@@ -8,7 +8,8 @@
 #include <PField.h>
 #include <ugens.h>		// for warn, die
 
-// Functions for creating signal conditioning wrapper PFields.   -John Gibson, 11/25/04
+// Functions for creating signal conditioning wrapper PFields.
+// -John Gibson, 11/25/04
 
 extern int resetval;		// declared in src/rtcmix/minc_functions.c
 
@@ -99,7 +100,7 @@ makefilter(const Arg args[], const int nargs)
 		}
 	}
 
-	PField *filt;
+	PField *filt = NULL;
 	if (type == kSmoothFilter)
 		filt = new SmoothPField(innerpf, resetval, arg1pf);
 	else if (type == kQuantizeFilter)

@@ -36,7 +36,7 @@ static TablePField *
 _makewavetable(const char *wavetype)
 {
 	int nargs;
-	Arg *mtargs;
+	Arg *mtargs = NULL;
 	const int tabsize = 1000;
 
 	if (strncmp(wavetype, "sine", 3) == 0) {
@@ -208,7 +208,7 @@ makeLFO(const Arg args[], const int nargs)
 		}
 	}
 
-	PField *lfo;
+	PField *lfo = NULL;
 	if (interp == kInterp1stOrder)
 		lfo = new LFOPField(resetval, wavetable, len, freqpf);
 	else // (interp == kTruncate)
@@ -353,7 +353,7 @@ makerandom(const Arg args[], const int nargs)
 		return NULL;
 	}
 
-	Random *gen;
+	Random *gen = NULL;
 	switch (type) {
 		case kLinearRandom:
 			gen = new LinearRandom(seed, min, max);
