@@ -160,6 +160,7 @@ else if (rheader(fd,&sfh)){ \
 } \
 else if (check_byte_order(&sfh,prog,name)) { \
 	fprintf(stderr,"%s: file is unrecognizable %s\n",prog,name); \
+	result = -1;  \
 } \
 else if (stat(name,&sfst)){ \
 	fprintf(stderr,"%s: cannot get status on %s\n",prog,name); \
@@ -178,6 +179,7 @@ else if (rheader(fd,&sfh)){ \
 } \
 else if (check_byte_order(&sfh,prog,name)) { \
 	fprintf(stderr,"%s: file is unrecognizable %s\n",prog,name); \
+	result = -1;  \
 } \
 else if (stat(name,&sfst)){ \
 	fprintf(stderr,"%s: cannot get status on %s\n",prog,name); \
