@@ -2,7 +2,7 @@
 
 include ../package.conf
 
-CURDIR = $(CMIXDIR)/insts.std/MOVE
+CURDIR = $(CMIXDIR)/insts/std/MOVE
 COMMON_OBJS = BASE.o cmixfuns.o setup.o common.o
 COMMON_HDRS = cmixfuns.h setup.h common.h
 OBJS = PLACE.o placeprof.o $(COMMON_OBJS)

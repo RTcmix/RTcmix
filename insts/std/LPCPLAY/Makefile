@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = LPCPLAY
 
-CURDIR = $(CMIXDIR)/insts.std/$(NAME)
+CURDIR = $(CMIXDIR)/insts/std/$(NAME)
 
 # NOTE: Using lib versions for some now -- optimize them!
 #LPCPLAY_O = allpole.o readjust.o mp.o shift.o buzz.o bmultf.o lpcheader.o rand.o

@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = NOISE
 
-CURDIR = $(CMIXDIR)/insts.std/$(NAME)
+CURDIR = $(CMIXDIR)/insts/std/$(NAME)
 OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
 PROGS = $(NAME) lib$(NAME).so

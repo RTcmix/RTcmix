@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = PVOC
 
-CURDIR = $(CMIXDIR)/insts.std/$(NAME)
+CURDIR = $(CMIXDIR)/insts/std/$(NAME)
 OBJS = PVOC.o lpa.o lpamp.o makewindows.o fft.o fold.o overlapadd.o PVFilter.o \
 		setup.o
 

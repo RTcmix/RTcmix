@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = TRANS
 
-CURDIR = $(CMIXDIR)/insts.std/$(NAME)
+CURDIR = $(CMIXDIR)/insts/std/$(NAME)
 OBJS = $(NAME).o TRANS3.o
 CMIXOBJS += $(PROFILE_O)
 PROGS = lib$(NAME).so $(NAME)

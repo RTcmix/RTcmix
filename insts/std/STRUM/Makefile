@@ -4,7 +4,7 @@ include ../package.conf
 
 NAME = STRUM
 
-CURDIR = $(CMIXDIR)/insts.std/$(NAME)
+CURDIR = $(CMIXDIR)/insts/std/$(NAME)
 OBJS = START.o BEND.o FRET.o START1.o BEND1.o FRET1.o VSTART1.o VFRET1.o \
 rtprofile.o randfill.o sset.o strum.o squisher.o delayset.o delayclean.o \
 dist.o delay.o

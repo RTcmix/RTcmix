@@ -5,7 +5,7 @@ include ../package.conf
 
 NAME = METAFLUTE
 
-CURDIR = $(CMIXDIR)/insts.std/$(NAME)
+CURDIR = $(CMIXDIR)/insts/std/$(NAME)
 OBJS = SFLUTE.o BSFLUTE.o VSFLUTE.o LSFLUTE.o sflcfuncs.o rtprofile.o
 HEADERS = SFLUTE.h BSFLUTE.h VSFLUTE.h LSFLUTE.h metaflute.h
 CMIXOBJS += $(PROFILE_O)

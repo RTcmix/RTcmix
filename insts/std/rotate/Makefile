@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = rotate
 
-CURDIR = $(CMIXDIR)/insts.std/$(NAME)
+CURDIR = $(CMIXDIR)/insts/std/$(NAME)
 OBJS = $(NAME).o
 CMIXOBJS += $(RTPROFILE_O)
 PROGS = lib$(NAME).so $(NAME)

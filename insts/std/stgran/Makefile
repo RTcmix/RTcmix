@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = stgran
 
-CURDIR = $(CMIXDIR)/insts.std/$(NAME)
+CURDIR = $(CMIXDIR)/insts/std/$(NAME)
 OBJS = $(NAME).o
 CMIXOBJS += $(RTPROFILE_O)
 ifeq ($(ARCH), LINUX)
