@@ -138,6 +138,102 @@ _normalize_table(double *array, const int len, const double peak)
 }
 
 
+/* ------------------------------------------------------- _datafile_table -- */
+/* Similar to gen 3, except that it accepts a file name rather than a cmix
+   file number.
+*/
+static int
+_datafile_table(const Arg args[], const int nargs, double *array, const int len)
+{
+   long cur;
+
+   if (!args[0].isType(StringType)) {
+      die("maketable", "Data file name must be a string.");
+      return -1;
+   }
+   const char *fname = (const char *) args[0];
+
+   size_t size = sizeof(float);
+   if (nargs > 1) {
+      if (!args[1].isType(StringType)) {
+         die("maketable", "Data file element size must be a string.");
+         return -1;
+      }
+      if (args[1] == "double")
+         size = sizeof(double);
+      else if (args[1] == "float")
+         size = sizeof(float);
+      else if (args[1] == "int")
+         size = sizeof(int);
+      else {
+         die("maketable", "Data file element size must be \"float\", "
+                          "\"double\" or \"int\".");
+         return -1;
+      }
+   }
+
+   FILE *stream = fopen(fname, "r");
+   if (stream == NULL) {
+      die("maketable", "Can't open data file \"%s\".", fname);
+      return -1;
+   }
+
+   /* Read data file until EOF or table is filled. */
+   int i;
+   if (size == sizeof(float)) {
+      float val;
+      for (i = 0; i < len; i++) {
+         if (fread(&val, sizeof(val), 1, stream) < 1) {
+            if (ferror(stream))
+               goto readerr;
+            break;
+         }
+         array[i] = (double) val;
+      }
+   }
+   else if (size == sizeof(double)) {
+      double val;
+      for (i = 0; i < len; i++) {
+         if (fread(&val, sizeof(val), 1, stream) < 1) {
+            if (ferror(stream))
+               goto readerr;
+            break;
+         }
+         array[i] = val;
+      }
+   }
+   else {  /* int */
+      int val;
+      for (i = 0; i < len; i++) {
+         if (fread(&val, sizeof(val), 1, stream) < 1) {
+            if (ferror(stream))
+               goto readerr;
+            break;
+         }
+         array[i] = (double) val;
+      }
+   }
+
+   cur = ftell(stream);
+   fseek(stream, 0, SEEK_END);
+   if (ftell(stream) != cur)
+      warn("maketable", "Data file \"%s\" has more than %d numbers.",
+                                                                  fname, len);
+   fclose(stream);
+
+   advise("maketable", "%d values loaded into table.", i);
+
+   /* fill remainder (if any) with zeros */
+   for ( ; i < len; i++)
+      array[i] = 0.0;
+
+   return 0;
+readerr:
+   die("maketable", "Error reading file \"%s\".", fname);
+   return -1;
+}
+
+
 /* ----------------------------------------------- _curve_table and helper -- */
 /* Derived from gen4 from the UCSD Carl package, described in F.R. Moore, 
    "Elements of Computer Music."  It works like setline, but there's an
@@ -734,7 +830,8 @@ _dispatch_table(const Arg args[], const int nargs, const int startarg,
          goto unimplemented;
          break;
       case DatafileTable:
-         goto unimplemented;
+         status = _datafile_table(&args[startarg], nargs - startarg, array,
+                                                                        *len);
          break;
       case CurveTable:
          status = _curve_table(&args[startarg], nargs - startarg, array, *len);
