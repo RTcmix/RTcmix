@@ -131,7 +131,7 @@ ifeq ($(PYTHON_SUPPORT), TRUE)
       # Pythons.  -JGG
       PYTHONLIBS += -lutil
    endif
-   ifeq ($(PYTHON_EXT_LINK), TRUE)
+   ifeq ($(PYTHON_EXT_STATIC_LINK), TRUE)
       PYEXT = ../parser/python/rtcmixmodule.o
    endif
 endif

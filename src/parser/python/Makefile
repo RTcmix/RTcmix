@@ -21,21 +21,21 @@ $(MODULE_SRC): make_python_ext.pl $(MODULE_SRC).in $(FUNCLIST)
 
 $(MODULE): $(MODULE_SRC)
 	$(PYTHON) setup.py build
-ifeq ($(PYTHON_EXT_LINK), TRUE)
+ifeq ($(PYTHON_EXT_STATIC_LINK), TRUE)
 	$(RM) $(MODULE)module.o
 	ln -s `find . -name $(MODULE)module.o` .
 endif
 
 # NB: need root for this; installs in python site-packages dir
 install: all
-ifeq ($(PYTHON_EXT_LINK), )
+ifeq ($(PYTHON_EXT_STATIC_LINK), )  # i.e., not TRUE
 	$(PYTHON) setup.py install
 endif
 
 # NB: unfortunately, distutils doesn't support uninstall 
 uninstall:
-#ifeq ($(PYTHON_EXT_LINK), )
-#	$(PYTHON) setup.py install
+#ifeq ($(PYTHON_EXT_STATIC_LINK), ) # i.e., not TRUE
+#	$(PYTHON) setup.py uninstall
 #endif
 
 clean:

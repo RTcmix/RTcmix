@@ -14,7 +14,7 @@ ifeq ($(PYTHON_SUPPORT), TRUE)
 	OBJS += parse_with_python.o
 	SRCS += parse_with_python.c
    PYTHON_INCLUDE_DIR = `$(PYTHON) python/print_python_includedir.py`
-   ifeq ($(PYTHON_EXT_LINK), TRUE)
+   ifeq ($(PYTHON_EXT_STATIC_LINK), TRUE)
       PYDEF = -DPYEXT_INIT
    endif
 endif
