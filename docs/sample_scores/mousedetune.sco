@@ -25,7 +25,7 @@ if (mode != play)
                            min = 0, max = 6, dflt = 0, lag = 50,
                            "detune", "Hz")
 if (mode == record)
-	detune = makedatafile(detune, "mousedetune.detune", 200)
+	detune = makemonitor(detune, "datafile", "mousedetune.detune", 200)
 else if (mode == play) {
    starttime = 0.0
    timefact = 1.0   // < 1: play data faster; > 1: play data slower
