@@ -19,7 +19,6 @@ ug_intro()
    UG_INTRO_HANDLE_RETURN("shifttable", shifttable);
    UG_INTRO_HANDLE_RETURN("quantizetable", quantizetable);
    UG_INTRO_DOUBLE_RETURN("samptable", samptable);
-   UG_INTRO_DOUBLE_RETURN("samptablei", samptablei);
    UG_INTRO_DOUBLE_RETURN("dumptable", dumptable);
    UG_INTRO_DOUBLE_RETURN("plottable", plottable);
    UG_INTRO_HANDLE_RETURN("mul", multtable);
