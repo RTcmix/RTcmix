@@ -3,9 +3,10 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #include <globals.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <pthread.h>
 #include <iostream.h>
-#include <stdio.h>
 #include "Instrument.h"
 #include "rt.h"
 #include "rtdefs.h"
@@ -27,7 +28,7 @@ Instrument :: Instrument()
    output_offset = 0;
 
    sfile_on = 0;                // default is no input soundfile
-   fdIndex = -1;
+   fdIndex = NO_DEVICE_FDINDEX;
    fileOffset = 0;
 
    inputsr = 0.0;
@@ -229,14 +230,16 @@ void Instrument :: gone()
 #endif
             clm_close(inputFileTable[fdIndex].fd);
          }
-         inputFileTable[fdIndex].fd = 0;
+         if (inputFileTable[fdIndex].filename);
+            free(inputFileTable[fdIndex].filename);
+         inputFileTable[fdIndex].filename = NULL;
+         inputFileTable[fdIndex].fd = NO_FD;
          inputFileTable[fdIndex].header_type = unsupported_sound_file;
          inputFileTable[fdIndex].data_format = snd_unsupported;
-         inputFileTable[fdIndex].chans = 0;
-         inputFileTable[fdIndex].srate = 0.0;
          inputFileTable[fdIndex].data_location = 0;
+         inputFileTable[fdIndex].srate = 0.0;
+         inputFileTable[fdIndex].chans = 0;
          inputFileTable[fdIndex].dur = 0.0;
-         inputFileTable[fdIndex].filename[0] = '\0';
          fdIndex = -1;
       }
    }
