@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Sunday, June 20, 2004 John Gibson <johgibso-at-indiana.edu>
+
+   * New spline table type for maketable.
+
 Saturday, June 19, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * Implement maketable versions of all the old gen types, with
