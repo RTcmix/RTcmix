@@ -24,6 +24,10 @@ WAVETABLE::init(float p[], short n_args)
 	nsamps = rtsetoutput(p[0], p[1], this);
 
 	wavetable = floc(1);
+	if (waveform == NULL) {
+		fprintf(stderr, "You need to store a waveform in function 1.\n");
+		exit(1);
+	}
 	len = fsize(1);
 
 	if (p[3] < 15.0) p[3] = cpspch(p[3]);
