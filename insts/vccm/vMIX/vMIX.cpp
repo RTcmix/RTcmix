@@ -2,10 +2,8 @@
 #include <stdio.h>
 #include <ugens.h>
 #include <mixerr.h>
-#include <Instrument.h>
 #include <rt.h>
 #include <rtdefs.h>
-#include <globals.h>
 #include "vMIX.h"
 
 // extern Bool stop_hold;
@@ -23,7 +21,7 @@ vMIX::~vMIX()
 	delete [] in;
 }
 
-int vMIX::init(float p[], int n_args)
+int vMIX::init(double p[], int n_args)
 {
 	// p0 = outsk; p1 = insk; p2 = duration (-endtime); p3 = amp; 
 	// p4 = fade time
@@ -33,12 +31,12 @@ int vMIX::init(float p[], int n_args)
 	int i;
 	float fade_time;
 
-	Instrument::init(p, n_args);
-
 	if (p[2] < 0.0) p[2] = -p[2] - p[1];
 
-	nsamps = rtsetoutput(p[0], p[2], this);
-	rtsetinput(p[1], this);
+	if (rtsetoutput(p[0], p[2], this) != 0)
+		return DONT_SCHEDULE;
+	if (rtsetinput(p[1], this) != 0)
+		return DONT_SCHEDULE;
 
 	amp = p[3];
 
@@ -46,7 +44,7 @@ int vMIX::init(float p[], int n_args)
 	fade_samps = (int)(fade_time*SR);
 	fade_samp = 0;
 
-	for (i = 0; i < inputchans; i++) {
+	for (i = 0; i < inputChannels(); i++) {
 		outchan[i] = (int)p[i+5];
 		if (outchan[i] + 1 > outputchans) {
 			die("vMIX", "You wanted output channel %d, but have only specified "
@@ -76,32 +74,33 @@ int vMIX::init(float p[], int n_args)
 	return(this->mytag);
 }
 
+int vMIX::configure()
+{
+	in = new float [RTBUFSAMPS * inputChannels()];
+	start_fade = NO;
+	fade_started = NO;
+	return 0;
+}
+
 int vMIX::run()
 {
 	int i,j,k,rsamps, finalsamp;
 	float out[MAXBUS];
 	float tamp;
 
-	if (in == NULL) {                /* first time, so allocate it */
-		in = new float [RTBUFSAMPS * inputchans];
-		start_fade = NO;
-		fade_started = NO;
-	}
-
-	Instrument::run();
-
-	rsamps = chunksamps*inputchans;
+	rsamps = chunksamps*inputChannels();
 
 	rtgetin(in, this, rsamps);
 
-	for (i = 0; i < rsamps; i += inputchans)  {
+	for (i = 0; i < rsamps; i += inputChannels())  {
 		if (--branch < 0) {
+#ifdef RTUPDATE
 			if(tags_on) {
 				tamp = rtupdate(this->mytag, 3);
 				if(tamp != NOPUPDATE)
 					amp = tamp;
 			}
-
+#endif	// RTUPDATE
 			if ((start_fade) || (fade_started)) {
 				if (!fade_started) {
 					finalsamp = i_chunkstart+i+fade_samps;
@@ -124,7 +123,7 @@ int vMIX::run()
 
 		for (j = 0; j < outputchans; j++) {
 			out[j] = 0.0;
-			for (k = 0; k < inputchans; k++) {
+			for (k = 0; k < inputChannels(); k++) {
 				if (outchan[k] == j)
 					out[j] += in[i+k] * aamp;
 			}
@@ -147,7 +146,9 @@ makevMIX()
 
 	inst = new vMIX();
 	inst->set_bus_config("vMIX");
+#ifdef RTUPDATE
 	inst->set_instnum("vMIX");
+#endif
 	return inst;
 }
 

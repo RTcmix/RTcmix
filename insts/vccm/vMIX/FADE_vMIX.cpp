@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <ugens.h>
 #include <mixerr.h>
-#include <Instrument.h>
-#include <globals.h>
 #include <rt.h>
 #include <rtdefs.h>
 #include "FADE_vMIX.h"
@@ -22,26 +20,24 @@ FADE_vMIX::~FADE_vMIX()
 
 }
 
-int FADE_vMIX::init(float p[], int n_args)
+int FADE_vMIX::init(double p[], int n_args)
 {
 	float start;
 
 	start = p[0];
 	dur = 0.001;
 	
-	nsamps = rtsetoutput(start, dur, this);
+	if (rtsetoutput(start, dur, this) != 0)
+		return DONT_SCHEDULE;
 	
 	return(0);
 }
 
 int FADE_vMIX::run()
 {
-	
-	Instrument::run();
 	start_fade = YES;
 	//	stop_hold = NO;
 	return(0);
-	
 }
 
 Instrument*
