@@ -1,5 +1,5 @@
 #include <ugens.h>
-#include "../H/Ougens.h"
+#include <Ougens.h>
 #include <sys/time.h>
 
 Orand::Orand()

@@ -1,4 +1,4 @@
-#include "../H/ugens.h"
+#include <ugens.h>
 
 float delget(float *a, float wait, int *l)
 {

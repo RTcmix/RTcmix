@@ -1,4 +1,4 @@
-#include "../H/combs.h"
+#include <combs.h>
 #include <math.h>
 
 extern float FTEMP1,FTEMP2,FTEMP3,FTEMP4;

@@ -1,5 +1,5 @@
 
-#include "../H/combs.h"
+#include <combs.h>
 
 float allpass(float samp,float *a)
 {

@@ -1,6 +1,6 @@
 #include <math.h>
-#include "../H/combs.h"
-#include "../H/ugens.h"
+#include <combs.h>
+#include <ugens.h>
 
 
 void

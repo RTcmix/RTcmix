@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <math.h>
-#include "../H/complexf.h"
-#include "../H/ugens.h"
+#include <complexf.h>
+#include <ugens.h>
 
 
 void

@@ -1,4 +1,4 @@
-#include "../H/ugens.h"
+#include <ugens.h>
 
 void
 tableset(float dur, int size, float *tab)

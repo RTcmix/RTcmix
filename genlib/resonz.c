@@ -1,4 +1,4 @@
-#include "../H/ugens.h"
+#include <ugens.h>
 
 void
 rszset(float cf, float bw, float xinit, float *a)

@@ -1,6 +1,6 @@
 #include <math.h>
-#include "../H/ugens.h"
-#include "../H/dbug.h"
+#include <ugens.h>
+#include <dbug.h>
 
 void rsnset(float cf, float bw, float scl, float xinit, float a[])
 {

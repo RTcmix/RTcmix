@@ -1,4 +1,4 @@
-#include "../H/ugens.h"
+#include <ugens.h>
 
 void
 evset(float dur, float rise, float dec, int nfrise, float *q)

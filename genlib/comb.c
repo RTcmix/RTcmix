@@ -1,4 +1,4 @@
-#include "../H/combs.h"
+#include <combs.h>
 
 float comb(float samp, float *a)
 {

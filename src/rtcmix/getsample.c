@@ -1,8 +1,8 @@
-#include "../H/sfheader.h"
-#include "../H/byte_routines.h"
+#include <sfheader.h>
+#include <byte_routines.h>
 #include <stdio.h>
 #include <math.h>
-#include "../H/ugens.h"
+#include <ugens.h>
 #include <sys/types.h>
 #include <unistd.h>
 

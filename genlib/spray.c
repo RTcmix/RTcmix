@@ -1,5 +1,5 @@
-#include "../H/ugens.h"
-#include "../H/spray.h"
+#include <ugens.h>
+#include <spray.h>
 
 void
 sprayinit(struct slist *slist, int size, unsigned int seed)

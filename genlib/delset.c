@@ -1,4 +1,4 @@
-#include "../H/ugens.h"
+#include <ugens.h>
 
 void
 delset(float *a, int *l, float xmax)
