@@ -174,6 +174,8 @@ int psize(int tag);
 int piloc(int instnum);
 
 
+int registerFunction(const char *function, const char *dsoName);
+
 void addLegacyfunc(const char *label, double (*func_ptr)(float *, int, double *));
 
 #ifdef __cplusplus
