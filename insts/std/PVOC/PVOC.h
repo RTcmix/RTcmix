@@ -1,5 +1,7 @@
 #include <Instrument.h>      /* the base class for this instrument */
 
+class PVFilter;
+
 class PVOC : public Instrument {
 public:
 	PVOC();
@@ -22,6 +24,7 @@ protected:
 	float	P, *Hwin, *Wanal, *Wsyn, *_pvInput, *winput;
 	float 	*lpcoef, *_fftBuf, *channel, *_pvOutput;
 	BUFTYPE	*_outbuf;         // private interleaved buffer
+	PVFilter *_pvFilter;
 	
 	// The following are used by the convert() and unconvert() methods
 	float	_fundamental;
