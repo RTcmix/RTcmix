@@ -9,7 +9,7 @@
 #include <assert.h>
 #include <limits.h>        // PATH_MAX
 #include "Option.h"
-#include "conf/Config.h"
+#include <Config.h>
 #include <ugens.h>         // FIXME: pull all this in just for warn()?
 #include <iostream.h>
 

@@ -3,7 +3,7 @@
 #include <ugens.h>
 #include <sndlibsupport.h>
 #include <sfheader.h>
-#include "../rtstuff/rtdefs.h"
+#include "rtdefs.h"
 #include <stdio.h>
 #include <sys/file.h>
 #include <sys/types.h>

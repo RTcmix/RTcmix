@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ugens.h>
-#include "../Minc/rtcmix_parse.h"      /* for MAXARGS */
+#include "../parser/rtcmix_parse.h"      /* for MAXARGS */
 
 /* These are accessed only here and in Minc/parse_with_minc.c.  They're
    defined here, because the Perl-embedded executable also needs them,

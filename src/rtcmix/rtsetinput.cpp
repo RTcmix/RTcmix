@@ -10,8 +10,8 @@
 #include <ugens.h>
 #include <stdio.h>
 #include <assert.h>
-#include "../rtstuff/Instrument.h"
-#include "../rtstuff/rtdefs.h"
+#include "Instrument.h"
+#include "rtdefs.h"
 
 
 #define INCHANS_DISCREPANCY_WARNING "\

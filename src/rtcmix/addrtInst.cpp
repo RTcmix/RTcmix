@@ -15,8 +15,8 @@
  *	Side Effects:
  */
 #include <globals.h>
-#include "../rtstuff/rt.h"
-#include "../rtstuff/Instrument.h"
+#include "rt.h"
+#include "Instrument.h"
 #include "mixerr.h"
 #include <string.h>
 

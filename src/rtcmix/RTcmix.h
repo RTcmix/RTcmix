@@ -1,5 +1,4 @@
-#include "../rtstuff/Instrument.h"
-
+class Instrument;
 class PFieldSet;
 
 class RTcmix
@@ -8,7 +7,7 @@ class RTcmix
 public:
 	RTcmix();			// 44.1k/stereo default
 	RTcmix(float, int);		// set SR and NCHANS
-	RTcmix(float, int, int, const char* opt1=NULL, const char *opt2=NULL, const char *opt3=NULL);	// set SR, NCHANS, BUFSIZE, up to 3 options
+	RTcmix(float, int, int, const char* opt1=0, const char *opt2=0, const char *opt3=0);	// set SR, NCHANS, BUFSIZE, up to 3 options
 	Instrument* cmd(char*, int, double, ...); // for numeric params
 	Instrument* cmd(char*, int, char*, ...); // for string params
 #ifdef PFIELD_CLASS

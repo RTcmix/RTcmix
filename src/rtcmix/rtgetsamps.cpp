@@ -11,8 +11,8 @@
 #include <globals.h>
 #include <prototypes.h>
 #include <buffers.h>
-#include "../rtstuff/rtdefs.h"
-#include "AudioDevice.h"
+#include "rtdefs.h"
+#include <AudioDevice.h>
 #include "Option.h"
 
 /* ----------------------------------------------------------- rtgetsamps --- */

@@ -34,7 +34,7 @@
 #include <version.h>
 #include <Option.h>
 #include "rt.h"
-#include "../rtstuff/heap/heap.h"
+#include "heap.h"
 #include "maxdispargs.h"
 #include "dbug.h"
 

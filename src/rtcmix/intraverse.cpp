@@ -9,13 +9,13 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <assert.h>
-#include "../rtstuff/heap/heap.h"
-#include "../rtstuff/rtdefs.h"
-#include "../sys/AudioDevice.h"
+#include <heap.h>
+#include "rtdefs.h"
+#include <AudioDevice.h>
 #include <Instrument.h>
 #include <Option.h>
 #include <bus.h>
-#include "../H/dbug.h"
+#include <dbug.h>
 
 //#define TBUG
 //#define ALLBUG

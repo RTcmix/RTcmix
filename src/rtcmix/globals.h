@@ -32,8 +32,6 @@ extern "C" {
 #define INLINE           /* MIPSpro can't */
 #endif
 
-#include <rtupdate.h>
-
 /* Note: these 3 vars also extern in rtdefs.h, for use by insts */
 GLOBAL int NCHANS;
 GLOBAL int RTBUFSAMPS;

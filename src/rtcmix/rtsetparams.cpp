@@ -17,7 +17,7 @@
 #include "audio_devices.h"
 #include <ugens.h>
 #include <Option.h>
-#include "../rtstuff/rtdefs.h"
+#include "rtdefs.h"
 
 /* #define DEBUG */
 

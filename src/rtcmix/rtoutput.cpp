@@ -12,7 +12,7 @@
 #include <errno.h>
 #include <sndlibsupport.h>
 #include "audio_devices.h"
-#include "../rtstuff/rtdefs.h"
+#include "rtdefs.h"
 #include <Option.h>
 
 

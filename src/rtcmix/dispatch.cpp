@@ -6,7 +6,7 @@
 #include <prototypes.h>
 #include <ugens.h>
 #include <maxdispargs.h>
-#include "../sys/mixerr.h"
+#include "mixerr.h"
 #include <stdio.h>
 
 #ifdef PFIELD_CLASS

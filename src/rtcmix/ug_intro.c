@@ -1,7 +1,5 @@
-#include	"../H/ugens.h"
-#ifdef PFIELD_CLASS
+#include	"ugens.h"
 #include <ug_intro.h>
-#endif
 
 void
 ug_intro()
@@ -10,7 +8,6 @@ ug_intro()
  *  This cute macro (from ugens.h) makes the necessary declarations
  *  and adds the function to ug_list
  */
-#ifdef PFIELD_CLASS
    UG_INTRO_HANDLE_RETURN("maketable", maketable);
    UG_INTRO_DOUBLE_RETURN("tablelen", tablelen);
    UG_INTRO_HANDLE_RETURN("normtable", normtable);
@@ -24,7 +21,6 @@ ug_intro()
    UG_INTRO_HANDLE_RETURN("mul", multtable);
    UG_INTRO_HANDLE_RETURN("add", addtable);
    UG_INTRO_HANDLE_RETURN("reversetable", reversetable);
-#endif /* !PFIELD_CLASS */
 	UG_INTRO("makegen", makegen);
 	UG_INTRO("open",m_open);
 	UG_INTRO("peakoff",peak_off);

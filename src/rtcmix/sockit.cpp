@@ -19,9 +19,9 @@
 #include <globals.h>
 #include <prototypes.h>
 #include <Option.h>
-#include "../rtstuff/rtdefs.h"
+#include "rtdefs.h"
 #include "sockdefs.h"
-#include "../H/dbug.h"
+#include "dbug.h"
 
 #include "notetags.h"
 

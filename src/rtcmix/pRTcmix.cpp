@@ -8,7 +8,7 @@
 #include "pRTcmix.h"
 
 extern "C" {
-#include "rtcmix_parse.h"
+#include "../parser/rtcmix_parse.h"
 }
 
 //  Constructor with default SR, NCHANS, and RTBUFSAMPS

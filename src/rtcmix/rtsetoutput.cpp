@@ -5,9 +5,9 @@
 #include <globals.h>
 #include <ugens.h>
 #include <iostream.h>
-#include "../rtstuff/Instrument.h"
-#include "../rtstuff/rtdefs.h"
-#include "../H/dbug.h"
+#include "Instrument.h"
+#include "rtdefs.h"
+#include "dbug.h"
 #include <stdlib.h>
 
 //extern double schedtime;

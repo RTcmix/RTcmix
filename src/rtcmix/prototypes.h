@@ -24,17 +24,13 @@ void rtgetsamps(AudioDevice *);
 int rtwritesamps(AudioDevice *);
 
 /* dispatch.cpp */
-#ifdef PFIELD_CLASS
 int dispatch(const char *str, const Arg args[], int n_args, Arg *retarg);
-#endif
 
 double dispatch(const char *str, double *pp, int n_args, void **inst);
 
-#ifdef PFIELD_CLASS
 /* addcheckfuncs.cpp */
 int checkfunc(const char *funcname, const Arg arglist[], const int nargs,
    Arg *retval);
-#endif /* PFIELD_CLASS */
 
 /* Note that C++ functions prototyped below really are defined within
    extern "C" braces in their files.
@@ -51,12 +47,8 @@ extern "C" {
 double checkfuncs(const char *fname, double *pp, int n_args);
 
 /* checkInsts.C */
-#ifdef PFIELD_CLASS
 double checkInsts(const char *instname, const Arg arglist[], const int nargs,
    Arg *retval);
-#else
-double checkInsts(const char *fname, double *pp, int n_args, void **inst);
-#endif
 
 /* this is just a wrapper for C files to call */
 double parse_dispatch(const char *str, double *pp, int n_args, void **inst);

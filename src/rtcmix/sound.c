@@ -33,7 +33,7 @@
 #include <sndlibsupport.h>
 #include <sfheader.h>
 #include <byte_routines.h>
-#include "../H/dbug.h"
+#include "dbug.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

@@ -27,12 +27,12 @@
 #include <prototypes.h>
 #include <ugens.h>
 #include <version.h>
-#include "../rtstuff/rt.h"
-#include "../rtstuff/heap/heap.h"
+#include "rt.h"
+#include "heap.h"
 #include "sockdefs.h"
 #include "notetags.h"           // contains defs for note-tagging
-#include "../H/dbug.h"
-#include "rtcmix_parse.h"
+#include "dbug.h"
+#include "../parser/rtcmix_parse.h"
 
 
 extern "C" {
@@ -125,7 +125,9 @@ init_globals()
    is_float_format = 0;
    rtoutsfname = NULL;
 
+#ifdef RTUPDATE
    tags_on = 0;
+#endif
 
    rtfileit = 0;                /* signal writing to soundfile */
    rtoutfile = 0;

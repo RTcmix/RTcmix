@@ -9,9 +9,9 @@
 #include <Instrument.h>
 #include <PField.h>
 #include <PFieldSet.h>
-#include "../rtstuff/rt.h"
-#include "../rtstuff/rtdefs.h"
-#include "../sys/mixerr.h"
+#include "rt.h"
+#include "rtdefs.h"
+#include "mixerr.h"
 #include <rtcmix_types.h>
 #include <stdio.h>
 #include <stdlib.h>

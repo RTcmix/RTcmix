@@ -9,7 +9,6 @@
 #include <bus.h>
 #include <buffers.h>
 #include <sys/types.h>
-#include <rtupdate.h>
 #include <maxdispargs.h>
 
 #define MAXNUMPARAMS 100

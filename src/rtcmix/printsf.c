@@ -1,6 +1,6 @@
-#include "../H/byte_routines.h"
-#include "../H/sfheader.h"
-#include "../H/ugens.h"
+#include "byte_routines.h"
+#include "sfheader.h"
+#include "ugens.h"
 #include <stdio.h>
 #include <sys/file.h>
 #include <sys/types.h>

@@ -3,7 +3,7 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #include <sndlibsupport.h>
-#include "../H/sfheader.h"
+#include "sfheader.h"
 
 /* These stay here (instead of moving to globals.h), because some utility
    programs need them.

@@ -16,9 +16,9 @@
 #include <buffers.h>
 #include <ugens.h>
 #include <sndlibsupport.h>
-#include "../rtstuff/rtdefs.h"
-#include "AudioDevice.h"
-#include "AudioFileDevice.h"
+#include "rtdefs.h"
+#include <AudioDevice.h>
+#include <AudioFileDevice.h>
 #include "Option.h"
 
 /* #define DUMP_AUDIO_TO_RAW_FILE */

@@ -3,7 +3,7 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #include <prototypes.h>
-#include "../sys/mixerr.h"
+#include "mixerr.h"
 
 
 extern "C" {
