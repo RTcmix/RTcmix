@@ -4,8 +4,7 @@
    p1 = input start time
    p2 = input duration
    p3 = amplitude multiplier
-   p4 = type of filter (0: no filter, 1: lowpass, 2: highpass, 3: bandpass,
-           4: bandreject)
+   p4 = type of filter (1: lowpass, 2: highpass, 3: bandpass, 4: bandreject)
    p5 = steepness (> 0) [optional, default is 1]
    p6 = balance output and input signals (0:no, 1:yes) [optional, default is 1]
    p7 = input channel [optional, default is 0]
@@ -26,7 +25,8 @@
    Here are the function table assignments:
 
       1: amplitude curve
-      2: cutoff frequency curve, described by time,cf pairs (e.g., gen 18)
+      2: cutoff (or center) frequency curve, described by time,cf pairs
+         (e.g., gen 18)
       3: bandwidth curve, described by time,bw pairs [only for bandpass and
          bandreject types].  If positive, bandwidth is in Hz; if negative,
          the '-' sign acts as a flag to interpret the bw values as percentages
@@ -92,7 +92,7 @@ int BUTTER :: init(float p[], int n_args)
       die("BUTTER", "You asked for channel %d of a %d-channel file.",
                                                          inchan, inputchans);
    if (nfilts < 1 || nfilts > MAXFILTS)
-      die("BUTTER", "Sharpness (p5) must be an integer between 1 and %d.",
+      die("BUTTER", "Steepness (p5) must be an integer between 1 and %d.",
                                                                    MAXFILTS);
    if (type != LowPass && type != HighPass && type != BandPass
          && type != BandReject)

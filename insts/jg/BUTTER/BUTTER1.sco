@@ -4,8 +4,7 @@
    p1 = input start time
    p2 = input duration
    p3 = amplitude multiplier
-   p4 = type of filter (0: no filter, 1: lowpass, 2: highpass, 3: bandpass,
-           4: bandreject)
+   p4 = type of filter (1: lowpass, 2: highpass, 3: bandpass, 4: bandreject)
    p5 = steepness (> 0) [optional, default is 1]
    p6 = balance output and input signals (0:no, 1:yes) [optional, default is 1]
    p7 = input channel [optional, default is 0]
@@ -26,7 +25,8 @@
    Here are the function table assignments:
 
       1: amplitude curve
-      2: cutoff frequency curve, described by time,cf pairs (e.g., gen 18)
+      2: cutoff (or center) frequency curve, described by time,cf pairs
+         (e.g., gen 18)
       3: bandwidth curve, described by time,bw pairs [only for bandpass and
          bandreject types].  If positive, bandwidth is in Hz; if negative,
          the '-' sign acts as a flag to interpret the bw values as percentages
@@ -52,9 +52,9 @@ reset(10000)
 WAVETABLE(0, dur, amp, pitch)
 WAVETABLE(0, dur, amp, pitch+.0005)
 
-type = 4   // 0: no filter, 1: lowpass, 2: highpass, 3: bandpass, 4: bandreject
+type = 4   // 1: lowpass, 2: highpass, 3: bandpass, 4: bandreject
 amp = 1.0
-sharpness = 5
+steepness = 5
 
 if (type == 1) {
    balance = 0
@@ -85,5 +85,5 @@ setline(0,0, 1,1, 7,1, 10,0)
 makegen(2, 18, 2000,
    0,lowcf, dur*.2,lowcf, dur*.5,highcf, dur*.9,lowcf, dur,lowcf)
 makegen(3, 18, 2000, 0, bw, 1, bw)
-BUTTER(0, 0, dur, amp, type, sharpness, balance)
+BUTTER(0, 0, dur, amp, type, steepness, balance)
 
