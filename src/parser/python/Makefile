@@ -1,7 +1,7 @@
 # for CMIXDIR and OPT...
 include ../makefile.conf
 
-EXT_NAME = rt
+EXT_NAME = rtcmix
 EXT_FILE = rtcmix_python_ext
 FUNCLIST = funclist
 FUNCEXCEPT = funcexcept

@@ -3,7 +3,7 @@
 # This score makes a wavetable synth riff and feeds it through 3 effects
 # in series: flange -> delay -> reverb
 
-from rt import *
+from rtcmix import *
 
 print_off()
 rtsetparams(44100, 2)
