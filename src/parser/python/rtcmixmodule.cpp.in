@@ -527,6 +527,7 @@ static PyObject *_call_dispatch(PyObject *args, char *funcname)
       else if (PyString_Check(obj)) {
          // dup the string, because we'll kill interpreter before
          // insts have run.
+// FIXME: Not necessary for insts, because StringPField dups string.
          char *str = strdup(PyString_AS_STRING(obj));
          rtcmixargs[i] = str;
 #ifdef DEBUG
