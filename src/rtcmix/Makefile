@@ -189,20 +189,20 @@ heap/rtHeap.o:
 
 # rules for three executables we build
 
-MIX: main.o $(M_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
-	$(CXX) -o MIX $(WORKAROUND) $(DYN) main.o $(PROFILE_O) $(M_O) -L. $(LDFLAGS)
+MIX: main.o $(M_O) $(LIBS) $(PROFILE_O)
+	$(CXX) -o MIX $(DYN) main.o $(PROFILE_O) $(M_O) -L. $(LDFLAGS)
 
-PMIX: main.o $(P_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
+PMIX: main.o $(P_O) $(LIBS) $(PROFILE_O)
 ifeq ($(PERL_SUPPORT), TRUE)
-	$(CXX) -o PMIX $(WORKAROUND) $(DYN) main.o $(PROFILE_O) \
+	$(CXX) -o PMIX $(DYN) main.o $(PROFILE_O) \
 		$(P_O) -L. $(LDFLAGS) $(PERL_LDFLAGS)
 else
 	@echo "You haven't configured with PERL_SUPPORT!"
 endif
 
-PYMIX: main.o $(PY_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
+PYMIX: main.o $(PY_O) $(LIBS) $(PROFILE_O)
 ifeq ($(PYTHON_SUPPORT), TRUE)
-	$(CXX) -o PYMIX $(WORKAROUND) $(DYN) main.o $(PROFILE_O) \
+	$(CXX) -o PYMIX $(DYN) main.o $(PROFILE_O) \
 		$(PY_O) -L. $(LDFLAGS) $(PYEXT) $(PYTHONLIBS)
 else
 	@echo "You haven't configured with PYTHON_SUPPORT!"
