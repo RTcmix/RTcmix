@@ -114,13 +114,12 @@ int JDELAY::init(double p[], int n_args)
    if (percent_wet < 0.0 || percent_wet > 1.0)
       return die("JDELAY", "Wet/dry mix must be between 0 and 1 inclusive.");
 
-   if (deltime > MAXDELTIME)
-      return die("JDELAY", "Maximum delay time (%g seconds) exceeded.",
-                                                                  MAXDELTIME);
+   if (deltime <= 0.0)
+      return die("JDELAY", "Illegal delay time (%g seconds)");
 
-   long maxdelsamps = (long) (MAXDELTIME * SR + 0.5);
-   delay = new Odelayi(maxdelsamps);
-   if (delay == NULL)
+   long delsamps = (long) (deltime * SR + 0.5);
+   delay = new Odelayi(delsamps);
+   if (delay->length() == 0)
       return die("JDELAY", "Can't allocate delay line memory.");
 
    amptable = floc(1);
@@ -150,16 +149,7 @@ void JDELAY::doupdate()
       amp *= tablei(currentFrame(), amptable, amptabs);
 
    float deltime = p[4];
-   if (deltime > MAXDELTIME) {
-      if (warn_deltime) {
-         warn("JDELAY", "Maximum delay time (%g seconds) exceeded!",
-                                                               MAXDELTIME);
-         warn_deltime = false;
-      }
-      delsamps = MAXDELTIME * SR;
-   }
-   else
-      delsamps = deltime * SR;
+   delsamps = deltime * SR;
 
    regen = p[5];
    if (regen < -1.0)
