@@ -41,7 +41,8 @@
 #define ROBUST_FACTOR       2
 #endif
 
-#define NUM_ZERO_BUFS       8
+#define NUM_ZERO_BUFS_BEFORE 0
+#define NUM_ZERO_BUFS_AFTER 8
 
 #define SKIP_SECONDS        4.0     /* for fast-forward and rewind */
 #define MARK_PRECISION      2       /* digits after decimal point to print
@@ -640,6 +641,21 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
    }
 
+   /* write buffers of zeros to prevent clicks */
+   for (i = 0; i < buf_samps; i++)
+      sbuf[i] = 0;
+   for (i = 0; i < NUM_ZERO_BUFS_BEFORE; i++) {
+#ifdef LINUX
+      status = write_buffer(afd, (char *)sbuf, AUDIO_DATUM_SIZE,
+                                             buf_samps / in_chans, in_chans);
+      if (status == -1)
+         exit(EXIT_FAILURE);
+#endif
+#ifdef MACOSX
+      macosx_cmixplay_audio_write(sbuf);
+#endif
+   }
+
    /* read input samples until end_frame, and copy to audio port,
       byte-swapping and converting from floats as necessary.
       If not running in quiet mode, print seconds as they elapse.
@@ -799,7 +815,7 @@ int main(int argc, char *argv[])
    /* write buffers of zeros to prevent clicks */
    for (i = 0; i < buf_samps; i++)
       sbuf[i] = 0;
-   for (i = 0; i < NUM_ZERO_BUFS; i++) {
+   for (i = 0; i < NUM_ZERO_BUFS_AFTER; i++) {
 #ifdef LINUX
       status = write_buffer(afd, (char *)sbuf, AUDIO_DATUM_SIZE, nframes,
                                                                   in_chans);
