@@ -158,7 +158,7 @@ write_buffer(int ports[], char *buf, int datum_size, int nframes, int nchans)
    static int   card_chans = -1;
    static short *tmpbuf = NULL;
 
-   if (tmpbuf == NULL) {                      /* first time, so check */
+   if (card_chans == -1) {                      /* first time, so check */
       card_chans = get_card_max_chans(ports[0]);
       assert(card_chans >= nchans);
    }
