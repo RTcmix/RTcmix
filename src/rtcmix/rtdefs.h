@@ -14,6 +14,7 @@ typedef struct inputdesc {
 #ifdef USE_SNDLIB
 	short header_type;        /* e.g., AIFF_sound_file (in sndlib.h) */
 	short data_format;        /* e.g., snd_16_linear (in sndlib.h) */
+	short chans;
 #else
   #ifdef sgi
 	void *handle;
