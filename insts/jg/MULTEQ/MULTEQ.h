@@ -23,6 +23,7 @@ public:
          _freq = freq;
          _Q = Q;
          _gain = gain;
+         _eq->settype(_type);
          _eq->setparams(_freq, _Q, _gain);
       }
       _bypass = bypass;
