@@ -16,6 +16,10 @@ all:
 	ln -sf ../src/rtcmix/RTcmix.h .
 	ln -sf ../src/rtcmix/mixerr.h .
 
+depend:
+
+install:
+
 clean:
 	@echo "Nothing to be done for 'clean'."
 
@@ -34,4 +38,5 @@ cleanall:
 	$(RM) notetags.h
 	$(RM) RTcmix.h
 	$(RM) mixerr.h
+
 
