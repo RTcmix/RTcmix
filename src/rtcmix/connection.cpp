@@ -10,24 +10,29 @@
 */
 #include <stdlib.h>
 #include <stdio.h>
+#include <dlfcn.h>
+
 #include <rtcmix_types.h>
 #include <PField.h>
 #include <ugens.h>		// for warn, die
 
-extern RTNumberPField *mouse_connection(const Arg args[], const int nargs);
-extern RTNumberPField *midi_connection(const Arg args[], const int nargs);
-
+#if !defined(SHAREDLIBDIR) || !defined(SHLIB_SUFFIX)
+#error "Compile flags are missing macros for SHAREDLIBDIR and/or SHLIB_SUFFIX"
+#endif
 
 // --------------------------------------------------------- local utilities ---
-static Handle
-_createPFieldHandle(PField *pfield)
+void *
+find_dso(const char *selector)
 {
-	Handle handle = (Handle) malloc(sizeof(struct _handle));
-	handle->type = PFieldType;
-	handle->ptr = (void *) pfield;
-	return handle;
+	char loadPath[1024];
+	dlerror();	// clear error queue
+	sprintf(loadPath, "%s/lib%sconn.%s", SHAREDLIBDIR, selector, SHLIB_SUFFIX);
+	void *dso = dlopen(loadPath, RTLD_LAZY);
+	if (!dso) {
+		die("makeconnection", "dynamic load failed: %s\n", dlerror());
+	}
+	return dso;
 }
-
 
 // =============================================================================
 // The remaining functions are public, callable from scripts.
@@ -36,6 +41,7 @@ extern "C" {
 	Handle makeconnection(const Arg args[], const int nargs);
 };
 
+typedef Handle (*HandleCreator)(const Arg[], const int);
 
 // ---------------------------------------------------------- makeconnection ---
 Handle
@@ -43,27 +49,27 @@ makeconnection(const Arg args[], const int nargs)
 {
 	if (!args[0].isType(StringType)) {
 		die("makeconnection", "First argument must be a string giving "
-									"connection type, e.g. \"mouseX\", \"midi\".");
+			"connection type, e.g. \"mouseX\", \"midi\".");
 		return NULL;
 	}
 
-	RTNumberPField *connection = NULL;
-
+	const char *selector = (const char *) args[0];
 	if (args[0] == "mouseX" || args[0] == "mouseY")
-#ifdef MACOSX
-{
-		die("makeconnection (mouse)", "Not yet implemented for OS X.");
-		return NULL;
-}
-#else
-		connection = mouse_connection(args, nargs);
-#endif
-	else if (args[0] == "midi")
-		connection = midi_connection(args, nargs);
+		selector = "mouse";
 
-	if (connection == NULL)
-		return NULL;
+	Handle handle = NULL;
+	HandleCreator creator = NULL;
 
-	return _createPFieldHandle(connection);
+	void *dso = find_dso(selector);
+	if (dso) {
+		creator = (HandleCreator) dlsym(dso, "create_handle");
+		if (creator) {
+			handle = (*creator)(args, nargs);
+		}
+		else {
+			die("makeconnection", "symbol lookup failed: %s\n", dlerror());
+		}
+	}
+	return handle;
 }
 
