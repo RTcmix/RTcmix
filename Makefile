@@ -154,6 +154,11 @@ ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
 endif
 	@echo "install done."; echo ""
 
+base_install:
+	@echo "beginning base_install..."
+	@cd $(BASE); $(MAKE) $(MFLAGS) install;
+	@echo "base_install done."; echo ""
+
 dso_install: 
 	@echo "beginning dso_install..."
 	@for DIR in $(INST_DIRS); \
