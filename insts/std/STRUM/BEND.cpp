@@ -41,7 +41,7 @@ int BEND::init(float p[], short n_args)
 	leng = fsize((int)p[4]);
 	tableset(p[1],leng,tags);
 
-	resetval = p[7];
+	resetval = (int)p[7];
 	if (resetval == 0) resetval = 100;
 	spread = p[8];
 

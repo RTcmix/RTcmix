@@ -73,7 +73,7 @@ int VSTART1::init(float p[], short n_args)
 	vlen = fsize(1);
 	vsibot = p[12] * (float)vlen/SR;
 	vsidiff = vsibot - (p[13] * (float)vlen/SR);
-	srrand(p[15]);
+	srrand((int)p[15]);
 	vsi = ((rrand()+1.0)/2.0) * vsidiff;
 	vsi += vsibot;
 	vphase = 0.0;
@@ -88,10 +88,10 @@ int VSTART1::init(float p[], short n_args)
 	distlevel = p[9];
 	amp = p[10];
 	vdepth = p[14];
-	resetval = p[16];
+	resetval = (int)p[16];
 	if (resetval == 0) resetval = 200;
 	spread = p[17];
-	deleteflag = p[18];
+	deleteflag = (int)p[18];
 
 	d = 0.0;
 
@@ -113,7 +113,7 @@ int VSTART1::run()
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch1 < 0) {
 			vsi = (( (rrand()+1.0)/2.0) * vsidiff) + vsibot;
-			branch1 = (float)vlen/vsi;
+			branch1 = (int)((float)vlen/vsi);
 			}
 		if (--branch2 < 0) {
 			vamp = tablei(cursamp, eloc, tab) * vdepth;

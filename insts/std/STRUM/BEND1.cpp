@@ -54,7 +54,7 @@ int BEND1::init(float p[], short n_args)
 	cleanlevel = p[10];
 	distlevel = p[11];
 	amp = p[12];
-	resetval = p[13];
+	resetval = (int)p[13];
 	if (resetval == 0) resetval = 100;
 	spread = p[14];
 

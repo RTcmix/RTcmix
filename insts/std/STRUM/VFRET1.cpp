@@ -69,7 +69,7 @@ int VFRET1::init(float p[], short n_args)
 	distlevel = p[9];
 	amp = p[10];
 	vdepth = p[13];
-	resetval = p[14];
+	resetval = (int)p[14];
 	if (resetval == 0) resetval = 200;
 	spread = p[15];
 
@@ -100,7 +100,7 @@ int VFRET1::run()
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch1 < 0) {
 			vsi = (( (rrand()+1.0)/2.0) * vsidiff) + vsibot;
-			branch1 = (float)vlen/vsi;
+			branch1 = (int)((float)vlen/vsi);
 			}
 		if (--branch2 < 0) {
 			vamp = tablei(cursamp, eloc, tab) * vdepth;

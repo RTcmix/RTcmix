@@ -43,7 +43,7 @@ int START::init(float p[], short n_args)
 	randfill(p[5], (int)p[6], strumq1);
 
 	spread = p[7];
-	deleteflag = p[8];
+	deleteflag = (int)p[8];
 
 	return(nsamps);
 }

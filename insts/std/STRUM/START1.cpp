@@ -62,7 +62,7 @@ int START1::init(float p[], short n_args)
 	distlevel = p[9];
 	amp = p[10];
 	spread = p[12];
-	deleteflag = p[13];
+	deleteflag = (int)p[13];
 
 	d = 0.0;
 
