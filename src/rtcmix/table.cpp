@@ -40,7 +40,7 @@
 typedef enum {
 	InvalidTable = -1,
 	TextfileTable = 0,
-	SndfileTable = 1,
+	SoundFileTable = 1,
 	LiteralTable = 2,
 	DatafileTable = 3,
 	CurveTable = 4,
@@ -58,7 +58,7 @@ typedef enum {
 
 static char *_table_name[] = {
 	"textfile",	// 0
-	"sndfile",
+	"soundfile",
 	"literal",
 	"datafile",
 	"curve",		// 4
@@ -246,10 +246,10 @@ _textfile_table(const Arg args[], const int nargs, double *array, const int len)
 }
 
 
-// ---------------------------------------------------------- _sndfile_table ---
+// -------------------------------------------------------- _soundfile_table ---
 // Fill a table with numbers read from a sound file.  The syntax is
 //
-// table = maketable("sndfile", size, filename[, duration[, inskip[, inchan]]])
+// table = maketable("soundfile", size, filename[, duration[, inskip[, inchan]]])
 //
 // The <size> argument is ignored; set it to zero.
 //
@@ -283,7 +283,8 @@ _textfile_table(const Arg args[], const int nargs, double *array, const int len)
 //       look at the sound file header.
 //
 // Similar to gen 1, but no normalization.  The arguments are different also,
-// and it does not return the number of frames.  Get this with tablelen().
+// and it does not return the number of frames.  Get the number of samples
+// (not frames) with tablelen().
 //                                              - JGG 2/7/01, rev. 6/19/04
 
 
@@ -291,17 +292,17 @@ _textfile_table(const Arg args[], const int nargs, double *array, const int len)
 #define BUFSAMPS	1024 * 16
 
 static int
-_sndfile_table(const Arg args[], const int nargs, double **array, int *len)
+_soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 {
 	delete [] *array;		// need to allocate our own
 
 	if (nargs <= 0)
-		return die("maketable (sndfile)",
-					  "\nUsage: table = maketable(\"sndfile\", size=0, "
+		return die("maketable (soundfile)",
+					  "\nUsage: table = maketable(\"soundfile\", size=0, "
 										"filename[, duration[, inskip[, inchan]]])");
 
 	if (!args[0].isType(StringType))
-		return die("maketable (sndfile)", "File name must be a string.");
+		return die("maketable (soundfile)", "File name must be a string.");
 	const char *fname = (const char *) args[0];
 
 	double request_dur = 0.0;
@@ -309,15 +310,15 @@ _sndfile_table(const Arg args[], const int nargs, double **array, int *len)
 	int inchan = ALL_CHANS;
 	if (nargs > 1) {
 		if (!args[1].isType(DoubleType))
-			return die("maketable (sndfile)", "<duration> must be a number.");
+			return die("maketable (soundfile)", "<duration> must be a number.");
 		request_dur = args[1];
 		if (nargs > 2) {
 			if (!args[2].isType(DoubleType))
-				return die("maketable (sndfile)", "<inskip> must be a number.");
+				return die("maketable (soundfile)", "<inskip> must be a number.");
 			inskip = args[2];
 			if (nargs > 3) {
 				if (!args[3].isType(DoubleType))
-					return die("maketable (sndfile)", "<inchan> must be a number.");
+					return die("maketable (soundfile)", "<inchan> must be a number.");
 				inchan = args[3];
 			}
 		}
@@ -330,10 +331,10 @@ _sndfile_table(const Arg args[], const int nargs, double **array, int *len)
 	int fd = open_sound_file((char *) fname, &header_type, &data_format,
 							&data_location, &srate, &file_chans, &file_samps);
 	if (fd == -1)
-		return die("maketable (sndfile)", "Can't open input file \"%s\".", fname);
+		return die("maketable (soundfile)", "Can't open input file \"%s\".", fname);
 
 	if (srate != RTcmix::sr())
-		warn("maketable (sndfile)", "The input file sampling rate is %g, but "
+		warn("maketable (soundfile)", "The input file sampling rate is %g, but "
 			  "the output rate is currently %g.", srate, SR);
 
 	int file_frames = file_samps / file_chans;
@@ -341,7 +342,7 @@ _sndfile_table(const Arg args[], const int nargs, double **array, int *len)
 	int table_chans = file_chans;
 	if (inchan != ALL_CHANS) {
 		if (inchan >= file_chans)
-			return die("maketable (sndfile)",
+			return die("maketable (soundfile)",
 						  "You asked for channel %d of a %d-channel file. (\"%s\")",
 						  inchan, file_chans, fname);
 		table_chans = 1;
@@ -364,18 +365,18 @@ _sndfile_table(const Arg args[], const int nargs, double **array, int *len)
  
 	double *block = new double[table_samps];
 	if (block == NULL)
-		return die("maketable (sndfile)", "Not enough memory for table.");
+		return die("maketable (soundfile)", "Not enough memory for table.");
 
 	int bytes_per_samp = mus_data_format_to_bytes_per_sample(data_format);
 
 	char *buf = new char[BUFSAMPS * bytes_per_samp];
 	if (buf == NULL)
-		return die("maketable (sndfile)",
+		return die("maketable (soundfile)",
 									"Not enough memory for temporary buffer.");
 
 	off_t seek_to = data_location + (start_frame * file_chans * bytes_per_samp);
 	if (lseek(fd, seek_to, SEEK_SET) == -1)
-		return die("maketable (sndfile)", "File seek error: %s", strerror(errno));
+		return die("maketable (soundfile)", "File seek error: %s", strerror(errno));
 
 #if MUS_LITTLE_ENDIAN
 	bool byteswap = IS_BIG_ENDIAN_FORMAT(data_format);
@@ -401,7 +402,7 @@ _sndfile_table(const Arg args[], const int nargs, double **array, int *len)
 		else
 			bytes_read = read(fd, buf, BUFSAMPS * bytes_per_samp);
 		if (bytes_read == -1)
-			return die("maketable (sndfile)", "File read error: %s",
+			return die("maketable (soundfile)", "File read error: %s",
 															strerror(errno));
 		if (bytes_read == 0)				// EOF, somehow
 			break;
@@ -1565,36 +1566,31 @@ _dispatch_table(const Arg args[], const int nargs, const int startarg,
 
 	switch (tablekind) {
 		case TextfileTable:
-			status = _textfile_table(&args[startarg], nargs - startarg,
-																	*array, *len);
+			status = _textfile_table(&args[startarg], nargs - startarg, *array, *len);
 			break;
-		case SndfileTable:
-			status = _sndfile_table(&args[startarg], nargs - startarg, array, len);
+		case SoundFileTable:
+			status = _soundfile_table(&args[startarg], nargs - startarg, array, len);
 			break;
 		case LiteralTable:
 			status = _literal_table(&args[startarg], nargs - startarg, array, len);
 			break;
 		case DatafileTable:
-			status = _datafile_table(&args[startarg], nargs - startarg,
-																	array, len);
+			status = _datafile_table(&args[startarg], nargs - startarg, array, len);
 			break;
 		case CurveTable:
 			status = _curve_table(&args[startarg], nargs - startarg, *array, *len);
 			break;
 		case ExpbrkTable:
-			status = _expbrk_table(&args[startarg], nargs - startarg,
-																	*array, *len);
+			status = _expbrk_table(&args[startarg], nargs - startarg, *array, *len);
 			break;
 		case LineTable:
 			status = _line_table(&args[startarg], nargs - startarg, *array, *len);
 			break;
 		case LinebrkTable:
-			status = _linebrk_table(&args[startarg], nargs - startarg,
-																	*array, *len);
+			status = _linebrk_table(&args[startarg], nargs - startarg, *array, *len);
 			break;
 		case SplineTable:
-			status = _spline_table(&args[startarg], nargs - startarg,
-																	*array, *len);
+			status = _spline_table(&args[startarg], nargs - startarg, *array, *len);
 			break;
 		case Wave3Table:
 			status = _wave3_table(&args[startarg], nargs - startarg, *array, *len);
@@ -1694,7 +1690,7 @@ maketable(const Arg args[], const int nargs)
 		return NULL;
 	}
 	int len = args[lenindex];
-	if (len < 0) {		// NOTE: It's okay for len to be zero (cf _sndfile_table)
+	if (len < 0) {		// NOTE: It's okay for len to be zero (cf _soundfile_table)
 		die("maketable", "Negative table size.");
 		return NULL;
 	}
