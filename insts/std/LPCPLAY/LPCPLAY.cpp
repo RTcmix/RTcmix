@@ -202,7 +202,7 @@ int LPCPLAY::localInit(float p[], int n_args)
    */
 	rtsetoutput(outskip, ldur, this);
 
-	_envFun = floc(2);
+	_envFun = floc(ENV_SLOT);
 	sbrrand(1);
 
 	// Pull all the current configuration information out of the environment.
@@ -226,7 +226,7 @@ int LPCPLAY::localInit(float p[], int n_args)
 	// Finish the initialization
 	
 	float *cpoint = _coeffs + 4;
-	evset(getdur(), _risetime, _decaytime, 2, _evals);
+	evset(getdur(), _risetime, _decaytime, ENV_SLOT, _evals);
 
 	_frames = frameCount;
 	_frame1 = startFrame;
@@ -299,7 +299,7 @@ int LPCPLAY::localInit(float p[], int n_args)
 	
 	/* note, dont use this feature unless pitch is specified in p[3]*/
 	
-	_sineFun = (float *)floc(1);
+	_sineFun = (float *)floc(SINE_SLOT);
 	_reson_is_on = p[7] ? true : false;
 	_cf_fact = p[7];
 	_bw_fact = p[8];
@@ -317,6 +317,9 @@ int LPCPLAY::run()
 
 	/* You MUST call the base class's run method here. */
 	Instrument::run();
+#if 0
+		printf("\nLPCPLAY::run()\n");
+#endif
 
 	// Samples may have been left over from end of previous run's block
 	if (_leftOver > 0)
@@ -345,7 +348,9 @@ int LPCPLAY::run()
 		{
 			_frameno = _frame1 + ((float)(CurrentFrame())/nsamps) * _frames;
 		}
-/*		printf("voiced: %d frame %g\n", _voiced, _frameno); */
+#if 0
+		printf("frame %g\n", _frameno);
+#endif
 		if (_dataSet->getFrame(_frameno,_coeffs) == -1)
 			break;
 		// If requested, stabilize this frame before using
@@ -378,7 +383,6 @@ int LPCPLAY::run()
 				_bw_fact*_cf_fact*cps,_cf_fact,_bw_fact,cps); */
 		}
 		float si = newpch * _magic;
-		_ampmlt *= evp(CurrentFrame(),_envFun,_envFun,_evals);
 
 		float *cpoint = _coeffs + 4;
 		
@@ -436,6 +440,11 @@ int LPCPLAY::run()
 #endif
 		if (_reson_is_on)
 			bresonz(_alpvals,_rsnetc,_alpvals,_counter);
+
+		// Apply envelope last
+
+		float envelope = evp(CurrentFrame(),_envFun,_envFun,_evals);
+		bmultf(_alpvals, envelope, _counter);
 
 		int sampsToAdd = min(_counter, FramesToRun() - n);
 
