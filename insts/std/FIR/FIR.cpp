@@ -57,10 +57,8 @@ int FIR::init(double p[], int n_args)
 
 int FIR::configure()
 {
-	if (in == NULL)
-		in = new float [RTBUFSAMPS * inputChannels()];
-
-	return 0;
+	in = new float [RTBUFSAMPS * inputChannels()];
+	return in ? 0 : -1;
 }
 
 int FIR::run()

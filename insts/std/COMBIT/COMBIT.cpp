@@ -86,10 +86,8 @@ int COMBIT::init(double p[], int n_args)
 
 int COMBIT::configure()
 {
-	if (in == NULL)
-		in = new float [RTBUFSAMPS * inputChannels()];
-
-	return 0;	// return 0 on success, -1 on failure
+	in = new float [RTBUFSAMPS * inputChannels()];
+	return in ? 0 : -1;
 }
 
 
