@@ -345,8 +345,7 @@ rtoutput(float p[], int n_args, double pp[])
 								 NCHANS,
 								 SR,
 								 normalize_output_floats,
-								 check_peaks,
-								 play_audio) < 0)
+								 check_peaks) < 0)
 	{
 		return -1;	/* failed! */
 	}
