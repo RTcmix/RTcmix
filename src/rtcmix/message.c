@@ -10,10 +10,9 @@
 #define PREFIX  "*** "       /* print before WARNING and ERROR */
 #define BUFSIZE 1024
 
-// FIXME: do we need this on sgi?
-//#ifdef SGI
-//#define vsnprintf(str, sz, fmt, args)  vsprintf(str, fmt, args)
-//#endif
+#ifdef SGI  /* not as safe, but what can ya do */
+#define vsnprintf(str, sz, fmt, args)  vsprintf(str, fmt, args)
+#endif
 
 /* These functions are wrappers for printf that do a little extra work.
    The first arg is the name of the instrument they're called from.
