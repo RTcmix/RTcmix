@@ -49,6 +49,8 @@ void Balance :: setFreq(MY_FLOAT freq)
 
 void Balance :: setWindowSize(int nsamples)
 {
+   assert(nsamples > 0);          // doesn't seem to work if nsamples is zero
+
    windowSize = nsamples;
    counter = windowSize + 1;      // sync with RMS "if (--counter < 0)" blocks
    inputRMS->setWindowSize(windowSize);
