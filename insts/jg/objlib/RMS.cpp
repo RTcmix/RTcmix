@@ -3,10 +3,10 @@
 #include "RMS.h"
 
 
-RMS :: RMS() : Filter()
+RMS :: RMS(double srate) : Filter(srate)
 {
    gain = 1.0;
-   subLowFilter = new OnePole;
+   subLowFilter = new OnePole(srate);
    subLowFilter->setFreq(10.0);
    windowSize = DEFAULT_CONTROL_RATE;
    counter = 0;

@@ -148,7 +148,7 @@ int VOCODE2 :: init(double p[], int n_args)
    }
 
    if (hipass_mod_amp > 0.0) {
-      hipassmod = new Butter();
+      hipassmod = new Butter(SR);
       hipassmod->setHighPass(hipasscf);
    }
 
@@ -228,16 +228,16 @@ int VOCODE2 :: init(double p[], int n_args)
    for (j = 0; j < numfilts; j++) {
       float thecf = cf[j];
 
-      modulator_filt[j] = new Butter();
+      modulator_filt[j] = new Butter(SR);
       modulator_filt[j]->setBandPass(thecf, bwpct * thecf);
 
       if (carrier_transp)
          thecf = cpsoct(octcps(thecf) + carrier_transp);
 
-      carrier_filt[j] = new Butter();
+      carrier_filt[j] = new Butter(SR);
       carrier_filt[j]->setBandPass(thecf, bwpct * thecf);
 
-      balancer[j] = new Balance();
+      balancer[j] = new Balance(SR);
       balancer[j]->setWindowSize(balance_window);
       balancer[j]->setInitialGain(0.0);
    }

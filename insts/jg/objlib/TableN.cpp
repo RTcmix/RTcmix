@@ -10,13 +10,14 @@
    (Caller is responsible for ensuring that <aTable> stays valid for the
    life of this object.) <tableSize> is the length of the table.
 */
-TableN :: TableN(MY_FLOAT duration, double *aTable, int tableSize) : Oscil()
+TableN :: TableN(double srate, MY_FLOAT duration, double *aTable, int tableSize)
+   : Oscil(srate)
 {
    assert(aTable != NULL && tableSize > 0 && duration > 0.0);
 
    size = tableSize;
    table = aTable;
-   increment = (double) size / (double) (duration * SR);
+   increment = (double) size / (double) (duration * _sr);
 }
 
 

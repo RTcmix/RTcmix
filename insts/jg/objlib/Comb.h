@@ -13,7 +13,7 @@ class Comb : public Filter
     MY_FLOAT combCoeff;
     MY_FLOAT loopt;
   public:
-    Comb(MY_FLOAT loopTime, MY_FLOAT reverbTime);
+    Comb(double srate, MY_FLOAT loopTime, MY_FLOAT reverbTime);
     ~Comb();
     void clear();
     void setReverbTime(MY_FLOAT reverbTime);

@@ -7,7 +7,7 @@
 float *resample_functable(float *table, int oldsize, int newsize);
 
 
-NZero :: NZero(int ntaps) : Filter()
+NZero :: NZero(double srate, int ntaps) : Filter(srate)
 {
    order = ntaps;
    inputs = new MY_FLOAT [order];
@@ -122,7 +122,7 @@ void NZero :: designFromFunctionTable(double *table,
                                       float high)
 {
    int    i;
-   float  nyquist = SR / 2.0;
+   float  nyquist = _sr / 2.0;
    double *newtable;
 
    assert(table != NULL && size > 1 && low >= 0 && high >=0);

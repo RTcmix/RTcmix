@@ -15,19 +15,20 @@
    Examples:
 
       // uses internal sine table, initial phase = 0
-      myosc = new OscilN();
+      myosc = new OscilN(srate);
 
       // uses internal sine table, initial phase = 90 deg (i.e., cosine)
-      myosc = new OscilN(PI/2);
+      myosc = new OscilN(srate, PI/2);
 
       // uses myTable of size elements, init. phase = 0 (note: must give phase)
-      myosc = new OscilN(0, myTable, size);
+      myosc = new OscilN(srate, 0, myTable, size);
 */
 OscilN :: OscilN(
+   double   srate,
    MY_FLOAT initialPhase = 0.0,
    double   *waveTable = NULL,
    int      tableSize = DEFAULT_WAVETABLE_SIZE)
-       : Oscil()
+   : Oscil(srate)
 {
    if (waveTable) {
       size = tableSize;
@@ -37,7 +38,7 @@ OscilN :: OscilN(
       size = DEFAULT_WAVETABLE_SIZE;
       table = getSineTable();           // get ptr to internal sine table
    }
-   increment = (double) size / (double) SR;
+   increment = (double) size / _sr;
    phase = (double) (initialPhase * ONE_OVER_TWO_PI * (double) size);
 }
 

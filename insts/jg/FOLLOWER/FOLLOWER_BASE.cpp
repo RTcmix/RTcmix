@@ -62,13 +62,13 @@ int FOLLOWER_BASE :: init(double p[], int n_args)
    double *function = floc(1);
    if (function) {
       int len = fsize(1);
-      amp_table = new TableL(dur, function, len);
+      amp_table = new TableL(SR, dur, function, len);
    }
 
-   gauge = new RMS();
+   gauge = new RMS(SR);
    gauge->setWindowSize(window_len);
 
-   smoother = new OnePole();
+   smoother = new OnePole(SR);
 
    skip = (int) (SR / (float) resetval);
 

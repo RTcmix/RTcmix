@@ -14,7 +14,7 @@
 #include "OnePole.h"
 
 
-OnePole :: OnePole() : Filter()
+OnePole :: OnePole(double srate) : Filter(srate)
 {
    poleCoeff = (MY_FLOAT) 0.9;
    gain = (MY_FLOAT) 1.0;
@@ -41,11 +41,11 @@ void OnePole :: setFreq(MY_FLOAT freq)
 {
    // after Dodge, but with pole coeff sign flipped (for tick method)
    if (freq >= 0.0) {                       // lowpass
-      double c = 2.0 - cos((double)(freq * TWO_PI / SR));
+      double c = 2.0 - cos((double)(freq * TWO_PI / _sr));
       poleCoeff = (MY_FLOAT) -(sqrt(c * c - 1.0) - c);
    }
    else {                                   // highpass
-      double c = 2.0 + cos((double)(freq * TWO_PI / SR));
+      double c = 2.0 + cos((double)(freq * TWO_PI / _sr));
       poleCoeff = (MY_FLOAT) -(c - sqrt(c * c - 1.0));
    }
 

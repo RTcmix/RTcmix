@@ -7,11 +7,11 @@
 #include "Notch.h"
 
 
-Notch :: Notch(MY_FLOAT loopTime, MY_FLOAT scaler) : Filter()
+Notch :: Notch(double srate, MY_FLOAT loopTime, MY_FLOAT scaler) : Filter(srate)
 {
    long len;
 
-   len = (long)(loopTime * SR + 0.5);
+   len = (long) (loopTime * _sr + 0.5);
    delayLine = new DLineN(len);
    delayLine->setDelay(len);
 

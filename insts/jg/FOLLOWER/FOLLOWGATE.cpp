@@ -102,7 +102,7 @@ int FOLLOWGATE :: post_init(double p[], int n_args)
    double *function = floc(2);
    if (function) {
       int len = fsize(2);
-      thresh_table = new TableL(dur, function, len);
+      thresh_table = new TableL(SR, dur, function, len);
    }
    else
       return die(instname(), "You must create the threshold table (table 2).");
@@ -110,12 +110,12 @@ int FOLLOWGATE :: post_init(double p[], int n_args)
    function = floc(3);
    if (function) {
       int len = fsize(3);
-      range_table = new TableL(dur, function, len);
+      range_table = new TableL(SR, dur, function, len);
    }
    else
       return die(instname(), "You must create the range table (table 3).");
 
-   envelope = new Envelope();
+   envelope = new Envelope(SR);
 
    return 0;
 }

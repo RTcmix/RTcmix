@@ -16,7 +16,7 @@ class BiQuad : public Filter
     MY_FLOAT poleCoeffs[2];
     MY_FLOAT zeroCoeffs[2];
   public:
-    BiQuad();
+    BiQuad(double srate);
     ~BiQuad();
     void clear();
     void setPoleCoeffs(MY_FLOAT *coeffs);

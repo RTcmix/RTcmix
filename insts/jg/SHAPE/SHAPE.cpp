@@ -112,7 +112,7 @@ int SHAPE :: init(double p[], int n_args)
    double *function = floc(1);
    if (function) {
       int len = fsize(1);
-      amp_table = new TableL(dur, function, len);
+      amp_table = new TableL(SR, dur, function, len);
    }
 
    function = NULL;
@@ -137,7 +137,7 @@ int SHAPE :: init(double p[], int n_args)
       function = floc(3);
       if (function) {
          int len = fsize(3);
-         index_table = new TableL(dur, function, len);
+         index_table = new TableL(SR, dur, function, len);
       }
       else
          advise("SHAPE", "Setting distortion index curve to all 1's.");

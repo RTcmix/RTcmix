@@ -24,7 +24,7 @@ class PRCRev : public Reverb
     MY_FLOAT lastOutR;
     MY_FLOAT effectMix;
   public:
-    PRCRev(MY_FLOAT T60);
+    PRCRev(double srate, MY_FLOAT T60);
     ~PRCRev();
     void clear();
     void setEffectMix(MY_FLOAT mix);

@@ -188,7 +188,7 @@ int VOCODESYNTH :: init(double p[], int n_args)
    release_rate = release_time ? (1.0 / SR) / release_time : 1.0;
 
    if (hipass_mod_amp > 0.0) {
-      hipassmod = new Butter();
+      hipassmod = new Butter(SR);
       hipassmod->setHighPass(hipasscf);
    }
 
@@ -282,7 +282,7 @@ int VOCODESYNTH :: init(double p[], int n_args)
    double *function = floc(1);
    if (function) {
       int len = fsize(1);
-      amptable = new TableL(dur, function, len);
+      amptable = new TableL(SR, dur, function, len);
    }
    else
       advise("VOCODESYNTH", "Setting phrase curve to all 1's.");
@@ -307,27 +307,27 @@ int VOCODESYNTH :: init(double p[], int n_args)
    for (i = 0; i < numbands; i++) {
       float thecf = cf[i];
 
-      modulator_filt[i] = new Butter();
+      modulator_filt[i] = new Butter(SR);
       modulator_filt[i]->setBandPass(thecf, bwpct * thecf);
 
       if (carrier_transp)
          thecf = cpsoct(octcps(thecf) + carrier_transp);
 
       if (car_wavetable)
-         carrier_osc[i] = new OscilN(0, car_wavetable, wavetablelen);
+         carrier_osc[i] = new OscilN(SR, 0, car_wavetable, wavetablelen);
       else
-         carrier_osc[i] = new OscilN(0, NULL, 2000);
+         carrier_osc[i] = new OscilN(SR, 0, NULL, 2000);
       carfreq[i] = thecf;
 
-      gauge[i] = new RMS();
+      gauge[i] = new RMS(SR);
       gauge[i]->setWindowSize(window_len);
 
       if (smoothness > 0.0) {
-         smoother[i] = new OnePole();
+         smoother[i] = new OnePole(SR);
          smoother[i]->setPole(smoothness);
       }
 
-      envelope[i] = new Envelope();
+      envelope[i] = new Envelope(SR);
       state[i] = belowThreshold;
    }
 

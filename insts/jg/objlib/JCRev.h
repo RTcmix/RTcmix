@@ -29,7 +29,7 @@ class JCRev : public Reverb
     MY_FLOAT lastOutR;
     MY_FLOAT effectMix;
   public:
-    JCRev(MY_FLOAT T60);
+    JCRev(double srate, MY_FLOAT T60);
     ~JCRev();
     void clear();
     void setEffectMix(MY_FLOAT mix);

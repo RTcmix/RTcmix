@@ -9,11 +9,11 @@
 #include "Equalizer.h"
 
 
-Equalizer :: Equalizer(EQType eqType)
+Equalizer :: Equalizer(double srate, EQType eqType)
+   : _sr(srate), type(eqType)
 {
    c0 = c1 = c2 = c3 = c4 = 0.0;
    x1 = x2 = y1 = y2 = 0.0;
-   type = eqType;
 }
 
 
@@ -37,11 +37,11 @@ void Equalizer :: setCoeffs(
 
    a0 = a1 = a2 = b0 = b1 = b2 = 0.0;  // suppress init warnings
 
-   omega = 2.0 * M_PI * ((double) freq / SR);
+   omega = 2.0 * M_PI * ((double) freq / _sr);
    sn = sin(omega);
    cs = cos(omega);
 
-   //printf("freq=%f, Q=%f, gain=%f, SR=%f\n", freq, Q, gain, SR);
+   //printf("freq=%f, Q=%f, gain=%f, _sr=%f\n", freq, Q, gain, _sr);
 
    switch (type) {
 

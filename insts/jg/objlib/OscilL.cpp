@@ -8,10 +8,11 @@
 /* Inherits from OscilN; see comments at OscilN constructor.
 */
 OscilL :: OscilL(
+   double   srate,
    MY_FLOAT initialPhase = 0.0,
    double   *waveTable = NULL,
    int      tableSize = DEFAULT_WAVETABLE_SIZE)
-        : OscilN(initialPhase, waveTable, tableSize)
+   : OscilN(srate, initialPhase, waveTable, tableSize)
 {
    // nothing else to do
 }

@@ -8,7 +8,7 @@
 #include "ADSR.h"    
 
 
-ADSR :: ADSR() : Envelope()
+ADSR :: ADSR(double srate) : Envelope(srate)
 {
    target = (MY_FLOAT) 0.0;
    value = (MY_FLOAT) 0.0;
@@ -90,10 +90,10 @@ void ADSR :: setAttackTime(MY_FLOAT aTime)
 {
    if (aTime < 0.0) {
       fprintf(stderr, "Negative times not allowed! Correcting...\n");
-      attackRate = (1.0 / SR) / -aTime;
+      attackRate = (1.0 / _sr) / -aTime;
    }
    else
-      attackRate = (1.0 / SR) / aTime;
+      attackRate = (1.0 / _sr) / aTime;
 }
 
 
@@ -101,10 +101,10 @@ void ADSR :: setDecayTime(MY_FLOAT aTime)
 {
    if (aTime < 0.0) {
       fprintf(stderr, "Negative times not allowed! Correcting...\n");
-      decayRate = (1.0 / SR) / -aTime;
+      decayRate = (1.0 / _sr) / -aTime;
    }
    else
-      decayRate = (1.0 / SR) / aTime;
+      decayRate = (1.0 / _sr) / aTime;
 }
 
 
@@ -112,10 +112,10 @@ void ADSR :: setReleaseTime(MY_FLOAT aTime)
 {
    if (aTime < 0.0) {
       fprintf(stderr, "Negative times not allowed! Correcting...\n");
-      releaseRate = (1.0 / SR) / -aTime;
+      releaseRate = (1.0 / _sr) / -aTime;
    }
    else
-      releaseRate = (1.0 / SR) / aTime;
+      releaseRate = (1.0 / _sr) / aTime;
 }
 
 

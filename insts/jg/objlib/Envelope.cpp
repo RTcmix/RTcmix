@@ -10,7 +10,7 @@
 #include "Envelope.h"    
 
 
-Envelope :: Envelope()
+Envelope :: Envelope(double srate) : _sr(srate)
 {
    target = (MY_FLOAT) 0.0;
    value = (MY_FLOAT) 0.0;
@@ -55,10 +55,10 @@ void Envelope :: setTime(MY_FLOAT aTime)
 {
    if (aTime < 0.0) {
       fprintf(stderr, "Negative times not allowed! Correcting...\n");
-      rate = (1.0 / SR) / -aTime;
+      rate = (1.0 / _sr) / -aTime;
    }
    else
-      rate = (1.0 / SR) / aTime;
+      rate = (1.0 / _sr) / aTime;
 }
 
 

@@ -4,11 +4,11 @@
 #include "Balance.h"
 
 
-Balance :: Balance() : Filter()
+Balance :: Balance(double srate) : Filter(srate)
 {
    outputs = inputs = NULL;       // unused in this class
-   inputRMS = new RMS;
-   compareRMS = new RMS;
+   inputRMS = new RMS(_sr);
+   compareRMS = new RMS(_sr);
    windowSize = DEFAULT_CONTROL_RATE;
    counter = windowSize + 1;      // sync with RMS "if (--counter < 0)" blocks
    increment = 0.0;

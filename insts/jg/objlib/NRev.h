@@ -29,7 +29,7 @@ class NRev : public Reverb
     MY_FLOAT lastOutR;
     MY_FLOAT effectMix;
   public:
-    NRev(MY_FLOAT T60);
+    NRev(double srate, MY_FLOAT T60);
     ~NRev();
     void clear();
     void setEffectMix(MY_FLOAT mix);

@@ -17,7 +17,7 @@ class Balance : public Filter
     RMS      *inputRMS;
     RMS      *compareRMS;
   public:
-    Balance();
+    Balance(double srate);
     ~Balance();
     void clear();
     void setInitialGain(MY_FLOAT aGain);

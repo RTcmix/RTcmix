@@ -4,13 +4,14 @@
 #include "Allpass.h"
 
 
-Allpass :: Allpass(MY_FLOAT loopTime, MY_FLOAT reverbTime) : Filter()
+Allpass :: Allpass(double srate, MY_FLOAT loopTime, MY_FLOAT reverbTime)
+   : Filter(srate)
 {
    long len;
 
    loopt = loopTime;
 
-   len = (long)(loopt * SR + 0.5);
+   len = (long) (loopt * _sr + 0.5);
    delayLine = new DLineN(len);
    delayLine->setDelay(len);
 

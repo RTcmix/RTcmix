@@ -16,10 +16,10 @@
 #include "NRev.h"
 
 
-NRev :: NRev(MY_FLOAT T60)
+NRev :: NRev(double srate, MY_FLOAT T60) : Reverb(srate)
 {
    int i;
-   double srscale = SR / 25641.0;
+   double srscale = _sr / 25641.0;
    int lens[15] = { 1433, 1601, 1867, 2053, 2251, 2399,
                     347, 113, 37, 59, 53, 43, 37, 29, 19 };
 
@@ -34,7 +34,7 @@ NRev :: NRev(MY_FLOAT T60)
    for (i = 0; i < 6; i++) {
       CdelayLine[i] = new DLineN((long)(lens[i]) + 2);
       CdelayLine[i]->setDelay((long)(lens[i]));
-      combCoef[i] = (MY_FLOAT)pow(10, (-3 * lens[i] / (T60 * SR)));
+      combCoef[i] = (MY_FLOAT)pow(10, (-3 * lens[i] / (T60 * _sr)));
    }
    for (i = 0; i < 6; i++) {
       APdelayLine[i] = new DLineN((long)(lens[i + 6]) + 2);

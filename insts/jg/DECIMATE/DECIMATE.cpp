@@ -122,7 +122,7 @@ int DECIMATE :: init(double p[], int n_args)
 
    usefilt = (cutoff > 0.0);
    if (usefilt) {
-      lpfilt = new Butter();
+      lpfilt = new Butter(SR);
       lpfilt->setLowPass(cutoff);
    }
    else

@@ -23,7 +23,7 @@ SubNoise :: ~SubNoise()
 }
 
 
-// (SR / freq in Hz to get subSample)
+// (srate / freq in Hz to get subSample)
 
 SubNoise :: SubNoise(int subSample, unsigned int aSeed = 0) : Noise(aSeed)
 {    
@@ -45,7 +45,7 @@ MY_FLOAT SubNoise :: tick()
 }
 
 
-// (SR / freq in Hz to get howOft)
+// (srate / freq in Hz to get howOft)
 
 void SubNoise :: setHowOften(int howOft)
 {

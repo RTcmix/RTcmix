@@ -9,7 +9,7 @@
 #include "BiQuad.h"
 
 
-BiQuad :: BiQuad() : Filter()
+BiQuad :: BiQuad(double srate) : Filter(srate)
 {
    inputs = new MY_FLOAT [2];
    zeroCoeffs[0] = (MY_FLOAT) 0.0;
@@ -67,7 +67,7 @@ void BiQuad :: setGain(MY_FLOAT aValue)
 
 void BiQuad :: setFreqAndReson(MY_FLOAT freq, MY_FLOAT reson)
 {
-   poleCoeffs[0] = (MY_FLOAT) (2.0 * reson * cos(TWO_PI * (double)(freq / SR)));
+   poleCoeffs[0] = (MY_FLOAT) (2.0 * reson * cos(TWO_PI * (double)(freq / _sr)));
    poleCoeffs[1] = -(reson * reson);
 }
 
@@ -77,7 +77,7 @@ void BiQuad :: setFreqAndReson(MY_FLOAT freq, MY_FLOAT reson)
 void BiQuad :: setFreqBandwidthAndGain(MY_FLOAT freq, MY_FLOAT bw,
                                                                MY_FLOAT aGain)
 {
-   MY_FLOAT reson = (MY_FLOAT) (exp(-PI * (double)(bw / SR)));
+   MY_FLOAT reson = (MY_FLOAT) (exp(-PI * (double)(bw / _sr)));
 
    setFreqAndReson(freq, reson);
 
@@ -85,7 +85,7 @@ void BiQuad :: setFreqBandwidthAndGain(MY_FLOAT freq, MY_FLOAT bw,
    zeroCoeffs[1] = (MY_FLOAT) -reson;
 
    // Note: using '+' rather than the '*' in 3/98 clm, which may be wrong (?)
-   gain = aGain * ((MY_FLOAT) sin(TWO_PI * (double)(freq / SR))
+   gain = aGain * ((MY_FLOAT) sin(TWO_PI * (double)(freq / _sr))
 #if 1 // see clm mus.lisp ... they use the 2nd one
                    + (1.0 - reson));
 #else

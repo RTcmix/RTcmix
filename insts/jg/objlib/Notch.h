@@ -14,7 +14,7 @@ class Notch : public Filter
     DLineN   *delayLine;
     MY_FLOAT combCoeff;
   public:
-    Notch(MY_FLOAT loopTime, MY_FLOAT scaler);
+    Notch(double srate, MY_FLOAT loopTime, MY_FLOAT scaler);
     ~Notch();
     void clear();
     void setScaler(MY_FLOAT scaler);

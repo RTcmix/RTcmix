@@ -147,7 +147,7 @@ int WIGGLE :: init(double p[], int n_args)
                     MAXFILTS);
       do_balance = n_args > 7 ? (int)p[7] : 0;
       if (do_balance) {
-         balancer = new Balance();
+         balancer = new Balance(SR);
          balancer->setWindowSize(BALANCE_WINDOW_SIZE);
       }
       ringdur = 0.1;
@@ -158,12 +158,12 @@ int WIGGLE :: init(double p[], int n_args)
       return die("WIGGLE", "Output must be mono or stereo.");
 
    for (int i = 0; i < nfilts; i++)
-      filt[i] = new Butter();
+      filt[i] = new Butter(SR);
 
    amp_array = floc(AMP_FUNC);
    if (amp_array) {
       int len = fsize(AMP_FUNC);
-      amp_table = new TableL(dur, amp_array, len);
+      amp_table = new TableL(SR, dur, amp_array, len);
    }
    else
       advise("WIGGLE", "Setting phrase curve to all 1's.");
@@ -171,7 +171,7 @@ int WIGGLE :: init(double p[], int n_args)
    carwave_array = floc(CAR_WAVE_FUNC);
    if (carwave_array) {
       int len = fsize(CAR_WAVE_FUNC);
-      carrier = new OscilL(0.0, carwave_array, len);
+      carrier = new OscilL(SR, 0.0, carwave_array, len);
    }
    else
       return die("WIGGLE",
@@ -181,7 +181,7 @@ int WIGGLE :: init(double p[], int n_args)
    cargliss_array = floc(CAR_GLISS_FUNC);
    if (cargliss_array) {
       int len = fsize(CAR_GLISS_FUNC);
-      cargliss_table = new TableN(dur, cargliss_array, len);
+      cargliss_table = new TableN(SR, dur, cargliss_array, len);
    }
    else
       return die("WIGGLE",
@@ -192,7 +192,7 @@ int WIGGLE :: init(double p[], int n_args)
       modwave_array = floc(MOD_WAVE_FUNC);
       if (modwave_array) {
          int len = fsize(MOD_WAVE_FUNC);
-         modulator = new OscilL(0.0, modwave_array, len);
+         modulator = new OscilL(SR, 0.0, modwave_array, len);
       }
       else
          return die("WIGGLE",
@@ -202,7 +202,7 @@ int WIGGLE :: init(double p[], int n_args)
       modfreq_array = floc(MOD_FREQ_FUNC);
       if (modfreq_array) {
          int len = fsize(MOD_FREQ_FUNC);
-         modfreq_table = new TableL(dur, modfreq_array, len);
+         modfreq_table = new TableL(SR, dur, modfreq_array, len);
       }
       else
          return die("WIGGLE",
@@ -212,7 +212,7 @@ int WIGGLE :: init(double p[], int n_args)
       moddepth_array = floc(MOD_DEPTH_FUNC);
       if (moddepth_array) {
          int len = fsize(MOD_DEPTH_FUNC);
-         moddepth_table = new TableL(dur, moddepth_array, len);
+         moddepth_table = new TableL(SR, dur, moddepth_array, len);
       }
       else
          return die("WIGGLE",
@@ -224,7 +224,7 @@ int WIGGLE :: init(double p[], int n_args)
       filtcf_array = floc(FILTER_CF_FUNC);
       if (filtcf_array) {
          int len = fsize(FILTER_CF_FUNC);
-         filtcf_table = new TableL(dur, filtcf_array, len);
+         filtcf_table = new TableL(SR, dur, filtcf_array, len);
       }
       else
          return die("WIGGLE",
@@ -236,7 +236,7 @@ int WIGGLE :: init(double p[], int n_args)
       pan_array = floc(PAN_FUNC);
       if (pan_array) {
          int len = fsize(PAN_FUNC);
-         pan_table = new TableL(dur, pan_array, len);
+         pan_table = new TableL(SR, dur, pan_array, len);
       }
       else
          return die("WIGGLE", "You haven't made the pan function (table %d).",

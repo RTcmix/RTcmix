@@ -100,7 +100,7 @@ make_table(int function_num, float dur)
    double *tab = floc(function_num);
    if (tab) {
       int len = fsize(function_num);
-      table = new TableL(dur, tab, len);      
+      table = new TableL(SR, dur, tab, len);      
    }
 
    return table;
@@ -133,7 +133,7 @@ int JGRAN :: init(double p[], int n_args)
    double *envtab = floc(2);
    if (envtab) {
       int len = fsize(2);
-      grainenv_oscil = new OscilN(0.0, envtab, len);
+      grainenv_oscil = new OscilN(SR, 0.0, envtab, len);
    }
    else
       return die("JGRAN",
@@ -193,9 +193,9 @@ int JGRAN :: init(double p[], int n_args)
                              "randomization function (table 14).");
    }
 
-   car_oscil = new OscilN(0.0, wavetab, wavetablen);
+   car_oscil = new OscilN(SR, 0.0, wavetab, wavetablen);
    if (osctype == FM)
-      mod_oscil = new OscilN(0.0, wavetab, wavetablen);
+      mod_oscil = new OscilN(SR, 0.0, wavetab, wavetablen);
 
    durnoi = new Noise((unsigned int) seed * 243);
    freqnoi = new Noise((unsigned int) seed * 734);

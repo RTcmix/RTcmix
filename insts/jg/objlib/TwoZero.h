@@ -16,7 +16,7 @@ class TwoZero : public Filter
   protected:  
     MY_FLOAT zeroCoeffs[2];
   public:
-    TwoZero();
+    TwoZero(double srate);
     ~TwoZero();
     void clear();
     void setZeroCoeffs(MY_FLOAT *coeffs);

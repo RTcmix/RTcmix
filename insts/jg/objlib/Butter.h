@@ -12,7 +12,7 @@ class Butter : public Filter
     MY_FLOAT poleCoeffs[2];
     MY_FLOAT zeroCoeffs[2];
   public:
-    Butter();
+    Butter(double srate);
     ~Butter();
     void clear();
     void setLowPass(MY_FLOAT cutoff);

@@ -127,13 +127,13 @@ int FOLLOWBUTTER :: pre_init(double p[], int n_args)
 int FOLLOWBUTTER :: post_init(double p[], int n_args)
 {
    for (int i = 0; i < nfilts; i++)
-      filt[i] = new Butter();
+      filt[i] = new Butter(SR);
 
    if (type == BandPass || type == BandReject) {
       double *function = floc(2);
       if (function) {
          int len = fsize(2);
-         bwtable = new TableL(dur, function, len);
+         bwtable = new TableL(SR, dur, function, len);
       }
       else
          return die(instname(),

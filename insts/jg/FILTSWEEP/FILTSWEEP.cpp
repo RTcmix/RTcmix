@@ -95,10 +95,10 @@ int FILTSWEEP :: init(double p[], int n_args)
       return die("FILTSWEEP",
                "Sharpness (p5) must be an integer between 1 and %d.", MAXFILTS);
    for (int i = 0; i < nfilts; i++)
-      filt[i] = new BiQuad();
+      filt[i] = new BiQuad(SR);
 
    if (do_balance) {
-      balancer = new Balance();
+      balancer = new Balance(SR);
       balancer->setWindowSize(BALANCE_WINDOW_SIZE);
       scale = 1.0;
    }

@@ -11,12 +11,12 @@
 #include "PRCRev.h"
 
 
-PRCRev :: PRCRev(MY_FLOAT T60) : Reverb()
+PRCRev :: PRCRev(double srate, MY_FLOAT T60) : Reverb(srate)
 {
    int    i, val, lens[4] = { 353, 1097, 1777, 2137 };
-   double srscale = SR / 44100.0;
+   double srscale = _sr / 44100.0;
 
-   if (SR < 44100.0) {
+   if (_sr < 44100.0) {
       for (i = 0; i < 4; i++)   {
          val = (int) floor(srscale * lens[i]);
          if ((val & 1) == 0)
@@ -31,7 +31,7 @@ PRCRev :: PRCRev(MY_FLOAT T60) : Reverb()
       APdelayLine[i]->setDelay(lens[i]);
       CdelayLine[i] = new DLineN(lens[i+2] + 2);
       CdelayLine[i]->setDelay(lens[i+2]);
-      combCoeff[i] = (MY_FLOAT) pow(10, (-3 * lens[i + 2] / (T60 * SR)));
+      combCoeff[i] = (MY_FLOAT) pow(10, (-3 * lens[i + 2] / (T60 * _sr)));
    }
    allPassCoeff = (MY_FLOAT) 0.7;
    effectMix = (MY_FLOAT) 0.5;

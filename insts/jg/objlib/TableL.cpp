@@ -10,8 +10,8 @@
    (Caller is responsible for ensuring that <aTable> stays valid for the
    life of this object.) <tableSize> is the length of the table.
 */
-TableL :: TableL(MY_FLOAT duration, double *aTable, int tableSize)
-        : TableN(duration, aTable, tableSize)
+TableL :: TableL(double srate, MY_FLOAT duration, double *aTable, int tableSize)
+        : TableN(srate, duration, aTable, tableSize)
 {
 }
 

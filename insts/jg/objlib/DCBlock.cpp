@@ -8,7 +8,7 @@
 #include "DCBlock.h"
 
 
-DCBlock :: DCBlock()
+DCBlock :: DCBlock() : Filter(0)
 {
    inputs = new MY_FLOAT [1];
    outputs = NULL;               // unused

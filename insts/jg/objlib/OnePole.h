@@ -21,7 +21,7 @@ class OnePole : public Filter
     MY_FLOAT poleCoeff;
     MY_FLOAT sgain;
   public:
-    OnePole();
+    OnePole(double srate);
     ~OnePole();
     void clear();
     void setFreq(MY_FLOAT freq);

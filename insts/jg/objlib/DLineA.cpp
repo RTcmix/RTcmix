@@ -10,7 +10,7 @@
 #include "DLineA.h"
 
 
-DLineA :: DLineA(long max_length)
+DLineA :: DLineA(long max_length) : Filter(0)
 {
    length = max_length;
    inputs = new MY_FLOAT [length];

@@ -13,7 +13,7 @@ class ZAllpass : public Filter
     MY_FLOAT loopt;
     MY_FLOAT delsamps;
   public:
-    ZAllpass(MY_FLOAT loopTime, MY_FLOAT reverbTime);
+    ZAllpass(double srate, MY_FLOAT loopTime, MY_FLOAT reverbTime);
     ~ZAllpass();
     void clear();
     void setReverbTime(MY_FLOAT reverbTime);

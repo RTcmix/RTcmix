@@ -96,7 +96,7 @@ int JFIR :: init(double p[], int n_args)
    if (order < 1)
       return die("JFIR", "Order must be greater than 0.");
 
-   filt = new NZero(order);
+   filt = new NZero(SR, order);
    filt->designFromFunctionTable(response_tab, tabsize, 0, 0);
 #ifdef PRINT_RESPONSE
    print_freq_response();

@@ -16,7 +16,7 @@ class ZComb : public Filter
     MY_FLOAT loopt;
     MY_FLOAT delsamps;
   public:
-    ZComb(MY_FLOAT loopTime, MY_FLOAT reverbTime);
+    ZComb(double srate, MY_FLOAT loopTime, MY_FLOAT reverbTime);
     ~ZComb();
     void clear();
     void setReverbTime(MY_FLOAT reverbTime);

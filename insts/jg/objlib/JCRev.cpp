@@ -16,7 +16,7 @@
 #define LOWPASS
 
 
-JCRev :: JCRev(MY_FLOAT T60)
+JCRev :: JCRev(double srate, MY_FLOAT T60) : Reverb(srate)
 {
    /* These are the values from CLM's JCRev.ins ... I found that the
       impulse response sounded better with the shorter delay lengths.
@@ -29,8 +29,8 @@ JCRev :: JCRev(MY_FLOAT T60)
 #endif
    int i;  // had to declare here to appease SGI compiler  -JGG
 
-   if (SR < 44100.0) {
-      double srscale = SR / 44100.0;
+   if (_sr < 44100.0) {
+      double srscale = _sr / 44100.0;
       for (i = 0; i < 9; i++)   {
          int val = (int) floor(srscale * lens[i]);
          if ((val & 1) == 0)
@@ -47,7 +47,7 @@ JCRev :: JCRev(MY_FLOAT T60)
    for (i = 0; i < 4; i++) {
       CdelayLine[i] = new DLineN(lens[i] + 2);
       CdelayLine[i]->setDelay(lens[i]);
-      combCoeff[i] = (MY_FLOAT) pow(10, (-3 * lens[i] / (T60 * SR)));
+      combCoeff[i] = (MY_FLOAT) pow(10, (-3 * lens[i] / (T60 * _sr)));
 //      printf("combCoeff[%d] = %f\n", i, combCoeff[i]);
    }
    outLdelayLine = new DLineN(lens[7] + 2);

@@ -12,7 +12,7 @@ class Allpass : public Filter
     MY_FLOAT allPassCoeff;
     MY_FLOAT loopt;
   public:
-    Allpass(MY_FLOAT loopTime, MY_FLOAT reverbTime);
+    Allpass(double srate, MY_FLOAT loopTime, MY_FLOAT reverbTime);
     ~Allpass();
     void clear();
     void setReverbTime(MY_FLOAT reverbTime);

@@ -12,7 +12,7 @@ class NZero : public Filter
     int      order;
     MY_FLOAT *zeroCoeffs;
   public:
-    NZero(int ntaps);
+    NZero(double srate, int ntaps);
     ~NZero();
     void clear();
     void setZeroCoeffs(MY_FLOAT *coeffs);

@@ -4,7 +4,7 @@
 #include "TwoPole.h"
 
 
-TwoPole :: TwoPole() : Filter()
+TwoPole :: TwoPole(double srate) : Filter(srate)
 {
    outputs = new MY_FLOAT [2];
    poleCoeffs[0] = (MY_FLOAT) 0.0;
@@ -47,11 +47,11 @@ void TwoPole :: setGain(MY_FLOAT aValue)
 // NOTE: same as CLM ppolar filter -- see clm.html
 // freq is angle and reson (bandwidth) is radius of a pole
 // 0 <= freq <= srate/2; 0 <= reson < 1
-// To get (approx) reson from bandwidth (in hz): reson = exp(-PI * bw / SR);
+// To get (approx) reson from bandwidth (in hz): reson = exp(-PI * bw / srate);
 
 void TwoPole :: setFreqAndReson(MY_FLOAT freq, MY_FLOAT reson)
 {
-   poleCoeffs[0] = (MY_FLOAT) (2.0 * reson * cos(TWO_PI * (double)(freq / SR)));
+   poleCoeffs[0] = (MY_FLOAT) (2.0 * reson * cos(TWO_PI * (double)(freq / _sr)));
    poleCoeffs[1] = -(reson * reson);
 }
 
@@ -62,9 +62,9 @@ void TwoPole :: setFreqBandwidthAndScale(MY_FLOAT freq, MY_FLOAT bw, int scale)
 {
    MY_FLOAT b1, b2, c;
 
-   b2 = (MY_FLOAT) exp(-TWO_PI * bw / SR);
+   b2 = (MY_FLOAT) exp(-TWO_PI * bw / _sr);
    c = 1.0 + b2;
-   b1 = 4.0 * b2 / c * cos(TWO_PI * (double)freq / SR);
+   b1 = 4.0 * b2 / c * cos(TWO_PI * (double)freq / _sr);
 
    if (scale == 1)            // for periodic signals
       gain = (1.0 - b2) * (MY_FLOAT) sqrt((double)(1.0 - b1 * b1 / 4.0 * b2));

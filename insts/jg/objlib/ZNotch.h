@@ -11,11 +11,11 @@
 class ZNotch : public Filter
 {
   protected:  
-    DLineL   *delayLine;
-    MY_FLOAT combCoeff;
-    MY_FLOAT delsamps;
+    DLineL   *_dline;
+    MY_FLOAT _coef;
+    MY_FLOAT _delsamps;
   public:
-    ZNotch(MY_FLOAT loopTime, MY_FLOAT scaler);
+    ZNotch(double srate, MY_FLOAT loopTime, MY_FLOAT scaler);
     ~ZNotch();
     void clear();
     void setScaler(MY_FLOAT scaler);

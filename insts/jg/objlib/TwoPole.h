@@ -16,7 +16,7 @@ class TwoPole : public Filter
   protected:  
     MY_FLOAT poleCoeffs[2];
   public:
-    TwoPole();
+    TwoPole(double srate);
     ~TwoPole();
     void clear();
     void setPoleCoeffs(MY_FLOAT *coeffs);

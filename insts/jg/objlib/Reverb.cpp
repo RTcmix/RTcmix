@@ -6,7 +6,7 @@
 #include "Reverb.h"
 
 
-Reverb :: Reverb()
+Reverb :: Reverb(double srate) : _sr(srate)
 {
 }
 

@@ -9,7 +9,7 @@
 #include "TwoZero.h"
 
 
-TwoZero :: TwoZero() : Filter()
+TwoZero :: TwoZero(double srate) : Filter(srate)
 {
    inputs = new MY_FLOAT [2];
    zeroCoeffs[0] = (MY_FLOAT) 0.0;
@@ -54,11 +54,11 @@ void TwoZero :: setGain(MY_FLOAT aValue)
 // NOTE: same as CLM zpolar filter -- see clm.html
 // freq is angle and width (notchwidth) is radius of a zero
 // 0 <= freq <= srate/2; 0 <= width < 1
-// To get (approx) width from bandwidth (in hz): width = exp(-PI * bw / SR);
+// To get (approx) width from bandwidth (in hz): width = exp(-PI * bw / srate);
 
 void TwoZero :: setFreqAndWidth(MY_FLOAT freq, MY_FLOAT width)
 {
-   zeroCoeffs[0] = (MY_FLOAT) -2.0 * width * cos(TWO_PI * (double)(freq / SR));
+   zeroCoeffs[0] = (MY_FLOAT) -2.0 * width * cos(TWO_PI * (double)(freq / _sr));
    zeroCoeffs[1] = width * width;
 }
 

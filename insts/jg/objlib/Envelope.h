@@ -21,9 +21,10 @@ class Envelope
     MY_FLOAT value;
     MY_FLOAT target;
     MY_FLOAT rate;
+    double _sr;
     int state;
   public:
-    Envelope();
+    Envelope(double srate);
     virtual ~Envelope();
     void keyOn();
     void keyOff();

@@ -11,7 +11,8 @@ class OscilN : public Oscil
 {
   protected:  
   public:
-    OscilN(MY_FLOAT initialPhase,
+    OscilN(double   srate,
+           MY_FLOAT initialPhase,
            double   *waveTable,
            int      tableSize);
     ~OscilN();

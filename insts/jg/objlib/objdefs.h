@@ -8,13 +8,10 @@
 #include <unistd.h>
 #include <errno.h>
 #include <assert.h>
-#include <rtdefs.h>       // in RTcmix/H
-
 // #define NDEBUG     /* define to disable asserts */
 
 #define DEFAULT_CONTROL_RATE  200
 
-/* Yer Basic Trigonometric constants  */
 #if (!defined(M_PI))
   #define M_PI 3.14159265358979323846264338327
 #endif

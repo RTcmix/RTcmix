@@ -26,7 +26,7 @@ class ADSR : public Envelope
     MY_FLOAT sustainLevel;
     MY_FLOAT releaseRate;
   public:
-    ADSR();
+    ADSR(double srate);
     ~ADSR();
     void keyOn();
     void keyOff();

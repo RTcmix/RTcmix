@@ -10,7 +10,7 @@
 #include "OneZero.h"
 
 
-OneZero :: OneZero()
+OneZero :: OneZero() : Filter(0)
 {
    gain = (MY_FLOAT) 1.0;
    zeroCoeff = (MY_FLOAT) 1.0;

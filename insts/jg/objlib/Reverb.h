@@ -8,8 +8,10 @@
 
 class Reverb
 {
+  protected:
+    double _sr;
   public:
-    Reverb();
+    Reverb(double srate);
     virtual ~Reverb();
     virtual void setEffectMix(MY_FLOAT mix);
     virtual MY_FLOAT lastOutput();

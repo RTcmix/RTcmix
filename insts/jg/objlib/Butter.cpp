@@ -14,7 +14,7 @@ enum {
 };
 
 
-Butter :: Butter() : Filter()
+Butter :: Butter(double srate) : Filter(srate)
 {
    inputs = new MY_FLOAT [2];
    zeroCoeffs[0] = (MY_FLOAT) 0.0;
@@ -47,7 +47,7 @@ void Butter :: setLowPass(MY_FLOAT cutoff)
    if (cutoff <= 0.0)
       cutoff = 0.001;
 
-   c = 1.0 / tan((double)(cutoff * PI / SR));
+   c = 1.0 / tan((double)(cutoff * PI / _sr));
 
    gain = (MY_FLOAT)(1.0 / (1.0 + SQRT_TWO * c + c * c));
 
@@ -63,7 +63,7 @@ void Butter :: setLowPass(MY_FLOAT cutoff)
 
 void Butter :: setHighPass(MY_FLOAT cutoff)
 {
-   c = tan((double)(cutoff * PI / SR));
+   c = tan((double)(cutoff * PI / _sr));
 
    gain = (MY_FLOAT)(1.0 / (1.0 + SQRT_TWO * c + c * c));
 
@@ -81,7 +81,7 @@ void Butter :: setBandPassFreq(MY_FLOAT freq)
 {
    assert(type == BAND_PASS);
 
-   d = 2.0 * cos((double)(TWO_PI * freq / SR));
+   d = 2.0 * cos((double)(TWO_PI * freq / _sr));
 
    poleCoeffs[0] = -c * d * gain;
 }
@@ -91,7 +91,7 @@ void Butter :: setBandPassBandwidth(MY_FLOAT bandwidth)
 {
    assert(type == BAND_PASS);
 
-   c = 1.0 / tan((double)(bandwidth * PI / SR));
+   c = 1.0 / tan((double)(bandwidth * PI / _sr));
 
    gain = 1.0 / (1.0 + c);
 
@@ -105,7 +105,7 @@ void Butter :: setBandPassBandwidth(MY_FLOAT bandwidth)
 
 void Butter :: setBandPass(MY_FLOAT freq, MY_FLOAT bandwidth)
 {
-   d = 2.0 * cos((double)(TWO_PI * freq / SR));
+   d = 2.0 * cos((double)(TWO_PI * freq / _sr));
 
    type = BAND_PASS;
    setBandPassBandwidth(bandwidth);
@@ -116,7 +116,7 @@ void Butter :: setBandRejectFreq(MY_FLOAT freq)
 {
    assert(type == BAND_REJECT);
 
-   d = 2.0 * cos((double)(TWO_PI * freq / SR));
+   d = 2.0 * cos((double)(TWO_PI * freq / _sr));
 
    zeroCoeffs[0] = -d * gain;
    poleCoeffs[0] = zeroCoeffs[0];
@@ -127,7 +127,7 @@ void Butter :: setBandRejectBandwidth(MY_FLOAT bandwidth)
 {
    assert(type == BAND_REJECT);
 
-   c = tan((double)(bandwidth * PI / SR));
+   c = tan((double)(bandwidth * PI / _sr));
 
    gain = 1.0 / (1.0 + c);
 
@@ -141,7 +141,7 @@ void Butter :: setBandRejectBandwidth(MY_FLOAT bandwidth)
 
 void Butter :: setBandReject(MY_FLOAT freq, MY_FLOAT bandwidth)
 {
-   d = 2.0 * cos((double)(TWO_PI * freq / SR));
+   d = 2.0 * cos((double)(TWO_PI * freq / _sr));
 
    type = BAND_REJECT;
    setBandRejectBandwidth(bandwidth);

@@ -16,8 +16,9 @@ class Oscil
     double   phase;              // current index into table
     double   increment;          // increments phase
     MY_FLOAT lastOutput;
+    double   _sr;
   public:
-    Oscil();
+    Oscil(double srate);
     virtual ~Oscil();
     void setPhase(MY_FLOAT aPhase);
     MY_FLOAT lastOut();

@@ -1,4 +1,4 @@
-/* DISTORT - time-varying Butterworth filters
+/* DISTORT - uh, distortion
 
    p0 = output start time
    p1 = input start time
@@ -72,14 +72,14 @@ int DISTORT :: init(double p[], int n_args)
 
    usefilt = (cutoff > 0.0);
    if (usefilt) {
-      filt = new Butter();
+      filt = new Butter(SR);
       filt->setLowPass(cutoff);
    }
 
    double *function = floc(1);
    if (function) {
       int len = fsize(1);
-      amptable = new TableL(dur, function, len);
+      amptable = new TableL(SR, dur, function, len);
    }
 
    skip = (int) (SR / (float) resetval);

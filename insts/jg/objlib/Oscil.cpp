@@ -5,7 +5,7 @@
 #include "Oscil.h"
 
 
-Oscil :: Oscil()
+Oscil :: Oscil(double srate) : _sr(srate)
 {
 }
 

@@ -11,12 +11,13 @@
 class Filter
 {
   protected:  
+    double _sr;
     MY_FLOAT gain;
     MY_FLOAT *outputs;
     MY_FLOAT *inputs;
     MY_FLOAT lastOutput;
   public:
-    Filter();
+    Filter(double srate);
     virtual ~Filter();
     MY_FLOAT lastOut();
 };

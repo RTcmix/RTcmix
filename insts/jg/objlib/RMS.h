@@ -14,7 +14,7 @@ class RMS : public Filter
     int      windowSize;
     OnePole  *subLowFilter;
   public:
-    RMS();
+    RMS(double srate);
     ~RMS();
     void clear();
     void setFreq(MY_FLOAT freq);

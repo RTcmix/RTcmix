@@ -153,7 +153,7 @@ int EQ :: init(double p[], int n_args)
    double *function = floc(1);
    if (function) {
       int len = fsize(1);
-      amp_table = new TableL(dur, function, len);
+      amp_table = new TableL(SR, dur, function, len);
    }
 
    if (n_args < 9) {       // no p8 filter freq PField, must use gen table
@@ -162,7 +162,7 @@ int EQ :: init(double p[], int n_args)
          return die("EQ", "Either use the EQ frequency pfield (p8) or make "
                     "an old-style gen function in slot 2.");
       int len = fsize(2);
-      freq_table = new TableL(dur, function, len);
+      freq_table = new TableL(SR, dur, function, len);
    }
 
    if (n_args < 10) {      // no p9 filter Q PField, must use gen table
@@ -171,7 +171,7 @@ int EQ :: init(double p[], int n_args)
          return die("EQ", "Either use the EQ Q pfield (p9) or make "
                     "an old-style gen function in slot 3.");
       int len = fsize(3);
-      q_table = new TableL(dur, function, len);
+      q_table = new TableL(SR, dur, function, len);
    }
 
    if (eqtype != EQLowPass && eqtype != EQHighPass) {
@@ -181,11 +181,11 @@ int EQ :: init(double p[], int n_args)
             return die("EQ", "Either use the EQ gain pfield (p10) or make "
                        "an old-style gen function in slot 4.");
          int len = fsize(4);
-         gain_table = new TableL(dur, function, len);
+         gain_table = new TableL(SR, dur, function, len);
       }
    }
 
-   eq = new Equalizer(eqtype);
+   eq = new Equalizer(SR, eqtype);
 
    skip = (int) (SR / (float) resetval);
 
@@ -209,7 +209,7 @@ void EQ :: doupdate()
       if (type != eqtype) {
          eqtype = type;
          delete eq;
-         eq = new Equalizer(eqtype);
+         eq = new Equalizer(SR, eqtype);
          freq = -FLT_MAX;              // force setCoeffs call below
       }
    }

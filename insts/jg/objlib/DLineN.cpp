@@ -23,7 +23,7 @@
 #include "DLineN.h"
 
 
-DLineN :: DLineN(long max_length) : Filter()
+DLineN :: DLineN(long max_length) : Filter(0)
 {
    /* Add 2 to let user call setDelay(max_length) next without worrying
       about outPoint stepping on inPoint.  -JGG

@@ -11,11 +11,12 @@
 
 
 KOscilN :: KOscilN(
+   double   srate,
    int      howOften,
    MY_FLOAT initialPhase = 0.0,
    double   *waveTable = NULL,
    int      tableSize = DEFAULT_WAVETABLE_SIZE)
-         : OscilN(initialPhase, waveTable, tableSize)
+         : OscilN(srate, initialPhase, waveTable, tableSize)
 {
    increment *= (MY_FLOAT) howOften;       // compensate for samples we'll skip
 }

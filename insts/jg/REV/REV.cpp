@@ -77,13 +77,13 @@ int REV :: init(double p[], int n_args)
                                                     inchan, inputChannels());
    switch (rvbtype) {
       case 1:
-         reverb = new PRCRev(rvbtime);
+         reverb = new PRCRev(SR, rvbtime);
          break;
       case 2:
-         reverb = new JCRev(rvbtime);
+         reverb = new JCRev(SR, rvbtime);
          break;
       case 3:
-         reverb = new NRev(rvbtime);
+         reverb = new NRev(SR, rvbtime);
          break;
       default:
          return die("REV", "Unknown reverb type %d.", rvbtype);

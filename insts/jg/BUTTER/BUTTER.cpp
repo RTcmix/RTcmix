@@ -102,10 +102,10 @@ int BUTTER :: init(double p[], int n_args)
                  "3 (bandpass) or 4 (bandreject).");
 
    for (int i = 0; i < nfilts; i++)
-      filt[i] = new Butter();
+      filt[i] = new Butter(SR);
 
    if (do_balance) {
-      balancer = new Balance();
+      balancer = new Balance(SR);
       balancer->setWindowSize(BALANCE_WINDOW_SIZE);
       scale = 1.0;
    }

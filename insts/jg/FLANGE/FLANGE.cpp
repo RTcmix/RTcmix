@@ -72,12 +72,12 @@ int FLANGE :: init(double p[], int n_args)
 
    if (flangetype == 0) {
       advise("FLANGE", "Using IIR comb filter.");
-      zcomb = new ZComb(maxdelay, resonance);
+      zcomb = new ZComb(SR, maxdelay, resonance);
    }
    else {
       advise("FLANGE", "Using FIR notch filter.");
       // takes more resonance to make the notch prominent
-      znotch = new ZNotch(maxdelay, resonance * 5.0);
+      znotch = new ZNotch(SR, maxdelay, resonance * 5.0);
    }
 
    maxdelsamps = maxdelay * SR;            // yes, maxdelsamps is float
@@ -103,7 +103,7 @@ int FLANGE :: init(double p[], int n_args)
    double *modtable = floc(2);
    if (modtable) {
       int len = fsize(2);
-      modoscil = new OscilN(0.0, modtable, len);
+      modoscil = new OscilN(SR, 0.0, modtable, len);
    }
    else
       return die("FLANGE",

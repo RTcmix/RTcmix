@@ -31,11 +31,12 @@ typedef enum {
 class Equalizer
 {
 protected:  
+   double   _sr;
    double   c0, c1, c2, c3, c4;
    double   x1, x2, y1, y2;
    EQType   type;
 public:
-   Equalizer(EQType eqType);
+   Equalizer(double srate, EQType eqType);
    ~Equalizer();
    void clear();
 

@@ -7,7 +7,7 @@
 #include "Filter.h"
 
 
-Filter :: Filter()
+Filter :: Filter(double srate) : _sr(srate)
 {
 }
 
