@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdio.h>   // for snprintf
 #include <math.h>
+#include <float.h>
 #include <Ougens.h>
 
 inline int max(int x, int y) { return (x >= y) ? x : y; }
@@ -454,6 +455,61 @@ double QuantizePField::doubleValue(int idx) const
 {
 	return quantizeValue(field()->doubleValue(idx), _quantumPField->doubleValue(idx));
 }
+
+// ConstrainPField
+
+// helper class
+Constrainer::Constrainer(const double *table, const int tableLen)
+	: _table(table), _tableLen(tableLen), _lastVal(DBL_MAX), _lastTableVal(0.0)
+{
+}
+
+double Constrainer::next(const double val, const double tightness)
+{
+	if (val != _lastVal) {
+		double min = DBL_MAX;
+		int closest = 0;
+		for (int i = 0; i < _tableLen; i++) {
+			const double proximity = fabs(_table[i] - val);
+			if (proximity < min) {
+				min = proximity;
+				closest = i;
+			}
+		}
+		_lastTableVal = _table[closest];
+		_lastVal = val;
+	}
+	if (tightness == 0.0)
+		return _lastVal;
+	else if (tightness == 1.0)
+		return _lastTableVal;
+	else
+		return _lastVal + ((_lastTableVal - _lastVal) * tightness);
+}
+
+ConstrainPField::ConstrainPField(PField *innerPField, const double *table,
+		const int tableLen, PField *tightnessPField)
+	: PFieldWrapper(innerPField), _len(innerPField->values()),
+	  _tightnessPField(tightnessPField)
+{
+	_constrainer = new Constrainer(table, tableLen);
+}
+
+ConstrainPField::~ConstrainPField()
+{
+	delete _constrainer;
+}
+
+double ConstrainPField::doubleValue(double didx) const
+{
+	return _constrainer->next(field()->doubleValue(didx), _tightnessPField->doubleValue(didx));
+}
+
+double ConstrainPField::doubleValue(int idx) const
+{
+	return _constrainer->next(field()->doubleValue(idx), _tightnessPField->doubleValue(idx));
+}
+
 
 // ConverterPField
 

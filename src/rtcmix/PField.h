@@ -293,6 +293,33 @@ private:
 	PField *_quantumPField;
 };
 
+// Class for constraining a control signal to the nearest value in a table.
+
+// helper class
+class Constrainer {
+public:
+	Constrainer(const double *table, const int tableLen);
+	double next(const double val, const double tightness);
+private:
+	const double *_table;
+	const int _tableLen;
+	double _lastVal, _lastTableVal;
+};
+
+class ConstrainPField : public PFieldWrapper {
+public:
+	ConstrainPField(PField *innerPField, const double *table, const int tableLen,
+		PField *tightnessPField);
+	~ConstrainPField();
+	virtual double	doubleValue(double didx) const;
+	virtual double	doubleValue(int idx) const;
+	virtual int		values() const { return _len; }
+private:
+	int _len;
+	PField *_tightnessPField;
+	Constrainer *_constrainer;
+};
+
 // Class for converting values read from another PField.
 
 class ConverterPField : public PFieldWrapper {
