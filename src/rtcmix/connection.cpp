@@ -49,22 +49,26 @@ makeconnection(const Arg args[], const int nargs)
 {
 	if (!args[0].isType(StringType)) {
 		die("makeconnection", "First argument must be a string giving "
-			"connection type, e.g. \"mouseX\", \"midi\".");
+			"connection type, e.g. \"mouse\", \"midi\".");
 		return NULL;
 	}
 
-	const char *selector = (const char *) args[0];
-	if (args[0] == "mouseX" || args[0] == "mouseY")
-		selector = "mouse";
+	if (args[0] == "mouseX" || args[0] == "mouseY") {
+		die("makeconnection",
+			"New calling convention for mouse is (\"mouse\", \"X\", ...)");
+		return NULL;
+	}
 
 	Handle handle = NULL;
 	HandleCreator creator = NULL;
+	const char *selector = (const char *) args[0];
 
 	void *dso = find_dso(selector);
 	if (dso) {
 		creator = (HandleCreator) dlsym(dso, "create_handle");
 		if (creator) {
-			handle = (*creator)(args, nargs);
+			// Pass 2nd thru last args, leaving off selector
+			handle = (*creator)(&args[1], nargs - 1);
 		}
 		else {
 			die("makeconnection", "symbol lookup failed: %s\n", dlerror());
