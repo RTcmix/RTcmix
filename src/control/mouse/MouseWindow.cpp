@@ -8,7 +8,7 @@
 // scaled data values for label display.  It's supposed to support the same
 // functionality as the version for X.
 //
-// The reason for writing this seperate program is that a command-line
+// The reason for writing this separate program is that a command-line
 // program (such as CMIX) can't put up a GUI window in OSX and still have
 // events work correctly.
 //
@@ -30,7 +30,7 @@
 
 #define DEBUG
 
-#define LABEL_FONT_NAME	"Monoco"		// platform-specific
+#define LABEL_FONT_NAME	"Monoco"
 #define LABEL_FONT_SIZE	10
 #define LABEL_FONT_FACE	0		// i.e., plain
 
@@ -72,7 +72,8 @@ int _newdesc;
 int _sockport = SOCK_PORT;
 
 // thread
-#define SLEEP_MSEC	10L
+#define SLEEP_MSEC	10
+bool _runThread;
 pthread_t _listenerThread;
 
 void drawXLabels();
@@ -82,16 +83,19 @@ void drawYLabels();
 // =============================================================================
 // Utilities
 
-int reportConsoleError(const char *err)
+int reportConsoleError(const char *err, const bool useErrno)
 {
-	fprintf(stderr, "%s\n", err);
+	if (useErrno)
+		fprintf(stderr, "%s: %s\n", err, strerror(errno));
+	else
+		fprintf(stderr, "%s\n", err);
 	return -1;
 }
 
-int reportError(const char *err)
+int reportError(const char *err, const bool useErrno)
 {
 //FIXME: pop alert instead of console print.
-	reportConsoleError(err);
+	reportConsoleError(err, useErrno);
 	return -1;
 }
 
@@ -107,7 +111,7 @@ int readPacket(MouseSockPacket *packet)
 	do {
 		ssize_t n = read(_newdesc, ptr + amt, packetsize - amt);
 		if (n < 0)
-			return reportError(strerror(errno));
+			return reportError("readPacket", true);
 		amt += n;
 	} while (amt < packetsize);
 
@@ -122,7 +126,7 @@ int writePacket(const MouseSockPacket *packet)
 	do {
 		ssize_t n = write(_newdesc, ptr + amt, packetsize - amt);
 		if (n < 0)
-			return reportError(strerror(errno));
+			return reportError("writePacket", true);
 		amt += n;
 	} while (amt < packetsize);
 
@@ -134,30 +138,58 @@ void remoteQuit()
 	QuitApplicationEventLoop();
 }
 
-void configureXLabel(const int id, const char *prefix, const char *units,
-	const int precision)
+// Set prefix string for xlabel with <id>, allocate a new xlabel, and increment
+// the count of xlabels in use.
+void configureXLabelPrefix(const int id, const char *prefix)
 {
 	assert(id >= 0 && id < NLABELS);
 	_xprefix[id] = strdup(prefix);
-	if (units)
-		_xunits[id] = strdup(units);
 	_xlabel[id] = new char [WHOLE_LABEL_LENGTH];
 	_xlabel[id][0] = 0;
-	_xprecision[id] = precision;
 	_xlabelCount++;
 }
 
-void configureYLabel(const int id, const char *prefix, const char *units,
-	const int precision)
+// Set (optional) units string for xlabel with <id>.
+// NOTE: This will have no effect if we don't receive a prefix for this label.
+void configureXLabelUnits(const int id, const char *units)
+{
+	assert(id >= 0 && id < NLABELS);
+	_xunits[id] = strdup(units);
+}
+
+// Set precision for xlabel with <id>.
+// NOTE: This will have no effect if we don't receive a prefix for this label.
+void configureXLabelPrecision(const int id, const int precision)
+{
+	assert(id >= 0 && id < NLABELS);
+	_xprecision[id] = precision;
+}
+
+// Set prefix string for ylabel with <id>, allocate a new ylabel, and increment
+// the count of ylabels in use.
+void configureYLabelPrefix(const int id, const char *prefix)
 {
 	assert(id >= 0 && id < NLABELS);
 	_yprefix[id] = strdup(prefix);
-	if (units)
-		_yunits[id] = strdup(units);
 	_ylabel[id] = new char [WHOLE_LABEL_LENGTH];
 	_ylabel[id][0] = 0;
-	_yprecision[id] = precision;
 	_ylabelCount++;
+}
+
+// Set (optional) units string for ylabel with <id>.
+// NOTE: This will have no effect if we don't receive a prefix for this label.
+void configureYLabelUnits(const int id, const char *units)
+{
+	assert(id >= 0 && id < NLABELS);
+	_yunits[id] = strdup(units);
+}
+
+// Set precision for ylabel with <id>.
+// NOTE: This will have no effect if we don't receive a prefix for this label.
+void configureYLabelPrecision(const int id, const int precision)
+{
+	assert(id >= 0 && id < NLABELS);
+	_yprecision[id] = precision;
 }
 
 void updateXLabelValue(const int id, const double value)
@@ -305,12 +337,10 @@ pascal OSStatus doWindowEvent(EventHandlerCallRef nextHandler,
 
 	switch (GetEventKind(theEvent)) {
 		case kEventWindowDrawContent:
-printf("kEventWindowDrawContent\n");
 			drawWindowContent();
 			status = noErr;
 			break;
 		case kEventWindowBoundsChanged:
-printf("kEventWindowBoundsChanged\n");
 			setFactors();
 			status = noErr;
 			break;
@@ -364,7 +394,8 @@ int createApp()
 					NewEventHandlerUPP(doAppMouseMoved),
 					numTypes, &eventType, NULL, NULL);
 	if (status != noErr)
-		return reportError("Can't install app mouse event handler.");
+		return reportError("createApp: Can't install app mouse event handler.",
+		                                                                false);
 
 	return 0;
 }
@@ -384,7 +415,7 @@ int createMenus()
 	MenuRef fileMenuRef;
 	OSStatus status = CreateNewMenu(kFileMenu, attr, &fileMenuRef);
 	if (status != noErr)
-		return reportConsoleError("Can't create file menu.");
+		return reportConsoleError("Can't create file menu.", false);
 	SetMenuTitleWithCFString(fileMenuRef, CFSTR("File Menu"));
 
 	InsertMenu(fileMenuRef, kInsertHierarchicalMenu);
@@ -406,7 +437,9 @@ int createWindow()
 								kWindowStandardDocumentAttributes,
 								&rect, &_window); 
 	if (status != noErr)
-		return reportError("Can't create window.");
+		return reportError("createWindow: Error creating window.", false);
+
+	setFactors();
 
 	SetWindowTitleWithCFString(_window, CFSTR("RTcmix Mouse Input"));
 
@@ -425,7 +458,8 @@ int createWindow()
 					NewEventHandlerUPP(doWindowEvent),
 					numTypes, eventTypes, NULL, NULL);
 	if (status != noErr)
-		return reportError("Can't install window close event handler.");
+		return reportError("createWindow: Can't install close event handler.",
+		                                                               false);
 
 	numTypes = 1;
 	eventTypes[0].eventClass = kEventClassMouse;
@@ -434,7 +468,8 @@ int createWindow()
 					NewEventHandlerUPP(doWindowMouseMoved),
 					numTypes, eventTypes, NULL, NULL);
 	if (status != noErr)
-		return reportError("Can't install window mouse event handler.");
+		return reportError("createWindow: Can't install mouse event handler.",
+		                                                               false);
 
 	// Get font info.
 	SetPort(GetWindowPort(_window));
@@ -459,20 +494,83 @@ int createWindow()
 	return 0;
 }
 
+int pollInput(long usec)
+{
+	fd_set rfdset;
+	FD_ZERO(&rfdset);
+	FD_SET(_newdesc, &rfdset);
+	const int nfds = _newdesc + 1;
+	struct timeval timeout;
+	timeout.tv_sec = 0;
+	timeout.tv_usec = usec;
+	int result = select(nfds, &rfdset, NULL, NULL, &timeout);
+	if (result == -1)
+		reportError("pollInput", true);
+	return result;
+}
+
+// Read any incoming data from RTcmix, and dispatch messages appropriately.
 void *listenerLoop(void *context)
 {
-	while (1) {
-//XXX select on socket, read and dispatch messages when available
-// (including message to close socket and perhaps quit)
-		usleep(SLEEP_MSEC);
+	MouseSockPacket *packet = new MouseSockPacket [1];
+
+	while (_runThread) {
+		int result;
+		do {
+			result = pollInput(0);
+			if (result == -1)
+				_runThread = false;
+			else if (result > 0) {
+				if (readPacket(packet) == -1)
+					_runThread = false;
+
+				switch (packet->type) {
+					case kPacketConfigureXLabelPrefix:
+						configureXLabelPrefix(packet->id, packet->data.str);
+						break;
+					case kPacketConfigureYLabelPrefix:
+						configureYLabelPrefix(packet->id, packet->data.str);
+						break;
+					case kPacketConfigureXLabelUnits:
+						configureXLabelUnits(packet->id, packet->data.str);
+						break;
+					case kPacketConfigureYLabelUnits:
+						configureYLabelUnits(packet->id, packet->data.str);
+						break;
+					case kPacketConfigureXLabelPrecision:
+						configureXLabelPrecision(packet->id, packet->data.ival);
+						break;
+					case kPacketConfigureYLabelPrecision:
+						configureYLabelPrecision(packet->id, packet->data.ival);
+						break;
+					case kPacketUpdateXLabel:
+						updateXLabelValue(packet->id, packet->data.dval);
+						break;
+					case kPacketUpdateYLabel:
+						updateYLabelValue(packet->id, packet->data.dval);
+						break;
+					case kPacketQuit:
+						_runThread = false;
+						break;
+					default:
+						reportError("listenerLoop: Invalid packet type\n", false);
+						_runThread = false;
+						break;
+				}
+			}
+		} while (result > 0);
+		usleep(SLEEP_MSEC * 1000L);
 	}
+	delete [] packet;
+	return NULL;
 }
 
 int createListenerThread()
 {
+	_runThread = true;
 	int retcode = pthread_create(&_listenerThread, NULL, listenerLoop, NULL);
 	if (retcode != 0)
-		return reportError("Error creating listener thread.");
+		return reportError("createListenerThread", true);
 	return 0;
 }
 
@@ -480,15 +578,14 @@ int createListenerThread()
 // to RTcmix.  Returns 0 if connection accepted, -1 if any other error.
 int openSocket()
 {
-// XXX beef up error messages
-
 	_servdesc = socket(AF_INET, SOCK_STREAM, 0);
 	if (_servdesc < 0)
-		return reportError(strerror(errno));
+		return reportError("openSocket", true);
 
 	socklen_t optlen = sizeof(char);
 	int val = sizeof(MouseSockPacket);
-	setsockopt(_servdesc, SOL_SOCKET, SO_RCVBUF, &val, optlen);
+	if (setsockopt(_servdesc, SOL_SOCKET, SO_RCVBUF, &val, optlen) < 0)
+		return reportError("openSocket", true);
 
 	struct sockaddr_in servaddr;
 	servaddr.sin_family = AF_INET;
@@ -496,23 +593,15 @@ int openSocket()
 	servaddr.sin_port = htons(_sockport);
 
 	if (bind(_servdesc, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0)
-		return reportError(strerror(errno));
+		return reportError("openSocket", true);
 
-	listen(_servdesc, 1);
-
-// XXX Is there any way to timeout? Yes -- from man accept...
-//     If  no  pending  connections are present on the queue, and
-//     the socket is not marked as  non-blocking,  accept  blocks
-//     the  caller  until a connection is present.  If the socket
-//     is marked non-blocking and no pending connections are pre-
-//     sent on the queue, accept returns EAGAIN.
-// So mark _servdesc as non-blocking and loop until accept returns
-// either a valid sd or a certain amount of time elapses.
+	if (listen(_servdesc, 1) < 0)
+		return reportError("openSocket", true);
 
 	int len = sizeof(servaddr);
 	_newdesc = accept(_servdesc, (struct sockaddr *) &servaddr, &len);
 	if (_newdesc < 0)
-		return reportError(strerror(errno));
+		return reportError("openSocket", true);
 
 	return 0;
 }
@@ -521,8 +610,10 @@ int closeSocket()
 {
 // XXX send close message to client, and then close socket
 
-	close(_servdesc);
-	close(_newdesc);
+	if (close(_servdesc) == -1)
+		return reportError("closeSocket", true);
+	if (close(_newdesc) == -1)
+		return reportError("closeSocket", true);
 
 	return 0;
 }
@@ -583,6 +674,8 @@ int initialize()
 
 int finalize()
 {
+	_runThread = false;
+	pthread_join(_listenerThread, NULL);
 	return closeSocket();
 }
 

@@ -8,6 +8,8 @@
 #include <Carbon/Carbon.h>
 #include "mouse_ipc.h"
 
+#define SERVER_NAME	"localhost"
+
 class OSXMouse : public RTcmixMouse {
 public:
 	OSXMouse();
@@ -31,18 +33,22 @@ protected:
 	virtual bool handleEvents();
 
 private:
-	int reportError(const char *err);
+	int openSocket();
+	int reportError(const char *err, const bool useErrno);
 	int readPacket(MouseSockPacket *packet);
 	int writePacket(const MouseSockPacket *packet);
 	void sendLabel(const bool isXAxis, const int id, const char *prefix,
                   const char *units, const int precision);
 	void sendLabelValue(const bool isXAxis, const int id, const double value);
+	int pollInput(long);
 
 	int _sockport;
-	int _newdesc;
+	int _sockdesc;
 	double _x;
 	double _y;
 	MouseSockPacket *_packet;
+	MouseSockPacket *_evtpacket;
+	char *_servername;
 };
 
 #endif // _OSXMOUSE_H_

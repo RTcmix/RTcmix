@@ -22,8 +22,8 @@ typedef struct {
 	short type;								// from enum above
 	short id;								// assigned by RTcmixMouse object
 	union {
-		int precision;						// kPacketConfigure?LabelPrecision
-		double value;						// kPacketUpdate?Label
+		int ival;							// kPacketConfigure?LabelPrecision
+		double dval;						// kPacketUpdate?Label
 		struct s_point {					// kPacketMouseCoords
 			double x;
 			double y;

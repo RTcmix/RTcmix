@@ -26,8 +26,10 @@ RTcmixMouse::RTcmixMouse()
 
 RTcmixMouse::~RTcmixMouse()
 {
-	if (_eventthread)
+	if (_eventthread) {
+		_runThread = false;
 		pthread_join(_eventthread, NULL);
+	}
 	for (int i = 0; i < NLABELS; i++) {
 		delete _xprefix[i];
 		delete _yprefix[i];
@@ -95,7 +97,7 @@ void RTcmixMouse::updateYLabelValue(const int id, const double value)
 void *RTcmixMouse::_eventLoop(void *context)
 {
 	RTcmixMouse *obj = (RTcmixMouse *) context;
-	while (1) {
+	while (obj->runThread()) {
 		if (obj->handleEvents() == false)
 			break;
 		usleep(obj->getSleepTime());
@@ -105,6 +107,7 @@ void *RTcmixMouse::_eventLoop(void *context)
 
 int RTcmixMouse::spawnEventLoop()
 {
+	_runThread = true;
 	int retcode = pthread_create(&_eventthread, NULL, _eventLoop, this);
 	if (retcode != 0)
 		fprintf(stderr, "Error creating mouse window thread (%d).\n", retcode);

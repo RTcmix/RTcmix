@@ -68,15 +68,17 @@ protected:
 	char *_yunits[NLABELS];
 	int _xprecision[NLABELS];
 	int _yprecision[NLABELS];
-	double _lastx[NLABELS];
-	double _lasty[NLABELS];
 
 private:
 	inline unsigned long getSleepTime() { return _sleeptime; }
+	inline bool runThread() { return _runThread; }
 	static void *_eventLoop(void *);
 
+	double _lastx[NLABELS];
+	double _lasty[NLABELS];
 	unsigned long _sleeptime;
 	pthread_t _eventthread;
+	bool _runThread;
 };
 
 RTcmixMouse *createMouseWindow();
