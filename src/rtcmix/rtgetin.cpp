@@ -16,10 +16,45 @@
 #include <rtdefs.h>
 #include <assert.h>
 
+/* The define below is to disable some fancy bus-mapping code for file
+   input that was not well thought out. As a user, when I open a file,
+   I typically just want the instrument to read all its channels without
+   me worrying how many there are. If the instrument can read only one,
+   I'll tell it which one in its inchan pfield. But what numbers do I use
+   in my call to bus_config for the "in" bus? As a user, I don't care.
+   So we're ignoring them here, and making sure that inst->inputchans
+   is set to match the number of chans in the file (in rtsetinput).
 
-// FIXME: Need to clean up return value confusion below. Should return val
-//        indicate status, nframes, nsamps, nbytes?
-//        (Was nbytes, but always ignored.)
+   What we lose by ignoring the bus numbers is consistency of the
+   bus_config interface between file and rt input. We also lose the
+   ability to select arbitrary channels from a file to send into an
+   instrument. (But what instruments could make use of this?) My
+   feeling is that this selection feature would be more trouble for
+   the user than it's worth. What do you think?
+
+   If we expand the rtinput syntax to allow opening more than one
+   file for an instrument to use, then this could all change. But
+   it's not easy to see how, exactly. Note that the commented out
+   code below interprets the bus numbers as a selection of channels
+   from the input file. However, if you could say:
+
+      rtinput("foo.snd", "in 0-1"); rtinput("bar.snd", "in 2-3")
+
+   Then you'd expect this to work the way an aux-in bus does now: the
+   first file is read into buses 0-1, the second into buses 2-3. But
+   these "buses" aren't really buses the way aux buses are. Instead,
+   they're just private buffers in this file (or in an instrument,
+   depending on how you look at it). This makes sense, because sound
+   files aren't real-time input, and instruments often don't read from
+   the same section of a file during the same timeslice -- so they'd
+   hardly ever be able to share a file input bus. So with the rtinput
+   syntax above, we'd just pretend that those are real buses. What
+   kind of bus_config would work with those two rtinputs, and what
+   would its in-bus numbers mean?
+
+   JGG, 27-May-00
+*/
+#define IGNORE_BUS_COUNT_FOR_FILE_INPUT
 
 
 
@@ -63,10 +98,10 @@ get_audio_in(
       short       src_chans,        /* number of in-bus chans to copy */
       Instrument  *inst)
 {
-   int   audioin_chans = 2;  // FIXME: where do we get this? rtinput pfield
-
+#ifdef NOMORE  // FIXME: not sure these are right
    assert(dest_chans >= src_chans);
-   assert(audioin_chans >= src_chans);
+   assert(audioNCHANS >= src_chans);
+#endif
 
    for (int n = 0; n < src_chans; n++) {
       int chan = src_chan_list[n];
@@ -87,10 +122,6 @@ get_audio_in(
 
 
 /* ----------------------------------------------------- read_float_samps --- */
-/* Returns number of samples copied into destination buffer. This will not
-   be the same as the number of samples read from the file, if <dest_chans>
-   is not the same as <file_chans> below.
-*/
 static int
 read_float_samps(
       BufPtr      dest,             /* interleaved buffer from inst */
@@ -100,7 +131,7 @@ read_float_samps(
       short       src_chans,        /* number of in-bus chans to copy */
       Instrument  *inst)
 {
-   int            fd, file_chans, seeked, nsamps, src_samps, swap;
+   int            fd, file_chans, seeked, src_samps, swap;
    int            data_format, datum_size;
    ssize_t        bytes_to_read, bytes_read;
    char           *bufp;
@@ -128,8 +159,6 @@ read_float_samps(
       }
    }
    bufp = (char *) fbuf;
-
-// FIXME: Needs fix to rtsetinput when setting initial fileOffset for inst!
 
    if (lseek(fd, inst->fileOffset, SEEK_SET) == -1) {
       perror("read_float_samps (lseek)");
@@ -167,7 +196,11 @@ read_float_samps(
    src_samps = dest_frames * file_chans;
 
    for (int n = 0; n < dest_chans; n++) {
+#ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT
+      int chan = n;
+#else
       int chan = src_chan_list[n];
+#endif
       int j = n;
       for (int i = chan; i < src_samps; i += file_chans, j += dest_chans)
          dest[j] = (BUFTYPE) fbuf[i];
@@ -184,20 +217,11 @@ read_float_samps(
    */
    inst->fileOffset += dest_frames * file_chans * sizeof(float);
 
-   /* NOTE: Just return size of entire buffer, even if we had to do
-            some zero padding.
-   */
-   nsamps = dest_frames / dest_chans;
-
-   return nsamps;
+   return 0;
 }
 
 
 /* ---------------------------------------------------- sndlib_read_samps --- */
-/* Returns number of samples copied into destination buffer. This will not
-   be the same as the number of samples read from the file, if <dest_chans>
-   is not the same as <file_chans> below.
-*/
 static int
 sndlib_read_samps(
       BufPtr      dest,             /* interleaved buffer from inst */
@@ -207,7 +231,7 @@ sndlib_read_samps(
       short       src_chans,        /* number of in-bus chans to copy */
       Instrument  *inst)
 {
-   int         fd, file_chans, seeked, nsamps;
+   int         fd, file_chans, seeked;
    static int  **inbufs = NULL;
 
    /* File opened by earlier call to rtinput. */
@@ -237,7 +261,11 @@ sndlib_read_samps(
    clm_read(fd, 0, dest_frames-1, file_chans, inbufs);
 
    for (int n = 0; n < dest_chans; n++) {
+#ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT
+      int chan = n;
+#else
       int chan = src_chan_list[n];
+#endif
       int j = n;
       for (int i = 0; i < dest_frames; i++, j += dest_chans)
          dest[j] = (BUFTYPE) inbufs[chan][i];
@@ -250,12 +278,7 @@ sndlib_read_samps(
    */
    inst->fileOffset += dest_frames * file_chans * 2;
 
-   /* NOTE: We can't know how much zero padding sndlib did, so just use
-            dest_frames.
-   */
-   nsamps = dest_frames / dest_chans;
-
-   return nsamps;
+   return 0;
 }
 
 
@@ -269,31 +292,34 @@ get_file_in(
       short       src_chans,        /* number of in-bus chans to copy */
       Instrument  *inst)
 {
-   int nsamps;
+   int status;
 
+#ifndef IGNORE_BUS_COUNT_FOR_FILE_INPUT
    assert(dest_chans >= src_chans);
+#endif
 
    /* We read float files ourselves, rather than hand them to sndlib. */
    if (inputFileTable[inst->fdIndex].is_float_format) {
-      nsamps = read_float_samps(dest, dest_chans, dest_frames, src_chan_list,
+      status = read_float_samps(dest, dest_chans, dest_frames, src_chan_list,
                                                              src_chans, inst);
    }
    else {
-      nsamps = sndlib_read_samps(dest, dest_chans, dest_frames, src_chan_list,
+      status = sndlib_read_samps(dest, dest_chans, dest_frames, src_chan_list,
                                                              src_chans, inst);
    }
 
-   return nsamps;
+   return status;
 }
 
 
 /* -------------------------------------------------------------- rtgetin --- */
-// some limitations for now...
-
 /* For use by instruments that take input either from an in buffer or from
-   an aux buffer, but not from both at once. Also, input from files or
-   from the audio in device can come only through an in buffer, not from
-   an aux buffer.
+   an aux buffer, but not from both at once. Also, input from files or from
+   the audio in device can come only through an in buffer, not from an aux
+   buffer. Note that file input ignores the bus_config entirely, simply
+   reading all the file channels into the insts buffer, which we assume is
+   large enough to hold them. (This should be a safe assumption, since
+   rtsetinput makes sure that inst->inputchans matches the file chans.)
 */
 int
 rtgetin(float      *inarr,         /* interleaved array of <inputchans> */
@@ -338,23 +364,7 @@ rtgetin(float      *inarr,         /* interleaved array of <inputchans> */
       status = get_file_in(inarr, inchans, frames, in, in_count, inst);
    }
 
-   return status;  // FIXME: or was this supposed to be nsamps or nbytes?
+   return nsamps;   // this seems pointless, but no insts pay attention anyway
 }
 
 
-
-/*
-
-// How about an alternative function for insts that want to be more bus savvy?
-
-int rtgetin_from_bus(float inarr[], Instrument *inst, int nsamps,
-                     BusType bus_type, int bus_chan)
-
-// Problem #1: what buses get input from fdIndex?
-// Need more than one fdIndex per inst (for convolve, e.g.)?
-
-// Hook up with idea for:  rtinput("foo.aiff", "aux 1-2 in")
-
-// Would need many changes all over this file (and others).
-
-*/
