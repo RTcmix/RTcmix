@@ -33,6 +33,7 @@
 
 #include <rtcmix_types.h>
 #include <PField.h>
+#include <utils.h>
 #include <string.h>
 #include "../../include/maxdispargs.h"
 #include "../../rtcmix/prototypes.h"
@@ -73,10 +74,8 @@ static OpaqueObject *newOpaqueObject(PyObject *arg)
 static void Opaque_dealloc(OpaqueObject *self)
 {
 // printf("Opaque_dealloc: %p\n", self);
-   if (self->handle) {
-	   free(self->handle);
-	   self->handle = NULL;
-   }
+   if (self->handle)
+	   unrefHandle(self->handle);
    Py_XDECREF(self->attrDict);
    PyObject_Del(self);
 }
@@ -86,17 +85,6 @@ static void Opaque_dealloc(OpaqueObject *self)
 inline Handle HandleFromPyObject(PyObject *obj)
 {
    return ((OpaqueObject *) obj)->handle;
-}
-
-static Handle createPFieldHandle(PField *pfield)
-{
-   Handle handle = (Handle) malloc(sizeof(struct _handle));
-   handle->type = PFieldType;
-   handle->ptr = (void *) pfield;
-#ifdef NOTYET
-   handle->refcount = 0;
-#endif
-   return handle;
 }
 
 
