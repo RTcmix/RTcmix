@@ -221,6 +221,8 @@ set_option("option_name" [, "option_name"]...)
      Check, report on and store  "CHECK_PEAKS_ON"      "CHECK_PEAKS_OFF"
        peak amplitude stats
 
+     Full duplex audio           "FULL_DUPLEX_ON"      "FULL_DUPLEX_OFF"
+
    The case of these options is not significant, so "audio_on" works too.
 
    NOTE: You have to use quotes, or the program will give up.
