@@ -82,6 +82,7 @@ JCHOR::JCHOR() : Instrument()
    in = new float[MAXBUF];
    voices = NULL;
    grain = NULL;
+   grain_done = 0;
 }
 
 
@@ -95,9 +96,7 @@ JCHOR::~JCHOR()
 
 int JCHOR::init(float p[], short n_args)
 {
-   int   i, maintain_indur, inchan;
-   float outskip, inskip, outdur, indur, transpose, maxamp, maxwait;
-   Voice *v;
+   float outskip, outdur, maxamp, maxwait;
 
    outskip = p[0];
    inskip = p[1];
@@ -149,29 +148,6 @@ int JCHOR::init(float p[], short n_args)
       exit(1);
    }
 
-   grain_input_and_transpose(inchan, inskip, indur, maintain_indur, transpose);
-
-   voices = new Voice[nvoices];
-
-   for (i = 0, v = voices; i < nvoices; i++, v++) {
-      seed = crandom(seed);
-      v->index = (int)(-seed * (grainsamps - 1));
-      if (outputchans > 1) {
-         seed = crandom(seed);
-         v->left_amp = seed;
-         v->right_amp = 1.0 - v->left_amp;
-      }
-      seed = crandom(seed);
-      v->overall_amp = (seed * ampdiff) + minamp;
-   }
-#ifdef DEBUG
-   printf("\n%d grainsamps\n", grainsamps);
-   printf("Voices:\n");
-   for (i = 0, v = voices; i < nvoices; i++, v++)
-      printf("%6d: index=%d, left=%g, right=%g, amp=%g\n",
-             i, v->index, v->left_amp, v->right_amp, v->overall_amp);
-#endif
-
    amparray = floc(ENVELOPE_TABLE_SLOT);
    if (amparray) {
       int len = fsize(ENVELOPE_TABLE_SLOT);
@@ -194,6 +170,11 @@ int JCHOR::run()
    Voice *v;
 
    Instrument::run();
+
+   if (!grain_done) {
+      grain_input_and_transpose();
+      setup_voices();
+   }
 
    amp = 1.0;                   /* in case amparray == NULL */
 
@@ -261,6 +242,35 @@ interp(double y0, double y1, double y2, double t)
 
 
 /* -------------------------------------------- grain_input_and_transpose --- */
+int JCHOR::setup_voices()
+{
+   int   i;
+   Voice *v;
+
+   voices = new Voice[nvoices];
+
+   for (i = 0, v = voices; i < nvoices; i++, v++) {
+      seed = crandom(seed);
+      v->index = (int)(-seed * (grainsamps - 1));
+      if (outputchans > 1) {
+         seed = crandom(seed);
+         v->left_amp = seed;
+         v->right_amp = 1.0 - v->left_amp;
+      }
+      seed = crandom(seed);
+      v->overall_amp = (seed * ampdiff) + minamp;
+   }
+#ifdef DEBUG
+   printf("\n%d grainsamps\n", grainsamps);
+   printf("Voices:\n");
+   for (i = 0, v = voices; i < nvoices; i++, v++)
+      printf("%6d: index=%d, left=%g, right=%g, amp=%g\n",
+             i, v->index, v->left_amp, v->right_amp, v->overall_amp);
+#endif
+}
+
+
+/* -------------------------------------------- grain_input_and_transpose --- */
 /* Reads part of a soundfile into a newly allocated array <grain>, transposing
    the signal as it's read, and shaping its amplitude with a window function.
 
@@ -287,12 +297,7 @@ interp(double y0, double y1, double y2, double t)
    curve for the grain. Use gen 25 for a Hanning or Hamming window, or try
    gens 5 or 7 to make other envelope shapes.
 */
-int JCHOR::grain_input_and_transpose(
-      int   inchan,          /* chan num or AVERAGE_CHANS */
-      float inskip,          /* seconds */
-      float indur,           /* seconds */
-      int   maintain_indur,  /* flag (see above) */
-      float transpose)       /* 8ve.pc */
+int JCHOR::grain_input_and_transpose()
 {
    int     i, j, k, n, reset_count, inframes, bufframes;
    int     getflag, incount, len;
@@ -317,11 +322,13 @@ int JCHOR::grain_input_and_transpose(
    printf("increment=%g, read_indur=%g, store_indur=%g\n",
            increment, read_indur, store_indur);
 #endif
+#ifdef NOT_YET
    total_indur = (float)m_DUR(NULL, 0);
    if (inskip < 0.0 || read_indur <= 0.0 || inskip + read_indur > total_indur) {
       fprintf(stderr, "Input file segment out of range.\n");
       exit(1);
    }
+#endif
 
    grainsamps = (int)(store_indur * SR + 0.5);
 
@@ -375,6 +382,8 @@ int JCHOR::grain_input_and_transpose(
       if (counter - (float)incount >= -0.5)
          getflag = 1;
    }
+
+   grain_done = 1;
 
    return 0;
 }
