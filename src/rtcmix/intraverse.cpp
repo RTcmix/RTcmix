@@ -64,12 +64,6 @@ extern "C" {
     cout << "ENTERING inTraverse() FUNCTION *****\n";
 #endif
 
-	// Try and be tight with time
-	gettimeofday(&tv, &tz);
-	sec = (double)tv.tv_sec;
-	usec = (double)tv.tv_usec;
-	baseTime = (sec * 1e6) + usec;
-
     // Wait for the ok to go ahead
     if (!audio_config) {
       cout << "inTraverse():  waiting for audio_config . . . ";
@@ -92,14 +86,6 @@ extern "C" {
     elapsed = 0;
     rtInst = 0;
     playEm = 0;
-
-	// Try and be tight with time
-	gettimeofday(&tv, &tz);
-	sec = (double)tv.tv_sec;
-	usec = (double)tv.tv_usec;
-	baseTime = (sec * 1e6) + usec;
-
-    // printf("ENTERING inTraverse() FUNCTION\n");
 
     // NOTE: audioin, aux and output buffers are zero'd during allocation
 
@@ -131,23 +117,6 @@ extern "C" {
       }
       pthread_mutex_unlock(&heapLock);
 
-	  // Added 6/17/00 DJT:  for real time perf
-	  // need to wait for something to be on the heap
-	  if (rtInteractive && (heapSize == 0) && (rtQSize == 0)) {
-		while (heapSize == 0) {
-		  pthread_mutex_lock(&heapLock);
-		  heapSize = rtHeap.getSize();
-		  gettimeofday(&tv, &tz);
-		  sec = (double)tv.tv_sec;
-		  usec = (double)tv.tv_usec;
-		  baseTime = (sec * 1e6) + usec;
-		  if (heapSize > 0) {
-			heapChunkStart = rtHeap.getTop();
-		  }
-		  pthread_mutex_unlock(&heapLock);
-		}
-	  }
-
 #ifdef TBUG
 	  cout << "heapSize = " << heapSize << endl;
 	  cout << "heapChunkStart = " << heapChunkStart << endl;
@@ -162,12 +131,6 @@ extern "C" {
 		pthread_mutex_unlock(&heapLock);
 		if (!Iptr)
 		  break;
-
-#ifdef TBUG
-		if ((Bus_Configed == NO) && (print_is_on)) {
-		  printf("WARNING:  no bus_configs defined, using default\n");
-		}
-#endif
 
 		// DJT Now we push things onto different queues
 		bus_class = checkClass(Iptr->bus_config);
@@ -272,11 +235,14 @@ extern "C" {
 		  break;
 		}
 
-		if (bus != -1)
+		if (bus != -1) {
 		  busq = bus+bus_q_offset;
-		else
-		  busq = bus;
-		if (bus == -1) {
+		  rtQSize = rtQueue[busq].getSize();
+		  if (rtQSize > 0) {
+			chunkStart = rtQueue[busq].nextChunk();
+		  }
+		}
+		else {
 		  switch (qStatus) {
 		  case TO_AUX:
 			qStatus = AUX_TO_AUX;
@@ -301,12 +267,6 @@ extern "C" {
 		cout << "bus: " << bus << endl;
 		cout << "busq:  " << busq << endl;
 #endif
-		if (busq != -1) {
-		  rtQSize = rtQueue[busq].getSize();
-		  if (rtQSize > 0) {
-			chunkStart = rtQueue[busq].nextChunk();
-		  }
-		}
 
 		// Play elements on queue (insert back in if needed) ++++++++++++++++++
 		while ((rtQSize > 0) && (chunkStart < bufEndSamp) && (bus != -1)) {
@@ -344,9 +304,6 @@ extern "C" {
 #endif		  
 		  Iptr->exec(bus_type, bus);    // write the samples * * * * * * * * * 
 		  
-#ifdef TBUG
-		  cout << "endbus " << endbus << endl;
-#endif
 		  // ReQueue or delete ++++++++++++++++++++++++++++++++++++++++++++++
 		  if (endsamp > bufEndSamp) {
 #ifdef ALLBUG
@@ -384,7 +341,7 @@ extern "C" {
 			if ((qStatus == t_class) && (bus == endbus)) {
 			  delete Iptr;
 			}
- 		  }
+ 		  }  // end rtQueue or delete ----------------------------------------
 		  
 		  // DJT:  not sure this check before new chunkStart is necessary
 		  rtQSize = rtQueue[busq].getSize();
