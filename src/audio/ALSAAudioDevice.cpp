@@ -17,17 +17,15 @@
 
 #define DEBUG 0
 
-#if DEBUG > 0
-#define PRINT0 if (1) printf
-#define PRINT1 if (0) printf
-#else 
 #if DEBUG > 1
 #define PRINT0 if (1) printf
 #define PRINT1 if (1) printf
+#elif DEBUG > 0
+#define PRINT0 if (1) printf
+#define PRINT1 if (0) printf
 #else
 #define PRINT0 if (0) printf
 #define PRINT1 if (0) printf
-#endif
 #endif
 
 inline int getstatus(int x) { return (x == 0) ? 0 : -1; }
@@ -340,6 +338,7 @@ int ALSAAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 		}
 		snd_pcm_sw_params_free(swParams);
 	}
+	PRINT1("writesize set to %d\n", tryperiodsize);
 	*pWriteSize = tryperiodsize;
 	return getstatus(status);
 }
