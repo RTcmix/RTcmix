@@ -15,6 +15,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <termios.h>
 #include <math.h>
 #include <errno.h>
 #include <assert.h>
@@ -41,6 +42,8 @@
 #endif
 
 #define NUM_ZERO_BUFS       8
+
+#define SKIP_SECONDS        4.0     /* for fast-forward and rewind */
 
 #define ALL_CHANS           -1
 
@@ -73,6 +76,13 @@ BufPtr out_buffer[1];
 
 static int print_minutes_seconds = 0;  /* print time as 1:20 instead of 80 */
 
+struct termios saved_term_attributes;
+
+void reset_input_mode(void)
+{
+   tcsetattr(STDIN_FILENO, TCSANOW, &saved_term_attributes);
+}
+
 
 /* ---------------------------------------------------------------- usage --- */
 
@@ -83,6 +93,10 @@ Usage: %s [options] filename  \n\
                  -d NUM    duration                        \n\
                  -f NUM    rescale factor for float files  \n\
                  -c NUM    channel (starting from 0)       \n\
+                 -h        view this help screen           \n\
+                 -k        disable hotkeys (see below)     \n\
+                 -t NUM    time to skip for rewind, fast-forward\n\
+                              (default is 4 seconds)       \n\
                  -r        robust - larger audio buffers   \n\
                  -q        quiet - don't print anything    \n\
                  --force   use rescale factor even if peak \n\
@@ -90,13 +104,14 @@ Usage: %s [options] filename  \n\
           Notes: -d ignored if you also give -e            \n\
                  Times can be given as seconds or 0:00.0   \n\
                  If the latter, prints time in same way.   \n\
+                 Hotkeys: 'f': fast-forward, 'r': rewind   \n\
 "
 
 static void
 usage()
 {
    fprintf(stderr, USAGE_MSG, PROGNAME);
-   exit(1);
+   exit(EXIT_FAILURE);
 }
 
 
@@ -231,7 +246,7 @@ get_seconds(char timestr[])
    str = strdup(timestr);
    if (str == NULL) {
       fprintf(stderr, "get_seconds: can't allocate string buffer.\n");
-      exit(1);
+      exit(EXIT_FAILURE);
    }
    p = strchr(str, ':');
    if (p) {
@@ -251,16 +266,42 @@ get_seconds(char timestr[])
 }
 
 
+/* ------------------------------------------------------- set_input_mode --- */
+static void
+set_input_mode(void)
+{
+   struct termios tattr;
+
+   /* Make sure stdin is a terminal. */
+   if (!isatty(STDIN_FILENO)) {
+      fprintf(stderr, "Not a terminal.\n");
+      exit(EXIT_FAILURE);
+   }
+
+   /* Save the terminal attributes so we can restore them at exit. */
+   tcgetattr(STDIN_FILENO, &saved_term_attributes);
+   atexit(reset_input_mode);
+
+   /* Set terminal modes so fast-forward, rewind, etc. will work. */
+   tcgetattr(STDIN_FILENO, &tattr);
+   tattr.c_lflag &= ~(ICANON | ECHO);  /* Clear ICANON and ECHO. */
+   tattr.c_cc[VMIN] = 0;               /* so read doesn't block; it */
+   tattr.c_cc[VTIME] = 0;              /*    returns 0 if no input */
+   tcsetattr(STDIN_FILENO, TCSAFLUSH, &tattr);
+}
+
+
 /* ----------------------------------------------------------------- main --- */
 int main(int argc, char *argv[])
 {
    int         i, n, fd, datum_size, second, status, fragments;
-   int         quiet, robust, force, is_float, swap, play_chan;
+   int         quiet, robust, force, is_float, swap, play_chan, hotkeys;
    int         header_type, data_format, data_location, srate, in_chans, nsamps;
    int         buf_bytes, buf_samps, buf_frames, buf_start_frame;
-   int         start_frame, end_frame, nframes;
+   int         start_frame, end_frame, nframes, skip_frames;
    long        skip_bytes;
    float       start_time, end_time, request_dur, buf_start_time, factor, dur;
+   float       skip_time;
    char        *sfname, *bufp;
    short       *sbuf;
    float       *fbuf;
@@ -281,41 +322,52 @@ int main(int argc, char *argv[])
    quiet = robust = force = second = nframes = 0;
    start_time = end_time = buf_start_time = request_dur = factor = 0.0;
    play_chan = ALL_CHANS;
+   hotkeys = 1;
+   skip_time = SKIP_SECONDS;
+   skip_frames = 0;     /* need srate to compute */
 
    for (i = 1; i < argc; i++) {
       char *arg = argv[i];
 
       if (arg[0] == '-') {
          switch (arg[1]) {
-            case 's':
+            case 's':               /* start time */
                if (++i >= argc)
                   usage();
                start_time = get_seconds(argv[i]);
                break;
-            case 'e':
+            case 'e':               /* end time */
                if (++i >= argc)
                   usage();
                end_time = get_seconds(argv[i]);
                break;
-            case 'd':
+            case 'd':               /* duration */
                if (++i >= argc)
                   usage();
                request_dur = get_seconds(argv[i]);
                break;
-            case 'f':
+            case 'f':               /* rescale factor (for float files) */
                if (++i >= argc)
                   usage();
                factor = atof(argv[i]);
                break;
-            case 'c':
+            case 'c':               /* channel */
                if (++i >= argc)
                   usage();
                play_chan = atoi(argv[i]);
                break;
-            case 'r':
+            case 'k':               /* disable hotkeys */
+               hotkeys = 0;
+               break;
+            case 't':               /* disable hotkeys */
+               if (++i >= argc)
+                  usage();
+               skip_time = atof(argv[i]);
+               break;
+            case 'r':               /* robust buffer size */
                robust = 1;
                break;
-            case 'q':
+            case 'q':               /* no printout */
                quiet = 1;
                break;
             case '-':
@@ -333,24 +385,28 @@ int main(int argc, char *argv[])
    }
    if (sfname == NULL) {
       fprintf(stderr, "You didn't give a valid filename.\n");
-      exit(1);
+      exit(EXIT_FAILURE);
    }
 
    /* input validation */
 
    if (start_time < 0.0) {
       fprintf(stderr, "Start time must be positive.\n");
-      exit(1);
+      exit(EXIT_FAILURE);
    }
    if (start_time > 0.0 && end_time > 0.0 && start_time >= end_time) {
       fprintf(stderr, "Start time must be less than end time.\n");
-      exit(1);
+      exit(EXIT_FAILURE);
    }
    if (end_time == 0.0 && request_dur > 0.0)
       end_time = start_time + request_dur;
    if (factor < 0.0) {
       fprintf(stderr, "Rescale factor must be greater than 0.\n");
-      exit(1);
+      exit(EXIT_FAILURE);
+   }
+   if (hotkeys && skip_time <= 0.0) {
+      fprintf(stderr, "Skip time must be greater than zero.\n");
+      exit(EXIT_FAILURE);
    }
 
    /* see if file exists and we can read it */
@@ -358,35 +414,35 @@ int main(int argc, char *argv[])
    fd = open(sfname, O_RDONLY);
    if (fd == -1) {
       fprintf(stderr, "%s: %s\n", sfname, strerror(errno));
-      exit(1);
+      exit(EXIT_FAILURE);
    }
 
    /* make sure it's a regular file or symbolic link */
 
    if (fstat(fd, &statbuf) == -1) {
       fprintf(stderr, "%s: %s\n", sfname, strerror(errno));
-      exit(1);
+      exit(EXIT_FAILURE);
    }
    if (!S_ISREG(statbuf.st_mode) && !S_ISLNK(statbuf.st_mode)) {
       fprintf(stderr, "\"%s\" is not a regular file or a link.\n", sfname);
-      exit(1);
+      exit(EXIT_FAILURE);
    }
 
    /* read header and gather info */
 
    if (sndlib_read_header(fd) == -1) {
       fprintf(stderr, "Can't read \"%s\"!\n", sfname);
-      exit(1);
+      exit(EXIT_FAILURE);
    }
    header_type = mus_header_type();
    if (NOT_A_SOUND_FILE(header_type)) {
       fprintf(stderr, "\"%s\" is probably not a sound file\n", sfname);
-      exit(1);
+      exit(EXIT_FAILURE);
    }
    data_format = mus_header_format();
    if (!SUPPORTED_DATA_FORMAT(data_format)) {
       fprintf(stderr, UNSUPPORTED_DATA_FORMAT_MSG, sfname, PROGNAME);
-      exit(1);
+      exit(EXIT_FAILURE);
    }
    is_float = IS_FLOAT_FORMAT(data_format);
 #if MUS_LITTLE_ENDIAN
@@ -405,7 +461,7 @@ int main(int argc, char *argv[])
 
    if (start_time >= dur) {
       fprintf(stderr, "Start time must be less than duration of file.\n");
-      exit(1);
+      exit(EXIT_FAILURE);
    }
    if (end_time > 0.0 && end_time > dur) {
       if (!quiet)
@@ -417,12 +473,12 @@ int main(int argc, char *argv[])
       fprintf(stderr,
               "Not configured to play files with more than %d channels.\n",
               MAXCHANS);
-      exit(1);
+      exit(EXIT_FAILURE);
    }
    if (play_chan >= in_chans) {
       fprintf(stderr, "You asked to play channel %d of a %d-channel file.\n",
               play_chan, in_chans);
-      exit(1);
+      exit(EXIT_FAILURE);
    }
 
    /* prepare for playing a float file */
@@ -432,7 +488,7 @@ int main(int argc, char *argv[])
 
       if (sndlib_get_current_header_comment(fd, &sfc) == -1) {
          fprintf(stderr, "Can't read header comment!\n");
-         exit(1);
+         exit(EXIT_FAILURE);
       }
       stats_valid = (SFCOMMENT_PEAKSTATS_VALID(&sfc)
                      && sfcomment_peakstats_current(&sfc, fd));
@@ -449,7 +505,7 @@ int main(int argc, char *argv[])
                   fprintf(stderr,
                           "Your rescale factor (%g) would cause clipping.\n",
                                                                      factor);
-                  exit(1);
+                  exit(EXIT_FAILURE);
                }
             }
             else
@@ -461,11 +517,11 @@ int main(int argc, char *argv[])
       if (!stats_valid) {      /* Note: stats_valid can change in prev block */
          if (factor == 0.0) {
             fprintf(stderr, NEED_FACTOR_MSG);
-            exit(1);
+            exit(EXIT_FAILURE);
          }
          else if (!force) {
             fprintf(stderr, FORCE_FACTOR_MSG);
-            exit(1);
+            exit(EXIT_FAILURE);
          }
       }
    }
@@ -490,7 +546,7 @@ int main(int argc, char *argv[])
                                     (float) srate, fragments, &buf_frames);
 #endif
    if (status == -1)
-      exit(1);
+      exit(EXIT_FAILURE);
 
    /* allocate buffer(s) */
 
@@ -502,13 +558,13 @@ int main(int argc, char *argv[])
    sbuf = (short *)malloc((size_t)buf_bytes);
    if (sbuf == NULL) {
       perror("short buffer malloc");
-      exit(1);
+      exit(EXIT_FAILURE);
    }
    if (is_float) {
       fbuf = (float *)malloc((size_t)(buf_samps * sizeof(float)));
       if (fbuf == NULL) {
          perror("float buffer malloc");
-         exit(1);
+         exit(EXIT_FAILURE);
       }
       bufp = (char *)fbuf;
    }
@@ -530,6 +586,12 @@ int main(int argc, char *argv[])
          printf("Warning: \"robust\" mode causes second count to run ahead.\n");
       printf("Time: ");
       fflush(stdout);
+   }
+
+   /* set terminal up to handle hotkey input, etc. */
+   if (hotkeys) {
+      set_input_mode();
+      skip_frames = (int)(skip_time * srate);
    }
 
    /* init variables used in playback loop */
@@ -557,7 +619,7 @@ int main(int argc, char *argv[])
 
    if (lseek(fd, data_location + skip_bytes, SEEK_SET) == -1) {
       perror("lseek");
-      exit(1);
+      exit(EXIT_FAILURE);
    }
 
    /* read input samples until end_frame, and copy to audio port,
@@ -568,6 +630,7 @@ int main(int argc, char *argv[])
    for (  ; buf_start_frame < end_frame; buf_start_frame += nframes) {
       int  samps_read;
       long bytes_read;
+      char c = 0;
 
       if (buf_start_frame + buf_frames > end_frame) {      /* last buffer */
          int samps = (end_frame - buf_start_frame) * in_chans;
@@ -582,7 +645,7 @@ int main(int argc, char *argv[])
 #endif
 #ifdef MACOSX
 #endif
-         exit(1);
+         exit(EXIT_FAILURE);
       }
       if (bytes_read == 0)          /* EOF, somehow */
          break;
@@ -626,7 +689,7 @@ int main(int argc, char *argv[])
       status = write_buffer(afd, (char *)sbuf, AUDIO_DATUM_SIZE, nframes,
                                                                   in_chans);
       if (status == -1)
-         exit(1);
+         exit(EXIT_FAILURE);
 #endif
 #ifdef MACOSX
       macosx_cmixplay_audio_write(sbuf);
@@ -643,6 +706,55 @@ int main(int argc, char *argv[])
             second++;
          }
       }
+
+      if (hotkeys) {
+         bytes_read = read(STDIN_FILENO, &c, 1);
+         if (bytes_read) {
+            int   skip = 0;
+
+            if (c == '\004')      /* control-D */
+               break;
+            else if (c == 'f') {
+               skip = 1;
+               skip_bytes = (long)(skip_frames * in_chans * datum_size);
+               buf_start_frame += skip_frames;
+               if (!quiet) {
+                  buf_start_time += skip_time;
+                  second += (int)skip_time;
+                  printf("\n");
+               }
+            }
+            else if (c == 'r') {
+               skip = 1;
+               skip_bytes = -(long)(skip_frames * in_chans * datum_size);
+               buf_start_frame -= skip_frames;
+               if (!quiet) {
+                  buf_start_time -= skip_time;
+                  second -= (int)skip_time;
+                  printf("\n");
+               }
+            }
+
+            if (skip) {
+               off_t curloc = lseek(fd, 0, SEEK_CUR);
+               if (curloc + skip_bytes <= data_location) {
+                  if (!quiet) {
+                     buf_start_time = 0.0;
+                     second = 0;
+                  }
+                  if (lseek(fd, data_location, SEEK_SET) == -1) {
+                     perror("lseek");
+                     exit(EXIT_FAILURE);
+                  } 
+                  buf_start_frame = -nframes;
+               }
+               else if (lseek(fd, skip_bytes, SEEK_CUR) == -1) {
+                  perror("lseek");
+                  exit(EXIT_FAILURE);
+               }
+            }
+         }
+      }
    }
 
    /* write buffers of zeros to prevent clicks */
@@ -653,7 +765,7 @@ int main(int argc, char *argv[])
       status = write_buffer(afd, (char *)sbuf, AUDIO_DATUM_SIZE, nframes,
                                                                   in_chans);
       if (status == -1)
-         exit(1);
+         exit(EXIT_FAILURE);
 #endif
 #ifdef MACOSX
       macosx_cmixplay_audio_write(sbuf);
@@ -670,7 +782,7 @@ int main(int argc, char *argv[])
    if (!quiet)
       printf("\n");
 
-   return 0;
+   return EXIT_SUCCESS;
 }
 
 
