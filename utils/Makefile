@@ -4,24 +4,20 @@ PLAY = cmixplay
 NPLAY = nplay
 SETUP = setup_rtcmixrc
 
-PLAY_HDRS = ../H/sndlibsupport.h ../sys/AudioDevice.h
-AUDIO_DEV_OBJS = ../sys/AudioDevice.o ../sys/AudioDeviceImpl.o \
-   ../sys/AudioIODevice.o ../sys/ThreadedAudioDevice.o \
-   ../sys/audio_dev_creator.o ../sys/NetAudioDevice.o \
-   ../sys/check_byte_order.o ../sys/sndlibsupport.o
-OPTION_O = ../Minc/Option.o
-LIBCONF = ../Minc/conf/libconf.a
+PLAY_HDRS = ../src/audio/sndlibsupport.h ../src/audio/AudioDevice.h
+OPTION_O = ../src/rtcmix/Option.o
+LIBCONF = ../src/conf/libconf.a
+LIBAUDIO = ../src/audio/librtaudio.a
+INCLUDES += -I../src/audio -I../src/sndlib -I../src/rtcmix
 
 ifeq ($(ARCH),LINUX)
-   PROGS = $(PLAY) $(SETUP) playraw full-duplex-test
+   PROGS = $(PLAY) $(SETUP) # full-duplex-test playraw
    RESAMPLE = resample
-   AUDIO_DEV_OBJS += ../sys/ALSAAudioDevice.o ../sys/OSSAudioDevice.o
 #  SYSLIBS = -lm   # only this, overriding makefile.conf
 endif
 ifeq ($(ARCH),MACOSX)
    PROGS = $(PLAY) $(SETUP) #playraw full-duplex-test
    RESAMPLE = resample
-   AUDIO_DEV_OBJS += ../sys/OSXAudioDevice.o
    SYSLIBS = -framework CoreAudio
 endif
 
@@ -30,13 +26,12 @@ endif
 #   PROGS += $(NPLAY)
 #endif
 
-SYSOBJS = ../sys/check_byte_order.o ../sys/sndlibsupport.o ../sys/audio_port.o
-
+SYSOBJS = ../src/rtcmix/check_byte_order.o
 
 all: $(PROGS) $(RESAMPLE)
 
 $(PLAY):  $(PLAY).o $(AUDIO_DEV_OBJS)
-	$(CXX) -o $(PLAY) $(PLAY).o $(SYSLIBS) $(AUDIO_DEV_OBJS) $(SNDLIB)
+	$(CXX) -o $(PLAY) $(PLAY).o $(SYSLIBS) $(LIBAUDIO) $(SNDLIB)
 
 $(PLAY).o:  $(PLAY).cpp $(PLAY_HDRS)
 	$(CXX) $(CXXFLAGS) $(SOUND_DRIVER) -c $< -o $@

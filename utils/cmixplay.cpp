@@ -20,8 +20,8 @@
 #include <assert.h>
 #include <byte_routines.h>
 #include <sndlibsupport.h>
-#include "../sys/AudioDevice.h"
-#include "../sys/audio_devices.h"
+#include <AudioDevice.h>
+#include <audio_devices.h>
 
 
 #define PROGNAME  "cmixplay"
