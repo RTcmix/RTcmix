@@ -30,6 +30,8 @@ double Option::_bufferFrames = DEFAULT_BUFFER_FRAMES;
 char Option::_device[DEVICE_MAX];
 char Option::_inDevice[DEVICE_MAX];
 char Option::_outDevice[DEVICE_MAX];
+char Option::_midiInDevice[DEVICE_MAX];
+char Option::_midiOutDevice[DEVICE_MAX];
 char Option::_dsoPath[DSOPATH_MAX];
 char Option::_homeDir[PATH_MAX];
 char Option::_rcName[PATH_MAX];
@@ -40,6 +42,8 @@ void Option::init()
    _device[0] = 0;
    _inDevice[0] = 0;
    _outDevice[0] = 0;
+   _midiInDevice[0] = 0;
+   _midiOutDevice[0] = 0;
    _dsoPath[0] = 0;
    _homeDir[0] = 0;
    _rcName[0] = 0;
@@ -179,6 +183,20 @@ int Option::readConfigFile(const char *fileName)
 	else if (result != kConfigNoValueForKey)
 		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
+	key = kOptionMidiInDevice;
+	result = conf.getValue(key, sval);
+	if (result == kConfigNoErr)
+		midiInDevice(sval);
+	else if (result != kConfigNoValueForKey)
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+
+	key = kOptionMidiOutDevice;
+	result = conf.getValue(key, sval);
+	if (result == kConfigNoErr)
+		midiOutDevice(sval);
+	else if (result != kConfigNoValueForKey)
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+
 	key = kOptionDSOPath;
 	result = conf.getValue(key, sval);
 	if (result == kConfigNoErr)
@@ -247,6 +265,16 @@ int Option::writeConfigFile(const char *fileName)
 		fprintf(stream, "%s = \"%s\"\n", kOptionOutDevice, outDevice());
 	else
 		fprintf(stream, "# %s = \"%s\"\n", kOptionOutDevice, "myoutdevice");
+	if (midiInDevice()[0])
+		fprintf(stream, "%s = \"%s\"\n", kOptionMidiInDevice, midiInDevice());
+	else
+		fprintf(stream, "# %s = \"%s\"\n", kOptionMidiInDevice,
+														"my midi indevice");
+	if (midiOutDevice()[0])
+		fprintf(stream, "%s = \"%s\"\n", kOptionMidiOutDevice, midiOutDevice());
+	else
+		fprintf(stream, "# %s = \"%s\"\n", kOptionMidiOutDevice,
+														"my midi outdevice");
 #ifdef SHAREDLIBDIR
 	fprintf(stream, "\n# %s is a colon-separated list of directories (full "
 			"path names) to \n# search for instruments.\n", kOptionDSOPath);
@@ -283,6 +311,20 @@ char *Option::outDevice(const char *devName)
 	return _outDevice;
 }
 
+char *Option::midiInDevice(const char *devName)
+{
+	strncpy(_midiInDevice, devName, DEVICE_MAX);
+	_midiInDevice[DEVICE_MAX - 1] = 0;
+	return _midiInDevice;
+}
+
+char *Option::midiOutDevice(const char *devName)
+{
+	strncpy(_midiOutDevice, devName, DEVICE_MAX);
+	_midiOutDevice[DEVICE_MAX - 1] = 0;
+	return _midiOutDevice;
+}
+
 char *Option::dsoPath(const char *pathName)
 {
 	strncpy(_dsoPath, pathName, DSOPATH_MAX);
@@ -311,6 +353,8 @@ void Option::dump()
 	cout << kOptionDevice << ": " << _device << endl;
 	cout << kOptionInDevice << ": " << _inDevice << endl;
 	cout << kOptionOutDevice << ": " << _outDevice << endl;
+	cout << kOptionMidiInDevice << ": " << _midiInDevice << endl;
+	cout << kOptionMidiOutDevice << ": " << _midiOutDevice << endl;
 	cout << kOptionDSOPath << ": " << _dsoPath << endl;
 	cout << kOptionHomeDir << ": " << _homeDir << endl;
 	cout << kOptionRCName << ": " << _rcName << endl;

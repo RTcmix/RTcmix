@@ -47,6 +47,8 @@
 #define kOptionDevice           "device"
 #define kOptionInDevice         "indevice"
 #define kOptionOutDevice        "outdevice"
+#define kOptionMidiInDevice     "midiindevice"
+#define kOptionMidiOutDevice    "midioutdevice"
 #define kOptionDSOPath          "dso_path"
 #define kOptionRCName           "rcname"
 #define kOptionHomeDir          "homedir"
@@ -108,6 +110,12 @@ public:
 	static char *outDevice() { return _outDevice; }
 	static char *outDevice(const char *devName);
 
+	static char *midiInDevice() { return _midiInDevice; }
+	static char *midiInDevice(const char *devName);
+
+	static char *midiOutDevice() { return _midiOutDevice; }
+	static char *midiOutDevice(const char *devName);
+
 	static char *dsoPath() { return _dsoPath; }
 	static char *dsoPath(const char *pathName);
 
@@ -133,6 +141,8 @@ private:
 	static char _device[];
 	static char _inDevice[];
 	static char _outDevice[];
+	static char _midiInDevice[];
+	static char _midiOutDevice[];
 	static char _dsoPath[];
 
 	static char _homeDir[];
