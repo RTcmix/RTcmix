@@ -4,7 +4,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     'NAME'         => 'RT',
 #   'VERSION_FROM' => 'RT.pm',  # parses $VERSION in RT.pm; not reliable
-    'VERSION'      => '0.01',  # be sure to change version in RT.pm.in also
+    'VERSION'      => '0.02',  # be sure to change version in RT.pm.in also
     'PREREQ_PM'    => {},      # e.g., Module::Name => 1.1
     'LIBS'         => [''],    # e.g., '-lm'
     'DEFINE'       => '-g',    # e.g., '-DHAVE_SOMETHING'
