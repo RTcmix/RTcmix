@@ -223,8 +223,14 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 
 			switch (status & 0xF0) {
 				case kNoteOn:
-					obj->setNoteOnPitch(chan, data1);
-					obj->setNoteOnVel(chan, data2);
+					if (data2 > 0) {
+						obj->setNoteOnPitch(chan, data1);
+						obj->setNoteOnVel(chan, data2);
+					}
+					else {	// note on w/ vel=0 is logically a note off
+						obj->setNoteOffPitch(chan, data1);
+						obj->setNoteOffVel(chan, data2);
+					}
 					break;
 				case kNoteOff:
 					obj->setNoteOffPitch(chan, data1);
