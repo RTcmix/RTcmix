@@ -168,6 +168,10 @@ typedef struct tree {
 
 /* prototypes for internal Minc use */
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 /* builtin.c */
 int call_builtin_function(const char *funcname, const MincListElem arglist[],
    const int nargs, MincListElem *retval);
@@ -175,6 +179,10 @@ int call_builtin_function(const char *funcname, const MincListElem arglist[],
 /* callextfunc.c */
 int call_external_function(const char *funcname, const MincListElem arglist[],
    const int nargs, MincListElem *return_value);
+MincHandle minc_offsethandle(const MincHandle handle, const MincFloat val);
+MincHandle minc_scalehandle(const MincHandle handle, const MincFloat val);
+MincHandle minc_addhandles(const MincHandle handle1, const MincHandle handle2);
+MincHandle minc_multhandles(const MincHandle handle1, const MincHandle handle2);
 
 /* error.c */
 void sys_error(char *msg);
@@ -227,5 +235,9 @@ MincList *array_to_float_list(const MincFloat *array, const int len);
 /* y.tab.c */
 void declare(MincDataType type);
 Tree go(Tree t1);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif /* _MINC_INTERNAL_H_ */
