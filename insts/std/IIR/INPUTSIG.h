@@ -1,14 +1,20 @@
 class INPUTSIG : public Instrument {
-	float myrsnetc[64][5],myamp[64];
-	int mynresons;
-	float oamp, *amparr, amptabs[2], *in;
-	int inchan;
-	int skip;
-	float spread;
+	int inchan, skip, branch, mynresons;
+	float myrsnetc[64][5], myamp[64];
+	float oamp, spread, *in;
+	float *amparr, amptabs[2];
 
 public:
 	INPUTSIG();
 	virtual ~INPUTSIG();
-	int init(double*, int);
-	int run();
-	};
+	virtual int init(double *, int);
+	virtual int configure();
+	virtual int run();
+};
+
+// update flags (shift amount is pfield number)
+enum {
+	kAmp = 1 << 3,
+	kPan = 1 << 5
+};
+

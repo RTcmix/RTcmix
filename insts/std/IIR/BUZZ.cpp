@@ -1,7 +1,44 @@
-#include <iostream.h>
+/* BUZZ - process a buzz wave signal with an IIR filter bank
+
+   First, call setup to configure the filter bank:
+
+      setup(cf1, bw1, gain1, cf2, bw2, gain2, ...)
+
+	Each filter has a center frequency (cf), bandwidth (bw) and gain control.
+	Frequency can be in Hz or oct.pc.  Bandwidth is in Hz, or if negative,
+	is a multiplier of the center frequency.  Gain is the amplitude of this
+	filter relative to the other filters in the bank.  There can be as many
+	as 64 filters in the bank.
+
+	Then call BUZZ:
+
+      p0 = output start time
+      p1 = duration
+      p2 = amplitude
+      p3 = pitch (Hz or oct.pc)
+      p4 = pan (in percent-to-left form: 0-1) [optional, default is 0] 
+
+   p2 (amplitude), p3 (pitch) and p4 (pan) can receive dynamic updates
+   from a table or real-time control source.
+
+   If an old-style gen table 1 is present, its values will be multiplied
+   by the p2 amplitude multiplier, even if the latter is dynamic.
+
+   When changing pitch dynamically, be aware of the implications of the
+   dual-format pitch specification.  If the values drop below 15, then
+   they will be interpreted as oct.pc.  Also, if you gliss from 8.00 down
+   to 7.00, you will not get what you intend, because, for example,
+   8.00 - .01 is 7.99, which is a very high pitch.
+
+   By default, BUZZ uses an internally generated sine wave to create the
+   buzz waveform.  But to be backward compatible with old scores, BUZZ
+   accepts a gen table in slot 2 -- i.e., makegen(2, 10, 1024, 1).  This
+   table must have exactly 1024 values.
+                                          rev. for v4.0 by JGG, 7/10/04
+*/
 #include <stdio.h>
+#include <math.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "BUZZ.h"
 #include <rt.h>
@@ -15,46 +52,57 @@ extern "C" {
 
 BUZZ::BUZZ() : Instrument()
 {
-	// future setup here?
+	our_sine_table = false;
+	branch = 0;
 }
 
 BUZZ::~BUZZ()
 {
+	if (our_sine_table)
+		delete [] sinetable;
 }
 
+// NOTE: Sine table must have exactly 1024 elements,
+// because of buzz ugen limitation.  -JGG
+
+float *makeSineTable(int size)
+{
+	float *table = new float[size];
+	double incr = (M_PI * 2.0) / (double) size;
+	double phs = 0.0;
+	for (int i = 0; i < size; i++, phs += incr)
+		table[i] = sin(phs);
+	return table;
+}
 
 int BUZZ::init(double p[], int n_args)
 {
-// p0 = start; p1 = duration; p2 = amplitude; p3 = pitch (hz or oct.pc)
-// p4 = stereo spread (0-1) [optional]
-// assumes function table 1 is the amplitude envelope
-// assumes function table 2 is a sine wave
-//
-// NOTE NOTE NOTE: Table 2 must have exactly 1024 elements
-//    (because of buzz ugen)  -JGG
+	float outskip = p[0];
+	float dur = p[1];
 
-	int i,lensine;
-
-	nsamps = rtsetoutput(p[0], p[1], this);
+	int nsamps = rtsetoutput(outskip, dur, this);
 
 	amparr = floc(1);
 	if (amparr) {
 		int lenamp = fsize(1);
-		tableset(p[1], lenamp, amptabs);
+		tableset(dur, lenamp, amptabs);
 	}
-	else
-		advise("BUZZ", "Setting phrase curve to all 1's.");
 
 	sinetable = floc(2);
-	if (sinetable == NULL) {
-		die("BUZZ", "You need to store a sine wave in function table 2.");
-		return(DONT_SCHEDULE);
+	if (sinetable) {
+		lensine = fsize(2);
+		if (lensine != 1024)
+			return die("BUZZ", "Wavetable must have exactly 1024 values.");
 	}
-	lensine = fsize(2);
-	si = p[3] < 15.0 ? cpspch(p[3])*(float)lensine/SR : p[3]*(float)lensine/SR;
-	hn = (int)(0.5/(si/(float)lensine));
+	else {
+		lensine = 1024;
+		sinetable = makeSineTable(lensine);
+		our_sine_table = true;
+	}
+	phase = 0.0;
+	prevpitch = -1.0;		// force first update
 
-	for(i = 0; i < nresons; i++) {
+	for (int i = 0; i < nresons; i++) {
 		myrsnetc[i][0] = rsnetc[i][0];
 		myrsnetc[i][1] = rsnetc[i][1];
 		myrsnetc[i][2] = rsnetc[i][2];
@@ -63,55 +111,62 @@ int BUZZ::init(double p[], int n_args)
 	}
 	mynresons = nresons;
 
-	oamp = p[2];
-	skip = (int)(SR/(float)resetval);
-	spread = p[4];
-	phase = 0.0;
+	skip = (int) (SR / (float) resetval);
 
-	return(nsamps);
+	return nsamps;
+}
+
+inline void BUZZ::setpitch(float pitch)
+{
+	if (pitch < 15.0)
+		si = cpspch(pitch) * (float) lensine / SR;
+	else
+		si = pitch * (float) lensine / SR;
+	hn = (int) (0.5 / (si / (float) lensine));
 }
 
 int BUZZ::run()
 {
-	int i,j;
-	float out[2];
-	float aamp,val,sig;
-	int branch;
-
-	aamp = oamp;           /* in case amparr == NULL */
-
-	branch = 0;
-	for (i = 0; i < chunksamps; i++)  {
-		if (--branch < 0) {
+	for (int i = 0; i < framesToRun(); i++)  {
+		if (--branch <= 0) {
+			double p[5];
+			update(p, 5);
+			oamp = p[2];
 			if (amparr)
-				aamp = tablei(cursamp, amparr, amptabs) * oamp;
+				oamp *= tablei(cursamp, amparr, amptabs);
+			float pitch = p[3];
+			if (pitch <= 0.0)
+				pitch = 0.01;
+			if (pitch != prevpitch) {
+				setpitch(pitch);
+				prevpitch = pitch;
+			}
+			spread = p[4];
 			branch = skip;
-			}
+		}
 
-		sig = buzz(1.0, si, hn, sinetable, &phase);
+		float sig = buzz(1.0, si, hn, sinetable, &phase);
 
+		float out[2];
 		out[0] = 0.0;
-		for(j = 0; j < mynresons; j++) {
-			val = reson(sig, myrsnetc[j]);
+		for (int j = 0; j < mynresons; j++) {
+			float val = reson(sig, myrsnetc[j]);
 			out[0] += val * myamp[j];
-			}
+		}
 
-		out[0] *= aamp;
-		if (outputchans == 2) {
+		out[0] *= oamp;
+		if (outputChannels() == 2) {
 			out[1] = out[0] * (1.0 - spread);
 			out[0] *= spread;
-			}
+		}
 
 		rtaddout(out);
-		cursamp++;
-		}
-	return(i);
+		increment();
+	}
+	return framesToRun();
 }
 
-
-
-Instrument*
-makeBUZZ()
+Instrument *makeBUZZ()
 {
 	BUZZ *inst;
 
@@ -120,3 +175,4 @@ makeBUZZ()
 
 	return inst;
 }
+

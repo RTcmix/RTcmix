@@ -1,14 +1,13 @@
 class PULSE : public Instrument {
-	float myrsnetc[64][5],myamp[64];
-	int mynresons;
-	float oamp,*amparr,amptabs[2];
-	float si,phase;
-	int skip;
-	float spread;
+	int skip, branch, mynresons;
+	float myrsnetc[64][5], myamp[64];
+	float oamp, spread, si, phase;
+	float *amparr, amptabs[2];
 
 public:
 	PULSE();
 	virtual ~PULSE();
-	int init(double*, int);
-	int run();
-	};
+	virtual int init(double *, int);
+	virtual int run();
+};
+

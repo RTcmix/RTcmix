@@ -1,4 +1,30 @@
-#include <iostream.h>
+/* NOISE - process white noise with an IIR filter bank
+
+   First, call setup to configure the filter bank:
+
+      setup(cf1, bw1, gain1, cf2, bw2, gain2, ...)
+
+	Each filter has a center frequency (cf), bandwidth (bw) and gain control.
+	Frequency can be in Hz or oct.pc.  Bandwidth is in Hz, or if negative,
+	is a multiplier of the center frequency.  Gain is the amplitude of this
+	filter relative to the other filters in the bank.  There can be as many
+	as 64 filters in the bank.
+
+	Then call NOISE:
+
+      p0 = output start time
+      p1 = duration
+      p2 = amplitude
+      p3 = pan (in percent-to-left form: 0-1) [optional, default is 0] 
+
+   p2 (amplitude) and p3 (pan) can receive dynamic updates from a table
+   or real-time control source.
+
+   If an old-style gen table 1 is present, its values will be multiplied
+   by the p2 amplitude multiplier, even if the latter is dynamic.
+
+                                          rev. for v4.0 by JGG, 7/10/04
+*/
 #include <stdio.h>
 #include <ugens.h>
 #include <mixerr.h>
@@ -15,7 +41,7 @@ extern "C" {
 
 NOISE::NOISE() : Instrument()
 {
-	// future setup here?
+	branch = 0;
 }
 
 NOISE::~NOISE()
@@ -25,79 +51,67 @@ NOISE::~NOISE()
 
 int NOISE::init(double p[], int n_args)
 {
-// p0 = start; p1 = duration; p2 = amplitude
-// p3 = stereo spread (0-1) [optional]
-// assumes function table 1 is the amplitude envelope
+	float outskip = p[0];
+	float dur = p[1];
 
-	int i;
-
-	nsamps = rtsetoutput(p[0], p[1], this);
+	nsamps = rtsetoutput(outskip, dur, this);
 
 	amparr = floc(1);
 	if (amparr) {
 		int lenamp = fsize(1);
-		tableset(p[1], lenamp, amptabs);
+		tableset(dur, lenamp, amptabs);
 	}
-	else
-		advise("NOISE", "Setting phrase curve to all 1's.");
 
-	for(i = 0; i < nresons; i++) {
+	for (int i = 0; i < nresons; i++) {
 		myrsnetc[i][0] = rsnetc[i][0];
 		myrsnetc[i][1] = rsnetc[i][1];
 		myrsnetc[i][2] = rsnetc[i][2];
 		myrsnetc[i][3] = myrsnetc[i][4] = 0.0;
 		myamp[i] = amp[i];
-		}
+	}
 	mynresons = nresons;
 
-	oamp = p[2];
-	skip = (int)(SR/(float)resetval);
-	spread = p[3];
+	skip = (int) (SR / (float) resetval);
 
-	return(nsamps);
+	return nsamps;
 }
 
 int NOISE::run()
 {
-	int i,j;
-	float out[2];
-	float aamp,val,sig;
-	int branch;
-
-	aamp = oamp;           /* in case amparr == NULL */
-
-	branch = 0;
-	for (i = 0; i < chunksamps; i++)  {
-		if (--branch < 0) {
+	for (int i = 0; i < framesToRun(); i++)  {
+		if (--branch <= 0) {
+			double p[4];
+			update(p, 4, kAmp | kPan);
+			oamp = p[2];
 			if (amparr)
-				aamp = tablei(cursamp, amparr, amptabs) * oamp;
+				oamp *= tablei(cursamp, amparr, amptabs);
+			spread = p[3];
 			branch = skip;
-			}
+		}
 
-		sig = rrand();
+		float sig = rrand();
 
+		float out[2];
 		out[0] = 0.0;
-		for(j = 0; j < mynresons; j++) {
-			val = reson(sig, myrsnetc[j]);
+		for (int j = 0; j < mynresons; j++) {
+			float val = reson(sig, myrsnetc[j]);
 			out[0] += val * myamp[j];
-			}
+		}
 
-		out[0] *= aamp;
+		out[0] *= oamp;
 		if (outputchans == 2) {
 			out[1] = out[0] * (1.0 - spread);
 			out[0] *= spread;
-			}
+		}
 
 		rtaddout(out);
-		cursamp++;
-		}
-	return(i);
+		increment();
+	}
+	return framesToRun();
 }
 
 
-
-Instrument*
-makeNOISE()
+Instrument *makeNOISE()
 {
 	NOISE *inst;
 
@@ -106,3 +120,4 @@ makeNOISE()
 
 	return inst;
 }
+

@@ -1,8 +1,35 @@
-#include <iostream.h>
+/* INPUTSIG - process a mono input with an IIR filter bank
+
+   First, call setup to configure the filter bank:
+
+      setup(cf1, bw1, gain1, cf2, bw2, gain2, ...)
+
+	Each filter has a center frequency (cf), bandwidth (bw) and gain control.
+	Frequency can be in Hz or oct.pc.  Bandwidth is in Hz, or if negative,
+	is a multiplier of the center frequency.  Gain is the amplitude of this
+	filter relative to the other filters in the bank.  There can be as many
+	as 64 filters in the bank.
+
+	Then call INPUTSIG:
+
+      p0 = output start time
+      p1 = input start time
+      p2 = duration
+      p3 = amplitude multiplier
+      p4 = input channel [optional, default is 0]
+      p5 = pan (in percent-to-left form: 0-1) [optional, default is 0] 
+
+   p3 (amplitude) and p5 (pan) can receive dynamic updates from a table
+   or real-time control source.
+
+   If an old-style gen table 1 is present, its values will be multiplied
+   by the p3 amplitude multiplier, even if the latter is dynamic.
+
+                                          rev. for v4.0 by JGG, 7/10/04
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "INPUTSIG.h"
 #include <rt.h>
@@ -17,6 +44,7 @@ extern "C" {
 INPUTSIG::INPUTSIG() : Instrument()
 {
 	in = NULL;
+	branch = 0;
 }
 
 INPUTSIG::~INPUTSIG()
@@ -27,28 +55,23 @@ INPUTSIG::~INPUTSIG()
 
 int INPUTSIG::init(double p[], int n_args)
 {
-// p0 = output skip; p1 = input skip; p2 = duration
-// p3 = amplitude multiplier; p4 = input channel (0 or 1)
-// p5 = stereo spread (0-1) [optional]
-// assumes function table 1 is the amplitude envelope
+	float outskip = p[0];
+	float inskip = p[1];
+	float dur = p[2];
+	inchan = n_args > 4 ? (int) p[4] : 0;
 
-	int i, rvin;
+	if (rtsetinput(inskip, this) == -1)
+		return DONT_SCHEDULE;	// no input
 
-	rvin = rtsetinput(p[1], this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
-	nsamps = rtsetoutput(p[0], p[2], this);
+	nsamps = rtsetoutput(outskip, dur, this);
 
 	amparr = floc(1);
 	if (amparr) {
 		int lenamp = fsize(1);
-		tableset(p[2], lenamp, amptabs);
+		tableset(dur, lenamp, amptabs);
 	}
-	else
-		advise("INPUTSIG", "Setting phrase curve to all 1's.");
 
-	for(i = 0; i < nresons; i++) {
+	for (int i = 0; i < nresons; i++) {
 		myrsnetc[i][0] = rsnetc[i][0];
 		myrsnetc[i][1] = rsnetc[i][1];
 		myrsnetc[i][2] = rsnetc[i][2];
@@ -57,66 +80,59 @@ int INPUTSIG::init(double p[], int n_args)
 	}
 	mynresons = nresons;
 
-	oamp = p[3];
-	inchan = (int)p[4];
-	if (inchan >= inputchans) {
-		die("INPUTSIG", "You asked for channel %d of a %d-channel file.",
-                                                        inchan, inputchans);
-		return(DONT_SCHEDULE);
-	}
+	if (inchan >= inputChannels())
+		return die("INPUTSIG", "You asked for channel %d of a %d-channel file.",
+														inchan, inputChannels());
 
-	skip = (int)(SR/(float)resetval);
-	spread = p[5];
+	skip = (int) (SR / (float) resetval);
 
-	return(nsamps);
+	return nsamps;
+}
+
+int INPUTSIG::configure()
+{
+	in = new float [RTBUFSAMPS * inputChannels()];
+	return in ? 0 : -1;
 }
 
 int INPUTSIG::run()
 {
-	int i,j,rsamps;
-	float out[2];
-	float aamp,val;
-	int branch;
+	int samps = framesToRun() * inputChannels();
 
-	if (in == NULL)        /* first time, so allocate it */
-		in = new float [RTBUFSAMPS * inputchans];
+	rtgetin(in, this, samps);
 
-	rsamps = chunksamps*inputchans;
-
-	rtgetin(in, this, rsamps);
-
-	aamp = oamp;           /* in case amparr == NULL */
-
-	branch = 0;
-	for (i = 0; i < rsamps; i += inputchans)  {
-		if (--branch < 0) {
+	for (int i = 0; i < samps; i += inputChannels())  {
+		if (--branch <= 0) {
+			double p[6];
+			update(p, 6, kAmp | kPan);
+			oamp = p[3];
 			if (amparr)
-				aamp = tablei(cursamp, amparr, amptabs) * oamp;
+				oamp *= tablei(cursamp, amparr, amptabs);
+			spread = p[5];
 			branch = skip;
-			}
+		}
 
+		float out[2];
 		out[0] = 0.0;
-		for(j = 0; j < mynresons; j++) {
-			val = reson(in[i+inchan],myrsnetc[j]);
+		for (int j = 0; j < mynresons; j++) {
+			float val = reson(in[i+inchan], myrsnetc[j]);
 			out[0] += val * myamp[j];
-			}
+		}
 
-		out[0] *= aamp;
-		if (outputchans == 2) {
+		out[0] *= oamp;
+		if (outputChannels() == 2) {
 			out[1] = out[0] * (1.0 - spread);
 			out[0] *= spread;
-			}
+		}
 
 		rtaddout(out);
-		cursamp++;
-		}
-	return(i);
+		increment();
+	}
+	return framesToRun();
 }
 
 
-
-Instrument*
-makeINPUTSIG()
+Instrument *makeINPUTSIG()
 {
 	INPUTSIG *inst;
 
@@ -125,3 +141,4 @@ makeINPUTSIG()
 
 	return inst;
 }
+

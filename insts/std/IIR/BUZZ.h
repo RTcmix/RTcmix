@@ -1,14 +1,14 @@
 class BUZZ : public Instrument {
-	float myrsnetc[64][5],myamp[64];
-	int mynresons;
-	float oamp,*amparr,amptabs[2];
-	float si,hn,phase,*sinetable;
-	int skip;
-	float spread;
+	bool our_sine_table;
+	int skip, branch, mynresons, lensine;
+	float myrsnetc[64][5], myamp[64];
+	float oamp, spread, prevpitch, si, hn, phase;
+	float *amparr, amptabs[2], *sinetable;
 
+	void setpitch(float);
 public:
 	BUZZ();
 	virtual ~BUZZ();
-	int init(double*, int);
-	int run();
-	};
+	virtual int init(double *, int);
+	virtual int run();
+};
