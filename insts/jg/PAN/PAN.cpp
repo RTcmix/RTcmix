@@ -109,7 +109,7 @@ int PAN :: run()
 {
    int   i, branch, rsamps;
    float aamp, insig;
-   float in[MAXBUF], out[2], pan[2];
+   float in[inputchans * RTBUFSAMPS], out[2], pan[2];
 
    Instrument::run();
 
