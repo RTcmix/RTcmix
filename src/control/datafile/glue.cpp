@@ -43,25 +43,6 @@ static RTNumberPField *_datafile_usage()
 	return NULL;
 }
 
-static int format_string_to_code(const char *str)
-{
-	if (str == NULL)
-		return -1;
-	if (strcmp(str, "double") == 0)
-		return kDataFormatDouble;
-	else if (strcmp(str, "float") == 0)
-		return kDataFormatFloat;
-	else if (strcmp(str, "int64") == 0)
-		return kDataFormatInt64;
-	else if (strcmp(str, "int32") == 0)
-		return kDataFormatInt32;
-	else if (strcmp(str, "int16") == 0)
-		return kDataFormatInt16;
-	else if (strcmp(str, "byte") == 0)
-		return kDataFormatByte;
-	return -1;
-}
-
 static RTNumberPField *
 create_pfield(const Arg args[], const int nargs)
 {
@@ -77,6 +58,11 @@ create_pfield(const Arg args[], const int nargs)
 		lag = args[1];
 	else
 		return _datafile_usage();
+	if (lag < 0.0 || lag > 100.0) {
+		die("makeconnection (datafile)", "<lag> must be between 0 and 100");
+		return NULL;
+	}
+	lag *= 0.01;
 
 	int filerate = -1;
 	int formatcode = -1;
@@ -85,8 +71,7 @@ create_pfield(const Arg args[], const int nargs)
 	// Handle the optional arguments.
 	if (nargs == 5) {
 		filerate = (int) args[1];
-		const char *format = args[2];
-		formatcode = format_string_to_code(format);
+		formatcode = DataFile::formatStringToCode(args[2]);
 		if (formatcode == -1) {
 			warn("makeconnection (datafile)", "Invalid format string. "
 						"Valid strings are:");
