@@ -9,6 +9,7 @@
 
 #include "version.h"
 #include "buffers.h"
+#include "bus.h"  // FIXME: just for MAXBUS
 
 #ifdef MAIN
 #define GLOBAL
@@ -26,8 +27,8 @@ extern "C" {
 #endif /* __cplusplus */
 
 #ifdef LINUX
-GLOBAL int in_port;
-GLOBAL int out_port;
+GLOBAL int in_port[MAXBUS];    /* array, in case sound driver uses many devs */
+GLOBAL int out_port[MAXBUS];
 #endif
 #ifdef SGI
 #include <dmedia/audio.h>
@@ -40,6 +41,7 @@ GLOBAL int MAXBUF;    /* NOTE NOTE NOTE: MAXBUF is a constant in SGI version! */
 GLOBAL int NCHANS;
 GLOBAL int RTBUFSAMPS;
 GLOBAL float SR;
+GLOBAL int audioNCHANS;
 
 
 /* -------------------------------------------------------------------------- */
@@ -52,11 +54,12 @@ GLOBAL int full_duplex;
 GLOBAL int audio_config;
 GLOBAL int rtInteractive;
 GLOBAL int print_is_on;
+GLOBAL int rtsetparams_called;
 
 /* for more than 1 socket, set by -s flag to CMIX as offset from MYPORT */
 GLOBAL int socknew;
 
-/* used in intraverse.C, traverse.C and rtwritesamps.C */
+/* used in intraverse.C, traverse.C and rtsendsamps.c */
 GLOBAL unsigned long bufStartSamp;
 
 #include <pthread.h>
@@ -74,19 +77,12 @@ GLOBAL pthread_mutex_t pfieldLock;
 #include "rtdefs.h"
 GLOBAL InputDesc inputFileTable[MAX_INPUT_FDS];
 
-#include "bus.h"  // FIXME: just for MAXBUS
-GLOBAL BufPtr audioin_buffer[MAXBUS];    /* input from ADC */
+GLOBAL BufPtr audioin_buffer[MAXBUS];    /* input from ADC, not file */
 GLOBAL BufPtr aux_buffer[MAXBUS];
 GLOBAL BufPtr out_buffer[MAXBUS];
 
-// FIXME: these are the old ones, which will go away soon
-GLOBAL float *outbuff;
-GLOBAL float *outbptr;
-GLOBAL short *inbuff;                /* for use with real-time audio input */
-
 GLOBAL int rtfileit;
 GLOBAL int rtoutfile;
-GLOBAL int rtoutswap;
 
 /* This should probably go someplace else in this file? */
 typedef enum {
