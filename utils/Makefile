@@ -1,6 +1,7 @@
 include ../makefile.conf
 
 PLAY = cmixplay
+NPLAY = nplay
 
 ifeq ($(ARCH),LINUX)
    PROGS = $(PLAY) playraw full-duplex-test
@@ -17,15 +18,25 @@ ifeq ($(ARCH),SGI) # nothing here supported under Irix yet
    RESAMPLE =
 endif
 
+ifeq ($(NPLAY_SUPPORT), TRUE)
+   PROGS += $(NPLAY)
+endif
+
 SYSOBJS = ../sys/check_byte_order.o ../sys/sndlibsupport.o ../sys/audio_port.o
 
 
 all: $(PROGS) $(RESAMPLE)
 
 $(PLAY):  $(PLAY).o $(SYSOBJS)
-	$(CC) -o cmixplay $(SOUND_DRIVER) $(PLAY).o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
+	$(CC) -o $(PLAY) $(SOUND_DRIVER) $(PLAY).o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
 
 $(PLAY).o:  $(PLAY).c ../H/audio_port.h ../H/sndlibsupport.h
+	$(CC) $(CFLAGS) $(SOUND_DRIVER) -c $< -o $@
+
+$(NPLAY):  $(NPLAY).o $(SYSOBJS)
+	$(CC) -o $(NPLAY) $(SOUND_DRIVER) $(NPLAY).o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
+
+$(NPLAY).o:  $(NPLAY).c ../H/audio_port.h ../H/sndlibsupport.h
 	$(CC) $(CFLAGS) $(SOUND_DRIVER) -c $< -o $@
 
 playraw: playraw.o
@@ -65,8 +76,8 @@ ifneq ($(strip $(PROGS)),)       # do only if PROGS is nonempty
 	  ( $(RM) $(DESTDIR)/$$PROG; ) \
 	done
 endif
-	 $(RM) $(DESTDIR)/play
-	 $(RM) $(DESTDIR)/resample
+	$(RM) $(DESTDIR)/play
+	$(RM) $(DESTDIR)/resample
 
 clean:
 	$(RM) *.o core $(PROGS)
