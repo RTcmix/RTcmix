@@ -13,9 +13,9 @@
 #include <stdio.h>
 #include <string.h>
 
-extern void heapSched(Instrument *Iptr);
+//#define DEBUG
 
-/* extern "C" double checkInsts(char *fname, double *pp, int n_args); */
+extern void heapSched(Instrument *Iptr);
 
 extern "C" {
 double checkInsts(char *fname, double *pp, int n_args)
@@ -25,18 +25,16 @@ double checkInsts(char *fname, double *pp, int n_args)
 	rt_item *rt_temp;
 	Instrument *Iptr;
 	double rv;
-	int iv;
 	float p[MAXDISPARGS];
 
-	/* printf("ENTERING checkInsts() FUNCTION -----\n"); */
-
-	rv = 0.0;
-	iv = 0;
+#ifdef DEBUG
+	printf("ENTERING checkInsts() FUNCTION -----\n");
+#endif
 
 	/* convert pp to floats */
-	for(i = 0; i < n_args; i++) p[i] = (float)pp[i];
+	for (i = 0; i < n_args; i++) p[i] = (float)pp[i];
 	/* and zero out the rest */
-	for(i = n_args; i < MAXDISPARGS; i++) p[i] = pp[i] = 0.0;
+	for (i = n_args; i < MAXDISPARGS; i++) p[i] = pp[i] = 0.0;
 
 	mixerr = MX_FNAME;
 	rt_temp = rt_list;
@@ -44,11 +42,12 @@ double checkInsts(char *fname, double *pp, int n_args)
 
 	while (rt_p) {
 	  
-		if((rv=strcmp(rt_p->rt_name,fname)) == 0) {
-			if(print_is_on) {
-				printf ("========<rt-queueing>=======\n");
-				printf ("%s:  ",fname);
-				for (i = 0; i < n_args; i++)  printf ("%f ",p[i]);
+		if (strcmp(rt_p->rt_name, fname) == 0) {
+			if (print_is_on) {
+				printf("========<rt-queueing>=======\n");
+				printf("%s:  ",fname);
+				for (i = 0; i < n_args; i++)
+					printf("%f ",p[i]);
 				printf("\n");
 			}
 
@@ -56,8 +55,7 @@ double checkInsts(char *fname, double *pp, int n_args)
 			
 			Iptr = (*(rt_p->rt_ptr))();
 	
-			iv = Iptr->init(p, n_args);
-			rv = (double)iv;
+			rv = Iptr->init(p, n_args);
 
 			/* schedule instrument */
 
@@ -68,14 +66,30 @@ double checkInsts(char *fname, double *pp, int n_args)
 			mixerr = MX_NOERR;
 			rt_list = rt_temp;
 
-			/* printf("EXITING checkInsts() FUNCTION -----\n"); */
-			return rv;
+#ifdef DEBUG
+			printf("EXITING checkInsts() FUNCTION -----\n");
+#endif
+
+/* ooooh, this is almost as bad as the string-int-double coercion
+   that happend when passing strings in through parse_dispatch.
+   checkInsts should return an Instrument*, to be used in imbRTcmix for
+   direct modification of Instrument values.  However, a slew of
+   existing funcs return double values (i.e. random()) to the
+   score-parser.  Hence the conversion to int, and then double.
+   We'll have to reconvert later and hope that the pointer retains
+   it's integrity -- BGG */
+			return (double)((int)Iptr);
 		}
 		rt_p = rt_p->rt_next;
 	}
 	rt_list = rt_temp;
-	/* printf("EXITING checkInsts() FUNCTION (function not found) -----\n"); */
-	return 0; /* This was NULL on SGI's ... not good */
+
+#ifdef DEBUG
+	printf("EXITING checkInsts() FUNCTION (function not found) -----\n");
+#endif
+
+	return 0.0;
 }
 
-}
+} /* extern "C" */
+

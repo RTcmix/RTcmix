@@ -11,6 +11,9 @@ extern "C" {
 	{
 		double rv;
 
+		// BGG -- if an RT instrument was found, "rv" is now a double
+	        // coerced from an int that represents an Instrument* pointer
+		// to the scheduled object
 		rv = checkInsts(fname, pp, n_args);
 		return rv;
 	}
