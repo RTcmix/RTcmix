@@ -194,9 +194,8 @@ extern "C" {
 		else if ( (strcmp(sinfo->name, "RTcmix_off") == 0) ) {
 			printf("RTcmix termination cmd received.\n");
 			rtInteractive = 0;
-			sleep(1);
  			shutdown(s,0);
-			exit(0);
+			return;
 		}
 		else {
 	

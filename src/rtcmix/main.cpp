@@ -377,15 +377,6 @@ main(int argc, char *argv[])
          fprintf(stderr, "inTraverse() thread create failed\n");
       }
 
-      /* Join scheduling thread. */
-#ifdef DBUG
-      fprintf(stdout, "joining inTraverse() thread\n");
-#endif
-      retcode = pthread_join(inTraverseThread, NULL);
-      if (retcode != 0) {
-         fprintf(stderr, "inTraverse() thread join failed\n");
-      }
-
       /* Join parsing thread. */
 #ifdef DBUG
       fprintf(stdout, "joining sockit() thread\n");
@@ -394,6 +385,17 @@ main(int argc, char *argv[])
       if (retcode != 0) {
          fprintf(stderr, "sockit() thread join failed\n");
       }
+
+      /* Join scheduling thread. */
+#ifdef DBUG
+      fprintf(stdout, "joining inTraverse() thread\n");
+#endif
+       retcode = pthread_join(inTraverseThread, NULL);
+      if (retcode != 0) {
+         fprintf(stderr, "inTraverse() thread join failed\n");
+      }
+
+
 
       if (!noParse)
          destroy_parser();
@@ -411,7 +413,7 @@ main(int argc, char *argv[])
    }
 
    /* DJT:  this instead of above joins */
-   while (rtInteractive) {};
+   /* while (rtInteractive) {}; */
 
    closesf();
 
