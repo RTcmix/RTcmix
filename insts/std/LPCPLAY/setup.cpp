@@ -75,6 +75,9 @@ double dataset(float *p, int n_args, double *pp)
 	i=(int)pp[0];
 	name=(char *)i;
 
+	if (name == NULL)
+		die("dataset", "NULL file name");
+
 	if (strcmp(name, g_dataset_names[g_currentDataset]) == 0) {
         	warn("dataset", "Data file %s is already open.\n", name);
         	return -1;

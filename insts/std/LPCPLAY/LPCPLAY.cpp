@@ -140,6 +140,7 @@ LPCPLAY::LPCPLAY()
 	_voiced = true;		// default state
 	for (int i=0; i<9; i++)
 		_rsnetc[i]=0;
+	_arrayLen = 0;
 }
 
 
@@ -183,6 +184,9 @@ int LPCPLAY::localInit(float p[], int n_args)
 	int startFrame = (int) p[4];
 	int endFrame = (int) p[5];
 	int frameCount = endFrame - startFrame + 1;
+
+	if (frameCount <= 0)
+		die("LPCPLAY", "Ending frame must be > starting frame.");
 
 	_warpFactor = p[6];	// defaults to 0
 
@@ -234,15 +238,23 @@ int LPCPLAY::localInit(float p[], int n_args)
 	float actualweight = weight(startFrame, endFrame, _thresh);
 	if (!actualweight)
 		actualweight = cpspch(_pitch);
+	// Transpose relative amount using input with +-0.01 == +-1 semitone
 	if (ABS(_pitch) < 1.0)
 		_transposition = pow(2.0,(_pitch/.12));
+	// Transpose relative amount using input as new center in hz
+	else if (_pitch > 20)
+		_transposition = _pitch/actualweight;
+	// Transpose using input as new center in octave pt p.c.
 	else if (_pitch > 0)
 		_transposition = cpspch(_pitch)/actualweight;
+	else if (_pitch < -20)
+		_transposition = -_pitch;  /* flat pitch in hz */
 	else
-		_transposition = cpspch(-_pitch);  /* flat pitch */
+		_transposition = cpspch(-_pitch);  /* flat pitch in octave pt */
+
 	if ((n_args <= _datafields) && (_pitch > 0)) {
-		advise("LPCPLAY", "Overall transposition: %f, weighted av. pitch = %f",
-			   _transposition,actualweight);
+		advise("LPCPLAY", "Overall transp factor: %f, weighted av. pitch = %f",
+			   _transposition, actualweight);
 		if (_maxdev) 
 			readjust(_maxdev,_pchvals,startFrame,endFrame,_thresh,actualweight);
 		for (i=startFrame; i<=endFrame; ++i) {
@@ -281,7 +293,6 @@ int LPCPLAY::localInit(float p[], int n_args)
 	tableset(getdur(), frameCount, _tblvals);
 //	actualweight = weight(startFrame,endFrame,_thresh);
 	float actualcps = cpspch(ABS(_pitch));
-	
 	
 	/* note, dont use this feature unless pitch is specified in p[3]*/
 	
@@ -342,8 +353,11 @@ int LPCPLAY::run()
 			_ampmlt = 0;
 		float cps = tablei(CurrentFrame(),_pchvals,_tblvals);
 		float newpch = cps;
+
+		// If input pitch was specified as -X.YZ, use this as actual pitch
 		if ((_pitch < 0) && (ABS(_pitch) >= 1))
 			newpch = _transposition;
+
 		if (_reson_is_on) {
 			/* If _cf_fact is greater than 20, treat as absolute freq.
 			   Else treat as factor.
@@ -379,6 +393,9 @@ int LPCPLAY::run()
 #endif
         if (_counter <= 0)
 			break;
+		// Catch bad pitches which generate array overruns
+		else if (_counter > _arrayLen)
+			die("LPCPLAY", "Counter exceeds array size.  Frame pitch: %f", newpch);
 
 		bbuzz(_ampmlt*buzamp,si,hn,_sineFun,&_phs,_buzvals,_counter);
 #ifdef debug
@@ -445,6 +462,7 @@ LPCPLAY::SetupArrays(int frameCount)
 	_alpvals = new float[siglen];
 	_buzvals = new float[siglen];
 	_noisvals = new float[siglen];
+	_arrayLen = siglen;
 }
 
 double

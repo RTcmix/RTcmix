@@ -45,6 +45,7 @@ protected:
 	float	_warpFactor;
 	float	_coeffs[MAXPOLES+4];
 	float	_past[MAXPOLES*2];
+	int		_arrayLen;
 	float	*_alpvals,*_buzvals;	// signal arrays
 	long	_jcount;
 	int		_counter;
