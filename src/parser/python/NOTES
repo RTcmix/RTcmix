@@ -10,5 +10,12 @@
    The cmix ones seem to have priority (because they were loaded
    most recently?).
   
+- The ability to kill the job and still see peak stats doesn't work,
+  though it does work in PCMIX.  Python is nuking our signal handler
+  (sigint_handler in main.C) somehow?  Strange, because supposedly
+  the interpreter is destroyed before we start playing score, by
+  parse_score in Minc/parse_with_python.c.  The comments in parse_score
+  imply that this used to work with Python 1.x.
 
-To build python on OS X, see http://www.zope.org/Members/jens/docs/zope_osx
+- To build python on OS X, see http://www.zope.org/Members/jens/docs/zope_osx
+
