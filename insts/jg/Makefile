@@ -15,7 +15,7 @@ all: objlib
 	@for DIR in $(LIBDIRS); \
 	do \
 	  ( if test -d $$DIR; then cd $$DIR; echo "making all in $$DIR..."; \
-	  $(MAKE) $(MFLAGS); echo "done in $$DIR"; fi ) \
+	  $(MAKE) $(MFLAGS) all; echo "done in $$DIR"; fi ) \
 	done
 
 progs: all
