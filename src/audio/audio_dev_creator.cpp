@@ -10,6 +10,7 @@
 #ifdef LINUX
 #include "SinglePortOSSAudioDevice.h"
 #include "MultiPortOSSAudioDevice.h"
+#include "TestAudioDevice.h"
 #endif
 #ifdef ALSA
 #include "ALSAAudioDevice.h"
@@ -44,6 +45,9 @@ AudioDevEntry s_AudioDevEntries[] = {
 	{ &ALSAAudioDevice::recognize, &ALSAAudioDevice::create },
 #endif
 #ifdef LINUX
+#ifdef TEST_AUDIO_DEVICE
+	{ &TestAudioDevice::recognize, &TestAudioDevice::create },
+#endif
 	{ &MultiPortOSSAudioDevice::recognize, &MultiPortOSSAudioDevice::create },
 	{ &SinglePortOSSAudioDevice::recognize, &SinglePortOSSAudioDevice::create },
 #endif

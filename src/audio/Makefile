@@ -5,6 +5,9 @@ AUDIOLIB = librtaudio.a
 INCLUDES += -I../sndlib -I../rtcmix -I$(INCLUDEDIR)
 CFLAGS += -DCMIX_LEGACY
 
+# Add this to enable the TestAudioDevice class
+#CXXFLAGS += -DTEST_AUDIO_DEVICE
+
 OBJECTS =  AudioDevice.o AudioIODevice.o AudioDeviceImpl.o \
 		   ThreadedAudioDevice.o AudioOutputGroupDevice.o \
 		   DualOutputAudioDevice.o AudioFileDevice.o \
@@ -12,7 +15,7 @@ OBJECTS =  AudioDevice.o AudioIODevice.o AudioDeviceImpl.o \
 
 ifeq ($(ARCH),LINUX)
 OBJECTS +=  OSSAudioDevice.o SinglePortOSSAudioDevice.o \
-			MultiPortOSSAudioDevice.o ALSAAudioDevice.o 
+			MultiPortOSSAudioDevice.o ALSAAudioDevice.o TestAudioDevice.o
 endif
 ifeq ($(ARCH),MACOSX)
 OBJECTS += OSXAudioDevice.o
