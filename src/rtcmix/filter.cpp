@@ -38,6 +38,7 @@ extern "C" {
 enum {
 	kConstrainFilter,
 	kFitRangeFilter,
+	kMapFilter,
 	kQuantizeFilter,
 	kSmoothFilter
 };
@@ -46,9 +47,11 @@ static Handle
 _makefilter_usage()
 {
 	die("makefilter",
-		"\n   usage: filt = makefilter(pfield, \"constrain\", table, tightness)"
+		"\n   usage: filt = makefilter(pfield, \"constrain\", table, strength)"
 		"\nOR"
 		"\n   usage: filt = makefilter(pfield, \"fitrange\", min, max [, \"bipolar\"])"
+		"\nOR"
+		"\n   usage: filt = makefilter(pfield, \"map\", transferTable[, inputMin, inputMax])"
 		"\nOR"
 		"\n   usage: filt = makefilter(pfield, \"quantize\", quantum)"
 		"\nOR"
@@ -73,6 +76,8 @@ makefilter(const Arg args[], const int nargs)
 			type = kConstrainFilter;
 		else if (args[1] == "fitrange")
 			type = kFitRangeFilter;
+		else if (args[1] == "map")
+			type = kMapFilter;
 		else if (args[1] == "quantize")
 			type = kQuantizeFilter;
 		else if (args[1] == "smooth" || args[1] == "lowpass")
@@ -122,6 +127,12 @@ makefilter(const Arg args[], const int nargs)
 		}
 		else
 			return _makefilter_usage();
+	}
+	else if (type == kMapFilter) {
+		TablePField *xferfunc = (TablePField *) arg1pf;
+		double min = arg2pf ? arg2pf->doubleValue(0) : 0.0;
+		double max = nargs > 4 ? (double) args[4] : 1.0;
+		filt = new MapPField(innerpf, xferfunc, min, max);
 	}
 	else if (type == kQuantizeFilter)
 		filt = new QuantizePField(innerpf, arg1pf);
