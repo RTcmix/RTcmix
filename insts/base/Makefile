@@ -12,35 +12,54 @@ DSODIRS = WAVETABLE $(CMIXLIBDIRS)
 all:
 	@for DIR in $(LIBDIRS) MIX; \
 	do \
-	( cd $$DIR; echo "making in $$DIR..."; \
-	$(MAKE) $(MFLAGS); echo "done in $$DIR"; \
-	ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR) ); \
+	  ( cd $$DIR; echo "making in $$DIR..."; \
+	  $(MAKE) $(MFLAGS); echo "done in $$DIR"; \
+	  ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR) ); \
 	done
 	@ln -fs `pwd`/MIX/MIX $(DESTDIR)/CMIX
 
-clean:
+install:
 	@for DIR in $(LIBDIRS); \
 	do \
-	( cd $$DIR; make clean; \
-	rm -f $(DESTDIR)/$$DIR; \
-	rm -f $(LIBDESTDIR)/lib$$DIR.so; ) \
+	  ( cd $$DIR; echo "making install in $$DIR..."; \
+	  ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR); \
+	  rm -f $(DESTDIR)/$$DIR; \
 	done
-	rm -f $(DESTDIR)/CMIX
+
+dsos:  all
+
+dso_install:  install
 
 standalone:
 	@for DIR in $(LIBDIRS); \
 	do \
+	  ( cd $$DIR; echo "making in $$DIR..."; \
+	  $(MAKE) $(MFLAGS) standalone; echo "done in $$DIR" ); \
+	done
+
+standalone_install:
+	@for DIR in $(LIBDIRS); \
+	do \
 	( cd $$DIR; echo "making install in $$DIR..."; \
 	  rm -f $(DESTDIR)/$$DIR; \
-	  make standalone; \
 	  ln -fs `pwd`/$$DIR $(DESTDIR); ) \
 	done
-	@ln -fs `pwd`/MIX/MIX $(DESTDIR)/CMIX
 
-onlyDSO:
-	@for DIR in $(DSODIRS); \
+clean:
+	@for DIR in $(LIBDIRS); \
 	do \
-	( cd $$DIR; echo "removing standalone instrument in $$DIR..."; \
-	rm -f $$DIR; ) \
+	  ( cd $$DIR; make clean; \
+	  rm -f $(DESTDIR)/$$DIR; \
+	  rm -f $(LIBDESTDIR)/lib$$DIR.so; ) \
+	done
+	rm -f $(DESTDIR)/CMIX
+
+dso_clean:  clean
+
+standalone_clean:
+	@for DIR in $(LIBDIRS); \
+	do \
+	  ( cd $$DIR; make clean; \
+	  rm -f $(DESTDIR)/$$DIR; \
 	done
 
