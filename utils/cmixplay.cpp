@@ -125,13 +125,24 @@ write_buffer(int ports[], char *buf, int datum_size, int nframes, int nchans)
          tmpbuf = calloc(nframes * card_chans, sizeof(short));   /* zeros mem */
          assert(tmpbuf != NULL);
       }
-      for (n = 0; n < nchans; n++) {
-         int k;
-         j = k = n;
-         for (i = 0; i < nframes; i++) {
-            tmpbuf[k] = ((short *)buf)[j];
-            j += nchans;
-            k += card_chans;
+      /* If input is mono, copy the signal into both channels of the first
+         stereo pair.
+      */
+      if (nchans == 1) {
+         for (i = j = 0; i < nframes; i++, j += card_chans) {
+            tmpbuf[j] = ((short *)buf)[i];
+            tmpbuf[j + 1] = tmpbuf[j];
+         }
+      }
+      else {
+         for (n = 0; n < nchans; n++) {
+            int k;
+            j = k = n;
+            for (i = 0; i < nframes; i++) {
+               tmpbuf[k] = ((short *)buf)[j];
+               j += nchans;
+               k += card_chans;
+            }
          }
       }
       buf_bytes = nframes * card_chans * datum_size;
