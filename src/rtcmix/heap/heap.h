@@ -1,3 +1,6 @@
+#ifndef _HEAP_H_
+#define _HEAP_H_ 1
+
 #include "../Instrument.h"
 
 // class for heap element structure
@@ -81,17 +84,5 @@ public:
 };
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+#endif /* _HEAP_H_ */
 
