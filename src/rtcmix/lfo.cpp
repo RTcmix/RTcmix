@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <PField.h>
+#include <utils.h>
 #include <tableutils.h>
 #include <ugens.h>		// for warn, die
 
@@ -14,14 +15,6 @@ extern int resetval;		// declared in src/rtcmix/minc_functions.c
 
 
 // --------------------------------------------------------- local utilities ---
-static Handle
-_createPFieldHandle(PField *pfield)
-{
-	Handle handle = (Handle) malloc(sizeof(struct _handle));
-	handle->type = PFieldType;
-	handle->ptr = (void *) pfield;
-	return handle;
-}
 
 
 // =============================================================================
@@ -148,7 +141,7 @@ makeLFO(const Arg args[], const int nargs)
 	else
 		lfo = new RangePField(lfo, minpf, maxpf, RangePField::BipolarSource);
 
-	return _createPFieldHandle(lfo);
+	return createPFieldHandle(lfo);
 }
 
 
@@ -311,7 +304,7 @@ makerandom(const Arg args[], const int nargs)
 
 	PField *rand = new RandomPField(resetval, gen, freqpf, minpf, maxpf, midpf, tightpf);
 
-	return _createPFieldHandle(rand);
+	return createPFieldHandle(rand);
 }
 
 

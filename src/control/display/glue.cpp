@@ -10,6 +10,7 @@
 #include <DisplayPField.h>
 #include <RTcmixDisplay.h>
 #include <ugens.h>		// for warn, die
+#include <utils.h>		// for createPFieldHandle
 
 
 // ------------------------------------------------------------- makedisplay ---
@@ -100,9 +101,7 @@ create_handle(const Arg args[], const int nargs)
 	PField *pField = create_pfield(args, nargs);
 	Handle handle = NULL;
 	if (pField != NULL) {
-		handle = new struct _handle;
-		handle->type = PFieldType;
-		handle->ptr = (void *) pField;
+		handle = createPFieldHandle(pField);
 	}
 	return handle;
 }

@@ -11,11 +11,11 @@
 class OSXMouse : public RTcmixMouse {
 public:
 	OSXMouse();
-	virtual ~OSXMouse();
 
 	virtual int show();
 
 protected:
+	virtual ~OSXMouse();
 	// RTcmixMouse reimplementations
 
 	virtual inline double getPositionX() const { return _x; }

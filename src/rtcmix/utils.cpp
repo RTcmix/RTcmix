@@ -2,10 +2,11 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-// Functions for creating Handles.  
+// utils.cpp
+// Functions for creating Handles and tables
 //
 
-#include <Handle.h>
+#include <utils.h>
 #include <PField.h>
 #include <stdlib.h>
 #include <assert.h>

@@ -25,10 +25,13 @@ RTMousePField::RTMousePField(
 			const char			*units,
 			const int			precision)
 	: RTNumberPField(0),
-	  _mousewin(mousewin), _axis(axis), _min(minval), _default(defaultval)
+	  _mousewin(mousewin), _axis(axis), _filter(NULL),
+	  _min(minval), _default(defaultval)
 {
 	assert(_mousewin != NULL);
 
+	_mousewin->ref();
+	
 	_labelID = -1;
 	if (prefix && prefix[0]) {	// no label if null or empty prefix string
 		if (_axis == kRTMouseAxisX)
@@ -49,6 +52,7 @@ RTMousePField::RTMousePField(
 RTMousePField::~RTMousePField()
 {
 	delete _filter;
+	_mousewin->unref();
 }
 
 double RTMousePField::doubleValue(double dummy) const

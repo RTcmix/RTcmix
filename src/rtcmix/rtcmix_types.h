@@ -20,6 +20,7 @@ typedef enum {
 typedef struct _handle {
    RTcmixHandleType type;
    void *ptr;
+   int refcount;
 } *Handle;
 
 typedef struct {
@@ -52,7 +53,7 @@ typedef struct {
    bool isType(RTcmixType type) const { return _type == type; }
    void operator = (double d) { _type = DoubleType; _val.number = d; }
    void operator = (const char *c) { _type = StringType; _val.string = c; }
-   void operator = (const Handle h) { _type = HandleType; _val.handle = h; }
+   void operator = (const Handle h);
    void operator = (Array *a) { _type = ArrayType; _val.array = a; }
    operator double () const { return _val.number; }
    operator float () const { return (float) _val.number; }

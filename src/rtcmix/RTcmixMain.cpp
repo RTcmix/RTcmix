@@ -65,6 +65,18 @@ usage()
    exit(1);
 }
 
+#ifdef DEBUG_MEMORY
+void *operator new(size_t size) {
+	return malloc(size);
+}
+
+void operator delete(void *mem) {
+	if (mem)
+		free(mem);
+}
+
+#endif
+
 extern "C" {
   int profile();
   void rtprofile();

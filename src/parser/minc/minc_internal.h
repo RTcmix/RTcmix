@@ -193,6 +193,7 @@ struct symbol *install(char *name, ScopeType scope);
 struct symbol *lookup(char *name);
 char *strsave(char *str);
 char *emalloc(int nbytes);
+void free_symbols();
 
 /* trees.c */
 Tree tnoop(void);

@@ -46,6 +46,7 @@ public:
 	RTcmix();				// 44.1k/stereo default
 	RTcmix(float, int);		// set SR and NCHANS
 	RTcmix(float, int, int, const char* opt1=0, const char *opt2=0, const char *opt3=0);	// set SR, NCHANS, BUFSIZE, up to 3 options
+	~RTcmix();
 
 	
 	Instrument* cmd(char*, int, double, ...); // for numeric params
@@ -122,6 +123,7 @@ protected:
 	// Initialization methods.
 	void init(float, int, int, const char*, const char*, const char*);	// called by all constructors
 	static void init_globals(bool fromMain, const char *defaultDSOPath);
+	static void free_globals();
 	
 	// Audio loop methods
 	
@@ -132,6 +134,7 @@ protected:
 	static double checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retval);
 	static int checkfunc(const char *funcname, const Arg arglist[], const int nargs, Arg *retval);
 	static int findAndLoadFunction(const char *funcname);
+	static void freefuncs();
 
 protected:
 	/* Note: these 3 vars also extern in rtdefs.h, for use by insts */

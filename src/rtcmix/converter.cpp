@@ -11,18 +11,8 @@
 #include <stdio.h>
 #include <rtcmix_types.h>
 #include <PField.h>
+#include <utils.h>
 #include <ugens.h>		// for warn, die
-
-
-// --------------------------------------------------------- local utilities ---
-static Handle
-_createPFieldHandle(PField *pfield)
-{
-	Handle handle = (Handle) malloc(sizeof(struct _handle));
-	handle->type = PFieldType;
-	handle->ptr = (void *) pfield;
-	return handle;
-}
 
 
 // =============================================================================
@@ -79,6 +69,6 @@ makeconverter(const Arg args[], const int nargs)
 		return NULL;
 	}
 
-	return _createPFieldHandle(converter);
+	return createPFieldHandle(converter);
 }
 

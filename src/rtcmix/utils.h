@@ -3,6 +3,9 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 
+// utils.h
+// Decls of Handle and other utilities.
+
 #include <rtcmix_types.h>
 #include <assert.h>
 #include <stdio.h>
@@ -13,9 +16,13 @@ Handle createInstHandle(class Instrument *);
 inline void refHandle(Handle h)
 {
 	assert(h->refcount >= 0);
+#ifdef DEBUG
     printf("refHandle(%p): %d -> ", h, h->refcount);
+#endif
 	++h->refcount;
+#ifdef DEBUG
     printf("%d\n", h->refcount);
+#endif
 }
 #endif	// __cplusplus
 
@@ -33,10 +40,10 @@ void unrefHandle(Handle);
 // This is macro-ized to allow inlining in C
 #define refHandle(h) \
 	{ \
-	printf("refHandle(%p): %d -> ", h, h->refcount); \
+	/* printf("refHandle(%p): %d -> ", h, h->refcount); */ \
 	assert(h->refcount >= 0); \
 	++h->refcount; \
-	printf("%d\n", h->refcount); \
+	/* printf("%d\n", h->refcount); */ \
 	} 
 
 #endif	// !__cplusplus

@@ -10,11 +10,11 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <labels.h>
+#include <RefCounted.h>
 
-class RTcmixMouse {
+class RTcmixMouse : public RefCounted {
 public:
 	RTcmixMouse();
-	virtual ~RTcmixMouse();
 
 	// Display the mouse window on the screen.
 	virtual int show() = 0;
@@ -48,6 +48,7 @@ public:
 	int spawnEventLoop();
 
 protected:
+	virtual ~RTcmixMouse();
 	virtual void doConfigureXLabel(const int id, const char *prefix,
                                  const char *units, const int precision) = 0;
 	virtual void doConfigureYLabel(const int id, const char *prefix,
@@ -55,6 +56,7 @@ protected:
 	virtual void doUpdateXLabelValue(const int id, const double value) = 0;
 	virtual void doUpdateYLabelValue(const int id, const double value) = 0;
 	virtual bool handleEvents() = 0;
+	void shutdownEventLoop();
 
 	int _xlabelCount;
 	int _ylabelCount;

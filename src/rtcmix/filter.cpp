@@ -6,24 +6,13 @@
 #include <string.h>
 #include <rtcmix_types.h>
 #include <PField.h>
+#include <utils.h>
 #include <ugens.h>		// for warn, die
 
 // Functions for creating signal conditioning wrapper PFields.
 // -John Gibson, 11/25/04
 
 extern int resetval;		// declared in src/rtcmix/minc_functions.c
-
-
-// --------------------------------------------------------- local utilities ---
-static Handle
-_createPFieldHandle(PField *pfield)
-{
-	Handle handle = (Handle) malloc(sizeof(struct _handle));
-	handle->type = PFieldType;
-	handle->ptr = (void *) pfield;
-	return handle;
-}
-
 
 // =============================================================================
 // The remaining functions are public, callable from scripts.
@@ -148,6 +137,6 @@ makefilter(const Arg args[], const int nargs)
 	else if (type == kSmoothFilter)
 		filt = new SmoothPField(innerpf, resetval, arg1pf);
 
-	return _createPFieldHandle(filt);
+	return createPFieldHandle(filt);
 }
 

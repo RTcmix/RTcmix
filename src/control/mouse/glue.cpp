@@ -7,6 +7,7 @@
 #include <string.h>
 #include <rtcmix_types.h>
 #include <PField.h>
+#include <utils.h>	// in ../../rtcmix
 #include <RTMousePField.h>
 #include <RTcmixMouse.h>
 #include <ugens.h>		// for warn, die
@@ -141,9 +142,7 @@ create_handle(const Arg args[], const int nargs)
 	PField *pField = create_pfield(args, nargs);
 	Handle handle = NULL;
 	if (pField != NULL) {
-		handle = new struct _handle;
-		handle->type = PFieldType;
-		handle->ptr = (void *) pField;
+		handle = createPFieldHandle(pField);
 	}
 	return handle;
 }

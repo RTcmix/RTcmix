@@ -9,6 +9,7 @@
 #include <Instrument.h>
 #include <PField.h>
 #include <PFieldSet.h>
+#include <utils.h>
 #include "rt.h"
 #include "rtdefs.h"
 #include "mixerr.h"
@@ -126,12 +127,7 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
         rt_list = rt_temp;
 
 		// Create Handle for Iptr on return
-		Handle rethandle = (Handle) malloc(sizeof(struct _handle));
-		if (rethandle) {
-			rethandle->type = InstrumentPtrType;
-			rethandle->ptr = (void *) Iptr;
-			*retval = rethandle;
-		}
+		*retval = createInstHandle(Iptr);
 #ifdef DEBUG
          printf("EXITING checkInsts() FUNCTION -----\n");
 #endif

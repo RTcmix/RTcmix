@@ -10,11 +10,12 @@
 class XMouse : public RTcmixMouse {
 public:
 	XMouse();
-	virtual ~XMouse();
 
 	virtual int show();
 
 protected:
+	virtual ~XMouse();
+
 	// RTcmixMouse reimplementations
 
 	virtual inline double getPositionX() const

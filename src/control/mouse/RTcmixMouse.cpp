@@ -31,10 +31,7 @@ RTcmixMouse::RTcmixMouse()
 
 RTcmixMouse::~RTcmixMouse()
 {
-	if (_eventthread) {
-		_runThread = false;
-		pthread_join(_eventthread, NULL);
-	}
+	shutdownEventLoop();
 	for (int i = 0; i < kNumLabels; i++) {
 		delete _xprefix[i];
 		delete _yprefix[i];
@@ -123,6 +120,14 @@ int RTcmixMouse::spawnEventLoop()
 	return retcode;
 }
 
+void RTcmixMouse::shutdownEventLoop()
+{
+	if (_eventthread) {
+		_runThread = false;
+		pthread_join(_eventthread, NULL);
+	}
+	_eventthread = 0;
+}
 
 #ifdef MACOSX
 	#include <OSXMouse.h>
@@ -138,7 +143,8 @@ RTcmixMouse *createMouseWindow()
 	RTcmixMouse *mousewin = new XMouse();
 #endif
 	if (mousewin->show() != 0 || mousewin->spawnEventLoop() != 0) {
-		delete mousewin;
+		mousewin->ref();
+		mousewin->unref();
 		mousewin = NULL;
 	}
 

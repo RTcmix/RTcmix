@@ -1,8 +1,8 @@
 include ../../../makefile.conf
 
 INCLUDES += -I../../include -I../../rtcmix
-OBJS = y.tab.o builtin.o callextfunc.o error.o sym.o trees.o utils.o yywrap.o
-SRCS = builtin.c callextfunc.cpp error.c sym.c trees.c utils.c yywrap.c 
+OBJS = y.tab.o builtin.o callextfunc.o error.o sym.o trees.o utils.o yywrap.o handle.o
+SRCS = builtin.c callextfunc.cpp error.c sym.c trees.c utils.c yywrap.c handle.c
 MINC = libminc.a
 
 LSRC = minc.l
@@ -19,10 +19,10 @@ all: $(MINC)
 $(MINC): depend $(OBJS)
 	$(LD) -r $(OBJS) -o $(MINC)
 
-lex.yy.c: $(LSRC)
+lex.yy.c: $(LSRC) minc_internal.h
 	$(LEX) $(LEXFLAGS) $(LSRC)
 
-y.tab.c: lex.yy.c $(YSRC)
+y.tab.c: lex.yy.c $(YSRC) minc_internal.h
 	$(YACC) $(YFLAGS) $(YSRC)
 
 depend:

@@ -98,6 +98,18 @@ RTcmix::addfunc(
 } 
 
 
+/* ----------------------------------------------------------- freefuncs -- */
+void
+RTcmix::freefuncs()
+{
+	for (RTcmixFunction *cur_node = _func_list; cur_node; ) {
+		RTcmixFunction *next = cur_node->next;
+		delete cur_node;
+		cur_node = next;
+	}
+	_func_list = NULL;
+}
+
 /* ------------------------------------------------------------- findfunc -- */
 static RTcmixFunction *
 findfunc(RTcmixFunction *func_list, const char *func_label)

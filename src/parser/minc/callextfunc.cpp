@@ -7,6 +7,7 @@
 #include <math.h>
 #include <RTcmix.h>
 #include "minc_internal.h"
+#include <handle.h>
 #include <rtcmix_types.h>
 #include <prototypes.h>
 #include <PField.h>
@@ -76,6 +77,7 @@ call_external_function(const char *funcname, const MincListElem arglist[],
       case HandleType:
          return_value->type = MincHandleType;
          return_value->val.handle = (MincHandle) (Handle) retval;
+		 ref_handle(return_value->val.handle);
          break;
       case ArrayType:
 #ifdef NOMORE
@@ -99,11 +101,13 @@ call_external_function(const char *funcname, const MincListElem arglist[],
 }
 
 static Handle
-createPFieldHandle(PField *pfield)
+_createPFieldHandle(PField *pfield)
 {
    Handle handle = (Handle) malloc(sizeof(struct _handle));
    handle->type = PFieldType;
    handle->ptr = (void *) pfield;
+   pfield->ref();
+   handle->refcount = 0;
    return handle;
 }
 
@@ -188,7 +192,7 @@ minc_binop_handle_float(const MincHandle mhandle, const MincFloat val, OpKind op
     // Create PField using appropriate operator.
     PField *outpfield = createBinopPField(pfield1, pfield2, op);
 	
-	return (MincHandle) createPFieldHandle(outpfield);
+	return (MincHandle) _createPFieldHandle(outpfield);
 }
 
 MincHandle
@@ -208,6 +212,6 @@ minc_binop_handles(const MincHandle mhandle1, const MincHandle mhandle2, OpKind 
 	
 	// create Handle for new PField, return it cast to MincHandle
 
-	return (MincHandle) createPFieldHandle(opfield);
+	return (MincHandle) _createPFieldHandle(opfield);
 }
 

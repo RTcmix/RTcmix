@@ -31,9 +31,11 @@ XMouse::XMouse() : RTcmixMouse()
 
 XMouse::~XMouse()
 {
+	shutdownEventLoop();
 	if (_display && _window) {
 		XUnmapWindow(_display, _window);
 		XDestroyWindow(_display, _window);
+		XCloseDisplay(_display);
 	}
 }
 

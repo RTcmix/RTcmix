@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "minc_internal.h"
+#include "handle.h"
 
 struct symbol *htab[HASHSIZE] =
    {0};                         /* hash table */
@@ -54,6 +55,28 @@ symalloc(char *name)
    return p;
 }
 
+void
+free_symbols()
+{
+	struct symbol *p;
+	int s;
+#ifdef DEBUG
+	printf("freeing symbol table...\n");
+#endif
+	for (s = 0; s < HASHSIZE; ++s)
+	{
+		p = htab[s];
+		if (p) {
+			if (p->type == MincHandleType)
+				unref_handle(p->v.handle);
+			free(p);
+			htab[s] = NULL;
+		}
+	}
+#ifdef DEBUG
+	printf("done\n");
+#endif
+}
 
 #ifdef NOTYET
 /* Free storage for reuse.  Very closely connected to symalloc.

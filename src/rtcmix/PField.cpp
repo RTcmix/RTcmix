@@ -15,6 +15,13 @@ inline int min(int x, int y) { return (x < y) ? x : y; }
 
 // PField
 
+#ifdef DEBUG
+PField::PField()
+{
+	this;
+}
+#endif
+
 PField::~PField() {}
 
 // Return a string version of the pfield value if the pointer address seems

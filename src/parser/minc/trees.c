@@ -39,6 +39,11 @@ static Tree node(OpKind op, NodeKind kind);
 static void push_list(void);
 static void pop_list(void);
 
+static void copy_tree_tree(Tree tpdest, Tree tpsrc);
+static void copy_sym_tree(Tree tpdest, Symbol *src);
+static void copy_tree_sym(Symbol *dest, Tree tpsrc);
+static void copy_tree_listelem(MincListElem *edest, Tree tpsrc);
+static void copy_listelem_tree(Tree tpdest, MincListElem *esrc);
 
 /* floating point comparisons:
      f1 < f2   ==> -1
@@ -87,7 +92,6 @@ node(OpKind op, NodeKind kind)
    tp->v.list.data = NULL;
    tp->funcname = NULL;
 #endif
-
    return tp;
 }
 
@@ -519,9 +523,11 @@ do_op_handle_num(Tree tp, const MincHandle val1, const MincFloat val2,
       case OpMod:
       case OpPow:
          tp->v.handle = minc_binop_handle_float(val1, val2, op);
+         ref_handle(tp->v.handle);
          break;
       case OpNeg:
          tp->v.handle = minc_binop_handle_float(val1, -1.0, OpMul);	// <val2> ignored
+         ref_handle(tp->v.handle);
          break;
       default:
          minc_internal_error("invalid operator for handle and number");
@@ -544,6 +550,7 @@ do_op_handle_handle(Tree tp, const MincHandle val1, const MincHandle val2,
 	case OpMod:
 	case OpPow:
 		tp->v.handle = minc_binop_handles(val1, val2, op);
+        ref_handle(tp->v.handle);
 		break;
 	case OpNeg:
 	default:
@@ -888,8 +895,9 @@ exct_opassign(Tree tp, OpKind op)
                            op == OpPlus ? '+' : (op == OpMinus ? '-'
                                               : (op == OpMul ? '*' : '/')));
 //FIXME: Is this correct?
-      memcpy(&tp->v, &tp0->u.symbol->v, sizeof(MincValue));
-      tp->type = tp0->type;
+//      memcpy(&tp->v, &tp0->u.symbol->v, sizeof(MincValue));
+//      tp->type = tp0->type;
+      copy_sym_tree(tp, tp0->u.symbol);
       return;
    }
 
@@ -956,7 +964,8 @@ exct_subscript_read(Tree tp)
                tp->v.number = elem.val.number;
          }
          else
-            memcpy(&tp->v, &elem.val, sizeof(MincValue));
+//            memcpy(&tp->v, &elem.val, sizeof(MincValue));
+            copy_listelem_tree(tp, &elem);
       }
       else
          minc_die("attempt to index a variable that's not a list");
@@ -1000,9 +1009,12 @@ exct_subscript_write(Tree tp)
             }
          }
          lst[index].type = tp->u.child[2]->type;
-         memcpy(&lst[index].val, &tp->u.child[2]->v, sizeof(MincValue));
-         tp->type = tp->u.child[2]->type;
-         memcpy(&tp->v, &tp->u.child[2]->v, sizeof(MincValue));
+//         memcpy(&lst[index].val, &tp->u.child[2]->v, sizeof(MincValue));
+         copy_tree_listelem(&lst[index], tp->u.child[2]);
+		 assert(lst[index].type == tp->u.child[2]->type);
+//         tp->type = tp->u.child[2]->type;
+//         memcpy(&tp->v, &tp->u.child[2]->v, sizeof(MincValue));
+         copy_tree_tree(tp, tp->u.child[2]);
       }
       else
          minc_die("attempt to index a variable that's not a list");
@@ -1067,8 +1079,10 @@ exct(Tree tp)
       case NodeName:
          DPRINT1("exct (enter NodeName, tp=%p)\n", tp);
          /* assign what's in the symbol into tree's value field */
-         tp->type = tp->u.symbol->type;
-         memcpy(&tp->v, &tp->u.symbol->v, sizeof(MincValue));
+//         tp->type = tp->u.symbol->type;
+//         memcpy(&tp->v, &tp->u.symbol->v, sizeof(MincValue));
+         copy_sym_tree(tp, tp->u.symbol);
+		 assert(tp->type == tp->u.symbol->type);
          DPRINT1("exct (exit NodeName, tp=%p)\n", tp);
          break;
       case NodeListElem:
@@ -1079,10 +1093,11 @@ exct(Tree tp)
          {
             Tree tmp = exct(tp->u.child[1]);
             /* Copy entire MincValue union from expr to tp and to stack. */
-            memcpy(&tp->v, &tmp->v, sizeof(MincValue));
-            tp->type = tmp->type;
-            memcpy(&list[list_len].val, &tmp->v, sizeof(MincValue));
-            list[list_len].type = tmp->type;
+            copy_tree_tree(tp, tmp);
+//            memcpy(&list[list_len].val, &tmp->v, sizeof(MincValue));
+//            list[list_len].type = tmp->type;
+            copy_tree_listelem(&list[list_len], tmp);
+			assert(list[list_len].type == tmp->type);
             list_len++;
          }
          DPRINT1("exct (exit NodeListElem, tp=%p)\n", tp);
@@ -1132,8 +1147,12 @@ exct(Tree tp)
             if (result < 0)
                result = call_external_function(tp->funcname, list, list_len,
                                                                      &retval);
-            tp->type = retval.type;
-            memcpy(&tp->v, &retval.val, sizeof(MincValue));
+//            tp->type = retval.type;
+//            memcpy(&tp->v, &retval.val, sizeof(MincValue));
+              copy_listelem_tree(tp, &retval);
+			  assert(tp->type == retval.type);
+			  if (retval.type == MincHandleType)
+			     unref_handle(retval.val.handle);
          }
          pop_list();
          DPRINT1("exct (exit NodeCall, tp=%p)\n", tp);
@@ -1143,10 +1162,14 @@ exct(Tree tp)
          /* Store value and type into sym pointed to by child[0]->u.symbol. */
          exct(tp->u.child[1]);
          /* Copy entire MincValue union from expr to id sym and to tp. */
-         memcpy(&tp->u.child[0]->u.symbol->v, &tp->u.child[1]->v,
-                                                         sizeof(MincValue));
-         memcpy(&tp->v, &tp->u.child[1]->v, sizeof(MincValue));
-         tp->type = tp->u.child[0]->u.symbol->type = tp->u.child[1]->type;
+//         memcpy(&tp->u.child[0]->u.symbol->v, &tp->u.child[1]->v,
+//                                                         sizeof(MincValue));
+         copy_tree_sym(tp->u.child[0]->u.symbol, tp->u.child[1]);
+		 assert(tp->u.child[0]->u.symbol->type == tp->u.child[1]->type);
+//         memcpy(&tp->v, &tp->u.child[1]->v, sizeof(MincValue));
+         copy_tree_tree(tp, tp->u.child[1]);
+//         tp->type = tp->u.child[0]->u.symbol->type = tp->u.child[1]->type;
+         assert(tp->type == tp->u.child[1]->type);
          DPRINT2("exct (exit NodeStore, tp=%p, type=%d)\n", tp, tp->type);
          break;
       case NodeOpAssign:
@@ -1277,6 +1300,94 @@ pop_list()
    list_len = list_len_stack[list_stack_ptr];
 }
 
+/* This copies a Tree node's value and handles ref counting when necessary */
+static void
+copy_tree_tree(Tree tpdest, Tree tpsrc)
+{
+   int no_ref = 0;
+   DPRINT2("copy_tree_tree(%p, %p)\n", tpdest, tpsrc);
+   assert(tpsrc->type != MincVoidType);
+   if (tpdest->type == MincHandleType) {
+	   if (tpdest->v.handle != tpsrc->v.handle)
+		   unref_handle(tpdest->v.handle);	// overwriting handle, so unref
+	   else
+		   no_ref = 1;	// handles are identical -- no ref/unref
+   }
+   tpdest->type = tpsrc->type;
+   memcpy(&tpdest->v, &tpsrc->v, sizeof(MincValue));
+   if (tpsrc->type == MincHandleType && !no_ref)
+   {
+      ref_handle(tpsrc->v.handle);
+   }
+}
+
+/* This copies a Symbol's value and handles ref counting when necessary */
+static void
+copy_sym_tree(Tree tpdest, Symbol *src)
+{
+   int no_ref = 0;
+   DPRINT2("copy_sym_tree(%p, %p)\n", tpdest, src);
+   assert(src->type != MincVoidType);
+   if (tpdest->type == MincHandleType) {
+	   if (tpdest->v.handle != src->v.handle)
+		   unref_handle(tpdest->v.handle);	// overwriting handle, so unref
+	   else
+		   no_ref = 1;	// handles are identical -- no ref/unref
+   }
+   tpdest->type = src->type;
+   memcpy(&tpdest->v, &src->v, sizeof(MincValue));
+   if (src->type == MincHandleType && !no_ref)
+   {
+      ref_handle(src->v.handle);
+   }
+}
+
+static void
+copy_tree_sym(Symbol *dest, Tree tpsrc)
+{
+   int no_ref = 0;
+   DPRINT2("copy_tree_sym(%p, %p)\n", dest, tpsrc);
+   assert(tpsrc->type != MincVoidType);
+#ifdef DEBUG
+   if (dest->type != MincVoidType)
+	   DPRINT("\toverwriting existing symbol value\n");
+#endif
+   if (dest->type == MincHandleType) {
+	   if (dest->v.handle != tpsrc->v.handle)
+		   unref_handle(dest->v.handle);	// overwriting handle, so unref
+	   else
+		   no_ref = 1;	// handles are identical -- no ref/unref
+   }
+   memcpy(&dest->v, &tpsrc->v, sizeof(MincValue));
+   dest->type = tpsrc->type;
+   if (tpsrc->type == MincHandleType && !no_ref) {
+      ref_handle(tpsrc->v.handle);
+   }
+}
+
+static void
+copy_tree_listelem(MincListElem *dest, Tree tpsrc)
+{
+   DPRINT2("copy_tree_listelem(%p, %p)\n", dest, tpsrc);
+   assert(tpsrc->type != MincVoidType);
+   memcpy(&dest->val, &tpsrc->v, sizeof(MincValue));
+   dest->type = tpsrc->type;
+   if (tpsrc->type == MincHandleType) {
+//      ref_handle(tpsrc->v.handle);
+   }
+}
+
+static void
+copy_listelem_tree(Tree tpdest, MincListElem *esrc)
+{
+   DPRINT2("copy_listelem_tree(%p, %p)\n", tpdest, esrc);
+   assert(esrc->type != MincVoidType);
+   memcpy(&tpdest->v, &esrc->val, sizeof(MincValue));
+   tpdest->type = esrc->type;
+   if (esrc->type == MincHandleType) {
+      ref_handle(esrc->val.handle);
+   }
+}
 
 /* This recursive function frees space. */
 void
@@ -1372,10 +1483,10 @@ free_tree(Tree tp)
          break;
    } /* switch kind */
 
-#ifdef NOTYET
-   if (tp->type == MincHandleType)
-      free(tp->v.handle);
-#endif
+   DPRINT1("free_tree(%p)\n", tp);
+   if (tp->type == MincHandleType) {
+      unref_handle(tp->v.handle);
+   }
    free(tp);   /* actually free space */
 }
 

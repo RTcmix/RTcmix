@@ -9,6 +9,7 @@
 #include <PField.h>
 #include <DataFileReaderPField.h>
 #include <ugens.h>		// for warn, die
+#include <utils.h>
 
 extern int resetval;		// declared in src/rtcmix/minc_functions.c
 
@@ -123,9 +124,7 @@ create_handle(const Arg args[], const int nargs)
 	PField *pField = create_pfield(args, nargs);
 	Handle handle = NULL;
 	if (pField != NULL) {
-		handle = new struct _handle;
-		handle->type = PFieldType;
-		handle->ptr = (void *) pField;
+		handle = createPFieldHandle(pField);
 	}
 	return handle;
 }

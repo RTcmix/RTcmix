@@ -1,13 +1,30 @@
 #include <rtcmix_types.h>
+#include <utils.h>
 #include <PField.h>
 #include <string.h>		// for strcmp()
 #include <stdlib.h>		// for free()
 
-Arg::~Arg() { if (_type == ArrayType) free(_val.array); }
+// NOTE:  For now, the Arg class does not reference and dereference the
+// underlying Handle.  This is OK because Args are always temporary storage
+// and their scope is always local within the parser.
+
+Arg::~Arg() {
+	if (_type == ArrayType)
+		free(_val.array);
+//	else if (_type == HandleType)
+//		unrefHandle(_val.handle);
+}
 
 bool
 Arg::operator == (const char *str) const {
 	return isType(StringType) && !strcmp(_val.string, str);
+}
+
+void
+Arg::operator = (const Handle h) {
+	_type = HandleType;
+	_val.handle = h;
+//	refHandle(h);
 }
 
 void 

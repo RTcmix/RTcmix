@@ -20,6 +20,7 @@
 #include <sndlibsupport.h>
 #include <PField.h>
 #include <Random.h>
+#include <utils.h>
 #include <ugens.h>		// for warn, die
 
 // Functions for creating and modifying double arrays.  These can be passed
@@ -105,16 +106,6 @@ _getTablePField(const Arg *arg)
 	}
 	return NULL;
 }
-
-Handle
-_createPFieldHandle(PField *pfield)
-{
-	Handle handle = (Handle) malloc(sizeof(struct _handle));
-	handle->type = PFieldType;
-	handle->ptr = (void *) pfield;
-	return handle;
-}
-
 
 // ----------------------------------------------------- args_have_same_type ---
 // FIXME: this belongs in a more general file
@@ -1612,7 +1603,7 @@ maketable(const Arg args[], const int nargs)
 	else // interp == kInterp2ndOrder
 		table = new TablePField(data, len, TablePField::Interpolate2ndOrder);
 
-	return _createPFieldHandle(table);
+	return createPFieldHandle(table);
 }
 
 
@@ -1653,7 +1644,7 @@ multtable(const Arg args[], const int nargs)
 			}
 		}
 		if (table0 && table1) {
-			return _createPFieldHandle(new MultPField(table0, table1));
+			return createPFieldHandle(new MultPField(table0, table1));
 		}
 	}
 	die("multtable", "Usage: mul(table1, table2) or mul(table, constant)");
@@ -1679,7 +1670,7 @@ addtable(const Arg args[], const int nargs)
 			}
 		}
 		if (table0 && table1) {
-			return _createPFieldHandle(new AddPField(table0, table1));
+			return createPFieldHandle(new AddPField(table0, table1));
 		}
 	}
 	die("addtable", "Usage: add(table1, table2) or add(table, constant)");
@@ -1704,7 +1695,7 @@ reversetable(const Arg args[], const int nargs)
 		die("reversetable", "Usage: newtable = reversetable(table)");
 		return NULL;
 	}
-	return _createPFieldHandle(new ReversePField(table));
+	return createPFieldHandle(new ReversePField(table));
 }
 
 
@@ -1742,7 +1733,7 @@ normtable(const Arg args[], const int nargs)
 	_normalize_table(values, table->values(), peak);
 	TablePField *newtable = new TablePField(values, table->values());
 
-	return _createPFieldHandle(newtable);
+	return createPFieldHandle(newtable);
 }
 
 
@@ -1846,7 +1837,7 @@ copytable(const Arg args[], const int nargs)
 	delete [] oldarray;
 	TablePField *newtable = new TablePField(newarray, newsize);
 
-	return _createPFieldHandle(newtable);
+	return createPFieldHandle(newtable);
 }
 
 
@@ -1903,7 +1894,7 @@ inverttable(const Arg args[], const int nargs)
 	_do_invert_table(array, table->values(), use_center, center);
 	TablePField *newtable = new TablePField(array, table->values());
 
-	return _createPFieldHandle(newtable);
+	return createPFieldHandle(newtable);
 }
 
 
@@ -1971,7 +1962,7 @@ shifttable(const Arg args[], const int nargs)
 		_do_shift_table(array, table->values(), shift);
 	TablePField *newtable = new TablePField(array, table->values());
 
-	return _createPFieldHandle(newtable);
+	return createPFieldHandle(newtable);
 }
 
 
@@ -2023,7 +2014,7 @@ quantizetable(const Arg args[], const int nargs)
 	_do_quantize_table(array, table->values(), quantum);
 	TablePField *newtable = new TablePField(array, table->values());
 
-	return _createPFieldHandle(newtable);
+	return createPFieldHandle(newtable);
 }
 
 

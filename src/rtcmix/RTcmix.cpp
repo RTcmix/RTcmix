@@ -27,6 +27,7 @@
 #include <ugens.h>
 #include <RTcmix.h>
 #include <Option.h>
+#include <utils.h>
 #include <ug_intro.h>
 #include "rt.h"
 #include "heap.h"
@@ -148,7 +149,6 @@ RTcmix::init_globals(bool fromMain, const char *defaultDSOPath)
    rtHeap = new heap;
    rtQueue = new RTQueue[MAXBUS*3];
 
-
    for (int i = 0; i < MAXBUS; i++) {
       AuxToAuxPlayList[i] = -1; /* The playback order for AUX buses */
       ToOutPlayList[i] = -1;    /* The playback order for AUX buses */
@@ -169,6 +169,15 @@ RTcmix::init_globals(bool fromMain, const char *defaultDSOPath)
    }
 }
 
+void
+RTcmix::free_globals()
+{
+	freefuncs();
+	delete [] rtQueue;
+	rtQueue = NULL;
+	delete rtHeap;
+	rtHeap = NULL;
+}
 
 /* ----------------------------------------------------- detect_denormals --- */
 /* Unmask "denormalized operand" bit of the x86 FPU control word, so that
@@ -219,6 +228,13 @@ RTcmix::RTcmix(float tsr, int tnchans, int bsize,
 // This is called by RTcmixMain constructor, which does all the work.
 
 RTcmix::RTcmix(bool dummy) {}
+
+// This is called when the entire system goes away.
+
+RTcmix::~RTcmix()
+{
+	free_globals();
+}
 
 //  The actual initialization method called by the imbedded constructors
 
@@ -336,10 +352,7 @@ RTcmix::cmd(char name[], const PFieldSet &pfSet)
 	// Copy PField pointers into arglist
 	
 	for (int field = 0; field < nFields; ++field) {
-		Handle handle = (Handle) malloc(sizeof(struct _handle));
-		handle->type = PFieldType;
-		handle->ptr = (void *) &pfSet[field];
-		arglist[field] = handle;
+		arglist[field] = createPFieldHandle(&pfSet[field]);
 	}
 
 	(void) dispatch(name, arglist, nFields, &retArg);
