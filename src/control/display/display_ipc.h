@@ -3,7 +3,7 @@
 
 #include <labels.h>
 
-#define SOCK_PORT			9798
+const int kSockPort = 9798;
 
 enum {
 	kPacketConfigureLabelPrefix = 0,
@@ -19,7 +19,7 @@ typedef struct {
 	union {
 		int ival;							// kPacketConfigureLabelPrecision
 		double dval;						// kPacketUpdateLabel
-		char str[PART_LABEL_LENGTH];	// kPacketConfigureLabelPrefix and *Units
+		char str[kPartLabelLength];	// kPacketConfigureLabelPrefix and *Units
 	} data;
 } DisplaySockPacket;						// should be 20 bytes
 
