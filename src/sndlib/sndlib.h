@@ -1,43 +1,41 @@
 #ifndef SNDLIB_H
 #define SNDLIB_H
 
-
 /* taken from libtool's demo/foo.h to try to protect us from C++ and ancient C's */
-#undef __BEGIN_DECLS
-#undef __END_DECLS
+#ifdef __CYGWIN__
+#  ifndef __CYGWIN32__
+#    define __CYGWIN32__
+#  endif
+#endif
+
+#undef BEGIN_DECLS
+#undef END_DECLS
 #ifdef __cplusplus
-# define __BEGIN_DECLS extern "C" {
-# define __END_DECLS }
+# define BEGIN_DECLS extern "C" {
+# define END_DECLS }
 #else
-# define __BEGIN_DECLS /* empty */
-# define __END_DECLS /* empty */
+# define BEGIN_DECLS /* empty */
+# define END_DECLS /* empty */
 #endif
 
-#undef __P
-#if defined (__STDC__) || defined (_AIX) || (defined (__mips) && defined (_SYSTYPE_SVR4)) || defined(WIN32) || defined(__cplusplus)
-# define __P(protos) protos
+#undef PROTO
+#if defined (__STDC__) || defined (_AIX) || (defined (__mips) && defined (_SYSTYPE_SVR4)) || defined(__CYGWIN32__) || defined(__cplusplus)
+# define PROTO(protos) protos
 #else
-# define __P(protos) ()
+# define PROTO(protos) ()
 #endif
 
 
-#define SNDLIB_VERSION 5
-#define SNDLIB_REVISION 5
-
-/* 1: Oct-98 */
-/* 2: Oct-98: removed header override functions */
-/* 3: Dec-98: removed output_scaler */
-/* 4: Jan-99: Sun-related word-alignment changes, C++ fixups */
-/* 5: Mar-99: changed float_sound to omit the scaling by SNDLIB_SNDFLT, Apr-99: removed perror calls */
-
+#define SNDLIB_VERSION 13
+#define SNDLIB_REVISION 1
+#define SNDLIB_DATE "13-Jul-01"
 
 /* try to figure out what type of machine (and in worst case, what OS) we're running on */
-/* gcc has various compile-time macros like #cpu, but we're hoping to run in Metroworks C, Watcom C, MSC, CodeWarrior, MPW, etc */
 
 #if defined(HAVE_CONFIG_H)
   #include "config.h"
   #if (!defined(WORDS_BIGENDIAN))
-     #define SNDLIB_LITTLE_ENDIAN 3
+     #define MUS_LITTLE_ENDIAN 1
   #endif
   #if (SIZEOF_INT_P != SIZEOF_INT)
      #define LONG_INT_P 1
@@ -45,7 +43,7 @@
      #define LONG_INT_P 0
   #endif
 #else
-  #if defined(ALPHA)
+  #if defined(ALPHA) || defined(__alpha__)
      #define LONG_INT_P 1
   #else 
      #define LONG_INT_P 0
@@ -53,38 +51,49 @@
   #define RETSIGTYPE void
   #ifdef __LITTLE_ENDIAN__
     /* NeXTStep on Intel */
-    #define SNDLIB_LITTLE_ENDIAN 1
+    #define MUS_LITTLE_ENDIAN 1
   #else
     #ifdef BYTE_ORDER
       #if (BYTE_ORDER == LITTLE_ENDIAN)
-        /* SGI possibility (/usr/include/sys/endian.h), and Linux (/usr/include/bytesex.h and endian.h) */
-        /* Alpha is apparently /usr/include/alpha/endian.h */
-        #define SNDLIB_LITTLE_ENDIAN 2
+        #define MUS_LITTLE_ENDIAN 1
+      #else
+        #if __INTEL__
+          #define MUS_LITTLE_ENDIAN 1
+        #endif
       #endif
     #endif
   #endif
 #endif
 
-#if defined(ALPHA) || defined(WINDOZE)
-  #define SNDLIB_LITTLE_ENDIAN 3
+#if defined(ALPHA) || defined(WINDOZE) || defined(__alpha__)
+  #define MUS_LITTLE_ENDIAN 1
 #endif
 
 #if (!(defined(MACOS))) && (defined(MPW_C) || defined(macintosh) || defined(__MRC__))
   #define MACOS 1
+  #include <MacMemory.h>
+  #include <TextUtils.h>
+  #include <Gestalt.h>
+  #ifndef TRUE
+    #define TRUE 1
+  #endif
+  #ifndef FALSE
+    #define FALSE 0
+  #endif
+#endif
+
+#if defined(__APPLE__)
+  #define MAC_OSX 1
 #endif
 
 /* due to project builder stupidity, we can't always depend on -D flags here (maybe we need a SNDLIB_OS macro?) */
 /* these wouldn't work with autoconf anyway, so we'll do it by hand */
 
-#if (!defined(SGI)) && (!defined(NEXT)) && (!defined(LINUX)) && (!defined(MACOS)) && (!defined(BEOS)) && (!defined(SUN)) && (!defined(UW2)) && (!defined(SCO5)) && (!defined(ALPHA)) && (!defined(WINDOZE))
+#if (!defined(SGI)) && (!defined(NEXT)) && (!defined(LINUX)) && (!defined(MACOS)) && (!defined(SUN)) && (!defined(UW2)) && (!defined(SCO5)) && (!defined(ALPHA)) && (!defined(WINDOZE)) && (!defined(MAC_OSX))
   #if defined(__dest_os)
     /* we're in Metrowerks Land */
-    #if (__dest_os == __be_os)
-      #define BEOS 1
-    #else
-      #if (__dest_os == __mac_os)
-        #define MACOS 1
-      #endif
+    #if (__dest_os == __mac_os)
+      #define MACOS 1
     #endif
   #else
     #if macintosh
@@ -92,39 +101,57 @@
     #else
       #if (__WINDOWS__) || (__NT__) || (_WIN32) || (__CYGWIN__)
         #define WINDOZE 1
-        #define SNDLIB_LITTLE_ENDIAN 3
+        #define MUS_LITTLE_ENDIAN 1
       #else
         #ifdef __alpha__
           #define ALPHA 1
-          #define SNDLIB_LITTLE_ENDIAN 3
+          #define MUS_LITTLE_ENDIAN 1
         #endif
       #endif
     #endif
   #endif
 #endif  
 
-/* others apparently are __QNX__ __bsdi__ __FreeBSD__ */
-
-#if defined(LINUX) && defined(PPC) && (!(defined(MKLINUX)))
-  #define MKLINUX 1
+#ifndef MUS_LITTLE_ENDIAN
+  #define MUS_LITTLE_ENDIAN 0
 #endif
 
-#if defined(MKLINUX) || defined(LINUX) || defined(SCO5) || defined(UW2) || defined(HAVE_SOUNDCARD_H) || defined(HAVE_SYS_SOUNDCARD_H) || defined(HAVE_MACHINE_SOUNDCARD_H)
-  #define HAVE_OSS 1
+#ifndef __GNUC__
+  #ifndef __FUNCTION__
+    #define __FUNCTION__ ""
+  #endif
+#endif
+
+/* this block needed because not everyone uses configure, and those who don't often have no clue what audio system they're using */
+/*   so, if nothing is set but we're on a system that looks linux-like and we can find the OSS headers, use OSS */
+
+#ifndef ESD
+#ifndef HAVE_OSS
+#ifndef HAVE_ALSA
+  #if defined(LINUX) || defined(SCO5) || defined(UW2) || defined(HAVE_SOUNDCARD_H) || defined(HAVE_SYS_SOUNDCARD_H) || defined(HAVE_MACHINE_SOUNDCARD_H) || defined(USR_LIB_OSS) || defined(USR_LOCAL_LIB_OSS) || defined(OPT_OSS) || defined(VAR_LIB_OSS) || defined(__FreeBSD__) || defined(__bsdi__)
+    #define HAVE_OSS 1
+  #else
+    #define HAVE_OSS 0
+  #endif
 #else
+  /* this branch may be obsolete with Fernando's new OSS+Alsa code -- need to test it */
   #define HAVE_OSS 0
 #endif
-
-#ifdef SNDLIB_LITTLE_ENDIAN
-  #define COMPATIBLE_FORMAT snd_16_linear_little_endian
-#else
-  #define COMPATIBLE_FORMAT snd_16_linear
+#endif
 #endif
 
-/* M_PI is more usual */
-#if (defined(HAVE_CONFIG_H) && (!defined(HAVE_PI))) || (defined(NEXT) || defined(MACOS) || defined(MKLINUX) || defined(SUN) || defined(WINDOZE) || (!defined(PI)))
-  #define PI 3.141592653589793
+
+#if (!defined(M_PI))
+  #define M_PI 3.14159265358979323846264338327
+  #define M_PI_2 (M_PI / 2.0)
 #endif
+
+#if (!defined(TWO_PI))  /* JGG: wrapped this */
+  #define TWO_PI (2.0 * M_PI)
+#endif
+
+#define POWER_OF_2_P(x)	((((x) - 1) & (x)) == 0)
+/* from sys/param.h */
 
 #ifndef SEEK_SET
   #define SEEK_SET 0
@@ -138,412 +165,451 @@
   #define SEEK_END 2
 #endif
 
-#ifndef MACOS
-#ifndef CLM_SIGFNC_DEFINED
-#define CLM_SIGFNC_DEFINED
-  #ifndef RETSIGTYPE 
-    #define RETSIGTYPE void
+#if (!SNDLIB_USE_FLOATS)
+  #define MUS_SAMPLE_TYPE int
+  #ifndef MUS_SAMPLE_BITS
+    #define MUS_SAMPLE_BITS 24
   #endif
-  typedef RETSIGTYPE sigfnc(int);
-#endif
-#endif
-
-#define SNDLIB_DAC_CHANNEL 252525
-#define SNDLIB_DAC_REVERB 252520
-#define SNDLIB_SNDFIX 32768.0
-#define SNDLIB_SNDFLT 0.000030517578
-
-#define unsupported_sound_file -1
-#define NeXT_sound_file 0
-#define AIFF_sound_file 1
-#define RIFF_sound_file 2
-#define BICSF_sound_file 3
-#define NIST_sound_file 4
-#define INRS_sound_file 5
-#define ESPS_sound_file 6
-#define SVX_sound_file 7
-#define VOC_sound_file 8
-#define SNDT_sound_file 9
-#define raw_sound_file 10
-#define SMP_sound_file 11
-#define SD2_sound_file 12
-#define AVR_sound_file 13
-#define IRCAM_sound_file 14
-#define SD1_sound_file 15
-#define SPPACK_sound_file 16
-#define MUS10_sound_file 17
-#define HCOM_sound_file 18
-#define PSION_sound_file 19
-#define MAUD_sound_file 20
-#define IEEE_sound_file 21
-#define DeskMate_sound_file 22
-#define DeskMate_2500_sound_file 23
-#define Matlab_sound_file 24
-#define ADC_sound_file 25
-#define SoundEdit_sound_file 26
-#define SoundEdit_16_sound_file 27
-#define DVSM_sound_file 28
-#define MIDI_file 29
-#define Esignal_file 30
-#define soundfont_sound_file 31
-#define gravis_sound_file 32
-#define comdisco_sound_file 33
-#define goldwave_sound_file 34
-#define srfs_sound_file 35
-#define MIDI_sample_dump 36
-#define DiamondWare_sound_file 37
-#define RealAudio_sound_file 38
-#define ADF_sound_file 39
-#define SBStudioII_sound_file 40
-#define Delusion_sound_file 41
-#define Farandole_sound_file 42
-#define Sample_dump_sound_file 43
-#define Ultratracker_sound_file 44
-#define Yamaha_SY85_sound_file 45
-#define Yamaha_TX16_sound_file 46
-#define digiplayer_sound_file 47
-#define Covox_sound_file 48
-#define SPL_sound_file 49
-#define AVI_sound_file 50
-#define OMF_sound_file 51
-#define Quicktime_sound_file 52
-#define asf_sound_file 53
-#define Yamaha_SY99_sound_file 54
-#define Kurzweil_2000_sound_file 55
-#define old_style_AIFF_sound_file 56
-
-
-#define snd_unsupported -1
-#define snd_no_snd 0
-#define snd_16_linear 1
-#define snd_8_mulaw 2
-#define snd_8_linear 3
-#define snd_32_float 4
-#define snd_32_linear 5
-#define snd_8_alaw 6
-#define snd_8_unsigned 7
-#define snd_24_linear 8
-#define snd_64_double 9
-#define snd_16_linear_little_endian 10
-#define snd_32_linear_little_endian 11
-#define snd_32_float_little_endian 12
-#define snd_64_double_little_endian 13
-#define snd_16_unsigned 14
-#define snd_16_unsigned_little_endian 15
-#define snd_24_linear_little_endian 16
-#define snd_32_vax_float 17
-#define snd_12_linear 18
-#define snd_12_linear_little_endian 19
-#define snd_12_unsigned 20
-#define snd_12_unsigned_little_endian 21
-/* 64-bit ints apparently can occur in ESPS files */
-
-#define NIST_shortpack 2
-#define AIFF_IMA_ADPCM 99
-
-#define DEFAULT_DEVICE 0
-#define READ_WRITE_DEVICE 1
-#define ADAT_IN_DEVICE 2
-#define AES_IN_DEVICE 3
-#define LINE_OUT_DEVICE 4
-#define LINE_IN_DEVICE 5
-#define MICROPHONE_DEVICE 6
-#define SPEAKERS_DEVICE 7
-#define DIGITAL_IN_DEVICE 8
-#define DIGITAL_OUT_DEVICE 9
-#define DAC_OUT_DEVICE 10
-#define ADAT_OUT_DEVICE 11
-#define AES_OUT_DEVICE 12
-#define DAC_FILTER_DEVICE 13
-#define MIXER_DEVICE 14
-#define LINE1_DEVICE 15
-#define LINE2_DEVICE 16
-#define LINE3_DEVICE 17
-#define AUX_INPUT_DEVICE 18
-#define CD_IN_DEVICE 19
-#define AUX_OUTPUT_DEVICE 20
-#define SPDIF_IN_DEVICE 21
-#define SPDIF_OUT_DEVICE 22
-
-#define AUDIO_SYSTEM(n) ((n)<<16)
-#define SNDLIB_SYSTEM(n) (((n)>>16)&0xffff)
-#define SNDLIB_DEVICE(n) ((n)&0xffff)
-
-#ifndef WINDOZE
-  #define NO_ERROR 0
+  #define MUS_SAMPLE_0 0
+  #define MUS_BYTE_TO_SAMPLE(n) ((n) << (MUS_SAMPLE_BITS - 8))
+  #define MUS_SAMPLE_TO_BYTE(n) ((n) >> (MUS_SAMPLE_BITS - 8))
+  #define MUS_SHORT_TO_SAMPLE(n) ((n) << (MUS_SAMPLE_BITS - 16))
+  #define MUS_SAMPLE_TO_SHORT(n) ((n) >> (MUS_SAMPLE_BITS - 16))
+  #if (MUS_SAMPLE_BITS < 24)
+    #define MUS_INT24_TO_SAMPLE(n) ((n) >> (24 - MUS_SAMPLE_BITS))
+    #define MUS_SAMPLE_TO_INT24(n) ((n) << (24 - MUS_SAMPLE_BITS))
+  #else
+    #define MUS_INT24_TO_SAMPLE(n) ((n) << (MUS_SAMPLE_BITS - 24))
+    #define MUS_SAMPLE_TO_INT24(n) ((n) >> (MUS_SAMPLE_BITS - 24))
+  #endif
+  #define MUS_INT_TO_SAMPLE(n) (n)
+  #define MUS_SAMPLE_TO_INT(n) (n)
+  #define MUS_FLOAT_TO_FIX ((MUS_SAMPLE_BITS < 32) ? (1 << (MUS_SAMPLE_BITS - 1)) : 0x7fffffff)
+  #define MUS_FIX_TO_FLOAT (1.0 / (float)(MUS_FLOAT_TO_FIX))
+  #define MUS_FLOAT_TO_SAMPLE(n) ((int)((n) * MUS_FLOAT_TO_FIX))
+  #define MUS_SAMPLE_TO_FLOAT(n) ((float)((n) * MUS_FIX_TO_FLOAT))
+  #define MUS_DOUBLE_TO_SAMPLE(n) ((int)((n) * MUS_FLOAT_TO_FIX))
+  #define MUS_SAMPLE_TO_DOUBLE(n) ((double)((n) * MUS_FIX_TO_FLOAT))
+  #define MUS_SAMPLE_MAX ((MUS_SAMPLE_BITS < 32) ? (MUS_FLOAT_TO_FIX - 1) : 0x7fffffff)
+  #define MUS_SAMPLE_MIN ((MUS_SAMPLE_BITS < 32) ? (-(MUS_FLOAT_TO_FIX)) : -0x7fffffff)
 #else
-  #define NO_ERROR 0L
+  /* this could use Float throughout and reflect the Float = double choice elsewhere */
+  #define MUS_SAMPLE_TYPE float
+  #ifndef MUS_SAMPLE_BITS
+    #define MUS_SAMPLE_BITS 24
+  #endif
+  #define MUS_SAMPLE_0 0.0
+  #define MUS_BYTE_TO_SAMPLE(n) ((float)(n) / (float)(1 << 7))
+  #define MUS_SHORT_TO_SAMPLE(n) ((float)(n) / (float)(1 << 15))
+  #define MUS_INT_TO_SAMPLE(n) ((float)(n) / (float)(1 << (MUS_SAMPLE_BITS-1)))
+  #define MUS_INT24_TO_SAMPLE(n) ((float)(n) / (float)(1 << 23))
+  #define MUS_FLOAT_TO_FIX 1.0
+  #define MUS_FIX_TO_FLOAT 1.0
+  #define MUS_FLOAT_TO_SAMPLE(n) (n)
+  #define MUS_DOUBLE_TO_SAMPLE(n) (n)
+  #define MUS_SAMPLE_TO_FLOAT(n) (n)
+  #define MUS_SAMPLE_TO_DOUBLE(n) (n)
+  #define MUS_SAMPLE_TO_INT(n) ((int)((n) * (1 << (MUS_SAMPLE_BITS-1))))
+  #define MUS_SAMPLE_TO_INT24(n) ((int)((n) * (1 << 23)))
+  #define MUS_SAMPLE_TO_SHORT(n) ((short)((n) * (1 << 15)))
+  #define MUS_SAMPLE_TO_BYTE(n) ((char)((n) * (1 << 7)))
+  #define MUS_SAMPLE_MAX 0.99999
+  #define MUS_SAMPLE_MIN (-1.0)
 #endif
-#define CHANNELS_NOT_AVAILABLE 1
-#define SRATE_NOT_AVAILABLE 2
-#define FORMAT_NOT_AVAILABLE 3
-#define NO_INPUT_AVAILABLE 4
-#define NO_OUTPUT_AVAILABLE 5
-#define INPUT_BUSY 6
-#define OUTPUT_BUSY 7
-#define CONFIGURATION_NOT_AVAILABLE 8
-#define INPUT_CLOSED 9
-#define OUTPUT_CLOSED 10
-#define IO_INTERRUPTED 11
-#define NO_LINES_AVAILABLE 12
-#define WRITE_ERROR 13
-#define SIZE_NOT_AVAILABLE 14
-#define DEVICE_NOT_AVAILABLE 15
-#define CANT_CLOSE 16
-#define CANT_OPEN 17
-#define READ_ERROR 18
-#define AMP_NOT_AVAILABLE 19
-#define AUDIO_NO_OP 20
-#define CANT_WRITE 21
-#define CANT_READ 22
-#define NO_READ_PERMISSION 23
 
-#define AMP_FIELD 0
-#define SRATE_FIELD 1
-#define CHANNEL_FIELD 2
-#define FORMAT_FIELD 3
-#define DEVICE_FIELD 4
-#define IMIX_FIELD 5
-#define IGAIN_FIELD 6
-#define RECLEV_FIELD 7
-#define PCM_FIELD 8
-#define PCM2_FIELD 9
-#define OGAIN_FIELD 10
-#define LINE_FIELD 11
-#define MIC_FIELD 12
-#define LINE1_FIELD 13
-#define LINE2_FIELD 14
-#define LINE3_FIELD 15
-#define SYNTH_FIELD 16
-#define BASS_FIELD 17
-#define TREBLE_FIELD 18
-#define CD_FIELD 19
+#define MUS_DAC_CHANNEL 252525
+#define MUS_DAC_REVERB 252520
+
+#define MUS_UNSUPPORTED -1
+enum {MUS_NEXT, MUS_AIFC, MUS_RIFF, MUS_BICSF, MUS_NIST, MUS_INRS, MUS_ESPS, MUS_SVX, MUS_VOC, MUS_SNDT, MUS_RAW,
+      MUS_SMP, MUS_SD2, MUS_AVR, MUS_IRCAM, MUS_SD1, MUS_SPPACK, MUS_MUS10, MUS_HCOM, MUS_PSION, MUS_MAUD,
+      MUS_IEEE, MUS_DESKMATE, MUS_DESKMATE_2500, MUS_MATLAB, MUS_ADC, MUS_SOUND_EDIT, MUS_SOUND_EDIT_16,
+      MUS_DVSM, MUS_MIDI, MUS_ESIGNAL, MUS_SOUNDFONT, MUS_GRAVIS, MUS_COMDISCO, MUS_GOLDWAVE, MUS_SRFS,
+      MUS_MIDI_SAMPLE_DUMP, MUS_DIAMONDWARE, MUS_REALAUDIO, MUS_ADF, MUS_SBSTUDIOII, MUS_DELUSION,
+      MUS_FARANDOLE, MUS_SAMPLE_DUMP, MUS_ULTRATRACKER, MUS_YAMAHA_SY85, MUS_YAMAHA_TX16, MUS_DIGIPLAYER,
+      MUS_COVOX, MUS_SPL, MUS_AVI, MUS_OMF, MUS_QUICKTIME, MUS_ASF, MUS_YAMAHA_SY99, MUS_KURZWEIL_2000,
+      MUS_AIFF, MUS_PAF, MUS_CSL, MUS_FILE_SAMP, MUS_PVF};
+
+#define MUS_HEADER_TYPE_OK(n) (((n) > MUS_UNSUPPORTED) && ((n) <= MUS_PVF))
+
+enum {MUS_UNKNOWN, MUS_BSHORT, MUS_MULAW, MUS_BYTE, MUS_BFLOAT, MUS_BINT, MUS_ALAW, MUS_UBYTE, MUS_B24INT,
+      MUS_BDOUBLE, MUS_LSHORT, MUS_LINT, MUS_LFLOAT, MUS_LDOUBLE, MUS_UBSHORT, MUS_ULSHORT, MUS_L24INT,
+      MUS_BINTN, MUS_LINTN, MUS_L12INT};
+
+/* MUS_LINTN and MUS_BINTN refer to 32 bit ints with 31 bits of "fraction" -- the data is "left justified" */
+
+#define MUS_DATA_FORMAT_OK(n) (((n) > MUS_UNKNOWN) && ((n) <= MUS_L12INT))
+
+#if MUS_LITTLE_ENDIAN
+  #define MUS_COMPATIBLE_FORMAT MUS_LSHORT
+#else
+  #define MUS_COMPATIBLE_FORMAT MUS_BSHORT
+#endif
+
+#if MUS_LITTLE_ENDIAN
+  #if SNDLIB_USE_FLOATS
+    #define MUS_OUT_FORMAT MUS_LFLOAT
+  #else
+    #define MUS_OUT_FORMAT MUS_LINT
+  #endif
+#else
+  #if SNDLIB_USE_FLOATS
+    #define MUS_OUT_FORMAT MUS_BFLOAT
+  #else
+    #define MUS_OUT_FORMAT MUS_BINT
+  #endif
+#endif
 
 
-/* realloc is enough of a mess that I'll handle each case individually */
+#define MUS_NIST_SHORTPACK 2
+#define MUS_AIFF_IMA_ADPCM 99
+
+#define MUS_AUDIO_PACK_SYSTEM(n) ((n) << 16)
+#define MUS_AUDIO_SYSTEM(n) (((n) >> 16) & 0xffff)
+#define MUS_AUDIO_DEVICE(n) ((n) & 0xffff)
+
+enum {MUS_AUDIO_DEFAULT, MUS_AUDIO_DUPLEX_DEFAULT, MUS_AUDIO_ADAT_IN, MUS_AUDIO_AES_IN, MUS_AUDIO_LINE_OUT,
+      MUS_AUDIO_LINE_IN, MUS_AUDIO_MICROPHONE, MUS_AUDIO_SPEAKERS, MUS_AUDIO_DIGITAL_IN, MUS_AUDIO_DIGITAL_OUT,
+      MUS_AUDIO_DAC_OUT, MUS_AUDIO_ADAT_OUT, MUS_AUDIO_AES_OUT, MUS_AUDIO_DAC_FILTER, MUS_AUDIO_MIXER,
+      MUS_AUDIO_LINE1, MUS_AUDIO_LINE2, MUS_AUDIO_LINE3, MUS_AUDIO_AUX_INPUT, MUS_AUDIO_CD,
+      MUS_AUDIO_AUX_OUTPUT, MUS_AUDIO_SPDIF_IN, MUS_AUDIO_SPDIF_OUT, MUS_AUDIO_AMP, MUS_AUDIO_SRATE,
+      MUS_AUDIO_CHANNEL, MUS_AUDIO_FORMAT, MUS_AUDIO_IMIX, MUS_AUDIO_IGAIN, MUS_AUDIO_RECLEV,
+      MUS_AUDIO_PCM, MUS_AUDIO_PCM2, MUS_AUDIO_OGAIN, MUS_AUDIO_LINE, MUS_AUDIO_SYNTH,
+      MUS_AUDIO_BASS, MUS_AUDIO_TREBLE, MUS_AUDIO_PORT, MUS_AUDIO_SAMPLES_PER_CHANNEL,
+      MUS_AUDIO_DIRECTION
+};
+/* Snd's recorder uses MUS_AUDIO_DIRECTION to find the size of this list */
+
+#define MUS_AUDIO_DEVICE_OK(a) (((a) >= MUS_AUDIO_DEFAULT) && ((a) <= MUS_AUDIO_DIRECTION))
+
+#define MUS_ERROR_TYPE int
+#define MUS_ERROR -1
+
+enum {MUS_NO_ERROR, MUS_NO_FREQUENCY, MUS_NO_PHASE, MUS_NO_GEN, MUS_NO_LENGTH,
+      MUS_NO_FREE, MUS_NO_DESCRIBE, MUS_NO_DATA, MUS_NO_SCALER,
+      MUS_MEMORY_ALLOCATION_FAILED, MUS_UNSTABLE_TWO_POLE_ERROR,
+      MUS_CANT_OPEN_FILE, MUS_NO_SAMPLE_INPUT, MUS_NO_SAMPLE_OUTPUT,
+      MUS_NO_SUCH_CHANNEL, MUS_NO_FILE_NAME_PROVIDED, MUS_NO_LOCATION, MUS_NO_CHANNEL,
+      MUS_NO_SUCH_FFT_WINDOW, MUS_UNSUPPORTED_DATA_FORMAT, MUS_HEADER_READ_FAILED,
+      MUS_HEADER_TOO_MANY_AUXILIARY_COMMENTS, MUS_UNSUPPORTED_HEADER_TYPE,
+      MUS_FILE_DESCRIPTORS_NOT_INITIALIZED, MUS_NOT_A_SOUND_FILE, MUS_FILE_CLOSED, MUS_WRITE_ERROR,
+      MUS_BOGUS_FREE, MUS_BUFFER_OVERFLOW, MUS_BUFFER_UNDERFLOW, MUS_FILE_OVERFLOW, MUS_EXPONENT_OVERFLOW,
+      MUS_HEADER_WRITE_FAILED, MUS_CANT_OPEN_TEMP_FILE, MUS_INTERRUPTED,
+
+      MUS_AUDIO_CHANNELS_NOT_AVAILABLE, MUS_AUDIO_SRATE_NOT_AVAILABLE, MUS_AUDIO_FORMAT_NOT_AVAILABLE,
+      MUS_AUDIO_NO_INPUT_AVAILABLE, MUS_AUDIO_NO_OUTPUT_AVAILABLE, MUS_AUDIO_INPUT_BUSY, MUS_AUDIO_OUTPUT_BUSY,
+      MUS_AUDIO_CONFIGURATION_NOT_AVAILABLE, MUS_AUDIO_INPUT_CLOSED, MUS_AUDIO_OUTPUT_CLOSED, MUS_AUDIO_IO_INTERRUPTED,
+      MUS_AUDIO_NO_LINES_AVAILABLE, MUS_AUDIO_WRITE_ERROR, MUS_AUDIO_SIZE_NOT_AVAILABLE, MUS_AUDIO_DEVICE_NOT_AVAILABLE,
+      MUS_AUDIO_CANT_CLOSE, MUS_AUDIO_CANT_OPEN, MUS_AUDIO_READ_ERROR, MUS_AUDIO_AMP_NOT_AVAILABLE, MUS_AUDIO_NO_OP,
+      MUS_AUDIO_CANT_WRITE, MUS_AUDIO_CANT_READ, MUS_AUDIO_NO_READ_PERMISSION,
+
+      MUS_CANT_CLOSE_FILE, MUS_ARG_OUT_OF_RANGE,
+
+      MUS_INITIAL_ERROR_TAG};
+
+/* keep this list in sync with error_names in sound.c */
 
 #ifdef MACOS
   /* C's calloc/free are incompatible with Mac's SndDisposeChannel (which we can't avoid using) */
-  #define CALLOC(a,b)  NewPtrClear((a) * (b))
-  #define MALLOC(a,b)  NewPtr((a) * (b))
+  /* realloc is enough of a mess that I'll handle each case individually */
+  /*   FREE is used only when we call either CALLOC or MALLOC ourselves -- other cases use free, g_free, XtFree, etc */
+  #define CALLOC(a, b)  NewPtrClear((a) * (b))
+  #define MALLOC(a)    NewPtr((a))
   #define FREE(a)      DisposePtr((Ptr)(a))
 #else
-  #define CALLOC(a,b)  calloc(a,b)
-  #define MALLOC(a,b)  malloc(a,b)
-  #define FREE(a)      free(a)
-  #define REALLOC(a,b) realloc(a,b)
+  #ifdef DEBUG_MEMORY
+    #define CALLOC(a, b)  mem_calloc((size_t)(a), (size_t)(b), __FUNCTION__, __FILE__, __LINE__)
+    #define MALLOC(a)     mem_malloc((size_t)(a), __FUNCTION__, __FILE__, __LINE__)
+    #define FREE(a)       mem_free(a, __FUNCTION__, __FILE__, __LINE__)
+    #define REALLOC(a, b) mem_realloc(a, (size_t)(b), __FUNCTION__, __FILE__, __LINE__)
+  #else
+    #define CALLOC(a, b)  calloc((size_t)(a), (size_t)(b))
+    #define MALLOC(a)     malloc((size_t)(a))
+    #define FREE(a)       free(a)
+    #define REALLOC(a, b) realloc(a, (size_t)(b))
+  #endif
 #endif 
 
+#define MUS_MAX_FILE_NAME 256
 
-__BEGIN_DECLS
-int sound_samples __P((char *arg));
-int sound_datum_size __P((char *arg));
-int sound_data_location __P((char *arg));
-int sound_chans __P((char *arg));
-int sound_srate __P((char *arg));
-int sound_header_type __P((char *arg));
-int sound_data_format __P((char *arg));
-int sound_original_format __P((char *arg));
-int sound_comment_start __P((char *arg));
-int sound_comment_end __P((char *arg));
-int sound_length __P((char *arg));
-int sound_fact_samples __P((char *arg));
-int sound_distributed __P((char *arg));
-int sound_write_date __P((char *arg));
-int sound_type_specifier __P((char *arg));
-int sound_align __P((char *arg));
-int sound_bits_per_sample __P((char *arg));
-char *sound_type_name __P((int type));
-char *sound_format_name __P((int format));
-char *sound_comment __P((char *name));
-int bytes_per_sample __P((int format));
-void initialize_sndlib __P((void));
-int override_sound_header __P((char *arg, int srate, int chans, int format, int type, int location, int size));
-
-int open_sound_input __P((char *arg));
-int open_sound_output __P((char *arg, int srate, int chans, int data_format, int header_type, char *comment));
-int close_sound_input __P((int fd));
-int close_sound_output __P((int fd, int bytes_of_data));
-int read_sound __P((int fd, int beg, int end, int chans, int **bufs));
-int write_sound __P((int tfd, int beg, int end, int chans, int **bufs));
-int seek_sound __P((int tfd, long offset, int origin));
-
-void describe_audio_state __P((void));
-char *report_audio_state __P((void));
-int open_audio_output __P((int dev, int srate, int chans, int format, int size));
-int open_audio_input __P((int dev, int srate, int chans, int format, int size));
-int write_audio __P((int line, char *buf, int bytes));
-int close_audio __P((int line));
-int read_audio __P((int line, char *buf, int bytes));
-int read_audio_state __P((int dev, int field, int chan, float *val));
-int write_audio_state __P((int dev, int field, int chan, float *val));
-void save_audio_state __P((void));
-void restore_audio_state __P((void));
-int audio_error __P((void));
-int initialize_audio __P((void));
-char *audio_error_name __P((int err));
-void set_audio_error __P((int err));
-int audio_systems __P((void));
-char *audio_system_name __P((int system));
-char *audio_moniker __P((void));
-#if HAVE_OSS
-  void setup_dsps __P((int cards, int *dsps, int *mixers));
-  void set_oss_buffers __P((int num,int size));
+#ifndef Float
+  #define Float float
 #endif
-void write_mixer_state __P((char *file));
-void read_mixer_state __P((char *file));
 
-void clm_printf __P((char *str));
+BEGIN_DECLS
 
-void normarray __P((int size, float *arr));
-int get_shift_24_choice __P((void));
-void set_shift_24_choice __P((int choice));
-long excl_timedabsmaxarr __P((int beg, int end, int *maxA, int *arr));
-long excl_clm_seek __P((int tfd, int *offset, int origin));
-void set_clm_datum_type __P((int tfd, int type));
+/* -------- sound.c -------- */
 
-#if LONG_INT_P
-  int *delist_ptr __P((int arr));
-  int list_ptr __P((int *arr));
-  int setarray __P((int arr_1, int i, int val));
-  int getarray __P((int arr_1, int i));
-  int incarray __P((int arr_1, int i, int val));
-  int makearray __P((int len));
-  void freearray __P((int ip_1));
-  void cleararray1 __P((int beg, int end, int arr_1));
-  void arrblt __P((int beg, int end, int newbeg, int arr_1));
-  int absmaxarr __P((int beg, int end, int arr_1));
+#ifdef __GNUC__
+  void mus_error(int error, const char *format, ...) __attribute__ ((format (printf, 2, 3)));
+  void mus_print(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
+  char *mus_format(const char *format, ...) __attribute__ ((format (printf, 1, 2)));
+  void mus_snprintf(char *buffer, int buffer_len, const char *format, ...)  __attribute__ ((format (printf, 3, 4)));
 #else
-  int setarray __P((int *arr, int i, int val));
-  int getarray __P((int *arr, int i));
-  int incarray __P((int *arr, int i, int val));
-  int *makearray __P((int len));
-  void freearray __P((int *ip));
-  void cleararray1 __P((int beg, int end, int *arr));
-  void arrblt __P((int beg, int end, int newbeg, int *arr));
-  int absmaxarr __P((int beg, int end, int *arr));
-#endif
-void reset_io_c __P((void));
-void reset_headers_c __P((void));
-void reset_audio_c __P((void));
-#ifndef MACOS
-  sigfnc *clm_signal __P((int signo, sigfnc *fnc));
-#endif
-void set_rt_audio_p __P((int rt));
-
-void open_clm_file_descriptors __P((int tfd, int df, int ds, int dl));
-void close_clm_file_descriptors __P((int tfd));
-void cleanup_clm_file_descriptors __P((void));
-int clm_open_read __P((char *arg));
-int clm_open_write __P((char *arg));
-int clm_create __P((char *arg));
-int clm_reopen_write __P((char *arg));
-void clm_close __P((int fd));
-long clm_seek __P((int tfd, long offset, int origin));
-void clm_read __P((int fd, int beg, int end, int chans, int **bufs));
-void clm_read_chans __P((int fd, int beg, int end, int chans, int **bufs, int *cm));
-void clm_write_zeros __P((int tfd, int num));
-void clm_write __P((int tfd, int beg, int end, int chans, int **bufs));
-
-void float_sound __P((char *charbuf, int samps, int charbuf_format, float *buffer));
-int c_snd_header_data_size __P((void));
-int c_snd_header_data_location __P((void));
-int c_snd_header_chans __P((void));
-int c_snd_header_srate __P((void));
-int c_snd_header_type __P((void));
-int c_snd_header_format __P((void));
-int c_snd_header_distributed __P((void));
-int c_snd_header_comment_start __P((void));
-int c_snd_header_comment_end __P((void));
-int c_snd_header_type_specifier __P((void));
-int c_snd_header_bits_per_sample __P((void));
-int c_snd_header_fact_samples __P((void));
-int c_snd_header_block_align __P((void));
-int c_snd_header_loop_mode __P((int which));
-int c_snd_header_loop_start __P((int which));
-int c_snd_header_loop_end __P((int which));
-int c_snd_header_mark_position __P((int id));
-int c_snd_header_base_note __P((void));
-int c_snd_header_base_detune __P((void));
-int c_true_file_length __P((void));
-int c_snd_header_original_format __P((void));
-int c_snd_datum_size __P((int format));
-int c_snd_header_datum_size __P((void));
-int c_snd_bytes __P((int format, int size));
-int c_snd_samples __P((int format, int size));
-void write_next_header __P((int chan, int srate, int chans, int loc, int siz, int format, char *comment, int len));
-void c_read_header_with_fd __P((int chan));
-int c_read_header __P((char *name));
-int c_write_header __P((char *name, int type, int srate, int chans, int loc, int size, int format, char *comment, int len));
-int c_write_header_with_fd __P((int chan, int type, int in_srate, int in_chans, int loc, int size, int format, char *comment, int len));
-void set_aifc_header __P((int val));
-int c_update_header_with_fd __P((int chan, int type, int siz));
-int c_update_header __P((char *name, int type, int size, int srate, int format, int chans, int loc));
-int c_snd_header_aux_comment_start __P((int n));
-int c_snd_header_aux_comment_end __P((int n));
-int match_four_chars __P((unsigned char *head, const unsigned char *match));
-int c_update_header_comment __P((char *name, int loc, char *comment, int len, int typ));
-void create_header_buffer __P((void));
-void create_descriptors __P((void));
-int clm_read_any __P((int tfd, int beg, int chans, int nints, int **bufs, int *cm));
-void c_set_snd_header __P((int in_srate, int in_chans, int in_format));
-int unshort_sound __P((short *in_buf, int samps, int new_format, char *out_buf));
-
-void set_big_endian_int __P((unsigned char *j, int x));
-int get_big_endian_int __P((unsigned char *inp));
-void set_little_endian_int __P((unsigned char *j, int x));
-int get_little_endian_int __P((unsigned char *inp));
-int get_uninterpreted_int __P((unsigned char *inp));
-void set_big_endian_float __P((unsigned char *j, float x));
-float get_big_endian_float __P((unsigned char *inp));
-void set_little_endian_float __P((unsigned char *j, float x));
-float get_little_endian_float __P((unsigned char *inp));
-void set_big_endian_short __P((unsigned char *j, short x));
-short get_big_endian_short __P((unsigned char *inp));
-void set_little_endian_short __P((unsigned char *j, short x));
-short get_little_endian_short __P((unsigned char *inp));
-void set_big_endian_unsigned_short __P((unsigned char *j, unsigned short x));
-unsigned short get_big_endian_unsigned_short __P((unsigned char *inp));
-void set_little_endian_unsigned_short __P((unsigned char *j, unsigned short x));
-unsigned short get_little_endian_unsigned_short __P((unsigned char *inp));
-double get_little_endian_double __P((unsigned char *inp));
-double get_big_endian_double __P((unsigned char *inp));
-void set_big_endian_double __P((unsigned char *j, double x));
-void set_little_endian_double __P((unsigned char *j, double x));
-unsigned int get_big_endian_unsigned_int __P((unsigned char *inp));
-unsigned int get_little_endian_unsigned_int __P((unsigned char *inp));
-
-#ifdef CLM
-int clm_read_floats __P((int fd,int n,float *arr));
-int clm_read_swapped_floats __P((int fd,int n,float *arr));
-int clm_read_ints __P((int fd,int n,int *arr));
-int clm_read_swapped_ints __P((int fd,int n,int *arr));
-int clm_write_floats __P((int fd,int n,float *arr));
-void clm_seek_floats __P((int fd,int n));
-void clm_seek_bytes __P((int fd,int n));
-int clm_read_bytes __P((int fd,int n,char *arr));
-int clm_write_bytes __P((int fd,int n,char *arr));
-int excl_c_update_header __P((char *name, int type, int *siz, int srate, int format, int chans, int loc));
-int excl_c_write_header __P((char *name, int type, int srate, int chans, int loc, int *siz, int format, char *comment, int len));
-int net_mix __P((int fd, int loc, char *buf1, char *buf2, int bytes));
-
-#ifdef MCL_PPC
-  void clm_break __P((void));
-  void clm_error __P((void));
-  void clm_funcall __P((char *str));
-  void set_lisp_callbacks __P((void (*lp)(char *),void (*bp)(void),void (*ep)(void),void (*fp)(char *)));
+  void mus_error              PROTO((int error, const char *format, ...));
+  void mus_print              PROTO((const char *format, ...));
+  char *mus_format            PROTO((const char *format, ...));
+  void mus_snprintf           PROTO((char *buffer, int buffer_len, const char *format, ...));
 #endif
 
+typedef void mus_error_handler_t(int type, char *msg);
+mus_error_handler_t *mus_error_set_handler PROTO((mus_error_handler_t *new_error_handler));
+int mus_make_error            PROTO((char *error_name));
+const char *mus_error_to_string     PROTO((int err));
+
+typedef void mus_print_handler_t(char *msg);
+mus_print_handler_t *mus_print_set_handler PROTO((mus_print_handler_t *new_print_handler));
+
+int mus_sound_samples         PROTO((const char *arg));
+int mus_sound_frames          PROTO((const char *arg));
+int mus_sound_datum_size      PROTO((const char *arg));
+int mus_sound_data_location   PROTO((const char *arg));
+int mus_sound_chans           PROTO((const char *arg));
+int mus_sound_srate           PROTO((const char *arg));
+int mus_sound_header_type     PROTO((const char *arg));
+int mus_sound_data_format     PROTO((const char *arg));
+int mus_sound_original_format PROTO((const char *arg));
+int mus_sound_comment_start   PROTO((const char *arg));
+int mus_sound_comment_end     PROTO((const char *arg));
+int mus_sound_length          PROTO((const char *arg));
+int mus_sound_fact_samples    PROTO((const char *arg));
+int mus_sound_distributed     PROTO((const char *arg));
+int mus_sound_write_date      PROTO((const char *arg));
+int mus_sound_type_specifier  PROTO((const char *arg));
+int mus_sound_align           PROTO((const char *arg));
+int mus_sound_bits_per_sample PROTO((const char *arg));
+
+int mus_sound_set_chans       PROTO((const char *arg, int val));
+int mus_sound_set_srate       PROTO((const char *arg, int val));
+int mus_sound_set_header_type PROTO((const char *arg, int val));
+int mus_sound_set_data_format PROTO((const char *arg, int val));
+int mus_sound_set_data_location PROTO((const char *arg, int val));
+int mus_sound_set_samples     PROTO((const char *arg, int val));
+
+const char *mus_header_type_name PROTO((int type));
+const char *mus_data_format_name PROTO((int format));
+char *mus_sound_comment       PROTO((const char *name));
+int mus_data_format_to_bytes_per_sample PROTO((int format));
+float mus_sound_duration      PROTO((const char *arg));
+int mus_sound_initialize      PROTO((void));
+void mus_sound_finalize       PROTO((void));
+int mus_sample_bits           PROTO((void));
+int mus_sound_override_header PROTO((const char *arg, int srate, int chans, int format, int type, int location, int size));
+int mus_sound_forget          PROTO((const char *name));
+void mus_sound_print_cache    PROTO((void));
+void mus_sound_report_cache   PROTO((FILE *fp));
+int mus_sound_aiff_p          PROTO((const char *arg));
+int *mus_sound_loop_info      PROTO((const char *arg));
+void mus_sound_set_loop_info  PROTO((const char *arg, int *loop));
+
+int mus_sound_open_input      PROTO((const char *arg));
+int mus_sound_open_output     PROTO((const char *arg, int srate, int chans, int data_format, int header_type, const char *comment));
+int mus_sound_reopen_output   PROTO((const char *arg, int chans, int format, int type, int data_loc));
+int mus_sound_close_input     PROTO((int fd));
+int mus_sound_close_output    PROTO((int fd, int bytes_of_data));
+int mus_sound_read            PROTO((int fd, int beg, int end, int chans, MUS_SAMPLE_TYPE **bufs));
+int mus_sound_write           PROTO((int tfd, int beg, int end, int chans, MUS_SAMPLE_TYPE **bufs));
+int mus_sound_seek            PROTO((int tfd, long offset, int origin));
+int mus_sound_seek_frame      PROTO((int tfd, int frame));
+int mus_sound_max_amp         PROTO((const char *ifile, MUS_SAMPLE_TYPE *vals));
+int mus_sound_set_max_amp     PROTO((const char *ifile, MUS_SAMPLE_TYPE *vals));
+int mus_sound_max_amp_exists  PROTO((const char *ifile));
+int mus_file_to_array         PROTO((const char *filename, int chan, int start, int samples, MUS_SAMPLE_TYPE *array));
+int mus_array_to_file         PROTO((const char *filename, MUS_SAMPLE_TYPE *ddata, int len, int srate, int channels));
+char *mus_array_to_file_with_error PROTO((const char *filename, MUS_SAMPLE_TYPE *ddata, int len, int srate, int channels));
+
+
+/* -------- audio.c -------- */
+
+#if (HAVE_OSS || HAVE_ALSA)
+  #define ALSA_API 0
+  #define OSS_API 1
 #endif
+
+void mus_audio_describe       PROTO((void));
+char *mus_audio_report        PROTO((void));
+int mus_audio_open_output     PROTO((int dev, int srate, int chans, int format, int size));
+int mus_audio_open_input      PROTO((int dev, int srate, int chans, int format, int size));
+int mus_audio_write           PROTO((int line, char *buf, int bytes));
+int mus_audio_close           PROTO((int line));
+int mus_audio_read            PROTO((int line, char *buf, int bytes));
+int mus_audio_mixer_read      PROTO((int dev, int field, int chan, float *val));
+int mus_audio_mixer_write     PROTO((int dev, int field, int chan, float *val));
+void mus_audio_save           PROTO((void));
+void mus_audio_restore        PROTO((void));
+int mus_audio_initialize      PROTO((void));
+int mus_audio_systems         PROTO((void));
+char *mus_audio_system_name   PROTO((int sys));
+char *mus_audio_moniker       PROTO((void));
+
+#if HAVE_OSS
+  void mus_audio_clear_soundcard_inputs PROTO((void));
+#endif
+#if (HAVE_OSS || HAVE_ALSA)
+  void mus_audio_set_oss_buffers    PROTO((int num, int size));
+  int mus_audio_api                 PROTO((void));
+#endif
+
+void mus_audio_mixer_save           PROTO((const char *file));
+void mus_audio_mixer_restore        PROTO((const char *file));
 
 #ifdef SUN
-void sun_outputs __P((int speakers, int headphones, int line_out));
+  void mus_audio_sun_outputs        PROTO((int speakers, int headphones, int line_out));
 #endif
 
 #if (defined(HAVE_CONFIG_H)) && (!defined(HAVE_STRERROR))
-  char *strerror __P((int errnum));
+  char *strerror                    PROTO((int errnum));
 #endif
 
-__END_DECLS
+
+
+/* -------- io.c -------- */
+
+int mus_file_set_descriptors        PROTO((int tfd, const char *arg, int df, int ds, int dl, int dc, int dt));
+#define mus_file_open_descriptors(Tfd, Arg, Df, Ds, Dl, Dc, Dt) mus_file_set_descriptors(Tfd, Arg, Df, Ds, Dl, Dc, Dt)
+int mus_file_close_descriptors      PROTO((int tfd));
+int mus_file_open_read              PROTO((const char *arg));
+int mus_file_probe                  PROTO((const char *arg));
+int mus_file_open_write             PROTO((const char *arg));
+int mus_file_create                 PROTO((const char *arg));
+int mus_file_reopen_write           PROTO((const char *arg));
+int mus_file_close                  PROTO((int fd));
+long mus_file_seek                  PROTO((int tfd, long offset, int origin));
+int mus_file_seek_frame             PROTO((int tfd, int frame));
+int mus_file_read                   PROTO((int fd, int beg, int end, int chans, MUS_SAMPLE_TYPE **bufs));
+int mus_file_read_chans             PROTO((int fd, int beg, int end, int chans, MUS_SAMPLE_TYPE **bufs, MUS_SAMPLE_TYPE *cm));
+int mus_file_write_zeros            PROTO((int tfd, int num));
+int mus_file_write                  PROTO((int tfd, int beg, int end, int chans, MUS_SAMPLE_TYPE **bufs));
+int mus_file_read_any               PROTO((int tfd, int beg, int chans, int nints, MUS_SAMPLE_TYPE **bufs, MUS_SAMPLE_TYPE *cm));
+int mus_file_read_file              PROTO((int tfd, int beg, int chans, int nints, MUS_SAMPLE_TYPE **bufs));
+int mus_file_read_buffer            PROTO((int charbuf_data_format, int beg, int chans, int nints, MUS_SAMPLE_TYPE **bufs, char *charbuf));
+int mus_file_write_file             PROTO((int tfd, int beg, int end, int chans, MUS_SAMPLE_TYPE **bufs));
+int mus_file_write_buffer           PROTO((int charbuf_data_format, int beg, int end, int chans, MUS_SAMPLE_TYPE **bufs, char *charbuf, int clipped));
+char *mus_expand_filename           PROTO((char *name));
+#define mus_file_full_name(File)    mus_expand_filename(File)
+
+int mus_file_set_data_clipped       PROTO((int tfd, int clipped));
+int mus_file_set_header_type        PROTO((int tfd, int type));
+int mus_file_header_type            PROTO((int tfd));
+char *mus_file_fd_name              PROTO((int tfd));
+int mus_file_set_chans              PROTO((int tfd, int chans));
+float mus_file_prescaler            PROTO((int tfd));
+float mus_file_set_prescaler        PROTO((int tfd, float val));
+
+void mus_bint_to_char               PROTO((unsigned char *j, int x));
+int mus_char_to_bint                PROTO((const unsigned char *inp));
+void mus_lint_to_char               PROTO((unsigned char *j, int x));
+int mus_char_to_lint                PROTO((const unsigned char *inp));
+int mus_char_to_uninterpreted_int   PROTO((const unsigned char *inp));
+void mus_bfloat_to_char             PROTO((unsigned char *j, float x));
+float mus_char_to_bfloat            PROTO((const unsigned char *inp));
+void mus_lfloat_to_char             PROTO((unsigned char *j, float x));
+float mus_char_to_lfloat            PROTO((const unsigned char *inp));
+void mus_bshort_to_char             PROTO((unsigned char *j, short x));
+short mus_char_to_bshort            PROTO((const unsigned char *inp));
+void mus_lshort_to_char             PROTO((unsigned char *j, short x));
+short mus_char_to_lshort            PROTO((const unsigned char *inp));
+void mus_ubshort_to_char            PROTO((unsigned char *j, unsigned short x));
+unsigned short mus_char_to_ubshort  PROTO((const unsigned char *inp));
+void mus_ulshort_to_char            PROTO((unsigned char *j, unsigned short x));
+unsigned short mus_char_to_ulshort  PROTO((const unsigned char *inp));
+double mus_char_to_ldouble          PROTO((const unsigned char *inp));
+double mus_char_to_bdouble          PROTO((const unsigned char *inp));
+void mus_bdouble_to_char            PROTO((unsigned char *j, double x));
+void mus_ldouble_to_char            PROTO((unsigned char *j, double x));
+unsigned int mus_char_to_ubint      PROTO((const unsigned char *inp));
+unsigned int mus_char_to_ulint      PROTO((const unsigned char *inp));
+
+int mus_iclamp                      PROTO((int lo, int val, int hi));
+Float mus_fclamp                    PROTO((Float lo, Float val, Float hi));
+
+#if LONG_INT_P
+  MUS_SAMPLE_TYPE *mus_table2ptr    PROTO((int arr));
+  int mus_ptr2table                 PROTO((MUS_SAMPLE_TYPE *arr));
+  void mus_untableptr               PROTO((int ip_1));
+  #define MUS_SAMPLE_ARRAY(n) mus_table2ptr((int)(n))
+  #define MUS_MAKE_SAMPLE_ARRAY(size) mus_ptr2table((MUS_SAMPLE_TYPE *)CALLOC((size), sizeof(MUS_SAMPLE_TYPE)))
+  #define MUS_FREE_SAMPLE_ARRAY(p) mus_untableptr((int)(p))
+#else
+  #define MUS_SAMPLE_ARRAY(n) ((MUS_SAMPLE_TYPE *)(n))
+  #define MUS_MAKE_SAMPLE_ARRAY(size) ((MUS_SAMPLE_TYPE *)CALLOC((size), sizeof(MUS_SAMPLE_TYPE)))
+  #define MUS_FREE_SAMPLE_ARRAY(p) FREE((void *)(p))
+#endif
+
+#ifdef CLM
+  /* these are needed to clear a saved lisp image to the just-initialized state */
+  void reset_io_c                   PROTO((void));
+  void reset_headers_c              PROTO((void));
+  void reset_audio_c                PROTO((void));
+  void set_rt_audio_p               PROTO((int rt));
+#endif
+
+
+
+/* -------- headers.c -------- */
+
+int mus_header_samples              PROTO((void));
+int mus_header_data_location        PROTO((void));
+int mus_header_chans                PROTO((void));
+int mus_header_srate                PROTO((void));
+int mus_header_type                 PROTO((void));
+int mus_header_format               PROTO((void));
+int mus_header_distributed          PROTO((void));
+int mus_header_comment_start        PROTO((void));
+int mus_header_comment_end          PROTO((void));
+int mus_header_type_specifier       PROTO((void));
+int mus_header_bits_per_sample      PROTO((void));
+int mus_header_fact_samples         PROTO((void));
+int mus_header_block_align          PROTO((void));
+int mus_header_loop_mode            PROTO((int which));
+int mus_header_loop_start           PROTO((int which));
+int mus_header_loop_end             PROTO((int which));
+int mus_header_mark_position        PROTO((int id));
+int mus_header_base_note            PROTO((void));
+int mus_header_base_detune          PROTO((void));
+void mus_header_set_raw_defaults    PROTO((int sr, int chn, int frm));
+void mus_header_raw_defaults        PROTO((int *sr, int *chn, int *frm));
+int mus_header_true_length          PROTO((void));
+int mus_header_original_format      PROTO((void));
+int mus_header_data_format_to_bytes_per_sample PROTO((void));
+int mus_samples_to_bytes            PROTO((int format, int size));
+int mus_bytes_to_samples            PROTO((int format, int size));
+int mus_header_write_next_header    PROTO((int chan, int srate, int chans, int loc, int siz, int format, const char *comment, int len));
+int mus_header_read_with_fd         PROTO((int chan));
+int mus_header_read                 PROTO((const char *name));
+int mus_header_write                PROTO((const char *name, int type, int srate, int chans, int loc, int size, int format, const char *comment, int len));
+int mus_header_write_with_fd        PROTO((int chan, int type, int in_srate, int in_chans, int loc, int size, int format, const char *comment, int len));
+int mus_header_update_with_fd       PROTO((int chan, int type, int siz));
+int mus_header_update               PROTO((const char *name, int type, int size, int srate, int format, int chans, int loc));
+int mus_header_aux_comment_start    PROTO((int n));
+int mus_header_aux_comment_end      PROTO((int n));
+int mus_header_update_comment       PROTO((const char *name, int loc, const char *comment, int len, int typ));
+int mus_header_initialize           PROTO((void));
+void mus_header_snd_set_header      PROTO((int in_srate, int in_chans, int in_format));
+int mus_header_aiff_p               PROTO((void));
+int mus_header_writable             PROTO((int type, int format));
+void mus_header_set_aiff_loop_info  PROTO((int *data));
+int mus_header_sf2_entries          PROTO((void));
+char *mus_header_sf2_name           PROTO((int n));
+int mus_header_sf2_start            PROTO((int n));
+int mus_header_sf2_end              PROTO((int n));
+int mus_header_sf2_loop_start       PROTO((int n));
+int mus_header_sf2_loop_end         PROTO((int n));
+const char *mus_header_original_format_name PROTO((int format, int type));
+
+void mus_header_set_aifc            PROTO((int val)); /* backwards compatibility, sort of */
+char *mus_header_riff_aux_comment   PROTO((const char *name, int *starts, int *ends));
+char *mus_header_aiff_aux_comment   PROTO((const char *name, int *starts, int *ends));
+
+
+#ifdef DEBUG_MEMORY
+  /* snd-utils.c (only used in conjunction with Snd's memory tracking functions) */
+  void *mem_calloc                  PROTO((size_t len, size_t size, const char *func, const char *file, int line));
+  void *mem_malloc                  PROTO((size_t len, const char *func, const char *file, int line));
+  void mem_free                     PROTO((void *ptr, const char *func, const char *file, int line));
+  void *mem_realloc                 PROTO((void *ptr, size_t size, const char *func, const char *file, int line));
+#endif
+
+END_DECLS
 
 #endif
