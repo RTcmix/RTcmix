@@ -5,13 +5,17 @@ RTcmix was derived from cmix by Brad Garton in 1995.
 The RTcmix Development Team (in alphabetical order)
 ---------------------------------------------------
 
-R. Luke DuBois    <luke-at-columbia.edu>
 Brad Garton       <garton-at-columbia.edu>
 John Gibson       <johgibso-at-indiana.edu>
-John Rhoads       <rhoads-at-virginia.edu>
 Doug Scott        <dscott-at-netscape.net>
 David Topper      <topper-at-virginia.edu>
 
+with
+
+Ivica Bukvic      <ico-at-fuse.net>
+R. Luke DuBois    <luke-at-columbia.edu>
+Mara Helmuth      <mara.helmuth-at-uc.edu>
+John Rhoads       <rhoads-at-virginia.edu>
 
 Thanks to Bill Schottstaedt for his sndlib sound library.
 (http://ccrma-www.stanford.edu/CCRMA/Software/sndlib)
