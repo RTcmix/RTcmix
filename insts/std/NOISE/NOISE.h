@@ -1,7 +1,7 @@
 class NOISE : public Instrument {
    int     inchan, skip, branch, nargs;
-   float   amp, pctleft;
-   float   *amparray, amptabs[2];
+   float   amp, pctleft, amptabs[2];
+   double  *amparray;
 
 public:
    NOISE();

@@ -1,8 +1,8 @@
 class NOISE : public Instrument {
 	int skip, branch, mynresons;
 	float myrsnetc[64][5], myamp[64];
-	float oamp, spread;
-	float *amparr, amptabs[2];
+	float oamp, spread, amptabs[2];
+	double *amparr;
 
 public:
 	NOISE();

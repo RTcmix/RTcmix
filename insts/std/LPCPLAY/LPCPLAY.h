@@ -73,8 +73,8 @@ protected:
 	float	weight(float frame1, float frame2, float thresh);
 	float	deviation(float frame1, float frame2, float weight, float thresh);
 	void	adjust(float actdev, float desdev, float actweight, 
-				   float *pchval, float framefirst, float framelast);
-	void	readjust(float maxdev, float *pchval, 
+				   double *pchval, float framefirst, float framelast);
+	void	readjust(float maxdev, double *pchval, 
 				  	 float firstframe, float lastframe, 
 				  	 float thresh, float weight);
 private:
@@ -91,11 +91,11 @@ private:
 	float	_transposition;
 	bool	_voiced;
 	float	_evals[5];
-	float	*_pchvals;						// pitch table
+	double	*_pchvals;						// pitch table
 	float	*_noisvals;						// signal arrays
 	float	_tblvals[2];
 	float	_srd2, _phs, _magic;
-	float	*_sineFun, *_envFun;
+	double	*_sineFun, *_envFun;
 	int		_datafields;
 };
 

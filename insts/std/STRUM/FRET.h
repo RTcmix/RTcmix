@@ -2,8 +2,8 @@
 
 class FRET : public Instrument {
 	float freq,tf0,tfN;
-	float spread,aamp;
-	float *amptable, amptabs[2];
+	float spread, aamp, amptabs[2];
+	double *amptable;
 	strumq *strumq1;
 	int firsttime,branch,skip;
 

@@ -7,8 +7,8 @@ class TRANSBEND : public Instrument {
    double increment, counter;
    float  amp, pctleft;
    float  newsig, oldsig, oldersig;
-   float  *amptable, tabs[2];
-   float  *pitchtable, ptabs[2];
+   float  tabs[2], ptabs[2];
+   double *amptable, *pitchtable;
    float  *in;
 public:
    TRANSBEND();

@@ -12,7 +12,7 @@ protected:
     virtual int updatePosition(int);
     virtual void get_tap(int, int, int, int);
 private:
-    float *rholoc, *thetaloc;
+    double *rholoc, *thetaloc;
     float tabr[2], tabt[2];
     double R_old, T_old, mindiff;
     int m_updateSamps, m_updateCount;

@@ -32,10 +32,9 @@ mrotate(float p[], int n_args)
 	int nsamps,i,j,k,off,reinit,chans,inchan;
 	int octpart1, octpart2;
 	float pcpart1, pcpart2, prange, pcbase, ival;
-	float *amptable, amptabs[2];
-	float *wintable;
+	float amptabs[2], ptabs[2];
+	double *amptable, *pcurve, *wintable;
 	int wlen;
-	float *pcurve, ptabs[2];
 	int plen;
 	int skip, cdown;
 

@@ -3,8 +3,8 @@
 class COMBIT : public Instrument {
 	bool give_minfreq_warning;
 	int insamps, branch, skip, inchan, delsamps;
-	float amp, frequency, rvbtime, pctleft, *in;
-	float *amptable, tabs[2];
+	float amp, frequency, rvbtime, pctleft, *in, tabs[2];
+	double *amptable;
 	Ocomb *comb;
 
 public:

@@ -419,7 +419,7 @@ void MBASE::set_gains()
    setline((float *)array, nvals, NCOEFFS, AIRCOEFFS);
 
    for (i = 0; i < NCOEFFS; i++)
-      AIRCOEFFS[i] = pow((double)AIRCOEFFS[i], adjust);
+      AIRCOEFFS[i] = pow(AIRCOEFFS[i], adjust);
 }
 
 

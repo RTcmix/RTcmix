@@ -39,10 +39,12 @@ wow(float p[], int n_args)
 	int skip;
 
 	float input_start, output_start, duration;
-	float *modulator, mphase, modulator_index; 
+	double *modulator; 
+	float mphase, modulator_index; 
 	float modulator_normalize, modulator_freq, amp, input_offset, si;
 	float *queue, min_x, max_x, integral, out[2], weight;
-	float *amparr,amptabs[2];
+	float amptabs[2];
+	double *amparr;
 	float aamp;
 
 	inchans = sfchans(&sfdesc[0]);

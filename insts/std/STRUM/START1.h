@@ -7,8 +7,8 @@ class START1 : public Instrument {
 	delayq *dq;
 	float dgain, fbgain;
 	float cleanlevel, distlevel;
-	float d;
-	float *amptable, amptabs[2];
+	float d, amptabs[2];
+	double *amptable;
 	int deleteflag, branch, skip;
 
 public:

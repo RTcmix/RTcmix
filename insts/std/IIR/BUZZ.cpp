@@ -65,9 +65,9 @@ BUZZ::~BUZZ()
 // NOTE: Sine table must have exactly 1024 elements,
 // because of buzz ugen limitation.  -JGG
 
-float *makeSineTable(int size)
+double *makeSineTable(int size)
 {
-	float *table = new float[size];
+	double *table = new double[size];
 	double incr = (M_PI * 2.0) / (double) size;
 	double phs = 0.0;
 	for (int i = 0; i < size; i++, phs += incr)

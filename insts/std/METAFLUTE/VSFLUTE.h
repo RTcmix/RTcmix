@@ -5,11 +5,11 @@ class VSFLUTE : public Instrument {
 	float l1span,l2span,l1base,l2base;
 	float del1[DELSIZE],del2[DELSIZE];
 	float amp,namp,dampcoef,oldsig;
-	float *amparr,amptabs[2];
-	float *oamparr,oamptabs[2];
-	float *pcurve1,si1lo,si1hi;
+	double *amparr, *oamparr, *pcurve1, *pcurve2;
+	float amptabs[2], oamptabs[2];
+	float si1lo,si1hi;
 	int psize1;
-	float *pcurve2,si2lo,si2hi;
+	float si2lo,si2hi;
 	int psize2;
 	float ampmult, spread;
 	int skip;

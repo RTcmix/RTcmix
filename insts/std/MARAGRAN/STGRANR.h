@@ -1,7 +1,7 @@
 class STGRANR : public Instrument {
         float amp,aamp, *in,inskip;
-        float *amptable,tabs[2];
-        float *grenvtable,tabg[2];
+        double *amptable, *grenvtable;
+        float tabs[2], tabg[2];
         float transp, dur, rate, ratevar, spread;
         float starttime,evdur,gdur;
         int len,alen,grlen,incount,get_frame,inframe;

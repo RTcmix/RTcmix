@@ -1,7 +1,7 @@
 class REVMIX : public Instrument {
    int     inchan, skip, branch, nargs;
-   float   amp, pctleft;
-   float   *in, *amparray, amptabs[2];
+   float   amp, pctleft, *in, amptabs[2];
+   double  *amparray;
 
 public:
    REVMIX();

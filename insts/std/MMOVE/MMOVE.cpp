@@ -20,7 +20,7 @@
 #define DBG(stmt)
 #endif
 
-extern "C" int get_path_params(float *rhos, float *thetas, int *cartesian, double *mdiff);
+extern "C" int get_path_params(double *rhos, double *thetas, int *cartesian, double *mdiff);
 
 // Defined in ../MOVE/common.C
 extern double SINARRAY[1025], COSARRAY[1025], ATANARRAY[1025];
@@ -63,8 +63,8 @@ MOVE::MOVE()
     m_updateCount = 0;
     m_updateSamps = BUFLEN;
     setup_trigfuns();
-    rholoc = new float[ARRAYSIZE];
-    thetaloc = new float[ARRAYSIZE];
+    rholoc = new double[ARRAYSIZE];
+    thetaloc = new double[ARRAYSIZE];
     for (int n = 0; n < 2; n++)
         for (int o = 0; o < 13; o++)
 	    oldOutlocs[n][o] = LocationUnset;	// to force update

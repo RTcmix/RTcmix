@@ -4,8 +4,8 @@
 
 class MULTICOMB : public Instrument {
 	int inchan, insamps, skip, branch, delsamps[NCOMBS];
-	float amp, rvbtime, *in, spread[NCOMBS];
-	float *amptable, amptabs[2];
+	float amp, rvbtime, *in, spread[NCOMBS], amptabs[2];
+	double *amptable;
 	Ocomb *comb[NCOMBS];
 
 public:

@@ -1,8 +1,8 @@
 #include "strums.h"
 
 class START : public Instrument {
-	float spread;
-	float *amptable, amptabs[2];
+	float spread, amptabs[2];
+	double *amptable;
 	strumq *strumq1;
 	int deleteflag, skip;
 

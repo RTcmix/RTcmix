@@ -6,8 +6,6 @@
 #include <math.h>
 
 extern SFHEADER      sfdesc[NFILES];
-static float *array, tabs[2];         /* for setline */
-
 
 /*
    sgran:
@@ -62,8 +60,8 @@ sgran(float p[], int n_args)
 	long egrainsamps,egraindist,egrainslide;
 	long grainsamps,grainslide,graindistdiff;
 	float si=0.0,phase,val=0.0,amp,out[2],chb,freq;
-	float tab[2],tab2[2],tab3[2],tab4[2],tab5[2];
-	float *wave,*envel,*rate_shape,*dur_shape,*loc_shape,*freq_shape;
+	float tabs[2],tab[2],tab2[2],tab3[2],tab4[2],tab5[2];
+	double *array,*wave,*envel,*rate_shape,*dur_shape,*loc_shape,*freq_shape;
 	float gdist_inc;
 	double gstt_per,lo,mid,hi,ti,slodiff,smiddiff,shidiff,stidiff;
 	double dlodiff,dmiddiff,dhidiff,dtidiff;

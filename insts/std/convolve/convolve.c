@@ -7,15 +7,15 @@
 #include <sys/stat.h>
 
 #define SIZE 131072 
-float array[2][SIZE];
+double array[2][SIZE];
 float tabs[2][2];                
-float warparray[2][SIZE];
+double warparray[2][SIZE];
 float warptabs[2][2];                
-float ringarray[2][SIZE];
+double ringarray[2][SIZE];
 float ringtabs[2][2];
-float rangearray[2][SIZE];
+double rangearray[2][SIZE];
 float rangetabs[2][2];                
-float dryarray[SIZE];
+double dryarray[SIZE];
 float drytabs[2]; 
 int haswindow = 0;                 
 

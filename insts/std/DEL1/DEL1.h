@@ -3,8 +3,8 @@
 class DEL1 : public Instrument {
 	bool warn_deltime;
 	int inchan, insamps, skip, branch;
-	float amp, delamp, *in;
-	float *amptable, amptabs[2];
+	float amp, delamp, *in, amptabs[2];
+	double *amptable;
 	double delsamps;
 	Ozdelay *delay;
 

@@ -29,7 +29,6 @@ extern "C" {
 */
 double shift(float, float, float);
 void bmultf(float *array, float mult, int number);
-float buzz(float amp, float si, float hn, float *f, float *phs);
 int stabilize(float *array, int npoles);
 int checkForHeader(int afd, int *nPoles, float sr);
 

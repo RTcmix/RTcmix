@@ -4,8 +4,8 @@ class STEREO : public Instrument {
 	bool warn_invalid;
 	int skip, branch, nargs, outslots;
 	float outspread[MAXBUS];
-	float amp, *in;
-	float *amptable, tabs[2];
+	float amp, *in, tabs[2];
+	double *amptable;
 
 	void updatePans(double p[]);
 public:

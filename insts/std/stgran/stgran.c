@@ -182,8 +182,9 @@ stgran(float p[], int n_args)
    float val, amp, aamp;
    float gdist_inc, in_gdist_inc;
    float tab1[2], tab2[2], tab3[2], tab4[2], tab5[2], tab6[2], tab7[2], tab8[2];
-   float *in_rate_shape, *rate_shape, *dur_shape, *transp_shape, *amp_shape;
-   float *loc_shape, *slarray, *envel, *inarr, *outarr;
+   double *in_rate_shape, *rate_shape, *dur_shape, *transp_shape, *amp_shape;
+   double *loc_shape, *envel, *slarray;
+   float *inarr, *outarr;
    double gstt_per, in_gstt_per, lo, mid, hi, ti, sig, table_val;
    double slodiff, smiddiff, shidiff, stidiff;
    double ilodiff, imiddiff, ihidiff, itidiff;

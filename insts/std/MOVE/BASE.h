@@ -49,8 +49,9 @@ protected:
    int    m_inchan, insamps, skip, m_binaural, m_tapsize, intap, tapcount;
    int    cartflag, rvbdelsize, m_buffersize;
    float  inamp, m_dur, m_rvbamp;
-   float  *amparray, amptabs[2], *in;
-   float  AIRCOEFFS[NCOEFFS];
+   float  amptabs[2], *in;
+   double *amparray;
+   double AIRCOEFFS[NCOEFFS];
    double m_dist, *m_tapDelay;
    double MikeAngle, MikePatternFactor;
    double Dimensions[5];

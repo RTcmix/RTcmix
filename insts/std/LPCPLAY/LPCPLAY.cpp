@@ -231,7 +231,7 @@ int LPCPLAY::localInit(double p[], int n_args)
 					 &_autoCorrect);
 	
 	// Pitch table
-	_pchvals = new float[frameCount];
+	_pchvals = new double[frameCount];
 
 	// Finish the initialization
 	
@@ -308,7 +308,7 @@ int LPCPLAY::localInit(double p[], int n_args)
 	
 	/* note, dont use this feature unless pitch is specified in p[3]*/
 	
-	_sineFun = (float *)floc(SINE_SLOT);
+	_sineFun = floc(SINE_SLOT);
 	_reson_is_on = p[7] ? true : false;
 	_cf_fact = p[7];
 	_bw_fact = p[8];
@@ -536,7 +536,7 @@ LPCPLAY::deviation(float frame1, float frame2, float weight, float thresh)
 
 void 
 LPCPLAY::adjust(float actdev, float desdev, float actweight, 
-				float *pchval, float framefirst, float framelast)
+				double *pchval, float framefirst, float framelast)
 {
 	int i,j;
 	float x,devfact;
@@ -551,7 +551,7 @@ LPCPLAY::adjust(float actdev, float desdev, float actweight,
 }
 
 void 
-LPCPLAY::readjust(float maxdev, float *pchval, 
+LPCPLAY::readjust(float maxdev, double *pchval, 
 			  	  float firstframe, float lastframe, 
 			  	  float thresh, float weight)
 {

@@ -1,7 +1,6 @@
 class SGRANR : public Instrument {
-        float *wavetable,si,phase,amp,aamp;
-        float *amptable,tabs[2];
-        float *grenvtable,tabg[2];
+        double *amptable, *wavetable, *grenvtable;
+        float tabs[2], tabg[2], si, phase, amp, aamp;
         float freq, dur, rate, ratevar, spread;
         float starttime,evdur,gdur;
         int len,alen,grlen;

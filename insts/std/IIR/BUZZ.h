@@ -3,7 +3,8 @@ class BUZZ : public Instrument {
 	int skip, branch, mynresons, lensine;
 	float myrsnetc[64][5], myamp[64];
 	float oamp, spread, prevpitch, si, hn, phase;
-	float *amparr, amptabs[2], *sinetable;
+	float amptabs[2];
+	double *amparr, *sinetable;
 
 	void setpitch(float);
 public:

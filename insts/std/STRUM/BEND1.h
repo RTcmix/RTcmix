@@ -4,9 +4,9 @@
 class BEND1 : public Instrument {
 	float freq0,diff;
 	float tf0,tfN;
-	float *glissf,tags[2];
+	double *glissf, *amptable;
+	float tags[2], amptabs[2];
 	float spread,amp,aamp;
-	float *amptable, amptabs[2];
 	strumq *strumq1;
 	delayq *dq;
 	float dgain,fbgain;

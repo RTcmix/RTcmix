@@ -4,17 +4,16 @@
 class VFRET1 : public Instrument {
 	float freq,tf0,tfN,fbpitch;
 	int vlen, branch1, branch2;
-	float *vloc;
+	double *eloc, *vloc, *amptable;
 	float vsibot,vsidiff,vsi,vphase;
 	float vdepth;
-	float *eloc,tab[2];
+	float tab[2];
 	float spread,amp,aamp;
 	strumq *strumq1;
 	delayq *dq;
 	float dgain,fbgain;
 	float cleanlevel,distlevel;
-	float d;
-	float *amptable, amptabs[2];
+	float d, amptabs[2];
 	int reset;
 	int firsttime;
 

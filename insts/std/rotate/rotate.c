@@ -30,8 +30,8 @@ rotate(float p[], int n_args)
 	int nsamps,i,j,k,off,reinit,chans,inchan;
 	int octpart;
 	float pcpart;
-	float *amptable, amptabs[2];
-	float *wintable;
+	float amptabs[2];
+	double *amptable, *wintable;
 	int wlen;
 	int skip, cdown;
 

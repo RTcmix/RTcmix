@@ -1,7 +1,6 @@
 class SCULPT : public Instrument {
-	float *wave, phase, amp;
-	float *amptable, amptabs[2];
-	float *freqtable, *pamptable;
+	double *wave, *amptable, *freqtable, *pamptable;
+	float phase, amp, amptabs[2];
 	float spread;
 	int len;
 	int pdur, pcount, index;

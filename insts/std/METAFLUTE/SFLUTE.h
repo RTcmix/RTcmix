@@ -5,8 +5,8 @@ class SFLUTE : public Instrument {
 	float del1[DELSIZE],del2[DELSIZE];
 	int length1,length2;
 	float amp,namp,dampcoef,oldsig;
-	float *amparr,amptabs[2];
-	float *oamparr,oamptabs[2];
+	double *amparr, *oamparr;
+	float amptabs[2], oamptabs[2];
 	float ampmult, spread;
 	int skip;
 

@@ -7,8 +7,8 @@ class TRANS : public Instrument {
    double increment, counter;
    float  amp, aamp, pctleft;
    float  newsig, oldsig, oldersig;
-   float  *amptable, tabs[2];
-   float  *in;
+   double *amptable;
+   float  *in, tabs[2];
 public:
    TRANS();
    virtual ~TRANS();

@@ -5,7 +5,7 @@
 /* This routine loads the t, x, y, triplets into the two arrays used by
    table() to update sound source location during main loop of move    */
 
-float rholoc[ARRAYSIZE], thetaloc[ARRAYSIZE];
+double rholoc[ARRAYSIZE], thetaloc[ARRAYSIZE];
 int cartflag;
 double mindiff;
 
@@ -76,7 +76,7 @@ double
 param (float p[], int n_args)	/* parametric setup for polar coordinates */
 {
     	int i;
-    	float *fun1, *fun2;
+    	double *fun1, *fun2;
 
     	if (n_args != 2)
        die("param", "Incorrect number of args. Should have 2.");
@@ -103,7 +103,7 @@ double
 cparam (float p[], int n_args) /* parametric setup for cartesian coordinates */
 {
     	int i;
-    	float *fun1, *fun2;
+    	double *fun1, *fun2;
 
     	if (n_args != 2)
        die("cparam", "Incorrect number of args. Should have 2.");
@@ -139,7 +139,7 @@ threshold(float p[], int n_args)
 
 /* this is called by MOVE::localInit() to load global params into instrument */
 
-int get_path_params(float *rhos, float *thetas, int *cartesian, double *mdiff)
+int get_path_params(double *rhos, double *thetas, int *cartesian, double *mdiff)
 {
     int i;
 	for(i = 0; i < ARRAYSIZE; i++) {

@@ -45,7 +45,7 @@ private:
 	double		Allpass_del[2][502];
 	int			allpassTap[2];
 	double		m_rvbPast[2];	// For hi-pass filter
-	float		AIRCOEFFS[NCOEFFS];
+	double		AIRCOEFFS[NCOEFFS];
 	double		Dimensions[5];
 	double		Nsdelay[2][6];
 	float		m_dur, m_amp;

@@ -1,5 +1,5 @@
 class WAVESHAPE : public Instrument {
-	float *waveform, *ampenv, *xfer, *indenv;
+	double *waveform, *ampenv, *xfer, *indenv;
 	float amptabs[2],indtabs[2];
 	float indbase,diff;
 	int lenwave, lenxfer, lenind;

@@ -1,9 +1,8 @@
 class AMINST : public Instrument {
-	float amp,*amparr, amptabs[2];
-	float *mamparr,mamptabs[2];
-	float *cartable,sicar,phasecar;
+	float amp, amptabs[2], mamptabs[2];
+	double *amparr, *mamparr, *cartable, *modtable;
+	float sicar,phasecar,simod,phasemod;
 	int lencar;
-	float *modtable,simod,phasemod;
 	int lenmod;
 	float spread;
 	int skip,inchan;
