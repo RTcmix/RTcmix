@@ -135,7 +135,7 @@ int JDELAY::init(double p[], int n_args)
 
    prev_in = prev_out = 0.0;         // for DC-blocker
 
-   return nsamps;
+   return nSamps();
 }
 
 
