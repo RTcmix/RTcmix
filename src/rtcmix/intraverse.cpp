@@ -339,6 +339,8 @@ extern "C" {
 #endif		  
 		  Iptr->exec(bus_type, bus);    // write the samples * * * * * * * * * 
 		  
+		  endsamp = Iptr->getendsamp();
+
 		  // ReQueue or delete ++++++++++++++++++++++++++++++++++++++++++++++
 		  if (endsamp > bufEndSamp) {
 #ifdef DBUG
