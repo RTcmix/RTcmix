@@ -9,6 +9,7 @@
 #include <math.h>
 #include <assert.h>
 #include <unistd.h>
+#include <sys/time.h>
 #include <rtcmix_types.h>
 #include <prototypes.h>
 #include <PField.h>
@@ -84,15 +85,15 @@ static char *_table_name[] = {
 static TablePField *
 _getTablePField(const Arg *arg)
 {
-	PField *tpf = NULL;
-	if ((tpf = (PField *) *arg) != NULL) {
+   PField *tpf = NULL;
+   if ((tpf = (PField *) *arg) != NULL) {
 #if __GNUG__ >= 3
-		return dynamic_cast<TablePField *> (tpf);
+      return dynamic_cast<TablePField *> (tpf);
 #else
-		return (TablePField *) tpf;
+      return (TablePField *) tpf;
 #endif
-	}
-	return NULL;
+   }
+   return NULL;
 }
 
 Handle
@@ -185,8 +186,7 @@ _transition(double a, double alpha, double b, int n, double *output)
 #define MAX_CURVE_PTS 256
 
 static int
-_curve_table(const Arg args[], const int nargs, double *array,
-   const int len)
+_curve_table(const Arg args[], const int nargs, double *array, const int len)
 {
    int    i, points, seglen = 0;
    double factor, *ptr;
@@ -240,8 +240,7 @@ time_err:
 /* Similar to gen 5, but no no normalization.
 */
 static int
-_expbrk_table(const Arg args[], const int nargs, double *array,
-   const int len)
+_expbrk_table(const Arg args[], const int nargs, double *array, const int len)
 {
    double amp2 = args[0];
    if (amp2 <= 0.0)
@@ -287,8 +286,7 @@ _expbrk_table(const Arg args[], const int nargs, double *array,
 */
 #define NEWWAY
 static int
-_line_table(const Arg args[], const int nargs, double *array,
-   const int len)
+_line_table(const Arg args[], const int nargs, double *array, const int len)
 {
    double scaler, starttime, thistime, thisval, nexttime, nextval, endtime;
    int i, j, k, l;
@@ -351,8 +349,7 @@ time_err:
 /* Similar to gen 7, but no no normalization.
 */
 static int
-_linebrk_table(const Arg args[], const int nargs, double *array,
-   const int len)
+_linebrk_table(const Arg args[], const int nargs, double *array, const int len)
 {
    double amp2 = args[0];
    int i = 0;
@@ -376,8 +373,7 @@ _linebrk_table(const Arg args[], const int nargs, double *array,
 /* Similar to cmix gen 9, but no normalization.
 */
 static int
-_wave3_table(const Arg args[], const int nargs, double *array,
-   const int len)
+_wave3_table(const Arg args[], const int nargs, double *array, const int len)
 {
    for (int i = 0; i < len; i++)
       array[i] = 0.0;
@@ -403,8 +399,7 @@ _wave3_table(const Arg args[], const int nargs, double *array,
 /* Equivalent to cmix gen 10.
 */
 static int
-_wave_table(const Arg args[], const int nargs, double *array,
-   const int len)
+_wave_table(const Arg args[], const int nargs, double *array, const int len)
 {
    for (int i = 0; i < len; i++)
       array[i] = 0.0;
@@ -432,8 +427,7 @@ _wave_table(const Arg args[], const int nargs, double *array,
    create the harmonics specified by the following arguments.
 */
 static int
-_cheby_table(const Arg args[], const int nargs, double *array,
-   const int len)
+_cheby_table(const Arg args[], const int nargs, double *array, const int len)
 {
    double d = (double) ((len / 2) - 0.5);
    for (int i = 0; i < len; i++) {
@@ -453,12 +447,200 @@ _cheby_table(const Arg args[], const int nargs, double *array,
 }
 
 
+/* --------------------------------------------------------- _random_table -- */
+/* Same as gen 20, the original version of which was written by Luke Dubois;
+   later additions by John Gibson.
+
+   The arguments are...
+
+      table = maketable("random", size, type[, seed[, min, max]])
+
+   The distribution types are:
+     0 = even distribution ["even"]
+     1 = low weighted linear distribution ["low"]
+     2 = high weighted linear distribution ["high"]
+     3 = triangle linear distribution ["triangle"]
+     4 = gaussian distribution ["gaussian"]
+     5 = cauchy distribution ["cauchy"]
+    
+   (Distribution equations adapted from Dodge and Jerse.)
+
+   If <seed> is zero, seed comes from microsecond clock, otherwise <seed>
+   is used as the seed.  If no <seed> argument, the seed used is 1.
+
+   <min> and <max> define the range (inclusive) for the random numbers.
+   Both args must be present; otherwise the range is from 0 to 1.
+*/
+
+/* Scale <num>, which falls in range [0,1] so that it falls
+   in range [min,max].  Return result.    -JGG, 12/4/01
+*/
+static inline double
+fit_range(double min, double max, double num)
+{
+   return min + (num * (max - min));
+}
+
+static inline double
+_brrand(long *randx)
+{
+   *randx = (*randx * 1103515245) + 12345;
+   int k = (*randx >> 16) & 077777;
+   return (double) k / 32768.0;
+}
+
+static int
+_random_table(const Arg args[], const int nargs, double *array, const int len)
+{
+   static long randx = 1;
+   int type;
+
+   if (args[0].isType(StringType)) {
+      if (args[0] == "even")
+         type = 0;
+      else if (args[0] == "low")
+         type = 1;
+      else if (args[0] == "high")
+         type = 2;
+      else if (args[0] == "triangle")
+         type = 3;
+      else if (args[0] == "gaussian")
+         type = 4;
+      else if (args[0] == "cauchy")
+         type = 5;
+      else {
+         die("maketable", "Unsupported random distribution type \"%s\".",
+                                                      (const char *) args[0]);
+         return -1;
+      }
+   }
+   else if (args[0].isType(DoubleType))
+      type = (int) args[0];
+   else {
+      die("maketable", "Random distribution type must be a string or number.");
+      return -1;
+   }
+
+   if ((int) args[1] == 0) {
+      struct timeval tv;
+      gettimeofday(&tv, NULL);
+      randx = tv.tv_usec;
+   }
+   else
+      randx = (int) args[1];
+
+   /* Set range for random numbers. */
+   if (nargs == 3) {
+      die("maketable",
+          "usage: maketable(\"random\", size, type[, seed[, min, max]])");
+      return -1;
+   }
+
+   double min, max;
+   if (nargs == 4) {
+      min = args[2];
+      max = args[3];
+      if (min == max) {
+         die("maketable", "For random table, <min> must be lower than <max>.");
+         return -1;
+      }
+      if (min > max) {     /* make sure these are in increasing order */
+         double tmp = max;
+         max = min;
+         min = tmp;
+      }
+   }
+   else {
+      min = 0.0;
+      max = 1.0;
+   }
+
+   switch (type) {
+      case 0:  /* even distribution */
+         for (int i = 0; i < len; i++) {
+            double tmp = _brrand(&randx);
+            array[i] = fit_range(min, max, tmp);
+         }
+         break;
+      case 1:  /* low weighted */
+         for (int i = 0; i < len; i++) {
+            double randnum = _brrand(&randx);
+            double randnum2 = _brrand(&randx);
+            if (randnum2 < randnum)
+               randnum = randnum2;
+            array[i] = fit_range(min, max, randnum);
+         }
+         break;
+      case 2:  /* high weighted */
+         for (int i = 0; i < len; i++) {
+            double randnum = _brrand(&randx);
+            double randnum2 = _brrand(&randx);
+            if (randnum2 > randnum)
+               randnum = randnum2;
+            array[i] = fit_range(min, max, randnum);
+         }
+         break;
+      case 3:  /* triangle */
+         for (int i = 0; i < len; i++) {
+            double randnum = _brrand(&randx);
+            double randnum2 = _brrand(&randx);
+            double tmp = 0.5 * (randnum + randnum2);
+            array[i] = fit_range(min, max, tmp);
+         }
+         break;
+      case 4:  /* gaussian */
+         {
+            const int N = 12;
+            const double halfN = 6.0;
+            const double scale = 1.0;
+            const double mu = 0.5;
+            const double sigma = 0.166666;
+            int i = 0;
+            while (i < len) {
+               double randnum = 0.0;
+               for (int j = 0; j < N; j++)
+                  randnum += _brrand(&randx);
+               double output = sigma * scale * (randnum - halfN) + mu;
+               if (output <= 1.0 && output >= 0.0) {
+                  array[i] = fit_range(min, max, output);
+                  i++;
+               }
+            }
+         }
+         break;
+      case 5:  /* cauchy */
+         {
+            const double alpha = 0.00628338;
+            int i = 0;
+            while (i < len) {
+               double randnum = 0.0;
+               do {
+                  randnum = _brrand(&randx);
+               } while (randnum == 0.5);
+               randnum *= PI;
+               double output = (alpha * tan(randnum)) + 0.5;
+               if (output <= 1.0 && output >= 0.0) {
+                  array[i] = fit_range(min, max, output);
+                  i++;
+               }
+            }
+         }
+         break;
+      default:
+         die("maketable", "Unsupported random distribution type %d.", type);
+         return -1;
+         break;
+   }
+
+   return 0;
+}
+
+
 /* --------------------------------------------------------- _window_table -- */
 /* Equivalent to cmix gen 25.
 */
 static int
-_window_table(const Arg args[], const int nargs, double *array,
-   const int len)
+_window_table(const Arg args[], const int nargs, double *array, const int len)
 {
    int window_type = 0;
 
@@ -478,7 +660,7 @@ _window_table(const Arg args[], const int nargs, double *array,
       }
    }
    else if (args[0].isType(DoubleType)) {
-   	  window_type = (int) args[0];
+        window_type = (int) args[0];
    }
    else {
       die("maketable", "Window type must be a string or numeric code.");
@@ -534,7 +716,8 @@ _dispatch_table(const Arg args[], const int nargs, const int startarg,
    else if (args[0].isType(StringType)) {
       tablekind = _string_to_tablekind((const char *) args[0]);
       if (tablekind == InvalidTable) {
-         die("maketable", "Invalid table type string '%s'", (const char *) args[0]);
+         die("maketable", "Invalid table type string '%s'",
+                                                      (const char *) args[0]);
          return -1;
       }
    }
@@ -576,7 +759,7 @@ _dispatch_table(const Arg args[], const int nargs, const int startarg,
          status = _cheby_table(&args[startarg], nargs - startarg, array, *len);
          break;
       case RandomTable:
-         goto unimplemented;
+         status = _random_table(&args[startarg], nargs - startarg, array, *len);
          break;
       case WindowTable:
          status = _window_table(&args[startarg], nargs - startarg, array, *len);
@@ -593,13 +776,13 @@ unimplemented:
 }
 
 extern "C" {
-	Handle maketable(const Arg args[], const int nargs);
-	Handle normtable(const Arg args[], const int nargs);
-	Handle copytable(const Arg args[], const int nargs);
-	Handle multtable(const Arg args[], const int nargs);
-	Handle addtable(const Arg args[], const int nargs);
-	double plottable(const Arg args[], const int nargs);
-	double dumptable(const Arg args[], const int nargs);
+   Handle maketable(const Arg args[], const int nargs);
+   Handle normtable(const Arg args[], const int nargs);
+   Handle copytable(const Arg args[], const int nargs);
+   Handle multtable(const Arg args[], const int nargs);
+   Handle addtable(const Arg args[], const int nargs);
+   double plottable(const Arg args[], const int nargs);
+   double dumptable(const Arg args[], const int nargs);
 };
 
 /* ------------------------------------------------------------- maketable -- */
@@ -671,50 +854,50 @@ maketable(const Arg args[], const int nargs)
 Handle
 multtable(const Arg args[], const int nargs)
 {
-	if (nargs == 2) {
-		PField *table0 = (PField *) args[0];
-		PField *table1 = (PField *) args[1];
-		if (!table1) {
-			if (args[1].isType(DoubleType)) {
-				table1 = new ConstPField((double) args[1]);
-			}
-		}
-		else if (!table0) {
-			if (args[0].isType(DoubleType)) {
-				table0 = new ConstPField((double) args[0]);
-			}
-		}
-		if (table0 && table1) {
-			return _createPFieldHandle(new MultPField(table0, table1));
-		}
-	}
-	die("multtable", "Usage: mul(table1, table2) or mul(table1, const1)");
-	return NULL;
+   if (nargs == 2) {
+      PField *table0 = (PField *) args[0];
+      PField *table1 = (PField *) args[1];
+      if (!table1) {
+         if (args[1].isType(DoubleType)) {
+            table1 = new ConstPField((double) args[1]);
+         }
+      }
+      else if (!table0) {
+         if (args[0].isType(DoubleType)) {
+            table0 = new ConstPField((double) args[0]);
+         }
+      }
+      if (table0 && table1) {
+         return _createPFieldHandle(new MultPField(table0, table1));
+      }
+   }
+   die("multtable", "Usage: mul(table1, table2) or mul(table1, const1)");
+   return NULL;
 }
 
 /* -------------------------------------------------------------- addtable -- */
 Handle
 addtable(const Arg args[], const int nargs)
 {
-	if (nargs == 2) {
-		PField *table0 = (PField *) args[0];
-		PField *table1 = (PField *) args[1];
-		if (!table1) {
-			if (args[1].isType(DoubleType)) {
-				table1 = new ConstPField((double) args[1]);
-			}
-		}
-		else if (!table0) {
-			if (args[0].isType(DoubleType)) {
-				table0 = new ConstPField((double) args[0]);
-			}
-		}
-		if (table0 && table1) {
-			return _createPFieldHandle(new AddPField(table0, table1));
-		}
-	}
-	die("addtable", "Usage: add(table1, table2) or add(table1, const1)");
-	return NULL;
+   if (nargs == 2) {
+      PField *table0 = (PField *) args[0];
+      PField *table1 = (PField *) args[1];
+      if (!table1) {
+         if (args[1].isType(DoubleType)) {
+            table1 = new ConstPField((double) args[1]);
+         }
+      }
+      else if (!table0) {
+         if (args[0].isType(DoubleType)) {
+            table0 = new ConstPField((double) args[0]);
+         }
+      }
+      if (table0 && table1) {
+         return _createPFieldHandle(new AddPField(table0, table1));
+      }
+   }
+   die("addtable", "Usage: add(table1, table2) or add(table1, const1)");
+   return NULL;
 }
 
 /* ------------------------------------------------------------- normtable -- */
@@ -737,18 +920,18 @@ normtable(const Arg args[], const int nargs)
       peak = (double) args[1];
    if (nargs > 2 && args[2].isType(DoubleType))
       copy_table = ((double) args[2] == 1.0);
-	TablePField *tableToNormalize = NULL;
+   TablePField *tableToNormalize = NULL;
 #ifdef NOTYET
-	if (copy_table) {
-   		tableToNormalize = table->copy();
-	}
-	else {
-		tableToNormalize = table;
-	}
-	tableToNormalize->normalize(peak);
+   if (copy_table) {
+         tableToNormalize = table->copy();
+   }
+   else {
+      tableToNormalize = table;
+   }
+   tableToNormalize->normalize(peak);
 #endif
 
-	return _createPFieldHandle(tableToNormalize);
+   return _createPFieldHandle(tableToNormalize);
 }
 
 /* ------------------------------------------------------------- copytable -- */
@@ -765,11 +948,11 @@ copytable(const Arg args[], const int nargs)
       return NULL;
    }
    if (table->values() == 1)
-	copyOfTable = new ConstPField(table->doubleValue());
+   copyOfTable = new ConstPField(table->doubleValue());
    else {
-   	double *values = new double[table->values()];
-	table->copyValues(values);
-	copyOfTable = new TablePField(values, table->values());
+      double *values = new double[table->values()];
+   table->copyValues(values);
+   copyOfTable = new TablePField(values, table->values());
    }
    return _createPFieldHandle(copyOfTable);
 }
@@ -882,10 +1065,10 @@ plottable(const Arg args[], const int nargs)
    int chars = table->print(fdata);
    fclose(fdata);
    
-	if (chars <= 0) {
-		die("dumptable", "Cannot print this kind of table");
-		return -1;
-	}
+   if (chars <= 0) {
+      die("dumptable", "Cannot print this kind of table");
+      return -1;
+   }
 
    fprintf(fcmd, 
 #ifdef MACOSX  /* NB: requires installation of Aquaterm and gnuplot 3.8 */
