@@ -25,8 +25,10 @@ int BEND::init(float p[], int n_args)
 // p7 = update every nsamples; p8 = stereo spread [optional]
 
 	int leng;
+	float dur;
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	dur = p[1];
+	nsamps = rtsetoutput(p[0], dur, this);
 
 	strumq1 = curstrumq[0];
 	freq0 = cpspch(p[2]);
@@ -36,6 +38,14 @@ int BEND::init(float p[], int n_args)
 	tf0 = p[5];
 	tfN = p[6];
 	sset(freq0, tf0, tfN, strumq1);
+
+	amptable = floc(1);
+	if (amptable) {
+		int amplen = fsize(1);
+		tableset(dur, amplen, amptabs);
+	}
+	else
+		advise("BEND", "Setting phrase curve to all 1's.");
 
 	glissf = floc((int)p[4]);
 	leng = fsize((int)p[4]);
@@ -52,20 +62,24 @@ int BEND::run()
 {
 	int i;
 	float freq;
-	float out[2];
+	float aamp, out[2];
 	int branch;
 
 	Instrument::run();
 
+	aamp = 1.0;                  /* in case amptable == NULL */
+
 	branch = 0;
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch < 0) {
+			if (amptable)
+				aamp = tablei(cursamp, amptable, amptabs);
 			freq = diff * tablei(cursamp, glissf, tags) + freq0;
 			sset(freq, tf0, tfN, strumq1);
 			branch = reset;
 			}
 
-		out[0] = strum(0.,strumq1);
+		out[0] = strum(0.,strumq1) * aamp;
 
 		if (outputchans == 2) { /* split stereo files between the channels */
 			out[1] = (1.0 - spread) * out[0];
