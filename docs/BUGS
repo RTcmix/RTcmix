@@ -1,5 +1,20 @@
+
+There's a problem with input sound files that have chunks outside of 
+the header.  For example, some AIFF files (like some on the SampleCell
+CDROMs) have comment chunks at the end of the file.  The RTcmix play
+program correctly ignores these, as long as the duration declared in
+the sound file header is correct.  But RTcmix itself happily slurps
+in the comment chunk and interprets it as sound data.  This can easily
+happen if you give STEREO a duration that causes it to read off the
+end of the file.  You're likely to get a click.  Until we fix this,
+it's best to adjust your script if you have source sounds like this,
+using something like "dur = DUR() - 0.01".
+
+-JGG (3/31/02)
+
+------------
+
 load errors
------------
 
 When using a standalone instrument (eg., FMINST vs. CMIX) compiled via make
 standalone_inst, you will see a warning message about the load directive in
