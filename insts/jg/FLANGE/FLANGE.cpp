@@ -63,6 +63,7 @@
 FLANGE :: FLANGE() : Instrument()
 {
    in = NULL;
+   branch = 0;
    flangetype_was_string = false;
 }
 
