@@ -82,7 +82,9 @@ int RTcmixMouse::configureYLabel(const char *prefix, const char *units,
 
 void RTcmixMouse::updateXLabelValue(const int id, const double value)
 {
-	assert(id >= 0 && id < _xlabelCount);
+	if (id < 0)
+		return;
+	assert(id < _xlabelCount);
 	const char *units = _xunits[id] ? _xunits[id] : "";
 	snprintf(_xlabel[id], LABEL_LENGTH, "%s: %.*f %s",
 				_xprefix[id], _xprecision[id], value, units);
@@ -91,7 +93,9 @@ void RTcmixMouse::updateXLabelValue(const int id, const double value)
 
 void RTcmixMouse::updateYLabelValue(const int id, const double value)
 {
-	assert(id >= 0 && id < _ylabelCount);
+	if (id < 0)
+		return;
+	assert(id < _ylabelCount);
 	const char *units = _yunits[id] ? _yunits[id] : "";
 	snprintf(_ylabel[id], LABEL_LENGTH, "%s: %.*f %s",
 				_yprefix[id], _yprecision[id], value, units);
