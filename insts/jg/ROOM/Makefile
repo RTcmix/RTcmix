@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = ROOM
 
-CURDIR = $(CMIXDIR)/insts.jg/$(NAME)
+CURDIR = $(CMIXDIR)/insts/jg/$(NAME)
 OBJS = $(NAME).o roomset.o
 PROGS = lib$(NAME).so $(NAME)
 

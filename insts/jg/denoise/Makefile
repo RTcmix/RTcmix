@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = denoise
 
-CURDIR = $(CMIXDIR)/insts.jg/$(NAME)
+CURDIR = $(CMIXDIR)/insts/jg/$(NAME)
 OBJS = $(NAME).o cfast.o cfsst.o cfr2tr.o cfr4tr.o cfr4syn.o cford1.o cford2.o
 CMIXOBJS += $(RTPROFILE_O)
 PROGS = lib$(NAME).so $(NAME)

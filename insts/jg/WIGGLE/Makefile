@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = WIGGLE
 
-CURDIR = $(CMIXDIR)/insts.jg/$(NAME)
+CURDIR = $(CMIXDIR)/insts/jg/$(NAME)
 OBJLIBDIR = ../objlib
 OBJLIB_A = $(OBJLIBDIR)/objlib.a
 OBJLIB_H = $(OBJLIBDIR)/objlib.h

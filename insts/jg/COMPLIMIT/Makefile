@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = COMPLIMIT
 
-CURDIR = $(CMIXDIR)/insts.jg/$(NAME)
+CURDIR = $(CMIXDIR)/insts/jg/$(NAME)
 OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
 CXXFLAGS += -Wall

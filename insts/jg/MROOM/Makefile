@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = MROOM
 
-CURDIR = $(CMIXDIR)/insts.jg/$(NAME)
+CURDIR = $(CMIXDIR)/insts/jg/$(NAME)
 OBJS = $(NAME).o timeset.o
 PROGS = lib$(NAME).so $(NAME)
 

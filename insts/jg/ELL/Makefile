@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = ELL
 
-CURDIR = $(CMIXDIR)/insts.jg/$(NAME)
+CURDIR = $(CMIXDIR)/insts/jg/$(NAME)
 OBJS = $(NAME).o ellipse.o setell.o
 PROGS = lib$(NAME).so $(NAME)
 

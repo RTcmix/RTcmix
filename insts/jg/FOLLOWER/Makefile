@@ -1,6 +1,6 @@
 include ../package.conf
 
-CURDIR = $(CMIXDIR)/insts.jg/FOLLOWER
+CURDIR = $(CMIXDIR)/insts/jg/FOLLOWER
 OBJLIBDIR = ../objlib
 OBJLIB_A = $(OBJLIBDIR)/objlib.a
 OBJLIB_H = $(OBJLIBDIR)/objlib.h

@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = FREEVERB
 
-CURDIR = $(CMIXDIR)/insts.jg/$(NAME)
+CURDIR = $(CMIXDIR)/insts/jg/$(NAME)
 OBJS = $(NAME).o allpass.o comb.o delay.o revmodel.o
 HDRS = allpass.hpp comb.hpp delay.hpp denormals.h revmodel.hpp tuning.h
 CMIXOBJS += $(PROFILE_O)
