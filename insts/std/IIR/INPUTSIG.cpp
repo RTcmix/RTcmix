@@ -17,10 +17,12 @@ extern "C" {
 
 INPUTSIG::INPUTSIG() : Instrument()
 {
+	in = NULL;
 }
 
 INPUTSIG::~INPUTSIG()
 {
+	delete [] in;
 }
 
 
@@ -55,8 +57,9 @@ int INPUTSIG::init(float p[], short n_args)
 
 	oamp = p[3];
 	inchan = (int)p[4];
-	if ((inchan+1) > inputchans) {
-	fprintf(stderr,"uh oh, you have asked for channel %d of a %d-channel file...\n",inchan,inputchans);
+	if (inchan >= inputchans) {
+		fprintf(stderr,"You have asked for channel %d of a %d-channel file.\n",
+							inchan, inputchans);
 		exit(-1);
 		}
 
@@ -69,9 +72,12 @@ int INPUTSIG::init(float p[], short n_args)
 int INPUTSIG::run()
 {
 	int i,j,rsamps;
-	float in[MAXBUF], out[2];
+	float out[2];
 	float aamp,val;
 	int branch;
+
+	if (in == NULL)        /* first time, so allocate it */
+		in = new float [RTBUFSAMPS * inputchans];
 
 	Instrument::run();
 

@@ -16,10 +16,12 @@ extern "C" {
 
 STEREO::STEREO() : Instrument()
 {
+	in = NULL;
 }
 
 STEREO::~STEREO()
 {
+	delete [] in;
 }
 
 
@@ -62,9 +64,12 @@ int STEREO::init(float p[], short n_args)
 int STEREO::run()
 {
 	int i,j,rsamps;
-	float in[MAXBUF], out[2];
+	float out[2];
 	float aamp;
 	int branch;
+
+	if (in == NULL)    /* first time, so allocate it */
+		in = new float [RTBUFSAMPS * inputchans];
 
 	Instrument::run();
 

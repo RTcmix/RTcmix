@@ -14,10 +14,12 @@ extern "C" {
 
 PANECHO::PANECHO() : Instrument()
 {
+	in = NULL;
 }
 
 PANECHO::~PANECHO()
 {
+	delete [] in;
 	delete [] delarray1;
 	delete [] delarray2;
 }
@@ -86,9 +88,12 @@ int PANECHO::init(float p[], short n_args)
 int PANECHO::run()
 {
 	int i,rsamps;
-	float in[MAXBUF], out[2];
+	float out[2];
 	float aamp;
 	int branch;
+
+	if (in == NULL)     /* first time, so allocate it */
+		in = new float [RTBUFSAMPS * inputchans];
 
 	Instrument::run();
 
