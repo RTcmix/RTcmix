@@ -57,7 +57,14 @@ create_pfield(const Arg args[], const int nargs)
 		return NULL;
 	}
 
-	RTMouseAxis axis = strchr(args[0], 'X') ? kRTMouseAxisX : kRTMouseAxisY;
+	RTMouseAxis axis;
+	const char *str = args[0];
+	if (str[0] == 'x' || str[0] == 'X')
+		axis = kRTMouseAxisX;
+	else if (str[0] == 'y' || str[0] == 'Y')
+		axis = kRTMouseAxisY;
+	else
+		return _mouse_usage();
 
 	double minval, maxval, defaultval, lag;
 	const char *prefix = NULL, *units = NULL;
@@ -86,6 +93,7 @@ create_pfield(const Arg args[], const int nargs)
 		die("makeconnection (mouse)", "<lag> must be between 0 and 100");
 		return NULL;
 	}
+	lag *= 0.01;
 
 	if (nargs > 5) {
 		if (args[5].isType(StringType))
