@@ -2,8 +2,8 @@
 
 include ../package.conf
 
-CURDIR = $(CMIXDIR)/insts.std/MMOVE
-MOVEDIR = $(CMIXDIR)/insts.std/MOVE
+CURDIR = $(CMIXDIR)/insts/std/MMOVE
+MOVEDIR = $(CMIXDIR)/insts/std/MOVE
 EXTERN_OBJS = $(MOVEDIR)/cmixfuns.o $(MOVEDIR)/common.o
 EXTERN_HDRS = $(MOVEDIR)/cmixfuns.h $(MOVEDIR)/common.h $(INSTRUMENT_H)
 COMMON_OBJS = MBASE.o RVB.o msetup.o
