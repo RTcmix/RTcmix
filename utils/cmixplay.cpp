@@ -46,6 +46,8 @@
 #define SKIP_SECONDS        4.0     /* for fast-forward and rewind */
 #define MARK_PRECISION      2       /* digits after decimal point to print
                                        for mark */
+#define MARK_DELAY          0.1     /* report mark time earlier by this much,
+                                       to make up for delay when typing key */
 
 #define ALL_CHANS           -1
 
@@ -746,8 +748,9 @@ int main(int argc, char *argv[])
                }
             }
             else if (c == 'm') {    /* mark */
-               printf("\nMARK: %.*f [%s]\n", MARK_PRECISION, buf_start_time,
-                           make_time_string(buf_start_time, MARK_PRECISION));
+               float mark_time = buf_start_time - MARK_DELAY;
+               printf("\nMARK: %.*f [%s]\n", MARK_PRECISION, mark_time,
+                                 make_time_string(mark_time, MARK_PRECISION));
                fflush(stdout);
             }
 
