@@ -1,6 +1,9 @@
+**** Released RTcmix-3.0.0 ****
+
 Sunday, May 28, 2000 John Gibson <johngibson@virginia.edu>
 
    * New sample scores showing bus_config feature.
+   * Some last-minute fixes for SGI compilation.
 
 Saturday, May 27, 2000 John Gibson <johngibson@virginia.edu>
 
