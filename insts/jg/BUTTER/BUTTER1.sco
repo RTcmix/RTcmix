@@ -4,8 +4,8 @@
    p1 = input start time
    p2 = input duration
    p3 = amplitude multiplier
-   p4 = type of filter (0: lowpass, 1: highpass)
-   p5 = steepness (integer btw 1 and 5, inclusive) [optional, default is 1]
+   p4 = type of filter (1: lowpass, 2: highpass)
+   p5 = steepness (> 0) [optional, default is 1]
    p6 = balance output and input signals (0:no, 1:yes) [optional, default is 1]
    p7 = input channel [optional, default is 0]
    p8 = percent to left channel [optional, default is .5]

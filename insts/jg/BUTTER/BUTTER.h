@@ -1,8 +1,8 @@
 #include <objlib.h>
 
 typedef enum {
-   LowPass = 0,
-   HighPass = 1
+   LowPass = 1,
+   HighPass = 2
 } FiltType;
 
 #define MAXFILTS 30
