@@ -27,6 +27,7 @@
 */
 
 #define SOUND
+#include <globals.h>
 #include "../H/ugens.h"
 #include "../H/sfheader.h"
 #include "../H/byte_routines.h"
@@ -54,9 +55,7 @@ extern short isNext;
 /* JGG: might want to make this 64*1024 in Linux */
 int nbytes = 32768;          /* exported only for the sake of sfcopy.c */
 
-extern float SR;
 int play_is_on=0;
-extern int print_is_on;
 int  sfd[NFILES];            /* soundfile descriptors */
 int  pointer[NFILES];	     /* to be used as pointer within sound buffer */
 int  bufsize[NFILES];        /* word length of buffer */
@@ -99,8 +98,6 @@ float FTEMP1,FTEMP2,FTEMP3,FTEMP4;
 int ITEMP1,ITEMP2;
 float *PTEMP1;
 
-
-float SR;   /* now declared here rather than in the profile */
 char *sfname[NFILES];
 float peakflag;
 
