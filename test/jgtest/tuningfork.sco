@@ -45,7 +45,7 @@ if (amp < 1 || amp > 32767) {
 rtsetparams(sr, 2)
 load("WAVETABLE")
 
-makegen(1, 10, 5000, 1)
-makegen(2, 18, 5000, 0,0, envramp,1, dur-envramp,1, dur,0)
+makegen(1, 18, 5000, 0,0, envramp,1, dur-envramp,1, dur,0)
+makegen(2, 10, 5000, 1)
 reset(10000)
 WAVETABLE(0, dur, amp, freq, .5)
