@@ -1,3 +1,5 @@
+include ../../package.conf
+
 # This allows us to test before doing the install
 CMD = ../../insts.base/MIX/MIX
 
@@ -19,9 +21,27 @@ test_unwriteable_output \
 test_null_output \
 test_bad_chans \
 test_8_channel \
+test_aux_bus \
+test_bus_loop \
 test_simple_mix \
+test_scheduler \
+test_stereo \
+run_stresstest \
 $(NULL)
 
+OBJS = stresstest.o
+IMBCMIXOBJS += $(PROFILE_O)
+PROGS = stresstest
+TESTLEN = 30
+
+stresstest: $(OBJS) $(IMBCMIXOBJS)
+	$(CXX) -o $@ $(DYN) $(OBJS) $(IMBCMIXOBJS) $(LDFLAGS)
+
+run_stresstest:	stresstest
+	@echo
+	@echo Running interactive stress test for $(TESTLEN) seconds...
+	./stresstest -d $(TESTLEN)
+	
 test_unreadable_input:
 	@echo
 	@echo Testing unreadable input file:
@@ -74,9 +94,30 @@ test_simple_mix:
 	@echo
 	@echo Testing simple MIX command:
 	-$(CMD) < simple-mix.sco
+	
+test_aux_bus:
+	@echo
+	@echo Testing aux busses:
+	-$(CMD) < test-aux-bus-01.sco
+
+test_bus_loop:
+	@echo
+	@echo Testing looped bus config:
+	-$(CMD) < test-bus-loop.sco
+
+test_scheduler:
+	@echo
+	@echo Testing non-interactive scheduler:
+	-$(CMD) < test-scheduler.sco
+
+test_stereo:
+	@echo
+	@echo Testing stereo placement (left-center-right):
+	-$(CMD) < test-stereo.sco
 
 clean:
-	@echo Nothing to clean here.
+	@echo Cleaning test suite.
+	$(RM) *.o $(PROGS)
 
 install:
 	@echo Nothing to install here.
