@@ -1,22 +1,45 @@
 include ../package.conf
 
-OBJS = COMBFILT.o
+NAME = COMBFILT
+
+CURDIR = $(CMIXDIR)/insts.vccm/$(NAME)
+OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
-#CFLAGS += -fPIC
-#CXXFLAGS += -fPIC 
-PROGS = COMBFILT libCOMBFILT.so
+PROGS = lib$(NAME).so $(NAME)
 
-all: libCOMBFILT.so
+.PHONY: all standalone install dso_install standalone_install \
+uninstall dso_uninstall standalone_uninstall clean cleanall
 
-standalone: COMBFILT
+all: lib$(NAME).so
 
-libCOMBFILT.so: $(OBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+standalone: $(NAME)
 
-COMBFILT: $(OBJS) $(CMIXOBJS)
+lib$(NAME).so: $(OBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+
+$(NAME): $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H)
+$(OBJS): $(INSTRUMENT_H) $(NAME).h
+
+install: dso_install
+
+dso_install: lib$(NAME).so
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)/libi$(NAME).so
+
+standalone_install: standalone
+	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)/i$(NAME)
+
+uninstall: dso_uninstall standalone_uninstall
+
+dso_uninstall:
+	$(RM) $(LIBDESTDIR)/libi$(NAME).so
+
+standalone_uninstall:
+	$(RM) $(DESTDIR)/i$(NAME)
 
 clean:
-	$(RM) *.o $(OBJS) $(PROGS)
+	$(RM) $(OBJS) $(PROGS)
+
+cleanall: clean uninstall
+
