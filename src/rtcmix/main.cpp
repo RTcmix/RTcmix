@@ -21,7 +21,7 @@
 #endif
 #include <globals.h>
 #include <prototypes.h>
-#include "../H/ugens.h"
+#include <ugens.h>
 #include "../rtstuff/rt.h"
 #include "sockdefs.h"           // Also includes defs.h
 #include "notetags.h"           // contains defs for note-tagging
@@ -35,7 +35,6 @@ extern "C" {
    void *sockit();
    void *inTraverse();
    Tree exct(Tree);
-   int closesf();
 #ifdef SGI
    void flush_all_underflows_to_zero();
 #endif
