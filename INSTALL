@@ -9,11 +9,8 @@ Here is how to install RTcmix and its instrument packages.
 2. If you downloaded the "cadillac version," which contains the optional
    instrument packages, skip this step.
 
-   a. Download at least the std and jg packages, and unpack them into the
-      "insts" directory of your RTcmix.
-
-   b. The package directory will have a version number, like "std-4.0.0".  It's
-      a good idea to rename this to remove the version number (e.g., "std").
+   Download at least the std and jg packages, and unpack them into the
+   "insts" directory of your RTcmix.
 
 3. cd into the top level of the RTcmix directory, and run the configure script:
 
@@ -28,7 +25,7 @@ Here is how to install RTcmix and its instrument packages.
       --with-python     Build the Python-enabled RTcmix (PYCMIX)
       --with-netplay    Enable code that lets you play RTcmix over a network
 
-   If you have more than one version of perl or python on your system, you
+   If you have more than one version of Perl or Python on your system, you
    can tell RTcmix which one to use by giving its path with the option, e.g.:
 
       --with-python=/usr/local/bin/python
@@ -38,7 +35,7 @@ Here is how to install RTcmix and its instrument packages.
       ./configure --with-alsa --with-perl --with-python
 
    NOTE: If you're running a Mac OS X earlier than 10.3 and want to enable
-   python, see the instructions below.
+   Python, see the instructions below.
 
 4. There are some special settings that you can make in the "site.conf" file,
    though most people will never need to do this.
@@ -52,9 +49,10 @@ Here is how to install RTcmix and its instrument packages.
       make install
 
 7. Add the bin directory inside of the RTcmix directory to your $PATH.  For
-   example, if you're using the bash shell, put this in .bashrc:
+   example, if you're using the bash shell, put something like this in .profile:
 
-      PATH="/path/to/rtcmix:$PATH"
+      PATH="/path/to/rtcmix/bin:$PATH"
+      export PATH
 
 8. Try running some of the scores in docs/sample_scores.  To run any score,
    type "CMIX < scorefile.sco".  If these seem to work, your installation
@@ -86,10 +84,10 @@ Mac OS X
      you have to install both the command-line gnuplot from source and the
      Aquaterm program.  See http://aquaterm.sourceforge.net for instructions.
 
-   - If you want to enable the Python front-end, and you are running a version
+   - If you want to enable the Python front end, and you are running a version
      of Mac OS X earlier than 10.3, you will have to build Python from source,
      because the Python supplied with the Developer Tools CD is incomplete.
-     See the instructions in RTcmix/Python/NOTES.
+     See the instructions in RTcmix/src/parser/python/NOTES.
 
 
 SGI Irix
