@@ -94,10 +94,10 @@ int BUTTER :: init(float p[], int n_args)
    if (nfilts < 1 || nfilts > MAXFILTS)
       die("BUTTER", "Sharpness (p5) must be an integer between 1 and %d.",
                                                                    MAXFILTS);
-   if (type != NoFilter && type != LowPass && type != HighPass
-         && type != BandPass && type != BandReject)
-      die("BUTTER", "Filter type must be 0 (no filter), 1 (lowpass), "
-                    "2 (highpass), 3 (bandpass) or 4 (bandreject).");
+   if (type != LowPass && type != HighPass && type != BandPass
+         && type != BandReject)
+      die("BUTTER", "Filter type must be 1 (lowpass), 2 (highpass), "
+                    "3 (bandpass) or 4 (bandreject).");
 
    for (int i = 0; i < nfilts; i++)
       filt[i] = new Butter();

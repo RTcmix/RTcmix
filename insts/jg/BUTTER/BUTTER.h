@@ -1,7 +1,6 @@
 #include <objlib.h>
 
 typedef enum {
-   NoFilter = 0,
    LowPass = 1,
    HighPass = 2,
    BandPass = 3,
