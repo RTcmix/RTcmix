@@ -1,6 +1,6 @@
 include ../package.conf
 
-OBJS = MIXN.o funcs.o
+OBJS = MIXN.o
 CMIXOBJS += 
 #CFLAGS += -fPIC
 #CXXFLAGS += -fPIC
