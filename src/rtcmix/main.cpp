@@ -40,7 +40,7 @@ extern "C" {
   void flush_all_underflows_to_zero();
 #endif
 #ifdef LINUX
-  void flush_fpe(int sig);
+  void sigfpe_handler(int sig);
 #endif
 }
 
@@ -201,7 +201,7 @@ main(int argc, char *argv[])
  #ifdef DENORMAL_CHECK
    detect_denormals();
  #endif
-   signal(SIGFPE, flush_fpe);          /* Install signal handler */
+   signal(SIGFPE, sigfpe_handler);          /* Install signal handler */
 #endif /* LINUX */
 #ifdef SGI
    flush_all_underflows_to_zero();
