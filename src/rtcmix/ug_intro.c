@@ -86,10 +86,15 @@ ug_intro()
 	UG_INTRO("control_rate",m_reset); /* because "reset" is a perlfunc */
 	UG_INTRO("load",m_load); /* allows loading of dynamic libraries */
 	UG_INTRO("DUR",m_DUR);  /* returns duration for rtinput files */
+	UG_INTRO("SR",m_SR);  /* returns rate for rtinput files */
 	UG_INTRO("PEAK",m_PEAK);  /* returns peak amp for rtinput files */
 	UG_INTRO("LEFT_PEAK",m_LEFT_PEAK);
 	UG_INTRO("RIGHT_PEAK",m_RIGHT_PEAK);
 	UG_INTRO("bus_config", bus_config);
+	UG_INTRO("pickrand", m_pickrand);
+	UG_INTRO("pickwrand", m_pickwrand);
+	UG_INTRO("irand", m_irand);
+	UG_INTRO("setexp", m_setexp);
 }
 
 
