@@ -14,7 +14,7 @@ extern "C" {
 
 DELAY::DELAY() : Instrument()
 {
-    in = new float[MAXBUF];
+    in = NULL;
     delarray = NULL;
 }
 
@@ -78,6 +78,11 @@ int DELAY::run()
 	float aamp;
 	int branch;
 
+	if (in == NULL)        /* first time, so allocate it */
+		in = new float [RTBUFSAMPS * inputchans];
+
+	Instrument::run();
+
 	rsamps = chunksamps*inputchans;
 
 	rtgetin(in, this, rsamps);
@@ -100,7 +105,7 @@ int DELAY::run()
 
 		delput(out[0], delarray, deltabs);
 
-		if (NCHANS == 2) {
+		if (outputchans == 2) {
 			out[1] = out[0] * (1.0 - spread);
 			out[0] *= spread;
 			}
@@ -119,6 +124,8 @@ makeDELAY()
 	DELAY *inst;
 
 	inst = new DELAY();
+	inst->set_bus_config("DELAY");
+
 	return inst;
 }
 

@@ -15,7 +15,7 @@ extern "C" {
 
 MULTICOMB::MULTICOMB() : Instrument()
 {
-	in = new float[MAXBUF];
+	in = NULL;
 	for (int n=0; n<NCEES; n++)
 		carray[n] = NULL;	
 }
@@ -40,7 +40,7 @@ int MULTICOMB::init(float p[], short n_args)
 	rtsetinput(p[1], this);
 	nsamps = rtsetoutput(p[0], p[2], this);
 
-	if (NCHANS != 2) {
+	if (outputchans != 2) {
 		fprintf(stderr,"Sorry, output must be stereo for MULTICOMB!\n");
 		exit(-1);
 		}
@@ -80,6 +80,11 @@ int MULTICOMB::run()
 	float aamp,temp;
 	int branch;
 
+	if (in == NULL)        /* first time, so allocate it */
+		in = new float [RTBUFSAMPS * inputchans];
+
+	Instrument::run();
+
 	rsamps = chunksamps*inputchans;
 
 	rtgetin(in, this, rsamps);
@@ -118,6 +123,8 @@ makeMULTICOMB()
 	MULTICOMB *inst;
 
 	inst = new MULTICOMB();
+	inst->set_bus_config("MULTICOMB");
+
 	return inst;
 }
 
