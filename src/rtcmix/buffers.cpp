@@ -100,7 +100,9 @@ copy_interleaved_buf_to_buf(
 void
 init_buf_ptrs()
 {
-   for (int i = 0; i < MAXBUS; i++) {
+   int   i;
+
+   for (i = 0; i < MAXBUS; i++) {
       audioin_buffer[i] = NULL;
       aux_buffer[i] = NULL;
       out_buffer[i] = NULL;
