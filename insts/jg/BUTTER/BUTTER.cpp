@@ -227,7 +227,7 @@ void BUTTER :: doupdate()
       newcf = p[10];
    else
       newcf = tablei(currentFrame(), cfarray, cftabs);
-   if (newcf < 0.0)
+   if (newcf < 1.0)
       newcf = 1.0;
    else if (newcf > SR * 0.5)
       newcf = SR * 0.5;
