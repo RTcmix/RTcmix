@@ -2,7 +2,7 @@ include ../makefile.conf
 
 INCLUDES += -I../src/include -I../src/rtcmix
 
-GENLIB = libgen.a
+LIB = libgen.$(SHLIB_SUFFIX)
 CFILES =  oscil.c oscili.c osciln.c oscilni.c table.c tablei.c evp.c reson.c \
 	  rsnset.c evset.c tableset.c cpspch.c cpsoct.c octpch.c buzz.c\
 	  rrand.c boost.c allpole.c delset.c delput.c delget.c dliget.c\
@@ -31,19 +31,18 @@ OOBJECTS = Ooscili.o Orand.o Ozdelay.o Ocomb.o Ozcomb.o
 .cpp.o:
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 	
-all : $(GENLIB)
+all : $(LIB)
 
 install:	all
 	@if test ! -d $(LIBDIR); then mkdir $(LIBDIR); fi;
-	$(INSTALL) $(GENLIB) $(LIBDIR)
+	$(INSTALL) $(LIB) $(LIBDIR)
 
 uninstall:
-	$(RM) $(LIBDIR)/$(GENLIB)
+	$(RM) $(LIBDIR)/$(LIB)
 
-$(GENLIB):	$(OBJECTS) $(OOBJECTS)
+$(LIB):	$(OBJECTS) $(OOBJECTS)
 	$(RM) $@
-	ar rv $@ $(OBJECTS) $(OOBJECTS)
-	$(RANLIB) $@
+	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(OBJECTS) $(OOBJECTS)
 
 depend:
 ifeq ($(ARCH),LINUX)
@@ -58,7 +57,7 @@ endif
 -include depend
 
 clean:
-	rm -f *.o *~ $(GENLIB)
+	rm -f *.o *~ $(LIB)
 
 cleanall: clean
 	rm -f depend
