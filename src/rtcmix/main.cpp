@@ -23,7 +23,8 @@
 #include <prototypes.h>
 #include <ugens.h>
 #include "../rtstuff/rt.h"
-#include "sockdefs.h"           // Also includes defs.h
+#include "sockdefs.h"
+#include "defs.h"
 #include "notetags.h"           // contains defs for note-tagging
 #include "../H/dbug.h"
 
@@ -32,9 +33,6 @@ extern "C" {
    void *yyparse();
    int profile();
    void rtprofile();
-   void *sockit(void *);
-   void *inTraverse(void *);
-   Tree exct(Tree);
 #ifdef SGI
    void flush_all_underflows_to_zero();
 #endif
@@ -210,10 +208,6 @@ main(int argc, char *argv[])
 
    setbuf(stdout, NULL);        /*  Want to see stdout errors */
 
-   if (rtInteractive) {
-      fprintf(stdout, "rtInteractive mode set\n");
-   }
-
    /* In rtInteractive mode, we set up RTcmix to listen for score data
       over a socket, and then parse this, schedule instruments, and play
       them concurrently. The socket listening and parsing go in one
@@ -223,6 +217,8 @@ main(int argc, char *argv[])
       all instruments, and then plays them -- in that order. No threads.
    */
    if (rtInteractive) {
+
+      fprintf(stdout, "rtInteractive mode set\n");
 
       /* Read an initialization score. */
       if (!noParse) {
