@@ -4,7 +4,7 @@
 TOPDIR = /usr/local
 
 # The name of the RTcmix directory
-CMIXDIR = $(TOPDIR)/RTcmix
+CMIXDIR = $(TOPDIR)/RTcmix-3.1.0
 
 # The dir that will contain links to the instrument dynamic shared objects
 LIBDESTDIR = $(CMIXDIR)/shlib
@@ -17,6 +17,7 @@ PACKAGE_DIRS =
 
 # Which platform?
 ARCH = LINUX
+#ARCH = MACOSX
 #ARCH = SGI
 
 # Sound driver API for Linux (and other than SGI)
@@ -69,17 +70,27 @@ BINDIR = $(DESTDIR)
 # Compile and link time flags
 
 ifeq ($(ARCH),LINUX)
-  ARCHFLAGS = -D_REENTRANT -DLINUX
+  ARCHFLAGS = -D_REENTRANT -DLINUX -DRTUPDATE
   CC = gcc 
   CXX = g++ 
   LD = ld
   MAKE = make
-#  INSTALL = cp -f
-  INSTALL = ln -fs
+  INSTALL = cp -f
+#  INSTALL = ln -fs
+  SHELL = /bin/sh
+endif
+ifeq ($(ARCH),MACOSX)
+  ARCHFLAGS = -D_REENTRANT -DMACOSX
+  CC = cc
+  CXX = c++
+  LD = ld
+  MAKE = gnumake
+  INSTALL = cp -f
+  RANLIB = ranlib
   SHELL = /bin/sh
 endif
 ifeq ($(ARCH),SGI)
-  ARCHFLAGS = -D_REENTRANT -DSGI
+  ARCHFLAGS = -D_REENTRANT -DSGI -DRTUPDATE
   CC = cc -Xcpluscomm
   CXX = CC
   LD = ld
@@ -98,9 +109,14 @@ CXXFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
 SNDLIB = ../sndlib/sndlib.a
 
 ifeq ($(ARCH),LINUX)
-  SYSLIBS = -lpthread -lm -ldl -lefence
+  SYSLIBS = -lpthread -lm -ldl #-lefence
   LDFLAGS = $(SYSLIBS)
-  SHARED_LDFLAGS = -shared 
+  SHARED_LDFLAGS = -shared -Wl,-soname,$@
+endif
+ifeq ($(ARCH),MACOSX)
+  SYSLIBS = 
+  LDFLAGS = $(SYSLIBS) -framework CoreAudio
+  SHARED_LDFLAGS = -bundle -flat_namespace -undefined suppress
 endif
 ifeq ($(ARCH),SGI)
   SYSLIBS = -lpthread -laudio -lm
