@@ -78,9 +78,10 @@ int FMINST::init(double p[], int n_args)
 
 	wavetable = NULL;
 	int tablelen = 0;
-#if 0   // handle table coming in as optional p8 TablePField
-	if (n_args > 8) {
-		wavetable = getTable(8, &tablelen);
+	if (n_args > 8) {      // handle table coming in as optional p8 TablePField
+		const PField &field = getPField(8);
+		tablelen = field.values();
+		wavetable = (double *) field;
 	}
 	if (wavetable == NULL) {
 		wavetable = floc(WAVET_GEN_SLOT);
@@ -89,22 +90,16 @@ int FMINST::init(double p[], int n_args)
                     "an old-style gen function in slot %d.", WAVET_GEN_SLOT);
 		tablelen = fsize(WAVET_GEN_SLOT);
 	}
-#else
-	wavetable = floc(WAVET_GEN_SLOT);
-	if (wavetable == NULL)
-		return die("FMINST", "You need to store a waveform in function %d.",
-                                                               WAVET_GEN_SLOT);
-	tablelen = fsize(WAVET_GEN_SLOT);
-#endif
 
 	carosc = new Ooscili(carfreq, wavetable, tablelen);
 	modosc = new Ooscili(modfreq, wavetable, tablelen);
 
 	indexenv = NULL;
 	tablelen = 0;
-#if 0   // handle table coming in as optional p9 TablePField
-	if (n_args > 9) {
-		indexenv = getTable(9, &tablelen);
+	if (n_args > 9) {      // handle table coming in as optional p9 TablePField
+		const PField &field = getPField(9);
+		tablelen = field.values();
+		indexenv = (double *) field;
 	}
 	if (indexenv == NULL) {
 		indexenv = floc(INDEX_GEN_SLOT);
@@ -114,15 +109,6 @@ int FMINST::init(double p[], int n_args)
 		tablelen = fsize(INDEX_GEN_SLOT);
 	}
 	tableset(dur, tablelen, indtabs);
-#else
-	indexenv = floc(INDEX_GEN_SLOT);
-	if (indexenv == NULL)
-		return die("FMINST",
-				"You haven't made the index guide function (table %d).",
-				INDEX_GEN_SLOT);
-	tablelen = fsize(INDEX_GEN_SLOT);
-	tableset(dur, tablelen, indtabs);
-#endif
 
 	ampenv = floc(AMP_GEN_SLOT);
 	if (ampenv) {
