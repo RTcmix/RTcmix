@@ -115,9 +115,9 @@ open_alsa_ports()
       return -1;
    }
 
-#ifdef RME
-#else /* !RME */
-#endif /* !RME */
+#ifdef MONO_DEVICES
+#else /* !MONO_DEVICES */
+#endif /* !MONO_DEVICES */
 
    return 0;
 err:
@@ -211,37 +211,61 @@ setup_oss_device(
 static int
 open_oss_ports()
 {
-   int   status, datum_size, buf_bytes;
+   int   n, status, datum_size, buf_bytes;
 
-   if (out_port) {
+   datum_size = AUDIO_DATUM_SIZE;
+
+#ifdef MONO_DEVICES
+
+   buf_bytes = RTBUFSAMPS * sizeof(short);
+
+   for (n = 0; n < NCHANS; n++) {
+      out_port[n] = open_device(n, O_WRONLY);
+      if (out_port[n] == -1)
+         goto err;
+      status = setup_oss_device(out_port[n], 1, (int) SR,
+                                          NUM_OSS_FRAGMENTS, 0, &buf_bytes);
+   }
+
+   if (full_duplex) {
+//FIXME: But it's NOT necessarily NCHANS!
+      for (n = 0; n < NCHANS; n++) {
+         in_port[n] = open_device(n, O_RDONLY);
+         if (in_port[n] == -1)
+            goto err;
+         status = setup_oss_device(in_port[n], 1, (int) SR,
+                                          NUM_OSS_FRAGMENTS, 0, &buf_bytes);
+      }
+   }
+
+#else /* !MONO_DEVICES */
+
+   if (out_port[0]) {
       fprintf(stderr, "Audio ports already opened!\n");
       return -1;
    }
 
-   datum_size = AUDIO_DATUM_SIZE;
-
-#ifdef RME
-#else /* !RME */
    /* This works for Creative/Ensoniq AudioPCI and other consumer cards. */
    if (full_duplex) {
-      out_port = open_device(-1, O_RDWR);
-      if (out_port == -1)
+      out_port[0] = open_device(-1, O_RDWR);
+      if (out_port[0] == -1)
          goto err;
-      in_port = out_port;
+      in_port[0] = out_port[0];
    }
    else {
-      out_port = open_device(-1, O_WRONLY);
-      if (out_port == -1)
+      out_port[0] = open_device(-1, O_WRONLY);
+      if (out_port[0] == -1)
          goto err;
    }
    buf_bytes = RTBUFSAMPS * NCHANS * sizeof(short);
-   status = setup_oss_device(out_port, NCHANS, (int) SR,
+   status = setup_oss_device(out_port[0], NCHANS, (int) SR,
                                  NUM_OSS_FRAGMENTS, full_duplex, &buf_bytes);
+
+#endif /* !MONO_DEVICES */
 
    printf("Output buffer:  %d bytes\n", buf_bytes);
    if (full_duplex)
       printf("Input buffer:   %d bytes\n", buf_bytes);
-#endif /* !RME */
 
    /* I think OSS can change our requested buffer size.  -JGG */
    RTBUFSAMPS = (buf_bytes / datum_size) / NCHANS;
@@ -420,7 +444,40 @@ rtsetparams(float p[], int n_args, double pp[])
 
    MAXBUF = (int) NCHANS * RTBUFSAMPS;
 
+   rtsetparams_called = 1;
+
    return 0.0;
 }
 
+
+/* ---------------------------------------------------- close_audio_ports --- */
+void
+close_audio_ports()
+{
+   int n;
+
+#ifdef LINUX
+ #ifdef MONO_DEVICES
+   for (n = 0; n < NCHANS; n++)
+      if (out_port[n])
+         close(out_port[n]);
+   for (n = 0; n < audioNCHANS; n++)
+      if (in_port[n])
+         close(in_port[n]);
+ #else /* !MONO_DEVICES */
+   if (out_port[0])
+      close(out_port[0]);
+   if (in_port[0] && in_port[0] != out_port[0])
+      close(in_port[0]);
+ #endif /* !MONO_DEVICES */
+#endif /* LINUX */
+
+#ifdef SGI
+   if (out_port) {
+      while (ALgetfilled(out_port) > 0)
+         ;
+// FIXME: anything else?
+   }
+#endif /* SGI */
+}
 
