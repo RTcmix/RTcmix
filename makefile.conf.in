@@ -111,5 +111,9 @@ PROFILE_O = $(CMIXDIR)/rtstuff/profile.o
 RTPROFILE_O = $(CMIXDIR)/rtstuff/rtprofile.o
 
 GENLIB = $(LIBDIR)/genlib.a
-CMIXOBJS = $(CMIXDIR)/sys/cmix.o $(LIBDIR)/genlib.a
+CMIX_O = $(CMIXDIR)/sys/cmix.o
+M_O = $(CMIXDIR)/Minc/m.o
+P_O = $(CMIXDIR)/Minc/p.o
+
+CMIXOBJS = $(CMIX_O) $(M_O) $(GENLIB)
 

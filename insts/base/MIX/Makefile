@@ -3,10 +3,6 @@ include ../package.conf
 OBJS = MIX.o
 PROGS = MIX PMIX
 
-CMIXOBJS += $(PROFILE_O)
-M_O = ../../Minc/m.o
-P_O = ../../Minc/p.o
-
 ifeq ($(ARCH),LINUX)
    DYN = -rdynamic
 else
@@ -21,11 +17,13 @@ else
 all: MIX
 endif
 
-MIX: $(OBJS) $(CMIXOBJS) $(M_O)
-	$(CXX) -o MIX $(DYN) $(OBJS) $(CMIXOBJS) $(M_O) $(LDFLAGS)
+MIX: $(OBJS) $(CMIX_O) $(M_O) $(GENLIB) $(PROFILE_O)
+	$(CXX) -o MIX $(DYN) $(OBJS) $(CMIX_O) $(PROFILE_O) $(M_O) $(GENLIB) \
+		$(LDFLAGS)
 
-PMIX: $(OBJS) $(CMIXOBJS) $(P_O)
-	$(CXX) -o PMIX $(DYN) $(OBJS) $(CMIXOBJS) $(P_O) $(LDFLAGS) $(PERL_LDFLAGS)
+PMIX: $(OBJS) $(CMIX_O) $(P_O) $(GENLIB) $(PROFILE_O)
+	$(CXX) -o PMIX $(DYN) $(OBJS) $(CMIX_O) $(PROFILE_O) $(P_O) $(LDFLAGS) \
+		$(GENLIB) $(PERL_LDFLAGS)
 
 $(OBJS): $(INSTRUMENT_H)
 
