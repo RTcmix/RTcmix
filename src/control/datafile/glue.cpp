@@ -45,6 +45,8 @@ static RTNumberPField *_datafile_usage()
 
 static int format_string_to_code(const char *str)
 {
+	if (str == NULL)
+		return -1;
 	if (strcmp(str, "double") == 0)
 		return kDataFormatDouble;
 	else if (strcmp(str, "float") == 0)
@@ -85,6 +87,13 @@ create_pfield(const Arg args[], const int nargs)
 		filerate = (int) args[1];
 		const char *format = args[2];
 		formatcode = format_string_to_code(format);
+		if (formatcode == -1) {
+			warn("makeconnection (datafile)", "Invalid format string. "
+						"Valid strings are:");
+			warn("makeconnection (datafile)", "\"double\", \"float\", \"int64\", "
+						"\"int32\", \"int16\", \"byte\"");
+			formatcode = kDataFormatFloat;
+		}
 		swap = (bool) ((int) args[3]);
 	}
 
