@@ -1,3 +1,11 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/* Functions to fill instrument input buffers from file, aux bus or audio dev.
+                                                             -JGG, 17-Feb-00
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
