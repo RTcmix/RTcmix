@@ -1,15 +1,12 @@
 include ../../../makefile.conf
 
-CFLAGS += -I$(INCLUDEDIR) -I../../rtcmix
-CXXFLAGS += -I$(INCLUDEDIR) -I../../rtcmix
-
 MODULE = rtcmix
 MODULE_SRC = $(MODULE)module.cpp
 FUNCLIST = funclist
 FUNCEXCEPT = funcexcept
 FIND_FLAGS = -follow
 
-.PHONY: all clean cleanall
+.PHONY: all install clean cleanall
 
 all: $(MODULE)
 
@@ -24,8 +21,10 @@ $(MODULE_SRC): make_python_ext.pl $(MODULE_SRC).in $(FUNCLIST)
 
 $(MODULE): $(MODULE_SRC)
 	$(PYTHON) setup.py build
-	cp build/lib.linux-i686-2.2/$(MODULE).so .
-#FIXME: this is platform-specific -- use distutils for install
+
+# NB: need root for this; installs in python site-packages dir
+install:
+	$(PYTHON) setup.py install
 
 clean:
 	$(RM) $(FUNCLIST) $(MODULE).so $(MODULE)module.o $(MODULE_SRC)
