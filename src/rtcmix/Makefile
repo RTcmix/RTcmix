@@ -63,6 +63,7 @@ Instrument.cpp \
 intraverse.cpp \
 lfo.cpp \
 minc_info.cpp \
+DataFile.cpp \
 Option.cpp \
 PField.cpp \
 PFieldSet.cpp \
