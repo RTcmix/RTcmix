@@ -238,7 +238,7 @@ rtsendzeros(AudioDevice *device, int also_write_to_file)
 
       err = write_to_audio_device(device);
       if (err)
-         fprintf(stderr, "rtsendzeros: bad write to audio device\n");
+         fprintf(stderr, "rtsendzeros: Error: %s\n", device->getLastError());
    }
 
    if (also_write_to_file && rtfileit) {
@@ -309,7 +309,7 @@ rtsendsamps(AudioDevice *device)
 
       err = write_to_audio_device(device);
       if (err)
-         fprintf(stderr, "rtsendsamps: bad write to audio device\n");
+         fprintf(stderr, "rtsendsamps: Error: %s\n", device->getLastError());
    }
 
    if (!is_float_format && rtfileit) {
