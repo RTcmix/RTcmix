@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2004-09-27  Douglas Scott  <netdscott at netscape.net>
+
+	* First pass at consolidating all globals into RTcmix object.
+
 Thursday, August 12, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * Two new features for cmixplay: "goto" hotkey (type number to
