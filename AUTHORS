@@ -13,15 +13,10 @@ David Topper      <topper@virginia.edu>
 
 
 Thanks to Bill Schottstaedt for his sndlib sound library.
-[url for this]
+(http://ccrma-www.stanford.edu/CCRMA/Software/sndlib)
 
 Thanks to Julius O. Smith for his resample program.
-[url for this]
-
-
-Individual instrument and interfaces packages may have their own
-LICENSE and AUTHORS files.
-
+(http://www-ccrma.stanford.edu/~jos/resample/index.html)
 
 
 Original Authors of cmix
@@ -46,17 +41,9 @@ Some instruments (pvoc, convolve) contain code from the UCSD Carl package,
 whose authors were F. R. Moore, Gareth Loy, Mark Dolson and others.
 
 
+See ``LICENSE'' for the license to this software and for a DISCLAIMER OF
+ALL WARRANTIES.
 
-
-
-
-
-need to put in each src file...
-
-/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
-   See ``AUTHORS'' for a list of contributors.
-   See ``LICENSE'' for the license to this software and for a
-     DISCLAIMER OF ALL WARRANTIES.
-*/
-
+Individual instrument and interfaces packages may have their own
+LICENSE and AUTHORS files.
 
