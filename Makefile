@@ -138,10 +138,10 @@ install::
 	@cd cmd; $(MAKE) $(MFLAGS) install;
 	@cd utils; $(MAKE) $(MFLAGS) install;
 	@cd docs/pod; $(MAKE) $(MFLAGS) install
+	@if test ! -d $(LIBDESTDIR); then mkdir $(LIBDESTDIR); fi;
 ifeq ($(PERL_SUPPORT), TRUE)
 	@cd Perl; $(MAKE) $(MFLAGS) install;
 endif
-	@if test ! -d $(LIBDESTDIR); then mkdir $(LIBDESTDIR); fi;
 	@for DIR in $(INST_DIRS); \
 	do \
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) install ); \
