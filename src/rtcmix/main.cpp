@@ -144,9 +144,9 @@ init_globals()
 }
 
 
-/* ------------------------------------------------------- signal_handler --- */
+/* ------------------------------------------------------- sigint_handler --- */
 static void
-signal_handler(int signo)
+sigint_handler(int signo)
 {
 #ifdef DBUG
    printf("Signal handler called (signo %d)\n", signo);
@@ -207,8 +207,8 @@ main(int argc, char *argv[])
    flush_all_underflows_to_zero();
 #endif
 
-   /* Call signal_handler on cntl-C. */
-   if (signal(SIGINT, signal_handler) == SIG_ERR) {
+   /* Call sigint_handler on cntl-C. */
+   if (signal(SIGINT, sigint_handler) == SIG_ERR) {
       fprintf(stderr, "Error installing signal handler.\n");
       exit(1);
    }
