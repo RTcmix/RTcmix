@@ -30,7 +30,7 @@ private:
 	int writePacket(const DisplaySockPacket *packet);
 	void sendLabel(const int id, const char *prefix,
                   const char *units, const int precision);
-	void sendLabelValue(const bool isXAxis, const int id, const double value);
+	void sendLabelValue(const int id, const double value);
 	int pollInput(long);
 
 	int _sockport;
