@@ -11,7 +11,7 @@ extern "C" {
 
 #define BUFTYPE float             /* could be double some day */
 
-typedef (BUFTYPE *) BufPtr;
+typedef BUFTYPE *BufPtr;
 
 void init_buf_ptrs(void);
 int allocate_audioin_buffer(short chan, int frames);
