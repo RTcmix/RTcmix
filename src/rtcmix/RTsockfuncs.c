@@ -7,6 +7,9 @@
 #include <signal.h>
 #include <sys/signal.h>
 #include <sys/time.h>
+#ifdef SGI
+#include <sys/socket.h>
+#endif
 
 #include "RTsockfuncs.h"
 
