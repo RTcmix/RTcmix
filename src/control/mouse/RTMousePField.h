@@ -19,7 +19,8 @@ typedef enum {
 	kRTMouseAxisY
 } RTMouseAxis;
 
-#define LAGFACTOR	0.17
+#define LAGFACTOR	0.12
+#define MAXCF		500.0
 #define MINCF		0.05
 
 
@@ -39,7 +40,6 @@ public:
 		  _mousewin(mousewin), _axis(axis), _min(minval), _default(defaultval)
 	{
 		assert(_mousewin != NULL);
-//FIXME: set up function pointers for each axis, for use in doubleValue?
 
 		_labelID = -1;
 		if (prefix && prefix[0]) {	// no label if null or empty prefix string
@@ -53,12 +53,12 @@ public:
 
 		_diff = maxval - minval;
 
-      // Convert lag, a percentage in range [0, 100], to cutoff frequency,
+		// Convert lag, a percentage in range [0, 100], to cutoff frequency,
 		// depending on the control rate in effect when this PField was created.
 		// Lag pct is inversely proportional to cf, because the lower the cf,
 		// the longer the lag time.
-      const double nyquist = resetval * 0.5;
-		double cf = nyquist * pow(2.0, -(lag * LAGFACTOR));
+		const double nyquist = resetval * 0.5;
+		double cf = MAXCF * pow(2.0, -(lag * LAGFACTOR));
 		if (cf <= MINCF)
 			cf = MINCF;
 		if (cf > nyquist)
