@@ -73,9 +73,9 @@ int STGRANR::init(float p[], int n_args)
             evdur = -evdur - inskip;
 
 	rvin = rtsetinput(inskip, this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
+   if (rvin == -1) { // no input
+      return(DONT_SCHEDULE);
+   }
 	nsamps = rtsetoutput(starttime, evdur, this);
 
 	if (outputchans > 2) {
@@ -85,7 +85,7 @@ int STGRANR::init(float p[], int n_args)
 
 	amp = p[3];
 	
-   inframe = RTBUFSAMPS;
+        inframe = RTBUFSAMPS;
         
 	amptable = floc(1);
 	if (amptable) {
@@ -114,7 +114,7 @@ int STGRANR::init(float p[], int n_args)
 	durmid  = (double)p[10]; if (durmid < durlo ) durmid = durlo;
 	durhi  = (double)p[11]; if (durhi < durmid ) durhi = durmid;
    if ( durhi > rate ) {
- 		die("STGRANR", "Grain durations %f sec. are larger than rate: %f seconds per grain.",durhi,rate);
+ 		die("STGRANR", "Grain durations %f sec. are larger than rate: %f seconds per grain.",durhi,rate);     
 		return(DONT_SCHEDULE);
 	}
 	durti  = (double)p[12];
@@ -194,13 +194,14 @@ int STGRANR::run()
                                 inframe = 0;
                             }
                             oldersig[0] = oldsig[0];
-                            oldersig[1] = oldsig[1];
                             oldsig[0] = newsig[0];
-                            oldsig[1] = newsig[1];
-                    
                             newsig[0] = in[(inframe * inputchans)/* + inchan*/];
-                            newsig[1] = in[(inframe * inputchans)+1];
-                   
+                            if ( inputchans == 2 ) {
+                                oldersig[1] = oldsig[1];
+                                oldsig[1] = newsig[1];
+                                newsig[1] = in[(inframe * inputchans)+1];
+                            }
+                            
                             inframe++;
                             incount++;
                     
@@ -216,7 +217,7 @@ int STGRANR::run()
                         }
                         else 
                             outp[0] = 0.0;
-                        if (NCHANS == 2 && inputchans == 1) {  // split stereo files between the channels 
+                        if (NCHANS == 2 ) {  // split stereo files between the channels 
                             outp[1] = (1.0 - spread) * outp[0];
                             outp[0] *= spread;
                         }
