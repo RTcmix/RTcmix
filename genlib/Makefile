@@ -43,9 +43,7 @@ uninstall:
 $(GENLIB):	$(OBJECTS) $(OOBJECTS)
 	$(RM) $@
 	ar rv $@ $(OBJECTS) $(OOBJECTS)
-ifeq ($(ARCH),MACOSX)
 	$(RANLIB) $@
-endif
 
 depend:
 ifeq ($(ARCH),LINUX)
