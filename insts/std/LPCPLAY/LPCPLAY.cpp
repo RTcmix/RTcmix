@@ -83,12 +83,14 @@ extern int GetLPCStuff(double *hithresh, double *lowthresh,
 					   
 extern int GetConfiguration(float *maxdev,
 							float *perperiod,
-							float *hnfactor);
+							float *hnfactor,
+							bool *autocorrect);
 
 /* Construct an instance of this instrument and initialize a variable. */
 LPCINST::LPCINST(const char *name)
 	: _dataSet(NULL), _alpvals(NULL), _buzvals(NULL), _functionName(name)
 {
+	_autoCorrect = false;
 	_jcount = _counter = 0; 
 	_leftOver = 0;
 	_savedOffset = 0;
@@ -216,7 +218,8 @@ int LPCPLAY::localInit(float p[], int n_args)
 					   
 	GetConfiguration(&_maxdev,
 					 &_perperiod,
-					 &_hnfactor);
+					 &_hnfactor,
+					 &_autoCorrect);
 	
 	SetupArrays(frameCount);
 
@@ -345,6 +348,10 @@ int LPCPLAY::run()
 /*		printf("voiced: %d frame %g\n", _voiced, _frameno); */
 		if (_dataSet->getFrame(_frameno,_coeffs) == -1)
 			break;
+		// If requested, stabilize this frame before using
+		if (_autoCorrect)
+			stabilize(_coeffs, _nPoles);
+			
 		float buzamp = getVoicedAmp(_coeffs[THRESH]);
 		_voiced = (buzamp > 0.1); /* voiced = 0 for 10:1 noise */
 		float noisamp = (1.0 - buzamp) * _randamp;	/* for now */

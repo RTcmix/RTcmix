@@ -14,6 +14,7 @@ static float cutoff;	// amp cutoff level, lpcplay, set via lpcstuff
 static float hnfactor = 1.0;	// harmonic count multiplier, set via lpcstuff
 static float thresh, randamp, unvoiced_rate;
 static float risetime, decaytime;	// enveloping; set externally
+static bool  autoCorrect = false;	// whether to stabilize each frame as it runs
 
 static const int maxDataSets = 8;
 
@@ -57,11 +58,13 @@ GetLPCStuff(double *pHiThresh,
 int
 GetConfiguration(float *pMaxdev,
 				 float *pPerperiod,
-				 float *pHnfactor)
+				 float *pHnfactor,
+				 bool  *pAutoCorrect)
 {
 	*pMaxdev = maxdev;
 	*pPerperiod = perperiod;
 	*pHnfactor = hnfactor;
+	*pAutoCorrect = autoCorrect;
 	return 1;
 }
 
@@ -171,6 +174,13 @@ set_thresh(float *p, int n_args)
 	return lowthresh;
 }
 
+double
+use_autocorrect(float *p, int n_args)
+{
+	autoCorrect = (p[0] != 0.0f);
+	return p[0];
+}
+
 extern "C" {
 
 int profile()
@@ -182,6 +192,7 @@ int profile()
 	UG_INTRO("setdev",setdev);
 	UG_INTRO("set_thresh",set_thresh);
 	UG_INTRO("set_hnfactor",set_hnfactor);
+	UG_INTRO("autocorrect",use_autocorrect);
 	p[0]=1; p[1]=10; p[2]=1024; p[3]=1;
 	pp[0]=1; pp[1]=10; pp[2]=1024; pp[3]=1;
 	makegen(p,4,pp);  /* store sinewave in array 1 */
