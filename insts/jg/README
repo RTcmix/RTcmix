@@ -1,4 +1,4 @@
-Most of these are reworkings of older cmix instruments by other people.
+Many of these are reworkings of older cmix instruments by other people.
 A few require objlib (in this directory), which is a C++ unit generator
 library based on Perry Cook's STK, the Objective C library in NeXT-era
 cmix, and some code from csound and clm.
@@ -24,6 +24,10 @@ JGRAN     - a granular synthesis instrument derived from a Cecilia module
             by Mathieu Bezkorowajny and Jean Piche. Produces grains by
             wavetable or FM synthesis.
 
+FILTSWEEP - two-pole filter with time-varying center freq. and bandwidth
+
+PAN       - simple mixing instrument that follows a pan curve
+
 JCHOR     - a variation on Lansky's chor program, which sprays a slice of
             an input file around the stereo field. Some limitations have
             been removed, and you can transpose the grain.
@@ -32,8 +36,6 @@ ELL       - an old cmix favorite, dusted off and RT-ified ... cascaded
             IIR filters with built-in elliptical design program.
             ***NEWSFLASH: No longer requires libf2c.a and f2c.h, thanks
             to Alistair Riddell and Ross Bencina.
-
-FILTSWEEP - two-pole filter with time-varying center freq. and bandwidth
 
 JDELAY    - a tweak of the standard RTcmix DELAY program, adding a low-pass
             filter and dc-blocker, among other things. Useful for short
@@ -55,8 +57,6 @@ ROOM      - Lansky's (and Garton's, I think) old room simulation.
 
 REV       - some Schroeder reverbs that are part of the STK package.
 
-PAN       - simple mixing instrument that follows a pan curve
-
 bender    - a variation on Lansky's vreadin program, which lets you bend
             the pitch of an input file along a glissando curve. Uses Doug
             Scott's trans interpolation.
@@ -72,5 +72,5 @@ transpan  - revision of Doug Scott's trans program to allow static panning of
             a mono input file (NOTE: superceded by revised TRANS in insts.std)
 
 
-John Gibson, johngibson@virginia.edu
+John Gibson <johngibson@virginia.edu>
 
