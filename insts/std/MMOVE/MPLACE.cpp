@@ -67,10 +67,6 @@ int PLACE::finishInit(double rvb_time, double *ringdur)
    // Set up air and other filters.
    int resetFlag = 1;
    airfil_set(resetFlag);
-   if (m_binaural)
-      earfil_set(resetFlag);
-   else
-      mike_set();
 
    *ringdur = rvb_time + ((float)tapcount / SR);
 
@@ -80,9 +76,8 @@ int PLACE::finishInit(double rvb_time, double *ringdur)
 int PLACE::configure()
 {
 	int status = MBASE::configure();
-	if (status) {
+	if (status == 0) {
 		// PLACE sets all filters just once, so we clear them at this time
-
 		int flag = 1;
 		airfil_set(flag);
 		if (m_binaural)
