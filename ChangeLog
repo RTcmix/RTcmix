@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2004-05-02  Douglas Scott  <netdscott-at-netscape.net>
+
+	* 2nd revision to audio device code. Completed conversion code
+	  for all supported audio formats, including non-interleaved
+	  and normalized.
+
 2004-04-28  Douglas Scott  <netdscott at netscape.net>
 
 	* First major revision to new AudioDevice system.  
