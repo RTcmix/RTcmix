@@ -39,8 +39,8 @@ start = 0
 SPECTACLE(start, inskip, indur, amp, ringdur, fftlen, winlen, wintype, overlap,
    wetdry, inchan, pctleft=1)
 
-/* rotate delay table to make right channel sound different */
-rotategen(4, 500)
+/* shift delay table to make right channel sound different */
+shiftgen(4, 500)
 
 /* do it for the right chan! */
 SPECTACLE(start, inskip, indur, amp, ringdur, fftlen, winlen, wintype, overlap,
