@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = WAVESHAPE libWAVESHAPE.so
 
-all:  libWAVESHAPE.so WAVESHAPE
+all:  libWAVESHAPE.so
+
+standalone:  WAVESHAPE
 
 libWAVESHAPE.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

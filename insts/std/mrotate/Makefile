@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = mrotate libmrotate.so
 
-all: libmrotate.so mrotate
+all: libmrotate.so
+
+standalone: mrotate
 
 libmrotate.so:  $(UGENS_H) $(OBJS)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

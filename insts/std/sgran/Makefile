@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = sgran libsgran.so
 
-all: libsgran.so sgran
+all: libsgran.so
+
+standalone: sgran
 
 libsgran.so:  $(UGENS_H) $(OBJS)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

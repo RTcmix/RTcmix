@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = MULTICOMB libMULTICOMB.so
 
-all: libMULTICOMB.so MULTICOMB
+all: libMULTICOMB.so
+
+standalone: MULTICOMB
 
 libMULTICOMB.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = wow libwow.so
 
-all: libwow.so wow
+all: libwow.so
+
+standalone: wow
 
 libwow.so:  $(UGENS_H) $(OBJS)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = TRANS libTRANS.so
 
-all: libTRANS.so TRANS
+all: libTRANS.so
+
+standalone: TRANS
 
 libTRANS.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

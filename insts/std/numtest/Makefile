@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = numtest libnumtest.so
 
-all:  libnumtest.so numtest
+all:  libnumtest.so
+
+standalone: numtest
 
 libnumtest.so:  $(UGENS_H) $(OBJS)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

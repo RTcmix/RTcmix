@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = CLAR libCLAR.so
 
-all: libCLAR.so CLAR
+all: libCLAR.so
+
+standalone: CLAR
 
 libCLAR.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

@@ -9,7 +9,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = STRUM libSTRUM.so
 
-all: libSTRUM.so STRUM
+all: libSTRUM.so
+
+standalone: STRUM
 
 libSTRUM.so: $(RTOBJS) $(COBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(RTOBJS) $(COBJS) \

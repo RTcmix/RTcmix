@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = convolve libconvolve.so
 
-all: libconvolve.so convolve
+all: libconvolve.so
+
+standalone: convolve
 
 libconvolve.so:  $(UGENS_H) $(OBJS)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

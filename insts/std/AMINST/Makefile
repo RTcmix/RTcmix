@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = AMINST libAMINST.so
 
-all: libAMINST.so AMINST
+all: libAMINST.so
+
+standalone: AMINST
 
 libAMINST.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

@@ -1,5 +1,5 @@
 # Change this if needed
-include insts.conf
+include package.conf
 
 RTLIBDIRS = FMINST CLAR COMBIT FMINST SCULPT STEREO WAVESHAPE \
 METAFLUTE MULTICOMB AM AMINST IIR DEL1 DELAY PANECHO STRUM TRANS FIR
@@ -11,17 +11,37 @@ mrotate convolve gravy sgran vwavetable del1 delay panecho flange # lpc
 LIBDIRS = $(RTLIBDIRS)  $(CMIXLIBDIRS) 
 
 all:
-	@for DIR in $(LIBDIRS); \
+	@for DIR in $(LIBDIRS) MIX; \
 	do \
-	( cd $$DIR; echo "making in $$DIR..."; \
-	$(MAKE) $(MFLAGS); echo "done in $$DIR" ); \
+	  ( cd $$DIR; echo "making in $$DIR..."; \
+	  $(MAKE) $(MFLAGS); echo "done in $$DIR"; \
+	  ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR) ); \
 	done
+	@ln -fs `pwd`/MIX/MIX $(DESTDIR)/CMIX
 
 install:
 	@for DIR in $(LIBDIRS); \
 	do \
-	( cd $$DIR; echo "making install in $$DIR..."; \
+	  ( cd $$DIR; echo "making install in $$DIR..."; \
 	  ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR); \
+	  rm -f $(DESTDIR)/$$DIR; \
+	done
+
+dsos:  all
+
+dso_install:  install
+
+standalone:
+	@for DIR in $(LIBDIRS); \
+	do \
+	  ( cd $$DIR; echo "making in $$DIR..."; \
+	  $(MAKE) $(MFLAGS) standalone; echo "done in $$DIR" ); \
+	done
+
+standalone_install:
+	@for DIR in $(LIBDIRS); \
+	do \
+	( cd $$DIR; echo "making install in $$DIR..."; \
 	  rm -f $(DESTDIR)/$$DIR; \
 	  ln -fs `pwd`/$$DIR $(DESTDIR); ) \
 	done
@@ -29,15 +49,23 @@ install:
 clean:
 	@for DIR in $(LIBDIRS); \
 	do \
-	( cd $$DIR; make clean; \
-	rm -f $(DESTDIR)/$$DIR; \
-	rm -f $(LIBDESTDIR)/lib$$DIR.so; ) \
+	  ( cd $$DIR; make clean; \
+	  rm -f $(DESTDIR)/$$DIR; \
+	  rm -f $(LIBDESTDIR)/lib$$DIR.so; ) \
 	done
+	rm -f $(DESTDIR)/CMIX
 
-onlyDSO:
+dso_clean:
 	@for DIR in $(LIBDIRS); \
 	do \
-	( cd $$DIR; echo "removing standalone instrument in $$DIR..."; \
-	rm -f $$DIR; ) \
+	  ( cd $$DIR; make clean; \
+	  rm -f $(LIBDESTDIR)/lib$$DIR.so; ) \
 	done
+	rm -f $(DESTDIR)/CMIX
 
+standalone_clean:
+	@for DIR in $(LIBDIRS); \
+	do \
+	  ( cd $$DIR; make clean; \
+	  rm -f $(DESTDIR)/$$DIR; \
+	done

@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = COMBIT libCOMBIT.so
 
-all: libCOMBIT.so COMBIT
+all: libCOMBIT.so
+
+standalone: COMBIT
 
 libCOMBIT.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

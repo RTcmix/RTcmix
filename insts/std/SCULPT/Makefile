@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = SCULPT libSCULPT.so
 
-all: libSCULPT.so SCULPT
+all: libSCULPT.so
+
+standalone: SCULPT
 
 libSCULPT.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

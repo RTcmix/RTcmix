@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC
 PROGS = FMINST libFMINST.so
 
-all: libFMINST.so FMINST
+all: libFMINST.so
+
+standalone: FMINST
 
 libFMINST.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

@@ -5,7 +5,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = IIR libIIR.so
 
-all: libIIR.so IIR
+all: libIIR.so
+
+standalone: IIR
 
 libIIR.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

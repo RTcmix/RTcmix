@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = FIR libFIR.so
 
-all: libFIR.so FIR
+all: libFIR.so
+
+standalone: FIR
 
 libFIR.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

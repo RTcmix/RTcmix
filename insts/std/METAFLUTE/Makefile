@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = METAFLUTE libMETAFLUTE.so
 
-all: libMETAFLUTE.so METAFLUTE
+all: libMETAFLUTE.so
+
+standalone: METAFLUTE
 
 libMETAFLUTE.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

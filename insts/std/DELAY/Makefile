@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = DELAY libDELAY.so
 
-all: libDELAY.so DELAY
+all: libDELAY.so
+
+standalone: DELAY
 
 libDELAY.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

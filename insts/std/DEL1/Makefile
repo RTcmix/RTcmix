@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = DEL1 libDEL1.so
 
-all: libDEL1.so DEL1
+all: libDEL1.so
+
+standalone: DEL1
 
 libDEL1.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

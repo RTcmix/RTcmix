@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = STEREO libSTEREO.so
 
-all: libSTEREO.so STEREO
+all: libSTEREO.so
+
+standalone: STEREO
 
 libSTEREO.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
