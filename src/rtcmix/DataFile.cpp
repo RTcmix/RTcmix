@@ -59,7 +59,7 @@ int DataFile::closeFile()
 	return status;
 }
 
-static int formatStringToCode(const char *str)
+int DataFile::formatStringToCode(const char *str)
 {
 	if (str == NULL)
 		return -1;
