@@ -1,6 +1,6 @@
 class MIX : public Instrument {
 	int outchan[8];
-	float amp,*amptable,tabs[2], *in;
+	float amp,*amptable,tabs[2];
 	int skip;
 
 public:

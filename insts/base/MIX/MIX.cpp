@@ -15,12 +15,10 @@ extern "C" {
 
 MIX::MIX() : Instrument()
 {
-	in = new float[MAXBUF];
 }
 
 MIX::~MIX()
 {
-	delete [] in;
 }
 
 int MIX::init(float p[], short n_args)
@@ -61,7 +59,7 @@ int MIX::init(float p[], short n_args)
 int MIX::run()
 {
 	int i,j,k,rsamps;
-	float out[2];
+	float in[MAXBUF], out[2];
 	float aamp;
 	int branch;
 
