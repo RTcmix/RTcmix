@@ -235,7 +235,7 @@ interp(double y0, double y1, double y2, double t)
 }
 
 
-/* -------------------------------------------- grain_input_and_transpose --- */
+/* --------------------------------------------------------- setup_voices --- */
 int JCHOR::setup_voices()
 {
    int   i;
@@ -296,7 +296,7 @@ int JCHOR::grain_input_and_transpose()
 {
    int     i, j, k, n, reset_count, inframes, bufframes;
    int     getflag, incount;
-   float   read_indur, store_indur, total_indur, interval, amp;
+   float   read_indur, store_indur, total_indur, interval, amp = 0.0;
    double  increment, newsig, oldsig, oldersig, frac, counter;
 
    if (inputchans == 1)
