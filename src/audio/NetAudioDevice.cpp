@@ -103,12 +103,6 @@ bool NetAudioDevice::waitForDevice(unsigned int wTime)
 	return ThreadedAudioDevice::waitForDevice(wTime);
 }
 
-// This is by far the most complex method.  
-// run() is called by ThreadedAudioDevice in a newly spawned thread.
-// During runCallback(), the application will call sendFrames() or getFrames(),
-// or if it is done, the callback returns false, which is our signal to
-// finish up.
-
 void
 NetAudioDevice::run()
 {
@@ -137,16 +131,6 @@ NetAudioDevice::run()
 	stopCallback();
 }
 
-// doOpen() is called by AudioDevice::open() to do the class-specific opening
-// of the audio port, HW, device, etc.  and set up any remaining Impl state.
-//
-// The assumption is that the open of the HW will return a integer file
-// descriptor that we can wait on.  Before exiting this method, call
-// setDevice() and hand it that descriptor.  It is used by waitForDevice().
-//
-// 'mode' has a direction portion and a bit to indicate if the device is being
-// run in passive mode (does not spawn its own thread to handle I/O).
-// You are guaranteed that doOpen() will NOT be called if you are already open.
 
 int
 NetAudioDevice::doOpen(int mode)
@@ -190,10 +174,6 @@ NetAudioDevice::doOpen(int mode)
 	return 0;
 }
 
-// doClose() is called by AudioDevice::close() to do the class-specific closing
-// of the audio port, HW, device, etc.
-// You are guaranteed that doClose() will NOT be called if you are already closed.
-
 int
 NetAudioDevice::doClose()
 {
@@ -206,9 +186,6 @@ NetAudioDevice::doClose()
 	}
 	return disconnect();
 }
-
-// doStart() is called by AudioDevice::start() to do class-specific calls which
-// notify the HW to begin recording, playing, or both.
 
 int
 NetAudioDevice::doStart()
@@ -254,21 +231,6 @@ NetAudioDevice::doPause(bool)
 	return error("Not implemented");
 }
 
-// doSetFormat() is called by AudioDevice::setFormat() and by AudioDevice::open().
-// Here is where you configure your HW, setting it to the format which will
-// best handle the format passed in.  Note that it is NOT necessary for the HW
-// to match the input format except in sampling rate;  The base class can handle
-// most format conversions.
-// 'sampfmt' is the format of the data passed to AudioDevice::getFrames() or
-//	AudioDevice::sendFrames(), and has three attributes:
-//	1) The actual type of the format, retrieved via MUS_GET_FORMAT(sampfmt)
-//	2) The interleave (true or false) retrieved via MUS_GET_INTERLEAVE(sampfmt)
-//	3) Whether the samples (when float) are normalized, retrieved via
-//		MUS_GET_NORMALIZED(sampfmt)
-//
-// At the end of this method, you must call setDeviceParams() to notify the
-// base class what format *you* need the audio data to be in.
-
 int
 NetAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 {
@@ -277,26 +239,12 @@ NetAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 	return 0;
 }
 
-// doSetQueueSize() is called by AudioDevice::setQueueSize() to allow HW-specific
-// configuration of internal audio queue sizes.  The values handed in via
-// address represent the size **in frames** of the buffers that will be handed
-// to doGetFrames() and/or doSendFrames(), and the number of such buffers the
-// application would like to have queued up for robustness.  The actual frame
-// count as determined by your HW *must* be reported back to the caller via
-// 'pWriteSize'.  If you cannot match *pCount, just do the best you can, but
-// do not fail if you cannot match it.
-
 int
 NetAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 {
 	_impl->framesPerWrite = *pWriteSize;
 	return 0;
 }
-
-// doGetFrames() is called by AudioDevice::getFrames() during record.
-// The format of 'frameBuffer' will be the format **YOU** specified via
-// setDeviceParams() above.  It will be converted into the 'frame format'
-// by a base class.  Here is where you fill frameBuffer from your audio HW.
 
 int
 NetAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
@@ -327,12 +275,6 @@ NetAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 	incrementFrameCount(framesRead);
 	return framesRead;
 }
-
-// doSendFrames() is called by AudioDevice::sendFrames() during playback.
-// The format of 'frameBuffer' will be the format **YOU** specified via
-// setDeviceParams() above.  It was converted from the 'frame format'
-// by a base class.   Here is where you hand the audio in frameBuffer to you
-// HW.
 
 int
 NetAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
