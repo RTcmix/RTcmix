@@ -20,7 +20,8 @@ void
 sys_error(char *msg)
 {
    fprintf(stderr, "FATAL SYSTEM ERROR: %s\n", msg);
-   exit(1);
+   if (exit_on_die)
+      exit(EXIT_FAILURE);
 }
 
 int
@@ -68,7 +69,7 @@ minc_die(const char *msg, ...)
 
    fprintf(stderr, "ERROR: %s (near line %d)\n", buf, yylineno);
    if (exit_on_die)
-      exit(1);
+      exit(EXIT_FAILURE);
 }
 
 void
@@ -83,14 +84,7 @@ minc_internal_error(const char *msg, ...)
 
    fprintf(stderr, "PROGRAM ERROR: %s (near line %d)\n", buf, yylineno);
    if (exit_on_die)
-      exit(1);
-}
-
-void
-msg(char *msg)
-{
-   fprintf(stderr, "%s\n", msg);
-   exit(1);
+      exit(EXIT_FAILURE);
 }
 
 void
