@@ -51,7 +51,7 @@ ifneq ($(strip $(RESAMPLE)),)    # do only if RESAMPLE is nonempty
 	@$(INSTALL) $(CMIXDIR)/utils/resample/resample $(DESTDIR)
 endif
 ifneq ($(strip $(PLAY)),)        # do only if PLAY is nonempty
-	@cd $(DESTDIR); ln -s $(PLAY) play
+	@cd $(DESTDIR); ln -fs $(PLAY) play
 endif
 
 clean:
