@@ -552,7 +552,7 @@ OSXAudioDevice::OSXAudioDevice(const char *desc) : _impl(new Impl)
 	::getDeviceList(&_impl->deviceIDs, &_impl->deviceCount);
 	
 	if (desc != NULL) {
-		char *substr = strstr(desc, ":");
+		char *substr = strchr(desc, ':');
 		if (substr == NULL) {
 			// Descriptor is just the device name
 			_impl->deviceName = new char[strlen(desc) + 1];
@@ -565,37 +565,44 @@ OSXAudioDevice::OSXAudioDevice(const char *desc) : _impl(new Impl)
 			strncpy(_impl->deviceName, desc, nameLen);
 			_impl->deviceName[nameLen] = '\0';
 			++substr;	// skip ':'
-			char *outsubstr = NULL;
-			if (strchr(substr, '-') == NULL) {
-				// Parse desc of form "DEVICE:in,out"
-				int idx1 = 0, idx2 = -1;
-				idx1 = strtol(substr, &outsubstr, 0);
-				_impl->port[REC].streamIndex = idx1;
-				if (outsubstr && strlen(outsubstr) > 0)
-					idx2 = strtol(outsubstr + 1, NULL, 0);
-				_impl->port[PLAY].streamIndex = (idx2 >= 0) ? idx2 : idx1;
-			}
-			else {
-				// Parse desc of form "DEVICE:in0-inX,out0-outX"
-				int idx0, idx1, idx2, idx3;
-				int found = sscanf(substr, "%d-%d,%d-%d", &idx0, &idx1, &idx2, &idx3);
-				if (found == 4) {
-					_impl->port[REC].streamIndex = idx0;
-					_impl->port[REC].streamCount = idx1 - idx0 + 1;
-					_impl->port[PLAY].streamIndex = idx2;
-					_impl->port[PLAY].streamCount = idx3 - idx2 + 1;
-				}
-				else if (found == 2) {
-					_impl->port[PLAY].streamIndex = idx0;
-					_impl->port[PLAY].streamCount = idx1 - idx0 + 1;
-				}
-				else {
-					printf("Could not parse OSX device descriptor \"%s\"", desc);
-				}
-			}
-			printf("input streamIndex is %d\n", _impl->port[REC].streamIndex);
-			printf("output streamIndex is %d\n", _impl->port[PLAY].streamIndex);
-		}
+         // Extract input and output stream selecters
+			char *insubstr = NULL, *outsubstr = NULL;
+            if ((outsubstr = strchr(substr, ',')) != NULL) {
+               ++outsubstr;   // skip ','
+               insubstr = substr;
+               insubstr[(int) outsubstr - (int) insubstr - 1] = '\0';
+            }
+            else {
+               outsubstr = substr;
+            }
+            // Now parse stream selecters
+            const char *selecters[2] = { insubstr, outsubstr };
+            for (int dir = REC; dir <= PLAY; ++dir) {
+               if (strchr(selecters[dir], '-') == NULL) {
+                  // Parse non-range selecter (single digit)
+                  _impl->port[dir].streamIndex = strtol(selecters[dir], NULL, 0);
+               }
+               else {
+                  // Parse selecter of form "X-Y"
+                  int idx0, idx1;
+                  int found = sscanf(selecters[dir], "%d-%d", &idx0, &idx1);
+                  if (found == 2) {
+                     _impl->port[dir].streamIndex = idx0;
+                     _impl->port[dir].streamCount = idx1 - idx0 + 1;
+                  }
+                  else {
+                     fprintf(stderr, "Could not parse OSX device descriptor \"%s\"\n", desc);
+                     break;      
+                  }
+               }
+            }
+#if DEBUG > 0
+			printf("input streamIndex = %d, streamCount = %d\n",
+                _impl->port[REC].streamIndex, _impl->port[REC].streamCount);
+			printf("output streamIndex = %d, streamCount = %d\n",
+                _impl->port[PLAY].streamIndex, _impl->port[PLAY].streamCount);
+#endif	
+        }
 		// Treat old-stye device name as "default" (handled below).
 		if (!strcmp(_impl->deviceName, "OSXHW")) {
 			delete [] _impl->deviceName;
@@ -948,6 +955,9 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 			port->audioBufChannels = port->deviceFormat.mChannelsPerFrame;
 		}
 		else {
+            if (port->deviceFormat.mChannelsPerFrame > 1) {
+               return error("Cannot open multiple multi-channel streams");
+            }
 			port->audioBufChannels = 1;
 			reportedChannelCount = port->deviceFormat.mChannelsPerFrame * port->streamCount;
 		}
