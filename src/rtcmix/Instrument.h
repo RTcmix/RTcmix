@@ -111,6 +111,7 @@ public:
 	inline void		set_output_offset(int);
 
 	void			set_bus_config(const char *);
+	inline const BusSlot *	GetBusSlot() const;
 	virtual int		init(float *, int);
 	virtual int		run();
 
@@ -178,6 +179,11 @@ inline void Instrument::set_ichunkstart(int csamps)
 inline void Instrument::set_output_offset(int offset)
 {
    output_offset = offset;
+}
+
+inline const BusSlot *	Instrument::GetBusSlot() const
+{
+	return bus_config;
 }
 
 #endif /* _INSTRUMENT_H_  */
