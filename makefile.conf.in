@@ -20,6 +20,10 @@ USE_SNDLIB = TRUE
 ARCH = LINUX
 #ARCH = SGI
 
+# sound driver API for Linux (and other than SGI)
+SOUND_DRIVER = -DOSS
+#SOUND_DRIVER = -DALSA
+
 # optimization and debugging flags
 OPT = -g #-O3
 # -Wall -Wno-unused
@@ -29,7 +33,7 @@ OPT = -g #-O3
 # and function 2 to contain the amp envelope. We swapped these so that you
 # can use setline to give the amp envelope. But if you prefer compatibility
 # with your existing scores, uncomment this line:
-#CMIX_FLAGS = -D_COMPATIBLE_FUNC_LOCS
+#CMIX_FLAGS = -DCOMPATIBLE_FUNC_LOCS
 
 
 ###############################################################
@@ -43,7 +47,7 @@ BINDIR = $(DESTDIR)
 # Compile and link time flags
 
 ifeq ($(ARCH),LINUX)
-  ARCHFLAGS = -D_REENTRANT -DLINUX
+  ARCHFLAGS = -D_REENTRANT -DLINUX $(SOUND_DRIVER)
   CC = gcc 
   CXX = g++ 
   LD = ld
