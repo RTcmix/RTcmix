@@ -845,9 +845,6 @@ _expbrk_table(const Arg args[], const int nargs, double *array, const int len)
 static int
 _line_table(const Arg args[], const int nargs, double *array, const int len)
 {
-   double scaler, starttime, thistime, thisval, nexttime, nextval, endtime;
-   int i, j, k, l;
-
    if (len < 2)
       return die("maketable (line)", "Table length must be at least 2.");
    if (!args_have_same_type(args, nargs, DoubleType))
@@ -855,35 +852,37 @@ _line_table(const Arg args[], const int nargs, double *array, const int len)
    if ((nargs % 2) != 0)
       return die("maketable (line)", "Incomplete <time, value> pair.");
 
-   endtime = (double) args[nargs - 2];
-   starttime = (double) args[0];
+   double endtime = (double) args[nargs - 2];
+   double starttime = (double) args[0];
    if (endtime - starttime <= 0.0)
-      goto time_err;
+      return die("maketable (line)", "Times must be in ascending order.");
 #ifdef NEWWAY
-   scaler = (double) (len - 1) / (endtime - starttime);
+   double scaler = (double) (len - 1) / (endtime - starttime);
 #else
-   scaler = (double) len / (endtime - starttime);
+   double scaler = (double) len / (endtime - starttime);
 #endif
-   nextval = (double) args[1];
-   thistime = starttime;
-   i = 0;
-   for (k = 1; k < nargs; k += 2) {
-      thisval = nextval;
+   double nextval = (double) args[1];
+   double thistime = starttime;
+   int i = 0;
+   for (int k = 1; k < nargs; k += 2) {
+      double nexttime;
+      double thisval = nextval;
       if (k < nargs - 1) {
          nexttime = (double) args[k + 1] - starttime;
          if (nexttime - thistime < 0.0)   /* okay for them to be the same */
-            goto time_err;
+            return die("maketable (line)", "Times must be in ascending order.");
          nextval = (double) args[k + 2];
       }
       else
-         nextval = nexttime = 0.0;     /* don't read off end of args array */
-      j = i + 1;
+         nextval = nexttime = 0.0;        /* don't read off end of args array */
+      int j = i + 1;
 #ifdef NEWWAY
-      i = (int) (nexttime * scaler);
+      i = (int) ((nexttime * scaler) + 0.5);
 #else
       i = (int) ((nexttime * scaler) + 1.0);
 #endif
-      for (l = j; l <= i; l++) {
+      //printf("j=%d, i=%d\n", j, i);
+      for (int l = j; l <= i; l++) {
          if (l <= len)
             array[l - 1] = thisval + (nextval - thisval)
                                           * (double) (l - j) / ((i - j) + 1);
@@ -894,8 +893,6 @@ _line_table(const Arg args[], const int nargs, double *array, const int len)
 #endif
 
    return 0;
-time_err:
-   return die("maketable (line)", "Times must be in ascending order.");
 }
 
 
