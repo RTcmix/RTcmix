@@ -26,10 +26,6 @@
 int audioNCHANS; /* this is for the reads on the audio device */
 #endif
 
-InputDesc inputFileTable[MAX_INPUT_FDS];
-int rtInputIndex = -1;  /* current index into inputFileTable */
-off_t rtInitialOffset;  /* current initial offset in file */
-
 int input_on;
 double inSR;
 int inNCHANS;
