@@ -1,4 +1,4 @@
-include ../insts.conf
+include ../package.conf
 
 OBJS = ROOM.o roomset.o
 CFLAGS += -fPIC

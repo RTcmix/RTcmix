@@ -1,4 +1,4 @@
-include ../insts.conf
+include ../package.conf
 
 OBJS = denoise.o cfast.o cfsst.o cfr2tr.o cfr4tr.o cfr4syn.o cford1.o cford2.o
 CMIXOBJS += $(RTPROFILE_O)

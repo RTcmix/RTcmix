@@ -1,4 +1,4 @@
-include ../insts.conf
+include ../package.conf
 
 OBJLIBDIR = ../objlib
 OBJLIB_A = $(OBJLIBDIR)/objlib.a

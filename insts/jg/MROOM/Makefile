@@ -1,4 +1,4 @@
-include ../insts.conf
+include ../package.conf
 
 OBJS = MROOM.o timeset.o
 CFLAGS += -fPIC

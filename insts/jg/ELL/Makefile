@@ -1,4 +1,4 @@
-include ../insts.conf
+include ../package.conf
 
 OBJS = ELL.o ellipse.o setell.o extramath.o
 CFLAGS += -fPIC -Wall -O3

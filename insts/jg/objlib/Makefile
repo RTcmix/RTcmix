@@ -1,4 +1,4 @@
-include ../insts.conf
+include ../package.conf
 
 OBJS = Filter.o OnePole.o TwoPole.o OneZero.o TwoZero.o NZero.o BiQuad.o \
 Butter.o DCBlock.o RMS.o Balance.o DLineN.o DLineL.o DLineA.o Reverb.o \

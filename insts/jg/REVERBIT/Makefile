@@ -1,4 +1,4 @@
-include ../insts.conf
+include ../package.conf
 
 OBJS = REVERBIT.o
 CMIXOBJS += $(PROFILE_O)
