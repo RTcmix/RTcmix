@@ -248,7 +248,7 @@ void Instrument::schedule(heap *rtHeap)
 
   // Calculate variables for heap insertion
   dur = getdur();
-  nsamps = (int) (dur*SR);
+  nsamps = (int) (dur * SR + 0.5);
   //  cout << "nsamps = " << nsamps << endl;
   
   start = getstart();
