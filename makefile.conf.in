@@ -15,10 +15,6 @@ INST_DIRS = insts.base #insts.std insts.jg
 # add new packages to this list (e.g., interfaces.std)
 PACKAGE_DIRS =
 
-# Set this to TRUE to use sndlib for file i/o; otherwise use the old cmix i/o.
-USE_SNDLIB = TRUE
-#USE_SNDLIB = FALSE
-
 # Which platform?
 ARCH = LINUX
 #ARCH = SGI
@@ -82,6 +78,9 @@ ifeq ($(ARCH),SGI)
   # Using the default /bin/sh on SGI complains about any Makefile
   # "for" loops where arg to "for" is empty
 endif
+
+# Use sndlib for file I/O; the only option in this version.
+USE_SNDLIB = TRUE
 
 INCLUDES = -I$(CMIXDIR)/H
 
