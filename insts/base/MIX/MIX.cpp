@@ -1,3 +1,17 @@
+/*	Mix inputs to outputs with global amplitude control.
+
+		p0 = output start time
+		p1 = input start time
+		p2 = duration (-endtime)
+		p3 = amplitude multiplier
+		p4-n = channel mix maxtrix
+
+	p3 (amplitude) can receive dynamic updates from a table or real-time
+	control source.
+
+	If an old-style gen table 1 is present, its values will be multiplied
+	by the p3 amplitude multiplier, even if the latter is dynamic.
+*/
 #include <iostream.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -21,28 +35,20 @@ MIX::~MIX()
 
 int MIX::init(double p[], int n_args)
 {
-// p0 = outsk; p1 = insk; p2 = duration (-endtime); p3 = amp; p4-n = channel mix matrix
-// we're stashing the setline info in gen table 1
-
-	int i, rvin;
-
-	if (p[2] < 0.0) p[2] = -p[2] - p[1];
+	if (p[2] < 0.0)
+		p[2] = -p[2] - p[1];
 
 	nsamps = rtsetoutput(p[0], p[2], this);
-	rvin = rtsetinput(p[1], this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
+	int rvin = rtsetinput(p[1], this);
+	if (rvin == -1)	// no input
+		return DONT_SCHEDULE;
 
-	amp = p[3];
-
-	for (i = 0; i < inputchans; i++) {
-		outchan[i] = (int)p[i+4];
-		if (outchan[i] + 1 > outputchans) {
-			die("MIX", "You wanted output channel %d, but have only specified "
-							"%d output channels", outchan[i], outputchans);
-			return(DONT_SCHEDULE);
-		}
+	for (int i = 0; i < inputChannels(); i++) {
+		outchan[i] = (int) p[i + 4];
+		if (outchan[i] + 1 > outputChannels())
+			return die("MIX",
+						"You wanted output channel %d, but have only specified "
+						"%d output channels", outchan[i], outputChannels());
 	}
 
 	amptable = floc(1);
@@ -50,49 +56,49 @@ int MIX::init(double p[], int n_args)
 		int amplen = fsize(1);
 		tableset(p[2], amplen, tabs);
 	}
-	else
-		advise("MIX", "Setting phrase curve to all 1's.");
-   aamp = amp;                     /* in case amptable == NULL */
 
-	skip = (int)(SR/(float)resetval);
+	skip = (int) (SR / (float) resetval);
 
-	return(nsamps);
+	return nsamps;
 }
+
 
 int MIX::configure()
 {
-	in = new float [RTBUFSAMPS * inputchans];
+	in = new float [RTBUFSAMPS * inputChannels()];
 	return in ? 0 : -1;
 }
 
+
 int MIX::run()
 {
-	int i,j,k,rsamps;
-	float out[MAXBUS];
+	int samps = framesToRun() * inputChannels();
 
-	rsamps = chunksamps*inputchans;
+	rtgetin(in, this, samps);
 
-	rtgetin(in, this, rsamps);
-
-	for (i = 0; i < rsamps; i += inputchans)  {
-		if (--branch < 0) {
+	for (int i = 0; i < samps; i += inputChannels())  {
+		if (--branch <= 0) {
+			double p[4];
+			update(p, 4);
+			amp = p[3];
 			if (amptable)
-				aamp = tablei(cursamp, amptable, tabs) * amp;
+				amp *= tablei(currentFrame(), amptable, tabs);
 			branch = skip;
-			}
+		}
 
-		for (j = 0; j < outputchans; j++) {
+		float out[MAXBUS];
+		for (int j = 0; j < outputChannels(); j++) {
 			out[j] = 0.0;
-			for (k = 0; k < inputchans; k++) {
+			for (int k = 0; k < inputChannels(); k++) {
 				if (outchan[k] == j)
-					out[j] += in[i+k] * aamp;
-				}
+					out[j] += in[i+k] * amp;
 			}
+		}
 
 		rtaddout(out);
-		cursamp++;
-		}
-	return i;
+		increment();
+	}
+	return framesToRun();
 }
 
 
