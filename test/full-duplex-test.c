@@ -33,7 +33,7 @@ main (int argc, char* argv[])
   printf("chans: %d\n", chans);
 
   /* Open the output audio port */
-  if ((out_port = (int)open("/dev/dsp", O_WRONLY, 0)) == -1) { 
+  if ((out_port = (int)open("/dev/dsp", O_RDWR, 0)) == -1) { 
     perror("/dev/dsp");
     exit(1);
   }
@@ -88,11 +88,14 @@ main (int argc, char* argv[])
     sampbuff[i] = 0;
   }
 
+  printf("attempting write...\n");
   if ((len = write(out_port, sampbuff, 2*BUFSIZE)) == -1) {
     perror("audio write");
     exit(1);
   }
+  printf("write done.\n");
 
+  printf("reading/writing in loop\n");
   while(1) {
     if ((len = read(in_port, sampbuff, 2*BUFSIZE)) == -1) {
       perror("audio read");
@@ -103,12 +106,14 @@ main (int argc, char* argv[])
       perror("audio write");
       exit(1);
     }
+	printf(".");
     
     /* zero the buffer again ... there might be leftover garbage at the last buffer */
     for (i=0;i<BUFSIZE;i++) {
       sampbuff[i] = 0;
     }
   }
+  printf("\n");
 
   /* Close the audio port */
   close(in_port);
