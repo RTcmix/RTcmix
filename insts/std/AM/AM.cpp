@@ -53,7 +53,12 @@ AM::~AM()
 
 int AM::init(float p[], int n_args)
 {
-	rtsetinput(p[1], this);
+	int rvin;
+
+	rvin = rtsetinput(p[1], this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
 	nsamps = rtsetoutput(p[0], p[2], this);
 
 	amptable = floc(1);
@@ -65,8 +70,10 @@ int AM::init(float p[], int n_args)
 		advise("AM", "Setting phrase curve to all 1's.");
 
 	amtable = floc(2);
-	if (amtable == NULL)
+	if (amtable == NULL) {
 		die("AM", "You need a function table 2 containing mod. waveform.");
+		return(DONT_SCHEDULE);
+	}
 	lenam = fsize(2);
 	npoints = (float)lenam / SR;
 	si = p[4] * npoints;
@@ -77,8 +84,10 @@ int AM::init(float p[], int n_args)
 			int len = fsize(3);
       	tableset(getdur(), len, freqtabs);
 		}
-		else
+		else {
 			die("AM", "Function table 3 must contain mod. freq. curve if p4=0.");
+			return(DONT_SCHEDULE);
+		}
 	}
 
 	amp = p[3];
@@ -86,9 +95,11 @@ int AM::init(float p[], int n_args)
 	phase = 0.0;
 
 	inchan = (int)p[5];
-	if ((inchan+1) > inputchans)
+	if ((inchan+1) > inputchans) {
 		die("AM", "You asked for channel %d of a %d-channel file.",
 																		inchan, inputchans);
+		return(DONT_SCHEDULE);
+	}
 
 	spread = p[6];
 

@@ -45,6 +45,7 @@
 */
 
 rtsetparams(44100, 1)
+load("IIR")
 rtinput("/snd/pablo1.snd")
 
 makegen(1, 24, 1000, 0, 0, 1,1, 5,1, 7,0)

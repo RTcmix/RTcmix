@@ -13,7 +13,8 @@
 *
 */
 
-rtsetparams(22050, 1)
+rtsetparams(44100, 2)
+load("CLAR")
 makegen(1, 24, 1000, 0, 1, 1, 1)
 makegen(2, 24, 1000, 0, 1, 1, 1)
 

@@ -1,5 +1,5 @@
 load("FMINST")
-rtsetparams(22050, 1)
+rtsetparams(44100, 1)
 print_off()
 makegen(1, 7, 1000, 0, 500, 1, 500, 0)
 makegen(2, 10, 1000, 1)

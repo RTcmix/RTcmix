@@ -35,12 +35,12 @@ int FIR::init(float p[], int n_args)
 *
 */
 
-	int i;
+	int i, rvin;
 
-	if (outputchans != 1)
-		die("FIR", "Ouput must be mono.");
-
-	rtsetinput(p[1], this);
+	rvin = rtsetinput(p[1], this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
 	nsamps = rtsetoutput(p[0], p[2], this);
 
 	ncoefs = (int)p[4];

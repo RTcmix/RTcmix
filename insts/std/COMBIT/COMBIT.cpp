@@ -31,21 +31,29 @@ int COMBIT::init(float p[], int n_args)
 // assumes function table 1 is the amplitude envelope
 
 	float loopt;
+	int rvin;
 
-	rtsetinput(p[1], this);
+	rvin = rtsetinput(p[1], this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
 	nsamps = rtsetoutput(p[0], p[2]+p[5], this);
 	insamps = (int)(p[2] * SR);
 
-	if (p[4] < 0.01)
-	    die("COMBIT", "Invalid pitch value!");	
+	if (p[4] < 0.01) {
+		die("COMBIT", "Invalid pitch value!");
+		return(DONT_SCHEDULE);
+	}
 	loopt = 1.0/p[4];
 
 	// adding "START" didn't do it, but adding 10.0 seems
 	// to prevent the array out-of-bounds bug
 	// BGG
 	combarr = new float[int(loopt * SR + 10.0)];
-	if (!combarr)
-	    die("COMBIT", "Could not allocate memory for comb array!");
+	if (!combarr) {
+		die("COMBIT", "Could not allocate memory for comb array!");
+		return(DONT_SCHEDULE);
+	}
 
 	combset(loopt,p[5],0,combarr);
 
@@ -60,9 +68,11 @@ int COMBIT::init(float p[], int n_args)
 	amp = p[3];
 	skip = (int)(SR/(float)resetval); // how often to update amp curve
 	inchan = (int)p[6];
-	if ((inchan+1) > inputchans)
+	if ((inchan+1) > inputchans) {
 		die("COMBIT", "You asked for channel %d of a %d-channel file.", 
                                                          inchan,inputchans);
+		return(DONT_SCHEDULE);
+	}
 
 	spread = p[7];
 
@@ -129,4 +139,3 @@ rtprofile()
 {
 	RT_INTRO("COMBIT",makeCOMBIT);
 }
-

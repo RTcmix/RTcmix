@@ -32,9 +32,12 @@ int INPUTSIG::init(float p[], int n_args)
 // p5 = stereo spread (0-1) [optional]
 // assumes function table 1 is the amplitude envelope
 
-	int i;
+	int i, rvin;
 
-	rtsetinput(p[1], this);
+	rvin = rtsetinput(p[1], this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
 	nsamps = rtsetoutput(p[0], p[2], this);
 
 	amparr = floc(1);
@@ -56,9 +59,11 @@ int INPUTSIG::init(float p[], int n_args)
 
 	oamp = p[3];
 	inchan = (int)p[4];
-	if (inchan >= inputchans)
+	if (inchan >= inputchans) {
 		die("INPUTSIG", "You asked for channel %d of a %d-channel file.",
                                                         inchan, inputchans);
+		return(DONT_SCHEDULE);
+	}
 
 	skip = (int)(SR/(float)resetval);
 	spread = p[5];

@@ -12,6 +12,7 @@
 */
 
 rtsetparams(44100, 2)
+load("DEL1")
 rtinput("/sndgr/than/multicombexamp.aiff")
 makegen(1, 24, 1000, 0,0, 0.5,1, 3.5,1, 7,0)
 DEL1(0, 0, 7, 1, .14)

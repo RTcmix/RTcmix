@@ -11,7 +11,9 @@
 *  assumes function slot 1 is the amplitude envelope
 */
 
+set_option("full_duplex_on")
 rtsetparams(44100, 2, 512)
+load("DEL1")
 rtinput("AUDIO", "MIC")
 makegen(1, 24, 1000, 0,0, 1,1, 16,1, 17,0)
 DEL1(0, 0, 17, 1, 4.3, 1)

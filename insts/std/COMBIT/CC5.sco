@@ -11,7 +11,9 @@
 *
 */
 
+set_option("full_duplex_on")
 rtsetparams(44100, 2, 256)
+load("COMBIT")
 rtinput("AUDIO", "MIC")
 
 dur = 0.1

@@ -13,7 +13,8 @@
 *
 */
 
-rtsetparams(44100, 1)
+rtsetparams(44100, 2)
+load("AMINST")
 
 makegen(1, 24, 1000, 0,0, 0.1,1, 3.4,1, 3.5,0)
 makegen(2, 24, 1000, 0,0, 1,1, 2,0)

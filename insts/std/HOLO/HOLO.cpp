@@ -95,14 +95,21 @@ int HOLO::init(float p[], int n_args)
 *
 */
 
-	int i;
+	int i, rvin;
 
-	if (inputchans != 2)
+	if (inputchans != 2) {
 		die("HOLO", "Input must be stereo.");
-	if (outputchans != 2)
+		return(DONT_SCHEDULE);
+	}
+	if (outputchans != 2) {
 		die("HOLO", "Output must be stereo.");
+		return(DONT_SCHEDULE);
+	}
 
-	rtsetinput(p[1], this);
+	rvin = rtsetinput(p[1], this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
 	nsamps = rtsetoutput(p[0], p[2], this);
 
 	ncoefs = nCoeffs;
@@ -199,4 +206,3 @@ rtprofile()
 {
 	RT_INTRO("HOLO",makeHOLO);
 }
-

@@ -10,7 +10,6 @@ rtprofile()
 	RT_INTRO("INPUTSIG",makeINPUTSIG);
 	RT_INTRO("NOISE",makeNOISE);
 	RT_INTRO("BUZZ",makeBUZZ);
-	RT_INTRO("BUZZ",makeBUZZ);
 	RT_INTRO("PULSE",makePULSE);
 }
 

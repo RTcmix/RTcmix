@@ -13,6 +13,7 @@
 */
 
 rtsetparams(44100, 1)
+load("DELAY")
 rtinput("/sndgr/bob.dole.mono")
 makegen(1, 24, 1000, 0,0, 0.5,1, 3.5,1, 7,0)
 DELAY(0, 0, 7, 0.7, .14, 0.7, 3.5)

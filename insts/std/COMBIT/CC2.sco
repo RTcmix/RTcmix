@@ -12,6 +12,7 @@
 */
 
 rtsetparams(44100, 2)
+load("COMBIT")
 rtinput("/snd/pablo1.snd")
 
 dur = 0.1

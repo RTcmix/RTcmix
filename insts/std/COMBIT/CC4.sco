@@ -11,7 +11,9 @@
 *
 */
 
+set_option("full_duplex_on")
 rtsetparams(44100, 2, 1024)
+load("COMBIT")
 rtinput("AUDIO")
 COMBIT(0, 0, 3.5, 0.08, cpspch(7.09), .5, 0, 0)
 COMBIT(0.2, 0, 3.5, 0.08, cpspch(7.07), .5, 0, 1)

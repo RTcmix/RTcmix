@@ -45,6 +45,7 @@
 */
 
 rtsetparams(44100, 2)
+load("IIR")
 makegen(1, 24, 1000, 0,0, 0.1,1, 0.2,0)
 
 start = 0

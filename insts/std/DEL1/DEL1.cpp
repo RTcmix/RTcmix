@@ -30,17 +30,25 @@ int DEL1::init(float p[], int n_args)
 // assumes function table 1 is the amplitude envelope
 
 	long delsamps;
+	int rvin;
 
-	rtsetinput(p[1], this);
+	rvin = rtsetinput(p[1], this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
 	nsamps = rtsetoutput(p[0], p[2]+p[4], this);
 	insamps = (int)(p[2] * SR);
 
-	if (outputchans != 2)
+	if (outputchans != 2) {
 		die("DEL1", "Output must be stereo.");
+		return(DONT_SCHEDULE);
+	}
 
 	delsamps = (long)(p[4]*SR + 0.5);
-	if( (delarray = new float[delsamps]) == NULL )
+	if( (delarray = new float[delsamps]) == NULL ) {
 		die("DEL1", "Sorry, Charlie -- no space");
+		return(DONT_SCHEDULE);
+	}
 
 	wait = p[4];
 	delamp = p[5];
@@ -57,9 +65,11 @@ int DEL1::init(float p[], int n_args)
 	amp = p[3];
 	skip = (int)(SR/(float)resetval);
 	inchan = (int)p[6];
-	if ((inchan+1) > inputchans)
+	if ((inchan+1) > inputchans) {
 		die("DEL1", "You asked for channel %d of a %d-channel file.",
                                                        inchan, inputchans);
+		return(DONT_SCHEDULE);
+	}
 
 	return(nsamps);
 }

@@ -33,14 +33,20 @@ int DELAY::init(float p[], int n_args)
 // assumes function table 1 is the amplitude envelope
 
 	long delsamps;
+	int rvin;
 
-	rtsetinput(p[1], this);
+	rvin = rtsetinput(p[1], this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
 	nsamps = rtsetoutput(p[0], p[2]+p[6], this);
 	insamps = (int)(p[2] * SR);
 
 	delsamps = (long)(p[4] * SR + 0.5);
-	if( (delarray = new float [delsamps]) == NULL )
+	if( (delarray = new float [delsamps]) == NULL ) {
 		die("DELAY", "Sorry, Charlie -- no space");
+		return(DONT_SCHEDULE);
+	}
 
 	wait = p[4];
 	regen = p[5];
@@ -57,9 +63,11 @@ int DELAY::init(float p[], int n_args)
 	amp = p[3];
 	skip = (int)(SR/(float)resetval);
 	inchan = (int)p[7];
-	if ((inchan+1) > inputchans)
+	if ((inchan+1) > inputchans) {
 		die("DELAY", "You asked for channel %d of a %d-channel file.",
                                                        inchan, inputchans);
+		return(DONT_SCHEDULE);
+	}
 
 	spread = p[8];
 
@@ -129,4 +137,3 @@ rtprofile()
 {
 	RT_INTRO("DELAY",makeDELAY);
 }
-

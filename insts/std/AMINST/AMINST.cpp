@@ -39,24 +39,30 @@ int AMINST::init(float p[], int n_args)
 		int len = fsize(2);
 		tableset(p[1], len, mamptabs);
 	}
-	else
+	else {
 		die("AMINST", "You haven't made the modulation envelope (table 2).");
+		return(DONT_SCHEDULE);
+	}
 
 	cartable = floc(3);
 	if (cartable) {
 		lencar = fsize(3);
 		sicar = p[3] * (float)lencar/SR;
 	}
-	else
+	else {
 		die("AMINST", "You haven't made the carrier waveform (table 3).");
+		return(DONT_SCHEDULE);
+	}
 
 	modtable = floc(4);
 	if (modtable) {
 		lenmod = fsize(4);
 		simod = p[4] * (float)lenmod/SR;
 	}
-	else
+	else {
 		die("AMINST", "You haven't made the modulator waveform (table 4).");
+		return(DONT_SCHEDULE);
+	}
 
 	amp = p[2];
 	skip = (int)(SR/(float)resetval);
