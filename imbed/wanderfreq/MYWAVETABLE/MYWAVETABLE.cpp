@@ -16,7 +16,8 @@ int MYWAVETABLE::init(double p[], int n_args)
 {
 // p0 = start; p1 = dur; p2 = amplitude; p3 = frequency; p4 = stereo spread;
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	if (rtsetoutput(p[0], p[1], this) == -1)
+		return -1;
 
 	theOscil = new Ooscili(SR, p[3], 2); // assumes makegen 2 for waveform
 
