@@ -18,6 +18,8 @@ enum ParamType {
 	DEVICE,
 	INDEVICE,
 	OUTDEVICE,
+	MIDI_INDEVICE,
+	MIDI_OUTDEVICE,
 	BUFFER_COUNT,
 	AUDIO,
 	RECORD,
@@ -39,6 +41,8 @@ static Param param_list[] = {
 	{ "DEVICE", DEVICE, false},
 	{ "INDEVICE", INDEVICE, false},
 	{ "OUTDEVICE", OUTDEVICE, false},
+	{ "MIDI_INDEVICE", MIDI_INDEVICE, false},
+	{ "MIDI_OUTDEVICE", MIDI_OUTDEVICE, false},
 	{ "BUFFER_COUNT", BUFFER_COUNT, false},
 	{ "AUDIO_ON", AUDIO, true},
 	{ "AUDIO_OFF", AUDIO, false},
@@ -140,6 +144,20 @@ double RTcmix::set_option(float *p, int nargs, double pp[])
 				 return -1.0;
 			}
 			Option::outDevice(p);
+			break;
+		case MIDI_INDEVICE:
+			if (p == NULL) {
+				 die("set_option", "No value for \"midi_indevice\"");
+				 return -1.0;
+			}
+			Option::midiInDevice(p);
+			break;
+		case MIDI_OUTDEVICE:
+			if (p == NULL) {
+				 die("set_option", "No value for \"midi_outdevice\"");
+				 return -1.0;
+			}
+			Option::midiOutDevice(p);
 			break;
 		case BUFFER_COUNT:
 			if (p == NULL) {
