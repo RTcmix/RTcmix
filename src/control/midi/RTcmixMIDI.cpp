@@ -28,14 +28,16 @@ RTcmixMIDI::RTcmixMIDI()
 
 RTcmixMIDI::~RTcmixMIDI()
 {
-	long msg = kQuitMsg;
-	Pm_Enqueue(_mainToMIDI, &msg);
+	if (_mainToMIDI) {
+		long msg = kQuitMsg;
+		Pm_Enqueue(_mainToMIDI, &msg);
 
-	// wait for acknowlegement
-	int spin;
-	do {
-		spin = Pm_Dequeue(_MIDIToMain, &msg);
-	} while (spin == 0);
+		// wait for acknowlegement
+		int spin;
+		do {
+			spin = Pm_Dequeue(_MIDIToMain, &msg);
+		} while (spin == 0);
+	}
 
 	Pt_Stop();	// stop timer
 	if (_instream)
@@ -128,6 +130,27 @@ void RTcmixMIDI::clear()
 	}
 }
 
+// FIXME: These should really pass a message from _processMIDI thread to
+// main thread.  Presumably the scheduler would call
+// RTcmixMIDI::checkMIDITrigger, which would dequeue such messages and
+// take appropriate action, starting or stopping notes.  If instead we
+// call a registered callback here, then it will be running from within
+// the _processMIDI thread!  Not what we want.
+// Since RTcmixMIDI is supposed to be dynamically loaded, how would scheduler
+// know if and what to call?
+void RTcmixMIDI::noteOnTrigger(int chan, int pitch, int velocity)
+{
+#ifdef NOTYET
+// NB: queue elem must be struct instead of long, so as to encode message
+// type plus 3 ints (for chan, pitch, vel)
+	Pm_Enqueue(_mainToMIDI, &msg);
+#endif
+}
+
+void RTcmixMIDI::noteOffTrigger(int chan, int pitch, int velocity)
+{
+}
+
 
 // -------------------------------------------------------------------- dump ---
 // Just for debugging.
@@ -189,7 +212,7 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 	PmError result;
 	do {
 		long msg;
-		result = Pm_Dequeue(obj->mainToMIDI(), &msg); 
+		result = Pm_Dequeue(obj->mainToMIDI(), &msg);
 		if (result) {
 			if (msg == kQuitMsg) {
 				// acknowledge receipt of quit message
@@ -198,10 +221,10 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 				return;
 			}
 		}
-	} while (result);         
+	} while (result);
 
 	// Don't poll MIDI until initialization completes.  We still listen for
-	// messages, in case RTcmixMIDI::init fails and dtor is then called.
+	// object messages, in case RTcmixMIDI::init fails and dtor is then called.
 	if (!obj->active())
 		return;
 
@@ -211,7 +234,7 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 		if (result) {
 			PmEvent buffer;
 
-			if (Pm_Read(obj->instream(), &buffer, 1) == pmBufferOverflow) 
+			if (Pm_Read(obj->instream(), &buffer, 1) == pmBufferOverflow)
 				continue;
 
 			// Unless there was overflow, we should have a message now.
@@ -226,15 +249,18 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 					if (data2 > 0) {
 						obj->setNoteOnPitch(chan, data1);
 						obj->setNoteOnVel(chan, data2);
+						obj->noteOnTrigger(chan, data1, data2);
 					}
 					else {	// note on w/ vel=0 is logically a note off
 						obj->setNoteOffPitch(chan, data1);
 						obj->setNoteOffVel(chan, data2);
+						obj->noteOffTrigger(chan, data1, data2);
 					}
 					break;
 				case kNoteOff:
 					obj->setNoteOffPitch(chan, data1);
 					obj->setNoteOffVel(chan, data2);
+					obj->noteOffTrigger(chan, data1, data2);
 					break;
 				case kPolyPress:
 					obj->setPolyPress(chan, data1, data2);

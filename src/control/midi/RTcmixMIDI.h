@@ -52,6 +52,9 @@ private:
 	inline PmStream *instream() { return _instream; }
 	inline PmStream *outstream() { return _outstream; }
 
+	void noteOnTrigger(int chan, int pitch, int velocity);
+	void noteOffTrigger(int chan, int pitch, int velocity);
+
 	inline void setNoteOnPitch(int chan, int val)
 						{ _noteonpitch[chan] = val; }
 	inline void setNoteOnVel(int chan, int val)
