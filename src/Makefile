@@ -2,7 +2,7 @@
 
 include ../makefile.conf
 
-DIRS = sndlib audio conf parser rtcmix
+DIRS = sndlib audio conf parser control rtcmix
 
 .PHONY: all progs dsos standalone install dso_install standalone_install \
 uninstall dso_uninstall standalone_uninstall clean cleanall
