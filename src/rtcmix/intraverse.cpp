@@ -48,7 +48,7 @@ int runMainLoop(void)
 	// Wait for the ok to go ahead
 	pthread_mutex_lock(&audio_config_lock);
 	if (!audio_config) {
-		if (print_is_on)
+		if (options.print())
 			cout << "runMainLoop():  waiting for audio_config . . .\n";
 	}
 	pthread_mutex_unlock(&audio_config_lock);
@@ -71,7 +71,7 @@ int runMainLoop(void)
 	}
 
 	if (audio_configured && rtInteractive) {
-		if (print_is_on)
+		if (options.print())
 			cout << "runMainLoop():  audio set." << endl;
 	}
 
@@ -488,7 +488,7 @@ bool inTraverse(AudioDevice *device, void *arg)
 	clear_output_buffers();
 
 	// read in an input buffer (if audio input is active)
-	if (record_audio) { 
+	if (options.record()) { 
 		// cout << "Reading data from audio device\n";
 		// DT_PANIC_MOD
 		if (!panic)

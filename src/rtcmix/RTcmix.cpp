@@ -59,7 +59,7 @@ init_globals()
 {
    int i;
 
-   RTBUFSAMPS = 8192;           /* default, modifiable with rtsetparams */
+   RTBUFSAMPS = (int) options.bufferFrames();  /* modifiable with rtsetparams */
    NCHANS = 2;
    audioNCHANS = 0;
 	SR = 44100.0; // what the heck...
@@ -69,14 +69,7 @@ init_globals()
 
 	rtInteractive = 1; // keep the heap going for this object
 	rtsetparams_called = 0; // will call at object instantiation, though
-
    audio_config = 1;
-   record_audio = 0;            /* modified with set_option */
-   play_audio = 1;              /* modified with set_option */
-   check_peaks = 1;
-   report_clipping = 1;
-
-   /* I can't believe these were never initialized */
    elapsed = 0;
 
 #ifdef NETAUDIO
@@ -92,7 +85,8 @@ init_globals()
    rtfileit = 0;                /* signal writing to soundfile */
    rtoutfile = 0;
 
-	print_is_on = 0; // default is off for the RTcmix object
+	options.print(false);
+	options.reportClipping(false);
 
    for (i = 0; i < MAXBUS; i++) {
       AuxToAuxPlayList[i] = -1; /* The playback order for AUX buses */
@@ -355,18 +349,17 @@ double RTcmix::cmdval(char name[], int n_args, char* p0, ...)
 
 void RTcmix::printOn()
 {
-	print_is_on = 1;
-	report_clipping = 1;
+	options.print(true);
+	options.reportClipping(true);
 
 	/* Banner */
-	if (print_is_on) printf("--------> %s %s <--------\n",
-			RTCMIX_NAME, RTCMIX_VERSION);
+	printf("--------> %s %s <--------\n", RTCMIX_NAME, RTCMIX_VERSION);
 }
 
 void RTcmix::printOff()
 {
-	print_is_on = 0;
-	report_clipping = 0;
+	options.print(false);
+	options.reportClipping(false);
 }
 
 void RTcmix::panic()

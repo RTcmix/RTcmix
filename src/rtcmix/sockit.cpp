@@ -114,7 +114,7 @@ extern "C" {
 		// Wait for the ok to go ahead
 		pthread_mutex_lock(&audio_config_lock);
 		if (!audio_config) {
-		  if (print_is_on)
+		  if (options.print())
 			cout << "sockit():  waiting for audio_config . . . \n";
 		}
 		pthread_mutex_unlock(&audio_config_lock);
@@ -147,7 +147,7 @@ extern "C" {
 		}
 		
 		if (audio_configured && rtInteractive) {
-			if (print_is_on)
+			if (options.print())
 				cout << "sockit():  audio set.\n";
 		}
 		

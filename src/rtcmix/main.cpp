@@ -92,12 +92,16 @@ usage()
 
 
 /* --------------------------------------------------------- init_globals --- */
+#include "Option.h"
+
 static void
 init_globals()
 {
    int i;
 
-   RTBUFSAMPS = 8192;           /* default, modifiable with rtsetparams */
+   options.readConfigFile(options.rcName());
+
+   RTBUFSAMPS = (int) options.bufferFrames();  /* modifiable with rtsetparams */
    NCHANS = 2;
    audioNCHANS = 0;
 
@@ -107,14 +111,7 @@ init_globals()
    noParse = 0;
    socknew = 0;
    rtsetparams_called = 0;
-
    audio_config = 1;
-   record_audio = 0;            /* modified with set_option */
-   play_audio = 1;              /* modified with set_option */
-   check_peaks = 1;
-   report_clipping = 1;
-
-   /* I can't believe these were never initialized */
    elapsed = 0;
 
 #ifdef NETAUDIO
@@ -131,8 +128,6 @@ init_globals()
 
    rtfileit = 0;                /* signal writing to soundfile */
    rtoutfile = 0;
-
-   print_is_on = 1;
 
    for (i = 0; i < MAXBUS; i++) {
       AuxToAuxPlayList[i] = -1; /* The playback order for AUX buses */
@@ -280,9 +275,9 @@ main(int argc, char *argv[])
                noParse = 1;
                break;
             case 'Q':               /* reall quiet */
-               report_clipping = 0; /* (then fall through) */
+               options.reportClipping(false); /* (then fall through) */
             case 'q':               /* quiet */
-               print_is_on = 0;
+               options.print(false);
                break;
 #ifdef LINUX
 			case 'p':
@@ -395,7 +390,7 @@ main(int argc, char *argv[])
    }
 
    /* Banner */
-   if (print_is_on)
+   if (options.print())
       printf("--------> %s %s (%s) <--------\n",
                                       RTCMIX_NAME, RTCMIX_VERSION, argv[0]);
 
@@ -429,7 +424,7 @@ main(int argc, char *argv[])
    */
    if (rtInteractive) {
 
-      if (print_is_on)
+      if (options.print())
          fprintf(stdout, "rtInteractive mode set\n");
 
       /* Read an initialization score. */
