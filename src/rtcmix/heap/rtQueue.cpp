@@ -25,12 +25,12 @@ int rtQueue::getSize()
 
 int rtQueue::nextChunk()
 {
-  return head->Inst->chunkstart;
+  return head->chunkstart;
 }
 
 // Push an element to end of the rtQueue
 
-void rtQueue::push(Instrument *newInst)
+void rtQueue::push(Instrument *newInst, unsigned long new_chunkstart)
 {
   int i;
   long diff;
@@ -38,23 +38,24 @@ void rtQueue::push(Instrument *newInst)
   rtQElt *tempElt; // BGG: for queue insertion
   newElt = new rtQElt;
   newElt->Inst = newInst;
+  newElt->chunkstart = new_chunkstart; 
   newElt->next = NULL;
   newElt->prev = NULL;
-  
 
   if (head == NULL)  // if first item on rtQueue
     head = tail = newElt;
-  else if(tail->Inst->chunkstart <= newElt->Inst->chunkstart) {
+  else if(tail->chunkstart <= newElt->chunkstart) {
     // append to the end of the rtQueue
     tail->next = newElt;
     newElt->prev = tail;
     tail = newElt;
   }
+#ifdef QBUG
   else { // BGG: we have to insert this one
 #ifdef DBUG
     cout << "rtQueue::push():  scanning ...\n";
-    cout << "tail->Inst->chunkstart = " << tail->Inst->chunkstart << endl;
-    cout << "newElt->Inst->chunkstart = " << newElt->Inst->chunkstart << endl;
+    cout << "tail->chunkstart = " << tail->chunkstart << endl;
+    cout << "newElt->chunkstart = " << newElt->chunkstart << endl;
     cout << "Queue size = " << size << endl;
 #endif
     tempElt = tail;
@@ -62,7 +63,7 @@ void rtQueue::push(Instrument *newInst)
 #ifdef DBUG    
     cout << "STARTING SCAN\n";
 #endif
-    while((tempElt->Inst->chunkstart > newElt->Inst->chunkstart) && (tempElt->prev) && (i < size)){
+    while((tempElt->chunkstart > newElt->chunkstart) && (tempElt->prev) && (i < size)){
       if (!tempElt->prev) { // BGG: we're at the head
 	cout << "We're at the head\n";
 	break;
@@ -71,10 +72,10 @@ void rtQueue::push(Instrument *newInst)
       cout << "i = " << i << endl;
       cout << "tempElt = " << tempElt << endl;
       cout << "head = " << head << endl;
-      cout << "head->Inst->chunkstart = " << head->Inst->chunkstart << endl;
-      cout << "tempElt->Inst->chunkstart = " << tempElt->Inst->chunkstart << endl;
-      cout << "newElt->Inst->chunkstart = " << newElt->Inst->chunkstart << endl;
-      diff = (newElt->Inst->chunkstart - tempElt->Inst->chunkstart);
+      cout << "head->chunkstart = " << head->chunkstart << endl;
+      cout << "tempElt->chunkstart = " << tempElt->chunkstart << endl;
+      cout << "newElt->chunkstart = " << newElt->chunkstart << endl;
+      diff = (newElt->chunkstart - tempElt->chunkstart);
       cout << "diff = " << diff << endl;
       cout << "tempElt->prev = " << tempElt->prev << endl;
 #endif
@@ -86,18 +87,18 @@ void rtQueue::push(Instrument *newInst)
     cout << "i = " << i << endl;
     cout << "tempElt = " << tempElt << endl;
     cout << "head = " << head << endl;
-    cout << "head->Inst->chunkstart = " << head->Inst->chunkstart << endl;
-    cout << "tempElt->Inst->chunkstart = " << tempElt->Inst->chunkstart << endl;
-    cout << "newElt->Inst->chunkstart = " << newElt->Inst->chunkstart << endl;
-    diff = (newElt->Inst->chunkstart - tempElt->Inst->chunkstart);
+    cout << "head->chunkstart = " << head->chunkstart << endl;
+    cout << "tempElt->chunkstart = " << tempElt->chunkstart << endl;
+    cout << "newElt->chunkstart = " << newElt->chunkstart << endl;
+    diff = (newElt->chunkstart - tempElt->chunkstart);
     cout << "diff = " << diff << endl;
     cout << "tempElt->prev = " << tempElt->prev << endl;
 
     if (diff > MAXBUF) {  // 128 was MAXBUF in my testing
       cerr << "SCHEDULING INCONSISTENCY!\n";
-      cerr << "newElt->Inst->chunkstart = " << newElt->Inst->chunkstart << endl;
-      cout << "tempElt->Inst->chunkstart = " << tempElt->Inst->chunkstart << endl;
-      diff = (newElt->Inst->chunkstart - tempElt->Inst->chunkstart);
+      cerr << "newElt->chunkstart = " << newElt->chunkstart << endl;
+      cout << "tempElt->chunkstart = " << tempElt->chunkstart << endl;
+      diff = (newElt->chunkstart - tempElt->chunkstart);
       cout << "diff = " << diff << endl;
       exit(1);
     }
@@ -124,6 +125,7 @@ void rtQueue::push(Instrument *newInst)
       head = newElt;
     }
   }
+#endif // QBUG
   size++;
 }
 
