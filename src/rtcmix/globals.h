@@ -9,7 +9,6 @@
 #include "version.h"
 #include "buffers.h"
 #include "bus.h"  // FIXME: just for MAXBUS
-#include <rtupdate.h> // FIXME
 
 #ifdef MAIN
 #define GLOBAL
@@ -32,9 +31,16 @@ extern "C" {
 #define INLINE           /* MIPSpro can't */
 #endif
 
+#include <rtupdate.h>
+
 #ifdef LINUX
 GLOBAL int in_port[MAXBUS];    /* array, in case sound driver uses many devs */
 GLOBAL int out_port[MAXBUS];
+#endif
+#ifdef MACOSX
+#include <CoreAudio/AudioHardware.h>
+GLOBAL AudioDeviceID in_port;
+GLOBAL AudioDeviceID out_port;
 #endif
 #ifdef SGI
 #include <dmedia/audio.h>
@@ -154,11 +160,6 @@ typedef enum {
 GLOBAL short AuxToAuxPlayList[MAXBUS]; /* The playback order for AUX buses */
 GLOBAL short ToOutPlayList[MAXBUS]; /* The playback order for AUX buses */
 GLOBAL short ToAuxPlayList[MAXBUS]; /* The playback order for AUX buses */
-
-/* -------------------------------------------------------------------------- */
-/* rtupdate stuff */
-
-#include <rtupdate.h>
 
 #ifdef __cplusplus
 } /* extern "C" */

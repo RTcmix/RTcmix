@@ -18,12 +18,20 @@ typedef BUFTYPE *BufPtr;
 #ifdef LINUX
 #define OBUFTYPE short
 typedef OBUFTYPE *OBufPtr;
+#define LIMIT_OBUF_FOR_AUDIO_DEV
 #define IBUFTYPE short
 typedef IBUFTYPE *IBufPtr;
 #endif /* LINUX */
+#ifdef MACOSX
+#define OBUFTYPE float        /* could make this float ... */
+#define LIMIT_OBUF_FOR_AUDIO_DEV
+typedef OBUFTYPE *OBufPtr;
+#define IBUFTYPE float
+typedef IBUFTYPE *IBufPtr;
+#endif /* MACOSX */
 #ifdef SGI
 #define OBUFTYPE short        /* could make this float, as in CMC version ... */
-//#define OBUF_IS_FLOAT       /* ... and also define this */
+#define LIMIT_OBUF_FOR_AUDIO_DEV  /* ...and then maybe comment this out */
 typedef OBUFTYPE *OBufPtr;
 #define IBUFTYPE short
 typedef IBUFTYPE *IBufPtr;
