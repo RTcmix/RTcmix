@@ -307,7 +307,8 @@ PrintStreamChannelInformation(AudioDeviceID devID, UInt32 chan, Boolean isInput,
                            &size,
                            &strDesc);
       printf("      %s (flags=%x)\n",
-         (flags & kLinearPCMFormatFlagIsNonInterleaved) ? "nonInterleaved" : "",
+         (strDesc.mFormatFlags  & kLinearPCMFormatFlagIsNonInterleaved)
+            ? "nonInterleaved" : "",
          strDesc.mFormatFlags);
    }
 
