@@ -250,7 +250,7 @@ read_float_samps(
          dest[j] = (BUFTYPE) fbuf[i];
    }
 
-#ifdef MUS_LITTLE_ENDIAN
+#if MUS_LITTLE_ENDIAN
    swap = IS_BIG_ENDIAN_FORMAT(data_format);
 #else
    swap = IS_LITTLE_ENDIAN_FORMAT(data_format);
@@ -320,7 +320,7 @@ read_short_samps(
 
    /* Copy interleaved file buffer to dest buffer, with bus mapping. */
 
-#ifdef MUS_LITTLE_ENDIAN
+#if MUS_LITTLE_ENDIAN
    swap = IS_BIG_ENDIAN_FORMAT(data_format);
 #else
    swap = IS_LITTLE_ENDIAN_FORMAT(data_format);
