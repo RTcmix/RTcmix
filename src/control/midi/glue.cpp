@@ -40,6 +40,7 @@ static char *_midi_controller_name[][NAME_VARIANTS] = {
 	{ "pan", NULL, NULL, NULL },
 	{ "exp", "expression", NULL, NULL },
 	{ NULL, NULL, NULL, NULL }
+//FIXME: add others
 };
 
 // -------------------------------------------------------- _midi_connection ---
@@ -92,7 +93,15 @@ static MIDISubType
 _string_to_subtype(const MIDIType type, const char *subtype)
 {
 	if (type == kMIDIControlType) {
-//FIXME
+		for (int i = 0; _midi_controller_name[i][0] != NULL; i++) {
+			for (int j = 0; j < NAME_VARIANTS; j++) {
+				const char *name = _midi_controller_name[i][j];
+				if (name == NULL)
+					break;
+				if (strcasecmp(type, name) == 0)
+					return (MIDISubType) i;
+			}
+		}
 	}
 	else if (type == kMIDINoteOnType || type == kMIDINoteOffType) {
 		if (strcmp(subtype, "note") == 0)
@@ -112,8 +121,8 @@ midi_connection(const Arg args[], const int nargs)
 
 	double minval, maxval, defaultval, lag;
 	int chan;
-	MIDIType type;
-	MIDISubType subtype;
+	MIDIType type = kMIDIInvalidType;
+	MIDISubType subtype = kMIDIInvalidSubType;
 
 	if (args[1].isType(DoubleType))
 		minval = args[1];
