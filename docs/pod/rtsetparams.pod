@@ -4,7 +4,7 @@ rtsetparams - set sampling rate, output channels, etc.
 
 =head1 SYNOPSIS
 
-B<rtsetparmas>(I<sampling_rate>, I<num_channels> [, I<buffer_size> ])
+B<rtsetparams>(I<sampling_rate>, I<num_channels> [, I<buffer_size> ])
 
 =head1 DESCRIPTION
 
@@ -23,7 +23,8 @@ once in a script.
 
 The sampling rate for all synthesis and processing.  Any input sound
 files must have this rate, and the output sound file will have this
-rate.
+rate.  Similarly, the input and output devices (audio hardware) will
+have this rate.
 
 =item I<num_channels>
 
