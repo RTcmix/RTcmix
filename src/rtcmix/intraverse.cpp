@@ -12,8 +12,8 @@
 #include "../rtstuff/rtdefs.h"
 #include "../H/dbug.h"
 
-#define XTBUG
-#define XALLBUG
+#define TBUG
+#define ALLBUG
 
 extern "C" {
   void rtsendsamps(void);
@@ -351,76 +351,32 @@ extern "C" {
 	  }
 	  
 	  // Write buf to audio device -------------------------------------------
-	  if ((chunkStart >= bufEndSamp) && (aux_pb_done)) {  
 #ifdef ALLBUG
-		cout << "Writing samples----------\n";
-		cout << "Q-chunkStart:  " << chunkStart << endl;
-		cout << "bufEndSamp:  " << bufEndSamp << endl;
+	  cout << "Writing samples----------\n";
+	  cout << "Q-chunkStart:  " << chunkStart << endl;
+	  cout << "bufEndSamp:  " << bufEndSamp << endl;
 #endif
-
-		rtsendsamps();
-
-		// zero the buffers
-		clear_aux_buffers();
-		clear_output_buffers();
-
-		// read in an input buffer (if audio input is active)
-		if (audio_on) { 
-		  // cout << "Reading data from audio port\n";
-		  rtgetsamps();
-		}
-
-		gettimeofday(&tv, &tz);
-		sec = (double)tv.tv_sec;
-		usec = (double)tv.tv_usec;
-		baseTime = (sec * 1e6) + usec;
-		elapsed += RTBUFSAMPS;	
-		bufStartSamp += RTBUFSAMPS;
-		bufEndSamp += RTBUFSAMPS;
+	  
+	  rtsendsamps();
+	  
+	  // zero the buffers
+	  clear_aux_buffers();
+	  clear_output_buffers();
+	  
+	  // read in an input buffer (if audio input is active)
+	  if (audio_on) { 
+		// cout << "Reading data from audio port\n";
+		rtgetsamps();
 	  }
+	  
+	  gettimeofday(&tv, &tz);
+	  sec = (double)tv.tv_sec;
+	  usec = (double)tv.tv_usec;
+	  baseTime = (sec * 1e6) + usec;
+	  elapsed += RTBUFSAMPS;	
+	  bufStartSamp += RTBUFSAMPS;
+	  bufEndSamp += RTBUFSAMPS;
       
-	  // Some checks for the next case v v v v v v v v v v v v
-	  pthread_mutex_lock(&heapLock);
-	  heapSize = rtHeap.getSize();
-	  if (heapSize > 0) {
-		heapChunkStart = rtHeap.getTop();
-	  }
-	  pthread_mutex_unlock(&heapLock);
-
-	  // Nothing on the queue and nothing on the heap for playing -------------
-	  // write zeros
-	  if ((heapChunkStart > bufEndSamp) || ((heapSize == 0) && (allQSize == 0))) {
-		
-		// FIXME: old comment -- still valid?  -JGG
-		// Write audio buffer to file
-		// ***FIXME: this writes extra MAXBUF zeros to end of file
-		// ***need to make intraverse aware of what it's doing (e.g, server?)
-
-#ifdef TBUG
-		cout << "Queue and Heap empty ----------\n";
-		cout << "rtQSize: " << rtQSize << endl;
-		cout << "chunkStart:  " << chunkStart << endl;
-		cout << "chunksamps:  " << chunksamps << endl;
-#endif
-
-		rtsendsamps();
-		if (rtInst)
-		 rtsendzeros(1);   // send zeros to audio device and to file
-		
-		// zero the buffers
-		clear_aux_buffers();
-		clear_output_buffers();
-
-		// Increment time
-		gettimeofday(&tv, &tz);
-		sec = (double)tv.tv_sec;
-		usec = (double)tv.tv_usec;
-		baseTime = (sec * 1e6) + usec;
-		elapsed += RTBUFSAMPS;
-		bufStartSamp += RTBUFSAMPS;
-		bufEndSamp += RTBUFSAMPS;
-      }
-
       if (!rtInteractive) {  // Ending condition
 		if ((heapSize == 0) && (allQSize == 0)) {
 #ifdef TBUG
@@ -436,7 +392,7 @@ extern "C" {
   
 	if (rtsetparams_called) {
 	  if (play_audio) {             // Play zero'd buffers to avoid clicks
-		int count = NCHANS * 2;  // DJT:  clicks on my box with 2
+		int count = NCHANS * 4;  // DJT:  clicks on my box with 2
 		for (j = 0; j < count; j++) 
 		  rtsendzeros(0);
       }  
