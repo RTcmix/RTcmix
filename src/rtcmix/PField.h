@@ -22,13 +22,13 @@ protected:
 
 // Base class for operator PFields
 
-class PFieldOperator : public PField {
+class PFieldBinaryOperator : public PField {
 public:
 	virtual double	doubleValue(double) const;
 protected:
 	typedef double (*Operator)(double, double);
-	PFieldOperator(PField *pf1, PField *pf2, Operator);
-	virtual 		~PFieldOperator();
+	PFieldBinaryOperator(PField *pf1, PField *pf2, Operator);
+	virtual 		~PFieldBinaryOperator();
 private:
 	PField	*_pfield1, *_pfield2;
 	Operator _operator;
@@ -36,22 +36,22 @@ private:
 
 // PField which adds two other PFields
 
-class AddPField : public PFieldOperator {
+class AddPField : public PFieldBinaryOperator {
 protected:
 	static double Add(double x, double y) { return x + y; }
 public:
-	AddPField(PField *pf1, PField *pf2) : PFieldOperator(pf1, pf2, Add) {}
+	AddPField(PField *pf1, PField *pf2) : PFieldBinaryOperator(pf1, pf2, Add) {}
 protected:
 	virtual 		~AddPField() {}
 };
 
 // PField which multiplies two other PFields
 
-class MultPField : public PFieldOperator {
+class MultPField : public PFieldBinaryOperator {
 protected:
 	static double Mult(double x, double y) { return x * y; }
 public:
-	MultPField(PField *pf1, PField *pf2) : PFieldOperator(pf1, pf2, Mult) {}
+	MultPField(PField *pf1, PField *pf2) : PFieldBinaryOperator(pf1, pf2, Mult) {}
 protected:
 	virtual 		~MultPField() {}
 };
