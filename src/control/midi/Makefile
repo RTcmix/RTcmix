@@ -16,13 +16,19 @@ endif
 
 CXXFLAGS += -I. -I../../rtcmix -Iportmidi/pm_common -Iportmidi/porttime
 
+# when we make this a dso
+#LIBMIDI = libmidicon.$(SHLIB_SUFFIX)
 LIBMIDI = libmidicon.a
 
 all: $(LIBMIDI) glue.o
 
 # FIXME: make this a dso
 $(LIBMIDI): depend $(OBJS)
-	$(LD) -r $(OBJS) -o $(LIBMIDI) $(PTLIB) $(PMLIB) $(MIDISYSLIB)
+	$(LD) -r $(OBJS) $(PMLIB) $(PTLIB) $(MIDISYSLIB) -o $@
+
+#$(LIBMIDI): depend $(OBJS)
+#	$(RM) $@
+#	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(OBJS) $(PMLIB) $(PTLIB) $(MIDISYSLIB)
 
 glue.o: depend glue.cpp RTMidiPField.h
 	$(CXX) $(CXXFLAGS) -c -o glue.o glue.cpp
