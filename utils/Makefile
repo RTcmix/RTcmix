@@ -2,10 +2,20 @@ include ../makefile.conf
 
 PROGS = cmixplay playraw sfrecord full-duplex-test
 
+SYSOBJS = ../sys/check_byte_order.o
+SYSLIBS = -lm   # only this, overriding makefile.conf
+
+ifeq ($(USE_SNDLIB),TRUE)
+   SYSOBJS += ../sys/sndlibsupport.o
+   SYSLIBS += ../sndlib/sndlib.a
+else
+endif
+
+
 all:  $(PROGS)
 
-cmixplay:  play.o ../sys/check_byte_order.o
-	$(CC) $(FLAGS) -o cmixplay play.o ../sys/check_byte_order.o -lm
+cmixplay:  play.o $(SYSOBJS)
+	$(CC) $(FLAGS) -o cmixplay play.o $(SYSOBJS) $(SYSLIBS)
 
 playraw: playraw.o
 	$(CC) -o playraw playraw.o
@@ -13,8 +23,8 @@ playraw: playraw.o
 full-duplex-test: full-duplex-test.o
 	$(CC) -o full-duplex-test full-duplex-test.o -lm
 
-sfrecord:  sfrecord.o ../sys/check_byte_order.o
-	$(CC) -o sfrecord sfrecord.o ../sys/check_byte_order.o
+sfrecord:  sfrecord.o $(SYSOBJS)
+	$(CC) -o sfrecord sfrecord.o $(SYSOBJS) $(SYSLIBS)
 
 install:
 	@for PROG in $(PROGS); \
