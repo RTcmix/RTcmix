@@ -90,8 +90,14 @@ NetAudioDevice::~NetAudioDevice()
 
 bool NetAudioDevice::waitForDevice(unsigned int wTime)
 {
-	if (!connected()) {
-		if (waitForConnect() < 0)
+	while (!connected()) {
+		if (waitForConnect() == 0) {
+			if (configure() < 0) {
+				disconnect();
+				continue;	// try again
+			}
+		}
+		else
 			return false;
 	}
 	return ThreadedAudioDevice::waitForDevice(wTime);
@@ -225,8 +231,17 @@ NetAudioDevice::doStart()
 		printf("NetAudioDevice::doStart: wrote header\n");
 	}
 	else if (isRecording()) {
-		if (waitForConnect() < 0)
-			return -1;
+		bool ready = false;
+		while (!ready) {
+			if (waitForConnect() == 0) {
+				if (configure() == 0)
+					ready = true;	// connection OK
+				else
+					disconnect();	// connection was not compatible; retry.
+			}
+			else
+				return -1;
+		}
 	}
 	return ThreadedAudioDevice::startThread();
 }
@@ -355,7 +370,7 @@ int NetAudioDevice::waitForConnect()
 	}
 	setDevice(sockdev);
 	printf("NetAudioDevice: got connection\n");
-	return configure();
+	return 0;
 }
 
 int NetAudioDevice::disconnect()
@@ -419,10 +434,14 @@ int NetAudioDevice::configure()
 		fprintf(stderr, "NetAudioDevice: unknown or unsupported audio format\n");
 		return error("NetAudioDevice: unsupported audio format");
 	}
-	// For now we cannot handle buffer size mismatches.
+	// For now we cannot handle buffer size or channel mismatches.
 	if (netformat.blockFrames != _impl->framesPerWrite) {
-		fprintf(stderr, "NetAudioDevice: for now, sender and receiver RTBUFSAMPS must match\n");
+		fprintf(stderr, "NetAudioDevice: sender and receiver RTBUFSAMPS must match\n");
 		return error("NetAudioDevice: audio buffer size mismatch");
+	}
+	else if (netformat.chans != getDeviceChannels()) {
+		fprintf(stderr, "NetAudioDevice: sender and receiver channel counts must match\n");
+		return error("NetAudioDevice: audio channel count mismatch");
 	}
 	// Just give a warning for SR mismatch.
 	if (netformat.sr != getSamplingRate()) {
