@@ -3,7 +3,6 @@
 double
 gen18(struct gen *gen)
 {
-   setline(gen->pvals, gen->nargs, gen->size, gen->array);
-   return 0.0;
+   return (double) setline(gen->pvals, gen->nargs, gen->size, gen->array);
 }
 
