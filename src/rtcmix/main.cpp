@@ -113,6 +113,7 @@ main(int argc, char *argv[])
 	char    *cp,*infile;
 	int retcode;  // for mutexes
 
+	init_globals();
 
 	/* threads */
 	pthread_t sockitThread, inTraverseThread;
