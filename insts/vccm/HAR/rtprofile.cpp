@@ -7,8 +7,8 @@
 void
 rtprofile()
 {
+	RT_INTRO("STORE",makeSTORE);
 	RT_INTRO("HOLD",makeHOLD);
-	RT_INTRO("RELEASE",makeRELEASE);
 	RT_INTRO("FADE",makeFADE);
 }
 

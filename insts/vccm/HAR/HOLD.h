@@ -1,10 +1,8 @@
-#define MAX_AUD_IDX 16
-
 class HOLD : public Instrument {
-  float *buf_loc, *in;
-  float dur;
-  int t_samp;
-  int aud_idx, inchan;
+	float amp,*amptable,tabs[2],*in;
+	float famp, *fade_table, f_tabs[2];
+	float dur,spread;
+	int skip, idx_samp, hold_samp, aud_idx, fade_samps, fade_samp;
 
 public:
 	HOLD();

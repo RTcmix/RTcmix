@@ -1,6 +1,6 @@
 include ../package.conf
 
-OBJS = RELEASE.o HOLD.o FADE.o rtprofile.o
+OBJS = HOLD.o STORE.o FADE.o rtprofile.o
 PROGS = HAR libHAR.so
 CMIXOBJS += $(PROFILE_O)
 
