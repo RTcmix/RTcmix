@@ -1,5 +1,5 @@
 # Print html to stdout for a web page that provides an index of all the
-# man pages, with brief descriptions grabbed from the synopsis.
+# man pages, with brief descriptions grabbed from the man page.
 
 # These tmp files are created and deleted by Makefile.
 $inst_fname = "inst_html.tmp";
