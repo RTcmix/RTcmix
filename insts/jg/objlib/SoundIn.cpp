@@ -27,22 +27,22 @@ SoundIn :: SoundIn(char *fileName, MY_FLOAT inskip = 0.0)
    }
 
    /* Gather info from file header. */
-   header_type = c_snd_header_type();
+   header_type = mus_header_type();
    if (NOT_A_SOUND_FILE(header_type)) {
       fprintf(stderr, "\"%s\" is probably not a sound file\n", fileName);
       sndlib_close(fd, 0, 0, 0, 0);
       exit(-1);                 // do something more graceful later...
    }
-   data_format = c_snd_header_format();
+   data_format = mus_header_format();
    if (INVALID_DATA_FORMAT(data_format)) {
       fprintf(stderr, "\"%s\" has invalid sound data format\n", fileName);
       sndlib_close(fd, 0, 0, 0, 0);
       exit(-1);                 // do something more graceful later...
    }
-   srate = c_snd_header_srate();
-   nchans = c_snd_header_chans();
-   nframes = (long)(c_snd_header_data_size() / nchans);
-   data_location = c_snd_header_data_location();
+   srate = mus_header_srate();
+   nchans = mus_header_chans();
+   nframes = (long)(mus_header_samples() / nchans);
+   data_location = mus_header_data_location();
 
    /* Allocate array of 1-channel I/O buffers. */
    bufframes = RTBUFSAMPS;
@@ -111,8 +111,9 @@ MY_FLOAT SoundIn :: getDuration()
 */
 int SoundIn :: readBuffer()
 {
-   clm_read(fd, 0, bufframes - 1, nchans, inbufs);
-// ***NOTE: doesn't return an error code, so we don't either!
+   int total_read = mus_file_read(fd, 0, bufframes - 1, nchans, inbufs);
+   if (total_read == MUS_ERROR)
+      return -1;
 
    curbufstart += bufframes;
    curbufframe = 0;
@@ -142,10 +143,10 @@ int SoundIn :: seekFrame(long frame)
    curbufstart = frame - bufframes;     // compensate for next readBuffer incr.
    curbufframe = bufframes;             // force next tick to read new buffer
 
-   /* NOTE: clm_seek handles any datum size as if it had 16 bits. */
+   /* NOTE: mus_file_seek handles any datum size as if it had 16 bits. */
    byteoffset = data_location + (frame * nchans * 2);
 
-   result = clm_seek(fd, byteoffset, SEEK_SET);
+   result = mus_file_seek(fd, byteoffset, SEEK_SET);
 
    return result;
 }

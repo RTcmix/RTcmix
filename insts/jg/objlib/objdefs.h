@@ -16,11 +16,16 @@
 #define DEFAULT_CONTROL_RATE  200
 
 /* Yer Basic Trigonometric constants  */
-#if !defined(PI)
-  #define PI (MY_FLOAT) 3.14159265359
+#if (!defined(M_PI))
+  #define M_PI 3.14159265358979323846264338327
 #endif
-#define TWO_PI (MY_FLOAT) 6.28318530718
-#define ONE_OVER_TWO_PI (MY_FLOAT) 0.15915494309
+#if (!defined(PI))
+  #define PI M_PI
+#endif
+#if (!defined(TWO_PI))
+  #define TWO_PI (2.0 * M_PI)
+#endif
+#define ONE_OVER_TWO_PI (1.0 / TWO_PI)
 #define SQRT_TWO (MY_FLOAT) 1.4142135623730950488
 
 /* Machine dependent stuff, possibly useful for optimization.
