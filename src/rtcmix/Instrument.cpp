@@ -324,14 +324,14 @@ void Instrument :: gone()
 #ifdef DEBUG
             printf("\tclosing fd %d\n", inputFileTable[fdIndex].fd);
 #endif
-            clm_close(inputFileTable[fdIndex].fd);
+            mus_file_close(inputFileTable[fdIndex].fd);
          }
          if (inputFileTable[fdIndex].filename);
             free(inputFileTable[fdIndex].filename);
          inputFileTable[fdIndex].filename = NULL;
          inputFileTable[fdIndex].fd = NO_FD;
-         inputFileTable[fdIndex].header_type = unsupported_sound_file;
-         inputFileTable[fdIndex].data_format = snd_unsupported;
+         inputFileTable[fdIndex].header_type = MUS_UNSUPPORTED;
+         inputFileTable[fdIndex].data_format = MUS_UNSUPPORTED;
          inputFileTable[fdIndex].is_float_format = 0;
          inputFileTable[fdIndex].data_location = 0;
          inputFileTable[fdIndex].srate = 0.0;
