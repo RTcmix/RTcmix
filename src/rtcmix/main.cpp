@@ -63,12 +63,7 @@ static void
 init_globals()
 {
    RTBUFSAMPS = 8192;           /* default, modifyable with rtsetparams */
-   // FIXME: NCHANS hasn't even been inited yet!
-
-   MAXBUF = NCHANS * RTBUFSAMPS;
-#ifdef DBUG
-   printf("init_globals():  MAXBUF = %d\n", MAXBUF);
-#endif
+   NCHANS = 2;
 
 #ifdef LINUX
    for (int i = 0; i < MAXBUS; i++)
