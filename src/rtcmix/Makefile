@@ -121,6 +121,9 @@ LIBS = $(AUDIOLIB) $(SNDLIB) $(LIBCONF)
 #LIBS += ../control/mouse/libmouse.a ../control/mouse/glue.o
 #LDFLAGS += -L/usr/X11/lib -lX11
 
+# JGG midi test...
+#LIBS += ../control/midi/libmidicon.a ../control/midi/glue.o
+
 PROGS = MIX
 MAIN_OBJS = RTcmixMain.o main.o
 TARGETS = $(RTLIB) $(MAIN_OBJS) RTsockfuncs.o $(PROGS)
