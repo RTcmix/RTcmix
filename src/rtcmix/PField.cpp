@@ -169,6 +169,29 @@ int PFieldBinaryOperator::copyValues(double *array) const
 	return maxlen;
 }
 
+// LFOPField
+
+LFOPField::LFOPField(double krate, double *tableArray, int length,
+		PField *freq, PField *amp, bool interp)
+	: SingleValuePField(0.0), _freqPF(freq), _ampPF(amp), _interp(interp)
+{
+	_oscil = new Ooscili(krate, _freqPF->doubleValue(0), tableArray, length);
+}
+
+LFOPField::~LFOPField()
+{
+	delete _oscil;
+}
+
+double LFOPField::doubleValue(double percent) const
+{
+	if (percent > 1.0)
+		percent = 1.0;
+	_oscil->setfreq(_freqPF->doubleValue(percent));
+	double val = _interp ? _oscil->next() : _oscil->nextn();
+	return val * _ampPF->doubleValue(percent);
+}
+
 // TablePField
 
 TablePField::TablePField(double *tableArray,

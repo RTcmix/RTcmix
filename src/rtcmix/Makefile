@@ -60,6 +60,7 @@ checkInsts.cpp \
 dispatch.cpp \
 Instrument.cpp \
 intraverse.cpp \
+lfo.cpp \
 minc_info.cpp \
 Option.cpp \
 PField.cpp \

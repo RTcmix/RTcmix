@@ -135,6 +135,24 @@ protected:
 	virtual 		~RTNumberPField() {}
 };
 
+// Class for low frequency control rate oscillator
+
+#include <Ougens.h>
+
+class LFOPField : public SingleValuePField {
+public:
+	LFOPField(double krate, double *tableArray, int length, PField *freq,
+					PField *amp, bool interp=true);
+	virtual double	doubleValue(double) const;
+protected:
+	virtual ~LFOPField();
+private:
+	Ooscili *_oscil;
+	PField *_freqPF;
+	PField *_ampPF;
+	bool _interp;
+};
+
 // Class for interpolated reading of table.
 
 class TablePField : public PField, public RTFieldObject {

@@ -25,6 +25,7 @@ ug_intro()
    UG_INTRO_HANDLE_RETURN("add", addtable);
    UG_INTRO_HANDLE_RETURN("reversetable", reversetable);
    UG_INTRO_HANDLE_RETURN("makeconnection", makeconnection);
+   UG_INTRO_HANDLE_RETURN("makeLFO", makeLFO);
    UG_INTRO_HANDLE_RETURN("makeconverter", makeconverter);
 	UG_INTRO("makegen", makegen);
 	UG_INTRO("open",m_open);
