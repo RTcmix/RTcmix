@@ -48,6 +48,10 @@ int rtsetinput(float start, Instrument *theInst)
 	theInst->fileOffset = rtInitialOffset
 		+ ((int)(start * inSR)) * theInst->inputchans * sizeof(short);
 
+	if (start >= inputFileTable[theInst->fdIndex].dur)
+		fprintf(stderr, "\nWARNING: Attempt to read past end of input file: %s\n\n",
+						inputFileTable[theInst->fdIndex].filename);
+
 	return(1);
 }
 
