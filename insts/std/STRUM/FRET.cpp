@@ -41,6 +41,8 @@ int FRET::run()
 	int i;
 	float out[2];
 
+	Instrument::run();
+
 	if (firsttime) {
 		sset(freq, tf0, tfN, strumq1);
 		firsttime = 0;
@@ -68,5 +70,7 @@ makeFRET()
 	FRET *inst;
 
 	inst = new FRET();
+	inst->set_bus_config("FRET");
+
 	return inst;
 }

@@ -107,6 +107,8 @@ int VSTART1::run()
 	float freqch;
 	int branch1,branch2;
 
+	Instrument::run();
+
 	branch1 = branch2 = 0;
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch1 < 0) {
@@ -146,5 +148,7 @@ makeVSTART1()
 	VSTART1 *inst;
 
 	inst = new VSTART1();
+	inst->set_bus_config("VSTART1");
+
 	return inst;
 }

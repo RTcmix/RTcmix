@@ -75,6 +75,8 @@ int START1::run()
 	float out[2];
 	float a,b;
 
+	Instrument::run();
+
 	for (i = 0; i < chunksamps; i++) {
 		a = strum(d, strumq1);
 		b = dist(dgain*a);
@@ -101,5 +103,7 @@ makeSTART1()
 	START1 *inst;
 
 	inst = new START1();
+	inst->set_bus_config("START1");
+
 	return inst;
 }

@@ -88,6 +88,8 @@ int VFRET1::run()
 	float freqch;
 	int branch1,branch2;
 
+	Instrument::run();
+
 	if (firsttime) {
 		sset(freq, tf0, tfN, strumq1);
 		delayset(fbpitch, dq);
@@ -133,5 +135,7 @@ makeVFRET1()
 	VFRET1 *inst;
 
 	inst = new VFRET1();
+	inst->set_bus_config("VFRET1");
+
 	return inst;
 }

@@ -16,13 +16,11 @@ extern "C" {
 
 COMBIT::COMBIT() : Instrument()
 {
-    in = new float[MAXBUF];
     combarr = NULL;
 }
 
 COMBIT::~COMBIT()
 {
-    delete [] in;
     delete [] combarr;
 }
 
@@ -76,9 +74,11 @@ int COMBIT::init(float p[], short n_args)
 int COMBIT::run()
 {
 	int i,j,rsamps;
-	float out[2];
+	float in[MAXBUF], out[2];
 	float aamp;
 	int branch;
+
+	Instrument::run();
 
 	rsamps = chunksamps*inputchans;
 
@@ -118,6 +118,8 @@ makeCOMBIT()
 	COMBIT *inst;
 
 	inst = new COMBIT();
+	inst->set_bus_config("COMBIT");
+
 	return inst;
 }
 

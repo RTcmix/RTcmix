@@ -53,6 +53,8 @@ int START::run()
 	int i;
 	float out[2];
 
+	Instrument::run();
+
 	for (i = 0; i < chunksamps; i++) {
 		out[0] = strum(0.,strumq1);
 
@@ -73,6 +75,8 @@ makeSTART()
 	START *inst;
 
 	inst = new START();
+	inst->set_bus_config("START");
+
 	return inst;
 }
 

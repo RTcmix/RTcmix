@@ -71,6 +71,8 @@ int BEND1::run()
 	float a,b;
 	int branch;
 
+	Instrument::run();
+
 	branch = 0;
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch < 0) {
@@ -104,5 +106,7 @@ makeBEND1()
 	BEND1 *inst;
 
 	inst = new BEND1();
+	inst->set_bus_config("BEND1");
+
 	return inst;
 }

@@ -16,12 +16,10 @@ extern "C" {
 
 STEREO::STEREO() : Instrument()
 {
-	in = new float[MAXBUF];
 }
 
 STEREO::~STEREO()
 {
-	delete [] in;
 }
 
 
@@ -64,9 +62,11 @@ int STEREO::init(float p[], short n_args)
 int STEREO::run()
 {
 	int i,j,rsamps;
-	float out[2];
+	float in[MAXBUF], out[2];
 	float aamp;
 	int branch;
+
+	Instrument::run();
 
 	rsamps = chunksamps*inputchans;
 
@@ -104,6 +104,8 @@ makeSTEREO()
 	STEREO *inst;
 
 	inst = new STEREO();
+	inst->set_bus_config("STEREO");
+
 	return inst;
 }
 

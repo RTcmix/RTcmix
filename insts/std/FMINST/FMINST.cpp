@@ -76,6 +76,8 @@ int FMINST::run()
 	int branch;
 	float tfreq,tamp;
 
+	Instrument::run();
+
 	aamp = amp;             /* in case ampenv == NULL */
 
 	branch = 0;
@@ -123,6 +125,8 @@ makeFMINST()
 	FMINST *inst;
 
 	inst = new FMINST();
+	inst->set_bus_config("FMINST");
+
 	return inst;
 }
 

@@ -58,6 +58,8 @@ int FRET1::run()
 	float out[2];
 	float a,b;
 
+	Instrument::run();
+
 	if (firsttime) {
 		sset(freq, tf0, tfN, strumq1);
 		delayset(fbpitch, dq);
@@ -90,5 +92,7 @@ makeFRET1()
 	FRET1 *inst;
 
 	inst = new FRET1();
+	inst->set_bus_config("FRET1");
+
 	return inst;
 }

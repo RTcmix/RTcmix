@@ -1,7 +1,7 @@
 class COMBIT : public Instrument {
 	int insamps;
 	float *combarr;
-	float amp, *amptable, tabs[2], *in;
+	float amp, *amptable, tabs[2];
 	int skip,inchan;
 	float spread;
 
