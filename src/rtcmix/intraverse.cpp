@@ -17,7 +17,7 @@
 // #define ALLBUG
 // #define PBUG
 
-IBusClass checkClass(BusSlot *slot) {
+IBusClass checkClass(const BusSlot *slot) {
   if (slot == NULL)
 	return UNKNOWN;
   if ((slot->auxin_count > 0) && (slot->auxout_count > 0))
@@ -44,6 +44,7 @@ extern "C" {
 	short bus_q_offset;
 
     Instrument *Iptr;
+	const BusSlot *iBus;
 
     unsigned long bufEndSamp,endsamp;
     unsigned long rtQchunkStart;
@@ -147,15 +148,17 @@ extern "C" {
 		if (!Iptr)
 		  break;
 
+		iBus = Iptr->GetBusSlot();
+
 		// DJT Now we push things onto different queues
 		pthread_mutex_lock(&bus_slot_lock);
-		bus_class = checkClass(Iptr->bus_config);
+		bus_class = checkClass(iBus);
 		switch (bus_class) {
 		case TO_AUX:
-		  bus_count = Iptr->bus_config->auxout_count;
+		  bus_count = iBus->auxout_count;
 		  bus_q_offset = 0;
 		  for(i=0;i<bus_count;i++) {
-			bus = Iptr->bus_config->auxout[i];
+			bus = iBus->auxout[i];
 			busq = bus+bus_q_offset;
 #ifdef ALLBUG
 			cout << "Pushing on TO_AUX[" << busq << "] rtQueue\n";
@@ -164,10 +167,10 @@ extern "C" {
 		  }
 		  break;
 		case AUX_TO_AUX:
-		  bus_count = Iptr->bus_config->auxout_count;
+		  bus_count = iBus->auxout_count;
 		  bus_q_offset = MAXBUS;
 		  for(i=0;i<bus_count;i++) {
-			bus = Iptr->bus_config->auxout[i];
+			bus = iBus->auxout[i];
 			busq = bus+bus_q_offset;
 #ifdef ALLBUG
 			cout << "Pushing on AUX_TO_AUX[" << busq << "] rtQueue\n";
@@ -176,10 +179,10 @@ extern "C" {
 		  }
 		  break;
 		case TO_OUT:
-		  bus_count = Iptr->bus_config->out_count;
+		  bus_count = iBus->out_count;
 		  bus_q_offset = MAXBUS*2;
 		  for(i=0;i<bus_count;i++) {
-			bus = Iptr->bus_config->out[i];
+			bus = iBus->out[i];
 			busq = bus+bus_q_offset;
 #ifdef ALLBUG
 			cout << "Pushing on TO_OUT[" << busq << "] rtQueue\n";
@@ -188,20 +191,20 @@ extern "C" {
 		  }
 		  break;
 		case TO_AUX_AND_OUT:
-		  bus_count = Iptr->bus_config->out_count;
+		  bus_count = iBus->out_count;
 		  bus_q_offset = MAXBUS;
 		  for(i=0;i<bus_count;i++) {
-			bus = Iptr->bus_config->out[i];
+			bus = iBus->out[i];
 			busq = bus+bus_q_offset;
 #ifdef ALLBUG
 			cout << "Pushing on TO_OUT2[" << busq << "] rtQueue\n";
 #endif
 			rtQueue[busq].push(Iptr,heapChunkStart);
 		  }
-		  bus_count = Iptr->bus_config->auxout_count;
+		  bus_count = iBus->auxout_count;
 		  bus_q_offset = 2*MAXBUS;
 		  for(i=0;i<bus_count;i++) {
-			bus = Iptr->bus_config->auxout[i];
+			bus = iBus->auxout[i];
 			busq = bus+bus_q_offset;
 #ifdef ALLBUG
 			cout << "Pushing on TO_AUX2[" << busq << "] rtQueue\n";
@@ -295,6 +298,7 @@ extern "C" {
 		while ((rtQSize > 0) && (rtQchunkStart < bufEndSamp) && (bus != -1)) {
 		  
 		  Iptr = rtQueue[busq].pop();  // get next instrument off queue
+		  iBus = Iptr->GetBusSlot();
 		  Iptr->set_ichunkstart(rtQchunkStart);
 		  
 		  endsamp = Iptr->getendsamp();
@@ -350,27 +354,27 @@ extern "C" {
 		  }
 		  else {
 			pthread_mutex_lock(&bus_slot_lock);
-			t_class = checkClass(Iptr->bus_config);
+			t_class = checkClass(iBus);
 			switch (t_class) {
 			case TO_AUX:
-			  t_count = Iptr->bus_config->auxout_count;
-			  endbus = Iptr->bus_config->auxout[t_count-1];
+			  t_count = iBus->auxout_count;
+			  endbus = iBus->auxout[t_count-1];
 			  break;
 			case AUX_TO_AUX:
-			  t_count = Iptr->bus_config->auxout_count;
-			  endbus = Iptr->bus_config->auxout[t_count-1];
+			  t_count = iBus->auxout_count;
+			  endbus = iBus->auxout[t_count-1];
 			  break;
 			case TO_AUX_AND_OUT:
 			  if (qStatus == TO_OUT) {
-				t_count = Iptr->bus_config->out_count;
-				endbus = Iptr->bus_config->out[t_count-1];			
+				t_count = iBus->out_count;
+				endbus = iBus->out[t_count-1];			
 			  }
 			  else
 				endbus = 1000;  /* can never equal this */
 			  break;
 			case TO_OUT:
-			  t_count = Iptr->bus_config->out_count;
-			  endbus = Iptr->bus_config->out[t_count-1];
+			  t_count = iBus->out_count;
+			  endbus = iBus->out[t_count-1];
 			  break;
 			default:
 			  cout << "ERROR (intraverse): unknown bus_class\n";
