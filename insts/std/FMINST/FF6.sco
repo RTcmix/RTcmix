@@ -1,6 +1,6 @@
 rtsetparams(44100, 1)
-makegen(1, 10, 1000, 1)
-makegen(2, 24, 1000, 0, 0, 0.1,1, 4,1, 7,0)
+makegen(1, 24, 1000, 0, 0, 0.1,1, 4,1, 7,0)
+makegen(2, 10, 1000, 1)
 makegen(3, 24, 1000, 0,1, 7,0)
 /* p0 = start; p1 = dur; p2 = pitch of carrier (hz or oct.pc); */
 /* p3 = pitch of modulator (hz or oct.pc); p4 = fm index low point; */
@@ -18,7 +18,7 @@ incr = 1;
 
 while (count < 52)
 {
-    FMINST(start, 3, pitch, pitch, 0, 0, 1000, 0.0)
+    FMINST(start, 3, 1000, pitch, pitch, 0, 0, 0.0)
     pitch = pitch * (num / denom);
     start = start + 0.2;
     count = count + 1;
