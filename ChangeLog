@@ -2,6 +2,12 @@ NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
 
+Sunday, September 22 2002 John Gibson <johgibso@indiana.edu>
+
+   * sfprint now also prints duration in minutes:seconds format.
+   * cmixplay now lets you rewind and fast-forward while playing.
+
+
 **** Released RTcmix-3.2, Thursday, Aug 29, 2002 ****
 
 Wednesday, August 28 2002 John Gibson <johgibso@indiana.edu>
