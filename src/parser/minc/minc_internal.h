@@ -64,6 +64,7 @@ typedef void *MincHandle;  // contents of this is opaque to Minc
 
 typedef struct {
    int len;                /* number of MincListElem's in <data> array */
+   int refcount;			/* reference count for contained data */
    struct _minc_list_elem *data;
 } MincList;
 
@@ -194,7 +195,7 @@ struct symbol *lookup(char *name);
 char *strsave(char *str);
 char *emalloc(int nbytes);
 void clear_elem(MincListElem *);
-void free_list(MincList *);
+void unref_list(MincList *);
 void free_symbols();
 
 /* trees.c */
