@@ -1,8 +1,8 @@
 load("WAVETABLE")
 rtsetparams(22050, 2)
 print_off()
-makegen(1, 10, 1000, 1, 0.3, 0.2)
-makegen(2, 24, 1000, 0, 1,  950, 0)
+makegen(1, 24, 1000, 0, 1,  950, 0)
+makegen(2, 10, 1000, 1, 0.3, 0.2)
 
 srand(0.35)
 
