@@ -1,0 +1,17 @@
+lpcplot will do a CRT plot of an lpcdataset
+
+restorelpc will restore selected frames of
+an lpc dataset from a backup copy just in 
+case you have munged some of the data in 
+trying to patch it up
+
+pchplot will do a CRT plot of a pitch analysis
+
+restorepch will patch a pitch analysis from
+a backup copy
+
+merge will merge a pitch analysis into an
+lpc dataset.
+
+muto16 is a script to convert a mulaw file
+to a 22k linear file.

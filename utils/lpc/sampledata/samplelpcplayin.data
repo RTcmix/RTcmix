@@ -1,0 +1,10 @@
+/*********  lpcin.data for use with lpcplay ****************/
+input("sf/take1/lowa1.snd")  /* this will be really slow if this signal has
+				lots of true 0's in it.  digitized sounds 
+				are best */
+output("synth")
+/*
+p[0]=starting time, p[1]=duration,p[2]=frame1, p[3]=frame2 p[4]=amp,p[5]=d,p[6]=inputskip\n");
+*/
+dataset("sampledataset.lpc",24)
+lpcin(start=0,dur=3,frame1=47,frame2=273,amp=1,d=0,inputskip=0)

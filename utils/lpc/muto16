@@ -1,0 +1,1 @@
+sndconvert -o $2 -f 3 -c 2 -s 22050 $1

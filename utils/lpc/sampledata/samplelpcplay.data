@@ -1,0 +1,52 @@
+/************   lpcplay.data *****************/
+/* p0=start,p1=dur,p2=8ve.pch,p3=frame1,p4=frame2,p5=amp,p6=warp,p7=cf,p8=bw, p9/10 --> additional pitch specifications */
+
+float thresh,randamp,fps,frame1,frame2,D,cf,bw,incr,start,amp
+
+output("synth")
+dataset("sampledataset.lpc",24)
+lpcstuff(thresh = .0007,	randamp = .1,	0,0,0)
+fps = 22050/250
+
+frame1=47 frame2=279 D=0 bw=0 cf=0 amp=1
+incr=(frame2-frame1)/fps
+
+/* straightforward synthesis */
+lpcplay(start=0,incr,transp = .00001,frame1,frame2,amp,D,cf,bw)
+
+setdev(1)  /* very slight deviation about base pitch, flat result */
+lpcplay(start=start+incr+1,incr,transp = 8,frame1,frame2,amp,D,cf,bw)
+
+setdev(0)  /* back to normal deviation, slower, higher, raise formants */
+lpcplay(start=start+incr+1,incr*1.5,transp = .08,frame1,frame2,amp,D=.2,cf,bw)
+
+/* lower, slower, lower formants --sex change operation */
+lpcplay(start=start+incr*1.5+1,incr*1.5,transp= -.12,frame1,frame2,amp,D=-.25,cf,bw)
+
+/* even more */
+lpcplay(start=start+incr*1.5+1,incr*1.5,transp= 6.00,frame1,frame2,amp,D=-.25,cf,bw)
+
+/* distorted curve, some formant shift, speeding up slightly */
+setdev(30)
+lpcplay(start=start+incr*1.5+1,incr*.9,transp=.02,frame1,frame2,amp,D=-.1,cf,bw)
+
+/* modify pitch curves */
+setdev(0)
+lpcplay(start=start+incr+1,incr*.9,transp=8,frame1,frame2,amp,D=0,cf,bw,frame1+50,8,frame1+100,7,frame1+150,7.05,frame2,9)
+
+/* some whispered speech */
+lpcstuff(thresh = -.01,	randamp = .1,	0,0,0)
+lpcplay(start=start+incr+1,incr,transp=8,frame1,frame2,amp,D=0,cf,bw)
+
+/* highpass whispered speech */
+lpcplay(start=start+incr+1,incr,transp=8,frame1,frame2,amp,D=0,cf=5,bw=.1)
+
+/* highpass whispered speech, shift formants */
+lpcplay(start=start+incr+1,incr,transp=8,frame1,frame2,amp,D=-.3,cf=7,bw=.05)
+
+/* andrews sisters */
+lpcstuff(thresh = .01,	randamp = .1,	0,0,0)
+setdev(15)
+lpcplay(start=start+incr+1,incr,transp=.01,frame1,frame2,amp,D=0,cf=0,bw=0)
+lpcplay(start             ,incr,transp=.05,frame1,frame2,amp,D=0,cf=0,bw=0)
+lpcplay(start             ,incr,transp=.08,frame1,frame2,amp,D=0,cf=0,bw=0)

@@ -1,0 +1,26 @@
+main()
+{
+printf("\n
+   lpcplot commands:\n
+   1) n frame1 frame2\n
+        will display frame1 to frame2.  If frame2 is 0 it will begin\n
+        current chunk size on frame1.  If frame1 is negative it will\n
+        backup that many frames and display current chunk size from \n
+        there.  If neither frame1 or frame2 is specified it will\n
+        simply display previous segment again.\n
+   2) p frame1 frame2 mult botcps topcps\n
+        Multiply the pitches of frames frame1 to frame2 by mult if the\n
+        current pitch is >= botcps and <=topcps.  default for botcps\n
+        and top cps are 0 and 999999.  If mult is 0 it will interpolate\n
+        pitches in these frames according to the frequencies of frame\n
+        frame1-1 and frame2+1.  If frame2 is 0 it defaults to frame1.\n
+        Thus p 100 will simply replace the frequency of frame100 by \n
+        interpolating between frames 99 and 101.\n
+   3) v frame1 frame2 value.\n
+        This will add value to the error numbers of frames frame1 toframe2.\n
+        In this way you can force a voiced or unvoiced decision by \n
+        subtracting 1 or adding 1, respectively.\n
+   4) null line (blank space-return)\n
+        this will simply display the next chunk of frames according to\n
+        the currently defined chunk size.\n");
+}

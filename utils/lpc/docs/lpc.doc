@@ -1,0 +1,97 @@
+.TH LPC l
+.SH NAME
+lpc \- do linear predictive coding analysis
+.SH SYNOPSIS
+.B lpc
+[
+.B \-o
+lpc_anal_file
+] [
+.B \-i
+inskip
+] [
+.B \-d
+duration
+] [
+.B \-p
+number_of_poles
+] [
+.B \-f
+framesize
+] [
+.B \-v
+]
+soundfile
+.SH DESCRIPTION
+.I Lpc
+does lpc analysis on the named
+.IR soundfile .
+It analyses a soundfile to find the values of an all-pole filter
+that will reconsitute its waveform when fed an excitation source.
+.PP
+The only required argument is the
+.IR soundfile.
+.PP
+The options and the defaults are:
+.IP \-v
+: Verbose mode, for those who love to see all those frame numbers.
+.IP \-o
+lpc_anal_file  : Defaults to soundfile with .la appended.
+This is the file where the lpc anaysis is placed.
+.IP \-p
+number_of_poles  : Defaults to 24.
+Number of poles to use (limit is 36).
+.IP \-f
+framesize  : Defaults to 200.
+Number of samples per frame to use.
+.IP \-i
+inskip  : Defaults to 0.
+How many seconds into the soundfile to skip before starting.
+.IP \-d
+duration  : Defaults to (file_duration - inskip).
+How many seconds of the soundfile to analyse.
+.SH HISTORY
+The original programs were written by Kenneth Steiglitz.  Paul 
+Lansky ported it to UNIX for use in CMIX.  R. Reid cleaned up and consolidated
+the code resulting in the version described here.
+.SH BUGS
+.PP
+Overflows can be caused by the interpolation method between frames that we
+use.  This is not mathematically 'legal' and we only get away with it
+because in the analysis process we overlap frames by 50% as we go, so that
+each frame consists of 50% of the spectrum of its right and left neighbors.
+When you synthesize something with a significantly slowed down frame-rate
+these bogus coefficients sometimes blow up.  Sometimes they blow up 
+under marginal conditions as well.  The programs patchframe and dupframe
+exist to help work around this.
+.SH SEE ALSO
+.PP
+.I ptrack, lpcstuff, lpcplay
+.PP
+Makhoul, J. "Linear Predication, a Tutorial Review"  
+.I Proceedings of IEEE, 63, 1975
+.PP
+Lansky, Paul, and Steiglitz, Kenneth. "Synthesis of Timbral Families by
+Warped Linear Prediction"
+.I Computer Music Journal, 5(3), 1981
+.PP
+Dodge, Charles, and Jerse, Thomas.  "Computer Music"
+.I Schirmer Books, 1985
+.PP
+Lansky, Paul. "Six Fantasies on a Poem by Thomas Campion"
+.I CRI Records (CRI SD456), 1982
+.SH EXAMPLE
+To do an lpc analysis of the file "text", and a pitch analysis of the file
+"mooing", you would do something like this:
+.PP
+.I lpc text
+(this will leave the file text.la)
+.PP
+.I ptrack -l 200 -h 800 mooing
+(this will leave the file mooing.pch, and tell you it's last frame #)
+.PP
+.I concat
+(will prompt for the lpcanal and the pitchanal and place results
+in the lpcanal file, which is now suitable to use in a
+dataset statement in a cmix program that will use lpcstuff
+and lpcplay, which see)

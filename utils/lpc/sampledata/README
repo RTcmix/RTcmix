@@ -1,0 +1,15 @@
+sampledataset.lpc is a 24 pole analysis of
+a male speaker acting silly.  It alrready
+has the pitch analysis merged with it.
+
+sampledataset.pch is the pitch analysis in 
+of this same fool.
+
+sampleplay.data is data for the instrument
+lpcplay in ../synthesis
+just say 
+../synthesis < sampleplaydata.lpc
+
+sampleplayin.data  is sample Minc data for
+the same instrument, but using cross synthesis
+
