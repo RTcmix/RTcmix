@@ -14,8 +14,9 @@ int samp_marker;
 int hold_samps;
 int hold_start;
 float hold_dur;
-Bool stop_hold;
+extern Bool stop_hold;
 extern Bool fade_started;
+extern Bool start_fade;
 
 STORE::STORE() : Instrument()
 {
@@ -62,12 +63,14 @@ int STORE::init(float p[], int n_args)
 		    "has only been compiled for %d", aud_idx, MAX_AUD_IDX);
 	}
 
+	skip = (int)(SR/(float)resetval);
+
 	return(nsamps);
 }
 
 int STORE::run()
 {
-	int i,j,k,rsamps;
+	int i,j,k,rsamps, finalsamp;
 	float sig;
 
 	Instrument::run();
@@ -84,10 +87,18 @@ int STORE::run()
 
 	rtgetin(in, this, rsamps);
 	
-	if (stop_hold) {
-		printf("stop_hold\n");
-	}
 	for (i = 0; i < rsamps; i += inputchans)  {
+
+		if (--branch < 0) {
+			if (start_fade) {
+				if (!fade_started) {
+					finalsamp = i_chunkstart+i+30;
+					this->setendsamp(finalsamp);
+					fade_started = YES;
+				}
+			}
+			branch = skip;
+		}
 
 		sig = in[i + (int)inchan];
 		if (!stop_hold) {

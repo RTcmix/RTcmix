@@ -20,6 +20,7 @@ extern Bool fade_started;
 HOLD::HOLD() : Instrument()
 {
 	in = NULL;
+	branch = 0;
 }
 
 HOLD::~HOLD()
@@ -56,8 +57,6 @@ int HOLD::init(float p[], int n_args)
 	hold_dur = (int)(hold_samps/SR);
 	idx_samp = 0;
 
-	start_fade = NO;
-
 	if (outputchans > 2) {
 			die("HOLD", "This is a MONO output instrument.  Reset your bus_config to use only 1 output bus\n");
 	}
@@ -78,6 +77,7 @@ int HOLD::init(float p[], int n_args)
 		}
 	}	
 
+	aamp = amp;
 	skip = (int)(SR/(float)resetval);
 
 	return(nsamps);
@@ -87,23 +87,21 @@ int HOLD::run()
 {
 	int i,j,k,rsamps,finalsamp;
 	float out[MAXBUS];
-	float aamp,famp;
-	int branch;
 
-	aamp = famp = 0.0;
 	if (!start_fade) 
 		stop_hold = YES;
 
 	if (in == NULL) {                 /* first time, so allocate it */
 		in = new float [RTBUFSAMPS];
 		idx_samp += samp_marker+1;
+		start_fade = NO;
+		fade_started = NO;
 	}
 
 	Instrument::run();
 
 	rsamps = chunksamps;
 
-	branch = 0;
 	for (i = 0; i < rsamps; i++)  {
 
 	  if (idx_samp > hold_samps) 
@@ -112,32 +110,30 @@ int HOLD::run()
 		hold_samp = 0;
 
 	  if (--branch < 0) {
+		if (start_fade) {
+			if (!fade_started) {
+				finalsamp = i_chunkstart+i+fade_samps;
+				this->setendsamp(finalsamp);
+			}
+			fade_started = YES;
+			if (fade_table)
+				amp = tablei(fade_samp, fade_table, f_tabs) * aamp;
+			else
+				amp = aamp;
+		}
 		if (amptable)
 		  aamp = tablei(hold_samp, amptable, tabs) * amp;
 		else
 		  aamp = amp;
-		if (start_fade) {
-		  if (!fade_started) {
- 			finalsamp = i_chunkstart+i+fade_samps;
-			this->setendsamp(finalsamp);
-		  }
-		  fade_started = YES;
-		  if (fade_table)
-			  famp = tablei(fade_samp, fade_table, f_tabs) * aamp;
-		  else
-			  famp = aamp;
-		}
+
 		branch = skip;
 	  }
+
+	  in[i] = temp_buff[aud_idx][idx_samp] * aamp;
 	  
-	  if (!start_fade)
-		  in[i] = temp_buff[aud_idx][idx_samp] * aamp;
-	  else 
-		  in[i] = temp_buff[aud_idx][idx_samp] * famp;
-	
 	  out[0] = in[i];
 	  if (outputchans == 2) { /* split stereo files between the channels */
-		out[1] = (1.0 - spread) * out[0];
+		out[1] = (1.0 - spread) * out[0] * aamp;
 		out[0] *= spread;
 	  }
 	  else {
@@ -151,7 +147,7 @@ int HOLD::run()
 	  cursamp++;
 	  idx_samp++;
 	  hold_samp++;
-	  if (start_fade)
+	  if (fade_started)
 		fade_samp++;
 	}
 	return i;

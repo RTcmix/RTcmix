@@ -1,17 +1,17 @@
 include ../package.conf
 
-OBJS = HOLD.o STORE.o FADE_HOLD.o rtprofile.o
-PROGS = HAR libHAR.so
+OBJS = vMIX.o FADE_vMIX.o
+PROGS = vMIX libvMIX.so
 CMIXOBJS += $(PROFILE_O)
 
-all: libHAR.so
+all: libvMIX.so
 
-standalone: HAR
+standalone: vMIX
 
-libHAR.so: $(OBJS) $(GENLIB)
+libvMIX.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
-HAR: $(OBJS) $(CMIXOBJS)
+vMIX: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
 $(OBJS): $(INSTRUMENT_H) $(HEADERS)

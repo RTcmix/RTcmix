@@ -5,6 +5,7 @@ class STORE : public Instrument {
   float dur;
   int t_samp;
   int aud_idx, inchan;
+  int branch, skip;
 
 public:
 	STORE();
