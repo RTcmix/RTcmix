@@ -88,7 +88,7 @@ _arg_is_table_pfield(const Arg *arg)
       return 0;
    if (arg->val.handle->type != PFieldType)
       return 0;
-   if (dynamic_cast<TablePField *> ((TablePField *) arg->val.handle->ptr) == NULL);
+   if (dynamic_cast<TablePField *> ((PField *) arg->val.handle->ptr) == NULL);
       return 0;
    return 1;
 }
