@@ -11,22 +11,20 @@ FUNCEXCEPT = funcexcept
 all: RT_extension
 
 # This dependency prevents making unless the funcexcept file has
-# changed.  Not really what we want, though it is annoying to have
+# changed.  Not really what we want, but it's annoying to have
 # to remake this stuff every time you make at the top level...
-#$(FUNCLIST): $(FUNCEXCEPT)
-
-$(FUNCLIST):
+$(FUNCLIST): $(FUNCEXCEPT)
 	perl -w make_funclist.pl $(CMIXDIR)
 
-$(XS_FILE): $(FUNCLIST)
+$(XS_DIR)/$(XS_FILE): $(FUNCLIST)
 	perl -w make_rtxs.pl $(CMIXDIR) $(EXT_NAME) > $(XS_DIR)/$(XS_FILE)
 
-$(PM_FILE): $(FUNCLIST)
+$(XS_DIR)/$(PM_FILE): $(FUNCLIST)
 	perl -w make_pmfile.pl $(EXT_NAME) > $(XS_DIR)/$(PM_FILE)
 
 .PHONY: RT_extension install clean
 
-RT_extension: $(XS_FILE) $(PM_FILE)
+RT_extension: $(XS_DIR)/$(XS_FILE) $(XS_DIR)/$(PM_FILE)
 	( cd $(XS_DIR); perl Makefile.PL; $(MAKE) )
 
 install:
