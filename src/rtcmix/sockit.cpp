@@ -150,10 +150,10 @@ extern "C" {
 				// rtupdate params are:
 				//	p0 = note tag # 0 for all notes
 				//	p1,2... pn,pn+1 = pfield, value
-	  ntag = sinfo->data.p[0];
+	  ntag = (int)sinfo->data.p[0];
 	  pthread_mutex_lock(&pfieldLock);
 	  for (i = 1; i < sinfo->n_args; i += 2) {
-	    pval = sinfo->data.p[i];
+	    pval = (int)sinfo->data.p[i];
 	    pupdatevals[ntag][pval] = sinfo->data.p[i+1];
 	  }
 	  pthread_mutex_unlock(&pfieldLock);
