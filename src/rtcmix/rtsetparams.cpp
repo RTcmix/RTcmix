@@ -44,9 +44,9 @@ rtsetparams(float p[], int n_args, double pp[])
       fprintf(stderr, "You can only use rtsetparams once!\n");
       exit(1);
    }
+   rtsetparams_called = 1;
 
-// FIXME: Need better names for NCHANS, RTBUFSAMPS and MAXBUF. Would prefer
-//        to get rid of MAXBUF or make it a constant again.  -JGG
+// FIXME: Need better names for NCHANS and RTBUFSAMPS. -JGG
 
    SR = p[0];
    NCHANS = (int) p[1];
@@ -109,10 +109,6 @@ rtsetparams(float p[], int n_args, double pp[])
    for (i = 0; i < NCHANS; i++) {
       allocate_out_buffer(i, RTBUFSAMPS);
    }
-
-   MAXBUF = (int) NCHANS * RTBUFSAMPS;
-
-   rtsetparams_called = 1;
 
    return 0.0;
 }

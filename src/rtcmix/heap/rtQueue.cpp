@@ -94,7 +94,7 @@ void rtQueue::push(Instrument *newInst, unsigned long new_chunkstart)
     cout << "diff = " << diff << endl;
     cout << "tempElt->prev = " << tempElt->prev << endl;
 
-    if (diff > MAXBUF) {  // 128 was MAXBUF in my testing
+    if (diff > NCHANS * RTBUFSAMPS) {
       cerr << "SCHEDULING INCONSISTENCY!\n";
       cerr << "newElt->chunkstart = " << newElt->chunkstart << endl;
       cout << "tempElt->chunkstart = " << tempElt->chunkstart << endl;
