@@ -147,7 +147,8 @@ int Option::readConfigFile(const char *fileName)
 		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
 	// string options .........................................................
-char *sval;
+
+	char *sval;
 
 	key = kOptionDevice;
 	result = conf.getValue(key, sval);
@@ -308,6 +309,11 @@ void Option::dump()
 
 // ----------------------------------------------------------------------------
 // These functions are for C code that needs to query options.
+
+int get_print_option()
+{
+	return (int) Option::print();
+}
 
 int get_bool_option(const char *option_name)
 {

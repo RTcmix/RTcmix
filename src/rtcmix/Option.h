@@ -139,6 +139,7 @@ extern "C" {
 // These are for C code that needs to query options.	See Option.h for the
 // supported option_name strings.
 
+int get_print_option();
 int get_bool_option(const char *option_name);
 void set_bool_option(const char *option_name, int value);
 double get_double_option(const char *option_name);
