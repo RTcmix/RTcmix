@@ -44,6 +44,7 @@
 #include <stdlib.h>
 #include <ugens.h>
 #include <Instrument.h>
+#include <PField.h>
 #include "AM.h"
 #include <rt.h>
 #include <rtdefs.h>

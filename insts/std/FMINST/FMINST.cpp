@@ -16,7 +16,7 @@
    from a table or real-time control source.
 
    * If an old-style gen table 1 is present, its values will be multiplied
-   by the p2 amplitude multiplier, even if the latter is dynamic.
+   by p2 (amp), even if the latter is dynamic.
 
    ** oct.pc format generally will not work as you expect for p3 and p4
    (osc freq) if the pfield changes dynamically.  Use Hz instead in that case.
@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <ugens.h>
 #include <Instrument.h>
+#include <PField.h>
 #include "FMINST.h"
 #include <rt.h>
 #include <rtdefs.h>
