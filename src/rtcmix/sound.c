@@ -51,7 +51,7 @@ extern short isNext;
 
 /* size of buffer to allocate.  this is no longer user-configurable */
 /* JGG: might want to make this 64*1024 in Linux */
-static int nbytes = 32768;
+int nbytes = 32768;          /* exported only for the sake of sfcopy.c */
 
 extern float SR;
 int play_is_on=0;

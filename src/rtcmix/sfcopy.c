@@ -5,18 +5,17 @@
 #include "../H/sfheader.h"
 #include <stdio.h>
 
+/* these are all defined in sound.c */
 extern int  sfd[NFILES];            /* soundfile descriptors */
 extern char *sndbuf[NFILES];        /* address of buffer */
 extern long  filepointer[NFILES];   /* to save current pointer in file */
-extern int   NBYTES;
-
-
+extern int   nbytes;
 extern SFHEADER      sfdesc[NFILES];
 
 sfcopy(p,n_args)
 float *p;
 {
-	int maxread,n,input,output,nbytes,jj;
+	int maxread,n,input,output,bytes,jj;
 
 	if(!n_args) fprintf(stderr,"(sfcopy(input_fno,output_fno,input_skip,output_skip,dur)\n");
 	input = (int)p[0];
@@ -27,17 +26,17 @@ float *p;
 		 "Input and output specifications do not match. Canot copy.\n");
 		closesf();
 	}
-	nbytes = setnote(p[2],p[4],input) * 
+	bytes = setnote(p[2],p[4],input) * 
 		 sfchans(&sfdesc[input]) * sfclass(&sfdesc[input]);
 
 	setnote(p[3],p[4],output);
 	_backup(input);
 	_backup(output);
 
-	fprintf(stderr,"Copy %d bytes\n",nbytes);
+	fprintf(stderr,"Copy %d bytes\n",bytes);
 
-	while(nbytes) {
-		maxread = (nbytes > NBYTES) ? NBYTES : nbytes;
+	while(bytes) {
+		maxread = (bytes > nbytes) ? nbytes : bytes;
 		if((n = read(sfd[input],sndbuf[input],maxread)) <= 0) {
 			fprintf(stderr,"Apparent eof on input\n");
 			return;
@@ -46,7 +45,7 @@ float *p;
 			fprintf(stderr,"Trouble writing output file\n");
 			closesf();
 		}
-		nbytes -= n;
+		bytes -= n;
 		filepointer[input] += n;
 		filepointer[output] += n;
 	}

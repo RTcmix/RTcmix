@@ -1,10 +1,12 @@
-#include "../H/ugens.h"
-#include "../H/sfheader.h"
 #include <stdio.h>
 #include <sys/file.h>
 #include <sys/types.h>
 #include <math.h>
+#include "../H/ugens.h"
+#include "../H/sfheader.h"
 #include "../H/spray.h"
+#include "../H/defs.h"
+
 #define ARRAY_SIZE 256
 #define NUM_ARRAYS  32
 double minc_array[NUM_ARRAYS][ARRAY_SIZE],minc_array_size[NUM_ARRAYS];
@@ -24,7 +26,6 @@ float *p;
 
 double m_midipch(p)
 float *p;
-
 { /*printf("%f\n",midipch(p[0]));*/ return(midipch(p[0])); }
 
 double m_cpspch(p)
@@ -86,7 +87,6 @@ m_stringify(p,n_args,pp)
 float *p;
 short n_args;
 double *pp;
-
 {
 	/* coerces a string passed in from Minc in quotes in p[0]
 	   to a 'floating point' pointer suitable for use in
@@ -100,7 +100,6 @@ m_pow(pp, n_args, p)
 float *pp;
 double *p;
 short n_args;
-
 {
 	double val;
 
@@ -329,16 +328,17 @@ float *p; short n_args; double *pp;
 double m_print_is_on(p,n_args)
 float *p;
 {
-        print_is_on = 1;
+	print_is_on = 1;
 	return print_is_on;
 }
 
 double m_print_is_off(p,n_args)
 float *p;
 {
-        print_is_on = 0;
+	print_is_on = 0;
 	return print_is_on;
 }
+
 struct slist slist[NUM_ARRAYS];
 double m_get_spray(p,n_args)
 float *p;
@@ -354,3 +354,57 @@ float *p;
 	i=p[0]; j=p[1];
 	sprayinit(&slist[i],j,p[2]);
 }
+
+
+static int line_array_size = 1000;      /* modified by m_setline_size */
+
+double m_setline_size(float p[], int n_args)
+{
+	if (p[0] < 2) {
+		fprintf(stderr, "Setline array size must be at least 2!\n");
+		exit(1);
+	}
+	line_array_size = p[0];
+	printf("Setline arrays will have %d elements.\n", line_array_size);
+
+	return 0.0;
+}
+
+
+double m_setline(float p[], int n_args)
+{
+	float	pp[MAXDISPARGS];
+	int	i;
+
+	pp[0] = 1;
+	pp[1] = 18;           /* not sure whether this should be gen18 or gen24 */
+	pp[2] = line_array_size;
+
+	for (i = 0; i < n_args; i++)
+		pp[i+3] = p[i];
+
+	makegen(pp, n_args+3);
+
+	return 0.0;
+}
+
+
+/* Note: MIX used 200 as default; WAVETABLE used 1000. It needs a faster
+   rate, since it's changing an oscillator at that speed, rather than just
+   an amplitude envelope. I'm just making 1000 the default for everyone.  -JGG
+*/
+int resetval = 1000;                 /* modified by m_reset; read by insts */
+
+double m_reset(float p[], int n_args)
+{
+	if (p[0] < 0) {
+		fprintf(stderr, "reset must be positive!\n");
+		exit(1);
+	}
+	resetval = p[0];
+	printf("Envelope calls set to %d times per sec.\n", resetval);
+
+	return 0.0;
+}
+
+

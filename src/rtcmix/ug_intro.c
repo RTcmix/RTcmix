@@ -80,6 +80,9 @@ ug_intro()
 	UG_INTRO("rtinput",rtinput);
 	UG_INTRO("rtoutput",rtoutput);
 	UG_INTRO("set_option",set_option);
+	UG_INTRO("setline_size",m_setline_size);
+	UG_INTRO("setline",m_setline);
+	UG_INTRO("reset",m_reset);
 	UG_INTRO("load",m_load); /* allows loading of dynamic libraries */
 	UG_INTRO("DUR",m_DUR);  /* returns duration for rtinput files */
 }
