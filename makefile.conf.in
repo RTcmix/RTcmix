@@ -32,6 +32,9 @@ OPT = -g -Wall -Wno-unused -O2
 
 # Uncomment this to enable use of the Python front end to RTcmix.
 #PYTHON_SUPPORT = TRUE
+# Say which python to use: just "python" if you only have one; otherwise,
+# give full path name of python to use, e.g., /usr/local/bin/python.
+PYTHON = python
 
 # Uncomment to use old function table assignments for certain instruments.
 # For example, WAVETABLE used to expect function 1 to contain the wavetable
