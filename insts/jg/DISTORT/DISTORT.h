@@ -6,8 +6,9 @@ typedef enum {
 } DistortType;
 
 class DISTORT : public Instrument {
-   int         inchan, branch, skip, bypass;
-   float       amp, aamp, gain, pctleft;
+   bool        usefilt, bypass;
+   int         nargs, inchan, branch, skip;
+   float       amp, gain, prevcf, pctleft;
    float       *in;
    DistortType type;
    Butter      *filt;
@@ -16,8 +17,18 @@ class DISTORT : public Instrument {
 public:
    DISTORT();
    virtual ~DISTORT();
-   int init(double p[], int n_args);
+   virtual int init(double p[], int n_args);
+   virtual int configure();
    float distort(float, float);
-   int run();
+   virtual int run();
+};
+
+// update flags (shift amount is pfield number)
+enum {
+   kAmp = 1 << 3,
+   kGain = 1 << 5,
+   kFiltCF = 1 << 6,
+   kPan = 1 << 8,
+   kBypass = 1 << 9
 };
 

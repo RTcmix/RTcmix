@@ -13,16 +13,19 @@
    p8 = percent to left channel [optional, default is .5]
    p9 = bypass all processing (0: no, 1: yes) [optional, default is 0]
 
-   Function table 1 is the amplitude envelope.
+   p3 (amplitude), p5 (gain), p6 (cutoff), p8 (pan) and p9 (bypass) can
+   receive dynamic updates from a table or real-time control source.
 
-   John Gibson (johgibso at indiana dot edu), 8/12/03.
+   If an old-style gen table 1 is present, its values will be multiplied
+   by the p3 amplitude multiplier, even if the latter is dynamic.
+
+   John Gibson (johgibso at indiana dot edu), 8/12/03, rev for v4, 7/10/04.
    Distortion algorithms taken from STRUM, by Charlie Sullivan.
 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "DISTORT.h"
 #include <rt.h>
@@ -32,9 +35,10 @@
 DISTORT :: DISTORT() : Instrument()
 {
    in = NULL;
-   filt = NULL;      // might not create
+   filt = NULL;
    amptable = NULL;  // might not create
    branch = 0;
+   usefilt = false;
 }
 
 
@@ -49,16 +53,13 @@ int DISTORT :: init(double p[], int n_args)
 {
    float outskip, inskip, dur, cf;
 
+   nargs = n_args;
    outskip = p[0];
    inskip = p[1];
    dur = p[2];
-   amp = p[3];
    type = (DistortType) p[4];
-   gain = p[5];
    cf = n_args > 6 ? p[6] : 0.0;                   /* filter disabled */
    inchan = n_args > 7 ? (int) p[7] : 0;           /* default is chan 0 */
-   pctleft = n_args > 8 ? p[8] : 0.5;              /* default is center */
-   bypass = n_args > 9 ? (int) p[9] : 0;           /* default is no */
 
    if (rtsetinput(inskip, this) != 0)
       return DONT_SCHEDULE;
@@ -71,24 +72,27 @@ int DISTORT :: init(double p[], int n_args)
       return die("DISTORT",
                  "Distortion type must be 1 (soft clip) or 2 (tube).");
 
-   if (cf > 0.0) {
-      filt = new Butter();
+   filt = new Butter();       // create it no matter what
+   usefilt = (cf > 0.0);
+   if (usefilt)
       filt->setLowPass(cf);
-   }
 
    float *function = floc(1);
    if (function) {
       int len = fsize(1);
       amptable = new TableL(dur, function, len);
    }
-   else {
-      aamp = amp;
-      advise("DISTORT", "Setting phrase curve to all 1's.");
-   }
 
-   skip = (int)(SR / (float)resetval);
+   skip = (int) (SR / (float) resetval);
 
    return nSamps();
+}
+
+
+int DISTORT :: configure()
+{
+   in = new float [RTBUFSAMPS * inputChannels()];
+   return in ? 0 : -1;
 }
 
 
@@ -157,18 +161,26 @@ f(x,a) = x * (abs(x) + a) / (x^2 + (a - 1) * abs(x) + 1)
 
 int DISTORT :: run()
 {
-   float out[2];
-
-   if (in == NULL)                  // first time, so allocate it
-      in = new float [RTBUFSAMPS * inputchans];
-
    const int insamps = framesToRun() * inputChannels();
    rtgetin(in, this, insamps);
 
    for (int i = 0; i < insamps; i += inputChannels()) {
-      if (--branch < 0) {
+      if (--branch <= 0) {
+         double p[10];
+         update(p, 10, kAmp | kGain | kFiltCF | kPan | kBypass);
+         amp = p[3];
          if (amptable)
-            aamp = amptable->tick(currentFrame(), amp);
+            amp *= amptable->tick(currentFrame(), 1.0);
+         gain = p[5];
+         if (usefilt) {
+            float thiscf = p[6];
+            if (thiscf != prevcf) {
+               filt->setLowPass(thiscf);
+               prevcf = thiscf;
+            }
+         }
+         pctleft = nargs > 8 ? p[8] : 0.5;      // default is center
+         bypass = (p[9] == 1.0);
          branch = skip;
       }
       float sig = in[i + inchan];
@@ -176,11 +188,12 @@ int DISTORT :: run()
          sig *= (1.0 / 32768.0);    // convert range
          sig = distort(sig, gain);
          sig *= 32768.0;
-         if (filt)
+         if (usefilt)
             sig = filt->tick(sig);
       }
-      sig *= aamp;
-      if (outputchans == 2) {
+      sig *= amp;
+      float out[2];
+      if (outputChannels() == 2) {
          out[0] = sig * pctleft;
          out[1] = sig * (1.0 - pctleft);
       }
