@@ -1,109 +1,101 @@
-/* JDELAY: Regenerating delay instrument, adapted from DELAY.
- *    The differences between JDELAY and DELAY are:
- *       - JDELAY uses interpolating delay line fetch and
- *         longer-than-necessary delay line, both of
- *         which make it sound less buzzy for audio-range delays
- *       - provides a simple low-pass filter
- *       - provides control over wet/dry mix
- *       - provides a DC blocking filter
- *       - by default the delay is "post-fader," as before, but there's
- *         a pfield switch to make it "pre-fader."
- *
- * Parameters:
- *    p0 = output start time
- *    p1 = input start time
- *    p2 = input duration
- *    p3 = amplitude multiplier
- *    p4 = delay time
- *    p5 = regeneration multiplier (must be >= -1.0 and <= 1.0)
- *    p6 = ring-down duration
- *    p7 = cutoff freq for low-pass filter (in cps)  (0 to disable filter)
- *    p8 = wet/dry mix (0: dry -> 1: wet)
- *    p9 = input channel number [optional, default is 0]
- *    p10 = stereo spread (0-1, % to left chan) [optional, default is .5]
- *    p11 = pre-fader send (0: No, 1: Yes) [optional, default is No]
- *    p12 = apply DC blocking filter (0: No, 1: Yes) [optional, default is Yes]
- *          (DC bias can affect sounds made with high regeneration setting.)
- *
- *    Assumes function slot 1 is the amplitude envelope (see above)
- *    Or you can just call setline. If no setline or function table 1, uses
- *    flat amplitude curve.
- *
- *    If pre-fader send is set to 1, sends input signal to delay line with
- *    no attenuation. Then p3 (amp multiplier) and setline controls entire
- *    note, including delay ring-down.
- *
- *    John Gibson (jgg9c@virginia.edu), 6/23/99
- */
+/* JDELAY - regenerating delay instrument, adapted from DELAY
+
+   Compared with DELAY, JDELAY adds:
+      - a simple low-pass filter
+      - control over wet/dry mix
+      - a DC blocking filter
+      - switchable pre/post-fader delay
+  
+   Parameters:
+      p0 = output start time
+      p1 = input start time
+      p2 = input duration
+      p3 = amplitude multiplier
+      p4 = delay time
+      p5 = delay feedback (i.e., regeneration multiplier) [-1 to 1]
+      p6 = ring-down duration
+      p7 = cutoff freq for low-pass filter (in cps)  (0 to disable filter)
+      p8 = wet/dry mix (0: dry -> 1: wet)
+      p9 = input channel number [optional, default is 0]
+      p10 = pan (in percent-to-left form: 0-1) [optional, default is .5] 
+      p11 = pre-fader send (0: No, 1: Yes) [optional, default is No]
+      p12 = apply DC blocking filter (0: No, 1: Yes) [optional, default is Yes]
+            (DC bias can affect sounds made with high feedback setting.)
+  
+   p3 (amplitude), p4 (delay time), p5 (feedback), p7 (cutoff), p8 (wet/dry)
+   and p8 (pan) can receive dynamic updates from a table or real-time control
+   source.
+
+   If an old-style gen table 1 is present, its values will be multiplied
+   by the p3 amplitude multiplier, even if the latter is dynamic.
+
+   The point of the ring-down duration parameter is to let you control
+   how long the delay will sound after the input has stopped.  Too short
+   a time, and the sound may be cut off prematurely.
+
+   If pre-fader send is set to 1, sends input signal to delay line with
+   no attenuation.  Then p3 (amp multiplier) and setline controls entire
+   note, including delay ring-down.
+  
+   John Gibson (jgg9c@virginia.edu), 6/23/99; rev for v4, 7/21/04
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "JDELAY.h"
 #include <rt.h>
 #include <rtdefs.h>
 
+#define MAXDELTIME 30.0    // seconds (176400 bytes per second at SR=44100)
 
-#define DELAY_FACTOR   2       /* Determines length of delay line */
-#define MIN_DELAY      .10     /* Uses extra-large delay line below this */
-
-/* The DC-blocking code is from Perry Cook's STK (STK98v2/DCBlock.cpp).
-   It works pretty well (and quickly) for all but extreme cases. But I've
-   gotten JDELAY to generate files with a fair amount of DC even *with* this
-   simple filter. The Remove DC function in mxv works better. It's the standard
-   cmix elliptical filter with 60db atten., stopband at 5 hz, and passband at
-   20 hz. But that's overkill for here.
-*/
-
-/* local functions */
+// local functions
 static void toneset(double, int, double []);
 static double tone(double, double []);
-
 
 
 JDELAY::JDELAY() : Instrument()
 {
    in = NULL;
-   delarray = NULL;
+   delay = NULL;
+   branch = 0;
+   usefilt = false;
+   warn_deltime = true;
 }
 
 
 JDELAY::~JDELAY()
 {
    delete [] in;
-   delete [] delarray;
+   delete delay;
 }
 
 
 int JDELAY::init(double p[], int n_args)
 {
-   int   delsamps;
-   float outskip, inskip, dur, ringdur;
-
-   outskip = p[0];
-   inskip = p[1];
-   dur = p[2];
+   nargs = n_args;
+   float outskip = p[0];
+   float inskip = p[1];
+   float dur = p[2];
    amp = p[3];
-   wait = p[4];
+   float deltime = p[4];
    regen = p[5];
-   ringdur = p[6];
+   float ringdur = p[6];
    cutoff = p[7];
    percent_wet = p[8];
-   inchan = n_args > 9 ? (int)p[9] : 0;
-   spread = n_args > 10 ? p[10] : 0.5;             /* default is center */
-   prefadersend = n_args > 11 ? (int)p[11] : 0;    /* default is "no" */
-   dcblock = n_args > 12 ? (int)p[12] : 1;         /* default is "yes" */
+   inchan = n_args > 9 ? (int) p[9] : 0;
+   prefadersend = n_args > 11 ? (bool) p[11] : false;    // default is "no"
+   dcblock = n_args > 12 ? (bool) p[12] : true;          // default is "yes"
 
    if (rtsetinput(inskip, this) != 0)
       return DONT_SCHEDULE;
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
-   insamps = (int)(dur * SR);
+   insamps = (int) (dur * SR + 0.5);
 
-   if (inchan >= inputchans)
+   if (inchan >= inputChannels())
       return die("JDELAY", "You asked for channel %d of a %d-channel file.",
-                                                         inchan, inputchans);
+                                                      inchan, inputChannels());
 
    if (regen < -1.0 || regen > 1.0)
       return die("JDELAY", "Regeneration multiplier must be between -1 and 1.");
@@ -114,26 +106,21 @@ int JDELAY::init(double p[], int n_args)
    else if (cutoff == 0.0)
       advise("JDELAY", "Low-pass filter disabled.");
    else {
+      usefilt = true;
       toneset(cutoff, 1, tonedata);
-      advise("JDELAY", "Low-pass filter cutoff: %g", cutoff);
    }
 
    if (percent_wet < 0.0 || percent_wet > 1.0)
       return die("JDELAY", "Wet/dry mix must be between 0 and 1 inclusive.");
 
-   delsamps = (int)(wait * SR + 0.5);
-   /* If delay time is very short, make delay line longer than necessary;
-      makes output sound less buzzy.
-   */
-   if (wait < MIN_DELAY)
-      delsamps = (int)((wait * SR * DELAY_FACTOR) + 0.5);
+   if (deltime > MAXDELTIME)
+      return die("JDELAY", "Maximum delay time (%g seconds) exceeded.",
+                                                                  MAXDELTIME);
 
-   delarray = new float[delsamps];
-
-   if (wait < MIN_DELAY)
-      delset(delarray, deltabs, wait * DELAY_FACTOR);
-   else
-      delset(delarray, deltabs, wait);
+   long maxdelsamps = (long) (MAXDELTIME * SR + 0.5);
+   delay = new Ozdelay(maxdelsamps);
+   if (delay == NULL)
+      return die("JDELAY", "Can't allocate delay line memory.");
 
    amptable = floc(1);
    if (amptable) {
@@ -143,92 +130,128 @@ int JDELAY::init(double p[], int n_args)
       else
          tableset(dur, amplen, amptabs);
    }
-   else
-      advise("JDELAY", "Setting phrase curve to all 1's.");
 
-   skip = (int)(SR / (float)resetval);
+   skip = (int) (SR / (float) resetval);
 
-   prev_in = prev_out = 0.0;         /* for DC-blocker */
+   prev_in = prev_out = 0.0;         // for DC-blocker
 
    return nsamps;
 }
 
 
+void JDELAY::doupdate(double p[])
+{
+   amp = p[3];
+   if (amptable)
+      amp *= tablei(currentFrame(), amptable, amptabs);
+
+   float deltime = p[4];
+   if (deltime > MAXDELTIME) {
+      if (warn_deltime) {
+         warn("JDELAY", "Maximum delay time (%g seconds) exceeded!",
+                                                               MAXDELTIME);
+         warn_deltime = false;
+      }
+      delsamps = MAXDELTIME * SR;
+   }
+   else
+      delsamps = deltime * SR;
+
+   regen = p[5];
+   if (regen < -1.0)
+      regen = -1.0;
+   else if (regen > 1.0)
+      regen = 1.0;
+
+   if (usefilt && p[7] != cutoff) {
+      cutoff = p[7];
+      if (cutoff <= 0.0)
+         cutoff = 0.1;
+      toneset(cutoff, 0, tonedata);
+   }
+
+   percent_wet = p[8];
+   if (percent_wet < 0.0)
+      percent_wet = 0.0;
+   else if (percent_wet > 1.0)
+      percent_wet = 1.0;
+
+   pctleft = nargs > 10 ? p[10] : 0.5;        // default is center
+}
+
+
+int JDELAY::configure()
+{
+   in = new float [RTBUFSAMPS * inputChannels()];
+   return in ? 0 : -1;
+}
+
+
 int JDELAY::run()
 {
-   int   i, branch, rsamps;
-   float aamp, insig, delsig;
-   float out[2];
+   int samps = framesToRun() * inputChannels();
 
-   if (in == NULL)              /* first time, so allocate it */
-      in = new float [RTBUFSAMPS * inputchans];
+   if (currentFrame() < insamps)
+      rtgetin(in, this, samps);
 
-   rsamps = chunksamps * inputchans;
-
-   rtgetin(in, this, rsamps);
-
-   aamp = amp;                  /* in case amptable == NULL */
-
-   branch = 0;
-   for (i = 0; i < rsamps; i += inputchans) {
-
-      delsig = dliget(delarray, wait, deltabs) * regen;
-
-      if (cursamp < insamps) {               /* still taking input from file */
-         if (--branch < 0) {
-            if (amptable)
-               aamp = tablei(cursamp, amptable, amptabs) * amp;
-            branch = skip;
-         }
-
-         insig = in[i + inchan];
-         if (prefadersend) {
-            delput(insig + delsig, delarray, deltabs);
-            out[0] = insig * (1.0 - percent_wet) + delsig * percent_wet;
-            out[0] *= aamp;
-         }
-         else {
-            insig *= aamp;
-            delput(insig + delsig, delarray, deltabs);
-            out[0] = insig * (1.0 - percent_wet) + delsig * percent_wet;
-         }
+   for (int i = 0; i < samps; i += inputChannels()) {
+      if (--branch <= 0) {
+         double p[11];
+         update(p, 11,
+                kAmp | kDelTime | kDelRegen | kCutoff | kWetPercent | kPan);
+         doupdate(p);
+         branch = skip;
       }
-      else {                                 /* in ring-down phase */
-         delput(delsig, delarray, deltabs);
-         out[0] = delsig * percent_wet;
-         if (prefadersend) {
-            if (--branch < 0) {
-               if (amptable)
-                  aamp = tablei(cursamp, amptable, amptabs) * amp;
-               branch = skip;
-            }
-            out[0] *= aamp;
-         }
+
+      float delsig = delay->getsamp(delsamps) * regen;
+
+      float insig;
+      if (currentFrame() < insamps)          // still taking input from file
+         insig = in[i + inchan];
+      else
+         insig = 0.0;
+
+      float out[2];
+      if (prefadersend) {
+         delay->putsamp(insig + delsig);
+         out[0] = insig * (1.0 - percent_wet) + delsig * percent_wet;
+         out[0] *= amp;
+      }
+      else {
+         insig *= amp;
+         delay->putsamp(insig + delsig);
+         out[0] = insig * (1.0 - percent_wet) + delsig * percent_wet;
       }
 
       /* NOTE: We filter the sig *after* putting it in the delay line.
-               Otherwise, pitch drops with low cutoff freqs.
+               Otherwise, pitch for short delays drops with low cutoff freqs.
       */
-      if (cutoff)
+      if (usefilt)
          out[0] = tone(out[0], tonedata);
 
+      /* The DC-blocking code is from Perry Cook's STK (STK98v2/DCBlock.cpp).
+         It works pretty well (and quickly) for all but extreme cases. But I've
+         gotten JDELAY to generate files with a fair amount of DC even *with*
+         this simple filter. The Remove DC function in mxv works better. It's
+         the standard cmix elliptical filter with 60db atten., stopband at 5 hz,
+         and passband at 20 hz. But that's overkill for here.
+      */
       if (dcblock) {
          float tmp_in = out[0];
-
          out[0] = tmp_in - prev_in + (0.99 * prev_out);
          prev_in = tmp_in;
          prev_out = out[0];
       }
 
-      if (outputchans == 2) {
-         out[1] = out[0] * (1.0 - spread);
-         out[0] *= spread;
+      if (outputChannels() == 2) {
+         out[1] = out[0] * (1.0 - pctleft);
+         out[0] *= pctleft;
       }
       rtaddout(out);
-      cursamp++;
+      increment();
    }
 
-   return i;
+   return framesToRun();
 }
 
 
