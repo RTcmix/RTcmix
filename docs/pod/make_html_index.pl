@@ -14,10 +14,11 @@ sub print_section($$);
 $title = "RTcmix Documentation";
 
 print "<html>\n<head>\n<title>";
-print "$title</title>\n</head>\n\n";
-print qq{<body bgcolor="white">\n\n};
+print "$title</title>\n";
+print qq{<link rel="stylesheet" href="style.css" type="text/css">\n};
+print "</head>\n\n";
 
-print qq{<h3 align="center">$title</h3>\n\n};
+print qq{<h1>$title</h1>\n\n};
 
 print_section($inst_fname, "Instruments");
 print_section($script_fname, "Script commands");
@@ -38,7 +39,7 @@ sub print_section ($$) {
    @tmp{@list} = ();
    @list = sort keys %tmp;
 
-   print qq{<p><br><h4>$heading</h4>\n};
+   print qq{<p><h2 class="index">$heading</h2>\n};
 
    print "<blockquote>\n";
    foreach $item (@list) {
