@@ -42,7 +42,7 @@ SROOM::~SROOM()
 }
 
 
-int SROOM::init(float p[], short n_args)
+int SROOM::init(float p[], int n_args)
 {
    int   rvbsamps;
    float outskip, inskip, dur;

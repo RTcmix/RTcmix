@@ -56,7 +56,7 @@ MROOM::~MROOM()
 
 
 /* ----------------------------------------------------------------- init --- */
-int MROOM::init(float p[], short n_args)
+int MROOM::init(float p[], int n_args)
 {
    int   delsamps, rvbsamps, quant, ntimes;
    float outskip, inskip, dur, rvbtime, ringdur;

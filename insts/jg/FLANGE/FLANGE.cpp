@@ -53,7 +53,7 @@ FLANGE :: ~FLANGE()
 }
 
 
-int FLANGE :: init(float p[], short n_args)
+int FLANGE :: init(float p[], int n_args)
 {
    int   len;
    float outskip, inskip, dur, maxdelay, ringdur;

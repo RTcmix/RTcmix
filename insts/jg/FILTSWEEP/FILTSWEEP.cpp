@@ -69,7 +69,7 @@ FILTSWEEP :: ~FILTSWEEP()
 }
 
 
-int FILTSWEEP :: init(float p[], short n_args)
+int FILTSWEEP :: init(float p[], int n_args)
 {
    float outskip, inskip, dur, ringdur;
 

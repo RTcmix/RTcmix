@@ -25,7 +25,7 @@ ROOM::~ROOM()
 }
 
 
-int ROOM::init(float p[], short n_args)
+int ROOM::init(float p[], int n_args)
 {
    int   i;
    float outskip, inskip, dur, ringdur;

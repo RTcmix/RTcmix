@@ -77,7 +77,7 @@ JDELAY::~JDELAY()
 }
 
 
-int JDELAY::init(float p[], short n_args)
+int JDELAY::init(float p[], int n_args)
 {
    int   delsamps;
    float outskip, inskip, dur, ringdur;

@@ -81,7 +81,7 @@ ELL::~ELL()
 }
 
 
-int ELL::init(float p[], short n_args)
+int ELL::init(float p[], int n_args)
 {
    int   n;
    float outskip, inskip, dur, ringdur;
