@@ -16,11 +16,11 @@ rfft( x, N, forward ) float x[] ; int N, forward ; {
  float xr, xi ;
  int i, i1, i2, i3, i4, N2p1 ;
  static int first = 1 ;
-/*     if ( first ) { */
+  if ( first ) {
 /* 	PI = 4.*atan( 1. ) ; */
-/* 	TWOPI = 8.*atan( 1. ) ; */
-/* 	first = 0 ; */
-/*     } */
+ 	TWOPI = 8.*atan( 1. ) ;
+ 	first = 0 ;
+  }
     theta = PI/N ;
     wr = 1. ;
     wi = 0. ;
