@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Sunday, January 4, 2004 John Gibson <johgibso-at-indiana.edu>
+
+   * Fix compilation bug affecting people whose yacc points to
+     bison (such as recent Debian Linux systems).
+
 Friday, January 2, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * Fix crash during final chunk of an instrument in rare cases.
@@ -105,6 +110,7 @@ Tuesday, February 18, 2003 Douglas Scott <dscott-at-netscape.net>
 Wednesday, February 12, 2003 Douglas Scott <dscott-at-netscape.net>
 
    * New instrument: PVOC
+
 
 **** Released RTcmix-3.4, Saturday, Jan 18, 2003 ****
 
