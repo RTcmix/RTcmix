@@ -83,12 +83,12 @@ protected:
    virtual        ~CauchyRandom();
 };
 
-class MaraRandom : public Random {
+class ProbRandom : public Random {
 public:
-   MaraRandom(int seed, double min, double mid, double max, double tight);
+   ProbRandom(int seed, double min, double mid, double max, double tight);
    virtual double value();
 protected:
-   virtual        ~MaraRandom();
+   virtual        ~ProbRandom();
 private:
    double         _mid;
    double         _tight;

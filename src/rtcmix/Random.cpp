@@ -147,13 +147,13 @@ double CauchyRandom::value()
 // Probability distribution subclass ------------------------------------------
 // Based on code by Mara Helmuth
 
-MaraRandom::MaraRandom(int seed, double min, double mid, double max,
+ProbRandom::ProbRandom(int seed, double min, double mid, double max,
                                                                 double tight)
    : Random(seed, min, max), _mid(mid), _tight(tight) {}
 
-MaraRandom::~MaraRandom() {}
+ProbRandom::~ProbRandom() {}
 
-double MaraRandom::value()
+double ProbRandom::value()
 {
    double min = getmin();
    double max = getmax();

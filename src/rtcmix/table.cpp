@@ -1335,7 +1335,7 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
          type = 4;
       else if (args[0] == "cauchy")
          type = 5;
-      else if (args[0] == "prob") // FIXME: need other name for Mara's function?
+      else if (args[0] == "prob")
          type = 6;
       else
          return die("maketable (random)",
@@ -1414,7 +1414,7 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
          gen = new CauchyRandom(seed, min, max);
          break;
       case 6:
-         gen = new MaraRandom(seed, min, mid, max, tight);
+         gen = new ProbRandom(seed, min, mid, max, tight);
          break;
       default:
          return die("maketable (random)", "Unsupported distribution type %d.",
