@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Tuesday, February 18, 2003 Douglas Scott <dscott-at-netscape.net>
+
+   * Several rounds of cleanup and bug fixing for PVOC between 2/12 and today.
+
 Wednesday, February 12, 2003 Douglas Scott <dscott-at-netscape.net>
 
    * New instrument: PVOC
