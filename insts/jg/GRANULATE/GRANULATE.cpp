@@ -130,6 +130,8 @@ GRANULATE::GRANULATE() : Instrument()
    _curwinstart = -DBL_MAX;
    _curwinend = -DBL_MAX;
    _block = NULL;
+   _keepgoing = true;
+   _stopped = false;
 }
 
 
@@ -234,8 +236,6 @@ inline const int min(const int a, const int b)
 int GRANULATE::run()
 {
    const int frames = framesToRun();
-   bool keepgoing = true;
-
    const int outchans = outputChannels();
    int i;
    for (i = 0; i < frames; i++) {
@@ -245,7 +245,7 @@ int GRANULATE::run()
       }
 
       // If we're not in wrap mode, this returns false when it's time to stop.
-      keepgoing = _stream->prepare();
+      _keepgoing = _stream->prepare();
 
       float out[outchans];
       if (outchans == 2) {
@@ -258,7 +258,7 @@ int GRANULATE::run()
       rtaddout(out);
       increment();
 
-      if (!keepgoing) {
+      if (!_keepgoing) {
 // FIXME: how do we remove note from RTcmix queue?
          break;
       }
@@ -278,7 +278,6 @@ int GRANULATE::run()
 
    const int frames = framesToRun();
    int blockframes = min(frames, _skip);
-   bool keepgoing = true;
    int framesdone = 0;
    while (1) {
       if (_branch <= 0) {
@@ -288,12 +287,17 @@ int GRANULATE::run()
       _branch -= blockframes;
 
       // If we're not in wrap mode, this returns false when it's time to stop.
-      keepgoing = _stream->processBlock(_block, blockframes, _amp);
+      if (_keepgoing)
+         _keepgoing = _stream->processBlock(_block, blockframes, _amp);
       rtbaddout(_block, blockframes);
       increment(blockframes);
-      if (!keepgoing) {
+      if (!_keepgoing && !_stopped) {
 // FIXME: how do we remove note from RTcmix queue?
-         return frames;    // need accurate count?
+         const int samps = RTBUFSAMPS * outputChannels();
+         for (int i = 0; i < samps; i++)
+            _block[i] = 0.0f;
+         advise("GRANULATE", "Reached end in non-wrap mode; stopping output.");
+         _stopped = true;
       }
       framesdone += blockframes;
       if (framesdone == frames)

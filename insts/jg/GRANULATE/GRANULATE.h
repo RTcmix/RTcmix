@@ -16,6 +16,7 @@ private:
    double _amp, _curwinstart, _curwinend;
    GrainStream *_stream;
    float *_block;
+   bool _keepgoing, _stopped;
 
    void doupdate();
 };
