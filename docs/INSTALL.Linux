@@ -2,15 +2,14 @@ I.  INSTALLATION
 ----------------
 
 1)  Set up your linux audio driver: either compile the kernel with sound, 
-or get the OSS drivers:
+    or get the OSS drivers:
 
 	http://www.4front-tech.com
 
-2)  Get the pthread libraries:
+2)  If you're still using a distribution of Linux that only has libc5
+    C libraries, then you'll need to get and install the pthread libraries:
 
-	http://pauillac.inria.fr/~xleroy/linuxthreads/
-
-Installation is simple.
+       http://pauillac.inria.fr/~xleroy/linuxthreads/
 
 
 Ia.  FOR THE CORE
@@ -77,7 +76,7 @@ effort on your part.
 Before using a disk-based instrument, you have to use sfcreate to
 make an empty sound file.
 
-See "README2.1.Linux" for more information.
+See "README2.1.Linux" for information on new features.
 
 
 III. HAVE FUN!
@@ -85,6 +84,6 @@ III. HAVE FUN!
 :->
 
 
-Dave Topper
-topper@virginia.edu
+Dave Topper <topper@virginia.edu>
+John Gibson <johngibson@virginia.edu>
 
