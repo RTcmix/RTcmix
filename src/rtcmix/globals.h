@@ -76,15 +76,19 @@ GLOBAL int socknew;
 
 /* used in intraverse.C, traverse.C and rtsendsamps.c */
 GLOBAL unsigned long bufStartSamp;
+/* Used by rtsetoutput and sockit to sync up timing */
+GLOBAL double schedtime;
 
 #include <pthread.h>
 #ifdef MAIN      /* Have to do this because must be inited in definition. */
 pthread_mutex_t heapLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t pfieldLock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t audio_config_lock = PTHREAD_MUTEX_INITIALIZER;
 /* pthread_mutex_t heapLock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP; */
 #else
 GLOBAL pthread_mutex_t heapLock;
 GLOBAL pthread_mutex_t pfieldLock;
+GLOBAL pthread_mutex_t audio_config_lock;
 #endif
 
 /* -------------------------------------------------------------------------- */
