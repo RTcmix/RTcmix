@@ -74,7 +74,7 @@ int DEL1::init(double p[], int n_args)
 		return die("DEL1", "Maximum delay time (%g) exceeded.", MAXDELTIME);
 
 	long maxdelsamps = (long) (MAXDELTIME * SR + 0.5);
-	delay = new Ozdelay(maxdelsamps);
+	delay = new Odelayi(maxdelsamps);
 	if (delay == NULL)
 		return die("DEL1", "Can't allocate delay line memory.");
 

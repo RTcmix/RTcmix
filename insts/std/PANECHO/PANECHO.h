@@ -6,7 +6,7 @@ class PANECHO : public Instrument {
 	double delsamps0, delsamps1;
 	float amp, regen, prevdeltime0, prevdeltime1, *in, amptabs[2];
 	double *amptable;
-	Ozdelay *delay0, *delay1;
+	Odelayi *delay0, *delay1;
 
 	double getdelsamps(float deltime);
 public:

@@ -6,7 +6,7 @@ class DEL1 : public Instrument {
 	float amp, delamp, *in, amptabs[2];
 	double *amptable;
 	double delsamps;
-	Ozdelay *delay;
+	Odelayi *delay;
 
 public:
 	DEL1();

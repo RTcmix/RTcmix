@@ -6,7 +6,7 @@ class DELAY : public Instrument {
 	float amp, *in, pctleft, regen, amptabs[2];
 	double *amptable;
 	int inchan, insamps, skip, branch;
-	Ozdelay *delay;
+	Odelayi *delay;
 
 public:
 	DELAY();

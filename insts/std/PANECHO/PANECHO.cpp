@@ -74,8 +74,8 @@ int PANECHO::init(double p[], int n_args)
 		return die("PANECHO", "Maximum delay time (%g seconds) exceeded.",
                                                             MAXDELTIME);
 	long maxdelsamps = (long) (MAXDELTIME * SR + 0.5);
-	delay0 = new Ozdelay(maxdelsamps);
-	delay1 = new Ozdelay(maxdelsamps);
+	delay0 = new Odelayi(maxdelsamps);
+	delay1 = new Odelayi(maxdelsamps);
 	if (delay0 == NULL || delay1 == NULL)
 		return die("PANECHO", "Can't allocate delay line memory.");
 	prevdeltime0 = prevdeltime1 = -999999999.9;		// force first update
