@@ -9,7 +9,7 @@ class MYWAVETABLE : public Instrument {
 public:
 	MYWAVETABLE();
 	virtual ~MYWAVETABLE();
-        int init(float p[], int n_args);
+        int init(double p[], int n_args);
         int run();
 	virtual double setfreq(double v);
         };

@@ -12,7 +12,7 @@ MYWAVETABLE::~MYWAVETABLE()
 {
 }
 
-int MYWAVETABLE::init(float p[], int n_args)
+int MYWAVETABLE::init(double p[], int n_args)
 {
 // p0 = start; p1 = dur; p2 = amplitude; p3 = frequency; p4 = stereo spread;
 
