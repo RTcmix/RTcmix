@@ -41,6 +41,7 @@ private:
    short          bufstatus[MAXBUS];
    short          needs_to_run;
 
+   int			  cumulative_size[MAXNUMPARAMS];
    int 			  pfpathcounter[MAXNUMPARAMS];
    double 		  newpvalue[MAXNUMPARAMS];
    double 		  oldpvalue[MAXNUMPARAMS][2];
@@ -48,8 +49,13 @@ private:
    float 		  ptabs[MAXNUMPARAMS][2];
    int 			  oldsamp[MAXNUMPARAMS];
 
+   int			  cumulative_isize[MAXNUMPARAMS];
+
    int 			  instnum;
    int			  slot;
+	
+   int			  j;
+   int 			  k;
 //   double 		  increment[MAXNUMPARAMS];
 public:
    Instrument();

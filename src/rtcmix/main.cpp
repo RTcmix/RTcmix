@@ -194,7 +194,7 @@ detect_denormals()
 int
 main(int argc, char *argv[])
 {
-   int         i, j, k, xargc;
+   int         i, j, k, l, xargc;
    int         retcode;                 /* for mutexes */
    char        *infile;
    char        *xargv[MAXARGS + 1];
@@ -266,20 +266,34 @@ main(int argc, char *argv[])
                printf("rtupdates enabled\n");
                curtag = 1;          /* "0" is reserved for all notes */
 			   curinst = 0;
+			   
                for (j = 0; j < MAXPUPS; j++)     /* initialize element 0 */
                   pupdatevals[0][j] = NOPUPDATE;
 			   for(j = 0; j < MAXNUMTAGS; j++)
 			   {
 				   for(k = 0; k < MAXNUMPARAMS; k++)
 				   {
-					   // parray_size[j][k] = 0; //initilizes size of pfpath array
+					   numcalls[j][k] = 0;
+					   cum_parray_size[j][k] = 0;
+					   for(l = 0; l < MAXNUMCALLS; l++)
+					   {
+						   parray_size[j][k][l] = 0; //initilizes size of 
+					   }						  // pfpath array
+ 
 				   }
 			   }
 			   for(j = 0; j < MAXNUMINSTS; j++)
 			   {
+				   pi_goto[j] = -1;
+//				   printf("pi_goto[%i] = %i \n", j, pi_goto[j]);
 				   for(k = 0; k < MAXNUMPARAMS; k++)
 				   {
-					   // piarray_size[j][k] = 0;
+						numinstcalls[j][k] = 0;
+						cum_piarray_size[j][k] = 0;
+						for(l = 0; l < MAXNUMCALLS; l++)
+						{
+							piarray_size[j][k][l] = 0;
+						}
 				   }
 			   }
                break;

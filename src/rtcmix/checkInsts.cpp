@@ -15,8 +15,9 @@
 
 extern void heapSched(Instrument *Iptr);
 
-extern "C" double checkInsts(char *fname, double *pp, int n_args);
+/* extern "C" double checkInsts(char *fname, double *pp, int n_args); */
 
+extern "C" {
 double checkInsts(char *fname, double *pp, int n_args)
 {
 	int i;
@@ -24,9 +25,13 @@ double checkInsts(char *fname, double *pp, int n_args)
 	rt_item *rt_temp;
 	Instrument *Iptr;
 	double rv;
+	int iv;
 	float p[MAXDISPARGS];
 
 	/* printf("ENTERING checkInsts() FUNCTION -----\n"); */
+
+	rv = 0.0;
+	iv = 0;
 
 	/* convert pp to floats */
 	for(i = 0; i < n_args; i++) p[i] = (float)pp[i];
@@ -50,8 +55,10 @@ double checkInsts(char *fname, double *pp, int n_args)
 			/* set up the Instrument */
 			
 			Iptr = (*(rt_p->rt_ptr))();
-
-			Iptr->init(p, n_args);
+	
+			iv = Iptr->init(p, n_args);
+			rv = (double)iv;
+			printf("rv = %2.2f, iv = %d\n",rv,iv);
 
 			/* schedule instrument */
 
@@ -59,7 +66,6 @@ double checkInsts(char *fname, double *pp, int n_args)
 			heapSched(Iptr);
 			pthread_mutex_unlock(&heapLock);
 
-			rv = 1;
 			mixerr = MX_NOERR;
 			rt_list = rt_temp;
 
@@ -73,3 +79,4 @@ double checkInsts(char *fname, double *pp, int n_args)
 	return 0; /* This was NULL on SGI's ... not good */
 }
 
+}

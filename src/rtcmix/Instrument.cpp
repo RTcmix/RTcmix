@@ -24,10 +24,12 @@ Instrument :: Instrument()
    for(i = 0; i < MAXNUMPARAMS; ++i)
    {
 	   pfpathcounter[i] = 0;
+	   cumulative_size[i] = 0;
 	   newpvalue[i] = 0;
 	   oldsamp[i] = 0;
    }
- 
+   j = 0;
+   k = 0;
 
    start = 0.0;
    dur = 0.0;
@@ -118,7 +120,7 @@ int Instrument :: init(float p[], int n_args)
 	   oldpvalue[i][1] = p[i];
    }
    slot = piloc(instnum);
-   return 0;
+   return 777;
 }
 
 
@@ -391,29 +393,45 @@ void Instrument::pi_path_update(int pval)
 	int i;
 //	printf("mytag = %i\n", mytag);
 //	printf("instnum = %i\n", instnum);
-	if((piarray_size[slot][pval] != 0) && (parray_size[mytag][pval] == 0))
+//	printf("slot = %i\n", slot);
+	if(slot < 0)
+		return;
+	
+//	printf("piarray_size[%i][%i][%i] = %i\n\n\n", slot, pval, k
+//                                            , piarray_size[slot][pval][k]);
+	while((piarray_size[slot][pval][k] != 0) 
+         && (parray_size[mytag][pval][k] == 0))
 	{
+
 //		printf("parraysize = %i\n", parray_size[mytag][pval]);
-//		printf("piarraysize = %i\n", piarray_size[slot][pval]);
-//		printf("slot = %i\n", slot);
-		gen_type[mytag][pval] = igen_type[slot][pval];
-		parray_size[mytag][pval] = piarray_size[slot][pval];
-		for(i = 0; i < piarray_size[slot][pval]; ++i)
+//		printf("piarraysize = %i\n", piarray_size[slot][pval][k]);
+		
+//		printf("piarray_size[%i][%i][%i] = %i\n", slot, pval, k
+//                                            , piarray_size[slot][pval][k]);
+
+		gen_type[mytag][pval][k] = igen_type[slot][pval][k];
+		parray_size[mytag][pval][k] = piarray_size[slot][pval][k];
+		numcalls[mytag][pval] = numinstcalls[slot][pval];
+//		printf("k = %i\n", k);
+		for(i = 0; i < cum_piarray_size[slot][pval]; ++i)
 		{
 			pfpath[mytag][pval][i][0] = pipath[slot][pval][i][0];
 			pfpath[mytag][pval][i][1] = pipath[slot][pval][i][1];
 			printf("pipath[%i][%i][%i][0] = %f\t", slot, pval, i
-               , pipath[slot][pval][i][0]);
-		 	printf("pipath[%i][%i][%i][1] = %f\n", slot, pval, i
-               , pipath[slot][pval][i][1]);
-	 		printf("pfpath[%i][%i][%i][0] = %f\t", mytag, pval, i
-               , pfpath[mytag][pval][i][0]);
- 			printf("pfpath[%i][%i][%i][1] = %f\n", mytag, pval, i
-               , pfpath[mytag][pval][i][1]);
+				, pipath[slot][pval][i][0]);
+			printf("pipath[%i][%i][%i][1] = %f\n", slot, pval, i
+				, pipath[slot][pval][i][1]);
+			printf("pfpath[%i][%i][%i][0] = %f\t", mytag, pval, i
+				, pfpath[mytag][pval][i][0]);
+			printf("pfpath[%i][%i][%i][1] = %f\n", mytag, pval, i
+				, pfpath[mytag][pval][i][1]);
 		}
-		
-		
+		k++;
 	}
+
+	
+
+
 	return;
 }
 
@@ -421,24 +439,27 @@ void Instrument::pf_path_update(int tag, int pval)
 {
 	float time, increment;
 	float updates_per_second; 
-	int i;
+	int i, incr_j;
 	double table_val, diff, difftime;
 	pi_path_update(pval);
-	if(gen_type[tag][pval] == 0 && gen_type[0][pval] == 0) 
+	incr_j = 0;
+//	printf("tag = %i\n", tag);
+	
+	if(gen_type[tag][pval][j] == 0 && gen_type[0][pval][j] == 0) 
                                             // linear interpolation of values
 	{
-		if(parray_size[tag][pval] > pfpathcounter[pval])
+		if(parray_size[tag][pval][j] > pfpathcounter[pval])
 		{
-			time = cursamp / SR;
+			time = cursamp / SR + start;
 
 			if(time < pfpath[tag][pval][0][0]) // before inst reaches first 
 				return;						   // time specified in pfpath
 
 			updates_per_second = resetval;
-			increment = 1 / ((pfpath[tag][pval][pfpathcounter[pval]][0] 
+			increment = 1 / ((pfpath[tag][pval][cumulative_size[pval]][0] 
 							 - oldpvalue[pval][0]) * updates_per_second);
 
-			increment *= pfpath[tag][pval][pfpathcounter[pval]][1] 
+			increment *= pfpath[tag][pval][cumulative_size[pval]][1] 
 						 - oldpvalue[pval][1];
 
 		
@@ -446,31 +467,34 @@ void Instrument::pf_path_update(int tag, int pval)
 
 			pupdatevals[tag][pval] = newpvalue[pval];
 
-			if(time >= pfpath[tag][pval][pfpathcounter[pval]][0])
+			if(time >= pfpath[tag][pval][cumulative_size[pval]][0])
 			{
 				pupdatevals[tag][pval] = 
-                             pfpath[tag][pval][pfpathcounter[pval]][1];
+                             pfpath[tag][pval][cumulative_size[pval]][1];
 
-				oldpvalue[pval][0] = pfpath[tag][pval][pfpathcounter[pval]][0];
+				oldpvalue[pval][0] = 
+                             pfpath[tag][pval][cumulative_size[pval]][0];
+
 				pfpathcounter[pval]++; 
+				cumulative_size[pval]++;
 				newpvalue[pval] = pupdatevals[tag][pval];
 				oldpvalue[pval][1] = newpvalue[pval];
 			
 			}
 		}
 
-		if(parray_size[0][pval] > pfpathcounter[pval])
+		if(parray_size[0][pval][j] > pfpathcounter[pval])
 		{		
-			time = cursamp / SR;
+			time = cursamp / SR + start;
 
 			if(time < pfpath[tag][pval][0][0]) // before inst reaches first 
 				return;						   // time specified in pfpath
 
 			updates_per_second = resetval;
-			increment = 1 / ((pfpath[0][pval][pfpathcounter[pval]][0] 
+			increment = 1 / ((pfpath[0][pval][cumulative_size[pval]][0] 
 							 - oldpvalue[pval][0]) * updates_per_second);
 
-			increment *= pfpath[0][pval][pfpathcounter[pval]][1] 
+			increment *= pfpath[0][pval][cumulative_size[pval]][1] 
 						 - oldpvalue[pval][1];
 
 		
@@ -478,11 +502,15 @@ void Instrument::pf_path_update(int tag, int pval)
 
 			pupdatevals[0][pval] = newpvalue[pval];
 
-			if(time >= pfpath[0][pval][pfpathcounter[pval]][0])
+			if(time >= pfpath[0][pval][cumulative_size[pval]][0])
 			{
-				pupdatevals[0][pval] = pfpath[0][pval][pfpathcounter[pval]][1];
-				oldpvalue[pval][0] = pfpath[0][pval][pfpathcounter[pval]][0];
+				pupdatevals[0][pval] = 
+                               pfpath[0][pval][cumulative_size[pval]][1];
+
+				oldpvalue[pval][0] = pfpath[0][pval][cumulative_size[pval]][0];
+
 				pfpathcounter[pval]++; 
+				cumulative_size[pval]++;
 				newpvalue[pval] = pupdatevals[0][pval];
 				oldpvalue[pval][1] = newpvalue[pval];
 			
@@ -491,81 +519,89 @@ void Instrument::pf_path_update(int tag, int pval)
 	}
 	else
 	{
-
-		
-//		tableset(dur, psize(gen_type[tag][pval]), ptabs[pval]);
-
-//		table_val = tablei(cursamp, ptables[pval], ptabs[pval]);
-//		printf("yes");
-//		printf("parraysize = %i\n", parray_size[0][pval]);
-		if(parray_size[tag][pval] > pfpathcounter[pval] + 1)
+//		printf("parraysize[%i] = %i\n", tag, parray_size[tag][pval][j]);
+//		printf("pfpathcounter = %i\n", pfpathcounter[pval]);
+//		printf("cumulative_size = %i\n", cumulative_size[pval]);
+//		printf("gen_type = %i\n", gen_type[tag][pval][j]);
+//	    printf("parray_size[%i] = %i\n", tag, parray_size[tag][pval][j]);
+		if(parray_size[tag][pval][j] > pfpathcounter[pval] + 1)
 		{
-			ptables[pval] = ploc(gen_type[tag][pval]);
 			
-		
-
-			time = cursamp / SR;
-
-			if(time >= pfpath[tag][pval][pfpathcounter[pval]][0]) 
+			ptables[pval] = ploc(gen_type[tag][pval][j]);
+			
+			time = cursamp / SR + start;
+//			printf("time = %f\n", time);
+//			printf("first time = %f\n"
+//                 , pfpath[tag][pval][cumulative_size[pval]][0]);
+//			printf("second time = %f\n"
+//				, pfpath[tag][pval][cumulative_size[pval] + 1][0]);
+			if(time >= pfpath[tag][pval][cumulative_size[pval]][0]) 
 			{
-				if(time >= pfpath[tag][pval][pfpathcounter[pval] + 1][0])
+				if(time >= pfpath[tag][pval][cumulative_size[pval] + 1][0])
 				{
 					pfpathcounter[pval]++;
+					cumulative_size[pval]++;
 					oldsamp[pval] = cursamp;
-					if(parray_size[0][pval] <= pfpathcounter[pval] + 1)
-						return;
+					if(parray_size[tag][pval][j] <= cumulative_size[pval] + 1)
+						return;  // should this be tag instead of '0'?
 				}
 
-				diff = pfpath[tag][pval][pfpathcounter[pval] + 1][1] 
-                   - pfpath[tag][pval][pfpathcounter[pval]][1];
+				diff = pfpath[tag][pval][cumulative_size[pval] + 1][1] 
+                   - pfpath[tag][pval][cumulative_size[pval]][1];
 
-				difftime = pfpath[tag][pval][pfpathcounter[pval] + 1][0] 
-                           - pfpath[tag][pval][pfpathcounter[pval]][0];
+				difftime = pfpath[tag][pval][cumulative_size[pval] + 1][0] 
+                           - pfpath[tag][pval][cumulative_size[pval]][0];
 
-				tableset(difftime, psize(gen_type[tag][pval]), ptabs[pval]);
+				tableset(difftime, psize(gen_type[tag][pval][j]), ptabs[pval]);
 
 				table_val = tablei(cursamp-oldsamp[pval], ptables[pval]
                                    , ptabs[pval]);
 
 				pupdatevals[tag][pval] = 
-             pfpath[tag][pval][pfpathcounter[pval]][1] + (table_val * diff);
+             pfpath[tag][pval][cumulative_size[pval]][1] + (table_val * diff);
 
 				printf("table result [%i] = %f\n"
                        , tag, pupdatevals[tag][pval]);
 				
 			}
 		} 
-		
-		if(parray_size[0][pval] > pfpathcounter[pval] + 1)
+		else
 		{
-			ptables[pval] = ploc(gen_type[0][pval]);
+			if(j < numcalls[tag][pval] - 1)
+				incr_j = 1;
+		}
+		if(parray_size[0][pval][j] > pfpathcounter[pval] + 1)
+		{
+			ptables[pval] = ploc(gen_type[0][pval][j]);
 			
 			   
 
-			time = cursamp / SR;
+			time = cursamp / SR + start;
 
-			if(time >= pfpath[0][pval][pfpathcounter[pval]][0])
+			if(time >= pfpath[0][pval][cumulative_size[pval]][0])
 			{
-				if(time >= pfpath[0][pval][pfpathcounter[pval] + 1][0])
+				if(time >= pfpath[0][pval][cumulative_size[pval] + 1][0])
 				{
 					pfpathcounter[pval]++;
+					cumulative_size[pval]++;
 					oldsamp[pval] = cursamp;
-					if(parray_size[0][pval] <= pfpathcounter[pval] + 1)
+					if(parray_size[0][pval][j] <= pfpathcounter[pval] + 1)
 						return;
 				}
 				
-				diff = pfpath[0][pval][pfpathcounter[pval] + 1][1] 
-                   - pfpath[0][pval][pfpathcounter[pval]][1];
+				diff = pfpath[0][pval][cumulative_size[pval] + 1][1] 
+                   - pfpath[0][pval][cumulative_size[pval]][1];
 
-				difftime = pfpath[0][pval][pfpathcounter[pval] + 1][0] 
-                           - pfpath[0][pval][pfpathcounter[pval]][0];
+				difftime = pfpath[0][pval][cumulative_size[pval] + 1][0] 
+                           - pfpath[0][pval][cumulative_size[pval]][0];
 
-				tableset(difftime, psize(gen_type[0][pval]), ptabs[pval]);
+				tableset(difftime, psize(gen_type[0][pval][j]), ptabs[pval]);
 				table_val = tablei(cursamp - oldsamp[pval], ptables[pval]
                                    , ptabs[pval]);
 
-				pupdatevals[0][pval] = pfpath[0][pval][pfpathcounter[pval]][1] 
-									   + (table_val * diff);
+				pupdatevals[0][pval] = 
+                                   pfpath[0][pval][cumulative_size[pval]][1] 
+                                   + (table_val * diff);
 
 //				printf("diff = %f\n", diff);
 //				printf("difftime = %f\n", difftime);
@@ -575,7 +611,12 @@ void Instrument::pf_path_update(int tag, int pval)
 
 				
 			}
-		} 
+	    }
+		else
+		{
+			if(j < numcalls[0][pval] - 1)
+				incr_j = 1;
+		}
 		
 /*		printf("ptabs[%i] = %f\t%f\n", pval, ptabs[pval][0], ptabs[pval][1]);
 	    for(i = 0; i < psize(gen_type[tag][pval]); ++i)
@@ -583,6 +624,15 @@ void Instrument::pf_path_update(int tag, int pval)
 		    printf("ptables[%i] = %f\n", i, ptables[pval][i]);
 		}*/
 		
+	}
+	if(incr_j == 1)
+	{
+		j++;
+		cumulative_size[pval]++;
+		incr_j = 0;
+		pfpathcounter[pval] = 0;
+		printf("j = %i\n", j);
+			
 	}
 }
 
