@@ -65,7 +65,7 @@ makeconverter(const Arg args[], const int nargs)
 		converter = new ConverterPField(pfield, ConverterPField::boost);
 
 	if (converter == NULL) {
-		die("makeconverter", "Invalid converter type \"%s\".", args[1]);
+		die("makeconverter", "Invalid converter type \"%s\".", (const char *) args[1]);
 		return NULL;
 	}
 
