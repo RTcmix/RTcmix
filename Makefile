@@ -7,12 +7,10 @@ else
   SNDLIB = 
 endif
 
-DIRS = rtstuff/heap rtstuff $(SNDLIB) Minc sys lib head cmd utils insts.base
+DIRS = H rtstuff/heap rtstuff $(SNDLIB) Minc sys lib head cmd utils insts.base
 
-# Add these to DIRS and as needed
+# Add these to DIRS and all: as needed
 #  insts.std insts.dev
-# CVS CHANGE
-# Another one for testing
 
 all: $(SNDLIB) H heap rtstuff Minc sys lib head cmd utils insts.base
 
@@ -22,6 +20,7 @@ install:
 	@cd head; $(MAKE) install;
 	@cd utils; $(MAKE) install;
 	@cd insts.base; $(MAKE) install;
+	@cd insts.std; $(MAKE) install;
 	@echo "install done."; echo ""
 
 H::
