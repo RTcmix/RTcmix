@@ -17,7 +17,8 @@ float Odelayi::getsamp(double lagsamps)
 {
 	_frac = lagsamps - (long) lagsamps;
 	// This call increments _outpoint
-	const float out = Odelay::getsamp(lagsamps + 0.99999999);
+//	const float out = Odelay::getsamp(lagsamps + 1);
+	const float out = Odelay::getsamp(lagsamps);
 	register float next;
 	if (_outpoint < _len)
 		next = _dline[_outpoint];
@@ -30,7 +31,7 @@ float Odelayi::getsamp(double lagsamps)
 
 void Odelayi::setdelay(double lagsamps)
 {
-	Odelay::setdelay(lagsamps + 0.99999999);
+	Odelay::setdelay(lagsamps);
 	_frac = lagsamps - (long) lagsamps;
 }
 
