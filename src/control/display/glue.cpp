@@ -14,7 +14,7 @@
 
 // ------------------------------------------------------------- makedisplay ---
 //
-//    mouse = makedisplay(handle, [prefix[, units,]] [precision])
+//    display = makedisplay(handle, [prefix[, units,]] [precision])
 //
 //    First argument is a PField handle, such as that returned by a call
 //    to makeconnection("midi", ...). Other arguments, which are optional:
@@ -86,7 +86,7 @@ create_pfield(const Arg args[], const int nargs)
 	return new DisplayPField(pfield, displaywin, prefix, units, precision);
 }
 
-// The following functions are the publically-visible ones called by the
+// The following functions are the publicly-visible ones called by the
 // system.
 
 extern "C" {
