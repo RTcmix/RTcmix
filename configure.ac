@@ -39,13 +39,16 @@ AC_SUBST(ARCH)
 
 # Configuration options --------------------------------------------------------
 #
-# Standard format is...
+# Standard format for options is...
 #    --with-option         (equivalent to --with-option=yes)
 #    --without-option      (equivalent to --with-option=no)
 #    --with-option=ARG
 # The built-in var <withval> will be set to "yes", "no" or "ARG" accordingly.
 # For perl and python options, we must be prepared to see any one of these
 # three values of <withval>.  -JGG
+#
+# Note that the order of options appearing in "configure --help" output 
+# follows the order of AC_ARG_WITH() calls below.
 
 # Audio driver options
 AUDIODRIVER=AUTO                          # default
@@ -56,7 +59,7 @@ AC_ARG_WITH(alsa, AC_HELP_STRING([--with-alsa],
    fi])
 AC_SUBST(AUDIODRIVER)
 
-# Parser options
+# Perl options
 PERL_SUPPORT=FALSE                        # disable by default
 PERL=perl                                 # default perl name
 AC_ARG_WITH(perl, AC_HELP_STRING([--with-perl=PATH],
@@ -70,6 +73,7 @@ AC_ARG_WITH(perl, AC_HELP_STRING([--with-perl=PATH],
 AC_SUBST(PERL_SUPPORT)
 AC_SUBST(PERL)
 
+# Python options
 PYTHON_SUPPORT=FALSE                      # disable by default
 PYTHON=python                             # default python name
 AC_ARG_WITH(python, AC_HELP_STRING([--with-python=PATH],
@@ -83,7 +87,7 @@ AC_ARG_WITH(python, AC_HELP_STRING([--with-python=PATH],
 AC_SUBST(PYTHON_SUPPORT)
 AC_SUBST(PYTHON)
 
-# Documentation dir
+# Documentation options
 HTMLDESTDIR="$CMIXDIR"/docs/html          # default location
 AC_ARG_WITH(docdir, AC_HELP_STRING([--with-docdir=PATH],
    [put documentation in this directory]),
@@ -92,7 +96,16 @@ AC_ARG_WITH(docdir, AC_HELP_STRING([--with-docdir=PATH],
    fi])
 AC_SUBST(HTMLDESTDIR)
 
-#AC_SUBST(WITH_VAL, "$withval")    # for debugging
+# NetPlay options
+NPLAY_SUPPORT=FALSE                       # default
+AC_ARG_WITH(netplay, AC_HELP_STRING([--with-netplay],
+   [support NetPlay]),
+   [if test "$withval" != "no"; then
+      NPLAY_SUPPORT=TRUE
+   fi])
+AC_SUBST(NPLAY_SUPPORT)
+
+#AC_SUBST(WITH_VAL, "$withval")    # for debugging this script
 
 
 # Standard program, library and header checks ----------------------------------
@@ -147,7 +160,7 @@ if test "$AUDIODRIVER" = "ALSA"; then
 fi
 
 
-# Write output files ---------------------------------------------------------
+# Write output files -----------------------------------------------------------
 #AC_CONFIG_HEADER(config.h)   # we don't need this yet
 AC_CONFIG_FILES(makefile.conf)
 AC_CONFIG_FILES(defs.conf)
