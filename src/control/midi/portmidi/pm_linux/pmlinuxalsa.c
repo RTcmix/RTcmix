@@ -207,7 +207,7 @@ static PmError alsa_write_byte(PmInternal *midi, unsigned char byte,
             if (when == 0) when = now;
             when = (when - now) + midi->latency;
             if (when < 0) when = 0;
-            VERBOSE printf("timestamp %d now %d latency %d, ", 
+            VERBOSE printf("timestamp %ld now %ld latency %ld, ", 
                            timestamp, now, midi->latency);
             VERBOSE printf("scheduling event after %d\n", when);
             /* message is sent in relative ticks, where 1 tick = 1 ms */
@@ -242,8 +242,9 @@ static PmError alsa_out_close(PmInternal *midi)
     alsa_descriptor_type desc = (alsa_descriptor_type) midi->descriptor;
     if (!desc) return pmBadPtr;
 
-    if (pm_hosterror = snd_seq_disconnect_to(seq, desc->this_port, 
-                                             desc->client, desc->port)) {
+    pm_hosterror = snd_seq_disconnect_to(seq, desc->this_port, 
+                                             desc->client, desc->port);
+    if (pm_hosterror) {
         // if there's an error, try to delete the port anyway, but don't
         // change the pm_hosterror value so we retain the first error
         snd_seq_delete_port(seq, desc->this_port);
@@ -332,8 +333,9 @@ static PmError alsa_in_close(PmInternal *midi)
     int err;
     alsa_descriptor_type desc = (alsa_descriptor_type) midi->descriptor;
     if (!desc) return pmBadPtr;
-    if (pm_hosterror = snd_seq_disconnect_from(seq, desc->this_port, 
-                                               desc->client, desc->port)) {
+    pm_hosterror = snd_seq_disconnect_from(seq, desc->this_port, 
+                                               desc->client, desc->port);
+    if (pm_hosterror) {
         snd_seq_delete_port(seq, desc->this_port); /* try to close port */
     } else {
         pm_hosterror = snd_seq_delete_port(seq, desc->this_port);
@@ -411,7 +413,7 @@ static PmError alsa_write(PmInternal *midi, PmEvent *buffer, long length)
 static PmError alsa_write_flush(PmInternal *midi)
 {
     alsa_descriptor_type desc = (alsa_descriptor_type) midi->descriptor;
-    VERBOSE printf("snd_seq_drain_output: 0x%x\n", seq);
+    VERBOSE printf("snd_seq_drain_output: %p\n", seq);
     desc->error = snd_seq_drain_output(seq);
     if (desc->error < 0) return pmHostError;
 
@@ -678,7 +680,7 @@ PmError pm_linuxalsa_init( void )
     unsigned int caps;
 
     err = snd_seq_open(&seq, "default", SND_SEQ_OPEN_DUPLEX, SND_SEQ_NONBLOCK);
-    if (err < 0) return;
+    if (err < 0) return pmHostError;   // FIXME: added return value -JGG
     
     snd_seq_client_info_alloca(&cinfo);
     snd_seq_port_info_alloca(&pinfo);
@@ -715,6 +717,7 @@ PmError pm_linuxalsa_init( void )
             }
         }
     }
+    return pmNoError;
 }
     
 
