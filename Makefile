@@ -111,7 +111,7 @@ dsos::
 dso_install: 
 	@for DIR in $(INST_DIRS); \
 	do \
-	  ( cd $$DIR; echo "making dso_clean $$DIR..."; \
+	  ( cd $$DIR; echo "making dso_install $$DIR..."; \
 	   @echo "include $(MAKEFILE_CONF)" > package.conf \
 	   $(MAKE) install; echo "done.";echo"" ); \
 	done
@@ -135,7 +135,7 @@ standalone::
 standalone_install::
 	@for DIR in $(INST_DIRS); \
 	do \
-	  ( cd $$DIR; echo "making standalone $$DIR..."; \
+	  ( cd $$DIR; echo "making standalone_install $$DIR..."; \
 	   @echo "include $(MAKEFILE_CONF)" > package.conf \
 	   $(MAKE) standalone_install; echo "done.";echo"" ); \
 	done
