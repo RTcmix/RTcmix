@@ -1,4 +1,9 @@
-Wednesday, May 10, 2000 Dave Topper <topper@virginia.edu?
+Friday, May 12, 2000 John Gibson <johngibson@virginia.edu>
+
+   * Get rid of MAXBUF -- no longer necessary or even useful.
+
+Wednesday, May 10, 2000 Dave Topper <topper@virginia.edu>
+
    * Changed bus_config schema to provide default behavior
      to maintain backwards compatibility with pre-bus_config scores
 
