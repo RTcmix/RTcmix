@@ -43,10 +43,10 @@ createInstHandle(Instrument *inst)
 void
 unrefHandle(Handle h)
 {
-	assert(h->refcount >= 0);
 #ifdef DEBUG
     printf("unrefHandle(%p): %d -> ", h, h->refcount);
 #endif
+	assert(h->refcount >= 0);
 	--h->refcount;
 #ifdef DEBUG
     printf("%d\n", h->refcount);
