@@ -26,9 +26,7 @@ all:	$(AUDIOLIB)
 $(AUDIOLIB):	$(OBJECTS)
 	$(RM) $@
 	ar q $@ $(OBJECTS)
-ifeq ($(ARCH),MACOSX)
 	$(RANLIB) $@
-endif
 
 .c.o:
 	$(CC) $(CFLAGS) $(SOUND_DRIVER) -c $< -o $@
