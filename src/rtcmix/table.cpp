@@ -121,9 +121,9 @@ args_have_same_type(const Arg args[], const int nargs, const RTcmixType type)
    Similar to cmix fnscl.
 */
 static void
-_normalize_table(double *array, const unsigned int len, const double peak)
+_normalize_table(double *array, const int len, const double peak)
 {
-   unsigned int i;
+   int i;
    double max = 0.0;
 
    for (i = 0; i < len; i++) {
@@ -186,7 +186,7 @@ _transition(double a, double alpha, double b, int n, double *output)
 
 static int
 _curve_table(const Arg args[], const int nargs, double *array,
-   const unsigned int len)
+   const int len)
 {
    int    i, points, seglen = 0;
    double factor, *ptr;
@@ -236,6 +236,36 @@ time_err:
 }
 
 
+/* --------------------------------------------------------- _expbrk_table -- */
+/* Similar to gen 5, but no no normalization.
+*/
+static int
+_expbrk_table(const Arg args[], const int nargs, double *array,
+   const int len)
+{
+   double amp2 = args[0];
+   if (amp2 <= 0.0)
+      amp2 = 0.00001;
+   int i = 0;
+   for (int k = 1; k < nargs; k += 2) {
+      double amp1 = amp2;
+      amp2 = args[k + 1];
+      if (amp2 <= 0.0)
+         amp2 = 0.00001;
+      int j = i + 1;
+      array[i] = amp1;
+      double c = pow((amp2 / amp1), (1.0 / (double) args[k]));
+      i = (j - 1) + (int) args[k];
+      for (int l = j; l < i; l++) {
+         if (l < len)
+            array[l] = array[l - 1] * c;
+      }
+   }
+
+   return 0;
+}
+
+
 /* ----------------------------------------------------------- _line_table -- */
 /* Create a function table comprising straight line segments, specified by
    using any number of <time, value> pairs.  The table is not normalized.
@@ -258,7 +288,7 @@ time_err:
 #define NEWWAY
 static int
 _line_table(const Arg args[], const int nargs, double *array,
-   const unsigned int len)
+   const int len)
 {
    double scaler, starttime, thistime, thisval, nexttime, nextval, endtime;
    int i, j, k, l;
@@ -301,7 +331,7 @@ _line_table(const Arg args[], const int nargs, double *array,
       i = (int) ((nexttime * scaler) + 1.0);
 #endif
       for (l = j; l <= i; l++) {
-         if (l <= (int) len)
+         if (l <= len)
             array[l - 1] = thisval + (nextval - thisval)
                                           * (double) (l - j) / ((i - j) + 1);
       }
@@ -317,24 +347,46 @@ time_err:
 }
 
 
+/* -------------------------------------------------------- _linebrk_table -- */
+/* Similar to gen 7, but no no normalization.
+*/
+static int
+_linebrk_table(const Arg args[], const int nargs, double *array,
+   const int len)
+{
+   double amp2 = args[0];
+   int i = 0;
+   for (int k = 1; k < nargs; k += 2) {
+      double amp1 = amp2;
+      amp2 = args[k + 1];
+      int j = i + 1;
+      i = j + (int) args[k] - 1;
+      for (int l = j; l <= i; l++) {
+         if (l <= len)
+            array[l - 1] = amp1
+                           + (amp2 - amp1) * (double) (l - j) / (i - j + 1);
+      }
+   }
+
+   return 0;
+}
+
+
 /* ---------------------------------------------------------- _wave3_table -- */
 /* Similar to cmix gen 9, but no normalization.
 */
 static int
 _wave3_table(const Arg args[], const int nargs, double *array,
-   const unsigned int len)
+   const int len)
 {
-   unsigned int i;
-   int j;
-
-   for (i = 0; i < len; i++)
+   for (int i = 0; i < len; i++)
       array[i] = 0.0;
 
-   for (j = nargs - 1; j > 0; j -= 3) {
+   for (int j = nargs - 1; j > 0; j -= 3) {
       assert(j > 0);
       assert(j < nargs);
       if ((double) args[j - 1] != 0.0) {
-         for (i = 0; i < len; i++) {
+         for (int i = 0; i < len; i++) {
             double val = sin(TWOPI * ((double) i
                                  / ((double) len / (double) args[j - 2])
                                  + (double) args[j] / 360.0));
@@ -352,20 +404,18 @@ _wave3_table(const Arg args[], const int nargs, double *array,
 */
 static int
 _wave_table(const Arg args[], const int nargs, double *array,
-   const unsigned int len)
+   const int len)
 {
-   unsigned int i, j;
-
-   for (i = 0; i < len; i++)
+   for (int i = 0; i < len; i++)
       array[i] = 0.0;
-   j = nargs;
+   int j = nargs;
    while (j--) {
       if (!args[j].isType(DoubleType)) {
          die("maketable", "Harmonic amplitudes must be numbers.");
          return -1;
       }
       if ((double) args[j] != 0.0) {
-         for (i = 0; i < len; i++) {
+         for (int i = 0; i < len; i++) {
             double val = TWOPI * (double) i / (len / (j + 1));
             array[i] += (sin(val) * (double) args[j]);
          }
@@ -383,21 +433,17 @@ _wave_table(const Arg args[], const int nargs, double *array,
 */
 static int
 _cheby_table(const Arg args[], const int nargs, double *array,
-   const unsigned int len)
+   const int len)
 {
-   unsigned int i;
-   int j;
-   double Tn, Tn1, Tn2, x, d;
-
-   d = (double) ((len / 2) - 0.5);
-   for (i = 0; i < len; i++) {
-      x = (i / d - 1.0) / (double) args[0];
+   double d = (double) ((len / 2) - 0.5);
+   for (int i = 0; i < len; i++) {
+      double x = (i / d - 1.0) / (double) args[0];
       array[i] = 0.0;
-      Tn1 = 1.0;
-      Tn = x;
-      for (j = 1; j < nargs; j++) {
+      double Tn1 = 1.0;
+      double Tn = x;
+      for (int j = 1; j < nargs; j++) {
          array[i] += (double) args[j] * Tn;
-         Tn2 = Tn1;
+         double Tn2 = Tn1;
          Tn1 = Tn;
          Tn = (2.0 * x * Tn1) - Tn2;
       }
@@ -412,9 +458,9 @@ _cheby_table(const Arg args[], const int nargs, double *array,
 */
 static int
 _window_table(const Arg args[], const int nargs, double *array,
-   const unsigned int len)
+   const int len)
 {
-   unsigned int i, window_type = 0;
+   int window_type = 0;
 
    if (nargs != 1) {
       die("maketable", "Missing window type.");
@@ -426,7 +472,8 @@ _window_table(const Arg args[], const int nargs, double *array,
       else if (args[0] == "hamming")
          window_type = 2;
       else {
-         die("maketable", "Unsupported window type '%s'.", (const char *) args[0]);
+         die("maketable", "Unsupported window type \"%s\".",
+                                                      (const char *) args[0]);
          return -1;
       }
    }
@@ -440,11 +487,11 @@ _window_table(const Arg args[], const int nargs, double *array,
 
    switch (window_type) {
       case 1:     /* hanning window */
-         for (i = 0; i < len; i++)
+         for (int i = 0; i < len; i++)
             array[i] = -cos(2.0 * M_PI * (double) i / (double) len) * 0.5 + 0.5;
          break;
       case 2:     /* hamming window */
-         for (i = 0; i < len; i++) {
+         for (int i = 0; i < len; i++) {
             double val = cos(2.0 * M_PI * (double) i / (double) len);
             array[i] = 0.54 - 0.46 * val;
          }
@@ -476,7 +523,7 @@ _string_to_tablekind(const char *str)
 
 static int
 _dispatch_table(const Arg args[], const int nargs, const int startarg,
-   double *array, unsigned int *len)
+   double *array, int *len)
 {
    int status;
    TableKind tablekind;
@@ -510,13 +557,14 @@ _dispatch_table(const Arg args[], const int nargs, const int startarg,
          status = _curve_table(&args[startarg], nargs - startarg, array, *len);
          break;
       case ExpbrkTable:
-         goto unimplemented;
+         status = _expbrk_table(&args[startarg], nargs - startarg, array, *len);
          break;
       case LineTable:
          status = _line_table(&args[startarg], nargs - startarg, array, *len);
          break;
       case LinebrkTable:
-         goto unimplemented;
+         status = _linebrk_table(&args[startarg], nargs - startarg, array,
+                                                                        *len);
          break;
       case Wave3Table:
          status = _wave3_table(&args[startarg], nargs - startarg, array, *len);
@@ -567,7 +615,6 @@ maketable(const Arg args[], const int nargs)
 {
    int status, lenindex;
    bool normalize = true;
-   unsigned int len;
    double *data;
    Handle handle;
 
@@ -593,7 +640,11 @@ maketable(const Arg args[], const int nargs)
       _maketable_usage();
       return NULL;
    }
-   len = (unsigned int) args[lenindex];
+   int len = args[lenindex];
+   if (len < 2) {
+      die("maketable", "Table size must be at least 2.");
+      return NULL;
+   }
    if (len > MAX_ARRAY_LEN) {
       warn("maketable", "Requesting larger than maximum table length.  "
                                           "Setting to %d.", MAX_ARRAY_LEN);
