@@ -1,3 +1,8 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+#include <globals.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -17,14 +22,7 @@
   #include "../H/sfheader.h"
 #endif
 
-extern int print_is_on;
-extern float SR;
-extern int NCHANS;
-
-/* This stuff not yet in LINUX */
-
 #ifdef SGI
-ALport in_port;
 int audioNCHANS; /* this is for the reads on the audio device */
 #endif
 
@@ -36,7 +34,6 @@ int input_on;
 double inSR;
 int inNCHANS;
 char *rtsfname;
-extern int audio_on;
 
 /* this routine is used in the Minc score to open up a file for
 * subsequent reads by RT Instruments.  "rtsetinput" is used in

@@ -1,3 +1,8 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+#include <globals.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -10,9 +15,6 @@
   #include "../H/sfheader.h"
   #include "../H/byte_routines.h"
 #endif
-
-int rtfileit = 0;        /* signal writing to soundfile */
-int rtoutfile;
 
 static int clobber = 0;         /* Default clobber mode (see comment below) */
 
@@ -81,8 +83,6 @@ set_rtoutput_clobber(int state)
 */
 #define DEFAULT_HEADER_TYPE    AIFF_sound_file
 #define DEFAULT_DATA_FORMAT    snd_16_linear
-
-extern int print_is_on;
 
 int output_header_type = -1;
 int output_data_format = -1;
@@ -323,8 +323,6 @@ rtoutput(float p[], int n_args, double pp[])
 
 #else  /* !USE_SNDLIB */
 
-int rtoutswap;
-extern int swap;
 
 double rtoutput(float *p, int n_args, double *pp)
 {
