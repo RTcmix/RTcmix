@@ -103,8 +103,9 @@ standalone::
 
 install::
 	@echo "beginning install..."
-	@cd head; $(MAKE) $(MFLAGS) install;
-	@cd cmd; $(MAKE) $(MFLAGS) install;
+	@cd src; $(MAKE) $(MFLAGS) install;
+	@if test ! -d $(LIBDIR); then mkdir $(LIBDIR); fi;
+	@cd genlib; $(MAKE) $(MFLAGS) install;
 	@cd utils; $(MAKE) $(MFLAGS) install;
 	@cd docs/pod; $(MAKE) $(MFLAGS) install
 	@if test ! -d $(LIBDESTDIR); then mkdir $(LIBDESTDIR); fi;
