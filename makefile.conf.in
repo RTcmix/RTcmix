@@ -10,7 +10,7 @@ CMIXDIR = $(TOPDIR)/RTcmix-3.0.0
 LIBDESTDIR = $(CMIXDIR)/shlib
 
 # add new instruments to this list (e.g., insts.std, insts.jg)
-INST_DIRS = insts.base #insts.std insts.jg
+INST_DIRS = insts.base #insts.std insts.jg insts.mch
 
 # add new packages to this list (e.g., interfaces.std)
 PACKAGE_DIRS =
@@ -20,6 +20,7 @@ ARCH = LINUX
 #ARCH = SGI
 
 # Sound driver API for Linux (and other than SGI)
+# NOTE: no support for ALSA yet, sorry
 SOUND_DRIVER = -DOSS
 #SOUND_DRIVER = -DALSA
 
@@ -36,8 +37,8 @@ SOUND_DRIVER += -DSHARED_AUDIO_DEV
 #SOUND_DRIVER += -DUSE_CARD_CHANS
 
 # optimization, debugging and warning flags
-OPT = -g -Wall -Wno-unused -O3
-# for Irix, try...
+OPT = -g -Wall -Wno-unused -O2
+# for Irix, try just...
 #OPT = -O2
 
 # Uncomment to use old function table assignments for certain instruments.
@@ -79,25 +80,14 @@ ifeq ($(ARCH),SGI)
   # "for" loops where arg to "for" is empty
 endif
 
-# Use sndlib for file I/O; the only option in this version.
-USE_SNDLIB = TRUE
-
 INCLUDES = -I$(CMIXDIR)/H
 
 CFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
 CXXFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
 
-ifeq ($(USE_SNDLIB),TRUE)
-  CFLAGS += -DUSE_SNDLIB
-  CXXFLAGS += -DUSE_SNDLIB
-  SNDLIB = ../sndlib/sndlib.a
-else
-  SNDLIB =
-endif
-
-FLAGS = $(CFLAGS)
-
 # Library flags
+
+SNDLIB = ../sndlib/sndlib.a
 
 ifeq ($(ARCH),LINUX)
   SYSLIBS = -lpthread -lm -ldl
