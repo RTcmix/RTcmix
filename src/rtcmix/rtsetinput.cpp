@@ -44,15 +44,14 @@ Instrument::rtsetinput(float start_time, Instrument *inst)
       int src_chans;
       int index = get_last_input_index();
 
-#ifdef LINUX
-      if (index < 0 || inputFileTable[index].fd < 1)
-         die(inst_name, "No input source open for this instrument!");
-#endif
 #ifdef SGI
       if (index < 0)
          die(inst_name, "No input source open for this instrument!");
       if ((inputFileTable[index].fd < 1)
                          && (inputFileTable[index].fd != AUDIO_DEVICE_FD))
+         die(inst_name, "No input source open for this instrument!");
+#else
+      if (index < 0 || inputFileTable[index].fd < 1)
          die(inst_name, "No input source open for this instrument!");
 #endif
 
