@@ -112,6 +112,7 @@ _makewavetable(const char *wavetype)
 extern "C" {
 	Handle makeLFO(const Arg args[], const int nargs);
 	Handle makerandom(const Arg args[], const int nargs);
+	Handle makesmoother(const Arg args[], const int nargs);
 }
 
 typedef enum {
@@ -231,11 +232,11 @@ static Handle
 _makerandom_usage()
 {
 	die("makerandom",
-		"\n   usage: rand = makerandom(type, [interp,] freq, min, max[, seed])"
+		"\n   usage: rand = makerandom(type, freq, min, max[, seed])"
 		"\n          where <type> is \"linear\", \"low\", \"high\", "
 						"\"triangle\", \"gaussian\", \"cauchy\""
 		"\nOR"
-		"\n   usage: rand = makerandom(\"prob\", [interp,] freq, min, max, mid, "
+		"\n   usage: rand = makerandom(\"prob\", freq, min, max, mid, "
 						"tight[, seed])"
 		"\n");
 	return NULL;
@@ -272,21 +273,7 @@ makerandom(const Arg args[], const int nargs)
 	else
 		return _makerandom_usage();
 
-	InterpType interp = kInterp1stOrder;
 	int index = 1;
-	if (args[index].isType(StringType)) {
-		if (args[index] == "nointerp")
-			interp = kTruncate;
-		else if (args[index] == "interp")
-			interp = kInterp1stOrder;
-		else {
-			die("makerandom", "Invalid string option \"%s\".",
-													(const char *) args[index]);
-			return NULL;
-		}
-		index++;
-	}
-
 	PField *freqpf = (PField *) args[index];
 	if (freqpf == NULL) {
 		if (args[index].isType(DoubleType))
@@ -349,7 +336,7 @@ makerandom(const Arg args[], const int nargs)
 	double tight = tightpf ? tightpf->doubleValue(0) : 0.0;
 
 	int seed = 0;
-	if (nargs - index > 1)		// explicit seed
+	if (nargs - index > 0)		// explicit seed
 		seed = (int) args[index];
 	if (seed == 0) {
 		struct timeval tv;
@@ -394,12 +381,40 @@ makerandom(const Arg args[], const int nargs)
 			break;
 	}
 
-	PField *rand;
-	if (interp == kInterp1stOrder)
-		rand = new RandomPField(resetval, gen, freqpf, minpf, maxpf, midpf, tightpf);
-	else // (interp == kTruncate)
-		rand = new RandomPField(resetval, gen, freqpf, minpf, maxpf, midpf, tightpf, RandomPField::Truncate);
+	PField *rand = new RandomPField(resetval, gen, freqpf, minpf, maxpf, midpf, tightpf);
 
 	return _createPFieldHandle(rand);
+}
+
+// ------------------------------------------------------------ makesmoother ---
+
+static Handle
+_makesmoother_usage()
+{
+	die("makesmoother",
+		"\n   usage: smoother = makesmoother(pfield, lag)\n");
+	return NULL;
+}
+
+Handle
+makesmoother(const Arg args[], const int nargs)
+{
+	if (nargs != 2)
+		return _makesmoother_usage();
+
+	PField *innerpf = (PField *) args[0];
+	if (innerpf == NULL)
+		return _makesmoother_usage();
+
+	PField *lagpf = (PField *) args[1];
+	if (lagpf == NULL) {
+		if (args[1].isType(DoubleType))
+			lagpf = new ConstPField((double) args[1]);
+		else
+			return _makesmoother_usage();
+	}
+	PField *smoother = new SmoothPField(innerpf, resetval, lagpf);
+
+	return _createPFieldHandle(smoother);
 }
 
