@@ -60,7 +60,7 @@
        the higher the interval, the lower the cutoff frequency.
 
 
-   John Gibson (johgibso@indiana.edu), 6/3/02.
+   John Gibson <johgibso at indiana dot edu>, 6/3/02.
 */
 #include <stdio.h>
 #include <stdlib.h>

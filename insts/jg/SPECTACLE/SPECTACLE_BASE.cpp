@@ -1,5 +1,5 @@
 /* Base class for SPECTACLE* instruments
-   John Gibson (johgibso@indiana.edu), 11/28/02.
+   John Gibson <johgibso at indiana dot edu>, 11/28/02.
 */
 
 //#define DUMP

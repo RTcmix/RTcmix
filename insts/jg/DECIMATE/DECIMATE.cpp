@@ -14,7 +14,7 @@
    Or you can just call setline. If no setline or function table 1, uses
    flat amplitude curve.  This is applied AFTER the decimation and filter.
 
-   JGG <johgibso@indiana.edu>, 3 Jan 2002
+   JGG <johgibso at indiana dot edu>, 3 Jan 2002
 */
 #include <stdio.h>
 #include <stdlib.h>

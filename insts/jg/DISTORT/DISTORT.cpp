@@ -15,7 +15,7 @@
 
    Function table 1 is the amplitude envelope.
 
-   John Gibson (johgibso@indiana.edu), 8/12/03.
+   John Gibson (johgibso at indiana dot edu), 8/12/03.
    Distortion algorithms taken from STRUM, by Charlie Sullivan.
 */
 #include <stdio.h>
@@ -107,10 +107,48 @@ float DISTORT :: distort(float sig, float g)
 // FIXME: this doesn't work yet...
       sig *= g;
       /* Tube-ish distortion: dist = (x +.5)^2 -.25  */
-      /* Charlies says: 'this does not work with a feedback guitar' */
+      /* Charlie says: 'this does not work with a feedback guitar' */
       float out = (sig + 0.5) * (sig + 0.5) - 0.25;
       return out / (g * 2.0);
    }
+
+/* other stuff...*/
+/*
+1. Variable-hardness clipping function
+
+References: Posted by Laurent de Soras
+[See http://musicdsp.org/files/laurent.gif for an animated graph.]
+
+Notes:
+k >= 1 is the "clipping hardness". 1 gives a smooth clipping, and a high value
+gives hardclipping.  Don't set k too high, because the formula use the pow()
+function, which use exp() and would overflow easily. 100 seems to be a
+reasonable value for "hardclipping"
+
+Code:
+f(x) = sign(x) * pow(atan(pow(abs(x), k)), (1 / k));
+[surely 'sign' should be 'sin' -JGG]
+
+
+2. WaveShaper
+
+Type: waveshaper
+References: Posted by Bram de Jong
+
+Notes:
+where x (in [-1..1] will be distorted and a is a distortion parameter that goes
+from 1 to infinity.  The equation is valid for positive and negativ values.  If
+a is 1, it results in a slight distortion and with bigger a's the signal get's
+more funky.
+
+A good thing about the shaper is that feeding it with bigger-than-one values,
+doesn't create strange fx. The maximum this function will reach is 1.2 for a=1.
+
+Code:
+f(x,a) = x * (abs(x) + a) / (x^2 + (a - 1) * abs(x) + 1)
+*/
+
+
    return 0.0;
 }
 

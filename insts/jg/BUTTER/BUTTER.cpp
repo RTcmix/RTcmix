@@ -32,7 +32,7 @@
          the '-' sign acts as a flag to interpret the bw values as percentages
          (from 0 to 1) of the current cf.
 
-   John Gibson (johgibso@indiana.edu), 12/1/01.
+   John Gibson (johgibso at indiana dot edu), 12/1/01.
 */
 #include <stdio.h>
 #include <stdlib.h>

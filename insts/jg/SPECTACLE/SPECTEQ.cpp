@@ -37,7 +37,7 @@
             This leaves a gap between successive FFTs, creating ugly robotic
             effects -- beware of clipping.
 
-   John Gibson (johgibso@indiana.edu), 8/12/03.
+   John Gibson <johgibso at indiana dot edu>, 8/12/03.
 */
 
 //#define DUMP

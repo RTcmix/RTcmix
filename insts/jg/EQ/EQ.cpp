@@ -17,7 +17,7 @@
       3  Q (with values from 0.5 to 10.0, roughly)
       4  gain (dB) [shelf and peak/notch only]
 
-   John Gibson <johgibso@indiana.edu>, 7 Dec 2003
+   John Gibson <johgibso at indiana dot edu>, 7 Dec 2003
 
    Based on formulas by Robert Bristow-Johnson ("Audio-EQ-Cookbook") and code
    by Tom St Denis <tomstdenis.home.dhs.org> (see musicdsp.org)

@@ -20,7 +20,7 @@
    Function table 3 is the resonance curve.  Should range between 0 and 1.
    Easiest to use gen 18, and make sure values are in that range.
 
-   JGG <johgibso@indiana.edu>, 22 May 2002
+   John Gibson <johgibso at indiana dot edu>, 22 May 2002
 */
 #include <stdio.h>
 #include <stdlib.h>

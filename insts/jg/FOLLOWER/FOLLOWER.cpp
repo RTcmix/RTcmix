@@ -48,7 +48,7 @@
         the RMS power of the modulator to affect the carrier, and this
         is always lower than the peak amplitude of the modulator signal.
 
-   John Gibson (johgibso@indiana.edu), 1/5/03.
+   John Gibson (johgibso at indiana dot edu), 1/5/03.
 */
 
 //#define DEBUG

@@ -15,7 +15,7 @@
 
    Function table 1 is the amplitude envelope.
 
-   John Gibson (johgibso@indiana.edu), 8/12/03.
+   John Gibson (johgibso at indiana dot edu), 8/12/03.
    Distortion algorithms taken from STRUM, by Charlie Sullivan.
 */
 rtsetparams(44100, 2)

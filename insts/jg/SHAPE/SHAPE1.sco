@@ -33,7 +33,7 @@
         This will keep the bright and dark timbres more equal in amplitude.
         But anything's possible.
 
-   JGG <johgibso@indiana.edu>, 3 Jan 2002
+   John Gibson <johgibso at indiana dot edu>, 3 Jan 2002
 */
 rtsetparams(44100, 1)
 load("WAVETABLE")

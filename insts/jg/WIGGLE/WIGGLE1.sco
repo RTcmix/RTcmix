@@ -56,7 +56,7 @@
    you'll get audible random stairsteps (with no transitions between the
    steps).
 
-   John Gibson (johgibso@indiana.edu), 12/4/01.
+   John Gibson <johgibso at indiana dot edu>, 12/4/01.
 */
 rtsetparams(44100, 2)
 load("WIGGLE")

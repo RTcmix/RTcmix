@@ -82,7 +82,7 @@
        Transposition (still specified as oct.pc) works here also, and it
        preserves harmonic structure.
 
-   John Gibson (johgibso@indiana.edu), 8/7/03.
+   John Gibson <johgibso at indiana dot edu>, 8/7/03.
 */
 #include "VOCODESYNTH.h"
 

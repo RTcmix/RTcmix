@@ -67,7 +67,7 @@
         to change p3 (carrier amp) to adjust for loss of power caused
         by connecting several filters in series.  Guard your ears!
 
-   John Gibson (johgibso@indiana.edu), 8/7/03.
+   John Gibson <johgibso at indiana dot edu>, 8/7/03.
 */
 
 //#define DEBUG

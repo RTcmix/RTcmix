@@ -54,7 +54,7 @@
         increasing the smoothness (p6).  This applies a low-pass filter
         to the power gauge signal, smoothing any abrupt changes.
 
-   John Gibson (johgibso@indiana.edu), 1/5/03.
+   John Gibson <johgibso at indiana dot edu>, 1/5/03.
 */
 
 //#define DEBUG

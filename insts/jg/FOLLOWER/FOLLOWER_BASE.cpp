@@ -1,5 +1,5 @@
 /* Base class for envelope follower instruments
-   John Gibson (johgibso@indiana.edu), 1/5/03.
+   John Gibson <johgibso at indiana dot edu>, 1/5/03.
 */
 
 //#define DEBUG
