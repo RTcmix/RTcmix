@@ -78,19 +78,15 @@ MOVE::~MOVE()
 
 int MOVE::localInit(double *p, int n_args)
 {
-    if (n_args < 6) {
-        die(name(), "Wrong number of args.");
-		return(DONT_SCHEDULE);
-	}
+    if (n_args < 6)
+        return die(name(), "Wrong number of args.");
     m_dist = p[4];
     m_inchan = n_args > 5 ? (int)p[5] : AVERAGE_CHANS;
     
     // copy global params into instrument
     
-    if (get_path_params(&rholoc[0], &thetaloc[0], &cartflag, &mindiff) < 0) {
-		  die(name(), "get_path_params failed.");
-        return(DONT_SCHEDULE);
-	}
+    if (get_path_params(&rholoc[0], &thetaloc[0], &cartflag, &mindiff) < 0)
+		  return die(name(), "get_path_params failed.");
 
 	// treat mindiff as update rate in seconds
 	if (mindiff > 0.0) {

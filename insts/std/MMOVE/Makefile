@@ -46,7 +46,7 @@ MMOVE: $(MOBJS) $(CMIXOBJS)
 
 $(MOBJS): $(COMMON_HDRS) MBASE.h MMOVE.h
 
-MBASE.o : $(COMMON_HDRS) MBASE.h
+MBASE.o : $(COMMON_HDRS) MBASE.cpp MBASE.h
 
 install: dso_install
 

@@ -92,16 +92,6 @@ int MBASE::init(double p[], int n_args)
 	
    	inamp = p[3];
 
-    if (m_inchan >= inputchans) {
-       return die(name(), "You asked for channel %d of a %d-channel input file.",
-                  m_inchan, inputchans);
-	 }
-    if (inputchans == 1)
-       m_inchan = 0;
-
-	if (outputchans != 2)
-		return die(name(), "Output must be stereo.");
-
     /* Get results of Minc setup calls (space, mikes_on, mikes_off, matrix) */
     if (get_setup_params(Dimensions, &m_attenParams,
 						 &rvb_time, &abs_factor, &UseMikes, &MikeAngle,
@@ -112,6 +102,16 @@ int MBASE::init(double p[], int n_args)
 	// call inst-specific init code
     if (localInit(p, n_args) == DONT_SCHEDULE)
 		  return die(name(), "localInit failed.");
+
+    if (m_inchan >= inputchans)
+       return die(name(), "You asked for channel %d of a %d-channel input file.",
+                  m_inchan, inputchans);
+
+    if (inputchans == 1)
+       m_inchan = 0;
+
+	if (outputchans != 2)
+		return die(name(), "Output must be stereo.");
 
     /* (perform some initialization that used to be in space.c) */
     int meanLength = MFP_samps(Dimensions);   /* mean delay length for reverb */
