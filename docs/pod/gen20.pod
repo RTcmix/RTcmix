@@ -1,0 +1,100 @@
+=head1 NAME
+
+gen20 - fill a function table with random numbers
+
+=head1 SYNOPSIS
+
+B<makegen>(I<table_number>, 20, I<table_size>, I<distribution_type>
+[, I<seed> [, I<min>, I<max> ]])
+
+=head1 DESCRIPTION
+
+Call L<makegen|makegen> from a script with a I<function_type> of 20 to
+fill a function table with random numbers using any of several different
+distribution types.  You can also specify a seed and a range within 
+which the numbers fall.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID for the function table.
+
+Unlike other gens, gen 20 never rescales the table to fit between -1 and 1.
+
+=item I<table_size>
+
+The size of the function table: how many values it stores.
+
+=item I<distribution_type>
+
+A code indicating the type of random distribution to use:
+
+=over 8
+
+=for html <p>
+
+=item 0
+
+even distribution
+
+=item 1
+
+low-weighted linear distribution
+
+=item 2
+
+high-weighted linear distribution
+
+=item 3
+
+triangular linear distribution
+
+=item 4
+
+gaussian distribution
+
+=item 5
+
+cauchy distribution
+
+=back
+
+=item I<seed>
+
+The seed for the random number generator.  If I<seed> is zero, then
+the seed comes from the microsecond clock, otherwise I<seed> is used
+as the seed.  If there is no I<seed> argument, the seed used is 1.
+
+=item I<min>
+
+=item I<max>
+
+Define the range (inclusive) for the random numbers.  Both arguments
+must be present, otherwise the range is from 0 to 1.
+
+=back
+
+=head1 EXAMPLES
+
+   makegen(1, 20, 30, 0, 1, -2, 5)
+
+uses an even distribution and a seed of 1 to generate 30 random numbers
+between -2 and 5.
+
+=begin html
+   <p align="center"><img src="images/gen20.png"><p><br>
+
+=end html
+
+=head1 AUTHOR
+
+R. Luke Dubois, with additions by John Gibson.  The random distribution
+equations were adapted from Dodge and Jerse.
+
+=head1 SEE ALSO
+
+L<makegen|makegen>
+
