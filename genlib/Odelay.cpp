@@ -5,9 +5,11 @@
 
 #include <Odelay.h>
 #include <stdlib.h>
+#include <assert.h>
 
 Odelay::Odelay(long defaultLength) : _dline(NULL), _len(0)
 {
+	assert(defaultLength > 0);
 	resize(defaultLength);
 	_outpoint = 0;
 	_inpoint = _len - 1;
@@ -37,8 +39,10 @@ float Odelay::getsamp(double lagsamps)
 	if (lagsamps >= (double) _len)
 		resize((long)(lagsamps + 0.5));
 	_outpoint = long(_inpoint - lagsamps - 0.5);
-	while (_outpoint < 0)
-		_outpoint += _len;
+	if (_len > 0) {
+		while (_outpoint < 0)
+			_outpoint += _len;
+	}
 	return _lastout = _dline[_outpoint++];
 }
 
@@ -49,8 +53,10 @@ void Odelay::setdelay(double lagsamps)
 	if (lagsamps >= (double) _len)
 		resize((long)(lagsamps + 0.5));
 	_outpoint = long(_inpoint - lagsamps - 0.5);
-	while (_outpoint < 0)
-		_outpoint += _len;
+	if (_len > 0) {
+		while (_outpoint < 0)
+			_outpoint += _len;
+	}
 }
 
 float Odelay::next(float input)
@@ -63,8 +69,6 @@ float Odelay::next(float input)
 		_outpoint = 0;
 	return _lastout;
 }
-
-#include <stdio.h>
 
 static float *newFloats(float *oldptr, long oldlen, long *newlen)
 {
@@ -92,8 +96,11 @@ int Odelay::resize(long thisLength)
 {
 	// Make a guess at how big the new array should be.
 	long newlen = (thisLength < _len * 2) ? _len * 2 : _len + thisLength;
-	if (_len > 0)
-		printf("Odelay resizing from %ld to %ld\n", _len, newlen);
 	_dline = ::newFloats(_dline, _len, &newlen);
 	return _len = newlen;
+}
+
+float Odelay::delay() const
+{
+	return (float) (_len > 0) ? abs((_outpoint - _inpoint) % _len) : 0;
 }

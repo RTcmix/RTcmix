@@ -35,6 +35,9 @@ public:
 	virtual void setdelay(double lagsamps);
 	virtual float next(float input);
 
+	// The current delay in samples.
+	virtual float delay() const;
+
 private:
 	double _frac;
 };

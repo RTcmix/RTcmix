@@ -3,103 +3,70 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #include <Ocomb.h>
+#include "Odelay.h"
+
 #include <math.h>
 #include <assert.h>
-#include <stdlib.h>
-#include <stdio.h>
 
-static float *newFloats(float *oldptr, int oldlen, int *newlen)
+Ocomb::Ocomb(float SR, float loopTime, float reverbTime)
+	: _delay(0), _sr(SR), _lastout(0.0)
 {
-	float *ptr = NULL;
-	if (oldptr == NULL) {
-		ptr = (float *) malloc(*newlen * sizeof(float));
-	}
-	else {
-		float *newptr = (float *) realloc(oldptr, *newlen * sizeof(float));
-		if (newptr) {
-			ptr = newptr;
-			// Zero out new portion.
-			for (int n = oldlen; n < *newlen; ++n)
-				ptr[n] = 0.0f;
-		}
-		else {
-			*newlen = oldlen;	// notify caller that realloc failed
-			ptr = oldptr;
-		}
-	}
-	return ptr;
+	init(loopTime,
+		 loopTime,
+		 reverbTime,
+		 new Odelay(1 + (long) (loopTime * _sr + 0.5)));
 }
 
-Ocomb::Ocomb(float SR, float loopTime, float reverbTime) : _sr(SR)
+Ocomb::Ocomb(float SR, float loopTime, float defaultLoopTime,
+			 float reverbTime, Odelay *theDelay)
+	: _delay(0), _sr(SR), _lastout(0.0)
 {
-	init(loopTime, loopTime, reverbTime);
+	init(loopTime,
+		 defaultLoopTime,
+		 reverbTime, 
+		 theDelay ? theDelay : new Odelay(1 + (long) (defaultLoopTime * _sr + 0.5)));
 }
 
-Ocomb::Ocomb(float SR, float loopTime, float maxLoopTime, float reverbTime)
-	: _sr(SR)
+void Ocomb::init(float loopTime, float defaultLoopTime, float reverbTime, Odelay *delay)
 {
-	init(loopTime, maxLoopTime, reverbTime);
-}
-
-void Ocomb::init(float loopTime, float maxLoopTime, float reverbTime)
-{
-	assert(maxLoopTime > 0.0);
-	assert(maxLoopTime >= loopTime);
-
-	_len = (int) (maxLoopTime * _sr + 0.5);
-	_dline = newFloats(NULL, 0, &_len);
-	clear();
-	_delsamps = (int) (loopTime * _sr + 0.5);
+	assert(defaultLoopTime > 0.0);
+	assert(defaultLoopTime >= loopTime);
+	_delay = delay;
+	_delsamps = loopTime * _sr;
+	_delay->setdelay(_delsamps);
 	setReverbTime(reverbTime);
-	_pointer = 0;
 }
 
 Ocomb::~Ocomb()
 {
-	free(_dline);
+	delete _delay;
 }
 
 void Ocomb::clear()
 {
-	for (int i = 0; i < _len; i++)
-		_dline[i] = 0.0;
-}
+	_delay->clear();
+	_lastout = 0.0;
+};
 
 void Ocomb::setReverbTime(float reverbTime)
 {
 	assert(reverbTime > 0.0);
-	_gain = pow(0.001, ((float) _delsamps / _sr) / reverbTime);
+	_gain = pow(0.001, (_delsamps / _sr) / reverbTime);
 }
 
-float Ocomb::next(float input)
+float Ocomb::next(float input, float delaySamps)
 {
-	if (_pointer == _len)
-		_pointer = 0;
-	float out = _dline[_pointer];
-	_dline[_pointer++] = (out * _gain) + input;
-	return out;
-}
-
-float Ocomb::next(float input, int delaySamps)
-{
-	if (delaySamps > _len) {
-		// Make a guess at how big the new array should be.
-		int newlen = (delaySamps < _len * 2) ? _len * 2 : _len + delaySamps;
-		printf("Ocomb resizing from %d to %d\n", _len, newlen);
-		_dline = newFloats(_dline, _len, &newlen);
-		if (newlen > _len) {
-			_len = newlen;
-		}
-		else {
-			printf("Ocomb resize failed!  Limiting delay.\n");
-			delaySamps = _len - 1;
-		}
+	if (delaySamps != _delsamps) {
+		_delsamps = delaySamps;
+		_delay->setdelay(_delsamps);
 	}
-	_delsamps = delaySamps;
-	if (_pointer >= _delsamps)
-		_pointer = 0;
-	float out = _dline[_pointer];
-	_dline[_pointer++] = (out * _gain) + input;
-	return out;
+	float tmp = input + (_gain * _delay->last());
+	_lastout = _delay->next(tmp);
+	return _lastout;
 }
 
+float Ocomb::frequency() const
+{
+	float delay = _delay->delay();
+	return (delay > 0.0f) ? _sr / delay : 0.0f;
+}

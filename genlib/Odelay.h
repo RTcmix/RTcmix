@@ -41,7 +41,7 @@ public:
 
 	// Get sample from delay line that is <lagsamps> samples behind the most
 	// recent sample to enter the delay line.  If <lagsamps> is longer than
-	// length of delay line, it wraps around, so check <lagsamps> first.
+	// length of delay line, the delay is resized to fit.
 
 	virtual float getsamp(double lagsamps);
 
@@ -51,6 +51,8 @@ public:
 	// Set the delay in samples by calling setdelay(), then call next() to store
 	// a new value into delay line and retreive the oldest value.  Does not let
 	// you have more than one delay tap.  Based on STK DLineL implementation.
+	// If lagsamps is greater than the length of the delay line, the delay is
+	// resized to fit.
 
 	virtual void setdelay(double lagsamps);
 	virtual float next(float input);
@@ -58,6 +60,9 @@ public:
 	float last() const { return _lastout; }
 
 	long  length() const { return _len; }
+
+	// The current delay in samples
+	virtual float delay() const;
 	
 protected:
 	int	  resize(long newLen);

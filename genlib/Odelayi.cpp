@@ -39,3 +39,7 @@ float Odelayi::next(float input)
 	return _lastout = (_dline[_outpoint] - out) * _frac;
 }
 
+float Odelayi::delay() const
+{
+	return Odelay::delay() + _frac;
+}
