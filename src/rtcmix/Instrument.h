@@ -62,9 +62,8 @@ private:
 };
 
 
-// some prototypes that probably don't belong here
-void heapify(Instrument *);
-void heapSched(Instrument *);
+// prototypes for functions called by instruments
+// probably should move these somewhere else
 int rtsetoutput(float, float, Instrument *);
 int rtsetinput(float, Instrument *);
 int rtgetin(float *, Instrument *, int);
