@@ -61,7 +61,7 @@ int WAVETABLE::run()
 {
 	int i;
 	float out[2];
-	float aamp,tfreq,tamp;
+	float aamp,tfreq,tamp,tdur,tspread;
 	int branch;
 	
 	Instrument::run();
@@ -73,18 +73,30 @@ int WAVETABLE::run()
 				aamp = tablei(cursamp, amptable, tabs) * amp;
 			else
 				aamp = amp;
+#ifdef USE_RTUPDATE
 			if (tags_on) {
-				tfreq = rtupdate(this->mytag, 3);
-				if (tfreq != NOPUPDATE)
-					si = tfreq * (float)len/SR;
-				tamp = rtupdate(this->mytag, 4);
-				if (tamp != NOPUPDATE)
-					amp = tamp;
+			  tfreq = rtupdate(this->mytag, 3);
+			  if (tfreq != NOPUPDATE) {
+				if (tfreq < 15.0) {
+				  tfreq = cpspch(tfreq);
 				}
-			branch = skip;
+				si = tfreq * (float)len/SR;
+			  }
+			  tamp = rtupdate(this->mytag, 2);
+			  if (tamp != NOPUPDATE)
+				amp = tamp;
+			  tdur = rtupdate(this->mytag, 1);
+			  if (tdur != NOPUPDATE)
+				dur = tdur;
+			  tspread = rtupdate(this->mytag, 4);
+			  if (tspread != NOPUPDATE)
+				spread = tspread;
 			}
+#endif
+			branch = skip;
+		}
 		out[0] = oscili(aamp, si, wavetable, len, &phase);
-
+		
 		if (outputchans == 2) { /* split stereo files between the channels */
 		out[1] = (1.0 - spread) * out[0];
 		out[0] *= spread;
