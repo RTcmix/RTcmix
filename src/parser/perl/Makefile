@@ -1,8 +1,8 @@
 # for CMIXDIR...
-include ../makefile.conf
+include ../../../makefile.conf
 
 EXT_NAME = RT
-XS_DIR = $(CMIXDIR)/Perl/$(EXT_NAME)
+XS_DIR = $(CMIXDIR)/src/parser/perl/$(EXT_NAME)
 XS_FILE = $(EXT_NAME).xs
 PM_FILE = $(EXT_NAME).pm
 ifeq ($(ARCH),MACOSX)

@@ -1,4 +1,4 @@
-include ../makefile.conf
+include ../../makefile.conf
 
 OBJS = headers.o io.o extra.o
 
