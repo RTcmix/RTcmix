@@ -34,7 +34,7 @@ sfprint: sfprint.o  $(SYSOBJS)
 sffixsize: sffixsize.o  $(SYSOBJS)
 	$(CC) -o sffixsize sffixsize.o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
 
-install:
+install: all
 	@echo "making install..."	
 	@for PGM in $(HEAD); \
 	do \
