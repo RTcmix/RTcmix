@@ -543,16 +543,12 @@ bool inTraverse(AudioDevice *device, void *arg)
 
 bool doneTraverse(AudioDevice *device, void *arg)
 {
-//	if (print_is_on)
-		cout << "closing ...\n";
-	// FIXXX ME:  Cannot send buffers here!
-//		for (int i = 0; i < ZERO_FRAMES_AFTER / RTBUFSAMPS; i++)
-//			rtsendzeros(device, 0);  // send a buffer of zeros to audio output device
+	cout << "closing ...\n";
 #ifdef ALLBUG
 	cout << "doneTraverse() closing ports and devices *****\n";
 #endif
 	rtreportstats(device);
-	close_audio_ports();
+	destroy_audio_devices();
 	rtcloseout();
 	cout << "\n";
 	audioDone = true;

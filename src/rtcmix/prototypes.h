@@ -81,9 +81,11 @@ int get_last_input_index(void);
 int open_sound_file(char *sfname, int *header_type, int *data_format,
 					int *data_location, double *srate, int *nchans, long *nsamps);
 
+/* audio_devices.cpp */
+void destroy_audio_devices();
+
 /* rtsetparams.C */
 double rtsetparams(float *p, int n_args, double *pp);
-void close_audio_ports(void);
 
 /* rtwritesamps.C */
 int rtcloseout(void);

@@ -379,7 +379,7 @@ void RTcmix::panic()
 void RTcmix::close()
 {
 	run_status = RT_SHUTDOWN;
-	close_audio_ports();
+	destroy_audio_devices();
 	rtcloseout();
 }
 

@@ -111,16 +111,3 @@ rtsetparams(float p[], int n_args, double pp[])
    return 0;
 }
 
-
-/* ---------------------------------------------------- close_audio_ports --- */
-/* NOTE: This is here, rather than in audio_port.c, because it needs globals
-   that we'd prefer to hide from utility programs (like cmixplay.c) that
-   use audio_port.c.    -JGG
-*/
-void
-close_audio_ports()
-{
-	// This closes and destroys the AudioDevices for input and output.
-	destroy_audio_devices();
-}
-

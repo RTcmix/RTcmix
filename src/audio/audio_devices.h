@@ -18,8 +18,6 @@ int create_audio_file_device(const char *outfilename,
 
 int audio_input_is_initialized();
 
-void destroy_audio_devices();
-
 int destroy_audio_file_device();
 
 #ifdef __cplusplus

@@ -159,15 +159,10 @@ signal_handler(int signo)
 	// Dont do handler work more than once
 	if (!signal_handler_called) {
 		signal_handler_called = 1;
-#ifdef DBUG
-	   printf("Signal handler called (signo %d)\n", signo);
-#endif
+	   fprintf(stderr, "\n<<< Signal handler called (signo %d) >>>\n", signo);
 
 	   if (rtsetparams_called) {
-#ifndef MACOSX
-		  rtreportstats(globalOutputFileDevice);
-#endif
-		  close_audio_ports();
+		  destroy_audio_devices();
 		  rtcloseout();
 	   }
 	   else

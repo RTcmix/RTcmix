@@ -17,6 +17,7 @@
 #include "AudioDevice.h"
 #include "AudioFileDevice.h"
 #include "AudioIODevice.h"
+#include "AudioOutputGroupDevice.h"
 #include "audio_devices.h"
 
 #ifdef NETAUDIO
@@ -138,26 +139,19 @@ int create_audio_file_device(const char *outfilename,
 	globalOutputFileDevice = fileDevice;
 
 	if (!play_audio && !record_audio) {				// To file only.
-		// If we are only writing to disk, we only have a single output device.  
-		// When all this is finished, we should be able to "play" to file, with 
-		// no distinction in the RTcmix code between to-disk and to-audio-hw.
+		// If we are only writing to disk, we only have a single output device. 
 		globalAudioDevice = fileDevice;
 	}
 	else {	// To file, plus record and/or playback.
 		if (play_audio && !record_audio) {	// Dual outputs to both HW and file.
-			printf("DEBUG: Independent devices for file and HW playback\n");
-			// For this one, we need to leave the two globals for now, until
-			// I write a dual-output AudioDevice.
-			// Passive start takes NULL callback and context.
-			if (fileDevice->start(NULL, NULL) == -1) {
-				rterror("rtoutput", "Can't start file device: %s", 
-				 		fileDevice->getLastError());
-				return -1;
-			}
+			printf("DEBUG: Dual device for file and HW playback\n");
+			globalAudioDevice = new AudioOutputGroupDevice(globalAudioDevice,
+														   fileDevice);
+			globalOutputFileDevice = NULL;
 		}
 		else if (record_audio && !play_audio) {	// Record from HW, write to file.
 			assert(globalAudioDevice != NULL);
-			printf("DEBUG: Creating dual device with HW record, file playback\n");
+			printf("DEBUG: Dual device for HW record, file playback\n");
 			globalAudioDevice = new AudioIODevice(globalAudioDevice, fileDevice, true);
 			globalOutputFileDevice = NULL;
 		}
@@ -187,16 +181,21 @@ int audio_input_is_initialized()
 	return globalAudioDevice != NULL;
 }
 
+static bool destroying = false;	// avoid reentrancy
+
 void
 destroy_audio_devices()
 {
-	globalAudioDevice->close();
+	if (!destroying) {
+		destroying = true;
+		globalAudioDevice->close();
 	
-	if (globalOutputFileDevice == globalAudioDevice) {
-		delete globalAudioDevice;
-		globalOutputFileDevice = NULL;	// Dont delete elsewhere.
+		if (globalOutputFileDevice == globalAudioDevice) {
+			delete globalAudioDevice;
+			globalOutputFileDevice = NULL;	// Dont delete elsewhere.
+		}
+		globalAudioDevice = NULL;
 	}
-	globalAudioDevice = NULL;
 }
 
 int
