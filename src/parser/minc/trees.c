@@ -953,20 +953,25 @@ exct_subscript_read(Tree tp)
             fltindex = (MincFloat) index;
          }
          elem = lst[index];
-         tp->type = elem.type;
+		 if (elem.type == MincHandleType)
+            ref_handle(elem.val.handle);
+		 	
 
          /* do linear interpolation for float items */
-         if (tp->type == MincFloatType && frac > 0.0 && index < len - 1) {
+         if (elem.type == MincFloatType && frac > 0.0 && index < len - 1) {
             MincListElem elem2 = lst[index + 1];
             if (elem2.type == MincFloatType)
                tp->v.number = elem.val.number
                         + (frac * (elem2.val.number - elem.val.number));
             else  /* can't interpolate btw. a number and another type */
                tp->v.number = elem.val.number;
+            tp->type = elem.type;
          }
-         else
+         else {
 //            memcpy(&tp->v, &elem.val, sizeof(MincValue));
             copy_listelem_tree(tp, &elem);
+         }
+		 clear_elem(&elem);
       }
       else
          minc_die("attempt to index a variable that's not a list");
@@ -985,7 +990,7 @@ exct_subscript_write(Tree tp)
    if (tp->u.child[1]->type == MincFloatType) {
       if (tp->u.child[0]->u.symbol->type == MincListType) {
          int len;
-         MincListElem *lst, elem;
+         MincListElem *lst;
          MincFloat fltindex = tp->u.child[1]->v.number;
          int index = (int) fltindex;
          if (fltindex - (MincFloat) index > 0.0)
@@ -1009,7 +1014,7 @@ exct_subscript_write(Tree tp)
                lst[i].val.number = 0.0;
             }
          }
-         lst[index].type = tp->u.child[2]->type;
+//         lst[index].type = tp->u.child[2]->type;
 //         memcpy(&lst[index].val, &tp->u.child[2]->v, sizeof(MincValue));
          copy_tree_listelem(&lst[index], tp->u.child[2]);
 		 assert(lst[index].type == tp->u.child[2]->type);
@@ -1152,8 +1157,7 @@ exct(Tree tp)
 //            memcpy(&tp->v, &retval.val, sizeof(MincValue));
               copy_listelem_tree(tp, &retval);
 			  assert(tp->type == retval.type);
-			  if (retval.type == MincHandleType)
-			     unref_handle(retval.val.handle);
+			  clear_elem(&retval);
          }
          pop_list();
          DPRINT1("exct (exit NodeCall, tp=%p)\n", tp);
@@ -1274,6 +1278,14 @@ exct(Tree tp)
    return tp;
 }
 
+static void
+clear_list(MincListElem *list, int len)
+{
+	int i;
+	for (i = 0; i < len; ++i) {
+		clear_elem(&list[i]);
+	}
+}
 
 static void
 push_list()
@@ -1283,8 +1295,8 @@ push_list()
       minc_die("stack overflow: too many nested function calls");
    list_stack[list_stack_ptr] = list;
    list_len_stack[list_stack_ptr++] = list_len;
-   list = (MincListElem *) malloc(sizeof(MincListElem) * MAXDISPARGS);
-   DPRINT1("push_list malloc: list=%p\n", list);
+   list = (MincListElem *) calloc(MAXDISPARGS, sizeof(MincListElem));
+   DPRINT1("push_list calloc: list=%p\n", list);
    list_len = 0;
 }
 
@@ -1294,6 +1306,7 @@ pop_list()
 {
    DPRINT("pop_list\n");
    DPRINT1("pop_list free: list=%p\n", list);
+   clear_list(list, MAXDISPARGS);
    free(list);
    if (list_stack_ptr == 0)
       minc_die("stack underflow");
@@ -1329,7 +1342,11 @@ copy_sym_tree(Tree tpdest, Symbol *src)
    int no_ref = 0;
    DPRINT2("copy_sym_tree(%p, %p)\n", tpdest, src);
    assert(src->type != MincVoidType);
+   assert(tpdest->type != MincListType);	// check for these!!
    if (tpdest->type == MincHandleType) {
+#ifdef DEBUG
+	   DPRINT("\toverwriting existing tree value\n");
+#endif
 	   if (tpdest->v.handle != src->v.handle)
 		   unref_handle(tpdest->v.handle);	// overwriting handle, so unref
 	   else
@@ -1349,11 +1366,11 @@ copy_tree_sym(Symbol *dest, Tree tpsrc)
    int no_ref = 0;
    DPRINT2("copy_tree_sym(%p, %p)\n", dest, tpsrc);
    assert(tpsrc->type != MincVoidType);
+   assert(dest->type != MincListType);	// check for these!!
+   if (dest->type == MincHandleType) {
 #ifdef DEBUG
-   if (dest->type != MincVoidType)
 	   DPRINT("\toverwriting existing symbol value\n");
 #endif
-   if (dest->type == MincHandleType) {
 	   if (dest->v.handle != tpsrc->v.handle)
 		   unref_handle(dest->v.handle);	// overwriting handle, so unref
 	   else
@@ -1369,23 +1386,44 @@ copy_tree_sym(Symbol *dest, Tree tpsrc)
 static void
 copy_tree_listelem(MincListElem *dest, Tree tpsrc)
 {
+   int no_ref = 0;
    DPRINT2("copy_tree_listelem(%p, %p)\n", dest, tpsrc);
    assert(tpsrc->type != MincVoidType);
+   assert(dest->type != MincListType);	// check for these!!
+   if (dest->type == MincHandleType) {
+#ifdef DEBUG
+	   DPRINT("\toverwriting existing listelem value\n");
+#endif
+	   if (dest->val.handle != tpsrc->v.handle)
+		   unref_handle(dest->val.handle);	// overwriting handle, so unref
+	   else
+		   no_ref = 1;	// handles are identical -- no ref/unref
+   }   
    memcpy(&dest->val, &tpsrc->v, sizeof(MincValue));
    dest->type = tpsrc->type;
-   if (tpsrc->type == MincHandleType) {
-//      ref_handle(tpsrc->v.handle);
+   if (tpsrc->type == MincHandleType && !no_ref) {
+      ref_handle(tpsrc->v.handle);
    }
 }
 
 static void
 copy_listelem_tree(Tree tpdest, MincListElem *esrc)
 {
+   int no_ref = 0;
    DPRINT2("copy_listelem_tree(%p, %p)\n", tpdest, esrc);
    assert(esrc->type != MincVoidType);
+   if (tpdest->type == MincHandleType) {
+#ifdef DEBUG
+	   DPRINT("\toverwriting existing tree value\n");
+#endif
+	   if (tpdest->v.handle != esrc->val.handle)
+		   unref_handle(tpdest->v.handle);	// overwriting handle, so unref
+	   else
+		   no_ref = 1;	// handles are identical -- no ref/unref
+   }
    memcpy(&tpdest->v, &esrc->val, sizeof(MincValue));
    tpdest->type = esrc->type;
-   if (esrc->type == MincHandleType) {
+   if (esrc->type == MincHandleType && !no_ref) {
       ref_handle(esrc->val.handle);
    }
 }
@@ -1491,4 +1529,38 @@ free_tree(Tree tp)
    free(tp);   /* actually free space */
 }
 
+void
+clear_elem(MincListElem *elem)
+{
+	if (elem->type == MincListType) {
+#ifdef DEBUG
+	printf("clear_elem(%p)\n", elem);
+#endif
+		free_list(&elem->val.list);
+	}
+	else if (elem->type == MincHandleType) {
+#ifdef DEBUG
+	printf("clear_elem(%p)\n", elem);
+#endif
+		unref_handle(elem->val.handle);
+	}
+}
+
+
+void
+free_list(MincList *list)
+{
+	int e;
+#ifdef DEBUG
+	printf("\tfreeing MincList %p...\n", list);
+#endif
+	for (e = 0; e < list->len; ++e) {
+		MincListElem *elem = &list->data[e];
+		clear_elem(elem);
+	}
+	free(list->data);
+#ifdef DEBUG
+	printf("\tdone\n");
+#endif
+}
 

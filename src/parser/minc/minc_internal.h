@@ -193,6 +193,8 @@ struct symbol *install(char *name, ScopeType scope);
 struct symbol *lookup(char *name);
 char *strsave(char *str);
 char *emalloc(int nbytes);
+void clear_elem(MincListElem *);
+void free_list(MincList *);
 void free_symbols();
 
 /* trees.c */

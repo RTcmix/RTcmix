@@ -1581,10 +1581,13 @@ maketable(const Arg args[], const int nargs)
 
 	// Allocate table array.  TablePField will own and delete this.
 	
-	double *data = new double[len];
-	if (data == NULL) {
-		die("maketable", "Out of memory.");
-		return NULL;
+	double *data = NULL;
+	if (len > 0) {
+		data = new double[len];
+		if (data == NULL) {
+			die("maketable", "Out of memory.");
+			return NULL;
+		}
 	}
 
 	if (_dispatch_table(args, nargs, lenindex + 1, &data, &len) != 0) {

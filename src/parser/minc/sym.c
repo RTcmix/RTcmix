@@ -65,13 +65,20 @@ free_symbols()
 #endif
 	for (s = 0; s < HASHSIZE; ++s)
 	{
-		p = htab[s];
-		if (p) {
+   		for (p = htab[s]; p != NULL; ) {
+			struct symbol *next = p->next;
+#ifdef DEBUG
+			printf("\tfreeing symbol %p\n", p);
+#endif
 			if (p->type == MincHandleType)
 				unref_handle(p->v.handle);
+			else if (p->type == MincListType) {
+				free_list(&p->v.list);
+			}
 			free(p);
-			htab[s] = NULL;
+			p = next;
 		}
+		htab[s] = NULL;
 	}
 #ifdef DEBUG
 	printf("done\n");
