@@ -51,7 +51,7 @@ int BEND1::init(float p[], int n_args)
 		tableset(dur, amplen, amptabs);
 	}
 	else {
-		advise("FRET", "Setting phrase curve to all 1's.");
+		advise("BEND1", "Setting phrase curve to all 1's.");
 		aamp = amp;
 	}
 
@@ -60,9 +60,11 @@ int BEND1::init(float p[], int n_args)
 		int leng = fsize((int)p[4]);
 		tableset(p[1],leng,tags);
 	}
-	else
+	else {
 		die("BEND1", "You haven't made the glissando function (table %d).",
 						(int)p[4]);
+		return(DONT_SCHEDULE);
+	}
 
 	dgain = p[7];
 	fbgain = p[8]/dgain;

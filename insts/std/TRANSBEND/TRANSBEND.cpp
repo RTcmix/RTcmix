@@ -73,10 +73,12 @@ int TRANSBEND :: init(float p[], int n_args)
 {
    float outskip, inskip, dur, transp, interval = 0, total_indur, dur_to_read;
    float averageInc;
-   int pgen;
+   int pgen, rvin;
 
-   if (n_args < 5)
+   if (n_args < 5) {
       die("TRANSBEND", "Wrong number of args.");
+		return(DONT_SCHEDULE);
+	}
 
    outskip = p[0];
    inskip = p[1];
@@ -90,11 +92,16 @@ int TRANSBEND :: init(float p[], int n_args)
       dur = -dur - inskip;
 
    nsamps = rtsetoutput(outskip, dur, this);
-   rtsetinput(inskip, this);
+   rvin = rtsetinput(inskip, this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
 
-   if (inchan >= inputchans)
+   if (inchan >= inputchans) {
       die("TRANSBEND", "You asked for channel %d of a %d-channel file.",
                                                        inchan, inputchans);
+		return(DONT_SCHEDULE);
+	}
    pitchtable = floc(pgen);
    if (pitchtable) {
       int plen = fsize(pgen);
@@ -109,8 +116,10 @@ int TRANSBEND :: init(float p[], int n_args)
 #endif
       tableset(dur, plen, ptabs);
    }
-   else
+   else {
       die("TRANSBEND", "Unable to load pitch curve (table %d)!", pgen);
+		return(DONT_SCHEDULE);
+	}
 
    averageInc = (double) cpsoct(10.0 + interval) / cpsoct(10.0);
 
@@ -242,7 +251,6 @@ Instrument *makeTRANSBEND()
 
    return inst;
 }
-
 
 void rtprofile()
 {

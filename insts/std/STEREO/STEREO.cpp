@@ -38,18 +38,25 @@ int STEREO::init(float p[], int n_args)
 // p0 = outsk; p1 = insk; p2 = dur (-endtime); p3 = amp; p4-n = channel mix matrix
 // we're stashing the setline info in gen table 1
 
-	int i;
+	int i, rvin;
 
-	if (outputchans != 2)
+	if (outputchans != 2) {
 		die("STEREO", "Output must be stereo.");
+		return(DONT_SCHEDULE);
+	}
 
-	if (n_args <= MATRIX_PFIELD_OFFSET)
+	if (n_args <= MATRIX_PFIELD_OFFSET) {
 		die("STEREO", "You need at least one channel assignment.");
+		return(DONT_SCHEDULE);
+	}
 
 	if (p[2] < 0.0) p[2] = -p[2] - p[1];
 
 	nsamps = rtsetoutput(p[0], p[2], this);
-	rtsetinput(p[1], this);
+	rvin = rtsetinput(p[1], this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
 
 	amp = p[3];
 
@@ -131,4 +138,3 @@ rtprofile()
 {
 	RT_INTRO("STEREO",makeSTEREO);
 }
-

@@ -13,6 +13,7 @@
 */
 
 rtsetparams(44100, 2)
+load("PANECHO")
 rtinput("/sndgr/bob.dole.mono")
 makegen(1, 24, 1000, 0,0, 0.5,1, 3.5,1, 7,0)
 PANECHO(0, 0, 7, 1, .14, 0.069, .7, 3.5)

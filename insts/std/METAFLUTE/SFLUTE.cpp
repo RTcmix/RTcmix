@@ -40,16 +40,20 @@ int SFLUTE::init(float p[], int n_args)
 		int len = fsize(1);
 		tableset(p[1], len, amptabs);
 	}
-	else
+	else {
 		die("SFLUTE", "You haven't made the noise amp envelope (table 1).");
+		return(DONT_SCHEDULE);
+	}
 
 	oamparr = floc(2);
 	if (oamparr) {
 		int len = fsize(2);
 		tableset(p[1], len, oamptabs);
 	}
-	else
+	else {
 		die("SFLUTE", "You haven't made the output amp envelope (table 2).");
+		return(DONT_SCHEDULE);
+	}
 
 	imax = DELSIZE;
 	mdelset(del1,dl1,imax);

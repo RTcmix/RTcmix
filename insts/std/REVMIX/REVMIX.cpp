@@ -49,6 +49,7 @@ REVMIX::~REVMIX()
 int REVMIX::init(float p[], int n_args)
 {
    float outskip, inskip, dur;
+	int rvin;
 
    outskip = p[0];
    inskip = p[1];
@@ -57,8 +58,10 @@ int REVMIX::init(float p[], int n_args)
    inchan = n_args > 4 ? (int) p[4] : 0;             /* default is chan 0 */
    pctleft = n_args > 5 ? p[5] : 0.5;                /* default is .5 */
 
-   if (inskip == 0)
+   if (inskip == 0) {
       die("REVMIX", "Input start time must be greater than zero.");
+		return(DONT_SCHEDULE);
+	}
 
    if (dur > inskip) {
       warn("REVMIX", "Duration must be greater than input start time. "
@@ -67,11 +70,16 @@ int REVMIX::init(float p[], int n_args)
    }
 
    nsamps = rtsetoutput(outskip, dur, this);
-   rtsetinput(dur, this);
+   rvin = rtsetinput(dur, this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
 
-   if (inchan >= inputchans)
+   if (inchan >= inputchans) {
       die("REVMIX", "You asked for channel %d of a %d-channel file.",
                                                          inchan, inputchans);
+		return(DONT_SCHEDULE);
+	}
    amparray = floc(1);
    if (amparray) {
       int amplen = fsize(1);
@@ -138,7 +146,6 @@ Instrument *makeREVMIX()
 
    return inst;
 }
-
 
 void rtprofile()
 {

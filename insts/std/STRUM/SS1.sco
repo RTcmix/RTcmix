@@ -3,13 +3,13 @@
 */
 
 rtsetparams(44100, 2)
-makegen(1, 2, 7, 0)
-7.00 7.02 7.05 7.07 7.10 8.00 8.07
+load("STRUM")
+makegen(2, 2, 7, 7, 7.00, 7.02, 7.05, 7.07, 7.10, 8.00, 8.07)
 
 
 srand(0.314)
 for (st = 0; st < 15; st = st + 0.1) {
 	pind = random() * 7
-	pitch = sampfunc(1, pind)
-	START(st, 1.0, pitch, 1.0, 0.1, 10000.0, 1, random())
+	pitch = sampfunc(2, pind)
+	START(st, 1.0, pitch, 1.0, 0.1, 5000.0, 1, random())
 }

@@ -70,9 +70,12 @@ TRANS3 :: ~TRANS3()
 int TRANS3 :: init(float p[], int n_args)
 {
    float outskip, inskip, dur, transp, interval, total_indur, dur_to_read;
+	int rvin;
 
-   if (n_args < 5)
+   if (n_args < 5) {
       die("TRANS3", "Wrong number of args.");
+		return(DONT_SCHEDULE);
+	}
 
    outskip = p[0];
    inskip = p[1];
@@ -86,11 +89,16 @@ int TRANS3 :: init(float p[], int n_args)
       dur = -dur - inskip;
 
    nsamps = rtsetoutput(outskip, dur, this);
-   rtsetinput(inskip, this);
+   rvin = rtsetinput(inskip, this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
 
-   if (inchan >= inputchans)
+   if (inchan >= inputchans) {
       die("TRANS3", "You asked for channel %d of a %d-channel file.",
                                                        inchan, inputchans);
+		return(DONT_SCHEDULE);
+	}
    interval = octpch(transp);
    increment = (double) cpsoct(10.0 + interval) / cpsoct(10.0);
 #ifdef DEBUG

@@ -77,6 +77,7 @@ int BASE::init(float p[], int n_args)
     int    flag, UseMikes, cartflag = 0;
     float  outskip, inskip, abs_factor, rvb_time;
     double R, T, dist;
+	 int rval;
 
     outskip = p[0];
     inskip = p[1];
@@ -84,27 +85,40 @@ int BASE::init(float p[], int n_args)
     if (m_dur < 0)                      /* "dur" represents timend */
         m_dur = -m_dur - inskip;
 
-    rtsetinput(inskip, this);
+    rval = rtsetinput(inskip, this);
+	 if (rval == -1) { // no input
+		  return(DONT_SCHEDULE);
+	 }
     insamps = (int)(m_dur * SR);
     inamp = p[3];
 
-    if (m_inchan >= inputchans)
+    if (m_inchan >= inputchans) {
        die(name(), "You asked for channel %d of a %d-channel input file.",
                                                          m_inchan, inputchans);
+		 return(DONT_SCHEDULE);
+	 }
     if (inputchans == 1)
        m_inchan = 0;
 
-	if (outputchans != 2)
+	if (outputchans != 2) {
 		die(name(), "Output must be stereo.");
+		return(DONT_SCHEDULE);
+	}
 
     double Matrix[12][12];
    
     /* Get results of Minc setup calls (space, mikes_on, mikes_off, matrix) */
     if (get_setup_params(Dimensions, Matrix, &abs_factor, &rvb_time,
-                         &UseMikes, &MikeAngle, &MikePatternFactor) == -1)
+                         &UseMikes, &MikeAngle, &MikePatternFactor) == -1) {
        die(name(), "You must call setup routine `space' first.");
+		 return(DONT_SCHEDULE);
+	 }
 
-    localInit(p, n_args);	// call inst-specific init code
+    rval = localInit(p, n_args);	// call inst-specific init code
+	 if (rval == DONT_SCHEDULE) {
+		  die(name(), "localInit failed.");
+		  return(DONT_SCHEDULE);
+	 }
 
     wire_matrix(Matrix);
 

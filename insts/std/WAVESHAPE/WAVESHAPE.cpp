@@ -46,9 +46,11 @@ int WAVESHAPE::init(float p[], int n_args)
 	nsamps = rtsetoutput(p[0], p[1], this);
 
 	waveform = floc(WAVE_GEN_SLOT);
-	if (waveform == NULL)
+	if (waveform == NULL) {
 		die("WAVESHAPE", "You need to store a waveform in function %d.",
 								WAVE_GEN_SLOT);
+		return(DONT_SCHEDULE);
+	}
 	lenwave = fsize(WAVE_GEN_SLOT);
 
 	if (p[2] < 15.0) p[2] = cpspch(p[2]);

@@ -156,12 +156,16 @@ NewArray(int size)
 
 int PVOC::init(float *p, int n_args)
 {
+	int rvin;
+
 	if (!n_args || n_args < 9) {
 		die("PVOC",
 		"usage:\nPVOC(outskip, inskip, dur, amp, input_chan, fft_size, window_size, decim, interp, [ pitch_mult, npoles, osc threshold ])");
+		return(DONT_SCHEDULE);
 	}
 	if (outputchans != 1) {
 		die("PVOC", "Output file must have 1 channel only");
+		return(DONT_SCHEDULE);
 	}
 
 	float outskip = p[0];
@@ -170,11 +174,16 @@ int PVOC::init(float *p, int n_args)
 	_amp = p[3];
 	_inputchannel = (int) p[4];
 
-	if (_inputchannel >= inputChannels())
+	if (_inputchannel >= inputChannels()) {
 		die("PVOC", "Requesting channel %d of a %d-channel input file",
 			_inputchannel, inputChannels());
+		return(DONT_SCHEDULE);
+	}
 
-	rtsetinput(inskip, this);
+	rvin = rtsetinput(inskip, this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
 	rtsetoutput(outskip, dur, this);
 	
 
@@ -206,6 +215,7 @@ int PVOC::init(float *p, int n_args)
 
 	if (I > Nw) {
 		die("PVOC", "Window size must be >= decimation factor");
+		return(DONT_SCHEDULE);
 	}
 	TWOPI = 8.*atan(1.);
 	obank = P != 0.;

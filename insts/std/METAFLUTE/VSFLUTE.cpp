@@ -39,29 +39,37 @@ int VSFLUTE::init(float p[], int n_args)
 		int len = fsize(1);
 		tableset(p[1], len, amptabs);
 	}
-	else
+	else {
 		die("VSFLUTE", "You haven't made the noise amp envelope (table 1).");
+		return(DONT_SCHEDULE);
+	}
 
 	oamparr = floc(2);
 	if (oamparr) {
 		int len = fsize(2);
 		tableset(p[1], len, oamptabs);
 	}
-	else
+	else {
 		die("VSFLUTE", "You haven't made the output amp envelope (table 2).");
+		return(DONT_SCHEDULE);
+	}
 
 	pcurve1 = floc(3);
-	if (pcurve1 == NULL)
+	if (pcurve1 == NULL) {
 		die("VSFLUTE", "You haven't made the vibrato function for "
 					"length 1 (table 3).");
+		return(DONT_SCHEDULE);
+	}
 	psize1 = fsize(3);
 	si1lo = p[8] * psize1/SR;
 	si1hi = p[9] * psize1/SR;
 
 	pcurve2 = floc(4);
-	if (pcurve2 == NULL)
+	if (pcurve2 == NULL) {
 		die("VSFLUTE", "You haven't made the vibrato function for "
 					"length 2 (table 4).");
+		return(DONT_SCHEDULE);
+	}
 	psize2 = fsize(4);
 	si2lo = p[10] * psize2/SR;
 	si2hi = p[11] * psize2/SR;

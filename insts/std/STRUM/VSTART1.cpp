@@ -77,8 +77,10 @@ int VSTART1::init(float p[], int n_args)
 	}
 
 	vloc = floc(2);
-	if (vloc == NULL)
+	if (vloc == NULL) {
 		die("VSTART1", "You need to store a vibrato function in gen num. 2.");
+		return(DONT_SCHEDULE);
+	}
 	vlen = fsize(2);
 
 	vsibot = p[12] * (float)vlen/SR;
@@ -89,8 +91,10 @@ int VSTART1::init(float p[], int n_args)
 	vphase = 0.0;
 
 	eloc = floc(3);
-	if (eloc == NULL)
+	if (eloc == NULL) {
 		die("VSTART1", "You need to store a vibrato amp. envelope in gen num. 3.");
+		return(DONT_SCHEDULE);
+	}
 	elen = fsize(3);
 	tableset(p[1], elen, tab);
 

@@ -7,11 +7,12 @@
    p14 = vibrato freq depth (expressed in cps); p15 = random seed value
    p16 = pitch update (default 200/sec)
    p17 = stereo spread [optional]
-   assumes makegen 1 is the vibrato function and makegen 2 is the
+   assumes makegen 2 is the vibrato function and makegen 3 is the
    vibrato amplitude envelope
 */
 
 rtsetparams(44100, 1)
+load("STRUM")
 makegen(1, 18, 1000, 0,1, 19,1, 20,0)
 makegen(2, 10, 1000, 1)
 makegen(3, 24, 1000, 0, 0, 1, 1, 2, 0)

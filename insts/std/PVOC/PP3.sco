@@ -16,6 +16,7 @@
 */
 
 rtsetparams(44100, 1, 512);
+load("PVOC")
 rtinput("/home/dscott/sounds/fine4.wav");
 
 /* PVOC(start, inskip, indur, amp, inchan, */

@@ -9,14 +9,14 @@
 */
 
 rtsetparams(44100, 2)
-makegen(1, 2, 7, 0)
-7.00 7.02 7.05 7.07 7.10 8.00 8.07
+load("STRUM")
+makegen(3, 2, 7, 7, 7.00, 7.02, 7.05, 7.07, 7.10, 8.00, 8.07)
 
 srand(0.314)
 makegen(2, 24, 1000, 0, 0, 0.2, 1, 2, 0)
 for (st = 0; st < 15; st = st + 0.2) {
 	pind = random() * 7
-	pitch = sampfunc(1, pind)
+	pitch = sampfunc(3, pind)
 	stereo = random()
 	START(st, 0.0, pitch, 1.0, 0.1, 10000.0, 1, stereo)
 	BEND(st+0, 1.0, pitch, pitch+0.02, 2, 1.0, 0.1, 100, stereo)

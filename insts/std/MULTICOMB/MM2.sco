@@ -12,6 +12,7 @@
 */
 
 rtsetparams(44100, 2)
+load("MULTICOMB")
 rtinput("/snd/pablo1.snd")
 reset(20000)
 makegen(1, 24, 1000, 0,0, 0.5,1, 8.6,1, 8.7,0, 8.8,0)

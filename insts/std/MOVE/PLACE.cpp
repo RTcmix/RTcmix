@@ -40,8 +40,10 @@ PLACE::~PLACE()
 
 int PLACE::localInit(float p[], int n_args)
 {
-    if (n_args < 8)
+    if (n_args < 8) {
         die(name(), "Wrong number of args.");
+		  return(DONT_SCHEDULE);
+	 }
 	
 	const double conv = PI2 / 360.0;
 	double R = (double)p[4];
@@ -56,7 +58,8 @@ int PLACE::localInit(float p[], int n_args)
     }
 	// convert angle to radians before passing in if polar
     if (roomtrig(R , cartflag ? T : T * conv, m_dist, cartflag)) {
-        exit(1);
+		  die(name(), "roomtrig failed.");
+        return(DONT_SCHEDULE);
     }
     return 0;
 }

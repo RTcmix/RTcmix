@@ -18,7 +18,7 @@ int SCULPT::init(float p[], int n_args)
 {
 // p0 = start; p1 = point dur; p2 = overall amplitude; p3 = number of points
 // p4 = stereo spread [optional];
-// function slot 1 is waveform, slot 2 is overall amp envelope
+// function slot 2 is waveform, slot 1 is overall amp envelope
 // function slot 3 is frequency points, slot 4 is amplitude points
 
 	float tdur;
@@ -27,28 +27,34 @@ int SCULPT::init(float p[], int n_args)
 	tdur = p[1] * p[3];
 	pdur = (int)(p[1] * SR);
 
-	wave = floc(1);
-	if (wave == NULL)
-		die("SCULPT", "You need to store a waveform in function 1.");
-	len = fsize(1);
+	wave = floc(2);
+	if (wave == NULL) {
+		die("SCULPT", "You need to store a waveform in function 2.");
+		return(DONT_SCHEDULE);
+	}
+	len = fsize(2);
 
-	amptable = floc(2);
+	amptable = floc(1);
 	if (amptable) {
-		int len = fsize(2);
+		int len = fsize(1);
 		tableset(tdur, len, amptabs);
 	}
 	else
 		advise("SCULPT", "Setting phrase curve to all 1's.");
 
 	freqtable = floc(3);
-	if (freqtable == NULL)
+	if (freqtable == NULL) {
 		die("SCULPT",
 			"You haven't made the table of frequency points (table 3).");
+		return(DONT_SCHEDULE);
+	}
 
 	pamptable = floc(4);
-	if (pamptable == NULL)
+	if (pamptable == NULL) {
 		die("SCULPT",
 			"You haven't made the table of amplitude points (table 4).");
+		return(DONT_SCHEDULE);
+	}
 
 	amp = p[2];
 	phase = 0.0;

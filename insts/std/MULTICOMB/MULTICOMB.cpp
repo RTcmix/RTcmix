@@ -30,14 +30,19 @@ int MULTICOMB::init(float p[], int n_args)
 // p5 = comb frequency range top; p6 = reverb time
 //  assumes function table 1 is the amplitude envelope
 
-	int i,j,nmax;
+	int i,j,nmax,rvin;
 	float cfreq;
 
-	rtsetinput(p[1], this);
+	rvin = rtsetinput(p[1], this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
 	nsamps = rtsetoutput(p[0], p[2], this);
 
-	if (outputchans != 2)
+	if (outputchans != 2) {
 		die("MULTICOMB", "Sorry, output must be stereo.");
+		return(DONT_SCHEDULE);
+	}
 
 	amptable = floc(1);
 	if (amptable) {
