@@ -1,3 +1,17 @@
+/* FMINST -- simple fm instrument
+*
+*  p0 = start time
+*  p1 = duration
+*  p2 = amp
+*  p3 = pitch of carrier (hz or oct.pc)
+*  p4 = pitch of modulator (hz or oct.pc)
+*  p5 = fm index low point
+*  p6 = fm index high point
+*  p7 = stereo spread (0-1) <optional>
+*  function slot 1 is amp envelope, slot 2 is oscillator waveform, 
+*     slot 3 is index guide
+*  [this instrument has real-time control of p2, p3, p4 and p6 enabled]
+*/
 #include <iostream.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -9,6 +23,15 @@
 #include <rtdefs.h>
 #include <notetags.h>
 
+#ifdef COMPATIBLE_FUNC_LOCS         /* set in makefile.conf */
+  #define AMP_GEN_SLOT     2
+  #define WAVET_GEN_SLOT   1
+  #define INDEX_GEN_SLOT   3
+#else
+  #define AMP_GEN_SLOT     1        /* so that we can use setline instead */
+  #define WAVET_GEN_SLOT   2
+  #define INDEX_GEN_SLOT   3
+#endif
 
 FMINST::FMINST() : Instrument()
 {
@@ -16,19 +39,13 @@ FMINST::FMINST() : Instrument()
 
 int FMINST::init(float p[], short n_args)
 {
-// p0 = start; p1 = dur; p2 = amp; p3 = pitch of carrier (hz or oct.pc); 
-// p4 = pitch of modulator (hz or oct.pc); p5 = fm index low point;
-// p6 = fm index high point;  p7 = stereo spread (0-1) <optional>
-// function slot 1 is oscillator waveform, slot 2 is the amp;
-//    slot 3 is index guide
-//  [this instrument has real-time control of p2, p3, p4 and p6 enabled]
-
 	nsamps = rtsetoutput(p[0], p[1], this);
 
-	sine = floc(1);
+	sine = floc(WAVET_GEN_SLOT);
 	if (sine == NULL)
-		die("FMINST", "You need to store a waveform in function 1.");
-	lensine = fsize(1);
+		die("FMINST", "You need to store a waveform in function %d.",
+					WAVET_GEN_SLOT);
+	lensine = fsize(WAVET_GEN_SLOT);
 
 	if (p[3] < 15.0)
 		sicar = cpspch(p[3]) * lensine/SR;
@@ -40,16 +57,16 @@ int FMINST::init(float p[], short n_args)
 	else
 		simod = p[4] * lensine/SR;
 	
-	ampenv = floc(2);
+	ampenv = floc(AMP_GEN_SLOT);
 	if (ampenv) {
-		int lenamp = fsize(2);
+		int lenamp = fsize(AMP_GEN_SLOT);
 		tableset(p[1], lenamp, amptabs);
 	}
 	else
 		advise("FMINST", "Setting phrase curve to all 1's.");
 	
-	indexenv = floc(3);
-	lenind = fsize(3);
+	indexenv = floc(INDEX_GEN_SLOT);
+	lenind = fsize(INDEX_GEN_SLOT);
 	tableset(p[1], lenind, indtabs);
 	
 	indbase = p[5];
