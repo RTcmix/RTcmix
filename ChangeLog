@@ -4,6 +4,7 @@ Saturday, Dec 5, 2001 John Gibson <johgibso@indiana.edu>
      Penrose for his help with this.
    * New FM instrument (WIGGLE).
    * New Butterworth filter instrument (BUTTER).
+   * Let fplot send data to gnuplot instead of doing an ascii plot.
    * New function to see what's actually in a makegen array (fdump).
    * New gen 4 function - like setline, but lets you set curvature
      of each segment (derived from ucsd carl src).
