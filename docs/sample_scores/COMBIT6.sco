@@ -7,7 +7,7 @@ masteramp = 1.0
 
 //-----------------------------------------------------------------------------
 bus_config("MIX", "in 0", "aux 0 out")
-rtinput("../../snd/huhh.wav")
+rtinput("../../../../snd/huhh.wav")
 inskip = 0
 dur = DUR()
 amp = maketable("curve", 1000, 0,0,1, 1,1,0, 3,1,-1, 4,0) * 0.5
