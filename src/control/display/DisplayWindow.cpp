@@ -35,24 +35,24 @@
 
 // Important tuning parameter: how often to nap between polling for 
 // incoming packets.
-#define SLEEP_MSEC	20
+const int kSleepMsec = 20;
 
-//#define LABEL_FONT_NAME	"Monaco"
-#define LABEL_FONT_NAME		"Lucida Grande"
-#define LABEL_FONT_SIZE		14
-#define LABEL_FONT_FACE		bold		// 0 for plain
-#define EXTRA_LINE_HEIGHT	5
+//const char *kLabelFontName = "Monaco";
+const char *kLabelFontName = "Lucida Grande";
+const int kLabelFontSize = 14;
+const int kLabelFontFace = bold;		// 0 for plain
+const int kExtraLineHeight = 5;
 
 const int _titleBarHeight = 22;	// FIXME: should get this from system
-const int _labelXpos = LABEL_FROM_LEFT;
-const int _labelYpos = LABEL_FROM_TOP;
-const int _maxLabelChars = WHOLE_LABEL_LENGTH;
+const int _labelXpos = kLabelFromLeft;
+const int _labelYpos = kLabelFromTop;
+const int _maxLabelChars = kWholeLabelLength;
 
 int _labelCount = 0;
-char *_label[NLABELS];
-char *_prefix[NLABELS];
-char *_units[NLABELS];
-int _precision[NLABELS];
+char *_label[kNumLabels];
+char *_prefix[kNumLabels];
+char *_units[kNumLabels];
+int _precision[kNumLabels];
 Rect _labelRect;
 
 int _lineHeight = 0;
@@ -71,7 +71,7 @@ enum {
 // socket
 int _servdesc;
 int _newdesc;
-int _sockport = SOCK_PORT;
+int _sockport = kSockPort;
 
 // thread
 bool _runThread;
@@ -143,9 +143,9 @@ int writePacket(const DisplaySockPacket *packet)
 // the count of labels in use.
 void configureLabelPrefix(const int id, const char *prefix)
 {
-	assert(id >= 0 && id < NLABELS);
+	assert(id >= 0 && id < kNumLabels);
 	_prefix[id] = strdup(prefix);
-	_label[id] = new char [WHOLE_LABEL_LENGTH];
+	_label[id] = new char [kWholeLabelLength];
 	_label[id][0] = 0;
 	_labelCount++;
 	updateLabelRect();
@@ -155,7 +155,7 @@ void configureLabelPrefix(const int id, const char *prefix)
 // NOTE: This will have no effect if we don't receive a prefix for this label.
 void configureLabelUnits(const int id, const char *units)
 {
-	assert(id >= 0 && id < NLABELS);
+	assert(id >= 0 && id < kNumLabels);
 	_units[id] = strdup(units);
 }
 
@@ -163,21 +163,21 @@ void configureLabelUnits(const int id, const char *units)
 // NOTE: This will have no effect if we don't receive a prefix for this label.
 void configureLabelPrecision(const int id, const int precision)
 {
-	assert(id >= 0 && id < NLABELS);
+	assert(id >= 0 && id < kNumLabels);
 	_precision[id] = precision;
 }
 
 void updateLabelValue(const int id, const double value)
 {
-	assert(id >= 0 && id < NLABELS);
+	assert(id >= 0 && id < kNumLabels);
 	const char *units = _units[id] ? _units[id] : "";
-	snprintf(_label[id], WHOLE_LABEL_LENGTH, "%s: %.*f %s",
+	snprintf(_label[id], kWholeLabelLength, "%s: %.*f %s",
 				_prefix[id], _precision[id], value, units);
 }
 
 void updateLabelRect()
 {
-	const int height = _labelCount * (_lineHeight + EXTRA_LINE_HEIGHT);
+	const int height = _labelCount * (_lineHeight + kExtraLineHeight);
 	const int width = _maxLabelChars * _charWidth;
 	SetRect(&_labelRect, _labelXpos, _labelYpos, _labelXpos + width,
 				_labelYpos + height);
@@ -378,14 +378,14 @@ int createWindow()
 	// NB: This is the deprecated way, but the new way seems too complicated.
 	// We'll figure it out when it's really necessary.
 	Str255 str;
-	CopyCStringToPascal(LABEL_FONT_NAME, str);
+	CopyCStringToPascal(kLabelFontName, str);
 	SInt16 fontID;
 	GetFNum(str, &fontID);
 	if (fontID == 0)
 		fontID = applFont;
 	TextFont(fontID);
-	TextSize(LABEL_FONT_SIZE);
-	TextFace(LABEL_FONT_FACE);
+	TextSize(kLabelFontSize);
+	TextFace(kLabelFontFace);
 	FontInfo finfo;
 	GetFontInfo(&finfo);
 	_charWidth = finfo.widMax;
@@ -456,7 +456,7 @@ void *listenerLoop(void *context)
 		} while (result > 0);
 		if (labelsUpdated)		// draw only the final state for this polling
 			drawLabels();
-		usleep(SLEEP_MSEC * 1000L);
+		usleep(kSleepMsec * 1000L);
 	}
 	delete [] packet;
 
@@ -548,7 +548,7 @@ void initdata(bool reinit);
 void initdata(bool reinit)
 {
 	if (reinit) {
-		for (int i = 0; i < NLABELS; i++) {
+		for (int i = 0; i < kNumLabels; i++) {
 			delete [] _prefix[i];
 			delete [] _units[i];
 			delete [] _label[i];
@@ -556,7 +556,7 @@ void initdata(bool reinit)
 	}
 
 	_labelCount = 0;
-	for (int i = 0; i < NLABELS; i++) {
+	for (int i = 0; i < kNumLabels; i++) {
 		_prefix[i] = NULL;
 		_units[i] = NULL;
 		_label[i] = NULL;

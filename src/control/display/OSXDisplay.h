@@ -8,8 +8,6 @@
 #include <Carbon/Carbon.h>
 #include "display_ipc.h"
 
-#define SERVER_NAME	"localhost"
-
 class OSXDisplay : public RTcmixDisplay {
 public:
 	OSXDisplay();

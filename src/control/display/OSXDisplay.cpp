@@ -15,10 +15,12 @@
 #include <errno.h>
 
 // If RTcmix fails to connect to DisplayWindow, increase this.
-#define LAUNCH_SLEEP_MSEC		500
+const int kLaunchSleepMsec = 500;
 
-#define NUM_CONNECT_ATTEMPTS	10
-#define CONNECT_SLEEP_MSEC		200
+const int kNum_Connect_Attempts = 10;
+const int kConnectSleepMsec = 200;
+
+const char *kServerName = "localhost";
 
 
 OSXDisplay::OSXDisplay()
@@ -27,7 +29,7 @@ OSXDisplay::OSXDisplay()
 	_sockport = SOCK_PORT;
 	_packet = new DisplaySockPacket [1];
 	_evtpacket = new DisplaySockPacket [1];
-	_servername = strdup(SERVER_NAME);
+	_servername = strdup(kServerName);
 }
 
 OSXDisplay::~OSXDisplay()
@@ -65,12 +67,12 @@ int OSXDisplay::openSocket()
 	// This loop *should* work, but if the initial attempt is refused, all others
 	// fail with EINVAL.  So instead, we sleep before attempting to connect.
 #if 1
-	usleep(LAUNCH_SLEEP_MSEC * 1000L);
+	usleep(kLaunchSleepMsec * 1000L);
 #endif
 	bool connected = false;
-	int attempts = NUM_CONNECT_ATTEMPTS;
+	int attempts = kNumConnectAttempts;
 	while (attempts-- > 0) {
-		// printf("connection attempt %d...\n", NUM_CONNECT_ATTEMPTS - attempts);
+		// printf("connection attempt %d...\n", kNumConnectAttempts - attempts);
 		int result = connect(_sockdesc, (struct sockaddr *) &servaddr,
 	                                               sizeof(servaddr));
 		if (result == 0) {
@@ -79,7 +81,7 @@ int OSXDisplay::openSocket()
 		}
 		else if (result < 0 && result != ECONNREFUSED)
 			return reportError("OSXDisplay::openSocket (connect)", true);
-		usleep(CONNECT_SLEEP_MSEC * 1000L);
+		usleep(kConnectSleepMsec * 1000L);
 	}
 	if (!connected)
 		return reportError("OSXDisplay::openSocket (connect)", true);
@@ -166,12 +168,12 @@ void OSXDisplay::sendLabel(const int id, const char *prefix,
 	_packet->id = id;
 
 	_packet->type = kPacketConfigureLabelPrefix;
-	mystrncpy(_packet->data.str, prefix, PART_LABEL_LENGTH);
+	mystrncpy(_packet->data.str, prefix, kPartLabelLength);
 	writePacket(_packet);
 
 	if (units) {		// units string is optional
 		_packet->type = kPacketConfigureLabelUnits;
-		mystrncpy(_packet->data.str, units, PART_LABEL_LENGTH);
+		mystrncpy(_packet->data.str, units, kPartLabelLength);
 		writePacket(_packet);
 	}
 
