@@ -17,10 +17,8 @@ extern "C" {
   void *rtsendsamps(short[]);
   short *rtrescale(float[]);
   void rtreportstats(void);
-#ifdef USE_SNDLIB
   int rtwritesamps(short[]);
   int rtcloseout();
-#endif
   int rtgetsamps();            // DT:  for use with real-time audio input
 }
 
@@ -277,19 +275,7 @@ extern "C" {
 		
 		// Write audio buffer to file
 		if (rtfileit) {
-#ifdef USE_SNDLIB
 		  rtwritesamps(sbuf);
-#else
-		  if (rtoutswap) {
-			for (j = 0; j < MAXBUF; j++) {
-			  byte_reverse2(&sbuf[j]);
-			}
-		  }
-		  // NOTE: old way doesn't support writing to float files
-		  if (write(rtoutfile, sbuf, sizeof(short)*NCHANS*RTBUFSAMPS) == -1) {
-			fprintf(stderr, "intraverse():  bad write to audio file\n");
-		  } 
-#endif // USE_SNDLIB
 		}      
 		
 		gettimeofday(&tv, &tz);
@@ -336,13 +322,7 @@ extern "C" {
 		// ***FIXME: this writes extra MAXBUF zeros to end of file
 		// ***need to make intraverse aware of what it's doing (e.g, server?)
 		if (rtfileit && rtInst) {
-#ifdef USE_SNDLIB
 		  rtwritesamps(sbuf);
-#else
-		  if (write(rtoutfile, sbuf, sizeof(short)*NCHANS*RTBUFSAMPS) == -1) {
-			fprintf(stderr, "intraverse():  bad write to audio file\n");
-		  } 
-#endif // !USE_SNDLIB
 		}
 		
 		// Increment time
@@ -387,11 +367,7 @@ extern "C" {
     }
 #endif
     if (rtfileit) {
-#ifdef USE_SNDLIB
       rtcloseout();
-#else
-      close(rtoutfile);
-#endif //!USE_SNDLIB
     }
 
 	cout << "\n";
