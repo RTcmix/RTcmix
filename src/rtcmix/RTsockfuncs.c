@@ -270,8 +270,6 @@ void RTtimeit(float interval, void *func)
 	signal(SIGALRM, func);
 }
 
-
-
 void parse(char *buf, char **args)
 {
 	while (*buf != '\0') {
@@ -290,7 +288,6 @@ void parse(char *buf, char **args)
 
 	*args = NULL;
 }
-
 
 int execute(args)
 char **args;
