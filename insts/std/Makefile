@@ -24,6 +24,8 @@ install:
 	  ( cd $$DIR; echo "making install in $$DIR..."; \
 	  $(INSTALL) `pwd`/lib$$DIR.so $(LIBDESTDIR); ) \
 	done
+	@# temporary workaround to install PLACE dso:
+	@$(INSTALL) `pwd`/MOVE/libPLACE.so $(LIBDESTDIR)
 
 dsos:  all
 
