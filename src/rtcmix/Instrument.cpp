@@ -438,6 +438,12 @@ void Instrument::gone()
    }
 }
 
+const PField &
+Instrument::getPField(int index)
+{
+	return (*_pfields)[index];
+}
+
 #ifdef RTUPDATE
 /* --------------------set_instnum------------------------------------------ */
 

@@ -14,6 +14,7 @@
 
 class heap;
 class PFieldSet;
+class PField;
 class BusSlot;
 
 class Instrument : public RefCounted {
@@ -164,6 +165,8 @@ protected:
 	static int		rtgetin(float *, Instrument *, int);
 	int rtaddout(BUFTYPE samps[]);  				// replacement for old rtaddout
 	int rtbaddout(BUFTYPE samps[], int length);	// block version of same
+
+	const PField &	getPField(int index);
 
 private:
    void				gone(); // decrements reference to input soundfile

@@ -19,6 +19,7 @@ public:
 	int 			intValue(double dindex) const { return (int) doubleValue(dindex); }
 	const char * 	stringValue(double dindex) const { return (const char *) intValue(dindex); }
 	virtual int		print(FILE *) const;
+	virtual operator double *() const { /* default is to */ return 0; }
 	virtual int		copyValues(double *) const;
 	virtual int		values() const = 0;
 protected:
@@ -146,6 +147,7 @@ public:
 	TablePField(double *tableArray, int length, InterpFunction fun=Interpolate1stOrder);
 	virtual double 	doubleValue(int indx = 0) const;
 	virtual double	doubleValue(double) const;
+	virtual operator double *() const { return _table; }
 	virtual int		print(FILE *) const;	// redefined
 	virtual int		copyValues(double *) const;
 	virtual int		values() const { return _len; }
@@ -160,6 +162,7 @@ private:
 class PFieldWrapper : public PField {
 public:
 	virtual int		values() const { return _pField->values(); }
+	virtual operator double *() const { return (double *) *_pField; }
 protected:
 	PFieldWrapper(PField *innerPField);
 	virtual ~PFieldWrapper();
