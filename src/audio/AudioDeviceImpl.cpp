@@ -108,17 +108,27 @@ int AudioDeviceImpl::pause(bool willPause)
 
 int AudioDeviceImpl::setStopCallback(Callback *stopCallback)
 {
-	_stopCallback = stopCallback;
+	if (stopCallback != _stopCallback) {
+		delete _stopCallback;
+		_stopCallback = stopCallback;
+	}
 	return 0;
 }
 
 bool AudioDeviceImpl::runCallback()
 { 
+	assert(_runCallback);
 	return _runCallback->call();
 }
 
+// Call the callback if present, then delete and null to avoid multiple
+// calls
+
 bool AudioDeviceImpl::stopCallback() {
-	return (_stopCallback) ? _stopCallback->call() : true;
+	bool ret = (_stopCallback) ? _stopCallback->call() : false;
+	delete _stopCallback;
+	_stopCallback = NULL;
+	return ret;
 }
 
 int AudioDeviceImpl::stop()
