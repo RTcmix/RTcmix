@@ -64,11 +64,16 @@ This floating-point file doesn't have up-to-date peak stats in its header. \n\
 Either run sndpeak on the file or supply a rescale factor when you play.   \n\
 (And watch out for your ears!)\n"
 
-#define FORCE_FACTOR_MSG "\
+#define CLIPPING_FORCE_FACTOR_MSG "\
+Your rescale factor (%g) would cause clipping.  If you really want to  \n\
+play the file with this factor anyway, use the \"--force\" flag on the \n\
+command line.  But be careful with your ears!\n"
+
+#define NO_STATS_FORCE_FACTOR_MSG "\
 Since this file header has no up-to-date peak stats, there's no way to  \n\
 guarantee that your rescale factor won't cause painfully loud playback. \n\
 If you really want to play the file with this factor anyway, use the    \n\
-\"--force\" flag on the command line. But be careful with your ears!\n"
+\"--force\" flag on the command line.  But be careful with your ears!\n"
 
 #ifdef MACOSX
 /* We ignore these, but need them to link with audio_port.o */
@@ -95,7 +100,7 @@ Usage: %s [options] filename  \n\
        options:  -s NUM    start time                           \n\
                  -e NUM    end time                             \n\
                  -d NUM    duration                             \n\
-                 -f NUM    rescale factor for float files       \n\
+                 -f NUM    rescale factor                       \n\
                  -c NUM    channel (starting from 0)            \n\
                  -h        view this help screen                \n\
                  -k        disable hotkeys (see below)          \n\
@@ -308,7 +313,7 @@ set_input_mode(void)
 /* ----------------------------------------------------------------- main --- */
 int main(int argc, char *argv[])
 {
-   int         i, n, fd, datum_size, second, status, fragments;
+   int         i, n, fd, datum_size, second, status, fragments, stats_valid;
    int         quiet, robust, force, is_float, swap, play_chan, hotkeys;
    int         header_type, data_format, data_location, srate, in_chans, nsamps;
    int         buf_bytes, buf_samps, buf_frames, buf_start_frame;
@@ -495,46 +500,46 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
    }
 
-   /* prepare for playing a float file */
+   /* prepare rescale factor */
 
-   if (is_float) {
-      int stats_valid;
+   if (sndlib_get_current_header_comment(fd, &sfc) == -1) {
+      fprintf(stderr, "Can't read header comment!\n");
+      exit(EXIT_FAILURE);
+   }
+   stats_valid = (SFCOMMENT_PEAKSTATS_VALID(&sfc)
+                  && sfcomment_peakstats_current(&sfc, fd));
 
-      if (sndlib_get_current_header_comment(fd, &sfc) == -1) {
-         fprintf(stderr, "Can't read header comment!\n");
-         exit(EXIT_FAILURE);
-      }
-      stats_valid = (SFCOMMENT_PEAKSTATS_VALID(&sfc)
-                     && sfcomment_peakstats_current(&sfc, fd));
-
-      if (stats_valid) {
-         float peak = 0.0;
-         for (n = 0; n < in_chans; n++)
-            if (sfc.peak[n] > peak)
-               peak = sfc.peak[n];
-         if (peak > 0.0) {
-            float tmp_factor = 32767.0 / peak;
-            if (factor) {
-               if (factor > tmp_factor) {
-                  fprintf(stderr,
-                          "Your rescale factor (%g) would cause clipping.\n",
-                                                                     factor);
-                  exit(EXIT_FAILURE);
-               }
+   if (stats_valid) {
+      float peak = 0.0;
+      for (n = 0; n < in_chans; n++)
+         if (sfc.peak[n] > peak)
+            peak = sfc.peak[n];
+      if (peak > 0.0) {
+         float tmp_factor = 32767.0 / peak;
+         if (factor) {
+            if (factor > tmp_factor && !force) {
+               fprintf(stderr, CLIPPING_FORCE_FACTOR_MSG, factor);
+               exit(EXIT_FAILURE);
             }
-            else
-               factor = tmp_factor > 1.0 ? 1.0 : tmp_factor;
          }
          else
-            stats_valid = 0;              /* better not to believe this peak */
+            factor = tmp_factor > 1.0 ? 1.0 : tmp_factor;
       }
-      if (!stats_valid) {      /* Note: stats_valid can change in prev block */
-         if (factor == 0.0) {
+      else
+         stats_valid = 0;              /* better not to believe this peak */
+   }
+   if (!stats_valid) {      /* Note: stats_valid can change in prev block */
+      if (factor == 0.0) {
+         if (is_float) {
             fprintf(stderr, NEED_FACTOR_MSG);
             exit(EXIT_FAILURE);
          }
-         else if (!force) {
-            fprintf(stderr, FORCE_FACTOR_MSG);
+         else
+            factor = 1.0;
+      }
+      else if (!force) {
+         if (is_float || factor > 1.0) {
+            fprintf(stderr, NO_STATS_FORCE_FACTOR_MSG);
             exit(EXIT_FAILURE);
          }
       }
@@ -589,13 +594,12 @@ int main(int argc, char *argv[])
 
    if (!quiet) {
       printf("File: %s\n", sfname);
-      printf("rate: %d  chans: %d\n", srate, in_chans);
+      printf("Rate: %d Hz   Chans: %d\n", srate, in_chans);
       if (start_time > 0.0)
          printf("Skipping %g seconds.\n", start_time);
       if (end_time > 0.0)
          printf("Ending at %g seconds.\n", end_time);
-      if (is_float)
-         printf("Rescale factor: %g\n", factor);
+      printf("Rescale factor: %g\n", factor);
       if (robust)
          printf("Warning: \"robust\" mode causes second count to run ahead.\n");
       printf("Time: ");
@@ -682,9 +686,23 @@ int main(int argc, char *argv[])
             }
          }
       }
-      else if (swap) {
-         for (i = 0; i < samps_read; i++)
-            sbuf[i] = reverse_int2(&sbuf[i]);
+      else {
+         if (swap) {
+            if (factor) {
+               for (i = 0; i < samps_read; i++) {
+                  sbuf[i] = reverse_int2(&sbuf[i]);
+                  sbuf[i] = (int) (factor * sbuf[i]);
+               }
+            }
+            else {
+               for (i = 0; i < samps_read; i++)
+                  sbuf[i] = reverse_int2(&sbuf[i]);
+            }
+         }
+         else {
+            if (factor)
+               sbuf[i] = (int) (factor * sbuf[i]);
+         }
       }
 
       for (i = samps_read; i < buf_samps; i++)
