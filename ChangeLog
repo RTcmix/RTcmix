@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Friday, January 7, 2005 John Gibson <johgibso-at-indiana.edu>
+
+   * The mouse window, invoked by makeconnection("mouse", ...),
+     now works on OS X.
+
 2004-12-17  Douglas Scott  <netdscott at netscape.net>
 
 	*  Added option to set audio buffer count.
