@@ -36,6 +36,8 @@ int COMBIT::init(float p[], int n_args)
 	nsamps = rtsetoutput(p[0], p[2]+p[5], this);
 	insamps = (int)(p[2] * SR);
 
+	if (p[4] < 0.01)
+	    die("COMBIT", "Invalid pitch value!");	
 	loopt = 1.0/p[4];
 
 	// adding "START" didn't do it, but adding 10.0 seems
