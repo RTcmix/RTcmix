@@ -56,8 +56,8 @@ extern "C" {
     double sec,usec;
 
 	Bool aux_pb_done,frame_done;
-	short bus,bus_count,play_bus,busq,endbus;
-	IBusClass bus_class,qStatus;
+	short bus,bus_count,play_bus,busq,endbus,t_bus,t_count;
+	IBusClass bus_class,qStatus,t_class;
 	BusType bus_type;
 	
     // cout << "ENTERING inTraverse() FUNCTION *****\n";
@@ -265,6 +265,7 @@ extern "C" {
 			chunkStart = rtQueue[busq].nextChunk();
 		  }
 		}
+
 		// Play elements on queue (insert back in if needed) - - - - - - - -
 		while ((rtQSize > 0) && (chunkStart < bufEndSamp) && (bus != -1)) {
 		  
@@ -301,18 +302,27 @@ extern "C" {
 #endif		  
 		  Iptr->exec(bus_type, bus);    // write the samples * * * * * * * * * 
 		  
-		  switch (qStatus) {
+		  t_class = checkClass(Iptr->bus_config);
+		  switch (t_class) {
 		  case TO_AUX:
-			bus_count = Iptr->bus_config->auxout_count;
-			endbus = ToAuxPlayList[bus_count-1];
+			t_count = Iptr->bus_config->auxout_count;
+			endbus = Iptr->bus_config->auxout[t_count];
 			break;
 		  case AUX_TO_AUX:
-			bus_count = Iptr->bus_config->auxout_count;
-			endbus = ToAuxPlayList[bus_count-1];
+			t_count = Iptr->bus_config->auxout_count;
+			endbus = Iptr->bus_config->auxout[t_count];
+			break;
+		  case TO_AUX_AND_OUT:
+			if (qStatus = TO_OUT) {
+			  t_count = Iptr->bus_config->out_count;
+			  endbus = Iptr->bus_config->out[t_count];			
+			}
+			else
+			  endbus = 1000;  /* can never equal this */
 			break;
 		  case TO_OUT:
-			bus_count = Iptr->bus_config->out_count;
-			endbus = ToOutPlayList[bus_count-1];
+			t_count = Iptr->bus_config->out_count;
+			endbus = Iptr->bus_config->out[t_count];
 			break;
 		  default:
 			cout << "ERROR (intraverse): unknown bus_class\n";
