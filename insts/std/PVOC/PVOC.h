@@ -5,6 +5,7 @@ public:
 	PVOC();
 	virtual ~PVOC();
 	virtual int init(float	*, int);
+	virtual int configure();
 	virtual int run();
 	
 protected:

@@ -214,23 +214,9 @@ int PVOC::init(float *p, int n_args)
 	_unconvertFactor = TWOPI * I / R;
 	_convertPhase = ::NewArray(N2 + 1);
 	_unconvertPhase = ::NewArray(N2 + 1);
+
+	// All buffer allocation done in configure()
 	
-/*
- * allocate memory
- */
-	Wanal = ::NewArray(Nw);		/* analysis window */
-	Wsyn = ::NewArray(Nw);		/* synthesis window */
-	_pvInput = ::NewArray(Nw);	/* input buffer */
-	Hwin = ::NewArray(Nw);		/* plain Hamming window */
-	winput = ::NewArray(Nw);		/* windowed input buffer */
-	lpcoef = ::NewArray(Np+1);	/* lp coefficients */
-	_fftBuf = ::NewArray(N);		/* FFT buffer */
-	channel = ::NewArray(N+2);	/* analysis channels */
-	_pvOutput = ::NewArray(Nw);	/* output buffer */
-/*
- * create windows
- */
-	makewindows( Hwin, Wanal, Wsyn, Nw, N, I, obank );
 /*
  * initialize input and output time values (in samples)
  */
@@ -243,20 +229,37 @@ int PVOC::init(float *p, int n_args)
 	return nSamps();
 }
 
-int PVOC::run()
+int PVOC::configure()
 {
-	// If this is first call to run, allocate input buffer, which
-	//	must persist across calls to run.
-	
+	/*
+	 * allocate memory
+	 */
+	Wanal = ::NewArray(Nw);		/* analysis window */
+	Wsyn = ::NewArray(Nw);		/* synthesis window */
+	_pvInput = ::NewArray(Nw);	/* input buffer */
+	Hwin = ::NewArray(Nw);		/* plain Hamming window */
+	winput = ::NewArray(Nw);		/* windowed input buffer */
+	lpcoef = ::NewArray(Np+1);	/* lp coefficients */
+	_fftBuf = ::NewArray(N);		/* FFT buffer */
+	channel = ::NewArray(N+2);	/* analysis channels */
+	_pvOutput = ::NewArray(Nw);	/* output buffer */
+	/*
+	 * create windows
+	 */
+	makewindows( Hwin, Wanal, Wsyn, Nw, N, I, obank );
+
 	// The input buffer is larger than BUFSAMPS so it can be filled with
 	// enough samples (via multiple calls to rtgetin()) to satisfy the input.
 	
-	if (_inbuf == NULL)
-		_inbuf = new BUFTYPE[inputChannels() * Nw];
+	_inbuf = new BUFTYPE[inputChannels() * Nw];
 
-	if (_outbuf == NULL)
-		_outbuf = new BUFTYPE[Nw];	// XXX CHECK THIS SIZE
+	_outbuf = new BUFTYPE[Nw];	// XXX CHECK THIS SIZE
 		
+	return Instrument::configure();
+}
+
+int PVOC::run()
+{
 	/* You MUST call the base class's run method here. */
 	Instrument::run();
 #ifdef debug
