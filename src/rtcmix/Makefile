@@ -152,6 +152,7 @@ all: $(TARGETS)
 ifeq ($(PERL_SUPPORT), TRUE)
 	$(INSTALL) pRTcmix.o $(LIBDIR)
 endif
+	$(INSTALL) $(RTLIB) $(LIBDIR)
 
 # rules to allow complete lib compile from this dir only
 
@@ -178,7 +179,6 @@ loader.o: loader.c
 
 $(RTLIB): depend $(COMMON_OBJS) $(LIBMINC) $(LIBS)
 	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(COMMON_OBJS) $(LIBMINC) $(LIBS) $(SYSLIBS)
-	$(INSTALL) $(RTLIB) $(LIBDIR)
 
 Option.o: Option.cpp Option.h
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c $< -o $@
