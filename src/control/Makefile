@@ -1,11 +1,6 @@
 include ../../makefile.conf
 
-DIRS = midi
-
-ifeq ($(ARCH), MACOSX)
-else
-DIRS += mouse
-endif
+DIRS = midi mouse display
 
 all: $(DIRS) $(OBJS)
 	@for DIR in $(DIRS); \
