@@ -12,8 +12,8 @@
 #include "../rtstuff/rtdefs.h"
 #include "../H/dbug.h"
 
-#define TBUG
-#define ALLBUG
+//#define TBUG
+//#define ALLBUG
 
 extern "C" {
   void rtsendsamps(void);
