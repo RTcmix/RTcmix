@@ -187,7 +187,9 @@ allocate_buf_ptr(int nsamps)       /* samples, not frames */
 
 
 /* ---------------------------------------------- allocate_audioin_buffer --- */
-// called from ??
+/* Allocate one of the global audio input bus buffers.
+   Called from rtinput.
+*/
 #ifdef __GNUC__
 inline int
 #else
@@ -210,7 +212,9 @@ allocate_audioin_buffer(short chan, int nsamps)
 
 
 /* -------------------------------------------------- allocate_aux_buffer --- */
-/* Called from bus_config. */
+/* Allocate one of the global aux bus buffers.
+   Called from bus_config.
+*/
 #ifdef __GNUC__
 inline int
 #else
@@ -233,7 +237,9 @@ allocate_aux_buffer(short chan, int nsamps)
 
 
 /* -------------------------------------------------- allocate_out_buffer --- */
-/* Called from rtsetparams. */
+/* Allocate one of the global out bus buffers.
+   Called from rtsetparams.
+*/
 #ifdef __GNUC__
 inline int
 #else
