@@ -67,9 +67,9 @@ main(int argc, char *argv[])
 		rrr->printOff();
 	sleep(1); // give the thread time to initialized
 
-	rrr->cmd("load", 1, "STRUM");
-	rrr->cmd("load", 1, "TRANS");
-	rrr->cmd("load", 1, "STEREO");
+	rrr->cmd("load", 1, "../../insts.std/STRUM/libSTRUM.so");
+	rrr->cmd("load", 1, "../../insts.std/TRANS/libTRANS.so");
+	rrr->cmd("load", 1, "../../insts.std/STEREO/libSTEREO.so");
 	rrr->cmd("rtinput", 1, "./sinetone.wav");
 
 	rrr->cmd("setline", 8, 0., 0., 1., 1., 100., 1., 110., 0.);
@@ -91,7 +91,7 @@ main(int argc, char *argv[])
 				pval = irand(5.0, 5.05);
 				spread = irand(0.0, 1.0);
 				rrr->cmd("bus_config", 2, "START", "out0-1");
-				rrr->cmd("START", 8, 0.0, 1.0, pval, 1.0, 0.7, 5000.0, 1.0, spread);
+				rrr->cmd("START", 9, 0.0, 1.0, pval, 1.0, 0.7, 5000.0, 1.0, spread, 1.0);
 				totalcmds += 2;
 				break;
 			case 1:
@@ -124,7 +124,9 @@ main(int argc, char *argv[])
 		  sec = (double)tv.tv_sec;
 		  if ((int) (sec - base_sec) > duration)
 		  {
-		  	printf("Reached %d seconds.  Exiting.\n", duration);
+		  	printf("Reached %d seconds.  Shutting down...", duration);
+			usleep(2000000);
+		  	printf("Exiting.\n");
 			exit(0);
 		  }
 		  checkCount = checkInterval;
