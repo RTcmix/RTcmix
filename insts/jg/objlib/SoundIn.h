@@ -6,9 +6,7 @@
 
 #include "objdefs.h"
 #include <sys/stat.h>
-#ifdef USE_SNDLIB
 #include <sndlibsupport.h>
-#endif
 
 class SoundIn
 {
