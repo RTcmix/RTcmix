@@ -314,41 +314,36 @@ double ConverterPField::doubleValue(int idx) const
 	return (*_converter)(val);
 }  
 
+#include <ugens.h>
+
 double ConverterPField::ampdb(const double db)
 {
-	return pow(10.0, db / 20.0);
+	return ::ampdb(db);
 }
-
-#define MIDC_OFFSET 261.62556530059868 / 256.0
 
 double ConverterPField::cpsoct(const double oct)
 {
-	return pow(2.0, oct) * MIDC_OFFSET;
+	return ::cpsoct(oct);
 }
 
 double ConverterPField::octpch(const double pch)
 {
-	int octave = (int) pch;
-	double semitone = (100.0 / 12.0) * (pch - octave);
-	return octave + semitone;
+	return ::octpch(pch);
 }
 
 double ConverterPField::cpspch(const double pch)
 {
-	double oct = octpch(pch);
-	return pow(2.0, oct) * MIDC_OFFSET;
+	return ::cpspch(pch);
 }
 
 double ConverterPField::pchoct(const double oct)
 {
-	int octave = (int) oct;
-	double linsemitone = oct - octave;
-	return octave + (0.12 * linsemitone); 
+	return ::pchoct(oct);
 }
 
 // NB: returns an amp multiplier; feed this to an amp pfield, not a pan pfield
 double ConverterPField::boost(const double pan)
 {
-	return 1.0 / sqrt((pan * pan) + ((1.0 - pan) * (1.0 - pan)));
+	return ::boost(pan);
 }
 
