@@ -52,6 +52,7 @@ int main()
 
 
 // satisfy linker for libgen.so;  FIXME: why doesn't this work??
+extern "C" {
 double *floc(int foo) { return NULL; }
 int fsize(int foo) { return 0; }
-
+}
