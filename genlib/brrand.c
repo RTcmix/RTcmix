@@ -6,7 +6,7 @@
 static	long	randx = 1;
 
 void
-sbrrand(unsigned x)
+sbrrand(unsigned int x)
 {
 	randx = x;
 }

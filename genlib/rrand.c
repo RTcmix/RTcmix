@@ -4,7 +4,7 @@
 static	long	randx = 1;
 
 void
-srrand(unsigned x)
+srrand(unsigned int x)
 {
 	randx = x;
 }
