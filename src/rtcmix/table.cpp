@@ -88,11 +88,41 @@ _arg_is_table_pfield(const Arg *arg)
       return 0;
    if (arg->val.handle->type != PFieldType)
       return 0;
-   if (dynamic_cast<TablePField *> ((PField *) arg->val.handle->ptr) == NULL);
-      return 0;
    return 1;
 }
 
+static PField *
+_getPField(const Arg *arg)
+{
+	PField *pf = NULL;
+	if (_arg_is_table_pfield(arg)) {
+		pf = (PField *) (arg->val.handle->ptr);
+	}
+	return pf;
+}
+
+static TablePField *
+_getTablePField(const Arg *arg)
+{
+	PField *tpf = NULL;
+	if ((tpf = _getPField(arg)) != NULL) {
+#if __GNUG__ >= 3
+		return dynamic_cast<TablePField *> (tpf);
+#else
+		return (TablePField *) tpf;
+#endif
+	}
+	return NULL;
+}
+
+Handle
+_createPFieldHandle(PField *pfield)
+{
+   Handle handle = (Handle) malloc(sizeof(struct _handle));
+   handle->type = PFieldType;
+   handle->ptr = (void *) pfield;
+   return handle;
+}
 
 /* --------------------------------------------------- args_have_same_type -- */
 // FIXME: this belongs in a more general file
@@ -536,10 +566,12 @@ unimplemented:
 }
 
 extern "C" {
-   Handle maketable(const Arg args[], const int nargs);
-   double normtable(const Arg args[], const int nargs);
-   double plottable(const Arg args[], const int nargs);
-   double dumptable(const Arg args[], const int nargs);
+	Handle maketable(const Arg args[], const int nargs);
+	Handle normtable(const Arg args[], const int nargs);
+	Handle multtable(const Arg args[], const int nargs);
+	Handle addtable(const Arg args[], const int nargs);
+	double plottable(const Arg args[], const int nargs);
+	double dumptable(const Arg args[], const int nargs);
 };
 
 /* ------------------------------------------------------------- maketable -- */
@@ -591,17 +623,62 @@ maketable(const Arg args[], const int nargs)
    if (normalize)
       _normalize_table(data, len, 1.0);
 
-   handle = (Handle) malloc(sizeof(struct _handle));
-   handle->type = PFieldType;
-   handle->ptr = (void *) new TablePField(data, len);
+   return _createPFieldHandle(new TablePField(data, len));
+}
 
-   return handle;
+/* ------------------------------------------------------------- multtable -- */
+Handle
+multtable(const Arg args[], const int nargs)
+{
+	if (nargs == 2) {
+		PField *table0 = _getPField(&args[0]);
+		PField *table1 = _getPField(&args[1]);
+		if (!table1) {
+			if (args[1].type == DoubleType) {
+				table1 = new ConstPField(args[1].val.number);
+			}
+		}
+		else if (!table0) {
+			if (args[0].type == DoubleType) {
+				table0 = new ConstPField(args[0].val.number);
+			}
+		}
+		if (table0 && table1) {
+			return _createPFieldHandle(new MultPField(table0, table1));
+		}
+	}
+	die("multtable", "Usage: mul(table1, table2) or mul(table1, const1)");
+	return NULL;
+}
+
+/* ------------------------------------------------------------- multtable -- */
+Handle
+addtable(const Arg args[], const int nargs)
+{
+	if (nargs == 2) {
+		PField *table0 = _getPField(&args[0]);
+		PField *table1 = _getPField(&args[1]);
+		if (!table1) {
+			if (args[1].type == DoubleType) {
+				table1 = new ConstPField(args[1].val.number);
+			}
+		}
+		else if (!table0) {
+			if (args[0].type == DoubleType) {
+				table0 = new ConstPField(args[0].val.number);
+			}
+		}
+		if (table0 && table1) {
+			return _createPFieldHandle(new AddPField(table0, table1));
+		}
+	}
+	die("multtable", "Usage: mul(table1, table2) or mul(table1, const1)");
+	return NULL;
 }
 
 
 /* ------------------------------------------------------------- normtable -- */
-//FIXME: should return type be Handle? See below.
-double
+Handle
 normtable(const Arg args[], const int nargs)
 {
    int copy_table = 0;
@@ -609,23 +686,29 @@ normtable(const Arg args[], const int nargs)
 
    if (nargs < 1) {
       die("normtable", "Requires at least one argument (table to normalize).");
-      return -1.0;
+      return NULL;
    }
-   if (!_arg_is_table_pfield(&args[0])) {
-      die("normtable", "First argument must be the table to normalize.");
-      return -1.0;
+   TablePField *table = _getTablePField(&args[0]);
+   if (table == NULL) {
+      die("normtable", "First argument must be a handle to the table to normalize.");
+      return NULL;
    }
    if (nargs > 1 && args[1].type == DoubleType)
       peak = args[1].val.number;
    if (nargs > 2 && args[2].type == DoubleType)
       copy_table = (args[2].val.number == 1.0);
+	TablePField *tableToNormalize = NULL;
 #ifdef NOTYET
-// FIXME: this would require returning a Handle instead of a double
-   if (copy_table) {
-   }
+	if (copy_table) {
+   		tableToNormalize = table->copy();
+	}
+	else {
+		tableToNormalize = table;
+	}
+	tableToNormalize->normalize(peak);
 #endif
-   _normalize_table(args[0].val.array->data, args[0].val.array->len, peak);
-   return 0.0;
+//   _normalize_table(args[0].val.array->data, args[0].val.array->len, peak);
+	return _createPFieldHandle(tableToNormalize);
 }
 
 
@@ -637,13 +720,13 @@ dumptable(const Arg args[], const int nargs)
    double *array; 
    FILE  *f = NULL;
    char  *fname = NULL;
-   TablePField *table;
 
    if (nargs < 1 || nargs > 2) {
       die("dumptable", "Usage: dumptable(table_handle [, out_file])");
       return -1.0;
    }
-   if (!_arg_is_table_pfield(&args[0])) {
+   TablePField *table = _getTablePField(&args[0]);
+   if (table == NULL) {
       die("dumptable", "First argument must be a handle to the table to dump.");
       return -1.0;
    }
@@ -663,7 +746,6 @@ dumptable(const Arg args[], const int nargs)
    else
       f = stdout;
 
-   table = (TablePField *) args[0].val.handle->ptr;
    char *lines = table->dump();
    fwrite(lines, 1, strlen(lines), f);
    delete lines;
@@ -687,14 +769,14 @@ plottable(const Arg args[], const int nargs)
    int pause = 10;
    char cmd[256];
    char *plotcmds = DEFAULT_PLOTCMD;
-   TablePField *table;
 
    if (nargs < 1 || nargs > 3) {
       die("plottable",
          "Usage: plottable(table_handle [, pause] [, plot_commands])");
       return -1.0;
    }
-   if (!_arg_is_table_pfield(&args[0])) {
+   TablePField *table = _getTablePField(&args[0]);
+   if (table == NULL) {
       die("plottable", "First argument must be the table to plot.");
       return -1.0;
    }
