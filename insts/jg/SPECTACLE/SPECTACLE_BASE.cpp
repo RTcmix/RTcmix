@@ -232,7 +232,7 @@ int SPECTACLE_BASE :: init(double p[], int n_args)
    else
       advise(instname(), "Setting output amplitude curve to all 1's.");
 
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
    if (inchan >= inputChannels())
       return die(instname(), "You asked for channel %d of a %d-channel file.",
@@ -244,7 +244,8 @@ int SPECTACLE_BASE :: init(double p[], int n_args)
    window_len_minus_decimation = window_len - decimation;
    latency = window_len + window_len_minus_decimation;
    float latency_dur = latency * (1.0 / SR);
-   nsamps = rtsetoutput(outskip, latency_dur + inputdur + ringdur, this);
+   if (rtsetoutput(outskip, latency_dur + inputdur + ringdur, this) == -1)
+      return DONT_SCHEDULE;
    total_insamps = (int)(inputdur * SR);    /* without latency_dur */
    input_end_frame = total_insamps + latency;
    DPRINT2("extra=%f, input_end_frame=%d\n", extra, input_end_frame);

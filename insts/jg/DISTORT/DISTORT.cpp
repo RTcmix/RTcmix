@@ -59,9 +59,10 @@ int DISTORT :: init(double p[], int n_args)
    cutoff = n_args > 6 ? p[6] : 0.0;               // filter disabled
    inchan = n_args > 7 ? (int) p[7] : 0;           // default is chan 0
 
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
-   nsamps = rtsetoutput(outskip, dur, this);
+   if (rtsetoutput(outskip, dur, this) == -1)
+      return DONT_SCHEDULE;
 
    if (inchan >= inputChannels())
       return die("DISTORT", "You asked for channel %d of a %d-channel file.",

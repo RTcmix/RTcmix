@@ -125,8 +125,9 @@ int VOCODE2 :: init(double p[], int n_args)
    int subsample = (int) p[13];                    // default: 1 (see below)
    pctleft = n_args > 14 ? p[14] : 0.5;            // default: center
 
-   nsamps = rtsetoutput(outskip, dur, this);
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetoutput(outskip, dur, this) == -1)
+      return DONT_SCHEDULE;
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
 
    if (outputChannels() > 2)

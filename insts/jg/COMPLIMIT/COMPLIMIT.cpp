@@ -100,9 +100,10 @@ int COMPLIMIT::init(double p[], int n_args)
    inchan = (n_args > 13) ? (int) p[13] : 0;
    pctleft = (n_args > 14) ? p[14] : 0.5;
 
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
-   nsamps = rtsetoutput(outskip, dur, this);
+   if (rtsetoutput(outskip, dur, this) == -1)
+      return DONT_SCHEDULE;
 
    if (inchan >= inputChannels())
       return die("COMPLIMIT", "You asked for channel %d of a %d-channel file.",

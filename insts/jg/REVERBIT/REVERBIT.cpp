@@ -102,12 +102,13 @@ int REVERBIT::init(double p[], int n_args)
    if (outputChannels() != 2)
       return die("REVERBIT", "Output must be stereo.");
 
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
    if (inputChannels() > 2)
       return die("REVERBIT", "Can't have more than 2 input channels.");
 
-   nsamps = rtsetoutput(outskip, dur + ringdur, this);
+   if (rtsetoutput(outskip, dur + ringdur, this) == -1)
+      return DONT_SCHEDULE;
    insamps = (int) (dur * SR);
 
    if (reverbtime <= 0.0)
@@ -153,7 +154,7 @@ int REVERBIT::init(double p[], int n_args)
    prev_in[0] = prev_out[0] = 0.0;         // for DC-blocker
    prev_in[1] = prev_out[1] = 0.0;
 
-   return nsamps;
+   return nSamps();
 }
 
 

@@ -81,14 +81,15 @@ int JFIR :: init(double p[], int n_args)
    int order = (int) p[4];
    inchan = (int) p[5];
 
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
    insamps = (int) (dur * SR + 0.5);
    if (inchan >= inputChannels())
       return die("JFIR", "You asked for channel %d of a %d-channel file.",
                                                       inchan, inputChannels());
    float ringdur = (float) order / SR;
-   nsamps = rtsetoutput(outskip, dur + ringdur, this);
+   if (rtsetoutput(outskip, dur + ringdur, this) == -1)
+      return DONT_SCHEDULE;
 
    double *response_table = NULL;
 	int tablelen = 0;

@@ -101,9 +101,10 @@ int FREEVERB :: init(double p[], int n_args)
    if (width < 0.0 || width > 100.0)
       return die("FREEVERB", "Width must be between 0 and 100%%.");
 
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
-   nsamps = rtsetoutput(outskip, dur + ringdur, this);
+   if (rtsetoutput(outskip, dur + ringdur, this) == -1)
+      return DONT_SCHEDULE;
    insamps = (int) (dur * SR);
 
    if (inputChannels() > 2)

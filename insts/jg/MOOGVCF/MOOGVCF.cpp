@@ -71,8 +71,9 @@ int MOOGVCF :: init(double p[], int n_args)
    inchan = n_args > 4 ? (int) p[4] : 0;             // default is chan 0
 
    float ringdown = 0.2;      // just a guess
-   nsamps = rtsetoutput(outskip, dur + ringdown, this);
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetoutput(outskip, dur + ringdown, this) == -1)
+      return DONT_SCHEDULE;
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
 
    if (inchan >= inputChannels())

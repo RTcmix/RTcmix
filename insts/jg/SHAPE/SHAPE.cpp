@@ -97,8 +97,9 @@ int SHAPE :: init(double p[], int n_args)
    if (n_args < 7)
       return die("SHAPE", "Needs at least 7 arguments.");
 
-   nsamps = rtsetoutput(outskip, dur, this);
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetoutput(outskip, dur, this) == -1)
+      return DONT_SCHEDULE;
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
 
    if (inchan >= inputChannels())

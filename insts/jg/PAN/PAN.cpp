@@ -65,8 +65,9 @@ int PAN :: init(double p[], int n_args)
    float dur = p[2];
    inchan = n_args > 4 ? (int) p[4] : 0;                    // default is chan 0
 
-   nsamps = rtsetoutput(outskip, dur, this);
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetoutput(outskip, dur, this) == -1)
+      return DONT_SCHEDULE;
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
 
    if (outputChannels() != 2)

@@ -134,13 +134,14 @@ int EQ :: init(double p[], int n_args)
    float dur = p[2];
    inchan = n_args > 5 ? (int) p[5] : 0;           // default is chan 0
 
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
    insamps = (int) (dur * SR + 0.5);
    if (inchan >= inputChannels())
       return die("EQ", "You asked for channel %d of a %d-channel file.",
                                                    inchan, inputChannels());
-   nsamps = rtsetoutput(outskip, dur + ringdur, this);
+   if (rtsetoutput(outskip, dur + ringdur, this) == -1)
+      return DONT_SCHEDULE;
    if (outputChannels() > 2)
       return die("EQ", "Output must be mono or stereo.");
 

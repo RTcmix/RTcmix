@@ -60,8 +60,9 @@ int SROOM::init(double p[], int n_args)
    if (outputChannels() != 2)
       return die("SROOM", "Output must be stereo.");
 
-   nsamps = rtsetoutput(outskip, dur + rvbtime, this);
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetoutput(outskip, dur + rvbtime, this) == -1)
+      return DONT_SCHEDULE;
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
    insamps = (int) (dur * SR + 0.5);
 

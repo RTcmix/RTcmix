@@ -89,12 +89,13 @@ int FILTSWEEP :: init(double p[], int n_args)
    do_balance = n_args > 6 ? (bool) p[6] : true;
    inchan = n_args > 7 ? (int) p[7] : 0;            // default is chan 0
 
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
    if (inchan >= inputChannels())
       return die("FILTSWEEP", "You asked for channel %d of a %d-channel file.",
                                                       inchan, inputChannels());
-   nsamps = rtsetoutput(outskip, dur + ringdur, this);
+   if (rtsetoutput(outskip, dur + ringdur, this) == -1)
+      return DONT_SCHEDULE;
    insamps = (int) (dur * SR + 0.5);
 
    if (nfilts < 1 || nfilts > MAXFILTS)

@@ -88,9 +88,10 @@ int JDELAY::init(double p[], int n_args)
    prefadersend = n_args > 11 ? (bool) p[11] : false;    // default is "no"
    dcblock = n_args > 12 ? (bool) p[12] : true;          // default is "yes"
 
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
-   nsamps = rtsetoutput(outskip, dur + ringdur, this);
+   if (rtsetoutput(outskip, dur + ringdur, this) == -1)
+      return DONT_SCHEDULE;
    insamps = (int) (dur * SR + 0.5);
 
    if (inchan >= inputChannels())

@@ -89,14 +89,15 @@ int DECIMATE :: init(double p[], int n_args)
       return die("DECIMATE", "Must have at least 6 pfields.");
    }
 
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
 
    if (inchan >= inputChannels())
       return die("DECIMATE", "You asked for channel %d of a %d-channel file.",
                                                       inchan, inputChannels());
 
-   nsamps = rtsetoutput(outskip, dur, this);
+   if (rtsetoutput(outskip, dur, this) == -1)
+      return DONT_SCHEDULE;
 
    if (bits > 16 || bits < 1) {
       warnold();

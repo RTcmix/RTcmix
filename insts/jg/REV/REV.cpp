@@ -67,8 +67,9 @@ int REV :: init(double p[], int n_args)
    float rvbtime = p[5];
    inchan = (int) p[7];
 
-   nsamps = rtsetoutput(outskip, dur + rvbtime, this);
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetoutput(outskip, dur + rvbtime, this) == -1)
+      return DONT_SCHEDULE;
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
    insamps = (int) (dur * SR + 0.5);
 

@@ -116,7 +116,7 @@ int FLANGE :: init(double p[], int n_args)
    inchan = (int) p[10];
    float ringdur = p[12];
 
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
    insamps = (int) (dur * SR + 0.5);
    if (inchan >= inputChannels())
@@ -124,7 +124,8 @@ int FLANGE :: init(double p[], int n_args)
                                                     inchan, inputChannels());
    if (ringdur == 0.0)
       ringdur = (resonance < 0.0) ? -resonance : resonance;
-   nsamps = rtsetoutput(outskip, dur + ringdur, this);
+   if (rtsetoutput(outskip, dur + ringdur, this) == -1)
+      return DONT_SCHEDULE;
 
    if (n_args > 9) {
       flangetype = getFlangeType(true);

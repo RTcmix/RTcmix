@@ -48,11 +48,12 @@ int FOLLOWER_BASE :: init(double p[], int n_args)
    if (pre_init(p, n_args) != 0)
       return DONT_SCHEDULE;
 
-   rtsetoutput(outskip, dur, this);
+   if (rtsetoutput(outskip, dur, this) == -1)
+      return DONT_SCHEDULE;
    if (outputChannels() > 2)
       return die(instname(), "Output must be either mono or stereo.");
 
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
 
    if (inputChannels() != 2)

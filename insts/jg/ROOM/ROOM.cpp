@@ -36,7 +36,7 @@ int ROOM::init(double p[], int n_args)
    if (outputchans != 2)
       return die("ROOM", "Output must be stereo.");
 
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
    insamps = (int) (dur * SR + 0.5);
 
@@ -60,7 +60,8 @@ int ROOM::init(double p[], int n_args)
 #endif
 
    float ringdur = (float) nmax / SR;
-   nsamps = rtsetoutput(outskip, dur + ringdur, this);
+   if (rtsetoutput(outskip, dur + ringdur, this) == -1)
+      return DONT_SCHEDULE;
 
    amparray = floc(1);
    if (amparray) {

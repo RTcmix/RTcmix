@@ -74,9 +74,10 @@ int MROOM::init(double p[], int n_args)
       return die("MROOM", "Requires stereo output.");
 
    float ringdur = (rvbtime > MAX_DELAY) ? rvbtime : MAX_DELAY;
-   nsamps = rtsetoutput(outskip, dur + ringdur, this);
+   if (rtsetoutput(outskip, dur + ringdur, this) == -1)
+      return DONT_SCHEDULE;
 
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
    insamps = (int)(dur * SR + 0.5);
 

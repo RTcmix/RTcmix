@@ -124,9 +124,10 @@ int JCHOR::init(double p[], int n_args)
    if (n_args < 12)
       return die("JCHOR", "Not enough pfields.");
 
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
-   nsamps = rtsetoutput(outskip, outdur, this);
+   if (rtsetoutput(outskip, outdur, this) == -1)
+      return DONT_SCHEDULE;
 
    if (outputChannels() > 2)
       return die("JCHOR", "Output must have no more than two channels.");
@@ -169,7 +170,7 @@ int JCHOR::init(double p[], int n_args)
 
    skip = (int) (SR / (float) resetval);
 
-   return nsamps;
+   return nSamps();
 }
 
 

@@ -155,7 +155,8 @@ int WIGGLE :: init(double p[], int n_args)
       ringdur = 0.1;
    }
 
-   nsamps = rtsetoutput(outskip, dur + ringdur, this);
+   if (rtsetoutput(outskip, dur + ringdur, this) == -1)
+      return DONT_SCHEDULE;
    if (outputChannels() < 1 || outputChannels() > 2)
       return die("WIGGLE", "Output must be mono or stereo.");
 

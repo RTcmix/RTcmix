@@ -98,10 +98,11 @@ int ELL::init(double p[], int n_args)
    amp = p[3];
    ringdur = p[4];
 
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
-   nsamps = rtsetoutput(outskip, dur + ringdur, this);
-   insamps = (int)(dur * SR);
+   if (rtsetoutput(outskip, dur + ringdur, this) == -1)
+      return DONT_SCHEDULE;
+   insamps = (int)(dur * SR + 0.5);
 
    /* If user passed something for inchan or pctleft, check it.
       Otherwise, mark the variable so that we ignore it below.
@@ -169,7 +170,7 @@ int ELL::init(double p[], int n_args)
 
    skip = (int) (SR / (float) resetval);
 
-   return nsamps;
+   return nSamps();
 }
 
 int ELL::configure()

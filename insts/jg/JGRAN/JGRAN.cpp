@@ -126,7 +126,8 @@ int JGRAN :: init(double p[], int n_args)
    osctype = (OscType) p[4];
    randomize_phase = n_args > 5 ? (bool) p[5] : true;    // default: yes
 
-   nsamps = rtsetoutput(outskip, dur, this);
+   if (rtsetoutput(outskip, dur, this) == -1)
+      return DONT_SCHEDULE;
    if (outputChannels() > 2)
       return die("JGRAN", "Output must be mono or stereo.");
 

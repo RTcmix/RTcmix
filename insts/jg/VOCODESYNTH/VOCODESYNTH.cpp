@@ -188,8 +188,9 @@ int VOCODESYNTH :: init(double p[], int n_args)
       hipassmod->setHighPass(hipasscf);
    }
 
-   nsamps = rtsetoutput(outskip, dur + release_time, this);
-   if (rtsetinput(inskip, this) != 0)
+   if (rtsetoutput(outskip, dur + release_time, this) == -1)
+      return DONT_SCHEDULE;
+   if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
 
    if (outputChannels() > 2)
