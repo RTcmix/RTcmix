@@ -43,4 +43,13 @@ SYSLIBS = -lpthread -lm -ldl
 LDFLAGS = $(SYSLIBS)
 SHARED_LDFLAGS = -shared 
 
+#
+# For benefit of inst makefiles that live outside CMIXDIR hierarchy
+#
+UGENS_H = $(CMIXDIR)/H/ugens.h
+INSTRUMENT_H = $(CMIXDIR)/rtstuff/Instrument.h      # for rt insts
+RTPROFILE_O = $(CMIXDIR)/rtstuff/rtprofile.o        # for disk-based insts
+PROFILE_O = $(CMIXDIR)/rtstuff/profile.o            # for rt insts
+GENLIB = $(LIBDIR)/genlib.a
+CMIXOBJS = $(CMIXDIR)/sys/cmix.o $(LIBDIR)/genlib.a
 
