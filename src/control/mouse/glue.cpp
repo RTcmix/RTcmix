@@ -18,7 +18,7 @@
 //                                 [prefix[, units[, precision]]])
 //
 //    First argument is either "X" or "Y", depending on which axis
-//    you want to read.  Other arguements:
+//    you want to read.  Other arguments:
 //
 //    <min>          minimum value [number]
 //    <max>          maximum value [number]
@@ -41,7 +41,7 @@ static RTNumberPField *
 _mouse_usage()
 {
 	die("makeconnection (mouse)",
-		"Usage: makeconnection(\"mouse\",\"X\" or \"Y\", min, max, default, "
+		"Usage: makeconnection(\"mouse\", \"X\" or \"Y\", min, max, default, "
 		"lag, [prefix[, units[, precision]]])");
 	return NULL;
 }
