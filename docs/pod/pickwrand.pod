@@ -54,10 +54,6 @@ the following probabilities: 10% of the notes will pan to hard left,
 10% of the notes will pan to hard right, and 80% of the notes will
 pan to the center.
 
-=head1 AUTHOR
-
-Douglas Scott
-
 =head1 SEE ALSO
 
 L<srand|srand>, L<random|random>, L<rand|rand>, L<irand|irand>,

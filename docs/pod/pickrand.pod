@@ -43,10 +43,6 @@ guarantee that this will print each of the arguments at least once.  Use
 the spray mechanism for that (L<spray_init|spray_init>,
 L<get_spray|get_spray>).
 
-=head1 AUTHOR
-
-Douglas Scott
-
 =head1 SEE ALSO
 
 L<srand|srand>, L<random|random>, L<rand|rand>, L<irand|irand>,
