@@ -101,6 +101,7 @@ makePLAY()
 	PLAY *inst;
 	inst = new PLAY();
 	inst->set_bus_config("PLAY");
+	inst->set_instnum("PLAY");
 	return inst;
 }
 

@@ -39,7 +39,7 @@ int MIXN::init(float p[], short n_args)
   // we're (still) stashing the setline info in gen table 1
 
   int i;
-
+  Instrument::init(p, n_args);
   if (p[2] < 0.0) p[2] = -p[2] - p[1];
 
   outskip = p[0];
@@ -145,7 +145,7 @@ makeMIXN()
 
   inst = new MIXN();
   inst->set_bus_config("MIXN");
-
+  inst->set_instnum("MIXN");
   return inst;
 }
 

@@ -8,8 +8,9 @@
 #include <rt.h>
 #include <rtdefs.h>
 #include <combs.h>
-#include <globals.h>
+//#include <globals.h>
 #include <math.h>
+#include <rtupdate.h>
 
 COMBFILT::COMBFILT() : Instrument()
 {
@@ -37,7 +38,7 @@ int COMBFILT::init(float p[], int n_args)
   // p12 = sustain
   // p13 = decay
   // assumes function table 1 is the amplitude envelope
-
+  Instrument::init(p, n_args);
   rtsetinput(p[1], this);
   nsamps = rtsetoutput(p[0], p[2], this);
   insamps = (int)(p[2] * SR);
@@ -71,7 +72,7 @@ int COMBFILT::init(float p[], int n_args)
   wetdry = p[8];
   spread = p[10];
 
-  maxdelay = (int)rint(SR/2);
+  maxdelay = (int)rint(SR);
   runsamp = 0;
 
   return(nsamps);
@@ -138,7 +139,7 @@ int COMBFILT::run()
 		if(tpitch != NOPUPDATE)
 		{
 		  if(tpitch < 15.0)
-			tpitch = pchcps(tpitch);
+			tpitch = cpspch(tpitch);
 		  combfreq = tpitch;
 		  delay = (int)rint(SR/combfreq);
 		}
@@ -214,6 +215,7 @@ makeCOMBFILT()
   inst = new COMBFILT();
   inst->set_bus_config("COMBFILT");
 
+  inst->set_instnum("COMBFILT");
   return inst;
 }
 

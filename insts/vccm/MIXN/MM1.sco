@@ -3,14 +3,14 @@
    we're stashing the setline info in gen table 1 */
 
 rtsetparams(44100, 8)
-load("MIXN")
+load("iMIXN")
 rtinput("/snd/Public_Sounds/doorbell.aiff")
 
 bus_config("MIXN","in0","out0-7")
 
 out = 0
 in = 0
-dur = 2
+dur = 20
 inchan = 0
 amp = 1
 ch0 = 0

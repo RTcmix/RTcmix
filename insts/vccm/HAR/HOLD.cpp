@@ -3,10 +3,11 @@
 #include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
-#include <globals.h>
+//#include <globals.h>
 #include <rt.h>
 #include <rtdefs.h>
 #include "HOLD.h"
+#include <rtupdate.h>
 
 float *temp_buff[MAX_AUD_IDX];
 static Bool first_run = YES;

@@ -90,7 +90,7 @@ makeRECORD()
 
 	inst = new RECORD();
 	inst->set_bus_config("RECORD");
-
+	inst->set_instnum("RECORD");
 	return inst;
 }
 
