@@ -2,5 +2,5 @@
 
 double rand1(double *);
 double randi(double []);
-void toneset(double, int, double *);
+void toneset(float, double, int, double *);
 

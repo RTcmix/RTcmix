@@ -86,10 +86,10 @@ int RVB::init(double p[], int n_args)
     insamps = (int)(m_dur * SR);
     m_amp = p[3];
 
-    if (inputchans != 2)
+    if (inputChannels() != 2)
 		return die(name(), "Input must be stereo.");
 
-	if (outputchans != 2)
+	if (outputChannels() != 2)
 		return die(name(), "Output must be stereo.");
 
     double Matrix[12][12];
@@ -98,7 +98,7 @@ int RVB::init(double p[], int n_args)
     if (get_rvb_setup_params(Dimensions, Matrix, &rvb_time) == -1)
        return die(name(), "You must call setup routine `space' first.");
     /* (perform some initialization that used to be in space.c) */
-    int meanLength = MFP_samps(Dimensions);   /* mean delay length for reverb */
+    int meanLength = MFP_samps(SR, Dimensions); // mean delay length for reverb
     get_lengths(meanLength);              /* sets up delay lengths */
     set_gains(rvb_time);                		/* sets gains for filters */
 	set_random();                       /* sets up random variation of delays */

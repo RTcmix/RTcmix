@@ -24,7 +24,7 @@ wrap(double x)
    the frequency desired.
 */
 float
-cycle(double freq, int funsize)
+cycle(float SR, double freq, int funsize)
 {
    return (freq * funsize / SR);
 }
@@ -141,7 +141,7 @@ setup_trigfuns()
 */
 
 long
-MFP_samps(double dim[])
+MFP_samps(float SR, double dim[])
 {
    double volume, length, width, height, area, MFP, mean_delay;
 

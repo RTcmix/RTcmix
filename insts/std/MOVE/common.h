@@ -35,7 +35,7 @@ extern "C" {
 
 /* common non-inline functions */
 
-extern long MFP_samps(double []);
+extern long MFP_samps(float, double []);
 extern int close_prime(int, int, int []);
 extern void setup_trigfuns(void);
 extern float cycle(double, int);

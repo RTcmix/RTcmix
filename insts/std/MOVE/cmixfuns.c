@@ -61,7 +61,7 @@ tone(double sig, double data[3])
    cutoff is -3db point in cps.  flag will reset history if set to 1.
 */
 void
-toneset(double cutoff, int flag, double *data)
+toneset(float SR, double cutoff, int flag, double *data)
 {
    double x = 2.0 - cos(cutoff * PI2 / SR);     /* feedback coeff. */
    data[1] = x - sqrt(x * x - 1.0);

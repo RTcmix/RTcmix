@@ -92,17 +92,16 @@ int BASE::init(double p[], int n_args)
     insamps = (int)(m_dur * SR);
     inamp = p[3];
 
-    if (m_inchan >= inputchans) {
-       die(name(), "You asked for channel %d of a %d-channel input file.",
-                                                         m_inchan, inputchans);
-		 return(DONT_SCHEDULE);
-	 }
-    if (inputchans == 1)
+    if (m_inchan >= inputChannels()) {
+       return die(name(),
+			      "You asked for channel %d of a %d-channel input file.", 
+			      m_inchan, inputChannels());
+	}
+    if (inputChannels() == 1)
        m_inchan = 0;
 
-	if (outputchans != 2) {
-		die(name(), "Output must be stereo.");
-		return(DONT_SCHEDULE);
+	if (outputChannels() != 2) {
+		return die(name(), "Output must be stereo.");
 	}
 
     double Matrix[12][12];
@@ -110,26 +109,23 @@ int BASE::init(double p[], int n_args)
     /* Get results of Minc setup calls (space, mikes_on, mikes_off, matrix) */
     if (get_setup_params(Dimensions, Matrix, &abs_factor, &rvb_time,
                          &UseMikes, &MikeAngle, &MikePatternFactor) == -1) {
-       die(name(), "You must call setup routine `space' first.");
-		 return(DONT_SCHEDULE);
-	 }
+       return die(name(), "You must call setup routine `space' first.");
+	}
 
     rval = localInit(p, n_args);	// call inst-specific init code
 	 if (rval == DONT_SCHEDULE) {
-		  die(name(), "localInit failed.");
-		  return(DONT_SCHEDULE);
+		  return die(name(), "localInit failed.");
 	 }
 
     wire_matrix(Matrix);
 
     /* (perform some initialization that used to be in space.c) */
-    int meanLength = MFP_samps(Dimensions);   /* mean delay length for reverb */
+    int meanLength = MFP_samps(SR, Dimensions); // mean delay length for reverb
     get_lengths(meanLength);              /* sets up delay lengths */
     set_gains(rvb_time);                /* sets gains for filters */
     set_walls(abs_factor);              /* sets wall filts for move routine */
     set_allpass();
     set_random();                       /* sets up random variation of delays */
-
 
    /* flag for use of ear filters */
    m_binaural = (!UseMikes && m_dist < 0.8 && m_dist != 0.0);
@@ -172,8 +168,9 @@ void PrintSig(double *sig, int len, double threshold = 0.0)
 int BASE::getInput(int currentSample, int frames)
 {
     // number of samples to process this time through
+	const int inChans = inputChannels();
 
-    int rsamps = frames * inputchans;
+    int rsamps = frames * inChans;
 
     rtgetin(in, this, rsamps);
 
@@ -189,7 +186,7 @@ int BASE::getInput(int currentSample, int frames)
 
     // apply curve to input signal and mix down to mono if necessary
 
-    for (int s = 0, lCurSamp = currentSample; s < rsamps; s += inputchans, lCurSamp++)
+    for (int s = 0, lCurSamp = currentSample; s < rsamps; s += inChans, lCurSamp++)
     {
 		if (lCurSamp < insamps) {	/* processing input signal */
 #ifdef LOOP_DEBUG
@@ -202,9 +199,9 @@ int BASE::getInput(int currentSample, int frames)
 			}
 			if (m_inchan == AVERAGE_CHANS) {
 			   insig = 0.0;
-			   for (int c = 0; c < inputchans; c++)
+			   for (int c = 0; c < inChans; c++)
     			  insig += in[s + c];
-			   insig /= (float)inputchans;
+			   insig /= (float)inChans;
 			}
 			else
 			   insig = in[s + m_inchan];
@@ -226,7 +223,7 @@ int BASE::getInput(int currentSample, int frames)
 
 int BASE::configure()
 {
-	in = new float [RTBUFSAMPS * inputchans];
+	in = new float [RTBUFSAMPS * inputChannels()];
     alloc_delays();                     /* allocates memory for delays */
 
 	rvb_reset(m_tapDelay);                  // resets reverb & tap delay
@@ -558,7 +555,7 @@ void BASE::set_walls(float wallfac)
    for (int i = 0; i < 2; i++) {
       for (int j = 1; j < 13; j++) {        /* skip first pair (direct sigs) */
          cf = (j > 4) ? cutoff * .6 : cutoff;   /* more filt for 2nd */
-         toneset(cf, 1, m_vectors[i][j].Walldata);        /* gen. wall reflect */
+         toneset(SR, cf, 1, m_vectors[i][j].Walldata);        /* gen. wall reflect */
       }
    }
 }

@@ -103,18 +103,18 @@ int MBASE::init(double p[], int n_args)
     if (localInit(p, n_args) == DONT_SCHEDULE)
 		  return die(name(), "localInit failed.");
 
-    if (m_inchan >= inputchans)
+    if (m_inchan >= inputChannels())
        return die(name(), "You asked for channel %d of a %d-channel input file.",
-                  m_inchan, inputchans);
+                  m_inchan, inputChannels());
 
-    if (inputchans == 1)
+    if (inputChannels() == 1)
        m_inchan = 0;
 
 	if (outputchans != 2)
 		return die(name(), "Output must be stereo.");
 
     /* (perform some initialization that used to be in space.c) */
-    int meanLength = MFP_samps(Dimensions);   /* mean delay length for reverb */
+    int meanLength = MFP_samps(SR, Dimensions); // mean delay length for reverb
     get_lengths(meanLength);              /* sets up delay lengths */
     set_gains();                		/* sets gains for filters */
     set_walls(abs_factor);              /* sets wall filts for move routine */
@@ -161,8 +161,9 @@ void PrintSig(double *sig, int len, double threshold = 0.0)
 int MBASE::getInput(int currentSample, int frames)
 {
     // number of samples to process this time through
+	const int inChans = inputChannels();
 
-    int rsamps = frames * inputchans;
+    int rsamps = frames * inChans;
 
     rtgetin(in, this, rsamps);
 	
@@ -176,7 +177,7 @@ int MBASE::getInput(int currentSample, int frames)
 
     // apply curve to input signal and mix down to mono if necessary
 
-    for (int s = 0, lCurSamp = currentSample; s < rsamps; s += inputchans, lCurSamp++)
+    for (int s = 0, lCurSamp = currentSample; s < rsamps; s += inChans, lCurSamp++)
     {
 		if (lCurSamp < insamps) {	/* processing input signal */
 #ifdef LOOP_DEBUG
@@ -192,9 +193,9 @@ int MBASE::getInput(int currentSample, int frames)
 			}
 			if (m_inchan == AVERAGE_CHANS) {
 			   insig = 0.0;
-			   for (int c = 0; c < inputchans; c++)
+			   for (int c = 0; c < inChans; c++)
     			  insig += in[s + c];
-			   insig /= (float)inputchans;
+			   insig /= (float)inChans;
 			}
 			else
 			   insig = in[s + m_inchan];
@@ -218,7 +219,7 @@ int MBASE::configure()
 {
 	int status = 0;
 	
-	in = new float [RTBUFSAMPS * inputchans];
+	in = new float [RTBUFSAMPS * inputChannels()];
     status = alloc_delays();			/* allocates memory for delays */
 
 	rvb_reset(m_tapDelay);   			// resets tap delay
@@ -451,7 +452,7 @@ void MBASE::set_walls(float wallfac)
    for (int i = 0; i < 2; i++) {
       for (int j = 1; j < 13; j++) {        /* skip first pair (direct sigs) */
          cf = (j > 4) ? cutoff * .6 : cutoff;   /* more filt for 2nd */
-         toneset(cf, 1, m_vectors[i][j].Walldata);        /* gen. wall reflect */
+         toneset(SR, cf, 1, m_vectors[i][j].Walldata);        /* gen. wall reflect */
       }
    }
 }
