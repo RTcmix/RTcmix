@@ -27,6 +27,8 @@ JCHOR    - a variation on Lansky's chor program, which sprays a slice of
 
 ELL      - an old cmix favorite, dusted off and RT-ified ... cascaded
            IIR filters with built-in elliptical design program.
+           ***NOTE: Requires libf2c.a and f2c.h (both might be installed
+           with g77, the GNU Fortran-77 compiler).
 
 JDELAY   - a tweak of the standard RTcmix DELAY program, adding a low-pass
            filter and dc-blocker, among other things. Useful for short
