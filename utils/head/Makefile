@@ -1,6 +1,7 @@
-include ../makefile.conf
+include ../../makefile.conf
 
-SYSOBJS = ../sys/printsf.o ../sys/check_byte_order.o ../sys/sndlibsupport.o
+SYSOBJS = $(SRCDIR)/rtcmix/printsf.o $(SRCDIR)/rtcmix/check_byte_order.o \
+	$(AUDIODIR)/sndlibsupport.o
 
 ifeq ($(ARCH),LINUX)
    SYSLIBS = -lm   # only this, overriding makefile.conf
@@ -8,6 +9,8 @@ endif
 ifeq ($(ARCH),FREEBSD)
    SYSLIBS = -lm   # only this, overriding makefile.conf
 endif
+
+INCLUDES += -I$(AUDIODIR) -I$(SRCDIR)/sndlib -I$(SRCDIR)/rtcmix
 
 HEAD = sfcreate sfprint sfshrink sfhedit sffixsize
 
@@ -35,7 +38,7 @@ install:
 	@echo "making install..."	
 	@for PGM in $(HEAD); \
 	do \
-	   ( $(INSTALL) $(CMIXDIR)/head/$$PGM $(DESTDIR); ) \
+	   ( $(INSTALL) $(CMIXDIR)/utils/head/$$PGM $(DESTDIR); ) \
 	done
 
 uninstall:
