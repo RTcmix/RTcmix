@@ -9,17 +9,18 @@ $cmixdir = $ARGV[0];             # location of rtcmix passed in as arg
 $output = "./funclist";
 $exceptions = "./funcexcept";
 $grep = "grep";
+$find = "find";
 if ($#ARGV == 1) {
-   $find = "find $ARGV[1]";      # flag to pass to find command (OSX needs -H)
+   $flags = $ARGV[1];   # flags to pass to find command (e.g., OSX needs -H)
 }
 else {
-   $find = "find";
+   $flags = "";
 }
 
 # Grep through RTcmix src tree for functions in UG_INTRO and RT_INTRO macros.
-$cmd = "$find $cmixdir -name \"*.[cC]\" | xargs $grep UG_INTRO";
+$cmd = "$find $cmixdir $flags -name \"*.[cC]\" | xargs $grep UG_INTRO";
 @oldcmix = `$cmd`;
-$cmd = "$find $cmixdir -name \"*.[cC]\" | xargs $grep RT_INTRO";
+$cmd = "$find $cmixdir $flags -name \"*.[cC]\" | xargs $grep RT_INTRO";
 @list = `$cmd`;
 push(@list, @oldcmix);
 
