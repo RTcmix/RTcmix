@@ -13,7 +13,7 @@
 
 rtsetparams(44100, 2)
 load("COMBIT")
-rtinput("../snd/nucular.wav")
+rtinput("../../../snd/nucular.wav")
 filedur = DUR()
 dur = 0.1
 setline(0,0, 0.1,1, 1,0) 
