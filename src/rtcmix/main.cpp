@@ -64,6 +64,7 @@ init_globals()
 {
    RTBUFSAMPS = 8192;           /* default, modifyable with rtsetparams */
    NCHANS = 2;
+   audioNCHANS = 0;
 
 #ifdef LINUX
    for (int i = 0; i < MAXBUS; i++)
