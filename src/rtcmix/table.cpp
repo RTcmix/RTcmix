@@ -386,7 +386,7 @@ _wave_table(const Arg args[], const int nargs, double *array,
       }
       if (args[j].val.number != 0.0) {
          for (i = 0; i < len; i++) {
-            double val = TWOPI * (double) i / (double) len / (double) (j + 1);
+            double val = TWOPI * (double) i / (len / (j + 1));
             array[i] += (sin(val) * args[j].val.number);
          }
       }
