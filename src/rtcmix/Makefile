@@ -208,36 +208,35 @@ endif
 
 -include depend
 
-install:	all
+install:	standalone_install
 	@if test ! -d $(LIBDIR); then mkdir $(LIBDIR); fi;
 	$(INSTALL) $(RTLIB) $(LIBDIR)
 	$(INSTALL) main.o $(LIBDIR)
 	$(INSTALL) RTcmix.o $(LIBDIR)
+ifeq ($(PERL_SUPPORT), TRUE)
+	$(INSTALL) pRTcmix.o $(LIBDIR)
+endif
+
+standalone_install: all
 	@if test ! -d $(DESTDIR); then mkdir $(DESTDIR); fi;
 	$(INSTALL) MIX $(DESTDIR)/CMIX
 ifeq ($(PERL_SUPPORT), TRUE)
-	$(INSTALL) pRTcmix.o $(LIBDIR)
 	$(INSTALL) PMIX $(DESTDIR)/PCMIX
 endif
 ifeq ($(PYTHON_SUPPORT), TRUE)
 	$(INSTALL) PYMIX $(DESTDIR)/PYCMIX
 endif
 
-standalone_install: all
-	$(INSTALL) MIX $(DESTDIR)/CMIX
-ifeq ($(PERL_SUPPORT), TRUE)
-	$(INSTALL) PMIX $(DESTDIR)/PCMIX
-endif
-ifeq ($(PYTHON_SUPPORT), TRUE)
-	$(INSTALL) PYMIX $(DESTDIR)/PYCMIX
-endif
+uninstall: standalone_uninstall
+	$(RM) $(LIBDIR)/$(RTLIB)
+	$(RM) $(LIBDIR)/main.o
+	$(RM) $(LIBDIR)/RTcmix.o
+	$(RM) $(LIBDIR)/pRTcmix.o
 
 standalone_uninstall:
 	$(RM) $(DESTDIR)/CMIX
 	$(RM) $(DESTDIR)/PCMIX
 	$(RM) $(DESTDIR)/PYCMIX
-
-uninstall: standalone_uninstall
 
 clean:
 	(cd heap; $(MAKE) $(MFLAGS) clean;)
