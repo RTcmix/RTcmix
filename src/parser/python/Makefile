@@ -1,4 +1,3 @@
-# for CMIXDIR and OPT...
 include ../makefile.conf
 
 EXT_NAME = rtcmix
@@ -13,7 +12,7 @@ else
   FIND_FLAGS = -follow
 endif
 
-PYTHON_INCLUDE_DIR = `python print_python_includedir.py`
+PYTHON_INCLUDE_DIR = `$(PYTHON) print_python_includedir.py`
 
 # Note: any optimization makes huge object file, due to extensive inlining
 CFLAGS = -I$(PYTHON_INCLUDE_DIR) $(OPT)
