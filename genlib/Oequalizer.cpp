@@ -2,14 +2,8 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-// Biquad equalizer class, based on code by Tom St Denis
-// <tomstdenis.home.dhs.org>, which in turn is based on the Cookbook
-// formulas for audio EQ biquad filter coefficients by Robert
-// Bristow-Johnson. (Google for "Audio-EQ-Cookbook".)
-//
-// Reimplemented by John Gibson.
-
-#include <Ougens.h>
+#include <Oequalizer.h>
+#include <math.h>
 #include <assert.h>
 
 Oequalizer::Oequalizer(float SR, OeqType type)
@@ -18,7 +12,6 @@ Oequalizer::Oequalizer(float SR, OeqType type)
 	  _x1(0), _x2(0), _y1(0), _y2(0)
 {
 }
-
 
 void Oequalizer::setparams(
    float freq,				// in Hz

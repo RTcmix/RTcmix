@@ -2,9 +2,8 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-// Adapted from Dodge and Jerse, and STK OnePole, by JGG
-
 #include <Ougens.h>
+#include <math.h>
 #include <float.h>	// for -FLT_MAX
 
 //#define DEBUG
@@ -26,8 +25,6 @@ Oonepole::Oonepole(float SR, float freq) : _sr(SR), _hist(0.0)
 {
 	setfreq(freq);
 }
-
-// Positive freq gives lowpass; negative freq gives highpass.
 
 void Oonepole::setfreq(float freq)
 {
@@ -63,6 +60,9 @@ void Oonepole::setlag(float lag)
 
 
 // ----------------------------------------------------------- OonepoleTrack ---
+// Subclass of Oonepole that tracks changes to freq or lag and performs 
+// computations to update them only when they change.  This only works
+// if the caller sticks to setfreq or setlag, not mixing calls to both.
 
 OonepoleTrack::OonepoleTrack(float SR) : Oonepole(SR)
 {

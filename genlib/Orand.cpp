@@ -1,24 +1,24 @@
-#include <ugens.h>
-#include <Ougens.h>
+/* RTcmix - Copyright (C) 2004  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+#include <Orand.h>
 #include <sys/time.h>
 
-Orand::Orand()
+Orand::Orand() : rand_x(1)
 {
-	rand_x = 1;
 }
 
-Orand::Orand(int x)
+Orand::Orand(int seed) : rand_x(seed)
 {
-	rand_x = x;
 }
 
-void Orand::seed(int x)
+void Orand::seed(int seed)
 {
-	rand_x = x;
+	rand_x = seed;
 }
 
 void Orand::timeseed()
-	// seed with the time of day
 {
 	struct timeval tv;
 	struct timezone tz;
@@ -28,21 +28,19 @@ void Orand::timeseed()
 }
 
 float Orand::random()
-	// between 0.0 and 1.0 -- based on brrand() in randfuncs.c
 {
-	int i = ((rand_x = rand_x*1103515245 + 12345)>>16) & 077777;
-	return((float)i/32768.0);
+	int i = ((rand_x = rand_x * 1103515245 + 12345) >> 16) & 077777;
+	return (float) i / 32768.0;
 }
 
 float Orand::rand()
-	// between -1 and +1 -- based on rrand()
 {
-	int i = ((rand_x = rand_x*1103515245 + 12345)>>16) & 077777;
-	return((float)i/16384. - 1.);
+	int i = ((rand_x = rand_x * 1103515245 + 12345) >> 16) & 077777;
+	return ((float) i / 16384.0) - 1.0;
 }
 
-float Orand::range(float lo, float hi)
-	// between lo and hi (obviously)
+float Orand::range(float min, float max)
 {
-	return(random() * (hi-lo) + lo);
+	return min + (random() * (max - min));
 }
+

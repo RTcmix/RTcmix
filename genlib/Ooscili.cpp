@@ -2,8 +2,8 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
+#include <Ooscili.h>
 #include <ugens.h>
-#include <Ougens.h>
 
 Ooscili::Ooscili(float SR, float freq, int arr) : _sr(SR)
 {
@@ -60,18 +60,5 @@ float Ooscili::next(int nsample)
 	int loc2 = loc1 + 1;
 	frac = frac - (double) loc1;
 	return array[loc1] + (frac * (array[loc2] - array[loc1]));
-}
-
-float Ooscili::nextn()  // non-interpolating; does not handle negative freqs
-{
-	int i = (int) phase;
-	float output = array[i];
-
-	// prepare for next call
-	phase += si;
-	while (phase >= (double) length)
-		phase -= (double) length;
-
-	return output;
 }
 

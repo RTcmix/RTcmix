@@ -100,6 +100,7 @@ Ocombi.cpp \
 Odelayi.cpp \
 Oequalizer.cpp \
 Oonepole.cpp \
+Ooscil.cpp \
 Ooscili.cpp \
 Orand.cpp
 
@@ -109,6 +110,7 @@ Ocombi.o \
 Odelayi.o \
 Oequalizer.o \
 Oonepole.o \
+Ooscil.o \
 Ooscili.o \
 Orand.o
 
