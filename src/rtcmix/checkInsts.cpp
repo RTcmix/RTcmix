@@ -1,3 +1,8 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for 
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+#include <globals.h>
 #include <pthread.h>
 #include "../rtstuff/Instrument.h"
 #include "../rtstuff/rt.h"
@@ -6,13 +11,6 @@
 #include <string.h>
 #include <iostream.h>
 #include "defs.h"
-
-extern rt_item *rt_list;
-extern int print_is_on;
-extern int rtInteractive;
-extern int oldSched;
-
-extern pthread_mutex_t heapLock;
 
 extern void heapSched(Instrument *Iptr);
 
