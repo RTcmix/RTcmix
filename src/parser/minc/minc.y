@@ -9,12 +9,12 @@
 #define YYDEBUG 1
 #define MAXTOK_IDENTLIST 200
 
-Tree		program;
-Symbol	*sym;
-int		idcount = 0;	
-char		*idlist[MAXTOK_IDENTLIST];  
-int		flerror;		/* set if there was an error during parsing */
-int		level = 0;	/* keeps track whether we are in a structure */
+static Tree		program;
+static Symbol	*sym;
+static int		idcount = 0;	
+static char		*idlist[MAXTOK_IDENTLIST];  
+static int		flerror;		/* set if there was an error during parsing */
+static int		level = 0;	/* keeps track whether we are in a structure */
 %}
 
 %left  <ival> LOWPRIO

@@ -6,8 +6,8 @@
 %{
 #include "y.tab.h"
 #define YY_ALWAYS_INTERACTIVE 1
-int comments = 0;
-int cpcomments = 0;
+static int comments = 0;
+static int cpcomments = 0;
 extern void yyerror(char *);
 %}
 

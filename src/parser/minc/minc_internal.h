@@ -39,9 +39,6 @@ typedef union {
 } YYSTYPE;
 #define YYSTYPE_IS_DECLARED   /* keep bison from declaring YYSTYPE as an int */
 
-extern int flerror;           /* don't execute if set = 1 */
-
-
 typedef enum {
    MincVoidType = 0,
    MincFloatType,       /* a floating point number, either float or double */
