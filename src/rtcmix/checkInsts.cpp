@@ -6,13 +6,15 @@
 #include <prototypes.h>
 #include <maxdispargs.h>
 #include <pthread.h>
-#include "../rtstuff/Instrument.h"
-#include "../rtstuff/PField.h"
-#include "../rtstuff/PFieldSet.h"
+#include <Instrument.h>
+#include <PField.h>
+#include <PFieldSet.h>
 #include "../rtstuff/rt.h"
 #include "../rtstuff/rtdefs.h"
 #include "../sys/mixerr.h"
+#include <rtcmix_types.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
@@ -32,24 +34,7 @@ _printargs(const char *instname, const Arg arglist[], const int nargs)
       printf("========<rt-queueing>=======\n");
       printf("%s:  ", instname);
       for (i = 0; i < nargs; i++) {
-         arg = arglist[i];
-         switch (arg.type) {
-            case DoubleType:
-               printf("%g ", arg.val.number);
-               break;
-            case StringType:
-               printf("\"%s\" ", arg.val.string);
-               break;
-            case HandleType:
-               printf("Handle:%p ", arg.val.handle);
-               break;
-            case ArrayType:
-               printf("[%g...%g] ", arg.val.array->data[0],
-                              arg.val.array->data[arg.val.array->len - 1]);
-               break;
-            default:
-               break;
-         }
+         arglist[i].printInline(stdout);
       }
       putchar('\n');
       fflush(stdout);
@@ -90,51 +75,57 @@ checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retv
 		// valid p field.
 		PFieldSet *pfieldset = new PFieldSet(nargs);
 		for (int arg = 0; arg < nargs; ++arg) {
-		  const Arg *pArg = &arglist[arg];
-		  switch (pArg->type) {
-    		 case DoubleType:
-        		pfieldset->load(new ConstPField((double) pArg->val.number), arg);
-        		break;
-    		 case StringType:
-        		pfieldset->load(new StringPField(pArg->val.string), arg);
-        		break;
-    		 case HandleType:
-				if (pArg->val.handle->type == PFieldType) {
-					assert(pArg->val.handle->ptr != NULL);
-					pfieldset->load((PField *) pArg->val.handle->ptr, arg);
-				}
-        		break;
-			 case ArrayType:
-    		 default:
-				// For now, default to using a zero PField.
-        		pfieldset->load(new ConstPField(0.0), arg);
-        		break;
+		  const Arg &theArg = arglist[arg];
+		  switch (theArg.getType()) {
+		  case DoubleType:
+			pfieldset->load(new ConstPField((double) theArg), arg);
+			break;
+    	  case StringType:
+			pfieldset->load(new StringPField((const char *) theArg), arg);
+			break;
+    	  case HandleType:
+			{
+			Handle handle = (Handle) theArg;
+			if (handle->type == PFieldType) {
+				assert(handle->ptr != NULL);
+				pfieldset->load((PField *) handle->ptr, arg);
+			}
+			}
+			break;
+		  case ArrayType:
+    	  default:
+			// For now, default to using a zero PField.
+			pfieldset->load(new ConstPField(0.0), arg);
+			break;
 		  }
 		}
-         double rv = (double) Iptr->setup(pfieldset);
+        double rv = (double) Iptr->setup(pfieldset);
 
-         if (rv != (double) DONT_SCHEDULE) { // only schedule if no init() error
-            // For non-interactive case, configure() is delayed until just
-            // before instrument run time.
-            if (rtInteractive)
-               Iptr->configure();
-
-            /* schedule instrument */
-            Iptr->schedule(&rtHeap);
-
-            mixerr = MX_NOERR;
-            rt_list = rt_temp;
-         }
-         else
+        if (rv == (double) DONT_SCHEDULE) { // only schedule if no init() error
             return rv;
+		}
+		
+        // For non-interactive case, configure() is delayed until just
+        // before instrument run time.
+        if (rtInteractive)
+           Iptr->configure();
 
+        /* schedule instrument */
+        Iptr->schedule(&rtHeap);
+
+        mixerr = MX_NOERR;
+        rt_list = rt_temp;
+
+		// Create Handle for Iptr on return
+		Handle rethandle = (Handle) malloc(sizeof(struct _handle));
+		if (rethandle) {
+			rethandle->type = InstrumentPtrType;
+			rethandle->ptr = (void *) Iptr;
+			*retval = rethandle;
+		}
 #ifdef DEBUG
          printf("EXITING checkInsts() FUNCTION -----\n");
 #endif
-
-//FIXME: ??need to create Handle for Iptr on return
-//       and return double rv?  can't be done in parse_dispatch now!
-
          return rv;
       }
       rt_p = rt_p->rt_next;
