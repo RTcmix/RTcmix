@@ -56,12 +56,12 @@ protected:
 
 class TablePField : public RTPField {
 public:
-	TablePField(float *tableArray, int length);
+	TablePField(double *tableArray, int length);
 	virtual double	doubleValue(double) const;
 protected:
 	virtual ~TablePField();
 private:
-	float	*_table;
+	double	*_table;
 	int 	_len;
 };
 

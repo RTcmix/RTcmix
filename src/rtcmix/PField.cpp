@@ -42,7 +42,7 @@ double StringPField::doubleValue(double) const
 
 // TablePField
 
-TablePField::TablePField(float *tableArray, int length)
+TablePField::TablePField(double *tableArray, int length)
 	: _table(tableArray), _len(length)
 {
 }
