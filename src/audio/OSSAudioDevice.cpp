@@ -14,7 +14,7 @@
 #include <errno.h>
 #include <string.h>	// strerror()
 
-#define DEBUG 0
+#define DEBUG 2
 
 #if DEBUG > 1
 #define PRINT0 if (1) printf
@@ -123,6 +123,8 @@ void OSSAudioDevice::run()
 			error("OSS error: ", strerror(errno));
 			break;
 		}
+		PRINT1("\tOSSAudioDevice::run: %d out of %d frags (%d bytes) can be written\n",
+			   info.fragments, info.fragstotal, info.bytes);
 		if (info.bytes < bufferSize() / 2) {
 			PRINT1("\tOSSAudioDevice::run: %d bytes avail...waiting\n", info.bytes);
 			usleep(10);

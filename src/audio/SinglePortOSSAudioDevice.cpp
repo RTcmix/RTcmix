@@ -16,7 +16,7 @@
 
 #define DEFAULT_DEVICE "/dev/dsp"
 
-#define DEBUG 0
+#define DEBUG 2
 
 #if DEBUG > 1
 #define PRINT0 if (1) printf
@@ -120,8 +120,11 @@ int
 SinglePortOSSAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 {
 	int reqQueueBytes = *pWriteSize * getDeviceBytesPerFrame();
+	int reqCount = *pCount;
+	PRINT0("SinglePortOSSAudioDevice::doSetQueueSize: Asking for queue of %d %d-byte fragments\n",
+		   reqCount, reqQueueBytes);
 	int queuecode = ((int) (log(reqQueueBytes) / log(2.0)));
-	int sizeCode = (*pCount << 16) | (queuecode & 0x0000ffff);
+	int sizeCode = (reqCount << 16) | (queuecode & 0x0000ffff);
 	if (ioctl(SNDCTL_DSP_SETFRAGMENT, &sizeCode) == -1) {
 		printf("ioctl(SNDCTL_DSP_SETFRAGMENT, ...) returned -1\n");
 	}
@@ -129,9 +132,14 @@ SinglePortOSSAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 	if (ioctl(SNDCTL_DSP_GETBLKSIZE, &fragSize) == -1) {
 		return error("OSS error while retrieving fragment size: ", strerror(errno));
 	}
+	PRINT0("SinglePortOSSAudioDevice::doSetQueueSize: OSS returned fragment size of %d bytes\n",
+		   fragSize);
 	*pWriteSize = fragSize / getDeviceBytesPerFrame();
-	_bufferSize = *pWriteSize * *pCount;
-	PRINT0("SinglePortOSSAudioDevice::doSetQueueSize: writesize = %d, count = %d\n", *pWriteSize, *pCount);
+	_bufferSize = fragSize * reqCount;
+	PRINT0("SinglePortOSSAudioDevice::doSetQueueSize: writesize = %d frames, count = %d\n",
+		   *pWriteSize, *pCount);
+	PRINT1("SinglePortOSSAudioDevice::doSetQueueSize: audio buffer will be %d bytes\n",
+		   _bufferSize);
 	return 0;
 }
 

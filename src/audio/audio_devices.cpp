@@ -96,11 +96,12 @@ create_audio_devices(int record, int play, int chans, float srate, int *buffersi
 			die("rtsetparams", "%s", device->getLastError());
 			return -1;
 		}
-		if (reqsize != *buffersize) {
+		int newSize = reqsize * numBuffers / reqcount;
+		if (newSize != *buffersize) {
 			advise("rtsetparams",
 				   "RTBUFSAMPS reset by audio device from %d to %d.",
-					*buffersize, reqsize);
-			*buffersize = reqsize;
+					*buffersize, newSize);
+			*buffersize = newSize;
 		}
 	}
 	else
