@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>  /* for memcpy */
 #include <float.h>   /* for FLT_MIN and FLT_MAX */
-#include <math.h>    /* for rintf */
+#include <math.h>
 #include <ugens.h>
 
 
@@ -302,15 +302,28 @@ m_quantizegen(float p[], int n_args, double pp[])
       die("quantizegen", "No function table defined for slot %d.", slot);
    size = fsize(slot);
    quantum = p[1];
+   if (quantum <= 0.0)
+      die("quantizegen", "Quantum must be greater than zero.");
    desttable = new_table(size);
    if (desttable == NULL)
       die("quantizegen", "No memory for new function table.");
    if (!install_gen(slot, size, desttable))
       die("quantizegen", "No more function tables available.");
 
+   /* It'd be nice to let the C library do the rounding, but rintf rounds
+      to the nearest even integer, and round and roundf don't even work
+      on my Slackware 8.1 system.  Screw it, we'll roll our own.  -JGG
+   */
    for (i = 0; i < size; i++) {
-      float q = rintf(srctable[i] / quantum);
-      desttable[i] = q * quantum;
+      float quotient = fabs(srctable[i] / quantum);
+      int floor = (int) quotient;
+      float remainder = quotient - (float) floor;
+      if (remainder >= 0.5)   /* round to nearest */
+         floor++;
+      if (srctable[i] < 0.0)
+         desttable[i] = -floor * quantum;
+      else
+         desttable[i] = floor * quantum;
    }
 
    return (double) size;
