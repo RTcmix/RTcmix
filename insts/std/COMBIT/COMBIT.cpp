@@ -27,8 +27,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
-#include <Instrument.h>
-#include "COMBIT.h"
+#include <Ougens.h>
+#include <COMBIT.h>
 #include <rt.h>
 #include <rtdefs.h>
 
@@ -74,7 +74,7 @@ int COMBIT::init(double p[], int n_args)
 	if (frequency <= 0.0)
 		return die("COMBIT", "Invalid frequency value!");
 	float loopt = 1.0 / frequency;
-	comb = new Ocomb(SR, loopt, loopt, rvbtime);
+	comb = new Ocombi(SR, loopt, loopt, rvbtime);
 	if (comb->frequency() == 0.0)
 		return die("COMBIT", "Failed to allocate comb memory!");
 

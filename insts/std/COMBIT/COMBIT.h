@@ -1,4 +1,6 @@
-#include <Ougens.h>
+#include <Instrument.h>
+
+class Ocomb;
 
 class COMBIT : public Instrument {
 	bool give_minfreq_warning;

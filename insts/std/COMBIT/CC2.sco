@@ -13,13 +13,14 @@
 
 rtsetparams(44100, 2)
 load("COMBIT")
-rtinput("/snd/pablo1.snd")
+rtinput("../../../snd/input.wav");
 
+filedur = DUR(0);
 dur = 0.1
 setline(0,0, 0.1,1, 1,0) 
 reset(1000)
 for (outsk = 0; outsk < 14.0; outsk = outsk + 0.1) {
-	insk = random() * 7.0
+	insk = random() * filedur
 	pitch = random() * 500 + 100
 	COMBIT(outsk, insk, dur, 0.1, pitch, .5, 0, random());
 	}

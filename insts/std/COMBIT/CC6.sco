@@ -11,8 +11,9 @@
 *
 */
 
-rtsetparams(44100, 2)
+rtsetparams(44100, 2, 512)
 load("COMBIT")
-rtinput("../../../snd/input.wav");
-COMBIT(0, 0, 3.5, 0.08, cpspch(7.09), .5, 0, 0)
-COMBIT(0.2, 0, 3.5, 0.08, cpspch(7.07), .5, 0, 1)
+rtinput("../../../snd/huhh.wav")
+pitch = maketable("line", "nonorm", 50000, 0, 600, 1, 60);
+setline(0,0, 2,1, 3.5,1)
+COMBIT(0, 0, 3.5, 0.8, pitch, 0.1, 0, 0.5)
