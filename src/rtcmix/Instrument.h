@@ -124,10 +124,10 @@ public:
 	void 			schedule(heap *rtHeap);
 	void			set_bus_config(const char *);
 	virtual int		setup(PFieldSet *);				// Called by checkInsts()
-	virtual int		init(float *, int, double *);	// Called by setup()
+	virtual int		init(double *, int);			// Called by setup()
 	int				configure(int bufsamps);		// Called by inTraverse
 	int				run(bool needsTo);
-	virtual int		update(float *, int, double *);	// Called by run()
+	virtual int		update(double *, int, unsigned fields=0xffffffff);	// Called by run()
 
 	int				exec(BusType bus_type, int bus);
 	void			addout(BusType bus_type, int bus);
@@ -161,10 +161,6 @@ protected:
    
 	// This is called by set_bus_config() ONLY.
     void			setName(const char *name);
-
-   // This is called by the public init() when it is not redefined
-
-	virtual int		init(float *, int);
 
 	static int		rtsetoutput(float, float, Instrument *);
 	static int		rtsetinput(float, Instrument *);

@@ -57,7 +57,7 @@ MYINST :: ~MYINST()
    report the error. If you just want to warn the user and keep going,
    call warn() or rterror() with a message.
 */
-int MYINST :: init(float p[], int n_args)
+int MYINST :: init(double p[], int n_args)
 {
    float outskip, inskip, dur;
 

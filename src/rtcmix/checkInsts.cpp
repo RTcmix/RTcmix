@@ -96,14 +96,17 @@ checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retv
         double rv = (double) Iptr->setup(pfieldset);
 
         if (rv == (double) DONT_SCHEDULE) { // only schedule if no init() error
+			mixerr = MX_FAIL;
             return rv;
 		}
 		
         // For non-interactive case, configure() is delayed until just
         // before instrument run time.
 		if (rtInteractive) {
-		   if (Iptr->configure(RTBUFSAMPS) != 0)
+		   if (Iptr->configure(RTBUFSAMPS) != 0) {
+			   mixerr = MX_FAIL;
 			   return -1;	// Configuration error!
+		   }
 		}
 
         /* schedule instrument */
@@ -140,16 +143,13 @@ double checkInsts(const char *fname, double *pp, int n_args, void **inst)
    rt_item *rt_temp;
    Instrument *Iptr;
    double rv;
-   float p[MAXDISPARGS];
 
 #ifdef DEBUG
    printf("ENTERING checkInsts() FUNCTION -----\n");
 #endif
 
-   /* convert pp to floats */
-   for (i = 0; i < n_args; i++) p[i] = (float)pp[i];
-   /* and zero out the rest */
-   for (i = n_args; i < MAXDISPARGS; i++) p[i] = pp[i] = 0.0;
+   /* zero out the unused p fields */
+   for (i = n_args; i < MAXDISPARGS; i++) pp[i] = 0.0;
 
    mixerr = MX_FNAME;
    rt_temp = rt_list;
@@ -172,14 +172,16 @@ double checkInsts(const char *fname, double *pp, int n_args, void **inst)
 
          Iptr->ref();   // We do this to assure one reference
    
-         rv = (double) Iptr->init(p, n_args, pp);
+         rv = (double) Iptr->init(pp, n_args);
 
          if (rv != DONT_SCHEDULE) { // only schedule if no init() error
             // For non-interactive case, configure() is delayed until just
             // before instrument run time.
             if (rtInteractive) {
-               if (Iptr->configure(RTBUFSAMPS) != 0)
+               if (Iptr->configure(RTBUFSAMPS) != 0) {
+			       mixerr = MX_FAIL;
 				   return -1;	// Configuration error!
+			   }
 			}
 
             /* schedule instrument */
@@ -188,6 +190,7 @@ double checkInsts(const char *fname, double *pp, int n_args, void **inst)
             mixerr = MX_NOERR;
             rt_list = rt_temp;
          } else {
+		    mixerr = MX_FAIL;
             return rv;
          }
 

@@ -12,6 +12,7 @@ char	*mix_errlist[] = {
 	"This name already defined",
 	"No subroutine by that name",
 	"No more memory",
+	"Instrument initialization error",
 	0
 };
 

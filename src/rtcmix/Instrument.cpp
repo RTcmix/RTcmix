@@ -120,7 +120,6 @@ void Instrument::set_bus_config(const char *inst_name)
 }
 
 #ifdef PFIELD_CLASS
-float  Instrument::s_fArray[MAXDISPARGS];
 double Instrument::s_dArray[MAXDISPARGS];
 #endif
 
@@ -133,8 +132,8 @@ int Instrument::setup(PFieldSet *pfields)
 #ifdef PFIELD_CLASS
 	_pfields = pfields;
 	int nargs = MAXDISPARGS;
-	update(s_fArray, nargs, s_dArray);
-	return init(s_fArray, pfields->size(), s_dArray);
+	update(s_dArray, nargs);
+	return init(s_dArray, pfields->size());
 #else
 	return -1;
 #endif
@@ -143,9 +142,10 @@ int Instrument::setup(PFieldSet *pfields)
 /* ------------------------------------------------------------ update () --- */
 
 // This function is called during run() by Instruments which want updated
-// values for each pfield slot.  'nvalues' is number of p fields to fill.
+// values for each pfield slot.  'nvalues' is size of p[].
+// 'fields' is a bitmask of fields between [0] and [nvalues - 1] to fill.
 
-int Instrument::update(float p[], int nvalues, double pp[])
+int Instrument::update(double p[], int nvalues, unsigned fields)
 {
 #ifdef PFIELD_CLASS
 	int n, args = _pfields->size();
@@ -153,30 +153,23 @@ int Instrument::update(float p[], int nvalues, double pp[])
 	double percent = (frame == 0) ? 0.0 : (double) frame / nSamps();
 	if (nvalues < args)
 		args = nvalues;
-	for (n = 0; n < args; ++n)
-		p[n] = float(pp[n] = (*_pfields)[n].doubleValue(percent));
+	for (n = 0; n < args; ++n) {
+		if (fields & (1 << n))
+			p[n] = (*_pfields)[n].doubleValue(percent);
+	}
 	for (; n < nvalues; ++n)
-		p[n] = float(pp[n] = 0.0);
+		p[n] = 0.0;
 #endif
 	return 0;
 }
 
-/* ------------------------------------------------------------ init (1) --- */
+/* ------------------------------------------------------------ init() --- */
 
-// This function is now called by setup().  It includes the double
-// version of the p array, pp, for instruments which need it.
+// This function is now called by setup().  When using RTUPDATE, it initializes
+// the newpvalue and oldpvalue arrays which are used in the linear 
+// interpolation case.  It also identifies the slot number for the instrument.
 
-int Instrument::init(float p[], int n_args, double pp[])
-{
-	return init(p, n_args);
-}
-
-/* ------------------------------------------------------------ init (2) --- */
-
-// This function initializes the newpvalue and oldpvalue arrays which are 
-// used in the linear interpolation case.  It also identifies the slot number
-// for the instrument
-int Instrument::init(float p[], int n_args)
+int Instrument::init(double p[], int n_args)
 {
 #ifdef RTUPDATE
    int i;
