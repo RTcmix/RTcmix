@@ -21,11 +21,10 @@ extern int resetval;		// declared in src/rtcmix/minc_functions.c
 //    <filename>     full or relative path to data file [string]
 //    <lag>          amount of smoothing for value stream [percent: 0-100]
 //
-//    These are optional, used only if the data file has no header.  If you
-//    give any, you must give all three.
-//
-//    We recommend that you give a filerate that's maybe 1/10 as fast as
-//    the current control rate, to thin the file data a bit.
+//    The next three are optional, used only if the data file has no header.
+//    If you give any, you must give all three.  We recommend that you give a
+//    filerate that's significantly less than the current control rate (maybe
+//    1/5 as fast), so as to thin the file data a bit.
 //
 //    <filerate>     file control rate to assume [int]
 //    <format>       "double", "float", "int64", "int32", "int16" or "byte"
@@ -36,16 +35,15 @@ extern int resetval;		// declared in src/rtcmix/minc_functions.c
 //    <format> is "float", and <swap> is zero.
 //                                                               JGG, 3/15/05
 
-static RTNumberPField * _datafile_usage()
+static RTNumberPField *_datafile_usage()
 {
 	die("makeconnection (datafile)",
 		"Usage: makeconnection(\"datafile\", filename, lag, "
-		"[filerate[, format[, swap]]])");
+		"[filerate, format, swap])");
 	return NULL;
 }
 
-static int
-format_string_to_code(const char *str)
+static int format_string_to_code(const char *str)
 {
 	if (strcmp(str, "double") == 0)
 		return kDataFormatDouble;
