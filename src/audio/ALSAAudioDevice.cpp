@@ -114,7 +114,7 @@ int ALSAAudioDevice::doPause(bool isPaused)
 int ALSAAudioDevice::doStop()
 {
 	if (!stopping()) {
-	PRINT0("ALSAAudioDevice::doStop: waiting for thread to finish...\n");
+		PRINT0("ALSAAudioDevice::doStop: waiting for thread to finish...\n");
 		stopping(true);		// signals play thread
 		if (paused()) {
 			_stopDuringPause = true;	// we handle this case as special
@@ -322,8 +322,8 @@ int ALSAAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 		if ((status = snd_pcm_sw_params_current(_handle, swParams)) < 0) {
 			return error("Cannot initialize sw params: ", snd_strerror (status));
 		}
-//		printf("Testing: HW will wake us when %d frames can be %s\n",
-//			   tryperiodsize, isPlaying() ? "written" : "read");
+		PRINT0("Testing: HW will wake us when %d frames can be %s\n",
+			   tryperiodsize, isPlaying() ? "written" : "read");
 		if ((status = snd_pcm_sw_params_set_avail_min(_handle, swParams, tryperiodsize)) < 0) {
 			return error("Cannot set minimum available count: ", 
 						 snd_strerror (status));
@@ -338,7 +338,7 @@ int ALSAAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 		}
 		snd_pcm_sw_params_free(swParams);
 	}
-	PRINT1("writesize set to %ld\n", tryperiodsize);
+	PRINT1("period size set to %ld\n", tryperiodsize);
 	*pWriteSize = tryperiodsize;
 	return getstatus(status);
 }
@@ -420,7 +420,7 @@ void ALSAAudioDevice::run()
 		}
 	}
 	PRINT0("ALSAAudioDevice::run: after loop\n");
-	if (!_stopDuringPause) {
+	if (!_stopDuringPause && isPlaying()) {
 		const int zFrames = sizeof(interleavedZeroBuffer)/getDeviceBytesPerFrame();
 		if (isDeviceInterleaved())
 			doSendFrames(interleavedZeroBuffer, zFrames);
