@@ -367,8 +367,8 @@ void RTcmix::printOff()
 void RTcmix::panic()
 {
 	run_status = RT_PANIC;
-	sleep(2);
-	run_status = RT_GOOD;
+	//	sleep(2);
+	//run_status = RT_GOOD;
 }
 
 void RTcmix::close()

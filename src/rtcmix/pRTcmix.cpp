@@ -45,3 +45,11 @@ void PRTcmix::perlparse(char *inBuf)
 // 	pthread_mutex_unlock(&schedtime_lock);
 	perl_parse_buf(inBuf);
 }
+
+double PRTcmix::getfval(char *val)
+{
+	double retval;
+	retval = get_perl_fval(val);
+	return retval;
+}
+

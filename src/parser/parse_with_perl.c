@@ -57,6 +57,12 @@ int perl_parse_buf (char *inBuf) {
 	
 }
 
+double get_perl_fval (char *val) {
+	double retval;
+	retval = SvNV(get_sv(val, FALSE));
+	return retval;
+}
+
 void set_perl_var(char *string, double value) {
 	sv_setpvf(perlBuf, "%f", value);
 }	

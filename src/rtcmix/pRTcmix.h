@@ -7,4 +7,5 @@ public:
 	PRTcmix(float, int);		// set SR and NCHANS
 	PRTcmix(float, int, int);	// set SR, NCHANS, BUFSIZE
 	void perlparse(char *);
+	double getfval(char *);
 };
