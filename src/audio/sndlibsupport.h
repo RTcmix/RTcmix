@@ -111,16 +111,16 @@ int getsfmaxamp(SFHEADER *, SFMAXAMP *);
 /* some handy macros */
 
 #define IS_FLOAT_FORMAT(format) (                        \
-              (format) == MUS_BFLOAT                     \
-           || (format) == MUS_LFLOAT                     )
+              MUS_GET_FORMAT(format) == MUS_BFLOAT       \
+           || MUS_GET_FORMAT(format) == MUS_LFLOAT       )
 
 #define IS_24BIT_FORMAT(format) (                        \
-              (format) == MUS_B24INT                     \
-           || (format) == MUS_L24INT                     )
+              MUS_GET_FORMAT(format) == MUS_B24INT       \
+           || MUS_GET_FORMAT(format) == MUS_L24INT       )
 
 #define IS_SHORT_FORMAT(format) (                        \
-              (format) == MUS_BSHORT                     \
-           || (format) == MUS_LSHORT                     )
+              MUS_GET_FORMAT(format) == MUS_BSHORT       \
+           || MUS_GET_FORMAT(format) == MUS_LSHORT       )
 
 #define NOT_A_SOUND_FILE(header_type) (                  \
               (header_type) == MUS_UNSUPPORTED           \
