@@ -36,6 +36,7 @@ Instrument::Instrument()
 	   j[i] = 0;
 	   k[i] = 0;
    }
+   _startOffset = 0;
 #endif /* RTUPDATE */
 
    sfile_on = 0;                // default is no input soundfile
@@ -222,6 +223,9 @@ void Instrument::schedule(heap *rtHeap)
   startsamp = (int) (start*SR);
   
   if (rtInteractive) {
+#ifdef RTUPDATE
+	_startOffset = (elapsed + RTBUFSAMPS);
+#endif
   	// Adjust start frame based on elapsed frame count
   	startsamp += (elapsed + RTBUFSAMPS);
   }
@@ -521,11 +525,11 @@ void Instrument::pf_path_update(int tag, int pval)
 		// on to the next call
 		if(parray_size[tag][pval][j[pval]] > pfpathcounter[pval])
 		{
-			time = cursamp / SR + _start;
+			time = (cursamp - _startOffset) / SR + _start;
 
 			// this statement insures that time 0 = "now" for the real time
 			// performance case
-			time -= schedtime;
+// DS			time -= schedtime;
 
 			if(time < pfpath[tag][pval][0][0]) // before inst reaches first 
 				return;						   // time specified in pfpath
@@ -579,11 +583,11 @@ void Instrument::pf_path_update(int tag, int pval)
 		// be checked
 		if(parray_size[0][pval][j[pval]] > pfpathcounter[pval])
 		{		
-			time = cursamp / SR + _start;
+			time = (cursamp - _startOffset) / SR + _start;
 
 			// this statement insures that time 0 = "now" for the real time
 			// performance case
-			time -= schedtime;
+// DS			time -= schedtime;
 
 			if(time < pfpath[tag][pval][0][0]) // before inst reaches first 
 				return;						   // time specified in pfpath
@@ -642,8 +646,8 @@ void Instrument::pf_path_update(int tag, int pval)
 		{
 			ptables[pval] = ploc(gen_type[tag][pval][j[pval]]);
 			
-			time = cursamp / SR + _start;
-			time -= schedtime;
+			time = (cursamp - _startOffset) / SR + _start;
+// DS			time -= schedtime;
 
 			// cumulative size is storing the current index into the pfpath 
             // array so this statement is testing to see if the current 
@@ -730,11 +734,11 @@ void Instrument::pf_path_update(int tag, int pval)
 			
 			   
 
-			time = cursamp / SR + _start;
+			time = (cursamp - _startOffset) / SR + _start;
 
 			// this statement insures that time 0 = "now" for the real time
 			// performance case
-			time -= schedtime;
+// DS			time -= schedtime;
 
 			// cumulative size is storing the current index into the pfpath 
             // array so this statement is testing to see if the current 

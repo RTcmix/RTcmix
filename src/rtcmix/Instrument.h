@@ -49,6 +49,7 @@ protected:
    float *sustain_table,s_tabs[2];
    float *decay_table,d_tabs[2];
    float rise_time, sustain_time, decay_time;
+   int _startOffset;
    int rsd_samp;
 #endif /* RTUPDATE */
 
