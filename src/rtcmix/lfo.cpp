@@ -125,7 +125,9 @@ static Handle
 _makeLFO_usage()
 {
 	die("makeLFO",
-		"\n   usage: lfo = makeLFO(wave, [interp,] freq, amp)\n");
+		"\n   usage: lfo = makeLFO(wave, [interp,] freq, amp)"
+		"\nOR"
+		"\n   usage: lfo = makeLFO(wave, [interp,] freq, min, max)\n");
 	return NULL;
 }
 
@@ -172,21 +174,46 @@ makeLFO(const Arg args[], const int nargs)
 	}
 	index++;
 
-	PField *amppf = (PField *) args[index];
-	if (amppf == NULL) {
-		if (args[index].isType(DoubleType))
-			amppf = new ConstPField((double) args[index]);
-		else
-			return _makeLFO_usage();
+	PField *amppf = NULL;
+	PField *minpf = NULL;
+	PField *maxpf = NULL;
+	if (nargs - index > 1) {		// min, max instead of amp
+		minpf = (PField *) args[index];
+		if (minpf == NULL) {
+			if (args[index].isType(DoubleType))
+				minpf = new ConstPField((double) args[index]);
+			else
+				return _makeLFO_usage();
+		}
+		index++;
+		maxpf = (PField *) args[index];
+		if (maxpf == NULL) {
+			if (args[index].isType(DoubleType))
+				maxpf = new ConstPField((double) args[index]);
+			else
+				return _makeLFO_usage();
+		}
 	}
-	index++;
+	else {
+		amppf = (PField *) args[index];
+		if (amppf == NULL) {
+			if (args[index].isType(DoubleType))
+				amppf = new ConstPField((double) args[index]);
+			else
+				return _makeLFO_usage();
+		}
+	}
 
 	PField *lfo;
 	if (interp == kInterp1stOrder)
 		lfo = new LFOPField(resetval, wavetable, len, freqpf);
 	else // (interp == kTruncate)
 		lfo = new LFOPField(resetval, wavetable, len, freqpf, LFOPField::Truncate);
-	lfo = new MultPField(lfo, amppf);
+
+	if (amppf != NULL)
+		lfo = new MultPField(lfo, amppf);
+	else
+		lfo = new RangePField(lfo, minpf, maxpf);
 
 	return _createPFieldHandle(lfo);
 }

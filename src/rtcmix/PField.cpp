@@ -319,11 +319,35 @@ ReversePField::ReversePField(PField *innerPField)
 double ReversePField::doubleValue(double didx) const
 {
 	return field()->doubleValue(1.0 - didx);
-}  
+}
 
 double ReversePField::doubleValue(int idx) const
 {
 	return field()->doubleValue((_len - 1) - idx);
+}
+
+// RangePField
+
+RangePField::RangePField(PField *innerPField, PField *minPField, PField *maxPField)
+	: PFieldWrapper(innerPField), _len(innerPField->values()),
+	  _minPField(minPField), _maxPField(maxPField)
+{
+}
+
+double RangePField::doubleValue(double didx) const
+{
+	const double min = _minPField->doubleValue(didx);
+	const double max = _maxPField->doubleValue(didx);
+	const double normval = field()->doubleValue(didx);
+	return min + ((normval + 1.0) * 0.5 * (max - min));
+}
+
+double RangePField::doubleValue(int idx) const
+{
+	const double min = _minPField->doubleValue(idx);
+	const double max = _maxPField->doubleValue(idx);
+	const double normval = field()->doubleValue(idx);
+	return min + ((normval + 1.0) * 0.5 * (max - min));
 }
 
 // ConverterPField

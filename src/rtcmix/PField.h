@@ -218,6 +218,20 @@ private:
 	int		_len;
 };
 
+// Class for scaling normalized [-1, 1] PField output into a range.
+
+class RangePField : public PFieldWrapper {
+public:
+	RangePField(PField *innerPField, PField *minPField, PField *maxPField);
+	virtual double	doubleValue(double didx) const;
+	virtual double	doubleValue(int idx) const;
+	virtual int		values() const { return _len; }
+private:
+	int _len;
+	PField *_minPField;
+	PField *_maxPField;
+};
+
 // Class for converting values read from another PField.
 
 class ConverterPField : public PFieldWrapper {
