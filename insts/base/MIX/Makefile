@@ -2,17 +2,20 @@ include ../package.conf
 
 OBJS = MIX.o
 CMIXOBJS += $(PROFILE_O)
-CFLAGS += -fPIC
-CXXFLAGS += -fPIC 
 PROGS = MIX
+ifeq ($(ARCH),LINUX)
+   DYN = -rdynamic
+else
+   DYN =
+endif
 
 all: MIX
 
 MIX: $(OBJS) $(CMIXOBJS)
-	$(CXX) -o MIX -rdynamic $(OBJS) $(CMIXOBJS) $(LDFLAGS)
+	$(CXX) -o MIX $(DYN) $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
 $(OBJS): $(INSTRUMENT_H)
 
 clean:
-	rm -f *.o $(OBJS) $(PROGS)
+	$(RM) *.o $(OBJS) $(PROGS)
 
