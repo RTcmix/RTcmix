@@ -113,6 +113,7 @@ Usage: %s [options] filename  \n\
                     If the latter, prints time in same way.     \n\
                  Hotkeys: 'f': fast-forward, 'r': rewind,       \n\
                           'm': mark (print current buffer start time)\n\
+                          't': toggle time display              \n\
                  To stop playing: cntl-D or cntl-C              \n\
 "
 
@@ -753,6 +754,7 @@ int main(int argc, char *argv[])
          }
       }
 
+      /* Handle hotkeys */
       if (hotkeys) {
          bytes_read = read(STDIN_FILENO, &c, 1);
          if (bytes_read) {
@@ -786,6 +788,8 @@ int main(int argc, char *argv[])
                                  make_time_string(mark_time, MARK_PRECISION));
                fflush(stdout);
             }
+            else if (c == 't')
+               print_minutes_seconds = print_minutes_seconds ? 0 : 1;
 
             if (skip) {
                off_t curloc = lseek(fd, 0, SEEK_CUR);
