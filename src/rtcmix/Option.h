@@ -38,6 +38,7 @@
 #define kOptionPrint            "print"
 #define kOptionReportClipping   "report_clipping"
 #define kOptionCheckPeaks       "check_peaks"
+#define kOptionExitOnError      "exit_on_error"
 
 // double options
 #define kOptionBufferFrames     "buffer_frames"
@@ -87,6 +88,10 @@ public:
 	static bool checkPeaks(const bool setIt) { _checkPeaks = setIt;
 													return _checkPeaks; }
 
+	static bool exitOnError() { return _exitOnError; }
+	static bool exitOnError(const bool setIt) { _exitOnError = setIt;
+													return _exitOnError; }
+
 	static double bufferFrames() { return _bufferFrames; }
 	static double bufferFrames(const double frames) { _bufferFrames = frames;
 													return _bufferFrames; }
@@ -121,6 +126,7 @@ private:
 	static bool _print;
 	static bool _reportClipping;
 	static bool _checkPeaks;
+	static bool _exitOnError;
 
 	static double _bufferFrames;
 

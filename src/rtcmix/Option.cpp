@@ -23,6 +23,7 @@ bool Option::_clobber = false;
 bool Option::_print = true;
 bool Option::_reportClipping = true;
 bool Option::_checkPeaks = true;
+bool Option::_exitOnError = false;	// we override this in main.cpp
 
 double Option::_bufferFrames = DEFAULT_BUFFER_FRAMES;
 
@@ -135,6 +136,13 @@ int Option::readConfigFile(const char *fileName)
 	else if (result != kConfigNoValueForKey)
 		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
+	key = kOptionExitOnError;
+	result = conf.getValue(key, bval);
+	if (result == kConfigNoErr)
+		exitOnError(bval);
+	else if (result != kConfigNoValueForKey)
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+
 	// double options .........................................................
 
 	double dval;
@@ -219,6 +227,7 @@ int Option::writeConfigFile(const char *fileName)
 										reportClipping() ? "true" : "false");
 	fprintf(stream, "%s = %s\n", kOptionCheckPeaks,
 										checkPeaks() ? "true" : "false");
+	// intentionally leaving out exitOnError
 
 	// write double options
    fprintf(stream, "\n# Number options: key = value\n");
@@ -297,6 +306,7 @@ void Option::dump()
 	cout << kOptionPrint << ": " << _print << endl;
 	cout << kOptionReportClipping << ": " << _reportClipping << endl;
 	cout << kOptionCheckPeaks << ": " << _checkPeaks << endl;
+	cout << kOptionExitOnError << ": " << _exitOnError << endl;
 	cout << kOptionBufferFrames << ": " << _bufferFrames << endl;
 	cout << kOptionDevice << ": " << _device << endl;
 	cout << kOptionInDevice << ": " << _inDevice << endl;
@@ -331,6 +341,8 @@ int get_bool_option(const char *option_name)
 		return (int) Option::play();
 	else if (!strcmp(option_name, kOptionRecord))
 		return (int) Option::record();
+	else if (!strcmp(option_name, kOptionExitOnError))
+		return (int) Option::exitOnError();
 
 	assert(0 && "unsupported option name");		// program error
 	return 0;
@@ -352,6 +364,8 @@ void set_bool_option(const char *option_name, int value)
 		Option::play((bool) value);
 	else if (!strcmp(option_name, kOptionRecord))
 		Option::record((bool) value);
+	else if (!strcmp(option_name, kOptionExitOnError))
+		Option::exitOnError((bool) value);
 	else
 		assert(0 && "unsupported option name");
 }
