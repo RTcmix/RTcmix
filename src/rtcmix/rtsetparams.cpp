@@ -35,7 +35,7 @@ double
 rtsetparams(float p[], int n_args, double pp[])
 {
    int         i, status;
-   int         verbose = get_bool_option(kOptionPrint);
+   int         verbose = get_print_option();
    int         play_audio = get_bool_option(kOptionPlay);
    int         record_audio = get_bool_option(kOptionRecord);
 #ifdef SGI

@@ -258,7 +258,7 @@ rtinput(float p[], int n_args, double pp[])
 						return -1;
 					}
 					RTBUFSAMPS = nframes;
-					if (get_bool_option(kOptionPrint))
+					if (get_print_option())
 						printf("Input audio set:  %g sampling rate, %d channels\n", SR, NCHANS);
 				}
 				// If record disabled during rtsetparams(), we cannot force it on here.
@@ -315,7 +315,7 @@ rtinput(float p[], int n_args, double pp[])
 #endif /* INPUT_BUS_SUPPORT */
 
 			dur = (double) (nsamps / nchans) / srate;
-			if (get_bool_option(kOptionPrint)) {
+			if (get_print_option()) {
 				printf("Input file set for reading:\n");
 				printf("      name:  %s\n", sfname);
 				printf("      type:  %s\n", mus_header_type_name(header_type));

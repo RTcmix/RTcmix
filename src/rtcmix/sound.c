@@ -156,7 +156,7 @@ double m_open(float *p, short n_args, double *pp)
 	is_Next[fno] = isNext;
 	headersize[fno] = getheadersize(&sfdesc[fno]);
 
-	if (get_bool_option(kOptionPrint)) {
+	if (get_print_option()) {
 		printf("name: %s   sr: %.3f  nchans: %d  class: %d\n",name,
 			sfsrate(&sfdesc[fno]),sfchans(&sfdesc[fno]), sfclass(&sfdesc[fno]));
 		printf("Soundfile type: %s\n",
@@ -1178,7 +1178,7 @@ float *p;
 	if(p[1] == 1) play_is_on = 2;  /* play and read disk, but don't write */
 	if(p[1] == 2) play_is_on = 3;  /* play but don't read disk */
 	peakflag = p[2];
-	if(get_bool_option(kOptionPrint))
+	if(get_print_option())
 		printf("%s\n",
 		       (play_is_on == 1) ? "writing to and playing from disk"
 		       : (play_is_on == 2) ? "playing and reading disk only"
@@ -1189,7 +1189,7 @@ float *p;
 		fprintf(stderr, "illegal value for p[1]\n");
 		closesf();
 	}
-	if(get_bool_option(kOptionPrint)) {
+	if(get_print_option()) {
 	    printf(peakflag < 0 ? "scaling to current overall peak" :
 	       peakflag == 0.0 ? "scaling to file peak value" :
 	       "scaling to peak of %f", peakflag); 
