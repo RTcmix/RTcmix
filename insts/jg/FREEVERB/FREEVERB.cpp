@@ -1,6 +1,6 @@
 /* FREEVERB - a reverberator
 
-   This reverb instrument is based on Freeverb, by Jezar at Dreampoint
+   This reverb instrument is based on Freeverb, by Jezar
    (http://www.dreampoint.co.uk/~jzracc/freeverb.htm).
 
    p0  = output start time
@@ -8,17 +8,20 @@
    p2  = input duration
    p3  = amplitude multiplier
    p4  = room size (0-1.07143 ... don't ask)
-   p5  = pre-delay time  (time between dry signal and onset of reverb)
-   p6  = ringdown duration
+   p5  = pre-delay time (time between dry signal and onset of reverb)
+   p6  = ring-down duration
    p7  = damp (0-100%)
-   p8  = dry (0-?)
-   p9  = wet (0-?)
-   p10 = width (0-100%)
+   p8  = dry signal level (0-100%)
+   p9  = wet signal level (0-100%)
+   p10 = stereo width of reverb (0-100%)
 
    Assumes function table 1 is amplitude curve for the note. (Try gen 18.)
    Or you can just call setline. If no setline or function table 1, uses
    flat amplitude curve.  The curve is applied to the input sound *before*
    it enters the reverberator.
+
+   If you enter a room size greater than the maximum, you'll get the
+   maximum amount -- which is probably an infinite reverb time.
 
    Be careful with the dry and wet levels -- it's easy to get extreme
    clipping!
@@ -82,6 +85,10 @@ int FREEVERB :: init(float p[], int n_args)
                                              (float) max_predelay_samps / SR);
    if (damp < 0.0 || damp > 100.0)
       die("FREEVERB", "Damp must be between 0 and 100%%.");
+   if (dry < 0.0 || dry > 100.0)
+      die("FREEVERB", "Dry signal level must be between 0 and 100%%.");
+   if (wet < 0.0 || wet > 100.0)
+      die("FREEVERB", "Wet signal level must be between 0 and 100%%.");
    if (width < 0.0 || width > 100.0)
       die("FREEVERB", "Width must be between 0 and 100%%.");
 
@@ -98,8 +105,8 @@ int FREEVERB :: init(float p[], int n_args)
    rvb->setroomsize(roomsize);
    rvb->setpredelay(predelay_samps);
    rvb->setdamp(damp * 0.01);
-   rvb->setdry(dry);
-   rvb->setwet(wet);
+   rvb->setdry(dry * 0.01);
+   rvb->setwet(wet * 0.01);
    rvb->setwidth(width * 0.01);
 
    amparray = floc(1);
