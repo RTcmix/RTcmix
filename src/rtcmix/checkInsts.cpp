@@ -51,24 +51,16 @@ double checkInsts(char *fname, double *pp, short n_args)
 
 			Iptr->init(p,n_args);
 
-			/* insert / chop Instrument into heap / chunks */
+			/* schedule instrument */
 
-			if (rtInteractive) {
-			  pthread_mutex_lock (&heapLock); // lock mutex variable
-			  heapSched(Iptr);
-			  pthread_mutex_unlock (&heapLock);  // unlock mutex variable
-			}
-			// Or else set things up for a heap sort ... the old scheduler
-			else if (oldSched){
-			  heapify(Iptr);
-			}
-			// Or just schedule with the new scheduler
-			else {
-			  heapSched(Iptr);
-			}
-                        rv = 1;
+			pthread_mutex_lock(&heapLock);
+			heapSched(Iptr);
+			pthread_mutex_unlock(&heapLock);
+
+			rv = 1;
 			mixerr = MX_NOERR;
 			rt_list = rt_temp;
+
 			/* printf("EXITING checkInsts() FUNCTION -----\n"); */
 			return rv;
 		}
