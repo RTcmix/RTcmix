@@ -173,6 +173,8 @@ makeLFO(const Arg args[], const int nargs)
 			return _makeLFO_usage();
 	}
 	index++;
+	if (index >= nargs)
+		return _makeLFO_usage();
 
 	PField *amppf = NULL;
 	PField *minpf = NULL;
@@ -186,6 +188,8 @@ makeLFO(const Arg args[], const int nargs)
 				return _makeLFO_usage();
 		}
 		index++;
+		if (index >= nargs)
+			return _makeLFO_usage();
 		maxpf = (PField *) args[index];
 		if (maxpf == NULL) {
 			if (args[index].isType(DoubleType))
@@ -227,7 +231,12 @@ static Handle
 _makerandom_usage()
 {
 	die("makerandom",
-		"\n   usage: rand = makerandom(type, [interp,] freq, seed, min, max)"
+		"\n   usage: rand = makerandom(type, [interp,] freq, min, max[, seed])"
+		"\n          where <type> is \"linear\", \"low\", \"high\", "
+						"\"triangle\", \"gaussian\", \"cauchy\""
+		"\nOR"
+		"\n   usage: rand = makerandom(\"prob\", [interp,] freq, min, max, mid, "
+						"tight[, seed])"
 		"\n");
 	return NULL;
 }
@@ -235,6 +244,9 @@ _makerandom_usage()
 Handle
 makerandom(const Arg args[], const int nargs)
 {
+	if (nargs < 4)
+		return _makerandom_usage();
+
 	int type;
 	if (args[0].isType(StringType)) {
 		if (args[0] == "even" || args[0] == "linear")
@@ -280,18 +292,8 @@ makerandom(const Arg args[], const int nargs)
 		if (args[index].isType(DoubleType))
 			freqpf = new ConstPField((double) args[index]);
 		else
-			return _makeLFO_usage();
+			return _makerandom_usage();
 	}
-	index++;
-
-	int seed;
-	if ((int) args[index] == 0) {
-		struct timeval tv;
-		gettimeofday(&tv, NULL);
-		seed = (int) tv.tv_usec;
-	}
-	else
-		seed = (int) args[index];
 	index++;
 
 	PField *minpf = (PField *) args[index];
@@ -303,19 +305,8 @@ makerandom(const Arg args[], const int nargs)
 	}
 	double min = minpf->doubleValue(0);
 	index++;
-
-	PField *midpf = NULL;
-	if (type == kProbRandom) {
-		midpf = (PField *) args[index];
-		if (midpf == NULL) {
-			if (args[index].isType(DoubleType))
-				midpf = new ConstPField((double) args[index]);
-			else
-				return _makerandom_usage();
-		}
-		index++;
-	}
-	double mid = midpf ? midpf->doubleValue(0) : 0.0;
+	if (index >= nargs)
+		return _makerandom_usage();
 
 	PField *maxpf = (PField *) args[index];
 	if (maxpf == NULL) {
@@ -326,6 +317,23 @@ makerandom(const Arg args[], const int nargs)
 	}
 	double max = maxpf->doubleValue(0);
 	index++;
+
+	PField *midpf = NULL;
+	if (type == kProbRandom) {
+		if (index >= nargs)
+			return _makerandom_usage();
+		midpf = (PField *) args[index];
+		if (midpf == NULL) {
+			if (args[index].isType(DoubleType))
+				midpf = new ConstPField((double) args[index]);
+			else
+				return _makerandom_usage();
+		}
+		index++;
+		if (index >= nargs)
+			return _makerandom_usage();
+	}
+	double mid = midpf ? midpf->doubleValue(0) : 0.0;
 
 	PField *tightpf = NULL;
 	if (type == kProbRandom) {
@@ -339,6 +347,15 @@ makerandom(const Arg args[], const int nargs)
 		index++;
 	}
 	double tight = tightpf ? tightpf->doubleValue(0) : 0.0;
+
+	int seed = 0;
+	if (nargs - index > 1)		// explicit seed
+		seed = (int) args[index];
+	if (seed == 0) {
+		struct timeval tv;
+		gettimeofday(&tv, NULL);
+		seed = (int) tv.tv_usec;
+	}
 
 	// check initial values
 	if (min > max) {
