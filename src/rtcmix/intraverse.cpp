@@ -13,11 +13,12 @@
 #include "../rtstuff/heap/heap.h"
 #include "../rtstuff/rtdefs.h"
 #include <Instrument.h>
+#include <bus.h>
 #include "../H/dbug.h"
 
 // #define TBUG
-// #define ALLBUG
-// #define DBUG
+//#define ALLBUG
+//#define DBUG
 
 // DT:  main heap structure used to queue instruments
 // D.S. Taken out of globals.h since only defined here.
@@ -28,10 +29,9 @@ extern "C" void *inTraverse(void *arg);
 
 void *inTraverse(void *arg)
 {
-  short rtInst;
-  short playEm;
+  short playEm = 0;
   int i,chunksamps;
-  int heapSize,rtQSize,allQSize;
+  int rtQSize = 0, allQSize;
   int offset;
   int keepGoing;
   int dummy;
@@ -40,9 +40,9 @@ void *inTraverse(void *arg)
   Instrument *Iptr;
   const BusSlot *iBus;
 
-  unsigned long bufEndSamp,endsamp;
-  unsigned long rtQchunkStart;
-  unsigned long heapChunkStart;
+  unsigned long bufEndSamp = RTBUFSAMPS, endsamp;
+  unsigned long rtQchunkStart = 0;
+  unsigned long heapChunkStart = 0;
 
   struct timeval tv;
   struct timezone tz;
@@ -50,9 +50,9 @@ void *inTraverse(void *arg)
 
   Bool aux_pb_done,frame_done;
   Bool audio_configured = NO;
-  short bus,bus_count,play_bus,busq;
+  short bus,bus_count,play_bus,busq = 0;
   IBusClass bus_class,qStatus;
-  BusType bus_type;
+  BusType bus_type = BUS_OUT; // Default when none is set
 
 #ifdef ALLBUG	
   cout << "ENTERING inTraverse() FUNCTION *****\n";
@@ -81,19 +81,8 @@ void *inTraverse(void *arg)
 
   // Initialize everything ... cause it's good practice
   bufStartSamp = 0;  // current end sample for buffer
-  bufEndSamp = RTBUFSAMPS;
-  rtQchunkStart = 0;
-  heapSize = 0;
-  rtInst = 0;
-  playEm = 0;
-  // These from make warnings ... shouldn't be necessary
-  // Put here to fix make warnings
-  rtQSize = 0;
   bus_q_offset = 0;
-  heapChunkStart = 0;
   bus = -1;  // Don't play
-  busq = 0;
-  bus_type = BUS_OUT; // Default when none is set
 
   // NOTE: audioin, aux and output buffers are zero'd during allocation
 
@@ -124,29 +113,19 @@ void *inTraverse(void *arg)
 	printf("Entering big loop .....................\n");
 #endif
 
-//    pthread_mutex_lock(&heapLock);
-	rtHeap.lock();
-    heapSize = rtHeap.getSize();
-    if (heapSize > 0) {
-	  heapChunkStart = rtHeap.getTop();
-    }
-//    pthread_mutex_unlock(&heapLock);
-	rtHeap.unlock();
-
-#ifdef DBUG
-	cout << "heapSize = " << heapSize << endl;
-	cout << "heapChunkStart = " << heapChunkStart << endl;
-#endif
-
     // Pop elements off rtHeap and insert into rtQueue +++++++++++++++++++++
-    while ((heapChunkStart < bufEndSamp) && (heapSize > 0)) {
-      rtInst = 1;
-//      pthread_mutex_lock(&heapLock);
-	  Iptr = rtHeap.deleteMin();  // get next instrument off heap
-//	  pthread_mutex_unlock(&heapLock);
-	  if (!Iptr)
-		break;
-
+	
+	// deleteMin() returns top instrument if inst's start time is < bufEndSamp,
+	// else NULL.  heapChunkStart is set in all cases
+	
+    while ((Iptr = rtHeap.deleteMin(bufEndSamp, &heapChunkStart)) != NULL) 
+    {
+//	  Iptr->Ref();	// While we are using it
+	  
+#ifdef DBUG
+	  cout << "Iptr = " << (void *) Iptr << endl;
+	  cout << "heapChunkStart = " << heapChunkStart << endl;
+#endif
 	  iBus = Iptr->GetBusSlot();
 
 	  // DJT Now we push things onto different queues
@@ -216,14 +195,7 @@ void *inTraverse(void *arg)
 		break;
 	  }
 	  pthread_mutex_unlock(&bus_slot_lock);
-
-//    pthread_mutex_lock(&heapLock);
-	  rtHeap.lock();
-	  heapSize = rtHeap.getSize();
-	  if (heapSize > 0)
-		heapChunkStart = rtHeap.getTop();
-//      pthread_mutex_unlock(&heapLock);
-      rtHeap.unlock();
+//	  Iptr->Unref();	// Matches Ref() at TOL
 	}
 	// End rtHeap popping and rtQueue insertion ----------------------------
 
@@ -267,6 +239,8 @@ void *inTraverse(void *arg)
 		rtQSize = rtQueue[busq].getSize();
 		if (rtQSize > 0) {
 		  rtQchunkStart = rtQueue[busq].nextChunk();
+		  // DS ADDED
+		  assert(rtQchunkStart > 0 || bufStartSamp == 0);
 		}
 	  }
 	  else {
@@ -297,8 +271,8 @@ void *inTraverse(void *arg)
 
 	  // Play elements on queue (insert back in if needed) ++++++++++++++++++
 	  while ((rtQSize > 0) && (rtQchunkStart < bufEndSamp) && (bus != -1)) {
-
 		Iptr = rtQueue[busq].pop();  // get next instrument off queue
+		
 		iBus = Iptr->GetBusSlot();
 		Iptr->set_ichunkstart(rtQchunkStart);
 
@@ -326,6 +300,11 @@ void *inTraverse(void *arg)
 		}
 		else {
 		  chunksamps = bufEndSamp-rtQchunkStart;
+		}
+		if (chunksamps > RTBUFSAMPS)
+		{
+			cout << "ERROR: chunksamps: " << chunksamps << " limiting to " << RTBUFSAMPS << endl;
+			chunksamps = RTBUFSAMPS;
 		}
 
 #ifdef DBUG
@@ -384,10 +363,10 @@ void *inTraverse(void *arg)
 			break;
 		  }
 		  if ((qStatus == t_class) && (bus == endbus)) {
-			delete Iptr;
+			Iptr->Unref();
 		  }
 		  pthread_mutex_unlock(&bus_slot_lock);
- 		}  // end rtQueue or delete ----------------------------------------
+ 		}  // end rtQueue or Unref ----------------------------------------
 
 		// DJT:  not sure this check before new rtQchunkStart is necessary
 		rtQSize = rtQueue[busq].getSize();
@@ -434,9 +413,9 @@ void *inTraverse(void *arg)
 	}
 
     if (!rtInteractive) {  // Ending condition
-	  if ((heapSize == 0) && (allQSize == 0)) {
+	  if ((rtHeap.getSize() == 0) && (allQSize == 0)) {
 #ifdef ALLBUG
-		cout << "heapSize:  " << heapSize << endl;
+		cout << "heapSize:  " << rtHeap.getSize() << endl;
 		cout << "rtQSize:  " << rtQSize << endl;
 		cout << "PLAYEM = 0\n";
 		cout << "The end\n\n";
