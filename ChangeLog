@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2005-03-17 Douglas Scott  <netdscott at netscape.net>
+
+	*  Major revision to better handle memory allocation and freeing.
+
 Thursday, March 13, 2005 John Gibson <johgibso-at-indiana.edu>
 
    * Two new makefilter modes: constrain (for constraining pfield output
