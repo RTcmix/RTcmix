@@ -75,16 +75,44 @@ static void Opaque_dealloc(OpaqueObject *self)
 {
 // printf("Opaque_dealloc: %p\n", self);
    if (self->handle)
-	   unrefHandle(self->handle);
+      unrefHandle(self->handle);
    Py_XDECREF(self->attrDict);
    PyObject_Del(self);
 }
 
 
-// Return a Handle from an PyObject, which MUST be an OpaqueObject.
+// Return a Handle from a PyObject, which MUST be an OpaqueObject.
 inline Handle HandleFromPyObject(PyObject *obj)
 {
    return ((OpaqueObject *) obj)->handle;
+}
+
+
+// Return a PField from a PyObject, or NULL if the object does not represent
+// either a PField Handle or a number.
+static PField *PFieldFromPyObject(PyObject *obj)
+{
+   PField *pfield;
+   if (OpaqueObject_Check(obj)) {
+      Handle handle = HandleFromPyObject(obj);
+      if (handle->type != PFieldType) {
+         PyErr_SetString(PyExc_TypeError,
+                           "can't operate on a Handle that is not a PField");
+         return NULL;
+      }
+      pfield = (PField *) handle->ptr;
+   }
+   else {
+      if (!PyNumber_Check(obj)) {
+         PyErr_SetString(PyExc_TypeError,
+                         "can operate only with PField Handles and numbers.");
+         return NULL;
+      }
+      double val = PyFloat_AsDouble(obj);
+      pfield = new ConstPField(val);
+      pfield->ref();
+   }
+   return pfield;
 }
 
 
@@ -207,53 +235,11 @@ static PField *createBinopPField(PField *pfield1, PField *pfield2, NumberOp op)
 
 
 static PyObject *
-_do_numop_commutative(PyObject *a, PyObject *b, NumberOp op)
+_do_numop(PyObject *a, PyObject *b, NumberOp op)
 {
-   PField *pfield1, *pfield2;
-
-   bool a_is_ours = OpaqueObject_Check(a);
-   bool b_is_ours = OpaqueObject_Check(b);
-
-   if (a_is_ours && b_is_ours) {          // both are PFields
-      printf("add: both 'a' and 'b' are handles\n");
-
-      Handle a_handle = HandleFromPyObject(a);
-      Handle b_handle = HandleFromPyObject(b);
-      if (a_handle->type != PFieldType || b_handle->type != PFieldType) {
-         PyErr_SetString(PyExc_TypeError,
-                           "can't operate on a Handle that is not a PField");
-         return NULL;
-      }
-      pfield1 = (PField *) a_handle->ptr;
-      pfield2 = (PField *) b_handle->ptr;
-   }
-   else if (a_is_ours || b_is_ours) {     // one PField, one constant
-      PyObject *pyhndl, *pynum;
-      if (a_is_ours) {
-         pyhndl = a;
-         pynum = b;
-      }
-      else {
-         pyhndl = b;
-         pynum = a;
-      }
-      if (!PyNumber_Check(pynum)) {
-         PyErr_SetString(PyExc_TypeError,
-                              "can't operate with a Handle and a non-number");
-         return NULL;
-      }
-      double val = PyFloat_AsDouble(pynum);
-
-      Handle handle = HandleFromPyObject(pyhndl);
-      if (handle->type != PFieldType) {
-         PyErr_SetString(PyExc_TypeError,
-                           "can't operate on a Handle that is not a PField");
-         return NULL;
-      }
-      pfield1 = (PField *) handle->ptr;
-      pfield2 = new ConstPField(val);
-   }
-   else {      // not sure how this could happen
+   PField *pfield1 = PFieldFromPyObject(a);
+   PField *pfield2 = PFieldFromPyObject(b);
+   if (pfield1 == NULL || pfield2 == NULL) {
       Py_INCREF(Py_NotImplemented);
       return Py_NotImplemented;
    }
@@ -263,73 +249,8 @@ _do_numop_commutative(PyObject *a, PyObject *b, NumberOp op)
    OpaqueObject *newobj = newOpaqueObject(NULL);
    if (newobj == NULL) {
       PyErr_SetString(PyExc_TypeError, "can't allocate new Handle");
-      return NULL;
-   }
-   newobj->handle = createPFieldHandle(opfield);
-
-   return (PyObject *) newobj;
-}
-
-
-static PyObject *
-_do_numop_noncommutative(PyObject *a, PyObject *b, NumberOp op)
-{
-   PField *pfield1 = NULL, *pfield2 = NULL;
-
-   bool a_is_ours = OpaqueObject_Check(a);
-   bool b_is_ours = OpaqueObject_Check(b);
-
-   if (a_is_ours) {
-      Handle handle = HandleFromPyObject(a);
-      if (handle->type != PFieldType) {
-         PyErr_SetString(PyExc_TypeError,
-                           "can't operate on a Handle that is not a PField");
-         return NULL;
-      }
-      pfield1 = (PField *) handle->ptr;
-   }
-
-   if (b_is_ours) {
-      Handle handle = HandleFromPyObject(b);
-      if (handle->type != PFieldType) {
-         PyErr_SetString(PyExc_TypeError,
-                           "can't operate on a Handle that is not a PField");
-         return NULL;
-      }
-      pfield2 = (PField *) handle->ptr;
-   }
-
-   if (a_is_ours && !b_is_ours) {
-      if (!PyNumber_Check(b)) {
-         PyErr_SetString(PyExc_TypeError,
-                              "can't operate with a Handle and a non-number");
-         return NULL;
-      }
-      double val = PyFloat_AsDouble(b);
-      pfield2 = new ConstPField(val);
-   }
-   else if (!a_is_ours && b_is_ours) {
-      char *str;
-      if (op == OpMinus)
-         str = "can't subtract a PField from a number";
-      else if (op == OpDiv)
-         str = "can't divide a number by a PField";
-      else
-         str = "invalid operation on a number and a PField.";
-      PyErr_SetString(PyExc_TypeError, str);
-      return NULL;
-   }
-   else if (!a_is_ours && !b_is_ours) {   // not sure how this could happen
       Py_INCREF(Py_NotImplemented);
       return Py_NotImplemented;
-   }
-
-   PField *opfield = createBinopPField(pfield1, pfield2, op);
-
-   OpaqueObject *newobj = newOpaqueObject(NULL);
-   if (newobj == NULL) {
-      PyErr_SetString(PyExc_TypeError, "can't allocate new Handle");
-      return NULL;
    }
    newobj->handle = createPFieldHandle(opfield);
 
@@ -340,33 +261,31 @@ _do_numop_noncommutative(PyObject *a, PyObject *b, NumberOp op)
 static PyObject *
 Opaque_add(PyObject *a, PyObject *b)
 {
-   return _do_numop_commutative(a, b, OpPlus);
+   return _do_numop(a, b, OpPlus);
 }
 
 static PyObject *
 Opaque_subtract(PyObject *a, PyObject *b)
 {
-   return _do_numop_noncommutative(a, b, OpMinus);
+   return _do_numop(a, b, OpMinus);
 }
 
 static PyObject *
 Opaque_multiply(PyObject *a, PyObject *b)
 {
-   return _do_numop_commutative(a, b, OpMul);
+   return _do_numop(a, b, OpMul);
 }
 
 static PyObject *
 Opaque_divide(PyObject *a, PyObject *b)
 {
-   return _do_numop_noncommutative(a, b, OpDiv);
+   return _do_numop(a, b, OpDiv);
 }
 
 static PyObject *
 Opaque_neg(PyObject *a)
 {
-   bool a_is_ours = OpaqueObject_Check(a);
-
-   if (!a_is_ours) {             // not sure how this could happen
+   if (!OpaqueObject_Check(a)) {          // not sure how this could happen
       Py_INCREF(Py_NotImplemented);
       return Py_NotImplemented;
    }
@@ -380,12 +299,14 @@ Opaque_neg(PyObject *a)
 
    PField *pfield1 = (PField *) handle->ptr;
    PField *pfield2 = new ConstPField(-1.0);
+   pfield2->ref();
    PField *opfield = createBinopPField(pfield1, pfield2, OpMul);
 
    OpaqueObject *newobj = newOpaqueObject(NULL);
    if (newobj == NULL) {
       PyErr_SetString(PyExc_TypeError, "can't allocate new Handle");
-      return NULL;
+      Py_INCREF(Py_NotImplemented);
+      return Py_NotImplemented;
    }
    newobj->handle = createPFieldHandle(opfield);
 
@@ -395,7 +316,7 @@ Opaque_neg(PyObject *a)
 static PyObject *
 Opaque_not_implemented(void)
 {
-   //PyErr_SetString(PyExc_TypeError, "operator not implemented for Handle");
+   PyErr_SetString(PyExc_TypeError, "operator not implemented for Handle");
    Py_INCREF(Py_NotImplemented);
    return Py_NotImplemented;
 }
