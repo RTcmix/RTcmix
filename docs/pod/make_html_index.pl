@@ -11,9 +11,13 @@ sub print_section($$);
 
 ################################################################################
 
-print qq{<html>\n<body bgcolor="white">\n\n};
+$title = "RTcmix Documentation";
 
-print qq{<h3 align="center">RTcmix Documentation</h3>\n\n};
+print "<html>\n<head>\n<title>";
+print "$title</title>\n</head>\n\n";
+print qq{<body bgcolor="white">\n\n};
+
+print qq{<h3 align="center">$title</h3>\n\n};
 
 print_section($inst_fname, "Instruments");
 print_section($script_fname, "Script commands");
