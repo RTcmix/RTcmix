@@ -11,9 +11,22 @@ that will be necessary to make them support both old and new style scores.
 Suggestions for updateable pfields are given, though only a close look
 at the instrument code will show which ones are feasible.
 
+One problem that turns up repeatedly: how to turn a static pitch pfield
+into a dynamic one.  Some of the pitch pfields complicate things by
+accepting either oct.pc (below 15) or Hz.  That can be handled, but
+the more difficult problem is dealing with oct.pc at all.  It does
+not work to let oct.pc change dynamically, because glissing down
+when the octave changes will produce unintended results.  (E.g.,
+a line from 8.07 to 7.07 will pass through 7.99, which is a very
+high pitch.)  The format should really be linear octaves.  We could
+handle the backward compatibility if we could determine whether the
+value received by init is from a ConstPField or a dynamic one.  So
+oct.pc would be acceptable as a constant, but not when a pfield is
+dynamic.  The other option would be to treat values during run as Hz.
+That's probably the best and seems to be what DT does in insts.vccm/FMINST.
+
 Some instruments don't seem worth updating, either because the new
-capabilities make them obsolete, or because there's not much that
-the new capabilities could add, or because updating them in a hybrid
+capabilities make them obsolete, or because updating them in a hybrid
 way would make an overly complex monstrosity.  In that case, new
 instruments, with new names, should be designed.
 
@@ -118,11 +131,11 @@ COMPLIMIT(start, inskip, dur, pre_amp, post_amp, attack, release, threshold,
       functionality (MMELL?)
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-FOLLOWER: FOLLOWER(start, inskip, dur, car_amp, mod_amp, window_len,
+### FOLLOWER: FOLLOWER(start, inskip, dur, car_amp, mod_amp, window_len,
                                                          smooth, [pctleft])
    [1. amp envelope]
 
-   PFields: car_amp, mod_amp, window_len, smooth, pctleft
+   PFields: car_amp, mod_amp, smooth, pctleft
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### FREEVERB(start, inskip, dur, amp, room_size, predelay, ringdur, damp, dry,
@@ -154,7 +167,7 @@ FOLLOWER: FOLLOWER(start, inskip, dur, car_amp, mod_amp, window_len,
    ***NOTE: IIR BUZZ inst in another category
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-JDELAY(start, inskip, dur, amp, deltime, regen, ringdur, lowpass_cf,
+### JDELAY(start, inskip, dur, amp, deltime, regen, ringdur, lowpass_cf,
                      wetdry_mix, [inchan, pctleft, prefader_send, dcblock])
    [1. amp envelope]
 
@@ -217,15 +230,15 @@ MROOM(start, inskip, dur, amp, right_dist, front_dist, rvb_time, reflect,
    PFields: amp, chan0del, chan1del, regen
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-REV(start, inskip, dur, amp, type, rvb_time, rvb_pct, [inchan])
+### REV(start, inskip, dur, amp, type, rvb_time, rvb_pct, [inchan])
    [1. amp envelope]
 
-   PFields: amp, rvb_time, rvb_pct
+   PFields: amp, rvb_pct
 
    ***NOTE: not sure this inst is worth maintaining
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-REVERBIT(start, inskip, dur, amp, rvb_time, rvb_pct, rt_chan_delay,
+### REVERBIT(start, inskip, dur, amp, rvb_time, rvb_pct, rt_chan_delay,
                                                    [lowpass_cf, dcblock])
    [1. amp envelope]
 
@@ -272,6 +285,14 @@ STRUM: START(start, dur, pitch, fund_decay, nyq_decay, amp, squish,
 
    PFields: amp, pitch, pctleft
 
+   ***NOTE: unexpected difficulty: amp pfield is absolute amp, not a multiplier,
+      whereas the setline is a multiplier.  They can't be combined into one
+      pfield without messing up amp for subsequent calls to FRET and BEND.
+
+   ***NOTE: STRUM family should be redesigned to make one inst for feedback
+      uses and one for non-feedback, with FRET and BEND capabilities subsumed
+      by the attack-starting inst, using PFields.
+
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 STRUM: START1(start, dur, pitch, fund_decay, nyq_decay, dist_gain,
                feedback_gain, feedback_pitch, clean_level, dist_level, amp,
@@ -303,6 +324,9 @@ TRANS(start, inskip, dur, amp, transp, [inchan, pctleft])
    PFields:: amp, transp, pctleft
 
    ***NOTE: same for TRANS3
+
+   ***NOTE: <transp> difficulty: it's octave.pc for pfield, but rt curve
+      needs to use linear octaves.
 
 
 ===========================================================================
@@ -360,7 +384,7 @@ TRANSBEND(start, inskip, dur, amp, pitch_curve_genno, [inchan, pctleft])
       use table or update.
 ---------------------------------------------------------------------------
 
-AM(start, inskip, dur, amp, mod_osc_freq, [inchan, pctleft])
+### AM(start, inskip, dur, amp, mod_osc_freq, [inchan, pctleft])
    [1. amp envelope]
     2. mod wavetable
    [3. mod freq curve]
@@ -374,8 +398,8 @@ AM(start, inskip, dur, amp, mod_osc_freq, [inchan, pctleft])
    ***NOTE: If no gen 2, then <mod_wavetable> arg must be present, and
             must return a local table.  If both, then arg overrides gen.
 
-   ***NOTE: gen 3 and <mod_osc_freq> arg are exactly analogous to
-            gen 1 and <amp> arg: they are multiplied.
+   ***NOTE: If <mod_osc_freq> (or its first value) is zero, then a gen 3 must
+            be present.  This is for backward compatibility.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 AMINST(start, dur, amp, car_freq, mod_freq, [pctleft])
@@ -486,7 +510,7 @@ FLANGE(start, inskip, dur, amp, resonance, maxdeltime, moddepth, modspeed,
             must return a local table.  If both, then arg overrides gen.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-FMINST(start, dur, amp, car_freq, mod_freq, index_low, index_high, [pctleft])
+### FMINST(start, dur, amp, car_freq, mod_freq, index_low, index_high, [pctleft])
    [1. amp envelope]
     2. wavetable
     3. index guide function
@@ -512,10 +536,10 @@ FOLLOWER: FOLLOWBUTTER(start, inskip, dur, car_amp, mod_amp, window_len,
 
    New signature:
 
-   FOLLOWBUTTER(start, inskip, dur, car_amp, mod_amp, window_len, smooth,
+   FOLLOWBUTTER(start, inskip, dur, car_amp, mod_amp, smooth,
                         filter_type, min_cf, max_cf, [steep, pctleft, bw])
 
-   PFields: car_amp, mod_amp, smooth, minc_cf, max_cf, pctleft, bw
+   PFields: car_amp, mod_amp, smooth, min_cf, max_cf, pctleft, bw
 
    ***NOTE: If no gen 2, then <bw> arg must be present.
             If both, then arg overrides gen.
@@ -529,7 +553,7 @@ FOLLOWER: FOLLOWGATE(start, inskip, dur, car_amp, mod_amp, window_len,
 
    New signature:
 
-   FOLLOWGATE(start, inskip, dur, car_amp, mod_amp, window_len, smooth,
+   FOLLOWGATE(start, inskip, dur, car_amp, mod_amp, smooth,
                               attack, release, [pctleft, threshold, range])
 
    PFields: car_amp, mod_amp, smooth, attack, release, pctleft, threshold range
@@ -817,7 +841,7 @@ SPECTACLE: SPECTACLE(start, inskip, dur, amp, ringdur, fft_len, window_len,
 
    New signature:
 
-   SPECTACLE(start, inskip, dur, amp, ringdur, fft_len, window_len,
+   SPECTACLE(start, inskip, dur, amp, ringdur, fft_len, 
                window_type, overlap, [wetdry_mix, inchan, pctleft, in_amp,
                eq_table, delay_time_table, delay_feedback_table])
 
@@ -845,7 +869,7 @@ SPECTACLE: SPECTEQ(start, inskip, dur, amp, ringdur, fft_len, window_len,
 
    New signature:
 
-   SPECTEQ(start, inskip, dur, amp, ringdur, fft_len, window_len,
+   SPECTEQ(start, inskip, dur, amp, ringdur, fft_len, 
                window_type, overlap, [wetdry_mix, inchan, pctleft,
                in_amp, eq_table)
 
@@ -877,7 +901,7 @@ SPECTACLE: TVSPECTACLE(start, inskip, dur, amp, ringdur, fft_len, window_len,
 
    New signature:
 
-   TVSPECTACLE(start, inskip, dur, amp, ringdur, fft_len, window_len,
+   TVSPECTACLE(start, inskip, dur, amp, ringdur, fft_len, 
                window_type, overlap, [wetdry_mix, inchan, pctleft, in_amp,
                eq_table_A, delay_time_table_A, delay_feedback_table_A,
                eq_table_B, delay_time_table_B, delay_feedback_table_B,
@@ -1113,11 +1137,11 @@ WIGGLE(start, dur, car_amp, car_freq, [mod_depth_type, filt_type, steep,
    given as a genno argument.  Handle these as for categories 3 and 4.
 ---------------------------------------------------------------------------
 
-SHAPE(start, inskip, dur, amp, min_dist_index, max_dist_index,
+### SHAPE(start, inskip, dur, amp, min_dist_index, max_dist_index,
                                           amp_norm_genno, [inchan, pctleft])
    [1. amp envelope]
     2. transfer function
-    3. distortion index curve
+   [3. distortion index curve]
     X. normalization table
 
    New signature:
