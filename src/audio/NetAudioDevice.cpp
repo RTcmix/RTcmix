@@ -52,13 +52,12 @@ static const int kNetAudioFormat_Size = sizeof(NetAudioFormat);
 static const int kNetAudioSampfmt = NATIVE_SHORT_FMT | MUS_INTERLEAVED;
 
 struct NetAudioDevice::Impl {
-	Impl() : hostname(NULL), sockno(-1), sockdesc(-1), swapped(false) {}
+	Impl() : hostname(NULL), sockno(-1), sockdesc(-1) {}
 	char				*hostname;
 	int					sockno;
 	struct sockaddr_in	sss;
 	int					sockdesc;			// as opened by socket()
 	int					framesPerWrite;		// set via doSetQueueSize()
-	bool				swapped;			// true if we need to swap
 };
 
 inline bool NetAudioDevice::connected() { return device() > 0; }
@@ -262,15 +261,6 @@ NetAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 	if (bytesRead < 0) {
 		return error("NetAudioDevice: read failed: ", strerror(errno));
 	}
-	// For now, we swap here.  This will be handled by base class.
-	if (_impl->swapped) {
-		short *sFrame = (short *) frameBuffer;
-		const int count = frameCount * getDeviceChannels();
-		for (int n = 0; n < count; ++n) {
-			const unsigned short tmp = (unsigned short) sFrame[n];
-			sFrame[n] = short((tmp >> 8) | (tmp << 8) & 0xffff);
-		}
-	}
 	int framesRead = bytesRead / getDeviceBytesPerFrame();
 	incrementFrameCount(framesRead);
 	return framesRead;
@@ -344,6 +334,7 @@ int NetAudioDevice::configure()
 {
 	NetAudioFormat netformat;
 	int rd;
+	bool swapped = false;
 //	printf("NetAudioDevice::configure(): reading header from stream...\n");
 	if ((rd = ::read(device(), &netformat, kNetAudioFormat_Size)) != kNetAudioFormat_Size)
 	{
@@ -355,16 +346,16 @@ int NetAudioDevice::configure()
 //	printf("NetAudioDevice: read header\n");
 	switch (netformat.cookie) {
 	case kAudioFmtCookie:
-		_impl->swapped = false;
+		swapped = false;
 		break;
 	case kAudioFmtCookieSwapped:
-		_impl->swapped = true;
+		swapped = true;
 		break;
 	default:
 		fprintf(stderr, "NetAudioDevice: missing or corrupt header: cookie = 0x%x", netformat.cookie);
 		return error("NetAudioDevice: missing or corrupt header");
 	}
-	if (_impl->swapped) {
+	if (swapped) {
 		printf("debug: header cookie was opposite endian\n");
 		netformat.fmt = swap(netformat.fmt);
 		netformat.chans = swap(netformat.chans);
@@ -376,6 +367,8 @@ int NetAudioDevice::configure()
 		fprintf(stderr, "NetAudioDevice: unknown or unsupported audio format\n");
 		return error("NetAudioDevice: unsupported audio format");
 	}
+	netformat.fmt |= MUS_INTERLEAVED;	// Just for good measure!
+
 	// For now we cannot handle buffer size or channel mismatches.
 	if (netformat.blockFrames != _impl->framesPerWrite) {
 		fprintf(stderr, "NetAudioDevice: sender and receiver RTBUFSAMPS must match\n");
