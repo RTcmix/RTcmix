@@ -244,7 +244,7 @@ get_seconds(char timestr[])
       print_minutes_seconds = 1;
    }
    else
-      seconds = atof(timestr);
+      seconds = atof(str);
    free(str);
 
    return seconds;
