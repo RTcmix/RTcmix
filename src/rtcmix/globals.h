@@ -61,9 +61,8 @@ GLOBAL int audioNCHANS;
 
 /* -------------------------------------------------------------------------- */
 GLOBAL int noParse;
-GLOBAL int audio_on;
+GLOBAL int record_audio;	// was audio_on
 GLOBAL int play_audio;
-GLOBAL int full_duplex;
 GLOBAL int audio_config;
 GLOBAL int rtInteractive;
 GLOBAL int print_is_on;
@@ -88,9 +87,8 @@ GLOBAL long peaklocs[MAXBUS];
 GLOBAL int report_clipping;
 GLOBAL int check_peaks;
 
-#ifdef NETPLAYER
+#ifdef NETAUDIO
 GLOBAL int netplay;     // for remote sound network playing
-GLOBAL int netplaysock; // socket for remote sound network playing
 #endif
 
 /* for more than 1 socket, set by -s flag to CMIX as offset from MYPORT */
@@ -98,10 +96,6 @@ GLOBAL int socknew;
 
 /* used in intraverse.C, traverse.C and rtsendsamps.c */
 GLOBAL unsigned long bufStartSamp;
-/* Used by rtsetoutput and sockit to sync up timing */
-//GLOBAL double schedtime;
-/* Used by sockit / intraverse to sync up */
-//GLOBAL double baseTime;
 GLOBAL long elapsed;
 typedef enum {
 	RT_GOOD = 0, RT_SHUTDOWN = 1, RT_PANIC = 2, RT_ERROR = 3
