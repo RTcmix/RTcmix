@@ -1,5 +1,6 @@
 # change these if needed
 include package.conf
+
 INSTDIR = insts.base
 
 RTLIBDIRS = MIX WAVETABLE
@@ -10,21 +11,19 @@ LIBDIRS = $(RTLIBDIRS)  $(CMIXLIBDIRS)
 DSODIRS = WAVETABLE $(CMIXLIBDIRS)
 
 all:
-	@for DIR in $(LIBDIRS) MIX; \
+	@for DIR in $(LIBDIRS); \
 	do \
 	  ( cd $$DIR; echo "making in $$DIR..."; \
-	  $(MAKE) $(MFLAGS); echo "done in $$DIR"; \
+	  $(MAKE) $(MFLAGS); echo "done in $$DIR"; ) \
+	done
+
+install:
+	@for DIR in $(DSODIRS); \
+	do \
+	  ( cd $$DIR; echo "making install in $$DIR..."; \
 	  ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR) ); \
 	done
 	@ln -fs `pwd`/MIX/MIX $(DESTDIR)/CMIX
-
-install:
-	@for DIR in $(LIBDIRS); \
-	do \
-	  ( cd $$DIR; echo "making install in $$DIR..."; \
-	  ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR); \
-	  rm -f $(DESTDIR)/$$DIR; \
-	done
 
 dsos:  all
 
