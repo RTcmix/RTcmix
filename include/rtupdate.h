@@ -33,8 +33,9 @@ typedef enum {
 GLOBAL int curtag;                /* current note tag */
 GLOBAL int tags_on;               /* using note tags for rtupdates */
 GLOBAL int tag_sem;
-GLOBAL int curinst;
-GLOBAL int curgen;
+GLOBAL int curinst;				  // current instrument tag
+GLOBAL int curgen;				  // current gen tag
+
 
 struct inst_list
 {
@@ -43,13 +44,14 @@ struct inst_list
 	struct inst_list *next;
 }; //inst_list
 
-GLOBAL struct inst_list *ilist;
-GLOBAL struct inst_list *genlist;
+GLOBAL struct inst_list *ilist;  // list of instrument-name/tag pairs
+GLOBAL struct inst_list *genlist; // list of gen-name/tag pairs
 
 /* contains the values to be updated -- a recirculating array */
 
-GLOBAL float pupdatevals[MAXPUPARR][MAXPUPS];
+GLOBAL float pupdatevals[MAXPUPARR][MAXPUPS];  
 
+// used to store note_pfield_path data.  
 GLOBAL int parray_size[MAXNUMTAGS][MAXNUMPARAMS][MAXNUMCALLS];
 GLOBAL int gen_type[MAXNUMTAGS][MAXNUMPARAMS][MAXNUMCALLS];
 GLOBAL double pfpath[MAXNUMTAGS][MAXNUMPARAMS][MAXPARRAYSIZE][2];
