@@ -81,6 +81,7 @@ int JDELAY::init(float p[], int n_args)
 {
    int   delsamps;
    float outskip, inskip, dur, ringdur;
+	int 	rvin;
 
    outskip = p[0];
    inskip = p[1];
@@ -96,20 +97,29 @@ int JDELAY::init(float p[], int n_args)
    prefadersend = n_args > 11 ? (int)p[11] : 0;    /* default is "no" */
    dcblock = n_args > 12 ? (int)p[12] : 1;         /* default is "yes" */
 
-   rtsetinput(inskip, this);
+   rvin = rtsetinput(inskip, this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans)
+   if (inchan >= inputchans) {
       die("JDELAY", "You asked for channel %d of a %d-channel file.",
                                                          inchan, inputchans);
+		return(DONT_SCHEDULE);
+	}
 
-   if (regen < -1.0 || regen > 1.0)
+   if (regen < -1.0 || regen > 1.0) {
       die("JDELAY", "Regeneration multiplier must be between -1 and 1.");
+		return(DONT_SCHEDULE);
+	}
 
-   if (cutoff < 0.0)
+   if (cutoff < 0.0) {
       die("JDELAY",
               "Cutoff freq. should be positive (or zero to disable filter).");
+		return(DONT_SCHEDULE);
+	}
    else if (cutoff == 0.0)
       advise("JDELAY", "Low-pass filter disabled.");
    else {
@@ -117,8 +127,10 @@ int JDELAY::init(float p[], int n_args)
       advise("JDELAY", "Low-pass filter cutoff: %g", cutoff);
    }
 
-   if (percent_wet < 0.0 || percent_wet > 1.0)
+   if (percent_wet < 0.0 || percent_wet > 1.0) {
       die("JDELAY", "Wet/dry mix must be between 0 and 1 inclusive.");
+		return(DONT_SCHEDULE);
+	}
 
    delsamps = (int)(wait * SR + 0.5);
    /* If delay time is very short, make delay line longer than necessary;

@@ -44,7 +44,7 @@ SROOM::~SROOM()
 
 int SROOM::init(float p[], int n_args)
 {
-   int   rvbsamps;
+   int   rvbsamps, rvin;
    float outskip, inskip, dur;
    float xdim, ydim, xsrc, ysrc, rvbtime, reflect, innerwidth;
 
@@ -61,16 +61,23 @@ int SROOM::init(float p[], int n_args)
    innerwidth = p[10];        /* the room inside your head */
    inchan = n_args > 11 ? (int)p[11] : AVERAGE_CHANS;
 
-   if (outputchans != 2)
+   if (outputchans != 2) {
       die("SROOM", "Output must be stereo.");
+		return(DONT_SCHEDULE);
+	}
 
    nsamps = rtsetoutput(outskip, dur + rvbtime, this);
-   rtsetinput(inskip, this);
+   rvin = rtsetinput(inskip, this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans)
+   if (inchan >= inputchans) {
       die("SROOM", "You asked for channel %d of a %d-channel input file.",
                                                        inchan, inputchans);
+		return(DONT_SCHEDULE);
+	}
    if (inputchans == 1)
       inchan = 0;
 
@@ -234,7 +241,6 @@ Instrument *makeSROOM()
 
    return inst;
 }
-
 
 void rtprofile()
 {

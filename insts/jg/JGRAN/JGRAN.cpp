@@ -129,8 +129,10 @@ int JGRAN :: init(float p[], int n_args)
    osctype = (OscType) p[4];
    randomize_phase = n_args > 5 ? (int) p[5] : 1;           /* default: yes */
 
-   if (outputchans > 2)
+   if (outputchans > 2) {
       die("JGRAN", "Output must be mono or stereo.");
+		return(DONT_SCHEDULE);
+	}
 
    nsamps = rtsetoutput(outskip, dur, this);
 
@@ -142,8 +144,10 @@ int JGRAN :: init(float p[], int n_args)
       int len = fsize(2);
       grainenv_oscil = new OscilN(0.0, envtab, len);
    }
-   else
+   else {
       die("JGRAN", "You haven't made the grain envelope function (table 2).");
+		return(DONT_SCHEDULE);
+	}
 
    wavetab = floc(3);
    if (wavetab)
@@ -334,7 +338,6 @@ Instrument *makeJGRAN()
    inst->set_bus_config("JGRAN");
    return inst;
 }
-
 
 void
 rtprofile()

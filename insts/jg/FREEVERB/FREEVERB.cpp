@@ -60,6 +60,7 @@ int FREEVERB :: init(float p[], int n_args)
    float outskip, inskip, dur, roomsize, damp, dry, wet, width, max_roomsize;
    float predelay_time;
    int   predelay_samps;
+	int	rvin;
 
    outskip = p[0];
    inskip = p[1];
@@ -75,34 +76,53 @@ int FREEVERB :: init(float p[], int n_args)
 
    /* Keep reverb comb feedback <= 1.0 */
    max_roomsize = (1.0 - offsetroom) / scaleroom;
-   if (roomsize < 0.0)
+   if (roomsize < 0.0) {
       die("FREEVERB", "Room size must be between 0 and %g.", max_roomsize);
+		return(DONT_SCHEDULE);
+	}
    if (roomsize > max_roomsize) {
       roomsize = max_roomsize;
       advise("FREEVERB", "Room size cannot be greater than %g. Adjusting...",
              max_roomsize);
    }
    predelay_samps = (int)((predelay_time * SR) + 0.5);
-   if (predelay_samps > max_predelay_samps)
+   if (predelay_samps > max_predelay_samps) {
       die("FREEVERB", "Pre-delay must be between 0 and %g seconds.",
                                              (float) max_predelay_samps / SR);
-   if (damp < 0.0 || damp > 100.0)
+		return(DONT_SCHEDULE);
+	}
+   if (damp < 0.0 || damp > 100.0) {
       die("FREEVERB", "Damp must be between 0 and 100%%.");
-   if (dry < 0.0 || dry > 100.0)
+		return(DONT_SCHEDULE);
+	}
+   if (dry < 0.0 || dry > 100.0) {
       die("FREEVERB", "Dry signal level must be between 0 and 100%%.");
-   if (wet < 0.0 || wet > 100.0)
+		return(DONT_SCHEDULE);
+	}
+   if (wet < 0.0 || wet > 100.0) {
       die("FREEVERB", "Wet signal level must be between 0 and 100%%.");
-   if (width < 0.0 || width > 100.0)
+		return(DONT_SCHEDULE);
+	}
+   if (width < 0.0 || width > 100.0) {
       die("FREEVERB", "Width must be between 0 and 100%%.");
+		return(DONT_SCHEDULE);
+	}
 
-   rtsetinput(inskip, this);
+   rvin = rtsetinput(inskip, this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
    insamps = (int)(dur * SR);
 
-   if (inputchans > 2)
+   if (inputchans > 2) {
       die("FREEVERB", "Can't have more than 2 input channels.");
-   if (outputchans > 2)
+		return(DONT_SCHEDULE);
+	}
+   if (outputchans > 2) {
       die("FREEVERB", "Can't have more than 2 output channels.");
+		return(DONT_SCHEDULE);
+	}
 
    rvb = new revmodel();
 
@@ -186,7 +206,6 @@ Instrument *makeFREEVERB()
 
    return inst;
 }
-
 
 void rtprofile()
 {

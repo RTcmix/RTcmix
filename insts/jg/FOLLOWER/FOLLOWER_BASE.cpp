@@ -31,6 +31,7 @@ int FOLLOWER_BASE :: init(float p[], int n_args)
 {
    int   window_len;
    float *function, outskip, inskip, smoothness;
+	int rval;
 
    outskip = p[0];
    inskip = p[1];
@@ -41,12 +42,16 @@ int FOLLOWER_BASE :: init(float p[], int n_args)
    modamp = p[4] / 32768.0;
 
    window_len = (int) p[5];
-   if (window_len < 1)
+   if (window_len < 1) {
       die(instname(), "Window length must be at least 1 sample.");
+		return(DONT_SCHEDULE);
+	}
 
    smoothness = p[6];
-   if (smoothness < 0.0 || smoothness > 1.0)
+   if (smoothness < 0.0 || smoothness > 1.0) {
       die(instname(), "Smoothness must be between 0 and 1.");
+		return(DONT_SCHEDULE);
+	}
    /* Filter pole coefficient is non-linear -- very sensitive near 1, and
       not very sensitive below .5, so we use a log to reduce this nonlinearity
       for the user.  Constrain to range [1, 100], then take log10.
@@ -56,16 +61,26 @@ int FOLLOWER_BASE :: init(float p[], int n_args)
       smoothness = 0.9999;
    DPRINT1("smoothness: %f\n", smoothness);
 
-   pre_init(p, n_args);
+   rval = pre_init(p, n_args);
+	if (rval == DONT_SCHEDULE)
+		return(DONT_SCHEDULE);
+
 
    rtsetoutput(outskip, dur, this);
-   if (outputChannels() > 2)
+   if (outputChannels() > 2) {
       die(instname(), "Output must be either mono or stereo.");
+		return(DONT_SCHEDULE);
+	}
 
-   rtsetinput(inskip, this);
-   if (inputChannels() != 2)
+   rval = rtsetinput(inskip, this);
+	if (rval == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
+   if (inputChannels() != 2) {
       die(instname(),
       "Must use 2 input channels: 'left' for carrier; 'right' for modulator.");
+		return(DONT_SCHEDULE);
+	}
 
    function = floc(1);
    if (function) {
@@ -85,7 +100,10 @@ int FOLLOWER_BASE :: init(float p[], int n_args)
 
    skip = (int) (SR / (float) resetval);
 
-   post_init(p, n_args);
+   rval = post_init(p, n_args);
+	if (rval == DONT_SCHEDULE) { // no input
+		return(DONT_SCHEDULE);
+	}
 
    return nSamps();
 }

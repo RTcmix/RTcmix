@@ -72,6 +72,7 @@ int BUTTER :: init(float p[], int n_args)
 {
    float outskip, inskip, dur;
    const float ringdur = 0.1;
+	int rvin;
 
    outskip = p[0];
    inskip = p[1];
@@ -84,20 +85,29 @@ int BUTTER :: init(float p[], int n_args)
    pctleft = n_args > 8 ? p[8] : 0.5;               /* default is center */
    bypass = n_args > 9 ? (int) p[9] : 0;            /* default is no */
 
-   rtsetinput(inskip, this);
+   rvin = rtsetinput(inskip, this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans)
+   if (inchan >= inputchans) {
       die("BUTTER", "You asked for channel %d of a %d-channel file.",
                                                          inchan, inputchans);
-   if (nfilts < 1 || nfilts > MAXFILTS)
+		return(DONT_SCHEDULE);
+	}
+   if (nfilts < 1 || nfilts > MAXFILTS) {
       die("BUTTER", "Steepness (p5) must be an integer between 1 and %d.",
                                                                    MAXFILTS);
+		return(DONT_SCHEDULE);
+	}
    if (type != LowPass && type != HighPass && type != BandPass
-         && type != BandReject)
+         && type != BandReject) {
       die("BUTTER", "Filter type must be 1 (lowpass), 2 (highpass), "
                     "3 (bandpass) or 4 (bandreject).");
+		return(DONT_SCHEDULE);
+	}
 
    for (int i = 0; i < nfilts; i++)
       filt[i] = new Butter();
@@ -123,9 +133,11 @@ int BUTTER :: init(float p[], int n_args)
       int lencf = fsize(2);
       tableset(dur, lencf, cftabs);
    }
-   else
+   else {
       die("BUTTER",
             "You haven't made the cutoff frequency function (table 2).");
+		return(DONT_SCHEDULE);
+	}
 
    if (type == BandPass || type == BandReject) {
       bwarray = floc(3);
@@ -133,9 +145,11 @@ int BUTTER :: init(float p[], int n_args)
          int lenbw = fsize(3);
          tableset(dur, lenbw, bwtabs);
       }
-      else
+      else {
          die("BUTTER",
                "You haven't made the bandwidth function (table 3).");
+			return(DONT_SCHEDULE);
+		}
    }
 
    skip = (int)(SR / (float)resetval);
@@ -249,5 +263,4 @@ rtprofile()
 {
    RT_INTRO("BUTTER", makeBUTTER);
 }
-
 

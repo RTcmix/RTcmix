@@ -76,7 +76,7 @@ REVERBIT::~REVERBIT()
 
 int REVERBIT::init(float p[], int n_args)
 {
-   int   delsamps, rvbsamps;
+   int   delsamps, rvbsamps, rvin;
    float outskip, inskip, dur, maxdeltime;
 
    outskip = p[0];
@@ -89,28 +89,43 @@ int REVERBIT::init(float p[], int n_args)
    cutoff = p[7];
    dcblock = n_args > 8 ? (int)p[8] : 1;           /* default is "yes" */
 
-   if (outputchans != 2)
+   if (outputchans != 2) {
       die("REVERBIT", "Output must be stereo.");
+		return(DONT_SCHEDULE);
+	}
 
-   rtsetinput(inskip, this);
-   if (inputchans > 2)
+   rvin = rtsetinput(inskip, this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
+   if (inputchans > 2) {
       die("REVERBIT", "Can't have more than 2 input channels.");
+		return(DONT_SCHEDULE);
+	}
 
    nsamps = rtsetoutput(outskip, dur + reverbtime + RVTSLOP, this);
    insamps = (int)(dur * SR);
 
-   if (reverbtime <= 0.0)
+   if (reverbtime <= 0.0) {
       die("REVERBIT", "Reverb time must be greater than 0.");
+		return(DONT_SCHEDULE);
+	}
 
-   if (reverbpct < 0.0 || reverbpct > 1.0)
+   if (reverbpct < 0.0 || reverbpct > 1.0) {
       die("REVERBIT", "Reverb percent must be between 0 and 1 inclusive.");
+		return(DONT_SCHEDULE);
+	}
 
-   if (rtchan_delaytime <= 0.0)
+   if (rtchan_delaytime <= 0.0) {
       die("REVERBIT", "Right chan delay time must be greater than 0.");
+		return(DONT_SCHEDULE);
+	}
 
-   if (cutoff < 0.0)
+   if (cutoff < 0.0) {
       die("REVERBIT", "Cutoff frequency should be positive (or zero to "
                                                            "disable filter).");
+		return(DONT_SCHEDULE);
+	}
    else if (cutoff == 0.0)
       advise("REVERBIT", "Low-pass filter disabled.");
    else {

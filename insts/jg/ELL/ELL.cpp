@@ -86,7 +86,7 @@ ELL::~ELL()
 
 int ELL::init(float p[], int n_args)
 {
-   int   n;
+   int   n, rvin;
    float outskip, inskip, dur, ringdur;
 
    outskip = p[0];
@@ -95,7 +95,10 @@ int ELL::init(float p[], int n_args)
    amp = p[3];
    ringdur = p[4];
 
-   rtsetinput(inskip, this);
+   rvin = rtsetinput(inskip, this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
    insamps = (int)(dur * SR);
 
@@ -104,17 +107,21 @@ int ELL::init(float p[], int n_args)
    */
    if (n_args > 5) {
       inchan = (int)p[5];
-      if (inchan >= inputchans)
+      if (inchan >= inputchans) {
          die("ELL", "You asked for channel %d of a %d-channel file.",
                                                         inchan, inputchans);
+			return(DONT_SCHEDULE);
+		}
    }
    else
       inchan = -1;
 
    if (n_args > 6) {
       pctleft = p[6];
-      if (pctleft < 0.0 || pctleft > 1.0)
+      if (pctleft < 0.0 || pctleft > 1.0) {
          die("ELL", "pctleft must be between 0 and 1 (inclusive).");
+			return(DONT_SCHEDULE);
+		}
    }
    else
       pctleft = -1.0;
@@ -124,9 +131,11 @@ int ELL::init(float p[], int n_args)
    if (inchan == -1) {
       if (inputchans == 1)
          inchan = 0;
-      else if (inputchans != outputchans)
+      else if (inputchans != outputchans) {
          die("ELL", "Input and output files have differing numbers of channels,"
                                     "so you have to specify 1 input channel.");
+			return(DONT_SCHEDULE);
+		}
    }
 
    /* <pctleft> relevant only when output is stereo and there's 1 input chan. */
@@ -141,8 +150,10 @@ int ELL::init(float p[], int n_args)
    }
 
    nsects = get_nsections();
-   if (nsects == 0)
+   if (nsects == 0) {
       die("ELL", "You haven't called ellset to specify filter.");
+		return(DONT_SCHEDULE);
+	}
    if (inchan == -1) {                     /* use all input chans */
       for (n = 0; n < inputchans; n++) {
          es[n] = new EllSect[nsects];
@@ -236,7 +247,6 @@ Instrument *makeELL()
 
    return inst;
 }
-
 
 void rtprofile()
 {

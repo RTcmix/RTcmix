@@ -101,19 +101,27 @@ int FOLLOWBUTTER :: pre_init(float p[], int n_args)
    nfilts = n_args > 10 ? (int)p[10] : 1;
    pctleft = n_args > 11 ? p[11] : 0.5;      /* default is center */
 
-   if (mincf <= 0.0 || mincf >= maxcf)
+   if (mincf <= 0.0 || mincf >= maxcf) {
       die("FOLLOWBUTTER", "Minimum cf (p8) must be greater than 0 and less "
             "than the maximum cf.");
-   if (maxcf > SR / 2.0)
+		return(DONT_SCHEDULE);
+	}
+   if (maxcf > SR / 2.0) {
       die("FOLLOWBUTTER",
                   "Maximum cf (p9) must be less than the Nyquist frequency.");
+		return(DONT_SCHEDULE);
+	}
    if (type != LowPass && type != HighPass && type != BandPass
-         && type != BandReject)
+         && type != BandReject) {
       die("FOLLOWBUTTER", "Filter type must be 1 (lowpass), 2 (highpass), "
                                           "3 (bandpass) or 4 (bandreject).");
-   if (nfilts < 1 || nfilts > MAXFILTS)
+		return(DONT_SCHEDULE);
+	}
+   if (nfilts < 1 || nfilts > MAXFILTS) {
       die("FOLLOWBUTTER",
             "Steepness (p10) must be an integer between 1 and %d.", MAXFILTS);
+		return(DONT_SCHEDULE);
+	}
 
    cfdiff = maxcf - mincf;
 
@@ -133,8 +141,10 @@ int FOLLOWBUTTER :: post_init(float p[], int n_args)
          int len = fsize(2);
          bwtable = new TableL(dur, function, len);
       }
-      else
+      else {
          die(instname(), "You must create the bandwidth table (table 2).");
+			return(DONT_SCHEDULE);
+		}
    }
 
    return 0;
@@ -208,7 +218,6 @@ Instrument *makeFOLLOWBUTTER()
 
    return inst;
 }
-
 
 /* ------------------------------------------------------------- rtprofile -- */
 void rtprofile()

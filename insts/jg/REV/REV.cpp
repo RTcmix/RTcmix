@@ -59,7 +59,7 @@ REV :: ~REV()
 
 int REV :: init(float p[], int n_args)
 {
-   int   rvbtype;
+   int   rvbtype, rvin;
    float outskip, inskip, dur;
 
    outskip = p[0];
@@ -72,12 +72,17 @@ int REV :: init(float p[], int n_args)
    inchan = (int)p[7];
 
    nsamps = rtsetoutput(outskip, dur + rvbtime, this);
-   rtsetinput(inskip, this);
+   rvin = rtsetinput(inskip, this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans)
+   if (inchan >= inputchans) {
       die("REV", "You asked for channel %d of a %d-channel file",
                                                           inchan, inputchans);
+		return(DONT_SCHEDULE);
+	}
    switch (rvbtype) {
       case 1:
          reverb = new PRCRev(rvbtime);
@@ -90,6 +95,7 @@ int REV :: init(float p[], int n_args)
          break;
       default:
          die("REV", "Unknown reverb type %d.", rvbtype);
+			return(DONT_SCHEDULE);
    }
    reverb->setEffectMix(rvbpct);
 
@@ -162,7 +168,6 @@ Instrument *makeREV()
 
    return inst;
 }
-
 
 void
 rtprofile()

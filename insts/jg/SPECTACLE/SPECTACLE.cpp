@@ -85,24 +85,30 @@ int SPECTACLE :: pre_init(float p[], int n_args)
    inchan = n_args > 10 ? (int) p[10] : 0;      /* default is chan 0 */
    pctleft = n_args > 11 ? p[11] : 0.5;         /* default is center */
 
-   if (wetdry < 0.0 || wetdry > 1.0)
+   if (wetdry < 0.0 || wetdry > 1.0) {
       die(instname(), "Wet/dry must be between 0 and 1.");
+		return(DONT_SCHEDULE);
+	}
 
    eqtable = floc(3);
    if (eqtable) {
       int len = fsize(3);
       eqtable = resample_functable(eqtable, len, half_fft_len);
    }
-   else
+   else {
       die(instname(), "You haven't made the EQ function (table 3).");
+		return(DONT_SCHEDULE);
+	}
 
    deltimetable = floc(4);
    if (deltimetable) {
       int len = fsize(4);
       deltimetable = resample_functable(deltimetable, len, half_fft_len);
    }
-   else
+   else {
       die(instname(), "You haven't made the delay time function (table 4).");
+		return(DONT_SCHEDULE);
+	}
 
    /* Compute maximum delay lag and create delay lines for FFT magnitude
       and phase values.  Make ringdur at least as long as the longest
@@ -134,9 +140,11 @@ int SPECTACLE :: pre_init(float p[], int n_args)
       int len = fsize(5);
       feedbacktable = resample_functable(feedbacktable, len, half_fft_len);
    }
-   else
+   else {
       die(instname(),
                   "You haven't made the delay feedback function (table 5).");
+		return(DONT_SCHEDULE);
+	}
 
    return 0;
 }

@@ -27,7 +27,7 @@ ROOM::~ROOM()
 
 int ROOM::init(float p[], int n_args)
 {
-   int   i;
+   int   i, rvin;
    float outskip, inskip, dur, ringdur;
 
    outskip = p[0];
@@ -36,21 +36,30 @@ int ROOM::init(float p[], int n_args)
    amp = p[3];
    inchan = n_args > 4 ? (int)p[4] : AVERAGE_CHANS;
 
-   if (outputchans != 2)
+   if (outputchans != 2) {
       die("ROOM", "Output must be stereo.");
+		return(DONT_SCHEDULE);
+	}
 
-   rtsetinput(inskip, this);
+   rvin = rtsetinput(inskip, this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans)
+   if (inchan >= inputchans) {
       die("ROOM", "You asked for channel %d of a %d-channel input file.",
                                                       inchan, inputchans);
+		return(DONT_SCHEDULE);
+	}
    if (inputchans == 1)
       inchan = 0;
 
    nmax = get_room(ipoint, lamp, ramp);
-   if (nmax == 0)
+   if (nmax == 0) {
       die("ROOM", "You need to call roomset before ROOM.");
+		return(DONT_SCHEDULE);
+	}
 
    echo = new float[nmax];
    for (i = 0; i < nmax; i++)

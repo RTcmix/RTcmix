@@ -95,6 +95,7 @@ JCHOR::~JCHOR()
 int JCHOR::init(float p[], int n_args)
 {
    float outskip, outdur, maxamp, maxwait;
+	int rvin;
 
    outskip = p[0];
    inskip = p[1];
@@ -113,26 +114,39 @@ int JCHOR::init(float p[], int n_args)
    if (n_args < 12)
       die("JCHOR", "Not enough pfields.");
 
-   rtsetinput(inskip, this);
+   rvin = rtsetinput(inskip, this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
    nsamps = rtsetoutput(outskip, outdur, this);
 
-   if (outputchans > 2)
+   if (outputchans > 2) {
       die("JCHOR", "Output must have no more than two channels.");
+		return(DONT_SCHEDULE);
+	}
 
-   if (nvoices < 1)
+   if (nvoices < 1) {
       die("JCHOR", "Must have at least one voice.");
+		return(DONT_SCHEDULE);
+	}
 
-   if (minamp < 0.0 || maxamp <= 0.0 || minamp > maxamp)
+   if (minamp < 0.0 || maxamp <= 0.0 || minamp > maxamp) {
       die("JCHOR", "Grain amplitude range confused.");
+		return(DONT_SCHEDULE);
+	}
    ampdiff = maxamp - minamp;
 
-   if (minwait < 0.0 || maxwait < 0.0 || minwait > maxwait)
+   if (minwait < 0.0 || maxwait < 0.0 || minwait > maxwait) {
       die("JCHOR", "Grain wait range confused.");
+		return(DONT_SCHEDULE);
+	}
    waitdiff = (maxwait - minwait) * SR;
    minwait *= SR;
 
-   if (seed < 0.0 || seed > 1.0)
+   if (seed < 0.0 || seed > 1.0) {
       die("JCHOR", "Seed must be between 0 and 1 inclusive.");
+		return(DONT_SCHEDULE);
+	}
 
    amparray = floc(ENVELOPE_TABLE_SLOT);
    if (amparray) {
@@ -147,9 +161,11 @@ int JCHOR::init(float p[], int n_args)
       may have changed.
    */
    winarray = floc(WINDOW_FUNC_SLOT);
-   if (winarray == NULL)
+   if (winarray == NULL) {
       die("JCHOR", "You haven't made the grain window function (table %d).",
                                                             WINDOW_FUNC_SLOT);
+		return(DONT_SCHEDULE);
+	}
    winarraylen = fsize(WINDOW_FUNC_SLOT);
 
    skip = (int)(SR / (float)resetval);
@@ -391,7 +407,6 @@ Instrument *makeJCHOR()
 
    return inst;
 }
-
 
 void rtprofile()
 {

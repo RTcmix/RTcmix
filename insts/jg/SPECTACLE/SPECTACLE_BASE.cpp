@@ -145,7 +145,7 @@ float * SPECTACLE_BASE :: resample_functable(float *table, int oldsize,
 /* ------------------------------------------------------------------ init -- */
 int SPECTACLE_BASE :: init(float p[], int n_args)
 {
-   int   valid;
+   int   valid, rval;
    float outskip, inskip, overlap;
 
    outskip = p[0];
@@ -166,17 +166,21 @@ int SPECTACLE_BASE :: init(float p[], int n_args)
          break;
       }
    }
-   if (!valid || fft_len > MAXFFTLEN)
+   if (!valid || fft_len > MAXFFTLEN) {
       die(instname(), "FFT length must be a power of two <= %d", MAXFFTLEN);
+		return(DONT_SCHEDULE);
+	}
 
 // FIXME: now this isn't a problem; instead, decimation can't be larger
 // than RTBUFSAMPS.  But must couch errmsg in terms of overlap and fft length,
 // not decimation...
 #if 0
-   if (fft_len > RTBUFSAMPS)
+   if (fft_len > RTBUFSAMPS) {
       die(instname(), "FFT length must be a power of two less than or equal\n"
                "to the output buffer size set in rtsetparams (currently %d).",
                RTBUFSAMPS);
+		return(DONT_SCHEDULE);
+	}
 #endif
    half_fft_len = fft_len / 2;
    fund_anal_freq = SR / (float) fft_len;
@@ -189,9 +193,11 @@ int SPECTACLE_BASE :: init(float p[], int n_args)
          break;
       }
    }
-   if (!valid)
+   if (!valid) {
       die(instname(), "Window length must be a power of two >= FFT length\n"
                      "(currently %d) and <= %d.", fft_len, MAXWINDOWLEN);
+		return(DONT_SCHEDULE);
+	}
 
    /* Make sure overlap is a power of 2 in our safety range. */
    valid = 0;
@@ -203,15 +209,19 @@ int SPECTACLE_BASE :: init(float p[], int n_args)
          break;
       }
    }
-   if (!valid)
+   if (!valid) {
       die(instname(), "Overlap must be a power of two between %g and %g.",
                                                    MINOVERLAP, MAXOVERLAP);
+		return(DONT_SCHEDULE);
+	}
    int_overlap = (int) overlap;
 
    /* derive decimation from overlap */
    decimation = (int) (fft_len / overlap);
 
-   pre_init(p, n_args);       /* can modify ringdur */
+   rval = pre_init(p, n_args);       /* can modify ringdur */
+	if (rval == DONT_SCHEDULE)
+		return(DONT_SCHEDULE);
 
    iamparray = floc(1);
    if (iamparray) {
@@ -229,10 +239,15 @@ int SPECTACLE_BASE :: init(float p[], int n_args)
    else
       advise(instname(), "Setting output amplitude curve to all 1's.");
 
-   rtsetinput(inskip, this);
-   if (inchan >= inputchans)
+   rval = rtsetinput(inskip, this);
+	if (rval == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
+   if (inchan >= inputchans) {
       die(instname(), "You asked for channel %d of a %d-channel file.",
                                                          inchan, inputchans);
+		return(DONT_SCHEDULE);
+	}
 
    /* <latency> is the delay before the FFT looks at actual input rather than
       zero-padding.  Need to let inst run long enough to compensate for this.
@@ -265,7 +280,9 @@ int SPECTACLE_BASE :: init(float p[], int n_args)
 
    skip = (int) (SR / (float) resetval);
 
-   post_init(p, n_args);
+   rval = post_init(p, n_args);
+	if (rval == DONT_SCHEDULE)
+		return(DONT_SCHEDULE);
 
    return nsamps;
 }
@@ -332,7 +349,7 @@ void SPECTACLE_BASE :: fold(int n)
 
 
 /* ----------------------------------------------------------- leanconvert -- */
-/* <fft_buf> is a spectrum in rfft format, i.e., it contains <half_fft_len> * 2
+/* <fft_buf> is a spectrum in rfft format, i.e. it contains <half_fft_len> * 2
    real values, arranged in pairs of real and imaginary values, except for
    the first two values, which are the real parts of 0 and Nyquist frequencies.
    Converts these into <half_fft_len> + 1 pairs of magnitude and phase values,

@@ -50,6 +50,7 @@ MOOGVCF :: ~MOOGVCF()
 int MOOGVCF :: init(float p[], int n_args)
 {
    float outskip, inskip, dur, ringdown;
+	int rvin;
 
    outskip = p[0];
    inskip = p[1];
@@ -60,11 +61,16 @@ int MOOGVCF :: init(float p[], int n_args)
 
    ringdown = 0.2;      /* just a guess, for now */
    nsamps = rtsetoutput(outskip, dur + ringdown, this);
-   rtsetinput(inskip, this);
+   rvin = rtsetinput(inskip, this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
 
-   if (inchan >= inputchans)
+   if (inchan >= inputchans) {
       die("MOOGVCF", "You asked for channel %d of a %d-channel file.",
                                                          inchan, inputchans);
+		return(DONT_SCHEDULE);
+	}
 
    amparray = floc(1);
    if (amparray) {
@@ -183,7 +189,6 @@ Instrument *makeMOOGVCF()
 
    return inst;
 }
-
 
 void rtprofile()
 {

@@ -120,40 +120,50 @@ int TVSPECTACLE :: pre_init(float p[], int n_args)
    inchan = n_args > 10 ? (int) p[10] : 0;      /* default is chan 0 */
    pctleft = n_args > 11 ? p[11] : 0.5;         /* default is center */
 
-   if (wetdry < 0.0 || wetdry > 1.0)
+   if (wetdry < 0.0 || wetdry > 1.0) {
       die(instname(), "Wet/dry must be between 0 and 1.");
+		return(DONT_SCHEDULE);
+	}
 
    eqtableA = floc(3);
    if (eqtableA) {
       int len = fsize(3);
       eqtableA = resample_functable(eqtableA, len, half_fft_len);
    }
-   else
+   else {
       die(instname(), "You haven't made EQ function A (table 3).");
+		return(DONT_SCHEDULE);
+	}
 
    eqtableB = floc(6);
    if (eqtableB) {
       int len = fsize(6);
       eqtableB = resample_functable(eqtableB, len, half_fft_len);
    }
-   else
+   else {
       die(instname(), "You haven't made EQ function B (table 6).");
+		return(DONT_SCHEDULE);
+	}
 
    deltimetableA = floc(4);
    if (deltimetableA) {
       int len = fsize(4);
       deltimetableA = resample_functable(deltimetableA, len, half_fft_len);
    }
-   else
+   else {
       die(instname(), "You haven't made delay time function A (table 4).");
+		return(DONT_SCHEDULE);
+	}
 
    deltimetableB = floc(7);
    if (deltimetableB) {
       int len = fsize(7);
       deltimetableB = resample_functable(deltimetableB, len, half_fft_len);
    }
-   else
+   else {
       die(instname(), "You haven't made delay time function B (table 7).");
+		return(DONT_SCHEDULE);
+	}
 
    /* Compute maximum delay lag and create delay lines for FFT magnitude
       and phase values.  Make ringdur at least as long as the longest
@@ -166,9 +176,11 @@ int TVSPECTACLE :: pre_init(float p[], int n_args)
 
       /* Check delay time table A. */
       float deltime = deltimetableA[i];
-      if (deltime < 0.0 || deltime > MAXDELTIME)
+      if (deltime < 0.0 || deltime > MAXDELTIME) {
          die(instname(), "Delay times must be >= 0 and <= %g. (The value in "
                          "table A at %d is %g.)", MAXDELTIME, i, deltime);
+			return(DONT_SCHEDULE);
+		}
       float samps = deltime * SR / (float) decimation;
       assert(samps <= maxdelsamps);
       if (deltime > maxtime)
@@ -176,9 +188,11 @@ int TVSPECTACLE :: pre_init(float p[], int n_args)
 
       /* Check delay time table B. */
       deltime = deltimetableB[i];
-      if (deltime < 0.0 || deltime > MAXDELTIME)
+      if (deltime < 0.0 || deltime > MAXDELTIME) {
          die(instname(), "Delay times must be >= 0 and <= %g. (The value in "
                          "table B at %d is %g.)", MAXDELTIME, i, deltime);
+			return(DONT_SCHEDULE);
+		}
       samps = deltime * SR / (float) decimation;
       assert(samps <= maxdelsamps);
       if (deltime > maxtime)
@@ -198,16 +212,20 @@ int TVSPECTACLE :: pre_init(float p[], int n_args)
       int len = fsize(5);
       feedbacktableA = resample_functable(feedbacktableA, len, half_fft_len);
    }
-   else
+   else {
       die(instname(), "You haven't made delay feedback function A (table 5).");
+		return(DONT_SCHEDULE);
+	}
 
    feedbacktableB = floc(8);
    if (feedbacktableB) {
       int len = fsize(8);
       feedbacktableB = resample_functable(feedbacktableB, len, half_fft_len);
    }
-   else
+   else {
       die(instname(), "You haven't made delay feedback function B (table 8).");
+		return(DONT_SCHEDULE);
+	}
 
    eqcurve = floc(9);
    if (eqcurve) {

@@ -58,7 +58,7 @@ MROOM::~MROOM()
 /* ----------------------------------------------------------------- init --- */
 int MROOM::init(float p[], int n_args)
 {
-   int   delsamps, rvbsamps, quant, ntimes;
+   int   delsamps, rvbsamps, quant, ntimes, rvin;
    float outskip, inskip, dur, rvbtime, ringdur;
 
    outskip = p[0];
@@ -73,25 +73,34 @@ int MROOM::init(float p[], int n_args)
    inchan = n_args > 9 ? (int)p[9] : AVERAGE_CHANS;
    quant = n_args > 10 ? (int)p[10] : DEFAULT_QUANTIZATION;
 
-   if (outputchans != 2)
+   if (outputchans != 2) {
       die("MROOM", "Requires stereo output.");
+		return(DONT_SCHEDULE);
+	}
 
    ringdur = (rvbtime > MAX_DELAY) ? rvbtime : MAX_DELAY;
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
 
-   rtsetinput(inskip, this);
+   rvin = rtsetinput(inskip, this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans)
+   if (inchan >= inputchans) {
       die("MROOM", "You asked for channel %d of a %d-channel input file.",
                                                       inchan, inputchans);
+		return(DONT_SCHEDULE);
+	}
    if (inputchans == 1)
       inchan = 0;
 
 // ***FIXME: input validation for trajectory points?
    ntimes = get_timeset(timepts, xvals, yvals);
-   if (ntimes == 0)
+   if (ntimes == 0) {
       die("MROOM", "Must have at least two timeset calls before MROOM.");
+		return(DONT_SCHEDULE);
+	}
 
    traject(ntimes);
 
@@ -301,7 +310,6 @@ Instrument *makeMROOM()
 
    return inst;
 }
-
 
 void rtprofile()
 {

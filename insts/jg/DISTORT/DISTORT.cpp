@@ -48,6 +48,7 @@ DISTORT :: ~DISTORT()
 int DISTORT :: init(float p[], int n_args)
 {
    float outskip, inskip, dur, cf;
+	int rvin;
 
    outskip = p[0];
    inskip = p[1];
@@ -60,14 +61,21 @@ int DISTORT :: init(float p[], int n_args)
    pctleft = n_args > 8 ? p[8] : 0.5;              /* default is center */
    bypass = n_args > 9 ? (int) p[9] : 0;           /* default is no */
 
-   rtsetinput(inskip, this);
+   rvin = rtsetinput(inskip, this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
    nsamps = rtsetoutput(outskip, dur, this);
 
-   if (inchan >= inputChannels())
+   if (inchan >= inputChannels()) {
       die("DISTORT", "You asked for channel %d of a %d-channel file.",
                                                       inchan, inputChannels());
-   if (type != SoftClip && type != Tube)
+		return(DONT_SCHEDULE);
+	}
+   if (type != SoftClip && type != Tube) {
       die("DISTORT", "Distortion type must be 1 (soft clip) or 2 (tube).");
+		return(DONT_SCHEDULE);
+	}
 
    if (cf > 0.0) {
       filt = new Butter();
@@ -205,11 +213,8 @@ Instrument *makeDISTORT()
    return inst;
 }
 
-
 void
 rtprofile()
 {
    RT_INTRO("DISTORT", makeDISTORT);
 }
-
-

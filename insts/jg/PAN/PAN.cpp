@@ -59,6 +59,7 @@ PAN :: ~PAN()
 int PAN :: init(float p[], int n_args)
 {
    float outskip, inskip, dur;
+	int rvin;
 
    outskip = p[0];
    inskip = p[1];
@@ -68,14 +69,21 @@ int PAN :: init(float p[], int n_args)
    use_constant_power = n_args > 5 ? !(int)p[5] : 1; /* default is true */
 
    nsamps = rtsetoutput(outskip, dur, this);
-   rtsetinput(inskip, this);
+   rvin = rtsetinput(inskip, this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
 
-   if (outputchans != 2)
+   if (outputchans != 2) {
       die("PAN", "Output must be stereo.");
+		return(DONT_SCHEDULE);
+	}
 
-   if (inchan >= inputchans)
+   if (inchan >= inputchans) {
       die("PAN", "You asked for channel %d of a %d-channel file.",
                                                          inchan, inputchans);
+		return(DONT_SCHEDULE);
+	}
 
    amparray = floc(1);
    if (amparray) {
@@ -90,8 +98,10 @@ int PAN :: init(float p[], int n_args)
       int lenpan = fsize(2);
       tableset(dur, lenpan, pantabs);
    }
-   else
+   else {
       die("PAN", "You haven't made the pan curve function (table 2).");
+		return(DONT_SCHEDULE);
+	}
 
    skip = (int)(SR / (float)resetval);
 
@@ -160,7 +170,6 @@ Instrument *makePAN()
 
    return inst;
 }
-
 
 void
 rtprofile()

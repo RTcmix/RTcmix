@@ -68,6 +68,7 @@ int JFIR :: init(float p[], int n_args)
    int   order, tabsize;
    float outskip, inskip, dur, ringdur;
    float *response_tab;
+	int	rvin;
 
    outskip = p[0];
    inskip = p[1];
@@ -80,21 +81,30 @@ int JFIR :: init(float p[], int n_args)
 
    ringdur = (float)order / SR;
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
-   rtsetinput(inskip, this);
+   rvin = rtsetinput(inskip, this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans)
+   if (inchan >= inputchans) {
       die("JFIR", "You asked for channel %d of a %d-channel file.",
                                                          inchan, inputchans);
+		return(DONT_SCHEDULE);
+	}
 
    response_tab = floc(2);
-   if (response_tab == NULL)
+   if (response_tab == NULL) {
       die("JFIR",
                "You haven't made the frequency response function (table 2).");
+		return(DONT_SCHEDULE);
+	}
    tabsize = fsize(2);
 
-   if (order < 1)
+   if (order < 1) {
       die("JFIR", "Order must be greater than 0.");
+		return(DONT_SCHEDULE);
+	}
 
    filt = new NZero(order);
    filt->designFromFunctionTable(response_tab, tabsize, 0, 0);

@@ -84,10 +84,14 @@ int FOLLOWGATE :: pre_init(float p[], int n_args)
    float release_time = p[8];
    pctleft = n_args > 9 ? p[9] : 0.5;     /* default is center */
 
-   if (attack_time < 0.0)
+   if (attack_time < 0.0) {
       die(instname(), "Attack time must be positive.");
-   if (release_time < 0.0)
+		return(DONT_SCHEDULE);
+	}
+   if (release_time < 0.0) {
       die(instname(), "Release time must be positive.");
+		return(DONT_SCHEDULE);
+	}
 
    attack_rate = attack_time ? (1.0 / SR) / attack_time : 1.0;
    release_rate = release_time ? (1.0 / SR) / release_time : 1.0;
@@ -104,16 +108,20 @@ int FOLLOWGATE :: post_init(float p[], int n_args)
       int len = fsize(2);
       thresh_table = new TableL(dur, function, len);
    }
-   else
+   else {
       die(instname(), "You must create the threshold table (table 2).");
+		return(DONT_SCHEDULE);
+	}
 
    function = floc(3);
    if (function) {
       int len = fsize(3);
       range_table = new TableL(dur, function, len);
    }
-   else
+   else {
       die(instname(), "You must create the range table (table 3).");
+		return(DONT_SCHEDULE);
+	}
 
    envelope = new Envelope();
 
