@@ -178,7 +178,6 @@ endif
 
 # Make it clean for distribution or for moving to another system
 distclean: cleanall
-	$(RM) Minc/depend
 	@for DIR in $(INST_DIRS); \
 	do \
 	  ( cd $$DIR; $(RM) package.conf );  \
