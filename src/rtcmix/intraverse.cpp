@@ -112,8 +112,9 @@ int runMainLoop(void)
 			cerr << globalAudioDevice->getLastError() << endl;
 			return -1;
 		}
+		return 0;
 	}
-	return 0;
+	return -1;	// Not playing, signal caller not to wait.
 }
 
 int waitForMainLoop()
