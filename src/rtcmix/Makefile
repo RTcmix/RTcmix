@@ -106,7 +106,7 @@ LIBMINC = ../parser/minc/libminc.a
 AUDIOLIB = ../audio/librtaudio.a
 SNDLIB = ../sndlib/sndlib.a
 
-LIBS = $(RTLIB) $(LIBMINC) $(AUDIOLIB) $(SNDLIB) $(LIBCONF) $(LIBDIR)/libgen.a
+LIBS = $(RTLIB) $(AUDIOLIB) $(SNDLIB) $(LIBCONF) $(LIBDIR)/libgen.a
 
 PROGS = MIX
 TARGETS = $(RTLIB) RTcmix.o main.o $(PROGS)
@@ -170,9 +170,9 @@ heap/rtHeap.o:
 
 # rules for three executables we build
 
-MIX: $(CMIX_O) $(M_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
+MIX: $(CMIX_O) $(M_O) $(LIBMINC) $(LIBS) $(PROFILE_O) $(WORKAROUND)
 	$(CXX) -o MIX $(WORKAROUND) $(DYN) $(CMIX_O) $(PROFILE_O) \
-		$(M_O) $(LIBS) $(LDFLAGS)
+		$(M_O) $(LIBMINC) $(LIBS) $(LDFLAGS)
 
 PMIX: $(CMIX_O) $(P_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
 	$(CXX) -o PMIX $(WORKAROUND) $(DYN) $(CMIX_O) $(PROFILE_O) \
