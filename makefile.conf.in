@@ -23,8 +23,6 @@ include $(CMIXDIR)/site.conf
 # The path to this file
 MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
 
-PFIELD_CLASS_SUPPORT = TRUE
-
 SOUND_DRIVER = -D$(AUDIODRIVER)
 
 LIBDIR = $(CMIXDIR)/lib
@@ -103,9 +101,6 @@ INCLUDES = -I. -I$(CMIXDIR)/include
 ifeq ($(NPLAY_SUPPORT), TRUE)
 CMIX_FLAGS += -DNETAUDIO
 endif
-ifeq ($(PFIELD_CLASS_SUPPORT), TRUE)
-CMIX_FLAGS += -DPFIELD_CLASS
-endif
 
 CFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
 CXXFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
@@ -122,11 +117,9 @@ LIBGEN = libgen.$(SHLIB_SUFFIX)
 
 GENLIB =
 
-# All platforms link against libgen.  Below we append others.
-SYSLIBS = $(ARCH_RTLDFLAGS) -L$(LIBDIR) -lgen
-
 # Platform-specific library flags Key:
 #
+# SYS_LDFLAGS:          External libraries for each platform.
 # SYSLIBS:              Libraries which DSOs link against.
 # SHARED_LDFLAGS:       Linker flags when creating DSOs.
 # CMIXOBJS:             Non-lib .o files which standalone binaries need.
@@ -136,9 +129,9 @@ SYSLIBS = $(ARCH_RTLDFLAGS) -L$(LIBDIR) -lgen
 
 ifeq ($(ARCH),LINUX)
 	ifeq ($(AUDIODRIVER),ALSA)
-	  SYSLIBS += -lasound -lpthread -lm -ldl #-lefence
+	  SYS_LDFLAGS = -lasound -lpthread -lm -ldl #-lefence
 	else
-	  SYSLIBS += -lpthread -lm -ldl #-lefence
+	  SYS_LDFLAGS = -lpthread -lm -ldl #-lefence
 	endif
   DSO_LDFLAGS = $(OPT) $(SYSLIBS)
   SHARED_LDFLAGS = -shared -Wl,-soname,$@
@@ -146,28 +139,29 @@ ifeq ($(ARCH),LINUX)
   DYN = -rdynamic
 endif
 ifeq ($(ARCH),MACOSX)
-  SYSLIBS += -framework CoreAudio
-  DSO_LDFLAGS = $(SYSLIBS)
+  SYS_LDFLAGS = -framework CoreAudio
+  DSO_LDFLAGS = $(SYS_LDFLAGS)
   SHARED_LDFLAGS = -bundle -flat_namespace -undefined suppress
   DYNAMIC_LDFLAGS = -flat_namespace -undefined suppress -dynamiclib -install_name $(LIBDIR)/$@
   DYN = 
 endif
 ifeq ($(ARCH),SGI)
-  SYSLIBS += -lpthread -laudio -lm
-  DSO_LDFLAGS = $(SYSLIBS)
+  SYS_LDFLAGS = -lpthread -laudio -lm
+  DSO_LDFLAGS = $(SYS_LDFLAGS)
   SHARED_LDFLAGS = -shared -update_registry $(LIBDESTDIR)/so_locations
   DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
   DYN = 
 endif
 ifeq ($(ARCH),FREEBSD)
-  SYSLIBS += -pthread -lm -ll
-  DSO_LDFLAGS = -export-dynamic $(SYSLIBS)
+  SYS_LDFLAGS += -pthread -lm -ll
+  DSO_LDFLAGS = -export-dynamic $(SYS_LDFLAGS)
   SHARED_LDFLAGS = -shared -Wl,-soname,$@
   DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
   DYN = -rdynamic
 endif
 
 LDFLAGS = $(ARCH_RTLDFLAGS) $(RTLDFLAGS)
+SYSLIBS = $(ARCH_RTLDFLAGS) -L$(LIBDIR) -lgen $(SYS_LDFLAGS)
 
 # For benefit of inst makefiles that live outside CMIXDIR hierarchy
 UGENS_H = $(CMIXDIR)/include/ugens.h
