@@ -1,2 +1,3 @@
-import sys
-print sys.prefix + '/include/python' + sys.version[:3]
+import distutils.sysconfig
+print distutils.sysconfig.get_config_vars("INCLUDEPY")[0]
+
