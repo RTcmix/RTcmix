@@ -1,12 +1,14 @@
 # Change this if needed
 include package.conf
 
-RTLIBDIRS = FMINST CLAR COMBIT FMINST SCULPT STEREO WAVESHAPE \
-METAFLUTE MULTICOMB AM AMINST IIR DEL1 DELAY PANECHO STRUM FIR #TRANS
+RTLIBDIRS = COMBIT STEREO FMINST STRUM PANECHO
 
-CMIXLIBDIRS = clar combit fir fminst iir move multicomb noise place sculpt \
-numtest strum wah wahwah wow wsh metaflute trans am aminst pvoc rotate \
-mrotate convolve gravy sgran vwavetable del1 delay panecho flange # lpc
+#RTLIBDIRS = FMINST CLAR COMBIT SCULPT STEREO WAVESHAPE \
+#METAFLUTE MULTICOMB AM AMINST IIR DEL1 DELAY PANECHO STRUM FIR #TRANS
+
+#CMIXLIBDIRS = clar combit fir fminst iir move multicomb noise place sculpt \
+#numtest strum wah wahwah wow wsh metaflute trans am aminst pvoc rotate \
+#mrotate convolve gravy sgran vwavetable del1 delay panecho flange # lpc
 
 LIBDIRS = $(RTLIBDIRS)  $(CMIXLIBDIRS) 
 
