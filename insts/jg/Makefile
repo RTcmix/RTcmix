@@ -1,7 +1,7 @@
 include package.conf
 
 RTLIBDIRS = JDELAY JCHOR JFIR REV REVERBIT ROOM MROOM SROOM VOCODE FLANGE \
-            PAN ELL FILTSWEEP
+            PAN ELL FILTSWEEP COMPLIMIT JGRAN
 
 CMIXLIBDIRS = bender denoise splice transpan
 
