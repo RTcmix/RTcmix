@@ -26,8 +26,7 @@
 
 
    Author unknown (probably Brad Garton).
-   Modulator frequency table and xtra comments added by John Gibson
-   (johgibso@indiana.edu), 1/12/02.
+   Modulator frequency table and xtra comments added by John Gibson, 1/12/02.
 */
 #include <iostream.h>
 #include <stdio.h>

@@ -9,7 +9,7 @@
    Or you can just call setline. If no setline or function table 1, uses
    flat amplitude curve.
 
-   JGG <johgibso@indiana.edu>, 24 Dec 2002
+   JGG <johgibso at indiana dot edu>, 24 Dec 2002
 */
 #include <stdio.h>
 #include <stdlib.h>
