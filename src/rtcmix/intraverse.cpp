@@ -118,7 +118,7 @@ extern "C" {
 	usec = (double)tv.tv_usec;
 	baseTime = (sec * 1e6) + usec;
 
-    while(playEm) { // the big loop ==========================================
+    while(playEm) { // the big loop ++++++++++++++++++++++++++++++++++++++++++
 
 #ifdef TBUG
 	  printf("Entering big loop ...\n");
@@ -308,7 +308,7 @@ extern "C" {
 		  }
 		}
 
-		// Play elements on queue (insert back in if needed) - - - - - - - -
+		// Play elements on queue (insert back in if needed) ++++++++++++++++++
 		while ((rtQSize > 0) && (chunkStart < bufEndSamp) && (bus != -1)) {
 		  
 #ifdef ALLBUG
@@ -347,7 +347,7 @@ extern "C" {
 #ifdef TBUG
 		  cout << "endbus " << endbus << endl;
 #endif
-		  // ReQueue or delete - - - - - - - - - - - - - - - - - - -
+		  // ReQueue or delete ++++++++++++++++++++++++++++++++++++++++++++++
 		  if (endsamp > bufEndSamp) {
 #ifdef ALLBUG
 			cout << "inTraverse():  re queueing instrument\n";
@@ -398,10 +398,10 @@ extern "C" {
 		  cout << "chunksamps:  " << chunksamps << endl;
 		  cout << "Iteration done==========\n";
 #endif
-		}
-	  }  // end aux_pb_done ========================================
+		} // end Play elements on queue (insert back in if needed) -----------
+	  }  // end aux_pb_done --------------------------------------------------
 	  
-	  // Write buf to audio device -------------------------------------------
+	  // Write buf to audio device - - - - - - - - - - - - - - - - - - - - -
 #ifdef ALLBUG
 	  cout << "Writing samples----------\n";
 	  cout << "Q-chunkStart:  " << chunkStart << endl;
@@ -439,7 +439,7 @@ extern "C" {
 		  playEm = 0;
 		}
       }
-    } // end playEm =========================================================
+    } // end playEm ----------------------------------------------------------
   
 	if (rtsetparams_called) {
 	  if (play_audio) {             // Play zero'd buffers to avoid clicks
