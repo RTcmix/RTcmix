@@ -1,4 +1,4 @@
-/* EQX - multi-band equalizer instrument
+/* MULTEQ - multi-band equalizer instrument
 
    p0 = output start time
    p1 = input start time
@@ -39,7 +39,7 @@
 #include <math.h>
 #include <Instrument.h>
 #include <PField.h>
-#include "EQX.h"
+#include "MULTEQ.h"
 #include <rt.h>
 #include <rtdefs.h>
 #include <float.h>   // for FLT_MIN
@@ -64,7 +64,7 @@ EQBand :: ~EQBand()
 }
 
 
-EQX :: EQX() : Instrument()
+MULTEQ :: MULTEQ() : Instrument()
 {
    in = NULL;
    branch = 0;
@@ -73,7 +73,7 @@ EQX :: EQX() : Instrument()
 }
 
 
-EQX :: ~EQX()
+MULTEQ :: ~MULTEQ()
 {
    delete [] in;
    for (int i = 0; i < MAXBAND * MAXCHAN; i++)
@@ -98,7 +98,7 @@ inline int _string_to_eqcode(const char *str)
    return -1;
 }
 
-OeqType EQX :: getEQType(bool trystring, int pfindex)
+OeqType MULTEQ :: getEQType(bool trystring, int pfindex)
 {
    double index = (double) currentFrame() / nSamps();
    const PField &field = getPField(pfindex);
@@ -123,7 +123,7 @@ OeqType EQX :: getEQType(bool trystring, int pfindex)
 }
 
 
-int EQX :: init(double p[], int n_args)
+int MULTEQ :: init(double p[], int n_args)
 {
    nargs = n_args;
    const float ringdur = 0.1;
@@ -139,26 +139,27 @@ int EQX :: init(double p[], int n_args)
       return DONT_SCHEDULE;
 
    if (inputChannels() > MAXCHAN)
-      return die("EQX", "Input and output must have no more than %d channels.",
-                        MAXCHAN);
+      return die("MULTEQ",
+               "Input and output must have no more than %d channels.", MAXCHAN);
    if (outputChannels() != inputChannels())
-      return die("EQX", "Input and output must have same number of channels, "
-                        "no more than %d.", MAXCHAN);
+      return die("MULTEQ", "Input and output must have same number of "
+                           "channels, no more than %d.", MAXCHAN);
 
    if ((nargs - FIRST_BAND_PF) % BAND_PFS)
-      return die("EQX", "For each band, need type, freq, Q, gain and bypass.");
+      return die("MULTEQ",
+                 "For each band, need type, freq, Q, gain and bypass.");
 
    numbands = 0;
    int band = 0;
    for (int i = FIRST_BAND_PF; i < nargs; i += BAND_PFS, band += MAXCHAN) {
       if (numbands == MAXBAND) {
-         warn("EQX", "You can only have %d EQ bands.", MAXBAND);
+         warn("MULTEQ", "You can only have %d EQ bands.", MAXBAND);
          break;
       }
 
       OeqType type = getEQType(true, i);
       if (type == OeqInvalid)
-         return die("EQX", "Invalid EQ type string or code.");
+         return die("MULTEQ", "Invalid EQ type string or code.");
       float freq = p[i + 1];
       float Q = p[i + 2];
       float gain = p[i + 3];
@@ -167,7 +168,7 @@ int EQX :: init(double p[], int n_args)
       for (int c = 0; c < inputChannels(); c++) {
          eq[band + c] = new EQBand(SR, type, freq, Q, gain, bypass);
          if (eq[band + c] == NULL)
-            return die("EQX", "Can't allocate EQ band.");
+            return die("MULTEQ", "Can't allocate EQ band.");
       }
 
       numbands++;
@@ -179,7 +180,7 @@ int EQX :: init(double p[], int n_args)
 }
 
 
-void EQX :: doupdate()
+void MULTEQ :: doupdate()
 {
    double p[nargs];
    update(p, nargs);
@@ -207,14 +208,14 @@ void EQX :: doupdate()
 }
 
 
-int EQX :: configure()
+int MULTEQ :: configure()
 {
    in = new float [RTBUFSAMPS * inputChannels()];
    return in ? 0 : -1;
 }
 
 
-int EQX :: run()
+int MULTEQ :: run()
 {
    const int samps = framesToRun() * inputChannels();
    if (currentFrame() < insamps)
@@ -259,18 +260,18 @@ int EQX :: run()
 }
 
 
-Instrument *makeEQX()
+Instrument *makeMULTEQ()
 {
-   EQX *inst;
+   MULTEQ *inst;
 
-   inst = new EQX();
-   inst->set_bus_config("EQX");
+   inst = new MULTEQ();
+   inst->set_bus_config("MULTEQ");
 
    return inst;
 }
 
 void rtprofile()
 {
-   RT_INTRO("EQX", makeEQX);
+   RT_INTRO("MULTEQ", makeMULTEQ);
 }
 

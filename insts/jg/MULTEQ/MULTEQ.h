@@ -32,7 +32,7 @@ public:
 };
 
 
-class EQX : public Instrument {
+class MULTEQ : public Instrument {
    int         nargs, skip, branch, insamps, numbands;
    bool        bypass;
    float       amp;
@@ -42,8 +42,8 @@ class EQX : public Instrument {
    OeqType getEQType(bool trystring, int pfindex);
    void doupdate();
 public:
-   EQX();
-   virtual ~EQX();
+   MULTEQ();
+   virtual ~MULTEQ();
    virtual int init(double p[], int n_args);
    virtual int configure();
    virtual int run();
