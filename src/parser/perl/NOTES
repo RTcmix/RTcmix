@@ -1,0 +1,50 @@
+Performance
+-----------
+
+ - Measure performance relative to Minc.
+
+   If it's really bad, some possible ways to improve it:
+
+      1) Don't register all the function names for insts that
+         aren't even compiled.  What this really means is either
+         hand-editing the funclist or getting rid of the disk-based
+         cmix inst dirs in insts.std that have equivalent RT versions.
+
+      2) Make a scheme that registers RTcmix functions in two classes:
+         those that expect to receive strings, and those that don't.
+         The former could use the existing glue function.  The latter
+         (the vast majority of insts) could use a simpler glue function
+         that doesn't test each arg to find out if it's a string.
+         Unfortunately, this requires a config file in each inst
+         dir listing the insts and what they expect.
+
+
+   After running a few informal tests, it doesn't look like there's
+   a significant performance hit anyway!  Let me know if you find
+   otherwise.
+
+
+User interface
+--------------
+
+ - A more elegant way to set lib path in script (other than installing
+   the rt extension in the site_perl, via the standard perl extension
+   makefile in perl/rt)?
+
+
+Other
+-----
+
+ - A way of registering RTcmix function names that aren't part of 
+   the installation tree, i.e., user functions?
+
+ - Need to deal with argv somehow.  RTcmix checks for its own args
+   but we can also pass args to Perl.  Bit of a mess here, as there
+   are conflicts.  Might be useful to have some of the Perl options
+   available, like -d (perl debugger) or -w (warnings).  Probably
+   should make a single set of options, and construct the argv[]
+   that Perl sees, rather than blindly copy it from cmd line.
+
+
+-JGG, 29-Jul-00
+

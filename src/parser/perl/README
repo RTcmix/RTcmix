@@ -1,0 +1,6 @@
+This directory contains the stuff that glues RTcmix and Perl together.
+The result is a Perl extension, called "RT", that can be used in a Perl
+script to call RTcmix functions.  But this works only if the Perl interpreter
+is imbedded in RTcmix.  The code to do that is in Minc/parse_with_perl.c.
+
+John Gibson, <johngibson@virginia.edu>
