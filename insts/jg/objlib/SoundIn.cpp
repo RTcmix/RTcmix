@@ -19,7 +19,7 @@ SoundIn :: SoundIn(char *fileName, MY_FLOAT inskip = 0.0)
       exit(-1);                 // do something more graceful later...
    }
 
-#ifdef LINUX
+#ifdef USE_SNDLIB
    fd = sndlib_open_read(fileName);
    if (fd == -1) {
       fprintf(stderr, "Can't read header of \"%s\" (%s)\n",
@@ -52,10 +52,10 @@ SoundIn :: SoundIn(char *fileName, MY_FLOAT inskip = 0.0)
       fprintf(stderr, "SoundIn can't allocate sndlib input buffers!\n");
       exit(-1);                 // do something more graceful later...
    }
-#else /* !LINUX */
+#else /* !USE_SNDLIB */
    fprintf(stderr, "Sorry, SoundIn not implemented yet!\n");
    exit(-1);
-#endif /* !LINUX */
+#endif /* !USE_SNDLIB */
 
    if (inskip > 0.0) {
       long frame = (long)(inskip * srate + 0.5);
@@ -78,7 +78,7 @@ SoundIn :: SoundIn(char *fileName, MY_FLOAT inskip = 0.0)
 
 SoundIn :: ~SoundIn()
 {
-#ifdef LINUX
+#ifdef USE_SNDLIB
    sndlib_free_buffers(inbufs, nchans);
    sndlib_close(fd, 0, 0, 0, 0);             // close, no update
 #endif
@@ -118,7 +118,7 @@ MY_FLOAT SoundIn :: getDuration()
 */
 int SoundIn :: readBuffer()
 {
-#ifdef LINUX
+#ifdef USE_SNDLIB
    clm_read(fd, 0, bufframes - 1, nchans, inbufs);
 // ***NOTE: doesn't return an error code, so we don't either!
 #endif
@@ -154,7 +154,7 @@ int SoundIn :: seekFrame(long frame)
    /* NOTE: clm_seek handles any datum size as if it had 16 bits. */
    byteoffset = data_location + (frame * nchans * 2);
 
-#ifdef LINUX
+#ifdef USE_SNDLIB
    result = clm_seek(fd, byteoffset, SEEK_SET);
 #endif
 

@@ -6,7 +6,7 @@
 
 #include "objdefs.h"
 #include <sys/stat.h>
-#ifdef LINUX
+#ifdef USE_SNDLIB
 #include <sndlibsupport.h>
 #endif
 
