@@ -88,6 +88,14 @@ GLOBAL int rtfileit;
 GLOBAL int rtoutfile;
 GLOBAL int rtoutswap;
 
+/* This should probably go someplace else in this file? */
+typedef enum {
+  NO = 0,
+  YES
+} Bool;
+
+short AuxPlayList[MAXBUS]; /* The playback order for AUX buses */
+
 /* -------------------------------------------------------------------------- */
 /* rtupdate stuff */
 
