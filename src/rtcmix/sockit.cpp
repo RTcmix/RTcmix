@@ -195,7 +195,7 @@ extern "C" {
 			printf("RTcmix termination cmd received.\n");
 			rtInteractive = 0;
  			shutdown(s,0);
-			return;
+			return NULL;
 		}
 		else {
 	
