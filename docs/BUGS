@@ -16,3 +16,18 @@ If there's a space after "9.11", the job will bail with
 "fsize: You haven't allocated function 3 yet!" No space after: no problem.
 
 -JGG (11/15/99)
+
+------------
+
+problem in MIX (and no doubt any other processing inst)...
+I want to take a stereo file and extract one channel into a mono file.
+My score:
+   rtsetparams(44100, 1)
+   rtinput("stereofile"); rtoutput("monofile")
+   MIX(0,0,DUR(),1, 0)
+Segfaults at end. The reason: <in> float buffer new'd in MIX ctor
+is sized as MAXBUF, which uses rtsetparams chan arg (1 in this case),
+NOT inputchans (2 in this case) inst member. So <in> is overwritten.
+
+-JGG (1/29/00)
+
