@@ -3,6 +3,7 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #include "heap.h"
+#include <lock.h>
 #include <iostream.h>
 
 heapslot::heapslot()
@@ -14,14 +15,30 @@ heapslot::heapslot()
   chunkStart = 0;
 }
 
-heap::heap()
+heap::heap() : size(0)
 {
-  size = 0;
+	pthread_mutex_init(&_mutex, NULL);
+}
+
+heap::~heap()
+{
+	pthread_mutex_destroy(&_mutex);
 }
 
 unsigned long heap::getTop()
 {
+//  Lock topLock(&_mutex);	// This will unlock when it goes out of scope
   return top->chunkStart;
+}
+
+void heap::lock()
+{
+	pthread_mutex_lock(&_mutex);
+}
+
+void heap::unlock()
+{
+	pthread_mutex_unlock(&_mutex);
 }
 
 long heap::getSize()
@@ -35,6 +52,8 @@ void heap::insert(Instrument *newInst, unsigned long cStart)
   heapslot *tempHeapElt;
   Instrument *tempInst;
   unsigned long tempChunkStart;
+
+  Lock insertLock(&_mutex);	// This will unlock when it goes out of scope
 
 //  cout << "insert(in):  " << cStart << '\n';
 
@@ -90,6 +109,8 @@ Instrument* heap::deleteMin()
   heapslot *tempHeapElt;
   unsigned long tempChunkStart;
   unsigned long retChunkStart;
+
+  Lock deleteLock(&_mutex);	// This will unlock when it goes out of scope
 
   sift = 1;
 

@@ -1,6 +1,7 @@
 include ../../makefile.conf
 
-OBJS = heap.o queue.o heapify.o heapSched.o rtQueue.o
+#OBJS = heap.o queue.o heapify.o heapSched.o rtQueue.o
+OBJS = heap.o queue.o rtQueue.o
 PROG = rtHeap.o
 
 all: $(PROG)

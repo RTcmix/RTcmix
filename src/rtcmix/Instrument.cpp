@@ -16,6 +16,7 @@
 #include <bus.h>
 #include <assert.h>
 #include <ugens.h>
+#include "heap/heap.h"
 
 /* ----------------------------------------------------------- Instrument --- */
 Instrument::Instrument()
@@ -91,7 +92,7 @@ Instrument::~Instrument()
 void Instrument::set_bus_config(const char *inst_name)
 {
   pthread_mutex_lock(&bus_slot_lock);
-  bus_config = get_bus_config(inst_name);
+  bus_config = ::get_bus_config(inst_name);
   
   inputchans = bus_config->in_count + bus_config->auxin_count;
   outputchans = bus_config->out_count + bus_config->auxout_count;
@@ -161,6 +162,32 @@ int Instrument::run()
    return 0;
 }
 
+/* ------------------------------------------------------------- schedule --- */
+/* Called from checkInsts to place the instrument into the scheduler heap */
+
+void Instrument::schedule(heap *rtHeap)
+{
+  int nsamps,startsamp,endsamp;
+  int heapSize;
+  int curslot;
+  float start,dur;
+
+  // Calculate variables for heap insertion
+  dur = getdur();
+  nsamps = (int) (dur*SR);
+  //  cout << "nsamps = " << nsamps << endl;
+  
+  start = getstart();
+  startsamp = (int) (start*SR);
+  
+  endsamp = startsamp+nsamps;
+  setendsamp(endsamp);  // used by traverse.C
+  
+  // place instrument into heap
+  rtHeap->insert(this, startsamp);
+  
+  // printf("Instrument::schedule(): %d\n", heapSize);
+}
 
 /* ----------------------------------------------------------------- exec --- */
 /* Called from inTraverse to do one or both of these tasks:

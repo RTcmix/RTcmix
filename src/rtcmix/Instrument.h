@@ -12,6 +12,8 @@
 
 #define MAXNUMPARAMS 100
 
+class heap;
+
 class Instrument {
 protected:
 
@@ -110,6 +112,7 @@ public:
 	inline void		set_ichunkstart(int);
 	inline void		set_output_offset(int);
 
+	void 			schedule(heap *rtHeap);
 	void			set_bus_config(const char *);
 	inline const BusSlot *	GetBusSlot() const;
 	virtual int		init(float *, int, double *);	// Called by checkInsts
