@@ -45,6 +45,7 @@ int BEND1::init(double p[], int n_args)
 	dq = curdelayq;
 	delayset(cpspch(p[9]), dq);
 
+	amp = p[12];
 	amptable = floc(1);
 	if (amptable) {
 		int amplen = fsize(1);
@@ -70,7 +71,6 @@ int BEND1::init(double p[], int n_args)
 	fbgain = p[8]/dgain;
 	cleanlevel = p[10];
 	distlevel = p[11];
-	amp = p[12];
 	reset = (int)p[13];
 	if (reset == 0) reset = 100;
 	spread = p[14];
