@@ -14,6 +14,7 @@ int samp_marker;
 int hold_samps;
 int hold_start;
 float hold_dur;
+
 extern Bool stop_hold;
 extern Bool fade_started;
 extern Bool start_fade;

@@ -9,8 +9,8 @@
 #include "FADE_vMIX.h"
 
 Bool start_fade = NO;
-Bool fade_started = NO;
-Bool stop_hold;
+// Bool fade_started = NO;
+// Bool stop_hold;
 
 FADE_vMIX::FADE_vMIX() : Instrument()
 {
@@ -38,7 +38,7 @@ int FADE_vMIX::run()
 	
 	Instrument::run();
 	start_fade = YES;
-	stop_hold = NO;
+	//	stop_hold = NO;
 	return(0);
 	
 }

@@ -8,9 +8,9 @@
 #include <globals.h>
 #include "vMIX.h"
 
-extern Bool stop_hold;
+// extern Bool stop_hold;
 extern Bool start_fade;
-extern Bool fade_started;
+// extern Bool fade_started;
 
 vMIX::vMIX() : Instrument()
 {
@@ -82,9 +82,6 @@ int vMIX::run()
 	float out[MAXBUS];
 	float tamp;
 
-
-
-
 	if (in == NULL) {                /* first time, so allocate it */
 		in = new float [RTBUFSAMPS * inputchans];
 		start_fade = NO;
@@ -105,7 +102,7 @@ int vMIX::run()
 					amp = tamp;
 			}
 
-			if (start_fade) {
+			if ((start_fade) || (fade_started)) {
 				if (!fade_started) {
 					finalsamp = i_chunkstart+i+fade_samps;
 					this->setendsamp(finalsamp);
