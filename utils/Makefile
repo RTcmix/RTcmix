@@ -16,7 +16,7 @@ INCLUDES += -I$(AUDIODIR) -I$(SRCDIR)/sndlib -I$(SRCDIR)/rtcmix
 all: $(PROGS) head resample
 
 $(PLAY): $(PLAY).o $(AUDIOLIB) $(SNDLIB)
-	$(CXX) $(CXXFLAGS) -o $(PLAY) $(PLAY).o $(AUDIOLIB) $(SNDLIB) $(SYSLIBS)
+	$(CXX) $(CXXFLAGS) -o $(PLAY) $(PLAY).o $(AUDIOLIB) $(SNDLIB) $(SYS_LDFLAGS)
 
 $(PLAY).o: $(PLAY).cpp $(PLAY_HDRS)
 	$(CXX) $(CXXFLAGS) $(SOUND_DRIVER) -c $< -o $@
@@ -28,10 +28,10 @@ hist: $(HISTOBJ) $(SYSOBJS)
 	$(CC) $(CFLAGS) -o hist $(HISTOBJ) $(SYSOBJS) $(SNDLIB) -lm
 
 cpspch: cpspchlookup.o $(GENLIB)
-	$(CC) $(CFLAGS) -o cpspch cpspchlookup.c $(GENLIB) -lm
+	$(CC) $(CFLAGS) -o cpspch cpspchlookup.c ../genlib/cpspch.o -lm
 
 pchcps: pchcpslookup.o $(GENLIB)
-	$(CC) $(CFLAGS) -o pchcps pchcpslookup.c $(GENLIB) -lm
+	$(CC) $(CFLAGS) -o pchcps pchcpslookup.c ../genlib/pchcps.o ../genlib/octcps.o ../genlib/pchoct.o -lm
 
 rescale: rescale.o $(SYSOBJS)
 	$(CC) $(CFLAGS) -o rescale rescale.o $(SYSOBJS) $(SNDLIB) -lm
