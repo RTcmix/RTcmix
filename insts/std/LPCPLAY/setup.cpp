@@ -193,11 +193,11 @@ int profile()
 	UG_INTRO("set_thresh",set_thresh);
 	UG_INTRO("set_hnfactor",set_hnfactor);
 	UG_INTRO("autocorrect",use_autocorrect);
-	p[0]=1; p[1]=10; p[2]=1024; p[3]=1;
-	pp[0]=1; pp[1]=10; pp[2]=1024; pp[3]=1;
-	makegen(p,4,pp);  /* store sinewave in array 1 */
-	p[0]=2; p[1]=7; p[2]=512; p[3]=0; p[4]=512; p[5]=1; 
-	pp[0]=2; pp[1]=7; pp[2]=512; pp[3]=0; pp[4]=512; pp[5]=1; 
+	p[0]=SINE_SLOT; p[1]=10; p[2]=1024; p[3]=1;
+	pp[0]=SINE_SLOT; pp[1]=10; pp[2]=1024; pp[3]=1;
+	makegen(p,4,pp);  /* store sinewave in array SINE_SLOT */
+	p[0]=ENV_SLOT; p[1]=7; p[2]=512; p[3]=0; p[4]=512; p[5]=1; 
+	pp[0]=ENV_SLOT; pp[1]=7; pp[2]=512; pp[3]=0; pp[4]=512; pp[5]=1; 
 	makegen(p,6,pp);
 	maxdev=0;
 	lowthresh = 0;

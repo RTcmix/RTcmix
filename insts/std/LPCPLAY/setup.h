@@ -11,6 +11,7 @@ double freset(float *p, int n_args);
 double setdev(float *p, int n_args);
 double set_thresh(float *p, int n_args);
 double set_hnfactor(float *p, int n_args);
+double use_autocorrect(float *p, int n_args);
 }
 
 #endif	//	 _SETUP_H_
