@@ -10,7 +10,7 @@ INST = ELL PAN REVERBIT REVMIX STEREO WAVETABLE
 SCRIPT = addgens bus_config fdump fplot \
 gen1 gen2 gen3 gen4 gen5 gen6 gen7 gen9 gen10 gen17 gen18 gen20 gen24 gen25 \
 infile makegen multgens rtinput rtoutput rtsetparams \
-irand rand random srand \
+irand rand random srand pickrand pickwrand \
 sampfunc sampfunci set_option setexp setline setline_size system
 
 # Commands invoked from the command line
