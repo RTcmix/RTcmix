@@ -385,7 +385,17 @@ int	ALSAAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 	return -1;
 }
 
-static char zeroBuffer[32768];
+static char interleavedZeroBuffer[32768];
+static char *nonInterleavedZeroBuffer[] = {
+	interleavedZeroBuffer,
+	interleavedZeroBuffer,
+	interleavedZeroBuffer,
+	interleavedZeroBuffer,
+	interleavedZeroBuffer,
+	interleavedZeroBuffer,
+	interleavedZeroBuffer,
+	interleavedZeroBuffer
+};
 
 void ALSAAudioDevice::run()
 {
@@ -397,7 +407,11 @@ void ALSAAudioDevice::run()
 	}
 //	printf("ALSAAudioDevice::run: after loop\n");
 	if (!_stopDuringPause) {
-		doSendFrames(zeroBuffer, sizeof(zeroBuffer)/getDeviceBytesPerFrame());
+		const int zFrames = sizeof(interleavedZeroBuffer)/getDeviceBytesPerFrame();
+		if (isDeviceInterleaved())
+			doSendFrames(interleavedZeroBuffer, zFrames);
+		else
+			doSendFrames(nonInterleavedZeroBuffer, zFrames * getDeviceChannels());
 		snd_pcm_drain(_handle);
 		_stopDuringPause = false;	// reset
 	}
