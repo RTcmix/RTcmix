@@ -7,6 +7,7 @@ RTLIBDIRS = MIX WAVETABLE
 CMIXLIBDIRS = mix wavetable
 
 LIBDIRS = $(RTLIBDIRS)  $(CMIXLIBDIRS) 
+DSODIRS = WAVETABLE $(CMIXLIBDIRS)
 
 all:
 	@for DIR in $(LIBDIRS) MIX; \
@@ -35,7 +36,7 @@ clean:
 	rm -f $(DESTDIR)/CMIX
 
 onlyDSO:
-	@for DIR in $(LIBDIRS); \
+	@for DIR in $(DSODIRS); \
 	do \
 	( cd $$DIR; echo "removing standalone instrument in $$DIR..."; \
 	rm -f $$DIR; ) \
