@@ -3,7 +3,7 @@
 #include <ugens.h>
 #include "strums.h"
 
-void sset(float freq, float tf0, float tNy, strumq *q) 
+void sset(float SR, float freq, float tf0, float tNy, strumq *q) 
 
 /* Sets up strumq structure for strum to use as plucked string.
    Uses a two point averaging filter to adjust the phase for exact

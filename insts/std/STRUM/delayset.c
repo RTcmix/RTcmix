@@ -3,7 +3,7 @@
 #include <ugens.h>
 #include "delayq.h"
 
-void delayset(float freq, delayq *q) 
+void delayset(float SR, float freq, delayq *q) 
  /* Sets up structure for simple interpolating delay line, delay.c.
     Sets delay time to 1/freq.
     Uses linear interpolation to get better than 1 sample resolution of delay

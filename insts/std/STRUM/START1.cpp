@@ -8,10 +8,10 @@ extern strumq *curstrumq[6];
 delayq *curdelayq;
 
 extern "C" {
-	void sset(float, float, float, strumq*);
+	void sset(float, float, float, float, strumq*);
 	void randfill(float, int, strumq*);
 	float strum(float, strumq*);
-	void delayset(float, delayq*);
+	void delayset(float, float, delayq*);
 	void delayclean(delayq*);
 	float dist(float);
 	float delay(float, delayq*);
@@ -46,12 +46,12 @@ int START1::init(double p[], int n_args)
 	strumq1 = new strumq;
 	curstrumq[0] = strumq1;
 	float freq = cpspch(p[2]);
-	sset(freq, p[3], p[4], strumq1);
+	sset(SR, freq, p[3], p[4], strumq1);
 	randfill(1.0, (int)p[11], strumq1);
 
 	dq = new delayq;
 	curdelayq = dq;
-	delayset(cpspch(p[7]), dq);
+	delayset(SR, cpspch(p[7]), dq);
 	delayclean(dq);
 
 	dgain = p[5];

@@ -10,9 +10,9 @@ extern strumq *curstrumq[6];
 extern delayq *curdelayq;
 
 extern "C" {
-	void sset(float, float, float, strumq*);
+	void sset(float, float, float, float, strumq*);
 	float strum(float, strumq*);
-	void delayset(float, delayq*);
+	void delayset(float, float, delayq*);
 	float dist(float);
 	float delay(float, delayq*);
 }
@@ -87,8 +87,8 @@ int VFRET1::init(double p[], int n_args)
 
 int VFRET1::configure()
 {
-	sset(freq, tf0, tfN, strumq1);
-	delayset(fbpitch, dq);
+	sset(SR, freq, tf0, tfN, strumq1);
+	delayset(SR, fbpitch, dq);
 	return 0;
 }
 
@@ -104,7 +104,7 @@ int VFRET1::run()
 				aamp = tablei(currentFrame(), amptable, amptabs) * amp;
 			float vamp = tablei(currentFrame(), eloc, tab) * vdepth;
 			float freqch = oscili(vamp,vsi,vloc,vlen,&vphase);
-			sset(freq+freqch, tf0, tfN, strumq1);
+			sset(SR, freq+freqch, tf0, tfN, strumq1);
 			branch2 = reset;
 			vphase += (float)branch2 * vsi;
 			while (vphase >= (float) vlen)

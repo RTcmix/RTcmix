@@ -8,9 +8,9 @@ extern strumq *curstrumq[6];
 extern delayq *curdelayq;
 
 extern "C" {
-	void sset(float, float, float, strumq*);
+	void sset(float, float, float, float, strumq*);
 	float strum(float, strumq*);
-	void delayset(float, delayq*);
+	void delayset(float, float, delayq*);
 	float dist(float);
 	float delay(float, delayq*);
 }
@@ -65,8 +65,8 @@ int FRET1::init(double p[], int n_args)
 
 int FRET1::configure()
 {
-	sset(freq, tf0, tfN, strumq1);
-	delayset(fbpitch, dq);
+	sset(SR, freq, tf0, tfN, strumq1);
+	delayset(SR, fbpitch, dq);
 	return 0;
 }
 

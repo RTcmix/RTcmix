@@ -7,7 +7,7 @@
 extern strumq *curstrumq[6];
 
 extern "C" {
-	void sset(float, float, float, strumq*);
+	void sset(float, float, float, float, strumq*);
 	float strum(float, strumq*);
 }
 
@@ -49,7 +49,7 @@ int FRET::init(double p[], int n_args)
 
 int FRET::configure()
 {
-	sset(freq, tf0, tfN, strumq1);
+	sset(SR, freq, tf0, tfN, strumq1);
 	return 0;
 }
 

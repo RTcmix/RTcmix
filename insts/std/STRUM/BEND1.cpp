@@ -9,9 +9,9 @@ extern strumq *curstrumq[6];
 extern delayq *curdelayq;
 
 extern "C" {
-	void sset(float, float, float, strumq*);
+	void sset(float, float, float, float, strumq*);
 	float strum(float, strumq*);
-	void delayset(float, delayq*);
+	void delayset(float, float, delayq*);
 	float dist(float);
 	float delay(float, delayq*);
 }
@@ -39,10 +39,10 @@ int BEND1::init(double p[], int n_args)
 	diff = cpspch(p[3]) - freq0;
 	tf0 = p[5];
 	tfN = p[6];
-	sset(freq0, tf0, tfN, strumq1);
+	sset(SR, freq0, tf0, tfN, strumq1);
 
 	dq = curdelayq;
-	delayset(cpspch(p[9]), dq);
+	delayset(SR, cpspch(p[9]), dq);
 
 	amp = p[12];
 	amptable = floc(1);
@@ -84,7 +84,7 @@ int BEND1::run()
 			if (amptable)
 				aamp = tablei(currentFrame(), amptable, amptabs) * amp;
 			float freq = diff * tablei(currentFrame(), glissf, tags) + freq0;
-			sset(freq, tf0, tfN, strumq1);
+			sset(SR, freq, tf0, tfN, strumq1);
 			branch = reset;
 		}
 

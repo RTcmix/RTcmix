@@ -10,10 +10,10 @@ extern strumq *curstrumq[6];
 extern delayq *curdelayq;
 
 extern "C" {
-	void sset(float, float, float, strumq*);
+	void sset(float, float, float, float, strumq*);
 	void randfill(float, int, strumq*);
 	float strum(float, strumq*);
-	void delayset(float, delayq*);
+	void delayset(float, float, delayq*);
 	void delayclean(delayq*);
 	float dist(float);
 	float delay(float, delayq*);
@@ -53,12 +53,12 @@ int VSTART1::init(double p[], int n_args)
 	freq = cpspch(p[2]);
 	tf0 = p[3];
 	tfN = p[4];
-	sset(freq, tf0, tfN, strumq1);
+	sset(SR, freq, tf0, tfN, strumq1);
 	randfill(1.0, (int)p[11], strumq1);
 
 	dq = new delayq;
 	curdelayq = dq;
-	delayset(cpspch(p[7]), dq);
+	delayset(SR, cpspch(p[7]), dq);
 	delayclean(dq);
 
 	amp = p[10];
@@ -117,7 +117,7 @@ int VSTART1::run()
 				aamp = tablei(currentFrame(), amptable, amptabs) * amp;
 			float vamp = tablei(currentFrame(), eloc, tab) * vdepth;
 			float freqch = oscili(vamp,vsi,vloc,vlen,&vphase);
-			sset(freq+freqch, tf0, tfN, strumq1);
+			sset(SR, freq+freqch, tf0, tfN, strumq1);
 			branch2 = reset;
 			vphase += (float)branch2 * vsi;
 			while (vphase >= (float) vlen)

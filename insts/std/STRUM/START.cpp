@@ -9,7 +9,7 @@
 strumq *curstrumq[6];
 
 extern "C" {
-	void sset(float, float, float, strumq*);
+	void sset(float, float, float, float, strumq*);
 	void randfill(float, int, strumq*);
 	float strum(float, strumq*);
 }
@@ -47,7 +47,7 @@ int START::init(double p[], int n_args)
 	strumq1 = new strumq;
 	curstrumq[0] = strumq1;
 	float freq = cpspch(pitch);
-	sset(freq, fdecay, nydecay, strumq1);
+	sset(SR, freq, fdecay, nydecay, strumq1);
 	randfill(amp, squish, strumq1);
 
    amptable = floc(1);
