@@ -52,7 +52,7 @@ revmodel::revmodel()
 	setdamp(initialdamp);
 	setwidth(initialwidth);
 	setmode(initialmode);
-	setpredelay(initialpredelay);
+	setpredelay((int)initialpredelay);
 
 	// Buffer will be full of rubbish - so we MUST mute them
 	mute();
