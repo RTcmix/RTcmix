@@ -6,6 +6,7 @@
 /* revision of Dave Topper's play program, by John Gibson, 6/99.
    rev'd again, for v2.3  -JGG, 2/26/00.
    rev'd again, for OSX support  -JGG, 12/01.
+   rev'd again, to work with Doug's AudioDevice class  -JGG, 6/04.
 */
 #if defined(LINUX) || defined(MACOSX)
 #include <stdio.h>
@@ -14,43 +15,58 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <sys/ioctl.h>
 #include <termios.h>
-#include <math.h>
 #include <errno.h>
 #include <assert.h>
 #include <byte_routines.h>
 #include <sndlibsupport.h>
-#include <audio_port.h>
+#include "../sys/AudioDevice.h"
+#include "../sys/audio_devices.h"
+
 
 #define PROGNAME  "cmixplay"
 
-/* Tradeoff: larger BUF_FRAMES and NUM_FRAGMENTS make playback more robust
-   on a loaded machine or over a network, at the cost of elapsed seconds
-   display running ahead of playback.
-   If user runs with robust flag (-r), code below increases buffer params
-   by ROBUST_FACTOR.
+/* Tradeoff: larger BUF_FRAMES makes playback more robust on a loaded machine
+   or over a network, at the cost of elapsed seconds display running ahead of
+   playback.  If user runs with robust flag (-r), code below increases buffer
+   params by ROBUST_FACTOR.
 */
 
-#define BUF_FRAMES          1024 * 2
 #ifdef LINUX
-#define ROBUST_FACTOR       4
-#endif
-#ifdef MACOSX
-// 4 glitches ... why?
-#define ROBUST_FACTOR       2
+   #define DEFAULT_DEVICE_NAME "plughw"
+   #define BUF_FRAMES          1024
+   #define ROBUST_FACTOR       4
 #endif
 
-#define SKIP_SECONDS        4.0     /* for fast-forward and rewind */
-#define MARK_PRECISION      2       /* digits after decimal point to print
-                                       for mark */
-#define MARK_DELAY          0.1     /* report mark time earlier by this much,
-                                       to make up for delay when typing key */
+#ifdef MACOSX
+   #define DEFAULT_DEVICE_NAME ""
+   #define BUF_FRAMES          1024
+   // 4 glitches ... why?   XXX: still true?
+   #define ROBUST_FACTOR       2
+#endif
+
+#define SKIP_SECONDS        4.0     // for fast-forward and rewind
+#define MARK_PRECISION      2       // digits after decimal point to print
+                                    // for mark
+#define MARK_DELAY          0.05    // report mark time earlier by this much,
+                                    // to make up for delay when typing key
 
 #define ALL_CHANS           -1
 
-/* #define DEBUG */
-#define VERBOSE             0       /* if true, print buffer size */
+//#define DEBUG
+
+#ifdef DEBUG
+   #define DPRINT(msg)                    printf((msg))
+   #define DPRINT1(msg, arg)              printf((msg), (arg))
+   #define DPRINT2(msg, arg1, arg2)       printf((msg), (arg1), (arg2))
+   #define DPRINT3(msg, arg1, arg2, arg3) printf((msg), (arg1), (arg2), (arg3))
+#else
+   #define DPRINT(msg)
+   #define DPRINT1(msg, arg)
+   #define DPRINT2(msg, arg1, arg2)
+   #define DPRINT3(msg, arg1, arg2, arg3)
+#endif
+
 
 #define UNSUPPORTED_DATA_FORMAT_MSG "\
 %s: samples in an unsupported data format. \n\
@@ -73,25 +89,743 @@ guarantee that your rescale factor won't cause painfully loud playback. \n\
 If you really want to play the file with this factor anyway, use the    \n\
 \"--force\" flag on the command line.  But be careful with your ears!\n"
 
-#ifdef MACOSX
-/* We ignore these, but need them to link with audio_port.o */
-int play_audio = 1;
-typedef float *BufPtr;
-BufPtr audioin_buffer[1];
-BufPtr out_buffer[1];
-#endif
 
-static int print_minutes_seconds = 0;  /* print time as 1:20 instead of 80 */
+typedef enum {
+   StatusError = -1,
+   StatusGood,
+   StatusAbort
+} Status;
 
-struct termios saved_term_attributes;
+typedef enum {
+   StateStopped,
+   StatePlaying,
+   StatePaused
+} State;
 
-void reset_input_mode(void)
+typedef enum {
+   TimeFormatSeconds,
+   TimeFormatMinutesSeconds
+} TimeFormat;
+
+static bool audioDone = false;
+
+static const char *make_time_string(const float seconds, const int precision);
+static const float get_seconds(const char timestr[], TimeFormat *format);
+static Status set_input_mode();
+static void reset_input_mode();
+
+bool playCallback(AudioDevice *device, void *arg);
+bool stopPlayCallback(AudioDevice *device, void *arg);
+
+
+class Player {
+
+public:
+   Player(const char       *fileName,
+          const char       *deviceName,
+          const float      startTime,
+          const float      endTime,
+          const int        playChan,
+          const int        requestedBufFrames,   
+          const float      rescaleFactor,
+          const bool       forcePeak,
+          const bool       useHotKeys,
+          const float      hotKeySkipTime,
+          const bool       quiet,
+          const TimeFormat timeFormat
+         );
+   ~Player();
+
+   Status      configure();
+   Status      play();
+   State       getState() const { return _state; }
+
+   // FIXME: these really shouldn't be public, but they have to be
+   // accessible by the callbacks.
+   int         readBuffer();
+   void        closeFiles();
+   Status      doHotKeys(int framesRead);
+   void        printTime();
+   float       *getOutBuf() const { return _outBuf; }
+
+private:
+   const char  *_fileName;
+   const char  *_deviceName;
+   float       _startTime;
+   float       _endTime;
+   int         _playChan;
+   int         _deviceFrames;
+   float       _factor;
+   bool        _force;
+   bool        _useHotKeys;
+   float       _hotKeySkipTime;
+   bool        _quiet;
+   TimeFormat  _timeFormat;
+
+   int         _fd;
+   int         _dataFormat;
+   int         _sRate;
+   int         _fileChans;
+   int         _datumSize;
+   int         _fileSamps;    // number of samples, not frames, in file
+   float       _fileDur;
+   int         _dataLocation;
+   bool        _isFloatFile;
+   bool        _is24bitFile;
+   bool        _swap;
+   int         _framesRead;
+   int         _bufSamps;
+   int         _endFrame;
+   float       _bufStartTime;
+   int         _bufStartFrame;
+   long        _skipBytes;
+   int         _curSecond;
+   void        *_inBuf;       // filled from file read
+   float       *_outBuf;      // passed to audio device
+   State       _state;
+   AudioDevice *_device;
+
+   Status      openInputFile();
+   Status      computeRescaleFactor();
+   Status      openAudioDevice();
+   void        printStats();
+};
+
+
+// ------------------------------------------------------------------ Player ---
+Player::Player(
+   const char        *fileName,
+   const char        *deviceName,
+   const float       startTime,
+   const float       endTime,
+   const int         playChan,
+   const int         requestedBufFrames,   
+   const float       rescaleFactor,
+   const bool        forcePeak,
+   const bool        useHotKeys,
+   const float       hotKeySkipTime,
+   const bool        quiet,
+   const TimeFormat  timeFormat)
+   : _fileName(fileName), _deviceName(deviceName), _startTime(startTime),
+     _endTime(endTime), _playChan(playChan), _deviceFrames(requestedBufFrames),
+     _factor(rescaleFactor), _force(forcePeak), _useHotKeys(useHotKeys),
+     _hotKeySkipTime(hotKeySkipTime), _quiet(quiet), _timeFormat(timeFormat)
 {
-   tcsetattr(STDIN_FILENO, TCSANOW, &saved_term_attributes);
+   _inBuf = NULL;
+   _outBuf = NULL;
+   _device = NULL;
+   _state = StateStopped;
 }
 
 
-/* ---------------------------------------------------------------- usage --- */
+// ----------------------------------------------------------------- ~Player ---
+Player::~Player()
+{
+   delete [] (float *) _inBuf;
+   delete [] _outBuf;
+}
+
+
+// --------------------------------------------------------------- configure ---
+Status
+Player::configure()
+{
+   Status status = openInputFile();
+   if (status != StatusGood)
+      return status;
+
+   // more input validation
+
+   if (_startTime >= _fileDur) {
+      fprintf(stderr, "Start time must be less than duration of file.\n");
+      return StatusError;
+   }
+   if (_endTime > 0.0 && _endTime > _fileDur) {
+      if (!_quiet)
+         printf("Note: Your end time was later than the end of file.\n");
+      // but continue anyway
+      _endTime = 0.0;
+   }
+   if (_playChan >= _fileChans) {
+      fprintf(stderr, "You asked to play channel %d of a %d-channel file.\n",
+              _playChan, _fileChans);
+      return StatusError;
+   }
+
+   status = computeRescaleFactor();
+   if (status != StatusGood)
+      return status;
+
+   status = openAudioDevice();
+   if (status != StatusGood)
+      return status;
+
+   _bufSamps = _deviceFrames * _fileChans;
+
+   // allocate input and output buffers
+   _inBuf = (void *) new char [_bufSamps * _datumSize];
+   _outBuf = new float [_bufSamps];
+
+   printStats();
+
+   return StatusGood;
+}
+
+
+// ----------------------------------------------------------- openInputFile ---
+Status
+Player::openInputFile()
+{
+   struct stat statbuf;
+
+   // see if file exists and we can read it
+   _fd = open(_fileName, O_RDONLY);
+   if (_fd == -1) {
+      fprintf(stderr, "%s: %s\n", _fileName, strerror(errno));
+      return StatusError;
+   }
+
+   // make sure it's a regular file or symbolic link
+   if (fstat(_fd, &statbuf) == -1) {
+      fprintf(stderr, "%s: %s\n", _fileName, strerror(errno));
+      return StatusError;
+   }
+   if (!S_ISREG(statbuf.st_mode) && !S_ISLNK(statbuf.st_mode)) {
+      fprintf(stderr, "\"%s\" is not a regular file or a link.\n", _fileName);
+      return StatusError;
+   }
+
+   // read header and gather info
+   if (sndlib_read_header(_fd) == -1) {
+      fprintf(stderr, "Can't read \"%s\"!\n", _fileName);
+      return StatusError;
+   }
+   int headerType = mus_header_type();
+   if (NOT_A_SOUND_FILE(headerType)) {
+      fprintf(stderr, "\"%s\" is probably not a sound file\n", _fileName);
+      return StatusError;
+   }
+   _dataFormat = mus_header_format();
+   if (!SUPPORTED_DATA_FORMAT(_dataFormat)) {
+      fprintf(stderr, UNSUPPORTED_DATA_FORMAT_MSG, _fileName, PROGNAME);
+      return StatusError;
+   }
+   _isFloatFile = IS_FLOAT_FORMAT(_dataFormat);
+   _is24bitFile = IS_24BIT_FORMAT(_dataFormat);
+#if MUS_LITTLE_ENDIAN
+   _swap = IS_BIG_ENDIAN_FORMAT(_dataFormat);
+#else
+   _swap = IS_LITTLE_ENDIAN_FORMAT(_dataFormat);
+#endif
+   _dataLocation = mus_header_data_location();
+   _sRate = mus_header_srate();
+   _fileChans = mus_header_chans();
+   _fileSamps = mus_header_samples();
+   _fileDur = (float) (_fileSamps / _fileChans) / (float) _sRate;
+   _datumSize = mus_header_data_format_to_bytes_per_sample();
+
+   return StatusGood;
+}
+
+
+// ---------------------------------------------------- computeRescaleFactor ---
+Status
+Player::computeRescaleFactor()
+{
+   SFComment sfc;
+
+   if (sndlib_get_current_header_comment(_fd, &sfc) == -1) {
+      fprintf(stderr, "Can't read header comment!\n");
+      return StatusError;
+   }
+   int validStats = (SFCOMMENT_PEAKSTATS_VALID(&sfc)
+                  && sfcomment_peakstats_current(&sfc, _fd));
+
+   if (validStats) {
+      float peak = 0.0;
+      for (int n = 0; n < _fileChans; n++)
+         if (sfc.peak[n] > peak)
+            peak = sfc.peak[n];
+      if (peak > 0.0) {
+         float tmpFactor = 32767.0 / peak;
+         if (_factor) {
+            if (_factor > tmpFactor && !_force) {
+               fprintf(stderr, CLIPPING_FORCE_FACTOR_MSG, _factor);
+               return StatusError;
+            }
+         }
+         else
+            _factor = tmpFactor > 1.0 ? 1.0 : tmpFactor;
+      }
+      else
+         validStats = 0;            // better not to believe this peak
+   }
+
+   if (!validStats) {               // NOTE: validStats can change in prev block
+      if (_factor == 0.0) {
+         if (_isFloatFile) {
+            fprintf(stderr, NEED_FACTOR_MSG);
+            return StatusError;
+         }
+         else
+            _factor = 1.0;
+      }
+      else if (!_force) {
+         if (_isFloatFile || _factor > 1.0) {
+            fprintf(stderr, NO_STATS_FORCE_FACTOR_MSG);
+            return StatusError;
+         }
+      }
+   }
+
+   return StatusGood;
+}
+
+
+// --------------------------------------------------------- openAudioDevice ---
+static const int numBuffers = 2;    // number of audio buffers to queue up
+
+Status
+Player::openAudioDevice()
+{
+   _device = createAudioDevice(NULL, _deviceName, false, true);
+   if (_device == NULL) {
+      fprintf(stderr, "Failed to create audio device \"%s\".\n", _deviceName);
+      return StatusError;
+   }
+
+   // We hand the device an interleaved floating point buffer.
+   int audioFormat = NATIVE_FLOAT_FMT | MUS_INTERLEAVED;
+   int openMode = AudioDevice::Playback;
+
+   _device->setFrameFormat(audioFormat, _fileChans);
+
+   if (_device->open(openMode, audioFormat, _fileChans, _sRate) < 0) {
+      fprintf(stderr, "%s\n", _device->getLastError());
+      return StatusError;
+   }
+
+   int reqsize = _deviceFrames;
+   int reqcount = numBuffers;
+   if (_device->setQueueSize(&reqsize, &reqcount) < 0) {
+      fprintf(stderr, "%s\n", _device->getLastError());
+      return StatusError;
+   }
+   if (reqsize != _deviceFrames) {
+      if (!_quiet)
+         printf("Note: buffer size reset by audio device from %d to %d.",
+                                                      _deviceFrames, reqsize);
+      _deviceFrames = reqsize;
+   }
+
+   return StatusGood;
+}
+
+
+// -------------------------------------------------------------- printStats ---
+void
+Player::printStats()
+{
+   if (!_quiet) {
+      printf("File: %s\n", _fileName);
+      printf("Rate: %d Hz   Chans: %d\n", _sRate, _fileChans);
+      printf("Duration: %.*f seconds [%s]\n", MARK_PRECISION, _fileDur,
+                                 make_time_string(_fileDur, MARK_PRECISION));
+      if (_startTime > 0.0)
+         printf("Skipping %g seconds.\n", _startTime);
+      if (_endTime > 0.0)
+         printf("Ending at %g seconds.\n", _endTime);
+      printf("Rescale factor: %g\n", _factor);
+      printf("Time: ");
+      fflush(stdout);
+   }
+}
+
+
+// --------------------------------------------------------------- doHotKeys ---
+Status
+Player::doHotKeys(int framesRead)
+{
+   if (_useHotKeys) {
+      int skipBytes = 0;
+      char c = 0;
+      long bytesRead = read(STDIN_FILENO, &c, 1);
+      if (bytesRead > 0) {
+         int skip = 0;
+
+         if (c == '\004')        // control-D
+            return StatusAbort;
+         else if (c == 'f') {    // fast-forward
+            skip = 1;
+            int skipFrames = (int) (_hotKeySkipTime * _sRate);
+            _skipBytes = (long) (skipFrames * _fileChans * _datumSize);
+            _bufStartFrame += skipFrames;
+            if (!_quiet) {
+               _bufStartTime += _hotKeySkipTime;
+               _curSecond += (int) _hotKeySkipTime;
+               printf("\n");
+            }
+         }
+         else if (c == 'r') {    // rewind
+            skip = 1;
+            int skipFrames = (int) (_hotKeySkipTime * _sRate);
+            _skipBytes = -(long) (skipFrames * _fileChans * _datumSize);
+            _bufStartFrame -= skipFrames;
+            if (!_quiet) {
+               _bufStartTime -= _hotKeySkipTime;
+               _curSecond -= (int) _hotKeySkipTime;
+               printf("\n");
+            }
+         }
+         else if (c == 'm') {    // mark
+            float markTime = _bufStartTime - MARK_DELAY;
+            printf("\nMARK: %.*f [%s]\n", MARK_PRECISION, markTime,
+                              make_time_string(markTime, MARK_PRECISION));
+            fflush(stdout);
+         }
+         else if (c == 't') {    // toggle time display format
+            if (_timeFormat == TimeFormatSeconds)
+               _timeFormat = TimeFormatMinutesSeconds;
+            else
+               _timeFormat = TimeFormatSeconds;
+         }
+         else if (c == 'p') {    // toggle pause
+            if (_state == StatePlaying) {
+               _state = StatePaused;
+               if (!_quiet)
+                  printf("\nPaused...[type 'p' to resume]\n");
+            }
+            else
+               _state = StatePlaying;
+         }
+
+         if (skip) {
+            off_t curloc = lseek(_fd, 0, SEEK_CUR);
+            if (curloc + _skipBytes <= _dataLocation) {
+               if (!_quiet) {
+                  _bufStartTime = 0.0;
+                  _curSecond = 0;
+               }
+               if (lseek(_fd, _dataLocation, SEEK_SET) == -1) {
+                  perror("lseek");
+                  return StatusError;
+               } 
+               _bufStartFrame = -framesRead;
+            }
+            else if (lseek(_fd, _skipBytes, SEEK_CUR) == -1) {
+               perror("lseek");
+               return StatusError;
+            }
+            if (_state == StatePaused) {
+               DPRINT("calling printTime while paused\n");
+               printTime();
+            }
+         }
+      }
+   }
+
+   return StatusGood;
+}
+
+
+// --------------------------------------------------------------- printTime ---
+void
+Player::printTime()
+{
+   if (_quiet)
+      return;
+
+   if (_bufStartTime >= _curSecond || _state == StatePaused) {
+      if (_timeFormat == TimeFormatMinutesSeconds)
+         printf("%s ", make_time_string((float) _curSecond, 0));
+      else
+         printf("%d ", _curSecond);
+      fflush(stdout);
+      if (_state == StatePlaying)
+         _curSecond++;
+   }
+}
+
+
+// -------------------------------------------------------------- readBuffer ---
+int
+Player::readBuffer()
+{
+   long bytesRead;
+
+   DPRINT3("bufStartFrame=%d, deviceFrames=%d, endFrame=%d\n",
+                                 _bufStartFrame, _deviceFrames, _endFrame);
+
+   if (_bufStartFrame + _deviceFrames > _endFrame) {      // last buffer
+      int samps = (_endFrame - _bufStartFrame) * _fileChans;
+      if (samps <= 0)
+         return 0;               // _endFrame reached
+      DPRINT1("last buffer: requesting %d frames\n", samps / _fileChans);
+      bytesRead = read(_fd, _inBuf, samps * _datumSize);
+   }
+   else
+      bytesRead = read(_fd, _inBuf, _bufSamps * _datumSize);
+   if (bytesRead == -1) {
+      perror("read");
+      return -1;
+   }
+   if (bytesRead == 0)          // EOF
+      return 0;
+
+   int sampsRead = bytesRead / _datumSize;
+   int framesRead = sampsRead / _fileChans;
+
+   if (_isFloatFile) {
+      float *bufp = (float *) _inBuf;
+      if (_swap) {
+         for (int i = 0; i < sampsRead; i++) {
+            byte_reverse4(&bufp[i]);
+            _outBuf[i] = bufp[i] * _factor;
+         }
+      }
+      else {
+         for (int i = 0; i < sampsRead; i++)
+            _outBuf[i] = bufp[i] * _factor;
+      }
+   }
+   else if (_is24bitFile) {
+      unsigned char *bufp = (unsigned char *) _inBuf;
+      int j;
+      if (_dataFormat == MUS_L24INT) {
+         for (int i = j = 0; i < sampsRead; i++, j += _datumSize) {
+            float samp = (float) (((bufp[j + 2] << 24)
+                                 + (bufp[j + 1] << 16)
+                                 + (bufp[j] << 8)) >> 8);
+            samp *= _factor;
+            _outBuf[i] = samp / (float) (1 << 8);
+         }
+      }
+      else {   // _dataFormat == MUS_B24INT
+         for (int i = j = 0; i < sampsRead; i++, j += _datumSize) {
+            float samp = (float) (((bufp[j] << 24)
+                                 + (bufp[j + 1] << 16)
+                                 + (bufp[j + 2] << 8)) >> 8);
+            samp *= _factor;
+            _outBuf[i] = samp / (float) (1 << 8);
+         }
+      }
+   }
+   else {      // 16bit int
+      short *bufp = (short *) _inBuf;
+      if (_swap) {
+         for (int i = 0; i < sampsRead; i++) {
+            bufp[i] = reverse_int2(&bufp[i]);
+            _outBuf[i] = (float) (_factor * (float) bufp[i]);
+         }
+      }
+      else {
+         for (int i = 0; i < sampsRead; i++)
+            _outBuf[i] = (float) (_factor * (float) bufp[i]);
+      }
+   }
+
+   for (int i = sampsRead; i < _bufSamps; i++)
+      _outBuf[i] = 0.0;
+
+   // Not efficient, but easy way to play just 1 of several chans.
+   if (_playChan > ALL_CHANS) {
+      for (int i = 0; i < sampsRead; i += _fileChans) {
+         float samp = _outBuf[i + _playChan];
+         for (int n = 0; n < _fileChans; n++)
+            _outBuf[i + n] = samp;
+      }
+   }
+
+   _bufStartFrame += framesRead;
+   _bufStartTime += (float) framesRead / (float) _sRate;
+
+   return framesRead;
+}
+
+
+// ------------------------------------------------------------ playCallback ---
+bool
+playCallback(AudioDevice *device, void *arg)
+{
+   int framesRead = 0;
+   Player *player = (Player *) arg;
+
+   if (player->getState() == StatePlaying) {
+      framesRead = player->readBuffer();
+      if (framesRead <= 0)
+         return false;
+
+      int framesWritten = device->sendFrames(player->getOutBuf(), framesRead);
+      if (framesWritten != framesRead)
+         fprintf(stderr, "Error: %s\n", device->getLastError());
+
+      player->printTime();
+   }
+   Status status = player->doHotKeys(framesRead);
+   if (status != StatusGood)
+      return false;
+
+   return true;
+}
+
+
+// -------------------------------------------------------------- closeFiles ---
+void
+Player::closeFiles()
+{
+   close(_fd);
+}
+
+
+// -------------------------------------------------------- stopPlayCallback ---
+bool
+stopPlayCallback(AudioDevice *device, void *arg)
+{
+   Player *player = (Player *) arg;
+
+   device->close();
+   player->closeFiles();
+   audioDone = true;
+
+   return true;
+}
+
+
+// -------------------------------------------------------------------- play ---
+Status
+Player::play()
+{
+   int startFileFrame = 0;
+
+   // init variables used in playback loop
+
+   if (_startTime > 0.0) {
+      startFileFrame = (int) (_startTime * _sRate);
+      _skipBytes = (long) (startFileFrame * _fileChans * _datumSize);
+   }
+   else
+      _skipBytes = 0;
+
+   if (_endTime > 0.0)
+      _endFrame = (int) (_endTime * _sRate);
+   else
+      _endFrame = _fileSamps / _fileChans;
+
+   _bufStartFrame = startFileFrame;
+   _bufStartTime = _startTime;
+   _curSecond = (int) _bufStartTime;
+
+   // seek to start time on input file
+   if (lseek(_fd, _dataLocation + _skipBytes, SEEK_SET) == -1) {
+      perror("lseek");
+      return StatusError;
+   }
+
+   _state = StatePlaying;
+
+   _device->setStopCallback(stopPlayCallback, (void *) this);
+
+   if (_device->start(playCallback, (void *) this) != 0) {
+      fprintf(stderr, "%s\n", _device->getLastError());
+      return StatusError;
+   }
+
+   return StatusGood;
+}
+
+
+// =============================================================================
+// End of Player definitions
+
+
+// -------------------------------------------------------- make_time_string ---
+static const char *
+make_time_string(const float seconds, const int precision)
+{
+   static char buf[32];
+
+   int minutes = (int) seconds / 60;
+   int secs = (int) seconds % 60;
+   if (precision > 0) {
+      char  tmp[16], *p;
+      float frac = seconds - (int) seconds;
+      snprintf(tmp, 16, "%.*f", precision, frac);
+      p = tmp + 1;      // skip 0 before decimal point
+      snprintf(buf, 32, "%d:%02d%s", minutes, secs, p);
+   }
+   else
+      snprintf(buf, 32, "%d:%02d", minutes, secs);
+   return buf;
+}
+
+
+// ------------------------------------------------------------- get_seconds ---
+static const float
+get_seconds(const char timestr[], TimeFormat *format)
+{
+   float seconds;
+   char  *p, *str;
+
+   str = strdup(timestr);
+   if (str == NULL) {
+      fprintf(stderr, "get_seconds: can't allocate string buffer.\n");
+      exit(EXIT_FAILURE);
+   }
+   p = strchr(str, ':');
+   if (p) {
+      float minutes = atof(str);
+      *p = '\0';
+      p++;        // now str points to minutes str; p points to seconds
+      seconds = atof(p);
+      seconds += minutes * 60.0;
+      *format = TimeFormatMinutesSeconds;
+   }
+   else
+      seconds = atof(str);
+   free(str);
+
+   return seconds;
+}
+
+
+// ---------------------------------------- reset_input_mode, set_input_mode ---
+
+static struct termios _saved_term_attributes;
+
+static void
+reset_input_mode()
+{
+   tcsetattr(STDIN_FILENO, TCSANOW, &_saved_term_attributes);
+}
+
+
+static Status
+set_input_mode()
+{
+   struct termios tattr;
+
+   // Make sure stdin is a terminal.
+   if (!isatty(STDIN_FILENO)) {
+      fprintf(stderr, "Not a terminal.\n");
+      return StatusError;
+   }
+
+   // Save the terminal attributes so we can restore them at exit.
+   tcgetattr(STDIN_FILENO, &_saved_term_attributes);
+   atexit(reset_input_mode);
+
+   // Set terminal modes so fast-forward, rewind, etc. will work.
+   tcgetattr(STDIN_FILENO, &tattr);
+   tattr.c_lflag &= ~(ICANON | ECHO);  // Clear ICANON and ECHO.
+   tattr.c_cc[VMIN] = 0;               // so read doesn't block; it
+   tattr.c_cc[VTIME] = 0;              //    returns 0 if no input
+   tcsetattr(STDIN_FILENO, TCSAFLUSH, &tattr);
+
+   return StatusGood;
+}
+
+
+// ------------------------------------------------------------------- usage ---
 
 #define USAGE_MSG "\
 Usage: %s [options] filename  \n\
@@ -108,16 +842,18 @@ Usage: %s [options] filename  \n\
                  -q        quiet - don't print anything         \n\
                  --force   use rescale factor even if peak      \n\
                               amp of float file unknown         \n\
+                 -D        audio device name                    \n\
           Notes: -d ignored if you also give -e                 \n\
                  Times can be given as seconds or 0:00.0        \n\
                     If the latter, prints time in same way.     \n\
                  Hotkeys: 'f': fast-forward, 'r': rewind,       \n\
                           'm': mark (print current buffer start time)\n\
                           't': toggle time display              \n\
+                          'p': pause / resume                   \n\
                  To stop playing: cntl-D or cntl-C              \n\
 "
 
-static void
+void
 usage()
 {
    fprintf(stderr, USAGE_MSG, PROGNAME);
@@ -125,270 +861,75 @@ usage()
 }
 
 
-/* --------------------------------------------------------- write_buffer --- */
-static int
-write_buffer(int ports[], char *buf, int datum_size, int nframes, int nchans)
+// -------------------------------------------------------------------- main ---
+int
+main(int argc, char *argv[])
 {
-   int      i, j, n, buf_bytes;
-   ssize_t  bytes_written;
-
-#ifdef MONO_DEVICES
-   static short *tmpbuf = NULL;
-
-   buf_bytes = nframes * datum_size;
-
-   if (tmpbuf == NULL) {                   /* first time, so allocate */
-      tmpbuf = malloc((size_t)buf_bytes);
-      assert(tmpbuf != NULL);
-   }
-   for (n = 0; n < nchans; n++) {
-      for (i = 0, j = n; i < nframes; i++, j += nchans)
-         tmpbuf[i] = ((short *)buf)[j];
-      bytes_written = write(ports[n], tmpbuf, buf_bytes);
-      if (bytes_written == -1) {
-         perror("audio write");
-         return -1;
-      }
-   }
-
-#else /* !MONO_DEVICES */
-
- #ifdef USE_CARD_CHANS
-
-   static int   card_chans = -1;
-   static short *tmpbuf = NULL;
-
-   if (card_chans == -1) {                      /* first time, so check */
-      card_chans = get_card_max_chans(ports[0]);
-      assert(card_chans >= nchans);
-   }
-
-   /* If file has fewer chans than card, copy file chans into a temp
-      interleaved array of card_chans, then zero-pad the rest of the
-      chans in the larger array.
-   */
-   if (card_chans > nchans) {
-      if (tmpbuf == NULL) {                   /* first time, so allocate */
-         tmpbuf = calloc(nframes * card_chans, sizeof(short));   /* zeros mem */
-         assert(tmpbuf != NULL);
-      }
-      /* If input is mono, copy the signal into both channels of the first
-         stereo pair.
-      */
-      if (nchans == 1) {
-         for (i = j = 0; i < nframes; i++, j += card_chans) {
-            tmpbuf[j] = ((short *)buf)[i];
-            tmpbuf[j + 1] = tmpbuf[j];
-         }
-      }
-      else {
-         for (n = 0; n < nchans; n++) {
-            int k;
-            j = k = n;
-            for (i = 0; i < nframes; i++) {
-               tmpbuf[k] = ((short *)buf)[j];
-               j += nchans;
-               k += card_chans;
-            }
-         }
-      }
-      buf_bytes = nframes * card_chans * datum_size;
-      bytes_written = write(ports[0], tmpbuf, buf_bytes);
-   }
-   else {
-      buf_bytes = nframes * nchans * datum_size;
-      bytes_written = write(ports[0], buf, buf_bytes);
-   }
-
- #else /* !USE_CARD_CHANS */
-
-   buf_bytes = nframes * nchans * datum_size;
-   bytes_written = write(ports[0], buf, buf_bytes);
-
- #endif /* !USE_CARD_CHANS */
-
-   if (bytes_written == -1) {
-      perror("audio write");
-      return -1;
-   }
-#endif /* !MONO_DEVICES */
-
-   return 0;
-}
-
-
-/* ---------------------------------------------------------- close_ports --- */
-static void
-close_ports(int ports[], int nchans)
-{
-#ifdef MONO_DEVICES
-   int   n;
-
-   for (n = 0; n < nchans; n++)
-      close(ports[n]);
-#else /* !MONO_DEVICES */
-   close(ports[0]);
-#endif /* !MONO_DEVICES */
-}
-
-
-/* ----------------------------------------------------- make_time_string --- */
-static char *
-make_time_string(float seconds, int precision)
-{
-   int         minutes, secs;
-   static char buf[32];
-
-   minutes = (int)seconds / 60;
-   secs = (int)seconds % 60;
-   if (precision > 0) {
-      char  tmp[16], *p;
-      float frac = seconds - (int)seconds;
-      snprintf(tmp, 16, "%.*f", precision, frac);
-      p = tmp + 1;      /* skip 0 before decimal point */
-      snprintf(buf, 32, "%d:%02d%s", minutes, secs, p);
-   }
-   else
-      snprintf(buf, 32, "%d:%02d", minutes, secs);
-   return buf;
-}
-
-
-/* ---------------------------------------------------------- get_seconds --- */
-static float
-get_seconds(char timestr[])
-{
-   float seconds;
-   char  *p, *str;
-
-   str = strdup(timestr);
-   if (str == NULL) {
-      fprintf(stderr, "get_seconds: can't allocate string buffer.\n");
-      exit(EXIT_FAILURE);
-   }
-   p = strchr(str, ':');
-   if (p) {
-      float minutes;
-      *p = '\0';
-      p++;        /* now str points to minutes str; p points to seconds */
-      minutes = atof(str);
-      seconds = atof(p);
-      seconds += minutes * 60.0;
-      print_minutes_seconds = 1;
-   }
-   else
-      seconds = atof(str);
-   free(str);
-
-   return seconds;
-}
-
-
-/* ------------------------------------------------------- set_input_mode --- */
-static void
-set_input_mode(void)
-{
-   struct termios tattr;
-
-   /* Make sure stdin is a terminal. */
-   if (!isatty(STDIN_FILENO)) {
-      fprintf(stderr, "Not a terminal.\n");
-      exit(EXIT_FAILURE);
-   }
-
-   /* Save the terminal attributes so we can restore them at exit. */
-   tcgetattr(STDIN_FILENO, &saved_term_attributes);
-   atexit(reset_input_mode);
-
-   /* Set terminal modes so fast-forward, rewind, etc. will work. */
-   tcgetattr(STDIN_FILENO, &tattr);
-   tattr.c_lflag &= ~(ICANON | ECHO);  /* Clear ICANON and ECHO. */
-   tattr.c_cc[VMIN] = 0;               /* so read doesn't block; it */
-   tattr.c_cc[VTIME] = 0;              /*    returns 0 if no input */
-   tcsetattr(STDIN_FILENO, TCSAFLUSH, &tattr);
-}
-
-
-/* ----------------------------------------------------------------- main --- */
-int main(int argc, char *argv[])
-{
-   int         i, n, fd, datum_size, second, status, fragments, stats_valid;
-   int         quiet, robust, force, is_float, is_24bit, swap, play_chan,
-               hotkeys;
-   int         header_type, data_format, data_location, srate, in_chans, nsamps;
-   int         buf_bytes, buf_samps, buf_frames, buf_start_frame;
-   int         start_frame, end_frame, nframes, skip_frames;
-   long        skip_bytes;
-   float       start_time, end_time, request_dur, buf_start_time, factor, dur;
-   float       skip_time;
-   char        *sfname, *bufp;
-   unsigned char *cbuf;
-   short       *sbuf;
-   float       *fbuf;
-   struct stat statbuf;
-   SFComment   sfc;
-#ifdef LINUX
-   int         afd[MAXCHANS];
-#endif
-#ifdef MACOSX
-   AudioDeviceID out_port;
-#endif
+   int         quiet, robust, force, play_chan, hotkeys, requested_bufframes;
+   float       start_time, end_time, request_dur, factor, hk_skip_time;
+   char        *file_name, *device_name;
+   Player      *player;
+   Status      status;
+   TimeFormat  time_format = TimeFormatSeconds;
 
    if (argc < 2)
       usage();
 
-   sfname = NULL;
-   fbuf = NULL;
-   cbuf = NULL;
-   quiet = robust = force = second = nframes = 0;
-   start_time = end_time = buf_start_time = request_dur = factor = 0.0;
+   file_name = NULL;
+   device_name = DEFAULT_DEVICE_NAME;
+   quiet = robust = force = 0;
    play_chan = ALL_CHANS;
    hotkeys = 1;
-   skip_time = SKIP_SECONDS;
-   skip_frames = 0;     /* need srate to compute */
+   start_time = end_time = request_dur = factor = 0.0;
+   hk_skip_time = SKIP_SECONDS;
 
-   for (i = 1; i < argc; i++) {
+   for (int i = 1; i < argc; i++) {
       char *arg = argv[i];
 
       if (arg[0] == '-') {
          switch (arg[1]) {
-            case 's':               /* start time */
+            case 's':               // start time
                if (++i >= argc)
                   usage();
-               start_time = get_seconds(argv[i]);
+               start_time = get_seconds(argv[i], &time_format);
                break;
-            case 'e':               /* end time */
+            case 'e':               // end time
                if (++i >= argc)
                   usage();
-               end_time = get_seconds(argv[i]);
+               end_time = get_seconds(argv[i], &time_format);
                break;
-            case 'd':               /* duration */
+            case 'd':               // duration
                if (++i >= argc)
                   usage();
-               request_dur = get_seconds(argv[i]);
+               request_dur = get_seconds(argv[i], &time_format);
                break;
-            case 'f':               /* rescale factor (for float files) */
+            case 'D':               // audio device name
+               if (++i >= argc)
+                  usage();
+               device_name = argv[i];
+               break;
+            case 'f':               // rescale factor (for float files)
                if (++i >= argc)
                   usage();
                factor = atof(argv[i]);
                break;
-            case 'c':               /* channel */
+            case 'c':               // channel
                if (++i >= argc)
                   usage();
                play_chan = atoi(argv[i]);
                break;
-            case 'k':               /* disable hotkeys */
+            case 'k':               // disable hotkeys
                hotkeys = 0;
                break;
-            case 't':               /* disable hotkeys */
+            case 't':               // hotkey transport skip time
                if (++i >= argc)
                   usage();
-               skip_time = get_seconds(argv[i]);
+               hk_skip_time = get_seconds(argv[i], &time_format);
                break;
-            case 'r':               /* robust buffer size */
+            case 'r':               // robust buffer size
                robust = 1;
                break;
-            case 'q':               /* no printout */
+            case 'q':               // no printout
                quiet = 1;
                break;
             case '-':
@@ -402,15 +943,15 @@ int main(int argc, char *argv[])
          }
       }
       else
-         sfname = arg;
+         file_name = arg;
    }
-   if (sfname == NULL) {
+
+   // input validation
+
+   if (file_name == NULL) {
       fprintf(stderr, "You didn't give a valid filename.\n");
       exit(EXIT_FAILURE);
    }
-
-   /* input validation */
-
    if (start_time < 0.0) {
       fprintf(stderr, "Start time must be positive.\n");
       exit(EXIT_FAILURE);
@@ -422,464 +963,50 @@ int main(int argc, char *argv[])
    if (end_time == 0.0 && request_dur > 0.0)
       end_time = start_time + request_dur;
    if (factor < 0.0) {
-      fprintf(stderr, "Rescale factor must be greater than 0.\n");
+      fprintf(stderr, "Rescale factor must be zero or greater.\n");
       exit(EXIT_FAILURE);
    }
-   if (hotkeys && skip_time <= 0.0) {
+   if (hotkeys && hk_skip_time <= 0.0) {
       fprintf(stderr, "Skip time must be greater than zero.\n");
       exit(EXIT_FAILURE);
    }
 
-   /* see if file exists and we can read it */
-
-   fd = open(sfname, O_RDONLY);
-   if (fd == -1) {
-      fprintf(stderr, "%s: %s\n", sfname, strerror(errno));
-      exit(EXIT_FAILURE);
-   }
-
-   /* make sure it's a regular file or symbolic link */
-
-   if (fstat(fd, &statbuf) == -1) {
-      fprintf(stderr, "%s: %s\n", sfname, strerror(errno));
-      exit(EXIT_FAILURE);
-   }
-   if (!S_ISREG(statbuf.st_mode) && !S_ISLNK(statbuf.st_mode)) {
-      fprintf(stderr, "\"%s\" is not a regular file or a link.\n", sfname);
-      exit(EXIT_FAILURE);
-   }
-
-   /* read header and gather info */
-
-   if (sndlib_read_header(fd) == -1) {
-      fprintf(stderr, "Can't read \"%s\"!\n", sfname);
-      exit(EXIT_FAILURE);
-   }
-   header_type = mus_header_type();
-   if (NOT_A_SOUND_FILE(header_type)) {
-      fprintf(stderr, "\"%s\" is probably not a sound file\n", sfname);
-      exit(EXIT_FAILURE);
-   }
-   data_format = mus_header_format();
-   if (!SUPPORTED_DATA_FORMAT(data_format)) {
-      fprintf(stderr, UNSUPPORTED_DATA_FORMAT_MSG, sfname, PROGNAME);
-      exit(EXIT_FAILURE);
-   }
-   is_float = IS_FLOAT_FORMAT(data_format);
-   is_24bit = IS_24BIT_FORMAT(data_format);
-#if MUS_LITTLE_ENDIAN
-   swap = IS_BIG_ENDIAN_FORMAT(data_format);
-#else
-   swap = IS_LITTLE_ENDIAN_FORMAT(data_format);
-#endif
-   data_location = mus_header_data_location();
-   srate = mus_header_srate();
-   in_chans = mus_header_chans();
-   datum_size = mus_header_data_format_to_bytes_per_sample();
-   nsamps = mus_header_samples();                /* samples, not frames */
-   dur = (float)(nsamps / in_chans) / (float)srate;
-
-   /* more input validation */
-
-   if (start_time >= dur) {
-      fprintf(stderr, "Start time must be less than duration of file.\n");
-      exit(EXIT_FAILURE);
-   }
-   if (end_time > 0.0 && end_time > dur) {
+   requested_bufframes = BUF_FRAMES;
+   if (robust) {
+      requested_bufframes *= ROBUST_FACTOR;
       if (!quiet)
-         printf("Note: Your end time was later than the end of file.\n");
-      /* but continue anyway */
-      end_time = 0.0;
-   }
-   if (in_chans > MAXCHANS) {
-      fprintf(stderr,
-              "Not configured to play files with more than %d channels.\n",
-              MAXCHANS);
-      exit(EXIT_FAILURE);
-   }
-   if (play_chan >= in_chans) {
-      fprintf(stderr, "You asked to play channel %d of a %d-channel file.\n",
-              play_chan, in_chans);
-      exit(EXIT_FAILURE);
-   }
-
-   /* prepare rescale factor */
-
-   if (sndlib_get_current_header_comment(fd, &sfc) == -1) {
-      fprintf(stderr, "Can't read header comment!\n");
-      exit(EXIT_FAILURE);
-   }
-   stats_valid = (SFCOMMENT_PEAKSTATS_VALID(&sfc)
-                  && sfcomment_peakstats_current(&sfc, fd));
-
-   if (stats_valid) {
-      float peak = 0.0;
-      for (n = 0; n < in_chans; n++)
-         if (sfc.peak[n] > peak)
-            peak = sfc.peak[n];
-      if (peak > 0.0) {
-         float tmp_factor = 32767.0 / peak;
-         if (factor) {
-            if (factor > tmp_factor && !force) {
-               fprintf(stderr, CLIPPING_FORCE_FACTOR_MSG, factor);
-               exit(EXIT_FAILURE);
-            }
-         }
-         else
-            factor = tmp_factor > 1.0 ? 1.0 : tmp_factor;
-      }
-      else
-         stats_valid = 0;              /* better not to believe this peak */
-   }
-   if (!stats_valid) {      /* Note: stats_valid can change in prev block */
-      if (factor == 0.0) {
-         if (is_float) {
-            fprintf(stderr, NEED_FACTOR_MSG);
-            exit(EXIT_FAILURE);
-         }
-         else
-            factor = 1.0;
-      }
-      else if (!force) {
-         if (is_float || factor > 1.0) {
-            fprintf(stderr, NO_STATS_FORCE_FACTOR_MSG);
-            exit(EXIT_FAILURE);
-         }
-      }
-   }
-
-   /* open the audio output port */
-
-   buf_frames = BUF_FRAMES;
-   if (robust)
-      buf_frames *= ROBUST_FACTOR;
-
-   fragments = NUM_FRAGMENTS;
-   if (robust)
-      fragments *= ROBUST_FACTOR;
-
-#ifdef LINUX
-   /* Note: This will set number of chans depending on USE_CARD_CHANS define. */
-   status = open_ports(0, 0, NULL, in_chans, MAXCHANS, afd, VERBOSE,
-                                    (float) srate, fragments, &buf_frames);
-#endif
-#ifdef MACOSX
-   status = open_macosx_ports(0, in_chans, NULL, &out_port, VERBOSE,
-                                    (float) srate, fragments, &buf_frames);
-#endif
-   if (status == -1)
-      exit(EXIT_FAILURE);
-
-   /* allocate buffer(s) */
-
-   buf_samps = buf_frames * in_chans;
-// FIXME: 24-bit audio output...
-   buf_bytes = buf_samps * sizeof(short);
-
-   /* output buffer */
-// FIXME: truncates 24-bit and float audio output; should feed OS X floats
-   sbuf = (short *)malloc((size_t)buf_bytes);
-   if (sbuf == NULL) {
-      perror("short buffer malloc");
-      exit(EXIT_FAILURE);
-   }
-
-   /* input buffer */
-   if (is_float) {
-      fbuf = (float *)malloc((size_t)(buf_samps * sizeof(float)));
-      if (fbuf == NULL) {
-         perror("float buffer malloc");
-         exit(EXIT_FAILURE);
-      }
-      bufp = (char *)fbuf;
-   }
-   else if (is_24bit) {
-      cbuf = (unsigned char *)malloc((size_t)buf_samps * datum_size);
-      if (cbuf == NULL) {
-         perror("24bit buffer malloc");
-         exit(EXIT_FAILURE);
-      }
-      bufp = (char *)cbuf;
-   }
-   else
-      bufp = (char *)sbuf;
-
-   /* print out stuff, if not running in quiet mode */
-
-   if (!quiet) {
-      printf("File: %s\n", sfname);
-      printf("Rate: %d Hz   Chans: %d\n", srate, in_chans);
-      printf("Duration: %.*f seconds [%s]\n", MARK_PRECISION, dur,
-                                       make_time_string(dur, MARK_PRECISION));
-      if (start_time > 0.0)
-         printf("Skipping %g seconds.\n", start_time);
-      if (end_time > 0.0)
-         printf("Ending at %g seconds.\n", end_time);
-      printf("Rescale factor: %g\n", factor);
-      if (robust)
          printf("Warning: \"robust\" mode causes second count to run ahead.\n");
-      printf("Time: ");
-      fflush(stdout);
    }
 
-   /* set terminal up to handle hotkey input, etc. */
+   // Set up terminal to handle hotkey input.
    if (hotkeys) {
-      set_input_mode();
-      skip_frames = (int)(skip_time * srate);
+      status = set_input_mode();
+      if (status != StatusGood)
+         exit(EXIT_FAILURE);
    }
 
-   /* init variables used in playback loop */
+   player = new Player(file_name, device_name, start_time, end_time, play_chan,
+               requested_bufframes, factor, force, hotkeys, hk_skip_time, quiet,
+               time_format);
 
-   if (start_time > 0.0) {
-      start_frame = (int)(start_time * srate);
-      skip_bytes = (long)(start_frame * in_chans * datum_size);
-   }
-   else
-      start_frame = skip_bytes = 0;
-
-   if (end_time > 0.0)
-      end_frame = (int)(end_time * srate);
-   else
-      end_frame = nsamps / in_chans;
-
-   buf_frames = buf_samps / in_chans;
-
-   buf_start_time = start_time;
-
-   if (!quiet)
-      second = (int)buf_start_time;
-
-   /* seek to start_time on input file */
-
-   if (lseek(fd, data_location + skip_bytes, SEEK_SET) == -1) {
-      perror("lseek");
+   status = player->configure();
+   if (status != StatusGood)
       exit(EXIT_FAILURE);
+
+   status = player->play();
+   if (status == StatusGood) {
+      while (audioDone == false)
+         sleep(1);
    }
-
-   /* write buffers of zeros to audio output to prevent clicks */
-   for (i = 0; i < buf_samps; i++)
-      sbuf[i] = 0;
-   for (i = 0; i < ZERO_FRAMES_BEFORE / buf_frames; i++) {
-#ifdef LINUX
-      status = write_buffer(afd, (char *)sbuf, AUDIO_DATUM_SIZE,
-                                             buf_samps / in_chans, in_chans);
-      if (status == -1)
-         exit(EXIT_FAILURE);
-#endif
-#ifdef MACOSX
-      macosx_cmixplay_audio_write(sbuf);
-#endif
-   }
-
-   /* read input samples until end_frame, and copy to audio port,
-      byte-swapping and converting from floats as necessary.
-      If not running in quiet mode, print seconds as they elapse.
-   */
-   buf_start_frame = start_frame;
-   for (  ; buf_start_frame < end_frame; buf_start_frame += nframes) {
-      int  samps_read;
-      long bytes_read;
-      char c = 0;
-
-      if (buf_start_frame + buf_frames > end_frame) {      /* last buffer */
-         int samps = (end_frame - buf_start_frame) * in_chans;
-         bytes_read = read(fd, bufp, samps * datum_size);
-      }
-      else
-         bytes_read = read(fd, bufp, buf_samps * datum_size);
-      if (bytes_read == -1) {
-         perror("read");
-#ifdef LINUX
-         close_ports(afd, in_chans);
-#endif
-#ifdef MACOSX
-#endif
-         exit(EXIT_FAILURE);
-      }
-      if (bytes_read == 0)          /* EOF, somehow */
-         break;
-
-      samps_read = bytes_read / datum_size;
-      nframes = samps_read / in_chans;
-
-      if (is_float) {
-         if (swap) {
-            for (i = 0; i < samps_read; i++) {
-               byte_reverse4(&fbuf[i]);
-               fbuf[i] *= factor;
-               sbuf[i] = (short)fbuf[i];
-            }
-         }
-         else {
-            for (i = 0; i < samps_read; i++) {
-               fbuf[i] *= factor;
-               sbuf[i] = (short)fbuf[i];
-            }
-         }
-      }
-      else if (is_24bit) {
-         int j;
-         if (data_format == MUS_L24INT) {
-            for (i = j = 0; i < samps_read; i++, j += datum_size) {
-               float samp = (float) (((cbuf[j + 2] << 24)
-                                    + (cbuf[j + 1] << 16)
-                                    + (cbuf[j] << 8)) >> 8);
-               samp *= factor;
-               sbuf[i] = (short) (samp / (float) (1 << 8));
-            }
-         }
-         else {   /* data_format == MUS_B24INT */
-            for (i = j = 0; i < samps_read; i++, j += datum_size) {
-               float samp = (float) (((cbuf[j] << 24)
-                                    + (cbuf[j + 1] << 16)
-                                    + (cbuf[j + 2] << 8)) >> 8);
-               samp *= factor;
-               sbuf[i] = (short) (samp / (float) (1 << 8));
-            }
-         }
-      }
-      else {   /* 16bit int */
-         if (swap) {
-            if (factor) {
-               for (i = 0; i < samps_read; i++) {
-                  sbuf[i] = reverse_int2(&sbuf[i]);
-                  sbuf[i] = (int) (factor * (float) sbuf[i]);
-               }
-            }
-            else {
-               for (i = 0; i < samps_read; i++)
-                  sbuf[i] = reverse_int2(&sbuf[i]);
-            }
-         }
-         else {
-            if (factor) {
-               for (i = 0; i < samps_read; i++)
-                  sbuf[i] = (int) (factor * (float) sbuf[i]);
-            }
-         }
-      }
-
-      for (i = samps_read; i < buf_samps; i++)
-         sbuf[i] = 0;
-
-      /* Not efficient, but easy way to play just 1 of several chans. */
-      if (play_chan > ALL_CHANS) {
-         for (i = 0; i < samps_read; i += in_chans) {
-            short samp = sbuf[i + play_chan];
-            for (n = 0; n < in_chans; n++)
-               sbuf[i + n] = samp;
-         }
-      }
-
-#ifdef LINUX
-      status = write_buffer(afd, (char *)sbuf, AUDIO_DATUM_SIZE, nframes,
-                                                                  in_chans);
-      if (status == -1)
-         exit(EXIT_FAILURE);
-#endif
-#ifdef MACOSX
-      macosx_cmixplay_audio_write(sbuf);
-#endif
-
-      if (!quiet) {
-         if (buf_start_time >= second) {
-            if (print_minutes_seconds)
-               printf("%s ", make_time_string((float)second, 0));
-            else
-               printf("%d ", second);
-            fflush(stdout);
-            second++;
-         }
-      }
-
-      /* Handle hotkeys */
-      if (hotkeys) {
-         bytes_read = read(STDIN_FILENO, &c, 1);
-         if (bytes_read) {
-            int   skip = 0;
-
-            if (c == '\004')        /* control-D */
-               break;
-            else if (c == 'f') {    /* fast-forward */
-               skip = 1;
-               skip_bytes = (long)(skip_frames * in_chans * datum_size);
-               buf_start_frame += skip_frames;
-               if (!quiet) {
-                  buf_start_time += skip_time;
-                  second += (int)skip_time;
-                  printf("\n");
-               }
-            }
-            else if (c == 'r') {    /* rewind */
-               skip = 1;
-               skip_bytes = -(long)(skip_frames * in_chans * datum_size);
-               buf_start_frame -= skip_frames;
-               if (!quiet) {
-                  buf_start_time -= skip_time;
-                  second -= (int)skip_time;
-                  printf("\n");
-               }
-            }
-            else if (c == 'm') {    /* mark */
-               float mark_time = buf_start_time - MARK_DELAY;
-               printf("\nMARK: %.*f [%s]\n", MARK_PRECISION, mark_time,
-                                 make_time_string(mark_time, MARK_PRECISION));
-               fflush(stdout);
-            }
-            else if (c == 't')
-               print_minutes_seconds = print_minutes_seconds ? 0 : 1;
-
-            if (skip) {
-               off_t curloc = lseek(fd, 0, SEEK_CUR);
-               if (curloc + skip_bytes <= data_location) {
-                  if (!quiet) {
-                     buf_start_time = 0.0;
-                     second = 0;
-                  }
-                  if (lseek(fd, data_location, SEEK_SET) == -1) {
-                     perror("lseek");
-                     exit(EXIT_FAILURE);
-                  } 
-                  buf_start_frame = -nframes;
-               }
-               else if (lseek(fd, skip_bytes, SEEK_CUR) == -1) {
-                  perror("lseek");
-                  exit(EXIT_FAILURE);
-               }
-            }
-         }
-      }
-
-      buf_start_time += (float)nframes / (float)srate;
-   }
-
-   /* write buffers of zeros to prevent clicks */
-   for (i = 0; i < buf_samps; i++)
-      sbuf[i] = 0;
-   for (i = 0; i < ZERO_FRAMES_AFTER / buf_frames; i++) {
-#ifdef LINUX
-      status = write_buffer(afd, (char *)sbuf, AUDIO_DATUM_SIZE, nframes,
-                                                                  in_chans);
-      if (status == -1)
-         exit(EXIT_FAILURE);
-#endif
-#ifdef MACOSX
-      macosx_cmixplay_audio_write(sbuf);
-#endif
-   }
-
-#ifdef LINUX
-   close_ports(afd, in_chans);
-#endif
-#ifdef MACOSX
-#endif
-   close(fd);
+   else
+      exit(EXIT_FAILURE);
 
    if (!quiet)
       printf("\n");
 
+   delete player;
+
    return EXIT_SUCCESS;
 }
-
 
 #endif /* #if defined(LINUX) || defined(MACOSX) */
