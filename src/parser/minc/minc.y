@@ -9,12 +9,23 @@
 #define YYDEBUG 1
 #define MAXTOK_IDENTLIST 200
 
+#undef MDEBUG	/* turns on some parser debugging below */
+
+#ifdef MDEBUG
+#define MPRINT(x) printf(x "\n")
+#define MPRINT1(x,y) printf(x "\n", y)
+#else
+#define MPRINT(x)
+#define MPRINT1(x,y)
+#endif
+
 static Tree		program;
 static Symbol	*sym;
 static int		idcount = 0;	
 static char		*idlist[MAXTOK_IDENTLIST];  
 static int		flerror;		/* set if there was an error during parsing */
 static int		level = 0;	/* keeps track whether we are in a structure */
+static void cleanup();
 %}
 
 %left  <ival> LOWPRIO
@@ -41,18 +52,18 @@ static int		level = 0;	/* keeps track whether we are in a structure */
 
 %%
 /* program (the "start symbol") */
-prg:	| stml			{ program = $1; cleanup(); return 0; }
+prg:	| stml			{ MPRINT("prg:"); program = $1; cleanup(); return 0; }
 	;
  
 /* statement list */
-stml:	stmt				{ $$ = $1; }
-	| stmt ';'			{ $$ = $1; }
-	| stml stmt			{ $$ = tseq($1, $2); }
-	| stml stmt ';'	{ $$ = tseq($1, $2); }
+stml:	stmt				{ MPRINT("<stmt>"); $$ = $1; }
+	| stmt ';'			{ MPRINT("<stmt;>"); $$ = $1; }
+	| stml stmt			{ MPRINT("<stml stmt>"); $$ = tseq($1, $2); }
+	| stml stmt ';'	{ MPRINT("<stml stmt;>"); $$ = tseq($1, $2); }
 	;
 
 /* statement */
-stmt: rstmt				{
+stmt: rstmt				{ MPRINT("<rstmt>");
 								if (level == 0) 
 									$$ = go($1); 
 								else
@@ -62,19 +73,19 @@ stmt: rstmt				{
 	| TOK_STRING_DECL idl	{ declare(MincStringType); idcount = 0; }
 	| TOK_HANDLE_DECL idl	{ declare(MincHandleType); idcount = 0; }
 	| TOK_IF level bexp stmt {
-								level--;
+								level--; MPRINT1("level %d", level);
 								$$ = go(tif($3, $4));
 							}
 	| TOK_IF level bexp stmt TOK_ELSE stmt {
-								level--;
+								level--; MPRINT1("level %d", level);
 								$$ = go(tifelse($3, $4, $6));
 							}
 	| TOK_WHILE level bexp stmt	{
-								level--;
+								level--; MPRINT1("level %d", level);
 								$$ = go(twhile($3, $4));
 							}
 	| TOK_FOR level '(' stmt ';' bexp ';' stmt ')' stmt {
-								level--;
+								level--; MPRINT1("level %d", level);
 								$$ = go(tfor($4, $6, $8, $10));
 							}
 	| '{' stml '}'		{ $$ = $2; }
@@ -90,7 +101,7 @@ stmt: rstmt				{
 	;
 
 /* statement nesting level counter */
-level:  /* nothing */ { level++; }
+level:  /* nothing */ { level++; MPRINT1("level %d", level); }
 	;
 
 /* statement returning a value: assignments, function calls, etc. */
@@ -258,13 +269,17 @@ declare(MincDataType type)
 	}
 }
 
+#define FREE_TREES_AT_END
 
 Tree
 go(Tree t1)
 {
+	MPRINT("go()");
 	if (level == 0) {
 		exct(t1);
+#ifndef FREE_TREES_AT_END
 		free_tree(t1);
+#endif
 	}
 	return t1;
 }
@@ -274,8 +289,13 @@ int yywrap()
 	return 1;
 }
 
-void cleanup()
+static void cleanup()
 {
+#ifdef FREE_TREES_AT_END
+    free_tree(program);
+#else
+	efree(program);
+#endif
 	free_symbols();
 	yy_delete_buffer(yy_current_buffer);
 	yy_current_buffer = NULL;

@@ -1046,7 +1046,6 @@ exct_subscript_read(Tree tp)
             tp->type = elem.type;
          }
          else {
-//            memcpy(&tp->v, &elem.val, sizeof(MincValue));
             copy_listelem_tree(tp, &elem);
          }
 		 clear_elem(&elem);
@@ -1165,8 +1164,6 @@ exct(Tree tp)
       case NodeName:
          DPRINT1("exct (enter NodeName, tp=%p)\n", tp);
          /* assign what's in the symbol into tree's value field */
-//         tp->type = tp->u.symbol->type;
-//         memcpy(&tp->v, &tp->u.symbol->v, sizeof(MincValue));
          copy_sym_tree(tp, tp->u.symbol);
 		 assert(tp->type == tp->u.symbol->type);
          DPRINT1("exct (exit NodeName, tp=%p)\n", tp);
@@ -1180,8 +1177,6 @@ exct(Tree tp)
             Tree tmp = exct(tp->u.child[1]);
             /* Copy entire MincValue union from expr to tp and to stack. */
             copy_tree_tree(tp, tmp);
-//            memcpy(&list[list_len].val, &tmp->v, sizeof(MincValue));
-//            list[list_len].type = tmp->type;
             copy_tree_listelem(&list[list_len], tmp);
 			assert(list[list_len].type == tmp->type);
             list_len++;
@@ -1205,8 +1200,11 @@ exct(Tree tp)
 			theList = newList(list_len);
             if (theList == NULL)
                return NULL;
+			if (tp->type == MincListType && tp->v.list != NULL)
+			   unref_value_list(&tp->v);
             tp->type = MincListType;
             tp->v.list = theList;
+  			DPRINT1("list assigned to tree %p\n", tp);
 			theList->refcount = 1;
   			DPRINT1("list %p refcount = 1\n", theList);
 			// Copy from stack list into tree list.
@@ -1237,8 +1235,6 @@ exct(Tree tp)
             if (result < 0)
                result = call_external_function(tp->funcname, list, list_len,
                                                                      &retval);
-//            tp->type = retval.type;
-//            memcpy(&tp->v, &retval.val, sizeof(MincValue));
               copy_listelem_tree(tp, &retval);
 			  assert(tp->type == retval.type);
 			  clear_elem(&retval);
@@ -1251,13 +1247,9 @@ exct(Tree tp)
          /* Store value and type into sym pointed to by child[0]->u.symbol. */
          exct(tp->u.child[1]);
          /* Copy entire MincValue union from expr to id sym and to tp. */
-//         memcpy(&tp->u.child[0]->u.symbol->v, &tp->u.child[1]->v,
-//                                                         sizeof(MincValue));
          copy_tree_sym(tp->u.child[0]->u.symbol, tp->u.child[1]);
 		 assert(tp->u.child[0]->u.symbol->type == tp->u.child[1]->type);
-//         memcpy(&tp->v, &tp->u.child[1]->v, sizeof(MincValue));
          copy_tree_tree(tp, tp->u.child[1]);
-//         tp->type = tp->u.child[0]->u.symbol->type = tp->u.child[1]->type;
          assert(tp->type == tp->u.child[1]->type);
          DPRINT2("exct (exit NodeStore, tp=%p, type=%d)\n", tp, tp->type);
          break;
