@@ -868,19 +868,7 @@ _linebrk_table(const Arg args[], const int nargs, double *array, const int len)
 	if (len < 2)
 		return die("maketable (linebrk)", "Table length must be at least 2.");
 
-	double amp2 = args[0];
-	int i = 0;
-	for (int k = 1; k < nargs; k += 2) {
-		double amp1 = amp2;
-		amp2 = args[k + 1];
-		int j = i + 1;
-		i = j + (int) args[k] - 1;
-		for (int l = j; l <= i; l++) {
-			if (l <= len)
-				array[l - 1] = amp1
-									+ (amp2 - amp1) * (double) (l - j) / (i - j + 1);
-		}
-	}
+	fill_linebrk_table(args, nargs, array, len);
 
 	return 0;
 }
@@ -1159,19 +1147,10 @@ _wave_table(const Arg args[], const int nargs, double *array, const int len)
 	if (len < 2)
 		return die("maketable (wave)", "Table length must be at least 2.");
 
-	for (int i = 0; i < len; i++)
-		array[i] = 0.0;
-	int j = nargs;
-	while (j--) {
-		if (!args[j].isType(DoubleType))
-			return die("maketable (wave)", "Harmonic amplitudes must be numbers.");
-		if ((double) args[j] != 0.0) {
-			for (int i = 0; i < len; i++) {
-				double val = TWOPI * (double) i / (len / (j + 1));
-				array[i] += (sin(val) * (double) args[j]);
-			}
-		}
-	}
+	if (args[0].isType(StringType))
+		return wavetable_from_string(args[0], array, len, "maketable (wave)");
+	else
+		fill_wave_table(args, nargs, array, len);
 
 	return 0;
 }
