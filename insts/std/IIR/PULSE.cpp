@@ -23,7 +23,7 @@ PULSE::~PULSE()
 }
 
 
-int PULSE::init(float p[], int n_args)
+int PULSE::init(double p[], int n_args)
 {
 // p0 = start; p1 = duration; p2 = amplitude; p3 = pitch (hz or oct.pc)
 // p4 = stereo spread (0-1) [optional]

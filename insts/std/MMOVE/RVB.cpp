@@ -69,7 +69,7 @@ RVB::~RVB()
 	}
 }
 
-int RVB::init(float p[], int n_args)
+int RVB::init(double p[], int n_args)
 {
     int    flag, UseMikes, cartflag = 0;
     float  outskip, inskip, rvb_time;

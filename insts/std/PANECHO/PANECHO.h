@@ -9,6 +9,6 @@ class PANECHO : public Instrument {
 public:
 	PANECHO();
 	virtual ~PANECHO();
-	int init(float*, int);
+	int init(double*, int);
 	int run();
 	};

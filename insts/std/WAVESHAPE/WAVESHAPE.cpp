@@ -41,7 +41,7 @@ WAVESHAPE::WAVESHAPE() : Instrument()
 	// future setup here?
 }
 
-int WAVESHAPE::init(float p[], int n_args)
+int WAVESHAPE::init(double p[], int n_args)
 {
 	nsamps = rtsetoutput(p[0], p[1], this);
 

@@ -22,7 +22,7 @@ DELAY::~DELAY()
 }
 
 
-int DELAY::init(float p[], int n_args)
+int DELAY::init(double p[], int n_args)
 {
 // p0 = output skip; p1 = input skip; p2 = output duration
 // p3 = amplitude multiplier; p4 = delay time

@@ -106,18 +106,15 @@ LPCINST::~LPCINST()
 	delete [] _buzvals;
 }
 
-int LPCINST::init(float p[], int n_args)
+int LPCINST::init(double p[], int n_args)
 {
-	if (outputchans != 1) { 
-		die(name(), "Output file must have 1 channel only\n");
-		return DONT_SCHEDULE;
-	}
+	if (outputchans != 1)
+		return die(name(), "Output file must have 1 channel only\n");
 
 	GetDataSet(&_dataSet);
-	if (_dataSet == NULL) {
-		die("LPCPLAY", "No open dataset!\n");
-		return DONT_SCHEDULE;
-	}
+	if (_dataSet == NULL)
+		return die("LPCPLAY", "No open dataset!\n");
+
 	_dataSet->ref();
 	
 	_nPoles = _dataSet->getNPoles();
@@ -173,7 +170,7 @@ LPCPLAY::~LPCPLAY()
    the error and exit. If you just want to warn the user and keep going,
    call warn() with a message.
 */
-int LPCPLAY::localInit(float p[], int n_args)
+int LPCPLAY::localInit(double p[], int n_args)
 {
    int i;
 
@@ -580,13 +577,13 @@ LPCIN::~LPCIN()
 	delete [] _inbuf;
 }
 
-int LPCIN::localInit(float p[], int n_args)
+int LPCIN::localInit(double p[], int n_args)
 {
    int i;
 
-	if (!n_args || n_args < 6 || n_args > 8) {
+	if (!n_args || n_args < 6 || n_args > 10) {
 		die("LPCIN",
-		"p[0]=outskip, p[1]=inskip, p[2]=duration, p[3]=amp, p[4]=frame1, p[5]=frame2, [ p[6]=warp p[7]=in_channel ]\n");
+		"p[0]=outskip, p[1]=inskip, p[2]=duration, p[3]=amp, p[4]=frame1, p[5]=frame2 [, p[6]=in_channel p[7]=warp p[8]=resoncf, p[9]=resonbw]\n");
 		return DONT_SCHEDULE;
 	}
 	float outskip = p[0];
@@ -598,16 +595,37 @@ int LPCIN::localInit(float p[], int n_args)
 	int endFrame = (int) p[5];
 	int frameCount = endFrame - startFrame + 1;
 
-	_warpFactor = p[6];	// defaults to 0
+	if (frameCount <= 0)
+		die("LPCIN", "Ending frame must be > starting frame.");
 
-	_inChannel = (int) p[7];
+	_inChannel = (int) p[6];
 	if (_inChannel >= inputChannels()) { 
 		die("LPCIN", "Requested channel %d of a %d-channel input file",
 			_inChannel, inputChannels());
 		return DONT_SCHEDULE;
 	}
 					   	
-	float dummy1, dummy2, dummy3;
+	_warpFactor = p[7];	// defaults to 0
+
+	_reson_is_on = p[8] ? true : false;
+	_cf_fact = p[8];
+	_bw_fact = p[9];
+
+	// Pull all the current configuration information out of the environment.
+	
+	double ddummy1, ddummy2, ddummy3;
+	float dummy1, dummy2, dummy3, dummy4;
+	bool bdummy;
+
+	GetLPCStuff(&ddummy1,
+				&ddummy1,
+				&dummy1,
+				&dummy2,
+				&bdummy,
+				&dummy3, 
+				&dummy4,
+				&_cutoff);	// All we use is cutoff here
+
 	GetConfiguration(&dummy1,
 					 &dummy2,
 					 &dummy3,
@@ -680,20 +698,19 @@ int LPCIN::run()
 		_ampmlt = _amp * _coeffs[RESIDAMP] / 10000.0;	// XXX normalize this!
 		float newpch = (_coeffs[PITCH] > 0.0) ? _coeffs[PITCH] : 256.0;
 
-//		if (_coeffs[RMSAMP] < _cutoff)
-//			_ampmlt = 0;
-// 		if (_reson_is_on) {
-// 			/* If _cf_fact is greater than 20, treat as absolute freq.
-// 			   Else treat as factor.
-// 			   If _bw_fact is greater than 20, treat as absolute freq.
-// 			   Else treat as factor (i.e., cf * factor == bw).
-// 			*/
-// 			float cf = (_cf_fact < 20.0) ? _cf_fact*cps : _cf_fact;
-// 			float bw = (_bw_fact < 20.0) ? cf * _bw_fact : _bw_fact;
-// 			rszset(cf, bw, 1., _rsnetc);
-// 			/* printf("%f %f %f %f\n",_cf_fact*cps,
-// 				_bw_fact*_cf_fact*cps,_cf_fact,_bw_fact,cps); */
-// 		}
+		if (_coeffs[RMSAMP] < _cutoff)
+			_ampmlt = 0;
+		if (_reson_is_on) {
+			/* Treat _cf_fact as absolute freq.
+			   If _bw_fact is greater than 20, treat as absolute freq.
+			   Else treat as factor (i.e., cf * factor == bw).
+			*/
+			float cf = _cf_fact;
+			float bw = (_bw_fact < 20.0) ? cf * _bw_fact : _bw_fact;
+			rszset(cf, bw, 1., _rsnetc);
+			/* printf("%f %f %f %f\n",_cf_fact*cps,
+				_bw_fact*_cf_fact*cps,_cf_fact,_bw_fact,cps); */
+		}
 
 		float *cpoint = _coeffs + 4;
 		
@@ -702,7 +719,6 @@ int LPCIN::run()
 			float warp = (_warpFactor > 1.) ? .0001 : _warpFactor;
 			_ampmlt *= _warpPole.set(warp, cpoint, _nPoles);
 		}
-//		_counter = int(((float)SR/newpch ) * .5);
 		_counter = (RTBUFSAMPS < MAXVALS) ? RTBUFSAMPS : MAXVALS;
 		_counter = (_counter > (nsamps - currentFrame())) ? nsamps - currentFrame() : _counter;
 				
@@ -737,8 +753,8 @@ int LPCIN::run()
 			printf("\t maxamp = %g\n", maxamp);
 		}
 #endif
-//		if (_reson_is_on)
-//			bresonz(_alpvals,_rsnetc,_alpvals,_counter);
+		if (_reson_is_on)
+			bresonz(_alpvals,_rsnetc,_alpvals,_counter);
 
 		int sampsToAdd = min(_counter, framesToRun() - n);
 		

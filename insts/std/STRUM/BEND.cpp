@@ -18,7 +18,7 @@ BEND::BEND() : Instrument()
 	branch = 0;
 }
 
-int BEND::init(float p[], int n_args)
+int BEND::init(double p[], int n_args)
 {
 // p0 = start; p1 = dur; p2 = pitch0 (oct.pc); p3 = pitch1 (oct.pc);
 // p4 = gliss function; p5 = fundamental decay time; p6 = nyquist decay time;

@@ -6,7 +6,7 @@ class REVMIX : public Instrument {
 public:
    REVMIX();
    virtual ~REVMIX();
-   int init(float *, int);
+   int init(double *, int);
    int run();
 };
 

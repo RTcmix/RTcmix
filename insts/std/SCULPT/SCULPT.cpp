@@ -14,7 +14,7 @@ SCULPT::SCULPT() : Instrument()
 	// future setup here?
 }
 
-int SCULPT::init(float p[], int n_args)
+int SCULPT::init(double p[], int n_args)
 {
 // p0 = start; p1 = point dur; p2 = overall amplitude; p3 = number of points
 // p4 = stereo spread [optional];

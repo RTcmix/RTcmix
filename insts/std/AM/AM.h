@@ -10,6 +10,6 @@ class AM : public Instrument {
 public:
 	AM();
 	virtual ~AM();
-	int init(float*, int);
+	int init(double*, int);
 	int run();
 	};

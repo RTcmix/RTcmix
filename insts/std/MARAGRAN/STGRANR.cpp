@@ -50,7 +50,7 @@ STGRANR::~STGRANR()
 	delete [] in;
 }
 
-int STGRANR::init(float p[], int n_args)
+int STGRANR::init(double p[], int n_args)
 {
 /*  p0=start_time
 *  p1=input start time

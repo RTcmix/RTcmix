@@ -4,7 +4,7 @@ rtinput("/snd/sources/toot01.aifc");
 load("TRANSBEND");
 
 dur = DUR(0);
-amp = 1;
+amp = 0.8;
 pan = 0.5;
 
 /* amplitude curve */

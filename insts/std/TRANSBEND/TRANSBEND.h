@@ -13,7 +13,7 @@ class TRANSBEND : public Instrument {
 public:
    TRANSBEND();
    virtual ~TRANSBEND();
-   int init(float *, int);
+   int init(double *, int);
    int run();
 };
 

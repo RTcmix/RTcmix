@@ -12,6 +12,6 @@ class SFLUTE : public Instrument {
 
 public:
 	SFLUTE();
-	int init(float*, int);
+	int init(double*, int);
 	int run();
 	};

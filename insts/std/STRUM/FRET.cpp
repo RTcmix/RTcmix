@@ -18,7 +18,7 @@ FRET::FRET() : Instrument()
 	branch = 0;
 }
 
-int FRET::init(float p[], int n_args)
+int FRET::init(double p[], int n_args)
 {
 // p0 = start; p1 = dur; p2 = pitch(oct.pc); p3 = fundamental decay time;
 // p4 = nyquist decay time; p5 = stereo spread [optional]

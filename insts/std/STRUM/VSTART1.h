@@ -21,6 +21,6 @@ class VSTART1 : public Instrument {
 public:
 	VSTART1();
 	virtual ~VSTART1();
-	int init(float*, int);
+	int init(double*, int);
 	int run();
 	};

@@ -83,7 +83,7 @@ HOLO::~HOLO()
 }
 
 
-int HOLO::init(float p[], int n_args)
+int HOLO::init(double p[], int n_args)
 {
 /* HOLO: stereo FIR filter to perform crosstalk cancellation
 *

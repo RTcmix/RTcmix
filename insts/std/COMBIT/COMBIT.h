@@ -8,6 +8,6 @@ class COMBIT : public Instrument {
 public:
 	COMBIT();
 	virtual ~COMBIT();
-	int init(float*, int);
+	int init(double*, int);
 	int run();
 };

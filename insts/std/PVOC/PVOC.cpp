@@ -149,12 +149,13 @@ NewArray(int size)
 	float *arr = new float[size];
 	if (!arr) {
 		die("PVOC", "Unable to allocate memory");
+		return NULL;
 	}
 	memset(arr, 0, size * sizeof(float));
 	return arr;
 }
 
-int PVOC::init(float *p, int n_args)
+int PVOC::init(double *p, int n_args)
 {
 	int rvin;
 
@@ -517,8 +518,9 @@ void PVOC::shiftout( float A[], int winLen, int I, int n)
 	printf("\tshiftout: copying A[%d - %d] to final output buffer at offset %d\n",
 		   0, I-1, _outWriteOffset);
 #endif
-	for (i = 0; i < I; ++i)
+	for (i = 0; i < I; ++i) {
 		output[i] = A[i];
+	}
 	_outWriteOffset += I;
 
 #ifdef debug
@@ -527,8 +529,9 @@ void PVOC::shiftout( float A[], int winLen, int I, int n)
 				I, I+winLen-I-1, 0, winLen-I-1);
 	}
 #endif
-	for ( i = 0 ; i < winLen - I ; ++i )
+	for ( i = 0 ; i < winLen - I ; ++i ) {
 		A[i] = A[i+I];
+	}
 #ifdef debug
 	if (i < winLen) {
 		printf("\tshiftout: zeroing A[%d - %d]\n", i, winLen - 1);

@@ -10,6 +10,6 @@ class DELAY : public Instrument {
 public:
 	DELAY();
 	virtual ~DELAY();
-	int init(float*, int);
+	int init(double*, int);
 	int run();
 	};

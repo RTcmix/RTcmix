@@ -10,6 +10,6 @@ class AMINST : public Instrument {
 
 public:
 	AMINST();
-	int init(float*, int);
+	int init(double*, int);
 	int run();
 	};

@@ -20,15 +20,15 @@
 */
 
 set_option("full_duplex_on")
-rtsetparams(44100, 2)
+rtsetparams(44100, 2, 1024)
 load("MOVE")
 rtinput("AUDIO")
 
-space(50, 50, -750, -80, 25, 1, 3)
+space(60, 50, -75, -80, 125, 8, 2)
 
-mikes_off()
+mikes(45.0, 0.5)
 
 path(0, 25, 0, 3, 15, 90)
 
-MOVE(0, 0, 10, 7, 0, 1)
+MOVE(0, 0, 10, 7, 3, 1)
 

@@ -72,7 +72,7 @@ BASE::~BASE()
    }
 }
 
-int BASE::init(float p[], int n_args)
+int BASE::init(double p[], int n_args)
 {
     int    flag, UseMikes, cartflag = 0;
     float  outskip, inskip, abs_factor, rvb_time;

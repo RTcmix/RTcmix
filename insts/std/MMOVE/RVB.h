@@ -14,7 +14,7 @@ class RVB : public Instrument {
 public:
 	RVB();
 	virtual ~RVB();
-	virtual int init(float *, int);
+	virtual int init(double *, int);
 	virtual int configure();
 	virtual int run();
 protected:

@@ -69,7 +69,7 @@ TRANSBEND :: ~TRANSBEND()
 }
 
 
-int TRANSBEND :: init(float p[], int n_args)
+int TRANSBEND :: init(double p[], int n_args)
 {
    float outskip, inskip, dur, transp, interval = 0, total_indur, dur_to_read;
    float averageInc;

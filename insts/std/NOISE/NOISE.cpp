@@ -33,7 +33,7 @@ NOISE :: ~NOISE()
 }
 
 
-int NOISE :: init(float p[], int n_args)
+int NOISE :: init(double p[], int n_args)
 {
    float outskip, dur;
 

@@ -75,7 +75,7 @@ MOCKBEND :: ~MOCKBEND()
 }
 
 
-int MOCKBEND :: init(float p[], int n_args)
+int MOCKBEND :: init(double p[], int n_args)
 {
    float outskip, inskip, dur, transp, interval = 0, total_indur, dur_to_read;
    float averageInc;

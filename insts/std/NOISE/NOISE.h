@@ -6,7 +6,7 @@ class NOISE : public Instrument {
 public:
    NOISE();
    virtual ~NOISE();
-   int init(float *, int);
+   int init(double *, int);
    int run();
 };
 

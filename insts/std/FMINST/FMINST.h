@@ -9,6 +9,6 @@ class FMINST : public Instrument {
 
 public:
 	FMINST();
-	int init(float*, int);
+	int init(double*, int);
 	int run();
 	};

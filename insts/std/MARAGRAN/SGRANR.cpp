@@ -19,7 +19,7 @@ SGRANR::SGRANR() : Instrument()
         grainoverlap = totalgrains = 0;
 }
 
-int SGRANR::init(float p[], int n_args)
+int SGRANR::init(double p[], int n_args)
 {
 /*  p0=start time
 *  p1=duration

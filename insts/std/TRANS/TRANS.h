@@ -12,7 +12,7 @@ class TRANS : public Instrument {
 public:
    TRANS();
    virtual ~TRANS();
-   int init(float *, int);
+   int init(double *, int);
    int run();
 };
 

@@ -18,7 +18,7 @@ class STGRANR : public Instrument {
 public:
 	STGRANR();
 	virtual ~STGRANR();
-        int init(float*, int );
+        int init(double*, int );
         int run();
 	double prob(double,double,double,double);
         };

@@ -9,6 +9,6 @@ class PULSE : public Instrument {
 public:
 	PULSE();
 	virtual ~PULSE();
-	int init(float*, int);
+	int init(double*, int);
 	int run();
 	};

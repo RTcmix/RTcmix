@@ -13,7 +13,7 @@ class MOCKBEND : public Instrument {
 public:
    MOCKBEND();
    virtual ~MOCKBEND();
-   int init(float *, int);
+   int init(double *, int);
    int run();
 };
 

@@ -20,7 +20,7 @@ FIR::~FIR()
 }
 
 
-int FIR::init(float p[], int n_args)
+int FIR::init(double p[], int n_args)
 {
 /* fir: simple fir filter instrument
 *

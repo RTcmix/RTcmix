@@ -9,7 +9,7 @@ class LPCINST : public Instrument {
 public:
 	LPCINST(const char *name);
 	virtual ~LPCINST();
-	virtual int init(float	*, int);
+	virtual int init(double	*, int);
 	virtual int configure();
 	
 protected:
@@ -30,7 +30,7 @@ protected:
 	const char *name() { return _functionName; }
 	
 protected:
-	virtual int 	localInit(float *, int) = 0;
+	virtual int 	localInit(double *, int) = 0;
 	virtual void	SetupArrays(int frameCount) = 0;
 
 	// These are set via external routines and copied in during init.
@@ -67,7 +67,7 @@ public:
 	virtual int run();
 
 protected:
-	virtual int 	localInit(float *, int);
+	virtual int 	localInit(double *, int);
 	virtual void	SetupArrays(int frameCount);
 	double	getVoicedAmp(float err);
 	float	weight(float frame1, float frame2, float thresh);
@@ -106,7 +106,7 @@ public:
 	virtual int run();
 
 protected:
-	virtual int		localInit(float *, int);
+	virtual int		localInit(double *, int);
 	virtual void	SetupArrays(int frameCount);
 
 private:

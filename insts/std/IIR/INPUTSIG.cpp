@@ -25,7 +25,7 @@ INPUTSIG::~INPUTSIG()
 }
 
 
-int INPUTSIG::init(float p[], int n_args)
+int INPUTSIG::init(double p[], int n_args)
 {
 // p0 = output skip; p1 = input skip; p2 = duration
 // p3 = amplitude multiplier; p4 = input channel (0 or 1)

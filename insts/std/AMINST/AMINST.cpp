@@ -14,7 +14,7 @@ AMINST::AMINST() : Instrument()
 	// future setup here?
 }
 
-int AMINST::init(float p[], int n_args)
+int AMINST::init(double p[], int n_args)
 {
 // p0 = start; p1 = duration; p2 = amplitude
 // p3 = carrier frequency (hz); p4 = modulator frequency (hz)

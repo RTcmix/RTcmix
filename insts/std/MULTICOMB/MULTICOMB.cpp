@@ -23,7 +23,7 @@ MULTICOMB::~MULTICOMB()
 		delete [] carray[n];	
 }
 
-int MULTICOMB::init(float p[], int n_args)
+int MULTICOMB::init(double p[], int n_args)
 {
 // p0 = output skip; p1 = input skip; p2 = output duration
 // p3 = amplitude multiplier; p4 = comb frequency range bottom

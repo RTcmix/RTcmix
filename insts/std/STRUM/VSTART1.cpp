@@ -34,7 +34,7 @@ VSTART1::~VSTART1()
 	}
 }
 
-int VSTART1::init(float p[], int n_args)
+int VSTART1::init(double p[], int n_args)
 {
 // p0 = start; p1 = dur; p2 = pitch (oct.pc); p3 = fundamental decay time
 // p4 = nyquist decay time; p5 = distortion gain; p6 = feedback gain

@@ -7,6 +7,6 @@ class FIR : public Instrument {
 public:
 	FIR();
 	virtual ~FIR();
-	int init(float*, int);
+	int init(double*, int);
 	int run();
 	};

@@ -16,6 +16,6 @@ class BEND1 : public Instrument {
 
 public:
 	BEND1();
-	int init(float*, int);
+	int init(double*, int);
 	int run();
 	};

@@ -15,7 +15,7 @@ class SGRANR : public Instrument {
 
 public:
 	SGRANR();
-        int init(float*, int);
+        int init(double*, int);
         int run();
 	double prob(double,double,double,double);
         };

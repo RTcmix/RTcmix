@@ -67,7 +67,7 @@ TRANS3 :: ~TRANS3()
 }
 
 
-int TRANS3 :: init(float p[], int n_args)
+int TRANS3 :: init(double p[], int n_args)
 {
    float outskip, inskip, dur, transp, interval, total_indur, dur_to_read;
 	int rvin;

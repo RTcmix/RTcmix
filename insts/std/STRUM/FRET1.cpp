@@ -22,7 +22,7 @@ FRET1::FRET1() : Instrument()
 	branch = 0;
 }
 
-int FRET1::init(float p[], int n_args)
+int FRET1::init(double p[], int n_args)
 {
 // p0 = start; p1 = dur; p2 = pitch (oct.pc); p3 = fundamental decay time
 // p4 = nyquist decay time; p5 = distortion gain; p6 = feedback gain

@@ -11,6 +11,6 @@ class HOLO : public Instrument {
 public:
 	HOLO();
 	virtual ~HOLO();
-	int init(float*, int);
+	int init(double*, int);
 	int run();
 };

@@ -9,6 +9,6 @@ class INPUTSIG : public Instrument {
 public:
 	INPUTSIG();
 	virtual ~INPUTSIG();
-	int init(float*, int);
+	int init(double*, int);
 	int run();
 	};

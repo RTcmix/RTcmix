@@ -10,6 +10,6 @@ class LSFLUTE : public Instrument {
 
 public:
 	LSFLUTE();
-	int init(float*, int);
+	int init(double*, int);
 	int run();
 	};

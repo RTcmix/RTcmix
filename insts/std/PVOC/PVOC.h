@@ -6,7 +6,7 @@ class PVOC : public Instrument {
 public:
 	PVOC();
 	virtual ~PVOC();
-	virtual int init(float	*, int);
+	virtual int init(double	*, int);
 	virtual int configure();
 	virtual int run();
 	

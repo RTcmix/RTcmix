@@ -21,7 +21,7 @@ PANECHO::~PANECHO()
 	delete [] delarray2;
 }
 
-int PANECHO::init(float p[], int n_args)
+int PANECHO::init(double p[], int n_args)
 {
 // p0 = output skip; p1 = input skip; p2 = output duration
 // p3 = amplitude multiplier 

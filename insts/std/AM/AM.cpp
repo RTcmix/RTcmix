@@ -51,7 +51,7 @@ AM::~AM()
 }
 
 
-int AM::init(float p[], int n_args)
+int AM::init(double p[], int n_args)
 {
 	int rvin;
 

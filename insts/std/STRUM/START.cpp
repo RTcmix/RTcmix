@@ -31,7 +31,7 @@ START::~START()
 // p4 = nyquist decay time; p5 = amp, p6 = squish; p7 = stereo spread [optional]
 // p8 = flag for deleting pluck arrays (used by FRET, BEND, etc.) [optional]
 
-int START::init(float p[], int n_args)
+int START::init(double p[], int n_args)
 {
 	int	squish;
 	float outskip, dur, pitch, fdecay, nydecay, amp, freq;
