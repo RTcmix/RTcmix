@@ -14,7 +14,7 @@ static float *array, tabs[2];         /* for setline */
       0              start time of group
       1              duration of group
       2              amplitude
-      3              beginning grain rate
+      3              beginning grain rate (time in seconds btw. grains)
       4              ending grain rate
 
       amount of variation in rate: (percentage of grain rate)
@@ -29,12 +29,10 @@ static float *array, tabs[2];         /* for setline */
       21-24          starting lo, average, hi, tightness
       25-28          ending lo, average, hi, tightness
 
-      pitch band AS:
+      pitch band:
       29-32          starting lo, average, hi, tightness
                      (if p29 < 0, noise is the input)
       33-36          ending lo, average, hi, tightness
-
-      input type 0=AS 1=FM 2=SAM   [which pfield does this refer to?  -JGG]
 
                  *       *       *
 
@@ -42,21 +40,15 @@ static float *array, tabs[2];         /* for setline */
 
       1              overall envelope (or setline)
 
-      shape of change:
+      shape of change (usually linear for all shapes):
       2              grain density
       3              grain duration
       4              grain location
+      5              grain frequency
 
-      AS-band
-      5              shape of change: frequency (usually linear for all shapes)
-      6              waveform
+      6              oscillator waveform
 
-      FM
-      5              shape of change: carrier frequency
-      6              shape of change: c:m ratio
-      7              shape of change: mi
-
-      8 (was 1)      grain envelope
+      8              grain envelope (note: was function 1 in Mara's version)
 */
 
 double
@@ -242,8 +234,10 @@ int n_args; /* number of p-fields */
 		ti = (ti < 0) ? 0 : ti; 
 		chb = prob(lo, mid, hi, ti);
 	}
-	printf("%ld grains\n",count);
+	printf("\n%ld grains\n",count);
 	endnote(1);
+
+	return(0.0);
 }
 
 
