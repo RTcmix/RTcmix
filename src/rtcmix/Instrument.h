@@ -16,6 +16,7 @@ public:
    float          dur;
    int            cursamp;
    int            chunksamps;
+   int            i_chunkstart;   // we need this for rtperf
    int            endsamp;
    int            nsamps;
    int            output_offset;
@@ -55,6 +56,7 @@ public:
    int getendsamp();
    void setendsamp(int);
    void setchunk(int);
+   void set_ichunkstart(int);
    void set_output_offset(int);
 private:
    void gone();                    // decrements reference to input soundfile
