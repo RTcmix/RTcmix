@@ -45,23 +45,23 @@ standalone_install:
 clean:
 	@for DIR in $(LIBDIRS); \
 	do \
-	  ( cd $$DIR; make clean; \
+	  ( cd $$DIR; $(MAKE) clean; \
 	  $(RM) $(DESTDIR)/$$DIR; \
 	  $(RM) $(LIBDESTDIR)/lib$$DIR.so; ) \
 	done
-	( cd objlib; make clean; )
+	( cd objlib; $(MAKE) clean; )
 
 dso_clean:
 	@for DIR in $(LIBDIRS); \
 	do \
-	  ( cd $$DIR; make clean; \
+	  ( cd $$DIR; $(MAKE) clean; \
 	  $(RM) $(LIBDESTDIR)/lib$$DIR.so; ) \
 	done
 
 standalone_clean:
 	@for DIR in $(LIBDIRS); \
 	do \
-	  ( cd $$DIR; make clean; \
+	  ( cd $$DIR; $(MAKE) clean; \
 	  $(RM) $(DESTDIR)/$$DIR; \
 	done
 
