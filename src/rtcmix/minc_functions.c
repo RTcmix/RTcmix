@@ -208,15 +208,6 @@ double m_get_array(float p[], int n_args)
 	return (minc_array[i][index]);
 }
 
-double m_get_array(p,n_args)
-float *p;
-{
-	int i;
-	i = p[0];
-	if(p[1] >= minc_array_size[i]) return(0);
-	else return(minc_array[i][(int)p[1]]);
-}
-
 double m_put_array(p,n_args)
 float *p;
 { /* to load a single value from minc */
