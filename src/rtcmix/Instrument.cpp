@@ -413,9 +413,6 @@ void Instrument::pi_path_update(int pval)
 	// iterator is used to distinguish between multiple calls/gen types for
 	// the array
 	
-//	printf("piarray_size[%i][%i][%i] = %i\n", slot, pval, k
-//                     , piarray_size[slot][pval][k]);
-
 	while((piarray_size[slot][pval][k[pval]] != 0) 
          && (parray_size[mytag][pval][k[pval]] == 0))
 	{
@@ -428,15 +425,6 @@ void Instrument::pi_path_update(int pval)
 			pfpath[mytag][pval][i][0] = pipath[slot][pval][i][0];
 			pfpath[mytag][pval][i][1] = pipath[slot][pval][i][1];
 
-			// keep for debugging
-			printf("pipath[%i][%i][%i][0] = %f\t", slot, pval, i
-				, pipath[slot][pval][i][0]);  
-			printf("pipath[%i][%i][%i][1] = %f\n", slot, pval, i  
-				, pipath[slot][pval][i][1]);  
-			printf("pfpath[%i][%i][%i][0] = %f\t", mytag, pval, i  
-				, pfpath[mytag][pval][i][0]);  
-			printf("pfpath[%i][%i][%i][1] = %f\n", mytag, pval, i   
-				, pfpath[mytag][pval][i][1]); 
 		}
 		k[pval]++;
 	}
@@ -465,13 +453,10 @@ void Instrument::pf_path_update(int tag, int pval)
 	pi_path_update(pval);
 	incr_j = 0;
 
-//    printf("gen_type[%i][%i][%i] = %i\n", tag, pval, j[pval]
-//                                        , gen_type[tag][pval][j[pval]]);
 	// if the user specifies gen type '0' use a linear interpolation.  Said
 	// interpolation is defined in the body of this if statement
 	if(gen_type[tag][pval][j[pval]] == 0 && gen_type[0][pval][j[pval]] == 0) 
 	{
-//		printf("one\n");
 		// pfpathcounter is used to keep track of which time-values pair 
 		// the program is currently considering, if this is greater than the 
 		// total number of time value pairs for a given call (specified by 
@@ -591,12 +576,6 @@ void Instrument::pf_path_update(int tag, int pval)
 	// This case deals with a user specified pgen for interpolation
 	else
 	{
-		// keep for testing
-//		printf("parraysize[%i] = %i\n", tag, parray_size[tag][pval][j[pval]]);
-//		printf("pfpathcounter = %i\n", pfpathcounter[pval]);
-//		printf("cumulative_size = %i\n", cumulative_size[pval]);
-
-
 		// pfpathcounter is used to keep track of which time-values pair 
 		// the program is currently considering, if this is greater than the 
 		// total number of time value pairs for a given call (specified by 
@@ -608,8 +587,6 @@ void Instrument::pf_path_update(int tag, int pval)
 			
 			time = cursamp / SR + start;
 			time -= schedtime;
-			// keep for testing
-
 
 			// cumulative size is storing the current index into the pfpath 
             // array so this statement is testing to see if the current 
@@ -667,28 +644,13 @@ void Instrument::pf_path_update(int tag, int pval)
 								 / difftime;
 					start_index *= SR * difftime;
 					oldsamp[pval] -= (int)start_index;
-				    printf("startindex = %f\n", start_index);
-					
-//					printf("difftime = %f\n", difftime);
-//					printf("psize = %i\n"
-//                            , psize(gen_type[tag][pval][j[pval]]));
-//					printf("size = %f\n"
-//                           , difftime * psize(gen_type[tag][pval][j[pval]]));
-//					printf("resetval = %i\n", (int)(SR / resetval));
-			
 				}
-//				printf("index = %i\n", cursamp - oldsamp[pval]);
 				table_val = tablei(cursamp - oldsamp[pval], ptables[pval]
                                    , ptabs[pval]);
 
 				pupdatevals[tag][pval] = 
              pfpath[tag][pval][cumulative_size[pval]][1] + (table_val * diff);
 
-
-				// keep for testing
-				printf("table result [%i][%i] = %f\n"
-                       , tag, pval, pupdatevals[tag][pval]);
-				
 			}
 		} 
 
@@ -781,11 +743,6 @@ void Instrument::pf_path_update(int tag, int pval)
                                    pfpath[0][pval][cumulative_size[pval]][1] 
                                    + (table_val * diff);
 
-				// keep for testing
-				printf("result [%f][%i] = %f\n", time, pval
-                       , pupdatevals[0][pval]);
-
-				
 			}
 	    }
 
