@@ -26,9 +26,9 @@ protected:
 	virtual ~DisplayPField();
 
 private:
+	int				_len;
 	RTcmixDisplay	*_displaywin;
 	int				_labelID;
-	int				_len;
 };
 
 #endif // _DISPLAYPFIELD_H_
