@@ -12,14 +12,15 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <iostream.h>
+#include <signal.h>
 #ifdef LINUX
    #include <sys/soundcard.h>
-   #include <signal.h>
 #endif
 #ifdef SGI
    #include <dmedia/audio.h>
 #endif
 #include <globals.h>
+#include <prototypes.h>
 #include "../H/ugens.h"
 #include "../rtstuff/rt.h"
 #include "sockdefs.h"           // Also includes defs.h
@@ -106,6 +107,26 @@ init_globals()
 }
 
 
+/* ------------------------------------------------------- signal_handler --- */
+static void
+signal_handler(int signo)
+{
+#ifdef DBUG
+   printf("Signal handler called (signo %d)\n", signo);
+#endif
+
+   if (rtsetparams_called) {
+      close_audio_ports();
+      rtreportstats();
+      rtcloseout();
+   }
+   else
+      closesf();
+
+   exit(1);
+}
+
+
 /* ----------------------------------------------------------------- main --- */
 int
 main(int argc, char *argv[])
@@ -123,6 +144,12 @@ main(int argc, char *argv[])
 #ifdef SGI
    flush_all_underflows_to_zero();
 #endif
+
+   /* Call this function on cntl-C. */
+   if (signal(SIGINT, signal_handler) == SIG_ERR) {
+      fprintf(stderr, "Error installing signal handler.\n");
+      exit(1);
+   }
 
    /* Copy command-line args, if any.
       Now, command-line args will be available to any subroutine
