@@ -337,6 +337,7 @@ int LPCPLAY::run()
 			   _leftOver, _savedOffset);
 #endif
 		rtbaddout(&_alpvals[_savedOffset], toAdd);
+		increment(toAdd);
 		n += toAdd;
 		_leftOver -= toAdd;
 		_savedOffset += toAdd;
@@ -461,7 +462,7 @@ int LPCPLAY::run()
 		rtbaddout(_alpvals, sampsToAdd);
 		
 		/* Keep track of how many sample frames this instrument has generated. */
-		increment(_counter);
+		increment(sampsToAdd);
 	}
 	// Handle case where last synthesized block extended beyond framesToRun()
 	if (n > framesToRun())
@@ -674,6 +675,7 @@ int LPCIN::run()
 #endif
 		bmultf(&_alpvals[_savedOffset], _ampmlt, toAdd);	// Scale signal
 		rtbaddout(&_alpvals[_savedOffset], toAdd);
+		increment(toAdd);
 		n += toAdd;
 		_leftOver -= toAdd;
 		_savedOffset += toAdd;
@@ -686,8 +688,10 @@ int LPCIN::run()
 		int loc;
 		_frameno = _frame1 + ((float)(currentFrame())/nsamps) * _frames;
 
-//		printf("\tgetting frame %g of %d (%d out of %d signal samps)\n",
-//			   _frameno, (int)_frames, currentFrame(), nsamps);
+#ifdef debug
+		printf("\tgetting frame %g of %d (%d out of %d signal samps)\n",
+			   _frameno, (int)_frames, currentFrame(), nsamps);
+#endif
 		if (_dataSet->getFrame(_frameno,_coeffs) == -1)
 			break;
 
@@ -719,8 +723,10 @@ int LPCIN::run()
 			float warp = (_warpFactor > 1.) ? .0001 : _warpFactor;
 			_ampmlt *= _warpPole.set(warp, cpoint, _nPoles);
 		}
-		_counter = (RTBUFSAMPS < MAXVALS) ? RTBUFSAMPS : MAXVALS;
-		_counter = (_counter > (nsamps - currentFrame())) ? nsamps - currentFrame() : _counter;
+		_counter = int(((float)SR/(newpch * /*_perperiod*/ 1.0) ) * .5);
+//		_counter = (RTBUFSAMPS < MAXVALS) ? RTBUFSAMPS : MAXVALS;
+//		_counter = (_counter > (nsamps - currentFrame())) ? nsamps - currentFrame() : _counter;
+		_counter = min(_counter, framesToRun() - n);
 				
         if (_counter <= 0)
 			break;
@@ -766,7 +772,7 @@ int LPCIN::run()
 		rtbaddout(_alpvals, sampsToAdd);
 		
 		/* Keep track of how many sample frames this instrument has generated. */
-		increment(_counter);
+		increment(sampsToAdd);
 	}
 	// Handle case where last synthesized block extended beyond framesToRun()
 	if (n > framesToRun())
