@@ -36,7 +36,9 @@ extern	addfunc(struct ug_item *);
 #define      PI2    6.2831853
 #endif
 
+#ifndef SGI
 extern       float  SR;
+#endif
 
 #ifndef MAIN
 extern int aargc;

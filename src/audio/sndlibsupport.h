@@ -1,4 +1,9 @@
+#ifdef LINUX
 #include <endian.h>      /* so that sndlib.h will get host byte-order right */
+#endif
+#ifdef SGI
+#include <sys/endian.h>
+#endif
 #include "../sndlib/sndlib.h"
 #include "../H/sfheader.h"       /* for SFHEADER */
 #include "../rtstuff/rtdefs.h"   /* just for MAXCHANS */
