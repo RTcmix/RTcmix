@@ -23,7 +23,7 @@ float Odelayi::getsamp(double lagsamps)
 		next = _dline[_outpoint];
 	else
 		next = _dline[0];
-	return _lastout = next + _frac * (out - next);
+	return _lastout = next - _frac * (next - out);
 }
 
 // Set interp fraction <_frac>.  Base class sets output pointer.
@@ -38,7 +38,7 @@ float Odelayi::next(float input)
 {
 	const float out = Odelay::next(input);	// This increments and wraps _outpoint
 	const float next = _dline[_outpoint];
-	return _lastout = next + _frac * (out - next);
+	return _lastout = next - _frac * (next - out);
 }
 
 float Odelayi::delay() const
