@@ -57,6 +57,7 @@ ug_intro()
  	UG_INTRO("getpch",m_getpch);
  	UG_INTRO("getamp",m_getamp);
  	UG_INTRO("stringify",m_stringify);
+	UG_INTRO("log",m_log);
 	UG_INTRO("pow",m_pow);
 	UG_INTRO("round",m_round);
 	UG_INTRO("print",m_print);

@@ -96,6 +96,16 @@ double *pp;
 }
 
 double
+m_log(float p[], short n_args)
+{
+   double val;
+
+   val = log10((double)p[0]);
+
+   return((float)val);
+}
+
+double
 m_pow(pp, n_args, p)
 float *pp;
 double *p;
