@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <sys/file.h>
 #include <sys/types.h>
+#include <sys/time.h>
 #include <unistd.h>
 #include <math.h>
 #include <ugens.h>
@@ -49,8 +50,20 @@ double m_rand()
 double m_random()
 { float rrand(); return((rrand() * 0.5) + 0.5); }
 
-double m_srand(float p[])
-{ srrand(p[0]); return 0.0; }
+double m_srand(float p[], int n_args)
+{
+   unsigned int randx;
+
+   if (n_args == 0) {
+      struct timeval tv;
+      gettimeofday(&tv, NULL);
+      randx = (unsigned int) tv.tv_usec;
+   }
+   else
+      randx = (unsigned int) p[0];
+   srrand(randx);
+   return 0.0;
+}
 
 double m_time_beat(float p[])
 { float time_beat(float); return(time_beat(p[0])); }
