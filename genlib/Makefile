@@ -37,6 +37,9 @@ install:	all
 	@if test ! -d $(LIBDIR); then mkdir $(LIBDIR); fi;
 	$(INSTALL) $(GENLIB) $(LIBDIR)
 
+uninstall:
+	$(RM) $(LIBDIR)/$(GENLIB)
+
 $(GENLIB):	$(OBJECTS) $(OOBJECTS)
 	$(RM) $@
 	ar rv $@ $(OBJECTS) $(OOBJECTS)
