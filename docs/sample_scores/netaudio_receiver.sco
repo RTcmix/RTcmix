@@ -1,4 +1,8 @@
 // Record from network, play via ALSA
+//
+// NOTE NOTE NOTE: Make sure you have configured RTcmix using --with-netplay
+// before compilation!
+//
 // (Device descriptor needs "net:" to distinguish it from HW devices which
 //     use name:number as their device -- like ALSA does here).
 // For recording from socket, we don't use the "net:localhost", but it
