@@ -181,8 +181,11 @@ makeLFO(const Arg args[], const int nargs)
 	}
 	index++;
 
-	PField *lfo = new LFOPField(resetval, wavetable, len, freqpf, amppf,
-														(interp == kInterp1stOrder));
+	PField *lfo;
+	if (interp == kInterp1stOrder)
+		lfo = new LFOPField(resetval, wavetable, len, freqpf, amppf);
+	else // (interp == kTruncate)
+		lfo = new LFOPField(resetval, wavetable, len, freqpf, amppf, LFOPField::Truncate);
 
 	return _createPFieldHandle(lfo);
 }

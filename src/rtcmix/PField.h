@@ -141,8 +141,12 @@ protected:
 
 class LFOPField : public SingleValuePField {
 public:
+	typedef double (*InterpFunction)(Ooscili *oscil);
+	static double Truncate(Ooscili *oscil);
+	static double Interpolate1stOrder(Ooscili *oscil);
+public:
 	LFOPField(double krate, double *tableArray, int length, PField *freq,
-					PField *amp, bool interp=true);
+					PField *amp, InterpFunction fun=Interpolate1stOrder);
 	virtual double	doubleValue(double) const;
 protected:
 	virtual ~LFOPField();
@@ -150,7 +154,7 @@ private:
 	Ooscili *_oscil;
 	PField *_freqPF;
 	PField *_ampPF;
-	bool _interp;
+	InterpFunction		_interpolator;
 };
 
 // Class for interpolated reading of table.
