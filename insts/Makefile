@@ -2,7 +2,7 @@ include ../makefile.conf
 
 # This adds optional dirs to list automatically if they are present.
 
-DIRS = base `test -d std && echo -n std` `test -d jg && echo -n jg`
+DIRS = base `find . -type d -mindepth 1 -maxdepth 1 | sed -e '/CVS/d'`
 
 .PHONY: all progs base std dsos standalone install dso_install \
 	standalone_install uninstall dso_uninstall standalone_uninstall \
