@@ -90,11 +90,6 @@ int FILTSWEEP :: init(float p[], short n_args)
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
    insamps = (int)(dur * SR);
 
-   if (outputchans != 2) {
-      fprintf(stderr, "Output must be stereo!\n");
-      exit(1);
-   }
-
    if (inchan >= inputchans) {
       fprintf(stderr, "You asked for channel %d of a %d-channel file.\n",
                                                          inchan, inputchans);
