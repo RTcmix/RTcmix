@@ -149,7 +149,7 @@ double CauchyRandom::value()
 
 ProbRandom::ProbRandom(int seed, double min, double mid, double max,
                                                                 double tight)
-   : Random(seed, min, max), _mid(mid), _tight(tight) {}
+   : Random(seed, min, max, mid, tight) {}
 
 ProbRandom::~ProbRandom() {}
 

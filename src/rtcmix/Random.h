@@ -26,22 +26,28 @@ enum {
 
 class Random : public RefCounted {
 public:
-   Random(int aseed, double min, double max)
-                  : _min(min), _max(max) { setseed(aseed); }
+   Random(int aseed, double min, double max, double mid=0.0, double tight=0.0)
+            : _min(min), _max(max), _mid(mid), _tight(tight) { setseed(aseed); }
    virtual double value() = 0;      // NB: not const, because it changes _randx
    void           setseed(const int aseed) { _randx = (long) aseed; }
    void           setmin(const double min) { _min = min; }
    void           setmax(const double max) { _max = max; }
+   void           setmid(const double mid) { _mid = mid; }
+   void           settight(const double tight) { _tight = tight; }
 protected:
    virtual        ~Random();
    double         rawvalue();
    double         fitrange(double num) const;
    double         getmax() const { return _max; }
    double         getmin() const { return _min; }
+   double         getmid() const { return _mid; }
+   double         gettight() const { return _tight; }
 private:
    long           _randx;
    double         _min;
    double         _max;
+   double         _mid;
+   double         _tight;
 };
 
 
@@ -99,15 +105,8 @@ class ProbRandom : public Random {
 public:
    ProbRandom(int seed, double min, double mid, double max, double tight);
    virtual double value();
-   void           setmid(const double mid) { _mid = mid; }
-   void           settight(const double tight) { _tight = tight; }
 protected:
    virtual        ~ProbRandom();
-   double         getmid() const { return _mid; }
-   double         gettight() const { return _tight; }
-private:
-   double         _mid;
-   double         _tight;
 };
 
 #endif  // _RANDOM_H_
