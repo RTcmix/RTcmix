@@ -105,7 +105,7 @@ int PFieldBinaryOperator::values() const
 {
 	const int len1 = _pfield1->values();
 	const int len2 = _pfield2->values();
-	return (len1 == 1 || len2 == 1) ? max(len1, len2) : min(len1, len2);
+	return max(len1, len2);
 }
 
 int PFieldBinaryOperator::print(FILE *file) const
@@ -127,10 +127,35 @@ int PFieldBinaryOperator::print(FILE *file) const
 	int chars = 0;
 	for (int n = 0; n < maxlen; ++n) {
 		double frac = (double) n/(maxlen-1);
-		double value = maxtable->doubleValue(n) * mintable->doubleValue(frac);
+		double value = (*_operator)(maxtable->doubleValue(n), mintable->doubleValue(frac));
 		chars += fprintf(file, "%.6f\n", value);
 	}
 	return chars;
+}
+
+int PFieldBinaryOperator::copyValues(double *array) const
+{
+	const int len1 = _pfield1->values();
+	const int len2 = _pfield2->values();
+	int maxlen;
+	PField *mintable, *maxtable;
+	if (len1 >= len2) {
+		maxlen = len1;
+		maxtable = _pfield1;
+		mintable = _pfield2;
+	}
+	else {
+		maxlen = len2;
+		maxtable = _pfield2;
+		mintable = _pfield1;
+	}
+	int chars = 0;
+	for (int n = 0; n < maxlen; ++n) {
+		double frac = (double) n/(maxlen-1);
+		double value = (*_operator)(maxtable->doubleValue(n), mintable->doubleValue(frac));
+		array[n] = value;
+	}
+	return maxlen;
 }
 
 // TablePField
