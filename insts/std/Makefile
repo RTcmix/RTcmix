@@ -14,18 +14,16 @@ all:
 	@for DIR in $(LIBDIRS) MIX; \
 	do \
 	  ( cd $$DIR; echo "making in $$DIR..."; \
-	  $(MAKE) $(MFLAGS); echo "done in $$DIR"; \
-	  ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR) ); \
+	  $(MAKE) $(MFLAGS); echo "done in $$DIR"; ) \
 	done
-	@ln -fs `pwd`/MIX/MIX $(DESTDIR)/CMIX
 
 install:
 	@for DIR in $(LIBDIRS); \
 	do \
 	  ( cd $$DIR; echo "making install in $$DIR..."; \
-	  ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR); \
-	  rm -f $(DESTDIR)/$$DIR; \
+	  ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR); ) \
 	done
+	@ln -fs `pwd`/MIX/MIX $(DESTDIR)/CMIX
 
 dsos:  all
 
