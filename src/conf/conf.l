@@ -4,6 +4,7 @@
 */
 %START INIT IGNORE
 %{
+#include "yystype.h"
 #include "conf.tab.hpp"
 #define yyterminate() yy_delete_buffer(YY_CURRENT_BUFFER); return YY_NULL
 #define YY_DECL int conflex(YYSTYPE *lvalp)

@@ -10,6 +10,7 @@
 #include <math.h>
 #include "Config.h"
 #include "lex.conf.c"
+#include "yystype.h"
 #define YYDEBUG 1
 #define YYPARSE_PARAM obj
 static char *my_strdup(char *src);
@@ -23,12 +24,6 @@ int conferror(char *msg);
    conf.l.
 */
 %pure_parser
-
-%union {
-   double num;
-   bool val;
-   char *str;
-}
 
 %token <num> TOK_NUM TOK_TRUE TOK_FALSE
 %token <str> TOK_KEY TOK_STRING
