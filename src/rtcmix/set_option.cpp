@@ -6,7 +6,7 @@
    default options (and those stored in the .rtcmixrc file).  The options
    are kept in the <options> object (see Option.h).      -JGG, 6/30/04
 */
-#include <globals.h>	// for options object
+#include <RTcmix.h>
 #include <ugens.h>		// for die()
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,7 +14,7 @@
 #include <ctype.h>
 #include <Option.h>
 
-typedef enum {
+enum ParamType {
 	DEVICE,
 	INDEVICE,
 	OUTDEVICE,
@@ -24,15 +24,15 @@ typedef enum {
 	REPORT_CLIPPING,
 	CHECK_PEAKS,
 	FULL_DUPLEX,
-} ParamType;
+};
 
 #define OPT_STRLEN 128
 
-typedef struct {
+struct Param {
 	char arg[OPT_STRLEN];	 
 	ParamType type;
 	bool value;		// use false if not relevant, i.e. for key=value style
-} Param;
+};
 
 static Param param_list[] = {
 	{ "DEVICE", DEVICE, false},
@@ -55,10 +55,7 @@ static Param param_list[] = {
 };
 static int num_params = sizeof(param_list) / sizeof(Param);
 
-
-extern "C" {
-
-double set_option(float *p, short nargs, double pp[])
+double RTcmix::set_option(float *p, int nargs, double pp[])
 {
 	int  j;
 	char opt[OPT_STRLEN];
@@ -183,6 +180,4 @@ double set_option(float *p, short nargs, double pp[])
 	}
 	return 0.0;
 }
-
-} // extern "C"
 

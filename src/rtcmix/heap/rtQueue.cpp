@@ -2,14 +2,14 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-// #define DBUG
 #include <iostream.h>
 #include "heap.h"
 #include <dbug.h>
 #include <rtdefs.h>
-#include <globals.h>
+#include <RTcmix.h>
 #include <Instrument.h>
 
+//#define DBUG
 
 RTQueue::RTQueue()
 {
@@ -38,21 +38,16 @@ void RTQueue::push(Instrument *newInst, unsigned long new_chunkstart)
 {
   int i;
   long diff;
-  rtQElt *newElt;  // create new rtQElt
   rtQElt *tempElt; // BGG: for queue insertion
-  newElt = new rtQElt;
-  newElt->Inst = newInst;
-  newElt->Inst->ref();
-  newElt->chunkstart = new_chunkstart; 
-  newElt->next = NULL;
-  newElt->prev = NULL;
+
+  rtQElt *newElt = new rtQElt(newInst, new_chunkstart);	// create new rtQElt
 
   if (head == NULL)  // if first item on RTQueue
     head = tail = newElt;
-  else if(tail->chunkstart <= newElt->chunkstart) {
+  else if (tail->chunkstart <= newElt->chunkstart) {
     // append to the end of the RTQueue
 #ifdef DBUG
-	cout << "Queueing at end\n";
+	cout << "RTQueue::push: Queueing at end\n";
 #endif
     tail->next = newElt;
     newElt->prev = tail;
@@ -101,7 +96,7 @@ void RTQueue::push(Instrument *newInst, unsigned long new_chunkstart)
     cout << "diff = " << diff << endl;
     cout << "tempElt->prev = " << tempElt->prev << endl;
 
-    if (diff > NCHANS * RTBUFSAMPS) {
+    if (diff > RTcmix::chans() * RTcmix::bufsamps()) {
       cerr << "SCHEDULING INCONSISTENCY!\n";
       cerr << "newElt->chunkstart = " << newElt->chunkstart << endl;
       cout << "tempElt->chunkstart = " << tempElt->chunkstart << endl;
@@ -148,9 +143,8 @@ Instrument *RTQueue::pop()
   }
   retInst = head->Inst;
   head = head->next;
-  delete tQelt;
+  delete tQelt;		// this unref's instrument
   size--;
-  retInst->unref();
   return retInst;
 }
 

@@ -31,8 +31,9 @@ typedef struct inputdesc {
 } InputDesc;
 
 
-/* for insts - so they don't have to include globals.h */
-extern int RTBUFSAMPS;
-extern float SR;
+/* for insts - so they don't have to include RTcmix.h */
+/* these are defined in RTcmix.cpp */
+//int RTBUFSAMPS();
+//float SR();
 
 #endif /* _RTDEFS_H_ */

@@ -4,6 +4,7 @@
 */
 #include "heap.h"
 #include <lock.h>
+#include <Instrument.h>
 #include <iostream.h>
 
 heapslot::heapslot() : chunkStart(0), inst(NULL), 
@@ -225,13 +226,13 @@ void heapslot::dump(int indent)
 }
 
 
+rtQElt::rtQElt(Instrument *inst, unsigned long start)
+	: next(NULL), prev(NULL), Inst(inst), chunkstart(start)
+{
+	Inst->ref();
+} 
 
-
-
-
-
-
-
-
-
-
+rtQElt::~rtQElt()
+{
+	Inst->unref();
+}

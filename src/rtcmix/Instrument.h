@@ -17,8 +17,21 @@ class PFieldSet;
 class PField;
 class BusSlot;
 
+struct InputState {
+   InputState();
+   int            fdIndex;         // index into unix input file desc. table
+   off_t          fileOffset;      // current offset in file for this inst
+   double         inputsr;		   // SR of input file
+   int            inputchans;	   // Chans of input file
+};
+
 class Instrument : public RefCounted {
 protected:
+
+	// These replace the old globals
+   static int	  RTBUFSAMPS;
+   static int     NCHANS;
+   static float   SR;
 
    float          _start;
    float          _dur;
@@ -30,11 +43,9 @@ protected:
    int            output_offset;
 
    int            sfile_on;        // a soundfile is open (for closing later)
-   int            fdIndex;         // index into unix input file desc. table
-   off_t          fileOffset;      // current offset in file for this inst
 
-   double         inputsr;
-   int            inputchans;
+   InputState     _input;		   // collected state for input source
+
    int            outputchans;
 
    int            mytag;           // for note tagging/rtupdate() 
@@ -42,8 +53,8 @@ protected:
    BUFTYPE        *outbuf;         // private interleaved buffer
 
    BusSlot        *_busSlot;
-	PFieldSet	  *_pfields;
-	static double s_dArray[];
+   PFieldSet	  *_pfields;
+   static double  s_dArray[];
 #ifdef RTUPDATE
    // new RSD variables
    EnvType rsd_env;
@@ -59,8 +70,10 @@ protected:
 private:
    char 		  *_name;	// the name of this instrument
    BUFTYPE        *obufptr;
-   short          bufstatus[MAXBUS];
-   short          needs_to_run;
+   char           bufstatus[MAXBUS];
+   char           needs_to_run;
+
+   static pthread_mutex_t endsamp_lock;
 
 #ifdef RTUPDATE
 // stores the current index into the pfpath array
@@ -89,6 +102,7 @@ private:
 // The instrument number and instrument slot number
    int 			  instnum;
    int			  slot;
+   
 	
 // used to keep track of which set of data in the pfpath array we are looking 
 // at.  This allows multiple calls to note_pfield_path and inst_pfield_path
@@ -102,7 +116,7 @@ public:
 	int				currentFrame() const { return cursamp; }
 	int				framesToRun() const { return chunksamps; }
 	int				nSamps() const { return nsamps; }
-	int				inputChannels() const { return inputchans; }
+	int				inputChannels() const { return _input.inputchans; }
 	int				outputChannels() const { return outputchans; }
 	// Use this to increment cursamp inside single-frame run loops.
 	void			increment() { ++cursamp; }

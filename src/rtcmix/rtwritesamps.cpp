@@ -11,7 +11,7 @@
 #include <string.h>  /* for strerror */
 #include <math.h>    /* for fabs */
 #include <errno.h>
-#include <globals.h>
+#include <RTcmix.h>
 #include <prototypes.h>
 #include "AudioDevice.h"
 #include "audio_devices.h"
@@ -25,9 +25,9 @@
 */
 
 int
-rtwritesamps(AudioDevice *fileDevice)
+RTcmix::rtwritesamps(AudioDevice *fileDevice)
 {
-	const int nframes = RTBUFSAMPS;
+	const int nframes = bufsamps();
 
    /* This catches our new case where rtoutput() failed but was ignored */
    if (rtfileit < 0) {
@@ -48,7 +48,7 @@ rtwritesamps(AudioDevice *fileDevice)
 /* ----------------------------------------------------------- rtcloseout --- */
 /* Close the output file device. */
 int
-rtcloseout()
+RTcmix::rtcloseout()
 {
 	int result = 0;
 

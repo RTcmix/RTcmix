@@ -2,21 +2,19 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
+#include <RTcmix.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
 #include <ugens.h>      // for die, warn
 #include <rtcmix_types.h>
 #include <ug_intro.h>
-#include <globals.h>    // for options
 #include <string.h>
 #include <Option.h>
 
 #define WARN_DUPLICATES
 
-typedef struct _func RTcmixFunction;
-
-struct _func {
+typedef struct _func {
    struct _func *next;
    union {
       double (*legacy_return) (float *, int, double *);
@@ -27,11 +25,8 @@ struct _func {
    RTcmixType return_type;
    const char  *func_label;
    int   legacy;        /* 1 if calling using old signature (w/ p[], pp[]) */
-}; /* RTcmixFunction */
+} RTcmixFunction;
 
-static RTcmixFunction *_func_list = NULL;
-
- 
 /* --------------------------------------------------------------- addfunc -- */
 /* Place a function into the table we search when handed a function name
    from the parser.  addfunc is called only from the UG_INTRO* macros.
@@ -43,19 +38,19 @@ static RTcmixFunction *_func_list = NULL;
    -JGG, 22 Jan, 2004
 */
 void
-addfunc(
+RTcmix::addfunc(
    const char     	*func_label,            /* name of function exposed to script */
    LegacyFunction 	func_ptr_legacy,
    NumberFunction	func_ptr_number,
    StringFunction 	func_ptr_string,
    HandleFunction 	func_ptr_handle,
-   RTcmixType		return_type,            /* return type of function */
+   int			    return_type,            /* return type of function */
    int    			legacy)                 /* use old function signature */
 {
    RTcmixFunction *cur_node, *this_node;
 
    /* Create and initialize new list node. */
-   this_node = (RTcmixFunction *) malloc(sizeof(RTcmixFunction));
+   this_node = new RTcmixFunction;
    if (this_node == NULL) {
       die("addfunc", "no memory for table of functions");
       return;
@@ -78,9 +73,8 @@ addfunc(
       default:
          die("addfunc", "invalid function return type");
          return;
-         break;
    }
-   this_node->return_type = return_type;
+   this_node->return_type = (RTcmixType) return_type;
    this_node->func_label = func_label;
    this_node->legacy = legacy;
 
@@ -104,13 +98,13 @@ addfunc(
 } 
 
 
-/* ------------------------------------------------------------- _findfunc -- */
+/* ------------------------------------------------------------- findfunc -- */
 static RTcmixFunction *
-_findfunc(const char *func_label)
+findfunc(RTcmixFunction *func_list, const char *func_label)
 {
    RTcmixFunction *cur_node;
 
-   for (cur_node = _func_list; cur_node; cur_node = cur_node->next) {
+   for (cur_node = func_list; cur_node; cur_node = cur_node->next) {
       if (strcmp(cur_node->func_label, func_label) == 0) {
          return cur_node;
          break;
@@ -121,23 +115,6 @@ _findfunc(const char *func_label)
 
 
 /* ------------------------------------------------------------ _printargs -- */
-#ifdef NOMORE
-static void
-_printarray(const Array *array)
-{
-   unsigned int i, last;
-
-   putchar('[');
-   last = array->len - 1;
-   for (i = 0; i < array->len; i++) {
-      if (i == last)
-         printf("%.12g", array->data[i]);
-      else
-         printf("%.12g] ", array->data[i]);
-   }
-}
-#endif
-
 static void
 _printargs(const char *funcname, const Arg arglist[], const int nargs)
 {
@@ -158,18 +135,18 @@ _printargs(const char *funcname, const Arg arglist[], const int nargs)
 
 /* ------------------------------------------------------------- checkfunc -- */
 int
-checkfunc(const char *funcname, const Arg arglist[], const int nargs,
-		  Arg *retval)
+RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
+		          Arg *retval)
 {
    RTcmixFunction *func;
 
-   func = _findfunc(funcname);
+   func = ::findfunc(_func_list, funcname);
    if (func == NULL)
       return -1;
 
    /* function found, so call it */
 
-   _printargs(funcname, arglist, nargs);
+   ::_printargs(funcname, arglist, nargs);
 
    switch (func->return_type) {
    case DoubleType:
@@ -220,11 +197,26 @@ checkfunc(const char *funcname, const Arg arglist[], const int nargs,
    return 0;
 }
 
-// Wrapper for UG_INTRO() use.
+// Wrappers for UG_INTRO() use.
+
+extern "C" {
+void addfunc(
+   const char     	*func_label,            /* name of function exposed to script */
+   LegacyFunction 	func_ptr_legacy,
+   NumberFunction	func_ptr_number,
+   StringFunction 	func_ptr_string,
+   HandleFunction 	func_ptr_handle,
+   RTcmixType		return_type,            /* return type of function */
+   int    			legacy)                 /* use old function signature */
+{
+	RTcmix::addfunc(func_label, func_ptr_legacy, func_ptr_number,
+				    func_ptr_string, func_ptr_handle, return_type, legacy);
+}
+};
 
 void
 addLegacyfunc(const char *label, double (*func_ptr)(float *, int, double *))
 {
-	addfunc(label, func_ptr, NULL, NULL, NULL, DoubleType, 1);
+	RTcmix::addfunc(label, func_ptr, NULL, NULL, NULL, DoubleType, 1);
 }
 

@@ -11,7 +11,7 @@
 #include <unistd.h>
 #include <math.h>       /* for fabs */
 #include <assert.h>
-#include <globals.h>
+#include <RTcmix.h>
 #include <prototypes.h>
 #include <buffers.h>
 #include <ugens.h>
@@ -20,6 +20,7 @@
 #include <AudioDevice.h>
 #include <AudioFileDevice.h>
 #include "Option.h"
+#include <bus.h>
 
 /* #define DUMP_AUDIO_TO_RAW_FILE */
 /* #define USE_REAL2INT */
@@ -28,9 +29,12 @@ extern AudioDevice *globalOutputFileDevice;	// audio_devices.cpp
 
 static int printing_dots = 0;
 
+/* max amplitude encountered -- reported at end of run */
+static BUFTYPE peaks[MAXBUS];
+static long peaklocs[MAXBUS];
+
 /* local prototypes */
-static int write_to_audio_device(AudioDevice *);
-static void limiter(void);
+static int write_to_audio_device(BufPtr out_buffer[], int samps, AudioDevice *);
 
 #ifdef DUMP_AUDIO_TO_RAW_FILE
 /* ----------------------------------------------- dump_audio_to_raw_file --- */
@@ -82,9 +86,9 @@ real2int(float val)
 
 /* ------------------------------------------------ write_to_audio_device --- */
 static int
-write_to_audio_device(AudioDevice *device)
+write_to_audio_device(BufPtr out_buffer[], int samps, AudioDevice *device)
 {
-	return device->sendFrames(out_buffer, RTBUFSAMPS) == RTBUFSAMPS ? 0 : -1;
+	return device->sendFrames(out_buffer, samps) == samps ? 0 : -1;
 }
 
 
@@ -98,12 +102,13 @@ write_to_audio_device(AudioDevice *device)
 
    Note: This modifies the floating-point output buffers *in place*.
 */
-static void
-limiter()
+void
+RTcmix::limiter(BUFTYPE peaks[], long peaklocs[])
 {
    int      i, j, numclipped;
    BUFTYPE  clipmax, orig_samp;
    BufPtr   buf;
+   const int samps = bufsamps();
    const bool checkPeaks = Option::checkPeaks();
    const bool reportClipping = Option::reportClipping();
 
@@ -112,18 +117,18 @@ limiter()
 
    for (i = 0; i < NCHANS; i++) {
       buf = out_buffer[i];
-      for (j = 0; j < RTBUFSAMPS; j++) {
+      for (j = 0; j < samps; j++) {
          orig_samp = buf[j];
-         if (orig_samp < -32768.0) {
+         if (orig_samp < -32768.0f) {
             if (orig_samp < -clipmax)
                clipmax = -orig_samp;
-            buf[j] = -32768.0;
+            buf[j] = -32768.0f;
             numclipped++;
          }
-         else if (orig_samp > 32767.0) {
+         else if (orig_samp > 32767.0f) {
             if (orig_samp > clipmax)
                clipmax = orig_samp;
-            buf[j] = 32767.0;
+            buf[j] = 32767.0f;
             numclipped++;
          }
          if (checkPeaks) {
@@ -138,7 +143,7 @@ limiter()
 
    if (numclipped && reportClipping) {
       float loc1 = (float) bufStartSamp / SR;
-      float loc2 = loc1 + ((float) RTBUFSAMPS / SR);
+      float loc2 = loc1 + ((float) samps / SR);
 
       /* We start with a newline if we're also printing the buffer dots. */
       fprintf(stderr,
@@ -155,7 +160,7 @@ limiter()
    NOTE NOTE NOTE: This clears all the global out_buffers!
 */
 void
-rtsendzeros(AudioDevice *device, int also_write_to_file)
+RTcmix::rtsendzeros(AudioDevice *device, int also_write_to_file)
 {
    int   err;
 
@@ -163,7 +168,7 @@ rtsendzeros(AudioDevice *device, int also_write_to_file)
 
    if (Option::play()) {
       int i, j, nsamps, nbufs;
-      err = write_to_audio_device(device);
+      err = ::write_to_audio_device(out_buffer, bufsamps(), device);
       if (err)
          fprintf(stderr, "rtsendzeros: Error: %s\n", device->getLastError());
    }
@@ -184,9 +189,9 @@ rtsendzeros(AudioDevice *device, int also_write_to_file)
 */
 
 void
-rtsendsamps(AudioDevice *device)
+RTcmix::rtsendsamps(AudioDevice *device)
 {
-   int   err;
+   int   err = 0;
    const bool playing = Option::play();
    
    /* If we're writing to a file, and not playing, print a dot to show
@@ -201,8 +206,10 @@ rtsendsamps(AudioDevice *device)
    if (is_float_format && rtfileit) {
 	  // FOR NOW, IF WE ARE BOTH PLAYING AND WRITING, DO IT WITH SEPARATE
 	  // AudioDevice INSTANCES.
-	  if (playing)
-         err = rtwritesamps(globalOutputFileDevice);
+	  if (playing) {
+	  	if (globalOutputFileDevice)
+      		err = rtwritesamps(globalOutputFileDevice);
+	  }
 	  else
 	     err = rtwritesamps(device);
       if (err)
@@ -211,10 +218,10 @@ rtsendsamps(AudioDevice *device)
          return;        /* without limiting */
    }
 
-   limiter();    /* Limit output buffer data to +-32767.0 */
+   limiter(peaks, peaklocs);    /* Limit output buffer data to +-32767.0 */
 
    if (playing) {
-      err = write_to_audio_device(device);
+      err = ::write_to_audio_device(out_buffer, bufsamps(), device);
       if (err)
          fprintf(stderr, "rtsendsamps: Error: %s\n", device->getLastError());
    }
@@ -222,8 +229,10 @@ rtsendsamps(AudioDevice *device)
    if (!is_float_format && rtfileit) {
 	  // FOR NOW, IF WE ARE BOTH PLAYING AND WRITING, DO IT WITH SEPARATE
 	  // AudioDevice INSTANCES.
-	  if (playing)
-         err = rtwritesamps(globalOutputFileDevice);
+	  if (playing) {
+	  	if (globalOutputFileDevice)
+      		err = rtwritesamps(globalOutputFileDevice);
+	  }
 	  else
 	     err = rtwritesamps(device);
       if (err)
@@ -234,17 +243,19 @@ rtsendsamps(AudioDevice *device)
 
 /* -------------------------------------------------------- rtreportstats --- */
 void
-rtreportstats(AudioDevice *device)
+RTcmix::rtreportstats(AudioDevice *device)
 {
 	int    n;
 	double dbref = dbamp(32768.0);
-	AudioFileDevice *fileDevice = dynamic_cast<AudioFileDevice *>(device);
 	
    if (Option::reportClipping() && Option::checkPeaks()) {
       printf("\nPeak amplitudes of output:\n");
       for (n = 0; n < NCHANS; n++) {
-	  	if (is_float_format && rtfileit && fileDevice != NULL)
-			peaks[n] = fileDevice->getPeak(n, &peaklocs[n]);
+	     if (is_float_format && rtfileit) {
+            AudioFileDevice *fileDevice = dynamic_cast<AudioFileDevice *> (globalOutputFileDevice);
+            if (fileDevice != NULL)
+               peaks[n] = fileDevice->getPeak(n, &peaklocs[n]);
+         }
          double peak_dbfs = dbamp(peaks[n]) - dbref;
          printf("  channel %d: %12.6f (%6.2f dBFS) at frame %ld (%g seconds)\n",
                 n, peaks[n], peak_dbfs, peaklocs[n], (float) peaklocs[n] / SR);

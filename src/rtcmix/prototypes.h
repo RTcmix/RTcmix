@@ -11,26 +11,11 @@
 
 // These functions are declared as C++ functions.
 
-/* rtsendsamps.C */
 class AudioDevice;
-void rtsendzeros(AudioDevice *, int also_write_to_file);
-void rtsendsamps(AudioDevice *);
-void rtreportstats(AudioDevice *);
-
-/* rtgetsamps.C */
-void rtgetsamps(AudioDevice *);
-
-/* rtwritesamps.C */
-int rtwritesamps(AudioDevice *);
 
 /* dispatch.cpp */
-int dispatch(const char *str, const Arg args[], int n_args, Arg *retarg);
 
 double dispatch(const char *str, double *pp, int n_args, void **inst);
-
-/* addcheckfuncs.cpp */
-int checkfunc(const char *funcname, const Arg arglist[], const int nargs,
-   Arg *retval);
 
 /* Note that C++ functions prototyped below really are defined within
    extern "C" braces in their files.
@@ -39,24 +24,13 @@ extern "C" {
 
 #endif /* __cplusplus */
 
-/* audio_port.c:  prototypes in audio_port.h */
-
 /* buffers.c:  prototypes in buffers.h */
 
 /* checkfuncs.c */
 double checkfuncs(const char *fname, double *pp, int n_args);
 
-/* checkInsts.C */
-double checkInsts(const char *instname, const Arg arglist[], const int nargs,
-   Arg *retval);
-
 /* this is just a wrapper for C files to call */
 double parse_dispatch(const char *str, double *pp, int n_args, void **inst);
-
-
-/* audioLoop.C */
-int runMainLoop(void);
-int waitForMainLoop(void);
 
 /* parseit.C */
 void *parseit(void *);
@@ -77,17 +51,12 @@ int open_sound_file(char *sfname, int *header_type, int *data_format,
 void stop_audio_devices();
 void destroy_audio_devices();
 
-/* rtsetparams.c */
-double rtsetparams(float *p, int n_args, double *pp);
+/* rtcmix_wrappers.c */
 
-/* rtwritesamps.C */
-int rtcloseout(void);
-
-/* set_option.c */
-double set_option(float *p, int n_args, double *pp);
-
-/* sockit.C */
-void *sockit(void *);
+void rtcloseout();
+int rtsetparams_was_called();
+float SR();
+void set_SR(float);
 
 #ifdef __cplusplus
 } /* extern "C" */

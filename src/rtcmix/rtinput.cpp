@@ -7,7 +7,7 @@
    Reworked for v2.3 by John Gibson.
    Reworked again for 3.7 by Douglas Scott.
 */
-#include <globals.h>
+#include <RTcmix.h>
 #include <prototypes.h>
 #include <ugens.h>
 #include <stdio.h>
@@ -134,7 +134,7 @@ FIXME: this stuff not implemented yet  -JGG
    an instrument.
 */
 double
-rtinput(float p[], int n_args, double pp[])
+RTcmix::rtinput(float p[], int n_args, double pp[])
 {
 	int            i, j, anint, audio_in, p1_is_audioport, start_pfield, fd;
 	int            is_open, header_type, data_format, data_location, nchans;
@@ -274,6 +274,7 @@ rtinput(float p[], int n_args, double pp[])
 			else {
 				// This allows rtinput("AUDIO") to turn on record
 				set_bool_option(kOptionRecord, 1);
+				rtrecord = 1;
 			}
 #else		// !NEW_CODE
 			if (rtsetparams_called && !get_bool_option(kOptionRecord)) {
@@ -298,7 +299,7 @@ rtinput(float p[], int n_args, double pp[])
 		}
 		else {
 			rtrecord = 0;
-			fd = open_sound_file(sfname, &header_type, &data_format,
+			fd = ::open_sound_file(sfname, &header_type, &data_format,
 							&data_location, &srate, &nchans, &nsamps);
 			if (fd == -1)
 				return -1;
@@ -370,6 +371,41 @@ rtinput(float p[], int n_args, double pp[])
 
 	/* Return this to Minc, so user can pass it to functions. */
 	return (double) last_input_index;
+}
+
+// This is called by Instrument::gone() to decrement references to open
+// input files.
+
+void
+RTcmix::releaseInput(int fdIndex)
+{
+   // BGG -- added this to prevent file closings in interactive mode
+   // we don't know if a file will be referenced again in the future
+   if (!interactive()) {
+#ifdef DEBUG
+      printf("RTcmix::releaseInput: fdIndex %d refcount = %d\n",
+          fdIndex, inputFileTable[fdIndex].refcount);
+#endif
+      if (--inputFileTable[fdIndex].refcount <= 0) {
+         if (inputFileTable[fdIndex].fd > 0) {
+#ifdef DEBUG
+            printf("\tclosing fd %d\n", inputFileTable[fdIndex].fd);
+#endif
+            mus_file_close(inputFileTable[fdIndex].fd);
+         }
+         if (inputFileTable[fdIndex].filename);
+            free(inputFileTable[fdIndex].filename);
+         inputFileTable[fdIndex].filename = NULL;
+         inputFileTable[fdIndex].fd = NO_FD;
+         inputFileTable[fdIndex].header_type = MUS_UNSUPPORTED;
+         inputFileTable[fdIndex].data_format = MUS_UNSUPPORTED;
+         inputFileTable[fdIndex].is_float_format = 0;
+         inputFileTable[fdIndex].data_location = 0;
+         inputFileTable[fdIndex].srate = 0.0;
+         inputFileTable[fdIndex].chans = 0;
+         inputFileTable[fdIndex].dur = 0.0;
+      }
+   }
 }
 
 

@@ -1,4 +1,4 @@
-#include <globals.h>
+#include <RTcmix.h>
 #include <prototypes.h>
 #include <ugens.h>
 #include <sndlibsupport.h>
@@ -16,11 +16,11 @@ extern SFHEADER      sfdesc[NFILES];
 extern SFMAXAMP      sfm[NFILES];
 extern struct stat   sfst[NFILES];
 extern int headersize[NFILES];
-extern void sfstats(int fd);       /* defined in sfstats.c */
+extern "C" void sfstats(int fd);       /* defined in sfstats.c */
 
+extern "C" {
 
-double m_sr(p,n_args)
-float *p;
+double m_sr(float *p, int n_args)
 {
   if(!isopen[(int)p[0]]) {
     fprintf(stderr, "You haven't opened file %d yet!\n", (int)p[0]);
@@ -29,8 +29,7 @@ float *p;
   return(sfsrate(&sfdesc[(int)p[0]]));
 }
 
-double m_chans(p,n_args)
-float *p;
+double m_chans(float *p, int n_args)
 {	
   if(!isopen[(int)p[0]]) {
     fprintf(stderr, "You haven't opened file %d yet!\n", (int)p[0]);
@@ -40,8 +39,7 @@ float *p;
   return(sfchans(&sfdesc[(int)p[0]]));
 }
 
-double m_class(p,n_args)
-float *p;
+double m_class(float *p, int n_args)
 {
   if(!isopen[(int)p[0]]) {
     fprintf(stderr, "You haven't opened file %d yet!\n", (int)p[0]);
@@ -53,12 +51,11 @@ float *p;
 // Still uses old style soundfile IO arrays, which are now updated with sndlib
 // We need to kill that old beast completely!
 
-double m_dur(p,n_args)
-float *p;
+double m_dur(float *p, int n_args)
 {
 	int i;
 	float dur;
-	i = p[0];
+	i = (int) p[0];
 	if(!isopen[i]) {
 		fprintf(stderr, "You haven't opened file %d yet!\n", i);
 		closesf();
@@ -69,7 +66,10 @@ float *p;
 	return(dur);
 }
 
-double m_CHANS(float *p, int n_args)   /* returns chans for rtinput() files */
+}	// end extern "C"
+
+double
+RTcmix::input_chans(float *p, int n_args)   /* returns chans for rtinput() files */
 {
    int index = get_last_input_index();
 
@@ -85,7 +85,8 @@ double m_CHANS(float *p, int n_args)   /* returns chans for rtinput() files */
    return (inputFileTable[index].chans);
 }
 
-double m_DUR(float *p, int n_args)   /* returns duration for rtinput() files */
+double 
+RTcmix::input_dur(float *p, int n_args)   /* returns duration for rtinput() files */
 {
    int index = get_last_input_index();
 
@@ -101,7 +102,8 @@ double m_DUR(float *p, int n_args)   /* returns duration for rtinput() files */
    return (inputFileTable[index].dur);
 }
 
-double m_SR(float *p, int n_args)   /* returns rate for rtinput() files */
+double
+RTcmix::input_sr(float *p, int n_args)   /* returns rate for rtinput() files */
 {
    int index = get_last_input_index();
 
@@ -117,6 +119,8 @@ double m_SR(float *p, int n_args)   /* returns rate for rtinput() files */
    return (inputFileTable[index].srate);
 }
 
+extern "C" {
+
 /* Note: the old versions of the peak info functions copy peak stats from
    the file header in memory into the sfm[fno] array maintained in sound.c.
    This seems unnecessary, since both are initialized on opening any file
@@ -131,7 +135,7 @@ m_peak(float p[], int n_args)
 	int      n, fno;
 	float    peak, chanpeak;
 
-	fno = p[0];
+	fno = (int) p[0];
 	if (!isopen[fno]) {
 		fprintf(stderr, "You haven't opened file %d yet!\n", fno);
 		closesf();
@@ -158,7 +162,7 @@ m_left(float p[], int n_args)
 {
 	int      fno;
 
-	fno = p[0];
+	fno = (int) p[0];
 	if (!isopen[fno]) {
 		fprintf(stderr, "You haven't opened file %d yet!\n", fno);
 		closesf();
@@ -178,7 +182,7 @@ m_right(float p[], int n_args)
 {
 	int      fno;
 
-	fno = p[0];
+	fno = (int) p[0];
 	if (!isopen[fno]) {
 		fprintf(stderr, "You haven't opened file %d yet!\n", fno);
 		closesf();
@@ -192,6 +196,7 @@ m_right(float p[], int n_args)
 	return 0.0;
 }
 
+} // end of extern "C"
 
 
 #define ALL_CHANS -1
@@ -200,8 +205,8 @@ m_right(float p[], int n_args)
    <end> times (in seconds). If <chan> is -1, returns the highest peak
    of all the channels. If <end> is 0, sets <end> to duration of file.
 */
-static float
-get_peak(float start, float end, int chan)
+float
+RTcmix::get_peak(float start, float end, int chan)
 {
    int       n, fd, result, nchans, srate, dataloc, format;
    int       index, file_stats_valid=0;
@@ -241,7 +246,7 @@ get_peak(float start, float end, int chan)
 
    format = inputFileTable[index].data_format;
    dataloc = inputFileTable[index].data_location;
-   srate = inputFileTable[index].srate;
+   srate = (int) inputFileTable[index].srate;	// note: casting to int
    nchans = inputFileTable[index].chans;
 
    startframe = (long)(start * srate + 0.5);
@@ -286,21 +291,21 @@ get_peak(float start, float end, int chan)
 
 
 double
-m_PEAK(float p[], int n_args)
+RTcmix::input_peak(float p[], int n_args)
 {
    return get_peak(p[0], p[1], ALL_CHANS);
 }
 
 
 double
-m_LEFT_PEAK(float p[], int n_args)
+RTcmix::left_peak(float p[], int n_args)
 {
    return get_peak(p[0], p[1], 0);
 }
 
 
 double
-m_RIGHT_PEAK(float p[], int n_args)
+RTcmix::right_peak(float p[], int n_args)
 {
    return get_peak(p[0], p[1], 1);
 }
@@ -308,10 +313,13 @@ m_RIGHT_PEAK(float p[], int n_args)
 
 extern int sfd[NFILES];
 
+extern "C" {
+
 double
-m_info(p,n_args)
-float *p;
+m_info(float *p, int n_args)
 {
   sfstats(sfd[(int) p[0]]);
     return 0;
 }
+
+}	// end extern "C"

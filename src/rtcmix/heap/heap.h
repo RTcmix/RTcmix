@@ -64,6 +64,10 @@ public:
 // class for queue used to hold Instruments
 
 class rtQElt {
+public:
+  rtQElt(Instrument *inst, unsigned long start);
+  ~rtQElt();
+private:
   friend class RTQueue;
   rtQElt *next;
   rtQElt *prev;

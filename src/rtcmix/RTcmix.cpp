@@ -13,6 +13,7 @@
 //#define DBUG
 //#define DENORMAL_CHECK
 #include <pthread.h>
+#include <sys/resource.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -21,17 +22,10 @@
 #include <sys/time.h>
 #include <string.h>
 #include <signal.h>
-#ifdef LINUX
-   #include <sys/soundcard.h>
-#endif
-#ifdef SGI
-   #include <dmedia/audio.h>
-#endif
 
-#include <globals.h>
 #include <prototypes.h>
 #include <ugens.h>
-#include <version.h>
+#include <RTcmix.h>
 #include <Option.h>
 #include <ug_intro.h>
 #include "rt.h"
@@ -39,11 +33,12 @@
 #include "maxdispargs.h"
 #include "dbug.h"
 
+
+// This is declared (still) in globals.h for use in gen routines.
+
+FILE *	infile_desc[MAX_INFILE_DESC + 1];
+
 extern "C" {
-	// I don't call the profiles here, because dead-time instruments
-	// won't be compiled into the object file unless they are present at
-	// the build (i.e. they aren't DSO's).  RT instruments have the
-	// rtprofile() called when they get loaded.  Go Doug, go!
 #ifdef SGI
   void flush_all_underflows_to_zero();
 #endif
@@ -52,50 +47,105 @@ extern "C" {
 #endif
 }
 
-rt_item *rt_list;     /* can't put this in globals.h because of rt.h trouble */
+// Static RTcmix member initialization
+
+int				RTcmix::NCHANS 			= 2;
+int				RTcmix::RTBUFSAMPS      = 0;
+int				RTcmix::audioNCHANS 	= 0;
+float			RTcmix::SR				= 0.0;
+unsigned long	RTcmix::bufStartSamp 	= 0;
+
+int				RTcmix::rtInteractive 	= 1; // keep the heap going for this object
+int				RTcmix::rtsetparams_called = 0; // will call at object instantiation, though
+int				RTcmix::audio_config 	= 1;
+long			RTcmix::elapsed 		= 0;
+RTstatus		RTcmix::run_status      = RT_GOOD;
+
+heap *			RTcmix::rtHeap			= NULL;
+RTQueue *		RTcmix::rtQueue			= NULL;
+rt_item *		RTcmix::rt_list 		= NULL;
+
+int				RTcmix::output_data_format 		= -1;
+int				RTcmix::output_header_type 		= -1;
+int				RTcmix::normalize_output_floats	= 0;
+int				RTcmix::is_float_format 		= 0;
+char *			RTcmix::rtoutsfname 			= NULL;
+
+#ifdef RTUPDATE
+int			RTcmix::tags_on 	= 0;
+#endif
+
+InputDesc	RTcmix::inputFileTable[MAX_INPUT_FDS];
+BufPtr 		RTcmix::audioin_buffer[MAXBUS];    /* input from ADC, not file */
+BufPtr 		RTcmix::aux_buffer[MAXBUS];
+BufPtr 		RTcmix::out_buffer[MAXBUS];
+
+int			RTcmix::rtrecord 	= 0;		// indicates reading from audio device
+int			RTcmix::rtfileit 	= 0;		// signal writing to soundfile
+int			RTcmix::rtoutfile 	= 0;
+
+pthread_mutex_t RTcmix::pfieldLock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t RTcmix::audio_config_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t RTcmix::aux_to_aux_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t RTcmix::to_aux_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t RTcmix::to_out_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t RTcmix::inst_bus_config_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t RTcmix::bus_config_status_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t RTcmix::bus_in_config_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t RTcmix::has_child_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t RTcmix::has_parent_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t RTcmix::aux_in_use_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t RTcmix::aux_out_in_use_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t RTcmix::out_in_use_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t RTcmix::revplay_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t RTcmix::bus_slot_lock = PTHREAD_MUTEX_INITIALIZER;
+
+short			RTcmix::AuxToAuxPlayList[MAXBUS];
+short			RTcmix::ToOutPlayList[MAXBUS];
+short			RTcmix::ToAuxPlayList[MAXBUS];
+
+// Bus config state
+
+BusQueue *		RTcmix::Inst_Bus_Config;
+Bool			RTcmix::Bus_Config_Status = NO;
+CheckNode *		RTcmix::Bus_In_Config[MAXBUS];
+Bool			RTcmix::HasChild[MAXBUS];
+Bool			RTcmix::HasParent[MAXBUS];
+Bool			RTcmix::AuxInUse[MAXBUS];
+Bool			RTcmix::AuxOutInUse[MAXBUS];
+Bool			RTcmix::OutInUse[MAXBUS];
+short			RTcmix::RevPlay[MAXBUS];
+
+// Function table state
+
+struct _func *	RTcmix::_func_list = NULL;
 
 
 /* --------------------------------------------------------- init_globals --- */
-static void
-init_globals()
+void
+RTcmix::init_globals(bool fromMain)
 {
    int i;
 
    Option::init();
 
-   RTBUFSAMPS = (int) Option::bufferFrames();  /* modifiable with rtsetparams */
-   NCHANS = 2;
-   audioNCHANS = 0;
-	SR = 44100.0; // what the heck...
-	bufStartSamp = 0;
 
+   if (fromMain) {
+      Option::readConfigFile(Option::rcName());
+      Option::exitOnError(true); // we do this no matter what is in config file
+      rtInteractive = 0;
+   }
+   else {
+      SR = 44100.0; // what the heck...
+      Option::print(false);
+      Option::reportClipping(false);
+   }
+
+   RTBUFSAMPS = (int) Option::bufferFrames();  /* modifiable with rtsetparams */
+
+   rtHeap = new heap;
    rtQueue = new RTQueue[MAXBUS*3];
 
-	rtInteractive = 1; // keep the heap going for this object
-	rtsetparams_called = 0; // will call at object instantiation, though
-   audio_config = 1;
-   elapsed = 0;
-
-#ifdef NETAUDIO
-   netplay = 0;      // for remote sound network playing
-#endif
-
-   output_data_format = -1;
-   output_header_type = -1;
-   normalize_output_floats = 0;
-   is_float_format = 0;
-   rtoutsfname = NULL;
-
-#ifdef RTUPDATE
-   tags_on = 0;
-#endif
-
-   rtrecord = 0;                /* indicates reading from audio device */
-   rtfileit = 0;                /* signal writing to soundfile */
-   rtoutfile = 0;
-
-	Option::print(false);
-	Option::reportClipping(false);
 
    for (i = 0; i < MAXBUS; i++) {
       AuxToAuxPlayList[i] = -1; /* The playback order for AUX buses */
@@ -108,6 +158,7 @@ init_globals()
 
    init_buf_ptrs();
 }
+
 
 /* ----------------------------------------------------- detect_denormals --- */
 /* Unmask "denormalized operand" bit of the x86 FPU control word, so that
@@ -131,19 +182,17 @@ detect_denormals()
 #endif /* DENORMAL_CHECK */
 #endif /* LINUX */
 
-
-
 //  The RTcmix constructor with default SR, NCHANS, and RTBUFSAMPS
 RTcmix::RTcmix() 
 {
-	init_globals();
+	init_globals(false);
 	init(SR, NCHANS, RTBUFSAMPS, NULL, NULL, NULL);
 }
 
 //  The RTcmix constructor with settable SR, NCHANS; default RTBUFSAMPS
 RTcmix::RTcmix(float tsr, int tnchans)
 {
-	init_globals();
+	init_globals(false);
 	init(tsr, tnchans, RTBUFSAMPS, NULL, NULL, NULL);
 }
 
@@ -153,11 +202,15 @@ RTcmix::RTcmix(float tsr, int tnchans)
 RTcmix::RTcmix(float tsr, int tnchans, int bsize,
 			   const char *opt1, const char *opt2, const char *opt3)
 {
-   init_globals();
-	init(tsr, tnchans, bsize, opt1, opt2, opt3);
+   init_globals(false);
+   init(tsr, tnchans, bsize, opt1, opt2, opt3);
 }
 
-//  The actual initialization method called by the constructors
+// This is called by RTcmixMain constructor, which does all the work.
+
+RTcmix::RTcmix(bool dummy) {}
+
+//  The actual initialization method called by the imbedded constructors
 
 void
 RTcmix::init(float tsr, int tnchans, int bsize,
@@ -174,8 +227,6 @@ RTcmix::init(float tsr, int tnchans, int bsize,
 #ifdef SGI
    flush_all_underflows_to_zero();
 #endif
-
-	run_status = RT_GOOD;	// Make sure status is good.
 
 	// set up the command lists, etc.
 	ug_intro();		/* introduce standard routines */
@@ -211,7 +262,8 @@ RTcmix::init(float tsr, int tnchans, int bsize,
 // numeric p-field sending command.  The first "double" is to disambiguate
 // from the string-sending command (below).  An old holdover from ancient
 // cmix, but it's a handy thing
-Instrument *RTcmix::cmd(char name[], int n_args, double p0, ...)
+Instrument *
+RTcmix::cmd(char name[], int n_args, double p0, ...)
 {
 	va_list ap;
 	int i;
@@ -224,14 +276,15 @@ Instrument *RTcmix::cmd(char name[], int n_args, double p0, ...)
 			p[i] = va_arg(ap, double);
 	va_end(ap);
 
-	(void) dispatch(name, p, n_args, &retval);
+	(void) ::dispatch(name, p, n_args, &retval);
 
 	return (Instrument *) retval;
 }
 
 // string p-field sending command.  the first "char*" is to disambiguate
 // from the double version above
-Instrument *RTcmix::cmd(char name[], int n_args, char* p0, ...)
+Instrument *
+RTcmix::cmd(char name[], int n_args, char* p0, ...)
 {
 	// these are not time-stamped as above... change if we need to!
 	va_list ap;
@@ -253,7 +306,7 @@ Instrument *RTcmix::cmd(char name[], int n_args, char* p0, ...)
       }
 	va_end(ap);
 
-	(void) dispatch(name, p, n_args, &retval);
+	(void) ::dispatch(name, p, n_args, &retval);
 
 	return (Instrument *) retval;
 }
@@ -262,7 +315,8 @@ Instrument *RTcmix::cmd(char name[], int n_args, char* p0, ...)
 #include <PField.h>
 
 // new PFieldSet sending command.
-Instrument *RTcmix::cmd(char name[], const PFieldSet &pfSet)
+Instrument *
+RTcmix::cmd(char name[], const PFieldSet &pfSet)
 {
 	void   *retval;
 	int nFields = pfSet.size();
@@ -293,13 +347,14 @@ Instrument *RTcmix::cmd(char name[], const PFieldSet &pfSet)
 
 // for commands with no params -- the double return val is because
 // that's what these commands generally do.
-double RTcmix::cmd(char name[])
+double
+RTcmix::cmd(char name[])
 {
 	// these are not time-stamped as above... change if we need to!
 	double p[MAXDISPARGS]; // for passing into dispatch only
 	double retval;
 
-	retval = dispatch(name, p, 0, NULL);
+	retval = ::dispatch(name, p, 0, NULL);
 
 	return(retval);
 }
@@ -307,7 +362,8 @@ double RTcmix::cmd(char name[])
 // This is s duplicate of the RTcmix::cmd() function, except that
 // instead of returning an Inst*, it returns the double value
 // of the RTcmix command that was invoked
-double RTcmix::cmdval(char name[], int n_args, double p0, ...)
+double
+RTcmix::cmdval(char name[], int n_args, double p0, ...)
 {
 	va_list ap;
 	int i;
@@ -320,13 +376,14 @@ double RTcmix::cmdval(char name[], int n_args, double p0, ...)
 		p[i] = va_arg(ap, double);
 	va_end(ap);
 
-	return dispatch(name, p, n_args, &retval);
+	return ::dispatch(name, p, n_args, &retval);
 }
 
 // This is s duplicate of the RTcmix::cmd() string-passing function, except
 // that instead of returning an Inst*, it returns the double value
 // of the RTcmix command that was invoked
-double RTcmix::cmdval(char name[], int n_args, char* p0, ...)
+double
+RTcmix::cmdval(char name[], int n_args, char* p0, ...)
 {
 	// these are not time-stamped as above... change if we need to!
 	va_list ap;
@@ -348,7 +405,7 @@ double RTcmix::cmdval(char name[], int n_args, char* p0, ...)
    }
 	va_end(ap);
 
-	return dispatch(name, p, n_args, &retval);
+	return ::dispatch(name, p, n_args, &retval);
 }
 
 
@@ -402,3 +459,4 @@ void RTtimeit(float interval, sig_t func)
 	setitimer(ITIMER_REAL, &itv, NULL);
 	signal(SIGALRM, func);
 }
+

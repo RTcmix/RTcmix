@@ -14,7 +14,7 @@
  *		MX_EMEM	  - No memory to create ug_item
  *	Side Effects:
  */
-#include <globals.h>
+#include <RTcmix.h>
 #include "rt.h"
 #include "Instrument.h"
 #include "mixerr.h"
@@ -22,6 +22,12 @@
 
 int
 addrtInst(rt_item *rt_p)
+{
+	return RTcmix::addrtInst(rt_p);
+}
+
+int
+RTcmix::addrtInst(rt_item *rt_p)
 {
 	rt_item *rt_tail;
 	rt_item *rt_temp;

@@ -28,7 +28,7 @@
 */
 
 #define SOUND
-#include <globals.h>
+#include <prototypes.h>
 #include <ugens.h>
 #include <sndlibsupport.h>
 #include <sfheader.h>
@@ -203,10 +203,10 @@ double m_open(float *p, short n_args, double *pp)
 		getinpointer[fno] = _fgetin;
 	}
 
-	if(!SR) SR = sfsrate(&sfdesc[fno]);	
+	if(!SR()) set_SR(sfsrate(&sfdesc[fno]));	
 
-	if(sfsrate(&sfdesc[fno])!= SR)
-		fprintf(stderr,"Note--> SR reset to %f\n",SR);
+	if(sfsrate(&sfdesc[fno])!= SR())
+		fprintf(stderr,"Note--> SR reset to %f\n",SR());
 
 	/* read in former peak amplitudes, make sure zero'ed out to start.*/
 
@@ -235,7 +235,7 @@ setnote(float start, float dur, int fno)
 		closesf();
 	}
 	if(start > 0.) /* if start < 0 it indicates number of samples to skip*/
-	        offset = (int) (start * SR + .5) * sfchans(&sfdesc[fno])
+	        offset = (int) (start * SR() + .5) * sfchans(&sfdesc[fno])
 	    		* sfclass(&sfdesc[fno]);
 
 	else    offset = -start * sfchans(&sfdesc[fno]) * sfclass(&sfdesc[fno]);
@@ -244,7 +244,7 @@ setnote(float start, float dur, int fno)
 	offset -= offset % (sfchans(&sfdesc[fno]) * sfclass(&sfdesc[fno]));
 	offset = (offset < 0) ? 0 : offset;
 
-	nsamps = (dur > 0.) ? (int)((start+dur) * SR -
+	nsamps = (dur > 0.) ? (int)((start+dur) * SR() -
 	(offset/(sfchans(&sfdesc[fno])*sfclass(&sfdesc[fno])))+ .5) : (int)-dur;
 
 	if(!istape[fno]) {
@@ -263,7 +263,7 @@ setnote(float start, float dur, int fno)
 
 	wipe_is_off[fno] = 1;          /* for wipeout */
 
-	starttime[fno] = (start<0) ? -start/SR : start;
+	starttime[fno] = (start<0) ? -start/SR() : start;
 
 	times(&clockin[fno]);       /* read in starting time */
 
@@ -685,7 +685,7 @@ endnote(int xno)
 	pkloc = (long *)peakloc[fno];
 	total = ((double)filepointer[fno]-headersize[fno])
 					/((double)sfclass(&sfdesc[fno]))
-					/(double)sfchans(&sfdesc[fno])/SR;
+					/(double)sfchans(&sfdesc[fno])/SR();
 	
 	/* _writeit(fno);  write out final record */
 
@@ -1043,11 +1043,11 @@ m_clean(float p[], int n_args) /* a fast clean of file, after header */
 
 	if(segment) {
 		skipbytes = (p[1] > 0) ? p[1] * sfclass(&sfdesc[fno]) *
-			    SR * sfchans(&sfdesc[fno]) 
+			    SR() * sfchans(&sfdesc[fno]) 
 			    : -p[1] * sfclass(&sfdesc[fno]) * 
 							 sfchans(&sfdesc[fno]);
 		todo =  (p[2] > 0) ? p[2] * sfclass(&sfdesc[fno]) * 
-			SR * sfchans(&sfdesc[fno])
+			SR() * sfchans(&sfdesc[fno])
 			: -p[2] * sfclass(&sfdesc[fno]) * 
 						sfchans(&sfdesc[fno]);
 		for(i=0; i<sfchans(&sfdesc[fno]); i++) chlist[i] = p[i+3];

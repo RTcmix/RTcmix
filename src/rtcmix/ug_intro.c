@@ -1,9 +1,12 @@
 #include	"ugens.h"
 #include <ug_intro.h>
 
+extern void rt_ug_intro();
+
 void
 ug_intro()
 {
+   rt_ug_intro();	// introduce functions owned by RTcmix object
 /*
  *  This cute macro (from ugens.h) makes the necessary declarations
  *  and adds the function to ug_list
@@ -95,22 +98,11 @@ ug_intro()
 	UG_INTRO("pchmidi",m_pchmidi);
 	UG_INTRO("cpsmidi",m_cpsmidi);
 	UG_INTRO("midipch", m_midipch);
-	UG_INTRO("rtsetparams",rtsetparams);
-	UG_INTRO("rtinput",rtinput);
-	UG_INTRO("rtoutput",rtoutput);
-	UG_INTRO("set_option",set_option);
 	UG_INTRO("setline_size",m_setline_size);
 	UG_INTRO("setline",m_setline);
 	UG_INTRO("reset",m_reset);
 	UG_INTRO("control_rate",m_reset); /* because "reset" is a perlfunc */
 	UG_INTRO("load",m_load); /* allows loading of dynamic libraries */
-	UG_INTRO("CHANS",m_CHANS);  /* returns channels for rtinput files */
-	UG_INTRO("DUR",m_DUR);  /* returns duration for rtinput files */
-	UG_INTRO("SR",m_SR);  /* returns rate for rtinput files */
-	UG_INTRO("PEAK",m_PEAK);  /* returns peak amp for rtinput files */
-	UG_INTRO("LEFT_PEAK",m_LEFT_PEAK);
-	UG_INTRO("RIGHT_PEAK",m_RIGHT_PEAK);
-	UG_INTRO("bus_config", bus_config);
 	UG_INTRO("pickrand", m_pickrand);
 	UG_INTRO("pickwrand", m_pickwrand);
 	UG_INTRO("irand", m_irand);

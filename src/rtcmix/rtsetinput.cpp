@@ -5,7 +5,7 @@
 
 /* rev for v2.3 by JGG */
 
-#include <globals.h>
+#include <RTcmix.h>
 #include <prototypes.h>
 #include <ugens.h>
 #include <stdio.h>
@@ -47,56 +47,80 @@ Instrument::rtsetinput(float start_time, Instrument *inst)
 
    if (in_count > 0) {
       int src_chans;
-      int index = get_last_input_index();
+	  
+	  int status = RTcmix::attachInput(start_time, &inst->_input);
+	  
+	  switch (status) {
+	  case RT_NO_INPUT_SRC:
+         die(inst_name, "No input source open for this instrument!");
+         return -1;
+      case RT_ILLEGAL_DEV_OFFSET:
+         die(inst_name, "Input start must be 0 when reading from the "
+                           "real-time audio device.");
+         return -1;
+      case RT_INPUT_EOF:
+         warn(inst_name, "Attempt to read past end of input file '%s'\n",
+              RTcmix::getInputPath(inst->_input.fdIndex));
+		 break;
+	  case RT_INPUT_CHANS_MISMATCH:
+#ifdef NOMORE // pointless ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT in rtgetin.C
+         advise(inst_name, INCHANS_DISCREPANCY_WARNING, inst->_input.inputchans,
+                                                        src_chans, src_chans);
+#endif
+	  default:
+	     break;
+	  }
+      inst->sfile_on = 1;
+   }
+   return 0;
+}
 
+int
+RTcmix::attachInput(float start_time, InputState *input)
+{
+      int index = get_last_input_index();
 #ifdef SGI
       if (index < 0) {
-         die(inst_name, "No input source open for this instrument!");
-			return -1;
-		}
+         return RT_NO_INPUT_SRC;
+      }
       if ((inputFileTable[index].fd < 1)
                          && (inputFileTable[index].fd != AUDIO_DEVICE_FD)) {
-         die(inst_name, "No input source open for this instrument!");
-			return -1;
-		}
+         return RT_NO_INPUT_SRC;
+      }
 #else
       if (index < 0 || inputFileTable[index].fd < 1) {
-         die(inst_name, "No input source open for this instrument!");
-			return -1;
-		}
+         return RT_NO_INPUT_SRC;
+      }
 #endif
+      int src_chans;
+	  int status = RT_NO_ERROR;
 
       /* File or audio device was opened in rtinput(). Here we store the
          index into the inputFileTable for the file or device.
       */
-      inst->fdIndex = index;
+      input->fdIndex = index;
 
       /* Fill in relevant data members of instrument class. */
-      inst->inputsr = inputFileTable[index].srate;
+      input->inputsr = inputFileTable[index].srate;
 
       src_chans = inputFileTable[index].chans;
 
       if (inputFileTable[index].is_audio_dev) {
          if (start_time != 0.0) {
-            die(inst_name, "Input start must be 0 when reading from the "
-                           "real-time audio device.");
-				return -1;
-			}
+		    return RT_ILLEGAL_DEV_OFFSET;
+		 }
       }
       else {
-         int datum_size, inskip_frames;
+         int datum_size;
 
-         if (inst->inputchans != src_chans) {
-#ifdef NOMORE // pointless ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT in rtgetin.C
-            advise(inst_name, INCHANS_DISCREPANCY_WARNING, inst->inputchans,
-                                                        src_chans, src_chans);
-#endif
-            inst->inputchans = src_chans;
+         if (input->inputchans != src_chans) {
+		    status = RT_INPUT_CHANS_MISMATCH;	// nonfatal
+            input->inputchans = src_chans;
          }
 
-         inst->sfile_on = 1;
 
-         inskip_frames = (int) (start_time * inst->inputsr + 0.5);
+		 // This is now rounded to the nearest frame -- DS
+         int inskip_frames = (int) (0.5 + start_time * input->inputsr);
 
          /* sndlib always uses 2 for datum size, even if the actual size is
             different. However, we don't use sndlib to read float files, so
@@ -108,18 +132,16 @@ Instrument::rtsetinput(float start_time, Instrument *inst)
             datum_size = 2;
 
          /* Offset is measured from the header size determined in rtinput(). */
-         inst->fileOffset = inputFileTable[index].data_location
-                            + (inskip_frames * inst->inputchans * datum_size);
+         input->fileOffset = inputFileTable[index].data_location
+                            + (inskip_frames * input->inputchans * datum_size);
 
          if (start_time >= inputFileTable[index].dur)
-            warn(inst_name, "Attempt to read past end of input file: %s",
-                                             inputFileTable[index].filename);
+		    status = RT_INPUT_EOF;	// not fatal -- just produces warning
       }
 
-      /* Increment the reference count for this file. */
-      inputFileTable[index].refcount++;
-   }
+   /* Increment the reference count for this file. */
+   inputFileTable[index].refcount++;
 
-   return 0;
+   return status;
 }
 

@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <globals.h>
+#include <RTcmix.h>
 #include <prototypes.h>
 #include <sndlibsupport.h>
 #include <byte_routines.h>
@@ -79,32 +79,26 @@
 int
 Instrument::rtinrepos(Instrument *inst, int frames, int whence)
 {
-   int   fdindex, fd, bytes_per_samp;
-   off_t bytes;
+   int   fdindex;
+   off_t offset;
 
-   fdindex = inst->fdIndex;
+   fdindex = inst->_input.fdIndex;
 
-   if (fdindex == NO_DEVICE_FDINDEX || inputFileTable[fdindex].is_audio_dev) {
+   if (fdindex == NO_DEVICE_FDINDEX || RTcmix::isInputAudioDevice(fdindex)) {
       fprintf(stdin,
             "rtinrepos: request to reposition input, but input is not a file.");
+	  return -1;
    }
 
-   fd = inputFileTable[fdindex].fd;
-
-   if (inputFileTable[fdindex].is_float_format)
-      bytes_per_samp = sizeof(float);
-   else
-      bytes_per_samp = 2;
-
-   bytes = frames * inst->inputchans * bytes_per_samp;
+   offset = RTcmix::seekInputFile(fdindex, frames, inst->_input.inputchans, whence);
 
    switch (whence) {
       case SEEK_SET:
-         assert(bytes >= 0);
-         inst->fileOffset = inputFileTable[fdindex].data_location + bytes;
+         assert(offset >= 0);
+         inst->_input.fileOffset = offset;
          break;
       case SEEK_CUR:
-         inst->fileOffset += bytes;
+         inst->_input.fileOffset += offset;
          break;
       case SEEK_END:
          fprintf(stderr, "rtinrepos: SEEK_END unimplemented\n");
@@ -119,10 +113,35 @@ Instrument::rtinrepos(Instrument *inst, int frames, int whence)
    return 0;
 }
 
+off_t 
+RTcmix::seekInputFile(int fdIndex, int frames, int chans, int whence)
+{
+   int   bytes_per_samp;
 
-/* ----------------------------------------------------------- get_aux_in --- */
-static int
-get_aux_in(
+   if (inputFileTable[fdIndex].is_float_format)
+      bytes_per_samp = sizeof(float);
+   else
+      bytes_per_samp = 2;
+
+   off_t bytes = frames * chans * bytes_per_samp;
+
+   switch (whence) {
+      case SEEK_SET:
+         assert(bytes >= 0);
+         bytes += inputFileTable[fdIndex].data_location;
+         break;
+      case SEEK_CUR:
+         break;
+	  default:
+         break;
+   }
+   return bytes;
+}
+
+
+/* -------------------- RTcmix::readFromAuxBus -------- [was get_aux_in] --- */
+void
+RTcmix::readFromAuxBus(
       BufPtr      dest,             /* interleaved buffer from inst */
       int         dest_chans,       /* number of chans interleaved */
       int         dest_frames,      /* frames in interleaved buffer */
@@ -143,16 +162,16 @@ get_aux_in(
       */
       src += output_offset;
 
-      copy_one_buf_to_interleaved_buf(dest, src, dest_chans, n, dest_frames);
+      ::copy_one_buf_to_interleaved_buf(dest, src, dest_chans, n, dest_frames);
    }
 
-   return 0;
+//   return 0;
 }
 
 
-/* --------------------------------------------------------- get_audio_in --- */
-static int
-get_audio_in(
+/* ------------------------RTcmix::readFromAudioDevice [was get_audio_in] --- */
+void
+RTcmix::readFromAudioDevice(
       BufPtr      dest,             /* interleaved buffer from inst */
       int         dest_chans,       /* number of chans interleaved */
       int         dest_frames,      /* frames in interleaved buffer */
@@ -179,7 +198,7 @@ get_audio_in(
       copy_one_buf_to_interleaved_buf(dest, src, dest_chans, n, dest_frames);
    }
 
-   return 0;
+//   return 0;
 }
 
 
@@ -205,7 +224,7 @@ read_float_samps(
    bytes_per_samp = sizeof(float);
 
    if (fbuf == NULL) {     /* 1st time, so allocate interleaved float buffer */
-      fbuf = (float *) malloc((size_t) RTBUFSAMPS * MAXCHANS * bytes_per_samp);
+      fbuf = (float *) malloc((size_t) RTcmix::bufsamps() * MAXCHANS * bytes_per_samp);
       if (fbuf == NULL) {
          perror("read_float_samps (malloc)");
          exit(1);
@@ -288,7 +307,7 @@ read_24bit_samps(
    bytes_per_samp = 3;         /* 24-bit int */
 
    if (cbuf == NULL) {     /* 1st time, so allocate interleaved char buffer */
-      size_t nbytes = RTBUFSAMPS * MAXCHANS * bytes_per_samp;
+      size_t nbytes = RTcmix::bufsamps() * MAXCHANS * bytes_per_samp;
       cbuf = (unsigned char *) malloc(nbytes);
       if (cbuf == NULL) {
          perror("read_24bit_samps (malloc)");
@@ -377,7 +396,7 @@ read_short_samps(
    bytes_per_samp = 2;         /* short int */
 
    if (sbuf == NULL) {     /* 1st time, so allocate interleaved short buffer */
-      sbuf = (short *) malloc((size_t) RTBUFSAMPS * MAXCHANS * bytes_per_samp);
+      sbuf = (short *) malloc((size_t) RTcmix::bufsamps() * MAXCHANS * bytes_per_samp);
       if (sbuf == NULL) {
          perror("read_short_samps (malloc)");
          exit(1);
@@ -480,9 +499,9 @@ read_samps(
 }
 
 
-/* ---------------------------------------------------------- get_file_in --- */
-static int
-get_file_in(
+/* ---------------------------RTcmix::readFromInputFile [was get_file_in ]--- */
+void
+RTcmix::readFromInputFile(
       BufPtr      dest,             /* interleaved buffer from inst */
       int         dest_chans,       /* number of chans interleaved */
       int         dest_frames,      /* frames in interleaved buffer */
@@ -491,37 +510,38 @@ get_file_in(
       int		  fdIndex,			/* index into input file desc. array */
 	  off_t		  *pFileOffset)		/* ptr to inst's file offset (updated) */
 {
-   int   status, fd, data_format, bytes_per_samp, file_chans;
+   int   status;
 
 #ifndef IGNORE_BUS_COUNT_FOR_FILE_INPUT
    assert(dest_chans >= src_chans);
 #endif
 
    /* File opened by earlier call to rtinput. */
-   fd = inputFileTable[fdIndex].fd;
-   file_chans = inputFileTable[fdIndex].chans;
+   int fd = inputFileTable[fdIndex].fd;
+   const int file_chans = inputFileTable[fdIndex].chans;
+   const int data_format = inputFileTable[fdIndex].data_format;
+   const int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(data_format);
+
    assert(file_chans <= MAXCHANS);
    assert(file_chans >= dest_chans);
-   data_format = inputFileTable[fdIndex].data_format;
-   bytes_per_samp = mus_data_format_to_bytes_per_sample(data_format);
 
    if (lseek(fd, *pFileOffset, SEEK_SET) == -1) {
-      perror("get_file_in (lseek)");
+      perror("RTcmix::readFromInputFile (lseek)");
       exit(1);
    }
 
    if (inputFileTable[fdIndex].is_float_format) {
-      status = read_float_samps(fd, data_format, file_chans,
+      status = ::read_float_samps(fd, data_format, file_chans,
                                 dest, dest_chans, dest_frames,
                                 src_chan_list, src_chans);
    }
    else if (IS_24BIT_FORMAT(data_format)) {
-      status = read_24bit_samps(fd, data_format, file_chans,
+      status = ::read_24bit_samps(fd, data_format, file_chans,
                                 dest, dest_chans, dest_frames,
                                 src_chan_list, src_chans);
    }
    else {
-      status = read_short_samps(fd, data_format, file_chans,
+      status = ::read_short_samps(fd, data_format, file_chans,
                                 dest, dest_chans, dest_frames,
                                 src_chan_list, src_chans);
    }
@@ -532,7 +552,7 @@ get_file_in(
    */
    *pFileOffset += dest_frames * file_chans * bytes_per_samp;
 
-   return status;
+//   return status;
 }
 
 
@@ -550,43 +570,41 @@ Instrument::rtgetin(float		*inarr,  /* interleaved array of <inputchans> */
         			Instrument	*inst,
         			int			nsamps)         /* samps, not frames */
 {
-   int   frames, status, fdindex;
-   int   inchans = inst->inputchans;    /* total in chans inst expects */
+   const int inchans = inst->inputChannels();    /* total in chans inst expects */
    const BusSlot *bus_config = inst->getBusSlot();
-   short in_count = bus_config->in_count;
-   short auxin_count = bus_config->auxin_count;
+   const short in_count = bus_config->in_count;
+   const int fdindex = inst->_input.fdIndex;
+   const int frames = nsamps / inchans;
 
    assert(inarr != NULL);
 
-   fdindex = inst->fdIndex;
-
-   frames = nsamps / inchans;
-
-   if (frames > RTBUFSAMPS) {
+   if (frames > RTcmix::bufsamps()) {
       die(inst->name(), "Internal Error: rtgetin: nsamps out of range!");
+	  return -1;
    }
 
    if (fdindex == NO_DEVICE_FDINDEX) {               /* input from aux buses */
       const short *auxin = bus_config->auxin;        /* auxin channel list */
+      const short auxin_count = bus_config->auxin_count;
 
-      assert(auxin_count > 0 && in_count == 0);
+      assert(auxin_count > 0);
 
-      status = get_aux_in(inarr, inchans, frames, auxin, auxin_count, inst->output_offset);
+      RTcmix::readFromAuxBus(inarr, inchans, frames, auxin, auxin_count, inst->output_offset);
    }
-   else if (inputFileTable[fdindex].is_audio_dev) {  /* input from mic/line */
+   else if (RTcmix::isInputAudioDevice(fdindex)) {  /* input from mic/line */
       const short *in = bus_config->in;              /* in channel list */
 
-      assert(in_count > 0 && auxin_count == 0);
+      assert(in_count > 0);
 
-      status = get_audio_in(inarr, inchans, frames, in, in_count, inst->output_offset);
+      RTcmix::readFromAudioDevice(inarr, inchans, frames, in, in_count, inst->output_offset);
    }
    else {                                            /* input from file */
       const short *in = bus_config->in;              /* in channel list */
 
-      assert(in_count > 0 && auxin_count == 0);
+      assert(in_count > 0);
 
-      status = get_file_in(inarr, inchans, frames, in, in_count,
-	  					   inst->fdIndex, &inst->fileOffset);
+      RTcmix::readFromInputFile(inarr, inchans, frames, in, in_count,
+	  				            fdindex, &inst->_input.fileOffset);
    }
 
    return nsamps;   // this seems pointless, but no insts pay attention anyway

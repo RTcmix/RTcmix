@@ -2,26 +2,23 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-#include <globals.h>
+#include <RTcmix.h>
+#include <Instrument.h>
 #include <ugens.h>
-#include <iostream.h>
-#include "Instrument.h"
-#include "rtdefs.h"
-#include "dbug.h"
-#include <stdlib.h>
 
 int Instrument::rtsetoutput(float start, float dur, Instrument *theInst)
 {
-	if (rtfileit < 0) {
-		die(theInst->name(),
-					"No output file open for this instrument (rtoutput failed?)!");
-		return -1;
-	}
+  // DS: Adding check to be sure rtoutput() did not fail.
 
-	theInst->_start = start;
-	theInst->_dur = dur;
-	theInst->nsamps = (int) (dur * SR + 0.5);
-
-	return 0;
+  if (!RTcmix::outputOpen()) {
+  	 die(theInst->name(),
+		 "rtsetoutput: No output open for this instrument (rtoutput failed?)!");
+	 return 0;
+  }
+  
+  theInst->_start = start;
+  theInst->_dur = dur;
+  theInst->nsamps = (int)(0.5 + dur * RTcmix::sr());
+  
+  return theInst->nsamps;
 }
-

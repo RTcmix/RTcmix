@@ -13,7 +13,8 @@
 class BusSlot : public RefCounted, public Lockable {
 public:
 	BusSlot();
-	inline IBusClass Class() const;
+	inline		IBusClass Class() const;
+	inline 	   short * getBusList(BusType type, int *busCount);
 	BusSlot    *next;
 	BusSlot    *prev;
 	short      in_count;
@@ -42,6 +43,19 @@ BusSlot::Class() const
   if (out_count > 0)
 	return TO_OUT;
   return UNKNOWN;
+}
+
+inline short * 
+BusSlot::getBusList(BusType type, int *busCount)
+{
+	if (type == BUS_AUX_OUT) {
+		*busCount = auxout_count;
+		return auxout;
+	}
+	else {	// type == BUS_OUT
+		*busCount = out_count;
+		return out;
+	}
 }
 
 #endif	// _BUSSLOT_H_

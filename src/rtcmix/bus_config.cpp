@@ -10,7 +10,7 @@
 #include <ugens.h>
 #include <bus.h>
 #include "BusSlot.h"
-#include <globals.h>
+#include <RTcmix.h>
 #include <prototypes.h>
 #include <lock.h>
 #include <Option.h>
@@ -91,41 +91,15 @@ struct CheckQueue {
    CheckQueue *next;
 };
 
-/* List of lists of BusSlots used by Insts to get their bus_config setup */
-static BusQueue *Inst_Bus_Config;
-
-/* Flag to tell us if we've gotten any configs */
-/* Used to initialize Bus_In_Config inside check_bus_inst_config */
-static Bool Bus_Config_Status = NO;
-
-/* Bus graph, parsed by check_bus_inst_config */
-/* Allows loop checking ... and buffer playback order? */
-static CheckNode *Bus_In_Config[MAXBUS];
-
-/* Global private arrays */
-static Bool HasChild[MAXBUS];
-static Bool HasParent[MAXBUS];
-static Bool AuxInUse[MAXBUS];
-static Bool AuxOutInUse[MAXBUS];
-static Bool OutInUse[MAXBUS];
-static short RevPlay[MAXBUS];
 
 /* Prototypes (in order)------------------------------------------------------*/
 static int strtoint(char*, int *);  /* Helper */
 static void print_bus_slot(BusSlot *);  /* Debugging */
-static ErrCode print_inst_bus_config();
-static void print_parents();
-static void print_children();
-static void print_play_order();
-static ErrCode check_bus_inst_config(BusSlot*, Bool);  /* Graph parsing, insertion */
-static ErrCode insert_bus_slot(char*, BusSlot*);
 static void bf_traverse(int, Bool);
 static void create_play_order();
-static ErrCode parse_bus_chan(char*, int*, int*); /* Input processing */
-extern "C" double bus_config(float*, int, double*);
 
 /* ------------------------------------------------------------- strtoint --- */
-static INLINE int
+static inline int
 strtoint(char *str, int *num)
 {
    long  along;
@@ -144,8 +118,8 @@ strtoint(char *str, int *num)
 }
 
 /* ------------------------------------------------------- print_parents -----*/
-static void
-print_parents() {
+void
+RTcmix::print_parents() {
   int i;
   printf("Aux buses w/o aux inputs:  "); 
   for(i=0;i<MAXBUS;i++) {
@@ -163,8 +137,8 @@ print_parents() {
 }
 
 /* ------------------------------------------------------ print_children -----*/
-static void
-print_children() {
+void
+RTcmix::print_children() {
   int i;
   printf("Aux buses w/o aux outputs:  "); 
   for(i=0;i<MAXBUS;i++) {
@@ -204,8 +178,8 @@ print_bus_slot(BusSlot *bs)
 
 /* ----------------------------------------------------- print_bus_config --- */
 /* Prints config from Inst. point of view */
-static ErrCode
-print_inst_bus_config() {
+ErrCode
+RTcmix::print_inst_bus_config() {
    BusQueue *qEntry;
    BusSlot *check_slot;
 
@@ -233,8 +207,8 @@ print_inst_bus_config() {
 }
 
 /* ----------------------------------------------------- print_play_order --- */
-static void
-print_play_order() {
+void
+RTcmix::print_play_order() {
   int i;
   printf("Output buffer playback order:  ");
   for(i=0;i<MAXBUS;i++) {
@@ -250,8 +224,8 @@ print_play_order() {
 /* ------------------------------------------------ check_bust_inst_config -- */
 /* Parses bus graph nodes */
 
-static ErrCode
-check_bus_inst_config(BusSlot *slot, Bool visit) {
+ErrCode
+RTcmix::check_bus_inst_config(BusSlot *slot, Bool visit) {
 	int i,j,aux_ctr,out_ctr;
 	short *in_check_list;
 	short in_check_count;
@@ -380,8 +354,8 @@ check_bus_inst_config(BusSlot *slot, Bool visit) {
 /* Also inserts into bus graph */
 /* Special case when called by bf_traverse->check_bus_inst_config-> */
 /*     s_in set to 333 and filtered out below */
-static ErrCode
-insert_bus_slot(char *name, BusSlot *slot) {
+ErrCode
+RTcmix::insert_bus_slot(char *name, BusSlot *slot) {
   
 	short i,j,t_in_count,s_in,s_out;
 
@@ -481,8 +455,8 @@ insert_bus_slot(char *name, BusSlot *slot) {
 /* ----------------------------------------------------- bf_traverse -------- */
 /* sets fictitious parent node to 333 */
 /* filtered out in insert() */
-static void
-bf_traverse(int bus, Bool visit) {
+void
+RTcmix::bf_traverse(int bus, Bool visit) {
 #ifdef PRINTPLAY
   printf("entering bf_traverse(%d)\n", bus);
 #endif
@@ -499,7 +473,8 @@ bf_traverse(int bus, Bool visit) {
 }
 
 /* ----------------------------------------------------- create_play_order -- */
-static void create_play_order() {
+void
+RTcmix::create_play_order() {
   int i,j;
   Bool visit = YES;
   short aux_p_count = 0;
@@ -555,7 +530,7 @@ static void create_play_order() {
    match, return a pointer to the default node.
 */
 BusSlot *
-get_bus_config(const char *inst_name)
+RTcmix::get_bus_config(const char *inst_name)
 {
    BusSlot  *slot, *default_bus_slot;
    BusQueue *q;
@@ -565,6 +540,8 @@ get_bus_config(const char *inst_name)
    assert(inst_name != NULL);
 
    slot = NULL;
+
+   Lock lock(&bus_slot_lock);	// unlocks when out of scope
 
    /* Maybe also need to lock q since it's accessing a BusSlot */
    /* that intraverse might also be checking? */
@@ -646,6 +623,24 @@ get_bus_config(const char *inst_name)
    return default_bus_slot;
 }
 
+/* ------------------------------------------------------- addToBus --------- */
+/* This is called by each instrument during addout() to mix itself into bus. */
+
+void
+RTcmix::addToBus(BusType type, int bus, BufPtr src, int offset, int endfr, int chans)
+{
+	register BufPtr dest = (type == BUS_AUX_OUT) ? 
+								aux_buffer[bus] : out_buffer[bus];
+	assert(dest != NULL);
+
+	// FIXME: pthread_mutex_lock dest buffer
+	for (int frame = offset; frame < endfr; frame++) {
+		dest[frame] += *src;
+		src += chans;
+	}
+	// FIXME: pthread_mutex_unlock dest buffer
+}
+
 /* ------------------------------------------------------- parse_bus_chan --- */
 static ErrCode
 parse_bus_chan(char *numstr, int *startchan, int *endchan)
@@ -708,10 +703,11 @@ parse_bus_name(char *busname, BusType *type, int *startchan, int *endchan)
    return status;
 }
 
-// D.S. This is now a C++ function declared extern "C"
+// D.S. This is now a static function
 
 /* ----------------------------------------------------------- bus_config --- */
-double bus_config(float p[], int n_args, double pp[])
+double 
+RTcmix::bus_config(float p[], int n_args, double pp[])
 {
    ErrCode     err;
    int         i, j, k, anint, startchan, endchan;

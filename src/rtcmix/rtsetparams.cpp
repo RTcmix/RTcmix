@@ -7,13 +7,13 @@
    (Linux code). Reworked for v2.3 by John Gibson.
    Reworked to use new AudioDevice code for v3.7 by Douglas Scott.
 */
+#include <RTcmix.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <math.h>
 #include <errno.h>
 #include <assert.h>
-#include <globals.h>
 #include "audio_devices.h"
 #include <ugens.h>
 #include <Option.h>
@@ -32,7 +32,7 @@
    for each of the output channels, and opens output devices.
 */
 double
-rtsetparams(float p[], int n_args, double pp[])
+RTcmix::rtsetparams(float p[], int n_args, double pp[])
 {
    int         i, status;
    int         verbose = get_print_option();

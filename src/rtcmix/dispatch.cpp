@@ -2,7 +2,7 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for 
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-#include <globals.h>
+#include <RTcmix.h>
 #include <prototypes.h>
 #include <ugens.h>
 #include <maxdispargs.h>
@@ -10,7 +10,7 @@
 #include <stdio.h>
 
 int
-dispatch(const char *func_label, const Arg arglist[], const int nargs, Arg *retval)
+RTcmix::dispatch(const char *func_label, const Arg arglist[], const int nargs, Arg *retval)
 {
    /* Search non-rt and rt function lists for a match with <func_label>.
       If there is a match of either, checkfunc or checkInsts will call
@@ -51,7 +51,7 @@ dispatch(const char *str, double *pp, int n_args, void **inst)
 	  rtcmixargs[i] = pp[i];
 	}
 
-	int status = dispatch(str, rtcmixargs, n_args, &retarg);
+	int status = RTcmix::dispatch(str, rtcmixargs, n_args, &retarg);
 	
 	// Handle state returned from dispatch()
 	
@@ -96,6 +96,6 @@ double parse_dispatch(const char *str, double *pp, int n_args, void **inst)
 extern "C" {
 int perl_dispatch(const char *str, const Arg args[], int n_args, Arg *retarg)
 {
-	return dispatch(str, args, n_args, retarg);
+	return RTcmix::dispatch(str, args, n_args, retarg);
 }
 };

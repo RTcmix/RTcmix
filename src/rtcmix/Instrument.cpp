@@ -9,6 +9,7 @@
 #include <pthread.h>
 #include <iostream.h>
 #include "Instrument.h"
+#include <RTcmix.h>
 #include "rt.h"
 #include "rtdefs.h"
 #include <notetags.h>
@@ -22,14 +23,30 @@
 #include <PFieldSet.h>
 #include <maxdispargs.h>
 
+InputState::InputState()
+	: fdIndex(NO_DEVICE_FDINDEX), fileOffset(0), inputsr(0.0), inputchans(0)
+{
+}
+
+int				Instrument::RTBUFSAMPS = 0;
+int				Instrument::NCHANS = 0;
+float			Instrument::SR     = 0;
+pthread_mutex_t Instrument::endsamp_lock = PTHREAD_MUTEX_INITIALIZER;
+
 /* ----------------------------------------------------------- Instrument --- */
 Instrument::Instrument()
 	: _start(0.0), _dur(0.0), cursamp(0), chunksamps(0), i_chunkstart(0),
-	  endsamp(0), nsamps(0), output_offset(0), fdIndex(NO_DEVICE_FDINDEX),
-	  fileOffset(0), inputsr(0.0), inputchans(0), outputchans(0), _name(NULL)
+	  endsamp(0), nsamps(0), output_offset(0), outputchans(0), _name(NULL)
 {
    int i;
 
+   // Here we initialize the Instrument class globals (over and over, I know)
+   // which replace the old system globals
+   
+   NCHANS = RTcmix::chans();
+   SR = RTcmix::sr();
+   RTBUFSAMPS = RTcmix::bufsamps();
+   
 #ifdef RTUPDATE
    for(i = 0; i < MAXNUMPARAMS; ++i)
    {
@@ -108,13 +125,11 @@ void Instrument::set_bus_config(const char *inst_name)
 {
   setName(inst_name);
 
-  pthread_mutex_lock(&bus_slot_lock);
-  _busSlot = ::get_bus_config(inst_name);
+  _busSlot = RTcmix::get_bus_config(inst_name);
   _busSlot->ref();		// add our reference to this
   
-  inputchans = _busSlot->in_count + _busSlot->auxin_count;
+  _input.inputchans = _busSlot->in_count + _busSlot->auxin_count;
   outputchans = _busSlot->out_count + _busSlot->auxout_count;
-  pthread_mutex_unlock(&bus_slot_lock);
 }
 
 double Instrument::s_dArray[MAXDISPARGS];
@@ -241,34 +256,27 @@ int Instrument::run(bool needsTo)
 
 void Instrument::schedule(heap *rtHeap)
 {
-  int nsamps,startsamp,endsamp;
-  int heapSize;
-  int curslot;
-  float start,dur;
-
   // Calculate variables for heap insertion
-  dur = getdur();
-  nsamps = (int) (dur * SR + 0.5);
+  float dur = getdur();
+  int nsamps = (int) (0.5 + dur * SR);	// Rounded to nearest - DS
   //  cout << "nsamps = " << nsamps << endl;
   
-  start = getstart();
-  startsamp = (int) (start*SR);
+  float start = getstart();
+  int startsamp = (int) (0.5 + start * SR);	// Rounded to nearest - DS
   
-  if (rtInteractive) {
+  if (RTcmix::interactive()) {
 #ifdef RTUPDATE
-	_startOffset = (elapsed + RTBUFSAMPS);
+	_startOffset = RTcmix::getElapsedFrames();
 #endif
   	// Adjust start frame based on elapsed frame count
-  	startsamp += (elapsed + RTBUFSAMPS);
+  	startsamp += RTcmix::getElapsedFrames();
   }
   
-  endsamp = startsamp+nsamps;
-  setendsamp(endsamp);  // used by traverse.C
+  int endsamp = startsamp+nsamps;
+  setendsamp(endsamp);  // used by intraverse.cpp
   
   // place instrument into heap
   rtHeap->insert(this, startsamp);
-  
-  // printf("Instrument::schedule(): %d\n", heapSize);
 }
 
 /* ----------------------------------------------------------------- exec --- */
@@ -349,20 +357,10 @@ void Instrument::addout(BusType bus_type, int bus)
 {
    int      samp_index, endframe, src_chan, buses;
    short    *bus_list;
-   BufPtr   src, dest;
 
    assert(bus >= 0 && bus < MAXBUS);
 
-   if (bus_type == BUS_AUX_OUT) {
-      dest = aux_buffer[bus];
-      buses = _busSlot->auxout_count;
-      bus_list = _busSlot->auxout;
-   }
-   else {       /* BUS_OUT */
-      dest = out_buffer[bus];
-      buses = _busSlot->out_count;
-      bus_list = _busSlot->out;
-   }
+   bus_list = _busSlot->getBusList(bus_type, &buses);
 
    src_chan = -1;
    for (int i = 0; i < buses; i++) {
@@ -373,19 +371,14 @@ void Instrument::addout(BusType bus_type, int bus)
    }
 
    assert(src_chan != -1);
-   assert(dest != NULL);
 
    endframe = output_offset + chunksamps;
-   samp_index = src_chan;
 
-// FIXME: pthread_mutex_lock dest buffer
-
-   for (int frame = output_offset; frame < endframe; frame++) {
-      dest[frame] += outbuf[samp_index];
-      samp_index += outputchans;
-   }
-
-// FIXME: pthread_mutex_unlock dest buffer
+   // Add outbuf to appropriate bus at offset
+	
+   RTcmix::addToBus(bus_type, bus,
+					 &outbuf[src_chan], output_offset,
+					 endframe, outputchans);
 
    /* Show exec() that we've written this chan. */
    bufstatus[src_chan] = 1;
@@ -408,33 +401,12 @@ void Instrument::setendsamp(int end)
 void Instrument::gone()
 {
 #ifdef DEBUG
-   printf("Instrument::gone(this=0x%x): index %d refcount = %d\n",
-          this, fdIndex, inputFileTable[fdIndex].refcount);
+   printf("Instrument::gone(this=0x%x): index %d\n", this, _input.fdIndex);
 #endif
 
-   // BGG -- added this to prevent file closings in interactive mode
-   // we don't know if a file will be referenced again in the future
-   if (!rtInteractive) {
-      if (fdIndex >= 0 && --inputFileTable[fdIndex].refcount <= 0) {
-         if (inputFileTable[fdIndex].fd > 0) {
-#ifdef DEBUG
-            printf("\tclosing fd %d\n", inputFileTable[fdIndex].fd);
-#endif
-            mus_file_close(inputFileTable[fdIndex].fd);
-         }
-         if (inputFileTable[fdIndex].filename);
-            free(inputFileTable[fdIndex].filename);
-         inputFileTable[fdIndex].filename = NULL;
-         inputFileTable[fdIndex].fd = NO_FD;
-         inputFileTable[fdIndex].header_type = MUS_UNSUPPORTED;
-         inputFileTable[fdIndex].data_format = MUS_UNSUPPORTED;
-         inputFileTable[fdIndex].is_float_format = 0;
-         inputFileTable[fdIndex].data_location = 0;
-         inputFileTable[fdIndex].srate = 0.0;
-         inputFileTable[fdIndex].chans = 0;
-         inputFileTable[fdIndex].dur = 0.0;
-         fdIndex = NO_DEVICE_FDINDEX;
-      }
+   if (_input.fdIndex >= 0) {
+      RTcmix::releaseInput(_input.fdIndex);
+      _input.fdIndex = NO_DEVICE_FDINDEX;
    }
 }
 

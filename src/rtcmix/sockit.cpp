@@ -14,9 +14,8 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
-//#include <sys/time.h>
 
-#include <globals.h>
+#include <RTcmixMain.h>
 #include <prototypes.h>
 #include <Option.h>
 #include "rtdefs.h"
@@ -26,14 +25,11 @@
 #include "notetags.h"
 
 // #define DBUG
+// #define ALLBUG
 
-extern "C" {
-  void *sockit(void*)
-  {
-
-//     double buftime,sec,usec;
-//     struct timeval tv;
-//     struct timezone tz;
+void *
+RTcmixMain::sockit(void *arg)
+{
     char ttext[MAXTEXTARGS][512];
     int i,tmpint;
 
@@ -53,10 +49,6 @@ extern "C" {
     int ntag,pval;
 	Bool audio_configured = NO;
 
-    // tz.tz_minuteswest = 0;
-    // tz.tz_dsttime = DST_NONE;
-
-    // timerclear(&tv);
     /* create the socket for listening */
 
 #ifdef DBUG
@@ -77,6 +69,7 @@ extern "C" {
     sss.sin_family = AF_INET;
     sss.sin_addr.s_addr = INADDR_ANY;
     // socknew is offset from MYPORT to allow more than one inst
+    if (noParse) {}	
     sss.sin_port = htons(MYPORT+socknew);
 
     err = bind(s, (struct sockaddr *)&sss, sizeof(sss));
@@ -144,7 +137,7 @@ extern "C" {
 			  sinfo->data.p[i] = (double)tmpint;
 			}
 		  }
-		  (void) dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
+		  (void) ::dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
 		}
 		
 		if (audio_configured && rtInteractive) {
@@ -153,9 +146,6 @@ extern "C" {
 		}
 		
 	  }
-
-// 	  buftime = (double)RTBUFSAMPS/SR;
-//       cout << "buftime:  " << buftime << endl;
 
       // Main socket reading loop
       while(1) {
@@ -216,28 +206,10 @@ extern "C" {
 		}
 		else {
 	
-// 		  gettimeofday(&tv, &tz);
-// 		  sec = (double)tv.tv_sec;
-// 		  usec = (double)tv.tv_usec;
-// 		  pthread_mutex_lock(&schedtime_lock);
-// 		  schedtime = (((sec * 1e6) + usec) - baseTime) * 1e-6;
-// 		  schedtime += ((double)elapsed/(double)SR);
-// 		  schedtime += buftime;
-// 		  pthread_mutex_unlock(&schedtime_lock);
-	  
 #ifdef DBUG
-// 		  cout << "sockit(): schedtime = " << schedtime << endl;
-// 		  cout << "sockit(): buftime = " << buftime << endl;
-// 		  cout << "sockit(): baseTime = " << baseTime << endl;
 		  cout << "sockit(): elapsed = " << elapsed << endl;
 		  cout << "sockit(): SR = " << SR << endl;
 #endif
-	  
-		  // schedtime is accessed in rtsetoutput() to
-		  // set the current time.  Plus, in interactive
-		  // mode we have to run a slight delay from
-		  // "0" or we wind up scheduling events in the past.
-	  
 		  if(sinfo->name) {
 #ifdef ALLBUG
 			cout << "SOCKET RECIEVED\n";
@@ -247,7 +219,7 @@ extern "C" {
 			  cout << "sinfo->data.p[" << i << "] =" << sinfo->data.p[i] << endl;
 			}
 #endif
-			(void) dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
+			(void) ::dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
 	    
 		  }
 		}
@@ -256,5 +228,4 @@ extern "C" {
 #ifdef DBUG
     cout << "EXITING sockit() FUNCTION **********\n";
 #endif
-  }
 }

@@ -1,6 +1,7 @@
 include ../../../makefile.conf
 
 INCLUDES += -I.. -I../../include -I$(INCLUDEDIR)
+SRCS = heap.cpp queue.cpp rtQueue.cpp
 OBJS = heap.o queue.o rtQueue.o
 PROG = rtHeap.o
 
@@ -12,4 +13,14 @@ $(PROG): $(OBJS)
 clean:
 	$(RM) $(PROG) $(OBJS)
 
-$(OBJS): ../rtdefs.h ../rt.h ../Instrument.h heap.h ../RefCounted.h ../Lockable.h
+depend:
+ifeq ($(ARCH),LINUX)
+	-$(SHELL) -ec '$(CC) -M $(CFLAGS) $(SRCS)' > depend
+endif
+ifeq ($(ARCH),SGI)
+# Note: -MM is a gcc extension. If no gcc, use -M.
+# # Unfortunately, this doesn't work...   -JGG
+# #   $(SHELL) -ec '$(CC) -M $(CFLAGS) $(SRCS)' > depend
+endif
+
+-include depend

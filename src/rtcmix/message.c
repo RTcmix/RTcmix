@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <globals.h>
+#include <rtdefs.h>
 #include <prototypes.h>
 #include <ugens.h>
 #include <Option.h>
@@ -104,7 +105,7 @@ die(const char *inst_name, const char *format, ...)
       fprintf(stderr, PREFIX "FATAL ERROR:  %s\n", buf);
 
    if (get_bool_option(kOptionExitOnError)) {
-      if (rtsetparams_called)
+      if (rtsetparams_was_called())
          rtcloseout();
       else
          closesf_noexit();

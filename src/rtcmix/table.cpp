@@ -12,6 +12,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <RTcmix.h>
 #include <rtcmix_types.h>
 #include <prototypes.h>
 #include <byte_routines.h>
@@ -331,7 +332,7 @@ _sndfile_table(const Arg args[], const int nargs, double **array, int *len)
 	if (fd == -1)
 		return die("maketable (sndfile)", "Can't open input file \"%s\".", fname);
 
-	if (srate != SR)
+	if (srate != RTcmix::sr())
 		warn("maketable (sndfile)", "The input file sampling rate is %g, but "
 			  "the output rate is currently %g.", srate, SR);
 

@@ -2,7 +2,7 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-#include <globals.h>
+#include <RTcmix.h>
 #include <ugens.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -159,8 +159,8 @@ header_type_from_filename(char *fname)
 
 
 /* -------------------------------------------------- parse_rtoutput_args --- */
-static int
-parse_rtoutput_args(int nargs, double pp[])
+int
+RTcmix::parse_rtoutput_args(int nargs, double pp[])
 {
    int   anint, i, j, matched;
    int   normfloat_requested;
@@ -279,7 +279,7 @@ parse_rtoutput_args(int nargs, double pp[])
    is any other error.
 */
 double
-rtoutput(float p[], int n_args, double pp[])
+RTcmix::rtoutput(float p[], int n_args, double pp[])
 {
    int         error;
    struct stat statbuf;

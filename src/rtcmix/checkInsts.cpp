@@ -2,7 +2,7 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for 
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-#include <globals.h>
+#include <RTcmix.h>
 #include <prototypes.h>
 #include <maxdispargs.h>
 #include <pthread.h>
@@ -19,12 +19,10 @@
 #include <assert.h>
 #include <Option.h>
 
-extern heap rtHeap;     // intraverse.C
-
 //#define DEBUG
 
 static void
-_printargs(const char *instname, const Arg arglist[], const int nargs)
+printargs(const char *instname, const Arg arglist[], const int nargs)
 {
    int i;
    Arg arg;
@@ -42,7 +40,7 @@ _printargs(const char *instname, const Arg arglist[], const int nargs)
 
 
 double
-checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retval)
+RTcmix::checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retval)
 {
 // FIXME: set this up as in addcheckfuncs, so that the guts of the
 // instrument name list are not exposed here.  -JGG
@@ -62,7 +60,7 @@ checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retv
      
       if (strcmp(rt_p->rt_name, instname) == 0) {
 
-         _printargs(instname, arglist, nargs);
+         ::printargs(instname, arglist, nargs);
 
          /* set up the Instrument */
          
@@ -109,7 +107,7 @@ checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retv
 		}
 
         /* schedule instrument */
-        Iptr->schedule(&rtHeap);
+        Iptr->schedule(rtHeap);
 
         mixerr = MX_NOERR;
         rt_list = rt_temp;

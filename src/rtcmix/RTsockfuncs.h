@@ -5,8 +5,6 @@
    interface programming (located in RTsockfuncs.c; link in RTsockfuncs.o
    to compile) */
 
-#include "sockdefs.h"
-
 int newRTsock(char *ihost, int rtsno);
 
 int RTsock(char *ihost, int rtsno);
@@ -29,9 +27,9 @@ void RTprintsockstr(struct sockdata *ssend);
 
 void RTsendsockstr(int theSock, struct sockdata *sockstr);
 
-RTsockstr *newRTsockstr(char *name, int);
+struct sockdata *newRTsockstr(char *name, int);
 
-RTsockstr *RTnewsockstr(char *name);
+struct sockdata *RTnewsockstr(char *name);
 
 void RTtimeit(float interval, void *func);
 
