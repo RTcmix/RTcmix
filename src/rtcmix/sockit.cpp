@@ -144,8 +144,8 @@ extern "C" {
 		}
 		
 		if (audio_configured && rtInteractive) {
-		  if (print_is_on)
-			cout << "sockit():  audio set.\n";
+			if (print_is_on)
+				cout << "sockit():  audio set.\n";
 		}
 		
 	  }
@@ -192,7 +192,11 @@ extern "C" {
 		}
 
 		else if ( (strcmp(sinfo->name, "RTcmix_off") == 0) ) {
+			printf("RTcmix termination cmd received.\n");
 			rtInteractive = 0;
+			sleep(1);
+ 			shutdown(s,0);
+			exit(0);
 		}
 		else {
 	

@@ -449,6 +449,7 @@ extern "C" {
 	}
 
 	cout << "\n";
+	exit(0);
 #ifdef ALLBUG
 	cout << "EXITING inTraverse() FUNCTION *****\n";
 	exit(1);
