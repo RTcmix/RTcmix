@@ -1,9 +1,9 @@
 // AudioIODevice.cpp
 
 #include "AudioIODevice.h"
+#include <ugens.h>
 #include <assert.h>
 #include <string.h>
-#include <stdio.h>
  
 // This subclass is designed to allow two independent AudioDevice instances
 // to function and be controlled as a single unit.  This allows systems which
@@ -55,7 +55,6 @@ int AudioIODevice::open(int mode, int sampfmt, int chans, double sr)
 		inmode = Record;
 		outmode = Playback | Passive;
 	}
-//	printf("AudioIODevice::open: opening input and output devices\n");
 	int status = _inputDevice->open(inmode, sampfmt, chans, sr);
 	if (status == 0)
 		status = _outputDevice->open(outmode, sampfmt, chans, sr);
@@ -73,7 +72,6 @@ int AudioIODevice::close()
 int AudioIODevice::start(Callback *runCallback)
 {
 	int status = 0;
-//	printf("AudioIODevice::start: starting input and output devices\n");
 	if ((status = getPassiveDevice()->start(0, 0)) == 0)
 		status = getActiveDevice()->start(runCallback);
 	return status;
@@ -117,11 +115,37 @@ int AudioIODevice::setFormat(int fmt, int chans, double srate)
 	return status;
 }
 
+// This is tricky:  If the output device resets the queue size, we pass that to
+// the input device.  If it resets it again, we must repeat the sequence until
+// they either agree or there is an error.
+
 int AudioIODevice::setQueueSize(int *pWriteSize, int *pCount)
 {
-	int status = _outputDevice->setQueueSize(pWriteSize, pCount);
-	if (status == 0)
-		status = _inputDevice->setQueueSize(pWriteSize, pCount);
+	int status;
+	int queueSize = *pWriteSize;
+	bool queuesAgree = true;
+	do {
+		int oldQueueSize = queueSize;
+		status = _outputDevice->setQueueSize(&queueSize, pCount);
+		if (status == 0) {
+			// If this happens, we have already tried setting 
+			if (!queuesAgree && (queueSize != oldQueueSize)) {
+				rterror(NULL, "Cannot reconcile input and output queue sizes");
+				return -1;
+			}
+			oldQueueSize = queueSize;
+			if ((status = _inputDevice->setQueueSize(&queueSize, pCount)) == 0)
+			{
+				if (!(queuesAgree = (queueSize == oldQueueSize))) {
+					if (queueSize > oldQueueSize)
+						queueSize = *pWriteSize * 2;
+					else 
+						queueSize = *pWriteSize / 2;
+				}
+			}
+		}
+	} while (status == 0 && !queuesAgree);
+	*pWriteSize = queueSize;
 	return status;
 }
 
