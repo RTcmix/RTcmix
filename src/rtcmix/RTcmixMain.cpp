@@ -1,0 +1,634 @@
+/* RTcmix  - Copyright (C) 2004  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+#include <signal.h>
+#include <stdlib.h>
+#include <iostream.h>
+#ifdef linux
+#include <unistd.h>
+#endif
+
+#include <RTcmixMain.h>
+#include <Option.h>
+#include <version.h>
+#include <ugens.h>
+#include <ug_intro.h>
+#include <prototypes.h>
+#include "../parser/rtcmix_parse.h"
+#include <sockdefs.h>
+
+#ifdef NETAUDIO
+extern int setnetplay(char *, char *);    // in setnetplay.cpp
+#endif
+
+/* ---------------------------------------------------------------- usage --- */
+static void
+usage()
+{
+   printf("\n"
+      "Usage:  CMIX [options] [arguments] < minc_script.sco\n"
+      "\n"
+      "   or, to use Perl instead of Minc:\n"
+      "        PCMIX [options] [arguments] < perl_script.pl\n"
+      "   or:\n"
+      "        PCMIX [options] perl_script.pl [arguments]\n"
+      "\n"
+      "   or, to use Python:\n"
+      "        PYCMIX [options] [arguments] < python_script.py\n"
+      "\n"
+      "        options:\n"
+      "           -i       run in interactive mode\n"
+      "           -n       no init script (interactive mode only)\n"
+      "           -o NUM   socket offset (interactive mode only)\n"
+      "           -c       enable continuous control (rtupdates)\n"
+#ifdef LINUX
+      "           -p NUM   set process priority to NUM (as root only)\n"
+#endif
+#ifdef NETAUDIO
+      "           -k NUM   socket number (netplay)\n"
+      "           -r NUM   remote host ip (or name for netplay)\n"
+#endif
+      "          NOTE: -s, -d, and -e are not yet implemented\n"
+      "           -s NUM   start time (seconds)\n"
+      "           -d NUM   duration (seconds)\n"
+      "           -e NUM   end time (seconds)\n"
+      "           -f NAME  read score from NAME instead of stdin\n"
+      "                      (Minc and Python only)\n"
+      "           --debug  enter parser debugger (Perl only)\n"
+      "           -q       quiet -- suppress print to screen\n"
+      "           -Q       really quiet -- not even peak stats\n"
+      "           -h       this help blurb\n"
+      "        Other options, and arguments, passed on to parser.\n\n");
+   exit(1);
+}
+
+extern "C" {
+  int profile();
+  void rtprofile();
+	// I don't call the profiles here, because dead-time instruments
+	// won't be compiled into the object file unless they are present at
+	// the build (i.e. they aren't DSO's).  RT instruments have the
+	// rtprofile() called when they get loaded.  Go Doug, go!
+}
+
+// RTcmixMain is the derived RTcmix class called by main()
+
+// Private static state
+
+int 			RTcmixMain::xargc;
+char *			RTcmixMain::xargv[MAXARGS + 1];
+int				RTcmixMain::interrupt_handler_called = 0;
+int				RTcmixMain::signal_handler_called = 0;
+
+int				RTcmixMain::noParse         = 0;
+int				RTcmixMain::socknew			= 0;
+#ifdef NETAUDIO
+int				RTcmixMain::netplay 		= 0;	// for remote sound network playing
+#endif
+
+RTcmixMain::RTcmixMain(int argc, char **argv) : RTcmix(false)
+{
+   set_sig_handlers();
+   init_globals(true);		// indicates we were called from main
+   parseArguments(argc, argv);
+   // Note:  What follows was done in main().  Some of it is identical
+   // to RTcmix::init() for imbedded.  Factor this out.
+   /* Banner */
+   if (Option::print())
+      printf("--------> %s %s (%s) <--------\n",
+             RTCMIX_NAME, RTCMIX_VERSION, argv[0]);
+
+   ug_intro();                  /* introduce standard routines */
+   profile();                   /* introduce user-written routines etc. */
+   rtprofile();                 /* introduce real-time user-written routines */
+
+   setbuf(stdout, NULL);        /*  Want to see stdout errors */
+}
+
+void
+RTcmixMain::parseArguments(int argc, char **argv)
+{
+   int         i, j, k, l;
+   int         retcode;                 /* for mutexes */
+#ifdef LINUX
+   int		   priority = 0;
+#endif
+   char        *infile;
+#ifdef NETAUDIO
+   char        rhostname[60], thesocket[8];
+
+   rhostname[0] = thesocket[0] = '\0';
+#endif
+
+   xargv[0] = argv[0];
+   for (i = 1; i <= MAXARGS; i++)
+      xargv[i] = NULL;
+   xargc = 1;
+
+   /* Process command line, copying any args we don't handle into
+      <xargv> for parsers to deal with.
+   */
+   for (i = 1; i < argc; i++) {
+      char *arg = argv[i];
+
+      if (arg[0] == '-') {
+         switch (arg[1]) {
+            case 'h':
+               usage();
+               break;
+            case 'i':               /* for separate parseit thread */
+               rtInteractive = 1;
+               audio_config = 0;
+               break;
+            case 'n':               /* for use in rtInteractive mode only */
+               noParse = 1;
+               break;
+            case 'Q':               /* reall quiet */
+               Option::reportClipping(false); /* (then fall through) */
+            case 'q':               /* quiet */
+               Option::print(false);
+               break;
+#ifdef LINUX
+			case 'p':
+               if (++i >= argc) {
+                  fprintf(stderr, "You didn't give a priority number.\n");
+                  exit(1);
+               }
+			   priority = atoi(argv[i]);
+			   break;
+#endif
+#ifdef NETAUDIO
+            case 'r':               /* set up for network playing */
+              	if (++i >= argc) {
+                  fprintf(stderr, "You didn't give a remote host ip.\n");
+                  exit(1);
+              	}
+               /* host ip num */
+               strcat(rhostname, "net:");
+               strncat(rhostname, argv[i], 59-4);    /* safe strcat */
+               rhostname[59] = '\0';
+               netplay = 1;
+               break;
+            case 'k':               /* socket number for network playing */
+                                    /* defaults to 9999 */
+               if (++i >= argc) {
+                  fprintf(stderr, "You didn't give a socket number.\n");
+                  exit(1);
+               }
+               strncpy(thesocket, argv[i], 7);
+               thesocket[7] = '\0';
+               netplay = 1;
+               break;
+#endif
+            case 'o':               /* NOTE NOTE NOTE: will soon replace -s */
+            case 's':               /* set up a socket offset */
+               if (++i >= argc) {
+                  fprintf(stderr, "You didn't give a socket offset.\n");
+                  exit(1);
+               }
+               socknew = atoi(argv[i]);
+               printf("listening on socket: %d\n", MYPORT + socknew);
+               break;
+//            case 's':               /* start time (unimplemented) */
+            case 'd':               /* duration to play for (unimplemented) */
+            case 'e':               /* time to stop playing (unimplemented) */
+               fprintf(stderr, "-s, -d, -e options not yet implemented\n");
+               exit(1);
+               break;
+#ifdef RTUPDATE
+            case 'c':     /* set up for continuous control (note tags on) */
+               tags_on = 1;
+               printf("rtupdates enabled\n");
+               curtag = 1;          /* "0" is reserved for all notes */
+			   curinst = 0;
+			   curgen = 1;
+
+               for (j = 0; j < MAXPUPS; j++)     /* initialize element 0 */
+                  pupdatevals[0][j] = NOPUPDATE;
+			   for(j = 0; j < MAXNUMTAGS; j++)
+			   {
+				   for(k = 0; k < MAXNUMPARAMS; k++)
+				   {
+					   numcalls[j][k] = 0;
+					   cum_parray_size[j][k] = 0;
+					   for(l = 0; l < MAXNUMCALLS; l++)
+					   {
+						   parray_size[j][k][l] = 0; //initilizes size of 
+					   }						  // pfpath array
+ 
+				   }
+			   }
+			   for(j = 0; j < MAXNUMINSTS; j++)
+			   {
+				   pi_goto[j] = -1;
+				   for(k = 0; k < MAXNUMPARAMS; k++)
+				   {
+						numinstcalls[j][k] = 0;
+						cum_piarray_size[j][k] = 0;
+						for(l = 0; l < MAXNUMCALLS; l++)
+						{
+							piarray_size[j][k][l] = 0;
+						}
+				   }
+			   }
+               break;
+#endif /* RTUPDATE */
+            case 'f':     /* use file name arg instead of stdin as score */
+               if (++i >= argc) {
+                  fprintf(stderr, "You didn't give a file name.\n");
+                  exit(1);
+               }
+               infile = argv[i];
+               use_script_file(infile);
+               break;
+            case '-':           /* accept "--debug" and pass to Perl as "-d" */
+               if (strncmp(&arg[2], "debug", 10) == 0)
+                  xargv[xargc++] = strdup("-d");
+               break;
+            default:
+               xargv[xargc++] = arg;    /* copy for parser */
+         }
+      }
+      else
+         xargv[xargc++] = arg;          /* copy for parser */
+
+      if (xargc >= MAXARGS) {
+         fprintf(stderr, "Too many command-line options.\n");
+         exit(1);
+      }
+   }
+   // Handle state which is set via args but not stored in RTcmix.
+   // NOTE:  The way this is handled should change.
+#ifdef NETAUDIO
+   if (netplay) {             /* set up socket for sending audio */
+      int status = setnetplay(rhostname, thesocket);
+      if (status == -1) {
+         fprintf(stderr, "Cannot establish network connection to '%s' for "
+                                             "remote playing\n", rhostname);
+         exit(-1);
+      }
+      fprintf(stderr, "Network sound playing enabled on machine '%s'\n",
+                                                                  rhostname);
+    }
+#endif
+
+}
+
+void
+RTcmixMain::run()
+{
+   pthread_t   sockitThread;
+   int retcode;
+   /* In rtInteractive mode, we set up RTcmix to listen for score data
+      over a socket, and then parse this, schedule instruments, and play
+      them concurrently. The socket listening and parsing go in one
+      thread, and the scheduler and instrument code go in another.
+
+      When not in rtInteractive mode, RTcmix parses the score, schedules
+      all instruments, and then plays them -- in that order.
+   */
+   if (rtInteractive) {
+
+      if (Option::print())
+         fprintf(stdout, "rtInteractive mode set\n");
+
+      /* Read an initialization score. */
+      if (!noParse) {
+         int status;
+
+#ifdef DBUG
+         cout << "Parsing once ...\n";
+#endif
+         status = parse_score(xargc, xargv);
+         if (status != 0)
+            exit(1);
+      }
+
+      /* Create parsing thread. */
+#ifdef DBUG
+      fprintf(stdout, "creating sockit() thread\n");
+#endif
+      retcode = pthread_create(&sockitThread, NULL, &RTcmixMain::sockit, (void *) this);
+      if (retcode != 0) {
+         fprintf(stderr, "sockit() thread create failed\n");
+      }
+
+      /* Create scheduling thread. */
+#ifdef DBUG
+      fprintf(stdout, "calling runMainLoop()\n");
+#endif
+      retcode = runMainLoop();
+      if (retcode != 0) {
+         fprintf(stderr, "runMainLoop() failed\n");
+      }
+
+      /* Join parsing thread. */
+#ifdef DBUG
+      fprintf(stdout, "joining sockit() thread\n");
+#endif
+      retcode = pthread_join(sockitThread, NULL);
+      if (retcode != 0) {
+         fprintf(stderr, "sockit() thread join failed\n");
+      }
+
+      /* Wait for audio thread. */
+#ifdef DBUG
+      fprintf(stdout, "calling waitForMainLoop()\n");
+#endif
+	  retcode = waitForMainLoop();
+      if (retcode != 0) {
+         fprintf(stderr, "waitForMailLoop() failed\n");
+      }
+
+      if (!noParse)
+         destroy_parser();
+   }
+   else {
+      int status;
+
+      status = parse_score(xargc, xargv);
+#ifdef PYTHON
+      /* Have to reinstall this after running Python interpreter. (Why?) */
+	  set_sig_handlers();
+#endif
+      if (status == 0) {
+#ifdef LINUX
+//		 if (priority != 0)
+//			 if (setpriority(PRIO_PROCESS, 0, priority) != 0)
+//			 	perror("setpriority");
+#endif
+         if ((status = runMainLoop()) == 0)
+			 waitForMainLoop();
+	  }
+      else
+         exit(status);
+
+      destroy_parser();
+   }
+
+   closesf_noexit();
+}
+
+/* ---------------------------------------------------- interrupt_handler --- */
+void
+RTcmixMain::interrupt_handler(int signo)
+{
+	// Dont do handler work more than once
+	if (!interrupt_handler_called) {
+		interrupt_handler_called = 1;
+	   fprintf(stderr, "\n<<< Caught interrupt signal >>>\n");
+
+	   if (rtsetparams_called) {
+		   stop_audio_devices();
+	   }
+	   else {
+		   closesf();	// We exit if we have not yet configured audio.
+	   }
+	}
+}
+
+/* ------------------------------------------------------- signal_handler --- */
+void
+RTcmixMain::signal_handler(int signo)
+{
+	// Dont do handler work more than once
+	if (!signal_handler_called) {
+		signal_handler_called = 1;
+	   fprintf(stderr, "\n<<< Caught internal signal (%d) >>>\n", signo);
+
+	   switch (signo) {
+	   default:
+		   fflush(stdout);
+		   fflush(stderr);
+  	 	   exit(1);
+	       break;
+	   }
+	}
+}
+
+void
+RTcmixMain::set_sig_handlers()
+{
+   /* Call interrupt_handler on cntl-C. */
+   if (signal(SIGINT, interrupt_handler) == SIG_ERR) {
+      fprintf(stderr, "Error installing signal handler.\n");
+      exit(1);
+   }
+   /* Call signal_handler on segv, etc. */
+   if (signal(SIGSEGV, signal_handler) == SIG_ERR) {
+      fprintf(stderr, "Error installing signal handler.\n");
+      exit(1);
+   }
+#if defined(SIGBUS)
+   if (signal(SIGBUS, signal_handler) == SIG_ERR) {
+      fprintf(stderr, "Error installing signal handler.\n");
+      exit(1);
+   }
+#endif
+}
+
+void *
+RTcmixMain::sockit(void *arg)
+{
+    char ttext[MAXTEXTARGS][512];
+    int i,tmpint;
+
+    // socket stuff
+    int s, ns;
+#ifdef LINUX
+    unsigned int len;
+#else
+    int len;
+#endif
+    struct sockaddr_in sss;
+    int err;
+    struct sockdata *sinfo;
+    size_t amt;
+    char *sptr;
+    int val,optlen;
+    int ntag,pval;
+	Bool audio_configured = NO;
+
+    /* create the socket for listening */
+
+#ifdef DBUG
+    cout << "ENTERING sockit() FUNCTION **********\n";
+#endif
+    if( (s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+      perror("socket");
+	  run_status = RT_ERROR;	// Notify inTraverse()
+      exit(1);
+    }
+
+    /* set up the receive buffer nicely for us */
+    optlen = sizeof(char);
+    val = sizeof(struct sockdata);
+    setsockopt(s, SOL_SOCKET, SO_RCVBUF, &val, optlen);
+
+    /* set up the socket address */
+    sss.sin_family = AF_INET;
+    sss.sin_addr.s_addr = INADDR_ANY;
+    // socknew is offset from MYPORT to allow more than one inst
+    if (noParse) {}	
+    sss.sin_port = htons(MYPORT+socknew);
+
+    err = bind(s, (struct sockaddr *)&sss, sizeof(sss));
+    if (err < 0) {
+      perror("bind");
+	  fflush(stdout);
+	  run_status = RT_ERROR;	// Notify inTraverse()
+	  sleep(1);
+	  cout << "\n";
+      exit(1);
+    }
+
+    listen(s, 1);
+
+    len = sizeof(sss);
+    ns = accept(s, (struct sockaddr *)&sss, &len);
+    if(ns < 0) {
+      perror("accept");
+	  run_status = RT_ERROR;	// Notify inTraverse()
+      exit(1);
+    }
+    else {
+
+      sinfo = new (struct sockdata);
+      // Zero the socket structure
+      sinfo->name[0] = '\0';
+      for (i=0;i<MAXDISPARGS;i++) {
+		sinfo->data.p[i] = 0;
+      }
+	  
+      // we do this when the -n flag is set, it has to parse rtsetparams()
+      // coming over the socket before it can access the values of RTBUFSAMPS,
+      // SR, NCHANS, etc.
+      if (noParse) {
+		
+		// Wait for the ok to go ahead
+		pthread_mutex_lock(&audio_config_lock);
+		if (!audio_config) {
+		  if (Option::print())
+			cout << "sockit():  waiting for audio_config . . . \n";
+		}
+		pthread_mutex_unlock(&audio_config_lock);
+		
+		while (!audio_configured) {
+		  pthread_mutex_lock(&audio_config_lock);
+		  if (audio_config) {
+			audio_configured = YES;
+		  }
+		  pthread_mutex_unlock(&audio_config_lock);
+
+		  sptr = (char *)sinfo;
+		  amt = read(ns, (void *)sptr, sizeof(struct sockdata));
+		  while (amt < sizeof(struct sockdata)) amt += read(ns, (void *)(sptr+amt), sizeof(struct sockdata)-amt);
+		  if ( (strcmp(sinfo->name, "rtinput") == 0) ||
+			   (strcmp(sinfo->name, "rtoutput") == 0) ||
+			   (strcmp(sinfo->name,"set_option") == 0) ||
+			   (strcmp(sinfo->name,"bus_config") == 0) ||
+			   (strcmp(sinfo->name, "load")==0) ) {
+			// these two commands use text data
+			// replace the text[i] with p[i] pointers
+			for (i = 0; i < sinfo->n_args; i++)
+			  strcpy(ttext[i],sinfo->data.text[i]);
+			for (i = 0; i < sinfo->n_args; i++) {
+			  tmpint = (int)ttext[i];
+			  sinfo->data.p[i] = (double)tmpint;
+			}
+		  }
+		  (void) ::dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
+		}
+		
+		if (audio_configured && rtInteractive) {
+			if (Option::print())
+				cout << "sockit():  audio set.\n";
+		}
+		
+	  }
+
+      // Main socket reading loop
+      while(1) {
+
+		sptr = (char *)sinfo;
+		amt = read(ns, (void *)sptr, sizeof(struct sockdata));
+		while (amt < sizeof(struct sockdata)) amt += read(ns, (void *)(sptr+amt), sizeof(struct sockdata)-amt);
+		if ( (strcmp(sinfo->name, "rtinput") == 0) ||
+			(strcmp(sinfo->name, "rtoutput") == 0) ||
+			(strcmp(sinfo->name,"set_option") == 0) ||
+			(strcmp(sinfo->name,"bus_config") == 0) ||
+			(strcmp(sinfo->name, "load")==0) ) {
+			
+			// these two commands use text data
+			// replace the text[i] with p[i] pointers
+			for (i = 0; i < sinfo->n_args; i++)
+				strcpy(ttext[i],sinfo->data.text[i]);
+			for (i = 0; i < sinfo->n_args; i++) {
+				tmpint = (int)ttext[i];
+				sinfo->data.p[i] = (double)tmpint;
+			}
+		}
+
+	 		// if it is an rtupdate, set the pval array
+		if (strcmp(sinfo->name, "rtupdate") == 0) {
+		  // rtupdate params are:
+		  //	p0 = note tag # 0 for all notes
+		  //	p1,2... pn,pn+1 = pfield, value
+#ifdef RTUPDATE
+		  ntag = (int)sinfo->data.p[0];
+		  pthread_mutex_lock(&pfieldLock);
+		  for (i = 1; i < sinfo->n_args; i += 2) {
+			pval = (int)sinfo->data.p[i];
+			pupdatevals[ntag][pval] = sinfo->data.p[i+1];
+		  }
+		  pthread_mutex_unlock(&pfieldLock);
+		  tag_sem=1;
+#endif /* RTUPDATE */
+		}
+
+		else if ( (strcmp(sinfo->name, "RTcmix_off") == 0) ) {
+			printf("RTcmix termination cmd received.\n");
+			run_status = RT_SHUTDOWN;	// Notify inTraverse()
+ 			shutdown(s,0);
+			return NULL;
+		}
+		else if ( (strcmp(sinfo->name, "RTcmix_panic") == 0) ) {
+			int count = 30;
+			printf("RTcmix panic cmd received...\n");
+			run_status = RT_PANIC;	// Notify inTraverse()
+			while (count--) {
+#ifdef linux
+				usleep(1000);
+#endif
+			}
+			printf("Resuming normal mode\n");
+			run_status = RT_GOOD;	// Notify inTraverse()
+		}
+		else {
+	
+#ifdef DBUG
+		  cout << "sockit(): elapsed = " << elapsed << endl;
+		  cout << "sockit(): SR = " << SR << endl;
+#endif
+		  if(sinfo->name) {
+#ifdef ALLBUG
+			cout << "SOCKET RECIEVED\n";
+			cout << "sinfo->name = " << sinfo->name << endl;
+			cout << "sinfo->n_args = " << sinfo->n_args << endl;
+			for (i=0;i<sinfo->n_args;i++) {
+			  cout << "sinfo->data.p[" << i << "] =" << sinfo->data.p[i] << endl;
+			}
+#endif
+			(void) ::dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
+	    
+		  }
+		}
+      }
+    }
+#ifdef DBUG
+    cout << "EXITING sockit() FUNCTION **********\n";
+#endif
+}
+
