@@ -12,26 +12,18 @@
 #include "../H/audio_port.h"    // JGG: for ZERO_FRAMES_BEFORE
 #include "../rtstuff/heap/heap.h"
 #include "../rtstuff/rtdefs.h"
+#include <Instrument.h>
 #include "../H/dbug.h"
 
 // #define TBUG
 // #define ALLBUG
-// #define PBUG
+// #define DBUG
 
-IBusClass checkClass(const BusSlot *slot) {
-  if (slot == NULL)
-	return UNKNOWN;
-  if ((slot->auxin_count > 0) && (slot->auxout_count > 0))
-	return AUX_TO_AUX;
-  if ((slot->auxout_count > 0) && (slot->out_count > 0))
-	return TO_AUX_AND_OUT;
-  if (slot->auxout_count > 0)
-	return TO_AUX;
-  if (slot->out_count > 0)
-	return TO_OUT;
-  return UNKNOWN;
-}
+// DT:  main heap structure used to queue instruments
+// D.S. Taken out of globals.h since only defined here.
 
+heap rtHeap;  
+ 
 extern "C" void *inTraverse(void *arg);
 
 void *inTraverse(void *arg)
@@ -58,8 +50,8 @@ void *inTraverse(void *arg)
 
   Bool aux_pb_done,frame_done;
   Bool audio_configured = NO;
-  short bus,bus_count,play_bus,busq,endbus,t_bus,t_count;
-  IBusClass bus_class,qStatus,t_class;
+  short bus,bus_count,play_bus,busq;
+  IBusClass bus_class,qStatus;
   BusType bus_type;
 
 #ifdef ALLBUG	
@@ -102,7 +94,6 @@ void *inTraverse(void *arg)
   bus = -1;  // Don't play
   busq = 0;
   bus_type = BUS_OUT; // Default when none is set
-  endbus = 999;  // Don't end yet
 
   // NOTE: audioin, aux and output buffers are zero'd during allocation
 
@@ -133,12 +124,14 @@ void *inTraverse(void *arg)
 	printf("Entering big loop .....................\n");
 #endif
 
-    pthread_mutex_lock(&heapLock);
+//    pthread_mutex_lock(&heapLock);
+	rtHeap.lock();
     heapSize = rtHeap.getSize();
     if (heapSize > 0) {
 	  heapChunkStart = rtHeap.getTop();
     }
-    pthread_mutex_unlock(&heapLock);
+//    pthread_mutex_unlock(&heapLock);
+	rtHeap.unlock();
 
 #ifdef DBUG
 	cout << "heapSize = " << heapSize << endl;
@@ -148,9 +141,9 @@ void *inTraverse(void *arg)
     // Pop elements off rtHeap and insert into rtQueue +++++++++++++++++++++
     while ((heapChunkStart < bufEndSamp) && (heapSize > 0)) {
       rtInst = 1;
-      pthread_mutex_lock(&heapLock);
+//      pthread_mutex_lock(&heapLock);
 	  Iptr = rtHeap.deleteMin();  // get next instrument off heap
-	  pthread_mutex_unlock(&heapLock);
+//	  pthread_mutex_unlock(&heapLock);
 	  if (!Iptr)
 		break;
 
@@ -158,7 +151,7 @@ void *inTraverse(void *arg)
 
 	  // DJT Now we push things onto different queues
 	  pthread_mutex_lock(&bus_slot_lock);
-	  bus_class = checkClass(iBus);
+	  bus_class = iBus->Class();
 	  switch (bus_class) {
 	  case TO_AUX:
 		bus_count = iBus->auxout_count;
@@ -224,11 +217,13 @@ void *inTraverse(void *arg)
 	  }
 	  pthread_mutex_unlock(&bus_slot_lock);
 
-	  pthread_mutex_lock(&heapLock);
+//    pthread_mutex_lock(&heapLock);
+	  rtHeap.lock();
 	  heapSize = rtHeap.getSize();
 	  if (heapSize > 0)
 		heapChunkStart = rtHeap.getTop();
-      pthread_mutex_unlock(&heapLock);
+//      pthread_mutex_unlock(&heapLock);
+      rtHeap.unlock();
 	}
 	// End rtHeap popping and rtQueue insertion ----------------------------
 
@@ -360,7 +355,9 @@ void *inTraverse(void *arg)
 		}
 		else {
 		  pthread_mutex_lock(&bus_slot_lock);
-		  t_class = checkClass(iBus);
+		  short t_count;
+		  short t_class = iBus->Class();
+  		  short endbus = 999;  // Don't end yet
 		  switch (t_class) {
 		  case TO_AUX:
 			t_count = iBus->auxout_count;
