@@ -121,7 +121,8 @@ make_table(int function_num, float dur, int exit_on_fail, const char *message)
 
 int JGRAN :: init(float p[], int n_args)
 {
-   float outskip, dur, seed, wavetablen = DEFAULT_WAVETABLE_SIZE;
+   int   wavetablen = DEFAULT_WAVETABLE_SIZE;
+   float outskip, dur, seed;
    float *wavetab, *envtab;
 
    outskip = p[0];
