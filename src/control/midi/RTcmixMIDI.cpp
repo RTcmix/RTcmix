@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <limits.h>
 #include <assert.h>
 
 // if INBUF_SIZE is 0, PortMidi uses a default value
@@ -21,8 +22,6 @@ enum {
 RTcmixMIDI::RTcmixMIDI()
 	: _instream(NULL), _outstream(NULL), _active(false)
 {
-	clear();
-
 	_MIDIToMain = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(long));
 	_mainToMIDI = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(long));
 //FIXME: how to handle error?
@@ -31,38 +30,7 @@ RTcmixMIDI::RTcmixMIDI()
 		return;
 	}
 
-	// Start the timer before starting MIDI I/O.  The timer runs the callback
-	// function every SLEEP_MSEC milliseconds.
-	Pt_Start(SLEEP_MSEC, &_processMIDI, 0);
-
-//FIXME: read device name from Option class?
-	int id = Pm_GetDefaultInputDeviceID();
-	const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
-//FIXME: how to handle error?
-	if (info == NULL) {
-		fprintf(stderr, "Could not open input device %d.\n", id);
-		return;
-	}
-
-	PmError err = Pm_OpenInput(&_instream, id, NULL, INBUF_SIZE, NULL, NULL);
-//FIXME: how to handle error?
-	if (err != pmNoError) {
-		fprintf(stderr, "Could not open input stream: %s.\n",
-									Pm_GetErrorText(err));
-		return;
-	}
-
-	Pm_SetFilter(_instream, PM_FILT_ACTIVE | PM_FILT_CLOCK | PM_FILT_SYSEX);
-
-	// Empty buffer after setting filter, in case anything got through before.
-	PmEvent buffer;
-	while (Pm_Poll(_instream))
-		Pm_Read(_instream, &buffer, 1);
-
-	// enable processing in MIDI thread (_processMIDI)
-	active(true);
-
-	Pm_Initialize();
+	clear();
 }
 
 RTcmixMIDI::~RTcmixMIDI()
@@ -81,21 +49,76 @@ RTcmixMIDI::~RTcmixMIDI()
 		Pm_Close(_instream);
 	if (_outstream)
 		Pm_Close(_outstream);
+
+	Pm_QueueDestroy(_mainToMIDI);
+	Pm_QueueDestroy(_MIDIToMain);
+
+	Pm_Terminate();
+}
+
+int RTcmixMIDI::init()
+{
+	// Start the timer before starting MIDI I/O.  The timer runs the callback
+	// function every SLEEP_MSEC milliseconds.
+	Pt_Start(SLEEP_MSEC, &_processMIDI, this);
+
+	Pm_Initialize();
+
+//FIXME: read device name from Option class?
+	int id = Pm_GetDefaultInputDeviceID();
+	const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
+	if (info == NULL) {
+		fprintf(stderr, "Could not open input device %d.\n", id);
+		return -1;
+	}
+
+	PmError err = Pm_OpenInput(&_instream, id, NULL, INBUF_SIZE, NULL, NULL);
+	if (err != pmNoError) {
+		fprintf(stderr, "Could not open input stream: %s.\n",
+									Pm_GetErrorText(err));
+		return -1;
+	}
+
+	Pm_SetFilter(_instream, PM_FILT_ACTIVE | PM_FILT_CLOCK | PM_FILT_SYSEX);
+
+	// Empty buffer after setting filter, in case anything got through before.
+	PmEvent buffer;
+	while (Pm_Poll(_instream))
+		Pm_Read(_instream, &buffer, 1);
+
+	// enable processing in MIDI thread (_processMIDI)
+	active(true);
+
+	return 0;
 }
 
 void RTcmixMIDI::clear()
 {
 	for (int chan = 0; chan < 16; chan++) {
-		_bend[chan] = -1;
-		_program[chan] = -1;
-		_chanpress[chan] = -1;
+		_bend[chan] = -INT_MAX;
+		_program[chan] = -INT_MAX;
+		_chanpress[chan] = -INT_MAX;
 		for (int i = 0; i < 128; i++) {
-			_noteonvel[chan][i] = -1;
-			_noteoffvel[chan][i] = -1;
-			_control[chan][i] = -1;
-			_polypress[chan][i] = -1;
+			_noteonvel[chan][i] = -INT_MAX;
+			_noteoffvel[chan][i] = -INT_MAX;
+			_control[chan][i] = -INT_MAX;
+			_polypress[chan][i] = -INT_MAX;
 		}
 	}
+}
+
+
+// -------------------------------------------------------------------- dump ---
+// Just for debugging.
+
+const char *RTcmixMIDI::getValueString(const int val)
+{
+	if (val == -INT_MAX)
+		return "--";
+
+	static char buf[16];
+	snprintf(buf, 16, "%d", val);
+	return buf;
 }
 
 void RTcmixMIDI::dump()
@@ -103,21 +126,21 @@ void RTcmixMIDI::dump()
 	printf("\nDumping current MIDI state...\n");
 	for (int chan = 0; chan < 16; chan++) {
 		printf("---------------------------------------- Channel %d\n", chan + 1);
-		printf("   Bend:\t%d\n", _bend[chan]);
-		printf("   Program:\t%d\n", _program[chan]);
-		printf("   ChanPress:\t%d\n", _chanpress[chan]);
+		printf("   Bend:\t%s\n", getValueString(_bend[chan]));
+		printf("   Program:\t%s\n", getValueString(_program[chan]));
+		printf("   ChanPress:\t%s\n", getValueString(_chanpress[chan]));
 		printf("   NoteOnVel:\n");
 		for (int i = 0; i < 128; i++)
-			printf("      [%d]:\t%d\n", i, _noteonvel[chan][i]);
+			printf("      [%d]:\t%s\n", i, getValueString(_noteonvel[chan][i]));
 		printf("   NoteOffVel:\n");
 		for (int i = 0; i < 128; i++)
-			printf("      [%d]:\t%d\n", i, _noteoffvel[chan][i]);
+			printf("      [%d]:\t%s\n", i, getValueString(_noteoffvel[chan][i]));
 		printf("   Control:\n");
 		for (int i = 0; i < 128; i++)
-			printf("      [%d]:\t%d\n", i, _control[chan][i]);
+			printf("      [%d]:\t%s\n", i, getValueString(_control[chan][i]));
 		printf("   PolyPress:\n");
 		for (int i = 0; i < 128; i++)
-			printf("      [%d]:\t%d\n", i, _polypress[chan][i]);
+			printf("      [%d]:\t%s\n", i, getValueString(_polypress[chan][i]));
 		printf("\n");
 	}
 }
@@ -142,11 +165,7 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 {
 	RTcmixMIDI *obj = (RTcmixMIDI *) context;
 
-	// do nothing until initialization completes
-	if (!obj->active())
-		return;
-
-	// check for messages from object
+	// Check for messages from object.
 	PmError result;
 	do {
 		long msg;
@@ -161,7 +180,12 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 		}
 	} while (result);         
 
-	// see if there is any midi input to process
+	// Don't poll MIDI until initialization completes.  We still listen for
+	// messages, in case RTcmixMIDI::init fails and dtor then called.
+	if (!obj->active())
+		return;
+
+	// See if there is any midi input to process.
 	do {
 		result = Pm_Poll(obj->instream());
 		if (result) {
@@ -206,15 +230,20 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 			}
 		}
 	} while (result);
+
+//sleep(2); obj->dump();
 }
 
-
-// This is kinda dumb, but we do it this way to be consistent with those
-// connection types that have platform-dependent derived classes, such as mouse.
 
 RTcmixMIDI *createMIDIPort()
 {
 	RTcmixMIDI *midiport = new RTcmixMIDI();
+	if (midiport) {
+		if (midiport->init() == -1) {
+			delete midiport;
+			return NULL;
+		}
+	}
 
 	return midiport;
 }
