@@ -13,10 +13,6 @@
 
 extern int resetval;		// declared in src/rtcmix/minc_functions.c
 
-#define LAGFACTOR	0.12
-#define MAXCF		500.0
-#define MINCF		0.05
-
 
 RTMousePField::RTMousePField(
 			RTcmixMouse			*mousewin,
@@ -24,7 +20,7 @@ RTMousePField::RTMousePField(
 			const double		minval,
 			const double		maxval,
 			const double		defaultval,
-			const double		lag,
+			const double		lag,				// in range [0, 1]
 			const char			*prefix,
 			const char			*units,
 			const int			precision)
@@ -45,24 +41,9 @@ RTMousePField::RTMousePField(
 
 	_diff = maxval - minval;
 
-	// Convert lag, a percentage in range [0, 100], to cutoff frequency,
-	// depending on the control rate in effect when this PField was created.
-	// Lag pct is inversely proportional to cf, because the lower the cf,
-	// the longer the lag time.
-	const double nyquist = resetval * 0.5;
-	double cf = MAXCF * pow(2.0, -(lag * LAGFACTOR));
-	if (cf <= MINCF)
-		cf = MINCF;
-	if (cf > nyquist)
-		cf = nyquist;
-
-//#define USEEQ
-#ifdef USEEQ
-	_filter = new Oequalizer(resetval, OeqLowPass);
-	_filter->setparams(cf, 0.5);
-#else
-	_filter = new Oonepole(resetval, cf);
-#endif
+	// NOTE: We rely on the control rate in effect when this PField is created.
+	_filter = new Oonepole(resetval);
+	_filter->setlag(lag);
 }
 
 RTMousePField::~RTMousePField() {}
