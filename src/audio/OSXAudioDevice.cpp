@@ -157,7 +157,7 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 			//   Treat it as circular buffer.
 			while (framesCopied < framesToRead) {
 				const int srcchans = impl->inputDeviceChannels();
-				register float *src = (float *) inInputData->mBuffers[0].mData;
+				register float *src = (float *) inInputData->mBuffers[port->streamIndex].mData;
 				register float *dest = port->audioBuffer;
 				int inLoc = port->inLoc;
 				for (int n = 0; n < framesToRead; ++n) {
@@ -218,7 +218,7 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 			printf("\tafter run callback, framesAvail (Filled) = %d\n", framesAvail);
 #endif
 			if (framesAvail == 0) {
-				assert(device->isPassive());
+				assert(!keepGoing || device->isPassive());
 #if DEBUG > 0
 				printf("\tzeroing input buffer and going on\n");
 #endif
@@ -236,7 +236,7 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 			//   Treat it as circular buffer.
 			while (framesDone < framesToWrite) {
 				register float *src = port->audioBuffer;
-				register float *dest = (float *) outOutputData->mBuffers[0].mData;
+				register float *dest = (float *) outOutputData->mBuffers[port->streamIndex].mData;
 				int outLoc = port->outLoc;
 				for (int n = 0; n < framesToWrite; ++n) {
 					if (outLoc == bufLen)	// wrap
