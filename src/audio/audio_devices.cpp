@@ -29,6 +29,7 @@ char globalNetworkPath[128];			// Set by Minc/setnetplay.c
 AudioDevice *globalAudioDevice;			// Used by Minc/intraverse.C
 
 // Return pointers to the most recently specified audio device strings.
+// "indevice" always overrides "device", and same with "outdevice".
 
 const char *get_audio_device_name()
 {
@@ -41,19 +42,19 @@ const char *get_audio_device_name()
 
 const char *get_audio_indevice_name()
 {
-	if (strlen(Option::device()))
-		return Option::device();
 	if (strlen(Option::inDevice()))
 		return Option::inDevice();
+	else if (strlen(Option::device()))
+		return Option::device();
 	return NULL;
 }
 
 const char *get_audio_outdevice_name()
 {
-	if (strlen(Option::device()))
-		return Option::device();
 	if (strlen(Option::outDevice()))
 		return Option::outDevice();
+	else if (strlen(Option::device()))
+		return Option::device();
 	return NULL;
 }
 
