@@ -180,6 +180,8 @@ RTcmix::init(float tsr, int tnchans, int bsize)
 	flush_all_underflows_to_zero();
 #endif
 
+	run_status = RT_GOOD;	// Make sure status is good.
+
 	// set up the command lists, etc.
 	ug_intro();		/* introduce standard routines */
 	// no profiles!  See the note above about DSOs
