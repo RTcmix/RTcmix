@@ -84,6 +84,14 @@ init_globals()
    audio_config = 1;
    play_audio = 1;              /* modified with set_option */
    full_duplex = 0;
+   check_peaks = 1;
+   report_clipping = 1;
+
+   output_data_format = -1;
+   output_header_type = -1;
+   normalize_output_floats = 0;
+   is_float_format = 0;
+   rtoutsfname = NULL;
 
    tags_on = 0;
 
