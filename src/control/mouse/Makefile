@@ -2,6 +2,11 @@ include ../../../makefile.conf
 
 OBJS = RTcmixMouse.o RTMousePField.o glue.o
 SRCS = RTcmixMouse.cpp RTMousePField.cpp glue.cpp
+
+# For OS X, we have to use a helper app, which communicates with RTcmix
+# over a socket.  This is because you can't sublaunch a GUI window from
+# a command-line program in OS X the way you can in X.  -JGG
+
 ifeq ($(ARCH), MACOSX)
    OBJS += OSXMouse.o
    SRCS += OSXMouse.cpp
@@ -31,9 +36,14 @@ glue.o: depend glue.cpp RTMousePField.h
 $(APP).o: $(APP).cpp
 	$(CXX) $(CXXFLAGS) -c -o $(APP).o $(APP).cpp
 
+# NB: Create OS X app bundle hierarchy each time, because bundle won't
+# work if it contains CVS admin directories!  -JGG
 $(APP): $(APP).o
 	$(CXX) $(CXXFLAGS) $(APP).o -o $(APP) $(GUILIBS)
+	install -d $(APP).app/Contents/MacOS
 	mv -f $(APP) $(APP).app/Contents/MacOS
+	cp -f osx_bundle_items/PkgInfo $(APP).app/Contents
+	cp -f osx_bundle_items/Info.plist $(APP).app/Contents
 
 $(TEST).o: depend $(TEST).cpp RTMousePField.h
 	$(CXX) $(CXXFLAGS) -c -o $(TEST).o $(TEST).cpp
@@ -62,7 +72,7 @@ endif
 clean:
 	$(RM) *.o $(LIBMOUSE) $(APP) $(TEST) depend
 ifeq ($(ARCH), MACOSX)
-	$(RM) $(APP).app/Contents/MacOS/$(APP)
+	$(RM) -r $(APP).app
 endif
 
 cleanall: clean
