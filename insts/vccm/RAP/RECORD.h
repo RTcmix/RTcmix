@@ -8,6 +8,7 @@ class RECORD : public Instrument {
 public:
 	RECORD();
 	virtual ~RECORD();
-	int init(float*, short);
+	int init(double*, short);
+	int configure();
 	int run();
 	};

@@ -3,7 +3,6 @@
 #include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
-#include <globals.h>
 #include <rt.h>
 #include <rtdefs.h>
 #include "STORE.h"
@@ -35,7 +34,7 @@ STORE::~STORE()
 	delete [] in;
 }
 
-int STORE::init(float p[], int n_args)
+int STORE::init(double p[], int n_args)
 {
 	// p0 = start; p1 = duration (-endtime); p2 = hold dur; p3 = inchan; p4 = audio index
 
@@ -43,8 +42,10 @@ int STORE::init(float p[], int n_args)
 
 	if (p[1] < 0.0) p[1] = -p[1] - p[0];
 
-	nsamps = rtsetoutput(p[0], p[1], this);
-	rtsetinput(p[0], this);
+	if (rtsetoutput(p[0], p[1], this) != 0)
+		return DONT_SCHEDULE;
+	if (rtsetinput(p[0], this) != 0)
+		return DONT_SCHEDULE;
 
 	dur = p[1];
 	hold_dur = p[2];
@@ -55,18 +56,29 @@ int STORE::init(float p[], int n_args)
 	stop_hold = NO;
 	t_samp = 0;
 
-	if (inchan > inputchans) {
-		die("STORE", "You wanted input channel %d, but have only specified "
-		    "%d input channels", p[3], inputchans);
+	if (inchan > inputChannels()) {
+		return die("STORE",
+				   "You wanted input channel %d, but have only specified "
+					"%d input channels", p[3], inputChannels());
 	}
 	if (aud_idx >= MAX_AUD_IDX) {
-		die("STORE", "You wanted to use audio index %d, but your RTcmix version"
-		    "has only been compiled for %d", aud_idx, MAX_AUD_IDX);
+		return die("STORE",
+					"You wanted to use audio index %d, but your RTcmix version"
+					"has only been compiled for %d", aud_idx, MAX_AUD_IDX);
 	}
 
 	skip = (int)(SR/(float)resetval);
 
-	return(nsamps);
+	return(nSamps());
+}
+
+int STORE::configure()
+{
+	// Allocate some RAM to store audio in
+	if (temp_buff[aud_idx] == NULL)
+		temp_buff[aud_idx] = new float [hold_samps];
+	in = new float [RTBUFSAMPS * inputChannels()];
+	return 0;
 }
 
 int STORE::run()
@@ -74,21 +86,11 @@ int STORE::run()
 	int i,j,k,rsamps, finalsamp;
 	float sig;
 
-	Instrument::run();
-
-	// Allocate some RAM to store audio in
-	if (temp_buff[aud_idx] == NULL)
-		temp_buff[aud_idx] = new float [hold_samps];
-
-	if (in == NULL)    { /* first time, so allocate it */
-		in = new float [RTBUFSAMPS * inputchans];
-	}
-
-	rsamps = chunksamps*inputchans;
+	rsamps = framesToRun()*inputChannels();
 
 	rtgetin(in, this, rsamps);
 	
-	for (i = 0; i < rsamps; i += inputchans)  {
+	for (i = 0; i < rsamps; i += inputChannels())  {
 
 		if (--branch < 0) {
 			if (start_fade) {

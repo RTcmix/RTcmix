@@ -1,11 +1,13 @@
 class PLAY : public Instrument {
-	float amp,*amptable,tabs[2],*in;
+	float amp, tabs[2],*in;
+	double *amptable;
 	float dur;
 	int skip, idx_samp, aud_idx;
 
 public:
 	PLAY();
 	virtual ~PLAY();
-	int init(float*, short);
+	int init(double*, short);
+	int configure();
 	int run();
 	};

@@ -4,7 +4,6 @@
 #include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
-#include <globals.h>
 #include <rt.h>
 #include <rtdefs.h>
 #include "RECORD.h"
@@ -28,7 +27,7 @@ RECORD::~RECORD()
 	delete [] in;
 }
 
-int RECORD::init(float p[], short n_args)
+int RECORD::init(double p[], short n_args)
 {
 // p0 = start; p1 = duration (-endtime); p2 = inchan; p3 = audio index
 
@@ -43,38 +42,40 @@ int RECORD::init(float p[], short n_args)
 	inchan = (int)p[2];
 	aud_idx = (int)p[3];
 
-	if (inchan > inputchans) {
-			die("RECORD", "You wanted input channel %d, but have only specified "
-							"%d input channels", p[2], inputchans);
+	if (inchan > inputChannels()) {
+		return die("RECORD", 
+					"You wanted input channel %d, but have only specified "
+						"%d input channels", p[2], inputChannels());
 	}
 	if (aud_idx >= MAX_AUD_IDX) {
-	  die("RECORD", "You wanted to use audio index %d, but your RTcmix version"
-		  "has only been compiled for %d", aud_idx, MAX_AUD_IDX);
+		return die("RECORD", 
+				"You wanted to use audio index %d, but your RTcmix version"
+			  "has only been compiled for %d", aud_idx, MAX_AUD_IDX);
 	}
 
 	return(this->mytag);
 }
 
-int RECORD::run()
+int RECORD::configure()
 {
-	int i,j,k,rsamps,idur;
-	float sig;
-	
-	Instrument::run();
-
 	// Allocate some RAM to store audio in
-	idur = (int) ceil(dur);
+	int idur = (int) ceil(dur);
 	if (temp_buff[aud_idx] == NULL)
 		temp_buff[aud_idx] = new float [idur * (int)SR];
+    in = new float [RTBUFSAMPS * inputChannels()];
+	return 0;
+}
 
-	if (in == NULL)    /* first time, so allocate it */
-	  in = new float [RTBUFSAMPS * inputchans];
+int RECORD::run()
+{
+	int i,j,k,rsamps;
+	float sig;
 
-	rsamps = chunksamps*inputchans;
+	rsamps = framesToRun()*inputChannels();
 
 	rtgetin(in, this, rsamps);
 
-	for (i = 0; i < rsamps; i += inputchans)  {
+	for (i = 0; i < rsamps; i += inputChannels())  {
 
 	  sig = in[i + (int)inchan];
 	  temp_buff[aud_idx][cursamp] = sig;
@@ -92,7 +93,9 @@ makeRECORD()
 
 	inst = new RECORD();
 	inst->set_bus_config("RECORD");
+#ifdef RTUPDATE
 	inst->set_instnum("RECORD");
+#endif
 	return inst;
 }
 

@@ -10,6 +10,7 @@ class STORE : public Instrument {
 public:
 	STORE();
 	virtual ~STORE();
-	int init(float*, int);
+	int init(double*, int);
+	int configure();
 	int run();
 	};

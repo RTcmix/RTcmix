@@ -3,7 +3,6 @@
 #include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
-#include <globals.h>
 #include <rt.h>
 #include <rtdefs.h>
 #include "PLAY.h"
@@ -20,7 +19,7 @@ PLAY::~PLAY()
 	delete [] in;
 }
 
-int PLAY::init(float p[], short n_args)
+int PLAY::init(double p[], short n_args)
 {
 // p0 = outsk; p1 = insk; p2 = duration (-endtime); p3 = amp; p4 = aud_idx
 // setline info is in gen table 1
@@ -29,7 +28,8 @@ int PLAY::init(float p[], short n_args)
 
 	if (p[2] < 0.0) p[2] = -p[2] - p[1];
 
-	nsamps = rtsetoutput(p[0], p[2], this);
+	if (rtsetoutput(p[0], p[2], this) != 0)
+		return DONT_SCHEDULE;
 	/* rtsetinput(p[1], this); */
 
 	dur = p[2];
@@ -37,8 +37,8 @@ int PLAY::init(float p[], short n_args)
 	aud_idx = (int)p[4];
 	idx_samp = (int)(p[1]*SR);
 
-	if (outputchans > 2) {
-			die("PLAY", "This is a MONO output instrument.  Reset your bus_config to use only 1 output bus\n");
+	if (outputChannels() > 2) {
+		return die("PLAY", "This is a MONO output instrument.  Reset your bus_config to use only 1 output bus\n");
 	}
 
 	amptable = floc(1);
@@ -54,6 +54,12 @@ int PLAY::init(float p[], short n_args)
 	return(this->mytag);
 }
 
+int PLAY::configure()
+{
+	in = new float [RTBUFSAMPS];
+	return 0;
+}
+
 int PLAY::run()
 {
 	int i,j,k,rsamps;
@@ -61,12 +67,7 @@ int PLAY::run()
 	float aamp;
 	int branch;
 
-	if (in == NULL)                 /* first time, so allocate it */
-		in = new float [RTBUFSAMPS];
-
-	Instrument::run();
-
-	rsamps = chunksamps;
+	rsamps = framesToRun();
 
 	/* Read input from temp_buffer */
 	for(i=0;i<rsamps;i++) {
@@ -101,7 +102,9 @@ makePLAY()
 	PLAY *inst;
 	inst = new PLAY();
 	inst->set_bus_config("PLAY");
+#ifdef RTUPDATE
 	inst->set_instnum("PLAY");
+#endif
 	return inst;
 }
 

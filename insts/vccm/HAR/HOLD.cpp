@@ -3,7 +3,6 @@
 #include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
-#include <globals.h>
 #include <rt.h>
 #include <rtdefs.h>
 #include "HOLD.h"
@@ -28,7 +27,7 @@ HOLD::~HOLD()
 	delete [] in;
 }
 
-int HOLD::init(float p[], int n_args)
+int HOLD::init(double p[], int n_args)
 {
 // p0 = outsk; 
 // p1 = duration (-endtime); 
@@ -43,7 +42,9 @@ int HOLD::init(float p[], int n_args)
 
 	if (p[1] < 0.0) p[1] = -p[1] - p[0];
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	if (rtsetoutput(p[0], p[1], this) != 0)
+		return DONT_SCHEDULE;
+
 	/* rtsetinput(p[1], this); */
 
 	dur = p[1];
@@ -58,7 +59,7 @@ int HOLD::init(float p[], int n_args)
 	idx_samp = 0;
 
 	if (outputchans > 2) {
-			die("HOLD", "This is a MONO output instrument.  Reset your bus_config to use only 1 output bus\n");
+		return die("HOLD", "This is a MONO output instrument.  Reset your bus_config to use only 1 output bus\n");
 	}
 
 	amptable = floc(1);
@@ -80,7 +81,16 @@ int HOLD::init(float p[], int n_args)
 	aamp = amp;
 	skip = (int)(SR/(float)resetval);
 
-	return(nsamps);
+	return(nSamps());
+}
+
+int HOLD::configure()
+{
+	in = new float [RTBUFSAMPS];
+	idx_samp += samp_marker+1;
+	start_fade = NO;
+	fade_started = NO;
+	return 0;
 }
 
 int HOLD::run()
@@ -91,16 +101,8 @@ int HOLD::run()
 	if (!start_fade) 
 		stop_hold = YES;
 
-	if (in == NULL) {                 /* first time, so allocate it */
-		in = new float [RTBUFSAMPS];
-		idx_samp += samp_marker+1;
-		start_fade = NO;
-		fade_started = NO;
-	}
 
-	Instrument::run();
-
-	rsamps = chunksamps;
+	rsamps = framesToRun();
 
 	for (i = 0; i < rsamps; i++)  {
 

@@ -4,6 +4,6 @@ class FADE_HOLD : public Instrument {
 public:
 	FADE_HOLD();
 	virtual ~FADE_HOLD();
-	int init(float*, int);
+	int init(double*, int);
 	int run();
 	};
