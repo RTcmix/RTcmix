@@ -84,11 +84,37 @@ GLOBAL double schedtime;
 pthread_mutex_t heapLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t pfieldLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t audio_config_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t aux_to_aux_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t to_aux_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t to_out_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t inst_bus_config_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t bus_config_status_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t bus_in_config_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t has_child_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t has_parent_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t aux_in_use_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t aux_out_in_use_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t out_in_use_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t revplay_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t bus_slot_lock = PTHREAD_MUTEX_INITIALIZER;
 /* pthread_mutex_t heapLock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP; */
 #else
 GLOBAL pthread_mutex_t heapLock;
 GLOBAL pthread_mutex_t pfieldLock;
 GLOBAL pthread_mutex_t audio_config_lock;
+GLOBAL pthread_mutex_t aux_to_aux_lock;
+GLOBAL pthread_mutex_t to_aux_lock;
+GLOBAL pthread_mutex_t to_out_lock;
+GLOBAL pthread_mutex_t inst_bus_config_lock;
+GLOBAL pthread_mutex_t bus_config_status_lock;
+GLOBAL pthread_mutex_t bus_in_config_lock;
+GLOBAL pthread_mutex_t has_child_lock;
+GLOBAL pthread_mutex_t has_parent_lock;
+GLOBAL pthread_mutex_t aux_in_use_lock;
+GLOBAL pthread_mutex_t aux_out_in_use_lock;
+GLOBAL pthread_mutex_t out_in_use_lock;
+GLOBAL pthread_mutex_t revplay_lock;
+GLOBAL pthread_mutex_t bus_slot_lock;
 #endif
 
 /* -------------------------------------------------------------------------- */
@@ -117,8 +143,6 @@ typedef enum {
   UNKNOWN
 } IBusClass;
 
-GLOBAL Bool Bus_Configed;
- 
 GLOBAL short AuxToAuxPlayList[MAXBUS]; /* The playback order for AUX buses */
 GLOBAL short ToOutPlayList[MAXBUS]; /* The playback order for AUX buses */
 GLOBAL short ToAuxPlayList[MAXBUS]; /* The playback order for AUX buses */
