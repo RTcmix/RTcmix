@@ -53,7 +53,6 @@ GLOBAL int audioNCHANS;
 GLOBAL int noParse;
 GLOBAL int audio_on;
 GLOBAL int play_audio;
-GLOBAL int noaudio;              /* to delay socket parsing */
 GLOBAL int full_duplex;
 GLOBAL int audio_config;
 GLOBAL int rtInteractive;
