@@ -1,61 +1,84 @@
-# prefix of test score and output file
-M = m1
-S = s1
 
 TESTSND = num.snd
 
-DIRT = $(M).snd $(M)rt.snd $(M).aif $(M)rt.aif $(M).wav $(M)rt.wav \
-       $(M).sf $(M)rt.sf $(M).out \
-       $(S).snd $(S)rt.snd $(S).aif $(S)rt.aif $(S).wav $(S)rt.wav \
-       $(S).sf $(S)rt.sf $(S).out \
-       $(TESTSND)
+DIRT = *.snd *.aif *.wav *.sf *.out *.rescale $(TESTSND)
 
 COMPARE = cmp -lc
 
 
-all: mix stereo
+all: m1 s1
 
-mix: $(TESTSND)
+m1: $(TESTSND)
 	@echo MIX/mix to next format
-	@CMIX 1 0 < $(M).sco 2>&1 >  $(M).out    # next
-	@CMIX 0 0 < $(M).sco 2>&1 >> $(M).out
+	@CMIX 1 0 < m1.sco 2>&1 >  m1.out    # next
+	@CMIX 0 0 < m1.sco 2>&1 >> m1.out
 	@echo MIX/mix to aiff format
-	@CMIX 1 1 < $(M).sco 2>&1 >> $(M).out    # aiff
-	@CMIX 0 1 < $(M).sco 2>&1 >> $(M).out
+	@CMIX 1 1 < m1.sco 2>&1 >> m1.out    # aiff
+	@CMIX 0 1 < m1.sco 2>&1 >> m1.out
 	@echo MIX/mix to wav format
-	@CMIX 1 2 < $(M).sco 2>&1 >> $(M).out    # wav
-	@CMIX 0 2 < $(M).sco 2>&1 >> $(M).out
+	@CMIX 1 2 < m1.sco 2>&1 >> m1.out    # wav
+	@CMIX 0 2 < m1.sco 2>&1 >> m1.out
 	@echo MIX/mix to ircam format
-	@CMIX 1 3 < $(M).sco 2>&1 >> $(M).out    # ircam
-	@CMIX 0 3 < $(M).sco 2>&1 >> $(M).out
+	@CMIX 1 3 < m1.sco 2>&1 >> m1.out    # ircam
+	@CMIX 0 3 < m1.sco 2>&1 >> m1.out
 
-stereo: $(TESTSND)
+m2: $(TESTSND)
+	@echo MIX/mix to next format
+	@CMIX 1 0 < m2.sco 2>&1 >  m2.out    # next
+	@CMIX 0 0 < m2.sco 2>&1 >> m2.out
+	@echo MIX/mix to aiff format
+	@CMIX 1 1 < m2.sco 2>&1 >> m2.out    # aiff
+	@CMIX 0 1 < m2.sco 2>&1 >> m2.out
+	@echo MIX/mix to wav format
+	@CMIX 1 2 < m2.sco 2>&1 >> m2.out    # wav
+	@CMIX 0 2 < m2.sco 2>&1 >> m2.out
+	@echo MIX/mix to ircam format
+	@CMIX 1 3 < m2.sco 2>&1 >> m2.out    # ircam
+	@CMIX 0 3 < m2.sco 2>&1 >> m2.out
+
+m3: $(TESTSND)
+	@echo MIX/mix to aiff format
+	@CMIX 1 < m3.sco 2>&1 >> m3.out
+	@CMIX 0 < m3.sco 2>&1 >> m3.out
+
+s1: $(TESTSND)
 	@echo STEREO/stereo to next format
-	@CMIX 1 0 < $(S).sco 2>&1 >  $(S).out    # next
-	@CMIX 0 0 < $(S).sco 2>&1 >> $(S).out
+	@CMIX 1 0 < s1.sco 2>&1 >  s1.out    # next
+	@CMIX 0 0 < s1.sco 2>&1 >> s1.out
 	@echo STEREO/stereo to aiff format
-	@CMIX 1 1 < $(S).sco 2>&1 >> $(S).out    # aiff
-	@CMIX 0 1 < $(S).sco 2>&1 >> $(S).out
+	@CMIX 1 1 < s1.sco 2>&1 >> s1.out    # aiff
+	@CMIX 0 1 < s1.sco 2>&1 >> s1.out
 	@echo STEREO/stereo to wav format
-	@CMIX 1 2 < $(S).sco 2>&1 >> $(S).out    # wav
-	@CMIX 0 2 < $(S).sco 2>&1 >> $(S).out
+	@CMIX 1 2 < s1.sco 2>&1 >> s1.out    # wav
+	@CMIX 0 2 < s1.sco 2>&1 >> s1.out
 	@echo STEREO/stereo to ircam format
-	@CMIX 1 3 < $(S).sco 2>&1 >> $(S).out    # ircam
-	@CMIX 0 3 < $(S).sco 2>&1 >> $(S).out
+	@CMIX 1 3 < s1.sco 2>&1 >> s1.out    # ircam
+	@CMIX 0 3 < s1.sco 2>&1 >> s1.out
 
-comparemix:
+cmp_m1:
 	@echo differences between disk-based and real-time output...
-	$(COMPARE) $(M).snd $(M)rt.snd
-	$(COMPARE) $(M).aif $(M)rt.aif
-	$(COMPARE) $(M).wav $(M)rt.wav
-	$(COMPARE) $(M).sf $(M)rt.sf
+	$(COMPARE) m1.snd m1rt.snd
+	$(COMPARE) m1.aif m1rt.aif
+	$(COMPARE) m1.wav m1rt.wav
+	$(COMPARE) m1.sf m1rt.sf
 
-comparestereo:
+cmp_m2:
 	@echo differences between disk-based and real-time output...
-	$(COMPARE) $(S).snd $(S)rt.snd
-	$(COMPARE) $(S).aif $(S)rt.aif
-	$(COMPARE) $(S).wav $(S)rt.wav
-	$(COMPARE) $(S).sf $(S)rt.sf
+	$(COMPARE) m2.snd m2rt.snd
+	$(COMPARE) m2.aif m2rt.aif
+	$(COMPARE) m2.wav m2rt.wav
+	$(COMPARE) m2.sf m2rt.sf
+
+cmp_m3:
+	@echo differences between disk-based and real-time output...
+	$(COMPARE) m3.aif m3rt.aif
+
+cmp_s1:
+	@echo differences between disk-based and real-time output...
+	$(COMPARE) s1.snd s1rt.snd
+	$(COMPARE) s1.aif s1rt.aif
+	$(COMPARE) s1.wav s1rt.wav
+	$(COMPARE) s1.sf s1rt.sf
 
 $(TESTSND):
 	@echo writing test snd...
