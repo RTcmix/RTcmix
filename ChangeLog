@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Wednesday, July 30, 2003 John Gibson <johgibso-at-indiana.edu>
+
+   * Add CHANS Minc command - returns number of channels in a sound file
+     opened with rtinput.  (Works like DUR, PEAK, etc.)
+
 Friday, July 25, 2003 John Gibson <johgibso-at-indiana.edu>
 
    * Fix band reject design formula in objlib/Butter.C to conform
