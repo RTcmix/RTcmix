@@ -38,10 +38,10 @@ extern "C" {
 
     // socket stuff
     int s, ns;
-#ifdef SGI
-    int len;
-#else
+#ifdef LINUX
     unsigned int len;
+#else
+    int len;
 #endif
     struct sockaddr_in sss;
     int err;
@@ -175,12 +175,12 @@ extern "C" {
 			}
 		}
 
-
 	 		// if it is an rtupdate, set the pval array
 		if (strcmp(sinfo->name, "rtupdate") == 0) {
 		  // rtupdate params are:
 		  //	p0 = note tag # 0 for all notes
 		  //	p1,2... pn,pn+1 = pfield, value
+#ifdef RTUPDATE
 		  ntag = (int)sinfo->data.p[0];
 		  pthread_mutex_lock(&pfieldLock);
 		  for (i = 1; i < sinfo->n_args; i += 2) {
@@ -189,6 +189,7 @@ extern "C" {
 		  }
 		  pthread_mutex_unlock(&pfieldLock);
 		  tag_sem=1;
+#endif /* RTUPDATE */
 		}
 
 		else if ( (strcmp(sinfo->name, "RTcmix_off") == 0) ) {
