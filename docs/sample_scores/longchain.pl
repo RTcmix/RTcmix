@@ -56,7 +56,7 @@ $resonance = 0.3;
 $lowpitch = 5.00;
 $moddepth = 90;
 $modspeed = 0.08;
-$$wetdrymix = 0.5;
+$wetdrymix = 0.5;
 $flangetype = 0;
 
 $gensize = 100000;
@@ -67,7 +67,7 @@ $maxdelay = 1.0 / cpspch($lowpitch);
 setline(0,1,1,1);
 
 FLANGE($st=0, $insk=0, $totdur, $amp, $resonance, $maxdelay, $moddepth,
-         $modspeed, $$wetdrymix, $flangetype, $inchan=0, $pctleft=1);
+         $modspeed, $wetdrymix, $flangetype, $inchan=0, $pctleft=1);
 
 $lowpitch += .07;
 $maxdelay = 1.0 / cpspch($lowpitch);
@@ -75,7 +75,7 @@ $maxdelay = 1.0 / cpspch($lowpitch);
 makegen(2,9,$gensize, 1,1,-180);
 
 FLANGE($st=0, $insk=0, $totdur, $amp, $resonance, $maxdelay, $moddepth,
-         $modspeed, $$wetdrymix, $flangetype, $inchan=1, $pctleft=0);
+         $modspeed, $wetdrymix, $flangetype, $inchan=1, $pctleft=0);
 
 
 # ---------------------------------------------------------------- delay ---
