@@ -27,6 +27,10 @@ install:
 ifeq ($(PERL_SUPPORT), TRUE)
 	@$(INSTALL) `pwd`/MIX/PMIX $(DESTDIR)/PCMIX
 endif
+ifeq ($(PYTHON_SUPPORT), TRUE)
+	@$(INSTALL) `pwd`/MIX/PYMIX $(DESTDIR)/PYCMIX
+endif
+
 
 dsos:  all
 
@@ -55,6 +59,7 @@ clean:
 	done
 	@$(RM) $(DESTDIR)/CMIX
 	@$(RM) $(DESTDIR)/PCMIX
+	@$(RM) $(DESTDIR)/PYCMIX
 
 dso_clean:
 	@for DIR in $(LIBDIRS); \
