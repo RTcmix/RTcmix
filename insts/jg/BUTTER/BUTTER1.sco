@@ -4,7 +4,7 @@
    p1 = input start time
    p2 = input duration
    p3 = amplitude multiplier
-   p4 = type of filter (1: lowpass, 2: highpass)
+   p4 = type of filter (0: no filter, 1: lowpass, 2: highpass)
    p5 = steepness (> 0) [optional, default is 1]
    p6 = balance output and input signals (0:no, 1:yes) [optional, default is 1]
    p7 = input channel [optional, default is 0]
@@ -48,16 +48,16 @@ reset(10000)
 WAVETABLE(0, dur, amp, pitch)
 WAVETABLE(0, dur, amp, pitch+.0005)
 
-type = 0    /* 0: lowpass, 1: highpass */
+type = 1    /* 0: no filter, 1: lowpass, 2: highpass */
 amp = 1.0
 sharpness = 5
 
-if (type == 0) {
+if (type == 1) {
    balance = 0
    lowcf = 500
    highcf = 5000
 }
-else {
+else if (type == 2) {
    balance = 1
    amp = amp * .4
    lowcf = 1
