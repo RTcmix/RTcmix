@@ -1,0 +1,18 @@
+This directory contains a preliminary documentation system for RTcmix.
+A lot is missing, but you still may find it useful.
+
+   make all install
+
+(This is done from the top-level Makefile.)
+
+This will put html documentation in RTcmix/docs/html.  Just point
+your browser to the index.html file in that directory.
+
+This also puts man pages in RTcmix/docs/man.  Add this directory
+to your MANPATH to use them.  In bash, put something like this in
+your .profile (or wherever you put such things):
+
+   MANPATH="$MANPATH:/usr/local/rtcmix/docs/man"
+
+
+JGG, 28 Aug 2002
