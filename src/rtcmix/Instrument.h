@@ -18,7 +18,6 @@ public:
    int            chunksamps;
    int            endsamp;
    int            nsamps;
-   unsigned long  chunkstart;
    int            output_offset;
 
    int            sfile_on;        // a soundfile is open (for closing later)
@@ -58,7 +57,6 @@ public:
    void setendsamp(int);
    void setchunk(int);
    void set_output_offset(int);
-   void setchunkstart(int);  // FIXME:  get rid of this soon DJT
 private:
    void gone();                    // decrements reference to input soundfile
 

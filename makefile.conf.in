@@ -1,14 +1,14 @@
 # The directory containing the RTcmix directory
-TOPDIR = /usr/local/src
+TOPDIR = /home/topper
 
 # The name of the RTcmix directory
-CMIXDIR = $(TOPDIR)/RTcmix-2.3.0
+CMIXDIR = $(TOPDIR)/RTcmix.dev
 
 # The dir that will contain links to the instrument dynamic shared objects
 LIBDESTDIR = $(CMIXDIR)/shlib
 
 # add new instruments to this list (e.g., insts.std, insts.jg)
-INST_DIRS = insts.base #insts.std insts.jg
+INST_DIRS = insts.base insts.std insts.jg
 
 # add new packages to this list (e.g., interfaces.std)
 PACKAGE_DIRS =
@@ -56,7 +56,7 @@ ifeq ($(ARCH),LINUX)
   CXX = g++ 
   LD = ld
   MAKE = make
-  INSTALL = cp -f
+  INSTALL = ln -fs
   SHELL = /bin/sh
 endif
 ifeq ($(ARCH),SGI)

@@ -25,7 +25,6 @@ Instrument :: Instrument()
    chunksamps = 0;
    endsamp = 0;
    nsamps = 0;
-   chunkstart = 0;
    output_offset = 0;
 
    sfile_on = 0;                // default is no input soundfile
@@ -265,12 +264,6 @@ void Instrument :: setendsamp(int end)
 void Instrument :: setchunk(int csamps)
 {
    chunksamps = csamps;
-}
-
-/* -------------------------------------------------------- setchunkstart --- */
-void Instrument :: setchunkstart(int csamps)
-{
-   chunkstart = csamps;
 }
 
 /* ---------------------------------------------------- set_output_offset --- */
