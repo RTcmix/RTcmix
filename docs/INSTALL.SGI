@@ -17,8 +17,8 @@ If you see errors like the following, it probably means that you're compiling
 in an NFS-mounted directory. Quick solution is to put the so_locations file
 on a local disk. (Change makefile.conf for this.)
 
-ld: ERROR 48: Cannot access registry file /users/jgg9c/export/RTcmix/shlib/so_locations (No locks available) - ignored.
-ld: FATAL 51: Can't assign virtual addresses for libWAVETABLE.so of size 10000 within specified range.  Please check your registry file /users/jgg9c/export/RTcmix/shlib/so_locations.
+ld: ERROR 48: Cannot access registry file /share/RTcmix/shlib/so_locations (No locks available) - ignored.
+ld: FATAL 51: Can't assign virtual addresses for libWAVETABLE.so of size 10000 within specified range.  Please check your registry file /share/RTcmix/shlib/so_locations.
 gmake[2]: *** [libWAVETABLE.so] Error 1
 
 
