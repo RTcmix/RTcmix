@@ -1231,7 +1231,7 @@ sndlib_rheader(int fd, SFHEADER *sfh)
    }
 
    sfdataformat(sfh) = mus_header_format();
-   if (!SUPPORTED_DATA_FORMAT(sfdataformat(sfh))) {
+   if (!SUPPORTED_DATA_FORMAT_NO24BIT(sfdataformat(sfh))) {
       fprintf(stderr, "Sound file not in a supported data format. (Can be \n");
       fprintf(stderr, "16-bit linear or 32-bit float, either byte order.)\n");
       return -1;
