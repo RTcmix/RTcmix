@@ -52,7 +52,6 @@ public:
    void setendsamp(int);
    void setchunk(int);
    void setchunkstart(int);
-   void setchunkstart(int);
    void set_output_offset(int);
 
 private:
