@@ -7,7 +7,6 @@
 #include "STGRANR.h"
 #include <rt.h>
 #include <rtdefs.h>
-#include <notetags.h>
 #include <math.h>
 
 // realtime sampling stochastic grain maker based on stgran, takes mono/stereo input
@@ -78,7 +77,7 @@ int STGRANR::init(double p[], int n_args)
    }
 	nsamps = rtsetoutput(starttime, evdur, this);
 
-	if (outputchans > 2) {
+	if (outputChannels() > 2) {
 		die("STGRANR", "Can't handle more than 2 output channels.");
 		return(DONT_SCHEDULE);
 	}
@@ -210,18 +209,18 @@ int STGRANR::run()
                             ampfac = tablei(j-waitsamps,grenvtable,tabg);
                             frac = (counter - (double) incount) + 2.0;
                             outp[0] = interp(oldersig[0], oldsig[0], newsig[0], frac) * ampfac;
-                            if (inputchans == 2 && NCHANS == 2)  // split stereo files between the channels 
+                            if (inputChannels() == 2 && outputChannels() == 2)  // split stereo files between the channels 
                                 outp[1] = interp(oldersig[1], oldsig[1], newsig[1], frac) * ampfac;
                         }
                         else 
                             outp[0] = 0.0;
-                        if (NCHANS == 2 ) {  // split stereo files between the channels 
+                        if (outputChannels() == 2 ) {  // split stereo files between the channels 
                             outp[1] = (1.0 - spread) * outp[0];
                             outp[0] *= spread;
                         }
 			cursamp++; // sample of whole note
                         thechunksamp++; // sample within chunk
-                        outp += outputchans;  
+                        outp += outputChannels();  
                         counter += increment;         /* keeps track of interp pointer */
                         if (counter - (double) incount >= -0.5)
                             get_frame = 1;
@@ -232,8 +231,8 @@ int STGRANR::run()
         else { // ngrains = 0
             for ( j = 0; j < chunksamps; j++ ) {
                 outp[0] = 0.0;
-                if (NCHANS == 2) outp[1] = 0.0;
-                outp += outputchans;
+                if (outputChannels() == 2) outp[1] = 0.0;
+                outp += outputChannels();
                 cursamp++; // sample of whole note
                 thechunksamp++; // sample within chunk
            }

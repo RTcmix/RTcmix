@@ -7,7 +7,6 @@
 #include "SGRANR.h"
 #include <rt.h>
 #include <rtdefs.h>
-#include <notetags.h>
 #include <math.h>
 
 // realtime stochastic grain maker based on sgran
@@ -137,7 +136,7 @@ int SGRANR::run()
                         }
                         out[0] = oscili(aamp, si, wavetable, len, &phase);
                         out[0] = out[0] * tablei(overlapsample++,grenvtable,tabg);
-                        if (NCHANS == 2) { // split stereo files between the channel!s 
+                        if (outputChannels() == 2) { // split stereo files between the channel!s 
                             out[1] = (1.0 - spread) * out[0];
                             out[0] *= spread;
                         }
@@ -176,7 +175,7 @@ int SGRANR::run()
                         }
                         else 
                             out[0] = 0.0;
-                        if (NCHANS == 2) { // split stereo files between the channels 
+                        if (outputChannels() == 2) { // split stereo files between the channels 
                             out[1] = (1.0 - spread) * out[0];
                             out[0] *= spread;
                         }
@@ -190,7 +189,7 @@ int SGRANR::run()
         else { // ngrains = 0
             for ( j = 0; j < chunksamps; j++ ) {
                 out[0] = 0.0;
-                if (NCHANS == 2) out[1] = 0.0;
+                if (outputChannels() == 2) out[1] = 0.0;
                 rtaddout(out);
                 cursamp++; // sample of whole note
                 thechunksamp++; // sample within chunk
