@@ -93,6 +93,10 @@ int n_args; /* number of p-fields */
 	wave = floc(6); /* finds starting loc. of waveform */
 	len = fsize(6); /* length of playing waveform function */
 	envel = floc(1);
+	if (envel == NULL) {
+		fprintf(stderr, "You need to store the grain envelope  in function 1.\n");
+		exit(1);
+	}
 
 	bgrainsamps = grainsamps = p[14] * SR;
 	bgraindist = p[3] * SR;

@@ -29,6 +29,10 @@ int FMINST::init(float p[], short n_args)
 	nsamps = rtsetoutput(p[0], p[1], this);
 
 	sine = floc(1);
+	if (sine == NULL) {
+		fprintf(stderr, "You need to store a waveform in function 1.\n");
+		exit(1);
+	}
 	lensine = fsize(1);
 	if (p[3] < 15.0)
 		sicar = cpspch(p[3]) * lensine/SR;

@@ -1,4 +1,5 @@
 #include <iostream.h>
+#include <stdio.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "VSTART1.h"
@@ -63,8 +64,12 @@ int VSTART1::init(float p[], short n_args)
 	delayset(cpspch(p[7]), dq);
 	delayclean(dq);
 
-	vlen = fsize(1);
 	vloc = floc(1);
+	if (vloc == NULL) {
+		fprintf(stderr, "You need to store a vibrato function in gen num. 1.\n");
+		exit(1);
+	}
+	vlen = fsize(1);
 	vsibot = p[12] * (float)vlen/SR;
 	vsidiff = vsibot - (p[13] * (float)vlen/SR);
 	srrand(p[15]);

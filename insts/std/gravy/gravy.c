@@ -46,6 +46,10 @@ int n_args;
 	p[6] = transpose(p[6]);
 
 	winfunc = floc(1);
+	if (winfunc == NULL) {
+		fprintf(stderr, "You need to store the window envelope in function 1.\n");
+		exit(1);
+	}
 	winsize = fsize(1);
 	tableset(p[3], winsize, wintabs);
 

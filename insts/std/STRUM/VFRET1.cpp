@@ -1,4 +1,5 @@
 #include <iostream.h>
+#include <stdio.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "VFRET1.h"
@@ -47,6 +48,10 @@ int VFRET1::init(float p[], short n_args)
 
 	vlen = fsize(1);
 	vloc = floc(1);
+	if (vloc == NULL) {
+		fprintf(stderr, "You need to store a vibrato function in gen num. 1.\n");
+		exit(1);
+	}
 	vsibot = p[11] * (float)vlen/SR;
 	vsidiff = vsibot - (p[12] * (float)vlen/SR);
 	vsi = ((rrand()+1.0)/2.0) * vsidiff;

@@ -29,6 +29,10 @@ int SCULPT::init(float p[], short n_args)
 	pdur = (int)(p[1] * SR);
 
 	wave = floc(1);
+	if (wave == NULL) {
+		fprintf(stderr, "You need to store a waveform in function 1.\n");
+		exit(1);
+	}
 	len = fsize(1);
 
 	amptable = floc(2);
