@@ -578,8 +578,11 @@ maketable(const Arg args[], const int nargs)
    if (args[1].isType(StringType)) {
       if (args[1] == "nonorm")
          normalize = false;
+      else if (args[1] == "norm")
+         normalize = true;
       else {
-         die("maketable", "Invalid string option \"%s\".", (const char *) args[1]);
+         die("maketable", "Invalid string option \"%s\".",
+                                                      (const char *) args[1]);
          return NULL;
       }
       lenindex = 2;
