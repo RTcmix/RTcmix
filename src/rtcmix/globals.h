@@ -8,6 +8,7 @@
 #define _GLOBALS_H_ 1
 
 #include "version.h"
+#include "buffers.h"
 
 #ifdef MAIN
 #define GLOBAL
@@ -59,17 +60,27 @@ GLOBAL int socknew;
 GLOBAL unsigned long bufStartSamp;
 
 #include <pthread.h>
-#ifdef MAIN   /* have to do this because must be inited in definition. wierd */
+#ifdef MAIN      /* Have to do this because must be inited in definition. */
 pthread_mutex_t heapLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t pfieldLock = PTHREAD_MUTEX_INITIALIZER;
 /* pthread_mutex_t heapLock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP; */
 #else
 GLOBAL pthread_mutex_t heapLock;
 GLOBAL pthread_mutex_t pfieldLock;
-/* GLOBAL pthread_mutex_t heapLock; */
 #endif
 
 /* -------------------------------------------------------------------------- */
+
+GLOBAL InputDesc inputFileTable[MAX_INPUT_FDS];
+GLOBAL int rtInputIndex;             /* current index into inputFileTable */
+GLOBAL off_t rtInitialOffset;        /* current initial offset in file */
+
+#include "bus.h"  // FIXME: just for MAXBUS
+GLOBAL BufPtr audioin_buffer[MAXBUS];    /* input from ADC */
+GLOBAL BufPtr aux_buffer[MAXBUS];
+GLOBAL BufPtr out_buffer[MAXBUS];
+
+// FIXME: these are the old ones, which will go away soon
 GLOBAL float *outbuff;
 GLOBAL float *outbptr;
 GLOBAL short *inbuff;                /* for use with real-time audio input */
