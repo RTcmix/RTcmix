@@ -16,7 +16,7 @@
 
 load("iCOMBFILT")
 rtsetparams(44100, 2)
-rtinput("/snd/jmr6u/fftheme")
+rtinput("/snd/jmr6u/eyes")
 
 outsk=0
 insk=0
