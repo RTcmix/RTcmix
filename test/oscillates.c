@@ -16,7 +16,7 @@ void makewave(short wtable[])
   int i;
   
   for(i = 0; i < WTABLESIZE; i++) {
-    wtable[i] = sin((double) (2*PI * (float)i/WTABLESIZE)) * 32767.0;
+    wtable[i] = sin((double) (2*M_PI * (float)i/WTABLESIZE)) * 32767.0;
   }
   return;
 }
