@@ -46,7 +46,7 @@ int ROOM::init(double p[], int n_args)
    if (inputChannels() == 1)
       inchan = 0;
 
-   nmax = get_room(ipoint, lamp, ramp);
+   nmax = get_room(ipoint, lamp, ramp, SR);
    if (nmax == 0)
       return die("ROOM", "You need to call roomset before ROOM.");
 

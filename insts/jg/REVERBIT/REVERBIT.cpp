@@ -68,7 +68,7 @@
 */
 
 // local functions
-static void toneset(double, int, double []);
+static void toneset(double, double, int, double []);
 static double tone(double, double []);
 
 
@@ -126,7 +126,7 @@ int REVERBIT::init(double p[], int n_args)
                                                            "disable filter).");
    usefilt = (cutoff > 0.0);
    if (usefilt)
-      toneset(cutoff, 1, tonedata);
+      toneset(SR, cutoff, 1, tonedata);
    else
       advise("REVERBIT", "Low-pass filter disabled.");
 
@@ -185,7 +185,7 @@ void REVERBIT::updateRvb(double p[])
       cutoff = p[7];
       if (cutoff <= 0.0)
          cutoff = 0.01;
-      toneset(cutoff, 0, tonedata);
+      toneset(SR, cutoff, 0, tonedata);
    }
 }
 
@@ -258,7 +258,7 @@ int REVERBIT::run()
    NOTE: REVERBIT doesn't try to use the inverse function cited below.
 */
 static void
-toneset(double cutoff, int flag, double data[])
+toneset(double SR, double cutoff, int flag, double data[])
 {
    double x;
 

@@ -103,7 +103,7 @@ JGRAN :: ~JGRAN()
 
 
 inline TableL *
-make_table(int function_num, float dur)
+make_table(int function_num, float dur, double SR)
 {
    TableL *table = NULL;
 
@@ -131,7 +131,7 @@ int JGRAN :: init(double p[], int n_args)
    if (outputChannels() > 2)
       return die("JGRAN", "Output must be mono or stereo.");
 
-   amp_table = make_table(1, dur);
+   amp_table = make_table(1, dur, SR);
 
    // get grain envelope table
    double *function = NULL;
@@ -170,70 +170,70 @@ int JGRAN :: init(double p[], int n_args)
    // create additional tables, if corresponding pfield is missing
    if (osctype == FM) {
       if (n_args <= 8) {
-         modmult_table = make_table(4, dur);
+         modmult_table = make_table(4, dur, SR);
          if (modmult_table == NULL)
             return die("JGRAN", "Either use the modulation frequency "
                                 "multiplier pfield (p8) or make an old-style "
                                 "gen function in slot 4.");
       }
       if (n_args <= 9) {
-         modindex_table = make_table(5, dur);
+         modindex_table = make_table(5, dur, SR);
          if (modindex_table == NULL)
             return die("JGRAN", "Either use the index envelope pfield (p9) "
                                 "or make an old-style gen function in slot 5.");
       }
    }
    if (n_args <= 10) {
-      minfreq_table = make_table(6, dur);
+      minfreq_table = make_table(6, dur, SR);
       if (minfreq_table == NULL)
          return die("JGRAN", "Either use the min. grain frequency pfield (p10) "
                              "or make an old-style gen function in slot 6.");
    }
    if (n_args <= 11) {
-      maxfreq_table = make_table(7, dur);
+      maxfreq_table = make_table(7, dur, SR);
       if (maxfreq_table == NULL)
          return die("JGRAN", "Either use the max. grain frequency pfield (p11) "
                              "or make an old-style gen function in slot 7.");
    }
    if (n_args <= 12) {
-      minspeed_table = make_table(8, dur);
+      minspeed_table = make_table(8, dur, SR);
       if (minspeed_table == NULL)
          return die("JGRAN", "Either use the min. grain speed pfield (p12) "
                              "or make an old-style gen function in slot 8.");
    }
    if (n_args <= 13) {
-      maxspeed_table = make_table(9, dur);
+      maxspeed_table = make_table(9, dur, SR);
       if (maxspeed_table == NULL)
          return die("JGRAN", "Either use the max. grain speed pfield (p13) "
                              "or make an old-style gen function in slot 9.");
    }
    if (n_args <= 14) {
-      minintens_table = make_table(10, dur);
+      minintens_table = make_table(10, dur, SR);
       if (minintens_table == NULL)
          return die("JGRAN", "Either use the min. grain intensity pfield (p14) "
                              "or make an old-style gen function in slot 10.");
    }
    if (n_args <= 15) {
-      maxintens_table = make_table(11, dur);
+      maxintens_table = make_table(11, dur, SR);
       if (maxintens_table == NULL)
          return die("JGRAN", "Either use the max. grain intensity pfield (p15) "
                              "or make an old-style gen function in slot 11.");
    }
    if (n_args <= 16) {
-      density_table = make_table(12, dur);
+      density_table = make_table(12, dur, SR);
       if (density_table == NULL)
          return die("JGRAN", "Either use the grain density pfield (p16) "
                              "or make an old-style gen function in slot 12.");
    }
    if (outputChannels() == 2) {
       if (n_args <= 17) {
-         pan_table = make_table(13, dur);
+         pan_table = make_table(13, dur, SR);
          if (pan_table == NULL)
             return die("JGRAN", "Either use the pan pfield (p17) or make an "
                                 "old-style gen function in slot 13.");
       }
       if (n_args <= 18) {
-         panvar_table = make_table(14, dur);
+         panvar_table = make_table(14, dur, SR);
          if (panvar_table == NULL)
             return die("JGRAN", "Either use the pan randomization pfield (p18) "
                                "or make an old-style gen function in slot 14.");

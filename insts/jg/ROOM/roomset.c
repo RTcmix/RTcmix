@@ -15,7 +15,7 @@ static float delay[NTAPS], sloc[NTAPS], amp[NTAPS];
    If roomset Minc function hasn't been called, returns 0.
 */
 int
-get_room(int ipoint[], float lamp[], float ramp[])
+get_room(int ipoint[], float lamp[], float ramp[], double SR)
 {
    int i, nmax;
 
