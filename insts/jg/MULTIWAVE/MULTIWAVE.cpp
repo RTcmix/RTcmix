@@ -121,7 +121,7 @@ int MULTIWAVE::run()
    const int chans = outputChannels();
    float out[chans];
 
-   for (int i = 0; i < samps; i += inputChannels()) {
+   for (int i = 0; i < samps; i++) {
       if (--branch <= 0) {
          doupdate();
          branch = skip;
