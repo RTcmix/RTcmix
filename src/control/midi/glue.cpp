@@ -166,13 +166,10 @@ _read_config()
 static RTNumberPField *
 create_pfield(const Arg args[], const int nargs)
 {
-	static bool configRead = false;
+	if (nargs < 6)
+		return _midi_usage();
 
-	static RTcmixMIDI *midiport = NULL;
-	if (midiport == NULL)				// first time, so init midi system
-		midiport = createMIDIPort();
-	if (midiport == NULL)
-		return NULL;
+	static bool configRead = false;
 
 	if (configRead == false) {
 		_read_config();
@@ -236,6 +233,12 @@ create_pfield(const Arg args[], const int nargs)
 		if (subtype == kMIDIInvalidSubType)
 			return _midi_usage();
 	}
+
+	static RTcmixMIDI *midiport = NULL;
+	if (midiport == NULL)				// first time, so init midi system
+		midiport = createMIDIPort();
+	if (midiport == NULL)
+		return NULL;
 
 	return new RTMidiPField(midiport, minval, maxval, defaultval, lag, chan,
 																		type, subtype);

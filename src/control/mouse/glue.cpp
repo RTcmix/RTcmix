@@ -49,13 +49,8 @@ _mouse_usage()
 static RTNumberPField *
 create_pfield(const Arg args[], const int nargs)
 {
-	static RTcmixMouse *mousewin = NULL;
-	if (mousewin == NULL)					// first time, so make window
-		mousewin = createMouseWindow();
-	if (mousewin == NULL) {
-		die("makeconnection (mouse)", "Failed to create mouse window");
-		return NULL;
-	}
+	if (nargs < 5)
+		return _mouse_usage();
 
 	RTMouseAxis axis;
 	const char *str = args[0];
@@ -118,6 +113,14 @@ create_pfield(const Arg args[], const int nargs)
 		}
 		else
 			precision = (int) args[5];
+	}
+
+	static RTcmixMouse *mousewin = NULL;
+	if (mousewin == NULL)					// first time, so make window
+		mousewin = createMouseWindow();
+	if (mousewin == NULL) {
+		die("makeconnection (mouse)", "Failed to create mouse window");
+		return NULL;
 	}
 
 	return new RTMousePField(mousewin, axis, minval, maxval, defaultval, lag,
