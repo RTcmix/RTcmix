@@ -3,12 +3,17 @@
 #ifdef ALSA
 
 #include "ALSAAudioDevice.h"
+#include "AudioIODevice.h"
 #include <sys/time.h>
 #include <sys/resource.h>	// setpriority()
 #include <unistd.h>
 #include <stdio.h>
 
 #include <sndlibsupport.h>	// RTcmix header
+
+// TO DO:  Look up default device during open()
+
+#define DEFAULT_DEVICE "hw:0,0"
 
 inline int getstatus(int x) { return (x == 0) ? 0 : -1; }
 
@@ -80,8 +85,10 @@ int ALSAAudioDevice::doStart()
 		return error("Cannot prepare audio interface for use: ", 
 					 snd_strerror (status));
 	}
-	if ((status = snd_pcm_wait(_handle, 500)) < 0) {
-		return error("Error while waiting for device: ", snd_strerror (status));
+	if (isPlaying()) {
+		if ((status = snd_pcm_wait(_handle, 500)) < 0) {
+			return error("Error while waiting for device: ", snd_strerror (status));
+		}
 	}
 //	for (int buf=0; buf<8192; buf += _bufSize/4)
 //		sendFrames(zeroBuffer, _bufSize/4);
@@ -292,29 +299,31 @@ int ALSAAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 		return error("Cannot set parameters: ", snd_strerror(status));
 	}
 
-	// Set up device to wake us whenever *pWriteSize frames can be read/written
-	
-	snd_pcm_sw_params_t *swParams;
-	if ((status = snd_pcm_sw_params_malloc(&swParams)) < 0) {
-		return error("Cannot allocate sw params structure: ", 
-					 snd_strerror (status));
+	if (!isPassive()) {
+		// Set up device to wake us whenever *pWriteSize frames can be read/written
+
+		snd_pcm_sw_params_t *swParams;
+		if ((status = snd_pcm_sw_params_malloc(&swParams)) < 0) {
+			return error("Cannot allocate sw params structure: ", 
+						 snd_strerror (status));
+		}
+		if ((status = snd_pcm_sw_params_current(_handle, swParams)) < 0) {
+			return error("Cannot initialize sw params: ", snd_strerror (status));
+		}
+		printf("Testing: HW will wake us when %d frames can be %s\n",
+			   *pWriteSize, isPlaying() ? "written" : "read");
+		if ((status = snd_pcm_sw_params_set_avail_min(_handle, swParams, *pWriteSize)) < 0) {
+			return error("Cannot set minimum available count: ", 
+						 snd_strerror (status));
+		}
+		if ((status = snd_pcm_sw_params_set_start_threshold(_handle, swParams, 0L)) < 0) {
+			return error("Cannot set start mode: ", snd_strerror (status));
+		}
+		if ((status = snd_pcm_sw_params(_handle, swParams)) < 0) {
+			return error("Cannot set software params: ", snd_strerror (status));
+		}
+		snd_pcm_sw_params_free(swParams);
 	}
-	if ((status = snd_pcm_sw_params_current(_handle, swParams)) < 0) {
-		return error("Cannot initialize sw params: ", snd_strerror (status));
-	}
-	printf("Testing: hw will wake us when %d frames can be read/written\n", *pWriteSize);
-	if ((status = snd_pcm_sw_params_set_avail_min(_handle, swParams, *pWriteSize)) < 0) {
-		return error("Cannot set minimum available count: ", 
-					 snd_strerror (status));
-	}
-	if ((status = snd_pcm_sw_params_set_start_threshold(_handle, swParams, 0L)) < 0) {
-		return error("Cannot set start mode: ", snd_strerror (status));
-	}
-	if ((status = snd_pcm_sw_params(_handle, swParams)) < 0) {
-		return error("Cannot set software params: ", snd_strerror (status));
-	}
-	snd_pcm_sw_params_free(swParams);
-	
 	*pWriteSize = tryperiodsize;
 	return getstatus(status);
 }
@@ -398,9 +407,20 @@ void ALSAAudioDevice::run()
 //	printf("ALSAAudioDevice::run: thread exiting\n");
 }
 
-AudioDevice *createAudioDevice(const char *path)
+AudioDevice *createAudioDevice(const char *inputDesc,
+							   const char *outputDesc,
+							   bool fullDuplex)
 {
-	return new ALSAAudioDevice(path);
+	AudioDevice *theDevice;
+	// ALSA does not support full duplex as of 05/2004, so we must create a
+	// dual device from two one-directional devices.
+	
+	if (!fullDuplex)
+		theDevice = new ALSAAudioDevice(inputDesc ? inputDesc : outputDesc ? outputDesc : DEFAULT_DEVICE);
+	else
+		theDevice = new AudioIODevice(new ALSAAudioDevice(inputDesc ? inputDesc : DEFAULT_DEVICE),
+									  new ALSAAudioDevice(outputDesc ? outputDesc: DEFAULT_DEVICE));
+	return theDevice;
 }
 
 #endif	// ALSA
