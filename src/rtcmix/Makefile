@@ -119,7 +119,6 @@ endif
 ifeq ($(PYTHON_SUPPORT), TRUE)
 ARCHFLAGS += -DPYTHON
 PROGS += PYMIX
-PYTHON_INCLUDE_DIR = `$(PYTHON) ../parser/python/print_python_includedir.py`
 LIBPYTHON = `$(PYTHON) ../parser/python/print_libpython.py`
 ifeq ($(ARCH), LINUX)
 	# This is necessary for Python 2.0 in Slackware Linux 8.0, and probably
@@ -139,7 +138,13 @@ $(LIBCONF):
 	(cd ../conf; $(MAKE) $(MFLAGS) all;)
 
 $(LIBMINC):
-	(cd ../parser/minc; $(MAKE) $(MFLAGS) all;)
+	(cd ../parser; $(MAKE) $(MFLAGS) minc;)
+
+$(P_O):
+	(cd ../parser; $(MAKE) $(MFLAGS) perl;)
+
+$(PY_O):
+	(cd ../parser; $(MAKE) $(MFLAGS) python;)
 
 $(SNDLIB):
 	(cd ../sndlib; $(MAKE) $(MFLAGS) all;)
@@ -218,6 +223,10 @@ standalone_uninstall:
 
 clean:
 	(cd heap; $(MAKE) $(MFLAGS) clean;)
+	(cd ../audio; $(MAKE) $(MFLAGS) clean;)
+	(cd ../conf; $(MAKE) $(MFLAGS) clean;)
+	(cd ../sndlib; $(MAKE) $(MFLAGS) clean;)
+	(cd ../parser; $(MAKE) $(MFLAGS) clean;)
 	$(RM) *.o $(TARGETS) core depend
 
 cleanall: clean
