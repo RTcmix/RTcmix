@@ -4,42 +4,27 @@
 
 include makefile.conf
 
-MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
-
-SNDLIB_DIR = src/sndlib
-
 BASE = insts/base
 
-DIRS = $(SNDLIB_DIR) include src genlib utils docs
-ifeq ($(PERL_SUPPORT), TRUE)
-	DIRS += src/parser/perl
-endif
-ifeq ($(PYTHON_SUPPORT), TRUE)
-	DIRS += src/parser/python
-endif
+DIRS = include genlib src insts utils docs
 
 #################################################################  make all  ###
 
 all: $(DIRS) insts packages
 
-$(SNDLIB_DIR)::
-	@echo "making sndlib..."
-	@cd $(SNDLIB_DIR); $(MAKE) $(MFLAGS) all
-	@echo "done."; echo ""
-
 include::
-	@echo "making include..."
-	@cd include; $(MAKE) $(MFLAGS) all
+	@echo "making and installing include..."
+	@cd include; $(MAKE) $(MFLAGS) install
 	@echo "done."; echo ""
 
 src::
-	@echo "making src..."
+	@echo "making all in src..."
 	@cd src; $(MAKE) $(MFLAGS) all
 	@echo "done."; echo ""
 
 genlib::
-	@echo "making genlib..."
-	@cd genlib; $(MAKE) $(MFLAGS) all
+	@echo "making and installing genlib..."
+	@cd genlib; $(MAKE) $(MFLAGS) install
 	@echo "done."; echo ""
 
 utils::
@@ -52,26 +37,15 @@ docs::
 	@cd docs/pod; $(MAKE) $(MFLAGS) all
 	@echo "done."; echo ""
 
-perl::
-	@echo "making perl..."
-	@cd Perl; $(MAKE) $(MFLAGS) all
+insts::
+	@echo "making insts ..."
+	@cd insts; $(MAKE) $(MFLAGS) all
 	@echo "done."; echo ""
 
-insts::
-	@for DIR in $(INST_DIRS); \
-	do \
-	  ( cd $$DIR; echo "making $$DIR..."; \
-	   echo "include $(MAKEFILE_CONF)" > package.conf; \
-	   $(MAKE) $(MFLAGS) all; echo "done."; echo "" ); \
-	done
-
 base::
-	@for DIR in $(BASE); \
-	do \
-	  ( cd $$DIR; echo "making $$DIR..."; \
-	   echo "include $(MAKEFILE_CONF)" > package.conf; \
-	   $(MAKE) $(MFLAGS) all; echo "done."; echo "" ); \
-	done
+	@echo "making base insts ..."
+	@cd insts; $(MAKE) $(MFLAGS) base
+	@echo "done."; echo ""
 
 packages::
 ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
@@ -83,36 +57,20 @@ ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
 	done
 endif
 
-dsos::
-	@for DIR in $(INST_DIRS); \
-	do \
-	  ( cd $$DIR; echo "making $$DIR..."; \
-	   echo "include $(MAKEFILE_CONF)" > package.conf \
-	   $(MAKE) $(MFLAGS) all; echo "done."; echo "" ); \
-	done
+dsos:: insts
 
 standalone::
-	@for DIR in $(INST_DIRS); \
-	do \
-	  ( cd $$DIR; echo "making standalone $$DIR..."; \
-	   echo "include $(MAKEFILE_CONF)" > package.conf \
-	   $(MAKE) $(MFLAGS) standalone; echo "done."; echo "" ); \
-	done
+	@echo "making standalone ..."
+	@cd insts; $(MAKE) $(MFLAGS) standalone
+	@echo "done."; echo ""
 
 #############################################################  make install  ###
 
 install::
 	@echo "beginning install..."
-	@cd src; $(MAKE) $(MFLAGS) install;
 	@if test ! -d $(LIBDIR); then mkdir $(LIBDIR); fi;
-	@cd genlib; $(MAKE) $(MFLAGS) install;
-	@cd utils; $(MAKE) $(MFLAGS) install;
-	@cd docs/pod; $(MAKE) $(MFLAGS) install
 	@if test ! -d $(LIBDESTDIR); then mkdir $(LIBDESTDIR); fi;
-ifeq ($(PERL_SUPPORT), TRUE)
-	@cd Perl; $(MAKE) $(MFLAGS) install;
-endif
-	@for DIR in $(INST_DIRS); \
+	@for DIR in $(DIRS) $(INST_DIRS); \
 	do \
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) install ); \
 	done
@@ -139,24 +97,14 @@ dso_install:
 
 standalone_install::
 	@echo "beginning standalone_install..."
-	@for DIR in $(INST_DIRS); \
-	do \
-	  ( cd $$DIR; $(MAKE) $(MFLAGS) standalone_install ); \
-	done
+	@cd insts; $(MAKE) $(MFLAGS) standalone_install;
 	@echo "standalone_install done."; echo ""
 
 ###########################################################  make uninstall  ###
 
 uninstall::
 	@echo "beginning uninstall..."
-	@cd head; $(MAKE) $(MFLAGS) uninstall;
-	@cd cmd; $(MAKE) $(MFLAGS) uninstall;
-	@cd utils; $(MAKE) $(MFLAGS) uninstall;
-	@cd docs/pod; $(MAKE) $(MFLAGS) uninstall
-ifeq ($(PERL_SUPPORT), TRUE)
-	@cd Perl; $(MAKE) $(MFLAGS) uninstall;
-endif
-	@for DIR in $(INST_DIRS); \
+	@for DIR in $(DIRS); \
 	do \
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) uninstall ); \
 	done
@@ -170,23 +118,17 @@ endif
 
 dso_uninstall: 
 	@echo "beginning dso_uninstall..."
-	@for DIR in $(INST_DIRS); \
-	do \
-	  ( cd $$DIR; $(MAKE) $(MFLAGS) dso_uninstall ); \
-	done
+	@cd insts; $(MAKE) $(MFLAGS) dso_uninstall; 
 	@echo "dso_uninstall done."; echo ""
 
 standalone_uninstall::
 	@echo "beginning standalone_uninstall..."
-	@for DIR in $(INST_DIRS); \
-	do \
-	  ( cd $$DIR; $(MAKE) $(MFLAGS) standalone_uninstall ); \
-	done
+	@cd insts; $(MAKE) $(MFLAGS) standalone_uninstall; 
 	@echo "standalone_uninstall done."; echo ""
 
 ###############################################################  make depend  ##
 depend::
-	@for DIR in Minc sys; \
+	@for DIR in $(DIRS); \
 	do \
 	  ( cd $$DIR; echo "making depend in $$DIR..."; \
 	  $(RM) depend; \
@@ -196,7 +138,7 @@ depend::
 
 # NB: leave docs/pod alone, so we don't have to rebuild docs all the time
 clean::
-	@for DIR in $(DIRS) $(INST_DIRS); \
+	@for DIR in $(DIRS); \
 	do \
 	  ( cd $$DIR; echo "making clean in $$DIR..."; \
 	  $(MAKE) $(MFLAGS) clean ); \
