@@ -1,4 +1,4 @@
-/* Apply a comb filter to the input stream.
+/* COMBIT - Apply a comb filter to the input stream.
 
 		p0 = output start time
 		p1 = input start time
@@ -8,18 +8,25 @@
 		p5 = reverb time
 		p6 = input channel [optional]
 		p7 = pan (percent to left) [optional]
+      p8 = ring-down duration [optional, default is first reverb time value]
 
 	p3 (amplitude), p4 (frequency), p5 (reverb time) and p7 (pan) can receive
 	dynamic updates from a table or real-time control source.
 
 	If an old-style gen table 1 is present, its values will be multiplied
    by the p3 amplitude multiplier, even if the latter is dynamic.
+
+   The point of the ring-down duration parameter is to let you control
+   how long the combs will ring after the input has stopped.  If the
+   reverb time is constant, COMBIT will figure out the correct ring-down
+   duration for you.  If the reverb time is dynamic, you must specify a
+   ring-down duration if you want to ensure that your sound will not be
+   cut off prematurely.
+                                          rev. for v4.0 by JGG, 7/10/04
 */
-#include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "COMBIT.h"
 #include <rt.h>
@@ -51,19 +58,16 @@ int COMBIT::init(double p[], int n_args)
 	rvbtime = p[5];
 	inchan = n_args > 6 ? (int) p[6] : 0;
 	pctleft = n_args > 7 ? p[7] : 0.0;
+	float ringdur = n_args > 8 ? p[8] : rvbtime;
 
-	int rvin = rtsetinput(inskip, this);
-	if (rvin == -1) { // no input
-		return DONT_SCHEDULE;
-	}
+	if (rtsetinput(inskip, this) == -1)
+		return DONT_SCHEDULE;	// no input
+
 	if (inchan >= inputChannels())
 		return die("COMBIT", "You asked for channel %d of a %d-channel file.", 
                                                     inchan, inputChannels());
-// FIXME: if update of rvbtime causes its value to increase, output will
-// be cut short.  Solutions: (1) as user, put big value in first table slot;
-// (2) here, pass bigger value to rtsetoutput.  (1) is confusing, (2) could
-// give way too much ringdur.  Probably should be an optional ringdur pfield.
-	nsamps = rtsetoutput(start, dur + rvbtime, this);
+
+	nsamps = rtsetoutput(start, dur + ringdur, this);
 	insamps = (int) (dur * SR + 0.5);
 
 	if (frequency < MINFREQ)
@@ -80,7 +84,7 @@ int COMBIT::init(double p[], int n_args)
 
 	skip = (int) (SR / (float) resetval);
 
-	return nsamps;
+	return nSamps();
 }
 
 
@@ -121,7 +125,6 @@ int COMBIT::run()
 				rvbtime = p[5];
 				comb->setReverbTime(rvbtime);
 			}
-			inchan = (int) p[6];
 			pctleft = p[7];
 			branch = skip;
 		}
@@ -146,8 +149,7 @@ int COMBIT::run()
 }
 
 
-Instrument*
-makeCOMBIT()
+Instrument *makeCOMBIT()
 {
 	COMBIT *inst;
 
