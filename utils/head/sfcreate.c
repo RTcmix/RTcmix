@@ -224,8 +224,6 @@ main(int argc, char *argv[])
    int         force = FALSE;
    struct stat statbuf;
 
-   old_format=0;
-   old_datum_size=0;
    /* get name of this program */
    progname = strrchr(argv[0], '/');
    if (progname == NULL)
@@ -288,7 +286,7 @@ main(int argc, char *argv[])
    if (check_params())
       usage();
 
-   old_data_location = old_nsamps = 0;
+   old_data_location = old_format = old_datum_size = old_nsamps = 0;
 
    /* Test for existing file. If there is one, and we can read and write it,
       and it seems to be a sound file, and the force flag is set ...
