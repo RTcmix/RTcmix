@@ -5,21 +5,20 @@
 #include <globals.h>
 #include <pthread.h>
 #include <iostream.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <sys/time.h>           // DT: 3/97 needed for time function
 #include "../rtstuff/heap/heap.h"
 #include "../rtstuff/rtdefs.h"
-#include "../H/byte_routines.h"
 #include "../H/dbug.h"
 
 extern "C" {
-#include <sys/time.h>           // DT: 3/97 needed for time function
-#include <unistd.h>
-#include <stdio.h>
-  void *rtsendsamps(short[]);
-  short *rtrescale(float[]);
+  void rtsendsamps(void);
+  void rtsendzeros(int);
   void rtreportstats(void);
-  int rtwritesamps(short[]);
-  int rtcloseout();
-  int rtgetsamps();            // DT:  for use with real-time audio input
+  int rtcloseout(void);
+  void rtgetsamps(void);         // DT:  for use with real-time audio input
+  void close_audio_ports(void);
 }
 
 double baseTime;
@@ -43,7 +42,6 @@ extern "C" {
     int offset,endsamp;
     int keepGoing;
     int dummy;
-    short *sbuf;
 
     Instrument *Iptr;
 
@@ -55,7 +53,7 @@ extern "C" {
     struct timezone tz;
     double sec,usec;
 
-	Bool aux_pb_done;
+	Bool aux_pb_done = NO;
 	short bus,bus_count,play_bus;
 	IBusClass bus_class,qStatus;
 	
@@ -93,24 +91,19 @@ extern "C" {
 
     // printf("ENTERING inTraverse() FUNCTION\n");
 
-    if (out_port) {
-      clear_audioin_buffers();
-      clear_aux_buffers();
-      clear_output_buffers();
-    }
+    // NOTE: audioin, aux and output buffers are zero'd during allocation
 
     // read in an input buffer (if audio input is active)
     if (audio_on) {
       rtgetsamps();
-      sbuf = rtrescale(outbuff);
-      rtsendsamps(sbuf);  // send a buffer of zeros
+      rtsendzeros(0);  // send a buffer of zeros to audio device
     }
   
     bufStartSamp = 0;  // current end sample for buffer
     bufEndSamp = RTBUFSAMPS;
     chunkStart = 0;
 
-    if (out_port)
+    if (rtsetparams_called)         // otherwise, disk-based only
       playEm = 1;
 
     while(playEm) { // the big loop ==========================================
@@ -216,7 +209,7 @@ extern "C" {
 		  
 		  Iptr->setchunk(chunksamps);  // set "chunksamps"
 		  
-		  Iptr->run();    // write the samples * * * * * * * * * * * 
+		  Iptr->exec();    // write the samples * * * * * * * * * * * 
 		  
 		  // ReQueue or delete - - - - - - - - - - - - - - - - - - -
 		  if (endsamp > bufEndSamp) {
@@ -262,29 +255,10 @@ extern "C" {
 		cout << "Q-chunkStart:  " << chunkStart << endl;
 		cout << "bufEndSamp:  " << bufEndSamp << endl;
 #endif
-		
-		// cout << "play_audio = " << play_audio << endl;
-		
-		sbuf = rtrescale(outbuff);
-		
-		if (play_audio)
-		  rtsendsamps(sbuf);
-		
-		// Write audio buffer to file
-		if (rtfileit) {
-		  rtwritesamps(sbuf);
-		}      
-		
-		gettimeofday(&tv, &tz);
-		sec = (double)tv.tv_sec;
-		usec = (double)tv.tv_usec;
-		baseTime = (sec * 1e6) + usec;
-		elapsed += RTBUFSAMPS;	
-		bufStartSamp += RTBUFSAMPS;
-		bufEndSamp += RTBUFSAMPS;
-		
+
+		rtsendsamps();
+
 		// zero the buffers
-		clear_audioin_buffers();
 		clear_aux_buffers();
 		clear_output_buffers();
 
@@ -293,6 +267,14 @@ extern "C" {
 		  // cout << "Reading data from audio port\n";
 		  rtgetsamps();
 		}
+
+		gettimeofday(&tv, &tz);
+		sec = (double)tv.tv_sec;
+		usec = (double)tv.tv_usec;
+		baseTime = (sec * 1e6) + usec;
+		elapsed += RTBUFSAMPS;	
+		bufStartSamp += RTBUFSAMPS;
+		bufEndSamp += RTBUFSAMPS;
 	  }
       
 	  // Some checks for the next case v v v v v v v v v v v v
@@ -309,18 +291,18 @@ extern "C" {
 	  // write zeros
 	  if (!(rtQSize) && (heapChunkStart > bufEndSamp)) {
 		
-		sbuf = rtrescale(outbuff);
-		if (play_audio && rtInst) {
-		  rtsendsamps(sbuf);
-		}
-		
+		// FIXME: old comment -- still valid?  -JGG
 		// Write audio buffer to file
 		// ***FIXME: this writes extra MAXBUF zeros to end of file
 		// ***need to make intraverse aware of what it's doing (e.g, server?)
-		if (rtfileit && rtInst) {
-		  rtwritesamps(sbuf);
-		}
+
+		if (rtInst)
+		  rtsendzeros(1);   // send zeros to audio device and to file
 		
+		// zero the buffers
+		clear_aux_buffers();
+		clear_output_buffers();
+
 		// Increment time
 		gettimeofday(&tv, &tz);
 		sec = (double)tv.tv_sec;
@@ -329,11 +311,6 @@ extern "C" {
 		elapsed += RTBUFSAMPS;
 		bufStartSamp += RTBUFSAMPS;
 		bufEndSamp += RTBUFSAMPS;
-      
-		// zero the buffers
-		clear_audioin_buffers();
-		clear_aux_buffers();
-		clear_output_buffers();
       }
 
 
@@ -345,27 +322,16 @@ extern "C" {
       }
     } // end playEm =========================================================
   
-    if (out_port) {
-      // Play zero'd buffers to avoid clicks
-      if (play_audio) {
+	if (rtsetparams_called) {
+	  if (play_audio) {             // Play zero'd buffers to avoid clicks
 		int count = NCHANS * 2;
-		sbuf = rtrescale(outbuff);
 		for (j = 0; j < count; j++) 
-		  rtsendsamps(sbuf);
+		  rtsendzeros(0);
       }  
-      rtreportstats();   /* only if rtsetparams was called */
-#ifdef LINUX
-      close(out_port);
-#endif
-    }
-#ifdef LINUX
-    if (in_port) {
-      close(in_port);
-    }
-#endif
-    if (rtfileit) {
-      rtcloseout();
-    }
+	  close_audio_ports();
+	  rtreportstats();
+	  rtcloseout();
+	}
 
 	cout << "\n";
 	// cout << "EXITING inTraverse() FUNCTION *****\n";
