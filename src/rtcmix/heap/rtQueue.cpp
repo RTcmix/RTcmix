@@ -10,30 +10,30 @@
 
 // #define DBUG
 
-rtQueue::rtQueue()
+RTQueue::RTQueue()
 {
   head=NULL;
   tail=NULL;
   size=0;
 }
 
-// Return the number of elements on the rtQueue
+// Return the number of elements on the RTQueue
 
-int rtQueue::getSize()
+int RTQueue::getSize()
 {
   return size;
 }
 
 // Return the starting sample chunk of the top Instrument
 
-int rtQueue::nextChunk()
+int RTQueue::nextChunk()
 {
   return head->chunkstart;
 }
 
-// Push an element to end of the rtQueue
+// Push an element to end of the RTQueue
 
-void rtQueue::push(Instrument *newInst, unsigned long new_chunkstart)
+void RTQueue::push(Instrument *newInst, unsigned long new_chunkstart)
 {
   int i;
   long diff;
@@ -45,10 +45,10 @@ void rtQueue::push(Instrument *newInst, unsigned long new_chunkstart)
   newElt->next = NULL;
   newElt->prev = NULL;
 
-  if (head == NULL)  // if first item on rtQueue
+  if (head == NULL)  // if first item on RTQueue
     head = tail = newElt;
   else if(tail->chunkstart <= newElt->chunkstart) {
-    // append to the end of the rtQueue
+    // append to the end of the RTQueue
 #ifdef DBUG
 	cout << "Queueing at end\n";
 #endif
@@ -58,7 +58,7 @@ void rtQueue::push(Instrument *newInst, unsigned long new_chunkstart)
   }
   else { // BGG: we have to insert this one
 #ifdef DBUG
-    cout << "rtQueue::push():  scanning ...\n";
+    cout << "RTQueue::push():  scanning ...\n";
     cout << "tail->chunkstart = " << tail->chunkstart << endl;
     cout << "newElt->chunkstart = " << newElt->chunkstart << endl;
     cout << "Queue size = " << size << endl;
@@ -133,15 +133,15 @@ void rtQueue::push(Instrument *newInst, unsigned long new_chunkstart)
   size++;
 }
 
-// Pop an element of the top of the rtQueue
+// Pop an element of the top of the RTQueue
 
-Instrument *rtQueue::pop() 
+Instrument *RTQueue::pop() 
 {
   rtQElt *tQelt;
   Instrument *retInst;
   tQelt = head;
   if (!head) {
-    cerr << "ERROR: attempt to pop empty rtQueue\n";
+    cerr << "ERROR: attempt to pop empty RTQueue\n";
     return NULL;
   }
   retInst = head->Inst;

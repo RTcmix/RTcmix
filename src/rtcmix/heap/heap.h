@@ -61,7 +61,7 @@ public:
 // class for queue used to hold Instruments
 
 class rtQElt {
-  friend class rtQueue;
+  friend class RTQueue;
   rtQElt *next;
   rtQElt *prev;
   Instrument *Inst;
@@ -70,13 +70,13 @@ class rtQElt {
 
 // class for main queue structure
 
-class rtQueue {
+class RTQueue {
 private:
   rtQElt *head;
   rtQElt *tail;
   int size;
 public:
-  rtQueue();
+  RTQueue();
   void push(Instrument*, unsigned long);
   Instrument *pop();
   int nextChunk();

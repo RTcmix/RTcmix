@@ -102,6 +102,8 @@ init_globals()
    out_port = 0;
 #endif /* SGI */
 
+   rtQueue = new RTQueue[MAXBUS*3];
+
    rtInteractive = 0;
    noParse = 0;
    socknew = 0;
@@ -270,14 +272,14 @@ main(int argc, char *argv[])
 			   {
 				   for(k = 0; k < MAXNUMPARAMS; k++)
 				   {
-					   parray_size[j][k] = 0; //initilizes size of pfpath array
+					   // parray_size[j][k] = 0; //initilizes size of pfpath array
 				   }
 			   }
 			   for(j = 0; j < MAXNUMINSTS; j++)
 			   {
 				   for(k = 0; k < MAXNUMPARAMS; k++)
 				   {
-					   piarray_size[j][k] = 0;
+					   // piarray_size[j][k] = 0;
 				   }
 			   }
                break;

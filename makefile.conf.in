@@ -1,16 +1,16 @@
 # Change stuff in here as needed
 
 # The directory containing the RTcmix directory
-TOPDIR = /usr/local/src
+TOPDIR = /users/jmr6u/
 
 # The name of the RTcmix directory
-CMIXDIR = $(TOPDIR)/RTcmix-3.1.0
+CMIXDIR = $(TOPDIR)/RTcmix
 
 # The dir that will contain links to the instrument dynamic shared objects
 LIBDESTDIR = $(CMIXDIR)/shlib
 
 # add new instruments to this list (e.g., insts.std, insts.jg)
-INST_DIRS = insts.base #insts.std insts.jg insts.mch
+INST_DIRS = insts.vccm insts.base #insts.std insts.rtperf #insts.jg
 
 # add new packages to this list (e.g., interfaces.std)
 PACKAGE_DIRS =
@@ -74,7 +74,8 @@ ifeq ($(ARCH),LINUX)
   CXX = g++ 
   LD = ld
   MAKE = make
-  INSTALL = cp -f
+#  INSTALL = cp -f
+  INSTALL = ln -fs
   SHELL = /bin/sh
 endif
 ifeq ($(ARCH),SGI)
@@ -97,7 +98,7 @@ CXXFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
 SNDLIB = ../sndlib/sndlib.a
 
 ifeq ($(ARCH),LINUX)
-  SYSLIBS = -lpthread -lm -ldl
+  SYSLIBS = -lpthread -lm -ldl -lefence
   LDFLAGS = $(SYSLIBS)
   SHARED_LDFLAGS = -shared 
 endif

@@ -20,7 +20,7 @@
 #ifdef __cplusplus
 
 #include "../rtstuff/heap/heap.h"
-GLOBAL rtQueue rtQueue[MAXBUS*3];
+GLOBAL RTQueue *rtQueue;
 GLOBAL heap rtHeap;  // DT:  main heap structure used to queue instruments
                      // formerly Qobject *rtqueue[];
 extern "C" {
