@@ -1,5 +1,5 @@
 # The directory containing the RTcmix directory
-TOPDIR = /users/djt7p
+TOPDIR = /musr
 #TOPDIR = /musr
 
 # The name of the RTcmix directory
@@ -10,7 +10,7 @@ LIBDESTDIR = $(CMIXDIR)/shlib
 #or this: LIBDESTDIR = $(CMIXDIR)/shlib
 
 # add new instruments to this list (e.g., insts.std, insts.jg)
-INST_DIRS = insts.base
+INST_DIRS = insts.base insts.std
 # insts.std insts.jg
 
 # add new packages to this list (e.g., interfaces.std)
