@@ -122,9 +122,11 @@ extern "C" {
 		if (!Iptr)
 		  break;
 
+#ifdef TBUG
 		if ((Bus_Configed == NO) && (print_is_on)) {
 		  printf("WARNING:  no bus_configs defined, using default\n");
 		}
+#endif
 
 		// DJT Now we push things onto different queues
 		bus_class = checkClass(Iptr->bus_config);
