@@ -5,15 +5,17 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include <rtcmix_types.h>
+#include <Option.h>
 #include <PField.h>
 #include <RTcmixMIDI.h>
 #include <RTMidiPField.h>
 #include <ugens.h>		// for warn, die
 
-//FIXME: better to have a struct with one field a string, the other type
+//FIXME: better to have a struct with one field a string, the other type?
 
-#define NAME_VARIANTS 4
+#define NAME_VARIANTS	4
 static char *_midi_type_name[][NAME_VARIANTS] = {
 	// NB: Order of these must correspond to indices given by MIDIType enum!
 	{ "cntl", "control", NULL, NULL },
@@ -28,25 +30,36 @@ static char *_midi_type_name[][NAME_VARIANTS] = {
 	{ NULL, NULL, NULL, NULL }
 };
 
-static char *_midi_controller_name[][NAME_VARIANTS] = {
-	{ "banksel", NULL, NULL, NULL },
-	{ "mod", "modwheel", "modulation", NULL },
-	{ "breath", NULL, NULL, NULL },
-// FIXME: This breaks _string_to_subtype!!
-	{ NULL, NULL, NULL, NULL },
-	{ "foot", NULL, NULL, NULL },
-	{ "port time", "portamento time", NULL, NULL },
-	{ "data", NULL, NULL, NULL },
-	{ "vol", "volume", NULL, NULL },
-	{ "bal", "balance", NULL, NULL },
-	{ NULL, NULL, NULL, NULL },
-	{ "pan", NULL, NULL, NULL },
-	{ "exp", "expression", NULL, NULL },
-	{ NULL, NULL, NULL, NULL }
-//FIXME: add others
+static char *_midi_controller_name[128] = {
+				"", "mod", "breath", "", "foot",
+				"port time", "data", "volume", "balance", "",
+/* 10 */		"pan", "expression", "fxctl1", "fxctl2", "",
+				"", "gp1", "gp2", "gp3", "gp4",
+/* 20 */		"", "", "", "", "",
+				"", "", "", "", "",
+/* 30 */		"", "", "", "", "",
+				"", "", "", "", "",
+/* 40 */		"", "", "", "", "",
+				"", "", "", "", "",
+/* 50 */		"", "", "", "", "",
+				"", "", "", "", "",
+/* 60 */		"", "", "", "", "sustainsw",
+				"portamentosw", "sostenutosw", "softpedsw", "legatosw", "hold2sw",
+/* 70 */		"sc1", "sc2", "sc3", "sc4", "sc5",
+				"sc6", "sc7", "sc8", "sc9", "sc10",
+/* 80 */		"gp5", "gp6", "gp7", "gp8", "portamento",
+				"", "", "", "", "",
+/* 90 */		"", "fx1depth", "fx2depth", "fx3depth", "fx4depth",
+				"fx5depth", "dataincr", "datadecr", "nrplsb", "nrpmsb",
+/* 100 */	"rplsb", "rpmsb", "", "", "",
+				"", "", "", "", "",
+/* 110 */	"", "", "", "", "",
+				"", "", "", "", "",
+/* 120 */	"sound off", "reset cntl", "local cntl", "notes off", "omni off",
+				"omni on", "mono on", "poly on"
 };
 
-// -------------------------------------------------------- _midi_connection ---
+// --------------------------------------------------------- midi_connection ---
 //
 //    midi = makeconnection("midi", min, max, default, lag, chan, type,
 //                                                                [subtype])
@@ -91,27 +104,80 @@ static MIDISubType
 _string_to_subtype(const MIDIType type, const char *subtype)
 {
 	if (type == kMIDIControlType) {
-		for (int i = 0; _midi_controller_name[i][0] != NULL; i++) {
-			for (int j = 0; j < NAME_VARIANTS; j++) {
-				const char *name = _midi_controller_name[i][j];
-				if (name == NULL)
-					break;
-				if (strcasecmp(subtype, name) == 0)
-					return (MIDISubType) i;
-			}
+		for (int i = 0; i < 128; i++) {
+			const char *name = _midi_controller_name[i];
+			if (strcmp(subtype, name) == 0)
+				return (MIDISubType) i;
 		}
 	}
 	return kMIDIInvalidSubType;
 }
 
+/* Parse MIDI control name string, a sequence of colon-separated strings,
+   with line-splicing recognition and some white-space eating.  Reads this:
+  
+      midi_control_names = " \
+         bank select: \
+         modulation wheel: \
+         : \
+         foot: \
+         ...
+         last name"
+
+   resulting in these names: "bank select", "modulation wheel", "", "foot",
+   ... "last name".  All except the empty "" override the builtin names.
+*/
+static void
+_read_config()
+{
+#ifdef NOTYET
+	char *names = strdup(Option::midiCntlNames());
+	char *p, buf[128];
+	int i = 0;
+	int j = 0;
+	bool eatspace = true;
+	for (i = 0, p = names; i < 128 && *p != 0; p++) {
+		if (eatspace && isspace(*p))
+			continue;
+		if (*p == '\\')
+			continue;
+		if (*p == ':') {
+			buf[j] = 0;
+			if (buf[0])
+				_midi_controller_name[i] = strdup(buf);
+			i++;
+			j = 0;
+			eatspace = true;
+		}
+		else {
+			buf[j++] = *p;
+			if (j == 127) {
+				warn("makeconnection (midi)",
+						"Controller name in config file too long");
+				break;
+			}
+			eatspace = false;
+		}
+	}
+	free(names);
+#endif
+}
+
 RTNumberPField *
 midi_connection(const Arg args[], const int nargs)
 {
+	static bool configRead = false;
+
 	static RTcmixMIDI *midiport = NULL;
 	if (midiport == NULL)				// first time, so init midi system
 		midiport = createMIDIPort();
 	if (midiport == NULL)
 		return NULL;
+
+	if (configRead == false) {
+		_read_config();
+		configRead = true;
+	}
 
 	double minval, maxval, defaultval, lag;
 	int chan;
