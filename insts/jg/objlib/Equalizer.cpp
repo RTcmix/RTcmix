@@ -29,15 +29,15 @@ void Equalizer :: clear()
 
 
 void Equalizer :: setCoeffs(
-   MY_FLOAT freq,          // in Hz
-   MY_FLOAT Q,             // roughly 0.5 to 10
-   MY_FLOAT gain = 0.0)    // in dB (peaking and shelving EQs only)
+   double freq,          // in Hz
+   double Q,             // roughly 0.5 to 10
+   double gain = 0.0)    // in dB (peaking and shelving EQs only)
 {
    double a0, a1, a2, b0, b1, b2, A, alpha, beta, omega, sn, cs;
 
    a0 = a1 = a2 = b0 = b1 = b2 = 0.0;  // suppress init warnings
 
-   omega = 2.0 * M_PI * ((double) freq / _sr);
+   omega = 2.0 * M_PI * (freq / _sr);
    sn = sin(omega);
    cs = cos(omega);
 

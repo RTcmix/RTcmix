@@ -17,7 +17,7 @@ Filter :: ~Filter()
 }
 
 
-MY_FLOAT Filter :: lastOut()
+double Filter :: lastOut()
 {
    return lastOutput;
 }

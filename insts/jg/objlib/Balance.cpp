@@ -34,13 +34,13 @@ void Balance :: clear()
 }
 
 
-void Balance :: setInitialGain(MY_FLOAT aGain)
+void Balance :: setInitialGain(double aGain)
 {
    gain = aGain;
 }
 
 
-void Balance :: setFreq(MY_FLOAT freq)
+void Balance :: setFreq(double freq)
 {
    inputRMS->setFreq(freq);
    compareRMS->setFreq(freq);
@@ -58,16 +58,16 @@ void Balance :: setWindowSize(int nsamples)
 }
 
 
-MY_FLOAT Balance :: tick(MY_FLOAT inputSamp, MY_FLOAT compareSamp)
+double Balance :: tick(double inputSamp, double compareSamp)
 {
-   MY_FLOAT in, cmp;
+   double in, cmp;
 
    // Note: must maintain rms histories even when we don't consult in and cmp
    in = inputRMS->tick(inputSamp);
    cmp = compareRMS->tick(compareSamp);
 
    if (--counter < 0) {
-      MY_FLOAT a, diff;
+      double a, diff;
 
       a  = in ? cmp / in : cmp;
       diff = a - gain;

@@ -18,16 +18,16 @@
 class OnePole : public Filter
 {
   protected:  
-    MY_FLOAT poleCoeff;
-    MY_FLOAT sgain;
+    double poleCoeff;
+    double sgain;
   public:
     OnePole(double srate);
     ~OnePole();
     void clear();
-    void setFreq(MY_FLOAT freq);
-    void setPole(MY_FLOAT aValue);
-    void setGain(MY_FLOAT aValue);
-    MY_FLOAT tick(MY_FLOAT sample);
+    void setFreq(double freq);
+    void setPole(double aValue);
+    void setGain(double aValue);
+    double tick(double sample);
 };
 
 #endif

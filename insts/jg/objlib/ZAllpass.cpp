@@ -4,7 +4,7 @@
 #include "ZAllpass.h"
 
 
-ZAllpass :: ZAllpass(double srate, MY_FLOAT loopTime, MY_FLOAT reverbTime)
+ZAllpass :: ZAllpass(double srate, double loopTime, double reverbTime)
    : Filter(srate)
 {
    long len;
@@ -32,37 +32,34 @@ ZAllpass :: ~ZAllpass()
 void ZAllpass :: clear()
 {
    delayLine->clear();
-   lastOutput = (MY_FLOAT) 0.0;
+   lastOutput = 0.0;
 }
 
 
-void ZAllpass :: setReverbTime(MY_FLOAT reverbTime)
+void ZAllpass :: setReverbTime(double reverbTime)
 {
    if (reverbTime < 0.0)
-      allPassCoeff = -((MY_FLOAT) pow(0.001, (double)(loopt / -reverbTime)));
+      allPassCoeff = -pow(0.001, loopt / -reverbTime);
    else
-      allPassCoeff = (MY_FLOAT) pow(0.001, (double)(loopt / reverbTime));
+      allPassCoeff = pow(0.001, loopt / reverbTime);
 }
 
 
 /* Make sure <delaySamps> is between 0 and (loopTime * srate * 2.0), or you'll
    get sudden pitch changes and dropouts.
 */
-MY_FLOAT ZAllpass :: tick(MY_FLOAT input, MY_FLOAT delaySamps)
+double ZAllpass :: tick(double input, double delaySamps)
 {
-   MY_FLOAT temp;
-
    if (delaySamps != delsamps) {
       delayLine->setDelay(delaySamps);
       delsamps = delaySamps;
    }
 
-   temp = delayLine->lastOut();
+   double temp = delayLine->lastOut();
    lastOutput = input + (allPassCoeff * temp);
    delayLine->tick(lastOutput);
    lastOutput = temp - (allPassCoeff * lastOutput);
 
    return lastOutput;
 }
-
 

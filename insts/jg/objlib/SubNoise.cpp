@@ -32,7 +32,7 @@ SubNoise :: SubNoise(int subSample, unsigned int aSeed = 0) : Noise(aSeed)
 }
 
 
-MY_FLOAT SubNoise :: tick()
+double SubNoise :: tick()
 {
    if (!counter) {
       lastOutput = Noise::tick();

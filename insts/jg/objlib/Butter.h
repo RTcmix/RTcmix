@@ -9,21 +9,21 @@ class Butter : public Filter
     double c, d;
     int type;
   protected:
-    MY_FLOAT poleCoeffs[2];
-    MY_FLOAT zeroCoeffs[2];
+    double poleCoeffs[2];
+    double zeroCoeffs[2];
   public:
     Butter(double srate);
     ~Butter();
     void clear();
-    void setLowPass(MY_FLOAT cutoff);
-    void setHighPass(MY_FLOAT cutoff);
-    void setBandPassFreq(MY_FLOAT freq);
-    void setBandPassBandwidth(MY_FLOAT bandwidth);
-    void setBandPass(MY_FLOAT freq, MY_FLOAT bandwidth);
-    void setBandRejectFreq(MY_FLOAT freq);
-    void setBandRejectBandwidth(MY_FLOAT bandwidth);
-    void setBandReject(MY_FLOAT freq, MY_FLOAT bandwidth);
-    MY_FLOAT tick(MY_FLOAT sample);
+    void setLowPass(double cutoff);
+    void setHighPass(double cutoff);
+    void setBandPassFreq(double freq);
+    void setBandPassBandwidth(double bandwidth);
+    void setBandPass(double freq, double bandwidth);
+    void setBandRejectFreq(double freq);
+    void setBandRejectBandwidth(double bandwidth);
+    void setBandReject(double freq, double bandwidth);
+    double tick(double sample);
 };
 
 #endif

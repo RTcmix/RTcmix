@@ -9,14 +9,14 @@ class Allpass : public Filter
 {
   protected:  
     DLineN   *delayLine;
-    MY_FLOAT allPassCoeff;
-    MY_FLOAT loopt;
+    double allPassCoeff;
+    double loopt;
   public:
-    Allpass(double srate, MY_FLOAT loopTime, MY_FLOAT reverbTime);
+    Allpass(double srate, double loopTime, double reverbTime);
     ~Allpass();
     void clear();
-    void setReverbTime(MY_FLOAT reverbTime);
-    MY_FLOAT tick(MY_FLOAT input);
+    void setReverbTime(double reverbTime);
+    double tick(double input);
 };
 
 #endif

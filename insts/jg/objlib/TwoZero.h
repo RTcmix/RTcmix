@@ -14,15 +14,15 @@
 class TwoZero : public Filter
 {
   protected:  
-    MY_FLOAT zeroCoeffs[2];
+    double zeroCoeffs[2];
   public:
     TwoZero(double srate);
     ~TwoZero();
     void clear();
-    void setZeroCoeffs(MY_FLOAT *coeffs);
-    void setGain(MY_FLOAT aValue);
-    void setFreqAndWidth(MY_FLOAT freq, MY_FLOAT width);
-    MY_FLOAT tick(MY_FLOAT sample);
+    void setZeroCoeffs(double *coeffs);
+    void setGain(double aValue);
+    void setFreqAndWidth(double freq, double width);
+    double tick(double sample);
 };
 
 #endif

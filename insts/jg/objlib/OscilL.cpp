@@ -9,12 +9,11 @@
 */
 OscilL :: OscilL(
    double   srate,
-   MY_FLOAT initialPhase = 0.0,
+   double   initialPhase = 0.0,
    double   *waveTable = NULL,
    int      tableSize = DEFAULT_WAVETABLE_SIZE)
    : OscilN(srate, initialPhase, waveTable, tableSize)
 {
-   // nothing else to do
 }
 
 
@@ -23,14 +22,11 @@ OscilL :: ~OscilL()
 }
 
 
-MY_FLOAT OscilL :: tick(MY_FLOAT freq, MY_FLOAT amp = 1.0)
+double OscilL :: tick(double freq, double amp = 1.0)
 {
-   int    i, k;
-   double frac;
-
-   i = (int) phase;
-   k = (i + 1) % size;
-   frac = phase - (double) i;
+   int i = (int) phase;
+   int k = (i + 1) % size;
+   double frac = phase - (double) i;
 
    lastOutput = (table[i] + (table[k] - table[i]) * frac) * amp;
 

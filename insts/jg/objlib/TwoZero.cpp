@@ -11,10 +11,10 @@
 
 TwoZero :: TwoZero(double srate) : Filter(srate)
 {
-   inputs = new MY_FLOAT [2];
-   zeroCoeffs[0] = (MY_FLOAT) 0.0;
-   zeroCoeffs[1] = (MY_FLOAT) 0.0;
-   gain = (MY_FLOAT) 1.0;
+   inputs = new double [2];
+   zeroCoeffs[0] = 0.0;
+   zeroCoeffs[1] = 0.0;
+   gain = 1.0;
    this->clear();
    outputs = NULL;             // unused
 }
@@ -28,20 +28,20 @@ TwoZero :: ~TwoZero()
 
 void TwoZero :: clear()
 {
-   inputs[0] = (MY_FLOAT) 0.0;
-   inputs[1] = (MY_FLOAT) 0.0;
-   lastOutput = (MY_FLOAT) 0.0;
+   inputs[0] = 0.0;
+   inputs[1] = 0.0;
+   lastOutput = 0.0;
 }
 
 
-void TwoZero :: setZeroCoeffs(MY_FLOAT *coeffs)
+void TwoZero :: setZeroCoeffs(double *coeffs)
 {
    zeroCoeffs[0] = coeffs[0];
    zeroCoeffs[1] = coeffs[1];
 }
 
 
-void TwoZero :: setGain(MY_FLOAT aValue)
+void TwoZero :: setGain(double aValue)
 {
    gain = aValue;
 }
@@ -56,9 +56,9 @@ void TwoZero :: setGain(MY_FLOAT aValue)
 // 0 <= freq <= srate/2; 0 <= width < 1
 // To get (approx) width from bandwidth (in hz): width = exp(-PI * bw / srate);
 
-void TwoZero :: setFreqAndWidth(MY_FLOAT freq, MY_FLOAT width)
+void TwoZero :: setFreqAndWidth(double freq, double width)
 {
-   zeroCoeffs[0] = (MY_FLOAT) -2.0 * width * cos(TWO_PI * (double)(freq / _sr));
+   zeroCoeffs[0] = -2.0 * width * cos(TWO_PI * (freq / _sr));
    zeroCoeffs[1] = width * width;
 }
 
@@ -66,7 +66,7 @@ void TwoZero :: setFreqAndWidth(MY_FLOAT freq, MY_FLOAT width)
 // y0 = g x(n) + a1 x(n-1) + a2 x(n-2)
 // Note: history takes g x(n), not x(n)
 
-MY_FLOAT TwoZero :: tick(MY_FLOAT sample)
+double TwoZero :: tick(double sample)
 {
    lastOutput = zeroCoeffs[0] * inputs[0];
    lastOutput += zeroCoeffs[1] * inputs[1];

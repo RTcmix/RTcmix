@@ -13,11 +13,11 @@ class Reverb
   public:
     Reverb(double srate);
     virtual ~Reverb();
-    virtual void setEffectMix(MY_FLOAT mix);
-    virtual MY_FLOAT lastOutput();
-    virtual MY_FLOAT lastOutputL();
-    virtual MY_FLOAT lastOutputR();
-    virtual MY_FLOAT tick(MY_FLOAT input);
+    virtual void setEffectMix(double mix);
+    virtual double lastOutput();
+    virtual double lastOutputL();
+    virtual double lastOutputR();
+    virtual double tick(double input);
     int isprime(int val);
 };
 

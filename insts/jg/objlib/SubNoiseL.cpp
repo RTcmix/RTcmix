@@ -15,9 +15,9 @@ SubNoiseL :: SubNoiseL(int subSample = 15, unsigned int aSeed = 0)
 {    
    assert(subSample > 0);
 
-   prevRand = (MY_FLOAT) 0.0;
-   curVal = (MY_FLOAT) 0.0;
-   increment = (MY_FLOAT) 0.0;
+   prevRand = 0.0;
+   curVal = 0.0;
+   increment = 0.0;
 }
 
 
@@ -26,12 +26,12 @@ SubNoiseL :: ~SubNoiseL()
 }
 
 
-MY_FLOAT SubNoiseL :: tick()
+double SubNoiseL :: tick()
 {
    SubNoise::tick();                    // NB: lastOutput set here
 
    if (lastOutput != prevRand) {
-      increment = (lastOutput - prevRand) / (MY_FLOAT) howOften;
+      increment = (lastOutput - prevRand) / (double) howOften;
       prevRand = lastOutput;
    }
    curVal += increment;
@@ -42,7 +42,7 @@ MY_FLOAT SubNoiseL :: tick()
 
 /* Need this here because we have to let SubNoise keep control of lastOutput */
 
-MY_FLOAT SubNoiseL :: lastOut()
+double SubNoiseL :: lastOut()
 {
    return curVal;
 }

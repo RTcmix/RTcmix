@@ -9,15 +9,15 @@ class ZAllpass : public Filter
 {
   protected:  
     DLineL   *delayLine;
-    MY_FLOAT allPassCoeff;
-    MY_FLOAT loopt;
-    MY_FLOAT delsamps;
+    double allPassCoeff;
+    double loopt;
+    double delsamps;
   public:
-    ZAllpass(double srate, MY_FLOAT loopTime, MY_FLOAT reverbTime);
+    ZAllpass(double srate, double loopTime, double reverbTime);
     ~ZAllpass();
     void clear();
-    void setReverbTime(MY_FLOAT reverbTime);
-    MY_FLOAT tick(MY_FLOAT input, MY_FLOAT delaySamps);
+    void setReverbTime(double reverbTime);
+    double tick(double input, double delaySamps);
 };
 
 #endif

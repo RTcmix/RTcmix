@@ -6,18 +6,18 @@
 
 
 /* <duration> is the time span the table will govern, in seconds.
-   <aTable> is a pointer to an array of MY_FLOAT allocated by caller.
+   <aTable> is a pointer to an array of double allocated by caller.
    (Caller is responsible for ensuring that <aTable> stays valid for the
    life of this object.) <tableSize> is the length of the table.
 */
-TableN :: TableN(double srate, MY_FLOAT duration, double *aTable, int tableSize)
+TableN :: TableN(double srate, double duration, double *aTable, int tableSize)
    : Oscil(srate)
 {
    assert(aTable != NULL && tableSize > 0 && duration > 0.0);
 
    size = tableSize;
    table = aTable;
-   increment = (double) size / (double) (duration * _sr);
+   increment = (double) size / (duration * _sr);
 }
 
 
@@ -26,12 +26,10 @@ TableN :: ~TableN()
 }
 
 
-MY_FLOAT TableN :: tick(long nsample, MY_FLOAT amp = 1.0)
+double TableN :: tick(long nsample, double amp = 1.0)
 {
-   long index;
-
    phase = (double) nsample * increment;
-   index = (long) phase;
+   long index = (long) phase;
 
    if (index < 0)
       index = 0;

@@ -18,7 +18,7 @@ class WavShape : public Filter
     WavShape(void);
     ~WavShape();
     void setTransferFunc(double *aFunc, int aSize);
-    MY_FLOAT tick(MY_FLOAT sample);
+    double tick(double sample);
 };
 
 #endif

@@ -19,7 +19,7 @@ Noise :: Noise(unsigned int aSeed = 0)
 {
    this->seed(aSeed);
 
-   lastOutput = (MY_FLOAT) 0.0;
+   lastOutput = 0.0;
 }
 
 
@@ -42,20 +42,20 @@ void Noise :: seed(unsigned int aSeed = 0)
 }
 
 
-MY_FLOAT Noise :: tick()
+double Noise :: tick()
 {
 #if defined(__OS_Win_)
-   lastOutput = (MY_FLOAT) (rand() - 16383);
+   lastOutput = (double) (rand() - 16383);
 #else
-   lastOutput = (MY_FLOAT) random() - 1073741823.0;
+   lastOutput = (double) random() - 1073741823.0;
 #endif
 
-   lastOutput *= (MY_FLOAT) ONE_OVER_RANDLIMIT;
+   lastOutput *= ONE_OVER_RANDLIMIT;
    return lastOutput;
 }
 
 
-MY_FLOAT Noise :: lastOut()
+double Noise :: lastOut()
 {
    return lastOutput;
 }

@@ -7,7 +7,7 @@
 #include "ZNotch.h"
 
 
-ZNotch :: ZNotch(double srate, MY_FLOAT loopTime, MY_FLOAT scaler)
+ZNotch :: ZNotch(double srate, double loopTime, double scaler)
    : Filter(srate)
 {
    long len;
@@ -32,11 +32,11 @@ ZNotch :: ~ZNotch()
 void ZNotch :: clear()
 {
    _dline->clear();
-   lastOutput = (MY_FLOAT) 0.0;
+   lastOutput = 0.0;
 }
 
 
-void ZNotch :: setScaler(MY_FLOAT scaler)
+void ZNotch :: setScaler(double scaler)
 {
    _coef = scaler;
 }
@@ -45,16 +45,14 @@ void ZNotch :: setScaler(MY_FLOAT scaler)
 /* Make sure <delaySamps> is between 0 and (loopTime * srate * 2.0), or you'll
    get sudden pitch changes and dropouts.
 */
-MY_FLOAT ZNotch :: tick(MY_FLOAT input, MY_FLOAT delaySamps)
+double ZNotch :: tick(double input, double delaySamps)
 {
-   MY_FLOAT temp;
-
    if (delaySamps != _delsamps) {
       _dline->setDelay(delaySamps);
       _delsamps = delaySamps;
    }
 
-   temp = _dline->tick(input);
+   double temp = _dline->tick(input);
    lastOutput = input + (_coef * temp);
 
    return lastOutput;

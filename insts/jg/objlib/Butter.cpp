@@ -16,12 +16,12 @@ enum {
 
 Butter :: Butter(double srate) : Filter(srate)
 {
-   inputs = new MY_FLOAT [2];
-   zeroCoeffs[0] = (MY_FLOAT) 0.0;
-   zeroCoeffs[1] = (MY_FLOAT) 0.0;
-   poleCoeffs[0] = (MY_FLOAT) 0.0;
-   poleCoeffs[1] = (MY_FLOAT) 0.0;
-   gain = (MY_FLOAT) 1.0;
+   inputs = new double [2];
+   zeroCoeffs[0] = 0.0;
+   zeroCoeffs[1] = 0.0;
+   poleCoeffs[0] = 0.0;
+   poleCoeffs[1] = 0.0;
+   gain = 1.0;
    type = LOW_PASS;
    c = d = 0.0;
    this->clear();
@@ -36,20 +36,20 @@ Butter :: ~Butter()
 
 void Butter :: clear()
 {
-   inputs[0] = (MY_FLOAT) 0.0;
-   inputs[1] = (MY_FLOAT) 0.0;
-   lastOutput = (MY_FLOAT) 0.0;
+   inputs[0] = 0.0;
+   inputs[1] = 0.0;
+   lastOutput = 0.0;
 }
 
 
-void Butter :: setLowPass(MY_FLOAT cutoff)
+void Butter :: setLowPass(double cutoff)
 {
    if (cutoff <= 0.0)
       cutoff = 0.001;
 
-   c = 1.0 / tan((double)(cutoff * PI / _sr));
+   c = 1.0 / tan(cutoff * PI / _sr);
 
-   gain = (MY_FLOAT)(1.0 / (1.0 + SQRT_TWO * c + c * c));
+   gain = 1.0 / (1.0 + SQRT_TWO * c + c * c);
 
    zeroCoeffs[0] = 2.0 * gain;
    zeroCoeffs[1] = gain;
@@ -61,11 +61,11 @@ void Butter :: setLowPass(MY_FLOAT cutoff)
 }
 
 
-void Butter :: setHighPass(MY_FLOAT cutoff)
+void Butter :: setHighPass(double cutoff)
 {
-   c = tan((double)(cutoff * PI / _sr));
+   c = tan(cutoff * PI / _sr);
 
-   gain = (MY_FLOAT)(1.0 / (1.0 + SQRT_TWO * c + c * c));
+   gain = 1.0 / (1.0 + SQRT_TWO * c + c * c);
 
    zeroCoeffs[0] = -2.0 * gain;
    zeroCoeffs[1] = gain;
@@ -77,21 +77,21 @@ void Butter :: setHighPass(MY_FLOAT cutoff)
 }
 
 
-void Butter :: setBandPassFreq(MY_FLOAT freq)
+void Butter :: setBandPassFreq(double freq)
 {
    assert(type == BAND_PASS);
 
-   d = 2.0 * cos((double)(TWO_PI * freq / _sr));
+   d = 2.0 * cos(TWO_PI * freq / _sr);
 
    poleCoeffs[0] = -c * d * gain;
 }
 
 
-void Butter :: setBandPassBandwidth(MY_FLOAT bandwidth)
+void Butter :: setBandPassBandwidth(double bandwidth)
 {
    assert(type == BAND_PASS);
 
-   c = 1.0 / tan((double)(bandwidth * PI / _sr));
+   c = 1.0 / tan(bandwidth * PI / _sr);
 
    gain = 1.0 / (1.0 + c);
 
@@ -103,31 +103,31 @@ void Butter :: setBandPassBandwidth(MY_FLOAT bandwidth)
 }
 
 
-void Butter :: setBandPass(MY_FLOAT freq, MY_FLOAT bandwidth)
+void Butter :: setBandPass(double freq, double bandwidth)
 {
-   d = 2.0 * cos((double)(TWO_PI * freq / _sr));
+   d = 2.0 * cos(TWO_PI * freq / _sr);
 
    type = BAND_PASS;
    setBandPassBandwidth(bandwidth);
 }
 
 
-void Butter :: setBandRejectFreq(MY_FLOAT freq)
+void Butter :: setBandRejectFreq(double freq)
 {
    assert(type == BAND_REJECT);
 
-   d = 2.0 * cos((double)(TWO_PI * freq / _sr));
+   d = 2.0 * cos(TWO_PI * freq / _sr);
 
    zeroCoeffs[0] = -d * gain;
    poleCoeffs[0] = zeroCoeffs[0];
 }
 
 
-void Butter :: setBandRejectBandwidth(MY_FLOAT bandwidth)
+void Butter :: setBandRejectBandwidth(double bandwidth)
 {
    assert(type == BAND_REJECT);
 
-   c = tan((double)(bandwidth * PI / _sr));
+   c = tan(bandwidth * PI / _sr);
 
    gain = 1.0 / (1.0 + c);
 
@@ -139,21 +139,21 @@ void Butter :: setBandRejectBandwidth(MY_FLOAT bandwidth)
 }
 
 
-void Butter :: setBandReject(MY_FLOAT freq, MY_FLOAT bandwidth)
+void Butter :: setBandReject(double freq, double bandwidth)
 {
-   d = 2.0 * cos((double)(TWO_PI * freq / _sr));
+   d = 2.0 * cos(TWO_PI * freq / _sr);
 
    type = BAND_REJECT;
    setBandRejectBandwidth(bandwidth);
 }
 
 
-//#define DISABLE_CLAMP_DENORMALS
+#define DISABLE_CLAMP_DENORMALS  // disabled until sure it works with doubles
 #include "ClampDenormals.h"
 
-MY_FLOAT Butter :: tick(MY_FLOAT sample)
+double Butter :: tick(double sample)
 {
-   MY_FLOAT temp;
+   double temp;
 
    temp = sample - inputs[0] * poleCoeffs[0] - inputs[1] * poleCoeffs[1];
    CLAMP_DENORMALS(temp);

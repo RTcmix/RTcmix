@@ -12,15 +12,15 @@ class ZComb : public Filter
 {
   protected:  
     DLineL   *delayLine;
-    MY_FLOAT combCoeff;
-    MY_FLOAT loopt;
-    MY_FLOAT delsamps;
+    double combCoeff;
+    double loopt;
+    double delsamps;
   public:
-    ZComb(double srate, MY_FLOAT loopTime, MY_FLOAT reverbTime);
+    ZComb(double srate, double loopTime, double reverbTime);
     ~ZComb();
     void clear();
-    void setReverbTime(MY_FLOAT reverbTime);
-    MY_FLOAT tick(MY_FLOAT input, MY_FLOAT delaySamps);
+    void setReverbTime(double reverbTime);
+    double tick(double input, double delaySamps);
 };
 
 #endif

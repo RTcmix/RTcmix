@@ -4,7 +4,7 @@
 #include "Allpass.h"
 
 
-Allpass :: Allpass(double srate, MY_FLOAT loopTime, MY_FLOAT reverbTime)
+Allpass :: Allpass(double srate, double loopTime, double reverbTime)
    : Filter(srate)
 {
    long len;
@@ -30,22 +30,22 @@ Allpass :: ~Allpass()
 void Allpass :: clear()
 {
    delayLine->clear();
-   lastOutput = (MY_FLOAT) 0.0;
+   lastOutput = 0.0;
 }
 
 
-void Allpass :: setReverbTime(MY_FLOAT reverbTime)
+void Allpass :: setReverbTime(double reverbTime)
 {
    if (reverbTime < 0.0)
-      allPassCoeff = -((MY_FLOAT) pow(0.001, (double)(loopt / -reverbTime)));
+      allPassCoeff = -pow(0.001, loopt / -reverbTime);
    else
-      allPassCoeff = (MY_FLOAT) pow(0.001, (double)(loopt / reverbTime));
+      allPassCoeff = pow(0.001, loopt / reverbTime);
 }
 
 
-MY_FLOAT Allpass :: tick(MY_FLOAT input)
+double Allpass :: tick(double input)
 {
-   MY_FLOAT temp;
+   double temp;
 
    temp = delayLine->lastOut();
    lastOutput = input + (allPassCoeff * temp);

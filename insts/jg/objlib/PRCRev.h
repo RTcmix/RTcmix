@@ -18,20 +18,20 @@ class PRCRev : public Reverb
   protected:  
     DLineN *APdelayLine[2];
     DLineN *CdelayLine[2];
-    MY_FLOAT allPassCoeff;
-    MY_FLOAT combCoeff[2];
-    MY_FLOAT lastOutL;
-    MY_FLOAT lastOutR;
-    MY_FLOAT effectMix;
+    double allPassCoeff;
+    double combCoeff[2];
+    double lastOutL;
+    double lastOutR;
+    double effectMix;
   public:
-    PRCRev(double srate, MY_FLOAT T60);
+    PRCRev(double srate, double T60);
     ~PRCRev();
     void clear();
-    void setEffectMix(MY_FLOAT mix);
-    MY_FLOAT lastOutput();
-    MY_FLOAT lastOutputL();
-    MY_FLOAT lastOutputR();
-    MY_FLOAT tick(MY_FLOAT input);
+    void setEffectMix(double mix);
+    double lastOutput();
+    double lastOutputL();
+    double lastOutputR();
+    double tick(double input);
 };
 
 #endif

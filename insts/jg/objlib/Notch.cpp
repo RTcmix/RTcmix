@@ -7,7 +7,7 @@
 #include "Notch.h"
 
 
-Notch :: Notch(double srate, MY_FLOAT loopTime, MY_FLOAT scaler) : Filter(srate)
+Notch :: Notch(double srate, double loopTime, double scaler) : Filter(srate)
 {
    long len;
 
@@ -30,21 +30,19 @@ Notch :: ~Notch()
 void Notch :: clear()
 {
    delayLine->clear();
-   lastOutput = (MY_FLOAT) 0.0;
+   lastOutput = 0.0;
 }
 
 
-void Notch :: setScaler(MY_FLOAT scaler)
+void Notch :: setScaler(double scaler)
 {
    combCoeff = scaler;
 }
 
 
-MY_FLOAT Notch :: tick(MY_FLOAT input)
+double Notch :: tick(double input)
 {
-   MY_FLOAT temp;
-
-   temp = delayLine->tick(input);
+   double temp = delayLine->tick(input);
    lastOutput = input + (combCoeff * temp);
 
    return lastOutput;

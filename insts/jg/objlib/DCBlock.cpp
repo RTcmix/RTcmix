@@ -10,7 +10,7 @@
 
 DCBlock :: DCBlock() : Filter(0)
 {
-   inputs = new MY_FLOAT [1];
+   inputs = new double [1];
    outputs = NULL;               // unused
    this->clear();
 }
@@ -24,12 +24,12 @@ DCBlock :: ~DCBlock()
 
 void DCBlock :: clear()
 {
-   inputs[0] = (MY_FLOAT) 0.0;
-   lastOutput = (MY_FLOAT) 0.0;
+   inputs[0] = 0.0;
+   lastOutput = 0.0;
 }
 
 
-MY_FLOAT DCBlock :: tick(MY_FLOAT sample)    
+double DCBlock :: tick(double sample)    
 {
    lastOutput = sample - inputs[0] + (0.99 * lastOutput);
    inputs[0] = sample;

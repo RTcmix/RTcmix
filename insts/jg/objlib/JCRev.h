@@ -22,21 +22,21 @@ class JCRev : public Reverb
     DLineN *CdelayLine[4];
     DLineN *outLdelayLine;
     DLineN *outRdelayLine;
-    MY_FLOAT allPassCoeff;
-    MY_FLOAT combCoeff[4];
-    MY_FLOAT combsum, combsum1, combsum2;
-    MY_FLOAT lastOutL;
-    MY_FLOAT lastOutR;
-    MY_FLOAT effectMix;
+    double allPassCoeff;
+    double combCoeff[4];
+    double combsum, combsum1, combsum2;
+    double lastOutL;
+    double lastOutR;
+    double effectMix;
   public:
-    JCRev(double srate, MY_FLOAT T60);
+    JCRev(double srate, double T60);
     ~JCRev();
     void clear();
-    void setEffectMix(MY_FLOAT mix);
-    MY_FLOAT lastOutput();
-    MY_FLOAT lastOutputL();
-    MY_FLOAT lastOutputR();
-    MY_FLOAT tick(MY_FLOAT input);
+    void setEffectMix(double mix);
+    double lastOutput();
+    double lastOutputL();
+    double lastOutputR();
+    double tick(double input);
 };
 
 #endif

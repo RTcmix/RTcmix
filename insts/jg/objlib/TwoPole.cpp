@@ -6,10 +6,10 @@
 
 TwoPole :: TwoPole(double srate) : Filter(srate)
 {
-   outputs = new MY_FLOAT [2];
-   poleCoeffs[0] = (MY_FLOAT) 0.0;
-   poleCoeffs[1] = (MY_FLOAT) 0.0;
-   gain = (MY_FLOAT) 1.0;
+   outputs = new double [2];
+   poleCoeffs[0] = 0.0;
+   poleCoeffs[1] = 0.0;
+   gain = 1.0;
    this->clear();
    inputs = NULL;           // unused
 }
@@ -23,22 +23,22 @@ TwoPole :: ~TwoPole()
 
 void TwoPole :: clear()
 {
-   outputs[0] = (MY_FLOAT) 0.0;
-   outputs[1] = (MY_FLOAT) 0.0;
-   lastOutput = (MY_FLOAT) 0.0;
+   outputs[0] = 0.0;
+   outputs[1] = 0.0;
+   lastOutput = 0.0;
 }
 
 
 // For stability: (-2.0 < coeffs[0] < 2.0) && (-1.0 < coeffs[1] < 1.0)
 
-void TwoPole :: setPoleCoeffs(MY_FLOAT *coeffs)
+void TwoPole :: setPoleCoeffs(double *coeffs)
 {
    poleCoeffs[0] = coeffs[0];
    poleCoeffs[1] = coeffs[1];
 }
 
 
-void TwoPole :: setGain(MY_FLOAT aValue)
+void TwoPole :: setGain(double aValue)
 {
    gain = aValue;
 }
@@ -49,27 +49,25 @@ void TwoPole :: setGain(MY_FLOAT aValue)
 // 0 <= freq <= srate/2; 0 <= reson < 1
 // To get (approx) reson from bandwidth (in hz): reson = exp(-PI * bw / srate);
 
-void TwoPole :: setFreqAndReson(MY_FLOAT freq, MY_FLOAT reson)
+void TwoPole :: setFreqAndReson(double freq, double reson)
 {
-   poleCoeffs[0] = (MY_FLOAT) (2.0 * reson * cos(TWO_PI * (double)(freq / _sr)));
+   poleCoeffs[0] = 2.0 * reson * cos(TWO_PI * (freq / _sr));
    poleCoeffs[1] = -(reson * reson);
 }
 
 
 // This is like the cmix genlib rsnset (and csound reson).
 
-void TwoPole :: setFreqBandwidthAndScale(MY_FLOAT freq, MY_FLOAT bw, int scale)
+void TwoPole :: setFreqBandwidthAndScale(double freq, double bw, int scale)
 {
-   MY_FLOAT b1, b2, c;
-
-   b2 = (MY_FLOAT) exp(-TWO_PI * bw / _sr);
-   c = 1.0 + b2;
-   b1 = 4.0 * b2 / c * cos(TWO_PI * (double)freq / _sr);
+   double b2 = exp(-TWO_PI * bw / _sr);
+   double c = 1.0 + b2;
+   double b1 = 4.0 * b2 / c * cos(TWO_PI * freq / _sr);
 
    if (scale == 1)            // for periodic signals
-      gain = (1.0 - b2) * (MY_FLOAT) sqrt((double)(1.0 - b1 * b1 / 4.0 * b2));
+      gain = (1.0 - b2) * sqrt(1.0 - b1 * b1 / 4.0 * b2);
    else if (scale == 2)       // for noise signals
-      gain = (MY_FLOAT) sqrt((double)((1.0 - b2) / c * (c * c - b1 * b1)));
+      gain = sqrt((1.0 - b2) / c * (c * c - b1 * b1));
    else                       // leave unscaled
       gain = 1.0;
 
@@ -81,11 +79,9 @@ void TwoPole :: setFreqBandwidthAndScale(MY_FLOAT freq, MY_FLOAT bw, int scale)
 // y0 = g x(n) + b1 y(n-1) + b2 y(n-2)
 // Note: coeff signs flipped from usual
 
-MY_FLOAT TwoPole :: tick(MY_FLOAT sample)
+double TwoPole :: tick(double sample)
 {
-   MY_FLOAT temp;
-
-   temp = sample * gain;
+   double temp = sample * gain;
    temp += poleCoeffs[0] * outputs[0];
    temp += poleCoeffs[1] * outputs[1];
    outputs[1] = outputs[0];

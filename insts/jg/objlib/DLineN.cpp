@@ -30,7 +30,7 @@ DLineN :: DLineN(long max_length) : Filter(0)
    */
    length = max_length + 2;       
 
-   inputs = new MY_FLOAT [length];
+   inputs = new double [length];
    outPoint = 0;
    inPoint = length >> 1;                  // by default, .5 of max delay  -JGG
    this->clear();
@@ -52,7 +52,7 @@ void DLineN :: clear()
 }
 
 
-void DLineN :: setDelay(MY_FLOAT lag)        // in samples! ignores fract. part
+void DLineN :: setDelay(double lag)        // in samples! ignores fract. part
 {
 // assert((long)lag < length);
 
@@ -64,7 +64,7 @@ void DLineN :: setDelay(MY_FLOAT lag)        // in samples! ignores fract. part
 
 /* Puts <sample> into delay line, returns oldest sample in delay line.
 */
-MY_FLOAT DLineN :: tick(MY_FLOAT input)       // take one, yield one
+double DLineN :: tick(double input)           // take one, yield one
 {                                              
    inputs[inPoint++] = input;
    if (inPoint == length)                     // check for end condition
@@ -79,7 +79,7 @@ MY_FLOAT DLineN :: tick(MY_FLOAT input)       // take one, yield one
 /* Like tick, but doesn't bother maintaining outPoint. Use this in
    conjunction with getSample only!
 */
-void DLineN :: putSample(MY_FLOAT input)
+void DLineN :: putSample(double input)
 {
    inputs[inPoint++] = input;                    // input next sample
    if (inPoint == length)                        // check for end condition
@@ -93,7 +93,7 @@ void DLineN :: putSample(MY_FLOAT input)
    (Note: this is like the cmix genlib delget, except it takes the number
    of samples of delay rather than a delay time in seconds.)
 */
-MY_FLOAT DLineN :: getSample(long lag)
+double DLineN :: getSample(long lag)
 {
    long outpt = inPoint - lag;
    while (outpt < 0)

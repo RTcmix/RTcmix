@@ -41,9 +41,8 @@ public:
    void clear();
 
    void setEQType(EQType eqType) { type = eqType; }
-   void setCoeffs(MY_FLOAT freq, MY_FLOAT Q, MY_FLOAT gain);
+   void setCoeffs(double freq, double Q, double gain);
 
-   // We use doubles for everything in case EQs are cascaded.
    double tick(double sample)
    {
       double y0 = (c0 * sample) + (c1 * x1) + (c2 * x2)

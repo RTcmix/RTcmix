@@ -7,7 +7,7 @@
 #include "ZComb.h"
 
 
-ZComb :: ZComb(double srate, MY_FLOAT loopTime, MY_FLOAT reverbTime)
+ZComb :: ZComb(double srate, double loopTime, double reverbTime)
    : Filter(srate)
 {
    long len;
@@ -34,35 +34,32 @@ ZComb :: ~ZComb()
 void ZComb :: clear()
 {
    delayLine->clear();
-   lastOutput = (MY_FLOAT) 0.0;
+   lastOutput = 0.0;
 }
 
 
-void ZComb :: setReverbTime(MY_FLOAT reverbTime)
+void ZComb :: setReverbTime(double reverbTime)
 {
    if (reverbTime < 0.0)
-      combCoeff = -((MY_FLOAT) pow(0.001, (double)(loopt / -reverbTime)));
+      combCoeff = -pow(0.001, loopt / -reverbTime);
    else
-      combCoeff = (MY_FLOAT) pow(0.001, (double)(loopt / reverbTime));
+      combCoeff = pow(0.001, loopt / reverbTime);
 }
 
 
 /* Make sure <delaySamps> is between 0 and (loopTime * srate * 2.0), or you'll
    get sudden pitch changes and dropouts.
 */
-MY_FLOAT ZComb :: tick(MY_FLOAT input, MY_FLOAT delaySamps)
+double ZComb :: tick(double input, double delaySamps)
 {
-   MY_FLOAT temp;
-
    if (delaySamps != delsamps) {
       delayLine->setDelay(delaySamps);
       delsamps = delaySamps;
    }
 
-   temp = input + (combCoeff * delayLine->lastOut());
+   double temp = input + (combCoeff * delayLine->lastOut());
    lastOutput = delayLine->tick(temp);
 
    return lastOutput;
 }
-
 

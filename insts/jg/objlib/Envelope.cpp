@@ -12,9 +12,9 @@
 
 Envelope :: Envelope(double srate) : _sr(srate)
 {
-   target = (MY_FLOAT) 0.0;
-   value = (MY_FLOAT) 0.0;
-   rate = (MY_FLOAT) 0.001;
+   target = 0.0;
+   value = 0.0;
+   rate = 0.001;
    state = ENV_HOLDING;
 }
 
@@ -26,7 +26,7 @@ Envelope :: ~Envelope()
 
 void Envelope :: keyOn()
 {
-   target = (MY_FLOAT) 1.0;
+   target = 1.0;
    if (value != target)
       state = ENV_RAMPING;
 }
@@ -34,13 +34,13 @@ void Envelope :: keyOn()
 
 void Envelope :: keyOff()
 {
-   target = (MY_FLOAT) 0.0;
+   target = 0.0;
    if (value != target)
       state = ENV_RAMPING;
 }
 
 
-void Envelope :: setRate(MY_FLOAT aRate)
+void Envelope :: setRate(double aRate)
 {
    if (aRate < 0.0) {
       fprintf(stderr, "Negative rates not allowed! Correcting...\n");
@@ -51,7 +51,7 @@ void Envelope :: setRate(MY_FLOAT aRate)
 }
 
 
-void Envelope :: setTime(MY_FLOAT aTime)
+void Envelope :: setTime(double aTime)
 {
    if (aTime < 0.0) {
       fprintf(stderr, "Negative times not allowed! Correcting...\n");
@@ -62,7 +62,7 @@ void Envelope :: setTime(MY_FLOAT aTime)
 }
 
 
-void Envelope :: setTarget(MY_FLOAT aTarget)
+void Envelope :: setTarget(double aTarget)
 {
    target = aTarget;
    if (value != target)
@@ -70,7 +70,7 @@ void Envelope :: setTarget(MY_FLOAT aTarget)
 }
 
 
-void Envelope :: setValue(MY_FLOAT aValue)
+void Envelope :: setValue(double aValue)
 {
    state = ENV_HOLDING;
    target = aValue;
@@ -84,7 +84,7 @@ int Envelope :: getState()
 }
 
 
-MY_FLOAT Envelope :: tick()
+double Envelope :: tick()
 {
    if (state == ENV_RAMPING) {
       if (target > value) {
@@ -113,7 +113,7 @@ int Envelope :: informTick()
 }
 
 
-MY_FLOAT Envelope :: lastOut()
+double Envelope :: lastOut()
 {
    return value;
 }

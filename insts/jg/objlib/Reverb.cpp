@@ -16,34 +16,34 @@ Reverb :: ~Reverb()
 }
 
 
-void Reverb :: setEffectMix(MY_FLOAT mix)
+void Reverb :: setEffectMix(double mix)
 {
    fprintf(stderr, "WARNING! Reverb class setEffectMix called!\n");
 }
 
 
-MY_FLOAT Reverb :: lastOutput()
+double Reverb :: lastOutput()
 {
    fprintf(stderr, "WARNING! Reverb class lastOutput called!\n");
    return 0.0;
 }
 
 
-MY_FLOAT Reverb :: lastOutputL()
+double Reverb :: lastOutputL()
 {
    fprintf(stderr, "WARNING! Reverb class lastOutputL called!\n");
    return 0.0;
 }
 
 
-MY_FLOAT Reverb :: lastOutputR()
+double Reverb :: lastOutputR()
 {
    fprintf(stderr, "WARNING! Reverb class lastOutputR called!\n");
    return 0.0;
 }
 
 
-MY_FLOAT Reverb :: tick(MY_FLOAT input)
+double Reverb :: tick(double input)
 {
    fprintf(stderr, "WARNING! Reverb class tick called!\n");
    return 0.0;

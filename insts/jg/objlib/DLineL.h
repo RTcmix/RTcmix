@@ -36,16 +36,16 @@ class DLineL : public Filter
     long inPoint;
     long outPoint;
     long length;
-    MY_FLOAT alpha;
-    MY_FLOAT omAlpha;
+    double alpha;
+    double omAlpha;
   public:
     DLineL(long max_length);  
     ~DLineL();  
     void clear();
-    void setDelay(MY_FLOAT lag);
-    MY_FLOAT tick(MY_FLOAT input);
-    void putSample(MY_FLOAT input);
-    MY_FLOAT getSample(MY_FLOAT lag);
+    void setDelay(double lag);
+    double tick(double input);
+    void putSample(double input);
+    double getSample(double lag);
 };
 
 #endif

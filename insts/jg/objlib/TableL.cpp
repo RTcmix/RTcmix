@@ -6,11 +6,11 @@
 
 
 /* <duration> is the time span the table will govern, in seconds.
-   <aTable> is a pointer to an array of MY_FLOAT allocated by caller.
+   <aTable> is a pointer to an array of double allocated by caller.
    (Caller is responsible for ensuring that <aTable> stays valid for the
    life of this object.) <tableSize> is the length of the table.
 */
-TableL :: TableL(double srate, MY_FLOAT duration, double *aTable, int tableSize)
+TableL :: TableL(double srate, double duration, double *aTable, int tableSize)
         : TableN(srate, duration, aTable, tableSize)
 {
 }
@@ -21,7 +21,7 @@ TableL :: ~TableL()
 }
 
 
-MY_FLOAT TableL :: tick(long nsample, MY_FLOAT amp = 1.0)
+double TableL :: tick(long nsample, double amp = 1.0)
 {
    phase = (double) nsample * increment;
 
@@ -30,14 +30,11 @@ MY_FLOAT TableL :: tick(long nsample, MY_FLOAT amp = 1.0)
    else if (phase >= (double) (size - 1))
       lastOutput = table[size - 1];
    else {
-      long     index;
-      double   frac, val0, val1;
-
-      index = (long) phase;
-      frac = phase - (double) index;
-      val0 = table[index];
-      val1 = table[index + 1];
-      lastOutput = (MY_FLOAT) (val0 + frac * (val1 - val0));
+      long index = (long) phase;
+      double frac = phase - (double) index;
+      double val0 = table[index];
+      double val1 = table[index + 1];
+      lastOutput = val0 + (frac * (val1 - val0));
    }
    lastOutput *= amp;
 

@@ -11,13 +11,13 @@
 class Noise
 {
   protected:  
-    MY_FLOAT lastOutput;
+    double lastOutput;
   public:
     Noise(unsigned int aSeed);
     virtual ~Noise();
     void seed(unsigned int aSeed);
-    MY_FLOAT tick();
-    MY_FLOAT lastOut();
+    double tick();
+    double lastOut();
 };
 
 #endif

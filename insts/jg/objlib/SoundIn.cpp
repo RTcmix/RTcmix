@@ -5,7 +5,7 @@
 #include "SoundIn.h"
 
 
-SoundIn :: SoundIn(char *fileName, MY_FLOAT inskip = 0.0)
+SoundIn :: SoundIn(char *fileName, double inskip = 0.0)
 {
    struct stat st;
 
@@ -68,7 +68,7 @@ SoundIn :: SoundIn(char *fileName, MY_FLOAT inskip = 0.0)
    }
 
    for (int n = 0; n < MAXCHANS; n++)
-      outputs[n] = (MY_FLOAT) 0.0;
+      outputs[n] = 0.0;
 }
 
 
@@ -101,9 +101,9 @@ long SoundIn :: getFrames()
 
 
 /* Returns the duration of the file if played at its sampling rate. */
-MY_FLOAT SoundIn :: getDuration()
+double SoundIn :: getDuration()
 {
-   return ((MY_FLOAT)nframes / (MY_FLOAT)srate);
+   return ((double) nframes / (double) srate);
 }
 
 
@@ -159,7 +159,7 @@ int SoundIn :: seekFrame(long frame)
    It's ok for this to continue reading past the end of file -- it'll just
    return 0's.
 */
-MY_FLOAT *SoundIn :: tick()
+double *SoundIn :: tick()
 {
    if (curbufframe >= bufframes)
       readBuffer();
@@ -178,7 +178,7 @@ MY_FLOAT *SoundIn :: tick()
    channel number.
    CAUTION: assumes <chan> is in range.
 */
-MY_FLOAT SoundIn :: lastOutput(int chan)
+double SoundIn :: lastOutput(int chan)
 {
    return outputs[chan];
 }

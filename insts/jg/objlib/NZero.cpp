@@ -4,14 +4,14 @@
 #include "NZero.h"
 
 // ***This should be moved to a utility file
-float *resample_functable(float *table, int oldsize, int newsize);
+double *resample_functable(double *table, int oldsize, int newsize);
 
 
 NZero :: NZero(double srate, int ntaps) : Filter(srate)
 {
    order = ntaps;
-   inputs = new MY_FLOAT [order];
-   zeroCoeffs = new MY_FLOAT [order];
+   inputs = new double [order];
+   zeroCoeffs = new double [order];
    gain = 1.0;
    outputs = NULL;                       // unused
    this->clear();
@@ -33,14 +33,14 @@ void NZero :: clear()
 }
 
 
-void NZero :: setZeroCoeffs(MY_FLOAT *coeffs)
+void NZero :: setZeroCoeffs(double *coeffs)
 {
    for (int i = 0; i < order; i++)
       zeroCoeffs[i] = coeffs[i];
 }
 
 
-void NZero :: setGain(MY_FLOAT aValue)
+void NZero :: setGain(double aValue)
 {
    gain = aValue;
 }
@@ -117,15 +117,15 @@ resample_functable(double *table, int oldsize, int newsize)
    (make_filter in snd-dac.c). See also CLM mus.lisp for design-FIR-from-env.
 */
 void NZero :: designFromFunctionTable(double *table,
-                                      int   size,
-                                      float low,
-                                      float high)
+                                      int    size,
+                                      double low,
+                                      double high)
 {
    int    i;
-   float  nyquist = _sr / 2.0;
+   double nyquist = _sr / 2.0;
    double *newtable;
 
-   assert(table != NULL && size > 1 && low >= 0 && high >=0);
+   assert(table != NULL && size > 1 && low >= 0.0 && high >= 0.0);
 
    if (high == 0.0)
       high = nyquist;
@@ -148,8 +148,8 @@ void NZero :: designFromFunctionTable(double *table,
       in <table>; set values above <high> to last value in <table>.
    */
    if (low != 0.0 || high != nyquist) {
-      int newsize = (int)(size * (nyquist / (high - low)) + 0.5);
-      int insertat = (int)(newsize * (low / nyquist) + 0.5);
+      int newsize = (int) (size * (nyquist / (high - low)) + 0.5);
+      int insertat = (int) (newsize * (low / nyquist) + 0.5);
 
       double *tmptab = new double [newsize];
 
@@ -189,7 +189,7 @@ void NZero :: designFromFunctionTable(double *table,
 
 // could be made more efficient by implementing circular queue?
 
-MY_FLOAT NZero :: tick(MY_FLOAT sample)
+double NZero :: tick(double sample)
 {
    lastOutput = 0.0;
 

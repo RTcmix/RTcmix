@@ -16,14 +16,14 @@
 class SubNoise : public Noise
 {
   protected:  
-     int counter;
-     int howOften;
+    int counter;
+    int howOften;
   public:
     SubNoise();
     ~SubNoise();
     SubNoise(int subSample, unsigned int aSeed);
     void setHowOften(int howOft);
-    MY_FLOAT tick();
+    double tick();
 };
 
 #endif

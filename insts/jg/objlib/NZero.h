@@ -9,17 +9,18 @@
 class NZero : public Filter
 {
   protected:  
-    int      order;
-    MY_FLOAT *zeroCoeffs;
+    int     order;
+    double  *zeroCoeffs;
   public:
     NZero(double srate, int ntaps);
     ~NZero();
     void clear();
-    void setZeroCoeffs(MY_FLOAT *coeffs);
-    void setGain(MY_FLOAT aValue);
+    void setZeroCoeffs(double *coeffs);
+    void setGain(double aValue);
     float getFrequencyResponse(float freq);
-    void designFromFunctionTable(double *table, int size, float low, float high);
-    MY_FLOAT tick(MY_FLOAT sample);
+    void designFromFunctionTable(double *table, int size, double low,
+                                                                  double high);
+    double tick(double sample);
 };
 
 #endif

@@ -35,10 +35,10 @@ class DLineN : public Filter
     DLineN(long max_length);  
     ~DLineN();  
     void clear();
-    void setDelay(MY_FLOAT lag);
-    MY_FLOAT tick(MY_FLOAT input);
-    void putSample(MY_FLOAT input);
-    MY_FLOAT getSample(long lag);
+    void setDelay(double lag);
+    double tick(double input);
+    void putSample(double input);
+    double getSample(long lag);
 };
 
 #endif

@@ -9,7 +9,7 @@ class DCBlock : public Filter
     DCBlock();
     ~DCBlock();
     void clear();
-    MY_FLOAT tick(MY_FLOAT sample);
+    double tick(double sample);
 };
 
 #endif

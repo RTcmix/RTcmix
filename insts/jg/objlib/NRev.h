@@ -22,21 +22,21 @@ class NRev : public Reverb
   protected:  
     DLineN *APdelayLine[8];
     DLineN *CdelayLine[6];
-    MY_FLOAT allPassCoeff;
-    MY_FLOAT combCoef[6];
-    MY_FLOAT lpLastout;
-    MY_FLOAT lastOutL;
-    MY_FLOAT lastOutR;
-    MY_FLOAT effectMix;
+    double allPassCoeff;
+    double combCoef[6];
+    double lpLastout;
+    double lastOutL;
+    double lastOutR;
+    double effectMix;
   public:
-    NRev(double srate, MY_FLOAT T60);
+    NRev(double srate, double T60);
     ~NRev();
     void clear();
-    void setEffectMix(MY_FLOAT mix);
-    MY_FLOAT lastOutput();
-    MY_FLOAT lastOutputL();
-    MY_FLOAT lastOutputR();
-    MY_FLOAT tick(MY_FLOAT input);
+    void setEffectMix(double mix);
+    double lastOutput();
+    double lastOutputL();
+    double lastOutputR();
+    double tick(double input);
 };
 
 #endif

@@ -13,7 +13,7 @@
 DLineA :: DLineA(long max_length) : Filter(0)
 {
    length = max_length;
-   inputs = new MY_FLOAT [length];
+   inputs = new double [length];
    this->clear();
    inPoint = 0;
    outPoint = length >> 1;
@@ -35,9 +35,9 @@ void DLineA :: clear()
 }
 
 
-void DLineA :: setDelay(MY_FLOAT lag)  
+void DLineA :: setDelay(double lag)  
 {
-   MY_FLOAT outputPointer;
+   double outputPointer;
 
    outputPointer = inPoint - lag + 2;         // outPoint chases inpoint
                                               //   + 2 for interp and other
@@ -54,9 +54,9 @@ void DLineA :: setDelay(MY_FLOAT lag)
 }
 
 
-MY_FLOAT DLineA :: tick(MY_FLOAT sample)      // take sample, yield sample
+double DLineA :: tick(double sample)          // take sample, yield sample
 {
-   MY_FLOAT temp;
+   double temp;
 
    inputs[inPoint++] = sample;                // write input sample
    if (inPoint == length)                     // increment input pointer

@@ -10,25 +10,24 @@
 
 ADSR :: ADSR(double srate) : Envelope(srate)
 {
-   target = (MY_FLOAT) 0.0;
-   value = (MY_FLOAT) 0.0;
-   attackRate = (MY_FLOAT) 0.001;
-   decayRate = (MY_FLOAT) 0.001;
-   sustainLevel = (MY_FLOAT) 0.5;
-   releaseRate = (MY_FLOAT) 0.01;
+   target = 0.0;
+   value = 0.0;
+   attackRate = 0.001;
+   decayRate = 0.001;
+   sustainLevel = 0.5;
+   releaseRate = 0.01;
    state = ADSR_ATTACK;
 }
 
 
 ADSR :: ~ADSR()
 {
-   /* Nothing to do here */
 }
 
 
 void ADSR :: keyOn()
 {
-   target = (MY_FLOAT) 1.0;
+   target = 1.0;
    rate = attackRate;
    state = ADSR_ATTACK;
 }
@@ -36,13 +35,13 @@ void ADSR :: keyOn()
 
 void ADSR :: keyOff()
 {
-   target = (MY_FLOAT) 0.0;
+   target = 0.0;
    rate = releaseRate;
    state = ADSR_RELEASE;
 }
 
 
-void ADSR :: setAttackRate(MY_FLOAT aRate)
+void ADSR :: setAttackRate(double aRate)
 {
    if (aRate < 0.0) {
       fprintf(stderr, "Negative rates not allowed! Correcting...\n");
@@ -53,7 +52,7 @@ void ADSR :: setAttackRate(MY_FLOAT aRate)
 }
 
 
-void ADSR :: setDecayRate(MY_FLOAT aRate)
+void ADSR :: setDecayRate(double aRate)
 {
    if (aRate < 0.0) {
       fprintf(stderr, "Negative rates not allowed! Correcting...\n");
@@ -64,18 +63,18 @@ void ADSR :: setDecayRate(MY_FLOAT aRate)
 }
 
 
-void ADSR :: setSustainLevel(MY_FLOAT aLevel)
+void ADSR :: setSustainLevel(double aLevel)
 {
    if (aLevel < 0.0 ) {
       fprintf(stderr, "Sustain level out of range! Correcting...\n");
-      sustainLevel = (MY_FLOAT) 0.0;
+      sustainLevel = 0.0;
    }
    else
       sustainLevel = aLevel;
 }
 
 
-void ADSR :: setReleaseRate(MY_FLOAT aRate)
+void ADSR :: setReleaseRate(double aRate)
 {
    if (aRate < 0.0) {
       fprintf(stderr, "Negative rates not allowed! Correcting...\n");
@@ -86,7 +85,7 @@ void ADSR :: setReleaseRate(MY_FLOAT aRate)
 }
 
 
-void ADSR :: setAttackTime(MY_FLOAT aTime)
+void ADSR :: setAttackTime(double aTime)
 {
    if (aTime < 0.0) {
       fprintf(stderr, "Negative times not allowed! Correcting...\n");
@@ -97,7 +96,7 @@ void ADSR :: setAttackTime(MY_FLOAT aTime)
 }
 
 
-void ADSR :: setDecayTime(MY_FLOAT aTime)
+void ADSR :: setDecayTime(double aTime)
 {
    if (aTime < 0.0) {
       fprintf(stderr, "Negative times not allowed! Correcting...\n");
@@ -108,7 +107,7 @@ void ADSR :: setDecayTime(MY_FLOAT aTime)
 }
 
 
-void ADSR :: setReleaseTime(MY_FLOAT aTime)
+void ADSR :: setReleaseTime(double aTime)
 {
    if (aTime < 0.0) {
       fprintf(stderr, "Negative times not allowed! Correcting...\n");
@@ -120,7 +119,7 @@ void ADSR :: setReleaseTime(MY_FLOAT aTime)
 
 
 void ADSR :: setAllTimes(
-   MY_FLOAT attTime, MY_FLOAT decTime, MY_FLOAT susLevel, MY_FLOAT relTime)
+   double attTime, double decTime, double susLevel, double relTime)
 {
    this->setAttackTime(attTime);
    this->setDecayTime(decTime);
@@ -129,7 +128,7 @@ void ADSR :: setAllTimes(
 }
 
 
-void ADSR :: setTarget(MY_FLOAT aTarget)
+void ADSR :: setTarget(double aTarget)
 {
    target = aTarget;
    if (value < target) {
@@ -145,17 +144,17 @@ void ADSR :: setTarget(MY_FLOAT aTarget)
 }
 
 
-void ADSR :: setValue(MY_FLOAT aValue)
+void ADSR :: setValue(double aValue)
 {
    state = ADSR_SUSTAIN;
    target = aValue;
    value = aValue;
    this->setSustainLevel(aValue);
-   rate = (MY_FLOAT) 0.0;
+   rate = 0.0;
 }
 
 
-MY_FLOAT ADSR :: tick()
+double ADSR :: tick()
 {
    if (state == ADSR_ATTACK) {
       value += rate;
@@ -170,14 +169,14 @@ MY_FLOAT ADSR :: tick()
       value -= decayRate;
       if (value <= sustainLevel) {
          value = sustainLevel;
-         rate = (MY_FLOAT) 0.0;
+         rate = 0.0;
          state = ADSR_SUSTAIN;
       }
    }
    else if (state == ADSR_RELEASE) {
       value -= releaseRate;
       if (value <= 0.0) {
-         value = (MY_FLOAT) 0.0;
+         value = 0.0;
          state = ADSR_END;
       }
    }
@@ -192,7 +191,7 @@ int ADSR :: informTick()
 }
 
 
-MY_FLOAT ADSR :: lastOut()
+double ADSR :: lastOut()
 {
    return value;
 }

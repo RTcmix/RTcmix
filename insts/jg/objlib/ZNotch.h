@@ -12,14 +12,14 @@ class ZNotch : public Filter
 {
   protected:  
     DLineL   *_dline;
-    MY_FLOAT _coef;
-    MY_FLOAT _delsamps;
+    double _coef;
+    double _delsamps;
   public:
-    ZNotch(double srate, MY_FLOAT loopTime, MY_FLOAT scaler);
+    ZNotch(double srate, double loopTime, double scaler);
     ~ZNotch();
     void clear();
-    void setScaler(MY_FLOAT scaler);
-    MY_FLOAT tick(MY_FLOAT input, MY_FLOAT delaySamps);
+    void setScaler(double scaler);
+    double tick(double input, double delaySamps);
 };
 
 #endif

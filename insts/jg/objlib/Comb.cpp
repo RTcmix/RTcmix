@@ -5,7 +5,7 @@
 #include "Comb.h"
 
 
-Comb :: Comb(double srate, MY_FLOAT loopTime, MY_FLOAT reverbTime)
+Comb :: Comb(double srate, double loopTime, double reverbTime)
    : Filter(srate)
 {
    long len;
@@ -31,22 +31,22 @@ Comb :: ~Comb()
 void Comb :: clear()
 {
    delayLine->clear();
-   lastOutput = (MY_FLOAT) 0.0;
+   lastOutput = 0.0;
 }
 
 
-void Comb :: setReverbTime(MY_FLOAT reverbTime)
+void Comb :: setReverbTime(double reverbTime)
 {
    if (reverbTime < 0.0)
-      combCoeff = -((MY_FLOAT) pow(0.001, (double)(loopt / -reverbTime)));
+      combCoeff = -pow(0.001, loopt / -reverbTime);
    else
-      combCoeff = (MY_FLOAT) pow(0.001, (double)(loopt / reverbTime));
+      combCoeff = pow(0.001, loopt / reverbTime);
 }
 
 
-MY_FLOAT Comb :: tick(MY_FLOAT input)
+double Comb :: tick(double input)
 {
-   MY_FLOAT temp;
+   double temp;
 
    temp = input + (combCoeff * delayLine->lastOut());
    lastOutput = delayLine->tick(temp);

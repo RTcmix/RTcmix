@@ -18,7 +18,7 @@ class KOscilN : public OscilN
   public:
     KOscilN(double   srate,
             int      howOften,  // caller will tick() us every <howOften> samps
-            MY_FLOAT initialPhase,
+            double   initialPhase,
             double   *waveTable,
             int      tableSize);
     ~KOscilN();

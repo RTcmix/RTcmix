@@ -28,7 +28,7 @@ void RMS :: clear()
 }
 
 
-void RMS :: setFreq(MY_FLOAT freq)
+void RMS :: setFreq(double freq)
 {
    subLowFilter->setFreq(freq);
 }
@@ -41,13 +41,11 @@ void RMS :: setWindowSize(int nsamples)
 }
 
 
-MY_FLOAT RMS :: tick(MY_FLOAT sample)
+double RMS :: tick(double sample)
 {
-   MY_FLOAT temp;
-
-   temp = subLowFilter->tick(sample * sample);
+   double temp = subLowFilter->tick(sample * sample);
    if (--counter < 0) {
-      lastOutput = (MY_FLOAT) sqrt((double) temp);
+      lastOutput = sqrt(temp);
       counter = windowSize;
    }
    return lastOutput;

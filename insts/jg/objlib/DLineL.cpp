@@ -35,7 +35,7 @@ DLineL :: DLineL(long max_length) : Filter(0)
    */
    length = max_length + 2;       
 
-   inputs = new MY_FLOAT [length];
+   inputs = new double [length];
    this->clear();
    outPoint = 0;
    inPoint = length >> 1;                // by default, .5 of max delay  -JGG
@@ -56,9 +56,9 @@ void DLineL :: clear()
 }
 
 
-void DLineL :: setDelay(MY_FLOAT lag)
+void DLineL :: setDelay(double lag)
 {
-   MY_FLOAT outputPointer;
+   double outputPointer;
 
    outputPointer = inPoint - lag;       // read chases write
    while (outputPointer < 0.0)
@@ -69,7 +69,7 @@ void DLineL :: setDelay(MY_FLOAT lag)
 }
 
 
-MY_FLOAT DLineL :: tick(MY_FLOAT input)          // take one, yield one
+double DLineL :: tick(double input)              // take one, yield one
 {
    inputs[inPoint++] = input;                    // input next sample
    if (inPoint == length)                        // check for end condition
@@ -90,7 +90,7 @@ MY_FLOAT DLineL :: tick(MY_FLOAT input)          // take one, yield one
    If you want to use tick again, precede it by a call to setDelay
    to reinitialize outPoint.
 */
-void DLineL :: putSample(MY_FLOAT input)
+void DLineL :: putSample(double input)
 {
    inputs[inPoint++] = input;                    // input next sample
    if (inPoint == length)                        // check for end condition
@@ -104,13 +104,13 @@ void DLineL :: putSample(MY_FLOAT input)
    (Note: this is like the cmix genlib dliget, except it takes the number
    of samples of delay rather than a delay time in seconds.)
 */
-MY_FLOAT DLineL :: getSample(MY_FLOAT lag)
+double DLineL :: getSample(double lag)
 {
-   MY_FLOAT outputPointer;
+   double outputPointer;
 
    outputPointer = inPoint - lag;
    while (outputPointer < 0.0)
-      outputPointer += (MY_FLOAT) length;
+      outputPointer += (double) length;
    outPoint = (long) outputPointer;
    alpha = outputPointer - outPoint;
    lastOutput = inputs[outPoint++];

@@ -14,16 +14,16 @@
 class TwoPole : public Filter
 {
   protected:  
-    MY_FLOAT poleCoeffs[2];
+    double poleCoeffs[2];
   public:
     TwoPole(double srate);
     ~TwoPole();
     void clear();
-    void setPoleCoeffs(MY_FLOAT *coeffs);
-    void setGain(MY_FLOAT aValue);
-    void setFreqAndReson(MY_FLOAT freq, MY_FLOAT reson);
-    void setFreqBandwidthAndScale(MY_FLOAT freq, MY_FLOAT bw, int scale);
-    MY_FLOAT tick(MY_FLOAT sample);
+    void setPoleCoeffs(double *coeffs);
+    void setGain(double aValue);
+    void setFreqAndReson(double freq, double reson);
+    void setFreqBandwidthAndScale(double freq, double bw, int scale);
+    double tick(double sample);
 };
 
 #endif

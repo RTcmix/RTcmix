@@ -32,18 +32,15 @@ void WavShape :: setTransferFunc(double *aFunc, int aSize)
 
 /* <sample> should be in range [-1, 1].
 */
-MY_FLOAT WavShape :: tick(MY_FLOAT sample)
+double WavShape :: tick(double sample)
 {
-   int      loc1;
-   double   findex, frac;
-
    if (transferFunc) {
-      findex = (double)((sample + 1.0) * indexFactor);
+      double findex = (sample + 1.0) * (double) indexFactor;
       if (findex < 0.0)
          findex = 0.0;
 
-      loc1 = (int)findex;
-      frac = findex - (double)loc1;
+      int loc1 = (int) findex;
+      double frac = findex - (double) loc1;
 
       double val1, val2;
       if (loc1 < lastIndex) {

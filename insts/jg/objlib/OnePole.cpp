@@ -16,10 +16,10 @@
 
 OnePole :: OnePole(double srate) : Filter(srate)
 {
-   poleCoeff = (MY_FLOAT) 0.9;
-   gain = (MY_FLOAT) 1.0;
-   sgain = (MY_FLOAT) 0.1;
-   lastOutput = (MY_FLOAT) 0.0;
+   poleCoeff = 0.9;
+   gain = 1.0;
+   sgain = 0.1;
+   lastOutput = 0.0;
    outputs = inputs = NULL;                     // unused
 }
 
@@ -31,54 +31,54 @@ OnePole :: ~OnePole()
 
 void OnePole :: clear()
 {
-   lastOutput = (MY_FLOAT) 0.0;
+   lastOutput = 0.0;
 }
 
 
 // positive freq for lowpass response, negative freq for highpass
 
-void OnePole :: setFreq(MY_FLOAT freq)
+void OnePole :: setFreq(double freq)
 {
    // after Dodge, but with pole coeff sign flipped (for tick method)
    if (freq >= 0.0) {                       // lowpass
-      double c = 2.0 - cos((double)(freq * TWO_PI / _sr));
-      poleCoeff = (MY_FLOAT) -(sqrt(c * c - 1.0) - c);
+      double c = 2.0 - cos(freq * TWO_PI / _sr);
+      poleCoeff = -(sqrt(c * c - 1.0) - c);
    }
    else {                                   // highpass
-      double c = 2.0 + cos((double)(freq * TWO_PI / _sr));
-      poleCoeff = (MY_FLOAT) -(c - sqrt(c * c - 1.0));
+      double c = 2.0 + cos(freq * TWO_PI / _sr);
+      poleCoeff = -(c - sqrt(c * c - 1.0));
    }
 
    if (poleCoeff > 0.0)                     // Normalize gain to 1.0 max
-      sgain = gain * ((MY_FLOAT) 1.0 - poleCoeff);
+      sgain = gain * (1.0 - poleCoeff);
    else
-      sgain = gain * ((MY_FLOAT) 1.0 + poleCoeff);
+      sgain = gain * (1.0 + poleCoeff);
 }
 
 
-void OnePole :: setPole(MY_FLOAT aValue)
+void OnePole :: setPole(double aValue)
 {
    poleCoeff = aValue;
    if (poleCoeff > 0.0)                     // Normalize gain to 1.0 max
-      sgain = gain * ((MY_FLOAT) 1.0 - poleCoeff);
+      sgain = gain * (1.0 - poleCoeff);
    else
-      sgain = gain * ((MY_FLOAT) 1.0 + poleCoeff);
+      sgain = gain * (1.0 + poleCoeff);
 }
 
 
-void OnePole :: setGain(MY_FLOAT aValue)
+void OnePole :: setGain(double aValue)
 {
    gain = aValue;
    if (poleCoeff > 0.0)                     // Normalize gain to 1.0 max
-      sgain = gain * ((MY_FLOAT) 1.0 - poleCoeff);
+      sgain = gain * (1.0 - poleCoeff);
    else
-      sgain = gain * ((MY_FLOAT) 1.0 + poleCoeff);
+      sgain = gain * (1.0 + poleCoeff);
 }
 
-//#define DISABLE_CLAMP_DENORMALS
+#define DISABLE_CLAMP_DENORMALS  // until sure it works for doubles
 #include "ClampDenormals.h"
 
-MY_FLOAT OnePole :: tick(MY_FLOAT sample)
+double OnePole :: tick(double sample)
 {
    lastOutput = (sgain * sample) + (poleCoeff * lastOutput);              
    CLAMP_DENORMALS(lastOutput);

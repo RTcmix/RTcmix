@@ -10,20 +10,20 @@
 class Balance : public Filter
 {
   private:
-    int      counter;
-    MY_FLOAT increment;
+    int     counter;
+    double  increment;
   protected:  
-    int      windowSize;
-    RMS      *inputRMS;
-    RMS      *compareRMS;
+    int     windowSize;
+    RMS     *inputRMS;
+    RMS     *compareRMS;
   public:
     Balance(double srate);
     ~Balance();
     void clear();
-    void setInitialGain(MY_FLOAT aGain);
-    void setFreq(MY_FLOAT freq);
+    void setInitialGain(double aGain);
+    void setFreq(double freq);
     void setWindowSize(int nsamples);
-    MY_FLOAT tick(MY_FLOAT inputSamp, MY_FLOAT compareSamp);
+    double tick(double inputSamp, double compareSamp);
 };
 
 #endif

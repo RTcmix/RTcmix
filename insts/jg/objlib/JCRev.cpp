@@ -16,7 +16,7 @@
 #define LOWPASS
 
 
-JCRev :: JCRev(double srate, MY_FLOAT T60) : Reverb(srate)
+JCRev :: JCRev(double srate, double T60) : Reverb(srate)
 {
    /* These are the values from CLM's JCRev.ins ... I found that the
       impulse response sounded better with the shorter delay lengths.
@@ -27,11 +27,10 @@ JCRev :: JCRev(double srate, MY_FLOAT T60) : Reverb(srate)
 #else
    int lens[9] = { 4799, 4999, 5399, 5801, 1051, 337, 113, 573, 487 };
 #endif
-   int i;  // had to declare here to appease SGI compiler  -JGG
 
    if (_sr < 44100.0) {
       double srscale = _sr / 44100.0;
-      for (i = 0; i < 9; i++)   {
+      for (int i = 0; i < 9; i++)   {
          int val = (int) floor(srscale * lens[i]);
          if ((val & 1) == 0)
             val++;
@@ -40,14 +39,14 @@ JCRev :: JCRev(double srate, MY_FLOAT T60) : Reverb(srate)
          lens[i] = val;
       }
    }
-   for (i = 0; i < 3; i++) {
+   for (int i = 0; i < 3; i++) {
       APdelayLine[i] = new DLineN(lens[i + 4] + 2);
       APdelayLine[i]->setDelay(lens[i + 4]);
    }
-   for (i = 0; i < 4; i++) {
+   for (int i = 0; i < 4; i++) {
       CdelayLine[i] = new DLineN(lens[i] + 2);
       CdelayLine[i]->setDelay(lens[i]);
-      combCoeff[i] = (MY_FLOAT) pow(10, (-3 * lens[i] / (T60 * _sr)));
+      combCoeff[i] = pow(10, (-3 * lens[i] / (T60 * _sr)));
 //      printf("combCoeff[%d] = %f\n", i, combCoeff[i]);
    }
    outLdelayLine = new DLineN(lens[7] + 2);
@@ -93,34 +92,34 @@ void JCRev :: clear()
 }
 
 
-void JCRev :: setEffectMix(MY_FLOAT mix)
+void JCRev :: setEffectMix(double mix)
 {
    effectMix = mix;
 }
 
 
-MY_FLOAT JCRev :: lastOutput()
+double JCRev :: lastOutput()
 {
    return (lastOutL + lastOutR) * 0.5;
 }
 
 
-MY_FLOAT JCRev :: lastOutputL()
+double JCRev :: lastOutputL()
 {
    return lastOutL;
 }
 
 
-MY_FLOAT JCRev :: lastOutputR()
+double JCRev :: lastOutputR()
 {
    return lastOutR;
 }
 
 
-MY_FLOAT JCRev :: tick(MY_FLOAT input)
+double JCRev :: tick(double input)
 {
-   MY_FLOAT temp, temp0, temp1, temp2, temp3, temp4, temp5, temp6;
-   MY_FLOAT filtout;
+   double temp, temp0, temp1, temp2, temp3, temp4, temp5, temp6;
+   double filtout;
 
    temp = APdelayLine[0]->lastOut();
    temp0 = allPassCoeff * temp;

@@ -12,10 +12,10 @@
 
 OneZero :: OneZero() : Filter(0)
 {
-   gain = (MY_FLOAT) 1.0;
-   zeroCoeff = (MY_FLOAT) 1.0;
-   sgain = (MY_FLOAT) 0.5;
-   inputs = new MY_FLOAT [1];
+   gain = 1.0;
+   zeroCoeff = 1.0;
+   sgain = 0.5;
+   inputs = new double [1];
    this->clear();
 }
 
@@ -28,35 +28,34 @@ OneZero :: ~OneZero()
 
 void OneZero :: clear()
 {
-   inputs[0] = (MY_FLOAT) 0.0;
-   lastOutput = (MY_FLOAT) 0.0;
+   inputs[0] = 0.0;
+   lastOutput = 0.0;
 }
 
 
-void OneZero :: setGain(MY_FLOAT aValue)
+void OneZero :: setGain(double aValue)
 {
    gain = aValue;
-   if (zeroCoeff > 0.0)                  /* Normalize gain to 1.0 max  */
-      sgain = gain / ((MY_FLOAT) 1.0 + zeroCoeff);
+   if (zeroCoeff > 0.0)                  // Normalize gain to 1.0 max
+      sgain = gain / (1.0 + zeroCoeff);
    else
-      sgain = gain / ((MY_FLOAT) 1.0 - zeroCoeff);
+      sgain = gain / (1.0 - zeroCoeff);
 }
 
 
-void OneZero :: setCoeff(MY_FLOAT aValue)
+void OneZero :: setCoeff(double aValue)
 {
    zeroCoeff = aValue;
-   if (zeroCoeff > 0.0)                  /* Normalize gain to 1.0 max  */
-      sgain = gain / ((MY_FLOAT) 1.0 + zeroCoeff);
+   if (zeroCoeff > 0.0)                  // Normalize gain to 1.0 max
+      sgain = gain / (1.0 + zeroCoeff);
    else
-      sgain = gain / ((MY_FLOAT) 1.0 - zeroCoeff);
+      sgain = gain / (1.0 - zeroCoeff);
 }
 
 
-MY_FLOAT OneZero :: tick(MY_FLOAT sample)
+double OneZero :: tick(double sample)
 {
-   MY_FLOAT temp;
-   temp = sgain * sample;
+   double temp = sgain * sample;
    lastOutput = (inputs[0] * zeroCoeff) + temp;
    inputs[0] = temp;
    return lastOutput;

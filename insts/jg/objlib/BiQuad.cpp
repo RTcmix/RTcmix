@@ -11,12 +11,12 @@
 
 BiQuad :: BiQuad(double srate) : Filter(srate)
 {
-   inputs = new MY_FLOAT [2];
-   zeroCoeffs[0] = (MY_FLOAT) 0.0;
-   zeroCoeffs[1] = (MY_FLOAT) 0.0;
-   poleCoeffs[0] = (MY_FLOAT) 0.0;
-   poleCoeffs[1] = (MY_FLOAT) 0.0;
-   gain = (MY_FLOAT) 1.0;
+   inputs = new double [2];
+   zeroCoeffs[0] = 0.0;
+   zeroCoeffs[1] = 0.0;
+   poleCoeffs[0] = 0.0;
+   poleCoeffs[1] = 0.0;
+   gain = 1.0;
    this->clear();
 }
 
@@ -29,20 +29,20 @@ BiQuad :: ~BiQuad()
 
 void BiQuad :: clear()
 {
-   inputs[0] = (MY_FLOAT) 0.0;
-   inputs[1] = (MY_FLOAT) 0.0;
-   lastOutput = (MY_FLOAT) 0.0;
+   inputs[0] = 0.0;
+   inputs[1] = 0.0;
+   lastOutput = 0.0;
 }
 
 
-void BiQuad :: setPoleCoeffs(MY_FLOAT *coeffs)
+void BiQuad :: setPoleCoeffs(double *coeffs)
 {
    poleCoeffs[0] = coeffs[0];
    poleCoeffs[1] = coeffs[1];
 }
 
 
-void BiQuad :: setZeroCoeffs(MY_FLOAT *coeffs)
+void BiQuad :: setZeroCoeffs(double *coeffs)
 {
    zeroCoeffs[0] = coeffs[0];
    zeroCoeffs[1] = coeffs[1];
@@ -51,12 +51,12 @@ void BiQuad :: setZeroCoeffs(MY_FLOAT *coeffs)
 
 void BiQuad :: setEqualGainZeroes()
 {
-   zeroCoeffs[0] = (MY_FLOAT) 0.0;
-   zeroCoeffs[1] = (MY_FLOAT) -1.0;
+   zeroCoeffs[0] = 0.0;
+   zeroCoeffs[1] = -1.0;
 }
 
 
-void BiQuad :: setGain(MY_FLOAT aValue)
+void BiQuad :: setGain(double aValue)
 {
    gain = aValue;
 }
@@ -65,27 +65,26 @@ void BiQuad :: setGain(MY_FLOAT aValue)
 // Same as the TwoPole method
 // <reson> is radius of pole on zplane; must be <= 1.0 for stable filter
 
-void BiQuad :: setFreqAndReson(MY_FLOAT freq, MY_FLOAT reson)
+void BiQuad :: setFreqAndReson(double freq, double reson)
 {
-   poleCoeffs[0] = (MY_FLOAT) (2.0 * reson * cos(TWO_PI * (double)(freq / _sr)));
+   poleCoeffs[0] = 2.0 * reson * cos(TWO_PI * (freq / _sr));
    poleCoeffs[1] = -(reson * reson);
 }
 
 
 // (similar to make-formant in clm, but with bw in Hz instead of R)
 
-void BiQuad :: setFreqBandwidthAndGain(MY_FLOAT freq, MY_FLOAT bw,
-                                                               MY_FLOAT aGain)
+void BiQuad :: setFreqBandwidthAndGain(double freq, double bw, double aGain)
 {
-   MY_FLOAT reson = (MY_FLOAT) (exp(-PI * (double)(bw / _sr)));
+   double reson = exp(-PI * (bw / _sr));
 
    setFreqAndReson(freq, reson);
 
-   zeroCoeffs[0] = (MY_FLOAT) 0.0;
-   zeroCoeffs[1] = (MY_FLOAT) -reson;
+   zeroCoeffs[0] = 0.0;
+   zeroCoeffs[1] = -reson;
 
    // Note: using '+' rather than the '*' in 3/98 clm, which may be wrong (?)
-   gain = aGain * ((MY_FLOAT) sin(TWO_PI * (double)(freq / _sr))
+   gain = aGain * (sin(TWO_PI * (freq / _sr))
 #if 1 // see clm mus.lisp ... they use the 2nd one
                    + (1.0 - reson));
 #else
@@ -102,9 +101,9 @@ void BiQuad :: setFreqBandwidthAndGain(MY_FLOAT freq, MY_FLOAT bw,
 // Note: signs of b1 and b2 flipped compared to what you often see
 // Note: This is the canonical form, needing only 2 history vals.
 
-MY_FLOAT BiQuad :: tick(MY_FLOAT sample)
+double BiQuad :: tick(double sample)
 {
-   MY_FLOAT temp;
+   double temp;
 
    temp = sample * gain;
    temp += inputs[0] * poleCoeffs[0];

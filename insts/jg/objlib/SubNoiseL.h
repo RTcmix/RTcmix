@@ -14,14 +14,14 @@
 class SubNoiseL : public SubNoise
 {
   protected:
-    MY_FLOAT prevRand;
-    MY_FLOAT curVal;
-    MY_FLOAT increment;
+    double prevRand;
+    double curVal;
+    double increment;
   public:
     SubNoiseL(int subSample, unsigned int aSeed);
     ~SubNoiseL();
-    MY_FLOAT tick();
-    MY_FLOAT lastOut();
+    double tick();
+    double lastOut();
 };
 
 #endif

@@ -11,9 +11,9 @@ class TableL : public TableN
 {
   protected:  
   public:
-    TableL(double srate, MY_FLOAT duration, double *aTable, int tableSize);
+    TableL(double srate, double duration, double *aTable, int tableSize);
     ~TableL();
-    MY_FLOAT tick(long nsample, MY_FLOAT amp);
+    double tick(long nsample, double amp);
 };
 
 #endif

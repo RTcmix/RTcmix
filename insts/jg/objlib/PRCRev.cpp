@@ -11,13 +11,13 @@
 #include "PRCRev.h"
 
 
-PRCRev :: PRCRev(double srate, MY_FLOAT T60) : Reverb(srate)
+PRCRev :: PRCRev(double srate, double T60) : Reverb(srate)
 {
-   int    i, val, lens[4] = { 353, 1097, 1777, 2137 };
+   int    val, lens[4] = { 353, 1097, 1777, 2137 };
    double srscale = _sr / 44100.0;
 
    if (_sr < 44100.0) {
-      for (i = 0; i < 4; i++)   {
+      for (int i = 0; i < 4; i++)   {
          val = (int) floor(srscale * lens[i]);
          if ((val & 1) == 0)
             val++;
@@ -26,15 +26,15 @@ PRCRev :: PRCRev(double srate, MY_FLOAT T60) : Reverb(srate)
          lens[i] = val;
       }
    }
-   for (i = 0; i < 2; i++) {
+   for (int i = 0; i < 2; i++) {
       APdelayLine[i] = new DLineN(lens[i] + 2);
       APdelayLine[i]->setDelay(lens[i]);
       CdelayLine[i] = new DLineN(lens[i+2] + 2);
       CdelayLine[i]->setDelay(lens[i+2]);
-      combCoeff[i] = (MY_FLOAT) pow(10, (-3 * lens[i + 2] / (T60 * _sr)));
+      combCoeff[i] = pow(10, (-3 * lens[i + 2] / (T60 * _sr)));
    }
-   allPassCoeff = (MY_FLOAT) 0.7;
-   effectMix = (MY_FLOAT) 0.5;
+   allPassCoeff = 0.7;
+   effectMix = 0.5;
    this->clear();
 }
 
@@ -54,38 +54,38 @@ void PRCRev :: clear()
    APdelayLine[1]->clear();
    CdelayLine[0]->clear();
    CdelayLine[1]->clear();
-   lastOutL = (MY_FLOAT) 0.0;
-   lastOutR = (MY_FLOAT) 0.0;
+   lastOutL = 0.0;
+   lastOutR = 0.0;
 }
 
 
-void PRCRev :: setEffectMix(MY_FLOAT mix)
+void PRCRev :: setEffectMix(double mix)
 {
    effectMix = mix;
 }
 
 
-MY_FLOAT PRCRev :: lastOutput()
+double PRCRev :: lastOutput()
 {
-   return (lastOutL + lastOutR) * (MY_FLOAT) 0.5;
+   return (lastOutL + lastOutR) * 0.5;
 }
 
 
-MY_FLOAT PRCRev :: lastOutputL()
+double PRCRev :: lastOutputL()
 {
    return lastOutL;
 }
 
 
-MY_FLOAT PRCRev :: lastOutputR()
+double PRCRev :: lastOutputR()
 {
    return lastOutR;
 }
 
 
-MY_FLOAT PRCRev :: tick(MY_FLOAT input)
+double PRCRev :: tick(double input)
 {
-   MY_FLOAT temp, temp0, temp1, temp2, temp3;
+   double temp, temp0, temp1, temp2, temp3;
 
    temp = APdelayLine[0]->lastOut();
    temp0 = allPassCoeff * temp;
@@ -104,11 +104,11 @@ MY_FLOAT PRCRev :: tick(MY_FLOAT input)
 
    lastOutL = effectMix * (CdelayLine[0]->tick(temp2));
    lastOutR = effectMix * (CdelayLine[1]->tick(temp3));
-   temp = (MY_FLOAT) (1.0 - effectMix) * input;
+   temp = (1.0 - effectMix) * input;
    lastOutL += temp;
    lastOutR += temp;
 
-   return (lastOutL + lastOutR) * (MY_FLOAT) 0.5;
+   return (lastOutL + lastOutR) * 0.5;
 }
 
 

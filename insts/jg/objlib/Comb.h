@@ -9,15 +9,15 @@
 class Comb : public Filter
 {
   protected:  
-    DLineN   *delayLine;
-    MY_FLOAT combCoeff;
-    MY_FLOAT loopt;
+    DLineN  *delayLine;
+    double  combCoeff;
+    double  loopt;
   public:
-    Comb(double srate, MY_FLOAT loopTime, MY_FLOAT reverbTime);
+    Comb(double srate, double loopTime, double reverbTime);
     ~Comb();
     void clear();
-    void setReverbTime(MY_FLOAT reverbTime);
-    MY_FLOAT tick(MY_FLOAT input);
+    void setReverbTime(double reverbTime);
+    double tick(double input);
 };
 
 #endif

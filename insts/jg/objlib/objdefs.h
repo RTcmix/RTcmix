@@ -22,19 +22,7 @@
   #define TWO_PI (2.0 * M_PI)
 #endif
 #define ONE_OVER_TWO_PI (1.0 / TWO_PI)
-#define SQRT_TWO (MY_FLOAT) 1.4142135623730950488
-
-/* Machine dependent stuff, possibly useful for optimization.
- * For example, changing double to float here increasesf
- * performance (speed) by a whopping 4-6% on 486-flavor machines.
- * BUT!! a change from float to double here increases speed by
- * 30% or so on SGI machines.
-*/
-//#define MY_FLOAT      double
-//#define MY_FLOAT_SIZE 8
-
-#define MY_FLOAT      float
-#define MY_FLOAT_SIZE 4
+#define SQRT_TWO 1.4142135623730950488
 
 #endif
 

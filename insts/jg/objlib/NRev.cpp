@@ -16,14 +16,13 @@
 #include "NRev.h"
 
 
-NRev :: NRev(double srate, MY_FLOAT T60) : Reverb(srate)
+NRev :: NRev(double srate, double T60) : Reverb(srate)
 {
-   int i;
    double srscale = _sr / 25641.0;
    int lens[15] = { 1433, 1601, 1867, 2053, 2251, 2399,
                     347, 113, 37, 59, 53, 43, 37, 29, 19 };
 
-   for (i = 0; i < 15; i++) {
+   for (int i = 0; i < 15; i++) {
       int val = (int)floor(srscale * lens[i]);
       if ((val & 1) == 0)
          val++;
@@ -31,12 +30,12 @@ NRev :: NRev(double srate, MY_FLOAT T60) : Reverb(srate)
          val += 2;
       lens[i] = val;
    }
-   for (i = 0; i < 6; i++) {
+   for (int i = 0; i < 6; i++) {
       CdelayLine[i] = new DLineN((long)(lens[i]) + 2);
       CdelayLine[i]->setDelay((long)(lens[i]));
-      combCoef[i] = (MY_FLOAT)pow(10, (-3 * lens[i] / (T60 * _sr)));
+      combCoef[i] = pow(10, (-3 * lens[i] / (T60 * _sr)));
    }
-   for (i = 0; i < 6; i++) {
+   for (int i = 0; i < 6; i++) {
       APdelayLine[i] = new DLineN((long)(lens[i + 6]) + 2);
       APdelayLine[i]->setDelay((long)(lens[i + 6]));
    }
@@ -63,22 +62,18 @@ NRev :: NRev(double srate, MY_FLOAT T60) : Reverb(srate)
 
 NRev :: ~NRev()
 {
-   int i;
-
-   for (i = 0; i < 6; i++)
+   for (int i = 0; i < 6; i++)
       delete CdelayLine[i];
-   for (i = 0; i < 8; i++)
+   for (int i = 0; i < 8; i++)
       delete APdelayLine[i];
 }
 
 
 void NRev :: clear()
 {
-   int i;
-
-   for (i = 0; i < 6; i++)
+   for (int i = 0; i < 6; i++)
       CdelayLine[i]->clear();
-   for (i = 0; i < 6; i++)
+   for (int i = 0; i < 6; i++)
       APdelayLine[i]->clear();
 #ifdef NOMORE // don't want to import NCHANS anymore  -JGG
    if (NCHANS == 4) {
@@ -92,41 +87,40 @@ void NRev :: clear()
 }
 
 
-void NRev :: setEffectMix(MY_FLOAT mix)
+void NRev :: setEffectMix(double mix)
 {
    effectMix = mix;
 }
 
 
-MY_FLOAT NRev :: lastOutput()
+double NRev :: lastOutput()
 {
    return (lastOutL + lastOutR) * 0.5;
 }
 
 
-MY_FLOAT NRev :: lastOutputL()
+double NRev :: lastOutputL()
 {
    return lastOutL;
 }
 
 
-MY_FLOAT NRev :: lastOutputR()
+double NRev :: lastOutputR()
 {
    return lastOutR;
 }
 
 
-MY_FLOAT NRev :: tick(MY_FLOAT input)
+double NRev :: tick(double input)
 {
-   int i;
-   MY_FLOAT temp, temp0, temp1, temp2, temp3;
+   double temp, temp0, temp1, temp2, temp3;
 
    temp0 = 0.0;
-   for (i = 0; i < 6; i++) {
+   for (int i = 0; i < 6; i++) {
       temp = input + (combCoef[i] * CdelayLine[i]->lastOut());
       temp0 += CdelayLine[i]->tick(temp);
    }
-   for (i = 0; i < 3; i++) {
+   for (int i = 0; i < 3; i++) {
       temp = APdelayLine[i]->lastOut();
       temp1 = allPassCoeff * temp;
       temp1 += temp0;

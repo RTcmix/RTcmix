@@ -21,29 +21,29 @@
 class ADSR : public Envelope
 {
   protected:  
-    MY_FLOAT attackRate;
-    MY_FLOAT decayRate;
-    MY_FLOAT sustainLevel;
-    MY_FLOAT releaseRate;
+    double attackRate;
+    double decayRate;
+    double sustainLevel;
+    double releaseRate;
   public:
     ADSR(double srate);
     ~ADSR();
     void keyOn();
     void keyOff();
-    void setAttackRate(MY_FLOAT aRate);
-    void setDecayRate(MY_FLOAT aRate);
-    void setSustainLevel(MY_FLOAT aLevel);
-    void setReleaseRate(MY_FLOAT aRate);
-    void setAttackTime(MY_FLOAT aTime);
-    void setDecayTime(MY_FLOAT aTime);
-    void setReleaseTime(MY_FLOAT aTime);
-    void setAllTimes(MY_FLOAT attTime, MY_FLOAT decTime, MY_FLOAT susLevel,
-                                                            MY_FLOAT relTime);
-    void setTarget(MY_FLOAT aTarget);
-    void setValue(MY_FLOAT aValue);
-    MY_FLOAT tick();
+    void setAttackRate(double aRate);
+    void setDecayRate(double aRate);
+    void setSustainLevel(double aLevel);
+    void setReleaseRate(double aRate);
+    void setAttackTime(double aTime);
+    void setDecayTime(double aTime);
+    void setReleaseTime(double aTime);
+    void setAllTimes(double attTime, double decTime, double susLevel,
+                                                            double relTime);
+    void setTarget(double aTarget);
+    void setValue(double aValue);
+    double tick();
     int informTick();  
-    MY_FLOAT lastOut();
+    double lastOut();
 };
 
 #endif

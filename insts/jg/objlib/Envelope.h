@@ -18,9 +18,9 @@
 class Envelope
 {
   protected:  
-    MY_FLOAT value;
-    MY_FLOAT target;
-    MY_FLOAT rate;
+    double value;
+    double target;
+    double rate;
     double _sr;
     int state;
   public:
@@ -28,14 +28,14 @@ class Envelope
     virtual ~Envelope();
     void keyOn();
     void keyOff();
-    void setRate(MY_FLOAT aRate);
-    void setTime(MY_FLOAT aTime);
-    void setTarget(MY_FLOAT aTarget);
-    void setValue(MY_FLOAT aValue);
+    void setRate(double aRate);
+    void setTime(double aTime);
+    void setTarget(double aTarget);
+    void setValue(double aValue);
     int getState();
-    MY_FLOAT tick();
+    double tick();
     int informTick();
-    MY_FLOAT lastOut();
+    double lastOut();
 };
 
 #endif

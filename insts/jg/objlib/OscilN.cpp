@@ -7,7 +7,7 @@
 
 /* Construct OscilN object. Uses default args unless provided with others.
    <initialPhase> is the initial phase offset into the wave table, given
-   in radians. <waveTable> is a pointer to an array of MY_FLOAT allocated
+   in radians. <waveTable> is a pointer to an array of double allocated
    by caller. (Caller is responsible for ensuring that <waveTable> stays
    valid for the life of this object.) Or, if <waveTable> is NULL, an
    internal sine wave table (of one cycle) will be used. If caller provides
@@ -25,7 +25,7 @@
 */
 OscilN :: OscilN(
    double   srate,
-   MY_FLOAT initialPhase = 0.0,
+   double   initialPhase = 0.0,
    double   *waveTable = NULL,
    int      tableSize = DEFAULT_WAVETABLE_SIZE)
    : Oscil(srate)
@@ -39,7 +39,7 @@ OscilN :: OscilN(
       table = getSineTable();           // get ptr to internal sine table
    }
    increment = (double) size / _sr;
-   phase = (double) (initialPhase * ONE_OVER_TWO_PI * (double) size);
+   phase = initialPhase * ONE_OVER_TWO_PI * (double) size;
 }
 
 
@@ -48,7 +48,7 @@ OscilN :: ~OscilN()
 }
 
 
-MY_FLOAT OscilN :: tick(MY_FLOAT freq, MY_FLOAT amp = 1.0)
+double OscilN :: tick(double freq, double amp = 1.0)
 {
    int i = (int) phase;
    lastOutput = table[i] * amp;

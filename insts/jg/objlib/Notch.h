@@ -11,14 +11,14 @@
 class Notch : public Filter
 {
   protected:  
-    DLineN   *delayLine;
-    MY_FLOAT combCoeff;
+    DLineN  *delayLine;
+    double  combCoeff;
   public:
-    Notch(double srate, MY_FLOAT loopTime, MY_FLOAT scaler);
+    Notch(double srate, double loopTime, double scaler);
     ~Notch();
     void clear();
-    void setScaler(MY_FLOAT scaler);
-    MY_FLOAT tick(MY_FLOAT input);
+    void setScaler(double scaler);
+    double tick(double input);
 };
 
 #endif

@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <sndlibsupport.h>
 #include <buffers.h>          /* for BUFTYPE and BufPtr */
-                              /* NB: assumes BUFTYPE is same as MY_FLOAT */
+                              /* NB: assumes BUFTYPE is same as double */
 #include <prototypes.h>       /* for read_samps */
 
 class SoundIn
@@ -27,20 +27,20 @@ class SoundIn
                                //    start of sound data
     int      curbufframe;      // frame index within current buffer
     BufPtr   inbuf;            // interleaved array of nchans channels
-    MY_FLOAT outputs[MAXCHANS];
+    double   outputs[MAXCHANS];
 
     int readBuffer();
 
   public:
-    SoundIn(char *fileName, MY_FLOAT inskip);
+    SoundIn(char *fileName, double inskip);
     ~SoundIn();
     int getChannels();
     int getSamplingRate();
     long getFrames();
-    MY_FLOAT getDuration();
+    double getDuration();
     int seekFrame(long frame);
-    MY_FLOAT *tick();
-    MY_FLOAT lastOutput(int chan);
+    double *tick();
+    double lastOutput(int chan);
 };
 
 #endif

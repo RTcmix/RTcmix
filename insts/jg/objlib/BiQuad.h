@@ -13,19 +13,19 @@
 class BiQuad : public Filter
 {
   protected:  
-    MY_FLOAT poleCoeffs[2];
-    MY_FLOAT zeroCoeffs[2];
+    double poleCoeffs[2];
+    double zeroCoeffs[2];
   public:
     BiQuad(double srate);
     ~BiQuad();
     void clear();
-    void setPoleCoeffs(MY_FLOAT *coeffs);
-    void setZeroCoeffs(MY_FLOAT *coeffs);
-    void setGain(MY_FLOAT aValue);
+    void setPoleCoeffs(double *coeffs);
+    void setZeroCoeffs(double *coeffs);
+    void setGain(double aValue);
     void setEqualGainZeroes();
-    void setFreqAndReson(MY_FLOAT freq, MY_FLOAT reson);
-    void setFreqBandwidthAndGain(MY_FLOAT freq, MY_FLOAT bw, MY_FLOAT aGain);
-    MY_FLOAT tick(MY_FLOAT sample);
+    void setFreqAndReson(double freq, double reson);
+    void setFreqBandwidthAndGain(double freq, double bw, double aGain);
+    double tick(double sample);
 };
 
 #endif

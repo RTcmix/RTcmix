@@ -17,9 +17,9 @@ class RMS : public Filter
     RMS(double srate);
     ~RMS();
     void clear();
-    void setFreq(MY_FLOAT freq);
+    void setFreq(double freq);
     void setWindowSize(int nsamples);
-    MY_FLOAT tick(MY_FLOAT sample);
+    double tick(double sample);
 };
 
 #endif

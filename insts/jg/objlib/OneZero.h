@@ -15,15 +15,15 @@
 class OneZero : public Filter
 {
   protected:  
-    MY_FLOAT zeroCoeff;
-    MY_FLOAT sgain;
+    double zeroCoeff;
+    double sgain;
   public:
     OneZero();
     ~OneZero();
     void clear();
-    void setGain(MY_FLOAT aValue);
-    void setCoeff(MY_FLOAT aValue);
-    MY_FLOAT tick(MY_FLOAT sample);
+    void setGain(double aValue);
+    void setCoeff(double aValue);
+    double tick(double sample);
 };
 
 #endif

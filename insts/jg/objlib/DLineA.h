@@ -17,15 +17,15 @@ class DLineA : public Filter
     long inPoint;
     long outPoint;
     long length;
-    MY_FLOAT alpha;
-    MY_FLOAT coeff;
-    MY_FLOAT lastIn;
+    double alpha;
+    double coeff;
+    double lastIn;
   public:
     DLineA(long max_length);
     ~DLineA();
     void clear();
-    void setDelay(MY_FLOAT length);
-    MY_FLOAT tick(MY_FLOAT sample);
+    void setDelay(double length);
+    double tick(double sample);
 };
 
 #endif

@@ -15,13 +15,13 @@ class Oscil
     int      size;               // size of table
     double   phase;              // current index into table
     double   increment;          // increments phase
-    MY_FLOAT lastOutput;
+    double   lastOutput;
     double   _sr;
   public:
     Oscil(double srate);
     virtual ~Oscil();
-    void setPhase(MY_FLOAT aPhase);
-    MY_FLOAT lastOut();
+    void setPhase(double aPhase);
+    double lastOut();
 };
 
 double *getSineTable();
