@@ -72,7 +72,7 @@ typedef union {
    MincFloat number;
    MincString string;
    MincHandle handle;
-   MincList list;
+   MincList *list;
 } MincValue;
 
 typedef struct _minc_list_elem {
@@ -195,7 +195,7 @@ struct symbol *lookup(char *name);
 char *strsave(char *str);
 char *emalloc(int nbytes);
 void clear_elem(MincListElem *);
-void unref_list(MincList *);
+void unref_value_list(MincValue *);
 void free_symbols();
 
 /* trees.c */

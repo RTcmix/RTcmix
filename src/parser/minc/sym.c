@@ -73,7 +73,7 @@ free_symbols()
 			if (p->type == MincHandleType)
 				unref_handle(p->v.handle);
 			else if (p->type == MincListType) {
-				unref_list(&p->v.list);
+				unref_value_list(&p->v);
 			}
 			free(p);
 			p = next;

@@ -135,7 +135,7 @@ _do_print(const MincListElem args[], const int nargs)
             break;
          case MincListType:
             putchar('[');
-            _do_print(args[i].val.list.data, args[i].val.list.len);
+            _do_print(args[i].val.list->data, args[i].val.list->len);
             if (i == last_arg)
                putchar(']');
             else
@@ -203,7 +203,7 @@ _minc_printf(const MincListElem args[], const int nargs)
                      goto err;
                   }
                   putchar('[');
-                  _do_print(args[n].val.list.data, args[n].val.list.len);
+                  _do_print(args[n].val.list->data, args[n].val.list->len);
                   putchar(']');
                   break;
                case 's':      /* print string object */
@@ -297,7 +297,7 @@ _minc_len(const MincListElem args[], const int nargs)
             len = 1;
             break;
          case MincListType:
-            len = args[0].val.list.len;
+            len = args[0].val.list->len;
             break;
          default:
             minc_warn("len: invalid argument");

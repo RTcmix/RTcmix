@@ -44,9 +44,9 @@ call_external_function(const char *funcname, const MincListElem arglist[],
             Array *newarray = (Array *) emalloc(sizeof(Array));
             if (newarray == NULL)
                return -1;
-            newarray->data = (double *) float_list_to_array(&arglist[i].val.list);
+            newarray->data = (double *) float_list_to_array(arglist[i].val.list);
             if (newarray->data != NULL) {
-               newarray->len = arglist[i].val.list.len;
+               newarray->len = arglist[i].val.list->len;
                rtcmixargs[i] = newarray;
             }
             else {

@@ -45,6 +45,7 @@ static void copy_sym_tree(Tree tpdest, Symbol *src);
 static void copy_tree_sym(Symbol *dest, Tree tpsrc);
 static void copy_tree_listelem(MincListElem *edest, Tree tpsrc);
 static void copy_listelem_tree(Tree tpdest, MincListElem *esrc);
+static void copy_listelem_elem(MincListElem *edest, MincListElem *esrc);
 
 /* floating point comparisons:
      f1 < f2   ==> -1
@@ -69,6 +70,37 @@ cmp(MincFloat f1, MincFloat f2)
    return 0;
 }
 
+static MincList *
+newList(int len)
+{
+   MincList *list = (MincList *) emalloc(sizeof(MincList));
+   if (list) {
+	  list->len = len;
+	  list->refcount = 0;
+	  if (len > 0) {
+         list->data = (MincListElem *) emalloc(len * sizeof(MincListElem));
+		 if (!list->data) {
+			free(list);
+			list = NULL;
+		 }
+	  }
+	  else
+         list->data = NULL;
+   }
+   return list;
+}
+
+static void
+resizeList(MincList *list, int newLen)
+{
+   int i;
+   list->data = (MincListElem *) realloc(list->data, sizeof(MincListElem) * newLen);
+   for (i = list->len; i < newLen; i++) {
+	  list->data[i].type = MincFloatType;
+	  list->data[i].val.number = 0.0;
+   }
+   list->len = newLen;
+}
 
 /* ========================================================================== */
 /* Tree nodes */
@@ -88,9 +120,7 @@ node(OpKind op, NodeKind kind)
    tp->u.child[1] = NULL;
    tp->u.child[2] = NULL;
    tp->u.child[3] = NULL;
-   tp->v.list.len = 0;
-   tp->v.list.refcount = 0;	// this MUST be set
-   tp->v.list.data = NULL;
+   tp->v.list = NULL;
    tp->funcname = NULL;
    return tp;
 }
@@ -571,13 +601,13 @@ static void
 do_op_list_iterate(Tree tp, Tree child, const MincFloat val, const OpKind op)
 {
    int i;
-   const int len = child->v.list.len;
-   MincListElem *src = child->v.list.data;
-   MincListElem *dest = (MincListElem *) emalloc(sizeof(MincListElem) * len);
-   if (dest == NULL)
+   const MincList *srcList = child->v.list;
+   const int len = srcList->len;
+   MincListElem *src = srcList->data;
+   MincList *destList = newList(len);
+   if (destList == NULL)
       return;
-   DPRINT2("do_op_list_iterate: MincList copy %p alloc'd at len %d\n",
-		   dest, len);
+   MincListElem *dest = destList->data;
    assert(len >= 0);
    switch (op) {
       case OpPlus:
@@ -653,9 +683,10 @@ do_op_list_iterate(Tree tp, Tree child, const MincFloat val, const OpKind op)
    }
    assert(tp->type == MincVoidType);	// are we ever overwriting these?
    tp->type = MincListType;
-   tp->v.list = child->v.list;
-   tp->v.list.data = dest;
-   tp->v.list.refcount = 1;
+   assert(tp->v.list == NULL);
+   tp->v.list = destList;
+   DPRINT3("list %p refcount %d -> %d\n", destList, destList->refcount, destList->refcount+1);
+   ++destList->refcount;
 }
 
 
@@ -939,10 +970,11 @@ exct_subscript_read(Tree tp)
          MincFloat fltindex = tp->u.child[1]->v.number;
          int index = (int) fltindex;
          MincFloat frac = fltindex - index;
-         MincListElem *lst = tp->u.child[0]->u.symbol->v.list.data;
-         int len = tp->u.child[0]->u.symbol->v.list.len;
-         if (len < 1)
+		 MincList *theList = tp->u.child[0]->u.symbol->v.list;
+		 int len = 0;
+         if (theList == NULL)
             minc_die("attempt to index an empty list");
+         len = theList->len;
          if (fltindex < 0.0) {    /* -1 means last element */
             if (fltindex <= -2.0)
                minc_warn("negative index ... returning last element");
@@ -955,14 +987,11 @@ exct_subscript_read(Tree tp)
             index = len - 1;
             fltindex = (MincFloat) index;
          }
-         elem = lst[index];
-		 if (elem.type == MincHandleType)
-            ref_handle(elem.val.handle);
-		 	
+		 copy_listelem_elem(&elem, &theList->data[index]);		 	
 
          /* do linear interpolation for float items */
          if (elem.type == MincFloatType && frac > 0.0 && index < len - 1) {
-            MincListElem elem2 = lst[index + 1];
+            MincListElem elem2 = theList->data[index + 1];
             if (elem2.type == MincFloatType)
                tp->v.number = elem.val.number
                         + (frac * (elem2.val.number - elem.val.number));
@@ -992,42 +1021,39 @@ exct_subscript_write(Tree tp)
    exct(tp->u.child[2]);         /* expression to store */
    if (tp->u.child[1]->type == MincFloatType) {
       if (tp->u.child[0]->u.symbol->type == MincListType) {
-         int len;
-         MincListElem *lst;
+         int len = 0;
+		 MincList *theList = tp->u.child[0]->u.symbol->v.list;
          MincFloat fltindex = tp->u.child[1]->v.number;
          int index = (int) fltindex;
          if (fltindex - (MincFloat) index > 0.0)
             minc_warn("list index must be integer ... correcting");
-         lst = tp->u.child[0]->u.symbol->v.list.data;
-         len = tp->u.child[0]->u.symbol->v.list.len;
-         assert(len >= 0);    /* NB: okay to have zero-length list */
+		 if (theList != NULL) {
+        	len = theList->len;
+        	assert(len >= 0);    /* NB: okay to have zero-length list */
+		 }
          if (index == -1)     /* means last element */
             index = len > 0 ? len - 1 : 0;
          else if (index >= len) {
-            /* realloc list and init new slots */
+            /* resize list */
             int i, newslots, oldlen = len;
             newslots = len > 0 ? (index - (len - 1)) : index + 1;
-//FIXME: what if newslots + len exceeds range of signed int?
             len += newslots;
-            lst = (MincListElem *) realloc(lst, sizeof(MincListElem) * len);
+			if (len < 0) {
+			    minc_die("list array subscript exceeds integer size limit!");
+			}
+			if (theList == NULL)
+				tp->u.child[0]->u.symbol->v.list = theList = newList(len);
+			else
+				resizeList(theList, len);
 			DPRINT2("exct_subscript_write: MincList %p expanded to len %d\n",
-					lst, len);
-            tp->u.child[0]->u.symbol->v.list.data = lst;
-            tp->u.child[0]->u.symbol->v.list.len = len;
+					theList->data, len);
 			// Ref the list if just allocated.
-			if (tp->u.child[0]->u.symbol->v.list.refcount == 0)
-				tp->u.child[0]->u.symbol->v.list.refcount = 1;
-            for (i = oldlen; i < len; i++) {
-               lst[i].type = MincFloatType;
-               lst[i].val.number = 0.0;
-            }
+			if (theList->refcount == 0)
+				theList->refcount = 1;
+  			 DPRINT1("list %p refcount = 1\n", theList);
          }
-//         lst[index].type = tp->u.child[2]->type;
-//         memcpy(&lst[index].val, &tp->u.child[2]->v, sizeof(MincValue));
-         copy_tree_listelem(&lst[index], tp->u.child[2]);
-		 assert(lst[index].type == tp->u.child[2]->type);
-//         tp->type = tp->u.child[2]->type;
-//         memcpy(&tp->v, &tp->u.child[2]->v, sizeof(MincValue));
+         copy_tree_listelem(&theList->data[index], tp->u.child[2]);
+		 assert(theList->data[index].type == tp->u.child[2]->type);
          copy_tree_tree(tp, tp->u.child[2]);
       }
       else
@@ -1126,18 +1152,21 @@ exct(Tree tp)
          push_list();
          exct(tp->u.child[0]);     /* NB: increments list_len */
          {
-            MincListElem *data;
+		    MincList *theList;
+			int i;
             if (check_list_count() < 0)
                return tp;
-            data = (MincListElem *) emalloc(sizeof(MincListElem) * list_len);
-            if (data == NULL)
+			theList = newList(list_len);
+            if (theList == NULL)
                return NULL;
-			DPRINT2("MincList %p alloc'd at len %d\n", data, list_len);
+			DPRINT2("MincList array %p alloc'd at len %d\n", theList->data, list_len);
             tp->type = MincListType;
-            tp->v.list.data = data;
-            tp->v.list.len = list_len;
-			tp->v.list.refcount = 1;
-            memcpy(data, list, sizeof(MincListElem) * list_len);
+            tp->v.list = theList;
+			theList->refcount = 1;
+  			DPRINT1("list %p refcount = 1\n", theList);
+			// Copy from stack list into tree list.
+			for (i = 0; i < list_len; ++i)
+            	copy_listelem_elem(&theList->data[i], &list[i]);
          }
          pop_list();
          DPRINT1("exct (exit NodeList, tp=%p)\n", tp);
@@ -1332,7 +1361,8 @@ static void copy_value(MincValue *dest, MincDataType destType,
       ref_handle(src->handle);	// ref before unref
    }
    else if (srcType == MincListType) {
-      ++src->list.refcount;
+      DPRINT3("list %p refcount %d -> %d\n", src->list, src->list->refcount, src->list->refcount+1);
+      ++src->list->refcount;
    }
    if (destType == MincHandleType) {
 #ifdef DEBUG
@@ -1344,7 +1374,7 @@ static void copy_value(MincValue *dest, MincDataType destType,
 #ifdef DEBUG
       DPRINT("\toverwriting existing MincList value\n");
 #endif
-      unref_list(&dest->list);
+      unref_value_list(dest);
    }
    memcpy(dest, src, sizeof(MincValue));
 }
@@ -1355,7 +1385,6 @@ copy_tree_tree(Tree tpdest, Tree tpsrc)
 {
    int no_ref = 0;
    DPRINT2("copy_tree_tree(%p, %p)\n", tpdest, tpsrc);
-   assert(tpdest->type != MincListType);	// check for these!!
    copy_value(&tpdest->v, tpdest->type, &tpsrc->v, tpsrc->type);
    tpdest->type = tpsrc->type;
 }
@@ -1366,7 +1395,6 @@ copy_sym_tree(Tree tpdest, Symbol *src)
 {
    int no_ref = 0;
    DPRINT2("copy_sym_tree(%p, %p)\n", tpdest, src);
-   assert(tpdest->type != MincListType);	// check for these!!
    copy_value(&tpdest->v, tpdest->type, &src->v, src->type);
    tpdest->type = src->type;
 }
@@ -1376,7 +1404,6 @@ copy_tree_sym(Symbol *dest, Tree tpsrc)
 {
    int no_ref = 0;
    DPRINT2("copy_tree_sym(%p, %p)\n", dest, tpsrc);
-   assert(dest->type != MincListType);	// check for these!!
    copy_value(&dest->v, dest->type, &tpsrc->v, tpsrc->type);
    dest->type = tpsrc->type;
 }
@@ -1386,7 +1413,6 @@ copy_tree_listelem(MincListElem *dest, Tree tpsrc)
 {
    int no_ref = 0;
    DPRINT2("copy_tree_listelem(%p, %p)\n", dest, tpsrc);
-   assert(dest->type != MincListType);	// check for these!!
    copy_value(&dest->val, dest->type, &tpsrc->v, tpsrc->type);
    dest->type = tpsrc->type;
 }
@@ -1396,9 +1422,17 @@ copy_listelem_tree(Tree tpdest, MincListElem *esrc)
 {
    int no_ref = 0;
    DPRINT2("copy_listelem_tree(%p, %p)\n", tpdest, esrc);
-   assert(tpdest->type != MincListType);	// check for these!!
    copy_value(&tpdest->v, tpdest->type, &esrc->val, esrc->type);
    tpdest->type = esrc->type;
+}
+
+static void
+copy_listelem_elem(MincListElem *edest, MincListElem *esrc)
+{
+   int no_ref = 0;
+   DPRINT2("copy_listelem_elem(%p, %p)\n", edest, esrc);
+   copy_value(&edest->val, edest->type, &esrc->val, esrc->type);
+   edest->type = esrc->type;
 }
 
 /* This recursive function frees space. */
@@ -1500,6 +1534,9 @@ free_tree(Tree tp)
    if (tp->type == MincHandleType) {
       unref_handle(tp->v.handle);
    }
+   else if (tp->type == MincListType) {
+      unref_value_list(&tp->v);
+   }
    free(tp);   /* actually free space */
 }
 
@@ -1510,7 +1547,7 @@ clear_elem(MincListElem *elem)
 #ifdef DEBUG
 	printf("clear_elem(%p)\n", elem);
 #endif
-		unref_list(&elem->val.list);
+		unref_value_list(&elem->val);
 	}
 	else if (elem->type == MincHandleType) {
 #ifdef DEBUG
@@ -1522,24 +1559,30 @@ clear_elem(MincListElem *elem)
 
 
 void
-unref_list(MincList *list)
+unref_value_list(MincValue *value)
 {
-   DPRINT1("unref_list(%p)\n", list);
-   assert(list->refcount > 0);
-   if (--list->refcount == 0) {
-		int e;
+   DPRINT3("unref_value_list(%p) [%d -> %d]\n", value->list, value->list->refcount, value->list->refcount-1);
+   assert(value->list->refcount > 0);
+   if (--value->list->refcount == 0) {
+      if (value->list->data != NULL) {
+		 int e;
 #ifdef DEBUG
-		printf("\tfreeing MincList %p...\n", list->data);
+		 printf("\tfreeing MincList data %p...\n", value->list->data);
 #endif
-		for (e = 0; e < list->len; ++e) {
-			MincListElem *elem = &list->data[e];
-			clear_elem(elem);
-		}
-		free(list->data);
-		list->data = NULL;
+		 for (e = 0; e < value->list->len; ++e) {
+			 MincListElem *elem = &value->list->data[e];
+			 clear_elem(elem);
+		 }
+		 free(value->list->data);
+		 value->list->data = NULL;
 #ifdef DEBUG
-		printf("\tdone\n");
+		 printf("\tdone\n");
 #endif
+      }
+#ifdef DEBUG
+	  printf("\tfreeing MincList %p\n", value->list);
+#endif
+	  free(value->list);
    }
 }
 
