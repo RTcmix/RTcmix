@@ -2,6 +2,8 @@ rtsetparams(44100, 2)
 load("WAVETABLE")
 load("FOLLOWER")
 
+source_listen = 0  /* set to 1 to hear carrier and modulator separately */
+
 dur = 20
 
 /* play carrier to bus 0 */
@@ -33,5 +35,10 @@ modamp = 4.0
 winlen = 10       /* number of samples for power gauge to average */
 smooth = 0.5      /* how much to smooth the power gauge curve */
 pctleft = 0.5
-FOLLOWER(0, inskip = 0, dur, caramp, modamp, winlen, smooth, pctleft)
+if (source_listen) {
+   bus_config("MIX", "aux 0-1 in", "out 0-1")
+   MIX(0, 0, dur, 1, 0, 1)
+}
+else
+   FOLLOWER(0, inskip = 0, dur, caramp, modamp, winlen, smooth, pctleft)
 
