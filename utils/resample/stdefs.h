@@ -47,9 +47,9 @@ typedef unsigned int   UWORD;
 
 #ifdef DEBUG
 #define INLINE
-#else DEBUG
+#else
 #define INLINE inline
-#endif DEBUG
+#endif
 
 #endif /* _STDEFS_H */
 
