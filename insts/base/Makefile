@@ -5,7 +5,12 @@ INSTDIR = insts.base
 
 RTLIBDIRS = MIX WAVETABLE
 
-CMIXLIBDIRS = mix wavetable
+ifeq ($(ARCH),MACOSX)
+# can't have these because of HFS+ is non case-sensitive
+   CMIXLIBDIRS = 
+else
+   CMIXLIBDIRS = mix wavetable
+endif
 
 LIBDIRS = $(RTLIBDIRS)  $(CMIXLIBDIRS) 
 DSODIRS = WAVETABLE $(CMIXLIBDIRS)
