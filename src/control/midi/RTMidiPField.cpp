@@ -74,6 +74,8 @@ double RTMidiPField::computeValue() const
 		rawval = _midiport->getProgram(_chan);
 	else if (_type == kMIDINoteOffType)
 		rawval = _midiport->getNoteOffVel(_chan, _subtype);
+	else
+		rawval = INVALID_MIDIVAL;
 
 	if (rawval == INVALID_MIDIVAL)
 		return _default;

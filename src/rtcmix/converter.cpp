@@ -49,7 +49,7 @@ makeconverter(const Arg args[], const int nargs)
 		return NULL;
 	}
 
-	ConverterPField *converter;
+	ConverterPField *converter = NULL;
 
 	if (args[1] == "ampdb")
 		converter = new ConverterPField(pfield, ConverterPField::ampdb);
