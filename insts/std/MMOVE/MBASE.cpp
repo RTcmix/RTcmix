@@ -137,9 +137,10 @@ int MBASE::init(double p[], int n_args)
    
    m_branch = 0;
    
-   nsamps = rtsetoutput(outskip, m_dur + ringdur, this);
-   DBG1(printf("nsamps = %d\n", nsamps));
-   return nsamps;
+   if (rtsetoutput(outskip, m_dur + ringdur, this) == -1)
+      return DONT_SCHEDULE;
+   DBG1(printf("nsamps = %d\n", nSamps()));
+   return nSamps();
 }
 
 void PrintInput(float *sig, int len)

@@ -119,9 +119,10 @@ int RVB::init(double p[], int n_args)
 
 	_skip = (int) (SR / (float) resetval);
 	
-	nsamps = rtsetoutput(outskip, m_dur + rvb_time, this);
-	DBG1(printf("nsamps = %d\n", nsamps));
-	return nsamps;
+	if (rtsetoutput(outskip, m_dur + rvb_time, this) == -1)
+		return DONT_SCHEDULE;
+	DBG1(printf("nsamps = %d\n", nSamps()));
+	return nSamps();
 }
 
 int RVB::configure()
