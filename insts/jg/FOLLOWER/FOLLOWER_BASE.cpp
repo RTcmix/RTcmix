@@ -2,7 +2,6 @@
    John Gibson (johgibso@indiana.edu), 1/5/03.
 */
 
-//#define DUMP
 //#define DEBUG
 #include "FOLLOWER_BASE.h"
 
@@ -39,7 +38,7 @@ int FOLLOWER_BASE :: init(float p[], int n_args)
    caramp = amp = p[3];
 
    /* apply conversion to normal range [-1, 1] for modulator input now */
-   modamp = p[4] * (1.0 / 32768.0);
+   modamp = p[4] / 32768.0;
 
    window_len = (int) p[5];
    if (window_len < 1)
