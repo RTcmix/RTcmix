@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <string.h>
 #include <math.h>
-#include <float.h>   /* for DBL_MIN and DBL_MAX */
+#include <float.h>   /* for DBL_MAX */
 #include <assert.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -95,6 +95,8 @@ inline double _fmin(double x, double y) { return (x < y) ? x : y; }
 static TablePField *
 _getTablePField(const Arg *arg)
 {
+//FIXME: How do we know that this PField really is a TablePField?
+// Should we test that pfield->values > 1?
    PField *tpf = NULL;
    if ((tpf = (PField *) *arg) != NULL) {
       return (TablePField *) tpf;
@@ -132,7 +134,7 @@ static void
 _get_table_bounds(const double *array, const int len, double &min, double &max)
 {
    min = DBL_MAX;
-   max = DBL_MIN;
+   max = -DBL_MAX;
    for (int i = 0; i < len; i++) {
       if (array[i] < min)
          min = array[i];
@@ -1812,26 +1814,106 @@ normtable(const Arg args[], const int nargs)
 
 
 /* ------------------------------------------------------------- copytable -- */
+/* Make a copy of the given table, and return the copy.  If the optional
+   <newsize> differs from the original size, resample the table to fit the
+   new size.  By default, resampling is done with linear interpolation,
+   but the optional <interp> argument allows for no interpolation.  Syntax:
+
+      newtable = copytable(table_to_copy, [newsize, [interp]])
+
+   where <interp> can be "interp" or "nointerp".
+                                                            -JGG, 7/21/04
+*/
+static void
+_do_copy_table(const double *srcarray, const int srclen, double *destarray,
+                                       const int destlen, const char *interp)
+{
+   if (destlen == srclen) {
+      for (int i = 0; i < destlen; i++)
+         destarray[i] = srcarray[i];
+   }
+   else {
+      double incr = (double) srclen / (double) destlen;
+
+      if (strcmp(interp, "nointerp") == 0) {
+         double f = 0.0;
+         for (int i = 0; i < destlen; i++) {
+            int n = (int) f;
+            destarray[i] = srcarray[n];
+            f += incr;
+         }
+      }
+      else if (strcmp(interp, "interp") == 0) {
+         double frac, next, diff = 0.0;
+         double f = 0.0;
+         for (int i = 0; i < destlen; i++) {
+            int n = (int) f;
+            frac = f - (double) n;
+            if (frac) {
+               next = (n + 1 < srclen) ? srcarray[n + 1] : srcarray[srclen - 1];
+               diff = next - srcarray[n];
+            }
+            destarray[i] = srcarray[n] + (diff * frac);
+            f += incr;
+         }
+      }
+      else
+         assert("_do_copy_table: invalid interp" && 0);
+   }
+}
+
 Handle
 copytable(const Arg args[], const int nargs)
 {
-   if (nargs != 1) {
-      die("copytable", "Usage: newtable = copytable(table_to_copy)");
+   if (nargs < 1 || nargs > 3) {
+      die("copytable",
+          "Usage: newtable = copytable(table_to_copy[, newsize, [interp]])");
       return NULL;
    }
-   PField *table = (PField *) args[0], *copyOfTable = NULL;
-   if (table == NULL) {
-      die("copytable", "Usage: newtable = copytable(table_to_copy)");
+   TablePField *oldtable = _getTablePField(&args[0]);
+   if (oldtable == NULL) {
+      die("copytable",
+          "Usage: newtable = copytable(table_to_copy[, newsize, [interp]])");
       return NULL;
    }
-   if (table->values() == 1)
-      copyOfTable = new ConstPField(table->doubleValue());
-   else {
-      double *values = new double[table->values()];
-      table->copyValues(values);
-      copyOfTable = new TablePField(values, table->values());
+
+   int newsize = 0;
+   if (nargs > 1) {
+      if (!args[1].isType(DoubleType)) {
+         die("copytable",
+             "Usage: newtable = copytable(table_to_copy[, newsize, [interp]])");
+         return NULL;
+      }
+      newsize = args[1];
    }
-   return _createPFieldHandle(copyOfTable);
+   else
+      newsize = oldtable->values();
+
+   const char *interp = NULL;
+   if (nargs > 2) {
+      if (!args[2].isType(StringType)) {
+         die("copytable",
+             "Usage: newtable = copytable(table_to_copy[, newsize, [interp]])");
+         return NULL;
+      }
+      if (args[2] != "nointerp" && args[2] != "interp") {
+         die("copytable",
+             "Valid interpolation types: \"interp\", \"nointerp\"");
+         return NULL;
+      }
+      interp = args[2];
+   }
+   else
+      interp = "interp";
+
+   double *oldarray = new double[oldtable->values()];
+   oldtable->copyValues(oldarray);
+   double *newarray = new double[newsize];
+   _do_copy_table(oldarray, oldtable->values(), newarray, newsize, interp);
+   delete [] oldarray;
+   TablePField *newtable = new TablePField(newarray, newsize);
+
+   return _createPFieldHandle(newtable);
 }
 
 
