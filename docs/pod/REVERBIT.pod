@@ -137,5 +137,5 @@ L<bus_config|bus_config>
 =head1 AUTHOR
 
 Paul Lansky, revised and documented for RTcmix by John Gibson
-E<lt>johgibso@indiana.eduE<gt>
+E<lt>johgibso at indiana eduE<gt>
 

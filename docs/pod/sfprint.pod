@@ -49,7 +49,7 @@ L<sfcreate|sfcreate>, L<sfhedit|sfhedit>, L<sffixsize|sffixsize>
 
 =head1 AUTHORS
 
-John Gibson E<lt>johgibso@indiana.eduE<gt>, based on the original
+John Gibson E<lt>johgibso at indiana eduE<gt>, based on the original
 Cmix B<sfprint>, but revised to work with multiple soundfile header
 types.  Thanks to Bill Schottstaedt, whose sndlib sound file library
 makes this possible.

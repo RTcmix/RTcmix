@@ -4,7 +4,8 @@ PAN - simple mixing instrument that follows a pan curve
 
 =head1 SYNOPSIS
 
-B<PAN>(I<outskip>, I<inskip>, I<indur>, I<ampmult> [, I<inchan> ])
+B<PAN>(I<outskip>, I<inskip>, I<indur>, I<ampmult>
+[, I<inchan> [, I<const_power>] ])
 
 Function table 1 gives amplitude curve.
 
@@ -19,8 +20,8 @@ as the percentage of signal to place in the left channel (as in the
 STEREO instrument), from 0 (0%) to 1 (100%).  Use L<gen24|gen24> to
 make the function table, since it ensures the range of numbers is [0,1].
 
-PAN uses "constant-power" panning to prevent a sense of lost power
-when the sound source moves toward the center.
+PAN uses "constant-power" panning to prevent a sense of lost power when
+the sound source moves toward the center, unless you set p5 to zero.
 
 B<PAN> uses the curve provided in function table 1 to scale the amplitudes
 of the input source.  Use L<setline|setline>, L<setexp|setexp>, or
@@ -44,6 +45,9 @@ The output of B<PAN> must be stereo.
 
 =item B<p4> (I<inchan>) input channel [optional, default is 0]
 
+=item B<p5> (I<const_power>) 1: use constant-power panning;
+0: use linear panning [optional, default is 1]
+
 =back
 
 =head1 EXAMPLES
@@ -62,5 +66,5 @@ L<setline|setline>, L<setexp|setexp>, L<makegen|makegen>, L<STEREO|STEREO>
 
 =head1 AUTHOR
 
-John Gibson E<lt>johgibso@indiana.eduE<gt>
+John Gibson E<lt>johgibso at indiana eduE<gt>
 

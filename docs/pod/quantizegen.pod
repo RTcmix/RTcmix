@@ -44,3 +44,7 @@ L<makegen|makegen>, L<addgens|addgens>, L<multgens|multgens>,
 L<copygen|copygen>, L<offsetgen|offsetgen>, L<scalegen|scalegen>,
 L<invertgen|invertgen>, L<reversegen|reversegen>, L<shiftgen|shiftgen>
 
+=head1 AUTHOR
+
+John Gibson E<lt>johgibso at indiana eduE<gt>
+

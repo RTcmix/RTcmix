@@ -64,3 +64,7 @@ L<srand|srand>, L<random|random>, L<rand|rand>, L<irand|irand>,
 L<pickrand|pickrand>, L<spray_init|spray_init>, L<get_spray|get_spray>,
 L<gen20|gen20>
 
+=head1 AUTHOR
+
+Douglas Scott E<lt>dscott at netscape net<gt>
+

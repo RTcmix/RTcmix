@@ -22,5 +22,5 @@ L<sfprint|sfprint>, L<sfcreate|sfcreate>, L<sfhedit|sfhedit>
 
 =head1 AUTHORS
 
-John Gibson E<lt>johgibso@indiana.eduE<gt>
+John Gibson E<lt>johgibso at indiana eduE<gt>
 

@@ -123,6 +123,6 @@ bits, applies the dithering algorithm to each sample.
 
 =head1 AUTHORS
 
-John Gibson E<lt>johgibso@indiana.eduE<gt>, based on the original
+John Gibson E<lt>johgibso at indiana eduE<gt>, based on the original
 Cmix B<rescale>, but revised and expanded.
 
