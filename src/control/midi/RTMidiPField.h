@@ -51,8 +51,12 @@ private:
 	RTcmixMIDI	*_midiport;
 	Oonepole		*_filter;
 	double		_min;
-	double		_default;
 	double		_diff;
+	double		_default;
+	int			_chan;
+	MIDIType		_type;
+	MIDISubType	_subtype;
+	double		_factor;
 };
 
 #endif // _RTMIDIPFIELD_H_

@@ -26,11 +26,15 @@ RTMidiPField::RTMidiPField(
 		const MIDIType		type,
 		const MIDISubType	subtype)
 	: RTNumberPField(0),
-	  _midiport(midiport), _min(minval), _default(defaultval)
+	  _midiport(midiport), _min(minval), _default(defaultval), _chan(chan),
+	  _type(type), _subtype(subtype)
 {
 	assert(_midiport != NULL);
 
 	_diff = maxval - minval;
+
+	const double maxraw = (type == kMIDIPitchBendType) ? 16383.0 : 127.0;
+	_factor = 1.0 / maxraw;
 
 	// Convert lag, a percentage in range [0, 100], to cutoff frequency,
 	// depending on the control rate in effect when this PField was created.
@@ -55,7 +59,25 @@ double RTMidiPField::doubleValue(double dummy) const
 
 double RTMidiPField::computeValue() const
 {
-//FIXME
-	return 0.0;
+	int rawval;
+	if (_type == kMIDIControlType)
+		rawval = _midiport->getControl(_chan, _subtype);
+	else if (_type == kMIDIPitchBendType)
+		rawval = _midiport->getBend(_chan) + 8192;
+	else if (_type == kMIDIChanPressType)
+		rawval = _midiport->getChanPress(_chan);
+	else if (_type == kMIDINoteOnType)
+		rawval = _midiport->getNoteOnVel(_chan, _subtype);
+	else if (_type == kMIDIPolyPressType)
+		rawval = _midiport->getPolyPress(_chan, _subtype);
+	else if (_type == kMIDIProgramType)
+		rawval = _midiport->getProgram(_chan);
+	else if (_type == kMIDINoteOffType)
+		rawval = _midiport->getNoteOffVel(_chan, _subtype);
+
+	if (rawval == INVALID_MIDIVAL)
+		return _default;
+
+	return _min + (_diff * (rawval * _factor));
 }
 
