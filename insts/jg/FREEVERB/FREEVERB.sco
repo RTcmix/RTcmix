@@ -23,6 +23,8 @@
    If you enter a room size greater than the maximum, you'll get the
    maximum amount -- which is probably an infinite reverb time.
 
+   Input can be mono or stereo; output can be mono or stereo.
+
    Be careful with the dry and wet levels -- it's easy to get extreme
    clipping!
 
