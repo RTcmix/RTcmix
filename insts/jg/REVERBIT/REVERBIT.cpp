@@ -4,7 +4,7 @@
  *    p0 = output start time
  *    p1 = input start time
  *    p2 = input duration
- *    p3 = amplitude multiplier (of output signal)
+ *    p3 = amplitude multiplier (of input signal)
  *    p4 = reverb time (must be greater than 0)
  *    p5 = reverb percent (between 0 and 1 inclusive)
  *    p6 = right channel delay time (must be greater than 0)
@@ -15,7 +15,7 @@
  *    Assumes function slot 1 is the amplitude envelope.
  *    Or you can just call setline. If no setline or function table 1, uses
  *    flat amplitude curve (all 1's). This curve, and p3, affect the
- *    output signal, not the input signal.
+ *    input signal, not the output signal.
  *
  *    Input file can be mono or stereo. Output file must be stereo.
  *
@@ -48,6 +48,7 @@ extern "C" {
 
 #define DELAY_FACTOR   2       /* Determines length of delay line */
 #define MIN_DELAY      .10     /* Uses extra-large delay line below this */
+#define RVTSLOP        0.2     /* Extra ring-down time */
 
 /* The DC-blocking code is from Perry Cook's STK (STK98v2/DCBlock.cpp).
    It works pretty well (and quickly) for all but extreme cases. But I've
@@ -98,7 +99,7 @@ int REVERBIT::init(float p[], short n_args)
       fprintf(stderr, "REVERBIT can't handle more than 2 input channels.\n");
       exit(1);
    }
-   nsamps = rtsetoutput(outskip, dur + reverbtime, this);
+   nsamps = rtsetoutput(outskip, dur + reverbtime + RVTSLOP, this);
    insamps = (int)(dur * SR);
 
    if (reverbtime <= 0.0) {
@@ -141,7 +142,7 @@ int REVERBIT::init(float p[], short n_args)
    amparray = floc(1);
    if (amparray) {
       int amplen = fsize(1);
-      tableset(dur + reverbtime, amplen, amptabs);
+      tableset(dur, amplen, amptabs);
    }
    else
       printf("Setting phrase curve to all 1's\n");
@@ -175,8 +176,8 @@ int REVERBIT::run()
          branch = skip;
       }
       if (cursamp < insamps) {               /* still taking input from file */
-         insig[0] = in[i];
-         insig[1] = (inputchans == 2) ? in[i + 1] : insig[0];
+         insig[0] = in[i] * aamp;
+         insig[1] = (inputchans == 2) ? in[i + 1] * aamp : insig[0];
       }
       else                                   /* in ring-down phase */
          insig[0] = insig[1] = 0.0;
@@ -189,8 +190,8 @@ int REVERBIT::run()
       delput(rvbsig, delarray, deltabs);
       delsig = delget(delarray, rtchan_delaytime, deltabs);
 
-      out[0] = (insig[0] + rvbsig) * aamp;
-      out[1] = (insig[1] + delsig) * aamp;
+      out[0] = insig[0] + rvbsig;
+      out[1] = insig[1] + delsig;
 
       if (dcblock) {
          float tmp_in[2];

@@ -4,7 +4,7 @@
  *    p0 = output start time
  *    p1 = input start time
  *    p2 = input duration
- *    p3 = amplitude multiplier (of output signal)
+ *    p3 = amplitude multiplier (of input signal)
  *    p4 = reverb time (must be greater than 0)
  *    p5 = reverb percent (between 0 and 1 inclusive)
  *    p6 = right channel delay time (must be greater than 0)
@@ -15,7 +15,7 @@
  *    Assumes function slot 1 is the amplitude envelope.
  *    Or you can just call setline. If no setline or function table 1, uses
  *    flat amplitude curve (all 1's). This curve, and p3, affect the
- *    output signal, not the input signal.
+ *    input signal, not the output signal.
  *
  *    Input file can be mono or stereo. Output file must be stereo.
  *
