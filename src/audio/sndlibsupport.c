@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -1015,6 +1016,25 @@ get_current_header_raw_comment(int fd, char **rawcomment)
    /* else no comment text at all (not an error) */
 
    return len;
+}
+
+
+/* ------------------------------------------ sfcomment_peakstats_current --- */
+/* Return 1 if the peak stats in <sfc> are not more than MAX_PEAK_STATS_AGE
+   seconds older than the modification date of the open file represented
+   by the file descriptor <fd>.  This constant is defined in H/sfheader.h.
+   Otherwise, return 0.
+*/
+int
+sfcomment_peakstats_current(const SFComment *sfc, const int fd)
+{
+   struct stat statbuf;
+
+   if (fstat(fd, &statbuf) == -1) {
+      perror("sfcomment_peakstats_current");
+      return 0;
+   }
+   return (statbuf.st_mtime <= sfc->timetag + MAX_PEAK_STATS_AGE);
 }
 
 

@@ -218,12 +218,8 @@ get_peak(float start, float end, int chan)
    if (sndlib_get_header_comment(fd, &sfc) == -1)
       return -0.0;         /* this call prints an err msg */
 
-   if (SFCOMMENT_PEAKSTATS_VALID(&sfc)) {
-      struct stat statbuf;
-      fstat(fd, &statbuf);
-      if (statbuf.st_mtime <= sfc.timetag + 2)
-         file_stats_valid = 1;
-   }
+   if (SFCOMMENT_PEAKSTATS_VALID(&sfc) && sfcomment_peakstats_current(&sfc, fd))
+      file_stats_valid = 1;
    else
       file_stats_valid = 0;    /* file written since peak stats were updated */
 

@@ -319,7 +319,7 @@ main(int argc, char *argv[])
       /* See if peak stats are up-to-date (i.e., file not modified after
          peak stats timetag).
       */
-      inpeak_uptodate = (insfc.timetag + 2 >= statbuf.st_mtime);
+      inpeak_uptodate = sfcomment_peakstats_current(&insfc, infd);
    }
    if (!inpeak_uptodate)
       printf(BAD_PEAK_LOC_WARNING);   /* output header peak locs unreliable */

@@ -104,8 +104,6 @@ main(int argc, char *argv[])
          /* but keep going */
       }
 
-      close(fd);                                   /* done with this now */
-
       /* format maxamp timetag string, as in "Fri May 28 09:41:51 EDT 1999" */
       if (sfc.offset != -1)
          strftime(timestr, MAX_TIME_CHARS, "%a %b %d %H:%M:%S %Z %Y",
@@ -126,7 +124,7 @@ main(int argc, char *argv[])
             printf("channel %d:  maxamp: %g  loc: %ld\n",
                                            n, sfc.peak[n], sfc.peakloc[n]);
          printf("maxamp updated: %s\n", timestr);
-         if (statbuf.st_mtime > sfc.timetag + 2)
+         if (!sfcomment_peakstats_current(&sfc, fd))
             printf("WARNING: maxamp stats not up-to-date -- run sndpeak.\n\n");
       }
       else {
@@ -136,6 +134,7 @@ main(int argc, char *argv[])
          printf("comment: %s\n", sfc.comment);
       printf("duration: %f seconds\n", dur);
 
+      close(fd);
    }
 
    return 0;

@@ -364,7 +364,7 @@ int main(int argc, char *argv[])
          exit(1);
       }
       stats_valid = (SFCOMMENT_PEAKSTATS_VALID(&sfc)
-                     && statbuf.st_mtime <= sfc.timetag + 2);
+                     && sfcomment_peakstats_current(&sfc, fd));
 
       if (stats_valid) {
          float peak = 0.0;
