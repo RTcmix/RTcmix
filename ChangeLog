@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Sunday, December 7, 2003 John Gibson <johgibso-at-indiana.edu>
+
+   * Change for BEND, BEND1 and FRET instruments in STRUM family:
+     function table 1 is now the amplitude envelope.  This can
+     affect existing scores in certain circumstances!
+
 Sunday, November 16, 2003 John Gibson <johgibso-at-indiana.edu>
 
    * Change for WIGGLE: Can specify modulator frequency as a percentage
@@ -8,7 +14,7 @@ Sunday, November 16, 2003 John Gibson <johgibso-at-indiana.edu>
 
 Saturday, September 13, 2003 John Gibson <johgibso-at-indiana.edu>
 
-   * Change for FRET1 and START1 instruments in STRUM library:
+   * Change for FRET1 and START1 instruments in STRUM family:
      function table 1 is now the amplitude envelope.  This can
      affect existing scores in certain circumstances!
 
