@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <iostream.h>
-
 #include "Instrument.h"
 #include "rt.h"
 #include "rtdefs.h"
@@ -15,13 +14,14 @@
 #include <sndlibsupport.h>
 #include <bus.h>
 #include <assert.h>
-
 #include <ugens.h>
 
 /* ----------------------------------------------------------- Instrument --- */
 Instrument :: Instrument()
 {
    int i;
+
+#ifdef RTUPDATE
    for(i = 0; i < MAXNUMPARAMS; ++i)
    {
 	   pfpathcounter[i] = 0;
@@ -31,7 +31,7 @@ Instrument :: Instrument()
 	   j[i] = 0;
 	   k[i] = 0;
    }
-   
+#endif /* RTUPDATE */
 
    start = 0.0;
    dur = 0.0;
@@ -58,6 +58,7 @@ Instrument :: Instrument()
       bufstatus[i] = 0;
    needs_to_run = 1;
 
+#ifdef RTUPDATE
    if (tags_on) {
       pthread_mutex_lock(&pfieldLock);
 
@@ -71,6 +72,7 @@ Instrument :: Instrument()
 	  
       pthread_mutex_unlock(&pfieldLock);
    }
+#endif /* RTUPDATE */
 }
 
 
@@ -116,9 +118,9 @@ void Instrument :: set_bus_config(const char *inst_name)
 // for the instrument
 int Instrument :: init(float p[], int n_args)
 {
-//   cout << "You haven't defined an init member of your Instrument class!"
-  //                                                                 << endl;
+#ifdef RTUPDATE
    int i;
+
    for(i = 0; i < n_args; ++i)
    {
 	   newpvalue[i] = p[i];	
@@ -127,6 +129,11 @@ int Instrument :: init(float p[], int n_args)
    }
    slot = piloc(instnum);
    return 777;
+#else /* !RTUPDATE */
+   cout << "You haven't defined an init member of your Instrument class!"
+                                                                 << endl;
+   return -1;
+#endif /* !RTUPDATE */
 }
 
 
@@ -344,6 +351,7 @@ void Instrument :: gone()
    }
 }
 
+#ifdef RTUPDATE
 /* --------------------set_instnum------------------------------------------ */
 
 // This function is used to set up the mapping between instrument names and 
@@ -889,3 +897,5 @@ float Instrument::RSD_get()
 	return retvalue;
 }
 // End Amp Env Check - - - - - - - - - - - - - - - - - 
+
+#endif /* RTUPDATE */

@@ -37,6 +37,7 @@ public:
 
    BusSlot        *bus_config;
 
+#ifdef RTUPDATE
    // new RSD variables
    EnvType rsd_env;
    int rise_samps, sustain_samps, decay_samps;
@@ -45,13 +46,14 @@ public:
    float *decay_table,d_tabs[2];
    float rise_time, sustain_time, decay_time;
    int rsd_samp;
-
+#endif /* RTUPDATE */
 
 private:
    BUFTYPE        *obufptr;
    short          bufstatus[MAXBUS];
    short          needs_to_run;
 
+#ifdef RTUPDATE
 // stores the current index into the pfpath array
    int			  cumulative_size[MAXNUMPARAMS];
 
@@ -84,6 +86,7 @@ private:
 // with different envelopes specified
    int			  j[MAXNUMPARAMS];
    int 			  k[MAXNUMPARAMS];
+#endif /* RTUPDATE */
 
 public:
    Instrument();
@@ -103,6 +106,7 @@ public:
    void setchunk(int);
    void set_ichunkstart(int);
    void set_output_offset(int);
+#ifdef RTUPDATE
    float rtupdate(int, int);  // tag, p-field for return value
    void pf_path_update(int tag, int pval);
    void pi_path_update(int pval);
@@ -110,10 +114,10 @@ public:
 
    void RSD_setup(int RISE_SLOT, int SUSTAIN_SLOT
                   , int DECAY_SLOT, float duration);
-
    void RSD_check();
-
    float RSD_get();
+#endif /* RTUPDATE */
+
 private:
    void gone();                    // decrements reference to input soundfile
 
@@ -126,8 +130,6 @@ int rtsetoutput(float, float, Instrument *);
 int rtsetinput(float, Instrument *);
 int rtinrepos(Instrument *, int, int);
 int rtgetin(float *, Instrument *, int);
-
-
 
 
 #endif /* _INSTRUMENT_H_  */
