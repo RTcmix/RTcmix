@@ -7,6 +7,8 @@
 #include <maxdispargs.h>
 #include <pthread.h>
 #include "../rtstuff/Instrument.h"
+#include "../rtstuff/PField.h"
+#include "../rtstuff/PFieldSet.h"
 #include "../rtstuff/rt.h"
 #include "../rtstuff/rtdefs.h"
 #include "../sys/mixerr.h"
@@ -55,36 +57,17 @@ _printargs(const char *instname, const Arg arglist[], const int nargs)
 
 
 double
-checkInsts(const char *instname, const Arg arglist[], const int nargs,
-   Arg *retval)
+checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retval)
 {
 // FIXME: set this up as in addcheckfuncs, so that the guts of the
 // instrument name list are not exposed here.  -JGG
    rt_item *rt_p;       // rt_item defined in rt.h
    rt_item *rt_temp;
    Instrument *Iptr;
-   float p[MAXDISPARGS];
-   double pp[MAXDISPARGS];
 
 #ifdef DEBUG
    printf("ENTERING checkInsts() FUNCTION -----\n");
 #endif
-
-// FIXME: this is just temporary  -JGG
-   for (int i = 0; i < nargs; i++) {
-      switch (arglist[i].type) {
-         case FloatType:
-            p[i] = (float) arglist[i].val.number;
-            pp[i] = (double) arglist[i].val.number;
-            break;
-         case StringType:
-            break;
-         case HandleType:
-            break;
-         default:
-            break;
-      }
-   }
 
    mixerr = MX_FNAME;
    rt_temp = rt_list;
@@ -102,7 +85,30 @@ checkInsts(const char *instname, const Arg arglist[], const int nargs,
 
          Iptr->ref();   // We do this to assure one reference
    
-         double rv = (double) Iptr->init(p, nargs, pp);
+		// Load PFieldSet with ConstPField instances for each 
+		// valid p field.
+		PFieldSet *pfieldset = new PFieldSet(nargs);
+		for (int arg = 0; arg < nargs; ++arg) {
+		  const Arg *pArg = &arglist[arg];
+		  switch (pArg->type) {
+    		 case FloatType:
+        		pfieldset->load(new ConstPField((double) pArg->val.number), arg);
+        		break;
+    		 case StringType:
+        		break;
+    		 case HandleType:
+        		pfieldset->load((PField *) pArg->val.handle, arg);
+        		break;
+			 case ArrayType:
+				pfieldset->load(new TablePField(pArg->val.array->data,
+												pArg->val.array->len),
+								arg);
+        		break;
+    		 default:
+        		break;
+		  }
+		}
+         double rv = (double) Iptr->setup(pfieldset);
 
          if (rv != (double) DONT_SCHEDULE) { // only schedule if no init() error
             // For non-interactive case, configure() is delayed until just
