@@ -353,6 +353,27 @@ private:
 	Mapper *_mapper;
 };
 
+// Class for writing PField data to a file.  The corresponding reader class
+// is implemented as a plugin in ../control/datafile.   -JGG
+
+class DataFile;
+
+class DataFileWriterPField : public PFieldWrapper {
+public:
+	DataFileWriterPField(PField *innerPField, const char *fileName,
+			const bool clobber, const int controlRate, const int fileRate,
+			const int format = 0, const bool swap = false);
+	virtual double doubleValue(double didx) const;
+	virtual double doubleValue(int idx) const;
+	virtual int values() const { return _len; }
+protected:
+	virtual ~DataFileWriterPField();
+private:
+	int _len;
+	// This is mutable to help with error-handling in doubleValue.
+	mutable DataFile *_datafile;
+};
+
 // Class for converting values read from another PField.
 
 class ConverterPField : public PFieldWrapper {

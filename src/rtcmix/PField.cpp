@@ -553,6 +553,48 @@ double MapPField::doubleValue(int idx) const
 	return _mapper->next(field()->doubleValue(idx));
 }
 
+// DataFileWriterPField
+
+#include <DataFile.h>
+
+DataFileWriterPField::DataFileWriterPField(PField *innerPField,
+		const char *fileName, const bool clobber, const int controlRate,
+		const int fileRate, const int format, const bool swap)
+	: PFieldWrapper(innerPField), _len(innerPField->values())
+{
+	_datafile = new DataFile(fileName, controlRate);
+	if (_datafile) {
+		if (_datafile->openFileWrite(clobber) == 0)
+			_datafile->writeHeader(fileRate, format, swap);
+		else {
+			delete _datafile;
+			_datafile = NULL;
+		}
+	}
+}
+
+DataFileWriterPField::~DataFileWriterPField()
+{
+	delete _datafile;
+}
+
+double DataFileWriterPField::doubleValue(double didx) const
+{
+	const double val = field()->doubleValue(didx);
+	if (_datafile) {
+		if (_datafile->writeOne(val) != 0) {
+			delete _datafile;
+			_datafile = NULL;
+		}
+	}
+	return val;
+}
+
+double DataFileWriterPField::doubleValue(int idx) const
+{
+	return doubleValue((double) idx);
+}
+
 // ConverterPField
 
 ConverterPField::ConverterPField(PField *innerPField,
