@@ -104,7 +104,7 @@ int REVMIX::run()
       an input file. <fileOffset> is a file position pointer. It always assumes
       that samples are 2 bytes. This is a peculiarity of sndlib.
    */
-   fileOffset -= samps * sizeof(short);
+   fileOffset -= samps * 2;
 
    rtgetin(in, this, samps);
 
@@ -128,7 +128,7 @@ int REVMIX::run()
       rtaddout(out);
       cursamp++;
    }
-   fileOffset -= samps * sizeof(short);
+   fileOffset -= samps * 2;
 
    return chunksamps;
 }
