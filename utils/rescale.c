@@ -504,7 +504,7 @@ main(int argc, char *argv[])
       exit(1);
    }
 
-#ifdef MUS_LITTLE_ENDIAN
+#if MUS_LITTLE_ENDIAN
    inswap = IS_BIG_ENDIAN_FORMAT(informat);
    outswap = IS_BIG_ENDIAN_FORMAT(outformat);
 #else
