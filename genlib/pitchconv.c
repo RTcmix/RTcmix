@@ -66,3 +66,8 @@ INLINE double pchmidi(unsigned char midinote)
 	return pchoct(((double) midinote / 12.0) + 3.0);
 }
 
+INLINE double octmidi(unsigned char midinote)
+{
+	return ((double) midinote / 12.0) + 3.0;
+}
+
