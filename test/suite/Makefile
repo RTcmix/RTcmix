@@ -57,7 +57,7 @@ test_unreadable_input:
 	@echo
 	@echo Testing unreadable input file:
 	@rm -rf unreadable.snd
-	@i1 unreadable.snd
+	@sfcreate -r 44100 -c 1 -t sun -i unreadable.snd
 	@chmod a-r unreadable.snd
 	-$(CMD) < test-unreadable-input.sco
 	@rm -rf unreadable.snd
@@ -66,7 +66,7 @@ test_unwriteable_output:
 	@echo
 	@echo Testing unwriteable output file:
 	@rm -rf unwriteable.snd
-	@i1 unwriteable.snd
+	@sfcreate -r 44100 -c 1 -t sun -i unwriteable.snd
 	@chmod a-w unwriteable.snd
 	-$(CMD) < test-unwriteable-output.sco
 	@rm -rf unwriteable.snd
