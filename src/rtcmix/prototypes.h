@@ -35,6 +35,8 @@ double rtdispatch(char *fname, double *pp, int n_args);
 
 /* rtinput.c */
 int get_last_input_index(void);
+int open_sound_file(char *sfname, int *header_type, int *data_format,
+               int *data_location, double *srate, int *nchans, long *nsamps);
 
 /* rtgetsamps.c */
 void rtgetsamps(void);

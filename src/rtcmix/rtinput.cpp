@@ -138,7 +138,7 @@ open_sgi_audio_input(AudioPortType port_type, int nchans)
 
 
 /* ------------------------------------------------------ open_sound_file --- */
-static int
+int
 open_sound_file(
       char     *sfname,
       int      *header_type,
