@@ -6,5 +6,10 @@ all:
 
 install: all
 
+uninstall:
+
 clean:
 	rm -f input.wav
+
+cleanall: clean
+
