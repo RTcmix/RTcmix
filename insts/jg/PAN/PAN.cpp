@@ -48,11 +48,13 @@ extern "C" {
 
 PAN :: PAN() : Instrument()
 {
+   in = NULL;
 }
 
 
 PAN :: ~PAN()
 {
+   delete [] in;
 }
 
 
@@ -109,7 +111,10 @@ int PAN :: run()
 {
    int   i, branch, rsamps;
    float aamp, insig;
-   float in[inputchans * RTBUFSAMPS], out[2], pan[2];
+   float out[2], pan[2];
+
+   if (in == NULL)              /* first time, so allocate it */
+      in = new float [RTBUFSAMPS * inputchans];
 
    Instrument::run();
 

@@ -50,11 +50,13 @@ extern "C" {
 
 REV :: REV() : Instrument()
 {
+   in = NULL;
 }
 
 
 REV :: ~REV()
 {
+   delete [] in;
    delete reverb;
 }
 
@@ -117,7 +119,10 @@ int REV :: run()
 {
    int   i, branch, rsamps;
    float aamp, insig;
-   float in[MAXBUF], out[2];
+   float out[2];
+
+   if (in == NULL)              /* first time, so allocate it */
+      in = new float [RTBUFSAMPS * inputchans];
 
    Instrument :: run();
 

@@ -43,6 +43,7 @@ extern "C" {
 
 FLANGE :: FLANGE() : Instrument()
 {
+   in = NULL;
    zcomb = NULL;       // only one of these will be created
    znotch = NULL;
 }
@@ -50,6 +51,7 @@ FLANGE :: FLANGE() : Instrument()
 
 FLANGE :: ~FLANGE()
 {
+   delete [] in;
    delete zcomb;
    delete znotch;
    delete modoscil;
@@ -110,11 +112,6 @@ int FLANGE :: init(float p[], short n_args)
       exit(-1);
    }
 
-/*
-   filt = new Butter;
-   filt->setLowPass(cutoff);
-*/
-
    modtable = floc(2);
    len = fsize(2);
    modoscil = new OscilN(0.0, modtable, len);
@@ -137,7 +134,10 @@ int FLANGE :: run()
 {
    int   i, branch, rsamps;
    float aamp, modval, insig, fsig, delsamps, modsamps;
-   float in[MAXBUF], out[2];
+   float out[2];
+
+   if (in == NULL)              /* first time, so allocate it */
+      in = new float [RTBUFSAMPS * inputchans];
 
    Instrument :: run();
 
@@ -160,10 +160,7 @@ int FLANGE :: run()
       else                                   /* in ring-down phase */
          insig = 0.0;
 
-//    insig = filt->tick(insig);
-
-      /* get modulation, shifted to fall in range [0, 1].
-      */
+      /* get modulation, shifted to fall in range [0, 1]. */
       modval = modoscil->tick(modspeed, 0.5);
       modval += 0.5;
 

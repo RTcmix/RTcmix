@@ -68,12 +68,14 @@ static double tone(double, double []);
 
 JDELAY::JDELAY() : Instrument()
 {
+   in = NULL;
    delarray = NULL;
 }
 
 
 JDELAY::~JDELAY()
 {
+   delete [] in;
    delete [] delarray;
 }
 
@@ -166,7 +168,10 @@ int JDELAY::run()
 {
    int   i, branch, rsamps;
    float aamp, insig, delsig;
-   float in[MAXBUF], out[2];
+   float out[2];
+
+   if (in == NULL)              /* first time, so allocate it */
+      in = new float [RTBUFSAMPS * inputchans];
 
    Instrument::run();
 

@@ -4,7 +4,7 @@
 class ELL : public Instrument {
    int     insamps, skip, inchan, nsects;
    float   amp, spread, xnorm;
-   float   *amptable, amptabs[2];
+   float   *in, *amptable, amptabs[2];
    EllSect *es[MAXCHANS];
 
 public:

@@ -68,6 +68,7 @@ extern "C" {
 
 ELL::ELL() : Instrument()
 {
+   in = NULL;
    for (int n = 0; n < MAXCHANS; n++)
       es[n] = NULL;
 }
@@ -75,6 +76,7 @@ ELL::ELL() : Instrument()
 
 ELL::~ELL()
 {
+   delete [] in;
    for (int n = 0; n < MAXCHANS; n++)
       delete [] es[n];
 }
@@ -178,7 +180,10 @@ int ELL::run()
 {
    int   i, n, branch, rsamps;
    float aamp, insig;
-   float in[MAXBUF], out[2];
+   float out[2];
+
+   if (in == NULL)              /* first time, so allocate it */
+      in = new float [RTBUFSAMPS * inputchans];
 
    Instrument::run();
 

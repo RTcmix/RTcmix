@@ -58,11 +58,13 @@ extern "C" {
 
 JFIR :: JFIR() : Instrument()
 {
+   in = NULL;
 }
 
 
 JFIR :: ~JFIR()
 {
+   delete [] in;
    delete filt;
 }
 
@@ -128,7 +130,10 @@ int JFIR :: run()
 {
    int   i, branch, rsamps;
    float aamp, insig;
-   float in[MAXBUF], out[2];
+   float out[2];
+
+   if (in == NULL)              /* first time, so allocate it */
+      in = new float [RTBUFSAMPS * inputchans];
 
    Instrument :: run();
 
