@@ -11,18 +11,20 @@ int num_points;
 float out_chan_amp[MAXBUS]; /* Used by inst */
 double tot_dist;
 int n_spk;
-Bool use_path;
-Bool use_rates;
+Bool use_path=NO;
+Bool use_rates=NO;
 double cycle;  /* Length of 1 iteration ... last path time */
 
 rfact ratefs[MAXBUS];
 int max_rates;
 
 pt spk_locs[MAXBUS]; /* Do we have a variable for this? */
-loc_slot *cur_slot=NULL;
+loc_slot *cur_loc=NULL;
 loc_slot *aud_locs=NULL;
-loc_slot *last_slot=NULL;
+loc_slot *last_loc=NULL;
 accel_slot *accel_curve=NULL;
+accel_slot *cur_acc=NULL;
+accel_slot *last_acc=NULL;
 
 double calc_dist(pt p1, pt p2) {
 	double ret_dist;
@@ -111,6 +113,9 @@ double speakerloc_p(float p[], int n_args, double pp[]) {
 double rates(float p[], int n_args, double pp[]) {
 	int i,j;
 	double s,time;
+	accel_slot *ta_slot;
+	accel_slot *new_acc_curve;
+	loc_slot *tl_slot;
 
 	if (p[0] != 0) {
 		fprintf(stderr,"WARNING:  rates start not = 0!\n");
@@ -121,15 +126,36 @@ double rates(float p[], int n_args, double pp[]) {
   
 	i=j=0;
 	while(i<n_args) {
-		time = p[i++];
-		s = p[i++];
-	
-		ratefs[j].factor = s;
-		ratefs[j].time = time;
-		j++;
-		max_rates++;
+		ta_slot = (accel_slot *)malloc(sizeof(accel_slot));
+		ta_slot->time = p[i++];
+		ta_slot->accel = p[i++];
+
+		if (!accel_curve) {
+			accel_curve = ta_slot;
+			last_acc = ta_slot;
+			cur_acc = ta_slot;
+		}
+		else {
+			last_acc->next = ta_slot;
+			last_acc = ta_slot;
+		}
+
 	}
 	use_rates = YES;
+
+	tl_slot = aud_locs;
+	ta_slot = accel_curve;
+	if (use_path) {
+		while ((tl_slot) && (ta_slot)) {
+			if (tl_slot->time < ta_slot->time) {
+				
+				/* Need some funky interleaving + math here */
+			}
+		}
+	}
+
+
+
 	return 0.0;
 }
 
@@ -163,12 +189,12 @@ double path(float p[], int n_args, double pp[]) {
 		
 		if (!aud_locs) {
 			aud_locs = tl_slot;
-			last_slot = tl_slot;
-			cur_slot = tl_slot;
+			last_loc = tl_slot;
+			cur_loc = tl_slot;
 		}
 		else {
-			last_slot->next = tl_slot;
-			last_slot = tl_slot;
+			last_loc->next = tl_slot;
+			last_loc = tl_slot;
 		}
 
 #ifdef DBUG
@@ -236,12 +262,12 @@ double path_p(float p[], int n_args, double pp[]) {
 
 		if (!aud_locs) {
 			aud_locs = tl_slot;
-			last_slot = tl_slot;
-			cur_slot = tl_slot;
+			last_loc = tl_slot;
+			cur_loc = tl_slot;
 		}
 		else {
-			last_slot->next = tl_slot;
-			last_slot = tl_slot;
+			last_loc->next = tl_slot;
+			last_loc = tl_slot;
 		}
 		printf("Point set:  %2.2f,%2.2f\n",x,y);
 
@@ -282,13 +308,13 @@ void calc_loc(long samps, pt *in_point) {
 	double xvel,yvel,dur;
 	loc_slot *next_slot;
 
-	x1 = cur_slot->point.x;
-	y1 = cur_slot->point.y;
-	t1 = cur_slot->time;
-	start_samp = cur_slot->startsamp;
-	next_slot = cur_slot->next;
+	x1 = cur_loc->point.x;
+	y1 = cur_loc->point.y;
+	t1 = cur_loc->time;
+	start_samp = cur_loc->startsamp;
+	next_slot = cur_loc->next;
 
-	printf("cur_slot:  %2.2f,%2.2f\n",cur_slot->point.x,cur_slot->point.y);
+	printf("cur_loc:  %2.2f,%2.2f\n",cur_loc->point.x,cur_loc->point.y);
 	if (next_slot) {
 		printf("next_slot:  %2.2f,%2.2f\n",next_slot->point.x,next_slot->point.y);
 		x2 = next_slot->point.x;
@@ -324,12 +350,12 @@ void calc_loc(long samps, pt *in_point) {
 		mag2 = sqrt(pow((x2-x1),2) + pow((y2-y1),2));
 
 		if (mag1 > mag2) {
-			cur_slot = cur_slot->next;
+			cur_loc = cur_loc->next;
 #ifdef DBUG
 			printf("cur_point %d\n",cur_point);
 			printf("old_point %d\n",old_point);
 #endif
-			cur_slot->startsamp = samps;
+			cur_loc->startsamp = samps;
 		}
 
 		printf("mags: %2.2f,%2.2f\n",mag1,mag2);
@@ -338,7 +364,7 @@ void calc_loc(long samps, pt *in_point) {
 		in_point->y = y1+ychange;
 
 #ifdef xDBUG
-		printf("[%d] %2.2f\t",samps,rate);
+		printf("[%ld] %2.2f\t",samps,rate);
 		printf("(%2.2f,%2.2f)\n",in_point->x,in_point->y);
 #endif
 	
