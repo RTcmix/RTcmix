@@ -7,12 +7,9 @@
 #include <sndlibsupport.h>
 #include <byte_routines.h>
 
-/* #define DUMP_GEN_TO_RAW_FILE */
-
 #define BUFSIZE   1024 * 64
 
 
-#ifdef DUMP_GEN_TO_RAW_FILE
 /* ------------------------------------------------- dump_gen_to_raw_file --- */
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -32,7 +29,6 @@ dump_gen_to_raw_file(float *buf, int nsamps)
    result = write(fd, buf, nbytes);
    assert(result != -1);
 }
-#endif /* DUMP_GEN_TO_RAW_FILE */
 
 
 /* ----------------------------------------------------------------- gen1 --- */
@@ -41,7 +37,7 @@ dump_gen_to_raw_file(float *buf, int nsamps)
    in any of the header formats recognized by sndlib.  The makegen syntax
    used in Minc is:
 
-      frames_read = makegen(slot, 1, size, filename, inskip [, inchan])
+      frames_read = makegen(slot, 1, size, filename, inskip [, inchan, dump])
 
    <size> is the duration (in seconds) of the sound file segment, or if it's
    negative, the number of sample frames to read.  If <size> is zero, the
@@ -56,6 +52,11 @@ dump_gen_to_raw_file(float *buf, int nsamps)
    If <inchan> is missing, reads all channels from the file; otherwise,
    reads just the channel specified by <inchan> (with zero as first chan).
 
+   If <dump> is 1, then dumps the gen table to a header-less sound file,
+   called "dumpaudio.raw," in the current directory.  The file is 32-bit
+   float, using the host byte order, <inchan> chans, and the sampling
+   rate in the source file's header.
+
    As usual, if the slot number is positive, the table will be rescaled
    to fit in the range [-1,1]; if it's negative, it will not be rescaled.
 
@@ -68,7 +69,7 @@ gen1(struct gen *gen, char *sfname)
 {
    int      i, fd, header_type, data_format, data_location, inchan;
    int      gen_chans, gen_frames, gen_samps, file_chans, file_frames;
-   int      start_frame, bytes_per_samp, byteswap, is_float;
+   int      start_frame, bytes_per_samp, byteswap, is_float, dump;
    int      buf_start_frame, end_frame, frames_read, buf_frames;
    long     file_samps;
    off_t    seek_to;
@@ -82,6 +83,7 @@ gen1(struct gen *gen, char *sfname)
       inchan = (int) gen->pvals[3];
    else
       inchan = -1;   /* read all chans */
+   dump = gen->nargs > 4? (int) gen->pvals[4] : 0;
 
    fd = open_sound_file(sfname, &header_type, &data_format,
                         &data_location, &srate, &file_chans, &file_samps);
@@ -248,9 +250,8 @@ gen1(struct gen *gen, char *sfname)
 
    fnscl(gen);
 
-#ifdef DUMP_GEN_TO_RAW_FILE
-   dump_gen_to_raw_file(block, gen_samps);
-#endif
+   if (dump)
+      dump_gen_to_raw_file(block, gen_samps);
 
    return (double) gen_frames;
 }
