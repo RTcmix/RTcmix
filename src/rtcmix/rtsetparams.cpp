@@ -5,6 +5,7 @@
 
 /* Originally by Brad Garton and Doug Scott (SGI code) and Dave Topper
    (Linux code). Reworked for v2.3 by John Gibson.
+   Reworked to use new AudioDevice code for v3.7 by Douglas Scott.
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,14 +14,11 @@
 #include <errno.h>
 #include <assert.h>
 #include <globals.h>
-#include <audio_port.h>
-#include <sndlibsupport.h>
+#include "audio_devices.h"
 #include <ugens.h>
 #include "../rtstuff/rtdefs.h"
 
 /* #define DEBUG */
-
-
 
 /* ---------------------------------------------------------- rtsetparams --- */
 /* Minc function that sets output sampling rate (p0), maximum number of
@@ -73,34 +71,10 @@ rtsetparams(float p[], int n_args, double pp[])
       needs the audio drivers.  -JGG
    */
    if (play_audio) {
-      int in_nchans, nframes = RTBUFSAMPS;
-
-      /* Open audio input and output ports. */
-#ifdef LINUX
-      if (full_duplex)
-         in_nchans = NCHANS;
-      else
-         in_nchans = 0;
-
-      status = open_ports(in_nchans, MAXBUS, in_port, NCHANS, MAXBUS, out_port,
-                                         verbose, SR, NUM_FRAGMENTS, &nframes);
-#endif /* LINUX */
-#ifdef MACOSX
-      if (full_duplex)
-         in_nchans = NCHANS;
-      else
-         in_nchans = 0;
-
-      status = open_macosx_ports(in_nchans, NCHANS, &in_port, &out_port,
-                                          verbose, SR, NUM_FRAGMENTS, &nframes);
-#endif /* MACOSX */
-#ifdef SGI
-      status = open_sgi_ports(out_port_str, NCHANS, &out_port, verbose, SR,
-                                                                     &nframes);
-#endif /* SGI */
-      if (status == -1) {
-         die("rtsetparams", "Trouble opening audio ports.");
-      }
+      int nframes = RTBUFSAMPS;
+		
+	  if (create_audio_devices(full_duplex, NCHANS, SR, &nframes) < 0)
+	  	return -1;
 
       /* This may have been reset by driver. */
       RTBUFSAMPS = nframes;
@@ -135,6 +109,9 @@ rtsetparams(float p[], int n_args, double pp[])
 void
 close_audio_ports()
 {
+	// This closes and destroys the AudioDevices for input and output.
+	destroy_audio_devices();
+
    int n;
 
 #ifdef LINUX
@@ -146,25 +123,10 @@ close_audio_ports()
       if (in_port[n])
          close(in_port[n]);
  #else /* !MONO_DEVICES */
-   if (out_port[0])
-      close(out_port[0]);
+
    if (in_port[0] && in_port[0] != out_port[0])
       close(in_port[0]);
  #endif /* !MONO_DEVICES */
 #endif /* LINUX */
-
-#ifdef MACOSX
-// FIXME: not sure what to do yet...
-   if (out_port) ;
-   if (in_port) ;
-#endif /* MACOSX */
-
-#ifdef SGI
-   if (out_port) {
-      while (ALgetfilled(out_port) > 0)
-         ;
-// FIXME: anything else?
-   }
-#endif /* SGI */
 }
 
