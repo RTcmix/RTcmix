@@ -57,9 +57,9 @@ warn(const char *inst_name, const char *format, ...)
       va_end(args);
 
       if (inst_name)
-         fprintf(stderr, PREFIX "WARNING [%s]:  %s\n", inst_name, buf);
+         fprintf(stderr, "\n" PREFIX "WARNING [%s]:  %s\n\n", inst_name, buf);
       else
-         fprintf(stderr, PREFIX "WARNING:  %s\n", buf);
+         fprintf(stderr, "\n" PREFIX "WARNING:  %s\n\n", buf);
    }
 }
 
