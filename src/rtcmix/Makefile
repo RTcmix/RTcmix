@@ -4,7 +4,6 @@ CXXFLAGS += $(SOUND_DRIVER)
 INCLUDES += -I$(INCLUDEDIR) -I../include -I../audio -I../sndlib -I./heap -I../conf
 
 COMMON_CSRCS = \
-buffers.c \
 check_byte_order.c \
 command_line.c \
 funderflow.c \
@@ -15,15 +14,11 @@ loader.c \
 merror.c \
 message.c \
 minc_functions.c \
-minc_info.c \
 minout.c \
 m_system.c \
 printsf.c \
 profile.c \
 resetamp.c \
-rtinput.c \
-rtoutput.c \
-rtsetparams.c \
 sampfunc.c \
 sfcopy.c \
 sfprint.c \
@@ -58,33 +53,42 @@ gen/modgens.c
 COMMON_CPPSRCS = \
 addcheckfunc.cpp \
 addrtInst.cpp \
+buffers.cpp \
 bus_config.cpp \
 checkInsts.cpp \
 dispatch.cpp \
 Instrument.cpp \
 intraverse.cpp \
+minc_info.cpp \
 Option.cpp \
 PField.cpp \
 PFieldSet.cpp \
 Random.cpp \
 RefCounted.cpp \
+RTcmix.cpp \
 rtcmix_types.cpp \
+rtcmix_wrappers.cpp \
 rtgetin.cpp \
 rtgetsamps.cpp \
+rtinput.cpp \
+rtoutput.cpp \
 rtsendsamps.cpp \
 rtsetinput.cpp \
 rtsetoutput.cpp \
+rtsetparams.cpp \
 rtwritesamps.cpp \
 set_option.cpp \
-sockit.cpp \
 table.cpp \
+rt_ug_intro.cpp \
 connection.cpp \
 converter.cpp
+
+MAIN_CPPSRCS = RTcmixMain.cpp main.cpp
 
 # This is not linked into librtcmix
 #rtprofile.cpp
 
-IMBEDSRCS = RTcmix.cpp
+IMBEDSRCS =
 
 CPPOBJS = $(patsubst %.cpp,%.o,$(COMMON_CPPSRCS))
 
@@ -118,7 +122,8 @@ LIBS = $(AUDIOLIB) $(SNDLIB) $(LIBCONF)
 #LDFLAGS += -L/usr/X11/lib -lX11
 
 PROGS = MIX
-TARGETS = $(RTLIB) RTcmix.o main.o $(PROGS)
+MAIN_OBJS = RTcmixMain.o main.o
+TARGETS = $(RTLIB) $(MAIN_OBJS) RTsockfuncs.o $(PROGS)
 
 ifeq ($(PERL_SUPPORT), TRUE)
    IMBEDSRCS += pRTcmix.cpp
@@ -146,7 +151,8 @@ endif
 
 all: $(TARGETS)
 	$(INSTALL) main.o $(LIBDIR)
-	$(INSTALL) RTcmix.o $(LIBDIR)
+	$(INSTALL) RTcmixMain.o $(LIBDIR)
+	$(INSTALL) RTsockfuncs.o $(LIBDIR)
 ifeq ($(PERL_SUPPORT), TRUE)
 	$(INSTALL) pRTcmix.o $(LIBDIR)
 endif
@@ -185,24 +191,25 @@ $(MIX_INST):
 	(cd ../../insts/base/MIX; make all)
 
 heap/rtHeap.o:
+	@echo compiling heap.
 	(cd heap; $(MAKE) $(MFLAGS) all;)
 
 # rules for three executables we build
 
-MIX: main.o $(M_O) $(LIBS) $(PROFILE_O)
-	$(CXX) -o MIX $(DYN) main.o $(PROFILE_O) $(M_O) -L. $(LDFLAGS)
+MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
+	$(CXX) -o MIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) $(M_O) -L. $(LDFLAGS)
 
-PMIX: main.o $(P_O) $(LIBS) $(PROFILE_O)
+PMIX: $(MAIN_OBJS) $(P_O) $(LIBS) $(PROFILE_O)
 ifeq ($(PERL_SUPPORT), TRUE)
-	$(CXX) -o PMIX $(DYN) main.o $(PROFILE_O) \
+	$(CXX) -o PMIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) \
 		$(P_O) -L. $(LDFLAGS) $(PERL_LDFLAGS)
 else
 	@echo "You haven't configured with PERL_SUPPORT!"
 endif
 
-PYMIX: main.o $(PY_O) $(LIBS) $(PROFILE_O)
+PYMIX: $(MAIN_OBJS) $(PY_O) $(LIBS) $(PROFILE_O)
 ifeq ($(PYTHON_SUPPORT), TRUE)
-	$(CXX) -o PYMIX $(DYN) main.o $(PROFILE_O) \
+	$(CXX) -o PYMIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) \
 		$(PY_O) -L. $(LDFLAGS) $(PYEXT) $(PYTHONLIBS)
 else
 	@echo "You haven't configured with PYTHON_SUPPORT!"
@@ -213,7 +220,7 @@ endif
 
 depend:
 ifeq ($(ARCH),LINUX)
-	-$(SHELL) -ec '$(CC) -M $(CFLAGS) $(COMMON_CSRCS) $(COMMON_CPPSRCS) $(IMBEDSRCS) `$(PERL) -MExtUtils::Embed -e ccopts`' > depend
+	-$(SHELL) -ec '$(CC) -M $(CFLAGS) $(COMMON_CSRCS) $(COMMON_CPPSRCS) $(IMBEDSRCS) $(MAIN_CPPSRCS) `$(PERL) -MExtUtils::Embed -e ccopts`' > depend
 endif
 ifeq ($(ARCH),SGI)
 # Note: -MM is a gcc extension. If no gcc, use -M.
@@ -238,7 +245,8 @@ endif
 uninstall: standalone_uninstall
 	$(RM) $(LIBDIR)/$(RTLIB)
 	$(RM) $(LIBDIR)/main.o
-	$(RM) $(LIBDIR)/RTcmix.o
+	$(RM) $(LIBDIR)/RTcmixMain.o
+	$(RM) $(LIBDIR)/RTsockfuncs.o
 	$(RM) $(LIBDIR)/pRTcmix.o
 
 standalone_uninstall:
