@@ -101,8 +101,7 @@ double
 space(float p[], int n_args)
 {
    if (n_args < 7) {
-      fprintf(stderr, "Not enough args for `space'\n");
-      exit(1);
+      die(NULL, "Not enough args for `space'");
    }
 
    _front = p[0];
