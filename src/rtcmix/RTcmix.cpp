@@ -37,10 +37,6 @@
 #include "maxdispargs.h"
 #include "dbug.h"
 
-#ifdef PFIELD_CLASS
-   #define parse_dispatch old_parse_dispatch
-#endif
-
 extern "C" {
 	// I don't call the profiles here, because dead-time instruments
 	// won't be compiled into the object file unless they are present at
@@ -236,7 +232,7 @@ Instrument *RTcmix::cmd(char name[], int n_args, double p0, ...)
 			p[i] = va_arg(ap, double);
 	va_end(ap);
 
-	(double) parse_dispatch(name, p, n_args, &retval);
+	(void) dispatch(name, p, n_args, &retval);
 
 	return (Instrument *) retval;
 }
@@ -265,7 +261,7 @@ Instrument *RTcmix::cmd(char name[], int n_args, char* p0, ...)
       }
 	va_end(ap);
 
-	(double) parse_dispatch(name, p, n_args, &retval);
+	(void) dispatch(name, p, n_args, &retval);
 
 	return (Instrument *) retval;
 }
@@ -275,10 +271,10 @@ Instrument *RTcmix::cmd(char name[], int n_args, char* p0, ...)
 double RTcmix::cmd(char name[])
 {
 	// these are not time-stamped as above... change if we need to!
-	double p[MAXDISPARGS]; // for passing into parse_dispatch only
+	double p[MAXDISPARGS]; // for passing into dispatch only
 	double retval;
 
-	retval = parse_dispatch(name, p, 0, NULL);
+	retval = dispatch(name, p, 0, NULL);
 
 	return(retval);
 }
@@ -299,7 +295,7 @@ double RTcmix::cmdval(char name[], int n_args, double p0, ...)
 		p[i] = va_arg(ap, double);
 	va_end(ap);
 
-	return ((double) parse_dispatch(name, p, n_args, &retval));
+	return dispatch(name, p, n_args, &retval);
 }
 
 // This is s duplicate of the RTcmix::cmd() string-passing function, except
@@ -327,7 +323,7 @@ double RTcmix::cmdval(char name[], int n_args, char* p0, ...)
    }
 	va_end(ap);
 
-	return ((double) parse_dispatch(name, p, n_args, &retval));
+	return dispatch(name, p, n_args, &retval);
 }
 
 

@@ -26,10 +26,6 @@
 
 // #define DBUG
 
-#ifdef PFIELD_CLASS
-   #define parse_dispatch old_parse_dispatch
-#endif
-
 extern "C" {
   void *sockit(void*)
   {
@@ -147,7 +143,7 @@ extern "C" {
 			  sinfo->data.p[i] = (double)tmpint;
 			}
 		  }
-		  parse_dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
+		  (void) dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
 		}
 		
 		if (audio_configured && rtInteractive) {
@@ -250,7 +246,7 @@ extern "C" {
 			  cout << "sinfo->data.p[" << i << "] =" << sinfo->data.p[i] << endl;
 			}
 #endif
-			parse_dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
+			(void) dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
 	    
 		  }
 		}
