@@ -1,0 +1,219 @@
+=head1 NAME
+
+gen9 - make a function with a waveform, composed of any partials
+
+=head1 SYNOPSIS
+
+B<makegen>(I<table_number>, 9, I<table_size>,
+I<partial1_ratio>, I<partial1_amp>, I<partial1_phase>
+[, ... I<partialN_ratio>, I<partialN_amp>, I<partialN_phase> ])
+
+=head1 DESCRIPTION
+
+Call L<makegen|makegen> from a script with a I<function_type> of 9 to
+make a function table with a waveform.  You define the waveform in terms
+of any number of partials, harmonic or inharmonic, with specific amplitudes
+and starting phase for each.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID for the function table.
+
+Normally the table will be rescaled to fit between -1 and 1.
+Put a negative sign before the number to prevent this.
+
+=item I<table_size>
+
+The size of the function table: how many values it stores.  The larger
+the size, the less quantization noise you'll get when using this with
+a wavetable oscillator (as in L<WAVETABLE|WAVETABLE>).
+
+=item I<partialN_ratio>
+
+The ratio of partial N to the fundamental.  A ratio of 1 is the fundamental,
+a ratio of 2 is the second harmonic partial, a ratio of 5.1 is a little
+higher than the fifth harmonic partial, a ratio of 0 is DC, and so on.
+
+Note that inharmonic partials in are not truly inharmonic, since their
+periodicity is governed by the table size.  In contrast, all harmonic
+partials complete an integer number of cycles spanning the table.
+
+=item I<partialN_amp>
+
+The amplitude of partial N, relative to the other partials.
+
+=item I<partialN_phase>
+
+The starting phase of partial N, in degrees.  Phase can be negative.
+
+=back
+
+=head1 EXAMPLES
+
+   makegen(2, 9, 1000, 1, 1, 0)
+
+makes one cycle of a sine wave, at full amplitude, with starting phase
+of 0 degrees.  This is exactly equivalent to makegen(2, 10, 1000, 1).
+
+=begin man
+ 
+              -------\
+            -/        -\
+          -/            -\
+        -/                \
+       /                   -\
+      /                      \
+    -/                        \
+   /                           -\
+  /                              \
+ /                                \
+------------------------------------------------------------------------
+                                    \                                  -
+                                     \                                /
+                                      \                              /
+                                       -\                           /
+                                         \                         /
+                                          \                      -/
+                                           -\                   /
+                                             \                -/
+                                              -\            -/
+                                                -\        -/
+                                                  -------/
+
+=end man
+
+=begin html
+   <p align="center"><img src="images/gen9a.png"><p><br>
+
+=end html
+
+   makegen(-2, 9, 1000, 1, 0.5, 90)
+
+makes one cycle of a cosine wave, at half amplitude (from -.5 to +.5).
+Making I<table_number> negative prevents rescaling the function to
+span -1 to +1.
+
+=begin man
+ 
+---\                                                                 ---
+    ---\                                                         ---/
+        --\                                                   --/
+           --\                                             --/
+              -\                                         -/
+------------------------------------------------------------------------
+                  --\                               --/
+                     -\                           -/
+                       --\                      -/
+                          --\                --/
+                             ---\        ---/
+                                 -------/
+
+=end man
+
+=begin html
+   <p align="center"><img src="images/gen9b.png"><p><br>
+
+=end html
+
+   makegen(2, 9, 1000,  1, 1, 0,  2, 0.4, 90,  10.1, 0.1, 130)
+
+makes a waveform with the first harmonic at amplitude 1 and phase 0, the
+second harmonic at amplitude 0.4 and phase 90, and an inharmonic partial
+with 10.1 times the frequency of the fundamental at amplitude 0.1 and
+phase 130.
+
+=begin man
+
+    ---\   ---\     --\    ---\
+  -/    --/    \  -/   ---/    ---\
+-/              -/                 \
+                                    \                                 -/
+                                     \                               /
+------------------------------------------------------------------------
+                                       --\                          /
+                                          \                        /
+                                           \                     -/
+                                            \                  -/
+                                            |                 /
+                                             \               |
+                                              \              /
+                                               --\          /
+                                                  \        /
+                                                   \   ---/
+                                                    --/
+
+=end man
+
+=begin html
+   <p align="center"><img src="images/gen9c.png"><p><br>
+
+=end html
+
+   makegen(1, 9, 1000,  0.5, 1, 0)
+
+makes a waveform with one half-cycle of a sine wave, suitable for use
+as a grain envelope.
+
+=begin man
+
+                           ------------------\
+                       ---/                   ---\
+                   ---/                           ---\
+                --/                                   --\
+             --/                                         --\
+          --/                                               --\
+        -/                                                     -\
+     --/                                                         --\
+   -/                                                               -\
+ -/                                                                   -\
+------------------------------------------------------------------------
+
+=end man
+
+=begin html
+   <p align="center"><img src="images/gen9d.png"><p><br>
+
+=end html
+
+   makegen(-1, 9, 1000,  0, 0.5, 90,  1, 0.5, -90)
+
+makes a "raised cosine" shape, or hanning window.  (L<Gen 25|gen25> does
+this more simply.)  The DC component specified by the first triplet of
+arguments adds 0.5 to every point on the phase-shifted sine wave cycle
+specified by the second triplet of arguments, thus making all the table
+values positive.  Not sure why DC phase has to be non-zero, but it does.
+
+=begin man
+
+                            ---------------\
+                         --/                --\
+                      --/                      --\
+                    -/                            -\
+                 --/                                --\
+               -/                                      -\
+             -/                                          -\
+          --/                                              --\
+        -/                                                    -\
+    ---/                                                        ---\
+------------------------------------------------------------------------
+
+=end man
+
+=begin html
+   <p align="center"><img src="images/gen9e.png"><p><br>
+
+=end html
+
+=head1 NOTES
+
+L<Gen 10|gen10> lets you specify a waveform more simply, but with
+only harmonic partials and no phase adjustment.
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<gen10|gen10>, L<gen25|gen25>
+
