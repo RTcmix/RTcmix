@@ -26,19 +26,14 @@
 
    John Gibson (jgg9c@virginia.edu), 7/21/99.
 */
-#include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "FLANGE.h"
 #include <rt.h>
 #include <rtdefs.h>
-
-extern "C" {
-   #include <ugens.h>
-   extern int resetval;
-}
 
 
 FLANGE :: FLANGE() : Instrument()
@@ -78,27 +73,23 @@ int FLANGE :: init(float p[], short n_args)
    spread = (n_args > 11) ? p[11] : 0.5;
 
    if (flangetype == 0) {
-      printf("Using IIR comb filter.\n");
+      advise("FLANGE", "Using IIR comb filter.");
       zcomb = new ZComb(maxdelay, resonance);
    }
    else {
-      printf("Using FIR notch filter.\n");
+      advise("FLANGE", "Using FIR notch filter.");
       // takes more resonance to make the notch prominent
       znotch = new ZNotch(maxdelay, resonance * 5.0);
    }
 
    maxdelsamps = maxdelay * SR;            // yes, maxdelsamps is float
 
-   if (moddepth < 0.0 || moddepth > 100.0) {
-      fprintf(stderr, "Modulation depth must be between 0 and 100.\n");
-      exit(-1);
-   }
+   if (moddepth < 0.0 || moddepth > 100.0)
+      die("FLANGE", "Modulation depth must be between 0 and 100.");
    moddepth /= 100.0;         // convert to [0, 1]
 
-   if (wetdrymix < 0.0 || wetdrymix > 1.0) {
-      fprintf(stderr, "Wet/dry mix must be between 0 and 1.\n");
-      exit(-1);
-   }
+   if (wetdrymix < 0.0 || wetdrymix > 1.0)
+      die("FLANGE", "Wet/dry mix must be between 0 and 1.");
 
    ringdur = (resonance < 0) ? -resonance : resonance;
 
@@ -106,11 +97,9 @@ int FLANGE :: init(float p[], short n_args)
    rtsetinput(inskip, this);
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans) {
-      fprintf(stderr, "You asked for channel %d of a %d-channel file.\n",
-              inchan, inputchans);
-      exit(-1);
-   }
+   if (inchan >= inputchans)
+      die("FLANGE", "You asked for channel %d of a %d-channel file.",
+                                                       inchan, inputchans);
 
    modtable = floc(2);
    len = fsize(2);
@@ -122,7 +111,7 @@ int FLANGE :: init(float p[], short n_args)
       tableset(dur, lenamp, amptabs);
    }
    else
-      printf("Setting phrase curve to all 1's\n");
+      advise("FLANGE", "Setting phrase curve to all 1's.");
 
    skip = (int)(SR / (float)resetval);
 

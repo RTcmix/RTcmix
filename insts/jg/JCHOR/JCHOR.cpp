@@ -50,9 +50,9 @@
 
    John Gibson (jgg9c@virginia.edu), 9/20/98, RT'd 6/24/99.
 */
-
 #include <stdio.h>
 #include <stdlib.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "JCHOR.h"
@@ -60,8 +60,6 @@
 #include <rtdefs.h>
 
 extern "C" {
-   #include <ugens.h>
-   extern int resetval;
    extern double m_DUR(float [], int);     /* in sys/minc_info.c */
 }
 
@@ -112,41 +110,29 @@ int JCHOR::init(float p[], short n_args)
    seed = p[11];
    inchan = (n_args > 12) ? (int)p[12] : AVERAGE_CHANS;
 
-   if (n_args < 12) {
-      fprintf(stderr, "JCHOR: Not enough pfields.\n");
-      exit(1);
-   }
+   if (n_args < 12)
+      die("JCHOR", "Not enough pfields.");
 
    rtsetinput(inskip, this);
    nsamps = rtsetoutput(outskip, outdur, this);
 
-   if (outputchans > 2) {
-      fprintf(stderr, "JCHOR: Output must have no more than two channels.\n");
-      exit(1);
-   }
+   if (outputchans > 2)
+      die("JCHOR", "Output must have no more than two channels.");
 
-   if (nvoices < 1) {
-      fprintf(stderr, "JCHOR: Must have at least one voice.\n");
-      exit(1);
-   }
+   if (nvoices < 1)
+      die("JCHOR", "Must have at least one voice.");
 
-   if (minamp < 0.0 || maxamp <= 0.0 || minamp > maxamp) {
-      fprintf(stderr, "JCHOR: Grain amplitude range confused.\n");
-      exit(1);
-   }
+   if (minamp < 0.0 || maxamp <= 0.0 || minamp > maxamp)
+      die("JCHOR", "Grain amplitude range confused.");
    ampdiff = maxamp - minamp;
 
-   if (minwait < 0.0 || maxwait < 0.0 || minwait > maxwait) {
-      fprintf(stderr, "JCHOR: Grain wait range confused.\n");
-      exit(1);
-   }
+   if (minwait < 0.0 || maxwait < 0.0 || minwait > maxwait)
+      die("JCHOR", "Grain wait range confused.");
    waitdiff = (maxwait - minwait) * SR;
    minwait *= SR;
 
-   if (seed < 0.0 || seed > 1.0) {
-      fprintf(stderr, "JCHOR: Seed must be between 0 and 1 inclusive.\n");
-      exit(1);
-   }
+   if (seed < 0.0 || seed > 1.0)
+      die("JCHOR", "Seed must be between 0 and 1 inclusive.");
 
    amparray = floc(ENVELOPE_TABLE_SLOT);
    if (amparray) {
@@ -154,7 +140,7 @@ int JCHOR::init(float p[], short n_args)
       tableset(outdur, len, amptabs);
    }
    else
-      printf("JCHOR: Setting phrase curve to all 1's\n");
+      advise("JCHOR", "Setting phrase curve to all 1's.");
 
    /* MUST do this here, rather than in grain_input_and_transpose,
       because by the time that is called, the makegen for this slot
@@ -332,10 +318,8 @@ int JCHOR::grain_input_and_transpose()
 #endif
 #ifdef NOT_YET
    total_indur = (float)m_DUR(NULL, 0);
-   if (inskip < 0.0 || read_indur <= 0.0 || inskip + read_indur > total_indur) {
-      fprintf(stderr, "Input file segment out of range.\n");
-      exit(1);
-   }
+   if (inskip < 0.0 || read_indur <= 0.0 || inskip + read_indur > total_indur)
+      die("JCHOR", "Input file segment out of range.");
 #endif
 
    grainsamps = (int)(store_indur * SR + 0.5);

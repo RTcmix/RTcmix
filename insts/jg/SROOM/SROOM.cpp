@@ -14,17 +14,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "SROOM.h"
 #include <rt.h>
 #include <rtdefs.h>
-
-extern "C" {
-   #include <ugens.h>
-   #include <delmacros.h>
-   extern int resetval;
-}
+#include <delmacros.h>
 
 //#define DEBUG
 #define AVERAGE_CHANS   -1           /* average input chans flag value */
@@ -65,21 +61,16 @@ int SROOM::init(float p[], short n_args)
    innerwidth = p[10];        /* the room inside your head */
    inchan = n_args > 11 ? (int)p[11] : AVERAGE_CHANS;
 
-   if (outputchans != 2) {
-      fprintf(stderr, "SROOM requires stereo output.\n");
-      exit(1);
-   }
+   if (outputchans != 2)
+      die("SROOM", "Output must be stereo.");
 
    nsamps = rtsetoutput(outskip, dur + rvbtime, this);
    rtsetinput(inskip, this);
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans) {
-      fprintf(stderr, "You asked for channel %d of a %d-channel input file.\n",
-                       inchan, inputchans);
-      exit(1);
-   }
-
+   if (inchan >= inputchans)
+      die("SROOM", "You asked for channel %d of a %d-channel input file.",
+                                                       inchan, inputchans);
    if (inputchans == 1)
       inchan = 0;
 
@@ -98,7 +89,7 @@ int SROOM::init(float p[], short n_args)
       tableset(dur, amplen, amptabs);
    }
    else
-      printf("Setting phrase curve to all 1's\n");
+      advise("SROOM", "Setting phrase curve to all 1's.");
 
    skip = (int)(SR / (float)resetval);
 

@@ -34,10 +34,9 @@
    John Gibson (jgg9c@virginia.edu), 7/3/99.
    Filter design code adapted from Bill Schottstaedt's Snd.
 */
-
-#include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "JFIR.h"
@@ -48,12 +47,6 @@
 //#define PRINT_RESPONSE
 #define NCOLUMNS 160      // 1 data point per terminal column
 #define NROWS    60
-
-
-extern "C" {
-   #include <ugens.h>
-   extern int resetval;
-}
 
 
 JFIR :: JFIR() : Instrument()
@@ -88,24 +81,20 @@ int JFIR :: init(float p[], short n_args)
    rtsetinput(inskip, this);
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans) {
-      fprintf(stderr, "You asked for channel %d of a %d-channel file.\n",
+   if (inchan >= inputchans)
+      die("JFIR", "You asked for channel %d of a %d-channel file.",
                                                          inchan, inputchans);
-      exit(1);
-   }
 
    response_tab = floc(2);
    if (response_tab == NULL) {
       // Note: we won't get here with current floc implementation
-      fprintf(stderr, "You haven't made the frequency response function.\n");
-      exit(1);
+      die("JFIR", "You haven't made the frequency response function.");
    }
    tabsize = fsize(2);
 
-   if (order < 1) {
-      fprintf(stderr, "Order must be greater than 0.\n");
-      exit(1);
-   }
+   if (order < 1)
+      die("JFIR", "Order must be greater than 0.");
+
    filt = new NZero(order);
    filt->designFromFunctionTable(response_tab, tabsize, 0, 0);
 #ifdef PRINT_RESPONSE
@@ -118,7 +107,7 @@ int JFIR :: init(float p[], short n_args)
       tableset(dur, lenamp, amptabs);
    }
    else
-      printf("Setting phrase curve to all 1's\n");
+      advise("JFIR", "Setting phrase curve to all 1's.");
 
    skip = (int)(SR / (float)resetval);
 

@@ -36,16 +36,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "REVERBIT.h"
 #include <rt.h>
 #include <rtdefs.h>
-
-extern "C" {
-   #include <ugens.h>
-   extern int resetval;
-}
 
 #define DELAY_FACTOR   2       /* Determines length of delay line */
 #define MIN_DELAY      .10     /* Uses extra-large delay line below this */
@@ -93,40 +89,33 @@ int REVERBIT::init(float p[], short n_args)
    cutoff = p[7];
    dcblock = n_args > 8 ? (int)p[8] : 1;           /* default is "yes" */
 
-   if (outputchans != 2) {
-      fprintf(stderr, "REVERBIT requires stereo output.\n");
-      exit(1);
-   }
+   if (outputchans != 2)
+      die("REVERBIT", "Output must be stereo.");
+
    rtsetinput(inskip, this);
-   if (inputchans > 2) {
-      fprintf(stderr, "REVERBIT can't handle more than 2 input channels.\n");
-      exit(1);
-   }
+   if (inputchans > 2)
+      die("REVERBIT", "Can't have more than 2 input channels.");
+
    nsamps = rtsetoutput(outskip, dur + reverbtime + RVTSLOP, this);
    insamps = (int)(dur * SR);
 
-   if (reverbtime <= 0.0) {
-      fprintf(stderr, "Reverb time must be greater than 0.\n");
-      exit(1);
-   }
-   if (reverbpct < 0.0 || reverbpct > 1.0) {
-      fprintf(stderr, "Reverb percent must be between 0 and 1 inclusive.\n");
-      exit(1);
-   }
-   if (rtchan_delaytime <= 0.0) {
-      fprintf(stderr, "Right chan delay time must be greater than 0.\n");
-      exit(1);
-   }
-   if (cutoff < 0.0) {
-      fprintf(stderr,
-              "Cutoff freq. should be positive (or zero to disable filter)\n");
-      exit(1);
-   }
+   if (reverbtime <= 0.0)
+      die("REVERBIT", "Reverb time must be greater than 0.");
+
+   if (reverbpct < 0.0 || reverbpct > 1.0)
+      die("REVERBIT", "Reverb percent must be between 0 and 1 inclusive.");
+
+   if (rtchan_delaytime <= 0.0)
+      die("REVERBIT", "Right chan delay time must be greater than 0.");
+
+   if (cutoff < 0.0)
+      die("REVERBIT", "Cutoff frequency should be positive (or zero to "
+                                                           "disable filter).");
    else if (cutoff == 0.0)
-      printf("Low-pass filter disabled\n");
+      advise("REVERBIT", "Low-pass filter disabled.");
    else {
       toneset(cutoff, 1, tonedata);
-      printf("Low-pass filter cutoff: %g\n", cutoff);
+      advise("REVERBIT", "Low-pass filter cutoff: %g", cutoff);
    }
 
    maxdeltime = rtchan_delaytime;
@@ -148,7 +137,7 @@ int REVERBIT::init(float p[], short n_args)
       tableset(dur, amplen, amptabs);
    }
    else
-      printf("Setting phrase curve to all 1's\n");
+      advise("REVERBIT", "Setting phrase curve to all 1's.");
 
    skip = (int)(SR / (float)resetval);
 

@@ -33,19 +33,15 @@
 
    John Gibson (jgg9c@virginia.edu), 7/19/99.
 */
-#include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "REV.h"
 #include <rt.h>
 #include <rtdefs.h>
 
-extern "C" {
-   #include <ugens.h>
-   extern int resetval;
-}
 
 
 REV :: REV() : Instrument()
@@ -79,12 +75,9 @@ int REV :: init(float p[], short n_args)
    rtsetinput(inskip, this);
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans) {
-      fprintf(stderr, "You asked for channel %d of a %d-channel file\n",
+   if (inchan >= inputchans)
+      die("REV", "You asked for channel %d of a %d-channel file",
                                                           inchan, inputchans);
-      exit(-1);
-   }
-
    switch (rvbtype) {
       case 1:
          reverb = new PRCRev(rvbtime);
@@ -96,8 +89,7 @@ int REV :: init(float p[], short n_args)
          reverb = new NRev(rvbtime);
          break;
       default:
-         fprintf(stderr, "Unknown reverb type %d\n", rvbtype);
-         exit(-1);
+         die("REV", "Unknown reverb type %d.", rvbtype);
    }
    reverb->setEffectMix(rvbpct);
 
@@ -107,7 +99,7 @@ int REV :: init(float p[], short n_args)
       tableset(dur, lenamp, amptabs);
    }
    else
-      printf("Setting phrase curve to all 1's\n");
+      advise("REV", "Setting phrase curve to all 1's.");
 
    skip = (int)(SR / (float)resetval);
 

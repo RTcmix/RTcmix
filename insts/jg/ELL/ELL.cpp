@@ -30,7 +30,7 @@
      p3  amplitude multiplier
      p4  ring-down duration
      p5  input channel [optional]
-     p6  stereo spread [optional]
+     p6  stereo percent to left channel [optional]
 
    Assumes function table 1 holds amplitude envelope. (Or you can just use
    setline.) If this function table is empty, uses flat envelope.
@@ -51,6 +51,7 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "ELL.h"
@@ -58,8 +59,6 @@
 #include <rtdefs.h>
 
 extern "C" {
-   #include <ugens.h>
-   extern int resetval;
    extern int get_nsections(void);
    extern int ellpset(EllSect [], float *);
    extern float ellipse(float, int, EllSect [], float);
@@ -97,59 +96,50 @@ int ELL::init(float p[], short n_args)
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
    insamps = (int)(dur * SR);
 
-   /* If user passed something for inchan or spread, check it.
+   /* If user passed something for inchan or pctleft, check it.
       Otherwise, mark the variable so that we ignore it below.
    */
    if (n_args > 5) {
       inchan = (int)p[5];
-      if (inchan >= inputchans) {
-         fprintf(stderr, "You asked for channel %d of a %d-channel file.\n",
-                         inchan, inputchans);
-         exit(1);
-      }
+      if (inchan >= inputchans)
+         die("ELL", "You asked for channel %d of a %d-channel file.",
+                                                        inchan, inputchans);
    }
    else
       inchan = -1;
 
    if (n_args > 6) {
-      spread = p[6];
-      if (spread < 0.0 || spread > 1.0) {
-         fprintf(stderr, "spread must be between 0 and 1 (inclusive)\n");
-         exit(1);
-      }
+      pctleft = p[6];
+      if (pctleft < 0.0 || pctleft > 1.0)
+         die("ELL", "pctleft must be between 0 and 1 (inclusive).");
    }
    else
-      spread = -1.0;
+      pctleft = -1.0;
 
    /* Set up for the various channel possibilities. */
 
    if (inchan == -1) {
       if (inputchans == 1)
          inchan = 0;
-      else if (inputchans != outputchans) {
-         fprintf(stderr,
-                 "Input and output files have differing numbers of channels,\n"
-                 "so you have to specify 1 input channel.\n");
-         exit(1);
-      }
+      else if (inputchans != outputchans)
+         die("ELL", "Input and output files have differing numbers of channels,"
+                                    "so you have to specify 1 input channel.");
    }
 
-   /* <spread> relevant only when output is stereo and there's 1 input chan. */
+   /* <pctleft> relevant only when output is stereo and there's 1 input chan. */
    if (outputchans == 2 && inchan != -1) {
-      if (spread == -1.0)
-         spread = 0.5;                     /* just set it to middle */
+      if (pctleft == -1.0)
+         pctleft = 0.5;                     /* just set it to middle */
    }
-   else if (spread != -1.0) {
-      printf("Note: spread ignored unless output is stereo and "
-             "there's 1 input channel.\n");
-      spread = -1.0;
+   else if (pctleft != -1.0) {
+      warn("ELL", "pctleft ignored unless output is stereo and "
+                                                  "there's 1 input channel.");
+      pctleft = -1.0;
    }
 
    nsects = get_nsections();
-   if (nsects == 0) {
-      fprintf(stderr, "You haven't called ellset to specify filter!\n");
-      exit(1);
-   }
+   if (nsects == 0)
+      die("ELL", "You haven't called ellset to specify filter.");
    if (inchan == -1) {                     /* use all input chans */
       for (n = 0; n < inputchans; n++) {
          es[n] = new EllSect[nsects];
@@ -160,7 +150,8 @@ int ELL::init(float p[], short n_args)
       es[inchan] = new EllSect[nsects];
       ellpset(es[inchan], &xnorm);
    }
-   printf("Filter: %d sections, normalization factor: %.9f\n", nsects, xnorm);
+   advise("ELL", "Filter: %d sections, normalization factor: %.9f",
+                                                               nsects, xnorm);
 
    amptable = floc(1);
    if (amptable) {
@@ -168,7 +159,7 @@ int ELL::init(float p[], short n_args)
       tableset(dur, amplen, amptabs);
    }
    else
-      printf("Setting phrase curve to all 1's\n");
+      advise("ELL", "Setting phrase curve to all 1's.");
 
    skip = (int)(SR / (float)resetval);
 
@@ -216,9 +207,9 @@ int ELL::run()
       }
       if (inchan != -1) {                     /* only one input chan */
          float val = ellipse(insig, nsects, es[inchan], xnorm);
-         if (outputchans == 2) {              /* then use spread */
-            out[0] = val * spread; 
-            out[1] = val * (1.0 - spread);
+         if (outputchans == 2) {              /* then use pctleft */
+            out[0] = val * pctleft; 
+            out[1] = val * (1.0 - pctleft);
          }
          else {
             for (n = 0; n < outputchans; n++)

@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <float.h>       /* for DBL_MAX */
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "COMPLIMIT.h"
@@ -51,11 +52,6 @@
 #define MAX_WINS 5        /* just a guess */
 
 #define DEFAULT_WINDOW_SIZE   128
-
-extern "C" {
-   #include <ugens.h>
-   extern int resetval;
-}
 
 
 COMPLIMIT::COMPLIMIT() : Instrument()
@@ -111,20 +107,15 @@ int COMPLIMIT::init(float p[], short n_args)
    rtsetinput(inskip, this);
    nsamps = rtsetoutput(outskip, dur, this);
 
-   if (inchan >= inputchans) {
-      fprintf(stderr, "You asked for channel %d of a %d-channel file.\n",
-                      inchan, inputchans);
-      exit(1);
-   }
-   if (outputchans > 2) {
-      fprintf(stderr, "Can't use more than 2 output channels.\n");
-      exit(1);
-   }
+   if (inchan >= inputchans)
+      die("COMPLIMIT", "You asked for channel %d of a %d-channel file.",
+                                                        inchan, inputchans);
+   if (outputchans > 2)
+      die("COMPLIMIT", "Can't use more than 2 output channels.");
 
-   if (atk_time < 0.0 || rel_time < 0.0) {
-      fprintf(stderr, "Invalid envelope times.\n");
-      exit(1);
-   }
+   if (atk_time < 0.0 || rel_time < 0.0)
+      die("COMPLIMIT", "Invalid envelope times.");
+
    atk_samps = (int) (atk_time * SR + 0.5);
    rel_samps = (int) (rel_time * SR + 0.5);
 
@@ -132,37 +123,32 @@ int COMPLIMIT::init(float p[], short n_args)
 
    dbref = dbamp(32768.0);           // FIXME: but what about 24-bit output?
 
-   if (threshold < -dbref || threshold > 0.0) {
-      fprintf(stderr, "Threshold must be between %.2f and 0.\n", -dbref);
-      exit(1);
-   }
+   if (threshold < -dbref || threshold > 0.0)
+      die("COMPLIMIT", "Threshold must be between %.2f and 0.", -dbref);
+
    threshold = ampdb(threshold + dbref);
 
-   if (ratio < 1.0) {
-      fprintf(stderr, "Compression ratio must be 1 or greater.\n");
-      exit(1);
-   }
+   if (ratio < 1.0)
+      die("COMPLIMIT", "Compression ratio must be 1 or greater.");
+
    if (ratio >= 100.0)
       ratio = DBL_MAX;
 
    if (window_frames == 0) {
       window_frames = min(DEFAULT_WINDOW_SIZE, RTBUFSAMPS);
-      printf("Setting window size to %d frames.\n", window_frames);
+      advise("COMPLIMIT", "Setting window size to %d frames.", window_frames);
    }
    else if (window_frames > RTBUFSAMPS) {
-      fprintf(stderr, "Window size must be less than %d frames (the RTCmix "
-                      "buffer size). Correcting...\n", RTBUFSAMPS);
+      warn("COMPLIMIT", "Window size must be less than %d frames (the RTCmix "
+                        "buffer size). Correcting...", RTBUFSAMPS);
       window_frames = RTBUFSAMPS;
    }
-   else if (RTBUFSAMPS % window_frames) {
-      fprintf(stderr, "Window size must be a power of two.\n");
-      exit(1);
-   }
+   else if (RTBUFSAMPS % window_frames)
+      die("COMPLIMIT", "Window size must be a power of two.");
 
-   if (detector_int < 0 || detector_int > 2) {
-      fprintf(stderr, "Invalid detector type.\n");
-      exit(1);
-   }
+   if (detector_int < 0 || detector_int > 2)
+      die("COMPLIMIT", "Invalid detector type.");
+
    detector_type = (DetectType) detector_int;
 
    amptable = floc(1);
@@ -171,7 +157,7 @@ int COMPLIMIT::init(float p[], short n_args)
       tableset(dur, amplen, amptabs);
    }
    else
-      printf("Setting phrase curve to all 1's\n");
+      advise("COMPLIMIT", "Setting phrase curve to all 1's.");
 
    skip = (int) (SR / (float) resetval);
 

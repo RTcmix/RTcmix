@@ -38,16 +38,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "JDELAY.h"
 #include <rt.h>
 #include <rtdefs.h>
 
-extern "C" {
-   #include <ugens.h>
-   extern int resetval;
-}
 
 #define DELAY_FACTOR   2       /* Determines length of delay line */
 #define MIN_DELAY      .10     /* Uses extra-large delay line below this */
@@ -103,33 +100,25 @@ int JDELAY::init(float p[], short n_args)
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans) {
-      fprintf(stderr, "You asked for channel %d of a %d-channel file.\n",
-                      inchan, inputchans);
-      exit(1);
-   }
+   if (inchan >= inputchans)
+      die("JDELAY", "You asked for channel %d of a %d-channel file.",
+                                                         inchan, inputchans);
 
-   if (regen < -1.0 || regen > 1.0) {
-      fprintf(stderr, "Regeneration multiplier must be between -1 and 1.\n");
-      exit(1);
-   }
+   if (regen < -1.0 || regen > 1.0)
+      die("JDELAY", "Regeneration multiplier must be between -1 and 1.");
 
-   if (cutoff < 0.0) {
-      fprintf(stderr,
-              "Cutoff freq. should be positive (or zero to disable filter)\n");
-      exit(1);
-   }
+   if (cutoff < 0.0)
+      die("JDELAY",
+              "Cutoff freq. should be positive (or zero to disable filter).");
    else if (cutoff == 0.0)
-      printf("Low-pass filter disabled\n");
+      advise("JDELAY", "Low-pass filter disabled.");
    else {
       toneset(cutoff, 1, tonedata);
-      printf("Low-pass filter cutoff: %g\n", cutoff);
+      advise("JDELAY", "Low-pass filter cutoff: %g", cutoff);
    }
 
-   if (percent_wet < 0.0 || percent_wet > 1.0) {
-      fprintf(stderr, "wet/dry mix must be between 0 and 1 inclusive.\n");
-      exit(1);
-   }
+   if (percent_wet < 0.0 || percent_wet > 1.0)
+      die("JDELAY", "Wet/dry mix must be between 0 and 1 inclusive.");
 
    delsamps = (int)(wait * SR + 0.5);
    /* If delay time is very short, make delay line longer than necessary;
@@ -154,7 +143,7 @@ int JDELAY::init(float p[], short n_args)
          tableset(dur, amplen, amptabs);
    }
    else
-      printf("Setting phrase curve to all 1's\n");
+      advise("JDELAY", "Setting phrase curve to all 1's.");
 
    skip = (int)(SR / (float)resetval);
 

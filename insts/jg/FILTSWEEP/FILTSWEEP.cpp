@@ -38,21 +38,16 @@
 
    John Gibson (jgg9c@virginia.edu), 2/5/00.
 */
-
-#include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "FILTSWEEP.h"
 #include <rt.h>
 #include <rtdefs.h>
 
-extern "C" {
-   #include <ugens.h>
-   extern int resetval;
-}
 
 #define BALANCE_WINDOW_SIZE  10
 
@@ -92,18 +87,12 @@ int FILTSWEEP :: init(float p[], short n_args)
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans) {
-      fprintf(stderr, "You asked for channel %d of a %d-channel file.\n",
+   if (inchan >= inputchans)
+      die("FILTSWEEP", "You asked for channel %d of a %d-channel file.",
                                                          inchan, inputchans);
-      exit(1);
-   }
-
-   if (nfilts < 1 || nfilts > MAXFILTS) {
-      fprintf(stderr, "Sharpness (p5) must be an integer between 1 and %d.\n",
-                      MAXFILTS);
-      exit(1);
-   }
-
+   if (nfilts < 1 || nfilts > MAXFILTS)
+      die("FILTSWEEP", "Sharpness (p5) must be an integer between 1 and %d.",
+                                                                   MAXFILTS);
    for (int i = 0; i < nfilts; i++)
       filt[i] = new BiQuad();
 
@@ -121,29 +110,23 @@ int FILTSWEEP :: init(float p[], short n_args)
       tableset(dur, lenamp, amptabs);
    }
    else
-      printf("Setting phrase curve to all 1's\n");
+      advise("FILTSWEEP", "Setting phrase curve to all 1's.");
 
    cfarray = floc(2);
    if (cfarray) {
       int lencf = fsize(2);
       tableset(dur, lencf, cftabs);
    }
-   else {
-      // Note: we won't get here with current floc implementation
-      fprintf(stderr, "You haven't made the center frequency function.\n");
-      exit(1);
-   }
+   else     // Note: we won't get here with current floc implementation
+      die("FILTSWEEP", "You haven't made the center frequency function.");
 
    bwarray = floc(3);
    if (bwarray) {
       int lenbw = fsize(3);
       tableset(dur, lenbw, bwtabs);
    }
-   else {
-      // Note: we won't get here with current floc implementation
-      fprintf(stderr, "You haven't made the bandwidth function.\n");
-      exit(1);
-   }
+   else     // Note: we won't get here with current floc implementation
+      die("FILTSWEEP", "You haven't made the bandwidth function.");
 
    skip = (int)(SR / (float)resetval);
 

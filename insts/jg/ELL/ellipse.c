@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <defs.h>
 #include <ugens.h>
 #include "elldefs.h"
 #include "setell.h"
@@ -33,10 +32,8 @@ ellset(float p[], int n_args)
 
    setell(srate, f1, f2, f3, ripple, atten, coeffs, &nsections, VERBOSE);
 
-   if (nsections < 1 || nsections > MAX_SECTIONS) {
-      fprintf(stderr, "\nFilter design failed! Try relaxing specs.\n\n");
-      exit(1);
-   }
+   if (nsections < 1 || nsections > MAX_SECTIONS)
+      die("ELL", "Filter design failed! Try relaxing specs.");
 
    return 0.0;
 }

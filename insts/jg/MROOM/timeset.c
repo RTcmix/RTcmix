@@ -1,5 +1,5 @@
+#include <stdio.h>
 #include <stdlib.h>
-#include <defs.h>
 #include <ugens.h>
 #include "timeset.h"
 
@@ -39,8 +39,8 @@ timeset(float p[], int n_args)
       _ntimes++;
    }
    else
-      fprintf(stderr, "Can only have %d timeset calls for each MROOM\n",
-                      TIME_ARRAY_SIZE);
+      warn("MROOM", "Can only have %d timeset calls for each MROOM.",
+                                                            TIME_ARRAY_SIZE);
 
    return 0.0;
 }

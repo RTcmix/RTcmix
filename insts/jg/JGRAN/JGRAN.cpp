@@ -40,20 +40,15 @@
 
    John Gibson (johngibson@virginia.edu), 4/15/00.
 */
-#include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "JGRAN.h"
 #include <rt.h>
 #include <rtdefs.h>
-
-extern "C" {
-   #include <ugens.h>
-   extern int resetval;
-}
 
 //#define DEBUG
 
@@ -111,9 +106,13 @@ make_table(int function_num, float dur, int exit_on_fail, const char *message)
       /* Note: we won't get here with current floc implementation, unless
          <function_num> is 1.
       */
-      if (message)
-         fprintf(stderr, "%s\n", message);
-      if (exit_on_fail)
+      if (message) {
+         if (exit_on_fail)
+            die("JGRAN", message);
+         else
+            advise("JGRAN", message);
+      }
+      else if (exit_on_fail)
          exit(1);
    }
    return table;
@@ -132,13 +131,12 @@ int JGRAN :: init(float p[], short n_args)
    osctype = (OscType) p[4];
    randomize_phase = n_args > 5 ? (int) p[5] : 1;           /* default: yes */
 
-   if (outputchans > 2) {
-      fprintf(stderr, "Output must be mono or stereo.\n");
-      exit(1);
-   }
+   if (outputchans > 2)
+      die("JGRAN", "Output must be mono or stereo.");
+
    nsamps = rtsetoutput(outskip, dur, this);
 
-   amp_table = make_table(1, dur, 0, "Setting phrase curve to all 1's");
+   amp_table = make_table(1, dur, 0, "Setting phrase curve to all 1's.");
    aamp = amp;                  /* in case amp_table == NULL */
 
    envtab = floc(2);
@@ -146,17 +144,15 @@ int JGRAN :: init(float p[], short n_args)
       int len = fsize(2);
       grainenv_oscil = new OscilN(0.0, envtab, len);
    }
-   else {
-      fprintf(stderr, "You haven't made the grain envelope function.\n");
-      exit(1);
-   }
+   else
+      die("JGRAN", "You haven't made the grain envelope function.");
 
    wavetab = floc(3);
    if (wavetab)
       wavetablen = fsize(3);
    else
       /* Note: current floc implementation won't let us get here. */
-      printf("Using sine for grain waveform.\n");
+      advise("JGRAN", "Using sine for grain waveform.");
 
    if (osctype == FM) {
       modmult_table = make_table(4, dur, 1,

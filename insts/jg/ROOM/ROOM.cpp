@@ -1,15 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "ROOM.h"
 #include <rt.h>
 #include <rtdefs.h>
-
-extern "C" {
-   #include <ugens.h>
-   extern int resetval;
-}
 
 //#define DEBUG
 #define AVERAGE_CHANS   -1           /* average input chans flag value */
@@ -40,27 +36,22 @@ int ROOM::init(float p[], short n_args)
    amp = p[3];
    inchan = n_args > 4 ? (int)p[4] : AVERAGE_CHANS;
 
-   if (outputchans != 2) {
-      fprintf(stderr, "ROOM requires stereo output.\n");
-      exit(1);
-   }
+   if (outputchans != 2)
+      die("ROOM", "Output must be stereo.");
+
    rtsetinput(inskip, this);
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans) {
-      fprintf(stderr, "You asked for channel %d of a %d-channel input file.\n",
-                       inchan, inputchans);
-      exit(1);
-   }
-
+   if (inchan >= inputchans)
+      die("ROOM", "You asked for channel %d of a %d-channel input file.",
+                                                      inchan, inputchans);
    if (inputchans == 1)
       inchan = 0;
 
    nmax = get_room(ipoint, lamp, ramp);
-   if (nmax == 0) {
-      fprintf(stderr, "You need to call roomset before ROOM.\n");
-      exit(1);
-   }
+   if (nmax == 0)
+      die("ROOM", "You need to call roomset before ROOM.");
+
    echo = new float[nmax];
    for (i = 0; i < nmax; i++)
       echo[i] = 0.0;
@@ -79,7 +70,7 @@ int ROOM::init(float p[], short n_args)
       tableset(dur + ringdur, amplen, amptabs);
    }
    else
-      printf("Setting phrase curve to all 1's\n");
+      advise("ROOM", "Setting phrase curve to all 1's.");
 
    skip = (int)(SR / (float)resetval);
 

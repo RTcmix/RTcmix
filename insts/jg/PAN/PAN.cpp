@@ -32,15 +32,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <ugens.h>
 #include <Instrument.h>
 #include "PAN.h"
 #include <rt.h>
 #include <rtdefs.h>
 
-extern "C" {
-   #include <ugens.h>
-   extern int resetval;
-}
 
 
 PAN :: PAN() : Instrument()
@@ -68,16 +65,12 @@ int PAN :: init(float p[], short n_args)
    nsamps = rtsetoutput(outskip, dur, this);
    rtsetinput(inskip, this);
 
-   if (outputchans != 2) {
-      fprintf(stderr, "Output must be stereo!\n");
-      exit(1);
-   }
+   if (outputchans != 2)
+      die("PAN", "Output must be stereo.");
 
-   if (inchan >= inputchans) {
-      fprintf(stderr, "You asked for channel %d of a %d-channel file.\n",
+   if (inchan >= inputchans)
+      die("PAN", "You asked for channel %d of a %d-channel file.",
                                                          inchan, inputchans);
-      exit(1);
-   }
 
    amparray = floc(1);
    if (amparray) {
@@ -85,7 +78,7 @@ int PAN :: init(float p[], short n_args)
       tableset(dur, lenamp, amptabs);
    }
    else
-      printf("Setting phrase curve to all 1's\n");
+      advise("PAN", "Setting phrase curve to all 1's.");
 
    panarray = floc(2);
    if (panarray) {
@@ -94,8 +87,7 @@ int PAN :: init(float p[], short n_args)
    }
    else {
       // Note: we won't get here with current floc implementation
-      fprintf(stderr, "You haven't made the pan curve function.\n");
-      exit(1);
+      die("PAN", "You haven't made the pan curve function.");
    }
 
    skip = (int)(SR / (float)resetval);

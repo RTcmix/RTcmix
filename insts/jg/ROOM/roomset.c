@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <defs.h>
 #include <ugens.h>
 #include "roomset.h"
 
@@ -209,10 +208,8 @@ space(float dim[],          /* first 4 args: arrays of 2 elements */
 double
 roomset(float p[], int n_args)
 {
-   if (n_args < 9) {
-      fprintf(stderr, "Not enough args for roomset\n");
-      exit(1);
-   }
+   if (n_args < 9)
+      die("roomset", "Not enough args.");
 
 // ***FIXME: need some input validation here
 

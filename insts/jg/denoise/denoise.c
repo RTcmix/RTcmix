@@ -171,21 +171,17 @@ denoise(float p[], int n_args)
 
    /* initial sanity checks */
 
-   if (n_args < 10) {
-      fprintf(stderr, "Wrong number of arguments to denoise.\n");
-      exit(1);
-   }
+   if (n_args < 10)
+      die("denoise", "Wrong number of arguments.");
 
 
    /* input file */
 
    R = srate = sfsrate(&sfdesc[INPUT]);
    nchans = sfchans(&sfdesc[INPUT]);
-   if (inchan >= nchans || inchan < 0) {
-      fprintf(stderr, "You asked for channel %d of a %d-channel file.\n",
+   if (inchan >= nchans || inchan < 0)
+      die("denoise", "You asked for channel %d of a %d-channel file.",
                                                               inchan, nchans);
-      exit(1);
-   }
    class = sfclass(&sfdesc[INPUT]);
    inputdur = (float)(sfst[INPUT].st_size - headersize[INPUT])
                                       / (float)class / (float)nchans / srate;
@@ -194,17 +190,15 @@ denoise(float p[], int n_args)
 
    /* output file */
 
-   if (sfsrate(&sfdesc[OUTPUT]) != srate) {
-      fprintf(stderr, "Output and input files must have same sample rate.\n");
-      exit(1);
-   }
+   if (sfsrate(&sfdesc[OUTPUT]) != srate)
+      die("denoise", "Output and input files must have same sample rate.");
+
    if (sfchans(&sfdesc[OUTPUT]) == nchans)
       outchan = inchan;
    else {
       outchan = 0;
-      fprintf(stderr, "WARNING: Writing to channel 0 of output file, since "
-                      "output and input files\n"
-                      "         don't have the same number of channels.\n");
+      warn("denoise", "Writing to channel 0 of output file, since output and "
+                      "input files don't have the same number of channels.");
    }
    setnote(0., inputdur, OUTPUT);
 
@@ -212,9 +206,8 @@ denoise(float p[], int n_args)
    /* reference noise file */
 
    if (sfsrate(&sfdesc[NOISE]) != srate) {
-      fprintf(stderr,
-           "Noise reference file must have same sample rate as input file.\n");
-      exit(1);
+      die("denoise",
+             "Noise reference file must have same sample rate as input file.");
    }
    if (sfchans(&sfdesc[NOISE]) == nchans)
       noiseInChan = inchan;            /* same as input chan */
@@ -222,24 +215,21 @@ denoise(float p[], int n_args)
       noiseInChan = 0;                 /* just take left chan */
    if (noiseInend > (float)(sfst[NOISE].st_size - headersize[NOISE])
                     / (float)sfclass(&sfdesc[NOISE]) / (float)nchans / srate) {
-      fprintf(stderr, "Noise reference file end time is past end of file.\n");
-      exit(1);
+      die("denoise", "Noise reference file end time is past end of file.");
    }
    if (noiseInend <= noiseInskip) {
-      fprintf(stderr,
-              "Make sure noise file begin time is earlier than end time!\n");
-      exit(1);
+      die("denoise",
+                  "Make sure noise file begin time is earlier than end time!");
    }
    if (noiseDur < .25) {
-      fprintf(stderr,
-             "WARNING: Try to have at least .25 seconds of reference noise.\n");
+      warn("denoise", "Try to have at least .25 seconds of reference noise.");
       /* but keep going */
    }
    nsampsNoise = setnote(noiseInskip, noiseDur, NOISE);
    beg = (long)(noiseInskip * srate + 0.5);      /* first _frame_ to read */
    end = (long)(noiseInend * srate + 0.5);       /* last _frame_ to read */
 
-   printf("\nProcessing channel %d...\n", inchan);
+   advise("denoise", "Processing channel %d...", inchan);
 
 
    /* Set up parameter values */
@@ -248,10 +238,8 @@ denoise(float p[], int n_args)
       if (N2 >= N)
          break;
 
-   if (N2 > 16384) {
-      fprintf(stderr, "N too large\n");
-      exit(1);
-   }
+   if (N2 > 16384)
+      die("denoise", "N too large.");
 
    N = N2;
    N2 = N / 2;

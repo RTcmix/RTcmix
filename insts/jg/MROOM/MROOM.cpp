@@ -22,17 +22,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "MROOM.h"
 #include <rt.h>
 #include <rtdefs.h>
-
-extern "C" {
-   #include <ugens.h>
-   #include <delmacros.h>
-   extern int resetval;
-}
+#include <delmacros.h>
 
 //#define DEBUG
 
@@ -77,10 +73,8 @@ int MROOM::init(float p[], short n_args)
    inchan = n_args > 9 ? (int)p[9] : AVERAGE_CHANS;
    quant = n_args > 10 ? (int)p[10] : DEFAULT_QUANTIZATION;
 
-   if (outputchans != 2) {
-      fprintf(stderr, "MROOM requires stereo output.\n");
-      exit(1);
-   }
+   if (outputchans != 2)
+      die("MROOM", "Requires stereo output.");
 
    ringdur = (rvbtime > MAX_DELAY) ? rvbtime : MAX_DELAY;
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
@@ -88,21 +82,17 @@ int MROOM::init(float p[], short n_args)
    rtsetinput(inskip, this);
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans) {
-      fprintf(stderr, "You asked for channel %d of a %d-channel input file.\n",
-                       inchan, inputchans);
-      exit(1);
-   }
-
+   if (inchan >= inputchans)
+      die("MROOM", "You asked for channel %d of a %d-channel input file.",
+                                                      inchan, inputchans);
    if (inputchans == 1)
       inchan = 0;
 
 // ***FIXME: input validation for trajectory points?
    ntimes = get_timeset(timepts, xvals, yvals);
-   if (ntimes == 0) {
-      fprintf(stderr, "Must have at least two timeset calls before MROOM.\n");
-      exit(1);
-   }
+   if (ntimes == 0)
+      die("MROOM", "Must have at least two timeset calls before MROOM.");
+
    traject(ntimes);
 
    tableset(dur, POS_ARRAY_SIZE, xpostabs);
@@ -125,7 +115,7 @@ int MROOM::init(float p[], short n_args)
       tableset(dur, amplen, amptabs);
    }
    else
-      printf("Setting phrase curve to all 1's\n");
+      advise("MROOM", "Setting phrase curve to all 1's.");
 
    skip = (int)(SR / (float)resetval);
    quantskip = (int)(SR / (float)quant);
