@@ -429,6 +429,78 @@ do_op_num(Tree tp, const MincFloat val1, const MincFloat val2, OpKind op)
 }
 
 
+/* ------------------------------------------------------ do_op_handle_num -- */
+static void
+do_op_handle_num(Tree tp, const MincHandle val1, const MincFloat val2,
+      OpKind op)
+{
+#ifdef NOTYET
+   switch (op) {
+      case OpPlus:
+         tp->v.handle = val1 + val2;
+         break;
+      case OpMinus:
+         tp->v.handle = val1 - val2;
+         break;
+      case OpMul:
+         tp->v.handle = val1 * val2;
+         break;
+      case OpDiv:
+         tp->v.handle = val1 / val2;
+         break;
+      case OpMod:
+         tp->v.handle = (MincFloat) ((long) val1 % (long) val2);
+         break;
+      case OpPow:
+         tp->v.handle = pow(val1, val2);
+         break;
+      case OpNeg:
+         tp->v.handle = -val1;        /* <val2> ignored */
+         break;
+      default:
+         break;
+   }
+   tp->type = MincHandleType;
+#endif
+}
+
+
+/* --------------------------------------------------- do_op_handle_handle -- */
+static void
+do_op_handle_handle(Tree tp, const MincHandle val1, const MincHandle val2,
+      OpKind op)
+{
+#ifdef NOTYET
+   switch (op) {
+      case OpPlus:
+         tp->v.handle = val1 + val2;
+         break;
+      case OpMinus:
+         tp->v.handle = val1 - val2;
+         break;
+      case OpMul:
+         tp->v.handle = val1 * val2;
+         break;
+      case OpDiv:
+         tp->v.handle = val1 / val2;
+         break;
+      case OpMod:
+         tp->v.handle = (MincFloat) ((long) val1 % (long) val2);
+         break;
+      case OpPow:
+         tp->v.handle = pow(val1, val2);
+         break;
+      case OpNeg:
+         tp->v.handle = -val1;        /* <val2> ignored */
+         break;
+      default:
+         break;
+   }
+   tp->type = MincHandleType;
+#endif
+}
+
+
 /* ---------------------------------------------------- do_op_list_iterate -- */
 /* Iterate over <child>'s list, performing the operation specified by <op>,
    using the scalar <val>, for each list element.  Store the result into a
@@ -437,10 +509,11 @@ do_op_num(Tree tp, const MincFloat val1, const MincFloat val2, OpKind op)
 static void
 do_op_list_iterate(Tree tp, Tree child, const MincFloat val, const OpKind op)
 {
-   unsigned int i;
-   const unsigned int len = child->v.list.len;
+   int i;
+   const int len = child->v.list.len;
    MincListElem *src = child->v.list.data;
    MincListElem *dest = (MincListElem *) emalloc(sizeof(MincListElem) * len);
+   assert(len >= 0);
    switch (op) {
       case OpPlus:
          for (i = 0; i < len; i++) {
@@ -537,7 +610,7 @@ exct_operator(Tree tp, OpKind op)
                minc_warn("can't operate on a string");
                break;
             case MincHandleType:
-               minc_warn("can't operate on a handle");
+               do_op_handle_num(tp, child1->v.handle, child0->v.number, op);
                break;
             case MincListType:
                do_op_list_iterate(tp, child1, child0->v.number, op);
@@ -567,7 +640,23 @@ exct_operator(Tree tp, OpKind op)
          }
          break;
       case MincHandleType:
-         minc_warn("can't operate on a handle");
+         switch (child1->type) {
+            case MincFloatType:
+               do_op_handle_num(tp, child0->v.handle, child1->v.number, op);
+               break;
+            case MincStringType:
+               minc_warn("can't operate on a string and a handle");
+               break;
+            case MincHandleType:
+               do_op_handle_handle(tp, child0->v.handle, child1->v.handle, op);
+               break;
+            case MincListType:
+               minc_warn("can't operate on a list and a handle");
+               break;
+            default:
+               minc_internal_error("exct_operator: invalid type");
+               break;
+         }
          break;
       case MincListType:
          switch (child1->type) {
@@ -760,11 +849,11 @@ exct_subscript_read(Tree tp)
       if (tp->u.child[0]->u.symbol->type == MincListType) {
          MincListElem elem;
          MincFloat fltindex = tp->u.child[1]->v.number;
-         unsigned int index = (unsigned int) fltindex;
-         unsigned int index2 = index + 1;
+         int index = (int) fltindex;
+         int index2 = index + 1;
 //FIXME: do linear interp for number items
          MincListElem *lst = tp->u.child[0]->u.symbol->v.list.data;
-         unsigned int len = tp->u.child[0]->u.symbol->v.list.len;
+         int len = tp->u.child[0]->u.symbol->v.list.len;
          if (len < 1)
             minc_die("attempt to index an empty list");
          if (fltindex == -1.0)   /* means last element */
@@ -794,10 +883,10 @@ exct_subscript_write(Tree tp)
    exct(tp->u.child[2]);         /* expression to store */
    if (tp->u.child[1]->type == MincFloatType) {
       if (tp->u.child[0]->u.symbol->type == MincListType) {
-         unsigned int len;
+         int len;
          MincListElem *lst, elem;
          MincFloat fltindex = tp->u.child[1]->v.number;
-         unsigned int index = (unsigned int) fltindex;
+         int index = (int) fltindex;
          if (fltindex - (MincFloat) index > 0.0)
             minc_warn("list index must be integer ... correcting");
          lst = tp->u.child[0]->u.symbol->v.list.data;
@@ -807,8 +896,9 @@ exct_subscript_write(Tree tp)
             index = len > 0 ? len - 1 : 0;
          else if (index >= len) {
             /* realloc list and init new slots */
-            unsigned int i, newslots, oldlen = len;
+            int i, newslots, oldlen = len;
             newslots = len > 0 ? (index - (len - 1)) : index + 1;
+//FIXME: what if newslots + len exceeds range of signed int?
             len += newslots;
             lst = (MincListElem *) realloc(lst, sizeof(MincListElem) * len);
             tp->u.child[0]->u.symbol->v.list.data = lst;
