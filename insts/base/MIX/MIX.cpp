@@ -1,3 +1,4 @@
+#include <iostream.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <ugens.h>
@@ -24,12 +25,15 @@ int MIX::init(float p[], int n_args)
 // p0 = outsk; p1 = insk; p2 = duration (-endtime); p3 = amp; p4-n = channel mix matrix
 // we're stashing the setline info in gen table 1
 
-	int i;
+	int i, rvin;
 
 	if (p[2] < 0.0) p[2] = -p[2] - p[1];
 
 	nsamps = rtsetoutput(p[0], p[2], this);
-	rtsetinput(p[1], this);
+	rvin = rtsetinput(p[1], this);
+	if (rvin == -1) { // no input
+		return(DONT_SCHEDULE);
+	}
 
 	amp = p[3];
 
@@ -38,6 +42,7 @@ int MIX::init(float p[], int n_args)
 		if (outchan[i] + 1 > outputchans) {
 			die("MIX", "You wanted output channel %d, but have only specified "
 							"%d output channels", outchan[i], outputchans);
+			return(DONT_SCHEDULE);
 		}
 	}
 
@@ -106,7 +111,5 @@ makeMIX()
 void
 rtprofile()
 {
-	RT_INTRO("MIX",makeMIX);
+   RT_INTRO("MIX",makeMIX);
 }
-
-

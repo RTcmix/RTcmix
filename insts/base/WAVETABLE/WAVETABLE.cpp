@@ -30,13 +30,16 @@ int WAVETABLE::init(float p[], int n_args)
 
 	nsamps = rtsetoutput(p[0], p[1], this);
 
+
 	if (outputchans > 2)
 		die("WAVETABLE", "Can't handle more than 2 output channels.");
 
 	wavetable = floc(WAVET_GEN_SLOT);
-	if (wavetable == NULL)
+	if (wavetable == NULL) {
 		die("WAVETABLE", "You need to store a waveform in function %d.",
 							WAVET_GEN_SLOT);
+		return(DONT_SCHEDULE);
+	}
 	len = fsize(WAVET_GEN_SLOT);
 
 	if (p[3] < 15.0) p[3] = cpspch(p[3]);
@@ -100,4 +103,3 @@ rtprofile()
 {
 	RT_INTRO("WAVETABLE",makeWAVETABLE);
 }
-
