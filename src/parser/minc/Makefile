@@ -1,6 +1,6 @@
 include ../../../makefile.conf
 
-INCLUDES += -I ../../rtcmix
+INCLUDES += -I../../include -I../../rtcmix
 OBJS = y.tab.o builtin.o callextfunc.o error.o sym.o trees.o utils.o yywrap.o
 SRCS = builtin.c callextfunc.cpp error.c sym.c trees.c utils.c yywrap.c 
 MINC = libminc.a
