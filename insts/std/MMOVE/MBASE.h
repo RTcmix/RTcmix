@@ -10,6 +10,7 @@
 #define AVERAGE_CHANS   -1           /* average input chans flag value */
 
 #include <Instrument.h>
+#include "msetup.h"
 
 class MBASE : public Instrument {
 public:
@@ -27,15 +28,15 @@ protected:
    void setBufferSize(int size) { m_buffersize = size; }
    int getBufferSize(void) { return m_buffersize; }
    int getInput(int currentSample, int frames);
-   void alloc_delays(void);
-   void alloc_firfilters(void);
+   int alloc_delays(void);
+   int alloc_firfilters(void);
    void get_lengths(long);
    void set_gains();
    void set_walls(float);
    void put_tap(int, float *, int);
    int  roomtrig(double, double, double, int);
    void rvb_reset(double *);
-   void setair(double, int, double *);
+   void setair(double, int, double *, bool);
    void airfil_set(int);
    void earfil_set(int);
    long tap_set(int);
@@ -43,6 +44,7 @@ protected:
 protected:
    int    m_inchan, insamps, skip, m_binaural, m_tapsize, intap, tapcount;
    int    cartflag, rvbdelsize, m_buffersize;
+   int 	  m_branch;
    float  inamp, m_dur, m_rvbamp;
    float  amptabs[2], *in;
    double *amparray;
@@ -50,6 +52,7 @@ protected:
    double m_dist, *m_tapDelay;
    double MikeAngle, MikePatternFactor;
    double Dimensions[5];
+   AttenuationParams m_attenParams;
    // one of these per path per channel
    struct Vector {
    	double Rho;		// distance relative to listener

@@ -13,5 +13,6 @@ profile()
 	UG_INTRO("path",path); 
 	UG_INTRO("cpath",cpath); 
   	UG_INTRO("threshold",threshold); 
+  	UG_INTRO("set_attenuation_params",set_attenuation_params); 
   	return 0;
 }

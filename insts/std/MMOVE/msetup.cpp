@@ -1,4 +1,4 @@
-// msetup.c -- setup routines for MPLACE and MMOVE
+// msetup.cpp -- setup routines for MPLACE and MMOVE
 //
 
 #include <stdlib.h>
@@ -14,7 +14,7 @@ static double _MikeAngle = PI / 4.0;      /* in radians - default is 45 deg. */
 static double _MikePatternFactor = 0.0;   /* 0 = omnidir, 1 = figure-8 */
 static double _Matrix[12][12];
 static double _Matrix_Gain = 0.72;
-
+static AttenuationParams g_AttenParams = { 0.1, 300.0, 1.0 };
 
 /* ---------------------------------------------------------- fill_matrix --- */
 static void
@@ -86,6 +86,7 @@ get_rvb_setup_params(double Dimensions[],       /* array of 5 elements */
 */
 int
 get_setup_params(double Dimensions[],       /* array of 5 elements */
+				 AttenuationParams *params,
 				 float *rvb_time,
                  float  *abs_factor,
                  int    *UseMikes,
@@ -102,6 +103,8 @@ get_setup_params(double Dimensions[],       /* array of 5 elements */
    Dimensions[2] = (double)_back;
    Dimensions[3] = (double)_left;
    Dimensions[4] = (double)_ceiling;
+   
+   *params = g_AttenParams;
 
    *rvb_time = _rvb_time;
    *abs_factor = _abs_factor;
@@ -114,6 +117,33 @@ get_setup_params(double Dimensions[],       /* array of 5 elements */
    return 0;
 }
 
+/* ----------------------------------------------- set_attenuation_params --- */
+
+double
+set_attenuation_params(float p[], int n_args)
+{
+   if (n_args != 3) {
+      die("set_attenuation_params",
+	  	  "Usage: set_attenuation_params(min_dist, max_dist, dist_exponent)");
+	  return -1;
+   }
+   if (p[0] < 0.1) {
+      die("set_attenuation_params", "min distance must be > 0.1");
+	  return -1;
+   }
+   if (p[1] < p[0] || p[1] > 300.0) {
+      die("set_attenuation_params", "max distance must be >= min and < 300.0");
+	  return -1;
+   }
+   if (p[2] < 0) {
+      die("set_attenuation_params", "exponent must be >= 0");
+	  return -1;
+   }
+   g_AttenParams.minDistance = p[0];
+   g_AttenParams.maxDistance = p[1];
+   g_AttenParams.distanceExponent = p[2];
+   return 0;
+}
 
 /* ---------------------------------------------------------------- space --- */
 /* This is the Minc setup routine for the binaural/room simulators, 

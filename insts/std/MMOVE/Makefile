@@ -36,7 +36,7 @@ libMPLACE.so: $(POBJS) $(GENLIB)
 MPLACE: $(POBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(POBJS) $(CMIXOBJS) $(LDFLAGS) $(PROF)
 
-$(POBJS): $(COMMON_HDRS) MPLACE.h
+$(POBJS): $(COMMON_HDRS) MBASE.h MPLACE.h
 
 libMMOVE.so: $(MOBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -o $@ $(MOBJS) $(GENLIB) $(SYSLIBS)
@@ -44,7 +44,7 @@ libMMOVE.so: $(MOBJS) $(GENLIB)
 MMOVE: $(MOBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(MOBJS) $(CMIXOBJS) $(LDFLAGS) $(PROF)
 
-$(MOBJS): $(COMMON_HDRS) MMOVE.h
+$(MOBJS): $(COMMON_HDRS) MBASE.h MMOVE.h
 
 MBASE.o : $(COMMON_HDRS) MBASE.h
 
@@ -69,7 +69,7 @@ standalone_uninstall:
 	$(RM) $(DESTDIR)/MMOVE
 
 clean:
-	$(RM) $(POBJS) $(MOBJS) $(PROGS)
+	$(RM) $(POBJS) $(MOBJS) $(PROGS) $(TRASH)
 
 cleanall: clean uninstall
 

@@ -11,6 +11,8 @@
 #include <rt.h>
 #include <rtdefs.h>
 
+#include <PField.h>
+
 #include <common.h>
 #include "msetup.h"
 
@@ -87,33 +89,36 @@ int MBASE::init(double p[], int n_args)
 		  return(DONT_SCHEDULE);
 	}
     insamps = (int)(m_dur * SR);
-    inamp = p[3];
+	
+	double *testPtr = (double *) getPField(3);
+	printf("testPtr came back 0x%x\n", testPtr);
+	if (testPtr) {
+	}
+	else {
+    	inamp = p[3];
+	}
 
     if (m_inchan >= inputchans) {
-       die(name(), "You asked for channel %d of a %d-channel input file.",
-                                                         m_inchan, inputchans);
-		 return(DONT_SCHEDULE);
+       return die(name(), "You asked for channel %d of a %d-channel input file.",
+                  m_inchan, inputchans);
 	 }
     if (inputchans == 1)
        m_inchan = 0;
 
 	if (outputchans != 2) {
-		die(name(), "Output must be stereo.");
-		return(DONT_SCHEDULE);
+		return die(name(), "Output must be stereo.");
 	}
 
     /* Get results of Minc setup calls (space, mikes_on, mikes_off, matrix) */
-    if (get_setup_params(Dimensions,
+    if (get_setup_params(Dimensions, &m_attenParams,
 						 &rvb_time, &abs_factor, &UseMikes, &MikeAngle,
 						 &MikePatternFactor) == -1) {
-		die(name(), "You must call setup routine `space' first.");
-		return(DONT_SCHEDULE);
+		return die(name(), "You must call setup routine `space' first.");
 	}
 
 	// call inst-specific init code
     if (localInit(p, n_args) == DONT_SCHEDULE) {
-		  die(name(), "localInit failed.");
-		  return(DONT_SCHEDULE);
+		  return die(name(), "localInit failed.");
 	}
 
     /* (perform some initialization that used to be in space.c) */
@@ -129,7 +134,7 @@ int MBASE::init(double p[], int n_args)
    amparray = floc(1);
    if (amparray) {
       int amplen = fsize(1);
-      tableset(m_dur, amplen, amptabs);          /* controls input dur only */
+      tableset(SR, m_dur, amplen, amptabs);      /* controls input dur only */
    }
    else
       advise(name(), "Setting phrase curve to all 1's.");
@@ -139,6 +144,8 @@ int MBASE::init(double p[], int n_args)
    /* determine extra run time for this routine before calling rtsetoutput() */
    double ringdur = 0.0;
    finishInit(rvb_time, &ringdur);
+   
+   m_branch = 0;
    
    nsamps = rtsetoutput(outskip, m_dur + ringdur, this);
    DBG1(printf("nsamps = %d\n", nsamps));
@@ -171,7 +178,7 @@ int MBASE::getInput(int currentSample, int frames)
 
     float aamp = inamp;                  /* in case amparray == NULL */
 
-    int n = 0, branch = 0;
+    int n = 0;
     int bufsamps = BUFLEN;	// adjust
     int lCurSamp;	// local copy for inner loops
     float insig;
@@ -187,10 +194,10 @@ int MBASE::getInput(int currentSample, int frames)
 #ifdef LOOP_DEBUG
 			nsig++;
 #endif
-			if (--branch < 0) {
+			if (--m_branch < 0) {
 			   if (amparray)
     			  aamp = tablei(lCurSamp, amparray, amptabs) * inamp;
-			   branch = skip;
+			   m_branch = skip;
 			}
 			if (m_inchan == AVERAGE_CHANS) {
 			   insig = 0.0;
@@ -218,16 +225,18 @@ int MBASE::getInput(int currentSample, int frames)
 
 int MBASE::configure()
 {
+	int status = 0;
+	
 	in = new float [RTBUFSAMPS * inputchans];
-    alloc_delays();                     /* allocates memory for delays */
+    status = alloc_delays();			/* allocates memory for delays */
 
-	rvb_reset(m_tapDelay);                  // resets tap delay
+	rvb_reset(m_tapDelay);   			// resets tap delay
 
-	if (m_binaural) {
+	if (status == 0 && m_binaural) {
 		advise(name(), "Running in binaural mode.");
-		alloc_firfilters();                     // allocates memory for FIRs
+		status = alloc_firfilters();	// allocates memory for FIRs
 	}
-	return 0;
+	return status;
 }
 
 /* ------------------------------------------------------------------ run --- */
@@ -358,26 +367,40 @@ int MBASE::run()
 /* The following functions from the original space.c. */
 /* -------------------------------------------------------------------------- */
 
-void MBASE::alloc_firfilters()
+int MBASE::alloc_firfilters()
 {
    /* allocate memory for FIR filters and zero delays */
    for (int i = 0; i < 2; i++) {
       for (int j = 0; j < 13; j++) {
          m_vectors[i][j].Firtaps = new double[g_Nterms[j] + 1];
+		 if (m_vectors[i][j].Firtaps == NULL) {
+		 	fprintf(stderr, "Memory failure during setup\n");
+			return -1;
+		 }
 		 memset(m_vectors[i][j].Firtaps, 0, (g_Nterms[j] + 1) * sizeof(double));
          m_vectors[i][j].Fircoeffs = new double[g_Nterms[j]];
+		 if (m_vectors[i][j].Fircoeffs == NULL) {
+		 	fprintf(stderr, "Memory failure during setup\n");
+			return -1;
+		 }
       }
    }
+   return 0;
 }
 
 /* --------------------------------------------------------- alloc_delays --- */
 /* Sets aside the memory needed for tap delay
 */
-void MBASE::alloc_delays()
+int MBASE::alloc_delays()
 {
 	assert(m_tapsize > 0);
     m_tapDelay = new double[m_tapsize + 8];
+	if (m_tapDelay == NULL) {
+		fprintf(stderr, "Memory failure during setup\n");
+		return -1;
+	}
 	memset(m_tapDelay, 0, (m_tapsize + 8) * sizeof(double));
+	return 0;
 }
 
 
@@ -644,23 +667,34 @@ void MBASE::rvb_reset(double *m_tapDelay)
 /* --------------------------------------------------------------- setair --- */
 /* setair calculates and loads the gain factors (G1 & G2) for the tone
    filters used to simulate air absorption. The values for G1 are stored
-   in AIRCOEFFS by space(). G2 takes the 1/r-squared attenuation factor into
+   in AIRCOEFFS by space(). G2 takes the 1/r**n attenuation factor into
    account.  Histories are reset to 0 if flag = 1.
 */
-void MBASE::setair(double rho, int flag, double *coeffs)
+void MBASE::setair(double rho, int flag, double *coeffs, bool directSrc)
 {
-   int    gpoint;
-   float  fpoint, frac;
-   double G1, G2;
+   // Max rho distance for filter is 300 ft.
 
-   /* pointer into array. Max distance for rho is 300 ft. */
-
-   rho = (rho > 300 ? 300 : rho);
-   fpoint = rho * 511 / 300.0;
-   gpoint = (int)fpoint;
-   frac = fpoint - (float)gpoint;
-   G1 = AIRCOEFFS[gpoint] + frac * (AIRCOEFFS[gpoint + 1] - AIRCOEFFS[gpoint]);
-   G2 = (1.0 / rho) * (1.0 - G1);
+   double filt_rho = (rho > 300 ? 300 : rho);
+   float fpoint = filt_rho * 511 / 300.0;
+   int gpoint = (int)fpoint;
+   float frac = fpoint - (float)gpoint;
+   double G1 = AIRCOEFFS[gpoint] + frac * (AIRCOEFFS[gpoint + 1] - AIRCOEFFS[gpoint]);
+   
+   // Limit *direct* src gain attenuation by minDistance and maxDistance
+   double rhoLimit = rho;
+   if (directSrc) {
+      rhoLimit = (rho < m_attenParams.minDistance) ? 
+   						m_attenParams.minDistance :
+							(rho > m_attenParams.maxDistance) ?
+								m_attenParams.maxDistance : rho;
+   }
+   // atten = (dist/min_distance) ** -exponent
+   double atten = pow(rhoLimit/m_attenParams.minDistance,
+   					  -m_attenParams.distanceExponent);
+//   if (directSrc)
+//	   printf("min is %g, dist is %g, attenuation = %g, expon = %g\n",
+//			   m_attenParams.minDistance, rhoLimit, atten, -m_attenParams.distanceExponent);
+   double G2 = atten * (1.0 - G1);
 
    /* load into output array */
 
@@ -682,7 +716,7 @@ void MBASE::airfil_set(int flag)
 {
    for (int i = 0; i < 2; ++i)
       for (int j = 0; j < 13; ++j)
-         setair(m_vectors[i][j].Rho, flag, m_vectors[i][j].Airdata);
+         setair(m_vectors[i][j].Rho, flag, m_vectors[i][j].Airdata, j==0);
 }
 
 /* -------------------------------------------------------------- put_tap --- */
