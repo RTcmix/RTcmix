@@ -1,6 +1,18 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Sunday, February 8, 2004 John Gibson <johgibso-at-indiana.edu>
+
+   * VSTART1 and VFRET1 (STRUM) had a few bugs that could cause clicks
+     in the output.
+   * Important change for VSTART1 and VFRET1 instruments in STRUM family:
+     function table 1 is now the amplitude envelope.
+     ***NOTE NOTE NOTE: Score compatibility warning...
+     Update scores to move the vibrato function from table 1 to table 2
+     and the vib. depth function from table 2 to table 3.
+     (This completes the addition of amp. envelopes to all the STRUM
+     family instruments.)
+
 Sunday, January 25, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * Integrated code for playing and receiving audio over a network (nplay),
@@ -274,7 +286,7 @@ Sunday, Jan 27, 2002 John Gibson <johgibso-at-indiana.edu>
 
 **** Released RTcmix-3.1, Monday, Jan 21, 2002 ****
 
-Monday, Jan 21, 2002 Dave Topper <topper@virginia.edu>
+Monday, Jan 21, 2002 Dave Topper <topper-at-virginia.edu>
 
    * New feature: real time control of pfield change.  ALPHA version.
      Instruments can now have pfields controlled in real time.  Trajectories
@@ -373,7 +385,7 @@ Friday, Dec 08, 2000 Douglas Scott <netdscott-at-netscape.net>
 
 **** Released RTcmix-3.0.3 ****
 
-Thursday, Sep 28, 2000 Dave Topper <topper@virginia.edu>
+Thursday, Sep 28, 2000 Dave Topper <topper-at-virginia.edu>
 
    * Many small changes / fixes for real time performance
 
@@ -412,7 +424,7 @@ Thursday, June 8, 2000 John Gibson <johngibson@virginia.edu>
      Linux Mandrake (and probably other distros), as well as Irix 6.5.
    * Some other minor changes to encourage compilation on Irix 6.5.
 
-Thursday, June 8, 2000 Dave Topper <topper@virginia.edu>
+Thursday, June 8, 2000 Dave Topper <topper-at-virginia.edu>
 
    * Fixed Iptr deletion conditions in intraverse()
      memory overhead should be MUCH less now
@@ -448,7 +460,7 @@ Friday, May 12, 2000 John Gibson <johngibson@virginia.edu>
 
    * Get rid of MAXBUF -- no longer necessary or even useful.
 
-Wednesday, May 10, 2000 Dave Topper <topper@virginia.edu>
+Wednesday, May 10, 2000 Dave Topper <topper-at-virginia.edu>
 
    * Changed bus_config schema to provide default behavior
      to maintain backwards compatibility with pre-bus_config scores
