@@ -23,14 +23,18 @@ Ia.  Preliminaries
 
 2) For MAC OS X:
 
-   This version currently cannot use the latest pfield-updating code by
-   John Rhoads and Dave Topper.  Hopefully, we'll figure out how to get
-   that to compile.
+   This has been tested only on the internal audio devices on recent G4
+   PowerMacs and PowerBooks.  It's possible that third-party hardware will
+   require some tweaks.  Please notify John Gibson (johgibso@indiana.edu)
+   if you can't get this to work.
 
-   Also, this has been tested only on the internal audio devices on
-   recent G4 PowerMacs and PowerBooks.  It's likely that third-party
-   hardware will require some tweaks.  Please notify John Gibson if
-   you can't get this to work.
+   Note that this version currently cannot use the latest pfield-updating
+   code by John Rhoads and Dave Topper.  Hopefully, we'll figure out how to get
+   that to compile.  (It's disabled for OS X now.)
+
+   The only instrument packages that have been tested with an OS X build
+   are "insts.std" and "insts.jg."  "insts.mch" compiles but hasn't been
+   tested.
 
    a) You must use OS X 10.1 or later, and you must have installed
       the appropriate version of the Developer Tools.
