@@ -17,7 +17,7 @@ ifeq ($(PERL_SUPPORT), TRUE)
 	DIRS += perl
 	OBJS += parse_with_perl.o
 	SRCS += parse_with_perl.c
-	CFLAGS += `$(PERL) -MExtUtils::Embed -e ccopts` -DSHAREDLIBDIR=$(LIBDESTDIR)
+	CFLAGS += `$(PERL) -MExtUtils::Embed -e ccopts` -DSHAREDLIBDIR=\"$(LIBDESTDIR)\"
 endif
 ifeq ($(PYTHON_SUPPORT), TRUE)
 	DIRS += python
