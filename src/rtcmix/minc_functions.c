@@ -428,11 +428,11 @@ double m_pickwrand(float p[], int n_args, double pp[])
 		rindex = m_random(p, 0) * totalchance;
 		for (n = 1; n < n_args; n += 2)
 		{
-				psum += p[n]/totalchance;
+				psum += p[n];
 				if (rindex <= psum)
 						return p[n-1];
 		}
-		return pp[n_args - 2];
+		return pp[n_args - 1];
 }
 
 /* returns a randomly-interpolated value between its two input values */
