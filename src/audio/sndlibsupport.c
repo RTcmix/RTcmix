@@ -1035,7 +1035,7 @@ sndlib_current_header_is_aifc()
 /* ---------------------------------------------- sndlib_allocate_buffers --- */
 /* Allocate the multi-dimensional array required by sndlib I/O functions.
    Returns an array of <nchans> arrays of <nframes> integers. The memory
-   is cleared. If the return value is NULL, check errno.
+   is cleared.
 */
 int **
 sndlib_allocate_buffers(int nchans, int nframes)
