@@ -7,6 +7,8 @@
 
 #define PFIELD_TEST
 
+int resetval = 1000;
+
 #ifdef PFIELD_TEST
 
 int main()
