@@ -5,10 +5,11 @@
 #define PAUL_FIX                /* PL sent this fall '98? */
 
 #include <stdio.h>
+#include <assert.h>
 #include <ugens.h>
 
 
-void
+int
 setline(float *p, short n_args, int length, double *array)
 {
    double increm;
@@ -17,7 +18,7 @@ setline(float *p, short n_args, int length, double *array)
 
    if ((n_args % 2) != 0) {
       fprintf(stderr, "Something wrong with phrase, check args\n");
-//    closesf();
+      return -1;
    }
 
    /* increm is time span for each array slot */
@@ -30,18 +31,18 @@ setline(float *p, short n_args, int length, double *array)
             points = 1;
          if ((p[j + 2] < p[j]) || (points > length)) {
             fprintf(stderr, " confusion on phrase card\n");
-//          closesf();
+            return -1;
          }
 #ifdef PAUL_FIX
          i = (double) p[j] / increm + .5;      /* force right position */
          i2 = (double) p[j + 2] / increm + .5;
 
          for (k = i; k < i2; k++) {
+            if (k == length)
+               return 0;
+
             array[k] = ((double) (k - i) / (double) points)
                        * (p[j + 3] - p[j + 1]) + p[j + 1];
-
-            if (k == length)
-               return;
          }
       }
    }
@@ -53,7 +54,7 @@ setline(float *p, short n_args, int length, double *array)
             array[i++] = ((double) k / (double) points)
                 * (p[j + 3] - p[j + 1]) + p[j + 1];
             if (i == length)
-               return;
+               return 0;
          }
       }
    }
@@ -61,4 +62,7 @@ setline(float *p, short n_args, int length, double *array)
    while (++i < length)
       array[i] = array[i - 1];
 #endif
+
+   return 0;
 }
+
