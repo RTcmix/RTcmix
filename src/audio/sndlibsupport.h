@@ -58,10 +58,6 @@ int sndlib_put_header_comment(int, float [], long [], char *);
 
 /* helper functions */
 int sndlib_current_header_comment_alloc_good(char *);
-void sndlib_current_header_match_aiff_flavor(void);
-int sndlib_current_header_is_aifc(void);
-int **sndlib_allocate_buffers(int, int);
-void sndlib_free_buffers(int **, int);
 int sndlib_findpeak(int, int, int, int, int, int, long, long,
                                                           float [], long []);
 

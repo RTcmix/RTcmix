@@ -4,6 +4,8 @@
 #ifndef _PROTOTYPES_H_ 
 #define PROTOTYPES_H_ 1
 
+#include <buffers.h>    /* for BufPtr */
+
 /* Note that C++ functions prototyped below really are defined within
    extern "C" braces in their files.
 */
@@ -33,6 +35,10 @@ double parse_dispatch(char *str, double *pp, int n_args);
 /* rtdispatch.C */
 double rtdispatch(char *fname, double *pp, int n_args);
 
+/* rtgetin.C */
+int read_samps(int fd, int data_format, int file_chans, BufPtr dest,
+                                    int dest_chans, int dest_frames);
+
 /* rtinput.c */
 int get_last_input_index(void);
 int open_sound_file(char *sfname, int *header_type, int *data_format,
@@ -50,7 +56,6 @@ void rtreportstats(void);
 void close_audio_ports(void);
 
 /* rtwritesamps.c */
-int rtwritefloatsamps(void);
 int rtwritesamps(void);
 int rtcloseout(void);
 
