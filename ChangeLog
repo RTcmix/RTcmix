@@ -1,11 +1,17 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Friday, July 25, 2003 John Gibson <johgibso-at-indiana.edu>
+
+   * Fix band reject design formula in objlib/Butter.C to conform
+     to Dodge.
+   * Add band pass and band reject filter types to insts.jg/BUTTER.
+
 Monday, April 14, 2003  Douglas Scott  <netdscott-at-netscape.net>
 
-    * Changed scheduling offset system to avoid all need for gettimeofday(),
-      etc.
-    * Perl-enhanced RTcmix object now subclass of RTcmix.
+   * Changed scheduling offset system to avoid all need for gettimeofday(),
+     etc.
+   * Perl-enhanced RTcmix object now subclass of RTcmix.
 
 Thursday, March 20, 2003 Douglas Scott <dscott-at-netscape.net>
 
@@ -33,15 +39,15 @@ Monday, March 10, 2003 Douglas Scott <dscott-at-netscape.net>
 Thursday, February 27, 2003 Douglas Scott <dscott-at-netscape.net>
 
    * Made extensive changes to the setup routines (rtinput, rtoutput, 
-   	 rtsetparams) to allow them to fail non-fatally and be called again.
+       rtsetparams) to allow them to fail non-fatally and be called again.
    * Worked on OSS init code.
 
 Saturday, February 22, 2003 Brad Garton <brad-at-music.columbia.edu>
 
    * Added change to allow app compiling under X11 on OSX using
-	the RTcmix* object
+     the RTcmix* object
    * Added new object-ugen: lib/Orand.C (H/Ougens/h) -- collects
-	various random functions scattered throughout RTcmix
+     various random functions scattered throughout RTcmix
    * Updated object-ugen lib/Ooscili.C, adding several new access methods
 
 Tuesday, February 18, 2003 Douglas Scott <dscott-at-netscape.net>
