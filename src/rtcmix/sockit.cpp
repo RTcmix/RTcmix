@@ -78,6 +78,7 @@ extern "C" {
     err = bind(s, (struct sockaddr *)&sss, sizeof(sss));
     if (err < 0) {
       perror("bind");
+	  cout << "\n";
       exit(1);
     }
 
