@@ -23,7 +23,8 @@ int FRET::init(double p[], int n_args)
 
 	float	dur = p[1];
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	if (rtsetoutput(p[0], p[1], this) == -1)
+		return DONT_SCHEDULE;
 
 	strumq1 = curstrumq[0];
 	freq = cpspch(p[2]);

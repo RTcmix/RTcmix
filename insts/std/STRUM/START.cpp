@@ -42,7 +42,8 @@ int START::init(double p[], int n_args)
 	spread = p[7];
 	deleteflag = (int)p[8];
 
-	rtsetoutput(outskip, dur, this);
+	if (rtsetoutput(outskip, dur, this) == -1)
+		return DONT_SCHEDULE;
 
 	strumq1 = new strumq;
 	curstrumq[0] = strumq1;

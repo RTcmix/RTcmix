@@ -60,7 +60,8 @@ int STEREO::init(double p[], int n_args)
 	if (p[2] < 0.0)
 		p[2] = -p[2] - p[1];
 
-	nsamps = rtsetoutput(p[0], p[2], this);
+	if (rtsetoutput(p[0], p[2], this) == -1)
+		return DONT_SCHEDULE;
 	if (rtsetinput(p[1], this) == -1)
 		return DONT_SCHEDULE;	// no input
 
@@ -75,7 +76,7 @@ int STEREO::init(double p[], int n_args)
 
 	skip = (int)(SR / (float) resetval);
 
-	return nsamps;
+	return nSamps();
 }
 
 

@@ -67,7 +67,8 @@ int MULTICOMB::init(double p[], int n_args)
 		return die("MULTICOMB", "You asked for channel %d of a %d-channel file.", 
                                                     inchan, inputChannels());
 
-	nsamps = rtsetoutput(start, dur + ringdur, this);
+	if (rtsetoutput(start, dur + ringdur, this) == -1)
+		return DONT_SCHEDULE;
 	insamps = (int) (dur * SR + 0.5);
 
 	if (outputChannels() != 2)

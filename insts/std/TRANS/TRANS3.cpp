@@ -70,7 +70,6 @@ TRANS3 :: ~TRANS3()
 int TRANS3 :: init(double p[], int n_args)
 {
    float outskip, inskip, dur, transp, interval, total_indur, dur_to_read;
-	int rvin;
 
    if (n_args < 5) {
       die("TRANS3", "Wrong number of args.");
@@ -88,11 +87,10 @@ int TRANS3 :: init(double p[], int n_args)
    if (dur < 0.0)
       dur = -dur - inskip;
 
-   nsamps = rtsetoutput(outskip, dur, this);
-   rvin = rtsetinput(inskip, this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
+   if (rtsetoutput(outskip, dur, this) == -1)
+		return DONT_SCHEDULE;
+   if (rtsetinput(inskip, this) == -1)
+		return DONT_SCHEDULE;
 
    if (inchan >= inputChannels()) {
       return die("TRANS3", "You asked for channel %d of a %d-channel file.",
@@ -116,7 +114,7 @@ int TRANS3 :: init(double p[], int n_args)
 #endif
 
    /* total number of frames to read during life of inst */
-   in_frames_left = (int) (nsamps * increment + 0.5);
+   in_frames_left = (int) (nSamps() * increment + 0.5);
 
    /* to trigger first read in run() */
    inframe = RTBUFSAMPS;
@@ -131,7 +129,7 @@ int TRANS3 :: init(double p[], int n_args)
 
    skip = (int) (SR / (float) resetval);
 
-   return nsamps;
+   return nSamps();
 }
 
 int TRANS3::configure()

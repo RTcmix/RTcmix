@@ -74,7 +74,8 @@ int WAVESHAPE::init(double p[], int n_args)
 	rawfreq = p[2];
 	doampnorm = n_args > 10 ? (bool) p[10] : true;
 
-	nsamps = rtsetoutput(outskip, dur, this);
+	if (rtsetoutput(outskip, dur, this) == -1)
+		return DONT_SCHEDULE;
 	if (outputChannels() > 2)
 		return die("WAVESHAPE", "Can't handle more than 2 output channels.");
 

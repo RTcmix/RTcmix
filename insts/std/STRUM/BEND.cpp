@@ -24,7 +24,8 @@ int BEND::init(double p[], int n_args)
 // p7 = update every nsamples; p8 = stereo spread [optional]
 
 	float dur = p[1];
-	nsamps = rtsetoutput(p[0], dur, this);
+	if (rtsetoutput(p[0], dur, this) == -1)
+		return DONT_SCHEDULE;
 
 	strumq1 = curstrumq[0];
 	freq0 = cpspch(p[2]);

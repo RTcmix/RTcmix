@@ -46,7 +46,8 @@ int VSTART1::init(double p[], int n_args)
 // assumes makegen 1 is the amplitude envelope, makegen 2 is the vibrato
 // function, and makegen 3 is the vibrato amplitude envelope
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	if (rtsetoutput(p[0], p[1], this) == -1)
+		return DONT_SCHEDULE;
 
 	strumq1 = new strumq;
 	curstrumq[0] = strumq1;

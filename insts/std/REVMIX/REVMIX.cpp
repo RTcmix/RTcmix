@@ -66,7 +66,8 @@ int REVMIX::init(double p[], int n_args)
       dur = inskip;
    }
 
-   nsamps = rtsetoutput(outskip, dur, this);
+   if (rtsetoutput(outskip, dur, this) == -1)
+		return DONT_SCHEDULE;
    if (rtsetinput(dur, this) == -1)
 		return DONT_SCHEDULE;  // no input
 
@@ -82,7 +83,7 @@ int REVMIX::init(double p[], int n_args)
 
    skip = (int) (SR / (float) resetval);
 
-   return nsamps;
+   return nSamps();
 }
 
 

@@ -19,7 +19,8 @@ int SCULPT::init(double p[], int n_args)
 // function slot 2 is waveform, slot 1 is overall amp envelope
 // function slot 3 is frequency points, slot 4 is amplitude points
 
-	nsamps = rtsetoutput(p[0], p[1]*p[3], this);
+	if (rtsetoutput(p[0], p[1]*p[3], this) == -1)
+		return DONT_SCHEDULE;
 	float tdur = p[1] * p[3];
 	pdur = (int)(p[1] * SR);
 

@@ -92,7 +92,8 @@ int MOCKBEND :: init(double p[], int n_args)
    if (dur < 0.0)
       dur = -dur - inskip;
 
-   nsamps = rtsetoutput(outskip, dur, this);
+   if (rtsetoutput(outskip, dur, this) == -1)
+		return DONT_SCHEDULE;
    if (rtsetinput(inskip, this) == -1)
 		return DONT_SCHEDULE;   // no input
 
@@ -132,7 +133,7 @@ int MOCKBEND :: init(double p[], int n_args)
 #endif
 
    /* total number of frames to read during life of inst */
-   in_frames_left = (int) (nsamps * averageInc + 0.5);
+   in_frames_left = (int) (nSamps() * averageInc + 0.5);
 
    /* to trigger first read in run() */
    inframe = RTBUFSAMPS;

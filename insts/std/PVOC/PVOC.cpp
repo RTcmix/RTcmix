@@ -157,8 +157,6 @@ NewArray(int size)
 
 int PVOC::init(double *p, int n_args)
 {
-	int rvin;
-
 	if (!n_args || n_args < 9) {
 		die("PVOC",
 		"usage:\nPVOC(outskip, inskip, dur, amp, input_chan, fft_size, window_size, decim, interp, [ pitch_mult, npoles, osc threshold ])");
@@ -181,12 +179,10 @@ int PVOC::init(double *p, int n_args)
 		return(DONT_SCHEDULE);
 	}
 
-	rvin = rtsetinput(inskip, this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
-	rtsetoutput(outskip, dur, this);
-	
+	if (rtsetinput(inskip, this) == -1)
+		return DONT_SCHEDULE; // no input
+	if (rtsetoutput(outskip, dur, this) == -1)
+		return DONT_SCHEDULE;
 
 	// pick up arguments from command line
 
@@ -435,7 +431,6 @@ int PVOC::run()
 int PVOC::shiftin( float A[], int winLen, int D)
 {
 	int i, n;
-	const int nsamps = nSamps();
 	const int inchans = inputChannels();
 	const float amp = _amp;
 	
