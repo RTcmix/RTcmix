@@ -30,6 +30,8 @@ typedef enum {
 #else
 #define  GLOBAL extern
 #endif
+
+
 GLOBAL int curtag;                /* current note tag */
 GLOBAL int tags_on;               /* using note tags for rtupdates */
 GLOBAL int tag_sem;
