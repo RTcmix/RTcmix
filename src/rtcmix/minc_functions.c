@@ -102,7 +102,7 @@ m_log(float p[], short n_args)
 
    val = log10((double)p[0]);
 
-   return((float)val);
+   return(val);
 }
 
 double
