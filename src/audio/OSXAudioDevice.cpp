@@ -401,8 +401,8 @@ int OSXAudioDevice::openInput()
 		return error("Invalid input stream index");
 	}
 	// Brute force: Find first audio channel for desired input stream
-	int streamChannel = 0;
-	for (int stream = 0; stream < port->streamDesc->mNumberBuffers; ++stream) {
+	int streamChannel = 1;
+	for (int stream = 1; stream < port->streamDesc->mNumberBuffers; ++stream) {
 		if (stream == port->streamIndex) {
 			port->streamChannel = streamChannel;
 			printf("input port streamChannel = %d\n", port->streamChannel);
@@ -481,8 +481,8 @@ int OSXAudioDevice::openOutput()
 		return error("Invalid output stream index");
 	}
 	// Brute force: Find first audio channel for desired output stream
-	int streamChannel = 0;
-	for (int stream = 0; stream < port->streamDesc->mNumberBuffers; ++stream) {
+	int streamChannel = 1;
+	for (int stream = 1; stream < port->streamDesc->mNumberBuffers; ++stream) {
 		if (stream == port->streamIndex) {
 			port->streamChannel = streamChannel;
 			printf("output port streamChannel = %d\n", port->streamChannel);
