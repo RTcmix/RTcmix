@@ -17,7 +17,7 @@
 // If RTcmix fails to connect to DisplayWindow, increase this.
 const int kLaunchSleepMsec = 500;
 
-const int kNum_Connect_Attempts = 10;
+const int kNumConnectAttempts = 10;
 const int kConnectSleepMsec = 200;
 
 const char *kServerName = "localhost";
