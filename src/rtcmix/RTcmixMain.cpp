@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <iostream.h>
+#include <sys/socket.h>
 #ifdef linux
 #include <unistd.h>
 #endif
