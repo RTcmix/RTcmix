@@ -12,8 +12,8 @@
 #include "../rtstuff/rtdefs.h"
 #include "../H/dbug.h"
 
-/* #define TBUG 1 */
-/* #define ALLBUG 1 */
+#define XTBUG
+#define XALLBUG
 
 extern "C" {
   void rtsendsamps(void);
@@ -63,11 +63,10 @@ extern "C" {
     struct timezone tz;
     double sec,usec;
 
-	Bool aux_pb_done;
-	short bus,bus_count,play_bus,busq;
+	Bool aux_pb_done,frame_done;
+	short bus,bus_count,play_bus,busq,endbus;
 	IBusClass bus_class,qStatus;
 	BusType bus_type;
-
 	
     // cout << "ENTERING inTraverse() FUNCTION *****\n";
 
@@ -132,7 +131,6 @@ extern "C" {
 		  break;
 
 		// DJT Now we push things onto different queues
-		Iptr->setchunkstart(heapChunkStart);
 		bus_class = checkClass(Iptr->bus_config);
 		switch (bus_class) {
 		case TO_AUX:
@@ -144,7 +142,7 @@ extern "C" {
 #ifdef TBUG
 			cout << "Pushing on TO_AUX[" << busq << "] rtQueue\n";
 #endif
-			rtQueue[busq].push(Iptr);
+			rtQueue[busq].push(Iptr,heapChunkStart);
 		  }
 		  break;
 		case AUX_TO_AUX:
@@ -156,7 +154,7 @@ extern "C" {
 #ifdef TBUG
 			cout << "Pushing on AUX_TO_AUX[" << busq << "] rtQueue\n";
 #endif
-			rtQueue[busq].push(Iptr);
+			rtQueue[busq].push(Iptr,heapChunkStart);
 		  }
 		  break;
 		case TO_OUT:
@@ -168,7 +166,7 @@ extern "C" {
 #ifdef TBUG
 			cout << "Pushing on TO_OUT[" << busq << "] rtQueue\n";
 #endif
-			rtQueue[busq].push(Iptr);
+			rtQueue[busq].push(Iptr,heapChunkStart);
 		  }
 		  break;
 		case TO_AUX_AND_OUT:
@@ -180,7 +178,7 @@ extern "C" {
 #ifdef TBUG
 			cout << "Pushing on TO_OUT2[" << busq << "] rtQueue\n";
 #endif
-			rtQueue[busq].push(Iptr);
+			rtQueue[busq].push(Iptr,heapChunkStart);
 		  }
 		  bus_count = Iptr->bus_config->auxout_count;
 		  bus_q_offset = 2*MAXBUS;
@@ -190,7 +188,7 @@ extern "C" {
 #ifdef TBUG
 			cout << "Pushing on TO_AUX2[" << busq << "] rtQueue\n";
 #endif
-			rtQueue[busq].push(Iptr);
+			rtQueue[busq].push(Iptr,heapChunkStart);
 		  }
 		  break;
 		default:
@@ -234,14 +232,11 @@ extern "C" {
 		  break;
 		}
 
-		busq = bus+bus_q_offset;
-		if (bus != -1 ) {
-		  rtQSize = rtQueue[busq].getSize();
-		  allQSize += rtQSize;
-		  if (rtQSize > 0)
-			chunkStart = rtQueue[busq].nextChunk();
-		}		  
-		else {
+		if (bus != -1)
+		  busq = bus+bus_q_offset;
+		else
+		  busq = bus;
+		if (bus == -1) {
 		  switch (qStatus) {
 		  case TO_AUX:
 			qStatus = AUX_TO_AUX;
@@ -252,6 +247,9 @@ extern "C" {
 			play_bus = 0;
 			break;
 		  case TO_OUT:
+#ifdef TBUG
+			cout << "aux_pb_done\n";
+#endif
 			aux_pb_done = YES;
 			break;
 		  default:
@@ -259,7 +257,16 @@ extern "C" {
 			break;
 		  }
 		}
-
+#ifdef TBUG
+		cout << "bus: " << bus << endl;
+		cout << "busq:  " << busq << endl;
+#endif
+		if (busq != -1) {
+		  rtQSize = rtQueue[busq].getSize();
+		  if (rtQSize > 0) {
+			chunkStart = rtQueue[busq].nextChunk();
+		  }
+		}
 		// Play elements on queue (insert back in if needed) - - - - - - - -
 		while ((rtQSize > 0) && (chunkStart < bufEndSamp) && (bus != -1)) {
 		  
@@ -289,30 +296,51 @@ extern "C" {
 		  else {
 			chunksamps = bufEndSamp-chunkStart;
 		  }
-		  
-		  Iptr->setchunk(chunksamps);  // set "chunksamps"
-		  
+
+		  Iptr->setchunk(chunksamps);  // set "chunksamps"		 
 #ifdef TBUG
 		  cout << "Iptr->exec(" << bus_type << "," << bus << ")\n";
 #endif		  
 		  Iptr->exec(bus_type, bus);    // write the samples * * * * * * * * * 
 		  
+		  switch (qStatus) {
+		  case TO_AUX:
+			bus_count = Iptr->bus_config->auxout_count;
+			endbus = ToAuxPlayList[bus_count-1];
+			break;
+		  case AUX_TO_AUX:
+			bus_count = Iptr->bus_config->auxout_count;
+			endbus = ToAuxPlayList[bus_count-1];
+			break;
+		  case TO_OUT:
+			bus_count = Iptr->bus_config->out_count;
+			endbus = ToOutPlayList[bus_count-1];
+			break;
+		  default:
+			cout << "ERROR (intraverse): unknown bus_class\n";
+			break;
+		  }
+
+#ifdef TBUG
+		  cout << "endbus " << endbus << endl;
+#endif
 		  // ReQueue or delete - - - - - - - - - - - - - - - - - - -
 		  if (endsamp > bufEndSamp) {
-			Iptr->setchunkstart(chunkStart+chunksamps);  // reset chunkStart
 #ifdef ALLBUG
 			cout << "inTraverse():  re queueing instrument\n";
 #endif
-			rtQueue[busq].push(Iptr);   // put back onto queue
+			rtQueue[busq].push(Iptr,chunkStart+chunksamps);   // put back onto queue
 		  }
-		  else {
-			delete Iptr;
-		  }
+		  else if (bus == endbus) {
+ 			delete Iptr;
+ 		  }
 		  
 		  // DJT:  not sure this check before new chunkStart is necessary
 		  rtQSize = rtQueue[busq].getSize();
-		  if (rtQSize)
+		  if (rtQSize) {
 			chunkStart = rtQueue[busq].nextChunk();
+			allQSize += rtQSize;
+		  }
 #ifdef TBUG
 		  cout << "rtQSize: " << rtQSize << endl;
 		  cout << "chunkStart:  " << chunkStart << endl;
@@ -323,7 +351,7 @@ extern "C" {
 	  }
 	  
 	  // Write buf to audio device -------------------------------------------
-	  if (chunkStart >= bufEndSamp) {  
+	  if ((chunkStart >= bufEndSamp) && (aux_pb_done)) {  
 #ifdef ALLBUG
 		cout << "Writing samples----------\n";
 		cout << "Q-chunkStart:  " << chunkStart << endl;
@@ -361,7 +389,7 @@ extern "C" {
 
 	  // Nothing on the queue and nothing on the heap for playing -------------
 	  // write zeros
-	  if (!(allQSize) && (heapChunkStart > bufEndSamp)) {
+	  if ((heapChunkStart > bufEndSamp) || ((heapSize == 0) && (allQSize == 0))) {
 		
 		// FIXME: old comment -- still valid?  -JGG
 		// Write audio buffer to file
@@ -374,8 +402,10 @@ extern "C" {
 		cout << "chunkStart:  " << chunkStart << endl;
 		cout << "chunksamps:  " << chunksamps << endl;
 #endif
+
+		rtsendsamps();
 		if (rtInst)
-		  rtsendzeros(1);   // send zeros to audio device and to file
+		 rtsendzeros(1);   // send zeros to audio device and to file
 		
 		// zero the buffers
 		clear_aux_buffers();
@@ -397,6 +427,7 @@ extern "C" {
 		  cout << "heapSize:  " << heapSize << endl;
 		  cout << "rtQSize:  " << rtQSize << endl;
 		  cout << "PLAYEM = 0\n";
+		  cout << "The end\n\n";
 #endif
 		  playEm = 0;
 		}
@@ -405,7 +436,7 @@ extern "C" {
   
 	if (rtsetparams_called) {
 	  if (play_audio) {             // Play zero'd buffers to avoid clicks
-		int count = NCHANS * 2;
+		int count = NCHANS * 2;  // DJT:  clicks on my box with 2
 		for (j = 0; j < count; j++) 
 		  rtsendzeros(0);
       }  
