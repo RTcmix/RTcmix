@@ -29,8 +29,7 @@ ug_intro()
    UG_INTRO_HANDLE_RETURN("makerandom", makerandom);
    UG_INTRO_HANDLE_RETURN("makefilter", makefilter);
    UG_INTRO_HANDLE_RETURN("makeconverter", makeconverter);
-   UG_INTRO_HANDLE_RETURN("makedisplay", makedisplay);
-   UG_INTRO_HANDLE_RETURN("makedatafile", makedatafile);
+   UG_INTRO_HANDLE_RETURN("makemonitor", makemonitor);
 	UG_INTRO("makegen", makegen);
 	UG_INTRO("open",m_open);
 	UG_INTRO("peakoff",peak_off);

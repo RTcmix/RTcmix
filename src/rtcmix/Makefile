@@ -88,8 +88,7 @@ utils.cpp \
 rt_ug_intro.cpp \
 connection.cpp \
 converter.cpp \
-display.cpp \
-datafilerecorder.cpp
+monitor.cpp
 
 MAIN_CPPSRCS = RTcmixMain.cpp main.cpp
 
