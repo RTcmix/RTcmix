@@ -112,20 +112,22 @@ PROGS = MIX
 TARGETS = $(RTLIB) RTcmix.o main.o $(PROGS)
 
 ifeq ($(PERL_SUPPORT), TRUE)
-IMBEDSRCS += pRTcmix.cpp
-TARGETS += pRTcmix.o
-PROGS += PMIX
+   IMBEDSRCS += pRTcmix.cpp
+   TARGETS += pRTcmix.o
+   PROGS += PMIX
 endif
 ifeq ($(PYTHON_SUPPORT), TRUE)
-ARCHFLAGS += -DPYTHON
-PROGS += PYMIX
-LIBPYTHON = `$(PYTHON) ../parser/python/print_libpython.py`
-ifeq ($(ARCH), LINUX)
-	# This is necessary for Python 2.0 in Slackware Linux 8.0, and probably
-	# other distributions; comment out if it gives you trouble with earlier
-	# Pythons.  -JGG
-	LIBPYTHON += -lutil
-endif
+   ARCHFLAGS += -DPYTHON
+   PROGS += PYMIX
+   ifeq ($(ARCH), MACOSX)
+      PYTHONLIBS = `$(PYTHON) ../parser/python/print_shlibpython.py`
+   else
+      PYTHONLIBS = `$(PYTHON) ../parser/python/print_libpython.py`
+      # This is necessary for Python 2.x in Slackware Linux 8.0, and probably
+      # other distributions; comment out if it gives you trouble with earlier
+      # Pythons.  -JGG
+      PYTHONLIBS += -lutil
+   endif
 endif
 
 PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts`
@@ -175,7 +177,7 @@ PMIX: $(CMIX_O) $(P_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
 
 PYMIX: $(CMIX_O) $(PY_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
 	$(CXX) -o PYMIX $(WORKAROUND) $(DYN) $(CMIX_O) $(PROFILE_O) \
-		$(PY_O) $(LIBS) $(LDFLAGS) $(LIBPYTHON)
+		$(PY_O) $(LIBS) $(LDFLAGS) $(PYTHONLIBS)
 
 .PHONY: all standalone install dso_install standalone_install \
 		uninstall dso_uninstall standalone_uninstall clean cleanall
