@@ -29,12 +29,9 @@
 
    John Gibson (jgg9c@virginia.edu), 1/26/00.
 */
-
-#include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "PAN.h"
 #include <rt.h>
