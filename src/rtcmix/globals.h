@@ -37,6 +37,7 @@ GLOBAL float SR;
 
 GLOBAL int audioNCHANS;
 
+
 /* -------------------------------------------------------------------------- */
 GLOBAL int noParse;
 GLOBAL int audio_config;
@@ -56,6 +57,9 @@ GLOBAL char *rtoutsfname;
 #define MAX_INFILE_DESC 50
 GLOBAL FILE *infile_desc[MAX_INFILE_DESC + 1];
 
+/* max amplitude encountered -- reported at end of run */
+GLOBAL BUFTYPE peaks[MAXBUS];
+GLOBAL long peaklocs[MAXBUS];
 
 #ifdef NETAUDIO
 GLOBAL int netplay;     // for remote sound network playing
