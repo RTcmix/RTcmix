@@ -5,7 +5,7 @@
 include makefile.conf
 
 BASE = insts/base
-DIRS = include genlib src insts utils docs
+DIRS = include genlib src insts utils apps docs
 
 all:	install_dirs
 	@echo "making all ..."
@@ -13,12 +13,6 @@ all:	install_dirs
 	do \
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) all ); \
 	done
-ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
-	@for DIR in $(PACKAGE_DIRS); \
-	do \
-		( cd $$DIR; $(MAKE) $(MFLAGS) all ); \
-	done
-endif
 	@echo "done"
 
 # Individual make targets.  Note that these are not necessarily equivalent
@@ -36,7 +30,7 @@ src::
 
 genlib::
 	@echo "making and installing genlib..."
-	@cd genlib; $(MAKE) $(MFLAGS) install
+	@cd genlib; $(MAKE) $(MFLAGS) all
 	@echo "done."; echo ""
 
 utils::
@@ -59,15 +53,15 @@ base::
 	@cd insts; $(MAKE) $(MFLAGS) base
 	@echo "done."; echo ""
 
-packages::
-ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
-	@for DIR in $(PACKAGE_DIRS); \
-	do \
-		( cd $$DIR; echo "making $$DIR..."; \
-		echo "include $(MAKEFILE_CONF)" > package.conf; \
-		$(MAKE) $(MFLAGS) all; echo "done."; echo "" ); \
-	done
-endif
+imbed::
+	@echo "making imbed apps ..."
+	@cd apps; $(MAKE) $(MFLAGS) imbed
+	@echo "done."; echo ""
+
+apps::
+	@echo "making apps ..."
+	@cd apps; $(MAKE) $(MFLAGS) all
+	@echo "done."; echo ""
 
 dsos:: insts
 
@@ -84,12 +78,6 @@ install:	install_dirs
 	do \
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) install ); \
 	done
-ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
-	@for DIR in $(PACKAGE_DIRS); \
-	do \
-		( cd $$DIR; $(MAKE) $(MFLAGS) install ); \
-	done
-endif
 	@echo "install done."; echo ""
 
 base_install:
@@ -119,12 +107,6 @@ uninstall::
 	do \
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) uninstall ); \
 	done
-ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
-	@for DIR in $(PACKAGE_DIRS); \
-	do \
-		( cd $$DIR; $(MAKE) $(MFLAGS) uninstall ); \
-	done
-endif
 	@echo "uninstall done."; echo ""
 
 dso_uninstall: 
@@ -138,6 +120,7 @@ standalone_uninstall::
 	@echo "standalone_uninstall done."; echo ""
 
 ###############################################################  make depend  ##
+
 depend::
 	@for DIR in $(DIRS); \
 	do \
@@ -145,6 +128,7 @@ depend::
 	  $(RM) depend; \
 	  $(MAKE) $(MFLAGS) depend ); \
 	done
+
 ###############################################################  make clean  ###
 
 clean::
@@ -153,13 +137,6 @@ clean::
 	  ( cd $$DIR; echo "making clean in $$DIR..."; \
 	  $(MAKE) $(MFLAGS) clean ); \
 	done
-ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
-	@for DIR in $(PACKAGE_DIRS); \
-	do \
-		( cd $$DIR; echo "making clean in $$DIR..."; \
-		$(MAKE) $(MFLAGS) clean ); \
-	done
-endif
 
 cleanall::
 	@for DIR in $(DIRS); \
@@ -167,22 +144,19 @@ cleanall::
 	  ( cd $$DIR; echo "making cleanall in $$DIR..."; \
 	  $(MAKE) $(MFLAGS) cleanall ); \
 	done
-ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
-	@for DIR in $(PACKAGE_DIRS); \
-	do \
-		( cd $$DIR; echo "making clean in $$DIR..."; \
-		$(MAKE) $(MFLAGS) cleanall ); \
-	done
-endif
 
 # Make it clean for distribution or for moving to another system
 distclean: cleanall
 	@cd insts; $(MAKE) $(MFLAGS) distclean; 
-ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
-	@for DIR in $(PACKAGE_DIRS); \
-	do \
-	  ( cd $$DIR; $(RM) package.conf );  \
-	done
-endif
+	@cd apps; $(MAKE) $(MFLAGS) distclean; 
 	@find . -name depend -exec rm -f '{}' ';'
+
+####################################################### for maintainers only ###
+
+configure: configure.ac
+	autoconf
+
+cleanac:
+	@$(RM) -r autom4te.cache config.log config.status config.cache \
+				configure defs.conf config.h
 
