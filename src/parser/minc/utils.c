@@ -38,6 +38,8 @@ float_list_to_array(const MincList *list)
    MincFloat *array;
 
    array = (MincFloat *) emalloc(list->len * sizeof(MincFloat));
+   if (array == NULL)
+      return NULL;
    for (i = 0; i < list->len; i++) {
       if (list->data[i].type != MincFloatType) {
          free(array);
@@ -62,7 +64,13 @@ array_to_float_list(const MincFloat *array, const int len)
    MincList *list;
 
    list = (MincList *) emalloc(sizeof(MincList));
+   if (list == NULL)
+      return NULL;
    list->data = (MincListElem *) emalloc(len * sizeof(MincListElem));
+   if (list->data == NULL) {
+      free(list);
+      return NULL;
+   }
 
    for (i = 0; i < len; i++) {
       list->data[i].val.number = array[i];

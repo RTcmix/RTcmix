@@ -73,6 +73,8 @@ node(OpKind op, NodeKind kind)
    Tree tp;
 
    tp = (Tree) emalloc(sizeof(struct tree));
+   if (tp == NULL)
+      return NULL;
    tp->op = op;
    tp->kind = kind;
    tp->type = MincVoidType;
@@ -104,6 +106,9 @@ Tree
 tseq(Tree e1, Tree e2)
 {
    Tree tp = node(OpFree, NodeSeq);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
 
@@ -116,6 +121,9 @@ Tree
 top(OpKind op, Tree e1, Tree e2)
 {
    Tree tp = node(op, NodeOperator);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
 
@@ -128,6 +136,9 @@ Tree
 tunop(OpKind op, Tree e1)
 {
    Tree tp = node(op, NodeUnaryOperator);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.child[0] = e1;
 
    DPRINT3("tunop (%d, %p) => %p\n", op, e1, tp);
@@ -140,6 +151,9 @@ Tree
 tstore(Tree e1, Tree e2)
 {
    Tree tp = node(OpFree, NodeStore);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
 
@@ -153,6 +167,9 @@ Tree
 topassign(Tree e1, Tree e2, OpKind op)
 {
    Tree tp = node(op, NodeOpAssign);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
 
@@ -168,6 +185,9 @@ Tree
 tname(Symbol *symbol)
 {
    Tree tp = node(OpFree, NodeName);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.symbol = symbol;
 
    DPRINT2("tname ('%s') => %p\n", symbol->name, tp);
@@ -179,6 +199,9 @@ Tree
 tstring(char *str)
 {
    Tree tp = node(OpFree, NodeString);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.string = str;
 
    DPRINT2("tstring ('%s') => %p\n", str, tp);
@@ -190,6 +213,9 @@ Tree
 tconstf(MincFloat num)
 {
    Tree tp = node(OpFree, NodeConstf);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.number = num;
 
    DPRINT2("tconstf (%f) => %p\n", num, tp);
@@ -201,6 +227,9 @@ Tree
 tcall(Tree args, char *funcname)
 {
    Tree tp = node(OpFree, NodeCall);
+   if (tp == NULL)
+      return NULL;
+
    tp->funcname = funcname;
    tp->u.child[0] = args;
 
@@ -213,6 +242,9 @@ Tree
 tcand(Tree test1, Tree test2)
 {
    Tree tp = node(OpFree, NodeAnd);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.child[0] = test1;
    tp->u.child[1] = test2;
 
@@ -225,6 +257,9 @@ Tree
 tcor(Tree test1, Tree test2)
 {
    Tree tp = node(OpFree, NodeOr);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.child[0] = test1;
    tp->u.child[1] = test2;
 
@@ -237,6 +272,9 @@ Tree
 tnot(Tree test1)
 {
    Tree tp = node(OpFree, NodeNot);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.child[0] = test1;
 
    DPRINT2("tnot (%p) => %p\n", test1, tp);
@@ -248,6 +286,9 @@ Tree
 trel(OpKind op, Tree e1, Tree e2)
 {
    Tree tp = node(op, NodeRelation);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
 
@@ -265,6 +306,9 @@ Tree
 tlist(Tree e1)
 {
    Tree tp = node(OpFree, NodeList);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.child[0] = e1;
 
    DPRINT2("tlist (%p) => %p\n", e1, tp);
@@ -276,6 +320,9 @@ Tree
 tlistelem(Tree e1, Tree e2)
 {
    Tree tp = node(OpFree, NodeListElem);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
 
@@ -298,6 +345,9 @@ Tree
 tsubscriptread(Tree e1, Tree e2)
 {
    Tree tp = node(OpFree, NodeSubscriptRead);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
 
@@ -310,6 +360,9 @@ Tree
 tsubscriptwrite(Tree e1, Tree e2, Tree e3)
 {
    Tree tp = node(OpFree, NodeSubscriptWrite);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
    tp->u.child[2] = e3;
@@ -323,6 +376,9 @@ Tree
 tif(Tree e1, Tree e2)
 {
    Tree tp = node(OpFree, NodeIf);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
 
@@ -335,6 +391,9 @@ Tree
 tifelse(Tree e1, Tree e2, Tree e3)
 {
    Tree tp = node(OpFree, NodeIfElse);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
    tp->u.child[2] = e3;
@@ -348,6 +407,9 @@ Tree
 tfor(Tree e1, Tree e2, Tree e3, Tree e4)
 {
    Tree tp = node(OpFree, NodeFor);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
    tp->u.child[2] = e3;
@@ -362,6 +424,9 @@ Tree
 twhile(Tree e1, Tree e2)
 {
    Tree tp = node(OpFree, NodeWhile);
+   if (tp == NULL)
+      return NULL;
+
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
 
@@ -384,6 +449,8 @@ do_op_string(Tree tp, const char *str1, const char *str2, OpKind op)
       case OpPlus:   /* concatenate */
          len = (strlen(str1) + strlen(str2)) + 1;
          s = (char *) emalloc(sizeof(char) * len);
+         if (s == NULL)
+            return;
          strcpy(s, str1);
          strcat(s, str2);
          tp->v.string = s;
@@ -396,7 +463,7 @@ do_op_string(Tree tp, const char *str1, const char *str2, OpKind op)
       case OpPow:
       case OpNeg:
          minc_warn("unsupported operation on a string");
-         break;
+         return;
       default:
          minc_internal_error("invalid string operator");
          break;
@@ -527,6 +594,8 @@ do_op_list_iterate(Tree tp, Tree child, const MincFloat val, const OpKind op)
    const int len = child->v.list.len;
    MincListElem *src = child->v.list.data;
    MincListElem *dest = (MincListElem *) emalloc(sizeof(MincListElem) * len);
+   if (dest == NULL)
+      return;
    assert(len >= 0);
    switch (op) {
       case OpPlus:
@@ -1007,6 +1076,8 @@ exct(Tree tp)
          {
             MincListElem *data;
             data = (MincListElem *) emalloc(sizeof(MincListElem) * list_len);
+            if (data == NULL)
+               return NULL;
             tp->type = MincListType;
             tp->v.list.data = data;
             tp->v.list.len = list_len;
