@@ -1,5 +1,5 @@
 #include <math.h>
-#include "../H/ugens.h"
+#include <ugens.h>
 
 double
 gen9(struct gen *gen)

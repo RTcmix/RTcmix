@@ -1,4 +1,4 @@
-#include "../H/ugens.h"
+#include <ugens.h>
 #include <stdio.h>
 
 /* these 3 defined in makegen.c */

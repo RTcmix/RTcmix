@@ -1,5 +1,5 @@
 #include <math.h>
-#include "../H/ugens.h"
+#include <ugens.h>
 
 void
 fnscl(struct gen *gen)

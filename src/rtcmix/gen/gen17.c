@@ -1,4 +1,4 @@
-#include "../H/ugens.h"
+#include <ugens.h>
 
 /* Computes transfer function using Chebyshev polynomials
    First argument (after number, 17, size) is the index value for which the

@@ -2,14 +2,14 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
+// #define DBUG
 #include <iostream.h>
 #include "heap.h"
-#include "../../H/dbug.h"
-#include "../rtdefs.h"
+#include <dbug.h>
+#include <rtdefs.h>
 #include <globals.h>
 #include <Instrument.h>
 
-// #define DBUG
 
 RTQueue::RTQueue()
 {
