@@ -1,6 +1,8 @@
 #ifndef SNDLIB_H
 #define SNDLIB_H
 
+#include <math.h>	// JGG added to avoid all the M_PI redefinitions
+
 /* taken from libtool's demo/foo.h to try to protect us from C++ and ancient C's */
 #ifdef __CYGWIN__
 #  ifndef __CYGWIN32__
