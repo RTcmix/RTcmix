@@ -6,7 +6,7 @@ TOPDIR = /usr/local/src
 # The name of the RTcmix directory
 CMIXDIR = $(TOPDIR)/RTcmix-3.2.0
 
-# The dir that will contain links to the instrument dynamic shared objects
+# The dir that will contain the instrument dynamic shared objects
 LIBDESTDIR = $(CMIXDIR)/shlib
 
 # Dirs in which to install documentation
