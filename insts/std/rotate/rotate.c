@@ -1,5 +1,6 @@
 #include <ugens.h>
 #include <sfheader.h>
+#include <stdio.h>
 #include <math.h>
 
 extern	SFHEADER	sfdesc[NFILES];
@@ -22,8 +23,7 @@ extern	SFHEADER	sfdesc[NFILES];
 */
 
 double
-rotate(p,n_args)
-float *p;
+rotate(float p[], int n_args)
 {
 	float samplenum1,samplenum2,x,interval;
 	float val1,val2,amp,in[2],out[2];
@@ -93,11 +93,15 @@ float *p;
 		}
 
 	endnote(1);
+
+	return 0.0;
 }
 
 
-profile()
+int profile()
 {
 	UG_INTRO("rotate",rotate);
+
+	return 0;
 }
 

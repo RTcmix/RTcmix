@@ -3,6 +3,8 @@
 #include <ugens.h>
 #include <sfheader.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <sys/file.h>
 #include <sys/types.h>
 #include <math.h>
@@ -28,9 +30,7 @@ extern SFHEADER      sfdesc[NFILES];
 #define MAX(x,y) ((x)>(y) ? (x) : (y))
 
 double
-wow (p,n_args)
-float p[]; /* array of args */
-int n_args; /* number of args */
+wow(float p[], int n_args)
 {
 	int n,nsamps,msize;
 	int i,j,input_offset_floor;
@@ -165,7 +165,9 @@ printf ("     Avg of modulator: %f.  Max of integral: %f.  Min: %f.\n",
 		}
 
 	endnote(1);
-	cfree(queue);
+	free(queue);
+
+	return 0.0;
 }
 
 
@@ -193,9 +195,9 @@ if desired:
 #endif
 
 
-int NBYTES = 16384;
-
-profile()
+int profile()
 {
 	UG_INTRO("wow",wow);
+
+	return 0;
 }

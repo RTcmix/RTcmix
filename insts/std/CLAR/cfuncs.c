@@ -20,7 +20,7 @@ mdelget(float *a, int samps, int *l)
 {
 /*  get value from delay line, samps samples delayed */
 
-	register i = *l - samps;
+	register int i = *l - samps;
 
 	if(i < 0)  {
 		i += *(l+1);
