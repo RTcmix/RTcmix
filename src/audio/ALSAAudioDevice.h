@@ -37,7 +37,7 @@ private:
 	const char *		_deviceName;
 	snd_pcm_t *			_handle;
 	snd_pcm_hw_params_t *_hwParams;
-	snd_pcm_uframes_t 	_bufSize;
+	snd_pcm_uframes_t 	_bufSize, _periodSize;
 	bool				_stopDuringPause;
 	int					_pipeFds[2];
 };

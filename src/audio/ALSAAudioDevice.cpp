@@ -32,7 +32,7 @@ inline int getstatus(int x) { return (x == 0) ? 0 : -1; }
 
 ALSAAudioDevice::ALSAAudioDevice(const char *devName)
 	: _deviceName(devName), _handle(NULL), _hwParams(NULL), _bufSize(0),
-	  _stopDuringPause(false)
+	  _periodSize(0), _stopDuringPause(false)
 {
 }
 
@@ -276,10 +276,12 @@ int ALSAAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 	PRINT1("ALSAAudioDevice::doSetQueueSize: requested %d frames total, got %d\n",
 			*pWriteSize * *pCount, (int) _bufSize);
 	
-	int dir = 0;
-	snd_pcm_uframes_t periodsize = _bufSize / *pCount, tryperiodsize;
+	_periodSize = _bufSize / *pCount;
 
-	tryperiodsize = periodsize;
+	int dir = 0;
+	snd_pcm_uframes_t tryperiodsize = _periodSize;
+
+	tryperiodsize = _periodSize;
 	if ((status = snd_pcm_hw_params_set_period_size_near(_handle,
 														 _hwParams,
 														 &tryperiodsize,
@@ -289,7 +291,7 @@ int ALSAAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 	}
 	else {
 		PRINT1("ALSAAudioDevice::doSetQueueSize: requested period size near %d, got %d\n",
-			   (int) periodsize, (int)tryperiodsize);
+			   (int) _periodSize, (int)tryperiodsize);
 	}
 	unsigned periods = *pCount;
 
@@ -421,7 +423,8 @@ void ALSAAudioDevice::run()
 	}
 	PRINT0("ALSAAudioDevice::run: after loop\n");
 	if (!_stopDuringPause && isPlaying()) {
-		const int zFrames = sizeof(interleavedZeroBuffer)/getDeviceBytesPerFrame();
+		const int zFrames = (int) _periodSize;
+		PRINT0("ALSAAudioDevice::run: sending %d zeros to HW...\n", zFrames);
 		if (isDeviceInterleaved())
 			doSendFrames(interleavedZeroBuffer, zFrames);
 		else
