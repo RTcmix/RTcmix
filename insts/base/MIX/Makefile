@@ -18,6 +18,11 @@ endif
 ifeq ($(PYTHON_SUPPORT), TRUE)
 TARGETS += PYMIX
 LIBPYTHON = `python $(CMIXDIR)/Python/print_libpython.py`
+
+# This is necessary for Python 2.0 in Slackware Linux 8.0, and probably
+# other distributions; comment out if it gives you trouble with earlier
+# Pythons.  -JGG
+LIBPYTHON += -lutil
 endif
 
 all: $(TARGETS)
