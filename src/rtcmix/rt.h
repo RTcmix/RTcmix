@@ -8,14 +8,13 @@ struct rt_item {
 
 extern rt_item *rt_list;
 
-extern void heapify(Instrument *Iptr);
-extern int addrtInst(rt_item*);
+void heapify(Instrument *Iptr);
+int addrtInst(rt_item*);
 
 extern "C" {
     void merror(char*);
+	void rtprofile();
 }
-
-extern "C" void rtprofile();
 
 #define RT_INTRO(flabel, func) \
 	{ extern Instrument* func(); \
