@@ -33,7 +33,7 @@ rtsetinput(float start_time, Instrument *inst)
 
    if (auxin_count == 0 && in_count == 0) {
       fprintf(stderr, "This instrument requires input from either an in bus "
-                      "or an aux bus.\n Change this with bus_config().\n");
+                      "or an aux bus.\nChange this with bus_config().\n");
       exit(1);
    }
 
