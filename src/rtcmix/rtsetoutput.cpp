@@ -13,12 +13,12 @@ int Instrument::rtsetoutput(float start, float dur, Instrument *theInst)
   if (!RTcmix::outputOpen()) {
   	 die(theInst->name(),
 		 "rtsetoutput: No output open for this instrument (rtoutput failed?)!");
-	 return 0;
+	 return -1;
   }
   
   theInst->_start = start;
   theInst->_dur = dur;
   theInst->nsamps = (int)(0.5 + dur * RTcmix::sr());
   
-  return theInst->nsamps;
+  return 0;
 }
