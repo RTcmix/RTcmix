@@ -1,6 +1,8 @@
 // audio_devices.h
 
 #ifdef __cplusplus
+// From audio_dev_creator.cpp.  Only used by C++ sources.
+AudioDevice *createAudioDevice(const char *inputDesc, const char *outputDesc, bool recording, bool playing);
 extern "C" {
 #endif
 

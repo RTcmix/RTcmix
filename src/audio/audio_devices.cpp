@@ -35,51 +35,21 @@ create_audio_devices(int record, int play, int chans, float srate, int *buffersi
 	const char *inDeviceName = get_audio_indevice_name();
 	const char *outDeviceName = get_audio_outdevice_name();
 	AudioDevice *device = NULL;
-	
-	// HACK: For now, we choose here whether or not we are opening a network
-	// audio player.  Users set device name to "net:hostname:sockno" to choose
-	// it.
 
 #ifdef NETAUDIO
-	AudioDevice *netDevice = NULL;
-	AudioDevice *hwDevice = NULL;
 	// For backwards compatibility, we check to see if a network path was set
 	// via the command line and stored in the global.
 	if (strlen(globalNetworkPath) > 0)
 		outDeviceName = globalNetworkPath;
-
-	if (inDeviceName && !strncmp(inDeviceName, "net:", 4)) {
-		netDevice = createNetAudioDevice(&inDeviceName[4]);
-	}
-	else if (outDeviceName && !strncmp(outDeviceName, "net:", 4)) {
-		netDevice = createNetAudioDevice(&outDeviceName[4]);
-	}
-	
-	if (netDevice != NULL) {
-		if (record != play) {
-			// User chose network audio record or play
-			device = netDevice;
-		}
-		else {
-			// User chose network audio in, HW audio out
-			if (inDeviceName && !strncmp(inDeviceName, "net:", 4)) {
-				hwDevice = createAudioDevice(NULL, outDeviceName, false);
-				device = new AudioIODevice(netDevice, hwDevice, true);
-			}
-			// User chose HW audio in, network audio out
-			else if (outDeviceName && !strncmp(outDeviceName, "net:", 4)) {
-				hwDevice = createAudioDevice(inDeviceName, NULL, false);
-				device = new AudioIODevice(hwDevice, netDevice, false);
-			}
-		}
-	}
-	else
 #endif	// NETAUDIO
-		device = createAudioDevice(inDeviceName, outDeviceName, record && play);
+
+	// See audio_dev_creator.cpp for this function.
+	device = createAudioDevice(inDeviceName, outDeviceName, record, play);
 	if (device == NULL) {
 		die("rtsetparams", "Failed to create audio device");
 		return -1;
 	}
+
 	// We hand the device noninterleaved floating point buffers.
 	int audioFormat = NATIVE_FLOAT_FMT | MUS_NON_INTERLEAVED;
 	int openMode = (record && play) ? AudioDevice::RecordPlayback
