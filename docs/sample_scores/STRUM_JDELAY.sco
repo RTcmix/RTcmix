@@ -3,6 +3,8 @@ rtsetparams(44100, 2)
 load("STRUM")
 load("JDELAY")
 
+makegen(1, 24, 1000, 0,1,1,1)
+
 bus_config("START", "aux 0-1 out")
 bus_config("JDELAY", "aux 0-1 in", "out0-1")
 
