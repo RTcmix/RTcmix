@@ -190,6 +190,7 @@ int AudioDeviceImpl::sendFrames(void *frameBuffer, int frameCount)
 {
 	int status = 0;
 	if (isPlaying()) {
+		// Clip if converting from non-clipped to clipped.
 		bool doClipping = !isFrameFmtClipped() && isDeviceFmtClipped();
 		limitFrame(frameBuffer, frameCount,
 				   doClipping, checkPeaks(), reportClipping());
@@ -478,7 +479,7 @@ AudioDeviceImpl::convertFrame(void *inbuffer, void *outbuffer,
 void
 AudioDeviceImpl::limitFrame(void *frameBuffer, int frames, bool doClip, bool checkPeaks, bool reportClipping)
 {
-	const int chans = getDeviceChannels();
+	const int chans = getFrameChannels();	// since frameBuffer is from user
 	const long bufStartSamp = getFrameCount();
 	int numclipped = 0;
 	float clipmax = 0.0f;

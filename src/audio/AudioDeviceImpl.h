@@ -177,12 +177,16 @@ inline bool	AudioDeviceImpl::isDeviceFmtNormalized() const
 
 inline bool AudioDeviceImpl::isFrameFmtClipped() const
 {
-	return !IS_FLOAT_FORMAT(_frameFormat) || IS_CLIPPED_FORMAT(_frameFormat);
+	return !IS_FLOAT_FORMAT(_frameFormat)
+		   || IS_CLIPPED_FORMAT(_frameFormat)
+		   || IS_NORMALIZED_FORMAT(_frameFormat);
 }
 
 inline bool	AudioDeviceImpl::isDeviceFmtClipped() const
 {
-	return !IS_FLOAT_FORMAT(_deviceFormat) || IS_CLIPPED_FORMAT(_deviceFormat);
+	return !IS_FLOAT_FORMAT(_deviceFormat)
+		   || IS_CLIPPED_FORMAT(_deviceFormat)
+		   || IS_NORMALIZED_FORMAT(_deviceFormat);
 }
 
 inline int AudioDeviceImpl::getFrameChannels() const
