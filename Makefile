@@ -18,7 +18,7 @@ DIRS = $(SNDLIB) H rtstuff/heap rtstuff Minc sys lib head cmd utils \
 
 all: $(DIRS)
 
-install:
+install::
 	@echo "beginning install..."
 	@cd cmd; $(MAKE) install;
 	@cd head; $(MAKE) install;
@@ -93,6 +93,14 @@ dsos::
 	   $(MAKE) all; echo "done.";echo"" ); \
 	done
 
+dso_install: 
+	@for DIR in $(INST_DIRS); \
+	do \
+	  ( cd $$DIR; echo "making dso_clean $$DIR..."; \
+	   @echo "include $(MAKEFILE_CONF)" > package.conf 	
+	   $(MAKE) install; echo "done.";echo"" ); \
+	done
+
 dso_clean::
 	@for DIR in $(INST_DIRS); \
 	do \
@@ -107,6 +115,14 @@ standalone::
 	  ( cd $$DIR; echo "making standalone $$DIR..."; \
 	   @echo "include $(MAKEFILE_CONF)" > package.conf 	
 	   $(MAKE) standalone; echo "done.";echo"" ); \
+	done
+
+standalone_install::
+	@for DIR in $(INST_DIRS); \
+	do \
+	  ( cd $$DIR; echo "making standalone $$DIR..."; \
+	   @echo "include $(MAKEFILE_CONF)" > package.conf 	
+	   $(MAKE) standalone_install; echo "done.";echo"" ); \
 	done
 
 standalone_clean::
