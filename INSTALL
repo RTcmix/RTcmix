@@ -137,7 +137,7 @@ effort on your part.
 Before using a disk-based instrument, you have to use sfcreate to
 make an empty sound file.
 
-See "README2.1.Linux" for information on recent features.
+See the README files in the docs dir for information on recent features.
 
 You may also find helpful the tutorials on John Gibson's Music 540
 course web site, http://www.people.virginia.edu/~jgg9c/musi540.
