@@ -10,3 +10,5 @@
    The cmix ones seem to have priority (because they were loaded
    most recently?).
   
+
+To build python on OS X, see http://www.zope.org/Members/jens/docs/zope_osx
