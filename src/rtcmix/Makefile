@@ -3,9 +3,6 @@ include ../../makefile.conf
 CXXFLAGS += $(SOUND_DRIVER)
 INCLUDES += -I$(INCLUDEDIR) -I../include -I../audio -I../sndlib -I./heap -I../conf
 
-LIBCONF = ../conf/libconf.a
-LIBMINC = ../parser/minc/libminc.a
-
 COMMON_CSRCS = \
 buffers.c \
 check_byte_order.c \
@@ -98,32 +95,59 @@ ifeq ($(NPLAY_SUPPORT), TRUE)
    CPPSRCS += setnetplay.cpp
 endif
 
+ifeq ($(ARCH), MACOSX_10.0)
+   COMMON_OBJS += osx_workaround.o
+endif
+
 RTLIB = librtcmix.a
 
-PROGS = MIX PMIX PYMIX
+LIBCONF = ../conf/libconf.a
+LIBMINC = ../parser/minc/libminc.a
+AUDIOLIB = ../audio/librtaudio.a
+SNDLIB = ../sndlib/sndlib.a
 
+LIBS = $(RTLIB) $(LIBMINC) $(AUDIOLIB) $(SNDLIB) $(LIBCONF) $(LIBDIR)/libgen.a
+
+PROGS = MIX
+TARGETS = $(RTLIB) RTcmix.o main.o $(PROGS)
 
 ifeq ($(PERL_SUPPORT), TRUE)
 IMBEDSRCS += pRTcmix.cpp
 TARGETS += pRTcmix.o
+PROGS += PMIX
 endif
 ifeq ($(PYTHON_SUPPORT), TRUE)
 ARCHFLAGS += -DPYTHON
-TARGETS += PYMIX
-PYTHON_INCLUDE_DIR = `$(PYTHON) $(CMIXDIR)/src/parsers/python/print_python_includedir.py`
+PROGS += PYMIX
+PYTHON_INCLUDE_DIR = `$(PYTHON) ../parser/python/print_python_includedir.py`
+LIBPYTHON = `$(PYTHON) ../parser/python/print_libpython.py`
+ifeq ($(ARCH), LINUX)
+	# This is necessary for Python 2.0 in Slackware Linux 8.0, and probably
+	# other distributions; comment out if it gives you trouble with earlier
+	# Pythons.  -JGG
+	LIBPYTHON += -lutil
 endif
-
-TARGETS = $(RTLIB) RTcmix.o main.o
+endif
 
 PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts`
 
 all: $(TARGETS)
+
+# rules to allow complete lib compile from this dir only
 
 $(LIBCONF):
 	(cd ../conf; $(MAKE) $(MFLAGS) all;)
 
 $(LIBMINC):
 	(cd ../parser/minc; $(MAKE) $(MFLAGS) all;)
+
+$(SNDLIB):
+	(cd ../sndlib; $(MAKE) $(MFLAGS) all;)
+
+$(AUDIOLIB):
+	(cd ../audio; $(MAKE) $(MFLAGS) all;)
+
+# rules for librtcmix.a
 
 $(RTLIB): depend $(COMMON_OBJS) $(LIBMINC) $(LIBCONF)
 	ar q $@ $(COMMON_OBJS) 
@@ -134,18 +158,19 @@ Option.o: Option.cpp Option.h
 heap/rtHeap.o:
 	(cd heap; $(MAKE) $(MFLAGS) all;)
 
+# rules for three executables we build
 
-MIX: $(OBJS) $(CMIX_O) $(M_O) $(GENLIB) $(PROFILE_O) $(WORKAROUND)
-	$(CXX) -o MIX $(WORKAROUND) $(DYN) $(OBJS) $(CMIX_O) $(PROFILE_O) \
-		$(M_O) $(GENLIB) $(LDFLAGS)
+MIX: $(CMIX_O) $(M_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
+	$(CXX) -o MIX $(WORKAROUND) $(DYN) $(CMIX_O) $(PROFILE_O) \
+		$(M_O) $(LIBS) $(LDFLAGS)
 
-PMIX: $(OBJS) $(CMIX_O) $(P_O) $(GENLIB) $(PROFILE_O) $(WORKAROUND)
-	$(CXX) -o PMIX $(WORKAROUND) $(DYN) $(OBJS) $(CMIX_O) $(PROFILE_O) \
-		$(P_O) $(LDFLAGS) $(GENLIB) $(PERL_LDFLAGS)
+PMIX: $(CMIX_O) $(P_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
+	$(CXX) -o PMIX $(WORKAROUND) $(DYN) $(CMIX_O) $(PROFILE_O) \
+		$(P_O) $(LIBS) $(LDFLAGS) $(PERL_LDFLAGS)
 
-PYMIX: $(OBJS) $(CMIX_O) $(PY_O) $(GENLIB) $(PROFILE_O) $(WORKAROUND)
-	$(CXX) -o PYMIX $(WORKAROUND) $(DYN) $(OBJS) $(CMIX_O) $(PROFILE_O) \
-		$(PY_O) $(LDFLAGS) $(GENLIB) $(LIBPYTHON)
+PYMIX: $(CMIX_O) $(PY_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
+	$(CXX) -o PYMIX $(WORKAROUND) $(DYN) $(CMIX_O) $(PROFILE_O) \
+		$(PY_O) $(LIBS) $(LDFLAGS) $(LIBPYTHON)
 
 .PHONY: all standalone install dso_install standalone_install \
 		uninstall dso_uninstall standalone_uninstall clean cleanall
@@ -173,6 +198,9 @@ ifeq ($(PERL_SUPPORT), TRUE)
 	$(INSTALL) pRTcmix.o $(LIBDIR)
 	$(INSTALL) PMIX $(DESTDIR)/PCMIX
 endif
+ifeq ($(PYTHON_SUPPORT), TRUE)
+	$(INSTALL) PYMIX $(DESTDIR)/PYCMIX
+endif
 
 standalone_install: all
 	$(INSTALL) MIX $(DESTDIR)/CMIX
@@ -190,7 +218,7 @@ standalone_uninstall:
 
 clean:
 	(cd heap; $(MAKE) $(MFLAGS) clean;)
-	$(RM) *.o $(RTLIB) core parse depend
+	$(RM) *.o $(TARGETS) core depend
 
 cleanall: clean
 
