@@ -1,4 +1,4 @@
-include ../../../makefile.conf
+include ../package.conf
 
 INCLUDES += -I../../../src/rtcmix	# for globals.h
 

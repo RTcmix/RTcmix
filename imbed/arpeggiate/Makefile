@@ -1,4 +1,4 @@
-include ../../../makefile.conf
+include ../package.conf
 
 OBJS = arpeggiate.o
 INCLUDES += -I../../../src/rtcmix	# for globals.h

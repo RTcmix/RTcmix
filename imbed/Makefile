@@ -1,5 +1,4 @@
-# Change this if needed
-include ../../makefile.conf
+include package.conf
 
 IMBDIRS = flutescale arpeggiate crudelooch happykeys mixit wanderfreq
 
