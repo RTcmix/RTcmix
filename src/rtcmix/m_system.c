@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 double
 m_system(p,n_args, pp)
 float *p; short n_args; double *pp;
