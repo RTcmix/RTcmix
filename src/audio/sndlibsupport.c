@@ -1085,7 +1085,7 @@ sndlib_findpeak(int    infd,
 
    assert(isfloat || bytespersamp == 2);
 
-#ifdef MUS_LITTLE_ENDIAN
+#if MUS_LITTLE_ENDIAN
    byteswap = IS_BIG_ENDIAN_FORMAT(informat);
 #else
    byteswap = IS_LITTLE_ENDIAN_FORMAT(informat);

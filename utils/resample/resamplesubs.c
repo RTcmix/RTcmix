@@ -78,7 +78,7 @@ readData(int   infd,          /* input file descriptor */
       bytesToRead -= bytesPerSamp;
    }
 
-#ifdef MUS_LITTLE_ENDIAN
+#if MUS_LITTLE_ENDIAN
    swap = IS_BIG_ENDIAN_FORMAT(inDataFormat);
 #else
    swap = IS_LITTLE_ENDIAN_FORMAT(inDataFormat);
