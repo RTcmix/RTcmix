@@ -434,34 +434,37 @@ static void
 do_op_handle_num(Tree tp, const MincHandle val1, const MincFloat val2,
       OpKind op)
 {
-#ifdef NOTYET
    switch (op) {
       case OpPlus:
-         tp->v.handle = val1 + val2;
+         tp->v.handle = minc_offsethandle(val1, val2);
          break;
       case OpMinus:
-         tp->v.handle = val1 - val2;
+//FIXME: this may not be correct for all cases! Check it out.
+         tp->v.handle = minc_offsethandle(val1, -val2);
          break;
       case OpMul:
-         tp->v.handle = val1 * val2;
+         tp->v.handle = minc_scalehandle(val1, val2);
          break;
       case OpDiv:
-         tp->v.handle = val1 / val2;
+         tp->v.handle = minc_scalehandle(val1, 1.0 / val2);
          break;
       case OpMod:
-         tp->v.handle = (MincFloat) ((long) val1 % (long) val2);
+         goto unimplemented;
          break;
       case OpPow:
-         tp->v.handle = pow(val1, val2);
+         goto unimplemented;
          break;
       case OpNeg:
-         tp->v.handle = -val1;        /* <val2> ignored */
+         tp->v.handle = minc_scalehandle(val1, -1.0);    /* <val2> ignored */
          break;
       default:
+         minc_internal_error("invalid handle operator");
          break;
    }
    tp->type = MincHandleType;
-#endif
+   return;
+unimplemented:
+   minc_warn("unsupported operation on a handle and a number");
 }
 
 
@@ -470,34 +473,36 @@ static void
 do_op_handle_handle(Tree tp, const MincHandle val1, const MincHandle val2,
       OpKind op)
 {
-#ifdef NOTYET
    switch (op) {
       case OpPlus:
-         tp->v.handle = val1 + val2;
+         tp->v.handle = minc_addhandles(val1, val2);
          break;
       case OpMinus:
-         tp->v.handle = val1 - val2;
+         goto unimplemented;
          break;
       case OpMul:
-         tp->v.handle = val1 * val2;
+         tp->v.handle = minc_multhandles(val1, val2);
          break;
       case OpDiv:
-         tp->v.handle = val1 / val2;
+         goto unimplemented;
          break;
       case OpMod:
-         tp->v.handle = (MincFloat) ((long) val1 % (long) val2);
+         goto unimplemented;
          break;
       case OpPow:
-         tp->v.handle = pow(val1, val2);
+         goto unimplemented;
          break;
       case OpNeg:
-         tp->v.handle = -val1;        /* <val2> ignored */
+         goto unimplemented;
          break;
       default:
+         minc_internal_error("invalid handle operator");
          break;
    }
    tp->type = MincHandleType;
-#endif
+   return;
+unimplemented:
+   minc_warn("unsupported operation on two handles");
 }
 
 
@@ -583,7 +588,7 @@ do_op_list_iterate(Tree tp, Tree child, const MincFloat val, const OpKind op)
       default:
          for (i = 0; i < len; i++)
             dest[i].val.number = 0.0;
-         minc_internal_error("invalid list operation");
+         minc_internal_error("invalid list operator");
          break;
    }
    tp->type = MincListType;
