@@ -340,6 +340,18 @@ GetDeviceList(AudioDeviceID **devList, int *devCount)
 
 
 int
+usage()
+{
+   printf("usage: coreaudioprobe [options...]\n"
+          "       options:\n"
+          "          --nochaninfo    don't print stream info for each channel\n"
+          "          --printflags    print format flags for each channel\n"
+      );
+   return -1;
+}
+
+
+int
 main(int argc, char *argv[])
 {
    AudioDeviceID *devList;
@@ -356,6 +368,9 @@ main(int argc, char *argv[])
 
       if (strcmp(arg, "--printflags") == 0)
          printFlags = true;
+
+      if (strcmp(arg, "-h") == 0)
+         return usage();
    }
 
    if (GetDeviceList(&devList, &devCount) != 0)
