@@ -8,6 +8,9 @@
 #define ZERO_FRAMES_BEFORE       0
 #define ZERO_FRAMES_AFTER        16384
 
+static ALport in_port;
+static ALport out_port;
+
 /* This macro is only in AL 2.0, so I use it to distinguish 2.0 from 1.0 */
 #ifdef AL_MAX_STRLEN
   #define AL_2_0
