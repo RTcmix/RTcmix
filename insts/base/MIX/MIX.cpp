@@ -1,16 +1,11 @@
-#include <iostream.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include <rt.h>
 #include <rtdefs.h>
 #include "MIX.h"
-
-extern "C" {
-	#include <ugens.h>
-	extern int resetval;
-}
 
 
 MIX::MIX() : Instrument()
@@ -40,12 +35,10 @@ int MIX::init(float p[], short n_args)
 	for (i = 0; i < inputchans; i++) {
 		outchan[i] = (int)p[i+4];
 		if (outchan[i] + 1 > outputchans) {
-			fprintf(stderr, "You wanted output channel %d, but have only "
-									"specified %d output channels\n",
-									outchan[i], outputchans);
-			exit(-1);
-			}
+			die("MIX", "You wanted output channel %d, but have only specified "
+							"%d output channels", outchan[i], outputchans);
 		}
+	}
 
 	amptable = floc(1);
 	if (amptable) {
@@ -53,9 +46,9 @@ int MIX::init(float p[], short n_args)
 		tableset(p[2], amplen, tabs);
 	}
 	else
-		printf("Setting phrase curve to all 1's\n");
+		advise("MIX", "Setting phrase curve to all 1's.");
 
-	skip = (int)(SR/(float)resetval); // how often to update amp curve, default 200/sec.
+	skip = (int)(SR/(float)resetval);
 
 	return(nsamps);
 }

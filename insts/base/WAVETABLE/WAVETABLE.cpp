@@ -1,17 +1,13 @@
 #include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "WAVETABLE.h"
 #include <rt.h>
 #include <rtdefs.h>
 #include <notetags.h>
-
-extern "C" {
-	#include <ugens.h>
-	extern int resetval;
-	}
 
 #ifdef COMPATIBLE_FUNC_LOCS
   #define AMP_GEN_SLOT     2
@@ -26,7 +22,7 @@ WAVETABLE::WAVETABLE() : Instrument()
 {
 }
 
-WAVETABLE::init(float p[], short n_args)
+int WAVETABLE::init(float p[], short n_args)
 {
 // p0 = start; p1 = dur; p2 = amplitude; p3 = frequency; p4 = stereo spread;
 // real-time control enabled for p3 and p4
@@ -34,10 +30,8 @@ WAVETABLE::init(float p[], short n_args)
 	nsamps = rtsetoutput(p[0], p[1], this);
 
 	wavetable = floc(WAVET_GEN_SLOT);
-	if (wavetable == NULL) {
-		fprintf(stderr, "You need to store a waveform in function 1.\n");
-		exit(1);
-	}
+	if (wavetable == NULL)
+		die("WAVETABLE", "You need to store a waveform in function 1.");
 	len = fsize(WAVET_GEN_SLOT);
 
 	if (p[3] < 15.0) p[3] = cpspch(p[3]);
@@ -51,7 +45,7 @@ WAVETABLE::init(float p[], short n_args)
 		tableset(p[1], alen, tabs);
 	}
 	else
-		printf("Setting phrase curve to all 1's\n");
+		advise("WAVETABLE", "Setting phrase curve to all 1's.");
 	
 	spread = p[4];
 	skip = (int)(SR/(float)resetval);
