@@ -1,38 +1,50 @@
-/* REVERBIT: Lansky's fast reverberator
- *
- * Parameters:
- *    p0 = output start time
- *    p1 = input start time
- *    p2 = input duration
- *    p3 = amplitude multiplier (of input signal)
- *    p4 = reverb time (must be greater than 0)
- *    p5 = reverb percent (between 0 and 1 inclusive)
- *    p6 = right channel delay time (must be greater than 0)
- *    p7 = cutoff freq for low-pass filter (in cps)  (0 to disable filter)
- *    p8 = apply DC blocking filter (0: No, 1: Yes) [optional, default is Yes]
- *         (set to zero for a bit more speed)
- *
- *    Assumes function slot 1 is the amplitude envelope.
- *    Or you can just call setline. If no setline or function table 1, uses
- *    flat amplitude curve (all 1's). This curve, and p3, affect the
- *    input signal, not the output signal.
- *
- *    Input file can be mono or stereo. Output file must be stereo.
- *
- *    To quote Lansky, this is meant to "put a gloss on a signal."
- *    Here's how it works:
- *      (1) Runs the input signal into a simple Schroeder reverberator,
- *          scaling the output of that by the reverb percent and flipping
- *          its phase.
- *      (2) Puts output of (1) into a delay line, length determined by p6.
- *      (3) Adds output of (1) to dry signal, and places in left channel.
- *      (4) Adds output of delay to dry signal, and places in right channel.
- *
- *    I added the optional low-pass filter to the output of (1) and the
- *    optional DC blocking filter.
- *
- *    RT'd and spruced up a bit by John Gibson (jgg9c@virginia.edu), 6/24/99
- */
+/* REVERBIT - Lansky's fast reverberator
+  
+   p0 = output start time
+   p1 = input start time
+   p2 = input duration
+   p3 = amplitude multiplier (of input signal)
+   p4 = reverb time (must be greater than 0)
+   p5 = reverb percent (between 0 and 1 inclusive)
+   p6 = right channel delay time (must be greater than 0)
+   p7 = cutoff freq for low-pass filter (in cps)  (0 to disable filter)
+   p8 = apply DC blocking filter (0: No, 1: Yes) [optional, default is Yes]
+        (set to zero for a bit more speed)
+   p9 = ring-down duration [optional, default is first reverb time value]
+
+   Input file can be mono or stereo. Output file must be stereo.
+
+   p3 (amplitude), p4 (reverb time), p5 (reverb percent) and p7 (cutoff)
+   can receive dynamic updates from a table or real-time control source.
+
+   If an old-style gen table 1 is present, its values will be multiplied
+   by the p3 amplitude multiplier, even if the latter is dynamic.
+
+   The amplitude multiplier is applied to the input sound *before*
+   it enters the reverberator.
+
+   The point of the ring-down duration parameter is to let you control
+   how long the reverb will ring after the input has stopped.  If the
+   reverb time is constant, REVERBIT will figure out the correct ring-down
+   duration for you.  If the reverb time is dynamic, you must specify a
+   ring-down duration if you want to ensure that your sound will not be
+   cut off prematurely.
+
+   To quote Lansky, this is meant to "put a gloss on a signal."
+   Here's how it works:
+     (1) Runs the input signal into a simple Schroeder reverberator,
+         scaling the output of that by the reverb percent and flipping
+         its phase.
+     (2) Puts output of (1) into a delay line, length determined by p6.
+     (3) Adds output of (1) to dry signal, and places in left channel.
+     (4) Adds output of delay to dry signal, and places in right channel.
+
+   I added the optional low-pass filter to the output of (1) and the
+   optional DC blocking filter.
+
+   RT'd and spruced up a bit by John Gibson (jgg9c@virginia.edu), 6/24/99
+   rev for v4, 7/11/04
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -43,9 +55,9 @@
 #include <rt.h>
 #include <rtdefs.h>
 
-#define DELAY_FACTOR   2       /* Determines length of delay line */
-#define MIN_DELAY      .10     /* Uses extra-large delay line below this */
-#define RVTSLOP        0.2     /* Extra ring-down time */
+#define DELAY_FACTOR   2       // Determines length of delay line
+#define MIN_DELAY      .10     // Uses extra-large delay line below this
+#define RVTSLOP        0.2     // Extra ring-down time
 
 /* The DC-blocking code is from Perry Cook's STK (STK98v2/DCBlock.cpp).
    It works pretty well (and quickly) for all but extreme cases. But I've
@@ -55,7 +67,7 @@
    20 hz. But that's overkill for here.
 */
 
-/* local functions */
+// local functions
 static void toneset(double, int, double []);
 static double tone(double, double []);
 
@@ -65,6 +77,7 @@ REVERBIT::REVERBIT() : Instrument()
 {
    in = NULL;
    delarray = rvbarray = NULL;
+   branch = 0;
 }
 
 REVERBIT::~REVERBIT()
@@ -76,29 +89,26 @@ REVERBIT::~REVERBIT()
 
 int REVERBIT::init(double p[], int n_args)
 {
-   int   delsamps, rvbsamps;
-   float outskip, inskip, dur, maxdeltime;
-
-   outskip = p[0];
-   inskip = p[1];
-   dur = p[2];
-   amp = p[3];
+   float outskip = p[0];
+   float inskip = p[1];
+   float dur = p[2];
    reverbtime = p[4];
    reverbpct = p[5];
    rtchan_delaytime = p[6];
    cutoff = p[7];
-   dcblock = n_args > 8 ? (int)p[8] : 1;           /* default is "yes" */
+   dcblock = n_args > 8 ? (p[8] != 0.0) : true;      // default is "yes"
+   float ringdur = n_args > 9 ? p[9] : reverbtime + RVTSLOP;
 
-   if (outputchans != 2)
+   if (outputChannels() != 2)
       return die("REVERBIT", "Output must be stereo.");
 
    if (rtsetinput(inskip, this) != 0)
       return DONT_SCHEDULE;
-   if (inputchans > 2)
+   if (inputChannels() > 2)
       return die("REVERBIT", "Can't have more than 2 input channels.");
 
-   nsamps = rtsetoutput(outskip, dur + reverbtime + RVTSLOP, this);
-   insamps = (int)(dur * SR);
+   nsamps = rtsetoutput(outskip, dur + ringdur, this);
+   insamps = (int) (dur * SR);
 
    if (reverbtime <= 0.0)
       return die("REVERBIT", "Reverb time must be greater than 0.");
@@ -113,23 +123,22 @@ int REVERBIT::init(double p[], int n_args)
    if (cutoff < 0.0)
       return die("REVERBIT", "Cutoff frequency should be positive (or zero to "
                                                            "disable filter).");
-   else if (cutoff == 0.0)
-      advise("REVERBIT", "Low-pass filter disabled.");
-   else {
+   usefilt = (cutoff > 0.0);
+   if (usefilt)
       toneset(cutoff, 1, tonedata);
-      advise("REVERBIT", "Low-pass filter cutoff: %g", cutoff);
-   }
+   else
+      advise("REVERBIT", "Low-pass filter disabled.");
 
-   maxdeltime = rtchan_delaytime;
-   /* If delay time is very short, make delay line longer than necessary. */
+   float maxdeltime = rtchan_delaytime;
+   // If delay time is very short, make delay line longer than necessary.
    if (rtchan_delaytime < MIN_DELAY)
       maxdeltime *= DELAY_FACTOR;
-   delsamps = (int)(maxdeltime * SR + 0.5);
+   int delsamps = (int) (maxdeltime * SR + 0.5);
    delarray = new float[delsamps];
    delset(delarray, deltabs, maxdeltime);
 
-   /* Array dimensions taken from lib/rvbset.c (+ 2 extra for caution). */
-   rvbsamps = (int)((0.1583 * SR) + 18 + 2);
+   // Array dimensions taken from lib/rvbset.c (+ 2 extra for caution).
+   int rvbsamps = (int)((0.1583 * SR) + 18 + 2);
    rvbarray = new float[rvbsamps];
    rvbset(reverbtime, 0, rvbarray);
 
@@ -138,54 +147,79 @@ int REVERBIT::init(double p[], int n_args)
       int amplen = fsize(1);
       tableset(dur, amplen, amptabs);
    }
-   else
-      advise("REVERBIT", "Setting phrase curve to all 1's.");
 
-   skip = (int)(SR / (float)resetval);
+   skip = (int) (SR / (float) resetval);
 
-   prev_in[0] = prev_out[0] = 0.0;         /* for DC-blocker */
+   prev_in[0] = prev_out[0] = 0.0;         // for DC-blocker
    prev_in[1] = prev_out[1] = 0.0;
 
    return nsamps;
 }
 
 
+int REVERBIT::configure()
+{
+   in = new float [RTBUFSAMPS * inputChannels()];
+   return in ? 0 : -1;
+}
+
+
+void REVERBIT::updateRvb(double p[])
+{
+   amp = p[3];
+   if (amparray)
+      amp *= tablei(currentFrame(), amparray, amptabs);
+   if (p[4] != reverbtime) {
+      reverbtime = p[4];
+      if (reverbtime <= 0.0)
+         reverbtime = 0.0001;
+      rvbset(reverbtime, 1, rvbarray);
+   }
+   reverbpct = p[5];
+   if (reverbpct < 0.0)
+      reverbpct = 0.0;
+   else if (reverbpct > 1.0)
+      reverbpct = 1.0;
+   if (usefilt && p[7] != cutoff) {
+      cutoff = p[7];
+      if (cutoff <= 0.0)
+         cutoff = 0.01;
+      toneset(cutoff, 0, tonedata);
+   }
+}
+
+
 int REVERBIT::run()
 {
-   int   i, branch, rsamps;
-   float aamp, insig[2], delsig, rvbsig;
-   float out[2];
+   int samps = framesToRun() * inputChannels();
 
-   if (in == NULL)              /* first time, so allocate it */
-      in = new float [RTBUFSAMPS * inputchans];
+   if (currentFrame() < insamps)
+      rtgetin(in, this, samps);
 
-   rsamps = chunksamps * inputchans;
-
-   rtgetin(in, this, rsamps);
-
-   aamp = amp;                  /* in case amparray == NULL */
-
-   branch = 0;
-   for (i = 0; i < rsamps; i += inputchans) {
-      if (--branch < 0) {
-         if (amparray)
-            aamp = tablei(cursamp, amparray, amptabs) * amp;
+   for (int i = 0; i < samps; i += inputChannels()) {
+      if (--branch <= 0) {
+         double p[8];
+         update(p, 8);
+         updateRvb(p);
          branch = skip;
       }
-      if (cursamp < insamps) {               /* still taking input from file */
-         insig[0] = in[i] * aamp;
-         insig[1] = (inputchans == 2) ? in[i + 1] * aamp : insig[0];
+
+      float insig[2], out[2];
+
+      if (currentFrame() < insamps) {        // still taking input from file
+         insig[0] = in[i] * amp;
+         insig[1] = (inputChannels() == 2) ? in[i + 1] * amp : insig[0];
       }
-      else                                   /* in ring-down phase */
+      else                                   // in ring-down phase
          insig[0] = insig[1] = 0.0;
 
-      rvbsig = -reverbpct * reverb(insig[0] + insig[1], rvbarray);
+      float rvbsig = -reverbpct * reverb(insig[0] + insig[1], rvbarray);
 
-      if (cutoff)
+      if (usefilt)
          rvbsig = tone(rvbsig, tonedata);
 
       delput(rvbsig, delarray, deltabs);
-      delsig = delget(delarray, rtchan_delaytime, deltabs);
+      float delsig = delget(delarray, rtchan_delaytime, deltabs);
 
       out[0] = insig[0] + rvbsig;
       out[1] = insig[1] + delsig;
@@ -206,10 +240,10 @@ int REVERBIT::run()
       }
 
       rtaddout(out);
-      cursamp++;
+      increment();
    }
 
-   return i;
+   return framesToRun();
 }
 
 
