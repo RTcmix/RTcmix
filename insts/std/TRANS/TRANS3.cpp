@@ -153,8 +153,6 @@ int TRANS3 :: run()
    if (in == NULL)
       in = new float[inputchans * RTBUFSAMPS];
 
-   Instrument :: run();
-
    aamp = amp;                  /* in case amptable == NULL */
    outp = outbuf;               /* point to inst private out buffer */
 

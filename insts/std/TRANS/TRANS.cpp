@@ -151,8 +151,6 @@ int TRANS :: run()
    if (in == NULL)
       in = new float[inputchans * RTBUFSAMPS];
 
-   Instrument :: run();
-
    outp = outbuf;               /* point to inst private out buffer */
 
    for (i = 0; i < out_frames; i++) {
