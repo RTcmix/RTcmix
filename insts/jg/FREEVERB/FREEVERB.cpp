@@ -8,16 +8,20 @@
    p2  = input duration
    p3  = amplitude multiplier
    p4  = room size (0-1.07143 ... don't ask)
-   p5  = damp (0-100%)
-   p6  = dry (0-?)
-   p7  = wet (0-?)
-   p8  = width (0-100%)
-   p9  = ringdown duration (seconds)
+   p5  = pre-delay time  (time between dry signal and onset of reverb)
+   p6  = ringdown duration
+   p7  = damp (0-100%)
+   p8  = dry (0-?)
+   p9  = wet (0-?)
+   p10 = width (0-100%)
 
    Assumes function table 1 is amplitude curve for the note. (Try gen 18.)
    Or you can just call setline. If no setline or function table 1, uses
    flat amplitude curve.  The curve is applied to the input sound *before*
    it enters the reverberator.
+
+   Be careful with the dry and wet levels -- it's easy to get extreme
+   clipping!
 
    John Gibson <johngibson@virginia.edu>, 2 Feb 2001
 */
@@ -48,17 +52,20 @@ FREEVERB :: ~FREEVERB()
 int FREEVERB :: init(float p[], int n_args)
 {
    float outskip, inskip, dur, roomsize, damp, dry, wet, width, max_roomsize;
+   float predelay_time;
+   int   predelay_samps;
 
    outskip = p[0];
    inskip = p[1];
    dur = p[2];
    amp = p[3];
    roomsize = p[4];
-   damp = p[5];
-   dry = p[6];
-   wet = p[7];
-   width = p[8];
-   ringdur = p[9];
+   predelay_time = p[5];
+   ringdur = p[6];
+   damp = p[7];
+   dry = p[8];
+   wet = p[9];
+   width = p[10];
 
    /* Keep reverb comb feedback <= 1.0 */
    max_roomsize = (1.0 - offsetroom) / scaleroom;
@@ -69,7 +76,10 @@ int FREEVERB :: init(float p[], int n_args)
       advise("FREEVERB", "Room size cannot be greater than %g. Adjusting...",
              max_roomsize);
    }
-
+   predelay_samps = (int)((predelay_time * SR) + 0.5);
+   if (predelay_samps > max_predelay_samps)
+      die("FREEVERB", "Pre-delay must be between 0 and %g seconds.",
+                                             (float) max_predelay_samps / SR);
    if (damp < 0.0 || damp > 100.0)
       die("FREEVERB", "Damp must be between 0 and 100%%.");
    if (width < 0.0 || width > 100.0)
@@ -86,6 +96,7 @@ int FREEVERB :: init(float p[], int n_args)
    rvb = new revmodel();
 
    rvb->setroomsize(roomsize);
+   rvb->setpredelay(predelay_samps);
    rvb->setdamp(damp * 0.01);
    rvb->setdry(dry);
    rvb->setwet(wet);
