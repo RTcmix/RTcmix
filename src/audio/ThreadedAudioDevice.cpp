@@ -9,6 +9,7 @@
 #include <sys/select.h>
 #include <string.h>			// memset()
 #include <stdio.h>
+#include <assert.h>
 
 ThreadedAudioDevice::ThreadedAudioDevice()
 	  : _device(-1), _thread(0), _frameCount(0),
@@ -23,19 +24,8 @@ int ThreadedAudioDevice::startThread()
 		return 0;
 //	printf("\tThreadedAudioDevice::startThread: starting thread\n");
 	int status = pthread_create(&_thread, NULL, _runProcess, this);
-	if (status == 0) {
-		pthread_attr_t attr;
-		pthread_attr_init(&attr);
-		status = pthread_attr_setschedpolicy(&attr, SCHED_RR);
-		pthread_attr_destroy(&attr);
-		if (status != 0)
-		{
-			return error("Failed to set scheduling policy of thread");
-		}
-		if (setpriority(PRIO_PROCESS, 0, -20) != 0)
-		{
-//			perror("ThreadedAudioDevice::startThread: Failed to set priority of thread.");
-		}
+	if (status < 0) {
+		error("Failed to create thread");
 	}
 	return status;
 }
@@ -43,11 +33,10 @@ int ThreadedAudioDevice::startThread()
 int ThreadedAudioDevice::doStop()
 {
 	if (!stopping()) {
-//		printf("\tThreadedAudioDevice::doStop: waiting for thread to finish\n");
+//		printf("\tThreadedAudioDevice::doStop\n");
 		stopping(true);		// signals play thread
 		paused(false);
-		if (!isPassive())
-			waitForThread();
+		waitForThread();
 	}
 	return 0;
 }
@@ -61,12 +50,16 @@ int ThreadedAudioDevice::doGetFrameCount() const
 
 void ThreadedAudioDevice::waitForThread(int waitMs)
 {
-	if (pthread_join(_thread, NULL) == -1) {
-//		printf("ThreadedAudioDevice::doStop: terminating thread!\n");
-		pthread_cancel(_thread);
-		_thread = 0;
+	if (!isPassive()) {
+		assert(_thread != 0);	// should not get called again!
+//		printf("ThreadedAudioDevice::waitForThread: waiting for thread to finish\n");
+		if (pthread_join(_thread, NULL) == -1) {
+			printf("ThreadedAudioDevice::doStop: terminating thread!\n");
+			pthread_cancel(_thread);
+			_thread = 0;
+		}
+//		printf("\tThreadedAudioDevice::waitForThread: thread done\n");
 	}
-//	printf("\tThreadedAudioDevice::waitForThread: thread done\n");
 }
 
 void ThreadedAudioDevice::setDevice(int dev)
@@ -84,11 +77,25 @@ bool ThreadedAudioDevice::waitForDevice(unsigned int wTime) {
 	unsigned waitUsecs = (wTime * 1000) - unsigned(waitSecs * 1.0e+06);
 	// Wait wTime msecs for select to return, then bail.
 	if (!stopping()) {
+#ifdef PREFER_SELECT_ON_WRITE
+		// Use read fd_set for half-duplex record only.
+		fd_set *rfdset = (isRecording() && !isPlaying()) ? &_fdset : NULL;
+		// Use write fd_set for full-duplex and half-duplex play.
+		fd_set *wfdset = isPlaying() ? &_fdset : NULL;
+#else
+		// Use read fd_set for for full-duplex and half-duplex record.
+		fd_set *rfdset = isRecording() ? &_fdset : NULL;
+		// Use write fd_set for half-duplex play only.
+		fd_set *wfdset = (isPlaying() && !isRecording()) ? &_fdset : NULL;
+#endif
 		struct timeval tv;
 		tv.tv_sec = waitSecs;
 		tv.tv_usec = waitUsecs;
 		// If wTime == 0, wait forever by passing NULL as the final arg.
-		int selret = ::select(_device + 1, NULL, &_fdset, 
+//		if (!isPlaying())
+//			printf("select(%d, 0x%x, 0x%x, NULL, 0x%x)...\n", 
+//					_device + 1, rfdset, wfdset, wTime == 0 ?  NULL : &tv);
+		int selret = ::select(_device + 1, rfdset, wfdset,
 							  NULL, wTime == 0 ?  NULL : &tv);
 		if (selret <= 0) {
 			fprintf(stderr,
@@ -107,6 +114,19 @@ bool ThreadedAudioDevice::waitForDevice(unsigned int wTime) {
 void *ThreadedAudioDevice::_runProcess(void *context)
 {
 	ThreadedAudioDevice *device = (ThreadedAudioDevice *) context;
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	int status = pthread_attr_setschedpolicy(&attr, SCHED_RR);
+	pthread_attr_destroy(&attr);
+	if (status != 0)
+	{
+		device->error("Failed to set scheduling policy of thread");
+		return NULL;
+	}
+	if (setpriority(PRIO_PROCESS, 0, -20) != 0)
+	{
+//			perror("ThreadedAudioDevice::startThread: Failed to set priority of thread.");
+	}
 	device->run();
 	return NULL;
 }
