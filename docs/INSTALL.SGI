@@ -1,0 +1,24 @@
+This version of RTcmix requires GNU make.
+
+Install as "gmake", and then make RTcmix by saying "gmake".
+
+
+If you don't use GNU make, you'll see errors like this:
+
+make: file `makefile.conf' line 35: Must be a separator (: or ::) for rules (bu39)
+
+
+Don't worry if you see errors like the following; they're harmless:
+
+ld: WARNING 84: /usr/lib/libaudio.so is not used for resolving any symbol.
+
+
+If you see errors like the following, it probably means that you're compiling
+in an NFS-mounted directory. Quick solution is to put the so_locations file
+on a local disk. (Change makefile.conf for this.)
+
+ld: ERROR 48: Cannot access registry file /users/jgg9c/export/RTcmix/shlib/so_locations (No locks available) - ignored.
+ld: FATAL 51: Can't assign virtual addresses for libWAVETABLE.so of size 10000 within specified range.  Please check your registry file /users/jgg9c/export/RTcmix/shlib/so_locations.
+gmake[2]: *** [libWAVETABLE.so] Error 1
+
+
