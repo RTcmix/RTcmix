@@ -23,6 +23,8 @@
    If you enter a room size greater than the maximum, you'll get the
    maximum amount -- which is probably an infinite reverb time.
 
+   Input can be mono or stereo; output can be mono or stereo.
+
    Be careful with the dry and wet levels -- it's easy to get extreme
    clipping!
 
@@ -96,9 +98,11 @@ int FREEVERB :: init(float p[], int n_args)
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
    insamps = (int)(dur * SR);
 
-/* legal chan configs:  1in1out, 2in2out, 1in2out */
-   if (inputchans == 2 && outputchans == 1)
-      die("FREEVERB", "If input is stereo, output must be stereo.");
+   /* Legal channel configs:  1in1out, 2in2out, 1in2out */
+   if (inputchans > 2)
+      die("FREEVERB", "Can't have more than 2 input channels.");
+   if (outputchans > 2)
+      die("FREEVERB", "Can't have more than 2 output channels.");
 
    rvb = new revmodel();
 
