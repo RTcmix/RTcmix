@@ -23,22 +23,11 @@ typedef struct inputdesc {
 	float dur;
 } InputDesc;
 
-extern float *outbuff;
-extern float *outbptr;
-extern short *inbuff;  // DT:  for use with real-time audio input
-
-// NOTE: MAXBUF is a constant in SGI version!
+/* for insts - so they don't have to include globals.h */
 extern int MAXBUF;
-
-#ifdef _LANGUAGE_C_PLUS_PLUS     /* Needed for MIPSpro */
-extern "C" {
-#endif
-extern float SR;
 extern int NCHANS;
 extern int RTBUFSAMPS;
-#ifdef _LANGUAGE_C_PLUS_PLUS
-}
-#endif
+extern float SR;
 
 #endif /* _RTDEFS_H_ */
 
