@@ -262,7 +262,7 @@ private:
 
 // Class for smoothing a control signal.  Lag must be in range [0, 100].
 
-class Oonepole;
+class OonepoleTrack;
 
 class SmoothPField : public PFieldWrapper {
 public:
@@ -275,8 +275,7 @@ protected:
 private:
 	void updateCutoffFreq(double percent = 0.0) const;
 	int _len;
-	double _lag;
-	Oonepole *_filter;
+	OonepoleTrack *_filter;
 	PField *_lagPField;
 };
 

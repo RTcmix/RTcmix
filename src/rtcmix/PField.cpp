@@ -7,7 +7,6 @@
 #include <string.h>
 #include <stdio.h>   // for snprintf
 #include <math.h>
-#include <float.h>	// for DBL_MAX
 #include <Ougens.h>
 
 inline int max(int x, int y) { return (x >= y) ? x : y; }
@@ -400,8 +399,7 @@ double RangePField::doubleValue(int idx) const
 SmoothPField::SmoothPField(PField *innerPField, double krate, PField *lagPField)
 	: PFieldWrapper(innerPField), _len(innerPField->values()), _lagPField(lagPField)
 {
-	_lag = -DBL_MAX;
-	_filter = new Oonepole(krate);
+	_filter = new OonepoleTrack(krate);
 	updateCutoffFreq();
 }
 
@@ -413,12 +411,7 @@ SmoothPField::~SmoothPField()
 void SmoothPField::updateCutoffFreq(double percent) const
 {
 	const double lag = _lagPField->doubleValue(percent);
-	if (lag != _lag) {
-		_filter->setlag(lag * 0.01);
-// FIXME: can't update state if this function must be const
-// move this optimization into Oonepole?  Then should setfreq also track freq changes?
-//		_lag = lag;
-	}
+	_filter->setlag(lag * 0.01);
 }
 
 double SmoothPField::doubleValue(double didx) const
