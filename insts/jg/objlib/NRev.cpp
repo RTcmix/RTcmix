@@ -40,6 +40,7 @@ NRev :: NRev(MY_FLOAT T60)
       APdelayLine[i] = new DLineN((long)(lens[i + 6]) + 2);
       APdelayLine[i]->setDelay((long)(lens[i + 6]));
    }
+#ifdef NOMORE // don't want to import NCHANS anymore  -JGG
    // but 4-chan unimplemented in tick (see reverb() in snd-dac.c in snd)
    if (NCHANS == 4) {
       APdelayLine[3]->setDelay((long)(lens[10]));      // as per clm nrev.ins
@@ -50,6 +51,10 @@ NRev :: NRev(MY_FLOAT T60)
    }
    else
       APdelayLine[6] = APdelayLine[7] = NULL;
+#else
+   APdelayLine[6] = APdelayLine[7] = NULL;
+#endif
+
    allPassCoeff = 0.7;
    effectMix = 0.3;
    this->clear();
