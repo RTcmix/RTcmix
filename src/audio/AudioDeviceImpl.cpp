@@ -229,6 +229,9 @@ AudioDeviceImpl::createInterleavedBuffer(int fmt, int chans, int len)
 	if (IS_FLOAT_FORMAT(fmt)) {
 		buffer = (void *) new float[chans * len];
 	}
+	else if (IS_32BIT_FORMAT(fmt)) {
+		buffer = (void *) new int32_t[chans * len];
+	}
 	else if (IS_SHORT_FORMAT(fmt)) {
 		buffer = (void *) new short[chans * len];
 	}
@@ -249,6 +252,9 @@ AudioDeviceImpl::destroyInterleavedBuffer(int fmt)
 {
 	if (IS_FLOAT_FORMAT(fmt)) {
 		delete [] (float *) _convertBuffer;
+	}
+	else if (IS_32BIT_FORMAT(fmt)) {
+		delete [] (int32_t *) _convertBuffer;
 	}
 	else if (IS_SHORT_FORMAT(fmt)) {
 		delete [] (short *) _convertBuffer;
@@ -294,6 +300,9 @@ AudioDeviceImpl::createNoninterleavedBuffer(int fmt, int chans, int len)
 	if (IS_FLOAT_FORMAT(fmt)) {
 		buffer = (void *) newNoninterleavedBuffer<float>(chans, len);
 	}
+	else if (IS_32BIT_FORMAT(fmt)) {
+		buffer = (void *) newNoninterleavedBuffer<int32_t>(chans, len);
+	}
 	else if (IS_24BIT_FORMAT(fmt)) {
 		buffer = (void *) newNoninterleavedBuffer<char>(chans, len * 3);
 	}
@@ -315,6 +324,9 @@ AudioDeviceImpl::destroyNoninterleavedBuffer(int fmt, int chans)
 {
 	if (IS_FLOAT_FORMAT(fmt)) {
 		deleteNoninterleavedBuffer<float>(_convertBuffer, chans);
+	}
+	else if (IS_32BIT_FORMAT(fmt)) {
+		deleteNoninterleavedBuffer<int32_t>(_convertBuffer, chans);
 	}
 	else if (IS_24BIT_FORMAT(fmt)) {
 		deleteNoninterleavedBuffer<char>(_convertBuffer, chans);
@@ -531,11 +543,14 @@ static void convert(void *_in, void *_out, int chans, int frames)
 		const int inIncr = InStream::channelIncrement(chans);
 		const int outIncr = OutStream::channelIncrement(chans);
         for (int fr = 0; fr < frames; ++fr, inbuffer += inIncr, outbuffer += outIncr) {
+			const OutChanType intermediate = 
+				::deNormalize<InChanType, OutChanType>(InStream::normalized,
+								 			::swap(InStream::endian != kMachineEndian,
+												   *inbuffer));
             *outbuffer = ::swap(OutStream::endian != kMachineEndian,
 								::normalize(OutStream::normalized,
-											((OutChanType) ::deNormalize(InStream::normalized,
-								 									 	 ::swap(InStream::endian != kMachineEndian,
-																		 		*inbuffer)))));
+											intermediate));
+											
         }
     }
 }
@@ -751,6 +766,19 @@ int AudioDeviceImpl::setConvertFunctions(int rawFrameFormat,
 					_playConvertFunction =
 						::convert< NonInterleavedStream<float, kMachineEndian>, NonInterleavedStream<float, Big, true> >;
 				}
+				break;
+
+			case MUS_LINT:
+				_recConvertFunction = 
+					::convert< NonInterleavedStream<int32_t, Little, true>, NonInterleavedStream<float, kMachineEndian> >;
+				_playConvertFunction =
+					::convert< NonInterleavedStream<float, kMachineEndian>, NonInterleavedStream<int32_t, Little, true> >;
+				break;
+			case MUS_BINT:
+				_recConvertFunction = 
+					::convert< NonInterleavedStream<int32_t, Big, true>, NonInterleavedStream<float, kMachineEndian> >;
+				_playConvertFunction =
+					::convert< NonInterleavedStream<float, kMachineEndian>, NonInterleavedStream<int32_t, Big, true> >;
 				break;
 
 			case MUS_LSHORT:

@@ -185,6 +185,10 @@ int ALSAAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 												  sampleFormat)) < 0)
 	{
 		if (sampleFormat == SND_PCM_FORMAT_FLOAT) {
+			sampleFormat = SND_PCM_FORMAT_S32;
+			deviceFormat = NATIVE_32BIT_FMT;	// This is what we report back.
+		}
+		else if (sampleFormat == SND_PCM_FORMAT_S32) {
 			sampleFormat = SND_PCM_FORMAT_S24;
 			deviceFormat = NATIVE_24BIT_FMT;	// This is what we report back.
 		}
@@ -411,7 +415,9 @@ void ALSAAudioDevice::run()
 
 bool ALSAAudioDevice::recognize(const char *desc)
 {
-	return desc == NULL || strncmp(desc, "hw:", 3) == 0;
+	return desc == NULL
+		|| strncmp(desc, "hw:", 3) == 0
+		|| strncmp(desc, "plug", 4) == 0;
 }
 
 AudioDevice *ALSAAudioDevice::create(const char *inputDesc,
