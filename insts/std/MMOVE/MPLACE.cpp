@@ -64,6 +64,14 @@ int PLACE::finishInit(double rvb_time, double *ringdur)
    /* set taps, return max samp */
    tapcount = tap_set(m_binaural);
 
+   // Set up air and other filters.
+   int resetFlag = 1;
+   airfil_set(resetFlag);
+   if (m_binaural)
+      earfil_set(resetFlag);
+   else
+      mike_set();
+
    *ringdur = rvb_time + ((float)tapcount / SR);
 
    return 0;
