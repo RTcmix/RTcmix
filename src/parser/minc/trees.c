@@ -1007,6 +1007,33 @@ exct_subscript_write(Tree tp)
 /* ========================================================================== */
 /* Tree execution and disposal */
 
+/* ------------------------------------------------------ check_list_count -- */
+/* This protects us against a situation that can arise due to our use of
+   '{' and '}' to delimit both statements and list contents.  If you write 
+   the following in a script, it will quickly chew through all available
+   memory, as it allocates a zero-length block for an empty list on each
+   iteration.
+
+      while (1) {}
+
+   This function prevents this from going on for too many thousands of
+   iterations.
+*/
+#define MAX_LISTS 50000
+
+static int
+check_list_count()
+{
+   static int list_count = 0;
+   if (++list_count > MAX_LISTS) {
+      minc_die("Bailing out due to suspected infinite loop on "
+               "empty code block\n(e.g., \"while (1) {}\").");
+      return -1;
+   }
+   return 0;
+}
+
+
 /* ------------------------------------------------------------------ exct -- */
 /* This recursive function interprets the intermediate code.
 */
@@ -1063,6 +1090,8 @@ exct(Tree tp)
          exct(tp->u.child[0]);     /* NB: increments list_len */
          {
             MincListElem *data;
+            if (check_list_count() < 0)
+               return tp;
             data = (MincListElem *) emalloc(sizeof(MincListElem) * list_len);
             if (data == NULL)
                return NULL;
@@ -1223,6 +1252,7 @@ push_list()
    list_stack[list_stack_ptr] = list;
    list_len_stack[list_stack_ptr++] = list_len;
    list = (MincListElem *) malloc(sizeof(MincListElem) * MAXDISPARGS);
+   DPRINT1("push_list malloc: list=%p\n", list);
    list_len = 0;
 }
 
@@ -1231,6 +1261,7 @@ static void
 pop_list()
 {
    DPRINT("pop_list\n");
+   DPRINT1("pop_list free: list=%p\n", list);
    free(list);
    if (list_stack_ptr == 0)
       minc_die("stack underflow");
