@@ -2,59 +2,63 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
+
+/* rev for v2.3 by JGG */
+
 #include <globals.h>
 #include <stdio.h>
+#include <assert.h>
 #include "../rtstuff/Instrument.h"
 #include "../rtstuff/rtdefs.h"
 
-/* these are defined in rtinput.c */
-extern double inSR;
-extern int inNCHANS;
-extern int input_on;
+extern "C" {
+extern int get_last_input_index(void);       /* defined in rtinput.c */
+}
 
 
-int rtsetinput(float start, Instrument *theInst)
+/* ----------------------------------------------------------- rtsetinput --- */
+/* Instruments call this to set their input file pointer (like setnote in cmix).
+   Returns 0 if ok, -1 if error.
+*/
+int
+rtsetinput(float start_time, Instrument *inst)
 {
-	if (input_on) { /* take from input device, not file */
-		theInst->inputsr = inSR;
-		theInst->inputchans = inNCHANS;
-		theInst->fdIndex = AUDIO_DEVICE_FDINDEX;
-		return(1);
-	}
+   int   index;
 
-	/* file was opened in rtinput().  Here we simply
-	 * store the index into the inputFileTable for the file.
-	 * We also increment the reference count for this file.
-	 */
+   index = get_last_input_index();
 
-	theInst->fdIndex = rtInputIndex;
+   if (index < 0 || inputFileTable[index].fd < 1) {
+      fprintf(stderr, "No input source open for this instrument!\n");
+      return -1;
+   }
 
-	/* check to be sure the open was successful */
+   /* File or audio device was opened in rtinput(). Here we store the
+      index into the inputFileTable for the file or device.
+   */
+   inst->fdIndex = index;
 
-	if (theInst->fdIndex < 0 || inputFileTable[theInst->fdIndex].fd < 1) {
-		fprintf(stderr, "No input file open for this instrument!\n");
-		return(0);
-	}
+   /* Fill in relevant data members of instrument class. */
+   inst->inputsr = inputFileTable[index].srate;
+   inst->inputchans = inputFileTable[index].chans;
 
-	inputFileTable[theInst->fdIndex].refcount++;
+   if (!inputFileTable[index].is_audio_dev) {
+      int datum_size = sizeof(short);
+      int inskip = (int) (start_time * inst->inputsr);
 
-	/* get some relevant info here */
+      inst->sfile_on = 1;
 
-	theInst->inputsr = inSR;
-	theInst->inputchans = inNCHANS;
+      /* Offset is measured from location that is set up in rtinput(). */
+      inst->fileOffset = inputFileTable[index].data_location
+                         + (inskip * inst->inputchans * datum_size);
 
-   inputFileTable[theInst->fdIndex].chans = inNCHANS;
+      if (start_time >= inputFileTable[index].dur)
+         fprintf(stderr, "\nWARNING: Attempt to read past end of input "
+                         "file: %s\n\n", inputFileTable[index].filename);
+   }
 
-	theInst->sfile_on = 1;
+   /* We also increment the reference count for this file. */
+   inputFileTable[index].refcount++;
 
-	/* offset is measured from location that is set up in rtinput() */
-	theInst->fileOffset = rtInitialOffset
-		+ ((int)(start * inSR)) * theInst->inputchans * sizeof(short);
-
-	if (start >= inputFileTable[theInst->fdIndex].dur)
-		fprintf(stderr, "\nWARNING: Attempt to read past end of input file: %s\n\n",
-						inputFileTable[theInst->fdIndex].filename);
-
-	return(1);
+   return 0;
 }
 
