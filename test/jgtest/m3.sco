@@ -21,9 +21,9 @@ if (rtlevel == 0) {
    load("mix")
 
    input(infile)
-   system("rm -f m3.aif")
-   system("sfcreate m3.aif")
-   output("m3.aif")
+   system("rm -f m3.aiff")
+   system("sfcreate m3.aiff")
+   output("m3.aiff")
    for (st=0; st < dur; st = st + .5) {
       odd = (st - trunc(st) > 0)
       mix(st, 0, .2, amp, odd)
@@ -39,7 +39,7 @@ else {
    rtinput(infile)
 
    if (rtlevel != 2)
-      rtoutput("m3rt.aif", "aiff")
+      rtoutput("m3rt.aiff", "aiff")
 
    for (st=0; st < dur; st = st + .5) {
       odd = (st - trunc(st) > 0)

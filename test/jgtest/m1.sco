@@ -2,7 +2,7 @@ print_off()
 if (n_arg() < 2) {
    str_num("usage:  CMIX rtlevel headertype < scorefile")
    str_num("  (rtlevel: 0=diskbased, 1=rtdiskonly, 2=rtaudioonly, 3=rtboth)")
-   str_num("  (headertype: 0=sun, 1=aif, 2=wav, 3=ircam)")
+   str_num("  (headertype: 0=sun, 1=aiff, 2=aifc, 3=wav, 4=ircam)")
    exit(1)
 }
 rtlevel = i_arg(0)
@@ -11,11 +11,11 @@ if (rtlevel < 0 || rtlevel > 3) {
    str_num("rtlevel: 0=diskbased, 1=rtdiskonly, 2=rtaudioonly, 3=rtboth")
    exit(1)
 }
-if (format < 0 || format > 3) {
-   str_num("headertype: 0=sun, 1=aif, 2=wav, 3=ircam")
+if (format < 0 || format > 4) {
+   str_num("headertype: 0=sun, 1=aiff, 2=aifc, 3=wav, 4=ircam")
    exit(1)
 }
-sun = 0; aif = 1; wav = 2; ircam = 3;
+sun = 0; aiff = 1; aifc = 2; wav = 3; ircam = 4;
 print_on()
 /* -------------------------------------------------------------------------- */
 
@@ -36,10 +36,15 @@ if (rtlevel == 0) {
       system("sfcreate -c 1 -t sun -i m1.snd")
       output("m1.snd")
    }
-   else if (format == aif) {
-      system("rm -f m1.aif")
-      system("sfcreate -c 1 -i m1.aif")
-      output("m1.aif")
+   else if (format == aiff) {
+      system("rm -f m1.aiff")
+      system("sfcreate -c 1 -i m1.aiff")
+      output("m1.aiff")
+   }
+   else if (format == aifc) {
+      system("rm -f m1.aifc")
+      system("sfcreate -c 1 -t aifc -i m1.aifc")
+      output("m1.aifc")
    }
    else if (format == wav) {
       system("rm -f m1.wav")
@@ -60,14 +65,17 @@ else {
    set_option("clobber_on")
    if (rtlevel == 1)
       set_option("audio_off")
+   bus_config("MIX", "in 0", "out 0")
 
    rtinput(infile)
 
    if (rtlevel != 2) {
       if (format == sun)
          rtoutput("m1rt.snd", "sun")
-      else if (format == aif)
-         rtoutput("m1rt.aif", "aiff")
+      else if (format == aiff)
+         rtoutput("m1rt.aiff", "aiff")
+      else if (format == aifc)
+         rtoutput("m1rt.aifc", "aifc")
       else if (format == wav)
          rtoutput("m1rt.wav", "wav")
       else if (format == ircam)
