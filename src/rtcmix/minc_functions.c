@@ -194,6 +194,20 @@ float *p;double *pp;
 	return(n_args-1);
 }
 
+double m_get_array(float p[], int n_args)
+{
+	int i, size, index;
+
+	i = p[0];
+	size = minc_array_size[i];
+	index = (int) p[1];
+
+	if (index >= size)
+		index = size - 1;
+
+	return (minc_array[i][index]);
+}
+
 double m_get_array(p,n_args)
 float *p;
 {
