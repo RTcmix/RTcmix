@@ -570,162 +570,66 @@ _literal_table(const Arg args[], const int nargs, double **array, int *len)
 // elements in the array.  Get this with tablelen().
 //                                                          - JGG, 6/20/04
 
+#include <DataFile.h>
+
 static int
 _datafile_table(const Arg args[], const int nargs, double **array, int *len)
 {
 	double *block = *array;
-	int length = *len;
-	long curpos;
+	long length = *len;
 
 	if (nargs <= 0)
 		return die("maketable (datafile)",
 			"Usage: table = maketable(\"datafile\", size, filename, number_type)");
 
-	if (!args[0].isType(StringType))
-		return die("maketable (datafile)", "File name must be a string.");
 	const char *fname = (const char *) args[0];
+	if (fname == NULL || fname[0] == 0)
+		return die("maketable (datafile)", "File name must be a string.");
 
-	size_t size = sizeof(float);		// default
+	int format = kDataFormatFloat;
 	if (nargs > 1) {
-		if (!args[1].isType(StringType))
-			return die("maketable (datafile)", "File number type must be a string "
-						  "\"double\", \"float\", \"int\", \"int64\", \"int32\", "
-						  "\"int16\" or \"byte\"");
-		if (args[1] == "double")
-			size = sizeof(double);
-		else if (args[1] == "float")
-			size = sizeof(float);
-		else if (args[1] == "int")
-			size = sizeof(int);
-		else if (args[1] == "int64")
-			size = sizeof(int64_t);
-		else if (args[1] == "int32")
-			size = sizeof(int32_t);
-		else if (args[1] == "int16")
-			size = sizeof(int16_t);
-		else if (args[1] == "byte")
-			size = sizeof(char);
-		else
+		format = DataFile::formatStringToCode(args[1]);
+		if (format == -1)
 			return die("maketable (datafile)", "File number type must be a string "
 						  "\"double\", \"float\", \"int\", \"int64\", \"int32\", "
 						  "\"int16\" or \"byte\"");
 	}
 
-	FILE *stream = fopen(fname, "r");
-	if (stream == NULL)
-		return die("maketable (datafile)", "Can't open file \"%s\".", fname);
-
-	if (fseek(stream, 0, SEEK_END) != 0)
-		return die("maketable (datafile)", "File seek error: %s",
-																strerror(errno));
-	long filebytes = ftell(stream);
-	rewind(stream);
+	// NB: errors reported within DataFile.
+	DataFile *dfile = new DataFile(fname);
+	if (dfile->openFileRead() != 0)
+		return die("maketable (datafile)", "Can't open file.");
+	long fileitems = dfile->readHeader(1000, format, false);
+	if (fileitems == -1)
+		return die("maketable (datafile)", "Can't read file.");
 
 	if (length == 0) {
-		length = filebytes / size;
 		delete [] block;
-		block = new double[length];
+		block = new double[fileitems];
+		length = fileitems;
 	}
 
 	// Read data file until EOF or table is filled, using specified word size.
-	int i;
-	if (args[1] == "double") {
-		double val;
-		for (i = 0; i < length; i++) {
-			if (fread(&val, size, 1, stream) < 1) {
-				if (ferror(stream))
-					goto readerr;
-				break;
-			}
-			block[i] = val;
-		}
-	}
-	else if (args[1] == "float") {
-		float val;
-		for (i = 0; i < length; i++) {
-			if (fread(&val, size, 1, stream) < 1) {
-				if (ferror(stream))
-					goto readerr;
-				break;
-			}
-			block[i] = (double) val;
-		}
-	}
-	else if (args[1] == "int") {
-		int val;
-		for (i = 0; i < length; i++) {
-			if (fread(&val, size, 1, stream) < 1) {
-				if (ferror(stream))
-					goto readerr;
-				break;
-			}
-			block[i] = (double) val;
-		}
-	}
-	else if (args[1] == "int64") {
-		int64_t val;
-		for (i = 0; i < length; i++) {
-			if (fread(&val, size, 1, stream) < 1) {
-				if (ferror(stream))
-					goto readerr;
-				break;
-			}
-			block[i] = (double) val;
-		}
-	}
-	else if (args[1] == "int32") {
-		int32_t val;
-		for (i = 0; i < length; i++) {
-			if (fread(&val, size, 1, stream) < 1) {
-				if (ferror(stream))
-					goto readerr;
-				break;
-			}
-			block[i] = (double) val;
-		}
-	}
-	else if (args[1] == "int16") {
-		int16_t val;
-		for (i = 0; i < length; i++) {
-			if (fread(&val, size, 1, stream) < 1) {
-				if (ferror(stream))
-					goto readerr;
-				break;
-			}
-			block[i] = (double) val;
-		}
-	}
-	else {  // byte
-		char val;
-		for (i = 0; i < length; i++) {
-			if (fread(&val, size, 1, stream) < 1) {
-				if (ferror(stream))
-					goto readerr;
-				break;
-			}
-			block[i] = (double) val;
-		}
-	}
+	const long readitems = (length > fileitems) ? fileitems : length;
+	dfile->readFile(block, readitems);
+	delete dfile;
 
-	curpos = ftell(stream);
-	fclose(stream);
-
-	if (labs(filebytes - curpos) >= (long) size) {
-		long filenums = filebytes / size;
+	if (length < fileitems)
 		warn("maketable (datafile)",
-			  "File \"%s\" has %ld %d-byte numbers (exceeding array size by %ld).",
-											fname, filenums, size, filenums - length);
-	}
-	if (i != length) {
-		warn("maketable (datafile)", "Only %d values loaded into table, "
-											  "followed by %d padding zero%s.",
-											  i, length - i, length - i > 1 ? "s" : "");
+			  "File \"%s\" has %ld more numbers than table, which has %ld.",
+											fname, fileitems - length, length);
+	else if (length > fileitems) {
+		const long diff = length - fileitems;
+		warn("maketable (datafile)", "Only %ld values loaded into table, "
+											  "followed by %ld padding zero%s.",
+											  fileitems, diff, diff > 1 ? "s" : "");
 		// Fill remainder with zeros.
-		for ( ; i < length; i++)
+		for (long i = fileitems; i < length; i++)
 			block[i] = 0.0;
 	}
 	else
-		advise("maketable (datafile)", "%d values loaded into table.", i);
+		advise("maketable (datafile)",
+					"%ld values loaded into table.", readitems);
 
 	*array = block;
 	*len = length;
