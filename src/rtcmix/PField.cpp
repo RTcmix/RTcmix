@@ -85,3 +85,24 @@ double TablePField::doubleValue(double percent) const
 	return _table[idx] + frac * (_table[idx] - _table[idx2]);
 }
 
+// Allocate a text buffer and fill it with lines representing the table
+// contents, one array element per line.  Return this text buffer.  A line
+// contains: the array index, one space and a formatted double...
+//
+//    99  123.450000
+//
+// Caller is responsible for deleting the text buffer.
+
+char *TablePField::dump() const
+{
+	const int linemaxlen = 32;		// worst case line length
+	char buf[linemaxlen];
+	char *lines = new char[_len * linemaxlen];
+	for (int i = 0; i < _len; i++) {
+		snprintf(buf, linemaxlen, "%d %.6f\n", i, _table[i]);
+		strcat(lines, buf);
+	}
+	lines[(_len * linemaxlen) - 1] = 0;
+	return lines;
+}
+
