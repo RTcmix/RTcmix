@@ -130,7 +130,7 @@ extern "C" {
 	amt = read(ns, (void *)sptr, sizeof(struct sockdata));
 	while (amt < sizeof(struct sockdata)) amt += read(ns, (void *)(sptr+amt), sizeof(struct sockdata)-amt);
 
-	if ( (strcmp(sinfo->name, "rtinput") == 0) || (strcmp(sinfo->name, "rtoutput") == 0) ) { 
+	if ( (strcmp(sinfo->name, "rtinput") == 0) || (strcmp(sinfo->name, "rtoutput") == 0) (strcmp(sinfo->name "set_option") == 0) ) { 
 	  // these two commands use text data
 	  // replace the text[i] with p[i] pointers
 	  for (i = 0; i < sinfo->n_args; i++)
