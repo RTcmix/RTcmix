@@ -22,7 +22,6 @@ typedef enum {
    BUS_AUX_OUT
 } BusType;
 
-
 typedef struct _BusSlot BusSlot;
 
 struct _BusSlot {

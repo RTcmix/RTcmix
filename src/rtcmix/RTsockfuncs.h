@@ -29,14 +29,14 @@ void RTprintsockstr(struct sockdata *ssend);
 
 void RTsendsockstr(int theSock, struct sockdata *sockstr);
 
-RTsockstr *newRTsockstr(char *name);
+RTsockstr *newRTsockstr(char *name, int);
 
 RTsockstr *RTnewsockstr(char *name);
 
 void RTtimeit(float interval, void *func);
 
-void parse(char *buf, char **args);
+void parse(char *buf, char**);
 
-int execute(char **args);
+int execute(char **);
 
 #endif

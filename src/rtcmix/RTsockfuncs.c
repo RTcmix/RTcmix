@@ -245,10 +245,11 @@ void RTprintsockstr(struct sockdata *ssend)
 
 /* wrapper for the following */
 
-RTsockstr *newRTsockstr(char *name) {
-	RTsockstr *theSock;
-	theSock = RTnewsockstr(name);
-	return theSock;
+RTsockstr *newRTsockstr(char *name, int n_args) {
+   RTsockstr *theSock;
+   theSock = RTnewsockstr(name);
+   theSock->n_args = n_args;
+   return theSock;
 }
 
 /* Return a nice clean socket structure */
