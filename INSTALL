@@ -39,6 +39,10 @@ Ia.  Preliminaries
          make: file `makefile.conf' line 35: Must be a separator (: or ::)
                for rules (bu39)
 
+   NOTE: This has been compiled and tested under Irix 6.3. Some folks
+   have reported problems compiling under Irix 6.5. If you solve these,
+   please let us know.
+ 
 
 Ib.  Compile and install the core
 ---------------------------------
@@ -50,7 +54,8 @@ Ib.  Compile and install the core
 
 2) Edit "makefile.conf" inside this directory.
    Make sure TOPDIR and LIBDESTDIR are right for your situation.
-   SGI users must change the definition of ARCH to SGI.
+   SGI users must change the definition of ARCH to SGI, and change
+   the compiler optimization flags, as suggested in the comments there.
 
    Also note the backwards-compatibility flag -DCOMPATIBLE_FUNC_LOCS,
    which you may want to enable if you have old WAVETABLE, FMINST and
@@ -92,7 +97,7 @@ at least the "insts.std" package. Here's how to install packages:
 
 1) cd into your RTcmix directory
 
-2) Untar PACKAGE.tar.gz  ("tar xfz PACKAGE-version.tar.gz")
+2) Untar PACKAGE-version.tar.gz  ("tar xfz PACKAGE-version.tar.gz")
 
 3) The package dir will have a version number, like "insts.std-3.0.0".
    Rename this to "insts.std", or use the full version name in
