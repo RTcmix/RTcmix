@@ -24,6 +24,7 @@ bool Option::_print = true;
 bool Option::_reportClipping = true;
 bool Option::_checkPeaks = true;
 bool Option::_exitOnError = false;	// we override this in main.cpp
+bool Option::_autoLoad = false;
 
 double Option::_bufferFrames = DEFAULT_BUFFER_FRAMES;
 
@@ -90,6 +91,13 @@ int Option::readConfigFile(const char *fileName)
 	// bool options ...........................................................
 
 	bool bval;
+
+	key = kOptionAutoLoad;
+	result = conf.getValue(key, bval);
+	if (result == kConfigNoErr)
+		autoLoad(bval);
+	else if (result != kConfigNoValueForKey)
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
 	key = kOptionAudio;
 	result = conf.getValue(key, bval);
@@ -236,6 +244,8 @@ int Option::writeConfigFile(const char *fileName)
 
 	// write bool options
 	fprintf(stream, "\n# Boolean options: key = [true | false]\n");
+	fprintf(stream, "%s = %s\n", kOptionAutoLoad, 
+										autoLoad() ? "true" : "false");
 	fprintf(stream, "%s = %s\n", kOptionAudio, audio() ? "true" : "false");
 	fprintf(stream, "%s = %s\n", kOptionPlay, play() ? "true" : "false");
 	fprintf(stream, "%s = %s\n", kOptionRecord, record() ? "true" : "false");

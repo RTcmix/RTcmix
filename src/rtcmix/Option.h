@@ -39,6 +39,7 @@
 #define kOptionReportClipping   "report_clipping"
 #define kOptionCheckPeaks       "check_peaks"
 #define kOptionExitOnError      "exit_on_error"
+#define kOptionAutoLoad         "auto_load"
 
 // double options
 #define kOptionBufferFrames     "buffer_frames"
@@ -97,6 +98,9 @@ public:
 	static double bufferFrames() { return _bufferFrames; }
 	static double bufferFrames(const double frames) { _bufferFrames = frames;
 													return _bufferFrames; }
+	static bool autoLoad() { return _autoLoad; }
+	static bool autoLoad(const bool setIt) { _autoLoad = setIt;
+													return _autoLoad; }
 
 	// WARNING: If no string as been assigned, do not expect the get method
 	// to return NULL!  Instead, check that strlen is > 0.
@@ -135,6 +139,7 @@ private:
 	static bool _reportClipping;
 	static bool _checkPeaks;
 	static bool _exitOnError;
+	static bool _autoLoad;
 
 	static double _bufferFrames;
 
