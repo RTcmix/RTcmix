@@ -34,8 +34,6 @@ public:
 
    inline void setWraparound(const bool wrap) { _wrap = wrap; }
 
-   void setTraversalRate(const double rate);
-
    void setTraversalRateAndGrainHop(const double rate, const double hop);
 
    inline void setInputJitter(const double jitter) {
