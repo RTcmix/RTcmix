@@ -16,10 +16,17 @@ extern int resetval;		// declared in src/rtcmix/minc_functions.c
 // -----------------------------------------------------------------------------
 //
 //    stream = makeconnection("datafile", filename, lag,
-//                                   [filerate, format, swap])
+//                            [timefactor[, filerate, format, swap]])
 //
 //    <filename>     full or relative path to data file [string]
 //    <lag>          amount of smoothing for value stream [percent: 0-100]
+//
+//    The next argument is optional.
+//
+//    <timefactor>   scale time it takes to consume file [1: use the same
+//                   amount of time it took to create the file; 2: take twice
+//                   as long to play the file data; 0.5: take half as long;
+//                   default is 1.0]
 //
 //    The next three are optional, used only if the data file has no header.
 //    If you give any, you must give all three.  We recommend that you give a
@@ -59,35 +66,44 @@ create_pfield(const Arg args[], const int nargs)
 	else
 		return _datafile_usage();
 	if (lag < 0.0 || lag > 100.0) {
-		die("makeconnection (datafile)", "<lag> must be between 0 and 100");
+		die("makeconnection (datafile)", "<lag> must be between 0 and 100.");
 		return NULL;
 	}
 	lag *= 0.01;
 
+	double timefactor = 1.0;
 	int filerate = -1;
 	int formatcode = -1;
 	bool swap = false;
 
 	// Handle the optional arguments.
-	if (nargs == 5) {
-		filerate = (int) args[1];
-		formatcode = DataFile::formatStringToCode(args[2]);
-		if (formatcode == -1) {
-			warn("makeconnection (datafile)", "Invalid format string. "
-						"Valid strings are:");
-			warn("makeconnection (datafile)", "\"double\", \"float\", \"int64\", "
-						"\"int32\", \"int16\", \"byte\"");
-			formatcode = kDataFormatFloat;
+	if (nargs > 2) {
+		timefactor = args[2];
+		if (timefactor <= 0.0) {
+			die("makeconnection (datafile)",
+								"<timefactor> must be greater than zero.");
+			return NULL;
 		}
-		swap = (bool) ((int) args[3]);
+		if (nargs == 6) {
+			filerate = (int) args[3];
+			formatcode = DataFile::formatStringToCode(args[4]);
+			if (formatcode == -1) {
+				warn("makeconnection (datafile)", "Invalid format string. "
+								"Valid strings are:");
+				warn("makeconnection (datafile)", "\"double\", \"float\", "
+								"\"int64\", \"int32\", \"int16\", \"byte\"");
+				formatcode = kDataFormatFloat;
+			}
+			swap = (bool) ((int) args[5]);
+		}
 	}
 
 	DataFileReaderPField *pfield;
 
 	if (formatcode == -1)	// use defaults in the PField
-		pfield = new DataFileReaderPField(filename, lag, resetval);
+		pfield = new DataFileReaderPField(filename, lag, resetval, timefactor);
 	else
-		pfield = new DataFileReaderPField(filename, lag, resetval,
+		pfield = new DataFileReaderPField(filename, lag, resetval, timefactor,
 							filerate, formatcode, swap);
 
 	return pfield;

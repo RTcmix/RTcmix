@@ -8,11 +8,12 @@
 
 
 DataFileReaderPField::DataFileReaderPField(const char *fileName,
-		const double lag, const int controlRate, const int defaultFileRate,
-		const int defaultFormat, const bool defaultSwap)
+		const double lag, const int controlRate, const double timeFactor,
+		const int defaultFileRate, const int defaultFormat,
+		const bool defaultSwap)
 	: RTNumberPField(0)
 {
-	_datafile = new DataFile(fileName, controlRate);
+	_datafile = new DataFile(fileName, controlRate, timeFactor);
 	if (_datafile) {
 		long status = _datafile->openFileRead();
 		if (status == 0)

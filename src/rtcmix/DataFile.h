@@ -37,7 +37,8 @@ const int kHeaderSize = sizeof(int32_t) * 3;
 
 class DataFile {
 public:
-	DataFile(const char *fileName, const int controlRate = 1000);
+	DataFile(const char *fileName, const int controlRate = 1000,
+					const double timeFactor = 1.0);
 	virtual ~DataFile();
 
 	int openFileWrite(const bool clobber);
@@ -116,6 +117,7 @@ private:
 	long _fileitems;
 	int _controlrate;
 	int _filerate;
+	double _timefactor;
 	double _increment;
 	double _counter;
 	double _lastval;		// used for reading only

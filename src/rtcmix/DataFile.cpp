@@ -9,11 +9,12 @@
 #include <string.h>
 
 
-DataFile::DataFile(const char *fileName, const int controlRate)
+DataFile::DataFile(const char *fileName, const int controlRate,
+		const double timeFactor)
 	: _stream(NULL), _swap(false),
 	  _format(kDataFormatFloat), _datumsize(sizeof(float)), _fileitems(0),
-	  _controlrate(controlRate), _filerate(0), _increment(1.0), _counter(1.0),
-	  _lastval(0.0)
+	  _controlrate(controlRate), _filerate(0), _timefactor(timeFactor),
+	  _increment(1.0), _counter(1.0), _lastval(0.0)
 {
 	_filename = strdup(fileName);
 }
@@ -125,7 +126,7 @@ int DataFile::writeHeader(const int fileRate, const int format, const bool swap)
 	_datumsize = format_datumsize(_format);
 	assert(_datumsize != -1);
 	_filerate = fileRate;
-	_increment = double(_controlrate) / double(_filerate);
+	_increment = (double(_controlrate) / double(_filerate)) / _timefactor;
 	_swap = swap;
 
 	int32_t magic = _swap ? kMagicSwapped : kMagic;
@@ -210,7 +211,7 @@ long DataFile::readHeader(
 	_filerate = filerate;
 	if (_filerate < 1)
 		goto invaldata;
-	_increment = double(_controlrate) / double(_filerate);
+	_increment = (double(_controlrate) / double(_filerate)) * _timefactor;
 	_fileitems = fileItems(filebytes, _datumsize, true);
 	return _fileitems;
 
@@ -219,7 +220,7 @@ noheader:
 	_format = defaultFormat;
 	_datumsize = format_datumsize(_format);
 	_filerate = (defaultFileRate == -1) ? _controlrate : defaultFileRate;
-	_increment = double(_controlrate) / double(_filerate);
+	_increment = (double(_controlrate) / double(_filerate)) * _timefactor;
 	printf("No header for data file \"%s\";\n"
 				"assuming %s at %d per second, %s.\n",
 				_filename, format_string(_format), _filerate,

@@ -16,6 +16,7 @@ public:
 		const char   *fileName,
 		const double lag,
 		const int    controlRate,
+		const double timeFactor = 1.0,
 		// Use the following if the data file has no header.
 		const int    defaultFileRate = -1,
 		const int    defaultFormat = kDataFormatFloat,
