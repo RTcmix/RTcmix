@@ -138,7 +138,7 @@ typedef enum {
    OpMinus,
    OpMul,
    OpDiv,
-   OpMod, // XXX unimplemented in minc.[ly]; beware of '%' in printf fmt str
+   OpMod,
    OpPow,
    OpNeg,
    OpEqual,

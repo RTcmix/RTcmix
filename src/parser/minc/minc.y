@@ -211,6 +211,7 @@ exp: rstmt				{ $$ = $1; }
 	| exp '/' exp		{ $$ = top(OpDiv, $1, $3); }
 	| exp '+' exp		{ $$ = top(OpPlus, $1, $3); }
 	| exp '-' exp		{ $$ = top(OpMinus, $1, $3); }
+	| exp '%' exp		{ $$ = top(OpMod, $1, $3); }
 	| '(' bexp ')'		{ $$ = $2; }
 	| str					{ $$ = $1; }
 	| TOK_NUM			{
