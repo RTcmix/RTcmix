@@ -66,7 +66,6 @@ rtsetinput(float start_time, Instrument *inst)
       if (inst->inputchans != src_chans) {
          fprintf(stderr, INCHANS_DISCREPANCY_WARNING, inst->inputchans,
                                                                   src_chans);
-         exit(1);
       }
 
       if (inputFileTable[index].is_audio_dev) {
