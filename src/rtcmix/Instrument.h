@@ -64,12 +64,10 @@ private:
 
 
 // some prototypes that probably don't belong here
-void heapify(Instrument * Iptr);
-void heapSched(Instrument * Iptr);
+void heapify(Instrument *);
+void heapSched(Instrument *);
 int rtsetoutput(float, float, Instrument *);
 int rtsetinput(float, Instrument *);
-int rtaddout(float *);
-int rtbaddout(float *, int);
 int rtgetin(float *, Instrument *, int);
 float rtupdate(int, int);  // tag, p-field for return value
 
