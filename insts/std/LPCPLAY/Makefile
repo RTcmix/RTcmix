@@ -30,7 +30,7 @@ lib$(NAME).so: $(OBJS) $(GENLIB)
 $(NAME): $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) $(NAME).h $(HEADERS) ../../H/RefCounted.h DataSet.h
+$(OBJS): $(INSTRUMENT_H) $(NAME).h $(HEADERS) ../../../include/RefCounted.h DataSet.h
 
 # For now, compile these with c++ because of compiler bug
 #
