@@ -156,7 +156,8 @@ endif
 
 uninstallhtml:
 ifneq ($(strip $(HTMLDESTDIR)),)    # do only if HTMLDESTDIR is nonempty
-	( cd $(HTMLDESTDIR); $(RM) $(HTML) $(HTML_INDEX) style.css )
+	( if test -d $(HTMLDESTDIR); then cd $(HTMLDESTDIR); \
+		$(RM) $(HTML) $(HTML_INDEX) style.css; fi )
 	( cd $(HTMLDESTDIR)/images; $(RM) $(IMAGES) )
 endif
 
