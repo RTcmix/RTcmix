@@ -10,7 +10,7 @@
 
 
 RTcmixMouse::RTcmixMouse()
-	: _xlabelCount(0), _ylabelCount(0),
+	: _xlabelCount(0), _ylabelCount(0), _lastx(-1.0), _lasty(-1.0),
 	  _sleeptime(SLEEP_MSEC * 1000)
 {
 	for (int i = 0; i < NLABELS; i++) {
@@ -82,24 +82,30 @@ int RTcmixMouse::configureYLabel(const char *prefix, const char *units,
 
 void RTcmixMouse::updateXLabelValue(const int id, const double value)
 {
-	if (id < 0)
+	if (value == _lastx)
 		return;
-	assert(id < _xlabelCount);
+	if (id < 0)							// this is valid if caller wants no label
+		return;
+	assert(id < _xlabelCount);		// this would be a program error
 	const char *units = _xunits[id] ? _xunits[id] : "";
 	snprintf(_xlabel[id], LABEL_LENGTH, "%s: %.*f %s",
 				_xprefix[id], _xprecision[id], value, units);
 	drawXLabels();
+	_lastx = value;
 }
 
 void RTcmixMouse::updateYLabelValue(const int id, const double value)
 {
-	if (id < 0)
+	if (value == _lasty)
 		return;
-	assert(id < _ylabelCount);
+	if (id < 0)							// this is valid if caller wants no label
+		return;
+	assert(id < _ylabelCount);		// this would be a program error
 	const char *units = _yunits[id] ? _yunits[id] : "";
 	snprintf(_ylabel[id], LABEL_LENGTH, "%s: %.*f %s",
 				_yprefix[id], _yprecision[id], value, units);
 	drawYLabels();
+	_lasty = value;
 }
 
 void *RTcmixMouse::_eventLoop(void *context)

@@ -68,6 +68,8 @@ private:
 	char *_yunits[NLABELS];
 	int _xprecision[NLABELS];
 	int _yprecision[NLABELS];
+	double _lastx;
+	double _lasty;
 	unsigned long _sleeptime;
 	pthread_t _eventthread;
 };
