@@ -1,3 +1,10 @@
+#ifndef PM_UTIL_H
+#define PM_UTIL_H
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+
 /* pmutil.h -- some helpful utilities for building midi 
                applications that use PortMidi 
  */
@@ -53,4 +60,9 @@ int Pm_QueueEmpty(PmQueue *queue);
     queue remains in the overflow state.
  */
 void *Pm_QueuePeek(PmQueue *queue);
+
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
+#endif /* PM_UTIL_H */
 
