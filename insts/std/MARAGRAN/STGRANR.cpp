@@ -141,7 +141,7 @@ int STGRANR::run()
         double    frac;
         
 	if (in == NULL)        /* first time, so allocate it */
-		in = new float [RTBUFSAMPS * inputchans];
+		in = new float [RTBUFSAMPS * inputChannels()];
 
 //        if ( (durhi*(float)SR) > chunksamps)
 //		advise("STGRANR", "Grain duration larger than buffer.");
@@ -187,16 +187,16 @@ int STGRANR::run()
 			}
                         while (get_frame) {
                             if (inframe >= attacksamps) {
-                                rtgetin(in, this, attacksamps * inputchans);
+                                rtgetin(in, this, attacksamps * inputChannels());
                                 inframe = 0;
                             }
                             oldersig[0] = oldsig[0];
                             oldsig[0] = newsig[0];
-                            newsig[0] = in[(inframe * inputchans)/* + inchan*/];
-                            if ( inputchans == 2 ) {
+                            newsig[0] = in[(inframe * inputChannels())/* + inchan*/];
+                            if ( inputChannels() == 2 ) {
                                 oldersig[1] = oldsig[1];
                                 oldsig[1] = newsig[1];
-                                newsig[1] = in[(inframe * inputchans)+1];
+                                newsig[1] = in[(inframe * inputChannels())+1];
                             }
                             
                             inframe++;

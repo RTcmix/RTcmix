@@ -36,7 +36,7 @@ int SGRANR::init(double p[], int n_args)
 
 	nsamps = rtsetoutput(starttime, evdur, this);
 
-	if (outputchans > 2) {
+	if (outputChannels() > 2) {
 		die("SGRANR", "Can't handle more than 2 output channels.");
 		return(DONT_SCHEDULE);
 	}
