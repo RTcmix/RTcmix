@@ -51,7 +51,7 @@ int INPUTSIG::init(float p[], int n_args)
 		myrsnetc[i][2] = rsnetc[i][2];
 		myrsnetc[i][3] = myrsnetc[i][4] = 0.0;
 		myamp[i] = amp[i];
-		}
+	}
 	mynresons = nresons;
 
 	oamp = p[3];
