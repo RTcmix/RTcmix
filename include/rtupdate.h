@@ -49,8 +49,9 @@ struct inst_list
 GLOBAL struct inst_list *ilist;  // list of instrument-name/tag pairs
 GLOBAL struct inst_list *genlist; // list of gen-name/tag pairs
 
-/* contains the values to be updated -- a recirculating array */
+#ifdef RTUPDATE
 
+/* contains the values to be updated -- a recirculating array */
 GLOBAL float pupdatevals[MAXPUPARR][MAXPUPS];  
 
 // used to store note_pfield_path data
@@ -89,4 +90,7 @@ GLOBAL int cum_parray_size[MAXNUMTAGS][MAXNUMPARAMS];
 
 GLOBAL int numinstcalls[MAXNUMINSTS][MAXNUMPARAMS];
 GLOBAL int cum_piarray_size[MAXNUMINSTS][MAXNUMPARAMS];
-#endif
+
+#endif /* RTUPDATE */
+
+#endif /* _RTUPDATE_H_ */
