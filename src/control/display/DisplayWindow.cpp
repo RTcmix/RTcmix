@@ -39,7 +39,7 @@
 
 //#define LABEL_FONT_NAME	"Monaco"
 #define LABEL_FONT_NAME	"Lucida Grande"
-#define LABEL_FONT_SIZE	12
+#define LABEL_FONT_SIZE	14
 #define LABEL_FONT_FACE	bold		// 0 for plain
 
 const int _titleBarHeight = 22;	// FIXME: should get this from system
@@ -172,7 +172,6 @@ void updateLabelValue(const int id, const double value)
 	const char *units = _units[id] ? _units[id] : "";
 	snprintf(_label[id], WHOLE_LABEL_LENGTH, "%s: %.*f %s",
 				_prefix[id], _precision[id], value, units);
-	InvalWindowRect(_window, &_labelRect);
 }
 
 void updateLabelRect()
@@ -198,11 +197,12 @@ void drawLabels()
 	if (_labelCount <= 0)
 		return;
 
-#ifdef NOMORE
+	// NOTE: You're really supposed to use GetGWorld/SetGWorld, but that didn't
+	// work when I tried it.  So we use the old way, which seems to work fine.
 	GrafPtr oldPort;
 	GetPort(&oldPort);
-	SetPort(GetWindowPort(_window));
-#endif
+	CGrafPtr port = GetWindowPort(_window);
+	SetPort(port);
 
 	int ypos = _labelYpos;
 
@@ -225,9 +225,10 @@ void drawLabels()
 		line++;
 	}
 
-#ifdef NOMORE
 	SetPort(oldPort);
-#endif
+
+	// Write to screen now, rather than in the event loop.
+	QDFlushPortBuffer(port, NULL);
 }
 
 void drawWindowContent()
@@ -416,6 +417,7 @@ void *listenerLoop(void *context)
 	DisplaySockPacket *packet = new DisplaySockPacket [1];
 
 	while (_runThread) {
+		bool labelsUpdated = false;
 		int result;
 		do {
 			result = pollInput(0);
@@ -439,6 +441,7 @@ void *listenerLoop(void *context)
 						break;
 					case kPacketUpdateLabel:
 						updateLabelValue(packet->id, packet->data.dval);
+						labelsUpdated = true;
 						break;
 					case kPacketQuit:
 						_runThread = false;
@@ -450,6 +453,8 @@ void *listenerLoop(void *context)
 				}
 			}
 		} while (result > 0);
+		if (labelsUpdated)		// draw only the final state for this polling
+			drawLabels();
 		usleep(SLEEP_MSEC * 1000L);
 	}
 	delete [] packet;
