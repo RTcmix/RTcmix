@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
+#include <RTcmix.h>
 #include "minc_internal.h"
 #include <rtcmix_types.h>
 #include <prototypes.h>
@@ -60,7 +61,7 @@ call_external_function(const char *funcname, const MincListElem arglist[],
       }
    }
 
-   result = dispatch(funcname, rtcmixargs, nargs, &retval);
+   result = RTcmix::dispatch(funcname, rtcmixargs, nargs, &retval);
    
    /* Convert return value from RTcmix function. */
    switch (retval.type()) {
