@@ -147,27 +147,31 @@ detect_denormals()
 RTcmix::RTcmix() 
 {
 	init_globals();
-	init(SR, NCHANS, RTBUFSAMPS);
+	init(SR, NCHANS, RTBUFSAMPS, NULL, NULL, NULL);
 }
 
 //  The RTcmix constructor with settable SR, NCHANS; default RTBUFSAMPS
 RTcmix::RTcmix(float tsr, int tnchans)
 {
 	init_globals();
-	init(tsr, tnchans, RTBUFSAMPS);
+	init(tsr, tnchans, RTBUFSAMPS, NULL, NULL, NULL);
 }
 
-//  The RTcmix constructor with settable SR, NCHANS, and RTBUFSAMPS
-RTcmix::RTcmix(float tsr, int tnchans, int bsize)
+//  The RTcmix constructor with settable SR, NCHANS, RTBUFSAMPS, and up to
+//  3 "opt=value" options
+
+RTcmix::RTcmix(float tsr, int tnchans, int bsize,
+			   const char *opt1, const char *opt2, const char *opt3)
 {
    init_globals();
-	init(tsr, tnchans, bsize);
+	init(tsr, tnchans, bsize, opt1, opt2, opt3);
 }
 
 //  The actual initialization method called by the constructors
 
 void
-RTcmix::init(float tsr, int tnchans, int bsize)
+RTcmix::init(float tsr, int tnchans, int bsize,
+			 const char *opt1, const char *opt2, const char *opt3)
 {
 	int retcode;		/* for mutexes */
 
@@ -189,11 +193,24 @@ RTcmix::init(float tsr, int tnchans, int bsize)
  
 	setbuf(stdout, NULL);	/*  Want to see stdout errors */
 
+	int nargs = 0;
+	// set options if any are non-null
+	p[0] = pp[0] = (double)(int) opt1;
+	if (opt1) ++nargs;
+	p[1] = pp[1] =  (double)(int) opt2;
+	if (opt2) ++nargs;
+	p[2] = pp[2] = (double)(int) opt3;
+	if (opt3) ++nargs;
+
+	if (nargs)
+		set_option(p, nargs, pp);
+
 	// set the sampling rate and nchannels
 	p[0] = pp[0] = tsr;
 	p[1] = pp[1] = tnchans;
 	p[2] = pp[2] = bsize;
-	rtsetparams(p, 3, pp);
+	nargs = 3;
+	rtsetparams(p, nargs, pp);
 
 	retcode = runMainLoop();
 	if (retcode != 0)

@@ -6,7 +6,7 @@ class RTcmix
 public:
 	RTcmix();			// 44.1k/stereo default
 	RTcmix(float, int);		// set SR and NCHANS
-	RTcmix(float, int, int);	// set SR, NCHANS, BUFSIZE
+	RTcmix(float, int, int, const char* opt1=NULL, const char *opt2=NULL, const char *opt3=NULL);	// set SR, NCHANS, BUFSIZE, up to 3 options
 	Instrument* cmd(char*, int, double, ...); // for numeric params
 	Instrument* cmd(char*, int, char*, ...); // for string params
 	double cmd(char*); // for commands with no params
@@ -17,7 +17,7 @@ public:
 	void panic();
 	void close();
 private:
-	void init(float, int, int);	// called by all constructors
+	void init(float, int, int, const char*, const char*, const char*);	// called by all constructors
 };
 
 // handy utility function...
