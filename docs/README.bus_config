@@ -131,8 +131,10 @@ read a segment of sound that hasn't happened yet!
 Also, some instruments just won't work well (or at all) when reading from
 a real-time source. TRANS is an example of this. When it transposes up an
 octave, it has to consume two samples for every output sample. So it will
-always be left gasping for more input. It should work correctly when
-transposing down, though.
+always be left gasping for more input.  When it transposes down, it has
+no way of keeping the ever-lengthening history of samples it would need
+to generate output.
+
 
 (For instruments that need to look into the future by a constant interval,
 like COMPLIMIT with non-zero lookahead, the instrument merely delays its
