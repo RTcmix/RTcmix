@@ -72,10 +72,8 @@ int SPECTEQ :: pre_init(float p[], int n_args)
       int len = fsize(3);
       eqtable = resample_functable(eqtable, len, half_fft_len);
    }
-   else {
-      die(instname(), "You haven't made the EQ function (table 3).");
-		return(DONT_SCHEDULE);
-	}
+   else
+      return die(instname(), "You haven't made the EQ function (table 3).");
 
    return 0;
 }
