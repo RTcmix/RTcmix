@@ -36,6 +36,7 @@ extern "C" {
 // -------------------------------------------------------------- makefilter ---
 
 enum {
+	kClipFilter,
 	kConstrainFilter,
 	kFitRangeFilter,
 	kMapFilter,
@@ -47,6 +48,8 @@ static Handle
 _makefilter_usage()
 {
 	die("makefilter",
+		"\n   usage: filt = makefilter(pfield, \"clip\", min[, max])"
+		"\nOR"
 		"\n   usage: filt = makefilter(pfield, \"constrain\", table, strength)"
 		"\nOR"
 		"\n   usage: filt = makefilter(pfield, \"fitrange\", min, max [, \"bipolar\"])"
@@ -72,7 +75,9 @@ makefilter(const Arg args[], const int nargs)
 
 	int type;
 	if (args[1].isType(StringType)) {
-		if (args[1] == "constrain")
+		if (args[1] == "clip")
+			type = kClipFilter;
+		else if (args[1] == "constrain")
 			type = kConstrainFilter;
 		else if (args[1] == "fitrange")
 			type = kFitRangeFilter;
@@ -111,7 +116,11 @@ makefilter(const Arg args[], const int nargs)
 	}
 
 	PField *filt = NULL;
-	if (type == kConstrainFilter) {
+	if (type == kClipFilter) {
+		// NB: It's okay for max PField to be NULL.
+		filt = new ClipPField(innerpf, arg1pf, arg2pf);
+	}
+	else if (type == kConstrainFilter) {
 		const double *table = (double *) *arg1pf;
 		const int len = arg1pf->values();
 		if (table == NULL || len < 1)
