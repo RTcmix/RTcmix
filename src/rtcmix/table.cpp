@@ -929,10 +929,18 @@ _linebrk_table(const Arg args[], const int nargs, double *array, const int len)
    The curve travels smoothly between the points, and all points lie on the
    curve.  The syntax is
 
-      table = maketable("spline", size, time1, value1, ... timeN, valueN)
+      table = maketable("spline", size, ["closed",] curvature,
+                                          time1, value1, ... timeN, valueN)
+
+   <curvature> controls the character of the slope between points.  Start
+   with zero; try positive numbers up to around 200 to see the difference.
+
+   The option "closed" tag is another way of affecting the curvature.
+   You just have to experiment with "closed" and <curvature> to get a
+   feel for what they do to a particular shape.
 
    It is possible that the curve will loop outside of the area you expect,
-   so plottable to be sure.
+   especially with the "nonorm" tag, so use plottable to be sure.
 
    Adapted from cspline from the UCSD Carl package, described in F.R. Moore, 
    "Elements of Computer Music."
@@ -942,8 +950,8 @@ _linebrk_table(const Arg args[], const int nargs, double *array, const int len)
 #define MAX_KNOTS 1024
 
 typedef struct {
-   int lbf, ubf;
-   float lb, ub, val[MAX_KNOTS];
+   bool manual_lb, manual_ub;
+   float lower_bound, upper_bound, val[MAX_KNOTS];
 } SplineSpec;
 
 
@@ -974,7 +982,7 @@ _rhs(const int knot, const int nknots, const SplineSpec *x, const SplineSpec *y)
 
 
 static int
-_spline(const int periodic, const float konst, const int nknots, double *outbuf,
+_spline(const int closed, const float konst, const int nknots, double *outbuf,
         const int outbuflen, const SplineSpec *x, const SplineSpec *y)
 {
    int count = 0;
@@ -992,8 +1000,8 @@ _spline(const int periodic, const float konst, const int nknots, double *outbuf,
    float d = 1.0;
    float u = 0.0;
    float v = 0.0;
-   float s = periodic ? -1.0 : 0.0;
-   for (int i = 0; ++i < nknots - !periodic; ) {     /* triangularize */
+   float s = closed ? -1.0 : 0.0;
+   for (int i = 0; ++i < nknots - !closed; ) {        /* triangularize */
       float hi = x->val[i] - x->val[i - 1];
       float hi1 = (i == nknots - 1) ? x->val[1] - x->val[0]
                                : x->val[i + 1] - x->val[i];
@@ -1012,7 +1020,7 @@ _spline(const int periodic, const float konst, const int nknots, double *outbuf,
    }
    float D2yi = 0.0;
    float D2yn1 = 0.0;
-   for (int i = nknots - !periodic; --i >= 0; ) {    /* back substitute */
+   for (int i = nknots - !closed; --i >= 0; ) {       /* back substitute */
       int end = i == nknots - 1;
       float hi1 = end ? x->val[1] - x->val[0] : x->val[i + 1] - x->val[i];
       float D2yi1 = D2yi;
@@ -1035,7 +1043,7 @@ _spline(const int periodic, const float konst, const int nknots, double *outbuf,
       }
       else
          D2yi = D2yn1;
-      if (!periodic) {
+      if (!closed) {
          if (i == 0)
             D2yi = konst * D2yi1;
          if (i == nknots - 2)
@@ -1044,7 +1052,7 @@ _spline(const int periodic, const float konst, const int nknots, double *outbuf,
       if (end)
          continue;
       int m = (hi1 > 0.0) ? outbuflen : -outbuflen;
-      m = (int) (1.001 * m * hi1 / (x->ub - x->lb));
+      m = (int) (1.001 * m * hi1 / (x->upper_bound - x->lower_bound));
       if (m <= 0)
          m = 1;
       float h = hi1 / m;
@@ -1082,10 +1090,10 @@ static void
 getlim(SplineSpec *p, int nknots)
 {
    for (int i = 0; i < nknots; i++) {
-      if (!p->lbf && p->lb > p->val[i])
-         p->lb = p->val[i];
-      if (!p->ubf && p->ub < p->val[i])
-         p->ub = p->val[i];
+      if (!p->manual_lb && p->lower_bound > p->val[i])
+         p->lower_bound = p->val[i];
+      if (!p->manual_ub && p->upper_bound < p->val[i])
+         p->upper_bound = p->val[i];
    }
 }
 
@@ -1097,36 +1105,52 @@ _spline_table(const Arg args[], const int nargs, double *array, const int len)
 {
    if (len < 2)
       return die("maketable (spline)", "Table length must be at least 2.");
-   if ((nargs % 2) != 0)
+
+   int closed = 0;
+   float curvature = 0.0;
+
+   int firstknot = 1;
+   if (args[0].isType(StringType)) {
+      if (args[0] == "closed")
+         closed = 1;
+      firstknot++;
+   }
+   else
+      curvature = (float) args[0];
+
+   if (((nargs - firstknot) % 2) != 0)
       return die("maketable (spline)", "Incomplete <time, value> pair.");
-   if (nargs < 6)
+   if ((nargs - firstknot) < 6)
       return die("maketable (spline)", "Need at least 3 <time, value> pairs.");
-   if (nargs > MAX_KNOTS * 2)
+   if ((nargs - firstknot) > MAX_KNOTS * 2)
       return die("maketable (spline)", "Too many <time, value> pairs.");
 
    SplineSpec x, y;
 
-   x.lbf = x.ubf = y.lbf = y.ubf = 0;
-   x.lb = y.lb = INF;
-   x.ub = y.ub = -INF;
+   x.manual_lb = x.manual_ub = y.manual_lb = y.manual_ub = 0;
+   x.lower_bound = y.lower_bound = INF;
+   x.upper_bound = y.upper_bound = -INF;
+   /* It's possible to manually set the lower and upper bounds here
+      (set the manual_lb and manual_ub flags as well), but it didn't
+      seem worth supporting this.   -JGG
+   */
 
-   int periodic = 0;
-   float konst = 0.0;
-
+   float last_timeval = -INF;
    int nknots = 0;
-   for (int i = 0; i < nargs; i += 2) {
-      x.val[nknots] = args[i];
+   for (int i = firstknot; i < nargs; i += 2) {
+      float this_timeval = args[i];
+      x.val[nknots] = this_timeval;
       y.val[nknots] = args[i + 1];
+      if (this_timeval <= last_timeval)
+         return die("maketable (spline)", "Times must be ascending.");
+      last_timeval = this_timeval;
       nknots++;
    }
 
-   if (periodic)     // FIXME: for later
-      konst = 0.0;
-
    getlim(&x, nknots);
-   getlim(&y, nknots);
+   //getlim(&y, nknots);   JGG: y.lower_bound and y.upper_bound not used
 
-   if (_spline(periodic, konst, nknots, array, len, &x, &y) != 0)
+   if (_spline(closed, curvature, nknots, array, len, &x, &y) != 0)
       return -1;
 
    return 0;
