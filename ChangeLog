@@ -1,6 +1,13 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Thursday, August 12, 2004 John Gibson <johgibso-at-indiana.edu>
+
+   * Two new features for cmixplay: "goto" hotkey (type number to
+     seek to a different part of the file), and "autopause" option
+     (pause when reaching end of file, instead of quitting).
+     Type "cmixplay -h" for more.
+
 Monday, August 2, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * New build process, using a configure script.  See INSTALL for details.
