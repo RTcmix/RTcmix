@@ -73,7 +73,6 @@ int SHAPE :: init(float p[], int n_args)
    int   ampnorm_genno;
    float outskip, inskip, dur;
    float *function;
-	int 	rvin;
 
    outskip = p[0];
    inskip = p[1];
@@ -86,21 +85,16 @@ int SHAPE :: init(float p[], int n_args)
    pctleft = n_args > 8 ? p[8] : 0.5;                /* default is .5 */
 
    nsamps = rtsetoutput(outskip, dur, this);
-   rvin = rtsetinput(inskip, this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
+   if (rtsetinput(inskip, this) != 0)
+      return DONT_SCHEDULE;
 
-   if (inchan >= inputChannels()) {
-      die("SHAPE", "You asked for channel %d of a %d-channel file.",
+   if (inchan >= inputChannels())
+      return die("SHAPE", "You asked for channel %d of a %d-channel file.",
                                                    inchan, inputChannels());
-		return(DONT_SCHEDULE);
-	}
 
-   if (max_index < min_index) {
-      die("SHAPE", "Max. distortion index must not be less than min. index.");
-		return(DONT_SCHEDULE);
-	}
+   if (max_index < min_index)
+      return die("SHAPE",
+                 "Max. distortion index must not be less than min. index.");
 
    function = floc(1);
    if (function) {
@@ -116,10 +110,8 @@ int SHAPE :: init(float p[], int n_args)
       int len = fsize(2);
       shaper->setTransferFunc(function, len);
    }
-   else {
-      die("SHAPE", "You haven't made the transfer function (table 2).");
-		return(DONT_SCHEDULE);
-	}
+   else
+      return die("SHAPE", "You haven't made the transfer function (table 2).");
 
    function = floc(3);
    if (function) {
@@ -138,12 +130,10 @@ int SHAPE :: init(float p[], int n_args)
          int len = fsize(ampnorm_genno);
          ampnorm->setTransferFunc(function, len);
       }
-      else {
-         die("SHAPE", "You specified table %d as the amplitude normalization "
-                      "function, but you didn't create the table.",
-                      ampnorm_genno);
-			return(DONT_SCHEDULE);
-		}
+      else
+         return die("SHAPE", "You specified table %d as the amplitude "
+                    "normalization function, but you didn't create the table.",
+                    ampnorm_genno);
    }
 
    dcblocker = new DCBlock();
@@ -163,8 +153,6 @@ int SHAPE :: run()
 
    if (in == NULL)
       in = new float [RTBUFSAMPS * inputChannels()];
-
-   Instrument::run();
 
    samps = framesToRun() * inputChannels();
    rtgetin(in, this, samps);

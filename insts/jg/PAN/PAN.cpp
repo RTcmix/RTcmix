@@ -59,7 +59,6 @@ PAN :: ~PAN()
 int PAN :: init(float p[], int n_args)
 {
    float outskip, inskip, dur;
-	int rvin;
 
    outskip = p[0];
    inskip = p[1];
@@ -69,21 +68,15 @@ int PAN :: init(float p[], int n_args)
    use_constant_power = n_args > 5 ? !(int)p[5] : 1; /* default is true */
 
    nsamps = rtsetoutput(outskip, dur, this);
-   rvin = rtsetinput(inskip, this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
+   if (rtsetinput(inskip, this) != 0)
+      return DONT_SCHEDULE;
 
-   if (outputchans != 2) {
-      die("PAN", "Output must be stereo.");
-		return(DONT_SCHEDULE);
-	}
+   if (outputchans != 2)
+      return die("PAN", "Output must be stereo.");
 
-   if (inchan >= inputchans) {
-      die("PAN", "You asked for channel %d of a %d-channel file.",
+   if (inchan >= inputchans)
+      return die("PAN", "You asked for channel %d of a %d-channel file.",
                                                          inchan, inputchans);
-		return(DONT_SCHEDULE);
-	}
 
    amparray = floc(1);
    if (amparray) {
@@ -98,10 +91,8 @@ int PAN :: init(float p[], int n_args)
       int lenpan = fsize(2);
       tableset(dur, lenpan, pantabs);
    }
-   else {
-      die("PAN", "You haven't made the pan curve function (table 2).");
-		return(DONT_SCHEDULE);
-	}
+   else
+      return die("PAN", "You haven't made the pan curve function (table 2).");
 
    skip = (int)(SR / (float)resetval);
 
@@ -118,8 +109,6 @@ int PAN :: run()
    if (in == NULL)              /* first time, so allocate it */
       in = new float [RTBUFSAMPS * inputchans];
 
-   Instrument::run();
-
    rsamps = chunksamps * inputchans;
 
    rtgetin(in, this, rsamps);
@@ -131,7 +120,7 @@ int PAN :: run()
       if (--branch < 0) {
          float pctleft = tablei(cursamp, panarray, pantabs);
          if (pctleft < 0.0 || pctleft > 1.0)
-            die("PAN", "pan array value out of range (%f)", pctleft);
+            return die("PAN", "pan array value out of range (%f)", pctleft);
          if (use_constant_power) {
             pan[0] = (float)sqrt((double)pctleft);
             pan[1] = (float)sqrt(1.0 - (double)pctleft);

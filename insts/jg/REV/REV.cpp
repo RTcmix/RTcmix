@@ -59,7 +59,7 @@ REV :: ~REV()
 
 int REV :: init(float p[], int n_args)
 {
-   int   rvbtype, rvin;
+   int   rvbtype;
    float outskip, inskip, dur;
 
    outskip = p[0];
@@ -72,17 +72,13 @@ int REV :: init(float p[], int n_args)
    inchan = (int)p[7];
 
    nsamps = rtsetoutput(outskip, dur + rvbtime, this);
-   rvin = rtsetinput(inskip, this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
+   if (rtsetinput(inskip, this) != 0)
+      return DONT_SCHEDULE;
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans) {
-      die("REV", "You asked for channel %d of a %d-channel file",
+   if (inchan >= inputchans)
+      return die("REV", "You asked for channel %d of a %d-channel file",
                                                           inchan, inputchans);
-		return(DONT_SCHEDULE);
-	}
    switch (rvbtype) {
       case 1:
          reverb = new PRCRev(rvbtime);
@@ -94,8 +90,7 @@ int REV :: init(float p[], int n_args)
          reverb = new NRev(rvbtime);
          break;
       default:
-         die("REV", "Unknown reverb type %d.", rvbtype);
-			return(DONT_SCHEDULE);
+         return die("REV", "Unknown reverb type %d.", rvbtype);
    }
    reverb->setEffectMix(rvbpct);
 
@@ -121,8 +116,6 @@ int REV :: run()
 
    if (in == NULL)              /* first time, so allocate it */
       in = new float [RTBUFSAMPS * inputchans];
-
-   Instrument :: run();
 
    rsamps = chunksamps * inputchans;
 

@@ -93,7 +93,7 @@ JGRAN :: ~JGRAN()
 
 
 inline TableL *
-make_table(int function_num, float dur, int exit_on_fail, const char *message)
+make_table(int function_num, float dur)
 {
    TableL *table = NULL;
 
@@ -102,16 +102,7 @@ make_table(int function_num, float dur, int exit_on_fail, const char *message)
       int len = fsize(function_num);
       table = new TableL(dur, tab, len);      
    }
-   else {
-      if (message) {
-         if (exit_on_fail)
-            die("JGRAN", message);
-         else
-            advise("JGRAN", message);
-      }
-      else if (exit_on_fail)
-         exit(1);
-   }
+
    return table;
 }
 
@@ -129,25 +120,25 @@ int JGRAN :: init(float p[], int n_args)
    osctype = (OscType) p[4];
    randomize_phase = n_args > 5 ? (int) p[5] : 1;           /* default: yes */
 
-   if (outputchans > 2) {
-      die("JGRAN", "Output must be mono or stereo.");
-		return(DONT_SCHEDULE);
-	}
+   if (outputchans > 2)
+      return die("JGRAN", "Output must be mono or stereo.");
 
    nsamps = rtsetoutput(outskip, dur, this);
 
-   amp_table = make_table(1, dur, 0, "Setting phrase curve to all 1's.");
-   aamp = amp;                  /* in case amp_table == NULL */
+   amp_table = make_table(1, dur);
+   if (amp_table == NULL) {
+      advise("JGRAN", "Setting phrase curve to all 1's.");
+      aamp = amp;
+   }
 
    envtab = floc(2);
    if (envtab) {
       int len = fsize(2);
       grainenv_oscil = new OscilN(0.0, envtab, len);
    }
-   else {
-      die("JGRAN", "You haven't made the grain envelope function (table 2).");
-		return(DONT_SCHEDULE);
-	}
+   else
+      return die("JGRAN",
+                 "You haven't made the grain envelope function (table 2).");
 
    wavetab = floc(3);
    if (wavetab)
@@ -156,30 +147,51 @@ int JGRAN :: init(float p[], int n_args)
       advise("JGRAN", "Using sine for grain waveform (no table 3).");
 
    if (osctype == FM) {
-      modmult_table = make_table(4, dur, 1,
-   "You haven't made the modulation frequency multiplier function (table 4).");
-      modindex_table = make_table(5, dur, 1,
+      modmult_table = make_table(4, dur);
+      if (modmult_table == NULL)
+         return die("JGRAN", "You haven't made the modulation frequency "
+                             "multiplier function (table 4).");
+      modindex_table = make_table(5, dur);
+      if (modindex_table == NULL)
+         return die("JGRAN",
                     "You haven't made the index envelope function (table 5).");
    }
-   minfreq_table = make_table(6, dur, 1,
-           "You haven't made the minimum grain frequency function (table 6).");
-   maxfreq_table = make_table(7, dur, 1,
-           "You haven't made the maximum grain frequency function (table 7).");
-   minspeed_table = make_table(8, dur, 1,
-               "You haven't made the minimum grain speed function (table 8).");
-   maxspeed_table = make_table(9, dur, 1,
-               "You haven't made the maximum grain speed function (table 9).");
-   minintens_table = make_table(10, dur, 1,
-           "You haven't made the minimum grain intensity function (table 10).");
-   maxintens_table = make_table(11, dur, 1,
-           "You haven't made the maximum grain intensity function (table 11).");
-   density_table = make_table(12, dur, 1,
-                           "You haven't made the density function (table 12).");
+   minfreq_table = make_table(6, dur);
+   if (minfreq_table == NULL)
+      return die("JGRAN", "You haven't made the minimum grain frequency "
+                          "function (table 6).");
+   maxfreq_table = make_table(7, dur);
+   if (maxfreq_table == NULL)
+      return die("JGRAN", "You haven't made the maximum grain frequency "
+                          "function (table 7).");
+   minspeed_table = make_table(8, dur);
+   if (minspeed_table == NULL)
+      return die("JGRAN", "You haven't made the minimum grain speed "
+                          "function (table 8).");
+   maxspeed_table = make_table(9, dur);
+   if (maxspeed_table == NULL)
+      return die("JGRAN", "You haven't made the maximum grain speed "
+                          "function (table 9).");
+   minintens_table = make_table(10, dur);
+   if (minintens_table == NULL)
+      return die("JGRAN", "You haven't made the minimum grain intensity "
+                          "function (table 10).");
+   maxintens_table = make_table(11, dur);
+   if (maxintens_table == NULL)
+      return die("JGRAN", "You haven't made the maximum grain intensity "
+                          "function (table 11).");
+   density_table = make_table(12, dur);
+   if (density_table == NULL)
+      return die("JGRAN", "You haven't made the density function (table 12).");
    if (outputchans == 2) {
-      pan_table = make_table(13, dur, 1,
-                   "You haven't made the stereo location function (table 13).");
-      panvar_table = make_table(14, dur, 1,
-     "You haven't made the stereo location randomization function (table 14).");
+      pan_table = make_table(13, dur);
+      if (pan_table == NULL)
+         return die("JGRAN", "You haven't made the stereo location "
+                             "function (table 13).");
+      panvar_table = make_table(14, dur);
+      if (panvar_table == NULL)
+         return die("JGRAN", "You haven't made the stereo location "
+                             "randomization function (table 14).");
    }
 
    car_oscil = new OscilN(0.0, wavetab, wavetablen);
@@ -204,8 +216,6 @@ int JGRAN :: run()
 {
    int      i;
    float    carsig, grainenv, out[2];
-
-	Instrument::run();
 
    for (i = 0; i < chunksamps; i++) {
       if (--branch < 0) {                       /* updates at control rate */
