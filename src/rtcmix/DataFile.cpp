@@ -186,8 +186,20 @@ long DataFile::readHeader(
 		_swap = false;
 	else if (magic == kMagicSwapped)
 		_swap = true;
-	else
-		goto noheader;
+	else {
+		_swap = defaultSwap;
+		_format = defaultFormat;
+		_datumsize = format_datumsize(_format);
+		_filerate = (defaultFileRate == -1) ? _controlrate : defaultFileRate;
+		_increment = (double(_controlrate) / double(_filerate)) * _timefactor;
+		printf("No header for data file \"%s\";\n"
+					"assuming %s at %d per second, %s.\n",
+					_filename, format_string(_format), _filerate,
+					_swap ? "with byte-swapping" : "no byte-swapping");
+		rewind(_stream);
+		_fileitems = fileItems(filebytes, _datumsize, _headerbytes);
+		return _fileitems;
+	}
 	_headerbytes = kHeaderSize;
 
 	int32_t format;
@@ -212,20 +224,6 @@ long DataFile::readHeader(
 	if (_filerate < 1)
 		goto invaldata;
 	_increment = (double(_controlrate) / double(_filerate)) * _timefactor;
-	_fileitems = fileItems(filebytes, _datumsize, _headerbytes);
-	return _fileitems;
-
-noheader:
-	_swap = defaultSwap;
-	_format = defaultFormat;
-	_datumsize = format_datumsize(_format);
-	_filerate = (defaultFileRate == -1) ? _controlrate : defaultFileRate;
-	_increment = (double(_controlrate) / double(_filerate)) * _timefactor;
-	printf("No header for data file \"%s\";\n"
-				"assuming %s at %d per second, %s.\n",
-				_filename, format_string(_format), _filerate,
-				_swap ? "with byte-swapping" : "no byte-swapping");
-	rewind(_stream);
 	_fileitems = fileItems(filebytes, _datumsize, _headerbytes);
 	return _fileitems;
 
