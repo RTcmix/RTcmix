@@ -10,9 +10,16 @@ SPECTACLE_OBJS = SPECTACLE.o $(COMMON_OBJS)
 TVSPECTACLE_OBJS = TVSPECTACLE.o $(COMMON_OBJS)
 CMIXOBJS += $(PROFILE_O)
 CXXFLAGS += -I$(OBJLIBDIR)
-PROGS = SPECTACLE libSPECTACLE.so TVSPECTACLE libTVSPECTACLE.so
+PROGS = libSPECTACLE.so libTVSPECTACLE.so SPECTACLE TVSPECTACLE 
+
+.PHONY: all standalone install dso_install standalone_install \
+uninstall dso_uninstall standalone_uninstall clean cleanall
 
 all: libSPECTACLE.so libTVSPECTACLE.so
+
+$(OBJLIB_A):
+	@( cd $(OBJLIBDIR); echo "making in objlib..."; \
+	  $(MAKE) $(MFLAGS); echo "done in objlib" ); \
 
 standalone: SPECTACLE TVSPECTACLE
 
@@ -34,5 +41,28 @@ $(SPECTACLE_OBJS): $(INSTRUMENT_H) $(OBJLIB_H) $(COMMON_HEADERS) SPECTACLE.h
 
 $(TVSPECTACLE_OBJS): $(INSTRUMENT_H) $(OBJLIB_H) $(COMMON_HEADERS) TVSPECTACLE.h
 
+install: all
+	$(INSTALL) libSPECTACLE.so $(LIBDESTDIR)
+	$(INSTALL) libTVSPECTACLE.so $(LIBDESTDIR)
+
+dso_install: install
+
+standalone_install: standalone
+	$(INSTALL) SPECTACLE $(DESTDIR)
+	$(INSTALL) TVSPECTACLE $(DESTDIR)
+
+uninstall: dso_uninstall standalone_uninstall
+
+dso_uninstall:
+	$(RM) $(LIBDESTDIR)/libSPECTACLE.so
+	$(RM) $(LIBDESTDIR)/libTVSPECTACLE.so
+
+standalone_uninstall:
+	$(RM) $(DESTDIR)/SPECTACLE
+	$(RM) $(DESTDIR)/TVSPECTACLE
+
 clean:
 	$(RM) $(SPECTACLE_OBJS) $(TVSPECTACLE_OBJS) $(PROGS)
+
+cleanall: clean uninstall
+

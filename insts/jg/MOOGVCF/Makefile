@@ -5,7 +5,10 @@ NAME = MOOGVCF
 OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
 CXXFLAGS += -I. -Wall 
-PROGS = $(NAME) lib$(NAME).so
+PROGS = lib$(NAME).so $(NAME)
+
+.PHONY: all standalone install dso_install standalone_install \
+uninstall dso_uninstall standalone_uninstall clean cleanall
 
 all: lib$(NAME).so
 
@@ -19,6 +22,24 @@ $(NAME): $(OBJS) $(CMIXOBJS)
 
 $(OBJS): $(INSTRUMENT_H) $(NAME).h
 
+install: all
+	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
+
+dso_install: install
+
+standalone_install: standalone
+	$(INSTALL) $(NAME) $(DESTDIR)
+
+uninstall: dso_uninstall standalone_uninstall
+
+dso_uninstall:
+	$(RM) $(LIBDESTDIR)/lib$(NAME).so
+
+standalone_uninstall:
+	$(RM) $(DESTDIR)/$(NAME)
+
 clean:
 	$(RM) $(OBJS) $(PROGS)
+
+cleanall: clean uninstall
 
