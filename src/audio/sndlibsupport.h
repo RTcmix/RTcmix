@@ -43,10 +43,12 @@ enum { MUS_NORMALIZED = 0x10000 };
 #if MUS_LITTLE_ENDIAN
 #define NATIVE_SHORT_FMT MUS_LSHORT
 #define NATIVE_24BIT_FMT MUS_L24INT
+#define NATIVE_32BIT_FMT MUS_LINT
 #define NATIVE_FLOAT_FMT MUS_LFLOAT
 #else
 #define NATIVE_SHORT_FMT MUS_BSHORT
 #define NATIVE_24BIT_FMT MUS_B24INT
+#define NATIVE_32BIT_FMT MUS_BINT
 #define NATIVE_FLOAT_FMT MUS_BFLOAT
 #endif
 
@@ -113,6 +115,10 @@ int getsfmaxamp(SFHEADER *, SFMAXAMP *);
 #define IS_FLOAT_FORMAT(format) (                        \
               MUS_GET_FORMAT(format) == MUS_BFLOAT       \
            || MUS_GET_FORMAT(format) == MUS_LFLOAT       )
+
+#define IS_32BIT_FORMAT(format) (                        \
+              MUS_GET_FORMAT(format) == MUS_BINT         \
+           || MUS_GET_FORMAT(format) == MUS_LINT         )
 
 #define IS_24BIT_FORMAT(format) (                        \
               MUS_GET_FORMAT(format) == MUS_B24INT       \
