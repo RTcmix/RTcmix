@@ -4,4 +4,3 @@
 
 int profile() {}
 
-int NBYTES = 32768;
