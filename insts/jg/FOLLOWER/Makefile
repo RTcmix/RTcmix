@@ -9,20 +9,22 @@ COMMON_OBJS = FOLLOWER_BASE.o
 COMMON_HEADERS = FOLLOWER_BASE.h
 FOLLOWER_OBJS = FOLLOWER.o $(COMMON_OBJS)
 FOLLOWGATE_OBJS = FOLLOWGATE.o $(COMMON_OBJS)
+FOLLOWBUTTER_OBJS = FOLLOWBUTTER.o $(COMMON_OBJS)
 CMIXOBJS += $(PROFILE_O)
 CXXFLAGS += -I$(OBJLIBDIR)
-PROGS = libFOLLOWER.so FOLLOWER libFOLLOWGATE.so FOLLOWGATE
+PROGS = libFOLLOWER.so FOLLOWER libFOLLOWGATE.so FOLLOWGATE \
+libFOLLOWBUTTER.so FOLLOWBUTTER
 
 .PHONY: all standalone install dso_install standalone_install \
 uninstall dso_uninstall standalone_uninstall clean cleanall
 
-all: libFOLLOWER.so libFOLLOWGATE.so
+all: libFOLLOWER.so libFOLLOWGATE.so libFOLLOWBUTTER.so
 
 $(OBJLIB_A):
 	@( cd $(OBJLIBDIR); echo "making in objlib..."; \
 	  $(MAKE) $(MFLAGS); echo "done in objlib" ); \
 
-standalone: FOLLOWER FOLLOWGATE
+standalone: FOLLOWER FOLLOWGATE FOLLOWBUTTER
 
 ################################################################### FOLLOWER ###
 libFOLLOWER.so: $(FOLLOWER_OBJS) $(GENLIB) $(OBJLIB_A)
@@ -44,6 +46,17 @@ FOLLOWGATE: $(FOLLOWGATE_OBJS) $(CMIXOBJS) $(OBJLIB_A)
 
 $(FOLLOWGATE_OBJS): $(INSTRUMENT_H) $(OBJLIB_H) $(COMMON_HEADERS) FOLLOWGATE.h
 
+############################################################### FOLLOWBUTTER ###
+libFOLLOWBUTTER.so: $(FOLLOWBUTTER_OBJS) $(GENLIB) $(OBJLIB_A)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(FOLLOWBUTTER_OBJS) $(GENLIB) $(SYSLIBS) \
+		$(OBJLIB_A)
+
+FOLLOWBUTTER: $(FOLLOWBUTTER_OBJS) $(CMIXOBJS) $(OBJLIB_A)
+	$(CXX) -o $@ $(FOLLOWBUTTER_OBJS) $(CMIXOBJS) $(OBJLIB_A) $(LDFLAGS)
+
+$(FOLLOWBUTTER_OBJS): $(INSTRUMENT_H) $(OBJLIB_H) $(COMMON_HEADERS) \
+		FOLLOWBUTTER.h
+
 ################################################################# BASE CLASS ###
 FOLLOWER_BASE.o: $(INSTRUMENT_H) $(COMMON_HEADERS)
 
@@ -53,23 +66,27 @@ install: dso_install
 dso_install: all
 	$(INSTALL) $(CURDIR)/libFOLLOWER.so $(LIBDESTDIR)
 	$(INSTALL) $(CURDIR)/libFOLLOWGATE.so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/libFOLLOWBUTTER.so $(LIBDESTDIR)
 
 standalone_install: standalone
 	$(INSTALL) $(CURDIR)/FOLLOWER $(DESTDIR)
 	$(INSTALL) $(CURDIR)/FOLLOWGATE $(DESTDIR)
+	$(INSTALL) $(CURDIR)/FOLLOWBUTTER $(DESTDIR)
 
 uninstall: dso_uninstall standalone_uninstall
 
 dso_uninstall:
 	$(RM) $(LIBDESTDIR)/libFOLLOWER.so
 	$(RM) $(LIBDESTDIR)/libFOLLOWGATE.so
+	$(RM) $(LIBDESTDIR)/libFOLLOWBUTTER.so
 
 standalone_uninstall:
 	$(RM) $(DESTDIR)/FOLLOWER
 	$(RM) $(DESTDIR)/FOLLOWGATE
+	$(RM) $(DESTDIR)/FOLLOWBUTTER
 
 clean:
-	$(RM) $(FOLLOWER_OBJS) $(FOLLOWGATE_OBJS) $(PROGS)
+	$(RM) $(FOLLOWER_OBJS) $(FOLLOWGATE_OBJS) $(FOLLOWBUTTER_OBJS) $(PROGS)
 
 cleanall: clean uninstall
 
