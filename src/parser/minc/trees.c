@@ -663,7 +663,11 @@ exct_operator(Tree tp, OpKind op)
                do_op_num(tp, child0->v.number, child1->v.number, op);
                break;
             case MincStringType:
-               minc_warn("can't operate on a string");
+               {
+                  char buf[64];
+                  snprintf(buf, 64, "%g", child0->v.number);
+                  do_op_string(tp, buf, child1->v.string, op);
+               }
                break;
             case MincHandleType:
                /* Check for ops that are not commutative. */
@@ -691,7 +695,11 @@ exct_operator(Tree tp, OpKind op)
       case MincStringType:
          switch (child1->type) {
             case MincFloatType:
-               minc_warn("can't operate on a string and a number");
+               {
+                  char buf[64];
+                  snprintf(buf, 64, "%g", child1->v.number);
+                  do_op_string(tp, child0->v.string, buf, op);
+               }
                break;
             case MincStringType:
                do_op_string(tp, child0->v.string, child1->v.string, op);
