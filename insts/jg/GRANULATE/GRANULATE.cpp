@@ -89,6 +89,11 @@
             [optional, ignored if mono output; if both missing, min = 0 and
             min = 1; if max missing, max = min]
 
+      p25 = use 3rd-order interpolation, instead of 2nd-order, when transposing.
+            This is more CPU-intensive, and often doesn't make a noticeable
+            difference.  (0: use 2nd-order, 1: use 3rd-order)
+            [optional; 2nd-order interp is the default]
+
    John Gibson <johgibso at indiana dot edu>, 1/29/05
 */
 #include <stdio.h>
@@ -143,6 +148,7 @@ int GRANULATE::init(double p[], int n_args)
    const double dur = p[2];
    const int numinchans = int(p[5]);
    const int seed = _nargs > 22 ? int(p[22]) : 0;
+   const bool use3rdOrderInterp = _nargs > 25 ? bool(p[25]) : false;
 
    if (rtsetoutput(outskip, dur, this) == -1)
       return DONT_SCHEDULE;
@@ -157,7 +163,7 @@ int GRANULATE::init(double p[], int n_args)
       return die("GRANULATE", "You must create a table containing the sound "
                               "to granulate.");
    _stream = new GrainStream(SR, table, length, numinchans, outputChannels(),
-                                               PRESERVE_GRAIN_DURATION, seed);
+                             PRESERVE_GRAIN_DURATION, seed, use3rdOrderInterp);
 
    table = (double *) getPFieldTable(11, &length);
    if (table == NULL)
@@ -180,7 +186,9 @@ int GRANULATE::init(double p[], int n_args)
 void GRANULATE::doupdate()
 {
    double p[_nargs];
-   update(p, _nargs);
+   update(p, _nargs, kInskip | kAmp | kInChan | kWinStart | kWinEnd | kWrap
+         | kTraversal | kHopTime | kInJitter | kOutJitter | kMinDur | kMaxDur
+         | kMinAmp | kMaxAmp | kTransp | kTranspJitter | kMinPan | kMaxPan);
 
    _amp = p[3];
    _stream->setInputChan(int(p[6]));

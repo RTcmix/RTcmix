@@ -9,7 +9,8 @@ class GrainVoice {
 
 public:
    GrainVoice(const double srate, double *inputTable, int inputFrames,
-      const int numInChans, const int numOutChans, const bool preserveDur);
+      const int numInChans, const int numOutChans, const bool preserveDur,
+      const bool use3rdOrderInterp);
    ~GrainVoice();
 
    inline bool inUse() const { return _inuse; }
@@ -58,6 +59,7 @@ private:
    int _inputframes;
    int _numinchans, _numoutchans;
    bool _preservedur;
+   bool _interp3;
 
    Ooscil *_env;
    bool _inuse, _getflag, _forwards;

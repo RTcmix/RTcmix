@@ -15,11 +15,12 @@
 
 // NOTE: We don't own the table memory.
 GrainVoice::GrainVoice(const double srate, double *inputTable, int inputFrames,
-   const int numInChans, const int numOutChans, const bool preserveDur)
+   const int numInChans, const int numOutChans, const bool preserveDur,
+   const bool use3rdOrderInterp)
    : _srate(srate), _inputtab(inputTable), _inputframes(inputFrames),
      _numinchans(numInChans), _numoutchans(numOutChans),
-     _preservedur(preserveDur), _env(NULL), _inuse(false),
-     _amp(0.0), _pan(0.0)
+     _preservedur(preserveDur), _interp3(use3rdOrderInterp), _env(NULL),
+     _inuse(false), _amp(0.0), _pan(0.0)
 {
    assert(_srate > 0.0);
    assert(_inputtab != NULL);
@@ -59,7 +60,7 @@ void GrainVoice::startGrain(const int bufoutstart, const int instartframe,
    // transposition method doesn't preserve duration.  For example, if we
    // request 1 second and transpose down an octave, then the transposer will
    // generate 2 seconds, while consuming 1 second of the source audio.  We
-   // let the client decide whether to preserve <outdur> when transposing.
+   // let the caller decide whether to preserve <outdur> when transposing.
    // If _preservedur is true, then we adjust the duration fed to the 
    // transposer so that the result will be <outdur>.  In the previous example,
    // we would tell the transposer to consume only a half second of audio
@@ -67,13 +68,12 @@ void GrainVoice::startGrain(const int bufoutstart, const int instartframe,
    // <outdur>, regardless of _preservedur state.
    // 
    // There's another problem.  If a grain duration would cause us to read past
-   // the end of the input array, then we have to adjust its duration, while
-   // taking into account the transposition issues.
+   // the end of the input array, then we bail out without setting the _inuse
+   // flag (which tells the GrainStream object whether this grain is active).
 
    // Set up transposition increment (for interpolation pointer).
-   if (transp == 0.0) {
+   if (transp == 0.0)
       _increment = 1.0;
-   }
    else {
       _increment = cpsoct(10.0 + transp) / _cpsoct10;
       _oldsig = 0.0f;
@@ -96,7 +96,7 @@ void GrainVoice::startGrain(const int bufoutstart, const int instartframe,
 #if DEBUG > 0
          printf("Suppressing grain that would run past input array end.\n");
 #endif
-         return;
+         return;     // without setting _inuse flag
       }
    }
    else {
@@ -153,10 +153,10 @@ float GrainVoice::getSigNoTransp()
 
 inline float _interp2ndOrder(float y0, float y1, float y2, float t)
 {
-   float hy0 = y0 * 0.5f;
-   float hy2 = y2 * 0.5f;
-   float b = (-3.0f * hy0) + (2.0f * y1) - hy2;
-   float c = hy0 - y1 + hy2;
+   const float hy0 = y0 * 0.5f;
+   const float hy2 = y2 * 0.5f;
+   const float b = (-3.0f * hy0) + (2.0f * y1) - hy2;
+   const float c = hy0 - y1 + hy2;
 
    return y0 + (b * t) + (c * t * t);
 }
@@ -225,7 +225,7 @@ inline float _interp3rdOrder(float ym2, float ym1, float yp1, float yp2,
    const float f = c * d;
 
    return 0.5f * (a * f * ym1 - e * d * yp1) 
-            + 0.166666666667 * (e * c * yp2 - t * f * ym2);
+            + 0.166666666667f * (e * c * yp2 - t * f * ym2);
 }
 
 float GrainVoice::getSig3rdOrder()
@@ -293,6 +293,8 @@ void GrainVoice::next(float &left, float &right)
    // have to pass object state in and out of them.
    if (_increment == 1.0)
       sig = getSigNoTransp();
+   else if (_interp3)
+      sig = getSig3rdOrder();
    else
       sig = getSig2ndOrder();
    sig *= _env->next() * _amp;
@@ -316,6 +318,14 @@ void GrainVoice::next(float *buffer, const int numFrames, const float amp)
       for (int i = _bufoutstart; i < numFrames; i++) {
          float sig = getSigNoTransp() * amp;
          addOutGrain(sig, buffer, i);           // inlined
+         if (!_inuse)
+            break;
+      }
+   }
+   else if (_interp3) {
+      for (int i = _bufoutstart; i < numFrames; i++) {
+         float sig = getSig3rdOrder() * amp;
+         addOutGrain(sig, buffer, i);
          if (!_inuse)
             break;
       }

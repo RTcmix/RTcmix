@@ -19,7 +19,10 @@ public:
       const int numOutChans,        // number of output chans (1 or 2)
       const bool preserveGrainDur,  // maintain grain duration, regardless of
                                     // transposition
-      const int seed);              // random seed
+      const int seed,               // random seed
+      const bool use3rdOrderInterp  // transposition interpolation order:
+                                    // 3rd-order if true; 2nd-order if false
+   );
    ~GrainStream();
 
    inline void setInputChan(const int chan) { _inchan = chan; }

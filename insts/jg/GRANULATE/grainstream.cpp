@@ -30,7 +30,7 @@ const inline int _clamp(const int min, const int val, const int max)
 // NOTE: We don't own the table memory.
 GrainStream::GrainStream(const float srate, double *inputTable, int tableLen,
    const int numInChans, const int numOutChans, const bool preserveGrainDur,
-   const int seed)
+   const int seed, const bool use3rdOrderInterp)
    : _srate(srate), _inputtab(inputTable), _inputframes(tableLen / numInChans),
      _outchans(numOutChans), _inchan(0), _winstart(-1), _winend(_inputframes),
      _wrap(true), _inhop(0), _outhop(0), _maxinjitter(0.0), _maxoutjitter(0.0),
@@ -40,7 +40,7 @@ GrainStream::GrainStream(const float srate, double *inputTable, int tableLen,
 {
    for (int i = 0; i < MAX_NUM_VOICES; i++)
       _voices[i] = new GrainVoice(_srate, _inputtab, _inputframes, numInChans,
-                                              numOutChans, preserveGrainDur);
+                            numOutChans, preserveGrainDur, use3rdOrderInterp);
    _inrand = new LinearRandom(0.0, 1.0, seed);
    _outrand = new LinearRandom(0.0, 1.0, seed * 2);
    _durrand = new LinearRandom(0.0, 1.0, seed * 3);
