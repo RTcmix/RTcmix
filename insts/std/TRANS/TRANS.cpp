@@ -37,7 +37,7 @@ static float interp(float, float, float, float);
 
 TRANS :: TRANS() : Instrument()
 {
-   in = new float[MAXBUF];       /* MUST persist across calls to run() */
+   in = NULL;
 
    incount = 1;
    counter = 0.0;
@@ -131,6 +131,12 @@ int TRANS :: run()
 #ifdef DEBUG
    printf("out_frames: %d  in_frames_left: %d\n", out_frames, in_frames_left);
 #endif
+
+   /* If this is first call to run, allocate input buffer, which
+      must persist across calls to run.
+   */
+   if (in == NULL)
+      in = new float[inputchans * RTBUFSAMPS];
 
    Instrument :: run();
 
