@@ -4,7 +4,7 @@
 TOPDIR = /usr/local/src
 
 # The name of the RTcmix directory
-CMIXDIR = $(TOPDIR)/RTcmix-3.4
+CMIXDIR = $(TOPDIR)/RTcmix-3.6
 
 # The dir that will contain the instrument dynamic shared objects
 LIBDESTDIR = $(CMIXDIR)/shlib
@@ -42,6 +42,10 @@ PERL = perl
 # Say which python to use: just "python" if you only have one; otherwise,
 # give full path name of python to use, e.g., /usr/local/bin/python.
 PYTHON = python
+
+# Uncomment this to enable code that lets you send and receive audio
+# sound over a network.  (See comments at the top of utils/nplay.c.)
+#NPLAY_SUPPORT = TRUE
 
 # Uncomment to use old function table assignments for certain instruments.
 # For example, WAVETABLE used to expect function 1 to contain the wavetable
@@ -125,6 +129,10 @@ ifeq ($(ARCH),FREEBSD)
 endif
 
 INCLUDES = -I$(CMIXDIR)/H
+
+ifeq ($(NPLAY_SUPPORT), TRUE)
+CMIX_FLAGS += -DNETPLAYER
+endif
 
 CFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
 CXXFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
