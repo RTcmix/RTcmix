@@ -36,21 +36,27 @@ const char *get_audio_device_name()
 {
 	if (strlen(Option::inDevice()) || strlen(Option::outDevice()))
 		return NULL;
-	return Option::device();
+	if (strlen(Option::device()))
+		return Option::device();
+	return NULL;
 }
 
 const char *get_audio_indevice_name()
 {
 	if (strlen(Option::device()))
 		return Option::device();
-	return Option::inDevice();
+	if (strlen(Option::inDevice()))
+		return Option::inDevice();
+	return NULL;
 }
 
 const char *get_audio_outdevice_name()
 {
 	if (strlen(Option::device()))
 		return Option::device();
-	return Option::outDevice();
+	if (strlen(Option::outDevice()))
+		return Option::outDevice();
+	return NULL;
 }
 
 
