@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Sunday, March 16, 2003 Douglas Scott <dscott-at-netscape.net>
+
+   * Reworked inTraverse code to streamline, fix bugs.  More work on bus code.
+   * Instrument class is now reference counted to allow imbedded access.
+   * Better dependencies in important Makefiles (to aid dev work).
+
 Monday, March 10, 2003 Douglas Scott <dscott-at-netscape.net>
 
    * Added beginning of test suite in ./test/suite/.
