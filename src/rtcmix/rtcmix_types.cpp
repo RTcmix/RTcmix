@@ -21,19 +21,23 @@ Arg::printInline(FILE *stream) const
 		fprintf(stream, "\"%s\" ", _val.string);
 		break;
 	case HandleType:
-		fprintf(stream, "%s:",
-				_val.handle->type == PFieldType ? "PF" :
-				_val.handle->type == InstrumentPtrType ? "Inst" :
-				_val.handle->type == PFieldType ? "AudioStr" : "Unknown");
-		if (_val.handle->type == PFieldType) {
-			// Print PField start and end values.
-			PField *pf = (PField *) _val.handle->ptr;
-			double start = pf->doubleValue(0);
-			double end = pf->doubleValue(1.0);
-			fprintf(stream, "[%g,...,%g] ", start, end);
+		if (_val.handle != NULL) {
+			fprintf(stream, "%s:",
+					_val.handle->type == PFieldType ? "PF" :
+					_val.handle->type == InstrumentPtrType ? "Inst" :
+					_val.handle->type == PFieldType ? "AudioStr" : "Unknown");
+			if (_val.handle->type == PFieldType) {
+				// Print PField start and end values.
+				PField *pf = (PField *) _val.handle->ptr;
+				double start = pf->doubleValue(0);
+				double end = pf->doubleValue(1.0);
+				fprintf(stream, "[%g,...,%g] ", start, end);
+			}
+			else
+				fprintf(stream, " ");
 		}
 		else
-			fprintf(stream, " ");
+			fprintf(stream, "NULL");
 		break;
 	case ArrayType:
 		fprintf(stream, "[%g,...,%g] ", _val.array->data[0],
