@@ -121,7 +121,48 @@ static Param param_list[] = {
 };
 static int num_params = sizeof(param_list) / sizeof(Param);
 
+/* for use in header_type_from_filename */
+typedef struct {
+   int   format;
+   char  arg[8];
+} Extension;
+
+static Extension format_extension_list[] = {
+   { MUS_NEXT,    "au"     },
+   { MUS_NEXT,    "snd"    },
+   { MUS_AIFF,    "aif"    },
+   { MUS_AIFF,    "aiff"   },
+   { MUS_AIFC,    "aifc"   },
+   { MUS_RIFF,    "wav"    },
+   { MUS_IRCAM,   "sf"     },
+   { MUS_RAW,     "raw"    }
+};
+static int num_format_extensions = sizeof(format_extension_list)
+                                                      / sizeof(Extension);
+
+static int header_type_from_filename(char *);
 static int parse_rtoutput_args(int, double []);
+
+
+/* -------------------------------------------- header_type_from_filename --- */
+static int
+header_type_from_filename(char *fname)
+{
+   int   i, format = -1;
+   char  *p;
+
+   p = strrchr(fname, '.');
+   if (p != NULL) {
+      p++;     /* skip over '.' */
+      for (i = 0; i < num_format_extensions; i++) {
+         if (strcasecmp(format_extension_list[i].arg, p) == 0) {
+            format = format_extension_list[i].format;
+            break;
+         }
+      }
+   }
+   return format;
+}
 
 
 /* -------------------------------------------------- parse_rtoutput_args --- */
@@ -141,7 +182,9 @@ parse_rtoutput_args(int nargs, double pp[])
    anint = (int)pp[0];
    rtoutsfname = (char *)anint;
 
-   output_header_type = DEFAULT_HEADER_TYPE;
+   output_header_type = header_type_from_filename(rtoutsfname);
+   if (output_header_type == -1)
+      output_header_type = DEFAULT_HEADER_TYPE;
    output_data_format = DEFAULT_DATA_FORMAT;
 
    normfloat_requested = 0;
@@ -246,6 +289,11 @@ rtoutput(float p[], int n_args, double pp[])
    if (rtfileit == 1) {
       fprintf(stderr, "A soundfile is already open for writing...\n");
       return -1.0;
+   }
+
+   if (SR == 0) {
+      fprintf(stderr, "You must call rtsetparams before rtoutput.\n");
+      exit(1);
    }
 
    error = parse_rtoutput_args(n_args, pp);
