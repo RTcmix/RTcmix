@@ -10,6 +10,7 @@ static SFCODE	ampcode = {
 }; 
 extern SFHEADER sfdesc[NFILES];
 
+double
 sfprint(p,n_args)
 float *p;
 {
