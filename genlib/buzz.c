@@ -1,9 +1,14 @@
+/* FIXME: This function requires that the <f> array contain exactly 1024
+   elements. It means a score creating this array with a makegen would
+   have to size it as 1024. (E.g., IIR's BUZZ inst.) Should add another
+   arg that gives size of array.   -JGG
+*/
 #define  ABS(x) ((x < 0) ? (-x) : (x))
 #define EPS .1e-06
 
 float buzz(float amp, float si, float hn, float *f, float *phs)
 {
-	register j,k;
+	register int j,k;
 	float q,d,h2n,h2np1;
 	j = *phs;
 	k = (j+1) % 1024;
