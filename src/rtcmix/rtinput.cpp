@@ -132,7 +132,7 @@ open_sgi_audio_input(AudioPortType port_type, int nchans)
       return -1;
    }
 
-   return AUDIO_DEVICE_ID;          /* our fake fd for SGI audio devices */
+   return AUDIO_DEVICE_FD;          /* our fake fd for SGI audio devices */
 }
 #endif /* SGI */
 
