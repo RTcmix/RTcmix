@@ -4,7 +4,7 @@ MANDIR = $(CMIXDIR)/docs/man
 HTMLDIR = $(CMIXDIR)/docs/html
 
 # RTcmix instruments
-INST = ELL PAN REVERBIT REVMIX STEREO
+INST = ELL PAN REVERBIT REVMIX STEREO WAVETABLE
 
 # Commands invoked from within an RTcmix script (in Minc, Perl, Python)
 SCRIPT = addgens fdump fplot \
