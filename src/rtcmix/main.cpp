@@ -101,7 +101,6 @@ init_globals()
 
    print_is_on = 1;
 
-   Bus_Configed = NO;
    for (i = 0; i < MAXBUS; i++) {
       AuxToAuxPlayList[i] = -1; /* The playback order for AUX buses */
       ToOutPlayList[i] = -1;    /* The playback order for AUX buses */
@@ -186,6 +185,9 @@ main(int argc, char *argv[])
                case 'n':               /* for separate parseit thread */
                   noParse = 1;
                   break;
+               case 'p':               /* for separate parseit thread */
+                  print_is_on = 0;
+                  break;
                case 's':               /* set up a socket offset */
                   socknew = atoi(*++argv);
                   fprintf(stderr, "listening on socket: %d\n",
@@ -234,6 +236,7 @@ main(int argc, char *argv[])
    */
    if (rtInteractive) {
 
+	 if (print_is_on)
       fprintf(stdout, "rtInteractive mode set\n");
 
       /* Read an initialization score. */
