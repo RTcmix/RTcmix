@@ -72,6 +72,7 @@ int rtcloseout(void);
 const char *get_audio_device_name(void);
 const char *get_audio_indevice_name(void);
 const char *get_audio_outdevice_name(void);
+int set_option(float *p, int n_args, double *pp);
 
 /* sockit.C */
 void *sockit(void *);
