@@ -74,21 +74,36 @@ double dataset(float *p, int n_args, double *pp)
 /* p1=dataset name, p2=npoles */
 {
 	char *name;
-	int i;
+	int i, set;
 	i=(int)pp[0];
 	name=(char *)i;
 
-	if (name == NULL)
-		die("dataset", "NULL file name");
-
-	if (strcmp(name, g_dataset_names[g_currentDataset]) == 0) {
-        	warn("dataset", "Data file %s is already open.", name);
-        	return -1;
+	if (name == NULL) {
+		rterror("dataset", "NULL file name");
+		return -1;
 	}
+
+	// Search all open dataset slots for matching name
+	for (set = 0; set < maxDataSets && strlen(g_dataset_names[set]); ++set) {
+		if (strcmp(name, g_dataset_names[set]) == 0) {
+			g_currentDataset = set;
+			::advise("dataset", "Using already open dataset at slot %d", set);
+			return g_datasets[g_currentDataset]->getFrameCount();
+		}
+	}
+	if (set >= maxDataSets) {
+		::rterror("dataset", "Maximum number of datasets exceeded");
+		return -1;
+	}
+
+	// OK, this is a new set that we will put in a new slot
+
+	g_currentDataset = set;
+
 	strcpy(g_dataset_names[g_currentDataset],name);
 
 	int npolesGuess = 0;
-    if(n_args>1)	/* if no npoles specified, it will be retrieved from */
+	if(n_args>1)	/* if no npoles specified, it will be retrieved from */
 		npolesGuess= (int) p[1];	/* the header (if USE_HEADERS #defined) */
 
 	DataSet *dataSet = new DataSet;
@@ -98,18 +113,21 @@ double dataset(float *p, int n_args, double *pp)
 	if (frms < 0)
 	{
 		if (dataSet->getNPoles() == 0) {
-			die("dataset",
+			::rterror("dataset",
 				"For this file, you must specify the correct value for npoles in p[1].");
 		}
+		return -1;
 	}
 
-	advise("dataset", "File has %d poles and %d frames.",
+	::advise("dataset", "File has %d poles and %d frames.",
 			dataSet->getNPoles(), frms);
 	
-	// Replace previous dataset.
+	// Add to dataset list.
 	g_datasets[g_currentDataset] = dataSet;
-	
-	return (float) frms;
+
+	dataset->ref();	// Note:  For now, datasets are never destroyed during run.
+
+	return (double) frms;
 }
 
 double lpcstuff(float *p, int n_args)
@@ -122,17 +140,17 @@ double lpcstuff(float *p, int n_args)
         if(n_args>3) risetime=p[3];
         if(n_args>4) decaytime=p[4];
         if(n_args>5) cutoff = p[5]; else cutoff = 0;
-        advise("lpcstuff", "Adjusting settings for %s.",g_dataset_names[g_currentDataset]); 
-        advise("lpcstuff", "Thresh: %g  Randamp: %g  EnvRise: %g  EnvDecay: %g",
+        ::advise("lpcstuff", "Adjusting settings for %s.",g_dataset_names[g_currentDataset]); 
+        ::advise("lpcstuff", "Thresh: %g  Randamp: %g  EnvRise: %g  EnvDecay: %g",
 			   thresh,randamp, risetime, decaytime);
 #ifdef WHEN_UNVOICED_RATE_WORKING
         if(unvoiced_rate == 1)
-			advise("lpcstuff", "Unvoiced frames played at normal rate.");
+			::advise("lpcstuff", "Unvoiced frames played at normal rate.");
         else
-			advise("lpcstuff", "Unvoiced frames played at same rate as voiced 'uns.");
+			::advise("lpcstuff", "Unvoiced frames played at same rate as voiced 'uns.");
 #else
         if(unvoiced_rate == 1) {
-			advise("lpcstuff", "Unvoiced rate option not yet working.");
+			::advise("lpcstuff", "Unvoiced rate option not yet working.");
 			unvoiced_rate = 0;
 		}
 #endif
@@ -147,14 +165,14 @@ double set_hnfactor(float *p, int n_args)
 		return hnfactor;
 	}
 	hnfactor = p[0];
-	advise("set_hnfactor", "Harmonic count factor set to %g", hnfactor);
+	::advise("set_hnfactor", "Harmonic count factor set to %g", hnfactor);
 	return p[0];
 }
 
 double freset(float *p, int n_args)
 {
         perperiod = p[0];
-        advise("freset", "Frame reinitialization reset to %f times per period.",
+        ::advise("freset", "Frame reinitialization reset to %f times per period.",
 				perperiod);
 		return perperiod;
 }
@@ -163,7 +181,7 @@ double freset(float *p, int n_args)
 double setdev(float *p, int n_args)
 {
         maxdev = p[0];
-		advise("setdev", "pitch deviation set to %g Hz", maxdev);
+		::advise("setdev", "pitch deviation set to %g Hz", maxdev);
 		return maxdev;
 }
 
@@ -171,7 +189,7 @@ double setdevfactor(float *p, int n_args)
 {
 		// LPCPLAY will treat negatives as a factor
         maxdev = -p[0];
-		advise("setdevfactor", "pitch deviation factor: %g", -maxdev);
+		::advise("setdevfactor", "pitch deviation factor: %g", -maxdev);
 		return -maxdev;
 }
 
@@ -180,12 +198,13 @@ set_thresh(float *p, int n_args)
 {
 	double log10();
 	if(p[1] <= p[0]) {
-		die("set_thresh", "upper thresh must be >= lower!");
+		::rterror("set_thresh", "upper thresh must be >= lower!");
+		return -1;
 	}
 	lowthresh = p[0];
 	highthresh = p[1];
 	thresh = highthresh;
-	advise("set_thresh",
+	::advise("set_thresh",
 		   "lower error threshold: %0.6f  upper error threshold: %0.6f",
 			p[0], p[1]);
 	return lowthresh;
@@ -195,7 +214,7 @@ double
 use_autocorrect(float *p, int n_args)
 {
 	autoCorrect = (p[0] != 0.0f);
-	advise("autocorrect", "auto-frame-correction turned %s", 
+	::advise("autocorrect", "auto-frame-correction turned %s", 
 			autoCorrect == 0.0 ? "off" : "on");
 	return p[0];
 }

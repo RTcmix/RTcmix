@@ -1,20 +1,21 @@
+#include <RefCounted.h>
+
 // DataSet.h
 
-class DataSet
+class DataSet : public RefCounted
 {
 public:
 	DataSet();
-	void ref();
-	void unref();
 	int	open(const char *fileName, int npoleGuess, float sampRate);
 	inline int getNPoles() { return _nPoles; }
+	inline int getFrameCount() { return _frameCount; }
 	int	getFrame(float frameno, float *pCoeffs);
 protected:
 	~DataSet();
 	void	allocArray(int nPoles);
 private:
-	int _refCount;
 	int	_nPoles;
+	int _frameCount;
 	int	_fdesc;
 	int	_lpHeaderSize;
 	float	*_array;

@@ -10,8 +10,8 @@
 #include "lp.h"
 
 DataSet::DataSet()
-	: _refCount(0), _nPoles(0), _fdesc(-1), _lpHeaderSize(0), _array(NULL),
-	_oldframe(0), _endframe(0)
+	: _nPoles(0), _frameCount(0), _fdesc(-1), _lpHeaderSize(0), 
+	  _array(NULL), _oldframe(0), _endframe(0)
 {
 	_fprec = 22;
 }
@@ -23,32 +23,20 @@ DataSet::~DataSet()
 	delete [] _array;
 }
 
-void
-DataSet::ref()
-{
-	++_refCount;
-}
-
-void
-DataSet::unref()
-{
-	if (this == NULL)
-		return;		// special trick to allow call on NULL object
-	if (--_refCount <= 0)
-		delete this;
-}
-
 int
 DataSet::open(const char *fileName, int npoleGuess, float sampRate)
 {
-	_nPoles = npoleGuess;	// in case we are not using headers
     if ((_fdesc = ::open(fileName, O_RDONLY)) < 0) {
-		::die("dataset", "Can't open %s", fileName);
+		::rterror("dataset", "Can't open %s", fileName);
+		return -1;
     }
+	_nPoles = npoleGuess;	// in case we are not using headers
 	::advise("dataset", "Opened lpc dataset %s.", fileName);
 #ifdef USE_HEADERS
-	if ((_lpHeaderSize = ::checkForHeader(_fdesc, &_nPoles, sampRate)) < 0)
-	    ::die("dataset", "Failed to check header");
+	if ((_lpHeaderSize = ::checkForHeader(_fdesc, &_nPoles, sampRate)) < 0) {
+	    ::rterror("dataset", "Failed to check header");
+		return -1;
+	}
 #else
 	if (!_nPoles) {
 		return -1;
@@ -64,14 +52,14 @@ DataSet::open(const char *fileName, int npoleGuess, float sampRate)
 	_bpframe=_framsize*FLOAT;
 
 	struct stat st;
-	/* return number of frames in datafile */
+	/* store and return number of frames in datafile */
 	if (::stat(fileName, &st) >= 0) {
-		int frms = (st.st_size-_lpHeaderSize) / _bpframe;
-		return frms;
+		_frameCount = (st.st_size-_lpHeaderSize) / _bpframe;
+		return _frameCount;
 	}
 	else {
-		::die("dataset", "Unable to stat dataset file.");
-		return 0;	/* not reached */
+		::rterror("dataset", "Unable to stat dataset file.");
+		return -1;
 	}
 }
 
