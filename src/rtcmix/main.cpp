@@ -161,6 +161,7 @@ init_globals()
    init_buf_ptrs();
 }
 
+extern AudioDevice *globalOutputFileDevice;
 
 /* ------------------------------------------------------- sigint_handler --- */
 static void
@@ -171,8 +172,8 @@ sigint_handler(int signo)
 #endif
 
    if (rtsetparams_called) {
+      rtreportstats(globalOutputFileDevice);
       close_audio_ports();
-      rtreportstats();
       rtcloseout();
    }
    else
@@ -411,7 +412,7 @@ main(int argc, char *argv[])
       thread, and the scheduler and instrument code go in another.
 
       When not in rtInteractive mode, RTcmix parses the score, schedules
-      all instruments, and then plays them -- in that order. No threads.
+      all instruments, and then plays them -- in that order.
    */
    if (rtInteractive) {
 
@@ -441,12 +442,11 @@ main(int argc, char *argv[])
 
       /* Create scheduling thread. */
 #ifdef DBUG
-      fprintf(stdout, "creating inTraverse() thread\n");
+      fprintf(stdout, "calling runMainLoop()\n");
 #endif
-      retcode = pthread_create(&inTraverseThread, NULL, inTraverse,
-                                                             (void *) "");
+      retcode = runMainLoop();
       if (retcode != 0) {
-         fprintf(stderr, "inTraverse() thread create failed\n");
+         fprintf(stderr, "runMainLoop() failed\n");
       }
 
       /* Join parsing thread. */
@@ -458,13 +458,13 @@ main(int argc, char *argv[])
          fprintf(stderr, "sockit() thread join failed\n");
       }
 
-      /* Join scheduling thread. */
+      /* Wait for audio thread. */
 #ifdef DBUG
-      fprintf(stdout, "joining inTraverse() thread\n");
+      fprintf(stdout, "calling waitForMainLoop()\n");
 #endif
-       retcode = pthread_join(inTraverseThread, NULL);
+	  retcode = waitForMainLoop();
       if (retcode != 0) {
-         fprintf(stderr, "inTraverse() thread join failed\n");
+         fprintf(stderr, "waitForMailLoop() failed\n");
       }
 
       if (!noParse)
@@ -487,7 +487,8 @@ main(int argc, char *argv[])
 			 if (setpriority(PRIO_PROCESS, 0, priority) != 0)
 			 	perror("setpriority");
 #endif
-         inTraverse(NULL);
+         runMainLoop();
+		 waitForMainLoop();
 	  }
       else
          exit(status);

@@ -172,7 +172,6 @@ void
 RTcmix::init(float tsr, int tnchans, int bsize)
 {
 	int retcode;		/* for mutexes */
-	pthread_t inTraverseThread;
 
 	// for rtsetparams -- I forget why it's set up with both double
 	// and float p-field arrays.  Also, these aren't 0-ed out
@@ -198,10 +197,9 @@ RTcmix::init(float tsr, int tnchans, int bsize)
 	p[2] = pp[2] = bsize;
 	rtsetparams(p, 3, pp);
 
-	retcode = pthread_create(&inTraverseThread, NULL, inTraverse,
-					(void *) "");
+	retcode = runMainLoop();
 	if (retcode != 0)
-		fprintf(stderr, "inTraverse() thread create failed\n");
+		fprintf(stderr, "runMainLoop() failed\n");
 }
 
 
@@ -379,8 +377,8 @@ void RTcmix::close()
 {
 	run_status = RT_SHUTDOWN;
 	//	closesf_noexit();
-      close_audio_ports();
       rtreportstats();
+      close_audio_ports();
       rtcloseout();
 }
 
