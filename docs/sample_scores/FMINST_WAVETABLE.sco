@@ -4,8 +4,8 @@ load("WAVETABLE")
 reset(2000)
 print_off()
 
-makegen(1, 10, 1000, 1)
-makegen(2, 7, 1000, 0, 500, 1, 500, 0)
+makegen(1, 7, 1000, 0, 500, 1, 500, 0)
+makegen(2, 10, 1000, 1)
 makegen(3, 24, 1000, 0,1, 2,0)
 
 freq = 8.00
