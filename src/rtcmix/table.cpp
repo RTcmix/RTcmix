@@ -1604,6 +1604,7 @@ extern "C" {
    double tablelen(const Arg args[], const int nargs);
    Handle multtable(const Arg args[], const int nargs);
    Handle addtable(const Arg args[], const int nargs);
+   Handle reversetable(const Arg args[], const int nargs);
    Handle normtable(const Arg args[], const int nargs);
    Handle copytable(const Arg args[], const int nargs);
    Handle inverttable(const Arg args[], const int nargs);
@@ -1722,7 +1723,7 @@ multtable(const Arg args[], const int nargs)
          return _createPFieldHandle(new MultPField(table0, table1));
       }
    }
-   die("multtable", "Usage: mul(table1, table2) or mul(table1, const1)");
+   die("multtable", "Usage: mul(table1, table2) or mul(table, constant)");
    return NULL;
 }
 
@@ -1748,8 +1749,29 @@ addtable(const Arg args[], const int nargs)
          return _createPFieldHandle(new AddPField(table0, table1));
       }
    }
-   die("addtable", "Usage: add(table1, table2) or add(table1, const1)");
+   die("addtable", "Usage: add(table1, table2) or add(table, constant)");
    return NULL;
+}
+
+
+/* ---------------------------------------------------------- reversetable -- */
+/* Make a copy of the given table, and reverse the values of the copy.
+   Note: this creates a ReversePField class, which performs the reverse 
+   reading on the fly when called upon to do so.
+*/
+Handle
+reversetable(const Arg args[], const int nargs)
+{
+   if (nargs != 1) {
+      die("reversetable", "Usage: newtable = reversetable(table)");
+      return NULL;
+   }
+   PField *table = (PField *) args[0];
+   if (table == NULL) {
+      die("reversetable", "Usage: newtable = reversetable(table)");
+      return NULL;
+   }
+   return _createPFieldHandle(new ReversePField(table));
 }
 
 
