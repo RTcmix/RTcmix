@@ -122,7 +122,7 @@ int FOLLOWGATE :: post_init(double p[], int n_args)
 
 
 /* --------------------------------------------------------- update_params -- */
-void FOLLOWGATE :: update_params()
+void FOLLOWGATE :: update_params(double p[])
 {
    threshold = thresh_table->tick(currentFrame(), 1.0);
    if (threshold < 0.0)

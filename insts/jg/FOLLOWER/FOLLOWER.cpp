@@ -13,7 +13,11 @@
    p6  = smoothness -- how much to smooth the power gauge output (0-1; try .8)
    p7  = percent to left channel [optional, default is .5]
 
-   Function table 1 is the overall amplitude envelope.
+   p3 (carrier amp), p4 (modulator amp), p6 (smoothness) and p7 (pan) can
+   receive dynamic updates from a table or real-time control source.
+
+   If an old-style gen table 1 is present, its values will be multiplied
+   by the p3 carrier amplitude multiplier, even if the latter is dynamic.
 
    NOTES:
 
@@ -74,8 +78,6 @@ FOLLOWER :: ~FOLLOWER()
 /* -------------------------------------------------------------- pre_init -- */
 int FOLLOWER :: pre_init(double p[], int n_args)
 {
-   pctleft = n_args > 7 ? p[7] : 0.5;     /* default is center */
-
    return 0;
 }
 
@@ -88,8 +90,9 @@ int FOLLOWER :: post_init(double p[], int n_args)
 
 
 /* --------------------------------------------------------- update_params -- */
-void FOLLOWER :: update_params()
+void FOLLOWER :: update_params(double p[])
 {
+   pctleft = nargs > 7 ? p[7] : 0.5;      // default is center
 }
 
 

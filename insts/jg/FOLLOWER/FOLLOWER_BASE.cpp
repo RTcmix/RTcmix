@@ -1,5 +1,5 @@
 /* Base class for envelope follower instruments
-   John Gibson <johgibso at indiana dot edu>, 1/5/03.
+   John Gibson <johgibso at indiana dot edu>, 1/5/03.  Rev for v4, 7/12/04
 */
 
 //#define DEBUG
@@ -12,7 +12,6 @@ FOLLOWER_BASE :: FOLLOWER_BASE()
    branch = 0;
    in = NULL;
    amp_table = NULL;
-   smoother = NULL;
 }
 
 
@@ -29,33 +28,22 @@ FOLLOWER_BASE :: ~FOLLOWER_BASE()
 /* ------------------------------------------------------------------ init -- */
 int FOLLOWER_BASE :: init(double p[], int n_args)
 {
-   int   window_len;
-   float *function, outskip, inskip, smoothness;
-
-   outskip = p[0];
-   inskip = p[1];
+   nargs = n_args;
+   float outskip = p[0];
+   float inskip = p[1];
    dur = p[2];
-   caramp = amp = p[3];
 
-   /* apply conversion to normal range [-1, 1] for modulator input now */
-   modamp = p[4] / 32768.0;
+   // apply conversion to normal range [-1, 1] for modulator input now
+   modamp = p[4] * (1.0 / 32768.0);
 
-   window_len = (int) p[5];
+   int window_len = (int) p[5];
    if (window_len < 1)
       return die(instname(), "Window length must be at least 1 sample.");
 
    smoothness = p[6];
    if (smoothness < 0.0 || smoothness > 1.0)
       return die(instname(), "Smoothness must be between 0 and 1.");
-
-   /* Filter pole coefficient is non-linear -- very sensitive near 1, and
-      not very sensitive below .5, so we use a log to reduce this nonlinearity
-      for the user.  Constrain to range [1, 100], then take log10.
-   */
-   smoothness = (float) log10((double) ((smoothness * 99) + 1)) * 0.5f;
-   if (smoothness > 0.9999)   /* 1.0 results in all zeros for power signal */
-      smoothness = 0.9999;
-   DPRINT1("smoothness: %f\n", smoothness);
+   smoothness = -1.0;   // force first update
 
    if (pre_init(p, n_args) != 0)
       return DONT_SCHEDULE;
@@ -71,21 +59,16 @@ int FOLLOWER_BASE :: init(double p[], int n_args)
       return die(instname(),
       "Must use 2 input channels: 'left' for carrier; 'right' for modulator.");
 
-   function = floc(1);
+   float *function = floc(1);
    if (function) {
       int len = fsize(1);
       amp_table = new TableL(dur, function, len);
    }
-   else
-      advise(instname(), "Setting flat amplitude curve, since no table 1.");
 
    gauge = new RMS();
    gauge->setWindowSize(window_len);
 
-   if (smoothness > 0.0) {
-      smoother = new OnePole();
-      smoother->setPole(smoothness);
-   }
+   smoother = new OnePole();
 
    skip = (int) (SR / (float) resetval);
 
@@ -96,30 +79,66 @@ int FOLLOWER_BASE :: init(double p[], int n_args)
 }
 
 
+/* ------------------------------------------------------------- configure -- */
+int FOLLOWER_BASE :: configure()
+{
+   in = new float [RTBUFSAMPS * inputChannels()];
+   return in ? 0 : -1;
+}
+
+
+/* ------------------------------------------------------- update_smoother -- */
+inline void FOLLOWER_BASE :: update_smoother(double p[])
+{
+   if (p[6] != smoothness) {
+      smoothness = p[6];
+      if (smoothness < 0.0)
+         smoothness = 0.0;
+      else if (smoothness > 1.0)
+         smoothness = 1.0;
+
+      // Filter pole coefficient is non-linear -- very sensitive near 1,
+      // and not very sensitive below .5, so we use a log to reduce this
+      // nonlinearity for the user.  Constrain to range [1, 100], then
+      // take log10.
+
+      float smooth = (float) log10((double) ((smoothness * 99) + 1)) * 0.5f;
+      if (smooth > 0.9999)    // 1.0 results in all zeros for power signal
+         smooth = 0.9999;
+
+      smoother->setPole(smooth);
+   }
+}
+
+
 /* ------------------------------------------------------------------- run -- */
 int FOLLOWER_BASE :: run()
 {
-   float out[2];
+   const int samps = framesToRun() * inputChannels();
+   rtgetin(in, this, samps);
 
-   if (in == NULL)            /* first time, so allocate it */
-      in = new float [RTBUFSAMPS * inputChannels()];
-
-   const int insamps = framesToRun() * inputChannels();
-   rtgetin(in, this, insamps);
-
-   for (int i = 0; i < insamps; i += inputChannels()) {
-      if (--branch < 0) {
+   for (int i = 0; i < samps; i += inputChannels()) {
+      if (--branch <= 0) {
+         double p[nargs];
+         update(p, nargs);
+         caramp = p[3];
          if (amp_table)
-            caramp = amp_table->tick(currentFrame(), amp);
-         update_params();
+            caramp *= amp_table->tick(currentFrame(), 1.0);
+         if (p[4] != modamp) {
+            // apply conversion to normal range [-1, 1]
+            modamp = p[4] * (1.0 / 32768.0);
+         }
+         update_smoother(p);
+         update_params(p);
          branch = skip;
       }
       float carsig = in[i] * caramp;
       float modsig = in[i + 1] * modamp;
       float power = gauge->tick(modsig);
-      if (smoother)
-         power = smoother->tick(power);
+      power = smoother->tick(power);
       float outsig = process_sample(carsig, power);
+
+      float out[2];
       if (outputChannels() == 2) {
          out[0] = outsig * pctleft;
          out[1] = outsig * (1.0 - pctleft);

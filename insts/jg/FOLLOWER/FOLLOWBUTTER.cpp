@@ -145,7 +145,7 @@ int FOLLOWBUTTER :: post_init(double p[], int n_args)
 
 
 /* --------------------------------------------------------- update_params -- */
-void FOLLOWBUTTER :: update_params()
+void FOLLOWBUTTER :: update_params(double p[])
 {
    if (bwtable) {
       float bw = bwtable->tick(currentFrame(), 1.0);
