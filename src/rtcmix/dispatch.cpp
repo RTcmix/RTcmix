@@ -84,10 +84,18 @@ dispatch(const char *str, double *pp, int n_args, void **inst)
 	return retval;
 }
 
-// This is an extern "C" wrapper for trees.c and RT.c
+// This is an extern "C" wrapper for trees.c
 
 double parse_dispatch(const char *str, double *pp, int n_args, void **inst)
 {
 	return dispatch(str, pp, n_args, inst);
 }
 
+// This is an extern "C" wrapper for RT.c.  Make sure decl matches one in RT.xs
+
+extern "C" {
+int perl_dispatch(const char *str, const Arg args[], int n_args, Arg *retarg)
+{
+	return dispatch(str, args, n_args, retarg);
+}
+};
