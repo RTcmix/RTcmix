@@ -55,7 +55,9 @@ public:
 	virtual void setdelay(double lagsamps);
 	virtual float next(float input);
 
-	float last() { return _lastout; }
+	float last() const { return _lastout; }
+
+	long  length() const { return _len; }
 	
 protected:
 	int	  resize(long newLen);
