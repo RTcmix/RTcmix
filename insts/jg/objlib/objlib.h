@@ -26,7 +26,7 @@
 #include "PRCRev.h"
 #include "RMS.h"
 #include "Reverb.h"
-#include "SoundIn.h"
+//#include "SoundIn.h"
 #include "SubNoise.h"
 #include "SubNoiseL.h"
 #include "TableL.h"
