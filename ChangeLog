@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Wednesday, November 20, 2002 Douglas Scott <netdscott-at-netscape.net>
+   * Added auto-stablize command to LPCPLAY to allow stabilizing of
+	interpolated lpc frames in real time.
+   * Updated MOVE and PLACE programs to fix old reverb problems.
 
 Sunday, November 17, 2002 John Gibson <johgibso@indiana.edu>
 
