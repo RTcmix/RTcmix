@@ -1,28 +1,42 @@
-#include <iostream.h>
-#include <unistd.h>
-#include <stdlib.h>
+/* Mix any number of inputs to stereo outputs with global amplitude control
+   and individual pans.
+
+      p0 = output start time
+      p1 = input start time
+      p2 = duration (-endtime)
+      p3 = amplitude multiplier
+      p4-n = channel mix maxtrix (see below)
+
+   p3 (amplitude) can receive dynamic updates from a table or real-time
+   control source.
+
+   If an old-style gen table 1 is present, its values will be multiplied
+   by the p3 amplitude multiplier, even if the latter is dynamic.
+
+   The mix matrix works like this.  For every input channel, the corresponding
+   number in the matrix gives the output stereo pan for that channel, in
+   percent-to-left form (0 is right; 1 is left).  p4 corresponds to input
+   channel 0, p5 corresponds to input channel 1, etc.  If the value of one
+   of these pfields is negative, then the corresponding input channel will 
+   not be played.  Note that you cannot send a channel to more than one
+   output pan location.
+
+	Each mix matrix pfield (pctleft) can receive dynamic updates.
+
+                                             rev. for v4.0 by JGG, 7/9/04
+*/
 #include <stdio.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "STEREO.h"
 #include <rt.h>
 #include <rtdefs.h>
 
-/* If an input file has 2 chans, but there's only one mix matrix pfield,
-   then the 2nd chan will be panned hard right (since an empty pfield has
-   an implicit value of 0).  But I expect a channel with no matrix assignment
-   to be disabled.  Uncommenting the define below gives an input chan with
-   no explicit pfield a value of -1 in the mix matrix, which disables input
-   from that channel.  This is here because I was bitten by this too many
-   times.   JGG, 11/10/01
-*/
-#define DISABLE_UNASSIGNED_INPUT_CHANS
-
 STEREO::STEREO() : Instrument()
 {
 	in = NULL;
 	branch = 0;
+	warn_invalid = true;
 }
 
 STEREO::~STEREO()
@@ -35,93 +49,97 @@ STEREO::~STEREO()
 
 int STEREO::init(double p[], int n_args)
 {
-// p0 = outsk; p1 = insk; p2 = dur (-endtime); p3 = amp; p4-n = channel mix matrix
-// we're stashing the setline info in gen table 1
+	nargs = n_args;
 
-	int i, rvin;
+	if (outputChannels() != 2)
+		return die("STEREO", "Output must be stereo.");
 
-	if (outputchans != 2) {
-		die("STEREO", "Output must be stereo.");
-		return(DONT_SCHEDULE);
-	}
+	if (n_args <= MATRIX_PFIELD_OFFSET)
+		return die("STEREO", "You need at least one channel assignment.");
 
-	if (n_args <= MATRIX_PFIELD_OFFSET) {
-		die("STEREO", "You need at least one channel assignment.");
-		return(DONT_SCHEDULE);
-	}
-
-	if (p[2] < 0.0) p[2] = -p[2] - p[1];
+	if (p[2] < 0.0)
+		p[2] = -p[2] - p[1];
 
 	nsamps = rtsetoutput(p[0], p[2], this);
-	rvin = rtsetinput(p[1], this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
-
-	amp = p[3];
-
-	for (i = 0; i < inputchans; i++) {
-		outspread[i] = p[i + MATRIX_PFIELD_OFFSET];
-		}
-
-#ifdef DISABLE_UNASSIGNED_INPUT_CHANS
-	/* disable input chans that don't have explicit matrix assignments */
-	i = n_args - MATRIX_PFIELD_OFFSET;
-	for ( ; i < inputchans; i++)
-		outspread[i] = -1.0;
-#endif
+	if (rtsetinput(p[1], this) == -1)
+		return DONT_SCHEDULE;	// no input
 
 	amptable = floc(1);
 	if (amptable) {
 		int amplen = fsize(1);
 		tableset(p[2], amplen, tabs);
 	}
-	else
-		advise("STEREO", "Setting phrase curve to all 1's.");
-	aamp = amp;        /* in case amptable == NULL */
+	amp = p[3];
 
-	skip = (int)(SR/(float)resetval);       // how often to update amp curve
+	outslots = n_args - MATRIX_PFIELD_OFFSET;
 
-	return(nsamps);
+	skip = (int)(SR / (float) resetval);
+
+	return nsamps;
+}
+
+
+int STEREO::configure()
+{
+	in = new float [RTBUFSAMPS * inputChannels()];
+	return in ? 0 : -1;
+}
+
+
+// Fill the mix matrix.  An input chan with no explicit pfield gets a
+// value of -1 in the matrix, which disables input from that channel.
+
+void STEREO::updatePans(double p[])
+{
+	for (int i = 0; i < inputChannels(); i++) {
+		double val = -1.0;
+		if (i < outslots)
+			val = p[i + MATRIX_PFIELD_OFFSET];
+		if (val > 1.0) {
+			if (warn_invalid) {
+				warn("STEREO", "One or more pan values were greater than 1.");
+				warn_invalid = false;
+			}
+			val = 1.0;
+		}
+		outspread[i] = val;
+	}
 }
 
 int STEREO::run()
 {
-	int i,j,rsamps;
-	float out[2];
+	int samps = framesToRun() * inputChannels();
 
-	if (in == NULL)    /* first time, so allocate it */
-		in = new float [RTBUFSAMPS * inputchans];
+	rtgetin(in, this, samps);
 
-	rsamps = chunksamps*inputchans;
-
-	rtgetin(in, this, rsamps);
-
-	for (i = 0; i < rsamps; i += inputchans)  {
-		if (--branch < 0) {
+	for (int i = 0; i < samps; i += inputChannels())  {
+		if (--branch <= 0) {
+			double p[nargs];
+			update(p, nargs);
+			amp = p[3];
 			if (amptable)
-				aamp = table(cursamp, amptable, tabs) * amp;
+				amp *= tablei(currentFrame(), amptable, tabs);
+			updatePans(p);
 			branch = skip;
-			}
+		}
 
+		float out[2];
 		out[0] = out[1] = 0.0;
-		for (j = 0; j < inputchans; j++) {
+		for (int j = 0; j < inputChannels(); j++) {
 			if (outspread[j] >= 0.0) {
-				out[0] += in[i+j] * outspread[j] * aamp;
-				out[1] += in[i+j] * (1.0 - outspread[j]) * aamp;
-				}
+				out[0] += in[i+j] * outspread[j] * amp;
+				out[1] += in[i+j] * (1.0 - outspread[j]) * amp;
 			}
+		}
 
 		rtaddout(out);
-		cursamp++;
-		}
-	return i;
+		increment();
+	}
+	return framesToRun();
 }
 
 
-
-Instrument*
-makeSTEREO()
+Instrument *makeSTEREO()
 {
 	STEREO *inst;
 
@@ -131,8 +149,9 @@ makeSTEREO()
 	return inst;
 }
 
+
 void
 rtprofile()
 {
-	RT_INTRO("STEREO",makeSTEREO);
+	RT_INTRO("STEREO", makeSTEREO);
 }
