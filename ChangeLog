@@ -1,26 +1,34 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Thursday, June 17, 2004 John Gibson <johgibso-at-indiana.edu>
+
+   * Added test program "coreaudioprobe," which prints out some useful
+     information about all the audio devices attached to an OS X system.
+
 2004-06-17  Douglas Scott  <netdscott at netscape.net>
 
-	* 1) Instrument subclasses continue to implement an optional virtual int ::configure(void) method 
-		and a required virtual int ::run(void) method.
+	* 1) Instrument subclasses continue to implement an optional
+        virtual int ::configure(void) method 
+		  and a required virtual int ::run(void) method.
  
-	* 2) Those method implementations NO LONGER and MAY NOT call the base class
-		Instrument versions of those methods.
+	* 2) Those method implementations NO LONGER and MAY NOT call the base
+        class Instrument versions of those methods.
  
-	* 3) The Instrument base class now has its own non-virtual version of configure() and run(),
-		each of which takes an argument, which distinguishes the base class calls from the
-		class-specific virtual calls.  These base class methods now do what they need to,
-		and then make a call to the *virtual* version.
+	* 3) The Instrument base class now has its own non-virtual version of
+        configure() and run(), each of which takes an argument, which
+        distinguishes the base class calls from the class-specific virtual
+        calls.  These base class methods now do what they need to, and then
+        make a call to the *virtual* version.
  
-	* 4) The configure() method returns 0 on success and -1 on failure, which is a change from
-		the comments in sample_code/MYINST.C.  inTraverse() and checkInsts() now check
-		this return value, because it is possible for configure() to fail to to memory allocation
-		failure, etc.
- 	* The other thing I did was make the die() function return DO_NOT_SCHEDULE in
-		configurations where EXIT_ON_ERROR (or whatever it is called) is NOT defined.
-		This allows the simplified 'return die("some error message");'
+	* 4) The configure() method returns 0 on success and -1 on failure, which
+        is a change from the comments in sample_code/MYINST.C.  inTraverse()
+        and checkInsts() now check this return value, because it is possible
+        for configure() to fail to to memory allocation failure, etc.
+
+ 	* The other thing I did was make the die() function return DO_NOT_SCHEDULE
+     in configurations where EXIT_ON_ERROR (or whatever it is called) is NOT
+     defined.  This allows the simplified 'return die("some error message");'
 
 2004-06-15 Douglas Scott  <netdscott at netscape.net>
 
