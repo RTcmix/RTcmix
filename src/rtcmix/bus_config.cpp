@@ -12,8 +12,7 @@
 #include <globals.h>
 #include <prototypes.h>
 #include <lock.h>
- 
-#include <iostream.h> 
+  
 //#define PRINTPLAY
 //#define DEBUG
 //#define PRINTALL
@@ -156,7 +155,6 @@ print_parents() {
 static void
 print_children() {
   int i;
-
   printf("Aux buses w/o aux outputs:  "); 
   for(i=0;i<MAXBUS;i++) {
 	pthread_mutex_lock(&aux_in_use_lock);
@@ -307,9 +305,9 @@ check_bus_inst_config(BusSlot *slot, Bool visit) {
 
 			/* Compare to each of the input slot's output channels */
 			for (j=0;(j<slot->auxout_count) && (!Checked[t_in]);j++) {
-				short t_out = slot->auxout[j];
+				const short t_out = slot->auxout[j];
 #ifdef PRINTALL
-				printf("checking in=%d out=%d\n",t_in,t_out);
+				printf("check_bus_inst_config: checking in=%d out=%d\n",t_in,t_out);
 #endif
 				/* If they're equal, then return the error */
 				if (t_in == t_out) {
@@ -327,12 +325,12 @@ check_bus_inst_config(BusSlot *slot, Bool visit) {
 			pthread_mutex_lock(&bus_in_config_lock);
 			if ((Bus_In_Config[t_in]->bus_count > 0) && !Visited[t_in]) {
 #ifdef PRINTALL
-				printf("adding Bus[%d] to list\n",t_in);
+				printf("check_bus_inst_config: adding Bus[%d] to list\n",t_in);
 #endif
 				pthread_mutex_lock(&has_parent_lock);
 				if (HasParent[t_in]) {
 #ifdef PRINTPLAY
-					printf("RevPlay[%d] = %d\n",r_p_count,t_in);
+					printf("check_bus_inst_config: RevPlay[%d] = %d\n",r_p_count,t_in);
 #endif
 					pthread_mutex_lock(&revplay_lock);
 					RevPlay[r_p_count++] = t_in;
@@ -347,13 +345,13 @@ check_bus_inst_config(BusSlot *slot, Bool visit) {
 			pthread_mutex_unlock(&bus_in_config_lock);
 		}
 #ifdef PRINTALL
-		printf("popping ...\n");
+		printf("check_bus_inst_config: popping ...\n");
 #endif
 		in_check_queue = in_check_queue->next;
 	}
 
 #ifdef PRINTALL
-	printf("cleaning up\n");
+	printf("check_bus_inst_config: cleaning up\n");
 #endif
 	// Now clean up
 	CheckQueue *queue = savedQueueHead;
@@ -389,7 +387,7 @@ insert_bus_slot(char *name, BusSlot *slot) {
 			pthread_mutex_lock(&has_parent_lock);
 			if ((!HasParent[s_out]) && (s_in != 333)) {
 #ifdef PRINTALL
-				printf("HasParent[%d]\n",s_out);
+				printf("insert_bus_slot: HasParent[%d]\n",s_out);
 #endif
 				HasParent[s_out] = YES;
 			}
@@ -399,7 +397,7 @@ insert_bus_slot(char *name, BusSlot *slot) {
 			t_in_count = Bus_In_Config[s_out]->bus_count;
 			pthread_mutex_unlock(&bus_in_config_lock);
 #ifdef PRINTALL
-			printf("Inserting Bus_In[%d] = %d\n",s_out,s_in);
+			printf("insert_bus_slot: Inserting Bus_In[%d] = %d\n",s_out,s_in);
 #endif
 			if (s_in != 333) {
 				pthread_mutex_lock(&bus_in_config_lock);
@@ -409,7 +407,6 @@ insert_bus_slot(char *name, BusSlot *slot) {
 // BGG -- my bus-wrapping hackeroo!  go brad go!  :-)
 				if (Bus_In_Config[s_out]->bus_count >= MAXBUS)
 					Bus_In_Config[s_out]->bus_count = 0;
-
 				pthread_mutex_unlock(&bus_in_config_lock);
 				pthread_mutex_lock(&has_child_lock);
 				HasChild[s_in] = YES;
@@ -443,14 +440,14 @@ insert_bus_slot(char *name, BusSlot *slot) {
 			// Remove our reference to this slot and replace.
 			qEntry->slot->unref();
 #ifdef PRINTALL
-			printf("replacing slot entry for '%s'\n", name);
+			printf("insert_bus_slot: replacing slot entry for '%s'\n", name);
 #endif
 			slot->next = next;
 			qEntry->slot = slot;
 			slot->ref();
 #else	//	TEST_SLOT_CLEANUP
 #ifdef PRINTALL
-			printf("prepending new slot entry for '%s'\n", name);
+			printf("insert_bus_slot: prepending new slot entry for '%s'\n", name);
 #endif
 			slot->next = qEntry->slot;
 			qEntry->slot = slot;
@@ -503,7 +500,7 @@ static void create_play_order() {
 	  pthread_mutex_lock(&has_parent_lock);
 	  if (!HasParent[i]) {
 #ifdef PRINTPLAY
-		printf("AuxPlay[%d] = %d\n",aux_p_count,i);
+		printf("create_play_order: AuxPlay[%d] = %d\n",aux_p_count,i);
 #endif
 		pthread_mutex_lock(&aux_to_aux_lock);
 		AuxToAuxPlayList[aux_p_count++] = i;
@@ -525,7 +522,7 @@ static void create_play_order() {
 		  pthread_mutex_lock(&revplay_lock);
 		  if (RevPlay[j] != -1) {
 #ifdef PRINTPLAY
-			printf("AuxPlay[%d](%d) = Rev[%d](%d)\n",
+			printf("create_play_order: AuxPlay[%d](%d) = Rev[%d](%d)\n",
 					aux_p_count,AuxToAuxPlayList[aux_p_count],j,RevPlay[j]);
 #endif
 			pthread_mutex_lock(&aux_to_aux_lock);
@@ -656,6 +653,10 @@ parse_bus_chan(char *numstr, int *startchan, int *endchan)
    else
       *endchan = *startchan;
 
+	/* NOTE: with the current code, only MAXBUS-1 channels are allowed */
+	if (*startchan >= MAXBUS-1 || *endchan >= MAXBUS-1)
+		return INVAL_BUS_CHAN_ERR;
+
    return NO_ERR;
 }
 
@@ -723,6 +724,7 @@ double bus_config(float p[], int n_args, double pp[])
    anint = (int)pp[0];
    str = (char *)anint;
    instname = strdup(str);	// Note:  If we exit nonfatally, we have to free.
+
    for (i = 1; i < n_args; i++) {
       anint = (int)pp[i];
       busname = (char *)anint;
