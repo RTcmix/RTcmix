@@ -43,9 +43,9 @@ DataSet::open(const char *fileName, int npoleGuess, float sampRate)
 {
 	_nPoles = npoleGuess;	// in case we are not using headers
     if ((_fdesc = ::open(fileName, O_RDONLY)) < 0) {
-		::die("dataset", "Can't open %s\n", fileName);
+		::die("dataset", "Can't open %s", fileName);
     }
-	::advise("dataset", "Opened lpc dataset %s.\n", fileName);
+	::advise("dataset", "Opened lpc dataset %s.", fileName);
 #ifdef USE_HEADERS
 	if ((_lpHeaderSize = ::checkForHeader(_fdesc, &_nPoles, sampRate)) < 0)
 	    ::die("dataset", "Failed to check header");
@@ -70,7 +70,7 @@ DataSet::open(const char *fileName, int npoleGuess, float sampRate)
 		return frms;
 	}
 	else {
-		::die("dataset", "Unable to stat dataset file.\n");
+		::die("dataset", "Unable to stat dataset file.");
 		return 0;	/* not reached */
 	}
 }

@@ -82,7 +82,7 @@ double dataset(float *p, int n_args, double *pp)
 		die("dataset", "NULL file name");
 
 	if (strcmp(name, g_dataset_names[g_currentDataset]) == 0) {
-        	warn("dataset", "Data file %s is already open.\n", name);
+        	warn("dataset", "Data file %s is already open.", name);
         	return -1;
 	}
 	strcpy(g_dataset_names[g_currentDataset],name);
@@ -99,11 +99,11 @@ double dataset(float *p, int n_args, double *pp)
 	{
 		if (dataSet->getNPoles() == 0) {
 			die("dataset",
-				"For this file, you must specify the correct value for npoles in p[1].\n");
+				"For this file, you must specify the correct value for npoles in p[1].");
 		}
 	}
 
-	advise("dataset", "File has %d poles and %d frames.\n",
+	advise("dataset", "File has %d poles and %d frames.",
 			dataSet->getNPoles(), frms);
 	
 	// Replace previous dataset.
@@ -122,12 +122,20 @@ double lpcstuff(float *p, int n_args)
         if(n_args>3) risetime=p[3];
         if(n_args>4) decaytime=p[4];
         if(n_args>5) cutoff = p[5]; else cutoff = 0;
-        advise("lpcstuff", "Adjusting settings for %s.\n",g_dataset_names[g_currentDataset]); 
-        advise("lpcstuff", "Thresh: %f     Randamp: %f",thresh,randamp);
+        advise("lpcstuff", "Adjusting settings for %s.",g_dataset_names[g_currentDataset]); 
+        advise("lpcstuff", "Thresh: %g  Randamp: %g  EnvRise: %g  EnvDecay: %g",
+			   thresh,randamp, risetime, decaytime);
+#ifdef WHEN_UNVOICED_RATE_WORKING
         if(unvoiced_rate == 1)
-			advise("lpcstuff", "Unvoiced frames played at normal rate.\n");
+			advise("lpcstuff", "Unvoiced frames played at normal rate.");
         else
-			advise("lpcstuff", "Unvoiced frames played at same rate as voiced 'uns.\n");
+			advise("lpcstuff", "Unvoiced frames played at same rate as voiced 'uns.");
+#else
+        if(unvoiced_rate == 1) {
+			advise("lpcstuff", "Unvoiced rate option not yet working.");
+			unvoiced_rate = 0;
+		}
+#endif
 	return 0;
 }
 
@@ -155,7 +163,16 @@ double freset(float *p, int n_args)
 double setdev(float *p, int n_args)
 {
         maxdev = p[0];
+		advise("setdev", "pitch deviation set to %g Hz", maxdev);
 		return maxdev;
+}
+
+double setdevfactor(float *p, int n_args)
+{
+		// LPCPLAY will treat negatives as a factor
+        maxdev = -p[0];
+		advise("setdevfactor", "pitch deviation factor: %g", -maxdev);
+		return -maxdev;
 }
 
 double
@@ -178,6 +195,8 @@ double
 use_autocorrect(float *p, int n_args)
 {
 	autoCorrect = (p[0] != 0.0f);
+	advise("autocorrect", "auto-frame-correction turned %s", 
+			autoCorrect == 0.0 ? "off" : "on");
 	return p[0];
 }
 
@@ -190,6 +209,7 @@ int profile()
 	UG_INTRO("dataset",dataset);
 	UG_INTRO("freset",freset);
 	UG_INTRO("setdev",setdev);
+	UG_INTRO("setdevfactor",setdevfactor);
 	UG_INTRO("set_thresh",set_thresh);
 	UG_INTRO("set_hnfactor",set_hnfactor);
 	UG_INTRO("autocorrect",use_autocorrect);

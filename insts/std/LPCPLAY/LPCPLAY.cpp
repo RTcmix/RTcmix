@@ -256,7 +256,7 @@ int LPCPLAY::localInit(float p[], int n_args)
 		_transposition = cpspch(-_pitch);  /* flat pitch in octave pt */
 
 	if ((n_args <= _datafields) && (_pitch > 0)) {
-		advise("LPCPLAY", "Overall transp factor: %f, weighted av. pitch = %f",
+		advise("LPCPLAY", "Overall transp factor: %f, weighted av. pitch = %g Hz",
 			   _transposition, actualweight);
 		if (_maxdev) 
 			readjust(_maxdev,_pchvals,startFrame,endFrame,_thresh,actualweight);
@@ -522,7 +522,7 @@ LPCPLAY::deviation(float frame1, float frame2, float weight, float thresh)
 		}
 	}
 	dev = (xweight != 0.0f) ? sum / xweight : 0.0f;
-	advise("LPCPLAY", "Average pitch deviation = %f",dev);
+	advise("LPCPLAY", "Average pitch deviation = %f Hz",dev);
 	return(dev);
 }
 
@@ -532,8 +532,9 @@ LPCPLAY::adjust(float actdev, float desdev, float actweight,
 {
 	int i,j;
 	float x,devfact;
-/* two heuristics here: only shrinking range, and no pitches < 50 hz */
-/*	devfact = (desdev > actdev) ? 1. : desdev/actdev; */
+	/* two heuristics here: only shrinking range, and no pitches < 50 hz */
+	// Note -- now range may grow.
+	/*	devfact = (desdev > actdev) ? 1. : desdev/actdev; */
 	devfact =  desdev/actdev;
 	for (j=0,i=(int)framefirst; i<=(int)framelast; i++,j++) {
 		x = (pchval[j]-actweight) * devfact + actweight;
@@ -551,7 +552,13 @@ LPCPLAY::readjust(float maxdev, float *pchval,
 	if (!dev)
 		dev=.0001;
 	if (maxdev)
+	{
+		// If negative, use as factor to multiply orig deviation
+		if (maxdev < 0)
+			maxdev = dev * -maxdev;
+		advise("LPCPLAY", "Adjusting pitch deviation to %f Hz",maxdev);
 		adjust(dev,maxdev,weight,pchval,firstframe,lastframe);
+	}
 }
 
 LPCIN::LPCIN() : LPCINST("LPCIN")
