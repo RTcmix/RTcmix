@@ -125,13 +125,13 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 			// Write new audio data into audioBuffers[REC].
 			//   Treat it as circular buffer.
 			while (sampsCopied < sampsToRead) {
-				register float *inbuf = (float *) inInputData->mBuffers[0].mData;
-				register float *outbuf = impl->audioBuffers[REC];
+				register float *src = (float *) inInputData->mBuffers[0].mData;
+				register float *dest = impl->audioBuffers[REC];
 				int inLoc = impl->inLoc[REC];
 				for (int n = 0; n < sampsToRead; ++n) {
 					if (inLoc == bufLen)	// wrap
 						inLoc = 0;
-					inbuf[n] = outbuf[inLoc++];
+					dest[inLoc++] = src[n];
 				}
 				impl->inLoc[REC] = inLoc;
 				sampsCopied = sampsToRead;
@@ -170,13 +170,13 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 			// Audio data has been written into audioBuffers[PLAY] during doSendFrames.
 			//   Treat it as circular buffer.
 			while (samplesDone < sampsToWrite) {
-				register float *inbuf = impl->audioBuffers[PLAY];
-				register float *outbuf = (float *) outOutputData->mBuffers[0].mData;
+				register float *src = impl->audioBuffers[PLAY];
+				register float *dest = (float *) outOutputData->mBuffers[0].mData;
 				int outLoc = impl->outLoc[PLAY];
 				for (int n = 0; n < sampsToWrite; ++n) {
 					if (outLoc == bufLen)	// wrap
 						outLoc = 0;
-					outbuf[n] = inbuf[outLoc++];
+					dest[n] = src[outLoc++];
 				}
 				impl->outLoc[PLAY] = outLoc;
 				samplesDone += sampsToWrite;
