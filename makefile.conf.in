@@ -33,6 +33,9 @@ OPT = -g -Wall -Wno-unused -O2
 # Uncomment this to enable use of the Perl front end to RTcmix.
 # This requires a perl version >= 5.005_62.
 #PERL_SUPPORT = TRUE
+# Say which perl to use: just "perl" if you only have one; otherwise,
+# give full path name of perl to use, e.g., /usr/local/bin/perl.
+PERL = perl
 
 # Uncomment this to enable use of the Python front end to RTcmix.
 #PYTHON_SUPPORT = TRUE
@@ -132,7 +135,7 @@ SNDLIB = ../sndlib/sndlib.a
 
 ifeq ($(ARCH),LINUX)
   SYSLIBS = -lpthread -lm -ldl #-lefence
-  LDFLAGS = $(SYSLIBS)
+  LDFLAGS = $(OPT) $(SYSLIBS)
   SHARED_LDFLAGS = -shared -Wl,-soname,$@
   DYN = -rdynamic
 endif
