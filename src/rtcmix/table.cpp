@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <string.h>
 #include <math.h>
+#include <float.h>   /* for DBL_MIN and DBL_MAX */
 #include <assert.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -121,6 +122,24 @@ args_have_same_type(const Arg args[], const int nargs, const RTcmixType type)
       if (!args[i].isType(type))
          return 0;
    return 1;
+}
+
+
+/* ----------------------------------------------------- _get_table_bounds -- */
+/* Update the <min> and <max> references with the lower and upper bounds of
+   the given <array> of length <len>.
+*/
+static void
+_get_table_bounds(const double *array, const int len, double &min, double &max)
+{
+   min = DBL_MAX;
+   max = DBL_MIN;
+   for (int i = 0; i < len; i++) {
+      if (array[i] < min)
+         min = array[i];
+      if (array[i] > max)
+         max = array[i];
+   }
 }
 
 
@@ -1583,14 +1602,17 @@ _dispatch_table(const Arg args[], const int nargs, const int startarg,
 extern "C" {
    Handle maketable(const Arg args[], const int nargs);
    double tablelen(const Arg args[], const int nargs);
-   Handle normtable(const Arg args[], const int nargs);
-   Handle copytable(const Arg args[], const int nargs);
-   Handle shifttable(const Arg args[], const int nargs);
-   Handle quantizetable(const Arg args[], const int nargs);
    Handle multtable(const Arg args[], const int nargs);
    Handle addtable(const Arg args[], const int nargs);
-   double plottable(const Arg args[], const int nargs);
+   Handle normtable(const Arg args[], const int nargs);
+   Handle copytable(const Arg args[], const int nargs);
+   Handle inverttable(const Arg args[], const int nargs);
+   Handle shifttable(const Arg args[], const int nargs);
+   Handle quantizetable(const Arg args[], const int nargs);
+   double samptable(const Arg args[], const int nargs);
+   double samptablei(const Arg args[], const int nargs);
    double dumptable(const Arg args[], const int nargs);
+   double plottable(const Arg args[], const int nargs);
 };
 
 
@@ -1732,6 +1754,16 @@ addtable(const Arg args[], const int nargs)
 
 
 /* ------------------------------------------------------------- normtable -- */
+/* Make a copy of the given table, and normalize the values of the copy,
+   using args[1] as the desired peak.  If no peak argument, peak is 1.
+   Here is what happens, depending on the sign of values in the table:
+
+      sign of values          resulting range of values
+      --------------------------------------------------------------
+      all positive            between 0 and peak
+      all negative            between 0 and -peak
+      positive and negative   between -peak and peak
+*/
 Handle
 normtable(const Arg args[], const int nargs)
 {
@@ -1783,6 +1815,47 @@ copytable(const Arg args[], const int nargs)
 }
 
 
+/* ----------------------------------------------------------- inverttable -- */
+/* Make a copy of the given table, and invert the values of the copy.  The
+   y-axis center of symmetry is a point halfway between the min and max
+   table values; inversion is performed around this center of symmetry.
+
+                                                           -JGG, 6/20/04
+*/
+static void
+_do_invert_table(double *array, const int len)
+{
+   double min, max;
+   _get_table_bounds(array, len, min, max);
+   double center = min + ((max - min) / 2.0);
+   for (int i = 0; i < len; i++) {
+      double diff = array[i] - center;
+      array[i] = center - diff;
+   }
+}
+
+Handle
+inverttable(const Arg args[], const int nargs)
+{
+   if (nargs != 1) {
+      die("inverttable", "Usage: newtable = inverttable(table)");
+      return NULL;
+   }
+   TablePField *table = _getTablePField(&args[0]);
+   if (table == NULL) {
+      die("inverttable", "Usage: newtable = inverttable(table)");
+      return NULL;
+   }
+
+   double *array = new double[table->values()];
+   table->copyValues(array);
+   _do_invert_table(array, table->values());
+   TablePField *newtable = new TablePField(array, table->values());
+
+   return _createPFieldHandle(newtable);
+}
+
+
 /* ------------------------------------------------------------ shifttable -- */
 /* Make a copy of the given table, and shift the values of the copy by 
    <shift> array locations.  Positive values of <shift> shift to the right;
@@ -1793,6 +1866,8 @@ copytable(const Arg args[], const int nargs)
       [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]      original table, size = 10
       [7, 8, 9, 0, 1, 2, 3, 4, 5, 6]      shift = 3
       [3, 4, 5, 6, 7, 8, 9, 0, 1, 2]      shift = -3
+
+                                                            -JGG, 6/20/04
 */
 static void
 _do_shift_table(double *array, const int len, const int shift)
@@ -1852,6 +1927,7 @@ shifttable(const Arg args[], const int nargs)
 /* --------------------------------------------------------- quantizetable -- */
 /* Make a copy of the given table, and constrain the values of the copy to
    the quantum.
+                                                            -JGG, 6/20/04
 */
 static void
 _do_quantize_table(double *array, const int len, const double quantum)
@@ -1889,6 +1965,7 @@ quantizetable(const Arg args[], const int nargs)
       die("quantizetable", "Usage: newtable = quantizetable(table, quantum)");
       return NULL;
    }
+
    double quantum = args[1];
    double *array = new double[table->values()];
    table->copyValues(array);
@@ -1899,7 +1976,53 @@ quantizetable(const Arg args[], const int nargs)
 }
 
 
+/* ------------------------------------------------- samptable, samptablei -- */
+/* Return the value of the table given in args[0] at the index given in
+   args[1].  For samptable, the index is truncated; for samptablei, the
+   value is generated by linear interpolation between two adjacent array
+   locations.  A negative index is an error; an index that is higher than
+   the highest valid index returns the last table value.
+*/
+double
+samptable(const Arg args[], const int nargs)
+{
+   if (nargs != 2)
+      return die("samptable", "Usage: value = samptable(table, index)");
+   TablePField *table = _getTablePField(&args[0]);
+   if (table == NULL)
+      return die("samptable", "Usage: value = samptable(table, index)");
+   if (!args[1].isType(DoubleType))
+      return die("samptable", "Usage: value = samptable(table, index)");
+   if ((double) args[1] < 0.0)
+      return die("samptable", "Index must be zero or greater.");
+   int index = args[1];                /* truncate float */
+   return table->doubleValue(index);
+}
+
+double
+samptablei(const Arg args[], const int nargs)
+{
+   if (nargs != 2)
+      return die("samptablei", "Usage: value = samptablei(table, index)");
+   TablePField *table = _getTablePField(&args[0]);
+   if (table == NULL)
+      return die("samptablei", "Usage: value = samptablei(table, index)");
+   if (!args[1].isType(DoubleType))
+      return die("samptablei", "Usage: value = samptablei(table, index)");
+   double index = args[1];
+   if (index < 0.0)
+      return die("samptablei", "Index must be zero or greater.");
+   return table->doubleValue(index / (table->values() - 1));
+}
+
+
 /* ------------------------------------------------------------- dumptable -- */
+/* Dump the table given in args[0] to stdout, or if args[1] is a filename,
+   to that file as text.  The dump format is a line of text for each table
+   entry, giving index, whitespace and table value.  E.g., for index 12:
+
+      12 0.618034
+*/
 double
 dumptable(const Arg args[], const int nargs)
 {
@@ -1937,6 +2060,41 @@ dumptable(const Arg args[], const int nargs)
 
 
 /* ------------------------------------------------------------- plottable -- */
+/* Plot the table given in args[0] using gnuplot.  Two optional arguments
+   (in args[1] and args[2]):
+
+      <pause>       amount of time to show the gnuplot window [default: 10]
+      <plot_cmds>   commands passed to gnuplot [default: "with lines"]
+
+   The optional arguments can appear in either order.
+
+   Plot commands are most useful for controlling the type of plot, e.g., with
+   lines, points, dots, impulses, etc.  See the gnuplot manual for more info.
+
+   Examples:
+
+      tbl = maketable("wave", 1000, 1)      // a sine wave
+
+      plottable(a, 30)                      // plot on screen for 30 seconds,
+                                            //   using lines
+      plottable(a, 15, "with points")       // plot with points
+      plottable(a, "with linespoints")      // plot with both lines and points
+
+   Other useful options are "with impulses," "with steps," "with dots,"
+   "with boxes," etc.
+
+   Note that gnuplot quits when <pause> seconds elapse.  But you can get rid
+   of the window earlier by typing 'q' at it.
+
+   NOTE: Under MacOS X, using Aquaterm to display output from gnuterm, <pause>
+   has no effect.  Also, you can only do one plot per run of RTcmix under OS X,
+   because gnuplot dies if there's already another one running.
+
+   If something goes wrong with the gnuplot syntax, there'll be some leftover
+   files in the /tmp directory, with names like "rtcmix_plot_data_xAb5x8."
+
+                                                      -JGG, 12/10/01, rev 6/04
+*/
 #define DEFAULT_PLOTCMD "with lines"
 
 double
