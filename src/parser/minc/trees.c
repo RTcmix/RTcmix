@@ -601,13 +601,14 @@ static void
 do_op_list_iterate(Tree tp, Tree child, const MincFloat val, const OpKind op)
 {
    int i;
+   MincListElem *dest;
    const MincList *srcList = child->v.list;
    const int len = srcList->len;
    MincListElem *src = srcList->data;
    MincList *destList = newList(len);
    if (destList == NULL)
       return;
-   MincListElem *dest = destList->data;
+   dest = destList->data;
    assert(len >= 0);
    switch (op) {
       case OpPlus:
