@@ -1,3 +1,6 @@
+#ifndef _SOCKDEFS_H_
+#define _SOCKDEFS_H_ 1
+
 #include <netinet/in.h>
 #include "maxdispargs.h"
 
@@ -16,3 +19,4 @@ typedef struct sockdata {
   int n_args;		/* number of p-fields used */
 } RTsockstr;
 
+#endif
