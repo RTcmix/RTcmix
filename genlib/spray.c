@@ -2,7 +2,7 @@
 #include "../H/spray.h"
 
 void
-sprayinit(struct slist *slist, int size, float seed)
+sprayinit(struct slist *slist, int size, unsigned int seed)
 {
 	int i;
 	slist->size = size;

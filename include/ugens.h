@@ -156,7 +156,7 @@ float rrand(void);
 int getsetnote(float start, float dur, int filenum);
 
 #include "spray.h"
-void sprayinit(struct slist *slist, int size, float seed);
+void sprayinit(struct slist *slist, int size, unsigned int seed);
 int spray(struct slist *slist);
 
 /* sound.c */

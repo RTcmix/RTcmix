@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <math.h>
 #include <ugens.h>
+#include <spray.h>
 #include <sfheader.h>
 #include <maxdispargs.h>
 
@@ -306,18 +307,37 @@ double m_print_is_off(float p[], int n_args)
 	return print_is_on;
 }
 
-struct slist slist[NUM_ARRAYS];
+struct slist slist[NUM_SPRAY_ARRAYS];
+
 double m_get_spray(float p[], int n_args)
 {
-	int i = p[0];
-	return((double)(spray(&slist[i])));
+	int table_num = (int) p[0];
+
+   if (table_num < 0 || table_num >= NUM_SPRAY_ARRAYS)
+      die("get_spray", "Spray table number must be between 0 and %d.",
+                                                   NUM_SPRAY_ARRAYS - 1);
+   if (slist[table_num].size == 0)
+      die("get_spray", "Spray table number %d was not initialized.", table_num);
+
+	return (double) (spray(&slist[table_num]));
 }
 
 double m_spray_init(float p[], int n_args)
 {
-	int i,j;
-	i=p[0]; j=p[1];
-	sprayinit(&slist[i],j,p[2]);
+	int   table_num, size;
+   unsigned int seed;
+
+	table_num = (int) p[0];
+   if (table_num < 0 || table_num >= NUM_SPRAY_ARRAYS)
+      die("spray_init", "Spray table number must be between 0 and %d.",
+                                                   NUM_SPRAY_ARRAYS - 1);
+   size = (int) p[1];
+   if (size < 2 || size > MAX_SPRAY_SIZE)
+      die("spray_init", "Spray table size must be between 2 and %d.",
+                                                   MAX_SPRAY_SIZE);
+   seed = (unsigned int) p[2];
+
+	sprayinit(&slist[table_num], size, seed);
 	return 0.0;
 }
 
