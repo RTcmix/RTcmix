@@ -24,6 +24,7 @@ if (use_file_input) {
    end = dur - notedur
    for (st = 0; st < end; st += increment)
       MIX(st, inskip, notedur, amp, 0)
+   amp = 4
 }
 else {
    load("WAVETABLE")
@@ -40,16 +41,18 @@ else {
    amp = 1
 }
 
-amp *= maketable("line", 2000, 0,0, 1,1, 9,1, 10,0)
-pan = 0.5
+env = maketable("line", 5000, 0,0, 1,1, 19,1, 20,0)
+pan = makeconnection("mouse", "x", 1, 0, .5, lag=50, "pan")
+
 ringdur = 2
 
 // high lag makes smoother deltime changes, reducing clicks
-deltime = makeconnection("mouse", "x", 0.0002, .5, .5, lag=90, "delay time")
+deltime = makeconnection("mouse", "x", 0.0002, .5, .5, lag=90,
+            "delay time", "", 5)
 
 feedback = makeconnection("mouse", "y", 0, 1, 0, lag=20, "feedback")
 
 bus_config("DELAY", "aux 0 in", "out 0-1")
-DELAY(0, 0, dur, amp, deltime, feedback, ringdur, inchan, pan)
+DELAY(0, 0, dur, amp * env, deltime, feedback, ringdur, inchan, pan)
 
 
