@@ -1,56 +1,103 @@
-#include <stdio.h> 
+#include <stdlib.h>
+#include <stdio.h>
 #include "../H/ugens.h"
 
-extern FILE *infile_desc[50];	/* contains file descriptors for data files */
+extern FILE *infile_desc[50];   /* contains file descriptors for data files */
 
+
+/* gen2 lets the user fill a function table with numbers specified in the
+   score or in a text file. There are two "API's" for this: the original
+   one and a newer one that fixes problems with the older one. The old
+   one remains for backwards compatibility with scores, as well as for
+   the data file input functionality.
+
+   Old way:
+
+      makegen(x, 2, tablesize, fnum)
+
+      If fnum is 0, then the table is filled with numbers appearing on
+      the next line in the score. The gen tries to grab <tablesize>
+      numbers. An example...
+
+      makegen(1, 2, 8, 0)
+      1.2  4.3  9.8  4.5  6.2  8.3  1.9  1.0
+
+      If fnum is > 0, then it identifies a text file already opened
+      by the infile Minc call, which returns this id. (The id is an
+      index into a table of FILE pointers.)
+
+   New way:
+
+      The old way has problems. When used with fnum=0, it reads from
+      stdin, behind the back of the parser. This means you can't use
+      variables as part of the list of numbers, and the makegen won't
+      work if it appears in a code block. Also, if the line of numbers
+      ends with a space char, gen2 often fails.
+
+      The new way is meant to make gen2 more like other makegens:
+
+      makegen(x, 2, tablesize, num1, num2 [, num3, ...] )
+
+      Only <tablesize> numbers will go into the function table,
+      regardless of how many arguments there are. If there are
+      fewer than <tablesize> args, the remaining table slots
+      are set to zero.
+
+                             [new way and comments by JGG, 21-Feb-00]
+*/
 void gen2(register struct gen *gen)
 {
-    char inval[128], next;
-    double atof();
-    float val; 
-    int i;
-    FILE *in_desc;
+   int i;
 
-    i=0;
+   if (gen->nargs > 1) {        /* new way */
+      for (i = 0; i < gen->nargs; i++)
+         gen->array[i] = gen->pvals[i];
+      while (i < gen->size)     /* fill remainder (if any) with zeros */
+         gen->array[i++] = 0.0;
+   }
+   else {                       /* old way */
+      float val;
+      char  inval[128];
+      FILE  *in_desc;
 
-    /* input datafile is stdin if pval[0] = 0 */
-    if (gen->pvals[0] == 0)
-      in_desc =  stdin;
-    else
-      in_desc = infile_desc[(int)gen->pvals[0]];
+      /* input datafile is stdin if pval[0] = 0 */
+      if (gen->pvals[0] == 0)
+         in_desc = stdin;
+      else
+         in_desc = infile_desc[(int) gen->pvals[0]];
 
-    if(in_desc == NULL) /* Stop if infile seek failed */ 
-    { 
-        fprintf(stderr, "Input error. Gen02 exited.\n");
-        return;
-    } 
+      if (in_desc == NULL) {       /* Stop if infile seek failed */
+         fprintf(stderr, "Input error. Gen02 exited.\n");
+         return;
+      }
 
-    if(gen->pvals[0] == 0)            /* if reading from stdin */ 
-    {
-        while(fscanf(in_desc, "%f", &val) != EOF)
-        {
-            if(i < gen->size) gen->array[i] = val;
+      i = 0;
+      if (gen->pvals[0] == 0) {    /* if reading from stdin */
+         while (fscanf(in_desc, "%f", &val) != EOF) {
+            if (i < gen->size)
+               gen->array[i] = val;
             i++;
-            if(getc(in_desc) == 10) break;
-        }
-    }
-    else   /* if reading from input text file specified with infile */
-    {
-        while(fscanf(in_desc, "%s", inval) != EOF) {
-            if(i >= gen->size)
-	      break;
-	    gen->array[i] = atof(inval);
+            if (getc(in_desc) == 10)
+               break;
+         }
+      }
+      else {         /* if reading from input text file specified with infile */
+         while (fscanf(in_desc, "%s", inval) != EOF) {
+            if (i >= gen->size)
+               break;
+            gen->array[i] = atof(inval);
             i++;
-        }
-    } 
-    if(i > gen->size) fprintf(stderr,"Out of array space in gen02!!\n");
-    
-    printf("%d values loaded into array.\n", (i<=gen->size)?i:gen->size);
+         }
+      }
+      if (i > gen->size)
+         fprintf(stderr, "Out of array space in gen02!!\n");
 
-    i--;
-	while(++i < gen->size)        /* fill remainder (if any) with zeros */
-		gen->array[i] = 0.0;
+      printf("%d values loaded into array.\n",
+                                          (i <= gen->size) ? i : gen->size);
 
-    /* fnscl(gen); */ /* no rescaling done for this gen */
+      i--;
+      while (++i < gen->size)      /* fill remainder (if any) with zeros */
+         gen->array[i] = 0.0;
+   }
 }
 
