@@ -16,7 +16,7 @@ class DISTORT : public Instrument {
 public:
    DISTORT();
    virtual ~DISTORT();
-   int init(float *, int);
+   int init(double p[], int n_args);
    float distort(float, float);
    int run();
 };

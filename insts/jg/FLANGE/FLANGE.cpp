@@ -53,7 +53,7 @@ FLANGE :: ~FLANGE()
 }
 
 
-int FLANGE :: init(float p[], int n_args)
+int FLANGE :: init(double p[], int n_args)
 {
    float outskip, inskip, dur, maxdelay, ringdur;
    float *modtable;

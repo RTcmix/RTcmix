@@ -8,7 +8,7 @@ class MOOGVCF : public Instrument {
 public:
    MOOGVCF();
    virtual ~MOOGVCF();
-   int init(float *, int);
+   int init(double p[], int n_args);
    int run();
    inline void make_coefficients();
 };

@@ -145,7 +145,7 @@ float * SPECTACLE_BASE :: resample_functable(float *table, int oldsize,
 
 
 /* ------------------------------------------------------------------ init -- */
-int SPECTACLE_BASE :: init(float p[], int n_args)
+int SPECTACLE_BASE :: init(double p[], int n_args)
 {
    int   valid;
    float outskip, inskip, overlap;

@@ -27,7 +27,7 @@ FOLLOWER_BASE :: ~FOLLOWER_BASE()
 
 
 /* ------------------------------------------------------------------ init -- */
-int FOLLOWER_BASE :: init(float p[], int n_args)
+int FOLLOWER_BASE :: init(double p[], int n_args)
 {
    int   window_len;
    float *function, outskip, inskip, smoothness;

@@ -68,7 +68,7 @@ BUTTER :: ~BUTTER()
 }
 
 
-int BUTTER :: init(float p[], int n_args)
+int BUTTER :: init(double p[], int n_args)
 {
    float outskip, inskip, dur;
    const float ringdur = 0.1;

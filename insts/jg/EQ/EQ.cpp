@@ -57,7 +57,7 @@ EQ :: ~EQ()
 }
 
 
-int EQ :: init(float p[], int n_args)
+int EQ :: init(double p[], int n_args)
 {
    float outskip, inskip, dur;
    float *function;

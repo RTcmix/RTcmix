@@ -107,7 +107,7 @@ VOCODE2 :: ~VOCODE2()
 }
 
 
-int VOCODE2 :: init(float p[], int n_args)
+int VOCODE2 :: init(double p[], int n_args)
 {
    int   j, balance_window, subsample;
    float outskip, inskip, dur;

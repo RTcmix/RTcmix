@@ -47,7 +47,7 @@ MOOGVCF :: ~MOOGVCF()
 }
 
 
-int MOOGVCF :: init(float p[], int n_args)
+int MOOGVCF :: init(double p[], int n_args)
 {
    float outskip, inskip, dur, ringdown;
 

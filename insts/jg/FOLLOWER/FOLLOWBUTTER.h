@@ -19,8 +19,8 @@ public:
    FOLLOWBUTTER();
    virtual ~FOLLOWBUTTER();
 protected:
-   virtual int pre_init(float *, int);
-   virtual int post_init(float *, int);
+   virtual int pre_init(double p[], int n_args);
+   virtual int post_init(double p[], int n_args);
    virtual float process_sample(float, float);
    virtual void update_params(void);
    virtual const char *instname(void) { return "FOLLOWBUTTER"; }

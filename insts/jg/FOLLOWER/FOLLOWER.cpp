@@ -72,7 +72,7 @@ FOLLOWER :: ~FOLLOWER()
 
 
 /* -------------------------------------------------------------- pre_init -- */
-int FOLLOWER :: pre_init(float p[], int n_args)
+int FOLLOWER :: pre_init(double p[], int n_args)
 {
    pctleft = n_args > 7 ? p[7] : 0.5;     /* default is center */
 
@@ -81,7 +81,7 @@ int FOLLOWER :: pre_init(float p[], int n_args)
 
 
 /* ------------------------------------------------------------- post_init -- */
-int FOLLOWER :: post_init(float p[], int n_args)
+int FOLLOWER :: post_init(double p[], int n_args)
 {
    return 0;
 }

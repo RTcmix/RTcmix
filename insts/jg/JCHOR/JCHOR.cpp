@@ -92,7 +92,7 @@ JCHOR::~JCHOR()
 }
 
 
-int JCHOR::init(float p[], int n_args)
+int JCHOR::init(double p[], int n_args)
 {
    float outskip, outdur, maxamp, maxwait;
 

@@ -12,7 +12,7 @@ class ROOM : public Instrument {
 public:
    ROOM();
    virtual ~ROOM();
-   int init(float *, int);
+   int init(double p[], int n_args);
    int run();
 };
 

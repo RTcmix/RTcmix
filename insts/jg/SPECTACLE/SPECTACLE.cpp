@@ -79,7 +79,7 @@ SPECTACLE :: ~SPECTACLE()
 
 
 /* -------------------------------------------------------------- pre_init -- */
-int SPECTACLE :: pre_init(float p[], int n_args)
+int SPECTACLE :: pre_init(double p[], int n_args)
 {
    wetdry = n_args > 9 ? p[9] : 1.0;            /* default is 1 */
    inchan = n_args > 10 ? (int) p[10] : 0;      /* default is chan 0 */
@@ -145,7 +145,7 @@ int SPECTACLE :: pre_init(float p[], int n_args)
 
 
 /* ------------------------------------------------------------- post_init -- */
-int SPECTACLE :: post_init(float p[], int n_args)
+int SPECTACLE :: post_init(double p[], int n_args)
 {
    return 0;
 }

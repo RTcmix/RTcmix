@@ -13,7 +13,7 @@ class FILTSWEEP : public Instrument {
 public:
    FILTSWEEP();
    virtual ~FILTSWEEP();
-   int init(float *, int);
+   int init(double p[], int n_args);
    int run();
 };
 

@@ -68,7 +68,7 @@ SHAPE :: ~SHAPE()
 }
 
 
-int SHAPE :: init(float p[], int n_args)
+int SHAPE :: init(double p[], int n_args)
 {
    int   ampnorm_genno;
    float outskip, inskip, dur;

@@ -63,7 +63,7 @@ JFIR :: ~JFIR()
 }
 
 
-int JFIR :: init(float p[], int n_args)
+int JFIR :: init(double p[], int n_args)
 {
    int   order, tabsize;
    float outskip, inskip, dur, ringdur;

@@ -83,7 +83,7 @@ inline int min(int a, int b) {
 }
 
 
-int COMPLIMIT::init(float p[], int n_args)
+int COMPLIMIT::init(double p[], int n_args)
 {
    int   detector_int;
    float outskip, inskip, dur, atk_time, rel_time, lookahead_time;

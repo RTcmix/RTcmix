@@ -45,7 +45,7 @@ DISTORT :: ~DISTORT()
 }
 
 
-int DISTORT :: init(float p[], int n_args)
+int DISTORT :: init(double p[], int n_args)
 {
    float outskip, inskip, dur, cf;
 

@@ -22,7 +22,7 @@ class BUTTER : public Instrument {
 public:
    BUTTER();
    virtual ~BUTTER();
-   int init(float *, int);
+   int init(double p[], int n_args);
    int run();
 };
 

@@ -28,7 +28,7 @@ class COMPLIMIT : public Instrument {
 public:
    COMPLIMIT();
    virtual ~COMPLIMIT();
-   int init(float *, int);
+   int init(double p[], int n_args);
    int run();
 private:
    float get_peak(int, int *);

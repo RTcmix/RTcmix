@@ -47,7 +47,7 @@ DECIMATE :: ~DECIMATE()
 }
 
 
-int DECIMATE :: init(float p[], int n_args)
+int DECIMATE :: init(double p[], int n_args)
 {
    int   bits;
    float outskip, inskip, dur, cutoff;

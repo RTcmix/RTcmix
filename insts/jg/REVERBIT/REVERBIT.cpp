@@ -74,7 +74,7 @@ REVERBIT::~REVERBIT()
    delete [] rvbarray;
 }
 
-int REVERBIT::init(float p[], int n_args)
+int REVERBIT::init(double p[], int n_args)
 {
    int   delsamps, rvbsamps;
    float outskip, inskip, dur, maxdeltime;

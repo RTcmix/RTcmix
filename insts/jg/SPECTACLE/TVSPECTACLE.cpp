@@ -114,7 +114,7 @@ static int check_curve(float table[], int len, float min, float max)
 
 
 /* -------------------------------------------------------------- pre_init -- */
-int TVSPECTACLE :: pre_init(float p[], int n_args)
+int TVSPECTACLE :: pre_init(double p[], int n_args)
 {
    wetdry = n_args > 9 ? p[9] : 1.0;            /* default is 1 */
    inchan = n_args > 10 ? (int) p[10] : 0;      /* default is chan 0 */
@@ -263,7 +263,7 @@ int TVSPECTACLE :: pre_init(float p[], int n_args)
 
 
 /* ------------------------------------------------------------- post_init -- */
-int TVSPECTACLE :: post_init(float p[], int n_args)
+int TVSPECTACLE :: post_init(double p[], int n_args)
 {
    return 0;
 }

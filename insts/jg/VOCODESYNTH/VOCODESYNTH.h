@@ -43,7 +43,7 @@ class VOCODESYNTH : public Instrument {
 public:
    VOCODESYNTH();
    virtual ~VOCODESYNTH();
-   int init(float *, int);
+   int init(double p[], int n_args);
    int run();
 };
 

@@ -55,7 +55,7 @@ FREEVERB :: ~FREEVERB()
 }
 
 
-int FREEVERB :: init(float p[], int n_args)
+int FREEVERB :: init(double p[], int n_args)
 {
    float outskip, inskip, dur, roomsize, damp, dry, wet, width, max_roomsize;
    float predelay_time;

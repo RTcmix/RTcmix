@@ -121,7 +121,7 @@ WIGGLE :: ~WIGGLE()
 }
 
 
-int WIGGLE :: init(float p[], int n_args)
+int WIGGLE :: init(double p[], int n_args)
 {
    float outskip, dur, ringdur;
 

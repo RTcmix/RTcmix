@@ -56,7 +56,7 @@ PAN :: ~PAN()
 }
 
 
-int PAN :: init(float p[], int n_args)
+int PAN :: init(double p[], int n_args)
 {
    float outskip, inskip, dur;
 

@@ -60,7 +60,7 @@ SPECTEQ :: ~SPECTEQ()
 
 
 /* -------------------------------------------------------------- pre_init -- */
-int SPECTEQ :: pre_init(float p[], int n_args)
+int SPECTEQ :: pre_init(double p[], int n_args)
 {
    inchan = n_args > 9 ? (int) p[9] : 0;        /* default is chan 0 */
    pctleft = n_args > 10 ? p[10] : 0.5;         /* default is center */
@@ -80,7 +80,7 @@ int SPECTEQ :: pre_init(float p[], int n_args)
 
 
 /* ------------------------------------------------------------- post_init -- */
-int SPECTEQ :: post_init(float p[], int n_args)
+int SPECTEQ :: post_init(double p[], int n_args)
 {
    return 0;
 }

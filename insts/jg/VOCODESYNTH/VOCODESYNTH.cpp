@@ -129,7 +129,7 @@ int compare_floats(const void *a, const void *b)
 
 
 /* ------------------------------------------------------------------ init -- */
-int VOCODESYNTH :: init(float p[], int n_args)
+int VOCODESYNTH :: init(double p[], int n_args)
 {
    int   i, window_len, wavetablelen = 0;
    float outskip, inskip, dur, lowcf, spacemult, bwpct, cf[MAXOSC];

@@ -9,7 +9,7 @@ class REVERBIT : public Instrument {
 public:
    REVERBIT();
    virtual ~REVERBIT();
-   int init(float *, int);
+   int init(double p[], int n_args);
    int run();
 };
 

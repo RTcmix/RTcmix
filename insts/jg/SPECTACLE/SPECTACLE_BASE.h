@@ -60,7 +60,7 @@ protected:
 public:
    SPECTACLE_BASE();
    virtual ~SPECTACLE_BASE();
-   virtual int init(float *, int);
+   virtual int init(double p[], int n_args);
    virtual int run();
 protected:
    float *resample_functable(float *, int, int);
@@ -72,8 +72,8 @@ protected:
    void leanunconvert();
    void overlapadd(int);
    void shiftout();
-   virtual int pre_init(float *, int) = 0;
-   virtual int post_init(float *, int) = 0;
+   virtual int pre_init(double p[], int n_args) = 0;
+   virtual int post_init(double p[], int n_args) = 0;
    virtual void modify_analysis() = 0;
    virtual const char *instname() = 0;
 };

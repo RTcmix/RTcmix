@@ -12,7 +12,7 @@ class EQ : public Instrument {
 public:
    EQ();
    virtual ~EQ();
-   int init(float *, int);
+   int init(double p[], int n_args);
    int run();
 };
 

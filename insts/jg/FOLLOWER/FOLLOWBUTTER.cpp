@@ -93,7 +93,7 @@ FOLLOWBUTTER :: ~FOLLOWBUTTER()
 
 
 /* -------------------------------------------------------------- pre_init -- */
-int FOLLOWBUTTER :: pre_init(float p[], int n_args)
+int FOLLOWBUTTER :: pre_init(double p[], int n_args)
 {
    type = (FiltType) p[7];
    mincf = p[8];
@@ -124,7 +124,7 @@ int FOLLOWBUTTER :: pre_init(float p[], int n_args)
 
 
 /* ------------------------------------------------------------- post_init -- */
-int FOLLOWBUTTER :: post_init(float p[], int n_args)
+int FOLLOWBUTTER :: post_init(double p[], int n_args)
 {
    for (int i = 0; i < nfilts; i++)
       filt[i] = new Butter();

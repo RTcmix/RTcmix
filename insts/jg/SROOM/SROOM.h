@@ -10,7 +10,7 @@ class SROOM : public Instrument {
 public:
    SROOM();
    virtual ~SROOM();
-   int init(float *, int);
+   int init(double p[], int n_args);
    int run();
 private:
    float distndelset(float, float, float, float, float, float);

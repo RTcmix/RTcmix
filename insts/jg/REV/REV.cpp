@@ -57,7 +57,7 @@ REV :: ~REV()
 }
 
 
-int REV :: init(float p[], int n_args)
+int REV :: init(double p[], int n_args)
 {
    int   rvbtype;
    float outskip, inskip, dur;

@@ -9,7 +9,7 @@ class FREEVERB : public Instrument {
 public:
    FREEVERB();
    virtual ~FREEVERB();
-   int init(float *, int);
+   int init(double p[], int n_args);
    int run();
 };
 

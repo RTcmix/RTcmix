@@ -13,7 +13,7 @@ class VOCODE2 : public Instrument {
 public:
    VOCODE2();
    virtual ~VOCODE2();
-   int init(float *, int);
+   int init(double p[], int n_args);
    int run();
 };
 

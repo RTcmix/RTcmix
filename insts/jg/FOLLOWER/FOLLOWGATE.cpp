@@ -78,7 +78,7 @@ FOLLOWGATE :: ~FOLLOWGATE()
 
 
 /* -------------------------------------------------------------- pre_init -- */
-int FOLLOWGATE :: pre_init(float p[], int n_args)
+int FOLLOWGATE :: pre_init(double p[], int n_args)
 {
    float attack_time = p[7];
    float release_time = p[8];
@@ -97,7 +97,7 @@ int FOLLOWGATE :: pre_init(float p[], int n_args)
 
 
 /* ------------------------------------------------------------- post_init -- */
-int FOLLOWGATE :: post_init(float p[], int n_args)
+int FOLLOWGATE :: post_init(double p[], int n_args)
 {
    float *function = floc(2);
    if (function) {
