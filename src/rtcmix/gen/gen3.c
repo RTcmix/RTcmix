@@ -12,18 +12,19 @@ gen3(struct gen *gen)
 
    fno = (int) gen->pvals[0];
    if (fno < 1 || fno > MAX_INFILE_DESC)
-      die("gen3", "Data file number must be between 1 and %d", MAX_INFILE_DESC);
+      return die("gen3", "Data file number must be between 1 and %d",
+                                                             MAX_INFILE_DESC);
 
    in_desc = infile_desc[fno];
    if (in_desc == NULL)
-      die("gen3", "Call infile() to open the data file before using gen3.");
+      return die("gen3", "Call infile() to open the data file before using gen3.");
 
    /* read input file until EOF */
 
    while (fread(&val, sizeof(val), 1, in_desc)) {
       if (i >= gen->size)
          break;
-      gen->array[i] = val;
+      gen->array[i] = (double) val;
       i++;
    }
    rewind(in_desc);

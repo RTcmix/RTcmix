@@ -35,7 +35,7 @@ static int ngens = 1;           /* total number of gens so far */
 #define TOTGENS 10000
 #define MAXGENS 300
 
-float *farrays[TOTGENS];
+double *farrays[TOTGENS];
 int sizeof_farray[TOTGENS];
 int f_goto[MAXGENS];   /* this is used to guarantee unique farrays in rtcmix */
 
@@ -51,7 +51,7 @@ int f_goto[MAXGENS];   /* this is used to guarantee unique farrays in rtcmix */
    particular function table number during the queueing of RT Instruments.
 */
 int
-install_gen(int slot, int size, float *table)
+install_gen(int slot, int size, double *table)
 {
    int index = ngens;
    if (index >= TOTGENS)
@@ -71,7 +71,7 @@ makegen(float p[], int n_args, double pp[])
 {
    int    genslot, genno;
    double retval = -1.0;
-   float  *table = NULL;
+   double *table = NULL;
    struct gen gen;
 
    genslot = (int) p[0];
@@ -80,17 +80,23 @@ makegen(float p[], int n_args, double pp[])
 
    if (genslot < 0)
       genslot = -genslot;
-   if (genslot >= MAXGENS)
+   if (genslot >= MAXGENS) {
       die("makegen", "No more simultaneous function tables available!");
-
-   if (genno != 1) {    /* gen1 must allocate its own memory */
-      table = (float *) malloc((size_t) gen.size * sizeof(float));
-      if (table == NULL)
-         die("makegen", "Not enough memory for function table %d.", genslot);
+      return -1.0;
    }
 
-   if (!install_gen(genslot, gen.size, table))
+   if (genno != 1) {    /* gen1 must allocate its own memory */
+      table = (double *) malloc((size_t) gen.size * sizeof(double));
+      if (table == NULL) {
+         die("makegen", "Not enough memory for function table %d.", genslot);
+         return -1.0;
+      }
+   }
+
+   if (!install_gen(genslot, gen.size, table)) {
       die("makegen", "No more function tables available!");
+      return -1.0;
+   }
 
    gen.nargs = n_args - 3;
    gen.pvals = p + 3;
@@ -151,7 +157,7 @@ makegen(float p[], int n_args, double pp[])
          }
          break;
       default:
-         die("makegen", "There is no gen%d.", genno);
+         retval = (double) die("makegen", "There is no gen%d.", genno);
    }
 
    return retval;
@@ -165,15 +171,15 @@ makegen(float p[], int n_args, double pp[])
    sizes are equivalent, merely make a straight copy of the table.  Return
    NULL if memory allocation error.  (JGG, 11/29/02)
 */
-float *
-resample_gen(float table[], int cursize, int newsize, InterpolationType interp)
+double *
+resample_gen(double table[], int cursize, int newsize, InterpolationType interp)
 {
    int   i;
-   float *newtable;
+   double *newtable;
 
    assert(interp == NO_INTERP || interp == LINEAR_INTERP);
 
-   newtable = (float *) malloc((size_t) newsize * sizeof(float));
+   newtable = (double *) malloc((size_t) newsize * sizeof(double));
    if (newtable == NULL)
       return NULL;
 
@@ -182,10 +188,10 @@ resample_gen(float table[], int cursize, int newsize, InterpolationType interp)
          newtable[i] = table[i];
    }
    else {
-      float incr = (float) cursize / (float) newsize;
+      double incr = (double) cursize / (double) newsize;
 
       if (interp == NO_INTERP) {
-         float f = 0.0;
+         double f = 0.0;
          for (i = 0; i < newsize; i++) {
             int n = (int) f;
             newtable[i] = table[n];
@@ -193,12 +199,11 @@ resample_gen(float table[], int cursize, int newsize, InterpolationType interp)
          }
       }
       else if (interp == LINEAR_INTERP) {
-         float frac, next, diff = 0.0;
-
-         float f = 0.0;
+         double frac, next, diff = 0.0;
+         double f = 0.0;
          for (i = 0; i < newsize; i++) {
             int n = (int) f;
-            frac = f - (float) n;
+            frac = f - (double) n;
             if (frac) {
                next = (n + 1 < cursize) ? table[n + 1] : table[cursize - 1];
                diff = next - table[n];
@@ -227,27 +232,27 @@ combine_gens(int destslot, int srcslot1, int srcslot2, int normalize,
    int      i;
    int      srcindex1, srcindex2;
    int      destsize, srcsize1, srcsize2;
-   float    *destarray, *srcarray1, *srcarray2, *tmparray = NULL;
+   double   *destarray, *srcarray1, *srcarray2, *tmparray = NULL;
 
    assert(modtype == ADD_GENS || modtype == MULT_GENS);
 
    if (destslot == 0 || srcslot1 == 0 || srcslot2 == 0)
-      die(funcname, "Gen number pfields cannot be zero.");
+      return die(funcname, "Gen number pfields cannot be zero.");
    if (srcslot1 >= MAXGENS)
-      die(funcname, "Gen number %d out of range.", srcslot1);
+      return die(funcname, "Gen number %d out of range.", srcslot1);
    if (srcslot2 >= MAXGENS)
-      die(funcname, "Gen number %d out of range.", srcslot2);
+      return die(funcname, "Gen number %d out of range.", srcslot2);
    if (destslot >= MAXGENS)
-      die(funcname, "No more simultaneous function tables available.");
+      return die(funcname, "No more simultaneous function tables available.");
 
    srcindex1 = f_goto[srcslot1];
    srcindex2 = f_goto[srcslot2];
    srcsize1 = sizeof_farray[srcindex1];
    srcsize2 = sizeof_farray[srcindex2];
    if (srcsize1 == 0)
-      die(funcname, "Gen number %d doesn't exist.", srcslot1);
+      return die(funcname, "Gen number %d doesn't exist.", srcslot1);
    if (srcsize2 == 0)
-      die(funcname, "Gen number %d doesn't exist.", srcslot2);
+      return die(funcname, "Gen number %d doesn't exist.", srcslot2);
 
    srcarray1 = farrays[srcindex1];
    srcarray2 = farrays[srcindex2];
@@ -257,7 +262,7 @@ combine_gens(int destslot, int srcslot1, int srcslot2, int normalize,
    */
    if (srcsize1 != srcsize2) {
       int   oldsize;
-      float *oldarray;
+      double *oldarray;
 
       if (srcsize1 > srcsize2) {
          destsize = srcsize1;
@@ -271,7 +276,7 @@ combine_gens(int destslot, int srcslot1, int srcslot2, int normalize,
       }
       tmparray = resample_gen(oldarray, oldsize, destsize, LINEAR_INTERP);
       if (tmparray == NULL)
-         die(funcname, "Not enough memory for temporary function table.");
+         return die(funcname, "Not enough memory for temporary function table.");
 
       if (srcsize1 > srcsize2)
          srcarray2 = tmparray;
@@ -281,12 +286,12 @@ combine_gens(int destslot, int srcslot1, int srcslot2, int normalize,
    else
       destsize = srcsize1;
 
-   destarray = (float *) malloc((size_t) destsize * sizeof(float));
+   destarray = (double *) malloc((size_t) destsize * sizeof(double));
    if (destarray == NULL)
-      die(funcname, "Not enough memory for new function table.");
+      return die(funcname, "Not enough memory for new function table.");
 
    if (!install_gen(destslot, destsize, destarray))
-      die(funcname, "No more function tables available.");
+      return die(funcname, "No more function tables available.");
 
    /* Fill destination array. */
    switch (modtype) {
@@ -306,10 +311,10 @@ combine_gens(int destslot, int srcslot1, int srcslot2, int normalize,
       free(tmparray);
 
    if (normalize) {        /* cf fnscl.c */
-      float max = 0.0;
+      double max = 0.0;
 
       for (i = 0; i < destsize; i++) {
-         float val = fabs(destarray[i]);
+         double val = fabs(destarray[i]);
          if (val > max)
             max = val;
       }

@@ -11,7 +11,7 @@ double
 fdump(float p[], short n_args, double pp[])
 {
    int   genslot;
-   float *array;
+   double *array;
    FILE  *f = NULL;
 
    genslot = p[0];

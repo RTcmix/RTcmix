@@ -15,7 +15,7 @@
 #include <fcntl.h>
 #include <assert.h>
 static void
-dump_gen_to_raw_file(float *buf, int nsamps)
+dump_gen_to_raw_file(double *buf, int nsamps)
 {
    int         result, nbytes;
    static int  fd = -1;
@@ -23,9 +23,9 @@ dump_gen_to_raw_file(float *buf, int nsamps)
    if (fd == -1) {
       fd = open("dumpaudio.raw", O_RDWR | O_CREAT | O_TRUNC, 0666);
       assert(fd > 0);
-      fprintf(stderr, "Dumping audio to \"dumpaudio.raw\".\n");
+      fprintf(stderr, "Dumping audio (as double samps) to \"dumpaudio.raw\".\n");
    }
-   nbytes = nsamps * sizeof(float);
+   nbytes = nsamps * sizeof(double);
    result = write(fd, buf, nbytes);
    assert(result != -1);
 }
@@ -73,8 +73,8 @@ gen1(struct gen *gen, char *sfname)
    int      buf_start_frame, end_frame, frames_read, buf_frames;
    long     file_samps;
    off_t    seek_to;
-   float    request_dur, filedur, inskip, *block, *blockp;
-   double   srate;
+   float    request_dur, filedur, inskip;
+   double   srate, *block, *blockp;
    char     *buf;
 
    request_dur = gen->pvals[0];
@@ -88,7 +88,7 @@ gen1(struct gen *gen, char *sfname)
    fd = open_sound_file(sfname, &header_type, &data_format,
                         &data_location, &srate, &file_chans, &file_samps);
    if (fd == -1)
-      die("gen1", "Can't open input file: \"%s\"!", sfname);
+      return die("gen1", "Can't open input file: \"%s\"!", sfname);
 
    if (srate != SR) {
       warn("gen1", "The input file sampling rate is %g, but "
@@ -106,7 +106,7 @@ gen1(struct gen *gen, char *sfname)
       inchan = -1;                       /* more efficient copy below */
 
    if (inchan >= file_chans)
-      die("gen1", "You asked for channel %d of a %d-channel file. (\"%s\")",
+      return die("gen1", "You asked for channel %d of a %d-channel file. (\"%s\")",
                                                    inchan, file_chans, sfname);
 
    if (request_dur < 0.0)
@@ -126,13 +126,13 @@ gen1(struct gen *gen, char *sfname)
 
    gen_samps = gen_frames * gen_chans;
  
-   block = (float *) malloc((size_t) (gen_samps * sizeof(float)));
+   block = (double *) malloc((size_t) (gen_samps * sizeof(double)));
    if (block == NULL)
-      die("gen1", "Not enough memory for function table %d.", gen->slot);
+      return die("gen1", "Not enough memory for function table %d.", gen->slot);
 
    buf = (char *) malloc((size_t) BUFSIZE);
    if (buf == NULL)
-      die("gen1", "Not enough memory for temporary buffer.");
+      return die("gen1", "Not enough memory for temporary buffer.");
 
    bytes_per_samp = mus_data_format_to_bytes_per_sample(data_format);
 
@@ -183,12 +183,12 @@ gen1(struct gen *gen, char *sfname)
             if (byteswap) {
                for (i = 0; i < samps_read; i++) {
                   byte_reverse4(bufp);       /* modify *bufp in place */
-                  *blockp++ = *bufp++;
+                  *blockp++ = (double) *bufp++;
                }
             }
             else {
                for (i = 0; i < samps_read; i++)
-                  *blockp++ = *bufp++;
+                  *blockp++ = (double) *bufp++;
             }
          }
          else {                              /* store only inchan */
@@ -196,13 +196,13 @@ gen1(struct gen *gen, char *sfname)
             if (byteswap) {
                for (i = 0; i < samps_read; i += file_chans) {
                   byte_reverse4(bufp);       /* modify *bufp in place */
-                  *blockp++ = *bufp;
+                  *blockp++ = (double) *bufp;
                   bufp += file_chans;
                }
             }
             else {
                for (i = 0; i < samps_read; i += file_chans) {
-                  *blockp++ = *bufp;
+                  *blockp++ = (double) *bufp;
                   bufp += file_chans;
                }
             }
@@ -215,12 +215,12 @@ gen1(struct gen *gen, char *sfname)
             if (byteswap) {
                for (i = 0; i < samps_read; i++, bufp++) {
                   short samp = reverse_int2(bufp);
-                  *blockp++ = (float) samp;
+                  *blockp++ = (double) samp;
                }
             }
             else {
                for (i = 0; i < samps_read; i++)
-                  *blockp++ = (float) *bufp++;
+                  *blockp++ = (double) *bufp++;
             }
          }
          else {                              /* store only inchan */
@@ -228,13 +228,13 @@ gen1(struct gen *gen, char *sfname)
             if (byteswap) {
                for (i = 0; i < samps_read; i += file_chans) {
                   short samp = reverse_int2(bufp);
-                  *blockp++ = (float) samp;
+                  *blockp++ = (double) samp;
                   bufp += file_chans;
                }
             }
             else {
                for (i = 0; i < samps_read; i += file_chans) {
-                  *blockp++ = (float) *bufp;
+                  *blockp++ = (double) *bufp;
                   bufp += file_chans;
                }
             }

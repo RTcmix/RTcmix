@@ -21,7 +21,7 @@
    for 0 <= i < n
 */
 static void
-trans(float a, float alpha, float b, int n, float *output)
+trans(float a, float alpha, float b, int n, double *output)
 {
    int   i;
    float delta, interval = 0.0;
@@ -55,19 +55,19 @@ double
 gen4(struct gen *gen)
 {
    int   i, points, seglen = 0;
-   float factor, *ptr;
-   float time[MAX_POINTS], value[MAX_POINTS], alpha[MAX_POINTS];
+   float factor, time[MAX_POINTS], value[MAX_POINTS], alpha[MAX_POINTS];
+   double *ptr;
 
    if (gen->nargs < 5 || (gen->nargs % 3) != 2)    /* check number of args */
-      die("gen4", "usage: t1 v1 a1 ... tn vn");
+      return die("gen4", "usage: t1 v1 a1 ... tn vn");
 
    if ((gen->nargs / 3) + 1 > MAX_POINTS)
-      die("gen4", "too many arguments");
+      return die("gen4", "too many arguments");
 
    for (i = points = 0; i < gen->nargs; points++) {
       time[points] = gen->pvals[i++];
       if (points > 0 && time[points] < time[points - 1])
-         die("gen4", "non-increasing time values");
+         return die("gen4", "non-increasing time values");
       value[points] = gen->pvals[i++];
       if (i < gen->nargs)
          alpha[points] = gen->pvals[i++];

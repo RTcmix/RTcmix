@@ -58,7 +58,7 @@ fplot(float p[], short n_args, double pp[])
       static int plot_count = 1;
 #endif
 		int genslot = (int) p[0];
-		float *array = floc(genslot);
+		double *array = floc(genslot);
 		if (array) {
 			int i, len = fsize(genslot);
 			int pause = (int) p[1];

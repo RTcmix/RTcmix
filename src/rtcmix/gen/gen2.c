@@ -72,7 +72,7 @@ gen2(struct gen *gen)
          slots = gen->nargs;
 
       for (i = 0; i < slots; i++)
-         gen->array[i] = gen->pvals[i];
+         gen->array[i] = (double) gen->pvals[i];
 
       while (i < gen->size)     /* fill remainder (if any) with zeros */
          gen->array[i++] = 0.0;
@@ -92,17 +92,17 @@ gen2(struct gen *gen)
       else if (fno <= MAX_INFILE_DESC)
          in_desc = infile_desc[fno];
       else
-         die("gen2", "Data file number must be between 1 and %d",
+         return die("gen2", "Data file number must be between 1 and %d",
                                                         MAX_INFILE_DESC);
 
       if (in_desc == NULL)
-         die("gen2", "Call infile() to open the data file before using gen2.");
+         return die("gen2", "Call infile() to open the data file before using gen2.");
 
       i = 0;
       if (in_desc == stdin) {
          while (fscanf(in_desc, "%f", &val) != EOF) {
             if (i < gen->size)
-               gen->array[i] = val;
+               gen->array[i] = (double) val;
             i++;
             if (getc(in_desc) == 10)
                break;

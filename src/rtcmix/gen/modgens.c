@@ -5,14 +5,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>  /* for memcpy */
-#include <float.h>   /* for FLT_MIN and FLT_MAX */
+#include <float.h>   /* for DBL_MAX */
 #include <math.h>
 #include <ugens.h>
 
 
-static float *new_table(int size)
+static double *new_table(int size)
 {
-   return (float *) malloc((size_t) size * sizeof(float));
+   return (double *) malloc((size_t) size * sizeof(double));
 }
 
 
@@ -77,14 +77,14 @@ double
 m_copygen(float p[], int n_args, double pp[])
 {
    int   srcslot, destslot, srcsize, destsize;
-   float *srctable, *desttable;
+   double *srctable, *desttable;
    InterpolationType interp;
 
    destslot = (int) p[0];
    srcslot = (int) p[1];
    srctable = floc(srcslot);
    if (srctable == NULL)
-      die("copygen", "No function table defined for slot %d.", srcslot);
+      return die("copygen", "No function table defined for slot %d.", srcslot);
    srcsize = fsize(srcslot);
 
    destsize = (n_args > 2) ? (int) p[2] : srcsize;
@@ -92,10 +92,10 @@ m_copygen(float p[], int n_args, double pp[])
 
    desttable = resample_gen(srctable, srcsize, destsize, interp);
    if (desttable == NULL)
-      die("copygen", "No memory to copy the gen in slot %d.", srcslot);
+      return die("copygen", "No memory to copy the gen in slot %d.", srcslot);
 
    if (!install_gen(destslot, destsize, desttable))
-      die("copygen", "No more function tables available.");
+      return die("copygen", "No more function tables available.");
 
    return (double) destsize;
 }
@@ -110,19 +110,19 @@ double
 m_offsetgen(float p[], int n_args, double pp[])
 {
    int   i, slot, size;
-   float *srctable, *desttable, offset;
+   double *srctable, *desttable, offset;
 
    slot = (int) p[0];
    srctable = floc(slot);
    if (srctable == NULL)
-      die("offsetgen", "No function table defined for slot %d.", slot);
+      return die("offsetgen", "No function table defined for slot %d.", slot);
    size = fsize(slot);
    offset = p[1];
    desttable = new_table(size);
    if (desttable == NULL)
-      die("offsetgen", "No memory for new function table.");
+      return die("offsetgen", "No memory for new function table.");
    if (!install_gen(slot, size, desttable))
-      die("offsetgen", "No more function tables available.");
+      return die("offsetgen", "No more function tables available.");
 
    for (i = 0; i < size; i++)
       desttable[i] = srctable[i] + offset;
@@ -140,19 +140,19 @@ double
 m_scalegen(float p[], int n_args, double pp[])
 {
    int   i, slot, size;
-   float *srctable, *desttable, scale;
+   double *srctable, *desttable, scale;
 
    slot = (int) p[0];
    srctable = floc(slot);
    if (srctable == NULL)
-      die("scalegen", "No function table defined for slot %d.", slot);
+      return die("scalegen", "No function table defined for slot %d.", slot);
    size = fsize(slot);
    scale = p[1];
    desttable = new_table(size);
    if (desttable == NULL)
-      die("scalegen", "No memory for new function table.");
+      return die("scalegen", "No memory for new function table.");
    if (!install_gen(slot, size, desttable))
-      die("scalegen", "No more function tables available.");
+      return die("scalegen", "No more function tables available.");
 
    for (i = 0; i < size; i++)
       desttable[i] = srctable[i] * scale;
@@ -170,22 +170,22 @@ double
 m_invertgen(float p[], int n_args, double pp[])
 {
    int   i, slot, size;
-   float min, max, center, *srctable, *desttable;
+   double min, max, center, *srctable, *desttable;
 
    slot = (int) p[0];
    srctable = floc(slot);
    if (srctable == NULL)
-      die("invertgen", "No function table defined for slot %d.", slot);
+      return die("invertgen", "No function table defined for slot %d.", slot);
    size = fsize(slot);
    desttable = new_table(size);
    if (desttable == NULL)
-      die("invertgen", "No memory for new function table.");
+      return die("invertgen", "No memory for new function table.");
    if (!install_gen(slot, size, desttable))
-      die("invertgen", "No more function tables available.");
+      return die("invertgen", "No more function tables available.");
 
    /* determine central y-axis value */
-   min = FLT_MAX;
-   max = FLT_MIN;
+   min = DBL_MAX;
+   max = -DBL_MAX;
    for (i = 0; i < size; i++) {
       if (srctable[i] < min)
          min = srctable[i];
@@ -198,7 +198,7 @@ m_invertgen(float p[], int n_args, double pp[])
 
    /* invert values around center */
    for (i = 0; i < size; i++) {
-      float diff = srctable[i] - center;
+      double diff = srctable[i] - center;
       desttable[i] = center - diff;
    }
 
@@ -212,18 +212,18 @@ double
 m_reversegen(float p[], int n_args, double pp[])
 {
    int   i, j, slot, size;
-   float *srctable, *desttable;
+   double *srctable, *desttable;
 
    slot = (int) p[0];
    srctable = floc(slot);
    if (srctable == NULL)
-      die("reversegen", "No function table defined for slot %d.", slot);
+      return die("reversegen", "No function table defined for slot %d.", slot);
    size = fsize(slot);
    desttable = new_table(size);
    if (desttable == NULL)
-      die("reversegen", "No memory for new function table.");
+      return die("reversegen", "No memory for new function table.");
    if (!install_gen(slot, size, desttable))
-      die("reversegen", "No more function tables available.");
+      return die("reversegen", "No more function tables available.");
 
    for (i = 0, j = size - 1; i < size; i++, j--)
       desttable[i] = srctable[j];
@@ -248,12 +248,12 @@ m_shiftgen(float p[], int n_args, double pp[])
 {
    int      slot, size, shift, abs_shift;
    size_t   movesize;
-   float    *srctable, *desttable;
+   double   *srctable, *desttable;
 
    slot = (int) p[0];
    srctable = floc(slot);
    if (srctable == NULL)
-      die("shiftgen", "No function table defined for slot %d.", slot);
+      return die("shiftgen", "No function table defined for slot %d.", slot);
    size = fsize(slot);
    shift = (int) p[1];
    abs_shift = abs(shift);
@@ -262,24 +262,24 @@ m_shiftgen(float p[], int n_args, double pp[])
       return (double) size;
    }
    if (abs_shift > size)
-      die("shiftgen", "You can't shift by more than the table size.");
+      return die("shiftgen", "You can't shift by more than the table size.");
 
    desttable = new_table(size);
    if (desttable == NULL)
-      die("shiftgen", "No memory for new function table.");
+      return die("shiftgen", "No memory for new function table.");
    if (!install_gen(slot, size, desttable))
-      die("shiftgen", "No more function tables available.");
+      return die("shiftgen", "No more function tables available.");
 
-   movesize = (size_t) (size - abs_shift);  /* floats to shift */
+   movesize = (size_t) (size - abs_shift);  /* doubles to shift */
    if (shift > 0) {
       memcpy(desttable, srctable + movesize, (size_t) abs_shift
-                                                            * sizeof(float));
-      memcpy(desttable + abs_shift, srctable, movesize * sizeof(float));
+                                                            * sizeof(double));
+      memcpy(desttable + abs_shift, srctable, movesize * sizeof(double));
    }
    else {
-      memcpy(desttable, srctable + abs_shift, movesize * sizeof(float));
+      memcpy(desttable, srctable + abs_shift, movesize * sizeof(double));
       memcpy(desttable + movesize, srctable, (size_t) abs_shift
-                                                            * sizeof(float));
+                                                            * sizeof(double));
    }
 
    return (double) size;
@@ -294,30 +294,30 @@ double
 m_quantizegen(float p[], int n_args, double pp[])
 {
    int      i, slot, size;
-   float    quantum, *srctable, *desttable;
+   double   quantum, *srctable, *desttable;
 
    slot = (int) p[0];
    srctable = floc(slot);
    if (srctable == NULL)
-      die("quantizegen", "No function table defined for slot %d.", slot);
+      return die("quantizegen", "No function table defined for slot %d.", slot);
    size = fsize(slot);
    quantum = p[1];
    if (quantum <= 0.0)
-      die("quantizegen", "Quantum must be greater than zero.");
+      return die("quantizegen", "Quantum must be greater than zero.");
    desttable = new_table(size);
    if (desttable == NULL)
-      die("quantizegen", "No memory for new function table.");
+      return die("quantizegen", "No memory for new function table.");
    if (!install_gen(slot, size, desttable))
-      die("quantizegen", "No more function tables available.");
+      return die("quantizegen", "No more function tables available.");
 
    /* It'd be nice to let the C library do the rounding, but rintf rounds
       to the nearest even integer, and round and roundf don't even work
       on my Slackware 8.1 system.  Screw it, we'll roll our own.  -JGG
    */
    for (i = 0; i < size; i++) {
-      float quotient = fabs(srctable[i] / quantum);
+      double quotient = fabs(srctable[i] / quantum);
       int floor = (int) quotient;
-      float remainder = quotient - (float) floor;
+      double remainder = quotient - (double) floor;
       if (remainder >= 0.5)   /* round to nearest */
          floor++;
       if (srctable[i] < 0.0)

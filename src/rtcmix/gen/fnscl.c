@@ -5,7 +5,7 @@ void
 fnscl(struct gen *gen)
 {
    int j;
-   float wmax, xmax = 0;
+   double wmax, xmax = 0;
 
    if (gen->slot < 0)
       return;

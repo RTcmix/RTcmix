@@ -5,38 +5,35 @@
 #include <sys/types.h>
 
 double
-m_sampfunc(p,n_args)
-
-float *p;
-short n_args;
-
+m_sampfunc(float p[], int n_args)
 {
 	int size, fnumber,skipin;
-	float *thefunct;
+	double *thefunct;
 
 	/* p0 == number of the function, p1 == amount to skip */
 
 
-	fnumber = p[0];
+	fnumber = (int) p[0];
+	thefunct = floc(fnumber);
+	if (thefunct == NULL)
+		return die("sampfunc", "You haven't created function number %d.\n", fnumber);
 	size = fsize(fnumber);
 	skipin = (p[1] < size) ? p[1] : size - 1; /* to avoid segvs */
-	thefunct = (float *) floc(fnumber);
 	return(thefunct[skipin]);
 }
 
 double
-m_sampfunci(p,n_args)	/* interpolated version of sampfunc -- DAS 5/90 */
-
-float *p;
-short n_args;
-
+m_sampfunci(float p[], int n_args)	/* interpolated version of sampfunc -- DAS 5/90 */
 {
 	int fnumber,size,skipin, skipin2;
-	float *thefunct, frac;
+	double *thefunct, frac;
 
 	/* p0 == number of the function, p1 == amount to skip */
 
 	fnumber = p[0];
+	thefunct = floc(fnumber);
+	if (thefunct == NULL)
+		return die("sampfunci", "You haven't created function number %d.\n", fnumber);
 	skipin = p[1];
 	frac = p[1] - skipin;
 	size = fsize(fnumber);
@@ -46,7 +43,6 @@ short n_args;
 	}
 	else
 		skipin2 = skipin + 1;
-	thefunct = (float *)floc(fnumber);
 	return(thefunct[skipin] + frac * (thefunct[skipin2]-thefunct[skipin]));
 }
 

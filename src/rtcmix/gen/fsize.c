@@ -2,7 +2,7 @@
 #include <stdio.h>
 
 /* these 3 defined in makegen.c */
-extern float *farrays[];
+extern double *farrays[];
 extern int sizeof_farray[];
 extern int f_goto[];
 

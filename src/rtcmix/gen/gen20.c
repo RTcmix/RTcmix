@@ -33,8 +33,8 @@
 /* Scale <num>, which falls in range [0,1] so that it falls
    in range [min,max].  Return result.    -JGG, 12/4/01
 */
-static INLINE float
-fit_range(float min, float max, float num)
+static INLINE double
+fit_range(double min, double max, double num)
 {
    return min + (num * (max - min));
 }
@@ -45,16 +45,16 @@ gen20(struct gen *gen)
 {
    int i, j, k, type;
    int N = 12;
-   float halfN = 6;
-   float scale = 1;
-   float mu = 0.5;
-   float sigma = .166666;
-   float randnum = 0.0;
-   float randnum2 = 0.0;
+   double halfN = 6;
+   double scale = 1;
+   double mu = 0.5;
+   double sigma = .166666;
+   double randnum = 0.0;
+   double randnum2 = 0.0;
    struct timeval tv;
-   float output;
-   float alpha = .00628338;
-   float min, max, tmp;
+   double output;
+   double alpha = .00628338;
+   double min, max, tmp;
    static long randx = 1;
 
    type = (int) gen->pvals[0];
@@ -68,13 +68,13 @@ gen20(struct gen *gen)
 
    /* Set range for random numbers. */
    if (gen->nargs == 3)
-      die("gen20",
+      return die("gen20",
           "usage: makegen(x, 20, size, dist_type[, seed[, min, max]])");
    if (gen->nargs == 4) {
       min = gen->pvals[2];
       max = gen->pvals[3];
       if (min == max)
-         die("gen20", "<min> must be lower than <max>");
+         return die("gen20", "<min> must be lower than <max>");
       if (min > max) {     /* make sure these are in increasing order */
          tmp = max;
          max = min;
@@ -90,16 +90,16 @@ gen20(struct gen *gen)
       case 0:  /* even distribution */
          for (i = 0; i < gen->size; i++) {
             k = ((randx = randx * 1103515245 + 12345) >> 16) & 077777;
-            tmp = (float) k / 32768.0;
+            tmp = (double) k / 32768.0;
             gen->array[i] = fit_range(min, max, tmp);
          }
          break;
       case 1:  /* low weighted */
          for (i = 0; i < gen->size; i++) {
             k = ((randx = randx * 1103515245 + 12345) >> 16) & 077777;
-            randnum = (float) k / 32768.0;
+            randnum = (double) k / 32768.0;
             k = ((randx = randx * 1103515245 + 12345) >> 16) & 077777;
-            randnum2 = (float) k / 32768.0;
+            randnum2 = (double) k / 32768.0;
             if (randnum2 < randnum) {
                randnum = randnum2;
             }
@@ -109,9 +109,9 @@ gen20(struct gen *gen)
       case 2:  /* high weighted */
          for (i = 0; i < gen->size; i++) {
             k = ((randx = randx * 1103515245 + 12345) >> 16) & 077777;
-            randnum = (float) k / 32768.0;
+            randnum = (double) k / 32768.0;
             k = ((randx = randx * 1103515245 + 12345) >> 16) & 077777;
-            randnum2 = (float) k / 32768.0;
+            randnum2 = (double) k / 32768.0;
             if (randnum2 > randnum) {
                randnum = randnum2;
             }
@@ -121,9 +121,9 @@ gen20(struct gen *gen)
       case 3:  /* triangle */
          for (i = 0; i < gen->size; i++) {
             k = ((randx = randx * 1103515245 + 12345) >> 16) & 077777;
-            randnum = (float) k / 32768.0;
+            randnum = (double) k / 32768.0;
             k = ((randx = randx * 1103515245 + 12345) >> 16) & 077777;
-            randnum2 = (float) k / 32768.0;
+            randnum2 = (double) k / 32768.0;
             tmp = 0.5 * (randnum + randnum2);
             gen->array[i] = fit_range(min, max, tmp);
          }
@@ -134,7 +134,7 @@ gen20(struct gen *gen)
             randnum = 0.0;
             for (j = 0; j < N; j++) {
                k = ((randx = randx * 1103515245 + 12345) >> 16) & 077777;
-               randnum += (float) k / 32768.0;
+               randnum += (double) k / 32768.0;
             }
             output = sigma * scale * (randnum - halfN) + mu;
             if ((output <= 1.0) && (output >= 0.0)) {
@@ -148,7 +148,7 @@ gen20(struct gen *gen)
          while (i < gen->size) {
             do {
                k = ((randx = randx * 1103515245 + 12345) >> 16) & 077777;
-               randnum = (float) k / 32768.0;
+               randnum = (double) k / 32768.0;
             }
             while (randnum == 0.5);
             randnum = randnum * PI;
@@ -160,7 +160,7 @@ gen20(struct gen *gen)
          }
          break;
       default:
-         die("gen20", "don't know about distribution %d\n", type);
+         return die("gen20", "don't know about distribution %d\n", type);
          break;
    }
 

@@ -2,7 +2,7 @@
 #include <ugens.h>
 
 /* these 3 defined in makegen.c */
-extern float *farrays[];
+extern double *farrays[];
 extern int sizeof_farray[];
 extern int f_goto[];
 
@@ -13,7 +13,7 @@ extern int f_goto[];
    missing gen, either by using die() or supplying a default
    and alerting the user with advise().
 */
-float *floc(int genno)
+double *floc(int genno)
 {
    int index;
 

@@ -3,11 +3,11 @@
 double
 gen24(struct gen *gen)
 {
-   float scaler, amp2, amp1;
+   double scaler, amp2, amp1;
    int j, k, l;
    int i = 0;
 
-   scaler = ((float) gen->size) / gen->pvals[gen->nargs - 2];
+   scaler = ((double) gen->size) / gen->pvals[gen->nargs - 2];
    amp2 = gen->pvals[1];
    for (k = 1; k < gen->nargs; k += 2) {
       amp1 = amp2;
@@ -17,7 +17,7 @@ gen24(struct gen *gen)
       for (l = j; l <= i; l++) {
          if (l <= gen->size)
             gen->array[l - 1] = amp1
-                                + (amp2 - amp1) * (float) (l - j) / (i - j + 1);
+                                + (amp2 - amp1) * (double) (l - j) / (i - j + 1);
       }
    }
    fnscl(gen);
