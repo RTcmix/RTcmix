@@ -1,3 +1,7 @@
+Sunday, Feb 11, 2001 Doug Scott <netdscott@netscape.net>
+   * Fixed bugs in real time PLACE and MOVE commands that were causing
+   * slowdowns.
+
 Wednesday, Feb 7, 2001 John Gibson <johngibson@virginia.edu>
 
    * Changed srand() so that if you don't give it a seed argument, it uses
