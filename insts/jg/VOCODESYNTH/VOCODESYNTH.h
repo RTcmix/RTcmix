@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include <rt.h>
 #include <rtdefs.h>
@@ -44,7 +43,8 @@ class VOCODESYNTH : public Instrument {
 public:
    VOCODESYNTH();
    virtual ~VOCODESYNTH();
-   int init(double p[], int n_args);
-   int run();
+   virtual int init(double p[], int n_args);
+   virtual int configure();
+   virtual int run();
 };
 

@@ -105,7 +105,7 @@ void SPECTEQ :: dump_anal_channels()
 /* ------------------------------------------------------- modify_analysis -- */
 void SPECTEQ :: modify_analysis()
 {
-   int   reading_input = (cursamp < input_end_frame);
+   int   reading_input = (currentFrame() < input_end_frame);
 
    DPRINT1("modify_analysis: .............. reading_input=%d\n", reading_input);
 #ifdef DUMP

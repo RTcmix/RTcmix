@@ -288,27 +288,28 @@ void TVSPECTACLE :: dump_anal_channels()
 /* ------------------------------------------------------- modify_analysis -- */
 void TVSPECTACLE :: modify_analysis()
 {
-   int   reading_input = (cursamp < input_end_frame);
+   int   reading_input = (currentFrame() < input_end_frame);
 
    DPRINT1("modify_analysis: .............. reading_input=%d\n", reading_input);
 #ifdef DUMP
    dump_anal_channels();
 #endif
 
-   if (cursamp >= latency) {
+   if (currentFrame() >= latency) {
       if (eqcurve)
-         eq_curve_weight = tablei(cursamp - latency, eqcurve, eqcurvetabs);
+         eq_curve_weight = tablei(currentFrame() - latency, eqcurve,
+                                                         eqcurvetabs);
       if (deltimecurve)
-         deltime_curve_weight = tablei(cursamp - latency, deltimecurve,
+         deltime_curve_weight = tablei(currentFrame() - latency, deltimecurve,
                                                          deltimecurvetabs);
       if (feedbackcurve)
-         feedback_curve_weight = tablei(cursamp - latency, feedbackcurve,
+         feedback_curve_weight = tablei(currentFrame() - latency, feedbackcurve,
                                                          feedbackcurvetabs);
    }
 #ifdef DEBUG
    printf("weights: eq=%f, del=%f, fb=%f (cursamp=%d, latency=%d)\n",
             eq_curve_weight, deltime_curve_weight, feedback_curve_weight,
-            cursamp, latency);
+            currentFrame(), latency);
 #endif
 
    for (int i = 0; i < half_fft_len; i++) {

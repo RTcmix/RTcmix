@@ -131,33 +131,29 @@ int compare_floats(const void *a, const void *b)
 /* ------------------------------------------------------------------ init -- */
 int VOCODESYNTH :: init(double p[], int n_args)
 {
-   int   i, window_len, wavetablelen = 0;
-   float outskip, inskip, dur, lowcf, spacemult, bwpct, cf[MAXOSC];
-   float carrier_transp, responsetime, attack_time, release_time, hipasscf;
-
-   outskip = p[0];
-   inskip = p[1];
-   dur = p[2];
+   float outskip = p[0];
+   float inskip = p[1];
+   float dur = p[2];
    amp = p[3];
    numbands = (int) p[4];
-   lowcf = p[5];
-   spacemult = p[6];
-   carrier_transp = p[7];
-   bwpct = p[8];
-   responsetime = n_args > 9 ? p[9] : 0.01;        // default: .01 secs
-   smoothness = n_args > 10 ? p[10] : 0.5;         // default: .5 secs
-   threshold = n_args > 11 ? p[11] : 0.0;          // default: 0
-   attack_time = n_args > 12 ? p[12] : 0.001;      // default: 0.001
-   release_time = n_args > 13 ? p[13] : 0.01;      // default: 0.01
-   hipass_mod_amp = n_args > 14 ? p[14] : 0.0;     // default: 0
-   hipasscf = n_args > 15 ? p[15] : 5000.0;        // default: 5000 Hz
-   inchan = n_args > 16 ? (int) p[16] : 0;         // default: left
-   pctleft = n_args > 17 ? p[17] : 0.5;            // default: center
+   float lowcf = p[5];
+   float spacemult = p[6];
+   float carrier_transp = p[7];
+   float bwpct = p[8];
+   float responsetime = n_args > 9 ? p[9] : 0.01;     // default: .01 secs
+   smoothness = n_args > 10 ? p[10] : 0.5;            // default: .5 secs
+   threshold = n_args > 11 ? p[11] : 0.0;             // default: 0
+   float attack_time = n_args > 12 ? p[12] : 0.001;   // default: 0.001
+   float release_time = n_args > 13 ? p[13] : 0.01;   // default: 0.01
+   hipass_mod_amp = n_args > 14 ? p[14] : 0.0;        // default: 0
+   float hipasscf = n_args > 15 ? p[15] : 5000.0;     // default: 5000 Hz
+   inchan = n_args > 16 ? (int) p[16] : 0;            // default: left
+   pctleft = n_args > 17 ? p[17] : 0.5;               // default: center
 
    if (bwpct <= 0.0)
       return die("VOCODESYNTH", "Bandwidth proportion must be greater than 0.");
 
-   window_len = (int) (responsetime * SR + 0.5);
+   int window_len = (int) (responsetime * SR + 0.5);
    if (window_len < 2) {
       warn("VOCODESYNTH", "Response time too short ... changing to %.8f.",
                                                                      2.0 / SR);
@@ -206,6 +202,7 @@ int VOCODESYNTH :: init(double p[], int n_args)
    /* <numbands> pfield lets user specify filter center frequencies either by
       interval, in the form of a frequency multiplier, or by function table.
    */
+   float cf[MAXOSC];
    if (numbands > 0) {           // specify by interval
       if (numbands > MAXOSC)
          return die("VOCODESYNTH", "Can only use %d filters.", MAXOSC);
@@ -215,7 +212,7 @@ int VOCODESYNTH :: init(double p[], int n_args)
       if (lowcf < 15.0)                // interpreted as oct.pc
          lowcf = cpspch(lowcf);
       advise("VOCODESYNTH", "Building center freqs above %g...", lowcf);
-      for (i = 0; i < numbands; i++)
+      for (int i = 0; i < numbands; i++)
          cf[i] = lowcf * (float) pow((double) spacemult, (double) i);
    }
    else if (numbands == 0) {     // specify by function table
@@ -230,7 +227,7 @@ int VOCODESYNTH :: init(double p[], int n_args)
          return die("VOCODESYNTH", "Can only use %d filters.", MAXOSC);
 
       advise("VOCODESYNTH", "Reading center freqs from function table 4...");
-      for (i = 0; i < numbands; i++) {
+      for (int i = 0; i < numbands; i++) {
          float freq = freqtable[i];
          if (freq < 15.0) {            // interpreted as oct.pc or linoct
             if (format == 0) {            // oct.pc
@@ -259,7 +256,7 @@ int VOCODESYNTH :: init(double p[], int n_args)
    else
       return die("VOCODESYNTH", "<numbands> must be zero or more.");
 
-   for (i = 0; i < numbands; i++) {
+   for (int i = 0; i < numbands; i++) {
       if (cf[i] > SR * 0.5) {
          warn("VOCODESYNTH", "A cf was above Nyquist. Correcting...");
          cf[i] = SR * 0.5;
@@ -267,7 +264,7 @@ int VOCODESYNTH :: init(double p[], int n_args)
    }
 
    advise("VOCODESYNTH", "centerfreq  bandwidth");
-   for (i = 0; i < numbands; i++)
+   for (int i = 0; i < numbands; i++)
       advise(NULL, "              %10.4f %10.4f", cf[i], bwpct * cf[i]);
 
    if (carrier_transp)
@@ -288,6 +285,7 @@ int VOCODESYNTH :: init(double p[], int n_args)
       advise("VOCODESYNTH", "Setting phrase curve to all 1's.");
 
    car_wavetable = floc(2);
+   int wavetablelen = 0;
    if (car_wavetable)
       wavetablelen = fsize(2);
 
@@ -304,7 +302,7 @@ int VOCODESYNTH :: init(double p[], int n_args)
 
    // make filters, oscillators ---------------------------------------------
 
-   for (i = 0; i < numbands; i++) {
+   for (int i = 0; i < numbands; i++) {
       float thecf = cf[i];
 
       modulator_filt[i] = new Butter(SR);
@@ -331,24 +329,28 @@ int VOCODESYNTH :: init(double p[], int n_args)
       state[i] = belowThreshold;
    }
 
-   return nsamps;
+   return nSamps();
+}
+
+
+/* ------------------------------------------------------------- configure -- */
+int VOCODESYNTH :: configure()
+{
+   in = new float [RTBUFSAMPS * inputChannels()];
+   return in ? 0 : -1;
 }
 
 
 /* ------------------------------------------------------------------- run -- */
 int VOCODESYNTH :: run()
 {
-   float modsig, out[MAXBUS];
-
-   if (in == NULL)            // first time, so allocate it
-      in = new float [RTBUFSAMPS * inputChannels()];
-
    const int frames = framesToRun() * inputChannels();
    rtgetin(in, this, frames);
 
    for (int i = 0; i < frames; i += inputChannels()) {
+      float modsig;
       if (currentFrame() < insamps) {
-         if (--branch < 0) {
+         if (--branch <= 0) {
             if (amptable)
                aamp = amptable->tick(currentFrame(), 1.0) * amp;
             branch = skip;
@@ -360,6 +362,7 @@ int VOCODESYNTH :: run()
          modsig = 0.0;
       }
 
+      float out[2];
       out[0] = 0.0;
       for (int j = 0; j < numbands; j++) {
          float power, car = 0.0;

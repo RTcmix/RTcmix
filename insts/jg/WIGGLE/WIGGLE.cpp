@@ -95,6 +95,8 @@ WIGGLE :: WIGGLE() : Instrument()
    pan_table = NULL;
 
    mod_depth = 0.0;        /* must init, in case depth_type == NoModOsc */
+
+   branch = 0;
 }
 
 
@@ -123,16 +125,16 @@ WIGGLE :: ~WIGGLE()
 
 int WIGGLE :: init(double p[], int n_args)
 {
-   float outskip, dur, ringdur;
-
-   outskip = p[0];
-   dur = p[1];
+   float outskip = p[0];
+   float dur = p[1];
    amp = p[2];
    base_freq = p[3];
    if (base_freq < 15.0)
       base_freq = cpspch(base_freq);
    depth_type = n_args > 4 ? (int)p[4] : 0;
    filter_type = n_args > 5 ? (FiltType)p[5] : NoFilter;
+
+   float ringdur;
    if (filter_type == NoFilter) {
       nfilts = do_balance = 0;
       ringdur = 0.0;
@@ -154,7 +156,7 @@ int WIGGLE :: init(double p[], int n_args)
    }
 
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
-   if (outputchans < 1 || outputchans > 2)
+   if (outputChannels() < 1 || outputChannels() > 2)
       return die("WIGGLE", "Output must be mono or stereo.");
 
    for (int i = 0; i < nfilts; i++)
@@ -232,7 +234,7 @@ int WIGGLE :: init(double p[], int n_args)
                   FILTER_CF_FUNC);
    }
 
-   if (outputchans == 2) {
+   if (outputChannels() == 2) {
       pan_array = floc(PAN_FUNC);
       if (pan_array) {
          int len = fsize(PAN_FUNC);
@@ -243,34 +245,30 @@ int WIGGLE :: init(double p[], int n_args)
                                                                      PAN_FUNC);
    }
 
-   branch = 0;
    skip = (int)(SR / (float)resetval);
    aamp = amp;        /* in case amp_table == NULL */
    cpsoct10 = cpsoct(10.0);
 
-   return nsamps;
+   return nSamps();
 }
 
 
 int WIGGLE :: run()
 {
-   int   i;
-   float sig, mod_sig, car_sig, out[2];
-
-   for (i = 0; i < chunksamps; i++) {
-      if (--branch < 0) {
+   for (int i = 0; i < framesToRun(); i++) {
+      if (--branch <= 0) {
          if (amp_table)
-            aamp = amp_table->tick(cursamp, 1.0) * amp;
-         car_gliss = cargliss_table->tick(cursamp, 1.0);
+            aamp = amp_table->tick(currentFrame(), 1.0) * amp;
+         car_gliss = cargliss_table->tick(currentFrame(), 1.0);
          car_gliss = cpsoct(10.0 + car_gliss) / cpsoct10;
          if (depth_type != NoModOsc) {
-            mod_freq = modfreq_table->tick(cursamp, 1.0);
-            mod_depth = moddepth_table->tick(cursamp, 1.0);
+            mod_freq = modfreq_table->tick(currentFrame(), 1.0);
+            mod_depth = moddepth_table->tick(currentFrame(), 1.0);
             if (depth_type == CarPercent)
                mod_depth *= 0.01;
          }
          if (filter_type != NoFilter) {
-            float cf = filtcf_table->tick(cursamp, 1.0);
+            float cf = filtcf_table->tick(currentFrame(), 1.0);
             if (cf <= 0.0)
                cf = 1.0;
             if (cf > SR * 0.5)
@@ -284,8 +282,8 @@ int WIGGLE :: run()
                   filt[j]->setHighPass(cf);
             }
          }
-         if (outputchans == 2)
-            pctleft = pan_table->tick(cursamp, 1.0);
+         if (outputChannels() == 2)
+            pctleft = pan_table->tick(currentFrame(), 1.0);
 
 #ifdef DEBUG1
          printf("amp=%f gliss=%f mfreq=%f mdpth=%f pan=%f\n",
@@ -295,6 +293,8 @@ int WIGGLE :: run()
       }
 
       car_freq = base_freq * car_gliss;
+
+      float mod_sig = 0.0;
       if (mod_depth) {
          float mfreq = mod_freq;
          if (mfreq < 0.0)     /* negative value acts as ratio flag */
@@ -306,21 +306,20 @@ int WIGGLE :: run()
             mod_sig = modulator->tick(mfreq, mdepth);
          }
       }
-      else
-         mod_sig = 0.0;
-      car_sig = carrier->tick(car_freq + mod_sig, aamp);
+      float car_sig = carrier->tick(car_freq + mod_sig, aamp);
 #ifdef DEBUG2
       printf("carfreq=%f carsig=%f modsig=%f\n", car_freq, car_sig, mod_sig);
 #endif
 
-      sig = car_sig;
+      float sig = car_sig;
       for (int j = 0; j < nfilts; j++)
          sig = filt[j]->tick(sig);
 
       if (do_balance)
          sig = balancer->tick(sig, car_sig);
 
-      if (outputchans == 2) {
+      float out[2];
+      if (outputChannels() == 2) {
          out[0] = sig * pctleft;
          out[1] = sig * (1.0 - pctleft);
       }
@@ -328,10 +327,10 @@ int WIGGLE :: run()
          out[0] = sig;
 
       rtaddout(out);
-      cursamp++;
+      increment();
    }
 
-   return i;
+   return framesToRun();
 }
 
 
@@ -345,8 +344,7 @@ Instrument *makeWIGGLE()
    return inst;
 }
 
-void
-rtprofile()
+void rtprofile()
 {
    RT_INTRO("WIGGLE", makeWIGGLE);
 }

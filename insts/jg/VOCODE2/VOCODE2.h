@@ -14,7 +14,8 @@ class VOCODE2 : public Instrument {
 public:
    VOCODE2();
    virtual ~VOCODE2();
-   int init(double p[], int n_args);
-   int run();
+   virtual int init(double p[], int n_args);
+   virtual int configure();
+   virtual int run();
 };
 

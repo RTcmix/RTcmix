@@ -37,12 +37,9 @@ SPECTACLE_BASE :: ~SPECTACLE_BASE()
 */
 int SPECTACLE_BASE :: make_windows()
 {
-   int i;
-   float sum;
-
    switch (window_type) {
       case Hamming:
-         for (i = 0; i < window_len; i++)
+         for (int i = 0; i < window_len; i++)
             anal_window[i] = synth_window[i] = 0.54 - 0.46
                                           * cos(TWO_PI * i / (window_len - 1));
          break;
@@ -51,7 +48,7 @@ int SPECTACLE_BASE :: make_windows()
          break;
       case Rectangle:
 //FIXME: is this right?
-         for (i = 0; i < window_len; i++)
+         for (int i = 0; i < window_len; i++)
             anal_window[i] = synth_window[i] = 1.0;
          break;
       case Triangle:
@@ -75,7 +72,7 @@ int SPECTACLE_BASE :: make_windows()
 
       /* Take care to create symmetrical windows. */
       x = -(window_len - 1) / 2.;
-      for (i = 0; i < window_len; i++, x += 1.)
+      for (int i = 0; i < window_len; i++, x += 1.)
          if (x != 0.) {
             anal_window[i] *= fft_len * sin(PI * x / fft_len) / (PI * x);
             if (decimation)
@@ -87,10 +84,11 @@ int SPECTACLE_BASE :: make_windows()
    /* Normalize windows for unity gain across unmodified
       analysis-synthesis procedure.
    */
-   for (sum = i = 0; i < window_len; i++)
+   float sum = 0.0;
+   for (int i = 0; i < window_len; i++)
       sum += anal_window[i];
 
-   for (i = 0; i < window_len; i++) {
+   for (int i = 0; i < window_len; i++) {
       float afac = 2. / sum;
       float sfac = window_len > fft_len ? 1. / afac : afac;
       anal_window[i] *= afac;
@@ -98,9 +96,11 @@ int SPECTACLE_BASE :: make_windows()
    }
 
    if (window_len <= fft_len && decimation) {
-      for (sum = i = 0; i < window_len; i += decimation)
+      sum = 0.0;
+      for (int i = 0; i < window_len; i += decimation)
          sum += synth_window[i] * synth_window[i];
-      for (sum = 1. / sum, i = 0; i < window_len; i++)
+      sum = 1.0 / sum;
+      for (int i = 0; i < window_len; i++)
          synth_window[i] *= sum;
    }
 
@@ -146,24 +146,21 @@ double * SPECTACLE_BASE :: resample_functable(double *table, int oldsize,
 /* ------------------------------------------------------------------ init -- */
 int SPECTACLE_BASE :: init(double p[], int n_args)
 {
-   int   valid;
-   float outskip, inskip, overlap;
-
-   outskip = p[0];
-   inskip = p[1];
+   float outskip = p[0];
+   float inskip = p[1];
    inputdur = p[2];
    amp = p[3];
    ringdur = p[4];
    fft_len = (int) p[5];
    window_len = (int) p[6];
    window_type = (WindowType) p[7];
-   overlap = p[8];
+   float overlap = p[8];
 
    /* Make sure FFT length is a power of 2 <= MAXFFTLEN and <= RTBUFSAMPS. */
-   valid = 0;
+   bool valid = false;
    for (int x = 1; x <= MAXFFTLEN; x *= 2) {
       if (fft_len == x) {
-         valid = 1;
+         valid = true;
          break;
       }
    }
@@ -185,10 +182,10 @@ int SPECTACLE_BASE :: init(double p[], int n_args)
    fund_anal_freq = SR / (float) fft_len;
 
    /* Make sure window length is a power of 2 >= FFT length. */
-   valid = 0;
+   valid = false;
    for (int x = fft_len; x <= MAXWINDOWLEN; x *= 2) {
       if (window_len == x) {
-         valid = 1;
+         valid = true;
          break;
       }
    }
@@ -198,12 +195,12 @@ int SPECTACLE_BASE :: init(double p[], int n_args)
                      "(currently %d) and <= %d.", fft_len, MAXWINDOWLEN);
 
    /* Make sure overlap is a power of 2 in our safety range. */
-   valid = 0;
+   valid = false;
 //FIXME: need to adjust MINOVERLAP so that iterations is never 0 in run()
 // This might depend upon window_len??
    for (float x = MINOVERLAP; x <= MAXOVERLAP; x *= 2.0) {
       if (overlap == x) {
-         valid = 1;
+         valid = true;
          break;
       }
    }
@@ -237,9 +234,9 @@ int SPECTACLE_BASE :: init(double p[], int n_args)
 
    if (rtsetinput(inskip, this) != 0)
       return DONT_SCHEDULE;
-   if (inchan >= inputchans)
+   if (inchan >= inputChannels())
       return die(instname(), "You asked for channel %d of a %d-channel file.",
-                                                         inchan, inputchans);
+                                                   inchan, inputChannels());
 
    /* <latency> is the delay before the FFT looks at actual input rather than
       zero-padding.  Need to let inst run long enough to compensate for this.
@@ -276,28 +273,27 @@ int SPECTACLE_BASE :: init(double p[], int n_args)
    if (post_init(p, n_args) != 0)
       return DONT_SCHEDULE;
 
-   return nsamps;
+   return nSamps();
 }
 
 
 /* ---------------------------------------------------------------- shiftin -- */
 void SPECTACLE_BASE :: shiftin()
 {
-   int   i, j, _cursamp;
+   DPRINT1("shiftin (cursamp=%d)\n", currentFrame());
 
-   DPRINT1("shiftin (cursamp=%d)\n", cursamp);
-
-   _cursamp = cursamp;
+   int _cursamp = currentFrame();
 
    /* Shift samples in <input> from right to left by <decimation>. */
-   for (i = 0; i < window_len_minus_decimation; i++)
+   for (int i = 0; i < window_len_minus_decimation; i++)
       input[i] = input[i + decimation];
 
    /* Copy <decimation> samples from <inbuf> to right end of <input> and
       to left end of <drybuf>.
    */
-   for (i = window_len_minus_decimation, j = 0; i < window_len; i++, j++) {
-      if (--iamp_branch < 0) {
+   int j = 0;
+   for (int i = window_len_minus_decimation; i < window_len; i++, j++) {
+      if (--iamp_branch <= 0) {
          /* Since inbuf_readptr trails inbuf_writeptr, we delay the start of
             the envelope until we reach actual input rather than zero padding.
          */
@@ -308,7 +304,7 @@ void SPECTACLE_BASE :: shiftin()
       float sig = inbuf_readptr[inchan] * iamp;
       drybuf[j] = dry_delay->tick(sig);
       input[i] = sig;
-      inbuf_readptr += inputchans;
+      inbuf_readptr += inputChannels();
       if (inbuf_readptr >= inbuf_endptr) {
          inbuf_readptr = inbuf_startptr;
          /* <inbuf_startptr> might not == <inbuf> in first call to run(). */
@@ -372,7 +368,7 @@ void SPECTACLE_BASE :: leanconvert()
 /* ------------------------------------------------------- flush_dry_delay -- */
 void SPECTACLE_BASE :: flush_dry_delay()
 {
-   if (cursamp < input_end_frame + window_len_minus_decimation) {
+   if (currentFrame() < input_end_frame + window_len_minus_decimation) {
       for (int i = 0; i < decimation; i++)
          drybuf[i] = dry_delay->tick(0.0);
    }
@@ -423,22 +419,20 @@ void SPECTACLE_BASE :: overlapadd(int n)
 /* -------------------------------------------------------------- shiftout -- */
 void SPECTACLE_BASE :: shiftout()
 {
-   int   i, _cursamp;
-   float sig;
+   int _cursamp = currentFrame();
 
-   _cursamp = cursamp;
-
-   for (i = 0; i < decimation; i++) {
-      if (--oamp_branch < 0) {
+   for (int i = 0; i < decimation; i++) {
+      if (--oamp_branch <= 0) {
          if (oamparray && (_cursamp >= latency))
             oamp = tablei(_cursamp - latency, oamparray, oamptabs) * amp;
          oamp_branch = skip;
       }
+      float sig;
       if (_cursamp < input_end_frame)
          sig = ((output[i] * wetdry) + ((1.0 - wetdry) * drybuf[i])) * oamp;
       else
          sig = output[i] * wetdry * oamp;
-      if (outputchans == 2) {
+      if (outputChannels() == 2) {
          *outbuf_writeptr++ = sig * pctleft;
          *outbuf_writeptr++ = sig * (1.0 - pctleft);
       }
@@ -452,9 +446,9 @@ void SPECTACLE_BASE :: shiftout()
    }
 
    /* shift samples in <output> from right to left by <decimation> */
-   for (i = 0; i < window_len_minus_decimation; i++)
+   for (int i = 0; i < window_len_minus_decimation; i++)
       output[i] = output[i + decimation];
-   for (i = window_len_minus_decimation; i < window_len; i++)  
+   for (int i = window_len_minus_decimation; i < window_len; i++)  
       output[i] = 0.0;
 }
 
@@ -462,63 +456,62 @@ void SPECTACLE_BASE :: shiftout()
 /* ------------------------------------------------------------------- run -- */
 int SPECTACLE_BASE :: run()
 {
-   int   i, iterations, insamps;
-
    if (first_time) {
       /* create segmented input buffer */
       int num_segments = (window_len / RTBUFSAMPS) + 2;
-      int extrasamps = RTBUFSAMPS - chunksamps;
+      int extrasamps = RTBUFSAMPS - framesToRun();
       if (extrasamps)
          num_segments++;
-      int inbuf_samps = num_segments * RTBUFSAMPS * inputchans;
+      int inbuf_samps = num_segments * RTBUFSAMPS * inputChannels();
       inbuf = new float [inbuf_samps];
-      for (i = 0; i < inbuf_samps; i++)
+      for (int i = 0; i < inbuf_samps; i++)
          inbuf[i] = 0.0;
 
       /* Read ptr chases write ptr by <window_len>.  Set read ptr to a position
          <window_len> frames from right end of input buffer.  Set write ptr to
-         beginning of buffer, or, if chunksamps is not the same as the RTcmix
+         beginning of buffer, or, if framesToRun() is not the same as the RTcmix
          buffer size, set it so that the next run invocation after this one
          will find the write ptr at the start of the second buffer segment.
       */
-      inbuf_readptr = inbuf + (inbuf_samps - (window_len * inputchans));
-      inbuf_startptr = inbuf + (extrasamps * inputchans);
+      inbuf_readptr = inbuf + (inbuf_samps - (window_len * inputChannels()));
+      inbuf_startptr = inbuf + (extrasamps * inputChannels());
       inbuf_writeptr = inbuf_startptr;
       inbuf_endptr = inbuf + inbuf_samps;
 
-      int outbuf_samps = num_segments * RTBUFSAMPS * outputchans;
+      int outbuf_samps = num_segments * RTBUFSAMPS * outputChannels();
       outbuf = new float [outbuf_samps];
-      for (i = 0; i < outbuf_samps; i++)
+      for (int i = 0; i < outbuf_samps; i++)
          outbuf[i] = 0.0;
 
-      outbuf_readptr = outbuf + (outbuf_samps - (chunksamps * outputchans));
+      outbuf_readptr = outbuf + (outbuf_samps
+                                       - (framesToRun() * outputChannels()));
       outbuf_writeptr = outbuf_readptr;
       outbuf_endptr = outbuf + outbuf_samps;
       first_time = 0;
 
-      DPRINT3("chunksamps=%d, extrasamps=%d, num_segments=%d\n",
-                                 chunksamps, extrasamps, num_segments);
+      DPRINT3("framesToRun()=%d, extrasamps=%d, num_segments=%d\n",
+                                 framesToRun(), extrasamps, num_segments);
       DPRINT3("inbuf_samps=%d, inbuf_readptr=%p, inbuf_writeptr=%p\n",
                                  inbuf_samps, inbuf_readptr, inbuf_writeptr);
       DPRINT3("outbuf_samps=%d, outbuf_readptr=%p, outbuf_writeptr=%p\n",
                                  outbuf_samps, outbuf_readptr, outbuf_writeptr);
    }
 
-   insamps = chunksamps * inputchans;
-   if (cursamp < total_insamps)
+   const int insamps = framesToRun() * inputChannels();
+   if (currentFrame() < total_insamps)
       rtgetin(inbuf_writeptr, this, insamps);
 
-   iterations = chunksamps / decimation;
-   if (chunksamps < RTBUFSAMPS)
+   int iterations = framesToRun() / decimation;
+   if (framesToRun() < RTBUFSAMPS)
       iterations++;
 
    DPRINT1("iterations=%d\n", iterations);
 
-   for (i = 0; i < iterations; i++) {
-      if (cursamp < input_end_frame) {
-         DPRINT1("taking input...cursamp=%d\n", cursamp);
+   for (int i = 0; i < iterations; i++) {
+      if (currentFrame() < input_end_frame) {
+         DPRINT1("taking input...cursamp=%d\n", currentFrame());
          shiftin();
-         fold(cursamp);
+         fold(currentFrame());
          rfft(fft_buf, half_fft_len, FORWARD);
          leanconvert();
       }
@@ -527,24 +520,24 @@ int SPECTACLE_BASE :: run()
       modify_analysis();
       leanunconvert();
       rfft(fft_buf, half_fft_len, INVERSE);
-      overlapadd(cursamp);
+      overlapadd(currentFrame());
       shiftout();
 
       cursamp += decimation;
    }
 
-   if (cursamp < input_end_frame) {
+   if (currentFrame() < input_end_frame) {
       inbuf_writeptr += insamps;
       if (inbuf_writeptr >= inbuf_endptr)
          inbuf_writeptr = inbuf;
    }
 
-   rtbaddout(outbuf_readptr, chunksamps);
-   outbuf_readptr += chunksamps * outputchans;
+   rtbaddout(outbuf_readptr, framesToRun());
+   outbuf_readptr += framesToRun() * outputChannels();
    if (outbuf_readptr >= outbuf_endptr)
       outbuf_readptr = outbuf;
 
-   return chunksamps;
+   return framesToRun();
 }
 
 

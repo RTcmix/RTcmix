@@ -35,7 +35,7 @@ class WIGGLE : public Instrument {
 public:
    WIGGLE();
    virtual ~WIGGLE();
-   int init(double p[], int n_args);
-   int run();
+   virtual int init(double p[], int n_args);
+   virtual int run();
 };
 

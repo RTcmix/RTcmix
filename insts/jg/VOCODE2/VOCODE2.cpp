@@ -109,34 +109,29 @@ VOCODE2 :: ~VOCODE2()
 
 int VOCODE2 :: init(double p[], int n_args)
 {
-   int   j, balance_window, subsample;
-   float outskip, inskip, dur;
-   float lowcf, spacemult, bwpct, responsetime, cf[MAXFILTS], carrier_transp;
-   float hipasscf;
-
-   outskip = p[0];
-   inskip = p[1];
-   dur = p[2];
+   float outskip = p[0];
+   float inskip = p[1];
+   float dur = p[2];
    amp = p[3];
    numfilts = (int) p[4];
-   lowcf = p[5];
-   spacemult = p[6];
-   carrier_transp = p[7];
-   bwpct = p[8];
-   responsetime = n_args > 9 ? p[9] : 0.01;        /* default: .01 secs */
-   hipass_mod_amp = p[10];                         /* default: 0 */
-   hipasscf = n_args > 11 ? p[11] : 5000.0;        /* default: 5000 Hz */
-   noise_amp = p[12];                              /* default: 0 */
-   subsample = (int) p[13];                        /* default: 1 (see below) */
-   pctleft = n_args > 14 ? p[14] : 0.5;            /* default: center */
+   float lowcf = p[5];
+   float spacemult = p[6];
+   float carrier_transp = p[7];
+   float bwpct = p[8];
+   float responsetime = n_args > 9 ? p[9] : 0.01;  // default: .01 secs
+   hipass_mod_amp = p[10];                         // default: 0
+   float hipasscf = n_args > 11 ? p[11] : 5000.0;  // default: 5000 Hz
+   noise_amp = p[12];                              // default: 0
+   int subsample = (int) p[13];                    // default: 1 (see below)
+   pctleft = n_args > 14 ? p[14] : 0.5;            // default: center
 
    nsamps = rtsetoutput(outskip, dur, this);
    if (rtsetinput(inskip, this) != 0)
       return DONT_SCHEDULE;
 
-   if (outputchans > 2)
+   if (outputChannels() > 2)
       return die("VOCODE2", "Output must be either mono or stereo.");
-   if (inputchans != 2)
+   if (inputChannels() != 2)
       return die("VOCODE2",
       "Must use 2 input channels: 'left' for carrier; 'right' for modulator.");
 
@@ -155,7 +150,7 @@ int VOCODE2 :: init(double p[], int n_args)
    if (bwpct <= 0.0)
       return die("VOCODE2", "Bandwidth proportion must be greater than 0.");
 
-   balance_window = (int) (responsetime * SR);
+   int balance_window = (int) (responsetime * SR);
    if (balance_window < 2) {
       warn("VOCODE2", "Response time too short ... changing to %.8f.",
                                                                      2.0 / SR);
@@ -166,6 +161,7 @@ int VOCODE2 :: init(double p[], int n_args)
    /* <numfilts> pfield lets user specify filter center frequencies by
       interval, in the form of a frequency multiplier, or by function table.
    */
+   float cf[MAXFILTS];
    if (numfilts > 0) {   /* by interval */
       if (numfilts > MAXFILTS)
          return die("VOCODE2", "Can only use %d filters.", MAXFILTS);
@@ -175,7 +171,7 @@ int VOCODE2 :: init(double p[], int n_args)
       if (lowcf < 15.0)                        /* interpreted as oct.pc */
          lowcf = cpspch(lowcf);
 
-      for (j = 0; j < numfilts; j++)
+      for (int j = 0; j < numfilts; j++)
          cf[j] = lowcf * (float) pow((double) spacemult, (double) j);
    }
    else {                /* by function table */
@@ -189,6 +185,7 @@ int VOCODE2 :: init(double p[], int n_args)
          return die("VOCODE2", "Can only use %d filters.", MAXFILTS);
 
       advise("VOCODE2", "Reading center freqs from function table...");
+      int j;
       for (j = 0; j < numfilts; j++) {
          float freq = freqtable[j];
          if (freq < 15.0) {                    /* interpreted as oct.pc */
@@ -211,7 +208,7 @@ int VOCODE2 :: init(double p[], int n_args)
          numfilts = i;
       }
    }
-   for (j = 0; j < numfilts; j++) {
+   for (int j = 0; j < numfilts; j++) {
       if (cf[j] > SR * 0.5) {
          warn("VOCODE2", "A cf was above Nyquist. Correcting...");
          cf[j] = SR * 0.5;
@@ -219,13 +216,13 @@ int VOCODE2 :: init(double p[], int n_args)
    }
 
    advise("VOCODE2", "centerfreq  bandwidth");
-   for (j = 0; j < numfilts; j++)
+   for (int j = 0; j < numfilts; j++)
       advise(NULL, "         %10.4f %10.4f", cf[j], bwpct * cf[j]);
 
    if (carrier_transp)
       carrier_transp = octpch(carrier_transp);
 
-   for (j = 0; j < numfilts; j++) {
+   for (int j = 0; j < numfilts; j++) {
       float thecf = cf[j];
 
       modulator_filt[j] = new Butter(SR);
@@ -253,37 +250,38 @@ int VOCODE2 :: init(double p[], int n_args)
    skip = (int) (SR / (float) resetval);
    aamp = amp;                  /* in case amparray == NULL */
 
-   return nsamps;
+   return nSamps();
+}
+
+
+int VOCODE2 :: configure()
+{
+   in = new float [RTBUFSAMPS * inputChannels()];
+   return in ? 0 : -1;
 }
 
 
 int VOCODE2 :: run()
 {
-   int   i, j, rsamps;
-   float modsig, carsig;
-   float out[MAXBUS];
+   const int samps = framesToRun() * inputChannels();
+   rtgetin(in, this, samps);
 
-   if (in == NULL)              /* first time, so allocate it */
-      in = new float [RTBUFSAMPS * inputchans];
-
-   rsamps = chunksamps * inputchans;
-   rtgetin(in, this, rsamps);
-
-   for (i = 0; i < rsamps; i += inputchans) {
-      if (--branch < 0) {
+   for (int i = 0; i < samps; i += inputChannels()) {
+      if (--branch <= 0) {
          if (amparray)
-            aamp = tablei(cursamp, amparray, amptabs) * amp;
+            aamp = tablei(currentFrame(), amparray, amptabs) * amp;
          branch = skip;
       }
-      carsig = in[i];
+      float carsig = in[i];
       if (noise_amp > 0.0) {
          float noisig = noise->tick() * 32767.0;
          carsig += noisig * noise_amp;
       }
-      modsig = in[i + 1];
+      float modsig = in[i + 1];
 
+      float out[2];
       out[0] = 0.0;
-      for (j = 0; j < numfilts; j++) {
+      for (int j = 0; j < numfilts; j++) {
          float mod = modulator_filt[j]->tick(modsig);
          float car = carrier_filt[j]->tick(carsig);
          CLAMP_DENORMALS(mod);
@@ -296,16 +294,16 @@ int VOCODE2 :: run()
       }
 
       out[0] *= aamp;
-      if (outputchans == 2) {
+      if (outputChannels() == 2) {
          out[1] = out[0] * (1.0 - pctleft);
          out[0] *= pctleft;
       }
 
       rtaddout(out);
-      cursamp++;
+      increment();
    }
 
-   return i;
+   return framesToRun();
 }
 
 
@@ -319,8 +317,7 @@ Instrument *makeVOCODE2()
    return inst;
 }
 
-void
-rtprofile()
+void rtprofile()
 {
    RT_INTRO("VOCODE2", makeVOCODE2);
 }

@@ -28,7 +28,6 @@
 #include <math.h>
 #include <float.h>       /* for DBL_MAX */
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "COMPLIMIT.h"
 #include <rt.h>
@@ -85,21 +84,18 @@ inline int min(int a, int b) {
 
 int COMPLIMIT::init(double p[], int n_args)
 {
-   int   detector_int;
-   float outskip, inskip, dur, atk_time, rel_time, lookahead_time;
-
-   outskip = p[0];
-   inskip = p[1];
-   dur = p[2];
-   ingain = ampdb(p[3]);           /* in dB, 0 means no change */
-   outgain = ampdb(p[4]);          /* in dB */
-   atk_time = p[5];
-   rel_time = p[6];
-   threshold = p[7];               /* in dBFS */
+   float outskip = p[0];
+   float inskip = p[1];
+   float dur = p[2];
+   ingain = ampdb(p[3]);           // in dB, 0 means no change
+   outgain = ampdb(p[4]);          // in dB
+   float atk_time = p[5];
+   float rel_time = p[6];
+   threshold = p[7];               // in dBFS
    ratio = p[8];
-   lookahead_time = p[9];
+   float lookahead_time = p[9];
    window_frames = (int) p[10];
-   detector_int = (int) p[11];
+   int detector_int = (int) p[11];
    bypass = (int) p[12];
    inchan = (n_args > 13) ? (int) p[13] : 0;
    pctleft = (n_args > 14) ? p[14] : 0.5;
@@ -108,10 +104,10 @@ int COMPLIMIT::init(double p[], int n_args)
       return DONT_SCHEDULE;
    nsamps = rtsetoutput(outskip, dur, this);
 
-   if (inchan >= inputchans)
+   if (inchan >= inputChannels())
       return die("COMPLIMIT", "You asked for channel %d of a %d-channel file.",
-                                                        inchan, inputchans);
-   if (outputchans > 2)
+                                                     inchan, inputChannels());
+   if (outputChannels() > 2)
       return die("COMPLIMIT", "Can't use more than 2 output channels.");
 
    if (atk_time < 0.0 || rel_time < 0.0)
@@ -169,7 +165,7 @@ int COMPLIMIT::init(double p[], int n_args)
           lookahead_samps, window_frames);
 #endif
 
-   return nsamps;
+   return nSamps();
 }
 
 
@@ -189,12 +185,12 @@ inline float COMPLIMIT::get_peak(int offset, int *over_thresh_offset)
    float over = 0.0;
 #endif
 
-   endsamp = offset + (window_len * inputchans);
+   endsamp = offset + (window_len * inputChannels());
    *over_thresh_offset = 0;
 
    if (detector_type == PEAK_DETECTOR) {
       int loc = -1;
-      for (int i = offset; i < endsamp; i += inputchans) {
+      for (int i = offset; i < endsamp; i += inputChannels()) {
          float samp = in[i + inchan];
          if (samp < 0.0)
             samp = -samp;
@@ -207,11 +203,11 @@ inline float COMPLIMIT::get_peak(int offset, int *over_thresh_offset)
          if (samp > pk)
             pk = samp;
       }
-      *over_thresh_offset = loc / inputchans;
+      *over_thresh_offset = loc / inputChannels();
    }
    else if (detector_type == AVERAGE_DETECTOR) {
       double dpk = 0.0;
-      for (int i = offset; i < endsamp; i += inputchans) {
+      for (int i = offset; i < endsamp; i += inputChannels()) {
          double samp = (double) in[i + inchan];
          if (samp < 0.0)
             samp = -samp;
@@ -221,7 +217,7 @@ inline float COMPLIMIT::get_peak(int offset, int *over_thresh_offset)
    }
    else {  /* detector_type == RMS_DETECTOR */
       double dpk = 0.0;
-      for (int i = offset; i < endsamp; i += inputchans) {
+      for (int i = offset; i < endsamp; i += inputChannels()) {
          double samp = (double) in[i + inchan];
          dpk += samp * samp;
       }
@@ -231,7 +227,7 @@ inline float COMPLIMIT::get_peak(int offset, int *over_thresh_offset)
 #ifdef DEBUG
    printf("\npeak: %g, over: %g, over_thresh_offset: %d, firstsamp: %d, "
           "window_len: %d, offset: %d\n", pk, over, *over_thresh_offset,
-                         cursamp + lookahead_samps, window_len, offset);
+                         currentFrame() + lookahead_samps, window_len, offset);
 #endif
 
    return pk;
@@ -256,38 +252,42 @@ inline float COMPLIMIT::get_gain_reduction()
 }
 
 
+int COMPLIMIT::configure()
+{
+   return 0;
+}
+
+
 int COMPLIMIT::run()
 {
-   int   i, samps, win_count, win_end_count, over_thresh_offset;
-   float *bufendptr, sig, out[2];
 
-   samps = chunksamps * inputchans;
+   const int samps = framesToRun() * inputChannels();
 
    if (first_time) {
       int nbufs = (lookahead_samps / RTBUFSAMPS) + 2;
-      int extrasamps = RTBUFSAMPS - chunksamps;
+      int extrasamps = RTBUFSAMPS - framesToRun();
       if (extrasamps)
          nbufs++;
-      buf_samps = nbufs * RTBUFSAMPS * inputchans;
+      buf_samps = nbufs * RTBUFSAMPS * inputChannels();
       in = new float [buf_samps];
-      for (i = 0; i < buf_samps; i++)
+      for (int i = 0; i < buf_samps; i++)
          in[i] = 0.0;
 
       /* Note: input ptr chases read ptr by lookahead_samps */
-      inptr = in + (buf_samps - (lookahead_samps * inputchans));
-      bufstartptr = in + (extrasamps * inputchans);
+      inptr = in + (buf_samps - (lookahead_samps * inputChannels()));
+      bufstartptr = in + (extrasamps * inputChannels());
       readptr = bufstartptr;
 
-      offset = extrasamps * inputchans;
-      window_len = chunksamps % window_frames;
+      offset = extrasamps * inputChannels();
+      window_len = framesToRun() % window_frames;
       if (window_len == 0)
          window_len = window_frames;
    }
 
-   bufendptr = in + buf_samps;
+   float *bufendptr = in + buf_samps;
 
-   win_end_count = window_len - 1;
-   win_count = 0;                      /* trigger first look-ahead */
+   int win_end_count = window_len - 1;
+   int win_count = 0;                  /* trigger first look-ahead */
 
 #ifdef DEBUG
    printf("\nin=%p, inptr=%p, readptr=%p, bufstartptr=%p, bufendptr=%p\n",
@@ -295,10 +295,12 @@ int COMPLIMIT::run()
 #endif
    rtgetin(readptr, this, samps);
 
-   for (i = 0; i < chunksamps; i++) {
-      if (--branch < 0) {
+   int over_thresh_offset;
+
+   for (int i = 0; i < framesToRun(); i++) {
+      if (--branch <= 0) {
          if (amptable)
-            oamp = tablei(cursamp, amptable, amptabs);
+            oamp = tablei(currentFrame(), amptable, amptabs);
          branch = skip;
       }
 
@@ -384,7 +386,7 @@ int COMPLIMIT::run()
          else
             wins_under_thresh++;
 
-         offset += window_len * inputchans;
+         offset += window_len * inputChannels();
          if (offset >= buf_samps)
             offset = 0;
          if (window_len != window_frames) {     /* after first window */
@@ -409,13 +411,13 @@ int COMPLIMIT::run()
             over_thresh_offset--;
       }
 
-      sig = inptr[inchan] * ingain;
+      float sig = inptr[inchan] * ingain;
 
       if (env_state == ENV_ATTACK) {
          double scale = ampdb(gain);
 #ifdef DEBUG
          printf("attack:   cursamp=%d, envcount=%d, insig=% f, gain=%f, sc=%f",
-                                       cursamp, env_count, sig, gain, scale);
+                                 currentFrame(), env_count, sig, gain, scale);
 #endif
          sig *= scale;
 
@@ -442,7 +444,7 @@ int COMPLIMIT::run()
          double scale = ampdb(gain);
 #ifdef DEBUG
          printf("sustain:  cursamp=%d, envcount=%d, insig=% f, gain=%f, sc=%f",
-                                       cursamp, env_count, sig, gain, scale);
+                                 currentFrame(), env_count, sig, gain, scale);
 #endif
          sig *= scale;
 
@@ -458,7 +460,7 @@ int COMPLIMIT::run()
          double scale = ampdb(gain);
 #ifdef DEBUG
          printf("release:  cursamp=%d, envcount=%d, insig=% f, gain=%f, sc=%f",
-                                       cursamp, env_count, sig, gain, scale);
+                                 currentFrame(), env_count, sig, gain, scale);
 #endif
          sig *= scale;
          gain -= gain_increment;
@@ -481,7 +483,8 @@ int COMPLIMIT::run()
       if (bypass)
          sig = inptr[inchan] * oamp;
 
-      if (outputchans == 2) {
+      float out[2];
+      if (outputChannels() == 2) {
          out[0] = sig * pctleft;
          out[1] = sig * (1.0 - pctleft);
       }
@@ -489,9 +492,9 @@ int COMPLIMIT::run()
          out[0] = sig;
 
       rtaddout(out);
-      cursamp++;
+      increment();
 
-      inptr += inputchans;
+      inptr += inputChannels();
       if (inptr >= bufendptr) {
          inptr = bufstartptr;
          bufstartptr = in;
@@ -505,7 +508,7 @@ int COMPLIMIT::run()
    if (first_time)
       first_time = 0;
 
-   return i;
+   return framesToRun();
 }
 
 
