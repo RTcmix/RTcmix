@@ -50,26 +50,19 @@ makeLFO(const Arg args[], const int nargs)
 	if (nargs < 3)
 		return _makeLFO_usage();
 
-// FIXME: passing a raw table to LFOPField is a memory leak, unless
-// LFOPField is allowed to own the table.  -JGG
-
-	int len = 0;
-	double *wavetable = NULL;
-
-	TablePField *wavetablePF = (TablePField *) ((PField *) args[0]);
-	if (wavetablePF == NULL || wavetablePF->values() < 2) {	// not a TablePField
+	TablePField *tablePField = (TablePField *) ((PField *) args[0]);
+	if (tablePField == NULL || tablePField->values() < 2) {	// not a TablePField
 		if (args[0].isType(StringType)) {
-			len = kLFOWavetableSize;
-			wavetable = new double [len];
-			if (wavetable_from_string(args[0], wavetable, len, "makeLFO") != 0)
+			const int len = kLFOWavetableSize;
+			double *wavetable = new double [len];
+			if (wavetable_from_string(args[0], wavetable, len, "makeLFO") != 0) {
+				delete wavetable;
 				return NULL;
+			}
+			tablePField = new TablePField(wavetable, len);
 		}
 		else
 			return _makeLFO_usage();
-	}
-	else {
-		len = wavetablePF->values();
-		wavetable = (double *) *wavetablePF;
 	}
 
 	InterpType interp = kInterp1stOrder;
@@ -132,9 +125,9 @@ makeLFO(const Arg args[], const int nargs)
 
 	PField *lfo = NULL;
 	if (interp == kInterp1stOrder)
-		lfo = new LFOPField(resetval, wavetable, len, freqpf);
+		lfo = new LFOPField(resetval, tablePField, freqpf);
 	else // (interp == kTruncate)
-		lfo = new LFOPField(resetval, wavetable, len, freqpf, LFOPField::Truncate);
+		lfo = new LFOPField(resetval, tablePField, freqpf, LFOPField::Truncate);
 
 	if (amppf != NULL)
 		lfo = new MultPField(lfo, amppf);

@@ -185,18 +185,22 @@ int PFieldBinaryOperator::copyValues(double *array) const
 
 // LFOPField
 
-LFOPField::LFOPField(double krate, double *tableArray, int length,
+LFOPField::LFOPField(double krate, TablePField *tablePField,
 		PField *freq, LFOPField::InterpFunction ifun)
-	: SingleValuePField(0.0), _freqPF(freq), _interpolator(ifun)
+	: SingleValuePField(0.0), _tablePF(tablePField), _freqPF(freq), _interpolator(ifun)
 {
+	_tablePF->ref();
 	_freqPF->ref();
-	_oscil = new Ooscil(krate, _freqPF->doubleValue(0), tableArray, length);
+	double *table = (double *) *_tablePF;
+	const int length = _tablePF->values();
+	_oscil = new Ooscil(krate, _freqPF->doubleValue(0), table, length);
 }
 
 LFOPField::~LFOPField()
 {
 	delete _oscil;
 	_freqPF->unref();
+	_tablePF->unref();
 }
 
 double LFOPField::Truncate(Ooscil *oscil)
