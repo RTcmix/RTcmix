@@ -3,6 +3,9 @@
 #ifndef _AUDIODEVICE_H_
 #define _AUDIODEVICE_H_
 
+#define ZERO_FRAMES_BEFORE 8192
+#define ZERO_FRAMES_AFTER  0
+
 class AudioDevice {
 protected:
 	class Callback;
