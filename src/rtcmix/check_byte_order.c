@@ -1,7 +1,11 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
 /* check_byte_order.c -- attempts to read byte-swapped Hybrid header */
 
 /* Hacked by DT 1/27/98 for Linux Intel */
-/* Only for use with BSD/IRCAM snd files */
 
 #include "../H/sfheader.h"
 #include "../H/byte_routines.h"
