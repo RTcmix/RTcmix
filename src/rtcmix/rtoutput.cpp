@@ -77,12 +77,6 @@ set_rtoutput_clobber(int state)
 #define DEFAULT_HEADER_TYPE    AIFF_sound_file
 #define DEFAULT_DATA_FORMAT    snd_16_linear
 
-int output_header_type = -1;
-int output_data_format = -1;
-int is_float_format = 0;
-int normalize_output_floats = 0;
-char *rtoutsfname;
-
 #define CLOBBER_WARNING       \
 "Specified output file already exists! \n\n\
 Turn on \"clobber mode\" in your score to overwrite it.\n\
