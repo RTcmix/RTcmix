@@ -22,7 +22,7 @@ install::
 	@cd cmd; $(MAKE) install;
 	@cd head; $(MAKE) install;
 	@cd utils; $(MAKE) install;
-	@cd insts.base; $(MAKE) install;
+	-mkdir $(LIBDESTDIR)
 	@for DIR in $(INST_DIRS); \
 	do \
 	  ( cd $$DIR; $(MAKE) install ); \
