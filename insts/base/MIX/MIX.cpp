@@ -69,13 +69,12 @@ int MIX::run()
 
 	rtgetin(in, this, rsamps);
 
+   aamp = amp;                     /* in case amptable == NULL */
 	branch = 0;
 	for (i = 0; i < rsamps; i += inputchans)  {
 		if (--branch < 0) {
 			if (amptable)
 				aamp = tablei(cursamp, amptable, tabs) * amp;
-			else
-				aamp = amp;
 			branch = skip;
 			}
 

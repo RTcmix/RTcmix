@@ -23,7 +23,7 @@ static void
 trans(float a, float alpha, float b, int n, float *output)
 {
    int   i;
-   float d, e, interval, delta;
+   float d, e, delta, interval = 0.0;
 
    delta = b - a;
 

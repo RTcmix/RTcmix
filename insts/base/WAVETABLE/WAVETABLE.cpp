@@ -66,13 +66,12 @@ int WAVETABLE::run()
 	
 	Instrument::run();
 
+   aamp = amp;                     /* in case amptable == NULL */
 	branch = 0;
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch < 0) {
 			if (amptable)
 				aamp = tablei(cursamp, amptable, tabs) * amp;
-			else
-				aamp = amp;
 			branch = skip;
 		}
 		out[0] = oscili(aamp, si, wavetable, len, &phase);
