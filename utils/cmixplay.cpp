@@ -110,7 +110,7 @@ Usage: %s [options] filename  \n\
                     If the latter, prints time in same way.     \n\
                  Hotkeys: 'f': fast-forward, 'r': rewind,       \n\
                           'm': mark (print current buffer start time)\n\
-                 To stop playing: cntl-D or cntl-C
+                 To stop playing: cntl-D or cntl-C              \n\
 "
 
 static void
