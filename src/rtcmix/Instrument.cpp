@@ -14,11 +14,13 @@
 #include <notetags.h>
 #include <sndlibsupport.h>
 #include <bus.h>
+#include "BusSlot.h"
 #include <assert.h>
 #include <ugens.h>
 #include "heap/heap.h"
 #include <PField.h>
 #include <PFieldSet.h>
+#include <maxdispargs.h>
 
 /* ----------------------------------------------------------- Instrument --- */
 Instrument::Instrument()
@@ -45,9 +47,7 @@ Instrument::Instrument()
 
    outbuf = NULL;
    _busSlot = NULL;
-#ifdef PFIELD_CLASS
    _pfields = NULL;
-#endif
 
    for (i = 0; i < MAXBUS; i++)
       bufstatus[i] = 0;
@@ -81,9 +81,7 @@ Instrument::~Instrument()
 
 	RefCounted::unref(_busSlot);	// release our reference	
 
-#ifdef PFIELD_CLASS
 	delete _pfields;
-#endif	
 	delete [] _name;
 }
 
@@ -119,9 +117,7 @@ void Instrument::set_bus_config(const char *inst_name)
   pthread_mutex_unlock(&bus_slot_lock);
 }
 
-#ifdef PFIELD_CLASS
 double Instrument::s_dArray[MAXDISPARGS];
-#endif
 
 /* ------------------------------------------------------------ setup () --- */
 
@@ -129,14 +125,10 @@ double Instrument::s_dArray[MAXDISPARGS];
 
 int Instrument::setup(PFieldSet *pfields)
 {
-#ifdef PFIELD_CLASS
 	_pfields = pfields;
 	int nargs = MAXDISPARGS;
 	update(s_dArray, nargs);
 	return init(s_dArray, pfields->size());
-#else
-	return -1;
-#endif
 }
 
 /* ------------------------------------------------------------ update () --- */
@@ -147,7 +139,6 @@ int Instrument::setup(PFieldSet *pfields)
 
 int Instrument::update(double p[], int nvalues, unsigned fields)
 {
-#ifdef PFIELD_CLASS
 	int n, args = _pfields->size();
 	int frame = currentFrame();
 	double percent = (frame == 0) ? 0.0 : (double) frame / nSamps();
@@ -159,7 +150,6 @@ int Instrument::update(double p[], int nvalues, unsigned fields)
 	}
 	for (; n < nvalues; ++n)
 		p[n] = 0.0;
-#endif
 	return 0;
 }
 

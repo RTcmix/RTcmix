@@ -2,8 +2,6 @@
 #define _BUS_H_ 1
 
 #include <globals.h>
-#include <Lockable.h>
-#include <RefCounted.h>
 
 #ifdef __cplusplus
 
@@ -30,48 +28,7 @@ enum IBusClass {
   UNKNOWN
 };
 
-class BusSlot : public RefCounted, public Lockable {
-public:
-	BusSlot();
-	inline IBusClass Class() const;
-	BusSlot    *next;
-	BusSlot    *prev;
-	short      in_count;
-	short      in[MAXBUS];
-	short      out_count;
-	short      out[MAXBUS];
-	short      auxin_count;
-	short      auxin[MAXBUS];
-	short      auxout_count;
-	short      auxout[MAXBUS];
-protected:
-	virtual ~BusSlot();
-};
-
-inline IBusClass 
-BusSlot::Class() const
-{
-  if (this == 0)
-	return UNKNOWN;
-  if (auxin_count > 0 && auxout_count > 0)
-	return AUX_TO_AUX;
-  if (auxout_count > 0 && out_count > 0)
-	return TO_AUX_AND_OUT;
-  if (auxout_count > 0)
-	return TO_AUX;
-  if (out_count > 0)
-	return TO_OUT;
-  return UNKNOWN;
-}
-
-struct BusQueue {
-	BusQueue(char *name, BusSlot *theQueue);
-	~BusQueue();
-	char *instName() { return inst_name; }
-	char *inst_name;
-	BusSlot *slot;
-	BusQueue *next;
-};
+class BusSlot;
 
 extern "C" {
 /* exported functions */

@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <ugens.h>
 #include <bus.h>
+#include "BusSlot.h"
 #include <globals.h>
 #include <prototypes.h>
 #include <lock.h>
@@ -24,6 +25,15 @@
 #else
 #define MPRINT(string, ptr)
 #endif
+
+struct BusQueue {
+	BusQueue(char *name, BusSlot *theQueue);
+	~BusQueue();
+	char *instName() { return inst_name; }
+	char *inst_name;
+	BusSlot *slot;
+	BusQueue *next;
+};
 
 //
 // BusSlot "class" methods

@@ -15,6 +15,7 @@
 #include <Instrument.h>
 #include <Option.h>
 #include <bus.h>
+#include "BusSlot.h"
 #include <dbug.h>
 
 //#define TBUG

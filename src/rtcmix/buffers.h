@@ -5,9 +5,7 @@
 #ifndef _BUFFERS_H_
 #define _BUFFERS_H_ 1
 
-/* type of buffer used for internal buses */
-#define BUFTYPE float           /* could be double some day */
-typedef BUFTYPE *BufPtr;
+#include <rt_types.h>
 
 #ifdef __cplusplus
 extern "C" {

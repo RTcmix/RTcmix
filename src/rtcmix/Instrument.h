@@ -7,14 +7,14 @@
 
 #include <RefCounted.h>
 #include <bus.h>
-#include <buffers.h>
+#include <rt_types.h>
 #include <sys/types.h>
-#include <maxdispargs.h>
 
 #define MAXNUMPARAMS 100
 
 class heap;
 class PFieldSet;
+class BusSlot;
 
 class Instrument : public RefCounted {
 protected:
@@ -41,11 +41,8 @@ protected:
    BUFTYPE        *outbuf;         // private interleaved buffer
 
    BusSlot        *_busSlot;
-#ifdef PFIELD_CLASS
 	PFieldSet	  *_pfields;
-	static float  s_fArray[MAXDISPARGS];
-	static double s_dArray[MAXDISPARGS];
-#endif
+	static double s_dArray[];
 #ifdef RTUPDATE
    // new RSD variables
    EnvType rsd_env;
