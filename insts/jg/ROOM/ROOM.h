@@ -7,7 +7,7 @@ class ROOM : public Instrument {
    int    nmax, jpoint, ipoint[NTAPS];
    float  lamp[NTAPS], ramp[NTAPS];
    float  amp;
-   float  *echo, *amparray, amptabs[2], *in;
+   float  *echo, *amparray, amptabs[2];
 
 public:
    ROOM();

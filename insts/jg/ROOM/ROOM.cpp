@@ -17,14 +17,12 @@ extern "C" {
 
 ROOM::ROOM() : Instrument()
 {
-   in = new float[MAXBUF];
    echo = NULL;
 }
 
 
 ROOM::~ROOM()
 {
-   delete [] in;
    delete [] echo;
 }
 
@@ -40,7 +38,7 @@ int ROOM::init(float p[], short n_args)
    amp = p[3];
    inchan = n_args > 4 ? (int)p[4] : AVERAGE_CHANS;
 
-   if (NCHANS != 2) {
+   if (outputchans != 2) {
       fprintf(stderr, "ROOM requires stereo output.\n");
       exit(1);
    }
@@ -91,7 +89,9 @@ int ROOM::run()
 {
    int   i, branch, rsamps;
    float aamp, insig;
-   float out[2];
+   float in[MAXBUF], out[2];
+
+   Instrument::run();
 
    rsamps = chunksamps * inputchans;
 
@@ -151,6 +151,8 @@ Instrument *makeROOM()
    ROOM *inst;
 
    inst = new ROOM();
+   inst->set_bus_config("ROOM");
+
    return inst;
 }
 

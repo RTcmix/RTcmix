@@ -58,13 +58,11 @@ extern "C" {
 
 JFIR :: JFIR() : Instrument()
 {
-   in = new float[MAXBUF];
 }
 
 
 JFIR :: ~JFIR()
 {
-   delete [] in;
    delete filt;
 }
 
@@ -130,7 +128,9 @@ int JFIR :: run()
 {
    int   i, branch, rsamps;
    float aamp, insig;
-   float out[2];
+   float in[MAXBUF], out[2];
+
+   Instrument :: run();
 
    rsamps = chunksamps * inputchans;
 
@@ -157,7 +157,7 @@ int JFIR :: run()
 printf("%4d:  %18.12f ->%18.12f ->%18.12f ->%18.12f\n",
        cursamp, insig, f1, f2, out[0]);
 #else
-      if (NCHANS == 2) {
+      if (outputchans == 2) {
          out[1] = out[0] * (1.0 - spread);
          out[0] *= spread;
       }
@@ -208,6 +208,8 @@ Instrument *makeJFIR()
    JFIR *inst;
 
    inst = new JFIR();
+   inst->set_bus_config("JFIR");
+
    return inst;
 }
 

@@ -45,14 +45,12 @@ extern "C" {
 
 MROOM::MROOM() : Instrument()
 {
-   in = new float[MAXBUF];
    delayline = rvbarrayl = rvbarrayr = NULL;
 }
 
 
 MROOM::~MROOM()
 {
-   delete [] in;
    delete [] delayline;
    delete [] rvbarrayl;
    delete [] rvbarrayr;
@@ -77,7 +75,7 @@ int MROOM::init(float p[], short n_args)
    inchan = n_args > 9 ? (int)p[9] : AVERAGE_CHANS;
    quant = n_args > 10 ? (int)p[10] : DEFAULT_QUANTIZATION;
 
-   if (NCHANS != 2) {
+   if (outputchans != 2) {
       fprintf(stderr, "MROOM requires stereo output.\n");
       exit(1);
    }
@@ -139,7 +137,9 @@ int MROOM::run()
 {
    int   i, m, ampbranch, quantbranch, rsamps;
    float aamp, insig, lout, rout, delval, rvbsig = 0.0;
-   float out[2];
+   float in[MAXBUF], out[2];
+
+   Instrument::run();
 
    rsamps = chunksamps * inputchans;
 
@@ -302,6 +302,8 @@ Instrument *makeMROOM()
    MROOM *inst;
 
    inst = new MROOM();
+   inst->set_bus_config("MROOM");
+
    return inst;
 }
 

@@ -3,7 +3,7 @@
 class JFIR : public Instrument {
    int     inchan, insamps, skip;
    float   amp, spread;
-   float   *amparray, amptabs[2], *in;
+   float   *amparray, amptabs[2];
    NZero   *filt;
 
 public:

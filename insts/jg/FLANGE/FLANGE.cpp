@@ -43,7 +43,6 @@ extern "C" {
 
 FLANGE :: FLANGE() : Instrument()
 {
-   in = new float[MAXBUF];
    zcomb = NULL;       // only one of these will be created
    znotch = NULL;
 }
@@ -51,7 +50,6 @@ FLANGE :: FLANGE() : Instrument()
 
 FLANGE :: ~FLANGE()
 {
-   delete [] in;
    delete zcomb;
    delete znotch;
    delete modoscil;
@@ -139,7 +137,9 @@ int FLANGE :: run()
 {
    int   i, branch, rsamps;
    float aamp, modval, insig, fsig, delsamps, modsamps;
-   float out[2];
+   float in[MAXBUF], out[2];
+
+   Instrument :: run();
 
    rsamps = chunksamps * inputchans;
 
@@ -182,7 +182,7 @@ int FLANGE :: run()
 
       out[0] = (insig * (1.0 - wetdrymix)) + (fsig * wetdrymix);
 
-      if (NCHANS == 2) {
+      if (outputchans == 2) {
          out[1] = out[0] * (1.0 - spread);
          out[0] *= spread;
       }
@@ -200,6 +200,8 @@ Instrument *makeFLANGE()
    FLANGE *inst;
 
    inst = new FLANGE();
+   inst->set_bus_config("FLANGE");
+
    return inst;
 }
 

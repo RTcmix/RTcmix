@@ -32,14 +32,12 @@ extern "C" {
 
 SROOM::SROOM() : Instrument()
 {
-   in = new float[MAXBUF];
    delayline = rvbarrayl = rvbarrayr = NULL;
 }
 
 
 SROOM::~SROOM()
 {
-   delete [] in;
    delete [] delayline;
    delete [] rvbarrayl;
    delete [] rvbarrayr;
@@ -65,7 +63,7 @@ int SROOM::init(float p[], short n_args)
    innerwidth = p[10];        /* the room inside your head */
    inchan = n_args > 11 ? (int)p[11] : AVERAGE_CHANS;
 
-   if (NCHANS != 2) {
+   if (outputchans != 2) {
       fprintf(stderr, "SROOM requires stereo output.\n");
       exit(1);
    }
@@ -110,7 +108,9 @@ int SROOM::run()
 {
    int   i, m, branch, rsamps;
    float aamp, insig, lout, rout, delval, rvbsig = 0.0;
-   float out[2];
+   float in[MAXBUF], out[2];
+
+   Instrument::run();
 
    rsamps = chunksamps * inputchans;
 
@@ -234,6 +234,8 @@ Instrument *makeSROOM()
    SROOM *inst;
 
    inst = new SROOM();
+   inst->set_bus_config("SROOM");
+
    return inst;
 }
 

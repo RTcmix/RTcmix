@@ -114,38 +114,38 @@ int JCHOR::init(float p[], short n_args)
    inchan = (n_args > 12) ? (int)p[12] : AVERAGE_CHANS;
 
    if (n_args < 12) {
-      fprintf(stderr, "Not enough pfields for JCHOR.\n");
+      fprintf(stderr, "JCHOR: Not enough pfields.\n");
       exit(1);
    }
 
    rtsetinput(inskip, this);
    nsamps = rtsetoutput(outskip, outdur, this);
 
-   if (NCHANS > 2) {
-      fprintf(stderr, "Output must have no more than two channels.\n");
+   if (outputchans > 2) {
+      fprintf(stderr, "JCHOR: Output must have no more than two channels.\n");
       exit(1);
    }
 
    if (nvoices < 1) {
-      fprintf(stderr, "Must have at least one voice.\n");
+      fprintf(stderr, "JCHOR: Must have at least one voice.\n");
       exit(1);
    }
 
    if (minamp < 0.0 || maxamp <= 0.0 || minamp > maxamp) {
-      fprintf(stderr, "Grain amplitude range confused.\n");
+      fprintf(stderr, "JCHOR: Grain amplitude range confused.\n");
       exit(1);
    }
    ampdiff = maxamp - minamp;
 
    if (minwait < 0.0 || maxwait < 0.0 || minwait > maxwait) {
-      fprintf(stderr, "Grain wait range confused.\n");
+      fprintf(stderr, "JCHOR: Grain wait range confused.\n");
       exit(1);
    }
    waitdiff = (maxwait - minwait) * SR;
    minwait *= SR;
 
    if (seed < 0.0 || seed > 1.0) {
-      fprintf(stderr, "Seed must be between 0 and 1 inclusive.\n");
+      fprintf(stderr, "JCHOR: Seed must be between 0 and 1 inclusive.\n");
       exit(1);
    }
 
@@ -156,7 +156,7 @@ int JCHOR::init(float p[], short n_args)
    for (i = 0, v = voices; i < nvoices; i++, v++) {
       seed = crandom(seed);
       v->index = (int)(-seed * (grainsamps - 1));
-      if (NCHANS > 1) {
+      if (outputchans > 1) {
          seed = crandom(seed);
          v->left_amp = seed;
          v->right_amp = 1.0 - v->left_amp;
@@ -178,7 +178,7 @@ int JCHOR::init(float p[], short n_args)
       tableset(outdur, len, amptabs);
    }
    else
-      printf("Setting phrase curve to all 1's\n");
+      printf("JCHOR: Setting phrase curve to all 1's\n");
 
    skip = (int)(SR / (float)resetval);
 
@@ -192,6 +192,8 @@ int JCHOR::run()
    float amp;
    float out[2];
    Voice *v;
+
+   Instrument::run();
 
    amp = 1.0;                   /* in case amparray == NULL */
 
@@ -210,7 +212,7 @@ int JCHOR::run()
          if (v->index >= grainsamps) {
             seed = crandom(seed);
             v->index = (int)(-((seed * waitdiff) + minwait));
-            if (NCHANS > 1) {
+            if (outputchans > 1) {
                seed = crandom(seed);
                v->left_amp = seed;
                v->right_amp = 1.0 - v->left_amp;
@@ -220,7 +222,7 @@ int JCHOR::run()
          }
          else {
             float sig = grain[v->index] * v->overall_amp;
-            if (NCHANS > 1) {
+            if (outputchans > 1) {
                out[0] += sig * v->left_amp;
                out[1] += sig * v->right_amp;
             }
@@ -383,6 +385,8 @@ Instrument *makeJCHOR()
    JCHOR *inst;
 
    inst = new JCHOR();
+   inst->set_bus_config("JCHOR");
+
    return inst;
 }
 
