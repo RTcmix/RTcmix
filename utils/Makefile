@@ -52,7 +52,7 @@ resample::
 	@cd resample; $(MAKE) $(MFLAGS) all
 	@echo "done."; echo ""
 
-install:
+install: all
 	@echo "making install..."	
 ifneq ($(strip $(PROGS)),)       # do only if PROGS is nonempty
 	@for PROG in $(PROGS); \
