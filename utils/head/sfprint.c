@@ -26,6 +26,29 @@ usage()
 }
 
 
+/* ------------------------------------------------------- print_duration --- */
+/* Print duration in seconds and in 00:00.00 format.
+*/
+static void
+print_duration(const double dur)
+{
+   /* Prepare bracketed version. */
+   int minutes = (int) dur / 60;
+   double seconds = fmod(dur, 60.0);
+   double frac = dur - (int) dur;
+   char buf[8];
+   sprintf(buf, "%.2f", frac);
+   if (strcmp(buf, "1.00") == 0) {     /* Will printf round seconds up? */
+      seconds = (int) seconds + 1.0;
+      if (seconds == 60.0) {           /* carry */
+         seconds = 0.0;
+         minutes++;
+      }
+   }
+   printf("duration: %f seconds [%d:%05.2f]\n", dur, minutes, seconds);
+}
+
+
 /* ----------------------------------------------------------------- main --- */
 /* Prints info about any number of sound files given as cmd-line arguments.
    If there's an error reading file, or if it's not a sound file with 
@@ -49,8 +72,8 @@ main(int argc, char *argv[])
    int         i, fd, header_type, data_format, data_location;
    int         verbose = 0, quiet = 0, status = 0;
    int         nsamps, result, srate, nchans, class;
-   float       dur, frac;
-   char        *sfname, timestr[MAX_TIME_CHARS], buf[32], *p;
+   double      dur;
+   char        *sfname, timestr[MAX_TIME_CHARS];
    SFComment   sfc;
    struct stat statbuf;
 
@@ -130,7 +153,7 @@ main(int argc, char *argv[])
       nchans = mus_header_chans();
       class = mus_header_data_format_to_bytes_per_sample();
       nsamps = mus_header_samples();                 /* samples, not frames */
-      dur = (float)(nsamps / nchans) / (float)srate;
+      dur = (double)(nsamps / nchans) / (double)srate;
 
       result = sndlib_get_current_header_comment(fd, &sfc);
       if (result == -1) {
@@ -169,13 +192,7 @@ main(int argc, char *argv[])
       if (sfc.comment[0])
          printf("comment: %s\n", sfc.comment);
 
-      /* print duration in seconds and in 00:00.00 format */
-      frac = dur - (int)dur;
-      sprintf(buf, "%.2f", frac);   /* e.g., "0.14" */
-      p = buf + 1;                  /* skip 0 before decimal point */
-      printf("duration: %f seconds [%d:%02d%s]\n", dur, (int)dur / 60,
-               (int)dur % 60, frac? p : "");
-
+      print_duration(dur);
       close(fd);
    }
 
