@@ -184,8 +184,6 @@ rtsendzeros(AudioDevice *device, int also_write_to_file)
    avoid overflow during conversion to other formats.
 */
 
-#define NPLAY_BUFSIZE 8192
-
 void
 rtsendsamps(AudioDevice *device)
 {
@@ -236,24 +234,6 @@ rtsendsamps(AudioDevice *device)
       if (err)
          fprintf(stderr, "rtsendsamps: bad write to output sound file\n");
    }
-
-#ifdef NETPLAYER
-   if (netplay == 1) {        /* send to the socket connection */
-      int   i, j, result;
-      short outbufshort[NPLAY_BUFSIZE];
-
-      for (i = 0; i < NPLAY_BUFSIZE / 2; i++) {
-         for (j = 0; j < 2; j++)
-            outbufshort[i * 2 + j] = out_buffer[j][i];
-      }
-      result = write(netplaysock, &outbufshort, RTBUFSAMPS * NCHANS
-                                                            * sizeof(short));
-      if (result < 0) {
-         fprintf(stderr, "bad write to network sound socket\n");
-         return;
-      }
-   }
-#endif
 }
 
 
