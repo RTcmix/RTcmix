@@ -62,3 +62,16 @@ float Ooscili::next(int nsample)
 	return array[loc1] + (frac * (array[loc2] - array[loc1]));
 }
 
+float Ooscili::nextn()  // non-interpolating; does not handle negative freqs
+{
+	int i = (int) phase;
+	float output = array[i];
+
+	// prepare for next call
+	phase += si;
+	while (phase >= (double) length)
+		phase -= (double) length;
+
+	return output;
+}
+
