@@ -18,11 +18,20 @@ else {
 }
 
 # Grep through RTcmix src tree for functions in UG_INTRO and RT_INTRO macros.
-$cmd = "$find $cmixdir $flags -name \"*.[cC]\" | xargs $grep UG_INTRO";
-@oldcmix = `$cmd`;
-$cmd = "$find $cmixdir $flags -name \"*.[cC]\" | xargs $grep RT_INTRO";
-@list = `$cmd`;
-push(@list, @oldcmix);
+$ug_intro_c = $cmixdir . "/src/rtcmix/ug_intro.c";
+$cmd = "$grep UG_INTRO $ug_intro_c";
+@list1 = `$cmd`;
+push(@list, @list1);
+$instdir = $cmixdir . "/insts";
+$cmd = "$find $instdir $flags -name \"*.c\" | xargs $grep UG_INTRO";
+@list1 = `$cmd`;
+push(@list, @list1);
+$cmd = "$find $instdir $flags -name \"*.cpp\" | xargs $grep UG_INTRO";
+@list1 = `$cmd`;
+push(@list, @list1);
+$cmd = "$find $instdir $flags -name \"*.cpp\" | xargs $grep RT_INTRO";
+@list1 = `$cmd`;
+push(@list, @list1);
 
 # Strip out everything except what's inside the double quotes.
 # NOTE: This requires that calls to the *INTRO macros end with a semicolon.
