@@ -4,13 +4,13 @@
 TOPDIR = /usr/local/src
 
 # The name of the RTcmix directory
-CMIXDIR = $(TOPDIR)/RTcmix-3.0.3
+CMIXDIR = $(TOPDIR)/RTcmix-3.0.2
 
 # The dir that will contain links to the instrument dynamic shared objects
 LIBDESTDIR = $(CMIXDIR)/shlib
 
 # add new instruments to this list (e.g., insts.std, insts.jg)
-INST_DIRS = insts.base #insts.std insts.jg insts.mch
+INST_DIRS = insts.base insts.std insts.jg insts.mch
 
 # add new packages to this list (e.g., interfaces.std)
 PACKAGE_DIRS =
@@ -37,7 +37,7 @@ SOUND_DRIVER += -DSHARED_AUDIO_DEV
 #SOUND_DRIVER += -DUSE_CARD_CHANS
 
 # optimization, debugging and warning flags
-OPT = -g -Wall -Wno-unused -O2
+OPT = -g -Wall -Wno-unused
 # for Irix, try just...
 #OPT = -O2
 
@@ -48,6 +48,9 @@ OPT = -g -Wall -Wno-unused -O2
 # with your existing scores, uncomment this line:
 #CMIX_FLAGS += -DCOMPATIBLE_FUNC_LOCS
 
+
+# Uncomment to use real time pfield updating, for GUI and performance control
+# CMIX_FLAGS += -DUSE_RTUPDATE
 
 ###############################################################
 # Shouldn't need to edit below this line
@@ -66,6 +69,7 @@ ifeq ($(ARCH),LINUX)
   LD = ld
   MAKE = make
   INSTALL = cp -f
+#  INSTALL = ln -fs
   SHELL = /bin/sh
 endif
 ifeq ($(ARCH),SGI)
