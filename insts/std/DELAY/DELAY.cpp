@@ -2,7 +2,7 @@
 
       p0 = output start time
       p1 = input start time
-      p2 = output duration
+      p2 = input duration
       p3 = amplitude multiplier
       p4 = delay time
       p5 = delay feedback (i.e., regeneration multiplier) [0-1]
@@ -30,7 +30,7 @@
 #include <rt.h>
 #include <rtdefs.h>
 
-#define MAXDELTIME 20.0    // seconds (176400 bytes per second at SR=44100
+#define MAXDELTIME 20.0    // seconds (176400 bytes per second at SR=44100)
 
 DELAY::DELAY() : Instrument()
 {
@@ -45,7 +45,6 @@ DELAY::~DELAY()
 	delete [] in;
 	delete delay;
 }
-
 
 int DELAY::init(double p[], int n_args)
 {
@@ -102,7 +101,7 @@ int DELAY::run()
 	for (int i = 0; i < samps; i += inputChannels())  {
 		if (--branch <= 0) {
 			double p[9];
-			update(p, 9, (kAmp | kDelTime | kDelRegen | kPan));
+			update(p, 9, kAmp | kDelTime | kDelRegen | kPan);
 			amp = p[3];
 			if (amptable)
 				amp *= tablei(cursamp, amptable, amptabs);
