@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <dlfcn.h>
+#include <globals.h>
 
 typedef double (*UG_FUN)(float *, int, double *);
 typedef void (*ProfileFun)();
@@ -54,7 +55,7 @@ double m_load(float *p, int n_args, double *pp)
     if (profileFun) {
 	profileLoaded++;
 	(*profileFun)();
-	printf("Loaded standard profile\n");
+//	printf("Loaded standard profile\n");
     }
 
     /* if present, load & call the shared library's rtprofile function to 
@@ -65,7 +66,7 @@ double m_load(float *p, int n_args, double *pp)
      if ((profileFun = (ProfileFun) dlsym(handle, "rtprofile")) != NULL) { 
  	profileLoaded += 2; 
  	(*profileFun)(); 
- 	printf("Loaded RT profile\n"); 
+// 	printf("Loaded RT profile\n"); 
      } 
 
     if (!profileLoaded) {
@@ -74,10 +75,11 @@ double m_load(float *p, int n_args, double *pp)
 	return 0;
     }
 
-    printf("Loaded %s functions from shared library.\n",
-	   (profileLoaded == 3) ? "standard and RT" :
-	   (profileLoaded == 2) ? "RT" :
-	   "standard");
+    if (print_is_on) {
+	printf("Loaded %s functions from shared library.\n",
+	    (profileLoaded == 3) ? "standard and RT" :
+	    (profileLoaded == 2) ? "RT" : "standard");
+    }
 
     return 1;
 }
