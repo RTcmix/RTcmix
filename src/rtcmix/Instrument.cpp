@@ -151,6 +151,9 @@ int Instrument::setup(PFieldSet *pfields)
 // This function is called during run() by Instruments which want updated
 // values for each pfield slot.  'nvalues' is size of p[].
 // 'fields' is a bitmask of fields between [0] and [nvalues - 1] to fill.
+// If fields is zero or missing, all of the first <nvalues> pfields are updated.
+// Note that the bitmask supports only 31 pfields; if an instrument has
+// more than that, don't use the fields argument.
 
 int Instrument::update(double p[], int nvalues, unsigned fields)
 {
@@ -159,9 +162,15 @@ int Instrument::update(double p[], int nvalues, unsigned fields)
 	double percent = (frame == 0) ? 0.0 : (double) frame / nSamps();
 	if (nvalues < args)
 		args = nvalues;
-	for (n = 0; n < args; ++n) {
-		if (fields & (1 << n))
+	if (fields == 0) {
+		for (n = 0; n < args; ++n)
 			p[n] = (*_pfields)[n].doubleValue(percent);
+	}
+	else {
+		for (n = 0; n < args; ++n) {
+			if (fields & (1 << n))
+				p[n] = (*_pfields)[n].doubleValue(percent);
+		}
 	}
 	for (; n < nvalues; ++n)
 		p[n] = 0.0;
