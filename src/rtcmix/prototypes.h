@@ -6,11 +6,27 @@
 
 #include <buffers.h>    /* for BufPtr */
 
+#ifdef __cplusplus
+
+// These functions are declared as C++ functions.
+
+/* rtsendsamps.C */
+class AudioDevice;
+void rtsendzeros(AudioDevice *, int also_write_to_file);
+void rtsendsamps(AudioDevice *);
+void rtreportstats(AudioDevice *);
+
+/* rtgetsamps.C */
+void rtgetsamps(AudioDevice *);
+
+/* rtwritesamps.C */
+int rtwritesamps(AudioDevice *);
+
 /* Note that C++ functions prototyped below really are defined within
    extern "C" braces in their files.
 */
-#ifdef __cplusplus
 extern "C" {
+
 #endif /* __cplusplus */
 
 /* audio_port.c:  prototypes in audio_port.h */
@@ -23,8 +39,9 @@ double checkfuncs(char *fname, double *pp, int n_args);
 /* checkInsts.C */
 double checkInsts(char *fname, double *pp, int n_args, void **inst);
 
-/* intraverse.C */
-void *inTraverse(void *);
+/* audioLoop.C */
+int runMainLoop(void);
+int waitForMainLoop(void);
 
 /* parseit.C */
 void *parseit(void *);
@@ -42,22 +59,13 @@ int read_samps(int fd, int data_format, int file_chans, BufPtr dest,
 /* rtinput.c */
 int get_last_input_index(void);
 int open_sound_file(char *sfname, int *header_type, int *data_format,
-               int *data_location, double *srate, int *nchans, long *nsamps);
+					int *data_location, double *srate, int *nchans, long *nsamps);
 
-/* rtgetsamps.c */
-void rtgetsamps(void);
-
-/* rtsendsamps.c */
-void rtsendzeros(int also_write_to_file);
-void rtsendsamps(void);
-void rtreportstats(void);
-
-/* rtsetparams.c */
+/* rtsetparams.C */
 double rtsetparams(float *p, int n_args, double *pp);
 void close_audio_ports(void);
 
-/* rtwritesamps.c */
-int rtwritesamps(void);
+/* rtwritesamps.C */
 int rtcloseout(void);
 
 /* sockit.C */
