@@ -1,0 +1,116 @@
+=head1 NAME
+
+gen 5 - make a function with any number of exponential line segments
+
+=head1 SYNOPSIS
+
+B<makegen>(I<table_number>, 5, I<table_size>,
+I<value1>, I<num_elements1>
+[, I<valueN-1>, I<num_elementsN-1>, ... ]
+I<valueN>)
+
+=head1 DESCRIPTION
+
+Call L<makegen|makegen> from a script with a I<function_type> of 5 to
+make a function table with any number of exponential line segments,
+where the ratio between successive values is equal.
+
+The I<num_elements> arguments control how many table elements a line
+segment spans, as it connects two successive I<value> arguments.
+
+If you want to use this to make table number 1 -- for an amplitude
+envelope, for example -- you may find L<setexp|setexp> more convenient.
+
+L<Gen 7|gen7> works just like gen 5, except that it uses straight line
+segments.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID for the function table.
+
+Normally the table will be rescaled to fit between -1 and 1.
+Put a negative sign before the number to prevent this.
+
+=item I<table_size>
+
+The size of the function table: how many values it stores.
+
+=item I<value>
+
+The value at the start or end point of a line segment.
+
+A I<value> of 0 will be converted internally to 0.00001.
+
+=item I<num_elements>
+
+The number of table elements connecting the previous I<value> to the
+next I<value>.
+
+The sum of all the I<num_elements> arguments must equal I<table_size>.
+
+=back
+
+=head1 EXAMPLES
+
+   makegen(1, 5, 1000, 0.01, 1000, 1)
+
+makes an exponential ramp from 0.01 to 1.
+
+=begin man
+
+                                                                       /
+                                                                     -/
+                                                                   -/
+                                                                 -/
+                                                              --/
+                                                           --/
+                                                       ---/
+                                                  ----/
+                                           ------/
+                               -----------/
+------------------------------------------------------------------------
+
+=end man
+
+=begin html
+   <p align="center"><img src="images/gen5a.png"><p><br>
+
+=end html
+
+   makegen(1, 5, 1000, 0, 700, 1, 300, 0.01)
+
+makes an exponential ramp from 0.00001 to 1 over 700 table elements,
+followed by an exponential ramp from 1 to 0.01 over 300 table elements.
+The first segment is steeper, because the ratio between its values,
+0.00001 and 1, is greater.  (Remember, a 0 value is converted internally
+to 0.00001.)
+
+=begin man
+
+                                                 \
+                                                | \
+                                                / |
+                                               |   \
+                                               /    \
+                                              /      \
+                                             /        \
+                                            /          -\
+                                          -/             -\
+                                      ---/                 --\
+------------------------------------------------------------------------
+
+=end man
+
+=begin html
+   <p align="center"><img src="images/gen5b.png"><p><br>
+
+=end html
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<setexp|setexp>, L<gen7|gen7>
+

@@ -1,0 +1,141 @@
+=head1 NAME
+
+REVERBIT - reverb instrument
+
+=head1 SYNOPSIS
+
+B<REVERBIT>(I<outskip>, I<inskip>, I<indur>, I<ampmult>, I<revtime>,
+I<wetpercent>, I<rtchandelay>, I<cutoff> [, I<dcblock> ])
+
+Function table 1 gives amplitude curve.  This curve (and I<ampmult>)
+affect the input signal, before it enters the reverberator.
+
+=head1 DESCRIPTION
+
+B<REVERBIT> reverberates the input signal using a variation on a
+typical Schroeder network of comb and allpass filters.  (See below for
+a description of the signal chain.)
+
+This reverb works best with short reverb times and a moderate amount
+of reverberated sound mixed into the output.  If you crank I<revtime>
+and I<wetpercent>, you'll hear a grungy, grainy reverb tail.  You can
+smooth this some using the lowpass filter.  Lansky's original intent
+was just to "put a gloss on a signal," not to swamp it with gushy
+reverb.
+
+The I<rtchandelay> parameter governs the delay time between output
+channels.  A small amount (e.g., .02 seconds) livens up the sound; a
+larger amount makes an audible slap echo.
+
+B<REVERBIT> uses the curve provided in function table 1 to scale the
+amplitudes of the input source.  Use L<setline|setline>, L<setexp|setexp>,
+or L<makegen|makegen> to create function table 1.  If this table has not
+been created, no amplitude scaling (other than that given by I<ampmult>)
+will occur.
+
+The output of B<REVERBIT> must be stereo.  The input file can be
+either mono or stereo.  If the input is from a real-time source,
+such as live audio in or an aux bus, I<inskip> MUST be zero.
+
+=head2 SIGNAL CHAIN
+
+Here's how B<REVERBIT> works:
+
+=over 4
+
+=item 1.
+
+Runs the input signal into a simple Schroeder reverberator, scaling
+the output of that by the reverb percent and flipping its phase.  (The
+reverberator has four comb filters in parallel, followed by two
+allpass filters in series.)
+
+=item 2.
+
+Puts output of (1) into a delay line, length determined by
+I<rtchandelay>.
+
+=item 3.
+
+Adds output of (1) to dry signal, and places in left channel.
+
+=item 4.
+
+Adds output of delay to dry signal, and places in right channel.
+
+=item 5.
+
+Feeds output to optional lowpass and DC-blocking filters.
+
+=back
+
+=head1 PFIELDS
+
+=over 8
+
+=item B<p0> (I<outskip>) output start time
+
+=item B<p1> (I<inskip>) input start time
+
+=item B<p2> (I<indur>) input duration
+
+=item B<p3> (I<ampmult>) amplitude multiplier (applied to input)
+
+=item B<p4> (I<revtime>) reverb time (in seconds, greater than 0)
+
+=item B<p5> (I<wetpercent>) percent (from 0 to 1) of wet signal in
+output
+
+=item B<p6> (I<rtchandelay>) right channel delay time (in seconds,
+greater than 0)
+
+=item B<p7> (I<cutoff>) cutoff frequency (in Hz) of lowpass filter
+applied to output of reverberator (0 to disable filter)
+
+=item B<p8> (I<dcblock>) apply DC blocking filter (0: No, 1: Yes)
+[optional; default is Yes.  Turn off for a bit more speed.]
+
+=back
+
+=head1 EXAMPLES
+
+Here's a good recipe for a moderate amount of reverb, suitable for
+enhancing a signal without calling too much attention to the reverb.
+
+   REVERBIT(outskip, inskip, indur, amp=1, revtime=.3,
+            revpct=.25, rtchandelay=.015, cutoff=0)
+
+To get a more dramatic reverb effect, it's probably a good idea to
+roll off the high end graininess, using the built-in lowpass filter.
+
+   REVERBIT(outskip, inskip, indur, amp, revtime=3,
+            revpct=.9, rtchandelay=.06, cutoff=1200)
+
+One common use for this instrument is as a sweetener for other
+instruments.  To make this happen, you have to set up an aux bus to
+send the signal from the first instrument into B<REVERBIT>.  It's
+important to set B<REVERBIT>'s I<outskip> and I<indur> so that it
+catches all the sound output by the first instrument.  The I<inskip>
+to B<REVERBIT> must be zero when reading from anything other than a
+soundfile.
+
+   bus_config("WAVETABLE", "aux 0 out")
+   bus_config("REVERBIT", "aux 0 in", "out 0-1")
+
+   totdur = 10
+   for (st = 0; st < totdur; st = st + .3)
+      WAVETABLE(st, notedur=.1, amp=5000, freq=440)
+
+   REVERBIT(outskip=0, inskip=0, totdur + notedur, amp=1,
+            revtime=.6, revpct=.4, rtchandel=.02, cutoff=5000)
+
+=head1 SEE ALSO
+
+L<setline|setline>, L<setexp|setexp>, L<makegen|makegen>,
+L<bus_config|bus_config>
+
+=head1 AUTHOR
+
+Paul Lansky, revised and documented for RTcmix by John Gibson
+E<lt>johgibso@indiana.eduE<gt>
+

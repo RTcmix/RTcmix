@@ -1,0 +1,66 @@
+=head1 NAME
+
+PAN - simple mixing instrument that follows a pan curve
+
+=head1 SYNOPSIS
+
+B<PAN>(I<outskip>, I<inskip>, I<indur>, I<ampmult> [, I<inchan> ])
+
+Function table 1 gives amplitude curve.
+
+Function table 2 gives panning curve.
+
+=head1 DESCRIPTION
+
+B<PAN> lets you pan the input sound continuously, according to the
+curve given in function table 2.  This curve should give I<time, pan>
+pairs (similar to L<setline|setline>).  The I<pan> value is expressed
+as the percentage of signal to place in the left channel (as in the
+STEREO instrument), from 0 (0%) to 1 (100%).  Use L<gen24|gen24> to
+make the function table, since it ensures the range of numbers is [0,1].
+
+PAN uses "constant-power" panning to prevent a sense of lost power
+when the sound source moves toward the center.
+
+B<PAN> uses the curve provided in function table 1 to scale the amplitudes
+of the input source.  Use L<setline|setline>, L<setexp|setexp>, or
+L<makegen|makegen> to create function table 1.  If this table has not
+been created, no amplitude scaling (other than that given by I<ampmult>)
+will occur.
+
+The output of B<PAN> must be stereo.
+
+=head1 PFIELDS
+
+=over 8
+
+=item B<p0> (I<outskip>) output start time
+
+=item B<p1> (I<inskip>) input start time
+
+=item B<p2> (I<indur>) input duration
+
+=item B<p3> (I<ampmult>) amplitude multiplier
+
+=item B<p4> (I<inchan>) input channel [optional, default is 0]
+
+=back
+
+=head1 EXAMPLES
+
+   setline(0,0, 1,0, 4,1, 5,0)
+   makegen(2, 24, 1000, 0,1, 1,0, 3,.5)
+
+   PAN(outskip=0, inskip=0, dur=3, amp=1, inchan=0)
+
+This will pan input channel 0 from left to right over the first second.
+Then the sound will travel back to the center during the next 2 seconds.
+
+=head1 SEE ALSO
+
+L<setline|setline>, L<setexp|setexp>, L<makegen|makegen>, L<STEREO|STEREO>
+
+=head1 AUTHOR
+
+John Gibson E<lt>johgibso@indiana.eduE<gt>
+

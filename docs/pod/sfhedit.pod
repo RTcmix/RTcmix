@@ -1,0 +1,66 @@
+=head1 NAME
+
+sfhedit - edit soundfile header
+
+=head1 SYNOPSIS
+
+B<sfhedit>
+[B<-c> I<numchans>]
+[B<-i> | B<-f>]
+[B<-p> I<peak>]
+[B<-r> I<srate>]
+[B<-w>]
+[B<-z>]
+I<filename>
+
+=head1 DESCRIPTION
+
+B<sfhedit> lets you edit some parts of a soundfile header.
+Without a I<filename> argument, B<sfhedit> just prints a help summary.
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-c NUM>
+
+Set the number of channels to I<NUM>.
+
+=item B<-f>
+
+Set the sample data format to floating-point.
+
+=item B<-i>
+
+Set the sample data format to 16-bit (short) integer.
+
+=item B<-p NUM>
+
+Set the peak amplitude to I<NUM>.  (Note that the peak location
+stored in the header will not be updated.)
+
+=item B<-r NUM>
+
+Set the sampling rate to I<NUM>.
+
+=item B<-w>
+
+Throws you into vi so you can edit the comment.
+
+=item B<-z>
+
+Truncates the data in the file, leaving only the header.
+
+=back
+
+=head1 EXAMPLES
+
+
+=head1 BUGS
+
+There are currently many problems with this program.  Stay away.
+
+=head1 SEE ALSO
+
+L<sfprint|sfprint>, L<sfcreate|sfcreate>, L<sffixsize|sffixsize>
+

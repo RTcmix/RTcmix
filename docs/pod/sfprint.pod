@@ -1,0 +1,39 @@
+=head1 NAME
+
+sfprint - print soundfile information
+
+=head1 SYNOPSIS
+
+B<sfprint> [B<-v>] I<filename> [I<filename>...]
+
+=head1 DESCRIPTION
+
+Prints the following information about a soundfile: the header type
+and data format, the sampling rate, the number of channels, the number
+of bytes per sample word, the maximum amplitude value for each channel
+and its location (if available), and the duration of the sound.
+
+Without a I<filename> argument, B<sfprint> prints a help summary.
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-v>
+
+Also print the number of sample frames and the header size.
+
+=back
+
+=head1 SEE ALSO
+
+L<sfcreate|sfcreate>, L<sfhedit|sfhedit>, L<sffixsize|sffixsize>
+
+
+=head1 AUTHORS
+
+John Gibson E<lt>johgibso@indiana.eduE<gt>, based on the original
+Cmix B<sfprint>, but revised to work with multiple soundfile header
+types.  Thanks to Bill Schottstaedt, whose sndlib sound file library
+makes this possible.
+

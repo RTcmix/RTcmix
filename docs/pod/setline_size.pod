@@ -1,0 +1,42 @@
+=head1 NAME
+
+setline_size - set the size of tables created by setline and setexp
+
+=head1 SYNOPSIS
+
+B<setline_size>(I<new_size>)
+
+=head1 DESCRIPTION
+
+Call B<setline_size> from a script to set the size of function tables
+subsequently created by L<setline|setline> and L<setexp|setexp>.  By
+default, those tables have 1000 elements.
+
+You might want to use more than 1000 elements if you make steep ramps
+for long notes.  The function table size limits the resolution of such
+a slope.  If the note is 10 seconds long, and the table has 1000 elements,
+then each element governs .01 seconds (10 / 1000).  If you want a steeper
+slope, you'll need a larger table.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<new_size>
+
+The number of elements in L<setline|setline> and L<setexp|setexp>
+tables created after this call to B<setline_size>.
+
+=back
+
+=head1 EXAMPLES
+
+   setline_size(10000)
+   setline(0, 0, 1, 1)
+
+creates a linear ramp with 10000 elements in the function table.
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<setline|setline>, L<setexp|setexp>
+

@@ -1,0 +1,117 @@
+=head1 NAME
+
+sfcreate - create soundfile header, or change existing one
+
+=head1 SYNOPSIS
+
+B<sfcreate>
+[B<-r> I<srate>]
+[B<-c> I<numchans>]
+[B<-t> I<format>]
+[B<-i> | B<-f>]
+[B<-b> | B<-l>]
+[B<--force>]
+I<filename>
+
+=head1 DESCRIPTION
+
+If I<filename> doesn't exist, B<sfcreate> creates a new file with the
+specified soundfile header.  If I<filename> already exists,
+B<sfcreate> puts a soundfile header at the beginning of the file,
+overwriting whatever was there.  (See B<WARNINGS> below.)  Without a
+I<filename> argument, B<sfcreate> just prints a help summary.
+
+This command is mainly useful for disk-based Cmix scripts, in which
+the B<output> function expects to find a file with a soundfile header.
+You can run B<sfcreate> from within such a script by using the
+L<system|system> function.
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-b>
+
+Use big-endian sample data format.
+This is the default for all file types except I<wav>.
+(Use either this or B<-l>.)
+
+=item B<-c NUM>
+
+Use I<NUM> number of channels.  The default is 2.
+
+=item B<-f>
+
+Use floating-point sample data format.  (Use either this or B<-i>.)
+
+=item B<-i>
+
+Use 16-bit (short) integer sample data format.  This is the default.
+(Use either this or B<-f>.)
+
+=item B<-l>
+
+Use little-endian sample data format.  This is the default for
+B<-t> I<wav>.  (Use either this or B<-b>.)
+
+=item B<-r NUM>
+
+Use the sampling rate given by I<NUM>.  44100 is the default.
+
+=item B<-t NAME>
+
+Use the specified file format.  The possibilities are:
+
+=over 8
+
+=item I<aiff>
+
+AIFF format
+
+=item I<aifc>
+
+AIFC format
+
+=item I<wav>
+
+Microsoft RIFF (Wav) format
+
+=item I<next>
+
+NeXT format (same as I<sun>)
+
+=item I<sun>
+
+Sun "au" format (same as I<next>)
+
+=item I<ircam>
+
+IRCAM format
+
+=back
+
+I<aiff> (or I<aifc> for floats) is the default.
+
+=back
+
+=head1 EXAMPLES
+
+
+=head1 RESTRICTIONS
+
+
+=head1 DIAGNOSTICS
+
+
+=head1 SEE ALSO
+
+L<sfprint|sfprint>, L<sfhedit|sfhedit>, L<sffixsize|sffixsize>
+
+
+=head1 AUTHORS
+
+John Gibson E<lt>johgibso@indiana.eduE<gt>, based on the original
+Cmix B<sfcreate>, but revised to work with multiple soundfile header
+types.  Thanks to Bill Schottstaedt, whose sndlib sound file library
+makes this possible.
+

@@ -1,0 +1,72 @@
+=head1 NAME
+
+ELL - elliptical filter instrument
+
+
+=head1 SYNOPSIS
+
+First, call B<ellset> to set filter parameters.
+
+For highpass or lowpass filters:
+
+B<ellset>(I<pbcutoff>, I<sbcutoff>, 0, I<ripple>, I<atten>)
+
+For a bandpass filter:
+
+B<ellset>(I<lopbcutoff>, I<hipbcutoff>, I<sbcutoff>, I<ripple>, I<atten>)
+
+
+Then, call B<ELL> to filter the input sound:
+
+B<ELL>(I<outskip>, I<inskip>, I<indur>, I<ampmult>, I<ringdowndur>
+[, I<inchan>, I<stereoloc> ])
+
+Function table 1 gives amplitude curve.
+
+=head1 DESCRIPTION
+
+B<ELL> implements cascaded IIR filters and a built-in elliptical filter
+design program.  It can create filters with very steep slopes.
+
+B<ELL> uses the curve provided in function table 1 to scale the amplitudes
+of the input source.  Use L<setline|setline>, L<setexp|setexp>, or
+L<makegen|makegen> to create function table 1.  If this table has not
+been created, no amplitude scaling (other than that given by I<ampmult>)
+will occur.
+
+The output of B<ELL> can be either mono or stereo.
+
+=head1 PFIELDS
+
+For ELL...
+
+=over 8
+
+=item B<p0> (I<outskip>) output start time
+
+=item B<p1> (I<inskip>) input start time
+
+=item B<p2> (I<indur>) input duration
+
+=item B<p3> (I<ampmult>) amplitude multiplier
+
+=item B<p4> (I<ringdowndur>) ring-down duration - how long to run
+the filter after it has consumed all the input 
+
+=item B<p5> (I<inchan>) input channel [optional, default is 0]
+
+=item B<p6> (I<stereoloc>) percent (from 0 to 1) of input signal to place
+in left output channel [optional, default is 0.5 if output is stereo]
+
+=back
+
+=head1 SEE ALSO
+
+L<setline|setline>, L<setexp|setexp>, L<makegen|makegen>
+
+=head1 AUTHOR
+
+Adapted by John Gibson E<lt>johgibso@indiana.eduE<gt> from the
+original Cmix instrument.  Thanks to Alistair Riddell and Ross Bencina
+for eliminating the f2c dependency.
+

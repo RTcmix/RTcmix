@@ -1,0 +1,76 @@
+=head1 NAME
+
+gen 1 - fill a function table with samples from a sound file
+
+=head1 SYNOPSIS
+
+B<makegen>(I<table_number>, 1, I<table_size>, I<file_name>, I<inskip>
+[, I<inchannel> [, I<dump> ]])
+
+=head1 DESCRIPTION
+
+Call L<makegen|makegen> from a script with a I<function_type> of 1 to
+fill a function table with samples from a sound file.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID for the function table.
+
+Normally the table will be rescaled to fit between -1 and 1.
+Put a negative sign before the number to prevent this.
+
+=item I<table_size>
+
+The duration (in seconds) of the sound file segment to read.  Note that
+this departs from the normal meaning of I<table_size> for other gens.
+If this duration is negative, then its absolute value is the number of
+sample frames to read.  If I<table_size> is zero, the whole file is
+slurpped in.  (Beware with large files: there is no check on memory
+consumption!)
+
+=item I<file_name>
+
+The name of the sound file, in double quotes.  This can be a full or
+relative path name.
+
+=item I<inskip>
+
+The time (in seconds) to skip before reading.  If this is negative,
+its absolute value is the number of sample frames to skip before reading.
+
+=item I<inchannel>
+
+If this is missing, read all channels from the file; otherwise, read just
+the channel specified here (with zero representing the first channel).
+
+=item I<dump>
+
+If 1, then dump the function table to a header-less sound file, called
+"dumpaudio.raw," in the current directory.  The file contains 32-bit
+floats, using the host byte order, I<inchannel> channels, and the
+sampling rate in the source file's header.  (This is for debugging.)
+
+=back
+
+=head1 RETURN VALUE
+
+Returns to the script the number of sample frames read and stored
+into the function table.
+
+=head1 EXAMPLES
+
+   num_samps = makegen(-3, 1, 1.25, "mysound.aif", -1425, 0)
+
+Table number 3 will contain 1.25 seconds worth of samples from the
+sound file "mysound.aif," starting 1425 frames from the beginning
+of the file, and using only channel 0.  After the call, I<num_samps>
+will contain the number of sample frames in the function table.
+
+=head1 SEE ALSO
+
+L<makegen|makegen>
+

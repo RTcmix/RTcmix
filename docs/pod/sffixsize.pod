@@ -1,0 +1,26 @@
+=head1 NAME
+
+sffixsize - update soundfile header's idea of sound duration
+
+=head1 SYNOPSIS
+
+B<sffixsize> I<filename> [I<filename>...]
+
+=head1 DESCRIPTION
+
+B<sffixsize> updates the soundfile header to reflect the actual amount
+of sound data the file contains.  This may not have been written
+correctly if the writing process ended prematurely.  B<sffixsize> can
+fix this problem so that you can play the file, etc.
+
+Without a I<filename> argument, B<sffixsize> just prints a help
+summary.
+
+=head1 SEE ALSO
+
+L<sfprint|sfprint>, L<sfcreate|sfcreate>, L<sfhedit|sfhedit>
+
+=head1 AUTHORS
+
+John Gibson E<lt>johgibso@indiana.eduE<gt>
+

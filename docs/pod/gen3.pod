@@ -1,0 +1,54 @@
+=head1 NAME
+
+gen 3 - fill a function table with numbers from a binary data file
+
+=head1 SYNOPSIS
+
+B<makegen>(I<table_number>, 3, I<table_size>, I<file_number>)
+
+=head1 DESCRIPTION
+
+Call L<makegen|makegen> from a script with a I<function_type> of 3 to
+fill a function table with arbitrary floating-point numbers read from
+a binary data file.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID for the function table.
+
+Unlike some other function table types, gen 3 does not rescale the
+table values to fit between -1 and 1.
+
+=item I<table_size>
+
+The size of the function table: how many values it stores.  If
+I<table_size> is less than the number of values in the data file,
+then gen 3 stores only the first I<table_size> values; it ignores
+the rest.
+
+=item I<file_number>
+
+Identifies a binary data file already opened by the L<infile|infile>
+script command.  This file is assumed to contain a stream of 32-bit
+floating-point numbers.
+
+=back
+
+=head1 EXAMPLES
+
+   file_num = 1
+   infile("myfile", file_num)
+   makegen(2, 3, 20, file_num)
+
+Table number 2 will contain 20 values read from the binary data file,
+"myfile."  If that file contains fewer than 20 values, then the table
+will be zero-padded.
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<gen2|gen2>, L<infile|infile>
+

@@ -1,0 +1,160 @@
+=head1 NAME
+
+makegen - create a function table
+
+=head1 SYNOPSIS
+
+B<makegen>(I<table_number>, I<function_type>, I<table_size>,
+I<arg1> [, I<arg2>, ... ])
+
+=head1 DESCRIPTION
+
+Call B<makegen> from a script to create a function table, which you
+can use to control an RTcmix instrument or to store values for use
+in the script.  For example, RTcmix instruments require you to make
+function tables for waveforms, envelopes, and so on.  Your script can
+access tables with the L<sampfunc|sampfunc> and L<sampfunci|sampfunci>
+script commands.  You can view functions with the L<fplot|fplot> command.
+
+=head1 ARGUMENTS
+
+=over 16
+
+=item I<table_number>
+
+A numeric ID for the table.  Instruments require a specific ID
+for tables that they use.  For example, most instruments require
+that their amplitude envelope be table number 1.  L<WAVETABLE|WAVETABLE>
+wants its waveform in table number 2, and so on.  See documentation
+for instruments to find out what each requires.
+
+Many function types will normalize the table values so that they
+fall between -1 and 1.  To prevent this, put a negative sign in
+front of the table number (e.g., makegen(-1, 18, 2000, ...).
+
+=item I<function_type>
+
+A numeric code indicating an algorithm that produces a specific
+kind of table.  For example, 10 creates a waveform, 20 creates
+a table of random numbers, etc.  See the summary of function types
+below.
+
+=item I<table_size>
+
+The size of the function table: how many numbers it stores.  For most
+tables, you can use 1000 or 2000 here.  You might want to use more or
+less, depending on the specific purpose.  (For example, you might want
+only 50 random numbers, so you would use function type 20 and set the
+table size to 50.)  There is no requirement that this size be a power
+of two.
+
+=item I<arg1, arg2, ...>
+
+Any number of arguments that define the table.  These depend on the
+function type.  See documentation for each type.  A summary of types
+appears below.
+
+Note that the number of arguments used to define the table is independent
+of the table size.  So, depending on the function type, you can create
+a table with a size of 2000 using only one or two arguments.
+
+=back
+
+=head2 Summary of Function Types
+
+We refer to the different types as "gen 1," "gen 10," etc.
+
+=over 8
+
+=item I<gen 1>
+
+fills a function table with samples from a sound file.
+
+=item I<gen 2>
+
+fills a function table with numbers specified in the script or in a text file.
+
+=item I<gen 3>
+
+fills a function table with numbers from a data file.
+
+=item I<gen 4>
+
+makes a function having any number of line segments, with adjustable 
+curvature for each segment, and defined in terms of time,value pairs.
+
+=item I<gen 5>
+
+makes a function having any number of exponential line segments.
+
+=item I<gen 6>
+
+makes a function having any number of straight line segments, defined
+in terms of time,value pairs.
+
+=item I<gen 7>
+
+makes a function having any number of straight line segments.
+
+=item I<gen 9>
+
+makes a function having one cycle of an arbitrary waveform, defined by
+triplets of floating-point partial number, amplitude, and phase.
+
+=item I<gen 10>
+
+makes a function having one cycle of an arbitrary waveform, defined by
+harmonic partials and their relative strengths.
+
+=item I<gen 17>
+
+makes a transfer function using Chebyshev polynomials.
+
+=item I<gen 18>
+
+works like gen 6, except it never normalizes the table to fit between -1 and 1.
+
+=item I<gen 20>
+
+fills a function table with random numbers using several different
+distributions (even, low-weighted linear, triangle linear, gaussian,
+cauchy, etc.).
+
+=item I<gen 24>
+
+makes a function having any number of straight line segments, defined
+in terms of time,value pairs.  (This is subtly different from gen 6, but
+it's not clear why anyone would care.)
+
+=item I<gen 25>
+
+makes a window function using several different common window types
+(hanning, hamming, etc.).
+
+=back
+
+=head1 EXAMPLES
+
+   makegen(1, 6, 1000, 0, 0, 1, 1)
+
+Table number 1 will contain a straight line from 0 to 1; the table will
+have 1000 elements. 
+
+   makegen(-5, 10, 2000, 0.5)
+
+Table number 5 will contain a sine wave at half amplitude, ranging from
+-0.5 to 0.5.  The negative sign before the table number prevents the
+table from being normalized (scaled to fall between -1 and 1).  The table
+will have 2000 elements.
+
+=head1 SEE ALSO
+
+L<setline|setline>, L<setexp|setexp>, L<addgens|addgens>, L<multgens|multgens>,
+L<sampfunc|sampfunc>, L<sampfunci|sampfunci>, L<fplot|fplot>, L<fdump|fdump>
+
+and documentation for each function type:
+
+L<gen1|gen1>, L<gen2|gen2>, L<gen3|gen3>, L<gen4|gen4>, L<gen5|gen5>,
+L<gen6|gen6>, L<gen7|gen7>, L<gen9|gen9>, L<gen10|gen10>, L<gen17|gen17>,
+L<gen18|gen18>, L<gen20|gen20>, L<gen24|gen24>, L<gen25|gen25>
+

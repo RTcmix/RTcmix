@@ -1,0 +1,178 @@
+=head1 NAME
+
+gen 4 - make a function from line segments with adjustable curvatures
+
+=head1 SYNOPSIS
+
+B<makegen>(I<table_number>, 4, I<table_size>,
+I<time1>, I<value1>, I<alpha1>,
+[ I<timeN-1>, I<valueN-1>, I<alphaN-1>, ]
+I<timeN>, I<valueN>)
+
+=head1 DESCRIPTION
+
+Call L<makegen|makegen> from a script with a I<function_type> of 4 to
+make a function table with any number of line segments.  Each segment
+has an adjustable curvature.
+
+Define the curve with triplets of I<time>, I<value> and I<alpha>.
+I<time> and I<value> work the same way they do in L<setline|setline>:
+they define a point on the curve.  I<alpha> controls the curvature
+to the I<next> point.  The last point has no I<alpha>, because it 
+terminates the last line segment.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID for the function table.
+
+Normally the table will be rescaled to fit between -1 and 1.
+Put a negative sign before the number to prevent this.
+
+=item I<table_size>
+
+The size of the function table: how many values it stores.
+
+=item I<timeN>
+
+The time point at which the curve reaches I<valueN>.  The total duration
+of the table is scaled to fit the duration of each note it affects.
+
+=item I<valueN>
+
+The value of the curve at I<timeN>.
+
+=item I<alphaN>
+
+Controls the curvature of the line segment from point N to point N+1.
+
+=over 8
+
+=for html <p>
+
+=item I<alpha> = 0
+
+makes a straight line.
+
+=item I<alpha> < 0
+
+makes a logarithmic (convex) shape.
+
+=item I<alpha> > 0
+
+makes an exponential (concave) shape.
+
+=back
+
+=back
+
+=head1 EXAMPLES
+
+   makegen(1, 4, 1000, 0,0,2, 1,1)
+
+makes a ramp from 0 to 1, with a slightly concave shape.
+
+=begin man
+
+                                                                     --/
+                                                                  --/
+                                                              ---/
+                                                          ---/
+                                                     ----/
+                                               -----/
+                                         -----/
+                                 -------/
+                        --------/
+             ----------/
+------------------------------------------------------------------------
+
+=end man
+
+=begin html
+   <p align="center"><img src="images/gen4a.png"><p><br>
+
+=end html
+
+   makegen(1, 4, 1000, 0,0,-2, 1,1)
+
+makes a ramp from 0 to 1, with a slightly convex shape.
+
+=begin man
+ 
+                                                         --------------/
+                                              ----------/
+                                     --------/
+                             -------/
+                       -----/
+                 -----/
+            ----/
+        ---/
+    ---/
+ --/
+------------------------------------------------------------------------
+
+=end man
+
+=begin html
+   <p align="center"><img src="images/gen4b.png"><p><br>
+
+=end html
+
+   makegen(1, 4, 1000, 0,0,8, 1,1,-8, 2,0)
+
+makes a ramp from 0 to 1 to 0, with steep curves between the three points.
+
+=begin man
+ 
+                                 /\
+                                /  \
+                               /    \
+                              /      \
+                             /        \
+                            /          \
+                           /            \
+                         -/              -\
+                     ---/                  ---\
+------------------------------------------------------------------------
+
+=end man
+
+=begin html
+   <p align="center"><img src="images/gen4c.png"><p><br>
+
+=end html
+
+   makegen(1, 4, 1000, 0,0,-6, 1,.5,2, 2,0,0, 4,1)
+
+defines 4 points -- at 0,0, 1,.5, 2,0 and 4,1 -- and specifies a different
+shape for each of the three connecting line segments.  The last segment
+is a straight line (with alpha = 0).
+
+=begin man
+ 
+                                                                      --/
+                                                                  ---/
+                                                               --/
+                                                           ---/
+                                                        --/
+        ------------\                              ---/
+     --/             ----\                     ---/
+   -/                     ---\              --/
+  /                           -\        ---/
+ /                              -\   --/
+------------------------------------------------------------------------
+
+=end man
+
+=begin html
+   <p align="center"><img src="images/gen4d.png"><p><br>
+
+=end html
+
+=head1 SEE ALSO
+
+L<makegen|makegen>
+

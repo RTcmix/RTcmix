@@ -1,0 +1,53 @@
+=head1 NAME
+
+setline - create function table 1 with straight line segments
+
+=head1 SYNOPSIS
+
+B<setline>(I<time1>, I<value1>, I<time2>, I<value2>, ... I<timeN>, I<valueN>)
+
+=head1 DESCRIPTION
+
+Call B<setline> from a script to make function table 1 with straight
+line segments.  Most RTcmix instruments require function table 1 to
+contain the amplitude envelope, and B<setline> is a convenient way to
+do this.
+
+=head1 ARGUMENTS
+
+Arguments are any number of time,amplitude pairs.  These define points
+through which straight line segments are drawn.
+
+Think of the duration of the function table as the difference between
+the first time and the last time.  The shape created by the table is
+scaled to fit the duration of each note that follows.
+
+Successive times must be in ascending order.  To make an instantaneous
+change of amplitude, use the same time for two adjacent pairs.
+
+=head1 EXAMPLES
+
+   setline(0, 0, 1, 1, 2, 0)
+
+draws a triangular shape, from 0 to 1 to 0.  If the next note were to
+last 1 second, it would reach full amplitude at a half second.
+
+=head1 NOTES
+
+B<setline> is an alias for a L<makegen|makegen> call using L<gen 18|gen18>,
+so
+
+   setline(0, 0, 1, 1, 2, 0)
+
+is exactly equivalent to
+
+   makegen(1, 18, 1000, 0, 0, 1, 1, 2, 0)
+
+The table size for B<setline> is 1000, unless you first call
+L<setline_size|setline_size> to change it.
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<setline_size|setline_size>, L<gen18|gen18>,
+L<setexp|setexp>
+

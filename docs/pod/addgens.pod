@@ -1,0 +1,61 @@
+=head1 NAME
+
+addgens - add two function tables to create a new one
+
+=head1 SYNOPSIS
+
+B<addgens>(I<new_table>, I<table_A>, I<table_B> [, I<normalize> ])
+
+=head1 DESCRIPTION
+
+Call B<addgens> from a script to make a new function table by adding
+corresponding points from two existing tables.  These two tables do
+not have to be the same size.  The new table will be as large as the
+larger of the two existing tables.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<new_table>
+
+The numeric ID for the new function table.
+
+=item I<table_A>
+
+=item I<table_B>
+
+The numeric IDs for the existing function tables.
+
+=item I<normalize>
+
+If this argument is given and is non-zero, then the new function
+table will be normalized.  If the table has no negative values, then
+its values will be scaled so that they fit between 0 and 1.  If the
+table has negative values, its values will be scaled so that they
+fit between -1 and 1.
+
+=back
+
+=head1 EXAMPLES
+
+   /* Make a straight line from 0 to 1. */
+   makegen(1, 18, 1000, 0, 0, 1, 1)
+
+   /* Make random numbers between -0.1 and 0.1. */
+   makegen(2, 20, 100, 0, 0, -0.1, 0.1)
+
+   addgens(3, 1, 2)
+
+Table number 3 will contain a line from 0 to 1, with random variations
+of as much as 0.1 from a straight line.  The table will have 1000 elements. 
+
+=begin html
+   <p align="center"><img src="images/addgens.png"><br>
+
+=end html
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<multgens|multgens>
+

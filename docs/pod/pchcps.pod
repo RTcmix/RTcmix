@@ -1,0 +1,16 @@
+=head1 NAME
+
+pchcps - convert frequency to octave.pitch-class
+
+
+=head1 SYNOPSIS
+
+B<pchcps> I<frequency>
+
+
+=head1 DESCRIPTION
+
+Given a frequency in Hz (cycles per second), B<pchcps> prints that
+value expressed in "octave.pitch-class" notation.  In this notation,
+blah, blah, blah
+

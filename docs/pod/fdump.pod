@@ -1,0 +1,72 @@
+=head1 NAME
+
+fdump - dump a function table to the terminal or to a text file
+
+=head1 SYNOPSIS
+
+B<fdump>(I<table_number>, [, I<"file_name"> ])
+
+=head1 DESCRIPTION
+
+Call B<fdump> from a script to display the numbers in a function
+table or to write them to a text file.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID of an existing function table.
+
+=item I<file_name>
+
+If this argument is present, dump the function table to a text file
+with the given name.  The name must be enclosed in double quotes, and
+can be a full or relative path name.  The file need not exist, but
+if it does, it will be overwritten.
+
+If this argument is not present, dump the function table to stdout
+(normally the terminal window).
+
+The dump consists of one line for each element in the table, with
+the following format.
+
+   <index> <value>
+
+You can feed such a file to gnuplot.
+
+=back
+
+=head1 EXAMPLES
+
+   makegen(1, 20, 10, 0)
+
+creates a table of 10 random numbers.
+
+   fdump(1)
+
+prints the contents of this table to the terminal window:
+
+   0 0.149719
+   1 0.339905
+   2 0.003204
+   3 0.573181
+   4 0.203583
+   5 0.379639
+   6 0.964508
+   7 0.805878
+   8 0.541534
+   9 0.467102
+
+If we give the optional file name argument...
+
+   fdump(1, "random_numbers")
+
+RTcmix instead will write the same information to a text file
+called "random_numbers."
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<fplot|fplot>
+

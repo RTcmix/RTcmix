@@ -1,0 +1,95 @@
+=head1 NAME
+
+STEREO - instrument that mixes to stereo, with static pan
+
+=head1 SYNOPSIS
+
+B<STEREO>(I<outskip>, I<inskip>, I<dur>, I<ampmult>,
+I<outloc0> [, I<outloc1>, ... I<outlocN> ])
+
+Function table 1 gives amplitude curve.
+
+=head1 DESCRIPTION
+
+B<STEREO> mixes channels from the input source into the stereo output,
+according to the I<outloc> arguments.  The I<outloc> arguments
+together constitute a "mix matrix," in which argument position
+represents input channel number, and argument value represents output
+stereo location.  These values are expressed as the percentage of
+signal to place in the left channel, from 0 (0%) to 1 (100%).  So, the
+value of I<outloc0> says where to place input channel 0 in the output
+stereo field; the value of I<outloc1> says where to place input
+channel 1; and so on.  A value of -1 directs B<STEREO> to skip that
+input channel.
+
+B<STEREO> uses the curve provided in function table 1 to scale the
+amplitudes of the input source.  Use L<setline|setline>, L<setexp|setexp>,
+or L<makegen|makegen> to create function table 1.  If this table has not
+been created, no amplitude scaling (other than that given by I<ampmult>)
+will occur.
+
+The output of B<STEREO> must be stereo.
+
+=head1 PFIELDS
+
+=over 8
+
+=item B<p0> (I<outskip>) output start time
+
+=item B<p1> (I<inskip>) input start time
+
+=item B<p2> (I<dur>) duration (if negative: input end time)
+
+=item B<p3> (I<ampmult>) amplitude multiplier
+
+=item B<p4> (I<outloc0>) percent (from 0 to 1) of signal from input
+channel 0 to place in left output channel
+
+=item B<p5> (I<outloc1>) percent of signal from input channel 1 to place
+in left output channel [optional]
+
+=item B<p6+> (I<outlocN>) percent of signal from input channel N to place
+in left output channel [optional]
+
+=back
+
+=head1 EXAMPLES
+
+The following will mix 5 seconds of the mono input source to stereo
+output, with the signal placed between hard left and center.  No
+amplitude scaling will be done.
+
+   rtinput("a_mono_file")
+
+   loc = 0.75
+   STEREO(outskip=0, inskip=1, dur=3, amp=1, loc)
+
+The following will mix 2 seconds of the input source, starting from 1
+second in, to stereo output.  The left and right channels of the input
+will be swapped in the output, and amplitude will be scaled by the
+setline curve.  The channel-swapping happens because the value of the
+first I<outloc> slot, representing the left input channel, is set to
+pan to hard right (0% to the left), and the value of the second
+I<outloc> slot, representing the right input channel, is set to pan to
+hard left (100% to the left).
+
+   rtinput("a_stereo_file")
+
+   setline(0,0, 1,0, 4,1, 5,0)
+
+   STEREO(outskip=0, inskip=1, dur=3, amp=1, outloc0 = 0, outloc1 = 1)
+
+The following will read from time 2.5 to time 5.8 from channel 1 (the
+right channel) of a stereo input source.  It scales the input by 0.5
+and places it in a random output stereo location.
+
+   rtinput("a_stereo_file")
+
+   inskip = 2.5
+   intime_end = -5.8
+   STEREO(outskip=0, inskip, intime_end, amp=0.5, -1, random())
+
+=head1 SEE ALSO
+
+L<setline|setline>, L<setexp|setexp>, L<makegen|makegen>
+

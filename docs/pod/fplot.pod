@@ -1,0 +1,110 @@
+=head1 NAME
+
+fplot - plot a function table
+
+=head1 SYNOPSIS
+
+B<fplot>(I<table_number> [, I<pause> [, I<plot_commands> ]])
+
+=head1 DESCRIPTION
+
+Call B<fplot> from a script to plot a function table to the screen.
+You can have either a crude ASCII plot or a high-resolution plot
+created by gnuplot.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID of an existing function table.
+
+=item I<pause>
+
+If this argument is present, use gnuplot to draw the function table
+with high resolution in a separate window.  Display the window for
+I<pause> seconds.  (On platforms using the X Window System, you can
+dismiss the window before this time elapses by typing 'q'.)  Use
+any integer greater than zero for this argument.
+
+If this argument is not present, draw the function table to stdout
+(normally the terminal window), using a crude ASCII plot.
+
+=item I<plot_commands>
+
+Pass commands to gnuplot.  These can be any modifiers that gnuplot
+understands as part of its "plot" command.  The commands must be
+enclosed in double quotes.  Some useful commands include "with lines,"
+"with linespoints," "with impulses," "with steps," and "with dots."
+See the gnuplot documentation for others.
+
+If this argument is not present, plot with points.
+
+=back
+
+=head1 EXAMPLES
+
+   makegen(1, 10, 1000, 1)
+
+fills a table with one cycle of a sine wave.
+
+   fplot(1)
+
+draws the table crudely to the terminal window:
+
+               ----------\
+             -/           -\
+           -/               -\
+         -/                   \
+        /                      -\
+       /                         \
+     -/                           \
+    /                              -\
+   /                                 \
+  /                                   \
+ ------------------------------------------------------------------------------
+                                        \                                     -
+                                         \                                   /
+                                          \                                 /
+                                           -\                              /
+                                             \                            /
+                                              \                         -/
+                                               -\                      /
+                                                 \                   -/
+                                                  -\               -/
+                                                    -\           -/
+                                                      ----------/
+
+   fplot(1, 10, "with lines")
+
+calls gnuplot to draw the table with much higher resolution, displaying
+it in a window for 10 seconds, and connecting the points of the table
+with straight lines, if necessary.
+
+=begin html
+   <p align="center"><img src="images/fplot.png"><br>
+
+=end html
+
+=head1 NOTES
+
+You can use fplot any number of times in a script; each call to fplot
+generates a new window (if using gnuplot).  Under Mac OS X, this doesn't
+work, so you can see only the most recent plot.
+
+Under Mac OS X, you must install and configure gnuplot and Aquaterm
+for high-resolution plotting.  Most Linux distributions come with 
+gnuplot already installed.
+
+The I<pause> argument has no effect under Mac OS X -- just put anything
+there.
+
+If something goes wrong with a gnuplot session, perhaps because of a
+syntax error, there may be some leftover files in the /tmp directory,
+with names like "rtcmix_plot_data_xAb5x8."
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<fdump|fdump>
+

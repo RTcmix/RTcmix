@@ -1,0 +1,133 @@
+=head1 NAME
+
+gen 2 - fill a function table with arbitrary numbers
+
+=head1 SYNOPSIS
+
+There are two ways of using gen 2.
+
+New way:
+
+B<makegen>(I<table_number>, 2, I<table_size>, I<value1>, I<value2>
+[, I<value3>, ... I<valueN> ])
+
+Old way:
+
+B<makegen>(I<table_number>, 2, I<table_size>, I<file_number>)
+[optionally followed by any number of I<value> arguments on next
+line of script]
+
+=head1 DESCRIPTION
+
+Call L<makegen|makegen> from a script with a I<function_type> of 2 to
+fill a function table with arbitrary numbers specified in the script
+or in a text file.
+
+There are two ways to use gen 2.  The preferred way is the one called
+the "new way" here.  It was developed to solve a number of problems
+with the "old way," which is retained partly for backward compatibility.
+The the "old way" does allow you to read numbers from a text file
+opened with the L<infile|infile> script command; the new way does not
+provide this functionality.
+
+If there are only four arguments, the "old way" is assumed, and the fourth
+argument determines whether the table values will come from a text file
+or from the next line of the script.  If there are more than four arguments,
+the "new way" is assumed, and all the arguments after the third will go
+into the table, as long as I<table_size> is large enough to hold them.
+See below for more details.
+
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID for the function table.
+
+Unlike some other function table types, gen 2 does not rescale the
+table values to fit between -1 and 1.
+
+=item I<table_size>
+
+The size of the function table: how many values it stores.  If 
+I<table_size> is less than the number of I<value> arguments given,
+then gen 2 stores only the first I<table_size> arguments; it ignores
+the rest.
+
+You can set this to be comfortably larger than the number of values
+you plan to store.  The return value from makegen will tell you how
+many values you passed to gen 2.  This is handy when you have more
+values than you would want to count manually.
+
+Internally, the function table contains exactly I<table_size> elements.
+Any elements above the last I<value> argument passed to gen 2 will be zero.
+
+=item I<file_number>
+
+NOTE: This applies only to "the old way."
+
+If I<file_number> is greater than zero, then it identifies a text file
+already opened by the L<infile|infile> script command.
+
+   file_num = 1   /* must be greater than zero */
+   infile("myfile", file_num)
+   makegen(1, 2, 10, file_num)
+
+Make sure you use a non-zero I<file_number> with B<infile>, otherwise
+gen 2 will work differently, as follows...
+
+If I<file_number> is zero, then gen 2 fills a table with numbers appearing
+on the next line in the script.  The gen tries to grab I<table_size>
+numbers.  For example:
+
+   makegen(1, 2, 8, 0)
+   1.2 4.3 9.8 4.5 6.2 8.3 1.9 1.0
+
+There are several limitations when I<file_number> is zero: works only
+with Minc, not with Perl or Python; no whitespace characters after the
+last I<value>; no newline characters within the list of I<values>;
+no variables in the list of I<values>; the makegen must not appear in
+a code block; no semicolon after the makegen call.
+
+In short: use "the new way" instead, unless you want to read numbers
+from a text file.
+
+=item I<value1 ... valueN>
+
+The items you want to store into the function table.  These can be
+strings as well as numbers.
+
+If I<table_size> is less than the number of I<value> arguments you
+give, then gen 2 stores only the first I<table_size> arguments.
+
+=back
+
+=head1 RETURN VALUE
+
+Returns to the script the number of elements stored into the function
+table, not including any zero-padding at the end.
+
+=head1 EXAMPLES
+
+   num_items = makegen(5, 2, 20, 8.00, 8.02, 8.04, 8.05, 8.07, 8.09, 8.11)
+
+Table number 5 will contain 7 values, representing pitches in a C major
+scale (expressed in octave.pc notation).  After the call, I<num_items> will
+contain the number of elements stored into the table -- 7 in this case.
+Note that this is smaller than the I<table_size>, which is set to 20.
+Internally, the table will contain the 7 pitch values followed by 13 zeros.
+
+=head1 NOTES
+
+Gen 2 distinguishes between the old and new ways by the number of I<value>
+arguments.  If there is only 1 of these, then it assumes the old way.
+Otherwise, it assumes the new way.  So a new-style table of 1 element
+will be interpreted as an old-style table (taking values either from
+the next line or, if the argument is greater than zero, from a text file).
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<gen3|gen3>, L<infile|infile>
+

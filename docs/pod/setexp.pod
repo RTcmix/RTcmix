@@ -1,0 +1,45 @@
+=head1 NAME
+
+setexp - create function table 1 with exponential line segments
+
+=head1 SYNOPSIS
+
+B<setexp>(I<time1>, I<value1>, I<time2>, I<value2>, ... I<timeN>, I<valueN>)
+
+=head1 DESCRIPTION
+
+Call B<setexp> from a script to make function table 1 with exponential
+line segments.  Most RTcmix instruments require function table 1 to
+contain the amplitude envelope, and B<setexp> is a convenient way to
+do this.
+
+=head1 ARGUMENTS
+
+Arguments are any number of time,amplitude pairs.  These define points
+through which exponential line segments are drawn.
+
+Think of the duration of the function table as the difference between
+the first time and the last time.  The shape created by the table is
+scaled to fit the duration of each note that follows.
+
+Successive times must be in ascending order.  To make an instantaneous
+change of amplitude, use the same time for two adjacent pairs.
+
+=head1 EXAMPLES
+
+   setexp(0, 0, 1, 1)
+
+draws an exponential ramp from 0 to 1.
+
+=head1 NOTES
+
+B<setexp> uses L<gen 5|gen5> internally to make the table.
+
+The table size for B<setexp> is 1000, unless you first call
+L<setline_size|setline_size> to change it.
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<gen5|gen5>,
+L<setline|setline>, L<setline_size|setline_size>
+
