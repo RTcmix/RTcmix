@@ -23,6 +23,9 @@ extern float synt ;
 
 /* DT:  SHOULD NEVER USE PI LIKE THIS !!!! */
 /* extern float PI ; */
+#ifndef PI
+#define PI  M_PI  /* should be in <math.h>   -JGG */
+#endif
 extern float TWOPI ;
 
 
