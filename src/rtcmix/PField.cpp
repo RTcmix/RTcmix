@@ -5,6 +5,7 @@
  
 #include <PField.h>
 #include <string.h>
+#include <stdio.h>   // for snprintf
 
 // PField
 
