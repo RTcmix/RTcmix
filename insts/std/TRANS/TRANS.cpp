@@ -28,8 +28,18 @@
 //#define DEBUG_FULL
 
 
-static float interp(float, float, float, float);
+inline float interp(float y0, float y1, float y2, float t)
+{
+   float hy2, hy0, a, b, c;
 
+   a = y0;
+   hy0 = y0 / 2.0f;
+   hy2 = y2 / 2.0f;
+   b = (-3.0f * hy0) + (2.0f * y1) - hy2;
+   c = hy0 - y1 + hy2;
+
+   return (a + b * t + c * t * t);
+}
 
 
 TRANS :: TRANS() : Instrument()
@@ -211,17 +221,4 @@ void rtprofile()
    RT_INTRO("TRANS", makeTRANS);
 }
 
-
-static float interp(float y0, float y1, float y2, float t)
-{
-   float hy2, hy0, a, b, c;
-
-   a = y0;
-   hy0 = y0 / 2.0f;
-   hy2 = y2 / 2.0f;
-   b = (-3.0f * hy0) + (2.0f * y1) - hy2;
-   c = hy0 - y1 + hy2;
-
-   return (a + b * t + c * t * t);
-}
 
