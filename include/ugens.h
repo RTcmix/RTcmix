@@ -79,6 +79,12 @@ extern int (*bwipeoutpointer[NFILES])();
 #define  SIGN(x) (ABS(x)/(x ? x : 1.))
 
 /* declarations of units */
+
+typedef enum {
+   ADD_GENS,
+   MULT_GENS
+} GenModType;
+int combine_gens(int, int, int, int, GenModType, char *);
 double makegen(float [], int, double []);
 float *floc(int);
 int fsize(int);
