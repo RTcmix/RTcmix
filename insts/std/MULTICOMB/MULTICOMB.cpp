@@ -1,8 +1,34 @@
-#include <iostream.h>
+/* MULTICOMB - 4 simultaneous comb filters randomly chosen within
+   a specified range (and spread across the stereo field)
+
+      p0 = output start time
+      p1 = input start time
+      p2 = input duration
+      p3 = amplitude multiplier
+      p4 = comb frequency range bottom
+      p5 = comb frequency range top
+      p6 = reverb time
+      p7 = input channel [optional]
+      p8 = ring-down duration [optional, default is first reverb time value]
+
+   p3 (amplitude) and p6 (reverb time) can receive dynamic updates from a
+   table or real-time control source.
+
+   If an old-style gen table 1 is present, its values will be multiplied
+   by the p3 amplitude multiplier, even if the latter is dynamic.
+
+   The point of the ring-down duration parameter is to let you control
+   how long the combs will ring after the input has stopped.  If the
+   reverb time is constant, MULTICOMB will figure out the correct ring-down
+   duration for you.  If the reverb time is dynamic, you must specify a
+   ring-down duration if you want to ensure that your sound will not be
+   cut off prematurely.
+
+                                          rev. for v4.0 by JGG, 7/10/04
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "MULTICOMB.h"
 #include <rt.h>
@@ -12,108 +38,115 @@
 MULTICOMB::MULTICOMB() : Instrument()
 {
 	in = NULL;
-	for (int n=0; n<NCEES; n++)
-		carray[n] = NULL;	
+	for (int n = 0; n < NCOMBS; n++)
+		comb[n] = NULL;	
 }
 
 MULTICOMB::~MULTICOMB()
 {
 	delete [] in;
-	for (int n=0; n<NCEES; n++)
-		delete [] carray[n];	
+	for (int n = 0; n < NCOMBS; n++)
+		delete comb[n];	
 }
 
 int MULTICOMB::init(double p[], int n_args)
 {
-// p0 = output skip; p1 = input skip; p2 = output duration
-// p3 = amplitude multiplier; p4 = comb frequency range bottom
-// p5 = comb frequency range top; p6 = reverb time
-//  assumes function table 1 is the amplitude envelope
+	float start = p[0];
+	float inskip = p[1];
+	float dur = p[2];
+	float minfreq = p[4];
+	float maxfreq = p[5];
+	rvbtime = p[6];
+	inchan = n_args > 7 ? (int) p[7] : 0;
+	float ringdur = n_args > 8 ? p[8] : rvbtime;
 
-	int i,j,nmax,rvin;
-	float cfreq;
+	if (rtsetinput(inskip, this) == -1)
+		return DONT_SCHEDULE;	// no input
 
-	rvin = rtsetinput(p[1], this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
-	nsamps = rtsetoutput(p[0], p[2], this);
+	if (inchan >= inputChannels())
+		return die("MULTICOMB", "You asked for channel %d of a %d-channel file.", 
+                                                    inchan, inputChannels());
 
-	if (outputchans != 2) {
-		die("MULTICOMB", "Sorry, output must be stereo.");
-		return(DONT_SCHEDULE);
-	}
+	nsamps = rtsetoutput(start, dur + ringdur, this);
+	insamps = (int) (dur * SR + 0.5);
+
+	if (outputChannels() != 2)
+		return die("MULTICOMB", "Output must be stereo.");
 
 	amptable = floc(1);
 	if (amptable) {
 		int amplen = fsize(1);
-		tableset(p[2], amplen, amptabs);
+		tableset(dur, amplen, amptabs);
 	}
-	else
-		advise("MULTICOMB", "Setting phrase curve to all 1's.");
 
-	for (j = 0; j < NCEES; j++) {
-		cfreq = (p[5] - p[4]) *  (rrand()+2.0)/2.0  + p[4];
-		advise(NULL, "comb number %d: %f\n",j,cfreq);
-		nmax = (int)(SR/(int)cfreq + 4);
-		if ( (carray[j] = new float[nmax] )  == NULL)
-			die("MULTICOMB", "Sorry, Charlie -- no space");
-		for (i = 0; i < nmax; i++) carray[j][i] = 0.0;
+	for (int j = 0; j < NCOMBS; j++) {
+		float cfreq = minfreq + ((maxfreq - minfreq) * (rrand() + 2.0) / 2.0);
+		advise("MULTICOMB", "comb number %d: %g Hz", j, cfreq);
+		float loopt = 1.0 / cfreq;
+		delsamps[j] = (int) (loopt * SR + 0.5);
+		comb[j] = new Ocomb(loopt, rvbtime);
+		spread[j] = (float) j / (float) (NCOMBS - 1);
+	}
 
-		combset(1.0/cfreq,p[6],0,carray[j]);
-		spread[j] = (float)j/(float)(NCEES-1);
-		}
+	skip = (int) (SR / (float) resetval);
 
-	amp = p[3];
-	skip = (int)(SR/(float)resetval);    // how often to update amp curve
+	return nSamps();
+}
 
-	return(nsamps);
+int MULTICOMB::configure()
+{
+	in = new float [RTBUFSAMPS * inputChannels()];
+	return in ? 0 : -1;
 }
 
 int MULTICOMB::run()
 {
-	int i,j,rsamps;
-	float out[2];
-	float aamp,temp;
-	int branch;
+	int samps = framesToRun() * inputChannels();
 
-	if (in == NULL)        /* first time, so allocate it */
-		in = new float [RTBUFSAMPS * inputchans];
+	if (currentFrame() < insamps)
+		rtgetin(in, this, samps);
 
-	rsamps = chunksamps*inputchans;
-
-	rtgetin(in, this, rsamps);
-
-	aamp = amp;          /* in case amptable == NULL */
-
-	branch = 0;
-	for (i = 0; i < rsamps; i += inputchans)  {
-		if (--branch < 0) {
+	for (int i = 0; i < samps; i += inputChannels())  {
+		if (--branch <= 0) {
+			double p[7];
+			update(p, 7, kAmp | kRvbTime);
+			amp = p[3];
 			if (amptable)
-				aamp = tablei(cursamp, amptable, amptabs) * amp;
-			branch = skip;
+				amp *= table(currentFrame(), amptable, amptabs);
+			if (p[6] != rvbtime) {
+				rvbtime = p[6];
+				for (int j = 0; j < NCOMBS; j++)
+					comb[j]->setReverbTime(rvbtime);
 			}
+			branch = skip;
+		}
+
+		float insig, out[2];
+
+		if (currentFrame() < insamps)
+			insig = in[i + inchan];
+		else
+			insig = 0.0;
 
 		out[0] = out[1] = 0.0;
-		for (j = 0; j < NCEES; j++) {
-			temp = comb(in[i], carray[j]);
-			out[0] += temp * spread[j]; 
-			out[1] += temp * (1.0 - spread[j]);
-			}
+		for (int j = 0; j < NCOMBS; j++) {
+			float sig = comb[j]->next(insig, delsamps[j]);
+			out[0] += sig * spread[j]; 
+			out[1] += sig * (1.0 - spread[j]);
+		}
 
-		out[0] *= aamp;
-		out[1] *= aamp;
+		out[0] *= amp;
+		out[1] *= amp;
 
 		rtaddout(out);
-		cursamp++;
-		}
-	return(i);
+		increment();
+	}
+
+	return framesToRun();
 }
 
 
-
-Instrument*
-makeMULTICOMB()
+Instrument *makeMULTICOMB()
 {
 	MULTICOMB *inst;
 

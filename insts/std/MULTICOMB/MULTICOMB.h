@@ -1,13 +1,24 @@
-#define NCEES 4
+#include <Ougens.h>
+
+#define NCOMBS 4
 
 class MULTICOMB : public Instrument {
-	float amp, *amptable, amptabs[2], *in;
-	float *carray[NCEES],spread[NCEES];
-	int skip;
+	int inchan, insamps, skip, branch, delsamps[NCOMBS];
+	float amp, rvbtime, *in, spread[NCOMBS];
+	float *amptable, amptabs[2];
+	Ocomb *comb[NCOMBS];
 
 public:
 	MULTICOMB();
 	virtual ~MULTICOMB();
-	int init(double*, int);
-	int run();
-	};
+	virtual int init(double *, int);
+	virtual int configure();
+	virtual int run();
+};
+
+// update flags (shift amount is pfield number)
+enum {
+	kAmp = 1 << 3,
+	kRvbTime = 1 << 6
+};
+
