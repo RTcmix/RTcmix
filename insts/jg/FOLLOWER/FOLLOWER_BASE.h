@@ -23,8 +23,7 @@ class FOLLOWER_BASE : public Instrument {
 
 private:
    int      branch, skip;
-   float    amp, caramp, modamp;
-   float    *in;
+   float    *in, amp, caramp, modamp;
    TableL   *amp_table;
    RMS      *gauge;
    OnePole  *smoother;
@@ -41,7 +40,7 @@ protected:
    virtual int pre_init(float *, int) = 0;
    virtual int post_init(float *, int) = 0;
    virtual float process_sample(float, float) = 0;
-   virtual void update_params() = 0;
-   virtual const char *instname() = 0;
+   virtual void update_params(void) = 0;
+   virtual const char *instname(void) = 0;
 };
 
