@@ -13,11 +13,10 @@
 #include <stdio.h>
 #include <string.h>
 
+extern heap rtHeap;		// intraverse.C
+
 //#define DEBUG
 
-extern void heapSched(Instrument *Iptr);
-
-//extern "C" {
 double checkInsts(char *fname, double *pp, int n_args, void **inst)
 {
 	int i;
@@ -59,9 +58,9 @@ double checkInsts(char *fname, double *pp, int n_args, void **inst)
 
 			/* schedule instrument */
 
-			pthread_mutex_lock(&heapLock);
-			heapSched(Iptr);
-			pthread_mutex_unlock(&heapLock);
+//			pthread_mutex_lock(&heapLock);
+			Iptr->schedule(&rtHeap);
+//			pthread_mutex_unlock(&heapLock);
 
 			mixerr = MX_NOERR;
 			rt_list = rt_temp;
@@ -84,6 +83,4 @@ double checkInsts(char *fname, double *pp, int n_args, void **inst)
 
 	return 0.0;
 }
-
-//} /* extern "C" */
 
