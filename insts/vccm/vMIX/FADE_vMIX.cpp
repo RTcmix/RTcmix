@@ -24,6 +24,7 @@ FADE_vMIX::~FADE_vMIX()
 
 int FADE_vMIX::init(float p[], int n_args)
 {
+	float start;
 
 	start = p[0];
 	dur = 0.001;

@@ -1,4 +1,4 @@
-#include <iostream.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <mixerr.h>
@@ -62,6 +62,7 @@ int MIXN::init(float p[], int n_args)
   // we're (still) stashing the setline info in gen table 1
 
   int i;
+  float dur;
 
   Instrument::init(p, n_args);
 

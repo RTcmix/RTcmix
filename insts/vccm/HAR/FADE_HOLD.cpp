@@ -24,6 +24,7 @@ FADE_HOLD::~FADE_HOLD()
 
 int FADE_HOLD::init(float p[], int n_args)
 {
+	float start,dur;	
 
 	start = p[0];
 	dur = 0.001;

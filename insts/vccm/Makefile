@@ -6,11 +6,7 @@ CMIXLIBDIRS = # bender denoise splice transpan
 
 LIBDIRS = $(RTLIBDIRS) $(CMIXLIBDIRS)
 
-all: objlib progs
-
-objlib:
-	@( cd objlib; echo "making in objlib..."; \
-	  $(MAKE) $(MFLAGS); echo "done in objlib" ); \
+all: progs
 
 progs:
 	@for DIR in $(LIBDIRS); \
@@ -51,7 +47,6 @@ clean:
 	  $(RM) $(DESTDIR)/$$DIR; \
 	  $(RM) $(LIBDESTDIR)/lib$$DIR.so; ) \
 	done
-	( cd objlib; $(MAKE) clean; )
 
 dso_clean:
 	@for DIR in $(LIBDIRS); \

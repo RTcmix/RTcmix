@@ -78,7 +78,7 @@ int STORE::run()
 
 	// Allocate some RAM to store audio in
 	if (temp_buff[aud_idx] == NULL)
-		temp_buff[aud_idx] = new float [hold_dur * SR];
+		temp_buff[aud_idx] = new float [hold_samps];
 
 	if (in == NULL)    { /* first time, so allocate it */
 		in = new float [RTBUFSAMPS * inputchans];

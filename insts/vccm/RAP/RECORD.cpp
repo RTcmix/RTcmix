@@ -1,3 +1,4 @@
+#include <math.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <ugens.h>
@@ -56,14 +57,15 @@ int RECORD::init(float p[], short n_args)
 
 int RECORD::run()
 {
-	int i,j,k,rsamps;
+	int i,j,k,rsamps,idur;
 	float sig;
-
+	
 	Instrument::run();
 
 	// Allocate some RAM to store audio in
+	idur = (int) ceil(dur);
 	if (temp_buff[aud_idx] == NULL)
-		temp_buff[aud_idx] = new float [dur * SR];
+		temp_buff[aud_idx] = new float [idur * (int)SR];
 
 	if (in == NULL)    /* first time, so allocate it */
 	  in = new float [RTBUFSAMPS * inputchans];
