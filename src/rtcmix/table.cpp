@@ -1300,7 +1300,7 @@ _cheby_table(const Arg args[], const int nargs, double *array, const int len)
 // ----------------------------------------------------------- _random_table ---
 // Fill a table with random numbers.  The syntax is
 //
-//    table = maketable("random", size, type[, seed[, min, max]])
+//    table = maketable("random", size, type, min, max[, seed])
 //
 // The distribution types are:
 //    0 = even distribution ["even" or "linear"]
@@ -1313,15 +1313,18 @@ _cheby_table(const Arg args[], const int nargs, double *array, const int len)
 //
 // Give either the string or number specification of type.
 //
+// <min> and <max> define the range (inclusive) for the random numbers.
+// Both args must be present.
+//
+// NOTE: If you don't give the "nonorm" argument after "random", then the 
+// table will be normalized, thus disregarding your min and max!
+//
 // If <seed> is zero, seed comes from the microsecond clock, otherwise <seed>
 // is used as the seed.  If no <seed> argument, the seed used is 1.
 //
-// <min> and <max> define the range (inclusive) for the random numbers.
-// Both args must be present; otherwise the range is from 0 to 1.
-//
 // *Note: type 6 ("prob") has different arguments:
 //
-// table = maketable("random", size, "prob", seed, min, mid, max, tight)
+// table = maketable("random", size, "prob", min, max, mid, tight[, seed])
 //
 //    <min> and <max> set the range within which the random numbers fall,
 //    as before.
@@ -1335,7 +1338,7 @@ _cheby_table(const Arg args[], const int nargs, double *array, const int len)
 //       tight         effect
 //       -------------------------------------------------------------
 //       0             only the <min> and <max> values appear
-//       1             even distribution, <mid> irrelevant
+//       1             even distribution
 //       > 1           numbers cluster ever more tightly around <mid>
 //       100           almost all numbers are equal to <mid>
 //
@@ -1346,15 +1349,31 @@ _cheby_table(const Arg args[], const int nargs, double *array, const int len)
 
 
 static int
+_random_table_usage()
+{
+	die("maketable (random)",
+		"\n   usage: table = maketable(\"random\", size, type, min, max[, seed])"
+		"\n          where <type> is \"linear\", \"low\", \"high\", "
+						"\"triangle\", \"gaussian\", \"cauchy\""
+		"\nOR"
+		"\n   usage: table = maketable(\"random\", size, \"prob\", min, max, "
+						"mid, tight[, seed])"
+		"\n");
+	return -1;
+}
+
+static int
 _random_table(const Arg args[], const int nargs, double *array, const int len)
 {
-	int type, seed;
+	if (nargs < 3)
+		return _random_table_usage();
 
 	if (len < 2)
 		return die("maketable (random)", "Table length must be at least 2.");
 
+	int type = 0;
 	if (args[0].isType(StringType)) {
-		if (args[0] == "even" || args[0] == "linear")
+		if (args[0] == "linear" || args[0] == "even")
 			type = kLinearRandom;
 		else if (args[0] == "low")
 			type = kLowLinearRandom;
@@ -1381,73 +1400,67 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
 		return die("maketable (random)",
 								"Distribution type must be string or number.");
 
-	if ((int) args[1] == 0) {
-		struct timeval tv;
-		gettimeofday(&tv, NULL);
-		seed = (int) tv.tv_usec;
+	double min = args[1];
+	double max = args[2];
+	if (min == max)
+		return die("maketable (random)", "<min> must be lower than <max>.");
+	if (min > max) {		// make sure these are in increasing order
+		const double tmp = max;
+		max = min;
+		min = tmp;
 	}
-	else
-		seed = (int) args[1];
 
-	// Set range for random numbers.
-	if (nargs == 3)
-		return die("maketable (random)",
-				  "Usage: maketable(\"random\", size, type[, seed[, min, max]])");
+	double mid = 0.0, tight = 0.0;
+	int seed = 0;
 
-	double min, max, mid = 0.0, tight = 0.0;
 	if (type == kProbRandom) {		// Mara's function has special args
-		if (nargs != 6)
-			return die("maketable (random)", "Usage: maketable(\"random\", size, "
-										"\"prob\", seed, min, mid, max, tight)");
-		min = args[2];
+		if (nargs < 5)
+			return _random_table_usage();
 		mid = args[3];
-		max = args[4];
-		tight = args[5];
+		if (mid < min || mid > max)
+			return die("maketable (random)",
+										"<mid> must be between <min> and <max>.");
+		tight = args[4];
 		if (tight < 0.0) {
 			warn("maketable (random)", "<tight> must be zero or greater "
 												"... setting to zero.");
 			tight = 0.0;
 		}
+		if (nargs > 5)
+			seed = (int) args[5];
 	}
-	else if (nargs > 3) {
-		min = args[2];
-		max = args[3];
-		if (min == max)
-			return die("maketable (random)", "<min> must be lower than <max>.");
-		if (min > max) {		// make sure these are in increasing order
-			double tmp = max;
-			max = min;
-			min = tmp;
-		}
-	}
-	else {
-		min = 0.0;
-		max = 1.0;
+	else if (nargs > 3)
+		seed = (int) args[3];
+
+	if (seed == 0) {
+		struct timeval tv;
+		gettimeofday(&tv, NULL);
+		seed = (int) tv.tv_usec;
 	}
 
-	Random *gen;
+	Random *gen = NULL;
 
 	switch (type) {
 		case kLinearRandom:
-			gen = new LinearRandom(seed, min, max);
+			gen = new LinearRandom(min, max, seed);
 			break;
 		case kLowLinearRandom:
-			gen = new LowLinearRandom(seed, min, max);
+			gen = new LowLinearRandom(min, max, seed);
 			break;
 		case kHighLinearRandom:
-			gen = new HighLinearRandom(seed, min, max);
+			gen = new HighLinearRandom(min, max, seed);
 			break;
 		case kTriangleRandom:
-			gen = new TriangleRandom(seed, min, max);
+			gen = new TriangleRandom(min, max, seed);
 			break;
 		case kGaussianRandom:
-			gen = new GaussianRandom(seed, min, max);
+			gen = new GaussianRandom(min, max, seed);
 			break;
 		case kCauchyRandom:
-			gen = new CauchyRandom(seed, min, max);
+			gen = new CauchyRandom(min, max, seed);
 			break;
 		case kProbRandom:
-			gen = new ProbRandom(seed, min, mid, max, tight);
+			gen = new ProbRandom(min, max, mid, tight, seed);
 			break;
 		default:
 			return die("maketable (random)", "Unsupported distribution type %d.",
@@ -1457,7 +1470,7 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
 	for (int i = 0; i < len; i++)
 		array[i] = gen->value();
 
-	gen->unref();
+	delete gen;
 
 	return 0;
 }

@@ -356,25 +356,25 @@ makerandom(const Arg args[], const int nargs)
 	Random *gen = NULL;
 	switch (type) {
 		case kLinearRandom:
-			gen = new LinearRandom(seed, min, max);
+			gen = new LinearRandom(min, max, seed);
 			break;
 		case kLowLinearRandom:
-			gen = new LowLinearRandom(seed, min, max);
+			gen = new LowLinearRandom(min, max, seed);
 			break;
 		case kHighLinearRandom:
-			gen = new HighLinearRandom(seed, min, max);
+			gen = new HighLinearRandom(min, max, seed);
 			break;
 		case kTriangleRandom:
-			gen = new TriangleRandom(seed, min, max);
+			gen = new TriangleRandom(min, max, seed);
 			break;
 		case kGaussianRandom:
-			gen = new GaussianRandom(seed, min, max);
+			gen = new GaussianRandom(min, max, seed);
 			break;
 		case kCauchyRandom:
-			gen = new CauchyRandom(seed, min, max);
+			gen = new CauchyRandom(min, max, seed);
 			break;
 		case kProbRandom:
-			gen = new ProbRandom(seed, min, mid, max, tight);
+			gen = new ProbRandom(min, max, mid, tight, seed);
 			break;
 		default:		// can't get here if type inited correctly above
 			break;

@@ -26,8 +26,10 @@ enum {
 
 class Random : public RefCounted {
 public:
-	Random(int aseed, double min, double max, double mid=0.0, double tight=0.0)
-		: _min(min), _max(max), _mid(mid), _tight(tight) { setseed(aseed); }
+	Random(double min, double max, int seed)
+		: _min(min), _max(max), _mid(0), _tight(0) { setseed(seed); }
+	Random(double min, double max, double mid, double tight, int seed)
+		: _min(min), _max(max), _mid(mid), _tight(tight) { setseed(seed); }
 	virtual ~Random();
 	virtual double value() = 0;	// NB: not const, because it changes _randx
 	void setseed(const int aseed) { _randx = (long) aseed; }
@@ -38,8 +40,8 @@ public:
 protected:
 	double rawvalue();
 	double fitrange(double num) const;
-	double getmax() const { return _max; }
 	double getmin() const { return _min; }
+	double getmax() const { return _max; }
 	double getmid() const { return _mid; }
 	double gettight() const { return _tight; }
 private:
@@ -55,7 +57,7 @@ private:
 
 class LinearRandom : public Random {
 public:
-	LinearRandom(int seed, double min = 0.0, double max = 1.0);
+	LinearRandom(double min = 0.0, double max = 1.0, int seed = 1);
 	virtual double value();
 protected:
 	virtual ~LinearRandom();
@@ -63,7 +65,7 @@ protected:
 
 class LowLinearRandom : public Random {
 public:
-	LowLinearRandom(int seed, double min = 0.0, double max = 1.0);
+	LowLinearRandom(double min = 0.0, double max = 1.0, int seed = 1);
 	virtual double value();
 protected:
 	virtual ~LowLinearRandom();
@@ -71,7 +73,7 @@ protected:
 
 class HighLinearRandom : public Random {
 public:
-	HighLinearRandom(int seed, double min = 0.0, double max = 1.0);
+	HighLinearRandom(double min = 0.0, double max = 1.0, int seed = 1);
 	virtual double value();
 protected:
 	virtual ~HighLinearRandom();
@@ -79,7 +81,7 @@ protected:
 
 class TriangleRandom : public Random {
 public:
-	TriangleRandom(int seed, double min = 0.0, double max = 1.0);
+	TriangleRandom(double min = 0.0, double max = 1.0, int seed = 1);
 	virtual double value();
 protected:
 	virtual ~TriangleRandom();
@@ -87,7 +89,7 @@ protected:
 
 class GaussianRandom : public Random {
 public:
-	GaussianRandom(int seed, double min = 0.0, double max = 1.0);
+	GaussianRandom(double min = 0.0, double max = 1.0, int seed = 1);
 	virtual double value();
 protected:
 	virtual ~GaussianRandom();
@@ -95,7 +97,7 @@ protected:
 
 class CauchyRandom : public Random {
 public:
-	CauchyRandom(int seed, double min = 0.0, double max = 1.0);
+	CauchyRandom(double min = 0.0, double max = 1.0, int seed = 1);
 	virtual double value();
 protected:
 	virtual ~CauchyRandom();
@@ -103,7 +105,8 @@ protected:
 
 class ProbRandom : public Random {
 public:
-	ProbRandom(int seed, double min, double mid, double max, double tight);
+	ProbRandom(double min = 0.0, double max = 1.0, double mid = 0.5,
+												double tight = 1.0, int seed = 1);
 	virtual double value();
 protected:
 	virtual ~ProbRandom();

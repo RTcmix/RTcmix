@@ -37,8 +37,8 @@ inline double Random::fitrange(double num) const
 
 // Linear distribution subclass -----------------------------------------------
 
-LinearRandom::LinearRandom(int seed, double min, double max)
-	: Random(seed, min, max) {}
+LinearRandom::LinearRandom(double min, double max, int seed)
+	: Random(min, max, seed) {}
 
 LinearRandom::~LinearRandom() {}
 
@@ -50,8 +50,8 @@ double LinearRandom::value()
 
 // Low-weighted linear distribution subclass ----------------------------------
 
-LowLinearRandom::LowLinearRandom(int seed, double min, double max)
-	: Random(seed, min, max) {}
+LowLinearRandom::LowLinearRandom(double min, double max, int seed)
+	: Random(min, max, seed) {}
 
 LowLinearRandom::~LowLinearRandom() {}
 
@@ -65,8 +65,8 @@ double LowLinearRandom::value()
 
 // High-weighted linear distribution subclass ---------------------------------
 
-HighLinearRandom::HighLinearRandom(int seed, double min, double max)
-	: Random(seed, min, max) {}
+HighLinearRandom::HighLinearRandom(double min, double max, int seed)
+	: Random(min, max, seed) {}
 
 HighLinearRandom::~HighLinearRandom() {}
 
@@ -80,8 +80,8 @@ double HighLinearRandom::value()
 
 // Triangle distribution subclass ---------------------------------------------
 
-TriangleRandom::TriangleRandom(int seed, double min, double max)
-	: Random(seed, min, max) {}
+TriangleRandom::TriangleRandom(double min, double max, int seed)
+	: Random(min, max, seed) {}
 
 TriangleRandom::~TriangleRandom() {}
 
@@ -96,8 +96,8 @@ double TriangleRandom::value()
 
 // Gaussian distribution subclass ---------------------------------------------
 
-GaussianRandom::GaussianRandom(int seed, double min, double max)
-	: Random(seed, min, max) {}
+GaussianRandom::GaussianRandom(double min, double max, int seed)
+	: Random(min, max, seed) {}
 
 GaussianRandom::~GaussianRandom() {}
 
@@ -123,8 +123,8 @@ double GaussianRandom::value()
 
 // Cauchy distribution subclass -----------------------------------------------
 
-CauchyRandom::CauchyRandom(int seed, double min, double max)
-	: Random(seed, min, max) {}
+CauchyRandom::CauchyRandom(double min, double max, int seed)
+	: Random(min, max, seed) {}
 
 CauchyRandom::~CauchyRandom() {}
 
@@ -146,10 +146,24 @@ double CauchyRandom::value()
 
 // Probability distribution subclass ------------------------------------------
 // Based on code by Mara Helmuth
+//
+//    <min> and <max> set the range within which the random numbers fall.
+//
+//    <mid> sets the mid-point of the range, which has an effect whenever
+//    <tight> is not 1.
+//
+//    <tight> governs the degree to which the random numbers adhere either
+//    to the mid-point or to the extremes of the range:
+//
+//       tight         effect
+//       -------------------------------------------------------------
+//       0             only the <min> and <max> values appear
+//       1             even distribution
+//       > 1           numbers cluster ever more tightly around <mid>
+//       100           almost all numbers are equal to <mid>
 
-ProbRandom::ProbRandom(int seed, double min, double mid, double max,
-                                                                double tight)
-	: Random(seed, min, max, mid, tight) {}
+ProbRandom::ProbRandom(double min, double max, double mid, double tight, int seed)
+	: Random(min, max, mid, tight, seed) {}
 
 ProbRandom::~ProbRandom() {}
 
