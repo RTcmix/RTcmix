@@ -25,7 +25,7 @@ Ia.  Preliminaries
 
    This has been tested only on the internal audio devices on recent G4
    PowerMacs and PowerBooks.  It's possible that third-party hardware will
-   require some tweaks.  Please notify John Gibson (johgibso at indiana.edu)
+   require some tweaks.  Please notify John Gibson (johgibso at indiana dot edu)
    if you can't get this to work.
 
    Note that this version currently cannot use the latest pfield-updating
@@ -39,15 +39,9 @@ Ia.  Preliminaries
    a) You must use OS X 10.1 or later, and you must have installed
       the appropriate version of the Developer Tools.
 
-   b) If you want to enable the Python front-end, you'll have to install
-      Python, which doesn't come with OS X.  We used the Python-2.1.1
-      source code tarball, and followed the build instructions at
-      http://www.zope.org/Members/jens/docs/zope_osx.
-
-      NOTE: OS X 10.2 comes with Python, but unfortunately, they don't
-      supply the python library that's necessary to build RTcmix with
-      Python embedded.  You have to build your own Python from source
-      (as for previous versions of OS X), and point makefile.conf at it.
+   b) If you want to enable the Python front-end, you'll have to build
+      Python from source, because the Python supplied with the Developer
+      Tools CD is incomplete.  See the instructions in RTcmix/Python/NOTES.
 
    c) If you want to use gnuplot with the fplot Minc function, you have
       to install both the command-line gnuplot from source and Aquaterm.
@@ -186,7 +180,7 @@ sfcreate to make an empty sound file.
 See the README files in the docs dir for information on recent features.
 
 You may also find helpful the tutorials on John Gibson's Music 540
-course web site, http://php.indiana.edu/~johgibso/musi540.
+course web site, http://mypage.iu.edu/~johgibso/musi540.
 
 
 III. HAVE FUN!
@@ -194,6 +188,6 @@ III. HAVE FUN!
 :->
 
 
-Dave Topper <topper@virginia.edu>
-John Gibson <johgibso@indiana.edu>
+Dave Topper <topper at virginia dot edu>
+John Gibson <johgibso at indiana dot edu>
 
