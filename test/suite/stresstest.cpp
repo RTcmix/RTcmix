@@ -2,6 +2,7 @@
 #include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -125,7 +126,9 @@ main(int argc, char *argv[])
 		  if ((int) (sec - base_sec) > duration)
 		  {
 		  	printf("Reached %d seconds.  Shutting down...", duration);
-			usleep(2000000);
+			sleep(2);
+			rrr->close();
+			sleep(1);
 		  	printf("Exiting.\n");
 			exit(0);
 		  }

@@ -77,6 +77,8 @@ main(int argc, char *argv[])
 	sprintf(name, "localhost");
 
 	signal(SIGINT, sigfunc);
+	signal(SIGKILL, sigfunc);
+	signal(SIGHUP, sigfunc);
 
 	/* open up the socket */
 	theSock = RTsock(name, 0);
@@ -98,7 +100,6 @@ main(int argc, char *argv[])
 
 	gettimeofday(&tv, &tz);
 	base_sec = (double)tv.tv_sec;
-//	usec = (double)tv.tv_usec;
 
 	while(1) {
 		usleep(minsleep + random() % maxsleep);	// random sleep
@@ -146,9 +147,10 @@ main(int argc, char *argv[])
 				printf("Shutting down...");
 			else
 				printf("Reached %d seconds.  Shutting down...", duration);
+			fflush(stdout);
 			RTsendsock("RTcmix_off", theSock, 0);
-			sleep(1);
-			RTkillsocket(theSock, RTpid);
+//			sleep(1);
+//			RTkillsocket(theSock, RTpid);
 			sleep(3); /* shut down time */
 		  	printf("Exiting.\n");
 			exit(0);

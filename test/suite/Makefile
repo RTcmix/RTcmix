@@ -27,6 +27,7 @@ test_simple_mix \
 test_scheduler \
 test_stereo \
 run_stresstest \
+run_sockettest \
 $(NULL)
 
 STRESSOBJS = stresstest.o
@@ -49,8 +50,6 @@ run_stresstest:	stresstest
 
 run_sockettest:	sockettest
 	@echo
-#	@echo Starting CMIX socket server
-#	/bin/csh $(CMD) -i -n &
 	@echo Running socket stress test for $(TESTLEN) seconds...
 	./sockettest -d $(TESTLEN)
 	
