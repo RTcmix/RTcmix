@@ -82,7 +82,22 @@ Mac OS X
 
    - If you want to use gnuplot with the fplot and plottable script functions,
      you have to install both the command-line gnuplot from source and the
-     Aquaterm program.  See http://aquaterm.sourceforge.net for instructions.
+     Aquaterm program.  First download the Aquaterm v1.0.b2 (or later) binary
+     package (.dmg) from http://aquaterm.sourceforge.net, and install the
+     package.  (This must be done before compiling gnuplot, or else gnuplot
+     will not be set up to use Aquaterm.)  Then download the gnuplot source
+     code for version 4.0 or later from ftp.gnuplot.info (gnuplot-4.0.0.tar.gz),
+     and unpack this in /usr/local/src.  Build the package like this:
+
+        ./configure --without-x
+        make
+        sudo make install
+
+     You'll probably have to add /usr/local/bin to your shell path.  For bash,
+     do something like this in .profile:
+
+        PATH=/usr/local/bin:${PATH}
+        export PATH
 
    - If you want to enable the Python front end, and you are running a version
      of Mac OS X earlier than 10.3, you will have to build Python from source,
