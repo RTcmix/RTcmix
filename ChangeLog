@@ -1,6 +1,13 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Friday, March 19, 2004 Brad Garton <brad-at-music.columbia.edu>
+
+	* added changes to allow imbedded apps to not schedule Instruments
+	  that return error status (uncomment the #define EXIT_ON_ERROR
+	  in the makefile.conf).  This is so that imbedded RTcmix apps
+	  (like in max/msp rtcmix~) won't exit for an RTcmix score error.
+
 Friday, March 5, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * Read and write 24-bit sound files.  (Doesn't work for old
