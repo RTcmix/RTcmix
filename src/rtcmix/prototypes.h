@@ -68,6 +68,9 @@ void close_audio_ports(void);
 /* rtwritesamps.C */
 int rtcloseout(void);
 
+/* set_option.c */
+const char *get_audio_device_name(void);
+
 /* sockit.C */
 void *sockit(void *);
 
