@@ -161,26 +161,36 @@ init_globals()
    init_buf_ptrs();
 }
 
+#ifndef MACOSX
 extern AudioDevice *globalOutputFileDevice;
+#endif
+
+static int sigint_handler_called = 0;
 
 /* ------------------------------------------------------- sigint_handler --- */
 static void
 sigint_handler(int signo)
 {
+	// Dont do handler work more than once
+	if (!sigint_handler_called) {
+		sigint_handler_called = 1;
 #ifdef DBUG
-   printf("Signal handler called (signo %d)\n", signo);
+	   printf("Signal handler called (signo %d)\n", signo);
 #endif
 
-   if (rtsetparams_called) {
-      rtreportstats(globalOutputFileDevice);
-      close_audio_ports();
-      rtcloseout();
-   }
-   else
-      closesf_noexit();
+	   if (rtsetparams_called) {
+#ifndef MACOSX
+		  rtreportstats(globalOutputFileDevice);
+#endif
+		  close_audio_ports();
+		  rtcloseout();
+	   }
+	   else
+		  closesf_noexit();
 
-   fflush(stdout);
-   fflush(stderr);
+	   fflush(stdout);
+	   fflush(stderr);
+	}
    exit(1);
 }
 
