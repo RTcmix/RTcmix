@@ -99,6 +99,8 @@ init_globals()
 
    print_is_on = 1;
 
+   Bus_Configed = NO;
+
    for (int i = 0; i < MAX_INPUT_FDS; i++)
       inputFileTable[i].fd = NO_FD;
 

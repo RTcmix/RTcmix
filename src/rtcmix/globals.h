@@ -103,6 +103,8 @@ typedef enum {
   UNKNOWN
 } IBusClass;
 
+GLOBAL Bool Bus_Configed;
+ 
 GLOBAL short AuxToAuxPlayList[MAXBUS]; /* The playback order for AUX buses */
 GLOBAL short ToOutPlayList[MAXBUS]; /* The playback order for AUX buses */
 GLOBAL short ToAuxPlayList[MAXBUS]; /* The playback order for AUX buses */

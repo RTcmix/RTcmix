@@ -130,6 +130,10 @@ extern "C" {
 		if (!Iptr)
 		  break;
 
+		if ((Bus_Configed == NO) && (print_is_on)) {
+		  printf("WARNING:  no bus_configs defined, using default\n");
+		}
+
 		// DJT Now we push things onto different queues
 		bus_class = checkClass(Iptr->bus_config);
 		switch (bus_class) {
