@@ -5,6 +5,8 @@ Wednesday, July 30, 2003 John Gibson <johgibso-at-indiana.edu>
 
    * Add CHANS Minc command - returns number of channels in a sound file
      opened with rtinput.  (Works like DUR, PEAK, etc.)
+   * Improvements to BUTTER: add bypass and optional specification of
+     bandwidth as percentage of center frequency.
 
 Friday, July 25, 2003 John Gibson <johgibso-at-indiana.edu>
 
