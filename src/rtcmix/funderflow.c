@@ -21,6 +21,7 @@ void flush_all_underflows_to_zero()
 #endif
 #ifdef LINUX
 
+#include <stdio.h>
 #include <signal.h>
 
 void flush_fpe (int sig)
