@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Thursday, November 18, 2004 John Gibson <johgibso-at-indiana.edu>
+
+   * Two new multichannel panning instruments: NPAN and QPAN
+
 2004-10-08  Douglas Scott  <netdscott at netscape.net>
 
 	* Added auto-registration of DSOs (optional).
@@ -21,6 +25,10 @@ Monday, August 2, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * New build process, using a configure script.  See INSTALL for details.
    * cmixplay has a new set of hotkeys for changing playback volume.
+
+Sunday, September 26, 2004 John Gibson <johgibso-at-indiana.edu>
+
+   * New EQ instrument, MULTEQ -- multiple parametric EQs in series.
 
 Friday, July 30, 2004 John Gibson <johgibso-at-indiana.edu>
 
