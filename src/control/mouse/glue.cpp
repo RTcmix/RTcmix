@@ -8,6 +8,7 @@
 #include <rtcmix_types.h>
 #include <PField.h>
 #include <RTMousePField.h>
+#include <RTcmixMouse.h>
 #include <ugens.h>		// for warn, die
 
 

@@ -1,7 +1,7 @@
 include ../../../makefile.conf
 
-OBJS = RTcmixMouse.o
-SRCS = RTcmixMouse.cpp
+OBJS = RTcmixMouse.o RTMousePField.o
+SRCS = RTcmixMouse.cpp RTMousePField.cpp glue.cpp
 ifeq ($(ARCH), MACOSX)
    OBJS += OSXMouse.o
    SRCS += OSXMouse.cpp
