@@ -2,6 +2,7 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
+//#define DBUG
 #define MAIN
 #include <pthread.h>
 #include <ctype.h>
@@ -44,7 +45,6 @@ extern "C" {
 
 rt_item *rt_list;     /* can't put this in globals.h because of rt.h trouble */
 
-
 int interactive;     /* used in y.tab.c - don't remove this! */
 Tree program;
 
@@ -55,8 +55,6 @@ int aargc;
 
 /* <yyin> is yacc's input file. If we leave it alone, stdin will be used. */
 extern FILE *yyin;
-
-
 
 /* --------------------------------------------------------- init_globals --- */
 static void
