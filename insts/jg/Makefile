@@ -11,20 +11,20 @@ LIBDIRS = $(RTLIBDIRS) $(CMIXLIBDIRS)
 .PHONY: all objlib progs dsos standalone install dso_install standalone_install\
 uninstall dso_uninstall standalone_uninstall clean cleanall
 
-all: objlib progs
+all: objlib
+	@for DIR in $(LIBDIRS); \
+	do \
+	  ( if test -d $$DIR; then cd $$DIR; echo "making all in $$DIR..."; \
+	  $(MAKE) $(MFLAGS); echo "done in $$DIR"; fi ) \
+	done
+
+progs: all
+
+dsos: all
 
 objlib:
 	@( cd objlib; echo "making in objlib..."; \
 	  $(MAKE) $(MFLAGS); echo "done in objlib" ); \
-
-progs:
-	@for DIR in $(LIBDIRS); \
-	do \
-	  ( if test -d $$DIR; then cd $$DIR; echo "making in $$DIR..."; \
-	  $(MAKE) $(MFLAGS); echo "done in $$DIR"; fi ) \
-	done
-
-dsos: all
 
 standalone:
 	@for DIR in $(LIBDIRS); \
