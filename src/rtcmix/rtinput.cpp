@@ -201,6 +201,9 @@ open_sound_file(
       return -1;
    }
 
+   if (!SUPPORTED_DATA_FORMAT(*data_format))
+      die("rtinput", "Can read only 16-bit integer and 32-bit float files.");
+
    *data_location = mus_header_data_location();
    *srate = (double) mus_header_srate();
    *nchans = mus_header_chans();
