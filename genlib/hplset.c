@@ -7,6 +7,64 @@ static float ABS(float x)
 	return (x >= 0.0f) ? x : -x;
 }
 
+float frand(float x)
+{
+      int n;
+      n=x*1048576.;
+      return((float)((1061*n+221589) % 1048576)/1048576.);
+}
+complex xcexp(complex a)
+{
+	complex b;
+	b.re = exp(a.re) * cos(a.im);
+	b.im = exp(a.re) * sin(a.im);
+	return(b);
+}
+complex xcmplx(float a, float b)
+{
+	complex c;
+	cmplx(a,b,c);
+	return(c);
+}
+complex xdivide(complex a, complex b)
+{
+	complex c,d,e,f;
+	conjugate(b,c);
+	multiply(a,c,d);
+	multiply(b,c,e);
+	f.re = d.re/e.re;
+	f.im = d.im/e.re;
+	/*prtcmplx(a); prtcmplx(b); prtcmplx(c); prtcmplx(d); prtcmplx(e); prtcmplx(f);*/
+	return(f);
+}
+complex xmultiply(complex a, complex b)
+{
+	complex c;
+	c.re = a.re * b.re - a.im * b.im;
+	c.im = a.re * b.im + a.im * b.re;
+	return(c);
+}
+complex xadd(complex x, complex y)
+{
+	complex z;
+	z.re = x.re + y.re;
+	z.im = x.im + y.im;
+	return(z);
+}
+complex xsubtract(complex x, complex y)
+{
+	complex z;
+	z.re = x.re - y.re;
+	z.im = x.im - y.im;
+	return(z);
+}
+complex smultiply(float x, complex y)
+{	complex z;
+	z.re = y.re * x;
+	z.im = y.im * x;
+	return(z);
+}
+
 void
 hplset(float xxlp, float dur, float dynam, float plamp, float seed, float sr, int init, float *q)
 {
@@ -14,8 +72,8 @@ hplset(float xxlp, float dur, float dynam, float plamp, float seed, float sr, in
    c.................compile with order -lF77 -lm    
 */
 	float xlp,freq,pi,w,tau,n1,ga1,x,b,s2,s1,rho,c1,pa,pc,cc,c,fl,fu,fm,rl,gl,gl2,w2,r1,r2,r;
-           complex j,v1,v2,v3,v4,v5,v6,cexp(),xcmplx(),xadd(),xdivide(),xmultiply(),xsubtract(),smultiply();
-	float frand(),zz;
+    complex j,v1,v2,v3,v4,v5,v6;
+	float zz;
 	 int n,len,m;
 #ifdef sgi
 	struct __cabs_s z;
@@ -57,7 +115,7 @@ L20:    pc=(sr/freq)-n-pa;
       fm=sqrt(fl*fu);
       rl=exp(-pi*dynam/sr);											   
        j=xcmplx(0.,-1.);
-       v1 = smultiply(rl,cexp(smultiply(2*pi*fm/sr,j)));
+       v1 = smultiply(rl,xcexp(smultiply(2*pi*fm/sr,j)));
        v2 = xsubtract(xcmplx(1.,0.),v1);
 #ifdef sgi
        z.a = v2.re; z.b = v2.im; 
@@ -96,70 +154,6 @@ L20:    pc=(sr/freq)-n-pa;
       q[10]=cc ;
       q[11]=plamp;   /* for bowplucks */
 
-    }
-float frand(x)
-float x;
-{
-      int n;
-      n=x*1048576.;
-      return((float)((1061*n+221589) % 1048576)/1048576.);
-}
-complex cexp(a)
-complex a;
-{
-	complex b;
-	b.re = exp(a.re) * cos(a.im);
-	b.im = exp(a.re) * sin(a.im);
-	return(b);
-}
-complex xcmplx(a,b)
-float a,b;
-{
-	complex c;
-	cmplx(a,b,c);
-	return(c);
-}
-complex xdivide(a,b)
-complex a,b;
-{
-	complex c,d,e,f;
-	conjugate(b,c);
-	multiply(a,c,d);
-	multiply(b,c,e);
-	f.re = d.re/e.re;
-	f.im = d.im/e.re;
-	/*prtcmplx(a); prtcmplx(b); prtcmplx(c); prtcmplx(d); prtcmplx(e); prtcmplx(f);*/
-	return(f);
-}
-complex xmultiply(a,b)
-complex a,b;
-{
-	complex c;
-	c.re = a.re * b.re - a.im * b.im;
-	c.im = a.re * b.im + a.im * b.re;
-	return(c);
-}
-complex xadd(x,y)
-complex x,y;
-{
-	complex z;
-	z.re = x.re + y.re;
-	z.im = x.im + y.im;
-	return(z);
-}
-complex xsubtract(x,y)
-complex x,y;
-{
-	complex z;
-	z.re = x.re - y.re;
-	z.im = x.im - y.im;
-	return(z);
-}
-complex smultiply(float x, complex y)
-{	complex z;
-	z.re = y.re * x;
-	z.im = y.im * x;
-	return(z);
 }
 
 void qnew(float SR, float freq2, float *q)
