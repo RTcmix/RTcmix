@@ -1,1 +1,1 @@
-sfcreate -r 44100 -c 2 -f $1
+sfcreate -r 44100 -c 2 -f -t sun $1
