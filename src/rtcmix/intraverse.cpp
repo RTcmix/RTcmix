@@ -187,79 +187,77 @@ extern "C" {
 		}
 
 		rtQSize = rtQueue[bus].getSize();
-		if (rtQSize == 0) {  // There's nothing on the current queue
-		  switch (qStatus) {
-		  case TO_AUX:
-			qStatus = AUX_TO_AUX;
-			break;
-		  case AUX_TO_AUX:
-			play_bus++;
-			bus = AuxPlayList[play_bus];
-			if (bus == -1) 
-			  qStatus = TO_OUT;
-			break;
-		  case TO_OUT:
-			aux_pb_done = YES;
-			break;
-		  default:
-			cout << "ERROR (intraverse): unknown bus_class\n";
-			break;
-		  }
-		}
-		else {  
+		if (rtQSize > 0)
 		  chunkStart = rtQueue[bus].nextChunk();
 
-		  // Play elements on queue (insert back in if needed) - - - - - - - -
-		  while ((rtQSize > 0) && (chunkStart < bufEndSamp)) {
-			
+		// Play elements on queue (insert back in if needed) - - - - - - - -
+		while ((rtQSize > 0) && (chunkStart < bufEndSamp)) {
+		  
 #ifdef ALLBUG
-			cout << "Q-chunkStart:  " << chunkStart << endl;
-			cout << "bufEndSamp:  " << bufEndSamp << endl;
-			cout << "RTBUFSAMPS:  " << RTBUFSAMPS << endl;
+		  cout << "Q-chunkStart:  " << chunkStart << endl;
+		  cout << "bufEndSamp:  " << bufEndSamp << endl;
+		  cout << "RTBUFSAMPS:  " << RTBUFSAMPS << endl;
 #endif      
-			Iptr = rtQueue[bus].pop();  // get next instrument off queue
-			
-			endsamp = Iptr->getendsamp();
-			
-			// difference in sample start (countdown)
-			offset = (chunkStart-bufStartSamp)*NCHANS;  
-			
-			if (offset < 0) { // BGG: added this trap for robustness
-			  cout << "WARNING: the scheduler is behind the queue!" << endl;
-			  offset = 0;
-			}
-			
-			outbptr = &outbuff[offset];  // advance buffer pointer
-			
-			if (endsamp < bufEndSamp) {  // compute # of samples to write
-			  chunksamps = endsamp-chunkStart;
-			}
-			else {
-			  chunksamps = bufEndSamp-chunkStart;
-			}
-			
-			Iptr->setchunk(chunksamps);  // set "chunksamps"
-
-			Iptr->run();    // write the samples * * * * * * * * * * * 
-			
-			// ReQueue or delete - - - - - - - - - - - - - - - - - - -
-			if (endsamp > bufEndSamp) {
-			  Iptr->setchunkstart(chunkStart+chunksamps);  // reset chunkStart
-#ifdef ALLBUG
-			  cout << "inTraverse():  re queueing instrument\n";
-#endif
-			  rtQueue[bus].push(Iptr);   // put back onto queue
-			}
-			else {
-			  delete Iptr;
-			}
-
-			// DJT:  not sure this check before new chunkStart is necessary
-			rtQSize = rtQueue[bus].getSize();
-			if (rtQSize)
-			  chunkStart = rtQueue[bus].nextChunk();
+		  Iptr = rtQueue[bus].pop();  // get next instrument off queue
+		  
+		  endsamp = Iptr->getendsamp();
+		  
+		  // difference in sample start (countdown)
+		  offset = (chunkStart-bufStartSamp)*NCHANS;  
+		  
+		  if (offset < 0) { // BGG: added this trap for robustness
+			cout << "WARNING: the scheduler is behind the queue!" << endl;
+			offset = 0;
 		  }
-		}  
+		  
+		  outbptr = &outbuff[offset];  // advance buffer pointer
+		  
+		  if (endsamp < bufEndSamp) {  // compute # of samples to write
+			chunksamps = endsamp-chunkStart;
+		  }
+		  else {
+			chunksamps = bufEndSamp-chunkStart;
+		  }
+		  
+		  Iptr->setchunk(chunksamps);  // set "chunksamps"
+		  
+		  Iptr->run();    // write the samples * * * * * * * * * * * 
+		  
+		  // ReQueue or delete - - - - - - - - - - - - - - - - - - -
+		  if (endsamp > bufEndSamp) {
+			Iptr->setchunkstart(chunkStart+chunksamps);  // reset chunkStart
+#ifdef ALLBUG
+			cout << "inTraverse():  re queueing instrument\n";
+#endif
+			rtQueue[bus].push(Iptr);   // put back onto queue
+		  }
+		  else {
+			delete Iptr;
+		  }
+		  
+		  // DJT:  not sure this check before new chunkStart is necessary
+		  rtQSize = rtQueue[bus].getSize();
+		  if (rtQSize)
+			chunkStart = rtQueue[bus].nextChunk();
+		}
+		
+		switch (qStatus) {
+		case TO_AUX:
+		  qStatus = AUX_TO_AUX;
+		  break;
+		case AUX_TO_AUX:
+		  play_bus++;
+		  bus = AuxPlayList[play_bus];
+		  if (bus == -1) 
+			qStatus = TO_OUT;
+		  break;
+		case TO_OUT:
+		  aux_pb_done = YES;
+		  break;
+		default:
+		  cout << "ERROR (intraverse): unknown bus_class\n";
+		  break;
+		}
 	  }
 	  
 	  // Write buf to audio device -------------------------------------------
