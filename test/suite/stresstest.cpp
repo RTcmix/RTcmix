@@ -25,6 +25,7 @@ main(int argc, char *argv[])
 	int numcommands = 4;
 	int minsleep = 1000;	// in microseconds
 	int maxsleep = 10000;
+	const char *hwopt = NULL;
 	int checkCount, checkInterval;
 	int i;
 	int verbose = 0;
@@ -53,18 +54,21 @@ main(int argc, char *argv[])
 			case 'b':
 				bufsize = atoi(argv[++arg]);
 				break;
+			case 'h':
+				hwopt = argv[++arg];
+				break;
 			default:
-				fprintf(stderr, "usage: %s <-b bufsize> <-s randseed> <-v>\n", argv[0]);
+				fprintf(stderr, "usage: %s <-h device=name> <-b bufsize> <-s randseed> <-v>\n", argv[0]);
 				exit(1);
 			}
 		}
 		else {
-			fprintf(stderr, "usage: %s <-s randseed> <-v>\n", argv[0]);
+			fprintf(stderr, "usage: %s <-h device=name> <-b bufsize> <-s randseed> <-v>\n", argv[0]);
 			exit(1);
 		}
 	}
 
-	rrr = new RTcmix(44100.0, 2, bufsize);
+	rrr = new RTcmix(44100.0, 2, bufsize, hwopt);
 	if (verbose)
 		rrr->printOn();
 	else
