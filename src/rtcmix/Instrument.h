@@ -9,6 +9,7 @@
 #include <buffers.h>
 #include <sys/types.h>
 
+#define MAXNUMPARAMS 100
 
 class Instrument {
 public:
@@ -40,6 +41,16 @@ private:
    short          bufstatus[MAXBUS];
    short          needs_to_run;
 
+   int 			  pfpathcounter[MAXNUMPARAMS];
+   double 		  newpvalue[MAXNUMPARAMS];
+   double 		  oldpvalue[MAXNUMPARAMS][2];
+   float		  *ptables[MAXNUMPARAMS];
+   float 		  ptabs[MAXNUMPARAMS][2];
+   int 			  oldsamp[MAXNUMPARAMS];
+
+   int 			  instnum;
+   int			  slot;
+//   double 		  increment[MAXNUMPARAMS];
 public:
    Instrument();
    virtual ~Instrument();
@@ -58,6 +69,10 @@ public:
    void setchunk(int);
    void set_ichunkstart(int);
    void set_output_offset(int);
+   float rtupdate(int, int);  // tag, p-field for return value
+   void pf_path_update(int tag, int pval);
+   void pi_path_update(int pval);
+   void set_instnum(char* name);
 private:
    void gone();                    // decrements reference to input soundfile
 
@@ -70,7 +85,8 @@ int rtsetoutput(float, float, Instrument *);
 int rtsetinput(float, Instrument *);
 int rtinrepos(Instrument *, int, int);
 int rtgetin(float *, Instrument *, int);
-float rtupdate(int, int);  // tag, p-field for return value
+
+
 
 
 #endif /* _INSTRUMENT_H_  */

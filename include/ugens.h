@@ -173,6 +173,11 @@ void advise(const char *inst_name, const char *format, ...);
 void warn(const char *inst_name, const char *format, ...);
 void die(const char *inst_name, const char *format, ...);
 
+// pgen function declarations
+float *ploc(int tag);
+int psize(int tag);
+int piloc(int instnum);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

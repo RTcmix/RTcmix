@@ -32,6 +32,7 @@
 #include "../H/dbug.h"
 #include "rtcmix_parse.h"
 
+
 extern "C" {
   int ug_intro();
   int profile();
@@ -191,7 +192,7 @@ detect_denormals()
 int
 main(int argc, char *argv[])
 {
-   int         i, j, xargc;
+   int         i, j, k, xargc;
    int         retcode;                 /* for mutexes */
    char        *infile;
    char        *xargv[MAXARGS + 1];
@@ -262,8 +263,23 @@ main(int argc, char *argv[])
                tags_on = 1;
                printf("rtupdates enabled\n");
                curtag = 1;          /* "0" is reserved for all notes */
+			   curinst = 0;
                for (j = 0; j < MAXPUPS; j++)     /* initialize element 0 */
                   pupdatevals[0][j] = NOPUPDATE;
+			   for(j = 0; j < MAXNUMTAGS; j++)
+			   {
+				   for(k = 0; k < MAXNUMPARAMS; k++)
+				   {
+					   parray_size[j][k] = 0; //initilizes size of pfpath array
+				   }
+			   }
+			   for(j = 0; j < MAXNUMINSTS; j++)
+			   {
+				   for(k = 0; k < MAXNUMPARAMS; k++)
+				   {
+					   piarray_size[j][k] = 0;
+				   }
+			   }
                break;
             case 'f':     /* use file name arg instead of stdin as score */
                if (++i >= argc) {

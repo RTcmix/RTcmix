@@ -14,11 +14,21 @@
 #include <sndlibsupport.h>
 #include <bus.h>
 #include <assert.h>
-
+#include <rtupdate.h>
+#include <ugens.h>
 
 /* ----------------------------------------------------------- Instrument --- */
 Instrument :: Instrument()
 {
+   int i;
+   for(i = 0; i < MAXNUMPARAMS; ++i)
+   {
+	   pfpathcounter[i] = 0;
+	   newpvalue[i] = 0;
+	   oldsamp[i] = 0;
+   }
+ 
+
    start = 0.0;
    dur = 0.0;
    cursamp = 0;
@@ -50,11 +60,11 @@ Instrument :: Instrument()
       for (int i = 0; i < MAXPUPS; i++)  // initialize this element
          pupdatevals[curtag][i] = NOPUPDATE;
       mytag = curtag++;
-
+	  
       if (curtag >= MAXPUPARR)
          curtag = 1;            // wrap it around
       // 0 is reserved for all-note rtupdates
-
+	  
       pthread_mutex_unlock(&pfieldLock);
    }
 }
@@ -98,9 +108,17 @@ void Instrument :: set_bus_config(const char *inst_name)
 /* ----------------------------------------------------------------- init --- */
 int Instrument :: init(float p[], int n_args)
 {
-   cout << "You haven't defined an init member of your Instrument class!"
-                                                                   << endl;
-   return -1;
+//   cout << "You haven't defined an init member of your Instrument class!"
+  //                                                                 << endl;
+   int i;
+   for(i = 0; i < n_args; ++i)
+   {
+	   newpvalue[i] = p[i];	
+	   oldpvalue[i][0] = 0;
+	   oldpvalue[i][1] = p[i];
+   }
+   slot = piloc(instnum);
+   return 0;
 }
 
 
@@ -318,3 +336,279 @@ void Instrument :: gone()
    }
 }
 
+/* -------------------------------------------------------------------- */
+
+void Instrument::set_instnum(char* name)
+{
+	inst_list *tmp;
+//	printf("firstname = %s\n", name);
+//	printf("curinst = %i\n", curinst);
+	if(ilist == NULL)
+	{	
+//		printf("one\n");
+		ilist = (struct inst_list *) malloc(sizeof(struct inst_list));
+		ilist->next = NULL;
+		ilist->num = curinst++;
+//		printf("curinst = %i\n", curinst);
+	    ilist->name = name;
+//		printf("inum = %i\n", ilist->num);
+//		printf("iname = %s\n", ilist->name);
+	}
+	tmp = ilist;
+//	printf("two\n");
+//	printf("name = %s \n", name);
+	while((strcmp(name, tmp->name) != 0) && (tmp->next != NULL))
+	{
+//		printf("two\n");
+		tmp = tmp->next;
+	}
+//	printf("four\n");
+	if(strcmp(name, tmp->name) == 0)
+	{
+		instnum = tmp->num;
+//		printf("tnum = %i\n", instnum);
+//		printf("tname = %s\n,", name);
+	}
+	else
+	{	  
+		tmp->next = (struct inst_list *) malloc(sizeof(struct inst_list));
+		tmp = tmp->next;
+		tmp->next = NULL;
+		tmp->num = curinst++;
+//		printf("curinst =%i\n", curinst);
+		tmp->name = name;
+		ilist->next = tmp;
+		instnum = tmp->num;
+//		printf("num = %i\n", instnum);
+//		printf("name = %s\n", tmp->name);
+	}
+	return;
+}
+
+
+void Instrument::pi_path_update(int pval)
+{
+	int i;
+//	printf("mytag = %i\n", mytag);
+//	printf("instnum = %i\n", instnum);
+	if((piarray_size[slot][pval] != 0) && (parray_size[mytag][pval] == 0))
+	{
+//		printf("parraysize = %i\n", parray_size[mytag][pval]);
+//		printf("piarraysize = %i\n", piarray_size[slot][pval]);
+//		printf("slot = %i\n", slot);
+		gen_type[mytag][pval] = igen_type[slot][pval];
+		parray_size[mytag][pval] = piarray_size[slot][pval];
+		for(i = 0; i < piarray_size[slot][pval]; ++i)
+		{
+			pfpath[mytag][pval][i][0] = pipath[slot][pval][i][0];
+			pfpath[mytag][pval][i][1] = pipath[slot][pval][i][1];
+			printf("pipath[%i][%i][%i][0] = %f\t", slot, pval, i
+               , pipath[slot][pval][i][0]);
+		 	printf("pipath[%i][%i][%i][1] = %f\n", slot, pval, i
+               , pipath[slot][pval][i][1]);
+	 		printf("pfpath[%i][%i][%i][0] = %f\t", mytag, pval, i
+               , pfpath[mytag][pval][i][0]);
+ 			printf("pfpath[%i][%i][%i][1] = %f\n", mytag, pval, i
+               , pfpath[mytag][pval][i][1]);
+		}
+		
+		
+	}
+	return;
+}
+
+void Instrument::pf_path_update(int tag, int pval)
+{
+	float time, increment;
+	float updates_per_second; 
+	int i;
+	double table_val, diff, difftime;
+	pi_path_update(pval);
+	if(gen_type[tag][pval] == 0 && gen_type[0][pval] == 0) 
+                                            // linear interpolation of values
+	{
+		if(parray_size[tag][pval] > pfpathcounter[pval])
+		{
+			time = cursamp / SR;
+
+			if(time < pfpath[tag][pval][0][0]) // before inst reaches first 
+				return;						   // time specified in pfpath
+
+			updates_per_second = resetval;
+			increment = 1 / ((pfpath[tag][pval][pfpathcounter[pval]][0] 
+							 - oldpvalue[pval][0]) * updates_per_second);
+
+			increment *= pfpath[tag][pval][pfpathcounter[pval]][1] 
+						 - oldpvalue[pval][1];
+
+		
+			newpvalue[pval] += increment;
+
+			pupdatevals[tag][pval] = newpvalue[pval];
+
+			if(time >= pfpath[tag][pval][pfpathcounter[pval]][0])
+			{
+				pupdatevals[tag][pval] = 
+                             pfpath[tag][pval][pfpathcounter[pval]][1];
+
+				oldpvalue[pval][0] = pfpath[tag][pval][pfpathcounter[pval]][0];
+				pfpathcounter[pval]++; 
+				newpvalue[pval] = pupdatevals[tag][pval];
+				oldpvalue[pval][1] = newpvalue[pval];
+			
+			}
+		}
+
+		if(parray_size[0][pval] > pfpathcounter[pval])
+		{		
+			time = cursamp / SR;
+
+			if(time < pfpath[tag][pval][0][0]) // before inst reaches first 
+				return;						   // time specified in pfpath
+
+			updates_per_second = resetval;
+			increment = 1 / ((pfpath[0][pval][pfpathcounter[pval]][0] 
+							 - oldpvalue[pval][0]) * updates_per_second);
+
+			increment *= pfpath[0][pval][pfpathcounter[pval]][1] 
+						 - oldpvalue[pval][1];
+
+		
+			newpvalue[pval] += increment;
+
+			pupdatevals[0][pval] = newpvalue[pval];
+
+			if(time >= pfpath[0][pval][pfpathcounter[pval]][0])
+			{
+				pupdatevals[0][pval] = pfpath[0][pval][pfpathcounter[pval]][1];
+				oldpvalue[pval][0] = pfpath[0][pval][pfpathcounter[pval]][0];
+				pfpathcounter[pval]++; 
+				newpvalue[pval] = pupdatevals[0][pval];
+				oldpvalue[pval][1] = newpvalue[pval];
+			
+			}
+		}
+	}
+	else
+	{
+
+		
+//		tableset(dur, psize(gen_type[tag][pval]), ptabs[pval]);
+
+//		table_val = tablei(cursamp, ptables[pval], ptabs[pval]);
+//		printf("yes");
+//		printf("parraysize = %i\n", parray_size[0][pval]);
+		if(parray_size[tag][pval] > pfpathcounter[pval] + 1)
+		{
+			ptables[pval] = ploc(gen_type[tag][pval]);
+			
+		
+
+			time = cursamp / SR;
+
+			if(time >= pfpath[tag][pval][pfpathcounter[pval]][0]) 
+			{
+				if(time >= pfpath[tag][pval][pfpathcounter[pval] + 1][0])
+				{
+					pfpathcounter[pval]++;
+					oldsamp[pval] = cursamp;
+					if(parray_size[0][pval] <= pfpathcounter[pval] + 1)
+						return;
+				}
+
+				diff = pfpath[tag][pval][pfpathcounter[pval] + 1][1] 
+                   - pfpath[tag][pval][pfpathcounter[pval]][1];
+
+				difftime = pfpath[tag][pval][pfpathcounter[pval] + 1][0] 
+                           - pfpath[tag][pval][pfpathcounter[pval]][0];
+
+				tableset(difftime, psize(gen_type[tag][pval]), ptabs[pval]);
+
+				table_val = tablei(cursamp-oldsamp[pval], ptables[pval]
+                                   , ptabs[pval]);
+
+				pupdatevals[tag][pval] = 
+             pfpath[tag][pval][pfpathcounter[pval]][1] + (table_val * diff);
+
+				printf("table result [%i] = %f\n"
+                       , tag, pupdatevals[tag][pval]);
+				
+			}
+		} 
+		
+		if(parray_size[0][pval] > pfpathcounter[pval] + 1)
+		{
+			ptables[pval] = ploc(gen_type[0][pval]);
+			
+			   
+
+			time = cursamp / SR;
+
+			if(time >= pfpath[0][pval][pfpathcounter[pval]][0])
+			{
+				if(time >= pfpath[0][pval][pfpathcounter[pval] + 1][0])
+				{
+					pfpathcounter[pval]++;
+					oldsamp[pval] = cursamp;
+					if(parray_size[0][pval] <= pfpathcounter[pval] + 1)
+						return;
+				}
+				
+				diff = pfpath[0][pval][pfpathcounter[pval] + 1][1] 
+                   - pfpath[0][pval][pfpathcounter[pval]][1];
+
+				difftime = pfpath[0][pval][pfpathcounter[pval] + 1][0] 
+                           - pfpath[0][pval][pfpathcounter[pval]][0];
+
+				tableset(difftime, psize(gen_type[0][pval]), ptabs[pval]);
+				table_val = tablei(cursamp - oldsamp[pval], ptables[pval]
+                                   , ptabs[pval]);
+
+				pupdatevals[0][pval] = pfpath[0][pval][pfpathcounter[pval]][1] 
+									   + (table_val * diff);
+
+//				printf("diff = %f\n", diff);
+//				printf("difftime = %f\n", difftime);
+//				printf("table result [%i] = %f\n", cursamp, table_val);
+				printf("result [%i] = %f\n", cursamp
+                       , pupdatevals[0][pval]);
+
+				
+			}
+		} 
+		
+/*		printf("ptabs[%i] = %f\t%f\n", pval, ptabs[pval][0], ptabs[pval][1]);
+	    for(i = 0; i < psize(gen_type[tag][pval]); ++i)
+	    {
+		    printf("ptables[%i] = %f\n", i, ptables[pval][i]);
+		}*/
+		
+	}
+}
+
+float Instrument::rtupdate(int tag, int pval)
+{
+  float tval;
+  pf_path_update(tag, pval);
+  pthread_mutex_lock(&pfieldLock);
+  if (pupdatevals[0][pval] != NOPUPDATE) // global takes precedence
+  {
+	  pthread_mutex_unlock(&pfieldLock);
+	  return pupdatevals[0][pval];
+  }
+  else
+	  tval = pupdatevals[tag][pval];
+  pupdatevals[tag][pval] = NOPUPDATE;
+  pthread_mutex_unlock(&pfieldLock);
+  return tval;
+}
+
+//		printf("increment = %f\n", increment);
+//		printf("oldpvaluse = %f\n", oldpvalue[pval]);
+//		printf("first inc = %f\n", increment);
+//		printf("updates_per_second= %f\n", updates_per_second);
+//		printf("restval = : %i\n", resetval);
+//		printf("sample rate =: %f\n", SR);
+//		printf("newpvalue = %f\n", newpvalue[pval]);
+//		printf("pupdatevals[0][pval] = %f\n", pupdatevals[0][pval]);
+//printf("pfpathcounter = %i\n", pfpathcounter[pval]);

@@ -9,6 +9,7 @@
 #include "version.h"
 #include "buffers.h"
 #include "bus.h"  // FIXME: just for MAXBUS
+#include <rtupdate.h> // FIXME
 
 #ifdef MAIN
 #define GLOBAL
