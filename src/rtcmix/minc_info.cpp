@@ -85,6 +85,21 @@ double m_DUR(float *p, int n_args)   /* returns duration for rtinput() files */
    return (inputFileTable[index].dur);
 }
 
+double m_SR(float *p, int n_args)   /* returns rate for rtinput() files */
+{
+   int index = get_last_input_index();
+
+   if (index < 0) {
+      fprintf(stderr, "There are no currently opened input files!\n");
+      return 0.0;
+   }
+//   if (inputFileTable[index].is_audio_dev) {
+//     fprintf(stderr, "WARNING: Requesting duration of audio input device "
+//                    "(not sound file)!\n");
+//   return 0.0;
+//   }
+   return (inputFileTable[index].srate);
+}
 
 /* Note: the old versions of the peak info functions copy peak stats from
    the file header in memory into the sfm[fno] array maintained in sound.c.
