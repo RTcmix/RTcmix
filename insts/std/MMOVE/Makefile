@@ -10,6 +10,7 @@ COMMON_OBJS = MBASE.o RVB.o msetup.o
 COMMON_HDRS = msetup.h $(EXTERN_HEADERS)
 POBJS = MPLACE.o placeprof.o $(COMMON_OBJS) $(EXTERN_OBJS)
 MOBJS = MMOVE.o moveprof.o path.o $(COMMON_OBJS) $(EXTERN_OBJS)
+DOBJS = DMOVE.o moveprof.o path.o $(COMMON_OBJS) $(EXTERN_OBJS)
 #PROF = -pg
 PROF =
 ifeq ($(ARCH),LINUX)
@@ -46,6 +47,14 @@ MMOVE: $(MOBJS) $(CMIXOBJS)
 
 $(MOBJS): $(COMMON_HDRS) MBASE.h MMOVE.h
 
+libDMOVE.so: $(DOBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(DOBJS) $(GENLIB) $(SYSLIBS)
+
+DMOVE: $(DOBJS) $(CMIXOBJS)
+	$(CXX) -o $@ $(DOBJS) $(CMIXOBJS) $(LDFLAGS) $(PROF)
+
+$(DOBJS): $(COMMON_HDRS) MBASE.h DMOVE.h
+
 MBASE.o : $(COMMON_HDRS) MBASE.cpp MBASE.h
 
 install: dso_install
@@ -69,7 +78,7 @@ standalone_uninstall:
 	$(RM) $(DESTDIR)/MMOVE
 
 clean:
-	$(RM) $(POBJS) $(MOBJS) $(PROGS) $(TRASH)
+	$(RM) $(POBJS) $(MOBJS) $(DOBJS) $(PROGS) $(TRASH)
 
 cleanall: clean uninstall
 

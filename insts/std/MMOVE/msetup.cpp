@@ -120,7 +120,7 @@ get_setup_params(double Dimensions[],       /* array of 5 elements */
 /* ----------------------------------------------- set_attenuation_params --- */
 
 double
-set_attenuation_params(float p[], int n_args)
+m_set_attenuation_params(float p[], int n_args)
 {
    if (n_args != 3) {
       die("set_attenuation_params",
@@ -158,7 +158,7 @@ set_attenuation_params(float p[], int n_args)
    tion factor, between 0 (total absorption) and 10 (total reflection).   
 */
 double
-space(float p[], int n_args)
+m_space(float p[], int n_args)
 {
 	if (space_called) {
       die("space", "'space' can only be called once");
@@ -198,7 +198,7 @@ space(float p[], int n_args)
    syntax: mikes(mikeAngle, pattern)
 */
 double
-mikes(float p[], int n_args)
+m_mikes(float p[], int n_args)
 {
    _MikeAngle = p[0] * PI / 180.0;  /* convert to rads */
    _MikePatternFactor = (p[1] <= 1.0) ? p[1] : 1.0;
@@ -214,7 +214,7 @@ mikes(float p[], int n_args)
 /* to turn off mike usage in order to use binaural filters
 */
 double
-mikes_off(float p[], int n_args)
+m_mikes_off(float p[], int n_args)
 {
    advise("mikes", "Microphone usage turned off.\n");
    _UseMikes = 0;
@@ -234,7 +234,7 @@ mikes_off(float p[], int n_args)
    contain matrix vals.
 */
 double
-oldmatrix(float p[], int n_args)
+m_oldmatrix(float p[], int n_args)
 {
    int   i, j;
    float amp, val;
@@ -259,7 +259,7 @@ oldmatrix(float p[], int n_args)
 }
 
 double
-matrix(float p[], int n_args)
+m_matrix(float p[], int n_args)
 {
    int   i, j;
    float amp, val;

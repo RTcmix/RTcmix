@@ -16,12 +16,12 @@ int get_rvb_setup_params(double dimensions[], double matrix[12][12],
 						 float *rvbTime);
 
 extern "C" {
-double space(float p[], int);
-double mikes(float p[], int);
-double mikes_off(float p[], int);
-double oldmatrix(float p[], int);
-double matrix(float p[], int);
-double set_attenuation_params(float p[], int);
+double m_space(float p[], int);
+double m_mikes(float p[], int);
+double m_mikes_off(float p[], int);
+double m_oldmatrix(float p[], int);
+double m_matrix(float p[], int);
+double m_set_attenuation_params(float p[], int);
 }
 
 #endif	// _MSETUP_H_

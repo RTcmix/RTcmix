@@ -150,3 +150,12 @@ int get_path_params(double *rhos, double *thetas, int *cartesian, double *mdiff)
 	*mdiff = mindiff;
 	return 0;
 }
+
+// This is used by DMOVE to retrieve params.
+
+int get_params(int *cartesian, double *mdiff)
+{
+	*cartesian = cartflag;
+	*mdiff = mindiff;
+	return 0;
+}

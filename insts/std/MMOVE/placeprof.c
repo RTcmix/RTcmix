@@ -4,12 +4,12 @@
 int
 profile()
 {
-   UG_INTRO("oldmatrix", oldmatrix); 
-   UG_INTRO("matrix", matrix); 
-   UG_INTRO("mikes", mikes); 
-   UG_INTRO("mikes_off", mikes_off); 
-   UG_INTRO("space", space); 
-   UG_INTRO("set_attenuation_params", set_attenuation_params); 
+   UG_INTRO("oldmatrix", m_oldmatrix); 
+   UG_INTRO("matrix", m_matrix); 
+   UG_INTRO("mikes", m_mikes); 
+   UG_INTRO("mikes_off", m_mikes_off); 
+   UG_INTRO("space", m_space); 
+   UG_INTRO("set_attenuation_params", m_set_attenuation_params); 
    return 0;
 }
 
