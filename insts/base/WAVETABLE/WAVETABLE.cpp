@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <ugens.h>
 #include <Instrument.h>
+#include <PField.h>
 #include "WAVETABLE.h"
 #include <rt.h>
 #include <rtdefs.h>
