@@ -65,6 +65,8 @@ makeconverter(const Arg args[], const int nargs)
 		converter = new ConverterPField(pfield, ConverterPField::pchmidi);
 	else if (args[1] == "boost")
 		converter = new ConverterPField(pfield, ConverterPField::boost);
+	else if (args[1] == "inverse")
+		converter = new ConverterPField(pfield, ConverterPField::inverse);
 
 	if (converter == NULL) {
 		die("makeconverter", "Invalid converter type \"%s\".", (const char *) args[1]);
