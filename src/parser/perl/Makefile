@@ -19,7 +19,7 @@ all: $(EXT_FILE)
 $(EXT_FILE): $(XS_DIR)/$(XS_FILE) $(XS_DIR)/$(PM_FILE)
 	( cd $(XS_DIR); $(PERL) Makefile.PL; $(MAKE) )
 
-install:
+install: all
 	@echo "making install..."	
 	@$(INSTALL) $(XS_DIR)/$(PM_FILE) $(LIBDESTDIR)
 	@$(INSTALL) $(EXT_FILE) $(LIBDESTDIR)
@@ -33,7 +33,6 @@ clean:
 	@if (test -f $(XS_DIR)/Makefile) then \
 		(cd $(XS_DIR); $(MAKE) clean; $(RM) Makefile.old) \
 	fi
-	@$(RM) $(LIBDESTDIR)/$(PM_FILE) $(LIBDESTDIR)/$(EXT_NAME)$(XT_SUFFIX)
 
 cleanall: clean
 

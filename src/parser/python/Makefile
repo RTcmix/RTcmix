@@ -27,7 +27,7 @@ ifeq ($(PYTHON_EXT_LINK), TRUE)
 endif
 
 # NB: need root for this; installs in python site-packages dir
-install:
+install: all
 ifeq ($(PYTHON_EXT_LINK), )
 	$(PYTHON) setup.py install
 endif

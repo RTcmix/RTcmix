@@ -8,7 +8,7 @@ sndlib.a: $(OBJS)
 	$(RM) sndlib.a
 	$(LD) -r $(OBJS) -o sndlib.a
 
-install:
+install: all
 uninstall:
 
 clean: 
