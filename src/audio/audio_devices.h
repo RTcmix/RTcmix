@@ -4,7 +4,7 @@
 extern "C" {
 #endif
 
-int create_audio_devices(int recordAndPlay, int chans, float sr, int *buffersize);
+int create_audio_devices(int record, int play, int chans, float sr, int *buffersize);
 
 int create_audio_file_device(const char *outfilename,
 							 int header_type,

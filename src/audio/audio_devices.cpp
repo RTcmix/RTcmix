@@ -7,6 +7,7 @@
 // and output.
 //
 
+#include <string.h>
 #include <globals.h>
 #include <sndlibsupport.h>
 #include <ugens.h>
@@ -14,7 +15,13 @@
 
 #include "AudioDevice.h"
 #include "AudioFileDevice.h"
+#include "AudioIODevice.h"
 #include "audio_devices.h"
+
+#ifdef NETAUDIO
+char globalNetworkPath[128];
+extern AudioDevice *createNetAudioDevice(const char *);
+#endif
 
 AudioDevice *globalAudioDevice;		// Used by Minc/audioLoop.C
 AudioDevice *globalOutputFileDevice;
@@ -22,33 +29,75 @@ AudioDevice *globalOutputFileDevice;
 static const int numBuffers = 2;		// number of audio buffers to queue up
 
 int
-create_audio_devices(int recordAndPlay, int chans, float srate, int *buffersize)
+create_audio_devices(int record, int play, int chans, float srate, int *buffersize)
 {
 	int status;
 	const char *inDeviceName = get_audio_indevice_name();
 	const char *outDeviceName = get_audio_outdevice_name();
-	AudioDevice *device = createAudioDevice(inDeviceName, outDeviceName, recordAndPlay != 0);
+	AudioDevice *device = NULL;
+	
+	// HACK: For now, we choose here whether or not we are opening a network
+	// audio player.  Users set device name to "net:hostname:sockno" to choose
+	// it.
+
+#ifdef NETAUDIO
+	AudioDevice *netDevice = NULL;
+	AudioDevice *hwDevice = NULL;
+	// For backwards compatibility, we check to see if a network path was set
+	// via the command line and stored in the global.
+	if (strlen(globalNetworkPath) > 0)
+		outDeviceName = globalNetworkPath;
+
+	if (inDeviceName && !strncmp(inDeviceName, "net:", 4)) {
+		netDevice = createNetAudioDevice(&inDeviceName[4]);
+	}
+	else if (outDeviceName && !strncmp(outDeviceName, "net:", 4)) {
+		netDevice = createNetAudioDevice(&outDeviceName[4]);
+	}
+	
+	if (netDevice != NULL) {
+		if (record != play) {
+			// User chose network audio record or play
+			device = netDevice;
+		}
+		else {
+			// User chose network audio in, HW audio out
+			if (inDeviceName && !strncmp(inDeviceName, "net:", 4)) {
+				hwDevice = createAudioDevice(NULL, outDeviceName, false);
+				device = new AudioIODevice(netDevice, hwDevice, true);
+			}
+			// User chose HW audio in, network audio out
+			else if (outDeviceName && !strncmp(outDeviceName, "net:", 4)) {
+				hwDevice = createAudioDevice(inDeviceName, NULL, false);
+				device = new AudioIODevice(hwDevice, netDevice, false);
+			}
+		}
+	}
+	else
+#endif	// NETAUDIO
+		device = createAudioDevice(inDeviceName, outDeviceName, record && play);
+	if (device == NULL) {
+		die("rtsetparams", "Failed to create audio device");
+		return -1;
+	}
 	// We hand the device noninterleaved floating point buffers.
 	int audioFormat = NATIVE_FLOAT_FMT | MUS_NON_INTERLEAVED;
-	int openMode = (recordAndPlay) ?
-						AudioDevice::RecordPlayback : AudioDevice::Playback;
+	int openMode = (record && play) ? AudioDevice::RecordPlayback
+				   : (record) ? AudioDevice::Record
+				   : AudioDevice::Playback;
 	device->setFrameFormat(audioFormat, chans);
-	if ((status = device->open(openMode,
-	  						   audioFormat,
-							   chans,
-							   srate)) == 0)
+	if ((status = device->open(openMode, audioFormat, chans, srate)) == 0)
 	{
 		int reqsize = *buffersize;
 		int reqcount = numBuffers;
 		if ((status = device->setQueueSize(&reqsize, &reqcount)) < 0) {
-			die("rtsetparams",
-				"Trouble setting audio device queue size: %s",
+			die("rtsetparams", "Trouble setting audio device queue size: %s",
 				device->getLastError());
 			return -1;
 		}
 		if (reqsize != *buffersize) {
 			advise("rtsetparams",
-					"RTBUFSAMPS reset by audio device from %d to %d",
+				   "RTBUFSAMPS reset by audio device from %d to %d",
 					*buffersize, reqsize);
 			*buffersize = reqsize;
 		}
@@ -84,6 +133,10 @@ int create_audio_file_device(const char *outfilename,
 													  header_type,
 													  fileOptions);
 													
+	if (fileDevice == NULL) {
+		rterror("rtoutput", "Failed to create audio file device");
+		return -1;
+	}
 	int openMode = AudioFileDevice::Playback;
 	if (play_audio)
 		openMode |= AudioDevice::Passive;	// Don't run thread for file device.
