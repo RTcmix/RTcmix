@@ -14,7 +14,11 @@ Arg::printInline(FILE *stream) const
 		fprintf(stream, "\"%s\" ", val.string);
 		break;
 	case HandleType:
-		fprintf(stream, "Handle:%p ", val.handle);
+		fprintf(stream, "%sHandle:%p ",
+				val.handle->type == PFieldType ? "PF" :
+				val.handle->type == InstrumentPtrType ? "Inst" :
+				val.handle->type == PFieldType ? "AudioStr" : "Unknown",
+				val.handle);
 		break;
 	case ArrayType:
 		fprintf(stream, "[%g...%g] ", val.array->data[0],
