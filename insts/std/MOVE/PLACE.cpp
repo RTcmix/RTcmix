@@ -67,17 +67,24 @@ int PLACE::finishInit(double rvb_time, double *ringdur)
    tapcount = tap_set(m_binaural);
 
    *ringdur = rvb_time + ((float)tapcount / SR);
-   
-   // PLACE sets all filters just once, so we clear them at this time
-   
-   int flag = 1;
-   airfil_set(flag);
-   if (m_binaural)
-      earfil_set(flag);
-   else
-      mike_set();
 
    return 0;
+}
+
+int PLACE::configure()
+{
+	int status = BASE::configure();
+	if (status) {
+		// PLACE sets all filters just once, so we clear them at this time
+
+		int flag = 1;
+		airfil_set(flag);
+		if (m_binaural)
+		   earfil_set(flag);
+		else
+		   mike_set();
+	}
+	return status;
 }
 
 int PLACE::updatePosition(int)
