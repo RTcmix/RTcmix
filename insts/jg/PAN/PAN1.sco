@@ -5,6 +5,7 @@
    p2 = input duration
    p3 = amplitude multiplier
    p4 = input channel [optional, default is 0]
+   p5 = 0: use constant-power panning, 1: don't use it [default is 0]
 
    Assumes function table 1 is amplitude curve for the note. (Try gen 18.)
    Or you can just call setline. If no setline or function table 1, uses
@@ -24,8 +25,10 @@
    This will pan input channel 0 from left to right over the first second.
    Then the sound travels back to the center during the next 2 seconds.
 
-   PAN uses "constant-power" panning to prevent a sense of lost power when
-   the pan location moves toward the center.
+   By default, PAN uses "constant-power" panning to prevent a sense of lost
+   power when the pan location moves toward the center.  Sometimes this causes
+   jerkey panning motion near hard left/right, so you can defeat it by
+   by passing 1 as p5.
 
    John Gibson (jgg9c@virginia.edu), 1/26/00.
 */

@@ -5,6 +5,7 @@
    p2 = input duration
    p3 = amplitude multiplier
    p4 = input channel [optional, default is 0]
+   p5 = 0: use constant-power panning, 1: don't use it [default is 0]
 
    Assumes function table 1 is amplitude curve for the note. (Try gen 18.)
    Or you can just call setline. If no setline or function table 1, uses
@@ -24,8 +25,10 @@
    This will pan input channel 0 from left to right over the first second.
    Then the sound travels back to the center during the next 2 seconds.
 
-   PAN uses "constant-power" panning to prevent a sense of lost power when
-   the pan location moves toward the center.
+   By default, PAN uses "constant-power" panning to prevent a sense of lost
+   power when the pan location moves toward the center.  Sometimes this causes
+   jerkey panning motion near hard left/right, so you can defeat it by
+   by passing 1 as p5.
 
    John Gibson (jgg9c@virginia.edu), 1/26/00.
 */
@@ -38,6 +41,7 @@
 #include <rt.h>
 #include <rtdefs.h>
 
+//#define DEBUG
 
 
 PAN :: PAN() : Instrument()
@@ -60,7 +64,8 @@ int PAN :: init(float p[], int n_args)
    inskip = p[1];
    dur = p[2];
    amp = p[3];
-   inchan = n_args > 4 ? (int)p[4] : 0;             /* default is chan 0 */
+   inchan = n_args > 4 ? (int)p[4] : 0;              /* default is chan 0 */
+   use_constant_power = n_args > 5 ? !(int)p[5] : 1; /* default is true */
 
    nsamps = rtsetoutput(outskip, dur, this);
    rtsetinput(inskip, this);
@@ -117,8 +122,20 @@ int PAN :: run()
    for (i = 0; i < rsamps; i += inputchans) {
       if (--branch < 0) {
          float pctleft = tablei(cursamp, panarray, pantabs);
-         pan[0] = (float)sqrt((double)pctleft);
-         pan[1] = (float)sqrt(1.0 - (double)pctleft);
+         if (pctleft < 0.0 || pctleft > 1.0)
+            die("PAN", "pan array value out of range (%f)", pctleft);
+         if (use_constant_power) {
+            pan[0] = (float)sqrt((double)pctleft);
+            pan[1] = (float)sqrt(1.0 - (double)pctleft);
+         }
+         else {
+            pan[0] = pctleft;
+            pan[1] = 1.0 - pctleft;
+         }
+#ifdef DEBUG
+         advise("PAN", "pctleft=%f pan[0]=%f pan[1]=%f (tot=%f)",
+                              pctleft, pan[0], pan[1], pan[0] + pan[1]);
+#endif
          if (amparray)
             aamp = tablei(cursamp, amparray, amptabs) * amp;
          branch = skip;
