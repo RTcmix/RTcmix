@@ -32,24 +32,24 @@ void addfunc(const char *func_label,
 #define UG_INTRO(flabel, func) \
    { \
       extern double func(); \
-      addfunc(flabel, func, NULL, NULL, NULL, DoubleType, 1); \
+      addfunc(flabel, (LegacyFunction) func, NULL, NULL, NULL, DoubleType, 1); \
    }
 
 #define UG_INTRO_DOUBLE_RETURN(flabel, func) \
    { \
-      extern double func(); \
+      extern double func(const Arg[], int); \
       addfunc(flabel, NULL, func, NULL, NULL, DoubleType, 0); \
    }
 
 #define UG_INTRO_STRING_RETURN(flabel, func) \
    { \
-      extern char *func(); \
+      extern char *func(const Arg[], int); \
       addfunc(flabel, NULL, NULL, func, NULL, StringType, 0); \
    }
 
 #define UG_INTRO_HANDLE_RETURN(flabel, func) \
    { \
-      extern Handle func(); \
+      extern Handle func(const Arg[], int); \
       addfunc(flabel, NULL, NULL, NULL, func, HandleType, 0); \
    }
 
