@@ -29,18 +29,30 @@ test_stereo \
 run_stresstest \
 $(NULL)
 
-OBJS = stresstest.o
+STRESSOBJS = stresstest.o
+SOCKOBJS = sockettest.o
 IMBCMIXOBJS += $(PROFILE_O)
-PROGS = stresstest
+PROGS = stresstest sockettest
 TESTLEN = 30
 
-stresstest: $(OBJS) $(IMBCMIXOBJS)
-	$(CXX) -o $@ $(DYN) $(OBJS) $(IMBCMIXOBJS) $(LDFLAGS)
+stresstest: $(STRESSOBJS) $(IMBCMIXOBJS)
+#	$(CXX) -o $@ $(DYN) $(STRESSOBJS) $(IMBCMIXOBJS) $(LDFLAGS) -L/home/dscott -ldmalloc
+	$(CXX) -o $@ $(DYN) $(STRESSOBJS) $(IMBCMIXOBJS) $(LDFLAGS)
+
+sockettest: $(SOCKOBJS) ../../lib/RTsockfuncs.o
+	$(CXX) -o $@ $(SOCKOBJS) ../../lib/RTsockfuncs.o
 
 run_stresstest:	stresstest
 	@echo
 	@echo Running interactive stress test for $(TESTLEN) seconds...
 	./stresstest -d $(TESTLEN)
+
+run_sockettest:	sockettest
+	@echo
+#	@echo Starting CMIX socket server
+#	/bin/csh $(CMD) -i -n &
+	@echo Running socket stress test for $(TESTLEN) seconds...
+	./sockettest -d $(TESTLEN)
 	
 test_unreadable_input:
 	@echo
