@@ -1,6 +1,6 @@
 =head1 NAME
 
-gen25 - make a function with straight line segments
+gen25 - make a window function
 
 =head1 SYNOPSIS
 
