@@ -14,6 +14,7 @@
 #include <sndlibsupport.h>
 #include <byte_routines.h>
 #include <Instrument.h>
+#include <BusSlot.h>
 #include <ugens.h>
 #include <rtdefs.h>
 #include <assert.h>

@@ -33,6 +33,7 @@
 #include <ugens.h>
 #include <version.h>
 #include <Option.h>
+#include <ug_intro.h>
 #include "rt.h"
 #include "heap.h"
 #include "maxdispargs.h"

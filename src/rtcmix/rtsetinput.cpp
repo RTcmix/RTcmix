@@ -10,6 +10,7 @@
 #include <ugens.h>
 #include <stdio.h>
 #include <assert.h>
+#include <BusSlot.h>
 #include "Instrument.h"
 #include "rtdefs.h"
 
