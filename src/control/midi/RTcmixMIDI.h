@@ -19,7 +19,7 @@ public:
 	virtual ~RTcmixMIDI();
 	int init();
 	void clear();
-	void dump();
+	void dump(const int chan);
 
 	// We store the last note on/off pitch and velocity values into an array
 	// for reference in a manner similar to that of controllers.  This is *not*

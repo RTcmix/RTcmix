@@ -11,6 +11,8 @@
 #include <assert.h>
 #include <Option.h>
 
+#define DEBUG 0
+
 // if INBUF_SIZE is 0, PortMidi uses a default value
 #define INBUF_SIZE		0
 #define MSG_QUEUE_SIZE	32		// NB: sets number of notes queued for scheduler
@@ -167,26 +169,29 @@ const char *RTcmixMIDI::getValueString(const int val)
 	return buf;
 }
 
-void RTcmixMIDI::dump()
+void RTcmixMIDI::dump(const int chan)
 {
 	printf("\nDumping current MIDI state...\n");
-	for (int chan = 0; chan < 16; chan++) {
-		printf("---------------------------------------- Channel %d\n", chan + 1);
-		printf("   Bend:\t%s\n", getValueString(_bend[chan]));
-		printf("   Program:\t%s\n", getValueString(_program[chan]));
-		printf("   ChanPress:\t%s\n", getValueString(_chanpress[chan]));
-		printf("   NoteOnPitch:\t%s\n", getValueString(_noteonpitch[chan]));
-		printf("   NoteOnVel:\t%s\n", getValueString(_noteonvel[chan]));
-		printf("   NoteOffPitch:\t%s\n", getValueString(_noteoffpitch[chan]));
-		printf("   NoteOffVel:\t%s\n", getValueString(_noteoffvel[chan]));
-		printf("   Control:\n");
-		for (int i = 0; i < 128; i++)
-			printf("      [%d]:\t%s\n", i, getValueString(_control[chan][i]));
-		printf("   PolyPress:\n");
-		for (int i = 0; i < 128; i++)
-			printf("      [%d]:\t%s\n", i, getValueString(_polypress[chan][i]));
-		printf("\n");
-	}
+	printf("---------------------------------------- Channel %d\n", chan + 1);
+	printf("   Bend:\t%s\n", getValueString(_bend[chan]));
+	printf("   Program:\t%s\n", getValueString(_program[chan]));
+	printf("   ChanPress:\t%s\n", getValueString(_chanpress[chan]));
+	printf("   NoteOnPitch:\t%s\n", getValueString(_noteonpitch[chan]));
+	printf("   NoteOnVel:\t%s\n", getValueString(_noteonvel[chan]));
+	printf("   NoteOffPitch:\t%s\n", getValueString(_noteoffpitch[chan]));
+	printf("   NoteOffVel:\t%s\n", getValueString(_noteoffvel[chan]));
+#if 1
+	printf("   Control:\n");
+	for (int i = 0; i < 128; i++)
+		printf("      [%d]:\t%s\n", i, getValueString(_control[chan][i]));
+#endif
+#if 0
+	printf("   PolyPress:\n");
+	for (int i = 0; i < 128; i++)
+		printf("      [%d]:\t%s\n", i, getValueString(_polypress[chan][i]));
+#endif
+	printf("\n");
+	fflush(stdout);
 }
 
 
@@ -281,9 +286,14 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 					break;
 				case kSystem:
 				default:
-//					printf("0x%.2x, %ld, %ld\n", (u_char) status, data1, data2);
+#if DEBUG > 0
+					printf("0x%.2x, %ld, %ld\n", (u_char) status, data1, data2);
+#endif
 					break;
 			}
+#if DEBUG > 0
+			obj->dump(chan);
+#endif
 		}
 	} while (result);
 }
