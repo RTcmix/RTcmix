@@ -273,17 +273,23 @@ int
 NetAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 {
 	int bytesToRead = frameCount * getDeviceBytesPerFrame();
-//	printf("NetAudioDevice::doGetFrames: reading %d bytes from stream...\n", bytesToRead);
-	int bytesRead = ::read(device(), frameBuffer, bytesToRead);
-//	printf("NetAudioDevice::doGetFrames: read %d bytes\n", bytesRead);
-	if (bytesRead == 0) {
-		printf("NetAudioDevice::doGetFrames: connection broke -- disconnecting\n");
-		memset(frameBuffer, 0, bytesToRead);
-		disconnect();
-		return 0;
-	}
-	if (bytesRead < 0) {
-		return error("NetAudioDevice: read failed: ", strerror(errno));
+	char *cbuf = (char *) frameBuffer;
+	int bytesRead = 0;
+	while (bytesRead < bytesToRead) {
+		int bytesNeeded = bytesToRead - bytesRead;
+//		printf("NetAudioDevice::doGetFrames: reading %d bytes from stream...\n", bytesNeeded);
+		int bytes = ::read(device(), &cbuf[bytesRead], bytesNeeded);
+//		printf("NetAudioDevice::doGetFrames: read %d bytes\n", bytes);
+		if (bytes == 0) {
+			printf("NetAudioDevice::doGetFrames: connection broke -- disconnecting\n");
+			memset(frameBuffer, 0, bytesToRead);
+			disconnect();
+			return 0;
+		}
+		if (bytes < 0) {
+			return error("NetAudioDevice: read failed: ", strerror(errno));
+		}
+		bytesRead += bytes;
 	}
 	int framesRead = bytesRead / getDeviceBytesPerFrame();
 	incrementFrameCount(framesRead);
