@@ -29,7 +29,7 @@ MIXN::~MIXN()
   delete [] in;
 }
 
-int MIXN::init(float p[], short n_args)
+int MIXN::init(float p[], int n_args)
 {
   // p0 = outsk
   // p1 = insk
@@ -43,11 +43,12 @@ int MIXN::init(float p[], short n_args)
   if (p[2] < 0.0) p[2] = -p[2] - p[1];
 
   outskip = p[0];
+  start = outskip;
   inskip = p[1];
   dur = p[2];
 
-  nsamps = rtsetoutput(outskip, dur, this);
   rtsetinput(inskip, this);
+  nsamps = rtsetoutput(outskip, dur, this);
 
   inchan = p[3];
   amp = p[4];

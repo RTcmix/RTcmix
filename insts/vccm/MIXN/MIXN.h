@@ -5,10 +5,11 @@ class MIXN : public Instrument {
 	int skip;
 	int amp_count;
 	float inskip,outskip,dur,inchan;  // Put here so can be rtupdatable
+	float start;
 
 public:
 	MIXN();
 	virtual ~MIXN();
-	int init(float*, short);
+	int init(float*, int);
 	int run();
 	};
