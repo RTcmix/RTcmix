@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <math.h>
 #include "../H/complexf.h"
 #include "../H/ugens.h"
@@ -159,7 +160,7 @@ complex y;
 	return(z);
 }
 
-qnew(freq2,q)                                          
+void qnew(freq2,q)                                          
 float freq2,*q;
 {
 	float w,xlp,pa,pc,c;

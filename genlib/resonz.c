@@ -23,7 +23,7 @@ float resonz(float sig, float *a)
       return(z);
 }
 
-float bresonz(float *sig, float *a, float *out, int count)
+void bresonz(float *sig, float *a, float *out, int count)
 {
 	float z;
 	int i;

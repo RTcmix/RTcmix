@@ -155,7 +155,7 @@ getfsample(double sampleno, float *c, int input)
 	    *(c+j) = *(array+i) + fraction * 
 	      (*(array+i+sfchans(&sfdesc[input])) - *(array+i));
 	  }
-	return(1);
 	}
+	return(1);
 }
 

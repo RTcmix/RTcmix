@@ -1,8 +1,8 @@
+#include "../H/ugens.h"
 #include "../H/spray.h"
 
-sprayinit(slist,size,seed)
-struct slist *slist;
-float seed;
+void
+sprayinit(struct slist *slist, int size, float seed)
 {
 	int i;
 	slist->size = size;
@@ -12,8 +12,9 @@ float seed;
 		slist->array[i] = i;
 		}
 }
-spray(slist)
-struct  slist *slist;
+
+int
+spray(struct slist *slist)
 {
 	int n,i,j;
 	float rrand();
@@ -30,3 +31,4 @@ struct  slist *slist;
 	}
 	return(j);
 }
+

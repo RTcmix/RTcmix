@@ -5,7 +5,10 @@
 #define PAUL_FIX                /* PL sent this fall '98? */
 
 #include <stdio.h>
+#include <ugens.h>
 
+
+void
 setline(float *p, short n_args, int length, float *array)
 {
    double increm;

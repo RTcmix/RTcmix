@@ -11,7 +11,7 @@ sbrrand(unsigned x)
 	randx = x;
 }
 
-int
+void
 brrand(float amp, float *a, int j)
 {
 	int k;
