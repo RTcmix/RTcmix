@@ -25,6 +25,7 @@ void RMS :: clear()
 {
    lastOutput = 0.0;
    counter = 0;
+   subLowFilter->clear();
 }
 
 
