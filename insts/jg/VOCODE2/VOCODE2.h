@@ -1,6 +1,6 @@
 #include <objlib.h>
 
-#define MAXFILTS 30
+#define MAXFILTS 200
 
 class VOCODE2 : public Instrument {
    int       skip, numfilts, branch;
