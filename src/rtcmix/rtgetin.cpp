@@ -26,11 +26,12 @@
 /* ----------------------------------------------------------- get_aux_in --- */
 static int
 get_aux_in(
-      BufPtr   dest,             /* interleaved buffer from inst */
-      int      dest_chans,       /* number of chans interleaved */
-      int      dest_frames,      /* frames in interleaved buffer */
-      short    src_chan_list[],  /* list of auxin-bus chan numbers from inst */
-      short    src_chans)        /* number of auxin-bus chans to copy */
+      BufPtr      dest,             /* interleaved buffer from inst */
+      int         dest_chans,       /* number of chans interleaved */
+      int         dest_frames,      /* frames in interleaved buffer */
+      short       src_chan_list[],  /* list of auxin-bus chan nums from inst */
+      short       src_chans,        /* number of auxin-bus chans to copy */
+      Instrument  *inst)
 {
    assert(dest_chans >= src_chans);
 
@@ -39,6 +40,11 @@ get_aux_in(
 
       BufPtr src = aux_buffer[chan];
       assert(src != NULL);
+
+      /* The inst might be playing only the last part of a buffer. If so,
+         we want it to read the corresponding segment of the aux buffer.
+      */
+      src += inst->output_offset;
 
       copy_one_buf_to_interleaved_buf(dest, src, dest_chans, n, dest_frames);
    }
@@ -50,11 +56,12 @@ get_aux_in(
 /* --------------------------------------------------------- get_audio_in --- */
 static int
 get_audio_in(
-      BufPtr   dest,             /* interleaved buffer from inst */
-      int      dest_chans,       /* number of chans interleaved */
-      int      dest_frames,      /* frames in interleaved buffer */
-      short    src_chan_list[],  /* list of in-bus chan numbers from inst */
-      short    src_chans)        /* number of in-bus chans to copy */
+      BufPtr      dest,             /* interleaved buffer from inst */
+      int         dest_chans,       /* number of chans interleaved */
+      int         dest_frames,      /* frames in interleaved buffer */
+      short       src_chan_list[],  /* list of in-bus chan numbers from inst */
+      short       src_chans,        /* number of in-bus chans to copy */
+      Instrument  *inst)
 {
    int   audioin_chans = 2;  // FIXME: where do we get this? rtinput pfield
 
@@ -66,6 +73,11 @@ get_audio_in(
 
       BufPtr src = audioin_buffer[chan];
       assert(src != NULL);
+
+      /* The inst might be playing only the last part of a buffer. If so,
+         we want it to read the corresponding segment of the audioin buffer.
+      */
+      src += inst->output_offset;
 
       copy_one_buf_to_interleaved_buf(dest, src, dest_chans, n, dest_frames);
    }
@@ -309,14 +321,14 @@ rtgetin(float      *inarr,         /* interleaved array of <inputchans> */
 
       assert(auxin_count > 0 && in_count == 0);
 
-      status = get_aux_in(inarr, inchans, frames, auxin, auxin_count);
+      status = get_aux_in(inarr, inchans, frames, auxin, auxin_count, inst);
    }
    else if (inputFileTable[fdindex].is_audio_dev) {  /* input from mic/line */
       short *in = inst->bus_config->in;              /* in channel list */
 
       assert(in_count > 0 && auxin_count == 0);
 
-      status = get_audio_in(inarr, inchans, frames, in, in_count);
+      status = get_audio_in(inarr, inchans, frames, in, in_count, inst);
    }
    else {                                            /* input from file */
       short *in = inst->bus_config->in;              /* in channel list */
