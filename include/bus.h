@@ -1,6 +1,10 @@
 #ifndef _BUS_H_ 
 #define _BUS_H_ 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
 #define MAXBUS 16
 
 typedef enum {
@@ -61,4 +65,8 @@ struct _CheckQueue {
 /* exported functions */
 ErrCode parse_bus_name(char*, BusType*, int*, int*);
 
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 #endif /* _BUS_H_ */
