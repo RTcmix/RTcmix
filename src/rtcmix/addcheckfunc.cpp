@@ -291,7 +291,7 @@ RTcmix::registerFunction(const char *funcName, const char *dsoPath)
 }
 
 #include <dirent.h>
-#include "load_utils.h"
+#include "DynamicLib.h"
 
 /* ------------------------------------------------------ registerDSOs -- */
 // This is called at initialization time to scan a supplied semicolon-separated
@@ -326,16 +326,16 @@ RTcmix::registerDSOs(const char *pathList)
 				if (strncmp(entry->d_name, "lib", 3) == 0) {
 					char fullPath[1024];
 					sprintf(fullPath, "%s/%s", path, entry->d_name);
-					void *dso = find_dso(fullPath);
-					if (dso) {
-						RegisterFunction registerMe = (RegisterFunction) find_symbol(dso, "registerSelf");
+					DynamicLib dso;
+					if (dso.load(fullPath) == 0) {
+						RegisterFunction registerMe = NULL;
 //						printf("opened DSO '%s'\n", fullPath);
-						if (registerMe)
+						if (dso.loadFunction(&registerMe, "registerSelf") == 0)
 						{
 //							printf("\tfound register function.\n");
 							(*registerMe)();
 						}
-						unload_dso(dso);
+						dso.unload();
 					}
 				}
 			}

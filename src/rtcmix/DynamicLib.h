@@ -1,6 +1,7 @@
 #ifndef _DYNAMICLIB_H_
 #define _DYNAMICLIB_H_
 
+#include <stdlib.h>
 #include "load_utils.h"
 
 class DynamicLib {

@@ -15,7 +15,7 @@
 #include <PField.h>
 #include <ugens.h>		// for warn, die
 
-#include "load_utils.h"
+#include "DynamicLib.h"
 
 #if !defined(SHAREDLIBDIR)
 #error "Compile flags are missing macro for SHAREDLIBDIR"
@@ -52,20 +52,19 @@ makeconnection(const Arg args[], const int nargs)
 	char loadPath[1024];
 	sprintf(loadPath, "%s/lib%sconn.so", SHAREDLIBDIR, selector);
 
-	void *dso = find_dso(loadPath);
-	if (dso) {
-		creator = (HandleCreator) find_symbol(dso, "create_handle");
-		if (creator) {
+	DynamicLib theDSO;
+	if (theDSO.load(loadPath) == 0) {
+		if (theDSO.loadFunction(&creator, "create_handle") == 0) {
 			// Pass 2nd thru last args, leaving off selector
 			handle = (*creator)(&args[1], nargs - 1);
 		}
 		else {
-			die("makeconnection", "symbol lookup failed: %s\n", get_dso_error());
-			unload_dso(dso);
+			die("makeconnection", "symbol lookup failed: %s\n", theDSO.error());
+			theDSO.unload();
 		}
 	}
 	else {
-		die("makeconnection", "dso load failed: %s\n", get_dso_error());
+		die("makeconnection", "dso load failed: %s\n", theDSO.error());
 	}
 	return handle;
 }
