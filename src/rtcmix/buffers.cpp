@@ -8,21 +8,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <globals.h>
+
+#include <RTcmix.h>
+#include <buffers.h>
+#include <bus.h>
 #include <assert.h>
 
 /* #define NDEBUG */     /* define to disable asserts */
-
-/* local prototypes */
-static BufPtr allocate_buf_ptr(int nsamps);
-
 
 
 /* -------------------------------------- copy_interleaved_buf_to_one_buf --- */
 /* Copy the specified channel of an interleaved buffer to a one-channel
    buffer. Buffers must be of same type (e.g., float).
 */
-INLINE void
+void
 copy_interleaved_buf_to_one_buf(
       BufPtr         dest,            /* buffer containing one chan */
       const BufPtr   src,             /* interleaved buffer */
@@ -41,7 +40,7 @@ copy_interleaved_buf_to_one_buf(
 /* Copy a one-channel buffer into the specified channel of an interleaved
    buffer. Buffers must be of same type (e.g., float).
 */
-INLINE void
+void
 copy_one_buf_to_interleaved_buf(
       BufPtr         dest,            /* interleaved buffer */
       const BufPtr   src,             /* buffer containing one chan */
@@ -60,7 +59,7 @@ copy_one_buf_to_interleaved_buf(
 /* Copy one channel between two interleaved buffers. Buffers must be
    of same type (e.g., float).
 */
-INLINE void
+void
 copy_interleaved_buf_to_buf(
       BufPtr         dest,            /* interleaved buffer */
       const BufPtr   src,             /* interleaved buffer */
@@ -83,9 +82,8 @@ copy_interleaved_buf_to_buf(
 
 
 /* -------------------------------------------------------- init_buf_ptrs --- */
-/* Called from main. */
 void
-init_buf_ptrs()
+RTcmix::init_buf_ptrs()
 {
    int   i;
 
@@ -96,12 +94,12 @@ init_buf_ptrs()
    }
 }
 
-
 /* ------------------------------------------------ clear_audioin_buffers --- */
 // FIXME: not sure we need to do this ever  -JGG
 /* Called from inTraverse. */
-INLINE void
-clear_audioin_buffers()
+#ifdef NO_LONGER_USED
+void
+RTcmix::clear_audioin_buffers()
 {
    int   i, j;
 
@@ -112,12 +110,12 @@ clear_audioin_buffers()
             buf[j] = 0.0;
    }
 }
-
+#endif
 
 /* ---------------------------------------------------- clear_aux_buffers --- */
 /* Called from inTraverse. */
-INLINE void
-clear_aux_buffers()
+void
+RTcmix::clear_aux_buffers()
 {
    int   i, j;
 
@@ -129,11 +127,10 @@ clear_aux_buffers()
    }
 }
 
-
 /* ------------------------------------------------- clear_output_buffers --- */
 /* Called from inTraverse. */
-INLINE void
-clear_output_buffers()
+void
+RTcmix::clear_output_buffers()
 {
    int   i, j;
 
@@ -146,7 +143,7 @@ clear_output_buffers()
 
 
 /* ----------------------------------------------------- allocate_buf_ptr --- */
-static INLINE BufPtr
+static BufPtr
 allocate_buf_ptr(int nsamps)       /* samples, not frames */
 {
    BufPtr buf_ptr;
@@ -161,15 +158,15 @@ allocate_buf_ptr(int nsamps)       /* samples, not frames */
 /* Allocate one of the global audio input bus buffers.
    Called from rtinput.
 */
-INLINE int
-allocate_audioin_buffer(short chan, int nsamps)
+int
+RTcmix::allocate_audioin_buffer(short chan, int nsamps)
 {
    BufPtr buf_ptr;
 
    assert(chan >= 0 && chan < MAXBUS);
 
    if (audioin_buffer[chan] == NULL) {
-      buf_ptr = allocate_buf_ptr(nsamps);
+      buf_ptr = ::allocate_buf_ptr(nsamps);
       assert(buf_ptr != NULL);
       audioin_buffer[chan] = buf_ptr;
    }
@@ -182,15 +179,15 @@ allocate_audioin_buffer(short chan, int nsamps)
 /* Allocate one of the global aux bus buffers.
    Called from bus_config.
 */
-INLINE int
-allocate_aux_buffer(short chan, int nsamps)
+int
+RTcmix::allocate_aux_buffer(short chan, int nsamps)
 {
    BufPtr buf_ptr;
 
    assert(chan >= 0 && chan < MAXBUS);
 
    if (aux_buffer[chan] == NULL) {
-      buf_ptr = allocate_buf_ptr(nsamps);
+      buf_ptr = ::allocate_buf_ptr(nsamps);
       assert(buf_ptr != NULL);
       aux_buffer[chan] = buf_ptr;
    }
@@ -203,15 +200,15 @@ allocate_aux_buffer(short chan, int nsamps)
 /* Allocate one of the global out bus buffers.
    Called from rtsetparams.
 */
-INLINE int
-allocate_out_buffer(short chan, int nsamps)
+int
+RTcmix::allocate_out_buffer(short chan, int nsamps)
 {
    BufPtr buf_ptr;
 
    assert(chan >= 0 && chan < MAXBUS);
 
    if (out_buffer[chan] == NULL) {
-      buf_ptr = allocate_buf_ptr(nsamps);
+      buf_ptr = ::allocate_buf_ptr(nsamps);
       assert(buf_ptr != NULL);
       out_buffer[chan] = buf_ptr;
    }
