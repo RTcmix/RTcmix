@@ -1,9 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ugens.h>
-
-extern FILE *infile_desc[50];   /* contains file descriptors for data files */
-
+#include <globals.h>
 
 /* gen2 lets the user fill a function table with numbers specified in the
    score or in a text file. There are two "API's" for this: the original
@@ -82,21 +80,26 @@ gen2(struct gen *gen)
       num_elements = slots;
    }
    else {                       /* old way */
+      int   fno;
       float val;
       char  inval[128];
-      FILE  *in_desc;
+      FILE  *in_desc = NULL;
 
       /* input datafile is stdin if pval[0] = 0 */
-      if (gen->pvals[0] == 0)
+      fno = (int) gen->pvals[0];
+      if (fno == 0)
          in_desc = stdin;
+      else if (fno <= MAX_INFILE_DESC)
+         in_desc = infile_desc[fno];
       else
-         in_desc = infile_desc[(int) gen->pvals[0]];
+         die("gen2", "Data file number must be between 1 and %d",
+                                                        MAX_INFILE_DESC);
 
-      if (in_desc == NULL)         /* Stop if infile seek failed */
-         die("gen2", "You haven't opened an input data file.");
+      if (in_desc == NULL)
+         die("gen2", "Call infile() to open the data file before using gen2.");
 
       i = 0;
-      if (gen->pvals[0] == 0) {    /* if reading from stdin */
+      if (in_desc == stdin) {
          while (fscanf(in_desc, "%f", &val) != EOF) {
             if (i < gen->size)
                gen->array[i] = val;
@@ -114,10 +117,10 @@ gen2(struct gen *gen)
          }
       }
       if (i > gen->size)
-         warn("gen2", "Out of array space!");
+         warn("gen2", "Table not large enough to hold all the data in file.");
 
       num_elements = (i <= gen->size) ? i : gen->size;
-      advise("gen2", "%d values loaded into array.", num_elements);
+      advise("gen2", "%d values loaded into table.", num_elements);
 
       i--;
       while (++i < gen->size)      /* fill remainder (if any) with zeros */

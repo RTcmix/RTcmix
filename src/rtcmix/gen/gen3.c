@@ -1,24 +1,23 @@
 #include <stdio.h>
 #include <math.h>
-#include "../H/ugens.h"
-
-extern FILE *infile_desc[50];   /* contains file descriptors for data files */
+#include <ugens.h>
+#include <globals.h>
 
 double
 gen3(struct gen *gen)
 {
    float val;
-   int i = 0;
+   int fno, i = 0;
    FILE *in_desc;
 
-   /* input datafile is stdin if pval[0] = 0 */
+   fno = (int) gen->pvals[0];
+   if (fno < 1 || fno > MAX_INFILE_DESC)
+      die("gen3", "Data file number must be between 1 and %d", MAX_INFILE_DESC);
 
-   in_desc = infile_desc[(int) gen->pvals[0]];
+   in_desc = infile_desc[fno];
+   if (in_desc == NULL)
+      die("gen3", "Call infile() to open the data file before using gen3.");
 
-   if (in_desc == NULL) {    /* Stop if infile seek failed */
-      fprintf(stderr, "Input file error. Gen03 exited.\n");
-      return -1.0;
-   }
    /* read input file until EOF */
 
    while (fread(&val, sizeof(val), 1, in_desc)) {
@@ -28,9 +27,10 @@ gen3(struct gen *gen)
       i++;
    }
    if (i > gen->size)
-      fprintf(stderr, "Out of array space in gen03!!\n");
+      warn("gen3", "Table not large enough to hold all the data in file.");
 
-   printf("%d values loaded into array.\n", (i <= gen->size) ? i : gen->size);
+   advise("gen3", "%d values loaded into table.",
+                (i <= gen->size) ? i : gen->size);
 
    i--;
    while (++i < gen->size)      /* fill remainder (if any) with zeros */
