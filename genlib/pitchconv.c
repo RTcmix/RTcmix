@@ -7,7 +7,7 @@
 #include <ugens.h>
 
 // midC freq is 440.0 * pow(2.0, -9.0 / 12.0) = 261.625...
-#define MIDC_OFFSET 261.62556530059868 / 256.0
+#define MIDC_OFFSET (261.62556530059868 / 256.0)
 #define LOG_OF_2    0.69314718055994529
 
 double cpsoct(double oct)
@@ -17,7 +17,7 @@ double cpsoct(double oct)
 
 double octcps(double cps)
 {
-	return log(cps / MIDC_OFFSET) / LOG_OF_2; 
+	return log(cps / MIDC_OFFSET) / LOG_OF_2;
 }
 
 double cpspch(double pch)
