@@ -11,6 +11,7 @@
 #include "Option.h"
 #include "conf/Config.h"
 #include <ugens.h>         // FIXME: pull all this in just for warn()?
+#include <iostream>
 
 #define DEVICE_MAX   64
 #define DSOPATH_MAX  PATH_MAX * 2
@@ -220,6 +221,24 @@ char *Option::rcName(const char *rcName)
 	return _rcName;
 }
 
+void Option::dump()
+{
+	cout << kOptionAudio << ": " << _audio << endl;
+	cout << kOptionPlay << ": " << _play << endl;
+	cout << kOptionRecord << ": " << _record << endl;
+	cout << kOptionClobber << ": " << _clobber << endl;
+	cout << kOptionPrint << ": " << _print << endl;
+	cout << kOptionReportClipping << ": " << _reportClipping << endl;
+	cout << kOptionCheckPeaks << ": " << _checkPeaks << endl;
+	cout << kOptionBufferFrames << ": " << _bufferFrames << endl;
+	cout << kOptionDevice << ": " << _device << endl;
+	cout << kOptionInDevice << ": " << _inDevice << endl;
+	cout << kOptionOutDevice << ": " << _outDevice << endl;
+	cout << kOptionDSOPath << ": " << _dsoPath << endl;
+	cout << kOptionHomeDir << ": " << _homeDir << endl;
+	cout << kOptionRCName << ": " << _rcName << endl;
+}
+
 
 // ----------------------------------------------------------------------------
 // These functions are for C code that needs to query options.
@@ -309,5 +328,11 @@ void set_string_option(const char *option_name, const char *value)
 		Option::dsoPath(value);
 	else
 		assert(0 && "unsupported option name");
+}
+
+// This is so we can call dump from within GDB.
+void option_dump()
+{
+	Option::dump();
 }
 

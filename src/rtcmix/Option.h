@@ -47,6 +47,8 @@
 #define kOptionInDevice         "indevice"
 #define kOptionOutDevice        "outdevice"
 #define kOptionDSOPath          "dso_path"
+#define kOptionRCName           "rcname"
+#define kOptionHomeDir          "homedir"
 
 
 #ifdef __cplusplus
@@ -105,6 +107,8 @@ public:
 	static char *rcName() { return _rcName; }
 	static char *rcName(const char *rcName);
 
+	static void dump();
+
 private:
 	static bool _audio;
 	static bool _play;
@@ -137,6 +141,8 @@ double get_double_option(const char *option_name);
 void set_double_option(const char *option_name, double value);
 char *get_string_option(const char *option_name);
 void set_string_option(const char *option_name, const char *value);
+
+void option_dump(void);
 
 #ifdef __cplusplus
 } // extern "C"
