@@ -10,7 +10,6 @@
 #include <assert.h>
 #include <rtdefs.h>       // in RTcmix/H
 
-
 // #define NDEBUG     /* define to disable asserts */
 
 #define DEFAULT_CONTROL_RATE  200
@@ -39,18 +38,6 @@
 
 #define MY_FLOAT      float
 #define MY_FLOAT_SIZE 4
-
-/* States for Envelopes, etc. */
-
-#ifdef USE_ADSR
-#define ATTACK  0 
-#define DECAY   1 
-#define SUSTAIN 2 
-#define RELEASE 3 
-#define END     4
-#endif
-
-#include <rtupdate.h>  /* DJT */
 
 #endif
 

@@ -9,16 +9,13 @@
 
 #include "Envelope.h"    
 
-#define HOLDING  0
-#define RAMPING  1
-
 
 Envelope :: Envelope()
 {
    target = (MY_FLOAT) 0.0;
    value = (MY_FLOAT) 0.0;
    rate = (MY_FLOAT) 0.001;
-   state = HOLDING;
+   state = ENV_HOLDING;
 }
 
 
@@ -31,7 +28,7 @@ void Envelope :: keyOn()
 {
    target = (MY_FLOAT) 1.0;
    if (value != target)
-      state = RAMPING;
+      state = ENV_RAMPING;
 }
 
 
@@ -39,7 +36,7 @@ void Envelope :: keyOff()
 {
    target = (MY_FLOAT) 0.0;
    if (value != target)
-      state = RAMPING;
+      state = ENV_RAMPING;
 }
 
 
@@ -69,33 +66,39 @@ void Envelope :: setTarget(MY_FLOAT aTarget)
 {
    target = aTarget;
    if (value != target)
-      state = RAMPING;
+      state = ENV_RAMPING;
 }
 
 
 void Envelope :: setValue(MY_FLOAT aValue)
 {
-   state = HOLDING;
+   state = ENV_HOLDING;
    target = aValue;
    value = aValue;
 }
 
 
+int Envelope :: getState()
+{
+   return state;
+}
+
+
 MY_FLOAT Envelope :: tick()
 {
-   if (state == RAMPING) {
+   if (state == ENV_RAMPING) {
       if (target > value) {
          value += rate;
          if (value >= target) {
             value = target;
-            state = HOLDING;
+            state = ENV_HOLDING;
          }
       }
       else {
          value -= rate;
          if (value <= target) {
             value = target;
-            state = HOLDING;
+            state = ENV_HOLDING;
          }
       }
    }

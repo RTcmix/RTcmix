@@ -9,6 +9,15 @@
 
 #include "Envelope.h"
 
+/* Envelope states (returned by getState and informTick methods).
+   Note that these differ from the states in the Envelope class.
+*/
+#define ADSR_ATTACK  0
+#define ADSR_DECAY   1
+#define ADSR_SUSTAIN 2
+#define ADSR_RELEASE 3
+#define ADSR_END     4
+
 class ADSR : public Envelope
 {
   protected:  

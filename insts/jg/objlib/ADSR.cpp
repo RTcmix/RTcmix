@@ -2,10 +2,9 @@
    This is the traditional ADSR (Attack, Decay, Sustain, Release) envelope.
    It responds to simple KeyOn and KeyOff messages, keeping track of it's
    state. There are two tick (update value) methods, one returns the value,
-   and other returns the state (0 = A, 1 = D, 2 = S, 3 = R).
+   and the other returns the state.
 */
 
-#define USE_ADSR 1
 #include "ADSR.h"    
 
 
@@ -17,7 +16,7 @@ ADSR :: ADSR() : Envelope()
    decayRate = (MY_FLOAT) 0.001;
    sustainLevel = (MY_FLOAT) 0.5;
    releaseRate = (MY_FLOAT) 0.01;
-   state = ATTACK;
+   state = ADSR_ATTACK;
 }
 
 
@@ -31,7 +30,7 @@ void ADSR :: keyOn()
 {
    target = (MY_FLOAT) 1.0;
    rate = attackRate;
-   state = ATTACK;
+   state = ADSR_ATTACK;
 }
 
 
@@ -39,7 +38,7 @@ void ADSR :: keyOff()
 {
    target = (MY_FLOAT) 0.0;
    rate = releaseRate;
-   state = RELEASE;
+   state = ADSR_RELEASE;
 }
 
 
@@ -134,13 +133,13 @@ void ADSR :: setTarget(MY_FLOAT aTarget)
 {
    target = aTarget;
    if (value < target) {
-      state = ATTACK;
+      state = ADSR_ATTACK;
       this->setSustainLevel(target);
       rate = attackRate;
    }
    if (value > target) {
       this->setSustainLevel(target);
-      state = DECAY;
+      state = ADSR_DECAY;
       rate = decayRate;
    }
 }
@@ -148,7 +147,7 @@ void ADSR :: setTarget(MY_FLOAT aTarget)
 
 void ADSR :: setValue(MY_FLOAT aValue)
 {
-   state = SUSTAIN;
+   state = ADSR_SUSTAIN;
    target = aValue;
    value = aValue;
    this->setSustainLevel(aValue);
@@ -158,28 +157,28 @@ void ADSR :: setValue(MY_FLOAT aValue)
 
 MY_FLOAT ADSR :: tick()
 {
-   if (state == ATTACK) {
+   if (state == ADSR_ATTACK) {
       value += rate;
       if (value >= target) {
          value = target;
          rate = decayRate;
          target = sustainLevel;
-         state = DECAY;
+         state = ADSR_DECAY;
       }
    }
-   else if (state == DECAY) {
+   else if (state == ADSR_DECAY) {
       value -= decayRate;
       if (value <= sustainLevel) {
          value = sustainLevel;
          rate = (MY_FLOAT) 0.0;
-         state = SUSTAIN;
+         state = ADSR_SUSTAIN;
       }
    }
-   else if (state == RELEASE) {
+   else if (state == ADSR_RELEASE) {
       value -= releaseRate;
       if (value <= 0.0) {
          value = (MY_FLOAT) 0.0;
-         state = END;
+         state = ADSR_END;
       }
    }
    return value;

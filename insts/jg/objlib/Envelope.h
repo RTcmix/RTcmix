@@ -11,6 +11,10 @@
 
 #include "objdefs.h"
 
+/* Envelope states (returned by getState and informTick methods) */
+#define ENV_HOLDING  0
+#define ENV_RAMPING  1
+
 class Envelope
 {
   protected:  
@@ -27,6 +31,7 @@ class Envelope
     void setTime(MY_FLOAT aTime);
     void setTarget(MY_FLOAT aTarget);
     void setValue(MY_FLOAT aValue);
+    int getState();
     MY_FLOAT tick();
     int informTick();
     MY_FLOAT lastOut();
