@@ -8,7 +8,7 @@ typedef enum {
 class DISTORT : public Instrument {
    bool        usefilt, bypass;
    int         nargs, inchan, branch, skip;
-   float       amp, gain, prevcf, pctleft;
+   float       amp, gain, cutoff, pctleft;
    float       *in;
    DistortType type;
    Butter      *filt;

@@ -51,15 +51,13 @@ DISTORT :: ~DISTORT()
 
 int DISTORT :: init(double p[], int n_args)
 {
-   float outskip, inskip, dur, cf;
-
    nargs = n_args;
-   outskip = p[0];
-   inskip = p[1];
-   dur = p[2];
+   float outskip = p[0];
+   float inskip = p[1];
+   float dur = p[2];
    type = (DistortType) p[4];
-   cf = n_args > 6 ? p[6] : 0.0;                   /* filter disabled */
-   inchan = n_args > 7 ? (int) p[7] : 0;           /* default is chan 0 */
+   cutoff = n_args > 6 ? p[6] : 0.0;               // filter disabled
+   inchan = n_args > 7 ? (int) p[7] : 0;           // default is chan 0
 
    if (rtsetinput(inskip, this) != 0)
       return DONT_SCHEDULE;
@@ -72,10 +70,11 @@ int DISTORT :: init(double p[], int n_args)
       return die("DISTORT",
                  "Distortion type must be 1 (soft clip) or 2 (tube).");
 
-   filt = new Butter();       // create it no matter what
-   usefilt = (cf > 0.0);
-   if (usefilt)
-      filt->setLowPass(cf);
+   usefilt = (cutoff > 0.0);
+   if (usefilt) {
+      filt = new Butter();
+      filt->setLowPass(cutoff);
+   }
 
    float *function = floc(1);
    if (function) {
@@ -173,10 +172,9 @@ int DISTORT :: run()
             amp *= amptable->tick(currentFrame(), 1.0);
          gain = p[5];
          if (usefilt) {
-            float thiscf = p[6];
-            if (thiscf != prevcf) {
-               filt->setLowPass(thiscf);
-               prevcf = thiscf;
+            if (p[6] != cutoff) {
+               cutoff = p[6];
+               filt->setLowPass(cutoff);
             }
          }
          pctleft = nargs > 8 ? p[8] : 0.5;      // default is center
