@@ -51,15 +51,15 @@ int LSFLUTE::init(float p[], short n_args)
 //	mdelpartset(del2ptr,dl2ptr,imax);
 
 //	srrand(0.1);
-	length1 = p[3];
-	length2 = p[4];
+	length1 = (int)p[3];
+	length2 = (int)p[4];
 
 	oldsig = 0; /* for the filter */
 
 	amp = p[5];
 	namp = p[2];
 	spread = p[6];
-	skip = SR/(float)resetval;
+	skip = (int)(SR/(float)resetval);
 
 	return(nsamps);
 }
@@ -71,6 +71,8 @@ int LSFLUTE::run()
 	float aamp,oamp;
 	float sig,del1sig;
 	int branch;
+
+	Instrument::run();
 
 	branch = 0;
 	for (i = 0; i < chunksamps; i++) {
@@ -97,7 +99,7 @@ int LSFLUTE::run()
 		oldsig = sig;
 		delput(sig,del1ptr,dl1ptr);
 
-		if (NCHANS == 2) {
+		if (outputchans == 2) {
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
 			}
@@ -114,5 +116,7 @@ makeLSFLUTE()
 	LSFLUTE *inst;
 
 	inst = new LSFLUTE();
+	inst->set_bus_config("LSFLUTE");
+
 	return inst;
 }

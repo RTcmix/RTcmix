@@ -70,7 +70,7 @@ int VSFLUTE::init(float p[], short n_args)
 	amp = p[7];
 	namp = p[2];
 	spread = p[12];
-	skip = SR/(float)resetval;
+	skip = (int)(SR/(float)resetval);
 	phs1 = 0.0;
 	phs2 = 0.0;
 
@@ -86,6 +86,8 @@ int VSFLUTE::run()
 	float length1,length2;
 	float si1,si2;
 	int branch;
+
+	Instrument::run();
 
 	branch = 0;
 	for (i = 0; i < chunksamps; i++) {
@@ -112,7 +114,7 @@ int VSFLUTE::run()
 		oldsig = sig;
 		delput(sig,del1,dl1);
 
-		if (NCHANS == 2) {
+		if (outputchans == 2) {
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
 			}
@@ -129,5 +131,7 @@ makeVSFLUTE()
 	VSFLUTE *inst;
 
 	inst = new VSFLUTE();
+	inst->set_bus_config("VSFLUTE");
+
 	return inst;
 }

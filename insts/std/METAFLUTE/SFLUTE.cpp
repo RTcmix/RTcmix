@@ -54,8 +54,8 @@ int SFLUTE::init(float p[], short n_args)
 	del2ptr = del2;
 
 //	srrand(0.1);
-	length1 = p[3];
-	length2 = p[4];
+	length1 = (int)p[3];
+	length2 = (int)p[4];
 	olength1 = length1;
 	olength2 = length2;
 
@@ -64,7 +64,7 @@ int SFLUTE::init(float p[], short n_args)
 	amp = p[5];
 	namp = p[2];
 	spread = p[6];
-	skip = SR/(float)resetval;
+	skip = (int)(SR/(float)resetval);
 
 	return(nsamps);
 }
@@ -76,6 +76,8 @@ int SFLUTE::run()
 	float aamp,oamp;
 	float sig,del1sig;
 	int branch;
+
+	Instrument::run();
 
 	branch = 0;
 	for (i = 0; i < chunksamps; i++) {
@@ -98,7 +100,7 @@ int SFLUTE::run()
 		oldsig = sig;
 		delput(sig,del1,dl1);
 
-		if (NCHANS == 2) {
+		if (outputchans == 2) {
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
 			}
@@ -115,5 +117,7 @@ makeSFLUTE()
 	SFLUTE *inst;
 
 	inst = new SFLUTE();
+	inst->set_bus_config("SFLUTE");
+
 	return inst;
 }

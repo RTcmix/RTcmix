@@ -66,7 +66,7 @@ int BSFLUTE::init(float p[], short n_args)
 	amp = p[7];
 	namp = p[2];
 	spread = p[8];
-	skip = SR/(float)resetval;
+	skip = (int)(SR/(float)resetval);
 
 	return(nsamps);
 }
@@ -79,6 +79,8 @@ int BSFLUTE::run()
 	float sig,del1sig;
 	float length1,length2;
 	int branch;
+
+	Instrument::run();
 
 	branch = 0;
 	for (i = 0; i < chunksamps; i++) {
@@ -103,7 +105,7 @@ int BSFLUTE::run()
 		oldsig = sig;
 		delput(sig,del1,dl1);
 
-		if (NCHANS == 2) {
+		if (outputchans == 2) {
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
 			}
@@ -120,5 +122,7 @@ makeBSFLUTE()
 	BSFLUTE *inst;
 
 	inst = new BSFLUTE();
+	inst->set_bus_config("BSFLUTE");
+
 	return inst;
 }
