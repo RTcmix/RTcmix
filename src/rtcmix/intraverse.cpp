@@ -200,7 +200,13 @@ bool inTraverse(AudioDevice *device, void *arg)
 #ifdef ALLBUG
 			cout << "Calling configure()" << endl;
 #endif
-			Iptr->configure();
+			if (Iptr->configure(RTBUFSAMPS) != 0) {
+#ifdef DBUG
+				cerr << "Inst configure error: Iptr " << (void *) Iptr << " unref'd" << endl;
+#endif
+				Iptr->unref();
+				continue;
+			}
 		}
 
 		iBus = Iptr->getBusSlot();

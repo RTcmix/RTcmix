@@ -53,8 +53,8 @@ MYINST :: ~MYINST()
      - set input and output file (or bus) pointers
      - init makegen tables and other instrument-specific things
      - set control rate counter
-   If there's an error here (like invalid pfields), call die() to report
-   the error and exit. If you just want to warn the user and keep going,
+   If there's an error here (like invalid pfields), call and return die() to 
+   report the error. If you just want to warn the user and keep going,
    call warn() or rterror() with a message.
 */
 int MYINST :: init(float p[], int n_args)
@@ -89,7 +89,7 @@ int MYINST :: init(float p[], int n_args)
       program.
    */
    if (inchan >= inputChannels())
-      die("MYINST", "You asked for channel %d of a %d-channel file.",
+      return die("MYINST", "You asked for channel %d of a %d-channel file.",
                                                       inchan, inputChannels());
 
    /* Set up to use the array of amplitude multipliers created by setline
@@ -121,8 +121,7 @@ int MYINST :: init(float p[], int n_args)
 
 int MYINST :: configure()
 {
-	/* You MUST call the base class's configure method here. */
-	Instrument :: configure();
+	/* You no longer call the base class's configure method here! */
 	/*
       Allocate the input buffer. We do this here, instead of in the
       ctor or init method, to reduce the memory demands of the inst.
@@ -130,7 +129,7 @@ int MYINST :: configure()
 	if (in == NULL)
 		in = new float [RTBUFSAMPS * inputChannels()];
 
-	return 1;	/* we MUST return 1 on success, and 0 on failure */
+	return 0;	/* we MUST return 0 on success, and -1 on failure */
 }
 
 /* Called by the scheduler for every time slice in which this instrument
@@ -142,8 +141,7 @@ int MYINST :: run()
    float insig;
    float out[2];        /* Space for only 2 output chans! */
 
-   /* You MUST call the base class's run method here. */
-   Instrument::run();
+   /* You no longer call the base class's run method here! */
 
    /* FramesToRun() gives the number of sample frames -- 1 sample for each
       channel -- that we have to write during this scheduler time slice.

@@ -68,8 +68,6 @@ int WAVETABLE::run()
 	float out[2];
 	float tfreq,tamp,tdur,tspread;
 	
-	Instrument::run();
-
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch < 0) {
 			if (amptable)

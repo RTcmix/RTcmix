@@ -87,7 +87,7 @@ rterror(const char *inst_name, const char *format, ...)
 }
 
 /* ------------------------------------------------------------------ die --- */
-void
+int
 die(const char *inst_name, const char *format, ...)
 {
    char     buf[BUFSIZE];
@@ -109,6 +109,9 @@ die(const char *inst_name, const char *format, ...)
       closesf_noexit();
 
    exit(1);
+   return 0;	/*NOTREACHED*/
+#else
+   return DO_NOT_SCHEDULE;
 #endif /* EXIT_ON_ERROR */
 }
 

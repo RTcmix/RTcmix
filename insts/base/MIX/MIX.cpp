@@ -9,9 +9,8 @@
 #include "MIX.h"
 
 
-MIX::MIX() : Instrument()
+MIX::MIX() : Instrument(), in(NULL)
 {
-	in = NULL;
 	branch = 0;
 }
 
@@ -60,15 +59,16 @@ int MIX::init(float p[], int n_args)
 	return(nsamps);
 }
 
+int MIX::configure()
+{
+	in = new float [RTBUFSAMPS * inputchans];
+	return in ? 0 : -1;
+}
+
 int MIX::run()
 {
 	int i,j,k,rsamps;
 	float out[MAXBUS];
-
-	if (in == NULL)                 /* first time, so allocate it */
-		in = new float [RTBUFSAMPS * inputchans];
-
-	Instrument::run();
 
 	rsamps = chunksamps*inputchans;
 

@@ -71,7 +71,7 @@ struct gen {
            int nargs;          /* number of arguments passed in p array */
            float *pvals;       /* address of array of p values */
            float *array;       /* address of array to be loaded up */
-	   int slot;	       /* slot number, for fnscl test */
+           int slot;	       /* slot number, for fnscl test */
            };
 
 
@@ -199,7 +199,8 @@ void fnscl(struct gen *gen);
 void advise(const char *inst_name, const char *format, ...);
 void warn(const char *inst_name, const char *format, ...);
 void rterror(const char *inst_name, const char *format, ...);
-void die(const char *inst_name, const char *format, ...);
+/* returns DO_NOT_SCHEDULE if !EXIT_ON_ERROR */
+int die(const char *inst_name, const char *format, ...);
 
 // pgen function declarations
 float *ploc(int tag);

@@ -196,60 +196,60 @@ int Instrument::init(float p[], int n_args)
 #endif /* !RTUPDATE */
 }
 
-/* --------------------------------------------------------- configure --- */
+/* ----------------------------------------------------- configure(int) --- */
 
 // This function performs any internal configuration and allocation needed
 // to run the instrument following the call to init() and preceeding the
 // first call to run().  It allows the majority of the memory allocation to
 // be postponed until the note is run.  
 //
-//   If an instrument subclass redefines this method, it *must* call this at 
-//   the beginning of its own configure methods, like this:
-//  
-//   int MyInstrument::configure()
-//   {
-//      Instrument::configure();
-//	  ...
-//   }
 
 /* 
-   [This note used to be on Instrument::run]:
+   It is called by the RTcmix system only and never by derived classes.
    This method allocates the instrument's private interleaved output buffer
-   and inits a buffer status array.
+   and inits a buffer status array, then calls the virtual class-specific 
+   configure(void) method.
    Note: We allocate here, rather than in ctor or init method, because this
    will mean less memory overhead before the inst begins playing.
 */
 
-int Instrument::configure()
+int Instrument::configure(int bufsamps)
 {
-	assert(outbuf == NULL);	/* configure called twice?? */
-	outbuf = new BUFTYPE [RTBUFSAMPS * outputchans];
-	return 1;
+	assert(outbuf == NULL);	// configure called twice, or recursively??
+	outbuf = new BUFTYPE [bufsamps * outputchans];
+	return configure();		// Class-specific configuration.
+}
+
+/* ----------------------------------------------------- configure(void) --- */
+
+// This is the virtual function that derived classes override.  We supply a
+// default base class version because not all subclasses need/use this method.
+
+int Instrument::configure(void)
+{
+	return 0;	// 0 is success, -1 is failure.
 }
 
 /* ------------------------------------------------------------------ run --- */
-/* Instruments *must* call this at the beginning of their run methods,
-   like this:
-  
-   int MyInstrument::run()
-   {
-      Instrument::run();
-	  ...
-   }
- 
-   Note that Instrument::run no longer needs to allocate memory.  Now handled
-   by Instrument::configure.
+/* 
+   This function is called by the RTcmix system only and never by derived
+   classes.  This method calls the virtual class-specific run(void) method.
+   Note that Instrument::run() no longer needs to allocate memory.  Now handled
+   by Instrument::configure(int).
 */
 
-int Instrument::run()
+int Instrument::run(bool needsTo)
 {
-   obufptr = outbuf;
+   if (needsTo) {
+	   obufptr = outbuf;
 
-   for (int i = 0; i < outputchans; i++)
-      bufstatus[i] = 0;
+	   for (int i = 0; i < outputchans; i++)
+		  bufstatus[i] = 0;
 
-   needs_to_run = 0;
+	   needs_to_run = 0;
 
+	   return run();	// Class-specific run().
+   }
    return 0;
 }
 
@@ -308,8 +308,7 @@ int Instrument::exec(BusType bus_type, int bus)
 {
    int done;
 
-   if (needs_to_run)
-      run();
+   run(needs_to_run);	// Only does anything if true.
 
    addout(bus_type, bus);
 
@@ -332,9 +331,7 @@ int Instrument::exec(BusType bus_type, int bus)
 /* Replacement for the old rtaddout (in rtaddout.C, now removed).
    This one copies (not adds) into the inst's outbuf. Later the
    scheduler calls the insts addout method to add outbuf into the 
-   appropriate output buses. Inst's *must* call the class run method
-   before doing their own run stuff. (This is true even if they don't
-   use rtaddout.)
+   appropriate output buses. 
    Assumes that <samps> contains at least outputchans interleaved samples.
    Returns outputchans (i.e., number of samples written).
 */

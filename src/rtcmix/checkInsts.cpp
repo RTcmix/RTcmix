@@ -101,8 +101,10 @@ checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retv
 		
         // For non-interactive case, configure() is delayed until just
         // before instrument run time.
-        if (rtInteractive)
-           Iptr->configure();
+		if (rtInteractive) {
+		   if (Iptr->configure(RTBUFSAMPS) != 0)
+			   return -1;	// Configuration error!
+		}
 
         /* schedule instrument */
         Iptr->schedule(&rtHeap);
@@ -175,8 +177,10 @@ double checkInsts(const char *fname, double *pp, int n_args, void **inst)
          if (rv != DONT_SCHEDULE) { // only schedule if no init() error
             // For non-interactive case, configure() is delayed until just
             // before instrument run time.
-            if (rtInteractive)
-               Iptr->configure();
+            if (rtInteractive) {
+               if (Iptr->configure(RTBUFSAMPS) != 0)
+				   return -1;	// Configuration error!
+			}
 
             /* schedule instrument */
             Iptr->schedule(&rtHeap);

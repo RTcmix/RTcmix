@@ -102,15 +102,16 @@ private:
 
 public:
 	// Instruments should use these to access variables.
-	inline int		currentFrame() const { return cursamp; }
-	inline int		framesToRun() const { return chunksamps; }
-	inline int		nSamps() const { return nsamps; }
-	inline int		inputChannels() const { return inputchans; }
-	inline int		outputChannels() const { return outputchans; }
+	int				currentFrame() const { return cursamp; }
+	int				framesToRun() const { return chunksamps; }
+	int				nSamps() const { return nsamps; }
+	int				inputChannels() const { return inputchans; }
+	int				outputChannels() const { return outputchans; }
 	// Use this to increment cursamp inside single-frame run loops.
-	inline void		increment() { ++cursamp; }
+	void			increment() { ++cursamp; }
 	// Use this to increment cursamp inside block-based run loops.
-	inline void	    increment(int amount) { cursamp += amount; }
+	void	    	increment(int amount) { cursamp += amount; }
+	// These inlines are declared at bottom of this header.
 	inline float	getstart();
 	inline float	getdur();
 	inline int		getendsamp();
@@ -118,20 +119,25 @@ public:
 	inline void		setchunk(int);
 	inline void		set_ichunkstart(int);
 	inline void		set_output_offset(int);
+	inline const BusSlot *	getBusSlot() const;
 
 	void 			schedule(heap *rtHeap);
 	void			set_bus_config(const char *);
-	inline const BusSlot *	getBusSlot() const;
 	virtual int		setup(PFieldSet *);				// Called by checkInsts()
 	virtual int		init(float *, int, double *);	// Called by setup()
-	virtual int		configure();					// Called by inTraverse
-	virtual int		run();
+	int				configure(int bufsamps);		// Called by inTraverse
+	int				run(bool needsTo);
 	virtual int		update(float *, int, double *);	// Called by run()
 
 	int				exec(BusType bus_type, int bus);
 	void			addout(BusType bus_type, int bus);
 	bool			isDone() const { return cursamp >= nsamps; }
 	const char *	name() const { return _name; }
+
+	// These are called by the base class methods declared above.
+
+	virtual int		configure();	// Sometimes overridden in derived class.
+	virtual int		run() = 0;		// Always redefined in derived class.
 
 #ifdef RTUPDATE
    float			rtupdate(int, int);  // tag, p-field for return value

@@ -9,5 +9,6 @@ public:
 	MIX();
 	virtual ~MIX();
 	int init(float*, int);
+	int configure();
 	int run();
 	};

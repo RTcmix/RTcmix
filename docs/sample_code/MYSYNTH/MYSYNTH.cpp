@@ -48,7 +48,7 @@ MYSYNTH :: ~MYSYNTH()
      - init makegen tables and other instrument-specific things
      - set control rate counter
    If there's an error here (like invalid pfields), call die() to report
-   the error and exit. If you just want to warn the user and keep going,
+   the error and return. If you just want to warn the user and keep going,
    call warn() with a message.
 */
 int MYSYNTH :: init(float p[], int n_args)
@@ -108,8 +108,7 @@ int MYSYNTH :: run()
    int   i;
    float out[2];        /* Space for only 2 output chans! */
 
-   /* You MUST call the base class's run method here. */
-   Instrument::run();
+   /* You no longer call the base class's run method here! */
 
    /* FramesToRun() gives the number of sample frames -- 1 sample for each
       channel -- that we have to write during this scheduler time slice.
