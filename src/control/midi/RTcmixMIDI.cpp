@@ -66,7 +66,7 @@ int RTcmixMIDI::init()
 
 	int id = 0;
 	const char *devname = Option::midiInDevice();
-	if (devname) {
+	if (strlen(devname)) {
 		const int numdev = Pm_CountDevices();
 		for ( ; id < numdev; id++) {
 			const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
@@ -114,14 +114,14 @@ int RTcmixMIDI::init()
 void RTcmixMIDI::clear()
 {
 	for (int chan = 0; chan < 16; chan++) {
-		_bend[chan] = -INT_MAX;
-		_program[chan] = -INT_MAX;
-		_chanpress[chan] = -INT_MAX;
+		_bend[chan] = INVALID_MIDIVAL;
+		_program[chan] = INVALID_MIDIVAL;
+		_chanpress[chan] = INVALID_MIDIVAL;
 		for (int i = 0; i < 128; i++) {
-			_noteonvel[chan][i] = -INT_MAX;
-			_noteoffvel[chan][i] = -INT_MAX;
-			_control[chan][i] = -INT_MAX;
-			_polypress[chan][i] = -INT_MAX;
+			_noteonvel[chan][i] = INVALID_MIDIVAL;
+			_noteoffvel[chan][i] = INVALID_MIDIVAL;
+			_control[chan][i] = INVALID_MIDIVAL;
+			_polypress[chan][i] = INVALID_MIDIVAL;
 		}
 	}
 }
@@ -132,7 +132,7 @@ void RTcmixMIDI::clear()
 
 const char *RTcmixMIDI::getValueString(const int val)
 {
-	if (val == -INT_MAX)
+	if (val == INVALID_MIDIVAL)
 		return "--";
 
 	static char buf[16];
