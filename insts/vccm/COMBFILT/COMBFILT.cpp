@@ -175,10 +175,14 @@ int COMBFILT::run()
 	  branch = skip;
 	}
 
+	if (runsamp >= maxdelay) {
+	  runsamp = 0;
+	}
+
 	x[runsamp] = in[i];
 
 	delaysamp = (int)runsamp-delay;
-	if (delaysamp < 1) {
+	if (delaysamp < 0) {
 	  delaysamp = maxdelay + delaysamp;
 	}
 
@@ -192,9 +196,6 @@ int COMBFILT::run()
 	y[runsamp] = out[0];
 
 	runsamp++;
-	if (runsamp > maxdelay) {
-	  runsamp = 0;
-	}
 
 	if (outputchans == 2) {
 	  out[1] = out[0] * (1.0 - spread);
