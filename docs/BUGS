@@ -4,3 +4,15 @@ load errors
 When using a standalone instrument (eg., FMINST vs. CMIX) compiled via make
 standalone_inst, you will see a warning message about the load directive in
 a scorefile.  Don't worry, be happy.
+
+------------
+
+gen2 is flakey. E.g....
+
+makegen(2,2,4,0)
+9.05 9.07 9.10 9.11 
+
+If there's a space after "9.11", the job will bail with 
+"fsize: You haven't allocated function 3 yet!" No space after: no problem.
+
+-JGG (11/15/99)
