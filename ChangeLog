@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2004-06-02 Douglas Scott  <netdscott at netscape.net>
+
+   * Added in my work on new PField scheme.   More work cleaning up 
+   	 outdated code in sys, as well.
+
 Wednesday, June 2, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * First version of experimental code: Minc v.2 and support
