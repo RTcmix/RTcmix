@@ -15,7 +15,7 @@ libs += " " + distutils.sysconfig.get_config_var("SYSLIBS")
 
 if static_link:
    prefix = distutils.sysconfig.get_config_var("LIBPL")
-   pythonlib = distutils.sysconfig.get_config_var("LIBRARY")
+   pythonlib = distutils.sysconfig.get_config_var("BLDLIBRARY")
    if len(pythonlib) > 0:
       print prefix + '/' + pythonlib, libs
       sys.exit(0)
