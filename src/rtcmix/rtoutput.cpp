@@ -6,15 +6,10 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sndlibsupport.h>
 #include "../rtstuff/rtdefs.h"
-#ifdef USE_SNDLIB
-  #include <unistd.h>
-  #include <errno.h>
-  #include "../H/sndlibsupport.h"
-#else
-  #include "../H/sfheader.h"
-  #include "../H/byte_routines.h"
-#endif
 
 static int clobber = 0;         /* Default clobber mode (see comment below) */
 
@@ -26,8 +21,6 @@ set_rtoutput_clobber(int state)
    clobber = state;
 }
 
-
-#ifdef USE_SNDLIB
 
 /* The syntax of rtoutput is expanded when using sndlib:
 
@@ -319,64 +312,5 @@ rtoutput(float p[], int n_args, double pp[])
 
    return 1.0;
 }
-
-
-#else  /* !USE_SNDLIB */
-
-
-double rtoutput(float *p, int n_args, double *pp)
-{
-/* this routine is used in the Minc score to open up a file for
-*  writing by RT instruments.  p[0] is the soundfile name.
-*  This routine will exit if the file already exists (it always
-*  does destructive writes).  It will return -1.0 if a file is
-*  already open for writing.
-*
-*/
-	int tint,status,i;
-	char tmpch[1000]; /* for testing the file */
-	char *rtoutsfname;
-	int chans,srate,class;
-
-	long pvbuf[4];
-	long buflen;
-	char *insrc;
-	SFHEADER sfdesc;
-	struct stat sfst;
-
-	if (rtfileit == 1) {
-		fprintf(stderr,"A soundfile is already open for writing...\n");
-		return(-1.0);
-		}
-
-	tint = (int)pp[0];
-	rtoutsfname = (char *)tint;
-
-	strcpy(tmpch, "test -f ");
-	strcat(tmpch, rtoutsfname);
-
-	status = 2;
-	rwopensf(rtoutsfname,rtoutfile,sfdesc,sfst,"CMIX",i,status);
-	if (i<0) {
-	  fprintf(stderr,"FILE ERROR:  could not open file %s\n",rtoutsfname);
-	  exit(1);
-	}
-	rtoutswap = swap;
-	
-	if (NCHANS != sfchans(&sfdesc)) {
-	  fprintf(stderr,"SETUP ERROR:  soundfile channels != rtsetparams channels\n");
-	  exit(1);
-	}
-	if (SR != sfsrate(&sfdesc)) {
-	  fprintf(stderr,"SETUP ERROR:  soundfile rate != rtsetparams rate\n");
-	  exit(1);
-	}
-
-	rtfileit = 1;
-
-	return(1.0);
-}
-
-#endif
 
 

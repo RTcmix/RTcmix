@@ -7,20 +7,16 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <errno.h>
+#include <sndlibsupport.h>
+#include <rtdefs.h>
 #ifdef LINUX
   #include <fcntl.h>
 #endif /* LINUX */
 #ifdef SGI
   #include <dmedia/audio.h>
 #endif /* SGI */
-#include "../rtstuff/rtdefs.h"
 
-#ifdef USE_SNDLIB
-  #include <errno.h>
-  #include "../H/sndlibsupport.h"
-#else
-  #include "../H/sfheader.h"
-#endif
 
 #ifdef SGI
 int audioNCHANS; /* this is for the reads on the audio device */
@@ -53,9 +49,6 @@ double rtinput(float *p, short n_args, double *pp)
 	char *insrc;
 #endif
 	struct stat sfst;
-#ifndef USE_SNDLIB
-	SFHEADER sfh;
-#endif
 	int n, fd, result, header_type, data_format, data_location, nsamps;
 	int tint;	
 
@@ -161,8 +154,6 @@ double rtinput(float *p, short n_args, double *pp)
 
 	/* It's a new file name, so open it and read its header. */
 
-#ifdef USE_SNDLIB
-
 	/* See if file exists and is a regular file or link. */
 	if (stat(rtsfname, &sfst) == -1) {
 		fprintf(stderr, "%s: %s\n", rtsfname, strerror(errno));
@@ -214,21 +205,6 @@ double rtinput(float *p, short n_args, double *pp)
 	inSR = (double)c_snd_header_srate();
 	inNCHANS = c_snd_header_chans();
 
-#else /* !USE_SNDLIB */
-
-	/* using the built-in cmix macros in sfheader.h */
-	readopensf(rtsfname,fd,sfh,sfst,"head",result);
-	if (result == -1)
-		return -1.0;       /* error reported in readopensf */
-
-	inSR = sfsrate(&sfh);
-	inNCHANS = sfchans(&sfh);
-
-	data_location = getheadersize(&sfh);
-	nsamps = (sfst.st_size - data_location) / sfclass(&sfh);
-
-#endif /* !USE_SNDLIB */
-
 	if (inSR != SR) {
 		fprintf(stderr, "WARNING: the input file sampling rate is %f; but the output rate is currently %f\n",inSR, SR);
 	}
@@ -238,10 +214,8 @@ double rtinput(float *p, short n_args, double *pp)
 
 	if (print_is_on) {
 	  printf("Input file %s set for reading\n", rtsfname);
-#ifdef USE_SNDLIB
 	  printf("    type:  %s\n", sound_type_name(header_type));
 	  printf("  format:  %s\n", sound_format_name(data_format));
-#endif
 	  printf("      SR:  %f    nchannels: %d\n", inSR, inNCHANS);
 	}
 
@@ -257,12 +231,10 @@ double rtinput(float *p, short n_args, double *pp)
 		strcpy(inputFileTable[n].filename, rtsfname);
 		inputFileTable[n].fd = fd;
 		inputFileTable[n].refcount = 0;
-#ifdef USE_SNDLIB
 		inputFileTable[n].header_type = header_type;
 		inputFileTable[n].data_format = data_format;
 		inputFileTable[n].chans = inNCHANS;
 		inputFileTable[n].srate = (float)inSR;
-#endif
 		inputFileTable[n].data_location = data_location;
 		inputFileTable[n].dur = (float)(nsamps / inNCHANS) / inSR;
 		break;
