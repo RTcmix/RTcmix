@@ -51,11 +51,6 @@ extern float SR;
 */
 extern int resetval;
 
-#ifndef MAIN
-extern int aargc;
-extern char *aargv[];          /* to pass commandline args to subroutines */
-#endif
-
  
 /*  structure to pass to gen routines */
 struct gen {

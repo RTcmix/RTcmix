@@ -10,6 +10,9 @@ SNDLIB_DIR = $(SNDLIB_LINK)-5.5
 MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
 
 DIRS = $(SNDLIB_LINK) H rtstuff Minc sys lib head cmd utils 
+ifeq ($(PERL_SUPPORT), TRUE)
+	DIRS += Perl
+endif
 
 all: $(DIRS) insts packages
 
@@ -28,6 +31,9 @@ ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
 	do \
 		( cd $$DIR; $(MAKE) install ); \
 	done
+endif
+ifeq ($(PERL_SUPPORT), TRUE)
+	@cd Perl; $(MAKE) install;
 endif
 	@echo "install done."; echo ""
 
@@ -88,6 +94,11 @@ utils::
 	@echo "making utils..."
 	@cd utils; $(MAKE) all
 	@echo "done.";echo""
+
+Perl::
+	@echo "making Perl..."
+	@cd Perl; $(MAKE) all
+	@echo "done."; echo ""
 
 dsos::
 	@for DIR in $(INST_DIRS); \

@@ -6,6 +6,7 @@
 #define MAIN
 #include <pthread.h>
 #include <ctype.h>
+#include <string.h>
 #include <math.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -26,13 +27,12 @@
 #include <version.h>
 #include "../rtstuff/rt.h"
 #include "sockdefs.h"
-#include "defs.h"
 #include "notetags.h"           // contains defs for note-tagging
 #include "../H/dbug.h"
+#include "rtcmix_parse.h"
 
 extern "C" {
   int ug_intro();
-  void *yyparse();
   int profile();
   void rtprofile();
 #ifdef SGI
@@ -45,16 +45,36 @@ extern "C" {
 
 rt_item *rt_list;     /* can't put this in globals.h because of rt.h trouble */
 
-int interactive;     /* used in y.tab.c - don't remove this! */
-Tree program;
 
-#define CMAX 16    /* allow up to 16 command line args to be passed to subs */
-char *aargv[CMAX];
-char name[NAMESIZE];
-int aargc;
 
-/* <yyin> is yacc's input file. If we leave it alone, stdin will be used. */
-extern FILE *yyin;
+/* ---------------------------------------------------------------- usage --- */
+static void
+usage()
+{
+   printf("\n"
+      "Usage:  CMIX [options] [arguments] < minc_script.sco\n"
+      "   or, to use Perl instead of Minc:\n"
+      "        PCMIX [options] [arguments] < perl_script.pl\n"
+      "   or:\n"
+      "        PCMIX [options] perl_script.pl [arguments]\n"
+      "\n"
+      "        options:\n"
+      "           -i       run in interactive mode\n"
+      "           -n       no init script (interactive mode only)\n"
+      "           -o NUM   socket offset (interactive mode only)\n"
+      "           -c       enable continuous control (rtupdates)\n"
+      "           -s NUM   start time (seconds)\n"
+      "           -d NUM   duration (seconds)\n"
+      "           -e NUM   end time (seconds)\n"
+      "           -f NAME  read score from NAME instead of stdin (Minc only)\n"
+      "           --debug  enter parser debugger (Perl only)\n"
+      "           -q       quiet -- suppress print to screen\n"
+      "           -Q       really quiet -- not even peak stats\n"
+      "           -h       this help blurb\n"
+      "        Other options, and arguments, passed on to parser.\n\n");
+   exit(1);
+}
+
 
 /* --------------------------------------------------------- init_globals --- */
 static void
@@ -62,7 +82,7 @@ init_globals()
 {
    int i;
 
-   RTBUFSAMPS = 8192;           /* default, modifyable with rtsetparams */
+   RTBUFSAMPS = 8192;           /* default, modifiable with rtsetparams */
    NCHANS = 2;
    audioNCHANS = 0;
 
@@ -75,7 +95,6 @@ init_globals()
    out_port = 0;
 #endif /* SGI */
 
-   interactive = 1;
    rtInteractive = 0;
    noParse = 0;
    socknew = 0;
@@ -138,9 +157,10 @@ signal_handler(int signo)
 int
 main(int argc, char *argv[])
 {
-   int         i, j;
+   int         i, j, xargc;
    int         retcode;                 /* for mutexes */
-   char        *cp, *infile;
+   char        *infile;
+   char        *xargv[MAXARGS + 1];
    pthread_t   sockitThread, inTraverseThread;
 
    init_globals();
@@ -158,67 +178,85 @@ main(int argc, char *argv[])
       exit(1);
    }
 
-   /* Copy command-line args, if any.
-      Now, command-line args will be available to any subroutine
-      in aargc; and char *aargv[], (both declared extern in ugens.h)
-      parsing is exactly the same then as standard C routine.
-      Maximum of CMAX arguments allowed.
+   xargv[0] = argv[0];
+   for (i = 1; i <= MAXARGS; i++)
+      xargv[i] = NULL;
+   xargc = 1;
+
+   /* Process command line, copying any args we don't handle into
+      <xargv> for parsers to deal with.
    */
-   for (j = 1; j < argc; j++)
-      aargv[j - 1] = argv[j];
-   aargc = argc;
+   for (i = 1; i < argc; i++) {
+      char *arg = argv[i];
 
-   /* Banner */
-   printf("--------> %s %s (%s) <--------\n",
-                                      RTCMIX_NAME, RTCMIX_VERSION, argv[0]);
-
-   /* Process command line. */
-   if (argc >= 2) {
-      while ((*++argv)[0] == '-') {
-         argc -= 1;             /* Take away two args */
-         for (cp = argv[0] + 1; *cp; cp++) {
-            switch (*cp) {      /* Grap options */
-               case 'i':               /* for separate parseit thread */
-                  rtInteractive = 1;
-                  audio_config = 0;
-                  break;
-               case 'n':               /* for separate parseit thread */
-                  noParse = 1;
-                  break;
-               case 'p':               /* for separate parseit thread */
-                  print_is_on = 0;
-                  break;
-               case 's':               /* set up a socket offset */
-                  socknew = atoi(*++argv);
-                  fprintf(stderr, "listening on socket: %d\n",
-                                                         MYPORT + socknew);
-                  argc -= 1;
-                  break;
-               case 'c':     /* set up for continuous control (note tags on) */
-                  tags_on = 1;
-                  printf("rtupdates enabled\n");
-                  curtag = 1;          /* "0" is reserved for all notes */
-                  for (i = 0; i < MAXPUPS; i++)     /* initialize element 0 */
-                     pupdatevals[0][i] = NOPUPDATE;
-                  break;
-               case 'f':     /* use file name arg instead of stdin as score */
-                  infile = *++argv;
-                  yyin = fopen(infile, "r+");
-                  if (yyin == NULL) {
-                     printf("Can't open %s\n", infile);
-                     exit(1);
-                  }
-                  fprintf(stderr, "Using file %s\n", infile);
-                  argc -= 1;
-                  break;
-               default:
-                  printf("Don't know about option '%c'\n", *cp);
-            }
+      if (arg[0] == '-') {
+         switch (arg[1]) {
+            case 'h':
+               usage();
+               break;
+            case 'i':               /* for separate parseit thread */
+               rtInteractive = 1;
+               audio_config = 0;
+               break;
+            case 'n':               /* for use in rtInteractive mode only */
+               noParse = 1;
+               break;
+            case 'Q':               /* reall quiet */
+               report_clipping = 0; /* (then fall through) */
+            case 'q':               /* quiet */
+               print_is_on = 0;
+               break;
+            case 'o':               /* NOTE NOTE NOTE: will soon replace -s */
+            case 's':               /* set up a socket offset */
+               if (++i >= argc) {
+                  fprintf(stderr, "You didn't give a socket offset.\n");
+                  exit(1);
+               }
+               socknew = atoi(argv[i]);
+               printf("listening on socket: %d\n", MYPORT + socknew);
+               break;
+//            case 's':               /* start time (unimplemented) */
+            case 'd':               /* duration to play for (unimplemented) */
+            case 'e':               /* time to stop playing (unimplemented) */
+               fprintf(stderr, "-s, -d, -e options not yet implemented\n");
+               exit(1);
+               break;
+            case 'c':     /* set up for continuous control (note tags on) */
+               tags_on = 1;
+               printf("rtupdates enabled\n");
+               curtag = 1;          /* "0" is reserved for all notes */
+               for (j = 0; j < MAXPUPS; j++)     /* initialize element 0 */
+                  pupdatevals[0][j] = NOPUPDATE;
+               break;
+            case 'f':     /* use file name arg instead of stdin as score */
+               if (++i >= argc) {
+                  fprintf(stderr, "You didn't give a file name.\n");
+                  exit(1);
+               }
+               infile = argv[i];
+               use_script_file(infile);
+               break;
+            case '-':           /* accept "--debug" and pass to Perl as "-d" */
+               if (strncmp(&arg[2], "debug", 10) == 0)
+                  xargv[xargc++] = strdup("-d");
+               break;
+            default:
+               xargv[xargc++] = arg;    /* copy for parser */
          }
-         if (argc == 1)
-            break;
+      }
+      else
+         xargv[xargc++] = arg;          /* copy for parser */
+
+      if (xargc >= MAXARGS) {
+         fprintf(stderr, "Too many command-line options.\n");
+         exit(1);
       }
    }
+
+   /* Banner */
+   if (print_is_on)
+      printf("--------> %s %s (%s) <--------\n",
+                                      RTCMIX_NAME, RTCMIX_VERSION, argv[0]);
 
    ug_intro();                  /* introduce standard routines */
    profile();                   /* introduce user-written routines etc. */
@@ -236,13 +274,19 @@ main(int argc, char *argv[])
    */
    if (rtInteractive) {
 
-	 if (print_is_on)
-      fprintf(stdout, "rtInteractive mode set\n");
+      if (print_is_on)
+         fprintf(stdout, "rtInteractive mode set\n");
 
       /* Read an initialization score. */
       if (!noParse) {
+         int status;
+
+#ifdef DBUG
          cout << "Parsing once ...\n";
-         yyparse();
+#endif
+         status = parse_score(xargc, xargv);
+         if (status != 0)
+            exit(1);
       }
 
       /* Create parsing thread. */
@@ -282,10 +326,19 @@ main(int argc, char *argv[])
          fprintf(stderr, "sockit() thread join failed\n");
       }
 
+      if (!noParse)
+         destroy_parser();
    }
    else {
-      yyparse();
-      inTraverse(NULL);
+      int status;
+
+      status = parse_score(xargc, xargv);
+      if (status == 0)
+         inTraverse(NULL);
+      else
+         exit(status);
+
+      destroy_parser();
    }
 
    /* DJT:  this instead of above joins */

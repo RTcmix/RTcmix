@@ -76,13 +76,14 @@ ug_intro()
 	UG_INTRO("pchmidi",m_pchmidi);
 	UG_INTRO("cpsmidi",m_cpsmidi);
 	UG_INTRO("midipch", m_midipch);
-	UG_INTRO("rtsetparams",rtsetparams); /* sets up real-time cmix on SGIs */
+	UG_INTRO("rtsetparams",rtsetparams);
 	UG_INTRO("rtinput",rtinput);
 	UG_INTRO("rtoutput",rtoutput);
 	UG_INTRO("set_option",set_option);
 	UG_INTRO("setline_size",m_setline_size);
 	UG_INTRO("setline",m_setline);
 	UG_INTRO("reset",m_reset);
+	UG_INTRO("control_rate",m_reset); /* because "reset" is a perlfunc */
 	UG_INTRO("load",m_load); /* allows loading of dynamic libraries */
 	UG_INTRO("DUR",m_DUR);  /* returns duration for rtinput files */
 	UG_INTRO("PEAK",m_PEAK);  /* returns peak amp for rtinput files */

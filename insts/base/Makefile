@@ -24,6 +24,9 @@ install:
 	  $(INSTALL) `pwd`/lib$$DIR.so $(LIBDESTDIR) ); \
 	done
 	@$(INSTALL) `pwd`/MIX/MIX $(DESTDIR)/CMIX
+ifeq ($(PERL_SUPPORT), TRUE)
+	@$(INSTALL) `pwd`/MIX/PMIX $(DESTDIR)/PCMIX
+endif
 
 dsos:  all
 
@@ -51,6 +54,7 @@ clean:
 	  $(RM) $(LIBDESTDIR)/lib$$DIR.so; ) \
 	done
 	@$(RM) $(DESTDIR)/CMIX
+	@$(RM) $(DESTDIR)/PCMIX
 
 dso_clean:
 	@for DIR in $(LIBDIRS); \

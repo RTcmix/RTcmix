@@ -4,7 +4,7 @@
 TOPDIR = /usr/local/src
 
 # The name of the RTcmix directory
-CMIXDIR = $(TOPDIR)/RTcmix-3.0.2
+CMIXDIR = $(TOPDIR)/RTcmix-3.0.3
 
 # The dir that will contain links to the instrument dynamic shared objects
 LIBDESTDIR = $(CMIXDIR)/shlib
@@ -40,6 +40,9 @@ SOUND_DRIVER += -DSHARED_AUDIO_DEV
 OPT = -g -Wall -Wno-unused -O2
 # for Irix, try just...
 #OPT = -O2
+
+# Uncomment this to enable use of the Perl front end to RTcmix.
+#PERL_SUPPORT = TRUE
 
 # Uncomment to use old function table assignments for certain instruments.
 # For example, WAVETABLE used to expect function 1 to contain the wavetable
