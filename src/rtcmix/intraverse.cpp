@@ -32,7 +32,7 @@ static bool audioDone = false;
 bool inTraverse(AudioDevice *device, void *arg);
 bool doneTraverse(AudioDevice *device, void *arg);
 
-extern AudioDevice *globalAudioDevice;	// from sys/audio_port.C
+extern AudioDevice *globalAudioDevice;	// from audio/audio_port.cpp
 
 int RTcmix::runMainLoop(void)
 {
@@ -43,19 +43,19 @@ int RTcmix::runMainLoop(void)
 #endif
 
 	// Wait for the ok to go ahead
-	pthread_mutex_lock(&audio_config_lock);
+	::pthread_mutex_lock(&audio_config_lock);
 	if (!audio_config) {
 		if (Option::print())
 			cout << "runMainLoop():  waiting for audio_config . . .\n";
 	}
-	pthread_mutex_unlock(&audio_config_lock);
+	::pthread_mutex_unlock(&audio_config_lock);
 
 	while (!audio_configured) {
-		pthread_mutex_lock(&audio_config_lock);
+		::pthread_mutex_lock(&audio_config_lock);
 		if (audio_config) {
 			audio_configured = YES;
 		}
-		pthread_mutex_unlock(&audio_config_lock);
+		::pthread_mutex_unlock(&audio_config_lock);
 		if (rtInteractive) {
 			if (run_status == RT_GOOD || run_status == RT_PANIC)
 				continue;
@@ -81,7 +81,8 @@ int RTcmix::runMainLoop(void)
 	if (rtsetparams_called) {
 		// NOTE: This will be handled in the AudioDevice platform-specific.
 		// Right now, the intraVerse function below calls rtsendzeros().
-		startupBufCount = ZERO_FRAMES_BEFORE / RTBUFSAMPS;
+//		startupBufCount = ZERO_FRAMES_BEFORE / RTBUFSAMPS;
+		startupBufCount = 0;
 
 		if (globalAudioDevice) {
 			// Set done callback on device.
@@ -109,7 +110,7 @@ int RTcmix::waitForMainLoop()
 		sleep(1);
 #endif
 	}
-	destroy_audio_devices();
+	::destroy_audio_devices();
 	rtcloseout();
 #ifdef WBUG	
 	cout << "EXITING waitForMainLoop() FUNCTION *****\n";
@@ -194,7 +195,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		iBus = Iptr->getBusSlot();
 
 		// DJT Now we push things onto different queues
-		pthread_mutex_lock(&bus_slot_lock);
+		::pthread_mutex_lock(&bus_slot_lock);
 		bus_class = iBus->Class();
 		switch (bus_class) {
 		case TO_AUX:
@@ -259,7 +260,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			cout << "ERROR (intraverse): unknown bus_class\n";
 			break;
 		}
-		pthread_mutex_unlock(&bus_slot_lock);
+		::pthread_mutex_unlock(&bus_slot_lock);
 	}
 	// End rtHeap popping and rtQueue insertion ----------------------------
 
@@ -275,22 +276,22 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		case TO_AUX:
 			bus_q_offset = 0;
 			bus_type = BUS_AUX_OUT;
-			pthread_mutex_lock(&to_aux_lock);
+			::pthread_mutex_lock(&to_aux_lock);
 			bus = ToAuxPlayList[play_bus++];
-			pthread_mutex_unlock(&to_aux_lock);
+			::pthread_mutex_unlock(&to_aux_lock);
 			break;
 		case AUX_TO_AUX:
 			bus_q_offset = MAXBUS;
-			pthread_mutex_lock(&aux_to_aux_lock);
+			::pthread_mutex_lock(&aux_to_aux_lock);
 			bus = AuxToAuxPlayList[play_bus++];
-			pthread_mutex_unlock(&aux_to_aux_lock);
+			::pthread_mutex_unlock(&aux_to_aux_lock);
 			bus_type = BUS_AUX_OUT;
 			break;
 		case TO_OUT:
 			bus_q_offset = MAXBUS*2;
-			pthread_mutex_lock(&to_out_lock);
+			::pthread_mutex_lock(&to_out_lock);
 			bus = ToOutPlayList[play_bus++];
-			pthread_mutex_unlock(&to_out_lock);
+			::pthread_mutex_unlock(&to_out_lock);
 			bus_type = BUS_OUT;
 			break;
 		default:
@@ -403,7 +404,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 				rtQueue[busq].push(Iptr,rtQchunkStart+chunksamps);   // put back onto queue
 			}
 			else {
-				pthread_mutex_lock(&bus_slot_lock);
+				::pthread_mutex_lock(&bus_slot_lock);
 				short t_count;
 				short t_class = iBus->Class();
 				short endbus = 999;  // Don't end yet
@@ -432,7 +433,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 					cout << "ERROR (intraverse): unknown bus_class\n";
 					break;
 				}
-				pthread_mutex_unlock(&bus_slot_lock);
+				::pthread_mutex_unlock(&bus_slot_lock);
 
 				// unref only after all buses have played -- i.e., if inst_chunk_finished
 				if (qStatus == t_class && inst_chunk_finished) {

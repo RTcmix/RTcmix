@@ -46,23 +46,10 @@ RTcmix::rtwritesamps(AudioDevice *fileDevice)
 }
 
 /* ----------------------------------------------------------- rtcloseout --- */
-/* Close the output file device. */
+/* Close the output file device.  No longer needed */
 int
 RTcmix::rtcloseout()
 {
-	int result = 0;
-
-	if (rtfileit != 1)          /* nothing to close */
-		return 0;
-
-	result = destroy_audio_file_device();
-
-	if (result == -1) {
-		fprintf(stderr, "rtcloseout: Error closing \"%s\" (%s)\n",
-				rtoutsfname, strerror(errno));
-		return -1;
-	}
-
 	return 0;
 }
 

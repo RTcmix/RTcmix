@@ -35,6 +35,10 @@ AudioDeviceImpl::AudioDeviceImpl()
 	  _convertBuffer(NULL), 
 	  _recConvertFunction(NULL), _playConvertFunction(NULL)
 {
+	for (int n = 0; n < 32; ++n) {
+		_peaks[n] = 0.0;
+		_peakLocs[n] = 0;
+	}
 }
 
 AudioDeviceImpl::~AudioDeviceImpl()
@@ -186,6 +190,9 @@ int AudioDeviceImpl::sendFrames(void *frameBuffer, int frameCount)
 {
 	int status = 0;
 	if (isPlaying()) {
+		bool doClipping = !isFrameFmtClipped() && isDeviceFmtClipped();
+		limitFrame(frameBuffer, frameCount,
+				   doClipping, checkPeaks(), reportClipping());
 		void *sendBuffer = convertFrame(frameBuffer,
 										_convertBuffer, 
 										frameCount, 
@@ -199,6 +206,12 @@ int AudioDeviceImpl::sendFrames(void *frameBuffer, int frameCount)
 
 const char *AudioDeviceImpl::getLastError() const {
 	return _lastErr;
+}
+
+double AudioDeviceImpl::getPeak(int chan, long *pLocation) const
+{
+	*pLocation = _peakLocs[chan];
+	return isDeviceFmtNormalized() ? _peaks[chan] / 32768.0 : _peaks[chan];
 }
 
 int AudioDeviceImpl::error(const char *msg, const char *msg2)
@@ -407,6 +420,9 @@ int AudioDeviceImpl::setupConversion()
 	int status = 0;
 	// Use the raw format because the accessor functions
 	// filter out the interleave and normalize bits.
+	PRINT0("AudioDeviceImpl::setupConversion(): user fmt: 0x%x, "
+			"device fmt: 0x%x, user chans: %d, device chans: %d\n",
+			_frameFormat, _deviceFormat, getFrameChannels(), getDeviceChannels());
 	if (_frameFormat != _deviceFormat || getFrameChannels() != getDeviceChannels())
 	{
 		status = createConvertBuffer(_maxFrames);
@@ -456,6 +472,61 @@ AudioDeviceImpl::convertFrame(void *inbuffer, void *outbuffer,
 									frmChans, devChans, frames);
 		}
 		return outbuffer;
+	}
+}
+
+void
+AudioDeviceImpl::limitFrame(void *frameBuffer, int frames, bool doClip, bool checkPeaks, bool reportClipping)
+{
+	const int chans = getDeviceChannels();
+	const long bufStartSamp = getFrameCount();
+	int numclipped = 0;
+	float clipmax = 0.0f;
+	PRINT0("AudioDeviceImpl::limitFrame: clip = %d check = %d\n", doClip, checkPeaks);
+	for (int c = 0; c < chans; ++c) {
+		float *fp;
+		int incr;
+		if (isFrameInterleaved()) {
+			fp = &((float *) frameBuffer)[c];
+			incr = chans;
+		}
+		else {
+			fp = ((float **) frameBuffer)[c];
+			incr = 1;
+		}
+		for (int n = 0; n < frames; ++n, fp += incr) {
+			if (doClip) {
+				const float samp = *fp;
+				if (samp < -32768.0f) {
+					if (samp < -clipmax)
+						clipmax = -samp;
+					*fp = -32768.0f;
+					++numclipped;
+				}
+				else if (samp > 32767.0f) {
+					if (samp > clipmax)
+						clipmax = samp;
+					*fp = 32767.0f;
+					++numclipped;
+				}
+			}
+			if (checkPeaks) {
+				const double fabsamp = fabs((double) *fp);
+				if (fabsamp > (double) _peaks[c]) {
+					_peaks[c] = (float) fabsamp;
+					_peakLocs[c] = bufStartSamp + n;	// frame count
+				}
+			}
+		}
+	}
+	if (numclipped && reportClipping) {
+		float loc1 = bufStartSamp / getSamplingRate();
+		float loc2 = loc1 + (frames / getSamplingRate());
+		bool printing_dots = true;	// HACK FOR NOW
+		/* We start with a newline if we're also printing the buffer dots. */
+		fprintf(stderr,
+    		  "%s  CLIPPING: %4d samps, max: %g, time range: %f - %f\n",
+    		  (printing_dots? "\n" : ""), numclipped, clipmax, loc1, loc2);
 	}
 }
 

@@ -255,12 +255,13 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 				// input audio, create the audio input device here.
 				if (!audio_input_is_initialized() && !Option::play()) {
 					int nframes = RTBUFSAMPS;
-					if (create_audio_devices(Option::record(), 0,
-												NCHANS, SR, &nframes,
-												Option::bufferCount()) < 0) {
+					if (create_audio_devices(true, false,
+											 NCHANS, SR, &nframes,
+											 Option::bufferCount()) < 0) {
 						rtrecord = 0;	/* because we failed */
 						return -1;
 					}
+					Option::record(true);
 					RTBUFSAMPS = nframes;
 					if (get_print_option())
 						printf("Input audio set:  %g sampling rate, %d channels\n", SR, NCHANS);

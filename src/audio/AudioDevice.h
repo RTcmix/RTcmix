@@ -13,12 +13,14 @@ protected:
 public:
 	typedef bool (*CallbackFun)(AudioDevice *, void *context);
 	enum {
-		Unset = 0x0,
-		Record = 0x1,
-		Playback = 0x2,
-		RecordPlayback = 0x3,
-		DirectionMask = 0xf,
-		Passive = 0x10
+		Unset 			= 0x0,
+		Record 			= 0x1,
+		Playback 		= 0x2,
+		RecordPlayback	= 0x3,
+		DirectionMask 	= 0xf,
+		Passive 		= 0x10,
+		CheckPeaks 		= 0x100,
+		ReportClipping 	= 0x200
 	};
 public:
 	virtual				~AudioDevice();
@@ -44,6 +46,7 @@ public:
 	virtual bool		isOpen() const = 0;
 	virtual bool		isRunning() const = 0;
 	virtual bool		isPaused() const = 0;
+	virtual double		getPeak(int chan, long *loc) const =0;
 	virtual	const char *getLastError() const = 0;
 
 protected:

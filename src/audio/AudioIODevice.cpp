@@ -46,14 +46,15 @@ int AudioIODevice::open(int mode, int sampfmt, int chans, double sr)
 {
 	if ((mode & DirectionMask) != RecordPlayback)
 		return -1;
-	int inmode, outmode;
+	// Preserve non-directional portion of mode.
+	int inmode, outmode, modeOptions = (mode & ~DirectionMask);
 	if (!_inputActive) {
 		inmode = Record | Passive;
-		outmode = Playback;
+		outmode = Playback | modeOptions;
 	}
 	else {
 		inmode = Record;
-		outmode = Playback | Passive;
+		outmode = Playback | Passive | modeOptions;
 	}
 	int status = _inputDevice->open(inmode, sampfmt, chans, sr);
 	if (status == 0)
@@ -174,6 +175,11 @@ bool AudioIODevice::isRunning() const
 bool AudioIODevice::isPaused() const
 {
 	return getActiveDevice()->isPaused();
+}
+
+double AudioIODevice::getPeak(int chan, long *peakLoc) const
+{
+	return _outputDevice->getPeak(chan, peakLoc);
 }
 
 const char *AudioIODevice::getLastError() const

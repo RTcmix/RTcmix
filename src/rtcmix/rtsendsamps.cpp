@@ -25,13 +25,8 @@
 /* #define DUMP_AUDIO_TO_RAW_FILE */
 /* #define USE_REAL2INT */
 
-extern AudioDevice *globalOutputFileDevice;	// audio_devices.cpp
-
 static int printing_dots = 0;
 
-/* max amplitude encountered -- reported at end of run */
-static BUFTYPE peaks[MAXBUS];
-static long peaklocs[MAXBUS];
 
 /* local prototypes */
 static int write_to_audio_device(BufPtr out_buffer[], int samps, AudioDevice *);
@@ -91,68 +86,6 @@ write_to_audio_device(BufPtr out_buffer[], int samps, AudioDevice *device)
 	return device->sendFrames(out_buffer, samps) == samps ? 0 : -1;
 }
 
-
-/* -------------------------------------------------------------- limiter --- */
-/* If clipping occurs within the out_buffer, pin the clipped samples to
-   extrema and then print some information about them: how many samples
-   clipped, the absolute value of the sample farthest out of range, the
-   time range of this buffer in the output, etc. Also, maintain peak
-   amplitude stats for later reporting and writing to the comment of the
-   output file (if any).
-
-   Note: This modifies the floating-point output buffers *in place*.
-*/
-void
-RTcmix::limiter(BUFTYPE peaks[], long peaklocs[])
-{
-   int      i, j, numclipped;
-   BUFTYPE  clipmax, orig_samp;
-   BufPtr   buf;
-   const int samps = bufsamps();
-   const bool checkPeaks = Option::checkPeaks();
-   const bool reportClipping = Option::reportClipping();
-
-   numclipped = 0;
-   clipmax = (BUFTYPE) 0;
-
-   for (i = 0; i < NCHANS; i++) {
-      buf = out_buffer[i];
-      for (j = 0; j < samps; j++) {
-         orig_samp = buf[j];
-         if (orig_samp < -32768.0f) {
-            if (orig_samp < -clipmax)
-               clipmax = -orig_samp;
-            buf[j] = -32768.0f;
-            numclipped++;
-         }
-         else if (orig_samp > 32767.0f) {
-            if (orig_samp > clipmax)
-               clipmax = orig_samp;
-            buf[j] = 32767.0f;
-            numclipped++;
-         }
-         if (checkPeaks) {
-            BUFTYPE abs_samp = (BUFTYPE) fabs((double) buf[j]);
-            if (abs_samp > peaks[i]) {
-               peaks[i] = abs_samp;
-               peaklocs[i] = bufStartSamp + (j / NCHANS);  /* frame count */
-            }
-         }
-      }
-   }
-
-   if (numclipped && reportClipping) {
-      float loc1 = (float) bufStartSamp / SR;
-      float loc2 = loc1 + ((float) samps / SR);
-
-      /* We start with a newline if we're also printing the buffer dots. */
-      fprintf(stderr,
-              "%s  CLIPPING: %4d samps, max: %g, time range: %f - %f\n",
-              (printing_dots? "\n" : ""), numclipped, clipmax, loc1, loc2);
-   }
-}
-
-
 /* ---------------------------------------------------------- rtsendzeros --- */
 /* Send a buffer of zeros to the audio output device, and to the output sound
    file if <also_write_to_file> is true.
@@ -167,18 +100,11 @@ RTcmix::rtsendzeros(AudioDevice *device, int also_write_to_file)
    clear_output_buffers();
 
    if (Option::play()) {
-      int i, j, nsamps, nbufs;
       err = ::write_to_audio_device(out_buffer, bufsamps(), device);
       if (err) {
          fprintf(stderr, "rtsendzeros: Error: %s\n", device->getLastError());
 		 return err;
 	  }
-   }
-
-   if (also_write_to_file && rtfileit) {
-      err = rtwritesamps(device);
-      if (err)
-         fprintf(stderr, "rtsendzeros: bad write to output sound file\n");
    }
    return err;
 }
@@ -186,9 +112,8 @@ RTcmix::rtsendzeros(AudioDevice *device, int also_write_to_file)
 
 /* ---------------------------------------------------------- rtsendsamps --- */
 /* Called by the scheduler to write the output buffer to the audio device
-   and/or a sound file.   All format conversion happens inside the AudioDevice.
-   For all supported cases, we limit the floating point buffer to +-32768 to
-   avoid overflow during conversion to other formats.
+   and/or a sound file.   All format conversion and limting happens inside
+   the AudioDevice.
 */
 
 int
@@ -204,45 +129,9 @@ RTcmix::rtsendsamps(AudioDevice *device)
       printing_dots = 1;
       printf(".");    /* no '\n' */
    }
-
-   /* Write float file *before* doing any limiting. */
-   if (is_float_format && rtfileit) {
-	  // FOR NOW, IF WE ARE BOTH PLAYING AND WRITING, DO IT WITH SEPARATE
-	  // AudioDevice INSTANCES.
-	  if (playing) {
-	  	if (globalOutputFileDevice)
-      		err = rtwritesamps(globalOutputFileDevice);
-	  }
-	  else
-	     err = rtwritesamps(device);
-      if (err)
-         fprintf(stderr, "rtsendsamps: bad write to output sound file\n");
-      if (!playing)
-         return err;        /* without limiting */
-   }
-
-   limiter(peaks, peaklocs);    /* Limit output buffer data to +-32767.0 */
-
-   if (playing) {
-      int ret = ::write_to_audio_device(out_buffer, bufsamps(), device);
-      if (ret)
-         fprintf(stderr, "rtsendsamps: Error: %s\n", device->getLastError());
-	  err = (err == 0) ? ret : err;
-   }
-
-   if (!is_float_format && rtfileit) {
-	  // FOR NOW, IF WE ARE BOTH PLAYING AND WRITING, DO IT WITH SEPARATE
-	  // AudioDevice INSTANCES.
-	  int ret = 0;
-	  if (playing) {
-	  	if (globalOutputFileDevice)
-      		ret = rtwritesamps(globalOutputFileDevice);
-	  }
-	  else
-	     ret = rtwritesamps(device);
-      if (ret)
-         fprintf(stderr, "rtsendsamps: bad write to output sound file\n");
-	  err = (err == 0) ? ret : err;
+   err = ::write_to_audio_device(out_buffer, bufsamps(), device);
+   if (err != 0) {
+      fprintf(stderr, "rtsendsamps: Error: %s\n", device->getLastError());
    }
    return err;
 }
@@ -252,18 +141,15 @@ RTcmix::rtsendsamps(AudioDevice *device)
 void
 RTcmix::rtreportstats(AudioDevice *device)
 {
-	int    n;
-	double dbref = dbamp(32768.0);
+   static const double dbref = ::dbamp(32768.0);
 	
-   if (Option::reportClipping() && Option::checkPeaks()) {
+   if (Option::checkPeaks()) {
+      BUFTYPE peaks[MAXBUS];
+      long peaklocs[MAXBUS];
       printf("\nPeak amplitudes of output:\n");
-      for (n = 0; n < NCHANS; n++) {
-	     if (is_float_format && rtfileit) {
-            AudioFileDevice *fileDevice = dynamic_cast<AudioFileDevice *> (globalOutputFileDevice);
-            if (fileDevice != NULL)
-               peaks[n] = fileDevice->getPeak(n, &peaklocs[n]);
-         }
-         double peak_dbfs = dbamp(peaks[n]) - dbref;
+      for (int n = 0; n < NCHANS; n++) {
+         peaks[n] = device->getPeak(n, &peaklocs[n]);
+         double peak_dbfs = ::dbamp(peaks[n]) - dbref;
          printf("  channel %d: %12.6f (%6.2f dBFS) at frame %ld (%g seconds)\n",
                 n, peaks[n], peak_dbfs, peaklocs[n], (float) peaklocs[n] / SR);
       }

@@ -27,6 +27,7 @@ public:
 	bool			isOpen() const;
 	bool			isRunning() const;
 	bool			isPaused() const;
+	double			getPeak(int chan, long *location) const;
 	const char *	getLastError() const;
 
 protected:
@@ -38,7 +39,9 @@ protected:
 	inline int		getFrameFormat() const;
 	inline int		getDeviceFormat() const;
 	inline bool		isFrameFmtNormalized() const;
+	inline bool		isFrameFmtClipped() const;
 	inline bool		isDeviceFmtNormalized() const;
+	inline bool		isDeviceFmtClipped() const;
 	inline bool		isFrameInterleaved() const;
 	inline bool		isDeviceInterleaved() const;
 	inline int		getFrameChannels() const;
@@ -47,7 +50,6 @@ protected:
 	inline long		getFrameCount() const;
 
 protected:
-	// Ctor is passed the format and chans of frameBuffer.
 	AudioDeviceImpl();
 	virtual ~AudioDeviceImpl();
 	// For subclass implementation.
@@ -74,12 +76,15 @@ protected:
 	inline bool		isRecording() const;
 	inline bool		isPlaying() const;
 	inline bool		isPassive() const;	// False if we don't run our own thread.
+	inline bool		checkPeaks() const;
+	inline bool		reportClipping() const;
 	int				getDeviceBytesPerFrame() const;
 	inline void		setMode(int m);
 	inline void		setState(State s);
 	inline int		getMode() const;
 	inline State	getState() const;
 	void			*convertFrame(void *inFrame, void *outFrame, int frames, bool rec);
+	void			limitFrame(void *frame, int frames, bool doClip, bool checkPeaks, bool reportClip);
 	int				error(const char *msg, const char *msg2=0);
 
 private:
@@ -92,9 +97,14 @@ private:
 	int				createConvertBuffer(int frames);
 	void			destroyConvertBuffer();
 
+protected:
+	float				_peaks[32];
+	long				_peakLocs[32];
+
 private:	
 	int					_mode;		// Playback, Record, etc.
 	State 				_state;		// Open, Configured, etc.
+	int					_options;	// check peaks, report clipping, etc.
 	int					_frameFormat;
 	int					_deviceFormat;
 	int					_frameChannels;
@@ -118,6 +128,10 @@ inline void	AudioDeviceImpl::setState(State s) { _state = s; }
 inline int AudioDeviceImpl::getMode() const { return _mode; }
 
 inline bool	AudioDeviceImpl::isPassive() const { return (_mode & Passive) != 0; }
+
+inline bool AudioDeviceImpl::checkPeaks() const { return (_mode & CheckPeaks) != 0; }
+
+inline bool AudioDeviceImpl::reportClipping() const { return (_mode & ReportClipping) != 0; }
 
 inline AudioDevice::State AudioDeviceImpl::getState() const { return _state; }
 
@@ -159,6 +173,16 @@ inline bool AudioDeviceImpl::isFrameFmtNormalized() const
 inline bool	AudioDeviceImpl::isDeviceFmtNormalized() const
 {
 	return IS_NORMALIZED_FORMAT(_deviceFormat);
+}
+
+inline bool AudioDeviceImpl::isFrameFmtClipped() const
+{
+	return !IS_FLOAT_FORMAT(_frameFormat) || IS_CLIPPED_FORMAT(_frameFormat);
+}
+
+inline bool	AudioDeviceImpl::isDeviceFmtClipped() const
+{
+	return !IS_FLOAT_FORMAT(_deviceFormat) || IS_CLIPPED_FORMAT(_deviceFormat);
 }
 
 inline int AudioDeviceImpl::getFrameChannels() const

@@ -7,15 +7,11 @@
 
 class AudioFileDevice : public ThreadedAudioDevice {
 public:
-	enum { CheckPeaks = 1 };
-	AudioFileDevice(const char *path, int fileType, int fileOptions);
+	AudioFileDevice(const char *path, int fileType);
 	virtual ~AudioFileDevice();
 
 	// AudioDeviceImpl overrides.
 	virtual int open(int mode, int sampfmt, int chans, double srate);
-	virtual int	sendFrames(void *frameBuffer, int frames);
-	// New to class
-	double getPeak(int chan, long *location);
 
 protected:
     // ThreadedAudioDevice redefine.

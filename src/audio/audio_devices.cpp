@@ -18,6 +18,8 @@
 #include "AudioDevice.h"
 #include "AudioFileDevice.h"
 #include "AudioIODevice.h"
+#include "AudioOutputGroupDevice.h"
+#include "DualOutputAudioDevice.h"
 #include "audio_devices.h"
 
 #ifdef NETAUDIO
@@ -25,7 +27,6 @@ char globalNetworkPath[128];			// Set by Minc/setnetplay.c
 #endif
 
 AudioDevice *globalAudioDevice;			// Used by Minc/intraverse.C
-AudioDevice *globalOutputFileDevice;	// Used by rtsendsamps.C
 
 // Return pointers to the most recently specified audio device strings.
 
@@ -79,12 +80,21 @@ create_audio_devices(int record, int play, int chans, float srate, int *buffersi
 		return -1;
 	}
 
-	// We hand the device noninterleaved floating point buffers.
+	// We hand the device noninterleaved, full-range floating point buffers.
 	int audioFormat = NATIVE_FLOAT_FMT | MUS_NON_INTERLEAVED;
+	device->setFrameFormat(audioFormat, chans);
+
 	int openMode = (record && play) ? AudioDevice::RecordPlayback
 				   : (record) ? AudioDevice::Record
 				   : AudioDevice::Playback;
-	device->setFrameFormat(audioFormat, chans);
+	if (Option::checkPeaks())
+		openMode |= AudioDevice::CheckPeaks;
+	if (Option::reportClipping())
+		openMode |= AudioDevice::ReportClipping;
+
+	printf("DEBUG: audio device: peak check: %d report clip: %d\n",
+		   openMode & AudioDevice::CheckPeaks, openMode & AudioDevice::ReportClipping);
+
 	if ((status = device->open(openMode, audioFormat, chans, srate)) == 0)
 	{
 		int reqsize = *buffersize;
@@ -120,27 +130,41 @@ int create_audio_file_device(const char *outfilename,
 							 int normalize_output_floats,
 							 int check_peaks)
 {
-
 	assert(rtsetparams_was_called());
 	
-	int fileOptions = 0;
-	if (check_peaks)
-		fileOptions |= AudioFileDevice::CheckPeaks;
-
 	AudioFileDevice *fileDevice = new AudioFileDevice(outfilename,
-													  header_type,
-													  fileOptions);
+													  header_type);
 													
 	if (fileDevice == NULL) {
 		rterror("rtoutput", "Failed to create audio file device");
 		return -1;
 	}
-	int openMode = AudioFileDevice::Playback;
-	if (Option::play() | Option::record())
-		openMode |= AudioDevice::Passive;	// Don't run thread for file device.
+	
+	// Here is the logic for opening the file device.  We do this all in
+	// advance now, rather than over and over during rtwritesamps().
 
-	// We send the device noninterleaved floating point buffers.
+	const bool recording = Option::record();
+	const bool playing = Option::play();
+	const bool fileIsRawFloats = IS_FLOAT_FORMAT(sample_format) && !normalize_output_floats;
+	
+	int openMode = AudioFileDevice::Playback;
+	if (playing | recording)
+		openMode |= AudioDevice::Passive;		// Don't run thread for file device.
+	if (!fileIsRawFloats || (check_peaks && !playing))
+		openMode |= AudioDevice::CheckPeaks;	// Dont check peaks if HW already doing so.
+	if (Option::reportClipping() && !playing)
+		openMode |= AudioDevice::ReportClipping;	// Ditto for reporting of clipping
+
+	printf("DEBUG: file device: peak check: %d report clip: %d\n",
+		   openMode & AudioDevice::CheckPeaks, openMode & AudioDevice::ReportClipping);
+
+	// We send the device noninterleaved, floating point buffers.  If we are playing
+	// to HW at the same time, the data received by the file device will already be
+	// clipped.
+	
 	int audioFormat = NATIVE_FLOAT_FMT | MUS_NON_INTERLEAVED;
+	if (playing) audioFormat |= MUS_CLIPPED;
+	
 	fileDevice->setFrameFormat(audioFormat, chans);
 
 	// File format is interleaved and may be normalized.
@@ -164,37 +188,29 @@ int create_audio_file_device(const char *outfilename,
 		return -1;
 	}
 
-	// This will soon go away entirely.
-	globalOutputFileDevice = fileDevice;
-
-	if (!Option::play() && !Option::record()) {				// To file only.
+	if (!playing && !recording) {	// To file only.
 		// If we are only writing to disk, we only have a single output device. 
 		globalAudioDevice = fileDevice;
 	}
-	else {	// To file, plus record and/or playback.
-		if (Option::play() && !Option::record()) {	// Dual outputs to both HW and file.
-			printf("DEBUG: Independent devices for file and HW playback\n");
-			// For this one, we need to leave the two globals for now, until
-			// I write a dual-output AudioDevice.
-			// Passive start takes NULL callback and context.
-			if (fileDevice->start(NULL, NULL) == -1) {
-				rterror("rtoutput", "Can't start file device: %s", 
-				 		fileDevice->getLastError());
-				return -1;
-			}
+	else {							// To file, plus record and/or playback.
+		if (playing && !recording) {		// Dual outputs to both HW and file.
+			printf("DEBUG: Group output device for file and HW playback\n");
+			bool fileDoesLimiting = !fileIsRawFloats;
+			globalAudioDevice = new DualOutputAudioDevice(globalAudioDevice,
+														  fileDevice,
+														  fileDoesLimiting);
 		}
-		else if (Option::record() && !Option::play()) {	// Record from HW, write to file.
+		else if (recording && !playing) {	// Record from HW, write to file.
 			assert(globalAudioDevice != NULL);
 			printf("DEBUG: Dual device for HW record, file playback\n");
 			globalAudioDevice = new AudioIODevice(globalAudioDevice, fileDevice, true);
-			globalOutputFileDevice = NULL;
 		}
 		else {	// HW Record and playback, plus write to file.
-			if (fileDevice->start(NULL, NULL) == -1) {
-				rterror("rtoutput", "Can't start file device: %s", 
-				 		fileDevice->getLastError());
-				return -1;
-			}
+			printf("DEBUG: Dual device for HW record/playback, file playback\n");
+			bool fileDoesLimiting = !fileIsRawFloats;
+			globalAudioDevice = new DualOutputAudioDevice(globalAudioDevice,
+														  fileDevice,
+														  fileDoesLimiting);
 		}
 	}
 
@@ -229,12 +245,7 @@ destroy_audio_devices()
 {
 	if (!destroying) {
 		destroying = true;
-		globalAudioDevice->close();
-	
-		if (globalOutputFileDevice == NULL || globalOutputFileDevice == globalAudioDevice) {
-			delete globalAudioDevice;
-			globalOutputFileDevice = NULL;	// Dont delete elsewhere.
-		}
+		delete globalAudioDevice;
 		globalAudioDevice = NULL;
 	}
 }
@@ -243,14 +254,11 @@ int
 destroy_audio_file_device()
 {
 	int result = 0;
-	if (globalOutputFileDevice) {
-    	result = globalOutputFileDevice->close();
-	}
                                                                                                     
-	if (globalOutputFileDevice != globalAudioDevice) {
-    	delete globalOutputFileDevice;
-	}
-	globalOutputFileDevice = NULL;
+// 	if (globalOutputFileDevice != globalAudioDevice) {
+//     	delete globalOutputFileDevice;
+// 	}
+// 	globalOutputFileDevice = NULL;
 
 	return result;
 }

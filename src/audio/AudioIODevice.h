@@ -24,6 +24,7 @@ public:
 	bool		isOpen() const;
 	bool		isRunning() const;
 	bool		isPaused() const;
+	double		getPeak(int chan, long *peakLoc) const;
 	const char *getLastError() const;
 
 protected:
