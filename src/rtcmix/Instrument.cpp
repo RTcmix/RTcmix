@@ -386,7 +386,6 @@ void Instrument::set_instnum(char* name)
 		tmp->next = NULL;
 		tmp->num = curinst++;
 		tmp->name = name;
-		ilist->next = tmp;
 		instnum = tmp->num;
 	}
 	return;
@@ -425,14 +424,14 @@ void Instrument::pi_path_update(int pval)
 			pfpath[mytag][pval][i][1] = pipath[slot][pval][i][1];
 
 			// keep for debugging
-/*			printf("pipath[%i][%i][%i][0] = %f\t", slot, pval, i
-				, pipath[slot][pval][i][0]); 
-			printf("pipath[%i][%i][%i][1] = %f\n", slot, pval, i 
-				, pipath[slot][pval][i][1]); 
-			printf("pfpath[%i][%i][%i][0] = %f\t", mytag, pval, i 
-				, pfpath[mytag][pval][i][0]); 
-			printf("pfpath[%i][%i][%i][1] = %f\n", mytag, pval, i  
-				, pfpath[mytag][pval][i][1]); */
+			printf("pipath[%i][%i][%i][0] = %f\t", slot, pval, i
+				, pipath[slot][pval][i][0]);  
+			printf("pipath[%i][%i][%i][1] = %f\n", slot, pval, i  
+				, pipath[slot][pval][i][1]);  
+			printf("pfpath[%i][%i][%i][0] = %f\t", mytag, pval, i  
+				, pfpath[mytag][pval][i][0]);  
+			printf("pfpath[%i][%i][%i][1] = %f\n", mytag, pval, i   
+				, pfpath[mytag][pval][i][1]); 
 		}
 		k++;
 	}
@@ -656,8 +655,8 @@ void Instrument::pf_path_update(int tag, int pval)
 
 
 				// keep for testing
-//				printf("table result [%i] = %f\n"
-//                       , tag, pupdatevals[tag][pval]);
+				printf("table result [%i] = %f\n"
+                       , tag, pupdatevals[tag][pval]);
 				
 			}
 		} 
@@ -736,8 +735,8 @@ void Instrument::pf_path_update(int tag, int pval)
                                    + (table_val * diff);
 
 				// keep for testing
-//				printf("result [%i] = %f\n", cursamp
-//                       , pupdatevals[0][pval]);
+				printf("result [%i] = %f\n", cursamp
+                       , pupdatevals[0][pval]);
 
 				
 			}
