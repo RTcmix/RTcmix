@@ -85,6 +85,11 @@ ug_intro()
 	UG_INTRO("reset",m_reset);
 	UG_INTRO("load",m_load); /* allows loading of dynamic libraries */
 	UG_INTRO("DUR",m_DUR);  /* returns duration for rtinput files */
+#ifdef USE_SNDLIB
+	UG_INTRO("PEAK",m_PEAK);  /* returns peak amp for rtinput files */
+	UG_INTRO("LEFT_PEAK",m_LEFT_PEAK);
+	UG_INTRO("RIGHT_PEAK",m_RIGHT_PEAK);
+#endif
 }
 
 

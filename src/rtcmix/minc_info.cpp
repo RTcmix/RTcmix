@@ -217,6 +217,124 @@ float *p;
 #endif /* !USE_SNDLIB */
 
 
+#ifdef USE_SNDLIB
+
+#include <sndlibsupport.h>
+
+#define ALL_CHANS -1
+
+extern double inSR;           /* defined in rtinput.c */
+extern int    inNCHANS;
+
+/* Returns peak for <chan> of current RT input file, between <start> and
+   <end> times (in seconds). If <chan> is -1, returns the highest peak
+   of all the channels. If <end> is 0, sets <end> to duration of file.
+*/
+static float
+get_peak(float start, float end, int chan)
+{
+   int       n, fd, result, nchans, srate, dataloc, format, file_stats_valid;
+   long      startframe, endframe, nframes, loc;
+   long      peakloc[MAXCHANS];
+   float     peak[MAXCHANS];
+   SFComment sfc;
+
+   if (rtInputIndex < 0) {
+      fprintf(stderr, "There are no currently opened input files!\n");
+      return -1.0;
+   }
+
+   if (end == 0.0)
+      end = inputFileTable[rtInputIndex].dur;       /* use end time of file */
+
+   fd = inputFileTable[rtInputIndex].fd;
+
+// *** If end - start is, say, 60 seconds, less trouble to just analyze file
+// than to dig through file header?
+
+   /* Try to use peak stats in file header. */
+   if (sndlib_get_header_comment(fd, &sfc) == -1)
+      return -1.0;         /* this call prints an err msg */
+
+   if (SFCOMMENT_PEAKSTATS_VALID(&sfc)) {
+      struct stat statbuf;
+      fstat(fd, &statbuf);
+      if (statbuf.st_mtime <= sfc.timetag + 2)
+         file_stats_valid = 1;
+   }
+   else
+      file_stats_valid = 0;    /* file written since peak stats were updated */
+
+   format = inputFileTable[rtInputIndex].data_format;
+   dataloc = inputFileTable[rtInputIndex].data_location;
+   srate = (float)inSR;
+   nchans = inNCHANS;
+
+   startframe = (long)(start * srate + 0.5);
+   endframe = (long)(end * srate + 0.5);
+   nframes = (endframe - startframe) + 1;
+
+   if (file_stats_valid) {
+      int c = 0;
+      if (chan == ALL_CHANS) {
+         float max = 0.0;
+         for (n = 0; n < nchans; n++) {
+            if (sfc.peak[n] > max) {
+               max = sfc.peak[n];
+               c = n;
+            }
+         }
+         loc = sfc.peakloc[c];
+      }
+      else {
+         loc = sfc.peakloc[chan];
+         c = chan;
+      }
+      if (loc >= startframe && loc <= endframe)
+         return sfc.peak[c];
+   }
+
+   /* NOTE: Might get here even if file_stats_valid. */
+   result = sndlib_findpeak(fd, -1, dataloc, -1, format, nchans,
+                            startframe, nframes, peak, peakloc);
+
+   if (chan == ALL_CHANS) {
+      float max = 0.0;
+      for (n = 0; n < nchans; n++) {
+         if (peak[n] > max)
+            max = peak[n];
+      }
+      return max;
+   }
+   else
+      return peak[chan];
+}
+
+
+double
+m_PEAK(float p[], int n_args)
+{
+   return get_peak(p[0], p[1], ALL_CHANS);
+}
+
+
+double
+m_LEFT_PEAK(float p[], int n_args)
+{
+   return get_peak(p[0], p[1], 0);
+}
+
+
+double
+m_RIGHT_PEAK(float p[], int n_args)
+{
+   return get_peak(p[0], p[1], 1);
+}
+
+
+#endif /* !USE_SNDLIB */
+
+
 extern int sfd[NFILES];
 
 double
