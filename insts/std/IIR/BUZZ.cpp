@@ -29,7 +29,9 @@ int BUZZ::init(float p[], short n_args)
 // p4 = stereo spread (0-1) [optional]
 // assumes function table 1 is the amplitude envelope
 // assumes function table 2 is a sine wave
-
+//
+// NOTE NOTE NOTE: Table 2 must have exactly 1024 elements
+//    (because of buzz ugen)  -JGG
 
 	int i,lensine;
 
