@@ -4,9 +4,9 @@
 #include <sys/soundcard.h>
 #include <math.h>
 
-#define BUFSIZE 8192
+#define BUFSIZE 4096
 #define SR_RATE 44100
-#define NBUFS 4
+#define NBUFS 10
 #define WTABLESIZE 1000
 #define FREQ 278.0
 #define NOSCILS 1000
@@ -49,7 +49,7 @@ main ()
   }
 
   /* Set the fragment size */
-  arg = 0x777f000d;
+  arg = 0x777f000a;
   if (ioctl(audio_fd, SNDCTL_DSP_SETFRAGMENT, &arg)==-1) {
     perror("incorrect fragment size");
     exit(1);
