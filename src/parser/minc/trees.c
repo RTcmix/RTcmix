@@ -1324,26 +1324,40 @@ pop_list()
    list_len = list_len_stack[list_stack_ptr];
 }
 
+static void copy_value(MincValue *dest, MincDataType destType,
+                       MincValue *src, MincDataType srcType)
+{
+   assert(srcType != MincVoidType);
+   if (srcType == MincHandleType) {
+      ref_handle(src->handle);	// ref before unref
+   }
+   else if (srcType == MincListType) {
+      ++src->list.refcount;
+   }
+   if (destType == MincHandleType) {
+#ifdef DEBUG
+      DPRINT("\toverwriting existing Handle value\n");
+#endif
+      unref_handle(dest->handle);	// overwriting handle, so unref
+   }
+   else if (destType == MincListType) {
+#ifdef DEBUG
+      DPRINT("\toverwriting existing MincList value\n");
+#endif
+      unref_list(&dest->list);
+   }
+   memcpy(dest, src, sizeof(MincValue));
+}
+
 /* This copies a Tree node's value and handles ref counting when necessary */
 static void
 copy_tree_tree(Tree tpdest, Tree tpsrc)
 {
    int no_ref = 0;
    DPRINT2("copy_tree_tree(%p, %p)\n", tpdest, tpsrc);
-   assert(tpsrc->type != MincVoidType);
    assert(tpdest->type != MincListType);	// check for these!!
-   if (tpdest->type == MincHandleType) {
-	   if (tpdest->v.handle != tpsrc->v.handle)
-		   unref_handle(tpdest->v.handle);	// overwriting handle, so unref
-	   else
-		   no_ref = 1;	// handles are identical -- no ref/unref
-   }
+   copy_value(&tpdest->v, tpdest->type, &tpsrc->v, tpsrc->type);
    tpdest->type = tpsrc->type;
-   memcpy(&tpdest->v, &tpsrc->v, sizeof(MincValue));
-   if (tpsrc->type == MincHandleType && !no_ref)
-   {
-      ref_handle(tpsrc->v.handle);
-   }
 }
 
 /* This copies a Symbol's value and handles ref counting when necessary */
@@ -1352,23 +1366,9 @@ copy_sym_tree(Tree tpdest, Symbol *src)
 {
    int no_ref = 0;
    DPRINT2("copy_sym_tree(%p, %p)\n", tpdest, src);
-   assert(src->type != MincVoidType);
    assert(tpdest->type != MincListType);	// check for these!!
-   if (tpdest->type == MincHandleType) {
-#ifdef DEBUG
-	   DPRINT("\toverwriting existing tree value\n");
-#endif
-	   if (tpdest->v.handle != src->v.handle)
-		   unref_handle(tpdest->v.handle);	// overwriting handle, so unref
-	   else
-		   no_ref = 1;	// handles are identical -- no ref/unref
-   }
+   copy_value(&tpdest->v, tpdest->type, &src->v, src->type);
    tpdest->type = src->type;
-   memcpy(&tpdest->v, &src->v, sizeof(MincValue));
-   if (src->type == MincHandleType && !no_ref)
-   {
-      ref_handle(src->v.handle);
-   }
 }
 
 static void
@@ -1376,22 +1376,9 @@ copy_tree_sym(Symbol *dest, Tree tpsrc)
 {
    int no_ref = 0;
    DPRINT2("copy_tree_sym(%p, %p)\n", dest, tpsrc);
-   assert(tpsrc->type != MincVoidType);
    assert(dest->type != MincListType);	// check for these!!
-   if (dest->type == MincHandleType) {
-#ifdef DEBUG
-	   DPRINT("\toverwriting existing symbol value\n");
-#endif
-	   if (dest->v.handle != tpsrc->v.handle)
-		   unref_handle(dest->v.handle);	// overwriting handle, so unref
-	   else
-		   no_ref = 1;	// handles are identical -- no ref/unref
-   }
-   memcpy(&dest->v, &tpsrc->v, sizeof(MincValue));
+   copy_value(&dest->v, dest->type, &tpsrc->v, tpsrc->type);
    dest->type = tpsrc->type;
-   if (tpsrc->type == MincHandleType && !no_ref) {
-      ref_handle(tpsrc->v.handle);
-   }
 }
 
 static void
@@ -1399,22 +1386,9 @@ copy_tree_listelem(MincListElem *dest, Tree tpsrc)
 {
    int no_ref = 0;
    DPRINT2("copy_tree_listelem(%p, %p)\n", dest, tpsrc);
-   assert(tpsrc->type != MincVoidType);
    assert(dest->type != MincListType);	// check for these!!
-   if (dest->type == MincHandleType) {
-#ifdef DEBUG
-	   DPRINT("\toverwriting existing listelem value\n");
-#endif
-	   if (dest->val.handle != tpsrc->v.handle)
-		   unref_handle(dest->val.handle);	// overwriting handle, so unref
-	   else
-		   no_ref = 1;	// handles are identical -- no ref/unref
-   }   
-   memcpy(&dest->val, &tpsrc->v, sizeof(MincValue));
+   copy_value(&dest->val, dest->type, &tpsrc->v, tpsrc->type);
    dest->type = tpsrc->type;
-   if (tpsrc->type == MincHandleType && !no_ref) {
-      ref_handle(tpsrc->v.handle);
-   }
 }
 
 static void
@@ -1422,22 +1396,9 @@ copy_listelem_tree(Tree tpdest, MincListElem *esrc)
 {
    int no_ref = 0;
    DPRINT2("copy_listelem_tree(%p, %p)\n", tpdest, esrc);
-   assert(esrc->type != MincVoidType);
    assert(tpdest->type != MincListType);	// check for these!!
-   if (tpdest->type == MincHandleType) {
-#ifdef DEBUG
-	   DPRINT("\toverwriting existing tree value\n");
-#endif
-	   if (tpdest->v.handle != esrc->val.handle)
-		   unref_handle(tpdest->v.handle);	// overwriting handle, so unref
-	   else
-		   no_ref = 1;	// handles are identical -- no ref/unref
-   }
-   memcpy(&tpdest->v, &esrc->val, sizeof(MincValue));
+   copy_value(&tpdest->v, tpdest->type, &esrc->val, esrc->type);
    tpdest->type = esrc->type;
-   if (esrc->type == MincHandleType && !no_ref) {
-      ref_handle(esrc->val.handle);
-   }
 }
 
 /* This recursive function frees space. */
