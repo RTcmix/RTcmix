@@ -8,6 +8,7 @@
 */
 #include <globals.h>
 #include <prototypes.h>
+#include <ugens.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -290,14 +291,11 @@ rtinput(float p[], int n_args, double pp[])
       str = (char *) anint;
 
       err = parse_bus_name(str, &type, &startchan, &endchan);
-      if (err) {
-         fprintf(stderr, "rtinput: invalid bus name specification.\n");
-         exit(1);       /* syntax error */
-      }
-      if (type != BUS_IN) {
-         fprintf(stderr, "You have to use an \"in\" bus with rtinput.\n");
-         exit(1);       /* syntax error */
-      }
+      if (err)
+         die("rtinput", "Invalid bus name specification.");
+      if (type != BUS_IN)
+         die(NULL, "You have to use an \"in\" bus with rtinput.");
+
       for (j = startchan; j <= endchan; j++)
          buslist[busindex++] = j;
    }
@@ -322,7 +320,7 @@ rtinput(float p[], int n_args, double pp[])
       if (audio_in) {
          fd = open_audio_input(port_type, nchans);
          if (fd == -1)
-            return -1.0;
+            exit(1);
          for (i = 0; i < nchans; i++) {
             allocate_audioin_buffer(i, RTBUFSAMPS);
          }
@@ -333,7 +331,7 @@ rtinput(float p[], int n_args, double pp[])
          fd = open_sound_file(sfname, &header_type, &data_format,
                                     &data_location, &srate, &nchans, &nsamps);
          if (fd == -1)
-            return -1.0;
+            exit(1);
 
 #ifdef INPUT_BUS_SUPPORT
          if (startchan == -1) {     /* no bus specified above */
@@ -342,9 +340,9 @@ rtinput(float p[], int n_args, double pp[])
          }
          else {
             if (endchan - startchan >= nchans) {
-               fprintf(stderr, "WARNING: You specifed more input buses than "
-                               "input file '%s' has channels.\n", sfname);
-               fprintf(stderr, "Using in buses %d    \n", foo);
+               warn(NULL, "You specifed more input buses than "
+                          "input file '%s' has channels.", sfname);
+               warn(NULL, "Using in buses %d", foo);
                endchan = (startchan + nchans) - 1;
             }
          }
@@ -363,8 +361,8 @@ rtinput(float p[], int n_args, double pp[])
 #endif /* INPUT_BUS_SUPPORT */
          }
          if (srate != SR) {
-            fprintf(stderr, "WARNING: The input file sampling rate is %g, but "
-                            "the output rate is currently %g.\n", srate, SR);
+            warn("rtinput", "The input file sampling rate is %g, but "
+                            "the output rate is currently %g.", srate, SR);
          }
       }
 
@@ -395,11 +393,9 @@ rtinput(float p[], int n_args, double pp[])
       }
 
       /* If this is true, we've used up all input descriptors in our array. */
-      if (i == MAX_INPUT_FDS) {
-         fprintf(stderr, "You have exceeded the maximum number of input "
-                         "files (%d)!\n", MAX_INPUT_FDS);
-         return -1.0;
-      }
+      if (i == MAX_INPUT_FDS)
+         die(NULL, "You have exceeded the maximum number of input files (%d)!",
+                                                                MAX_INPUT_FDS);
    }
 
    /* Return this to Minc, so user can pass it to functions. */
