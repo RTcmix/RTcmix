@@ -6,6 +6,6 @@ class STEREO : public Instrument {
 public:
 	STEREO();
 	virtual ~STEREO();
-	int init(float*, short);
+	int init(float*, int);
 	int run();
 	};

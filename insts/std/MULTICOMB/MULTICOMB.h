@@ -8,6 +8,6 @@ class MULTICOMB : public Instrument {
 public:
 	MULTICOMB();
 	virtual ~MULTICOMB();
-	int init(float*, short);
+	int init(float*, int);
 	int run();
 	};

@@ -10,6 +10,6 @@ class WAVESHAPE : public Instrument {
 
 public:
 	WAVESHAPE();
-	int init(float*, short);
+	int init(float*, int);
 	int run();
 	};

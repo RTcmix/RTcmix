@@ -19,6 +19,6 @@ class VSFLUTE : public Instrument {
 
 public:
 	VSFLUTE();
-	int init(float*, short);
+	int init(float*, int);
 	int run();
 	};

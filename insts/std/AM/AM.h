@@ -8,6 +8,6 @@ class AM : public Instrument {
 public:
 	AM();
 	virtual ~AM();
-	int init(float*, short);
+	int init(float*, int);
 	int run();
 	};

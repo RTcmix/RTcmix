@@ -12,6 +12,6 @@ class LSFLUTE : public Instrument {
 
 public:
 	LSFLUTE();
-	int init(float*, short);
+	int init(float*, int);
 	int run();
 	};

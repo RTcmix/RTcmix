@@ -9,6 +9,6 @@ class DEL1 : public Instrument {
 public:
 	DEL1();
 	virtual ~DEL1();
-	int init(float*, short);
+	int init(float*, int);
 	int run();
 	};

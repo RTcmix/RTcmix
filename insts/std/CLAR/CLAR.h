@@ -11,6 +11,6 @@ class CLAR : public Instrument {
 
 public:
 	CLAR();
-	int init(float*, short);
+	int init(float*, int);
 	int run();
 	};

@@ -8,6 +8,6 @@ class FRET : public Instrument {
 
 public:
 	FRET();
-	int init(float*, short);
+	int init(float*, int);
 	int run();
 	};

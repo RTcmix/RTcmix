@@ -18,6 +18,6 @@ class BSFLUTE : public Instrument {
 
 public:
 	BSFLUTE();
-	int init(float*, short);
+	int init(float*, int);
 	int run();
 	};

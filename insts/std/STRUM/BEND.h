@@ -10,6 +10,6 @@ class BEND : public Instrument {
 
 public:
 	BEND();
-	int init(float*, short);
+	int init(float*, int);
 	int run();
 	};

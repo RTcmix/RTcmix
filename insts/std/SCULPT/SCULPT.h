@@ -8,6 +8,6 @@ class SCULPT : public Instrument {
 
 public:
 	SCULPT();
-	int init(float*, short);
+	int init(float*, int);
 	int run();
 	};

@@ -13,6 +13,6 @@ class START1 : public Instrument {
 public:
 	START1();
 	virtual ~START1();
-	int init(float*, short);
+	int init(float*, int);
 	int run();
 	};

@@ -13,6 +13,6 @@ class FRET1 : public Instrument {
 
 public:
 	FRET1();
-	int init(float*, short);
+	int init(float*, int);
 	int run();
 	};

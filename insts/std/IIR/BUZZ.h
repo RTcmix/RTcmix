@@ -9,6 +9,6 @@ class BUZZ : public Instrument {
 public:
 	BUZZ();
 	virtual ~BUZZ();
-	int init(float*, short);
+	int init(float*, int);
 	int run();
 	};

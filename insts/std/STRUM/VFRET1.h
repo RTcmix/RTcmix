@@ -19,6 +19,6 @@ class VFRET1 : public Instrument {
 
 public:
 	VFRET1();
-	int init(float*, short);
+	int init(float*, int);
 	int run();
 	};
