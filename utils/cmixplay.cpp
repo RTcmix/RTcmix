@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
+#include <ctype.h>
 #include <termios.h>
 #include <errno.h>
 #include <assert.h>
@@ -53,6 +54,7 @@
 #define MARK_DELAY          0.05f   // report mark time earlier by this much,
                                     // to make up for delay when typing key
 #define FACTOR_INCREMENT    0.1f    // for hotkey volume changes
+#define GOTO_BUFLEN         32      // number of chars in goto digit buffer
 
 #define ALL_CHANS           -1
 
@@ -112,8 +114,8 @@ typedef enum {
 
 static bool audioDone = false;
 
-static const char *make_time_string(const float seconds, const int precision);
-static const float get_seconds(const char timestr[], TimeFormat *format);
+static const char *make_time_string(const double seconds, const int precision);
+static const double get_seconds(const char timestr[], TimeFormat *format);
 static Status set_input_mode();
 static void reset_input_mode();
 
@@ -130,6 +132,7 @@ public:
           const bool       forcePeak,
           const bool       useHotKeys,
           const float      hotKeySkipTime,
+          const bool       autoPause,
           const bool       quiet,
           const TimeFormat timeFormat
          );
@@ -162,6 +165,7 @@ private:
    bool        _force;
    bool        _useHotKeys;
    float       _hotKeySkipTime;
+   bool        _autoPause;
    bool        _quiet;
    TimeFormat  _timeFormat;
 
@@ -184,6 +188,8 @@ private:
    int         _bufStartFrame;
    long        _skipBytes;
    int         _curSecond;
+   bool        _gotoPending;
+   char        *_gotoBuf;
    void        *_inBuf;       // filled from file read
    float       *_outBuf;      // passed to audio device
    float       *_outZeroBuf;  // used during pause
@@ -209,18 +215,22 @@ Player::Player(
    const bool        forcePeak,
    const bool        useHotKeys,
    const float       hotKeySkipTime,
+   const bool        autoPause,
    const bool        quiet,
    const TimeFormat  timeFormat)
    : _fileName(fileName), _deviceName(deviceName), _startTime(startTime),
      _endTime(endTime), _playChan(playChan), _deviceFrames(requestedBufFrames),
      _factor(rescaleFactor), _force(forcePeak), _useHotKeys(useHotKeys),
-     _hotKeySkipTime(hotKeySkipTime), _quiet(quiet), _timeFormat(timeFormat)
+     _hotKeySkipTime(hotKeySkipTime), _autoPause(autoPause), _quiet(quiet),
+     _timeFormat(timeFormat)
 {
    _inBuf = NULL;
    _outBuf = NULL;
    _outZeroBuf = NULL;
    _device = NULL;
    _state = StateStopped;
+   _gotoPending = false;
+   _gotoBuf = new char [GOTO_BUFLEN];
 }
 
 
@@ -230,6 +240,7 @@ Player::~Player()
    delete [] (float *) _inBuf;
    delete [] _outBuf;
    delete [] _outZeroBuf;
+   delete [] _gotoBuf;
 }
 
 
@@ -462,13 +473,65 @@ Player::doHotKeys(int framesRead)
       char c = 0;
       long bytesRead = read(STDIN_FILENO, &c, 1);
       if (bytesRead > 0) {
-         int skip = 0;
+         bool skip = false;
+         DPRINT1("\nchar: %d\n", (int) c);
 
-         if (c == '\004')        // control-D
+         if (c == '\004')           // control-D
             return StatusAbort;
-         else if (c == 'f') {    // fast-forward
-            skip = 1;
-            int skipFrames = (int) (_hotKeySkipTime * _sRate);
+         else if (_gotoPending) {
+            // NB: while pending, all other hotkeys ignored
+            int len = strlen(_gotoBuf);
+            if (isdigit(c) || c == '.' || c == ':') { // append to goto buffer
+               if (len < GOTO_BUFLEN - 1) {
+                  _gotoBuf[len] = c;
+                  _gotoBuf[len + 1] = 0;
+                  if (!_quiet) {
+                     printf("%c", c);
+                     fflush(stdout);
+                  }
+               }
+            }
+            // FIXME: Backspace doesn't really work well, because I don't know
+            // how to clear chars from the screen, so no feedback for user.
+            else if (c == '\177') { // backspace
+               len--;
+               if (len >= 0)
+                  _gotoBuf[len] = 0;
+            }
+            else if (c == '\n') {   // prepare to exit goto mode
+               double seconds = get_seconds(_gotoBuf, &_timeFormat);
+               if (seconds >= 0.0) {        // update params for skip
+                  int gotoFrame = (int) (seconds * _sRate + 0.5);
+                  int skipFrames = gotoFrame - _bufStartFrame;
+                  _bufStartFrame = gotoFrame;
+                  _skipBytes = (long) (skipFrames * _fileChans * _datumSize);
+                  if (!_quiet) {
+                     _bufStartTime = seconds;
+                     _curSecond = (int) seconds;
+                  }
+                  skip = true;
+               }
+               _gotoPending = false;
+               if (!_quiet)
+                  printf("\n");
+            }
+            else if (c == '\e') {   // escape cancels goto mode
+               _gotoPending = false;
+               if (!_quiet)
+                  printf("\n");
+            }
+         }
+         else if (c == 'g') {       // enter goto mode
+            _gotoBuf[0] = 0;
+            _gotoPending = true;
+            if (!_quiet) {
+               printf("\nGo to [type number, then return]: ");
+               fflush(stdout);
+            }
+         }
+         else if (c == 'f') {       // fast-forward
+            skip = true;
+            int skipFrames = (int) (_hotKeySkipTime * _sRate + 0.5);
             _skipBytes = (long) (skipFrames * _fileChans * _datumSize);
             _bufStartFrame += skipFrames;
             if (!_quiet) {
@@ -477,9 +540,9 @@ Player::doHotKeys(int framesRead)
                printf("\n");
             }
          }
-         else if (c == 'r') {    // rewind
-            skip = 1;
-            int skipFrames = (int) (_hotKeySkipTime * _sRate);
+         else if (c == 'r') {       // rewind
+            skip = true;
+            int skipFrames = (int) (_hotKeySkipTime * _sRate + 0.5);
             _skipBytes = -(long) (skipFrames * _fileChans * _datumSize);
             _bufStartFrame -= skipFrames;
             if (!_quiet) {
@@ -488,19 +551,19 @@ Player::doHotKeys(int framesRead)
                printf("\n");
             }
          }
-         else if (c == 'm') {    // mark
-            float markTime = _bufStartTime - MARK_DELAY;
+         else if (c == 'm') {       // mark
+            double markTime = _bufStartTime - MARK_DELAY;
             printf("\nMARK: %.*f [%s]\n", MARK_PRECISION, markTime,
                               make_time_string(markTime, MARK_PRECISION));
             fflush(stdout);
          }
-         else if (c == 't') {    // toggle time display format
+         else if (c == 't') {       // toggle time display format
             if (_timeFormat == TimeFormatSeconds)
                _timeFormat = TimeFormatMinutesSeconds;
             else
                _timeFormat = TimeFormatSeconds;
          }
-         else if (c == 'p') {    // toggle pause
+         else if (c == 'p') {       // toggle pause
             if (_state == StatePlaying) {
                _state = StatePaused;
                if (!_quiet)
@@ -509,7 +572,7 @@ Player::doHotKeys(int framesRead)
             else
                _state = StatePlaying;
          }
-         else if (c == '-') {    // decrease volume (factor)
+         else if (c == '-') {       // decrease volume (factor)
             _factor -= FACTOR_INCREMENT;
             if (_factor < 0.0)
                _factor = 0.0;
@@ -553,12 +616,12 @@ Player::doHotKeys(int framesRead)
 void
 Player::printTime()
 {
-   if (_quiet)
+   if (_quiet || _gotoPending)
       return;
 
    if (_bufStartTime >= _curSecond || _state == StatePaused) {
       if (_timeFormat == TimeFormatMinutesSeconds)
-         printf("%s ", make_time_string((float) _curSecond, 0));
+         printf("%s ", make_time_string((double) _curSecond, 0));
       else
          printf("%d ", _curSecond);
       fflush(stdout);
@@ -583,6 +646,11 @@ Player::readBuffer()
          return 0;               // _endFrame reached
       DPRINT1("last buffer: requesting %d frames\n", samps / _fileChans);
       bytesRead = read(_fd, _inBuf, samps * _datumSize);
+      if (_autoPause) {
+         _state = StatePaused;   // handled after return from readBuffer
+         if (!_quiet)
+            printf("\nPausing at end...\n");
+      }
    }
    else
       bytesRead = read(_fd, _inBuf, _bufSamps * _datumSize);
@@ -781,7 +849,7 @@ Player::play()
 
 // -------------------------------------------------------- make_time_string ---
 static const char *
-make_time_string(const float seconds, const int precision)
+make_time_string(const double seconds, const int precision)
 {
    static char buf[32];
 
@@ -789,7 +857,7 @@ make_time_string(const float seconds, const int precision)
    int secs = (int) seconds % 60;
    if (precision > 0) {
       char  tmp[16], *p;
-      float frac = seconds - (int) seconds;
+      double frac = seconds - (int) seconds;
       snprintf(tmp, 16, "%.*f", precision, frac);
       p = tmp + 1;      // skip 0 before decimal point
       snprintf(buf, 32, "%d:%02d%s", minutes, secs, p);
@@ -801,28 +869,51 @@ make_time_string(const float seconds, const int precision)
 
 
 // ------------------------------------------------------------- get_seconds ---
-static const float
+static const double
 get_seconds(const char timestr[], TimeFormat *format)
 {
-   float seconds;
-   char  *p, *str;
+   double seconds;
 
-   str = strdup(timestr);
+   assert(timestr != NULL);
+   assert(format != NULL);
+
+   char *str = strdup(timestr);
    if (str == NULL) {
       fprintf(stderr, "get_seconds: can't allocate string buffer.\n");
       exit(EXIT_FAILURE);
    }
-   p = strchr(str, ':');
+   char *p = strchr(str, ':');
    if (p) {
-      float minutes = atof(str);
-      *p = '\0';
+      *p = 0;
       p++;        // now str points to minutes str; p points to seconds
-      seconds = atof(p);
+
+      char *pos = NULL;
+      double minutes = strtod(str, &pos);
+      if ((minutes == 0.0 && pos == str) || errno == ERANGE) {
+         fprintf(stderr, "Error converting time string (min:sec format).\n");
+         free(str);
+         return -1.0;
+      }
+      pos = NULL;
+      seconds = strtod(p, &pos);
+      if ((seconds == 0.0 && pos == p) || errno == ERANGE) {
+         fprintf(stderr, "Error converting time string (min:sec format).\n");
+         free(str);
+         return -1.0;
+      }
       seconds += minutes * 60.0;
       *format = TimeFormatMinutesSeconds;
    }
-   else
-      seconds = atof(str);
+   else {
+      char *pos = NULL;
+      seconds = strtod(str, &pos);
+      if ((seconds == 0.0 && pos == str) || errno == ERANGE) {
+         fprintf(stderr, "Error converting time string (seconds format).\n");
+         free(str);
+         return -1.0;
+      }
+      *format = TimeFormatSeconds;
+   }
    free(str);
 
    return seconds;
@@ -843,8 +934,6 @@ reset_input_mode()
 static Status
 set_input_mode()
 {
-   struct termios tattr;
-
    // Make sure stdin is a terminal.
    if (!isatty(STDIN_FILENO)) {
       fprintf(stderr, "Not a terminal.\n");
@@ -856,6 +945,7 @@ set_input_mode()
    atexit(reset_input_mode);
 
    // Set terminal modes so fast-forward, rewind, etc. will work.
+   struct termios tattr;
    tcgetattr(STDIN_FILENO, &tattr);
    tattr.c_lflag &= ~(ICANON | ECHO);  // Clear ICANON and ECHO.
    tattr.c_cc[VMIN] = 0;               // so read doesn't block; it
@@ -875,19 +965,21 @@ Usage: %s [options] filename  \n\
                  -d NUM    duration                             \n\
                  -f NUM    rescale factor                       \n\
                  -c NUM    channel (starting from 0)            \n\
-                 -h        view this help screen                \n\
+                 -h        display help                         \n\
                  -k        disable hotkeys (see below)          \n\
                  -t NUM    time to skip for rewind, fast-forward\n\
                               (default is 4 seconds)            \n\
+                 -a        auto-pause at end                    \n\
                  -r        robust - larger audio buffers        \n\
                  -q        quiet - don't print anything         \n\
                  --force   use rescale factor even if peak      \n\
                               amp of float file unknown         \n\
                  -D        audio device name                    \n\
-          Notes: -d ignored if you also give -e                 \n\
+          Notes: duration (-d) ignored if you also give end time (-e)\n\
                  Times can be given as seconds or 0:00.0        \n\
                     If the latter, prints time in same way.     \n\
-                 Hotkeys: 'f': fast-forward, 'r': rewind,       \n\
+                 Hotkeys: 'f': fast-forward, 'r': rewind        \n\
+                          'g': go to location (enter time)      \n\
                           'm': mark (print current buffer start time)\n\
                           't': toggle time display              \n\
                           'p': pause / resume                   \n\
@@ -908,7 +1000,8 @@ usage()
 int
 main(int argc, char *argv[])
 {
-   int         quiet, robust, force, play_chan, hotkeys, requested_bufframes;
+   int         play_chan, requested_bufframes;
+   bool        quiet, robust, force, hotkeys, autopause;
    float       start_time, end_time, request_dur, factor, hk_skip_time;
    char        *file_name, *device_name;
    Player      *player;
@@ -920,9 +1013,9 @@ main(int argc, char *argv[])
 
    file_name = NULL;
    device_name = DEFAULT_DEVICE_NAME;
-   quiet = robust = force = 0;
+   quiet = robust = force = autopause = false;
    play_chan = ALL_CHANS;
-   hotkeys = 1;
+   hotkeys = true;
    start_time = end_time = request_dur = factor = 0.0;
    hk_skip_time = SKIP_SECONDS;
 
@@ -962,22 +1055,25 @@ main(int argc, char *argv[])
                play_chan = atoi(argv[i]);
                break;
             case 'k':               // disable hotkeys
-               hotkeys = 0;
+               hotkeys = false;
                break;
             case 't':               // hotkey transport skip time
                if (++i >= argc)
                   usage();
                hk_skip_time = get_seconds(argv[i], &time_format);
                break;
+            case 'a':               // auto-pause at end
+               autopause = true;
+               break;
             case 'r':               // robust buffer size
-               robust = 1;
+               robust = true;
                break;
             case 'q':               // no printout
-               quiet = 1;
+               quiet = true;
                break;
             case '-':
                if (strcmp(arg, "--force") == 0)
-                  force = 1;
+                  force = true;
                else
                   usage();
                break;
@@ -1029,8 +1125,8 @@ main(int argc, char *argv[])
    }
 
    player = new Player(file_name, device_name, start_time, end_time, play_chan,
-               requested_bufframes, factor, force, hotkeys, hk_skip_time, quiet,
-               time_format);
+               requested_bufframes, factor, force, hotkeys, hk_skip_time, 
+               autopause, quiet, time_format);
 
    status = player->configure();
    if (status != StatusGood)
