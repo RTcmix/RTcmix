@@ -11,7 +11,7 @@
    p4 = minimum distortion index
    p5 = maximum distortion index
    p6 = reference to an amplitude normalization table, or 0 for no norm. **
-   p7 = input channel [optional, default is 0]
+   p7 = input channel [optional, default is 0.5]
    p8 = percent of signal to left output channel [optional, default is .5]
    p9 = reference to waveshaping tranfer function table [optional; if missing,
         must use gen 2] ***
