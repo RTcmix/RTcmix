@@ -9,6 +9,8 @@ capability.
 Instrument designers should see "docs/README.inst_porting" to find out
 how to make your instruments compatible with this version of RTcmix.
 
+Later 3.0 versions add support for alternative parsers: Perl and Python.
 
 
-JGG
+John Gibson
+johngibson@virginia.edu
