@@ -46,10 +46,9 @@ extern "C" {
     struct sockaddr_in sss;
     int err;
     struct sockdata *sinfo;
-    int amt,tamt;
+    size_t amt;
     char *sptr;
     int val,optlen;
-    double a,b,c;
     int ntag,pval;
 
     // tz.tz_minuteswest = 0;
