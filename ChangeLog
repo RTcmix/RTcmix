@@ -1,3 +1,14 @@
+Saturday, Aug 4, 2001 John Gibson <johgibso@indiana.edu>
+
+   * Update to more recent version of sndlib, with lots
+     of reorganization of sound file code.
+   * Make it easier to fix a nagging problem that happens when
+     an NFS server's clock doesn't match the client's clock.
+     Various parts of RTcmix will complain if a file's modification
+     date is more recent than the file's peak stats. Changing
+     MAX_PEAK_STATS_AGE in H/sfheader.h can silence these complaints.
+
+
 **** Released RTcmix-3.0.5, Sunday, Apr 15, 2001 ****
 
 Thursday, Feb 15 2001 Doug Scott <netdscott@netscape.net>
