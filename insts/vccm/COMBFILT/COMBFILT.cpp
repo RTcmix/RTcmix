@@ -39,6 +39,8 @@ int COMBFILT::init(float p[], int n_args)
   // p13 = decay
   // assumes function table 1 is the amplitude envelope
   Instrument::init(p, n_args);
+
+
   rtsetinput(p[1], this);
   nsamps = rtsetoutput(p[0], p[2], this);
   insamps = (int)(p[2] * SR);
