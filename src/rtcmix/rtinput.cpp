@@ -157,6 +157,8 @@ double rtinput(float *p, short n_args, double *pp)
 	for (n = 0; n < MAX_INPUT_FDS; n++) {
 		if (!strcmp(inputFileTable[n].filename, rtsfname)) {
 			rtInputIndex = n;
+			inNCHANS = inputFileTable[n].chans;
+			inSR = (double)inputFileTable[n].srate;
 			return 0.0;
 		}
 	}
@@ -262,6 +264,8 @@ double rtinput(float *p, short n_args, double *pp)
 #ifdef USE_SNDLIB
 		inputFileTable[n].header_type = header_type;
 		inputFileTable[n].data_format = data_format;
+		inputFileTable[n].chans = inNCHANS;
+		inputFileTable[n].srate = (float)inSR;
 #endif
 		inputFileTable[n].data_location = data_location;
 		inputFileTable[n].dur = (float)(nsamps / inNCHANS) / inSR;
