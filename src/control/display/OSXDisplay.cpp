@@ -26,7 +26,7 @@ const char *kServerName = "localhost";
 OSXDisplay::OSXDisplay()
 	: RTcmixDisplay(), _sockdesc(0), _running(false)
 {
-	_sockport = SOCK_PORT;
+	_sockport = kSockPort;
 	_packet = new DisplaySockPacket [1];
 	_evtpacket = new DisplaySockPacket [1];
 	_servername = strdup(kServerName);
