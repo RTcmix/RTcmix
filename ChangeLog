@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Thursday, August 22 2002 Douglas Scott <netdscott-at-netscape.net>
+
+   * Added new LPCIN instrument to libLPCPLAY library.
+
 Friday, August 9, 2002 John Gibson <johgibso@indiana.edu>
 
    * PCMIX (the Perl front end to RTcmix) can now recognize functions
@@ -19,7 +23,7 @@ Wednesday, May 22, 2002 John Gibson <johgibso@indiana.edu>
 
    * New instrument: MOOGVCF, based on work by Stilson, Smith and Kellett.
 
-Sunday, May 19, 2002 Doug Scott <netdscott@netscape.net>
+Sunday, May 19, 2002 Doug Scott <netdscott-at-netscape.net>
 
    * Second set of revisions to Instrument class - made all members protected
      and renamed new inline methods to follow agreed-upon convention.  Tracked
@@ -35,7 +39,7 @@ Monday, Mar 18, 2002 John Gibson <johgibso@indiana.edu>
    * Fix pvoc bug: transposing would fail for pvoc calls after
      the first in a script.
 
-Saturday, Mar 16, 2002 Doug Scott <netdscott@netscape.net>
+Saturday, Mar 16, 2002 Doug Scott <netdscott-at-netscape.net>
 
    * Added first revisions of Instrument class - inline accessor methods for 
      state, new block-add method, rtbaddout.
@@ -109,7 +113,7 @@ Saturday, Aug 4, 2001 John Gibson <johgibso@indiana.edu>
 
 **** Released RTcmix-3.0.5, Sunday, Apr 15, 2001 ****
 
-Thursday, Feb 15 2001 Doug Scott <netdscott@netscape.net>
+Thursday, Feb 15 2001 Doug Scott <netdscott-at-netscape.net>
 
    * More work on optimizing and cleaning up MOVE and PLACE.
 
@@ -117,7 +121,7 @@ Wednesday, Feb 14, 2001 John Gibson <johngibson@virginia.edu>
 
    * Added (optional) support for Python as an alternative to Minc.
 
-Sunday, Feb 11, 2001 Doug Scott <netdscott@netscape.net>
+Sunday, Feb 11, 2001 Doug Scott <netdscott-at-netscape.net>
 
    * Fixed bugs in real time PLACE and MOVE commands that were causing
      slowdowns.
@@ -150,7 +154,7 @@ Sunday, Dec 17, 2000 John Gibson <johngibson@virginia.edu>
    * Fix bug in REVMIX that caused clicks for files with more than one channel.
    * Install new PLACE
 
-Friday, Dec 08, 2000 Douglas Scott <netdscott@netscape.net>
+Friday, Dec 08, 2000 Douglas Scott <netdscott-at-netscape.net>
 
    * Added TRANSBEND instrument which allows time-varying pitch changes.
    * Fixed bug in TRANS call to tableset().
