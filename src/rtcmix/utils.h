@@ -36,7 +36,22 @@ void unrefHandle(Handle);
 }
 #endif	// __cplusplus
 
+#define ALLOW_INLINE_C
+
 #ifndef __cplusplus
+#ifdef ALLOW_INLINE_C
+inline void refHandle(Handle h)
+{
+	assert(h->refcount >= 0);
+#ifdef DEBUG
+    printf("refHandle(%p): %d -> ", h, h->refcount);
+#endif
+	++h->refcount;
+#ifdef DEBUG
+    printf("%d\n", h->refcount);
+#endif
+}
+#else	// !ALLOW_INLINE_C
 // This is macro-ized to allow inlining in C
 #define refHandle(h) \
 	{ \
@@ -45,5 +60,7 @@ void unrefHandle(Handle);
 	++h->refcount; \
 	/* printf("%d\n", h->refcount); */ \
 	} 
+
+#endif	// ALLOW_INLINE_C
 
 #endif	// !__cplusplus

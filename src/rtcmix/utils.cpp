@@ -19,7 +19,8 @@ createPFieldHandle(PField *pfield)
 		handle->type = PFieldType;
 		handle->ptr = (void *) pfield;
 #ifdef DEBUG
-    	printf("\trefing PField %p\n", pfield);
+		printf("\tcreated Handle %p\n", handle);
+    	printf("\t\trefing PField %p\n", pfield);
 #endif
 		pfield->ref();
 		handle->refcount = 0;
