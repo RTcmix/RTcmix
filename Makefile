@@ -2,18 +2,19 @@ include makefile.conf
 
 ifeq ($(USE_SNDLIB),TRUE)
   SNDLIB = sndlib
+  SNDLIB_DIR = $(SNDLIB)-5.5
 else
   SNDLIB = 
 endif
 
 DIRS = rtstuff/heap rtstuff $(SNDLIB) Minc sys lib head cmd utils insts.base
 
-# Add these to DIRS as needed
+# Add these to DIRS and as needed
 #  insts.std insts.dev
 # CVS CHANGE
 # Another one for testing
 
-all: heap rtstuff $(SNDLIB) Minc sys lib head cmd utils insts.base
+all: H heap rtstuff $(SNDLIB) Minc sys lib head cmd utils insts.base
 
 install:
 	@echo "making install..."
@@ -22,6 +23,11 @@ install:
 	@cd utils; $(MAKE) install;
 	@cd insts.base; $(MAKE) install;
 	@echo "install done."; echo ""
+
+H::
+	@echo "making H..."
+	@cd H; $(MAKE) all
+	@echo "done."; echo""
 
 heap::
 	@echo "making heap ..."
@@ -40,6 +46,7 @@ sys::
 
 sndlib::
 	@echo "making sndlib..."
+	@ln -sf $(SNDLIB_DIR) $(SNDLIB);
 	@cd sndlib; $(MAKE) all
 	@echo "done.";echo""
 
@@ -89,3 +96,4 @@ clean:
 	  ( cd $$DIR; echo "making clean in $$DIR..."; \
 	  $(MAKE) clean ); \
 	done
+
