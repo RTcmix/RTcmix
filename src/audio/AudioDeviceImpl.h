@@ -25,6 +25,9 @@ public:
 	bool			isOpen() const;
 	bool			isRunning() const;
 	bool			isPaused() const;
+	const char *	getLastError() const;
+
+protected:
 	inline int		getFrameFormat() const;
 	inline int		getDeviceFormat() const;
 	inline bool		isFrameFmtNormalized() const;
@@ -35,7 +38,6 @@ public:
 	inline int		getDeviceChannels() const;
 	inline double	getSamplingRate() const;
 	inline long		getFrameCount() const;
-	const char *	getLastError() const;
 
 protected:
 	// Ctor is passed the format and chans of frameBuffer.
