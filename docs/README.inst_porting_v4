@@ -21,9 +21,8 @@ code provided in docs/sample_code.
    Do not call the base class init method from your init method.
    Do not call the base class run method from your run method.
 
-4. Use a configure method (as in MIX.cpp) whenever your inst takes input.
-   Not required, but recommended over the old way of handling memory
-   allocation in the run method.
+4. floc() now returns a double (not float) array, and genlib functions
+   like oscili and tablei take a double array.
 
 5. Many Instrument base class variables that were protected are now private,
    so that you can't access them.  Use the inline accessor functions instead.
@@ -49,7 +48,11 @@ code provided in docs/sample_code.
    for the accessors to use when your code tries to use a private base
    class variable.
 
-6. Another recommended change.  When computing values at the control rate,
+6. Use a configure method (as in MIX.cpp) whenever your inst takes input.
+   Not required, but recommended over the old way of handling memory
+   allocation in the run method.
+
+7. Another recommended change...  When computing values at the control rate,
    many insts use this idiom in the run method:
 
          if (branch < 0) {
@@ -57,7 +60,7 @@ code provided in docs/sample_code.
             branch = skip
          }
 
-   Change the "branch < 0" test to "branch <= 0".  It was discovered that
+   Change the "branch < 0" test to "branch <= 0".  We discovered that
    the old way meant that reset(44100) in a script would not do what you 
    expect; instead it effectively set the control rate to 22050.  The new
    test fixes this.
