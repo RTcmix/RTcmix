@@ -1,6 +1,6 @@
 from distutils.core import setup, Extension
 
-include = ["../../rtcmix"]
+include = ["../../../include", "../../rtcmix"]
 
 rtcmix_ext = Extension("rtcmix", ["rtcmixmodule.cpp"], include_dirs = include)
 

@@ -1,6 +1,7 @@
 include ../../../makefile.conf
 
-CXXFLAGS += -I../../rtcmix
+CFLAGS += -I$(INCLUDEDIR) -I../../rtcmix
+CXXFLAGS += -I$(INCLUDEDIR) -I../../rtcmix
 
 MODULE = rtcmix
 MODULE_SRC = $(MODULE)module.cpp
