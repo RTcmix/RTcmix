@@ -8,7 +8,7 @@ OBJLIB_H = $(OBJLIBDIR)/objlib.h
 
 OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
-CXXFLAGS += -I$(OBJLIBDIR) -Wall
+CXXFLAGS += -I$(OBJLIBDIR)
 PROGS = $(NAME) lib$(NAME).so
 
 all: lib$(NAME).so
