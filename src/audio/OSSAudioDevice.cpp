@@ -198,15 +198,18 @@ void OSSAudioDevice::run()
 	audio_buf_info info;
 //	printf("OSSAudioDevice::run: top of loop\n");
 	while (waitForDevice(0) == true) {
-		if (ioctl(SNDCTL_DSP_GETOSPACE, &info)) {
-			error("Error during playback");
-			return;
+		if (ioctl(isPlaying() ? SNDCTL_DSP_GETOSPACE : SNDCTL_DSP_GETISPACE,
+				  &info))
+		{
+			error("OSS error");
+			break;
 		}
-//		printf("OSSAudioDevice::run: %d bytes avail\n", info.bytes);
-		if (info.bytes < bufferSize() / 2)
+		if (info.bytes < bufferSize() / 2) {
+//			printf("\tOSSAudioDevice::run: %d bytes avail...waiting\n", info.bytes);
+			usleep(10);
 			continue;
+		}
 		if (runCallback() != true) {
-//			printf("OSSAudioDevice::run: callback returned false\n");
 			break;
 		}
 		// Spin if device is paused
