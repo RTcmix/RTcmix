@@ -147,6 +147,10 @@ PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts | sed 's/usr\/local/usr/'`
 endif
 
 all: $(TARGETS)
+	$(INSTALL) RTcmix.o $(LIBDIR)
+ifeq ($(PERL_SUPPORT), TRUE)
+	$(INSTALL) pRTcmix.o $(LIBDIR)
+endif
 
 # rules to allow complete lib compile from this dir only
 
@@ -173,6 +177,7 @@ loader.o: loader.c
 
 $(RTLIB): depend $(COMMON_OBJS) $(LIBMINC) $(LIBS)
 	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(COMMON_OBJS) $(LIBMINC) $(LIBS) $(SYSLIBS)
+	$(INSTALL) $(RTLIB) $(LIBDIR)
 
 Option.o: Option.cpp Option.h
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c $< -o $@
@@ -212,13 +217,6 @@ endif
 -include depend
 
 install:	standalone_install
-	@if test ! -d $(LIBDIR); then mkdir $(LIBDIR); fi;
-	$(INSTALL) $(RTLIB) $(LIBDIR)
-	$(INSTALL) main.o $(LIBDIR)
-	$(INSTALL) RTcmix.o $(LIBDIR)
-ifeq ($(PERL_SUPPORT), TRUE)
-	$(INSTALL) pRTcmix.o $(LIBDIR)
-endif
 
 standalone_install: all
 	@if test ! -d $(DESTDIR); then mkdir $(DESTDIR); fi;
@@ -232,7 +230,6 @@ endif
 
 uninstall: standalone_uninstall
 	$(RM) $(LIBDIR)/$(RTLIB)
-	$(RM) $(LIBDIR)/main.o
 	$(RM) $(LIBDIR)/RTcmix.o
 	$(RM) $(LIBDIR)/pRTcmix.o
 
