@@ -1,0 +1,86 @@
+=head1 NAME
+
+gen24 - make a function with straight line segments
+
+=head1 SYNOPSIS
+
+B<makegen>(I<table_number>, 24, I<table_size>,
+I<time1>, I<value1>, I<time2>, I<value2>, ... I<timeN>, I<valueN>)
+
+=head1 DESCRIPTION
+
+Call L<makegen|makegen> from a script with a I<function_type> of 24 to
+make a function table with any number of straight line segments.
+
+If you want to use this to make table number 1 -- for an amplitude
+envelope, for example -- you may find L<setline|setline> more convenient.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID for the function table.
+
+Normally the table will be rescaled to fit between -1 and 1.
+Put a negative sign before the number to prevent this.
+
+=item I<table_size>
+
+The size of the function table: how many values it stores.
+
+=item I<timeN>
+
+=item I<valueN>
+
+Pairs of I<time>,I<value> arguments define points throught which
+straight line segments are drawn.
+
+Successive times must be in ascending order.  To make an instantaneous
+change of amplitude, use the same time for two adjacent pairs.
+
+The shape created by the table is scaled to fit the duration of each
+note that follows.
+
+=back
+
+=head1 EXAMPLES
+
+   makegen(1, 24, 1000, 0,0, 1,1, 10,0)
+
+makes a quick ramp from 0 to 1, followed by a much slower ramp from 1 to 0.
+
+=begin man
+
+        ------\
+       /       -----\
+      /              ------\
+     |                      -----\
+     /                            -----\
+    /                                   -----\
+   /                                          ------\
+  |                                                  -----\
+  /                                                        ------\
+ /                                                                -----\
+------------------------------------------------------------------------
+
+=end man
+
+=begin html
+   <p align="center"><img src="images/gen6.png"><p><br>
+
+=end html
+
+=head1 NOTES
+
+L<Gen 18|gen18> works just like gen 24, except that it never normalizes
+the table to fit between -1 and 1.
+
+L<Gen 6|gen6> works just like gen 24, but is subtly different.  (We're
+not really sure why both of these exist...)
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<setline|setline>, L<gen18|gen18>, L<gen6|gen6>
+

@@ -1,0 +1,54 @@
+=head1 NAME
+
+gen25 - make a function with straight line segments
+
+=head1 SYNOPSIS
+
+B<makegen>(I<table_number>, 25, I<table_size>, I<window_type>)
+
+=head1 DESCRIPTION
+
+Call L<makegen|makegen> from a script with a I<function_type> of 25 to
+make a window function, for use in FFT analysis or as a grain envelope.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID for the function table.
+
+Normally the table will be rescaled to fit between -1 and 1.
+Put a negative sign before the number to prevent this.
+
+=item I<table_size>
+
+The size of the function table: how many values it stores.
+
+=item I<window_type>
+
+A code indicating which type of window function to draw:
+
+=over 8
+
+=for html <p>
+
+=item 1
+
+Hanning window
+
+=item 2
+
+Hamming window
+
+=back
+
+=back
+
+=head1 EXAMPLES
+
+=head1 SEE ALSO
+
+L<makegen|makegen>
+

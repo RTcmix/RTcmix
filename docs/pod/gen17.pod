@@ -1,0 +1,83 @@
+=head1 NAME
+
+gen17 - make a transfer function using Chebyshev polynomials
+
+=head1 SYNOPSIS
+
+B<makegen>(I<table_number>, 17, I<table_size>, I<index>,
+I<harmonic1>, ... I<harmonicN>)
+
+=head1 DESCRIPTION
+
+Call L<makegen|makegen> from a script with a I<function_type> of 17 to
+make a function table using Chebyshev polynomials.  Use this kind of
+table as a transfer function with waveshaping instruments.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID for the function table.
+
+Unlike other gens, gen 17 never rescales the table to fit between -1 and 1.
+
+=item I<table_size>
+
+The size of the function table: how many values it stores.
+
+=item I<index>
+
+The index number of the Chebyshev polynomial to be solved.
+
+=item I<harmonicN>
+
+The relative strength of harmonic N in a spectrum produced by waveshaping
+a sine wave with this transfer function.
+
+=back
+
+=head1 EXAMPLES
+
+   makegen(3, 17, 1000, 0.9, 0.3, -0.2, 0.6, -0.7)
+
+solves a Chebyshev polynomial with an index of 0.9 and three harmonics.
+
+=begin man
+
+            ---\
+           /    -\
+          /       \
+         /         -\
+        /            \
+       |              \                                     --\
+       /               \                                 --/   -\
+      |                 \                               /        \
+      /                  \                            -/          \
+     |                    \                          /            |
+     |                     \                        /              \
+ -----------------------------------------------------------------------
+    |                        \                     /                |
+    |                         \                  -/                 |
+    /                          \                /                    \
+   |                            \              /                     |
+   |                             -\          -/                       \
+   /                               -\      -/                         |
+  |                                  -----/                           |
+  |                                                                    \
+  |                                                                    |
+  |                                                                    |
+  /
+
+=end man
+
+=begin html
+   <p align="center"><img src="images/gen17.png"><p><br>
+
+=end html
+
+=head1 SEE ALSO
+
+L<makegen|makegen>
+
