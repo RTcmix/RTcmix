@@ -94,7 +94,7 @@ class TablePField : public RTPField {
 public:
 	TablePField(double *tableArray, int length);
 	virtual double	doubleValue(double) const;
-	char *dump(void) const;
+	char *dump() const;
 protected:
 	virtual ~TablePField();
 private:
