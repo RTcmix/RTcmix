@@ -15,10 +15,12 @@ extern "C" {
 
 MIX::MIX() : Instrument()
 {
+	in = NULL;
 }
 
 MIX::~MIX()
 {
+	delete [] in;
 }
 
 int MIX::init(float p[], short n_args)
@@ -61,9 +63,12 @@ int MIX::init(float p[], short n_args)
 int MIX::run()
 {
 	int i,j,k,rsamps;
-	float in[MAXBUF], out[MAXBUS];
+	float out[MAXBUS];
 	float aamp;
 	int branch;
+
+	if (in == NULL)                 /* first time, so allocate it */
+		in = new float [RTBUFSAMPS * inputchans];
 
 	Instrument::run();
 
