@@ -4,8 +4,8 @@
  */
 
 static char resampleVersion[] = "\
-resample version 1.2 (jos@ccrma.stanford.edu)\n\
-(sndlib support by johgibso@indiana.edu)\n";
+resample version 1.2 (jos at ccrma dot stanford dot edu)\n\
+(sndlib support by johgibso at indiana dot edu)\n";
 
 #include "filterkit.h"
 #include "resample.h"
