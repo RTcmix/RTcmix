@@ -101,6 +101,7 @@ makeWAVETABLE()
 {
 	WAVETABLE *inst;
 	inst = new WAVETABLE();
+   inst->set_bus_config("WAVETABLE");
 	return inst;
 }
 

@@ -101,6 +101,8 @@ makeMIX()
 	MIX *inst;
 
 	inst = new MIX();
+	inst->set_bus_config("MIX");
+
 	return inst;
 }
 
