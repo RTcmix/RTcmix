@@ -41,7 +41,7 @@ void Equalizer :: setCoeffs(
    sn = sin(omega);
    cs = cos(omega);
 
-printf("freq=%f, Q=%f, gain=%f, SR=%f\n", freq, Q, gain, SR);
+   //printf("freq=%f, Q=%f, gain=%f, SR=%f\n", freq, Q, gain, SR);
 
    switch (type) {
 
