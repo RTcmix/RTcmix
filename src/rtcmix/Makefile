@@ -8,6 +8,7 @@ buffers.c \
 check_byte_order.c \
 command_line.c \
 funderflow.c \
+getsample.c \
 infile.c \
 io.c \
 loader.c \
@@ -89,7 +90,7 @@ COBJS = $(patsubst %.c,%.o,$(COMMON_CSRCS))
 
 MIX_INST = ../../insts/base/MIX/MIX.o
 
-COMMON_OBJS = $(CPPOBJS) $(COBJS) heap/rtHeap.o $(MIX_INST)
+COMMON_OBJS = $(CPPOBJS) $(COBJS) heap/rtHeap.o $(MIX_INST) ../audio/audio_devices.o
 
 PIMBED_OBJS = $(COMMON_OBJS) pRTcmix.o
 
