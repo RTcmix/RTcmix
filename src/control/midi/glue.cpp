@@ -244,7 +244,7 @@ create_pfield(const Arg args[], const int nargs)
 																		type, subtype);
 }
 
-// The following functions are the publically-visible ones called by the
+// The following functions are the publicly-visible ones called by the
 // system.
 
 extern "C" {
