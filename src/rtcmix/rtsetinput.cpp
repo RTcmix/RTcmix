@@ -18,7 +18,7 @@ int rtsetinput(float start, Instrument *theInst)
 	if (input_on) { /* take from input device, not file */
 		theInst->inputsr = inSR;
 		theInst->inputchans = inNCHANS;
-		theInst->fdIndex = AUDIO_DEVICE;
+		theInst->fdIndex = AUDIO_DEVICE_FDINDEX;
 		return(1);
 	}
 
