@@ -1,5 +1,8 @@
 /* Derived from gen4 from the UCSD Carl package, described in F.R. Moore, 
-   "Elements of Computer Music."    -JGG, 12/2/01
+   "Elements of Computer Music."  It works like setline, but there's an
+   additional argument for each time,value pair (except the last).  This
+   arg determines the curvature of the segment, and is called "alpha" in
+   the comments to trans() below.                         -JGG, 12/2/01
 */
 #include <math.h>
 #include <ugens.h>
@@ -66,7 +69,6 @@ gen4(struct gen *gen)
          alpha[points] = gen->pvals[i++];
    }
 
-// what's this for?
    factor = (float) (gen->size - 1) / time[points - 1];
    for (i = 0; i < points; i++)
       time[i] *= factor;
