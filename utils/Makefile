@@ -55,12 +55,14 @@ ifneq ($(strip $(PLAY)),)        # do only if PLAY is nonempty
 endif
 
 clean:
+ifneq ($(strip $(PROGS)),)       # do only if PROGS is nonempty
 	@for PROG in $(PROGS); \
 	do \
 	  ( $(RM) $(DESTDIR)/$$PROG; ) \
 	done
+endif
+ifneq ($(strip $(RESAMPLE)),)    # do only if RESAMPLE is nonempty
 	@cd $(RESAMPLE); $(MAKE) clean
-	@$(RM) $(DESTDIR)/resample
-	@$(RM) $(DESTDIR)/play
+endif
 	@$(RM) *.o core $(PROGS)
 
