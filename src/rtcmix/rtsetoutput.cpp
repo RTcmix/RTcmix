@@ -1,3 +1,8 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+#include <globals.h>
 #include <iostream.h>
 #include "../rtstuff/Instrument.h"
 #include "../rtstuff/rtdefs.h"
