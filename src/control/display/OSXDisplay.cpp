@@ -21,7 +21,8 @@
 #define CONNECT_SLEEP_MSEC		200
 
 
-OSXDisplay::OSXDisplay() : RTcmixDisplay(), _sockdesc(0)
+OSXDisplay::OSXDisplay()
+	: RTcmixDisplay(), _sockdesc(0), _running(false)
 {
 	_sockport = SOCK_PORT;
 	_packet = new DisplaySockPacket [1];
@@ -102,6 +103,8 @@ int OSXDisplay::show()
 	// Establish socket connection as client
 	if (openSocket() == -1)
 		return -1;
+
+	_running = true;
 
 	return 0;
 }
@@ -194,7 +197,8 @@ void OSXDisplay::sendLabelValue(const int id, const double value)
 
 void OSXDisplay::doUpdateLabelValue(const int id, const double value)
 {
-	sendLabelValue(id, value);
+	if (_running)
+		sendLabelValue(id, value);
 }
 
 int OSXDisplay::pollInput(long usec)
@@ -232,6 +236,7 @@ bool OSXDisplay::handleEvents()
 				case kPacketQuit:
 					if (close(_sockdesc) == -1)
 						reportError("OSXDisplay::handleEvents", true);
+					_running = false;
 					return false;
 					break;
 				default:

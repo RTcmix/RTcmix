@@ -38,6 +38,7 @@ private:
 	DisplaySockPacket *_packet;
 	DisplaySockPacket *_evtpacket;
 	char *_servername;
+	bool _running;
 };
 
 #endif // _OSXDISPlAY_H_
