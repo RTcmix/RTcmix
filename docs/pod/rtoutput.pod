@@ -26,12 +26,17 @@ files for writing, not B<rtoutput>.
 The name of a sound file, in double-quotes.  If the file already
 exists, the script will terminate with an error, unless you've
 turned on file clobbering with L<set_option|set_option> (by saying
-set_option("clobber_on")).
+set_option("clobber_on")).  If you name the file with a recognized
+suffix, that suffix will determine the header type, unless overridden
+by a I<header_type> string.  Recognized suffixes: ".wav", ".aif",
+".aiff", ".aifc", ".snd" (NeXT/Sun), ".au" (NeXT/Sun), ".sf" (IRCAM),
+and ".raw".
 
 =item I<header_type>
 
 The type of header to use for the sound file, as a double-quoted
-string.
+string.  Note that if you name the file with a recognized suffix
+(see above), you don't need to specify a header type in this way.
 
 =over 8
 
@@ -116,7 +121,7 @@ little-endian, and "raw," which has host byte order.
 If you ask for "aiff" and "float" (or "normfloat"), you'll get "aifc"
 format instead, because AIFF doesn't support floating-point files.
 
-If you want to use floating-point files in the B<Snd>, choose
+If you want to use floating-point files in the B<Snd> editor, choose
 "normfloat" format.  If you want to use them in B<Mxv>, choose
 the "next" header type.  Many programs don't read AIFC files,
 maybe because they assume these are always compressed.
