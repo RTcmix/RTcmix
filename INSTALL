@@ -1,0 +1,149 @@
+I.  INSTALLATION
+----------------
+
+Ia.  Preliminaries
+------------------
+
+1) For Linux:
+
+   a) Set up your linux audio driver: either compile the kernel with sound, 
+      or get the OSS drivers:
+
+         http://www.4front-tech.com
+
+   b) If you're still using a distribution of Linux that only has libc5
+      C libraries, then you'll need to get and install the pthread libraries:
+
+         http://pauillac.inria.fr/~xleroy/linuxthreads/
+
+   c) If you're using RedHat, you may not have the lex libraries, in which
+      case you'll get an error about -ll not found. Change the Makefile in
+      the Minc directory to use -lfl (flex libraries) instead.
+
+
+2) For SGI:
+
+   The Irix port was done rather quickly by John Gibson, so as to have the
+   same RTcmix features under Irix as we had under Linux at UVA. You may
+   prefer to try the Irix version made by Brad Garton and folks at Columbia.
+
+   a) This version of RTcmix requires GNU make, which you can get from
+      ftp://ftp.gnu.org/gnu/make/ (current version is make-3.78.1.tar.gz).
+      Install it as "gmake". Then you'll make RTcmix by saying "gmake".
+
+      If you already have GNU make, either change its name to gmake, or 
+      edit RTcmix's makefile.conf to point to the right make program name.
+
+      If you don't use GNU make, you'll see errors like this:
+
+         make: file `makefile.conf' line 35: Must be a separator (: or ::)
+               for rules (bu39)
+
+   b) The makefile scheme also seems to require the bash shell. See comments
+      in makefile.conf about using /bin/sh. You can work around these problems
+      if you don't have bash; it's just more work.
+
+
+Ib.  Compile and install the core
+---------------------------------
+
+1) Unpack the RTcmix archive into any directory on your machine
+   (e.g., with "gunzip -c RTcmix-2.4.0.tar.gz | tar xf -").
+   This will create a directory called "RTcmix-2.4.0" with all
+   the core source inside. We call this the "RTcmix directory" below.
+
+2) Edit "makefile.conf" inside this directory.
+   Make sure TOPDIR and LIBDESTDIR are right for your situation.
+   SGI users must change the definition of ARCH to SGI.
+
+   Also note the backwards-compatibility flag -DCOMPATIBLE_FUNC_LOCS,
+   which you may want to enable if you have old WAVETABLE scores.
+
+3) From your RTcmix directory, type "make && make install"
+   (or, for SGI, "gmake && gmake install").
+
+4) Add the bin directory inside of the RTcmix directory to your $PATH.
+
+   It's easier to manage versions of RTcmix if you make an "RTcmix" link to
+   the current version, and then put the link into your PATH.)
+
+SGI compilation problems:
+
+1) Don't worry if you see errors like the following; they're harmless:
+
+      ld: WARNING 84: /usr/lib/libaudio.so is not used for resolving any symbol
+
+2) If you see errors like the following, it probably means that you're
+   compiling in an NFS-mounted directory. (It's possible that this only
+   crops up if the NFS directory is served to the SGI by a Linux machine.)
+   Quick solution: put the so_locations file on a local disk, and change
+   makefile.conf to reflect the new location of this file.
+
+      ld: ERROR 48: Cannot access registry file
+         /share/RTcmix/shlib/so_locations (No locks available) - ignored.
+      ld: FATAL 51: Can't assign virtual addresses for libWAVETABLE.so of
+         size 10000 within specified range.  Please check your registry
+         file /share/RTcmix/shlib/so_locations.
+
+
+Ic.  Compile and install separate packages
+------------------------------------------
+
+Packages usually contain additional instruments. The base distribution
+only contains MIX, mix, WAVETABLE and wavetable, so you'll want to grab
+at least the "insts.std" package. Here's how to install packages:
+
+1) cd into your RTcmix directory
+
+2) Untar PACKAGE.tar.gz  ("tar xfz PACKAGE.tar.gz")
+
+3) Edit "makefile.conf" in the RTcmix directory.
+
+   If the package is an instrument package (e.g., insts.std, insts.jg),
+   then add the package directory name to INST_DIRS.
+
+   If the package is not an instrument package (e.g., interfaces.dt),
+   then add the package directory name to PACKAGE_DIRS.
+
+4) Do a "make && make install" (or gmake for SGI) from the RTcmix directory
+   (not from inside the package directory). This creates a .conf file in the
+   package directory, which the sub-level makefiles need.
+
+NOTE: some development packages may not install into the RTcmix bin
+directory. You'll have to CD into the specific directory and run 
+the ./program from there.
+
+
+II.  RUN THEM SCOREFILES!
+-------------------------
+
+There are sample score files in insts.std/SAMPLE_SCORES.
+
+To run any score, type "CMIX < scorefile.sco".
+
+The ones to start with are the real-time (upper case) ones that
+don't need input files, like WAVETABLE, AMINST, FMINST and STRUM.
+
+If these seem to work, your installation is probably ok.
+
+The instruments (both real-time and disk-based) that process input
+files will accept files in a variety of formats without any special
+effort on your part.
+
+Before using a disk-based instrument, you have to use sfcreate to
+make an empty sound file.
+
+See "README2.1.Linux" for information on recent features.
+
+You may also find helpful the tutorials on John Gibson's Music 540
+course web site, http://www.people.virginia.edu/~jgg9c/musi540.
+
+
+III. HAVE FUN!
+--------------
+:->
+
+
+Dave Topper <topper@virginia.edu>
+John Gibson <johngibson@virginia.edu>
+
