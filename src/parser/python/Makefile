@@ -1,40 +1,14 @@
-include ../makefile.conf
+include ../../../makefile.conf
 
-EXT_NAME = rtcmix
-EXT_FILE = rtcmix_python_ext
-FUNCLIST = funclist
-FUNCEXCEPT = funcexcept
-ifeq ($(ARCH),MACOSX)
-  XT_SUFFIX = .bundle
-  FIND_FLAGS = -follow
-else
-  XT_SUFFIX = .so
-  FIND_FLAGS = -follow
-endif
+CXXFLAGS += -I../../../src/rtcmix
 
-PYTHON_INCLUDE_DIR = `$(PYTHON) print_python_includedir.py`
+all: rtcmix
 
-# Note: any optimization makes huge object file, due to extensive inlining
-CFLAGS = -I$(PYTHON_INCLUDE_DIR) $(OPT)
-
-.PHONY: all clean cleanall
-
-all: $(EXT_FILE).o
-
-# This dependency prevents making unless the funcexcept file has
-# changed.  Not really what we want, but it's annoying to have
-# to remake this stuff every time you make at the top level...
-$(FUNCLIST): make_funclist.pl $(FUNCEXCEPT)
-	$(PERL) -w make_funclist.pl $(CMIXDIR) $(FIND_FLAGS)
-
-$(EXT_FILE).c: make_python_ext.pl $(FUNCLIST)
-	$(PERL) -w make_python_ext.pl $(CMIXDIR) $(EXT_NAME) > $(EXT_FILE).c
-
-$(EXT_FILE).o: $(EXT_FILE).c $(EXT_FILE).h
-	$(CC) $(CFLAGS) -c $(EXT_FILE).c
+rtcmix: rtcmixmodule.cpp
+	python setup.py build
+	cp build/lib.linux-i686-2.2/rtcmix.so .
+#FIXME: this is platform-specific -- use distutils for install
 
 clean:
-	$(RM) $(FUNCLIST) $(EXT_FILE).o $(EXT_FILE).c
-
-cleanall: clean
+	$(RM) -r build *.so
 
