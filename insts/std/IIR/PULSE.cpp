@@ -53,7 +53,7 @@ PULSE::~PULSE()
 {
 }
 
-inline float pitch2si(float pitch)
+inline float pitch2si(float SR, float pitch)
 {
 	return pitch < 15.0 ? cpspch(pitch) * 512.0 / SR : pitch * 512.0 / SR;
 }
@@ -72,7 +72,7 @@ int PULSE::init(double p[], int n_args)
 		tableset(SR, dur, lenamp, amptabs);
 	}
 
-	si = pitch2si(pitch);
+	si = pitch2si(SR, pitch);
 	phase = 512.0;
 
 	for (int i = 0; i < nresons; i++) {
@@ -108,7 +108,7 @@ int PULSE::run()
 			oamp = p[2];
 			if (amparr)
 				oamp *= tablei(cursamp, amparr, amptabs);
-			si = pitch2si(p[3]);
+			si = pitch2si(SR, p[3]);
 			spread = p[4];
 			branch = skip;
 		}
