@@ -10,9 +10,10 @@
 #include <perl.h>
 #include "rtcmix_parse.h"
 
-extern void boot_DynaLoader(CV *cv);
+extern void boot_DynaLoader (CV* cv);
 
 static PerlInterpreter *perl_interp = NULL;
+static PerlInterpreter *my_perl = NULL;
 static char *extra_lib_dir = "-I"SHAREDLIBDIR;
 
 
@@ -23,8 +24,34 @@ xs_init()
    char *file = __FILE__;
 
    newXS("DynaLoader::boot_DynaLoader", boot_DynaLoader, file);
+
 }
 
+/* ---- special pearl parser ----- */
+int perl_parse_buf (char *inBuf) {
+	
+	STRLEN n_a;
+	char *embedding[] = { "", "-e", "" };
+	char *xargv[2];
+
+	xargv[0] = "";
+	xargv[1] = extra_lib_dir;
+
+	my_perl = perl_alloc();
+	perl_construct( my_perl );
+	
+	perl_parse(my_perl, xs_init, 3, embedding, NULL);
+	PL_exit_flags |= PERL_EXIT_DESTRUCT_END;
+	perl_run(my_perl);
+	
+	eval_pv(inBuf, TRUE);
+	
+	perl_destruct(my_perl);
+	perl_free(my_perl);
+	
+	return 0;
+	
+}
 
 /* ---------------------------------------------------------- parse_score --- */
 int
