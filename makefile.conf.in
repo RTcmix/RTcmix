@@ -8,7 +8,7 @@ CMIXDIR = $(TOPDIR)/RTcmix-2.3.0
 LIBDESTDIR = $(CMIXDIR)/shlib
 
 # add new instruments to this list (e.g., insts.std, insts.jg)
-INST_DIRS = insts.base insts.std insts.jg
+INST_DIRS = insts.base #insts.std insts.jg
 
 # add new packages to this list (e.g., interfaces.std)
 PACKAGE_DIRS =
@@ -32,6 +32,10 @@ SOUND_DRIVER += -DSHARED_AUDIO_DEV
 
 # Uncomment if your sound driver uses multiple mono devices.
 #SOUND_DRIVER += -DMONO_DEVICES
+
+# Uncomment if your sound card always needs to use its maximum number of
+# channels, even when you request fewer (in rtsetparams).
+#SOUND_DRIVER += -DUSE_CARD_CHANS
 
 # optimization and debugging flags
 OPT = -g #-O3
