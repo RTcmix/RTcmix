@@ -88,7 +88,7 @@ inline short normalize<short>(bool doIt, const short &value) { return value; }
  
 template<>
 inline int32_t normalize<int32_t>(bool doIt, const int32_t &value) {
-	return value << 16;
+	return value;
 }
  
 template<>
