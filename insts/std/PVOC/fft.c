@@ -37,7 +37,7 @@ void rfft( float x[], int N, int forward )
  static int first = 1 ;
 
     if ( first ) {
-	TWOPI = 8.*atan( 1. ) ;
+	TWOPI = 8.*atanf( 1. ) ;
 	first = 0 ;
     }
     theta = PI/N ;
@@ -56,8 +56,8 @@ void rfft( float x[], int N, int forward )
 	xi = 0. ;
 	x[1] = 0. ;
     }
-    wpr = -2.*pow( sin( 0.5*theta ), 2. ) ;
-    wpi = sin( theta ) ;
+    wpr = -2.*powf( sinf( 0.5*theta ), 2. ) ;
+    wpi = sinf( theta ) ;
     N2p1 = (N<<1) + 1 ;
     for ( i = 0 ; i <= N>>1 ; i++ ) {
 	i1 = i<<1 ;
@@ -110,8 +110,8 @@ void cfft( float x[], int NC, int forward )
     for ( mmax = 2 ; mmax < ND ; mmax = delta ) {
 	delta = mmax<<1 ;
 	theta = TWOPI/( forward? mmax : -mmax ) ;
-	wpr = -2.*pow( sin( 0.5*theta ), 2. ) ;
-	wpi = sin( theta ) ;
+	wpr = -2.*powf( sinf( 0.5*theta ), 2. ) ;
+	wpi = sinf( theta ) ;
 	wr = 1. ;
 	wi = 0. ;
 	for ( m = 0 ; m < mmax ; m += 2 ) {
