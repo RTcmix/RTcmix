@@ -24,7 +24,6 @@ install:
 	@cd cmd; $(MAKE) install;
 	@cd head; $(MAKE) install;
 	@cd utils; $(MAKE) install;
-	-mkdir $(LIBDESTDIR)
 	@cd insts.base; $(MAKE) install;
 	@for DIR in $(PACKAGE_DIRS); \
 	do \
@@ -113,6 +112,7 @@ packages::
 	@for DIR in $(PACKAGE_DIRS); \
 	do \
 	  ( cd $$DIR; echo "making $$DIR..."; \
+	   @echo "include $(MAKEFILE_CONF)" > package.conf 	
 	   $(MAKE) all; echo "done.";echo"" ); \
 	done
 
