@@ -53,7 +53,7 @@ typedef enum {
 typedef double MincFloat;
 #define EPSILON DBL_EPSILON
 
-typedef char *MincString;
+typedef const char *MincString;
 typedef void *MincHandle;  // contents of this is opaque to Minc
 
 /* A MincList contains an array of MincListElem's, whose underlying data
