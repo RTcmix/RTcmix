@@ -108,13 +108,8 @@ int ALSAAudioDevice::doStop()
 			waitForThread();
 			snd_pcm_drop(_handle);
 		}
-		else if (isPlaying()) {
+		else if (isRecording() || isPlaying()) {
 			waitForThread();
-			snd_pcm_drain(_handle);
-		}
-		else if (isRecording()) {
-			waitForThread();
-			snd_pcm_drop(_handle);
 		}
 //		printf("ALSAAudioDevice::doStop: done\n");
 	}
