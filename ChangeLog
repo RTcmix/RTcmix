@@ -7,6 +7,7 @@ Thursday, June 8, 2000 John Gibson <johngibson@virginia.edu>
    * Fixes to main.C and sockit.C supplied by Doug Scott. These affect
      compilation on Linux Mandrake (and probably other distros), as
      well as Irix 6.5.
+   * Some other minor changes to encourage compilation on Irix 6.5.
 
 Thursday, June 8, 2000 Dave Topper <topper@virginia.edu>
 
