@@ -16,8 +16,8 @@ LEX = flex
 LEXFLAGS = -l -P$(SYMPREFIX) #-d    # -d for debug output
 
 YSRC = $(CONF).ypp
-YACC = bison -t -p $(SYMPREFIX)
-YFLAGS = -d #-v      # -v for conf.output file
+YACC = bison
+YFLAGS = -t -p $(SYMPREFIX) -d #-v  # -v for conf.output file
 
 all: $(LIBCONF)
 
@@ -32,6 +32,7 @@ $(TEST): depend $(TEST).o $(LIBCONF)
 
 lex.conf.c: $(LSRC)
 	$(LEX) $(LEXFLAGS) $(LSRC)
+	sh fixlexoutput.sh lex.conf.c
 
 conf.tab.cpp: lex.conf.c $(YSRC)
 	$(YACC) $(YFLAGS) $(YSRC)
