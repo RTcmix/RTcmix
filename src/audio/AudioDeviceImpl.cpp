@@ -81,21 +81,7 @@ int AudioDeviceImpl::close()
 //	printf("AudioDeviceImpl::close -- finish\n");
 	return status;
 }
-#ifdef ORIGINAL_CODE
-int AudioDeviceImpl::start(AudioDevice::Callback *callback)
-{
-	int status = 0;
-	if (!isRunning()) {
-		_runCallback = callback;
-		State oldState = getState();
-		setState(Running);
-		if ((status = doStart()) != 0) {
-			setState(oldState);
-		}
-	}
-	return status;
-}
-#else
+
 int AudioDeviceImpl::start(AudioDevice::Callback *callback)
 {
 	int status = 0;
@@ -107,7 +93,6 @@ int AudioDeviceImpl::start(AudioDevice::Callback *callback)
 	}
 	return status;
 }
-#endif
 
 int AudioDeviceImpl::pause(bool willPause)
 {

@@ -54,7 +54,7 @@ void ThreadedAudioDevice::waitForThread(int waitMs)
 		assert(_thread != 0);	// should not get called again!
 //		printf("ThreadedAudioDevice::waitForThread: waiting for thread to finish\n");
 		if (pthread_join(_thread, NULL) == -1) {
-			printf("ThreadedAudioDevice::doStop: terminating thread!\n");
+//			printf("ThreadedAudioDevice::doStop: terminating thread!\n");
 			pthread_cancel(_thread);
 			_thread = 0;
 		}
@@ -107,6 +107,9 @@ bool ThreadedAudioDevice::waitForDevice(unsigned int wTime) {
 			FD_SET(_device, &_fdset);
 			ret = true;
 		}
+	}
+	else {
+//		printf("ThreadedAudioDevice::waitForDevice: stopping == true\n");
 	}
 	return ret;
 }

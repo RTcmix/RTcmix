@@ -25,6 +25,7 @@ ALSAAudioDevice::ALSAAudioDevice(const char *devName)
 
 ALSAAudioDevice::~ALSAAudioDevice()
 {
+//	printf("ALSAAudioDevice::~ALSAAudioDevice\n");
 	close();
 	snd_pcm_hw_params_free (_hwParams);
 }
@@ -76,8 +77,6 @@ int ALSAAudioDevice::doClose()
 	return snd_pcm_close(_handle);
 }
 
-static float zeroBuffer[8192];
-
 int ALSAAudioDevice::doStart()
 {
 	int status;
@@ -85,13 +84,6 @@ int ALSAAudioDevice::doStart()
 		return error("Cannot prepare audio interface for use: ", 
 					 snd_strerror (status));
 	}
-//	if (isPlaying()) {
-//		if ((status = snd_pcm_wait(_handle, 500)) < 0) {
-//			return error("Error while waiting for device: ", snd_strerror (status));
-//		}
-//	}
-//	for (int buf=0; buf<8192; buf += _bufSize/4)
-//		sendFrames(zeroBuffer, _bufSize/4);
 	return ThreadedAudioDevice::startThread();
 }
 
@@ -113,15 +105,18 @@ int ALSAAudioDevice::doStop()
 		stopping(true);		// signals play thread
 		if (paused()) {
 			_stopDuringPause = true;	// we handle this case as special
+			waitForThread();
 			snd_pcm_drop(_handle);
 		}
 		else if (isPlaying()) {
+			waitForThread();
 			snd_pcm_drain(_handle);
 		}
 		else if (isRecording()) {
+			waitForThread();
 			snd_pcm_drop(_handle);
 		}
-		waitForThread();
+//		printf("ALSAAudioDevice::doStop: done\n");
 	}
 	return 0;
 }
@@ -395,6 +390,8 @@ int	ALSAAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 	return -1;
 }
 
+static char zeroBuffer[32768];
+
 void ALSAAudioDevice::run()
 {
 //	printf("ALSAAudioDevice::run: top of loop\n");
@@ -405,6 +402,7 @@ void ALSAAudioDevice::run()
 	}
 //	printf("ALSAAudioDevice::run: after loop\n");
 	if (!_stopDuringPause) {
+		doSendFrames(zeroBuffer, sizeof(zeroBuffer)/getDeviceBytesPerFrame());
 		snd_pcm_drain(_handle);
 		_stopDuringPause = false;	// reset
 	}

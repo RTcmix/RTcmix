@@ -197,6 +197,8 @@ OSSAudioDevice::ioctl(int req, void *argp) {
 	return ::ioctl(device(), req, argp);
 }
 
+static char zeroBuffer[32768];
+
 void OSSAudioDevice::run()
 {
 	audio_buf_info info;
@@ -225,8 +227,8 @@ void OSSAudioDevice::run()
 		}
 	}
 	// Write buffer of zeros.
-//	static int buffer[256];
-//	::write(device(), buffer, sizeof(buffer));
+	doSendFrames(zeroBuffer, sizeof(zeroBuffer)/getDeviceBytesPerFrame());
+	
 //	printf("OSSAudioDevice::run: flushing...\n");
 	// Flush device.
 	ioctl(SNDCTL_DSP_SYNC, 0);
