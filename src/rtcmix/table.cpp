@@ -45,6 +45,7 @@ typedef enum {
    ExpbrkTable = 5,
    LineTable = 6,
    LinebrkTable = 7,
+   SplineTable = 8,
    Wave3Table = 9,
    WaveTable = 10,
    ChebyTable = 17,
@@ -62,7 +63,7 @@ static char *_table_name[] = {
    "expbrk",
    "line",
    "linebrk",
-   NULL,       /* 8 */
+   "spline",   /* 8 */
    "wave3",
    "wave",
    NULL,
@@ -923,6 +924,215 @@ _linebrk_table(const Arg args[], const int nargs, double *array, const int len)
 }
 
 
+/* --------------------------------------------- _spline_table and helpers -- */
+/* Fill a table with a spline curve, defined by at least three x,y points.
+   The curve travels smoothly between the points, and all points lie on the
+   curve.  The syntax is
+
+      table = maketable("spline", size, time1, value1, ... timeN, valueN)
+
+   It is possible that the curve will loop outside of the area you expect,
+   so plottable to be sure.
+
+   Adapted from cspline from the UCSD Carl package, described in F.R. Moore, 
+   "Elements of Computer Music."
+                                                           - JGG, 6/20/04
+*/
+
+#define MAX_KNOTS 1024
+
+typedef struct {
+   int lbf, ubf;
+   float lb, ub, val[MAX_KNOTS];
+} SplineSpec;
+
+
+static void
+_spline_interp(const float *inbuf, const int count, double *outbuf,
+                                                      const int outbuflen)
+{
+   float rat = count * 1.0 / (float) outbuflen;
+   int c = 0;
+   float fc = 0.0;
+   for (int i = outbuflen - 1; i >= 0; fc += rat, i--) {
+      c = (int) fc;
+      float frat = fc - (float) c;        /* get fraction */
+      outbuf[i] = (double) ((1.0 - frat) * inbuf[c] + frat * inbuf[c + 1]);
+   }
+}
+
+
+inline float
+_rhs(const int knot, const int nknots, const SplineSpec *x, const SplineSpec *y)
+{
+   int i = (knot == nknots - 1) ? 0 : knot;
+   double zz = (y->val[knot] - y->val[knot - 1])
+                                    / (x->val[knot] - x->val[knot - 1]);
+   return (6.0 * ((y->val[i + 1] - y->val[i])
+                                    / (x->val[knot + 1] - x->val[knot]) - zz));
+}
+
+
+static int
+_spline(const int periodic, const float konst, const int nknots, double *outbuf,
+        const int outbuflen, const SplineSpec *x, const SplineSpec *y)
+{
+   int count = 0;
+   int buflen = BUFSIZ;
+   float *buf = (float *) malloc(buflen * sizeof(float));  /* realloc'd below */
+   if (buf == NULL)
+      return die("maketable (spline)", "Out of memory.");
+
+   float *diag = new float[nknots + 1];
+   float *r = new float[nknots + 1];
+
+   r[0] = 0.0;
+
+   float a = 0.0;
+   float d = 1.0;
+   float u = 0.0;
+   float v = 0.0;
+   float s = periodic ? -1.0 : 0.0;
+   for (int i = 0; ++i < nknots - !periodic; ) {     /* triangularize */
+      float hi = x->val[i] - x->val[i - 1];
+      float hi1 = (i == nknots - 1) ? x->val[1] - x->val[0]
+                               : x->val[i + 1] - x->val[i];
+      if (hi1 * hi <= 0)
+         return -1;
+      u = i == 1 ? 0.0 : u - s * s / d;
+      v = i == 1 ? 0.0 : v - s * r[i - 1] / d;
+      r[i] = _rhs(i, nknots, x, y) - hi * r[i - 1] / d;
+      s = -hi * s / d;
+      a = 2.0 * (hi + hi1);
+      if (i == 1)
+         a += konst * hi;
+      if (i == nknots - 2)
+         a += konst * hi1;
+      diag[i] = d = (i == 1) ? a : a - hi * hi / d;
+   }
+   float D2yi = 0.0;
+   float D2yn1 = 0.0;
+   for (int i = nknots - !periodic; --i >= 0; ) {    /* back substitute */
+      int end = i == nknots - 1;
+      float hi1 = end ? x->val[1] - x->val[0] : x->val[i + 1] - x->val[i];
+      float D2yi1 = D2yi;
+      if (i > 0) {
+         float hi = x->val[i] - x->val[i - 1];
+         float corr = end ? 2.0 * s + u : 0.0;
+         D2yi = (end * v + r[i] - hi1 * D2yi1 - s * D2yn1) /
+             (diag[i] + corr);
+         if (end)
+            D2yn1 = D2yi;
+         if (i > 1) {
+            a = 2 * (hi + hi1);
+            if (i == 1)
+               a += konst * hi;
+            if (i == nknots - 2)
+               a += konst * hi1;
+            d = diag[i - 1];
+            s = -s * d / hi;
+         }
+      }
+      else
+         D2yi = D2yn1;
+      if (!periodic) {
+         if (i == 0)
+            D2yi = konst * D2yi1;
+         if (i == nknots - 2)
+            D2yi1 = konst * D2yi;
+      }
+      if (end)
+         continue;
+      int m = (hi1 > 0.0) ? outbuflen : -outbuflen;
+      m = (int) (1.001 * m * hi1 / (x->ub - x->lb));
+      if (m <= 0)
+         m = 1;
+      float h = hi1 / m;
+      for (int j = m; j > 0 || i == 0 && j == 0; j--) {
+         /* interpolate */
+         float x0 = (m - j) * h / hi1;
+         float x1 = j * h / hi1;
+         float yy = D2yi * (x0 - x0 * x0 * x0) + D2yi1 * (x1 - x1 * x1 * x1);
+         yy = y->val[i] * x0 + y->val[i + 1] * x1 - hi1 * hi1 * yy / 6.0;
+
+         if (count < buflen)
+            buf[count++] = yy;
+         else {
+            buflen += BUFSIZ;
+            buf = (float *) realloc(buf, buflen * sizeof(float));
+            if (buf == NULL)
+               return die("maketable (spline)", "Out of memory.");
+            buf[count++] = yy;
+         }
+      }
+   }
+
+   delete [] diag;
+   delete [] r;
+
+   _spline_interp(buf, count, outbuf, outbuflen);
+
+   free(buf);
+
+   return 0;
+}
+
+
+static void
+getlim(SplineSpec *p, int nknots)
+{
+   for (int i = 0; i < nknots; i++) {
+      if (!p->lbf && p->lb > p->val[i])
+         p->lb = p->val[i];
+      if (!p->ubf && p->ub < p->val[i])
+         p->ub = p->val[i];
+   }
+}
+
+
+#define INF 1.e37
+
+static int
+_spline_table(const Arg args[], const int nargs, double *array, const int len)
+{
+   if (len < 2)
+      return die("maketable (spline)", "Table length must be at least 2.");
+   if ((nargs % 2) != 0)
+      return die("maketable (spline)", "Incomplete <time, value> pair.");
+   if (nargs < 6)
+      return die("maketable (spline)", "Need at least 3 <time, value> pairs.");
+   if (nargs > MAX_KNOTS * 2)
+      return die("maketable (spline)", "Too many <time, value> pairs.");
+
+   SplineSpec x, y;
+
+   x.lbf = x.ubf = y.lbf = y.ubf = 0;
+   x.lb = y.lb = INF;
+   x.ub = y.ub = -INF;
+
+   int periodic = 0;
+   float konst = 0.0;
+
+   int nknots = 0;
+   for (int i = 0; i < nargs; i += 2) {
+      x.val[nknots] = args[i];
+      y.val[nknots] = args[i + 1];
+      nknots++;
+   }
+
+   if (periodic)     // FIXME: for later
+      konst = 0.0;
+
+   getlim(&x, nknots);
+   getlim(&y, nknots);
+
+   if (_spline(periodic, konst, nknots, array, len, &x, &y) != 0)
+      return -1;
+
+   return 0;
+}
+
+
 /* ---------------------------------------------------------- _wave3_table -- */
 /* Similar to cmix gen 9, but no normalization.
 */
@@ -1311,6 +1521,10 @@ _dispatch_table(const Arg args[], const int nargs, const int startarg,
          break;
       case LinebrkTable:
          status = _linebrk_table(&args[startarg], nargs - startarg, *array,
+                                                                        *len);
+         break;
+      case SplineTable:
+         status = _spline_table(&args[startarg], nargs - startarg, *array,
                                                                         *len);
          break;
       case Wave3Table:
