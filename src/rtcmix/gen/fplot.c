@@ -40,6 +40,10 @@
    Note that gnuplot quits when <pause> seconds elapse.  But you can get rid
    of the window earlier by typing 'q' at it.
 
+   NOTE: Under MacOS X, using Aquaterm to display output from gnuterm, <pause>
+   has no effect.  Also, you can only do one plot per run of RTcmix under OS X,
+   because gnuplot dies if there's already another one running.
+
    If something goes wrong with the gnuplot syntax, there'll be some leftover
    files in the /tmp directory, with names like "rtcmix_plot_data_xAb5x8."
 
@@ -50,6 +54,9 @@ double
 fplot(float p[], short n_args, double pp[])
 {
 	if (n_args > 1) {					/* use gnuplot */
+#ifdef MACOSX
+      static int plot_count = 1;
+#endif
 		int genslot = (int) p[0];
 		float *array = floc(genslot);
 		if (array) {
@@ -74,11 +81,19 @@ fplot(float p[], short n_args, double pp[])
 
 			plotcmds = (char *) ((int) pp[2]);
 			fprintf(fcmd, 
+#ifdef MACOSX
+/* NB: requires installation of Aquaterm and gnuplot 3.8 */
+						"set term aqua %d\n"
+#endif
 						"set title \"Function %d\"\n"
 						"set grid\n"
 						"plot '%s' notitle %s\n"
 						"pause %d\n"
 						"!rm '%s' '%s'\n",
+#ifdef MACOSX
+// FIXME: ??nevertheless, gnuplots after the first die with bus error
+                  plot_count++,
+#endif
 						genslot, data_file, n_args > 2 ? plotcmds : "",
 						pause, data_file, cmd_file);
 			fclose(fcmd);
