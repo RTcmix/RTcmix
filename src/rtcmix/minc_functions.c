@@ -1,3 +1,4 @@
+#include <globals.h>
 #include <stdio.h>
 #include <sys/file.h>
 #include <sys/types.h>
@@ -10,7 +11,6 @@
 #define ARRAY_SIZE 256
 #define NUM_ARRAYS  32
 double minc_array[NUM_ARRAYS][ARRAY_SIZE],minc_array_size[NUM_ARRAYS];
-extern int print_is_on;
 
 double m_boost(p)
 float *p;
