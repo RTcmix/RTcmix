@@ -2,19 +2,18 @@
 
 #if defined(LINUX)
 
+#include <math.h>
 #include "OSSAudioDevice.h"
 #include "AudioIODevice.h"
 #include <sys/soundcard.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
-#include <math.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>	// strerror()
 
-#include <sndlibsupport.h>	// RTcmix header
 
 // TO DO:  Loop up default device in open()
 

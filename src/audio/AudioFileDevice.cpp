@@ -5,9 +5,8 @@
 // other formats.  Constructor specifies audio file type, the file's sample 
 // format, and options concerning format of data.
 
-#include "AudioFileDevice.h"
 #include <math.h>       /* for fabs */
-#include <sndlibsupport.h>
+#include "AudioFileDevice.h"
 #include <byte_routines.h>
 #include <globals.h>	// MAXBUS, etc.
 #include <assert.h>
