@@ -38,13 +38,7 @@ extern AudioDevice *globalAudioDevice;	// from sys/audio_port.C
 
 int runMainLoop(void)
 {
-	short playEm = 0;
-	int i;
-
 	Bool audio_configured = NO;
-	short bus,bus_count,play_bus,busq = 0;
-	IBusClass bus_class,qStatus;
-	BusType bus_type = BUS_OUT; // Default when none is set
 
 #ifdef ALLBUG	
 	cout << "ENTERING runMainLoop() FUNCTION *****\n";
@@ -64,16 +58,15 @@ int runMainLoop(void)
 			audio_configured = YES;
 		}
 		pthread_mutex_unlock(&audio_config_lock);
-		if (rtInteractive)
-			{
-				if (run_status == RT_GOOD || run_status == RT_PANIC)
-					continue;
-				else if (run_status == RT_SHUTDOWN)
-					cout << "runMainLoop():  shutting down" << endl;
-				else if (run_status == RT_ERROR)
-					cout << "runMainLoop():  shutting down due to error" << endl;
-				return -1;
-			}
+		if (rtInteractive) {
+			if (run_status == RT_GOOD || run_status == RT_PANIC)
+				continue;
+			else if (run_status == RT_SHUTDOWN)
+				cout << "runMainLoop():  shutting down" << endl;
+			else if (run_status == RT_ERROR)
+				cout << "runMainLoop():  shutting down due to error" << endl;
+			return -1;
+		}
 	}
 
 	if (audio_configured && rtInteractive) {
@@ -84,7 +77,6 @@ int runMainLoop(void)
 	// Initialize everything ... cause it's good practice
 	bufStartSamp = 0;  // current end sample for buffer
 	bufEndSamp = RTBUFSAMPS;
-	bus = -1;  // Don't play
 
 	// NOTE: audioin, aux and output buffers are zero'd during allocation
 
@@ -93,25 +85,16 @@ int runMainLoop(void)
 		// Right now, the intraVerse function below calls rtsendzeros().
 		startupBufCount = ZERO_FRAMES_BEFORE / RTBUFSAMPS;
 
-		playEm = 1;
-	}
-
-	// read in an input buffer (if audio input is active)
-	// NOTE:  We cannot do this until audio device has been started, below
-	if (record_audio) {
-//		rtgetsamps(globalAudioDevice);
-//		rtsendzeros(globalAudioDevice, 0);  // send a buffer of zeros to audio device
-	}
-	
-	if (playEm) {
-		// Set done callback on device.
-		globalAudioDevice->setStopCallback(doneTraverse, NULL);
-		// Start audio output device, handing it our callback.
-		if (globalAudioDevice->start(inTraverse, NULL) != 0) {
-			cerr << globalAudioDevice->getLastError() << endl;
-			return -1;
+		if (globalAudioDevice) {
+			// Set done callback on device.
+			globalAudioDevice->setStopCallback(doneTraverse, NULL);
+			// Start audio output device, handing it our callback.
+			if (globalAudioDevice->start(inTraverse, NULL) != 0) {
+				cerr << globalAudioDevice->getLastError() << endl;
+				return -1;
+			}
+			return 0;	// Playing, thru HW and/or to FILE.
 		}
-		return 0;
 	}
 	return -1;	// Not playing, signal caller not to wait.
 }
@@ -151,9 +134,9 @@ bool inTraverse(AudioDevice *device, void *arg)
 	unsigned long rtQchunkStart = 0;
 	unsigned long heapChunkStart = 0;
 
-	Bool aux_pb_done,frame_done, panic = NO;
-	short bus = -1,bus_count,play_bus,busq = 0;
-	IBusClass bus_class,qStatus;
+	Bool aux_pb_done, frame_done, panic = NO;
+	short bus = -1, bus_count = 0, play_bus, busq = 0;
+	IBusClass bus_class, qStatus;
 	BusType bus_type = BUS_OUT; // Default when none is set
 
 #ifdef DBUG	  
