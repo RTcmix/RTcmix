@@ -24,7 +24,7 @@ WAVETABLE::init(float p[], short n_args)
 	nsamps = rtsetoutput(p[0], p[1], this);
 
 	wavetable = floc(1);
-	if (waveform == NULL) {
+	if (wavetable == NULL) {
 		fprintf(stderr, "You need to store a waveform in function 1.\n");
 		exit(1);
 	}
