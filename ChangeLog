@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Saturday, July 10, 2004 John Gibson <johgibso-at-indiana.edu>
+
+   * Update some instruments for v4 PField control: MIX, STEREO,
+     COMBIT, DEL1, DELAY, FIR, IIR, NOISE, PANECHO, ELL, DISTORT,
+     MULTICOMB.
+
 2004-07-09  Douglas Scott  <netdscott-at-netscape.net>
 
 	* libgen is now shared and linked via "-lgen"
