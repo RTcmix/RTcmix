@@ -120,13 +120,13 @@ bool AudioDeviceImpl::runCallback()
 	return _runCallback->call();
 }
 
-// Call the callback if present, then delete and null to avoid multiple
-// calls
+// Call the callback if present; delete and null to avoid multiple calls
 
 bool AudioDeviceImpl::stopCallback() {
-	bool ret = (_stopCallback) ? _stopCallback->call() : false;
-	delete _stopCallback;
+	Callback *stop = _stopCallback;
 	_stopCallback = NULL;
+	bool ret = (stop) ? stop->call() : false;
+	delete stop;
 	return ret;
 }
 
