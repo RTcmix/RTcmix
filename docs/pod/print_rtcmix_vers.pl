@@ -1,5 +1,5 @@
 $cmixdir = $ARGV[0];
-$vers_h = $cmixdir . "/H/version.h";
+$vers_h = $cmixdir . "/src/rtcmix/version.h";
 
 open VERS_H, $vers_h or die "Can't open $vers_h ($!)";
 
