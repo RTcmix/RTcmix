@@ -1,16 +1,16 @@
 # Change stuff in here as needed
 
 # The directory containing the RTcmix directory
-TOPDIR = /usr/local/src
+TOPDIR = /musr/src
 
 # The name of the RTcmix directory
-CMIXDIR = $(TOPDIR)/RTcmix-3.0.3
+CMIXDIR = $(TOPDIR)/RTcmix.dev
 
 # The dir that will contain links to the instrument dynamic shared objects
 LIBDESTDIR = $(CMIXDIR)/shlib
 
 # add new instruments to this list (e.g., insts.std, insts.jg)
-INST_DIRS = insts.base #insts.std insts.jg insts.mch
+INST_DIRS = insts.base insts.std insts.jg insts.mch insts.dt
 
 # add new packages to this list (e.g., interfaces.std)
 PACKAGE_DIRS =
@@ -34,7 +34,7 @@ SOUND_DRIVER += -DSHARED_AUDIO_DEV
 
 # Uncomment if your sound card always needs to use its maximum number of
 # channels, even when you request fewer (in rtsetparams).
-#SOUND_DRIVER += -DUSE_CARD_CHANS
+SOUND_DRIVER += -DUSE_CARD_CHANS
 
 # optimization, debugging and warning flags
 OPT = -g -Wall -Wno-unused -O2
@@ -42,7 +42,7 @@ OPT = -g -Wall -Wno-unused -O2
 #OPT = -O2
 
 # Uncomment this to enable use of the Perl front end to RTcmix.
-#PERL_SUPPORT = TRUE
+PERL_SUPPORT = TRUE
 
 # Uncomment to use old function table assignments for certain instruments.
 # For example, WAVETABLE used to expect function 1 to contain the wavetable
@@ -67,7 +67,8 @@ ifeq ($(ARCH),LINUX)
   CXX = g++ 
   LD = ld
   MAKE = make
-  INSTALL = cp -f
+#  INSTALL = cp -f
+  INSTALL = ln -fs
   SHELL = /bin/sh
 endif
 ifeq ($(ARCH),SGI)

@@ -67,7 +67,7 @@ extern "C" {
 	pthread_mutex_lock(&audio_config_lock);
     if (!audio_config) {
 	  if (print_is_on)
-      cout << "inTraverse():  waiting for audio_config . . . ";
+      cout << "inTraverse():  waiting for audio_config . . .\n";
     }
 	pthread_mutex_unlock(&audio_config_lock);
 
@@ -81,7 +81,7 @@ extern "C" {
 
     if (audio_configured && rtInteractive) {
 	  if (print_is_on)
-		cout << "audio set.\n\n";
+		cout << "inTraverse():  audio set.\n";
     }
 
     // Initialize everything ... cause it's good practice
@@ -309,6 +309,8 @@ extern "C" {
 			cout << "WARNING: the scheduler is behind the queue!" << endl;
 			cout << "rtQchunkStart:  " << rtQchunkStart << endl;
 			cout << "bufStartSamp:  " << bufStartSamp << endl;
+			cout << "endsamp:  " << endsamp << endl;
+			endsamp += offset;  // DJT:  added this (with hope)
 			offset = 0;
 		  }
 		  

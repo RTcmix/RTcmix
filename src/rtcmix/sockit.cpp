@@ -49,6 +49,7 @@ extern "C" {
     char *sptr;
     int val,optlen;
     int ntag,pval;
+	Bool audio_configured = NO;
 
     // tz.tz_minuteswest = 0;
     // tz.tz_dsttime = DST_NONE;
@@ -78,6 +79,8 @@ extern "C" {
     err = bind(s, (struct sockaddr *)&sss, sizeof(sss));
     if (err < 0) {
       perror("bind");
+	  fflush(stdout);
+	  sleep(1);
 	  cout << "\n";
       exit(1);
     }
@@ -92,9 +95,6 @@ extern "C" {
     }
     else {
 
-      buftime = (float)RTBUFSAMPS/SR;
-      cout << "buftime:  " << buftime << endl;
-	  
       sinfo = new (struct sockdata);
       // Zero the socket structure
       sinfo->name[0] = '\0';
@@ -106,17 +106,51 @@ extern "C" {
       // coming over the socket before it can access the values of RTBUFSAMPS,
       // SR, NCHANS, etc.
       if (noParse) {
-		if (print_is_on)
-		  cout << "sockit():  waiting for audio config\n";
+		
+		// Wait for the ok to go ahead
+		pthread_mutex_lock(&audio_config_lock);
+		if (!audio_config) {
+		  if (print_is_on)
+			cout << "sockit():  waiting for audio_config . . . \n";
+		}
+		pthread_mutex_unlock(&audio_config_lock);
+		
+		while (!audio_configured) {
+		  pthread_mutex_lock(&audio_config_lock);
+		  if (audio_config) {
+			audio_configured = YES;
+		  }
+		  pthread_mutex_unlock(&audio_config_lock);
 
-		sptr = (char *)sinfo;
-		amt = read(ns, (void *)sptr, sizeof(struct sockdata));
-		while (amt < sizeof(struct sockdata)) amt += read(ns, (void *)(sptr+amt), sizeof(struct sockdata)-amt);
-	
-		parse_dispatch(sinfo->name, sinfo->data.p, sinfo->n_args);
-      }
+		  sptr = (char *)sinfo;
+		  amt = read(ns, (void *)sptr, sizeof(struct sockdata));
+		  while (amt < sizeof(struct sockdata)) amt += read(ns, (void *)(sptr+amt), sizeof(struct sockdata)-amt);
+		  if ( (strcmp(sinfo->name, "rtinput") == 0) ||
+			   (strcmp(sinfo->name, "rtoutput") == 0) ||
+			   (strcmp(sinfo->name,"set_option") == 0) ||
+			   (strcmp(sinfo->name,"bus_config") == 0) ||
+			   (strcmp(sinfo->name, "load")==0) ) {
+			// these two commands use text data
+			// replace the text[i] with p[i] pointers
+			for (i = 0; i < sinfo->n_args; i++)
+			  strcpy(ttext[i],sinfo->data.text[i]);
+			for (i = 0; i < sinfo->n_args; i++) {
+			  tmpint = (int)ttext[i];
+			  sinfo->data.p[i] = (double)tmpint;
+			}
+		  }
+		  parse_dispatch(sinfo->name, sinfo->data.p, sinfo->n_args);
+		}
+		
+		if (audio_configured && rtInteractive) {
+		  if (print_is_on)
+			cout << "sockit():  audio set.\n";
+		}
+		
+	  }
 
-      buftime = (float)RTBUFSAMPS/SR;
+	  buftime = (double)RTBUFSAMPS/SR;
+      cout << "buftime:  " << buftime << endl;
 
       // Main socket reading loop
       while(1) {
@@ -124,8 +158,12 @@ extern "C" {
 		sptr = (char *)sinfo;
 		amt = read(ns, (void *)sptr, sizeof(struct sockdata));
 		while (amt < sizeof(struct sockdata)) amt += read(ns, (void *)(sptr+amt), sizeof(struct sockdata)-amt);
+		  if ( (strcmp(sinfo->name, "rtinput") == 0) ||
+			   (strcmp(sinfo->name, "rtoutput") == 0) ||
+			   (strcmp(sinfo->name,"set_option") == 0) ||
+			   (strcmp(sinfo->name,"bus_config") == 0) ||
+			   (strcmp(sinfo->name, "load")==0) ) {
 
-		if ( (strcmp(sinfo->name, "rtinput") == 0) || (strcmp(sinfo->name, "rtoutput") == 0) || (strcmp(sinfo->name,"set_option") == 0) || (strcmp(sinfo->name, "load")==0) ) {
 		  // these two commands use text data
 		  // replace the text[i] with p[i] pointers
 		  for (i = 0; i < sinfo->n_args; i++)
