@@ -24,7 +24,7 @@ totdur += dur
 amp = masteramp
 env = maketable("line", 1000, 0,0, 1,1, 7,1, 10,0)
 
-freq = maketable("random", "nonorm", totdur * 8, "cauchy", 1, 50, 180)
+freq = maketable("random", "nonorm", totdur * 8, "cauchy", 50, 180, 1)
 rvbtime = maketable("line", "nonorm", 1000, 0,2, 2,10, 3,5)
 pctleft = maketable("wave", "nonorm", 1000, .5) + 0.5
 ringdur = 0.5
