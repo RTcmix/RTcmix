@@ -203,16 +203,19 @@ void GRANULATE::doupdate()
 
 int GRANULATE::run()
 {
+   int i;
    const int outchans = outputChannels();
    const int frames = framesToRun();
+   bool keepgoing = true;
 
-   for (int i = 0; i < frames; i++) {
+   for (i = 0; i < frames; i++) {
       if (--_branch <= 0) {
          doupdate();
          _branch = _skip;
       }
 
-      _stream->compute();
+      // If we're not in wrap mode, this returns false when it's time to stop.
+      keepgoing = _stream->compute();
 
       float out[outchans];
       if (outchans == 2) {
@@ -224,9 +227,13 @@ int GRANULATE::run()
 
       rtaddout(out);
       increment();
+      if (!keepgoing) {
+// FIXME: how do we remove note from RTcmix queue?
+         break;
+      }
    }
 
-   return framesToRun();
+   return i;
 }
 
 Instrument *makeGRANULATE()
