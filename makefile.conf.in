@@ -63,18 +63,19 @@ CMIX_FLAGS += -DEXIT_ON_ERROR
 ###############################################################
 # Linux sound driver flags -- ignore for Irix and Mac OS X
 # It doesn't matter how any of these are set for Irix and Mac OS X.
-# The Linux flags should work for FreeBSD, using OSS or an emulation
-# of the OSS API.
+# The Linux flags should work for FreeBSD, using OSS or an emulation of the OSS API, or ALSA if
+# it is installed.
 
-# Sound driver API
-# NOTE: no support for ALSA yet, sorry
-SOUND_DRIVER = -DOSS
-#SOUND_DRIVER = -DALSA
+# Linux Sound driver API
+#AUDIODRIVER=ALSA
+AUDIODRIVER=OSS
+
+SOUND_DRIVER = -D$(AUDIODRIVER)
 
 # Uncomment if your sound driver uses the same device file for input and
 # output. This is true if you have a Creative/Ensoniq AudioPCI, or similar
 # consumer card.
-SOUND_DRIVER += -DSHARED_AUDIO_DEV
+#SOUND_DRIVER += -DSHARED_AUDIO_DEV
 
 # Uncomment if your sound driver uses multiple mono devices.
 #SOUND_DRIVER += -DMONO_DEVICES
@@ -148,7 +149,11 @@ CXXFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
 SNDLIB = ../sndlib/sndlib.a
 
 ifeq ($(ARCH),LINUX)
-  SYSLIBS = -lpthread -lm -ldl #-lefence
+	ifeq ($(AUDIODRIVER),ALSA)
+	  SYSLIBS = -lasound -lpthread -lm -ldl #-lefence
+	else
+	  SYSLIBS = -lpthread -lm -ldl #-lefence
+	endif
   LDFLAGS = $(OPT) $(SYSLIBS)
   SHARED_LDFLAGS = -shared -Wl,-soname,$@
   DYN = -rdynamic
