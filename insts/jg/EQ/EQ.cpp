@@ -4,9 +4,9 @@
    p1 = input start time
    p2 = input duration
    p3 = amplitude multiplier *
-   p4 = EQ type ("lowpass", "highpass", "lowshelf", "highshelf", "peaknotch")
+   p4 = EQ type ("lowpass", "highpass", "lowshelf", "highshelf", "peaknotch") **
    p5 = input channel [optional, default is 0]
-   p6 = percent of signal to left output channel [optional, default is .5]
+   p6 = pan (in percent-to-left form: 0-1) [optional, default is .5]
    p7 = bypass filter (0: no, 1: yes) [optional, default is 0]
    p8 = filter frequency (Hz) [optional; if missing, must use gen 2] ***
    p9 = filter Q (values from 0.5 to 10.0, roughly) [optional; if missing,
@@ -16,7 +16,7 @@
 
    p3 (amplitude), p4 (type), p6 (pan), p7 (bypass), p8 (freq), p9 (Q)
    and p10 (gain) can receive dynamic updates from a table or real-time
-   control source.
+   control source.  p4 (type) can be updated only when using numeric codes. **
 
    ----
 
@@ -105,7 +105,7 @@ EQType EQ :: getEQType(bool trystring)
 
    // must try int first, since a valid code cast to char * will crash strncmp
    int code = field.intValue(index);
-   if ((code < 0 || code > 4) && trystring) {
+   if ((code < EQLowPass || code > EQPeaking) && trystring) {
       const char *str = field.stringValue(index);
       code = _string_to_eqcode(str);   // -1 if no match
       if (code != -1)
@@ -132,7 +132,6 @@ int EQ :: init(double p[], int n_args)
    float outskip = p[0];
    float inskip = p[1];
    float dur = p[2];
-   amp = p[3];
    inchan = n_args > 5 ? (int) p[5] : 0;           // default is chan 0
 
    if (rtsetinput(inskip, this) != 0)
