@@ -7,7 +7,7 @@
    p0 = output start time
    p1 = duration
    p2 = amplitude multiplier
-   p3 = random seed (if 0, seed from system clock) [default: 0]
+   p3 = random seed (any integer; if 0, seed from system clock) [default: 0]
    p4 = oscillator configuration (0: additive, 1: FM, 2: sampled) [default: 0]
    p5 = randomize oscillator starting phase (0: no, 1: yes) [default: yes]
 
@@ -121,14 +121,14 @@ make_table(int function_num, float dur, int exit_on_fail, const char *message)
 
 int JGRAN :: init(float p[], int n_args)
 {
-   int   wavetablen = DEFAULT_WAVETABLE_SIZE;
-   float outskip, dur, seed;
+   int   seed, wavetablen = DEFAULT_WAVETABLE_SIZE;
+   float outskip, dur;
    float *wavetab, *envtab;
 
    outskip = p[0];
    dur = p[1];
    amp = p[2];
-   seed = p[3];
+   seed = (int) p[3];
    osctype = (OscType) p[4];
    randomize_phase = n_args > 5 ? (int) p[5] : 1;           /* default: yes */
 
@@ -186,12 +186,12 @@ int JGRAN :: init(float p[], int n_args)
    if (osctype == FM)
       mod_oscil = new OscilN(0.0, wavetab, wavetablen);
 
-   durnoi = new Noise(seed * 0.243);
-   freqnoi = new Noise(seed * 0.734);
-   pannoi = new Noise(seed * 0.634);
-   ampnoi = new Noise(seed * 0.824);
+   durnoi = new Noise((unsigned int) seed * 243);
+   freqnoi = new Noise((unsigned int) seed * 734);
+   pannoi = new Noise((unsigned int) seed * 634);
+   ampnoi = new Noise((unsigned int) seed * 824);
    if (randomize_phase)
-      phasenoi = new Noise(seed * 0.951);
+      phasenoi = new Noise((unsigned int) seed * 951);
 
    krate = resetval;
    skip = (int) (SR / (float) krate);
