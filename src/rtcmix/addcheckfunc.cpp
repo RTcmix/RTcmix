@@ -192,6 +192,11 @@ checkfunc(const char *funcname, const Arg arglist[], const int nargs,
                return -1;
             }
          }
+         /* some functions rely on zero contents of args > nargs */
+         for (int i = nargs; i < MAXDISPARGS; i++) {
+            p[i] = 0.0;
+            pp[i] = 0.0;
+         }
          *retval = (double) (*(func->func_ptr.legacy_return))
                                                       (p, nargs, pp);
       }
