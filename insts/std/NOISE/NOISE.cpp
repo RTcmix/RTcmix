@@ -67,7 +67,7 @@ int NOISE :: run()
 
    Instrument::run();
 
-   for (i = 0; i < FramesToRun(); i++) {
+   for (i = 0; i < framesToRun(); i++) {
       if (--branch < 0) {
          if (amparray)
             aamp = tablei(cursamp, amparray, amptabs) * amp;
@@ -76,7 +76,7 @@ int NOISE :: run()
 
       out[0] = rrand() * aamp;
 
-      if (OutputChannels() == 2) {
+      if (outputChannels() == 2) {
          out[1] = out[0] * (1.0 - pctleft);
          out[0] *= pctleft;
       }
@@ -85,7 +85,7 @@ int NOISE :: run()
       increment();
    }
 
-   return FramesToRun();
+   return framesToRun();
 }
 
 

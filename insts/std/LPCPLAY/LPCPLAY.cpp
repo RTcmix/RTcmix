@@ -126,9 +126,9 @@ int LPCINST::init(float p[], int n_args)
 	
 	for (int i=0; i<_nPoles*2; i++) _past[i] = 0;
 
-	/* NSamps() returns the number of sample
+	/* nSamps() returns the number of sample
       frames that will be written to output (dur * SR). */
-	return NSamps();
+	return nSamps();
 }
 
 /* Construct an instance of this instrument and initialize a variable. */
@@ -324,7 +324,7 @@ int LPCPLAY::run()
 	// Samples may have been left over from end of previous run's block
 	if (_leftOver > 0)
 	{
-		int toAdd = min(_leftOver, FramesToRun());
+		int toAdd = min(_leftOver, framesToRun());
 #ifdef debug
 		printf("using %d leftover samps starting at offset %d\n",
 			   _leftOver, _savedOffset);
@@ -335,10 +335,10 @@ int LPCPLAY::run()
 		_savedOffset += toAdd;
 	}
 	
-	/* FramesToRun() returns the number of sample frames -- 1 sample for each
+	/* framesToRun() returns the number of sample frames -- 1 sample for each
 	  channel -- that we have to write during this scheduler time slice.
 	*/
-	for (; n < FramesToRun(); n += _counter) {
+	for (; n < framesToRun(); n += _counter) {
 		int loc;
 		if ( _unvoiced_rate && !_voiced )
 		{
@@ -346,7 +346,7 @@ int LPCPLAY::run()
 		}
 		else
 		{
-			_frameno = _frame1 + ((float)(CurrentFrame())/nsamps) * _frames;
+			_frameno = _frame1 + ((float)(currentFrame())/nsamps) * _frames;
 		}
 #if 0
 		printf("frame %g\n", _frameno);
@@ -363,7 +363,7 @@ int LPCPLAY::run()
 		_ampmlt = _amp * _coeffs[RESIDAMP];
 		if (_coeffs[RMSAMP] < _cutoff)
 			_ampmlt = 0;
-		float cps = tablei(CurrentFrame(),_pchvals,_tblvals);
+		float cps = tablei(currentFrame(),_pchvals,_tblvals);
 		float newpch = cps;
 
 		// If input pitch was specified as -X.YZ, use this as actual pitch
@@ -397,7 +397,7 @@ int LPCPLAY::run()
 		}
 		float hn = (_hnfactor <= 1.0) ? (int)(_hnfactor*_srd2/newpch)-2 : _hnfactor;
 		_counter = int(((float)SR/(newpch * _perperiod) ) * .5);
-		_counter = (_counter > (nsamps - CurrentFrame())) ? nsamps - CurrentFrame() : _counter;
+		_counter = (_counter > (nsamps - currentFrame())) ? nsamps - currentFrame() : _counter;
 #ifdef debug
 		printf("fr: %g err: %g bzamp: %g noisamp: %g pch: %g ctr: %d\n",
 		 	   _frameno,_coeffs[THRESH],_ampmlt*buzamp,_ampmlt*noisamp,newpch,_counter);
@@ -443,10 +443,10 @@ int LPCPLAY::run()
 
 		// Apply envelope last
 
-		float envelope = evp(CurrentFrame(),_envFun,_envFun,_evals);
+		float envelope = evp(currentFrame(),_envFun,_envFun,_evals);
 		bmultf(_alpvals, envelope, _counter);
 
-		int sampsToAdd = min(_counter, FramesToRun() - n);
+		int sampsToAdd = min(_counter, framesToRun() - n);
 
 		/* Write this block to the output buffer. */
 		rtbaddout(_alpvals, sampsToAdd);
@@ -454,17 +454,17 @@ int LPCPLAY::run()
 		/* Keep track of how many sample frames this instrument has generated. */
 		increment(_counter);
 	}
-	// Handle case where last synthesized block extended beyond FramesToRun()
-	if (n > FramesToRun())
+	// Handle case where last synthesized block extended beyond framesToRun()
+	if (n > framesToRun())
 	{
-		_leftOver = n - FramesToRun();
+		_leftOver = n - framesToRun();
 		_savedOffset = _counter - _leftOver;
 #ifdef debug
 		printf("saving %d samples left over at offset %d\n", _leftOver, _savedOffset);
 #endif
 	}
 
-	return FramesToRun();
+	return framesToRun();
 }
 
 void
@@ -631,7 +631,7 @@ int LPCIN::run()
 	// Samples may have been left over from end of previous run's block
 	if (_leftOver > 0)
 	{
-		int toAdd = min(_leftOver, FramesToRun());
+		int toAdd = min(_leftOver, framesToRun());
 #ifdef debug
 		printf("using %d leftover samps starting at offset %d\n",
 			   _leftOver, _savedOffset);
@@ -643,15 +643,15 @@ int LPCIN::run()
 		_savedOffset += toAdd;
 	}
 	
-	/* FramesToRun() returns the number of sample frames -- 1 sample for each
+	/* framesToRun() returns the number of sample frames -- 1 sample for each
 	  channel -- that we have to write during this scheduler time slice.
 	*/
-	for (; n < FramesToRun(); n += _counter) {
+	for (; n < framesToRun(); n += _counter) {
 		int loc;
-		_frameno = _frame1 + ((float)(CurrentFrame())/nsamps) * _frames;
+		_frameno = _frame1 + ((float)(currentFrame())/nsamps) * _frames;
 
 //		printf("\tgetting frame %g of %d (%d out of %d signal samps)\n",
-//			   _frameno, (int)_frames, CurrentFrame(), nsamps);
+//			   _frameno, (int)_frames, currentFrame(), nsamps);
 		if (_dataSet->getFrame(_frameno,_coeffs) == -1)
 			break;
 		_ampmlt = _amp * _coeffs[RESIDAMP] / 10000.0;	// XXX normalize this!
@@ -681,7 +681,7 @@ int LPCIN::run()
 		}
 //		_counter = int(((float)SR/newpch ) * .5);
 		_counter = (RTBUFSAMPS < MAXVALS) ? RTBUFSAMPS : MAXVALS;
-		_counter = (_counter > (nsamps - CurrentFrame())) ? nsamps - CurrentFrame() : _counter;
+		_counter = (_counter > (nsamps - currentFrame())) ? nsamps - currentFrame() : _counter;
 				
         if (_counter <= 0)
 			break;
@@ -713,7 +713,7 @@ int LPCIN::run()
 //		if (_reson_is_on)
 //			bresonz(_alpvals,_rsnetc,_alpvals,_counter);
 
-		int sampsToAdd = min(_counter, FramesToRun() - n);
+		int sampsToAdd = min(_counter, framesToRun() - n);
 		
 //		printf("\tscaling %d samples by %g\n", sampsToAdd, _ampmlt);
 
@@ -725,17 +725,17 @@ int LPCIN::run()
 		/* Keep track of how many sample frames this instrument has generated. */
 		increment(_counter);
 	}
-	// Handle case where last synthesized block extended beyond FramesToRun()
-	if (n > FramesToRun())
+	// Handle case where last synthesized block extended beyond framesToRun()
+	if (n > framesToRun())
 	{
-		_leftOver = n - FramesToRun();
+		_leftOver = n - framesToRun();
 		_savedOffset = _counter - _leftOver;
 #ifdef debug
 		printf("saving %d samples left over at offset %d\n", _leftOver, _savedOffset);
 #endif
 	}
 
-	return FramesToRun();
+	return framesToRun();
 }
 
 /* The scheduler calls this to create an instance of this instrument,

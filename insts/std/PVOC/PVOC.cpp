@@ -240,7 +240,7 @@ int PVOC::init(float *p, int n_args)
 	else
 		_on = _in;
 
-	return NSamps();
+	return nSamps();
 }
 
 int PVOC::run()
@@ -252,7 +252,7 @@ int PVOC::run()
 	// enough samples (via multiple calls to rtgetin()) to satisfy the input.
 	
 	if (_inbuf == NULL)
-		_inbuf = new BUFTYPE[InputChannels() * Nw];
+		_inbuf = new BUFTYPE[inputChannels() * Nw];
 
 	if (_outbuf == NULL)
 		_outbuf = new BUFTYPE[Nw];	// XXX CHECK THIS SIZE
@@ -268,7 +268,7 @@ int PVOC::run()
 	//	the group delay of the windowed output.
 	
 	do {
-		int outFramesNeeded = FramesToRun();
+		int outFramesNeeded = framesToRun();
 
 		if (_cachedOutFrames)
 		{
@@ -392,7 +392,7 @@ int PVOC::run()
 		}
 	} while (_on < 0);
 
-	return FramesToRun();
+	return framesToRun();
 }
 
 /*
@@ -404,8 +404,8 @@ int PVOC::run()
 int PVOC::shiftin( float A[], int winLen, int D)
 {
 	int i, n;
-	const int nsamps = NSamps();
-	const int inchans = InputChannels();
+	const int nsamps = nSamps();
+	const int inchans = inputChannels();
 	const float amp = _amp;
 	
 	if ( _valid < 0 )		/* first time only */
