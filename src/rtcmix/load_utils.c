@@ -48,6 +48,7 @@ const char *get_dso_error()
    compatibility library.   -JGG, 8/10/01
 */
 #include <mach-o/dyld.h>
+#include <unistd.h>
 
 static NSObjectFileImageReturnCode s_result = NSObjectFileImageSuccess;
 
@@ -55,7 +56,7 @@ void *
 find_dso(const char *loadPath)
 {
     NSObjectFileImage objectFileImage;
-    s_result = NSCreateObjectFileImageFromFile(dsoPath, &objectFileImage);
+    s_result = NSCreateObjectFileImageFromFile(loadPath, &objectFileImage);
     if (s_result == NSObjectFileImageSuccess) {
     	unsigned long options = NSLINKMODULE_OPTION_PRIVATE | NSLINKMODULE_OPTION_BINDNOW;
 		NSModule module = NSLinkModule(objectFileImage, loadPath, options);
@@ -65,11 +66,13 @@ find_dso(const char *loadPath)
 	return NULL;
 }
 
-void
-find_symbol(void *dso, const char *symbol)
+void *
+find_symbol(void *dso, const char *symbolName)
 {
 	NSModule module = (NSModule) dso;
-    NSSymbol symbol = NSLookupSymbolInModule(module, symbol);
+	char fullSymbolName[128];
+	snprintf(fullSymbolName, sizeof(fullSymbolName), "_%s", symbolName);
+    NSSymbol symbol = NSLookupSymbolInModule(module, fullSymbolName);
     if (symbol != NULL) {
 		return (void *) NSAddressOfSymbol(symbol);
 	}
@@ -80,7 +83,7 @@ int
 unload_dso(void *dso)
 {
 	NSModule module = (NSModule) dso;
-	return NSUnlinkModule(module, NSUNLINKMODULE_OPTIONS_NONE) == TRUE ? 0 : -1;
+	return NSUnLinkModule(module, NSUNLINKMODULE_OPTION_NONE) == TRUE ? 0 : -1;
 }
 
 const char *get_dso_error()
