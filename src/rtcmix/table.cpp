@@ -651,7 +651,7 @@ multtable(const Arg args[], const int nargs)
 	return NULL;
 }
 
-/* ------------------------------------------------------------- multtable -- */
+/* -------------------------------------------------------------- addtable -- */
 Handle
 addtable(const Arg args[], const int nargs)
 {
@@ -672,10 +672,9 @@ addtable(const Arg args[], const int nargs)
 			return _createPFieldHandle(new AddPField(table0, table1));
 		}
 	}
-	die("multtable", "Usage: mul(table1, table2) or mul(table1, const1)");
+	die("addtable", "Usage: add(table1, table2) or add(table1, const1)");
 	return NULL;
 }
-
 
 /* ------------------------------------------------------------- normtable -- */
 Handle
@@ -710,7 +709,6 @@ normtable(const Arg args[], const int nargs)
 //   _normalize_table(args[0].val.array->data, args[0].val.array->len, peak);
 	return _createPFieldHandle(tableToNormalize);
 }
-
 
 /* ------------------------------------------------------------- dumptable -- */
 double
@@ -753,7 +751,6 @@ dumptable(const Arg args[], const int nargs)
 
    return (chars > 0) ? 0.0 : -1.0;
 }
-
 
 /* ------------------------------------------------------------- plottable -- */
 #define DEFAULT_PLOTCMD "with lines"
