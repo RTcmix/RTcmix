@@ -1,6 +1,6 @@
 include package.conf
 
-RTLIBDIRS = JDELAY JCHOR JFIR REV REVERBIT ROOM MROOM SROOM VOCODE FLANGE ELL
+RTLIBDIRS = JDELAY JCHOR JFIR REV REVERBIT ROOM MROOM SROOM VOCODE FLANGE ELL ELLNEW
 CMIXLIBDIRS = bender denoise splice
 LIBDIRS = $(CMIXLIBDIRS) $(RTLIBDIRS)
 
@@ -21,7 +21,7 @@ install:
 	@for DIR in $(LIBDIRS); \
 	do \
 	  ( cd $$DIR; echo "making install in $$DIR..."; \
-	  ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR); ) \
+	  $(INSTALL) `pwd`/lib$$DIR.so $(LIBDESTDIR); ) \
 	done
 
 dsos:  all
@@ -39,16 +39,15 @@ standalone_install:
 	@for DIR in $(LIBDIRS); \
 	do \
 	( cd $$DIR; echo "making install in $$DIR..."; \
-	  rm -f $(DESTDIR)/$$DIR; \
-	  ln -fs `pwd`/$$DIR $(DESTDIR); ) \
+	  $(INSTALL) `pwd`/$$DIR $(DESTDIR); ) \
 	done
 
 clean:
 	@for DIR in $(LIBDIRS); \
 	do \
 	  ( cd $$DIR; make clean; \
-	  rm -f $(DESTDIR)/$$DIR; \
-	  rm -f $(LIBDESTDIR)/lib$$DIR.so; ) \
+	  $(RM) $(DESTDIR)/$$DIR; \
+	  $(RM) $(LIBDESTDIR)/lib$$DIR.so; ) \
 	done
 	( cd objlib; make clean; )
 
@@ -56,14 +55,14 @@ dso_clean:
 	@for DIR in $(LIBDIRS); \
 	do \
 	  ( cd $$DIR; make clean; \
-	  rm -f $(LIBDESTDIR)/lib$$DIR.so; ) \
+	  $(RM) $(LIBDESTDIR)/lib$$DIR.so; ) \
 	done
 
 standalone_clean:
 	@for DIR in $(LIBDIRS); \
 	do \
 	  ( cd $$DIR; make clean; \
-	  rm -f $(DESTDIR)/$$DIR; \
+	  $(RM) $(DESTDIR)/$$DIR; \
 	done
 
 .PHONY: objlib
