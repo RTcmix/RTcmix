@@ -1,7 +1,7 @@
 include ../package.conf
 
 OBJS = MIX.o
-PROGS = MIX PMIX
+PROGS = MIX PMIX PYMIX
 
 ifeq ($(ARCH),LINUX)
    DYN = -rdynamic
@@ -11,11 +11,16 @@ endif
 
 PERL_LDFLAGS = `perl -MExtUtils::Embed -e ldopts`
 
+TARGETS = MIX
 ifeq ($(PERL_SUPPORT), TRUE)
-all: MIX PMIX
-else
-all: MIX
+TARGETS += PMIX
 endif
+ifeq ($(PYTHON_SUPPORT), TRUE)
+TARGETS += PYMIX
+LIBPYTHON = `python $(CMIXDIR)/Python/print_libpython.py`
+endif
+
+all: $(TARGETS)
 
 MIX: $(OBJS) $(CMIX_O) $(M_O) $(GENLIB) $(PROFILE_O)
 	$(CXX) -o MIX $(DYN) $(OBJS) $(CMIX_O) $(PROFILE_O) $(M_O) $(GENLIB) \
@@ -24,6 +29,10 @@ MIX: $(OBJS) $(CMIX_O) $(M_O) $(GENLIB) $(PROFILE_O)
 PMIX: $(OBJS) $(CMIX_O) $(P_O) $(GENLIB) $(PROFILE_O)
 	$(CXX) -o PMIX $(DYN) $(OBJS) $(CMIX_O) $(PROFILE_O) $(P_O) $(LDFLAGS) \
 		$(GENLIB) $(PERL_LDFLAGS)
+
+PYMIX: $(OBJS) $(CMIX_O) $(PY_O) $(GENLIB) $(PROFILE_O)
+	$(CXX) -o PYMIX $(DYN) $(OBJS) $(CMIX_O) $(PROFILE_O) $(PY_O) $(LDFLAGS) \
+		$(GENLIB) $(LIBPYTHON)
 
 $(OBJS): $(INSTRUMENT_H)
 
