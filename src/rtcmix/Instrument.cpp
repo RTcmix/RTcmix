@@ -109,29 +109,29 @@ void Instrument::gone()
 #ifdef DEBUG
 	printf("\tclosing fd %d\n", inputFileTable[fdIndex].fd);
 #endif
-#ifdef sgi
-	// free the file handle opened for this file
-	afCloseFile((AFfilehandle) inputFileTable[fdIndex].handle);
-#else
-	// otherwise close the fdesc (no need if doing afCloseFile)
+
 #ifdef USE_SNDLIB
 	clm_close(inputFileTable[fdIndex].fd);
-#else
+#else /* !USE_SNDLIB */
+  #ifdef sgi
+	// free the file handle opened for this file
+	afCloseFile((AFfilehandle) inputFileTable[fdIndex].handle);
+  #else
 	close(inputFileTable[fdIndex].fd);
-#endif
-#endif
+  #endif
+#endif /* !USE_SNDLIB */
       }
       inputFileTable[fdIndex].fd = 0;
-#ifdef sgi
-      inputFileTable[fdIndex].handle = NULL;
-#else
 #ifdef USE_SNDLIB
       inputFileTable[fdIndex].header_type = unsupported_sound_file;
       inputFileTable[fdIndex].data_format = snd_unsupported;
-#endif
+#else /* !USE_SNDLIB */
+  #ifdef sgi
+      inputFileTable[fdIndex].handle = NULL;
+  #endif
+#endif /* !USE_SNDLIB */
       inputFileTable[fdIndex].data_location = 0;
       inputFileTable[fdIndex].dur = 0.0;
-#endif
       inputFileTable[fdIndex].filename[0] = '\0';
       fdIndex = -1;
     }

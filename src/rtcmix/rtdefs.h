@@ -11,16 +11,16 @@ typedef struct inputdesc {
 	char filename[1024];
 	int fd;
 	int refcount;
-#ifdef sgi
-	void *handle;
-#else
-  #ifdef USE_SNDLIB
+#ifdef USE_SNDLIB
 	short header_type;        /* e.g., AIFF_sound_file (in sndlib.h) */
 	short data_format;        /* e.g., snd_16_linear (in sndlib.h) */
+#else
+  #ifdef sgi
+	void *handle;
   #endif
+#endif
 	int data_location;        /* offset of sound data start in file */
 	float dur;
-#endif
 } InputDesc;
 
 extern float *outbuff;
