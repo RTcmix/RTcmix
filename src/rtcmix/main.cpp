@@ -159,8 +159,9 @@ interrupt_handler(int signo)
 	   if (rtsetparams_called) {
 		   stop_audio_devices();
 	   }
-	   else
-		   closesf_noexit();
+	   else {
+		   closesf();	// We exit if we have not yet configured audio.
+	   }
 	}
 }
 
