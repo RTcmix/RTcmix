@@ -1,4 +1,5 @@
 #include "../H/ugens.h"
+#include <stdlib.h>
 #include <stdio.h>
 
 extern double gen2(struct gen *gen);
@@ -35,18 +36,15 @@ double
 makegen(float p[], int n_args)
 {
    float  *block;
-   double retval;
+   double retval = -1.0;
    struct gen gen;
-   char *valloc();
 
    int genno = p[0];
    if (genno < 0)
       genno = -genno;
 
-   if (genno >= MAXGENS) {
-      fprintf(stderr, "makegen: no more simultaneous gens available!\n");
-      closesf();
-   }
+   if (genno >= MAXGENS)
+      die("makegen", "no more simultaneous gens available!");
 
    /* makegen now creates a new function for *every* call to it - this
       is so that we can guarantee the correct version of a given function
@@ -60,10 +58,8 @@ makegen(float p[], int n_args)
 
 // FIXME: Should we really be using valloc here?  -JGG
    block = (float *) valloc((unsigned) gen.size * FLOAT);
-   if (block == NULL) {
-      fprintf(stderr, "makegen: Can't get any function space.\n");
-      closesf();
-   }
+   if (block == NULL)
+      die("makegen", "Not enough memory for function table %d.", genno);
    farrays[f_goto[genno]] = block;
    ngens++;
 
@@ -112,8 +108,7 @@ makegen(float p[], int n_args)
          retval = gen2(&gen);
          break;
       default:
-         fprintf(stderr, "makegen: There is no gen%d\n", (int) p[1]);
-         retval = -1.0;
+         die("makegen", "There is no gen%d.", (int) p[1]);
    }
 
    return retval;
