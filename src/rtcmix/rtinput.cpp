@@ -184,13 +184,6 @@ open_sound_file(
       sndlib_close(fd, 0, 0, 0, 0);
       return -1;
    }
-#ifdef NOMORE  // float input should work now -JG
-   if (IS_FLOAT_FORMAT(*data_format)) {
-      fprintf(stderr, "\"%s\": can't handle float input files yet.\n", sfname);
-      sndlib_close(fd, 0, 0, 0, 0);
-      return -1;
-   }
-#endif
 
    *data_location = c_snd_header_data_location();
    *srate = (double) c_snd_header_srate();
@@ -363,7 +356,7 @@ rtinput(float p[], int n_args, double pp[])
             printf("    format:  %s\n", sound_format_name(data_format));
             printf("     srate:  %g\n", srate);
             printf("     chans:  %d\n", nchans);
-            printf("  duration:  %g\n\n", dur);
+            printf("  duration:  %g\n", dur);
 #ifdef INPUT_BUS_SUPPORT
 #endif /* INPUT_BUS_SUPPORT */
          }
@@ -388,6 +381,7 @@ rtinput(float p[], int n_args, double pp[])
             inputFileTable[i].is_audio_dev = audio_in;
             inputFileTable[i].header_type = header_type;
             inputFileTable[i].data_format = data_format;
+            inputFileTable[i].is_float_format = IS_FLOAT_FORMAT(data_format);
             inputFileTable[i].data_location = data_location;
             inputFileTable[i].srate = (float) srate;
             inputFileTable[i].chans = nchans;
