@@ -17,7 +17,7 @@ public:
    inline void setparams(OeqType type, float freq, float Q, float gain,
                                                             bool bypass) {
       if (type == OeqInvalid)
-         type == _type;
+         type = _type;
       if (type != _type || freq != _freq || Q != _Q || gain != _gain) {
          _type = type;
          _freq = freq;
