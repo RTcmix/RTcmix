@@ -42,7 +42,8 @@ int MIX::init(double p[], int n_args)
 	if (dur < 0.0)
 		dur = -dur - inskip;
 
-	nsamps = rtsetoutput(outskip, dur, this);
+	if (rtsetoutput(outskip, dur, this) == -1)
+		return DONT_SCHEDULE;
 	if (rtsetinput(inskip, this) == -1)
 		return DONT_SCHEDULE;	// no input
 

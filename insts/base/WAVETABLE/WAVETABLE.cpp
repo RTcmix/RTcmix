@@ -49,7 +49,8 @@ int WAVETABLE::init(double p[], int n_args)
 	float outskip = p[0];
 	float dur = p[1];
 
-	nsamps = rtsetoutput(outskip, dur, this);
+	if (rtsetoutput(outskip, dur, this) == -1)
+		return DONT_SCHEDULE;
 	if (outputChannels() > 2)
 		return die("WAVETABLE", "Can't handle more than 2 output channels.");
 
