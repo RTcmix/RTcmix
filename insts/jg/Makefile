@@ -1,4 +1,4 @@
-include insts.conf
+include package.conf
 
 RTLIBDIRS = ELL JDELAY JCHOR JFIR REV REVERBIT ROOM MROOM SROOM VOCODE FLANGE
 CMIXLIBDIRS = bender denoise splice
@@ -13,15 +13,33 @@ objlib:
 progs:
 	@for DIR in $(LIBDIRS); \
 	do \
-	( cd $$DIR; echo "making in $$DIR..."; \
-	  $(MAKE) $(MFLAGS); echo "done in $$DIR" ); \
+	  ( cd $$DIR; echo "making in $$DIR..."; \
+	  $(MAKE) $(MFLAGS); echo "done in $$DIR"; ) \
 	done
 
 install:
 	@for DIR in $(LIBDIRS); \
 	do \
+	  ( cd $$DIR; echo "making install in $$DIR..."; \
+	  ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR); ) \
+	done
+	@ln -fs `pwd`/MIX/MIX $(DESTDIR)/CMIX
+
+dsos:  all
+
+dso_install:  install
+
+standalone:
+	@for DIR in $(LIBDIRS); \
+	do \
+	  ( cd $$DIR; echo "making in $$DIR..."; \
+	  $(MAKE) $(MFLAGS) standalone; echo "done in $$DIR" ); \
+	done
+
+standalone_install:
+	@for DIR in $(LIBDIRS); \
+	do \
 	( cd $$DIR; echo "making install in $$DIR..."; \
-	  ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR); \
 	  rm -f $(DESTDIR)/$$DIR; \
 	  ln -fs `pwd`/$$DIR $(DESTDIR); ) \
 	done
@@ -29,19 +47,26 @@ install:
 clean:
 	@for DIR in $(LIBDIRS); \
 	do \
-	( cd $$DIR; make clean; \
+	  ( cd $$DIR; make clean; \
 	  rm -f $(DESTDIR)/$$DIR; \
 	  rm -f $(LIBDESTDIR)/lib$$DIR.so; ) \
 	done
-	( cd objlib; make clean; )
+	rm -f $(DESTDIR)/CMIX
 
-onlyDSO:
+dso_clean:
 	@for DIR in $(LIBDIRS); \
 	do \
-	( cd $$DIR; echo "removing standalone instrument in $$DIR..."; \
-	  rm -f $$DIR; ) \
+	  ( cd $$DIR; make clean; \
+	  rm -f $(LIBDESTDIR)/lib$$DIR.so; ) \
 	done
+	rm -f $(DESTDIR)/CMIX
 
+standalone_clean:
+	@for DIR in $(LIBDIRS); \
+	do \
+	  ( cd $$DIR; make clean; \
+	  rm -f $(DESTDIR)/$$DIR; \
+	done
 
 .PHONY: objlib
 
