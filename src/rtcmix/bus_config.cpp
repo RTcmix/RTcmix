@@ -607,7 +607,7 @@ get_bus_config(const char *inst_name)
    index = get_last_input_index();
    /* Otherwise grab from audio device, if active */
    if (index == -1) {
-	 if (full_duplex)
+	 if (record_audio && play_audio)
 	   in_chans = NCHANS;
 	 else
 	   in_chans = 0;
