@@ -92,6 +92,7 @@ int oldSched;
 int noParse = 0;
 int audio_on;
 int play_audio;
+int full_duplex;
 
 int audio_config = 1;
 
@@ -160,6 +161,9 @@ main(int argc, char *argv[])
 	rtInteractive = 0;
 	oldSched = 0;
 	tags_on = 0;
+	full_duplex = 0;
+	in_port=0;
+	out_port=0;
 
 	fprintf(stderr," ---------> RTcmix/%s <----------\n",argv[0]);
 	/*
