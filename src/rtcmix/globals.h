@@ -29,6 +29,7 @@ GLOBAL int in_port;
 GLOBAL int out_port;
 #endif
 #ifdef SGI
+#include <dmedia/audio.h>
 GLOBAL ALport in_port;
 GLOBAL ALport out_port;
 #endif
