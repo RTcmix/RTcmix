@@ -1,7 +1,7 @@
 include ../../../makefile.conf
 
 OBJS = RTcmixWindow.o
-SRCS = RTcmixMouse.cpp
+SRCS = RTcmixWindow.cpp
 #CXXFLAGS += -I. -I../../rtcmix
 
 all: depend $(OBJS)
