@@ -9,7 +9,7 @@ DIRS = include genlib src insts utils docs
 
 all:	install_dirs
 	@echo "making all ..."
-	@for DIR in $(DIRS) $(INST_DIRS); \
+	@for DIR in $(DIRS); \
 	do \
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) all ); \
 	done
