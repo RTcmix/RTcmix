@@ -5,6 +5,7 @@
 #ifndef _INSTRUMENT_H_
 #define _INSTRUMENT_H_ 1
 
+#include <RefCounted.h>
 #include <bus.h>
 #include <buffers.h>
 #include <sys/types.h>
@@ -14,7 +15,7 @@
 
 class heap;
 
-class Instrument {
+class Instrument : public RefCounted {
 protected:
 
    float          _start;
@@ -92,8 +93,6 @@ private:
 #endif /* RTUPDATE */
 
 public:
-	Instrument();
-	virtual		~Instrument();
 	// Instruments should use these to access variables.
 	inline int		CurrentFrame() const { return cursamp; }
 	inline int		FramesToRun() const { return chunksamps; }
@@ -120,6 +119,7 @@ public:
 
 	void			exec(BusType bus_type, int bus);
 	void			addout(BusType bus_type, int bus);
+	bool			IsDone() { return cursamp >= nsamps; }
 
 #ifdef RTUPDATE
    float			rtupdate(int, int);  // tag, p-field for return value
@@ -135,6 +135,8 @@ public:
 
 protected:
    // Methods which are called from within other methods
+	Instrument();
+	virtual		~Instrument();	// never called directly -- use Unref()
    
    // This is called by the public init() when it is not redefined
 
