@@ -7,7 +7,7 @@
 
    Note that you can't use this instrument with a real-time input
    (microphone or aux bus), only with input from a sound file. (That's
-   because the input start time of a an inst taking real-time input must
+   because the input start time of an inst taking real-time input must
    be zero, but this instrument reads backward from its inskip.)
 
    p0 = output start time
@@ -99,12 +99,7 @@ int REVMIX::run()
 
    samps = chunksamps * inputchans;
 
-   /* Need to reposition the input file so that we read a buffer that *ends*
-      with the first sample we'll write. There is no API yet for repositioning
-      an input file. <fileOffset> is a file position pointer. It always assumes
-      that samples are 2 bytes. This is a peculiarity of sndlib.
-   */
-   fileOffset -= samps * 2;
+   rtinrepos(this, -chunksamps, SEEK_CUR);
 
    rtgetin(in, this, samps);
 
@@ -128,7 +123,7 @@ int REVMIX::run()
       rtaddout(out);
       cursamp++;
    }
-   fileOffset -= samps * 2;
+   rtinrepos(this, -chunksamps, SEEK_CUR);
 
    return chunksamps;
 }
