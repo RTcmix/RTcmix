@@ -924,7 +924,7 @@ int OSXAudioDevice::doGetFrameCount() const
 
 bool OSXAudioDevice::recognize(const char *desc)
 {
-	return desc == NULL | strncmp(desc, "OSXHW", 5) == 0;
+	return desc == NULL || strcmp(desc, "OSXHW") == 0;
 }
 
 AudioDevice *OSXAudioDevice::create(const char *inputDesc, const char *outputDesc, int mode)
