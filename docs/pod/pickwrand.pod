@@ -1,0 +1,66 @@
+=head1 NAME
+
+pickwrand - return a weighted random choice from a set of numbers
+
+=head1 SYNOPSIS
+
+value = B<pickwrand>(I<number1>, I<probability1>
+[, I<number2>, I<probability2>, ... I<numberN>, I<probabilityN> ])
+
+=head1 DESCRIPTION
+
+Call B<pickwrand> to choose randomly among several numbers that you
+specify, with a probability for each number.
+
+It's a good idea to call L<srand|srand> once to seed the random
+number generator before using B<pickwrand>.  Otherwise, a seed of
+1 will be used.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<number>
+
+=item I<probability>
+
+There can be as many I<number>, I<probability> pairs as you like,
+as long as there is at least one pair.
+
+A I<probability> argument determines how likely it is that B<pickwrand>
+will choose the corresponding I<number> argument.  The higher the
+I<probability>, the more likely.
+
+The total probability is the sum of all the I<probability> arguments.
+
+=back
+
+=head1 RETURNS
+
+One of the I<number> arguments to B<pickwrand>, selected randomly
+in accordance with the given probabilities.
+
+=head1 EXAMPLES
+
+   srand(0)
+   while (outskip < ending_time) {
+      stereo_loc = pickwrand(0.0, 10,  0.5, 80,  1.0, 10)
+      WAVETABLE(outskip, dur, amp, frequency, stereo_loc)
+      outskip = outskip + 0.2
+   }
+
+plays L<WAVETABLE|WAVETABLE> notes, panning them in accordance with
+the following probabilities: 10% of the notes will pan to hard left,
+10% of the notes will pan to hard right, and 80% of the notes will
+pan to the center.
+
+=head1 AUTHOR
+
+Douglas Scott
+
+=head1 SEE ALSO
+
+L<srand|srand>, L<random|random>, L<rand|rand>, L<irand|irand>,
+L<pickrand|pickrand>, L<spray_init|spray_init>, L<get_spray|get_spray>,
+L<gen20|gen20>
+

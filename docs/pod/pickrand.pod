@@ -1,0 +1,55 @@
+=head1 NAME
+
+pickrand - return a random choice from a specified set of numbers
+
+=head1 SYNOPSIS
+
+value = B<pickrand>(I<number1> [, I<number2>, ... I<numberN> ])
+
+=head1 DESCRIPTION
+
+Call B<pickrand> to choose randomly among several numbers that you
+specify as its arguments.
+
+It's a good idea to call L<srand|srand> once to seed the random
+number generator before using B<pickrand>.  Otherwise, a seed of
+1 will be used.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<number>
+
+There can be any number of numerical arguments to B<pickrand>, as
+long as there is at least one. 
+
+=back
+
+=head1 RETURNS
+
+One of the arguments to B<pickrand>, selected randomly.
+
+=head1 EXAMPLES
+
+   srand(1)
+   for (i = 0; i < 10; i = i + 1) {
+      pitch = pickrand(8.00, 8.02, 8.04, 8.05, 8.07, 8.09, 8.11)
+      print(pitch)
+   }
+
+prints 10 pitches from a C major scale, selected randomly.  There's no
+guarantee that this will print each of the arguments at least once.  Use
+the spray mechanism for that (L<spray_init|spray_init>,
+L<get_spray|get_spray>).
+
+=head1 AUTHOR
+
+Douglas Scott
+
+=head1 SEE ALSO
+
+L<srand|srand>, L<random|random>, L<rand|rand>, L<irand|irand>,
+L<pickwrand|pickwrand>, L<spray_init|spray_init>, L<get_spray|get_spray>,
+L<gen20|gen20>
+
