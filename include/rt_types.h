@@ -10,4 +10,23 @@
 #define BUFTYPE float           /* could be double some day */
 typedef BUFTYPE *BufPtr;
 
+/* This should probably go someplace else in this file? */
+typedef enum {
+  NO = 0,
+  YES
+} Bool;
+
+#ifndef PI
+#define      PI     3.141592654
+#endif
+#ifndef PI2
+#define      PI2    6.2831853
+#endif
+
+#define FLOAT (sizeof(float))   /* nbytes in floating point word*/
+#define INT   (sizeof(int))   /* nbytes in integer word */
+#define SHORT (sizeof(short))
+#define LONG  (sizeof(long))
+
+
 #endif	// _RT_TYPES_H_
