@@ -1161,6 +1161,9 @@ sndlib_findpeak(int    infd,
          perror("sndlib_findpeak: read");
          goto err;
       }
+      if (inbytes == 0)
+         break;                           /* already reached EOF */
+
       bufframes = inbytes / bytespersamp / nchans;
 
       if (isfloat) {
@@ -1206,9 +1209,11 @@ sndlib_findpeak(int    infd,
       }
    }
 
+   free(buffer);
    lseek(infd, oldloc, SEEK_SET);
    return 0;
 err:
+   free(buffer);
    lseek(infd, oldloc, SEEK_SET);
    return -1;
 }
