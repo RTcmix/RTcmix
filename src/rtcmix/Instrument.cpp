@@ -35,8 +35,6 @@ Instrument :: Instrument()
    inputchans = 0;
    outputchans = 0;
 
-// FIXME: not clear we need inbuf - better to leave it on run method's stack?
-   inbuf = NULL;
    outbuf = NULL;
 
    bus_config = NULL;
@@ -67,7 +65,6 @@ Instrument :: ~Instrument()
    if (sfile_on)
       gone();                   // decrement input soundfile reference
 
-   delete [] inbuf;
    delete [] outbuf;
 
 // FIXME: Also...
@@ -173,7 +170,7 @@ void Instrument :: exec(BusType bus_type, int bus)
    appropriate output buses. Inst's *must* call the class run method
    before doing their own run stuff. (This is true even if they don't
    use rtaddout.)
-   Assumes that <samps> contains exactly outputchans interleaved samples.
+   Assumes that <samps> contains at least outputchans interleaved samples.
    Returns outputchans (i.e., number of samples written).
 */
 int Instrument :: rtaddout(BUFTYPE samps[])
@@ -305,7 +302,7 @@ void Instrument :: gone()
          inputFileTable[fdIndex].srate = 0.0;
          inputFileTable[fdIndex].chans = 0;
          inputFileTable[fdIndex].dur = 0.0;
-         fdIndex = -1;
+         fdIndex = NO_DEVICE_FDINDEX;
       }
    }
 }
