@@ -16,9 +16,8 @@ extern int sfd[NFILES];
 extern int swap_bytes[NFILES];
 extern int bufsize[NFILES];
 extern char *sndbuf[NFILES];
-#ifdef USE_SNDLIB
 extern int headersize[NFILES];
-#endif
+
 int (*getsample)();
 int getfsample();
 int getisample();
@@ -55,13 +54,9 @@ getisample(double sampleno, float *c, int input)
 	sample = (int)sampleno;
 	fraction = sampleno - (double)sample;
 	if(!((sample >= oldsample) && (sample < endsample))) {
-#ifdef USE_SNDLIB
 		/* sflseek (sfheader.h) assumes header size, so can't use it */
 		if(lseek(sfd[input], (sample * BPFRAME) + headersize[input],
 							SEEK_SET) <= 0) {
-#else
-		if(sflseek(sfd[input], sample * BPFRAME, 0) <=0) {
-#endif
 			fprintf(stderr,"badlseek on inputfile\n");
 			closesf();
 		}
@@ -117,13 +112,9 @@ getfsample(double sampleno, float *c, int input)
 	sample = (int)sampleno;
 	fraction = sampleno - (double)sample;
 	if(!((sample >= oldsample) && (sample < endsample))) {
-#ifdef USE_SNDLIB
 		/* sflseek (sfheader.h) assumes header size, so can't use it */
 		if(lseek(sfd[input], (sample * BPFRAME) + headersize[input],
 							SEEK_SET) <= 0) {
-#else
-		if(sflseek(sfd[input], sample * BPFRAME, 0) <=0) {
-#endif
 			fprintf(stderr,"badlseek on inputfile\n");
 			closesf();
 		}
