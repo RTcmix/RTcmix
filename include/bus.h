@@ -63,6 +63,7 @@ struct _CheckQueue {
 
 
 /* exported functions */
+BusSlot *get_bus_config(const char *inst_name);
 ErrCode parse_bus_name(char*, BusType*, int*, int*);
 
 
