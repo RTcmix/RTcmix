@@ -5,14 +5,14 @@
 
 // Interpolating delay class, offering two different ways of storing and
 // retrieving values from the delay line.  (See API 1 and API 2 below.) 
-// It's best not to mix the two ways while working with an Ozdelay object.
+// It's best not to mix the two ways while working with an Odelayi object.
 // Based on cmix delset/dliget and STK DLineL.              -JGG, 7/9/04
 
 #include <math.h>
 #include <ugens.h>
 #include <Ougens.h>
 
-Ozdelay::Ozdelay(long maxLength)
+Odelayi::Odelayi(long maxLength)
 {
 	_maxlen = maxLength;
 	_dline = new float[_maxlen];
@@ -22,12 +22,12 @@ Ozdelay::Ozdelay(long maxLength)
 	_frac = 0.0;
 }
 
-Ozdelay::~Ozdelay()
+Odelayi::~Odelayi()
 {
 	delete [] _dline;
 }
 
-void Ozdelay::clear()
+void Odelayi::clear()
 {
 	for (long i = 0; i < _maxlen; i++)
 		_dline[i] = 0.0;
@@ -48,12 +48,12 @@ void Ozdelay::clear()
 //
 // Note that this API does not maintain the correct values for _outpoint and
 // _frac across calls to getsamp, so if you want to use API 2 after API 1 for
-// the same Ozdelay object, then be sure to call setdelay before using API 2.
+// the same Odelayi object, then be sure to call setdelay before using API 2.
 
 // Put sample into delay line, and advance input pointer.  Use getsamp() to
 // retrieve samples from delay line at varying delays from this input pointer.
 
-void Ozdelay::putsamp(float samp)
+void Odelayi::putsamp(float samp)
 {
 	_dline[_inpoint++] = samp;
 	if (_inpoint == _maxlen)
@@ -64,7 +64,7 @@ void Ozdelay::putsamp(float samp)
 // sample to enter the delay line.  If <lagsamps> is longer than length of
 // delay line, it wraps around, so check <lagsamps> first.
 
-float Ozdelay::getsamp(double lagsamps)
+float Odelayi::getsamp(double lagsamps)
 {
 	double outptr = (double) _inpoint - lagsamps;
 	while (outptr < 0.0)
@@ -89,7 +89,7 @@ float Ozdelay::getsamp(double lagsamps)
 
 // Set output pointer <_outpoint> and interp fraction <_frac>.
 
-void Ozdelay::setdelay(double lagsamps)
+void Odelayi::setdelay(double lagsamps)
 {
 	double outptr = (double) _inpoint - lagsamps;
 	while (outptr < 0.0)
@@ -98,7 +98,7 @@ void Ozdelay::setdelay(double lagsamps)
 	_frac = outptr - _outpoint;
 }
 
-float Ozdelay::next(float input)
+float Odelayi::next(float input)
 {
 	_dline[_inpoint++] = input;
 	if (_inpoint == _maxlen)
