@@ -13,11 +13,20 @@
 
 // if INBUF_SIZE is 0, PortMidi uses a default value
 #define INBUF_SIZE		0
-#define MSG_QUEUE_SIZE	32
+#define MSG_QUEUE_SIZE	32		// NB: sets number of notes queued for scheduler
 
-enum {
-	kQuitMsg = 0
-};
+typedef enum {
+	kQuitMsg = 0,
+	kNoteOnMsg,
+	kNoteOffMsg
+} RTMQMessageType;
+
+typedef struct {
+	RTMQMessageType type;
+	int data0;
+	int data1;
+	int data2;
+} RTMQMessage;
 
 
 RTcmixMIDI::RTcmixMIDI()
@@ -29,7 +38,8 @@ RTcmixMIDI::RTcmixMIDI()
 RTcmixMIDI::~RTcmixMIDI()
 {
 	if (_mainToMIDI) {
-		long msg = kQuitMsg;
+		RTMQMessage msg;
+		msg.type = kQuitMsg;
 		Pm_Enqueue(_mainToMIDI, &msg);
 
 		// wait for acknowlegement
@@ -51,10 +61,23 @@ RTcmixMIDI::~RTcmixMIDI()
 	Pm_Terminate();
 }
 
+RTcmixMIDI *createMIDIPort()
+{
+	RTcmixMIDI *midiport = new RTcmixMIDI();
+	if (midiport) {
+		if (midiport->init() == -1) {
+			delete midiport;
+			return NULL;
+		}
+	}
+
+	return midiport;
+}
+
 int RTcmixMIDI::init()
 {
-	_MIDIToMain = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(long));
-	_mainToMIDI = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(long));
+	_MIDIToMain = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(RTMQMessage));
+	_mainToMIDI = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(RTMQMessage));
 	if (_mainToMIDI == NULL || _MIDIToMain == NULL) {
 		fprintf(stderr, "Could not create MIDI message queues.\n");
 		return -1;
@@ -130,27 +153,6 @@ void RTcmixMIDI::clear()
 	}
 }
 
-// FIXME: These should really pass a message from _processMIDI thread to
-// main thread.  Presumably the scheduler would call
-// RTcmixMIDI::checkMIDITrigger, which would dequeue such messages and
-// take appropriate action, starting or stopping notes.  If instead we
-// call a registered callback here, then it will be running from within
-// the _processMIDI thread!  Not what we want.
-// Since RTcmixMIDI is supposed to be dynamically loaded, how would scheduler
-// know if and what to call?
-void RTcmixMIDI::noteOnTrigger(int chan, int pitch, int velocity)
-{
-#ifdef NOTYET
-// NB: queue elem must be struct instead of long, so as to encode message
-// type plus 3 ints (for chan, pitch, vel)
-	Pm_Enqueue(_mainToMIDI, &msg);
-#endif
-}
-
-void RTcmixMIDI::noteOffTrigger(int chan, int pitch, int velocity)
-{
-}
-
 
 // -------------------------------------------------------------------- dump ---
 // Just for debugging.
@@ -211,10 +213,10 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 	// Check for messages from object.
 	PmError result;
 	do {
-		long msg;
+		RTMQMessage msg;
 		result = Pm_Dequeue(obj->mainToMIDI(), &msg);
 		if (result) {
-			if (msg == kQuitMsg) {
+			if (msg.type == kQuitMsg) {
 				// acknowledge receipt of quit message
 				Pm_Enqueue(obj->MIDIToMain(), &msg);
 				obj->active(false);
@@ -286,17 +288,35 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 	} while (result);
 }
 
+// These functions pass a message, from the MIDI worker thread to the main
+// thread, containing the data for a new noteon or noteoff event.  If we
+// were to act on that data directly here, by calling a scheduler function,
+// then the note would be running within the MIDI worker thread!  Not what
+// we want.
 
-RTcmixMIDI *createMIDIPort()
+// FIXME: Presumably the scheduler would call RTcmixMIDI::checkMIDITrigger,
+// which would dequeue such messages and take appropriate action, starting or
+// stopping notes.  Since RTcmixMIDI is supposed to be dynamically loaded, how
+// would scheduler know if and what to call?
+
+void RTcmixMIDI::noteOnTrigger(int chan, int pitch, int velocity)
 {
-	RTcmixMIDI *midiport = new RTcmixMIDI();
-	if (midiport) {
-		if (midiport->init() == -1) {
-			delete midiport;
-			return NULL;
-		}
-	}
-
-	return midiport;
+	RTMQMessage msg;
+	msg.type = kNoteOnMsg;
+	msg.data0 = chan;
+	msg.data1 = pitch;
+	msg.data2 = velocity;
+	Pm_Enqueue(_MIDIToMain, &msg);
 }
+
+void RTcmixMIDI::noteOffTrigger(int chan, int pitch, int velocity)
+{
+	RTMQMessage msg;
+	msg.type = kNoteOffMsg;
+	msg.data0 = chan;
+	msg.data1 = pitch;
+	msg.data2 = velocity;
+	Pm_Enqueue(_MIDIToMain, &msg);
+}
+
 
