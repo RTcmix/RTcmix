@@ -1,3 +1,12 @@
+Sunday, Jan 27, 2002 John Gibson <johgibso@indiana.edu>
+
+   * Fix compilation problem with Perl and Python extensions.  They
+     weren't happy if CMIXDIR in makefile.conf was a symbolic link.
+   * New Minc functions to combine makegen tables (addgens and multgens).
+
+
+**** Released RTcmix-3.1, Monday, Jan 21, 2002 ****
+
 Monday, Jan 21, 2002 Dave Topper <topper@virginia.edu>
 
    * New feature: real time control of pfield change.  ALPHA version.
