@@ -22,6 +22,14 @@ int PField::print(FILE *file) const
 	return chars;
 }
 
+int PField::copyValues(double *array) const
+{
+	const int len = values();
+	for (int n = 0; n < len; ++n)
+		array[n] = doubleValue(n);
+	return len;
+}
+
 // SingleValuePField
 
 double SingleValuePField::doubleValue(double) const
@@ -137,3 +145,40 @@ int TablePField::print(FILE *file) const
 	}
 	return chars;
 }
+
+// Optimized version for table
+
+int TablePField::copyValues(double *array) const
+{
+	const int len = values();
+	for (int n = 0; n < len; ++n)
+		array[n] = _table[n];
+	return len;
+}
+
+// LoopedPField
+
+LoopedPField::LoopedPField(PField *innerPField, double loopFactor)
+	: _pField(innerPField), _factor(loopFactor), _len(innerPField->values())
+{
+	_pField->ref();
+}
+
+LoopedPField::~LoopedPField() { _pField->unref(); }
+
+double	LoopedPField::doubleValue(double didx) const
+{
+	double dfrac = didx * _factor;
+	while (dfrac > 1.0)
+		dfrac -= 1.0;
+	return _pField->doubleValue(dfrac);
+}  
+
+double	LoopedPField::doubleValue(int idx) const
+{
+	int nidx = int(idx * _factor);
+	while (nidx >= _len)
+		nidx -= _len;
+	return _pField->doubleValue(nidx);
+}
+

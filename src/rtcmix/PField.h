@@ -19,6 +19,7 @@ public:
 	int 			intValue(double dindex) const { return (int) doubleValue(dindex); }
 	const char * 	stringValue(double dindex) const { return (const char *) intValue(dindex); }
 	virtual int		print(FILE *) const;
+	virtual int		copyValues(double *) const;
 	virtual int		values() const = 0;
 protected:
 	virtual 		~PField();
@@ -139,6 +140,7 @@ public:
 	virtual double 	doubleValue(int indx = 0) const;
 	virtual double	doubleValue(double) const;
 	virtual int		print(FILE *) const;	// redefined
+	virtual int		copyValues(double *) const;
 	virtual int		values() const { return _len; }
 protected:
 	virtual ~TablePField();
@@ -147,5 +149,21 @@ private:
 	int 	_len;
 };
 
+// Class for looped reading of table.  'loopFactor' is how many times
+// table will loop for doubleValue(0 through 1.0)
+
+class LoopedPField : public PField {
+public:
+	LoopedPField(PField *innerPField, double loopFactor);
+	~LoopedPField();
+	virtual double	doubleValue(double didx) const;
+	virtual double	doubleValue(int idx) const;
+private:
+	PField *_pField;
+	double	_factor;
+	int		_len;
+};
+
+	
 #endif	// _PFIELD_H_
 
