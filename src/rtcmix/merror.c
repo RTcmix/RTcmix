@@ -1,7 +1,7 @@
 /*
  *	merror.c: text of mix error messages
  */
-
+#include <unistd.h>
 #include	"mixerr.h"
 
 int	mixerr;
@@ -13,8 +13,8 @@ char	*mix_errlist[] = {
 	0
 };
 
-merror(s)
-char *s;
+void
+merror(char *s)
 {
 	register char *c;
 	register n;
