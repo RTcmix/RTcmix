@@ -1,23 +1,50 @@
 include ../package.conf
 
-RTOBJS = START.o BEND.o FRET.o START1.o BEND1.o FRET1.o VSTART1.o \
-	 VFRET1.o rtprofile.o
-COBJS =  randfill.o sset.o strum.o squisher.o delayset.o delayclean.o \
-	dist.o delay.o
+# NOTE: STRUM is a family of instruments, none of which is called "STRUM."
+
+NAME = STRUM
+
+OBJS = START.o BEND.o FRET.o START1.o BEND1.o FRET1.o VSTART1.o VFRET1.o \
+rtprofile.o randfill.o sset.o strum.o squisher.o delayset.o delayclean.o \
+dist.o delay.o
+HEADERS = START.h BEND.h FRET.h START1.h BEND1.h FRET1.h VFRET1.h VSTART1.h \
+delayq.h strums.h
 CMIXOBJS += $(PROFILE_O)
-PROGS = STRUM libSTRUM.so
+PROGS = lib$(NAME).so $(NAME)
 
-all: libSTRUM.so
+.PHONY: all standalone install dso_install standalone_install \
+uninstall dso_uninstall standalone_uninstall clean cleanall
 
-standalone: STRUM
+all: lib$(NAME).so
 
-libSTRUM.so: $(RTOBJS) $(COBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -o $@ $(RTOBJS) $(COBJS) $(GENLIB) $(SYSLIBS)
+standalone: $(NAME)
 
-STRUM: $(RTOBJS) $(COBJS) $(CMIXOBJS)
-	$(CXX) -o $@ $(RTOBJS) $(CMIXOBJS) $(COBJS) $(LDFLAGS)
+lib$(NAME).so: $(OBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
-$(RTOBJS):	$(INSTRUMENT_H)
+$(NAME): $(OBJS) $(CMIXOBJS)
+	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
+
+$(OBJS): $(INSTRUMENT_H) $(HEADERS)
+
+install: dso_install
+
+dso_install: lib$(NAME).so
+	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
+
+standalone_install: standalone
+	$(INSTALL) $(NAME) $(DESTDIR)
+
+uninstall: dso_uninstall standalone_uninstall
+
+dso_uninstall:
+	$(RM) $(LIBDESTDIR)/lib$(NAME).so
+
+standalone_uninstall:
+	$(RM) $(DESTDIR)/$(NAME)
 
 clean:
-	$(RM) *.o $(OBJS) $(PROGS)
+	$(RM) $(OBJS) $(PROGS)
+
+cleanall: clean uninstall
+

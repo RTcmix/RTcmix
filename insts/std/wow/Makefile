@@ -4,17 +4,39 @@ NAME = wow
 
 OBJS = $(NAME).o
 CMIXOBJS += $(RTPROFILE_O)
-PROGS = $(NAME) lib$(NAME).so
+PROGS = lib$(NAME).so $(NAME)
+
+.PHONY: all standalone install dso_install standalone_install \
+uninstall dso_uninstall standalone_uninstall clean cleanall
 
 all: lib$(NAME).so
 
 standalone: $(NAME)
 
-lib$(NAME).so:  $(UGENS_H) $(OBJS)
+lib$(NAME).so: $(UGENS_H) $(OBJS)
 	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
-$(NAME):  $(UGENS_H) $(OBJS) $(CMIXOBJS)
+$(NAME): $(UGENS_H) $(CMIXOBJS) $(OBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
+install: dso_install
+
+dso_install: lib$(NAME).so
+	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
+
+standalone_install: standalone
+	$(INSTALL) $(NAME) $(DESTDIR)
+
+uninstall: dso_uninstall standalone_uninstall
+
+dso_uninstall:
+	$(RM) $(LIBDESTDIR)/lib$(NAME).so
+
+standalone_uninstall:
+	$(RM) $(DESTDIR)/$(NAME)
+
 clean:
-	$(RM) *.o $(OBJS) $(PROGS)
+	$(RM) $(OBJS) $(PROGS)
+
+cleanall: clean uninstall
+

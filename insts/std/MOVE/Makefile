@@ -3,6 +3,7 @@
 include ../package.conf
 
 COMMON_OBJS = BASE.o cmixfuns.o setup.o common.o
+COMMON_HDRS = cmixfuns.h setup.h common.h
 OBJS = PLACE.o placeprof.o $(COMMON_OBJS)
 MOBJS = MOVE.o moveprof.o path.o $(COMMON_OBJS)
 #PROF = -pg
@@ -11,6 +12,9 @@ ifeq ($(ARCH),LINUX)
    CXXFLAGS += -funroll-loops $(PROF)
 endif
 PROGS = PLACE libPLACE.so MOVE libMOVE.so
+
+.PHONY: all standalone install dso_install standalone_install \
+uninstall dso_uninstall standalone_uninstall clean cleanall
 
 all: libPLACE.so libMOVE.so
 
@@ -22,7 +26,7 @@ libPLACE.so: $(OBJS) $(GENLIB)
 PLACE: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS) $(PROF)
 
-$(OBJS): $(INSTRUMENT_H) PLACE.h cmixfuns.h setup.h common.h
+$(OBJS): $(INSTRUMENT_H) $(COMMON_HDRS) PLACE.h
 
 libMOVE.so: $(MOBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -o $@ $(MOBJS) $(GENLIB) $(SYSLIBS)
@@ -30,10 +34,32 @@ libMOVE.so: $(MOBJS) $(GENLIB)
 MOVE: $(MOBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(MOBJS) $(CMIXOBJS) $(LDFLAGS) $(PROF)
 
-$(MOBJS): $(INSTRUMENT_H) MOVE.h cmixfuns.h setup.h common.h
+$(MOBJS): $(INSTRUMENT_H) $(COMMON_HDRS) MOVE.h
 
-BASE.o : $(INSTRUMENT_H) BASE.h cmixfuns.h setup.h common.h
+BASE.o : $(INSTRUMENT_H) $(COMMON_HDRS) BASE.h
+
+install: dso_install
+
+dso_install: all
+	$(INSTALL) libPLACE.so $(LIBDESTDIR)
+	$(INSTALL) libMOVE.so $(LIBDESTDIR)
+
+standalone_install: standalone
+	$(INSTALL) PLACE $(DESTDIR)
+	$(INSTALL) MOVE $(DESTDIR)
+
+uninstall: dso_uninstall standalone_uninstall
+
+dso_uninstall:
+	$(RM) $(LIBDESTDIR)/libPLACE.so
+	$(RM) $(LIBDESTDIR)/libMOVE.so
+
+standalone_uninstall:
+	$(RM) $(DESTDIR)/PLACE
+	$(RM) $(DESTDIR)/MOVE
 
 clean:
 	$(RM) $(OBJS) $(MOBJS) $(PROGS)
+
+cleanall: clean uninstall
 

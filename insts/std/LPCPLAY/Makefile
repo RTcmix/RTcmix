@@ -15,6 +15,9 @@ CFLAGS += -I. -DUSE_HEADERS
 
 PROGS = $(NAME) lib$(NAME).so
 
+.PHONY: all standalone install dso_install standalone_install \
+uninstall dso_uninstall standalone_uninstall clean cleanall
+
 all: lib$(NAME).so
 
 standalone: $(NAME)
@@ -27,10 +30,6 @@ $(NAME): $(OBJS) $(CMIXOBJS)
 
 $(OBJS): $(INSTRUMENT_H) $(NAME).h $(HEADERS)
 
-clean:
-	$(RM) $(OBJS) $(PROGS)
-
-
 # For now, compile these with c++ because of compiler bug
 #
 buzz.o: buzz.c lp.h
@@ -38,3 +37,25 @@ buzz.o: buzz.c lp.h
 #
 rand.o: rand.c lp.h
 	$(CXX) $(CXXFLAGS) -c rand.c
+
+install: dso_install
+
+dso_install: lib$(NAME).so
+	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
+
+standalone_install: standalone
+	$(INSTALL) $(NAME) $(DESTDIR)
+
+uninstall: dso_uninstall standalone_uninstall
+
+dso_uninstall:
+	$(RM) $(LIBDESTDIR)/lib$(NAME).so
+
+standalone_uninstall:
+	$(RM) $(DESTDIR)/$(NAME)
+
+clean:
+	$(RM) $(OBJS) $(PROGS)
+
+cleanall: clean uninstall
+
