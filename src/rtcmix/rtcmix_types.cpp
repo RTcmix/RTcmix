@@ -21,7 +21,7 @@ Arg::printInline(FILE *stream) const
 		fprintf(stream, "\"%s\" ", _val.string);
 		break;
 	case HandleType:
-		fprintf(stream, "%sHndl:",
+		fprintf(stream, "%s:",
 				_val.handle->type == PFieldType ? "PF" :
 				_val.handle->type == InstrumentPtrType ? "Inst" :
 				_val.handle->type == PFieldType ? "AudioStr" : "Unknown");
