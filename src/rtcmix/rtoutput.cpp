@@ -305,6 +305,7 @@ rtoutput(float p[], int n_args, double pp[])
 
    if (SR == 0) {
       die("rtoutput", "You must call rtsetparams before rtoutput.");
+      return -1;
    }
 
    error = parse_rtoutput_args(n_args, pp);
