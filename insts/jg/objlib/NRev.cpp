@@ -80,10 +80,12 @@ void NRev :: clear()
       CdelayLine[i]->clear();
    for (i = 0; i < 6; i++)
       APdelayLine[i]->clear();
+#ifdef NOMORE // don't want to import NCHANS anymore  -JGG
    if (NCHANS == 4) {
       APdelayLine[6]->clear();
       APdelayLine[7]->clear();
    }
+#endif
    lastOutL = 0.0;
    lastOutR = 0.0;
    lpLastout = 0.0;
