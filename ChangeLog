@@ -3,6 +3,8 @@ fixes that we don't bother putting here.
 
 Sunday, December 7, 2003 John Gibson <johgibso-at-indiana.edu>
 
+   * New objlib object: Equalizer (various EQ types)
+   * New instrument: EQ (1 band of parametric or shelving EQ)
    * Change for BEND, BEND1 and FRET instruments in STRUM family:
      function table 1 is now the amplitude envelope.  This can
      affect existing scores in certain circumstances!
