@@ -1,36 +1,34 @@
-/* PAN - simple mixing instrument that follows a pan curve
+/* PAN - simple mixing instrument that can use constant power panning
 
    p0 = output start time
    p1 = input start time
    p2 = input duration
-   p3 = amplitude multiplier
+   p3 = amplitude multiplier *
    p4 = input channel [optional, default is 0]
-   p5 = 0: use constant-power panning, 1: don't use it [default is 0]
+   p5 = 0: use constant-power panning, 1: don't use it [optional; default is 0]
+   p6 = pan (in percent-to-left form: 0-1) [optional; if missing, must use
+        gen 2] **
 
-   Assumes function table 1 is amplitude curve for the note. (Try gen 18.)
-   Or you can just call setline. If no setline or function table 1, uses
-   flat amplitude curve.
-
-   Function table 2 is the panning curve, described by time,pan pairs.
-   <pan> is expressed as the percentage of signal to place in the left
-   channel (as in the STEREO instrument), from 0 (0%) to 1 (100%).
-   Use gen 24 to make the function table, since it ensures the range
-   is [0,1].
-
-   Example:
-
-      makegen(2, 24, 1000, 0,1, 1,0, 3,.5)
-      PAN(start=0, inskip=0, dur=3, amp=1, inchan=0)
-
-   This will pan input channel 0 from left to right over the first second.
-   Then the sound travels back to the center during the next 2 seconds.
+   p3 (amplitude), p5 (pan mode) and p6 (pan) can receive dynamic updates from
+   a table or real-time control source.
 
    By default, PAN uses "constant-power" panning to prevent a sense of lost
    power when the pan location moves toward the center.  Sometimes this causes
    jerkey panning motion near hard left/right, so you can defeat it by
    by passing 1 as p5.
 
-   John Gibson (jgg9c@virginia.edu), 1/26/00.
+   ----
+
+   Notes about backward compatibility with pre-v4 scores:
+
+   * If an old-style gen table 1 is present, its values will be multiplied
+   by p3 (amplitude), even if the latter is dynamic.
+
+   ** If p6 is missing, you must use an old-style gen table 2 for the
+   panning curve.
+
+
+   John Gibson (jgg9c@virginia.edu), 1/26/00; rev for v4, JGG, 7/24/04
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -47,6 +45,9 @@
 PAN :: PAN() : Instrument()
 {
    in = NULL;
+   panarray = NULL;
+   branch = 0;
+   prevpan = -1.0;
 }
 
 
@@ -58,95 +59,112 @@ PAN :: ~PAN()
 
 int PAN :: init(double p[], int n_args)
 {
-   float outskip, inskip, dur;
-
-   outskip = p[0];
-   inskip = p[1];
-   dur = p[2];
-   amp = p[3];
-   inchan = n_args > 4 ? (int)p[4] : 0;              /* default is chan 0 */
-   use_constant_power = n_args > 5 ? !(int)p[5] : 1; /* default is true */
+   nargs = n_args;
+   float outskip = p[0];
+   float inskip = p[1];
+   float dur = p[2];
+   inchan = n_args > 4 ? (int) p[4] : 0;                    // default is chan 0
 
    nsamps = rtsetoutput(outskip, dur, this);
    if (rtsetinput(inskip, this) != 0)
       return DONT_SCHEDULE;
 
-   if (outputchans != 2)
+   if (outputChannels() != 2)
       return die("PAN", "Output must be stereo.");
 
-   if (inchan >= inputchans)
+   if (inchan >= inputChannels())
       return die("PAN", "You asked for channel %d of a %d-channel file.",
-                                                         inchan, inputchans);
+                                                   inchan, inputChannels());
 
    amparray = floc(1);
    if (amparray) {
       int lenamp = fsize(1);
       tableset(SR, dur, lenamp, amptabs);
    }
-   else
-      advise("PAN", "Setting phrase curve to all 1's.");
 
-   panarray = floc(2);
-   if (panarray) {
-      int lenpan = fsize(2);
-      tableset(SR, dur, lenpan, pantabs);
+   if (n_args < 7) {          // no p6 pan PField, must use gen table
+      panarray = floc(2);
+      if (panarray == NULL)
+         return die("PAN", "Either use the pan pfield (p6) "
+                    "or make an old-style gen function in slot 2.");
+      int len = fsize(2);
+      tableset(SR, dur, len, pantabs);
    }
+
+   skip = (int) (SR / (float) resetval);
+
+   return nSamps();
+}
+
+
+void PAN :: doupdate()
+{
+   double p[7];
+   update(p, 7, kAmp | kUseConstPower | kPan);
+
+   amp = p[3];
+   if (amparray)
+      amp *= tablei(currentFrame(), amparray, amptabs);
+
+   bool use_constant_power = nargs > 5 ? !(bool) p[5] : true; // default is yes
+
+   float newpan;
+   if (nargs > 6)
+      newpan = p[6];
    else
-      return die("PAN", "You haven't made the pan curve function (table 2).");
+      newpan = tablei(currentFrame(), panarray, pantabs);
+   if (newpan < 0.0)
+      newpan = 0.0;
+   else if (newpan > 1.0)
+      newpan = 1.0;
 
-   skip = (int)(SR / (float)resetval);
+   if (newpan != prevpan) {
+      prevpan = newpan;
+      if (use_constant_power) {
+         pan[0] = (float) sqrt((double) newpan);
+         pan[1] = (float) sqrt(1.0 - (double) newpan);
+      }
+      else {
+         pan[0] = newpan;
+         pan[1] = 1.0 - newpan;
+      }
+#ifdef DEBUG
+      advise("PAN", "newpan=%f pan[0]=%f pan[1]=%f (tot=%f)",
+                           newpan, pan[0], pan[1], pan[0] + pan[1]);
+#endif
+   }
+}
 
-   return nsamps;
+
+int PAN :: configure()
+{
+   in = new float [RTBUFSAMPS * inputChannels()];
+   return in ? 0 : -1;
 }
 
 
 int PAN :: run()
 {
-   int   i, branch, rsamps;
-   float aamp, insig;
-   float out[2], pan[2];
+   const int samps = framesToRun() * inputChannels();
 
-   if (in == NULL)              /* first time, so allocate it */
-      in = new float [RTBUFSAMPS * inputchans];
+   rtgetin(in, this, samps);
 
-   rsamps = chunksamps * inputchans;
-
-   rtgetin(in, this, rsamps);
-
-   aamp = amp;                  /* in case amparray == NULL */
-
-   branch = 0;
-   for (i = 0; i < rsamps; i += inputchans) {
-      if (--branch < 0) {
-         float pctleft = tablei(cursamp, panarray, pantabs);
-         if (pctleft < 0.0 || pctleft > 1.0)
-            return die("PAN", "pan array value out of range (%f)", pctleft);
-         if (use_constant_power) {
-            pan[0] = (float)sqrt((double)pctleft);
-            pan[1] = (float)sqrt(1.0 - (double)pctleft);
-         }
-         else {
-            pan[0] = pctleft;
-            pan[1] = 1.0 - pctleft;
-         }
-#ifdef DEBUG
-         advise("PAN", "pctleft=%f pan[0]=%f pan[1]=%f (tot=%f)",
-                              pctleft, pan[0], pan[1], pan[0] + pan[1]);
-#endif
-         if (amparray)
-            aamp = tablei(cursamp, amparray, amptabs) * amp;
+   for (int i = 0; i < samps; i += inputChannels()) {
+      if (--branch <= 0) {
+         doupdate();
          branch = skip;
       }
-      insig = in[i + inchan] * aamp;
+      float insig = in[i + inchan] * amp;
 
+      float out[2];
       out[0] = insig * pan[0];
       out[1] = insig * pan[1];
 
       rtaddout(out);
-      cursamp++;
+      increment();
    }
 
-   return i;
+   return framesToRun();
 }
 
 
@@ -160,10 +178,9 @@ Instrument *makePAN()
    return inst;
 }
 
-void
-rtprofile()
+
+void rtprofile()
 {
    RT_INTRO("PAN", makePAN);
 }
-
 
