@@ -82,7 +82,7 @@ float Ocomb::next(float input)
 
 float Ocomb::next(float input, int delaySamps)
 {
-	if (delaySamps >= _len) {
+	if (delaySamps > _len) {
 		// Make a guess at how big the new array should be.
 		int newlen = (delaySamps < _len * 2) ? _len * 2 : _len + delaySamps;
 		printf("Ocomb resizing from %d to %d\n", _len, newlen);
