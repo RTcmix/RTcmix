@@ -59,6 +59,22 @@ private:
 };
 
 
+// Subclass of Oonepole that tracks changes to freq or lag and performs 
+// computations to update them only when they change.  This only works
+// if the caller sticks to setfreq or setlag, not mixing calls to both.
+
+class OonepoleTrack : public Oonepole
+{
+public:
+	OonepoleTrack(float SR);
+	void setfreq(float freq);
+	void setlag(float lag);
+private:
+	float _freq;
+	float _lag;
+};
+
+
 typedef enum {
    OeqLowPass = 0,
    OeqHighPass,
