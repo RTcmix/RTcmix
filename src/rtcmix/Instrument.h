@@ -57,9 +57,8 @@ public:
    int getendsamp();
    void setendsamp(int);
    void setchunk(int);
-   void setchunkstart(int);
    void set_output_offset(int);
-
+   void setchunkstart(int);  // FIXME:  get rid of this soon DJT
 private:
    void gone();                    // decrements reference to input soundfile
 
