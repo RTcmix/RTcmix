@@ -43,6 +43,7 @@
 AM::AM() : Instrument()
 {
 	in = NULL;
+	freqtable = NULL;
 }
 
 AM::~AM()
