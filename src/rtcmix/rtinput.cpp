@@ -57,7 +57,7 @@ get_last_input_index()
 /* The device has already been opened in rtsetparams.
 */
 static int
-open_linux_audio_input()
+open_linux_audio_input(AudioPortType port_type, int nchans)
 {
 #ifdef MONO_DEVICES
 // FIXME: what do we return?
@@ -273,6 +273,7 @@ rtinput(float p[], int n_args, double pp[])
 
 // FIXME: need to replace this with the bus spec scheme below... -JGG
       audioNCHANS = (n_args > 2) ? (int) p[2] : NCHANS;
+      nchans = audioNCHANS;
    }
 
 #ifdef INPUT_BUS_SUPPORT
@@ -327,6 +328,9 @@ rtinput(float p[], int n_args, double pp[])
          fd = open_audio_input(port_type, nchans);
          if (fd == -1)
             return -1.0;
+         for (i = 0; i < nchans; i++) {
+            allocate_audioin_buffer(i);
+         }
 #ifdef INPUT_BUS_SUPPORT
 #endif /* INPUT_BUS_SUPPORT */
       }
