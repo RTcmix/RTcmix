@@ -133,7 +133,7 @@ extern "C" {
 
 	  // Added 6/17/00 DJT:  for real time perf
 	  // need to wait for something to be on the heap
-	  if ((heapSize == 0) && (rtQSize == 0)) {
+	  if (rtInteractive && (heapSize == 0) && (rtQSize == 0)) {
 		while (heapSize == 0) {
 		  pthread_mutex_lock(&heapLock);
 		  heapSize = rtHeap.getSize();
