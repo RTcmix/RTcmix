@@ -33,7 +33,7 @@ extern "C" {
 };
 
 
-// ---------------------------------------------------------- makeconnection ---
+// ----------------------------------------------------------- makeconverter ---
 Handle
 makeconverter(const Arg args[], const int nargs)
 {
