@@ -1,6 +1,5 @@
 include ../makefile.conf
 
-SYSOBJS = ../sys/check_byte_order.o
 
 ifeq ($(ARCH),LINUX)
    PROGS = cmixplay playraw sfrecord full-duplex-test
@@ -13,18 +12,17 @@ ifeq ($(ARCH),SGI)
    RESAMPLE =
 endif
 
-ifeq ($(USE_SNDLIB),TRUE)
-   SYSOBJS += ../sys/sndlibsupport.o ../sys/audio_port.o
-   PLAY = sndlib_play.o
-else
-   PLAY = play.o
-endif
+PLAY = cmixplay.o
+SYSOBJS = ../sys/check_byte_order.o ../sys/sndlibsupport.o ../sys/audio_port.o
 
 
 all: $(PROGS) $(RESAMPLE)
 
 cmixplay:  $(PLAY) $(SYSOBJS)
 	$(CC) -o cmixplay $(SOUND_DRIVER) $(PLAY) $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
+
+cmixplay.o:  cmixplay.c ../H/audio_port.h ../H/sndlibsupport.h
+	$(CC) $(CFLAGS) $(SOUND_DRIVER) -c $< -o $@
 
 playraw: playraw.o
 	$(CC) -o playraw playraw.o
