@@ -40,7 +40,7 @@ short n_args;
 	skipin = p[1];
 	frac = p[1] - skipin;
 	size = fsize(fnumber);
-	if(skipin >= size-2) {
+	if(skipin >= size-1) {         /* was (skipin >= size-2)  --JGG 7/99 */
 		skipin = size - 1;
 		skipin2 = skipin;
 	}
