@@ -15,12 +15,10 @@ typedef enum {
    AudioStreamType
 } RTcmixHandleType;
 
-struct _handle {
+typedef struct _handle {
    RTcmixHandleType type;
    void *ptr;
-};
-
-typedef struct _handle *Handle;
+} *Handle;
 
 typedef struct {
    unsigned int len;    // number of elements in <data> array
