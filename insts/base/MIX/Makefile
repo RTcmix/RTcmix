@@ -16,16 +16,16 @@ PERL_LDFLAGS = `perl -MExtUtils::Embed -e ldopts`
 
 TARGETS = MIX
 ifeq ($(PERL_SUPPORT), TRUE)
-TARGETS += PMIX
+  TARGETS += PMIX
 endif
 ifeq ($(PYTHON_SUPPORT), TRUE)
-TARGETS += PYMIX
-LIBPYTHON = `python $(CMIXDIR)/Python/print_libpython.py`
+  TARGETS += PYMIX
+  LIBPYTHON = `python $(CMIXDIR)/Python/print_libpython.py`
   ifeq ($(ARCH),LINUX)
-  # This is necessary for Python 2.0 in Slackware Linux 8.0, and probably
-  # other distributions; comment out if it gives you trouble with earlier
-  # Pythons.  -JGG
-  LIBPYTHON += -lutil
+     # This is necessary for Python 2.0 in Slackware Linux 8.0, and probably
+     # other distributions; comment out if it gives you trouble with earlier
+     # Pythons.  -JGG
+     LIBPYTHON += -lutil
   endif
 endif
 
