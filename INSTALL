@@ -37,6 +37,9 @@ Here is how to install RTcmix and its instrument packages.
 
       ./configure --with-alsa --with-perl --with-python
 
+   NOTE: If you're running a Mac OS X earlier than 10.3 and want to enable
+   python, see the instructions below.
+
 4. There are some special settings that you can make in the "site.conf" file,
    though most people will never need to do this.
 
@@ -79,13 +82,14 @@ Mac OS X
    - You must use OS X 10.1 or later, and you must have installed the
      appropriate version of the Developer Tools.
 
-   - If you want to use gnuplot with the fplot Minc function, you have
-     to install both the command-line gnuplot from source and Aquaterm.
-     See http://aquaterm.sourceforge.net for instructions.
+   - If you want to use gnuplot with the fplot and plottable script functions,
+     you have to install both the command-line gnuplot from source and the
+     Aquaterm program.  See http://aquaterm.sourceforge.net for instructions.
 
-   - If you want to enable the Python front-end, you may have to build
-     Python from source, because the Python supplied with the Developer
-     Tools CD is incomplete.  See the instructions in RTcmix/Python/NOTES.
+   - If you want to enable the Python front-end, and you are running a version
+     of Mac OS X earlier than 10.3, you will have to build Python from source,
+     because the Python supplied with the Developer Tools CD is incomplete.
+     See the instructions in RTcmix/Python/NOTES.
 
 
 SGI Irix
