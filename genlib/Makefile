@@ -30,10 +30,10 @@ OOBJECTS = Ooscili.o Orand.o Odelayi.o Ocomb.o Ocombi.o
 	$(CXX) -c $(CXXFLAGS) -o $@ $<
 	
 all : $(LIB)
-
-install:	all
 	@if test ! -d $(LIBDIR); then mkdir $(LIBDIR); fi;
 	$(INSTALL) $(LIB) $(LIBDIR)
+
+install:	all
 
 uninstall:
 	$(RM) $(LIBDIR)/$(LIB)
