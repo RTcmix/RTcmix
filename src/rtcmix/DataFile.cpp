@@ -10,7 +10,7 @@
 
 DataFile::DataFile(const char *fileName, const int controlRate)
 	: _stream(NULL), _swap(false),
-	  _format(kDataFormatFloat), _datumsize(sizeof(float)),
+	  _format(kDataFormatFloat), _datumsize(sizeof(float)), _fileitems(0),
 	  _controlrate(controlRate), _filerate(0), _increment(1.0), _counter(1.0),
 	  _lastval(0.0)
 {
@@ -59,8 +59,37 @@ int DataFile::closeFile()
 	return status;
 }
 
+static int formatStringToCode(const char *str)
+{
+	if (str == NULL)
+		return -1;
+   if (strcmp(str, "double") == 0)
+      return kDataFormatDouble;
+   else if (strcmp(str, "float") == 0)
+      return kDataFormatFloat;
+   else if (strcmp(str, "int") == 0) {
+		if (sizeof(int) == sizeof(int64_t))
+			return kDataFormatInt64;
+		else if (sizeof(int) == sizeof(int32_t))
+			return kDataFormatInt32;
+		else if (sizeof(int) == sizeof(int16_t))
+			return kDataFormatInt16;
+		else
+			return -1;
+	}
+   else if (strcmp(str, "int64") == 0)
+      return kDataFormatInt64;
+   else if (strcmp(str, "int32") == 0)
+      return kDataFormatInt32;
+   else if (strcmp(str, "int16") == 0)
+      return kDataFormatInt16;
+   else if (strcmp(str, "byte") == 0)
+      return kDataFormatByte;
+   return -1;
+}
+
 // Return number of bytes to hold one element of given format.
-size_t format_datumsize(const int format)
+int format_datumsize(const int format)
 {
 	switch (format) {
 		case kDataFormatDouble: return sizeof(double); break;
@@ -117,41 +146,63 @@ err_return:
 	return -1;
 }
 
-// Attempt to interpret first few ints as a header.  If successful, return 0;
-// if not, return -1, rewind the file, and use the default values.
-int DataFile::readHeader(
+// Return the number of items in this file.
+static long fileItems(const long fileBytes, const int datumSize,
+	const bool hasHeader)
+{
+	long bytes = fileBytes;
+	if (hasHeader)
+		bytes -= kHeaderSize;
+	return bytes / datumSize;
+}
+
+// Attempt to interpret first few ints as a header.  If successful, leave
+// the file pointer set to the first non-header item.  If not successful,
+// rewind the file, and use the default values for the header information.
+// In either case, return the number of items in the file.  In case of read
+// error, return -1.
+long DataFile::readHeader(
 		const int   defaultFileRate,
 		const int   defaultFormat,
 		const bool  defaultSwap)
 {
+	if (fseek(_stream, 0, SEEK_END) != 0) {
+		fprintf(stderr, "Seek error for data file \"%s\": %s\n",
+					_filename, strerror(errno));
+		return -1;
+	}
+	long filebytes = ftell(_stream);
+	rewind(_stream);
+
 	int32_t magic;
 	size_t nitems = fread(&magic, sizeof(int32_t), 1, _stream);
 	if (nitems != 1)
-		goto err_return;
+		goto readerr;
 	if (magic == kMagic)
 		_swap = false;
 	else if (magic == kMagicSwapped)
 		_swap = true;
 	else
-		goto err_return;
+		goto noheader;
 
 	int32_t format;
 	nitems = fread(&format, sizeof(int32_t), 1, _stream);
 	if (nitems != 1)
-		goto err_return;
+		goto readerr;
 
 	int32_t filerate;
 	nitems = fread(&filerate, sizeof(int32_t), 1, _stream);
 	if (nitems != 1)
-		goto err_return;
+		goto readerr;
 
 	_format = format;
 	_datumsize = format_datumsize(_format);
 	_filerate = filerate;
 	_increment = double(_controlrate) / double(_filerate);
-	return 0;
+	_fileitems = fileItems(filebytes, _datumsize, true);
+	return _fileitems;
 
-err_return:
+noheader:
 	_swap = defaultSwap;
 	_format = defaultFormat;
 	_datumsize = format_datumsize(_format);
@@ -162,6 +213,15 @@ err_return:
 				_filename, format_string(_format), _filerate,
 				_swap ? "with byte-swapping" : "no byte-swapping");
 	rewind(_stream);
+	_fileitems = fileItems(filebytes, _datumsize, false);
+	return _fileitems;
+
+readerr:
+	if (ferror(_stream))
+		fprintf(stderr, "Read error for data file \"%s\"\n", _filename);
+	else
+		fprintf(stderr, "There's hardly anything in data file \"%s\"!\n",
+				_filename);
 	return -1;
 }
 
@@ -303,5 +363,13 @@ double DataFile::readOne()
 	}
 
 	return _lastval;
+}
+
+int DataFile::readFile(double *block, const long maxItems)
+{
+	_increment = 1.0;
+	for (int i = 0; i < maxItems; i++)
+		block[i] = readOne();
+	return 0;
 }
 

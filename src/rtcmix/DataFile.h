@@ -32,22 +32,27 @@ enum {
 // int32_t format        see enum above
 // int32_t controlrate   control rate in effect when file was saved
 
+const int kHeaderSize = sizeof(int32_t) * 3;
+
 
 class DataFile {
 public:
-	DataFile(const char *fileName, const int controlRate);
+	DataFile(const char *fileName, const int controlRate = 1000);
 	virtual ~DataFile();
 
 	int openFileWrite(const bool clobber);
 	int openFileRead();
 	int closeFile();
 	int writeHeader(const int fileRate, const int format, const bool swap);
-	int readHeader(const int  defaultFileRate = -1,
+	long readHeader(const int  defaultFileRate = -1,
 						const int  defaultFormat = kDataFormatFloat,
 						const bool defaultSwap = false);
 
 	int writeOne(const double val);
 	double readOne();
+	int readFile(double *block, const long maxItems);
+
+	static int formatStringToCode(const char *str);
 
 private:
 	// Return 0 if valid read; -1 if error.
@@ -107,7 +112,8 @@ private:
 	FILE *_stream;
 	bool _swap;
 	int _format;
-	size_t _datumsize;
+	int _datumsize;
+	long _fileitems;
 	int _controlrate;
 	int _filerate;
 	double _increment;
