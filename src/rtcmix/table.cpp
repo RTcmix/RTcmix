@@ -17,6 +17,7 @@
 #include <byte_routines.h>
 #include <sndlibsupport.h>
 #include <PField.h>
+#include <Random.h>
 #include <ugens.h>      /* for warn, die */
 
 /* Functions for creating and modifying double arrays.  These can be passed
@@ -1279,7 +1280,7 @@ _cheby_table(const Arg args[], const int nargs, double *array, const int len)
       3 = triangle linear distribution ["triangle"]
       4 = gaussian distribution ["gaussian"]
       5 = cauchy distribution ["cauchy"]
-      6 = Mara Helmuth's probability function ["helmuth"]  *see below for usage
+      6 = Mara Helmuth's probability distribution ["prob"]  *see below for usage
 
    If <seed> is zero, seed comes from microsecond clock, otherwise <seed>
    is used as the seed.  If no <seed> argument, the seed used is 1.
@@ -1287,25 +1288,25 @@ _cheby_table(const Arg args[], const int nargs, double *array, const int len)
    <min> and <max> define the range (inclusive) for the random numbers.
    Both args must be present; otherwise the range is from 0 to 1.
 
-   *Note: type 6 ("helmuth") has different arguments:
+   *Note: type 6 ("prob") has different arguments:
 
-   table = maketable("random", size, "helmuth", seed, min, mid, max, tightness)
+   table = maketable("random", size, "prob", seed, min, mid, max, tight)
 
       <min> and <max> set the range within which the random numbers fall,
       as before.
 
       <mid> sets the mid-point of the range, which has an effect whenever
-      <tightness> is not 1.
+      <tight> is not 1.
 
-      <tightness> governs the degree to which the random numbers adhere
-      either to the mid-point or to the extremes of the range:
+      <tight> governs the degree to which the random numbers adhere either
+      to the mid-point or to the extremes of the range:
 
-         tightness         effect
-         ----------------------------------------------------------------
-         0                 only the <min> and <max> values appear
-         1                 even distribution, <mid> irrelevant
-         > 1               numbers cluster ever more tightly around <mid>
-         100               almost all numbers are equal to <mid>
+         tight         effect
+         -------------------------------------------------------------
+         0             only the <min> and <max> values appear
+         1             even distribution, <mid> irrelevant
+         > 1           numbers cluster ever more tightly around <mid>
+         100           almost all numbers are equal to <mid>
 
 
    Similar to gen 20. the original version of which was written by Luke Dubois;
@@ -1313,29 +1314,10 @@ _cheby_table(const Arg args[], const int nargs, double *array, const int len)
    equations adapted from Dodge and Jerse.
 */
 
-/* Scale <num>, which falls in range [0,1] so that it falls
-   in range [min,max].  Return result.    -JGG, 12/4/01
-*/
-static inline double
-fit_range(double min, double max, double num)
-{
-   return min + (num * (max - min));
-}
-
-/* Return a random number between 0 and 1 inclusive, updating randx. */
-static inline double
-_brrand(long &randx)
-{
-   randx = (randx * 1103515245) + 12345;
-   int k = (randx >> 16) & 077777;
-   return (double) k / 32768.0;
-}
-
 static int
 _random_table(const Arg args[], const int nargs, double *array, const int len)
 {
-   static long randx = 1;
-   int type;
+   int type, seed;
 
    if (len < 2)
       return die("maketable (random)", "Table length must be at least 2.");
@@ -1353,7 +1335,7 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
          type = 4;
       else if (args[0] == "cauchy")
          type = 5;
-      else if (args[0] == "helmuth")    // FIXME: need name for Mara's function
+      else if (args[0] == "prob") // FIXME: need other name for Mara's function?
          type = 6;
       else
          return die("maketable (random)",
@@ -1369,10 +1351,10 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
    if ((int) args[1] == 0) {
       struct timeval tv;
       gettimeofday(&tv, NULL);
-      randx = tv.tv_usec;
+      seed = (int) tv.tv_usec;
    }
    else
-      randx = (int) args[1];
+      seed = (int) args[1];
 
    /* Set range for random numbers. */
    if (nargs == 3)
@@ -1380,16 +1362,16 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
               "Usage: maketable(\"random\", size, type[, seed[, min, max]])");
 
    double min, max, mid = 0.0, tight = 0.0;
-   if (type == 6) {        /* helmuth type has special args */
+   if (type == 6) {        /* Mara's function has special args */
       if (nargs != 6)
          die("maketable (random)", "Usage: maketable(\"random\", size, "
-                              "\"helmuth\", seed, min, mid, max, tightness)");
+                              "\"prob\", seed, min, mid, max, tight)");
       min = args[2];
       mid = args[3];
       max = args[4];
       tight = args[5];
       if (tight < 0.0) {
-         warn("maketable (random)", "<tightness> must be zero or greater "
+         warn("maketable (random)", "<tight> must be zero or greater "
                                     "... setting to zero.");
          tight = 0.0;
       }
@@ -1410,102 +1392,39 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
       max = 1.0;
    }
 
+   Random *gen;
+
    switch (type) {
-      case 0:  /* even distribution */
-         for (int i = 0; i < len; i++) {
-            double tmp = _brrand(randx);
-            array[i] = fit_range(min, max, tmp);
-         }
+      case 0:
+         gen = new LinearRandom(seed, min, max);
          break;
-      case 1:  /* low weighted */
-         for (int i = 0; i < len; i++) {
-            double randnum = _brrand(randx);
-            double randnum2 = _brrand(randx);
-            if (randnum2 < randnum)
-               randnum = randnum2;
-            array[i] = fit_range(min, max, randnum);
-         }
+      case 1:
+         gen = new LowLinearRandom(seed, min, max);
          break;
-      case 2:  /* high weighted */
-         for (int i = 0; i < len; i++) {
-            double randnum = _brrand(randx);
-            double randnum2 = _brrand(randx);
-            if (randnum2 > randnum)
-               randnum = randnum2;
-            array[i] = fit_range(min, max, randnum);
-         }
+      case 2:
+         gen = new HighLinearRandom(seed, min, max);
          break;
-      case 3:  /* triangle */
-         for (int i = 0; i < len; i++) {
-            double randnum = _brrand(randx);
-            double randnum2 = _brrand(randx);
-            double tmp = 0.5 * (randnum + randnum2);
-            array[i] = fit_range(min, max, tmp);
-         }
+      case 3:
+         gen = new TriangleRandom(seed, min, max);
          break;
-      case 4:  /* gaussian */
-         {
-            const int N = 12;
-            const double halfN = 6.0;
-            const double scale = 1.0;
-            const double mu = 0.5;
-            const double sigma = 0.166666;
-            int i = 0;
-            while (i < len) {
-               double randnum = 0.0;
-               for (int j = 0; j < N; j++)
-                  randnum += _brrand(randx);
-               double output = sigma * scale * (randnum - halfN) + mu;
-               if (output <= 1.0 && output >= 0.0) {
-                  array[i] = fit_range(min, max, output);
-                  i++;
-               }
-            }
-         }
+      case 4:
+         gen = new GaussianRandom(seed, min, max);
          break;
-      case 5:  /* cauchy */
-         {
-            const double alpha = 0.00628338;
-            int i = 0;
-            while (i < len) {
-               double randnum = 0.0;
-               do {
-                  randnum = _brrand(randx);
-               } while (randnum == 0.5);
-               randnum *= PI;
-               double output = (alpha * tan(randnum)) + 0.5;
-               if (output <= 1.0 && output >= 0.0) {
-                  array[i] = fit_range(min, max, output);
-                  i++;
-               }
-            }
-         }
+      case 5:
+         gen = new CauchyRandom(seed, min, max);
          break;
-      case 6:  /* helmuth */
-         {
-            double hirange = max - mid;
-            double lowrange = mid - min;
-            double range = _fmax(hirange, lowrange);
-            for (int i = 0; i < len; i++) {
-               double num;
-               do {
-                  double sign;
-                  num = _brrand(randx);      /* num is [0,1] */
-                  if (num > 0.5)
-                     sign = 1.0;
-                  else
-                     sign = -1.0;
-                  num = mid + (sign * (pow(_brrand(randx), tight) * range));
-               } while (num < min || num > max);
-               array[i] = num;
-            }
-         }
+      case 6:
+         gen = new MaraRandom(seed, min, mid, max, tight);
          break;
       default:
          return die("maketable (random)", "Unsupported distribution type %d.",
                                                                         type);
          break;
    }
+   for (int i = 0; i < len; i++)
+      array[i] = gen->value();
+
+   gen->unref();
 
    return 0;
 }
@@ -1686,8 +1605,8 @@ _maketable_usage()
 }
 
 typedef enum {
-   kNoInterp,
-   kInterpLinear,
+   kTruncate,
+   kInterp1stOrder,
    kInterp2ndOrder
 } InterpType;
 
@@ -1700,7 +1619,7 @@ maketable(const Arg args[], const int nargs)
    }
 
    bool normalize = true;
-   InterpType interp = kInterpLinear;
+   InterpType interp = kInterp1stOrder;
 
    int lenindex = 1;             // following table type string w/ no options
    for (int i = lenindex; i < nargs; i++) {
@@ -1709,11 +1628,11 @@ maketable(const Arg args[], const int nargs)
       if (args[i] == "nonorm")
          normalize = false;
       else if (args[i] == "nointerp")
-         interp = kNoInterp;
+         interp = kTruncate;
       else if (args[i] == "norm")
          normalize = true;
       else if (args[i] == "interp")
-         interp = kInterpLinear;
+         interp = kInterp1stOrder;
       else if (args[i] == "interp2")
          interp = kInterp2ndOrder;
       else {
