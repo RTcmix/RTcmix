@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Thursday, February 3, 2005 John Gibson <johgibso-at-indiana.edu>
+
+   * New granulation instrument: GRANULATE.  This has 18 parameters that
+     can be controlled by the new dynamic PField scheme.  See scores in
+     docs/sample_scores/dynamic_insts/minc.
+
 2005-01-09  Douglas Scott  <netdscott at netscape.net>
 
 	*  Simplified audio I/O by moving all float limiting and peak detection
