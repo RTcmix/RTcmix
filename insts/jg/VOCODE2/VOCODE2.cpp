@@ -14,7 +14,7 @@
    p5  = lowest filter center frequency (in Hz or oct.pc)
    p6  = center frequency spacing multiplier (greater than 1)
          (multiplies each cf by this to get next higher cf)
-   p7  = amount to transpose carrier filter banks (in Hz or oct.pc)
+   p7  = amount to transpose carrier filters (in Hz or oct.pc)
    p8  = filter bandwidth proportion of center frequency (greater than 0)
    p9  = filter response time (seconds)  [optional; default is 0.01]
          Determines how often changes in modulator power are measured.
