@@ -23,7 +23,7 @@
 #include "TRANS.h"
 #include <rt.h>
 
-#define DEBUG
+//#define DEBUG
 //#define DEBUG_FULL
 
 extern "C" {
