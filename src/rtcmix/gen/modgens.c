@@ -63,7 +63,7 @@ m_multgens(float p[], int n_args, double pp[])
 
       p0    table number of new table
       p1    table number of original table
-      p2    size of new table
+      p2    size of new table [optional, default is size of original]
       p3    interpolation type (0: no interpolation, 1: linear interpolation)
                [optional, default is 1]
 */
@@ -81,7 +81,7 @@ m_copygen(float p[], int n_args, double pp[])
       die("copygen", "No function table defined for slot %d.", srcslot);
    srcsize = fsize(srcslot);
 
-   destsize = (int) p[2];
+   destsize = (n_args > 2) ? (int) p[2] : srcsize;
    interp = (n_args > 3) ? (InterpolationType) p[3] : LINEAR_INTERP;
 
    desttable = resample_gen(srctable, srcsize, destsize, interp);
