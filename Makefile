@@ -14,10 +14,9 @@ endif
 MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
 
 DIRS = $(SNDLIB) H rtstuff/heap rtstuff Minc sys lib head cmd utils \
-       insts.base $(PACKAGE_DIRS)
+       $(PACKAGE_DIRS) $(INST_DIRS)
 
-all: $(SNDLIB) H heap rtstuff Minc sys lib head cmd utils \
-       insts.base $(PACKAGE_DIRS)
+all: $(DIRS)
 
 install:
 	@echo "beginning install..."
@@ -25,6 +24,10 @@ install:
 	@cd head; $(MAKE) install;
 	@cd utils; $(MAKE) install;
 	@cd insts.base; $(MAKE) install;
+	@for DIR in $(INST_DIRS); \
+	do \
+	  ( cd $$DIR; $(MAKE) install ); \
+	done
 	@for DIR in $(PACKAGE_DIRS); \
 	do \
 	  ( cd $$DIR; $(MAKE) install ); \
@@ -82,14 +85,38 @@ utils::
 	@cd utils; $(MAKE) all
 	@echo "done.";echo""
 
-clean:
-	@for DIR in $(DIRS); \
+dsos::
+	@for DIR in $(INST_DIRS); \
 	do \
-	  ( cd $$DIR; echo "making clean in $$DIR..."; \
-	  $(MAKE) clean ); \
+	  ( cd $$DIR; echo "making $$DIR..."; \
+	   @echo "include $(MAKEFILE_CONF)" > package.conf 	
+	   $(MAKE) all; echo "done.";echo"" ); \
 	done
 
-# JG: this might be a better idea for packages.
+dso_clean::
+	@for DIR in $(INST_DIRS); \
+	do \
+	  ( cd $$DIR; echo "making dso_clean $$DIR..."; \
+	   @echo "include $(MAKEFILE_CONF)" > package.conf 	
+	   $(MAKE) dso_clean; echo "done.";echo"" ); \
+	done
+
+standalone::
+	@for DIR in $(INST_DIRS); \
+	do \
+	  ( cd $$DIR; echo "making standalone $$DIR..."; \
+	   @echo "include $(MAKEFILE_CONF)" > package.conf 	
+	   $(MAKE) standalone; echo "done.";echo"" ); \
+	done
+
+standalone_clean::
+	@for DIR in $(INST_DIRS); \
+	do \
+	  ( cd $$DIR; echo "making standalone_clean $$DIR..."; \
+	   @echo "include $(MAKEFILE_CONF)" > package.conf 	
+	   $(MAKE) standalone_clean; echo "done.";echo"" ); \
+	done
+
 packages::
 	@for DIR in $(PACKAGE_DIRS); \
 	do \
@@ -98,3 +125,9 @@ packages::
 	   $(MAKE) all; echo "done.";echo"" ); \
 	done
 
+clean::
+	@for DIR in $(DIRS); \
+	do \
+	  ( cd $$DIR; echo "making clean in $$DIR..."; \
+	  $(MAKE) clean ); \
+	done
