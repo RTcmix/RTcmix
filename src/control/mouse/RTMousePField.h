@@ -8,7 +8,6 @@
 #include <PField.h>
 
 class RTcmixMouse;
-class Oequalizer;
 class Oonepole;
 
 enum RTMouseAxis {
@@ -40,11 +39,7 @@ private:
 
 	RTcmixMouse *	_mousewin;
 	RTMouseAxis		_axis;
-#ifdef USEEQ
-	Oequalizer *	_filter;
-#else
 	Oonepole *		_filter;
-#endif
 	double			_min;
 	double			_default;
 
