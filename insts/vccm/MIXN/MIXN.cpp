@@ -52,7 +52,7 @@ MIXN::~MIXN()
   delete [] in;
 }
 
-int MIXN::init(float p[], int n_args)
+int MIXN::init(double p[], int n_args)
 {
   // p0 = outsk
   // p1 = insk
@@ -64,16 +64,16 @@ int MIXN::init(float p[], int n_args)
   int i;
   float dur;
 
-  Instrument::init(p, n_args);
-
   if (p[2] < 0.0) p[2] = -p[2] - p[1];
 
   outskip = p[0];
   inskip = p[1];
   dur = p[2];
 
-  nsamps = rtsetoutput(outskip, dur, this);
-  rtsetinput(inskip, this);
+  if (rtsetoutput(outskip, dur, this) != 0)
+	  return DONT_SCHEDULE;
+  if (rtsetinput(inskip, this) != 0)
+	  return DONT_SCHEDULE;
 
   inchan = p[3];
   amp = p[4];
@@ -108,6 +108,12 @@ int MIXN::init(float p[], int n_args)
   return(this->mytag);
 }
 
+int MIXN::configure()
+{
+    in = new float [RTBUFSAMPS * inputChannels()];
+	return 0;
+}
+
 int MIXN::run()
 {
   int i,j,k,outframes;
@@ -119,10 +125,6 @@ int MIXN::run()
   int finalsamp;
 
   aamp = 0;
-  if (in == NULL)    /* first time, so allocate it */
-    in = new float [RTBUFSAMPS * inputchans];
-
-  Instrument::run();
 
   aud_locs = my_aud_locs;
   spk_locs = my_spk_locs;
@@ -138,15 +140,16 @@ int MIXN::run()
   use_rates = my_use_rates;
   cycle = my_cycle;
 
-  outframes = chunksamps*inputchans;
+  outframes = framesToRun()*inputChannels();
 
   rtgetin(in, this, outframes);
 
   outp = outbuf;  // Use private pointer to Inst::outbuf
 
   branch = 0;
-  for (i = 0; i < outframes; i += inputchans)  {
+  for (i = 0; i < outframes; i += inputChannels())  {
 	if (--branch < 0) {
+#ifdef RTUPDATE
 	  if (tags_on) {
 		for (j=0;j<8;j++) {
 		  t_out_amp[j] = rtupdate(this->mytag,j+4);
@@ -155,6 +158,7 @@ int MIXN::run()
 		  }
 		}
 	  }
+#endif
 	  if (amptable)
 		aamp = tablei(cursamp, amptable, tabs) * amp;
 	  else
@@ -187,7 +191,9 @@ makeMIXN()
 
   inst = new MIXN();
   inst->set_bus_config("MIXN");
+#ifdef RTUPDATE
   inst->set_instnum("MIXN");
+#endif
   return inst;
 }
 

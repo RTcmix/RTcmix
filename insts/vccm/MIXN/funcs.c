@@ -1,10 +1,12 @@
 #define xDBUG 1
 #include <stdlib.h>
 #include <stdio.h>
-#include <globals.h>
 #include <math.h>
 #include <ugens.h>
+#include <bus.h>
 #include "mixn_structs.h"
+
+extern float SR();
 
 loc *aud_locs;
 pt *spk_locs;
@@ -140,7 +142,7 @@ double rates(float p[], int n_args, double pp[]) {
 
   i=j=0;
   while(i<n_args) {
-	time = p[i++] * (double) SR;
+	time = p[i++] * (double) SR();
 	s = p[i++];
 	ratefs[j].factor = s;
 	ratefs[j].time = time;
@@ -181,7 +183,7 @@ double path(float p[], int n_args, double pp[]) {
   aud_locs = (loc *)malloc(MAXLOCS * sizeof(loc));
   
   while(i<n_args) {
-	time = p[i++] * (double)SR;
+	time = p[i++] * (double)SR();
 	x = p[i++];
 	y = p[i++];
 
@@ -242,7 +244,7 @@ double path_p(float p[], int n_args, double pp[]) {
   aud_locs = (loc *)malloc(MAXLOCS * sizeof(loc));
 
   while(i<n_args) {
-	time = p[i++] * (double) SR;
+	time = p[i++] * (double) SR();
 	r = p[i++];
 	a = p[i++];
 

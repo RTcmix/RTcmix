@@ -1,7 +1,8 @@
 #include "mixn_structs.h"
 
 class MIXN : public Instrument {
-	float amp,*amptable,tabs[2],*in;
+	float amp, tabs[2],*in;
+	double *amptable;
 	int skip;
 	int amp_count;
 	float inskip,outskip,dur,inchan;  // Put here so can be rtupdatable
@@ -23,7 +24,8 @@ class MIXN : public Instrument {
 public:
 	MIXN();
 	virtual ~MIXN();
-	int init(float*, int);
+	int init(double*, int);
+	int configure();
 	int run();
 };
 
