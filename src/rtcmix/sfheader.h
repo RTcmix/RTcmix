@@ -21,6 +21,15 @@
 #define MAXCOMM 512
 #define MINCOMM 256
 
+/* This is the maximum difference (in seconds) between the time peak
+   stats have been written and the file's modification date.  If the
+   the mod. date is more recent than the peak stats (timetag) by at
+   least this many seconds, then parts of RTcmix will complain.
+   If you have an NFS setup where the machines may not be time-sync'd
+   (via ntp), then you may want to increase this by several minutes.
+*/
+#define MAX_PEAK_STATS_AGE 2
+
 /* Codes for sfcode */
 #define SF_END 0
 #define SF_MAXAMP 1
@@ -96,7 +105,8 @@ typedef union sfheader {
 # define sfmaxamp(mptr,chan) (mptr)->value[chan]
 # define sfmaxamploc(mptr,chan) (mptr)->samploc[chan]
 # define sfmaxamptime(x) (x)->timetag
-# define ismaxampgood(x,s) (sfmaxamptime(x) + 2  >= (s)->st_mtime)
+# define ismaxampgood(x,s) (sfmaxamptime(x) + MAX_PEAK_STATS_AGE \
+                                                      >= (s)->st_mtime)
 
 # define sfcomm(x,n) (x)->comment[n]
 
