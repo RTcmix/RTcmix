@@ -19,7 +19,7 @@ lib$(NAME).so:	$(UGENS_H) $(OBJS)
 	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
 $(NAME):	$(UGENS_H) $(OBJS) $(CMIXOBJS)
-	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
 install: dso_install
 
