@@ -41,7 +41,10 @@
 
       p11 = grain envelope table
 
-    * p12 = grain density (grains per second)
+    * p12 = grain hop time (time between successive grains).  This is the 
+            inverse of grain density (grains per second); you can use
+            makeconverter(..., "inverse") to convert a table or real-time
+            control source from density to hop time.
 
     * p13 = grain input time jitter
             Maximum randomly determined amount to add or subtract from the
@@ -107,7 +110,7 @@
 "Usage:\n" \
 "  GRANULATE(start, inskip, dur, amp, sound_table, num_chans, input_chan,\n" \
 "    window_start_time, window_end_time, wraparound, traversal_rate,\n" \
-"    grain_env, grain_density, grain_input_jitter, grain_output_jitter,\n" \
+"    grain_env, grain_hoptime, grain_input_jitter, grain_output_jitter,\n" \
 "    grain_dur_min, grain_dur_max, grain_amp_min, grain_amp_max,\n" \
 "    grain_transposition, grain_transposition_collection,\n" \
 "    grain_transposition_jitter, random_seed, grain_pan_min, grain_pan_max\n"
@@ -182,7 +185,7 @@ void GRANULATE::doupdate()
    }
    _stream->setInskip(p[1]);     // do this after setting window
    _stream->setWraparound(bool(p[9]));
-   _stream->setTraversalRateAndGrainHop(p[10], 1.0 / p[12]);
+   _stream->setTraversalRateAndGrainHop(p[10], p[12]);
    _stream->setInputJitter(p[13]);
    _stream->setOutputJitter(p[14]);
    _stream->setGrainDuration(p[15], p[16]);
