@@ -38,7 +38,7 @@ extern "C" {
 extern long MFP_samps(float, double []);
 extern int close_prime(int, int, int []);
 extern void setup_trigfuns(void);
-extern float cycle(double, int);
+extern float cycle(float, double, int);
 extern void binaural(double, double, double, double, double,
                                                           double *, double *);
 extern void fir(double *, long, int, double *, double *, int);

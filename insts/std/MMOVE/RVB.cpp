@@ -332,7 +332,7 @@ RVB::set_random()
       for (int j = 0; j < 6; j++) {           /* loop for 6 delays per chan */
          ReverbData *r = &m_rvbData[i][j];
          r->Rand_info[0] = rnd_pcnt[i][j] * SR / 2.0;    /* nsamps jitter */
-         r->Rand_info[1] = cycle(rnd_freq[i][j], 512);   /* SI  */
+         r->Rand_info[1] = cycle(SR, rnd_freq[i][j], 512);   /* SI  */
          r->Rand_info[2] = 1.0;
          r->Rand_info[4] = seed[i][j];     /* load seeds */
       }
