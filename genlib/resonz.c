@@ -1,13 +1,13 @@
-#include <ugens.h>
+#include <math.h>
 
 void
-rszset(float cf, float bw, float xinit, float *a)
+rszset(float SR, float cf, float bw, float xinit, float *a)
 {
       double exp(),cos();
       int i;
-      a[0]=exp(-PI*bw/SR);
+      a[0]=exp(-M_PI*bw/SR);
       a[1]=1.-a[0];
-      a[2]=2.*a[0]*cos(2.*PI*cf/SR);
+      a[2]=2.*a[0]*cos(2.*M_PI*cf/SR);
       a[3] = -a[0]*a[0];
       if(!xinit) for(i=4; i<9; i++) a[i]=0.;
 }

@@ -1,8 +1,6 @@
 #include <math.h>
-#include <ugens.h>
-#include <dbug.h>
 
-void rsnset(float cf, float bw, float scl, float xinit, float a[])
+void rsnset(float SR, float cf, float bw, float scl, float xinit, float a[])
 {
 	float c,temp;
 	float tval1,tval2,tval3,tval4;
@@ -14,10 +12,10 @@ void rsnset(float cf, float bw, float scl, float xinit, float a[])
 		a[3] = 0;
 		}
 
-	a[2] = (float)exp(-PI2 * bw/SR);
+	a[2] = (float)exp(-2.0f * M_PI * bw/SR);
 	temp = 1. - a[2];
 	c = a[2] + 1;
-	a[1] = 4. * a[2]/c * (float)cos(PI2 * cf/SR);
+	a[1] = 4. * a[2]/c * (float)cos(2.0f * M_PI * cf/SR);
 	if(scl < 0) a[0] = 1;
 	if(scl) a[0] = sqrt(temp/c*(c*c-a[1]*a[1]));
 	if(!scl) a[0] = temp*sqrt(1.-a[1]*a[1]/(4.*a[2]));

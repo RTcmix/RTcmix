@@ -5,21 +5,21 @@
 #include <ugens.h>
 #include <Ougens.h>
 
-Ooscili::Ooscili(float freq, int arr)
+Ooscili::Ooscili(float SR, float freq, int arr) : _sr(SR)
 {
 	array = floc(arr);
 	length = fsize(arr);
 	init(freq);
 }
 
-Ooscili::Ooscili(float freq, double arr[])
+Ooscili::Ooscili(float SR, float freq, double arr[]) : _sr(SR)
 {
 	array = arr;
 	length = sizeof(arr);
 	init(freq);
 }
 
-Ooscili::Ooscili(float freq, double arr[], int len)
+Ooscili::Ooscili(float SR, float freq, double arr[], int len) : _sr(SR)
 {
 	array = arr;
 	length = len;
@@ -28,7 +28,7 @@ Ooscili::Ooscili(float freq, double arr[], int len)
 
 void Ooscili::init(float freq)
 {
-	lendivSR = (double) length / SR;
+	lendivSR = (double) length / _sr;
 	si = freq * lendivSR;
 	phase = 0.0;
 	dur = 1.0 / freq;	// for arbitrary lookups in the next(nsample) method
@@ -53,7 +53,7 @@ float Ooscili::next()
 
 float Ooscili::next(int nsample)
 {
-	double frac = ((double)nsample/SR)/dur * (double)(length-1);
+	double frac = ((double)nsample/_sr)/dur * (double)(length-1);
 	if (frac >= (double)(length-1))
 		return array[length-1];
 	int loc1 = (int) frac;

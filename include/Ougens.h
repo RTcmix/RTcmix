@@ -7,14 +7,15 @@ class Ooscili
 {
 	double si, phase, lendivSR;
 	double *array;
+	float _sr;
 	float dur;
 	int length;
 
 	void init(float);
 public:
-	Ooscili(float, int);
-	Ooscili(float, double *);
-	Ooscili(float, double *, int);
+	Ooscili(float, float, int);
+	Ooscili(float, float, double *);
+	Ooscili(float, float, double *, int);
 	float next();
 	float next(int);
 	inline void setfreq(float freq) { si = freq * lendivSR; }
@@ -60,8 +61,8 @@ private:
 class Ocomb
 {
 public:
-	Ocomb(float loopTime, float reverbTime);
-	Ocomb(float loopTime, float maxLoopTime, float reverbTime);
+	Ocomb(float SR, float loopTime, float reverbTime);
+	Ocomb(float SR, float loopTime, float maxLoopTime, float reverbTime);
 	~Ocomb();
 	void clear();
 	void setReverbTime(float reverbTime);
@@ -69,6 +70,7 @@ public:
 	float next(float input, int delaySamps);
 private:
 	void init(float loopTime, float maxLoopTime, float reverbTime);
+	float _sr;
 	float *_dline;
 	int _len;
 	int _delsamps;
@@ -79,13 +81,14 @@ private:
 class Ozcomb
 {
 public:
-	Ozcomb(float loopTime, float maxLoopTime, float reverbTime);
+	Ozcomb(float SR, float loopTime, float maxLoopTime, float reverbTime);
 	~Ozcomb();
 	void clear();
 	void setReverbTime(float reverbTime);
 	float next(float input, float delaySamps);
 private:
 	Ozdelay *_delay;
+	float _sr;
 	float _gain;
 	float _lastout;
 	float _delsamps;

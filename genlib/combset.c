@@ -1,10 +1,9 @@
 #include <math.h>
 #include <combs.h>
-#include <ugens.h>
 
 
 void
-combset(float loopt, float rvt,int init, float *a)
+combset(float SR, float loopt, float rvt,int init, float *a)
 {
 	int j;
 

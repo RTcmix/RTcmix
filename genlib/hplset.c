@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <math.h>
 #include <complexf.h>
-#include <ugens.h>
 
+static float ABS(float x)
+{
+	return (x >= 0.0f) ? x : -x;
+}
 
 void
 hplset(float xxlp, float dur, float dynam, float plamp, float seed, float sr, int init, float *q)
@@ -152,22 +155,19 @@ complex x,y;
 	z.im = x.im - y.im;
 	return(z);
 }
-complex smultiply(x,y)
-float x;
-complex y;
+complex smultiply(float x, complex y)
 {	complex z;
 	z.re = y.re * x;
 	z.im = y.im * x;
 	return(z);
 }
 
-void qnew(freq2,q)                                          
-float freq2,*q;
+void qnew(float SR, float freq2, float *q)
 {
 	float w,xlp,pa,pc,c;
 	int n;
        c=q[2];
-      w=2.*PI*freq2 ;                                                    
+      w=2.*M_PI*freq2 ;                                                    
       xlp=SR/freq2;                                                      
       pa=(-1)*SR/w*atan(-c*sin(w/SR)/((1.-c)+c*cos(w/SR)));              
       n=(int)(xlp-pa);  

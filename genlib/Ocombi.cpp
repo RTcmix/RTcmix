@@ -6,7 +6,6 @@
 // Interpolating comb filter class.    -JGG, 7/8/04
 
 #include <math.h>
-#include <ugens.h>
 #include <Ougens.h>
 #include <assert.h>
 
@@ -15,14 +14,15 @@
 // frequency) that you expect to use.  It must be >= loopTime.  <reverbTime>
 // must be greater than zero.
 
-Ozcomb::Ozcomb(float loopTime, float maxLoopTime, float reverbTime)
+Ozcomb::Ozcomb(float SR, float loopTime, float maxLoopTime, float reverbTime)
+	: _sr(SR)
 {
 	assert(maxLoopTime > 0.0);
 	assert(maxLoopTime >= loopTime);
 
-	long maxlen = (long) (maxLoopTime * SR + 0.5);
+	long maxlen = (long) (maxLoopTime * _sr + 0.5);
 	_delay = new Ozdelay(maxlen);
-	_delsamps = loopTime * SR;
+	_delsamps = loopTime * _sr;
 	_delay->setdelay(_delsamps);
 	setReverbTime(reverbTime);
 	_lastout = 0.0;
@@ -45,10 +45,10 @@ void Ozcomb::clear()
 void Ozcomb::setReverbTime(float reverbTime)
 {
 	assert(reverbTime > 0.0);
-	_gain = pow(0.001, (_delsamps / SR) / reverbTime);
+	_gain = pow(0.001, (_delsamps / _sr) / reverbTime);
 }
 
-// Make sure <delaySamps> is between 0 and (maxLoopTime * SR), or you'll
+// Make sure <delaySamps> is between 0 and (maxLoopTime * _sr), or you'll
 // get sudden pitch changes and dropouts.
 
 float Ozcomb::next(float input, float delaySamps)

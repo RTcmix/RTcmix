@@ -10,7 +10,6 @@
 // of cmix combset/comb.  -JGG, 7/8/04
 
 #include <math.h>
-#include <ugens.h>      // for SR
 #include <Ougens.h>
 #include <assert.h>
 
@@ -18,7 +17,7 @@
 // Use this when you don't intend to change the loopTime dynamically.
 // <reverbTime> must be greater than zero.
 
-Ocomb::Ocomb(float loopTime, float reverbTime)
+Ocomb::Ocomb(float SR, float loopTime, float reverbTime) : _sr(SR)
 {
 	init(loopTime, loopTime, reverbTime);
 }
@@ -28,7 +27,8 @@ Ocomb::Ocomb(float loopTime, float reverbTime)
 // frequency) that you expect to use.  It must be >= loopTime.
 // <reverbTime> must be greater than zero.
 
-Ocomb::Ocomb(float loopTime, float maxLoopTime, float reverbTime)
+Ocomb::Ocomb(float SR, float loopTime, float maxLoopTime, float reverbTime)
+	: _sr(SR)
 {
 	init(loopTime, maxLoopTime, reverbTime);
 }
@@ -38,10 +38,10 @@ void Ocomb::init(float loopTime, float maxLoopTime, float reverbTime)
 	assert(maxLoopTime > 0.0);
 	assert(maxLoopTime >= loopTime);
 
-	_len = (int) (maxLoopTime * SR + 0.5);
+	_len = (int) (maxLoopTime * _sr + 0.5);
 	_dline = new float[_len];
 	clear();
-	_delsamps = (int) (loopTime * SR + 0.5);
+	_delsamps = (int) (loopTime * _sr + 0.5);
 	setReverbTime(reverbTime);
 	_pointer = 0;
 }
@@ -63,7 +63,7 @@ void Ocomb::clear()
 void Ocomb::setReverbTime(float reverbTime)
 {
 	assert(reverbTime > 0.0);
-	_gain = pow(0.001, ((float) _delsamps / SR) / reverbTime);
+	_gain = pow(0.001, ((float) _delsamps / _sr) / reverbTime);
 }
 
 // There are two next() methods: use the first for non-changing delay
@@ -81,7 +81,7 @@ float Ocomb::next(float input)
 }
 
 // Note: loopTime is expressed here as delaySamps.
-// Make sure <delaySamps> is between 0 and (maxLoopTime * SR), or you'll
+// Make sure <delaySamps> is between 0 and (maxLoopTime * _sr), or you'll
 // get sudden pitch changes and dropouts.
 
 float Ocomb::next(float input, int delaySamps)

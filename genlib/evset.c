@@ -1,7 +1,7 @@
 #include <ugens.h>
 
 void
-evset(float dur, float rise, float dec, int nfrise, float *q)
+evset(float SR, float dur, float rise, float dec, int nfrise, float *q)
 {
 	rise = (rise > 0.) ? rise : -rise * dur;
 	dec = (dec > 0.) ? dec : -dec * dur;

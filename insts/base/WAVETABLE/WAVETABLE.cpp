@@ -75,12 +75,12 @@ int WAVETABLE::init(double p[], int n_args)
 		tablelen = fsize(WAVET_GEN_SLOT);
 	}
 
-	osc = new Ooscili(freq, wavetable, tablelen);
+	osc = new Ooscili(SR, freq, wavetable, tablelen);
 
 	amptable = floc(AMP_GEN_SLOT);
 	if (amptable) {
 		int alen = fsize(AMP_GEN_SLOT);
-		tableset(dur, alen, amptabs);
+		tableset(SR, dur, alen, amptabs);
 	}
 
 	skip = (int) (SR / (float) resetval);
