@@ -70,9 +70,11 @@ int DELAY::init(double p[], int n_args)
 		return die("DELAY", "Maximum delay time (%g seconds) exceeded.",
 																			MAXDELTIME);
 
-	long maxdelsamps = (long) (MAXDELTIME * SR + 0.5);
-	delay = new Odelayi(maxdelsamps);
-	if (delay == NULL)
+	// Delay is initialized to first delay time passed in, and will resize
+	// as necessary.
+	delay = new Odelayi((long) (deltime * SR + 0.5));
+	// This is how we check for memory failure.
+	if (delay->length() == 0)
 		return die("DELAY", "Can't allocate delay line memory.");
 
 	amptable = floc(1);
@@ -89,8 +91,7 @@ int DELAY::init(double p[], int n_args)
 int DELAY::configure()
 {
 	in = new float [RTBUFSAMPS * inputChannels()];
-	return in ? 0 : -1;
-}
+	return in ? 0 : -1; }
 
 int DELAY::run()
 {
@@ -107,16 +108,7 @@ int DELAY::run()
 			if (amptable)
 				amp *= tablei(cursamp, amptable, amptabs);
 			float deltime = p[4];
-			if (deltime > MAXDELTIME) {
-				if (warn_deltime) {
-					warn("DELAY", "Maximum delay time (%g seconds) exceeded!",
-																			MAXDELTIME);
-					warn_deltime = false;
-				}
-				delsamps = MAXDELTIME * SR;
-			}
-			else
-				delsamps = deltime * SR;
+			delsamps = deltime * SR;
 			regen = p[5];
 			pctleft = p[8];
 			branch = skip;
