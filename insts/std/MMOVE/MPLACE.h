@@ -11,7 +11,7 @@ public:
     virtual ~PLACE();
 	virtual int configure();
 protected:
-    virtual int localInit(float *, int);
+    virtual int localInit(double *, int);
     virtual int finishInit(double, double *);
     virtual int updatePosition(int);
     virtual void get_tap(int, int, int, int);

@@ -76,7 +76,7 @@ MOVE::~MOVE()
     delete [] rholoc;
 }
 
-int MOVE::localInit(float *p, int n_args)
+int MOVE::localInit(double *p, int n_args)
 {
     if (n_args < 6) {
         die(name(), "Wrong number of args.");
