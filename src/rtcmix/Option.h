@@ -91,6 +91,9 @@ public:
 	static double bufferFrames(const double frames) { _bufferFrames = frames;
 													return _bufferFrames; }
 
+	// WARNING: If no string as been assigned, do not expect the get method
+	// to return NULL!  Instead, check that strlen is > 0.
+
 	static char *device() { return _device; }
 	static char *device(const char *devName);
 
