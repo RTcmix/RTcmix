@@ -4,7 +4,7 @@
 TOPDIR = /usr/local/src
 
 # The name of the RTcmix directory
-CMIXDIR = $(TOPDIR)/RTcmix-3.2.0
+CMIXDIR = $(TOPDIR)/RTcmix-3.4
 
 # The dir that will contain the instrument dynamic shared objects
 LIBDESTDIR = $(CMIXDIR)/shlib
@@ -17,7 +17,7 @@ HTMLDESTDIR = $(CMIXDIR)/docs/html
 INST_DIRS = insts.base # insts.std insts.jg insts.vccm
 
 # add new packages to this list (e.g., interfaces.std)
-PACKAGE_DIRS =
+PACKAGE_DIRS = imbed
 
 # Which platform?
 ARCH = LINUX
