@@ -181,7 +181,7 @@ OSXAudioDevice::Impl::Port::interleavedSendFrames(struct Port *port,
 			}
 		}
 		else {
-			printf("Only mono-to-stereo playback conversion is currently supported"\n);
+			printf("Only mono-to-stereo playback conversion is currently supported\n");
 			return -1;
 		}
 		break;
