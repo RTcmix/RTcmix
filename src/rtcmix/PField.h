@@ -73,6 +73,7 @@ public:
 	typedef double (*Operator)(double, double);
 	PFieldBinaryOperator(PField *pf1, PField *pf2, Operator);
 	virtual int		print(FILE *) const;
+	virtual int		copyValues(double *) const;
 	virtual int		values() const;
 protected:
 	virtual 		~PFieldBinaryOperator();
@@ -151,6 +152,8 @@ private:
 };
 
 class PFieldWrapper : public PField {
+public:
+	virtual int		values() const { return _pField->values(); }
 protected:
 	PFieldWrapper(PField *innerPField);
 	virtual ~PFieldWrapper();
