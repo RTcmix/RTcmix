@@ -5,10 +5,8 @@
 #include <iostream.h>
 #include "heap.h"
 
-queue::queue()
+queue::queue() : head(NULL), tail(NULL)
 {
-  head=NULL;
-  tail=NULL;
 }
 
 void queue::pushTail(heapslot *newHeapElt)
