@@ -98,7 +98,7 @@ _string_to_subtype(const MIDIType type, const char *subtype)
 				const char *name = _midi_controller_name[i][j];
 				if (name == NULL)
 					break;
-				if (strcasecmp(type, name) == 0)
+				if (strcasecmp(subtype, name) == 0)
 					return (MIDISubType) i;
 			}
 		}
