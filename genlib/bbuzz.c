@@ -4,7 +4,7 @@
    arg that gives size of array.   -JGG
 */
 float *
-bbuzz(float amp, float si, float hn, float *f, float *phs, float *a, long alen)
+bbuzz(float amp, float si, float hn, double *f, float *phs, float *a, long alen)
 {
 	register int i,j,k;
 	float q,d,h2n,h2np1;

@@ -1,4 +1,4 @@
-float tablei(long nsample, float *array, float *tab)
+float tablei(long nsample, double *array, float *tab)
 {
 	register int loc1,loc2;
 	float frac = ((float)(nsample)/(*tab)) * *(tab+1);

@@ -9,7 +9,7 @@
 
 
 void
-setline(float *p, short n_args, int length, float *array)
+setline(float *p, short n_args, int length, double *array)
 {
    double increm;
    int i, j, k, i2, points;
@@ -37,7 +37,7 @@ setline(float *p, short n_args, int length, float *array)
          i2 = (double) p[j + 2] / increm + .5;
 
          for (k = i; k < i2; k++) {
-            array[k] = ((float) (k - i) / (float) points)
+            array[k] = ((double) (k - i) / (double) points)
                        * (p[j + 3] - p[j + 1]) + p[j + 1];
 
             if (k == length)
@@ -50,7 +50,7 @@ setline(float *p, short n_args, int length, float *array)
       array[k] = array[k - 1];
 #else
          for (k = 0; k < points; k++) {
-            array[i++] = ((float) k / (float) points)
+            array[i++] = ((double) k / (double) points)
                 * (p[j + 3] - p[j + 1]) + p[j + 1];
             if (i == length)
                return;

@@ -12,14 +12,14 @@ Ooscili::Ooscili(float freq, int arr)
 	init(freq);
 }
 
-Ooscili::Ooscili(float freq, float arr[])
+Ooscili::Ooscili(float freq, double arr[])
 {
 	array = arr;
 	length = sizeof(arr);
 	init(freq);
 }
 
-Ooscili::Ooscili(float freq, float arr[], int len)
+Ooscili::Ooscili(float freq, double arr[], int len)
 {
 	array = arr;
 	length = len;

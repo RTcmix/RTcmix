@@ -40,7 +40,7 @@ struct gen {
            int size;           /* size of array to load up */
            int nargs;          /* number of arguments passed in p array */
            float *pvals;       /* address of array of p values */
-           float *array;       /* address of array to be loaded up */
+           double *array;       /* address of array to be loaded up */
            int slot;	       /* slot number, for fnscl test */
            };
 
@@ -67,16 +67,16 @@ typedef enum {
    NO_INTERP = 0,
    LINEAR_INTERP
 } InterpolationType;
-float *resample_gen(float [], int, int, InterpolationType);
+double *resample_gen(double [], int, int, InterpolationType);
 
 typedef enum {
    ADD_GENS,
    MULT_GENS
 } GenModType;
 int combine_gens(int, int, int, int, GenModType, char *);
-int install_gen(int, int, float *);
+int install_gen(int, int, double *);
 double makegen(float [], int, double []);
-float *floc(int);
+double *floc(int);
 int fsize(int);
 
 extern int (*getsample)();
@@ -87,14 +87,14 @@ float allpole(float, int*, int, float*, float*);
 double ampdb(float);
 double dbamp(float);
 float *ballpole(float*, long*, long, float*, float*, float*, long);
-float *bbuzz(float, float, float, float*, float*, float*, long);
+float *bbuzz(float, float, float, double*, float*, float*, long);
 float boost(float);
-int boscili(float, float, float*, int, float*, float*, int);
+int boscili(float, float, double*, int, float*, float*, int);
 float bpluck(float, float*);
 float breson(float*, float*, float*, int);
 void sbrrand(unsigned int);
 void brrand(float, float*, int);
-float buzz(float, float, float, float*, float*);
+float buzz(float, float, float, double*, float*);
 float comb(float, float*);
 void combset(float, float,int, float*);
 float cpsoct(float);
@@ -103,7 +103,7 @@ float delget(float*, float, int*);
 void delput(float, float*, int*);
 void delset(float*, int*, float);
 float dliget(float*, float, int*);
-float evp(long, float*, float*, float*);
+float evp(long, double*, double*, float*);
 void evset(float, float, float, int, float*);
 float hcomb(float,float,float*);
 void hplset(float, float, float, float, float, float, int, float*);
@@ -111,10 +111,10 @@ float hpluck(float, float*);
 float midipch(float);
 float octcps(float);
 float octpch(float);
-float oscil(float, float, float*, int, float*);
-float oscili(float, float, float*, int, float*);
-float osciln(float, float, float*, int, float*);
-float oscilni(float, float, float*, int, float*);
+float oscil(float, float, double*, int, float*);
+float oscili(float, float, double*, int, float*);
+float osciln(float, float, double*, int, float*);
+float oscilni(float, float, double*, int, float*);
 float pchcps(float);
 float pchmidi(unsigned char);
 float pchoct(float);
@@ -128,13 +128,13 @@ void rszset(float, float, float, float*);
 float resonz(float, float*);
 void bresonz(float*, float*, float*, int);
 float reverb(float, float*);
-void setline(float [], short, int, float []);
+void setline(float [], short, int, double []);
 void srrand(unsigned int);
 void rvbset(float, int, float*);
-float table(long, float*, float*);
-float tablei(long, float*, float*);
+float table(long, double*, float*);
+float tablei(long, double*, float*);
 void tableset(float, int, float*);
-float wshape(float, float*, int);
+float wshape(float, double*, int);
 float rrand(void);
 int getsetnote(float start, float dur, int filenum);
 

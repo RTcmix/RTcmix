@@ -1,4 +1,4 @@
-float wshape(float x, float *f, int len)
+float wshape(float x, double *f, int len)
 {
 /* use function f as static transfer function from x to returned value*/
 

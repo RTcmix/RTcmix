@@ -1,4 +1,4 @@
-float table(long nsample, float *array, float *tab)
+float table(long nsample, double *array, float *tab)
 {
 	register int loc = ((float)(nsample)/(*tab)) * *(tab+1);
 	if(loc < 0) return(array[0]);

@@ -6,14 +6,15 @@
 class Ooscili
 {
 	double si, phase, lendivSR;
-	float *array, dur;
+	double *array;
+	float dur;
 	int length;
 
 	void init(float);
 public:
 	Ooscili(float, int);
-	Ooscili(float, float*);
-	Ooscili(float, float*, int);
+	Ooscili(float, double *);
+	Ooscili(float, double *, int);
 	float next();
 	float next(int);
 	inline void setfreq(float freq) { si = freq * lendivSR; }

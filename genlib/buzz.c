@@ -6,7 +6,7 @@
 #define  ABS(x) ((x < 0) ? (-x) : (x))
 #define EPS .1e-06
 
-float buzz(float amp, float si, float hn, float *f, float *phs)
+float buzz(float amp, float si, float hn, double *f, float *phs)
 {
 	register int j,k;
 	float q,d,h2n,h2np1;

@@ -1,4 +1,4 @@
-float oscil(float amp, float si, float *farray, int len, float *phs)
+float oscil(float amp, float si, double *farray, int len, float *phs)
 {
 	register int i =  *phs;   
 	*phs += si;            

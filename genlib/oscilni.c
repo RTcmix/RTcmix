@@ -1,4 +1,4 @@
-float oscilni(float amp, float si, float *farray, int len, float *phs)
+float oscilni(float amp, float si, double *farray, int len, float *phs)
 {
 	register int i =  *phs;         
 	register int k =  (i + 1) % len; 

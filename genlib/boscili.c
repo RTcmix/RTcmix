@@ -1,5 +1,5 @@
 int
-boscili(float amp, float si, float *farray, int len, float *phs,
+boscili(float amp, float si, double *farray, int len, float *phs,
 			float *array, int alen)      
 {
 	register int i,j,k;

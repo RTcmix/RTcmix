@@ -1,4 +1,4 @@
-float evp(long nsample, float *f1, float *f2, float *q)
+float evp(long nsample, double *f1, double *f2, float *q)
 {
 	register int jloc;
 	float far = (float)(nsample) / *q;
