@@ -65,17 +65,6 @@ init_globals()
 	SR = 44100.0; // what the heck...
 	bufStartSamp = 0;
 
-#ifdef LINUX
-   for (i = 0; i < MAXBUS; i++)
-      in_port[i] = out_port[i] = 0;
-#endif /* LINUX */
-#ifdef MACOSX
-#endif
-#ifdef SGI
-   in_port = 0;
-   out_port = 0;
-#endif /* SGI */
-
    rtQueue = new RTQueue[MAXBUS*3];
 
 	rtInteractive = 1; // keep the heap going for this object

@@ -101,17 +101,6 @@ init_globals()
    NCHANS = 2;
    audioNCHANS = 0;
 
-#ifdef LINUX
-   for (i = 0; i < MAXBUS; i++)
-      in_port[i] = out_port[i] = 0;
-#endif /* LINUX */
-#ifdef MACOSX
-#endif
-#ifdef SGI
-   in_port = 0;
-   out_port = 0;
-#endif /* SGI */
-
    rtQueue = new RTQueue[MAXBUS*3];
 
    rtInteractive = 0;

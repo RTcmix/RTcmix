@@ -9,7 +9,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <assert.h>
-#include "../H/audio_port.h"    // JGG: for ZERO_FRAMES_BEFORE
 #include "../rtstuff/heap/heap.h"
 #include "../rtstuff/rtdefs.h"
 #include "../sys/AudioDevice.h"

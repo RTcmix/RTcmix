@@ -34,23 +34,6 @@ extern "C" {
 
 #include <rtupdate.h>
 
-#ifdef LINUX
-GLOBAL int in_port[MAXBUS];    /* array, in case sound driver uses many devs */
-GLOBAL int out_port[MAXBUS];
-#endif
-#ifdef MACOSX
-#define Boolean Mac_Boolean /* this allows compiling of RTcmix w/X11 on OSX */
-#include <CoreAudio/AudioHardware.h>
-#undef Boolean
-GLOBAL AudioDeviceID in_port;
-GLOBAL AudioDeviceID out_port;
-#endif
-#ifdef SGI
-#include <dmedia/audio.h>
-GLOBAL ALport in_port;
-GLOBAL ALport out_port;
-#endif
-
 /* Note: these 3 vars also extern in rtdefs.h, for use by insts */
 GLOBAL int NCHANS;
 GLOBAL int RTBUFSAMPS;
