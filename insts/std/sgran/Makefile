@@ -2,8 +2,9 @@ include ../package.conf
 
 OBJS = sgran.o minout.o
 CMIXOBJS += $(RTPROFILE_O)
-#CFLAGS += -fPIC
-#CXXFLAGS += -fPIC 
+ifeq ($(ARCH),LINUX)
+   CFLAGS += -funroll-loops -Wall
+endif
 PROGS = sgran libsgran.so
 
 all: libsgran.so
