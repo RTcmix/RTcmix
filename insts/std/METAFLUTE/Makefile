@@ -1,4 +1,4 @@
-include ../insts.conf
+include ../package.conf
 
 OBJS = SFLUTE.o BSFLUTE.o VSFLUTE.o LSFLUTE.o sflcfuncs.o rtprofile.o
 CMIXOBJS += $(PROFILE_O)

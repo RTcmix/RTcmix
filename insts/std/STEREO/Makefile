@@ -1,4 +1,4 @@
-include ../insts.conf
+include ../package.conf
 
 OBJS = STEREO.o
 CMIXOBJS += $(PROFILE_O)

@@ -1,4 +1,4 @@
-include ../insts.conf   
+include ../package.conf   
 
 OBJS = WAVESHAPE.o
 CMIXOBJS += $(PROFILE_O)

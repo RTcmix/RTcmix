@@ -1,4 +1,4 @@
-include ../insts.conf
+include ../package.conf
 
 OBJS = gravy.o minout.o
 CMIXOBJS += $(RTPROFILE_O)

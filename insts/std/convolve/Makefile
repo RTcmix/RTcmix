@@ -1,4 +1,4 @@
-include ../insts.conf
+include ../package.conf
 
 OBJS = fft.o convolve.o
 CMIXOBJS += $(RTPROFILE_O)

@@ -1,4 +1,4 @@
-include ../insts.conf
+include ../package.conf
 
 OBJS = wow.o
 CMIXOBJS += $(RTPROFILE_O)

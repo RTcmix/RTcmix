@@ -1,4 +1,4 @@
-include ../insts.conf
+include ../package.conf
 
 OBJS = INPUTSIG.o NOISE.o BUZZ.o PULSE.o cfuncs.o rtprofile.o
 CFLAGS += -fPIC

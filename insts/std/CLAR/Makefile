@@ -1,4 +1,4 @@
-include ../insts.conf
+include ../package.conf
 
 OBJS = CLAR.o cfuncs.o
 CMIXOBJS += $(PROFILE_O)

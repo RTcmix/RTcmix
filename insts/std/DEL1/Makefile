@@ -1,4 +1,4 @@
-include ../insts.conf
+include ../package.conf
 
 OBJS = DEL1.o
 CMIXOBJS += $(PROFILE_O)

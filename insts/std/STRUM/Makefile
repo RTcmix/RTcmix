@@ -1,4 +1,4 @@
-include ../insts.conf
+include ../package.conf
 
 RTOBJS = START.o BEND.o FRET.o START1.o BEND1.o FRET1.o VSTART1.o \
 	 VFRET1.o rtprofile.o
