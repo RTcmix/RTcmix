@@ -54,7 +54,7 @@
 
 #define UNSUPPORTED_DATA_FORMAT_MSG "\
 %s: samples in an unsupported data format. \n\
-(%s will play 16-bit linear or 32-bit floating point samples, \n\
+(%s will play 16-bit linear, 24-bit linear or 32-bit floating point samples, \n\
 in either byte order.) \n"
 
 #define NEED_FACTOR_MSG "\
@@ -313,7 +313,8 @@ set_input_mode(void)
 int main(int argc, char *argv[])
 {
    int         i, n, fd, datum_size, second, status, fragments, stats_valid;
-   int         quiet, robust, force, is_float, swap, play_chan, hotkeys;
+   int         quiet, robust, force, is_float, is_24bit, swap, play_chan,
+               hotkeys;
    int         header_type, data_format, data_location, srate, in_chans, nsamps;
    int         buf_bytes, buf_samps, buf_frames, buf_start_frame;
    int         start_frame, end_frame, nframes, skip_frames;
@@ -321,6 +322,7 @@ int main(int argc, char *argv[])
    float       start_time, end_time, request_dur, buf_start_time, factor, dur;
    float       skip_time;
    char        *sfname, *bufp;
+   unsigned char *cbuf;
    short       *sbuf;
    float       *fbuf;
    struct stat statbuf;
@@ -337,6 +339,7 @@ int main(int argc, char *argv[])
 
    sfname = NULL;
    fbuf = NULL;
+   cbuf = NULL;
    quiet = robust = force = second = nframes = 0;
    start_time = end_time = buf_start_time = request_dur = factor = 0.0;
    play_chan = ALL_CHANS;
@@ -463,6 +466,7 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
    }
    is_float = IS_FLOAT_FORMAT(data_format);
+   is_24bit = IS_24BIT_FORMAT(data_format);
 #if MUS_LITTLE_ENDIAN
    swap = IS_BIG_ENDIAN_FORMAT(data_format);
 #else
@@ -569,15 +573,18 @@ int main(int argc, char *argv[])
    /* allocate buffer(s) */
 
    buf_samps = buf_frames * in_chans;
-// FIXME: 24-bit audio...
+// FIXME: 24-bit audio output...
    buf_bytes = buf_samps * sizeof(short);
 
-// FIXME: 24-bit audio...
+   /* output buffer */
+// FIXME: truncates 24-bit and float audio output; should feed OS X floats
    sbuf = (short *)malloc((size_t)buf_bytes);
    if (sbuf == NULL) {
       perror("short buffer malloc");
       exit(EXIT_FAILURE);
    }
+
+   /* input buffer */
    if (is_float) {
       fbuf = (float *)malloc((size_t)(buf_samps * sizeof(float)));
       if (fbuf == NULL) {
@@ -585,6 +592,14 @@ int main(int argc, char *argv[])
          exit(EXIT_FAILURE);
       }
       bufp = (char *)fbuf;
+   }
+   else if (is_24bit) {
+      cbuf = (unsigned char *)malloc((size_t)buf_samps * datum_size);
+      if (cbuf == NULL) {
+         perror("24bit buffer malloc");
+         exit(EXIT_FAILURE);
+      }
+      bufp = (char *)cbuf;
    }
    else
       bufp = (char *)sbuf;
@@ -641,7 +656,7 @@ int main(int argc, char *argv[])
       exit(EXIT_FAILURE);
    }
 
-   /* write buffers of zeros to prevent clicks */
+   /* write buffers of zeros to audio output to prevent clicks */
    for (i = 0; i < buf_samps; i++)
       sbuf[i] = 0;
    for (i = 0; i < ZERO_FRAMES_BEFORE / buf_frames; i++) {
@@ -702,7 +717,28 @@ int main(int argc, char *argv[])
             }
          }
       }
-      else {
+      else if (is_24bit) {
+         int j;
+         if (data_format == MUS_L24INT) {
+            for (i = j = 0; i < samps_read; i++, j += datum_size) {
+               float samp = (float) (((cbuf[j + 2] << 24)
+                                    + (cbuf[j + 1] << 16)
+                                    + (cbuf[j] << 8)) >> 8);
+               samp *= factor;
+               sbuf[i] = (short) (samp / (float) (1 << 8));
+            }
+         }
+         else {   /* data_format == MUS_B24INT */
+            for (i = j = 0; i < samps_read; i++, j += datum_size) {
+               float samp = (float) (((cbuf[j] << 24)
+                                    + (cbuf[j + 1] << 16)
+                                    + (cbuf[j + 2] << 8)) >> 8);
+               samp *= factor;
+               sbuf[i] = (short) (samp / (float) (1 << 8));
+            }
+         }
+      }
+      else {   /* 16bit int */
          if (swap) {
             if (factor) {
                for (i = 0; i < samps_read; i++) {
