@@ -220,3 +220,11 @@ checkfunc(const char *funcname, const Arg arglist[], const int nargs,
    return 0;
 }
 
+// Wrapper for UG_INTRO() use.
+
+void
+addLegacyfunc(const char *label, double (*func_ptr)(float *, int, double *))
+{
+	addfunc(label, func_ptr, NULL, NULL, NULL, DoubleType, 1);
+}
+
