@@ -71,6 +71,10 @@ int rtgetin(float *inarr, Instrument *theInst, int nsmps)
 	}
 
 	frames = nsmps / inNCHANS;
+   if (frames > RTBUFSAMPS) {
+      fprintf(stderr, "Internal Error: rtgetin: nsmps out of range!\n");
+      exit(1);
+   }
 	clm_read(fdesc, 0, frames-1, inNCHANS, inbufs);
 //NOTE: doesn't return an error code!!
 
