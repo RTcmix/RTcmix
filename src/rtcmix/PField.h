@@ -256,6 +256,8 @@ public:
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
 	virtual int		values() const { return _len; }
+protected:
+	virtual ~RangePField();
 private:
 	int _len;
 	PField *_minPField;
@@ -290,6 +292,8 @@ public:
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
 	virtual int		values() const { return _len; }
+protected:
+	virtual ~QuantizePField();
 private:
 	double quantizeValue(const double val, const double quantum) const;
 	int _len;
@@ -305,6 +309,8 @@ public:
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
 	virtual int		values() const { return _len; }
+protected:
+	virtual ~ClipPField();
 private:
 	int _len;
 	PField *_minPField;
@@ -331,10 +337,11 @@ class ConstrainPField : public PFieldWrapper {
 public:
 	ConstrainPField(PField *innerPField, const double *table, const int tableLen,
 		PField *strengthPField);
-	~ConstrainPField();
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
 	virtual int		values() const { return _len; }
+protected:
+	virtual ~ConstrainPField();
 private:
 	int _len;
 	PField *_strengthPField;

@@ -22,7 +22,12 @@ PField::PField()
 }
 #endif
 
-PField::~PField() {}
+PField::~PField()
+{
+#ifdef DEBUG
+	printf("PField::~PField (this = 0x%x)\n", this);
+#endif
+}
 
 // Return a string version of the pfield value if the pointer address seems
 // to be valid, else NULL (which means the PField did not contain a string).
@@ -184,12 +189,14 @@ LFOPField::LFOPField(double krate, double *tableArray, int length,
 		PField *freq, LFOPField::InterpFunction ifun)
 	: SingleValuePField(0.0), _freqPF(freq), _interpolator(ifun)
 {
+	_freqPF->ref();
 	_oscil = new Ooscil(krate, _freqPF->doubleValue(0), tableArray, length);
 }
 
 LFOPField::~LFOPField()
 {
 	delete _oscil;
+	_freqPF->unref();
 }
 
 double LFOPField::Truncate(Ooscil *oscil)
@@ -218,12 +225,22 @@ RandomPField::RandomPField(double krate, Random *generator, PField *freq,
 		PField *min, PField *max, PField *mid, PField *tight)
 	: SingleValuePField(0.0), _freqPF(freq), _minPF(min), _maxPF(max), _midPF(mid), _tightPF(tight)
 {
+	_freqPF->ref();
+	_minPF->ref();
+	_maxPF->ref();
+	RefCounted::ref(_tightPF);
+	RefCounted::ref(_midPF);
 	_randOscil = new RandomOscil(generator, krate, _freqPF->doubleValue());
 }
 
 RandomPField::~RandomPField()
 {
 	delete _randOscil;
+	RefCounted::unref(_tightPF);
+	RefCounted::unref(_midPF);
+	_maxPF->unref();
+	_minPF->unref();
+	_freqPF->unref();
 }
 
 double RandomPField::doubleValue(double percent) const
@@ -366,11 +383,20 @@ double ReversePField::doubleValue(int idx) const
 
 // RangePField
 
-RangePField::RangePField(PField *innerPField, PField *minPField, PField *maxPField,
-																	RangePField::RangeFitFunction fun)
+RangePField::RangePField(PField *innerPField,
+						 PField *minPField, PField *maxPField,
+						 RangePField::RangeFitFunction fun)
 	: PFieldWrapper(innerPField), _len(innerPField->values()),
 	  _minPField(minPField), _maxPField(maxPField), _rangefitter(fun)
 {
+	_minPField->ref();
+	_maxPField->ref();
+}
+
+RangePField::~RangePField()
+{
+	_maxPField->unref();
+	_minPField->unref();
 }
 
 // Assumes val is in range [0, 1]
@@ -404,8 +430,10 @@ double RangePField::doubleValue(int idx) const
 // SmoothPField
 
 SmoothPField::SmoothPField(PField *innerPField, double krate, PField *lagPField)
-	: PFieldWrapper(innerPField), _len(innerPField->values()), _lagPField(lagPField)
+	: PFieldWrapper(innerPField),
+	  _len(innerPField->values()), _lagPField(lagPField)
 {
+	_lagPField->ref();
 	_filter = new OonepoleTrack(krate);
 	updateCutoffFreq();
 }
@@ -413,6 +441,7 @@ SmoothPField::SmoothPField(PField *innerPField, double krate, PField *lagPField)
 SmoothPField::~SmoothPField()
 {
 	delete _filter;
+	_lagPField->unref();
 }
 
 void SmoothPField::updateCutoffFreq(double percent) const
@@ -436,8 +465,15 @@ double SmoothPField::doubleValue(int idx) const
 // QuantizePField
 
 QuantizePField::QuantizePField(PField *innerPField, PField *quantumPField)
-	: PFieldWrapper(innerPField), _len(innerPField->values()), _quantumPField(quantumPField)
+	: PFieldWrapper(innerPField),
+	  _len(innerPField->values()), _quantumPField(quantumPField)
 {
+	_quantumPField->ref();
+}
+
+QuantizePField::~QuantizePField()
+{
+	_quantumPField->unref();
 }
 
 double QuantizePField::quantizeValue(const double val, const double quantum) const
@@ -468,6 +504,14 @@ ClipPField::ClipPField(PField *innerPField, PField *minPField, PField *maxPField
 	: PFieldWrapper(innerPField), _len(innerPField->values()),
 	  _minPField(minPField), _maxPField(maxPField)
 {
+	_minPField->ref();
+	_maxPField->ref();
+}
+
+ClipPField::~ClipPField()
+{
+	_maxPField->ref();
+	_minPField->ref();
 }
 
 double ClipPField::doubleValue(double didx) const
