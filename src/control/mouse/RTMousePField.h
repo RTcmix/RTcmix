@@ -12,7 +12,7 @@
 #include <math.h>
 #include <assert.h>
 
-extern int resetval;
+extern int resetval;		// declared in src/rtcmix/minc_functions.c
 
 typedef enum {
 	kRTMouseAxisX,
@@ -50,12 +50,23 @@ public:
 
 		_diff = maxval - minval;
 
+      // Convert lag, a percentage in range [0, 100], to cutoff frequency,
+		// depending on the control rate in effect when this PField was created.
+		// Lag pct is inversely proportional to cf, because the lower the cf,
+		// the longer the lag time.
+      const double nyquist = resetval * 0.5;
+		double cf = nyquist * (1.0 - (lag * 0.01));
+		if (cf <= 0.0)
+			cf = 0.1;
+		if (cf > nyquist)
+			cf = nyquist;
+
 #define USEEQ
 #ifdef USEEQ
 		_filter = new Oequalizer(resetval, OeqLowPass);
-		_filter->setparams(lag, 0.5);
+		_filter->setparams(cf, 0.5);
 #else
-		_filter = new Oonepole(lag);
+		_filter = new Oonepole(resetval, cf);
 #endif
 	}
 
