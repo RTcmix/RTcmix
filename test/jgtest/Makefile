@@ -1,6 +1,6 @@
 TESTSND = num
-TESTSND = sine
 TESTSND = sinefloat
+TESTSND = sine
 
 TESTSCO = $(TESTSND).sco
 
