@@ -55,7 +55,7 @@ MYINST :: ~MYINST()
      - set control rate counter
    If there's an error here (like invalid pfields), call die() to report
    the error and exit. If you just want to warn the user and keep going,
-   call warn() with a message.
+   call warn() or rterror() with a message.
 */
 int MYINST :: init(float p[], int n_args)
 {
@@ -84,13 +84,13 @@ int MYINST :: init(float p[], int n_args)
    rtsetinput(inskip, this);
 
    /* Make sure requested input channel number is valid for this input file.
-      InputChannels() gives the total number of input channels, initialized
+      inputChannels() gives the total number of input channels, initialized
       in rtsetinput.  The die function reports the error and exits the
       program.
    */
-   if (inchan >= InputChannels())
+   if (inchan >= inputChannels())
       die("MYINST", "You asked for channel %d of a %d-channel file.",
-                                                      inchan, InputChannels());
+                                                      inchan, inputChannels());
 
    /* Set up to use the array of amplitude multipliers created by setline
       (which is just an alias to gen18). If function table hasn't been
@@ -119,6 +119,19 @@ int MYINST :: init(float p[], int n_args)
    return nsamps;
 }
 
+int MYINST :: configure()
+{
+	/* You MUST call the base class's configure method here. */
+	Instrument :: configure();
+	/*
+      Allocate the input buffer. We do this here, instead of in the
+      ctor or init method, to reduce the memory demands of the inst.
+	*/
+	if (in == NULL)
+		in = new float [RTBUFSAMPS * inputChannels()];
+
+	return 1;	/* we MUST return 1 on success, and 0 on failure */
+}
 
 /* Called by the scheduler for every time slice in which this instrument
    should run. This is where the real work of the instrument is done.
@@ -129,26 +142,19 @@ int MYINST :: run()
    float insig;
    float out[2];        /* Space for only 2 output chans! */
 
-   /* If this is first call to run, <in> will still be NULL, so we
-      allocate the input buffer. We do this here, instead of in the
-      ctor or init method, to reduce the memory demands of the inst.
-   */
-   if (in == NULL)
-      in = new float [RTBUFSAMPS * InputChannels()];
-
    /* You MUST call the base class's run method here. */
    Instrument::run();
 
    /* FramesToRun() gives the number of sample frames -- 1 sample for each
       channel -- that we have to write during this scheduler time slice.
    */
-   samps = FramesToRun() * InputChannels();
+   samps = framesToRun() * inputChannels();
 
    /* Read <samps> samples from the input file (or audio input device). */
    rtgetin(in, this, samps);
 
    /* Each loop iteration processes 1 sample frame. */
-   for (i = 0; i < samps; i += InputChannels()) {
+   for (i = 0; i < samps; i += inputChannels()) {
 
       /* Every <skip> frames, update the amplitude envelope, if there
          is one. This is also the place to update other values from
@@ -158,7 +164,7 @@ int MYINST :: run()
       */
       if (--branch < 0) {
          if (amparray)
-            aamp = tablei(CurrentFrame(), amparray, amptabs) * amp;
+            aamp = tablei(currentFrame(), amparray, amptabs) * amp;
          branch = skip;
       }
 
@@ -172,7 +178,7 @@ int MYINST :: run()
          (Note: insts.jg/PAN/PAN.C shows a better method of panning,
          using constant power panning controlled by a makegen.)
       */
-      if (OutputChannels() == 2) {
+      if (outputChannels() == 2) {
          out[1] = out[0] * (1.0 - pctleft);
          out[0] *= pctleft;
       }
@@ -184,7 +190,7 @@ int MYINST :: run()
       increment();
    }
 
-   return FramesToRun();
+   return framesToRun();
 }
 
 
