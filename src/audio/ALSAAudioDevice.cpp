@@ -85,11 +85,11 @@ int ALSAAudioDevice::doStart()
 		return error("Cannot prepare audio interface for use: ", 
 					 snd_strerror (status));
 	}
-	if (isPlaying()) {
-		if ((status = snd_pcm_wait(_handle, 500)) < 0) {
-			return error("Error while waiting for device: ", snd_strerror (status));
-		}
-	}
+//	if (isPlaying()) {
+//		if ((status = snd_pcm_wait(_handle, 500)) < 0) {
+//			return error("Error while waiting for device: ", snd_strerror (status));
+//		}
+//	}
 //	for (int buf=0; buf<8192; buf += _bufSize/4)
 //		sendFrames(zeroBuffer, _bufSize/4);
 	return ThreadedAudioDevice::startThread();
@@ -113,6 +113,12 @@ int ALSAAudioDevice::doStop()
 		stopping(true);		// signals play thread
 		if (paused()) {
 			_stopDuringPause = true;	// we handle this case as special
+			snd_pcm_drop(_handle);
+		}
+		else if (isPlaying()) {
+			snd_pcm_drain(_handle);
+		}
+		else if (isRecording()) {
 			snd_pcm_drop(_handle);
 		}
 		waitForThread();
@@ -163,8 +169,8 @@ static snd_pcm_format_t convertSampleFormat(int sampfmt)
 int ALSAAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 {
 	int status;
-	printf("ALSAAudioDevice::doSetFormat: fmt: 0x%x chans: %d rate: %g\n",
-		   sampfmt, chans, srate);
+//	printf("ALSAAudioDevice::doSetFormat: fmt: 0x%x chans: %d rate: %g\n",
+//		   sampfmt, chans, srate);
 	int deviceFormat = MUS_GET_FORMAT(sampfmt);
 	snd_pcm_format_t sampleFormat = ::convertSampleFormat(deviceFormat);
 	if (sampleFormat == SND_PCM_FORMAT_UNKNOWN)
@@ -179,12 +185,10 @@ int ALSAAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 												  sampleFormat)) < 0)
 	{
 		if (sampleFormat == SND_PCM_FORMAT_FLOAT) {
-			printf("\tTried float -- switching to 24bit.\n");
 			sampleFormat = SND_PCM_FORMAT_S24;
 			deviceFormat = NATIVE_24BIT_FMT;	// This is what we report back.
 		}
 		else if (sampleFormat == SND_PCM_FORMAT_S24) {
-			printf("\tTried 24bit -- switching to 16bit.\n");
 			sampleFormat = SND_PCM_FORMAT_S16;
 			deviceFormat = NATIVE_SHORT_FMT;	// This is what we report back.
 		}
@@ -239,11 +243,11 @@ int ALSAAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 
 	// Store the device params to allow format conversion.
 	if (hwAccess == SND_PCM_ACCESS_RW_INTERLEAVED) {
-		printf("\tHW uses interleaved channels\n");
+//		printf("\tHW uses interleaved channels\n");
 		deviceFormat |= MUS_INTERLEAVED;
 	}
 	else {
-		printf("\tHW uses non-interleaved channels\n");
+//		printf("\tHW uses non-interleaved channels\n");
 		deviceFormat |= MUS_NON_INTERLEAVED;
 	}
 
@@ -262,8 +266,8 @@ int ALSAAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 	{
  		return error("Cannot set buffer size: ", snd_strerror(status));
  	}
-	printf("ALSAAudioDevice::doSetQueueSize: requested %d frames total, got %d\n",
-			*pWriteSize * *pCount, (int) _bufSize);
+//	printf("ALSAAudioDevice::doSetQueueSize: requested %d frames total, got %d\n",
+//			*pWriteSize * *pCount, (int) _bufSize);
 	
 	int dir = 0;
 	snd_pcm_uframes_t periodsize = *pWriteSize, tryperiodsize;
@@ -276,13 +280,13 @@ int ALSAAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 	{
 		return error("Failed to set ALSA period size: ", snd_strerror(status));
 	}
-	else
-		printf("ALSAAudioDevice::doSetQueueSize: requested period size near %d, got %d\n",
-			   (int) periodsize, (int)tryperiodsize);
-
+	else {
+//		printf("ALSAAudioDevice::doSetQueueSize: requested period size near %d, got %d\n",
+//			   (int) periodsize, (int)tryperiodsize);
+	}
 	unsigned periods = *pCount;
 
-	printf("setting periods to %d\n", periods);
+//	printf("setting periods to %d\n", periods);
 	if ((status = snd_pcm_hw_params_set_periods(_handle,
 												_hwParams, 
 												periods, 
@@ -316,7 +320,9 @@ int ALSAAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 			return error("Cannot set minimum available count: ", 
 						 snd_strerror (status));
 		}
-		if ((status = snd_pcm_sw_params_set_start_threshold(_handle, swParams, 0L)) < 0) {
+		if ((status = snd_pcm_sw_params_set_start_threshold(_handle,
+															swParams,
+															1L)) < 0) {
 			return error("Cannot set start mode: ", snd_strerror (status));
 		}
 		if ((status = snd_pcm_sw_params(_handle, swParams)) < 0) {
@@ -337,7 +343,7 @@ int	ALSAAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 		else
 			fread = snd_pcm_readn(_handle, (void **) frameBuffer, frameCount);
 		if (fread == -EPIPE) {
-			printf("ALSAAudioDevice::doGetFrames: overrun on read -- recovering and calling again\n");
+//			printf("ALSAAudioDevice::doGetFrames: overrun on read -- recovering and calling again\n");
 			snd_pcm_prepare(_handle);
 		}
 		else if (fread < 0) {
@@ -387,9 +393,8 @@ int	ALSAAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 void ALSAAudioDevice::run()
 {
 //	printf("ALSAAudioDevice::run: top of loop\n");
-	while (waitForDevice(0) == true) {
+	while (waitForDevice(isPlaying() ? 0 : 1000) == true) {
 		if (runCallback() != true) {
-//			printf("ALSAAudioDevice::run: callback returned false\n");
 			break;
 		}
 	}
