@@ -35,7 +35,7 @@ WAVETABLE::init(float p[], short n_args)
 	tableset(p[1], alen, tabs);
 	
 	spread = p[4];
-	skip = SR/(float)resetval;
+	skip = (int)(SR/(float)resetval);
 
 	return(nsamps);
 }
