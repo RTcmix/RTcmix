@@ -86,7 +86,6 @@ int fsize(int);
 extern int (*getsample)();
 #define GETSAMPLE (*getsample)
 
-
 float allpass(float, float *);
 float allpole(float, int*, int, float*, float*);
 double ampdb(float);
@@ -141,7 +140,26 @@ float tablei(long, float*, float*);
 void tableset(float, int, float*);
 float wshape(float, float*, int);
 float rrand(void);
+int getsetnote(float start, float dur, int filenum);
 
+/* sound.c */
+int setnote(float start, float dur, int fno);
+int bgetin(float *input, int fno, int size);
+void blayout(float *out, int *chlist, int fno, int size);
+void baddout(float *out, int fno, int size);
+void bwipeout(float *out, int fno, int size);
+int endnote(int xno);
+void _flushbuf(int fno);
+void _chkpeak(int fno);
+int _readit(int fno);
+int _writeit(int fno);
+void _backup(int fno);
+void _forward(int fno);
+void closesf(void);
+
+/* minout.c */
+int inrepos(int samps, int fno);
+int outrepos(int samps, int fno);
 
 #ifdef __cplusplus
 } /* extern "C" */
