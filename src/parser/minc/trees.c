@@ -513,34 +513,21 @@ do_op_handle_num(Tree tp, const MincHandle val1, const MincFloat val2,
 {
    switch (op) {
       case OpPlus:
-         tp->v.handle = minc_offsethandle(val1, val2);
-         break;
       case OpMinus:
-         tp->v.handle = minc_offsethandle(val1, -val2);
-         break;
       case OpMul:
-         tp->v.handle = minc_scalehandle(val1, val2);
-         break;
       case OpDiv:
-         tp->v.handle = minc_scalehandle(val1, 1.0 / val2);
-         break;
       case OpMod:
-         goto unimplemented;
-         break;
       case OpPow:
-         goto unimplemented;
+         tp->v.handle = minc_binop_handle_float(val1, val2, op);
          break;
       case OpNeg:
-         tp->v.handle = minc_scalehandle(val1, -1.0);    /* <val2> ignored */
+         tp->v.handle = minc_binop_handle_float(val1, -1.0, OpMul);	// <val2> ignored
          break;
       default:
-         minc_internal_error("invalid handle operator");
+         minc_internal_error("invalid operator for handle and number");
          break;
    }
    tp->type = MincHandleType;
-   return;
-unimplemented:
-   minc_warn("unsupported operation on a handle and a number");
 }
 
 
@@ -549,36 +536,22 @@ static void
 do_op_handle_handle(Tree tp, const MincHandle val1, const MincHandle val2,
       OpKind op)
 {
-   switch (op) {
-      case OpPlus:
-         tp->v.handle = minc_addhandles(val1, val2);
-         break;
-      case OpMinus:
-         goto unimplemented;
-         break;
-      case OpMul:
-         tp->v.handle = minc_multhandles(val1, val2);
-         break;
-      case OpDiv:
-         goto unimplemented;
-         break;
-      case OpMod:
-         goto unimplemented;
-         break;
-      case OpPow:
-         goto unimplemented;
-         break;
-      case OpNeg:
-         goto unimplemented;
-         break;
-      default:
-         minc_internal_error("invalid handle operator");
-         break;
-   }
-   tp->type = MincHandleType;
-   return;
-unimplemented:
-   minc_warn("unsupported operation on two handles");
+	switch (op) {
+	case OpPlus:
+	case OpMinus:
+	case OpMul:
+	case OpDiv:
+	case OpMod:
+	case OpPow:
+		tp->v.handle = minc_binop_handles(val1, val2, op);
+		break;
+	case OpNeg:
+	default:
+		minc_internal_error("invalid binary handle operator");
+		break;
+	}
+	if (tp->v.handle)
+		tp->type = MincHandleType;
 }
 
 

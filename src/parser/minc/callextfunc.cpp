@@ -4,9 +4,11 @@
 */
 #include <stdlib.h>
 #include <assert.h>
+#include <math.h>
 #include "minc_internal.h"
 #include <rtcmix_types.h>
 #include <parse_dispatch.h>
+#include <PField.h>
 
 
 int
@@ -102,86 +104,116 @@ call_external_function(const char *funcname, const MincListElem arglist[],
    return 0;
 }
 
-
-MincHandle
-minc_offsethandle(const MincHandle handle, const MincFloat val)
+static Handle
+createPFieldHandle(PField *pfield)
 {
-   Handle return_handle;
-
-   DPRINT2("minc_offsethandle (handle=%p, val=%f\n", handle, val);
-
-   /* extract PField from MincHandle
-      create ConstPField for MincFloat
-      create AddPField
-      create Handle for new AddPField, return it cast to MincHandle
-   */
-
-   return_handle = (Handle) malloc(sizeof(struct _handle));
-   return_handle->type = PFieldType;
-// return_handle->ptr = (void *) new AddPField(pfield1, pfield2);
-
-   return (MincHandle) return_handle;
+   Handle handle = (Handle) malloc(sizeof(struct _handle));
+   handle->type = PFieldType;
+   handle->ptr = (void *) pfield;
+   return handle;
 }
 
 
+static double plus_binop(double x, double y)
+{
+	return x + y;
+}
+static double minus_binop(double x, double y)
+{
+	return x - y;
+}
+static double mult_binop(double x, double y)
+{
+	return x * y;
+}
+static double divide_binop(double x, double y)
+{
+	return (y != 0.0) ? x / y : 999999999999999999.9;
+}
+static double mod_binop(double x, double y)
+{
+	return (int) x % (int) y;
+}
+static double pow_binop(double x, double y)
+{
+	return pow(x, y);
+}
+
+PField *createBinopPField(PField *pfield1, PField *pfield2, OpKind op)
+{
+	PField *opfield = NULL;
+	PFieldBinaryOperator::Operator binop = NULL;
+
+	// Create appropriate binary operator PField
+	
+	switch (op) {
+	case OpPlus:
+		binop = plus_binop;
+		break;
+	case OpMinus:
+		binop = minus_binop;
+		break;
+	case OpMul:
+		binop = mult_binop;
+		break;
+	case OpDiv:
+		binop = divide_binop;
+		break;
+	case OpMod:
+		binop = mod_binop;
+		break;
+	case OpPow:
+		binop = pow_binop;
+		break;
+	case OpNeg:
+	default:
+		minc_internal_error("invalid binary handle operator");
+		return NULL;
+	}
+
+	// create new Binop PField, return it cast to MincHandle
+
+	return new PFieldBinaryOperator(pfield1, pfield2, binop);
+}
+
 MincHandle
-minc_scalehandle(const MincHandle handle, const MincFloat val)
+minc_binop_handle_float(const MincHandle mhandle, const MincFloat val, OpKind op)
 {
    Handle return_handle;
 
-   DPRINT2("minc_scalehandle (handle=%p, val=%f\n", handle, val);
+   DPRINT2("minc_binop_handle_float (handle=%p, val=%f\n", handle, val);
 
-   /* extract PField from MincHandle
-      create ConstPField for MincFloat
-      create MultPField
-      create Handle for new MultPField, return it cast to MincHandle
-   */
+	// Extract PField from MincHandle.
+	Handle handle = (Handle) mhandle;
+	assert(handle->type == PFieldType);
+	PField *pfield1 = (PField *) handle->ptr;
 
-   return_handle = (Handle) malloc(sizeof(struct _handle));
-   return_handle->type = PFieldType;
-// return_handle->ptr = (void *) new MultPField(pfield1, pfield2);
-
-   return (MincHandle) return_handle;
+	// Create ConstPField for MincFloat.
+	PField *pfield2 = new ConstPField(val);
+	
+    // Create PField using appropriate operator.
+    PField *outpfield = createBinopPField(pfield1, pfield2, op);
+	
+	return (MincHandle) createPFieldHandle(outpfield);
 }
-
 
 MincHandle
-minc_addhandles(const MincHandle handle1, const MincHandle handle2)
+minc_binop_handles(const MincHandle mhandle1, const MincHandle mhandle2, OpKind op)
 {
-   Handle return_handle;
+	DPRINT2("minc_binop_handles (handle1=%p, handle2=%p\n", handle1, handle2);
 
-   DPRINT2("minc_addhandles (handle1=%p, handle2=%p\n", handle1, handle2);
+	// Extract PFields from MincHandles
+	
+	Handle handle1 = (Handle) mhandle1;
+	Handle handle2 = (Handle) mhandle2;
+	assert(handle1->type == PFieldType);
+	assert(handle2->type == PFieldType);
+	PField *pfield1 = (PField *) handle1->ptr;
+	PField *pfield2 = (PField *) handle2->ptr;
+	PField *opfield = createBinopPField(pfield1, pfield2, op);
+	
+	// create Handle for new PField, return it cast to MincHandle
 
-   /* extract PFields from MincHandles
-      create AddPField
-      create Handle for new AddPField, return it cast to MincHandle
-   */
-
-   return_handle = (Handle) malloc(sizeof(struct _handle));
-   return_handle->type = PFieldType;
-// return_handle->ptr = (void *) new AddPField(pfield1, pfield2);
-
-   return (MincHandle) return_handle;
+	return (MincHandle) createPFieldHandle(opfield);
 }
-
-
-MincHandle
-minc_multhandles(const MincHandle handle1, const MincHandle handle2)
-{
-   Handle return_handle;
-
-   DPRINT2("minc_multhandles (handle1=%p, handle2=%p\n", handle1, handle2);
-
-   /* extract PFields from MincHandles
-      create MultPField
-      create Handle for new MultPField, return it cast to MincHandle
-   */
-
-   return_handle = (Handle) malloc(sizeof(struct _handle));
-   return_handle->type = PFieldType;
-// return_handle->ptr = (void *) new MultPField(pfield1, pfield2);
-
-   return (MincHandle) return_handle;
-}
-
 
