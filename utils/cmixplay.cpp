@@ -25,11 +25,9 @@
    If user runs with robust flag (-r), code below increases buffer params
    by ROBUST_FACTOR.
 */
+
 #define BUF_FRAMES          1024 * 2
 #define ROBUST_FACTOR       4
-
-#undef NUM_FRAGMENTS        /* override the one in audio_port.h */
-#define NUM_FRAGMENTS       4
 
 #define NUM_ZERO_BUFS       8
 
@@ -110,11 +108,13 @@ write_buffer(int ports[], char *buf, int datum_size, int nframes, int nchans)
 
  #ifdef USE_CARD_CHANS
 
-   int          card_chans;
+   static int   card_chans = -1;
    static short *tmpbuf = NULL;
 
-   card_chans = get_card_max_chans(ports[0]);
-   assert(card_chans >= nchans);
+   if (tmpbuf == NULL) {                      /* first time, so check */
+      card_chans = get_card_max_chans(ports[0]);
+      assert(card_chans >= nchans);
+   }
 
    /* If file has fewer chans than card, copy file chans into a temp
       interleaved array of card_chans, then zero-pad the rest of the
