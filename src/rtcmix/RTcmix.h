@@ -10,6 +10,8 @@ public:
 	Instrument* cmd(char*, int, double, ...); // for numeric params
 	Instrument* cmd(char*, int, char*, ...); // for string params
 	double cmd(char*); // for commands with no params
+	double cmdval(char*, int, double, ...); // value return (numeric params)
+	double cmdval(char*, int, char*, ...); // value return (string params)
 	void printOn();
 	void printOff();
 	void panic();

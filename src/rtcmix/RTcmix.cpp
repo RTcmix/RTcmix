@@ -280,6 +280,72 @@ double RTcmix::cmd(char name[])
 	return(retval);
 }
 
+// This is s duplicate of the RTcmix::cmd() function, except that
+// instead of returning an Inst*, it returns the double value
+// of the RTcmix command that was invoked
+double RTcmix::cmdval(char name[], int n_args, double p0, ...)
+{
+// 	double buftime,sec,usec;
+// 	struct timeval tv;
+// 	struct timezone tz;
+	va_list ap;
+	int i;
+	double p[MAXDISPARGS];
+	void   *retval;
+
+// 	buftime = (double)RTBUFSAMPS/SR;
+// 
+// 	gettimeofday(&tv, &tz);
+// 	sec = (double)tv.tv_sec;
+// 	usec = (double)tv.tv_usec;
+// 	pthread_mutex_lock(&schedtime_lock);
+// 	schedtime = (((sec * 1e6) + usec) - baseTime) * 1e-6;
+// 	schedtime += ((double)elapsed/(double)SR);
+// 	schedtime += buftime;
+// 	pthread_mutex_unlock(&schedtime_lock);
+
+	// schedtime is accessed in rtsetoutput() to set the current
+	// time.  Plus, in interactive mode we have to run a slight delay
+	// from "0" or we wind up scheduling events in the past.
+
+	p[0] = p0;
+	va_start(ap, p0); // start variable list after p0
+		for (i = 1; i < n_args; i++)
+			p[i] = va_arg(ap, double);
+	va_end(ap);
+
+	return ((double) parse_dispatch(name, p, n_args, &retval));
+}
+
+// This is s duplicate of the RTcmix::cmd() string-passing function, except
+// that instead of returning an Inst*, it returns the double value
+// of the RTcmix command that was invoked
+double RTcmix::cmdval(char name[], int n_args, char* p0, ...)
+{
+	// these are not time-stamped as above... change if we need to!
+	va_list ap;
+	int i;
+	char st[MAXDISPARGS][100];
+	int tmpint;
+	double p[MAXDISPARGS];
+	void *retval;
+
+	// this kludge dates from the olden days!
+	strcpy(st[0], p0);
+	tmpint = (int)st[0];
+	p[0] = (double)tmpint;
+	va_start(ap, p0); // start variable list after p0
+		for (i = 1; i < n_args; i++) {
+			strcpy(st[i], va_arg(ap, char*));
+			tmpint = (int)st[i];
+			p[i] = (double)tmpint;
+		}
+	va_end(ap);
+
+	return ((double) parse_dispatch(name, p, n_args, &retval));
+}
+
+
 void RTcmix::printOn()
 {
 	print_is_on = 1;
