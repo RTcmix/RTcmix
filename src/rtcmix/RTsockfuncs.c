@@ -24,13 +24,15 @@
    MYPORT (1102), defined in sockdefs.h */
 
 int newRTsock(char *ihost, int rtsno) {
-	int s;
+	int s, err;
 	struct sockaddr_in sss;
 	struct hostent *hp;
 
 	if( (s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		perror("socket");
+#ifdef HARD_EXIT
 		exit(1);
+#endif
 	}
 
 	hp = gethostbyname(ihost);
@@ -38,9 +40,14 @@ int newRTsock(char *ihost, int rtsno) {
 	bcopy(hp->h_addr, &(sss.sin_addr.s_addr), hp->h_length);
 	sss.sin_port = htons(MYPORT+rtsno);
 
-	if(connect(s, (struct sockaddr *)&sss, sizeof(sss)) < 0) {
+	err = connect(s, (struct sockaddr *)&sss, sizeof(sss));
+
+	if(err < 0) {
 		perror("connect");
+		return err;
+#ifdef HARD_EXIT
 		exit(1);
+#endif
 	}
 	return s;
 }
@@ -88,8 +95,8 @@ int RTopensocket(int socket, char *binaryname) {
 	strcat(syscall, socknumber);
 	strcat(syscall, " &>cmix.dbug");
 
-	parse(syscall, args);
-	pid = execute(args);
+	parse(syscall, (char**)args);
+	pid = execute((char**)args);
 	printf("cmix process id is %i\n", pid);
 
 	return(pid);
@@ -107,17 +114,17 @@ int RTopensocket_syscall(int socket, char *binaryname) {
 	struct hostent *hp;
 
 	sprintf(syscall, "%s ", binaryname);
-	sprintf(flags, "-i -n -s ");
-	sprintf(socknumber, "%i", socket);
+	sprintf(flags, "-i -n -c -o %i", socket);
 	strcat(syscall, flags);
-	strcat(syscall, socknumber);
-	strcat(syscall, " &>cmix.dbug");
+	strcat(syscall, " &>cmix.dbug &");
 
 	pid = system(syscall);
 
-	if (pid < 0) {
+	if (pid != 0) {
 	  printf("CMIX system call failed\n");
+#ifdef HARD_EXIT
 	  exit(1);
+#endif
 	}
 	
 	return pid;
@@ -231,6 +238,13 @@ void RTprintsockstr(struct sockdata *ssend)
   }
 }
 
+/* wrapper for the following */
+
+RTsockstr *newRTsockstr(char *name) {
+	RTsockstr *theSock;
+	theSock = RTnewsockstr(name);
+	return theSock;
+}
 
 /* Return a nice clean socket structure */
 
@@ -306,4 +320,5 @@ char **args;
 		perror(*args);
 		return(pid);
 	}
+	return 0;
 }

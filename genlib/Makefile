@@ -33,10 +33,10 @@ genlib.a:	$(OBJECTS)
 
 # $(CFILES): $(IFILES)
 
-RTsockfuncs.o:
+RTsockfuncs.o: RTsockfuncs.c
 	$(CC) $(CFLAGS) -c RTsockfuncs.c
 
-randfuncs.o:
+randfuncs.o: randfuncs.c
 	$(CC) $(CFLAGS) -c randfuncs.c
 
 clean:
