@@ -1,4 +1,4 @@
-include ../../package.conf
+include ../../makefile.conf
 
 # This allows us to test before doing the install
 CMD = ../../insts.base/MIX/MIX
@@ -112,7 +112,7 @@ test_scheduler:
 
 test_stereo:
 	@echo
-	@echo Testing stereo placement (left-center-right):
+	@echo Testing stereo placement \(left-center-right\):
 	-$(CMD) < test-stereo.sco
 
 clean:
