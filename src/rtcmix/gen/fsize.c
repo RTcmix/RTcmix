@@ -7,13 +7,13 @@ extern int sizeof_farray[];
 extern int f_goto[];
 
 
+/*   returns the size of function number genno */
 int
 fsize(int genno)
-/*   returns the size of function number genno */
 {
-	if(!sizeof_farray[f_goto[genno]]) {
-	       fprintf(stderr,"fsize: You haven't allocated function %d yet!\n",genno);
-		closesf();  
+	if (!sizeof_farray[f_goto[genno]]) {
+		die("fsize", "You haven't allocated function %d yet!", genno);
+		return -1;
 	}
-	return(sizeof_farray[f_goto[genno]]);
+	return sizeof_farray[f_goto[genno]];
 }
