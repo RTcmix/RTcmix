@@ -2,7 +2,7 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-#include <globals.h>
+#include <RTcmix.h>
 #include <prototypes.h>
 #include <pthread.h>
 #include <iostream.h>
@@ -23,11 +23,6 @@
 //#define DBUG
 //#define WBUG	/* this new one turns on prints of where we are */
 
-// DT:  main heap structure used to queue instruments
-// D.S. Taken out of globals.h since only defined here.
-
-heap rtHeap;
-
 // Temporary globals
 
 static unsigned long bufEndSamp;
@@ -39,7 +34,7 @@ bool doneTraverse(AudioDevice *device, void *arg);
 
 extern AudioDevice *globalAudioDevice;	// from sys/audio_port.C
 
-int runMainLoop(void)
+int RTcmix::runMainLoop(void)
 {
 	Bool audio_configured = NO;
 
@@ -90,9 +85,9 @@ int runMainLoop(void)
 
 		if (globalAudioDevice) {
 			// Set done callback on device.
-			globalAudioDevice->setStopCallback(doneTraverse, NULL);
+			globalAudioDevice->setStopCallback(doneTraverse, this);
 			// Start audio output device, handing it our callback.
-			if (globalAudioDevice->start(inTraverse, NULL) != 0) {
+			if (globalAudioDevice->start(inTraverse, this) != 0) {
 				cerr << globalAudioDevice->getLastError() << endl;
 				return -1;
 			}
@@ -102,7 +97,7 @@ int runMainLoop(void)
 	return -1;	// Not playing, signal caller not to wait.
 }
 
-int waitForMainLoop()
+int RTcmix::waitForMainLoop()
 {
 #ifdef WBUG	
 	cout << "ENTERING waitForMainLoop() FUNCTION *****\n";
@@ -124,7 +119,7 @@ int waitForMainLoop()
 
 // This is now the audio play callback
 
-bool inTraverse(AudioDevice *device, void *arg)
+bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 {
 	short playEm = 1;
 	int i,chunksamps;
@@ -164,7 +159,7 @@ bool inTraverse(AudioDevice *device, void *arg)
 	// deleteMin() returns top instrument if inst's start time is < bufEndSamp,
 	// else NULL.  heapChunkStart is set in all cases
 
-	while ((Iptr = rtHeap.deleteMin(bufEndSamp, &heapChunkStart)) != NULL) 
+	while ((Iptr = rtHeap->deleteMin(bufEndSamp, &heapChunkStart)) != NULL) 
 	{
 
 #ifdef DBUG
@@ -391,7 +386,7 @@ bool inTraverse(AudioDevice *device, void *arg)
 
 			Iptr->setchunk(chunksamps);  // set "chunksamps"		 
 #ifdef TBUG
-			cout << "Iptr->exec(" << bus_type << "," << bus << ")\n";
+			cout << "Iptr->exec(" << bus_type << "," << bus << ") [" << Iptr->name() << "]\n";
 #endif		  
 			// DT_PANIC_MOD
 			if (!panic) {
@@ -475,13 +470,7 @@ bool inTraverse(AudioDevice *device, void *arg)
 	if (!panic)
 		rtsendsamps(device);
 
-	// 	gettimeofday(&tv, &tz);
-	// 	sec = (double)tv.tv_sec;
-	// 	usec = (double)tv.tv_usec;
-	// 	pthread_mutex_lock(&schedtime_lock);
-	// 	baseTime = (sec * 1e6) + usec;
 	elapsed += RTBUFSAMPS;	
-	// 	pthread_mutex_unlock(&schedtime_lock);
 	bufStartSamp += RTBUFSAMPS;
 	bufEndSamp += RTBUFSAMPS;
 
@@ -498,9 +487,9 @@ bool inTraverse(AudioDevice *device, void *arg)
 	}
 
 	if (!rtInteractive) {  // Ending condition
-		if ((rtHeap.getSize() == 0) && (allQSize == 0)) {
+		if ((rtHeap->getSize() == 0) && (allQSize == 0)) {
 #ifdef ALLBUG
-			cout << "heapSize:  " << rtHeap.getSize() << endl;
+			cout << "heapSize:  " << rtHeap->getSize() << endl;
 			cout << "rtQSize:  " << rtQSize << endl;
 			cout << "PLAYEM = 0\n";
 			cout << "The end\n\n";
@@ -523,13 +512,13 @@ bool inTraverse(AudioDevice *device, void *arg)
 			panic = NO;
 		}
 		// DT_PANIC_MOD
-		if (panic && (rtHeap.getSize() == 0) && (allQSize == 0))
+		if (panic && (rtHeap->getSize() == 0) && (allQSize == 0))
 			run_status = RT_GOOD;
 	}
 	return playEm;
 }
 
-bool doneTraverse(AudioDevice *device, void *arg)
+bool RTcmix::doneTraverse(AudioDevice *device, void *arg)
 {
 	if (Option::print())
 		cout << "closing ...\n";
