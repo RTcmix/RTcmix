@@ -21,7 +21,9 @@
 #include "FMINST.h"
 #include <rt.h>
 #include <rtdefs.h>
+#ifdef RTUPDATE
 #include <notetags.h>
+#endif
 
 #ifdef COMPATIBLE_FUNC_LOCS         /* set in makefile.conf */
   #define AMP_GEN_SLOT     2
