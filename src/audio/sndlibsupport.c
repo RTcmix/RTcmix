@@ -870,16 +870,21 @@ sndlib_put_header_comment(int fd, float peak[], long peakloc[], char *comment)
 static int
 get_current_header_comment_alloc()
 {
-   int  comment_start, comment_end;
+   int  comment_start, comment_end, len;
 
    /* offset of first comment byte (from start of header) */
    comment_start = c_snd_header_comment_start();
+   assert(comment_start >= 0 && comment_start < 3000);  /* see if plausible */
 
    /* offset of last comment byte (from start of header) */
    comment_end = c_snd_header_comment_end();
+   assert(comment_end >= 0 && comment_end < 3000);
 
    /* total bytes available for comment in header */
-   return (comment_end - comment_start) + 1;
+   len = comment_end - comment_start;
+   assert(len >= 0);
+
+   return (len > 0 ? len + 1 : len);
 }
 
 
@@ -941,13 +946,16 @@ get_current_header_raw_comment(int fd, char **rawcomment)
    *rawcomment = NULL;
 
    start = c_snd_header_comment_start();
-   assert(start > 0 && start < 3000);
+   assert(start >= 0 && start < 3000);
 
    end = c_snd_header_comment_end();
    assert(end >= start);
 
-   len = (end - start) + 1;
-   if (len < 0)
+   len = end - start;
+
+   if (len > 0)
+      len++;
+   else
       len = 0;
 
    if (len > 0) {
