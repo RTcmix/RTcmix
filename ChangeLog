@@ -1,3 +1,10 @@
+Wednesday, Feb 13, 2002 John Gibson <johgibso@indiana.edu>
+
+   * Let fdump write to a file, optionally.
+     fdump(gennum, "filename") writes makegen <gennum> to an ASCII file.
+     Each line is an array index followed by the value at that location.
+     This is for debugging of makegens.
+
 Sunday, Jan 27, 2002 John Gibson <johgibso@indiana.edu>
 
    * Fix compilation problem with Perl and Python extensions.  They
@@ -35,7 +42,7 @@ Saturday, Dec 5, 2001 John Gibson <johgibso@indiana.edu>
    * Let fplot send data to gnuplot instead of doing an ascii plot.
    * New function to see what's actually in a makegen array (fdump).
    * New gen 4 function - like setline, but lets you set curvature
-     of each segment (derived from ucsd carl src).
+     of each segment.
    * Optional arguments to gen20 to set min and max.
 
 Saturday, Aug 4, 2001 John Gibson <johgibso@indiana.edu>
