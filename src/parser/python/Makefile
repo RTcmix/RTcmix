@@ -6,7 +6,7 @@ FUNCLIST = funclist
 FUNCEXCEPT = funcexcept
 FIND_FLAGS = -follow
 
-.PHONY: all install clean cleanall
+.PHONY: all $(MODULE) install clean cleanall
 
 all: $(MODULE)
 
@@ -22,8 +22,8 @@ $(MODULE_SRC): make_python_ext.pl $(MODULE_SRC).in $(FUNCLIST)
 $(MODULE): $(MODULE_SRC)
 	$(PYTHON) setup.py build
 ifeq ($(PYTHON_EXT_LINK), TRUE)
-	mv -f `find . -name rtcmixmodule.o` .
-	$(RM) -r build
+	$(RM) $(MODULE)module.o
+	ln -s `find . -name $(MODULE)module.o` .
 endif
 
 # NB: need root for this; installs in python site-packages dir
