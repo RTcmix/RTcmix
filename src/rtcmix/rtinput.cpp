@@ -26,6 +26,8 @@
 /* code that lets user specify buses for input sources */
 //#define INPUT_BUS_SUPPORT
 
+extern int record_is_on;	/* set_option.c */
+
 typedef enum {
    MIC,
    LINE,
@@ -242,10 +244,10 @@ rtinput(float p[], int n_args, double pp[])
          }
       }
    }
-
+#define NEW_CODE
 	if (!is_open) {                  /* if not, open input audio device or file. */
 		if (audio_in) {
-#ifdef NOT_QUITE_READY_YET
+#ifdef NEW_CODE
            if (rtsetparams_called) {
 			   // If audio *playback* was disabled, but there is a request for input audio,
 		 	  // create the audio input device here.
@@ -261,20 +263,30 @@ rtinput(float p[], int n_args, double pp[])
 					printf("Input audio set:  %g sampling rate, %d channels\n", SR, NCHANS);
 				}
 			  }
-			  else {
-			  	warn("rtinput", "Audio already configured for playback only via rtsetparams()");
+			  // If record disabled during rtsetparams(), we cannot force it on here.
+			  else if (!record_is_on) {
+			  	die("rtinput", "Audio already configured for playback only via rtsetparams()");
 				record_audio = 0;	/* because we failed */
 				return -1;
 			  }
 		   }
+		   else {
+				record_is_on = 1;	// This allows rtinput("AUDIO") to turn on record
+		   }
 #else
+           if (rtsetparams_called && !record_is_on) {
+			   die("rtinput",
+			   	   "Full duplex was not enabled for rtsetparams.  Set option \"full_duplex\" before calling rtsetparams()");
+			   record_audio = 0;	/* because we failed */
+			   return -1;
+		   }
            if (!audio_input_is_initialized())
            {
             die("rtinput", "Audio input device not open yet.  Call rtsetparams first.");
 			record_audio = 0;	/* because we failed */
             return -1;
            }
-#endif	// NOT_QUITE_READY_YET
+#endif	// NEW_CODE
          fd = 1;  /* we don't use this;  set to 1 so rtsetinput() will work */
          for (i = 0; i < nchans; i++) {
             allocate_audioin_buffer(i, RTBUFSAMPS);
