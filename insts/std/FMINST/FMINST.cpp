@@ -3,8 +3,8 @@
    p0 = start time
    p1 = duration
    p2 = amp *
-   p3 = frequency of carrier (Hz; oct.pc if constant **)
-   p4 = frequency of modulator (Hz; oct.pc if constant)
+   p3 = frequency of carrier (Hz or oct.pc **)
+   p4 = frequency of modulator (Hz or oct.pct)
    p5 = FM index low point
    p6 = FM index high point
    p7 = pan (in percent-to-left form: 0-1) [optional; default is 0]
@@ -18,9 +18,8 @@
    * If an old-style gen table 1 is present, its values will be multiplied
    by the p2 amplitude multiplier, even if the latter is dynamic.
 
-   ** If you pass a constant value for p3 and p4 (oscillator freq), then you
-   may use oct.pc format instead of Hz.  However, if you use a dynamically
-   changing pfield, it must be in Hz.
+   ** oct.pc format generally will not work as you expect for p3 and p4
+   (osc freq) if the pfield changes dynamically.  Use Hz instead in that case.
 
    *** If p8 is missing, you must use an old-style gen table 2 for the
    oscillator waveform.
@@ -62,6 +61,8 @@ int FMINST::init(double p[], int n_args)
 	float dur = p[1];
 
 	nsamps = rtsetoutput(outskip, dur, this);
+	if (outputChannels() > 2)
+		return die("FMINST", "Can't handle more than 2 output channels.");
 
 	carfreqraw = p[3];
 	if (carfreqraw < 15.0)
@@ -75,30 +76,58 @@ int FMINST::init(double p[], int n_args)
 	else
 		modfreq = modfreqraw;
 
-//FIXME: handle table coming in as optional p8 TablePField (see indexenv below)
-	wavetable = floc(WAVET_GEN_SLOT);
-	if (wavetable == NULL) {
-		return die("FMINST", "You need to store a waveform in function %d.",
-					WAVET_GEN_SLOT);
+	wavetable = NULL;
+	int tablelen = 0;
+#if 0   // handle table coming in as optional p8 TablePField
+	if (n_args > 8) {
+		wavetable = getTable(8, &tablelen);
 	}
-	int lentable = fsize(WAVET_GEN_SLOT);
+	if (wavetable == NULL) {
+		wavetable = floc(WAVET_GEN_SLOT);
+		if (wavetable == NULL)
+			return die("FMINST", "Either use the wavetable pfield (p8) or make "
+                    "an old-style gen function in slot %d.", WAVET_GEN_SLOT);
+		tablelen = fsize(WAVET_GEN_SLOT);
+	}
+#else
+	wavetable = floc(WAVET_GEN_SLOT);
+	if (wavetable == NULL)
+		return die("FMINST", "You need to store a waveform in function %d.",
+                                                               WAVET_GEN_SLOT);
+	tablelen = fsize(WAVET_GEN_SLOT);
+#endif
 
-	carosc = new Ooscili(carfreq, wavetable, lentable);
-	modosc = new Ooscili(modfreq, wavetable, lentable);
+	carosc = new Ooscili(carfreq, wavetable, tablelen);
+	modosc = new Ooscili(modfreq, wavetable, tablelen);
+
+	indexenv = NULL;
+	tablelen = 0;
+#if 0   // handle table coming in as optional p9 TablePField
+	if (n_args > 9) {
+		indexenv = getTable(9, &tablelen);
+	}
+	if (indexenv == NULL) {
+		indexenv = floc(INDEX_GEN_SLOT);
+		if (indexenv == NULL)
+			return die("FMINST", "Either use the index guide pfield (p9) or make "
+                    "an old-style gen function in slot %d.", INDEX_GEN_SLOT);
+		tablelen = fsize(INDEX_GEN_SLOT);
+	}
+	tableset(dur, tablelen, indtabs);
+#else
+	indexenv = floc(INDEX_GEN_SLOT);
+	if (indexenv == NULL)
+		return die("FMINST",
+				"You haven't made the index guide function (table %d).",
+				INDEX_GEN_SLOT);
+	tablelen = fsize(INDEX_GEN_SLOT);
+	tableset(dur, tablelen, indtabs);
+#endif
 
 	ampenv = floc(AMP_GEN_SLOT);
 	if (ampenv) {
 		int lenamp = fsize(AMP_GEN_SLOT);
 		tableset(dur, lenamp, amptabs);
-	}
-
-	if (nargs < 10) {		// no index guide pfield, so look for gen table
-		indexenv = floc(INDEX_GEN_SLOT);
-		if (indexenv == NULL)
-			return die("FMINST", "Either use the index guide pfield (p9) or make "
-                    "an old-style gen function in slot %d.", INDEX_GEN_SLOT);
-		int lenind = fsize(INDEX_GEN_SLOT);
-		tableset(dur, lenind, indtabs);
 	}
 
 	skip = (int) (SR / (float) resetval);
