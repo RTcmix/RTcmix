@@ -10,7 +10,7 @@ void
 cfr4syn(long off, long nn, float *b0, float *b1, float *b2, float *b3,
                            float *b4, float *b5, float *b6, float *b7)
 {
-	extern	double	pii, pi2, p7, p7two, c22, s22;
+	extern	double	pii, p7two;
 
 	float	piovn, arg, c1, c2, c3, s1, s2, s3, 
 		t0, t1, t2, t3, t4, t5, t6, t7;
