@@ -113,15 +113,11 @@ at least the "insts.std" package. Here's how to install packages:
    (not from inside the package directory). This creates a .conf file in the
    package directory, which the sub-level makefiles need.
 
-NOTE: some development packages may not install into the RTcmix bin
-directory. You'll have to CD into the specific directory and run 
-the ./program from there.
-
 
 II.  RUN THEM SCOREFILES!
 -------------------------
 
-There are sample score files in insts.std/SAMPLE_SCORES.
+There are sample score files in docs/sample_scos_1.0.
 
 To run any score, type "CMIX < scorefile.sco".
 
@@ -134,8 +130,8 @@ The instruments (both real-time and disk-based) that process input
 files will accept files in a variety of formats without any special
 effort on your part.
 
-Before using a disk-based instrument, you have to use sfcreate to
-make an empty sound file.
+Before using a disk-based instrument (lower case), you have to use
+sfcreate to make an empty sound file.
 
 See the README files in the docs dir for information on recent features.
 
