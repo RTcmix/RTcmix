@@ -9,6 +9,7 @@
 #include "DLineL.h"
 #include "DLineN.h"
 #include "Envelope.h"
+#include "Equalizer.h"
 #include "Filter.h"
 #include "JCRev.h"
 #include "KOscilN.h"
