@@ -1,0 +1,6 @@
+Saturday March 26, 2000 John Gibson <johngibson@virginia.edu>
+
+   * Added dbamp function for lib and Minc.
+	* Bumped version number (version.h) to 2.3.1.
+	* Finally created this ChangeLog.
+
