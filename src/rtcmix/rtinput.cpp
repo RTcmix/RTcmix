@@ -329,7 +329,7 @@ rtinput(float p[], int n_args, double pp[])
          if (fd == -1)
             return -1.0;
          for (i = 0; i < nchans; i++) {
-            allocate_audioin_buffer(i);
+            allocate_audioin_buffer(i, RTBUFSAMPS);
          }
 #ifdef INPUT_BUS_SUPPORT
 #endif /* INPUT_BUS_SUPPORT */
