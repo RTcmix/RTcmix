@@ -166,6 +166,10 @@ int PVOC::init(float *p, int n_args)
 	_amp = p[3];
 	_inputchannel = (int) p[4];
 
+	if (_inputchannel >= inputChannels())
+		die("PVOC", "Requesting channel %d of a %d-channel input file",
+			_inputchannel, inputChannels());
+
 	rtsetinput(inskip, this);
 	rtsetoutput(outskip, dur, this);
 	
@@ -423,7 +427,7 @@ int PVOC::shiftin( float A[], int winLen, int D)
 	_currentsample += (i-1);
 
 	int framesToRead = D;
-	int count = 0;
+	int framecount = 0;
 
 	while (framesToRead)
 	{
@@ -433,26 +437,27 @@ int PVOC::shiftin( float A[], int winLen, int D)
 			printf("\tshiftin: copying %d sampframes from input offset %d to A[%d]\n", 
 			   	   toCopy, _inReadOffset, i);
 #endif
-		float *in = &_inbuf[_inReadOffset];
-		for (count = 0; i < winLen && count < toCopy; ++i, ++count) {  
+		float *in = &_inbuf[_inReadOffset * inchans + _inputchannel];
+		for (framecount = 0; i < winLen && framecount < toCopy; ++i, ++framecount) {  
 			A[i] = *in * amp;
 			in += inchans;
 		}
-		framesToRead -= count;
-		_cachedInFrames -= count;
-		_inReadOffset += count;
+		framesToRead -= framecount;
+		_cachedInFrames -= framecount;
+		_inReadOffset += framecount;
 		if (_inReadOffset == _inWriteOffset)
 			_inReadOffset = _inWriteOffset = 0;
 		while (_cachedInFrames < framesToRead)
 		{
-			int toRead = min(framesToRead, RTBUFSAMPS);
+			int toRead = min(framesToRead, RTBUFSAMPS/inchans);
 #ifdef debug
 			printf("\tshiftin: calling rtgetin for %d sampframes into offset %d\n",
 				  toRead, _inWriteOffset);
 #endif
-			int sampsRead = rtgetin(&_inbuf[_inWriteOffset], this, toRead * inchans);
-			_cachedInFrames += sampsRead / inchans;
-			_inWriteOffset += sampsRead;
+			in = &_inbuf[_inWriteOffset * inchans + _inputchannel];
+			int framesRead = rtgetin(in, this, toRead*inchans) / inchans;
+			_cachedInFrames += framesRead;
+			_inWriteOffset += framesRead;
 		}
 	}
 #ifdef debug
