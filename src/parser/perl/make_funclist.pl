@@ -11,7 +11,7 @@ $exceptions = "./funcexcept";
 $grep = "grep";
 $find = "find";
 if ($#ARGV == 1) {
-   $flags = $ARGV[1];   # flags to pass to find command (e.g., OSX needs -H)
+   $flags = $ARGV[1];   # flags to pass to find command
 }
 else {
    $flags = "";

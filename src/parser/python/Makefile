@@ -7,7 +7,7 @@ FUNCLIST = funclist
 FUNCEXCEPT = funcexcept
 ifeq ($(ARCH),MACOSX)
   XT_SUFFIX = .bundle
-  FIND_FLAGS = -H
+  FIND_FLAGS = -follow
 else
   XT_SUFFIX = .so
   FIND_FLAGS = -follow
