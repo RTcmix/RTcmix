@@ -1,3 +1,8 @@
+Thursday, May 25, 2000 John Gibson <johngibson@virginia.edu>
+
+   * New files: NEWS and docs/README.bus_config
+   * Bumped version number (version.h) to 3.0.0.
+
 Tuesday, May 16, 2000 John Gibson <johngibson@virginia.edu>
 
    * Fix compilation problem involving pthreads that triggered
@@ -59,6 +64,6 @@ Saturday March 26, 2000 John Gibson <johngibson@virginia.edu>
    * Show peak stats, and close output file, even when killing with
      control-C. (main.C)
    * Added dbamp function for lib and Minc.
-	* Bumped version number (version.h) to 2.3.1.
-	* Finally created this ChangeLog.
+   * Bumped version number (version.h) to 2.3.1.
+   * Finally created this ChangeLog.
 
