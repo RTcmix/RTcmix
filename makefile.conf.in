@@ -1,7 +1,7 @@
 # Change stuff in here as needed
 
 # The directory containing the RTcmix directory
-TOPDIR = /usr/local
+TOPDIR = /usr/local/src
 
 # The name of the RTcmix directory
 CMIXDIR = $(TOPDIR)/RTcmix-3.1.0
