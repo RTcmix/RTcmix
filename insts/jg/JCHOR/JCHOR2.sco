@@ -18,15 +18,29 @@
 
    Assumes function table 1 is amplitude curve for the note. (Try gen 18.)
    Or you can just call setline. If no setline or function table 1, uses
-   flat amplitude curve.
+   flat amplitude curve. By default, the amplitude envelope is updated 1000
+   times per second, but this can be changed by calling reset() with a
+   different value.
 
    Assumes function table 2 is grain window function. (Try gen 25.)
 
-   By default, the amplitude envelope is updated 1000 times per second,
-   but this can be changed by calling reset() with a different value.
-
    Output can be either mono or stereo. If it's stereo, the program randomly
    distributes the voices across the stereo field.
+
+   Notes on p4 (maintain input duration)...
+
+      Because the transposition method doesn't try to maintain duration -- it
+      works like the speed control on a tape deck -- you have an option about
+      the way to handle the duration of the input read:
+
+      - If p4 is 1, the grain length after transposition will be the same as
+        that given by p3 (input duration). This means that the amount actually
+        read from the input file will be shorter or longer than p3, depending
+        on the transposition.
+
+      - If p4 is 0, the segment of sound specified by p3 will be read, and the
+        grain length will be shorter or longer than p3, depending on the
+        transposition.
 
    Differences between JCHOR and chor (besides RT ability):
       - No limit on input duration or number of voices
