@@ -719,7 +719,7 @@ dumptable(const Arg args[], const int nargs)
    int len;
    double *array; 
    FILE  *f = NULL;
-   char  *fname = NULL;
+   const char  *fname = NULL;
 
    if (nargs < 1 || nargs > 2) {
       die("dumptable", "Usage: dumptable(table_handle [, out_file])");
@@ -736,7 +736,7 @@ dumptable(const Arg args[], const int nargs)
          die("dumptable", "Second argument must be output file name.");
          return -1.0;
       }
-      fname = args[1].val.string;
+      fname = (const char *) args[1];
       f = fopen(fname, "w+");
       if (f == NULL) {
          perror("dumptable");
@@ -766,7 +766,7 @@ plottable(const Arg args[], const int nargs)
 #endif
    int pause = 10;
    char cmd[256];
-   char *plotcmds = DEFAULT_PLOTCMD;
+   const char *plotcmds = DEFAULT_PLOTCMD;
 
    if (nargs < 1 || nargs > 3) {
       die("plottable",
@@ -782,9 +782,9 @@ plottable(const Arg args[], const int nargs)
    /* 2nd and 3rd args are optional and can be in either order */
    if (nargs > 1) {
       if (args[1].type == DoubleType)
-         pause = (int) args[1].val.number;
+         pause = (int) args[1];
       else if (args[1].type == StringType)
-         plotcmds = args[1].val.string;
+         plotcmds = (const char *) args[1];
       else {
          die("plottable",
             "Second argument can be pause length or plot commands.");
