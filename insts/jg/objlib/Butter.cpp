@@ -114,7 +114,7 @@ void Butter :: setBandRejectFreq(MY_FLOAT freq)
 
    d = 2.0 * cos((double)(TWO_PI * freq / SR));
 
-   zeroCoeffs[0] = -c * d;
+   zeroCoeffs[0] = -d * gain;
    poleCoeffs[0] = zeroCoeffs[0];
 }
 
@@ -127,7 +127,7 @@ void Butter :: setBandRejectBandwidth(MY_FLOAT bandwidth)
 
    gain = 1.0 / (1.0 + c);
 
-   zeroCoeffs[0] = -d * c;
+   zeroCoeffs[0] = -d * gain;
    zeroCoeffs[1] = gain;
 
    poleCoeffs[0] = zeroCoeffs[0];
