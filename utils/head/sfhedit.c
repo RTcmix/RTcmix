@@ -1,4 +1,5 @@
-#include <sndlibsupport.h>
+#include <math.h>
+#include <sndlibsupport.h>  /* must come after math.h, or else M_PI redefined */
 #include <byte_routines.h>
 #include <sfheader.h>
 #include <stdio.h>
@@ -11,7 +12,6 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-#include <math.h>
 
 static SFCODE	ampcode = {
 	SF_MAXAMP,
