@@ -5,19 +5,21 @@
 
 class Ooscili
 {
-	float si, phase, *array, dur;
+	double si, phase, lendivSR;
+	float *array, dur;
 	int length;
 
+	void init(float);
 public:
 	Ooscili(float, int);
 	Ooscili(float, float*);
 	Ooscili(float, float*, int);
 	float next();
 	float next(int);
-	void setfreq(float);
-	void setphase(float);
-	int getlength();
-	float getdur();
+	inline void setfreq(float freq) { si = freq * lendivSR; }
+	inline void setphase(double phs) { phase = phs; }
+	inline int getlength() { return length; }
+	inline float getdur() { return dur; }
 };
 
 class Orand
