@@ -12,11 +12,7 @@ FILE *infile_desc[50];
 
 
 double
-m_infile(p,n_args,pp) 
-    float *p; 
-    short n_args;
-	double *pp;
-
+m_infile(float *p, short n_args, double *pp) 
 {
     FILE *descrip;
     char  *name;
