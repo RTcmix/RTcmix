@@ -14,7 +14,7 @@ CMIXDIR = $(TOPDIR)/RTcmix-4.0
 ###############################################################
 
 # This is the default for non-Linux systems.
-# Leave it, and override in user.conf if you are running LINUX
+# Leave it, and override in site.conf if you are running LINUX
 AUDIODRIVER = AUTO
 
 # This is the file which contains site-specific settings.
@@ -47,7 +47,7 @@ AUDIOLIB = $(AUDIODIR)/librtaudio.a
 # Compile and link time flags
 
 ifeq ($(ARCH),LINUX)
-  ARCHFLAGS = -D_REENTRANT -DLINUX
+  ARCHFLAGS = -DLINUX
   ARCH_RTLDFLAGS = -Wl,-rpath $(LIBDIR)
   CC = gcc 
   CXX = g++ -Wno-deprecated
@@ -60,7 +60,7 @@ ifeq ($(ARCH),LINUX)
   SHLIB_SUFFIX = so
 endif
 ifeq ($(ARCH),MACOSX)
-  ARCHFLAGS = -D_REENTRANT -DMACOSX -fno-common
+  ARCHFLAGS = -DMACOSX -fno-common
   ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX)
   CC = cc
   CXX = c++
@@ -72,7 +72,7 @@ ifeq ($(ARCH),MACOSX)
   SHLIB_SUFFIX = dylib
 endif
 ifeq ($(ARCH),SGI)
-  ARCHFLAGS = -D_REENTRANT -DSGI
+  ARCHFLAGS = -DSGI
   ARCH_RTLDFLAGS =
   CC = cc -Xcpluscomm
   CXX = CC
@@ -84,7 +84,7 @@ ifeq ($(ARCH),SGI)
   SHLIB_SUFFIX = so
 endif
 ifeq ($(ARCH),FREEBSD)
-  ARCHFLAGS = -D_REENTRANT -DFREEBSD -DLINUX
+  ARCHFLAGS = -DFREEBSD -DLINUX
   ARCH_RTLDFLAGS =
   CC = gcc
   CXX = g++
