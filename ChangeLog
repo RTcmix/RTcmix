@@ -2,6 +2,8 @@ Saturday, Feb 3, 2001 John Gibson <johngibson@virginia.edu>
 
    * New reverb instrument, FREEVERB, derived from code by Jezar
      (http://www.dreampoint.co.uk/~jzracc/freeverb.htm)
+   * Fix problem in Perl extension, which would cause a numerical
+     scalar in Perl to be passed to RTcmix as a string pointer.
 
 
 **** Released RTcmix-3.0.4 ****
