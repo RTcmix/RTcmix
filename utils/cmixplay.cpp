@@ -44,6 +44,8 @@
 #define NUM_ZERO_BUFS       8
 
 #define SKIP_SECONDS        4.0     /* for fast-forward and rewind */
+#define MARK_PRECISION      3       /* digits after decimal point to print
+                                       for mark */
 
 #define ALL_CHANS           -1
 
@@ -88,23 +90,25 @@ void reset_input_mode(void)
 
 #define USAGE_MSG "\
 Usage: %s [options] filename  \n\
-       options:  -s NUM    start time                      \n\
-                 -e NUM    end time                        \n\
-                 -d NUM    duration                        \n\
-                 -f NUM    rescale factor for float files  \n\
-                 -c NUM    channel (starting from 0)       \n\
-                 -h        view this help screen           \n\
-                 -k        disable hotkeys (see below)     \n\
+       options:  -s NUM    start time                           \n\
+                 -e NUM    end time                             \n\
+                 -d NUM    duration                             \n\
+                 -f NUM    rescale factor for float files       \n\
+                 -c NUM    channel (starting from 0)            \n\
+                 -h        view this help screen                \n\
+                 -k        disable hotkeys (see below)          \n\
                  -t NUM    time to skip for rewind, fast-forward\n\
-                              (default is 4 seconds)       \n\
-                 -r        robust - larger audio buffers   \n\
-                 -q        quiet - don't print anything    \n\
-                 --force   use rescale factor even if peak \n\
-                              amp of float file unknown    \n\
-          Notes: -d ignored if you also give -e            \n\
-                 Times can be given as seconds or 0:00.0   \n\
-                 If the latter, prints time in same way.   \n\
-                 Hotkeys: 'f': fast-forward, 'r': rewind   \n\
+                              (default is 4 seconds)            \n\
+                 -r        robust - larger audio buffers        \n\
+                 -q        quiet - don't print anything         \n\
+                 --force   use rescale factor even if peak      \n\
+                              amp of float file unknown         \n\
+          Notes: -d ignored if you also give -e                 \n\
+                 Times can be given as seconds or 0:00.0        \n\
+                    If the latter, prints time in same way.     \n\
+                 Hotkeys: 'f': fast-forward, 'r': rewind,       \n\
+                          'm': mark (print current buffer start time)\n\
+                 To stop playing: cntl-D or cntl-C
 "
 
 static void
@@ -224,14 +228,22 @@ close_ports(int ports[], int nchans)
 
 /* ----------------------------------------------------- make_time_string --- */
 static char *
-make_time_string(int seconds)
+make_time_string(float seconds, int precision)
 {
-   int         minutes;
+   int         minutes, secs;
    static char buf[32];
 
-   minutes = seconds / 60;
-   seconds = seconds % 60;
-   snprintf(buf, 32, "%d:%02d", minutes, seconds);
+   minutes = (int)seconds / 60;
+   secs = (int)seconds % 60;
+   if (precision > 0) {
+      char  tmp[16], *p;
+      float frac = seconds - (int)seconds;
+      snprintf(tmp, 16, "%.*f", precision, frac);
+      p = tmp + 1;      /* skip 0 before decimal point */
+      snprintf(buf, 32, "%d:%02d%s", minutes, secs, p);
+   }
+   else
+      snprintf(buf, 32, "%d:%02d", minutes, secs);
    return buf;
 }
 
@@ -362,7 +374,7 @@ int main(int argc, char *argv[])
             case 't':               /* disable hotkeys */
                if (++i >= argc)
                   usage();
-               skip_time = atof(argv[i]);
+               skip_time = get_seconds(argv[i]);
                break;
             case 'r':               /* robust buffer size */
                robust = 1;
@@ -610,10 +622,10 @@ int main(int argc, char *argv[])
 
    buf_frames = buf_samps / in_chans;
 
-   if (!quiet) {
-      buf_start_time = start_time;
+   buf_start_time = start_time;
+
+   if (!quiet)
       second = (int)buf_start_time;
-   }
 
    /* seek to start_time on input file */
 
@@ -695,11 +707,12 @@ int main(int argc, char *argv[])
       macosx_cmixplay_audio_write(sbuf);
 #endif
 
+      buf_start_time += (float)nframes / (float)srate;
+
       if (!quiet) {
-         buf_start_time += (float)nframes / (float)srate;
          if (buf_start_time > second) {
             if (print_minutes_seconds)
-               printf("%s ", make_time_string(second));
+               printf("%s ", make_time_string((float)second, 0));
             else
                printf("%d ", second);
             fflush(stdout);
@@ -712,9 +725,9 @@ int main(int argc, char *argv[])
          if (bytes_read) {
             int   skip = 0;
 
-            if (c == '\004')      /* control-D */
+            if (c == '\004')        /* control-D */
                break;
-            else if (c == 'f') {
+            else if (c == 'f') {    /* fast-forward */
                skip = 1;
                skip_bytes = (long)(skip_frames * in_chans * datum_size);
                buf_start_frame += skip_frames;
@@ -724,7 +737,7 @@ int main(int argc, char *argv[])
                   printf("\n");
                }
             }
-            else if (c == 'r') {
+            else if (c == 'r') {    /* rewind */
                skip = 1;
                skip_bytes = -(long)(skip_frames * in_chans * datum_size);
                buf_start_frame -= skip_frames;
@@ -733,6 +746,11 @@ int main(int argc, char *argv[])
                   second -= (int)skip_time;
                   printf("\n");
                }
+            }
+            else if (c == 'm') {    /* mark */
+               printf("\nMARK: %.*f [%s]\n", MARK_PRECISION, buf_start_time,
+                           make_time_string(buf_start_time, MARK_PRECISION));
+               fflush(stdout);
             }
 
             if (skip) {
