@@ -16,7 +16,7 @@ setline(0,0, 1,1, 6,1, 8,0)
 makegen(2, 10, 8000, 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1) /* car wave */
 makegen(3, 18, 10, 0,0,1,0)                        /* car gliss */
 makegen(4, 10, 80, 1, 1, .4)                       /* mod wave */
-makegen(5, 18, 20, 0,mfreq, 1,mfreq, 2,mfreq-18)   /* mod mfreq */
+makegen(5, 18, 20, 0,mfreq, 1,mfreq, 2,mfreq-18)   /* mod freq */
 makegen(6, 18, 2000, 0,1.5, 1,1.8)                 /* mod depth */
 makegen(7, 18, 2000, 0,4000, 1,10000, 2,100)       /* filt cf */
 makegen(8, 18, 2000, 0,0, 1,.5)                    /* pan */
