@@ -3,7 +3,7 @@ include ../makefile.conf
 PLAY = cmixplay
 
 ifeq ($(ARCH),LINUX)
-   PROGS = $(PLAY) playraw sfrecord full-duplex-test
+   PROGS = $(PLAY) playraw full-duplex-test
    RESAMPLE = resample
    SYSLIBS = -lm   # only this, overriding makefile.conf
 endif
@@ -60,6 +60,7 @@ ifneq ($(strip $(PROGS)),)       # do only if PROGS is nonempty
 	do \
 	  ( $(RM) $(DESTDIR)/$$PROG; ) \
 	done
+	@$(RM) $(DESTDIR)/play
 endif
 ifneq ($(strip $(RESAMPLE)),)    # do only if RESAMPLE is nonempty
 	@cd $(RESAMPLE); $(MAKE) clean
