@@ -7,7 +7,7 @@ class JDELAY : public Instrument {
    float   prev_in, prev_out;
    float   *in, amptabs[2];
    double  delsamps, *amptable, tonedata[3];
-   Ozdelay *delay;
+   Odelayi *delay;
 
    void doupdate();
 public:

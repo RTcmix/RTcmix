@@ -118,7 +118,7 @@ int JDELAY::init(double p[], int n_args)
                                                                   MAXDELTIME);
 
    long maxdelsamps = (long) (MAXDELTIME * SR + 0.5);
-   delay = new Ozdelay(maxdelsamps);
+   delay = new Odelayi(maxdelsamps);
    if (delay == NULL)
       return die("JDELAY", "Can't allocate delay line memory.");
 
