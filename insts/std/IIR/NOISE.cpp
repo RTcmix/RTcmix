@@ -19,6 +19,13 @@ NOISE::NOISE() : Instrument()
 	// future setup here?
 }
 
+NOISE::~NOISE()
+{
+	delete [] myrsnetc;
+	delete [] myamp;
+}
+
+
 int NOISE::init(float p[], short n_args)
 {
 // p0 = start; p1 = duration; p2 = amplitude

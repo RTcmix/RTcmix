@@ -19,6 +19,13 @@ PULSE::PULSE() : Instrument()
 	// future setup here?
 }
 
+PULSE::~PULSE()
+{
+	delete [] myrsnetc;
+	delete [] myamp;
+}
+
+
 int PULSE::init(float p[], short n_args)
 {
 // p0 = start; p1 = duration; p2 = amplitude; p3 = pitch (hz or oct.pc)

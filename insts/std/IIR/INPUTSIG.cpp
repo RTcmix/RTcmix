@@ -20,6 +20,13 @@ INPUTSIG::INPUTSIG() : Instrument()
 	// future setup here?
 }
 
+INPUTSIG::~INPUTSIG()
+{
+	delete [] myrsnetc;
+	delete [] myamp;
+}
+
+
 int INPUTSIG::init(float p[], short n_args)
 {
 // p0 = output skip; p1 = input skip; p2 = duration

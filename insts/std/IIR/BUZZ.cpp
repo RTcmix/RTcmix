@@ -19,6 +19,13 @@ BUZZ::BUZZ() : Instrument()
 	// future setup here?
 }
 
+BUZZ::~BUZZ()
+{
+	delete [] myrsnetc;
+	delete [] myamp;
+}
+
+
 int BUZZ::init(float p[], short n_args)
 {
 // p0 = start; p1 = duration; p2 = amplitude; p3 = pitch (hz or oct.pc)

@@ -8,6 +8,7 @@ class PULSE : public Instrument {
 
 public:
 	PULSE();
+	virtual ~PULSE();
 	int init(float*, short);
 	int run();
 	};
