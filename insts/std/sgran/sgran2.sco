@@ -39,21 +39,21 @@ system("rescale -r sgran2.wav")
       4              ending grain rate
 
       amount of variation in rate: (percentage of grain rate)
-      5-8            beg: lo, average, hi, tightness (0-1, is 0-100%)
-      9-12           end: lo, average, hi, tightness (0-1, is 0-100%)
+      5-8            zero: lo, average, hi, tightness (0-1, is 0-100%)
+      9-12           one: lo, average, hi, tightness (0-1, is 0-100%)
 
       average duration:
-      13-16          starting lo, average, hi, tightness
-      17-20          ending lo, average, hi, tightness
+      13-16          zero: lo, average, hi, tightness
+      17-20          one: lo, average, hi, tightness
 
       location:
-      21-24          starting lo, average, hi, tightness
-      25-28          ending lo, average, hi, tightness
+      21-24          zero: lo, average, hi, tightness
+      25-28          one: lo, average, hi, tightness
 
-      pitch band:
-      29-32          starting lo, average, hi, tightness
+      frequency band:
+      29-32          zero: lo, average, hi, tightness
                      (if p29 < 0, noise is the input)
-      33-36          ending lo, average, hi, tightness
+      33-36          one: lo, average, hi, tightness
 
       37             random seed (integer) [optional]
 
@@ -62,6 +62,7 @@ system("rescale -r sgran2.wav")
    functions: (stt variation changes are linear)
 
       1              overall envelope (or setline)
+                     (caution: was grain envelope prior to 12 June, 1999)
 
       shape of change (usually linear for all shapes):
       2              grain density
@@ -71,6 +72,5 @@ system("rescale -r sgran2.wav")
 
       6              oscillator waveform
 
-      8              grain envelope (note: was function 1 in Mara's version)
+      8              grain envelope
 */
-

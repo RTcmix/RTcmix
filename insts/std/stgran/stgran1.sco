@@ -85,26 +85,26 @@ system("rescale -r -P 20000 stgran1.wav")
              most values are equal to <mid>, with the rest very close to it.
 
       variation in grain rate (percentage of rate, 0-2 is 0-200%):
-      9-12   input file beg:  low, mid, high, tight   [not yet working]
-      13-16  input file end:  low, mid, high, tight   [not yet working]
-      17-20  output file beg: low, mid, high, tight
-      21-24  output file end: low, mid, high, tight
+      9-12   input file zero:  low, mid, high, tight   [not yet working]
+      13-16  input file one:  low, mid, high, tight   [not yet working]
+      17-20  output file zero: low, mid, high, tight
+      21-24  output file one: low, mid, high, tight
 
       grain duration:
-      25-28  beg: low, mid, high, tight
-      29-32  end: low, mid, high, tight
+      25-28  zero: low, mid, high, tight
+      29-32  one: low, mid, high, tight
 
       grain transposition (oct.pc):
-      33-36  beg: low, mid, high, tight
-      37-40  end: low, mid, high, tight
+      33-36  zero: low, mid, high, tight
+      37-40  one: low, mid, high, tight
 
       grain amp (0-1):
-      41-44  beg: low, mid, high, tight
-      45-48  end: low, mid, high, tight
+      41-44  zero: low, mid, high, tight
+      45-48  one: low, mid, high, tight
 
       grain stereo location (percent to left; ignored if output is mono):
-      49-52  beg: low, mid, high, tight
-      53-56  end: low, mid, high, tight
+      49-52  zero: low, mid, high, tight
+      53-56  one: low, mid, high, tight
 
       57     random seed (integer)  [optional]
 
@@ -113,6 +113,7 @@ system("rescale -r -P 20000 stgran1.wav")
    functions:
 
       1      overall envelope (or call setline)
+             (was grain envelope prior to 12 June, 1999)
 
       shape of change (usually linear for all shapes):
       2      grain input rate (density)               [not yet working]

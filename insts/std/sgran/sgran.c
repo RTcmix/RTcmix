@@ -18,21 +18,21 @@ static float *array, tabs[2];         /* for setline */
       4              ending grain rate
 
       amount of variation in rate: (percentage of grain rate)
-      5-8            beg: lo, average, hi, tightness (0-1, is 0-100%)
-      9-12           end: lo, average, hi, tightness (0-1, is 0-100%)
+      5-8            zero: lo, average, hi, tightness (0-1, is 0-100%)
+      9-12           one: lo, average, hi, tightness (0-1, is 0-100%)
 
       average duration:
-      13-16          starting lo, average, hi, tightness
-      17-20          ending lo, average, hi, tightness
+      13-16          zero: lo, average, hi, tightness
+      17-20          one: lo, average, hi, tightness
 
       location:
-      21-24          starting lo, average, hi, tightness
-      25-28          ending lo, average, hi, tightness
+      21-24          zero: lo, average, hi, tightness
+      25-28          one: lo, average, hi, tightness
 
-      pitch band:
-      29-32          starting lo, average, hi, tightness
+      frequency band:
+      29-32          zero: lo, average, hi, tightness
                      (if p29 < 0, noise is the input)
-      33-36          ending lo, average, hi, tightness
+      33-36          one: lo, average, hi, tightness
 
       37             random seed (integer) [optional]
 
@@ -41,6 +41,7 @@ static float *array, tabs[2];         /* for setline */
    functions: (stt variation changes are linear)
 
       1              overall envelope (or setline)
+                     (was grain envelope prior to 12 June, 1999)
 
       shape of change (usually linear for all shapes):
       2              grain density
@@ -50,7 +51,7 @@ static float *array, tabs[2];         /* for setline */
 
       6              oscillator waveform
 
-      8              grain envelope (note: was function 1 in Mara's version)
+      8              grain envelope
 */
 
 double
@@ -117,17 +118,17 @@ int n_args; /* number of p-fields */
 	freq_shape = (float *)floc(5);
 	tableset(p[1]-p[4],fsize(5),tab5);
 
-	slodiff = (double)(p[9]-p[5])/nsamps; /* get stt beg/end differences */
+	slodiff = (double)(p[9]-p[5])/nsamps; /* get stt zero/one differences */
 	smiddiff = (double)(p[10]-p[6])/nsamps;
 	shidiff = (double)(p[11]-p[7])/nsamps;
 	stidiff = (double)(p[12]-p[8])/nsamps;
 
-	dlodiff = (double)(p[17]-p[13]); /*get dur beg/end differences */
+	dlodiff = (double)(p[17]-p[13]); /*get dur zero/one differences */
 	dmiddiff = (double)(p[18]-p[14]);
 	dhidiff = (double)(p[19]-p[15]);
 	dtidiff = (double)(p[20]-p[16]);
 
-	llodiff = (double)(p[25]-p[21]); /*get loc beg/end differences */
+	llodiff = (double)(p[25]-p[21]); /*get loc zero/one differences */
 	lmiddiff = (double)(p[26]-p[22]);
 	lhidiff = (double)(p[27]-p[23]);
 	ltidiff = (double)(p[28]-p[24]);
@@ -136,7 +137,7 @@ int n_args; /* number of p-fields */
 	if(p[29] < 0) 		/* if negative, noise is the input */
 		randflag = 1;
 
-	flodiff = (double)(p[33]-p[29]); /*freq beg/end differences */
+	flodiff = (double)(p[33]-p[29]); /*freq zero/one differences */
 	fmiddiff = (double)(p[34]-p[30]);
 	fhidiff = (double)(p[35]-p[31]);
 	ftidiff = (double)(p[36]-p[32]);

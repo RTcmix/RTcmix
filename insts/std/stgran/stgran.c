@@ -32,26 +32,26 @@
              most values are equal to <mid>, with the rest very close to it.
 
       variation in grain rate (percentage of rate, 0-2 is 0-200%):
-      9-12   input file beg:  low, mid, high, tight   [not yet working]
-      13-16  input file end:  low, mid, high, tight   [not yet working]
-      17-20  output file beg: low, mid, high, tight
-      21-24  output file end: low, mid, high, tight
+      9-12   input file zero:  low, mid, high, tight   [not yet working]
+      13-16  input file one:  low, mid, high, tight   [not yet working]
+      17-20  output file zero: low, mid, high, tight
+      21-24  output file one: low, mid, high, tight
 
       grain duration:
-      25-28  beg: low, mid, high, tight
-      29-32  end: low, mid, high, tight
+      25-28  zero: low, mid, high, tight
+      29-32  one: low, mid, high, tight
 
       grain transposition (oct.pc):
-      33-36  beg: low, mid, high, tight
-      37-40  end: low, mid, high, tight
+      33-36  zero: low, mid, high, tight
+      37-40  one: low, mid, high, tight
 
       grain amp (0-1):
-      41-44  beg: low, mid, high, tight
-      45-48  end: low, mid, high, tight
+      41-44  zero: low, mid, high, tight
+      45-48  one: low, mid, high, tight
 
       grain stereo location (percent to left; ignored if output is mono):
-      49-52  beg: low, mid, high, tight
-      53-56  end: low, mid, high, tight
+      49-52  zero: low, mid, high, tight
+      53-56  one: low, mid, high, tight
 
       57     random seed (integer)  [optional]
 
@@ -60,6 +60,7 @@
    functions:
 
       1      overall envelope (or call setline)
+             (was grain envelope prior to 12 June, 1999)
 
       shape of change (usually linear for all shapes):
       2      grain input rate (density)               [not yet working]
@@ -260,37 +261,37 @@ stgran(float p[], int n_args)
 
    envel = floc(8);           /* tableset in sample loop */
 
-   /* get infile stt var beg/end differences */
+   /* get infile stt var zero/one differences */
    ilodiff = (double) (p[13] - p[9]) / nsamps;
    imiddiff = (double) (p[14] - p[10]) / nsamps;
    ihidiff = (double) (p[15] - p[11]) / nsamps;
    itidiff = (double) (p[16] - p[12]) / nsamps;
 
-   /* get outfile stt var beg/end differences */
+   /* get outfile stt var zero/one differences */
    slodiff = (double) (p[21] - p[17]) / nsamps;
    smiddiff = (double) (p[22] - p[18]) / nsamps;
    shidiff = (double) (p[23] - p[19]) / nsamps;
    stidiff = (double) (p[24] - p[20]) / nsamps;
 
-   /* get dur beg/end differences */
+   /* get dur zero/one differences */
    dlodiff = (double) (p[29] - p[25]);
    dmiddiff = (double) (p[30] - p[26]);
    dhidiff = (double) (p[31] - p[27]);
    dtidiff = (double) (p[32] - p[28]);
 
-   /* transp beg/end differences */
+   /* transp zero/one differences */
    tlodiff = tloend - tlobeg;
    tmiddiff = tmidend - tmidbeg;
    thidiff = thiend - thibeg;
    ttidiff = (double) (p[40] - p[36]);
 
-   /* amp beg/end differences */
+   /* amp zero/one differences */
    alodiff = (double) (p[45] - p[41]);
    amiddiff = (double) (p[46] - p[42]);
    ahidiff = (double) (p[47] - p[43]);
    atidiff = (double) (p[48] - p[44]);
 
-   /* loc beg/end differences */
+   /* loc zero/one differences */
    llodiff = (double) (p[53] - p[49]);
    lmiddiff = (double) (p[54] - p[50]);
    lhidiff = (double) (p[55] - p[51]);
