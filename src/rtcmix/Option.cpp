@@ -11,7 +11,7 @@
 #include "Option.h"
 #include "conf/Config.h"
 #include <ugens.h>         // FIXME: pull all this in just for warn()?
-#include <iostream>
+#include <iostream.h>
 
 #define DEVICE_MAX   64
 #define DSOPATH_MAX  PATH_MAX * 2
