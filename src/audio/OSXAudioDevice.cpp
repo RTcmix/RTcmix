@@ -12,64 +12,65 @@
 #include <assert.h>
 #include <sndlibsupport.h>	// RTcmix header
 
-#define DEBUG 1
+#define DEBUG 0
 
 static const char *errToString(OSStatus err);
 static OSStatus getDeviceList(AudioDeviceID **devList, int *devCount);
-static AudioDeviceID findDeviceID(const char *devName, AudioDeviceID *devList, int devCount, Boolean isInput);
+static AudioDeviceID findDeviceID(const char *devName, AudioDeviceID *devList,
+								  int devCount, Boolean isInput);
 
 static const int REC = 0, PLAY = 1;
 static const int kMasterChannel = 0;
 
 struct OSXAudioDevice::Impl {
-	AudioDeviceID				*deviceIDs;				// Queried on system.
-	int							deviceCount;			// Queried on system.
-	char 						*deviceName;			// Passed in by user.
-	AudioDeviceID				deviceID;
+	AudioDeviceID			*deviceIDs;				// Queried on system.
+	int						deviceCount;			// Queried on system.
+	char 					*deviceName;			// Passed in by user.
+	AudioDeviceID			deviceID;
 	struct Port {
-		int							streamIndex;		// Which stream
-		int							streamCount;		// How many streams open
-		int							streamChannel;		// 1st chan of first stream
-		AudioBufferList				*streamDesc;		// Properties for all strams
+		int						streamIndex;		// Which stream
+		int						streamCount;		// How many streams open
+		int						streamChannel;		// 1st chan of first stream
+		AudioBufferList			*streamDesc;		// Properties for all strams
 		AudioStreamBasicDescription deviceFormat;		// format
-		unsigned int 				deviceBufFrames;	// hw buf length
-		float						*audioBuffer;		// circ. buffer
-		int							audioBufFrames;		// length of audioBuffers
-		int							audioBufChannels;	// channels in audioBuffers
-		int							inLoc, outLoc;		// circ. buffer indices
-		int							audioBufFilled;		// audioBuffer samples available
+		unsigned int 			deviceBufFrames;	// hw buf length
+		float					*audioBuffer;		// circ. buffer
+		int						audioBufFrames;		// length of audioBuffers
+		int						audioBufChannels;	// channels in audioBuffers
+		int						inLoc, outLoc;		// circ. buffer indices
+		int						audioBufFilled;		// audioBuffer samples available
 		typedef int (*FrameFunction)(struct Port *, void *, int, int);
-		FrameFunction				frameFn;
-		static int					interleavedGetFrames(struct Port *, void *, int, int);
-		static int					interleavedSendFrames(struct Port *, void *, int, int);
-		static int					noninterleavedGetFrames(struct Port *, void *, int, int);
-		static int					noninterleavedSendFrames(struct Port *, void *, int, int);
-	} 							port[2];
+		FrameFunction			frameFn;
+		static int				interleavedGetFrames(struct Port *, void *, int, int);
+		static int				interleavedSendFrames(struct Port *, void *, int, int);
+		static int				noninterleavedGetFrames(struct Port *, void *, int, int);
+		static int				noninterleavedSendFrames(struct Port *, void *, int, int);
+	} 						port[2];
 	
-	int							bufferSampleFormat;
-	int							frameCount;
-	bool						formatWritable;			// true if device allows changes to fmt
-	bool						paused;
-	bool						stopping;
-	bool						recording;				// Used by OSX code
-	bool						playing;				// Used by OSX code
-	static OSStatus				runProcess(
-									AudioDeviceID			inDevice,
-									const AudioTimeStamp	*inNow,
-									const AudioBufferList	*inInputData,
-									const AudioTimeStamp	*inInputTime,
-									AudioBufferList			*outOutputData,
-									const AudioTimeStamp	*inOutputTime,
-							  		void					*object);
-	static OSStatus				listenerProcess(
-									AudioDeviceID inDevice,
-									UInt32 inChannel,
-									Boolean isInput,
-									AudioDevicePropertyID inPropertyID,
-									void *object);
+	int						bufferSampleFormat;
+	int						frameCount;
+	bool					formatWritable;		// true if device allows changes to fmt
+	bool					paused;
+	bool					stopping;
+	bool					recording;				// Used by OSX code
+	bool					playing;				// Used by OSX code
+	static OSStatus			runProcess(
+								AudioDeviceID			inDevice,
+								const AudioTimeStamp	*inNow,
+								const AudioBufferList	*inInputData,
+								const AudioTimeStamp	*inInputTime,
+								AudioBufferList			*outOutputData,
+								const AudioTimeStamp	*inOutputTime,
+						  		void					*object);
+	static OSStatus			listenerProcess(
+								AudioDeviceID inDevice,
+								UInt32 inChannel,
+								Boolean isInput,
+								AudioDevicePropertyID inPropertyID,
+								void *object);
 
-	inline int					inputDeviceChannels() const;
-	inline int					outputDeviceChannels() const;						
+	inline int				inputDeviceChannels() const;
+	inline int				outputDeviceChannels() const;						
 };
 
 // I/O Functions
