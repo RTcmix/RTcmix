@@ -10,10 +10,12 @@
 #include <buffers.h>
 #include <sys/types.h>
 #include <rtupdate.h>
+#include <maxdispargs.h>
 
 #define MAXNUMPARAMS 100
 
 class heap;
+class PFieldSet;
 
 class Instrument : public RefCounted {
 protected:
@@ -40,7 +42,11 @@ protected:
    BUFTYPE        *outbuf;         // private interleaved buffer
 
    BusSlot        *_busSlot;
-
+#ifdef PFIELD_CLASS
+	PFieldSet	  *_pfields;
+	static float  s_fArray[MAXDISPARGS];
+	static double s_dArray[MAXDISPARGS];
+#endif
 #ifdef RTUPDATE
    // new RSD variables
    EnvType rsd_env;
@@ -116,11 +122,13 @@ public:
 	void 			schedule(heap *rtHeap);
 	void			set_bus_config(const char *);
 	inline const BusSlot *	getBusSlot() const;
-	virtual int		init(float *, int, double *);	// Called by checkInsts
+	virtual int		setup(PFieldSet *);				// Called by checkInsts()
+	virtual int		init(float *, int, double *);	// Called by setup()
 	virtual int		configure();					// Called by inTraverse
 	virtual int		run();
+	virtual int		update(float *, int *, double *);	// Called by run()
 
-	int			exec(BusType bus_type, int bus);
+	int				exec(BusType bus_type, int bus);
 	void			addout(BusType bus_type, int bus);
 	bool			isDone() const { return cursamp >= nsamps; }
 	const char *	name() const { return _name; }
@@ -206,3 +214,4 @@ inline const BusSlot *	Instrument::getBusSlot() const
 }
 
 #endif /* _INSTRUMENT_H_  */
+

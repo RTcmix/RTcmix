@@ -17,6 +17,8 @@
 #include <assert.h>
 #include <ugens.h>
 #include "heap/heap.h"
+#include <PField.h>
+#include <PFieldSet.h>
 
 /* ----------------------------------------------------------- Instrument --- */
 Instrument::Instrument()
@@ -43,6 +45,9 @@ Instrument::Instrument()
 
    outbuf = NULL;
    _busSlot = NULL;
+#ifdef PFIELD_CLASS
+   _pfields = NULL;
+#endif
 
    for (i = 0; i < MAXBUS; i++)
       bufstatus[i] = 0;
@@ -76,6 +81,9 @@ Instrument::~Instrument()
 
 	RefCounted::unref(_busSlot);	// release our reference	
 
+#ifdef PFIELD_CLASS
+	delete _pfields;
+#endif	
 	delete [] _name;
 }
 
@@ -111,10 +119,49 @@ void Instrument::set_bus_config(const char *inst_name)
   pthread_mutex_unlock(&bus_slot_lock);
 }
 
+#ifdef PFIELD_CLASS
+float  Instrument::s_fArray[MAXDISPARGS];
+double Instrument::s_dArray[MAXDISPARGS];
+#endif
+
+/* ------------------------------------------------------------ setup () --- */
+
+// This function is now the one called by checkInsts().  It calls init().
+
+int Instrument::setup(PFieldSet *pfields)
+{
+#ifdef PFIELD_CLASS
+	_pfields = pfields;
+	int nargs = 0;
+	update(s_fArray, &nargs, s_dArray);
+	return init(s_fArray, pfields->size(), s_dArray);
+#else
+	return -1;
+#endif
+}
+
+/* ------------------------------------------------------------ update () --- */
+
+// This function is called during run() by Instruments which want updated
+// values for each pfield slot.
+
+int Instrument::update(float p[], int *n_args, double pp[])
+{
+#ifdef PFIELD_CLASS
+	int n, args = _pfields->size();
+	double percent = (double) currentFrame() / nSamps();
+	for (n = 0; n <args; ++n)
+		p[n] = float(pp[n] = (*_pfields)[n].doubleValue(percent));
+	for (; n < MAXDISPARGS; ++n)
+		p[n] = float(pp[n] = 0.0);
+	*n_args = args;
+#endif
+	return 0;
+}
 
 /* ------------------------------------------------------------ init (1) --- */
 
-// This function is the one called by checkInsts().  It includes the double
+// This function is now called by setup().  It includes the double
 // version of the p array, pp, for instruments which need it.
 
 int Instrument::init(float p[], int n_args, double pp[])
