@@ -18,7 +18,7 @@ short isNext;
 int
 check_byte_order(SFHEADER *sfh, char *prog, char *sfname)
 {
-#ifdef MUS_LITTLE_ENDIAN
+#if MUS_LITTLE_ENDIAN
    swap = (sfdataformat(sfh) == MUS_BSHORT
         || sfdataformat(sfh) == MUS_BFLOAT);
 #else

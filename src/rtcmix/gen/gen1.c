@@ -140,7 +140,7 @@ gen1(struct gen *gen, char *sfname)
       exit(1);
    }
 
-#ifdef MUS_LITTLE_ENDIAN
+#if MUS_LITTLE_ENDIAN
    byteswap = IS_BIG_ENDIAN_FORMAT(data_format);
 #else
    byteswap = IS_LITTLE_ENDIAN_FORMAT(data_format);
