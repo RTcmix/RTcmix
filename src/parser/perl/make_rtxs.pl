@@ -68,18 +68,22 @@ print qq~
             croak("Too many arguments to %s.", _rtcmix_funcs[ix]);
 
          for (i = 0; i < items; i++) {
-            if (SvPOK(ST(i))) {
-               STRLEN   len;
+            SV  *stack_item = ST(i);
+
+# NOTE: check for double/integer first; otherwise you might get the string
+# version of a number, which we'll then cast as a string pointer to RTcmix.
+            if (SvNIOK(stack_item)) {
+               pp[i] = SvNV(stack_item);
+            }
+            else {
                int      anint;
                char     *str;
 
-# FIXME: may need to strdup <str>, since perl might garbage-collect it
-               str = SvPV(ST(i), len);
+# FIXME: may need to strdup <str>, since perl might garbage-collect it?
+               str = SvPV_nolen(stack_item);
                anint = (int) str;
                pp[i] = (double) anint;
             }
-            else
-               pp[i] = SvNV(ST(i));
          }
 
          RETVAL = parse_dispatch(_rtcmix_funcs[ix], pp, items);
