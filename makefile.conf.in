@@ -1,5 +1,5 @@
 # The directory containing the RTcmix directory
-TOPDIR = /home/topper
+TOPDIR = /usr/local/src
 
 # The name of the RTcmix directory
 CMIXDIR = $(TOPDIR)/RTcmix.dev
