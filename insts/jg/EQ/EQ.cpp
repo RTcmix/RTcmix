@@ -105,7 +105,7 @@ EQType EQ :: getEQType(bool trystring)
 
    // must try int first, since a valid code cast to char * will crash strncmp
    int code = field.intValue(index);
-   if ((code < EQLowPass || code > EQPeaking) && trystring) {
+   if ((code < 0 || code > 4) && trystring) {
       const char *str = field.stringValue(index);
       code = _string_to_eqcode(str);   // -1 if no match
       if (code != -1)
