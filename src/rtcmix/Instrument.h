@@ -8,6 +8,7 @@
 #include <bus.h>
 #include <buffers.h>
 #include <sys/types.h>
+#include <rtupdate.h>
 
 #define MAXNUMPARAMS 100
 
@@ -35,6 +36,16 @@ public:
    BUFTYPE        *outbuf;         // private interleaved buffer
 
    BusSlot        *bus_config;
+
+   // new RSD variables
+   EnvType rsd_env;
+   int rise_samps, sustain_samps, decay_samps;
+   float *rise_table,r_tabs[2];
+   float *sustain_table,s_tabs[2];
+   float *decay_table,d_tabs[2];
+   float rise_time, sustain_time, decay_time;
+   int rsd_samp;
+
 
 private:
    BUFTYPE        *obufptr;
@@ -96,6 +107,13 @@ public:
    void pf_path_update(int tag, int pval);
    void pi_path_update(int pval);
    void set_instnum(char* name);
+
+   void RSD_setup(int RISE_SLOT, int SUSTAIN_SLOT
+                  , int DECAY_SLOT, float duration);
+
+   void RSD_check();
+
+   float RSD_get();
 private:
    void gone();                    // decrements reference to input soundfile
 

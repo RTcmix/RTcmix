@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <iostream.h>
+
 #include "Instrument.h"
 #include "rt.h"
 #include "rtdefs.h"
@@ -14,7 +15,7 @@
 #include <sndlibsupport.h>
 #include <bus.h>
 #include <assert.h>
-#include <rtupdate.h>
+
 #include <ugens.h>
 
 /* ----------------------------------------------------------- Instrument --- */
@@ -832,3 +833,102 @@ float Instrument::rtupdate(int tag, int pval)
   return tval;
 }
 
+// Rise, Sustain, Decay code + + + + + + + + + + + + + + + + 
+void Instrument::RSD_setup(int RISE_SLOT, int SUSTAIN_SLOT, int DECAY_SLOT
+                           , float duration)
+{
+	rsd_env = NONE;
+	rise_samps = sustain_samps = decay_samps = 0;
+	
+	rise_table = sustain_table = decay_table = NULL;
+
+	
+	if((sustain_time || decay_time) && (rise_time <= 0))
+		rise_time = 0.0001;
+	if(rise_time)
+	{
+		rise_table = floc(RISE_SLOT);
+		if(rise_table)
+		{
+			tableset(rise_time, fsize(RISE_SLOT), r_tabs);
+			rise_samps = (int)(rise_time * SR);
+			rsd_env = RISE;
+		}
+	}
+
+	if((rise_time || decay_time) && (sustain_time <= 0))
+		sustain_time = 0.0001;
+	if(sustain_time)
+	{
+		sustain_table = floc(SUSTAIN_SLOT);
+		if(sustain_table)
+		{
+			tableset(sustain_time, fsize(SUSTAIN_SLOT), s_tabs);
+			sustain_samps = (int)(sustain_time * SR);
+		}
+	}
+
+	if((rise_time || sustain_time) && (decay_time <= 0))
+		decay_time = 0.0001;
+	if(decay_time)
+	{
+		decay_table = floc(DECAY_SLOT);
+		if(decay_table)
+		{
+			tableset(decay_time, fsize(DECAY_SLOT), d_tabs);
+			decay_samps = (int)(decay_time * SR);
+		}
+	}
+
+	if((rise_table) || (sustain_table) || (decay_table))
+	{
+		dur = (rise_time + sustain_time + decay_time);
+	}
+	else
+		dur = duration;
+	return;
+}
+
+	// End RSD Setup - - - - - - - - - - - - - - - - - - - - -
+
+// Check RSD Envelope + + + + + + + + + + + + + + + + + + + + 
+void Instrument::RSD_check()
+{
+	if((rsd_samp > rise_samps) && (rsd_env == RISE))
+	{
+		rsd_env = SUSTAIN;
+		rsd_samp = 0;
+	}
+	else if((rsd_samp > sustain_samps) && (rsd_env == SUSTAIN))
+	{
+		rsd_env = DECAY;
+		rsd_samp = 0;
+	}
+	return;
+}
+
+// End RSD Envelope Check - - - - - - - - - - - - - - - -
+
+// Check which Amplitude Envelope to use + + + + + + +
+float Instrument::RSD_get()
+{
+	float retvalue;
+	if(rsd_env == RISE)
+	{
+		retvalue = tablei(rsd_samp, rise_table, r_tabs);
+	}
+	else if(rsd_env == SUSTAIN)
+	{
+		retvalue = tablei(rsd_samp, sustain_table, s_tabs);
+	}
+	else if(rsd_env == DECAY)
+	{
+		retvalue = tablei(rsd_samp, decay_table, d_tabs);
+	}
+	else
+	{
+		retvalue = -1;
+	}
+	return retvalue;
+}
+// End Amp Env Check - - - - - - - - - - - - - - - - - 
