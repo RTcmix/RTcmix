@@ -11,12 +11,13 @@ static SFCODE	ampcode = {
 extern SFHEADER sfdesc[NFILES];
 
 double
-sfprint(p,n_args)
-float *p;
+sfprint(float p[], int n_args)
 {
 	int fno;
 	char date[26];
 	fno = p[0];
 	fprintf(stderr,"Header info for file number %d\n",fno);
 	printsf(&sfdesc[fno]);
+
+	return 0.0;
 }

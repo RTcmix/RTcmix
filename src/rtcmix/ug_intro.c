@@ -1,5 +1,6 @@
 #include	"../H/ugens.h"
 
+void
 ug_intro()
 {
 /*
