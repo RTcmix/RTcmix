@@ -46,7 +46,7 @@ readData(int   infd,          /* input file descriptor */
    outPtr1 += Xoff;                 /* Start at designated sample number */
    outPtr2 += Xoff;
 
-   clm_read(infd, 0, Nsamps - 1, nChans, ibufs);
+   mus_file_read(infd, 0, Nsamps - 1, nChans, ibufs);
    /* NOTE: doesn't return an error code! */
 
    /* NB: sndlib pads ibufs with zeros if it reads past EOF. */
@@ -315,7 +315,7 @@ resampleFast(double factor,        /* factor = Sndout/Sndin */
          }
       }
       /* NB: errors reported within sndlib */
-      clm_write(outfd, 0, Nout - 1, nChans, obufs);
+      mus_file_write(outfd, 0, Nout - 1, nChans, obufs);
 
       printf("."); fflush(stdout);
 
@@ -443,7 +443,7 @@ resampleWithFilter(double factor,      /* factor = Sndout/Sndin */
          }
       }
       /* NB: errors reported within sndlib */
-      clm_write(outfd, 0, Nout - 1, nChans, obufs);
+      mus_file_write(outfd, 0, Nout - 1, nChans, obufs);
 
       printf("."); fflush(stdout);
 

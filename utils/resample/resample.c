@@ -5,7 +5,7 @@
 
 static char resampleVersion[] = "\
 resample version 1.2 (jos@ccrma.stanford.edu)\n\
-(sndlib support by jgg9c@virginia.edu)\n";
+(sndlib support by johgibso@indiana.edu)\n";
 
 #include "filterkit.h"
 #include "resample.h"
@@ -17,13 +17,13 @@ resample version 1.2 (jos@ccrma.stanford.edu)\n\
 #include <errno.h>
 #include <sndlibsupport.h>
 
-#define OUT_TYPE    AIFF_sound_file
-//#define OUT_TYPE    RIFF_sound_file
-//#define OUT_TYPE    NeXT_sound_file
-//#define OUT_TYPE    IRCAM_sound_file
+#define OUT_TYPE    MUS_AIFC
+//#define OUT_TYPE    MUS_RIFF
+//#define OUT_TYPE    MUS_NEXT
+//#define OUT_TYPE    MUS_IRCAM
 
-#define OUT_FORMAT  snd_16_linear
-//#define OUT_FORMAT  snd_16_linear_little_endian  /* use this for RIFF only */
+#define OUT_FORMAT  MUS_BSHORT
+//#define OUT_FORMAT  MUS_LSHORT  /* use this for RIFF only */
 
 #define OUT_SUFFIX  ".resamp"
 
@@ -196,11 +196,11 @@ main(int argc, char *argv[])
    infd = sndlib_open_read(insfname);
    if (infd == -1)
       fails("Could not open input file \"%s\"", insfname);
-   if (NOT_A_SOUND_FILE(c_snd_header_type()))
+   if (NOT_A_SOUND_FILE(mus_header_type()))
       fails("\"%s\" is probably not a sound file.", insfname);
-   nChans = c_snd_header_chans();
-   insrate = c_snd_header_srate();
-   inCount = c_snd_header_data_size();
+   nChans = mus_header_chans();
+   insrate = mus_header_srate();
+   inCount = mus_header_samples();
    inCount /= nChans;           /* to get sample frames */
 
    /* Compute sampling conversion factor */
@@ -209,7 +209,7 @@ main(int argc, char *argv[])
       printf("Sampling rate conversion factor set to %f\n", factor);
 
    /* Create and open output file */
-   set_aifc_header(0);                            /* we want AIFF, not AIFC */
+   mus_header_set_aifc(0);                        /* we want AIFF, not AIFC */
    outfd = sndlib_create(outsfname, OUT_TYPE, OUT_FORMAT, newsrate, nChans);
    if (outfd == -1)
       fails("Could not create output file \"%s\"", outsfname);

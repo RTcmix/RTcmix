@@ -307,27 +307,27 @@ int main(int argc, char *argv[])
       fprintf(stderr, "Can't read \"%s\"!\n", sfname);
       exit(1);
    }
-   header_type = c_snd_header_type();
+   header_type = mus_header_type();
    if (NOT_A_SOUND_FILE(header_type)) {
       fprintf(stderr, "\"%s\" is probably not a sound file\n", sfname);
       exit(1);
    }
-   data_format = c_snd_header_format();
+   data_format = mus_header_format();
    if (!SUPPORTED_DATA_FORMAT(data_format)) {
       fprintf(stderr, UNSUPPORTED_DATA_FORMAT_MSG, sfname, PROGNAME);
       exit(1);
    }
    is_float = IS_FLOAT_FORMAT(data_format);
-#ifdef SNDLIB_LITTLE_ENDIAN
+#ifdef MUS_LITTLE_ENDIAN
    swap = IS_BIG_ENDIAN_FORMAT(data_format);
 #else
    swap = IS_LITTLE_ENDIAN_FORMAT(data_format);
 #endif
-   data_location = c_snd_header_data_location();
-   srate = c_snd_header_srate();
-   in_chans = c_snd_header_chans();
-   datum_size = c_snd_header_datum_size();           /* bytes per sample */
-   nsamps = c_snd_header_data_size();                /* samples, not frames */
+   data_location = mus_header_data_location();
+   srate = mus_header_srate();
+   in_chans = mus_header_chans();
+   datum_size = mus_header_data_format_to_bytes_per_sample();
+   nsamps = mus_header_samples();                /* samples, not frames */
    dur = (float)(nsamps / in_chans) / (float)srate;
 
    /* more input validation */
