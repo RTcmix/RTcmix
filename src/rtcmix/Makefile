@@ -122,15 +122,7 @@ endif
 ifeq ($(PYTHON_SUPPORT), TRUE)
    ARCHFLAGS += -DPYTHON
    PROGS += PYMIX
-   ifeq ($(ARCH), MACOSX)
-      PYTHONLIBS = `$(PYTHON) ../parser/python/print_shlibpython.py`
-   else
-      PYTHONLIBS = `$(PYTHON) ../parser/python/print_libpython.py`
-      # This is necessary for Python 2.x in Slackware Linux 8.0, and probably
-      # other distributions; comment out if it gives you trouble with earlier
-      # Pythons.  -JGG
-      PYTHONLIBS += -lutil
-   endif
+   PYTHONLIBS = `$(PYTHON) ../parser/python/print_libpython.py`
    ifeq ($(PYTHON_EXT_STATIC_LINK), TRUE)
       PYEXT = ../parser/python/rtcmixmodule.o
    endif
