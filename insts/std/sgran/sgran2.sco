@@ -55,6 +55,8 @@ system("rescale -r sgran2.wav")
                      (if p29 < 0, noise is the input)
       33-36          ending lo, average, hi, tightness
 
+      37             random seed (optional)
+
                  *       *       *
 
    functions: (stt variation changes are linear)
