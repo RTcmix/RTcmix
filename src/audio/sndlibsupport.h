@@ -11,6 +11,9 @@
 #ifdef SGI
 #include <sys/endian.h>
 #endif
+#ifdef FREEBSD
+#include <machine/endian.h>
+#endif
 #include <stdio.h>               /* for FILE, needed by sndlib.h */
 #include "../sndlib/sndlib.h"
 #include "../H/sfheader.h"       /* for SFHEADER */

@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+
+Saturday, Mar 30, 2002 John Gibson <johgibso@indiana.edu>
+
+   * Support for FreeBSD, contributed by Carl McTague and Judd Storrs.
+
 Monday, Mar 18, 2002 John Gibson <johgibso@indiana.edu>
 
    * Fix pvoc bug: transposing would fail for pvoc calls after

@@ -19,6 +19,7 @@ PACKAGE_DIRS =
 ARCH = LINUX
 #ARCH = MACOSX
 #ARCH = SGI
+#ARCH = FREEBSD
 
 # optimization, debugging and warning flags
 OPT = -g -Wall -Wno-unused -O2
@@ -101,6 +102,15 @@ ifeq ($(ARCH),SGI)
   INSTALL = cp -f
   SHELL = /bin/sh
 endif
+ifeq ($(ARCH),FREEBSD)
+  ARCHFLAGS = -D_REENTRANT -DFREEBSD -DLINUX -DRTUPDATE
+  CC = gcc
+  CXX = g++
+  LD = ld
+  MAKE = gmake
+  INSTALL = cp -f
+  SHELL = /bin/sh
+endif
 
 INCLUDES = -I$(CMIXDIR)/H
 
@@ -125,6 +135,11 @@ ifeq ($(ARCH),SGI)
   SYSLIBS = -lpthread -laudio -lm
   LDFLAGS = $(SYSLIBS)
   SHARED_LDFLAGS = -shared -update_registry $(LIBDESTDIR)/so_locations
+endif
+ifeq ($(ARCH),FREEBSD)
+  SYSLIBS = -pthread -lm -ll
+  LDFLAGS = -export-dynamic $(SYSLIBS)
+  SHARED_LDFLAGS = -shared -Wl,-soname,$@
 endif
 
 # For benefit of inst makefiles that live outside CMIXDIR hierarchy

@@ -5,6 +5,9 @@ SYSOBJS = ../sys/printsf.o ../sys/check_byte_order.o ../sys/sndlibsupport.o
 ifeq ($(ARCH),LINUX)
    SYSLIBS = -lm   # only this, overriding makefile.conf
 endif
+ifeq ($(ARCH),FREEBSD)
+   SYSLIBS = -lm   # only this, overriding makefile.conf
+endif
 
 HEAD = sfcreate sfprint sfshrink sfhedit sffixsize
 
