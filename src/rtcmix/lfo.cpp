@@ -4,18 +4,13 @@
 */
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-#include <rtcmix_types.h>
 #include <PField.h>
+#include <tableutils.h>
 #include <ugens.h>		// for warn, die
 
 // Functions for creating LFO PFields.    -John Gibson, 11/20/04
 
 extern int resetval;		// declared in src/rtcmix/minc_functions.c
-
-extern "C" {
-Handle maketable(const Arg args[], const int nargs); // defined in table.cpp
-}
 
 
 // --------------------------------------------------------- local utilities ---
@@ -26,83 +21,6 @@ _createPFieldHandle(PField *pfield)
 	handle->type = PFieldType;
 	handle->ptr = (void *) pfield;
 	return handle;
-}
-
-// Create an appropriate TablePField from a string description.
-// We use ideal waveforms instead of building them up from harmonics.
-// For square waves, this avoids the ripple that we'd get otherwise.
-
-static TablePField *
-_makewavetable(const char *wavetype)
-{
-	int nargs;
-	Arg *mtargs = NULL;
-	const int tabsize = 1000;
-
-	if (strncmp(wavetype, "sine", 3) == 0) {
-		nargs = 3;
-		mtargs = new Arg[nargs];
-		mtargs[0] = "wave";
-		mtargs[1] = tabsize;
-		mtargs[2] = 1.0;
-	}
-	else if (strncmp(wavetype, "sawup", 4) == 0) {
-		nargs = 6;
-		mtargs = new Arg[nargs];
-		mtargs[0] = "linebrk";
-		mtargs[1] = "nonorm";
-		mtargs[2] = tabsize;
-		mtargs[3] = -1.0;
-		mtargs[4] = tabsize;
-		mtargs[5] = 1.0;
-	}
-	else if (strncmp(wavetype, "sawdown", 3) == 0) {
-		nargs = 6;
-		mtargs = new Arg[nargs];
-		mtargs[0] = "linebrk";
-		mtargs[1] = "nonorm";
-		mtargs[2] = tabsize;
-		mtargs[3] = 1.0;
-		mtargs[4] = tabsize;
-		mtargs[5] = -1.0;
-	}
-	else if (strncmp(wavetype, "square", 3) == 0) {
-		nargs = 10;
-		mtargs = new Arg[nargs];
-		mtargs[0] = "linebrk";
-		mtargs[1] = "nonorm";
-		mtargs[2] = tabsize;
-		mtargs[3] = -1.0;
-		mtargs[4] = tabsize >> 1;
-		mtargs[5] = -1.0;
-		mtargs[6] = 0.0;
-		mtargs[7] = 1.0;
-		mtargs[8] = tabsize >> 1;
-		mtargs[9] = 1.0;
-	}
-	else if (strncmp(wavetype, "triangle", 3) == 0) {
-		nargs = 8;
-		mtargs = new Arg[nargs];
-		mtargs[0] = "linebrk";
-		mtargs[1] = "nonorm";
-		mtargs[2] = tabsize;
-		mtargs[3] = -1.0;
-		mtargs[4] = tabsize >> 1;
-		mtargs[5] = 1.0;
-		mtargs[6] = tabsize >> 1;
-		mtargs[7] = -1.0;
-	}
-	else {
-		die("makeLFO", "Waveform string can be \"sine\", \"sawup\", \"sawdown\", "
-						"\"square\" or \"triangle\"; or pass a table handle.");
-		delete [] mtargs;
-		return NULL;
-	}
-
-	Handle handle = maketable(mtargs, nargs);
-	delete [] mtargs;
-
-	return (TablePField *) handle->ptr;
 }
 
 
@@ -131,24 +49,35 @@ _makeLFO_usage()
 	return NULL;
 }
 
+const int kLFOWavetableSize = 1000;
+
 Handle
 makeLFO(const Arg args[], const int nargs)
 {
 	if (nargs < 3)
 		return _makeLFO_usage();
 
+// FIXME: passing a raw table to LFOPField is a memory leak, unless
+// LFOPField is allowed to own the table.  -JGG
+
+	int len = 0;
+	double *wavetable = NULL;
+
 	TablePField *wavetablePF = (TablePField *) ((PField *) args[0]);
 	if (wavetablePF == NULL || wavetablePF->values() < 2) {	// not a TablePField
 		if (args[0].isType(StringType)) {
-			wavetablePF = _makewavetable(args[0]);
-			if (wavetablePF == NULL)
+			len = kLFOWavetableSize;
+			wavetable = new double [len];
+			if (wavetable_from_string(args[0], wavetable, len, "makeLFO") != 0)
 				return NULL;
 		}
 		else
 			return _makeLFO_usage();
 	}
-	double *wavetable = (double *) *wavetablePF;
-	int len = wavetablePF->values();
+	else {
+		len = wavetablePF->values();
+		wavetable = (double *) *wavetablePF;
+	}
 
 	InterpType interp = kInterp1stOrder;
 	int index = 1;

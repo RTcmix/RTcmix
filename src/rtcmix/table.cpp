@@ -15,6 +15,7 @@
 #include <RTcmix.h>
 #include <rtcmix_types.h>
 #include <prototypes.h>
+#include <tableutils.h>
 #include <byte_routines.h>
 #include <sndlibsupport.h>
 #include <PField.h>
@@ -335,7 +336,7 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 
 	if (srate != RTcmix::sr())
 		warn("maketable (soundfile)", "The input file sampling rate is %g, but "
-			  "the output rate is currently %g.", srate, SR);
+			  "the output rate is currently %g.", srate, RTcmix::sr());
 
 	int file_frames = file_samps / file_chans;
 

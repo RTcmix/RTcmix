@@ -6,6 +6,7 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
+#include <tableutils.h>
 #include <rtcmix_types.h>
 #include <PField.h>
 #include <ugens.h>		// for warn, die
