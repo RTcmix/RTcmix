@@ -17,7 +17,7 @@
 #include <bus.h>
 #include "../H/dbug.h"
 
-// #define TBUG
+//#define TBUG
 //#define ALLBUG
 //#define DBUG
 
@@ -41,7 +41,7 @@ void *inTraverse(void *arg)
   Instrument *Iptr;
   const BusSlot *iBus;
 
-  unsigned long bufEndSamp = RTBUFSAMPS, endsamp;
+  unsigned long bufEndSamp, endsamp;
   unsigned long rtQchunkStart = 0;
   unsigned long heapChunkStart = 0;
 
@@ -82,6 +82,7 @@ void *inTraverse(void *arg)
 
   // Initialize everything ... cause it's good practice
   bufStartSamp = 0;  // current end sample for buffer
+  bufEndSamp = RTBUFSAMPS;
   bus_q_offset = 0;
   bus = -1;  // Don't play
 
@@ -124,7 +125,7 @@ void *inTraverse(void *arg)
 //	  Iptr->ref();	// While we are using it
 
 #ifdef DBUG
-	  cout << "Iptr = " << (void *) Iptr << endl;
+	  cout << "Iptr " << (void *) Iptr << " pulled from rtHeap" << endl;
 	  cout << "heapChunkStart = " << heapChunkStart << endl;
 #endif
 
@@ -285,6 +286,9 @@ void *inTraverse(void *arg)
 	  // Play elements on queue (insert back in if needed) ++++++++++++++++++
 	  while ((rtQSize > 0) && (rtQchunkStart < bufEndSamp) && (bus != -1)) {
 		Iptr = rtQueue[busq].pop();  // get next instrument off queue
+#ifdef DBUG
+	  cout << "Iptr " << (void *) Iptr << " popped from rtQueue " << busq << endl;
+#endif
 		
 		iBus = Iptr->getBusSlot();
 		Iptr->set_ichunkstart(rtQchunkStart);
@@ -341,7 +345,7 @@ void *inTraverse(void *arg)
 		// ReQueue or delete ++++++++++++++++++++++++++++++++++++++++++++++
 		if (endsamp > bufEndSamp) {
 #ifdef DBUG
-		  cout << "re queueing\n";
+		  cout << "re queueing inst " << (void *) Iptr << endl;
 #endif
 		  rtQueue[busq].push(Iptr,rtQchunkStart+chunksamps);   // put back onto queue
 		}
@@ -376,6 +380,9 @@ void *inTraverse(void *arg)
 			break;
 		  }
 		  if ((qStatus == t_class) && (bus == endbus)) {
+#ifdef DBUG
+			cout << "unref'ing inst " << (void *) Iptr << endl;
+#endif
 			Iptr->unref();
 		  }
 		  pthread_mutex_unlock(&bus_slot_lock);
