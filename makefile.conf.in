@@ -4,7 +4,7 @@
 TOPDIR = /usr/local/src
 
 # The name of the RTcmix directory
-CMIXDIR = $(TOPDIR)/RTcmix-3.0.1
+CMIXDIR = $(TOPDIR)/RTcmix-3.0.2
 
 # The dir that will contain links to the instrument dynamic shared objects
 LIBDESTDIR = $(CMIXDIR)/shlib
@@ -70,7 +70,7 @@ ifeq ($(ARCH),LINUX)
 endif
 ifeq ($(ARCH),SGI)
   ARCHFLAGS = -D_REENTRANT -DSGI
-  CC = cc  -Xcpluscomm
+  CC = cc -Xcpluscomm
   CXX = CC
   LD = ld
   MAKE = gmake
