@@ -44,7 +44,12 @@ extern	addfunc(struct ug_item *);
 #define      PI2    6.2831853
 #endif
 
-extern       float  SR;
+extern float SR;
+
+/* times per second to update control-rate variables;
+   defined in sys/minc_functions.c
+*/
+extern int resetval;
 
 #ifndef MAIN
 extern int aargc;
@@ -97,7 +102,7 @@ int boscili(float, float, float*, int, float*, float*, int);
 float bpluck(float, float*);
 float breson(float*, float*, float*, int);
 void sbrrand(unsigned);
-int brrand(float, float*, int);
+void brrand(float, float*, int);
 float buzz(float, float, float, float*, float*);
 float comb(float, float*);
 void combset(float, float,int, float*);
@@ -130,9 +135,9 @@ float reson(float, float*);
 void rsnset(float, float, float, float, float*);
 void rszset(float, float, float, float*);
 float resonz(float, float*);
-float bresonz(float*, float*, float*, int);
+void bresonz(float*, float*, float*, int);
 float reverb(float, float*);
-int setline(float [], short, int, float []);
+void setline(float [], short, int, float []);
 void srrand(unsigned);
 void rvbset(float, int, float*);
 float table(long, float*, float*);
@@ -141,6 +146,10 @@ void tableset(float, int, float*);
 float wshape(float, float*, int);
 float rrand(void);
 int getsetnote(float start, float dur, int filenum);
+
+#include "spray.h"
+void sprayinit(struct slist *slist, int size, float seed);
+int spray(struct slist *slist);
 
 /* sound.c */
 int setnote(float start, float dur, int fno);
@@ -160,6 +169,14 @@ void closesf(void);
 /* minout.c */
 int inrepos(int samps, int fno);
 int outrepos(int samps, int fno);
+
+/* fnscl.c */
+void fnscl(struct gen *gen);
+
+/* message.c */
+void advise(const char *inst_name, const char *format, ...);
+void warn(const char *inst_name, const char *format, ...);
+void die(const char *inst_name, const char *format, ...);
 
 #ifdef __cplusplus
 } /* extern "C" */
