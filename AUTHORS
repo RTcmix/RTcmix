@@ -5,12 +5,12 @@ RTcmix was derived from cmix by Brad Garton in 1995.
 The RTcmix Development Team (in alphabetical order)
 ---------------------------------------------------
 
-R. Luke DuBois    <luke@columbia.edu>
-Brad Garton       <garton@columbia.edu>
-John Gibson       <johgibso@indiana.edu>
-John Rhoads       <rhoads@virginia.edu>
-Doug Scott        <dscott@sgi.com>
-David Topper      <topper@virginia.edu>
+R. Luke DuBois    <luke-at-columbia.edu>
+Brad Garton       <garton-at-columbia.edu>
+John Gibson       <johgibso-at-indiana.edu>
+John Rhoads       <rhoads-at-virginia.edu>
+Doug Scott        <dscott-at-netscape.net>
+David Topper      <topper-at-virginia.edu>
 
 
 Thanks to Bill Schottstaedt for his sndlib sound library.
@@ -44,7 +44,7 @@ Charlie Sullivan
 Please do not pester the original cmix authors asking questions about RTcmix.
 
 If you know of others who are missing from this list, please send their
-names to John Gibson <johgibso@indiana.edu>.
+names to John Gibson <johgibso-at-indiana.edu>.
 
 Some instruments (pvoc, convolve) contain code from the UCSD Carl package,
 whose authors were F. R. Moore, Gareth Loy, Mark Dolson and others.
