@@ -347,7 +347,7 @@ double m_setline(float p[], int n_args)
 	for (i = 0; i < n_args; i++)
 		pp[i+3] = p[i];
 
-	makegen(pp, n_args+3);
+	makegen(pp, n_args+3, NULL);
 
 	return 0.0;
 }
@@ -383,7 +383,7 @@ double m_setexp(float p[], int n_args)
 	/* add final value to arg list */
 	pp[i+2] = p[i] > 0.0f ? p[i] : 0.00001;
 
-	makegen(pp, n_args+2);
+	makegen(pp, n_args+2, NULL);
 
 	return 0.0;
 }
