@@ -2,6 +2,7 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
+#include <math.h>
 
 class Ooscili
 {
@@ -13,16 +14,87 @@ class Ooscili
 
 	void init(float);
 public:
-	Ooscili(float, float, int);
-	Ooscili(float, float, double *);
-	Ooscili(float, float, double *, int);
+	Ooscili(float SR, float freq, int arr);
+	Ooscili(float SR, float freq, double arr[]);
+	Ooscili(float SR, float freq, double arr[], int len);
 	float next();
-	float next(int);
+	float next(int nsample);
 	inline void setfreq(float freq) { si = freq * lendivSR; }
 	inline void setphase(double phs) { phase = phs; }
 	inline int getlength() { return length; }
 	inline float getdur() { return dur; }
 };
+
+
+class Oonepole
+{
+public:
+	Oonepole(float SR);
+	Oonepole(float SR, float freq);
+	void setfreq(float freq);
+	inline void clear() { _hist = 0.0; }
+
+	inline void setpole(float coeff)
+	{
+		_b = coeff;
+		_a = (_b > 0.0) ? 1.0 - _b : 1.0 + _b;
+	}
+
+	inline float next(float input)
+	{
+		_hist = (_a * input) + (_b * _hist);
+		return _hist;
+	}
+
+private:
+	float _sr;
+	float _hist;
+	float _a;
+	float _b;
+};
+
+
+typedef enum {
+   OeqLowPass = 0,
+   OeqHighPass,
+   OeqBandPassCSG,    // CSG: constant skirt gain; peak gain = Q
+   OeqBandPassCPG,    // CPG: constant 0 dB peak gain
+   OeqBandPass = OeqBandPassCPG,
+   OeqNotch,
+   OeqAllPass,
+   OeqPeaking,
+   OeqLowShelf,
+   OeqHighShelf,
+   OeqInvalid
+} OeqType;
+
+class Oequalizer
+{
+public:
+	Oequalizer(float SR, OeqType type);
+   void settype(OeqType type) { _type = type; }
+	void setparams(float freq, float Q, float gain = 0.0);
+	inline void clear() { _x1 = _x2 = _y1 = _y2 = 0.0; }
+
+	inline float next(float input)
+	{
+		double y0 = (_c0 * input) + (_c1 * _x1) + (_c2 * _x2)
+										  - (_c3 * _y1) - (_c4 * _y2);
+		_x2 = _x1;
+		_x1 = input;
+		_y2 = _y1;
+		_y1 = y0;
+
+		return y0;
+	}
+
+private:
+	double _sr;
+	OeqType _type;
+	double _c0, _c1, _c2, _c3, _c4;
+	double _x1, _x2, _y1, _y2;
+};
+
 
 class Orand
 {
@@ -37,6 +109,7 @@ public:
 	float rand();
 	float range(float, float);
 };
+
 
 class Odelayi
 {
@@ -58,6 +131,7 @@ private:
 	float _lastout;
 };
 
+
 class Ocomb
 {
 public:
@@ -77,6 +151,7 @@ private:
 	float _gain;
 	int _pointer;
 };
+
 
 class Ocombi
 {
