@@ -6,18 +6,36 @@
    p3 = amplitude multiplier
    p4 = interval of transposition, in octave.pc
    p5 = input channel [optional, default is 0]
-   p6 = percent to left [optional, default is .5]
+   p6 = pan (in percent-to-left form: 0-1) [optional, default is .5]
 
-   Processes only one channel at a time.
+   p3 (amplitude), p4 (transposition) and p6 (pan) can receive dynamic updates
+   from a table or real-time control source.
 
-   Assumes function table 1 is amplitude curve for the note.
-   You can call setline for this.
+   If updating transposition, work in linear octaves, and then convert to
+   octave.pc before passing to the instrument.  This avoids arithmetic errors
+   that result from the fact that 7.13 is equal to 8.01 in octave.pc.
+   Here's an example of how to handle the conversion.
+
+      low = octpch(-0.05)
+      high = octpch(0.03)
+      transp = maketable("line", "nonorm", 1000, 0,0, 1,low, 3,high)
+      transp = makeconverter(transp, "pchoct")
+      TRANS(start, inskip, dur, amp, transp)
+
+   This transposition starts at 0, moves down by a perfect fourth (-0.05),
+   then up to a minor third (0.03) above the starting transposition.  The
+   table is expressed in linear octaves, then converted to octave.pc by the
+   call to makeconverter.
+
+   TRANS processes only one channel at a time.
 
    TRANS was written by Doug Scott.
-   Revised by John Gibson <johngibson@virginia.edu>, 2/29/00.
+   Revised by John Gibson, 2/29/00.
+   Revised for v4 by JG, 3/27/05.
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <float.h>
 #include <assert.h>
 #include <ugens.h>
 #include <mixerr.h>
@@ -42,78 +60,55 @@ inline float interp(float y0, float y1, float y2, float t)
 }
 
 
-TRANS :: TRANS() : Instrument()
+TRANS::TRANS() : Instrument()
 {
    in = NULL;
    branch = 0;
-
+   transp = FLT_MAX;
    incount = 1;
+   increment = 0.0;
    counter = 0.0;
-   get_frame = 1;
+   getframe = true;
 
-   /* clear sample history */
+   // clear sample history
    oldersig = 0.0;
    oldsig = 0.0;
    newsig = 0.0;
 }
 
 
-TRANS :: ~TRANS()
+TRANS::~TRANS()
 {
    delete [] in;
 }
 
 
-int TRANS :: init(double p[], int n_args)
+int TRANS::init(double p[], int n_args)
 {
-   float outskip, inskip, dur, transp, interval, total_indur, dur_to_read;
+   nargs = n_args;
+   if (nargs < 5)
+      return die("TRANS", "Wrong number of args.");
 
-   if (n_args < 5) {
-      die("TRANS", "Wrong number of args.");
-		return(DONT_SCHEDULE);
-	}
-
-   outskip = p[0];
-   inskip = p[1];
-   dur = p[2];
+   float outskip = p[0];
+   float inskip = p[1];
+   float dur = p[2];
    amp = p[3];
-   transp = p[4];
-   inchan = (n_args > 5) ? (int) p[5] : 0;
-   pctleft = (n_args > 6) ? p[6] : 0.5;
+   inchan = (nargs > 5) ? (int) p[5] : 0;
 
    if (dur < 0.0)
       dur = -dur - inskip;
 
    if (rtsetoutput(outskip, dur, this) == -1)
-		return DONT_SCHEDULE;
+      return DONT_SCHEDULE;
    if (rtsetinput(inskip, this) == -1)
-		return DONT_SCHEDULE;
+      return DONT_SCHEDULE;
 
    if (inchan >= inputChannels()) {
       return die("TRANS", "You asked for channel %d of a %d-channel file.",
-												   inchan, inputChannels());
-	}
-   interval = octpch(transp);
-   increment = (double) cpsoct(10.0 + interval) / cpsoct(10.0);
-#ifdef DEBUG
-   printf("increment: %g\n", increment);
-#endif
-
-#ifdef NOTYET
-   total_indur = (float) m_DUR(NULL, 0);
-   dur_to_read = dur * increment;
-   if (inskip + dur_to_read > total_indur) {
-      warn("TRANS", "This note will read off the end of the input file.\n"
-                    "You might not get the envelope decay you "
-                    "expect from setline.\nReduce output duration.");
-      /* no exit() */
+                                                  inchan, inputChannels());
    }
-#endif
 
-   /* total number of frames to read during life of inst */
-   in_frames_left = (int) (nSamps() * increment + 0.5);
-
-   /* to trigger first read in run() */
+   // to trigger first read in run()
    inframe = RTBUFSAMPS;
 
    amptable = floc(1);
@@ -121,9 +116,8 @@ int TRANS :: init(double p[], int n_args)
       int amplen = fsize(1);
       tableset(SR, dur, amplen, tabs);
    }
-   else
-      advise("TRANS", "Setting phrase curve to all 1's.");
-   aamp = amp;
+
+   oneover_cpsoct10 = 1.0 / cpsoct(10.0);
 
    skip = (int) (SR / (float) resetval);
 
@@ -136,50 +130,56 @@ int TRANS::configure()
    return in ? 0 : -1;
 }
 
-int TRANS :: run()
+void TRANS::doupdate()
 {
-   const int out_frames = framesToRun();
-   int       i, inChans = inputChannels();
-   float     *outp;
-   double    frac;
+   double p[7];
+   update(p, 7);
 
+   amp = p[3];
+   if (amptable)
+      amp *= tablei(currentFrame(), amptable, tabs);
+   pctleft = (nargs > 6) ? p[6] : 0.5;
+
+   float newtransp = p[4];
+   if (newtransp != transp) {
+      transp = newtransp;
+      increment = cpsoct(10.0 + octpch(transp)) * oneover_cpsoct10;
 #ifdef DEBUG
-   printf("out_frames: %d  in_frames_left: %d\n", out_frames, in_frames_left);
+      printf("increment: %g\n", increment);
 #endif
+   }
+}
 
-   outp = outbuf;               /* point to inst private out buffer */
+int TRANS::run()
+{
+   const int outframes = framesToRun();
+   const int inchans = inputChannels();
+   float *outp = outbuf;               // point to inst private out buffer
 
-   for (i = 0; i < out_frames; i++) {
-      if (--branch < 0) {
-         if (amptable)
-            aamp = table(cursamp, amptable, tabs) * amp;
+   for (int i = 0; i < outframes; i++) {
+      if (--branch <= 0) {
+         doupdate();
          branch = skip;
       }
-      while (get_frame) {
+      while (getframe) {
          if (inframe >= RTBUFSAMPS) {
-            rtgetin(in, this, RTBUFSAMPS * inChans);
-
-            in_frames_left -= RTBUFSAMPS;
-#ifdef DEBUG
-            printf("READ %d frames, in_frames_left: %d\n",
-                                                  RTBUFSAMPS, in_frames_left);
-#endif
+            rtgetin(in, this, RTBUFSAMPS * inchans);
             inframe = 0;
          }
          oldersig = oldsig;
          oldsig = newsig;
 
-         newsig = in[(inframe * inChans) + inchan];
+         newsig = in[(inframe * inchans) + inchan];
 
          inframe++;
          incount++;
 
          if (counter - (double) incount < 0.5)
-            get_frame = 0;
+            getframe = false;
       }
 
-      frac = (counter - (double) incount) + 2.0;
-      outp[0] = interp(oldersig, oldsig, newsig, frac) * aamp;
+      const double frac = (counter - (double) incount) + 2.0;
+      outp[0] = interp(oldersig, oldsig, newsig, frac) * amp;
 
 #ifdef DEBUG_FULL
       printf("i: %d counter: %g incount: %d frac: %g inframe: %d cursamp: %d\n",
@@ -195,16 +195,12 @@ int TRANS :: run()
       outp += outputchans;
       cursamp++;
 
-      counter += increment;         /* keeps track of interp pointer */
+      counter += increment;         // keeps track of interp pointer
       if (counter - (double) incount >= -0.5)
-         get_frame = 1;
+         getframe = true;
    }
 
-#ifdef DEBUG
-   printf("OUT %d frames\n\n", i);
-#endif
-
-   return i;
+   return framesToRun();
 }
 
 
@@ -218,7 +214,7 @@ Instrument *makeTRANS()
    return inst;
 }
 
-extern Instrument *makeTRANS3();	// from TRANS3.C
+extern Instrument *makeTRANS3();    // from TRANS3.cpp
 
 void rtprofile()
 {
