@@ -1,3 +1,9 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+#ifndef _INSTRUMENT_H_ 
+#define _INSTRUMENT_H_ 1
 #include <sys/types.h>
 
 class Instrument {
@@ -40,3 +46,5 @@ extern int rtaddout(float*);
 extern int rtbaddout(float*, int);
 extern int rtgetin(float*, Instrument*, int);
 extern float rtupdate(int, int); // tag, p-field for return value
+
+#endif /* _INSTRUMENT_H_  */
