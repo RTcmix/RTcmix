@@ -136,6 +136,10 @@ open_rd_or_rdwr(char *sfname, int accesstype)
 
    open_clm_file_descriptors(fd, format, c_snd_datum_size(format), loc);
 
+   if (lseek(fd, loc, SEEK_SET) == -1) {
+      perror("open_rd_or_rdwr: lseek");
+      return -1;
+   }
    return fd;
 }
 
@@ -145,6 +149,8 @@ open_rd_or_rdwr(char *sfname, int accesstype)
    its header into the sndlib header buffer. After this, the caller can
    use sndlib functions (like c_snd_header_type, c_snd_data_format, etc.)
    to gather information from the header.
+
+   Leaves file position pointer at start of sound data.
 
    The caller should check that this is actually a sound file by using
    the NOT_A_SOUND_FILE macro (sndlibsupport.h).
