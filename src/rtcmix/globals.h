@@ -73,8 +73,6 @@ GLOBAL pthread_mutex_t pfieldLock;
 
 #include "rtdefs.h"
 GLOBAL InputDesc inputFileTable[MAX_INPUT_FDS];
-GLOBAL int rtInputIndex;             /* current index into inputFileTable */
-GLOBAL off_t rtInitialOffset;        /* current initial offset in file */
 
 #include "bus.h"  // FIXME: just for MAXBUS
 GLOBAL BufPtr audioin_buffer[MAXBUS];    /* input from ADC */
