@@ -1,4 +1,4 @@
-/* TRANSBENDBEND - perform a time-varying transpose on a mono input signal 
+/* TRANSBEND - perform a time-varying transpose on a mono input signal 
    using cubic spline interpolation
 
    p0 = output start time
@@ -15,9 +15,12 @@
    You can call setline for this.
 
    Assumes function table 2 is interval curve for the note.
-   You can call makegen(2, ...) for this.
+   The interval values in this table are expressed in linear octaves.
+   You can call makegen(2, ...) for this.  So if you want to gliss
+   from a perfect 5th above to a perfect 5th below, use:
+      makegen(-2, 18, 1000, 0,octpch(.07), 1,octpch(-.07))
 
-   Created from my and John Gibson's TRANSBEND by Doug Scott
+   Created from my and John Gibson's TRANS by Doug Scott
 	<netdscott@netscape.net> 9/3/2000.
 */
 #include <stdio.h>
