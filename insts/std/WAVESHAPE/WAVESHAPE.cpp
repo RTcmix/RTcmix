@@ -93,8 +93,8 @@ int WAVESHAPE::run()
 {
 	int i;
 	float out[2];
-	float aamp,ampi,val,val2,val3;
-	float index;
+	float aamp,ampi=0.,val,val2,val3;
+	float index=0.;
 	int branch;
 
 	Instrument::run();
