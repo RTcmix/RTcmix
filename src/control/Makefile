@@ -1,6 +1,6 @@
 include ../../makefile.conf
 
-DIRS = midi mouse display
+DIRS = midi mouse display datafile
 
 all: $(DIRS) $(OBJS)
 	@for DIR in $(DIRS); \
