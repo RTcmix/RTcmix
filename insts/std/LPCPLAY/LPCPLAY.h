@@ -37,14 +37,14 @@ protected:
 	DataSet	*_dataSet;
 
 	// These are set and used within subclasses.
-	float	_amp;
+	double	_amp;
 	int		_nPoles;
 	float	_frames, _frameno;
 	int		_frame1;
-	float	_ampmlt;
-	float	_warpFactor;
+	double	_ampmlt;
+	double	_warpFactor;
 	float	_cutoff;							// amp cutoff level
-	float	_cf_fact, _bw_fact;
+	double	_cf_fact, _bw_fact;
 	float	_rsnetc[9];
 	float	_coeffs[MAXPOLES+4];
 	float	_past[MAXPOLES*2];
@@ -87,8 +87,8 @@ private:
 	float	_risetime, _decaytime;				// enveloping
 
 	// These are set and used within LPCPLAY.
-	float	_pitch;
-	float	_transposition;
+	double	_pitch;
+	double	_transposition;
 	bool	_voiced;
 	float	_evals[5];
 	double	*_pchvals;						// pitch table

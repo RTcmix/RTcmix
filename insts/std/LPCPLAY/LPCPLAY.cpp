@@ -113,7 +113,7 @@ int LPCINST::init(double p[], int n_args)
 
 	GetDataSet(&_dataSet);
 	if (_dataSet == NULL)
-		return die("LPCPLAY", "No open dataset!\n");
+		return die(name(), "No open dataset!\n");
 
 	_dataSet->ref();
 	
@@ -174,11 +174,9 @@ int LPCPLAY::localInit(double p[], int n_args)
 {
    int i;
 
-	if (!n_args || n_args < 6) {
-		die("LPCPLAY",
-		"p[0]=starting time, p[1]=duration, p[2]=amp, p[3]=pitch, p[4]=frame1, p[5]=frame2, [ p[6]=warp p7=resoncf, p8=resonbw [ p9--> pitchcurves ] ]\n");
-		return DONT_SCHEDULE;
-	}
+	if (!n_args || n_args < 6)
+		return die("LPCPLAY",
+				   "p[0]=starting time, p[1]=duration, p[2]=amp, p[3]=pitch, p[4]=frame1, p[5]=frame2, [ p[6]=warp p7=resoncf, p8=resonbw [ p9--> pitchcurves ] ]\n");
 
    /* Store pfields in variables, to allow for easy pfield renumbering.
       You should retain the RTcmix numbering convention for the first
@@ -194,10 +192,8 @@ int LPCPLAY::localInit(double p[], int n_args)
 	int endFrame = (int) p[5];
 	int frameCount = endFrame - startFrame + 1;
 
-	if (frameCount <= 0) {
-		die("LPCPLAY", "Ending frame must be > starting frame.");
-		return DONT_SCHEDULE;
-	}
+	if (frameCount <= 0)
+		return die("LPCPLAY", "Ending frame must be > starting frame.");
 
 	_warpFactor = p[6];	// defaults to 0
 
@@ -347,6 +343,16 @@ int LPCPLAY::run()
 	  channel -- that we have to write during this scheduler time slice.
 	*/
 	for (; n < framesToRun(); n += _counter) {
+		double p[12];
+		update(p, 12);
+		_amp = p[2];
+		_pitch = p[3];
+		_transposition = ABS(_pitch);
+		_warpFactor = p[6];
+		_reson_is_on = p[7] ? true : false;
+		_cf_fact = p[7];
+		_bw_fact = p[8];
+		
 		int loc;
 		if ( _unvoiced_rate && !_voiced )
 		{
@@ -387,8 +393,9 @@ int LPCPLAY::run()
 			float cf = (_cf_fact < 20.0) ? _cf_fact*cps : _cf_fact;
 			float bw = (_bw_fact < 20.0) ? cf * _bw_fact : _bw_fact;
 			rszset(SR, cf, bw, 1., _rsnetc);
-			/* printf("%f %f %f %f\n",_cf_fact*cps,
-				_bw_fact*_cf_fact*cps,_cf_fact,_bw_fact,cps); */
+#ifdef debug
+			printf("cf %g bw %g cps %g\n", cf, bw,cps);
+#endif
 		}
 		float si = newpch * _magic;
 
@@ -539,7 +546,7 @@ LPCPLAY::adjust(float actdev, float desdev, float actweight,
 				double *pchval, float framefirst, float framelast)
 {
 	int i,j;
-	float x,devfact;
+	double x,devfact;
 	/* two heuristics here: only shrinking range, and no pitches < 50 hz */
 	// Note -- now range may grow.
 	/*	devfact = (desdev > actdev) ? 1. : desdev/actdev; */
@@ -582,11 +589,10 @@ int LPCIN::localInit(double p[], int n_args)
 {
    int i;
 
-	if (!n_args || n_args < 6 || n_args > 10) {
-		die("LPCIN",
-		"p[0]=outskip, p[1]=inskip, p[2]=duration, p[3]=amp, p[4]=frame1, p[5]=frame2 [, p[6]=in_channel p[7]=warp p[8]=resoncf, p[9]=resonbw]\n");
-		return DONT_SCHEDULE;
-	}
+	if (!n_args || n_args < 6 || n_args > 10)
+		return die("LPCIN",
+				   "p[0]=outskip, p[1]=inskip, p[2]=duration, p[3]=amp, p[4]=frame1, p[5]=frame2 [, p[6]=in_channel p[7]=warp p[8]=resoncf, p[9]=resonbw]\n");
+
 	float outskip = p[0];
 	float inskip = p[1];
 	float ldur = p[2];
@@ -597,14 +603,12 @@ int LPCIN::localInit(double p[], int n_args)
 	int frameCount = endFrame - startFrame + 1;
 
 	if (frameCount <= 0)
-		die("LPCIN", "Ending frame must be > starting frame.");
+		return die("LPCIN", "Ending frame must be > starting frame.");
 
 	_inChannel = (int) p[6];
-	if (_inChannel >= inputChannels()) { 
-		die("LPCIN", "Requested channel %d of a %d-channel input file",
-			_inChannel, inputChannels());
-		return DONT_SCHEDULE;
-	}
+	if (_inChannel >= inputChannels())
+		return die("LPCIN", "Requested channel %d of a %d-channel input file",
+				   _inChannel, inputChannels());
 					   	
 	_warpFactor = p[7];	// defaults to 0
 
@@ -685,6 +689,14 @@ int LPCIN::run()
 	  channel -- that we have to write during this scheduler time slice.
 	*/
 	for (; n < framesToRun(); n += _counter) {
+		double p[10];
+		update(p, 10);
+		_amp = p[2];
+		_warpFactor = p[7];
+		_reson_is_on = p[8] ? true : false;
+		_cf_fact = p[8];
+		_bw_fact = p[9];
+
 		int loc;
 		_frameno = _frame1 + ((float)(currentFrame())/nsamps) * _frames;
 
