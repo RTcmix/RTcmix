@@ -7,7 +7,7 @@ include makefile.conf
 BASE = insts/base
 DIRS = include genlib src insts utils docs
 
-all:
+all:	install_dirs
 	@echo "making all ..."
 	@for DIR in $(DIRS) $(INST_DIRS); \
 	do \
@@ -78,10 +78,8 @@ standalone::
 
 #############################################################  make install  ###
 
-install::
+install:	install_dirs
 	@echo "beginning install..."
-	@if test ! -d $(LIBDIR); then mkdir $(LIBDIR); fi;
-	@if test ! -d $(LIBDESTDIR); then mkdir $(LIBDESTDIR); fi;
 	@for DIR in $(DIRS) $(INST_DIRS); \
 	do \
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) install ); \
@@ -111,6 +109,10 @@ standalone_install::
 	@echo "beginning standalone_install..."
 	@cd insts; $(MAKE) $(MFLAGS) standalone_install;
 	@echo "standalone_install done."; echo ""
+
+install_dirs::
+	@if test ! -d $(LIBDIR); then mkdir $(LIBDIR); fi;
+	@if test ! -d $(LIBDESTDIR); then mkdir $(LIBDESTDIR); fi;
 
 ###########################################################  make uninstall  ###
 
