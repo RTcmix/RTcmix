@@ -3,51 +3,60 @@
    p0 = output start time
    p1 = input start time
    p2 = input duration
-   p3 = amplitude multiplier
+   p3 = amplitude multiplier *
    p4 = ring-down duration (time to ring out filter after input stops)
-   p5 = sharpness (integer btw 1 and 5, inclusive) [optional, default is 1]
+   p5 = steepness (integer btw 1 and 5, inclusive) [optional, default is 1]
    p6 = balance output and input signals (0:no, 1:yes) [optional, default is 1]
    p7 = input channel [optional, default is 0]
-   p8 = percent to left channel [optional, default is .5]
+   p8 = pan (in percent-to-left form: 0-1) [optional, default is .5]
+   p9 = bypass filter (0: no, 1: yes) [optional, default is 0]
+   p10 = filter center frequency (Hz) [optional; if missing, must use gen 2] **
+   p11 = filter bandwidth (Hz if positive; if negative, the '-' sign acts as a
+         flag to interpret the bw values as percentages (from 0 to 1) of the
+         current cf.  [optional; if missing, must use gen 3] ***
 
-   p5 (sharpness) is just the number of filters to add in series. Using more
-   than 1 decreases the actual bandwidth of the total filter. This sounds
+   p3 (amplitude), p8 (pan), p9 (bypass), p10 (freq) and p11 (bandwidth) can
+   receive dynamic updates from a table or real-time control source.
+
+   p5 (steepness) is the number of filters to add in series.  Using more
+   than 1 decreases the actual bandwidth of the total filter.  This sounds
    different from decreasing the bandwith of 1 filter using the bandwidth
-   curve, described below. (Mainly, it further attenuates sound outside the
-   passband.) If you don't set p6 (balance) to 1, you'll need to change p3
+   curve, described below.  (Mainly, it further attenuates sound outside the
+   passband.)  If you don't set p6 (balance) to 1, you'll need to change p3
    (amp) to adjust for loss of power caused by connecting several filters
-   in series. Guard your ears!
+   in series.
 
    p6 (balance) tries to adjust the output of the filter so that it has
-   the same power as the input. This means there's less fiddling around
+   the same power as the input.  This means there's less fiddling around
    with p3 (amp) to get the right amplitude (audible, but not ear-splitting)
-   when the bandwidth is very low and/or sharpness is > 1. However, it has
+   when the bandwidth is very low and/or steepness is > 1.  However, it has
    drawbacks: it can introduce a click at the start of the sound, it can
    cause the sound to pump up and down a bit, and it eats extra CPU time.
 
-   Assumes function table 1 is amplitude curve for the note. (Try gen 18.)
-   Or you can just call setline. If no setline or function table 1, uses
-   flat amplitude curve.
+   ----
 
-   Function table 2 is the center frequency curve, described by time,cf pairs.
-   Use gen 18.
+   Notes about backward compatibility with pre-v4 scores:
 
-   Function table 3 is the bandwidth curve, described by time,bw pairs.
-   If bw is negative, it's interpreted as a percentage (from 0 to 1)
-   of the cf. Use gen 18.
+   * If an old-style gen table 1 is present, its values will be multiplied
+   by p3 (amplitude), even if the latter is dynamic.
 
-   John Gibson (jgg9c@virginia.edu), 2/5/00.
+   ** If p10 is missing, you must use an old-style gen table 2 for the
+   filter center frequency curve.
+
+   *** If p11 is missing, you must use an old-style gen table 3 for the
+   filter bandwidth curve.
+
+
+   John Gibson (jgg9c@virginia.edu), 2/5/00; rev for v4, JGG, 7/24/04
 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "FILTSWEEP.h"
 #include <rt.h>
 #include <rtdefs.h>
-
 
 #define BALANCE_WINDOW_SIZE  10
 
@@ -55,7 +64,8 @@
 FILTSWEEP :: FILTSWEEP() : Instrument()
 {
    in = NULL;
-   balancer = NULL;              // might not use
+   balancer = NULL;
+   branch = 0;
 }
 
 
@@ -64,36 +74,32 @@ FILTSWEEP :: ~FILTSWEEP()
    delete [] in;
    for (int i = 0; i < nfilts; i++)
       delete filt[i];
-   if (balancer)
-      delete balancer;
+   delete balancer;
 }
 
 
 int FILTSWEEP :: init(double p[], int n_args)
 {
-   float outskip, inskip, dur, ringdur;
-
-   outskip = p[0];
-   inskip = p[1];
-   dur = p[2];
-   amp = p[3];
-   ringdur = p[4];
-   nfilts = n_args > 5 ? (int)p[5] : 1;
-   do_balance = n_args > 6 ? (int)p[6] : 1;
-   inchan = n_args > 7 ? (int)p[7] : 0;             /* default is chan 0 */
-   pctleft = n_args > 8 ? p[8] : 0.5;               /* default is center */
+   nargs = n_args;
+   float outskip = p[0];
+   float inskip = p[1];
+   float dur = p[2];
+   float ringdur = p[4];
+   nfilts = n_args > 5 ? (int) p[5] : 1;
+   do_balance = n_args > 6 ? (bool) p[6] : true;
+   inchan = n_args > 7 ? (int) p[7] : 0;            // default is chan 0
 
    if (rtsetinput(inskip, this) != 0)
       return DONT_SCHEDULE;
-   nsamps = rtsetoutput(outskip, dur + ringdur, this);
-   insamps = (int)(dur * SR);
-
-   if (inchan >= inputchans)
+   if (inchan >= inputChannels())
       return die("FILTSWEEP", "You asked for channel %d of a %d-channel file.",
-                                                         inchan, inputchans);
+                                                      inchan, inputChannels());
+   nsamps = rtsetoutput(outskip, dur + ringdur, this);
+   insamps = (int) (dur * SR + 0.5);
+
    if (nfilts < 1 || nfilts > MAXFILTS)
       return die("FILTSWEEP",
-               "Sharpness (p5) must be an integer between 1 and %d.", MAXFILTS);
+               "Steepness (p5) must be an integer between 1 and %d.", MAXFILTS);
    for (int i = 0; i < nfilts; i++)
       filt[i] = new BiQuad(SR);
 
@@ -103,94 +109,127 @@ int FILTSWEEP :: init(double p[], int n_args)
       scale = 1.0;
    }
    else
-      scale = 1.0 / pow((double)nfilts, 1.8);     // just a guess; needs work
+      scale = 1.0 / pow((double) nfilts, 1.8);     // just a guess; needs work
 
    amparray = floc(1);
    if (amparray) {
       int lenamp = fsize(1);
       tableset(SR, dur, lenamp, amptabs);
    }
-   else
-      advise("FILTSWEEP", "Setting phrase curve to all 1's.");
 
-   cfarray = floc(2);
-   if (cfarray) {
-      int lencf = fsize(2);
-      tableset(SR, dur, lencf, cftabs);
+   if (n_args < 11) {         // no p10 center freq PField, must use gen table
+      cfarray = floc(2);
+      if (cfarray == NULL)
+         return die("FILTSWEEP", "Either use the center frequency pfield (p10) "
+                    "or make an old-style gen function in slot 2.");
+      int len = fsize(2);
+      tableset(SR, dur, len, cftabs);
    }
-   else
-      return die("FILTSWEEP",
-                 "You haven't made the center frequency function (table 2).");
 
-   bwarray = floc(3);
-   if (bwarray) {
-      int lenbw = fsize(3);
-      tableset(SR, dur, lenbw, bwtabs);
+   if (n_args < 12) {         // no p11 bandwidth PField, must use gen table
+      bwarray = floc(3);
+      if (bwarray == NULL)
+         return die("FILTSWEEP", "Either use the bandwidth pfield (p11) "
+                    "or make an old-style gen function in slot 3.");
+      int len = fsize(3);
+      tableset(SR, dur, len, bwtabs);
    }
+
+   skip = (int) (SR / (float) resetval);
+
+   return nSamps();
+}
+
+
+void FILTSWEEP :: doupdate()
+{
+   double p[12];
+   update(p, 12, kAmp | kPan | kBypass | kFreq | kBandwidth);
+
+   amp = p[3];
+   if (amparray)
+      amp *= tablei(currentFrame(), amparray, amptabs);
+
+   pctleft = nargs > 8 ? p[8] : 0.5;                // default is center
+   bypass = nargs > 9 ? (bool) p[9] : false;        // default is no
+
+   float newcf;
+   if (nargs > 10)
+      newcf = p[10];
    else
-      return die("FILTSWEEP",
-                 "You haven't made the bandwidth function (table 3).");
+      newcf = tablei(currentFrame(), cfarray, cftabs);
+   if (newcf < 0.0)
+      newcf = 1.0;
+   else if (newcf > SR * 0.5)
+      newcf = SR * 0.5;
 
-   skip = (int)(SR / (float)resetval);
+   float newbw;
+   if (nargs > 11)
+      newbw = p[11];
+   else
+      newbw = tablei(currentFrame(), bwarray, bwtabs);
+   if (newbw < 0.0) {
+      if (newbw < -1.0)
+         newbw = -1.0;
+      newbw *= -cf;     // percent of cf
+   }
+   else if (newbw < 0.1)
+      newbw = 0.1;      // very small bw wreaks havoc
 
-   return nsamps;
+   if (newcf != cf || newbw != bw) {
+      cf = newcf;
+      bw = newbw;
+      for (int j = 0; j < nfilts; j++)
+         filt[j]->setFreqBandwidthAndGain(cf, bw, scale);
+   }
+}
+
+
+int FILTSWEEP :: configure()
+{
+   in = new float [RTBUFSAMPS * inputChannels()];
+   return in ? 0 : -1;
 }
 
 
 int FILTSWEEP :: run()
 {
-   int   i, j, branch, rsamps;
-   float aamp, bw, cf, insig;
-   float out[2];
+   const int samps = framesToRun() * inputChannels();
 
-   if (in == NULL)              /* first time, so allocate it */
-      in = new float [RTBUFSAMPS * inputchans];
+   if (currentFrame() < insamps)
+      rtgetin(in, this, samps);
 
-   rsamps = chunksamps * inputchans;
-
-   if (cursamp < insamps)
-      rtgetin(in, this, rsamps);
-
-   aamp = amp;                  /* in case amparray == NULL */
-
-   branch = 0;
-   for (i = 0; i < rsamps; i += inputchans) {
-      if (--branch < 0) {
-         cf = tablei(cursamp, cfarray, cftabs);
-         bw = tablei(cursamp, bwarray, bwtabs);
-         if (bw < 0)
-            bw *= -cf;
-// FIXME: probably should be a minimum bw, since very small ones wreak havoc
-         for (j = 0; j < nfilts; j++)
-            filt[j]->setFreqBandwidthAndGain(cf, bw, scale);
-
-         if (amparray)
-            aamp = tablei(cursamp, amparray, amptabs) * amp;
-
+   for (int i = 0; i < samps; i += inputChannels()) {
+      if (--branch <= 0) {
+         doupdate();
          branch = skip;
       }
-      if (cursamp < insamps)
-         insig = in[i + inchan] * aamp;
+
+      float insig;
+      if (currentFrame() < insamps)
+         insig = in[i + inchan] * amp;
       else
          insig = 0.0;
 
+      float out[2];
       out[0] = insig;
-      for (j = 0; j < nfilts; j++)
-         out[0] = filt[j]->tick(out[0]);
+      if (!bypass) {
+         for (int j = 0; j < nfilts; j++)
+            out[0] = filt[j]->tick(out[0]);
+         if (do_balance)
+            out[0] = balancer->tick(out[0], insig);
+      }
 
-      if (do_balance)
-         out[0] = balancer->tick(out[0], insig);
-
-      if (outputchans == 2) {
+      if (outputChannels() == 2) {
          out[1] = out[0] * (1.0 - pctleft);
          out[0] *= pctleft;
       }
 
       rtaddout(out);
-      cursamp++;
+      increment();
    }
 
-   return i;
+   return framesToRun();
 }
 
 
