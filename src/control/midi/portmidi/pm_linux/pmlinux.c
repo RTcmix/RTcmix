@@ -20,10 +20,10 @@
 PmError pm_init()
 {
     #ifdef PMALSA
-	pm_linuxalsa_init();
+	return pm_linuxalsa_init();
     #endif
     #ifdef PMNULL
-        pm_linuxnull_init();
+        return pm_linuxnull_init();
     #endif
 }
 
