@@ -433,6 +433,35 @@ double SmoothPField::doubleValue(int idx) const
 	return _filter->next(field()->doubleValue(idx));
 }
 
+// QuantizePField
+
+QuantizePField::QuantizePField(PField *innerPField, PField *quantumPField)
+	: PFieldWrapper(innerPField), _len(innerPField->values()), _quantumPField(quantumPField)
+{
+}
+
+double QuantizePField::quantizeValue(const double val, const double quantum) const
+{
+	const double quotient = fabs(val / quantum);
+	int floor = int(quotient);
+	const double remainder = quotient - double(floor);
+	if (remainder >= 0.5)		// round to nearest
+		floor++;
+	if (val < 0.0)
+		return -floor * quantum;
+	return floor * quantum;
+}
+
+double QuantizePField::doubleValue(double didx) const
+{
+	return quantizeValue(field()->doubleValue(didx), _quantumPField->doubleValue(didx));
+}
+
+double QuantizePField::doubleValue(int idx) const
+{
+	return quantizeValue(field()->doubleValue(idx), _quantumPField->doubleValue(idx));
+}
+
 // ConverterPField
 
 ConverterPField::ConverterPField(PField *innerPField,

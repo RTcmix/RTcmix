@@ -280,6 +280,20 @@ private:
 	PField *_lagPField;
 };
 
+// Class for quantizing a control signal.
+
+class QuantizePField : public PFieldWrapper {
+public:
+	QuantizePField(PField *innerPField, PField *quantumPField);
+	virtual double	doubleValue(double didx) const;
+	virtual double	doubleValue(int idx) const;
+	virtual int		values() const { return _len; }
+private:
+	double quantizeValue(const double val, const double quantum) const;
+	int _len;
+	PField *_quantumPField;
+};
+
 // Class for converting values read from another PField.
 
 class ConverterPField : public PFieldWrapper {
