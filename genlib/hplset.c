@@ -16,7 +16,7 @@ hplset(float xxlp, float dur, float dynam, float plamp, float seed, float sr, in
 #ifdef sgi
 	struct __cabs_s z;
 #else
-	struct {double a,b;} z;
+/*	struct {double a,b;} z; */ /* don't need any more  -JGG */
 #endif
 /* printf("in hplset%f %f %f %f %f %f %d %f\n",xxlp,dur,dynam,plamp,seed,sr,init,q);
 */
@@ -55,8 +55,12 @@ L20:    pc=(sr/freq)-n-pa;
        j=xcmplx(0.,-1.);
        v1 = smultiply(rl,cexp(smultiply(2*pi*fm/sr,j)));
        v2 = xsubtract(xcmplx(1.,0.),v1);
+#ifdef sgi
        z.a = v2.re; z.b = v2.im; 
        zz = cabs(z);
+#else
+       zz = cabs(v2);
+#endif
        gl = (1.-rl)/zz;
        gl2=gl*gl;
       w2=w/2;  

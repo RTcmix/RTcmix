@@ -30,3 +30,11 @@ typedef struct {
 
 #define prtcmplx(x)\
   printf("%f %f \n",x.re,x.im); 
+
+#ifndef sgi
+ #ifndef cabs     /* lib/hplset.c needs this */
+ #define cabs(x) \
+   sqrt((x).re * (x).re + (x).im * (x).im);
+ #endif
+#endif
+
