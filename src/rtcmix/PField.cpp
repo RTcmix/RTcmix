@@ -172,6 +172,12 @@ TablePField::~TablePField()
 	delete [] _table;
 }
 
+double TablePField::Truncate(double *tab, int len, double didx)
+{
+	const int idx = int(didx);
+	return tab[idx];
+}
+
 double TablePField::Interpolate1stOrder(double *tab, int len, double didx)
 {
 	const int idx = int(didx);

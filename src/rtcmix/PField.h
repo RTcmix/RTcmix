@@ -139,6 +139,7 @@ protected:
 class TablePField : public PField, public RTFieldObject {
 public:
 	typedef double (*InterpFunction)(double *, int, double);
+	static double Truncate(double *, int, double);
 	static double Interpolate1stOrder(double *, int, double);
 	static double Interpolate2ndOrder(double *, int, double);
 public:
