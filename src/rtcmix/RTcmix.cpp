@@ -301,19 +301,19 @@ Instrument *RTcmix::cmd(char name[], int n_args, char* p0, ...)
 	// these are not time-stamped as above... change if we need to!
 	va_list ap;
 	int i;
-	char st[100];
+	char st[MAXDISPARGS][100];
 	int tmpint;
 	double p[MAXDISPARGS];
 	void *retval;
 
 	// this kludge dates from the olden days!
-	strcpy(st, p0);
-	tmpint = (int)st;
+	strcpy(st[0], p0);
+	tmpint = (int)st[0];
 	p[0] = (double)tmpint;
 	va_start(ap, p0); // start variable list after p0
 		for (i = 1; i < n_args; i++) {
-			strcpy(st, va_arg(ap, char*));
-			tmpint = (int)st;
+			strcpy(st[i], va_arg(ap, char*));
+			tmpint = (int)st[i];
 			p[i] = (double)tmpint;
 		}
 	va_end(ap);
