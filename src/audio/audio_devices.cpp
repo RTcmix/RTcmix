@@ -178,7 +178,7 @@ int create_audio_file_device(const char *outfilename,
 		 printf("Output file set for writing:\n");
 		 printf("      name:  %s\n", outfilename);
 		 printf("      type:  %s\n", mus_header_type_name(header_type));
-		 printf("    format:  %s\n", mus_data_format_name(sample_format));
+		 printf("    format:  %s\n", mus_data_format_name(MUS_GET_FORMAT(sample_format)));
 		 printf("     srate:  %g\n", srate);
 		 printf("     chans:  %d\n", chans);
 	}
