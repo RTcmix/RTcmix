@@ -7,15 +7,17 @@
 #define _PFIELD_H_
 
 #include <RefCounted.h>
+#include <stdio.h>
 
 // Base class for all PFields.  Value can be retrieved at any time in any
 // of the 4 supported formats.
 
 class PField : public RefCounted {
 public:
-	virtual double 	doubleValue(double dindex) const = 0;
+	virtual double 	doubleValue(double dindex=0.0) const = 0;
 	int 			intValue(double dindex) const { return (int) doubleValue(dindex); }
 	const char * 	stringValue(double dindex) const { return (const char *) intValue(dindex); }
+	virtual int		print(FILE *) const;
 protected:
 	virtual 		~PField();
 };
@@ -94,9 +96,10 @@ class TablePField : public RTPField {
 public:
 	TablePField(double *tableArray, int length);
 	virtual double	doubleValue(double) const;
-	char *dump() const;
+	virtual int		print(FILE *) const;	// redefined
 protected:
 	virtual ~TablePField();
+	int		len() const { return _len; }
 private:
 	double	*_table;
 	int 	_len;

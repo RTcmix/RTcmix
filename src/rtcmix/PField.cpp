@@ -32,6 +32,11 @@ double	PFieldBinaryOperator::doubleValue(double frac) const
 	return (*_operator)(_pfield1->doubleValue(frac), _pfield2->doubleValue(frac));
 }
 
+int PField::print(FILE *file) const
+{
+	return fprintf(file, "%.6f\n", doubleValue());
+}
+
 // ConstPField
 
 ConstPField::ConstPField(double value) : _value(value) {}
@@ -80,32 +85,18 @@ double TablePField::doubleValue(double percent) const
 {
 	if (percent > 1.0)
 		percent = 1.0;
-	double didx = (_len - 1) * percent;
+	double didx = (len() - 1) * percent;
 	int idx = int(didx);
-	int idx2 = min(idx + 1, _len - 1);
+	int idx2 = min(idx + 1, len() - 1);
 	double frac = didx - idx;
-	return _table[idx] + frac * (_table[idx] - _table[idx2]);
+	return _table[idx] + frac * (_table[idx2] - _table[idx]);
 }
 
-// Allocate a text buffer and fill it with lines representing the table
-// contents, one array element per line.  Return this text buffer.  A line
-// contains: the array index, one space and a formatted double...
-//
-//    99  123.450000
-//
-// Caller is responsible for deleting the text buffer.
-
-char *TablePField::dump() const
+int TablePField::print(FILE *file) const
 {
-	const int linemaxlen = 32;		// worst case line length
-	char buf[linemaxlen];
-	char *lines = new char[_len * linemaxlen];
-   lines[0] = 0;
-	for (int i = 0; i < _len; i++) {
-		snprintf(buf, linemaxlen, "%d %.6f\n", i, _table[i]);
-		strcat(lines, buf);
+	int chars = 0;
+	for (int i = 0; i < len(); i++) {
+		chars += fprintf(file, "%d %.6f\n", i, _table[i]);
 	}
-	lines[(_len * linemaxlen) - 1] = 0;
-	return lines;
+	return chars;
 }
-
