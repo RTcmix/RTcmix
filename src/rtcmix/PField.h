@@ -300,10 +300,13 @@ public:
 	typedef double (*ConverterFunction)(double);
 	static double ampdb(const double);
 	static double cpsoct(const double);
+	static double octcps(const double);
 	static double octpch(const double);
 	static double cpspch(const double);
 	static double pchoct(const double);
+	static double pchcps(const double);
 	static double pchmidi(const double);
+	static double octmidi(const double);
 	static double boost(const double);
 	static double inverse(const double);
 

@@ -487,6 +487,11 @@ double ConverterPField::cpsoct(const double oct)
 	return ::cpsoct(oct);
 }
 
+double ConverterPField::octcps(const double cps)
+{
+	return ::octcps(cps);
+}
+
 double ConverterPField::octpch(const double pch)
 {
 	return ::octpch(pch);
@@ -502,9 +507,19 @@ double ConverterPField::pchoct(const double oct)
 	return ::pchoct(oct);
 }
 
+double ConverterPField::pchcps(const double cps)
+{
+	return ::pchcps(cps);
+}
+
 double ConverterPField::pchmidi(const double midi)
 {
 	return ::pchmidi((unsigned char) midi);
+}
+
+double ConverterPField::octmidi(const double midi)
+{
+	return ::octmidi((unsigned char) midi);
 }
 
 // NB: returns an amp multiplier; feed this to an amp pfield, not a pan pfield
