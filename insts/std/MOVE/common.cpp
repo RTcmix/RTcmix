@@ -157,11 +157,9 @@ MFP_samps(double dim[])
    MFP = 4.0 * volume / area;
    mean_delay = 2.0 * MFP / MACH1;
 
-   if (print_is_on) {
-      printf("This room is %.1f ft. long,", length);
-      printf(" %.1f ft. wide, & %.1f ft. high.\n", width, height);
-      printf("The average delay is %.2f ms.\n", mean_delay * 1000.0);
-   }
+   advise(NULL, "This room is %.1f ft. long,", length);
+   advise(NULL, " %.1f ft. wide, & %.1f ft. high.\n", width, height);
+   advise(NULL, "The average delay is %.2f ms.\n", mean_delay * 1000.0);
 
    return (long)(mean_delay * SR + 0.5);
 }
