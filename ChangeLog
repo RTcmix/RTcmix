@@ -1,6 +1,15 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2004-04-28  Douglas Scott  <netdscott at netscape.net>
+
+	* First major revision to new AudioDevice system.  
+	  AudioDevices now accept RTcmix input and output buffers
+	  directly as float non-interleaved.  All format conversion
+	  handled internally.  Removed all references to RTcmix global
+	  conversion buffers.  Also, AudioDevices set queue size via
+	  block size and block count, for better internal optimization.
+
 Wednesday, 2004-04-14  Douglas Scott  <netdscott-at-netscape.net>
 
 	* Major revision of all audio I/O and main loop to use new
