@@ -44,7 +44,7 @@
 #define NUM_ZERO_BUFS       8
 
 #define SKIP_SECONDS        4.0     /* for fast-forward and rewind */
-#define MARK_PRECISION      3       /* digits after decimal point to print
+#define MARK_PRECISION      2       /* digits after decimal point to print
                                        for mark */
 
 #define ALL_CHANS           -1
@@ -707,10 +707,8 @@ int main(int argc, char *argv[])
       macosx_cmixplay_audio_write(sbuf);
 #endif
 
-      buf_start_time += (float)nframes / (float)srate;
-
       if (!quiet) {
-         if (buf_start_time > second) {
+         if (buf_start_time >= second) {
             if (print_minutes_seconds)
                printf("%s ", make_time_string((float)second, 0));
             else
@@ -773,6 +771,8 @@ int main(int argc, char *argv[])
             }
          }
       }
+
+      buf_start_time += (float)nframes / (float)srate;
    }
 
    /* write buffers of zeros to prevent clicks */
