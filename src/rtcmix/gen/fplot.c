@@ -30,9 +30,9 @@
       fplot(2, 10)                  [a gnuplot plot, on screen for 10 seconds,
                                      using gnuplot default for plot type]
 
-      fplot(2, 10, "with lines")    [plots with lines, interpolating btw points]
-      fplot(2, 10, "with points")   [plots with points]
-      fplot(2, 10, "with linespoints")   [plots with both lines and points]
+      fplot(2, 10, "with lines")    [plot with lines, interpolating btw. points]
+      fplot(2, 10, "with points")   [plot with points]
+      fplot(2, 10, "with linespoints")   [plot with both lines and points]
 
    Other useful options are "with impulses," "with steps," "with dots,"
    "with boxes," etc.
@@ -42,6 +42,8 @@
 
    If something goes wrong with the gnuplot syntax, there'll be some leftover
    files in the /tmp directory, with names like "rtcmix_plot_data_xAb5x8."
+
+   -JGG, 12/10/01
 */
 
 double
