@@ -2,7 +2,7 @@ Wednesday, May 10, 2000 Dave Topper <topper@virginia.edu?
    * Changed bus_config schema to provide default behavior
      to maintain backwards compatibility with pre-bus_config scores
 
-Thursday, May 7, 2000 John Gibson <johngibson@virginia.edu>
+Sunday, May 7, 2000 John Gibson <johngibson@virginia.edu>
 
    * Update some RT insts to 2.3 API.
    * Allocate input buffer dynamically in all RT insts that need one.
