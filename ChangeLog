@@ -1,7 +1,18 @@
+**** Released RTcmix-3.0.1 ****
+[Note: If you're running 3.0.0 now, you *really* want this update, due
+to the fix DT describes just below.  -JG]
+
+Thursday, June 8, 2000 John Gibson <johngibson@virginia.edu>
+
+   * Fixes to main.C and sockit.C supplied by Doug Scott. These affect
+     compilation on Linux Mandrake (and probably other distros), as
+     well as Irix 6.5.
+
 Thursday, June 8, 2000 Dave Topper <topper@virginia.edu>
 
    * Fixed Iptr deletion conditions in intraverse()
      memory overhead should be MUCH less now
+
 
 **** Released RTcmix-3.0.0 ****
 
@@ -105,5 +116,6 @@ Saturday, March 26, 2000 John Gibson <johngibson@virginia.edu>
      control-C. (main.C)
    * Added dbamp function for lib and Minc.
      (ampdb.c, minc_functions.c, ug_intro.c)
-	* Finally created this ChangeLog.
+   * Finally created this ChangeLog.
+
 
