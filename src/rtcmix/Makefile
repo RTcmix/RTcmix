@@ -129,7 +129,7 @@ ifeq ($(PYTHON_SUPPORT), TRUE)
       PYTHONLIBS += -lutil
    endif
    ifeq ($(PYTHON_EXT_LINK), TRUE)
-      PYEXT = ../parser/python/rtcmix.so
+      PYEXT = ../parser/python/rtcmixmodule.o
    endif
 endif
 
