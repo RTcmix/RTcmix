@@ -84,11 +84,13 @@ int MYINST :: init(float p[], int n_args)
    rtsetinput(inskip, this);
 
    /* Make sure requested input channel number is valid for this input file.
-      (The die function reports the error and exits the program.)
+      InputChannels() gives the total number of input channels, initialized
+      in rtsetinput.  The die function reports the error and exits the
+      program.
    */
-   if (inchan >= inputchans)
+   if (inchan >= InputChannels())
       die("MYINST", "You asked for channel %d of a %d-channel file.",
-                                                         inchan, inputchans);
+                                                      inchan, InputChannels());
 
    /* Set up to use the array of amplitude multipliers created by setline
       (which is just an alias to gen18). If function table hasn't been
@@ -132,21 +134,21 @@ int MYINST :: run()
       ctor or init method, to reduce the memory demands of the inst.
    */
    if (in == NULL)
-      in = new float [RTBUFSAMPS * inputchans];
+      in = new float [RTBUFSAMPS * InputChannels()];
 
    /* You MUST call the base class's run method here. */
    Instrument::run();
 
-   /* <chunksamps> is the number of sample frames -- 1 sample for each
+   /* FramesToRun() gives the number of sample frames -- 1 sample for each
       channel -- that we have to write during this scheduler time slice.
    */
-   samps = chunksamps * inputchans;
+   samps = FramesToRun() * InputChannels();
 
    /* Read <samps> samples from the input file (or audio input device). */
    rtgetin(in, this, samps);
 
    /* Each loop iteration processes 1 sample frame. */
-   for (i = 0; i < samps; i += inputchans) {
+   for (i = 0; i < samps; i += InputChannels()) {
 
       /* Every <skip> frames, update the amplitude envelope, if there
          is one. This is also the place to update other values from
@@ -156,7 +158,7 @@ int MYINST :: run()
       */
       if (--branch < 0) {
          if (amparray)
-            aamp = tablei(cursamp, amparray, amptabs) * amp;
+            aamp = tablei(CurrentFrame(), amparray, amptabs) * amp;
          branch = skip;
       }
 
@@ -170,7 +172,7 @@ int MYINST :: run()
          (Note: insts.jg/PAN/PAN.C shows a better method of panning,
          using constant power panning controlled by a makegen.)
       */
-      if (outputchans == 2) {
+      if (OutputChannels() == 2) {
          out[1] = out[0] * (1.0 - pctleft);
          out[0] *= pctleft;
       }
@@ -178,11 +180,11 @@ int MYINST :: run()
       /* Write this sample frame to the output buffer. */
       rtaddout(out);
 
-      /* Keep track of how many sample frames this instrument has written. */
-      cursamp++;
+      /* Increment the count of sample frames this instrument has written. */
+      increment();
    }
 
-   return chunksamps;
+   return FramesToRun();
 }
 
 

@@ -111,11 +111,11 @@ int MYSYNTH :: run()
    /* You MUST call the base class's run method here. */
    Instrument::run();
 
-   /* <chunksamps> is the number of sample frames -- 1 sample for each
+   /* FramesToRun() gives the number of sample frames -- 1 sample for each
       channel -- that we have to write during this scheduler time slice.
       Each loop iteration outputs 1 sample frame.
    */
-   for (i = 0; i < chunksamps; i++) {
+   for (i = 0; i < FramesToRun(); i++) {
 
       /* Every <skip> frames, update the amplitude envelope, if there
          is one. This is also the place to update other values from
@@ -138,7 +138,7 @@ int MYSYNTH :: run()
          (Note: insts.jg/PAN/PAN.C shows a better method of panning,
          using constant power panning controlled by a makegen.)
       */
-      if (outputchans == 2) {
+      if (OutputChannels() == 2) {
          out[1] = out[0] * (1.0 - pctleft);
          out[0] *= pctleft;
       }
@@ -146,11 +146,11 @@ int MYSYNTH :: run()
       /* Write this sample frame to the output buffer. */
       rtaddout(out);
 
-      /* Keep track of how many sample frames this instrument has written. */
-      cursamp++;
+      /* Increment the count of sample frames this instrument has written. */
+      increment();
    }
 
-   return chunksamps;
+   return FramesToRun();
 }
 
 
