@@ -152,11 +152,12 @@ double dispatch(const char *str, double *pp, int n_args, void **inst)
 	return rv;
 }
 
-// This is an extern "C" wrapper for trees.c
+#endif /* !PFIELD_CLASS */
+
+// This is an extern "C" wrapper for trees.c and RT.c
 
 double parse_dispatch(const char *str, double *pp, int n_args, void **inst)
 {
 	return dispatch(str, pp, n_args, inst);
 }
 
-#endif /* !PFIELD_CLASS */

@@ -56,9 +56,10 @@ double checkInsts(const char *instname, const Arg arglist[], const int nargs,
    Arg *retval);
 #else
 double checkInsts(const char *fname, double *pp, int n_args, void **inst);
-/* this is just a wrapper */
-double parse_dispatch(const char *str, double *pp, int n_args, void **inst);
 #endif
+
+/* this is just a wrapper for C files to call */
+double parse_dispatch(const char *str, double *pp, int n_args, void **inst);
 
 
 /* audioLoop.C */
