@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2004-07-09  Douglas Scott  <netdscott-at-netscape.net>
+
+	* libgen is now shared and linked via "-lgen"
+
 Friday, July 9, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * New Ocomb, Ozcomb and Ozdelay objects for genlib.
