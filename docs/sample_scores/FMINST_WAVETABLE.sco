@@ -1,4 +1,4 @@
-rtsetparams(22050, 2)
+rtsetparams(44100, 2)
 load("FMINST")
 load("WAVETABLE")
 reset(2000)
