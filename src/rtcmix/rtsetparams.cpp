@@ -41,6 +41,7 @@ rtsetparams(float p[], int n_args, double pp[])
 
    if (rtsetparams_called) {
       die("rtsetparams", "You can only call rtsetparams once!");
+	  return -1;
    }
 
 // FIXME: Need better names for NCHANS and RTBUFSAMPS. -JGG
@@ -60,20 +61,26 @@ rtsetparams(float p[], int n_args, double pp[])
    
    if (SR <= 0.0) {
 	   die("rtsetparams", "Sampling rate must be greater than 0.");
+	   return -1;
    }
 
    if (NCHANS > MAXBUS) {
-      die("rtsetparams", "You can only have up to %d output channels.", MAXBUS);
+      die("rtsetparams", "You can only have up to %d output channels.", MAXBUS - 1);
+	  return -1;
    }
 
    /* play_audio is true unless user has called set_option("audio_off") before
       rtsetparams. This would let user run multiple jobs, as long as only one
       needs the audio drivers.  -JGG
+
+	  record_audio is false unless user has called set_option("full_duplex_on") or
+	  has explicity turned record on by itself via set_option("record_on"), or  
+	  has already called rtinput("AUDIO").  -DS
    */
-   if (play_audio) {
+   if (play_audio || record_audio) {
       int nframes = RTBUFSAMPS;
 		
-	  if (create_audio_devices(full_duplex, NCHANS, SR, &nframes) < 0)
+	  if (create_audio_devices(record_audio, play_audio, NCHANS, SR, &nframes) < 0)
 	  	return -1;
 
       /* This may have been reset by driver. */
@@ -109,24 +116,7 @@ rtsetparams(float p[], int n_args, double pp[])
 void
 close_audio_ports()
 {
-   int n;
-
 	// This closes and destroys the AudioDevices for input and output.
 	destroy_audio_devices();
-
-#ifdef LINUX
- #ifdef MONO_DEVICES
-   for (n = 0; n < NCHANS; n++)
-      if (out_port[n])
-         close(out_port[n]);
-   for (n = 0; n < audioNCHANS; n++)
-      if (in_port[n])
-         close(in_port[n]);
- #else /* !MONO_DEVICES */
-
-   if (in_port[0] && in_port[0] != out_port[0])
-      close(in_port[0]);
- #endif /* !MONO_DEVICES */
-#endif /* LINUX */
 }
 
