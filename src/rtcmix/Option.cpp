@@ -73,6 +73,7 @@ int Option::readConfigFile(const char *fileName)
 	char *key;
 	Config conf;
 
+	assert(fileName != NULL && fileName[0] != 0);
 	ConfigErrorCode result = conf.parseFile(fileName);
 	if (result == kConfigFileMissingErr)
 		return -1;			// user doesn't have an rc file; fail silently
