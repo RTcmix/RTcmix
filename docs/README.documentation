@@ -1,0 +1,21 @@
+There's not much documentation for recent versions of RTcmix.
+
+Go to the CMC RTcmix web page at Columbia for some documentation
+that is a little out of date, but still very useful:
+
+   http://www.music.columbia.edu/cmix
+
+You may also find helpful the tutorials on John Gibson's Music 540
+course web site:
+
+   http://www.people.virginia.edu/~jgg9c/musi540.
+
+The sample score directories in the current dir are probably your
+best guide. It's also useful to look at the source code for the
+instruments, especially since most of them have usage comments.
+
+For information about the new bus-routing capability, read
+"README.bus_config" in this directory.
+
+
+-JGG
