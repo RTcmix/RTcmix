@@ -413,13 +413,13 @@ int JCHOR::grain_input_and_transpose()
             newsig = (double)in[index + inchan];
          incount++;
          k++;
-         if (counter - (float)incount < 0.5)
+         if (counter - (double)incount < 0.5)
             getflag = 0;
       }
       frac = counter - (double)incount + 2.0;
       grain[i] = (float)interp(oldersig, oldsig, newsig, frac) * grainamp;
       counter += increment;
-      if (counter - (float)incount >= -0.5)
+      if (counter - (double)incount >= -0.5)
          getflag = 1;
    }
 
