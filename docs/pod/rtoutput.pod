@@ -100,6 +100,10 @@ call to L<rtsetparams|rtsetparams> at the beginning of the script.
 
 synonym for "short"
 
+=item S< >I<24>
+
+24-bit linear
+
 =back
 
 "short" is the default if no data format is given.
