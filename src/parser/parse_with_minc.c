@@ -8,8 +8,6 @@
 
 extern int yyparse();
 
-int interactive = 1;     /* used in y.tab.c - don't remove this! */
-
 /* <yyin> is yacc's input file. If we leave it alone, stdin will be used. */
 extern FILE *yyin;
 
