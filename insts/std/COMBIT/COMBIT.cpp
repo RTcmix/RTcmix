@@ -99,7 +99,7 @@ int COMBIT::run()
 			}
 
 		out[0] = comb(in[i+inchan],combarr) * aamp;
-		if (NCHANS == 2) {
+		if (outputchans == 2) {
 			out[1] = out[0] * (1.0 - spread);
 			out[0] *= spread;
 			}

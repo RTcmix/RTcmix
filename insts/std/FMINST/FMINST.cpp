@@ -106,7 +106,7 @@ int FMINST::run()
 		val = oscil(index,simod,sine,lensine,&modphs);
 		out[0] = osciln(aamp,sicar+val,sine,lensine,&carphs);
 
-		if (NCHANS == 2) { /* split stereo files between the channels */
+		if (outputchans == 2) { /* split stereo files between the channels */
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
 			}

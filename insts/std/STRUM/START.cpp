@@ -58,7 +58,7 @@ int START::run()
 	for (i = 0; i < chunksamps; i++) {
 		out[0] = strum(0.,strumq1);
 
-		if (NCHANS == 2) { /* split stereo files between the channels */
+		if (outputchans == 2) { /* split stereo files between the channels */
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
 			}

@@ -39,7 +39,7 @@ int PANECHO::init(float p[], short n_args)
 	nsamps = rtsetoutput(p[0], p[2]+p[7], this);
 	insamps = (int)(p[2] * SR);
 
-	if (NCHANS != 2) {
+	if (outputchans != 2) {
 		fprintf(stderr,"output must be stereo!\n");
 		exit(-1);
 		}

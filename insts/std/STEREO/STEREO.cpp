@@ -30,7 +30,7 @@ int STEREO::init(float p[], short n_args)
 
 	int i;
 
-	if (NCHANS != 2) {
+	if (outputchans != 2) {
 		fprintf(stderr,"output must be stereo!\n");
 		exit(-1);
 		}
