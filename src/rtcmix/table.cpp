@@ -8,6 +8,7 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
+#include <unistd.h>
 #include <rtcmix_types.h>
 #include <prototypes.h>
 #include <PField.h>
