@@ -15,7 +15,6 @@
 #include "../rtstuff/rtdefs.h"
 
 #ifdef LINUX
-//   #include <unistd.h>  /* DT maybe don't need this? */
    #include <sys/types.h>
    #include <sys/stat.h>
    #include <fcntl.h>
