@@ -1,0 +1,86 @@
+=head1 NAME
+
+set_option - turn on and off various RTcmix options
+
+=head1 SYNOPSIS
+
+B<set_option>(I<option_name> [, I<option_name>, ... ])
+
+=head1 DESCRIPTION
+
+Use B<set_option> to control the behavior of RTcmix: whether to
+play audio, to report clipping and peak amplitude, to overwrite
+existing sound files, and so on.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<option_name>
+
+An I<option_name> is a double-quoted string of the form "option_on"
+or "option_off," depending on whether you want to turn the option
+on or off.  The case used for the string is not significant.
+
+A call to B<set_option> can contain more than one I<option_name>,
+separated by commas.  There can be more than one call to B<set_option>
+in a script.
+
+=for html <p>
+
+=over 8
+
+=item I<audio_on, audio_off>
+
+controls whether RTcmix plays audio while executing the script.
+
+=item I<check_peaks_on, check_peaks_off>
+
+controls whether RTcmix checks, reports, and stores peak amplitude
+stats in sound files.
+
+=item I<clobber_on, clobber_off>
+
+controls whether RTcmix overwrites existing sound files without asking.
+("Clobber_on" means that it will.)
+
+=item I<full_duplex_on, full_duplex_off>
+
+controls whether RTcmix opens the audio device for simultaneous
+input and output.  You need this if you want to process a signal
+coming from a microphone, for example.
+
+=item I<report_clipping_on, report_clipping_off>
+
+controls whether RTcmix reports samples that exceed the range provided
+by signed 16-bit integers.
+
+=back
+
+=back
+
+=head1 EXAMPLES
+
+   set_option("audio_off", "clobber_on")
+   rtoutput("myfile.aif")
+
+turns off audio playback and enables overwriting of existing files.
+This is the standard way to make a script that writes a sound file.
+
+   set_option("audio_off")
+   set_option("clobber_on")
+   rtoutput("myfile.aif")
+
+this does exactly the same thing.
+
+   set_option("full_duplex_on")
+   rtsetparams(44100, 2, 128)
+   rtinput("AUDIO")
+
+sets up RTcmix to process audio received from the audio device
+in real time.
+
+=head1 SEE ALSO
+
+L<rtsetparams|rtsetparams>, L<rtinput|rtinput>, L<rtoutput|rtoutput>
+
