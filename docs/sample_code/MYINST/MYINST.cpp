@@ -112,6 +112,8 @@ int MYINST :: init(float p[], int n_args)
    /* Set control rate counter. */
    skip = (int) (SR / (float) resetval);
 
+   aamp = amp;                  /* in case amparray == NULL */
+
    return nsamps;
 }
 
@@ -122,7 +124,7 @@ int MYINST :: init(float p[], int n_args)
 int MYINST :: run()
 {
    int   i, samps;
-   float aamp, insig;
+   float insig;
    float out[2];        /* Space for only 2 output chans! */
 
    /* If this is first call to run, <in> will still be NULL, so we
@@ -142,8 +144,6 @@ int MYINST :: run()
 
    /* Read <samps> samples from the input file (or audio input device). */
    rtgetin(in, this, samps);
-
-   aamp = amp;                  /* in case amparray == NULL */
 
    /* Each loop iteration processes 1 sample frame. */
    for (i = 0; i < samps; i += inputchans) {

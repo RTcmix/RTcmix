@@ -94,6 +94,8 @@ int MYSYNTH :: init(float p[], int n_args)
    /* Set control rate counter. */
    skip = (int) (SR / (float) resetval);
 
+   aamp = amp;                  /* in case amparray == NULL */
+
    return nsamps;
 }
 
@@ -104,13 +106,10 @@ int MYSYNTH :: init(float p[], int n_args)
 int MYSYNTH :: run()
 {
    int   i;
-   float aamp;
    float out[2];        /* Space for only 2 output chans! */
 
    /* You MUST call the base class's run method here. */
    Instrument::run();
-
-   aamp = amp;                  /* in case amparray == NULL */
 
    /* <chunksamps> is the number of sample frames -- 1 sample for each
       channel -- that we have to write during this scheduler time slice.

@@ -1,6 +1,6 @@
 class MYINST : public Instrument {
    int     inchan, skip, branch;
-   float   amp, pctleft;
+   float   amp, aamp, pctleft;
    float   *in, *amparray, amptabs[2];
 
 public:
