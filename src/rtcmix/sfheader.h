@@ -120,9 +120,9 @@ typedef union sfheader {
    using sndlib (see lib/getsample.c for example of using lseek instead).
 */
 
-/* These functions in sys/sndlibsupport.c
+/* These functions in src/audio/sndlibsupport.c
    <sfh> is pointer to an SFHEADER.
-   Code that calls these should include H/sndlibsupport.h.
+   Code that calls these should include sndlibsupport.h.
 */
 # define wheader(fd, sfh) sndlib_wheader((fd), (SFHEADER *)(sfh))
 # define rheader(fd, sfh) sndlib_rheader((fd), (SFHEADER *)(sfh))
