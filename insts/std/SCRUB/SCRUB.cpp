@@ -239,6 +239,8 @@ int SCRUB::Initialize() {
 // is called).
 // Return 0 on success, -1 on failure.
 
+inline int min(int x, int y) { return (x <= y) ? x : y; }
+
 int SCRUB::ReadRawFrames(int destframe, int nframes) {
   float fromFrame, toFrame;
 
@@ -266,15 +268,18 @@ int SCRUB::ReadRawFrames(int destframe, int nframes) {
   int read = 0;
   while (1) {
   	PRINT("ReadRawFrames calling rtgetin() for %d frames\n", (toread - read));
-    res = rtgetin(&pRawFrames[(destframe + read) * fChannels],
-				  this,
-				  (toread - read) * fChannels);
-    if (res == -1) {
-      err = -1;
-      break;
-    }
-	else
-      read += res;
+    while (read < toread) {
+		int framesToRead = min(RTBUFSAMPS, toread - read);
+		res = rtgetin(&pRawFrames[(destframe + read) * fChannels],
+					  this,
+					  framesToRead * fChannels);
+		if (res == -1) {
+		  err = -1;
+		  break;
+		}
+		else
+		  read += res;
+	}
     if (read < toread) {
  	  PRINT("ReadRawFrames calling rtinrepos() with loc = 0\n");
       rtinrepos(this, 0, SEEK_SET);
