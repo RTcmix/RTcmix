@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Thursday, February 27, 2003 Douglas Scott <dscott-at-netscape.net>
+
+   * Made extensive changes to the setup routines (rtinput, rtoutput, 
+   	 rtsetparams) to allow them to fail non-fatally and be called again.
+   * Worked on OSS init code.
+
 Saturday, February 22, 2003 Brad Garton <brad-at-music.columbia.edu>
 
    * Added change to allow app compiling under X11 on OSX using
