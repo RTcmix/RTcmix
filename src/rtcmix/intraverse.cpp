@@ -35,8 +35,7 @@ static bool audioDone = false;
 bool inTraverse(AudioDevice *device, void *arg);
 bool doneTraverse(AudioDevice *device, void *arg);
 
-extern AudioDevice *globalInputDevice;	// from sys/rtsetparams.C
-extern AudioDevice *globalOutputDevice;	// from sys/audio_port.C
+extern AudioDevice *globalAudioDevice;	// from sys/audio_port.C
 
 int runMainLoop(void)
 {
@@ -101,16 +100,16 @@ int runMainLoop(void)
 	// read in an input buffer (if audio input is active)
 	// NOTE:  We cannot do this until audio device has been started, below
 	if (audio_on) {
-//		rtgetsamps(globalInputDevice);
-//		rtsendzeros(globalOutputDevice, 0);  // send a buffer of zeros to audio device
+//		rtgetsamps(globalAudioDevice);
+//		rtsendzeros(globalAudioDevice, 0);  // send a buffer of zeros to audio device
 	}
 	
 	if (playEm) {
 		// Set done callback on device.
-		globalOutputDevice->setStopCallback(doneTraverse, NULL);
+		globalAudioDevice->setStopCallback(doneTraverse, NULL);
 		// Start audio output device, handing it our callback.
-		if (globalOutputDevice->start(inTraverse, NULL) != 0) {
-			cerr << globalOutputDevice->getLastError() << endl;
+		if (globalAudioDevice->start(inTraverse, NULL) != 0) {
+			cerr << globalAudioDevice->getLastError() << endl;
 			return -1;
 		}
 	}
