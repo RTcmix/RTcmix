@@ -72,6 +72,13 @@ GLOBAL int normalize_output_floats;
 GLOBAL int is_float_format;
 GLOBAL char *rtoutsfname;
 
+/* contains file descriptors for data files opened with infile
+   and used by gen2 and gen3
+*/
+#include <stdio.h>
+#define MAX_INFILE_DESC 50
+GLOBAL FILE *infile_desc[MAX_INFILE_DESC + 1];
+
 /* max amplitude encountered -- reported at end of run */
 GLOBAL BUFTYPE peaks[MAXBUS];
 GLOBAL long peaklocs[MAXBUS];
