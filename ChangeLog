@@ -1,3 +1,8 @@
+Sunday, Dec 17, 2000 John Gibson <johngibson@virginia.edu>
+
+   * Perl extension compilation fix.
+   * More n_args decls cleanups in ./sys and inst dirs.
+
 Friday, Dec 08, 2000 Douglas Scott <netdscott@netscape.net>
 
    * Added TRANSBEND instrument which allows time-varying pitch changes.
@@ -8,6 +13,7 @@ Friday, Dec 08, 2000 Douglas Scott <netdscott@netscape.net>
    * Added setexp() command to generate exponential lines for amplitudes, etc.
    * Cleaned up n_args decls in ./sys.
    * Added a check for SR <= 0 to rtsetparams().
+
 
 **** Released RTcmix-3.0.3 ****
 
