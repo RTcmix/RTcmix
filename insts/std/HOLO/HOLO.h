@@ -12,5 +12,6 @@ public:
 	HOLO();
 	virtual ~HOLO();
 	int init(double*, int);
+	int configure();
 	int run();
 };

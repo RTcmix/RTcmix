@@ -97,20 +97,21 @@ int HOLO::init(double p[], int n_args)
 
 	int i, rvin;
 
-	if (inputchans != 2) {
-		die("HOLO", "Input must be stereo.");
-		return(DONT_SCHEDULE);
+	if (inputChannels() != 2) {
+		return die("HOLO", "Input must be stereo.");
 	}
-	if (outputchans != 2) {
-		die("HOLO", "Output must be stereo.");
-		return(DONT_SCHEDULE);
+	if (outputChannels() != 2) {
+		return die("HOLO", "Output must be stereo.");
 	}
 
 	rvin = rtsetinput(p[1], this);
 	if (rvin == -1) { // no input
 		return(DONT_SCHEDULE);
 	}
-	nsamps = rtsetoutput(p[0], p[2], this);
+	rvin = rtsetoutput(p[0], p[2], this);
+	if (rvin == -1) { // no output
+		return(DONT_SCHEDULE);
+	}
 
 	ncoefs = nCoeffs;
 
@@ -129,7 +130,14 @@ int HOLO::init(double p[], int n_args)
 
 	intap = 0;
 
-	return(nsamps);
+	return 0;
+}
+
+int HOLO::configure()
+{
+	in = new float [RTBUFSAMPS * inputChannels()];
+	out = new float [RTBUFSAMPS * inputChannels()];
+	return (in && out) ? 0 : -1;
 }
 
 int HOLO::run()
@@ -137,13 +145,8 @@ int HOLO::run()
 	int i, j;
 	float output[2];
 
-	if (in == NULL)        /* first time, so allocate it */
-		in = new float [RTBUFSAMPS * inputchans];
 
-	if (out == NULL)        /* first time, so allocate it */
-		out = new float [RTBUFSAMPS * inputchans];
-
-	int rsamps = chunksamps*inputchans;
+	int rsamps = framesToRun()*inputChannels();
 	rtgetin(in, this, rsamps);
 
 	for (i = 0; i < rsamps; i += 2) {
