@@ -11,8 +11,8 @@
    p1 = duration
    p2 = carrier amplitude
    p3 = carrier oscillator frequency (or oct.pc if < 15)
-   p4 = modulator depth control type (0: percent of carrier frequency,
-        1: modulation index) [optional, default is 0]
+   p4 = modulator depth control type (0: no modulation at all, 1: percent
+        of carrier frequency, 2: modulation index) [optional, default is 0]
    p5 = type of filter (0: no filter, 1: low-pass, 2: high-pass)
         [optional, default is 0]
    p6 = steepness (> 0) [optional, default is 1]
@@ -21,7 +21,9 @@
    p4 (modulator depth control type) tells the instrument how to interpret
    the values in the modulator depth function table.  You can express these
    as a percentage of the carrier (useful for subaudio rate modulation) or
-   as a modulation index (useful for audio rate FM).
+   as a modulation index (useful for audio rate FM).  If you don't want
+   to use the modulating oscillator at all, pass 0 for this pfield.  Then
+   you don't need to create function tables 4-6.
 
    p6 (steepness) is just the number of filters to add in series.  Using more
    than 1 steepens the slope of the filter.  If you don't set p7 (balance)
@@ -60,7 +62,7 @@ load("WIGGLE")
 dur = 12
 amp = 10000
 pitch = 8.00
-mod_depth_type = 0      /* % of car freq */
+mod_depth_type = 1      /* % of car freq */
 
 setline(0,0, 1,1, 2,1, 5,0)
 

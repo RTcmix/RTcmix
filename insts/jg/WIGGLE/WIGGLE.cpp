@@ -11,8 +11,8 @@
    p1 = duration
    p2 = carrier amplitude
    p3 = carrier oscillator frequency (or oct.pc if < 15)
-   p4 = modulator depth control type (0: percent of carrier frequency,
-        1: modulation index) [optional, default is 0]
+   p4 = modulator depth control type (0: no modulation at all, 1: percent
+        of carrier frequency, 2: modulation index) [optional, default is 0]
    p5 = type of filter (0: no filter, 1: low-pass, 2: high-pass)
         [optional, default is 0]
    p6 = steepness (> 0) [optional, default is 1]
@@ -21,7 +21,9 @@
    p4 (modulator depth control type) tells the instrument how to interpret
    the values in the modulator depth function table.  You can express these
    as a percentage of the carrier (useful for subaudio rate modulation) or
-   as a modulation index (useful for audio rate FM).
+   as a modulation index (useful for audio rate FM).  If you don't want
+   to use the modulating oscillator at all, pass 0 for this pfield.  Then
+   you don't need to create function tables 4-6.
 
    p6 (steepness) is just the number of filters to add in series.  Using more
    than 1 steepens the slope of the filter.  If you don't set p7 (balance)
@@ -83,9 +85,14 @@ WIGGLE :: WIGGLE() : Instrument()
 {
    /* might not use these, so make them NULL */
    balancer = NULL;
+   modulator = NULL;
    amp_table = NULL;
+   modfreq_table = NULL;
+   moddepth_table = NULL;
    filtcf_table = NULL;
    pan_table = NULL;
+
+   mod_depth = 0.0;        /* must init, in case depth_type == NoModOsc */
 }
 
 
@@ -96,12 +103,15 @@ WIGGLE :: ~WIGGLE()
    if (balancer)
       delete balancer;
    delete carrier;
-   delete modulator;
+   if (modulator)
+      delete modulator;
    if (amp_table)
       delete amp_table;
    delete cargliss_table;
-   delete modfreq_table;
-   delete moddepth_table;
+   if (modfreq_table)
+      delete modfreq_table;
+   if (moddepth_table)
+      delete moddepth_table;
    if (filtcf_table)
       delete filtcf_table;
    if (pan_table)
@@ -171,29 +181,31 @@ int WIGGLE :: init(float p[], int n_args)
    else     // Note: we won't get here with current floc implementation
       die("WIGGLE", "You haven't made the carrier glissando function.");
 
-   modwave_array = floc(MOD_WAVE_FUNC);
-   if (modwave_array) {
-      int len = fsize(MOD_WAVE_FUNC);
-      modulator = new OscilL(0.0, modwave_array, len);
-   }
-   else     // Note: we won't get here with current floc implementation
-      die("WIGGLE", "You haven't made the modulator waveform function.");
+   if (depth_type != NoModOsc) {
+      modwave_array = floc(MOD_WAVE_FUNC);
+      if (modwave_array) {
+         int len = fsize(MOD_WAVE_FUNC);
+         modulator = new OscilL(0.0, modwave_array, len);
+      }
+      else     // Note: we won't get here with current floc implementation
+         die("WIGGLE", "You haven't made the modulator waveform function.");
 
-   modfreq_array = floc(MOD_FREQ_FUNC);
-   if (modfreq_array) {
-      int len = fsize(MOD_FREQ_FUNC);
-      modfreq_table = new TableL(dur, modfreq_array, len);
-   }
-   else     // Note: we won't get here with current floc implementation
-      die("WIGGLE", "You haven't made the modulator frequency function.");
+      modfreq_array = floc(MOD_FREQ_FUNC);
+      if (modfreq_array) {
+         int len = fsize(MOD_FREQ_FUNC);
+         modfreq_table = new TableL(dur, modfreq_array, len);
+      }
+      else     // Note: we won't get here with current floc implementation
+         die("WIGGLE", "You haven't made the modulator frequency function.");
 
-   moddepth_array = floc(MOD_DEPTH_FUNC);
-   if (moddepth_array) {
-      int len = fsize(MOD_DEPTH_FUNC);
-      moddepth_table = new TableL(dur, moddepth_array, len);
+      moddepth_array = floc(MOD_DEPTH_FUNC);
+      if (moddepth_array) {
+         int len = fsize(MOD_DEPTH_FUNC);
+         moddepth_table = new TableL(dur, moddepth_array, len);
+      }
+      else     // Note: we won't get here with current floc implementation
+         die("WIGGLE", "You haven't made the modulator depth function.");
    }
-   else     // Note: we won't get here with current floc implementation
-      die("WIGGLE", "You haven't made the modulator depth function.");
 
    if (filter_type != NoFilter) {
       filtcf_array = floc(FILTER_CF_FUNC);
@@ -237,12 +249,14 @@ int WIGGLE :: run()
             aamp = amp_table->tick(cursamp, 1.0) * amp;
          car_gliss = cargliss_table->tick(cursamp, 1.0);
          car_gliss = cpsoct(10.0 + car_gliss) / cpsoct10;
-         mod_freq = modfreq_table->tick(cursamp, 1.0);
-         mod_depth = moddepth_table->tick(cursamp, 1.0);
-         if (depth_type == CarPercent)
-            mod_depth *= 0.01;
-         else   /* ModIndex */
-            mod_depth *= mod_freq;     /* now mod_depth is peak deviation */
+         if (depth_type != NoModOsc) {
+            mod_freq = modfreq_table->tick(cursamp, 1.0);
+            mod_depth = moddepth_table->tick(cursamp, 1.0);
+            if (depth_type == CarPercent)
+               mod_depth *= 0.01;
+            else   /* ModIndex */
+               mod_depth *= mod_freq;     /* now mod_depth is peak deviation */
+         }
          if (filter_type != NoFilter) {
             float cf = filtcf_table->tick(cursamp, 1.0);
             if (cf <= 0.0)

@@ -20,7 +20,7 @@ makegen(8, 18, 2000, 0,.2, 1,.5, 2,1)  /* pan */
 filt_type = 2                          /* highpass */
 filt_steep = 20
 
-WIGGLE(st=0, dur, amp, pitch, 1, filt_type, filt_steep)
+WIGGLE(st=0, dur, amp, pitch, 2, filt_type, filt_steep)
 
 makegen(8, 18, 2000, 0,1, 1,0)         /* pan */
-WIGGLE(st=0.1, dur, amp, pitch+.01, 1, filt_type, filt_steep)
+WIGGLE(st=0.1, dur, amp, pitch+.01, 2, filt_type, filt_steep)

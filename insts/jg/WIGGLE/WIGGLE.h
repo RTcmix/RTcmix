@@ -1,8 +1,9 @@
 #include <objlib.h>
 
 typedef enum {
-   CarPercent = 0,
-   ModIndex = 1
+   NoModOsc = 0,
+   CarPercent = 1,
+   ModIndex = 2
 } DepthType;
 
 typedef enum {

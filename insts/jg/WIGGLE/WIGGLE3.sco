@@ -21,7 +21,7 @@ makegen(6, 18, 2000, 0,1.5, 1,1.8)                 /* mod depth */
 makegen(7, 18, 2000, 0,4000, 1,10000, 2,100)       /* filt cf */
 makegen(8, 18, 2000, 0,0, 1,.5)                    /* pan */
 
-depth_type = 1  /* mod index */
+depth_type = 2  /* mod index */
 filt_type = 1
 filt_steep = 5
 

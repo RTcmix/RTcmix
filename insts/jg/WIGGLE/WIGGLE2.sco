@@ -31,12 +31,6 @@ gen_size = vib_speed * dur
 
 /* gliss function values are in linear octaves, thus the octpch conversions. */
 makegen(3, 20, gen_size, dist_type, seed, octpch(min), octpch(max))
-/* -------------------------------------------------------------------------- */
-
-/* These are all disabled, since we're using gliss function to modulate. */
-makegen(4, 10, 8000, 1)             /* mod waveform */
-makegen(5, 18, 1000, 0,0,1,0)       /* mod freq */
-makegen(6, 18, 1000, 0,0,1,0)       /* mod depth */
 
 WIGGLE(st=0, dur, amp, pitch)
 
