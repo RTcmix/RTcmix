@@ -16,6 +16,10 @@ extern "C" {
 	void rtprofile();
 }
 
+#ifndef NULL
+#define NULL 0
+#endif
+
 #define RT_INTRO(flabel, func) \
 	{ extern Instrument* func(); \
 		static rt_item this_rt = { NULL, func, flabel }; \
