@@ -275,8 +275,11 @@ bool GrainStream::maybeStartGrain(const int bufoutstart)
 
          const int overshoot = _nextinstart - _winend;
          if (overshoot >= 0) {
-            if (_wrap)
+            if (_wrap) {
                _nextinstart = _winstart + overshoot;
+               if (_nextinstart > _winend)
+                  _nextinstart = _winend;
+            }
             else
                keepgoing = false;
 #if DEBUG > 0
@@ -291,8 +294,11 @@ bool GrainStream::maybeStartGrain(const int bufoutstart)
 
          const int overshoot = _winstart - _nextinstart;
          if (overshoot >= 0) {
-            if (_wrap)
+            if (_wrap) {
                _nextinstart = _winend - overshoot;
+               if (_nextinstart < _winstart)
+                  _nextinstart = _winstart;
+            }
             else
                keepgoing = false;
 #if DEBUG > 0
