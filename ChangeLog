@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Saturday, August 9, 2003 John Gibson <johgibso-at-indiana.edu>
+
+   * New instruments:
+      FOLLOWBUTTER - envelope follower controlling a Butterworth filter
+      VOCODESYNTH - channel vocoder driving an oscillator bank
+
 Wednesday, July 30, 2003 John Gibson <johgibso-at-indiana.edu>
 
    * Add CHANS Minc command - returns number of channels in a sound file
