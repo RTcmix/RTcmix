@@ -38,10 +38,8 @@ PLACE::~PLACE()
 
 int PLACE::localInit(double p[], int n_args)
 {
-    if (n_args < 8) {
-        die(name(), "Wrong number of args.");
-		  return(DONT_SCHEDULE);
-	 }
+    if (n_args < 7)
+        return die(name(), "Wrong number of args.");
 	
 	const double conv = PI2 / 360.0;
 	double R = (double)p[4];
