@@ -56,6 +56,7 @@ extern "C" void *yTraverse();
 extern "C" void *traverse();
 extern "C" void *rtsendsamps();
 
+int interactive;    /* used in y.tab.c - don't remove this! */
 Tree     program;            
 #define CMAX 16     /* allow up to 16 command line args to be passed to subs */
 int aargc;
@@ -83,6 +84,7 @@ init_globals()
 	in_port = 0;
 	out_port = 0;
 
+	interactive = 1;
 	rtInteractive = 0;	/* we set this with command-line option -r now */
 	oldSched = 0;
 	noParse = 0;
