@@ -30,6 +30,6 @@ clean:
 		( cd $$DIR; $(MAKE) $(MFLAGS) clean; ) \
 	done
 
-cleanall: uninstall
+cleanall: clean uninstall
 distclean: cleanall
 
