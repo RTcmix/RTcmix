@@ -56,7 +56,6 @@ extern "C" void *yTraverse();
 extern "C" void *traverse();
 extern "C" void *rtsendsamps();
 
-int interactive;
 Tree     program;            
 #define CMAX 16     /* allow up to 16 command line args to be passed to subs */
 int aargc;
@@ -68,6 +67,46 @@ FILE *fp;
 
 // *************************************************************************** 
 
+static void
+init_globals()
+{
+	// Set up buffer sizes 
+	// These can be changed with rtsetparams
+	
+	RTBUFSAMPS = 8192; // default, modifyable with rtsetparams
+// FIXME: NCHANS hasn't even been inited yet!
+	MAXBUF = NCHANS * RTBUFSAMPS;
+#ifdef DBUG	
+	printf("init_globals():  MAXBUF = %d\n", MAXBUF);
+#endif
+
+	in_port = 0;
+	out_port = 0;
+
+	rtInteractive = 0;	/* we set this with command-line option -r now */
+	oldSched = 0;
+	noParse = 0;
+	socknew = 0;
+
+	audio_on = 0;
+	audio_config = 1;
+	play_audio = 1;      /* modified with set_option */
+	full_duplex = 0;
+
+	tags_on = 0;
+
+   rtfileit = 0;        /* signal writing to soundfile */
+	rtoutfile = 0;
+	rtoutswap = 0;
+
+	print_is_on = 1;
+
+	rtInputIndex = -1;
+
+	init_buf_ptrs();
+}
+
+
 main(int argc, char *argv[])
 {
 	int	i,j;
@@ -78,48 +117,12 @@ main(int argc, char *argv[])
 	/* threads */
 	pthread_t sockitThread, inTraverseThread;
 
-	// Set up buffer sizes 
-	// These can be changed with rtsetparams
-	
-	play_audio = 1; // modified with audio_set
-	RTBUFSAMPS = 8192; // default, modifyable with rtsetparams
-	MAXBUF = NCHANS*RTBUFSAMPS;
-	in_port = 0;
-	out_port = 0;
-
-	interactive = 1;		/* default is interactive mode */
-	rtInteractive = 0;	/* we set this with command-line option -r now */
-	oldSched = 0;
-	noParse = 0;
-	socknew = 0;
-	audio_on = 0;
-	audio_config = 1;
-	tags_on = 0;
-	full_duplex = 0;
-	in_port = 0;
-	out_port = 0;
-   rtfileit = 0;        /* signal writing to soundfile */
-	rtoutfile = 0;
-	rtoutswap = 0;
-	print_is_on = 1;
-
-#ifdef DBUG	
-	printf("main():  MAXBUF = %d\n",MAXBUF);
-#endif
-	/*	THE FOLLOWING FUNCTION IS SGI ONLY
-		set the special "flush zero" but (FS, bit 24) in the
-		Control Status Register of the FPU of R4k and beyond
-		so that the result of any underflowing operation will
-		be clamped to zero, and no exception of any kind will
-		be generated on the CPU.  This has no effect on an R3000.
-	*/
 #ifdef SGI
 	flush_all_underflows_to_zero();
 #endif
 #ifdef LINUX
-	/* THE FOLLOWING FUNCTION TRIES TO DO THE SAME THING */
 	/* Install signal handler */
-	signal(SIGFPE,flush_fpe);
+	signal(SIGFPE, flush_fpe);
 #endif
 
 	/* copy command-line args, if any*/
@@ -251,6 +254,5 @@ main(int argc, char *argv[])
 	if (out_port) while (ALgetfilled(out_port) > 0) {};
 #endif
 	closesf();
-	fprintf(stderr,"--------->Goodbye<---------");
 }
 
