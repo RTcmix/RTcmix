@@ -28,7 +28,7 @@ makegen(12, 18, 1000, 0,1, 1,1)             /* grain density */
 makegen(13, 18, 1000, 0,.5, 1,.5)           /* grain stereo loc */
 makegen(14, 18, 1000, 0,1, 1,1)             /* grain stereo loc randomization */
 
-JGRAN(start=0, totdur, amp=1, seed=.1, type=1, ranphase=0)
+JGRAN(start=0, totdur, amp=1, seed=0, type=1, ranphase=0)
 
 /* --------------------------------------------------------------- flange --- */
 resonance = 0.6
