@@ -38,9 +38,10 @@
 #define SLEEP_MSEC	20
 
 //#define LABEL_FONT_NAME	"Monaco"
-#define LABEL_FONT_NAME	"Lucida Grande"
-#define LABEL_FONT_SIZE	14
-#define LABEL_FONT_FACE	bold		// 0 for plain
+#define LABEL_FONT_NAME		"Lucida Grande"
+#define LABEL_FONT_SIZE		14
+#define LABEL_FONT_FACE		bold		// 0 for plain
+#define EXTRA_LINE_HEIGHT	5
 
 const int _titleBarHeight = 22;	// FIXME: should get this from system
 const int _labelXpos = LABEL_FROM_LEFT;
@@ -63,8 +64,8 @@ WindowRef _window;
 enum {
 	kWindowXpos = 200,
 	kWindowYpos = 100,
-	kWindowWidth = 180,
-	kWindowHeight = 140
+	kWindowWidth = 250,
+	kWindowHeight = 250
 };
 
 // socket
@@ -176,7 +177,7 @@ void updateLabelValue(const int id, const double value)
 
 void updateLabelRect()
 {
-	const int height = _labelCount * _lineHeight;
+	const int height = _labelCount * (_lineHeight + EXTRA_LINE_HEIGHT);
 	const int width = _maxLabelChars * _charWidth;
 	SetRect(&_labelRect, _labelXpos, _labelYpos, _labelXpos + width,
 				_labelYpos + height);
