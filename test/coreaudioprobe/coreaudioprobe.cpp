@@ -232,7 +232,13 @@ PrintStreamList(AudioDeviceID devID, Boolean isInput, UInt32 *totChans)
    }
    printf("   Total number of channels: %d\n", *totChans);
 
-   delete [] list;
+// I don't know why, but this delete can cause a worrying error message:
+//    *** malloc[4748]: error for object 0x515d50: Incorrect checksum for freed
+//        object - object was probably modified after being freed; break at
+//        szone_error
+// *We*  aren't using it, but maybe CoreAudio still is somehow??   -JGG
+//
+// delete [] list;
 
    return 0;
 }
@@ -282,7 +288,7 @@ PrintStreamChannelInformation(AudioDeviceID devID, UInt32 chan, Boolean isInput)
       else
          printf("   \"         \"            %d     %d       \"         (\"%s\")\n",
                chan, strDesc.mChannelsPerFrame, chanName);
-      delete [] chanName;
+//    delete [] chanName;
    }
    else {
       if (chan == 1)
@@ -328,6 +334,15 @@ main(int argc, char *argv[])
 {
    AudioDeviceID *devList;
    int devCount;
+   Boolean printChanInfo = true;
+
+   for (int i = 1; i < argc; i++) {
+      char *arg = argv[i];
+
+      // Give this option if calling PrintStreamChannelInformation fails.
+      if (strcmp(arg, "--nochaninfo") == 0)
+         printChanInfo = false;
+   }
 
    if (GetDeviceList(&devList, &devCount) != 0)
       return -1;
@@ -358,19 +373,23 @@ main(int argc, char *argv[])
       UInt32 totChans;
       if (PrintStreamList(devID, isInput, &totChans) != 0)
          return -1;
-      for (UInt32 n = 1; n <= totChans; n++)
-         if (PrintStreamChannelInformation(devID, n, isInput) != 0)
-            return -1;
-      printf("\n");
+      if (printChanInfo) {
+         // NOTE: We continue even if printing this info fails.
+         for (UInt32 n = 1; n <= totChans; n++)
+            PrintStreamChannelInformation(devID, n, isInput);
+         printf("\n");
+      }
 
       printf("Output Section ----------------------------------------------\n");
       if (PrintStreamList(devID, isOutput, &totChans) != 0)
          return -1;
-      for (UInt32 n = 1; n <= totChans; n++)
-         if (PrintStreamChannelInformation(devID, n, isOutput) != 0)
-            return -1;
+      if (printChanInfo) {
+         for (UInt32 n = 1; n <= totChans; n++)
+            PrintStreamChannelInformation(devID, n, isOutput);
+      }
 
-      delete [] devName;
+//    NOTE: This can cause a malloc err msg.  Why??  We're not using it again!
+//    delete [] devName;
    }
 
    delete [] devList;
