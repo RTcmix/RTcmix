@@ -7,7 +7,6 @@
 #ifdef USE_SNDLIB
   #include <stdlib.h>
   #include "../H/sndlibsupport.h"
-  extern int inNCHANS;
 #endif
 
 extern InputDesc inputFileTable[];
@@ -20,7 +19,7 @@ int rtgetin(float *inarr, Instrument *theInst, int nsmps)
 	int i;
 	int fdesc, seeked, sampsRead;
 #ifdef USE_SNDLIB
-	int n, j, frames;
+	int n, j, frames, chans;
 	static int **inbufs = NULL;
 #else
 	short in[MAXBUF];
@@ -70,16 +69,17 @@ int rtgetin(float *inarr, Instrument *theInst, int nsmps)
 		return -1;
 	}
 
-	frames = nsmps / inNCHANS;
+   chans = theInst->inputchans;
+	frames = nsmps / chans;
    if (frames > RTBUFSAMPS) {
       fprintf(stderr, "Internal Error: rtgetin: nsmps out of range!\n");
       exit(1);
    }
-	clm_read(fdesc, 0, frames-1, inNCHANS, inbufs);
+	clm_read(fdesc, 0, frames-1, chans, inbufs);
 //NOTE: doesn't return an error code!!
 
-	for (i = j = 0; i < frames; i++, j += inNCHANS)
-		for (n = 0; n < inNCHANS; n++)
+	for (i = j = 0; i < frames; i++, j += chans)
+		for (n = 0; n < chans; n++)
 			inarr[j+n] = (short)inbufs[n][i];
 
 	/* update our file offset
