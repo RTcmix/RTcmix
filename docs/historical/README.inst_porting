@@ -1,0 +1,89 @@
+
+If you have a real-time instrument that works with RTcmix 2.2.3,
+you have to make a few changes to get it to run properly on the
+most recent version of RTcmix that implements bus routing.
+
+Note that instruments don't need to know where their input and output
+signals are coming from. For example, an instrument whose <outputchans>
+is 2 could be writing to a stereo output file, aux busses 0 and 1, or
+aux busses 2 and 7. The instrument doesn't care which. (The instrument
+does have access to the bus_config information if it wants to care, but
+try to avoid this.)
+
+----------
+
+The minimum changes are:
+
+1) Call the set_bus_config Instrument method in the makeINST function
+   (substituting the name of your instrument for "INST", of course):
+
+      inst = new INST();
+      inst->set_bus_config("INST");
+
+2) Call the run method of the base Instrument class at the
+   beginning of your run method:
+
+      Instrument::run();
+
+   This does essential bus bookkeeping.
+
+3) If the instrument reads from an input file, size the input
+   buffer to "RTBUFSAMPS * inputchans" floats. Don't use MAXBUF,
+   which doesn't exist anymore.
+
+   If you want the instrument to compile with the Irix MIPSPro
+   compiler, you must dynamically allocate this buffer instead of
+   making it an automatic array. Allocate it in the run method,
+   instead of in the ctor or init method, to reduce the memory
+   demand when playing thousands of notes using your instrument.
+   And delete the buffer in the destructor.
+   See docs/sample_code/MYINST/MYINST.C for an example.
+ 
+4) If you were using rtbaddout instead of rtaddout, for block I/O,
+   don't declare an output buffer. This has already been done in the
+   Instrument base class. It's name is <outbuf>. Just write to it the
+   same way you were writing to your private output buffer before,
+   but don't call rtbaddout (which no longer exists). The scheduler
+   will take care of adding your output buffer into the appropriate
+   output busses.
+
+5) Replace all references to "NCHANS" with "outputchans".
+
+----------
+
+Additionally, you can make these optional changes:
+
+6) Make use of the new advise, warn and die message functions instead
+   of printf's. These take into account the print_on and print_off
+   score functions as appropriate, and print the messages to the
+   job output in a consistent way. die() also exits the program,
+   after closing sound files.
+
+7) Remove the declaration of resetval. This is now in ugens.h (which
+   you're already including).
+
+8) No longer need to include ugens.h in an extern "C" wrapper.
+
+----------
+
+If you're porting instruments from earlier versions of RTcmix, there
+are a few other things you have to do. It'll be helpful to look at
+docs/sample_code/MYINST/MYINST.C for the current way to do things.
+
+1) Don't use a private setline function. Assume gen function #1 holds
+   the overall amplitude envelope shape.
+
+2) Don't use a private reset function. Just use the resetval variable
+   as before. (The reset function is now in minc_functions.c.)
+
+3) floc(1) no longer complains and aborts the program if that gen array
+   doesn't exist. Instead, you have to check for this yourself.
+
+4) Don't use hard-coded include paths.
+
+5) Update your Makefile to use the makefile.conf scheme.
+
+
+
+-John Gibson, 17 May, 2000
+
