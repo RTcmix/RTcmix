@@ -73,26 +73,6 @@ int WAVETABLE::run()
 				aamp = tablei(cursamp, amptable, tabs) * amp;
 			else
 				aamp = amp;
-#ifdef USE_RTUPDATE
-			if (tags_on) {
-			  tfreq = rtupdate(this->mytag, 3);
-			  if (tfreq != NOPUPDATE) {
-				if (tfreq < 15.0) {
-				  tfreq = cpspch(tfreq);
-				}
-				si = tfreq * (float)len/SR;
-			  }
-			  tamp = rtupdate(this->mytag, 2);
-			  if (tamp != NOPUPDATE)
-				amp = tamp;
-			  tdur = rtupdate(this->mytag, 1);
-			  if (tdur != NOPUPDATE)
-				dur = tdur;
-			  tspread = rtupdate(this->mytag, 4);
-			  if (tspread != NOPUPDATE)
-				spread = tspread;
-			}
-#endif
 			branch = skip;
 		}
 		out[0] = oscili(aamp, si, wavetable, len, &phase);
@@ -113,7 +93,7 @@ makeWAVETABLE()
 {
 	WAVETABLE *inst;
 	inst = new WAVETABLE();
-   inst->set_bus_config("WAVETABLE");
+    inst->set_bus_config("WAVETABLE");
 	return inst;
 }
 
