@@ -36,6 +36,7 @@ private:
   qElt *tail;
 public:
   queue();
+  ~queue();
   void pushTail(heapslot*);
   void push(heapslot*);
   heapslot *pop();

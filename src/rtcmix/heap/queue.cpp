@@ -9,6 +9,13 @@ queue::queue() : head(NULL), tail(NULL)
 {
 }
 
+queue::~queue()
+{
+//	while (head) {
+//		pop();
+//	}
+}
+
 void queue::pushTail(heapslot *newHeapElt)
 {
   qElt *newElt;  // create new qElt

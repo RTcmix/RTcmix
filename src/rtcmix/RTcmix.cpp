@@ -172,6 +172,8 @@ RTcmix::init_globals(bool fromMain, const char *defaultDSOPath)
 void
 RTcmix::free_globals()
 {
+	free_buffers();
+	free_bus_config();
 	freefuncs();
 	delete [] rtQueue;
 	rtQueue = NULL;

@@ -216,3 +216,24 @@ RTcmix::allocate_out_buffer(short chan, int nsamps)
    return 0;
 }
 
+// Cleanup routine
+
+void
+RTcmix::free_buffers()
+{
+	for (int chan = 0; chan < MAXBUS; ++chan)
+	{
+		if (audioin_buffer[chan]) {
+			free(audioin_buffer[chan]);
+			audioin_buffer[chan] = NULL;
+		}
+		if (aux_buffer[chan]) {
+			free(aux_buffer[chan]);
+			aux_buffer[chan] = NULL;
+		}
+		if (out_buffer[chan]) {
+			free(out_buffer[chan]);
+			out_buffer[chan] = NULL;
+		}
+	}
+}

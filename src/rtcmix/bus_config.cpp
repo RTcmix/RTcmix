@@ -846,3 +846,15 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
    return -1.0;
 }
 
+void
+RTcmix::free_bus_config()
+{
+   for (BusQueue *q = Inst_Bus_Config; q;) {
+      BusQueue *next = q->next;
+      delete q;
+      q = next;
+   }
+   for (int i=0 ; i<MAXBUS; i++) {
+	   RefCounted::unref(Bus_In_Config[i]);
+   }
+}

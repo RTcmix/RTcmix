@@ -123,7 +123,10 @@ protected:
 	// Initialization methods.
 	void init(float, int, int, const char*, const char*, const char*);	// called by all constructors
 	static void init_globals(bool fromMain, const char *defaultDSOPath);
+
+	// Cleanup methods
 	static void free_globals();
+	static void free_bus_config();
 	
 	// Audio loop methods
 	
@@ -151,9 +154,13 @@ protected:
 	static pthread_mutex_t audio_config_lock;
 
 private:
+	// Buffer alloc routines.
 	static int allocate_audioin_buffer(short chan, int len);
 	static int allocate_aux_buffer(short chan, int len);
 	static int allocate_out_buffer(short chan, int len);
+
+	// Cleanup routine.
+	static void free_buffers();
 
 	static int registerDSOs(const char *dsoPaths);
 
