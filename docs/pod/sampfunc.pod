@@ -1,0 +1,56 @@
+=head1 NAME
+
+sampfunc - return a value from a function table
+
+=head1 SYNOPSIS
+
+I<value> = B<sampfunc>(I<table_number>, I<index>)
+
+=head1 DESCRIPTION
+
+Returns the value stored in a specified location of a function table.
+The function table must already have been created by calling
+L<makegen|makegen>.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID for the function table.  If this table hasn't been
+created by L<makegen|makegen> yet, the script will die.
+
+=item I<index>
+
+The location in the function table of the value you want to retrieve,
+starting from zero.  If I<index> is greater than or equal to the
+number of elements in the table, B<sampfunc> returns the last element
+in the table.
+
+=back
+
+=head1 EXAMPLES
+
+   makegen(1, 2, 6,  3, 1, 0, 5, 2, 4)  /* stores 6 values */
+
+   value1 = sampfunc(1, 0)          /* gets value at index 0 */
+   value2 = sampfunc(1, 4)          /* gets value at index 4 */
+
+   print(value1)                    /* prints "3" */
+   print(value2)                    /* prints "2" */
+ 
+   for (i = 0; i < 6; i = i + 1) {  /* prints all 6 values */
+      value = sampfunc(1, i)
+      print(value)
+   }
+
+=head1 NOTES
+
+If you want to interpolate between successive values stored in a
+table, use L<sampfunci|sampfunci>.
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<sampfunci|sampfunci>, L<gen2|gen2>
+

@@ -1,0 +1,55 @@
+=head1 NAME
+
+sampfunci - return an interpolated value from a function table
+
+=head1 SYNOPSIS
+
+I<value> = B<sampfunci>(I<table_number>, I<index>)
+
+=head1 DESCRIPTION
+
+Returns the value stored in a specified location of a function table,
+or a value interpolated between two successive locations.  The function
+table must already have been created by calling L<makegen|makegen>.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID for the function table.  If this table hasn't been
+created by L<makegen|makegen> yet, the script will die.
+
+=item I<index>
+
+The location in the function table of the value you want to retrieve,
+starting from zero.  If I<index> has a fractional part, then the value
+is interpolated between two successive locations.  The interpolation
+is linear.
+
+For example, if I<index> is 1.5, the value returned will be halfway
+between the values stored at locations 1 and 2.
+
+If I<index> is greater than or equal to the number of elements in the
+table, B<sampfunc> returns the last element in the table.
+
+=back
+
+=head1 EXAMPLES
+
+   makegen(1, 2, 4,  0, 2, 4, 6) /* stores 4 values */
+
+   value = sampfunci(1, 0)       /* returns 0 */
+   value = sampfunci(1, 1)       /* returns 2 */
+   value = sampfunci(1, 0.5)     /* returns 1 - halfway btw. 0 and 2 */
+
+=head1 NOTES
+
+If you simply want to retrieve a value from a table, without interpolation,
+use L<sampfunc|sampfunc>.
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<sampfunc|sampfunc>, L<gen2|gen2>
+
