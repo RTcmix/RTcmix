@@ -13,8 +13,8 @@
 #include "../rtstuff/rtdefs.h"
 #include "../H/dbug.h"
 
-//#define TBUG
-//#define ALLBUG
+// #define TBUG
+// #define ALLBUG
 
 double baseTime;
 long elapsed;
@@ -60,7 +60,15 @@ extern "C" {
 	IBusClass bus_class,qStatus,t_class;
 	BusType bus_type;
 	
-    // cout << "ENTERING inTraverse() FUNCTION *****\n";
+#ifdef TBUG	
+    cout << "ENTERING inTraverse() FUNCTION *****\n";
+#endif
+
+	// Try and be tight with time
+	gettimeofday(&tv, &tz);
+	sec = (double)tv.tv_sec;
+	usec = (double)tv.tv_usec;
+	baseTime = (sec * 1e6) + usec;
 
     // Wait for the ok to go ahead
     if (!audio_config) {
@@ -75,13 +83,7 @@ extern "C" {
       cout << "audio set.\n\n";
     }
 
-    gettimeofday(&tv, &tz);
-    sec = (double)tv.tv_sec;
-    usec = (double)tv.tv_usec;
-    baseTime = (sec * 1e6) + usec;
-
     // Initialize everything
-
     bufStartSamp = 0;  // current end sample for buffer
     bufEndSamp = RTBUFSAMPS;
     chunkStart = 0;
@@ -90,6 +92,12 @@ extern "C" {
     elapsed = 0;
     rtInst = 0;
     playEm = 0;
+
+	// Try and be tight with time
+	gettimeofday(&tv, &tz);
+	sec = (double)tv.tv_sec;
+	usec = (double)tv.tv_usec;
+	baseTime = (sec * 1e6) + usec;
 
     // printf("ENTERING inTraverse() FUNCTION\n");
 
@@ -104,7 +112,17 @@ extern "C" {
     if (rtsetparams_called)         // otherwise, disk-based only
       playEm = 1;
 
+	// Try and be tight with time
+	gettimeofday(&tv, &tz);
+	sec = (double)tv.tv_sec;
+	usec = (double)tv.tv_usec;
+	baseTime = (sec * 1e6) + usec;
+
     while(playEm) { // the big loop ==========================================
+
+#ifdef TBUG
+	  printf("Entering big loop ...\n");
+#endif
 
       pthread_mutex_lock(&heapLock);
       heapSize = rtHeap.getSize();
@@ -113,7 +131,30 @@ extern "C" {
       }
       pthread_mutex_unlock(&heapLock);
 
-      // Pop elements off rtHeap and insert into rtQueue ----------------------
+	  // Added 6/17/00 DJT:  for real time perf
+	  // need to wait for something to be on the heap
+	  if ((heapSize == 0) && (rtQSize == 0)) {
+		while (heapSize == 0) {
+		  pthread_mutex_lock(&heapLock);
+		  heapSize = rtHeap.getSize();
+		  gettimeofday(&tv, &tz);
+		  sec = (double)tv.tv_sec;
+		  usec = (double)tv.tv_usec;
+		  baseTime = (sec * 1e6) + usec;
+		  if (heapSize > 0) {
+			heapChunkStart = rtHeap.getTop();
+		  }
+		  pthread_mutex_unlock(&heapLock);
+		}
+	  }
+
+#ifdef TBUG
+	  cout << "heapSize = " << heapSize << endl;
+	  cout << "heapChunkStart = " << heapChunkStart << endl;
+	  cout << "Bus_Configed = " << Bus_Configed << endl;
+#endif
+
+      // Pop elements off rtHeap and insert into rtQueue +++++++++++++++++++++
       while ((heapChunkStart < bufEndSamp) && (heapSize > 0)) {
         rtInst = 1;
         pthread_mutex_lock(&heapLock);
@@ -200,13 +241,14 @@ extern "C" {
 		  heapChunkStart = rtHeap.getTop();
         pthread_mutex_unlock(&heapLock);
 	  }
+	  // End rtHeap popping and rtQueue insertion ----------------------------
 
 	  qStatus = TO_AUX;
 	  play_bus = 0;
 	  aux_pb_done = NO;
 	  allQSize = 0;
 	  
-	  // rtQueue[] playback shuffling ----------------------------------------
+	  // rtQueue[] playback shuffling ++++++++++++++++++++++++++++++++++++++++
 	  while (!aux_pb_done) {
 
 		switch (qStatus) {
@@ -368,6 +410,14 @@ extern "C" {
 	  
 	  rtsendsamps();
 	  
+	  gettimeofday(&tv, &tz);
+	  sec = (double)tv.tv_sec;
+	  usec = (double)tv.tv_usec;
+	  baseTime = (sec * 1e6) + usec;
+	  elapsed += RTBUFSAMPS;	
+	  bufStartSamp += RTBUFSAMPS;
+	  bufEndSamp += RTBUFSAMPS;
+
 	  // zero the buffers
 	  clear_aux_buffers();
 	  clear_output_buffers();
@@ -377,14 +427,6 @@ extern "C" {
 		// cout << "Reading data from audio port\n";
 		rtgetsamps();
 	  }
-	  
-	  gettimeofday(&tv, &tz);
-	  sec = (double)tv.tv_sec;
-	  usec = (double)tv.tv_usec;
-	  baseTime = (sec * 1e6) + usec;
-	  elapsed += RTBUFSAMPS;	
-	  bufStartSamp += RTBUFSAMPS;
-	  bufEndSamp += RTBUFSAMPS;
       
       if (!rtInteractive) {  // Ending condition
 		if ((heapSize == 0) && (allQSize == 0)) {
@@ -411,8 +453,10 @@ extern "C" {
 	}
 
 	cout << "\n";
-	// cout << "EXITING inTraverse() FUNCTION *****\n";
-	// exit(1);
+#ifdef TBUG
+	cout << "EXITING inTraverse() FUNCTION *****\n";
+	exit(1);
+#endif
   }
 
 } /* extern "C" */
