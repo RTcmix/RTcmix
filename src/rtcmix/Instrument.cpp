@@ -1,3 +1,8 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+#include <globals.h>
 #include <pthread.h>
 #include <iostream.h>
 #include "Instrument.h"
@@ -14,8 +19,6 @@
 
 extern int setinput(float, Instrument*);
 extern InputDesc inputFileTable[];
-extern int rtInteractive;
-extern pthread_mutex_t pfieldLock;
 
 Instrument::Instrument()
 {
