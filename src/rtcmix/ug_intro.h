@@ -15,33 +15,42 @@ void ug_intro(void);       /* called by RTcmix main and RTcmix.C */
 
 #include "rtcmix_types.h"
 
-void addfunc(char *func_label, double (*func_ptr_number)(),
-   char *(*func_ptr_string)(), Handle (*func_ptr_handle)(),
-   RTcmixType return_type, int legacy);
+typedef double (*LegacyFunction)(float *, int, double *);
+typedef double (*NumberFunction)(const Arg[], int);
+typedef char * (*StringFunction)(const Arg[], int);
+typedef Handle (*HandleFunction)(const Arg[], int);
+
+void addfunc(const char *func_label,
+			 LegacyFunction func_ptr_legacy,
+			 NumberFunction func_ptr_number,
+			 StringFunction func_ptr_string,
+			 HandleFunction func_ptr_handle,
+			 RTcmixType return_type,
+			 int legacy);
 
 
 #define UG_INTRO(flabel, func) \
    { \
       extern double func(); \
-      addfunc(flabel, func, NULL, NULL, DoubleType, 1); \
+      addfunc(flabel, func, NULL, NULL, NULL, DoubleType, 1); \
    }
 
 #define UG_INTRO_DOUBLE_RETURN(flabel, func) \
    { \
       extern double func(); \
-      addfunc(flabel, func, NULL, NULL, DoubleType, 0); \
+      addfunc(flabel, NULL, func, NULL, NULL, DoubleType, 0); \
    }
 
 #define UG_INTRO_STRING_RETURN(flabel, func) \
    { \
       extern char *func(); \
-      addfunc(flabel, NULL, func, NULL, StringType, 0); \
+      addfunc(flabel, NULL, NULL, func, NULL, StringType, 0); \
    }
 
 #define UG_INTRO_HANDLE_RETURN(flabel, func) \
    { \
       extern Handle func(); \
-      addfunc(flabel, NULL, NULL, func, HandleType, 0); \
+      addfunc(flabel, NULL, NULL, NULL, func, HandleType, 0); \
    }
 
 #ifdef __cplusplus

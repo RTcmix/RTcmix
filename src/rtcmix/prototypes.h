@@ -30,19 +30,18 @@ int dispatch(const char *str, const Arg args[], int n_args, Arg *retarg);
 
 double dispatch(const char *str, double *pp, int n_args, void **inst);
 
+#ifdef PFIELD_CLASS
+/* addcheckfuncs.cpp */
+int checkfunc(const char *funcname, const Arg arglist[], const int nargs,
+   Arg *retval);
+#endif /* PFIELD_CLASS */
+
 /* Note that C++ functions prototyped below really are defined within
    extern "C" braces in their files.
 */
 extern "C" {
 
 #endif /* __cplusplus */
-
-#ifdef PFIELD_CLASS
-
-/* addcheckfuncs.c */
-int checkfunc(const char *funcname, const Arg arglist[], const int nargs,
-   Arg *retval);
-#endif /* PFIELD_CLASS */
 
 /* audio_port.c:  prototypes in audio_port.h */
 
