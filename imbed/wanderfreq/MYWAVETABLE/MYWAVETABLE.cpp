@@ -32,8 +32,6 @@ int MYWAVETABLE::run()
 	int i;
 	float out[2];
 	
-	Instrument::run();
-
 	for (i = 0; i < chunksamps; i++) {
 		out[0] = theOscil->next() * theEnv->next() * amp;
 		

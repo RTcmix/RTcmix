@@ -35,7 +35,7 @@ main(int argc, char *argv[])
 	if (argc == 2)
 		duration = atof(argv[1]);
 
-	rrr = new RTcmix(44100.0, 2);
+	rrr = new RTcmix(44100.0, 2, 512);
 //	rrr->printOn();
 	rrr->printOff();
 	sleep(1); // give the thread time to initialize
