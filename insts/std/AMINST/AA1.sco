@@ -1,19 +1,4 @@
-/* aminst -- amplitude modulation synthesis
-*
-*  p0 = start
-*  p1 = duration
-*  p2 = amplitude
-*  p3 = carrier frequency (hz)
-*  p4 = modulator frequency (hz)
-*  p5 = stereo spread <0-1> [optional]
-*  assumes function table 1 is the amplitude envelope
-*  assumes function table 2 is the modulation envelope
-*  function table 3 is the carrier waveform
-*  function table 4 is the modulator waveform
-*
-*/
-
-rtsetparams(44100, 2)
+rtsetparams(44100, 1)
 load("AMINST")
 
 makegen(1, 24, 1000, 0,0, 0.1,1, 3.4,1, 3.5,0)

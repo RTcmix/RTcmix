@@ -1,9 +1,44 @@
-#include <iostream.h>
+/* AMINST - amplitude modulation synthesis
+
+   p0 = output start time
+   p1 = duration
+   p2 = amplitude *
+   p3 = carrier frequency (Hz)
+   p4 = modulation frequency (Hz)
+   p5 = pan (in percent-to-left form: 0-1) [optional; default is 0]
+   p6 = modulator amplitude [optional; if missing,must use gen 2 **]
+   p7 = reference to carrier wavetable [optional; if missing, must use
+        gen 3 ***]
+   p8 = reference to modulator wavetable [optional; if missing, must use
+        gen 4 ****]
+
+   p2 (amplitude), p3 (carrier freq), p4 (modulator freq) and p5 (pan) can
+   receive dynamic updates from a table or real-time control source.
+
+   ---
+
+   Notes about backward compatibility with pre-v4 scores:
+
+   * If an old-style gen table 1 is present, its values will be multiplied
+   by p2 (amplitude), even if the latter is dynamic.
+
+   ** If p6 is missing, you must use an old-style gen table 2 for the
+   modulation envelope.
+
+   *** If p7 is missing, you must use an old-style gen table 3 for the
+   carrier waveform.
+
+   **** If p8 is missing, you must use an old-style gen table 4 for the
+   modulator waveform.
+
+
+   Author unknown (probably Brad Garton); rev for v4, JGG, 7/22/04
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
+#include <PField.h>
 #include "AMINST.h"
 #include <rt.h>
 #include <rtdefs.h>
@@ -11,106 +46,132 @@
 
 AMINST::AMINST() : Instrument()
 {
-	// future setup here?
+	carosc = NULL;
+	modosc = NULL;
+	branch = 0;
+}
+
+AMINST::~AMINST()
+{
+	delete carosc;
+	delete modosc;
 }
 
 int AMINST::init(double p[], int n_args)
 {
-// p0 = start; p1 = duration; p2 = amplitude
-// p3 = carrier frequency (hz); p4 = modulator frequency (hz)
-// p5 = stereo spread <0-1> [optional]
-// assumes function table 1 is the amplitude envelope
-// assumes function table 2 is the modulation envelope
-// function table 3 is the carrier waveform
-// function table 4 is the modulator waveform
+	float outskip = p[0];
+	float dur = p[1];
+	float carfreq = p[3];
+	float modfreq = p[4];
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	nsamps = rtsetoutput(outskip, dur, this);
+	if (outputChannels() > 2)
+		return die("AMINST", "Can't handle more than 2 output channels.");
 
 	amparr = floc(1);
 	if (amparr) {
 		int lenamp = fsize(1);
-		tableset(p[1], lenamp, amptabs);
+		tableset(dur, lenamp, amptabs);
 	}
-	else
-		advise("AMINST", "Setting phrase curve to all 1's.");
 
-	mamparr = floc(2);
-	if (mamparr) {
+	modamparr = NULL;
+	if (n_args < 7) {      // no p6 mod amp PField, must use gen table
+		modamparr = floc(2);
+		if (modamparr == NULL)
+			return die("AMINST", "Either use the mod. amp pfield (p6) or "
+							"make an old-style gen function in slot 2.");
 		int len = fsize(2);
-		tableset(p[1], len, mamptabs);
-	}
-	else {
-		die("AMINST", "You haven't made the modulation envelope (table 2).");
-		return(DONT_SCHEDULE);
+		tableset(dur, len, modamptabs);
 	}
 
-	cartable = floc(3);
-	if (cartable) {
-		lencar = fsize(3);
-		sicar = p[3] * (float)lencar/SR;
+	cartable = NULL;
+	int tablelen = 0;
+	if (n_args > 7) {      // handle table coming in as optional p7 TablePField
+		const PField &field = getPField(7);
+		tablelen = field.values();
+		cartable = (double *) field;
 	}
-	else {
-		die("AMINST", "You haven't made the carrier waveform (table 3).");
-		return(DONT_SCHEDULE);
+	if (cartable == NULL) {
+		cartable = floc(3);
+		if (cartable == NULL)
+			return die("AMINST", "Either use the carrier wavetable pfield (p7) "
+						"or make an old-style gen function in slot 3.");
+		tablelen = fsize(3);
 	}
+	carosc = new Ooscili(carfreq, cartable, tablelen);
 
-	modtable = floc(4);
-	if (modtable) {
-		lenmod = fsize(4);
-		simod = p[4] * (float)lenmod/SR;
+	modtable = NULL;
+	tablelen = 0;
+	if (n_args > 8) {      // handle table coming in as optional p8 TablePField
+		const PField &field = getPField(8);
+		tablelen = field.values();
+		modtable = (double *) field;
 	}
-	else {
-		die("AMINST", "You haven't made the modulator waveform (table 4).");
-		return(DONT_SCHEDULE);
+	if (modtable == NULL) {
+		modtable = floc(4);
+		if (modtable == NULL)
+			return die("AMINST", "Either use the modulator wavetable pfield (p8) "
+						"or make an old-style gen function in slot 4.");
+		tablelen = fsize(4);
 	}
+	modosc = new Ooscili(modfreq, modtable, tablelen);
+
+	skip = (int) (SR / (float) resetval);
+
+	return nSamps();
+}
+
+void AMINST::doupdate()
+{
+	double p[7];
+	update(p, 7);
 
 	amp = p[2];
-	skip = (int)(SR/(float)resetval);
-	phasecar = phasemod = 0.0;
+	if (amparr)
+		amp *= tablei(currentFrame(), amparr, amptabs);
+
+	float carfreq = p[3];
+	carosc->setfreq(carfreq);
+
+	float modfreq = p[4];
+	modosc->setfreq(modfreq);
+
 	spread = p[5];
 
-	return(nsamps);
+	if (modamparr)
+		modamp = tablei(currentFrame(), modamparr, modamptabs);
+	else
+		modamp = p[6];
 }
 
 int AMINST::run()
 {
-	int i;
-	float out[2];
-	float aamp,maamp=0.;
-	float tval1,tval2;
-	int branch;
-
-	aamp = amp;        /* in case amparr == NULL */
-
-	branch = 0;
-	for (i = 0; i < chunksamps; i++)  {
-		if (--branch < 0) {
-			if (amparr)
-				aamp = tablei(cursamp, amparr, amptabs) * amp;
-			maamp = tablei(cursamp,mamparr,mamptabs);
+	for (int i = 0; i < framesToRun(); i++)  {
+		if (--branch <= 0) {
+			doupdate();
 			branch = skip;
-			}
+		}
 
-		tval1 = oscili(1.0, sicar, cartable, lencar, &phasecar);
-		tval2 = tval1 * oscili(1.0, simod, modtable, lenmod, &phasemod);
-		out[0] = (tval1*(1.0-maamp)) + (tval2*maamp);
-		out[0] *= aamp;
+		float carsig = carosc->next();
+		float outsig = carsig * modosc->next();
 
-		if (outputchans == 2) {
+		float out[2];
+		out[0] = (carsig * (1.0 - modamp)) + (outsig * modamp);
+		out[0] *= amp;
+
+		if (outputChannels() == 2) {
 			out[1] = out[0] * (1.0 - spread);
 			out[0] *= spread;
-			}
+		}
 
 		rtaddout(out);
-		cursamp++;
-		}
-	return(i);
+		increment();
+	}
+	return framesToRun();
 }
 
 
-
-Instrument*
-makeAMINST()
+Instrument *makeAMINST()
 {
 	AMINST *inst;
 
