@@ -10,6 +10,7 @@ DIRS = rtstuff/heap rtstuff $(SNDLIB) Minc sys lib head cmd utils insts.base
 
 # Add these to DIRS as needed
 #  insts.std insts.dev
+# CVS CHANGE
 
 all: heap rtstuff $(SNDLIB) Minc sys lib head cmd utils insts.base
 
