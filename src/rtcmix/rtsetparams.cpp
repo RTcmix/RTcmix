@@ -16,11 +16,10 @@
 #include <globals.h>
 #include "audio_devices.h"
 #include <ugens.h>
+#include <Option.h>
 #include "../rtstuff/rtdefs.h"
 
 /* #define DEBUG */
-
-extern int record_is_on;	/* set_option.c */
 
 /* ---------------------------------------------------------- rtsetparams --- */
 /* Minc function that sets output sampling rate (p0), maximum number of
@@ -36,7 +35,9 @@ double
 rtsetparams(float p[], int n_args, double pp[])
 {
    int         i, status;
-   int         verbose = print_is_on;
+   int         verbose = get_bool_option(PRINT_STR);
+   int         play_audio = get_bool_option(PLAY_STR);
+   int         record_audio = get_bool_option(RECORD_STR);
 #ifdef SGI
    static char *out_port_str = NULL;
 #endif /* SGI */
@@ -50,7 +51,8 @@ rtsetparams(float p[], int n_args, double pp[])
 
    SR = p[0];
    NCHANS = (int) p[1];
-   RTBUFSAMPS = n_args > 2 ? (int) p[2] : 4096;
+   RTBUFSAMPS = n_args > 2 ? (int) p[2]
+                                 : (int) get_double_option(BUFFER_FRAMES_STR);
 
    if (n_args > 3 && pp[3] != 0.0) {
 #ifdef SGI
@@ -75,18 +77,16 @@ rtsetparams(float p[], int n_args, double pp[])
       rtsetparams. This would let user run multiple jobs, as long as only one
       needs the audio drivers.  -JGG
 
-	  record_is_on is false unless user has called set_option("full_duplex_on")
+	  record_audio is false unless user has called set_option("full_duplex_on")
 	  or has explicity turned record on by itself via set_option("record_on"),
 	  or has already called rtinput("AUDIO").  -DS
    */
-   if (play_audio || record_is_on) {
+   if (play_audio || record_audio) {
       int nframes = RTBUFSAMPS;
 		
-	  if (create_audio_devices(record_is_on, play_audio, NCHANS, SR, &nframes) < 0)
+	  if (create_audio_devices(record_audio, play_audio, NCHANS, SR, &nframes) < 0)
 	  	return -1;
 
-	  record_audio = record_is_on;		/* used by inTraverse() */
-	  
       /* This may have been reset by driver. */
       RTBUFSAMPS = nframes;
    }

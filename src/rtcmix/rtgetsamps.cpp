@@ -13,12 +13,13 @@
 #include <buffers.h>
 #include "../rtstuff/rtdefs.h"
 #include "AudioDevice.h"
+#include "Option.h"
 
 /* ----------------------------------------------------------- rtgetsamps --- */
 void
 rtgetsamps(AudioDevice *inputDevice)
 {
-	assert(record_audio == 1);
+	assert(options.record() == true);
 	if (inputDevice->getFrames(audioin_buffer, RTBUFSAMPS) < 0)
 	{
 		fprintf(stderr, "rtgetsamps error: %s\n", inputDevice->getLastError());

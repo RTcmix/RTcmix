@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <sndlibsupport.h>
 #include <rtdefs.h>
+#include <Option.h>
 #include "audio_devices.h"
 #ifdef LINUX
    #include <fcntl.h>
@@ -25,8 +26,6 @@
 
 /* code that lets user specify buses for input sources */
 //#define INPUT_BUS_SUPPORT
-
-extern int record_is_on;	/* set_option.c */
 
 typedef enum {
    MIC,
@@ -137,236 +136,235 @@ FIXME: this stuff not implemented yet  -JGG
 double
 rtinput(float p[], int n_args, double pp[])
 {
-   int            i, j, anint, audio_in, p1_is_audioport, start_pfield, fd;
-   int            is_open, header_type, data_format, data_location, nchans;
+	int            i, j, anint, audio_in, p1_is_audioport, start_pfield, fd;
+	int            is_open, header_type, data_format, data_location, nchans;
 #ifdef INPUT_BUS_SUPPORT
-   int            startchan, endchan;
-   short          busindex, buslist[MAXBUS];
-   BusType        type;
+	int            startchan, endchan;
+	short          busindex, buslist[MAXBUS];
+	BusType        type;
 #endif /* INPUT_BUS_SUPPORT */
-   long           nsamps;
-   double         srate, dur;
-   char           *sfname, *str;
-   AudioPortType  port_type = MIC;
+	long           nsamps;
+	double         srate, dur;
+	char           *sfname, *str;
+	AudioPortType  port_type = MIC;
 
-   header_type = MUS_UNSUPPORTED;
-   data_format = MUS_UNSUPPORTED;
-   data_location = 0;
-   dur = 0.0;
+	header_type = MUS_UNSUPPORTED;
+	data_format = MUS_UNSUPPORTED;
+	data_location = 0;
+	dur = 0.0;
 
-   audio_in = 0;
-   p1_is_audioport = 0;
-   is_open = 0;
+	audio_in = 0;
+	p1_is_audioport = 0;
+	is_open = 0;
 
-   /* Cast Minc double to int, then to a string ptr. */
-   anint = (int) pp[0];
-   sfname = (char *) anint;
+	/* Cast Minc double to int, then to a string ptr. */
+	anint = (int) pp[0];
+	sfname = (char *) anint;
 
-   /* Catch stoopid NULL filenames */
-   if (sfname == NULL) {
-       rterror("rtinput", "NULL filename!");
-	   return -1;
-   }
+	/* Catch stoopid NULL filenames */
+	if (sfname == NULL) {
+		rterror("rtinput", "NULL filename!");
+		return -1;
+	}
 
-   if (strcmp(sfname, "AUDIO") == 0) {
-      audio_in = 1;
+	if (strcmp(sfname, "AUDIO") == 0) {
+		audio_in = 1;
 
-      if (n_args > 1 && pp[1] != 0.0) {
-         p1_is_audioport = 1;
-         anint = (int) pp[1];
-         str = (char *) anint;
-         if (strcmp(str, "MIC") == 0)
-            port_type = MIC;
-         else if (strcmp(str, "LINE") == 0)
-            port_type = LINE;
-         else if (strcmp(str, "DIGITAL") == 0)
-            port_type = DIGITAL;
-         else
-            p1_is_audioport = 0;           /* p[1] might be a bus spec. */
-      }
+		if (n_args > 1 && pp[1] != 0.0) {
+			p1_is_audioport = 1;
+			anint = (int) pp[1];
+			str = (char *) anint;
+			if (strcmp(str, "MIC") == 0)
+				port_type = MIC;
+			else if (strcmp(str, "LINE") == 0)
+				port_type = LINE;
+			else if (strcmp(str, "DIGITAL") == 0)
+				port_type = DIGITAL;
+			else
+				p1_is_audioport = 0;		/* p[1] might be a bus spec. */
+		}
 
-      /* This signals inTraverse() to grab buffers from the audio device. */
-      record_audio = 1;
+		/* This signals inTraverse() to grab buffers from the audio device. */
+		set_bool_option(RECORD_STR, 1);
 
 // FIXME: need to replace this with the bus spec scheme below... -JGG
-      audioNCHANS = (n_args > 2) ? (int) p[2] : NCHANS;
-      nchans = audioNCHANS;
-      srate = SR;
-   }
+		audioNCHANS = (n_args > 2) ? (int) p[2] : NCHANS;
+		nchans = audioNCHANS;
+		srate = SR;
+	}
 
 #ifdef INPUT_BUS_SUPPORT
-   /* Parse bus specification. */
+	/* Parse bus specification. */
 
-   busindex = 0;
-   for (i = 0; i < MAXBUS; i++)
-      buslist[i] = -1;
+	busindex = 0;
+	for (i = 0; i < MAXBUS; i++)
+		buslist[i] = -1;
 
-   type = BUS_IN;
-   startchan = endchan = -1;
+	type = BUS_IN;
+	startchan = endchan = -1;
 
-   start_pfield = p1_is_audioport ? 2 : 1;
+	start_pfield = p1_is_audioport ? 2 : 1;
 
-   for (i = start_pfield; i < n_args; i++) {
-      ErrCode  err;
+	for (i = start_pfield; i < n_args; i++) {
+		ErrCode  err;
 
-      anint = (int) pp[i];
-      str = (char *) anint;
-	  if (str == NULL) {
-	  	rterror("rtinput", "NULL bus name!");
-		return -1;
-	  }
+		anint = (int) pp[i];
+		str = (char *) anint;
+		if (str == NULL) {
+			rterror("rtinput", "NULL bus name!");
+			return -1;
+		}
 
-      err = parse_bus_name(str, &type, &startchan, &endchan);
-      if (err) {
-         rterror("rtinput", "Invalid bus name specification.");
-		 return -1;
-	  }
-      if (type != BUS_IN) {
-         rterror("rtinput", "You have to use an \"in\" bus with rtinput.");
-		 return -1;
-	  }
+		err = parse_bus_name(str, &type, &startchan, &endchan);
+		if (err) {
+			rterror("rtinput", "Invalid bus name specification.");
+			return -1;
+		}
+		if (type != BUS_IN) {
+			rterror("rtinput", "You have to use an \"in\" bus with rtinput.");
+			return -1;
+		}
 
-      for (j = startchan; j <= endchan; j++)
-         buslist[busindex++] = j;
-   }
+		for (j = startchan; j <= endchan; j++)
+			buslist[busindex++] = j;
+	}
 
-   if (startchan == -1) {           /* no bus specified */
-   }
+	if (startchan == -1) {           /* no bus specified */
+	}
 #endif /* INPUT_BUS_SUPPORT */
 
-   /* See if this audio device or file has already been opened. */
-   for (i = 0; i < MAX_INPUT_FDS; i++) {
-      if (inputFileTable[i].fd != NO_FD) {
-         if (strcmp(sfname, inputFileTable[i].filename) == 0) {
-            last_input_index = i;
-            is_open = 1;
-            break;
-         }
-      }
-   }
+	/* See if this audio device or file has already been opened. */
+	for (i = 0; i < MAX_INPUT_FDS; i++) {
+		if (inputFileTable[i].fd != NO_FD) {
+			if (strcmp(sfname, inputFileTable[i].filename) == 0) {
+				last_input_index = i;
+				is_open = 1;
+				break;
+			}
+		}
+	}
 #define NEW_CODE
-	if (!is_open) {                  /* if not, open input audio device or file. */
+	if (!is_open) {			/* if not, open input audio device or file. */
 		if (audio_in) {
 #ifdef NEW_CODE
-           if (rtsetparams_called) {
-			   // If audio *playback* was disabled, but there is a request for input audio,
-		 	  // create the audio input device here.
-         	  if (!audio_input_is_initialized() && !play_audio)
-		   	  {
-				int nframes = RTBUFSAMPS;
-				if (create_audio_devices(record_audio, 0, NCHANS, SR, &nframes) < 0) {
-					record_audio = 0;	/* because we failed */
+			if (rtsetparams_called) {
+				// If audio *playback* was disabled, but there is a request for
+				// input audio, create the audio input device here.
+				if (!audio_input_is_initialized() && !get_bool_option(PLAY_STR)) {
+					int nframes = RTBUFSAMPS;
+					if (create_audio_devices(get_bool_option(RECORD_STR), 0,
+												NCHANS, SR, &nframes) < 0) {
+						set_bool_option(RECORD_STR, 0);	/* because we failed */
+						return -1;
+					}
+					RTBUFSAMPS = nframes;
+					if (get_bool_option(PRINT_STR))
+						printf("Input audio set:  %g sampling rate, %d channels\n", SR, NCHANS);
+				}
+				// If record disabled during rtsetparams(), we cannot force it on here.
+				else if (!get_bool_option(RECORD_STR)) {
+					die("rtinput", "Audio already configured for playback only via rtsetparams()");
+					set_bool_option(RECORD_STR, 0);	/* because we failed */
 					return -1;
 				}
-				RTBUFSAMPS = nframes;
-		   		if (print_is_on) {
-					printf("Input audio set:  %g sampling rate, %d channels\n", SR, NCHANS);
-				}
-			  }
-			  // If record disabled during rtsetparams(), we cannot force it on here.
-			  else if (!record_is_on) {
-			  	die("rtinput", "Audio already configured for playback only via rtsetparams()");
-				record_audio = 0;	/* because we failed */
+			}
+			else {
+				set_bool_option(RECORD_STR, 1);	// This allows rtinput("AUDIO") to turn on record
+			}
+#else		// !NEW_CODE
+			if (rtsetparams_called && !get_bool_option(RECORD_STR)) {
+				die("rtinput", "Full duplex was not enabled for rtsetparams. "
+					"Set option \"full_duplex\" before calling rtsetparams()");
+				set_bool_option(RECORD_STR, 0);	/* because we failed */
 				return -1;
-			  }
-		   }
-		   else {
-				record_is_on = 1;	// This allows rtinput("AUDIO") to turn on record
-		   }
-#else
-           if (rtsetparams_called && !record_is_on) {
-			   die("rtinput",
-			   	   "Full duplex was not enabled for rtsetparams.  Set option \"full_duplex\" before calling rtsetparams()");
-			   record_audio = 0;	/* because we failed */
-			   return -1;
-		   }
-           if (!audio_input_is_initialized())
-           {
-            die("rtinput", "Audio input device not open yet.  Call rtsetparams first.");
-			record_audio = 0;	/* because we failed */
-            return -1;
-           }
-#endif	// NEW_CODE
-         fd = 1;  /* we don't use this;  set to 1 so rtsetinput() will work */
-         for (i = 0; i < nchans; i++) {
-            allocate_audioin_buffer(i, RTBUFSAMPS);
-         }
+			}
+			if (!audio_input_is_initialized()) {
+				die("rtinput", "Audio input device not open yet. "
+												"Call rtsetparams first.");
+				set_bool_option(RECORD_STR, 0);	/* because we failed */
+				return -1;
+			}
+#endif	// !NEW_CODE
+			fd = 1;  /* we don't use this; set to 1 so rtsetinput() will work */
+			for (i = 0; i < nchans; i++) {
+				allocate_audioin_buffer(i, RTBUFSAMPS);
+			}
 #ifdef INPUT_BUS_SUPPORT
 #endif /* INPUT_BUS_SUPPORT */
-      }
-      else {
-         fd = open_sound_file(sfname, &header_type, &data_format,
-                                    &data_location, &srate, &nchans, &nsamps);
-         if (fd == -1)
-			return -1;
+		}
+		else {
+			fd = open_sound_file(sfname, &header_type, &data_format,
+							&data_location, &srate, &nchans, &nsamps);
+			if (fd == -1)
+				return -1;
 
 #ifdef INPUT_BUS_SUPPORT
-         if (startchan == -1) {     /* no bus specified above */
-            startchan = 0;
-            endchan = nchans - 1;
-         }
-         else {
-            if (endchan - startchan >= nchans) {
-               warn("rtinput", "You specifed more input buses than "
-                          "input file '%s' has channels.", sfname);
-               warn("rtinput", "Using in buses %d", foo);
-               endchan = (startchan + nchans) - 1;
-            }
-         }
+			if (startchan == -1) {     /* no bus specified above */
+				startchan = 0;
+				endchan = nchans - 1;
+			}
+			else {
+				if (endchan - startchan >= nchans) {
+					warn("rtinput", "You specifed more input buses than "
+							"input file '%s' has channels.", sfname);
+					warn("rtinput", "Using in buses %d", foo);
+					endchan = (startchan + nchans) - 1;
+				}
+			}
 #endif /* INPUT_BUS_SUPPORT */
 
-         dur = (double) (nsamps / nchans) / srate;
-         if (print_is_on) {
-            printf("Input file set for reading:\n");
-            printf("      name:  %s\n", sfname);
-            printf("      type:  %s\n", mus_header_type_name(header_type));
-            printf("    format:  %s\n", mus_data_format_name(data_format));
-            printf("     srate:  %g\n", srate);
-            printf("     chans:  %d\n", nchans);
-            printf("  duration:  %g\n", dur);
-#ifdef INPUT_BUS_SUPPORT
-#endif /* INPUT_BUS_SUPPORT */
-         }
-         if (srate != SR) {
-            warn("rtinput", "The input file sampling rate is %g, but "
-                            "the output rate is currently %g.", srate, SR);
-         }
-      }
+			dur = (double) (nsamps / nchans) / srate;
+			if (get_bool_option(PRINT_STR)) {
+				printf("Input file set for reading:\n");
+				printf("      name:  %s\n", sfname);
+				printf("      type:  %s\n", mus_header_type_name(header_type));
+				printf("    format:  %s\n", mus_data_format_name(data_format));
+				printf("     srate:  %g\n", srate);
+				printf("     chans:  %d\n", nchans);
+				printf("  duration:  %g\n", dur);
+	#ifdef INPUT_BUS_SUPPORT
+	#endif /* INPUT_BUS_SUPPORT */
+			}
+			if (srate != SR) {
+				warn("rtinput", "The input file sampling rate is %g, but "
+							"the output rate is currently %g.", srate, SR);
+			}
+		}
 
-      /* Put new file descriptor into the first available slot in the
-         inputFileTable.  Also copy the filename for later checking, and
-         fill in the other fields in the InputDesc struct (see rtdefs.h).
+		/* Put new file descriptor into the first available slot in the
+			inputFileTable.  Also copy the filename for later checking, and
+			fill in the other fields in the InputDesc struct (see rtdefs.h).
 
-         last_input_index is the value that will be used by any instrument
-         created after this call to rtinput().
-      */
-      for (i = 0; i < MAX_INPUT_FDS; i++) {
-         if (inputFileTable[i].fd == NO_FD) {
-            inputFileTable[i].filename = strdup(sfname);
-            inputFileTable[i].fd = fd;
-            inputFileTable[i].refcount = 0;
-            inputFileTable[i].is_audio_dev = audio_in;
-            inputFileTable[i].header_type = header_type;
-            inputFileTable[i].data_format = data_format;
-            inputFileTable[i].is_float_format = IS_FLOAT_FORMAT(data_format);
-            inputFileTable[i].data_location = data_location;
-            inputFileTable[i].srate = (float) srate;
-            inputFileTable[i].chans = nchans;
-            inputFileTable[i].dur = dur;
+			last_input_index is the value that will be used by any instrument
+			created after this call to rtinput().
+		*/
+		for (i = 0; i < MAX_INPUT_FDS; i++) {
+			if (inputFileTable[i].fd == NO_FD) {
+				inputFileTable[i].filename = strdup(sfname);
+				inputFileTable[i].fd = fd;
+				inputFileTable[i].refcount = 0;
+				inputFileTable[i].is_audio_dev = audio_in;
+				inputFileTable[i].header_type = header_type;
+				inputFileTable[i].data_format = data_format;
+				inputFileTable[i].is_float_format = IS_FLOAT_FORMAT(data_format);
+				inputFileTable[i].data_location = data_location;
+				inputFileTable[i].srate = (float) srate;
+				inputFileTable[i].chans = nchans;
+				inputFileTable[i].dur = dur;
 
-            last_input_index = i;
-            break;
-         }
-      }
+				last_input_index = i;
+				break;
+			}
+		}
 
-      /* If this is true, we've used up all input descriptors in our array. */
-      if (i == MAX_INPUT_FDS)
-         die("rtinput", "You have exceeded the maximum number of input files (%d)!",
-                                                                MAX_INPUT_FDS);
-   }
+		/* If this is true, we've used up all input descriptors in our array. */
+		if (i == MAX_INPUT_FDS)
+			die("rtinput", "You have exceeded the maximum number of input "
+												"files (%d)!", MAX_INPUT_FDS);
+	}
 
-   /* Return this to Minc, so user can pass it to functions. */
-   return (double) last_input_index;
+	/* Return this to Minc, so user can pass it to functions. */
+	return (double) last_input_index;
 }
 
 

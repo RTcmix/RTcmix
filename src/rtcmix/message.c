@@ -12,6 +12,7 @@
 #include <globals.h>
 #include <prototypes.h>
 #include <ugens.h>
+#include <Option.h>
 
 #define PREFIX  "*** "       /* print before WARNING and ERROR */
 #define BUFSIZE 1024
@@ -25,7 +26,7 @@
    Non-instrument code can call these and pass NULL for <inst_name>.
    The remaining args are just like printf (format string and a variable
    number of arguments to fill it).  advise() and warn() take into account
-   the current state of <print_is_on>, while die() prints no matter what,
+   the current state of the print option, while die() prints no matter what,
    and then exits after some cleanup.
 */
 
@@ -33,7 +34,7 @@
 void
 advise(const char *inst_name, const char *format, ...)
 {
-   if (print_is_on) {
+   if (get_bool_option(PRINT_STR)) {
       char     buf[BUFSIZE];
       va_list  args;
 
@@ -53,7 +54,7 @@ advise(const char *inst_name, const char *format, ...)
 void
 warn(const char *inst_name, const char *format, ...)
 {
-   if (print_is_on) {
+   if (get_bool_option(PRINT_STR)) {
       char     buf[BUFSIZE];
       va_list  args;
 

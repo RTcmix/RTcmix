@@ -9,6 +9,7 @@
 #include <spray.h>
 #include <sfheader.h>
 #include <maxdispargs.h>
+#include <Option.h>
 
 #define ARRAY_SIZE 256
 #define NUM_ARRAYS  32
@@ -317,14 +318,14 @@ double str_num(float p[], int n_args, double pp[])
 
 double m_print_is_on(float p[], int n_args)
 {
-	print_is_on = 1;
-	return print_is_on;
+	set_bool_option(PRINT_STR, 1);
+	return 1.0;
 }
 
 double m_print_is_off(float p[], int n_args)
 {
-	print_is_on = 0;
-	return print_is_on;
+	set_bool_option(PRINT_STR, 0);
+	return 0.0;
 }
 
 struct slist slist[NUM_SPRAY_ARRAYS];

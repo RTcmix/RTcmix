@@ -13,16 +13,7 @@
 #include <sndlibsupport.h>
 #include "audio_devices.h"
 #include "../rtstuff/rtdefs.h"
-
-static int clobber = 0;         /* Default clobber mode (see comment below) */
-
-
-/* ------------------------------------------------- set_rtoutput_clobber --- */
-void
-set_rtoutput_clobber(int state)
-{
-   clobber = state;
-}
+#include <Option.h>
 
 
 /* The syntax of rtoutput is expanded when using sndlib:
@@ -321,38 +312,33 @@ rtoutput(float p[], int n_args, double pp[])
       else {
          rterror("rtoutput", "Error accessing file \"%s\": %s",
                                                 rtoutsfname, strerror(errno));
-	  	 return -1;	/* was exit() */
+         return -1;  /* was exit() */
       }
    }
    else {               /* File exists; find out whether we can clobber it */
-      if (!clobber) {
+      if (!get_bool_option(CLOBBER_STR)) {
          rterror("rtoutput", "\n%s", CLOBBER_WARNING);
-		 return -1;
+         return -1;
       }
       else {
          /* make sure it's a regular file */
          if (!S_ISREG(statbuf.st_mode)) {
             rterror("rtoutput", "\"%s\" isn't a regular file; won't clobber it",
                                                                  rtoutsfname);
-			return -1;
+            return -1;
          }
       }
    }
 
-	if (create_audio_file_device(rtoutsfname,
-								 output_header_type,
-								 output_data_format,
-								 NCHANS,
-								 SR,
-								 normalize_output_floats,
-								 check_peaks) < 0)
-	{
-		return -1;	/* failed! */
-	}
-	
-	rtfileit = 1;	/* here we finally set this to 1 */
+   if (create_audio_file_device(rtoutsfname, output_header_type,
+                                output_data_format, NCHANS, SR,
+                                normalize_output_floats,
+                                get_bool_option(CHECK_PEAKS_STR)) < 0)
+      return -1;  /* failed! */
 
-	return 1;
+   rtfileit = 1;  /* here we finally set this to 1 */
+
+   return 1;
 }
 
 

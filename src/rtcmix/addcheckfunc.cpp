@@ -8,8 +8,9 @@
 #include <ugens.h>      // for die, warn
 #include <rtcmix_types.h>
 #include <ug_intro.h>
-#include <globals.h>    // for print_is_on
+#include <globals.h>    // for options
 #include <string.h>
+#include <Option.h>
 
 #define WARN_DUPLICATES
 
@@ -143,7 +144,7 @@ _printargs(const char *funcname, const Arg arglist[], const int nargs)
    int i;
    Arg arg;
 
-   if (print_is_on) {
+   if (options.print()) {
       printf("============================\n");
       printf("%s:  ", funcname);
       for (i = 0; i < nargs; i++) {

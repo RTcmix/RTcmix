@@ -13,6 +13,7 @@
 #include <ugens.h>
 #include <prototypes.h>
 #include <assert.h>
+#include <Option.h>
 
 #include "AudioDevice.h"
 #include "AudioFileDevice.h"
@@ -27,6 +28,31 @@ AudioDevice *globalAudioDevice;			// Used by Minc/intraverse.C
 AudioDevice *globalOutputFileDevice;	// Used by rtsendsamps.C
 
 static const int numBuffers = 2;		// number of audio buffers to queue up
+
+
+// Return pointers to the most recently specified audio device strings.
+
+const char *get_audio_device_name()
+{
+	if (options.inDevice() != NULL || options.outDevice() != NULL)
+		return NULL;
+	return options.device();
+}
+
+const char *get_audio_indevice_name()
+{
+	if (options.device() != NULL)
+		return options.device();
+	return options.inDevice();
+}
+
+const char *get_audio_outdevice_name()
+{
+	if (options.device() != NULL)
+		return options.device();
+	return options.outDevice();
+}
+
 
 int
 create_audio_devices(int record, int play, int chans, float srate, int *buffersize)
@@ -106,7 +132,7 @@ int create_audio_file_device(const char *outfilename,
 		return -1;
 	}
 	int openMode = AudioFileDevice::Playback;
-	if (play_audio | record_audio)
+	if (options.play() | options.record())
 		openMode |= AudioDevice::Passive;	// Don't run thread for file device.
 
 	// We send the device noninterleaved floating point buffers.
@@ -137,12 +163,12 @@ int create_audio_file_device(const char *outfilename,
 	// This will soon go away entirely.
 	globalOutputFileDevice = fileDevice;
 
-	if (!play_audio && !record_audio) {				// To file only.
+	if (!options.play() && !options.record()) {				// To file only.
 		// If we are only writing to disk, we only have a single output device. 
 		globalAudioDevice = fileDevice;
 	}
 	else {	// To file, plus record and/or playback.
-		if (play_audio && !record_audio) {	// Dual outputs to both HW and file.
+		if (options.play() && !options.record()) {	// Dual outputs to both HW and file.
 			printf("DEBUG: Independent devices for file and HW playback\n");
 			// For this one, we need to leave the two globals for now, until
 			// I write a dual-output AudioDevice.
@@ -153,7 +179,7 @@ int create_audio_file_device(const char *outfilename,
 				return -1;
 			}
 		}
-		else if (record_audio && !play_audio) {	// Record from HW, write to file.
+		else if (options.record() && !options.play()) {	// Record from HW, write to file.
 			assert(globalAudioDevice != NULL);
 			printf("DEBUG: Dual device for HW record, file playback\n");
 			globalAudioDevice = new AudioIODevice(globalAudioDevice, fileDevice, true);
@@ -168,7 +194,7 @@ int create_audio_file_device(const char *outfilename,
 		}
 	}
 
-	if (print_is_on) {
+	if (options.print()) {
 		 printf("Output file set for writing:\n");
 		 printf("      name:  %s\n", outfilename);
 		 printf("      type:  %s\n", mus_header_type_name(header_type));

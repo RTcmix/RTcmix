@@ -12,6 +12,7 @@
 #include <globals.h>
 #include <prototypes.h>
 #include <lock.h>
+#include <Option.h>
   
 //#define PRINTPLAY
 //#define DEBUG
@@ -607,7 +608,7 @@ get_bus_config(const char *inst_name)
    index = get_last_input_index();
    /* Otherwise grab from audio device, if active */
    if (index == -1) {
-	 if (record_audio && play_audio)
+	 if (options.record() && options.play())
 	   in_chans = NCHANS;
 	 else
 	   in_chans = 0;

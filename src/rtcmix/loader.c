@@ -3,6 +3,7 @@
 #include <string.h>
 #include <globals.h>
 #include <ugens.h>
+#include <Option.h>
 
 typedef void (*ProfileFun)();
 
@@ -91,7 +92,7 @@ double m_load(float *p, int n_args, double *pp)
 	NSUnLinkModule(module, 0);
 	return 1.0;
     }
-    if (print_is_on) {
+    if (get_bool_option(PRINT_STR)) {
 	printf("Loaded %s functions from shared library '%s'.\n",
 	    (profileLoaded == 3) ? "standard and RT" :
 			(profileLoaded == 2) ? "RT" : "standard",
@@ -160,7 +161,7 @@ double m_load(float *p, int n_args, double *pp)
 		return 0;
     }
 
-    if (print_is_on) {
+    if (get_bool_option(PRINT_STR)) {
 		printf("Loaded %s functions from shared library '%s'.\n",
 			  (profileLoaded == 3) ? "standard and RT" :
 							   (profileLoaded == 2) ? "RT" : "standard",
