@@ -35,7 +35,7 @@ double
 rtsetparams(float p[], int n_args, double pp[])
 {
    int         i, status;
-   int         verbose = 1;
+   int         verbose = print_is_on;
 #ifdef SGI
    static char *out_port_str = NULL;
 #endif /* SGI */
