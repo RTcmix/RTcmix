@@ -21,8 +21,6 @@ NOISE::NOISE() : Instrument()
 
 NOISE::~NOISE()
 {
-//	delete [] myrsnetc;
-//	delete [] myamp;
 }
 
 
@@ -67,6 +65,8 @@ int NOISE::run()
 	float aamp,val,sig;
 	int branch;
 
+	Instrument::run();
+
 	aamp = oamp;           /* in case amparr == NULL */
 
 	branch = 0;
@@ -105,5 +105,7 @@ makeNOISE()
 	NOISE *inst;
 
 	inst = new NOISE();
+	inst->set_bus_config("NOISE");
+
 	return inst;
 }

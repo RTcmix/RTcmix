@@ -17,14 +17,10 @@ extern "C" {
 
 INPUTSIG::INPUTSIG() : Instrument()
 {
-	in = new float[MAXBUF];
 }
 
 INPUTSIG::~INPUTSIG()
 {
-	delete [] in;
-//	delete [] myrsnetc;
-//	delete [] myamp;
 }
 
 
@@ -73,9 +69,11 @@ int INPUTSIG::init(float p[], short n_args)
 int INPUTSIG::run()
 {
 	int i,j,rsamps;
-	float out[2];
+	float in[MAXBUF], out[2];
 	float aamp,val;
 	int branch;
+
+	Instrument::run();
 
 	rsamps = chunksamps*inputchans;
 
@@ -98,7 +96,7 @@ int INPUTSIG::run()
 			}
 
 		out[0] *= aamp;
-		if (NCHANS == 2) {
+		if (outputchans == 2) {
 			out[1] = out[0] * (1.0 - spread);
 			out[0] *= spread;
 			}
@@ -117,5 +115,7 @@ makeINPUTSIG()
 	INPUTSIG *inst;
 
 	inst = new INPUTSIG();
+	inst->set_bus_config("INPUTSIG");
+
 	return inst;
 }

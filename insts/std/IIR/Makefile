@@ -1,6 +1,7 @@
 include ../package.conf
 
 OBJS = INPUTSIG.o NOISE.o BUZZ.o PULSE.o cfuncs.o rtprofile.o
+HEADERS = INPUTSIG.h NOISE.h BUZZ.h PULSE.h
 #CFLAGS += -fPIC
 #CXXFLAGS += -fPIC 
 PROGS = IIR libIIR.so
@@ -15,7 +16,7 @@ libIIR.so: $(OBJS) $(GENLIB)
 IIR: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H)
+$(OBJS): $(INSTRUMENT_H) $(HEADERS)
 
 clean:
 	$(RM) *.o $(OBJS) $(PROGS)

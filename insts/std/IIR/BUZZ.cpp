@@ -21,8 +21,6 @@ BUZZ::BUZZ() : Instrument()
 
 BUZZ::~BUZZ()
 {
-//	delete [] myrsnetc;
-//	delete [] myamp;
 }
 
 
@@ -75,6 +73,8 @@ int BUZZ::run()
 	float aamp,val,sig;
 	int branch;
 
+	Instrument::run();
+
 	aamp = oamp;           /* in case amparr == NULL */
 
 	branch = 0;
@@ -113,5 +113,7 @@ makeBUZZ()
 	BUZZ *inst;
 
 	inst = new BUZZ();
+	inst->set_bus_config("BUZZ");
+
 	return inst;
 }

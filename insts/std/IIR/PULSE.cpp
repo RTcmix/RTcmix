@@ -21,8 +21,6 @@ PULSE::PULSE() : Instrument()
 
 PULSE::~PULSE()
 {
-//	delete [] myrsnetc;
-//	delete [] myamp;
 }
 
 
@@ -71,6 +69,8 @@ int PULSE::run()
 	int branch;
 	float mypulse(float, float, float*);
 
+	Instrument::run();
+
 	aamp = oamp;           /* in case amparr == NULL */
 
 	branch = 0;
@@ -109,6 +109,8 @@ makePULSE()
 	PULSE *inst;
 
 	inst = new PULSE();
+	inst->set_bus_config("PULSE");
+
 	return inst;
 }
 
