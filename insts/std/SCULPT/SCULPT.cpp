@@ -1,4 +1,5 @@
 #include <iostream.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <mixerr.h>
 #include <Instrument.h>
