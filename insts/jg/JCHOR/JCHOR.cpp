@@ -274,6 +274,7 @@ int JCHOR::setup_voices()
       printf("%6d: index=%d, left=%g, right=%g, amp=%g\n",
              i, v->index, v->left_amp, v->right_amp, v->overall_amp);
 #endif
+   return 0;
 }
 
 
