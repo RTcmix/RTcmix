@@ -14,6 +14,7 @@
 #include "../sys/mixerr.h"
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 extern heap rtHeap;     // intraverse.C
 
@@ -95,16 +96,18 @@ checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retv
         		pfieldset->load(new ConstPField((double) pArg->val.number), arg);
         		break;
     		 case StringType:
+        		pfieldset->load(new StringPField(pArg->val.string), arg);
         		break;
     		 case HandleType:
-        		pfieldset->load((PField *) pArg->val.handle, arg);
+				if (pArg->val.handle->type == PFieldType) {
+					assert(pArg->val.handle->ptr != NULL);
+					pfieldset->load((PField *) pArg->val.handle->ptr, arg);
+				}
         		break;
 			 case ArrayType:
-				pfieldset->load(new TablePField(pArg->val.array->data,
-												pArg->val.array->len),
-								arg);
-        		break;
     		 default:
+				// For now, default to using a zero PField.
+        		pfieldset->load(new ConstPField(0.0), arg);
         		break;
 		  }
 		}
