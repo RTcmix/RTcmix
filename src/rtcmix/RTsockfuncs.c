@@ -86,13 +86,41 @@ int RTopensocket(int socket, char *binaryname) {
 	sprintf(socknumber, "%i", socket);
 	strcat(syscall, flags);
 	strcat(syscall, socknumber);
-	strcat(syscall, " &");
+	strcat(syscall, " &>cmix.dbug");
 
 	parse(syscall, args);
 	pid = execute(args);
 	printf("cmix process id is %i\n", pid);
 
 	return(pid);
+}
+
+/* Slightly different version that does not use fork() */
+int RTopensocket_syscall(int socket, char *binaryname) {
+	char syscall[60];
+	char flags[30];
+	char socknumber[2];
+	char args[64];
+	int pid;
+	int s;
+	struct sockaddr_in sss;
+	struct hostent *hp;
+
+	sprintf(syscall, "%s ", binaryname);
+	sprintf(flags, "-i -n -s ");
+	sprintf(socknumber, "%i", socket);
+	strcat(syscall, flags);
+	strcat(syscall, socknumber);
+	strcat(syscall, " &>cmix.dbug");
+
+	pid = system(syscall);
+
+	if (pid < 0) {
+	  printf("CMIX system call failed\n");
+	  exit(1);
+	}
+	
+	return pid;
 }
 
 /* RTkillsocket closes the relevant cmix socket and kills off the relevant
