@@ -2,6 +2,10 @@ NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
 
+Sunday, October 20 2002 John Gibson <johgibso@indiana.edu>
+
+   * denoise now can process less than the entire input file.
+
 Sunday, September 22 2002 John Gibson <johgibso@indiana.edu>
 
    * sfprint now also prints duration in minutes:seconds format.
