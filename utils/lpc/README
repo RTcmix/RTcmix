@@ -14,3 +14,12 @@ all for now.
 
 R. Luke DuBois - CMC/CU
 August 28, 1998
+
+
+
+---
+
+This doesn't compile with the current version of RTcmix, due to sndlib
+changes and so forth. Haven't had a chance to update it yet.
+
+JGG, 27-may-00
