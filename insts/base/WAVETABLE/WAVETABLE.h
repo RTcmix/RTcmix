@@ -7,6 +7,6 @@ class WAVETABLE : public Instrument {
 
 public:
 	WAVETABLE();
-        int init(float p[], short n_args);
+        int init(float p[], int n_args);
         int run();
         };

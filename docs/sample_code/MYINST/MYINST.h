@@ -6,7 +6,7 @@ class MYINST : public Instrument {
 public:
    MYINST();
    virtual ~MYINST();
-   int init(float *, short);
+   int init(float *, int);
    int run();
 };
 

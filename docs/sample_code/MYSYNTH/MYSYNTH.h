@@ -6,7 +6,7 @@ class MYSYNTH : public Instrument {
 public:
    MYSYNTH();
    virtual ~MYSYNTH();
-   int init(float *, short);
+   int init(float *, int);
    int run();
 };
 

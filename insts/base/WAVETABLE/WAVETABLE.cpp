@@ -22,7 +22,7 @@ WAVETABLE::WAVETABLE() : Instrument()
 {
 }
 
-int WAVETABLE::init(float p[], short n_args)
+int WAVETABLE::init(float p[], int n_args)
 {
 // p0 = start; p1 = dur; p2 = amplitude; p3 = frequency; p4 = stereo spread;
 // real-time control enabled for p3 and p4

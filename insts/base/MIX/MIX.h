@@ -8,6 +8,6 @@ class MIX : public Instrument {
 public:
 	MIX();
 	virtual ~MIX();
-	int init(float*, short);
+	int init(float*, int);
 	int run();
 	};
