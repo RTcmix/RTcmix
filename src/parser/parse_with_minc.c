@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "rtcmix_parse.h"
+#include <Option.h>
 
 extern int yyparse();
 
@@ -45,7 +46,8 @@ use_script_file(char *fname)
       fprintf(stderr, "Can't open %s\n", fname);
       exit(1);
    }
-   printf("Using file %s\n", fname);
+   if (get_bool_option(kOptionPrint))
+      printf("Using file %s\n", fname);
 }
 
 
