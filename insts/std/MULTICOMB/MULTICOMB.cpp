@@ -1,17 +1,13 @@
 #include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "MULTICOMB.h"
 #include <rt.h>
 #include <rtdefs.h>
 
-
-extern "C" {
-	#include <ugens.h>
-	extern int resetval;
-}
 
 MULTICOMB::MULTICOMB() : Instrument()
 {
@@ -40,10 +36,8 @@ int MULTICOMB::init(float p[], short n_args)
 	rtsetinput(p[1], this);
 	nsamps = rtsetoutput(p[0], p[2], this);
 
-	if (outputchans != 2) {
-		fprintf(stderr,"Sorry, output must be stereo for MULTICOMB!\n");
-		exit(-1);
-		}
+	if (outputchans != 2)
+		die("MULTICOMB", "Sorry, output must be stereo.");
 
 	amptable = floc(1);
 	if (amptable) {
@@ -51,16 +45,14 @@ int MULTICOMB::init(float p[], short n_args)
 		tableset(p[2], amplen, amptabs);
 	}
 	else
-		printf("Setting phrase curve to all 1's\n");
+		advise("MULTICOMB", "Setting phrase curve to all 1's.");
 
 	for (j = 0; j < NCEES; j++) {
 		cfreq = (p[5] - p[4]) *  (rrand()+2.0)/2.0  + p[4];
-		printf("comb number %d: %f\n",j,cfreq);
+		advise(NULL, "comb number %d: %f\n",j,cfreq);
 		nmax = (int)(SR/(int)cfreq + 4);
-		if ( (carray[j] = new float[nmax] )  == NULL) {
-			fprintf(stderr,"Sorry, Charlie -- no space\n");
-			exit(-1);
-			}
+		if ( (carray[j] = new float[nmax] )  == NULL)
+			die("MULTICOMB", "Sorry, Charlie -- no space");
 		for (i = 0; i < nmax; i++) carray[j][i] = 0.0;
 
 		combset(1.0/cfreq,p[6],0,carray[j]);

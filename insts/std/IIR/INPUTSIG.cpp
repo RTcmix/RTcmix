@@ -1,6 +1,7 @@
 #include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "INPUTSIG.h"
@@ -9,9 +10,7 @@
 
 
 extern "C" {
-	#include <ugens.h>
-	extern int resetval;
-	extern float rsnetc[64][5],amp[64];
+	extern float rsnetc[64][5],amp[64];  /* defined in cfuncs.c */
 	extern int nresons;
 }
 
@@ -44,7 +43,7 @@ int INPUTSIG::init(float p[], short n_args)
 		tableset(p[2], lenamp, amptabs);
 	}
 	else
-		printf("Setting phrase curve to all 1's\n");
+		advise("INPUTSIG", "Setting phrase curve to all 1's.");
 
 	for(i = 0; i < nresons; i++) {
 		myrsnetc[i][0] = rsnetc[i][0];
@@ -57,11 +56,9 @@ int INPUTSIG::init(float p[], short n_args)
 
 	oamp = p[3];
 	inchan = (int)p[4];
-	if (inchan >= inputchans) {
-		fprintf(stderr,"You have asked for channel %d of a %d-channel file.\n",
-							inchan, inputchans);
-		exit(-1);
-		}
+	if (inchan >= inputchans)
+		die("INPUTSIG", "You asked for channel %d of a %d-channel file.",
+                                                        inchan, inputchans);
 
 	skip = (int)(SR/(float)resetval);
 	spread = p[5];

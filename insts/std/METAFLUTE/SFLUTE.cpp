@@ -1,4 +1,5 @@
 #include <iostream.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "SFLUTE.h"
@@ -11,10 +12,7 @@ int *dl1ptr,*dl2ptr;
 float *del1ptr,*del2ptr;
 int olength1,olength2;
 
-extern int resetval;
-
 extern "C" {
-	#include <ugens.h>
 	void mdelset(float*, int*, int);
 	float mdelget(float*, int, int*);
 }

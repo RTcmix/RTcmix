@@ -1,8 +1,5 @@
 #include <iostream.h>
-#include <mixerr.h>
-#include <Instrument.h>
 #include <rt.h>
-#include <rtdefs.h>
 
 void
 rtprofile()

@@ -14,7 +14,7 @@ class VFRET1 : public Instrument {
 	float dgain,fbgain;
 	float cleanlevel,distlevel;
 	float d;
-	int resetval;
+	int reset;
 	int firsttime;
 
 public:

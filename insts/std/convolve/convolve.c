@@ -3,9 +3,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
-//#include "carl.h"      /* these ucsd headers aren't used  -JGG */
-//#include "procom.h"
-//#include "defaults.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -28,7 +25,15 @@ extern SFHEADER sfdesc[NFILES];
 int sferror;
 int sinbuf;
 int tail;
-int	input,output;
+int input,output;
+
+extern void rfft(float x[], int N, int forward);
+
+static void malerr(char *str, int ex);
+static int cmixgetfloat(float xin[2], int inchan);
+static int cmixputfloat(float *xout, float *dout, float drymix,
+                                     float outpan, int inchan, int ichan);
+
 
 /*-------------------------------------------------------
 			convolve.c
@@ -53,11 +58,8 @@ This program performs fast convolution via the FFT.
 
 
 double 
-convolve(p,n_args)
-float *p;
-int n_args;
+convolve(float p[], int n_args)
 {
-
   float 	*sbuf[2],  		/* array for input and FFT */
   		*tbuf[2],  		/* array for overlap-adding output */
 		*filt[2],		/* array for filter transform */
@@ -126,18 +128,17 @@ int n_args;
     nsamps = setnote(p[1],p[2],input);			
     setnote(p[0],p[2],output);				
     nchnls_out = sfchans(&sfdesc[output]);
-    if (nchnls_out < 2){
-	printf("stereo outfile needed by cmix convolve\n"); 
- 	exit(0);
-    }	
-    isamps     = setnote(p[5],p[4],impulse);	
+    if (nchnls_out < 2)
+	die("convolve", "Output must be stereo."); 
+
+    isamps = setnote(p[5],p[4],impulse);	
 
     size = sizeof(short);
     sinbuf = SF_BUFSIZE / size; 
 
-    if ((isamps) > NCMAX){
+    if ((isamps) > NCMAX) {
       isamps = NCMAX;
-      fprintf(stderr,"convolve: warning - impulse response too long\n");
+      warn("convolve", "Impulse response too long.");
     }
 
 /* Set up buffers. */
@@ -186,10 +187,9 @@ int n_args;
     }
     if (max != 0.)
       max = gain/(sqrt(max));
-    else {
-      fprintf(stderr,"convolve: impulse response is all zeros\n");
-      exit(1);
-    }
+    else
+      die("convolve", "Impulse response is all zeros.");
+
     for (i=0; i< N+2; i++)
       *(filt[c] + i) *= max;
   } 
@@ -215,10 +215,8 @@ int n_args;
         *(sbuf[c]+i) = 0.;
         *(dry[c]+i) = 0.;
      }
-     if (icnt[c] == 0){
-       fprintf(stderr,"convolve: no valid input in source file\n");
-       exit(1);
-    }
+     if (icnt[c] == 0)
+       die("convolve", "No valid input in source file.");
   }
 	
   
@@ -366,11 +364,13 @@ int n_args;
      free(filt[c]);
      free(dry[c]);
   }
-  return(1);
+
+  return(0.0);
 } /* end convolve */
 
-usage(exitcode)
-	int exitcode;
+
+void
+usage(int exitcode)
 {
 	fprintf(stderr,"%s%s%s%s%s%s%s",
 	"\nusage: convolvesf [flags] impulse_response_soundfile < floatsams > floatsams\n",
@@ -383,21 +383,17 @@ usage(exitcode)
 	exit(exitcode);
 }
 
-quit()
+
+static void
+malerr(char *str, int ex)
 {
-  fprintf(stderr, "exiting\n");
-  exit(1); 
+	fprintf(stderr, "%s\n", str);
+	fprintf(stderr,"\nconvolvesf: impulse response too long\n");
+	exit(ex);
 }
 
-malerr(str, ex)
-  char	*str;
-  int	ex;
-{
-  fprintf(stderr, "%s\n", str);
-  fprintf(stderr,"\nconvolvesf: impulse response too long\n");
-  exit(ex);
-}
 
+int
 profile()
 {
 	UG_INTRO("convolve",convolve);	        
@@ -414,198 +410,200 @@ profile()
 	return(0);
 }
 
-cmixgetfloat(xin,inchan)
-float *xin[2];
-int inchan;
-{
 
-GETIN(xin,input);
-if (inchan==1)
-	xin[1]=xin[0];
-return(1);
+static int
+cmixgetfloat(float xin[2], int inchan)
+{
+	GETIN(xin,input);
+	if (inchan==1)
+		xin[1] = xin[0];
+	return 1;
 }
 
-cmixputfloat(xout,dout,drymix,outpan,inchan,ichan)
-float *xout,*dout,outpan,drymix;
-int inchan,ichan;
-{
-int c;
-float out[2],pan[2],wet;
-pan[0]  = sqrt(outpan); 
-pan[1]  = sqrt(1-outpan);
-wet = (1 - drymix); 
 
-if(ichan==1)
-    for(c=0;c<2;c++){
-        out[c] = (xout[0]*pan[c])*wet + (dout[0]*pan[c])*drymix;
-    }
-else{
-     for(c=0;c<2;c++)
-        out[c] = (xout[c]*pan[c])*wet + (dout[c]*pan[c])*drymix;
-    }
-    return(ADDOUT(out,output));
+static int
+cmixputfloat(
+	float	*xout,
+	float	*dout,
+	float	drymix,
+	float	outpan,
+	int	inchan,
+	int	ichan)
+{
+	int c;
+	float out[2],pan[2],wet;
+
+	pan[0] = sqrt(outpan); 
+	pan[1] = sqrt(1-outpan);
+	wet = (1 - drymix); 
+
+	if (ichan==1) {
+		for (c=0;c<2;c++)
+			out[c] = (xout[0]*pan[c])*wet + (dout[0]*pan[c])*drymix;
+	}
+	else {
+		for (c=0;c<2;c++)
+			out[c] = (xout[c]*pan[c])*wet + (dout[c]*pan[c])*drymix;
+	}
+	return (ADDOUT(out,output));
 }
 
+
+/* table for envelope on read of target file
+      p[0] = number of array:   0 = source, 1 = impulse response
+      p[1] = duration of window 
+      p[2] = table values	
+*/
 double 
-setwindow(p,n_args)
-float *p;
-int n_args;
+setwindow(float p[], int n_args)
 {
-    /*
-    // table for envelope on read of target file
-    // p[0] number of array:   0 = source, 1 = impulse response
-    // p[1] duration of window 
-    // p[2] -> table values	
-    */
-    int number = p[0];
-    printf("creating window %d\n",number);
-    tableset(p[1],SIZE,tabs[number]);
-    setline(&p[2],n_args-2,SIZE,array[number]);
-    haswindow=1;
+	int number = p[0];
+
+	advise("convolve", "Creating window %d.", number);
+	tableset(p[1],SIZE,tabs[number]);
+	setline(&p[2],n_args-2,SIZE,array[number]);
+	haswindow=1;
+
+	return 0.0;
 }
 
+
+/* table for inc. warp 
+      p[0] = number of array: 0 = source, 1 = impulse response 
+      p[1] = duration of file
+      p[2] = table values	
+*/
 double
-setwarp(p,n_args)
-float *p;
-int n_args;
+setwarp(float p[], int n_args)
 {
-	/*
-	// table for inc. warp 
-	// p[0] number of array: 0 = source, 1 = impulse response 
-        // p[1] duration of file
-        // p[2] -> table values	
-	*/
 	int number = p[0];
-    	printf("creating warp table %d\n",number);
+
+	advise("convolve", "Creating warp table %d.", number);
 	tableset(p[1],SIZE,warptabs[number]);
-        setline(&p[2],n_args-2,SIZE,warparray[number]);
+	setline(&p[2],n_args-2,SIZE,warparray[number]);
+
+	return 0.0;
 }
+
+
+/* take inskip location and return return  newskip 
+      p[0] = number of array: 0 = source, 1 = impulse response 
+      p[1] = current inskip
+*/
 double
-getwarp(p,n_args)
-float *p;
-int n_args;
+getwarp(float p[], int n_args)
 {
 	int number,insamp;
 	float newskip;
 
-	/*
-	// take inskip location and return return  newskip 
-	// p[0] number of array: 0 = source, 1 = impulse response 
-	// p[1] current inskip
-	*/
-
 	number = p[0];
-	insamp = (int)(p[1]*44100);
+	insamp = (int)(p[1] * SR);
 	newskip  = table(insamp,warparray[number],warptabs[number]); 
-	return(newskip);
+	return newskip;
 }
-double
-setrange(p,n_args)
-float *p;
-int n_args;
-{
 
-	/*
-	// table for dynamic random ranges 
-	// p[0] number of array: 0 = source, 1 = impulse response 
-        // p[1] duration of file
-        // p[2] -> table values	
-	*/
-	int number = p[0];
-    	printf("creating range table %d\n",number);
-	tableset(p[1],SIZE,rangetabs[number]);
-        setline(&p[2],n_args-2,SIZE,rangearray[number]);
-}
+
+/* table for dynamic random ranges 
+      p[0] = number of array: 0 = source, 1 = impulse response 
+      p[1] = duration of file
+      p[2] = table values	
+*/
 double
-getrange(p,n_args)
-float *p;
-int n_args;
+setrange(float p[], int n_args)
+{
+	int number = p[0];
+
+	advise("convolve", "Creating range table %d.", number);
+	tableset(p[1],SIZE,rangetabs[number]);
+	setline(&p[2],n_args-2,SIZE,rangearray[number]);
+
+	return 0.0;
+}
+
+
+/*	take inskip location and return range value 
+      p[0] = number of array: 0 = source, 1 = impulse response 
+      p[1] = current inskip
+*/
+double
+getrange(float p[], int n_args)
 {
 	int number,insamp;
 	float range;
 
-   	/*	
-	// take inskip location and return range value 
-	// p[0] number of array: 0 = source, 1 = impulse response 
-	// p[1] current inskip
-	*/
-
 	number = p[0];
-	insamp = (int)(p[1]*44100);
-	range  = table(insamp,rangearray[number],rangetabs[number]); 
-	return(range);
+	insamp = (int)(p[1] * SR);
+	range = table(insamp,rangearray[number],rangetabs[number]); 
+
+	return range;
 }
+
+
+/* table for ring 
+      p[0] = number of array: 0 = source, 1 = impulse response 
+      p[1] = duration of file
+      p[2] = table values	
+*/
 double
-setring(p,n_args)
-float *p;
-int n_args;
+setring(float p[], int n_args)
 {
-
-	/*
-	// table for ring 
-	// p[0] number of array: 0 = source, 1 = impulse response 
-        // p[1] duration of file
-        // p[2] -> table values	
-	*/
-
 	int number = p[0];
-    	printf("creating ring table %d\n",number);
+
+	advise("convolve", "Creating ring table %d.", number);
 	tableset(p[1],SIZE,ringtabs[number]);
-        setline(&p[2],n_args-2,SIZE,ringarray[number]);
+	setline(&p[2],n_args-2,SIZE,ringarray[number]);
+
+	return 0.0;
 }
+
+
+/* get table value i"newinc," and return inskip + newinc 
+      p[0] = number of array: 0 = source, 1 = impulse response 
+      p[1] = current inskip
+*/
 double
-getring(p,n_args)
-float *p;
-int n_args;
+getring(float p[], int n_args)
 {
 	int number;
 	long insamp;
 	float newindow;
 
-	/*
-	// get table value i"newinc," and return inskip + newinc 
-	// p[0] number of array: 0 = source, 1 = impulse response 
-	// p[1] current inskip
-	*/
-
 	number = p[0];
-	insamp = (long)(p[1]*44100);
+	insamp = (long)(p[1] * SR);
 	newindow  = table(insamp,ringarray[number],ringtabs[number]); 
-	return(newindow);
+
+	return newindow;
 }
+
+
+/* table for dry 
+      p[0] = duration of file
+      p[1] = table values	
+*/
 double
-setdry(p,n_args)
-float *p;
-int n_args;
+setdry(float p[], int n_args)
 {
-
-	/*
-	// table for dry 
-        // p[0] duration of file
-        // p[1] -> table values	
-	*/
-
-    	printf("creating dry table \n");
+	advise("convolve", "Creating dry table.");
 	tableset(p[0],SIZE,drytabs);
-        setline(&p[1],n_args-1,SIZE,dryarray);
+	setline(&p[1],n_args-1,SIZE,dryarray);
 
+	return 0.0;
 }
+
+
+/* get table value i"newinc," and return inskip + newinc 
+      p[0] current inskip
+*/
 double
-getdry(p,n_args)
-float *p;
-int n_args;
+getdry(float p[], int n_args)
 {
 	int number;
 	long insamp;
 	float dry;
 
-	/*
-	// get table value i"newinc," and return inskip + newinc 
-	// p[0] current inskip
-	*/
+	insamp = (long)(p[0] * SR);
+	dry = table(insamp,dryarray,drytabs); 
 
-	insamp = (long)(p[0]*44100);
-	dry  = table(insamp,dryarray,drytabs); 
-	return(dry);
+	return dry;
 }
 

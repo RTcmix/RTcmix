@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "START.h"
@@ -9,8 +10,6 @@
 strumq *curstrumq[6];
 
 extern "C" {
-	#include <ugens.h>
-   extern int resetval;
 	void sset(float, float, float, strumq*);
 	void randfill(float, int, strumq*);
 	float strum(float, strumq*);
@@ -61,7 +60,7 @@ int START::init(float p[], short n_args)
 		tableset(dur, amplen, amptabs);
 	}
 	else
-		printf("Setting phrase curve to all 1's\n");
+		advise("START", "Setting phrase curve to all 1's.");
 
 	skip = (int)(SR / (float)resetval);
 

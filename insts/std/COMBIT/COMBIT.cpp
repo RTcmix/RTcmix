@@ -1,18 +1,14 @@
 #include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "COMBIT.h"
 #include <rt.h>
 #include <rtdefs.h>
+#include <combs.h>
 
-
-extern "C" {
-	#include <ugens.h>
-	#include <combs.h>
-	extern int resetval;
-}
 
 COMBIT::COMBIT() : Instrument()
 {
@@ -46,10 +42,9 @@ int COMBIT::init(float p[], short n_args)
 	// to prevent the array out-of-bounds bug
 	// BGG
 	combarr = new float[int(loopt * SR + 10.0)];
-	if (!combarr) {
-	    fprintf(stderr, "could not allocate memory for comb array!\n");
-	    return (-1);
-	}
+	if (!combarr)
+	    die("COMBIT", "Could not allocate memory for comb array!");
+
 	combset(loopt,p[5],0,combarr);
 
 	amptable = floc(1);
@@ -58,15 +53,14 @@ int COMBIT::init(float p[], short n_args)
 		tableset(p[2]+p[5], amplen, tabs);
 	}
 	else
-		printf("Setting phrase curve to all 1's\n");
+		advise("COMBIT", "Setting phrase curve to all 1's.");
 
 	amp = p[3];
 	skip = (int)(SR/(float)resetval); // how often to update amp curve
 	inchan = (int)p[6];
-	if ((inchan+1) > inputchans) {
-		fprintf(stderr,"uh oh, you have asked for channel %d of a %d-channel file...\n",inchan,inputchans);
-		exit(-1);
-		}
+	if ((inchan+1) > inputchans)
+		die("COMBIT", "You asked for channel %d of a %d-channel file.", 
+                                                         inchan,inputchans);
 
 	spread = p[7];
 

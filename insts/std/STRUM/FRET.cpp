@@ -1,4 +1,5 @@
 #include <iostream.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "FRET.h"
@@ -8,7 +9,6 @@
 extern strumq *curstrumq[6];
 
 extern "C" {
-	#include <ugens.h>
 	void sset(float, float, float, strumq*);
 	float strum(float, strumq*);
 }

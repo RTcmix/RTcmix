@@ -34,7 +34,6 @@ float *p;
 	float *wintable;
 	int wlen;
 	int skip, cdown;
-	extern int resetval;
 
 	getsetnote(p[1], p[2], 0);
 	nsamps = setnote(p[0], p[2], 1);

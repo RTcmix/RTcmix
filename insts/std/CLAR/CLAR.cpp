@@ -1,15 +1,13 @@
 #include <stdio.h>
-#include <iostream.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "CLAR.h"
 #include <rt.h>
 #include <rtdefs.h>
 
-
 extern "C" {
-	#include <ugens.h>
-	extern int resetval;
+	/* defined in cfuncs.c */
 	void mdelset(float*, int*, int);
 	float mdelget(float*, int, int*);
 }
@@ -38,7 +36,7 @@ int CLAR::init(float p[], short n_args)
 		tableset(p[1], lenamp, amptabs);
 	}
 	else
-		printf("Setting noise amp curve to all 1's\n");
+		advise("CLAR", "Setting noise amp curve to all 1's.");
 
 	oamparr = floc(2);
 	if (oamparr) {
@@ -46,7 +44,7 @@ int CLAR::init(float p[], short n_args)
 		tableset(p[1], olenamp, oamptabs);
 	}
 	else
-		printf("Setting output amp curve to all 1's\n");
+		advise("CLAR", "Setting output amp curve to all 1's.");
 
 	imax = DELSIZE;
 	mdelset(del1,dl1,imax);

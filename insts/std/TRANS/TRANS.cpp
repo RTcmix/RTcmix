@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include "TRANS.h"
 #include <rt.h>
@@ -26,10 +27,6 @@
 //#define DEBUG
 //#define DEBUG_FULL
 
-extern "C" {
-   #include <ugens.h>
-   extern int resetval;
-}
 
 static float interp(float, float, float, float);
 
@@ -60,10 +57,9 @@ int TRANS :: init(float p[], short n_args)
 {
    float outskip, inskip, dur, transp, interval, total_indur, dur_to_read;
 
-   if (n_args < 5) {
-      fprintf(stderr, "TRANS: Wrong number of args.\n");
-      exit(1);
-   }
+   if (n_args < 5)
+      die("TRANS", "Wrong number of args.");
+
    outskip = p[0];
    inskip = p[1];
    dur = p[2];
@@ -78,12 +74,9 @@ int TRANS :: init(float p[], short n_args)
    nsamps = rtsetoutput(outskip, dur, this);
    rtsetinput(inskip, this);
 
-   if (inchan >= inputchans) {
-      fprintf(stderr, "TRANS: You asked for channel %d of a %d-channel file.\n",
-                      inchan, inputchans);
-      exit(1);
-   }
-
+   if (inchan >= inputchans)
+      die("TRANS", "You asked for channel %d of a %d-channel file.",
+                                                       inchan, inputchans);
    interval = octpch(transp);
    increment = (double) cpsoct(10.0 + interval) / cpsoct(10.0);
 #ifdef DEBUG
@@ -94,9 +87,9 @@ int TRANS :: init(float p[], short n_args)
    total_indur = (float) m_DUR(NULL, 0);
    dur_to_read = dur * increment;
    if (inskip + dur_to_read > total_indur) {
-      fprintf(stderr, "TRANS WARNING: This note will read off the end of the "
-                      "input file.\nYou might not get the envelope decay you "
-                      "expect from setline.\nReduce output duration.\n");
+      warn("TRANS", "This note will read off the end of the input file.\n"
+                    "You might not get the envelope decay you "
+                    "expect from setline.\nReduce output duration.");
       /* no exit() */
    }
 #endif
@@ -113,7 +106,7 @@ int TRANS :: init(float p[], short n_args)
       tableset(p[2], amplen, tabs);
    }
    else
-      printf("Setting phrase curve to all 1's\n");
+      advise("TRANS", "Setting phrase curve to all 1's.");
 
    skip = (int) (SR / (float) resetval);
 

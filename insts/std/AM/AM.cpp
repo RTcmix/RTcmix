@@ -1,17 +1,13 @@
 #include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "AM.h"
 #include <rt.h>
 #include <rtdefs.h>
 
-
-extern "C" {
-	#include <ugens.h>
-	extern int resetval;
-}
 
 AM::AM() : Instrument()
 {
@@ -42,26 +38,22 @@ int AM::init(float p[], short n_args)
 		tableset(p[2], amplen, amptabs);
 	}
 	else
-		printf("Setting phrase curve to all 1's\n");
+		advise("AM", "Setting phrase curve to all 1's.");
 
 	amtable = floc(2);
-	if (amtable == NULL) {
-		fprintf(stderr, "You need a function table 2 containing mod. waveform\n");
-		exit(1);
-	}
+	if (amtable == NULL)
+		die("AM", "You need a function table 2 containing mod. waveform.");
 	lenam = fsize(2);
 	si = p[4] * (float)lenam/SR;
 
 	amp = p[3];
 	skip = (int)(SR/(float)resetval);      // how often to update amp curve
 	phase = 0.0;
+
 	inchan = (int)p[5];
-	if ((inchan+1) > inputchans) {
-		fprintf(stderr,
-			"uh oh, you have asked for channel %d of a %d-channel file...\n",
-																				inchan,inputchans);
-		exit(-1);
-		}
+	if ((inchan+1) > inputchans)
+		die("AM", "You asked for channel %d of a %d-channel file.",
+																		inchan, inputchans);
 
 	spread = p[6];
 

@@ -2,6 +2,9 @@
 #include <ugens.h>
 #include "strums.h"
 
+extern void squisher(int squish, strumq *q);
+
+
 void randfill(float amp, int squish, strumq *q) 
 
 /* Fills plucked string structure q with random values, and intitialize things.

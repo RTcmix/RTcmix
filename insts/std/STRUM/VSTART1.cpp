@@ -1,6 +1,7 @@
 #include <iostream.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "VSTART1.h"
@@ -11,7 +12,6 @@ extern strumq *curstrumq[6];
 extern delayq *curdelayq;
 
 extern "C" {
-	#include <ugens.h>
 	void sset(float, float, float, strumq*);
 	void randfill(float, int, strumq*);
 	float strum(float, strumq*);
@@ -66,10 +66,9 @@ int VSTART1::init(float p[], short n_args)
 	delayclean(dq);
 
 	vloc = floc(1);
-	if (vloc == NULL) {
-		fprintf(stderr, "You need to store a vibrato function in gen num. 1.\n");
-		exit(1);
-	}
+	if (vloc == NULL)
+		die("VSTART1", "You need to store a vibrato function in gen num. 1.");
+
 	vlen = fsize(1);
 	vsibot = p[12] * (float)vlen/SR;
 	vsidiff = vsibot - (p[13] * (float)vlen/SR);
@@ -88,8 +87,8 @@ int VSTART1::init(float p[], short n_args)
 	distlevel = p[9];
 	amp = p[10];
 	vdepth = p[14];
-	resetval = (int)p[16];
-	if (resetval == 0) resetval = 200;
+	reset = (int)p[16];
+	if (reset == 0) reset = 200;
 	spread = p[17];
 	deleteflag = (int)p[18];
 
@@ -119,7 +118,7 @@ int VSTART1::run()
 			vamp = tablei(cursamp, eloc, tab) * vdepth;
 			freqch = oscili(vamp,vsi,vloc,vlen,&vphase);
 			sset(freq+freqch, tf0, tfN, strumq1);
-			branch2 = resetval;
+			branch2 = reset;
 			vphase += (float)branch2 * vsi;
 			}
 

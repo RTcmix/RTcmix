@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <defs.h>
 #include <ugens.h>
 
 float rsnetc[64][5],amp[64];
@@ -14,16 +13,16 @@ double setup(float *p, int n_args)
 	first = (p[0] < 15.0) ? cpspch(p[0]) : p[0];
 	bw = p[1] < 0 ? -p[1] * first : p[1];
 	rsnset(first,bw,1.,0.,rsnetc[0]);
-	printf("centerfreq    bandwidth  relative amp\n");
+	advise("IIR setup", "centerfreq    bandwidth  relative amp");
 	amp[0] = p[2];
-	printf("%10.4f %10.4f %10.4f\n",first,bw,amp[0]);
+	advise(NULL, "            %10.4f %10.4f %10.4f\n",first,bw,amp[0]);
 	for(i=3,j=1; i<n_args; i += 3)  {
 	        if(p[i] < 0.) cf = -p[i] * first;
 	        else  cf = (p[i] < 15.0) ? cpspch(p[i]) : p[i];
 	        bw = p[i+1] < 0 ? -p[i+1] * cf : p[i+1];
 	        amp[j] = p[i+2];
 	        rsnset(cf ,bw ,1.,0.,rsnetc[j]);
-	        printf("%10.4f %10.4f %10.4f\n",cf,bw,amp[j]);
+	        advise(NULL, "            %10.4f %10.4f %10.4f\n",cf,bw,amp[j]);
 	        j++;
 	}
 	nresons = j;
@@ -31,8 +30,10 @@ double setup(float *p, int n_args)
 }
 
 
+int
 profile()
 {
 	UG_INTRO("setup",setup);
+	return 0;
 }
 

@@ -11,7 +11,7 @@ class BEND1 : public Instrument {
 	float dgain,fbgain;
 	float cleanlevel,distlevel;
 	float d;
-	int resetval;
+	int reset;
 
 public:
 	BEND1();

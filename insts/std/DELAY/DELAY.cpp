@@ -1,16 +1,13 @@
 #include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "DELAY.h"
 #include <rt.h>
 #include <rtdefs.h>
 
-extern "C" {
-	#include <ugens.h>
-	extern int resetval;
-}
 
 DELAY::DELAY() : Instrument()
 {
@@ -42,10 +39,9 @@ int DELAY::init(float p[], short n_args)
 	insamps = (int)(p[2] * SR);
 
 	delsamps = (long)(p[4] * SR + 0.5);
-	if( (delarray = new float [delsamps]) == NULL ) {
-		fprintf(stderr,"Sorry, Charlie -- no space\n");
-		exit(-1);
-		}
+	if( (delarray = new float [delsamps]) == NULL )
+		die("DELAY", "Sorry, Charlie -- no space");
+
 	wait = p[4];
 	regen = p[5];
 	delset(delarray, deltabs, wait);
@@ -56,15 +52,14 @@ int DELAY::init(float p[], short n_args)
 		tableset(p[2], amplen, amptabs);
 	}
 	else
-		printf("Setting phrase curve to all 1's\n");
+		advise("DELAY", "Setting phrase curve to all 1's.");
 
 	amp = p[3];
 	skip = (int)(SR/(float)resetval);
 	inchan = (int)p[7];
-	if ((inchan+1) > inputchans) {
-		fprintf(stderr,"uh oh, you have asked for channel %d of a %d-channel file...\n",inchan,inputchans);
-		exit(-1);
-		}
+	if ((inchan+1) > inputchans)
+		die("DELAY", "You asked for channel %d of a %d-channel file.",
+                                                       inchan, inputchans);
 
 	spread = p[8];
 

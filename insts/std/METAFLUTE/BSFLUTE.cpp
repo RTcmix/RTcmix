@@ -1,3 +1,4 @@
+#include <ugens.h>
 #include <iostream.h>
 #include <mixerr.h>
 #include <Instrument.h>
@@ -5,10 +6,7 @@
 #include <rt.h>
 #include <rtdefs.h>
 
-extern int resetval;
-
 extern "C" {
-	#include <ugens.h>
 	void mdelset(float*, int*, int);
 	float mdliget(float*, float, int*);
 }

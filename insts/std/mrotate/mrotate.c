@@ -38,7 +38,6 @@ float *p;
 	float *pcurve, ptabs[2];
 	int plen;
 	int skip, cdown;
-	extern int resetval;
 
 	getsetnote(p[1], p[2], 0);
 	nsamps = setnote(p[0], p[2], 1);

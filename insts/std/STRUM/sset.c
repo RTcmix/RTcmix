@@ -42,10 +42,9 @@ void sset(float freq, float tf0, float tNy, strumq *q)
 
    del = 1.;  /*delay of 1 from three point filter to be added later */
    q->n = floor(xlen - del);
-   if (q->n > maxlen) {
-      fprintf(stderr, "STRUM: pitch is too low\n");
-      exit(1);
-   }
+   if (q->n > maxlen)
+      die("STRUM", "Pitch is too low.");
+
    xerr = q->n - xlen + del;   /*xerr will be a negative number*/
 
    /* Calculate the phase shift needed from two-point averaging filter,

@@ -2,6 +2,7 @@
 #include <ugens.h>
 #include "strums.h"
 
+void
 squisher(squish,q) 
  strumq *q;
  int squish;

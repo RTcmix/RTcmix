@@ -6,7 +6,7 @@ class BEND : public Instrument {
 	float *glissf,tags[2];
 	float spread;
 	strumq *strumq1;
-	int resetval;
+	int reset;
 
 public:
 	BEND();

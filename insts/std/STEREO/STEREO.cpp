@@ -2,17 +2,13 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "STEREO.h"
 #include <rt.h>
 #include <rtdefs.h>
 
-
-extern "C" {
-	#include <ugens.h>
-	extern int resetval;
-}
 
 STEREO::STEREO() : Instrument()
 {
@@ -32,10 +28,8 @@ int STEREO::init(float p[], short n_args)
 
 	int i;
 
-	if (outputchans != 2) {
-		fprintf(stderr,"output must be stereo!\n");
-		exit(-1);
-		}
+	if (outputchans != 2)
+		die("STEREO", "Output must be stereo.");
 
 	if (p[2] < 0.0) p[2] = -p[2] - p[1];
 
@@ -54,7 +48,7 @@ int STEREO::init(float p[], short n_args)
 		tableset(p[2], amplen, tabs);
 	}
 	else
-		printf("Setting phrase curve to all 1's\n");
+		advise("STEREO", "Setting phrase curve to all 1's.");
 
 	skip = (int)(SR/(float)resetval);       // how often to update amp curve
 

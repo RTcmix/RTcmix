@@ -1,17 +1,13 @@
 #include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "AMINST.h"
 #include <rt.h>
 #include <rtdefs.h>
 
-
-extern "C" {
-	#include <ugens.h>
-	extern int resetval;
-}
 
 AMINST::AMINST() : Instrument()
 {
@@ -38,7 +34,7 @@ int AMINST::init(float p[], short n_args)
 		tableset(p[1], lenamp, amptabs);
 	}
 	else
-		printf("Setting phrase curve to all 1's\n");
+		advise("AMINST", "Setting phrase curve to all 1's.");
 
 	mamparr = floc(2);
 	lenmamp = fsize(2);

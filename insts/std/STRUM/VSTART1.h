@@ -13,7 +13,7 @@ class VSTART1 : public Instrument {
 	delayq *dq;
 	float dgain, fbgain;
 	float cleanlevel, distlevel;
-	int resetval;
+	int reset;
 	float d;
 	int deleteflag;
 

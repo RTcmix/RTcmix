@@ -27,11 +27,15 @@ int n_args;
 		ADDOUT(out, 1);
 		}
 	endnote(1);
+
+	return 0.0;
 }
 
 
+int
 profile()
 {
 	UG_INTRO("numtest",numtest);
+	return 0;
 }
 

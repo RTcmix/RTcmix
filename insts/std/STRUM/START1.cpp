@@ -1,4 +1,5 @@
 #include <iostream.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "START1.h"
@@ -9,7 +10,6 @@ extern strumq *curstrumq[6];
 delayq *curdelayq;
 
 extern "C" {
-	#include <ugens.h>
 	void sset(float, float, float, strumq*);
 	void randfill(float, int, strumq*);
 	float strum(float, strumq*);

@@ -1,15 +1,13 @@
 #include <iostream.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "SCULPT.h"
 #include <rt.h>
 #include <rtdefs.h>
 
-extern "C" {
-	#include <ugens.h>
-}
 
 SCULPT::SCULPT() : Instrument()
 {
@@ -30,10 +28,8 @@ int SCULPT::init(float p[], short n_args)
 	pdur = (int)(p[1] * SR);
 
 	wave = floc(1);
-	if (wave == NULL) {
-		fprintf(stderr, "You need to store a waveform in function 1.\n");
-		exit(1);
-	}
+	if (wave == NULL)
+		die("SCULPT", "You need to store a waveform in function 1.");
 	len = fsize(1);
 
 	amptable = floc(2);
@@ -42,7 +38,7 @@ int SCULPT::init(float p[], short n_args)
 		tableset(tdur, len, amptabs);
 	}
 	else
-		printf("Setting phrase curve to all 1's\n");
+		advise("SCULPT", "Setting phrase curve to all 1's.");
 
 	freqtable = floc(3);
 	pamptable = floc(4);

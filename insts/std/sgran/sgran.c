@@ -90,7 +90,7 @@ int n_args; /* number of p-fields */
 		tableset(p[1], amplen, tabs);
 	}
 	else
-		printf("Setting phrase curve to all 1's\n");
+		advise("sgran", "Setting phrase curve to all 1's.");
 
 	wave = floc(6); /* finds starting loc. of waveform */
 	len = fsize(6); /* length of playing waveform function */
@@ -273,8 +273,10 @@ double low, mid, high, tight;      /* Returns a value within a range
 }
 
 
+int
 profile()
 {
 	UG_INTRO("sgran",sgran); 
+	return 0;
 }
 

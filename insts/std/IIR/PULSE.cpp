@@ -1,5 +1,6 @@
 #include <iostream.h>
 #include <stdio.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "PULSE.h"
@@ -8,9 +9,7 @@
 
 
 extern "C" {
-	#include <ugens.h>
-	extern int resetval;
-	extern float rsnetc[64][5],amp[64];
+	extern float rsnetc[64][5],amp[64];  /* defined in cfuncs.c */
 	extern int nresons;
 }
 
@@ -40,7 +39,7 @@ int PULSE::init(float p[], short n_args)
 		tableset(p[1], lenamp, amptabs);
 	}
 	else
-		printf("Setting phrase curve to all 1's\n");
+		advise("PULSE", "Setting phrase curve to all 1's.");
 
 	si = p[3] < 15.0 ? cpspch(p[3])*512.0/SR : p[3] * 512.0/SR;
 

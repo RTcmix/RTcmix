@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <math.h>
 #include <ugens.h>
 #include "delayq.h"
@@ -20,7 +21,7 @@ void delayset(float freq, delayq *q)
    q->del = floor(xdel);
    if (q->del > maxdl) {
        q->del = maxdl;
-       printf("too long a delay requested\n");
+       die("STRUM", "Too long a delay requested.");
        }
    xerr = xdel - q->del;
 

@@ -37,7 +37,6 @@ int n_args; /* number of args */
 	int q_size, q_past, q_future, q_middle, q_end, q_pos, q_pos1;
 	int inchan,inchans,outchans;
 	int skip;
-	extern int resetval;
 
 	float input_start, output_start, duration;
 	float *modulator, mphase, modulator_index; 

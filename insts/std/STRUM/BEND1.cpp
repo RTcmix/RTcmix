@@ -1,4 +1,5 @@
 #include <iostream.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "BEND1.h"
@@ -9,7 +10,6 @@ extern strumq *curstrumq[6];
 extern delayq *curdelayq;
 
 extern "C" {
-	#include <ugens.h>
 	void sset(float, float, float, strumq*);
 	float strum(float, strumq*);
 	void delayset(float, delayq*);
@@ -54,8 +54,8 @@ int BEND1::init(float p[], short n_args)
 	cleanlevel = p[10];
 	distlevel = p[11];
 	amp = p[12];
-	resetval = (int)p[13];
-	if (resetval == 0) resetval = 100;
+	reset = (int)p[13];
+	if (reset == 0) reset = 100;
 	spread = p[14];
 
 	d = 0.0;
@@ -78,7 +78,7 @@ int BEND1::run()
 		if (--branch < 0) {
 			freq = diff * tablei(cursamp, glissf, tags) + freq0;
 			sset(freq, tf0, tfN, strumq1);
-			branch = resetval;
+			branch = reset;
 			}
 
 		a = strum(d, strumq1);

@@ -1,17 +1,13 @@
 #include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "FIR.h"
 #include <rt.h>
 #include <rtdefs.h>
 
-
-extern "C" {
-	#include <ugens.h>
-	extern int resetval;
-}
 
 FIR::FIR() : Instrument()
 {
@@ -41,10 +37,8 @@ int FIR::init(float p[], short n_args)
 
 	int i;
 
-	if (outputchans != 1) {
-		fprintf(stderr, "Ouput of FIR must be mono.\n");
-		exit(1);
-	}
+	if (outputchans != 1)
+		die("FIR", "Ouput must be mono.");
 
 	rtsetinput(p[1], this);
 	nsamps = rtsetoutput(p[0], p[2], this);

@@ -1,17 +1,13 @@
 #include <iostream.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "WAVESHAPE.h"
 #include <rt.h>
 #include <rtdefs.h>
 
-
-extern "C" {
-	#include <ugens.h>
-	extern int resetval;
-}
 
 WAVESHAPE::WAVESHAPE() : Instrument()
 {
@@ -31,11 +27,10 @@ int WAVESHAPE::init(float p[], short n_args)
 	nsamps = rtsetoutput(p[0], p[1], this);
 
 	waveform = floc(1);    /* function 1 is waveform */
-	if (waveform == NULL) {
-		fprintf(stderr, "You need to store a waveform in function 1.\n");
-		exit(1);
-	}
+	if (waveform == NULL)
+		die("WAVESHAPE", "You need to store a waveform in function 1.");
 	lenwave = fsize(1);
+
 	if (p[2] < 15.0) p[2] = cpspch(p[2]);
 	si = p[2] * (float)(lenwave/SR);
 
@@ -45,7 +40,7 @@ int WAVESHAPE::init(float p[], short n_args)
 		tableset(p[1], lenamp, amptabs);
 	}
 	else
-		printf("Setting phrase curve to all 1's\n");
+		advise("WAVESHAPE", "Setting phrase curve to all 1's.");
 
 	xfer = floc(3);
 	lenxfer = fsize(3);

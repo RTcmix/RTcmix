@@ -1,5 +1,6 @@
 #include <iostream.h>
 #include <stdio.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "BUZZ.h"
@@ -8,9 +9,7 @@
 
 
 extern "C" {
-	#include <ugens.h>
-	extern int resetval;
-	extern float rsnetc[64][5],amp[64];
+	extern float rsnetc[64][5],amp[64];  /* defined in cfuncs.c */
 	extern int nresons;
 }
 
@@ -42,7 +41,7 @@ int BUZZ::init(float p[], short n_args)
 		tableset(p[1], lenamp, amptabs);
 	}
 	else
-		printf("Setting phrase curve to all 1's\n");
+		advise("BUZZ", "Setting phrase curve to all 1's.");
 
 	sinetable = floc(2);
 	lensine = fsize(2);

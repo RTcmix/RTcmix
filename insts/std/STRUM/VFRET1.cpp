@@ -1,6 +1,7 @@
 #include <iostream.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "VFRET1.h"
@@ -11,7 +12,6 @@ extern strumq *curstrumq[6];
 extern delayq *curdelayq;
 
 extern "C" {
-	#include <ugens.h>
 	void sset(float, float, float, strumq*);
 	float strum(float, strumq*);
 	void delayset(float, delayq*);
@@ -49,10 +49,9 @@ int VFRET1::init(float p[], short n_args)
 
 	vlen = fsize(1);
 	vloc = floc(1);
-	if (vloc == NULL) {
-		fprintf(stderr, "You need to store a vibrato function in gen num. 1.\n");
-		exit(1);
-	}
+	if (vloc == NULL)
+		die("VFRET1", "You need to store a vibrato function in gen num. 1.");
+
 	vsibot = p[11] * (float)vlen/SR;
 	vsidiff = vsibot - (p[12] * (float)vlen/SR);
 	vsi = ((rrand()+1.0)/2.0) * vsidiff;
@@ -69,8 +68,8 @@ int VFRET1::init(float p[], short n_args)
 	distlevel = p[9];
 	amp = p[10];
 	vdepth = p[13];
-	resetval = (int)p[14];
-	if (resetval == 0) resetval = 200;
+	reset= (int)p[14];
+	if (reset == 0) reset = 200;
 	spread = p[15];
 
 	firsttime = 1;
@@ -106,7 +105,7 @@ int VFRET1::run()
 			vamp = tablei(cursamp, eloc, tab) * vdepth;
 			freqch = oscili(vamp,vsi,vloc,vlen,&vphase);
 			sset(freq+freqch, tf0, tfN, strumq1);
-			branch2 = resetval;
+			branch2 = reset;
 			vphase += (float)branch2 * vsi;
 			}
 

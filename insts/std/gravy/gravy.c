@@ -37,8 +37,6 @@ int n_args;
 	long i,j,k,m,intt,lgc,n,ncuts;
 	float transpose();
 	double interp();
-	extern int resetval;
-
 
 	winsamps = setnote(p[1],p[3],0);
 	setnote(p[0],p[2],1);
@@ -116,6 +114,8 @@ int n_args;
 		outrepos(outshift,1);
 		}
 	endnote(1);
+
+	return 0.0;
 }
 
 
@@ -148,8 +148,10 @@ double interp(y0,y1,y2,t)
 }
 
 
+int
 profile()
 {
 	UG_INTRO("gravy",gravy);
+	return 0;
 }
 

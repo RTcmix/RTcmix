@@ -1,6 +1,7 @@
 #include <iostream.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "FMINST.h"
@@ -8,11 +9,6 @@
 #include <rtdefs.h>
 #include <notetags.h>
 
-
-extern "C" {
-	#include <ugens.h>
-	extern int resetval;
-	}
 
 FMINST::FMINST() : Instrument()
 {
@@ -30,11 +26,10 @@ int FMINST::init(float p[], short n_args)
 	nsamps = rtsetoutput(p[0], p[1], this);
 
 	sine = floc(1);
-	if (sine == NULL) {
-		fprintf(stderr, "You need to store a waveform in function 1.\n");
-		exit(1);
-	}
+	if (sine == NULL)
+		die("FMINST", "You need to store a waveform in function 1.");
 	lensine = fsize(1);
+
 	if (p[3] < 15.0)
 		sicar = cpspch(p[3]) * lensine/SR;
 	else
@@ -51,7 +46,7 @@ int FMINST::init(float p[], short n_args)
 		tableset(p[1], lenamp, amptabs);
 	}
 	else
-		printf("Setting phrase curve to all 1's\n");
+		advise("FMINST", "Setting phrase curve to all 1's.");
 	
 	indexenv = floc(3);
 	lenind = fsize(3);
