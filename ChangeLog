@@ -1,6 +1,14 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Monday, March 10, 2003 Douglas Scott <dscott-at-netscape.net>
+
+   * Added beginning of test suite in ./test/suite/.
+   * Added new rterror() function to indicate non-fatal error to user.
+   * More work on audio_port.c.
+   * Cleanup of many headers, etc. and added H/lock.h.
+   * Cleanup of intraverse.C (first stage).
+
 Thursday, February 27, 2003 Douglas Scott <dscott-at-netscape.net>
 
    * Made extensive changes to the setup routines (rtinput, rtoutput, 
