@@ -653,8 +653,11 @@ int OSXAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 			port->audioBufFrames = 2 * deviceFrames;
 		}
 		else {
-			port->audioBufFrames = reqQueueFrames;
+			// Make audio buffer a multiple of hw buffer
+			port->audioBufFrames = reqQueueFrames - (reqQueueFrames % deviceFrames);
 		}
+		// Notify caller of any change.
+		*pWriteSize = port->audioBufFrames;
 
 		port->deviceBufFrames = deviceBufferBytes / (port->deviceFormat.mChannelsPerFrame * sizeof(float));
 
