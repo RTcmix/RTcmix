@@ -437,13 +437,14 @@ PmError Pm_Close( PortMidiStream* stream );
     Pm_MessageStatus(), Pm_MessageData1(), and 
     Pm_MessageData2() extract fields from a long-encoded midi message.
 */
-/* JGG
+#if 0 /* JGG: this formatting tripped up gcc 2.95.3! */
 #define Pm_Message(status, data1, data2) \
          ((((data2) << 16) & 0xFF0000) | \
           (((data1) << 8) & 0xFF00) | \
           ((status) & 0xFF))
-*/
+#else
 #define Pm_Message(status, data1, data2) ((((data2) << 16) & 0xFF0000) | (((data1) << 8) & 0xFF00) | ((status) & 0xFF))
+#endif
 #define Pm_MessageStatus(msg) ((msg) & 0xFF)
 #define Pm_MessageData1(msg) (((msg) >> 8) & 0xFF)
 #define Pm_MessageData2(msg) (((msg) >> 16) & 0xFF)
