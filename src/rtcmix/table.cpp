@@ -428,7 +428,7 @@ _sndfile_table(const Arg args[], const int nargs, double **array, int *len)
             }
          }
       }
-      if (is_24bit) {
+      else if (is_24bit) {
          unsigned char *bufp = (unsigned char *) buf;
 
          if (inchan != ALL_CHANS) {
@@ -557,7 +557,7 @@ _literal_table(const Arg args[], const int nargs, double **array, int *len)
    "short" or "byte".  This just means that with the "double" type, for
    example, every 8 bytes will be interpreted as one floating point number;
    with the "int" type, every 4 bytes will be interpreted as one integer;
-   and so on.
+   and so on (assuming a 32-bit platform).
 
    Similar to gen 3, except that it accepts a file name rather than a cmix
    file number, it has choices for the type of number, it has the option to
@@ -1208,7 +1208,7 @@ _wave3_table(const Arg args[], const int nargs, double *array, const int len)
 
 
 /* ----------------------------------------------------------- _wave_table -- */
-/* Equivalent to cmix gen 10.
+/* Similar to cmix gen 10, but no normalization.
 */
 static int
 _wave_table(const Arg args[], const int nargs, double *array, const int len)
