@@ -1,4 +1,4 @@
-include ../../package.conf
+include ../../../../makefile.conf
 
 OBJS = MYWAVETABLE.o
 CMIXOBJS += $(PROFILE_O)

@@ -1,4 +1,6 @@
-include ../package.conf
+include ../../../makefile.conf
+
+INCLUDES += -I../../../src/rtcmix	# for globals.h
 
 OBJS = mixit.o randfuncs.o
 IMBCMIXOBJS += $(PROFILE_O)

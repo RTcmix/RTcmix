@@ -1,6 +1,8 @@
-include ../package.conf
+include ../../../makefile.conf
 
 OBJS = arpeggiate.o
+INCLUDES += -I../../../src/rtcmix	# for globals.h
+
 IMBCMIXOBJS += $(PROFILE_O)
 PROGS = arpeggiate
 

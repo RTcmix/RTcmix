@@ -1,4 +1,5 @@
 #include "Ougens.h"
+#include <Instrument.h>
 
 class MYWAVETABLE : public Instrument {
 	Ooscili *theOscil;

@@ -1,4 +1,6 @@
-include ../package.conf
+include ../../../makefile.conf
+
+INCLUDES += -I../../../src/rtcmix	# for globals.h
 
 OBJS = wanderfreq.o
 IMBCMIXOBJS += $(PROFILE_O)
@@ -8,7 +10,7 @@ wanderfreq: $(OBJS) $(IMBCMIXOBJS)
 	cd MYWAVETABLE; make
 	$(CXX) -o $@ $(DYN) $(OBJS) $(IMBCMIXOBJS) $(LDFLAGS)
 
-wanderfreq.o:	wanderfreq.C ../../H/RTcmix.h ../../H/Instrument.h
+wanderfreq.o:	wanderfreq.cpp $(INCLUDEDIR)/RTcmix.h $(INCLUDEDIR)/Instrument.h
 
 clean:
 	cd MYWAVETABLE; make clean

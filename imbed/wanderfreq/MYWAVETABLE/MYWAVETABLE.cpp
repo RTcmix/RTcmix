@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <iostream.h>
-#include <Instrument.h>
 #include "MYWAVETABLE.h"
 #include <rt.h>
 
