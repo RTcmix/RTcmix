@@ -40,11 +40,8 @@ PLACE::~PLACE()
 
 int PLACE::localInit(double p[], int n_args)
 {
-    if (n_args < 8) {
-        die(name(), "Wrong number of args.");
-		  return(DONT_SCHEDULE);
-	 }
-	
+    if (n_args < 8)
+        return die(name(), "Wrong number of args.");
 	const double conv = PI2 / 360.0;
 	double R = (double)p[4];
 	double T = (double)p[5];
@@ -58,8 +55,7 @@ int PLACE::localInit(double p[], int n_args)
     }
 	// convert angle to radians before passing in if polar
     if (roomtrig(R , cartflag ? T : T * conv, m_dist, cartflag)) {
-		  die(name(), "roomtrig failed.");
-        return(DONT_SCHEDULE);
+		  return die(name(), "roomtrig failed.");
     }
     return 0;
 }
@@ -76,10 +72,9 @@ int PLACE::finishInit(double rvb_time, double *ringdur)
 
 int PLACE::configure()
 {
-	int status = BASE::configure();
-	if (status) {
+	int status = Base::configure();
+	if (status == 0) {
 		// PLACE sets all filters just once, so we clear them at this time
-
 		int flag = 1;
 		airfil_set(flag);
 		if (m_binaural)
