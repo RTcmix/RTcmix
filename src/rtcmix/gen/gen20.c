@@ -27,20 +27,24 @@ int i, j, k;
 int N=12;
 float halfN = 6;
 float scale = 1;
-float sum=0;
 float mu = 0.5;
 float sigma = .166666;
 float randnum = 0.0;
 float randnum2 = 0.0;
 struct timeval tv;
-struct timezone tz;
 float output;
 float alpha = .00628338;
-float randfunc();
 static long randx=1;
 
-gettimeofday(&tv,&tz);
-randx = tv.tv_usec;
+
+ switch((int)(gen->pvals[1])) {    /* added optional seed  -JG */
+ case 0:
+   gettimeofday(&tv, NULL);
+   randx = tv.tv_usec;
+   break;
+ default:
+   randx = (int)(gen->pvals[1]);
+ }
 
  switch((int)(gen->pvals[0])) {
  case 0: /* even distribution */
