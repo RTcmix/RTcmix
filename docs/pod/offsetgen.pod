@@ -40,5 +40,5 @@ The amount to add to every element of the function table.
 
 L<makegen|makegen>, L<addgens|addgens>, L<multgens|multgens>,
 L<copygen|copygen>, L<scalegen|scalegen>, L<invertgen|invertgen>,
-L<reversegen|reversegen>, L<rotategen|rotategen>, L<quantizegen|quantizegen>
+L<reversegen|reversegen>, L<shiftgen|shiftgen>, L<quantizegen|quantizegen>
 

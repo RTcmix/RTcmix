@@ -75,5 +75,5 @@ then you have to make a very large table that preserves the jagged shape.
 
 L<makegen|makegen>, L<addgens|addgens>, L<multgens|multgens>,
 L<offsetgen|offsetgen>, L<scalegen|scalegen>, L<invertgen|invertgen>,
-L<reversegen|reversegen>, L<rotategen|rotategen>, L<quantizegen|quantizegen>
+L<reversegen|reversegen>, L<shiftgen|shiftgen>, L<quantizegen|quantizegen>
 

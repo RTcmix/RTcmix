@@ -40,5 +40,5 @@ The amount to multiply every element of the function table by.
 
 L<makegen|makegen>, L<addgens|addgens>, L<multgens|multgens>,
 L<copygen|copygen>, L<offsetgen|offsetgen>, L<invertgen|invertgen>,
-L<reversegen|reversegen>, L<rotategen|rotategen>, L<quantizegen|quantizegen>
+L<reversegen|reversegen>, L<shiftgen|shiftgen>, L<quantizegen|quantizegen>
 
