@@ -3,7 +3,7 @@
 #include <ugens.h>
 #include "timeset.h"
 
-static _ntimes = 0;
+static int _ntimes = 0;
 static float _timepts[TIME_ARRAY_SIZE];
 static float _xvals[TIME_ARRAY_SIZE], _yvals[TIME_ARRAY_SIZE];
 

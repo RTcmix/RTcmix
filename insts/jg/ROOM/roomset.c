@@ -4,7 +4,7 @@
 #include <ugens.h>
 #include "roomset.h"
 
-static roomset_called = 0;
+static int roomset_called = 0;
 static float delay[NTAPS], sloc[NTAPS], amp[NTAPS];
 
 
