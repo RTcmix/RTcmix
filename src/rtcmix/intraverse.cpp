@@ -317,30 +317,31 @@ extern "C" {
 			switch (t_class) {
 			case TO_AUX:
 			  t_count = Iptr->bus_config->auxout_count;
-			  endbus = Iptr->bus_config->auxout[t_count];
+			  endbus = Iptr->bus_config->auxout[t_count-1];
 			  break;
 			case AUX_TO_AUX:
 			  t_count = Iptr->bus_config->auxout_count;
-			  endbus = Iptr->bus_config->auxout[t_count];
+			  endbus = Iptr->bus_config->auxout[t_count-1];
 			  break;
 			case TO_AUX_AND_OUT:
 			  if (qStatus == TO_OUT) {
 				t_count = Iptr->bus_config->out_count;
-				endbus = Iptr->bus_config->out[t_count];			
+				endbus = Iptr->bus_config->out[t_count-1];			
 			  }
 			  else
 				endbus = 1000;  /* can never equal this */
 			  break;
 			case TO_OUT:
 			  t_count = Iptr->bus_config->out_count;
-			  endbus = Iptr->bus_config->out[t_count];
+			  endbus = Iptr->bus_config->out[t_count-1];
 			  break;
 			default:
 			  cout << "ERROR (intraverse): unknown bus_class\n";
 			  break;
 			}
-			if ((qStatus == t_class) && (bus == endbus) && (endsamp >= bufEndSamp))
+			if ((qStatus == t_class) && (bus == endbus)) {
 			  delete Iptr;
+			}
  		  }
 		  
 		  // DJT:  not sure this check before new chunkStart is necessary
@@ -356,7 +357,7 @@ extern "C" {
 		  cout << "Iteration done==========\n";
 #endif
 		}
-	  }
+	  }  // end aux_pb_done ========================================
 	  
 	  // Write buf to audio device -------------------------------------------
 #ifdef ALLBUG
