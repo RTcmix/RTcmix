@@ -21,10 +21,18 @@ public:
 	void clear();
 	void dump();
 
-	inline int getNoteOnVel(int chan, int pitch)
-						{ return _noteonvel[chan][pitch]; }
-	inline int getNoteOffVel(int chan, int pitch)
-						{ return _noteoffvel[chan][pitch]; }
+	// We store the last note on/off pitch and velocity values into an array
+	// for reference in a manner similar to that of controllers.  This is *not*
+	// for triggering new notes.
+	inline int getNoteOnPitch(int chan)
+						{ return _noteonpitch[chan]; }
+	inline int getNoteOnVel(int chan)
+						{ return _noteonvel[chan]; }
+	inline int getNoteOffPitch(int chan)
+						{ return _noteoffpitch[chan]; }
+	inline int getNoteOffVel(int chan)
+						{ return _noteoffvel[chan]; }
+
 	inline int getPolyPress(int chan, int pitch)
 						{ return _polypress[chan][pitch]; }
 	inline int getControl(int chan, int controlnum)
@@ -44,10 +52,15 @@ private:
 	inline PmStream *instream() { return _instream; }
 	inline PmStream *outstream() { return _outstream; }
 
-	inline void setNoteOnVel(int chan, int pitch, int val)
-						{ _noteonvel[chan][pitch] = val; }
-	inline void setNoteOffVel(int chan, int pitch, int val)
-						{ _noteoffvel[chan][pitch] = val; }
+	inline void setNoteOnPitch(int chan, int val)
+						{ _noteonpitch[chan] = val; }
+	inline void setNoteOnVel(int chan, int val)
+						{ _noteonvel[chan] = val; }
+	inline void setNoteOffPitch(int chan, int val)
+						{ _noteoffpitch[chan] = val; }
+	inline void setNoteOffVel(int chan, int val)
+						{ _noteoffvel[chan] = val; }
+
 	inline void setPolyPress(int chan, int pitch, int val)
 						{ _polypress[chan][pitch] = val; }
 	inline void setControl(int chan, int controlnum, int val)
@@ -68,13 +81,15 @@ private:
 	PmQueue *_MIDIToMain;
 	bool _active;
 
+	int _noteonpitch[16];
+	int _noteonvel[16];
+	int _noteoffpitch[16];
+	int _noteoffvel[16];
+	int _polypress[16][128];
+	int _control[16][128];
 	int _bend[16];
 	int _program[16];
 	int _chanpress[16];
-	int _noteonvel[16][128];
-	int _noteoffvel[16][128];
-	int _control[16][128];
-	int _polypress[16][128];
 };
 
 RTcmixMIDI *createMIDIPort();

@@ -114,12 +114,14 @@ int RTcmixMIDI::init()
 void RTcmixMIDI::clear()
 {
 	for (int chan = 0; chan < 16; chan++) {
+		_noteonpitch[chan] = INVALID_MIDIVAL;
+		_noteonvel[chan] = INVALID_MIDIVAL;
+		_noteoffpitch[chan] = INVALID_MIDIVAL;
+		_noteoffvel[chan] = INVALID_MIDIVAL;
 		_bend[chan] = INVALID_MIDIVAL;
 		_program[chan] = INVALID_MIDIVAL;
 		_chanpress[chan] = INVALID_MIDIVAL;
 		for (int i = 0; i < 128; i++) {
-			_noteonvel[chan][i] = INVALID_MIDIVAL;
-			_noteoffvel[chan][i] = INVALID_MIDIVAL;
 			_control[chan][i] = INVALID_MIDIVAL;
 			_polypress[chan][i] = INVALID_MIDIVAL;
 		}
@@ -148,12 +150,10 @@ void RTcmixMIDI::dump()
 		printf("   Bend:\t%s\n", getValueString(_bend[chan]));
 		printf("   Program:\t%s\n", getValueString(_program[chan]));
 		printf("   ChanPress:\t%s\n", getValueString(_chanpress[chan]));
-		printf("   NoteOnVel:\n");
-		for (int i = 0; i < 128; i++)
-			printf("      [%d]:\t%s\n", i, getValueString(_noteonvel[chan][i]));
-		printf("   NoteOffVel:\n");
-		for (int i = 0; i < 128; i++)
-			printf("      [%d]:\t%s\n", i, getValueString(_noteoffvel[chan][i]));
+		printf("   NoteOnPitch:\t%s\n", getValueString(_noteonpitch[chan]));
+		printf("   NoteOnVel:\t%s\n", getValueString(_noteonvel[chan]));
+		printf("   NoteOffPitch:\t%s\n", getValueString(_noteoffpitch[chan]));
+		printf("   NoteOffVel:\t%s\n", getValueString(_noteoffvel[chan]));
 		printf("   Control:\n");
 		for (int i = 0; i < 128; i++)
 			printf("      [%d]:\t%s\n", i, getValueString(_control[chan][i]));
@@ -223,10 +223,12 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 
 			switch (status & 0xF0) {
 				case kNoteOn:
-					obj->setNoteOnVel(chan, data1, data2);
+					obj->setNoteOnPitch(chan, data1);
+					obj->setNoteOnVel(chan, data2);
 					break;
 				case kNoteOff:
-					obj->setNoteOffVel(chan, data1, data2);
+					obj->setNoteOffPitch(chan, data1);
+					obj->setNoteOffVel(chan, data2);
 					break;
 				case kPolyPress:
 					obj->setPolyPress(chan, data1, data2);

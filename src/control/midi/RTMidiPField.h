@@ -10,8 +10,10 @@
 typedef enum {
 	kMIDIInvalidType = -1,
 	kMIDIControlType = 0,
-	kMIDINoteOnType,
-	kMIDINoteOffType,
+	kMIDINoteOnPitchType,
+	kMIDINoteOnVelType,
+	kMIDINoteOffPitchType,
+	kMIDINoteOffVelType,
 	kMIDIPitchBendType,
 	kMIDIProgramType,
 	kMIDIChanPressType,
@@ -21,8 +23,8 @@ typedef enum {
 typedef enum {
 	kMIDIInvalidSubType = -1,
 	// 0-127 reserved for literal note and controller number values
-	kMIDINoteSubType = 128,
-	kMIDIVelocitySubType,
+	kMIDINotePitchSubType = 128,
+	kMIDINoteVelSubType,
 } MIDISubType;
 
 class RTcmixMIDI;

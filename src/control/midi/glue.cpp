@@ -17,8 +17,10 @@
 static char *_midi_type_name[][NAME_VARIANTS] = {
 	// NB: Order of these must correspond to indices given by MIDIType enum!
 	{ "cntl", "control", NULL, NULL },
-	{ "noteon", NULL, NULL, NULL },
-	{ "noteoff", NULL, NULL, NULL },
+	{ "noteonpitch", "onpitch", NULL, NULL },
+	{ "noteonvel", "onvel", NULL, NULL },
+	{ "noteoffpitch", "offpitch", NULL, NULL },
+	{ "noteoffvel", "offvel", NULL, NULL },
 	{ "bend", "pitchbend", NULL, NULL },
 	{ "prog", "program", NULL, NULL },
 	{ "chanpress", "monopress", "at", "aftertouch" },
@@ -51,19 +53,14 @@ static char *_midi_controller_name[][NAME_VARIANTS] = {
 //
 //    <chan>      MIDI channel (1-16)
 //
-//    <type>      "noteon", "noteoff", "cntl", "prog", "bend", "chanpress",
-//                "polypress"
+//    <type>      "noteonpitch", "noteonvel", "noteoffpitch", "noteoffpitch"
+//                "cntl", "prog", "bend", "chanpress", "polypress"
 //
 //    <subtype>   depends on <type>:
-//                   noteon     "note", "velocity"
-//                   noteoff    "note", "velocity"
 //                   cntl       controller number or string symbol, such as
 //                              "mod", "foot", "breath", "data", "volume", "pan"
-//                   prog       not applicable
-//                   bend       not applicable
-//                   monopress  not applicable
 //                   polypress  MIDI note number
-//
+//                   [no subtypes for the other types]
 //
 
 static RTNumberPField *
@@ -103,12 +100,6 @@ _string_to_subtype(const MIDIType type, const char *subtype)
 					return (MIDISubType) i;
 			}
 		}
-	}
-	else if (type == kMIDINoteOnType || type == kMIDINoteOffType) {
-		if (strcmp(subtype, "note") == 0)
-			return kMIDINoteSubType;
-		else if (strncmp(subtype, "vel", 3) == 0)
-			return kMIDIVelocitySubType;
 	}
 	return kMIDIInvalidSubType;
 }
