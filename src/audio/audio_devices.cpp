@@ -17,7 +17,6 @@
 #include "AudioDevice.h"
 #include "AudioFileDevice.h"
 #include "AudioIODevice.h"
-#include "AudioOutputGroupDevice.h"
 #include "audio_devices.h"
 
 #ifdef NETAUDIO
@@ -144,10 +143,15 @@ int create_audio_file_device(const char *outfilename,
 	}
 	else {	// To file, plus record and/or playback.
 		if (play_audio && !record_audio) {	// Dual outputs to both HW and file.
-			printf("DEBUG: Dual device for file and HW playback\n");
-			globalAudioDevice = new AudioOutputGroupDevice(globalAudioDevice,
-														   fileDevice);
-			globalOutputFileDevice = NULL;
+			printf("DEBUG: Independent devices for file and HW playback\n");
+			// For this one, we need to leave the two globals for now, until
+			// I write a dual-output AudioDevice.
+			// Passive start takes NULL callback and context.
+			if (fileDevice->start(NULL, NULL) == -1) {
+				rterror("rtoutput", "Can't start file device: %s", 
+				 		fileDevice->getLastError());
+				return -1;
+			}
 		}
 		else if (record_audio && !play_audio) {	// Record from HW, write to file.
 			assert(globalAudioDevice != NULL);
