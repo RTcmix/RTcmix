@@ -45,10 +45,11 @@ REVERBIT  - a translation of Lansky's fast reverberator. Added low-pass filter
             amount of roominess.
 
 FREEVERB  - a version of the Freeverb reverberator written by "Jezar"
-            (http://www.dreampoint.co.uk/~jzracc/freeverb.htm).  Added
-            pre-delay and adapted to RTcmix.  This is a high quality
+            (http://www.dreampoint.co.uk/~jzracc/freeverb.htm).  I added
+            pre-delay and adapted it to RTcmix.  This is a high quality
             Schroeder reverb, since it has 8 combs and 4 allpass filters
-            for each output channel, and it's tuned well.
+            for each output channel, and it's tuned well.  This uses about
+            60-70% of the CPU time that REVERBIT does, for some reason.
 
 SROOM     - the old cmix implementation of F.R. Moore's stationary-source room
             simulation program. Not nearly as effective as place, but kind
