@@ -28,11 +28,11 @@ $(SETUP): $(SETUP).o $(OPTION_O) $(LIBCONF)
 hist: $(HISTOBJ) $(SYSOBJS)
 	$(CC) $(CFLAGS) -o hist $(HISTOBJ) $(SYSOBJS) $(SNDLIB) -lm
 
-cpspch: cpspchlookup.o $(GENLIB)
-	$(CC) $(CFLAGS) -o cpspch cpspchlookup.c ../genlib/cpspch.o -lm
+cpspch: cpspchlookup.o ../genlib/pitchconv.o
+	$(CC) $(CFLAGS) -o cpspch cpspchlookup.c ../genlib/pitchconv.o -lm
 
-pchcps: pchcpslookup.o $(GENLIB)
-	$(CC) $(CFLAGS) -o pchcps pchcpslookup.c ../genlib/pchcps.o ../genlib/octcps.o ../genlib/pchoct.o -lm
+pchcps: pchcpslookup.o ../genlib/pitchconv.o
+	$(CC) $(CFLAGS) -o pchcps pchcpslookup.c ../genlib/pitchconv.o -lm
 
 rescale: rescale.o $(SYSOBJS)
 	$(CC) $(CFLAGS) -o rescale rescale.o $(SYSOBJS) $(SNDLIB) -lm
