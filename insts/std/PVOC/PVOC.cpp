@@ -145,9 +145,13 @@ NewArray(int size)
 int PVOC::init(float *p, int n_args)
 {
 	if (!n_args || n_args < 9) {
-		die("LPCIN",
-		"p[0]=outskip, p[1]=inskip, p[2]=duration, p[3]=amp, p[4]=input_chan, p[5]=fft_size, p[6]=window_size, p[7]=decim, p[8]=interp, [ p[9]=pitch_mult ]\n");
+		die("PVOC",
+		"usage:\nPVOC(outskip, inskip, dur, amp, input_chan, fft_size, window_size, decim, interp, [ pitch_mult, npoles, osc threshold ])");
 	}
+	if (outputchans != 1) {
+		die("PVOC", "Output file must have 1 channel only");
+	}
+
 	float outskip = p[0];
 	float inskip = p[1];
 	float dur = p[2];
@@ -663,14 +667,23 @@ PVOC::oscbank(float C[], int N, float lpcoef[], int npoles,
 	 * control values
 	 */
 	for (int chan = npoles ? (int)P : 0; chan < NP; ++chan) {
-		int amp;
-		int freq = ( amp = ( chan << 1 ) ) + 1;
-		if (C[amp] < thresh) /* skip the little ones */
-			continue;
+		const int amp = ( chan << 1 );
+		const int freq = amp + 1;
+		// If this bin's amp is less than threshold, ramp to zero if prev
+		//	bin was active.
+		if (C[amp] < thresh) {
+			if (lastamp[chan] >= thresh) {
+				C[amp] = 0.0f;	// This will generate a fade-out on this chan
+			}
+			else {
+				lastamp[chan] = 0.0f;	// Already faded out. Skip it.
+				continue;
+			}
+		}
 		C[freq] *= Pinc;
 
-		register float a, f, finc;
-		finc = ( C[freq] - ( f = lastfreq[chan] ) ) * Iinv;
+		register float a, f;
+		register const float finc = ( C[freq] - ( f = lastfreq[chan] ) ) * Iinv;
 	/*
 	 * if linear prediction specified, REPLACE phase vocoder amplitude
 	 * measurements with linear prediction estimates
@@ -681,7 +694,7 @@ PVOC::oscbank(float C[], int N, float lpcoef[], int npoles,
 			else
 				C[amp] = ::lpamp( chan*ffac, lpcoef[0], lpcoef, npoles );
 		}
-		register float ainc = ( C[amp] - ( a = lastamp[chan] ) ) * Iinv;
+		register const float ainc = ( C[amp] - ( a = lastamp[chan] ) ) * Iinv;
 		register float address = index[chan];
 	/*
 	 * accumulate the I samples from each oscillator into
