@@ -1,3 +1,10 @@
+Thursday, May 4, 2000 John Gibson <johngibson@virginia.edu>
+
+   * Reduce memory overhead of TRANS. (TRANS.C)
+   * When reading off the end of a Minc array with get_array,
+     return the last array element instead of zero.
+     (minc_functions.c)
+
 Saturday, April 22, 2000 John Gibson <johngibson@virginia.edu>
 
    * Add prototypes for sound.c and minout.c functions to ugens.h
