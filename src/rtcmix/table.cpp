@@ -1624,32 +1624,45 @@ _maketable_usage()
       "\n    usage: table = maketable(type, [option, ] length, ...)\n");
 }
 
+typedef enum {
+   kNoInterp,
+   kInterpLinear,
+   kInterp2ndOrder
+} InterpType;
+
 Handle
 maketable(const Arg args[], const int nargs)
 {
-   int status, lenindex;
-   bool normalize = true;
-   double *data;
-   Handle handle;
-
-   if (nargs < 2) {
+   if (nargs < 3) {
       _maketable_usage();
       return NULL;
    }
-   if (args[1].isType(StringType)) {
-      if (args[1] == "nonorm")
+
+   bool normalize = true;
+   InterpType interp = kInterpLinear;
+
+   int lenindex = 1;             // following table type string w/ no options
+   for (int i = lenindex; i < nargs; i++) {
+      if (!args[i].isType(StringType))
+         break;
+      if (args[i] == "nonorm")
          normalize = false;
-      else if (args[1] == "norm")
+      else if (args[i] == "nointerp")
+         interp = kNoInterp;
+      else if (args[i] == "norm")
          normalize = true;
+      else if (args[i] == "interp")
+         interp = kInterpLinear;
+      else if (args[i] == "interp2")
+         interp = kInterp2ndOrder;
       else {
          die("maketable", "Invalid string option \"%s\".",
-                                                      (const char *) args[1]);
+                                                      (const char *) args[i]);
          return NULL;
       }
-      lenindex = 2;
+      lenindex++;
    }
-   else
-      lenindex = 1;
+
    if (!args[lenindex].isType(DoubleType)) {
       _maketable_usage();
       return NULL;
@@ -1667,17 +1680,21 @@ maketable(const Arg args[], const int nargs)
 
    // Allocate table array.  TablePField will own and delete this.
    
-   data = new double[len];
+   double *data = new double[len];
    if (data == NULL) {
       die("maketable", "Out of memory.");
       return NULL;
    }
 
-   status = _dispatch_table(args, nargs, lenindex + 1, &data, &len);
+   if (_dispatch_table(args, nargs, lenindex + 1, &data, &len) != 0) {
+      delete [] data;
+      return NULL;            // error message already given
+   }
 
    if (normalize)
       _normalize_table(data, len, 1.0);
 
+// FIXME: here is where we would use the interp value
    return _createPFieldHandle(new TablePField(data, len));
 }
 
