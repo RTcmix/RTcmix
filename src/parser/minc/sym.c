@@ -41,8 +41,11 @@ mnew(char *name)
    p = freelist;
    if (p)
       freelist = p->next;
-   else
+   else {
       p = (struct symbol *) emalloc(sizeof(struct symbol));
+      if (p == NULL)
+         return NULL;
+   }
    p->name = name;
 #ifdef NOTYET
    p->defined = p->offset = 0;
@@ -121,7 +124,11 @@ strsave(char *str)
       if (strcmp(str, p->str) == 0)
          return (p->str);
    p = (struct str *) emalloc(sizeof(struct str));
+   if (p == NULL)
+      return NULL;
    p->str = (char *) emalloc(strlen(str) + 1);
+   if (p->str == NULL)
+      return NULL;
    strcpy(p->str, str);
    p->next = stab[h];
    stab[h] = p;
@@ -217,10 +224,8 @@ emalloc(int nbytes)
    char *s;
 
    s = (char *) malloc(nbytes);
-   if (s == NULL) {
+   if (s == NULL)
       sys_error("system out of memory");
-      exit(1);
-   }
    return s;
 }
 
