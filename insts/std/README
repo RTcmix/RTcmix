@@ -1,3 +1,9 @@
+[Note: This note by Brad applies to an older version of RTcmix. Some
+of the details of Instrument operation have changed a little -- see
+docs/README.inst_porting, but it's still well worth reading this.
+                                                 -JGG, 18 May, 2000]
+
+
 This directory contains a bunch of CMIX and RTcmix instruments,
 all compiled and ready-to-roll.  I tried to make the p-fields
 for many of these instruments a bit more consistent, plus
