@@ -24,6 +24,7 @@
 #include <sndlibsupport.h>
 #include <AudioDevice.h>
 #include <audio_devices.h>
+#include "../src/rtcmix/Option.h"
 
 
 #define PROGNAME  "cmixplay"
@@ -36,14 +37,12 @@
 
 #ifdef LINUX
    #include <values.h>
-   #define DEFAULT_DEVICE_NAME "plughw"
    #define BUF_FRAMES          1024
    #define ROBUST_FACTOR       4
 #endif
 
 #ifdef MACOSX
    #include <limits.h>
-   #define DEFAULT_DEVICE_NAME NULL
    #define BUF_FRAMES          1024
    // 4 glitches ... why?   XXX: still true?
    #define ROBUST_FACTOR       2
@@ -1029,8 +1028,11 @@ main(int argc, char *argv[])
    if (argc < 2)
       usage();
 
+   Option::init();
+   Option::readConfigFile(Option::rcName());
+
    file_name = NULL;
-   device_name = DEFAULT_DEVICE_NAME;
+   device_name = Option::device();
    quiet = robust = force = autopause = false;
    play_chan = ALL_CHANS;
    hotkeys = true;
@@ -1105,6 +1107,9 @@ main(int argc, char *argv[])
    }
 
    // input validation
+
+   if (strlen(device_name) == 0)
+      device_name = NULL;
 
    if (file_name == NULL) {
       fprintf(stderr, "You didn't give a valid filename.\n");

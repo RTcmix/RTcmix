@@ -16,7 +16,8 @@ INCLUDES += -I$(AUDIODIR) -I$(SRCDIR)/sndlib -I$(SRCDIR)/rtcmix
 all: $(PROGS) head resample
 
 $(PLAY): $(PLAY).o $(AUDIOLIB) $(SNDLIB)
-	$(CXX) $(CXXFLAGS) -o $(PLAY) $(PLAY).o $(AUDIOLIB) $(SNDLIB) $(SYS_LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o $(PLAY) $(PLAY).o $(OPTION_O) $(AUDIOLIB) $(SNDLIB) \
+		$(LIBCONF) $(SYS_LDFLAGS)
 
 $(PLAY).o: $(PLAY).cpp $(PLAY_HDRS)
 	$(CXX) $(CXXFLAGS) $(SOUND_DRIVER) -c $< -o $@
