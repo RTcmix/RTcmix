@@ -1,13 +1,16 @@
 #include "../H/sfheader.h"
 #include <stdio.h>
+#include <string.h>
 #include <sys/file.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <sys/stat.h>
 #include <signal.h>
 #include <errno.h>
 #ifdef USE_SNDLIB
-#include "../H/sfheader.h"
+#include <sndlibsupport.h>
 #endif
+
 
 void
 sfstats(int fd)
@@ -51,7 +54,8 @@ sfstats(int fd)
  		}
 #endif /* !USE_SNDLIB */
 
-	if (cp = getsfcode(&sfh,SF_MAXAMP)) { 
+	cp = getsfcode(&sfh,SF_MAXAMP);
+	if (cp) { 
 		bcopy(cp + sizeof(SFCODE), (char *) &sfm, sizeof(SFMAXAMP));
 		printf("\nMAXAMP structure found, containing:\n");
 		printf("\tchannel #\tmaxamp\tsample #\n");
@@ -59,8 +63,9 @@ sfstats(int fd)
 			printf("\t %d\t %f\t %ld\n\n",n,sfmaxamp(&sfm,n),sfmaxamploc(&sfm,n));
 			}
 		}
-	if (cp = getsfcode(&sfh,SF_COMMENT)) {
-	    	bcopy(cp + sizeof(SFCODE), (char *) &sfcm, ((SFCODE *)cp)->bsize);
+	cp = getsfcode(&sfh,SF_COMMENT);
+	if (cp) {
+		bcopy(cp + sizeof(SFCODE), (char *) &sfcm, ((SFCODE *)cp)->bsize);
 		printf("\nSFCOMMENT structure found, containing:\n");
 		printf("  %s\n\n",&sfcomm(&sfcm,0));
 		}

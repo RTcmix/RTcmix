@@ -4,6 +4,7 @@
 #include "../H/ugens.h"
 #include "../H/sfheader.h"
 #include <stdio.h>
+#include <unistd.h>
 
 /* these are all defined in sound.c */
 extern int  sfd[NFILES];            /* soundfile descriptors */
@@ -12,8 +13,9 @@ extern long  filepointer[NFILES];   /* to save current pointer in file */
 extern int   nbytes;
 extern SFHEADER      sfdesc[NFILES];
 
-sfcopy(p,n_args)
-float *p;
+
+double
+sfcopy(float p[], int n_args)
 {
 	int maxread,n,input,output,bytes,jj;
 
@@ -39,7 +41,7 @@ float *p;
 		maxread = (bytes > nbytes) ? nbytes : bytes;
 		if((n = read(sfd[input],sndbuf[input],maxread)) <= 0) {
 			fprintf(stderr,"Apparent eof on input\n");
-			return;
+			return -1.0;
 		}
 		if((jj = write(sfd[output],sndbuf[input],n)) <= 0) {
 			fprintf(stderr,"Trouble writing output file\n");
@@ -54,4 +56,7 @@ float *p;
 		closesf();
 	}
 	fprintf(stderr,"Copy completed\n");
+
+	return 0.0;
 }
+
