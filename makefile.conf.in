@@ -4,7 +4,7 @@
 TOPDIR = /usr/local/src
 
 # The name of the RTcmix directory
-CMIXDIR = $(TOPDIR)/RTcmix-3.9
+CMIXDIR = $(TOPDIR)/RTcmix-4.0
 
 # The dir that will contain the instrument dynamic shared objects
 LIBDESTDIR = $(CMIXDIR)/shlib
@@ -72,20 +72,6 @@ AUDIODRIVER=OSS
 
 SOUND_DRIVER = -D$(AUDIODRIVER)
 
-# Uncomment if your sound driver uses the same device file for input and
-# output. This is true if you have a Creative/Ensoniq AudioPCI, or similar
-# consumer card.
-#SOUND_DRIVER += -DSHARED_AUDIO_DEV
-
-# Uncomment if your sound driver uses multiple mono devices.
-#SOUND_DRIVER += -DMONO_DEVICES
-
-# Uncomment if your sound card always needs to use its maximum number of
-# channels, even when you request fewer (in rtsetparams).
-# NOTE: This seems to be broken right now.  Leave it commented out.
-#SOUND_DRIVER += -DUSE_CARD_CHANS
-
-
 ###############################################################
 # Shouldn't need to edit below this line
 ###############################################################
@@ -93,11 +79,26 @@ SOUND_DRIVER = -D$(AUDIODRIVER)
 LIBDIR = $(CMIXDIR)/lib
 DESTDIR = $(CMIXDIR)/bin
 BINDIR = $(DESTDIR)
+INCLUDEDIR = $(CMIXDIR)/include
+
+SRCDIR = $(CMIXDIR)/src
+AUDIODIR = $(SRCDIR)/audio
+CONFDIR = $(SRCDIR)/conf
+PARSERDIR = $(SRCDIR)/parser
+MINCDIR = $(PARSERDIR)/minc
+PERLDIR = $(PARSERDIR)/perl
+
+# For temporary use in linking MIX instrument in
+MIXDIR = insts/base/MIX
+
+MINCLIB = $(MINCDIR)/libminc.a
+SNDLIB = $(SRCDIR)/sndlib/sndlib.a
+AUDIOLIB = $(AUDIODIR)/librtaudio.a
 
 # Compile and link time flags
 
 ifeq ($(ARCH),LINUX)
-  ARCHFLAGS = -D_REENTRANT -DLINUX -DRTUPDATE
+  ARCHFLAGS = -D_REENTRANT -DLINUX #-DRTUPDATE
   CC = gcc 
   CXX = g++ 
   LD = ld
@@ -135,7 +136,7 @@ ifeq ($(ARCH),FREEBSD)
   SHELL = /bin/sh
 endif
 
-INCLUDES = -I$(CMIXDIR)/H
+INCLUDES = -I. -I$(CMIXDIR)/include
 
 ifeq ($(NPLAY_SUPPORT), TRUE)
 CMIX_FLAGS += -DNETAUDIO
@@ -149,7 +150,6 @@ CXXFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
 
 # Library flags
 
-SNDLIB = ../sndlib/sndlib.a
 
 ifeq ($(ARCH),LINUX)
 	ifeq ($(AUDIODRIVER),ALSA)
@@ -181,21 +181,22 @@ ifeq ($(ARCH),FREEBSD)
 endif
 
 # For benefit of inst makefiles that live outside CMIXDIR hierarchy
-UGENS_H = $(CMIXDIR)/H/ugens.h
+UGENS_H = $(CMIXDIR)/include/ugens.h
 
 # for rt insts
-INSTRUMENT_H = $(CMIXDIR)/rtstuff/Instrument.h
-PROFILE_O = $(CMIXDIR)/rtstuff/profile.o
+INSTRUMENT_H = $(CMIXDIR)/include/Instrument.h
+PROFILE_O = $(CMIXDIR)/src/rtcmix/profile.o
 
 # for disk-based insts
-RTPROFILE_O = $(CMIXDIR)/rtstuff/rtprofile.o
+RTPROFILE_O = $(CMIXDIR)/src/rtcmix/rtprofile.o
 
-GENLIB = $(LIBDIR)/genlib.a
-CMIX_O = $(CMIXDIR)/sys/cmix.o
-M_O = $(CMIXDIR)/Minc/m.o
-IMB_RTCMIX_O = $(CMIXDIR)/Minc/imbRTcmix.o
-P_O = $(CMIXDIR)/Minc/p.o
-PY_O = $(CMIXDIR)/Minc/py.o
+GENLIB = $(LIBDIR)/librtcmix.a $(LIBDIR)/libgen.a $(MINCLIB) \
+		 $(CONFDIR)/libconf.a $(AUDIOLIB) $(SNDLIB)
+CMIX_O = $(LIBDIR)/main.o
+M_O =  $(PARSERDIR)/parse_with_minc.o
+IMB_RTCMIX_O = #$(CMIXDIR)/Minc/imbRTcmix.o
+P_O =  $(PARSERDIR)/parse_with_perl.o
+PY_O = #$(CMIXDIR)/Minc/py.o
 
 CMIXOBJS = $(CMIX_O) $(M_O) $(GENLIB)
 IMBCMIXOBJS = $(CMIX_O) $(IMB_RTCMIX_O) $(GENLIB)
