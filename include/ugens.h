@@ -81,10 +81,17 @@ extern int (*bwipeoutpointer[NFILES])();
 /* declarations of units */
 
 typedef enum {
+   NO_INTERP = 0,
+   LINEAR_INTERP
+} InterpolationType;
+float *resample_gen(float [], int, int, InterpolationType);
+
+typedef enum {
    ADD_GENS,
    MULT_GENS
 } GenModType;
 int combine_gens(int, int, int, int, GenModType, char *);
+int install_gen(int, int, float *);
 double makegen(float [], int, double []);
 float *floc(int);
 int fsize(int);

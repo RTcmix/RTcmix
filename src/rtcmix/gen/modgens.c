@@ -53,6 +53,47 @@ m_multgens(float p[], int n_args, double pp[])
 }
 
 
+/* -------------------------------------------------------------- copygen --- */
+/* Make a copy of the gen whose table number is given in p1.  Assign the
+   copy the table number given in p0.  The copied table will have the size
+   given in p2.  p3 is a number specifying the type of interpolation to use
+   when resampling the source table to fit the new number of locations.
+   Return the size of the new table.
+
+      p0    table number of new table
+      p1    table number of original table
+      p2    size of new table
+      p3    interpolation type (0: no interpolation, 1: linear interpolation)
+               [optional, default is 1]
+*/
+double
+m_copygen(float p[], int n_args, double pp[])
+{
+   int   srcslot, destslot, srcsize, destsize;
+   float *srctable, *desttable;
+   InterpolationType interp;
+
+   destslot = (int) p[0];
+   srcslot = (int) p[1];
+   srctable = floc(srcslot);
+   if (srctable == NULL)
+      die("copygen", "No function table defined for slot %d.", srcslot);
+   srcsize = fsize(srcslot);
+
+   destsize = (int) p[2];
+   interp = (n_args > 3) ? (InterpolationType) p[3] : LINEAR_INTERP;
+
+   desttable = resample_gen(srctable, srcsize, destsize, interp);
+   if (desttable == NULL)
+      die("copygen", "No memory to copy the gen in slot %d.", srcslot);
+
+   if (!install_gen(destslot, destsize, desttable))
+      die("copygen", "No more function tables available.");
+
+   return (double) destsize;
+}
+
+
 /* ------------------------------------------------------------ offsetgen --- */
 /* Add a constant, given in p1, to the values of the gen whose table number
    is given in p0.  Note that no rescaling of the resulting table is done,
@@ -176,7 +217,7 @@ m_reversegen(float p[], int n_args, double pp[])
 double
 m_rotategen(float p[], int n_args, double pp[])
 {
-   int      i, j, slot, size, rotate, absrotate;
+   int      slot, size, rotate, absrotate;
    size_t   movesize;
    float    *table, *scratch;
 
@@ -197,14 +238,6 @@ m_rotategen(float p[], int n_args, double pp[])
    scratch = (float *) malloc((size_t)(absrotate * sizeof(float)));
    if (scratch == NULL)
       die("rotategen", "No memory for scratch buffer!");
-
-/*
-   j = (rotate > 0) ? size - rotate : 0;
-   for (i = 0; i < absrotate; i++, j++) {
-      scratch[i] = table[j];
-printf("scratch[%d]: %f\n", i, scratch[i]);
-   }
-*/
 
    /* an example of what should happen...
       [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]      src table, size = 10

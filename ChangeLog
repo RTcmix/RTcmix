@@ -1,25 +1,30 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Friday, November 29, 2002 John Gibson <johgibso-at-indiana.edu>
+
+   * Added copygen function and reorganizied makegen code somewhat.
+
 Wednesday, November 20, 2002 Douglas Scott <netdscott-at-netscape.net>
+
    * Added auto-stablize command to LPCPLAY to allow stabilizing of
-	interpolated lpc frames in real time.
+     interpolated lpc frames in real time.
    * Updated MOVE and PLACE programs to fix old reverb problems.
 
-Sunday, November 17, 2002 John Gibson <johgibso@indiana.edu>
+Sunday, November 17, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * Added several makegen table processing functions: offsetgen,
      scalegen, invertgen, reversegen, rotategen.
 
-Friday, November 8, 2002 John Gibson <johgibso@indiana.edu>
+Friday, November 8, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * cmixplay lets you use a rescale factor for integer files.
 
-Sunday, October 20, 2002 John Gibson <johgibso@indiana.edu>
+Sunday, October 20, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * denoise now can process less than the entire input file.
 
-Sunday, September 22, 2002 John Gibson <johgibso@indiana.edu>
+Sunday, September 22, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * sfprint now also prints duration in minutes:seconds format.
    * cmixplay now lets you rewind and fast-forward while playing,
@@ -29,7 +34,7 @@ Sunday, September 22, 2002 John Gibson <johgibso@indiana.edu>
 
 **** Released RTcmix-3.2, Thursday, Aug 29, 2002 ****
 
-Wednesday, August 28, 2002 John Gibson <johgibso@indiana.edu>
+Wednesday, August 28, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * Added preliminary documentation system in docs/pod.  See
      "__README__" in that directory.
@@ -44,21 +49,21 @@ Thursday, August 22, 2002 Douglas Scott <netdscott-at-netscape.net>
    * Minc now ignores text on a line that follows '#' or '//'
      (i.e., shell or C++ style comments).
 
-Friday, August 9, 2002 John Gibson <johgibso@indiana.edu>
+Friday, August 9, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * PCMIX (the Perl front end to RTcmix) can now recognize functions
      stored outside of the RTcmix source tree.  This improvement
      courtesy of Doug Scott.
 
-Friday, June 14, 2002 John Gibson <johgibso@indiana.edu>
+Friday, June 14, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * cmixplay now handles times in 0:00.0 format, in addition to raw seconds.
 
-Monday, June 10, 2002 John Gibson <johgibso@indiana.edu>
+Monday, June 10, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * New instrument: VOCODE2
 
-Wednesday, May 22, 2002 John Gibson <johgibso@indiana.edu>
+Wednesday, May 22, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * New instrument: MOOGVCF, based on work by Stilson, Smith and Kellett.
 
@@ -69,11 +74,11 @@ Sunday, May 19, 2002 Doug Scott <netdscott-at-netscape.net>
      these changes into source where needed.  Made all sys/rtset** functions
      into static Instrument methods because they modify private state.
 
-Saturday, Mar 30, 2002 John Gibson <johgibso@indiana.edu>
+Saturday, Mar 30, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * Support for FreeBSD, contributed by Carl McTague and Judd Storrs.
 
-Monday, Mar 18, 2002 John Gibson <johgibso@indiana.edu>
+Monday, Mar 18, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * Fix pvoc bug: transposing would fail for pvoc calls after
      the first in a script.
@@ -84,22 +89,22 @@ Saturday, Mar 16, 2002 Doug Scott <netdscott-at-netscape.net>
      state, new block-add method, rtbaddout.
    * Added first version of LPCPLAY instrument (with more revisions to follow)
 
-Thursday, Mar 7, 2002 John Gibson <johgibso@indiana.edu>
+Thursday, Mar 7, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * Fix horrible memory leak, introduced while adding support for MacOS X.
 
-Thursday, Feb 14, 2002 John Gibson <johgibso@indiana.edu>
+Thursday, Feb 14, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * Fix bug: convolve would hang if the impulse response file was mono.
 
-Wednesday, Feb 13, 2002 John Gibson <johgibso@indiana.edu>
+Wednesday, Feb 13, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * Let fdump write to a file, optionally.
      fdump(gennum, "filename") writes makegen <gennum> to an ASCII file.
      Each line is an array index followed by the value at that location.
      This is for debugging of makegens.
 
-Sunday, Jan 27, 2002 John Gibson <johgibso@indiana.edu>
+Sunday, Jan 27, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * Fix compilation problem with Perl and Python extensions.  They
      weren't happy if CMIXDIR in makefile.conf was a symbolic link.
@@ -119,7 +124,7 @@ Monday, Jan 21, 2002 Dave Topper <topper@virginia.edu>
      NOTE: Only the instruments in the insts.vccm package work with this
      feature currently.  Also, this feature does not yet work under Mac OS X.
 
-Tuesday, Jan 1, 2002 John Gibson <johgibso@indiana.edu>
+Tuesday, Jan 1, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * Support for audio input under MacOS X.
    * Support for fplot calls to gnuplot under MacOS X.  (See INSTALL
@@ -127,7 +132,7 @@ Tuesday, Jan 1, 2002 John Gibson <johgibso@indiana.edu>
    * New instruments - SHAPE (waveshape an input) and DECIMATE (reduce
       sampling resolution of input)
 
-Saturday, Dec 5, 2001 John Gibson <johgibso@indiana.edu>
+Saturday, Dec 5, 2001 John Gibson <johgibso-at-indiana.edu>
 
    * Support for MacOS X 10.1 (output only).  Thanks to Christopher
      Penrose for his help with this.
@@ -139,7 +144,7 @@ Saturday, Dec 5, 2001 John Gibson <johgibso@indiana.edu>
      of each segment.
    * Optional arguments to gen20 to set min and max.
 
-Saturday, Aug 4, 2001 John Gibson <johgibso@indiana.edu>
+Saturday, Aug 4, 2001 John Gibson <johgibso-at-indiana.edu>
 
    * Update to more recent version of sndlib, with lots
      of reorganization of sound file code.

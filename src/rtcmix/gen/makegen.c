@@ -40,6 +40,30 @@ int sizeof_farray[TOTGENS];
 int f_goto[MAXGENS];   /* this is used to guarantee unique farrays in rtcmix */
 
 
+/* ---------------------------------------------------------- install_gen --- */
+/* Install <table>, of <size> elements, into the cmix function table list
+   as the user-visible table number <slot>.  Return 1 if okay, or 0 if the
+   function table list is full.
+
+   NOTE: makegen creates a new function for *every* call to it.  This is so
+   that we can guarantee the correct version of a given function at run-time
+   during RT operation.  The f_goto[] array keeps track of where to map a
+   particular function table number during the queueing of RT Instruments.
+*/
+int
+install_gen(int slot, int size, float *table)
+{
+   int index = ngens;
+   if (index >= TOTGENS)
+      return 0;
+   f_goto[slot] = index;
+   sizeof_farray[index] = size;
+   farrays[index] = table;
+   ngens++;       /* for next time */
+   return 1;
+}
+
+
 /* -------------------------------------------------------------- makegen --- */
 /* p0=storage loc, p1=gen no, p2=size, p3--> = args */
 double
@@ -47,40 +71,30 @@ makegen(float p[], int n_args, double pp[])
 {
    int    genslot, genno;
    double retval = -1.0;
+   float  *table = NULL;
    struct gen gen;
 
    genslot = (int) p[0];
    genno = (int) p[1];
+   gen.size = (int) p[2];
 
    if (genslot < 0)
       genslot = -genslot;
    if (genslot >= MAXGENS)
-      die("makegen", "no more simultaneous gens available!");
+      die("makegen", "No more simultaneous function tables available!");
 
-   /* makegen now creates a new function for *every* call to it - this
-      is so that we can guarantee the correct version of a given function
-      at run-time during RT operation.  the f_goto[] array keeps track
-      of where to map a particular function table number during the
-      queueing of RT Instruments
-   */
-   f_goto[genslot] = ngens;
-
-   gen.size = p[2];
-
-// FIXME: Should we really be using valloc here?  -JGG
    if (genno != 1) {    /* gen1 must allocate its own memory */
-      float *block = (float *) valloc((unsigned) gen.size * FLOAT);
-      if (block == NULL)
+      table = (float *) malloc((size_t) gen.size * sizeof(float));
+      if (table == NULL)
          die("makegen", "Not enough memory for function table %d.", genslot);
-      farrays[f_goto[genslot]] = block;
    }
-   ngens++;
 
-   sizeof_farray[f_goto[genslot]] = p[2];
+   if (!install_gen(genslot, gen.size, table))
+      die("makegen", "No more function tables available!");
 
    gen.nargs = n_args - 3;
    gen.pvals = p + 3;
-   gen.array = farrays[f_goto[genslot]];
+   gen.array = table;
    gen.slot = (int) p[0];   /* get from pfield, to preserve negative "flag" */
 
    switch (genno) {
@@ -137,20 +151,81 @@ makegen(float p[], int n_args, double pp[])
          }
          break;
       default:
-         die("makegen", "There is no gen%d.", (int) p[1]);
+         die("makegen", "There is no gen%d.", genno);
    }
 
    return retval;
 }
 
 
+/* --------------------------------------------------------- resample_gen --- */
+/* Given a function table of a certain size <cursize>, allocate and return
+   a new table of size <newsize>, filled with values resampled from the old
+   table using the kind of interpolation specified by <interp>.  If the two
+   sizes are equivalent, merely make a straight copy of the table.  Return
+   NULL if memory allocation error.  (JGG, 11/29/02)
+*/
+float *
+resample_gen(float table[], int cursize, int newsize, InterpolationType interp)
+{
+   int   i;
+   float *newtable;
+
+   assert(interp == NO_INTERP || interp == LINEAR_INTERP);
+
+   newtable = (float *) malloc((size_t) newsize * sizeof(float));
+   if (newtable == NULL)
+      return NULL;
+
+   if (newsize == cursize) {
+      for (i = 0; i < newsize; i++)
+         newtable[i] = table[i];
+   }
+   else {
+      float incr = (float) cursize / (float) newsize;
+
+      if (interp == NO_INTERP) {
+         float f = 0.0;
+         for (i = 0; i < newsize; i++) {
+            int n = (int) f;
+            newtable[i] = table[n];
+            f += incr;
+         }
+      }
+      else if (interp == LINEAR_INTERP) {
+         float frac, next, diff = 0.0;
+
+         float f = 0.0;
+         for (i = 0; i < newsize; i++) {
+            int n = (int) f;
+            frac = f - (float) n;
+            if (frac) {
+               next = (n + 1 < cursize) ? table[n + 1] : table[cursize - 1];
+               diff = next - table[n];
+            }
+            newtable[i] = table[n] + (diff * frac);
+            f += incr;
+         }
+      }
+   }
+   return newtable;
+}
+
+
 /* --------------------------------------------------------- combine_gens --- */
+/* Given two function tables occupying the gen locations <srcslot1> and
+   <srcslot2>, allocate a new table, to occupy <destslot>, filled with a
+   combination of corresponding elements from the source tables.  The
+   type of combination is specified by <modtype>, currently addition
+   or multiplication.  The new table has the same size as the larger
+   of the two source tables, and this size is returned.
+*/
 int
 combine_gens(int destslot, int srcslot1, int srcslot2, int normalize,
                                     GenModType modtype, char *funcname)
 {
    int      i;
-   int      destindex, srcindex1, srcindex2;
+   int      srcindex1, srcindex2;
    int      destsize, srcsize1, srcsize2;
    float    *destarray, *srcarray1, *srcarray2, *tmparray = NULL;
 
@@ -178,11 +253,11 @@ combine_gens(int destslot, int srcslot1, int srcslot2, int normalize,
    srcarray2 = farrays[srcindex2];
 
    /* If necessary, resample shorter table so that it uses same number of
-      slots as the longer table.  (Code came from objlib/NZero.C.)
+      slots as the longer table.
    */
    if (srcsize1 != srcsize2) {
       int   oldsize;
-      float *oldarray, incr, f, frac, next, diff = 0.0;
+      float *oldarray;
 
       if (srcsize1 > srcsize2) {
          destsize = srcsize1;
@@ -194,22 +269,9 @@ combine_gens(int destslot, int srcslot1, int srcslot2, int normalize,
          oldsize = srcsize1;
          oldarray = srcarray1;
       }
-      tmparray = (float *) malloc((size_t) destsize * sizeof(float));
+      tmparray = resample_gen(oldarray, oldsize, destsize, LINEAR_INTERP);
       if (tmparray == NULL)
          die(funcname, "Not enough memory for temporary function table.");
-
-      incr = (float) oldsize / (float) destsize;
-      f = 0.0;
-      for (i = 0; i < destsize; i++) {
-         int n = (int) f;
-         frac = f - (float) n;
-         if (frac) {
-            next = (n + 1 < oldsize) ? oldarray[n + 1] : oldarray[oldsize - 1];
-            diff = next - oldarray[n];
-         }
-         tmparray[i] = oldarray[n] + (diff * frac);
-         f += incr;
-      }
 
       if (srcsize1 > srcsize2)
          srcarray2 = tmparray;
@@ -223,11 +285,8 @@ combine_gens(int destslot, int srcslot1, int srcslot2, int normalize,
    if (destarray == NULL)
       die(funcname, "Not enough memory for new function table.");
 
-   /* Fix bookkeeping vars. */
-   destindex = ngens++;
-   f_goto[destslot] = destindex;
-   sizeof_farray[destindex] = destsize;
-   farrays[destindex] = destarray;
+   if (!install_gen(destslot, destsize, destarray))
+      die(funcname, "No more function tables available.");
 
    /* Fill destination array. */
    switch (modtype) {
