@@ -280,7 +280,7 @@ int JGRAN :: run()
 
       if (--gsampcount < 0) {                   /* updates at each grain */
 
-         /* set starting phase of carrier grain envelope oscillators */
+         /* set starting phase of carrier and grain envelope oscillators */
          if (randomize_phase)
             car_oscil->setPhase(ranphase);
          grainenv_oscil->setPhase(0.0);
