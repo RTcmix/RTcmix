@@ -79,11 +79,13 @@ protected:
 	double delin;
    	double Rand_info[6];
 	double *Rvb_del;
+	int deltap;
 	double Rvb_air[3];
 	double delout;
    };
    ReverbData m_rvbData[2][6];
    double Allpass_del[2][502];
+   int allpassTap[2];
    // static data
    static int    primes[NPRIMES + 2];
    static int primes_gotten;
