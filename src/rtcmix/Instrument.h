@@ -31,7 +31,6 @@ public:
 
    int            mytag;           // for note tagging/rtupdate() 
 
-protected:
    BUFTYPE        *inbuf;          // private interleaved buffers
    BUFTYPE        *outbuf;
 
