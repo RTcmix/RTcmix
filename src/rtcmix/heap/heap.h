@@ -65,6 +65,7 @@ class rtQElt {
   rtQElt *next;
   rtQElt *prev;
   Instrument *Inst;
+  unsigned long chunkstart;
 };
 
 // class for main queue structure
@@ -76,7 +77,7 @@ private:
   int size;
 public:
   rtQueue();
-  void push(Instrument*);
+  void push(Instrument*, unsigned long);
   Instrument *pop();
   int nextChunk();
   int getSize();
