@@ -50,8 +50,17 @@ void gen2(register struct gen *gen)
    int i;
 
    if (gen->nargs > 1) {        /* new way */
-      for (i = 0; i < gen->nargs; i++)
+      int slots;
+
+      /* gen->size is size of array */
+      if (gen->size < gen->nargs)
+         slots = gen->size;
+      else
+         slots = gen->nargs;
+
+      for (i = 0; i < slots; i++)
          gen->array[i] = gen->pvals[i];
+
       while (i < gen->size)     /* fill remainder (if any) with zeros */
          gen->array[i++] = 0.0;
    }
