@@ -46,7 +46,10 @@ RTMousePField::RTMousePField(
 	_filter->setlag(lag);
 }
 
-RTMousePField::~RTMousePField() {}
+RTMousePField::~RTMousePField()
+{
+	delete _filter;
+}
 
 double RTMousePField::doubleValue(double dummy) const
 {
