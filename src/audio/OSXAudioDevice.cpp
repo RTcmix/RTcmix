@@ -108,13 +108,14 @@ OSXAudioDevice::Impl::Port::interleavedGetFrames(struct Port *port,
 				outLoc += 2;
 			}
 		}
-		else
-//			return error("Only stereo-to-mono record conversion is currently supported");
+		else {
+			printf("Only stereo-to-mono record interleaved conversion is currently supported\n");
 			return -1;
+		}
 		break;
 
 	default:
-		if (bufChannels == frameChans) {
+		{
 #if DEBUG > 0
 			printf("Copying %d-channel interleaved buf into user frame\n", bufChannels);
 #endif
@@ -124,16 +125,11 @@ OSXAudioDevice::Impl::Port::interleavedGetFrames(struct Port *port,
 			for (int out=0; out < frameCount; ++out) {
 				if (outLoc >= bufLen)
 					outLoc -= bufLen;	// wrap
-				for (int ch = 0; ch < frameChans; ++ch) {
+				for (int ch = 0; ch < bufChannels; ++ch) {
 					outbuf[ch] = from[outLoc++];	
 				}
 				outbuf += frameChans;
 			}
-		}
-		else {
-	//		return error("Channel count conversion not supported for record");
-			printf("Channel count conversion not supported for record\n");
-			return -1;
 		}
 		break;
 	}
@@ -181,32 +177,28 @@ OSXAudioDevice::Impl::Port::interleavedSendFrames(struct Port *port,
 			}
 		}
 		else {
-			printf("Only mono-to-stereo playback conversion is currently supported\n");
+			printf("Only mono-to-stereo interleaved playback conversion is currently supported\n");
 			return -1;
 		}
 		break;
 
-	default:		// 2-N channel input to 2-N channel circ. buffer; HW 2-N channels.
-		if (bufChannels == frameChans) {
+	default:	// 2-N chan input to 2-N channel circ. buffer; HW 2-N chans.
+		{
 #if DEBUG > 0
-			printf("Copying %d-channel user frame into buf\n", frameChans);
+			printf("Copying user frame into %d-channel interleaved buf\n",
+				   bufChannels);
 #endif
 			float *from = (float *) frameBuffer;
 			// Write all channels of each frame from frame into circular buf.
 			for (int in=0; in < frameCount; ++in) {
 				if (inLoc >= bufLen)
 					inLoc -= bufLen;	// wrap
-				for (int ch = 0; ch < frameChans; ++ch) {
+				for (int ch = 0; ch < bufChannels; ++ch) {
 					outbuf[inLoc+ch] = (float) from[ch];	
 				}
-				from += frameChans;
+				from += bufChannels;
 				inLoc += bufChannels;
 			}
-		}
-		else {
-//			return error("Channel count conversion not supported for playback");
-			printf("Channel count conversion not supported for playback\n");
-			return -1;
 		}
 		break;
 	}
@@ -235,30 +227,23 @@ OSXAudioDevice::Impl::Port::noninterleavedGetFrames(struct Port *port,
 #endif
 	assert(frameCount <= port->audioBufFilled);
 
-	if (bufChannels == frameChans) {
 #if DEBUG > 0
-		printf("Copying %d non-interleaved internal bufs into user frame\n",
-			   bufChannels);
+	printf("Copying %d non-interleaved internal bufs into user frame\n",
+		   bufChannels);
 #endif
-		assert(port->streamCount == frameChans);
-		for (int stream = 0; stream < port->streamCount; ++stream) {
-			outLoc = port->outLoc;
-			const int strIdx = stream + port->streamIndex;
-			// Offset into serially-ordered, multi-channel non-interleaved buf.
-			register float *from = &port->audioBuffer[stream * bufFrames];
-			float *outbuf = fFrameBuffer[stream];
-			// Write each monaural frame from circ. buffer into a non-interleaved output frame.
-			for (int out=0; out < frameCount; ++out) {
-				if (outLoc >= bufFrames)
-					outLoc -= bufFrames;	// wrap
-				outbuf[out] = from[outLoc++];	
-			}
+	assert(port->streamCount == frameChans);
+	for (int stream = 0; stream < port->streamCount; ++stream) {
+		outLoc = port->outLoc;
+		const int strIdx = stream + port->streamIndex;
+		// Offset into serially-ordered, multi-channel non-interleaved buf.
+		register float *from = &port->audioBuffer[stream * bufFrames];
+		float *outbuf = fFrameBuffer[stream];
+		// Write each monaural frame from circ. buffer into a non-interleaved output frame.
+		for (int out=0; out < frameCount; ++out) {
+			if (outLoc >= bufFrames)
+				outLoc -= bufFrames;	// wrap
+			outbuf[out] = from[outLoc++];	
 		}
-	}
-	else {
-	//	return error("Channel count conversion not supported for record");
-		printf("Channel count conversion not supported for record\n");
-		return -1;
 	}
 	port->outLoc = outLoc;
 	port->audioBufFilled -= frameCount;
@@ -284,28 +269,21 @@ OSXAudioDevice::Impl::Port::noninterleavedSendFrames(struct Port *port,
 #if DEBUG > 1
 	printf("OSXAudioDevice::doSendFrames: frameCount = %d, PLAY filled = %d\n", frameCount, port->audioBufFilled);
 #endif
-	if (bufChannels == frameChans) {
 #if DEBUG > 0
-		printf("Copying %d-chan non-interleaved user frame into internal bufs\n", frameChans);
+	printf("Copying user frame into %d non-interleaved internal bufs\n",
+			bufChannels);
 #endif
-		assert(port->streamCount == frameChans);
-		for (int stream = 0; stream < port->streamCount; ++stream) {
-			inLoc = port->inLoc;
-			float *from = fFrameBuffer[stream];
-			// Offset into serially-ordered, multi-channel non-interleaved buf.
-			float *outbuf = &port->audioBuffer[stream * bufFrames];
-			// Write each non-interleaved input frame into circular buf.
-			for (int in=0; in < frameCount; ++in) {
-				if (inLoc >= bufFrames)
-					inLoc -= bufFrames;	// wrap
-				outbuf[inLoc++] = from[in];	
-			}
+	for (int stream = 0; stream < port->streamCount; ++stream) {
+		inLoc = port->inLoc;
+		float *from = fFrameBuffer[stream];
+		// Offset into serially-ordered, multi-channel non-interleaved buf.
+		float *outbuf = &port->audioBuffer[stream * bufFrames];
+		// Write each non-interleaved input frame into circular buf.
+		for (int in=0; in < frameCount; ++in) {
+			if (inLoc >= bufFrames)
+				inLoc -= bufFrames;	// wrap
+			outbuf[inLoc++] = from[in];	
 		}
-	}
-	else {
-	//	return error("Channel count conversion not supported for playback");
-		printf("Channel count conversion not supported for playback\n");
-		return -1;
 	}
 	port->audioBufFilled += frameCount;
 	port->inLoc = inLoc;
@@ -1008,6 +986,9 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 		_impl->port[REC].frameFn = Impl::Port::interleavedGetFrames;
 		_impl->port[PLAY].frameFn = Impl::Port::interleavedSendFrames;
 	}
+#if DEBUG > 0
+	printf("OSX setting device params to %d channels\n", reportedChannelCount);
+#endif
 
 	setDeviceParams(deviceFormat,
 					reportedChannelCount,
