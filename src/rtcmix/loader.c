@@ -1,45 +1,120 @@
 #include <stdio.h>
 #include <string.h>
-#include <dlfcn.h>
 #include <globals.h>
 
-typedef double (*UG_FUN)(float *, int, double *);
 typedef void (*ProfileFun)();
 
-double m_load(float *p, int n_args, double *pp)
+/* Assemble path to the shared library, and pass back as <dsoPath>. */
+static int
+get_dso_path(double pfield, char dsoPath[])
 {
-    char *dsoName;
-    char dsoPath[1024];
+    char *str;
 #ifdef SHAREDLIBDIR
     const char *directory = SHAREDLIBDIR;
 #else
     const char *directory = "/musr/lib";
 #endif
-    int   i;
+
+    /* cast double to string pointer */
+    str = (char *) ((int) pfield);
+
+    if (!str || strlen(str) == 0) {
+	fprintf(stderr, "load: Bad argument for p[0]!\n");
+	exit(1);
+    }
+    /* if name contains a '/', assume it is a full or relative path */
+    if (strchr(str, '/'))
+	strcpy(dsoPath, str);
+    /* if name does not start with "lib", add prefix and suffix */
+    else if (strncmp(str, "lib", 3))
+	sprintf(dsoPath, "%s/lib%s.so", directory, str);
+    /* otherwise just prepend directory and use as is */
+    else
+	sprintf(dsoPath, "%s/%s", directory, str);
+
+    return 0;
+}
+
+#ifdef MACOSX
+
+/* As of Mac OS X 10.1, the standard dlopen API is not supported officially
+   (though there is a compatibility library floating around that works, from
+   which this code was pilfered).  We roll our own loader here using the
+   native OS X API for this reason, and also because it avoids a symbol
+   collision with the Perl extension mechanism when using the dlopen
+   compatibility library.   -JGG, 8/10/01
+*/
+#include <mach-o/dyld.h>
+
+double m_load(float *p, int n_args, double *pp)
+{
+    char dsoPath[1024];
+    NSObjectFileImage objectFileImage;
+    NSObjectFileImageReturnCode result;
+    NSModule module;
+    NSSymbol symbol;
+    ProfileFun profileFun;
+    unsigned long options;
+    int profileLoaded;
+
+    get_dso_path(pp[0], dsoPath);
+
+    result = NSCreateObjectFileImageFromFile(dsoPath, &objectFileImage);
+    if (result != NSObjectFileImageSuccess)
+	goto broken;
+
+    options = NSLINKMODULE_OPTION_PRIVATE | NSLINKMODULE_OPTION_BINDNOW;
+    module = NSLinkModule(objectFileImage, dsoPath, options);
+    NSDestroyObjectFileImage(objectFileImage);
+    if (module == NULL)
+	goto broken;
+
+    /*  Load & call the shared library's profile and/or rtprofile functions
+	to load its symbols.
+    */
+    profileLoaded = 0;
+    symbol = NSLookupSymbolInModule(module, "_profile");
+    if (symbol != NULL) {
+	profileFun = NSAddressOfSymbol(symbol);
+	(*profileFun)();
+	profileLoaded++;
+    }
+    symbol = NSLookupSymbolInModule(module, "_rtprofile");
+    if (symbol != NULL) {
+	profileFun = NSAddressOfSymbol(symbol);
+ 	(*profileFun)(); 
+ 	profileLoaded += 2; 
+    } 
+    if (!profileLoaded) {
+	fprintf(stderr, "Unable to find a profile routine in DSO\n");
+	NSUnLinkModule(module, 0);
+	return 1.0;
+    }
+    if (print_is_on) {
+	printf("Loaded %s functions from shared library.\n",
+	    (profileLoaded == 3) ? "standard and RT" :
+	    (profileLoaded == 2) ? "RT" : "standard");
+    }
+
+    return 0.0;
+broken:
+    /* We could give more detailed error reporting here, but... */
+    fprintf(stderr, "Unable to dynamically load '%s'\n", dsoPath);
+    return 1.0;
+}
+
+#else /* !MACOSX */
+
+#include <dlfcn.h>
+
+double m_load(float *p, int n_args, double *pp)
+{
+    char dsoPath[1024];
     int profileLoaded;
     void *handle;
     ProfileFun profileFun;
-	
 
-    /* assemble path to the shared library */
-
-    i = (int) pp[0];
-    dsoName = (char *) i;
-
-    if (!dsoName || strlen(dsoName) == 0) {
-	fprintf(stderr, "Bad argument for p[0]!\n");
-	return 0;
-    }
-
-    /* if name contains a '/', assume it is a full or relative path */
-    if (strchr(dsoName, '/'))
-	strcpy(dsoPath, dsoName);
-    /* if name does not start with "lib", add prefix and suffix */
-    else if (strncmp(dsoName, "lib", 3))
-	sprintf(dsoPath, "%s/lib%s.so", directory, dsoName);
-    /* otherwise just prepend directory and use as is */
-    else
-	sprintf(dsoPath, "%s/%s", directory, dsoName);
+    get_dso_path(pp[0], dsoPath);
 
     handle = dlopen(dsoPath, RTLD_NOW);
 
@@ -57,7 +132,9 @@ double m_load(float *p, int n_args, double *pp)
     if (profileFun) {
 	profileLoaded++;
 	(*profileFun)();
-//	printf("Loaded standard profile\n");
+#ifdef DBUG
+	printf("Loaded standard profile\n");
+#endif
     }
 
     /* if present, load & call the shared library's rtprofile function to 
@@ -65,10 +142,13 @@ double m_load(float *p, int n_args, double *pp)
      * unmangled symbol name due to its extern "C" decl in rt.h.
      */
 
-     if ((profileFun = (ProfileFun) dlsym(handle, "rtprofile")) != NULL) { 
+     profileFun = (ProfileFun) dlsym(handle, "rtprofile");
+     if (profileFun) {
  	profileLoaded += 2; 
  	(*profileFun)(); 
-// 	printf("Loaded RT profile\n"); 
+#ifdef DBUG
+ 	printf("Loaded RT profile\n"); 
+#endif
      } 
 
     if (!profileLoaded) {
@@ -85,3 +165,5 @@ double m_load(float *p, int n_args, double *pp)
 
     return 1;
 }
+
+#endif /* !MACOSX */

@@ -7,9 +7,12 @@ ifeq ($(ARCH),LINUX)
    RESAMPLE = resample
    SYSLIBS = -lm   # only this, overriding makefile.conf
 endif
-
-# nothing here supported under Irix yet
-ifeq ($(ARCH),SGI)
+ifeq ($(ARCH),MACOSX)
+   PROGS = $(PLAY) #playraw full-duplex-test
+   RESAMPLE = resample
+   SYSLIBS = -framework CoreAudio
+endif
+ifeq ($(ARCH),SGI) # nothing here supported under Irix yet
    PROGS =
    RESAMPLE =
 endif

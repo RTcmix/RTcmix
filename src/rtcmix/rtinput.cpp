@@ -20,6 +20,8 @@
 #ifdef LINUX
    #include <fcntl.h>
 #endif /* LINUX */
+#ifdef MACOSX
+#endif /* MACOSX */
 #ifdef SGI
    #include <dmedia/audio.h>
 #endif /* SGI */
@@ -35,6 +37,9 @@ typedef enum {
 
 #ifdef LINUX
    #define open_audio_input open_linux_audio_input
+#endif
+#ifdef MACOSX
+   #define open_audio_input open_macosx_audio_input
 #endif
 #ifdef SGI
    #define open_audio_input open_sgi_audio_input
@@ -71,6 +76,23 @@ open_linux_audio_input(AudioPortType port_type, int nchans)
 #endif /* !MONO_DEVICES */
 }
 #endif /* LINUX */
+
+
+#ifdef MACOSX
+/* ---------------------------------------------- open_macosx_audio_input --- */
+/* The device has already been opened in rtsetparams.
+*/
+static int
+open_macosx_audio_input(AudioPortType port_type, int nchans)
+{
+#ifdef NOTYET
+   if (in_port[0])
+      return in_port[0];         /* global set in rtsetparams */
+   else
+#endif
+      return -1;
+}
+#endif /* MACOSX */
 
 
 #ifdef SGI

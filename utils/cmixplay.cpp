@@ -1,4 +1,13 @@
-#ifdef LINUX
+/* RTcmix  - Copyright (C) 2001  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
+/* revision of Dave Topper's play program, by John Gibson, 6/99.
+   rev'd again, for v2.3  -JGG, 2/26/00.
+   rev'd again, for OSX support  -JGG, 12/01.
+*/
+#if defined(LINUX) || defined(MACOSX)
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,10 +22,6 @@
 #include <sndlibsupport.h>
 #include <audio_port.h>
 
-/* revision of Dave Topper's play program, by John Gibson, 6/99.
-   rev'd again, for v2.3  -JGG, 2/26/00.
-*/
-
 #define PROGNAME  "cmixplay"
 
 /* Tradeoff: larger BUF_FRAMES and NUM_FRAGMENTS make playback more robust
@@ -27,14 +32,20 @@
 */
 
 #define BUF_FRAMES          1024 * 2
+#ifdef LINUX
 #define ROBUST_FACTOR       4
+#endif
+#ifdef MACOSX
+// 4 glitches ... why?
+#define ROBUST_FACTOR       2
+#endif
 
 #define NUM_ZERO_BUFS       8
 
 #define ALL_CHANS           -1
 
 /* #define DEBUG */
-#define VERBOSE             1       /* if true, print buffer size */
+#define VERBOSE             0       /* if true, print buffer size */
 
 #define UNSUPPORTED_DATA_FORMAT_MSG "\
 %s: samples in an unsupported data format. \n\
@@ -52,6 +63,12 @@ guarantee that your rescale factor won't cause painfully loud playback. \n\
 If you really want to play the file with this factor anyway, use the    \n\
 \"--force\" flag on the command line. But be careful with your ears!\n"
 
+#ifdef MACOSX
+/* We ignore these, but need them to link with audio_port.o */
+int play_audio = 1;
+typedef float *BufPtr;
+BufPtr out_buffer[1];
+#endif
 
 
 /* ---------------------------------------------------------------- usage --- */
@@ -193,7 +210,6 @@ int main(int argc, char *argv[])
    int         header_type, data_format, data_location, srate, in_chans, nsamps;
    int         buf_bytes, buf_samps, buf_frames, buf_start_frame;
    int         start_frame, end_frame, nframes;
-   int         afd[MAXCHANS];
    long        skip_bytes;
    float       start_time, end_time, request_dur, buf_start_time, factor, dur;
    char        *sfname, *bufp;
@@ -201,6 +217,12 @@ int main(int argc, char *argv[])
    float       *fbuf;
    struct stat statbuf;
    SFComment   sfc;
+#ifdef LINUX
+   int         afd[MAXCHANS];
+#endif
+#ifdef MACOSX
+   AudioDeviceID out_port;
+#endif
 
    if (argc < 2)
       usage();
@@ -318,7 +340,7 @@ int main(int argc, char *argv[])
       exit(1);
    }
    is_float = IS_FLOAT_FORMAT(data_format);
-#ifdef MUS_LITTLE_ENDIAN
+#if MUS_LITTLE_ENDIAN
    swap = IS_BIG_ENDIAN_FORMAT(data_format);
 #else
    swap = IS_LITTLE_ENDIAN_FORMAT(data_format);
@@ -409,9 +431,15 @@ int main(int argc, char *argv[])
    if (robust)
       fragments *= ROBUST_FACTOR;
 
+#ifdef LINUX
    /* Note: This will set number of chans depending on USE_CARD_CHANS define. */
    status = open_ports(0, 0, NULL, in_chans, MAXCHANS, afd, VERBOSE,
-                                      (float) srate, fragments, &buf_frames);
+                                    (float) srate, fragments, &buf_frames);
+#endif
+#ifdef MACOSX
+   status = open_macosx_ports(0, in_chans, NULL, &out_port, VERBOSE,
+                                    (float) srate, fragments, &buf_frames);
+#endif
    if (status == -1)
       exit(1);
 
@@ -500,7 +528,11 @@ int main(int argc, char *argv[])
          bytes_read = read(fd, bufp, buf_samps * datum_size);
       if (bytes_read == -1) {
          perror("read");
+#ifdef LINUX
          close_ports(afd, in_chans);
+#endif
+#ifdef MACOSX
+#endif
          exit(1);
       }
       if (bytes_read == 0)          /* EOF, somehow */
@@ -541,10 +573,15 @@ int main(int argc, char *argv[])
          }
       }
 
+#ifdef LINUX
       status = write_buffer(afd, (char *)sbuf, AUDIO_DATUM_SIZE, nframes,
                                                                   in_chans);
       if (status == -1)
          exit(1);
+#endif
+#ifdef MACOSX
+      macosx_cmixplay_audio_write(sbuf);
+#endif
 
       if (!quiet) {
          buf_start_time += (float)nframes / (float)srate;
@@ -560,13 +597,22 @@ int main(int argc, char *argv[])
    for (i = 0; i < buf_samps; i++)
       sbuf[i] = 0;
    for (i = 0; i < NUM_ZERO_BUFS; i++) {
+#ifdef LINUX
       status = write_buffer(afd, (char *)sbuf, AUDIO_DATUM_SIZE, nframes,
                                                                   in_chans);
       if (status == -1)
          exit(1);
+#endif
+#ifdef MACOSX
+      macosx_cmixplay_audio_write(sbuf);
+#endif
    }
 
+#ifdef LINUX
    close_ports(afd, in_chans);
+#endif
+#ifdef MACOSX
+#endif
    close(fd);
 
    if (!quiet)
@@ -576,5 +622,4 @@ int main(int argc, char *argv[])
 }
 
 
-#endif /* LINUX */
-
+#endif /* #if defined(LINUX) || defined(MACOSX) */

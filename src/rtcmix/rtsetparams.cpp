@@ -89,6 +89,15 @@ rtsetparams(float p[], int n_args, double pp[])
       status = open_ports(in_nchans, MAXBUS, in_port, NCHANS, MAXBUS, out_port,
                                          verbose, SR, NUM_FRAGMENTS, &nframes);
 #endif /* LINUX */
+#ifdef MACOSX
+      if (full_duplex)
+         in_nchans = NCHANS;
+      else
+         in_nchans = 0;
+
+      status = open_macosx_ports(in_nchans, NCHANS, &in_port, &out_port,
+                                          verbose, SR, NUM_FRAGMENTS, &nframes);
+#endif /* MACOSX */
 #ifdef SGI
       status = open_sgi_ports(out_port_str, NCHANS, &out_port, verbose, SR,
                                                                      &nframes);
@@ -146,6 +155,12 @@ close_audio_ports()
       close(in_port[0]);
  #endif /* !MONO_DEVICES */
 #endif /* LINUX */
+
+#ifdef MACOSX
+// FIXME: not sure what to do yet...
+   if (out_port) ;
+   if (in_port) ;
+#endif /* MACOSX */
 
 #ifdef SGI
    if (out_port) {
