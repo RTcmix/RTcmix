@@ -4,12 +4,13 @@ shiftgen - change the phase of a function table
 
 =head1 SYNOPSIS
 
-B<shiftgen>(I<table_number>, I<rotate>)
+B<shiftgen>(I<table_number>, I<shift>)
 
 =head1 DESCRIPTION
 
-Call B<shiftgen> from a script to rotate the elements of a function table,
-shifting the phase of the table.
+Call B<shiftgen> from a script to shift the elements of a function table
+from left to right, or from right to left, thereby changing the phase of
+the table.
 
 =head1 ARGUMENTS
 
@@ -19,7 +20,7 @@ shifting the phase of the table.
 
 The numeric ID for the function table.
 
-=item I<rotate>
+=item I<shift>
 
 The number of table slots by which to shift the elements of the table.
 Elements that would run off the end of the table wrap around to the 
