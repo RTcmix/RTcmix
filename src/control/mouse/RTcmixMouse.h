@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-#define SLEEP_MSEC			20		// How long to nap between polling of events
+#define SLEEP_MSEC			10		// How long to nap between polling of events
 #define NLABELS				4		// Number of labels per axis
 #define LABEL_LENGTH			32		// Total number of chars in one label
 #define DEFAULT_PRECISION	3		// Precision of label double values
@@ -24,7 +24,6 @@ public:
 	// that the coord. is invalid, and the caller should use a default instead.
 	virtual double getPositionX() const = 0;
 	virtual double getPositionY() const = 0;
-	virtual void getPositionXY(double &x, double &y) const = 0;
 
 	// Clients can have a label printed when their value changes.  Labels have
 	// the format: "prefix: value units", where value is a formatted double and
