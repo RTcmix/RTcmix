@@ -1,8 +1,5 @@
 include ../../makefile.conf
 
-MANDIR = $(CMIXDIR)/docs/man
-HTMLDIR = $(CMIXDIR)/docs/html
-
 # RTcmix instruments
 INST = ELL PAN REVERBIT REVMIX STEREO WAVETABLE
 
@@ -114,29 +111,29 @@ clean:
 	$(RM) *.1 *.3 *.html *.ps *.pdf *.tmp pod2htm*
 
 installman: $(MAN)
-	$(mkinstalldirs) $(MANDIR)/man1
-	$(mkinstalldirs) $(MANDIR)/man3
-	$(INSTALL) $(INST_MAN) $(SCRIPT_MAN) $(CMD_MAN) $(MANDIR)/man1
+	$(mkinstalldirs) $(MANDESTDIR)/man1
+	$(mkinstalldirs) $(MANDESTDIR)/man3
+	$(INSTALL) $(INST_MAN) $(SCRIPT_MAN) $(CMD_MAN) $(MANDESTDIR)/man1
 ifneq ($(strip $(API_MAN)),)    # do only if API_MAN is nonempty
-	$(INSTALL) $(API_MAN) $(MANDIR)/man3
+	$(INSTALL) $(API_MAN) $(MANDESTDIR)/man3
 endif
 
 uninstallman:
-	( cd $(MANDIR)/man1; $(RM) $(INST_MAN) $(SCRIPT_MAN) $(CMD_MAN) )
+	( cd $(MANDESTDIR)/man1; $(RM) $(INST_MAN) $(SCRIPT_MAN) $(CMD_MAN) )
 ifneq ($(strip $(API_MAN)),)    # do only if API_MAN is nonempty
-	( cd $(MANDIR)/man3; $(RM) $(API_MAN) )
+	( cd $(MANDESTDIR)/man3; $(RM) $(API_MAN) )
 endif
 
 installhtml: $(HTML) $(HTML_INDEX)
-	$(mkinstalldirs) $(HTMLDIR)
-	$(INSTALL) $(HTML) $(HTMLDIR)
-	$(INSTALL) $(HTML_INDEX) $(HTMLDIR)
-	$(mkinstalldirs) $(HTMLDIR)/images
-	( cd images; $(INSTALL) $(IMAGES) $(HTMLDIR)/images )
+	$(mkinstalldirs) $(HTMLDESTDIR)
+	$(INSTALL) $(HTML) $(HTMLDESTDIR)
+	$(INSTALL) $(HTML_INDEX) $(HTMLDESTDIR)
+	$(mkinstalldirs) $(HTMLDESTDIR)/images
+	( cd images; $(INSTALL) $(IMAGES) $(HTMLDESTDIR)/images )
 
 uninstallhtml:
-	( cd $(HTMLDIR); $(RM) $(HTML) $(HTML_INDEX) )
-	( cd $(HTMLDIR)/images; $(RM) $(IMAGES) )
+	( cd $(HTMLDESTDIR); $(RM) $(HTML) $(HTML_INDEX) )
+	( cd $(HTMLDESTDIR)/images; $(RM) $(IMAGES) )
 
 install: installman installhtml
 uninstall: uninstallman uninstallhtml
