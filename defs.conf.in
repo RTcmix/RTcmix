@@ -16,8 +16,8 @@ exec_prefix = @exec_prefix@
 #DESTDIR = @bindir@
 MANDESTDIR = @mandir@
 HTMLDESTDIR = @HTMLDESTDIR@
-# THIS NEEDS TO BE SET BY configure
-XLIBDIR = /usr/X11/lib
+
+XLIBDIR = @x_libraries@
 
 # for debugging configure.ac
 #WITH_VAL = @WITH_VAL@
