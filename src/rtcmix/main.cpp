@@ -1,6 +1,10 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+#define MAIN
+#include <globals.h>
 #include <pthread.h>
-extern "C" {
-#include "../H/ugens.h"
 #include <ctype.h>
 #include <math.h>
 #include <stdio.h>
@@ -8,16 +12,16 @@ extern "C" {
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <iostream.h>
+extern "C" {
+#include "../H/ugens.h"
 }
 
-
-#include "../rtstuff/heap/heap.h"
 #include "../rtstuff/rt.h"
 
 #include "sockdefs.h"  // Also includes defs.h
 #include "notetags.h" // contains defs for note-tagging
 
-#include <iostream.h>
 
 #include "../H/dbug.h"
 
@@ -44,28 +48,12 @@ extern "C" {
 #endif
 }
 
-#ifdef SGI
-	extern ALport in_port;
-	extern ALport out_port;
-#endif
-
-#ifdef LINUX 
-	extern int out_port;   // this is the descriptor for the audio port.
-	extern int in_port;
-#endif
-
-heap rtHeap;  // DT:  main heap structure used to queue instruments
-              // formerly Qobject *rtqueue[];
-
-rtQueue rtQueue;
-
-rt_item *rt_list;
+rt_item *rt_list;   /* can't put this in globals.h because of rt.h trouble */
 
 extern "C" void rtprofile();
 extern "C" void *inTraverse();	
 extern "C" void *yTraverse();
 extern "C" void *traverse();
-extern "C" int rtInteractive;
 extern "C" void *rtsendsamps();
 
 int interactive;
@@ -77,34 +65,7 @@ char name[NAMESIZE];/* to store file name found by card scanner, accessed by
                        m_open in sound.c */
 FILE *fp;
 
-pthread_mutex_t heapLock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t pfieldLock = PTHREAD_MUTEX_INITIALIZER;
-// pthread_mutex_t heapLock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
-float *outbuff;
-float *outbptr;
-short *inbuff;  // for use with real-time audio input
-
-extern float SR;
-int NCHANS;
-int RTBUFSAMPS;
-int MAXBUF;
-int oldSched;
-int noParse = 0;
-int audio_on = 0;        // JGG inited this
-int play_audio;
-int full_duplex;
-
-int audio_config = 1;
-
-int socknew = 0; // for more than one socket active, set by -s flag
-
-// rtupdate stuff ****************************************************** 
-int curtag; 		// current note tag
-float pupdatevals[MAXPUPARR][MAXPUPS];	// contains the values to be updated --
-					// a recirculating array
-int tags_on;		// using note tags for rtupdates
-int tag_sem;
 // *************************************************************************** 
 
 main(int argc, char *argv[])
@@ -125,19 +86,33 @@ main(int argc, char *argv[])
 	MAXBUF = NCHANS*RTBUFSAMPS;
 	in_port = 0;
 	out_port = 0;
+
+	interactive = 1;		/* default is interactive mode */
+	rtInteractive = 0;	/* we set this with command-line option -r now */
+	oldSched = 0;
+	noParse = 0;
+	socknew = 0;
+	audio_on = 0;
+	audio_config = 1;
+	tags_on = 0;
+	full_duplex = 0;
+	in_port = 0;
+	out_port = 0;
+   rtfileit = 0;        /* signal writing to soundfile */
+	rtoutfile = 0;
+	rtoutswap = 0;
+	print_is_on = 1;
+
 #ifdef DBUG	
 	printf("main():  MAXBUF = %d\n",MAXBUF);
 #endif
-	/*
-	THE FOLLOWING FUNCTION IS SGI ONLY
-	set the special "flush zero" but (FS, bit 24) in the
-	Control Status Register of the FPU of R4k and beyond
-	so that the result of any underflowing operation will
-	be clamped to zero, and no exception of any kind will
-	be generated on the CPU.  This has no effect on 
-	an R3000.
+	/*	THE FOLLOWING FUNCTION IS SGI ONLY
+		set the special "flush zero" but (FS, bit 24) in the
+		Control Status Register of the FPU of R4k and beyond
+		so that the result of any underflowing operation will
+		be clamped to zero, and no exception of any kind will
+		be generated on the CPU.  This has no effect on an R3000.
 	*/
-
 #ifdef SGI
 	flush_all_underflows_to_zero();
 #endif
@@ -145,28 +120,19 @@ main(int argc, char *argv[])
 	/* THE FOLLOWING FUNCTION TRIES TO DO THE SAME THING */
 	/* Install signal handler */
 	signal(SIGFPE,flush_fpe);
-        rtInteractive = 0;  /* we set this with command-line option -r now */
 #endif
 
-
-/* copy command-line args, if any*/
-	for(j=1; j<argc; j++) aargv[j-1]=argv[j];
+	/* copy command-line args, if any*/
+	for(j = 1; j < argc; j++)
+		aargv[j - 1] = argv[j];
 	aargc = argc;
 	/* Now, command-line args will be available to any subroutine
 	   in aargc; and char *aargv[], (both declared extern in ugens.h)
 	   parsing is exactly the same then as standard C routine.
 	   Maximum of CMAX arguments allowed. */
 
-
-	interactive = 1; /* default is interactive mode */
-	rtInteractive = 0;
-	oldSched = 0;
-	tags_on = 0;
-	full_duplex = 0;
-	in_port=0;
-	out_port=0;
-
 	fprintf(stderr," ---------> RTcmix/%s <----------\n",argv[0]);
+
 	/*
 	 * "Introduce" functions and stuff to program
 	 */
@@ -287,19 +253,4 @@ main(int argc, char *argv[])
 	closesf();
 	fprintf(stderr,"--------->Goodbye<---------");
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

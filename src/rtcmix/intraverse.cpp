@@ -1,7 +1,11 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+#include <globals.h>
 #include <pthread.h>
 #include <iostream.h>
 #include "../rtstuff/heap/heap.h"
-#include "../rtstuff/rt.h"
 #include "../rtstuff/rtdefs.h"
 #include "../H/byte_routines.h"
 #include "../H/dbug.h"
@@ -18,33 +22,10 @@ extern "C" {
    int rtcloseout();
 #endif
    int rtgetsamps();            // DT:  for use with real-time audio input
-   int rtInteractive;
 }
-
-int noaudio;  // to delay socket parsing
-
-extern int out_port;  // Audio file descriptor
-extern int in_port;  // Audio file descriptor
-
-extern heap rtHeap;  // main heap structure from main.C
-extern rtQueue rtQueue;  // real time queue
-
-extern pthread_mutex_t heapLock;
 
 double baseTime;
 long elapsed;
-extern int audio_config;  // Flag to wait for
-
-extern int rtfileit,rtoutfile,rtoutswap,play_audio;
-
-extern "C" int audio_on;
-
-/* traverse.C and sys/rtwritesamps.C import this */
-unsigned long bufStartSamp;
-
-extern float *outbuff, *outbptr; /* defined in main.C */
-extern short *inbuff;
-
 
 extern "C" {
   void *inTraverse()
