@@ -1,6 +1,6 @@
 include ../makefile.conf
 
-OBJS = audio.o headers.o io.o sound.o
+OBJS = headers.o io.o extra.o
 
 all: sndlib.a
 
