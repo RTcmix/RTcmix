@@ -38,6 +38,7 @@ public:
 
 private:
    BUFTYPE        *obufptr;
+   short          bufstatus[MAXBUS];
 
 public:
    Instrument();
