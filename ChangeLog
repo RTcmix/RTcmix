@@ -1,3 +1,13 @@
+Tuesday, May 16, 2000 John Gibson <johngibson@virginia.edu>
+
+   * Fix compilation problem involving pthreads that triggered
+     errors on Irix 6.5 (and warnings on Irix 6.3).
+     (main.C, intraverse.C)
+   * Many changes to ANSI-fy some older code and to enable more
+     productive use of -Wall when compiling.
+   * New message functions advise(), warn() and die() for use
+     by instruments and others.
+
 Friday, May 12, 2000 John Gibson <johngibson@virginia.edu>
 
    * Get rid of MAXBUF -- no longer necessary or even useful.
