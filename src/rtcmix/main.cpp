@@ -209,6 +209,26 @@ detect_denormals()
 #endif /* LINUX */
 
 
+void set_sig_handlers()
+{
+   /* Call interrupt_handler on cntl-C. */
+   if (signal(SIGINT, interrupt_handler) == SIG_ERR) {
+      fprintf(stderr, "Error installing signal handler.\n");
+      exit(1);
+   }
+   /* Call signal_handler on segv, etc. */
+   if (signal(SIGSEGV, signal_handler) == SIG_ERR) {
+      fprintf(stderr, "Error installing signal handler.\n");
+      exit(1);
+   }
+#if defined(SIGBUS)
+   if (signal(SIGBUS, signal_handler) == SIG_ERR) {
+      fprintf(stderr, "Error installing signal handler.\n");
+      exit(1);
+   }
+#endif
+}
+
 /* ----------------------------------------------------------------- main --- */
 int
 main(int argc, char *argv[])
@@ -239,22 +259,7 @@ main(int argc, char *argv[])
    flush_all_underflows_to_zero();
 #endif
 
-   /* Call interrupt_handler on cntl-C. */
-   if (signal(SIGINT, interrupt_handler) == SIG_ERR) {
-      fprintf(stderr, "Error installing signal handler.\n");
-      exit(1);
-   }
-   /* Call signal_handler on segv, etc. */
-   if (signal(SIGSEGV, signal_handler) == SIG_ERR) {
-      fprintf(stderr, "Error installing signal handler.\n");
-      exit(1);
-   }
-#if defined(SIGBUS)
-   if (signal(SIGBUS, signal_handler) == SIG_ERR) {
-      fprintf(stderr, "Error installing signal handler.\n");
-      exit(1);
-   }
-#endif
+   set_sig_handlers();
 
    xargv[0] = argv[0];
    for (i = 1; i <= MAXARGS; i++)
@@ -489,15 +494,7 @@ main(int argc, char *argv[])
       status = parse_score(xargc, xargv);
 #ifdef PYTHON
       /* Have to reinstall this after running Python interpreter. (Why?) */
-      if (signal(SIGINT, signal_handler) == SIG_ERR) {
-         fprintf(stderr, "Error installing signal handler.\n");
-         exit(1);
-      }
-	   /* Call signal_handler on segv. */
-	   if (signal(SIGSEGV, signal_handler) == SIG_ERR) {
-		  fprintf(stderr, "Error installing signal handler.\n");
-		  exit(1);
-	   }
+	  set_sig_handlers();
 #endif
       if (status == 0) {
 #ifdef LINUX
