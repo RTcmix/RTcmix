@@ -339,3 +339,10 @@ double ConverterPField::cpspch(const double pch)
 	return pow(2.0, oct) * MIDC_OFFSET;
 }
 
+double ConverterPField::pchoct(const double oct)
+{
+	int octave = (int) oct;
+	double linsemitone = oct - octave;
+	return octave + (0.12 * linsemitone); 
+}
+

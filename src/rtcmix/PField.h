@@ -206,6 +206,7 @@ public:
 	static double cpsoct(const double);
 	static double octpch(const double);
 	static double cpspch(const double);
+	static double pchoct(const double);
 
 	ConverterPField(PField *innerPField, ConverterFunction cfun);
 	virtual double doubleValue(double percent) const;
