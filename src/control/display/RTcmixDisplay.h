@@ -11,8 +11,6 @@
 #include <pthread.h>
 #include <labels.h>
 
-#define SLEEP_MSEC			20		// How long to nap between polling of events
-
 class RTcmixDisplay {
 public:
 	RTcmixDisplay();
@@ -45,20 +43,22 @@ protected:
 	virtual bool handleEvents() = 0;
 
 	int _labelCount;
-	char *_label[NLABELS];
-	char *_prefix[NLABELS];
-	char *_units[NLABELS];
-	int _precision[NLABELS];
+	char *_label[kNumLabels];
+	char *_prefix[kNumLabels];
+	char *_units[kNumLabels];
+	int _precision[kNumLabels];
 
 private:
 	inline unsigned long getSleepTime() { return _sleeptime; }
 	inline bool runThread() { return _runThread; }
 	static void *_eventLoop(void *);
 
-	double _last[NLABELS];
+	double _last[kNumLabels];
 	unsigned long _sleeptime;
 	pthread_t _eventthread;
 	bool _runThread;
+	int _throttleCount[kNumLabels];
+	int _throttle;
 };
 
 RTcmixDisplay *createDisplayWindow();

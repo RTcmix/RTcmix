@@ -8,16 +8,20 @@
 #include <string.h>
 #include <assert.h>
 
+const int kSleepMsec = 40;		// How long to nap between polling of events
+const int kThrottle = 50;		// How many intervening values to skip drawing
 
 RTcmixDisplay::RTcmixDisplay()
-	: _labelCount(0), _sleeptime(SLEEP_MSEC * 1000)
+	: _labelCount(0), _sleeptime(kSleepMsec * 1000)
 {
-	for (int i = 0; i < NLABELS; i++) {
+	for (int i = 0; i < kNumLabels; i++) {
 		_prefix[i] = NULL;
 		_units[i] = NULL;
 		_label[i] = NULL;
 		_last[i] = -1.0;
+		_throttleCount[i] = 0;
 	}
+	_throttle = kThrottle;
 }
 
 RTcmixDisplay::~RTcmixDisplay()
@@ -26,7 +30,7 @@ RTcmixDisplay::~RTcmixDisplay()
 		_runThread = false;
 		pthread_join(_eventthread, NULL);
 	}
-	for (int i = 0; i < NLABELS; i++) {
+	for (int i = 0; i < kNumLabels; i++) {
 		delete _prefix[i];
 		delete _units[i];
 		delete _label[i];
@@ -37,7 +41,7 @@ int RTcmixDisplay::configureLabel(const char *prefix, const char *units,
 		const int precision)
 {
 	assert(prefix != NULL);
-	if (_labelCount == NLABELS)
+	if (_labelCount == kNumLabels)
 		return -1;
 	const int id = _labelCount;
 	_labelCount++;
@@ -52,12 +56,14 @@ void RTcmixDisplay::updateLabelValue(const int id, const double value)
 	if (id < 0)							// this means user ran out of labels
 		return;
 	assert(id < _labelCount);
-	if (value == _last[id])
-		return;
 
-	doUpdateLabelValue(id, value);
-
-	_last[id] = value;
+	if (--_throttleCount[id] < 0) {
+		if (value == _last[id])
+			return;
+		doUpdateLabelValue(id, value);
+		_last[id] = value;
+		_throttleCount[id] = _throttle;
+	}
 }
 
 void *RTcmixDisplay::_eventLoop(void *context)
