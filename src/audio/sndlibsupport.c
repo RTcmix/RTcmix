@@ -811,6 +811,8 @@ sndlib_put_current_header_comment(int    fd,
       fprintf(stderr, "  can't write this type of header.\n");
       return -1;
    }
+   if (header_type == MUS_RAW)     /* We can't write a comment for these. */
+      return 0;
 
    /* Initialize SFComment struct. */
    memset(&sfc, 0, sizeof(SFComment));

@@ -109,6 +109,7 @@ static Param param_list[] = {
    { HEADER_TYPE,  MUS_AIFC,     "aifc"      },
    { HEADER_TYPE,  MUS_RIFF,     "wav"       },
    { HEADER_TYPE,  MUS_IRCAM,    "ircam"     },
+   { HEADER_TYPE,  MUS_RAW,      "raw"       },
    { DATA_FORMAT,  MUS_BSHORT,   "short"     },
    { DATA_FORMAT,  MUS_BFLOAT,   "float"     },
    { DATA_FORMAT,  MUS_BFLOAT,   "normfloat" },
