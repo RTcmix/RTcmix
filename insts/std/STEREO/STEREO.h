@@ -2,7 +2,7 @@
 
 class STEREO : public Instrument {
 	float outspread[MAXBUS];
-	float amp, *amptable, tabs[2], *in;
+	float amp, aamp, *amptable, tabs[2], *in;
 	int skip, branch;
 
 public:

@@ -71,6 +71,7 @@ int STEREO::init(float p[], int n_args)
 	}
 	else
 		advise("STEREO", "Setting phrase curve to all 1's.");
+	aamp = amp;        /* in case amptable == NULL */
 
 	skip = (int)(SR/(float)resetval);       // how often to update amp curve
 
@@ -81,7 +82,6 @@ int STEREO::run()
 {
 	int i,j,rsamps;
 	float out[2];
-	float aamp;
 
 	if (in == NULL)    /* first time, so allocate it */
 		in = new float [RTBUFSAMPS * inputchans];
@@ -91,8 +91,6 @@ int STEREO::run()
 	rsamps = chunksamps*inputchans;
 
 	rtgetin(in, this, rsamps);
-
-	aamp = amp;        /* in case amptable == NULL */
 
 	for (i = 0; i < rsamps; i += inputchans)  {
 		if (--branch < 0) {
