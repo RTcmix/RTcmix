@@ -22,7 +22,7 @@ $(MODULE_SRC): make_python_ext.pl $(MODULE_SRC).in $(FUNCLIST)
 $(MODULE): $(MODULE_SRC)
 	$(PYTHON) setup.py build
 ifeq ($(PYTHON_EXT_LINK), TRUE)
-	mv -f `find . -name rtcmix.so` .
+	mv -f `find . -name rtcmixmodule.o` .
 	$(RM) -r build
 endif
 
