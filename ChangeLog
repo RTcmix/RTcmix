@@ -5,7 +5,7 @@ Saturday, July 10, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * Update some instruments for v4 PField control: MIX, STEREO,
      COMBIT, DEL1, DELAY, FIR, IIR, NOISE, PANECHO, ELL, DISTORT,
-     DECIMATE, MULTICOMB, REVMIX, FREEVERB.
+     DECIMATE, MULTICOMB, REVMIX, FREEVERB, REVERBIT.
 
 2004-07-09  Douglas Scott  <netdscott-at-netscape.net>
 
