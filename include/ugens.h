@@ -124,6 +124,7 @@ void rszset(float, float, float, float*);
 float resonz(float, float*);
 float bresonz(float*, float*, float*, int);
 float reverb(float, float*);
+int setline(float [], short, int, float []);
 void srrand(unsigned);
 void rvbset(float, int, float*);
 float table(long, float*, float*);
