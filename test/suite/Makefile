@@ -1,7 +1,8 @@
 include ../../makefile.conf
 
 # This allows us to test before doing the install
-CMD = ../../insts.base/MIX/MIX
+#CMD = ../../insts.base/MIX/MIX
+CMD = ../../bin/CMIX
 
 all:	announce all_tests
 
@@ -40,7 +41,7 @@ stresstest: $(STRESSOBJS) $(IMBCMIXOBJS)
 #	$(CXX) -o $@ $(DYN) $(STRESSOBJS) $(IMBCMIXOBJS) $(LDFLAGS) -L/home/dscott -ldmalloc
 	$(CXX) -o $@ $(DYN) $(STRESSOBJS) $(IMBCMIXOBJS) $(LDFLAGS)
 
-sockettest: $(SOCKOBJS) ../../lib/RTsockfuncs.o
+sockettest: $(SOCKOBJS)
 	$(CXX) -o $@ $(SOCKOBJS) ../../lib/RTsockfuncs.o
 
 run_stresstest:	stresstest

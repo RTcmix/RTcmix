@@ -3,11 +3,12 @@ rtsetparams(44100, 2);
 bus_config("MIX", "in0-1", "out0-1");
 rtinput("./input.wav");
 
-float count = 0;
+float count;
 float maxout;
 float outskip;
 
 maxout = 30;
+count = 0;
 
 while (count < 100)
 {

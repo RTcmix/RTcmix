@@ -2,12 +2,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <fcntl.h>
 #include <sys/time.h>
 #include <signal.h>
 
 extern "C" {
-#include "../H/RTsockfuncs.h"
+#include "../../src/rtcmix/RTsockfuncs.h"
 }
 
 double irand(double low, double high)
@@ -87,9 +86,8 @@ main(int argc, char *argv[])
 	RTsendsock("rtsetparams", theSock, 3, 44100.0, 2.0, 256.0);
 	
 	RTsendsock("load", theSock, 1, "STRUM");
-	RTsendsock("load", theSock, 1, "../../insts.std/STRUM/libSTRUM.so");
-	RTsendsock("load", theSock, 1, "../../insts.std/TRANS/libTRANS.so");
-	RTsendsock("load", theSock, 1, "../../insts.std/STEREO/libSTEREO.so");
+	RTsendsock("load", theSock, 1, "TRANS");
+	RTsendsock("load", theSock, 1, "STEREO");
 	RTsendsock("rtinput", theSock, 1, "./sinetone.wav");
 
 	RTsendsock("setline", theSock, 8, 0., 0., 1., 1., 100., 1., 110., 0.);

@@ -7,7 +7,6 @@
 #include <unistd.h>
 #include <sys/time.h>
 
-#include <globals.h>
 #include "RTcmix.h"
 
 double irand(double low, double high)
@@ -74,9 +73,9 @@ main(int argc, char *argv[])
 	else
 		rrr->printOff();
 
-	rrr->cmd("load", 1, "../../insts.std/STRUM/libSTRUM.so");
-	rrr->cmd("load", 1, "../../insts.std/TRANS/libTRANS.so");
-	rrr->cmd("load", 1, "../../insts.std/STEREO/libSTEREO.so");
+	rrr->cmd("load", 1, "STRUM");
+	rrr->cmd("load", 1, "TRANS");
+	rrr->cmd("load", 1, "STEREO");
 	rrr->cmd("rtinput", 1, "./sinetone.wav");
 
 	rrr->cmd("setline", 8, 0., 0., 1., 1., 100., 1., 110., 0.);
