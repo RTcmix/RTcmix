@@ -833,6 +833,9 @@ _readit(int fno)
 	 * EOF, and if so adjust amount to be read and flush rest of buffer
 	 */
 
+	/* From make warnings */
+	n=0;
+
 	if(filepointer[fno] > originalsize[fno])
 		maxread = 0;
 	else if((filepointer[fno]+nbytes) > originalsize[fno]) 
@@ -898,7 +901,7 @@ _readit(int fno)
 int
 _writeit(int fno)
 {
-	int i,n;
+	int i,n=0;
 	short tisamp,*tibuf;
 	float tfsamp,*tfbuf;
 	float peakval;

@@ -224,6 +224,8 @@ main(int argc, char *argv[])
    int         force = FALSE;
    struct stat statbuf;
 
+   old_format=0;
+   old_datum_size=0;
    /* get name of this program */
    progname = strrchr(argv[0], '/');
    if (progname == NULL)

@@ -95,6 +95,11 @@ int main(int argc, char *argv[])
    complex s[8192];
    float maxamps[SF_MAXCHAN];
 
+   segments=0;
+   rmsflag=0;
+   sampleflag=0;
+   sample=0.0;
+
    if (argc == 1) {
       cmdline_usage();
       exit(0);

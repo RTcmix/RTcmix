@@ -8,7 +8,7 @@
 
 #define BUFSIZE 64
 
-void
+int
 main (int argc, char* argv[]) 
 {
   int len,format,stereo,speed,cycle,frag_size,samps,srate,chans,magic,class;

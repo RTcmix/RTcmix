@@ -202,6 +202,11 @@ int main(int argc, char *argv[])
    struct stat statbuf;
    SFComment   sfc;
 
+   second=0;
+   nframes=0;
+   buf_start_time=0.0;
+   *fbuf = NULL;
+
    if (argc < 2)
       usage();
 

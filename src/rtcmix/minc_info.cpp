@@ -173,7 +173,7 @@ static float
 get_peak(float start, float end, int chan)
 {
    int       n, fd, result, nchans, srate, dataloc, format;
-   int       index, file_stats_valid;
+   int       index, file_stats_valid=0;
    long      startframe, endframe, nframes, loc;
    long      peakloc[MAXCHANS];
    float     peak[MAXCHANS];

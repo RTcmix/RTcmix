@@ -13,6 +13,7 @@ setline(float *p, short n_args, int length, float *array)
 {
    double increm;
    int i, j, k, i2, points;
+   k=0;
 
    if ((n_args % 2) != 0) {
       fprintf(stderr, "Something wrong with phrase, check args\n");
