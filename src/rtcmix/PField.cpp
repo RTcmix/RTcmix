@@ -252,6 +252,6 @@ double ReversePField::doubleValue(double didx) const
 
 double ReversePField::doubleValue(int idx) const
 {
-	return field()->doubleValue(_len - idx);
+	return field()->doubleValue((_len - 1) - idx);
 }
 

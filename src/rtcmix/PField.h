@@ -182,6 +182,7 @@ public:
 	ReversePField(PField *innerPField);
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
+	virtual int		values() const { return _len; }
 private:
 	int		_len;
 };
