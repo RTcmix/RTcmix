@@ -9,7 +9,7 @@ CFILES =  oscil.c oscili.c osciln.c oscilni.c table.c tablei.c evp.c reson.c \
 	  reverb.c rvbset.c comb.c combset.c allpass.c \
 	  pchoct.c octcps.c pchcps.c boscili.c bbuzz.c ballpole.c brrand.c\
 	  hpluck.c hcomb.c setline.c random.c ampdb.c\
-	  getsample.c breson.c resonz.c pluck.c hplset.c pluckset.c randf.c spray.c wshape.c bpluck.c\
+	  breson.c resonz.c pluck.c hplset.c pluckset.c randf.c spray.c wshape.c bpluck.c\
 	  pchmidi.c midipch.c
 #OCFILES = Ooscili.cpp Orand.cpp Ortgetin.cpp
 OCFILES = Ooscili.cpp Orand.cpp Ozdelay.cpp Ocomb.cpp Ozcomb.cpp
@@ -20,7 +20,7 @@ OBJECTS = oscil.o oscili.o osciln.o oscilni.o table.o tablei.o evp.o reson.o \
 	  reverb.o rvbset.o comb.o combset.o allpass.o\
 	  pchoct.o octcps.o pchcps.o boscili.o bbuzz.o ballpole.o brrand.o\
 	  hpluck.o hcomb.o setline.o random.o ampdb.o\
-	  getsample.o breson.o resonz.o pluck.o hplset.o pluckset.o randf.o spray.o wshape.o bpluck.o\
+	  breson.o resonz.o pluck.o hplset.o pluckset.o randf.o spray.o wshape.o bpluck.o\
 	  pchmidi.o midipch.o
 #OOBJECTS = Ooscili.o Orand.o Ortgetin.o
 OOBJECTS = Ooscili.o Orand.o Ozdelay.o Ocomb.o Ozcomb.o
