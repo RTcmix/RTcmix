@@ -329,12 +329,15 @@ OSXAudioDevice::OSXAudioDevice(const char *desc) : _impl(new Impl)
 	// Strip desc of form "OSXHW:inbuf,outbuf" into inbuf and outbuf
 	if (substr != NULL) {
 		char *outsubstr = NULL;
-		_impl->port[REC].streamIndex = strtol(substr, &outsubstr, 0);
+		int idx1 = 0, idx2 = -1;
+		idx1 = strtol(substr, &outsubstr, 0);
+		_impl->port[REC].streamIndex = idx1;
+		if (outsubstr && strlen(outsubstr) > 0)
+			idx2 = strtol(outsubstr + 1, NULL, 0);
+		_impl->port[PLAY].streamIndex = (idx2 >= 0) ? idx2 : idx1;
+
 		printf("input streamIndex is %d\n", _impl->port[REC].streamIndex);
-		if (outsubstr) {
-			_impl->port[PLAY].streamIndex = strtol(outsubstr + 1, NULL, 0);
-			printf("output streamIndex is %d\n", _impl->port[PLAY].streamIndex);
-		}
+		printf("output streamIndex is %d\n", _impl->port[PLAY].streamIndex);
 
 	}
 	_impl->bufferSampleFormat = MUS_UNKNOWN;
