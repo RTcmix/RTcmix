@@ -3,21 +3,25 @@ include ../../../../makefile.conf
 # Define this for debugging only
 PMFLAGS = -DPM_CHECK_ERRORS
 
-PTOBJECTS = porttime/porttime.o porttime/ptlinux.o 
-PTLIB = porttime/libporttime.a
 PMOBJECTS = pm_common/pmutil.o pm_common/portmidi.o
+
+PTOBJECTS = porttime/porttime.o
+PTLIB = porttime/libporttime.a
 
 ifeq ($(ARCH), MACOSX)
 	VFLAGS = 
 	PMLIB = pm_mac/libportmidi.a
 	AUDIOLIB = -framework CoreFoundation -framework CoreAudio -framework CoreMIDI
 	PMOBJECTS += pm_mac/pmmac.o pm_mac/pmmacosxcm.o
+	PTOBJECTS += porttime/ptmacosx_cf.o 
+#	PTOBJECTS += porttime/ptmacosx_mach.o 
 endif
 ifeq ($(ARCH), LINUX)
 	VFLAGS = -DPMALSA
 	PMLIB = pm_linux/libportmidi.a
 	AUDIOLIB = -lasound
 	PMOBJECTS += pm_linux/pmlinux.o pm_linux/pmlinuxalsa.o
+	PTOBJECTS += porttime/ptlinux.o 
 endif
 
 CFLAGS += $(VFLAGS) $(PMFLAGS) -Ipm_common -Iporttime
