@@ -1,0 +1,24 @@
+#!/bin/sh
+
+progname=`basename $0`
+
+if [ $# -lt 1 ]
+then
+   echo Usage: ${progname} freq [dur]
+   echo        \(freq in Hz or oct.pc\)
+   exit
+fi
+
+scriptloc=`type -path ${progname}`
+scriptloc=`dirname ${scriptloc}`
+scriptname=${scriptloc}/tuningfork.sco
+
+if [ $# -eq 1 ] ; then
+   CMIX $1 < ${scriptname} >& /dev/null
+else
+   CMIX $1 $2 < ${scriptname} >& /dev/null
+fi
+
+# Note: no way to tell whether this failed, because cmix returns 0
+# status after Minc exit(1)  (problem in minc_functions.c)
+# If it don't make noise, it don't work  ;-)
