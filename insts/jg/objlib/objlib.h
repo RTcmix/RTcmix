@@ -31,6 +31,7 @@
 #include "TableN.h"
 #include "TwoPole.h"
 #include "TwoZero.h"
+#include "WavShape.h"
 #include "ZComb.h"
 #include "ZNotch.h"
 #include "objdefs.h"
