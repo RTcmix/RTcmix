@@ -23,7 +23,7 @@ void Oonepole::setfreq(float freq)
 		_b = -(sqrt(c * c - 1.0) - c);
 	}
 	else {
-		double c = 2.0 - cos(freq * (M_PI * 2.0) / _sr);
+		double c = 2.0 + cos(freq * (M_PI * 2.0) / _sr);
 		_b = -(c - sqrt(c * c - 1.0));
 	}
 	_a = (_b > 0.0) ? 1.0 - _b : 1.0 + _b;
