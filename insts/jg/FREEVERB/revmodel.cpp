@@ -3,6 +3,7 @@
 // Written by Jezar at Dreampoint, June 2000
 // http://www.dreampoint.co.uk
 // This code is public domain
+// Modified by JGG for RTcmix, 3 Feb 2001
 
 #include "revmodel.hpp"
 
@@ -33,6 +34,8 @@ revmodel::revmodel()
 	allpassR[2].setbuffer(bufallpassR3,allpasstuningR3);
 	allpassL[3].setbuffer(bufallpassL4,allpasstuningL4);
 	allpassR[3].setbuffer(bufallpassR4,allpasstuningR4);
+	delayL.setbuffer(bufdelayL,max_predelay_samps);
+	delayR.setbuffer(bufdelayR,max_predelay_samps);
 
 	// Set default values
 	allpassL[0].setfeedback(0.5f);
@@ -49,6 +52,7 @@ revmodel::revmodel()
 	setdamp(initialdamp);
 	setwidth(initialwidth);
 	setmode(initialmode);
+	setpredelay(initialpredelay);
 
 	// Buffer will be full of rubbish - so we MUST mute them
 	mute();
@@ -69,6 +73,8 @@ void revmodel::mute()
 		allpassL[i].mute();
 		allpassR[i].mute();
 	}
+	delayL.mute();
+	delayR.mute();
 }
 
 void revmodel::processreplace(float *inputL, float *inputR, float *outputL, float *outputR, long numsamples, int input_skip, int output_skip)
@@ -95,8 +101,17 @@ void revmodel::processreplace(float *inputL, float *inputR, float *outputL, floa
 		}
 
 		// Calculate output REPLACING anything already there
-		*outputL = outL*wet1 + outR*wet2 + *inputL*dry;
-		*outputR = outR*wet1 + outL*wet2 + *inputR*dry;
+
+		// If we're using predelay, stuff reverb'd samp into delay line,
+		// and retrieve oldest samp.  -JGG
+		if (predelay_samps) {
+			*outputL = delayL.process(outL*wet1 + outR*wet2) + *inputL*dry;
+			*outputR = delayR.process(outR*wet1 + outL*wet2) + *inputR*dry;
+		}
+		else {
+			*outputL = outL*wet1 + outR*wet2 + *inputL*dry;
+			*outputR = outR*wet1 + outL*wet2 + *inputR*dry;
+		}
 
 		// Increment sample pointers, allowing for interleave (if any)
 		inputL += input_skip;
@@ -247,6 +262,21 @@ float revmodel::getmode()
 		return 1;
 	else
 		return 0;
+}
+
+// Set the amount of predelay in samples (not seconds)
+void revmodel::setpredelay(int value)
+{
+	if (value <= max_predelay_samps)
+		predelay_samps = value;
+	// else what?
+	delayL.setdelaysamps(predelay_samps);
+	delayR.setdelaysamps(predelay_samps);
+}
+
+int revmodel::getpredelay()
+{
+	return predelay_samps;
 }
 
 //ends

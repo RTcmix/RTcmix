@@ -2,8 +2,8 @@ include ../package.conf
 
 NAME = FREEVERB
 
-OBJS = $(NAME).o allpass.o comb.o revmodel.o
-HDRS = allpass.hpp comb.hpp denormals.h revmodel.hpp tuning.h
+OBJS = $(NAME).o allpass.o comb.o delay.o revmodel.o
+HDRS = allpass.hpp comb.hpp delay.hpp denormals.h revmodel.hpp tuning.h
 CMIXOBJS += $(PROFILE_O)
 CXXFLAGS += -I. -Wall 
 PROGS = $(NAME) lib$(NAME).so

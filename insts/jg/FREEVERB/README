@@ -5,6 +5,7 @@ as public domain.
 The Freeverb files are allpass.cpp, allpass.hpp, comb.cpp, comb.hpp,
 denormals.h, revmodel.cpp, revmodel.hpp, tuning.h, and readme.txt.
 Here are the changes I made to this source:
+   - implemented pre-delay, including new delay class (delay.cpp, .hpp)
    - made a few "int i" declarations in some for loops in revmodel.cpp,
      just to keep egcs from complaining.
    - changed the names of the comb and allpass classes to fv_comb and

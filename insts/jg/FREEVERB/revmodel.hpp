@@ -3,12 +3,14 @@
 // Written by Jezar at Dreampoint, June 2000
 // http://www.dreampoint.co.uk
 // This code is public domain
+// Modified by JGG for RTcmix, 3 Feb 2001
 
 #ifndef _revmodel_
 #define _revmodel_
 
 #include "comb.hpp"
 #include "allpass.hpp"
+#include "delay.hpp"
 #include "tuning.h"
 
 class revmodel
@@ -30,6 +32,8 @@ public:
 			float	getwidth();
 			void	setmode(float value);
 			float	getmode();
+			void	setpredelay(int value);  // samples, not seconds    -JGG
+			int		getpredelay();
 private:
 			void	update();
 private:
@@ -40,6 +44,7 @@ private:
 	float	dry;
 	float	width;
 	float	mode;
+	int		predelay_samps;
 
 	// The following are all declared inline 
 	// to remove the need for dynamic allocation
@@ -52,6 +57,10 @@ private:
 	// Allpass filters
 	fv_allpass	allpassL[numallpasses];
 	fv_allpass	allpassR[numallpasses];
+
+	// Delay lines (for predelay)
+	fv_delay	delayL;
+	fv_delay	delayR;
 
 	// Buffers for the combs
 	float	bufcombL1[combtuningL1];
@@ -80,6 +89,10 @@ private:
 	float	bufallpassR3[allpasstuningR3];
 	float	bufallpassL4[allpasstuningL4];
 	float	bufallpassR4[allpasstuningR4];
+
+	// Buffers for the delays
+	float	bufdelayL[max_predelay_samps];
+	float	bufdelayR[max_predelay_samps];
 };
 
 #endif//_revmodel_

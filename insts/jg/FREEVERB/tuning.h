@@ -3,6 +3,7 @@
 // Written by Jezar at Dreampoint, June 2000
 // http://www.dreampoint.co.uk
 // This code is public domain
+// Modified by JGG for RTcmix, 3 Feb 2001
 
 #ifndef _tuning_
 #define _tuning_
@@ -22,6 +23,7 @@ const float initialwet		= 1/scalewet;
 const float initialdry		= 0;
 const float initialwidth	= 1;
 const float initialmode		= 0;
+const float initialpredelay = 0;
 const float freezemode		= 0.5f;
 const int	stereospread	= 23;
 
@@ -53,6 +55,8 @@ const int allpasstuningL3	= 341;
 const int allpasstuningR3	= 341+stereospread;
 const int allpasstuningL4	= 225;
 const int allpasstuningR4	= 225+stereospread;
+
+const int max_predelay_samps	= 22050;   // enough for .5 secs at 44.1  -JGG
 
 #endif//_tuning_
 
