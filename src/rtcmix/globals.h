@@ -94,7 +94,7 @@ typedef enum {
   YES
 } Bool;
 
-short AuxPlayList[MAXBUS]; /* The playback order for AUX buses */
+GLOBAL short AuxPlayList[MAXBUS]; /* The playback order for AUX buses */
 
 /* -------------------------------------------------------------------------- */
 /* rtupdate stuff */
