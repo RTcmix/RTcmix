@@ -16,15 +16,12 @@
 #include <sys/time.h>
 
 #include <globals.h>
+#include <prototypes.h>
 #include "../rtstuff/rtdefs.h"
 #include "sockdefs.h"
 #include "../H/dbug.h"
 
 #include "notetags.h"
-
-extern "C" {
-  double parse_dispatch(char*, double*, int);
-}
 
 
 double schedtime; 	// up here so that rtsetoutput can access this info
@@ -78,7 +75,8 @@ extern "C" {
     // socknew is offset from MYPORT to allow more than one inst
     sss.sin_port = htons(MYPORT+socknew);
 
-    if( err = bind(s, (struct sockaddr *)&sss, sizeof(sss)) < 0) {
+    err = bind(s, (struct sockaddr *)&sss, sizeof(sss));
+    if (err < 0) {
       perror("bind");
       exit(1);
     }
