@@ -593,6 +593,8 @@ int main(int argc, char *argv[])
    if (!quiet) {
       printf("File: %s\n", sfname);
       printf("Rate: %d Hz   Chans: %d\n", srate, in_chans);
+      printf("Duration: %.*f seconds [%s]\n", MARK_PRECISION, dur,
+                                       make_time_string(dur, MARK_PRECISION));
       if (start_time > 0.0)
          printf("Skipping %g seconds.\n", start_time);
       if (end_time > 0.0)
