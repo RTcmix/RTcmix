@@ -235,6 +235,26 @@ int get_bool_option(const char *option_name)
 	return 0;
 }
 
+void set_bool_option(const char *option_name, int value)
+{
+	if (!strcmp(option_name, PRINT_STR))
+		options.print((bool) value);
+	else if (!strcmp(option_name, REPORT_CLIPPING_STR))
+		options.reportClipping((bool) value);
+	else if (!strcmp(option_name, CHECK_PEAKS_STR))
+		options.checkPeaks((bool) value);
+	else if (!strcmp(option_name, CLOBBER_STR))
+		options.clobber((bool) value);
+	else if (!strcmp(option_name, AUDIO_STR))
+		options.audio((bool) value);
+	else if (!strcmp(option_name, PLAY_STR))
+		options.play((bool) value);
+	else if (!strcmp(option_name, RECORD_STR))
+		options.record((bool) value);
+	else
+		assert(0 && "unsupported option name");
+}
+
 double get_double_option(const char *option_name)
 {
 	if (!strcmp(option_name, BUFFER_FRAMES_STR))
@@ -242,6 +262,14 @@ double get_double_option(const char *option_name)
 
 	assert(0 && "unsupported option name");
 	return 0;
+}
+
+void set_double_option(const char *option_name, double value)
+{
+	if (!strcmp(option_name, BUFFER_FRAMES_STR))
+		options.bufferFrames(value);
+	else
+		assert(0 && "unsupported option name");
 }
 
 char *get_string_option(const char *option_name)
@@ -257,5 +285,19 @@ char *get_string_option(const char *option_name)
 
 	assert(0 && "unsupported option name");
 	return 0;
+}
+
+void set_string_option(const char *option_name, const char *value)
+{
+	if (!strcmp(option_name, DEVICE_STR))
+		options.device(value);
+	else if (!strcmp(option_name, INDEVICE_STR))
+		options.inDevice(value);
+	else if (!strcmp(option_name, OUTDEVICE_STR))
+		options.outDevice(value);
+	else if (!strcmp(option_name, DSO_PATH_STR))
+		options.dsoPath(value);
+	else
+		assert(0 && "unsupported option name");
 }
 

@@ -114,8 +114,11 @@ extern "C" {
 // supported option_name strings.
 
 int get_bool_option(const char *option_name);
+void set_bool_option(const char *option_name, int value);
 double get_double_option(const char *option_name);
+void set_double_option(const char *option_name, double value);
 char *get_string_option(const char *option_name);
+void set_string_option(const char *option_name, const char *value);
 
 #ifdef __cplusplus
 } // extern "C"
