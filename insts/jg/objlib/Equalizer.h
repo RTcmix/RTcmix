@@ -24,7 +24,8 @@ typedef enum {
    EQAllPass,
    EQPeaking,
    EQLowShelf,
-   EQHighShelf
+   EQHighShelf,
+   EQInvalid
 } EQType;
 
 class Equalizer

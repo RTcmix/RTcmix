@@ -146,6 +146,10 @@ void Equalizer :: setCoeffs(
          a1 = 2.0 * ((A - 1.0) - ((A + 1.0) * cs));
          a2 = (A + 1.0) - ((A - 1.0) * cs) - (beta * sn);
          break;
+
+      case EQInvalid:
+         assert("Equalizer::setCoeffs: invalid EQ type" && 0);
+         break;
    }
 
    c0 = b0 / a0;
