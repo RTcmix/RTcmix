@@ -86,6 +86,11 @@ init_globals()
    is_float_format = 0;
    rtoutsfname = NULL;
 
+#ifdef RTUPDATE
+   tags_on = 0;
+#endif
+
+   rtrecord = 0;                /* indicates reading from audio device */
    rtfileit = 0;                /* signal writing to soundfile */
    rtoutfile = 0;
 
