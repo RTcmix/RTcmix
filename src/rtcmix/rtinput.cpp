@@ -5,6 +5,7 @@
 
 /* Originally by Brad Garton, Doug Scott, and Dave Topper.
    Reworked for v2.3 by John Gibson.
+   Reworked again for 3.7 by Douglas Scott.
 */
 #include <globals.h>
 #include <prototypes.h>
@@ -17,14 +18,10 @@
 #include <errno.h>
 #include <sndlibsupport.h>
 #include <rtdefs.h>
+#include "audio_devices.h"
 #ifdef LINUX
    #include <fcntl.h>
 #endif /* LINUX */
-#ifdef MACOSX
-#endif /* MACOSX */
-#ifdef SGI
-   #include <dmedia/audio.h>
-#endif /* SGI */
 
 /* code that lets user specify buses for input sources */
 //#define INPUT_BUS_SUPPORT
@@ -35,18 +32,7 @@ typedef enum {
    DIGITAL
 } AudioPortType;
 
-#ifdef LINUX
-   #define open_audio_input open_linux_audio_input
-#endif
-#ifdef MACOSX
-   #define open_audio_input open_macosx_audio_input
-#endif
-#ifdef SGI
-   #define open_audio_input open_sgi_audio_input
-#endif
-
 static int last_input_index = -1;
-
 
 
 /* ------------------------------------------------- get_last_input_index --- */
@@ -57,98 +43,6 @@ get_last_input_index()
 {
    return last_input_index;
 }
-
-
-#ifdef LINUX
-/* ----------------------------------------------- open_linux_audio_input --- */
-/* The device has already been opened in rtsetparams.
-*/
-static int
-open_linux_audio_input(AudioPortType port_type, int nchans)
-{
-#ifdef MONO_DEVICES
-// FIXME: what do we return?
-#else /* !MONO_DEVICES */
-   if (in_port[0])
-      return in_port[0];         /* global set in rtsetparams */
-   else
-      return -1;
-#endif /* !MONO_DEVICES */
-}
-#endif /* LINUX */
-
-
-#ifdef MACOSX
-/* ---------------------------------------------- open_macosx_audio_input --- */
-/* The device has already been opened in rtsetparams.
-*/
-static AudioDeviceID
-open_macosx_audio_input(AudioPortType port_type, int nchans)
-{
-   return in_port;         /* global set in rtsetparams */
-}
-#endif /* MACOSX */
-
-
-#ifdef SGI
-/* ------------------------------------------------- open_sgi_audio_input --- */
-static int
-open_sgi_audio_input(AudioPortType port_type, int nchans)
-{
-   int      port;
-   long     pvbuf[4];
-   long     buflen;
-   ALconfig in_port_config;
-
-   /* configure and open input audio port */
-   in_port_config = ALnewconfig();
-   ALsetwidth(in_port_config, AL_SAMPLE_16);
-
-   if (nchans == 1)
-      ALsetchannels(in_port_config, AL_MONO);
-   else if (nchans == 2)
-      ALsetchannels(in_port_config, AL_STEREO);
-
-   if (ALsetqueuesize(in_port_config, RTBUFSAMPS * 4) == -1) {
-      rterror("rtinput",
-              "Could not configure the input audio port queue size to %d.\n",
-              RTBUFSAMPS * 4);
-      return -1;
-   }
-
-   switch (port_type) {
-      case LINE:
-         port = AL_INPUT_LINE;
-         break;
-      case DIGITAL:
-         port = AL_INPUT_DIGITAL;
-         break;
-      default:
-         port = AL_INPUT_MIC;
-         break;
-   }
-
-   pvbuf[0] = AL_INPUT_RATE;
-   pvbuf[1] = (long) SR;
-   pvbuf[2] = AL_INPUT_SOURCE;
-   pvbuf[3] = port;
-   buflen = 4;
-
-   ALsetparams(AL_DEFAULT_DEVICE, pvbuf, buflen);
-
-   /* open up thet thar audio port! */
-   in_port = ALopenport("rtcmixin", "r", in_port_config);
-
-   ALfreeconfig(in_port_config);
-
-   if (!in_port) {
-      fprintf(stderr, "Could not open input audio port.\n");
-      return -1;
-   }
-
-   return AUDIO_DEVICE_FD;          /* our fake fd for SGI audio devices */
-}
-#endif /* SGI */
 
 
 /* ------------------------------------------------------ open_sound_file --- */
@@ -215,7 +109,6 @@ open_sound_file(
 
    return fd;
 }
-
 
 /* -------------------------------------------------------------- rtinput --- */
 /* This function is used in the score to open a file or an audio device for
@@ -350,21 +243,14 @@ rtinput(float p[], int n_args, double pp[])
       }
    }
 
-   if (!is_open) {                  /* then open audio device or file. */
-
-      if (audio_in) {
-#ifdef MACOSX
-         if (open_audio_input(port_type, nchans) == kAudioDeviceUnknown)
-            die("rtinput",
-                     "Audio device not open yet.  Call rtsetparams first.");
-         fd = 1;  /* we don't use this;  set to 1 so rtsetinput() will work */
-#else /* !MACOSX */
-         fd = open_audio_input(port_type, nchans);
-         if (fd == -1) {
-		 	rterror("rtinput", "Audio input device not configured.");
+	if (!is_open) {                  /* then open audio device or file. */
+		if (audio_in) {
+           if (!audio_input_is_initialized())
+		   {
+            die("rtinput", "Audio input device not open yet.  Call rtsetparams first.");
 			return -1;
-		 }
-#endif /* !MACOSX */
+		   }
+         fd = 1;  /* we don't use this;  set to 1 so rtsetinput() will work */
          for (i = 0; i < nchans; i++) {
             allocate_audioin_buffer(i, RTBUFSAMPS);
          }

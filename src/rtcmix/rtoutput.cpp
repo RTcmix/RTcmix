@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sndlibsupport.h>
+#include "audio_devices.h"
 #include "../rtstuff/rtdefs.h"
 
 static int clobber = 0;         /* Default clobber mode (see comment below) */
@@ -337,25 +338,21 @@ rtoutput(float p[], int n_args, double pp[])
       }
    }
 
-   rtoutfile = sndlib_create(rtoutsfname, output_header_type,
-                                         output_data_format, (int)SR, NCHANS);
-   if (rtoutfile == -1) {
-      rterror("rtoutput", "Can't write \"%s\": %s", rtoutsfname, strerror(errno));
-	  return -1;
-   }
+	if (create_audio_file_device(rtoutsfname,
+								 output_header_type,
+								 output_data_format,
+								 NCHANS,
+								 SR,
+								 normalize_output_floats,
+								 check_peaks,
+								 play_audio) < 0)
+	{
+		return -1;	/* failed! */
+	}
+	
+	rtfileit = 1;	/* here we finally set this to 1 */
 
-   if (print_is_on) {
-     printf("Output file set for writing:\n");
-     printf("      name:  %s\n", rtoutsfname);
-     printf("      type:  %s\n", mus_header_type_name(output_header_type));
-     printf("    format:  %s\n", mus_data_format_name(output_data_format));
-     printf("     srate:  %g\n", SR);
-     printf("     chans:  %d\n", NCHANS);
-   }
-
-   rtfileit = 1;	/* here we finally set this to 1 */
-
-   return 1;
+	return 1;
 }
 
 
