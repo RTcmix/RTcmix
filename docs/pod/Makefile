@@ -10,14 +10,14 @@ INST = ELL PAN REVERBIT REVMIX STEREO
 CMD = pchcps sfcreate sffixsize sfhedit sfprint
 
 # Commands invoked from within an RTcmix script (in Minc, Perl, Python)
-SCRIPT = addgens fdump fplot gen1 gen2 gen3 gen4 gen5 gen7 \
-makegen multgens setexp setline setline_size
+SCRIPT = addgens fdump fplot gen1 gen2 gen3 gen4 gen5 gen6 gen7 \
+gen10 gen18 makegen multgens setexp setline setline_size
 
 # Programmer documentation
 API = 
 
 IMAGES = addgens.png fplot.png gen4a.png gen4b.png gen4c.png gen4d.png \
-gen5a.png gen5b.png gen7.png multgens.png
+gen5a.png gen5b.png gen6.png gen7.png multgens.png
 
 
 ################################################################################
