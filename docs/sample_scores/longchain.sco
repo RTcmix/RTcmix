@@ -1,4 +1,4 @@
-/* This inst makes a wavetable synth riff and feeds it through 3 effects
+/* This score makes a wavetable synth riff and feeds it through 3 effects
    in series: flange -> delay -> reverb
 */
 print_off()
