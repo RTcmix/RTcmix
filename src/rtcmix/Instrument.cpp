@@ -444,6 +444,28 @@ Instrument::getPField(int index) const
 	return (*_pfields)[index];
 }
 
+// Utility for returning a double array to the subclass.
+// Returns array from PField if available, else treats
+// value as index into floc tables.
+
+const double *
+Instrument::getPFieldTable(int index, int *tableLen) const
+{
+	const PField &pf = getPField(index);
+	double *tableArray = (double *) pf;
+	*tableLen = 0;
+	if (tableArray != NULL) {
+		*tableLen = pf.values();
+	}
+	else {
+		int flocIndex = pf.intValue(0.0);
+		tableArray = floc(flocIndex);
+		if (tableArray)
+			*tableLen = fsize(flocIndex);
+	}
+	return tableArray;
+}
+
 #ifdef RTUPDATE
 /* --------------------set_instnum------------------------------------------ */
 

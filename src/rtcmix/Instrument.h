@@ -167,6 +167,7 @@ protected:
 	int rtbaddout(BUFTYPE samps[], int length);	// block version of same
 
 	const PField &	getPField(int index) const;
+	const double *	getPFieldTable(int index, int *tableLen) const;
 
 private:
    void				gone(); // decrements reference to input soundfile
