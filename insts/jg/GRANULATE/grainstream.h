@@ -83,7 +83,7 @@ public:
 private:
    const int firstFreeVoice();
    const double getTransposition();
-   void playGrains(bool forwards);
+   void playGrains();
 
    // set in response to user input
    double _srate;

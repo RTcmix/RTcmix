@@ -16,13 +16,14 @@ public:
 
    void startGrain(const int instartframe, const double outdur,
       const int inchan, const double amp, const double transp,
-      const double pan);
+      const double pan, const bool forwards);
 
-   void next(float &left, float &right, const bool forwards);
+   void next(float &left, float &right);
 
 private:
-   float getSigNoTransp(const bool forwards);
-   float getSig2ndOrder(const bool forwards);
+   float getSigNoTransp();
+   float getSig2ndOrder();
+   float getSig3rdOrder();
 
    double _srate;
    double *_inputtab;
@@ -31,9 +32,9 @@ private:
    bool _preservedur;
 
    Ooscil *_env;
-   bool _inuse, _getflag;
+   bool _inuse, _getflag, _forwards;
    int _inchan, _instartframe, _inendframe, _incurframe;
-   float _oldersig, _oldsig, _newsig, _amp, _pan;
+   float _oldersig, _oldsig, _newsig, _newestsig, _amp, _pan;
    double _increment, _counter, _cpsoct10;
 };
 

@@ -10,7 +10,6 @@
 #include "grainvoice.h"
 
 #define DEBUG 0
-
 //#define NDEBUG     // disable asserts
 
 
@@ -19,7 +18,8 @@ GrainVoice::GrainVoice(const double srate, double *inputTable, int inputFrames,
    const int numInChans, const int numOutChans, const bool preserveDur)
    : _srate(srate), _inputtab(inputTable), _inputframes(inputFrames),
      _numinchans(numInChans), _numoutchans(numOutChans),
-     _preservedur(preserveDur), _env(NULL), _inuse(false), _amp(0.0), _pan(0.0)
+     _preservedur(preserveDur), _env(NULL), _inuse(false),
+     _amp(0.0), _pan(0.0)
 {
    assert(_srate > 0.0);
    assert(_inputtab != NULL);
@@ -43,9 +43,13 @@ void GrainVoice::setGrainEnvelopeTable(double *table, int length)
 
 // <transp> is in linear octaves, relative to zero.
 void GrainVoice::startGrain(const int instartframe, const double outdur,
-   const int inchan, const double amp, const double transp, const double pan)
+   const int inchan, const double amp, const double transp, const double pan,
+   const bool forwards)
 {
    assert(inchan < _numinchans);
+
+   _forwards = forwards;
+   _instartframe = instartframe;
 
    // Getting durations right is tricky when transposing, because our
    // transposition method doesn't preserve duration.  For example, if we
@@ -63,38 +67,42 @@ void GrainVoice::startGrain(const int instartframe, const double outdur,
    // taking into account the transposition issues.
 
    // Set up transposition increment (for interpolation pointer).
-   if (transp == 0.0)
+   if (transp == 0.0) {
       _increment = 1.0;
-   else
+   }
+   else {
       _increment = cpsoct(10.0 + transp) / _cpsoct10;
+      _oldsig = 0.0f;
+      _newsig = 0.0f;
+      _newestsig = 0.0f;      // for 3rd order interp only
+      _getflag = true;
+      _counter = double(_instartframe);
+   }
 
    const double inputdur = _preservedur ? outdur * _increment : outdur;
    const double outputdur = _preservedur ? outdur : outdur / _increment;
 
    int inframes = int((inputdur * _srate) + 0.5);
 
-   _instartframe = instartframe;
-   _inendframe = _instartframe + inframes;
-
-#ifdef NOTNOW
-   if (_inendframe >= _inputframes) {
-      _inendframe = _inputframes - 1;
-      inframes = _inendframe - _instartframe;
-      outputdur = double(inframes) / _srate;
-      if (_preservedur)
-         outputdur *= _increment;
-   }
-   if (inframes <= 0)
-      return;
-#else
-   // If inputdur would cause us to read past the end of the input array,
-   // don't play this grain.
-   if (_inendframe >= _inputframes) {
- #if DEBUG > 0
-      printf("Suppressing grain that would run past input array.\n");
- #endif
-      return;
+   if (forwards) {
+      _inendframe = _instartframe + inframes;
+      // If inputdur would cause us to read past the end of the input array,
+      // don't play this grain.
+      if (_inendframe >= _inputframes) {
+#if DEBUG > 0
+         printf("Suppressing grain that would run past input array end.\n");
 #endif
+         return;
+      }
+   }
+   else {
+      _inendframe = _instartframe - inframes;
+      if (_inendframe < 0) {
+#if DEBUG > 0
+         printf("Suppressing grain that would run past input array start.\n");
+#endif
+         return;
+      }
    }
 
    assert(_env != NULL);
@@ -105,41 +113,36 @@ void GrainVoice::startGrain(const int instartframe, const double outdur,
    _amp = amp;
    _pan = pan;
 
-   _oldsig = 0.0f;
-   _newsig = 0.0f;
-
-   _getflag = true;
    _incurframe = _instartframe;
-   _counter = double(_instartframe);
 
    _inuse = true;
 
 #if DEBUG > 0
-   printf("inputdur=%f, outputdur=%f, inputframes=%d, startframe=%d, \
-      endframe=%d, inchan=%d, numinchans=%d\n",
-      inputdur, outputdur, _inputframes, _instartframe, _inendframe,
-      _inchan, _numinchans);
+   printf("inputdur=%f, outputdur=%f, _inchan=%d, _numinchans=%d,
+      _inputframes=%d, _instartframe=%d, _inendframe=%d, inframes=%d\n",
+      inputdur, outputdur, _inchan, _numinchans, _inputframes, _instartframe,
+      _inendframe, inframes);
 #endif
 }
 
-float GrainVoice::getSigNoTransp(const bool forwards)
+float GrainVoice::getSigNoTransp()
 {
    assert(_incurframe >= 0);
    assert(_incurframe < _inputframes);
 
    const int index = (_incurframe * _numinchans) + _inchan;
 
-   if (forwards) {
+   if (_forwards) {
       _incurframe++;
       if (_incurframe >= _inendframe)
          _inuse = false;            // returning last frame for this grain
    }
    else {
       _incurframe--;
-      if (_incurframe < _instartframe)
+      if (_incurframe <= _inendframe)
          _inuse = false;
    }
-   return float(_inputtab[index]);
+   return (float) _inputtab[index];
 }
 
 inline float _interp2ndOrder(float y0, float y1, float y2, float t)
@@ -152,7 +155,7 @@ inline float _interp2ndOrder(float y0, float y1, float y2, float t)
    return y0 + (b * t) + (c * t * t);
 }
 
-float GrainVoice::getSig2ndOrder(const bool forwards)
+float GrainVoice::getSig2ndOrder()
 {
    int index = (_incurframe * _numinchans) + _inchan;
 
@@ -164,39 +167,112 @@ float GrainVoice::getSig2ndOrder(const bool forwards)
       assert(_incurframe < _inputframes);
 
       _newsig = (float) _inputtab[index];
-      index += _numinchans;
 
-      if (forwards) {
+      if (_forwards) {
+         index += _numinchans;
          _incurframe++;
          if (_incurframe >= _inendframe) {
             _inuse = false;         // returning last frame for this grain
             break;
          }
+         if (_counter - double(_incurframe) < 0.5)
+            _getflag = false;
       }
       else {
+         index -= _numinchans;
          _incurframe--;
-         if (_incurframe < _instartframe) {
+         if (_incurframe <= _inendframe) {
             _inuse = false;
             break;
          }
+         if (double(_incurframe) - _counter < 0.5)
+            _getflag = false;
       }
-      if (_counter - double(_incurframe) < 0.5)
-         _getflag = false;
    }
-   const double frac = _counter - (double) _incurframe + 2.0;
-   float sig = _interp2ndOrder(_oldersig, _oldsig, _newsig, frac);
-   _counter += _increment;
-   if (_counter - (double) _incurframe >= -0.5)
-      _getflag = true;
+   float sig;
+   if (_forwards) {
+      const double frac = (_counter - (double) _incurframe) + 2.0;
+      sig = _interp2ndOrder(_oldersig, _oldsig, _newsig, frac);
+      _counter += _increment;
+      if (_counter - (double) _incurframe >= -0.5)
+         _getflag = true;
+   }
+   else {
+      const double frac = ((double) _incurframe - _counter) + 2.0;
+      sig = _interp2ndOrder(_oldersig, _oldsig, _newsig, frac);
+      _counter -= _increment;
+      if ((double) _incurframe - _counter >= -0.5)
+         _getflag = true;
+   }
    return sig;
 }
 
-#ifdef NOTYET
-// see TRANS3.cpp
-float GrainVoice::getSig3rdOrder(const bool forwards)
+inline float _interp3rdOrder(float ym2, float ym1, float yp1, float yp2,
+   float t)
 {
+   const float a = t + 1.0f;
+   const float c = t - 1.0f;
+   const float d = t - 2.0f;
+
+   const float e = a * t;
+   const float f = c * d;
+
+   return 0.5f * (a * f * ym1 - e * d * yp1) 
+            + 0.166666666667 * (e * c * yp2 - t * f * ym2);
 }
-#endif
+
+float GrainVoice::getSig3rdOrder()
+{
+   int index = (_incurframe * _numinchans) + _inchan;
+
+   while (_getflag) {
+      _oldersig = _oldsig;
+      _oldsig = _newsig;
+      _newsig = _newestsig;
+
+      assert(_incurframe >= 0);
+      assert(_incurframe < _inputframes);
+
+      _newestsig = (float) _inputtab[index];
+
+      if (_forwards) {
+         index += _numinchans;
+         _incurframe++;
+         if (_incurframe >= _inendframe) {
+            _inuse = false;         // returning last frame for this grain
+            break;
+         }
+         if (_counter - double(_incurframe) < 0.0)
+            _getflag = false;
+      }
+      else {
+         index -= _numinchans;
+         _incurframe--;
+         if (_incurframe <= _inendframe) {
+            _inuse = false;
+            break;
+         }
+         if (double(_incurframe) - _counter < 0.0)
+            _getflag = false;
+      }
+   }
+   float sig;
+   if (_forwards) {
+      const double frac = (_counter - (double) _incurframe) + 1.0;
+      sig = _interp3rdOrder(_oldersig, _oldsig, _newsig, _newestsig, frac);
+      _counter += _increment;
+      if (_counter - (double) _incurframe >= 0.0)
+         _getflag = true;
+   }
+   else {
+      const double frac = ((double) _incurframe - _counter) + 1.0;
+      sig = _interp3rdOrder(_oldersig, _oldsig, _newsig, _newestsig, frac);
+      _counter -= _increment;
+      if ((double) _incurframe - _counter >= 0.0)
+         _getflag = true;
+   }
+   return sig;
+}
 
 // Compensate for hole in the middle.
 inline float _boost(const float panL, const float panR)
@@ -205,15 +281,19 @@ inline float _boost(const float panL, const float panR)
 }
 
 // If output is mono, <left> holds signal, and <right> is zero.
-void GrainVoice::next(float &left, float &right, const bool forwards)
+void GrainVoice::next(float &left, float &right)
 {
-//FIXME: use function pointers to select interp method in startGrain
    float sig;
+
+   // Select appropriate interpolation function.  We could make these static
+   // methods, and install a function pointer during startGrain, but then we'd
+   // have to pass object state in and out of them.
    if (_increment == 1.0)
-      sig = getSigNoTransp(forwards);
+      sig = getSigNoTransp();
    else
-      sig = getSig2ndOrder(forwards);
+      sig = getSig2ndOrder();
    sig *= _env->next() * _amp;
+
    if (_numoutchans > 1) {
       const float panR = 1.0 - _pan;
       sig *= _boost(_pan, panR);

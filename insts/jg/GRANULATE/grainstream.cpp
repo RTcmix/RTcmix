@@ -130,9 +130,14 @@ void GrainStream::setTraversalRateAndGrainHop(const double rate,
 {
    const double hopframes = hop * _srate;
    _outhop = int(hopframes + 0.5);
-   _inhop = int((hopframes * rate) + 0.5);
+   if (rate < 0.0)
+      _inhop = int((hopframes * rate) - 0.5);
+   else
+      _inhop = int((hopframes * rate) + 0.5);
    _travrate = rate;
-//printf("inhop=%d, outhop=%d\n", _inhop, _outhop);
+#if DEBUG > 3
+   printf("inhop=%d, outhop=%d\n", _inhop, _outhop);
+#endif
 }
 
 void GrainStream::setGrainTranspositionCollection(double *table, int length)
@@ -169,20 +174,20 @@ const double GrainStream::getTransposition()
             min = proximity;
             closest = i;
          }
-#if DEBUG > 1
+#if DEBUG > 2
          printf("transtab[%d]=%f, jitter=%f, proximity=%f, min=%f\n",
                            i, _transptab[i], transpjitter, proximity, min);
 #endif
       }
       transp += _transptab[closest];
-#if DEBUG > 0
+#if DEBUG > 1
       printf("transpcoll chosen: %f (linoct) at index %d\n",
                                              _transptab[closest], closest);
 #endif
    }
    else {
       transp += transpjitter;
-#if DEBUG > 0
+#if DEBUG > 1
       printf("transp (linoct): %f\n", transp);
 #endif
    }
@@ -190,14 +195,14 @@ const double GrainStream::getTransposition()
    return transp;
 }
 
-void GrainStream::playGrains(bool forwards)
+void GrainStream::playGrains()
 {
    _lastL = 0.0f;
    _lastR = 0.0f;
    for (int i = 0; i < MAX_NUM_VOICES; i++) {
       if (_voices[i]->inUse()) {
          float sigL, sigR;
-         _voices[i]->next(sigL, sigR, forwards);
+         _voices[i]->next(sigL, sigR);
          _lastL += sigL;
          _lastR += sigR;
       }
@@ -225,6 +230,8 @@ bool GrainStream::compute()
 
    if (_outframecount >= _nextoutstart) {
       // time to start another grain
+      bool forwards = (_travrate >= 0.0);
+
       const int voice = firstFreeVoice();
       if (voice != ALL_VOICES_IN_USE) {
 #ifdef COUNT_VOICES
@@ -238,27 +245,14 @@ bool GrainStream::compute()
 
          if (outdur >= 0.0)
             _voices[voice]->startGrain(_nextinstart, outdur, _inchan, amp,
-                                                            transp, pan);
+                                                      transp, pan, forwards);
       }
       const int injitter = (_maxinjitter == 0.0) ? 0
                                           : int(_inrand->value() * _srate);
       _nextinstart += _inhop + injitter;
 
       // NB: injitter can be negative, and _inhop can be <= 0.
-      if (_travrate < 0.0) {
-         const int overshoot = _winstart - _nextinstart;
-         if (overshoot >= 0) {
-            if (_wrap)
-               _nextinstart = _winend - overshoot;
-            else
-               keepgoing = false;
-#if DEBUG > 0
-            printf("wrap to ending... nextinstart=%d, overshoot=%d\n",
-                                                   _nextinstart, overshoot);
-#endif
-         }
-      }
-      else {
+      if (forwards) {
          if (_nextinstart < _winstart)
             _nextinstart = _winstart;
 
@@ -274,6 +268,22 @@ bool GrainStream::compute()
 #endif
          }
       }
+      else {
+         if (_nextinstart > _winend)
+            _nextinstart = _winend;
+
+         const int overshoot = _winstart - _nextinstart;
+         if (overshoot >= 0) {
+            if (_wrap)
+               _nextinstart = _winend - overshoot;
+            else
+               keepgoing = false;
+#if DEBUG > 0
+            printf("wrap to ending... nextinstart=%d, overshoot=%d\n",
+                                                   _nextinstart, overshoot);
+#endif
+         }
+      }
 
       const int outjitter = (_maxoutjitter == 0.0) ? 0
                                           : int(_outrand->value() * _srate);
@@ -283,11 +293,7 @@ bool GrainStream::compute()
       if (_nextoutstart <= _outframecount)
          _nextoutstart = _outframecount + 1;
    }
-#ifdef NOTYET  // not ready to try reverse read yet
-   playGrains(_travrate >= 0.0);
-#else
-   playGrains(true);
-#endif
+   playGrains();
    _outframecount++;
 
    return keepgoing;
