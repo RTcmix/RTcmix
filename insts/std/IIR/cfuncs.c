@@ -2,21 +2,9 @@
 #include <defs.h>
 #include <ugens.h>
 
-#ifdef NOMORE
-int resetval = 1000;
-
-double reset(float *p, int n_args)
-{
-	if(p[0]) resetval = p[0];
-	fprintf(stderr,"Envelope calls set to %d times per sec\n",resetval);
-	return(1.0);
-}
-#endif
-
-
-
 float rsnetc[64][5],amp[64];
 int nresons;
+
 
 double setup(float *p, int n_args)
 {
@@ -43,12 +31,8 @@ double setup(float *p, int n_args)
 }
 
 
-#ifdef NOMORE
-int NBYTES = 32768;
-
 profile()
 {
-	UG_INTRO("reset",reset);
 	UG_INTRO("setup",setup);
 }
-#endif
+

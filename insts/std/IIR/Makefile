@@ -1,7 +1,6 @@
 include ../insts.conf
 
 OBJS = INPUTSIG.o NOISE.o BUZZ.o PULSE.o cfuncs.o rtprofile.o
-CMIXOBJS += $(PROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = IIR libIIR.so
