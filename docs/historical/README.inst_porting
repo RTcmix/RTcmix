@@ -1,12 +1,11 @@
-
 If you have a real-time instrument that works with RTcmix 2.2.3,
 you have to make a few changes to get it to run properly on the
 most recent version of RTcmix that implements bus routing.
 
 Note that instruments don't need to know where their input and output
 signals are coming from. For example, an instrument whose <outputchans>
-is 2 could be writing to a stereo output file, aux busses 0 and 1, or
-aux busses 2 and 7. The instrument doesn't care which. (The instrument
+is 2 could be writing to a stereo output file, aux buses 0 and 1, or
+aux buses 2 and 7. The instrument doesn't care which. (The instrument
 does have access to the bus_config information if it wants to care, but
 try to avoid this.)
 
@@ -41,11 +40,11 @@ The minimum changes are:
  
 4) If you were using rtbaddout instead of rtaddout, for block I/O,
    don't declare an output buffer. This has already been done in the
-   Instrument base class. It's name is <outbuf>. Just write to it the
+   Instrument base class. Its name is <outbuf>. Just write to it the
    same way you were writing to your private output buffer before,
    but don't call rtbaddout (which no longer exists). The scheduler
    will take care of adding your output buffer into the appropriate
-   output busses.
+   output buses.
 
 5) Replace all references to "NCHANS" with "outputchans".
 
@@ -77,7 +76,9 @@ docs/sample_code/MYINST/MYINST.C for the current way to do things.
    as before. (The reset function is now in minc_functions.c.)
 
 3) floc(1) no longer complains and aborts the program if that gen array
-   doesn't exist. Instead, you have to check for this yourself.
+   doesn't exist. Instead, you have to check for this yourself, and 
+   handle its absence in your code (by using a constant amplitude
+   multiplier rather than updating it with tablei).
 
 4) Don't use hard-coded include paths.
 
