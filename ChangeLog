@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Monday, December 2, 2002 John Gibson <johgibso-at-indiana.edu>
+
+   * Fixed bug in AM: if modulator frequency was non-zero (to set
+     fixed frequency rather than function table), the score would
+     play silence or crash.
+
 Sunday, December 1, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * New family of instruments, called SPECTACLE, that do FFT-based
