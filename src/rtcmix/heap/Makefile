@@ -15,4 +15,4 @@ test: testmain.o heap.o queue.o rtQueue.o osx_workaround.o
 clean:
 	$(RM) $(PROG) $(OBJS) test testmain.o
 
-$(OBJS): ../rtdefs.h ../rt.h ../Instrument.h heap.h
+$(OBJS): ../rtdefs.h ../rt.h ../Instrument.h heap.h ../../H/RefCounted.h ../../H/Lockable.h
