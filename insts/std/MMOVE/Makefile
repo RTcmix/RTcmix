@@ -1,0 +1,75 @@
+# This builds and installs both PLACE and MOVE
+
+include ../package.conf
+
+CURDIR = $(CMIXDIR)/insts.std/MMOVE
+MOVEDIR = $(CMIXDIR)/insts.std/MOVE
+EXTERN_OBJS = $(MOVEDIR)/cmixfuns.o $(MOVEDIR)/common.o
+EXTERN_HDRS = $(MOVEDIR)/cmixfuns.h $(MOVEDIR)/common.h $(INSTRUMENT_H)
+COMMON_OBJS = MBASE.o RVB.o msetup.o
+COMMON_HDRS = msetup.h $(EXTERN_HEADERS)
+POBJS = MPLACE.o placeprof.o $(COMMON_OBJS) $(EXTERN_OBJS)
+MOBJS = MMOVE.o moveprof.o path.o $(COMMON_OBJS) $(EXTERN_OBJS)
+#PROF = -pg
+PROF =
+ifeq ($(ARCH),LINUX)
+   CXXFLAGS += -funroll-loops $(PROF)
+endif
+CXXFLAGS += -I. -I$(MOVEDIR) $(MINE)
+CFLAGS += -I. -I$(MOVEDIR) $(MINE)
+
+PROGS = MPLACE libMPLACE.so MMOVE libMMOVE.so
+
+.PHONY: all standalone install dso_install standalone_install \
+uninstall dso_uninstall standalone_uninstall clean cleanall
+
+all: libMPLACE.so libMMOVE.so
+
+standalone: MPLACE MMOVE
+
+$(EXTERN_OBJS):
+	cd $(MOVEDIR); make
+
+libMPLACE.so: $(POBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(POBJS) $(GENLIB) $(SYSLIBS)
+
+MPLACE: $(POBJS) $(CMIXOBJS)
+	$(CXX) -o $@ $(POBJS) $(CMIXOBJS) $(LDFLAGS) $(PROF)
+
+$(POBJS): $(COMMON_HDRS) MPLACE.h
+
+libMMOVE.so: $(MOBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(MOBJS) $(GENLIB) $(SYSLIBS)
+
+MMOVE: $(MOBJS) $(CMIXOBJS)
+	$(CXX) -o $@ $(MOBJS) $(CMIXOBJS) $(LDFLAGS) $(PROF)
+
+$(MOBJS): $(COMMON_HDRS) MMOVE.h
+
+MBASE.o : $(COMMON_HDRS) MBASE.h
+
+install: dso_install
+
+dso_install: all
+	$(INSTALL) $(CURDIR)/libMPLACE.so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/libMMOVE.so $(LIBDESTDIR)
+
+standalone_install: standalone
+	$(INSTALL) $(CURDIR)/MPLACE $(DESTDIR)
+	$(INSTALL) $(CURDIR)/MMOVE $(DESTDIR)
+
+uninstall: dso_uninstall standalone_uninstall
+
+dso_uninstall:
+	$(RM) $(LIBDESTDIR)/libMPLACE.so
+	$(RM) $(LIBDESTDIR)/libMMOVE.so
+
+standalone_uninstall:
+	$(RM) $(DESTDIR)/MPLACE
+	$(RM) $(DESTDIR)/MMOVE
+
+clean:
+	$(RM) $(POBJS) $(MOBJS) $(PROGS)
+
+cleanall: clean uninstall
+
