@@ -34,11 +34,12 @@
 #include "../H/dbug.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <sys/file.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/times.h>       /* obsolete on VAX replace with new proc */
-#include <sys/time.h>       /* obsolete on VAX replace with new proc */
+#include <sys/time.h>
+#include <sys/times.h>
 #include <string.h>
 
 #ifdef USE_SNDLIB
@@ -86,8 +87,18 @@ static SFCODE ampcode = {
 
 struct tms    clockin[NFILES];
  
-int _iaddout(),_faddout(),_iwipeout(),_fwipeout(),_ilayout(),_flayout();
-int _igetin(),_fgetin();
+float getpeakval(float peakflag, int fno);
+void m_zapout(int fno, char *buffer, int nwrite, int *chlist);
+
+static int _iaddout(float *out, int fno);
+static int _faddout(float *out, int fno);
+static int _igetin(float *in, int fno);
+static int _fgetin(float *in, int fno);
+static int _ilayout(float *out, int *chlist, int fno);
+static int _flayout(float *out, int *chlist, int fno);
+static int _iwipeout(float *out, int fno);
+static int _fwipeout(float *out, int fno);
+
 int (*addoutpointer[NFILES])();
 int (*layoutpointer[NFILES])();
 int (*wipeoutpointer[NFILES])();
@@ -149,8 +160,7 @@ double m_open(float *p, short n_args, double *pp)
 
 	if(print_is_on) {
 		printf("name: %s   sr: %.3f  nchans: %d  class: %d\n",name,
-			sfsrate(&sfdesc[fno]),sfchans(&sfdesc[fno]),
-			sfclass(&sfdesc[fno]),sfd[fno]);
+			sfsrate(&sfdesc[fno]),sfchans(&sfdesc[fno]), sfclass(&sfdesc[fno]));
 #ifdef USE_SNDLIB
 		printf("Soundfile type: %s\n",
 				sound_type_name(sfheadertype(&sfdesc[fno])));
@@ -239,11 +249,12 @@ double m_open(float *p, short n_args, double *pp)
 	for(opk = (float *)peak[fno], i = 0; i<sfchans(&sfdesc[fno]); i++) 
 		*(opk+i) = sfmaxamp(&sfm[fno],i);
 	bufsize[fno] = nbytes / sfclass(&sfdesc[fno]);/* set size in words */
+
+	return 0.0;
 }
 
-setnote(start,dur,fno)
-float start,dur;
-int fno;
+int
+setnote(float start, float dur, int fno)
 {
 	int nsamps,offset;
 	int i;
@@ -288,14 +299,13 @@ int fno;
 	return(nsamps);
 }
 
-_iaddout(out,fno)
-float *out;
+static int
+_iaddout(float *out, int fno)
 {
   int i;
   int ipoint = pointer[fno];
   int incr = sfchans(&sfdesc[fno]);
   short *ibuf;
-  short t_isamp;
   
   for(i=0,ibuf = (short *)sndbuf[fno] + ipoint; i<incr; i++) {
     *(ibuf + i) +=  *(out+i); 
@@ -309,16 +319,16 @@ float *out;
     _readit(fno);
     pointer[fno] = 0;
   }
+  return 0;
 }
 
-_faddout(out,fno)
-register float *out;
+static int
+_faddout(float *out, int fno)
 {
 	register int i;
 	register int ipoint = pointer[fno];
 	register int incr = sfchans(&sfdesc[fno]);
 	register float *fbuf;
-	float t_fsamp;
 
 	for(i=0,fbuf = (float *)sndbuf[fno] + ipoint; i<incr; i++) {
 	  *(fbuf + i) +=  *(out+i);
@@ -330,16 +340,16 @@ register float *out;
 	  _readit(fno);
 	  pointer[fno] = 0;
 	}
+	return 0;
 }
 
-_igetin(in,fno)
-float *in;
+static int
+_igetin(float *in, int fno)
 {
 	int i;
 	int ipoint = pointer[fno];
 	int incr = sfchans(&sfdesc[fno]);
 	short *ibuf;
-	short t_isamp;
 
 	for(i=0,ibuf = (short *)sndbuf[fno] + ipoint; i<incr; i++) {
 	  *(in+i) = *(ibuf + i);
@@ -351,8 +361,8 @@ float *in;
 	return(nbytes);
 }
 
-_fgetin(in,fno)
-register float *in;
+static int
+_fgetin(float *in, int fno)
 {
 	register i;
 	register int ipoint = pointer[fno];
@@ -369,16 +379,13 @@ register float *in;
 	return(nbytes);
 }
 
-_ilayout(out,chlist,fno)
-register float *out;
-int *chlist;
-
+static int
+_ilayout(float *out, int *chlist, int fno)
 {
 	register i;
 	register int ipoint = pointer[fno];
 	register int incr = sfchans(&sfdesc[fno]);
 	register short *ibuf;
-	short t_isamp;
 
 	for(i=0,ibuf = (short *)sndbuf[fno] + ipoint; i<incr; i++) {
 	  if(chlist[i]) {
@@ -392,12 +399,11 @@ int *chlist;
 		_readit(fno);
 		pointer[fno] = 0;
 	}
+	return 0;
 }
 
-_flayout(out,chlist,fno)
-register float *out;
-int *chlist;
-
+static int
+_flayout(float *out, int *chlist, int fno)
 {
 	register i;
 	register int ipoint = pointer[fno];
@@ -416,17 +422,16 @@ int *chlist;
 		_readit(fno);
 		pointer[fno] = 0;
 	}
+	return 0;
 }
 
-_iwipeout(out,fno)
-register float *out;
-			/* to force destructive writes */ 
+static int
+_iwipeout(float *out, int fno)   /* to force destructive writes */ 
 {
 	register i;
 	register int ipoint = pointer[fno];
 	register int incr = sfchans(&sfdesc[fno]);
 	register short *ibuf;
-	short t_isamp;
 
 	for(i=0,ibuf = (short *)sndbuf[fno] + ipoint; i<incr; i++) {
 	  *(ibuf + i) = *(out+i); 
@@ -441,11 +446,11 @@ register float *out;
 		_writeit(fno);
 		pointer[fno] = 0;
 	}
+	return 0;
 }
 
-_fwipeout(out,fno)
-register float *out;
-			/* to force destructive writes */ 
+static int
+_fwipeout(float *out, int fno)   /* to force destructive writes */ 
 {
 	register i;
 	register int ipoint = pointer[fno];
@@ -465,15 +470,16 @@ register float *out;
 		_writeit(fno);
 		pointer[fno] = 0;
 	}
+	return 0;
 }
 
-bgetin(input,fno,size)
-register float *input;   
+int
+bgetin(float *input, int fno, int size)
 {
 	register int i;
 	register short *ibuf;
 	register float *fbuf;
-	register int todo,remains;
+	register int todo;
 	int n;
 	int len = bufsize[fno]; 
 
@@ -505,17 +511,15 @@ refill:	todo = ((pointer[fno] + size) > len)
 	return(i);
 }
 
-blayout(out,chlist,fno,size)
-register float *out;   
-register int *chlist;
+void
+blayout(float *out, int *chlist, int fno, int size)
 {
 	register int i,j;
 	register short *ibuf;
 	register float *fbuf;
-	register int todo,remains;
+	register int todo;
 	register int nchans;
 	int len = bufsize[fno]; 
-	short t_isamp;
 
 	nchans = sfchans(&sfdesc[fno]);
 
@@ -553,14 +557,13 @@ refill:	todo = ((pointer[fno] + size) > len)
 	if(size -= todo) goto refill;
 }
 
-baddout(out,fno,size)
-register float *out;   
+void
+baddout(float *out, int fno, int size)
 {
 	register int i;
 	register short *ibuf;
-	short t_isamp;
 	register float *fbuf;
-	register int todo,remains;
+	register int todo;
 	int len = bufsize[fno]; 
 	
  refill:	todo = ((pointer[fno] + size) > len) 
@@ -592,14 +595,13 @@ register float *out;
 	if(size -= todo) goto refill;
 }
 
-bwipeout(out,fno,size)
-register float *out;   
+void
+bwipeout(float *out, int fno, int size)
 {
 	register int i;
 	register short *ibuf;
-	short t_isamp;
 	register float *fbuf;
-	register int todo,remains;
+	register int todo;
 	int len = bufsize[fno]; 
 
 	
@@ -632,19 +634,17 @@ refill:	todo = ((pointer[fno] + size) > len)
 	if(size -= todo) goto refill;
 }
 
-endnote(xno)
+int
+endnote(int xno)
 {
 	struct timeval tp;	
 	struct timezone tzp;	
-	int i,j,final_bytes,fno,err;
+	int i,j,final_bytes,fno;
 	float notepeak,*pk;
 	double total;
 	long *pkloc;
 	struct tms timbuf;
-	float peakval,getpeakval();
-	SFHEADER      tSFHeader;
-	SFMAXAMP      tSFMaxamp;
-	SFCODE        tSFCode;
+	float peakval;
 	struct stat st;
 	short tisamp,*tibuf;
 	float tfsamp,*tfbuf;
@@ -699,7 +699,7 @@ endnote(xno)
    			if((i = write(sfd[fno],sndbuf[fno],final_bytes)) 
 											!= final_bytes) {
 				fprintf(stderr,
-					"CMIX: Bad UNIX write, file %d, nbytes = %ld\n",
+					"CMIX: Bad UNIX write, file %d, nbytes = %d\n",
 					fno,i);
 				perror("write");
 				closesf();
@@ -716,7 +716,7 @@ endnote(xno)
 					/((double)sfclass(&sfdesc[fno]))
 					/(double)sfchans(&sfdesc[fno])/SR;
 	
-	/* _writeit(fno);  /*  write out final record */
+	/* _writeit(fno);  write out final record */
 
 	for(i = 0,notepeak=0; i<sfchans(&sfdesc[fno]); i++) { 
 		if(*(pk+i) > sfmaxamp(&sfm[fno],i)) {
@@ -775,6 +775,7 @@ endnote(xno)
 		perror("write");
 		closesf();
 	}
+	return 0;
 
 #else /* !USE_SNDLIB */
 
@@ -866,16 +867,16 @@ endnote(xno)
 #endif /* !USE_SNDLIB */
 }
 
-_flushbuf(fno)
-int fno;
+void
+_flushbuf(int fno)
 {
 	register i;
 	for(i=pointer[fno]*sfclass(&sfdesc[fno]); i<nbytes; i++)
 		*(sndbuf[fno] + i) = 0;
 }
 
-_chkpeak(fno)
-int fno;
+void
+_chkpeak(int fno)
 {
 	register int i,incr;
 	register short *ibuf,*bufend;
@@ -922,25 +923,28 @@ int fno;
 	} 
 }
 
-peak_off(p,n_args)
-float *p;
+double
+peak_off(float p[], int n_args)
 {
 	peakoff[(int)p[0]] = (char)p[1];
 	if(p[1]) printf("      peak check turned off for file %d\n",(int)p[0]);
 		else
 		 printf("      peak check turned on for file %d\n",(int)p[0]);
+	return 0.0;
 }
-punch_on(p,n_args)
-float *p;
+
+double
+punch_on(float p[], int n_args)
 {
 	punch[(int)p[0]] = p[1];
 	if(!p[1]) printf("      punch turned off for file %d\n",(int)p[0]);
 		else
 		 printf("      punch check turned on for file %d\n",(int)p[0]);
+	return 0.0;
 }
 
-_readit(fno)
-int fno;
+int
+_readit(int fno)
 {
 	int i,n,maxread;
 	short tisamp,*tibuf;
@@ -963,13 +967,13 @@ int fno;
 				/*if(istape[fno] && n) continue;*/
 				perror("read");
 				fprintf(stderr,
-				    "CMIX: Bad UNIX read, nbytes = %ld\n",n);
+				    "CMIX: Bad UNIX read, nbytes = %d\n",n);
 				fprintf(stderr, " sfd[fno]= %d\n",sfd[fno]);
 			        closesf();
 			}
 		}
 	}
-	if(((play_is_on==2) && !maxread) || (play_is_on==3) && (status[fno]))
+	if(((play_is_on==2) && !maxread) || ((play_is_on==3) && (status[fno])))
 	      bzero(sndbuf[fno],nbytes);  /* clean buffer out if not readin */
 
 	/* Swap input buffer */
@@ -1012,13 +1016,13 @@ int fno;
 	return(maxread ? n : maxread);
 }
 
-_writeit(fno)
-int fno;
+int
+_writeit(int fno)
 {
 	int i,n;
 	short tisamp,*tibuf;
 	float tfsamp,*tfbuf;
-	float getpeakval(),peakval;
+	float peakval;
 
 	if(!status[fno]) {
 		fprintf(stderr,"File %d is write-protected!\n",fno);
@@ -1067,7 +1071,7 @@ int fno;
 	if(play_is_on < 2) {
 		if((n = write(sfd[fno],sndbuf[fno],nbytes)) != nbytes) {
 			fprintf(stderr,
-					"CMIX: Bad UNIX write, file %d, nbytes = %ld\n",fno,n);
+					"CMIX: Bad UNIX write, file %d, nbytes = %d\n",fno,n);
 			perror("write");
 			closesf();
 		}
@@ -1082,9 +1086,9 @@ int fno;
 	return(n);
 }
 
-_backup(fno)     /* utility routine to backspace one 'record' */
+void
+_backup(int fno)     /* utility routine to backspace one 'record' */
 {
-
 	if(play_is_on >= 2) return; 
 
 	if((filepointer[fno] = lseek(sfd[fno],(long)-nbytes,SEEK_CUR)) < 0) {
@@ -1094,7 +1098,8 @@ _backup(fno)     /* utility routine to backspace one 'record' */
 	}
 }
 
-_forward(fno)     /* utility routine to forwardspace one 'record' */
+void
+_forward(int fno)     /* utility routine to forwardspace one 'record' */
 {
 	if((filepointer[fno] = lseek(sfd[fno],(long)nbytes,1)) < 0) {
 		fprintf(stderr,"CMIX: bad forward space  in file %d\n",fno);
@@ -1103,6 +1108,7 @@ _forward(fno)     /* utility routine to forwardspace one 'record' */
 	}
 }
 
+void
 closesf()
 {
 	int i;
@@ -1123,13 +1129,13 @@ closesf()
 	exit(0);
 }
 
-m_clean(p,n_args)
-float *p;		/* a fast clean of file, after header */
+double
+m_clean(float p[], int n_args) /* a fast clean of file, after header */
 {
 /* if p1-> = 0, clean whole file, else skip=p1, dur=p2, ch-on? p3--> */
 	int i,todo,nwrite,n;
 	char *point;
-	int fno,segment,zapsize,chlist[4];
+	int fno,segment,chlist[4];
 	int skipbytes;
 
 	fno = (int) p[0];
@@ -1171,9 +1177,8 @@ float *p;		/* a fast clean of file, after header */
 		if(segment) {
 			if((n = read(sfd[fno],sndbuf[fno],nwrite)) 
 					== 0) { /* allow for fractional reads*/
-				fprintf(stderr,
-                 		"CMIX: Apparent eof in clean\n",n);
-				return;
+				fprintf(stderr, "CMIX: Apparent eof in clean\n");
+				return -1.0;
 			}
 			if(lseek(sfd[fno],-n,1) < 0) {
 				fprintf(stderr,"Bad UNIX lseek in clean\n");
@@ -1183,8 +1188,7 @@ float *p;		/* a fast clean of file, after header */
 			nwrite = n;
 		}
 		if((n = write(sfd[fno],sndbuf[fno],nwrite)) == 0) {
-			fprintf(stderr,
-                 	"CMIX: Apparent eof in clean\n",n);
+			fprintf(stderr, "CMIX: Apparent eof in clean\n");
 	        	closesf();
 		}
 		todo -= n;
@@ -1215,11 +1219,12 @@ float *p;		/* a fast clean of file, after header */
 		}
 	filepointer[fno] = headersize[fno];
 	printf("Clean successfully finished.\n");
+
+   return 0.0;
 }
 
-m_zapout(fno,buffer,nwrite,chlist)
-char *buffer;
-int *chlist;
+void
+m_zapout(int fno, char *buffer, int nwrite, int *chlist)
 {
 	float *fbuf;
 	int i,j,nchunks,chans;
@@ -1242,9 +1247,9 @@ int *chlist;
 				if(chlist[j]) *(fbuf+j+i) = 0;
 	}
 }
+
 float
-getpeakval(peakflag,fno)
-float peakflag;
+getpeakval(float peakflag, int fno)
 {
 	float opeak;
 	int i;
