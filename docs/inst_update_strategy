@@ -426,7 +426,7 @@ TRANSBEND(start, inskip, dur, amp, pitch_curve_genno, [inchan, pctleft])
             must return a local table.  If both, then arg overrides gen.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-BUTTER(start, inskip, dur, amp, type, steep, [balance, inchan, pctleft, bypass])
+### BUTTER(start, inskip, dur, amp, type, steep, [balance, inchan, pctleft, bypass])
    [1. amp envelope]
     2. cutoff freq curve
     3. bandwidth curve
@@ -474,7 +474,7 @@ BUTTER(start, inskip, dur, amp, type, steep, [balance, inchan, pctleft, bypass])
             must be present.  If both, then arg overrides gen.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-FILTSWEEP(start, inskip, dur, amp, ringdur, [steep, balance, inchan, pctleft])
+### FILTSWEEP(start, inskip, dur, amp, ringdur, [steep, balance, inchan, pctleft])
    [1. amp envelope]
     2. cutoff freq curve
     3. bandwidth curve
@@ -493,7 +493,7 @@ FILTSWEEP(start, inskip, dur, amp, ringdur, [steep, balance, inchan, pctleft])
             If both, then arg overrides gen.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-FLANGE(start, inskip, dur, amp, resonance, maxdeltime, moddepth, modspeed,
+### FLANGE(start, inskip, dur, amp, resonance, maxdeltime, moddepth, modspeed,
                                  [wet_dry_mix, flanger_type, inchan, pctleft])
    [1. amp envelope]
     2. modulation wavetable
@@ -529,7 +529,7 @@ FLANGE(start, inskip, dur, amp, resonance, maxdeltime, moddepth, modspeed,
             arg overrides gen.  PField values should range from 0 to 1.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-FOLLOWER: FOLLOWBUTTER(start, inskip, dur, car_amp, mod_amp, window_len,
+### FOLLOWER: FOLLOWBUTTER(start, inskip, dur, car_amp, mod_amp, window_len,
                      smooth, filter_type, min_cf, max_cf, [steep, pctleft])
    [1. amp envelope]
     2. bandwidth curve
@@ -545,7 +545,7 @@ FOLLOWER: FOLLOWBUTTER(start, inskip, dur, car_amp, mod_amp, window_len,
             If both, then arg overrides gen.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-FOLLOWER: FOLLOWGATE(start, inskip, dur, car_amp, mod_amp, window_len,
+### FOLLOWER: FOLLOWGATE(start, inskip, dur, car_amp, mod_amp, window_len,
                                        smooth, attack, release, [pctleft])
    [1. amp envelope]
     2. power threshold table
@@ -583,7 +583,7 @@ FOLLOWER: FOLLOWGATE(start, inskip, dur, car_amp, mod_amp, window_len,
             must return a local table.  If both, then arg overrides gen.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-JCHOR(start, inskip, dur, indur, maintain_dur, transp, num_voices,
+### JCHOR(start, inskip, dur, indur, maintain_dur, transp, num_voices,
             min_grain_amp, max_grain_amp, min_grain_wait, max_grain_wait,
             seed, [inchan])
    [1. amp envelope]
@@ -593,16 +593,16 @@ JCHOR(start, inskip, dur, indur, maintain_dur, transp, num_voices,
 
    JCHOR(start, inskip, dur, indur, maintain_dur, transp, num_voices,
             min_grain_amp, max_grain_amp, min_grain_wait, max_grain_wait,
-            seed, [inchan, grain_envelope])
+            seed, [inchan, overall_amp, grain_envelope])
 
    PFields: transp, min_grain_amp, max_grain_amp, min_grain_wait,
-            max_grain_wait, grain_envelope
+            max_grain_wait, overall_amp, grain_envelope
 
    ***NOTE: If no gen 2, then <grain_envelope> arg must be present, and
             must return a local table.  If both, then arg overrides gen.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-JFIR(start, inskip, dur, amp, filt_order, [inchan, pctleft, bypass])
+### JFIR(start, inskip, dur, amp, filt_order, [inchan, pctleft, bypass])
    [1. amp envelope]
     2. freq response function
 
@@ -756,7 +756,7 @@ MMOVE: MPLACE(outskip, inskip, dur, pre_amp, dist2sound, angle, dist_mikes,
 MOVE: same as MMOVE, but no RVB
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-MOOGVCF(start, inskip, dur, amp, [inchan, pctleft])
+### MOOGVCF(start, inskip, dur, amp, [inchan, pctleft])
    [1. amp envelope]
     2. cutoff freq curve
     3. bandwidth curve
@@ -774,18 +774,21 @@ MOOGVCF(start, inskip, dur, amp, [inchan, pctleft])
             If both, then arg overrides gen.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-PAN(start, inskip, dur, amp, [inchan, use_const_power])
+### PAN(start, inskip, dur, amp, [inchan, use_const_power])
    [1. amp envelope]
     2. pan curve
 
    New signature:
 
-   PAN(start, inskip, dur, amp, [inchan, use_const_power, pctleft])
+   PAN(start, inskip, dur, amp, [inchan, use_const_power, pan])
 
-   ***NOTE: If no gen 2, then <pctleft> arg must be present.
+   PFields: amp, use_const_power, pan
+
+   ***NOTE: If no gen 2, then <pan> arg must be present.
             If both, then arg overrides gen.
 
-   ***NOTE: this inst probably superseded by pctleft update capability
+   ***NOTE: this inst would be superseded by pan update capability that all
+      insts now have, were it not for the constant-power panning feature.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 SCULPT(start, dur, amp, num_points, [pctleft])
