@@ -446,7 +446,7 @@ main(int argc, char *argv[])
    /* DJT:  this instead of above joins */
    /* while (rtInteractive) {}; */
 
-   closesf();
+   closesf_noexit();
 
    return 0;
 }

@@ -352,7 +352,7 @@ void RTcmix::printOff()
 
 void RTcmix::close()
 {
-	closesf();
+	closesf_noexit();
 }
 
 
