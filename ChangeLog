@@ -1,3 +1,9 @@
+Saturday, May 27, 2000 John Gibson <johngibson@virginia.edu>
+
+   * Added new instrument, REVMIX, by Ivica Bukvic, to insts.std.
+   * Removed all the USE_SNDLIB ifdefs, since we always use it.
+   * Input from files now ignores in-bus count entirely.
+
 Friday, May 26, 2000 John Gibson <johngibson@virginia.edu>
 
    * Revive the sndreverse program.
