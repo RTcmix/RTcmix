@@ -1,3 +1,8 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
 /* sndlibsupport.c
 
    This file defines functions that help RTcmix use Bill Schottstaedt's
@@ -420,22 +425,26 @@ sndlib_print_current_header_stats(int fd, SFComment *sfc, int verbosity)
 
 #ifdef SGI
    nchars = sprintf(str, 
-#else
-   nchars = snprintf(str, 256,
-#endif
                     "%s, %s\nsrate: %d  chans: %d\nduration: %g seconds\n",
                      is_aifc? "AIFC" : sound_type_name(type),
                      sound_format_name(format), srate, nchans, duration);
+#else
+   nchars = snprintf(str, 256,
+                    "%s, %s\nsrate: %d  chans: %d\nduration: %g seconds\n",
+                     is_aifc? "AIFC" : sound_type_name(type),
+                     sound_format_name(format), srate, nchans, duration);
+#endif
 
    if (verbosity == 2) {
       char tmp[128];
 
 #ifdef SGI
       sprintf(tmp, "frames: %d\nheader size: %d bytes\n",
+                                                 nsamps / nchans, data_loc);
 #else
       snprintf(tmp, 128, "frames: %d\nheader size: %d bytes\n",
-#endif
                                                  nsamps / nchans, data_loc);
+#endif
       strcat(str, tmp);
    }
 
@@ -447,10 +456,11 @@ sndlib_print_current_header_stats(int fd, SFComment *sfc, int verbosity)
          for (n = 0; n < nchans; n++) {
 #ifdef SGI
             sprintf(tmp, "  chan %d:  peak: %g  loc: %ld\n",
+                                         n, sfcp->peak[n], sfcp->peakloc[n]);
 #else
             snprintf(tmp, 80, "  chan %d:  peak: %g  loc: %ld\n",
-#endif
                                          n, sfcp->peak[n], sfcp->peakloc[n]);
+#endif
             strcat(str, tmp);
          }
          strftime(tmp, 80, "  peak stats updated: %a %b %d %H:%M:%S %Z %Y\n",
