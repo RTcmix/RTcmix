@@ -8,7 +8,8 @@
 
 #include "version.h"
 #include "buffers.h"
-#include "bus.h"  // FIXME: just for MAXBUS
+
+#define MAXBUS 16
 
 #ifdef MAIN
 #define GLOBAL
@@ -18,10 +19,9 @@
 
 #ifdef __cplusplus
 
-#include "../rtstuff/heap/heap.h"
+class RTQueue;
 GLOBAL RTQueue *rtQueue;
-GLOBAL heap rtHeap;  // DT:  main heap structure used to queue instruments
-                     // formerly Qobject *rtqueue[];
+
 extern "C" {
 #endif /* __cplusplus */
 
@@ -100,7 +100,6 @@ GLOBAL long elapsed;
 
 #include <pthread.h>
 #ifdef MAIN      /* Have to do this because must be inited in definition. */
-pthread_mutex_t heapLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t pfieldLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t endsamp_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t audio_config_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -120,7 +119,6 @@ pthread_mutex_t bus_slot_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t schedtime_lock = PTHREAD_MUTEX_INITIALIZER;
 /* pthread_mutex_t heapLock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP; */
 #else
-GLOBAL pthread_mutex_t heapLock;
 GLOBAL pthread_mutex_t pfieldLock;
 GLOBAL pthread_mutex_t endsamp_lock;
 GLOBAL pthread_mutex_t audio_config_lock;
@@ -157,14 +155,6 @@ typedef enum {
   NO = 0,
   YES
 } Bool;
-
-typedef enum {
-  TO_AUX,
-  AUX_TO_AUX,
-  TO_OUT,
-  TO_AUX_AND_OUT,
-  UNKNOWN
-} IBusClass;
 
 GLOBAL short AuxToAuxPlayList[MAXBUS]; /* The playback order for AUX buses */
 GLOBAL short ToOutPlayList[MAXBUS]; /* The playback order for AUX buses */
