@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2004-07-23  Douglas Scott  <netdscott at netscape.net>
+
+	*  Genlib functions no longer rely on global SR, so prototypes changed and
+	   all instruments which use the functions were modified.
+
 Saturday, July 22, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * Update some instruments for v4 PField control: MIX, STEREO,
