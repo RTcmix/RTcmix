@@ -40,6 +40,10 @@ extern "C" {
 Handle
 makeconnection(const Arg args[], const int nargs)
 {
+#ifdef MACOSX
+	die("makeconnection", "Not yet implemented for OS X.");
+	return NULL;
+#else
 	if (!args[0].isType(StringType)) {
 		die("makeconnection", "First argument must be a string giving "
 									"connection type, e.g. \"mouseX\", \"midi\".");
@@ -55,5 +59,6 @@ makeconnection(const Arg args[], const int nargs)
 		return NULL;
 
 	return _createPFieldHandle(connection);
+#endif
 }
 
