@@ -24,16 +24,12 @@ typedef	struct ug_item	ug_t;
 extern "C" {
 #endif /* __cplusplus */
 
-extern	ug_t	*ug_list;
 void merror(char *);
-
-extern float SR;
 
 /* times per second to update control-rate variables;
    defined in sys/minc_functions.c
 */
 extern int resetval;
-
  
 /*  structure to pass to gen routines */
 struct gen {
