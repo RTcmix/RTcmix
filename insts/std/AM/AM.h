@@ -1,15 +1,24 @@
+#include <Ougens.h>
+
 class AM : public Instrument {
-	float amp, npoints, *in;
+	int inchan, skip, branch;
+	float *in, amp, modfreq, spread;
 	float amptabs[2], freqtabs[2];
 	double *amptable, *freqtable, *amtable;
-	float si,phase;
-	int lenam;
-	float spread;
-	int skip,inchan;
+	Ooscili *modosc;
 
 public:
 	AM();
 	virtual ~AM();
-	int init(double*, int);
-	int run();
-	};
+	virtual int init(double *, int);
+	virtual int configure();
+	virtual int run();
+};
+
+// update flags (shift amount is pfield number)
+enum {
+	kAmp = 1 << 3,
+	kFreq = 1 << 4,
+	kPan = 1 << 6
+};
+

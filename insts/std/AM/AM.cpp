@@ -3,36 +3,46 @@
    p0 = output start time
    p1 = input start time
    p2 = duration
-   p3 = amplitude multiplier
-   p4 = modulation oscillator frequency (or 0 to use function table)
+   p3 = amplitude multiplier *
+   p4 = modulation oscillator frequency (Hz) **
    p5 = input channel [optional, default is 0]
-   p6 = percent to left channel [optional, default is .5]
+   p6 = pan (in percent-to-left form: 0-1) [optional; default is 0]
+   p7 = reference to AM modulator wavetable [optional; if missing, must use
+        gen 2 ***]
 
-   Here are the function table assignments:
+   p3 (amplitude), p4 (mod freq) and p6 (pan) can receive dynamic updates
+   from a table or real-time control source.
 
-      1: amplitude curve (setline)
-      2: AM modulator waveform (e.g., gen 9 or 10)
-      3: AM modulator frequency curve (optional; set p4 to 0 to use table)
+   * If an old-style gen table 1 is present, its values will be multiplied
+   by the p3 amplitude multiplier, even if the latter is dynamic.
+
+   ** For backwards compatibility, if p4 is zero (or its first value is
+   zero, if p4 is dynamic), then an old-style gen table 3 must be present,
+   and will override any changing values in p4.  However, the preferred
+   way is to use either a constant or dynamic pfield for p4 instead of
+   the makegen.
+   
+   *** If p7 is missing, you must use an old-style gen table 2 for the
+   modulator waveform.
 
    Note that you get either amplitude modulation or ring modulation,
    depending on whether the modulator waveform is unipolar or bipolar
    (unipolar = amp. mod., bipolar = ring mod.).
 
    To make a unipolar sine wave, you have to add a DC component 90 degrees
-   out of phase.  For example, the following makegen creates a sine wave
-   that oscillates between 0 and 1:
+   out of phase.  For example, the following creates a sine wave that
+   oscillates between 0 and 1:
 
-      makegen(2, 9, 1000, 0,.5,90, 1,.5,0)
+      wave = maketable("wave3", 1000, 0,.5,90, 1,.5,0)
 
 
    Author unknown (probably Brad Garton).
    Modulator frequency table and xtra comments added by John Gibson, 1/12/02.
+   rev for v4, JGG, 7/22/04
 */
-#include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "AM.h"
 #include <rt.h>
@@ -42,113 +52,116 @@
 AM::AM() : Instrument()
 {
 	in = NULL;
+	modosc = NULL;
 	freqtable = NULL;
+	branch = 0;
 }
 
 AM::~AM()
 {
 	delete [] in;
+	delete modosc;
 }
-
 
 int AM::init(double p[], int n_args)
 {
-	int rvin;
+	float outskip = p[0];
+	float inskip = p[1];
+	float dur = p[2];
+	inchan = (int) p[5];
 
-	rvin = rtsetinput(p[1], this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
-	nsamps = rtsetoutput(p[0], p[2], this);
+	if (rtsetinput(inskip, this) == -1)
+		return DONT_SCHEDULE;	// no input
+	if (inchan >= inputChannels())
+		return die("AM", "You asked for channel %d of a %d-channel file.",
+														inchan, inputChannels());
+	nsamps = rtsetoutput(outskip, dur, this);
+	if (outputChannels() > 2)
+		return die("AM", "Can't handle more than 2 output channels.");
 
 	amptable = floc(1);
 	if (amptable) {
 		int amplen = fsize(1);
-		tableset(p[2], amplen, amptabs);
+		tableset(dur, amplen, amptabs);
 	}
-	else
-		advise("AM", "Setting phrase curve to all 1's.");
 
-	amtable = floc(2);
-	if (amtable == NULL) {
-		die("AM", "You need a function table 2 containing mod. waveform.");
-		return(DONT_SCHEDULE);
+	double *wavetable = NULL;
+	int tablelen = 0;
+	if (n_args > 7) {      // handle table coming in as optional p7 TablePField
+		const PField &field = getPField(7);
+		tablelen = field.values();
+		wavetable = (double *) field;
 	}
-	lenam = fsize(2);
-	npoints = (float)lenam / SR;
-	si = p[4] * npoints;
+	if (wavetable == NULL) {
+		wavetable = floc(2);
+		if (wavetable == NULL)
+			return die("AM", "Either use the wavetable pfield (p7) or make "
+                    "an old-style gen function in slot 2.");
+		tablelen = fsize(2);
+	}
 
-	if (si == 0.0) {
+	modfreq = p[4];
+	modosc = new Ooscili(modfreq, wavetable, tablelen);
+
+	if (modfreq == 0.0) {
 		freqtable = floc(3);
 		if (freqtable) {
 			int len = fsize(3);
-      	tableset(getdur(), len, freqtabs);
+      	tableset(dur, len, freqtabs);
 		}
-		else {
-			die("AM", "Function table 3 must contain mod. freq. curve if p4=0.");
-			return(DONT_SCHEDULE);
-		}
+		else
+			return die("AM", "If p4 is zero, old-style gen table 3 must "
+									"contain modulator frequency curve.");
 	}
 
-	amp = p[3];
-	skip = (int)(SR/(float)resetval);      // how often to update amp curve
-	phase = 0.0;
+	skip = (int) (SR / (float) resetval);
 
-	inchan = (int)p[5];
-	if ((inchan+1) > inputchans) {
-		die("AM", "You asked for channel %d of a %d-channel file.",
-																		inchan, inputchans);
-		return(DONT_SCHEDULE);
-	}
+	return nSamps();
+}
 
-	spread = p[6];
-
-	return(nsamps);
+int AM::configure()
+{
+	in = new float [RTBUFSAMPS * inputChannels()];
+	return in ? 0 : -1;
 }
 
 int AM::run()
 {
-	int i,rsamps;
-	float out[2];
-	float aamp;
-	int branch;
+	const int samps = framesToRun() * inputChannels();
 
-	if (in == NULL)        /* first time, so allocate it */
-		in = new float [RTBUFSAMPS * inputchans];
+	rtgetin(in, this, samps);
 
-	rsamps = chunksamps*inputchans;
-
-	rtgetin(in, this, rsamps);
-
-	aamp = amp;            /* in case amptable == NULL */
-
-	branch = 0;
-	for (i = 0; i < rsamps; i += inputchans)  {
-		if (--branch < 0) {
+	for (int i = 0; i < samps; i += inputChannels())  {
+		if (--branch <= 0) {
+			double p[7];
+			update(p, 7, kAmp | kFreq | kPan);
+			amp = p[3];
 			if (amptable)
-				aamp = tablei(cursamp, amptable, amptabs) * amp;
+				amp *= tablei(currentFrame(), amptable, amptabs);
 			if (freqtable)
-				si = tablei(cursamp, freqtable, freqtabs) * npoints;
+				modfreq = tablei(currentFrame(), freqtable, freqtabs);
+			else
+				modfreq = p[4];
+			modosc->setfreq(modfreq);
+			spread = p[6];
 			branch = skip;
 		}
 
-		out[0] = in[i+inchan] * oscili(aamp, si, amtable, lenam, &phase);
+		float out[2];
+		out[0] = in[i + inchan] * modosc->next() * amp;
 
-		if (outputchans == 2) {
+		if (outputChannels() == 2) {
 			out[1] = out[0] * (1.0 - spread);
 			out[0] *= spread;
 		}
 
 		rtaddout(out);
-		cursamp++;
+		increment();
 	}
-	return(i);
+	return framesToRun();
 }
 
-
-
-Instrument*
-makeAM()
+Instrument *makeAM()
 {
 	AM *inst;
 
