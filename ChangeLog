@@ -1,3 +1,8 @@
+Saturday, Dec 1, 2001 John Gibson <johgibso@indiana.edu>
+
+   * New function to see what's actually in a makegen array (fdump).
+   * New Butterworth filter instrument (BUTTER).
+
 Saturday, Aug 4, 2001 John Gibson <johgibso@indiana.edu>
 
    * Update to more recent version of sndlib, with lots
