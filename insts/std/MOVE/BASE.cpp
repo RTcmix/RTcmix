@@ -279,7 +279,7 @@ int BASE::run()
 					get_tap(cursamp, ch, path, bufsamps);
 					DBG(PrintSig(vec->Sig, bufsamps));   
 					/* air absorpt. filters */
-         			air(vec->Sig, bufsamps, vec->Airdata);			
+         				air(vec->Sig, bufsamps, vec->Airdata);			
 					/* wall absorpt. filters */
 					if (path > 0)	// no filtering of direct signal
          				wall(vec->Sig, bufsamps, vec->Walldata);
@@ -287,7 +287,7 @@ int BASE::run()
 					if (m_binaural)						
 						fir(vec->Sig, cursamp, g_Nterms[path], 
 					    	vec->Fircoeffs, vec->Firtaps, bufsamps);
-           			// sum unscaled reflected paths as input for RVB.
+           				// sum unscaled reflected paths as input for RVB.
 					// first path is set; the rest are summed
 					if (path == 1)
 						copyBuf(&roomsig[ch][0], vec->Sig, bufsamps);             

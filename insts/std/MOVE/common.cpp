@@ -77,6 +77,18 @@ addBuf(double *to, double *from, int len)
 	    to[i] += from[i];
 }
 
+#if defined(i386)
+/* -------------------------------------------------- * check_denormals --- */
+/* check_denormals assures that no values in the buffer underflow the FPU */
+void
+check_denormals(double *Sig, int len)
+{
+	for (int i = 0; i < len; ++i)
+		if ((Sig[i] > 0.0 && Sig[i] < 1.0e-30) || (Sig[i] < 0.0 && Sig[i] > -1.0e-30))
+			Sig[i] = 0.0;
+}
+#endif
+
 /* ------------------------------------------------------- setup_trigfuns --- */
 /* Loads global arrays with sine and cosine functions for macros.
 */

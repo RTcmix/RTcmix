@@ -23,7 +23,11 @@ const double MACH1 = 1080.0;
 inline double
 tone(double sig, double data[3])
 {
-   return data[2] = data[0] * sig + data[1] * data[2];
+    double out = data[0] * sig + data[1] * data[2];
+#if defined(i386)
+	out += 1.0e-35;	// adding this small offset avoids FP underflow
+#endif
+    return data[2] = out;
 }
 
 #endif /* __cplusplus */
@@ -45,6 +49,7 @@ extern void setfir(double, int, int, double *, double *);
 extern void scale(double *, int, double);
 extern void air(double *, int, double[3]);
 extern void wall(double *, int, double[3]);
+extern void check_denormals(double *, int);
 extern void copyBuf(double *to, double *from, int);
 extern void addBuf(double *to, double *from, int);
 extern double wrap(double);

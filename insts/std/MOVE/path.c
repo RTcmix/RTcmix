@@ -122,7 +122,9 @@ double
 threshold(float p[], int n_args)
 {
 	mindiff = p[0];
-	advise("threshold", "Source location updated every %.2f feet.", mindiff);
+//	advise("threshold", "Source location updated every %.2f feet.", mindiff);
+	advise("threshold", "Source location updated every %.2f msec.",
+		   mindiff*1000.0);
 
 	return 0.0;
 }
