@@ -8,9 +8,12 @@ CMIXDIR = $(TOPDIR)/RTcmix
 LIBDESTDIR = $(TOPDIR)/shlib
 #or this: LIBDESTDIR = $(CMIXDIR)/shlib
 
-# add new packages to this list (e.g., insts.std, insts.dev)
-PACKAGE_DIRS = insts.base
+# add new instruments to this list (e.g., insts.std, insts.jg)
+INST_DIRS = insts.base
 # insts.std
+
+# add new packages to this list (e.g., interface/OpenGL)
+PACKAGE_DIRS = interface/lib interface/MIDI.Linux
 
 # Set this to TRUE to use sndlib for file i/o; otherwise use the old cmix i/o.
 USE_SNDLIB = TRUE
@@ -28,6 +31,7 @@ BINDIR = $(DESTDIR)
 CC = gcc 
 CXX = g++ 
 LD = ld
+MAKE = make
 
 INCLUDES = -I$(CMIXDIR)/H
 
@@ -57,4 +61,3 @@ RTPROFILE_O = $(CMIXDIR)/rtstuff/rtprofile.o
 
 GENLIB = $(LIBDIR)/genlib.a
 CMIXOBJS = $(CMIXDIR)/sys/cmix.o $(LIBDIR)/genlib.a
-
