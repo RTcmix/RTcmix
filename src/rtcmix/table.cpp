@@ -94,16 +94,6 @@ _arg_is_table_pfield(const Arg *arg)
 }
 
 
-/* Given a handle, which we assume points to a valid TablePField, pass back
-   the array and length.  Return 0 if no error, -1 if error.
-*/
-static int
-_table_from_handle(Handle *handle, float **array, int *len)
-{
-   return 0;
-}
-
-
 /* --------------------------------------------------- args_have_same_type -- */
 // FIXME: this belongs in a more general file
 int
@@ -546,10 +536,10 @@ unimplemented:
 }
 
 extern "C" {
-	Handle maketable(const Arg args[], const int nargs);
-	double normtable(const Arg args[], const int nargs);
-	double plottable(const Arg args[], const int nargs);
-	double dumptable(const Arg args[], const int nargs);
+   Handle maketable(const Arg args[], const int nargs);
+   double normtable(const Arg args[], const int nargs);
+   double plottable(const Arg args[], const int nargs);
+   double dumptable(const Arg args[], const int nargs);
 };
 
 /* ------------------------------------------------------------- maketable -- */
@@ -643,10 +633,11 @@ normtable(const Arg args[], const int nargs)
 double
 dumptable(const Arg args[], const int nargs)
 {
-   int   len, status;
+   int len;
    double *array; 
    FILE  *f = NULL;
    char  *fname = NULL;
+   TablePField *table;
 
    if (nargs < 1 || nargs > 2) {
       die("dumptable", "Usage: dumptable(table_handle [, out_file])");
@@ -672,18 +663,10 @@ dumptable(const Arg args[], const int nargs)
    else
       f = stdout;
 
-#ifdef NOTYET
-   status = _table_from_handle(args[0].val.handle, &array, &len);
-   if (status == 0) {
-      int i;
-      // FIXME: interesting: no way to identify this better for user!
-      printf("Dumping function table ...\n");
-      for (i = 0; i < len; i++)
-         fprintf(f, "%d %.6f\n", i, array[i]);
-   }
-   else
-      die(NULL, "Unknown problem dumping table.");
-#endif
+   table = (TablePField *) args[0].val.handle->ptr;
+   char *lines = table->dump();
+   fwrite(lines, 1, strlen(lines), f);
+   delete lines;
 
    if (f != stdout)
       fclose(f);
@@ -693,17 +676,100 @@ dumptable(const Arg args[], const int nargs)
 
 
 /* ------------------------------------------------------------- plottable -- */
+#define DEFAULT_PLOTCMD "with lines"
+
 double
 plottable(const Arg args[], const int nargs)
 {
-   if (nargs != 1) {
-      die("plottable", "Requires one argument (table to plot).");
+#ifdef MACOSX
+   static int plot_count = 1;
+#endif
+   int pause = 10;
+   char cmd[256];
+   char *plotcmds = DEFAULT_PLOTCMD;
+   TablePField *table;
+
+   if (nargs < 1 || nargs > 3) {
+      die("plottable",
+         "Usage: plottable(table_handle [, pause] [, plot_commands])");
       return -1.0;
    }
    if (!_arg_is_table_pfield(&args[0])) {
       die("plottable", "First argument must be the table to plot.");
       return -1.0;
    }
+
+   /* 2nd and 3rd args are optional and can be in either order */
+   if (nargs > 1) {
+      if (args[1].type == DoubleType)
+         pause = (int) args[1].val.number;
+      else if (args[1].type == StringType)
+         plotcmds = args[1].val.string;
+      else {
+         die("plottable",
+            "Second argument can be pause length or plot commands.");
+         return -1.0;
+      }
+      if (nargs > 2) {
+         if (args[2].type == DoubleType)
+            pause = (int) args[2].val.number;
+         else if (args[2].type == StringType)
+            plotcmds = args[2].val.string;
+         else {
+            die("plottable",
+               "Third argument can be pause length or plot commands.");
+            return -1.0;
+         }
+      }
+   }
+
+   char data_file[256] = "/tmp/rtcmix_plot_data_XXXXXX";
+   char cmd_file[256] = "/tmp/rtcmix_plot_cmds_XXXXXX";
+
+   if (mkstemp(data_file) == -1 || mkstemp(cmd_file) == -1) {
+      die("plottable", "Can't make temp files for gnuplot.");
+      return -1.0;
+   }
+   FILE *fdata = fopen(data_file, "w");
+   FILE *fcmd = fopen(cmd_file, "w");
+   if (fdata == NULL || fcmd == NULL) {
+      die("dumptable", "Can't open temp files for gnuplot.");
+      return -1.0;
+   }
+
+   table = (TablePField *) args[0].val.handle->ptr;
+   char *lines = table->dump();
+   fwrite(lines, 1, strlen(lines), fdata);
+   fclose(fdata);
+   delete lines;
+
+   fprintf(fcmd, 
+#ifdef MACOSX  /* NB: requires installation of Aquaterm and gnuplot 3.8 */
+      "set term aqua %d\n"
+#endif
+#ifdef TABNAME // FIXME: there *is* no table number, and we don't have var name!
+      "set title \"Table %s\"\n"
+#else
+      "set title \"Table\"\n"
+#endif
+      "set grid\n"
+      "plot '%s' notitle %s\n"
+      "!rm '%s' '%s'\n"
+      "pause %d\n",
+#ifdef MACOSX
+// FIXME: ??nevertheless, gnuplots after the first die with bus error
+      plot_count++,
+#endif
+#ifdef TABNAME
+      table_name,
+#endif
+      data_file, plotcmds, data_file, cmd_file, pause);
+   fclose(fcmd);
+
+   snprintf(cmd, 255, "gnuplot %s &", cmd_file);
+   cmd[255] = 0;
+   system(cmd);
+
    return 0.0;
 }
 
