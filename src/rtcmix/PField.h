@@ -137,13 +137,13 @@ protected:
 
 // Class for low frequency control rate oscillator
 
-class Ooscili;
+class Ooscil;
 
 class LFOPField : public SingleValuePField {
 public:
-	typedef double (*InterpFunction)(Ooscili *);
-	static double Truncate(Ooscili *);
-	static double Interpolate1stOrder(Ooscili *);
+	typedef double (*InterpFunction)(Ooscil *);
+	static double Truncate(Ooscil *);
+	static double Interpolate1stOrder(Ooscil *);
 public:
 	LFOPField(double krate, double *tableArray, int length, PField *freq,
 								InterpFunction fun=Interpolate1stOrder);
@@ -151,7 +151,7 @@ public:
 protected:
 	virtual ~LFOPField();
 private:
-	Ooscili *_oscil;
+	Ooscil *_oscil;
 	PField *_freqPF;
 	InterpFunction	_interpolator;
 };

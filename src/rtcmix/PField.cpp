@@ -176,7 +176,7 @@ LFOPField::LFOPField(double krate, double *tableArray, int length,
 		PField *freq, LFOPField::InterpFunction ifun)
 	: SingleValuePField(0.0), _freqPF(freq), _interpolator(ifun)
 {
-	_oscil = new Ooscili(krate, _freqPF->doubleValue(0), tableArray, length);
+	_oscil = new Ooscil(krate, _freqPF->doubleValue(0), tableArray, length);
 }
 
 LFOPField::~LFOPField()
@@ -184,14 +184,14 @@ LFOPField::~LFOPField()
 	delete _oscil;
 }
 
-double LFOPField::Truncate(Ooscili *oscil)
-{
-	return oscil->nextn();
-}
-
-double LFOPField::Interpolate1stOrder(Ooscili *oscil)
+double LFOPField::Truncate(Ooscil *oscil)
 {
 	return oscil->next();
+}
+
+double LFOPField::Interpolate1stOrder(Ooscil *oscil)
+{
+	return oscil->nexti();
 }
 
 double LFOPField::doubleValue(double percent) const
