@@ -51,6 +51,7 @@ ug_intro()
 	UG_INTRO("put_array",m_put_array);
 	UG_INTRO("get_size",m_get_size);
 	UG_INTRO("max",m_max);
+	UG_INTRO("min",m_min);
 	UG_INTRO("exit",m_exit);
 	UG_INTRO("info",m_info);
  	UG_INTRO("infile", m_infile);

@@ -157,6 +157,15 @@ double m_max(float p[], int n_args)
 	return(max);
 }
 
+double m_min(float p[], int n_args)
+{
+	int i;
+	float min = 1e+22;
+	for(i=0; i<n_args; i++)
+		if(p[i] < min) min=p[i];
+	return(min);
+}
+
 double m_exit(float p[], int n_args)
 {
 	closesf();

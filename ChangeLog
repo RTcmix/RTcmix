@@ -1,5 +1,8 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
+Friday, December 13, 2002 Douglas Scott <netdscott-at-netscape.net>
+
+   * Added min() Minc function to match max().
 
 Tuesday, December 10, 2002 Brad Garton <brad-at-music.columbia.edu>
 
