@@ -1,0 +1,6 @@
+load errors
+-----------
+
+When using a standalone instrument (eg., FMINST vs. CMIX) compiled via make
+standalone_inst, you will see a warning message about the load directive in
+a scorefile.  Don't worry, be happy.
