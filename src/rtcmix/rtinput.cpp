@@ -92,7 +92,7 @@ open_sgi_audio_input(AudioPortType port_type, int nchans)
 
    if (nchans == 1)
       ALsetchannels(in_port_config, AL_MONO);
-   else (nchans == 2)
+   else if (nchans == 2)
       ALsetchannels(in_port_config, AL_STEREO);
 
    if (ALsetqueuesize(in_port_config, RTBUFSAMPS * 4) == -1) {
