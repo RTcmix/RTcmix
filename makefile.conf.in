@@ -50,6 +50,7 @@ AUDIOLIB = $(AUDIODIR)/librtaudio.a
 
 ifeq ($(ARCH),LINUX)
   ARCHFLAGS = -D_REENTRANT -DLINUX #-DRTUPDATE
+  ARCH_RTLDFLAGS = -Wl,-rpath $(LIBDIR)
   CC = /usr/bin/gcc 
   CXX = /usr/bin/g++ -Wno-deprecated
   LD = ld
@@ -62,6 +63,7 @@ ifeq ($(ARCH),LINUX)
 endif
 ifeq ($(ARCH),MACOSX)
   ARCHFLAGS = -D_REENTRANT -DMACOSX -fno-common
+  ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX)
   CC = cc
   CXX = c++
   LD = ld
@@ -73,6 +75,7 @@ ifeq ($(ARCH),MACOSX)
 endif
 ifeq ($(ARCH),SGI)
   ARCHFLAGS = -D_REENTRANT -DSGI -DRTUPDATE
+  ARCH_RTLDFLAGS =
   CC = cc -Xcpluscomm
   CXX = CC
   LD = ld
@@ -84,6 +87,7 @@ ifeq ($(ARCH),SGI)
 endif
 ifeq ($(ARCH),FREEBSD)
   ARCHFLAGS = -D_REENTRANT -DFREEBSD -DLINUX -DRTUPDATE
+  ARCH_RTLDFLAGS =
   CC = gcc
   CXX = g++
   LD = ld
@@ -111,13 +115,15 @@ CXXFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
 RTLIB = librtcmix.$(SHLIB_SUFFIX)
 LIBRTCMIX = $(LIBDIR)/$(RTLIB)
 RTLDFLAGS = -L$(LIBDIR) -lrtcmix -lgen
-SYSLIBS = -Wl,-rpath $(LIBDIR) -L$(LIBDIR) -lgen
 
 LIBGEN = libgen.$(SHLIB_SUFFIX)
 # GENLIB macro is no longer needed because it is dynamically linked
 # via SYSLIBS
 
 GENLIB =
+
+# All platforms link against libgen.  Below we append others.
+SYSLIBS = $(ARCH_RTLDFLAGS) -L$(LIBDIR) -lgen
 
 # Platform-specific library flags Key:
 #
@@ -134,7 +140,6 @@ ifeq ($(ARCH),LINUX)
 	else
 	  SYSLIBS += -lpthread -lm -ldl #-lefence
 	endif
-  ARCH_RTLDFLAGS = -Wl,-rpath $(LIBDIR)
   DSO_LDFLAGS = $(OPT) $(SYSLIBS)
   SHARED_LDFLAGS = -shared -Wl,-soname,$@
   DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
@@ -142,7 +147,6 @@ ifeq ($(ARCH),LINUX)
 endif
 ifeq ($(ARCH),MACOSX)
   SYSLIBS += -framework CoreAudio
-  ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX)
   DSO_LDFLAGS = $(SYSLIBS)
   SHARED_LDFLAGS = -bundle -flat_namespace -undefined suppress
   DYNAMIC_LDFLAGS = -flat_namespace -undefined suppress -dynamiclib -install_name $(LIBDIR)/$@
@@ -150,7 +154,6 @@ ifeq ($(ARCH),MACOSX)
 endif
 ifeq ($(ARCH),SGI)
   SYSLIBS += -lpthread -laudio -lm
-  ARCH_RTLDFLAGS =
   DSO_LDFLAGS = $(SYSLIBS)
   SHARED_LDFLAGS = -shared -update_registry $(LIBDESTDIR)/so_locations
   DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
@@ -158,7 +161,6 @@ ifeq ($(ARCH),SGI)
 endif
 ifeq ($(ARCH),FREEBSD)
   SYSLIBS += -pthread -lm -ll
-  ARCH_RTLDFLAGS =
   DSO_LDFLAGS = -export-dynamic $(SYSLIBS)
   SHARED_LDFLAGS = -shared -Wl,-soname,$@
   DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
