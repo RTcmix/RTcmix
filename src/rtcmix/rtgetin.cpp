@@ -279,7 +279,7 @@ read_24bit_samps(
       short       src_chans         /* number of in-bus chans to copy */
       )
 {
-   int            seeked, src_samps, src_bytes, swap, bytes_per_samp;
+   int            seeked, src_samps, swap, bytes_per_samp;
    ssize_t        bytes_to_read, bytes_read;
    unsigned char  *bufp;
    static unsigned char *cbuf = NULL;
@@ -331,7 +331,7 @@ read_24bit_samps(
 #endif
       int i = chan * bytes_per_samp;
       int incr = file_chans * bytes_per_samp;
-      src_bytes = src_samps * bytes_per_samp;
+      int src_bytes = src_samps * bytes_per_samp;
       if (data_format == MUS_L24INT) {
          for (int j = n; i < src_bytes; i += incr, j += dest_chans) {
             int samp = (int) (((cbuf[i + 2] << 24)
