@@ -19,18 +19,13 @@ install:
 	@for DIR in $(LIBDIRS); \
 	do \
 	( cd $$DIR; echo "making install in $$DIR..."; \
-	ln -fs $(CMIXDIR)/$(INSTDIR)/$$DIR/lib$$DIR.so $(LIBDESTDIR); ) \
+	  ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR); \
+	  rm -f $(DESTDIR)/$$DIR; \
+	  ln -fs `pwd`/$$DIR $(DESTDIR); ) \
 	done
-	@for DIR in $(LIBDIRS); \
-	do \
-	( cd $$DIR; echo "making install in $$DIR..."; \
-	rm -f $(DESTDIR)/$$DIR; \
-	ln -fs $(CMIXDIR)/$(INSTDIR)/$$DIR/$$DIR $(DESTDIR); ) \
-	done
-	ln -fs $(CMIXDIR)/$(INSTDIR)/MIX/MIX ../bin/CMIX
+	@ln -fs `pwd`/MIX/MIX $(DESTDIR)/CMIX
 
 clean:
-
 	@for DIR in $(LIBDIRS); \
 	do \
 	( cd $$DIR; make clean; \
@@ -38,4 +33,11 @@ clean:
 	rm -f $(LIBDESTDIR)/lib$$DIR.so; ) \
 	done
 	rm -f $(DESTDIR)/CMIX
+
+onlyDSO:
+	@for DIR in $(LIBDIRS); \
+	do \
+	( cd $$DIR; echo "removing standalone instrument in $$DIR..."; \
+	rm -f $$DIR; ) \
+	done
 
