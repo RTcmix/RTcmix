@@ -1,7 +1,7 @@
+#include <globals.h>
 #include <stdio.h>
-extern int print_is_on;
 
-double m_open(float *, short, double *);
+extern double m_open(float *, short, double *);
 
 double
 m_input(float *p,short n_args,double *pp)
