@@ -5,6 +5,7 @@
 #include "LSFLUTE.h"
 #include <rt.h>
 #include <rtdefs.h>
+#include "sflcfuncs.h"
 
 
 // these are from "LSFLUTE"
@@ -13,9 +14,7 @@ extern float *del1ptr,*del2ptr;
 extern int olength1,olength2;
 
 extern "C" {
-	void mdelset(float*, int*, int);
 	void mdelpartset(float*, int*, int);
-	float mdelget(float*, int, int*);
 }
 
 LSFLUTE::LSFLUTE() : Instrument()
@@ -87,7 +86,7 @@ int LSFLUTE::run()
 		float sig = (rrand() * namp * aamp) + aamp;
 		float del1sig = mdelget(del1ptr,olength1,dl1ptr);
 		sig = sig + (del1sig * -0.35);
-		delput(sig,del2ptr,dl2ptr);
+		mdelput(sig,del2ptr,dl2ptr);
 
 		sig = mdelget(del2ptr,olength2,dl2ptr);
 		sig = (sig * sig * sig) - sig;
@@ -97,7 +96,7 @@ int LSFLUTE::run()
 		out[0] = sig * amp * oamp;
 		sig = (dampcoef * sig) + ((1.0 - dampcoef) * oldsig);
 		oldsig = sig;
-		delput(sig,del1ptr,dl1ptr);
+		mdelput(sig,del1ptr,dl1ptr);
 
 		if (outputChannels() == 2) {
 			out[1] = (1.0 - spread) * out[0];

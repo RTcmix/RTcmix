@@ -4,17 +4,12 @@
 #include "SFLUTE.h"
 #include <rt.h>
 #include <rtdefs.h>
-
+#include "sflcfuncs.h"
 
 // these are for "LSFLUTE"
 int *dl1ptr,*dl2ptr;
 float *del1ptr,*del2ptr;
 int olength1,olength2;
-
-extern "C" {
-	void mdelset(float*, int*, int);
-	float mdelget(float*, int, int*);
-}
 
 SFLUTE::SFLUTE() : Instrument()
 {
@@ -87,7 +82,7 @@ int SFLUTE::run()
 		float sig = (rrand() * namp * aamp) + aamp;
 		float del1sig = mdelget(del1,length1,dl1);
 		sig = sig + (del1sig * -0.35);
-		delput(sig,del2,dl2);
+		mdelput(sig,del2,dl2);
 
 		sig = mdelget(del2,length2,dl2);
 		sig = (sig * sig * sig) - sig;
@@ -97,7 +92,7 @@ int SFLUTE::run()
 		out[0] = sig * amp * oamp;
 		sig = (dampcoef * sig) + ((1.0 - dampcoef) * oldsig);
 		oldsig = sig;
-		delput(sig,del1,dl1);
+		mdelput(sig,del1,dl1);
 
 		if (outputChannels() == 2) {
 			out[1] = (1.0 - spread) * out[0];

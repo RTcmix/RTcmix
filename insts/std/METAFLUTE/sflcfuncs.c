@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <ugens.h>
+#include "sflcfuncs.h"
 
 void
 mdelset(float *a, int *l, int imax)
@@ -9,11 +10,21 @@ mdelset(float *a, int *l, int imax)
 
 	int i;
 
-	*l = 0;
-	*(l+1) = imax;
-	for(i = 0; i < *(l+1); i++) *(a+i) = 0;
+	l[0] = 0;
+	l[1] = imax;
+	for(i = 0; i < l[1]; i++) a[i] = 0;
 }
 
+void
+mdelput(float x, float *a, int *l)
+{
+/* put value in delay line. */
+    int index = l[0];
+    a[index] = x;
+    ++l[0];
+    if (l[0] >= l[1])
+        l[0] -= l[1];
+}
 
 float
 mdelget(float *a, int samps, int *l)
@@ -23,11 +34,11 @@ mdelget(float *a, int samps, int *l)
 	register int i = *l - samps;
 
 	if(i < 0)  {
-		i += *(l+1);
+		i += l[1];
 		if(i < 0) return(0);
 		}
 
-	return(*(a+i));
+	return(a[i]);
 }
 
 float  
