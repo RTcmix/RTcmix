@@ -9,28 +9,51 @@ endif
 
 .PHONY: minc perl python install-perl install-python clean
 
-minc: parse_with_perl.c rtcmix_parse.h
-	$(CC) $(CFLAGS) -c parse_with_minc.c
-	(cd minc; $(MAKE) $(MFLAGS) all;)
+DIRS = minc
+SRCS = parse_with_minc.c
+OBJS = parse_with_minc.o
 
-perl: parse_with_perl.c rtcmix_parse.h
-	$(CC) $(CFLAGS) `$(PERL) -MExtUtils::Embed -e ccopts` \
-		-DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c parse_with_perl.c
-	(cd perl; $(MAKE) $(MFLAGS) all;)
+ifeq ($(PERL_SUPPORT), TRUE)
+	DIRS += perl
+	OBJS += parse_with_perl.o
+	SRCS += parse_with_perl.c
+	CFLAGS += `$(PERL) -MExtUtils::Embed -e ccopts` -DSHAREDLIBDIR=$(LIBDESTDIR)
+endif
+ifeq ($(PYTHON_SUPPORT), TRUE)
+	DIRS += python
+	INCLUDES += -I$(PYTHON_INCLUDE_DIR)
+	CLFAGS += $(PYDEF)
+	OBJS += parse_with_python.o
+	SRCS += parse_with_python.c
+endif
 
-python: parse_with_python.c rtcmix_parse.h
-	$(CC) $(CFLAGS) -I$(PYTHON_INCLUDE_DIR) $(PYDEF) -c parse_with_python.c
-	(cd python; $(MAKE) $(MFLAGS) all;)
 
-install-perl:
-	(cd perl; $(MAKE) $(MFLAGS) install;)
+all: $(DIRS) $(OBJS)
+	@for DIR in $(DIRS); \
+	do \
+	  ( cd $$DIR; $(MAKE) $(MFLAGS) all; ) \
+	done
 
-install-python:
-	(cd python; $(MAKE) $(MFLAGS) install;)
+install: all
+	@for DIR in $(DIRS); \
+	do \
+	  ( cd $$DIR; $(MAKE) $(MFLAGS) install; ) \
+	done
 
 clean:
-	$(RM) *.o
-	(cd minc; $(MAKE) $(MFLAGS) clean;)
-	(cd perl; $(MAKE) $(MFLAGS) clean;)
-	(cd python; $(MAKE) $(MFLAGS) clean;)
+	$(RM) *.o depend core
+	@for DIR in $(DIRS); \
+	do \
+	  ( cd $$DIR; $(MAKE) $(MFLAGS) clean; ) \
+	done
 
+depend:
+ifeq ($(ARCH),LINUX)
+	-$(SHELL) -ec '$(CC) -M $(CFLAGS) $(SRCS)' > depend
+endif
+ifeq ($(ARCH),SGI)
+# Note: -MM is a gcc extension. If no gcc, use -M.
+# # Unfortunately, this doesn't work...   -JGG
+# #   $(SHELL) -ec '$(CC) -M $(CFLAGS) $(SRCS)' > depend
+endif
+	
