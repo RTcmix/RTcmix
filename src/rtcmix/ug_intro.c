@@ -91,6 +91,7 @@ ug_intro()
 	UG_INTRO("LEFT_PEAK",m_LEFT_PEAK);
 	UG_INTRO("RIGHT_PEAK",m_RIGHT_PEAK);
 #endif
+	UG_INTRO("bus_config", bus_config);
 }
 
 
