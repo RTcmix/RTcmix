@@ -557,6 +557,10 @@ _literal_table(const Arg args[], const int nargs, double **array, int *len)
 // careful if you use this option with a very large file: you may run out
 // of memory!
 //
+// If the data file has a header of the sort written when recording a
+// PField data stream, then the type of number is taken from this header.
+// Otherwise, use the <number_type> argument.
+//
 // <number_type> can be any of "float" (the default), "double", "int",
 // "int64", "int32", "int16" or "byte".  This just means that with the
 // "double" type, for example, every 8 bytes will be interpreted as one
