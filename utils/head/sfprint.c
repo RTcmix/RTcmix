@@ -152,8 +152,8 @@ main(int argc, char *argv[])
                          mus_data_format_name(data_format));
       printf("sr: %d  nchans: %d  class: %d\n", srate, nchans, class);
       if (verbose)
-         printf("frames: %d\nheader size: %d bytes\n",
-                                             nsamps / nchans, data_location);
+         printf("frames: %d\nheader size: %d bytes\ndata size: %d bytes\n",
+                           nsamps / nchans, data_location, nsamps * class);
       if (sfc.offset != -1) {
          int n;
          for (n = 0; n < nchans; n++)
