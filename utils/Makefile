@@ -40,6 +40,7 @@ install:
 	  ( ln -fs $(CMIXDIR)/utils/$$PROG $(DESTDIR); ) \
 	done
 	@ln -fs $(CMIXDIR)/utils/resample/resample $(DESTDIR)
+	@ln -fs $(CMIXDIR)/utils/cmixplay $(DESTDIR)/play
 
 clean:
 	-rm -f *~ *.o core $(PROGS)
