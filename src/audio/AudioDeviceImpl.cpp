@@ -8,17 +8,15 @@
 
 #define DEBUG 0
 
-#if DEBUG > 0
-#define PRINT0 if (1) printf
-#define PRINT1 if (0) printf
-#else 
 #if DEBUG > 1
 #define PRINT0 if (1) printf
 #define PRINT1 if (1) printf
+#elif DEBUG > 0
+#define PRINT0 if (1) printf
+#define PRINT1 if (0) printf
 #else
 #define PRINT0 if (0) printf
 #define PRINT1 if (0) printf
-#endif
 #endif
 
 // AudioDeviceImpl is the "workhorse" intermediate base class for most
@@ -99,13 +97,16 @@ int AudioDeviceImpl::close()
 
 int AudioDeviceImpl::start(AudioDevice::Callback *callback)
 {
+	PRINT1("AudioDeviceImpl::start -- begin\n");
 	int status = 0;
 	if (!isRunning()) {
+		PRINT1("AudioDeviceImpl::start: not running, calling doStart()\n");
 		_runCallback = callback;
 		if ((status = doStart()) == 0) {
 			setState(Running);
 		}
 	}
+	PRINT1("AudioDeviceImpl::start -- finish\n");
 	return status;
 }
 
@@ -155,8 +156,9 @@ int AudioDeviceImpl::stop()
 			setState(Configured);
 		}
 	}
-	delete _runCallback;
+	Callback *tempCallback = _runCallback;
 	_runCallback = NULL;
+	delete tempCallback;
 	PRINT0("AudioDeviceImpl::stop -- finish\n");
 	return status;
 }
@@ -343,10 +345,6 @@ AudioDeviceImpl::destroyNoninterleavedBuffer(int fmt, int chans)
 
 int AudioDeviceImpl::createConvertBuffer(int frames)
 {
-	bool needFormatConversion = getFrameFormat() != getDeviceFormat();
-	bool needInterleaveConversion = isFrameInterleaved() != isDeviceInterleaved();
-	bool needNormalizeConversion = isFrameFmtNormalized() != isDeviceFmtNormalized();
-	if (needFormatConversion || needInterleaveConversion || needNormalizeConversion) {
 		if (isDeviceInterleaved())
 			_convertBuffer = createInterleavedBuffer(getDeviceFormat(),
 													 getDeviceChannels(),
@@ -357,7 +355,6 @@ int AudioDeviceImpl::createConvertBuffer(int frames)
 														frames);
 		if (!_convertBuffer)
 			return -1;
-	}
 	return 0;
 }
 
@@ -407,11 +404,17 @@ int AudioDeviceImpl::setQueueSize(int *pWriteSize, int *pCount)
 
 int AudioDeviceImpl::setupConversion()
 {
-	int status = createConvertBuffer(_maxFrames);
+	int status = 0;
+	bool needFormatConversion = getFrameFormat() != getDeviceFormat();
+	bool needInterleaveConversion = isFrameInterleaved() != isDeviceInterleaved();
+	bool needNormalizeConversion = isFrameFmtNormalized() != isDeviceFmtNormalized();
+	if (needFormatConversion || needInterleaveConversion || needNormalizeConversion) {
+		status = createConvertBuffer(_maxFrames);
 	if (status == 0) {
 		// Hand in the raw format because the accessor functions
 		// filter out the interleave and normalize bits.
 		status = setConvertFunctions(_frameFormat, _deviceFormat);
+	}
 	}
 	return status;
 }
@@ -458,8 +461,6 @@ AudioDeviceImpl::convertFrame(void *inbuffer, void *outbuffer,
 
 static const float kFloatNormalizer = (1.0 / 32768.0);
 typedef unsigned char *UCharP;
-
-
 
 
 // Note:  The 24bit converters are only used for writing soundfiles to disk.
@@ -543,9 +544,12 @@ static void convert(void *_in, void *_out, int chans, int frames)
         OutChanType *outbuffer = OutStream::innerFromOuter(out, ch);
 		const int inIncr = InStream::channelIncrement(chans);
 		const int outIncr = OutStream::channelIncrement(chans);
-        for (int fr = 0; fr < frames; ++fr, inbuffer += inIncr, outbuffer += outIncr) {
+        for (int fr = 0; fr < frames;
+			 ++fr, inbuffer += inIncr, outbuffer += outIncr)
+		{
 			const OutChanType intermediate = 
-				::deNormalize<InChanType, OutChanType>(InStream::normalized,
+				::deNormalize<InChanType, OutChanType>(
+						InStream::normalized,
 								 			::swap(InStream::endian != kMachineEndian,
 												   *inbuffer));
             *outbuffer = ::swap(OutStream::endian != kMachineEndian,

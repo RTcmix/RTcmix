@@ -6,7 +6,7 @@
 #include <sndlibsupport.h>	// RTcmix header
 #include "AudioDevice.h"
 
-typedef void *(ConversionFunction)(void *, void*, int, int);
+typedef void (*ConversionFunction)(void *, void*, int, int);
 
 class AudioDeviceImpl : public AudioDevice {
 public:
@@ -103,8 +103,8 @@ private:
 	int					_maxFrames;
 	Callback			*_runCallback, *_stopCallback;
 	void				*_convertBuffer;
-	void				(*_recConvertFunction)(void *, void *, int, int);
-	void				(*_playConvertFunction)(void *, void *, int, int);
+	ConversionFunction	_recConvertFunction;
+	ConversionFunction	_playConvertFunction;
 	enum { ErrLength = 128 };
 	char				_lastErr[ErrLength];
 };
