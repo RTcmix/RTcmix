@@ -51,6 +51,8 @@ ROOM     - Lansky's (and Garton's, I think) old room simulation.
 
 REV      - some Schroeder reverbs that are part of the STK package.
 
+PAN      - simple mixing instrument that follows a pan curve
+
 bender   - a variation on Lansky's vreadin program, which lets you bend
            the pitch of an input file along a glissando curve. Uses Doug
            Scott's trans interpolation.
