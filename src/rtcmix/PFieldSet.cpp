@@ -19,7 +19,7 @@ PFieldSet::PFieldSet(int numfields)
 PFieldSet::~PFieldSet()
 {
 	for (int n = 0; n < _size; ++n)
-		_array[n]->unref();
+		RefCounted::unref(_array[n]);
 	delete [] _array;
 }
 
