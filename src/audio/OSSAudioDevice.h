@@ -3,6 +3,8 @@
 #ifndef _OSS_AUDIO_DEVICE_H_
 #define _OSS_AUDIO_DEVICE_H_
 
+#ifdef LINUX
+
 #include "ThreadedAudioDevice.h"
 
 class OSSAudioDevice : public ThreadedAudioDevice {
@@ -35,5 +37,7 @@ private:
 	int				_bytesPerFrame;
 	int				_bufferSize;
 };
+
+#endif	// LINUX
 
 #endif	// _OSS_AUDIO_DEVICE_H_
