@@ -110,7 +110,7 @@ open_sgi_audio_input(AudioPortType port_type, int nchans)
       ALsetchannels(in_port_config, AL_STEREO);
 
    if (ALsetqueuesize(in_port_config, RTBUFSAMPS * 4) == -1) {
-      fprintf(stderr,
+      warn("rtinput",
               "Could not configure the input audio port queue size to %d.\n",
               RTBUFSAMPS * 4);
       return -1;
@@ -167,19 +167,19 @@ open_sound_file(
 
    /* See if file exists and is a regular file or link. */
    if (stat(sfname, &sfst) == -1) {
-      fprintf(stderr, "%s: %s\n", sfname, strerror(errno));
+      warn("rtinput", "%s: %s", sfname, strerror(errno));
       return -1;
    }
    if (!S_ISREG(sfst.st_mode) && !S_ISLNK(sfst.st_mode)) {
-      fprintf(stderr, "%s is not a regular file or a link.\n", sfname);
+      warn("rtinput", "%s is not a regular file or a link.\n", sfname);
       return -1;
    }
 
    /* Open the file and read its header. */
    fd = sndlib_open_read(sfname);
    if (fd == -1) {
-      fprintf(stderr, "Can't read header of \"%s\" (%s)\n",
-                                                  sfname, strerror(errno));
+      warn("rtinput", "Can't read header from \"%s\" (%s)\n",
+		   sfname, strerror(errno));
       return -1;
    }
 
@@ -188,7 +188,7 @@ open_sound_file(
    *header_type = mus_header_type();
 
    if (NOT_A_SOUND_FILE(*header_type)) {
-      fprintf(stderr, "\"%s\" is probably not a sound file\n", sfname);
+      warn("rtinput", "\"%s\" is probably not a sound file\n", sfname);
       sndlib_close(fd, 0, 0, 0, 0);
       return -1;
    }
@@ -196,13 +196,16 @@ open_sound_file(
    *data_format = mus_header_format();
 
    if (INVALID_DATA_FORMAT(*data_format)) {
-      fprintf(stderr, "\"%s\" has invalid sound data format\n", sfname);
+      warn("rtinput", "\"%s\" has invalid sound data format\n", sfname);
       sndlib_close(fd, 0, 0, 0, 0);
       return -1;
    }
 
-   if (!SUPPORTED_DATA_FORMAT(*data_format))
-      die("rtinput", "Can read only 16-bit integer and 32-bit float files.");
+   if (!SUPPORTED_DATA_FORMAT(*data_format)) {
+      warn("rtinput", "Can read only 16-bit integer and 32-bit float files.");
+      sndlib_close(fd, 0, 0, 0, 0);
+	  return -1;
+   }
 
    *data_location = mus_header_data_location();
    *srate = (double) mus_header_srate();
@@ -265,7 +268,8 @@ rtinput(float p[], int n_args, double pp[])
 
    /* Catch stoopid NULL filenames */
    if (sfname == NULL) {
-       die("rtinput", "NULL filename!");
+       warn("rtinput", "NULL filename!");
+	   return -1;
    }
 
    if (strcmp(sfname, "AUDIO") == 0) {
@@ -311,12 +315,20 @@ rtinput(float p[], int n_args, double pp[])
 
       anint = (int) pp[i];
       str = (char *) anint;
+	  if (str == NULL) {
+	  	warn("rtinput", "NULL bus name!");
+		return -1;
+	  }
 
       err = parse_bus_name(str, &type, &startchan, &endchan);
-      if (err)
-         die("rtinput", "Invalid bus name specification.");
-      if (type != BUS_IN)
-         die(NULL, "You have to use an \"in\" bus with rtinput.");
+      if (err) {
+         warn("rtinput", "Invalid bus name specification.");
+		 return -1;
+	  }
+      if (type != BUS_IN) {
+         warn("rtinput", "You have to use an \"in\" bus with rtinput.");
+		 return -1;
+	  }
 
       for (j = startchan; j <= endchan; j++)
          buslist[busindex++] = j;
@@ -347,8 +359,10 @@ rtinput(float p[], int n_args, double pp[])
          fd = 0;  /* we don't use this */
 #else /* !MACOSX */
          fd = open_audio_input(port_type, nchans);
-         if (fd == -1)
-            exit(1);
+         if (fd == -1) {
+		 	warn("rtinput", "Audio input device not configured.");
+			return -1;
+		 }
 #endif /* !MACOSX */
          for (i = 0; i < nchans; i++) {
             allocate_audioin_buffer(i, RTBUFSAMPS);
@@ -360,7 +374,7 @@ rtinput(float p[], int n_args, double pp[])
          fd = open_sound_file(sfname, &header_type, &data_format,
                                     &data_location, &srate, &nchans, &nsamps);
          if (fd == -1)
-            exit(1);
+			return -1;
 
 #ifdef INPUT_BUS_SUPPORT
          if (startchan == -1) {     /* no bus specified above */
@@ -369,9 +383,9 @@ rtinput(float p[], int n_args, double pp[])
          }
          else {
             if (endchan - startchan >= nchans) {
-               warn(NULL, "You specifed more input buses than "
+               warn("rtinput", "You specifed more input buses than "
                           "input file '%s' has channels.", sfname);
-               warn(NULL, "Using in buses %d", foo);
+               warn("rtinput", "Using in buses %d", foo);
                endchan = (startchan + nchans) - 1;
             }
          }
@@ -423,7 +437,7 @@ rtinput(float p[], int n_args, double pp[])
 
       /* If this is true, we've used up all input descriptors in our array. */
       if (i == MAX_INPUT_FDS)
-         die(NULL, "You have exceeded the maximum number of input files (%d)!",
+         die("rtinput", "You have exceeded the maximum number of input files (%d)!",
                                                                 MAX_INPUT_FDS);
    }
 

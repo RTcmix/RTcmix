@@ -15,6 +15,7 @@
 #include <globals.h>
 #include <audio_port.h>
 #include <sndlibsupport.h>
+#include <ugens.h>
 #include "../rtstuff/rtdefs.h"
 
 /* #define DEBUG */
@@ -41,10 +42,8 @@ rtsetparams(float p[], int n_args, double pp[])
 #endif /* SGI */
 
    if (rtsetparams_called) {
-      fprintf(stderr, "You can only use rtsetparams once!\n");
-      exit(1);
+      die("rtsetparams", "You can only call rtsetparams once!");
    }
-   rtsetparams_called = 1;
 
 // FIXME: Need better names for NCHANS and RTBUFSAMPS. -JGG
 
@@ -52,24 +51,21 @@ rtsetparams(float p[], int n_args, double pp[])
    NCHANS = (int) p[1];
    RTBUFSAMPS = n_args > 2 ? (int) p[2] : 4096;
 
-   if (n_args > 3) {
+   if (n_args > 3 && pp[3] != 0.0) {
 #ifdef SGI
       /* Cast Minc double to char ptr to get string. */
       int iarg = (int) pp[3];
       out_port_str = (char *) iarg;
-      if (verbose)
-         printf("Playing through output port '%s'\n", out_port_str);
+ 	  advise("rtsetparams", "Playing through output port '%s'", out_port_str);
 #endif /* SGI */
    }
    
    if (SR <= 0.0) {
-	   fprintf(stderr, "Sampling rate must be greater than 0.\n");
-	   exit(1);
+	   die("rtsetparams", "Sampling rate must be greater than 0.");
    }
 
    if (NCHANS > MAXBUS) {
-      fprintf(stderr, "You can only have %d output channels.\n", MAXBUS);
-      exit(1);
+      die("rtsetparams", "You can only have up to %d output channels.", MAXBUS);
    }
 
    /* play_audio is true unless user has called set_option("audio_off") before
@@ -103,8 +99,7 @@ rtsetparams(float p[], int n_args, double pp[])
                                                                      &nframes);
 #endif /* SGI */
       if (status == -1) {
-         fprintf(stderr, "Trouble opening audio ports.\n");
-         exit(1);
+         die("rtsetparams", "Trouble opening audio ports.");
       }
 
       /* This may have been reset by driver. */
@@ -126,7 +121,9 @@ rtsetparams(float p[], int n_args, double pp[])
       allocate_out_buffer(i, RTBUFSAMPS);
    }
 
-   return 0.0;
+   rtsetparams_called = 1;	/* Put this at end to allow re-call due to error */
+
+   return 0;
 }
 
 
