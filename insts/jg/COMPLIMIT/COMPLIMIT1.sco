@@ -26,6 +26,8 @@
 rtsetparams(44100, 1)
 load("COMPLIMIT")
 
+bus_config("COMPLIMIT", "in0-1", "out0-1")
+
 rtinput("/tmp/jumpyextract.wav")
 inskip = 10
 dur = .5
