@@ -1,7 +1,6 @@
 // common.C -- common implementation for PLACE and MOVE
 
 #include "common.h"
-#include <globals.h>
 #include <math.h>
 #include <stdio.h>
 
