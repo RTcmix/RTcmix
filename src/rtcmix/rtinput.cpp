@@ -263,6 +263,11 @@ rtinput(float p[], int n_args, double pp[])
    anint = (int) pp[0];
    sfname = (char *) anint;
 
+   /* Catch stoopid NULL filenames */
+   if (sfname == NULL) {
+       die("rtinput", "NULL filename!");
+   }
+
    if (strcmp(sfname, "AUDIO") == 0) {
       audio_in = 1;
 

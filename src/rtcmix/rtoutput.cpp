@@ -181,6 +181,11 @@ parse_rtoutput_args(int nargs, double pp[])
    /* This is the ancient method of casting a double to a char ptr. */
    anint = (int)pp[0];
    rtoutsfname = (char *)anint;
+   if (rtoutsfname == NULL)
+   {
+      fprintf(stderr, "rtoutput: NULL file name!\n");
+      return -1;
+   }
 
    output_header_type = header_type_from_filename(rtoutsfname);
    if (output_header_type == -1)

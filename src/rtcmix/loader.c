@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <globals.h>
+#include <ugens.h>
 
 typedef void (*ProfileFun)();
 
@@ -20,18 +21,17 @@ get_dso_path(double pfield, char dsoPath[])
     str = (char *) ((int) pfield);
 
     if (!str || strlen(str) == 0) {
-	fprintf(stderr, "load: Bad argument for p[0]!\n");
-	exit(1);
+		die("load", "Bad argument for p[0]!");
     }
     /* if name contains a '/', assume it is a full or relative path */
     if (strchr(str, '/'))
-	strcpy(dsoPath, str);
+		strcpy(dsoPath, str);
     /* if name does not start with "lib", add prefix and suffix */
     else if (strncmp(str, "lib", 3))
-	sprintf(dsoPath, "%s/lib%s.so", directory, str);
+		sprintf(dsoPath, "%s/lib%s.so", directory, str);
     /* otherwise just prepend directory and use as is */
     else
-	sprintf(dsoPath, "%s/%s", directory, str);
+		sprintf(dsoPath, "%s/%s", directory, str);
 
     return 0;
 }
@@ -92,9 +92,10 @@ double m_load(float *p, int n_args, double *pp)
 	return 1.0;
     }
     if (print_is_on) {
-	printf("Loaded %s functions from shared library.\n",
+	printf("Loaded %s functions from shared library '%s'.\n",
 	    (profileLoaded == 3) ? "standard and RT" :
-	    (profileLoaded == 2) ? "RT" : "standard");
+			(profileLoaded == 2) ? "RT" : "standard",
+		dsoPath);
     }
 
     return 0.0;
@@ -153,15 +154,17 @@ double m_load(float *p, int n_args, double *pp)
      } 
 
     if (!profileLoaded) {
-	fprintf(stderr, "Unable to find a profile routine in DSO\n");
-	dlclose(handle);
-	return 0;
+		fprintf(stderr, "Unable to find a profile routine in DSO '%s'\n", 
+				dsoPath);
+		dlclose(handle);
+		return 0;
     }
 
     if (print_is_on) {
-	printf("Loaded %s functions from shared library.\n",
-	    (profileLoaded == 3) ? "standard and RT" :
-	    (profileLoaded == 2) ? "RT" : "standard");
+		printf("Loaded %s functions from shared library '%s'.\n",
+			  (profileLoaded == 3) ? "standard and RT" :
+							   (profileLoaded == 2) ? "RT" : "standard",
+			  dsoPath);
     }
 
     return 1;
