@@ -294,11 +294,15 @@ extern "C" {
 	  rtsendsamps(sbuf);
       }  
       rtreportstats();   /* only if rtsetparams was called */
+#ifdef LINUX
       close(out_port);
+#endif
     }
+#ifdef LINUX
     if (in_port) {
       close(in_port);
     }
+#endif
     if (rtfileit) {
 #ifdef USE_SNDLIB
       rtcloseout();
