@@ -70,7 +70,6 @@ RefCounted.cpp \
 rtcmix_types.cpp \
 rtgetin.cpp \
 rtgetsamps.cpp \
-rtprofile.cpp \
 rtsendsamps.cpp \
 rtsetinput.cpp \
 rtsetoutput.cpp \
@@ -80,15 +79,21 @@ set_option.cpp \
 sockit.cpp \
 table.cpp
 
+# This is not linked into librtcmix
+#rtprofile.cpp
+
 IMBEDSRCS = RTcmix.cpp
 
 CPPOBJS = $(patsubst %.cpp,%.o,$(COMMON_CPPSRCS))
 
 COBJS = $(patsubst %.c,%.o,$(COMMON_CSRCS))
 
-COMMON_OBJS = $(CPPOBJS) $(COBJS) heap/rtHeap.o
+MIX_INST = ../../insts/base/MIX/MIX.o
+
+COMMON_OBJS = $(CPPOBJS) $(COBJS) heap/rtHeap.o $(MIX_INST)
 
 PIMBED_OBJS = $(COMMON_OBJS) pRTcmix.o
+
 
 ifeq ($(NPLAY_SUPPORT), TRUE)
    COMMON_OBJS += setnetplay.o
@@ -143,13 +148,13 @@ $(LIBCONF):
 	(cd ../conf; $(MAKE) $(MFLAGS) all;)
 
 $(LIBMINC):
-	(cd ../parser; $(MAKE) $(MFLAGS) minc;)
+	(cd ../parser; $(MAKE) $(MFLAGS) all;)
 
 $(P_O):
-	(cd ../parser; $(MAKE) $(MFLAGS) perl;)
+	(cd ../parser; $(MAKE) $(MFLAGS) all;)
 
 $(PY_O):
-	(cd ../parser; $(MAKE) $(MFLAGS) python;)
+	(cd ../parser; $(MAKE) $(MFLAGS) all;)
 
 $(SNDLIB):
 	(cd ../sndlib; $(MAKE) $(MFLAGS) all;)
@@ -168,21 +173,24 @@ $(RTLIB): depend $(COMMON_OBJS) $(LIBMINC) $(LIBCONF)
 Option.o: Option.cpp Option.h
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c $< -o $@
 
+$(MIX_INST):	
+	(cd ../../insts/base/MIX; make all)
+
 heap/rtHeap.o:
 	(cd heap; $(MAKE) $(MFLAGS) all;)
 
 # rules for three executables we build
 
-MIX: $(CMIX_O) $(M_O) $(LIBMINC) $(LIBS) $(PROFILE_O) $(WORKAROUND)
-	$(CXX) -o MIX $(WORKAROUND) $(DYN) $(CMIX_O) $(PROFILE_O) \
+MIX: main.o $(M_O) $(LIBMINC) $(LIBS) $(PROFILE_O) $(WORKAROUND)
+	$(CXX) -o MIX $(WORKAROUND) $(DYN) main.o $(PROFILE_O) \
 		$(M_O) $(LIBMINC) $(LIBS) $(LDFLAGS)
 
-PMIX: $(CMIX_O) $(P_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
-	$(CXX) -o PMIX $(WORKAROUND) $(DYN) $(CMIX_O) $(PROFILE_O) \
+PMIX: main.o $(P_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
+	$(CXX) -o PMIX $(WORKAROUND) $(DYN) main.o $(PROFILE_O) \
 		$(P_O) $(LIBS) $(LDFLAGS) $(PERL_LDFLAGS)
 
-PYMIX: $(CMIX_O) $(PY_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
-	$(CXX) -o PYMIX $(WORKAROUND) $(DYN) $(CMIX_O) $(PROFILE_O) \
+PYMIX: main.o $(PY_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
+	$(CXX) -o PYMIX $(WORKAROUND) $(DYN) main.o $(PROFILE_O) \
 		$(PY_O) $(LIBS) $(LDFLAGS) $(PYEXT) $(PYTHONLIBS)
 
 .PHONY: all standalone install dso_install standalone_install \
@@ -231,10 +239,6 @@ standalone_uninstall:
 
 clean:
 	(cd heap; $(MAKE) $(MFLAGS) clean;)
-	(cd ../audio; $(MAKE) $(MFLAGS) clean;)
-	(cd ../conf; $(MAKE) $(MFLAGS) clean;)
-	(cd ../sndlib; $(MAKE) $(MFLAGS) clean;)
-	(cd ../parser; $(MAKE) $(MFLAGS) clean;)
 	$(RM) *.o $(TARGETS) core depend
 
 cleanall: clean
