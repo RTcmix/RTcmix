@@ -1,4 +1,5 @@
-#include "../H/ugens.h"
+#include <globals.h>
+#include <ugens.h>
 #include <stdio.h>
 #include <math.h>
 #include <sys/time.h>
@@ -15,11 +16,34 @@
      by r. luke dubois - CMC/CU, 1998.
     
    distribution equations adapted from dodge and jerse.
+
+   optional arguments added (JGG):
+
+      makegen(x, 20, size, dist_type[, seed[, min, max]]
+
+   If <seed> is zero, seed comes from microsecond clock,
+   otherwise <seed> is used as the seed.  If no <seed>
+   argument, the seed used is 1.
+
+   <min> and <max> define the range (inclusive) for the
+   random numbers output.  Both args must be present;
+   otherwise the range is from 0 to 1.
 */
+
+/* Scale <num>, which falls in range [0,1] so that it falls
+   in range [min,max].  Return result.    -JGG, 12/4/01
+*/
+static INLINE float
+fit_range(float min, float max, float num)
+{
+   return min + (num * (max - min));
+}
+
+
 double
 gen20(struct gen *gen)
 {
-   int i, j, k;
+   int i, j, k, type;
    int N = 12;
    float halfN = 6;
    float scale = 1;
@@ -30,20 +54,44 @@ gen20(struct gen *gen)
    struct timeval tv;
    float output;
    float alpha = .00628338;
+   float min, max, tmp;
    static long randx = 1;
+
+   type = (int) gen->pvals[0];
 
    if (gen->pvals[1] == 0) {           /* added optional seed  -JG */
       gettimeofday(&tv, NULL);
       randx = tv.tv_usec;
    }
    else
-      randx = (int) (gen->pvals[1]);
+      randx = (int) gen->pvals[1];
 
-   switch ((int) (gen->pvals[0])) {
+   /* Set range for random numbers. */
+   if (gen->nargs == 3)
+      die("gen20",
+          "usage: makegen(x, 20, size, dist_type[, seed[, min, max]])");
+   if (gen->nargs == 4) {
+      min = gen->pvals[2];
+      max = gen->pvals[3];
+      if (min == max)
+         die("gen20", "<min> must be lower than <max>");
+      if (min > max) {     /* make sure these are in increasing order */
+         tmp = max;
+         max = min;
+         min = tmp;
+      }
+   }
+   else {
+      min = 0.0;
+      max = 1.0;
+   }
+
+   switch (type) {
       case 0:  /* even distribution */
          for (i = 0; i < gen->size; i++) {
             k = ((randx = randx * 1103515245 + 12345) >> 16) & 077777;
-            gen->array[i] = (float) k / 32768.0;
+            tmp = (float) k / 32768.0;
+            gen->array[i] = fit_range(min, max, tmp);
          }
          break;
       case 1:  /* low weighted */
@@ -55,7 +103,7 @@ gen20(struct gen *gen)
             if (randnum2 < randnum) {
                randnum = randnum2;
             }
-            gen->array[i] = randnum;
+            gen->array[i] = fit_range(min, max, randnum);
          }
          break;
       case 2:  /* high weighted */
@@ -67,7 +115,7 @@ gen20(struct gen *gen)
             if (randnum2 > randnum) {
                randnum = randnum2;
             }
-            gen->array[i] = randnum;
+            gen->array[i] = fit_range(min, max, randnum);
          }
          break;
       case 3:  /* triangle */
@@ -76,7 +124,8 @@ gen20(struct gen *gen)
             randnum = (float) k / 32768.0;
             k = ((randx = randx * 1103515245 + 12345) >> 16) & 077777;
             randnum2 = (float) k / 32768.0;
-            gen->array[i] = 0.5 * (randnum + randnum2);
+            tmp = 0.5 * (randnum + randnum2);
+            gen->array[i] = fit_range(min, max, tmp);
          }
          break;
       case 4:  /* gaussian */
@@ -89,7 +138,7 @@ gen20(struct gen *gen)
             }
             output = sigma * scale * (randnum - halfN) + mu;
             if ((output <= 1.0) && (output >= 0.0)) {
-               gen->array[i] = output;
+               gen->array[i] = fit_range(min, max, output);
                i++;
             }
          }
@@ -105,15 +154,14 @@ gen20(struct gen *gen)
             randnum = randnum * PI;
             output = (alpha * tan(randnum)) + 0.5;
             if ((output <= 1.0) && (output >= 0.0)) {
-               gen->array[i] = output;
+               gen->array[i] = fit_range(min, max, output);
                i++;
             }
          }
          break;
       default:
-         fprintf(stderr, "gen20:  don't know about distribution %d\n",
-                                                      (int) (gen->pvals[0]));
-         exit(-1);
+         die("gen20", "don't know about distribution %d\n", type);
+         break;
    }
 
    return 0.0;
