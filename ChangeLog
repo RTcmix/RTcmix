@@ -1,6 +1,15 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Saturday, December 7, 2002 John Gibson <johgibso-at-indiana.edu>
+
+   * New Makefile scheme, only really of interest to people developing
+     instrument packages.
+   * Better error messages for missing makegens in a script.  Instrument
+     designers note: this changes the behavior of floc() in such a way
+     that you must now test its return value and handle any errors.  (See
+     insts.base/WAVETABLE/WAVETABLE.C for an example of what to do.)
+
 Wednesday, December 4, 2002 Douglas Scott <netdscott-at-netscape.net>
 
    * Added ability to set thread priority in linux version.
