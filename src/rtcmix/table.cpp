@@ -1473,11 +1473,11 @@ copytable(const Arg args[], const int nargs)
       return NULL;
    }
    if (table->values() == 1)
-   copyOfTable = new ConstPField(table->doubleValue());
+      copyOfTable = new ConstPField(table->doubleValue());
    else {
       double *values = new double[table->values()];
-   table->copyValues(values);
-   copyOfTable = new TablePField(values, table->values());
+      table->copyValues(values);
+      copyOfTable = new TablePField(values, table->values());
    }
    return _createPFieldHandle(copyOfTable);
 }
