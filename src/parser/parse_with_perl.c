@@ -32,23 +32,22 @@ int perl_parse_buf (char *inBuf) {
 	
 	STRLEN n_a;
 	char *embedding[] = { "", "-e", "" };
-	char *xargv[2];
 
-	xargv[0] = "";
-	xargv[1] = extra_lib_dir;
+	if (!my_perl) {
+		my_perl = perl_alloc();
+		perl_construct( my_perl );
+		perl_parse(my_perl, xs_init, 3, embedding, NULL);
+		// PL_exit_flags |= PERL_EXIT_DESTRUCT_END;
+		perl_run(my_perl);
+	}
 
-	my_perl = perl_alloc();
-	perl_construct( my_perl );
-	
-	perl_parse(my_perl, xs_init, 3, embedding, NULL);
-	PL_exit_flags |= PERL_EXIT_DESTRUCT_END;
-	perl_run(my_perl);
-	
 	eval_pv(inBuf, TRUE);
 	
-	perl_destruct(my_perl);
-	perl_free(my_perl);
-	
+	{
+		perl_destruct(my_perl);
+		perl_free(my_perl);
+	}
+
 	return 0;
 	
 }
