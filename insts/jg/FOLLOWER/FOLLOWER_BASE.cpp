@@ -11,6 +11,7 @@
 FOLLOWER_BASE :: FOLLOWER_BASE()
 {
    branch = 0;
+   in = NULL;
    amp_table = NULL;
    smoother = NULL;
 }
