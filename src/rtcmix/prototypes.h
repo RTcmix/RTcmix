@@ -82,6 +82,7 @@ int open_sound_file(char *sfname, int *header_type, int *data_format,
 					int *data_location, double *srate, int *nchans, long *nsamps);
 
 /* audio_devices.cpp */
+void stop_audio_devices();
 void destroy_audio_devices();
 
 /* rtsetparams.C */
