@@ -20,11 +20,11 @@ wipe out the contents of the first makegen.
 
 Here are the affected instruments:
 
-inst name        NEW table assignments
-------------------------------------------
-WAVETABLE        1: amp envelope, 2: waveform
-FMINST           1: amp envelope, 2: waveform, 3: index guide
-
+inst name    NEW table assignments
+------------------------------------------------------------------------------
+FMINST       1: amp envelope, 2: waveform, 3: index guide
+WAVETABLE    1: amp envelope, 2: waveform
+WAVESHAPE    1: amp envelope, 2: waveform, 3: transfer func, 4: index envelope
 
 
 Sorry about this irritating change. Of course, if you don't like it,
