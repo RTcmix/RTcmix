@@ -17,12 +17,16 @@ PACKAGE_DIRS =
 USE_SNDLIB = TRUE
 #USE_SNDLIB = FALSE
 
+# Which platform?
 ARCH = LINUX
 #ARCH = SGI
 
-# sound driver API for Linux (and other than SGI)
+# Sound driver API for Linux (and other than SGI)
 SOUND_DRIVER = -DOSS
 #SOUND_DRIVER = -DALSA
+
+# Uncomment if your sound driver uses multiple mono devices.
+#SOUND_DRIVER += -DMONO_DEVICES
 
 # optimization and debugging flags
 OPT = -g #-O3
