@@ -15,6 +15,11 @@ extern "C" {
 extern int get_last_input_index(void);       /* defined in rtinput.c */
 }
 
+#define INCHANS_DISCREPANCY_WARNING "\
+WARNING: The bus config for this instrument specifies %d input channels, \n\
+but its input source has %d channels.\n"
+
+
 
 /* ----------------------------------------------------------- rtsetinput --- */
 /* Instruments call this to set their input file pointer (like setnote in cmix).
@@ -28,6 +33,7 @@ rtsetinput(float start_time, Instrument *inst)
    }
 
    if (inst->bus_config->in_count > 0) {
+      int src_chans;
       int index = get_last_input_index();
 
       if (index < 0 || inputFileTable[index].fd < 1) {
@@ -43,30 +49,39 @@ rtsetinput(float start_time, Instrument *inst)
       /* Fill in relevant data members of instrument class. */
       inst->inputsr = inputFileTable[index].srate;
 
-// FIXME: not sure what to do here. inputchans is set according to what
-// bus_config specifies. Currently, we just warn about the descrepancy,
-// but maybe we should do something about it?  -JGG
-      if (inst->inputchans != inputFileTable[index].chans) {
-         fprintf(stderr, "WARNING: This instrument's bus config doesn't "
-                         "match the number of input channels.\n");
+      src_chans = inputFileTable[index].chans;
+
+      if (inst->inputchans != src_chans) {
+         fprintf(stderr, INCHANS_DISCREPANCY_WARNING, inst->inputchans,
+                                                                  src_chans);
       }
 
       if (!inputFileTable[index].is_audio_dev) {
-         int datum_size = sizeof(short);
-         int inskip = (int) (start_time * inst->inputsr);
+         int datum_size, inskip;
 
          inst->sfile_on = 1;
 
-         /* Offset is measured from location that is set up in rtinput(). */
+         inskip = (int) (start_time * inst->inputsr);
+
+         /* sndlib always uses 2 for datum size, even if the actual size is
+            different. However, we don't use sndlib to read float files, so
+            their datum size is the real thing.
+         */ 
+         if (inputFileTable[index].is_float_format)
+            datum_size = sizeof(float);
+         else
+            datum_size = 2;
+
+         /* Offset is measured from the header size determined in rtinput(). */
          inst->fileOffset = inputFileTable[index].data_location
                             + (inskip * inst->inputchans * datum_size);
 
          if (start_time >= inputFileTable[index].dur)
-            fprintf(stderr, "\nWARNING: Attempt to read past end of input "
-                            "file: %s\n\n", inputFileTable[index].filename);
+            fprintf(stderr, "WARNING: Attempt to read past end of input "
+                            "file: %s\n", inputFileTable[index].filename);
       }
 
-      /* We also increment the reference count for this file. */
+      /* Increment the reference count for this file. */
       inputFileTable[index].refcount++;
    }
 
