@@ -243,7 +243,7 @@ rtreportstats(AudioDevice *device)
    if (Option::reportClipping() && Option::checkPeaks()) {
       printf("\nPeak amplitudes of output:\n");
       for (n = 0; n < NCHANS; n++) {
-	  	if (is_float_format && rtfileit)
+	  	if (is_float_format && rtfileit && fileDevice != NULL)
 			peaks[n] = fileDevice->getPeak(n, &peaklocs[n]);
          double peak_dbfs = dbamp(peaks[n]) - dbref;
          printf("  channel %d: %12.6f (%6.2f dBFS) at frame %ld (%g seconds)\n",
