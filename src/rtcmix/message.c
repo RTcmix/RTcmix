@@ -83,7 +83,7 @@ die(const char *inst_name, const char *format, ...)
    if (rtsetparams_called)
       rtcloseout();
    else
-      closesf();
+      closesf_noexit();
 
    exit(1);
 }
