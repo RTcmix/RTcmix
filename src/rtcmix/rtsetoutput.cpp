@@ -7,6 +7,7 @@
 #include "../rtstuff/Instrument.h"
 #include "../rtstuff/rtdefs.h"
 #include "../H/dbug.h"
+#include <stdlib.h>
 
 extern double schedtime;
 
