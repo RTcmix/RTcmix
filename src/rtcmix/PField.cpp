@@ -699,7 +699,8 @@ double ConstrainPField::doubleValue(double didx) const
 
 double ConstrainPField::doubleValue(int idx) const
 {
-	return _constrainer->next(field()->doubleValue(idx), _strengthPField->doubleValue(idx));
+	double frac = (double) idx / (values() - 1);
+	return _constrainer->next(field()->doubleValue(idx), _strengthPField->doubleValue(frac));
 }
 
 // MapPField
