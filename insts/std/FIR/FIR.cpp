@@ -1,3 +1,15 @@
+/* FIR: simple FIR filter instrument
+*
+*  p0 = outsk
+*  p1 = insk
+*  p2 = dur
+*  p3 = amp
+*  p4 = total number of coefficients
+*  p5...  the coefficients (up to 99 fir coefficients)
+*
+*  p3 (amp) can receive updates.
+*  mono input / mono output only
+*/
 #include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,10 +20,10 @@
 #include <rt.h>
 #include <rtdefs.h>
 
-
 FIR::FIR() : Instrument()
 {
 	in = NULL;
+	branch = 0;
 }
 
 FIR::~FIR()
@@ -19,21 +31,8 @@ FIR::~FIR()
 	delete [] in;
 }
 
-
 int FIR::init(double p[], int n_args)
 {
-/* fir: simple fir filter instrument
-*
-*  p0 = outsk
-*  p1 = insk
-*  p2 = dur
-*  p3 = amp
-*  p4 = total number of coefficients
-*  p5...  the coefficients (up to 99 fir coefficients)
-*
-*  (no amplitude control, does channel 0 of both input and output only)
-*
-*/
 
 	int i, rvin;
 
@@ -51,36 +50,47 @@ int FIR::init(double p[], int n_args)
 
 	amp = p[3];
 
+	skip = (int) (SR / (float) resetval);
+
 	return(nsamps);
+}
+
+int FIR::configure()
+{
+	if (in == NULL)
+		in = new float [RTBUFSAMPS * inputChannels()];
+
+	return 0;
 }
 
 int FIR::run()
 {
-	int i,j,rsamps;
 	float out[2];
 
-	if (in == NULL)        /* first time, so allocate it */
-		in = new float [RTBUFSAMPS * inputchans];
-
-	rsamps = chunksamps*inputchans;
+	int rsamps = framesToRun() * inputChannels();
 	rtgetin(in, this, rsamps);
 
-	for (i = 0; i < chunksamps; i++) {
+	for (int i = 0; i < framesToRun(); i++) {
+		if (--branch <= 0) {
+			double p[4];
+			update(p, 4, 1 << 3);
+			amp = p[3];
+			branch = skip;
+		}
 		out[0] = 0.0;
-		pastsamps[0] = in[i*inputchans];
+		pastsamps[0] = in[i * inputChannels()];
 
-		for (j = 0; j < ncoefs; j++) 
+		for (int j = 0; j < ncoefs; j++) 
 			out[0] += (pastsamps[j] * coefs[j]);
-		for (j = ncoefs-1; j >= 1; j--)
+		for (int j = ncoefs-1; j >= 1; j--)
 			pastsamps[j] = pastsamps[j-1];
 
 		out[0] *= amp;
 		rtaddout(out);
-		cursamp++;
-		}
-	return(i);
+		increment();
+	}
+	return framesToRun();
 }
-
 
 
 Instrument*

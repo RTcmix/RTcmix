@@ -1,20 +1,29 @@
-/* FIR: simple fir filter instrument
+/* FIR: simple FIR filter instrument
 *
-*  p0 = outsk  
-*  p1 = insk 
+*  p0 = outsk
+*  p1 = insk
 *  p2 = dur
 *  p3 = amp
 *  p4 = total number of coefficients
 *  p5...  the coefficients (up to 99 fir coefficients)
 *
-*  (no amplitude control, does channel 0 of both input and output only)
-*
+*  p3 (amp) can receive updates.
+*  mono input / mono output only
 */
 
 rtsetparams(44100, 1)
 load("FIR")
 rtinput("/snd/pablo1.snd")
 
-FIR(0, 0, 7.0, 0.1, 32, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9)
+dur = DUR()
+env = maketable("curve", 1000, 0,0,2, 2,1,-4, dur,0)
 
-FIR(8.0, 0, 9.8, 1.0, 32, 0.9, -0.9,  0.9, -0.9,  0.9, -0.9,  0.9, -0.9, 0.9, -0.9,  0.9, -0.9,  0.9, -0.9,  0.9, -0.9, 0.9, -0.9,  0.9, -0.9,  0.9, -0.9,  0.9, -0.9, 0.9, -0.9,  0.9, -0.9,  0.9, -0.9,  0.9, -0.9)
+FIR(0, 0, dur, env * 0.05,
+32, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9,
+0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9,
+0.9)
+
+FIR(dur + 0.3, 0, dur, env,
+32, 0.9, -0.9,  0.9, -0.9,  0.9, -0.9,  0.9, -0.9, 0.9, -0.9,  0.9, -0.9,  0.9,
+-0.9,  0.9, -0.9, 0.9, -0.9,  0.9, -0.9,  0.9, -0.9,  0.9, -0.9, 0.9, -0.9,
+0.9, -0.9,  0.9, -0.9,  0.9, -0.9)

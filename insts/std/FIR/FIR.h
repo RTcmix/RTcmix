@@ -1,5 +1,5 @@
 class FIR : public Instrument {
-	int ncoefs;
+	int ncoefs, branch, skip;
 	float pastsamps[101];
 	float coefs[101];
 	float amp, *in;
@@ -7,6 +7,7 @@ class FIR : public Instrument {
 public:
 	FIR();
 	virtual ~FIR();
-	int init(double*, int);
-	int run();
-	};
+	virtual int init(double *, int);
+   virtual int configure();
+	virtual int run();
+};
