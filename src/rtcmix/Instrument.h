@@ -42,6 +42,7 @@ private:
 public:
    Instrument();
    virtual ~Instrument();
+   void set_bus_config(const char *);
    virtual int init(float *, short);
    virtual int run();
 

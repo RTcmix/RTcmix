@@ -12,6 +12,7 @@
 #include "rtdefs.h"
 #include <notetags.h>
 #include <sndlibsupport.h>
+#include <bus.h>
 #include <assert.h>
 
 
@@ -69,6 +70,12 @@ Instrument :: ~Instrument()
 // Call something that decrements refcount for bus_config, and if that
 // reaches zero, and is no longer the most recent for that instname,
 // then delete that bus_config node.
+}
+
+
+void Instrument :: set_bus_config(const char *inst_name)
+{
+   bus_config = get_bus_config(inst_name);
 }
 
 
