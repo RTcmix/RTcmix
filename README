@@ -1,4 +1,10 @@
-This is RTcmix version 2.3, for Linux and Irix platforms.
+This is RTcmix version 2.4, for Linux and Irix platforms.
 
-See the files in the docs directory for information about installing
-and using RTcmix.
+See the AUTHORS and LICENSE files for information about the license
+to this software.
+
+See the INSTALL file for compilation and installation instructions.
+
+See the files in the docs directory for more information about 
+using RTcmix.
+
