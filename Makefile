@@ -6,16 +6,16 @@ include makefile.conf
 
 MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
 
-SNDLIB_DIR = sndlib
+SNDLIB_DIR = src/sndlib
 
-BASE = insts.base
+BASE = insts/base
 
-DIRS = $(SNDLIB_DIR) H rtstuff Minc sys lib head cmd utils docs
+DIRS = $(SNDLIB_DIR) include src genlib utils docs
 ifeq ($(PERL_SUPPORT), TRUE)
-	DIRS += Perl
+	DIRS += src/parser/perl
 endif
 ifeq ($(PYTHON_SUPPORT), TRUE)
-	DIRS += Python
+	DIRS += src/parser/python
 endif
 
 #################################################################  make all  ###
@@ -27,50 +27,19 @@ $(SNDLIB_DIR)::
 	@cd $(SNDLIB_DIR); $(MAKE) $(MFLAGS) all
 	@echo "done."; echo ""
 
-H::
-	@echo "making H..."
-	@cd H; $(MAKE) $(MFLAGS) all
+include::
+	@echo "making include..."
+	@cd include; $(MAKE) $(MFLAGS) all
 	@echo "done."; echo ""
 
-heap::
-	@echo "making rtstuff/heap ..."
-	@cd rtstuff/heap; $(MAKE) $(MFLAGS) all
+src::
+	@echo "making src..."
+	@cd src; $(MAKE) $(MFLAGS) all
 	@echo "done."; echo ""
 
-rtstuff::
-	@echo "making rtstuff/heap..."
-	@cd rtstuff/heap; $(MAKE) $(MFLAGS) all
-	@echo "done."; echo ""
-	@echo "making rtstuff..."
-	@cd rtstuff; $(MAKE) $(MFLAGS) all
-	@echo "done."; echo ""
-
-Minc::
-	@echo "making Minc..."
-	@cd Minc; $(MAKE) $(MFLAGS) all
-	@echo "done."; echo ""
-
-sys::
-	@echo "making sys..."
-	@cd sys; $(MAKE) $(MFLAGS) all
-	@echo "done."; echo ""
-
-lib::
-ifeq ($(ARCH),SGI)   # do only for SGI, which needs this for so_locations file
-	@if test ! -d $(LIBDESTDIR); then mkdir $(LIBDESTDIR); fi;
-endif
-	@echo "making lib..."
-	@cd lib; $(MAKE) $(MFLAGS) all
-	@echo "done."; echo ""
-
-head::
-	@echo "making head..."
-	@cd head; $(MAKE) $(MFLAGS) all
-	@echo "done."; echo ""
-
-cmd::
-	@echo "making cmd..."
-	@cd cmd; $(MAKE) $(MFLAGS) all
+genlib::
+	@echo "making genlib..."
+	@cd genlib; $(MAKE) $(MFLAGS) all
 	@echo "done."; echo ""
 
 utils::
@@ -83,8 +52,8 @@ docs::
 	@cd docs/pod; $(MAKE) $(MFLAGS) all
 	@echo "done."; echo ""
 
-Perl::
-	@echo "making Perl..."
+perl::
+	@echo "making perl..."
 	@cd Perl; $(MAKE) $(MFLAGS) all
 	@echo "done."; echo ""
 
