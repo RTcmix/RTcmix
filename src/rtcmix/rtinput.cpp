@@ -171,7 +171,7 @@ rtinput(float p[], int n_args, double pp[])
    if (strcmp(sfname, "AUDIO") == 0) {
       audio_in = 1;
 
-      if (pp[1] != 0.0) {
+      if (n_args > 1 && pp[1] != 0.0) {
          p1_is_audioport = 1;
          anint = (int) pp[1];
          str = (char *) anint;
