@@ -141,9 +141,9 @@ class Ooscili;
 
 class LFOPField : public SingleValuePField {
 public:
-	typedef double (*InterpFunction)(Ooscili *oscil);
-	static double Truncate(Ooscili *oscil);
-	static double Interpolate1stOrder(Ooscili *oscil);
+	typedef double (*InterpFunction)(Ooscili *);
+	static double Truncate(Ooscili *);
+	static double Interpolate1stOrder(Ooscili *);
 public:
 	LFOPField(double krate, double *tableArray, int length, PField *freq,
 								InterpFunction fun=Interpolate1stOrder);
@@ -244,7 +244,12 @@ private:
 
 class RangePField : public PFieldWrapper {
 public:
-	RangePField(PField *innerPField, PField *minPField, PField *maxPField);
+	typedef double (*RangeFitFunction)(const double, const double, const double);
+	static double UnipolarSource(const double, const double, const double);
+	static double BipolarSource(const double, const double, const double);
+public:
+	RangePField(PField *innerPField, PField *minPField, PField *maxPField,
+												RangeFitFunction fun=UnipolarSource);
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
 	virtual int		values() const { return _len; }
@@ -252,6 +257,7 @@ private:
 	int _len;
 	PField *_minPField;
 	PField *_maxPField;
+	RangeFitFunction _rangefitter;
 };
 
 // Class for smoothing a control signal.  Lag must be in range [0, 100].

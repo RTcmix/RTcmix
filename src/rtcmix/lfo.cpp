@@ -218,7 +218,7 @@ makeLFO(const Arg args[], const int nargs)
 	if (amppf != NULL)
 		lfo = new MultPField(lfo, amppf);
 	else
-		lfo = new RangePField(lfo, minpf, maxpf);
+		lfo = new RangePField(lfo, minpf, maxpf, RangePField::BipolarSource);
 
 	return _createPFieldHandle(lfo);
 }

@@ -360,10 +360,23 @@ double ReversePField::doubleValue(int idx) const
 
 // RangePField
 
-RangePField::RangePField(PField *innerPField, PField *minPField, PField *maxPField)
+RangePField::RangePField(PField *innerPField, PField *minPField, PField *maxPField,
+																	RangePField::RangeFitFunction fun)
 	: PFieldWrapper(innerPField), _len(innerPField->values()),
-	  _minPField(minPField), _maxPField(maxPField)
+	  _minPField(minPField), _maxPField(maxPField), _rangefitter(fun)
 {
+}
+
+// Assumes val is in range [0, 1]
+double RangePField::UnipolarSource(const double val, const double min, const double max)
+{
+	return min + (val * (max - min));
+}
+
+// Assumes val is in range [-1, 1]
+double RangePField::BipolarSource(const double val, const double min, const double max)
+{
+	return min + ((val + 1.0) * 0.5 * (max - min));
 }
 
 double RangePField::doubleValue(double didx) const
@@ -371,7 +384,7 @@ double RangePField::doubleValue(double didx) const
 	const double min = _minPField->doubleValue(didx);
 	const double max = _maxPField->doubleValue(didx);
 	const double normval = field()->doubleValue(didx);
-	return min + ((normval + 1.0) * 0.5 * (max - min));
+	return (*_rangefitter)(normval, min, max);
 }
 
 double RangePField::doubleValue(int idx) const
@@ -379,7 +392,7 @@ double RangePField::doubleValue(int idx) const
 	const double min = _minPField->doubleValue(idx);
 	const double max = _maxPField->doubleValue(idx);
 	const double normval = field()->doubleValue(idx);
-	return min + ((normval + 1.0) * 0.5 * (max - min));
+	return (*_rangefitter)(normval, min, max);
 }
 
 // SmoothPField
