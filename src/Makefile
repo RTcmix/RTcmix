@@ -1,3 +1,5 @@
+# Makefile for $(TOP)/src
+
 include ../makefile.conf
 
 DIRS = sndlib audio conf parser rtcmix
@@ -5,7 +7,7 @@ DIRS = sndlib audio conf parser rtcmix
 .PHONY: all progs dsos standalone install dso_install standalone_install \
 uninstall dso_uninstall standalone_uninstall clean cleanall
 
-all:
+all: $(DIRS)
 	@for DIR in $(DIRS); \
 	do \
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) all; ) \
@@ -32,6 +34,14 @@ dso_uninstall:
 
 standalone_uninstall: do_package
 
+depend::
+	@for DIR in $(DIRS); \
+	do \
+	  ( cd $$DIR; echo "making depend in $$DIR..."; \
+	  $(RM) depend; \
+	  $(MAKE) $(MFLAGS) depend ); \
+	done
+
 clean:
 	@for DIR in $(DIRS); \
 	do \
@@ -39,5 +49,10 @@ clean:
 		$(MAKE) $(MFLAGS) clean ); \
 	done
 
-cleanall: clean uninstall
+cleanall::
+	@for DIR in $(DIRS); \
+	do \
+	  ( cd $$DIR; echo "making cleanall in $$DIR..."; \
+	  $(MAKE) $(MFLAGS) cleanall ); \
+	done
 
