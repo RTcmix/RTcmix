@@ -92,6 +92,8 @@ int Instrument :: run()
    if (outbuf == NULL)
       outbuf = new BUFTYPE [RTBUFSAMPS * outputchans];
 
+   obufptr = outbuf;
+
 #ifdef NOTYET
    for (int i = 0; i < outputchans; i++)
       bufstatus[i] = 0;
@@ -104,6 +106,22 @@ int Instrument :: run()
 void Instrument :: exec()
 {
    run();
+}
+
+
+// Replacement for the old rtaddout (in rtaddout.C, now removed).
+// This one copies (not adds) into the inst's outbuf. Later the
+// schedular calls the insts addout method to add outbuf into the 
+// appropriate output buses. Inst's *must* call the class run method
+// before doing their own run stuff. (This is true even if they don't
+// use rtaddout.)
+// Assumes that <samps> contains exactly outputchans interleaved samples.
+// Returns outputchans (i.e., number of samples written).
+
+int Instrument :: rtaddout(BUFTYPE samps[])
+{
+   for (int i = 0; i < outputchans; i++)
+      *obufptr++ = samps[i];
 }
 
 
