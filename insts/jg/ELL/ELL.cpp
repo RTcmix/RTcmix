@@ -48,6 +48,9 @@
    and attenuation. If this happens, the program will die with a "Filter
    design failed!" message, instead of running the job. If you ask for a
    very steep cutoff and very little ripple, you may see this.
+
+   Based on original Cmix code.  Removal of libf2c.a and f2c.h requirement
+   courtesy of Alistair Riddell and Ross Bencina.
 */
 #include <stdio.h>
 #include <stdlib.h>
