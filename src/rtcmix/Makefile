@@ -77,7 +77,8 @@ rtsetoutput.cpp \
 rtwritesamps.cpp \
 set_option.cpp \
 sockit.cpp \
-table.cpp
+table.cpp \
+connection.cpp
 
 # This is not linked into librtcmix
 #rtprofile.cpp
@@ -110,6 +111,10 @@ AUDIOLIB = ../audio/librtaudio.a
 SNDLIB = ../sndlib/sndlib.a
 
 LIBS = $(AUDIOLIB) $(SNDLIB) $(LIBCONF)
+
+# JGG mouse test...
+#LIBS += ../control/mouse/libmouse.a ../control/mouse/glue.o
+#LDFLAGS += -L/usr/X11/lib -lX11
 
 PROGS = MIX
 TARGETS = $(RTLIB) RTcmix.o main.o $(PROGS)
