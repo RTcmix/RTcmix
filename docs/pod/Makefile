@@ -50,6 +50,7 @@ MAN = $(INST_MAN) $(SCRIPT_MAN) $(CMD_MAN) $(API_MAN)
 HTML = $(INST_HTML) $(SCRIPT_HTML) $(CMD_HTML) $(API_HTML)
 PS = $(INST_PS) $(SCRIPT_PS) $(CMD_PS) $(API_PS)
 PDF = $(INST_PDF) $(SCRIPT_PDF) $(CMD_PDF) $(API_PDF)
+SYN = syn
 
 HTML_INDEX = index.html
 
@@ -60,6 +61,7 @@ API_TITLE = "RTcmix Programmer Documentation"
 
 VERS = "$(shell perl print_rtcmix_vers.pl $(CMIXDIR))"
 DATE = "$(shell date +'%d %b, %Y')"
+CMDIR = "$(CMIXDIR)"
 
 mkinstalldirs = $(SHELL) $(CMIXDIR)/docs/pod/mkinstalldirs
 
@@ -107,8 +109,15 @@ $(PS): %.ps: %.1
 $(PDF): %.pdf: %.ps
 	ps2pdf $<
 
+# Edit syn.in script to insert RTcmix src dir.  Use 'Z' instead of '/' as regexp
+# delimiter, since cmixdir contains path slashes.  We might be screwed without
+# GNU sed.
+$(SYN): syn.in
+	@sed s\Z_CMIXDIR_Z'$(CMDIR)'Z syn.in > $(SYN)
+	@chmod 755 $(SYN)
+
 clean:
-	$(RM) *.1 *.3 *.html *.ps *.pdf *.tmp pod2htm*
+	$(RM) *.1 *.3 *.html *.ps *.pdf *.tmp pod2htm* $(SYN)
 
 installman: $(MAN)
 ifneq ($(strip $(MANDESTDIR)),)    # do only if MANDESTDIR is nonempty
@@ -143,6 +152,12 @@ ifneq ($(strip $(HTMLDESTDIR)),)    # do only if HTMLDESTDIR is nonempty
 	( cd $(HTMLDESTDIR)/images; $(RM) $(IMAGES) )
 endif
 
-install: installman installhtml
-uninstall: uninstallman uninstallhtml
+installsyn: $(SYN)
+	$(INSTALL) $(SYN) $(BINDIR)
+
+uninstallsyn:
+	( cd $(BINDIR); $(RM) $(SYN) )
+
+install: installman installhtml #installsyn
+uninstall: uninstallman uninstallhtml #uninstallsyn
 
