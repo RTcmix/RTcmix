@@ -4,7 +4,7 @@ I.  INSTALLATION
 1)  Set up your linux audio driver: either compile the kernel with sound, 
     or get the OSS drivers:
 
-	http://www.4front-tech.com
+       http://www.4front-tech.com
 
 2)  If you're still using a distribution of Linux that only has libc5
     C libraries, then you'll need to get and install the pthread libraries:
@@ -16,8 +16,8 @@ Ia.  FOR THE CORE
 -----------------
 
 1)  Unpack the RTcmix archive into any directory on your machine
-    (e.g., with "gunzip -c RTcmix2.1.Linux.tgz | tar xf -").
-    This will create a directory called "RTcmix2.1.Linux" with all
+    (e.g., with "gunzip -c RTcmix-2.2.0.tar.gz | tar xf -").
+    This will create a directory called "RTcmix-2.2.0" with all
     the core source inside. We call this the "RTcmix directory" below.
 
 2)  Edit "makefile.conf" inside this directory.
@@ -46,7 +46,12 @@ at least the "insts.std.tgz" package. Here's how to install packages:
 2)  Untar PACKAGE.tgz  ("tar xfz PACKAGE.tgz")
 
 3)  Edit "makefile.conf" in the RTcmix directory.
-    Add the package directory name to PACKAGE_DIRS.
+
+    If the package is an instrument package (e.g., insts.std, insts.jg),
+    then add the package directory name to INST_DIRS.
+
+    If the package is not an instrument package (e.g., interfaces.dt),
+    then add the package directory name to PACKAGE_DIRS.
 
 4)  Do a "make; make install" from the RTcmix directory (not from
     inside the package directory). This creates a .conf file in the
