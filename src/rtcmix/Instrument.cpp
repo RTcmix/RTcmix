@@ -631,15 +631,6 @@ void Instrument::pf_path_update(int tag, int pval)
 						return;  
 				}
 				
-				// This flag is used to test if this is the first time that 
-				// a value update will occur.  For the first update 
-                // cursamp - oldsamp[pval] should equal 0 because it is used
-				// as an index into the gen table, and the first index should
-				// always be 0
-
-				if(oldsamp[pval] == -1)
-					oldsamp[pval] = cursamp;
-
 				// diff is the difference between the "end value" and the 
 				// "start value"
 				diff = pfpath[tag][pval][cumulative_size[pval] + 1][1] 
@@ -650,9 +641,20 @@ void Instrument::pf_path_update(int tag, int pval)
 				difftime = pfpath[tag][pval][cumulative_size[pval] + 1][0] 
                            - pfpath[tag][pval][cumulative_size[pval]][0];
 
+				
 				tableset(difftime, psize(gen_type[tag][pval][j[pval]])
                                  , ptabs[pval]);
 				
+
+				// This flag is used to test if this is the first time that 
+				// a value update will occur.  For the first update 
+                // cursamp - oldsamp[pval] should equal 0 because it is used
+				// as an index into the gen table, and the first index should
+				// always be 0
+				if(oldsamp[pval] == -1)
+				{
+					oldsamp[pval] = cursamp;
+				}
 				table_val = tablei(cursamp - oldsamp[pval], ptables[pval]
                                    , ptabs[pval]);
 
@@ -769,6 +771,7 @@ void Instrument::pf_path_update(int tag, int pval)
 		cumulative_size[pval]++;
 		incr_j = 0;
 		pfpathcounter[pval] = 0;
+		oldsamp[pval] = -1;
 	}
 }
 
