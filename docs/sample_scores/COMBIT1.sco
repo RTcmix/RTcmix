@@ -13,6 +13,6 @@
 
 rtsetparams(44100, 2)
 load("COMBIT")
-rtinput("/snd.harmony/Public_Sounds/pigs.snd")
-COMBIT(0, 0, 3.5, 0.08, cpspch(7.09), .5)
-/* COMBIT(0.2, 0, 3.5, 0.08, cpspch(7.07), .5, 0, 1) */
+rtinput("../snd/nucular.wav")
+COMBIT(0, 0, DUR(), 0.5, cpspch(7.09), .9)
+COMBIT(0.2, 0, DUR(), 0.5, cpspch(7.07), .9, 0, 1)

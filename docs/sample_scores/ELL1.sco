@@ -2,13 +2,13 @@ rtsetparams(44100, 2)
 load("STEREO")
 load("ELL")
 
-rtinput("/snd/Public_Sounds/vccm_old/ah.snd")
+rtinput("../snd/huhh.wav")
 inchan = 0
 inskip = 0
 dur = DUR()
 
 /* --------------------------------------------------------------- STEREO --- */
-amp = 8
+amp = 2
 STEREO(start=0, inskip, dur, amp, pctleft=.5)
 
 /* --------------------------------------------------------- ELL low-pass --- */
@@ -19,7 +19,7 @@ atten = 90
 
 ellset(pbcut, sbcut, 0, ripple, atten)
 
-amp = 12
+amp = 4
 ringdur = .1
 
 ELL(start=dur+1, inskip, dur, amp, ringdur, inchan, pctleft=.5)
@@ -32,7 +32,7 @@ atten = 90
 
 ellset(pbcut, sbcut, 0, ripple, atten)
 
-amp = 15
+amp = 8
 ringdur = .1
 
 ELL(start=start+dur+1, inskip, dur, amp, ringdur, inchan, pctleft=.5)

@@ -14,8 +14,9 @@
 
 rtsetparams(44100, 1)
 load("AM")
-rtinput("/sndh/bob.dole.mono")
+rtinput("../snd/nucular.wav")
 makegen(1, 24, 1000, 0,0, 2,1, 5,1, 7,0)
 makegen(2, 10, 1000, 1)
-AM(0, 0, 7, 1, 14)
-AM(8, 0, 7, 1, 187)
+dur = DUR()
+AM(0, 0, dur, 1, 14)
+AM(dur + 1, 0, dur, 1, 187)
