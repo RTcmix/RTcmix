@@ -162,7 +162,7 @@ double checkInsts(const char *fname, double *pp, int n_args, void **inst)
             printf("========<rt-queueing>=======\n");
             printf("%s:  ",fname);
             for (i = 0; i < n_args; i++)
-               printf("%f ",p[i]);
+               printf("%f ", pp[i]);
             printf("\n");
          }
 
