@@ -172,17 +172,19 @@ sigint_handler(int signo)
    the exception is thrown doesn't mean there's a serious problem.  For
    more info, see: http://www.smartelectronix.com/musicdsp/text/other001.txt.
 */
+#ifdef LINUX
+#ifdef DENORMAL_CHECK
 static void
 detect_denormals()
 {
-#ifdef LINUX
    #include <fpu_control.h>
    int cw = 0;
    _FPU_GETCW(cw);
    cw &= ~_FPU_MASK_DM;
    _FPU_SETCW(cw);
-#endif
 }
+#endif /* DENORMAL_CHECK */
+#endif /* LINUX */
 
 
 /* ----------------------------------------------------------------- main --- */
