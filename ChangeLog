@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Wednesday, 2004-04-14  Douglas Scott  <netdscott-at-netscape.net>
+
+	* Major revision of all audio I/O and main loop to use new
+	  AudioDevice classes.  Several source files converted from
+	  .c to .cpp.  Tested under OSS, ALSA, and MACOSX.
+
 Friday, March 19, 2004 Brad Garton <brad-at-music.columbia.edu>
 
 	* added changes to allow imbedded apps to not schedule Instruments
