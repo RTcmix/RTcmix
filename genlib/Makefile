@@ -36,7 +36,6 @@ all : $(LIB)
 install:	all
 
 uninstall:
-	$(RM) $(LIBDIR)/$(LIB)
 
 $(LIB):	$(OBJECTS) $(OOBJECTS)
 	$(RM) $@
@@ -55,9 +54,10 @@ endif
 -include depend
 
 clean:
-	rm -f *.o *~ $(LIB)
+	$(RM) *.o *~ $(LIB)
 
 cleanall: clean
-	rm -f depend
+	$(RM) depend
+	$(RM) $(LIBDIR)/$(LIB)
 
 
