@@ -3,10 +3,8 @@
 #include <stdio.h>
 #include <math.h>
 #include "../H/ugens.h"
-#ifdef USE_SNDLIB
 #include <sys/types.h>
 #include <unistd.h>
-#endif
 
 
 #if defined(NeXT) && defined(i386)
@@ -50,7 +48,7 @@ int input;
 	int BPFRAME = sfchans(&sfdesc[input]) * sizeof(short);
 	int FPREC = RECSIZE/sfchans(&sfdesc[input]);
 
-	int sample,i,j;
+	int sample,i,j,nbytes;
 	signed short *array = (short *)sndbuf[input];
 	float tempsample1;
 	float tempsample2;
@@ -71,10 +69,18 @@ int input;
 			fprintf(stderr,"badlseek on inputfile\n");
 			closesf();
 		}
-		if(read(sfd[input],(char *)array,BPREC) <= 0) {
-			fprintf(stderr,"reached eof on input file \n");
-			return(0);
+		nbytes = read(sfd[input], (char *)array, BPREC);
+		if (nbytes == -1) {
+			perror("getisample: read");
+			return 0;
 		}
+		if (nbytes == 0) {
+			fprintf(stderr, "reached eof on input file\n");
+			return 0;
+		}
+		if (nbytes < BPREC)     /* zero out rest of sndbuf */
+			for (i = nbytes; i < BPREC; i++)
+				sndbuf[input][i] = 0;
 		oldsample = sample;
 		endsample = oldsample + FPREC - 1;
 		}
@@ -108,7 +114,7 @@ int input;
 	int BPFRAME = sfchans(&sfdesc[input]) * sizeof(float);
 	int FPREC = RECSIZE/(float)sfchans(&sfdesc[input]);
 
-	int sample,i,j;
+	int sample,i,j,nbytes;
 	float *array = (float *)sndbuf[input];
 	float fraction,tempfloat1,tempfloat2;
 	static int oldsample = 0;
@@ -128,10 +134,18 @@ int input;
 			fprintf(stderr,"badlseek on inputfile\n");
 			closesf();
 		}
-		if(read(sfd[input],(char *)array,BPREC) <= 0) {
-			fprintf(stderr,"reached eof on input file \n");
-			return(0);
+		nbytes = read(sfd[input], (char *)array, BPREC);
+		if (nbytes == -1) {
+			perror("getfsample: read");
+			return 0;
 		}
+		if (nbytes == 0) {
+			fprintf(stderr, "reached eof on input file\n");
+			return 0;
+		}
+		if (nbytes < BPREC)     /* zero out rest of sndbuf */
+			for (i = nbytes; i < BPREC; i++)
+				sndbuf[input][i] = 0;
 		oldsample = sample;
 		endsample = oldsample + FPREC - 1;
 		}
