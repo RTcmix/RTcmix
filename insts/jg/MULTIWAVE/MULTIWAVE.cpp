@@ -139,7 +139,7 @@ int MULTIWAVE::run()
             out[1] += sig * (1.0 - pan[j]);
          }
       }
-      float scale = (1.0 / float(numpartials)) * overall_amp;
+      float scale = (1.0 / float(numpartials)) * (overall_amp * chans);
       for (int j = 0; j < chans; j++)
          out[j] *= scale;
 
