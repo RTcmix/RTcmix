@@ -16,7 +16,6 @@ winstart = 0.1
 winend = filedur - 0.1
 wrap = true
 
-//travrate = makeconnection("mouse", "x", min=0, max=4, dflt=1, lag=30, "rate")
 travrate = 0.01
 
 envtab = maketable("window", 1000, "hanning")
