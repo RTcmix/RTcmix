@@ -768,10 +768,19 @@ _expbrk_table(const Arg args[], const int nargs, double *array, const int len)
 		double c = pow((amp2 / amp1), (1.0 / (double) args[k]));
 		i = (j - 1) + (int) args[k];
 		for (int l = j; l < i; l++) {
-			if (l < len)
+			if (l < len) {
 				array[l] = array[l - 1] * c;
+			} else { 
+				warn("maketable (expbrk)", "the number of points requested exceeds the table size, ignoring the excess.");
+				k = nargs; // force the loop to exit)
+				break;
+			}
 		}
 	}
+
+	// fill the rest of the array with the last value if all locs weren't used
+	if (i < len)
+		for (int m = i; m < len; m++) array[m] = args[nargs-1];
 
 	return 0;
 }

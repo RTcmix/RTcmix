@@ -34,11 +34,21 @@ void fill_linebrk_table(const Arg args[], const int nargs, double *array,
 		const int j = i + 1;
 		i = j + (int) args[k] - 1;
 		for (int l = j; l <= i; l++) {
-			if (l <= len)
+			if (l <= len) {
 				array[l - 1] = amp1
 									+ (amp2 - amp1) * (double) (l - j) / (i - j + 1);
+         } else {
+            warn("maketable (linebrk)", "the number of points requested exceeds the table size, ignoring the excess.");
+            k = nargs; // force the loop to exit)
+            break;
+         }
 		}
 	}
+
+   // fill the rest of the array with the last value if all locs weren't used
+   if (i < len)
+      for (int m = i; m < len; m++) array[m] = args[nargs-1];
+
 }
 
 // --------------------------------------------------------- fill_wave_table ---
