@@ -31,15 +31,15 @@
 #include "../H/dbug.h"
 
 extern "C" {
-   int ug_intro();
-   void *yyparse();
-   int profile();
-   void rtprofile();
+  int ug_intro();
+  void *yyparse();
+  int profile();
+  void rtprofile();
 #ifdef SGI
-   void flush_all_underflows_to_zero();
+  void flush_all_underflows_to_zero();
 #endif
 #ifdef LINUX
-   void flush_fpe(int sig);
+  void flush_fpe(int sig);
 #endif
 }
 
@@ -265,7 +265,7 @@ main(int argc, char *argv[])
 #ifdef DBUG
       fprintf(stdout, "joining inTraverse() thread\n");
 #endif
-      retcode = pthread_join(inTraverseThread, NULL);
+      /* retcode = pthread_join(inTraverseThread, NULL); */
       if (retcode != 0) {
          fprintf(stderr, "inTraverse() thread join failed\n");
       }
@@ -274,7 +274,7 @@ main(int argc, char *argv[])
 #ifdef DBUG
       fprintf(stdout, "joining sockit() thread\n");
 #endif
-      retcode = pthread_join(sockitThread, NULL);
+      /* retcode = pthread_join(sockitThread, NULL); */
       if (retcode != 0) {
          fprintf(stderr, "sockit() thread join failed\n");
       }
@@ -284,6 +284,9 @@ main(int argc, char *argv[])
       yyparse();
       inTraverse(NULL);
    }
+
+   /* DJT:  this instead of above joins */
+   while (rtInteractive) {};
 
    closesf();
 
