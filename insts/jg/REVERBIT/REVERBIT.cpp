@@ -163,7 +163,7 @@ int REVERBIT::run()
    float aamp, insig[2], delsig, rvbsig;
    float in[MAXBUF], out[2];
 
-   Instrument:run();
+   Instrument::run();
 
    rsamps = chunksamps * inputchans;
 
