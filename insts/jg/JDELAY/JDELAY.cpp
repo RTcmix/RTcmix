@@ -139,8 +139,11 @@ int JDELAY::init(double p[], int n_args)
 }
 
 
-void JDELAY::doupdate(double p[])
+void JDELAY::doupdate()
 {
+   double p[11];
+   update(p, 11, kAmp | kDelTime | kDelRegen | kCutoff | kWetPercent | kPan);
+
    amp = p[3];
    if (amptable)
       amp *= tablei(currentFrame(), amptable, amptabs);
@@ -196,10 +199,7 @@ int JDELAY::run()
 
    for (int i = 0; i < samps; i += inputChannels()) {
       if (--branch <= 0) {
-         double p[11];
-         update(p, 11,
-                kAmp | kDelTime | kDelRegen | kCutoff | kWetPercent | kPan);
-         doupdate(p);
+         doupdate();
          branch = skip;
       }
 

@@ -9,7 +9,7 @@ class JDELAY : public Instrument {
    double  delsamps, *amptable, tonedata[3];
    Ozdelay *delay;
 
-   void doupdate(double p[]);
+   void doupdate();
 public:
    JDELAY();
    virtual ~JDELAY();
