@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2004-12-07  Douglas Scott  <netdscott at netscape.net>
+
+	*  Added support for multi-device OSS audio (waiting for testing).
+
 Thursday, November 18, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * Two new multichannel panning instruments: NPAN and QPAN
