@@ -71,6 +71,8 @@ BufPtr audioin_buffer[1];
 BufPtr out_buffer[1];
 #endif
 
+static int print_minutes_seconds = 0;  /* print time as 1:20 instead of 80 */
+
 
 /* ---------------------------------------------------------------- usage --- */
 
@@ -85,7 +87,9 @@ Usage: %s [options] filename  \n\
                  -q        quiet - don't print anything    \n\
                  --force   use rescale factor even if peak \n\
                               amp of float file unknown    \n\
-          Note:  -d ignored if you also give -e            \n\
+          Notes: -d ignored if you also give -e            \n\
+                 Times can be given as seconds or 0:00.0   \n\
+                 If the latter, prints time in same way.   \n\
 "
 
 static void
@@ -203,6 +207,50 @@ close_ports(int ports[], int nchans)
 }
 
 
+/* ----------------------------------------------------- make_time_string --- */
+static char *
+make_time_string(int seconds)
+{
+   int         minutes;
+   static char buf[32];
+
+   minutes = seconds / 60;
+   seconds = seconds % 60;
+   snprintf(buf, 32, "%d:%02d", minutes, seconds);
+   return buf;
+}
+
+
+/* ---------------------------------------------------------- get_seconds --- */
+static float
+get_seconds(char timestr[])
+{
+   float seconds;
+   char  *p, *str;
+
+   str = strdup(timestr);
+   if (str == NULL) {
+      fprintf(stderr, "get_seconds: can't allocate string buffer.\n");
+      exit(1);
+   }
+   p = strchr(str, ':');
+   if (p) {
+      float minutes;
+      *p = '\0';
+      p++;        /* now str points to minutes str; p points to seconds */
+      minutes = atof(str);
+      seconds = atof(p);
+      seconds += minutes * 60.0;
+      print_minutes_seconds = 1;
+   }
+   else
+      seconds = atof(timestr);
+   free(str);
+
+   return seconds;
+}
+
+
 /* ----------------------------------------------------------------- main --- */
 int main(int argc, char *argv[])
 {
@@ -242,17 +290,17 @@ int main(int argc, char *argv[])
             case 's':
                if (++i >= argc)
                   usage();
-               start_time = atof(argv[i]);
+               start_time = get_seconds(argv[i]);
                break;
             case 'e':
                if (++i >= argc)
                   usage();
-               end_time = atof(argv[i]);
+               end_time = get_seconds(argv[i]);
                break;
             case 'd':
                if (++i >= argc)
                   usage();
-               request_dur = atof(argv[i]);
+               request_dur = get_seconds(argv[i]);
                break;
             case 'f':
                if (++i >= argc)
@@ -587,7 +635,10 @@ int main(int argc, char *argv[])
       if (!quiet) {
          buf_start_time += (float)nframes / (float)srate;
          if (buf_start_time > second) {
-            printf("%d ", second);
+            if (print_minutes_seconds)
+               printf("%s ", make_time_string(second));
+            else
+               printf("%d ", second);
             fflush(stdout);
             second++;
          }
