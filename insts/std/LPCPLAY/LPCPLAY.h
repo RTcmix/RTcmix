@@ -43,6 +43,9 @@ protected:
 	int		_frame1;
 	float	_ampmlt;
 	float	_warpFactor;
+	float	_cutoff;							// amp cutoff level
+	float	_cf_fact, _bw_fact;
+	float	_rsnetc[9];
 	float	_coeffs[MAXPOLES+4];
 	float	_past[MAXPOLES*2];
 	int		_arrayLen;
@@ -50,6 +53,7 @@ protected:
 	long	_jcount;
 	int		_counter;
 	bool	_autoCorrect;
+	bool	_reson_is_on;
 	int		_leftOver, _savedOffset;
 
 private:
@@ -77,7 +81,6 @@ private:
 	double	_lowthresh, _highthresh;
 	float	_maxdev;
 	float	_perperiod;
-	float	_cutoff;							// amp cutoff level
 	float	_hnfactor;							// harmonic count multiplier
 	float	_thresh, _randamp;
 	bool	_unvoiced_rate;
@@ -86,17 +89,14 @@ private:
 	// These are set and used within LPCPLAY.
 	float	_pitch;
 	float	_transposition;
-	float	_cf_fact, _bw_fact;
-	bool	_voiced, _reson_is_on;
+	bool	_voiced;
 	float	_evals[5];
-	float	_rsnetc[9];
 	float	*_pchvals;						// pitch table
 	float	*_noisvals;						// signal arrays
 	float	_tblvals[2];
 	float	_srd2, _phs, _magic;
 	float	*_sineFun, *_envFun;
-	long	_jcount;
-	int		_counter, _datafields;
+	int		_datafields;
 };
 
 class LPCIN : public LPCINST {
