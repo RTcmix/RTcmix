@@ -1,14 +1,14 @@
-This is RTcmix version 3.0, for Linux and Irix platforms.
-
-See the AUTHORS and LICENSE files for information about the license
-to this software.
+This is RTcmix version 3.1, for Linux, Mac OS X, and Irix platforms.
 
 See the INSTALL file for compilation and installation instructions.
 
 See the files in the docs directory for more information about 
 using RTcmix.
 
-RTcmix is frequently updated. New versions appear at:
+See the AUTHORS and LICENSE files for information about the license
+to this software.
 
-   ftp://din.music.virginia.edu/pub/rtcmix
+RTcmix is frequently updated.  New versions appear at:
+
+   ftp://presto.music.virginia.edu/pub/rtcmix
 
