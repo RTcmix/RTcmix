@@ -272,12 +272,14 @@ rtgetin(float      *inarr,         /* interleaved array of <inputchans> */
         Instrument *inst,
         int        nsamps)         /* samps, not frames */
 {
-   int   frames, status;
+   int   frames, status, fdindex;
    int   inchans = inst->inputchans;    /* total in chans inst expects */
    short in_count = inst->bus_config->in_count;
    short auxin_count = inst->bus_config->auxin_count;
 
    assert(inarr != NULL);
+
+   fdindex = inst->fdIndex;
 
    frames = nsamps / inchans;
 
@@ -286,14 +288,14 @@ rtgetin(float      *inarr,         /* interleaved array of <inputchans> */
       exit(1);
    }
 
-   if (inst->fdIndex == NO_DEVICE_FDINDEX) {         /* input from aux buses */
+   if (fdindex == NO_DEVICE_FDINDEX) {               /* input from aux buses */
       short *auxin = inst->bus_config->auxin;        /* auxin channel list */
 
       assert(auxin_count > 0 && in_count == 0);
 
       status = get_aux_in(inarr, inchans, frames, auxin, auxin_count);
    }
-   else if (inst->fdIndex == AUDIO_DEVICE_FDINDEX) { /* input from mic/line */
+   else if (inputFileTable[fdindex].is_audio_dev) {  /* input from mic/line */
       short *in = inst->bus_config->in;              /* in channel list */
 
       assert(in_count > 0 && auxin_count == 0);
