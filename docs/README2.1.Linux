@@ -8,8 +8,13 @@ Makefile variables are no longer passed from makefile to makefile.  Instead,
 sub-level makefiles include the toplevel makefile.conf.  Similarly, instrument
 directories contain an insts.conf.
 
+So, the only thing a user needs to edit is the toplevel makefile.conf.
+Separate package.conf files are created for each package listed in
+PACKAGE_DIRS.
+
 Users can edit the .conf files in order to built RTcmix and/or instruments
-in any directory.
+in any directory, but proper definition of PACKAGE_DIRS should make this
+unnecessary.
 
 Instrument .C and Makefiles have been changed to get rid of relative ../../
 links.  All necessary .h files are linked to RTcmix/H and that directory is
