@@ -3,8 +3,9 @@ include package.conf
 RTLIBDIRS = JDELAY JCHOR JFIR REV REVERBIT ROOM MROOM SROOM VOCODE FLANGE \
             PAN ELL FILTSWEEP
 
-CMIXLIBDIRS = bender denoise splice
-LIBDIRS = $(CMIXLIBDIRS) $(RTLIBDIRS)
+CMIXLIBDIRS = bender denoise splice transpan
+
+LIBDIRS = $(RTLIBDIRS) $(CMIXLIBDIRS)
 
 all: objlib progs
 
