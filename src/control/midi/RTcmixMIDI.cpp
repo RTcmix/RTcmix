@@ -9,6 +9,7 @@
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
+#include <Option.h>
 
 // if INBUF_SIZE is 0, PortMidi uses a default value
 #define INBUF_SIZE		0
@@ -22,14 +23,6 @@ enum {
 RTcmixMIDI::RTcmixMIDI()
 	: _instream(NULL), _outstream(NULL), _active(false)
 {
-	_MIDIToMain = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(long));
-	_mainToMIDI = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(long));
-//FIXME: how to handle error?
-	if (_mainToMIDI == NULL || _MIDIToMain == NULL) {
-		fprintf(stderr, "Could not create MIDI message queues.\n");
-		return;
-	}
-
 	clear();
 }
 
@@ -58,23 +51,49 @@ RTcmixMIDI::~RTcmixMIDI()
 
 int RTcmixMIDI::init()
 {
+	_MIDIToMain = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(long));
+	_mainToMIDI = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(long));
+	if (_mainToMIDI == NULL || _MIDIToMain == NULL) {
+		fprintf(stderr, "Could not create MIDI message queues.\n");
+		return -1;
+	}
+
 	// Start the timer before starting MIDI I/O.  The timer runs the callback
 	// function every SLEEP_MSEC milliseconds.
 	Pt_Start(SLEEP_MSEC, &_processMIDI, this);
 
 	Pm_Initialize();
 
-//FIXME: read device name from Option class?
-	int id = Pm_GetDefaultInputDeviceID();
+	int id = 0;
+	const char *devname = Option::midiInDevice();
+	if (devname) {
+		const int numdev = Pm_CountDevices();
+		for ( ; id < numdev; id++) {
+			const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
+			if (info->input) {
+				if (strcmp(info->name, devname) == 0)
+					break;
+			}
+		}
+		if (id == 0 || id == numdev) {
+			fprintf(stderr, "WARNING: no match for MIDI input device \"%s\""
+							" ... using default.\n", devname);
+			id = Pm_GetDefaultInputDeviceID();
+		}
+	}
+	else {
+		fprintf(stderr, "WARNING: using default MIDI input device.\n");
+		id = Pm_GetDefaultInputDeviceID();
+	}
 	const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
 	if (info == NULL) {
-		fprintf(stderr, "Could not open input device %d.\n", id);
+		fprintf(stderr, "Could not open MIDI input device %d.\n", id);
 		return -1;
 	}
 
 	PmError err = Pm_OpenInput(&_instream, id, NULL, INBUF_SIZE, NULL, NULL);
 	if (err != pmNoError) {
-		fprintf(stderr, "Could not open input stream: %s.\n",
+		fprintf(stderr, "Could not open MIDI input stream: %s.\n",
 									Pm_GetErrorText(err));
 		return -1;
 	}
