@@ -32,8 +32,8 @@ extern "C" {
    void *yyparse();
    int profile();
    void rtprofile();
-   void *sockit();
-   void *inTraverse();
+   void *sockit(void *);
+   void *inTraverse(void *);
    Tree exct(Tree);
 #ifdef SGI
    void flush_all_underflows_to_zero();
@@ -269,7 +269,7 @@ main(int argc, char *argv[])
    }
    else {
       yyparse();
-      inTraverse();
+      inTraverse(NULL);
    }
 
    closesf();
