@@ -71,7 +71,7 @@ GrainStream::~GrainStream()
 
 
 // NOTE: We don't own the table memory.
-// Call this before ever calling prepare().
+// Call this before ever calling prepare or processBlock.
 
 void GrainStream::setGrainEnvelopeTable(double *table, int length)
 {
@@ -96,7 +96,7 @@ void GrainStream::setInskip(const double inskip)
 
 
 // Set input start and end point in frames.  If this is the first time we're
-// called, force next call to prepare() or processBlock() to start playing at
+// called, force next call to prepare or processBlock to start playing at
 // start point.  Otherwise, we'll come back to new start point at wraparound.
 
 void GrainStream::setWindow(const double start, const double end)
@@ -130,7 +130,7 @@ void GrainStream::setWindow(const double start, const double end)
 //    -1    move backward at normal rate
 //
 // <hop> is the number of seconds to skip on the output before starting a
-// new grain.  We add jitter to this amount in prepare().
+// new grain.  We add jitter to this amount in maybeStartGrain().
 
 void GrainStream::setTraversalRateAndGrainHop(const double rate,
    const double hop)
