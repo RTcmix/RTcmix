@@ -17,8 +17,21 @@
    Function tables:
       1  amplitude curve (or use setline)
          If no setline or function table 1, uses flat amplitude curve.
-      2  transfer function
+      2  waveshaping transfer function
       3  distortion index curve
+
+   NOTES:
+      - The amplitude normalization function allows you to decouple
+        amplitude and timbral change, to some extent.  (Read about this
+        in the Roads "Computer Music Tutorial" chapter on waveshaping.)
+        The table maps incoming signal amplitudes, on the X axis, to
+        amplitude multipliers, on the Y axis.  The multipliers should be
+        from 0 to 1.  The amplitude multipliers are applied to the 
+        output signal, along with whatever overall amplitude curve is
+        in effect.  Generally, you'll want a curve that starts high and
+        moves lower (see SHAPE2.sco) for the higher signal amplitudes.
+        This will keep the bright and dark timbres more equal in amplitude.
+        But anything's possible.
 
    JGG <johgibso@indiana.edu>, 3 Jan 2002
 */
