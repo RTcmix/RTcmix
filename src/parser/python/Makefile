@@ -23,8 +23,8 @@ all: $(EXT_FILE).o
 # This dependency prevents making unless the funcexcept file has
 # changed.  Not really what we want, but it's annoying to have
 # to remake this stuff every time you make at the top level...
-$(FUNCLIST): ../Perl/make_funclist.pl $(FUNCEXCEPT)
-	perl -w ../Perl/make_funclist.pl $(CMIXDIR) $(FIND_FLAGS)
+$(FUNCLIST): make_funclist.pl $(FUNCEXCEPT)
+	perl -w make_funclist.pl $(CMIXDIR) $(FIND_FLAGS)
 
 $(EXT_FILE).c: make_python_ext.pl $(FUNCLIST)
 	perl -w make_python_ext.pl $(CMIXDIR) $(EXT_NAME) > $(EXT_FILE).c
