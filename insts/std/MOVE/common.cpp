@@ -1,6 +1,7 @@
 // common.C -- common implementation for PLACE and MOVE
 
 #include "common.h"
+#include <globals.h>
 #include <math.h>
 #include <stdio.h>
 
@@ -126,7 +127,6 @@ setup_trigfuns()
 long
 MFP_samps(double dim[])
 {
-   int    verbose = 1;
    double volume, length, width, height, area, MFP, mean_delay;
 
    /* volume & surface area */
@@ -140,7 +140,7 @@ MFP_samps(double dim[])
    MFP = 4.0 * volume / area;
    mean_delay = 2.0 * MFP / MACH1;
 
-   if (verbose) {
+   if (print_is_on) {
       printf("This room is %.1f ft. long,", length);
       printf(" %.1f ft. wide, & %.1f ft. high.\n", width, height);
       printf("The average delay is %.2f ms.\n", mean_delay * 1000.0);
