@@ -135,7 +135,7 @@ ConfigErrorCode Config::parseStream(FILE *stream)
 
 #include <errno.h>
 
-ConfigErrorCode Config::parseFile(char *fileName)
+ConfigErrorCode Config::parseFile(const char *fileName)
 {
    FILE *stream = fopen(fileName, "r");
    if (stream == NULL) {

@@ -94,7 +94,7 @@ public:
    Config() : _head(NULL), _err(kConfigNoErr), _debug(false) {}
    ~Config();
 
-   ConfigErrorCode parseFile(char *fileName);
+   ConfigErrorCode parseFile(const char *fileName);
    ConfigErrorCode parseStream(FILE *stream);
 
    ConfigErrorCode getValue(const char *key, bool& value);
