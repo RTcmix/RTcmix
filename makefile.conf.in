@@ -9,6 +9,10 @@ CMIXDIR = $(TOPDIR)/RTcmix-3.2.0
 # The dir that will contain links to the instrument dynamic shared objects
 LIBDESTDIR = $(CMIXDIR)/shlib
 
+# Dirs in which to install documentation
+MANDESTDIR = $(CMIXDIR)/docs/man
+HTMLDESTDIR = $(CMIXDIR)/docs/html
+
 # add new instruments to this list (e.g., insts.std, insts.jg)
 INST_DIRS = insts.base # insts.std insts.jg insts.vccm
 
