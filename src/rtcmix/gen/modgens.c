@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>  /* for memmove */
 #include <float.h>   /* for FLT_MIN and FLT_MAX */
+#include <math.h>    /* for rintf */
 #include <ugens.h>
 
 
@@ -257,6 +258,32 @@ m_rotategen(float p[], int n_args, double pp[])
    }
 
    free(scratch);
+
+   return (double) size;
+}
+
+
+/* ---------------------------------------------------------- quantizegen --- */
+/* Quantize the values of the gen whose table number is given in p0 to the
+   quantum given in p1.
+*/
+double
+m_quantizegen(float p[], int n_args, double pp[])
+{
+   int      i, slot, size;
+   float    quantum, *table;
+
+   slot = (int) p[0];
+   table = floc(slot);
+   if (table == NULL)
+      die("quantizegen", "No function table defined for slot %d.", slot);
+   size = fsize(slot);
+   quantum = p[1];
+
+   for (i = 0; i < size; i++) {
+      float q = rintf(table[i] / quantum);
+      table[i] = q * quantum;
+   }
 
    return (double) size;
 }

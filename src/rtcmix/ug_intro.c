@@ -104,6 +104,7 @@ ug_intro()
 	UG_INTRO("invertgen", m_invertgen);
 	UG_INTRO("reversegen", m_reversegen);
 	UG_INTRO("rotategen", m_rotategen);
+	UG_INTRO("quantizegen", m_quantizegen);
 #ifdef RTUPDATE
 	UG_INTRO("pgen", pgen);
 	UG_INTRO("note_pfield_path", note_pfield_path);
