@@ -1,7 +1,7 @@
 #include "../H/ugens.h"
 #include <stdio.h>
 
-extern int ngens;       /*total of gens so far, initialized in main at 1*/
+/* these 3 defined in makegen.c */
 extern float *farrays[];
 extern int sizeof_farray[];
 extern int f_goto[];
