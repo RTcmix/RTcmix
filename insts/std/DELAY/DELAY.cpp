@@ -14,13 +14,16 @@ extern "C" {
 
 DELAY::DELAY() : Instrument()
 {
+    in = new float[MAXBUF];
     delarray = NULL;
 }
 
 DELAY::~DELAY()
 {
+    delete [] in;
     delete [] delarray;
 }
+
 
 int DELAY::init(float p[], short n_args)
 {
@@ -71,7 +74,7 @@ int DELAY::init(float p[], short n_args)
 int DELAY::run()
 {
 	int i,rsamps;
-	float in[2*MAXBUF],out[2];
+	float out[2];
 	float aamp;
 	int branch;
 

@@ -17,11 +17,12 @@ extern "C" {
 
 INPUTSIG::INPUTSIG() : Instrument()
 {
-	// future setup here?
+	in = new float[MAXBUF];
 }
 
 INPUTSIG::~INPUTSIG()
 {
+	delete [] in;
 //	delete [] myrsnetc;
 //	delete [] myamp;
 }
@@ -72,7 +73,7 @@ int INPUTSIG::init(float p[], short n_args)
 int INPUTSIG::run()
 {
 	int i,j,rsamps;
-	float in[2*MAXBUF],out[2];
+	float out[2];
 	float aamp,val;
 	int branch;
 

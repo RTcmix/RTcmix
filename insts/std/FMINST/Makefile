@@ -2,8 +2,8 @@ include ../package.conf
 
 OBJS = FMINST.o
 CMIXOBJS += $(PROFILE_O)
-CFLAGS += -fPIC
-CXXFLAGS += -fPIC
+#CFLAGS += -fPIC
+#CXXFLAGS += -fPIC
 PROGS = FMINST libFMINST.so
 
 all: libFMINST.so
@@ -11,8 +11,7 @@ all: libFMINST.so
 standalone: FMINST
 
 libFMINST.so: $(OBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	$(GENLIB) $(SYSLIBS)
+	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
 FMINST: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
@@ -20,4 +19,4 @@ FMINST: $(OBJS) $(CMIXOBJS)
 $(OBJS): $(INSTRUMENT_H)
 
 clean:
-	rm -f *.o $(OBJS) $(PROGS)
+	$(RM) *.o $(OBJS) $(PROGS)

@@ -14,11 +14,13 @@ extern "C" {
 
 DEL1::DEL1() : Instrument()
 {
+    in = new float[MAXBUF];
     delarray = NULL;
 }
 
 DEL1::~DEL1()
 {
+    delete [] in;
     delete [] delarray;
 }
 
@@ -72,7 +74,7 @@ int DEL1::init(float p[], short n_args)
 int DEL1::run()
 {
 	int i,j,rsamps;
-	float in[2*MAXBUF],out[2];
+	float out[2];
 	float aamp;
 	int branch;
 

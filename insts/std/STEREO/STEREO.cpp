@@ -15,8 +15,14 @@ extern "C" {
 
 STEREO::STEREO() : Instrument()
 {
-	// future setup here?
+	in = new float[MAXBUF];
 }
+
+STEREO::~STEREO()
+{
+	delete [] in;
+}
+
 
 int STEREO::init(float p[], short n_args)
 {
@@ -57,7 +63,7 @@ int STEREO::init(float p[], short n_args)
 int STEREO::run()
 {
 	int i,j,rsamps;
-	float in[2*MAXBUF],out[2];
+	float out[2];
 	float aamp;
 	int branch;
 

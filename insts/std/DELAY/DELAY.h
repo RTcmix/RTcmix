@@ -1,5 +1,5 @@
 class DELAY : public Instrument {
-	float amp,*amptable,amptabs[2];
+	float amp, *amptable, amptabs[2], *in;
 	float *delarray;
 	float wait,regen;
 	float spread;

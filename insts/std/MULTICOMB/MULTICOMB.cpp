@@ -15,14 +15,16 @@ extern "C" {
 
 MULTICOMB::MULTICOMB() : Instrument()
 {
-    for (int n=0; n<NCEES; n++)
-	carray[n] = NULL;	
+	in = new float[MAXBUF];
+	for (int n=0; n<NCEES; n++)
+		carray[n] = NULL;	
 }
 
 MULTICOMB::~MULTICOMB()
 {
-    for (int n=0; n<NCEES; n++)
-	delete [] carray[n];	
+	delete [] in;
+	for (int n=0; n<NCEES; n++)
+		delete [] carray[n];	
 }
 
 int MULTICOMB::init(float p[], short n_args)
@@ -74,7 +76,7 @@ int MULTICOMB::init(float p[], short n_args)
 int MULTICOMB::run()
 {
 	int i,j,rsamps;
-	float in[2*MAXBUF],out[2];
+	float out[2];
 	float aamp,temp;
 	int branch;
 

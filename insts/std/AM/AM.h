@@ -1,5 +1,5 @@
 class AM : public Instrument {
-	float amp,*amptable, amptabs[2];
+	float amp, *amptable, amptabs[2], *in;
 	float *amtable,si,phase;
 	int lenam;
 	float spread;
@@ -7,6 +7,7 @@ class AM : public Instrument {
 
 public:
 	AM();
+	virtual ~AM();
 	int init(float*, short);
 	int run();
 	};

@@ -15,11 +15,12 @@ extern "C" {
 
 FIR::FIR() : Instrument()
 {
-	// future setup here?
+	in = new float [MAXBUF];
 }
 
 FIR::~FIR()
 {
+	delete [] in;
 #ifdef CRASHME
 	delete [] pastsamps;
 	delete [] coefs;
@@ -61,7 +62,7 @@ int FIR::init(float p[], short n_args)
 int FIR::run()
 {
 	int i,j,rsamps;
-	float in[2*MAXBUF],out[2];
+	float out[2];
 
 	rsamps = chunksamps*inputchans;
 	rtgetin(in, this, rsamps);

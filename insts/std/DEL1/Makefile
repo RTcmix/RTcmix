@@ -2,8 +2,8 @@ include ../package.conf
 
 OBJS = DEL1.o
 CMIXOBJS += $(PROFILE_O)
-CFLAGS += -fPIC
-CXXFLAGS += -fPIC 
+#CFLAGS += -fPIC
+#CXXFLAGS += -fPIC 
 PROGS = DEL1 libDEL1.so
 
 all: libDEL1.so
@@ -11,8 +11,7 @@ all: libDEL1.so
 standalone: DEL1
 
 libDEL1.so: $(OBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	$(GENLIB) $(SYSLIBS)
+	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
 DEL1: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
@@ -20,4 +19,4 @@ DEL1: $(OBJS) $(CMIXOBJS)
 $(OBJS): $(INSTRUMENT_H)
 
 clean:
-	rm -f *.o $(OBJS) $(PROGS)
+	$(RM) *.o $(OBJS) $(PROGS)

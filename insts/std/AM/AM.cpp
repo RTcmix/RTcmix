@@ -15,8 +15,14 @@ extern "C" {
 
 AM::AM() : Instrument()
 {
-	// future setup here?
+	in = new float[MAXBUF];
 }
+
+AM::~AM()
+{
+	delete [] in;
+}
+
 
 int AM::init(float p[], short n_args)
 {
@@ -65,7 +71,7 @@ int AM::init(float p[], short n_args)
 int AM::run()
 {
 	int i,rsamps;
-	float in[2*MAXBUF],out[2];
+	float out[2];
 	float aamp;
 	int branch;
 

@@ -2,8 +2,8 @@ include ../package.conf
 
 OBJS = AMINST.o
 CMIXOBJS += $(PROFILE_O)
-CFLAGS += -fPIC
-CXXFLAGS += -fPIC 
+#CFLAGS += -fPIC
+#CXXFLAGS += -fPIC 
 PROGS = AMINST libAMINST.so
 
 all: libAMINST.so
@@ -11,8 +11,7 @@ all: libAMINST.so
 standalone: AMINST
 
 libAMINST.so: $(OBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	$(GENLIB) $(SYSLIBS)
+	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
 AMINST: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
@@ -20,4 +19,4 @@ AMINST: $(OBJS) $(CMIXOBJS)
 $(OBJS): $(INSTRUMENT_H)
 
 clean:
-	rm -f *.o $(OBJS) $(PROGS)
+	$(RM) *.o $(OBJS) $(PROGS)

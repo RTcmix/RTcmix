@@ -1,8 +1,8 @@
 include ../package.conf
 
 OBJS = INPUTSIG.o NOISE.o BUZZ.o PULSE.o cfuncs.o rtprofile.o
-CFLAGS += -fPIC
-CXXFLAGS += -fPIC 
+#CFLAGS += -fPIC
+#CXXFLAGS += -fPIC 
 PROGS = IIR libIIR.so
 
 all: libIIR.so
@@ -10,8 +10,7 @@ all: libIIR.so
 standalone: IIR
 
 libIIR.so: $(OBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	$(GENLIB) $(SYSLIBS)
+	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
 IIR: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
@@ -19,4 +18,4 @@ IIR: $(OBJS) $(CMIXOBJS)
 $(OBJS): $(INSTRUMENT_H)
 
 clean:
-	rm -f *.o $(OBJS) $(PROGS)
+	$(RM) *.o $(OBJS) $(PROGS)
