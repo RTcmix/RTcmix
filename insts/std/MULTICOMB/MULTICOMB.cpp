@@ -86,6 +86,8 @@ int MULTICOMB::init(double p[], int n_args)
 		float loopt = 1.0 / cfreq;
 		delsamps[j] = (int) (loopt * SR + 0.5);
 		comb[j] = new Ocomb(SR, loopt, rvbtime);
+		if (comb[j]->frequency() == 0.0)
+			return die("MULTICOMB", "Comb delay allocation failed.");
 		spread[j] = (float) j / (float) (NCOMBS - 1);
 	}
 

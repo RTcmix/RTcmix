@@ -31,8 +31,6 @@
 #include <rt.h>
 #include <rtdefs.h>
 
-#define MAXDELTIME 20.0    // seconds (176400 bytes per second at SR=44100)
-
 PANECHO::PANECHO() : Instrument()
 {
 	in = NULL;
@@ -71,14 +69,16 @@ int PANECHO::init(double p[], int n_args)
 	if (outputChannels() != 2)
 		return die("PANECHO", "Output must be stereo.");
 
-	if (deltime0 > MAXDELTIME || deltime1 > MAXDELTIME)
-		return die("PANECHO", "Maximum delay time (%g seconds) exceeded.",
-                                                            MAXDELTIME);
-	long maxdelsamps = (long) (MAXDELTIME * SR + 0.5);
-	delay0 = new Odelayi(maxdelsamps);
-	delay1 = new Odelayi(maxdelsamps);
-	if (delay0 == NULL || delay1 == NULL)
+	if (deltime0 <= 0.0 || deltime1 <= 0.0)
+		return die("PANECHO", "Illegal delay times");
+
+	long delsamps = (long) (deltime0 * SR + 0.5);
+	delay0 = new Odelayi(delsamps);
+	delsamps = (long) (deltime1 * SR + 0.5);
+	delay1 = new Odelayi(delsamps);
+	if (delay0->length() == 0 || delay1->length() == 0)
 		return die("PANECHO", "Can't allocate delay line memory.");
+
 	prevdeltime0 = prevdeltime1 = -999999999.9;		// force first update
 
 	amptable = floc(1);
@@ -100,14 +100,6 @@ int PANECHO::configure()
 
 inline double PANECHO::getdelsamps(float deltime)
 {
-	if (deltime > MAXDELTIME) {
-		if (warn_deltime) {
-			warn("PANECHO", "Maximum delay time (%g seconds) exceeded!",
-                                                          MAXDELTIME);
-			warn_deltime = false;
-		}
-		return (MAXDELTIME * SR);
-	}
 	return (deltime * SR);
 }
 
