@@ -1,4 +1,6 @@
-#define MAXRATES 10
+#define MAXRATES 32
+#define MAXLOCS 32
+#define MAXSPEAKS 16
 
 typedef struct pt {
   double x;
