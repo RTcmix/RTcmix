@@ -109,8 +109,8 @@ void process_midi(PtTimestamp timestamp, void *userData)
 					printf("ChanPress (chan=%ld):\tpress=%ld\n", chan, data1);
 					break;
 				case kPitchBend:
-					printf("PitchBend (chan=%ld):\tmsb=%ld lsb=%ld\n",
-										chan, data1, data2);
+					printf("PitchBend (chan=%ld):\tbend=%ld (%ld, %ld)\n", chan,
+										((data2 << 7) + data1) - 8192, data1, data2);
 					break;
 				default:
 					printf("0x%.2x, %ld, %ld\n", (u_char) status, data1, data2);
