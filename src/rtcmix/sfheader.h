@@ -225,7 +225,7 @@ void printsf(SFHEADER *);
 #endif /* !USE_SNDLIB */
 
 #define readopensf(name,fd,sfh,sfst,prog,result) \
-if ((fd = open(name,0))  < 0) {  \
+if ((fd = open(name,O_RDONLY)) < 0) {  \
         fprintf(stderr,"%s: cannot access file %s\n",prog,name); \
 	result = -1;  \
 } \
