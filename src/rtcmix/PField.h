@@ -335,7 +335,7 @@ private:
 
 class ConstrainPField : public PFieldWrapper {
 public:
-	ConstrainPField(PField *innerPField, const double *table, const int tableLen,
+	ConstrainPField(PField *innerPField, TablePField *tablePField,
 		PField *strengthPField);
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
@@ -344,6 +344,7 @@ protected:
 	virtual ~ConstrainPField();
 private:
 	int _len;
+	TablePField *_tablePField;
 	PField *_strengthPField;
 	Constrainer *_constrainer;
 };
@@ -375,6 +376,7 @@ public:
 	virtual int		values() const { return _len; }
 private:
 	int _len;
+	TablePField *_tablePField;
 	Mapper *_mapper;
 };
 

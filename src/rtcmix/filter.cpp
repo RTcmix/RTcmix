@@ -114,7 +114,7 @@ makefilter(const Arg args[], const int nargs)
 		const int len = arg1pf->values();
 		if (table == NULL || len < 1)
 			return _makefilter_usage();
-		filt = new ConstrainPField(innerpf, table, len, arg2pf);
+		filt = new ConstrainPField(innerpf, (TablePField *) arg1pf, arg2pf);
 	}
 	else if (type == kFitRangeFilter) {
 		if (arg2pf) {

@@ -510,8 +510,8 @@ ClipPField::ClipPField(PField *innerPField, PField *minPField, PField *maxPField
 
 ClipPField::~ClipPField()
 {
-	_maxPField->ref();
-	_minPField->ref();
+	_maxPField->unref();
+	_minPField->unref();
 }
 
 double ClipPField::doubleValue(double didx) const
@@ -543,7 +543,7 @@ Constrainer::Constrainer(const double *table, const int tableLen)
 
 double Constrainer::next(const double val, const double strength)
 {
-	if (val != _lastVal) {
+	if (val != _lastVal && _table) {
 		double min = DBL_MAX;
 		int closest = 0;
 		for (int i = 0; i < _tableLen; i++) {
@@ -564,17 +564,22 @@ double Constrainer::next(const double val, const double strength)
 		return _lastVal + ((_lastTableVal - _lastVal) * strength);
 }
 
-ConstrainPField::ConstrainPField(PField *innerPField, const double *table,
-		const int tableLen, PField *strengthPField)
+ConstrainPField::ConstrainPField(PField *innerPField, TablePField *tablePField,
+		PField *strengthPField)
 	: PFieldWrapper(innerPField), _len(innerPField->values()),
-	  _strengthPField(strengthPField)
+	  _tablePField(tablePField), _strengthPField(strengthPField)
 {
-	_constrainer = new Constrainer(table, tableLen);
+	_tablePField->ref();
+	_strengthPField->ref();
+	const double *table = (double *) *_tablePField;
+	_constrainer = new Constrainer(table, _tablePField->values());
 }
 
 ConstrainPField::~ConstrainPField()
 {
 	delete _constrainer;
+	_strengthPField->unref();
+	_tablePField->unref();
 }
 
 double ConstrainPField::doubleValue(double didx) const
@@ -611,14 +616,17 @@ double Mapper::next(const double val)
 
 MapPField::MapPField(PField *innerPField, TablePField *tablePField,
 		const double inputMin, const double inputMax)
-	: PFieldWrapper(innerPField), _len(innerPField->values())
+	: PFieldWrapper(innerPField), _len(innerPField->values()),
+	  _tablePField(tablePField)
 {
-	_mapper = new Mapper(tablePField, inputMin, inputMax);
+	_tablePField->ref();
+	_mapper = new Mapper(_tablePField, inputMin, inputMax);
 }
 
 MapPField::~MapPField()
 {
 	delete _mapper;
+	_tablePField->unref();
 }
 
 double MapPField::doubleValue(double didx) const
