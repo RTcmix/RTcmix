@@ -126,7 +126,7 @@ public:
 	virtual int		init(float *, int, double *);	// Called by setup()
 	virtual int		configure();					// Called by inTraverse
 	virtual int		run();
-	virtual int		update(float *, int *, double *);	// Called by run()
+	virtual int		update(float *, int, double *);	// Called by run()
 
 	int				exec(BusType bus_type, int bus);
 	void			addout(BusType bus_type, int bus);

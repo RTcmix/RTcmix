@@ -132,8 +132,8 @@ int Instrument::setup(PFieldSet *pfields)
 {
 #ifdef PFIELD_CLASS
 	_pfields = pfields;
-	int nargs = 0;
-	update(s_fArray, &nargs, s_dArray);
+	int nargs = MAXDISPARGS;
+	update(s_fArray, nargs, s_dArray);
 	return init(s_fArray, pfields->size(), s_dArray);
 #else
 	return -1;
@@ -143,18 +143,20 @@ int Instrument::setup(PFieldSet *pfields)
 /* ------------------------------------------------------------ update () --- */
 
 // This function is called during run() by Instruments which want updated
-// values for each pfield slot.
+// values for each pfield slot.  'nvalues' is number of p fields to fill.
 
-int Instrument::update(float p[], int *n_args, double pp[])
+int Instrument::update(float p[], int nvalues, double pp[])
 {
 #ifdef PFIELD_CLASS
 	int n, args = _pfields->size();
-	double percent = (double) currentFrame() / nSamps();
-	for (n = 0; n <args; ++n)
+	int frame = currentFrame();
+	double percent = (frame == 0) ? 0.0 : (double) frame / nSamps();
+	if (nvalues < args)
+		args = nvalues;
+	for (n = 0; n < args; ++n)
 		p[n] = float(pp[n] = (*_pfields)[n].doubleValue(percent));
-	for (; n < MAXDISPARGS; ++n)
+	for (; n < nvalues; ++n)
 		p[n] = float(pp[n] = 0.0);
-	*n_args = args;
 #endif
 	return 0;
 }
