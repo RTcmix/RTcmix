@@ -1,7 +1,7 @@
 # Change stuff in here as needed
 
 # The directory containing the RTcmix directory
-TOPDIR = /users/jmr6u/
+TOPDIR = /users/jmr6u
 
 # The name of the RTcmix directory
 CMIXDIR = $(TOPDIR)/RTcmix
@@ -10,7 +10,7 @@ CMIXDIR = $(TOPDIR)/RTcmix
 LIBDESTDIR = $(CMIXDIR)/shlib
 
 # add new instruments to this list (e.g., insts.std, insts.jg)
-INST_DIRS = insts.vccm insts.base # insts.std insts.rtperf #insts.jg
+INST_DIRS = insts.vccm insts.base # insts.std insts.rtperf
 
 # add new packages to this list (e.g., interfaces.std)
 PACKAGE_DIRS =
