@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = vMIX
 
-CURDIR = $(CMIXDIR)/insts.vccm/$(NAME)
+CURDIR = $(CMIXDIR)/insts/vccm/$(NAME)
 OBJS = $(NAME).o FADE_vMIX.o
 CMIXOBJS += $(PROFILE_O)
 PROGS = lib$(NAME).so $(NAME)

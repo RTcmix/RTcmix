@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = COMBFILT
 
-CURDIR = $(CMIXDIR)/insts.vccm/$(NAME)
+CURDIR = $(CMIXDIR)/insts/vccm/$(NAME)
 OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
 PROGS = lib$(NAME).so $(NAME)

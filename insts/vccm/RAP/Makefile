@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = RAP
 
-CURDIR = $(CMIXDIR)/insts.vccm/$(NAME)
+CURDIR = $(CMIXDIR)/insts/vccm/$(NAME)
 OBJS = PLAY.o RECORD.o rtprofile.o
 CMIXOBJS += $(PROFILE_O)
 PROGS = lib$(NAME).so $(NAME)

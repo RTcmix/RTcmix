@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = MIXN
 
-CURDIR = $(CMIXDIR)/insts.vccm/$(NAME)
+CURDIR = $(CMIXDIR)/insts/vccm/$(NAME)
 OBJS = $(NAME).o funcs.o
 PROGS = lib$(NAME).so $(NAME)
 

@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = HAR
 
-CURDIR = $(CMIXDIR)/insts.vccm/$(NAME)
+CURDIR = $(CMIXDIR)/insts/vccm/$(NAME)
 OBJS = HOLD.o STORE.o FADE_HOLD.o rtprofile.o
 CMIXOBJS += $(PROFILE_O)
 PROGS = lib$(NAME).so $(NAME)
