@@ -1,4 +1,6 @@
+#include <stdio.h>
 #include <math.h>
+
 #define TLEN 20  /* maximum number of time/tempo pairs */
 #define TLENP 21
 #define TWO  2.
@@ -6,14 +8,17 @@
 float xtime[TLENP],temp[TLENP],rxtime[TLENP],accel[TLENP],BASIS = 60.;
 short tset = 0,npts;
 
-tbase(p,n_args)
-float *p;
+
+double
+tbase(float p[], int n_args)
 {
 	BASIS = p[0];
+	return 0.0;
 }
 
-tempo(p,n_args)
-float *p;
+
+double
+tempo(float p[], int n_args)
 {
 	short m;
 	float dur,prvbt;
@@ -21,7 +26,7 @@ float *p;
 		printf("n_args = %d\n",n_args);
 		printf("Tempo changes cleared out\n");
 		tset = 0;
-		return;
+		return -1.0;
 	}
 
 	tset = 1;
@@ -56,10 +61,12 @@ float *p;
 /*
 for(m=0; m<=npts; m++) printf("%d %f %f %f %f\n",m,temp[m],accel[m],rxtime[m],xtime[m]);
 */
+	return 0.0;
 }
 
-float time_beat(timein)
-float timein;
+
+float
+time_beat(float timein)
 {
 	int m = 0;
 	float durp = 0;
@@ -79,8 +86,9 @@ float timein;
 		accel[m] + rxtime[m]);
 }
 
-float beat_time(beatin)    /* returns beats from times */
-float beatin;
+
+float
+beat_time(float beatin)    /* returns beats from times */
 {
 	int m=0;
 	if(!tset) return(beatin);
@@ -92,11 +100,14 @@ float beatin;
 		-(float)pow((double)temp[m],TWO))/(TWO * accel[m]) + xtime[m]);
 }
 
-t(p,n_args)
-float *p;
+
+double
+t(float p[], int n_args)
 {
 	float time_beat(),x,y;
 	x = time_beat(p[0]);
 	y = beat_time(p[0]);
 	printf("%f %f %f\n",p[0],x,y);
+	return 0.0;
 }
+
