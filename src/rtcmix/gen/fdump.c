@@ -29,7 +29,7 @@ fdump(float p[], short n_args, double pp[])
    array = floc(genslot);
    if (array) {
       int i, len = fsize(genslot);
-      printf("Dumping gen slot %d...\n", genslot);
+      printf("Dumping function table %d...\n", genslot);
       for (i = 0; i < len; i++)
          fprintf(f, "%d %.6f\n", i, array[i]);
    }
