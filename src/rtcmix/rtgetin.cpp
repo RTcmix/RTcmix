@@ -257,14 +257,12 @@ get_file_in(
       short       src_chans,        /* number of in-bus chans to copy */
       Instrument  *inst)
 {
-   int   data_format, nsamps;
+   int nsamps;
 
    assert(dest_chans >= src_chans);
 
-   data_format = inputFileTable[inst->fdIndex].data_format;
-
    /* We read float files ourselves, rather than hand them to sndlib. */
-   if (IS_FLOAT_FORMAT(data_format)) {
+   if (inputFileTable[inst->fdIndex].is_float_format) {
       nsamps = read_float_samps(dest, dest_chans, dest_frames, src_chan_list,
                                                              src_chans, inst);
    }

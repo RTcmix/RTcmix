@@ -300,6 +300,7 @@ void Instrument :: gone()
          inputFileTable[fdIndex].fd = NO_FD;
          inputFileTable[fdIndex].header_type = unsupported_sound_file;
          inputFileTable[fdIndex].data_format = snd_unsupported;
+         inputFileTable[fdIndex].is_float_format = 0;
          inputFileTable[fdIndex].data_location = 0;
          inputFileTable[fdIndex].srate = 0.0;
          inputFileTable[fdIndex].chans = 0;
