@@ -54,24 +54,19 @@ JackAudioDevice::~JackAudioDevice()
 void
 JackAudioDevice::run()
 {
-    Callback runCallback = getRunCallback();
-
 	// waitForDevice() waits on the descriptor you passed to setDevice() until
 	// the device is ready to give/get audio.  It returns false if 
 	// AudioDevice::stop() is called, to allow the loop to exit.
 	
     while (waitForDevice(0) == true) {
-        if ((*runCallback)(this, getRunCallbackContext()) != true) {
+        if (runCallback() != true) {
             break;
         }
  	}
 	// Do any HW-specific flushing, etc. here.
 	
-	// Now call the stop callback if present.
-    Callback stopCallback = getStopCallback();
-    if (stopCallback) {
-        (*stopCallback)(this, getStopCallbackContext());
-    }
+	// Now call the stop callback.
+	stopCallback();
 }
 
 // doOpen() is called by AudioDevice::open() to do the class-specific opening

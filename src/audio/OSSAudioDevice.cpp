@@ -2,8 +2,6 @@
 
 #if defined(LINUX)
 
-#ifndef ALSA
-
 #include "OSSAudioDevice.h"
 #include "AudioIODevice.h"
 #include <sys/soundcard.h>
@@ -198,7 +196,6 @@ OSSAudioDevice::ioctl(int req, void *argp) {
 void OSSAudioDevice::run()
 {
 	audio_buf_info info;
-	Callback runCallback = getRunCallback();
 //	printf("OSSAudioDevice::run: top of loop\n");
 	while (waitForDevice(0) == true) {
 		if (ioctl(SNDCTL_DSP_GETOSPACE, &info)) {
@@ -208,7 +205,7 @@ void OSSAudioDevice::run()
 //		printf("OSSAudioDevice::run: %d bytes avail\n", info.bytes);
 		if (info.bytes < bufferSize() / 2)
 			continue;
-		if ((*runCallback)(this, getRunCallbackContext()) != true) {
+		if (runCallback() != true) {
 //			printf("OSSAudioDevice::run: callback returned false\n");
 			break;
 		}
@@ -239,15 +236,20 @@ void OSSAudioDevice::run()
 			close();
 		}
 	}
-	Callback stopCallback = getStopCallback();
-	if (stopCallback) {
 //		printf("OSSAudioDevice::run: stop callback\n");
-		(*stopCallback)(this, getStopCallbackContext());
-	}
+	stopCallback();
 //	printf("OSSAudioDevice::run: thread exiting\n");
 }
 
-AudioDevice *createAudioDevice(const char *inputDesc, const char *outputDesc, bool fullDuplex)
+// If OSS is all we have, this becomes the creator function.
+
+#if !defined(ALSA) && !defined (NETAUDIO)
+#define createOSSAudioDevice createAudioDevice
+#endif
+
+AudioDevice *createOSSAudioDevice(const char *inputDesc, 
+								  const char *outputDesc, 
+								  bool fullDuplex)
 {
 	AudioDevice *theDevice;
 	if (fullDuplex) {
@@ -264,8 +266,6 @@ AudioDevice *createAudioDevice(const char *inputDesc, const char *outputDesc, bo
 	}
 	return theDevice;
 }
-
-#endif	// !ALSA
 
 #endif	// LINUX
 

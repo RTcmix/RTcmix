@@ -213,7 +213,6 @@ int	AudioFileDevice::doSendFrames(void *frameBuffer, int frames)
 
 void AudioFileDevice::run()
 {
-	Callback runCallback = getRunCallback();
 //	printf("AudioFileDevice::run: TOF\n");
 	assert(!isPassive());	// Cannot call this method when passive!
 	
@@ -223,7 +222,7 @@ void AudioFileDevice::run()
 			::usleep(1000);
 #endif
 		}
-		if ((*runCallback)(this, getRunCallbackContext()) != true) {
+		if (runCallback() != true) {
 //			printf("AudioFileDevice::run: callback returned false\n");
 			break;
 		}
@@ -239,11 +238,8 @@ void AudioFileDevice::run()
 			close();
 		}
 	}
-	Callback stopCallback = getStopCallback();
-	if (stopCallback) {
 //		printf("AudioFileDevice::run: calling stop callback\n");
-		(*stopCallback)(this, getStopCallbackContext());
-	}
+	stopCallback();
 //	printf("AudioFileDevice::run: thread exiting\n");
 }
 

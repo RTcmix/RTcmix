@@ -80,17 +80,20 @@ void ThreadedAudioDevice::setDevice(int dev)
 
 bool ThreadedAudioDevice::waitForDevice(unsigned int wTime) {
 	bool ret = false;
-	struct timeval tv;
+	unsigned waitSecs = int(wTime / 1000.0);
+	unsigned waitUsecs = (wTime * 1000) - unsigned(waitSecs * 1.0e+06);
 	// Wait wTime msecs for select to return, then bail.
-	// NOTE:  Not using this for now -- no timeout.
-	tv.tv_sec = 0;
-	tv.tv_usec = unsigned(wTime * 0.01);
 	if (!stopping()) {
-		int selret = ::select(_device + 1, NULL, &_fdset, NULL, NULL);
+		struct timeval tv;
+		tv.tv_sec = waitSecs;
+		tv.tv_usec = waitUsecs;
+		// If wTime == 0, wait forever by passing NULL as the final arg.
+		int selret = ::select(_device + 1, NULL, &_fdset, 
+							  NULL, wTime == 0 ?  NULL : &tv);
 		if (selret <= 0) {
 			fprintf(stderr,
-					"ThreadedAudioDevice::waitForDevice: select returned %d\n",
-					selret);
+					"ThreadedAudioDevice::waitForDevice: select %s\n",
+					(selret == 0) ? "timed out" : "returned error");
 			ret = false;
 		}
 		else {

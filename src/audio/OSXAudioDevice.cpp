@@ -113,8 +113,7 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 
 		// Run this loop while not enough space to copy audio from HW.
 		while (spaceAvail < sampsToRead && keepGoing) {
-			Callback runCallback = device->getRunCallback();
-			keepGoing = (*runCallback)(device, device->getRunCallbackContext());
+			keepGoing = device->runCallback();
 			spaceAvail = ::inRemaining(impl->outLoc[REC], impl->inLoc[REC], bufLen);
 			// printf("\tafter run callback, spaceAvail = %d\n", spaceAvail);
 		}
@@ -140,10 +139,7 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 		}
 		else if (!impl->playing) {
 			// printf("OSXAudioDevice: run callback returned false -- calling stop callback\n");
-			Callback stopCallback = device->getStopCallback();
-			if (stopCallback) {
-				(*stopCallback)(device, device->getStopCallbackContext());
-			}
+			device->stopCallback();
 			device->close();
 			// printf("OSXAudioDevice: leaving runProcess\n");
 			return kAudioHardwareNoError;
@@ -158,8 +154,7 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 		// printf("sampsAvail = %d\n", sampsAvail);
 		while (sampsAvail < sampsToWrite && keepGoing) {
 			// printf("\tsampsAvail < needed (%d), so run callback for more\n", sampsToWrite);
-			Callback runCallback = device->getRunCallback();
-			keepGoing = (*runCallback)(device, device->getRunCallbackContext());
+			keepGoing = device->runCallback();
 			sampsAvail = ::outRemaining(impl->inLoc[PLAY], impl->outLoc[PLAY], bufLen);
 			// printf("\tafter run callback, sampsAvail = %d\n", sampsAvail);
 		}
@@ -185,10 +180,7 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 		}
 		else {
 			// printf("OSXAudioDevice: run callback returned false -- calling stop callback\n");
-			Callback stopCallback = device->getStopCallback();
-			if (stopCallback) {
-				(*stopCallback)(device, device->getStopCallbackContext());
-			}
+			device->stopCallback();
 			device->close();
 		}
 	}
@@ -226,10 +218,7 @@ OSXAudioDevice::Impl::listenerProcess(AudioDeviceID inDevice,
 	if (!isRunning && impl->stopping) {
 		impl->stopping = false;	// We only want 1 invocation of callback
 		// printf("OSXAudioDevice: no longer running -- calling stop callback\n");
-		Callback stopCallback = device->getStopCallback();
-		if (stopCallback) {
-			(*stopCallback)(device, device->getStopCallbackContext());
-		}
+		device->stopCallback();
 	}
 	return err;
 }

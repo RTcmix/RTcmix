@@ -8,28 +8,48 @@
 
 class AudioIODevice : public AudioDevice {
 public:
-	AudioIODevice(AudioDevice *inputDevice, AudioDevice *outputDevice);
+	AudioIODevice(AudioDevice *inDev, AudioDevice *outDev, bool inputIsActive=false);
 	virtual ~AudioIODevice();
 	// AudioDevice redefinitions.
-	virtual int			setFrameFormat(int sampfmt, int chans);
-	virtual int			open(int mode, int sampfmt, int chans, double sr);
-	virtual int			close();
-	virtual int			start(Callback runCallback, void *callbackContext);
-	virtual int			setStopCallback(Callback stopCallback, void *callbackContext);
-	virtual int			pause(bool);
-	virtual int			stop();
-	virtual int			setFormat(int fmt, int chans, double srate);
-	virtual int			setQueueSize(int *pWriteSize, int *pCount);
-	virtual int			getFrames(void *frameBuffer, int frameCount);
-	virtual int			sendFrames(void *frameBuffer, int frameCount);
-	virtual bool		isOpen() const;
-	virtual bool		isRunning() const;
-	virtual bool		isPaused() const;
-	virtual	const char *getLastError() const;
+	int			setFrameFormat(int sampfmt, int chans);
+	int			open(int mode, int sampfmt, int chans, double sr);
+	int			close();
+	int			setStopCallback(Callback *stopCallback);
+	int			pause(bool);
+	int			stop();
+	int			setFormat(int fmt, int chans, double srate);
+	int			setQueueSize(int *pWriteSize, int *pCount);
+	int			getFrames(void *frameBuffer, int frameCount);
+	int			sendFrames(void *frameBuffer, int frameCount);
+	bool		isOpen() const;
+	bool		isRunning() const;
+	bool		isPaused() const;
+	const char *getLastError() const;
+
+protected:
+	// AudioDevice redefinitions.
+	int			start(Callback *runCallback);
+	bool		runCallback();
+	bool		stopCallback();
+
+protected:
+	inline AudioDevice *getActiveDevice() const;
+	inline AudioDevice *getPassiveDevice() const;
 
 private:
 	AudioDevice	*_inputDevice;
 	AudioDevice *_outputDevice;
+	bool		_inputActive;
 };
+
+inline AudioDevice *
+AudioIODevice::getActiveDevice() const {
+	return (_inputActive) ? _inputDevice : _outputDevice;
+}
+
+inline AudioDevice *
+AudioIODevice::getPassiveDevice() const {
+	return (_inputActive) ? _outputDevice : _inputDevice;
+}
 
 #endif	// _AUDIOIODEVICE_H_

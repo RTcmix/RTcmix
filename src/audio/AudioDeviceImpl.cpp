@@ -8,9 +8,8 @@
 AudioDeviceImpl::AudioDeviceImpl() 
 	: _mode(Unset), _state(Closed),
 	  _frameFormat(MUS_UNSUPPORTED), _deviceFormat(MUS_UNSUPPORTED),
-	  _frameChannels(0), _deviceChannels(0), _samplingRate(0.0),
+	  _frameChannels(0), _deviceChannels(0), _samplingRate(0.0), _maxFrames(0),
 	  _runCallback(NULL), _stopCallback(NULL),
-	  _runCallbackContext(NULL), _stopCallbackContext(NULL),
 	  _convertBuffer(NULL),
 	  _recConvertFunction(NULL), _playConvertFunction(NULL)
 {
@@ -20,6 +19,8 @@ AudioDeviceImpl::~AudioDeviceImpl()
 {
 	/* if this asserts, close() is not being called before destructor */
 	assert(_convertBuffer == NULL);
+	delete _runCallback;
+	delete _stopCallback;
 }
 
 int	AudioDeviceImpl::setFrameFormat(int frameSampFmt, int frameChans)
@@ -31,7 +32,11 @@ int	AudioDeviceImpl::setFrameFormat(int frameSampFmt, int frameChans)
 
 int AudioDeviceImpl::open(int mode, int sampfmt, int chans, double srate)
 {
-//	printf("AudioDeviceImpl::open\n");
+	printf("AudioDeviceImpl::open: opening device 0x%x for %s in %s mode\n",
+		   this,
+		   (mode & DirectionMask) == RecordPlayback ? "Record/Playback"
+		   : (mode & DirectionMask) == Playback ? "Playback" : "Record",
+		   (mode & Passive) ? "Passive" : "Active");
 	_lastErr[0] = 0;
 	if (!IS_FLOAT_FORMAT(MUS_GET_FORMAT(sampfmt))) {
 		return error("Only floating point buffers are accepted as input");
@@ -68,12 +73,11 @@ int AudioDeviceImpl::close()
 	return status;
 }
 
-int AudioDeviceImpl::start(AudioDevice::Callback callback, void *context)
+int AudioDeviceImpl::start(AudioDevice::Callback *callback)
 {
 	int status = 0;
 	if (!isRunning()) {
 		_runCallback = callback;
-		_runCallbackContext = context;
 		State oldState = getState();
 		setState(Running);
 		if ((status = doStart()) != 0) {
@@ -94,11 +98,19 @@ int AudioDeviceImpl::pause(bool willPause)
 	return status;
 }
 
-int AudioDeviceImpl::setStopCallback(Callback stopCallback, void *callbackContext)
+int AudioDeviceImpl::setStopCallback(Callback *stopCallback)
 {
 	_stopCallback = stopCallback;
-	_stopCallbackContext = callbackContext;
 	return 0;
+}
+
+bool AudioDeviceImpl::runCallback()
+{ 
+	return _runCallback->call();
+}
+
+bool AudioDeviceImpl::stopCallback() {
+	return (_stopCallback) ? _stopCallback->call() : true;
 }
 
 int AudioDeviceImpl::stop()
@@ -111,8 +123,8 @@ int AudioDeviceImpl::stop()
 			setState(Configured);
 		}
 	}
+	delete _runCallback;
 	_runCallback = NULL;
-	_runCallbackContext = NULL;
 //	printf("AudioDeviceImpl::stop -- finish\n");
 	return status;
 }
@@ -341,16 +353,31 @@ int AudioDeviceImpl::setQueueSize(int *pWriteSize, int *pCount)
 	if (doSetQueueSize(&reqWriteSize, &reqCount) == 0) {
 		*pWriteSize = reqWriteSize;
 		*pCount = reqCount;
-		int status = createConvertBuffer(reqWriteSize * reqCount);
-		if (status == 0) {
-			// Hand in the raw format because the accessor functions
-			// filter out the interleave and normalize bits.
-			status = setConvertFunctions(_frameFormat, _deviceFormat);
-		}
-		return status;
+		_maxFrames = reqWriteSize * reqCount;
+		return setupConversion();
 	}
 	*pWriteSize = -1;	// error condition
 	return -1;
+}
+
+int AudioDeviceImpl::setupConversion()
+{
+	int status = createConvertBuffer(_maxFrames);
+	if (status == 0) {
+		// Hand in the raw format because the accessor functions
+		// filter out the interleave and normalize bits.
+		status = setConvertFunctions(_frameFormat, _deviceFormat);
+	}
+	return status;
+}
+
+// This is used by specialized derived classes that need to change formats
+// in mid-stream.
+
+int AudioDeviceImpl::resetFormatConversion()
+{
+	destroyConvertBuffer();
+	return setupConversion();
 }
 
 int AudioDeviceImpl::getDeviceBytesPerFrame() const
@@ -691,7 +718,7 @@ int AudioDeviceImpl::setConvertFunctions(int rawFrameFormat,
 	_playConvertFunction = NULL;
 	
 	// The device may be a file or HW, so take endian-ness into account for
-	// playback.  Record is always from HW, so no endian issues.
+	// playback and some record options.
 	if (deviceInterleaved) {
 		switch (MUS_GET_FORMAT(rawDeviceFormat)) {
 		case MUS_LFLOAT:	// float frame, LE float device
@@ -738,7 +765,7 @@ int AudioDeviceImpl::setConvertFunctions(int rawFrameFormat,
 			break;
 		}
 	}
-	// Non-interleaved devices are always HW, so no endian issues.
+	// Non-interleaved devices are always local HW, so no endian issues.
 	else {
 		switch (MUS_GET_FORMAT(rawDeviceFormat)) {
 		case MUS_LFLOAT:	// float frame, BE float device

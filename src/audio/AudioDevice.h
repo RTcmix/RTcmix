@@ -4,8 +4,11 @@
 #define _AUDIODEVICE_H_
 
 class AudioDevice {
+protected:
+	class Callback;
+
 public:
-	typedef bool (*Callback)(AudioDevice *, void *context);
+	typedef bool (*CallbackFun)(AudioDevice *, void *context);
 	enum {
 		Unset = 0x0,
 		Record = 0x1,
@@ -22,8 +25,12 @@ public:
 	// Open the HW in mode 'mode' with suggested audio format
 	virtual int			open(int mode, int sampfmt, int chans, double sr) = 0;
 	virtual int			close() = 0;
-	virtual int			start(Callback runCallback, void *callbackContext) = 0;
-	virtual int			setStopCallback(Callback stopCallback, void *callbackContext) = 0;
+	// These are the only non-virtual methods, just wrappers for the
+	// next calls
+	int					start(CallbackFun runCallback, void *context);
+	int					setStopCallback(CallbackFun stopCallback, void *callbackContext);
+	virtual int			start(Callback *runCallback) = 0;
+	virtual int			setStopCallback(Callback *stopCallback) = 0;
 	virtual int			pause(bool) = 0;
 	virtual int			stop() = 0;
 	virtual int			setFormat(int fmt, int chans, double srate) = 0;
@@ -37,14 +44,19 @@ public:
 	virtual	const char *getLastError() const = 0;
 
 protected:
-// 	virtual int			getFrameFormat() const = 0;
-// 	virtual int			getDeviceFormat() const = 0;
-// 	virtual bool		isFrameInterleaved() const = 0;
-// 	virtual bool		isDeviceInterleaved() const = 0;
-// 	virtual int			getFrameChannels() const = 0;
-// 	virtual int			getDeviceChannels() const = 0;
-// 	virtual double		getSamplingRate() const = 0;
-// 	virtual long		getFrameCount() const = 0;
+	class Callback {
+	public:
+		Callback(AudioDevice *dev, CallbackFun fun, void *context);
+		bool call();
+	private:
+		AudioDevice *_device;
+		CallbackFun _callbackFun;
+		void		*_context;
+	};
+
+	virtual bool		runCallback() = 0;
+	virtual bool		stopCallback() = 0;
+
 protected:
 	// For use by all
 	enum State {

@@ -386,10 +386,9 @@ int	ALSAAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 
 void ALSAAudioDevice::run()
 {
-	Callback runCallback = getRunCallback();
 //	printf("ALSAAudioDevice::run: top of loop\n");
 	while (waitForDevice(0) == true) {
-		if ((*runCallback)(this, getRunCallbackContext()) != true) {
+		if (runCallback() != true) {
 //			printf("ALSAAudioDevice::run: callback returned false\n");
 			break;
 		}
@@ -400,26 +399,37 @@ void ALSAAudioDevice::run()
 		_stopDuringPause = false;	// reset
 	}
 	setState(Configured);	// no longer running
-	Callback stopCallback = getStopCallback();
-	if (stopCallback) {
-		(*stopCallback)(this, getStopCallbackContext());
-	}
+	stopCallback();
 //	printf("ALSAAudioDevice::run: thread exiting\n");
 }
 
+// From OSSAudioDevice.cpp
+extern AudioDevice *createOSSAudioDevice(const char*, const char*, bool);
+
 AudioDevice *createAudioDevice(const char *inputDesc,
-							   const char *outputDesc,
-							   bool fullDuplex)
+								   const char *outputDesc,
+								   bool fullDuplex)
 {
-	AudioDevice *theDevice;
+	// If the descriptor is a path, we assume the request is for OSS.
+	if ((inputDesc && inputDesc[0] == '/') ||
+	    (outputDesc && outputDesc[0] == '/')) {
+		return createOSSAudioDevice(inputDesc, outputDesc, fullDuplex);
+	}
+
+	AudioDevice *theDevice = NULL;
 	// ALSA does not support full duplex as of 05/2004, so we must create a
 	// dual device from two one-directional devices.
 	
-	if (!fullDuplex)
-		theDevice = new ALSAAudioDevice(inputDesc ? inputDesc : outputDesc ? outputDesc : DEFAULT_DEVICE);
-	else
-		theDevice = new AudioIODevice(new ALSAAudioDevice(inputDesc ? inputDesc : DEFAULT_DEVICE),
-									  new ALSAAudioDevice(outputDesc ? outputDesc: DEFAULT_DEVICE));
+	if (!fullDuplex) {
+		theDevice = new ALSAAudioDevice(inputDesc ? inputDesc
+										: outputDesc ? outputDesc
+										: DEFAULT_DEVICE);
+	}
+	else {
+		theDevice = new AudioIODevice(
+				new ALSAAudioDevice(inputDesc ? inputDesc : DEFAULT_DEVICE),
+			    new ALSAAudioDevice(outputDesc ? outputDesc: DEFAULT_DEVICE));
+	}
 	return theDevice;
 }
 

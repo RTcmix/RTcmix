@@ -14,9 +14,11 @@ public:
 	int				setFrameFormat(int sampfmt, int chans);
 	int				open(int mode, int sampfmt, int chans, double srate);
 	int				close();
-	int				start(Callback runCallback, void *callbackContext);
-	int				setStopCallback(Callback stopCallback, void *callbackContext);
 	int				pause(bool);
+	inline int		start(CallbackFun runCallback, void *context);
+	int				start(Callback *runCallback);
+	inline int		setStopCallback(CallbackFun stopCallback, void *callbackContext);
+	int				setStopCallback(Callback *stopCallback);
 	int				stop();
 	int				setFormat(int sampfmt, int chans, double srate);
 	int				setQueueSize(int *pWriteSize, int *pCount);
@@ -26,6 +28,11 @@ public:
 	bool			isRunning() const;
 	bool			isPaused() const;
 	const char *	getLastError() const;
+
+protected:
+	// Redefined from AudioDevice
+	bool			runCallback();
+	bool			stopCallback();
 
 protected:
 	inline int		getFrameFormat() const;
@@ -53,13 +60,17 @@ protected:
 	virtual int 	doSetFormat(int sampfmt, int chans, double srate) = 0;
 	// Returns actual write size and count via pWriteSize and pCount.
 	virtual int 	doSetQueueSize(int *pWriteSize, int *pCount) = 0;
+	// Returns number of frames recorded or played.
 	virtual int 	doGetFrameCount() const = 0;
 	// Returns number of frames read, or -1 for error.
 	virtual	int		doGetFrames(void *frameBuffer, int frameCount) = 0;
 	// Returns number of frames written, or -1 for error.
 	virtual	int		doSendFrames(void *frameBuffer, int frameCount) = 0;
+
 	// Local utilities for base classes to use.
+
 	inline void		setDeviceParams(int fmt, int chans, double srate);
+	int				resetFormatConversion();
 	inline bool		isRecording() const;
 	inline bool		isPlaying() const;
 	inline bool		isPassive() const;	// False if we don't run our own thread.
@@ -68,23 +79,20 @@ protected:
 	inline void		setState(State s);
 	inline int		getMode() const;
 	inline State	getState() const;
-	inline Callback	getRunCallback() const;
-	inline void *	getRunCallbackContext() const;
-	inline Callback	getStopCallback() const;
-	inline void *	getStopCallbackContext() const;
 	void			*convertFrame(void *inFrame, void *outFrame, int frames, bool rec);
 	int				error(const char *msg, const char *msg2=0);
 
 private:
+	int				setupConversion();
+	int				setConvertFunctions(int rawSrcFormat, int rawDstFormat);
 	void 			*createInterleavedBuffer(int fmt, int chans, int len);
 	void 			destroyInterleavedBuffer(int fmt);
 	void 			*createNoninterleavedBuffer(int fmt, int chans, int len);
 	void 			destroyNoninterleavedBuffer(int fmt, int chans);
 	int				createConvertBuffer(int frames);
 	void			destroyConvertBuffer();
-	int				setConvertFunctions(int rawSrcFormat, int rawDstFormat);
 
-private:
+private:	
 	int					_mode;		// Playback, Record, etc.
 	State 				_state;		// Open, Configured, etc.
 	int					_frameFormat;
@@ -92,14 +100,16 @@ private:
 	int					_frameChannels;
 	int					_deviceChannels;
 	double				_samplingRate;
-	Callback			_runCallback, _stopCallback;
-	void				*_runCallbackContext, *_stopCallbackContext;
+	int					_maxFrames;
+	Callback			*_runCallback, *_stopCallback;
 	void				*_convertBuffer;
 	void				(*_recConvertFunction)(void *, void *, int, int);
 	void				(*_playConvertFunction)(void *, void *, int, int);
 	enum { ErrLength = 128 };
 	char				_lastErr[ErrLength];
 };
+
+// Inline utility methods
 
 inline void	AudioDeviceImpl::setMode(int m) { _mode = m; }
 
@@ -178,17 +188,17 @@ inline void AudioDeviceImpl::setDeviceParams(int fmt, int chans, double rate)
 	_samplingRate = rate;
 }
 
+// These two wrappers are here to get around the problem of having one of a
+// pair of overloaded methods redefined at this class level.
 
-inline AudioDevice::Callback 
-AudioDeviceImpl::getRunCallback() const { return _runCallback; }
+inline int AudioDeviceImpl::start(CallbackFun runCallback, void *context) {
+	return AudioDevice::start(runCallback, context);
+}
 
-inline void *
-AudioDeviceImpl::getRunCallbackContext() const { return _runCallbackContext; }
-
-inline AudioDevice::Callback 
-AudioDeviceImpl::getStopCallback() const { return _stopCallback; }
-
-inline void *
-AudioDeviceImpl::getStopCallbackContext() const { return _stopCallbackContext; }
+inline int AudioDeviceImpl::setStopCallback(CallbackFun stopCallback,
+											void *callbackContext)
+{
+	return AudioDevice::setStopCallback(stopCallback, callbackContext);
+}
 
 #endif	// _RT_AUDIODEVICEIMPL_H_
