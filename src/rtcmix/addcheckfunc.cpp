@@ -253,7 +253,7 @@ RTcmix::findAndLoadFunction(const char *funcname)
 		char fullDSOPath[128];
 		float p[1];
 		double pp[1];
-		sprintf(fullDSOPath, "%s.%s", path, SHLIB_SUFFIX);
+		sprintf(fullDSOPath, "%s.so", path);
 		p[0] = 0;
 		pp[0] = (double)(int) fullDSOPath;
 		if (m_load(p, 1, pp) == 1)

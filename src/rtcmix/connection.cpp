@@ -17,8 +17,8 @@
 
 #include "load_utils.h"
 
-#if !defined(SHAREDLIBDIR) || !defined(SHLIB_SUFFIX)
-#error "Compile flags are missing macros for SHAREDLIBDIR and/or SHLIB_SUFFIX"
+#if !defined(SHAREDLIBDIR)
+#error "Compile flags are missing macro for SHAREDLIBDIR"
 #endif
 
 // =============================================================================
@@ -50,7 +50,7 @@ makeconnection(const Arg args[], const int nargs)
 	HandleCreator creator = NULL;
 	const char *selector = (const char *) args[0];
 	char loadPath[1024];
-	sprintf(loadPath, "%s/lib%sconn.%s", SHAREDLIBDIR, selector, SHLIB_SUFFIX);
+	sprintf(loadPath, "%s/lib%sconn.so", SHAREDLIBDIR, selector);
 
 	void *dso = find_dso(loadPath);
 	if (dso) {

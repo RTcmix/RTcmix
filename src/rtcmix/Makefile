@@ -179,10 +179,10 @@ loader.o: loader.c
 	$(CC) $(CFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c loader.c
 
 connection.o: connection.cpp
-	$(CXX) $(CXXFLAGS) -DSHLIB_SUFFIX=\"$(SHLIB_SUFFIX)\" -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c connection.cpp
+	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c connection.cpp
 
 addcheckfunc.o: addcheckfunc.cpp
-	$(CXX) $(CXXFLAGS) -DSHLIB_SUFFIX=\"$(SHLIB_SUFFIX)\" -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c addcheckfunc.cpp
+	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c addcheckfunc.cpp
 
 RTcmix.o: RTcmix.cpp
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c RTcmix.cpp
