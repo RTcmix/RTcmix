@@ -1,8 +1,15 @@
 /* WIGGLE - wavetable oscillator with frequency modulation and filter
 
+   This instrument is like WAVETABLE, except that it lets you change
+   the pitch with a glissando curve and/or frequency modulation.  The
+   modulation can be subaudio rate (for vibrato) or audio rate (for
+   basic Chowning FM).  There is an optional filter, either lowpass or
+   highpass.  Many of the parameters are time-varying, specified by
+   gen functions.
+
    p0 = output start time
    p1 = duration
-   p2 = amplitude multiplier
+   p2 = carrier amplitude
    p3 = carrier oscillator frequency (or oct.pc if < 15)
    p4 = modulator depth control type (0: percent of carrier frequency,
         1: modulation index) [optional, default is 0]
@@ -18,8 +25,8 @@
 
    p6 (steepness) is just the number of filters to add in series.  Using more
    than 1 steepens the slope of the filter.  If you don't set p7 (balance)
-   to 1, you'll need to change p2 (amp) to adjust for loss of power caused
-   by connecting several filters in series.
+   to 1, you'll need to change p2 (carrier amp) to adjust for loss of power
+   caused by connecting several filters in series.
 
    p7 (balance) tries to adjust the output of the filter so that it has
    the same power as the input.  This means there's less fiddling around
