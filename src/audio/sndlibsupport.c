@@ -39,15 +39,8 @@
 #include <errno.h>
 #include <assert.h>
 
-#define CMIX_LEGACY
-
-#ifdef CMIX_LEGACY
- #include "../H/sndlibsupport.h"
- #include "../H/byte_routines.h"
-#else
- #include <sndlibsupport.h>
- #include <byte_routines.h>
-#endif
+#include <sndlibsupport.h>
+#include <byte_routines.h>
 
 #ifndef SGI
  #define HAVE_SNPRINTF

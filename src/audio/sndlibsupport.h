@@ -17,10 +17,10 @@
 #else
 #error "This platform is not supported by sndlibsupport.h"
 #endif
-#include <stdio.h>               /* for FILE, needed by sndlib.h */
-#include "../sndlib/sndlib.h"
-#include "../H/sfheader.h"       /* for SFHEADER */
-#include "../rtstuff/rtdefs.h"   /* just for MAXCHANS */
+#include <stdio.h>          /* for FILE, needed by sndlib.h */
+#include <sndlib.h>
+#include <sfheader.h>       /* for SFHEADER */
+#include <rtdefs.h>         /* just for MAXCHANS */
 
 /* This value must be OR'd into our sample format when it is used to set the
  * format of an input or output audio device
