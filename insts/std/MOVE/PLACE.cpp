@@ -72,7 +72,7 @@ int PLACE::finishInit(double rvb_time, double *ringdur)
 
 int PLACE::configure()
 {
-	int status = Base::configure();
+	int status = BASE::configure();
 	if (status == 0) {
 		// PLACE sets all filters just once, so we clear them at this time
 		int flag = 1;
