@@ -37,8 +37,10 @@ int MIX::init(float p[], short n_args)
 
 	for (i = 0; i < inputchans; i++) {
 		outchan[i] = (int)p[i+4];
-		if (outchan[i]+1 > NCHANS) {
-			fprintf(stderr,"You wanted output channel %d, but have only specified %d output channels\n",outchan[i],NCHANS);
+		if (outchan[i] + 1 > outputchans) {
+			fprintf(stderr, "You wanted output channel %d, but have only "
+									"specified %d output channels\n",
+									outchan[i], outputchans);
 			exit(-1);
 			}
 		}
@@ -79,7 +81,7 @@ int MIX::run()
 			branch = skip;
 			}
 
-		for (j = 0; j < NCHANS; j++) {
+		for (j = 0; j < outputchans; j++) {
 			out[j] = 0.0;
 			for (k = 0; k < inputchans; k++) {
 				if (outchan[k] == j)
