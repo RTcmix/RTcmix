@@ -54,7 +54,8 @@ int NOISE::init(double p[], int n_args)
 	float outskip = p[0];
 	float dur = p[1];
 
-	nsamps = rtsetoutput(outskip, dur, this);
+	if (rtsetoutput(outskip, dur, this) == -1)
+		return DONT_SCHEDULE;
 
 	amparr = floc(1);
 	if (amparr) {
@@ -73,7 +74,7 @@ int NOISE::init(double p[], int n_args)
 
 	skip = (int) (SR / (float) resetval);
 
-	return nsamps;
+	return nSamps();
 }
 
 int NOISE::run()

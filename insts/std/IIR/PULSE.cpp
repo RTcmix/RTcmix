@@ -64,7 +64,8 @@ int PULSE::init(double p[], int n_args)
 	float dur = p[1];
 	float pitch = p[3];
 
-	nsamps = rtsetoutput(outskip, dur, this);
+	if (rtsetoutput(outskip, dur, this) == -1)
+		return DONT_SCHEDULE;
 
 	amparr = floc(1);
 	if (amparr) {
@@ -86,7 +87,7 @@ int PULSE::init(double p[], int n_args)
 
 	skip = (int) (SR / (float) resetval);
 
-	return nsamps;
+	return nSamps();
 }
 
 float mypulse(float amp, float si, float *phs)
