@@ -57,19 +57,21 @@ double checkInsts(char *fname, double *pp, int n_args, void **inst)
 			Iptr->ref();	// We do this to assure one reference
 	
 			rv = (double) Iptr->init(p, n_args, pp);
-			
-			// For non-interactive case, configure() is delayed until just
-			// before instrument run time.
 
-			if (rtInteractive)
-				Iptr->configure();
+			if (rv != DONT_SCHEDULE) { // only schedule if no init() error
+				// For non-interactive case, configure() is delayed until just
+				// before instrument run time.
+				if (rtInteractive)
+					Iptr->configure();
 
-			/* schedule instrument */
+				/* schedule instrument */
+				Iptr->schedule(&rtHeap);
 
-			Iptr->schedule(&rtHeap);
-
-			mixerr = MX_NOERR;
-			rt_list = rt_temp;
+				mixerr = MX_NOERR;
+				rt_list = rt_temp;
+			} else {
+				return rv;
+			}
 
 #ifdef DEBUG
 			printf("EXITING checkInsts() FUNCTION -----\n");

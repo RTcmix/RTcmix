@@ -31,13 +31,17 @@ Instrument::rtsetinput(float start_time, Instrument *inst)
    int   in_count = inst->getBusSlot()->in_count;
    const char  *inst_name = inst->name();
 
-   if (auxin_count == 0 && in_count == 0)
+   if (auxin_count == 0 && in_count == 0) {
       die(inst_name, "This instrument requires input from either an in bus "
                       "or an aux bus.\nChange this with bus_config().");
+		return -1;
+	}
 
    if (auxin_count > 0) {
-      if (start_time != 0.0)
+      if (start_time != 0.0) {
          die(inst_name, "Input start must be 0 when reading from an aux bus.");
+			return -1;
+		}
    }
 
    if (in_count > 0) {
@@ -45,14 +49,20 @@ Instrument::rtsetinput(float start_time, Instrument *inst)
       int index = get_last_input_index();
 
 #ifdef SGI
-      if (index < 0)
+      if (index < 0) {
          die(inst_name, "No input source open for this instrument!");
+			return -1;
+		}
       if ((inputFileTable[index].fd < 1)
-                         && (inputFileTable[index].fd != AUDIO_DEVICE_FD))
+                         && (inputFileTable[index].fd != AUDIO_DEVICE_FD)) {
          die(inst_name, "No input source open for this instrument!");
+			return -1;
+		}
 #else
-      if (index < 0 || inputFileTable[index].fd < 1)
+      if (index < 0 || inputFileTable[index].fd < 1) {
          die(inst_name, "No input source open for this instrument!");
+			return -1;
+		}
 #endif
 
       /* File or audio device was opened in rtinput(). Here we store the
@@ -66,9 +76,11 @@ Instrument::rtsetinput(float start_time, Instrument *inst)
       src_chans = inputFileTable[index].chans;
 
       if (inputFileTable[index].is_audio_dev) {
-         if (start_time != 0.0)
+         if (start_time != 0.0) {
             die(inst_name, "Input start must be 0 when reading from the "
                            "real-time audio device.");
+				return -1;
+			}
       }
       else {
          int datum_size, inskip_frames;

@@ -8,6 +8,8 @@
 #define NO_DEVICE_FDINDEX    -1    /* value for inst fdIndex if unused */
 #define NO_FD                -1    /* this InputDesc not in use */
 
+#define DONT_SCHEDULE			-1	/* returned by Instr->init() on fatal err */
+
 /* SGI audio lib doesn't give us a file descriptor for an audio device,
    so we use this fake one in the InputDesc.
 */

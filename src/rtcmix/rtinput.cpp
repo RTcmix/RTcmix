@@ -357,7 +357,7 @@ rtinput(float p[], int n_args, double pp[])
          if (open_audio_input(port_type, nchans) == kAudioDeviceUnknown)
             die("rtinput",
                      "Audio device not open yet.  Call rtsetparams first.");
-         fd = 0;  /* we don't use this */
+         fd = 1;  /* we don't use this;  set to 1 so rtsetinput() will work */
 #else /* !MACOSX */
          fd = open_audio_input(port_type, nchans);
          if (fd == -1) {

@@ -1,6 +1,11 @@
 /* message functions, designed for use by instruments and others.
                                                         -JGG, 5/16/00
 */
+/* modified to allow die() to continue (i.e. no exit) if ERROR_ON_EXIT
+   is undef'd in makefile.conf
+   -- BGG 1/2004
+*/
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -97,11 +102,13 @@ die(const char *inst_name, const char *format, ...)
    else
       fprintf(stderr, PREFIX "FATAL ERROR:  %s\n", buf);
 
+#ifdef EXIT_ON_ERROR
    if (rtsetparams_called)
       rtcloseout();
    else
       closesf_noexit();
 
    exit(1);
+#endif /* EXIT_ON_ERROR */
 }
 

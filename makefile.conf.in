@@ -14,10 +14,10 @@ MANDESTDIR = $(CMIXDIR)/docs/man
 HTMLDESTDIR = $(CMIXDIR)/docs/html
 
 # add new instruments to this list (e.g., insts.std, insts.jg)
-INST_DIRS = insts.base # insts.std insts.jg insts.vccm
+INST_DIRS = insts.base # insts.std insts.jg insts.stk insts.vccm
 
-# add new packages to this list (e.g., interfaces.std)
-PACKAGE_DIRS = #imbed
+# add new packages to this list (e.g., imbed)
+PACKAGE_DIRS = # imbed
 
 # Which platform?
 ARCH = LINUX
@@ -53,6 +53,12 @@ PYTHON = python
 # can use setline to give the amp envelope. But if you prefer compatibility
 # with your existing scores, uncomment this line:
 #CMIX_FLAGS += -DCOMPATIBLE_FUNC_LOCS
+
+# Comment this out to set the die() function so that it will not exit on
+# encountering an error (you may want to do this if you are using
+# RTcmix in the context of another application where you don't want
+# to terminate the application because of an RTcmix error
+CMIX_FLAGS += -DEXIT_ON_ERROR
 
 ###############################################################
 # Linux sound driver flags -- ignore for Irix and Mac OS X

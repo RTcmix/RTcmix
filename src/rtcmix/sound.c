@@ -1002,7 +1002,10 @@ closesf()
 			close(sfd[i]);
 		}
 	}
+
+#ifdef EXIT_ON_ERROR
 	exit(0);
+#endif /* EXIT_ON_ERROR */
 }
 
 void
