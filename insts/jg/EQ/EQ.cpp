@@ -31,7 +31,7 @@
 #include "EQ.h"
 #include <rt.h>
 #include <rtdefs.h>
-#include <float.h>   /* for FLT_MIN */
+#include <float.h>   /* for FLT_MIN, FLT_MAX */
 
 
 EQ :: EQ() : Instrument()
@@ -42,7 +42,7 @@ EQ :: EQ() : Instrument()
    q_table = NULL;
    gain_table = NULL;
    branch = 0;
-   prev_freq = prev_Q = prev_gain = FLT_MIN;
+   prev_freq = prev_Q = prev_gain = -FLT_MAX;
 }
 
 
@@ -166,6 +166,8 @@ int EQ :: run()
             aamp = amp_table->tick(currentFrame(), amp);
          freq = freq_table->tick(currentFrame(), 1.0);
          Q = q_table->tick(currentFrame(), 1.0);
+         if (Q <= 0.0)
+            Q = FLT_MIN;
          if (gain_table)
             gain = gain_table->tick(currentFrame(), 1.0);
          if (freq != prev_freq || Q != prev_Q || gain != prev_gain)
