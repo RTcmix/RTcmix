@@ -8,7 +8,10 @@ all: $(PROG)
 $(PROG): $(OBJS)
 	$(LD) -r $(OBJS) -o $(PROG)
 
+test: testmain.o heap.o queue.o rtQueue.o osx_workaround.o
+	$(CXX) -o test osx_workaround.o testmain.o heap.o queue.o rtQueue.o
+
 clean:
-	rm -f $(PROG) $(OBJS)
+	$(RM) $(PROG) $(OBJS) test testmain.o
 
 $(OBJS): ../rtdefs.h ../rt.h ../Instrument.h heap.h
