@@ -104,7 +104,7 @@ inline int inAvailable(int filled, int size) {
 	return size - filled;
 }
 
-#define DEBUG 0
+#define DEBUG 1
 
 OSStatus
 OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
@@ -134,7 +134,7 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 		int framesAvail = ::inAvailable(port->audioBufFilled, port->audioBufFrames);
 
 #if DEBUG > 0
-		printf("OSXAudioDevice: record section\n");
+		printf("OSXAudioDevice: record section (in buffer %d)\n", port->streamIndex);
 		printf("framesToRead = %d, framesAvail = %d, Filled = %d\n", framesToRead, framesAvail, port->audioBufFilled);
 #endif
 
@@ -204,7 +204,7 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 		int framesAvail = port->audioBufFilled;
 		
 #if DEBUG > 0
-		printf("OSXAudioDevice: playback section\n");
+		printf("OSXAudioDevice: playback section (out buffer %d)\n", port->streamIndex);
 		printf("framesAvail (Filled) = %d\n", framesAvail);
 #endif
 		while (framesAvail < framesToWrite && keepGoing) {
@@ -513,6 +513,11 @@ int OSXAudioDevice::openOutput()
 		return error("Can't get output device writeable property: ", 
 					 	  ::errToString(err));
 	}
+#if DEBUG > 0
+	printf("Output device %d (dev channel %d): %d channels\n",
+			port->streamIndex, port->streamChannel, 
+			port->deviceFormat.mChannelsPerFrame);
+#endif
 	impl->formatWritable = (writeable != 0);
 	return 0;
 }
@@ -642,10 +647,11 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 				return error("This sampling rate not supported.");
 			}
 #if DEBUG > 0
-			printf("OSX %s HW %d channel, %s\n",
+			printf("OSX %s HW (stream index %d, stream channel %d): %d %s channel(s)\n",
 				   dir == REC ? "input" : "output",
+				   port->streamIndex, port->streamChannel,
 				   port->deviceFormat.mChannelsPerFrame,
-					port->deviceFormat.mFormatFlags & kLinearPCMFormatFlagIsNonInterleaved ? "non-interleaved" : "interleaved");
+				   port->deviceFormat.mFormatFlags & kLinearPCMFormatFlagIsNonInterleaved ? "non-interleaved" : "interleaved");
 #endif
 		}
 	}
