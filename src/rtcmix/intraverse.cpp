@@ -491,7 +491,8 @@ void *inTraverse(void *arg)
 	} // end playEm ----------------------------------------------------------
 
 	if (rtsetparams_called) {
-		cout << "closing ..\n";
+		if (print_is_on)
+			cout << "closing ...\n";
 		for (i = 0; i < ZERO_FRAMES_AFTER / RTBUFSAMPS; i++)
 			rtsendzeros(0);  // send a buffer of zeros to audio output device
 		close_audio_ports();
