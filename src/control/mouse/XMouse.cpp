@@ -147,7 +147,7 @@ void XMouse::drawYLabels()
 		// Draw all Y labels.
 		ypos += _fontAscent;
 		int line = 0;
-		for (int i = 0; i < _xlabelCount; i++) {
+		for (int i = 0; i < _ylabelCount; i++) {
 			XDrawString(_display, _window, _gc,
 							_labelXpos, ypos + (line * _lineHeight),
 							_ylabel[i], strlen(_ylabel[i]));
