@@ -12,6 +12,7 @@ all:
 	ln -sf ../src/rtcmix/Random.h .
 	ln -sf ../src/rtcmix/Option.h .
 	ln -sf ../src/rtcmix/sockdefs.h .
+	ln -sf ../src/rtcmix/sfheader.h .
 	ln -sf ../src/rtcmix/notetags.h .
 	ln -sf ../src/rtcmix/RTcmix.h .
 	ln -sf ../src/rtcmix/mixerr.h .
@@ -35,6 +36,7 @@ cleanall:
 	$(RM) Random.h
 	$(RM) Option.h
 	$(RM) sockdefs.h
+	$(RM) sfheader.h
 	$(RM) notetags.h
 	$(RM) RTcmix.h
 	$(RM) mixerr.h
