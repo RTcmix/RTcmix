@@ -1,0 +1,62 @@
+Most of these are reworkings of older cmix instruments by other people.
+A few require objlib (in this directory), which is a C++ unit generator
+library based on Perry Cook's STK, the Objective C library in NeXT-era
+cmix, and some code from csound and clm.
+
+(Note for SGI users: These will require a little futzing to get them
+running under the current version of RTcmix for Irix. The Linux version
+now has reset and setline in the core, and also has a different Makefile
+scheme. Also, the VOCODE instrument uses a sound file input object that
+relies on sndlib, which hasn't been brought into the SGI version.)
+
+
+VOCODE   - a channel vocoder. Control a bank of band-pass filters from
+           a real-time analysis of another file. (Linux-only, because
+           of method used to open two rt input files.)
+
+JFIR     - an FIR filter with frequency response sampling. Use a makegen
+           to "draw" a frequency response for the filter. (I can get up
+           to 600 taps in real-time on a PII266.)
+
+JCHOR    - a variation on Lansky's chor program, which sprays a slice of
+           an input file around the stereo field. Some limitations have
+           been removed, and you can transpose the grain.
+
+ELL      - an old cmix favorite, dusted off and RT-ified ... cascaded
+           IIR filters with built-in elliptical design program.
+
+JDELAY   - a tweak of the standard RTcmix DELAY program, adding a low-pass
+           filter and dc-blocker, among other things. Useful for short
+           resonating delay times.
+
+REVERBIT - a translation of Lansky's fast reverberator. Added low-pass filter
+           and removed a few limitations. Very effective for a moderate
+           amount of roominess. (This'll be great for the future shared
+           audio buffer RTcmix.)
+
+SROOM    - the old cmix implementation of F.R. Moore's stationary-source room
+           simulation program. Not nearly as effective as place, but kind
+           of a kick to see running in real time.
+
+MROOM    - the old cmix implementation of F.R. Moore's moving-source room
+           simulation program. Not a replacement for move, but fun to run
+           in real time.
+
+ROOM     - Lansky's (and Garton's, I think) old room simulation.
+
+REV      - some Schroeder reverbs that are part of the STK package.
+
+bender   - a variation on Lansky's vreadin program, which lets you bend
+           the pitch of an input file along a glissando curve. Uses Doug
+           Scott's trans interpolation.
+
+denoise  - a translation of Mark Dolson's old CARL program, which does
+           frequency-domain noise reduction. Pretty effective for cleaning
+           up files with a moderate amount of constant background noise.
+
+splice   - a simple program that makes it easy to stitch together final
+           mixes for a CD without getting any clicks at the splice points.
+
+
+
+John Gibson, jgg9c@virginia.edu

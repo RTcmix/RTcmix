@@ -1,0 +1,35 @@
+/* CMIX "ROOM" INSTRUMENT */
+
+
+input("/hd1/users/aw2m/snd/jackhammer.snd")
+output("/tmp/jackroom.snd")
+float x,y,xsrc,ysrc,lftwallx,lftwally,rightwallx,rightwally,absorb,start,dur,inskip,inchannel
+
+/* 100 x 100 square room, srce in middle, absorb = 2 */
+roomset(x=100,y=100,xsrc=.5, ysrc=.5,lftwallx=.1,lftwally=.9,rightwallx=.1,rightwally=.9,absorb=2)
+room(start=0,dur=5,inskip=0,inchannel=0)
+
+/* 100 x 100 square room, srce in middle, absorb = 1 (wetter) */
+roomset(x=100,y=100,xsrc=.5, ysrc=.5,lftwallx=.1,lftwally=.9,rightwallx=.1,rightwally=.9,absorb=1)
+room(start=7,dur=5,inskip=0,inchannel=0)
+
+/* 10 wide by 100 deep, rectangular room, srce at back absorb = 1 (wetter) */
+roomset(x=10,y=100,xsrc=.5, ysrc=.9,lftwallx=.1,lftwally=.9,rightwallx=.1,rightwally=.9,absorb=1)
+room(start=14,dur=5,inskip=0,inchannel=0)
+
+/* 100 wide by 10 deep room, srce at front in middle, absorb=1 */
+roomset(x=100,y=10,xsrc=.5, ysrc=.1,lftwallx=.1,lftwally=.9,rightwallx=.1,rightwally=.9,absorb=1)
+room(start=21,dur=5,inskip=0,inchannel=0)
+
+/* 300 x 300 room, srce at front in middle, very wet, absorb = .5 */
+roomset(x=300,y=300,xsrc=.5, ysrc=.1,lftwallx=.1,lftwally=.9,rightwallx=.1,rightwally=.9,absorb=.5)
+room(start=28,dur=5,inskip=0,inchannel=0)
+
+/* 100 x 100 room, srce in front middle, absorb = 2 */
+roomset(x=100,y=100,xsrc=.5, ysrc=.1,lftwallx=.1,lftwally=.9,rightwallx=.1,rightwally=.9,absorb=2)
+room(start=35,dur=5,inskip=0,inchannel=0)
+
+/* 100 x 100 room, srce in front middle, absorb = -2 */
+roomset(x=100,y=100,xsrc=.5, ysrc=.1,lftwallx=.1,lftwally=.9,rightwallx=.1,rightwally=.9,absorb=-1)
+room(start=42,dur=5,inskip=0,inchannel=0)
+
