@@ -11,7 +11,8 @@
 *
 */
 
-rtsetparams(22050, 2, 256)
+set_option("full_duplex_on")
+rtsetparams(44100, 2, 256)
 load("MULTICOMB")
 rtinput("AUDIO")
 reset(20000)
