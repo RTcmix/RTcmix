@@ -3,6 +3,7 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #include <globals.h>
+#include <ugens.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -174,7 +175,7 @@ parse_rtoutput_args(int nargs, double pp[])
    char  *arg;
 
    if (nargs == 0) {
-      fprintf(stderr, "rtoutput: you didn't specify a file name!\n");
+      warn("rtoutput", "you didn't specify a file name!");
       return -1;
    }
 
@@ -183,7 +184,7 @@ parse_rtoutput_args(int nargs, double pp[])
    rtoutsfname = (char *)anint;
    if (rtoutsfname == NULL)
    {
-      fprintf(stderr, "rtoutput: NULL file name!\n");
+      warn("rtoutput", "NULL file name!");
       return -1;
    }
 
@@ -206,7 +207,7 @@ parse_rtoutput_args(int nargs, double pp[])
          }
       }
       if (!matched) {
-         fprintf(stderr, "rtoutput: unrecognized argument \"%s\"\n", arg);
+         warn("rtoutput", "unrecognized argument \"%s\"", arg);
          return -1;
       }
 
@@ -292,18 +293,22 @@ rtoutput(float p[], int n_args, double pp[])
    struct stat statbuf;
 
    if (rtfileit == 1) {
-      fprintf(stderr, "A soundfile is already open for writing...\n");
-      return -1.0;
+      warn("rtoutput", "A soundfile is already open for writing...");
+      return -1;
    }
 
+   /* flag set to -1 until we reach end of function.  This way, if anything
+      fails along the way, we leave this set as we want it.
+   */
+   rtfileit = -1;
+
    if (SR == 0) {
-      fprintf(stderr, "You must call rtsetparams before rtoutput.\n");
-      exit(1);
+      die("rtoutput", "You must call rtsetparams before rtoutput.");
    }
 
    error = parse_rtoutput_args(n_args, pp);
    if (error)
-      exit(1);          /* already reported in parse_rtoutput_args */
+      return -1;          /* already reported in parse_rtoutput_args */
 
    error = stat(rtoutsfname, &statbuf);
 
@@ -312,30 +317,22 @@ rtoutput(float p[], int n_args, double pp[])
          ;              /* File doesn't exist -- no problem */
       }
       else {
-         fprintf(stderr, "Error accessing file \"%s\": %s\n",
+         warn("rtoutput", "Error accessing file \"%s\": %s",
                                                 rtoutsfname, strerror(errno));
-         exit(1);
+	  	 return -1;	/* was exit() */
       }
    }
    else {               /* File exists; find out whether we can clobber it */
       if (!clobber) {
-         fprintf(stderr, "\n%s\n", CLOBBER_WARNING);
-         exit(1);
+         warn("rtoutput", "\n%s", CLOBBER_WARNING);
+		 return -1;
       }
       else {
          /* make sure it's a regular file */
          if (!S_ISREG(statbuf.st_mode)) {
-            fprintf(stderr, "\"%s\" isn't a regular file; won't clobber it\n",
+            warn("rtoutput", "\"%s\" isn't a regular file; won't clobber it",
                                                                  rtoutsfname);
-            exit(1);
-         }
-
-         /* try to delete it */
-         error = unlink(rtoutsfname);
-         if (error) {
-            fprintf(stderr, "Error deleting clobbered file \"%s\" (%s)\n",
-                                                rtoutsfname, strerror(errno));
-            exit(1);
+			return -1;
          }
       }
    }
@@ -343,9 +340,8 @@ rtoutput(float p[], int n_args, double pp[])
    rtoutfile = sndlib_create(rtoutsfname, output_header_type,
                                          output_data_format, (int)SR, NCHANS);
    if (rtoutfile == -1) {
-      fprintf(stderr, "Can't write \"%s\" (%s)\n",
-                                                rtoutsfname, strerror(errno));
-      exit(1);
+      warn("rtoutput", "Can't write \"%s\": %s", rtoutsfname, strerror(errno));
+	  return -1;
    }
 
    if (print_is_on) {
@@ -357,9 +353,9 @@ rtoutput(float p[], int n_args, double pp[])
      printf("     chans:  %d\n", NCHANS);
    }
 
-   rtfileit = 1;
+   rtfileit = 1;	/* here we finally set this to 1 */
 
-   return 1.0;
+   return 1;
 }
 
 

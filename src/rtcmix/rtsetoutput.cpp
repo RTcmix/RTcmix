@@ -15,6 +15,15 @@ int Instrument::rtsetoutput(float start, float dur, Instrument *theInst)
 // I know this is silly, but I wanted nsamps and I wanted it to
 // look like "setnote" in orig cmix insts
   // DJT:  then perhaps we should call it rtsetnote?
+
+  // DS: Adding check to be sure rtoutput() did not fail.  We cannot use die()
+  //	here because we cannot call closesf() on a bad fdesc.
+
+  if (rtfileit < 0) {
+  	 fprintf(stderr, "No output file open for this instrument (rtoutput failed)!\n");
+	 exit(1);
+  }
+
   // DJT:  made change to increment schedtime here ... not sure how it will work
   if (rtInteractive) {
 #ifdef DBUG
