@@ -1,28 +1,29 @@
-#include <objlib.h>
 
 typedef enum {
    PEAK_DETECTOR = 0,
-   RMS_DETECTOR,
-   AVERAGE_DETECTOR
+   AVERAGE_DETECTOR,
+   RMS_DETECTOR
 } DetectType;
 
 typedef enum {
    ENV_INACTIVE,
+   ENV_ATTACK_WAIT,
    ENV_ATTACK,
    ENV_SUSTAIN,
    ENV_RELEASE
-} EnvStage;
+} EnvState;
 
 class COMPLIMIT : public Instrument {
-   int         insamps, skip, inchan, atk_samps, rel_samps, bypass;
-   int         window_len, env_count, branch, peak_under_thresh;
-   float       ingain, outgain, threshold, ratio, pctleft;
-   float       oamp, env_level, scale, atk_increment, rel_increment;
-   float       target_scale, scale_increment, prev_peak, peak;
-   float       *amptable, amptabs[2], *in;
+   int         skip, inchan, atk_samps, rel_samps, bypass, branch, first_time;
+   int         lookahead_samps, offset, window_frames, window_len, buf_samps;
+   int         wins_under_thresh, env_count, sus_count, next_env_count;
+   float       ingain, outgain, gain, threshold, pctleft, oamp, dbref;
+   float       target_peak, target_gain, next_target_gain, gain_increment;
+   float       *in, *inptr, *readptr, *bufstartptr;
+   float       *amptable, amptabs[2];
+   double      ratio;
    DetectType  detector_type;
-   EnvStage    env_stage;
-   RMS         *rms_gauge;
+   EnvState    env_state;
 
 public:
    COMPLIMIT();
@@ -30,7 +31,7 @@ public:
    int init(float *, short);
    int run();
 private:
-   float get_peak(int);
-   float get_compress_factor(void);
+   float get_peak(int, int *);
+   float get_gain_reduction(void);
 };
 

@@ -1,26 +1,25 @@
 include ../package.conf
 
-OBJLIBDIR = ../objlib
-OBJLIB_A = $(OBJLIBDIR)/objlib.a
-OBJLIB_H = $(OBJLIBDIR)/objlib.h
+NAME = COMPLIMIT
 
-OBJS = COMPLIMIT.o
+OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
-CXXFLAGS += -I$(OBJLIBDIR) -Wall
-PROGS = libCOMPLIMIT.so COMPLIMIT
+ifeq ($(ARCH),LINUX)
+   CXXFLAGS += -Wall
+endif
+PROGS = lib$(NAME).so $(NAME)
 
-all: libCOMPLIMIT.so
+all: lib$(NAME).so
 
-standalone: COMPLIMIT
+standalone: $(NAME)
 
-libCOMPLIMIT.so: $(OBJS) $(GENLIB) $(OBJLIB_A)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	$(GENLIB) $(SYSLIBS) $(OBJLIB_A)
+libCOMPLIMIT.so: $(OBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
-COMPLIMIT: $(OBJS) $(CMIXOBJS) $(OBJLIB_A)
-	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(OBJLIB_A) $(LDFLAGS)
+COMPLIMIT: $(OBJS) $(CMIXOBJS)
+	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) COMPLIMIT.h
+$(OBJS): $(INSTRUMENT_H) $(NAME).h
 
 clean:
 	$(RM) $(OBJS) $(PROGS)
