@@ -26,14 +26,14 @@ main(int argc, char *argv[])
 		150.0, 177.777, 200.0, 228.0, 266.666, 300.0, 355.555, 400.0};
 	float sleepness;
 
-	rrr = new RTcmix();
+	rrr = new RTcmix(44100, 2, 4096);
 	rrr->printOn();
 	sleep(1); // give the thread time to initialized
 
 	// set up the instrument
 	rrr->cmd("load", 1, "WAVETABLE");
 	rrr->cmd("makegen", 8, 1.0, 7.0, 1000.0, 0.0, 500.0, 1.0, 500.0, 0.0);
-	rrr->cmd("makegen", 11,
+	rrr->cmd("makegen", 10,
 		2.0, 10.0, 1000.0, 1.0, 0.5, 0.25, 0.125, 0.06, 0.03, 0.015);
 
 
