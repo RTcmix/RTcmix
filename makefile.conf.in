@@ -4,7 +4,7 @@
 TOPDIR = /usr/local/src
 
 # The name of the RTcmix directory
-CMIXDIR = $(TOPDIR)/RTcmix-2.3.0
+CMIXDIR = $(TOPDIR)/RTcmix-3.0.0
 
 # The dir that will contain links to the instrument dynamic shared objects
 LIBDESTDIR = $(CMIXDIR)/shlib
@@ -36,7 +36,7 @@ SOUND_DRIVER += -DSHARED_AUDIO_DEV
 #SOUND_DRIVER += -DUSE_CARD_CHANS
 
 # optimization, debugging and warning flags
-OPT = -g -Wall -Wno-unused #-O3
+OPT = -g -Wall -Wno-unused -O3
 # for Irix, try...
 #OPT = -O2
 
