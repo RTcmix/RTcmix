@@ -1,17 +1,3 @@
-/* AM -- amplitude modulate an input signal
-*
-*  p0 = output skip
-*  p1 = input skip
-*  p2 = duration
-*  p3 = amplitude
-*  p4 = AM modulator frequency (hz)
-*  p5 = input channal [optional]
-*  p6 = stereo spread <0-1> [optional]
-*  assumes function table 1 is the amplitude envelope
-*  function table 2 is the AM modulator waveform
-*
-*/
-
 set_option("full_duplex_on")  /* must do this before rtsetparams */
 rtsetparams(44100, 2, 256)
 load("AM")
