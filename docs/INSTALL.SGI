@@ -1,6 +1,15 @@
+The Irix port was done rather quickly to have the same RTcmix features
+under Irix as we had under Linux at UVA. You may prefer to try the
+Irix version made by Brad Garton and folks at Columbia.
+
 This version of RTcmix requires GNU make.
 
-Install as "gmake", and then make RTcmix by saying "gmake".
+If you don't already have GNU make, get it from ftp://ftp.gnu.org/gnu/make/
+(current version is make-3.78.1.tar.gz). Install it as "gmake". Then make
+RTcmix by saying "gmake".
+
+If you already have GNU make, either change its name to gmake, or edit
+RTcmix's makefile.conf to point to the right make program name.
 
 
 If you don't use GNU make, you'll see errors like this:
@@ -22,3 +31,6 @@ ld: FATAL 51: Can't assign virtual addresses for libWAVETABLE.so of size 10000 w
 gmake[2]: *** [libWAVETABLE.so] Error 1
 
 
+
+John Gibson
+jgg9c@virginia.edu
