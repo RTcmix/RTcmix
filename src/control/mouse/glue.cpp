@@ -14,10 +14,10 @@
 
 // ------------------------------------------------------- _mouse_connection ---
 //
-//    mouse = create_pfield("X", min, max, default, lag,
-//                                 [prefix[, units[, precision]]])
+//    mouse = create_pfield("x", min, max, default, lag,
+//                                 [prefix[, units,]] [precision])
 //
-//    First argument is either "X" or "Y", depending on which axis
+//    First argument is either "x" or "y", depending on which axis
 //    you want to read.  Other arguments:
 //
 //    <min>          minimum value [number]
@@ -41,8 +41,8 @@ static RTNumberPField *
 _mouse_usage()
 {
 	die("makeconnection (mouse)",
-		"Usage: makeconnection(\"mouse\", \"X\" or \"Y\", min, max, default, "
-		"lag, [prefix[, units[, precision]]])");
+		"Usage: makeconnection(\"mouse\", \"x\" or \"y\", min, max, default, "
+		"lag, [prefix[, units,]] [precision])");
 	return NULL;
 }
 
@@ -95,25 +95,29 @@ create_pfield(const Arg args[], const int nargs)
 	}
 	lag *= 0.01;
 
+	// Handle the optional arguments.
+	// <prefix> and <units> strings must appear in that order.  <precision>
+	// follows either or both of the strings, or replaces both.  (I.e., it
+	// appears after of a list of 0, 1, or 2 strings.)
 	if (nargs > 5) {
-		if (args[5].isType(StringType))
+		if (args[5].isType(StringType)) {
 			prefix = args[5];
+			if (nargs > 6) {
+				if (args[6].isType(StringType)) {
+					units = args[6];
+					if (nargs > 7) {
+						if (args[7].isType(DoubleType))
+							precision = (int) args[7];
+						else
+							return _mouse_usage();
+					}
+				}
+				else
+					precision = (int) args[6];
+			}
+		}
 		else
-			return _mouse_usage();
-	}
-
-	if (nargs > 6) {
-		if (args[6].isType(StringType))
-			units = args[6];
-		else
-			return _mouse_usage();
-	}
-
-	if (nargs > 7) {
-		if (args[7].isType(DoubleType))
-			precision = (int) args[7];
-		else
-			return _mouse_usage();
+			precision = (int) args[5];
 	}
 
 	return new RTMousePField(mousewin, axis, minval, maxval, defaultval, lag,
