@@ -217,6 +217,8 @@ exp: rstmt				{ $$ = $1; }
 								double f = atof(yytext);
 								$$ = tconstf(f);
 							}
+	| TOK_TRUE			{ $$ = tconstf(1.0); }
+	| TOK_FALSE			{ $$ = tconstf(0.0); }
 	| '-' exp %prec CASTTOKEN {
 								/* tconstf is a dummy; makes exct_operator work */
 								$$ = top(OpNeg, $2, tconstf(0.0));
