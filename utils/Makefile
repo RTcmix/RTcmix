@@ -8,14 +8,16 @@ SYSLIBS = -lm   # only this, overriding makefile.conf
 ifeq ($(USE_SNDLIB),TRUE)
    SYSOBJS += ../sys/sndlibsupport.o
    SYSLIBS += ../sndlib/sndlib.a
+   PLAY = sndlib_play.o
 else
+   PLAY = play.o
 endif
 
 
 all:  $(PROGS)
 
-cmixplay:  play.o $(SYSOBJS)
-	$(CC) $(FLAGS) -o cmixplay play.o $(SYSOBJS) $(SYSLIBS)
+cmixplay:  $(PLAY) $(SYSOBJS)
+	$(CC) -o cmixplay $(PLAY) $(SYSOBJS) $(SYSLIBS)
 
 playraw: playraw.o
 	$(CC) -o playraw playraw.o
