@@ -5,6 +5,9 @@ Sunday, January 4, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * Fix compilation bug affecting people whose yacc points to
      bison (such as recent Debian Linux systems).
+   * New instrument: MOCKBEND, by Ivica Bukvic.  Like TRANSBEND,
+     but works with real-time sources, such as aux buses and
+     input from sound card.
 
 Friday, January 2, 2004 John Gibson <johgibso-at-indiana.edu>
 
