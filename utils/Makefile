@@ -49,9 +49,6 @@ endif
 ifneq ($(strip $(RESAMPLE)),)    # do only if RESAMPLE is nonempty
 	@$(INSTALL) $(CMIXDIR)/utils/resample/resample $(DESTDIR)
 endif
-ifneq ($(strip $(PROGS)),)       # do only if PROGS is nonempty
-	@$(INSTALL) $(CMIXDIR)/utils/cmixplay $(DESTDIR)/play
-endif
 
 clean:
 	@for PROG in $(PROGS); \
