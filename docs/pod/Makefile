@@ -1,3 +1,9 @@
+# RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+# See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+# the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+#
+# RTcmix help system makefile by John Gibson
+
 include ../../makefile.conf
 
 # RTcmix instruments
@@ -68,7 +74,7 @@ mkinstalldirs = $(SHELL) $(CMIXDIR)/docs/pod/mkinstalldirs
 all: $(MAN) $(HTML) $(HTML_INDEX)
 
 .PHONY: man html ps pdf clean install uninstall installman uninstallman \
-installhtml uninstallhtml
+installhtml uninstallhtml installsyn uninstallsyn
 
 man: $(INST_MAN) $(CMD_MAN) $(SCRIPT_MAN) $(API_MAN)
 
@@ -91,8 +97,8 @@ $(API_MAN): %.3: %.pod
 	pod2man --center=$(API_TITLE) -s 3 --release=$(VERS) --date=$(DATE) $< > $@
 
 $(HTML): %.html: %.pod
-	pod2html --htmlroot=. --podpath=. --noindex $< > $@
-	@sed -e 's/<BODY>/<body bgcolor="white">/' $@ > $@.tmp
+	pod2html --css=style.css --htmlroot=. --podpath=. --noindex $< > $@
+	@sh fix_html.sh $@ > $@.tmp
 	@mv -f $@.tmp $@
 
 $(HTML_INDEX): make_html_index.pl
@@ -142,13 +148,14 @@ ifneq ($(strip $(HTMLDESTDIR)),)    # do only if HTMLDESTDIR is nonempty
 	$(mkinstalldirs) $(HTMLDESTDIR)
 	$(INSTALL) $(HTML) $(HTMLDESTDIR)
 	$(INSTALL) $(HTML_INDEX) $(HTMLDESTDIR)
+	$(INSTALL) style.css $(HTMLDESTDIR)
 	$(mkinstalldirs) $(HTMLDESTDIR)/images
 	( cd images; $(INSTALL) $(IMAGES) $(HTMLDESTDIR)/images )
 endif
 
 uninstallhtml:
 ifneq ($(strip $(HTMLDESTDIR)),)    # do only if HTMLDESTDIR is nonempty
-	( cd $(HTMLDESTDIR); $(RM) $(HTML) $(HTML_INDEX) )
+	( cd $(HTMLDESTDIR); $(RM) $(HTML) $(HTML_INDEX) style.css )
 	( cd $(HTMLDESTDIR)/images; $(RM) $(IMAGES) )
 endif
 
