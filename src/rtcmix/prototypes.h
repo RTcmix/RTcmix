@@ -5,6 +5,7 @@
 #define PROTOTYPES_H_ 1
 
 #include <buffers.h>    /* for BufPtr */
+#include <rtcmix_types.h>
 
 #ifdef __cplusplus
 
@@ -22,6 +23,13 @@ void rtgetsamps(AudioDevice *);
 /* rtwritesamps.C */
 int rtwritesamps(AudioDevice *);
 
+/* dispatch.cpp */
+#ifdef PFIELD_CLASS
+int dispatch(const char *str, const Arg args[], int n_args, Arg *retarg);
+#endif
+
+double dispatch(const char *str, double *pp, int n_args, void **inst);
+
 /* Note that C++ functions prototyped below really are defined within
    extern "C" braces in their files.
 */
@@ -30,7 +38,6 @@ extern "C" {
 #endif /* __cplusplus */
 
 #ifdef PFIELD_CLASS
-#include <rtcmix_types.h>
 
 /* addcheckfuncs.c */
 int checkfunc(const char *funcname, const Arg arglist[], const int nargs,
@@ -58,13 +65,6 @@ int waitForMainLoop(void);
 
 /* parseit.C */
 void *parseit(void *);
-
-/* parse_dispatch.c */
-#ifdef PFIELD_CLASS
-double old_parse_dispatch(char *str, double *pp, int n_args, void **inst);
-#else
-double parse_dispatch(char *str, double *pp, int n_args, void **inst);
-#endif
 
 /* rtdispatch.C */
 double rtdispatch(char *fname, double *pp, int n_args, void **inst);
