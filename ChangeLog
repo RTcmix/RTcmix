@@ -19,15 +19,12 @@ Saturday, Feb 3, 2001 John Gibson <johngibson@virginia.edu>
 
 **** Released RTcmix-3.0.4 ****
 
-Sunday, Jan 15, 2001 John Gibson <johngibson@virginia.edu>
-
-   * Install new PLACE
-
 Sunday, Dec 17, 2000 John Gibson <johngibson@virginia.edu>
 
    * Perl extension compilation fix.
    * More n_args decls cleanups in ./sys and inst dirs.
    * Fix bug in REVMIX that caused clicks for files with more than one channel.
+   * Install new PLACE
 
 Friday, Dec 08, 2000 Douglas Scott <netdscott@netscape.net>
 
