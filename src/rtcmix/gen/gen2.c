@@ -43,6 +43,13 @@ extern FILE *infile_desc[50];   /* contains file descriptors for data files */
       fewer than <tablesize> args, the remaining table slots
       are set to zero.
 
+   Note that this code distinguishes between the old and new ways
+   by the number of pfields. If there are only 4 pfields (i.e., 
+   gen->nargs is 1), then it assumes the old way. Otherwise, it
+   assumes the new way. So a new-style array of 1 element will
+   be interpreted as an old-style array (taking values either
+   from the next line or from a file).
+
                              [new way and comments by JGG, 21-Feb-00]
 */
 void gen2(register struct gen *gen)
