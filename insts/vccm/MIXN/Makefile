@@ -19,7 +19,7 @@ lib$(NAME).so: $(OBJS) $(GENLIB) $(OBJLIB_A)
 $(NAME): $(OBJS) $(CMIXOBJS) $(OBJLIB_A)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(OBJLIB_A) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) $(OBJLIB_H) $(NAME).h funcs.h
+$(OBJS): $(INSTRUMENT_H) $(OBJLIB_H) $(NAME).h 
 
 install: dso_install
 
