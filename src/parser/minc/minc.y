@@ -269,3 +269,10 @@ go(Tree t1)
 	return t1;
 }
 
+int yywrap()
+{
+	free_symbols();
+	yy_delete_buffer(yy_current_buffer);
+	yy_current_buffer = NULL;
+	return 1;
+}

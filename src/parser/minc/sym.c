@@ -58,13 +58,14 @@ symalloc(char *name)
 void
 free_symbols()
 {
-	struct symbol *p;
 	int s;
 #ifdef DEBUG
-	printf("freeing symbol table...\n");
+	printf("freeing symbol and string tables...\n");
 #endif
 	for (s = 0; s < HASHSIZE; ++s)
 	{
+		struct symbol *p;
+		struct str *str;
    		for (p = htab[s]; p != NULL; ) {
 			struct symbol *next = p->next;
 #ifdef DEBUG
@@ -79,6 +80,14 @@ free_symbols()
 			p = next;
 		}
 		htab[s] = NULL;
+#if 0
+		for (str = stab[s]; str != NULL; ) {
+			struct str *next = str->next;
+			free(str->str);
+			free(str);
+			str = next;
+		}
+#endif
 	}
 #ifdef DEBUG
 	printf("done\n");
