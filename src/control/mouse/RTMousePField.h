@@ -25,8 +25,8 @@ static double makeSmoothingCoefficient(double lag)
 {
 	assert(lag >= 0.0 && lag <= MAXLAG);
 	double c = (1.0 - exp(lag * ALPHA / MAXLAG)) / (1.0 - exp(ALPHA));
-	if (c > 0.999)		// coeff must not be 1.0, and best not be too near it
-		c = 0.999;
+	if (c > 0.9999)		// coeff must not be 1.0, and best not be too near it
+		c = 0.9999;
 	return c;
 }
 
@@ -110,7 +110,10 @@ private:
 	{
 		double rawval = _mousewin->getPositionY();
 		if (rawval != _lastRawval) {
-			if (rawval < 0.0)
+			// NB: roundoff error in getPositionY can cause rawval to be a very
+			// small negative number when y-coord is bottom-most of window.
+			// A truly invalid value is a much larger negative number.
+			if (rawval < -0.000001)
 				_val = _default;
 			else
 				_val = _min + (_diff * rawval);
