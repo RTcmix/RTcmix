@@ -1,5 +1,3 @@
-#ifdef USE_SNDLIB
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -310,7 +308,4 @@ main(int argc, char *argv[])
 
    exit(exitcode);
 }
-
-
-#endif /* !USE_SNDLIB */
 

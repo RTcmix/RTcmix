@@ -13,9 +13,7 @@
 #include "../H/complexf.h"
 #include "../H/byte_routines.h"
 #include "../H/sfheader.h"
-#ifdef USE_SNDLIB
-#include "../H/sndlibsupport.h"
-#endif
+#include <sndlibsupport.h>
 
 #define  BUFSIZE 32768
 /* use smaller buffers for hist across network */
@@ -136,17 +134,6 @@ int main(int argc, char *argv[])
    if (cp != NULL)
       bcopy(cp + sizeof(SFCODE), (char *)&sfm, sizeof(SFMAXAMP));
 
-#ifndef USE_SNDLIB              /* no need to swap these with sndlib */
-   if (swap) {
-      printf("Swapping MAXAMP data\n");
-      for (i = 0; i < SF_MAXCHAN; i++) {
-         byte_reverse4(&sfm.value[i]);
-         byte_reverse4(&sfm.samploc[i]);
-      }
-      byte_reverse4(&sfm.timetag);
-   }
-#endif
-
    dur = (float) (sfst.st_size - headersize)
              / (float) sfclass(&sfh) / (float) sfchans(&sfh) / sfsrate(&sfh);
 
@@ -252,19 +239,14 @@ int main(int argc, char *argv[])
       /* roundout to multiple of sampleblocksize */
       loopsize = fftflag ? incr : incr * sfsrate(&sfh) + .5;
       loopbytes = loopsize * sfclass(&sfh) * sfchans(&sfh);
-#ifdef USE_SNDLIB
+
       /* sflseek (sfheader.h) assumes header size, so can't use it */
       bytenumber = lseek(sf, bytes + sfdatalocation(&sfh), SEEK_SET);
       if (bytenumber < 0) {
          printf("bad lseek on file %s\n", sfname);
          exit(1);
       }
-#else
-      if ((bytenumber = sflseek(sf, bytes, 0)) < 0) {
-         printf("bad lseek on file %s\n", sfname);
-         exit(1);
-      }
-#endif
+
       bytenumber -= headersize;
       bytestoread = fftflag ? incr * sfclass(&sfh) * sfchans(&sfh)
                : sfsrate(&sfh) * sfclass(&sfh) * sfchans(&sfh) * (end - start);
