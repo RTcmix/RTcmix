@@ -114,10 +114,6 @@ static const float get_seconds(const char timestr[], TimeFormat *format);
 static Status set_input_mode();
 static void reset_input_mode();
 
-bool playCallback(AudioDevice *device, void *arg);
-bool stopPlayCallback(AudioDevice *device, void *arg);
-
-
 class Player {
 
 public:
@@ -139,9 +135,11 @@ public:
    Status      configure();
    Status      play();
    State       getState() const { return _state; }
+   
+   static bool playCallback(AudioDevice *device, void *arg);
+   static bool stopPlayCallback(AudioDevice *device, void *arg);
 
-   // FIXME: these really shouldn't be public, but they have to be
-   // accessible by the callbacks.
+protected:
    int         readBuffer();
    void        closeFiles();
    Status      doHotKeys(int framesRead);
@@ -645,7 +643,7 @@ Player::readBuffer()
 
 // ------------------------------------------------------------ playCallback ---
 bool
-playCallback(AudioDevice *device, void *arg)
+Player::playCallback(AudioDevice *device, void *arg)
 {
    int framesRead = 0;
    Player *player = (Player *) arg;
@@ -679,7 +677,7 @@ Player::closeFiles()
 
 // -------------------------------------------------------- stopPlayCallback ---
 bool
-stopPlayCallback(AudioDevice *device, void *arg)
+Player::stopPlayCallback(AudioDevice *device, void *arg)
 {
    Player *player = (Player *) arg;
 
@@ -723,9 +721,9 @@ Player::play()
 
    _state = StatePlaying;
 
-   _device->setStopCallback(stopPlayCallback, (void *) this);
+   _device->setStopCallback(Player::stopPlayCallback, (void *) this);
 
-   if (_device->start(playCallback, (void *) this) != 0) {
+   if (_device->start(Player::playCallback, (void *) this) != 0) {
       fprintf(stderr, "%s\n", _device->getLastError());
       return StatusError;
    }
