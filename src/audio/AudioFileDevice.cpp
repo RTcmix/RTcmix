@@ -17,9 +17,6 @@
 struct AudioFileDevice::Impl {
 	char						*path;
 	int							frameSize;
-	bool						stopping;
-	bool						closing;
-	bool						paused;
 	int							fileType;		// wave, aiff, etc.
 	bool						checkPeaks;
 	float						peaks[MAXBUS];
@@ -33,9 +30,6 @@ AudioFileDevice::AudioFileDevice(const char *path,
 {
 	_impl->path = (char *)path;
 	_impl->frameSize = 1024;
-	_impl->stopping = false;
-	_impl->closing = false;
-	_impl->paused = false;
 	_impl->fileType = fileType;
 	_impl->checkPeaks = fileOptions & CheckPeaks;
 	
@@ -128,7 +122,7 @@ int AudioFileDevice::doOpen(int mode)
 						   getDeviceFormat(), (int) getSamplingRate(), 
 						   getDeviceChannels());
 	setDevice(fd);
-	_impl->closing = false;
+	closing(false);
 	resetFrameCount();
 	return (fd > 0) ? 0 : -1;
 }
@@ -136,8 +130,8 @@ int AudioFileDevice::doOpen(int mode)
 int AudioFileDevice::doClose()
 {
 	int status = 0;
-	if (!_impl->closing) {
-		_impl->closing = true;
+	if (!closing()) {
+		closing(true);
 		if (_impl->checkPeaks) {
 			// Normalize peaks if file was normalized.
 			if (isDeviceFmtNormalized())
@@ -161,15 +155,13 @@ int AudioFileDevice::doClose()
 
 int AudioFileDevice::doStart()
 {
-	_impl->stopping = false;
-	_impl->paused = false;
 //	printf("AudioFileDevice::doStart: starting thread\n");
 	return ThreadedAudioDevice::startThread();
 }
 
 int AudioFileDevice::doPause(bool paused)
 {
-	_impl->paused = paused;
+	this->paused(paused);
 	return 0;
 }
 
@@ -212,8 +204,8 @@ void AudioFileDevice::run()
 //	printf("AudioFileDevice::run: TOF\n");
 	assert(!isPassive());	// Cannot call this method when passive!
 	
-	while (_impl->stopping == false) {
-		while (_impl->paused) {
+	while (!stopping()) {
+		while (paused()) {
 #ifdef linux
 			::usleep(1000);
 #endif
@@ -227,9 +219,9 @@ void AudioFileDevice::run()
 	// call to close() does not attempt to call stop, which we cannot do in
 	// this thread.  Then, check to see if we are being closed by the main
 	// thread before calling close() here, to avoid a reentrant call.
-	if (!_impl->stopping) {
+	if (!stopping()) {
 		setState(Configured);
-		if (!_impl->closing) {
+		if (!closing()) {
 //			printf("AudioFileDevice::run: calling close()\n");
 			close();
 		}
