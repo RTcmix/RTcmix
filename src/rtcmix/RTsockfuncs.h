@@ -1,3 +1,6 @@
+#ifndef _RTSOCKFUNCS_H_
+#define _RTSOCKFUNCS_H_ 1
+
 /* RTsockfuncs.h - headers for a set of utility functions for real-time cmix
    interface programming (located in RTsockfuncs.c; link in RTsockfuncs.o
    to compile) */
@@ -31,3 +34,5 @@ void RTtimeit(float interval, void *func);
 void parse(char *buf, char **args);
 
 int execute(char **args);
+
+#endif
