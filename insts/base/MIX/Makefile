@@ -1,7 +1,7 @@
 include ../insts.conf
 
-OBJS = MIX.o cfuncs.o
-CMIXOBJS = ../../sys/cmix.o ../../lib/genlib.a
+OBJS = MIX.o
+CMIXOBJS += $(PROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = MIX
@@ -11,7 +11,8 @@ all: MIX
 MIX: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o MIX -rdynamic $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): ../../rtstuff/Instrument.h
+$(OBJS): $(INSTRUMENT_H)
 
 clean:
 	rm -f *.o $(OBJS) $(PROGS)
+

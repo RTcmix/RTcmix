@@ -1,13 +1,14 @@
 #include <iostream.h>
-#include "../../sys/mixerr.h"
-#include "../../rtstuff/Instrument.h"
+#include <stdio.h>
+#include <mixerr.h>
+#include <Instrument.h>
 #include "WAVETABLE.h"
-#include "../../rtstuff/rt.h"
-#include "../../rtstuff/rtdefs.h"
-#include "../../Minc/notetags.h"
+#include <rt.h>
+#include <rtdefs.h>
+#include <notetags.h>
 
 extern "C" {
-	#include "../../H/ugens.h"
+	#include <ugens.h>
 	extern int resetval;
 	}
 
@@ -31,8 +32,12 @@ WAVETABLE::init(float p[], short n_args)
 	amp = p[2];
 	
 	amptable = floc(2);
-	alen = fsize(2);
-	tableset(p[1], alen, tabs);
+	if (amptable) {
+		alen = fsize(2);
+		tableset(p[1], alen, tabs);
+	}
+	else
+		printf("Setting phrase curve to all 1's\n");
 	
 	spread = p[4];
 	skip = (int)(SR/(float)resetval);
@@ -50,7 +55,10 @@ int WAVETABLE::run()
 	branch = 0;
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch < 0) {
-			aamp = tablei(cursamp, amptable, tabs) * amp;
+			if (amptable)
+				aamp = tablei(cursamp, amptable, tabs) * amp;
+			else
+				aamp = amp;
 			if (tags_on) {
 				tfreq = rtupdate(this->mytag, 3);
 				if (tfreq != NOPUPDATE)
