@@ -142,18 +142,21 @@ detect_denormals()
 //  The RTcmix constructor with default SR, NCHANS, and RTBUFSAMPS
 RTcmix::RTcmix() 
 {
+	init_globals();
 	init(SR, NCHANS, RTBUFSAMPS);
 }
 
 //  The RTcmix constructor with settable SR, NCHANS; default RTBUFSAMPS
 RTcmix::RTcmix(float tsr, int tnchans)
 {
+	init_globals();
 	init(tsr, tnchans, RTBUFSAMPS);
 }
 
 //  The RTcmix constructor with settable SR, NCHANS, and RTBUFSAMPS
 RTcmix::RTcmix(float tsr, int tnchans, int bsize)
 {
+	init_globals();
 	init(tsr, tnchans, bsize);
 }
 
@@ -170,8 +173,6 @@ RTcmix::init(float tsr, int tnchans, int bsize)
 	// so no need to dimension them at MAXDISPARGS
 	float p[3];
 	double pp[3];
-
-	init_globals();
 
 #ifdef SGI
 	flush_all_underflows_to_zero();
