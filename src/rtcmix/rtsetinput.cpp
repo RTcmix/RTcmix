@@ -48,7 +48,7 @@ rtsetinput(float start_time, Instrument *inst)
 // but maybe we should do something about it?  -JGG
       if (inst->inputchans != inputFileTable[index].chans) {
          fprintf(stderr, "WARNING: This instrument's bus config doesn't "
-                         "match the number of channels in the input file.\n");
+                         "match the number of input channels.\n");
       }
 
       if (!inputFileTable[index].is_audio_dev) {
