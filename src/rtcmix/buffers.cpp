@@ -38,8 +38,6 @@ allocate_buffer(int nsamps)
 {
    BufPtr buf_ptr;
 
-   assert(nsamps == RTBUFSAMPS);      /* might be more flexible some day */
-   
    buf_ptr = (BUFTYPE *) calloc(nsamps, sizeof(BUFTYPE));
 
    return buf_ptr;
@@ -49,15 +47,14 @@ allocate_buffer(int nsamps)
 /* ---------------------------------------------- allocate_audioin_buffer --- */
 // called from ??
 int
-allocate_audioin_buffer(short chan)
+allocate_audioin_buffer(short chan, int frames)
 {
    BufPtr buf_ptr;
-   int    nsamps = RTBUFSAMPS;        /* might be more flexible some day */
 
    assert(chan >= 0 && chan < MAXBUS);
 
    if (audioin_buffer[chan] == NULL) {
-      buf_ptr = allocate_buffer(nsamps);
+      buf_ptr = allocate_buffer(frames);
       assert(buf_ptr != NULL);
       audioin_buffer[chan] = buf_ptr;
    }
@@ -69,15 +66,14 @@ allocate_audioin_buffer(short chan)
 /* -------------------------------------------------- allocate_aux_buffer --- */
 // called from bus_config()
 int
-allocate_aux_buffer(short chan)
+allocate_aux_buffer(short chan, int frames)
 {
    BufPtr buf_ptr;
-   int    nsamps = RTBUFSAMPS;        /* might be more flexible some day */
 
    assert(chan >= 0 && chan < MAXBUS);
 
    if (aux_buffer[chan] == NULL) {
-      buf_ptr = allocate_buffer(nsamps);
+      buf_ptr = allocate_buffer(frames);
       assert(buf_ptr != NULL);
       aux_buffer[chan] = buf_ptr;
    }
@@ -87,17 +83,16 @@ allocate_aux_buffer(short chan)
 
 
 /* -------------------------------------------------- allocate_out_buffer --- */
-// called from rtsetparams()?
+/* Called from rtsetparams. */
 int
-allocate_out_buffer(short chan)
+allocate_out_buffer(short chan, int frames)
 {
    BufPtr buf_ptr;
-   int    nsamps = RTBUFSAMPS;        /* might be more flexible some day */
 
    assert(chan >= 0 && chan < MAXBUS);
 
    if (out_buffer[chan] == NULL) {
-      buf_ptr = allocate_buffer(nsamps);
+      buf_ptr = allocate_buffer(frames);
       assert(buf_ptr != NULL);
       out_buffer[chan] = buf_ptr;
    }

@@ -14,9 +14,9 @@ extern "C" {
 typedef (BUFTYPE *) BufPtr;
 
 void init_buf_ptrs(void);
-int allocate_audioin_buffer(short chan);
-int allocate_aux_buffer(short chan);
-int allocate_out_buffer(short chan);
+int allocate_audioin_buffer(short chan, int frames);
+int allocate_aux_buffer(short chan, int frames);
+int allocate_out_buffer(short chan, int frames);
 void copy_interleaved_buf_to_one_buf(BufPtr dest, const BufPtr src,
                                 int src_chans, int src_chan, int dest_frames);
 void copy_one_buf_to_interleaved_buf(BufPtr dest, const BufPtr src,
