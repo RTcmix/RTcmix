@@ -148,9 +148,11 @@ setup_oss_device(
    assert(fd >= 0);
 
    // FIXME: Is this really supposed to go before the others?  -JG
-   if (ioctl(fd, SNDCTL_DSP_SETDUPLEX, &tmp) == -1) {
-      perror("SNDCTL_DSP_SETDUPLEX");
-      return -1;
+   if (full_duplex) {
+      if (ioctl(fd, SNDCTL_DSP_SETDUPLEX, &tmp) == -1) {
+         perror("SNDCTL_DSP_SETDUPLEX");
+         return -1;
+      }
    }
 
    /* Set buffering parameters (number of fragments and fragment size).
