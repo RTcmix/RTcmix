@@ -32,7 +32,6 @@ endif
 	@echo "install done."; echo ""
 
 H::
-	@if test ! -d $(LIBDESTDIR); then mkdir $(LIBDESTDIR); fi;
 	@echo "making H..."
 	@cd H; $(MAKE) all
 	@echo "done."; echo""
@@ -60,6 +59,9 @@ sndlib::
 	@echo "done.";echo""
 
 lib::
+ifeq ($(ARCH),SGI)   # do only for SGI, which needs this for so_locations file
+	@if test ! -d $(LIBDESTDIR); then mkdir $(LIBDESTDIR); fi;
+endif
 	@echo "making lib..."
 	@cd lib; $(MAKE) all
 	@echo "done.";echo""
