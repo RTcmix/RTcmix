@@ -21,11 +21,10 @@ Arg::printInline(FILE *stream) const
 		fprintf(stream, "\"%s\" ", _val.string);
 		break;
 	case HandleType:
-		fprintf(stream, "%sHandle:%p",
+		fprintf(stream, "%sHndl:",
 				_val.handle->type == PFieldType ? "PF" :
 				_val.handle->type == InstrumentPtrType ? "Inst" :
-				_val.handle->type == PFieldType ? "AudioStr" : "Unknown",
-				_val.handle);
+				_val.handle->type == PFieldType ? "AudioStr" : "Unknown");
 		if (_val.handle->type == PFieldType) {
 			// Print PField start and end values.
 			PField *pf = (PField *) _val.handle->ptr;
