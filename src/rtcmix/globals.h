@@ -6,11 +6,9 @@
 #ifndef _GLOBALS_H_ 
 #define _GLOBALS_H_ 1
 
-#include "version.h"
-#include "buffers.h"
-
-/* MAXBUS is one greater than the total number of useable buses. */
-#define MAXBUS 33
+#include <version.h>
+#include <buffers.h>
+#include <bus.h>
 
 #ifdef MAIN
 #define GLOBAL
@@ -70,7 +68,7 @@ GLOBAL int netplay;     // for remote sound network playing
 /* for more than 1 socket, set by -s flag to CMIX as offset from MYPORT */
 GLOBAL int socknew;
 
-/* used in intraverse.C, traverse.C and rtsendsamps.c */
+/* used in intraverse.C, rtsendsamps.c */
 GLOBAL unsigned long bufStartSamp;
 GLOBAL long elapsed;
 typedef enum {
@@ -130,11 +128,6 @@ GLOBAL BufPtr out_buffer[MAXBUS];
 GLOBAL int rtfileit;
 GLOBAL int rtoutfile;
 
-/* This should probably go someplace else in this file? */
-typedef enum {
-  NO = 0,
-  YES
-} Bool;
 
 GLOBAL short AuxToAuxPlayList[MAXBUS]; /* The playback order for AUX buses */
 GLOBAL short ToOutPlayList[MAXBUS]; /* The playback order for AUX buses */
