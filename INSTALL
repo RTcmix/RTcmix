@@ -76,12 +76,13 @@ Ib.  Compile and install the core
 ---------------------------------
 
 1) Unpack the RTcmix archive into any directory on your machine
-   (e.g., with "gunzip -c RTcmix-3.0.1.tar.gz | tar xf -").
-   This will create a directory called "RTcmix-3.0.1" with all
+   (e.g., with "gunzip -c RTcmix-3.1.0.tar.gz | tar xf -").
+   This will create a directory called "RTcmix-3.1.0" with all
    the core source inside. We call this the "RTcmix directory" below.
 
 2) Edit "makefile.conf" inside this directory.
    Make sure TOPDIR and LIBDESTDIR are right for your situation.
+   Mac OS X users must change the definition of ARCH to MACOSX.
    SGI users must change the definition of ARCH to SGI, and change
    the compiler optimization flags, as suggested in the comments there.
 
@@ -130,8 +131,8 @@ Ic.  Compile and install separate packages
 ------------------------------------------
 
 Packages usually contain additional instruments. The base distribution
-only contains MIX, mix, WAVETABLE and wavetable, so you'll want to grab
-at least the "insts.std" package. Here's how to install packages:
+only contains MIX and WAVETABLE, so you'll want to grab at least the
+"insts.std" package. Here's how to install packages:
 
 1) cd into your RTcmix directory
 
