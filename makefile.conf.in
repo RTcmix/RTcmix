@@ -46,7 +46,7 @@ ifeq ($(ARCH),SGI)
   CC = cc  -Xcpluscomm
   CXX = CC
   LD = ld
-  MAKE = gnumake
+  MAKE = gmake
   INSTALL = cp -f
   SHELL = /bin/bash
   # Using the default /bin/sh on SGI complains about any Makefile
