@@ -602,6 +602,12 @@ int LPCIN::localInit(float p[], int n_args)
 			_inChannel, inputChannels());
 	}
 					   	
+	float dummy1, dummy2, dummy3;
+	GetConfiguration(&dummy1,
+					 &dummy2,
+					 &dummy3,
+					 &_autoCorrect);	// All we use is auto-correct here
+
 	// Duration can be calculated from frame count
 
 	const float defaultFrameRate = 112.0;
@@ -664,6 +670,11 @@ int LPCIN::run()
 //			   _frameno, (int)_frames, currentFrame(), nsamps);
 		if (_dataSet->getFrame(_frameno,_coeffs) == -1)
 			break;
+
+		// If requested, stabilize this frame before using
+		if (_autoCorrect)
+			stabilize(_coeffs, _nPoles);
+
 		_ampmlt = _amp * _coeffs[RESIDAMP] / 10000.0;	// XXX normalize this!
 		float newpch = (_coeffs[PITCH] > 0.0) ? _coeffs[PITCH] : 256.0;
 
