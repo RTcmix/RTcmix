@@ -13,7 +13,7 @@
    p5 (sharpness) is just the number of filters to add in series. Using more
    than 1 decreases the actual bandwidth of the total filter. This sounds
    different from decreasing the bandwith of 1 filter using the bandwidth
-   curve. described below. (Mainly, it further attenuates sound outside the
+   curve, described below. (Mainly, it further attenuates sound outside the
    passband.) If you don't set p6 (balance) to 1, you'll need to change p3
    (amp) to adjust for loss of power caused by connecting several filters
    in series. Guard your ears!
