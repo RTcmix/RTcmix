@@ -174,7 +174,7 @@ minc_binop_handle_float(const MincHandle mhandle, const MincFloat val, OpKind op
 {
    Handle return_handle;
 
-   DPRINT2("minc_binop_handle_float (handle=%p, val=%f\n", handle, val);
+   DPRINT2("minc_binop_handle_float (handle=%p, val=%f\n", mhandle, val);
 
 	// Extract PField from MincHandle.
 	Handle handle = (Handle) mhandle;
@@ -193,7 +193,7 @@ minc_binop_handle_float(const MincHandle mhandle, const MincFloat val, OpKind op
 MincHandle
 minc_binop_handles(const MincHandle mhandle1, const MincHandle mhandle2, OpKind op)
 {
-	DPRINT2("minc_binop_handles (handle1=%p, handle2=%p\n", handle1, handle2);
+	DPRINT2("minc_binop_handles (handle1=%p, handle2=%p\n", mhandle1, mhandle2);
 
 	// Extract PFields from MincHandles
 	
