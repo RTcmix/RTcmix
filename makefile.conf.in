@@ -62,7 +62,10 @@ CMIX_FLAGS += -DEXIT_ON_ERROR
 
 # This is the default for non-Linux systems -- leave it, and override below
 # if you are running LINUX
-AUDIODRIVER=AUTO
+AUDIODRIVER = AUTO
+
+# Uncomment to enable new experimental pfield update scheme and Minc v.2
+#PFIELD_CLASS_SUPPORT = TRUE
 
 ###############################################################
 # Linux sound driver flags -- ignore for Irix and Mac OS X
@@ -143,6 +146,9 @@ INCLUDES = -I$(CMIXDIR)/H
 
 ifeq ($(NPLAY_SUPPORT), TRUE)
 CMIX_FLAGS += -DNETAUDIO
+endif
+ifeq ($(PFIELD_CLASS_SUPPORT), TRUE)
+CMIX_FLAGS += -DPFIELD_CLASS
 endif
 
 CFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
