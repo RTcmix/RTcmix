@@ -209,7 +209,8 @@ extern "C" {
 		  
 		  Iptr->setchunk(chunksamps);  // set "chunksamps"
 		  
-		  Iptr->exec();    // write the samples * * * * * * * * * * * 
+//FIXME: DT, can you fill in these args?
+		  Iptr->exec(bus_type, bus_number);    // write the samples * * * * * * * * * * * 
 		  
 		  // ReQueue or delete - - - - - - - - - - - - - - - - - - -
 		  if (endsamp > bufEndSamp) {
