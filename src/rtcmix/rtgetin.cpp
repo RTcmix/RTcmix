@@ -58,6 +58,65 @@
 
 
 
+/* ------------------------------------------------------------ rtinrepos --- */
+/* Change rt input sound file position pointer, in preparation for a
+   subsequent call to rtgetin.  Designed for use by instruments that 
+   want to reposition the input file arbitrarily (like REVMIX, which
+   reads a file backwards).
+
+   <whence> works just as in lseek: it specifies the point from which
+   to move <frames> number of frames.  <frames> can be negative.
+   Values of <whence> are SEEK_SET, SEEK_CUR and SEEK_END, all defined
+   in <unistd.h>.
+
+   This function doesn't actually do an lseek on the file yet -- that
+   happens inside of rtgetin -- this merely updates the instrument's
+   <fileOffset> for the next read.
+*/
+int
+rtinrepos(Instrument *inst, int frames, int whence)
+{
+   int   fdindex, fd, datum_size;
+   off_t bytes;
+
+   fdindex = inst->fdIndex;
+
+   if (fdindex == NO_DEVICE_FDINDEX || inputFileTable[fdindex].is_audio_dev) {
+      fprintf(stdin,
+            "rtinrepos: request to reposition input, but input is not a file.");
+   }
+
+   fd = inputFileTable[fdindex].fd;
+
+   if (inputFileTable[fdindex].is_float_format)
+      datum_size = sizeof(float);
+   else
+      datum_size = 2;
+
+   bytes = frames * inst->inputchans * datum_size;
+
+   switch (whence) {
+      case SEEK_SET:
+         assert(bytes >= 0);
+         inst->fileOffset = inputFileTable[fdindex].data_location + bytes;
+         break;
+      case SEEK_CUR:
+         inst->fileOffset += bytes;
+         break;
+      case SEEK_END:
+         fprintf(stderr, "rtinrepos: SEEK_END unimplemented\n");
+         exit(1);
+         break;
+      default:
+         fprintf(stderr, "Instrument error: rtinrepos: invalid <whence>\n");
+         exit(1);
+         break;
+   }
+
+   return 0;
+}
+
+
 /* ----------------------------------------------------------- get_aux_in --- */
 static int
 get_aux_in(
