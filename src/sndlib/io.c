@@ -1638,7 +1638,7 @@ char *mus_format(const char *format, ...)
   return(buf);
 }
 
-Float mus_fclamp(Float lo, Float val, Float hi) 
+MusFloat mus_fclamp(MusFloat lo, MusFloat val, MusFloat hi) 
 {
   if (val > hi) 
     return(hi); 

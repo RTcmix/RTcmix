@@ -193,7 +193,7 @@
   #define MUS_SAMPLE_MAX ((MUS_SAMPLE_BITS < 32) ? (MUS_FLOAT_TO_FIX - 1) : 0x7fffffff)
   #define MUS_SAMPLE_MIN ((MUS_SAMPLE_BITS < 32) ? (-(MUS_FLOAT_TO_FIX)) : -0x7fffffff)
 #else
-  /* this could use Float throughout and reflect the Float = double choice elsewhere */
+  /* this could use MusFloat throughout and reflect the Float = double choice elsewhere */
   #define MUS_SAMPLE_TYPE float
   #ifndef MUS_SAMPLE_BITS
     #define MUS_SAMPLE_BITS 24
@@ -332,8 +332,9 @@ enum {MUS_NO_ERROR, MUS_NO_FREQUENCY, MUS_NO_PHASE, MUS_NO_GEN, MUS_NO_LENGTH,
 
 #define MUS_MAX_FILE_NAME 256
 
-#ifndef Float
-  #define Float float
+// JGG: was Float, but that conflicts with our own Float in rtcmix_types.h
+#ifndef MusFloat
+  #define MusFloat float
 #endif
 
 BEGIN_DECLS
@@ -521,7 +522,7 @@ unsigned int mus_char_to_ubint      PROTO((const unsigned char *inp));
 unsigned int mus_char_to_ulint      PROTO((const unsigned char *inp));
 
 int mus_iclamp                      PROTO((int lo, int val, int hi));
-Float mus_fclamp                    PROTO((Float lo, Float val, Float hi));
+MusFloat mus_fclamp                 PROTO((MusFloat lo, MusFloat val, MusFloat hi));
 
 #if LONG_INT_P
   MUS_SAMPLE_TYPE *mus_table2ptr    PROTO((int arr));
