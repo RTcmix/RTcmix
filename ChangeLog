@@ -7,6 +7,7 @@ Tuesday, May 16, 2000 John Gibson <johngibson@virginia.edu>
      productive use of -Wall when compiling.
    * New message functions advise(), warn() and die() for use
      by instruments and others.
+   * Add README.inst_porting and an instrument sample code dir.
 
 Friday, May 12, 2000 John Gibson <johngibson@virginia.edu>
 
