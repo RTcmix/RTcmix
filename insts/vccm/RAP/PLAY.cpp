@@ -19,7 +19,7 @@ PLAY::~PLAY()
 	delete [] in;
 }
 
-int PLAY::init(double p[], short n_args)
+int PLAY::init(double p[], int n_args)
 {
 // p0 = outsk; p1 = insk; p2 = duration (-endtime); p3 = amp; p4 = aud_idx
 // setline info is in gen table 1

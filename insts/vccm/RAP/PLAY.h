@@ -7,7 +7,7 @@ class PLAY : public Instrument {
 public:
 	PLAY();
 	virtual ~PLAY();
-	int init(double*, short);
+	int init(double*, int);
 	int configure();
 	int run();
 	};

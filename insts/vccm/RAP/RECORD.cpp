@@ -27,7 +27,7 @@ RECORD::~RECORD()
 	delete [] in;
 }
 
-int RECORD::init(double p[], short n_args)
+int RECORD::init(double p[], int n_args)
 {
 // p0 = start; p1 = duration (-endtime); p2 = inchan; p3 = audio index
 
