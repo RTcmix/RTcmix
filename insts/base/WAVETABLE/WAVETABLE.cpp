@@ -1,20 +1,36 @@
-#include <iostream.h>
+/* WAVETABLE -- simple wavetable oscillator instrument
+ 
+   p0 = start time
+   p1 = duration
+   p2 = amp *
+   p3 = frequency (Hz or oct.pc **)
+   p4 = pan (in percent-to-left form: 0-1) [optional; default is 0]
+   p5 = reference to wavetable [optional; if missing, must use gen 2 ***]
+
+   p2 (amplitude), p3 (freq) and p4 (pan) can receive dynamic updates
+   from a table or real-time control source.
+
+   * If an old-style gen table 1 is present, its values will be multiplied
+   by the p2 amplitude multiplier, even if the latter is dynamic.
+
+   ** oct.pc format generally will not work as you expect for p3 (osc freq)
+   if the pfield changes dynamically.  Use Hz instead in that case.
+
+   *** If p5 is missing, you must use an old-style gen table 2 for the
+   oscillator waveform.
+
+                                                rev for v4, JGG, 7/12/04
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "WAVETABLE.h"
 #include <rt.h>
 #include <rtdefs.h>
 
-#ifdef COMPATIBLE_FUNC_LOCS
-  #define AMP_GEN_SLOT     2
-  #define WAVET_GEN_SLOT   1
-#else
-  #define AMP_GEN_SLOT     1        /* so that we can use setline instead */
-  #define WAVET_GEN_SLOT   2
-#endif
+#define AMP_GEN_SLOT     1
+#define WAVET_GEN_SLOT   2
 
 
 WAVETABLE::WAVETABLE() : Instrument()
@@ -22,81 +38,116 @@ WAVETABLE::WAVETABLE() : Instrument()
 	branch = 0;
 }
 
+WAVETABLE::~WAVETABLE()
+{
+	delete osc;
+}
+
 int WAVETABLE::init(double p[], int n_args)
 {
-// p0 = start; p1 = dur; p2 = amplitude; p3 = frequency; p4 = stereo spread;
-// real-time control enabled for p3 and p4
+	float outskip = p[0];
+	float dur = p[1];
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	nsamps = rtsetoutput(outskip, dur, this);
+	if (outputChannels() > 2)
+		return die("WAVETABLE", "Can't handle more than 2 output channels.");
 
+	freqraw = p[3];
+	float freq;
+	if (freqraw < 15.0)
+		freq = cpspch(freqraw);
+	else
+		freq = freqraw;
 
-	if (outputchans > 2)
-		die("WAVETABLE", "Can't handle more than 2 output channels.");
-
-	wavetable = floc(WAVET_GEN_SLOT);
-	if (wavetable == NULL) {
-		die("WAVETABLE", "You need to store a waveform in function %d.",
-							WAVET_GEN_SLOT);
-		return(DONT_SCHEDULE);
+	wavetable = NULL;
+	int tablelen = 0;
+#if 0   // handle table coming in as optional p5 TablePField
+	if (n_args > 5) {
+		wavetable = getTable(5, &tablelen);
 	}
-	len = fsize(WAVET_GEN_SLOT);
+	if (wavetable == NULL) {
+		wavetable = floc(WAVET_GEN_SLOT);
+		if (wavetable == NULL)
+			return die("WAVETABLE", "Either use the wavetable pfield (p5) or make "
+                    "an old-style gen function in slot %d.", WAVET_GEN_SLOT);
+		tablelen = fsize(WAVET_GEN_SLOT);
+	}
+#else
+	wavetable = floc(WAVET_GEN_SLOT);
+	if (wavetable == NULL)
+		return die("WAVETABLE", "You need to store a waveform in function %d.",
+                                                               WAVET_GEN_SLOT);
+	tablelen = fsize(WAVET_GEN_SLOT);
+#endif
 
-	if (p[3] < 15.0) p[3] = cpspch(p[3]);
-	si = p[3] * (float)len/SR;
-	phase = 0.0;
-	amp = p[2];
-	
+	osc = new Ooscili(freq, wavetable, tablelen);
+
 	amptable = floc(AMP_GEN_SLOT);
 	if (amptable) {
-		alen = fsize(AMP_GEN_SLOT);
-		tableset(p[1], alen, tabs);
+		int alen = fsize(AMP_GEN_SLOT);
+		tableset(dur, alen, amptabs);
 	}
-	else
-		advise("WAVETABLE", "Setting phrase curve to all 1's.");
-	aamp = amp;
-	
-	spread = p[4];
-	skip = (int)(SR/(float)resetval);
 
-	return(nsamps);
+	skip = (int) (SR / (float) resetval);
+
+	return nSamps();
+}
+
+void WAVETABLE::doupdate(double p[])
+{
+	amp = p[2];
+	if (amptable)
+		amp *= table(currentFrame(), amptable, amptabs);
+
+	if (p[3] != freqraw) {
+		float freq;
+		freqraw = p[3];
+		if (freqraw < 15.0)
+			freq = cpspch(freqraw);
+		else
+			freq = freqraw;
+		osc->setfreq(freq);
+	}
+
+	spread = p[4];
 }
 
 int WAVETABLE::run()
 {
-	int i;
-	float out[2];
-	float tfreq,tamp,tdur,tspread;
-	
-	for (i = 0; i < chunksamps; i++) {
-		if (--branch < 0) {
-			if (amptable)
-				aamp = tablei(cursamp, amptable, tabs) * amp;
+	for (int i = 0; i < framesToRun(); i++) {
+		if (--branch <= 0) {
+			double p[5];
+			update(p, 5);
+			doupdate(p);
 			branch = skip;
 		}
-		out[0] = oscili(aamp, si, wavetable, len, &phase);
-		
-		if (outputchans == 2) { /* split stereo files between the channels */
-		out[1] = (1.0 - spread) * out[0];
-		out[0] *= spread;
+
+		float out[2];
+
+		out[0] = osc->next() * amp;
+
+		if (outputChannels() == 2) {
+			out[1] = (1.0 - spread) * out[0];
+			out[0] *= spread;
 		}
-	  
+
 		rtaddout(out);
-		cursamp++;
-		}
-	return i;
+		increment();
+	}
+	return framesToRun();
 }
 
-Instrument*
-makeWAVETABLE()
+
+Instrument *makeWAVETABLE()
 {
 	WAVETABLE *inst;
 	inst = new WAVETABLE();
-    inst->set_bus_config("WAVETABLE");
+	inst->set_bus_config("WAVETABLE");
 	return inst;
 }
 
-void
-rtprofile()
+void rtprofile()
 {
-	RT_INTRO("WAVETABLE",makeWAVETABLE);
+	RT_INTRO("WAVETABLE", makeWAVETABLE);
 }
+

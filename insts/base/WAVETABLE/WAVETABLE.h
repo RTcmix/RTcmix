@@ -1,12 +1,15 @@
-class WAVETABLE : public Instrument {
-   float *wavetable,si,phase,amp,aamp;
-   float *amptable,tabs[2];
-   float spread;
-   int len,alen;
-	int skip, branch;
+#include <Ougens.h>
 
+class WAVETABLE : public Instrument {
+	int skip, branch;
+	float amp, freqraw, spread;
+	float *wavetable, *amptable, amptabs[2];
+	Ooscili *osc;
+
+	void doupdate(double p[]);
 public:
 	WAVETABLE();
-        int init(double p[], int n_args);
-        int run();
-        };
+	virtual ~WAVETABLE();
+	virtual int init(double p[], int n_args);
+	virtual int run();
+};
