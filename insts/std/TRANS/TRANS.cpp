@@ -45,6 +45,7 @@ inline float interp(float y0, float y1, float y2, float t)
 TRANS :: TRANS() : Instrument()
 {
    in = NULL;
+   branch = 0;
 
    incount = 1;
    counter = 0.0;
@@ -127,7 +128,7 @@ int TRANS :: init(float p[], int n_args)
 int TRANS :: run()
 {
    const int out_frames = chunksamps;
-   int       i, branch = 0;
+   int       i;
    float     aamp, *outp;
    double    frac;
 

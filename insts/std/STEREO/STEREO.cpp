@@ -22,6 +22,7 @@
 STEREO::STEREO() : Instrument()
 {
 	in = NULL;
+	branch = 0;
 }
 
 STEREO::~STEREO()
@@ -81,7 +82,6 @@ int STEREO::run()
 	int i,j,rsamps;
 	float out[2];
 	float aamp;
-	int branch;
 
 	if (in == NULL)    /* first time, so allocate it */
 		in = new float [RTBUFSAMPS * inputchans];
@@ -94,7 +94,6 @@ int STEREO::run()
 
 	aamp = amp;        /* in case amptable == NULL */
 
-	branch = 0;
 	for (i = 0; i < rsamps; i += inputchans)  {
 		if (--branch < 0) {
 			if (amptable)

@@ -2,7 +2,7 @@
 #include <rtdefs.h>
 
 class TRANS : public Instrument {
-   int    incount, inframe, skip, inchan, get_frame;
+   int    incount, inframe, skip, branch, inchan, get_frame;
    int    in_frames_left;
    double increment, counter;
    float  amp, pctleft;
