@@ -13,6 +13,6 @@ typedef union {
 } YYSTYPE;
 
 // This is to make bison 1.875 (et al) happy.
-#define YYSTYPE_IS_DEFINED
+#define YYSTYPE_IS_DECLARED
 
 #endif // _YYSTYPE_H_ 1
