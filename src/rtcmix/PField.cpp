@@ -480,7 +480,9 @@ double InvertPField::doubleValue(double didx) const
 
 double InvertPField::doubleValue(int idx) const
 {
-	return doubleValue((double) idx);
+	const double center = _centerPField->doubleValue(idx);
+	const double diff = field()->doubleValue(idx) - center;
+	return center - diff;
 }
 
 // RangePField
@@ -629,7 +631,16 @@ double ClipPField::doubleValue(double didx) const
 
 double ClipPField::doubleValue(int idx) const
 {
-	return doubleValue((double) idx);
+	double val = field()->doubleValue(idx);
+	const double min = _minPField->doubleValue(idx);
+	if (val < min)
+		return min;
+	else if (_maxPField) {
+		const double max = _maxPField->doubleValue(idx);
+		if (val > max)
+			return max;
+	}
+	return val;
 }
 
 // ConstrainPField
@@ -776,7 +787,14 @@ double DataFileWriterPField::doubleValue(double didx) const
 
 double DataFileWriterPField::doubleValue(int idx) const
 {
-	return doubleValue((double) idx);
+	const double val = field()->doubleValue(idx);
+	if (_datafile) {
+		if (_datafile->writeOne(val) != 0) {
+			delete _datafile;
+			_datafile = NULL;
+		}
+	}
+	return val;
 }
 
 // ConverterPField
