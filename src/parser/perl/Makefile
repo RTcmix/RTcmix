@@ -7,6 +7,13 @@ XS_FILE = $(EXT_NAME).xs
 PM_FILE = $(EXT_NAME).pm
 FUNCLIST = funclist
 FUNCEXCEPT = funcexcept
+ifeq ($(ARCH),MACOSX)
+  XT_SUFFIX = .bundle
+  FIND_FLAG = -H
+else
+  XT_SUFFIX = .so
+  FIND_FLAG = 
+endif
 
 all: RT_extension
 
@@ -14,7 +21,7 @@ all: RT_extension
 # changed.  Not really what we want, but it's annoying to have
 # to remake this stuff every time you make at the top level...
 $(FUNCLIST): $(FUNCEXCEPT)
-	perl -w make_funclist.pl $(CMIXDIR)
+	perl -w make_funclist.pl $(CMIXDIR) $(FIND_FLAG)
 
 $(XS_DIR)/$(XS_FILE): $(FUNCLIST)
 	perl -w make_rtxs.pl $(CMIXDIR) $(EXT_NAME) > $(XS_DIR)/$(XS_FILE)

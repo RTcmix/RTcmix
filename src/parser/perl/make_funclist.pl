@@ -5,15 +5,21 @@
 # is no way to add other names to this file (such as would be needed for
 # user functions).   -JGG, 28-Jul-00
 
-$cmixdir = $ARGV[0];               # location of rtcmix passed in as arg
+$cmixdir = $ARGV[0];             # location of rtcmix passed in as arg
 $output = "./funclist";
 $exceptions = "./funcexcept";
 $grep = "grep";
+if ($#ARGV == 1) {
+   $find = "find $ARGV[1]";      # flag to pass to find command (OSX needs -H)
+}
+else {
+   $find = "find";
+}
 
 # Grep through RTcmix src tree for functions in UG_INTRO and RT_INTRO macros.
-$cmd = "find $cmixdir -name \"*.[cC]\" | xargs $grep UG_INTRO";
+$cmd = "$find $cmixdir -name \"*.[cC]\" | xargs $grep UG_INTRO";
 @oldcmix = `$cmd`;
-$cmd = "find $cmixdir -name \"*.[cC]\" | xargs $grep RT_INTRO";
+$cmd = "$find $cmixdir -name \"*.[cC]\" | xargs $grep RT_INTRO";
 @list = `$cmd`;
 push(@list, @oldcmix);
 
