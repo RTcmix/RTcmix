@@ -338,7 +338,7 @@ int ALSAAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 		}
 		snd_pcm_sw_params_free(swParams);
 	}
-	PRINT1("writesize set to %d\n", tryperiodsize);
+	PRINT1("writesize set to %ld\n", tryperiodsize);
 	*pWriteSize = tryperiodsize;
 	return getstatus(status);
 }
