@@ -6,11 +6,6 @@ include ../package.conf
 OBJS = MIX.o
 PROGS = MIX PMIX PYMIX
 
-ifeq ($(ARCH), LINUX)
-   DYN = -rdynamic
-else
-   DYN =
-endif
 ifeq ($(ARCH), MACOSX_10.0)
    WORKAROUND = osx_workaround.o
 endif
