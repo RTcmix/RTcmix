@@ -12,7 +12,8 @@
 #include <globals.h>
 #include <prototypes.h>
 #include <lock.h>
-  
+ 
+#include <iostream.h> 
 //#define PRINTPLAY
 //#define DEBUG
 //#define PRINTALL
@@ -155,6 +156,7 @@ print_parents() {
 static void
 print_children() {
   int i;
+
   printf("Aux buses w/o aux outputs:  "); 
   for(i=0;i<MAXBUS;i++) {
 	pthread_mutex_lock(&aux_in_use_lock);
@@ -403,6 +405,11 @@ insert_bus_slot(char *name, BusSlot *slot) {
 				pthread_mutex_lock(&bus_in_config_lock);
 				Bus_In_Config[s_out]->bus_list[t_in_count] = s_in;
 				Bus_In_Config[s_out]->bus_count++;
+
+// BGG -- my bus-wrapping hackeroo!  go brad go!  :-)
+				if (Bus_In_Config[s_out]->bus_count >= MAXBUS)
+					Bus_In_Config[s_out]->bus_count = 0;
+
 				pthread_mutex_unlock(&bus_in_config_lock);
 				pthread_mutex_lock(&has_child_lock);
 				HasChild[s_in] = YES;
@@ -716,7 +723,6 @@ double bus_config(float p[], int n_args, double pp[])
    anint = (int)pp[0];
    str = (char *)anint;
    instname = strdup(str);	// Note:  If we exit nonfatally, we have to free.
-
    for (i = 1; i < n_args; i++) {
       anint = (int)pp[i];
       busname = (char *)anint;
