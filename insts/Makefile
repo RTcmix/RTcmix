@@ -1,8 +1,7 @@
 include ../makefile.conf
 
-# This adds optional dirs to list automatically if they are present.
-
-DIRS = base `find . -type d -mindepth 1 -maxdepth 1 | sed -e '/CVS/d'`
+# This finds all dirs in this directory (except for CVS/).
+DIRS = `find . -type d -mindepth 1 -maxdepth 1 | sed -e '/CVS/d'`
 
 .PHONY: all progs base std dsos standalone install dso_install \
 	standalone_install uninstall dso_uninstall standalone_uninstall \
@@ -11,13 +10,14 @@ DIRS = base `find . -type d -mindepth 1 -maxdepth 1 | sed -e '/CVS/d'`
 all: do_package
 	@for DIR in $(DIRS); \
 	do \
-	  ( cd $$DIR; $(MAKE) $(MFLAGS) all; ) \
+	  ( cd $$DIR; echo "making all in $$DIR..."; \
+	  $(MAKE) $(MFLAGS) all; echo "done in $$DIR" ); \
 	done
 
 do_package:
 	@for DIR in $(DIRS); \
 	do \
-	( cd $$DIR; echo "include $(MAKEFILE_CONF)" > package.conf; )\
+	  ( cd $$DIR; echo "include $(MAKEFILE_CONF)" > package.conf; )\
 	done
 
 base: do_package
@@ -81,9 +81,14 @@ clean:
 	@for DIR in $(DIRS); \
 	do \
 	  ( cd $$DIR; echo "making clean in $$DIR..."; \
-		$(MAKE) $(MFLAGS) clean; \
-		$(RM) package.conf ); \
+		$(MAKE) $(MFLAGS) clean ); \
 	done
 
 cleanall: clean uninstall
+
+distclean: cleanall
+	@for DIR in $(DIRS); \
+	do \
+	  $(RM) $$DIR/package.conf; \
+	done
 
