@@ -1,3 +1,7 @@
+Thursday, Feb 14, 2002 John Gibson <johgibso@indiana.edu>
+
+   * Fix bug: convolve would hang if the impulse response file was mono.
+
 Wednesday, Feb 13, 2002 John Gibson <johgibso@indiana.edu>
 
    * Let fdump write to a file, optionally.
