@@ -15,7 +15,7 @@ vib = maketable("wave3", "nonorm", 1000, dur*10, 4, 0)
 
 pan = maketable("line", 100, 0,0, 1,1, 2,0.5)
 
-wavt = maketable("wave", 1000, 1, 0.5, 0.3, 0.2, 0.1, 0.1)
+wavt = maketable("wave", 4000, 1, 0.5, 0.3, 0.2, 0.1, 0.1)
 
 start = 0
 for (n = 0; n < numnotes; n += 1) {
