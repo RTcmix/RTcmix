@@ -172,8 +172,8 @@ int PFieldBinaryOperator::copyValues(double *array) const
 // LFOPField
 
 LFOPField::LFOPField(double krate, double *tableArray, int length,
-		PField *freq, PField *amp, LFOPField::InterpFunction ifun)
-	: SingleValuePField(0.0), _freqPF(freq), _ampPF(amp), _interpolator(ifun)
+		PField *freq, LFOPField::InterpFunction ifun)
+	: SingleValuePField(0.0), _freqPF(freq), _interpolator(ifun)
 {
 	_oscil = new Ooscili(krate, _freqPF->doubleValue(0), tableArray, length);
 }
@@ -198,7 +198,7 @@ double LFOPField::doubleValue(double percent) const
 	if (percent > 1.0)
 		percent = 1.0;
 	_oscil->setfreq(_freqPF->doubleValue(percent));
-	return (*_interpolator)(_oscil) * _ampPF->doubleValue(percent);
+	return (*_interpolator)(_oscil);
 }
 
 // TablePField

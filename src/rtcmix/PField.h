@@ -146,15 +146,14 @@ public:
 	static double Interpolate1stOrder(Ooscili *oscil);
 public:
 	LFOPField(double krate, double *tableArray, int length, PField *freq,
-					PField *amp, InterpFunction fun=Interpolate1stOrder);
+								InterpFunction fun=Interpolate1stOrder);
 	virtual double	doubleValue(double) const;
 protected:
 	virtual ~LFOPField();
 private:
 	Ooscili *_oscil;
 	PField *_freqPF;
-	PField *_ampPF;
-	InterpFunction		_interpolator;
+	InterpFunction	_interpolator;
 };
 
 // Class for interpolated reading of table.
