@@ -40,7 +40,7 @@ static float *array, tabs[2];         /* for setline */
 
    functions: (stt variation changes are linear)
 
-      1              grain envelope
+      1              overall envelope (or setline)
 
       shape of change:
       2              grain density
@@ -56,7 +56,7 @@ static float *array, tabs[2];         /* for setline */
       6              shape of change: c:m ratio
       7              shape of change: mi
 
-      8              overall envelope (setline)
+      8 (was 1)      grain envelope
 */
 
 double
@@ -90,13 +90,19 @@ int n_args; /* number of p-fields */
 
 	nsamps = setnote(p[0],p[1],1); /* set file position */
 
+	array = floc(1);             /* used to be setline  -JGG */
+	if (array) {
+		int amplen = fsize(1);
+		tableset(p[1], amplen, tabs);
+	}
+	else
+		printf("Setting phrase curve to all 1's\n");
+
 	wave = floc(6); /* finds starting loc. of waveform */
 	len = fsize(6); /* length of playing waveform function */
-	envel = floc(1);
-	if (envel == NULL) {
-		fprintf(stderr, "You need to store the grain envelope  in function 1.\n");
-		exit(1);
-	}
+
+	envel = floc(8);  /* NOTE: used to be floc(1), now stolen by setline  -JGG */
+	/* NOTE: fsize(8) called in loop below */
 
 	bgrainsamps = grainsamps = p[14] * SR;
 	bgraindist = p[3] * SR;
@@ -148,20 +154,12 @@ int n_args; /* number of p-fields */
 	gstt_var = 0;
 	count = 0;
 
-	array = floc(8);             /* used to be setline  -JGG */
-	if (array) {
-		int amplen = fsize(8);
-		tableset(p[1], amplen, tabs);
-	}
-	else
-		printf("Setting phrase curve to all 1's\n");
-
 	j = 0; /* "branch once a cycle" loop for amp envelope */
 
 	for(i = 0; i < nsamps; i++) {
 		count++;
 		phase = 0;
-		tableset(grainsamps/SR,fsize(1),tab);
+		tableset(grainsamps/SR,fsize(8),tab);
 		if(!randflag) {
 			lo = p[29] + flodiff*tablei(i,freq_shape,tab5);
 			mid = p[30] + fmiddiff*tablei(i,freq_shape,tab5);
