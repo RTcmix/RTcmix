@@ -1,8 +1,8 @@
 /* VOCODE2 - channel vocoder
 
-   Performs a filter-bank analysis of the left input channel (the modulator),
+   Performs a filter-bank analysis of the right input channel (the modulator),
    and uses the time-varying energy measured in the filter bands to control
-   a corresponding filter bank that processes the right input channel (the
+   a corresponding filter bank that processes the left input channel (the
    carrier).  The two filter banks have identical characteristics, but there
    is a way to shift all of the center frequencies of the carrier's bank.
 
