@@ -149,7 +149,7 @@ int
 combine_gens(int destslot, int srcslot1, int srcslot2, int normalize,
                                     GenModType modtype, char *funcname)
 {
-   int      i, length_difference;
+   int      i;
    int      destindex, srcindex1, srcindex2;
    int      destsize, srcsize1, srcsize2;
    float    *destarray, *srcarray1, *srcarray2, *tmparray = NULL;
@@ -177,12 +177,10 @@ combine_gens(int destslot, int srcslot1, int srcslot2, int normalize,
    srcarray1 = farrays[srcindex1];
    srcarray2 = farrays[srcindex2];
 
-   length_difference = (srcsize1 != srcsize2);
-
    /* If necessary, resample shorter table so that it uses same number of
       slots as the longer table.  (Code came from objlib/NZero.C.)
    */
-   if (length_difference) {
+   if (srcsize1 != srcsize2) {
       int   oldsize;
       float *oldarray, incr, f, frac, next, diff = 0.0;
 
@@ -245,7 +243,7 @@ combine_gens(int destslot, int srcslot1, int srcslot2, int normalize,
          break;
    }
 
-   if (length_difference)
+   if (tmparray)
       free(tmparray);
 
    if (normalize) {        /* cf fnscl.c */
