@@ -111,29 +111,37 @@ clean:
 	$(RM) *.1 *.3 *.html *.ps *.pdf *.tmp pod2htm*
 
 installman: $(MAN)
+ifneq ($(strip $(MANDESTDIR)),)    # do only if MANDESTDIR is nonempty
 	$(mkinstalldirs) $(MANDESTDIR)/man1
 	$(mkinstalldirs) $(MANDESTDIR)/man3
 	$(INSTALL) $(INST_MAN) $(SCRIPT_MAN) $(CMD_MAN) $(MANDESTDIR)/man1
-ifneq ($(strip $(API_MAN)),)    # do only if API_MAN is nonempty
+ifneq ($(strip $(API_MAN)),)       # do only if API_MAN is nonempty
 	$(INSTALL) $(API_MAN) $(MANDESTDIR)/man3
+endif
 endif
 
 uninstallman:
+ifneq ($(strip $(MANDESTDIR)),)    # do only if MANDESTDIR is nonempty
 	( cd $(MANDESTDIR)/man1; $(RM) $(INST_MAN) $(SCRIPT_MAN) $(CMD_MAN) )
-ifneq ($(strip $(API_MAN)),)    # do only if API_MAN is nonempty
+ifneq ($(strip $(API_MAN)),)       # do only if API_MAN is nonempty
 	( cd $(MANDESTDIR)/man3; $(RM) $(API_MAN) )
+endif
 endif
 
 installhtml: $(HTML) $(HTML_INDEX)
+ifneq ($(strip $(HTMLDESTDIR)),)    # do only if HTMLDESTDIR is nonempty
 	$(mkinstalldirs) $(HTMLDESTDIR)
 	$(INSTALL) $(HTML) $(HTMLDESTDIR)
 	$(INSTALL) $(HTML_INDEX) $(HTMLDESTDIR)
 	$(mkinstalldirs) $(HTMLDESTDIR)/images
 	( cd images; $(INSTALL) $(IMAGES) $(HTMLDESTDIR)/images )
+endif
 
 uninstallhtml:
+ifneq ($(strip $(HTMLDESTDIR)),)    # do only if HTMLDESTDIR is nonempty
 	( cd $(HTMLDESTDIR); $(RM) $(HTML) $(HTML_INDEX) )
 	( cd $(HTMLDESTDIR)/images; $(RM) $(IMAGES) )
+endif
 
 install: installman installhtml
 uninstall: uninstallman uninstallhtml
