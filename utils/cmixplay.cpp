@@ -202,17 +202,13 @@ int main(int argc, char *argv[])
    struct stat statbuf;
    SFComment   sfc;
 
-   second=0;
-   nframes=0;
-   buf_start_time=0.0;
-   *fbuf = NULL;
-
    if (argc < 2)
       usage();
 
    sfname = NULL;
-   quiet = robust = force = 0;
-   start_time = end_time = request_dur = factor = 0.0;
+   fbuf = NULL;
+   quiet = robust = force = second = nframes = 0;
+   start_time = end_time = buf_start_time = request_dur = factor = 0.0;
    play_chan = ALL_CHANS;
 
    for (i = 1; i < argc; i++) {
