@@ -14,7 +14,7 @@ ifeq ($(ARCH),SGI)
 endif
 
 ifeq ($(USE_SNDLIB),TRUE)
-   SYSOBJS += ../sys/sndlibsupport.o
+   SYSOBJS += ../sys/sndlibsupport.o ../sys/audio_port.o
    PLAY = sndlib_play.o
 else
    PLAY = play.o
