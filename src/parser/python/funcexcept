@@ -1,11 +1,13 @@
 MYINST
 MYSYNTH
 abs
+add
 exit
 f_arg
 i_arg
 log
 max
+mul
 open
 round
 s_arg
