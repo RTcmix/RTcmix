@@ -1,12 +1,12 @@
 class NOISE : public Instrument {
-   int     inchan, skip, branch;
-   float   amp, aamp, pctleft;
+   int     inchan, skip, branch, nargs;
+   float   amp, pctleft;
    float   *amparray, amptabs[2];
 
 public:
    NOISE();
    virtual ~NOISE();
-   int init(double *, int);
-   int run();
+   virtual int init(double *, int);
+   virtual int run();
 };
 

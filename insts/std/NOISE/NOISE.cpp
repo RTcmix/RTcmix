@@ -2,14 +2,17 @@
 
    p0 = output start time
    p1 = duration
-   p2 = amplitude multiplier
+   p2 = amplitude
    p3 = percent of signal to left output channel [optional, default is .5]
 
-   Assumes function table 1 is amplitude curve for the note. (Try gen 18.)
-   Or you can just call setline. If no setline or function table 1, uses
-   flat amplitude curve.
+   p2 (amplitude) and p3 (pan) can receive dynamic updates from a table or
+   real-time control source.
 
-   JGG <johgibso at indiana dot edu>, 24 Dec 2002
+   If an old-style gen table 1 is present, its values will be multiplied
+   by the p3 amplitude multiplier, even if the latter is dynamic.
+
+   The series of random numbers that makes the noise
+   JGG <johgibso at indiana dot edu>, 24 Dec 2002, rev. 7/9/04
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,12 +38,10 @@ NOISE :: ~NOISE()
 
 int NOISE :: init(double p[], int n_args)
 {
-   float outskip, dur;
+   nargs = n_args;
 
-   outskip = p[0];
-   dur = p[1];
-   amp = p[2];
-   pctleft = n_args > 3 ? p[3] : 0.5;                /* default is .5 */
+   float outskip = p[0];
+   float dur = p[1];
 
    nsamps = rtsetoutput(outskip, dur, this);
 
@@ -49,12 +50,8 @@ int NOISE :: init(double p[], int n_args)
       int lenamp = fsize(1);
       tableset(dur, lenamp, amptabs);
    }
-   else
-      advise("NOISE", "Setting phrase curve to all 1's.");
 
    skip = (int) (SR / (float) resetval);
-
-   aamp = amp;                  /* in case amparray == NULL */
 
    return nsamps;
 }
@@ -62,17 +59,19 @@ int NOISE :: init(double p[], int n_args)
 
 int NOISE :: run()
 {
-   int   i;
-   float out[2];
-
-   for (i = 0; i < framesToRun(); i++) {
-      if (--branch < 0) {
+   for (int i = 0; i < framesToRun(); i++) {
+      if (--branch <= 0) {
+         double p[nargs];
+         update(p, nargs);
+         amp = p[2];
          if (amparray)
-            aamp = tablei(cursamp, amparray, amptabs) * amp;
+            amp *= tablei(cursamp, amparray, amptabs);
+         pctleft = nargs > 3 ? p[3] : 0.5;         // default is .5
          branch = skip;
       }
 
-      out[0] = rrand() * aamp;
+      float out[2];
+      out[0] = rrand() * amp;
 
       if (outputChannels() == 2) {
          out[1] = out[0] * (1.0 - pctleft);
