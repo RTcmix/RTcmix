@@ -87,9 +87,9 @@ int SHAPE :: init(float p[], int n_args)
    nsamps = rtsetoutput(outskip, dur, this);
    rtsetinput(inskip, this);
 
-   if (inchan >= InputChannels())
+   if (inchan >= inputChannels())
       die("SHAPE", "You asked for channel %d of a %d-channel file.",
-                                                   inchan, InputChannels());
+                                                   inchan, inputChannels());
 
    if (max_index < min_index)
       die("SHAPE", "Max. distortion index must not be less than min. index.");
@@ -150,19 +150,19 @@ int SHAPE :: run()
    float out[2];
 
    if (in == NULL)
-      in = new float [RTBUFSAMPS * InputChannels()];
+      in = new float [RTBUFSAMPS * inputChannels()];
 
    Instrument::run();
 
-   samps = FramesToRun() * InputChannels();
+   samps = framesToRun() * inputChannels();
    rtgetin(in, this, samps);
 
-   for (i = 0; i < samps; i += InputChannels()) {
+   for (i = 0; i < samps; i += inputChannels()) {
       if (--branch < 0) {
          if (amp_table)
-            aamp = amp_table->tick(CurrentFrame(), amp);
+            aamp = amp_table->tick(currentFrame(), amp);
          if (index_table)
-            index = index_table->tick(CurrentFrame(), 1.0);
+            index = index_table->tick(currentFrame(), 1.0);
          index = min_index + (index * (max_index - min_index));
          if (ampnorm)
             /* scale index vals to range [-1, 1] in order to use WavShape */
@@ -181,7 +181,7 @@ int SHAPE :: run()
       }
       out[0] = outsig * aamp * 32768.0;
 
-      if (OutputChannels() == 2) {
+      if (outputChannels() == 2) {
          out[1] = out[0] * (1.0 - pctleft);
          out[0] *= pctleft;
       }
@@ -190,7 +190,7 @@ int SHAPE :: run()
       increment();
    }
 
-   return FramesToRun();
+   return framesToRun();
 }
 
 

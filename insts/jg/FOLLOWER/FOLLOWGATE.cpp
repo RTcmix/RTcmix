@@ -124,11 +124,11 @@ int FOLLOWGATE :: post_init(float p[], int n_args)
 /* --------------------------------------------------------- update_params -- */
 void FOLLOWGATE :: update_params()
 {
-   threshold = thresh_table->tick(CurrentFrame(), 1.0);
+   threshold = thresh_table->tick(currentFrame(), 1.0);
    if (threshold < 0.0)
       threshold = 0.0;
 
-   range = range_table->tick(CurrentFrame(), 1.0);
+   range = range_table->tick(currentFrame(), 1.0);
    if (range < 0.0)
       range = 0.0;
    if (state == belowThreshold) {

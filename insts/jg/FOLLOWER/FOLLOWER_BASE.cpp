@@ -59,11 +59,11 @@ int FOLLOWER_BASE :: init(float p[], int n_args)
    pre_init(p, n_args);
 
    rtsetoutput(outskip, dur, this);
-   if (OutputChannels() > 2)
+   if (outputChannels() > 2)
       die(instname(), "Output must be either mono or stereo.");
 
    rtsetinput(inskip, this);
-   if (InputChannels() != 2)
+   if (inputChannels() != 2)
       die(instname(),
       "Must use 2 input channels: 'left' for carrier; 'right' for modulator.");
 
@@ -87,7 +87,7 @@ int FOLLOWER_BASE :: init(float p[], int n_args)
 
    post_init(p, n_args);
 
-   return NSamps();
+   return nSamps();
 }
 
 
@@ -97,17 +97,17 @@ int FOLLOWER_BASE :: run()
    float out[2];
 
    if (in == NULL)            /* first time, so allocate it */
-      in = new float [RTBUFSAMPS * InputChannels()];
+      in = new float [RTBUFSAMPS * inputChannels()];
 
    Instrument :: run();
 
-   const int insamps = FramesToRun() * InputChannels();
+   const int insamps = framesToRun() * inputChannels();
    rtgetin(in, this, insamps);
 
-   for (int i = 0; i < insamps; i += InputChannels()) {
+   for (int i = 0; i < insamps; i += inputChannels()) {
       if (--branch < 0) {
          if (amp_table)
-            caramp = amp_table->tick(CurrentFrame(), amp);
+            caramp = amp_table->tick(currentFrame(), amp);
          update_params();
          branch = skip;
       }
@@ -117,7 +117,7 @@ int FOLLOWER_BASE :: run()
       if (smoother)
          power = smoother->tick(power);
       float outsig = process_sample(carsig, power);
-      if (OutputChannels() == 2) {
+      if (outputChannels() == 2) {
          out[0] = outsig * pctleft;
          out[1] = outsig * (1.0 - pctleft);
       }
@@ -126,7 +126,7 @@ int FOLLOWER_BASE :: run()
       increment();
    }
 
-   return FramesToRun();
+   return framesToRun();
 }
 
 
