@@ -47,14 +47,14 @@ BusSlot::~BusSlot()
 BusQueue::BusQueue(char *name, BusSlot *theSlot)
 		: inst_name(strdup(name)), slot(theSlot), next(NULL)
 {
-	slot->Ref();
+	slot->ref();
 }
 
 BusQueue::~BusQueue()
 {
 	MPRINT("BusQueue 0x%x destroyed\n", this);
 	free(inst_name);
-	slot->Unref();
+	slot->unref();
 }
 
 /* Special flags and whatnot */
@@ -74,8 +74,8 @@ struct CheckNode : public RefCounted {
 };
 
 struct CheckQueue {
-   CheckQueue(CheckNode *theNode) : node(theNode), next(NULL) { node->Ref(); }
-   ~CheckQueue() { RefCounted::Unref(node); }
+   CheckQueue(CheckNode *theNode) : node(theNode), next(NULL) { node->ref(); }
+   ~CheckQueue() { RefCounted::unref(node); }
    CheckNode *node;
    CheckQueue *next;
 };
@@ -257,7 +257,7 @@ check_bus_inst_config(BusSlot *slot, Bool visit) {
 			CheckNode *t_node = new CheckNode;
 			pthread_mutex_lock(&bus_in_config_lock);
 			Bus_In_Config[i] = t_node;
-			t_node->Ref();
+			t_node->ref();
 			pthread_mutex_unlock(&bus_in_config_lock);
 		}
 		Bus_Config_Status = YES;
@@ -434,20 +434,20 @@ insert_bus_slot(char *name, BusSlot *slot) {
 #ifdef TEST_SLOT_CLEANUP
 			BusSlot *next = qEntry->slot->next;
 			// Remove our reference to this slot and replace.
-			qEntry->slot->Unref();
+			qEntry->slot->unref();
 #ifdef PRINTALL
 			printf("replacing slot entry for '%s'\n", name);
 #endif
 			slot->next = next;
 			qEntry->slot = slot;
-			slot->Ref();
+			slot->ref();
 #else	//	TEST_SLOT_CLEANUP
 #ifdef PRINTALL
 			printf("prepending new slot entry for '%s'\n", name);
 #endif
 			slot->next = qEntry->slot;
 			qEntry->slot = slot;
-			slot->Ref();
+			slot->ref();
 #endif	//	TEST_SLOT_CLEANUP
 			return NO_ERR;
 		}
@@ -477,7 +477,7 @@ bf_traverse(int bus, Bool visit) {
   temp->auxout[0] = 333;
   temp->auxout_count=1;
   check_bus_inst_config(temp, visit);
-  temp->Unref();
+  temp->unref();
 #ifdef PRINTPLAY
   printf("exiting bf_traverse(%d)\n", bus);
 #endif

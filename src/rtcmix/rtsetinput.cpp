@@ -27,9 +27,9 @@ but its input source has %d channels. Setting input channels to %d..."
 int
 Instrument::rtsetinput(float start_time, Instrument *inst)
 {
-   int   auxin_count = inst->GetBusSlot()->auxin_count;
-   int   in_count = inst->GetBusSlot()->in_count;
-   char  *inst_name = NULL;      // FIXME: need this for better msgs
+   int   auxin_count = inst->getBusSlot()->auxin_count;
+   int   in_count = inst->getBusSlot()->in_count;
+   const char  *inst_name = inst->name();
 
    if (auxin_count == 0 && in_count == 0)
       die(inst_name, "This instrument requires input from either an in bus "

@@ -22,7 +22,7 @@
 Instrument::Instrument()
 	: _start(0.0), _dur(0.0), cursamp(0), chunksamps(0), i_chunkstart(0),
 	  endsamp(0), nsamps(0), output_offset(0), fdIndex(NO_DEVICE_FDINDEX),
-	  fileOffset(0), inputsr(0.0), inputchans(0), outputchans(0)
+	  fileOffset(0), inputsr(0.0), inputchans(0), outputchans(0), _name(NULL)
 {
    int i;
 
@@ -68,14 +68,25 @@ Instrument::Instrument()
 /* ---------------------------------------------------------- ~Instrument --- */
 Instrument::~Instrument()
 {
-   if (sfile_on)
-      gone();                   // decrement input soundfile reference
+	if (sfile_on)
+		gone();                   // decrement input soundfile reference
 
-   delete [] outbuf;
+	delete [] outbuf;
 
-	RefCounted::Unref(_busSlot);	// release our reference	
+	RefCounted::unref(_busSlot);	// release our reference	
+
+	delete [] _name;
 }
 
+/* ------------------------------------------------------- setName --- */
+/* This is only called by set_bus_config
+*/
+
+void Instrument::setName(const char *name)
+{
+	_name = new char[strlen(name) + 1];
+	strcpy(_name, name);
+}
 
 /* ------------------------------------------------------- set_bus_config --- */
 /* Set the _busSlot pointer to the right bus_config for this inst.
@@ -88,9 +99,11 @@ Instrument::~Instrument()
 */
 void Instrument::set_bus_config(const char *inst_name)
 {
+  setName(inst_name);
+
   pthread_mutex_lock(&bus_slot_lock);
   _busSlot = ::get_bus_config(inst_name);
-  _busSlot->Ref();		// add our reference to this
+  _busSlot->ref();		// add our reference to this
   
   inputchans = _busSlot->in_count + _busSlot->auxin_count;
   outputchans = _busSlot->out_count + _busSlot->auxout_count;
@@ -133,23 +146,53 @@ int Instrument::init(float p[], int n_args)
 #endif /* !RTUPDATE */
 }
 
+/* --------------------------------------------------------- configure --- */
 
-/* ------------------------------------------------------------------ run --- */
-/* Instruments *must* call this at the beginning of their run methods,
-   like this:
-  
-      Instrument::run();
-  
+// This function performs any internal configuration and allocation needed
+// to run the instrument following the call to init() and preceeding the
+// first call to run().  It allows the majority of the memory allocation to
+// be postponed until the note is run.  
+//
+//   If an instrument subclass redefines this method, it *must* call this at 
+//   the beginning of its own configure methods, like this:
+//  
+//   int MyInstrument::configure()
+//   {
+//      Instrument::configure();
+//	  ...
+//   }
+
+/* 
+   [This note used to be on Instrument::run]:
    This method allocates the instrument's private interleaved output buffer
    and inits a buffer status array.
    Note: We allocate here, rather than in ctor or init method, because this
    will mean less memory overhead before the inst begins playing.
 */
+
+int Instrument::configure()
+{
+	assert(outbuf == NULL);	/* configure called twice?? */
+	outbuf = new BUFTYPE [RTBUFSAMPS * outputchans];
+	return 1;
+}
+
+/* ------------------------------------------------------------------ run --- */
+/* Instruments *must* call this at the beginning of their run methods,
+   like this:
+  
+   int MyInstrument::run()
+   {
+      Instrument::run();
+	  ...
+   }
+ 
+   Note that Instrument::run no longer needs to allocate memory.  Now handled
+   by Instrument::configure.
+*/
+
 int Instrument::run()
 {
-   if (outbuf == NULL)
-      outbuf = new BUFTYPE [RTBUFSAMPS * outputchans];
-
    obufptr = outbuf;
 
    for (int i = 0; i < outputchans; i++)

@@ -54,9 +54,15 @@ double checkInsts(char *fname, double *pp, int n_args, void **inst)
 			
 			Iptr = (*(rt_p->rt_ptr))();
 
-			Iptr->Ref();	// We do this to assure one reference
+			Iptr->ref();	// We do this to assure one reference
 	
 			rv = (double) Iptr->init(p, n_args, pp);
+			
+			// For non-interactive case, configure() is delayed until just
+			// before instrument run time.
+
+			if (rtInteractive)
+				Iptr->configure();
 
 			/* schedule instrument */
 

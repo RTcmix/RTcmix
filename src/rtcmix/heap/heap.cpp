@@ -21,7 +21,7 @@ heap::~heap()
 
 unsigned long heap::getTop()
 {
-  Lock topLock(getlockhandle());	// This will unlock when it goes out of scope
+  Lock topLock(getLockHandle());	// This will unlock when it goes out of scope
   return top ? top->chunkStart : 0;
 }
 
@@ -37,7 +37,7 @@ void heap::insert(Instrument *newInst, unsigned long cStart)
   Instrument *tempInst;
   unsigned long tempChunkStart;
 
-  Lock insertLock(getlockhandle());	// This will unlock when it goes out of scope
+  Lock insertLock(getLockHandle());	// This will unlock when it goes out of scope
 
 //  cout << "insert(in):  " << cStart << '\n';
 
@@ -98,7 +98,7 @@ heap::deleteMin(unsigned long maxChunkStart, unsigned long *pChunkStart)
   unsigned long tempChunkStart;
   unsigned long retChunkStart;
 
-  Lock deleteLock(getlockhandle());	// This will unlock when it goes out of scope
+  Lock deleteLock(getLockHandle());	// This will unlock when it goes out of scope
 
   sift = 1;
 

@@ -121,13 +121,25 @@ void *inTraverse(void *arg)
 	
     while ((Iptr = rtHeap.deleteMin(bufEndSamp, &heapChunkStart)) != NULL) 
     {
-//	  Iptr->Ref();	// While we are using it
-	  
+//	  Iptr->ref();	// While we are using it
+
 #ifdef DBUG
 	  cout << "Iptr = " << (void *) Iptr << endl;
 	  cout << "heapChunkStart = " << heapChunkStart << endl;
 #endif
-	  iBus = Iptr->GetBusSlot();
+
+	  // Because we know this instrument will be run during this slot,
+	  // perform final configuration on it if we are not interactive.
+	  // (If interactive, this is handled at init() time).
+
+	  if (!rtInteractive) {
+#ifdef ALLBUG
+		  cout << "Calling configure()" << endl;
+#endif
+		  Iptr->configure();
+	  }
+	  
+	  iBus = Iptr->getBusSlot();
 
 	  // DJT Now we push things onto different queues
 	  pthread_mutex_lock(&bus_slot_lock);
@@ -196,7 +208,7 @@ void *inTraverse(void *arg)
 		break;
 	  }
 	  pthread_mutex_unlock(&bus_slot_lock);
-//	  Iptr->Unref();	// Matches Ref() at TOL
+//	  Iptr->unref();	// Matches ref() at TOL
 	}
 	// End rtHeap popping and rtQueue insertion ----------------------------
 
@@ -274,7 +286,7 @@ void *inTraverse(void *arg)
 	  while ((rtQSize > 0) && (rtQchunkStart < bufEndSamp) && (bus != -1)) {
 		Iptr = rtQueue[busq].pop();  // get next instrument off queue
 		
-		iBus = Iptr->GetBusSlot();
+		iBus = Iptr->getBusSlot();
 		Iptr->set_ichunkstart(rtQchunkStart);
 
 		endsamp = Iptr->getendsamp();
@@ -364,10 +376,10 @@ void *inTraverse(void *arg)
 			break;
 		  }
 		  if ((qStatus == t_class) && (bus == endbus)) {
-			Iptr->Unref();
+			Iptr->unref();
 		  }
 		  pthread_mutex_unlock(&bus_slot_lock);
- 		}  // end rtQueue or Unref ----------------------------------------
+ 		}  // end rtQueue or unref ----------------------------------------
 
 		// DJT:  not sure this check before new rtQchunkStart is necessary
 		rtQSize = rtQueue[busq].getSize();

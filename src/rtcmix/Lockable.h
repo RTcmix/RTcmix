@@ -18,7 +18,7 @@ public:
 	void		unlock() { pthread_mutex_unlock(&_mutex); }
 protected:
 	// This allows subclasses to create temp Lock class instances
-	LockHandle	getlockhandle() { return (LockHandle) &_mutex; }
+	LockHandle	getLockHandle() { return (LockHandle) &_mutex; }
 private:
 	pthread_mutex_t _mutex;
 };

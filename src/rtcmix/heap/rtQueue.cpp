@@ -42,7 +42,7 @@ void RTQueue::push(Instrument *newInst, unsigned long new_chunkstart)
   rtQElt *tempElt; // BGG: for queue insertion
   newElt = new rtQElt;
   newElt->Inst = newInst;
-  newElt->Inst->Ref();
+  newElt->Inst->ref();
   newElt->chunkstart = new_chunkstart; 
   newElt->next = NULL;
   newElt->prev = NULL;
@@ -150,7 +150,7 @@ Instrument *RTQueue::pop()
   head = head->next;
   delete tQelt;
   size--;
-  retInst->Unref();
+  retInst->unref();
   return retInst;
 }
 

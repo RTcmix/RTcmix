@@ -21,7 +21,7 @@ int Instrument::rtsetoutput(float start, float dur, Instrument *theInst)
   // DS: Adding check to be sure rtoutput() did not fail.
 
   if (rtfileit < 0) {
-  	 die("rtsetoutput", "No output file open for this instrument (rtoutput failed)!");
+  	 die(theInst->name(), "rtsetoutput: No output file open for this instrument (rtoutput failed?)!");
   }
 
   // DJT:  made change to increment schedtime here ... not sure how it will work

@@ -53,6 +53,7 @@ protected:
 #endif /* RTUPDATE */
 
 private:
+   char 		  *_name;	// the name of this instrument
    BUFTYPE        *obufptr;
    short          bufstatus[MAXBUS];
    short          needs_to_run;
@@ -94,11 +95,11 @@ private:
 
 public:
 	// Instruments should use these to access variables.
-	inline int		CurrentFrame() const { return cursamp; }
-	inline int		FramesToRun() const { return chunksamps; }
-	inline int		NSamps() const { return nsamps; }
-	inline int		InputChannels() const { return inputchans; }
-	inline int		OutputChannels() const { return outputchans; }
+	inline int		currentFrame() const { return cursamp; }
+	inline int		framesToRun() const { return chunksamps; }
+	inline int		nSamps() const { return nsamps; }
+	inline int		inputChannels() const { return inputchans; }
+	inline int		outputChannels() const { return outputchans; }
 	// Use this to increment cursamp inside single-frame run loops.
 	inline void		increment() { ++cursamp; }
 	// Use this to increment cursamp inside block-based run loops.
@@ -113,13 +114,15 @@ public:
 
 	void 			schedule(heap *rtHeap);
 	void			set_bus_config(const char *);
-	inline const BusSlot *	GetBusSlot() const;
+	inline const BusSlot *	getBusSlot() const;
 	virtual int		init(float *, int, double *);	// Called by checkInsts
+	virtual int		configure();					// Called by inTraverse
 	virtual int		run();
 
 	void			exec(BusType bus_type, int bus);
 	void			addout(BusType bus_type, int bus);
-	bool			IsDone() { return cursamp >= nsamps; }
+	bool			isDone() const { return cursamp >= nsamps; }
+	const char *	name() const { return _name; }
 
 #ifdef RTUPDATE
    float			rtupdate(int, int);  // tag, p-field for return value
@@ -136,8 +139,11 @@ public:
 protected:
    // Methods which are called from within other methods
 	Instrument();
-	virtual		~Instrument();	// never called directly -- use Unref()
+	virtual		~Instrument();	// never called directly -- use unref()
    
+	// This is called by set_bus_config() ONLY.
+    void			setName(const char *name);
+
    // This is called by the public init() when it is not redefined
 
 	virtual int		init(float *, int);
@@ -190,7 +196,7 @@ inline void Instrument::set_output_offset(int offset)
    output_offset = offset;
 }
 
-inline const BusSlot *	Instrument::GetBusSlot() const
+inline const BusSlot *	Instrument::getBusSlot() const
 {
 	return _busSlot;
 }

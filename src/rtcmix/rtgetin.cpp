@@ -14,6 +14,7 @@
 #include <sndlibsupport.h>
 #include <byte_routines.h>
 #include <Instrument.h>
+#include <ugens.h>
 #include <rtdefs.h>
 #include <assert.h>
 
@@ -445,13 +446,13 @@ get_file_in(
    rtsetinput makes sure that inst->inputchans matches the file chans.)
 */
 int
-Instrument::rtgetin(float      *inarr,         /* interleaved array of <inputchans> */
-        Instrument *inst,
-        int        nsamps)         /* samps, not frames */
+Instrument::rtgetin(float		*inarr,  /* interleaved array of <inputchans> */
+        			Instrument	*inst,
+        			int			nsamps)         /* samps, not frames */
 {
    int   frames, status, fdindex;
    int   inchans = inst->inputchans;    /* total in chans inst expects */
-   const BusSlot *bus_config = inst->GetBusSlot();
+   const BusSlot *bus_config = inst->getBusSlot();
    short in_count = bus_config->in_count;
    short auxin_count = bus_config->auxin_count;
 
@@ -462,8 +463,7 @@ Instrument::rtgetin(float      *inarr,         /* interleaved array of <inputcha
    frames = nsamps / inchans;
 
    if (frames > RTBUFSAMPS) {
-      fprintf(stderr, "Internal Error: rtgetin: nsamps out of range!\n");
-      exit(1);
+      die(inst->name(), "Internal Error: rtgetin: nsamps out of range!");
    }
 
    if (fdindex == NO_DEVICE_FDINDEX) {               /* input from aux buses */
