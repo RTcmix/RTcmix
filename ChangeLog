@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Sunday, December 1, 2002 John Gibson <johgibso-at-indiana.edu>
+
+   * New family of instruments, called SPECTACLE, that do FFT-based
+     delay processing.
+
 Friday, November 29, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * Added copygen function and reorganizied makegen code somewhat.
