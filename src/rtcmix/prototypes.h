@@ -53,6 +53,7 @@ void rtsendsamps(void);
 void rtreportstats(void);
 
 /* rtsetparams.c */
+double rtsetparams(float *p, int n_args, double *pp);
 void close_audio_ports(void);
 
 /* rtwritesamps.c */
