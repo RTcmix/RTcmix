@@ -26,7 +26,8 @@ RTcmixMouse::RTcmixMouse()
 
 RTcmixMouse::~RTcmixMouse()
 {
-	int retcode = pthread_join(_eventthread, NULL);
+	if (_eventthread)
+		pthread_join(_eventthread, NULL);
 	for (int i = 0; i < NLABELS; i++) {
 		delete _xprefix[i];
 		delete _yprefix[i];
@@ -142,7 +143,7 @@ RTcmixMouse *createMouseWindow()
 #else
 	RTcmixMouse *mousewin = new XMouse();
 #endif
-	if (mousewin->spawnEventLoop() != 0) {
+	if (mousewin->show() != 0 || mousewin->spawnEventLoop() != 0) {
 		delete mousewin;
 		mousewin = NULL;
 	}

@@ -20,6 +20,9 @@ public:
 	RTcmixMouse();
 	virtual ~RTcmixMouse();
 
+	// Display the mouse window on the screen.
+	virtual int show() = 0;
+
 	// Deliver coordinate(s) in range [0, 1].  If coord. is negative, it means
 	// that the coord. is invalid, and the caller should use a default instead.
 	virtual double getPositionX() const = 0;

@@ -12,6 +12,8 @@ public:
 	XMouse();
 	virtual ~XMouse();
 
+	virtual int show();
+
 protected:
 	// RTcmixMouse reimplementations
 

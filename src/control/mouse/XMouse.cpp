@@ -27,27 +27,34 @@ XMouse::XMouse() : RTcmixMouse()
 	_lineHeight = 0;
 	_charWidth = 0;
 	_fontName = LABEL_FONT_NAME;
-
 	_windowname = "RTcmix Mouse Input";
-	_display = XOpenDisplay(NULL);
-	if (_display == NULL) {
-		// FIXME: error
-	}
-	_screen = XDefaultScreen(_display);
-	_gc = XDefaultGC(_display, _screen);
-
-	const int xpos = 100;	// NB: window manager sets position
-	const int ypos = 100;
-	const unsigned int width = 200;
-	const unsigned int height = 200;
-	_window = createWindow(xpos, ypos, width, height);
-	setFactors();           // must do after creating window
 }
 
 XMouse::~XMouse()
 {
-	XUnmapWindow(_display, _window);
-	XDestroyWindow(_display, _window);
+	if (_display && _window) {
+		XUnmapWindow(_display, _window);
+		XDestroyWindow(_display, _window);
+	}
+}
+
+int XMouse::show()
+{
+	const int xpos = 100;	// NB: window manager sets position
+	const int ypos = 100;
+	const unsigned int width = 200;
+	const unsigned int height = 200;
+	_display = XOpenDisplay(NULL);
+	if (_display != NULL) {
+		_screen = XDefaultScreen(_display);
+		_gc = XDefaultGC(_display, _screen);
+		_window = createWindow(xpos, ypos, width, height);
+		if (_window != None) {
+			setFactors();           // must do after creating window
+			return 0;
+		}
+	}
+	return -1;
 }
 
 Window XMouse::createWindow(

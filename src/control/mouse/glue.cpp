@@ -14,10 +14,10 @@
 
 // ------------------------------------------------------- _mouse_connection ---
 //
-//    mouse = create_pfield("mouseX", min, max, default, lag,
-//                                     [prefix[, units[, precision]]])
+//    mouse = create_pfield("X", min, max, default, lag,
+//                                 [prefix[, units[, precision]]])
 //
-//    First argument is either "mouseX" or "mouseY", depending on which axis
+//    First argument is either "X" or "Y", depending on which axis
 //    you want to read.  Other arguements:
 //
 //    <min>          minimum value [number]
@@ -34,11 +34,14 @@
 //    mouse window.
 //                                                               JGG, 8/14/04
 
+// Note that the first argument passed to this routine is the "X" / "Y" selector
+// but that the score command starts with "mouse".
+
 static RTNumberPField *
 _mouse_usage()
 {
 	die("makeconnection (mouse)",
-		"Usage: makeconnection(\"mouseX\" or \"mouseY\", min, max, default, "
+		"Usage: makeconnection(\"mouse\",\"X\" or \"Y\", min, max, default, "
 		"lag, [prefix[, units[, precision]]])");
 	return NULL;
 }
@@ -49,6 +52,10 @@ create_pfield(const Arg args[], const int nargs)
 	static RTcmixMouse *mousewin = NULL;
 	if (mousewin == NULL)					// first time, so make window
 		mousewin = createMouseWindow();
+	if (mousewin == NULL) {
+		die("makeconnection (mouse)", "Failed to create mouse window");
+		return NULL;
+	}
 
 	RTMouseAxis axis = strchr(args[0], 'X') ? kRTMouseAxisX : kRTMouseAxisY;
 
