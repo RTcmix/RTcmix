@@ -4,12 +4,8 @@
 
 include makefile.conf
 
-ifeq ($(USE_SNDLIB),TRUE)
-  SNDLIB_LINK = sndlib
-  SNDLIB_DIR = $(SNDLIB_LINK)-5.5
-else
-  SNDLIB_LINK = 
-endif
+SNDLIB_LINK = sndlib
+SNDLIB_DIR = $(SNDLIB_LINK)-5.5
 
 MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
 
