@@ -972,7 +972,7 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 	}
 
 	setDeviceParams(deviceFormat,
-					port->deviceFormat.mChannelsPerFrame,
+					port->deviceFormat.mChannelsPerFrame * port->streamCount,
 					port->deviceFormat.mSampleRate);
 	return 0;
 }
