@@ -13,6 +13,8 @@ public:
 	void printOn();
 	void printOff();
 	void close();
+private:
+	void init(float, int, int);	// called by all constructors
 };
 
 // handy utility function...

@@ -140,86 +140,27 @@ detect_denormals()
 
 
 //  The RTcmix constructor with default SR, NCHANS, and RTBUFSAMPS
-RTcmix::RTcmix()
+RTcmix::RTcmix() 
 {
-	int retcode;		/* for mutexes */
-	pthread_t inTraverseThread;
-
-	// for rtsetparams -- I forget why it's set up with both double
-	// and float p-field arrays.  Also, these aren't 0-ed out
-	// so no need to dimension them at MAXDISPARGS
-	float p[2];
-	double pp[2];
-
-	init_globals();
-
-
-#ifdef LINUX
-#ifdef DENORMAL_CHECK
-	detect_denormals();
-#endif
-	signal(SIGFPE, sigfpe_handler);          /* Install signal handler */
-#endif /* LINUX */
-
-#ifdef SGI
-	flush_all_underflows_to_zero();
-#endif
-
-
-	// set up the command lists, etc.
-	ug_intro();		/* introduce standard routines */
-	// no profiles!  See the note above about DSOs
-
-	setbuf(stdout, NULL);	/*  Want to see stdout errors */
-
-	// set defaults
-	p[0] = pp[0] = SR;
-	p[1] = pp[1] = NCHANS;
-	rtsetparams(p, 2, pp);
-
-	retcode = pthread_create(&inTraverseThread, NULL, inTraverse,
-					(void *) "");
-	if (retcode != 0)
-		fprintf(stderr, "inTraverse() thread create failed\n");
+	init(SR, NCHANS, RTBUFSAMPS);
 }
 
 //  The RTcmix constructor with settable SR, NCHANS; default RTBUFSAMPS
 RTcmix::RTcmix(float tsr, int tnchans)
 {
-	int retcode;		/* for mutexes */
-	pthread_t inTraverseThread;
-
-	// for rtsetparams -- I forget why it's set up with both double
-	// and float p-field arrays.  Also, these aren't 0-ed out
-	// so no need to dimension them at MAXDISPARGS
-	float p[2];
-	double pp[2];
-
-	init_globals();
-
-#ifdef SGI
-	flush_all_underflows_to_zero();
-#endif
-
-	// set up the command lists, etc.
-	ug_intro();		/* introduce standard routines */
-	// no profiles!  See the note above about DSOs
-
-	setbuf(stdout, NULL);	/*  Want to see stdout errors */
-
-	// set the sampling rate and nchannels
-	p[0] = pp[0] = tsr;
-	p[1] = pp[1] = tnchans;
-	rtsetparams(p, 2, pp);
-
-	retcode = pthread_create(&inTraverseThread, NULL, inTraverse,
-					(void *) "");
-	if (retcode != 0)
-		fprintf(stderr, "inTraverse() thread create failed\n");
+	init(tsr, tnchans, RTBUFSAMPS);
 }
 
 //  The RTcmix constructor with settable SR, NCHANS, and RTBUFSAMPS
 RTcmix::RTcmix(float tsr, int tnchans, int bsize)
+{
+	init(tsr, tnchans, bsize);
+}
+
+//  The actual initialization method called by the constructors
+
+void
+RTcmix::init(float tsr, int tnchans, int bsize)
 {
 	int retcode;		/* for mutexes */
 	pthread_t inTraverseThread;
