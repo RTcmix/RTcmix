@@ -139,7 +139,7 @@ int LPCPLAY::init(float p[], int n_args)
       take no input: outskip, dur, amp.
    */
 	float outskip = p[0];
-	float dur = p[1];
+	float ldur = p[1];
 	_amp = p[2];
 	_pitch = p[3];
 
@@ -153,12 +153,11 @@ int LPCPLAY::init(float p[], int n_args)
 
 	const float defaultFrameRate = 112.0;
 
-	dur = (dur > 0.) ? dur : (frameCount/defaultFrameRate);
+	ldur = (ldur > 0.) ? ldur : (frameCount/defaultFrameRate);
 
-   /* Tell scheduler when to start this inst. <nsamps> is number of sample
-      frames that will be written to output (dur * SR).
+   /* Tell scheduler when to start this inst. 
    */
-	nsamps = rtsetoutput(outskip, dur, this);
+	rtsetoutput(outskip, ldur, this);
 
 	if (outputchans != 1) { 
 		die("LPCPLAY", "Output file must have 1 channel only\n");
@@ -196,7 +195,7 @@ int LPCPLAY::init(float p[], int n_args)
 	for (i=0; i<_nPoles*2; i++) _past[i] = 0;
 
 	float *cpoint = _coeffs + 4;
-	evset(dur, _risetime, _decaytime, 2, _evals);
+	evset(getdur(), _risetime, _decaytime, 2, _evals);
 
 	_frames = frameCount;
 	_frame1 = startFrame;
@@ -255,7 +254,7 @@ int LPCPLAY::init(float p[], int n_args)
 				_pchvals[i-startFrame] *= transp;
 		}
 	}
-	tableset(dur, frameCount, _tblvals);
+	tableset(getdur(), frameCount, _tblvals);
 //	actualweight = weight(startFrame,endFrame,_thresh);
 	float actualcps = cpspch(ABS(_pitch));
 	
@@ -268,7 +267,9 @@ int LPCPLAY::init(float p[], int n_args)
 	_bw_fact = p[8];
 	_frameno = _frame1;	/* in case first frame is unvoiced */
 			
-	return nsamps;
+	/* NSamps() returns the number of sample
+      frames that will be written to output (dur * SR). */
+	return NSamps();
 }
 
 /* Called by the scheduler for every time slice in which this instrument
@@ -285,7 +286,7 @@ int LPCPLAY::run()
 	// Samples may have been left over from end of previous run's block
 	if (_leftOver > 0)
 	{
-		int toAdd = min(_leftOver, chunksamps);
+		int toAdd = min(_leftOver, FramesToRun());
 #ifdef debug
 		printf("using %d leftover samps starting at offset %d\n",
 			   _leftOver, _savedOffset);
@@ -296,10 +297,10 @@ int LPCPLAY::run()
 		_savedOffset += toAdd;
 	}
 	
-	/* <chunksamps> is the number of sample frames -- 1 sample for each
+	/* FramesToRun() returns the number of sample frames -- 1 sample for each
 	  channel -- that we have to write during this scheduler time slice.
 	*/
-	for (; n < chunksamps; n += _counter) {
+	for (; n < FramesToRun(); n += _counter) {
 		int loc;
 		if ( _unvoiced_rate && !_voiced )
 		{
@@ -307,7 +308,7 @@ int LPCPLAY::run()
 		}
 		else
 		{
-			_frameno = _frame1 + ((float)(cursamp)/nsamps) * _frames;
+			_frameno = _frame1 + ((float)(CurrentFrame())/nsamps) * _frames;
 		}
 /*		printf("voiced: %d frame %g\n", _voiced, _frameno); */
 		if (_dataSet->getFrame(_frameno,_coeffs) == -1)
@@ -318,7 +319,7 @@ int LPCPLAY::run()
 		_ampmlt = _amp * _coeffs[RESIDAMP];
 		if (_coeffs[RMSAMP] < _cutoff)
 			_ampmlt = 0;
-		float cps = tablei(cursamp,_pchvals,_tblvals);
+		float cps = tablei(CurrentFrame(),_pchvals,_tblvals);
 		float newpch = cps;
 		if ((_pitch < 0) && (ABS(_pitch) >= 1))
 			newpch = _transposition;
@@ -335,7 +336,7 @@ int LPCPLAY::run()
 				_bw_fact*_cf_fact*cps,_cf_fact,_bw_fact,cps); */
 		}
 		float si = newpch * _magic;
-		_ampmlt *= evp(cursamp,_envFun,_envFun,_evals);
+		_ampmlt *= evp(CurrentFrame(),_envFun,_envFun,_evals);
 
 		float *cpoint = _coeffs + 4;
 		
@@ -350,7 +351,7 @@ int LPCPLAY::run()
 		}
 		float hn = (_hnfactor <= 1.0) ? (int)(_hnfactor*_srd2/newpch)-2 : _hnfactor;
 		_counter = int(((float)SR/(newpch * _perperiod) ) * .5);
-		_counter = (_counter > (nsamps - cursamp)) ? nsamps - cursamp : _counter;
+		_counter = (_counter > (nsamps - CurrentFrame())) ? nsamps - CurrentFrame() : _counter;
 #ifdef debug
 		printf("fr: %g err: %g bzamp: %g noisamp: %g pch: %g ctr: %d\n",
 		 	   _frameno,_coeffs[THRESH],_ampmlt*buzamp,_ampmlt*noisamp,newpch,_counter);
@@ -391,25 +392,25 @@ int LPCPLAY::run()
 		if (_reson_is_on)
 			bresonz(_alpvals,_rsnetc,_alpvals,_counter);
 
-		int sampsToAdd = min(_counter, chunksamps - n);
+		int sampsToAdd = min(_counter, FramesToRun() - n);
 
 		/* Write this block to the output buffer. */
 		rtbaddout(_alpvals, sampsToAdd);
 		
 		/* Keep track of how many sample frames this instrument has generated. */
-		cursamp += _counter;
+		increment(_counter);
 	}
-	// Handle case where last synthesized block extended beyond chunksamps
-	if (n > chunksamps)
+	// Handle case where last synthesized block extended beyond FramesToRun()
+	if (n > FramesToRun())
 	{
-		_leftOver = n - chunksamps;
+		_leftOver = n - FramesToRun();
 		_savedOffset = _counter - _leftOver;
 #ifdef debug
 		printf("saving %d samples left over at offset %d\n", _leftOver, _savedOffset);
 #endif
 	}
 
-	return chunksamps;
+	return FramesToRun();
 }
 
 void

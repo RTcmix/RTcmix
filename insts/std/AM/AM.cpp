@@ -75,7 +75,7 @@ int AM::init(float p[], int n_args)
 		freqtable = floc(3);
 		if (freqtable) {
 			int len = fsize(3);
-      	tableset(dur, len, freqtabs);
+      	tableset(getdur(), len, freqtabs);
 		}
 		else
 			die("AM", "Function table 3 must contain mod. freq. curve if p4=0.");
