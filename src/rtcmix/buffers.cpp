@@ -15,7 +15,7 @@
 
 
 /* local prototypes */
-static BufPtr allocate_buffer(int nsamps);
+static BufPtr allocate_buf_ptr(int nsamps);
 
 
 
@@ -111,6 +111,8 @@ init_buf_ptrs()
 
 
 /* ------------------------------------------------ clear_audioin_buffers --- */
+// FIXME: not sure we need to do this ever  -JGG
+/* Called from inTraverse. */
 #ifdef __GNUC__
 inline void
 #else
@@ -130,6 +132,7 @@ clear_audioin_buffers()
 
 
 /* ---------------------------------------------------- clear_aux_buffers --- */
+/* Called from inTraverse. */
 #ifdef __GNUC__
 inline void
 #else
@@ -149,6 +152,7 @@ clear_aux_buffers()
 
 
 /* ------------------------------------------------- clear_output_buffers --- */
+/* Called from inTraverse. */
 #ifdef __GNUC__
 inline void
 #else
@@ -166,13 +170,13 @@ clear_output_buffers()
 }
 
 
-/* ------------------------------------------------------ allocate_buffer --- */
+/* ----------------------------------------------------- allocate_buf_ptr --- */
 #ifdef __GNUC__
 static inline BufPtr
 #else
 static BufPtr
 #endif
-allocate_buffer(int nsamps)
+allocate_buf_ptr(int nsamps)       /* samples, not frames */
 {
    BufPtr buf_ptr;
 
@@ -189,14 +193,14 @@ inline int
 #else
 int
 #endif
-allocate_audioin_buffer(short chan, int frames)
+allocate_audioin_buffer(short chan, int nsamps)
 {
    BufPtr buf_ptr;
 
    assert(chan >= 0 && chan < MAXBUS);
 
    if (audioin_buffer[chan] == NULL) {
-      buf_ptr = allocate_buffer(frames);
+      buf_ptr = allocate_buf_ptr(nsamps);
       assert(buf_ptr != NULL);
       audioin_buffer[chan] = buf_ptr;
    }
@@ -212,14 +216,14 @@ inline int
 #else
 int
 #endif
-allocate_aux_buffer(short chan, int frames)
+allocate_aux_buffer(short chan, int nsamps)
 {
    BufPtr buf_ptr;
 
    assert(chan >= 0 && chan < MAXBUS);
 
    if (aux_buffer[chan] == NULL) {
-      buf_ptr = allocate_buffer(frames);
+      buf_ptr = allocate_buf_ptr(nsamps);
       assert(buf_ptr != NULL);
       aux_buffer[chan] = buf_ptr;
    }
@@ -235,19 +239,59 @@ inline int
 #else
 int
 #endif
-allocate_out_buffer(short chan, int frames)
+allocate_out_buffer(short chan, int nsamps)
 {
    BufPtr buf_ptr;
 
    assert(chan >= 0 && chan < MAXBUS);
 
    if (out_buffer[chan] == NULL) {
-      buf_ptr = allocate_buffer(frames);
+      buf_ptr = allocate_buf_ptr(nsamps);
       assert(buf_ptr != NULL);
       out_buffer[chan] = buf_ptr;
    }
 
    return 0;
+}
+
+
+/* ---------------------------------------------------- allocate_ibuf_ptr --- */
+/* Allocate buffer of the type received from the audio input device.
+   Called by rtgetsamps.c
+*/
+#ifdef __GNUC__
+inline IBufPtr
+#else
+IBufPtr
+#endif
+allocate_ibuf_ptr(int nsamps)       /* samples, not frames */
+{
+   IBufPtr ibuf_ptr;
+
+   ibuf_ptr = (IBUFTYPE *) malloc(nsamps * sizeof(IBUFTYPE));
+   assert(ibuf_ptr != NULL);
+
+   return ibuf_ptr;
+}
+
+
+/* ---------------------------------------------------- allocate_obuf_ptr --- */
+/* Allocate buffer of the type sent to the audio output device.
+   Called by rtsendsamps.c
+*/
+#ifdef __GNUC__
+inline OBufPtr
+#else
+OBufPtr
+#endif
+allocate_obuf_ptr(int nsamps)       /* samples, not frames */
+{
+   OBufPtr obuf_ptr;
+
+   obuf_ptr = (OBUFTYPE *) malloc(nsamps * sizeof(OBUFTYPE));
+   assert(obuf_ptr != NULL);
+
+   return obuf_ptr;
 }
 
 
