@@ -10,7 +10,7 @@
 * p7 = stereo spread [optional]
 *
 */
-
+set_option("full_duplex_on")
 rtsetparams(44100, 2, 1024)
 load("COMBIT")
 rtinput("AUDIO")

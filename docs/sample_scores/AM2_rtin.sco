@@ -12,6 +12,7 @@
 *
 */
 
+set_option("full_duplex_on")
 rtsetparams(44100, 1, 256)
 load("AM")
 rtinput("AUDIO")
