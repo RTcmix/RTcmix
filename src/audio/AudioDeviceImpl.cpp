@@ -345,7 +345,8 @@ int AudioDeviceImpl::createConvertBuffer(int frames)
 {
 	bool needFormatConversion = getFrameFormat() != getDeviceFormat();
 	bool needInterleaveConversion = isFrameInterleaved() != isDeviceInterleaved();
-	if (needFormatConversion || needInterleaveConversion) {
+	bool needNormalizeConversion = isFrameFmtNormalized() != isDeviceFmtNormalized();
+	if (needFormatConversion || needInterleaveConversion || needNormalizeConversion) {
 		if (isDeviceInterleaved())
 			_convertBuffer = createInterleavedBuffer(getDeviceFormat(),
 													 getDeviceChannels(),
