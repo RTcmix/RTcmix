@@ -32,6 +32,8 @@ static int		level = 0;	/* keeps track whether we are in a structure */
 %left  <ival> TOK_POW
 %left  <ival> CASTTOKEN
 %token <ival> TOK_FLOAT_DECL
+%token <ival> TOK_STRING_DECL
+%token <ival> TOK_HANDLE_DECL
 %token <ival> TOK_IDENT TOK_NUM TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE 
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING 
 %type  <trees> stml stmt rstmt bexp expl exp str
@@ -57,6 +59,8 @@ stmt: rstmt				{
 									$$ = $1;
 							}
 	| TOK_FLOAT_DECL idl	{ declare(MincFloatType); idcount = 0; }
+	| TOK_STRING_DECL idl	{ declare(MincStringType); idcount = 0; }
+	| TOK_HANDLE_DECL idl	{ declare(MincHandleType); idcount = 0; }
 	| TOK_IF level bexp stmt {
 								level--;
 								$$ = go(tif($3, $4));
@@ -75,6 +79,8 @@ stmt: rstmt				{
 							}
 	| '{' stml '}'		{ $$ = $2; }
 	| error TOK_FLOAT_DECL	{ flerror = 1; $$ = tnoop(); }
+	| error TOK_STRING_DECL	{ flerror = 1; $$ = tnoop(); }
+	| error TOK_HANDLE_DECL	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_IF		{ flerror = 1; $$ = tnoop(); }
 	| error TOK_WHILE	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_FOR	{ flerror = 1; $$ = tnoop(); }

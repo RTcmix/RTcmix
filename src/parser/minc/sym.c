@@ -22,7 +22,7 @@ static struct str {             /* string table */
 static struct symbol *freelist = NULL;  /* free list of unused entries */
 
 /* prototypes for local functions */
-static struct symbol *mnew(char *name);
+static struct symbol *symalloc(char *name);
 #ifdef NOTYET
 static void free_node(struct symbol *p);
 static void kill_scope(ScopeType scope);
@@ -34,7 +34,7 @@ static int hash(char *s);
 
 /* Allocate and initialize and new symbol table entry for <name>. */
 static struct symbol *
-mnew(char *name)
+symalloc(char *name)
 {
    struct symbol *p;
 
@@ -56,7 +56,7 @@ mnew(char *name)
 
 
 #ifdef NOTYET
-/* Free storage for reuse.  Very closely connected to mnew.
+/* Free storage for reuse.  Very closely connected to symalloc.
    TBD:  only allow a maximum freelist length
 */
 static void
@@ -84,12 +84,13 @@ install(char *name, ScopeType scope)
    int h;
    struct symbol *p;
 
-   p = mnew(name);
+   p = symalloc(name);
    h = hash(name);
    p->next = htab[h];
    p->scope = scope;
    p->type = MincVoidType;
    htab[h] = p;
+   p->v.number = 0.0;
 
    DPRINT2("install ('%s') => %p\n", name, p);
    return p;
