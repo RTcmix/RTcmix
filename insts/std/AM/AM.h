@@ -1,5 +1,7 @@
 class AM : public Instrument {
-	float amp, *amptable, amptabs[2], *in;
+	float amp, npoints, *in;
+	float *amptable, amptabs[2];
+	float *freqtable, freqtabs[2];
 	float *amtable,si,phase;
 	int lenam;
 	float spread;

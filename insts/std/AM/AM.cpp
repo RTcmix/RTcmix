@@ -1,3 +1,34 @@
+/* AM - amplitude modulation of input
+
+   p0 = output start time
+   p1 = input start time
+   p2 = duration
+   p3 = amplitude multiplier
+   p4 = modulation oscillator frequency (or 0 to use function table)
+   p5 = input channel [optional, default is 0]
+   p6 = percent to left channel [optional, default is .5]
+
+   Here are the function table assignments:
+
+      1: amplitude curve (setline)
+      2: AM modulator waveform (e.g., gen 9 or 10)
+      3: AM modulator frequency curve (optional; set p4 to 0 to use table)
+
+   Note that you get either amplitude modulation or ring modulation,
+   depending on whether the modulator waveform is unipolar or bipolar
+   (unipolar = amp. mod., bipolar = ring mod.).
+
+   To make a unipolar sine wave, you have to add a DC component 90 degrees
+   out of phase.  For example, the following makegen creates a sine wave
+   that oscillates between 0 and 1:
+
+      makegen(2, 9, 1000, 0,.5,90, 1,.5,0)
+
+
+   Author unknown (probably Brad Garton).
+   Modulator frequency table and xtra comments added by John Gibson
+   (johgibso@indiana.edu), 1/12/02.
+*/
 #include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -22,13 +53,6 @@ AM::~AM()
 
 int AM::init(float p[], int n_args)
 {
-// p0 = output skip; p1 = input skip; p2 = output duration
-// p3 = amplitude multiplier; p4 = AM modulator frequency (hz)
-// p5 = input channel [optional]
-// p6 = stereo spread <0-1> [optional]
-// assumes function table 1 is the amplitude envelope
-// assumes function table 2 is the AM modulator waveform
-
 	rtsetinput(p[1], this);
 	nsamps = rtsetoutput(p[0], p[2], this);
 
@@ -44,7 +68,18 @@ int AM::init(float p[], int n_args)
 	if (amtable == NULL)
 		die("AM", "You need a function table 2 containing mod. waveform.");
 	lenam = fsize(2);
-	si = p[4] * (float)lenam/SR;
+	npoints = (float)lenam / SR;
+	si = p[4] * npoints;
+
+	if (si == 0.0) {
+		freqtable = floc(3);
+		if (freqtable) {
+			int len = fsize(3);
+      	tableset(dur, len, freqtabs);
+		}
+		else
+			die("AM", "Function table 3 must contain mod. freq. curve if p4=0.");
+	}
 
 	amp = p[3];
 	skip = (int)(SR/(float)resetval);      // how often to update amp curve
@@ -83,19 +118,21 @@ int AM::run()
 		if (--branch < 0) {
 			if (amptable)
 				aamp = tablei(cursamp, amptable, amptabs) * amp;
+			if (freqtable)
+				si = tablei(cursamp, freqtable, freqtabs) * npoints;
 			branch = skip;
-			}
+		}
 
 		out[0] = in[i+inchan] * oscili(aamp, si, amtable, lenam, &phase);
 
 		if (outputchans == 2) {
 			out[1] = out[0] * (1.0 - spread);
 			out[0] *= spread;
-			}
+		}
 
 		rtaddout(out);
 		cursamp++;
-		}
+	}
 	return(i);
 }
 
