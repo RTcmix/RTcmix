@@ -57,7 +57,7 @@ int vMIX::init(float p[], int n_args)
 	amptable = floc(1);
 	if (amptable) {
 		int amplen = fsize(1);
-		tableset(p[2], amplen, tabs);
+		tableset(SR, p[2], amplen, tabs);
 	}
 	else
 		advise("vMIX", "Setting phrase curve to all 1's.");
@@ -66,7 +66,7 @@ int vMIX::init(float p[], int n_args)
 	  	fade_table = floc(2);
 		if (fade_table) {
 		   	int famplen = fsize(2);
-			tableset(fade_time, famplen, f_tabs);
+			tableset(SR, fade_time, famplen, f_tabs);
 		}
 	}	
 

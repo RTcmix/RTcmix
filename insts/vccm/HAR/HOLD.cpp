@@ -64,7 +64,7 @@ int HOLD::init(float p[], int n_args)
 	amptable = floc(1);
 	if (amptable) {
 		int amplen = fsize(1);
-		tableset(hold_dur, amplen, tabs);
+		tableset(SR, hold_dur, amplen, tabs);
 	}
 	else
 		advise("HOLD", "Setting phrase curve to all 1's for *loop* duration.");
@@ -73,7 +73,7 @@ int HOLD::init(float p[], int n_args)
 	  	fade_table = floc(2);
 		if (fade_table) {
 		   	int famplen = fsize(2);
-			tableset(fade_time, famplen, f_tabs);
+			tableset(SR, fade_time, famplen, f_tabs);
 		}
 	}	
 
