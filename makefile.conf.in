@@ -42,7 +42,9 @@ OPT = -g -Wall -Wno-unused -O2
 
 ###############################################################
 # Linux sound driver flags -- ignore for Irix and Mac OS X
-# (It doesn't matter how any of these are set for Irix and Mac OS X.)
+# It doesn't matter how any of these are set for Irix and Mac OS X.
+# The Linux flags should work for FreeBSD, using OSS or an emulation
+# of the OSS API.
 
 # Sound driver API
 # NOTE: no support for ALSA yet, sorry
