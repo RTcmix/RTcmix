@@ -1,7 +1,7 @@
 float oscili(float amp, float si, float *farray, int len, float *phs)
 {
-	register int i =  *phs;        
-	register int k =  (i + 1) % len;  
+	int i =  (int)*phs;        
+	int k =  (int)(i + 1) % len;  
 	float frac = *phs  - i;      
 	*phs += si;                 
 	while(*phs >= len)

@@ -3,9 +3,9 @@
 float dliget(float *a, float wait, int *l)
 {
 /* get interpolated value from delay line, wait seconds old */
-	register int im1;
+	int im1;
 	float x = wait * SR;
-	register int i = x;
+	int i = (int) x;
 	float frac = x - i;
 	i = *l - i;
 	im1 = i - 1;
