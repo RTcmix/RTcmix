@@ -104,7 +104,7 @@ inline int inAvailable(int filled, int size) {
 	return size - filled;
 }
 
-#define DEBUG 1
+#define DEBUG 0
 
 OSStatus
 OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
