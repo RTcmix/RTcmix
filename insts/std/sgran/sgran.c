@@ -34,6 +34,8 @@ static float *array, tabs[2];         /* for setline */
                      (if p29 < 0, noise is the input)
       33-36          ending lo, average, hi, tightness
 
+      37             random seed (integer) [optional]
+
                  *       *       *
 
    functions: (stt variation changes are linear)
@@ -75,10 +77,10 @@ int n_args; /* number of p-fields */
 	void srrand();
 	double prob();
 
-	srrand(.3);
-
-	if(p[37] > 0)
+	if (p[37] > 0)
 		srrand(p[37]);
+   else
+		srrand(.3);
 
 	nsamps = setnote(p[0],p[1],1); /* set file position */
 
