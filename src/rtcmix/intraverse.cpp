@@ -63,7 +63,7 @@ void *inTraverse(void *arg)
   pthread_mutex_lock(&audio_config_lock);
   if (!audio_config) {
 	if (print_is_on)
-    cout << "inTraverse():  waiting for audio_config . . .\n";
+		cout << "inTraverse():  waiting for audio_config . . .\n";
   }
   pthread_mutex_unlock(&audio_config_lock);
 
@@ -73,11 +73,21 @@ void *inTraverse(void *arg)
 	  audio_configured = YES;
 	}
 	pthread_mutex_unlock(&audio_config_lock);
+	if (rtInteractive)
+	{
+		if (run_status == RT_GOOD)
+			continue;
+		else if (run_status == RT_SHUTDOWN)
+			cout << "inTraverse():  shutting down" << endl;
+		else if (run_status == RT_ERROR)
+			cout << "inTraverse():  shutting down due to error" << endl;
+		return NULL;
+	}
   }
 
   if (audio_configured && rtInteractive) {
 	if (print_is_on)
-	  cout << "inTraverse():  audio set.\n";
+	  cout << "inTraverse():  audio set." << endl;
   }
 
   // Initialize everything ... cause it's good practice
@@ -443,6 +453,17 @@ void *inTraverse(void *arg)
 		playEm = 0;
 	  }
     }
+	else {
+		// Check status from other threads
+		if (run_status == RT_SHUTDOWN) {
+			cout << "inTraverse():  shutting down" << endl;
+			playEm = 0;
+		}
+		else if (run_status == RT_ERROR) {
+			cout << "inTraverse():  shutting down due to error" << endl;
+			playEm = 0;
+		}
+    }
   } // end playEm ----------------------------------------------------------
 
   if (rtsetparams_called) {
@@ -456,7 +477,7 @@ void *inTraverse(void *arg)
   cout << "\n";
 #ifdef ALLBUG
   cout << "EXITING inTraverse() FUNCTION *****\n";
-  exit(1);
+  exit(0);
 #endif
 
   return NULL;

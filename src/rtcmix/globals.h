@@ -97,6 +97,10 @@ GLOBAL double schedtime;
 /* Used by sockit / intraverse to sync up */
 GLOBAL double baseTime;
 GLOBAL long elapsed;
+typedef enum {
+	RT_GOOD = 0, RT_SHUTDOWN = 1, RT_ERROR = 2
+} RTstatus;
+GLOBAL RTstatus run_status;
 
 #include <pthread.h>
 #ifdef MAIN      /* Have to do this because must be inited in definition. */

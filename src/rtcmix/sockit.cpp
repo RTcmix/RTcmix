@@ -63,6 +63,7 @@ extern "C" {
 #endif
     if( (s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
       perror("socket");
+	  run_status = RT_ERROR;	// Notify inTraverse()
       exit(1);
     }
 
@@ -81,6 +82,7 @@ extern "C" {
     if (err < 0) {
       perror("bind");
 	  fflush(stdout);
+	  run_status = RT_ERROR;	// Notify inTraverse()
 	  sleep(1);
 	  cout << "\n";
       exit(1);
@@ -92,6 +94,7 @@ extern "C" {
     ns = accept(s, (struct sockaddr *)&sss, &len);
     if(ns < 0) {
       perror("accept");
+	  run_status = RT_ERROR;	// Notify inTraverse()
       exit(1);
     }
     else {
@@ -194,7 +197,7 @@ extern "C" {
 
 		else if ( (strcmp(sinfo->name, "RTcmix_off") == 0) ) {
 			printf("RTcmix termination cmd received.\n");
-			rtInteractive = 0;
+			run_status = RT_SHUTDOWN;	// Notify inTraverse()
  			shutdown(s,0);
 			return NULL;
 		}
