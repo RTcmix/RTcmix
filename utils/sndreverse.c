@@ -1,18 +1,16 @@
-/* would be nice to have general-purpose splice program.
--s input skip, -o output skip -d dur -r reverse??  */
-# include <stdio.h>
-
-#ifndef LINT
-static char SccsId[] = "@(#)sndreverse.c	1.4	10/18/85	IRCAM";
-#endif
-
-# include <sys/types.h>
-# include <sys/stat.h>
-# include <sys/file.h>
-# include "../H/sfheader.h"
-# include "../H/byte_routines.h"
-
-# define SKIP error++; goto skip
+/* This is an old cmix version of an IRCAM program from 1985. Updating it for
+   current RTcmix with sndlib support (but still using legacy cmix API).  -JGG
+*/
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/file.h>
+#include "../H/sfheader.h"
+#include "../H/byte_routines.h"
+#include <sndlibsupport.h>
 
 /* This program is designed to reverse existing soundfiles.
    The channels of the soundfile are kept in the original order
@@ -20,155 +18,131 @@ static char SccsId[] = "@(#)sndreverse.c	1.4	10/18/85	IRCAM";
 
 extern int swap;
 
-main(argc,argv)
-     int argc;
-     char *argv[];
+int
+main(int argc, char *argv[])
 {
-  int sfd1,sfd2;
-  register int i;
-  off_t bytes;
-  int readbyte,error = 0;
-  SFHEADER hd;
-  char *forward,*back;
-  struct stat st;
-  int backsu,units,nsu,nextsu,result;
-  char newname[1024];
-  char infile[1024];
+   int      i, sfd1, sfd2, backsu, units, nsu, nextsu, result, readbyte;
+   off_t    bytes;
+   char     *forward, *back;
+   char     outfilename[1024], infilename[1024];
+   SFHEADER hd1, hd2;
+   struct stat st;
 
-  /* Get memory for buffers */
-
-  forward = (char *)malloc(SF_BUFSIZE);
-  back = (char *)malloc(SF_BUFSIZE);
-  if(!forward || ! back) {
-    fprintf(stderr,"Bad allocation for buffers\n");
-    exit(1);
-  }
-
-  if (argc != 2) {
-    fprintf(stderr,"Usage:  %s <filename>\n",argv[0]);
-    exit(1);
-  }
-  
-  strcpy(infile,argv[1]);
-
-  readopensf(infile,sfd1,hd,st,"rescale",result);
-  if (result < 0) {
-    fprintf(stderr,"Error opening file %s\n",infile);
-  }
-
- skip:	printf("%s\n",infile);	
-  printf("sndreverse():  skip\n");
-  /*
-    if(!strncmp("-f",*(argv+1),2)) {
-    argc -= 2;
-    argv += 2;
-    strcpy(newname,*argv);
-    }
-    else {
-  */
-  
-  strcpy(newname,infile);
-  strcat(newname,".r");
-  /*
-    }
-  */
-  if(error) {
-    error = 0;
-  }
-  
-  if((sfd2 = open(newname,O_CREAT|O_TRUNC|O_WRONLY,0644)) < 0) {
-    fprintf(stderr,"Can't create %s\n",newname);
-    close(sfd1);
-  }
-  
-  /* Swap main header info */
-  if (swap) {
-    byte_reverse4(&hd.sfinfo.sf_magic);
-    byte_reverse4(&hd.sfinfo.sf_srate);
-    byte_reverse4(&hd.sfinfo.sf_chans);
-    byte_reverse4(&hd.sfinfo.sf_packmode); 
-  }
-
-  if(wheader(sfd2,&hd)) { /* Duplicate header */
-    fprintf(stderr,"Write to header failed.\n");
-    close(sfd1);
-    close(sfd2);
-  }
-
-  /* Then swap it back */
-  if (swap) {
-    byte_reverse4(&hd.sfinfo.sf_magic);
-    byte_reverse4(&hd.sfinfo.sf_srate);
-    byte_reverse4(&hd.sfinfo.sf_chans);
-    byte_reverse4(&hd.sfinfo.sf_packmode); 
-  }
-
-
-  bytes = sfbsize(&st);
-  readbyte = bytes % SF_BUFSIZE;
-  if(sflseek(sfd1,(long) -readbyte,2) == -1) {
-    fprintf(stderr,"Bad seek\n");
-    exit(1);
-  }
-
-  while(bytes > 0) { /* For all of the samples */
-    if((readbyte = read(sfd1,forward,SF_BUFSIZE)) < 0) {
-      fprintf(stderr,"Bad read on soundfile %s\n",*argv);
+   if (argc != 2) {
+      fprintf(stderr, "Usage:  %s <filename>\n", argv[0]);
       exit(1);
-    }
-    /* units = samples per read.
-       nsu = number of sample units per read. 
-       (sample unit = all channels
-       for this sample slot).
-       nextsu = next sample unit.
-       backsu = current backward sample unit 
-       starting channel.	*/
+   }
 
-    units = readbyte / sfclass(&hd);
-    nextsu = 0;
-    nsu = units - sfchans(&hd);
-    if(sfclass(&hd) == SF_FLOAT) { /* Do floating point file */
-      register float *fbuf = (float *) back;
-      float *fforward = (float *) forward;
+   strcpy(infilename, argv[1]);          /* Don't install setuid root  ;-) */
 
-      while((char *) fbuf < back + readbyte) {
-	backsu = nsu - nextsu;
-	for(i = 0; i < sfchans(&hd); i++) {
-	  *fbuf++ = *(fforward + backsu + i);
-	  if (swap) {
-	    byte_reverse4(fbuf);
-	  }
-	}
-	nextsu += i;
-      }
-    }
-    else { /* Integer (short) file */
-      register short *sbuf = (short *) back;
-      short *sforward = (short *) forward;
-
-      while((char *) sbuf < back + readbyte) {
-	backsu = nsu - nextsu;
-	for(i = 0; i < sfchans(&hd); i++) {
-	  *sbuf++ = *(sforward + backsu + i);
-	  if (swap) {
-	    byte_reverse2(sbuf);
-	  }
-	}
-	nextsu += i;
-      }
-    }
-
-    if(write(sfd2,back,readbyte) != readbyte) {
-      fprintf(stderr,"Bad write on soundfile\n");
+   readopensf(infilename, sfd1, hd1, st, "sndreverse", result);
+   if (result < 0)
       exit(1);
-    }
-    if((bytes -= readbyte) > 0) 
-      if(sflseek(sfd1,(long) -(SF_BUFSIZE + readbyte),1) == -1) {
-	fprintf(stderr,"Bad seek\n");
-	exit(1);
+
+   strcpy(outfilename, infilename);
+   strcat(outfilename, ".r");
+
+   if ((sfd2 = open(outfilename, O_CREAT | O_TRUNC | O_WRONLY, 0644)) < 0) {
+      fprintf(stderr, "Error creating file \"%s\".\n", outfilename);
+      close(sfd1);
+      exit(1);
+   }
+
+   /* Duplicate input file header and write it to new output file. */
+   hd2 = hd1;
+   sfdatasize(&hd2) = 0;
+   if (wheader(sfd2, &hd2)) {
+      fprintf(stderr, "Write to header failed.\n");
+      close(sfd1);
+      close(sfd2);
+      exit(1);
+   }
+
+   /* Close and reopen output file to get updated SFHEADER. */
+   close(sfd2);
+   rwopensf(outfilename, sfd2, hd2, st, "sndreverse", result, O_RDWR);
+   if (result < 0)
+      exit(1);
+
+   /* Get memory for buffers */
+   forward = (char *) malloc(SF_BUFSIZE);
+   back = (char *) malloc(SF_BUFSIZE);
+   if (!forward || !back) {
+      fprintf(stderr, "Bad allocation for buffers.\n");
+      exit(1);
+   }
+
+   bytes = sfdatasize(&hd1);
+   readbyte = bytes % SF_BUFSIZE;
+   if (lseek(sfd1, (long) -readbyte, SEEK_END) == -1) {
+      fprintf(stderr, "Bad seek.\n");
+      exit(1);
+   }
+
+   while (bytes > 0) {          /* For all of the samples */
+      if ((readbyte = read(sfd1, forward, SF_BUFSIZE)) < 0) {
+         fprintf(stderr, "Bad read on soundfile \"%s\".\n", infilename);
+         exit(1);
       }
-  }
-  close(sfd1);
-  close(sfd2);
+      /* units = samples per read.
+         nsu = number of sample units per read. 
+         (sample unit = all channels
+         for this sample slot).
+         nextsu = next sample unit.
+         backsu = current backward sample unit 
+         starting channel. */
+
+      units = readbyte / sfclass(&hd1);
+      nextsu = 0;
+      nsu = units - sfchans(&hd1);
+      if (sfclass(&hd1) == SF_FLOAT) {  /* Do floating point file */
+         register float *fbuf = (float *) back;
+         float *fforward = (float *) forward;
+
+         while ((char *) fbuf < back + readbyte) {
+            backsu = nsu - nextsu;
+            for (i = 0; i < sfchans(&hd1); i++) {
+               *fbuf++ = *(fforward + backsu + i);
+               if (swap) {
+                  byte_reverse4(fbuf);
+               }
+            }
+            nextsu += i;
+         }
+      }
+      else {                    /* Integer (short) file */
+         register short *sbuf = (short *) back;
+         short *sforward = (short *) forward;
+
+         while ((char *) sbuf < back + readbyte) {
+            backsu = nsu - nextsu;
+            for (i = 0; i < sfchans(&hd1); i++) {
+               *sbuf++ = *(sforward + backsu + i);
+               if (swap) {
+                  byte_reverse2(sbuf);
+               }
+            }
+            nextsu += i;
+         }
+      }
+
+      if (write(sfd2, back, readbyte) != readbyte) {
+         fprintf(stderr, "Bad write on soundfile.\n");
+         exit(1);
+      }
+      if ((bytes -= readbyte) > 0)
+         if (lseek(sfd1, (long) -(SF_BUFSIZE + readbyte), SEEK_CUR) == -1) {
+            fprintf(stderr, "Bad seek.\n");
+            exit(1);
+         }
+   }
+
+   /* Update header for bytes of sound data written. */
+   putlength(outfilename, sfd2, &hd2);
+
+   close(sfd1);
+   close(sfd2);
+
+   return 0;
 }
 
