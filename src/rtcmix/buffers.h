@@ -5,31 +5,13 @@
 #ifndef _BUFFERS_H_
 #define _BUFFERS_H_ 1
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
-
 /* type of buffer used for internal buses */
 #define BUFTYPE float           /* could be double some day */
 typedef BUFTYPE *BufPtr;
 
-/* type of buffer used to receive from audio device */
-#ifdef LINUX
-#define LIMIT_OBUF_FOR_AUDIO_DEV
-#define IBUFTYPE short
-typedef IBUFTYPE *IBufPtr;
-#endif /* LINUX */
-#ifdef MACOSX
-#define LIMIT_OBUF_FOR_AUDIO_DEV
-#define IBUFTYPE float
-typedef IBUFTYPE *IBufPtr;
-#endif /* MACOSX */
-#ifdef SGI
-#define LIMIT_OBUF_FOR_AUDIO_DEV  /* ...and then maybe comment this out */
-#define IBUFTYPE short
-typedef IBUFTYPE *IBufPtr;
-#endif /* SGI */
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
 void copy_interleaved_buf_to_one_buf(BufPtr dest, const BufPtr src,
                                 int src_chans, int src_chan, int dest_frames);
@@ -44,7 +26,6 @@ void clear_output_buffers(void);
 int allocate_audioin_buffer(short chan, int nsamps);
 int allocate_aux_buffer(short chan, int nsamps);
 int allocate_out_buffer(short chan, int nsamps);
-IBufPtr allocate_ibuf_ptr(int nsamps);
 
 #ifdef __cplusplus
 } /* extern "C" */
