@@ -26,6 +26,10 @@ the random value returned by B<irand>.
 
 =back
 
+=head1 RETURNS
+
+A random number between I<minimum> and I<maximum>, inclusive.
+
 =head1 EXAMPLES
 
    srand(0)
@@ -42,5 +46,5 @@ prints 20 random numbers having values between -30 and 10, inclusive.
 
 L<srand|srand>, L<random|random>, L<rand|rand>, L<pickrand|pickrand>,
 L<pickwrand|pickwrand>, L<spray_init|spray_init>, L<get_spray|get_spray>,
-L<gen20>
+L<gen20|gen20>
 
