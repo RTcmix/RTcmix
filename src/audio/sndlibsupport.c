@@ -24,7 +24,6 @@
 
                                                       -- J. Gibson, 6/1/99
 */
-#ifdef USE_SNDLIB
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1675,6 +1674,4 @@ sf_class_to_data_format(int class, int header_type)
 
 
 #endif /* CMIX_LEGACY */
-
-#endif /* USE_SNDLIB */
 
