@@ -364,8 +364,7 @@ void *
 AudioDeviceImpl::convertFrame(void *inbuffer, void *outbuffer,
 							  int frames, bool recording)
 {
-	// Num chans handed to us depends on direction.
-	const int chans = recording ? getDeviceChannels() : getFrameChannels();
+	const int chans = getFrameChannels();
 		
 	if (_frameFormat == _deviceFormat) {
 		return inbuffer;
