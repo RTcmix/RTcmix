@@ -195,6 +195,7 @@ struct symbol *install(char *name, ScopeType scope);
 struct symbol *lookup(char *name);
 char *strsave(char *str);
 char *emalloc(int nbytes);
+void efree(void *mem);
 void clear_elem(MincListElem *);
 void unref_value_list(MincValue *);
 void free_symbols();

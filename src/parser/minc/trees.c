@@ -34,6 +34,42 @@ static MincListElem *list_stack[MAXSTACK];
 static int list_len_stack[MAXSTACK];
 static int list_stack_ptr;
 
+#ifdef DEBUG
+static int numTrees = 0;
+static char *s_NodeKinds[] = {
+   "NodeZero",
+   "NodeSeq",
+   "NodeStore",
+   "NodeList",
+   "NodeListElem",
+   "NodeEmptyListElem",
+   "NodeSubscriptRead",
+   "NodeSubscriptWrite",
+   "NodeOpAssign",
+   "NodeName",
+   "NodeConstf",
+   "NodeString",
+   "NodeCall",
+   "NodeAnd",
+   "NodeOr",
+   "NodeOperator",
+   "NodeUnaryOperator",
+   "NodeNot",
+   "NodeRelation",
+   "NodeIf",
+   "NodeWhile",
+   "NodeFor",
+   "NodeIfElse",
+   "NodeNoop"
+};
+
+static const char *printNodeKind(NodeKind k)
+{
+	return s_NodeKinds[k];
+}
+
+#endif
+
 /* prototypes for local functions */
 static int cmp(MincFloat f1, MincFloat f2);
 static Tree node(OpKind op, NodeKind kind);
@@ -80,7 +116,7 @@ newList(int len)
 	  if (len > 0) {
          list->data = (MincListElem *) emalloc(len * sizeof(MincListElem));
 		 if (!list->data) {
-			free(list);
+			efree(list);
 			list = NULL;
 		 }
 		 else {
@@ -126,6 +162,10 @@ node(OpKind op, NodeKind kind)
    tp->u.child[3] = NULL;
    tp->v.list = NULL;
    tp->funcname = NULL;
+#ifdef DEBUG
+	++numTrees;
+   DPRINT1("[%d trees in existence]\n", numTrees);
+#endif
    return tp;
 }
 
@@ -1351,7 +1391,7 @@ pop_list()
    DPRINT("pop_list\n");
    DPRINT1("pop_list free: list=%p\n", list);
    clear_list(list, MAXDISPARGS);
-   free(list);
+   efree(list);
    if (list_stack_ptr == 0)
       minc_die("stack underflow");
    list = list_stack[--list_stack_ptr];
@@ -1447,7 +1487,7 @@ free_tree(Tree tp)
    if (tp == NULL)
       return;
 
-   DPRINT("free_tree() children first...\n");
+   DPRINT2("entering free_tree(%p) (%s)\n", tp, printNodeKind(tp->kind));
 
    switch (tp->kind) {
       case NodeZero:
@@ -1536,7 +1576,6 @@ free_tree(Tree tp)
          break;
    } /* switch kind */
 
-   DPRINT1("free_tree() parent %p\n", tp);
    if (tp->type == MincHandleType) {
       unref_handle(tp->v.handle);
    }
@@ -1544,23 +1583,24 @@ free_tree(Tree tp)
       unref_value_list(&tp->v);
    }
    tp->type = MincVoidType;		// To prevent double-free
-   free(tp);   /* actually free space */
+   efree(tp);   /* actually free space */
+#ifdef DEBUG
+	--numTrees;
+   DPRINT1("[%d trees left]\n", numTrees);
+#endif
+   DPRINT1("leaving free_tree(%p)\n", tp);
 }
 
 void
 clear_elem(MincListElem *elem)
 {
 	if (elem->type == MincListType) {
-#ifdef DEBUG
-	printf("clear_elem(%p)\n", elem);
-#endif
-		unref_value_list(&elem->val);
+	   DPRINT1("clear_elem(%p)\n", elem);
+       unref_value_list(&elem->val);
 	}
 	else if (elem->type == MincHandleType) {
-#ifdef DEBUG
-	printf("clear_elem(%p)\n", elem);
-#endif
-		unref_handle(elem->val.handle);
+	   DPRINT1("clear_elem(%p)\n", elem);
+	   unref_handle(elem->val.handle);
 	}
 }
 
@@ -1573,23 +1613,17 @@ unref_value_list(MincValue *value)
    if (--value->list->refcount == 0) {
       if (value->list->data != NULL) {
 		 int e;
-#ifdef DEBUG
-		 printf("\tfreeing MincList data %p...\n", value->list->data);
-#endif
+		 DPRINT1("\tfreeing MincList data %p...\n", value->list->data);
 		 for (e = 0; e < value->list->len; ++e) {
 			 MincListElem *elem = &value->list->data[e];
 			 clear_elem(elem);
 		 }
-		 free(value->list->data);
+		 efree(value->list->data);
 		 value->list->data = NULL;
-#ifdef DEBUG
-		 printf("\tdone\n");
-#endif
+		 DPRINT("\tdone\n");
       }
-#ifdef DEBUG
-	  printf("\tfreeing MincList %p\n", value->list);
-#endif
-	  free(value->list);
+	  DPRINT1("\tfreeing MincList %p\n", value->list);
+	  efree(value->list);
    }
 }
 

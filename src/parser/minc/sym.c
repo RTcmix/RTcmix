@@ -273,6 +273,13 @@ emalloc(int nbytes)
    return s;
 }
 
+void efree(void *mem)
+{
+#ifndef NO_EMALLOC_DEBUG
+   DPRINT1("efree: ptr=%p\n", mem);
+#endif
+   free(mem);
+}
 
 /* Returns an index to a hash bucket. */
 static int
