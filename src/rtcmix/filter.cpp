@@ -28,6 +28,7 @@ enum {
 	kClipFilter,
 	kConstrainFilter,
 	kFitRangeFilter,
+	kInvertFilter,
 	kMapFilter,
 	kQuantizeFilter,
 	kSmoothFilter
@@ -42,6 +43,8 @@ _makefilter_usage()
 		"\n   usage: filt = makefilter(pfield, \"constrain\", table, strength)"
 		"\nOR"
 		"\n   usage: filt = makefilter(pfield, \"fitrange\", min, max [, \"bipolar\"])"
+		"\nOR"
+		"\n   usage: filt = makefilter(pfield, \"invert\", center)"
 		"\nOR"
 		"\n   usage: filt = makefilter(pfield, \"map\", transferTable[, inputMin, inputMax])"
 		"\nOR"
@@ -70,6 +73,8 @@ makefilter(const Arg args[], const int nargs)
 			type = kConstrainFilter;
 		else if (args[1] == "fitrange")
 			type = kFitRangeFilter;
+		else if (args[1] == "invert")
+			type = kInvertFilter;
 		else if (args[1] == "map")
 			type = kMapFilter;
 		else if (args[1] == "quantize")
@@ -126,6 +131,8 @@ makefilter(const Arg args[], const int nargs)
 		else
 			return _makefilter_usage();
 	}
+	else if (type == kInvertFilter)
+		filt = new InvertPField(innerpf, arg1pf);
 	else if (type == kMapFilter) {
 		TablePField *xferfunc = (TablePField *) arg1pf;
 		double min = arg2pf ? arg2pf->doubleValue(0) : 0.0;
