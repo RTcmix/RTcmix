@@ -75,7 +75,7 @@ int MYINST :: init(float p[], short n_args)
    inchan = n_args > 4 ? (int) p[4] : 0;             /* default is chan 0 */
    pctleft = n_args > 5 ? p[5] : 0.5;                /* default is .5 */
 
-   /* Set file pointer on audio output. <nsamps> is number os sample
+   /* Set file pointer on audio output. <nsamps> is number of sample
       frames that will be written to output (dur * SR).
    */
    nsamps = rtsetoutput(outskip, dur, this);
@@ -127,12 +127,12 @@ int MYINST :: run()
 
    /* If this is first call to run, <in> will still be NULL, so we
       allocate the input buffer. We do this here, instead of in the
-      init method, to reduce the memory demands of the job.
+      ctor or init method, to reduce the memory demands of the inst.
    */
    if (in == NULL)
       in = new float [RTBUFSAMPS * inputchans];
 
-   /* You MUST call the parent class's run method here. */
+   /* You MUST call the base class's run method here. */
    Instrument::run();
 
    /* <chunksamps> is the number of sample frames -- 1 sample for each
@@ -140,7 +140,7 @@ int MYINST :: run()
    */
    samps = chunksamps * inputchans;
 
-   /* Read <samps> from the input file (or audio input device). */
+   /* Read <samps> samples from the input file (or audio input device). */
    rtgetin(in, this, samps);
 
    aamp = amp;                  /* in case amparray == NULL */
@@ -168,7 +168,7 @@ int MYINST :: run()
 
       /* If we have stereo output, use the pctleft pfield to pan.
          (Note: insts.jg/PAN/PAN.C shows a better method of panning,
-         using constant power panning controlled by a makegen.
+         using constant power panning controlled by a makegen.)
       */
       if (outputchans == 2) {
          out[1] = out[0] * (1.0 - pctleft);
@@ -182,12 +182,12 @@ int MYINST :: run()
       cursamp++;
    }
 
-   return i;
+   return chunksamps;
 }
 
 
 /* The scheduler calls this to create an instance of this instrument,
-   and to set up the bus-routing fields in the parent Instrument class.
+   and to set up the bus-routing fields in the base Instrument class.
    This happens for every "note" in a score.
 */
 Instrument *makeMYINST()
@@ -205,8 +205,7 @@ Instrument *makeMYINST()
    associates a Minc name (in quotes below) with the instrument. This
    is the name the instrument goes by in a Minc script.
 */
-void
-rtprofile()
+void rtprofile()
 {
    RT_INTRO("MYINST", makeMYINST);
 }
