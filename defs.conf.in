@@ -1,0 +1,18 @@
+# defs.conf generated automatically from defs.conf.in during configure
+
+ARCH = @ARCH@
+OPT = @CFLAGS@
+PERL_SUPPORT = @PERL_SUPPORT@
+PERL = @PERL@
+PYTHON_SUPPORT = @PYTHON_SUPPORT@
+PYTHON = @PYTHON@
+AUDIODRIVER = @AUDIODRIVER@
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+#DESTDIR = @bindir@
+MANDESTDIR = @mandir@
+HTMLDESTDIR = @HTMLDESTDIR@
+
+# for debugging configure.ac
+#WITH_VAL = @WITH_VAL@
