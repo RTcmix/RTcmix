@@ -46,6 +46,8 @@ int rtsetinput(float start, Instrument *theInst)
 	theInst->inputsr = inSR;
 	theInst->inputchans = inNCHANS;
 
+   inputFileTable[theInst->fdIndex].chans = inNCHANS;
+
 	theInst->sfile_on = 1;
 
 	/* offset is measured from location that is set up in rtinput() */
