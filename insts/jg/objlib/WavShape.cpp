@@ -40,11 +40,12 @@ MY_FLOAT WavShape :: tick(MY_FLOAT sample)
 
       loc1 = (int)findex;
       frac = findex - (MY_FLOAT)loc1;
-      val1 = transferFunc[loc1];
-      if (loc1 < lastIndex)
+      if (loc1 < lastIndex) {
+         val1 = transferFunc[loc1];
          val2 = transferFunc[loc1 + 1];
-      else
-         val2 = val1;
+      }
+      else     // pin to last array value if sample out of range
+         val2 = val1 = transferFunc[lastIndex];
       lastOutput = val1 + frac * (val2 - val1);
    }
    else
