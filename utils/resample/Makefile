@@ -2,7 +2,7 @@ include ../../makefile.conf
 
 SNDLIB = ../../sys/sndlibsupport.o ../../sndlib/sndlib.a
 
-CFLAGS += -Wall -O2
+#CFLAGS += -Wall -O2
 
 PROG = resample
 OBJS = resample.o resamplesubs.o
