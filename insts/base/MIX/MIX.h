@@ -1,5 +1,7 @@
+#include <bus.h>        /* for MAXBUS */
+
 class MIX : public Instrument {
-	int outchan[8];
+	int outchan[MAXBUS];
 	float amp,*amptable,tabs[2];
 	int skip;
 
