@@ -438,10 +438,10 @@ sndlib_print_current_header_stats(int fd, SFComment *sfc, int verbosity)
       char tmp[128];
 
 #ifdef SGI
-      sprintf(tmp, "frames: %d\nheader size: %ld bytes\n",
+      sprintf(tmp, "frames: %ld\nheader size: %d bytes\n",
                                                  nsamps / nchans, data_loc);
 #else
-      snprintf(tmp, 128, "frames: %d\nheader size: %ld bytes\n",
+      snprintf(tmp, 128, "frames: %ld\nheader size: %d bytes\n",
                                                  nsamps / nchans, data_loc);
 #endif
       strcat(str, tmp);
