@@ -34,21 +34,21 @@ static const int numBuffers = 2;		// number of audio buffers to queue up
 
 const char *get_audio_device_name()
 {
-	if (Option::inDevice() != NULL || Option::outDevice() != NULL)
+	if (strlen(Option::inDevice()) || strlen(Option::outDevice()))
 		return NULL;
 	return Option::device();
 }
 
 const char *get_audio_indevice_name()
 {
-	if (Option::device() != NULL)
+	if (strlen(Option::device()))
 		return Option::device();
 	return Option::inDevice();
 }
 
 const char *get_audio_outdevice_name()
 {
-	if (Option::device() != NULL)
+	if (strlen(Option::device()))
 		return Option::device();
 	return Option::outDevice();
 }
