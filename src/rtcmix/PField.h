@@ -150,7 +150,7 @@ private:
 	int 	_len;
 };
 
-class PFieldWrapper {
+class PFieldWrapper : public PField {
 protected:
 	PFieldWrapper(PField *innerPField);
 	virtual ~PFieldWrapper();
