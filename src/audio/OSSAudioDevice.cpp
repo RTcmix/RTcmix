@@ -19,6 +19,19 @@
 
 #define DEFAULT_DEVICE "/dev/dsp"
 
+#define DEBUG 0
+
+#if DEBUG > 1
+#define PRINT0 if (1) printf
+#define PRINT1 if (1) printf
+#elif DEBUG > 0
+#define PRINT0 if (1) printf
+#define PRINT1 if (0) printf
+#else
+#define PRINT0 if (0) printf
+#define PRINT1 if (0) printf
+#endif
+
 OSSAudioDevice::OSSAudioDevice(const char *devPath)
 	: _inputDeviceName(devPath), _outputDeviceName(devPath), _bytesPerFrame(0)
 {
@@ -61,7 +74,7 @@ int OSSAudioDevice::doClose()
 		closing(true);
 		resetFrameCount();
 		_bufferSize = 0;	// lets us know it must be recalculated.
-//		printf("\tOSSAudioDevice::doClose\n");
+		PRINT0("\tOSSAudioDevice::doClose\n");
 		status = ::close(device());
 		setDevice(0);
 	}
@@ -137,6 +150,9 @@ int OSSAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 		return error("OSS error while setting sample rate: ", strerror(errno));
 	if (dsp_speed != (int) srate)
 		return error("Device does not support this sample rate");
+#ifdef SOUND_PCM_WRITE_CHANNELS
+	PRINT0("OSSAudioDevice::doSetFormat: srate = %d, channels = %d\n", dsp_speed, reqChans);
+#endif
 	// Store the device params to allow format conversion.
 	setDeviceParams(deviceFormat | MUS_INTERLEAVED,		// always interleaved
 					chans,
@@ -158,6 +174,7 @@ int OSSAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 	}
 	*pWriteSize = fragSize / getDeviceBytesPerFrame();
 	_bufferSize = *pWriteSize * *pCount;
+	PRINT0("OSSAudioDevice::doSetQueueSize: writesize = %d, count = %d\n", *pWriteSize, *pCount);
 	return 0;
 }
 
@@ -165,7 +182,7 @@ int	OSSAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 {
 	int toRead = frameCount * _bytesPerFrame;
 	int read = ::read(device(), frameBuffer, toRead);
-//	printf("OSSAudioDevice::doGetFrames: %d bytes to read, %d read\n", toRead, read);
+	PRINT1("OSSAudioDevice::doGetFrames: %d bytes to read, %d read\n", toRead, read);
 	if (read > 0) {
 		int frames = read / _bytesPerFrame;
 		incrementFrameCount(frames);
@@ -180,7 +197,7 @@ int	OSSAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 {
 	int toWrite = frameCount * _bytesPerFrame;
 	int written = ::write(device(), frameBuffer, toWrite);
-//	printf("OSSAudioDevice::doSendFrames: %d bytes to write, %d written\n", toWrite, written);
+	PRINT1("OSSAudioDevice::doSendFrames: %d bytes to write, %d written\n", toWrite, written);
 	if (written > 0) {
 		int frames = written / _bytesPerFrame;
 		incrementFrameCount(frames);
@@ -201,7 +218,7 @@ static char zeroBuffer[32768];
 void OSSAudioDevice::run()
 {
 	audio_buf_info info;
-//	printf("OSSAudioDevice::run: top of loop\n");
+	PRINT1("OSSAudioDevice::run: top of loop\n");
 	while (waitForDevice(0) == true) {
 		if (ioctl(isPlaying() ? SNDCTL_DSP_GETOSPACE : SNDCTL_DSP_GETISPACE,
 				  &info))
@@ -210,7 +227,7 @@ void OSSAudioDevice::run()
 			break;
 		}
 		if (info.bytes < bufferSize() / 2) {
-//			printf("\tOSSAudioDevice::run: %d bytes avail...waiting\n", info.bytes);
+			PRINT1("\tOSSAudioDevice::run: %d bytes avail...waiting\n", info.bytes);
 			usleep(10);
 			continue;
 		}
@@ -228,7 +245,7 @@ void OSSAudioDevice::run()
 	// Write buffer of zeros.
 	doSendFrames(zeroBuffer, sizeof(zeroBuffer)/getDeviceBytesPerFrame());
 	
-//	printf("OSSAudioDevice::run: flushing...\n");
+	PRINT1("OSSAudioDevice::run: flushing...\n");
 	// Flush device.
 	ioctl(SNDCTL_DSP_SYNC, 0);
 
@@ -240,7 +257,7 @@ void OSSAudioDevice::run()
 	if (!stopping()) {
 		setState(Configured);
 		if (!closing()) {
-//			printf("OSSAudioDevice::run: calling close()\n");
+			PRINT1("OSSAudioDevice::run: calling close()\n");
 			close();
 		}
 	}
