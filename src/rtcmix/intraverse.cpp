@@ -37,7 +37,7 @@ extern "C" {
   {
     short rtInst;
     short playEm;
-    int i,j,chunksamps;
+    int i,chunksamps;
     int heapSize,rtQSize,allQSize;
     int offset;
     int keepGoing;
@@ -448,11 +448,8 @@ extern "C" {
     } // end playEm ----------------------------------------------------------
   
 	if (rtsetparams_called) {
-	  if (play_audio) {             // Play zero'd buffers to avoid clicks
-		int count = NCHANS * 4;  // DJT:  clicks on my box with 2
-		for (j = 0; j < count; j++) 
-		  rtsendzeros(0);
-      }  
+	  for (i = 0; i < ZERO_FRAMES_AFTER / RTBUFSAMPS; i++)
+		rtsendzeros(0);  // send a buffer of zeros to audio output device
 	  close_audio_ports();
 	  rtreportstats();
 	  rtcloseout();
