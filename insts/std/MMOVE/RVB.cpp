@@ -68,6 +68,10 @@ RVB::~RVB()
 	for (int i = 0; i < 2; i++) {
 		for (int j = 0; j < 6; j++)
 			delete [] m_rvbData[i][j].Rvb_del;
+		delete [] globalEarlyResponse[i];
+		globalEarlyResponse[i] = NULL;
+		delete [] globalReverbInput[i];
+		globalReverbInput[i] = NULL;
 	}
 }
 
@@ -106,17 +110,6 @@ int RVB::init(double p[], int n_args)
    
 	wire_matrix(Matrix);
 
-	// Allocate the global buffers used to store the early response.
-	
-	for (int n = 0; n < 2; ++n) {
-		if (globalEarlyResponse[n] == NULL)
-			globalEarlyResponse[n] = new double[RTBUFSAMPS];
-		memset(globalEarlyResponse[n], 0, sizeof(double) * RTBUFSAMPS);
-		if (globalReverbInput[n] == NULL)
-			globalReverbInput[n] = new double[RTBUFSAMPS];
-		memset(globalReverbInput[n], 0, sizeof(double) * RTBUFSAMPS);
-	}
-
 	_skip = (int) (SR / (float) resetval);
 	
 	if (rtsetoutput(outskip, m_dur + rvb_time, this) == -1)
@@ -128,8 +121,19 @@ int RVB::init(double p[], int n_args)
 int RVB::configure()
 {
 	in = new float [RTBUFSAMPS * inputChannels()];
-    alloc_delays();                     /* allocates memory for delays */
 
+	// Allocate the global buffers used to store the early response.
+	
+	for (int n = 0; n < 2; ++n) {
+		if (globalEarlyResponse[n] == NULL)
+			globalEarlyResponse[n] = new double[RTBUFSAMPS];
+		memset(globalEarlyResponse[n], 0, sizeof(double) * RTBUFSAMPS);
+		if (globalReverbInput[n] == NULL)
+			globalReverbInput[n] = new double[RTBUFSAMPS];
+		memset(globalReverbInput[n], 0, sizeof(double) * RTBUFSAMPS);
+	}
+
+    alloc_delays();                     /* allocates memory for delays */
 	rvb_reset();
 	return 0;
 }
@@ -216,7 +220,6 @@ inline double
 Allpass(double sig, int *counter, double *data)
 {
    register int nsdel, intap, length, outtap;
-   double gsig;
    double *delay = &data[2];
 
    nsdel = (int)data[1];
@@ -230,7 +233,7 @@ Allpass(double sig, int *counter, double *data)
 
    /* Input = sig + gain * (sig - delayed out)  */
 
-   gsig = data[0] * (sig - delay[outtap]);
+   double gsig = data[0] * (sig - delay[outtap]);
    delay[intap] = sig + gsig;
 
    *counter = ++intap;	// increment and store
