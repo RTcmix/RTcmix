@@ -26,6 +26,8 @@ gen3(struct gen *gen)
       gen->array[i] = val;
       i++;
    }
+   rewind(in_desc);
+
    if (i > gen->size)
       warn("gen3", "Table not large enough to hold all the data in file.");
 

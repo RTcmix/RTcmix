@@ -115,6 +115,7 @@ gen2(struct gen *gen)
             gen->array[i] = atof(inval);
             i++;
          }
+         rewind(in_desc);
       }
       if (i > gen->size)
          warn("gen2", "Table not large enough to hold all the data in file.");
