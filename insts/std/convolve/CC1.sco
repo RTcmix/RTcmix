@@ -13,7 +13,7 @@ setwindow(1, 0.2, 0,0, 20,1, 80,1, 100,0)
 *  p1 = source input skip
 *  p2 = output duration
 *  p3 = impulse file number (p1 on the input() command)
-*  p4 = impulse window number (p0 on the setwindow() command)
+*  p4 = duration to read impulse response file
 *  p5 = impulse input skip
 *  p6 = amplitude multiplier
 *  p7 = invert flag (0 or 1, swaps the imp + src, I think)
@@ -26,8 +26,10 @@ setwindow(1, 0.2, 0,0, 20,1, 80,1, 100,0)
 outsk = 0.0
 srcinsk = 0.0
 impinsk = 0.0
+impdur = 0.1
+
 for(i = 0; i < 30; i = i + 1) { /*  0.1 skips means 3 seconds done */
-	convolve(outsk, srcinsk, 0.1, 2, 1, impinsk, 1, 0, 0, 0.5)
+	convolve(outsk, srcinsk, 0.1, 2, impdur, impinsk, 1, 0, 0, 0.5)
 	outsk = outsk + 0.1
 	srcinsk = srcinsk + 0.1
 	impinsk = impinsk + 0.1
