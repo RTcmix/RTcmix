@@ -7,6 +7,7 @@
 
 #include <RTcmixMouse.h>
 #include <PField.h>
+#include <LowPass.h>
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
@@ -16,19 +17,6 @@ typedef enum {
 	kRTMouseAxisY
 } RTMouseAxis;
 
-
-#define ALPHA	-6.0
-#define MAXLAG	10.0
-
-// For lag in range [0,MAXLAG], return smoothing coefficient in range [0,1).
-static double makeSmoothingCoefficient(double lag)
-{
-	assert(lag >= 0.0 && lag <= MAXLAG);
-	double c = (1.0 - exp(lag * ALPHA / MAXLAG)) / (1.0 - exp(ALPHA));
-	if (c > 0.9999)		// coeff must not be 1.0, and best not be too near it
-		c = 0.9999;
-	return c;
-}
 
 class RTMousePField : public RTNumberPField {
 public:
@@ -59,21 +47,15 @@ public:
 		}
 
 		_diff = maxval - minval;
-		_val = _smoothval = 0.0;
-		_lastRawval = -999.9;	// must be a negative number other than -1.0
 
-		_coeffB = makeSmoothingCoefficient(lag);
-		_coeffA = 1.0 - _coeffB;
+		_filter = new LowPass();
+		_filter->setLag(lag);
 	}
 
-	virtual double doubleValue(double dummy)
+	virtual double doubleValue(double dummy) const
 	{
-		if (_axis == kRTMouseAxisX)
-			computeValueX();
-		else
-			computeValueY();
-		_smoothval = (_coeffA * _val) + (_coeffB * _smoothval);
-		return setValue(_smoothval);
+		double val = (_axis == kRTMouseAxisX) ? computeValueX() : computeValueY();
+		return _filter->next(val);
 	}
 
 protected:
@@ -82,44 +64,38 @@ protected:
 private:
 	RTcmixMouse *_mousewin;
 	RTMouseAxis _axis;
+	LowPass *_filter;
 	double _min;
 	double _default;
 
 	double _diff;
-	double _val;
-	double _smoothval;
-	double _lastRawval;
-	double _coeffA;
-	double _coeffB;
 	int _labelID;
 
-	void computeValueX()
+	double computeValueX() const
 	{
+		double val;
 		double rawval = _mousewin->getPositionX();
-		if (rawval != _lastRawval) {
-			if (rawval < 0.0)
-				_val = _default;
-			else
-				_val = _min + (_diff * rawval);
-			_mousewin->updateXLabelValue(_labelID, _val);
-			_lastRawval = rawval;
-		}
+		if (rawval < 0.0)
+			val = _default;
+		else
+			val = _min + (_diff * rawval);
+		_mousewin->updateXLabelValue(_labelID, val);
+		return val;
 	}
 
-	void computeValueY()
+	double computeValueY() const
 	{
+		double val;
 		double rawval = _mousewin->getPositionY();
-		if (rawval != _lastRawval) {
-			// NB: roundoff error in getPositionY can cause rawval to be a very
-			// small negative number when y-coord is bottom-most of window.
-			// A truly invalid value is a much larger negative number.
-			if (rawval < -0.000001)
-				_val = _default;
-			else
-				_val = _min + (_diff * rawval);
-			_mousewin->updateYLabelValue(_labelID, _val);
-			_lastRawval = rawval;
-		}
+		// NB: roundoff error in getPositionY can cause rawval to be a very
+		// small negative number when y-coord is bottom-most of window.
+		// A truly invalid value is a much larger negative number.
+		if (rawval < -0.000001)
+			val = _default;
+		else
+			val = _min + (_diff * rawval);
+		_mousewin->updateYLabelValue(_labelID, val);
+		return val;
 	}
 };
 
