@@ -406,6 +406,13 @@ main(int argc, char *argv[])
       int status;
 
       status = parse_score(xargc, xargv);
+#ifdef PYTHON
+      /* Have to reinstall this after running Python interpreter. (Why?) */
+      if (signal(SIGINT, sigint_handler) == SIG_ERR) {
+         fprintf(stderr, "Error installing signal handler.\n");
+         exit(1);
+      }
+#endif
       if (status == 0)
          inTraverse(NULL);
       else

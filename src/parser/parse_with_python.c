@@ -41,7 +41,10 @@ parse_score(int argc, char *argv[])
    if (status == 0) {
       PyRun_AnyFile(script, "");    // FIXME: 2nd arg should be script name
 
-      /* Kill interpreter, so that it won't trap cntl-C while insts play. */
+      /* Kill interpreter, so that it won't trap cntl-C while insts play.
+         Actually, it turns out that this doesn't help, at least for 
+         Python 2.x, so we have to reinstall our SIGINT handler in main().
+      */
       Py_Finalize();                /* any errors ignored internally */
    }
    else
