@@ -1,8 +1,6 @@
 # Change this if needed
 include insts.conf
 
-INSTDIR = `pwd`
-
 RTLIBDIRS = FMINST CLAR COMBIT FMINST SCULPT STEREO WAVESHAPE \
 METAFLUTE MULTICOMB AM AMINST IIR DEL1 DELAY PANECHO STRUM
 
@@ -23,13 +21,13 @@ install:
 	@for DIR in $(LIBDIRS); \
 	do \
 	( cd $$DIR; echo "making install in $$DIR..."; \
-	ln -fs $(INSTDIR)/$$DIR/lib$$DIR.so $(LIBDESTDIR); ) \
+	ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR); ) \
 	done
 	@for DIR in $(LIBDIRS); \
 	do \
 	( cd $$DIR; echo "making install in $$DIR..."; \
 	rm -f $(DESTDIR)/$$DIR; \
-	ln -fs $(INSTDIR)/$$DIR/$$DIR $(DESTDIR); ) \
+	ln -fs `pwd`/$$DIR $(DESTDIR); ) \
 	done
 
 clean:
