@@ -12,7 +12,7 @@
 #include <assert.h>
 #include <sndlibsupport.h>	// RTcmix header
 
-#define DEBUG 1
+#define DEBUG 2
 
 static const char *errToString(OSStatus err);
 static OSStatus getDeviceList(AudioDeviceID **devList, int *devCount);
@@ -909,18 +909,14 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 	if (_impl->bufferSampleFormat != MUS_BFLOAT)
 		return error("Only float audio buffers supported at this time.");
 
+	int reportedChannelCount = 0;
+	
 	if (_impl->formatWritable)
 	{
 		const int startDir = _impl->recording ? REC : PLAY;
 		const int endDir = _impl->playing ? PLAY : REC;
 		for (int dir = startDir; dir <= endDir; ++dir) {
 			port = &_impl->port[dir];
-			// We catch mono input and do the conversion ourselves.  Otherwise we
-			// create a buffer equal to the requested channel count.
-			if (port->streamCount == 1)
-				port->audioBufChannels = (chans == 1) ? 2 : chans;
-			else
-				port->audioBufChannels = 1;
 			// Default all values to device's defaults (from doOpen()), then set
 			// our sample rate.
 			AudioStreamBasicDescription requestedFormat = port->deviceFormat;
@@ -935,7 +931,7 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 			if (err != kAudioHardwareNoError) {
 				return error("Can't set audio device format: ", ::errToString(err));
 			}
-			// Now retrieve settings to see what we got (IS THIS NECESSARY?)
+			// Now retrieve settings to see what we got, and compare with request.
 			size = sizeof(port->deviceFormat);
 			err = AudioDeviceGetProperty(_impl->deviceID, 
 										  port->streamChannel, dir == REC,
@@ -948,6 +944,29 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 			}
 			else if (port->deviceFormat.mSampleRate != srate) {
 				return error("This sampling rate not supported.");
+			}
+			// We catch mono input and do the conversion ourselves.  Otherwise we
+			// create a buffer equal to the internal HW channel count.
+			if (port->streamCount == 1) {
+				if (port->deviceFormat.mChannelsPerFrame < chans && chans > 2) {
+					char errmsg[64];
+					sprintf(errmsg, "Cannot open %u-channel OSX device for %d channels",
+							port->deviceFormat.mChannelsPerFrame, chans);
+					return error(errmsg);
+				}
+				else if (port->deviceFormat.mChannelsPerFrame == 2 && chans == 1) {
+#if DEBUG > 0
+					printf("Performing internal mono-to-stereo conversion\n");
+					reportedChannelCount = chans;
+#endif
+				}
+				else
+					reportedChannelCount = port->deviceFormat.mChannelsPerFrame;
+				port->audioBufChannels = port->deviceFormat.mChannelsPerFrame;
+			}
+			else {
+				port->audioBufChannels = 1;
+				reportedChannelCount = port->deviceFormat.mChannelsPerFrame * port->streamCount;
 			}
 #if DEBUG > 0
 			printf("OSX %s HW (stream index %d, stream channel %d): %u %s channel(s)\n",
@@ -991,7 +1010,7 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 	}
 
 	setDeviceParams(deviceFormat,
-					port->deviceFormat.mChannelsPerFrame * port->streamCount,
+					reportedChannelCount,
 					port->deviceFormat.mSampleRate);
 	return 0;
 }
