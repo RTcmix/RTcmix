@@ -4,11 +4,11 @@ class FMINST : public Instrument {
 	int nargs, skip, branch;
 	int lenind;
 	float amp, carfreq, carfreqraw, modfreq, modfreqraw, peakdev, spread;
-	double *indexenv, *wavetable, *ampenv;
+	double *indexenv, *ampenv;
 	float indtabs[2], amptabs[2];
 	Ooscili *carosc, *modosc;
 
-	void doupdate(double p[]);
+	void doupdate();
 public:
 	FMINST();
 	virtual ~FMINST();

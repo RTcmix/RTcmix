@@ -77,7 +77,7 @@ int FMINST::init(double p[], int n_args)
 	else
 		modfreq = modfreqraw;
 
-	wavetable = NULL;
+	double *wavetable = NULL;
 	int tablelen = 0;
 	if (n_args > 8) {      // handle table coming in as optional p8 TablePField
 		const PField &field = getPField(8);
@@ -95,21 +95,14 @@ int FMINST::init(double p[], int n_args)
 	carosc = new Ooscili(carfreq, wavetable, tablelen);
 	modosc = new Ooscili(modfreq, wavetable, tablelen);
 
-	indexenv = NULL;
-	tablelen = 0;
-	if (n_args > 9) {      // handle table coming in as optional p9 TablePField
-		const PField &field = getPField(9);
-		tablelen = field.values();
-		indexenv = (double *) field;
-	}
-	if (indexenv == NULL) {
+	if (n_args < 10) {		// no p9 guide PField, must use gen table
 		indexenv = floc(INDEX_GEN_SLOT);
 		if (indexenv == NULL)
 			return die("FMINST", "Either use the index guide pfield (p9) or make "
                     "an old-style gen function in slot %d.", INDEX_GEN_SLOT);
-		tablelen = fsize(INDEX_GEN_SLOT);
+		int len = fsize(INDEX_GEN_SLOT);
+		tableset(dur, len, indtabs);
 	}
-	tableset(dur, tablelen, indtabs);
 
 	ampenv = floc(AMP_GEN_SLOT);
 	if (ampenv) {
@@ -122,8 +115,11 @@ int FMINST::init(double p[], int n_args)
 	return nSamps();
 }
 
-void FMINST::doupdate(double p[])
+void FMINST::doupdate()
 {
+   double p[10];
+   update(p, 10);
+
 	amp = p[2];
 	if (ampenv)
 		amp *= table(currentFrame(), ampenv, amptabs);
@@ -152,7 +148,7 @@ void FMINST::doupdate(double p[])
 		maxindex = tmp;
 	}
 	float guide;
-	if (nargs == 10)		// guide pfield is present
+	if (nargs > 9)			// guide pfield is present
 		guide = p[9];
 	else                 // backward-compatible gen table
 		guide = tablei(currentFrame(), indexenv, indtabs);
@@ -166,9 +162,7 @@ int FMINST::run()
 {
 	for (int i = 0; i < framesToRun(); i++) {
 		if (--branch <= 0) {
-			double p[10];
-			update(p, 10);
-			doupdate(p);
+			doupdate();
 			branch = skip;
 		}
 
