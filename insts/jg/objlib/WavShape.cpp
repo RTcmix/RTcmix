@@ -1,12 +1,14 @@
 /* Wave shaping class, by John Gibson, 1999. Derived from cmix genlib/wshape.c.
+
+   NOTE: transfer function table should have values in range [-1, 1], and
+   samples fed to tick() should also be in this range.
 */
 
 #include "WavShape.h"
 
 
-WavShape :: WavShape(MY_FLOAT aLimit = 1.0)
+WavShape :: WavShape()
 {
-   limit = aLimit;
    transferFunc = NULL;
 }
 
@@ -28,13 +30,15 @@ void WavShape :: setTransferFunc(MY_FLOAT *aFunc, int aSize)
 }
 
 
+/* <sample> should be in range [-1, 1].
+*/
 MY_FLOAT WavShape :: tick(MY_FLOAT sample)
 {
    int      loc1;
    MY_FLOAT findex, frac, val1, val2;
 
    if (transferFunc) {
-      findex = (sample + limit) * indexFactor;
+      findex = (sample + 1.0) * indexFactor;
       if (findex < 0.0)
          findex = 0.0;
 
