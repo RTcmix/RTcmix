@@ -2,8 +2,9 @@
 
 class START : public Instrument {
 	float spread;
+	float *amptable, amptabs[2];
 	strumq *strumq1;
-	int deleteflag;
+	int deleteflag, skip;
 
 public:
 	START();
