@@ -28,14 +28,23 @@ but its input source has %d channels.\n"
 int
 rtsetinput(float start_time, Instrument *inst)
 {
-   if (inst->bus_config->auxin_count > 0) {
+   int auxin_count = inst->bus_config->auxin_count;
+   int in_count = inst->bus_config->in_count;
+
+   if (auxin_count == 0 && in_count == 0) {
+      fprintf(stderr, "This instrument requires input from either an in bus"
+                      "or an aux bus.\n Change this with bus_config().\n");
+      exit(1);
+   }
+
+   if (auxin_count > 0) {
       if (start_time != 0.0) {
          fprintf(stderr, "inskip must be 0 when reading from an aux bus.\n");
          exit(1);
       }
    }
 
-   if (inst->bus_config->in_count > 0) {
+   if (in_count > 0) {
       int src_chans;
       int index = get_last_input_index();
 
