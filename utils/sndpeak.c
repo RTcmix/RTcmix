@@ -44,7 +44,7 @@ char *argv[];
 
 		status = 2;
 		rwopensf(name,sfd,hd,st,"sndpeak",i,status);
-		if(i<0) closesf();
+		if(i<0) exit(1);
 
 		/* printf("%f %d %d\n",sfsrate(&hd),sfchans(&hd),sfclass(&hd)); */
 
