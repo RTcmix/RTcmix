@@ -13,7 +13,8 @@ public:
 	int configure();
 	int run();
 protected:
-	int    incount, inframe, skip, branch, inchan;
+	int    skip, branch, inchan;
+	int _startFrame;
 	float speed;
 	float  amp, aamp, pctleft;
 	double *amptable;
@@ -44,6 +45,8 @@ private:
 
 	// Set up pSincTable and pSincTableDiffs.
 	void MakeSincTable();
+	
+	bool _initialized;
 
 	float* pSincTable;		// `right wing' of a sinc function
 	float* pSincTableDiffs;	// differences between sinc samples

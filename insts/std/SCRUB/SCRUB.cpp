@@ -4,7 +4,7 @@
    p1 = input start time
    p2 = output duration (time to end if negative)
    p3 = amplitude multiplier
-   p4 = interval of transposition, in octave.pc
+   p4 = transposition factor (literal)
    p5 = sync width in samples
    p6 = sync oversampling
    p7 = input channel [optional, default is 0]
@@ -30,6 +30,12 @@
 
 //#define DEBUG
 //#define DEBUG_FULL
+
+#ifdef DEBUG
+#define PRINT printf
+#else
+#define PRINT if (0) printf
+#endif
 
 // Set buffer segment size to a power of two to be able to test most
 // efficiently for out-of-bounds conditions of the read pointer
@@ -57,6 +63,8 @@ SCRUB::SCRUB(int sincWidth, int sincOversampling) : Instrument(),
   fFrameCount(0), fChannels(1),
   fCurRawFramesIdx(0.0f), fFileChunkStartFrame(0), fFileChunkEndFrame(0)
 {
+   _initialized = false;
+   _startFrame = 0;
    in = NULL;
    branch = 0;
 }
@@ -73,7 +81,7 @@ SCRUB::~SCRUB()
 
 int SCRUB::init(double p[], int n_args)
 {
-	float outskip, inskip, dur, transp, interval, total_indur, dur_to_read;
+	float outskip, inskip, dur, dur_to_read;
 
 	if (n_args < 5) {
 	  die("SCRUB", "Wrong number of args.");
@@ -84,7 +92,7 @@ int SCRUB::init(double p[], int n_args)
 	inskip = p[1];
 	dur = p[2];
 	amp = p[3];
-	transp = p[4];
+	speed = p[4];
 	if (n_args > 5)
 		kSincWidth = (int) p[5];
 	if (n_args > 6)
@@ -102,25 +110,23 @@ int SCRUB::init(double p[], int n_args)
 
 	if (inchan >= inputChannels()) {
 		return die("SCRUB", "You asked for channel %d of a %d-channel file.",
-												   inchan, inputChannels());
+				   inchan, inputChannels());
 	}
+	
+	_startFrame = (int) (0.5 + inskip * SR);
 
-	speed = (double) cpsoct(10.0 + p[4]) / cpsoct10;
-   /* to trigger first read in run() */
-   inframe = RTBUFSAMPS;
+	amptable = floc(1);
+	if (amptable) {
+		int amplen = fsize(1);
+		tableset(SR, dur, amplen, tabs);
+	}
+	else
+		advise("SCRUB", "Setting phrase curve to all 1's.");
+	aamp = amp;
 
-   amptable = floc(1);
-   if (amptable) {
-      int amplen = fsize(1);
-      tableset(SR, dur, amplen, tabs);
-   }
-   else
-      advise("SCRUB", "Setting phrase curve to all 1's.");
-   aamp = amp;
+	skip = (int) (SR / (float) resetval);
 
-   skip = (int) (SR / (float) resetval);
-
-   return nSamps();
+	return nSamps();
 }
 
 int SCRUB::configure()
@@ -148,10 +154,9 @@ int SCRUB::run()
 	double    frac;
 
 	// HACK
-	static int initialized = 0;
-	if (!initialized) {
+	if (!_initialized) {
 		Initialize();
-		initialized = 1;
+		_initialized = 1;
 	}
 	
 	outp = outbuf;               /* point to inst private out buffer */
@@ -163,8 +168,7 @@ int SCRUB::run()
 			double 	p[6];
 			update(p, 6);
 			amp = p[3];
-			double interval = p[4];
-			speed = (double) cpsoct(10.0 + interval) / cpsoct10;
+			speed = p[4];
 			if (amptable)
 				aamp = table(cursamp, amptable, tabs) * amp;
 			branch = skip;
@@ -201,16 +205,19 @@ void rtprofile()
    RT_INTRO("SCRUB", makeSCRUB);
 }
 
+inline int max(int x, int y) { return (x >= y) ? x : y; }
 
 int SCRUB::Initialize() {
-	fFileChunkStartFrame = 0;
-	fFileChunkEndFrame = 0;
-	fFrameCount = getendsamp();
+	fFileChunkStartFrame = _startFrame;
+	fFileChunkEndFrame = _startFrame;
+	fFrameCount = (speed >= 0.0) ?
+		_startFrame + getendsamp() : max(_startFrame, getendsamp());
+	PRINT("Initialize: fFrameCount set to %ld\n", fFrameCount);
 	// read in initial frames so that fCurRawFramesIdx is centered
 	int NPastFrames = gkNrRawFrames / 2;
 	int NFutureFrames = gkNrRawFrames - NPastFrames;
 	ReadRawFrames(NPastFrames, NFutureFrames);
-	fFileChunkStartFrame = 0;
+	fFileChunkStartFrame = _startFrame;
 	ReadRawFrames(0, -NPastFrames);
 	fCurRawFramesIdx = (float)NPastFrames;
 	return 0;
@@ -249,6 +256,7 @@ int SCRUB::ReadRawFrames(int destframe, int nframes) {
 
   int res;
   int toread = abs(nframes);
+  PRINT("ReadRawFrames calling rtinrepos() with loc = %d\n", (int)fromFrame);
   res = rtinrepos(this, (int) fromFrame, SEEK_SET);
   if (res < 0) {
     return -1;
@@ -257,6 +265,7 @@ int SCRUB::ReadRawFrames(int destframe, int nframes) {
   int err = 0;
   int read = 0;
   while (1) {
+  	PRINT("ReadRawFrames calling rtgetin() for %d frames\n", (toread - read));
     res = rtgetin(&pRawFrames[(destframe + read) * fChannels],
 				  this,
 				  (toread - read) * fChannels);
@@ -267,6 +276,7 @@ int SCRUB::ReadRawFrames(int destframe, int nframes) {
 	else
       read += res;
     if (read < toread) {
+ 	  PRINT("ReadRawFrames calling rtinrepos() with loc = 0\n");
       rtinrepos(this, 0, SEEK_SET);
     }
 	else
