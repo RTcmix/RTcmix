@@ -3,6 +3,7 @@ include ../../makefile.conf
 AUDIOLIB = librtaudio.a
 
 INCLUDES += -I../sndlib -I../rtcmix -I$(INCLUDEDIR)
+CFLAGS += -DCMIX_LEGACY
 
 OBJECTS =  AudioDevice.o AudioIODevice.o AudioDeviceImpl.o \
 		   ThreadedAudioDevice.o AudioFileDevice.o NetAudioDevice.o \
