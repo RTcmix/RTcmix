@@ -7,7 +7,22 @@ include makefile.conf
 BASE = insts/base
 DIRS = include genlib src insts utils docs
 
-all: $(DIRS) packages
+all:
+	@echo "making all ..."
+	@for DIR in $(DIRS) $(INST_DIRS); \
+	do \
+	  ( cd $$DIR; $(MAKE) $(MFLAGS) all ); \
+	done
+ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
+	@for DIR in $(PACKAGE_DIRS); \
+	do \
+		( cd $$DIR; $(MAKE) $(MFLAGS) all ); \
+	done
+endif
+	@echo "done"
+
+# Individual make targets.  Note that these are not necessarily equivalent
+# to the subdir with the same name.
 
 include::
 	@echo "making and installing include..."
