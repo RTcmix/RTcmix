@@ -1,0 +1,86 @@
+=head1 NAME
+
+AM - apply amplitude or ring modulation to an input source 
+
+=head1 SYNOPSIS
+
+B<AM>(I<outskip>, I<inskip>, I<indur>, I<ampmult>, I<modfreq>,
+[, I<inchan> [, I<stereoloc>] ])
+
+Function table 1 gives amplitude curve.
+
+Function table 2 gives modulator waveform (e.g., L<gen9|gen9> or
+L<gen10|gen10>).
+
+Function table 3 gives modulator frequency curve (in time,Hz pairs).
+(Optional; set I<modfreq> to 0 to use table.)
+
+=head1 DESCRIPTION
+
+B<AM> processes an input source using amplitude or ring modulation.  An
+oscillator modulates the amplitude of the source.  You control the waveform of
+the oscillator (table 2) and the frequency, using either a static frequency
+(I<modfreq>) or a frequency curve (table 3).
+
+You get either amplitude modulation or ring modulation, depending on whether
+the modulator waveform is unipolar (no negative values) or bipolar (positive
+and negative values, like a typical waveform).  A unipolar modulator does
+amplitude modulation; a bipolar modulator does ring modulation.
+
+To make a unipolar sine wave, you can add a DC component 90 degrees out of
+phase.  For example, the following makegen, using L<gen9|gen9>, creates a sine
+wave that oscillates between 0 and 1:
+
+   makegen(2, 9, 1000, 0, .5, 90, 1, .5, 0)
+
+B<AM> uses the curve provided in function table 1 to scale the amplitudes
+of the input source.  Use L<setline|setline>, L<setexp|setexp>, or
+L<makegen|makegen> to create function table 1.  If this table has not
+been created, no amplitude scaling (other than that given by I<ampmult>)
+will occur.
+
+The output of B<AM> can be either mono or stereo.
+
+=head1 PFIELDS
+
+=over 8
+
+=item B<p0> (I<outskip>) output start time
+
+=item B<p1> (I<inskip>) input start time
+
+=item B<p2> (I<indur>) input duration
+
+=item B<p3> (I<ampmult>) amplitude multiplier
+
+=item B<p4> (I<modfreq>) modulation oscillator frequency in Hz
+(or 0 to use table 3)
+
+=item B<p5> (I<inchan>) input channel [optional, default is 0]
+
+=item B<p6> (I<stereoloc>) percent (from 0 to 1) of input signal to place
+in left output channel [optional, default is 0.5 if output is stereo]
+
+=back
+
+=head1 EXAMPLES
+
+   rtinput("mysound.aif")
+   setline(0,0, 1,1, 2,0)
+   makegen(2, 10, 1000, 1)
+
+   AM(outskip=0, inskip=0, dur=DUR(), amp=1, modfreq=400)
+
+This score fragment processes the entire "mysound.aif" (left channel only)
+using ring modulation, with a sine wave modulator with a frequency of 400 Hz.
+
+=head1 SEE ALSO
+
+L<setline|setline>, L<setexp|setexp>, L<makegen|makegen>, L<AMINST|AMINST>
+
+=head1 AUTHORS
+
+Brad Garton (maybe?)
+
+Additions by John Gibson E<lt>johgibso at indiana eduE<gt>
+
