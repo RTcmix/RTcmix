@@ -1,6 +1,14 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Saturday, February 22, 2003 Brad Garton <brad-at-music.columbia.edu>
+
+   * Added change to allow app compiling under X11 on OSX using
+	the RTcmix* object
+   * Added new object-ugen: lib/Orand.C (H/Ougens/h) -- collects
+	various random functions scattered throughout RTcmix
+   * Updated object-ugen lib/Ooscili.C, adding several new access methods
+
 Tuesday, February 18, 2003 Douglas Scott <dscott-at-netscape.net>
 
    * Several rounds of cleanup and bug fixing for PVOC between 2/12 and today.
