@@ -28,6 +28,7 @@ ug_intro()
 	UG_INTRO("rand",m_rand);
 	UG_INTRO("srand",m_srand);
 	UG_INTRO("fplot",fplot);
+	UG_INTRO("fdump",fdump);
 	UG_INTRO("tb",m_time_beat);
 	UG_INTRO("bt",m_beat_time);
 	UG_INTRO("tbase",tbase);
