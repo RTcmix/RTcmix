@@ -85,10 +85,12 @@ Instrument :: ~Instrument()
 */
 void Instrument :: set_bus_config(const char *inst_name)
 {
-   bus_config = get_bus_config(inst_name);
-
-   inputchans = bus_config->in_count + bus_config->auxin_count;
-   outputchans = bus_config->out_count + bus_config->auxout_count;
+  pthread_mutex_lock(&bus_slot_lock);
+  bus_config = get_bus_config(inst_name);
+  
+  inputchans = bus_config->in_count + bus_config->auxin_count;
+  outputchans = bus_config->out_count + bus_config->auxout_count;
+  pthread_mutex_unlock(&bus_slot_lock);
 }
 
 

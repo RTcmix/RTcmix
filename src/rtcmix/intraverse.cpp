@@ -68,6 +68,7 @@ extern "C" {
     // Wait for the ok to go ahead
 	pthread_mutex_lock(&audio_config_lock);
     if (!audio_config) {
+	  if (print_is_on)
       cout << "inTraverse():  waiting for audio_config . . . ";
     }
 	pthread_mutex_unlock(&audio_config_lock);
@@ -81,10 +82,11 @@ extern "C" {
     }
 
     if (audio_configured && rtInteractive) {
-      cout << "audio set.\n\n";
+	  if (print_is_on)
+		cout << "audio set.\n\n";
     }
 
-    // Initialize everything
+    // Initialize everything ... cause it's good practice
     bufStartSamp = 0;  // current end sample for buffer
     bufEndSamp = RTBUFSAMPS;
     chunkStart = 0;
@@ -93,6 +95,15 @@ extern "C" {
     elapsed = 0;
     rtInst = 0;
     playEm = 0;
+	// These from make warnings ... shouldn't be necessary
+	// Put here to fix make warnings
+	rtQSize = 0;
+	bus_q_offset = 0;
+	heapChunkStart = 0;
+	bus = -1;  // Don't play
+	busq = 0;
+	bus_type = BUS_OUT; // Default when none is set
+	endbus = 999;  // Don't end yet
 
     // NOTE: audioin, aux and output buffers are zero'd during allocation
 
@@ -127,7 +138,6 @@ extern "C" {
 #ifdef TBUG
 	  cout << "heapSize = " << heapSize << endl;
 	  cout << "heapChunkStart = " << heapChunkStart << endl;
-	  cout << "Bus_Configed = " << Bus_Configed << endl;
 #endif
 
       // Pop elements off rtHeap and insert into rtQueue +++++++++++++++++++++
@@ -140,6 +150,7 @@ extern "C" {
 		  break;
 
 		// DJT Now we push things onto different queues
+		pthread_mutex_lock(&bus_slot_lock);
 		bus_class = checkClass(Iptr->bus_config);
 		switch (bus_class) {
 		case TO_AUX:
@@ -204,6 +215,7 @@ extern "C" {
 		  cout << "ERROR (intraverse): unknown bus_class\n";
 		  break;
 		}
+		pthread_mutex_unlock(&bus_slot_lock);
 
 		pthread_mutex_lock(&heapLock);
 		heapSize = rtHeap.getSize();
@@ -225,16 +237,22 @@ extern "C" {
 		case TO_AUX:
 		  bus_q_offset = 0;
 		  bus_type = BUS_AUX_OUT;
+		  pthread_mutex_lock(&to_aux_lock);
 		  bus = ToAuxPlayList[play_bus++];
+		  pthread_mutex_unlock(&to_aux_lock);
 		  break;
 		case AUX_TO_AUX:
 		  bus_q_offset = MAXBUS;
+		  pthread_mutex_lock(&aux_to_aux_lock);
 		  bus = AuxToAuxPlayList[play_bus++];
+		  pthread_mutex_unlock(&aux_to_aux_lock);
 		  bus_type = BUS_AUX_OUT;
 		  break;
 		case TO_OUT:
 		  bus_q_offset = MAXBUS*2;
+		  pthread_mutex_lock(&to_out_lock);
 		  bus = ToOutPlayList[play_bus++];
+		  pthread_mutex_unlock(&to_out_lock);
 		  bus_type = BUS_OUT;
 		  break;
 		default:
@@ -290,6 +308,8 @@ extern "C" {
 		  // unlcear what that will do just now
 		  if (offset < 0) { // BGG: added this trap for robustness
 			cout << "WARNING: the scheduler is behind the queue!" << endl;
+			cout << "chunkStart:  " << chunkStart << endl;
+			cout << "bufStartSamp:  " << bufStartSamp << endl;
 			offset = 0;
 		  }
 		  
@@ -326,6 +346,7 @@ extern "C" {
 			rtQueue[busq].push(Iptr,chunkStart+chunksamps);   // put back onto queue
 		  }
 		  else {
+			pthread_mutex_lock(&bus_slot_lock);
 			t_class = checkClass(Iptr->bus_config);
 			switch (t_class) {
 			case TO_AUX:
@@ -355,6 +376,7 @@ extern "C" {
 			if ((qStatus == t_class) && (bus == endbus)) {
 			  delete Iptr;
 			}
+			pthread_mutex_unlock(&bus_slot_lock);
  		  }  // end rtQueue or delete ----------------------------------------
 		  
 		  // DJT:  not sure this check before new chunkStart is necessary
