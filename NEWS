@@ -2,6 +2,13 @@ This gives a very brief summary of new things for each stable version.
 If you want more detail, see the ChangeLog.
 
 
+RTcmix version 4.0
+------------------
+
+Includes a major new set of features to enable dynamic parameter
+updates.
+
+
 RTcmix version 3.8
 ------------------
 
