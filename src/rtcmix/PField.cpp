@@ -108,6 +108,31 @@ int PFieldBinaryOperator::values() const
 	return (len1 == 1 || len2 == 1) ? max(len1, len2) : min(len1, len2);
 }
 
+int PFieldBinaryOperator::print(FILE *file) const
+{
+	const int len1 = _pfield1->values();
+	const int len2 = _pfield2->values();
+	int maxlen;
+	PField *mintable, *maxtable;
+	if (len1 >= len2) {
+		maxlen = len1;
+		maxtable = _pfield1;
+		mintable = _pfield2;
+	}
+	else {
+		maxlen = len2;
+		maxtable = _pfield2;
+		mintable = _pfield1;
+	}
+	int chars = 0;
+	for (int n = 0; n < maxlen; ++n) {
+		double frac = (double) n/(maxlen-1);
+		double value = maxtable->doubleValue(n) * mintable->doubleValue(frac);
+		chars += fprintf(file, "%.6f\n", value);
+	}
+	return chars;
+}
+
 // TablePField
 
 TablePField::TablePField(double *tableArray, int length)
@@ -156,29 +181,52 @@ int TablePField::copyValues(double *array) const
 	return len;
 }
 
-// LoopedPField
+// PFieldWrapper
 
-LoopedPField::LoopedPField(PField *innerPField, double loopFactor)
-	: _pField(innerPField), _factor(loopFactor), _len(innerPField->values())
+PFieldWrapper::PFieldWrapper(PField *innerPField) : _pField(innerPField)
 {
 	_pField->ref();
 }
 
-LoopedPField::~LoopedPField() { _pField->unref(); }
+PFieldWrapper::~PFieldWrapper() { _pField->unref(); }
 
-double	LoopedPField::doubleValue(double didx) const
+// LoopedPField
+
+LoopedPField::LoopedPField(PField *innerPField, double loopFactor)
+	: PFieldWrapper(innerPField), _factor(loopFactor), _len(innerPField->values())
+{
+}
+
+double LoopedPField::doubleValue(double didx) const
 {
 	double dfrac = didx * _factor;
 	while (dfrac > 1.0)
 		dfrac -= 1.0;
-	return _pField->doubleValue(dfrac);
+	return field()->doubleValue(dfrac);
 }  
 
-double	LoopedPField::doubleValue(int idx) const
+double LoopedPField::doubleValue(int idx) const
 {
 	int nidx = int(idx * _factor);
 	while (nidx >= _len)
 		nidx -= _len;
-	return _pField->doubleValue(nidx);
+	return field()->doubleValue(nidx);
+}
+
+// ReversePField
+
+ReversePField::ReversePField(PField *innerPField)
+	: PFieldWrapper(innerPField), _len(innerPField->values())
+{
+}
+
+double ReversePField::doubleValue(double didx) const
+{
+	return field()->doubleValue(1.0 - didx);
+}  
+
+double ReversePField::doubleValue(int idx) const
+{
+	return field()->doubleValue(_len - idx);
 }
 

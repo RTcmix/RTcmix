@@ -72,6 +72,7 @@ public:
 	virtual double	doubleValue(double) const;
 	typedef double (*Operator)(double, double);
 	PFieldBinaryOperator(PField *pf1, PField *pf2, Operator);
+	virtual int		print(FILE *) const;
 	virtual int		values() const;
 protected:
 	virtual 		~PFieldBinaryOperator();
@@ -149,18 +150,36 @@ private:
 	int 	_len;
 };
 
+class PFieldWrapper {
+protected:
+	PFieldWrapper(PField *innerPField);
+	virtual ~PFieldWrapper();
+	PField *field() const { return _pField; }
+private:
+	PField *_pField;
+};
+
 // Class for looped reading of table.  'loopFactor' is how many times
 // table will loop for doubleValue(0 through 1.0)
 
-class LoopedPField : public PField {
+class LoopedPField : public PFieldWrapper {
 public:
 	LoopedPField(PField *innerPField, double loopFactor);
-	~LoopedPField();
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
 private:
-	PField *_pField;
 	double	_factor;
+	int		_len;
+};
+
+// Class for reverse-reading table.
+
+class ReversePField : public PFieldWrapper {
+public:
+	ReversePField(PField *innerPField);
+	virtual double	doubleValue(double didx) const;
+	virtual double	doubleValue(int idx) const;
+private:
 	int		_len;
 };
 
