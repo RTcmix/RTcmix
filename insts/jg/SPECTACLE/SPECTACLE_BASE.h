@@ -64,7 +64,7 @@ public:
    virtual int run();
 protected:
    float *resample_functable(float *, int, int);
-   void make_windows();
+   int make_windows();
    void shiftin();
    void fold(int);
    void leanconvert();
