@@ -16,8 +16,24 @@ class RTcmixMIDI {
 public:
 	RTcmixMIDI();
 	virtual ~RTcmixMIDI();
+	int init();
 	void clear();
 	void dump();
+
+	inline int getNoteOnVel(int chan, int pitch)
+						{ return _noteonvel[chan][pitch]; }
+	inline int getNoteOffVel(int chan, int pitch)
+						{ return _noteoffvel[chan][pitch]; }
+	inline int getPolyPress(int chan, int pitch)
+						{ return _polypress[chan][pitch]; }
+	inline int getControl(int chan, int controlnum)
+						{ return _control[chan][controlnum]; }
+	inline int getBend(int chan)
+						{ return _bend[chan]; }
+	inline int getProgram(int chan)
+						{ return _program[chan]; }
+	inline int getChanPress(int chan)
+						{ return _chanpress[chan]; }
 
 private:
 	inline bool active() { return _active; }
@@ -27,34 +43,21 @@ private:
 	inline PmStream *instream() { return _instream; }
 	inline PmStream *outstream() { return _outstream; }
 
-	inline int getNoteOnVel(int chan, int pitch)
-						{ return _noteonvel[chan][pitch]; }
 	inline void setNoteOnVel(int chan, int pitch, int val)
 						{ _noteonvel[chan][pitch] = val; }
-	inline int getNoteOffVel(int chan, int pitch)
-						{ return _noteoffvel[chan][pitch]; }
 	inline void setNoteOffVel(int chan, int pitch, int val)
 						{ _noteoffvel[chan][pitch] = val; }
-	inline int getPolyPress(int chan, int pitch)
-						{ return _polypress[chan][pitch]; }
 	inline void setPolyPress(int chan, int pitch, int val)
 						{ _polypress[chan][pitch] = val; }
-	inline int getControl(int chan, int controlnum)
-						{ return _control[chan][controlnum]; }
 	inline void setControl(int chan, int controlnum, int val)
 						{ _control[chan][controlnum] = val; }
-	inline int getBend(int chan)
-						{ return _bend[chan]; }
 	inline void setBend(int chan, int val)
 						{ _bend[chan] = val; }
-	inline int getProgram(int chan)
-						{ return _program[chan]; }
 	inline void setProgram(int chan, int val)
 						{ _program[chan] = val; }
-	inline int getChanPress(int chan)
-						{ return _chanpress[chan]; }
 	inline void setChanPress(int chan, int val)
 						{ _chanpress[chan] = val; }
+	const char *getValueString(const int val);
 
 	static void _processMIDI(PtTimestamp timestamp, void *context);
 
