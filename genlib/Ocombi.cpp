@@ -14,7 +14,7 @@
 // frequency) that you expect to use.  It must be >= loopTime.  <reverbTime>
 // must be greater than zero.
 
-Ozcomb::Ozcomb(float SR, float loopTime, float maxLoopTime, float reverbTime)
+Ocombi::Ocombi(float SR, float loopTime, float maxLoopTime, float reverbTime)
 	: _sr(SR)
 {
 	assert(maxLoopTime > 0.0);
@@ -28,12 +28,12 @@ Ozcomb::Ozcomb(float SR, float loopTime, float maxLoopTime, float reverbTime)
 	_lastout = 0.0;
 }
 
-Ozcomb::~Ozcomb()
+Ocombi::~Ocombi()
 {
 	delete _delay;
 }
 
-void Ozcomb::clear()
+void Ocombi::clear()
 {
 	_delay->clear();
 	_lastout = 0.0;
@@ -42,7 +42,7 @@ void Ozcomb::clear()
 // Can be called repeatedly while running.  <reverbTime> must be greater
 // than zero.
 
-void Ozcomb::setReverbTime(float reverbTime)
+void Ocombi::setReverbTime(float reverbTime)
 {
 	assert(reverbTime > 0.0);
 	_gain = pow(0.001, (_delsamps / _sr) / reverbTime);
@@ -51,7 +51,7 @@ void Ozcomb::setReverbTime(float reverbTime)
 // Make sure <delaySamps> is between 0 and (maxLoopTime * _sr), or you'll
 // get sudden pitch changes and dropouts.
 
-float Ozcomb::next(float input, float delaySamps)
+float Ocombi::next(float input, float delaySamps)
 {
 	if (delaySamps != _delsamps) {
 		_delsamps = delaySamps;
