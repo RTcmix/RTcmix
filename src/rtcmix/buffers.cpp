@@ -19,6 +19,82 @@ static BufPtr allocate_buffer(int nsamps);
 
 
 
+/* -------------------------------------- copy_interleaved_buf_to_one_buf --- */
+/* Copy the specified channel of an interleaved buffer to a one-channel
+   buffer. Buffers must be of same type (e.g., float).
+*/
+#ifdef __GNUC__
+inline void
+#else
+void
+#endif
+copy_interleaved_buf_to_one_buf(
+      BufPtr         dest,            /* buffer containing one chan */
+      const BufPtr   src,             /* interleaved buffer */
+      int            src_chans,       /* chans in interleaved buffer */
+      int            src_chan,        /* channel to copy from */
+      int            dest_frames)     /* frames in destination buffer */
+{
+   int   i, j;
+
+   for (i = 0, j = src_chan; i < dest_frames; i++, j += src_chans)
+      dest[i] = src[j];
+}
+
+
+/* -------------------------------------- copy_one_buf_to_interleaved_buf --- */
+/* Copy a one-channel buffer into the specified channel of an interleaved
+   buffer. Buffers must be of same type (e.g., float).
+*/
+#ifdef __GNUC__
+inline void
+#else
+void
+#endif
+copy_one_buf_to_interleaved_buf(
+      BufPtr         dest,            /* interleaved buffer */
+      const BufPtr   src,             /* buffer containing one chan */
+      int            dest_chans,      /* chans in interleaved buffer */
+      int            dest_chan,       /* channel to copy into */
+      int            dest_frames)     /* frames in destination buffer */
+{
+   int   i, j;
+
+   for (i = 0, j = dest_chan; i < dest_frames; i++, j += dest_chans)
+      dest[j] = src[i];
+}
+
+
+/* ------------------------------------------ copy_interleaved_buf_to_buf --- */
+/* Copy one channel between two interleaved buffers. Buffers must be
+   of same type (e.g., float).
+*/
+#ifdef __GNUC__
+inline void
+#else
+void
+#endif
+copy_interleaved_buf_to_buf(
+      BufPtr         dest,            /* interleaved buffer */
+      const BufPtr   src,             /* interleaved buffer */
+      int            dest_chans,      /* number of chans interleaved */
+      int            dest_chan,       /* chan to copy into */
+      int            dest_frames,     /* frames in dest buffer */
+      int            src_chans,       /* number of chans interleaved */
+      int            src_chan)        /* chan to copy from */
+{
+   int   i, j, k;
+
+   j = src_chan;
+   k = dest_chan;
+   for (i = 0; i < dest_frames; i++) {
+      dest[k] = src[j];
+      src_chan += src_chans;
+      dest_chan += dest_chans;
+   }
+}
+
+
 /* -------------------------------------------------------- init_buf_ptrs --- */
 /* Called from main. */
 void
