@@ -3,12 +3,7 @@ include ../../makefile.conf
 SYSOBJS = $(SRCDIR)/rtcmix/printsf.o $(SRCDIR)/rtcmix/check_byte_order.o \
 	$(AUDIODIR)/sndlibsupport.o
 
-ifeq ($(ARCH),LINUX)
-   SYSLIBS = -lm   # only this, overriding makefile.conf
-endif
-ifeq ($(ARCH),FREEBSD)
-   SYSLIBS = -lm   # only this, overriding makefile.conf
-endif
+SYSLIBS = -lm   # only this, overriding makefile.conf
 
 INCLUDES += -I$(AUDIODIR) -I$(SRCDIR)/sndlib -I$(SRCDIR)/rtcmix
 
