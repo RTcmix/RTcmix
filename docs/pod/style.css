@@ -1,0 +1,37 @@
+body {
+   background: white;
+   font-family: lucida, arial, helvetica, sans-serif;
+   font-size: 14px;
+   color: #202020;   /* dark gray text */
+   margin-top: 3ex;
+   margin-left: 3ex;
+   margin-bottom: 3ex;
+   margin-right: 3ex;
+}
+
+h1 {
+   font-size: 16px;
+   font-weight: bold;
+   text-align: left;
+}
+
+h2 {
+   margin-top: 0;
+   font-size: 14px;
+   font-weight: bold;
+   text-align: left;
+}
+
+h2.index {
+   margin-top: 2em;
+   font-size: 14px;
+   font-weight: bold;
+   text-align: left;
+}
+
+a:link { color: blue; text-decoration: underline }
+a:visited { color: purple; text-decoration: underline }
+/*
+a:hover { color: white; background-color: blue; text-decoration: none }
+*/
+
