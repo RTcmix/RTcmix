@@ -17,7 +17,7 @@ libTRANS.so: $(OBJS) $(GENLIB)
 TRANS: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H)
+$(OBJS): $(INSTRUMENT_H) TRANS.h
 
 clean:
 	$(RM) *.o $(OBJS) $(PROGS)
