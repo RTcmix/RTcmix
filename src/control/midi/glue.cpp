@@ -30,6 +30,7 @@ static char *_midi_controller_name[][NAME_VARIANTS] = {
 	{ "banksel", NULL, NULL, NULL },
 	{ "mod", "modwheel", "modulation", NULL },
 	{ "breath", NULL, NULL, NULL },
+// FIXME: This breaks _string_to_subtype!!
 	{ NULL, NULL, NULL, NULL },
 	{ "foot", NULL, NULL, NULL },
 	{ "port time", "portamento time", NULL, NULL },
@@ -118,6 +119,8 @@ midi_connection(const Arg args[], const int nargs)
 	static RTcmixMIDI *midiport = NULL;
 	if (midiport == NULL)				// first time, so init midi system
 		midiport = createMIDIPort();
+	if (midiport == NULL)
+		return NULL;
 
 	double minval, maxval, defaultval, lag;
 	int chan;
