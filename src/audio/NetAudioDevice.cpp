@@ -391,7 +391,7 @@ int NetAudioDevice::configure()
 //	printf("NetAudioDevice::configure(): reading header from stream...\n");
 	if ((rd = ::read(device(), &netformat, kNetAudioFormat_Size)) != kNetAudioFormat_Size)
 	{
-		fprintf(stderr, "NetAudioDevice: unable to read header: %s",
+		fprintf(stderr, "NetAudioDevice: unable to read header: %s\n",
 				(rd >= 0) ? "partial or zero read" : strerror(errno));
 		return error("NetAudioDevice: unable to read header: ",
 					 (rd >= 0) ? "partial or zero read" : strerror(errno));
@@ -405,7 +405,7 @@ int NetAudioDevice::configure()
 		swapped = true;
 		break;
 	default:
-		fprintf(stderr, "NetAudioDevice: missing or corrupt header: cookie = 0x%x", netformat.cookie);
+		fprintf(stderr, "NetAudioDevice: missing or corrupt header: cookie = 0x%x\n", netformat.cookie);
 		return error("NetAudioDevice: missing or corrupt header");
 	}
 	if (swapped) {
