@@ -1,3 +1,11 @@
+Thursday, May 7, 2000 John Gibson <johngibson@virginia.edu>
+
+   * Update some RT insts to 2.3 API.
+   * Allocate input buffer dynamically in all RT insts that need one.
+     (This is because MIPSPro compiler can't size an automatic array
+     by a variable -- that's a GNU extension.) Allocate in run method
+     to avoid gobbling up all memory when insts init before playing.
+
 Thursday, May 4, 2000 John Gibson <johngibson@virginia.edu>
 
    * Reduce memory overhead of TRANS. (TRANS.C)
