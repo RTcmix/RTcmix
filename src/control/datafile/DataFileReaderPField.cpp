@@ -14,9 +14,11 @@ DataFileReaderPField::DataFileReaderPField(const char *fileName,
 {
 	_datafile = new DataFile(fileName, controlRate);
 	if (_datafile) {
-		if (_datafile->openFileRead() == 0)
-			_datafile->readHeader(defaultFileRate, defaultFormat, defaultSwap);
-		else {
+		long status = _datafile->openFileRead();
+		if (status == 0)
+			status = _datafile->readHeader(defaultFileRate, defaultFormat,
+                                                               defaultSwap);
+		if (status == -1) {
 			delete _datafile;
 			_datafile = NULL;
 		}
