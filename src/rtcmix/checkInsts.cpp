@@ -40,7 +40,8 @@ printargs(const char *instname, const Arg arglist[], const int nargs)
 
 
 double
-RTcmix::checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retval)
+RTcmix::checkInsts(const char *instname, const Arg arglist[], 
+				   const int nargs, Arg *retval)
 {
 // FIXME: set this up as in addcheckfuncs, so that the guts of the
 // instrument name list are not exposed here.  -JGG
@@ -57,12 +58,11 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[], const int nargs, A
    rt_p = rt_list;
 
    while (rt_p) {
-     
       if (strcmp(rt_p->rt_name, instname) == 0) {
 
          ::printargs(instname, arglist, nargs);
 
-         /* set up the Instrument */
+         /* Create the Instrument */
          
          Iptr = (*(rt_p->rt_ptr))();
 
@@ -70,40 +70,53 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[], const int nargs, A
    
 		// Load PFieldSet with ConstPField instances for each 
 		// valid p field.
-		PFieldSet *pfieldset = new PFieldSet(nargs);
-		for (int arg = 0; arg < nargs; ++arg) {
-		  const Arg &theArg = arglist[arg];
-		  if (theArg.isType(DoubleType))
-			pfieldset->load(new ConstPField((double) theArg), arg);
-		  else if (theArg.isType(StringType))
-			pfieldset->load(new StringPField(theArg.string()), arg);
-		  else if (theArg.isType(HandleType)) {
-			Handle handle = (Handle) theArg;
-			if (handle->type == PFieldType) {
-				assert(handle->ptr != NULL);
-				pfieldset->load((PField *) handle->ptr, arg);
+         PFieldSet *pfieldset = new PFieldSet(nargs);
+         for (int arg = 0; arg < nargs; ++arg) {
+			const Arg &theArg = arglist[arg];
+			if (theArg.isType(DoubleType))
+				pfieldset->load(new ConstPField((double) theArg), arg);
+			else if (theArg.isType(StringType))
+				pfieldset->load(new StringPField(theArg.string()), arg);
+			else if (theArg.isType(HandleType)) {
+				Handle handle = (Handle) theArg;
+				if (handle != NULL) {
+				   if (handle->type == PFieldType) {
+				      assert(handle->ptr != NULL);
+				      pfieldset->load((PField *) handle->ptr, arg);
+				   }
+			    }
+			    else {
+				   fprintf(stderr, "%s: NULL handle passed as arg %d!\n",
+						   instname, arg);
+				   delete pfieldset;
+				   Iptr->unref();
+				   mixerr = MX_FAIL;
+				   return -1.0;
+			    }
 			}
-		  }
-		  else {
-			// For now, default to using a zero PField.
-			pfieldset->load(new ConstPField(0.0), arg);
-			break;
-		  }
+			else {
+			   // For now, default to using a zero PField.
+			   pfieldset->load(new ConstPField(0.0), arg);
+			   break;
+			}
 		}
         double rv = (double) Iptr->setup(pfieldset);
 
-        if (rv == (double) DONT_SCHEDULE) { // only schedule if no init() error
+        if (rv != (double) DONT_SCHEDULE) { // only schedule if no setup() error
+			// For non-interactive case, configure() is delayed until just
+			// before instrument run time.
+			if (rtInteractive) {
+			   if (Iptr->configure(RTBUFSAMPS) != 0) {
+				   rv = DONT_SCHEDULE;	// Configuration error!
+			   }
+			}
+		}
+
+		// Clean up if there was an error.
+		if (rv == (double) DONT_SCHEDULE) {
+			Iptr->unref();
 			mixerr = MX_FAIL;
             return rv;
-		}
-		
-        // For non-interactive case, configure() is delayed until just
-        // before instrument run time.
-		if (rtInteractive) {
-		   if (Iptr->configure(RTBUFSAMPS) != 0) {
-			   mixerr = MX_FAIL;
-			   return -1;	// Configuration error!
-		   }
 		}
 
         /* schedule instrument */

@@ -10,25 +10,35 @@
 #include <stdio.h>
 
 int
-RTcmix::dispatch(const char *func_label, const Arg arglist[], const int nargs, Arg *retval)
+RTcmix::dispatch(const char *func_label, const Arg arglist[], 
+				 const int nargs, Arg *retval)
 {
    /* Search non-rt and rt function lists for a match with <func_label>.
       If there is a match of either, checkfunc or checkInsts will call
       the appropriate function and return zero.  If both of these return
-      non-zero status, print an error message.
+      non-zero status, print an error message if the error indicates that
+	  no function was found.  Else just return proper status.
    */
    int status = checkfunc(func_label, arglist, nargs, retval);
 
    if (status != 0) {         /* search rt functions */
       mixerr = MX_NOERR;      /* clear old errors */
       checkInsts(func_label, arglist, nargs, retval);
-      if (mixerr == MX_FNAME)
-         advise(NULL, "Note: \"%s\" is an undefined function or instrument.",
-                                                                  func_label);
-	  else
-	  	status = 0;
+      switch (mixerr) {
+	  case MX_FNAME:		// Function not found
+		 advise(NULL, 
+				"Note: \"%s\" is an undefined function or instrument.",
+				func_label);
+		 break;
+	  case MX_NOERR:		// Success
+		 status = 0;
+		 break;
+	  case MX_FAIL:			// Some other failure.
+	  default:
+		 status = -1;
+		 break;
+	  }
    }
-
    return status;
 }
 
