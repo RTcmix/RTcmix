@@ -7,7 +7,7 @@
 
 #include <assert.h>
 #include <Python.h>
-#include "../Python/rtcmix_python_ext.h"
+#include "python/rtcmix_python_ext.h"
 #include "rtcmix_parse.h"
 
 static FILE *script = NULL;
