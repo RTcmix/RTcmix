@@ -1,3 +1,8 @@
+Thursday, June 8, 2000 Dave Topper <topper@virginia.edu>
+
+   * Fixed Iptr deletion conditions in intraverse()
+     memory overhead should be MUCH less now
+
 **** Released RTcmix-3.0.0 ****
 
 Saturday, May 27, 2000 John Gibson <johngibson@virginia.edu>
