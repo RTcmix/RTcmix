@@ -5,12 +5,9 @@
 include makefile.conf
 
 BASE = insts/base
+DIRS = include genlib src insts utils docs
 
-DIRS = include genlib src insts utils docs/pod
-
-#################################################################  make all  ###
-
-all: $(DIRS) insts packages
+all: $(DIRS) packages
 
 include::
 	@echo "making and installing include..."
@@ -32,9 +29,9 @@ utils::
 	@cd utils; $(MAKE) $(MFLAGS) all
 	@echo "done."; echo ""
 
-docs/pod::
+docs::
 	@echo "making docs ..."
-	@cd docs/pod; $(MAKE) $(MFLAGS) all
+	@cd docs; $(MAKE) $(MFLAGS) all
 	@echo "done."; echo ""
 
 insts::
@@ -136,7 +133,6 @@ depend::
 	done
 ###############################################################  make clean  ###
 
-# NB: leave docs/pod alone, so we don't have to rebuild docs all the time
 clean::
 	@for DIR in $(DIRS); \
 	do \
@@ -152,8 +148,6 @@ ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
 endif
 
 cleanall::
-	@echo "making cleanall in docs"
-	@cd docs/pod; $(MAKE) $(MFLAGS) clean uninstall
 	@for DIR in $(DIRS) $(INST_DIRS); \
 	do \
 	  ( cd $$DIR; echo "making cleanall in $$DIR..."; \
