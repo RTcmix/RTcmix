@@ -168,8 +168,10 @@ RTPROFILE_O = $(CMIXDIR)/rtstuff/rtprofile.o
 GENLIB = $(LIBDIR)/genlib.a
 CMIX_O = $(CMIXDIR)/sys/cmix.o
 M_O = $(CMIXDIR)/Minc/m.o
+IMB_RTCMIX_O = $(CMIXDIR)/Minc/imbRTcmix.o
 P_O = $(CMIXDIR)/Minc/p.o
 PY_O = $(CMIXDIR)/Minc/py.o
 
 CMIXOBJS = $(CMIX_O) $(M_O) $(GENLIB)
+IMBCMIXOBJS = $(CMIX_O) $(IMB_RTCMIX_O) $(GENLIB)
 
