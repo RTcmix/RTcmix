@@ -12,6 +12,7 @@ public:
 	double cmd(char*); // for commands with no params
 	void printOn();
 	void printOff();
+	void panic();
 	void close();
 private:
 	void init(float, int, int);	// called by all constructors

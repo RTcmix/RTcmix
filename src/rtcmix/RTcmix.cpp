@@ -17,6 +17,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <iostream.h>
+#include <unistd.h>
 #include <sys/time.h>
 #include <string.h>
 #include <signal.h>
@@ -64,6 +65,7 @@ init_globals()
 	NCHANS = 2;
 	audioNCHANS = 0;
 	SR = 44100.0; // what the heck...
+	bufStartSamp = 0;
 
 #ifdef LINUX
 	for (i = 0; i < MAXBUS; i++) in_port[i] = out_port[i] = 0;
@@ -89,9 +91,9 @@ init_globals()
 
 	/* I can't believe these were never initialized */
 	// hey, I'm that kinda guy! :-)
-	baseTime = 0;
+// 	baseTime = 0;
+// 	schedtime = 0;
 	elapsed = 0;
-	schedtime = 0;
 
 	output_data_format = -1;
 	output_header_type = -1;
@@ -202,24 +204,24 @@ RTcmix::init(float tsr, int tnchans, int bsize)
 // cmix, but it's a handy thing
 Instrument *RTcmix::cmd(char name[], int n_args, double p0, ...)
 {
-	double buftime,sec,usec;
-	struct timeval tv;
-	struct timezone tz;
+// 	double buftime,sec,usec;
+// 	struct timeval tv;
+// 	struct timezone tz;
 	va_list ap;
 	int i;
 	double p[MAXDISPARGS];
 	void   *retval;
 
-	buftime = (double)RTBUFSAMPS/SR;
-
-	gettimeofday(&tv, &tz);
-	sec = (double)tv.tv_sec;
-	usec = (double)tv.tv_usec;
-	pthread_mutex_lock(&schedtime_lock);
-	schedtime = (((sec * 1e6) + usec) - baseTime) * 1e-6;
-	schedtime += ((double)elapsed/(double)SR);
-	schedtime += buftime;
-	pthread_mutex_unlock(&schedtime_lock);
+// 	buftime = (double)RTBUFSAMPS/SR;
+// 
+// 	gettimeofday(&tv, &tz);
+// 	sec = (double)tv.tv_sec;
+// 	usec = (double)tv.tv_usec;
+// 	pthread_mutex_lock(&schedtime_lock);
+// 	schedtime = (((sec * 1e6) + usec) - baseTime) * 1e-6;
+// 	schedtime += ((double)elapsed/(double)SR);
+// 	schedtime += buftime;
+// 	pthread_mutex_unlock(&schedtime_lock);
 
 	// schedtime is accessed in rtsetoutput() to set the current
 	// time.  Plus, in interactive mode we have to run a slight delay
@@ -294,8 +296,16 @@ void RTcmix::printOff()
 	report_clipping = 0;
 }
 
+void RTcmix::panic()
+{
+	run_status = RT_PANIC;
+	sleep(2);
+	run_status = RT_GOOD;
+}
+
 void RTcmix::close()
 {
+	run_status = RT_SHUTDOWN;
 	closesf_noexit();
 }
 

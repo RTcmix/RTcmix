@@ -14,7 +14,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
-#include <sys/time.h>
+//#include <sys/time.h>
 
 #include <globals.h>
 #include <prototypes.h>
@@ -30,9 +30,9 @@ extern "C" {
   void *sockit(void*)
   {
 
-    double buftime,sec,usec;
-    struct timeval tv;
-    struct timezone tz;
+//     double buftime,sec,usec;
+//     struct timeval tv;
+//     struct timezone tz;
     char ttext[MAXTEXTARGS][512];
     int i,tmpint;
 
@@ -153,8 +153,8 @@ extern "C" {
 		
 	  }
 
-	  buftime = (double)RTBUFSAMPS/SR;
-      cout << "buftime:  " << buftime << endl;
+// 	  buftime = (double)RTBUFSAMPS/SR;
+//       cout << "buftime:  " << buftime << endl;
 
       // Main socket reading loop
       while(1) {
@@ -201,21 +201,33 @@ extern "C" {
  			shutdown(s,0);
 			return NULL;
 		}
+		else if ( (strcmp(sinfo->name, "RTcmix_panic") == 0) ) {
+			int count = 30;
+			printf("RTcmix panic cmd received...\n");
+			run_status = RT_PANIC;	// Notify inTraverse()
+			while (count--) {
+#ifdef linux
+				usleep(1000);
+#endif
+			}
+			printf("Resuming normal mode\n");
+			run_status = RT_GOOD;	// Notify inTraverse()
+		}
 		else {
 	
-		  gettimeofday(&tv, &tz);
-		  sec = (double)tv.tv_sec;
-		  usec = (double)tv.tv_usec;
-		  pthread_mutex_lock(&schedtime_lock);
-		  schedtime = (((sec * 1e6) + usec) - baseTime) * 1e-6;
-		  schedtime += ((double)elapsed/(double)SR);
-		  schedtime += buftime;
-		  pthread_mutex_unlock(&schedtime_lock);
+// 		  gettimeofday(&tv, &tz);
+// 		  sec = (double)tv.tv_sec;
+// 		  usec = (double)tv.tv_usec;
+// 		  pthread_mutex_lock(&schedtime_lock);
+// 		  schedtime = (((sec * 1e6) + usec) - baseTime) * 1e-6;
+// 		  schedtime += ((double)elapsed/(double)SR);
+// 		  schedtime += buftime;
+// 		  pthread_mutex_unlock(&schedtime_lock);
 	  
 #ifdef DBUG
-		  cout << "sockit(): schedtime = " << schedtime << endl;
-		  cout << "sockit(): buftime = " << buftime << endl;
-		  cout << "sockit(): baseTime = " << baseTime << endl;
+// 		  cout << "sockit(): schedtime = " << schedtime << endl;
+// 		  cout << "sockit(): buftime = " << buftime << endl;
+// 		  cout << "sockit(): baseTime = " << baseTime << endl;
 		  cout << "sockit(): elapsed = " << elapsed << endl;
 		  cout << "sockit(): SR = " << SR << endl;
 #endif

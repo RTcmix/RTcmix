@@ -8,7 +8,7 @@
 #include <iostream.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <sys/time.h>           // DT: 3/97 needed for time function
+//#include <sys/time.h>           // DT: 3/97 needed for time function
 #include <assert.h>
 #include "../H/audio_port.h"    // JGG: for ZERO_FRAMES_BEFORE
 #include "../rtstuff/heap/heap.h"
@@ -45,11 +45,11 @@ void *inTraverse(void *arg)
   unsigned long rtQchunkStart = 0;
   unsigned long heapChunkStart = 0;
 
-  struct timeval tv;
-  struct timezone tz;
-  double sec,usec;
+//   struct timeval tv;
+//   struct timezone tz;
+//   double sec,usec;
 
-  Bool aux_pb_done,frame_done;
+  Bool aux_pb_done,frame_done, panic = NO;
   Bool audio_configured = NO;
   short bus,bus_count,play_bus,busq = 0;
   IBusClass bus_class,qStatus;
@@ -75,7 +75,7 @@ void *inTraverse(void *arg)
 	pthread_mutex_unlock(&audio_config_lock);
 	if (rtInteractive)
 	{
-		if (run_status == RT_GOOD)
+		if (run_status == RT_GOOD || run_status == RT_PANIC)
 			continue;
 		else if (run_status == RT_SHUTDOWN)
 			cout << "inTraverse():  shutting down" << endl;
@@ -112,12 +112,12 @@ void *inTraverse(void *arg)
   }
 
   // Try and be tight with time
-  gettimeofday(&tv, &tz);
-  sec = (double)tv.tv_sec;
-  usec = (double)tv.tv_usec;
-  pthread_mutex_lock(&schedtime_lock);
-  baseTime = (sec * 1e6) + usec;
-  pthread_mutex_unlock(&schedtime_lock);
+//   gettimeofday(&tv, &tz);
+//   sec = (double)tv.tv_sec;
+//   usec = (double)tv.tv_usec;
+//   pthread_mutex_lock(&schedtime_lock);
+//   baseTime = (sec * 1e6) + usec;
+//   pthread_mutex_unlock(&schedtime_lock);
 
   while(playEm) { // the big loop ++++++++++++++++++++++++++++++++++++++++++
 
@@ -125,6 +125,9 @@ void *inTraverse(void *arg)
 	printf("Entering big loop .....................\n");
 #endif
 
+	if (rtInteractive && run_status == RT_PANIC)
+	    panic = YES;
+		
     // Pop elements off rtHeap and insert into rtQueue +++++++++++++++++++++
 	
 	// deleteMin() returns top instrument if inst's start time is < bufEndSamp,
@@ -132,13 +135,20 @@ void *inTraverse(void *arg)
 	
     while ((Iptr = rtHeap.deleteMin(bufEndSamp, &heapChunkStart)) != NULL) 
     {
-//	  Iptr->ref();	// While we are using it
 
 #ifdef DBUG
 	  cout << "Iptr " << (void *) Iptr << " pulled from rtHeap" << endl;
 	  cout << "heapChunkStart = " << heapChunkStart << endl;
 #endif
 
+	  if (panic) {
+#ifdef DBUG
+	  	cout << "Panic: Iptr " << (void *) Iptr << " unref'd" << endl;
+#endif
+	    Iptr->unref();
+		continue;
+	  }
+	  
 	  // Because we know this instrument will be run during this slot,
 	  // perform final configuration on it if we are not interactive.
 	  // (If interactive, this is handled at init() time).
@@ -219,7 +229,6 @@ void *inTraverse(void *arg)
 		break;
 	  }
 	  pthread_mutex_unlock(&bus_slot_lock);
-//	  Iptr->unref();	// Matches ref() at TOL
 	}
 	// End rtHeap popping and rtQueue insertion ----------------------------
 
@@ -294,12 +303,11 @@ void *inTraverse(void *arg)
 #endif
 
 	  // Play elements on queue (insert back in if needed) ++++++++++++++++++
-	  while ((rtQSize > 0) && (rtQchunkStart < bufEndSamp) && (bus != -1)) {
+	  while (rtQSize > 0 && rtQchunkStart < bufEndSamp && bus != -1) {
 		Iptr = rtQueue[busq].pop();  // get next instrument off queue
 #ifdef DBUG
-	  cout << "Iptr " << (void *) Iptr << " popped from rtQueue " << busq << endl;
-#endif
-		
+	  	cout << "Iptr " << (void *) Iptr << " popped from rtQueue " << busq << endl;
+#endif			
 		iBus = Iptr->getBusSlot();
 		Iptr->set_ichunkstart(rtQchunkStart);
 
@@ -352,8 +360,8 @@ void *inTraverse(void *arg)
 
 		endsamp = Iptr->getendsamp();
 
-		// ReQueue or delete ++++++++++++++++++++++++++++++++++++++++++++++
-		if (endsamp > bufEndSamp) {
+		// ReQueue or unref ++++++++++++++++++++++++++++++++++++++++++++++
+		if (endsamp > bufEndSamp && !panic) {
 #ifdef DBUG
 		  cout << "re queueing inst " << (void *) Iptr << endl;
 #endif
@@ -389,13 +397,13 @@ void *inTraverse(void *arg)
 			cout << "ERROR (intraverse): unknown bus_class\n";
 			break;
 		  }
-		  if ((qStatus == t_class) && (bus == endbus)) {
+		  pthread_mutex_unlock(&bus_slot_lock);
+		  if (qStatus == t_class && bus == endbus) {
 #ifdef DBUG
 			cout << "unref'ing inst " << (void *) Iptr << endl;
 #endif
 			Iptr->unref();
 		  }
-		  pthread_mutex_unlock(&bus_slot_lock);
  		}  // end rtQueue or unref ----------------------------------------
 
 		// DJT:  not sure this check before new rtQchunkStart is necessary
@@ -422,13 +430,13 @@ void *inTraverse(void *arg)
 
 	rtsendsamps();
 
-	gettimeofday(&tv, &tz);
-	sec = (double)tv.tv_sec;
-	usec = (double)tv.tv_usec;
-	pthread_mutex_lock(&schedtime_lock);
-	baseTime = (sec * 1e6) + usec;
+// 	gettimeofday(&tv, &tz);
+// 	sec = (double)tv.tv_sec;
+// 	usec = (double)tv.tv_usec;
+// 	pthread_mutex_lock(&schedtime_lock);
+// 	baseTime = (sec * 1e6) + usec;
 	elapsed += RTBUFSAMPS;	
-	pthread_mutex_unlock(&schedtime_lock);
+// 	pthread_mutex_unlock(&schedtime_lock);
 	bufStartSamp += RTBUFSAMPS;
 	bufEndSamp += RTBUFSAMPS;
 
@@ -463,6 +471,11 @@ void *inTraverse(void *arg)
 			cout << "inTraverse():  shutting down due to error" << endl;
 			playEm = 0;
 		}
+ 		else if (panic && run_status == RT_GOOD) {
+ 			cout << "inTraverse():  panic mode finished" << endl;
+ 			panic = NO;
+ 		}
+ 		 
     }
   } // end playEm ----------------------------------------------------------
 

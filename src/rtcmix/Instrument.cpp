@@ -221,6 +221,11 @@ void Instrument::schedule(heap *rtHeap)
   start = getstart();
   startsamp = (int) (start*SR);
   
+  if (rtInteractive) {
+  	// Adjust start frame based on elapsed frame count
+  	startsamp += (elapsed + RTBUFSAMPS);
+  }
+  
   endsamp = startsamp+nsamps;
   setendsamp(endsamp);  // used by traverse.C
   

@@ -93,12 +93,12 @@ GLOBAL int socknew;
 /* used in intraverse.C, traverse.C and rtsendsamps.c */
 GLOBAL unsigned long bufStartSamp;
 /* Used by rtsetoutput and sockit to sync up timing */
-GLOBAL double schedtime;
+//GLOBAL double schedtime;
 /* Used by sockit / intraverse to sync up */
-GLOBAL double baseTime;
+//GLOBAL double baseTime;
 GLOBAL long elapsed;
 typedef enum {
-	RT_GOOD = 0, RT_SHUTDOWN = 1, RT_ERROR = 2
+	RT_GOOD = 0, RT_SHUTDOWN = 1, RT_PANIC = 2, RT_ERROR = 3
 } RTstatus;
 GLOBAL RTstatus run_status;
 
@@ -120,7 +120,7 @@ pthread_mutex_t aux_out_in_use_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t out_in_use_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t revplay_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t bus_slot_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t schedtime_lock = PTHREAD_MUTEX_INITIALIZER;
+//pthread_mutex_t schedtime_lock = PTHREAD_MUTEX_INITIALIZER;
 /* pthread_mutex_t heapLock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP; */
 #else
 GLOBAL pthread_mutex_t pfieldLock;
@@ -139,7 +139,7 @@ GLOBAL pthread_mutex_t aux_out_in_use_lock;
 GLOBAL pthread_mutex_t out_in_use_lock;
 GLOBAL pthread_mutex_t revplay_lock;
 GLOBAL pthread_mutex_t bus_slot_lock;
-GLOBAL pthread_mutex_t schedtime_lock;
+//GLOBAL pthread_mutex_t schedtime_lock;
 #endif
 
 /* -------------------------------------------------------------------------- */

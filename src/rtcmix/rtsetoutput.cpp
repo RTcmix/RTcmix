@@ -10,7 +10,7 @@
 #include "../H/dbug.h"
 #include <stdlib.h>
 
-extern double schedtime;
+//extern double schedtime;
 
 int Instrument::rtsetoutput(float start, float dur, Instrument *theInst)
 {
@@ -25,14 +25,14 @@ int Instrument::rtsetoutput(float start, float dur, Instrument *theInst)
   }
 
   // DJT:  made change to increment schedtime here ... not sure how it will work
-  if (rtInteractive) {
-#ifdef DBUG
-    cout << "rtsetoutput():  rtInteractive mode set\n";
-#endif
-	pthread_mutex_lock(&schedtime_lock);
-    start += (float)schedtime;
-	pthread_mutex_unlock(&schedtime_lock);
-  }
+//   if (rtInteractive) {
+// #ifdef DBUG
+//     cout << "rtsetoutput():  rtInteractive mode set\n";
+// #endif
+// 	pthread_mutex_lock(&schedtime_lock);
+//     start += (float)schedtime;
+// 	pthread_mutex_unlock(&schedtime_lock);
+//   }
   
   theInst->_start = start;
   theInst->_dur = dur;

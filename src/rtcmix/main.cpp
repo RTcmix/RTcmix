@@ -124,9 +124,9 @@ init_globals()
    report_clipping = 1;
 
    /* I can't believe these were never initialized */
-   baseTime = 0;
+//    baseTime = 0;
+//    schedtime = 0;
    elapsed = 0;
-   schedtime = 0;
 
    output_data_format = -1;
    output_header_type = -1;
