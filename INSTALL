@@ -1,7 +1,7 @@
 I.  INSTALLATION
 ----------------
 
-1)  Set up your linux audio driver either compile the kernel with sound, 
+1)  Set up your linux audio driver: either compile the kernel with sound, 
 or get the OSS drivers:
 
 	http://www.4front-tech.com
@@ -12,63 +12,73 @@ or get the OSS drivers:
 
 Installation is simple.
 
+
 Ia.  FOR THE CORE
 -----------------
 
-1)  Make directories called /musr and /musr/lib on your system
-2)  Get the file RTcmix2.0.Linux.tgz
-3)  untar RTcmix2.0.linux.tar.gz into /musr
-4)  create a link from RTcmix2.0.linux to cmix (to avoid version confusion):
-	ln -s /musr/RTcmix2.0.linux /musr/cmix
-5)  cd into /musr/cmix
-6)  do a make; make install
-7)  Put /musr/cmix/bin into your $PATH
+1)  Unpack the RTcmix archive into any directory on your machine
+    (e.g., with "gunzip -c RTcmix2.1.Linux.tgz | tar xf -").
+    This will create a directory called "RTcmix2.1.Linux" with all
+    the core source inside. We call this the "RTcmix directory" below.
+
+2)  Edit "makefile.conf" inside this directory.
+    Make sure TOPDIR and LIBDESTDIR are right for your situation.
+
+3)  From your RTcmix directory, type "make && make install"
+
+4)  Add the bin directory inside of the RTcmix directory to your $PATH.
+    (It's easier to manage versions of RTcmix if you make a "RTcmix" link to
+    the current version, and then put the link into your PATH.)
 
 NOTE TO REDHAT USERS:  you may not have the lex libraries, in which case 
 you'll get an error about -ll not found.  Change the Makefile in the Minc
 directory to use -lfl (flex libraries) instead.
 
+
 Ib.  FOR SEPARATE PACKAGES
 --------------------------
 
-1)  cd into /musr/cmix
-2)  untar PACKAGE.tgz
-3)  cd into /musr/cmix/PACKAGE
-4)  do a make; make install
+Packages usually contain additional instruments. The base distribution
+only contains MIX, mix, WAVETABLE and wavetable, so you'll want to grab
+at least the "insts.std.tgz" package. Here's how to install packages:
 
-NOTE:  many packages will not install into /musr/cmix/bin because they are 
-development work.  You'll have to CD into the specific directory and run 
+1)  cd into your RTcmix directory
+
+2)  Untar PACKAGE.tgz  ("tar xfz PACKAGE.tgz")
+
+3)  Edit "makefile.conf" in the RTcmix directory.
+    Add the package directory name to PACKAGE_DIRS.
+
+4)  Do a "make; make install" from the RTcmix directory (not from
+    inside the package directory). This creates a .conf file in the
+    package directory, which the sub-level makefiles need.
+
+NOTE: some development packages may not install into the RTcmix bin
+directory. You'll have to CD into the specific directory and run 
 the ./program from there.
 
-The following instruments are included in the base distribution:
-
-mix/MIX
-wavetable/WAVETABLE
-
-If you want more, you should download insts.tgz and compile them.
-
-and so on...
 
 II.  RUN THEM SCOREFILES!
 -------------------------
 
-1)  Get or create two soundfiles (eg., /snd/test.snd (mono) and /snd/test2.snd
-(stereo))
+There are sample score files in insts.std/SAMPLE_SCORES.
 
-They must be NeXT/IRCAM style which means they can be either Next or IRCAM 
-style with the hybrid header.  You can put that header on with sfcreate or 
-one of the I* scripts.
+To run any score, type "CMIX < scorefile.sco".
 
-The SOX package is very useful for creating such files.  The following two lines will get 'em just right (for a mono, 44k file):
+The ones to start with are the real-time (upper case) ones that
+don't need input files, like WAVETABLE, AMINST, FMINST and STRUM.
 
-sox $input.aiff -x -t .sf $name.snd # note the -x swaps bytes
-sfcreate -c 1 -r 44100 -i name.snd
+If these seem to work, your installation is probably ok.
 
-2) Start running stuff in ./cmix/insts/SAMPLE_SCORES
+The instruments (both real-time and disk-based) that process input
+files will accept files in a variety of formats without any special
+effort on your part.
 
-EG.,
+Before using a disk-based instrument, you have to use sfcreate to
+make an empty sound file.
 
-	CMIX < mix1.sco  
+See "README2.1.Linux" for more information.
+
 
 III. HAVE FUN!
 --------------
@@ -77,3 +87,4 @@ III. HAVE FUN!
 
 Dave Topper
 topper@virginia.edu
+

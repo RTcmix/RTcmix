@@ -1,3 +1,7 @@
+################################################################################
+# You shouldn't need to edit this file. Edit makefile.conf instead.
+################################################################################
+
 include makefile.conf
 
 ifeq ($(USE_SNDLIB),TRUE)
@@ -7,19 +11,25 @@ else
   SNDLIB = 
 endif
 
-DIRS = H rtstuff/heap rtstuff $(SNDLIB) Minc sys lib head cmd utils insts.base
+MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
 
-# Add these to DIRS and all: as needed
-#  insts.std insts.dev
+DIRS = $(SNDLIB) H rtstuff/heap rtstuff Minc sys lib head cmd utils \
+       insts.base $(PACKAGE_DIRS)
 
-all: $(SNDLIB) H heap rtstuff Minc sys lib head cmd utils insts.base
+all: $(SNDLIB) H heap rtstuff Minc sys lib head cmd utils \
+       insts.base $(PACKAGE_DIRS)
 
 install:
-	@echo "making install..."
+	@echo "beginning install..."
 	@cd cmd; $(MAKE) install;
 	@cd head; $(MAKE) install;
 	@cd utils; $(MAKE) install;
+	-mkdir $(LIBDESTDIR)
 	@cd insts.base; $(MAKE) install;
+	@for DIR in $(PACKAGE_DIRS); \
+	do \
+	  ( cd $$DIR; $(MAKE) install ); \
+	done
 	@echo "install done."; echo ""
 
 H::
@@ -60,16 +70,19 @@ rtstuff::
 
 insts.base::
 	@echo "making insts..."
+	@echo "include $(MAKEFILE_CONF)" > insts.base/insts.conf
 	@cd insts.base; $(MAKE) all
 	@echo "done.";echo""
 
 insts.dev::
 	@echo "making insts.dev..."
+	@echo "include $(MAKEFILE_CONF)" > insts.dev/insts.conf
 	@cd insts.dev; $(MAKE) all
 	@echo "done.";echo""
 
 insts.std::
 	@echo "making insts.std..."
+	@echo "include $(MAKEFILE_CONF)" > insts.std/insts.conf
 	@cd insts.std; $(MAKE) all
 	@echo "done.";echo""
 
@@ -93,5 +106,13 @@ clean:
 	do \
 	  ( cd $$DIR; echo "making clean in $$DIR..."; \
 	  $(MAKE) clean ); \
+	done
+
+# JG: this might be a better idea for packages.
+packages::
+	@for DIR in $(PACKAGE_DIRS); \
+	do \
+	  ( cd $$DIR; echo "making $$DIR..."; \
+	   $(MAKE) all; echo "done.";echo"" ); \
 	done
 

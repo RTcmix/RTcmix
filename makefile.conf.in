@@ -1,8 +1,16 @@
-#
-# Set these based on where you put the source tree and where you wish to install
-#
+# The directory containing the RTcmix directory
 TOPDIR = /musr
-#
+
+# The name of the RTcmix directory
+CMIXDIR = $(TOPDIR)/RTcmix
+
+# The dir that will contain links to the instrument dynamic shared objects
+LIBDESTDIR = $(TOPDIR)/lib
+#or this: LIBDESTDIR = $(CMIXDIR)/shlib
+
+# add new packages to this list (e.g., insts.std, insts.dev)
+PACKAGE_DIRS = insts.std
+
 # Set this to TRUE to use sndlib for file i/o; otherwise use the old cmix i/o.
 USE_SNDLIB = TRUE
 #USE_SNDLIB = FALSE
@@ -10,19 +18,12 @@ USE_SNDLIB = TRUE
 ###############################################################
 # Shouldn't need to edit below this line
 ###############################################################
-#
-CMIXDIR = $(TOPDIR)/cmix
+
 LIBDIR = $(CMIXDIR)/lib
 DESTDIR = $(CMIXDIR)/bin
 BINDIR = $(DESTDIR)
-#
-# This is where it will install all the dynamic shared libraries
-#
-LIBDESTDIR =$(TOPDIR)/lib
-#
-#
+
 # Compile and link time flags
-#
 CC = gcc 
 CXX = g++ 
 LD = ld
@@ -43,13 +44,16 @@ SYSLIBS = -lpthread -lm -ldl
 LDFLAGS = $(SYSLIBS)
 SHARED_LDFLAGS = -shared 
 
-#
 # For benefit of inst makefiles that live outside CMIXDIR hierarchy
-#
 UGENS_H = $(CMIXDIR)/H/ugens.h
-INSTRUMENT_H = $(CMIXDIR)/rtstuff/Instrument.h      # for rt insts
-RTPROFILE_O = $(CMIXDIR)/rtstuff/rtprofile.o        # for disk-based insts
-PROFILE_O = $(CMIXDIR)/rtstuff/profile.o            # for rt insts
+
+# for rt insts
+INSTRUMENT_H = $(CMIXDIR)/rtstuff/Instrument.h
+PROFILE_O = $(CMIXDIR)/rtstuff/profile.o
+
+# for disk-based insts
+RTPROFILE_O = $(CMIXDIR)/rtstuff/rtprofile.o
+
 GENLIB = $(LIBDIR)/genlib.a
 CMIXOBJS = $(CMIXDIR)/sys/cmix.o $(LIBDIR)/genlib.a
 
