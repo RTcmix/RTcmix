@@ -4,6 +4,7 @@
    arg determines the curvature of the segment, and is called "alpha" in
    the comments to trans() below.                         -JGG, 12/2/01
 */
+#include <stdio.h>
 #include <math.h>
 #include <ugens.h>
 
@@ -23,7 +24,7 @@ static void
 trans(float a, float alpha, float b, int n, float *output)
 {
    int   i;
-   float d, e, delta, interval = 0.0;
+   float delta, interval = 0.0;
 
    delta = b - a;
 
