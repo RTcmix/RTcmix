@@ -1,0 +1,99 @@
+#include "../../H/ugens.h"
+#include "../../H/sfheader.h"
+#include <math.h>
+
+extern	SFHEADER	sfdesc[NFILES];
+
+/*  rotate -- a pitch-shifting instrument based upon the idea
+*	of old rotating tape-head pitch shifters
+*
+*  p0 = output skip
+*  p1 = input skip
+*  p2 = duration
+*  p3 = amplitude multiplier
+*  p4 = pitch shift up or down (oct.pc)
+*  p5 = window size
+*  p6 = input channel number
+*  p7 = stereo spread (0-1) [optional]
+*  assumes function table 1 is the amplitude envelope
+*  assumes function table 2 is the window envelope
+*	<usually a hanning window -- use "makegen(2, 25, 1000, 1)">
+*
+*/
+
+double
+rotate(p,n_args)
+float *p;
+{
+	float samplenum1,samplenum2,x,interval;
+	float val1,val2,amp,in[2],out[2];
+	int nsamps,i,j,k,off,reinit,chans,inchan;
+	int octpart;
+	float pcpart;
+	float *amptable, amptabs[2];
+	int alen;
+	float *wintable;
+	int wlen;
+	int skip, cdown;
+	extern int resetval;
+
+	getsetnote(p[1], p[2], 0);
+	nsamps = setnote(p[0], p[2], 1);
+
+	amptable = floc(1);
+	alen = fsize(1);
+	tableset(p[2], alen, amptabs);
+	
+	wintable = floc(2);
+	wlen = fsize(2);
+
+	octpart = (int)p[4] * 12;
+	pcpart = (p[4] * 100.0) - (float)(octpart*100);
+	interval =  pow(2.0, ((float)octpart + pcpart)/12.0) - 1.0;
+
+	reinit = p[5] * SR;
+	off = reinit/2;
+	k = off;
+	chans = sfchans(&sfdesc[1]); 
+	inchan = p[6];
+	skip = SR/(float)resetval;
+	cdown = 0;
+	j = 0;
+	for(i = 0; i < nsamps; i++) {
+		while (!cdown--) {
+			amp = tablei(i, amptable, amptabs) * p[3];
+			cdown = skip;
+			}
+
+		j = (j+1) % reinit;
+		k = (k+1) % reinit;
+		
+		samplenum1 = (float)i + (float)j * interval;
+		if(!GETSAMPLE(samplenum1, in, 0)) break;
+		x = wintable[(int)(((float)j/reinit) * wlen)];
+		val1 = in[inchan] * x;
+
+		samplenum2 = (float)(i) + (float)(k-off) * interval;
+		if(!GETSAMPLE(samplenum2, in, 0)) break;
+		x = wintable[(int)(((float)k/reinit) * wlen)];
+		val2 = in[inchan] * x;
+
+		out[0] = (val1 + val2) * amp;
+		if (chans > 1) {
+			out[1] = (1.0 - p[7]) * out[0];
+			out[0] *= p[7];
+			}
+		
+		ADDOUT(out, 1);
+		}
+
+	endnote(1);
+}
+
+int NBYTES = 16384;
+
+profile()
+{
+	UG_INTRO("rotate",rotate);
+	UG_INTRO("reset",reset);
+}

@@ -1,0 +1,269 @@
+#include "../../H/ugens.h"
+#include "../../H/sfheader.h"
+#include <stdio.h>
+#include <sys/file.h>
+#include <sys/types.h>
+#include <math.h>
+
+#define SIZE 512
+
+extern SFHEADER      sfdesc[NFILES];
+extern float array[SIZE],tabs[2];	/* for setline */
+extern int lineset;
+
+double
+sgran(p,n_args)
+float *p; /* array of p-fields */
+int n_args; /* number of p-fields */
+{
+        long n,bgrainsamps,bgraindist,bgrainslide;
+	long i,nsamps,gstt_var,count;
+        long egrainsamps,egraindist,egrainslide;
+        long grainsamps,grainslide,graindistdiff;
+        float si,phase,val,amp,out[2],chb,freq;
+	float tab[2],tab2[2],tab3[2],tab4[2],tab5[2];
+	float *wave,*envel,*rate_shape,*dur_shape,*loc_shape,*freq_shape;
+	float gdist_inc;
+	double gstt_per,lo,mid,hi,ti,slodiff,smiddiff,shidiff,stidiff;
+	double dlodiff,dmiddiff,dhidiff,dtidiff;
+	double llodiff,lmiddiff,lhidiff,ltidiff;
+	double flodiff,fmiddiff,fhidiff,ftidiff;
+        int len,j,z,chans,randflag=0;
+
+	int outrepos();
+	float rrand();
+	void srrand();
+	double prob();
+
+	srrand(.3);
+
+/*
+sgran:
+0       start time of group
+1       duration of group
+2       amplitude
+3       beginning grain rate
+4       ending grain rate
+	amount of variation in rate: (percentage of grain rate)
+5-8             beg: lo, average, hi, tightness (0-1, is 0-100%)
+9-12            end: lo, average, hi, tightness (0-1, is 0-100%)
+	average duration:
+13-16           starting lo, average, hi, tightness
+17-20           ending lo, average, hi, tightness
+	location:
+21-24           starting lo, average, hi, tightness
+25-28           ending lo, average, hi, tightness
+	pitch band AS:
+29-32           starting lo, average, hi, tightness
+			if p29 < 0, noise is the input
+33-36           ending lo, average, hi, tightness
+      input type 0=AS 1=FM 2=SAM
+	*       *       *
+functions: (stt variation changes are linear)
+
+1       grain envelope
+	shape of change:
+2               grain density
+3               grain duration
+4               grain location
+AS-band
+5       shape of change: frequency (usually linear for all shapes)
+6       waveform
+FM
+5       shape of change: carrier frequency
+6       shape of change: c:m ratio
+7       shape of change: mi
+*/
+	if(p[37] > 0)
+		srrand(p[37]);
+
+        nsamps = setnote(p[0],p[1],1); /* set file position */
+        wave = (float *) floc(6); /* finds starting loc. of waveform */
+        len = fsize(6); /* length of playing waveform function */
+	envel = (float *) floc(1);
+
+	bgrainsamps = grainsamps = p[14] * SR;
+	bgraindist = p[3] * SR;
+	bgrainslide = grainslide = bgraindist - bgrainsamps;
+
+
+	egrainsamps = p[18] * SR;
+	egraindist = p[4] * SR;
+	egrainslide = egraindist - egrainsamps;
+
+	graindistdiff = egraindist - bgraindist;
+
+	rate_shape = (float *)floc(2);
+	tableset(p[1]-p[4],fsize(2),tab2);
+	dur_shape = (float *)floc(3);
+	tableset(p[1]-p[4],fsize(3),tab3);
+	loc_shape = (float *)floc(4);
+	tableset(p[1]-p[4],fsize(4),tab4);
+	freq_shape = (float *)floc(5);
+	tableset(p[1]-p[4],fsize(5),tab5);
+
+	slodiff = (double)(p[9]-p[5])/nsamps; /* get stt beg/end differences */
+	smiddiff = (double)(p[10]-p[6])/nsamps;
+	shidiff = (double)(p[11]-p[7])/nsamps;
+	stidiff = (double)(p[12]-p[8])/nsamps;
+
+	dlodiff = (double)(p[17]-p[13]); /*get dur beg/end differences */
+	dmiddiff = (double)(p[18]-p[14]);
+	dhidiff = (double)(p[19]-p[15]);
+	dtidiff = (double)(p[20]-p[16]);
+
+	llodiff = (double)(p[25]-p[21]); /*get loc beg/end differences */
+	lmiddiff = (double)(p[26]-p[22]);
+	lhidiff = (double)(p[27]-p[23]);
+	ltidiff = (double)(p[28]-p[24]);
+	chb = p[21];
+
+	if(p[29] < 0) 		/* if negative, noise is the input */
+		randflag = 1;
+
+	flodiff = (double)(p[33]-p[29]); /*freq beg/end differences */
+	fmiddiff = (double)(p[34]-p[30]);
+	fhidiff = (double)(p[35]-p[31]);
+	ftidiff = (double)(p[36]-p[32]);
+
+        z =  2;
+
+        chans = sfchans(&sfdesc[1]); /* get file number of channels */
+        amp = p[2];
+	gstt_var = 0;
+	count = 0;
+	tableset(p[1],SIZE,tabs);
+
+   	if(!lineset) {
+		for(j = 0; j < SIZE; j++) 
+			array[j] = 1;
+		fprintf(stderr,"Set phrase curve to all 1's\n");
+		lineset = 1;
+   	}
+        j = 0; /* "branch once a cycle" loop for amp envelope */
+
+        for(i = 0; i < nsamps; i++) {
+		count++;
+        	phase = 0;
+		tableset(grainsamps/SR,fsize(1),tab);
+		if(!randflag) {
+			lo = p[29] + flodiff*tablei(i,freq_shape,tab5);
+			mid = p[30] + fmiddiff*tablei(i,freq_shape,tab5);
+			hi = p[31] + fhidiff*tablei(i,freq_shape,tab5);
+			ti = p[32] + ftidiff*tablei(i,freq_shape,tab5);
+			lo = (lo > mid) ? mid : lo;
+			hi = (hi < mid) ? mid : hi;
+			ti = (ti < 0) ? 0 : ti; 
+			freq = prob(lo, mid, hi, ti);
+			si = freq * (float)len/SR; 
+		}
+
+/*
+	fprintf(stderr,"i: %ld, grainsamps: %ld, grainslide: %ld\n",i,grainsamps,grainslide);
+*/
+
+		for (n = 0; n < grainsamps; n++) {
+	                while (!j--) {   /* branch in here when j reaches 0 */
+	                        val = amp * tablei(n,envel,tab)*tablei(i,array,tabs);
+                        	j = ((grainsamps-n) > z) ? z : (grainsamps-n);
+                       	}
+			if(randflag)
+				out[0] = rrand()*val;
+			else
+                		out[0] =  oscili(val,si,wave,len,&phase);
+
+                	if (chans > 1) { /* stereo */
+                        	out[1] = (1.0 - chb) * out[0];
+                        	out[0] *= chb;
+                       	}
+                	ADDOUT(out,1);
+               	}
+ 
+		if((i+grainslide+gstt_var+grainsamps) < 0) {
+			outrepos((grainslide),1);
+			i += grainsamps;
+			i += grainslide;
+		}	
+		else {
+			outrepos((grainslide+gstt_var),1);
+			i += grainsamps;
+			i += grainslide;
+			i += gstt_var;
+		}
+
+		lo = p[13] + dlodiff*tablei(i,dur_shape,tab3);
+		mid = p[14] + dmiddiff*tablei(i,dur_shape,tab3);
+		hi = p[15] + dhidiff*tablei(i,dur_shape,tab3);
+		ti = p[16] + dtidiff*tablei(i,dur_shape,tab3);
+		lo = (lo > mid) ? mid : lo;
+		hi = (hi < mid) ? mid : hi;
+		ti = (ti < 0) ? 0 : ti; 
+		grainsamps = (long)(prob(lo, mid, hi, ti)*SR);
+
+
+		/*	get percentage to vary next stt of grain */
+		lo = p[5] + slodiff*i;
+		mid = p[6] + smiddiff*i;
+		hi = p[7] + shidiff*i;
+		ti = p[8] + stidiff*i;
+		lo = (lo > mid) ? mid : lo;
+		hi = (hi < mid) ? mid : hi;
+		ti = (ti < 0) ? 0 : ti; 
+		gstt_per = prob(lo, mid, hi, ti);
+		gstt_var = (long)(gstt_per*(grainsamps+grainslide)); 
+
+/* calculate grainslide */
+		gdist_inc = tablei(i,rate_shape,tab2);
+		grainslide = (float)bgraindist + (float)graindistdiff*gdist_inc - grainsamps;
+
+		lo = p[21] + llodiff*tablei(i,loc_shape,tab4);
+		mid = p[22] + lmiddiff*tablei(i,loc_shape,tab4);
+		hi = p[23] + lhidiff*tablei(i,loc_shape,tab4);
+		ti = p[24] + ltidiff*tablei(i,loc_shape,tab4);
+		lo = (lo > mid) ? mid : lo;
+		hi = (hi < mid) ? mid : hi;
+		ti = (ti < 0) ? 0 : ti; 
+		chb = prob(lo, mid, hi, ti);
+
+	}
+	printf("%ld grains\n",count);
+        endnote(1);
+}
+
+double prob(low,mid,high,tight)  
+double low, mid, high, tight;      /* Returns a value within a range
+				   close to a preferred value 
+	
+			   tightness: 0 max away from mid
+				      1 even distribution
+				      2+amount closeness to mid
+				      no negative allowed */
+{
+	int repeat;
+	double range, num, sign;
+	repeat = 0;
+	do {
+	  	if ((high-mid) > (mid-low))    
+			range = high-mid;
+	    	else  
+			range = mid-low;
+	  	if (rrand() > 0.)  
+			sign = 1.; 
+		else  sign = -1.;
+	  	num = mid + sign*(pow((rrand()+1.)*.5,tight)*range);
+	  	if (num < low || num > high)  
+			repeat++;
+	    	else  
+			repeat = 0;
+	} while(repeat > 0);
+	return(num);
+}
+
+
+int NBYTES = 16384;
+ 
+profile()
+{
+	UG_INTRO("sgran",sgran); 
+}
+
