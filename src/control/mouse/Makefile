@@ -15,7 +15,7 @@ CXXFLAGS += -I. -I../../rtcmix
 LIBMOUSE = libmouse.a
 TEST = test
 PFIELD = ../../rtcmix/PField.o ../../rtcmix/RefCounted.o
-GENLIB = ../../../lib/libgen.so
+GENLIB = -Wl,-rpath ../../../lib -L../../../lib -lgen
 
 all: $(LIBMOUSE) glue.o
 
@@ -30,8 +30,8 @@ $(TEST).o: depend $(TEST).cpp RTMousePField.h
 	$(CXX) $(CXXFLAGS) -c -o $(TEST).o $(TEST).cpp
 
 $(TEST): depend $(TEST).o $(LIBMOUSE)
-	$(CXX) $(CXXFLAGS) $(TEST).o -o $(TEST) $(LIBMOUSE) $(PFIELD) \
-		$(LIBDIR)/$(LIBGEN) $(GUILIBS) -lpthread
+	$(CXX) $(CXXFLAGS) $(TEST).o -o $(TEST) $(LIBMOUSE) $(PFIELD) $(GENLIB) \
+		$(GUILIBS) -lpthread
 
 depend:
 	-$(SHELL) -ec '$(CXX) -M $(CXXFLAGS) $(TEST).cpp $(SRCS)' > depend
