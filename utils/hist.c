@@ -17,7 +17,7 @@
 SFHEADER sfh;
 int loopsize,bytestoread;
 
-int swap;
+extern int swap;
 
 main(argc,argv)
 

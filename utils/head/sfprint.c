@@ -135,7 +135,7 @@ static SFCODE	ampcode = {
 	sizeof(SFMAXAMP) + sizeof(SFCODE)
 }; 
 
-int swap;
+extern int swap;
 
 main(argc,argv)
      

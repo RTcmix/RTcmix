@@ -18,7 +18,7 @@ static char SccsId[] = "@(#)sndreverse.c	1.4	10/18/85	IRCAM";
    The channels of the soundfile are kept in the original order
    contrary to what an analog tape would do. */
 
-int swap;
+extern int swap;
 
 main(argc,argv)
      int argc;

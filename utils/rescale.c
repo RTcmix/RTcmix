@@ -27,7 +27,7 @@ static SFCODE	commentcode = {
 };
 
 
-int swap;
+extern int swap;
 
 void main(int argc, char *argv[])
 {

@@ -12,7 +12,7 @@
 #include <netinet/in.h>
 
 extern int big_endian;
-extern int swap;
+int swap;
 short isNext;
 
 int check_byte_order(SFHEADER *sfh,char *prog,char *sfname)

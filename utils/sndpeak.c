@@ -18,7 +18,7 @@ static char SccsId[] = "@(#)sndpeak.c	1.7	10/29/85	IRCAM";
 /* This program is designed to find the peak absolute value of an existing 
    soundfile and put it in the header */
 
-int swap;
+extern int swap;
 int print_is_on;
 int init_sound(){};
 

@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <math.h>
 
-int swap;
+extern int swap;
 
 static SFCODE	ampcode = {
 	SF_MAXAMP,

@@ -47,7 +47,7 @@ static short data_format[NFILES];
 #endif /* USE_SNDLIB */
 
 /* Used to determine if we should swap endian-ness */
-int swap;
+extern int swap;
 int swap_bytes[NFILES];
 short is_Next[NFILES];
 extern short isNext;
