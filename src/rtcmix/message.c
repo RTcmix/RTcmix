@@ -43,7 +43,7 @@ advise(const char *inst_name, const char *format, ...)
 }
 
 
-/* ----------------------------------------------------------------- warn --- */
+/* --------------------------------------------------------------- warn --- */
 void
 warn(const char *inst_name, const char *format, ...)
 {
