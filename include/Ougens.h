@@ -38,11 +38,11 @@ public:
 	float range(float, float);
 };
 
-class Ozdelay
+class Odelayi
 {
 public:
-	Ozdelay(long maxLength);
-	~Ozdelay();
+	Odelayi(long maxLength);
+	~Odelayi();
 	void clear();
 	void putsamp(float samp);
 	float getsamp(double lagsamps);
@@ -78,16 +78,16 @@ private:
 	int _pointer;
 };
 
-class Ozcomb
+class Ocombi
 {
 public:
-	Ozcomb(float SR, float loopTime, float maxLoopTime, float reverbTime);
-	~Ozcomb();
+	Ocombi(float SR, float loopTime, float maxLoopTime, float reverbTime);
+	~Ocombi();
 	void clear();
 	void setReverbTime(float reverbTime);
 	float next(float input, float delaySamps);
 private:
-	Ozdelay *_delay;
+	Odelayi *_delay;
 	float _sr;
 	float _gain;
 	float _lastout;
