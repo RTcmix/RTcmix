@@ -5,6 +5,8 @@ EXT_NAME = RT
 XS_DIR = $(CMIXDIR)/Perl/$(EXT_NAME)
 XS_FILE = $(EXT_NAME).xs
 PM_FILE = $(EXT_NAME).pm
+FUNCLIST = funclist
+FUNCEXCEPT = funcexcept
 ifeq ($(ARCH),MACOSX)
   XT_SUFFIX = .bundle
   FIND_FLAG = -H
@@ -12,8 +14,6 @@ else
   XT_SUFFIX = .so
   FIND_FLAG = 
 endif
-FUNCLIST = funclist
-FUNCEXCEPT = funcexcept
 
 all: RT_extension
 
