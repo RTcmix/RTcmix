@@ -41,7 +41,7 @@ static int		level = 0;	/* keeps track whether we are in a structure */
 
 %%
 /* program (the "start symbol") */
-prg:	| stml			{ program = $1; return 0; }
+prg:	| stml			{ program = $1; cleanup(); return 0; }
 	;
  
 /* statement list */
@@ -271,8 +271,13 @@ go(Tree t1)
 
 int yywrap()
 {
+	return 1;
+}
+
+void cleanup()
+{
 	free_symbols();
 	yy_delete_buffer(yy_current_buffer);
 	yy_current_buffer = NULL;
-	return 1;
 }
+

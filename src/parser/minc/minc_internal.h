@@ -188,6 +188,7 @@ void minc_warn(const char *msg, ...);
 void minc_die(const char *msg, ...);
 void minc_internal_error(const char *msg, ...);
 void yyerror(char *msg);
+void cleanup();
 
 /* sym.c */
 struct symbol *install(char *name, ScopeType scope);

@@ -69,7 +69,7 @@ free_symbols()
    		for (p = htab[s]; p != NULL; ) {
 			struct symbol *next = p->next;
 #ifdef DEBUG
-			printf("\tfreeing symbol %p\n", p);
+			printf("\tfreeing symbol \"%s\" (%p)\n", p->name, p);
 #endif
 			if (p->type == MincHandleType)
 				unref_handle(p->v.handle);
@@ -80,7 +80,7 @@ free_symbols()
 			p = next;
 		}
 		htab[s] = NULL;
-#if 0
+#if 1
 		for (str = stab[s]; str != NULL; ) {
 			struct str *next = str->next;
 			free(str->str);
@@ -267,7 +267,9 @@ emalloc(int nbytes)
    if (s == NULL)
       sys_error("system out of memory");
 
+#ifndef NO_EMALLOC_DEBUG
    DPRINT2("emalloc: nbytes=%d, ptr=%p\n", nbytes, s);
+#endif
    return s;
 }
 

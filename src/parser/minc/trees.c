@@ -86,6 +86,7 @@ newList(int len)
 	  }
 	  else
          list->data = NULL;
+      DPRINT2("newList: %p alloc'd at len %d\n", list, list_len);
    }
    return list;
 }
@@ -1160,7 +1161,6 @@ exct(Tree tp)
 			theList = newList(list_len);
             if (theList == NULL)
                return NULL;
-			DPRINT2("MincList array %p alloc'd at len %d\n", theList->data, list_len);
             tp->type = MincListType;
             tp->v.list = theList;
 			theList->refcount = 1;
@@ -1443,7 +1443,7 @@ free_tree(Tree tp)
    if (tp == NULL)
       return;
 
-   DPRINT1("free_tree(%p)\n", tp);
+   DPRINT("free_tree() children first...\n");
 
    switch (tp->kind) {
       case NodeZero:
@@ -1532,12 +1532,14 @@ free_tree(Tree tp)
          break;
    } /* switch kind */
 
+   DPRINT1("free_tree() parent %p\n", tp);
    if (tp->type == MincHandleType) {
       unref_handle(tp->v.handle);
    }
    else if (tp->type == MincListType) {
       unref_value_list(&tp->v);
    }
+   tp->type = MincVoidType;		// To prevent double-free
    free(tp);   /* actually free space */
 }
 
