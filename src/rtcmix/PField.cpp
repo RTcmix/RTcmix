@@ -138,23 +138,20 @@ int PFieldBinaryOperator::print(FILE *file) const
 {
 	const int len1 = _pfield1->values();
 	const int len2 = _pfield2->values();
-	int maxlen;
-	PField *mintable, *maxtable;
+	int chars = 0;
 	if (len1 >= len2) {
-		maxlen = len1;
-		maxtable = _pfield1;
-		mintable = _pfield2;
+		for (int n = 0; n < len1; ++n) {
+			double frac = (double) n / (len1 - 1);
+			double value = (*_operator)(_pfield1->doubleValue(n), _pfield2->doubleValue(frac));
+			chars += fprintf(file, "%.6f\n", value);
+		}
 	}
 	else {
-		maxlen = len2;
-		maxtable = _pfield2;
-		mintable = _pfield1;
-	}
-	int chars = 0;
-	for (int n = 0; n < maxlen; ++n) {
-		double frac = (double) n/(maxlen-1);
-		double value = (*_operator)(maxtable->doubleValue(n), mintable->doubleValue(frac));
-		chars += fprintf(file, "%.6f\n", value);
+		for (int n = 0; n < len2; ++n) {
+			double frac = (double) n / (len2 - 1);
+			double value = (*_operator)(_pfield1->doubleValue(frac), _pfield2->doubleValue(n));
+			chars += fprintf(file, "%.6f\n", value);
+		}
 	}
 	return chars;
 }
@@ -163,25 +160,22 @@ int PFieldBinaryOperator::copyValues(double *array) const
 {
 	const int len1 = _pfield1->values();
 	const int len2 = _pfield2->values();
-	int maxlen;
-	PField *mintable, *maxtable;
 	if (len1 >= len2) {
-		maxlen = len1;
-		maxtable = _pfield1;
-		mintable = _pfield2;
+		for (int n = 0; n < len1; ++n) {
+			double frac = (double) n / (len1 - 1);
+			double value = (*_operator)(_pfield1->doubleValue(n), _pfield2->doubleValue(frac));
+			array[n] = value;
+		}
+		return len1;
 	}
 	else {
-		maxlen = len2;
-		maxtable = _pfield2;
-		mintable = _pfield1;
+		for (int n = 0; n < len2; ++n) {
+			double frac = (double) n / (len2 - 1);
+			double value = (*_operator)(_pfield1->doubleValue(frac), _pfield2->doubleValue(n));
+			array[n] = value;
+		}
+		return len2;
 	}
-	int chars = 0;
-	for (int n = 0; n < maxlen; ++n) {
-		double frac = (double) n/(maxlen-1);
-		double value = (*_operator)(maxtable->doubleValue(n), mintable->doubleValue(frac));
-		array[n] = value;
-	}
-	return maxlen;
 }
 
 // LFOPField
