@@ -219,19 +219,3 @@ allocate_out_buffer(short chan, int nsamps)
    return 0;
 }
 
-
-/* ---------------------------------------------------- allocate_ibuf_ptr --- */
-/* Allocate buffer of the type received from the audio input device.
-   Called by rtgetsamps.c
-*/
-INLINE IBufPtr
-allocate_ibuf_ptr(int nsamps)       /* samples, not frames */
-{
-   IBufPtr ibuf_ptr;
-
-   ibuf_ptr = (IBUFTYPE *) malloc(nsamps * sizeof(IBUFTYPE));
-   assert(ibuf_ptr != NULL);
-
-   return ibuf_ptr;
-}
-
