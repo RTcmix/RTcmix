@@ -2,6 +2,7 @@ include ../package.conf
 
 NAME = DECIMATE
 
+CURDIR = $(CMIXDIR)/insts.jg/$(NAME)
 OBJLIBDIR = ../objlib
 OBJLIB_A = $(OBJLIBDIR)/objlib.a
 OBJLIB_H = $(OBJLIBDIR)/objlib.h
@@ -33,10 +34,10 @@ $(OBJS): $(INSTRUMENT_H) $(OBJLIB_H) $(NAME).h
 install: dso_install
 
 dso_install: lib$(NAME).so
-	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)
 
 standalone_install: standalone
-	$(INSTALL) $(NAME) $(DESTDIR)
+	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)
 
 uninstall: dso_uninstall standalone_uninstall
 

@@ -2,6 +2,7 @@ include ../package.conf
 
 NAME = FREEVERB
 
+CURDIR = $(CMIXDIR)/insts.jg/$(NAME)
 OBJS = $(NAME).o allpass.o comb.o delay.o revmodel.o
 HDRS = allpass.hpp comb.hpp delay.hpp denormals.h revmodel.hpp tuning.h
 CMIXOBJS += $(PROFILE_O)
@@ -26,10 +27,10 @@ $(OBJS): $(INSTRUMENT_H) $(NAME).h $(HDRS)
 install: dso_install
 
 dso_install: lib$(NAME).so
-	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)
 
 standalone_install: standalone
-	$(INSTALL) $(NAME) $(DESTDIR)
+	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)
 
 uninstall: dso_uninstall standalone_uninstall
 

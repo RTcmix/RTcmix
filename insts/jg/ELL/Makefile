@@ -2,6 +2,7 @@ include ../package.conf
 
 NAME = ELL
 
+CURDIR = $(CMIXDIR)/insts.jg/$(NAME)
 OBJS = $(NAME).o ellipse.o setell.o
 PROGS = lib$(NAME).so $(NAME)
 
@@ -23,10 +24,10 @@ $(OBJS): $(INSTRUMENT_H) $(NAME).h elldefs.h setell.h
 install: dso_install
 
 dso_install: lib$(NAME).so
-	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)
 
 standalone_install: standalone
-	$(INSTALL) $(NAME) $(DESTDIR)
+	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)
 
 uninstall: dso_uninstall standalone_uninstall
 

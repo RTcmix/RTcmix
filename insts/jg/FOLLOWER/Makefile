@@ -1,5 +1,6 @@
 include ../package.conf
 
+CURDIR = $(CMIXDIR)/insts.jg/FOLLOWER
 OBJLIBDIR = ../objlib
 OBJLIB_A = $(OBJLIBDIR)/objlib.a
 OBJLIB_H = $(OBJLIBDIR)/objlib.h
@@ -50,12 +51,12 @@ FOLLOWER_BASE.o: $(INSTRUMENT_H) $(COMMON_HEADERS)
 install: dso_install
 
 dso_install: all
-	$(INSTALL) libFOLLOWER.so $(LIBDESTDIR)
-	$(INSTALL) libFOLLOWGATE.so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/libFOLLOWER.so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/libFOLLOWGATE.so $(LIBDESTDIR)
 
 standalone_install: standalone
-	$(INSTALL) FOLLOWER $(DESTDIR)
-	$(INSTALL) FOLLOWGATE $(DESTDIR)
+	$(INSTALL) $(CURDIR)/FOLLOWER $(DESTDIR)
+	$(INSTALL) $(CURDIR)/FOLLOWGATE $(DESTDIR)
 
 uninstall: dso_uninstall standalone_uninstall
 
