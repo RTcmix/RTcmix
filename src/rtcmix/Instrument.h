@@ -5,8 +5,8 @@
 #ifndef _INSTRUMENT_H_
 #define _INSTRUMENT_H_ 1
 
-#include "../H/bus.h"
-#include "../H/buffers.h"
+#include <bus.h>
+#include <buffers.h>
 #include <sys/types.h>
 
 
