@@ -19,6 +19,9 @@ typedef enum {
 	kRTMouseAxisY
 } RTMouseAxis;
 
+#define LAGFACTOR	0.17
+#define MINCF		0.05
+
 
 class RTMousePField : public RTNumberPField {
 public:
@@ -55,13 +58,13 @@ public:
 		// Lag pct is inversely proportional to cf, because the lower the cf,
 		// the longer the lag time.
       const double nyquist = resetval * 0.5;
-		double cf = nyquist * (1.0 - (lag * 0.01));
-		if (cf <= 0.0)
-			cf = 0.1;
+		double cf = nyquist * pow(2.0, -(lag * LAGFACTOR));
+		if (cf <= MINCF)
+			cf = MINCF;
 		if (cf > nyquist)
 			cf = nyquist;
 
-#define USEEQ
+//#define USEEQ
 #ifdef USEEQ
 		_filter = new Oequalizer(resetval, OeqLowPass);
 		_filter->setparams(cf, 0.5);
