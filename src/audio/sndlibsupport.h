@@ -36,6 +36,13 @@ enum { MUS_NON_INTERLEAVED = 0x1000, MUS_INTERLEAVED = 0x2000 };
 enum { MUS_NORMALIZED = 0x10000 };
 #define IS_NORMALIZED_FORMAT(fmt) (((fmt) & MUS_NORMALIZED) != 0)
 
+/* This value may be OR'd into float sample formats to indicate the data is
+ * to be clipped between -32768 and 32767.  It should be ignored for any 
+ * other format.
+ */
+enum { MUS_CLIPPED = 0x100000 };
+#define IS_CLIPPED_FORMAT(fmt) (((fmt) & MUS_CLIPPED) != 0)
+
 #define MUS_FORMAT_MASK 0x0fff
 #define MUS_GET_FORMAT(fmt) ((fmt) & MUS_FORMAT_MASK)
 
