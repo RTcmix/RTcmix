@@ -17,8 +17,12 @@ if static_link:
    prefix = distutils.sysconfig.get_config_var("LIBPL")
    pythonlib = distutils.sysconfig.get_config_var("BLDLIBRARY")
    if len(pythonlib) > 0:
-      print prefix + '/' + pythonlib, libs
-      sys.exit(0)
+      import os.path
+      plib = prefix + '/' + pythonlib
+      # Must see if file exists, because it doesn't in Jaguar!
+      if os.path.exists(plib):
+         print plib, libs
+         sys.exit(0)
    # else try shared linkage
 
 linkshared = distutils.sysconfig.get_config_vars("LINKFORSHARED")[0]
