@@ -659,7 +659,7 @@ static void _convertIFloatNormalizedToNFloat(void *in, void *out, int chans, int
 		float *ibuffer = &fin[ch];
 		float *obuffer = fout[ch];
 		for (int fr = 0; fr < frames; ++fr, ibuffer += chans) {
-			obuffer[fr] = ibuffer[fr] * 32768.0;
+			obuffer[fr] = *ibuffer * 32768.0;
 		}
 	}
 }
