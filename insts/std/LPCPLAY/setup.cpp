@@ -18,6 +18,8 @@ static bool  autoCorrect = false;	// whether to stabilize each frame as it runs
 
 static const int maxDataSets = 16;
 
+#define THRESH_UNSET (-1)
+
 // For right now, datasets are created each time they are needed and are
 //	not shared.
 
@@ -44,6 +46,11 @@ GetLPCStuff(double *pHiThresh,
 			float *pRisetime, float *pDecaytime,
 			float *pAmpcutoff)
 {
+	// Set these here if not already set.
+	if (highthresh == THRESH_UNSET)
+		highthresh = thresh + 0.000001;
+	if (lowthresh == THRESH_UNSET)
+		lowthresh = thresh;
 	*pHiThresh = highthresh;
 	*pLowThresh = lowthresh;
 	*pThresh = thresh;
@@ -239,8 +246,8 @@ int profile()
 	pp[0]=ENV_SLOT; pp[1]=7; pp[2]=512; pp[3]=0; pp[4]=512; pp[5]=1; 
 	makegen(p,6,pp);
 	maxdev=0;
-	lowthresh = 0;
-	highthresh = 1;
+	lowthresh = THRESH_UNSET;
+	highthresh = THRESH_UNSET;
 	return 0;
 }
 
