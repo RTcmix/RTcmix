@@ -1,4 +1,4 @@
-/* EQX - equalizer instrument (peak/notch, shelving and high/low pass types)
+/* EQX - multi-band equalizer instrument
 
    p0 = output start time
    p1 = input start time
