@@ -39,10 +39,6 @@ Ia.  Preliminaries
          make: file `makefile.conf' line 35: Must be a separator (: or ::)
                for rules (bu39)
 
-   b) The makefile scheme also seems to require the bash shell. See comments
-      in makefile.conf about using /bin/sh. You can work around these problems
-      if you don't have bash; it's just more work.
-
 
 Ib.  Compile and install the core
 ---------------------------------

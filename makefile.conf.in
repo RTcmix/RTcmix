@@ -75,9 +75,7 @@ ifeq ($(ARCH),SGI)
   LD = ld
   MAKE = gmake
   INSTALL = cp -f
-  SHELL = /bin/bash
-  # Using the default /bin/sh on SGI complains about any Makefile
-  # "for" loops where arg to "for" is empty
+  SHELL = /bin/sh
 endif
 
 INCLUDES = -I$(CMIXDIR)/H
