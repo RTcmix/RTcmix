@@ -12,6 +12,13 @@
 #include <assert.h>
 #include <errno.h>
 
+// Uncomment this to make it possible to profile RTcmix code w/ gprof
+//#define PROFILE
+
+#ifdef PROFILE
+static struct itimerval globalTimerVal;
+#endif
+
 ThreadedAudioDevice::ThreadedAudioDevice()
 	  : _device(-1), _thread(0), _frameCount(0),
 	  _paused(false), _stopping(false), _closing(false)
@@ -23,6 +30,9 @@ int ThreadedAudioDevice::startThread()
 	stopping(false);	// Reset.
 	if (isPassive())	// Nothing else to do here if passive mode.
 		return 0;
+#ifdef PROFILE
+	getitimer(ITIMER_PROF, &globalTimerVal);
+#endif
 //	printf("\tThreadedAudioDevice::startThread: starting thread\n");
 	int status = pthread_create(&_thread, NULL, _runProcess, this);
 	if (status < 0) {
@@ -130,6 +140,10 @@ bool ThreadedAudioDevice::waitForDevice(unsigned int wTime) {
 
 void *ThreadedAudioDevice::_runProcess(void *context)
 {
+#ifdef PROFILE
+	setitimer(ITIMER_PROF, &globalTimerVal, NULL);
+	getitimer(ITIMER_PROF, &globalTimerVal);
+#endif
 	ThreadedAudioDevice *device = (ThreadedAudioDevice *) context;
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
