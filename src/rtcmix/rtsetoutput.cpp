@@ -8,7 +8,6 @@
 #include "../rtstuff/rtdefs.h"
 #include "../H/dbug.h"
 
-extern int rtInteractive;
 extern double schedtime;
 
 int rtsetoutput(float start, float dur, Instrument *theInst)
