@@ -1,6 +1,16 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Thursday, March 24, 2005 Brad Garton <brad-at-music.columbia.edu>
+
+	* added code to the "expbrk" and "linebrk" functions of maketable()
+	  in (src/rtcmix/table.cpp and src/rtcmix/tableutils.cpp) to
+	  print warning if npoints exceeds the tabel size, and to fill
+	  the rest of the table if npoints < table size (repeats the
+	  last value of the table)
+
+	* fixed Ortgetin and added it again to the Makefile in genlib
+
 2005-03-17 Douglas Scott  <netdscott at netscape.net>
 
 	*  Major revision to better handle memory allocation and freeing.
