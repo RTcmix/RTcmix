@@ -5,6 +5,7 @@
 #ifdef PFIELD_CLASS
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 #include <string.h>
 #include <math.h>
 #include <assert.h>
@@ -12,17 +13,19 @@
 #include <sys/time.h>
 #include <rtcmix_types.h>
 #include <prototypes.h>
+#include <byte_routines.h>
+#include <sndlibsupport.h>
 #include <PField.h>
 #include <ugens.h>      /* for warn, die */
 
-/* Functions for creating and modifying float arrays.  These can be passed
-   from a script to RTcmix functions that can accept them.  All this code
-   is derived from RTcmix makegens.
+/* Functions for creating and modifying double arrays.  These can be passed
+   from a script to RTcmix functions that can accept them.  Much of this code
+   is derived from the old RTcmix makegens.
 
-   John Gibson, 1/23/2004
+   John Gibson and Doug Scott, May/June 2004
 */
 
-#define MAX_ARRAY_LEN 10000000  /* guard against unintentionally huge allocs */
+#define MAX_ARRAY_LEN 1000000  /* guard against unintentionally huge allocs */
 
 #ifndef M_PI
   #define M_PI    3.14159265358979323846
@@ -34,8 +37,9 @@
 
 typedef enum {
    InvalidTable = -1,
+   TextfileTable = 0,
    SndfileTable = 1,
-   TextfileTable = 2,
+   LiteralTable = 2,
    DatafileTable = 3,
    CurveTable = 4,
    ExpbrkTable = 5,
@@ -50,9 +54,9 @@ typedef enum {
 } TableKind;
 
 static char *_table_name[] = {
-   NULL,       /* 0 */
+   "textfile", /* 0 */
    "sndfile",
-   "textfile",
+   "literal",
    "datafile",
    "curve",    /* 4 */
    "expbrk",
@@ -79,9 +83,10 @@ static char *_table_name[] = {
    NULL
 };
 
+inline int min(int x, int y) { return (x <= y) ? x : y; }
+
 
 /* ------------------------------------------------------- local utilities -- */
-
 static TablePField *
 _getTablePField(const Arg *arg)
 {
@@ -105,6 +110,7 @@ _createPFieldHandle(PField *pfield)
    return handle;
 }
 
+
 /* --------------------------------------------------- args_have_same_type -- */
 // FIXME: this belongs in a more general file
 int
@@ -118,8 +124,8 @@ args_have_same_type(const Arg args[], const int nargs, const RTcmixType type)
 
 
 /* ------------------------------------------------------ _normalize_table -- */
-/* Rescale the values in <array> so that the maximum absolute value is <peak>.
-   Similar to cmix fnscl.
+/* Rescale the values in <array> so that the maximum absolute value is <peak>,
+   which cannot be zero.  Similar to cmix fnscl.
 */
 static void
 _normalize_table(double *array, const int len, const double peak)
@@ -127,14 +133,371 @@ _normalize_table(double *array, const int len, const double peak)
    int i;
    double max = 0.0;
 
+   assert(peak != 0.0);
+
    for (i = 0; i < len; i++) {
       double absval = fabs(array[i]);
       if (absval > max)
          max = absval;
    }
    max /= peak;
-   for (i = 0; i < len; i++)
-      array[i] /= max;
+   if (max != 0.0)
+      for (i = 0; i < len; i++)
+         array[i] /= max;
+}
+
+
+/* ------------------------------------------------------- _textfile_table -- */
+/* Similar to gen 2, except it supports only the text file input, it takes
+   a file name instead of a cmix file number, and it does not return the
+   number of elements in the array.
+*/
+static int
+_textfile_table(const Arg args[], const int nargs, double *array, const int len)
+{
+   if (nargs <= 0) {
+      die("maketable (textfile)",
+                     "Usage: table = maketable(\"textfile\", size, filename)");
+      return -1;
+   }
+   if (!args[0].isType(StringType)) {
+      die("maketable (textfile)", "File name must be a string.");
+      return -1;
+   }
+   const char *fname = (const char *) args[0];
+
+   FILE *stream = fopen(fname, "r");
+   if (stream == NULL) {
+      die("maketable (textfile)", "Can't open file \"%s\".", fname);
+      return -1;
+   }
+
+   bool non_convertible_found = false;
+   int i;
+   for (i = 0; i < len; i++) {
+      char buf[128 + 1];
+      if (fscanf(stream, "%128s", buf) == EOF)
+         break;
+      char *pos = NULL;
+      double val = strtod(buf, &pos);
+      if (val == 0.0 && pos == buf) {  /* no conversion performed; warn once */
+         if (!non_convertible_found)
+            warn("maketable (textfile)",
+                "File contains some text that can't be converted to a number.");
+         non_convertible_found = true;
+         i--;
+         continue;
+      }
+      if (errno == ERANGE) {           /* overflow or underflow */
+         die("maketable (textfile)",
+                     "A number in the file can't be represented as a double.");
+         return -1;
+      }
+      array[i] = val;
+   }
+
+   float bogusval;
+   if (fscanf(stream, "%f", &bogusval) != EOF)
+      warn("maketable (textfile)", "File \"%s\" has more than %d numbers.",
+                                                                  fname, len);
+   fclose(stream);
+
+   if (i != len) {
+      warn("maketable (textfile)", "Only %d values loaded into table, "
+                                   "followed by %d padding zeros.", i, len - i);
+      /* Fill remainder with zeros. */
+      for ( ; i < len; i++)
+         array[i] = 0.0;
+   }
+   else
+      advise("maketable (textfile)", "%d values loaded into table.", i);
+
+   return 0;
+}
+
+
+/* -------------------------------------------------------- _sndfile_table -- */
+/* Similar to gen 1, but no normalization.  The arguments are different also,
+   and it does not return the number of frames.  The syntax is
+
+   table = maketable("sndfile", size, filename[, duration[, inskip[, inchan]]])
+
+   The <size> argument is ignored; set it to zero.
+
+   <filename> is obligatory.  The other arguments are optional, but if an
+   argument further to the right is given, all the ones to its left must also
+   be given.
+
+      filename    name of a sound file in any of the header types RTcmix can
+                  read; data formats: 16bit signed int, 32bit float, 24bit
+                  3-byte signed int; either endian.
+
+      duration    duration (in seconds) to read from file.  If negative, its
+                  absolute value is the number of sample frames to read.
+
+                  If <duration> is missing, or if it's zero, then the whole
+                  file is read.  Beware with large files -- there is no check
+                  on memory consumption!
+
+      inskip      time (in seconds) to skip before reading, or if negative,
+                  its absolute value is the number of sample frames to skip.
+
+                  If <inskip> is missing, it's assumed to be zero.
+
+      inchan      channel number to read (with zero as first channel).
+
+                  If <inchan> is missing all channels are read, with samples
+                  from each frame interleaved.
+
+   NOTE: We dispose the array passed in and allocate a new one to replace it.
+         This is because we can't know how big the array must be before we
+         look at the sound file header.
+
+                                                   JGG 2/7/01, rev. 6/19/04
+*/
+
+#define ALL_CHANS -1
+#define BUFSAMPS  1024 * 16
+
+static int
+_sndfile_table(const Arg args[], const int nargs, double **array, int *len)
+{
+   delete [] *array;    /* need to allocate our own */
+
+   if (nargs <= 0) {
+      die("maketable (sndfile)",
+          "\nUsage: table = maketable(\"sndfile\", size=0, "
+                                 "filename[, duration[, inskip[, inchan]]])");
+      return -1;
+   }
+   if (!args[0].isType(StringType)) {
+      die("maketable (sndfile)", "File name must be a string.");
+      return -1;
+   }
+   const char *fname = (const char *) args[0];
+
+   double request_dur = 0.0;
+   double inskip = 0.0;
+   int inchan = ALL_CHANS;
+   if (nargs > 1) {
+      if (!args[1].isType(DoubleType)) {
+         die("maketable (sndfile)", "<duration> must be a number.");
+         return -1;
+      }
+      request_dur = args[1];
+      if (nargs > 2) {
+         if (!args[2].isType(DoubleType)) {
+            die("maketable (sndfile)", "<inskip> must be a number.");
+            return -1;
+         }
+         inskip = args[2];
+         if (nargs > 3) {
+            if (!args[3].isType(DoubleType)) {
+               die("maketable (sndfile)", "<inchan> must be a number.");
+               return -1;
+            }
+            inchan = args[3];
+         }
+      }
+   }
+
+   int header_type, data_format, data_location, file_chans;
+   long file_samps;
+   double srate;
+
+   int fd = open_sound_file((char *) fname, &header_type, &data_format,
+                        &data_location, &srate, &file_chans, &file_samps);
+   if (fd == -1) {
+      die("maketable (sndfile)", "Can't open input file \"%s\".", fname);
+      return -1;
+   }
+
+   if (srate != SR)
+      warn("maketable (sndfile)", "The input file sampling rate is %g, but "
+           "the output rate is currently %g.", srate, SR);
+
+   int file_frames = file_samps / file_chans;
+
+   int table_chans = file_chans;
+   if (inchan != ALL_CHANS) {
+      if (inchan >= file_chans)
+         die("maketable (sndfile)", "You asked for channel %d of a %d-channel "
+                                 "file. (\"%s\")", inchan, file_chans, fname);
+      table_chans = 1;
+   }
+
+   int table_frames = file_frames;        /* if request_dur == 0 */
+   if (request_dur < 0.0)
+      table_frames = (int) -request_dur;
+   else if (request_dur > 0.0)
+      table_frames = (int) (request_dur * srate + 0.5);
+
+   int start_frame = (int) (inskip * srate + 0.5); 
+   if (inskip < 0.0)
+      start_frame = (int) -inskip;
+
+   if (start_frame + table_frames > file_frames)
+      table_frames = file_frames - start_frame;
+
+   int table_samps = table_frames * table_chans;
+ 
+   double *block = new double[table_samps];
+   if (block == NULL) {
+      die("maketable (sndfile)", "Not enough memory for table.");
+      return -1;
+   }
+
+   int bytes_per_samp = mus_data_format_to_bytes_per_sample(data_format);
+
+   char *buf = new char[BUFSAMPS * bytes_per_samp];
+   if (buf == NULL) {
+      die("maketable (sndfile)", "Not enough memory for temporary buffer.");
+      return -1;
+   }
+
+   off_t seek_to = data_location + (start_frame * file_chans * bytes_per_samp);
+   if (lseek(fd, seek_to, SEEK_SET) == -1) {
+      die("maketable (sndfile)", "File seek error: %s", strerror(errno));
+      exit(1);
+   }
+
+#if MUS_LITTLE_ENDIAN
+   bool byteswap = IS_BIG_ENDIAN_FORMAT(data_format);
+#else
+   bool byteswap = IS_LITTLE_ENDIAN_FORMAT(data_format);
+#endif
+   bool is_float = IS_FLOAT_FORMAT(data_format);
+   bool is_24bit = IS_24BIT_FORMAT(data_format);
+
+   int buf_frames = BUFSAMPS / file_chans;
+   int end_frame = start_frame + table_frames;
+
+   double *blockp = block;
+   int frames_read = 0;
+   int buf_start_frame = start_frame;
+   for ( ; buf_start_frame < end_frame; buf_start_frame += frames_read) {
+      long bytes_read;
+
+      if (buf_start_frame + buf_frames > end_frame) {      /* last buffer */
+         int samps = (end_frame - buf_start_frame) * file_chans;
+         bytes_read = read(fd, buf, samps * bytes_per_samp);
+      }
+      else
+         bytes_read = read(fd, buf, BUFSAMPS * bytes_per_samp);
+      if (bytes_read == -1) {
+         die("maketable (sndfile)", "File read error: %s", strerror(errno));
+         return -1;
+      }
+      if (bytes_read == 0)          /* EOF, somehow */
+         break;
+
+      int samps_read = bytes_read / bytes_per_samp;
+      frames_read = samps_read / file_chans;
+
+      int increment = 1;
+      if (is_float) {
+         float *bufp = (float *) buf;
+
+         if (inchan != ALL_CHANS) {
+            bufp += inchan;
+            increment = file_chans;
+         }
+         if (byteswap) {
+            for (int i = 0; i < samps_read; i += increment) {
+               byte_reverse4(bufp);          /* modify *bufp in place */
+               *blockp++ = (double) *bufp;
+               bufp += increment;
+            }
+         }
+         else {
+            for (int i = 0; i < samps_read; i += increment) {
+               *blockp++ = (double) *bufp;
+               bufp += increment;
+            }
+         }
+      }
+      if (is_24bit) {
+         unsigned char *bufp = (unsigned char *) buf;
+
+         if (inchan != ALL_CHANS) {
+            bufp += inchan * 3;              /* 3-byte samples */
+            increment = file_chans;
+         }
+         if (data_format == MUS_L24INT) {
+            for (int i = 0; i < samps_read; i += increment) {
+               int samp = (int) (((bufp[2] << 24)
+                                + (bufp[1] << 16)
+                                + (bufp[0] << 8)) >> 8);
+               *blockp++ = (double) samp / (double) (1 << 8);
+               bufp += increment * 3;
+            }
+         }
+         else {   /* data_format == MUS_B24INT */
+            for (int i = 0; i < samps_read; i += increment) {
+               int samp = (int) (((bufp[0] << 24)
+                                + (bufp[1] << 16)
+                                + (bufp[2] << 8)) >> 8);
+               *blockp++ = (double) samp / (double) (1 << 8);
+               bufp += increment * 3;
+            }
+         }
+      }
+      else {     /* is 16bit integer file */
+         short *bufp = (short *) buf;
+
+         if (inchan != ALL_CHANS) {
+            bufp += inchan;
+            increment = file_chans;
+         }
+         if (byteswap) {
+            for (int i = 0; i < samps_read; i += increment) {
+               short samp = reverse_int2(bufp);
+               *blockp++ = (double) samp;
+               bufp += increment;
+            }
+         }
+         else {
+            for (int i = 0; i < samps_read; i += increment) {
+               *blockp++ = (double) *bufp;
+               bufp += increment;
+            }
+         }
+      }
+   }
+
+   delete [] buf;
+   sndlib_close(fd, 0, 0, 0, 0);
+
+   *array = block;
+   *len = table_samps;
+
+   return 0;
+}
+
+
+/* -------------------------------------------------------- _literal_table -- */
+/* Similar to gen 2, except it supports only the "new way" described in
+   gen2.c, and it does not return the number of elements in the array.
+*/
+static int
+_literal_table(const Arg args[], const int nargs, double *array, const int len)
+{
+   const int n = min(nargs, len);
+   for (int i = 0; i < n; i++)
+      array[i] = args[i];
+
+   if (nargs < len) {
+      for (int i = nargs; i < len; i++)
+         array[i] = 0.0;
+      advise("maketable (literal)",
+                           "Table is larger than the number of elements given "
+                           "to fill it.  Adding zeros to pad.");
+   }
+   else if (len < nargs)
+      warn("maketable (literal)",
+                           "Table is large enough for only %d numbers.", len);
+
+   return 0;
 }
 
 
@@ -147,16 +510,22 @@ _datafile_table(const Arg args[], const int nargs, double *array, const int len)
 {
    long cur;
 
+   if (nargs <= 0) {
+      die("maketable (datafile)",
+         "Usage: table = maketable(\"datafile\", size, filename, number_type)");
+      return -1;
+   }
    if (!args[0].isType(StringType)) {
-      die("maketable", "Data file name must be a string.");
+      die("maketable (datafile)", "File name must be a string.");
       return -1;
    }
    const char *fname = (const char *) args[0];
 
-   size_t size = sizeof(float);
+   size_t size = sizeof(float);     /* default */
    if (nargs > 1) {
       if (!args[1].isType(StringType)) {
-         die("maketable", "Data file element size must be a string.");
+         die("maketable (datafile)", "File number type must be a string "
+                                  "\"double\", \"float\", \"int\" or \"char\"");
          return -1;
       }
       if (args[1] == "double")
@@ -165,16 +534,18 @@ _datafile_table(const Arg args[], const int nargs, double *array, const int len)
          size = sizeof(float);
       else if (args[1] == "int")
          size = sizeof(int);
+      else if (args[1] == "char")
+         size = sizeof(char);
       else {
-         die("maketable", "Data file element size must be \"float\", "
-                          "\"double\" or \"int\".");
+         die("maketable (datafile)", "File number type must be "
+                                  "\"double\", \"float\", \"int\" or \"char\"");
          return -1;
       }
    }
 
    FILE *stream = fopen(fname, "r");
    if (stream == NULL) {
-      die("maketable", "Can't open data file \"%s\".", fname);
+      die("maketable (datafile)", "Can't open file \"%s\".", fname);
       return -1;
    }
 
@@ -202,8 +573,20 @@ _datafile_table(const Arg args[], const int nargs, double *array, const int len)
          array[i] = val;
       }
    }
-   else {  /* int */
+   else if (size == sizeof(int)) {
       int val;
+      for (i = 0; i < len; i++) {
+         if (fread(&val, sizeof(val), 1, stream) < 1) {
+            if (ferror(stream))
+               goto readerr;
+            break;
+         }
+         array[i] = (double) val;
+      }
+   }
+
+   else {  /* char */
+      char val;
       for (i = 0; i < len; i++) {
          if (fread(&val, sizeof(val), 1, stream) < 1) {
             if (ferror(stream))
@@ -217,19 +600,23 @@ _datafile_table(const Arg args[], const int nargs, double *array, const int len)
    cur = ftell(stream);
    fseek(stream, 0, SEEK_END);
    if (ftell(stream) != cur)
-      warn("maketable", "Data file \"%s\" has more than %d numbers.",
+      warn("maketable (datafile)", "File \"%s\" has more than %d numbers.",
                                                                   fname, len);
    fclose(stream);
 
-   advise("maketable", "%d values loaded into table.", i);
-
-   /* fill remainder (if any) with zeros */
-   for ( ; i < len; i++)
-      array[i] = 0.0;
+   if (i != len) {
+      warn("maketable (datafile)", "Only %d values loaded into table, "
+                                   "followed by %d padding zeros.", i, len - i);
+      /* Fill remainder with zeros. */
+      for ( ; i < len; i++)
+         array[i] = 0.0;
+   }
+   else
+      advise("maketable (datafile)", "%d values loaded into table.", i);
 
    return 0;
 readerr:
-   die("maketable", "Error reading file \"%s\".", fname);
+   die("maketable (datafile)", "Error reading file \"%s\".", fname);
    return -1;
 }
 
@@ -261,8 +648,8 @@ _transition(double a, double alpha, double b, int n, double *output)
    delta = b - a;
 
    if (n <= 1) {
-      warn("maketable", "'curve' trying to transition over 1 array slot; "
-                                       "time between points is too short");
+      warn("maketable (curve)", "Trying to transition over 1 array slot; "
+                                "time between points is too short");
       *output = a;
       return;
    }
@@ -289,19 +676,19 @@ _curve_table(const Arg args[], const int nargs, double *array, const int len)
    double time[MAX_CURVE_PTS], value[MAX_CURVE_PTS], alpha[MAX_CURVE_PTS];
 
    if (nargs < 5 || (nargs % 3) != 2) {      /* check number of args */
-      die("maketable", "'curve' usage: t1 v1 a1 ... tn vn");
+      die("maketable (curve)", "Usage: t1 v1 a1 ... tn vn");
       return -1;
    }
    if ((nargs / 3) + 1 > MAX_CURVE_PTS) {
-      die("maketable", "too many arguments for curve.");
+      die("maketable (curve)", "Too many arguments.");
       return -1;
    }
    if (!args_have_same_type(args, nargs, DoubleType)) {
-      die("maketable", "<time, value, alpha> pairs must be numbers.");
+      die("maketable (curve)", "<time, value, alpha> pairs must be numbers.");
       return -1;
    }
    if ((double) args[0] != 0.0) {
-      die("maketable", "'curve' first time must be zero.");
+      die("maketable (curve)", "First time must be zero.");
       return -1;
    }
 
@@ -326,14 +713,15 @@ _curve_table(const Arg args[], const int nargs, double *array, const int len)
    }
 
    return 0;
+
 time_err:
-   die("maketable", "times not in ascending order.");
+   die("maketable (curve)", "Times must be in ascending order.");
    return -1;
 }
 
 
 /* --------------------------------------------------------- _expbrk_table -- */
-/* Similar to gen 5, but no no normalization.
+/* Similar to gen 5, but no normalization.
 */
 static int
 _expbrk_table(const Arg args[], const int nargs, double *array, const int len)
@@ -388,11 +776,11 @@ _line_table(const Arg args[], const int nargs, double *array, const int len)
    int i, j, k, l;
 
    if (!args_have_same_type(args, nargs, DoubleType)) {
-      die("maketable", "<time, value> pairs must be numbers.");
+      die("maketable (line)", "<time, value> pairs must be numbers.");
       return -1;
    }
    if ((nargs % 2) != 0) {
-      die("maketable", "incomplete <time, value> pair.");
+      die("maketable (line)", "Incomplete <time, value> pair.");
       return -1;
    }
 
@@ -436,13 +824,13 @@ _line_table(const Arg args[], const int nargs, double *array, const int len)
 
    return 0;
 time_err:
-   die("maketable", "times not in ascending order.");
+   die("maketable (line)", "Times must be in ascending order.");
    return -1;
 }
 
 
 /* -------------------------------------------------------- _linebrk_table -- */
-/* Similar to gen 7, but no no normalization.
+/* Similar to gen 7, but no normalization.
 */
 static int
 _linebrk_table(const Arg args[], const int nargs, double *array, const int len)
@@ -502,7 +890,7 @@ _wave_table(const Arg args[], const int nargs, double *array, const int len)
    int j = nargs;
    while (j--) {
       if (!args[j].isType(DoubleType)) {
-         die("maketable", "Harmonic amplitudes must be numbers.");
+         die("maketable (wave)", "Harmonic amplitudes must be numbers.");
          return -1;
       }
       if ((double) args[j] != 0.0) {
@@ -605,7 +993,7 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
       else if (args[0] == "cauchy")
          type = 5;
       else {
-         die("maketable", "Unsupported random distribution type \"%s\".",
+         die("maketable (random)", "Unsupported distribution type \"%s\".",
                                                       (const char *) args[0]);
          return -1;
       }
@@ -613,7 +1001,7 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
    else if (args[0].isType(DoubleType))
       type = (int) args[0];
    else {
-      die("maketable", "Random distribution type must be a string or number.");
+      die("maketable (random)", "Distribution type must be string or number.");
       return -1;
    }
 
@@ -627,8 +1015,8 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
 
    /* Set range for random numbers. */
    if (nargs == 3) {
-      die("maketable",
-          "usage: maketable(\"random\", size, type[, seed[, min, max]])");
+      die("maketable (random)",
+          "Usage: maketable(\"random\", size, type[, seed[, min, max]])");
       return -1;
    }
 
@@ -637,7 +1025,7 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
       min = args[2];
       max = args[3];
       if (min == max) {
-         die("maketable", "For random table, <min> must be lower than <max>.");
+         die("maketable (random)", "<min> must be lower than <max>.");
          return -1;
       }
       if (min > max) {     /* make sure these are in increasing order */
@@ -723,7 +1111,7 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
          }
          break;
       default:
-         die("maketable", "Unsupported random distribution type %d.", type);
+         die("maketable (random)", "Unsupported distribution type %d.", type);
          return -1;
          break;
    }
@@ -733,7 +1121,7 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
 
 
 /* --------------------------------------------------------- _window_table -- */
-/* Equivalent to cmix gen 25.
+/* Similar to gen 25, but no normalization.
 */
 static int
 _window_table(const Arg args[], const int nargs, double *array, const int len)
@@ -741,7 +1129,7 @@ _window_table(const Arg args[], const int nargs, double *array, const int len)
    int window_type = 0;
 
    if (nargs != 1) {
-      die("maketable", "Missing window type.");
+      die("maketable (window)", "Missing window type.");
       return -1;
    }
    if (args[0].isType(StringType)) {
@@ -750,7 +1138,7 @@ _window_table(const Arg args[], const int nargs, double *array, const int len)
       else if (args[0] == "hamming")
          window_type = 2;
       else {
-         die("maketable", "Unsupported window type \"%s\".",
+         die("maketable (window)", "Unsupported window type \"%s\".",
                                                       (const char *) args[0]);
          return -1;
       }
@@ -759,7 +1147,7 @@ _window_table(const Arg args[], const int nargs, double *array, const int len)
         window_type = (int) args[0];
    }
    else {
-      die("maketable", "Window type must be a string or numeric code.");
+      die("maketable (window)", "Window type must be string or numeric code.");
       return -1;
    }
 
@@ -775,7 +1163,8 @@ _window_table(const Arg args[], const int nargs, double *array, const int len)
          }
          break;
       default:
-         die("maketable", "Unsupported window type (%d).", window_type);
+         die("maketable (window)", "Unsupported window type (%d).",
+                                                               window_type);
          return -1;
    }
 
@@ -801,7 +1190,7 @@ _string_to_tablekind(const char *str)
 
 static int
 _dispatch_table(const Arg args[], const int nargs, const int startarg,
-   double *array, int *len)
+   double **array, int *len)
 {
    int status;
    TableKind tablekind;
@@ -812,7 +1201,7 @@ _dispatch_table(const Arg args[], const int nargs, const int startarg,
    else if (args[0].isType(StringType)) {
       tablekind = _string_to_tablekind((const char *) args[0]);
       if (tablekind == InvalidTable) {
-         die("maketable", "Invalid table type string '%s'",
+         die("maketable", "Invalid table type string \"%s\"",
                                                       (const char *) args[0]);
          return -1;
       }
@@ -823,57 +1212,71 @@ _dispatch_table(const Arg args[], const int nargs, const int startarg,
    }
 
    switch (tablekind) {
-      case SndfileTable:
-         goto unimplemented;
-         break;
       case TextfileTable:
-         goto unimplemented;
+         status = _textfile_table(&args[startarg], nargs - startarg, *array,
+                                                                        *len);
+         break;
+      case SndfileTable:
+         /* NOTE: passing addresses of array and len is correct for this table,
+                  because _sndfile_table will update them.
+         */
+         status = _sndfile_table(&args[startarg], nargs - startarg, array, len);
+         break;
+      case LiteralTable:
+         status = _literal_table(&args[startarg], nargs - startarg, *array,
+                                                                        *len);
          break;
       case DatafileTable:
-         status = _datafile_table(&args[startarg], nargs - startarg, array,
+         status = _datafile_table(&args[startarg], nargs - startarg, *array,
                                                                         *len);
          break;
       case CurveTable:
-         status = _curve_table(&args[startarg], nargs - startarg, array, *len);
+         status = _curve_table(&args[startarg], nargs - startarg, *array, *len);
          break;
       case ExpbrkTable:
-         status = _expbrk_table(&args[startarg], nargs - startarg, array, *len);
+         status = _expbrk_table(&args[startarg], nargs - startarg, *array,
+                                                                        *len);
          break;
       case LineTable:
-         status = _line_table(&args[startarg], nargs - startarg, array, *len);
+         status = _line_table(&args[startarg], nargs - startarg, *array, *len);
          break;
       case LinebrkTable:
-         status = _linebrk_table(&args[startarg], nargs - startarg, array,
+         status = _linebrk_table(&args[startarg], nargs - startarg, *array,
                                                                         *len);
          break;
       case Wave3Table:
-         status = _wave3_table(&args[startarg], nargs - startarg, array, *len);
+         status = _wave3_table(&args[startarg], nargs - startarg, *array, *len);
          break;
       case WaveTable:
-         status = _wave_table(&args[startarg], nargs - startarg, array, *len);
+         status = _wave_table(&args[startarg], nargs - startarg, *array, *len);
          break;
       case ChebyTable:
-         status = _cheby_table(&args[startarg], nargs - startarg, array, *len);
+         status = _cheby_table(&args[startarg], nargs - startarg, *array, *len);
          break;
       case RandomTable:
-         status = _random_table(&args[startarg], nargs - startarg, array, *len);
+         status = _random_table(&args[startarg], nargs - startarg, *array,
+                                                                        *len);
          break;
       case WindowTable:
-         status = _window_table(&args[startarg], nargs - startarg, array, *len);
+         status = _window_table(&args[startarg], nargs - startarg, *array,
+                                                                        *len);
          break;
       default:
-         die("maketable", "invalid table type.");
+         die("maketable", "Invalid table type.");
          return -1;
          break;
    }
+
    return status;
-unimplemented:
-   die("maketable", "unimplemented table type.");
-   return -1;
 }
+
+
+/* ========================================================================== */
+/* The remaining functions are public, callable from scripts. */
 
 extern "C" {
    Handle maketable(const Arg args[], const int nargs);
+   double tablelen(const Arg args[], const int nargs);
    Handle normtable(const Arg args[], const int nargs);
    Handle copytable(const Arg args[], const int nargs);
    Handle multtable(const Arg args[], const int nargs);
@@ -883,7 +1286,7 @@ extern "C" {
 };
 
 /* ------------------------------------------------------------- maketable -- */
-void
+static void
 _maketable_usage()
 {
    die("maketable",
@@ -921,8 +1324,8 @@ maketable(const Arg args[], const int nargs)
       return NULL;
    }
    int len = args[lenindex];
-   if (len < 2) {
-      die("maketable", "Table size must be at least 2.");
+   if (len < 0) {    // NOTE: It's okay for len to be zero (cf _sndfile_table)
+      die("maketable", "Negative table size.");
       return NULL;
    }
    if (len > MAX_ARRAY_LEN) {
@@ -939,12 +1342,36 @@ maketable(const Arg args[], const int nargs)
       return NULL;
    }
 
-   status = _dispatch_table(args, nargs, lenindex + 1, data, &len);
+   status = _dispatch_table(args, nargs, lenindex + 1, &data, &len);
 
    if (normalize)
       _normalize_table(data, len, 1.0);
 
    return _createPFieldHandle(new TablePField(data, len));
+}
+
+/* -------------------------------------------------------------- tablelen -- */
+double
+tablelen(const Arg args[], const int nargs)
+{
+   double len;
+
+   if (nargs != 1) {
+      die("tablelen", "Takes only one argument: a valid table handle.");
+      return -1.0;
+   }
+   if (!args[0].isType(HandleType)) {
+      die("tablelen", "Argument must be a valid table handle.");
+      return -1.0;
+   }
+
+   TablePField *table = _getTablePField(&args[0]);
+   if (table == NULL) {
+      die("tablelen", "Argument must be a valid table handle.");
+      return -1.0;
+   }
+
+   return (double) table->values();
 }
 
 /* ------------------------------------------------------------- multtable -- */
@@ -1010,7 +1437,8 @@ normtable(const Arg args[], const int nargs)
    }
    TablePField *table = _getTablePField(&args[0]);
    if (table == NULL) {
-      die("normtable", "First argument must be a handle to the table to normalize.");
+      die("normtable",
+          "First argument must be a handle to the table to normalize.");
       return NULL;
    }
    if (nargs > 1 && args[1].isType(DoubleType))
@@ -1129,7 +1557,7 @@ plottable(const Arg args[], const int nargs)
          plotcmds = (const char *) args[1];
       else {
          die("plottable",
-            "Second argument can be pause length or plot commands.");
+             "Second argument can be pause length or plot commands.");
          return -1.0;
       }
       if (nargs > 2) {
@@ -1139,7 +1567,7 @@ plottable(const Arg args[], const int nargs)
             plotcmds = (const char *) args[2];
          else {
             die("plottable",
-               "Third argument can be pause length or plot commands.");
+                "Third argument can be pause length or plot commands.");
             return -1.0;
          }
       }
