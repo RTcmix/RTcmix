@@ -46,7 +46,7 @@ makegen(13, 18, 1000, 0,.5, 1,.5)           /* image centered in middle */
 makegen(14, 18, 1000, 0,0, 1,1)             /* increasingly randomized */
 
 
-JGRAN(start=0, dur, amp=1, seed=0, type=1, ranphase=1)
+JGRAN(start=0, dur, amp=1, seed=1, type=1, ranphase=1)
 
 /*----------------------------------------------------------------------------*/
 deltime1 = .37
