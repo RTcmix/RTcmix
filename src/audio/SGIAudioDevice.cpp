@@ -75,7 +75,7 @@ SGIAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 }
 
 int
-SGIAudioDevice::doSetQueueSize(int *pQueueSize)
+SGIAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 {
 	return error("Not implemented");
 }

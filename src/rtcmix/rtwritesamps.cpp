@@ -17,39 +17,17 @@
 #include "audio_devices.h"
 
 /* --------------------------------------------------------- rtwritesamps --- */
-/* Write the current output buffers to an interleaved buffer, and send it to
-   the fileDevice.  Currently the AudioDevice supports 16-bit and 24-bit signed
+/* Write the current non-interleaved output buffers to the fileDevice.  
+   Currently the AudioDevice supports 16-bit and 24-bit signed
    integer and 32-bit floating-point files, in both byte orders.  Floats have
    a scaling option that forces the normal range of values to fall between 
    -1.0 and 1.0 (set at file device creation time).
 */
 
-static BUFTYPE	*interleavedBuf;
-
 int
 rtwritesamps(AudioDevice *fileDevice)
 {
 	const int nframes = RTBUFSAMPS;
-	const int nchans = NCHANS;
-
-	if (interleavedBuf == NULL) {
-		interleavedBuf = new BUFTYPE[8192*nchans];
-		if (interleavedBuf == NULL) {
-			fprintf(stderr, "rtwritesamps: failed to allocate interleave buffer\n");
-			exit(1);
-		}
-	}
-
-	// Interleave output buffers before handing to outputDevice.
-	
-	for (int n = 0; n < nchans; n++) {
-		BufPtr iBuf = &interleavedBuf[n];
-		BufPtr bp = out_buffer[n];
-		for (int i = 0; i < nframes; i++) {
-			*iBuf = bp[i];
-			iBuf += nchans;
-		}
-	}
 
    /* This catches our new case where rtoutput() failed but was ignored */
    if (rtfileit < 0) {
@@ -57,9 +35,9 @@ rtwritesamps(AudioDevice *fileDevice)
       exit(1);
    }
    
-   int framesWritten = fileDevice->sendFrames(interleavedBuf, nframes);
+   int framesWritten = fileDevice->sendFrames(out_buffer, nframes);
    
-   if (framesWritten == -1) {
+   if (framesWritten != nframes) {
       fprintf(stderr, "rtwritesamps error: %s\n", fileDevice->getLastError());
       exit(1);
    }
@@ -76,8 +54,6 @@ rtcloseout()
 
 	if (rtfileit != 1)          /* nothing to close */
 		return 0;
-
-	delete [] interleavedBuf;
 
 	result = destroy_audio_file_device();
 

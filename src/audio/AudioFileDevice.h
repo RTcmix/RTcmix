@@ -8,11 +8,12 @@
 class AudioFileDevice : public ThreadedAudioDevice {
 public:
 	enum { NormalizeFloats = 1, CheckPeaks = 2 };
-	AudioFileDevice(const char *path, int fileType, int fileFmt, int fileOptions);
+	AudioFileDevice(const char *path, int fileType, int fileOptions);
 	virtual ~AudioFileDevice();
 
-	// AudioDeviceImpl override.
+	// AudioDeviceImpl overrides.
 	virtual int open(int mode, int sampfmt, int chans, double srate);
+	virtual int	sendFrames(void *frameBuffer, int frames);
 	// New to class
 	double getPeak(int chan, long *location);
 
@@ -25,12 +26,10 @@ protected:
 	virtual int doStart();
 	virtual int doPause(bool);
 	virtual int doSetFormat(int sampfmt, int chans, double srate);
-	virtual int doSetQueueSize(int *pQueueSize);
+	virtual int doSetQueueSize(int *pWriteSize, int *pCount);
 	virtual int doGetFrameCount() const;
 	virtual int doGetFrames(void *frameBuffer, int frameCount);
 	virtual	int	doSendFrames(void *frameBuffer, int frameCount);
-	// New to class
-	void		*convertSamples(void *buffer, int frames);
 private:
 	struct Impl;
 	Impl	*_impl;

@@ -235,20 +235,3 @@ allocate_ibuf_ptr(int nsamps)       /* samples, not frames */
    return ibuf_ptr;
 }
 
-
-/* ---------------------------------------------------- allocate_obuf_ptr --- */
-/* Allocate buffer of the type sent to the audio output device.
-   Called by rtsendsamps.c
-*/
-INLINE OBufPtr
-allocate_obuf_ptr(int nsamps)       /* samples, not frames */
-{
-   OBufPtr obuf_ptr;
-
-   obuf_ptr = (OBUFTYPE *) malloc(nsamps * sizeof(OBUFTYPE));
-   assert(obuf_ptr != NULL);
-
-   return obuf_ptr;
-}
-
-

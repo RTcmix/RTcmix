@@ -9,7 +9,7 @@
 
 class OSSAudioDevice : public ThreadedAudioDevice {
 public:
-	OSSAudioDevice(const char *devPath="/dev/dsp");
+	OSSAudioDevice(const char *devPath);
 	virtual ~OSSAudioDevice();
 	
 protected:
@@ -21,7 +21,7 @@ protected:
 	virtual int doStart();
 	virtual int doPause(bool);
 	virtual int doSetFormat(int sampfmt, int chans, double srate);
-	virtual int doSetQueueSize(int *pQueueSize);
+	virtual int doSetQueueSize(int *pWriteSize, int *pCount);
 	virtual int	doGetFrames(void *frameBuffer, int frameCount);
 	virtual int	doSendFrames(void *frameBuffer, int frameCount);
 	// Local methods

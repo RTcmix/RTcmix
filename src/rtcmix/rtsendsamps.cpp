@@ -26,17 +26,8 @@
 extern AudioDevice *globalOutputFileDevice;	// audio_devices.cpp
 
 static int printing_dots = 0;
-static int dev_obuf_allocated = 0;
-
-/* Array of output buffers for audio device, in format wanted by driver.
-   If driver wants interleaved samps, use only dev_obuf[0], which contains
-   interleaved samples. Otherwise, each buffer in dev_obuf contains one
-   channel of samples.
-*/
-static OBufPtr dev_obuf[MAXBUS];
 
 /* local prototypes */
-static void allocate_dev_obuf(void);
 static int write_to_audio_device(AudioDevice *);
 static void limiter(void);
 
@@ -64,25 +55,6 @@ dump_audio_to_raw_file(OBufPtr dest, int nbytes)
    assert(result != -1);
 }
 #endif /* DUMP_AUDIO_TO_RAW_FILE */
-
-
-/* ---------------------------------------------------- allocate_dev_obuf --- */
-/* Allocate either one interleaved buffer or multiple single buffers,
-   depending on whether MONO_DEVICES is defined.
-*/
-static void
-allocate_dev_obuf()
-{
-#ifdef MONO_DEVICES
-   int i;
-
-   for (i = 0; i < NCHANS; i++)
-      dev_obuf[i] = allocate_obuf_ptr(RTBUFSAMPS);
-#else /* !MONO_DEVICES */
-   dev_obuf[0] = allocate_obuf_ptr(RTBUFSAMPS * NCHANS);
-#endif /* !MONO_DEVICES */
-}
-
 
 #ifdef USE_REAL2INT
 /* ------------------------------------------------------------- real2int --- */
@@ -113,47 +85,7 @@ real2int(float val)
 static int
 write_to_audio_device(AudioDevice *device)
 {
-   int   i, j, n, result;
-
-#ifdef MONO_DEVICES
-   const int nbytes = RTBUFSAMPS * sizeof(OBUFTYPE);
-
-   for (n = 0; n < NCHANS; n++) {
-      BufPtr src = out_buffer[n];
-      OBufPtr dest = dev_obuf[n];
-
-      for (i = 0; i < RTBUFSAMPS; i++)
-         dest[i] = (OBUFTYPE) src[i];
-
-      result = write(out_port[n], dest, nbytes);
-      if (result == -1)
-         break;
-   }
-
-#else /* !MONO_DEVICES */
-
-   OBufPtr dest = dev_obuf[0];
-
-   for (n = 0; n < NCHANS; n++) {
-      BufPtr src = out_buffer[n];
-
-      for (i = 0, j = n; i < RTBUFSAMPS; i++, j += NCHANS)
-#ifdef USE_REAL2INT
-         dest[j] = real2int(src[i]);
-#else
-         dest[j] = (OBUFTYPE) src[i];
-#endif
-   }
-#ifdef DUMP_AUDIO_TO_RAW_FILE
-   dump_audio_to_raw_file(dest, nbytes);
-#endif
-	result = device->sendFrames(dest, RTBUFSAMPS);
-
-#endif /* !MONO_DEVICES */
-
-   if (result == -1)
-      return -1;
-   return 0;
+	return device->sendFrames(out_buffer, RTBUFSAMPS) == RTBUFSAMPS ? 0 : -1;
 }
 
 
@@ -232,10 +164,6 @@ rtsendzeros(AudioDevice *device, int also_write_to_file)
 
    if (play_audio) {
       int i, j, nsamps, nbufs;
-
-      if (!dev_obuf_allocated)
-         allocate_dev_obuf();
-
       err = write_to_audio_device(device);
       if (err)
          fprintf(stderr, "rtsendzeros: Error: %s\n", device->getLastError());
@@ -251,23 +179,9 @@ rtsendzeros(AudioDevice *device, int also_write_to_file)
 
 /* ---------------------------------------------------------- rtsendsamps --- */
 /* Called by the scheduler to write the output buffer to the audio device
-   and/or a sound file. This involves two kinds of conversion:
-
-      1) Convert the sample format from the type used in the internal
-         output buffers (floating point) to that expected by the audio
-         device (if playing) and the output file (if writing). Most
-         audio devices expect 16-bit or 24-bit integers, but some
-         (like SGI) can accept 32-bit floats efficiently. Sound files
-         can be most any kind of format. We need to support 16-bit and
-         24-bit ints, as well as 32-bit floats, optionally normalized
-         to fit mostly into the range [-1.0, 1.0].
-
-         Converting from floats to ints involves detecting, reporting
-         and handling out-of-range samples.
-
-      2) As required, convert the buffer scheme from one buffer per
-         channel to one big buffer with channels interleaved. All sound
-         files, and some audio devices, need interleaved samples.
+   and/or a sound file.   All format conversion happens inside the AudioDevice.
+   For all supported cases, we limit the floating point buffer to +-32768 to
+   avoid overflow during conversion to other formats.
 */
 
 #define NPLAY_BUFSIZE 8192
@@ -300,13 +214,10 @@ rtsendsamps(AudioDevice *device)
    }
 
 #ifdef LIMIT_OBUF_FOR_AUDIO_DEV
-   limiter();    /* If audio device does *not* want floats, do limiting now. */
+   limiter();    /* Limit output buffer data to +-32767.0 */
 #endif
 
    if (play_audio) {
-      if (!dev_obuf_allocated)
-         allocate_dev_obuf();
-
       err = write_to_audio_device(device);
       if (err)
          fprintf(stderr, "rtsendsamps: Error: %s\n", device->getLastError());
@@ -331,8 +242,6 @@ rtsendsamps(AudioDevice *device)
       int   i, j, result;
       short outbufshort[NPLAY_BUFSIZE];
 
-      if (!dev_obuf_allocated)
-         allocate_dev_obuf();
       for (i = 0; i < NPLAY_BUFSIZE / 2; i++) {
          for (j = 0; j < 2; j++)
             outbufshort[i * 2 + j] = out_buffer[j][i];

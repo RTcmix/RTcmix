@@ -11,7 +11,7 @@
 #include <stdio.h>
 
 ThreadedAudioDevice::ThreadedAudioDevice()
-	: _device(-1), _thread(0), _frameCount(0),
+	  : _device(-1), _thread(0), _frameCount(0),
 	  _paused(false), _stopping(false), _closing(false)
 {
 }

@@ -83,7 +83,8 @@ int OSSAudioDevice::doPause(bool isPaused)
 int OSSAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 {
 	int sampleFormat;
-	switch(sampfmt) {
+	int deviceFormat = MUS_GET_FORMAT(sampfmt);
+	switch (MUS_GET_FORMAT(sampfmt)) {
 		case MUS_UBYTE:
 			sampleFormat = AFMT_U8;
 			_bytesPerFrame = chans;
@@ -92,10 +93,14 @@ int OSSAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 			sampleFormat = AFMT_S8;
 			_bytesPerFrame = chans;
 			break;
+		case MUS_LFLOAT:
+			deviceFormat = NATIVE_SHORT_FMT;
 		case MUS_LSHORT:
 			_bytesPerFrame = 2 * chans;
 			sampleFormat = AFMT_S16_LE;
 			break;
+		case MUS_BFLOAT:
+			deviceFormat = NATIVE_SHORT_FMT;
 		case MUS_BSHORT:
 			_bytesPerFrame = 2 * chans;
 			sampleFormat = AFMT_S16_BE;
@@ -126,23 +131,26 @@ int OSSAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 		return error("Error while setting sample rate.");
 	if (dsp_speed != (int) srate)
 		return error("Device does not support this sample rate");
-//	if (ioctl(SNDCTL_DSP_GETBLKSIZE, &_bufferSize))
-//		return error("Error while retrieving block size.");
+	// Store the device params to allow format conversion.
+	setDeviceParams(deviceFormat | MUS_INTERLEAVED,		// always interleaved
+					chans,
+					srate);
 	return 0;
 }
 
-int OSSAudioDevice::doSetQueueSize(int *pQueueSize)
+int OSSAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 {
-	int reqQueueBytes = *pQueueSize * getBytesPerFrame();
+	int reqQueueBytes = *pWriteSize * getDeviceBytesPerFrame();
 	int queuecode = ((int) (log(reqQueueBytes) / log(2.0))) + 1;
-	int sizeCode = 0x40000 | (queuecode & 0x0000ffff);
+	int sizeCode = (*pCount << 16) | (queuecode & 0x0000ffff);
 	if (ioctl(SNDCTL_DSP_SETFRAGMENT, &sizeCode) == -1) {
+		printf("ioctl(SNDCTL_DSP_SETFRAGMENT, ...) returned -1\n");
 	}
 	_bufferSize = 0;
 	if (ioctl(SNDCTL_DSP_GETBLKSIZE, &_bufferSize) == -1) {
 		return error("Error while retrieving block size.");
 	}
-	*pQueueSize = _bufferSize / getBytesPerFrame();
+	*pWriteSize = _bufferSize / (*pCount * getDeviceBytesPerFrame());
 	return 0;
 }
 
@@ -233,9 +241,9 @@ void OSSAudioDevice::run()
 //	printf("OSSAudioDevice::run: thread exiting\n");
 }
 
-AudioDevice *createAudioDevice()
+AudioDevice *createAudioDevice(const char *path)
 {
-	return new OSSAudioDevice;
+	return new OSSAudioDevice(path);
 }
 
 #endif	// !ALSA

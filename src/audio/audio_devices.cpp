@@ -10,74 +10,58 @@
 #include <globals.h>
 #include <sndlibsupport.h>
 #include <ugens.h>
+#include <prototypes.h>
 
 #include "AudioFileDevice.h"
 #include "audio_devices.h"
 
-#if defined(LINUX)
-
-#if MUS_LITTLE_ENDIAN
-#define NATIVE_HW_FORMAT MUS_LSHORT
-#else
-#define NATIVE_HW_FORMAT MUS_BSHORT
-#endif
-#ifdef OSS
-#include "OSSAudioDevice.h"
-#elif defined(ALSA)
-#include "ALSAAudioDevice.h"
-#endif
-
-#elif defined(MACOSX)
-
-#include "OSXAudioDevice.h"
-#define NATIVE_HW_FORMAT MUS_BFLOAT
-
-#elif defined(SGI)
-
-#include "SGIAudioDevice.h"
-#define NATIVE_HW_FORMAT MUS_BFLOAT
-
-#endif
-
-
-#ifdef ALSA
+#if defined(ALSA)
+#define DEFAULT_DEVICE "hw:0,0"
 #define FULL_DUPLEX_NOT_SUPPORTED
+#elif defined(OSS)
+#define DEFAULT_DEVICE "/dev/dsp"
+#else
+#define DEFAULT_DEVICE NULL
 #endif
 
 AudioDevice *globalInputDevice;			// Used by Minc/audioLoop.C
 AudioDevice *globalOutputDevice;		// Used by Minc/audioLoop.C
 AudioDevice *globalOutputFileDevice;
 
-static const int numBuffers = 4;		// number of audio buffers to queue up
+static const int numBuffers = 2;		// number of audio buffers to queue up
 
 int
 create_audio_devices(int recordAndPlay, int chans, float srate, int *buffersize)
 {
 	int status;
+	const char *deviceName = get_audio_device_name();	// from set_option.c
 #ifdef FULL_DUPLEX_NOT_SUPPORTED
 	/* Open audio input and output ports. */
 	if (recordAndPlay) {
-		AudioDevice *idevice = createAudioDevice();
+		AudioDevice *idevice = createAudioDevice(deviceName ? deviceName : DEFAULT_DEVICE);
+		// We read noninterleaved floating point buffers from the device
+		int audioFormat = NATIVE_FLOAT_FMT | MUS_NON_INTERLEAVED;
 		// Don't run thread for input device if output device is running too.
 		int openMode = AudioFileDevice::Record | AudioDevice::Passive;
+		idevice->setFrameFormat(audioFormat, chans);
 		if ((status = idevice->open(openMode,
-									NATIVE_HW_FORMAT, 
+									audioFormat, 
 									chans, 
 									srate)) == 0)
 		{
-			int reqsize = *buffersize * numBuffers;
-			if ((status = idevice->setQueueSize(&reqsize)) < 0) {
+			int reqsize = *buffersize;
+			int reqcount = numBuffers;
+			if ((status = idevice->setQueueSize(&reqsize, &reqcount)) < 0) {
 				die("rtsetparams",
 					"Trouble setting audio input device queue size: %s",
 					idevice->getLastError());
 				return -1;
 			}
-			int newBufferSize = reqsize / numBuffers;
-			if (newBufferSize != *buffersize) {
+			if (reqsize != *buffersize) {
 				advise("rtsetparams",
 						"RTBUFSAMPS reset by input audio device from %d to %d",
-						*buffersize, newBufferSize);
-				*buffersize = newBufferSize;
+						*buffersize, reqsize);
+				*buffersize = reqsize;
 			}
 			// Passive start takes NULL callback and context.
 			if (idevice->start(NULL, NULL) != 0) {
@@ -95,28 +79,30 @@ create_audio_devices(int recordAndPlay, int chans, float srate, int *buffersize)
 		recordAndPlay = false;	// reset so code below will not attempt duplex
 	}
 #endif	// FULL_DUPLEX_NOT_SUPPORTED
-
-	AudioDevice *device = createAudioDevice();
+	AudioDevice *device = createAudioDevice(deviceName ? deviceName : DEFAULT_DEVICE);
+	// We send the device noninterleaved floating point buffers.
+	int audioFormat = NATIVE_FLOAT_FMT | MUS_NON_INTERLEAVED;
 	int openMode = (recordAndPlay) ?
 						AudioDevice::RecordPlayback : AudioDevice::Playback;
+	device->setFrameFormat(audioFormat, chans);
 	if ((status = device->open(openMode,
-	  						   NATIVE_HW_FORMAT,
+	  						   audioFormat,
 							   chans,
 							   srate)) == 0)
 	{
-		int reqsize = *buffersize * numBuffers;
-		if ((status = device->setQueueSize(&reqsize)) < 0) {
+		int reqsize = *buffersize;
+		int reqcount = numBuffers;
+		if ((status = device->setQueueSize(&reqsize, &reqcount)) < 0) {
 			die("rtsetparams",
 				"Trouble setting audio device queue size: %s",
 				device->getLastError());
 			return -1;
 		}
-		int newBufferSize = reqsize / numBuffers;
-		if (newBufferSize != *buffersize) {
+		if (reqsize != *buffersize) {
 			advise("rtsetparams",
 					"RTBUFSAMPS reset by audio device from %d to %d",
-					*buffersize, newBufferSize);
-			*buffersize = newBufferSize;
+					*buffersize, reqsize);
+			*buffersize = reqsize;
 		}
 	}
 	else
@@ -152,14 +138,16 @@ int create_audio_file_device(const char *outfilename,
 
 	AudioFileDevice *fileDevice = new AudioFileDevice(outfilename,
 													  header_type,
-													  sample_format,
 													  fileOptions);
 													
 	int openMode = AudioFileDevice::Playback;
 	if (play_audio)
 		openMode |= AudioDevice::Passive;	// Don't run thread for file device.
+	// We send the device noninterleaved floating point buffers.
+	int audioFormat = NATIVE_FLOAT_FMT | MUS_NON_INTERLEAVED;
+	fileDevice->setFrameFormat(audioFormat, chans);
 
-	int ret = fileDevice->open(openMode, MUS_LFLOAT, chans, srate);
+	int ret = fileDevice->open(openMode, sample_format, chans, srate);
 	
 	if (ret == -1) {
 		rterror("rtoutput", "Can't create output for \"%s\": %s", 
@@ -168,7 +156,8 @@ int create_audio_file_device(const char *outfilename,
 	}
 	// Cheating -- should hand in queue size as argument!
 	int queueSize = RTBUFSAMPS;
-	ret = fileDevice->setQueueSize(&queueSize);
+	int count = 1;
+	ret = fileDevice->setQueueSize(&queueSize, &count);
 	if (ret == -1) {
 		rterror("rtoutput", "Failed to set queue size on file device:  %s", 
 				 fileDevice->getLastError());

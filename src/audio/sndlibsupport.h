@@ -29,10 +29,12 @@ enum { MUS_NON_INTERLEAVED = 0x1000, MUS_INTERLEAVED = 0x2000 };
 #define IS_INTERLEAVED_FORMAT(fmt) (MUS_GET_INTERLEAVE(fmt) == MUS_INTERLEAVED)
 #define MUS_GET_FORMAT(fmt) ((fmt) & MUS_FORMAT_MASK)
 
-/* Use this to describe the floating point data we hand to an AudioDevice */
+/* Use these to describe "native" endian for floats and shorts */
 #if MUS_LITTLE_ENDIAN
+#define NATIVE_SHORT_FMT MUS_LSHORT
 #define NATIVE_FLOAT_FMT MUS_LFLOAT
 #else
+#define NATIVE_SHORT_FMT MUS_BSHORT
 #define NATIVE_FLOAT_FMT MUS_BFLOAT
 #endif
 
