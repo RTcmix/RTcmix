@@ -1,3 +1,5 @@
+2004-05-04  Douglas Scott  <netdscott at netscape.net>
+
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
@@ -5,6 +7,7 @@ fixes that we don't bother putting here.
 
 	* Added stub class files for "JackAudioDevice" for interested
 	  developers to examine.  Minor other changes.
+	* Checked in initial version of MMOVE/MPLACE into insts.std.
 
 2004-05-02  Douglas Scott  <netdscott-at-netscape.net>
 
