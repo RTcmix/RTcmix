@@ -1,7 +1,6 @@
 /* This is set up so that all vars are defined when this file is included
    by main.C (which defines the MAIN preprocessor symbol), and declared
    extern when included by all other files.
-   For C++ files including this one, all vars are wrapped by extern "C".
                                                               -JGG, 2/8/00
 */
 #ifndef _GLOBALS_H_ 
@@ -60,6 +59,18 @@ GLOBAL int audio_config;
 GLOBAL int rtInteractive;
 GLOBAL int print_is_on;
 GLOBAL int rtsetparams_called;
+
+GLOBAL int output_data_format;
+GLOBAL int output_header_type;
+GLOBAL int normalize_output_floats;
+GLOBAL int is_float_format;
+GLOBAL char *rtoutsfname;
+
+/* max amplitude encountered -- reported at end of run */
+GLOBAL BUFTYPE peaks[MAXBUS];
+GLOBAL long peaklocs[MAXBUS];
+GLOBAL int report_clipping;
+GLOBAL int check_peaks;
 
 /* for more than 1 socket, set by -s flag to CMIX as offset from MYPORT */
 GLOBAL int socknew;
