@@ -16,7 +16,6 @@
    TRANS was written by Doug Scott.
    Revised by John Gibson <johngibson@virginia.edu>, 2/29/00.
 */
-#include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <mixerr.h>
@@ -36,8 +35,7 @@ static float interp(float, float, float, float);
 
 TRANS :: TRANS() : Instrument()
 {
-   in = new float[MAXBUF + (MAXCHANS * 2)];
-   out = new float[MAXBUF];
+   in = new float[MAXBUF];       /* MUST persist across calls to run() */
 
    inframe = RTBUFSAMPS;
    incount = 0;
@@ -55,7 +53,6 @@ TRANS :: TRANS() : Instrument()
 TRANS :: ~TRANS()
 {
    delete [] in;
-   delete [] out;
 }
 
 
@@ -64,8 +61,8 @@ int TRANS :: init(float p[], short n_args)
    float outskip, inskip, dur, transp, interval;
 
    if (n_args < 5) {
-      cerr << "TRANS: Wrong number of args." << endl;
-      return -1;
+      fprintf(stderr, "TRANS: Wrong number of args.\n");
+      exit(1);
    }
    outskip = p[0];
    inskip = p[1];
@@ -80,6 +77,12 @@ int TRANS :: init(float p[], short n_args)
 
    nsamps = rtsetoutput(outskip, dur, this);
    rtsetinput(inskip, this);
+
+   if (inchan >= inputchans) {
+      fprintf(stderr, "TRANS: You asked for channel %d of a %d-channel file.\n",
+                      inchan, inputchans);
+      exit(1);
+   }
 
    interval = octpch(transp);
    increment = (double) cpsoct(10.0 + interval) / cpsoct(10.0);
@@ -116,7 +119,11 @@ int TRANS :: run()
    int       i;
    int       branch = 0;
    float     aamp;
-   float     *outp = out;
+   float     *outp;
+
+   Instrument :: run();
+
+   outp = outbuf;               /* point to inst private out buffer */
 
    aamp = amp;                  /* in case amptable == NULL */
 
@@ -161,12 +168,12 @@ int TRANS :: run()
       printf("interping %g, %g, %g\n", oldersig, oldsig, newsig);
 #endif
 
-      if (NCHANS == 2) {
+      if (outputchans == 2) {
          outp[1] = outp[0] * (1.0 - pctleft);
          outp[0] *= pctleft;
       }
 
-      outp += NCHANS;
+      outp += outputchans;
       cursamp++;
 
       counter += increment;     // keeps track of interp pointer
@@ -174,7 +181,6 @@ int TRANS :: run()
          getflag = 1;
    }
 
-   rtbaddout(out, outframes * NCHANS);
 #ifdef DEBUG
    printf("OUT %d samples\n\n", i);
 #endif
@@ -185,7 +191,12 @@ int TRANS :: run()
 
 Instrument *makeTRANS()
 {
-   return new TRANS();
+   TRANS *inst;
+
+   inst = new TRANS();
+   inst->set_bus_config("TRANS");
+
+   return inst;
 }
 
 
