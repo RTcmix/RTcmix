@@ -72,10 +72,10 @@ private:
 
 class PFieldBinaryOperator : public PField {
 public:
-	virtual double 	doubleValue(int indx = 0) const;
-	virtual double	doubleValue(double) const;
 	typedef double (*Operator)(double, double);
 	PFieldBinaryOperator(PField *pf1, PField *pf2, Operator);
+	virtual double 	doubleValue(int indx = 0) const;
+	virtual double	doubleValue(double) const;
 	virtual int		print(FILE *) const;
 	virtual int		copyValues(double *) const;
 	virtual int		values() const;
@@ -209,7 +209,7 @@ private:
 
 class PFieldWrapper : public PField {
 public:
-	virtual int		values() const { return _pField->values(); }
+	virtual int		values() const { return _len; }
 	virtual operator double *() const { return (double *) *_pField; }
 protected:
 	PFieldWrapper(PField *innerPField);
@@ -217,21 +217,49 @@ protected:
 	PField *field() const { return _pField; }
 private:
 	PField *_pField;
+	int		_len;
 };
 
+// Base class for specialized wrappers which perform transforms on the index
+// passed to doubleValue() (and make no change to the actual values).
+
+class IIFunctor;	// Takes 2 ints, and returns int.
+class DIFunctor;	// Takes double, int, and returns double.
+
+class ModifiedIndexPFieldWrapper : public PFieldWrapper {
+protected:
+	ModifiedIndexPFieldWrapper(PField *innerPField, IIFunctor *iif, DIFunctor *dif);
+	virtual double	doubleValue(double didx) const;
+	virtual double	doubleValue(int idx) const;
+protected:
+	virtual ModifiedIndexPFieldWrapper::~ModifiedIndexPFieldWrapper();
+private:
+	IIFunctor *_iifun;
+	DIFunctor *_difun;
+};
+
+#define OLD
 // Class for looped reading of table.  'loopFactor' is how many times
 // table will loop for doubleValue(0 through 1.0)
 
+#ifdef OLD
 class LoopedPField : public PFieldWrapper {
 public:
 	LoopedPField(PField *innerPField, double loopFactor);
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
-	virtual int		values() const { return _len; }
 private:
 	double	_factor;
-	int		_len;
 };
+#else
+class LoopedPField : public ModifiedIndexPFieldWrapper {
+public:
+	LoopedPField(PField *innerPField, double loopFactor);
+private:
+    class LoopIIFunctor;
+	class LoopDIFunctor;
+};
+#endif
 
 // Class for reverse-reading table.
 
@@ -240,9 +268,6 @@ public:
 	ReversePField(PField *innerPField);
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
-	virtual int		values() const { return _len; }
-private:
-	int		_len;
 };
 
 // Class for inverting PField output around a variable center of symmetry.
@@ -252,11 +277,9 @@ public:
 	InvertPField(PField *innerPField, PField *centerPField);
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
-	virtual int		values() const { return _len; }
 protected:
 	virtual ~InvertPField();
 private:
-	int _len;
 	PField *_centerPField;
 };
 
@@ -272,11 +295,9 @@ public:
 												RangeFitFunction fun=UnipolarSource);
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
-	virtual int		values() const { return _len; }
 protected:
 	virtual ~RangePField();
 private:
-	int _len;
 	PField *_minPField;
 	PField *_maxPField;
 	RangeFitFunction _rangefitter;
@@ -291,12 +312,10 @@ public:
 	SmoothPField(PField *innerPField, double krate, PField *lagPField);
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
-	virtual int		values() const { return _len; }
 protected:
 	virtual ~SmoothPField();
 private:
 	void updateCutoffFreq(double percent = 0.0) const;
-	int _len;
 	OonepoleTrack *_filter;
 	PField *_lagPField;
 };
@@ -308,12 +327,10 @@ public:
 	QuantizePField(PField *innerPField, PField *quantumPField);
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
-	virtual int		values() const { return _len; }
 protected:
 	virtual ~QuantizePField();
 private:
 	double quantizeValue(const double val, const double quantum) const;
-	int _len;
 	PField *_quantumPField;
 };
 
@@ -325,11 +342,9 @@ public:
 	ClipPField(PField *innerPField, PField *minPField, PField *maxPField);
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
-	virtual int		values() const { return _len; }
 protected:
 	virtual ~ClipPField();
 private:
-	int _len;
 	PField *_minPField;
 	PField *_maxPField;
 };
@@ -356,11 +371,9 @@ public:
 		PField *strengthPField);
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
-	virtual int		values() const { return _len; }
 protected:
 	virtual ~ConstrainPField();
 private:
-	int _len;
 	TablePField *_tablePField;
 	PField *_strengthPField;
 	Constrainer *_constrainer;
@@ -390,9 +403,7 @@ public:
 	~MapPField();
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
-	virtual int		values() const { return _len; }
 private:
-	int _len;
 	TablePField *_tablePField;
 	Mapper *_mapper;
 };
@@ -409,11 +420,9 @@ public:
 			const int format = 0, const bool swap = false);
 	virtual double doubleValue(double didx) const;
 	virtual double doubleValue(int idx) const;
-	virtual int values() const { return _len; }
 protected:
 	virtual ~DataFileWriterPField();
 private:
-	int _len;
 	// This is mutable to help with error-handling in doubleValue.
 	mutable DataFile *_datafile;
 };

@@ -9,6 +9,7 @@
 #include <math.h>
 #include <float.h>
 #include <Ougens.h>
+#include <Functor.h>
 
 inline int max(int x, int y) { return (x >= y) ? x : y; }
 inline int min(int x, int y) { return (x < y) ? x : y; }
@@ -338,17 +339,46 @@ int TablePField::copyValues(double *array) const
 
 // PFieldWrapper
 
-PFieldWrapper::PFieldWrapper(PField *innerPField) : _pField(innerPField)
+PFieldWrapper::PFieldWrapper(PField *innerPField)
+	: _pField(innerPField), _len(innerPField->values())
 {
 	_pField->ref();
 }
 
 PFieldWrapper::~PFieldWrapper() { _pField->unref(); }
 
+// ModifiedIndexPFieldWrapper
+
+ModifiedIndexPFieldWrapper::ModifiedIndexPFieldWrapper(PField *innerPField,
+												       IIFunctor *iif, DIFunctor *dif)
+	: PFieldWrapper(innerPField), _iifun(iif), _difun(dif)
+{
+}
+
+ModifiedIndexPFieldWrapper::~ModifiedIndexPFieldWrapper()
+{
+	delete _iifun;
+	delete _difun;
+}
+
+double
+ModifiedIndexPFieldWrapper::doubleValue(double didx) const
+{
+	return field()->doubleValue((*_difun)(didx, values()));
+}
+
+double
+ModifiedIndexPFieldWrapper::doubleValue(int idx) const
+{
+	return field()->doubleValue((*_iifun)(idx, values()));
+}
+
 // LoopedPField
 
+#ifdef OLD	/* The code as it was as direct subclass of PFieldWrapper */
+
 LoopedPField::LoopedPField(PField *innerPField, double loopFactor)
-	: PFieldWrapper(innerPField), _factor(loopFactor), _len(innerPField->values())
+	: PFieldWrapper(innerPField), _factor(loopFactor)
 {
 }
 
@@ -363,15 +393,63 @@ double LoopedPField::doubleValue(double didx) const
 double LoopedPField::doubleValue(int idx) const
 {
 	int nidx = int(idx * _factor);
-	while (nidx >= _len)
-		nidx -= _len;
+	const int len = values();
+	while (nidx >= len)
+		nidx -= len;
 	return field()->doubleValue(nidx);
 }
 
+#else
+
+// These are the two Functors for LoopedPField - one for double indices,
+// one for integer.
+
+class LoopedPField::LoopIIFunctor : public IIFunctor {
+public:
+	LoopIIFunctor(double factor) : _factor(factor) {}
+	virtual int operator ()(int i1, int i2);
+private:
+	double _factor;	
+};
+
+class LoopedPField::LoopDIFunctor : public DIFunctor {
+public:
+	LoopDIFunctor(double factor) : _factor(factor) {}
+	virtual double operator ()(double d1, int i1);
+private:
+	double _factor;	
+};
+
+int LoopedPField::LoopIIFunctor::operator ()(int idx, int len)
+{
+	int nidx = int(idx * _factor);
+	while (nidx >= len)
+		nidx -= len;
+	return nidx;
+}
+
+double LoopedPField::LoopDIFunctor::operator ()(double didx, int)
+{
+	double dfrac = didx * _factor;
+	while (dfrac > 1.0)
+		dfrac -= 1.0;
+	return dfrac;
+}  
+
+// This is all we need to define for the actual LoopedPField class
+
+LoopedPField::LoopedPField(PField *innerPField, double loopFactor)
+	: ModifiedIndexPFieldWrapper(innerPField,
+								 new LoopIIFunctor(loopFactor),
+								 new LoopDIFunctor(loopFactor))
+{
+}
+
+#endif	// !OLD
+
 // ReversePField
 
-ReversePField::ReversePField(PField *innerPField)
-	: PFieldWrapper(innerPField), _len(innerPField->values())
+ReversePField::ReversePField(PField *innerPField) : PFieldWrapper(innerPField)
 {
 }
 
@@ -382,14 +460,14 @@ double ReversePField::doubleValue(double didx) const
 
 double ReversePField::doubleValue(int idx) const
 {
-	return field()->doubleValue((_len - 1) - idx);
+	const int len = values();
+	return field()->doubleValue((len - 1) - idx);
 }
 
 // InvertPField
 
 InvertPField::InvertPField(PField *innerPField, PField *centerPField)
-	: PFieldWrapper(innerPField), _len(innerPField->values()),
-	  _centerPField(centerPField)
+	: PFieldWrapper(innerPField), _centerPField(centerPField)
 {
 	_centerPField->ref();
 }
@@ -416,7 +494,7 @@ double InvertPField::doubleValue(int idx) const
 RangePField::RangePField(PField *innerPField,
 						 PField *minPField, PField *maxPField,
 						 RangePField::RangeFitFunction fun)
-	: PFieldWrapper(innerPField), _len(innerPField->values()),
+	: PFieldWrapper(innerPField),
 	  _minPField(minPField), _maxPField(maxPField), _rangefitter(fun)
 {
 	_minPField->ref();
@@ -460,8 +538,7 @@ double RangePField::doubleValue(int idx) const
 // SmoothPField
 
 SmoothPField::SmoothPField(PField *innerPField, double krate, PField *lagPField)
-	: PFieldWrapper(innerPField),
-	  _len(innerPField->values()), _lagPField(lagPField)
+	: PFieldWrapper(innerPField), _lagPField(lagPField)
 {
 	_lagPField->ref();
 	_filter = new OonepoleTrack(krate);
@@ -495,8 +572,7 @@ double SmoothPField::doubleValue(int idx) const
 // QuantizePField
 
 QuantizePField::QuantizePField(PField *innerPField, PField *quantumPField)
-	: PFieldWrapper(innerPField),
-	  _len(innerPField->values()), _quantumPField(quantumPField)
+	: PFieldWrapper(innerPField), _quantumPField(quantumPField)
 {
 	_quantumPField->ref();
 }
@@ -531,8 +607,7 @@ double QuantizePField::doubleValue(int idx) const
 // ClipPField
 
 ClipPField::ClipPField(PField *innerPField, PField *minPField, PField *maxPField)
-	: PFieldWrapper(innerPField), _len(innerPField->values()),
-	  _minPField(minPField), _maxPField(maxPField)
+	: PFieldWrapper(innerPField), _minPField(minPField), _maxPField(maxPField)
 {
 	_minPField->ref();
 	_maxPField->ref();
@@ -596,7 +671,7 @@ double Constrainer::next(const double val, const double strength)
 
 ConstrainPField::ConstrainPField(PField *innerPField, TablePField *tablePField,
 		PField *strengthPField)
-	: PFieldWrapper(innerPField), _len(innerPField->values()),
+	: PFieldWrapper(innerPField),
 	  _tablePField(tablePField), _strengthPField(strengthPField)
 {
 	_tablePField->ref();
@@ -646,8 +721,7 @@ double Mapper::next(const double val)
 
 MapPField::MapPField(PField *innerPField, TablePField *tablePField,
 		const double inputMin, const double inputMax)
-	: PFieldWrapper(innerPField), _len(innerPField->values()),
-	  _tablePField(tablePField)
+	: PFieldWrapper(innerPField), _tablePField(tablePField)
 {
 	_tablePField->ref();
 	_mapper = new Mapper(_tablePField, inputMin, inputMax);
@@ -676,7 +750,7 @@ double MapPField::doubleValue(int idx) const
 DataFileWriterPField::DataFileWriterPField(PField *innerPField,
 		const char *fileName, const bool clobber, const int controlRate,
 		const int fileRate, const int format, const bool swap)
-	: PFieldWrapper(innerPField), _len(innerPField->values())
+	: PFieldWrapper(innerPField)
 {
 	_datafile = new DataFile(fileName, controlRate);
 	if (_datafile) {
