@@ -6,7 +6,8 @@ typedef enum {
 } PowerState;
 
 class FOLLOWGATE : public FOLLOWER_BASE {
-   float    threshold, range, attack_rate, release_rate;
+   float    threshold, range, oneoverSR;
+   float    attack_time, release_time, attack_rate, release_rate;
    TableL   *thresh_table, *range_table;
    Envelope *envelope;
    PowerState state;

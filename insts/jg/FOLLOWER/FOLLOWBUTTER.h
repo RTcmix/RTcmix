@@ -1,20 +1,24 @@
 #include "FOLLOWER_BASE.h"
 
 typedef enum {
-   LowPass = 1,
-   HighPass = 2,
-   BandPass = 3,
-   BandReject = 4
+   LowPass = 0,      // but note that user codes are 1-based (unlike EQ inst)
+   HighPass,
+   BandPass,
+   BandReject,
+   FiltInvalid
 } FiltType;
 
 #define MAXFILTS 30
 
 class FOLLOWBUTTER : public FOLLOWER_BASE {
+   bool     filttype_was_string;
    int      nfilts;
-   float    mincf, maxcf, cfdiff, curcf, curbw;
+   float    mincf, maxcf, cfdiff, cf, bw, nyquist;
    FiltType type;
    Butter   *filt[MAXFILTS];
    TableL   *bwtable;
+
+   FiltType getFiltType(bool trystring);
 public:
    FOLLOWBUTTER();
    virtual ~FOLLOWBUTTER();
