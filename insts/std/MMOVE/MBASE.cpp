@@ -322,9 +322,9 @@ int MBASE::run()
 				}          
 			}
 			DBG(printf("left signal:\n"));
-			DBG(PrintSig(globalReverbInput[0][outputOffset], bufsamps, 0.1));
+			DBG(PrintSig(&globalReverbInput[0][outputOffset], bufsamps, 0.1));
 			DBG(printf("right signal:\n"));
-			DBG(PrintSig(globalReverbInput[1][outputOffset], bufsamps, 0.1));
+			DBG(PrintSig(&globalReverbInput[1][outputOffset], bufsamps, 0.1));
 			/* write the direct signal only into the output bus  */
 			register float *outptr = &this->outbuf[i*2];
 			for (int n = 0; n < bufsamps; n++) {
