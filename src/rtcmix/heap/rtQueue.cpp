@@ -6,6 +6,9 @@
 #include "heap.h"
 #include "../../H/dbug.h"
 #include "../rtdefs.h"
+#include <globals.h>
+
+// #define DBUG
 
 rtQueue::rtQueue()
 {
@@ -46,11 +49,13 @@ void rtQueue::push(Instrument *newInst, unsigned long new_chunkstart)
     head = tail = newElt;
   else if(tail->chunkstart <= newElt->chunkstart) {
     // append to the end of the rtQueue
+#ifdef DBUG
+	cout << "Queueing at end\n";
+#endif
     tail->next = newElt;
     newElt->prev = tail;
     tail = newElt;
   }
-#ifdef QBUG
   else { // BGG: we have to insert this one
 #ifdef DBUG
     cout << "rtQueue::push():  scanning ...\n";
@@ -125,7 +130,6 @@ void rtQueue::push(Instrument *newInst, unsigned long new_chunkstart)
       head = newElt;
     }
   }
-#endif // QBUG
   size++;
 }
 
