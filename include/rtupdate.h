@@ -7,12 +7,14 @@
 
 /* For rtperf */
 /* DJT:  modified to work with JG's objlib.h */
+#ifndef USE_ADSR
 typedef enum {
   NONE,
   RISE,
   SUSTAIN,
   DECAY
 } EnvType;
+#endif
 
 #ifndef GLOBAL
 #define GLOBAL extern
