@@ -1,11 +1,12 @@
 # The directory containing the RTcmix directory
-TOPDIR = /musr
+TOPDIR = /users/djt7p
+#TOPDIR = /musr
 
 # The name of the RTcmix directory
 CMIXDIR = $(TOPDIR)/RTcmix
 
 # The dir that will contain links to the instrument dynamic shared objects
-LIBDESTDIR = $(TOPDIR)/shlib
+LIBDESTDIR = $(CMIXDIR)/shlib
 #or this: LIBDESTDIR = $(CMIXDIR)/shlib
 
 # add new instruments to this list (e.g., insts.std, insts.jg)
