@@ -8,7 +8,8 @@
 #include <ugens.h>
 
 #ifdef LINUX
-#include "OSSAudioDevice.h"
+#include "SinglePortOSSAudioDevice.h"
+#include "MultiPortOSSAudioDevice.h"
 #endif
 #ifdef ALSA
 #include "ALSAAudioDevice.h"
@@ -43,7 +44,8 @@ AudioDevEntry s_AudioDevEntries[] = {
 	{ &ALSAAudioDevice::recognize, &ALSAAudioDevice::create },
 #endif
 #ifdef LINUX
-	{ &OSSAudioDevice::recognize, &OSSAudioDevice::create },
+	{ &MultiPortOSSAudioDevice::recognize, &MultiPortOSSAudioDevice::create },
+	{ &SinglePortOSSAudioDevice::recognize, &SinglePortOSSAudioDevice::create },
 #endif
 #ifdef SGI
 	{ &SGIAudioDevice::recognize, &SGIAudioDevice::create },

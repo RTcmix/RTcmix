@@ -14,11 +14,6 @@
 #include <errno.h>
 #include <string.h>	// strerror()
 
-
-// TO DO:  Loop up default device in open()
-
-#define DEFAULT_DEVICE "/dev/dsp"
-
 #define DEBUG 0
 
 #if DEBUG > 1
@@ -33,38 +28,19 @@
 #endif
 
 OSSAudioDevice::OSSAudioDevice(const char *devPath)
-	: _inputDeviceName(devPath), _outputDeviceName(devPath), _bytesPerFrame(0)
+	: _inputDeviceName(NULL), _outputDeviceName(NULL), _bytesPerFrame(0)
 {
+	_inputDeviceName = new char [strlen(devPath) + 1];
+	_outputDeviceName = new char [strlen(devPath) + 1];
+	strcpy(_inputDeviceName, devPath);
+	strcpy(_outputDeviceName, devPath);
 }
 
 OSSAudioDevice::~OSSAudioDevice()
 {
 	close();
-}
-
-int OSSAudioDevice::doOpen(int mode)
-{
-	int fd = 0;
-	switch (mode & DirectionMask) {
-	case Playback:
-		setDevice(fd = ::open(_outputDeviceName, O_WRONLY));
-		closing(false);
-		break;
-	case Record:
-		setDevice(fd = ::open(_inputDeviceName, O_RDONLY));
-		closing(false);
-		break;
-	case RecordPlayback:
-		setDevice(fd = ::open(_outputDeviceName, O_RDWR));
-		closing(false);
-		break;
-	default:
-		return error("AudioDevice: Illegal open mode.");
-	}
-	if (fd < 0)
-		return error("OSS device open failed: ", strerror(errno));
-	else
-		return 0;
+	delete [] _inputDeviceName;
+	delete [] _outputDeviceName;
 }
 
 int OSSAudioDevice::doClose()
@@ -75,8 +51,7 @@ int OSSAudioDevice::doClose()
 		resetFrameCount();
 		_bufferSize = 0;	// lets us know it must be recalculated.
 		PRINT0("\tOSSAudioDevice::doClose\n");
-		status = ::close(device());
-		setDevice(0);
+		status = closeDevice();
 	}
 	return status;
 }
@@ -99,37 +74,11 @@ int OSSAudioDevice::doPause(bool isPaused)
 }
 
 
-int OSSAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
+int
+OSSAudioDevice::setDeviceFormat(int dev, int sampleFormat, int chans, int srate)
 {
-	int sampleFormat;
-	int deviceFormat = MUS_GET_FORMAT(sampfmt);
-	switch (MUS_GET_FORMAT(sampfmt)) {
-		case MUS_UBYTE:
-			sampleFormat = AFMT_U8;
-			_bytesPerFrame = chans;
-			break;
-		case MUS_BYTE:
-			sampleFormat = AFMT_S8;
-			_bytesPerFrame = chans;
-			break;
-		case MUS_LFLOAT:
-			deviceFormat = NATIVE_SHORT_FMT;
-		case MUS_LSHORT:
-			_bytesPerFrame = 2 * chans;
-			sampleFormat = AFMT_S16_LE;
-			break;
-		case MUS_BFLOAT:
-			deviceFormat = NATIVE_SHORT_FMT;
-		case MUS_BSHORT:
-			_bytesPerFrame = 2 * chans;
-			sampleFormat = AFMT_S16_BE;
-			break;
-		default:
-			_bytesPerFrame = 0;
-			return error("Unsupported sample format");
-	};
 	int confirmedFormat = sampleFormat;
-	if (ioctl(SNDCTL_DSP_SETFMT, &confirmedFormat))
+	if (::ioctl(dev, SNDCTL_DSP_SETFMT, &confirmedFormat))
 		return error("OSS error while setting sample format: ", strerror(errno));
 	else if (confirmedFormat != sampleFormat)
 		return error("This sample format not supported by device.");
@@ -138,74 +87,22 @@ int OSSAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 		return error("This device supports only mono and stereo");
 #else
 	int reqChans = chans;
-	if (ioctl(SOUND_PCM_WRITE_CHANNELS, &reqChans) || reqChans != chans)
+	if (::ioctl(dev, SOUND_PCM_WRITE_CHANNELS, &reqChans) || reqChans != chans)
 #endif
 	{
 		int dsp_stereo = (chans == 2);
-		if (ioctl(SNDCTL_DSP_STEREO, &dsp_stereo) || dsp_stereo != (chans == 2))
+		if (::ioctl(dev, SNDCTL_DSP_STEREO, &dsp_stereo) || dsp_stereo != (chans == 2))
 			return error("OSS error while setting channel count: ", strerror(errno));
 	}
 	int dsp_speed = (int) srate;
-	if (ioctl (SNDCTL_DSP_SPEED, &dsp_speed))
+	if (::ioctl(dev, SNDCTL_DSP_SPEED, &dsp_speed))
 		return error("OSS error while setting sample rate: ", strerror(errno));
 	if (dsp_speed != (int) srate)
 		return error("Device does not support this sample rate");
 #ifdef SOUND_PCM_WRITE_CHANNELS
-	PRINT0("OSSAudioDevice::doSetFormat: srate = %d, channels = %d\n", dsp_speed, reqChans);
+	PRINT0("OSSAudioDevice::setDeviceFormat: srate = %d, channels = %d\n", dsp_speed, reqChans);
 #endif
-	// Store the device params to allow format conversion.
-	setDeviceParams(deviceFormat | MUS_INTERLEAVED,		// always interleaved
-					chans,
-					srate);
 	return 0;
-}
-
-int OSSAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
-{
-	int reqQueueBytes = *pWriteSize * getDeviceBytesPerFrame();
-	int queuecode = ((int) (log(reqQueueBytes) / log(2.0)));
-	int sizeCode = (*pCount << 16) | (queuecode & 0x0000ffff);
-	if (ioctl(SNDCTL_DSP_SETFRAGMENT, &sizeCode) == -1) {
-		printf("ioctl(SNDCTL_DSP_SETFRAGMENT, ...) returned -1\n");
-	}
-	int fragSize = 0;
-	if (ioctl(SNDCTL_DSP_GETBLKSIZE, &fragSize) == -1) {
-		return error("OSS error while retrieving fragment size: ", strerror(errno));
-	}
-	*pWriteSize = fragSize / getDeviceBytesPerFrame();
-	_bufferSize = *pWriteSize * *pCount;
-	PRINT0("OSSAudioDevice::doSetQueueSize: writesize = %d, count = %d\n", *pWriteSize, *pCount);
-	return 0;
-}
-
-int	OSSAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
-{
-	int toRead = frameCount * _bytesPerFrame;
-	int read = ::read(device(), frameBuffer, toRead);
-	PRINT1("OSSAudioDevice::doGetFrames: %d bytes to read, %d read\n", toRead, read);
-	if (read > 0) {
-		int frames = read / _bytesPerFrame;
-		incrementFrameCount(frames);
-		return frames;
-	}
-	else {
-		return error("Error reading from OSS device: ", strerror(-read));
-	}
-}
-
-int	OSSAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
-{
-	int toWrite = frameCount * _bytesPerFrame;
-	int written = ::write(device(), frameBuffer, toWrite);
-	PRINT1("OSSAudioDevice::doSendFrames: %d bytes to write, %d written\n", toWrite, written);
-	if (written > 0) {
-		int frames = written / _bytesPerFrame;
-		incrementFrameCount(frames);
-		return frames;
-	}
-	else {
-		return error("Error writing to OSS device: ", strerror(-written));
-	}
 }
 
 int
@@ -264,16 +161,6 @@ void OSSAudioDevice::run()
 //		printf("OSSAudioDevice::run: stop callback\n");
 	stopCallback();
 //	printf("OSSAudioDevice::run: thread exiting\n");
-}
-
-bool OSSAudioDevice::recognize(const char *desc)
-{
-	return (desc == NULL) || strncmp(desc, "/dev", 4) == 0;
-}
-
-AudioDevice *OSSAudioDevice::create(const char *inputDesc, const char *outputDesc, int mode)
-{
-	return new OSSAudioDevice(inputDesc ? inputDesc : outputDesc ? outputDesc : DEFAULT_DEVICE);
 }
 
 #endif	// LINUX

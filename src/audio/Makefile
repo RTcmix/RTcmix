@@ -6,11 +6,12 @@ INCLUDES += -I../sndlib -I../rtcmix -I$(INCLUDEDIR)
 CFLAGS += -DCMIX_LEGACY
 
 OBJECTS =  AudioDevice.o AudioIODevice.o AudioDeviceImpl.o \
-		   ThreadedAudioDevice.o AudioFileDevice.o NetAudioDevice.o \
-		   audio_dev_creator.o audio_devices.o sndlibsupport.o
+		   AudioOutputGroupDevice.o ThreadedAudioDevice.o AudioFileDevice.o \
+		   NetAudioDevice.o audio_dev_creator.o sndlibsupport.o
 
 ifeq ($(ARCH),LINUX)
-OBJECTS +=  OSSAudioDevice.o ALSAAudioDevice.o 
+OBJECTS +=  OSSAudioDevice.o SinglePortOSSAudioDevice.o \
+			MultiPortOSSAudioDevice.o ALSAAudioDevice.o 
 endif
 ifeq ($(ARCH),MACOSX)
 OBJECTS += OSXAudioDevice.o

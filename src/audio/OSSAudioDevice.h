@@ -11,31 +11,33 @@ class OSSAudioDevice : public ThreadedAudioDevice {
 public:
 	OSSAudioDevice(const char *devPath);
 	virtual ~OSSAudioDevice();
-	// Recognizer
-	static bool			recognize(const char *);
-	// Creator
-	static AudioDevice*	create(const char *, const char *, int);
 	
 protected:
 	// ThreadedAudioDevice reimplementation
 	virtual void run();
 	// AudioDeviceImpl reimplementation
-	virtual int doOpen(int mode);
+	virtual int doOpen(int mode)=0;
 	virtual int doClose();
 	virtual int doStart();
 	virtual int doPause(bool);
-	virtual int doSetFormat(int sampfmt, int chans, double srate);
-	virtual int doSetQueueSize(int *pWriteSize, int *pCount);
-	virtual int	doGetFrames(void *frameBuffer, int frameCount);
-	virtual int	doSendFrames(void *frameBuffer, int frameCount);
+	virtual int doSetFormat(int sampfmt, int chans, double srate)=0;
+	virtual int doSetQueueSize(int *pWriteSize, int *pCount)=0;
+	virtual int	doGetFrames(void *frameBuffer, int frameCount)=0;
+	virtual int	doSendFrames(void *frameBuffer, int frameCount)=0;
 	// Local methods
 	int			ioctl(int req, void *argp);
 	int			bufferSize() const { return _bufferSize; }
-private:
-	const char *	_inputDeviceName;
-	const char *	_outputDeviceName;
-	int				_bytesPerFrame;
-	int				_bufferSize;
+protected:
+	// OSS device-level virtual implementation
+	virtual int closeDevice()=0;
+	// OSS device-level non-virtual implementation
+	int setDeviceFormat(int dev, int sampfmt, int chans, int srate);
+
+protected:
+	char *	_inputDeviceName;
+	char *	_outputDeviceName;
+	int		_bytesPerFrame;
+	int		_bufferSize;
 };
 
 #endif	// LINUX
