@@ -184,7 +184,7 @@ rtinput(float p[], int n_args, double pp[])
       }
 
       /* This signals inTraverse() to grab buffers from the audio device. */
-      audio_on = 1;
+      record_audio = 1;
 
 // FIXME: need to replace this with the bus spec scheme below... -JGG
       audioNCHANS = (n_args > 2) ? (int) p[2] : NCHANS;
@@ -243,13 +243,38 @@ rtinput(float p[], int n_args, double pp[])
       }
    }
 
-	if (!is_open) {                  /* then open audio device or file. */
+	if (!is_open) {                  /* if not, open input audio device or file. */
 		if (audio_in) {
-           if (!audio_input_is_initialized())
-		   {
-            die("rtinput", "Audio input device not open yet.  Call rtsetparams first.");
-			return -1;
+#ifdef NOT_QUITE_READY_YET
+           if (rtsetparams_called) {
+			   // If audio *playback* was disabled, but there is a request for input audio,
+		 	  // create the audio input device here.
+         	  if (!audio_input_is_initialized() && !play_audio)
+		   	  {
+				int nframes = RTBUFSAMPS;
+				if (create_audio_devices(record_audio, 0, NCHANS, SR, &nframes) < 0) {
+					record_audio = 0;	/* because we failed */
+					return -1;
+				}
+				RTBUFSAMPS = nframes;
+		   		if (print_is_on) {
+					printf("Input audio set:  %g sampling rate, %d channels\n", SR, NCHANS);
+				}
+			  }
+			  else {
+			  	warn("rtinput", "Audio already configured for playback only via rtsetparams()");
+				record_audio = 0;	/* because we failed */
+				return -1;
+			  }
 		   }
+#else
+           if (!audio_input_is_initialized())
+           {
+            die("rtinput", "Audio input device not open yet.  Call rtsetparams first.");
+			record_audio = 0;	/* because we failed */
+            return -1;
+           }
+#endif	// NOT_QUITE_READY_YET
          fd = 1;  /* we don't use this;  set to 1 so rtsetinput() will work */
          for (i = 0; i < nchans; i++) {
             allocate_audioin_buffer(i, RTBUFSAMPS);
