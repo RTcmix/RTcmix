@@ -19,20 +19,18 @@ void flush_all_underflows_to_zero()
 	set_fpc_csr(f.fc_word);
 }
 #endif
+
 #ifdef LINUX
 
 #include <stdio.h>
 #include <signal.h>
 
-void flush_fpe (int sig)
+void sigfpe_handler(int sig)
 {
-  if (sig==SIGFPE)
-   {
-      printf("RTCMIX WARNING:  attempt to divide by zero!\n");
-      return;
-   }
-  printf("RTCMIX FATAL ERROR:  division by zero halted process.\n");
-  exit(1);
+   fprintf(stderr,
+           "\nRTcmix FATAL ERROR: floating point exception halted process.\n");
+   exit(1);
 }
+
 #endif
 
