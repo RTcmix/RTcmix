@@ -44,7 +44,7 @@
 *
 */
 
-
+set_option("full_duplex_on")  /* must do this before rtsetparams */
 rtsetparams(44100, 2)
 load("IIR")
 rtinput("AUDIO", "MIC")
@@ -52,5 +52,11 @@ makegen(1, 24, 1000, 0,0, 0.1,1, 0.2,0)
 
 for(start = 0; start < 7.8; start = start + 0.1) {
 	setup((random()*2000.0) + 300.0, -0.005, 1)
-	INPUTSIG(start, start, 0.2, 0.3, 1, random())
-	}
+	INPUTSIG(start, 0, 0.2, 0.3, 1, random())
+}
+
+
+/* NOTE: This line used to work in v2?
+	   INPUTSIG(start, start, 0.2, 0.3, 1, random())
+   Now we can't have non-zero inskip for insts reading from rt input.  -JGG
+*/

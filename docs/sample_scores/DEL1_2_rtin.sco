@@ -11,6 +11,7 @@
 *  assumes function slot 1 is the amplitude envelope
 */
 
+set_option("full_duplex_on")  /* must do this before rtsetparams */
 rtsetparams(44100, 2, 512)
 load("DEL1")
 rtinput("AUDIO", "MIC")

@@ -12,9 +12,10 @@
 *  assumes function slot 1 is the amplitude envelope
 */
 
+set_option("full_duplex_on")  /* must do this before rtsetparams */
 rtsetparams(44100, 2)
 load("PANECHO")
 rtinput("AUDIO", "MIC")
-makegen(1, 24, 1000, 0,1, 100, 1)
+setline(0,1, 1,1)
 PANECHO(0, 0, 14, 1.0, 5.14, 1.14, .7, 9.5)
 PANECHO(10, 0, 7, 1.0, 1.14, 0.14, .7, 3.5)
