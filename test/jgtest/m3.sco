@@ -12,7 +12,7 @@ if (rtlevel < 0 || rtlevel > 3) {
 print_on()
 /* -------------------------------------------------------------------------- */
 
-infile = stringify("num.snd")
+infile = stringify("test.snd")
 
 dur = trunc(2.0)
 amp = 1

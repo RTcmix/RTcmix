@@ -1,12 +1,16 @@
+TESTSND = num
+TESTSND = sine
 
-TESTSND = num.snd
+TESTSCO = $(TESTSND).sco
 
-DIRT = *.snd *.aif *.aiff *.aifc *.wav *.sf *.out *.rescale $(TESTSND)
+DIRT = *.snd *.aif *.aiff *.aifc *.wav *.sf *.out *.rescale test.snd
 
 COMPARE = cmp -lc
 
 
 all: m1 s1
+
+.PHONY: m1 m2 m3 s1 cmp_m1 cmp_m2 cmp_m3 cmp_s1 $(TESTSND) clean
 
 m1: $(TESTSND)
 	@echo MIX/mix to next format
@@ -93,10 +97,9 @@ cmp_s1:
 	$(COMPARE) s1.sf s1rt.sf
 
 $(TESTSND):
-	@echo writing test snd...
-	@CMIX < num.sco >& /dev/null
+	@echo writing test.snd...
+	@CMIX < $(TESTSCO) >& /dev/null
 
-.PHONY: clean
 clean:
 	$(RM) $(DIRT)
 

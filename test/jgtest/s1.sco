@@ -19,10 +19,11 @@ sun = 0; aiff = 1; aifc = 2; wav = 3; ircam = 4;
 print_on()
 /* -------------------------------------------------------------------------- */
 
-infile = stringify("num.snd")
+infile = stringify("test.snd")
 
 outskip = 0.0
 inskip = 0.0
+dur = .5
 amp = 1.0
 
 setline(0,1, 1,1)
@@ -58,7 +59,6 @@ if (rtlevel == 0) {
       output("s1.sf")
    }
 
-   dur = dur(0)
    stereo(outskip, inskip, dur, amp, pan=.3)
 }
 
@@ -85,7 +85,6 @@ else {
          rtoutput("s1rt.sf", "ircam")
    }
 
-   dur = DUR()
    STEREO(outskip, inskip, dur, amp, pan=.3)
 }
 

@@ -19,7 +19,7 @@ sun = 0; aiff = 1; aifc = 2; wav = 3; ircam = 4;
 print_on()
 /* -------------------------------------------------------------------------- */
 
-infile = stringify("num.snd")
+infile = stringify("test.snd")
 
 outskip = 0.0
 inskip = 0.0
