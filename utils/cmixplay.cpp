@@ -33,12 +33,14 @@
 */
 
 #ifdef LINUX
+	#include <values.h>
    #define DEFAULT_DEVICE_NAME "plughw"
    #define BUF_FRAMES          1024
    #define ROBUST_FACTOR       4
 #endif
 
 #ifdef MACOSX
+	#include <limits.h>
    #define DEFAULT_DEVICE_NAME NULL
    #define BUF_FRAMES          1024
    // 4 glitches ... why?   XXX: still true?
@@ -170,6 +172,7 @@ private:
    int         _dataLocation;
    bool        _isFloatFile;
    bool        _is24bitFile;
+   bool		   _is32bitFile;
    bool        _swap;
    int         _framesRead;
    int         _bufSamps;
@@ -310,6 +313,7 @@ Player::openInputFile()
    }
    _isFloatFile = IS_FLOAT_FORMAT(_dataFormat);
    _is24bitFile = IS_24BIT_FORMAT(_dataFormat);
+   _is32bitFile = IS_32BIT_FORMAT(_dataFormat);
 #if MUS_LITTLE_ENDIAN
    _swap = IS_BIG_ENDIAN_FORMAT(_dataFormat);
 #else
@@ -584,6 +588,20 @@ Player::readBuffer()
       else {
          for (int i = 0; i < sampsRead; i++)
             _outBuf[i] = bufp[i] * _factor;
+      }
+   }
+   else if (_is32bitFile) {	// 32bit int
+  	 static const float intScale = 32768.0f/INT_MAX;
+      int *bufp = (int *) _inBuf;
+      if (_swap) {
+         for (int i = 0; i < sampsRead; i++) {
+            bufp[i] = reverse_int4(&bufp[i]);
+            _outBuf[i] = (float) (intScale * _factor * (float) bufp[i]);
+         }
+      }
+      else {
+         for (int i = 0; i < sampsRead; i++)
+            _outBuf[i] = (float) (intScale * _factor * (float) bufp[i]);
       }
    }
    else if (_is24bitFile) {

@@ -150,7 +150,9 @@ int getsfmaxamp(SFHEADER *, SFMAXAMP *);
            ||  (format) == MUS_BFLOAT                    \
            ||  (format) == MUS_LFLOAT                    \
            ||  (format) == MUS_B24INT                    \
-           ||  (format) == MUS_L24INT                    )
+           ||  (format) == MUS_L24INT                    \
+           ||  (format) == MUS_BINT                      \
+           ||  (format) == MUS_LINT                      )
 
 /* The data formats that disk-based cmix can read and write. */
 #define SUPPORTED_DATA_FORMAT_NO24BIT(format) (          \
