@@ -173,6 +173,7 @@ int _writeit(int fno);
 void _backup(int fno);
 void _forward(int fno);
 void closesf(void);
+void closesf_noexit(void);
 
 /* minout.c */
 int inrepos(int samps, int fno);

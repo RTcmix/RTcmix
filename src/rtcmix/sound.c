@@ -1005,6 +1005,20 @@ closesf()
 	exit(0);
 }
 
+void
+closesf_noexit()
+{
+	int i;
+
+	for(i = 0; i<NFILES; i++) {
+		if(isopen[i]) {
+			if (status[i]) 
+				putlength(sfname[i], sfd[i], &sfdesc[i]);
+			close(sfd[i]);
+		}
+	}
+}
+
 double
 m_clean(float p[], int n_args) /* a fast clean of file, after header */
 {
