@@ -58,7 +58,8 @@ REV       - some Schroeder reverbs that are part of the STK package.
 
 bender    - a variation on Lansky's vreadin program, which lets you bend
             the pitch of an input file along a glissando curve. Uses Doug
-            Scott's trans interpolation.
+            Scott's trans interpolation. (NOTE: superceded by Doug's new
+            TRANSBEND in insts.std.)
 
 denoise   - a translation of Mark Dolson's old CARL program, which does
             frequency-domain noise reduction. Pretty effective for cleaning
