@@ -71,9 +71,11 @@ dispatch(const char *str, double *pp, int n_args, void **inst)
 				if (rethandle->type == InstrumentPtrType)
 					*inst = (Instrument *) rethandle->ptr;
 			}
+			retval = 0;
 		}
 		else {
 			fprintf(stderr, "dispatch: unhandled Arg return type!\n");
+			retval = 0;
 		}
 	}
 	else
