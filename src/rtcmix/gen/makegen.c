@@ -1,6 +1,7 @@
 #include "../H/ugens.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
 extern double gen1(struct gen *gen, char *sfname);
 extern double gen2(struct gen *gen);
