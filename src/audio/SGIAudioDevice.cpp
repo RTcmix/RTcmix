@@ -94,7 +94,12 @@ SGIAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 	return error("Not implemented");
 }
 
-AudioDevice *createAudioDevice(const char *inputDesc, const char *outputDesc, bool fullDuplex)
+bool SGIAudioDevice::recognize(const char *desc)
+{
+	return true;
+}
+
+AudioDevice *SGIAudioDevice::create(const char *inputDesc, const char *outputDesc, int mode)
 {
 	return new SGIAudioDevice(outputDesc);
 }

@@ -636,7 +636,12 @@ int OSXAudioDevice::doGetFrameCount() const
 	return _impl->frameCount;
 }
 
-AudioDevice *createAudioDevice(const char *, const char *, bool)
+bool OSXAudioDevice::recognize(const char *desc)
+{
+	return true;
+}
+
+AudioDevice *OSXAudioDevice::create(const char *inputDesc, const char *outputDesc, int mode)
 {
 	return new OSXAudioDevice;
 }

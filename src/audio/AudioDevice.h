@@ -68,9 +68,4 @@ protected:
 	};
 };
 
-// createAudioDevice must be implemented by each platform's derived AudioDevice
-//	implementation code.
-
-AudioDevice *createAudioDevice(const char *inputDesc, const char *outputDesc, bool fullDuplex);
-
 #endif	// _AUDIODEVICE_H_

@@ -11,6 +11,10 @@ class NetAudioDevice : public ThreadedAudioDevice {
 public:
 	NetAudioDevice(const char *path);
 	virtual ~NetAudioDevice();
+	// Recognizer
+	static bool			recognize(const char *);
+	// Creator
+	static AudioDevice*	create(const char *, const char *, int);
 	
 protected:
 	// ThreadedAudioDevice override

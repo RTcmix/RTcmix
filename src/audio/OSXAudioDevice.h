@@ -9,6 +9,10 @@ class OSXAudioDevice : public AudioDeviceImpl {
 public:
 	OSXAudioDevice();
 	virtual ~OSXAudioDevice();
+	// Recognizer
+	static bool			recognize(const char *);
+	// Creator
+	static AudioDevice*	create(const char *, const char *, int);
 	
 protected:
 	// AudioDeviceImpl reimplementation

@@ -403,33 +403,23 @@ void ALSAAudioDevice::run()
 //	printf("ALSAAudioDevice::run: thread exiting\n");
 }
 
-// From OSSAudioDevice.cpp
-extern AudioDevice *createOSSAudioDevice(const char*, const char*, bool);
-
-AudioDevice *createAudioDevice(const char *inputDesc,
-								   const char *outputDesc,
-								   bool fullDuplex)
+bool ALSAAudioDevice::recognize(const char *desc)
 {
-	// If the descriptor is a path, we assume the request is for OSS.
-	if ((inputDesc && inputDesc[0] == '/') ||
-	    (outputDesc && outputDesc[0] == '/')) {
-		return createOSSAudioDevice(inputDesc, outputDesc, fullDuplex);
-	}
+	return desc == NULL || strncmp(desc, "hw:", 3) == 0;
+}
 
+AudioDevice *ALSAAudioDevice::create(const char *inputDesc,
+									 const char *outputDesc,
+								   	 int mode)
+{
 	AudioDevice *theDevice = NULL;
-	// ALSA does not support full duplex as of 05/2004, so we must create a
-	// dual device from two one-directional devices.
+
+	// ALSA does not support full duplex as of 05/2004.
 	
-	if (!fullDuplex) {
+	if ((mode & AudioDevice::DirectionMask) != RecordPlayback)
 		theDevice = new ALSAAudioDevice(inputDesc ? inputDesc
 										: outputDesc ? outputDesc
 										: DEFAULT_DEVICE);
-	}
-	else {
-		theDevice = new AudioIODevice(
-				new ALSAAudioDevice(inputDesc ? inputDesc : DEFAULT_DEVICE),
-			    new ALSAAudioDevice(outputDesc ? outputDesc: DEFAULT_DEVICE));
-	}
 	return theDevice;
 }
 

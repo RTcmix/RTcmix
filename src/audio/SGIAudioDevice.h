@@ -10,6 +10,10 @@ class SGIAudioDevice : public ThreadedAudioDevice {
 public:
 	SGIAudioDevice(const char *);
 	virtual ~SGIAudioDevice();
+	// Recognizer
+	static bool			recognize(const char *);
+	// Creator
+	static AudioDevice*	create(const char *, const char *, int);
 	
 protected:
 	// ThreadedAudioDevice reimplementation

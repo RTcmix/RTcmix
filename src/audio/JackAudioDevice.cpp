@@ -182,10 +182,18 @@ JackAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 	return error("Not implemented");
 }
 
+// Return true if the passed in device descriptor matches one that this device
+// can understand.
+
+bool JackAudioDevice::recognize(const char *desc)
+{
+	return false;
+}
+
 // If your audio device(s) needs a string descriptor, it will come in via 'inputDesc'
 // and/or 'outputDesc', allowing you to specify different HW for record and play.
 
-AudioDevice *createAudioDevice(const char *inputDesc, const char *outputDesc, bool fullDuplex)
+AudioDevice *JackAudioDevice::create(const char *inputDesc, const char *outputDesc, int mode)
 {
 	return new JackAudioDevice;
 }

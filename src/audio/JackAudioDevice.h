@@ -11,6 +11,10 @@ class JackAudioDevice : public ThreadedAudioDevice {
 public:
 	JackAudioDevice();
 	virtual ~JackAudioDevice();
+	// Recognizer
+	static bool			recognize(const char *);
+	// Creator
+	static AudioDevice*	create(const char *, const char *, int);
 	
 protected:
 	// ThreadedAudioDevice reimplementation

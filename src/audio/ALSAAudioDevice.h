@@ -14,6 +14,10 @@ class ALSAAudioDevice : public ThreadedAudioDevice {
 public:
 	ALSAAudioDevice(const char *devName="hw:0,0");
 	virtual ~ALSAAudioDevice();
+	// Recognizer
+	static bool			recognize(const char *);
+	// Creator
+	static AudioDevice*	create(const char *, const char *, int);
 	
 protected:
 	// ThreadedAudioDevice reimplementation

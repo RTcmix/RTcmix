@@ -433,9 +433,21 @@ int NetAudioDevice::configure()
 	return resetFormatConversion();
 }
 
-AudioDevice *createNetAudioDevice(const char *desc)
+bool NetAudioDevice::recognize(const char *desc)
 {
-	return new NetAudioDevice(desc);
+	return (desc != NULL) && strncmp(desc, "net:", 4) == 0;
+}
+
+AudioDevice *NetAudioDevice::create(const char *inputDesc, const char *outputDesc, int mode)
+{
+	AudioDevice *theDevice = NULL;
+	// We dont support full duplex for this class.
+	if ((mode & AudioDevice::DirectionMask) != RecordPlayback) {
+		const char *desc = inputDesc ? inputDesc : outputDesc;
+		// Strip off the "net:" from the beginning of the descriptor.
+		theDevice  = new NetAudioDevice(&desc[4]);
+	}
+	return theDevice;
 }
 
 #endif	// NETAUDIO

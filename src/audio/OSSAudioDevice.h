@@ -9,6 +9,10 @@ class OSSAudioDevice : public ThreadedAudioDevice {
 public:
 	OSSAudioDevice(const char *devPath);
 	virtual ~OSSAudioDevice();
+	// Recognizer
+	static bool			recognize(const char *);
+	// Creator
+	static AudioDevice*	create(const char *, const char *, int);
 	
 protected:
 	// ThreadedAudioDevice reimplementation

@@ -241,30 +241,14 @@ void OSSAudioDevice::run()
 //	printf("OSSAudioDevice::run: thread exiting\n");
 }
 
-// If OSS is all we have, this becomes the creator function.
-
-#if !defined(ALSA) && !defined (NETAUDIO)
-#define createOSSAudioDevice createAudioDevice
-#endif
-
-AudioDevice *createOSSAudioDevice(const char *inputDesc, 
-								  const char *outputDesc, 
-								  bool fullDuplex)
+bool OSSAudioDevice::recognize(const char *desc)
 {
-	AudioDevice *theDevice;
-	if (fullDuplex) {
-		// Create dual device if input and out are set and input != output.
-		if (inputDesc && outputDesc && strcmp(inputDesc, outputDesc))
-			theDevice = new AudioIODevice(new OSSAudioDevice(inputDesc), 
-										  new OSSAudioDevice(outputDesc));
-		else
-			theDevice = new OSSAudioDevice(inputDesc ? inputDesc : outputDesc ? outputDesc : DEFAULT_DEVICE);
-	}
-	// Create single device.
-	else {
-		theDevice = new OSSAudioDevice(inputDesc ? inputDesc : outputDesc ? outputDesc : DEFAULT_DEVICE);
-	}
-	return theDevice;
+	return (desc == NULL) || strncmp(desc, "/dev", 4) == 0;
+}
+
+AudioDevice *OSSAudioDevice::create(const char *inputDesc, const char *outputDesc, int mode)
+{
+	return new OSSAudioDevice(inputDesc ? inputDesc : outputDesc ? outputDesc : DEFAULT_DEVICE);
 }
 
 #endif	// LINUX
