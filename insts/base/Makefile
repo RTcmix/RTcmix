@@ -54,7 +54,13 @@ clean:
 	done
 	rm -f $(DESTDIR)/CMIX
 
-dso_clean:  clean
+dso_clean:
+	@for DIR in $(LIBDIRS); \
+	do \
+	  ( cd $$DIR; make clean; \
+	  rm -f $(LIBDESTDIR)/lib$$DIR.so; ) \
+	done
+	rm -f $(DESTDIR)/CMIX
 
 standalone_clean:
 	@for DIR in $(LIBDIRS); \
