@@ -3,14 +3,15 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #include <globals.h>
+#include <prototypes.h>
+#include <maxdispargs.h>
 #include <pthread.h>
 #include "../rtstuff/Instrument.h"
 #include "../rtstuff/rt.h"
 #include "../rtstuff/rtdefs.h"
 #include "../sys/mixerr.h"
+#include <stdio.h>
 #include <string.h>
-#include <iostream.h>
-#include "defs.h"
 
 extern void heapSched(Instrument *Iptr);
 
