@@ -6,6 +6,7 @@
 //#define DENORMAL_CHECK
 #define MAIN
 #include <pthread.h>
+#include <sys/resource.h>
 #include <ctype.h>
 #include <string.h>
 #include <math.h>
@@ -68,6 +69,9 @@ usage()
       "           -n       no init script (interactive mode only)\n"
       "           -o NUM   socket offset (interactive mode only)\n"
       "           -c       enable continuous control (rtupdates)\n"
+#ifdef LINUX
+      "           -p NUM   set process priority to NUM (as root only)\n"
+#endif
       "          NOTE: -s, -d, and -e are not yet implemented\n"
       "           -s NUM   start time (seconds)\n"
       "           -d NUM   duration (seconds)\n"
@@ -198,6 +202,9 @@ main(int argc, char *argv[])
 {
    int         i, j, k, l, xargc;
    int         retcode;                 /* for mutexes */
+#ifdef LINUX
+   int		   priority = 0;
+#endif
    char        *infile;
    char        *xargv[MAXARGS + 1];
    pthread_t   sockitThread, inTraverseThread;
@@ -248,6 +255,15 @@ main(int argc, char *argv[])
             case 'q':               /* quiet */
                print_is_on = 0;
                break;
+#ifdef LINUX
+			case 'p':
+               if (++i >= argc) {
+                  fprintf(stderr, "You didn't give a priority number.\n");
+                  exit(1);
+               }
+			   priority = atoi(argv[i]);
+			   break;
+#endif
             case 'o':               /* NOTE NOTE NOTE: will soon replace -s */
             case 's':               /* set up a socket offset */
                if (++i >= argc) {
@@ -413,8 +429,14 @@ main(int argc, char *argv[])
          exit(1);
       }
 #endif
-      if (status == 0)
+      if (status == 0) {
+#ifdef LINUX
+		 if (priority != 0)
+			 if (setpriority(PRIO_PROCESS, 0, priority) != 0)
+			 	perror("setpriority");
+#endif
          inTraverse(NULL);
+	  }
       else
          exit(status);
 
