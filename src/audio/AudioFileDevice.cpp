@@ -6,11 +6,11 @@
 // format, and options concerning format of data.
 
 #include "AudioFileDevice.h"
+#include <math.h>       /* for fabs */
 #include <sndlibsupport.h>
 #include <byte_routines.h>
 #include <globals.h>	// MAXBUS, etc.
 #include <assert.h>
-#include <math.h>       /* for fabs */
 #ifdef linux
 #include <unistd.h>
 #endif
