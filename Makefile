@@ -8,6 +8,8 @@ MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
 
 SNDLIB_DIR = sndlib
 
+BASE = insts.base
+
 DIRS = $(SNDLIB_DIR) H rtstuff Minc sys lib head cmd utils docs
 ifeq ($(PERL_SUPPORT), TRUE)
 	DIRS += Perl
@@ -88,6 +90,14 @@ Perl::
 
 insts::
 	@for DIR in $(INST_DIRS); \
+	do \
+	  ( cd $$DIR; echo "making $$DIR..."; \
+	   echo "include $(MAKEFILE_CONF)" > package.conf; \
+	   $(MAKE) $(MFLAGS) all; echo "done."; echo "" ); \
+	done
+
+base::
+	@for DIR in $(BASE); \
 	do \
 	  ( cd $$DIR; echo "making $$DIR..."; \
 	   echo "include $(MAKEFILE_CONF)" > package.conf; \
