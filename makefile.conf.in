@@ -25,6 +25,11 @@ ARCH = LINUX
 SOUND_DRIVER = -DOSS
 #SOUND_DRIVER = -DALSA
 
+# Uncomment if your sound driver uses the same device file for input and
+# output. This is true if you have a Creative/Ensoniq AudioPCI, or similar
+# consumer card.
+SOUND_DRIVER += -DSHARED_AUDIO_DEV
+
 # Uncomment if your sound driver uses multiple mono devices.
 #SOUND_DRIVER += -DMONO_DEVICES
 
@@ -51,7 +56,7 @@ BINDIR = $(DESTDIR)
 # Compile and link time flags
 
 ifeq ($(ARCH),LINUX)
-  ARCHFLAGS = -D_REENTRANT -DLINUX $(SOUND_DRIVER)
+  ARCHFLAGS = -D_REENTRANT -DLINUX
   CC = gcc 
   CXX = g++ 
   LD = ld
