@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <Python.h>
 #include "rtcmix_parse.h"
+#include <Option.h>
 
 static FILE *_script = NULL;
 static char *_script_name = NULL;
@@ -66,7 +67,8 @@ use_script_file(char *fname)
       return;
    }
    _script_name = fname;
-   printf("Using file %s\n", fname);
+   if (get_bool_option(kOptionPrint))
+      printf("Using file %s\n", fname);
 }
 
 
