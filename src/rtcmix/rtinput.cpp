@@ -1,8 +1,13 @@
 #include <stdio.h>
 #include <string.h>
-#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#ifdef LINUX
+  #include <fcntl.h>
+#endif /* LINUX */
+#ifdef SGI
+  #include <dmedia/audio.h>
+#endif /* SGI */
 #include "../rtstuff/rtdefs.h"
 
 #ifdef USE_SNDLIB
@@ -18,9 +23,8 @@ extern int NCHANS;
 
 /* This stuff not yet in LINUX */
 
-#ifdef sgi
+#ifdef SGI
 ALport in_port;
-int audio_on = 0;
 int audioNCHANS; /* this is for the reads on the audio device */
 #endif
 
@@ -49,9 +53,11 @@ extern int audio_on;
 
 double rtinput(float *p, short n_args, double *pp)
 {
-#ifdef sgi  // but note that sgi code in this file is way out of date
-	AFfilehandle rtinfile;
+#ifdef SGI
 	ALconfig in_port_config;
+	long pvbuf[4];
+	long buflen;
+	char *insrc;
 #endif
 	struct stat sfst;
 #ifndef USE_SNDLIB
@@ -82,13 +88,63 @@ double rtinput(float *p, short n_args, double *pp)
 	if (strcmp(rtsfname, "AUDIO") == 0) {
 	    // printf("rtinput():  setting up audio input\n");
 
+#ifdef SGI
+	    /* configure and open input audio port */
+	    in_port_config = ALnewconfig();
+	    ALsetwidth(in_port_config, AL_SAMPLE_16);
+
+	    if (p[2] == 1) {
+		inNCHANS = 1;
+		ALsetchannels(in_port_config, AL_MONO);
+	    }
+	    else {
+		inNCHANS = 2;
+		ALsetchannels(in_port_config, AL_STEREO);
+	    }
+
+	    audioNCHANS = inNCHANS;
+
+	    if (ALsetqueuesize(in_port_config, RTBUFSAMPS*4) == -1) {
+		fprintf(stderr,
+		  "could not configure the input audio port queue size to %d\n",
+			RTBUFSAMPS*4);
+		return -1.0;
+	    }
+
+	    inSR = SR;
+	    pvbuf[0] = AL_INPUT_RATE;
+	    pvbuf[1] = (long)SR;
+	    pvbuf[2] = AL_INPUT_SOURCE;
+	    pvbuf[3] = AL_INPUT_MIC;
+	    if (pp[1] != 0) {
+		tint = (int)pp[1];
+		insrc = (char *)tint;
+		if (strcmp(insrc, "LINE") == 0) pvbuf[3] = AL_INPUT_LINE;
+		if (strcmp(insrc, "DIGITAL") == 0) pvbuf[3] = AL_INPUT_DIGITAL;
+	    }
+	    buflen = 4;
+	    ALsetparams(AL_DEFAULT_DEVICE, pvbuf, buflen);
+
+	    /* open up thet thar audio port! */
+	    in_port = ALopenport("rtcmixin", "r", in_port_config);
+
+	    ALfreeconfig(in_port_config);
+
+	    if (!in_port) {
+		fprintf(stderr, "could not open input audio port\n");
+               	exit(-1);
+	    }
+#endif /* SGI */
+
 	/* input_on toggles rtsetinput to take data from file or audio device
 	 * With this set, the instrument does not have to worry about a file
 	 * descriptor index.
 	 */
 	    input_on = 1;
+#ifdef LINUX
 	    inSR = SR;
 	    inNCHANS = NCHANS;
+#endif /* LINUX */
 
 	/* audio_on signals traverse() to grab buffers from the audio device */
 

@@ -32,6 +32,7 @@
 #include "../H/byte_routines.h"
 #include "../H/dbug.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/file.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -106,7 +107,6 @@ float peakflag;
 double m_open(float *p, short n_args, double *pp) 
 {
 	char  *name,*cp,*getsfcode();
-	char *malloc();
 	int   fno,i,new;
 	float *opk;
 
@@ -1269,6 +1269,7 @@ float peakflag;
 	return(opeak);
 }
 
+#ifdef OBSOLETE
 extern int init_sound();
 
 double
@@ -1305,3 +1306,16 @@ float *p;
 	return init_sound((float)sfsrate(&sfdesc[output]),
 		sfchans(&sfdesc[output]));
 }
+
+#else /* !OBSOLETE */
+
+double
+play_on(float p[], int n_args)
+{	
+   fprintf(stderr, "Sorry, this version of RTcmix does not support "
+                   "the old cmix method of playing real-time audio.");
+   return 0.0;
+}
+
+#endif /* !OBSOLETE */
+

@@ -15,13 +15,13 @@ extern int swap;
 
 int rtgetin(float *inarr, Instrument *theInst, int nsmps)
 {
-	int nbytes;
 	int i;
-	int fdesc, seeked, sampsRead;
+	int fdesc, seeked;
 #ifdef USE_SNDLIB
 	int n, j, frames, chans;
 	static int **inbufs = NULL;
 #else
+	int nbytes, sampsRead;
 	short in[MAXBUF];
 
   #ifdef DBUG

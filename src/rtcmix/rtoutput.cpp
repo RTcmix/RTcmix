@@ -188,6 +188,7 @@ parse_rtoutput_args(int nargs, double pp[])
          case ENDIANNESS:  /* currently unused */
             break;
          default:
+            break;
       }
    }
 

@@ -1,3 +1,5 @@
+#ifdef OBSOLETE
+
 #include <stdio.h>
 #include <math.h>
 #include "../H/sfheader.h"
@@ -118,3 +120,4 @@ int chans;
 #endif /* sgi */
 
 
+#endif /* OBSOLETE */

@@ -418,7 +418,11 @@ sndlib_print_current_header_stats(int fd, SFComment *sfc, int verbosity)
    nsamps = c_snd_header_data_size();           /* samples, not frames */
    duration = (float)(nsamps / nchans) / (float)srate;
 
+#ifdef SGI
+   nchars = sprintf(str, 
+#else
    nchars = snprintf(str, 256,
+#endif
                     "%s, %s\nsrate: %d  chans: %d\nduration: %g seconds\n",
                      is_aifc? "AIFC" : sound_type_name(type),
                      sound_format_name(format), srate, nchans, duration);
@@ -426,7 +430,11 @@ sndlib_print_current_header_stats(int fd, SFComment *sfc, int verbosity)
    if (verbosity == 2) {
       char tmp[128];
 
+#ifdef SGI
+      sprintf(tmp, "frames: %d\nheader size: %d bytes\n",
+#else
       snprintf(tmp, 128, "frames: %d\nheader size: %d bytes\n",
+#endif
                                                  nsamps / nchans, data_loc);
       strcat(str, tmp);
    }
@@ -437,14 +445,18 @@ sndlib_print_current_header_stats(int fd, SFComment *sfc, int verbosity)
       if (SFCOMMENT_PEAKSTATS_VALID(sfcp)) {
          strcat(str, "peak amplitudes:\n");
          for (n = 0; n < nchans; n++) {
+#ifdef SGI
+            sprintf(tmp, "  chan %d:  peak: %g  loc: %ld\n",
+#else
             snprintf(tmp, 80, "  chan %d:  peak: %g  loc: %ld\n",
+#endif
                                          n, sfcp->peak[n], sfcp->peakloc[n]);
             strcat(str, tmp);
          }
          strftime(tmp, 80, "  peak stats updated: %a %b %d %H:%M:%S %Z %Y\n",
                            localtime(&sfcp->timetag));
          strcat(str, tmp);
-         }
+      }
       else
          strcat(str, "(no peak amp stats)\n");
    }
