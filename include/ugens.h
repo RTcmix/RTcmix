@@ -106,6 +106,7 @@ void hplset(float, float, float, float, float, float, int, float*);
 float hpluck(float, float*);
 double midipch(double);
 double octcps(double);
+double octmidi(unsigned char);
 double octpch(double);
 float oscil(float, float, double*, int, float*);
 float oscili(float, float, double*, int, float*);
