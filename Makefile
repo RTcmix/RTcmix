@@ -6,7 +6,7 @@ include makefile.conf
 
 BASE = insts/base
 
-DIRS = include genlib src insts utils docs
+DIRS = include genlib src insts utils docs/pod
 
 #################################################################  make all  ###
 
@@ -32,7 +32,7 @@ utils::
 	@cd utils; $(MAKE) $(MFLAGS) all
 	@echo "done."; echo ""
 
-docs::
+docs/pod::
 	@echo "making docs ..."
 	@cd docs/pod; $(MAKE) $(MFLAGS) all
 	@echo "done."; echo ""
