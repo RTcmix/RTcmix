@@ -75,10 +75,13 @@ void OnePole :: setGain(MY_FLOAT aValue)
       sgain = gain * ((MY_FLOAT) 1.0 + poleCoeff);
 }
 
+//#define DISABLE_CLAMP_DENORMALS
+#include "ClampDenormals.h"
 
 MY_FLOAT OnePole :: tick(MY_FLOAT sample)
 {
    lastOutput = (sgain * sample) + (poleCoeff * lastOutput);              
+   CLAMP_DENORMALS(lastOutput);
    return lastOutput;
 }
 

@@ -148,14 +148,19 @@ void Butter :: setBandReject(MY_FLOAT freq, MY_FLOAT bandwidth)
 // Note: signs of b1 and b2 flipped compared to what you often see
 // Note: This is the canonical form, needing only 2 history vals.
 
+//#define DISABLE_CLAMP_DENORMALS
+#include "ClampDenormals.h"
+
 MY_FLOAT Butter :: tick(MY_FLOAT sample)
 {
    MY_FLOAT temp;
 
    temp = sample - inputs[0] * poleCoeffs[0] - inputs[1] * poleCoeffs[1];
+   CLAMP_DENORMALS(temp);
 
    lastOutput = temp * gain + inputs[0] * zeroCoeffs[0]
                             + inputs[1] * zeroCoeffs[1];
+
    inputs[1] = inputs[0];
    inputs[0] = temp;
 

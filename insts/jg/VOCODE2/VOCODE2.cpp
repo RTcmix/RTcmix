@@ -240,6 +240,8 @@ int VOCODE2 :: run()
       for (j = 0; j < numfilts; j++) {
          float mod = modulator_filt[j]->tick(modsig);
          float car = carrier_filt[j]->tick(carsig);
+         CLAMP_DENORMALS(mod);
+         CLAMP_DENORMALS(car);
          out[0] += balancer[j]->tick(car, mod);
       }
       if (hipass_mod_amp > 0.0) {
