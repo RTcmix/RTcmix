@@ -22,7 +22,9 @@ code provided in docs/sample_code.
    Do not call the base class run method from your run method.
 
 4. floc() now returns a double (not float) array, and genlib functions
-   like oscili and tablei take a double array.
+   like oscili and tablei take a double array.  Please don't write a
+   new instrument using floc.  It will still work, but we're trying to
+   move away from makegens.
 
 5. Many Instrument base class variables that were protected are now private,
    so that you can't access them.  Use the inline accessor functions instead.
