@@ -8,9 +8,11 @@
 #include <string.h>
 #include <assert.h>
 
+const int kSleepMsec = 10;		// How long to nap between polling of events
+const int kThrottle = 50;		// How many intervening values to skip drawing
 
 RTcmixMouse::RTcmixMouse()
-	: _xlabelCount(0), _ylabelCount(0), _sleeptime(SLEEP_MSEC * 1000)
+	: _xlabelCount(0), _ylabelCount(0), _sleeptime(kSleepMsec * 1000)
 {
 	for (int i = 0; i < NLABELS; i++) {
 		_xprefix[i] = NULL;
@@ -21,7 +23,10 @@ RTcmixMouse::RTcmixMouse()
 		_ylabel[i] = NULL;
 		_lastx[i] = -1.0;
 		_lasty[i] = -1.0;
+		_xthrottleCount[i] = 0;
+		_ythrottleCount[i] = 0;
 	}
+	_throttle = kThrottle;
 }
 
 RTcmixMouse::~RTcmixMouse()
@@ -73,12 +78,14 @@ void RTcmixMouse::updateXLabelValue(const int id, const double value)
 	if (id < 0)							// this is valid if caller wants no label
 		return;
 	assert(id < _xlabelCount);
-	if (value == _lastx[id])
-		return;
 
-	doUpdateXLabelValue(id, value);
-
-	_lastx[id] = value;
+	if (--_xthrottleCount[id] < 0) {
+		if (value == _lastx[id])
+			return;
+		doUpdateXLabelValue(id, value);
+		_lastx[id] = value;
+		_xthrottleCount[id] = _throttle;
+	}
 }
 
 void RTcmixMouse::updateYLabelValue(const int id, const double value)
@@ -86,12 +93,14 @@ void RTcmixMouse::updateYLabelValue(const int id, const double value)
 	if (id < 0)							// this is valid if caller wants no label
 		return;
 	assert(id < _ylabelCount);
-	if (value == _lasty[id])
-		return;
 
-	doUpdateYLabelValue(id, value);
-
-	_lasty[id] = value;
+	if (--_ythrottleCount[id] < 0) {
+		if (value == _lasty[id])
+			return;
+		doUpdateYLabelValue(id, value);
+		_lasty[id] = value;
+		_ythrottleCount[id] = _throttle;
+	}
 }
 
 void *RTcmixMouse::_eventLoop(void *context)

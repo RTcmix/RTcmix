@@ -11,8 +11,6 @@
 #include <pthread.h>
 #include <labels.h>
 
-#define SLEEP_MSEC			10		// How long to nap between polling of events
-
 class RTcmixMouse {
 public:
 	RTcmixMouse();
@@ -79,6 +77,9 @@ private:
 	unsigned long _sleeptime;
 	pthread_t _eventthread;
 	bool _runThread;
+	int _xthrottleCount[NLABELS];
+	int _ythrottleCount[NLABELS];
+	int _throttle;
 };
 
 RTcmixMouse *createMouseWindow();
