@@ -6,7 +6,7 @@ all: sndlib.a
 
 sndlib.a: $(OBJS)
 	$(RM) sndlib.a
-	ld -r $(OBJS) -o sndlib.a
+	$(LD) -r $(OBJS) -o sndlib.a
 
 clean: 
 	$(RM) $(OBJS) sndlib.a
