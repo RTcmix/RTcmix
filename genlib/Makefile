@@ -3,25 +3,114 @@ include ../makefile.conf
 INCLUDES += -I../src/include -I../src/rtcmix
 
 LIB = libgen.$(SHLIB_SUFFIX)
-CFILES =  oscil.c oscili.c osciln.c oscilni.c table.c tablei.c evp.c reson.c \
-	  rsnset.c evset.c tableset.c cpspch.c cpsoct.c octpch.c buzz.c\
-	  rrand.c boost.c allpole.c delset.c delput.c delget.c dliget.c\
-	  reverb.c rvbset.c comb.c combset.c allpass.c \
-	  pchoct.c octcps.c pchcps.c boscili.c bbuzz.c ballpole.c brrand.c\
-	  hpluck.c hcomb.c setline.c random.c ampdb.c\
-	  breson.c resonz.c pluck.c hplset.c pluckset.c randf.c spray.c wshape.c bpluck.c\
-	  pchmidi.c midipch.c
-OCFILES = Ooscili.cpp Orand.cpp Odelayi.cpp Ocomb.cpp Ocombi.cpp Oequalizer.cpp Oonepole.cpp
 
-OBJECTS = oscil.o oscili.o osciln.o oscilni.o table.o tablei.o evp.o reson.o \
-	  rsnset.o evset.o tableset.o cpspch.o cpsoct.o octpch.o buzz.o\
-	  rrand.o boost.o allpole.o delset.o delput.o delget.o dliget.o\
-	  reverb.o rvbset.o comb.o combset.o allpass.o\
-	  pchoct.o octcps.o pchcps.o boscili.o bbuzz.o ballpole.o brrand.o\
-	  hpluck.o hcomb.o setline.o random.o ampdb.o\
-	  breson.o resonz.o pluck.o hplset.o pluckset.o randf.o spray.o wshape.o bpluck.o\
-	  pchmidi.o midipch.o
-OOBJECTS = Ooscili.o Orand.o Odelayi.o Ocomb.o Ocombi.o Oequalizer.o Oonepole.o
+CFILES = \
+allpass.c \
+allpole.c \
+ampdb.c \
+ballpole.c \
+bbuzz.c \
+boost.c \
+boscili.c \
+bpluck.c \
+breson.c \
+brrand.c \
+buzz.c \
+comb.c \
+combset.c \
+delget.c \
+delput.c \
+delset.c \
+dliget.c \
+evp.c \
+evset.c \
+hcomb.c \
+hplset.c \
+hpluck.c \
+oscil.c \
+oscili.c \
+osciln.c \
+oscilni.c \
+pitchconv.c \
+pluck.c \
+pluckset.c \
+randf.c \
+random.c \
+reson.c \
+resonz.c \
+reverb.c \
+rrand.c \
+rsnset.c \
+rvbset.c \
+setline.c \
+spray.c \
+table.c \
+tablei.c \
+tableset.c \
+wshape.c
+
+OBJECTS = \
+allpass.o \
+allpole.o \
+ampdb.o \
+ballpole.o \
+bbuzz.o \
+boost.o \
+boscili.o \
+bpluck.o \
+breson.o \
+brrand.o \
+buzz.o \
+comb.o \
+combset.o \
+delget.o \
+delput.o \
+delset.o \
+dliget.o \
+hcomb.o \
+hplset.o \
+hpluck.o \
+evp.o \
+evset.o \
+oscil.o \
+oscili.o \
+osciln.o \
+oscilni.o \
+pitchconv.o \
+pluck.o \
+pluckset.o \
+randf.o \
+random.o \
+reson.o \
+resonz.o \
+reverb.o \
+rrand.o \
+rsnset.o \
+rvbset.o \
+setline.o \
+spray.o \
+table.o \
+tablei.o \
+tableset.o \
+wshape.o
+
+OCFILES = \
+Ocomb.cpp \
+Ocombi.cpp \
+Odelayi.cpp \
+Oequalizer.cpp \
+Oonepole.cpp \
+Ooscili.cpp \
+Orand.cpp
+
+OOBJECTS = \
+Ocomb.o \
+Ocombi.o \
+Odelayi.o \
+Oequalizer.o \
+Oonepole.o \
+Ooscili.o \
+Orand.o
 
 .c.o:
 	$(CC) -c $(CFLAGS) -o $@ $<
