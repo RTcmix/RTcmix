@@ -1,15 +1,11 @@
 include ../package.conf
 
-NAME = EQX
+NAME = MULTEQ
 
 CURDIR = $(CMIXDIR)/insts/jg/$(NAME)
-OBJLIBDIR = ../objlib
-OBJLIB_A = $(OBJLIBDIR)/objlib.a
-OBJLIB_H = $(OBJLIBDIR)/objlib.h
 
 OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
-CXXFLAGS += -I$(OBJLIBDIR)
 PROGS = lib$(NAME).so $(NAME)
 
 .PHONY: all standalone install dso_install standalone_install \
@@ -17,19 +13,15 @@ uninstall dso_uninstall standalone_uninstall clean cleanall
 
 all: lib$(NAME).so
 
-$(OBJLIB_A):
-	@( cd $(OBJLIBDIR); echo "making in objlib..."; \
-	  $(MAKE) $(MFLAGS); echo "done in objlib" ); \
-
 standalone: $(NAME)
 
-lib$(NAME).so: $(OBJS) $(GENLIB) $(OBJLIB_A)
-	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS) $(OBJLIB_A)
+lib$(NAME).so: $(OBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
-$(NAME): $(OBJS) $(CMIXOBJS) $(OBJLIB_A)
-	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(OBJLIB_A) $(LDFLAGS)
+$(NAME): $(OBJS) $(CMIXOBJS)
+	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) $(OBJLIB_H) $(NAME).h
+$(OBJS): $(INSTRUMENT_H) $(NAME).h
 
 install: dso_install
 
