@@ -18,11 +18,13 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <mixerr.h>
 #include "TRANS.h"
 #include <rt.h>
 
-//#define DEBUG
+#define DEBUG
+//#define DEBUG_FULL
 
 extern "C" {
    #include <ugens.h>
@@ -37,11 +39,9 @@ TRANS :: TRANS() : Instrument()
 {
    in = new float[MAXBUF];       /* MUST persist across calls to run() */
 
-   inframe = RTBUFSAMPS;
-   incount = 0;
+   incount = 1;
    counter = 0.0;
-   getflag = 1;
-   first_time = 1;
+   get_frame = 1;
 
    /* clear sample history */
    oldersig = 0.0;
@@ -58,7 +58,7 @@ TRANS :: ~TRANS()
 
 int TRANS :: init(float p[], short n_args)
 {
-   float outskip, inskip, dur, transp, interval;
+   float outskip, inskip, dur, transp, interval, total_indur, dur_to_read;
 
    if (n_args < 5) {
       fprintf(stderr, "TRANS: Wrong number of args.\n");
@@ -90,6 +90,23 @@ int TRANS :: init(float p[], short n_args)
    printf("increment: %g\n", increment);
 #endif
 
+#ifdef NOTYET
+   total_indur = (float) m_DUR(NULL, 0);
+   dur_to_read = dur * increment;
+   if (inskip + dur_to_read > total_indur) {
+      fprintf(stderr, "TRANS WARNING: This note will read off the end of the "
+                      "input file.\nYou might not get the envelope decay you "
+                      "expect from setline.\nReduce output duration.\n");
+      /* no exit() */
+   }
+#endif
+
+   /* total number of frames to read during life of inst */
+   in_frames_left = (int) (nsamps * increment + 0.5);
+
+   /* to trigger first read in run() */
+   inframe = RTBUFSAMPS;
+
    amptable = floc(1);
    if (amptable) {
       int amplen = fsize(1);
@@ -115,59 +132,56 @@ inline int min(int x, int y)
 
 int TRANS :: run()
 {
-   const int outframes = chunksamps;
-   int       i;
-   int       branch = 0;
-   float     aamp;
-   float     *outp;
+   const int out_frames = chunksamps;
+   int       i, branch = 0;
+   float     aamp, *outp;
+   double    frac;
+
+#ifdef DEBUG
+   printf("out_frames: %d  in_frames_left: %d\n", out_frames, in_frames_left);
+#endif
 
    Instrument :: run();
 
+   aamp = amp;                  /* in case amptable == NULL */
    outp = outbuf;               /* point to inst private out buffer */
 
-   aamp = amp;                  /* in case amptable == NULL */
-
-   if (first_time) {
-      int offset = RTBUFSAMPS - chunksamps;
-      outp += offset * NCHANS;
-      inframe = outframes;
-      first_time = 0;
-   }
-
-   for (i = 0; i < outframes; i++) {
+   for (i = 0; i < out_frames; i++) {
       if (--branch < 0) {
          if (amptable)
             aamp = table(cursamp, amptable, tabs) * amp;
          branch = skip;
       }
-      while (getflag) {
-         int index;
+      while (get_frame) {
+         if (inframe >= RTBUFSAMPS) {
+            rtgetin(in, this, RTBUFSAMPS * inputchans);
 
-         if (inframe == outframes) {          /* time for an input buffer */
-            rtgetin(in, this, inputchans * outframes);
+            in_frames_left -= RTBUFSAMPS;
 #ifdef DEBUG
-            printf("READ %d frames\n", outframes);
+            printf("READ %d frames, in_frames_left: %d\n",
+                                                  RTBUFSAMPS, in_frames_left);
 #endif
             inframe = 0;
          }
          oldersig = oldsig;
          oldsig = newsig;
 
-         index = inframe * inputchans;
-         newsig = in[index + inchan];
+         newsig = in[(inframe * inputchans) + inchan];
 
-         incount++;
          inframe++;
+         incount++;
+
          if (counter - (double) incount < 0.5)
-            getflag = 0;
+            get_frame = 0;
       }
 
-      double frac = counter - (double) incount + 2.0;
+      frac = (counter - (double) incount) + 2.0;
       outp[0] = interp(oldersig, oldsig, newsig, frac) * aamp;
-#ifdef DEBUG
+
+#ifdef DEBUG_FULL
       printf("i: %d counter: %g incount: %d frac: %g inframe: %d cursamp: %d\n",
              i, counter, incount, frac, inframe, cursamp);
-      printf("interping %g, %g, %g\n", oldersig, oldsig, newsig);
+      printf("interping %g, %g, %g => %g\n", oldersig, oldsig, newsig, outp[0]);
 #endif
 
       if (outputchans == 2) {
@@ -178,13 +192,13 @@ int TRANS :: run()
       outp += outputchans;
       cursamp++;
 
-      counter += increment;     // keeps track of interp pointer
+      counter += increment;         /* keeps track of interp pointer */
       if (counter - (double) incount >= -0.5)
-         getflag = 1;
+         get_frame = 1;
    }
 
 #ifdef DEBUG
-   printf("OUT %d samples\n\n", i);
+   printf("OUT %d frames\n\n", i);
 #endif
 
    return i;
