@@ -1,0 +1,49 @@
+#insts.base
+$$ see if can treat like "STEREO" MIX ??
+# done WAVETABLE
+
+#insts.std
+# done AM
+# done AMINST
+# done CLAR
+$$ problems exist here done COMBIT -> now COMBFILT
+$$ uses "delset" DEL1
+$$ uses "delset" DELAY
+$$ uses 99 parameters FIR
+# done FMINST
+# done IIR
+# done METAFLUTE
+$$ seem to be libraries and not instruments MOVE
+$$ uses "combset" MULTICOMB
+$$ uses "delset" PANECHO
+$$ empty PLACE
+# done REVMIX
+$$ all params cannot be changed SCULPT
+# done STEREO
+# done STRUM ??
+$$ issues with updating dur and interval TRANS
+TRANSBEND
+# done WAVESHAPE
+
+# insts.jg
+COMPLIMIT
+ELL
+FILTSWEEP
+$$ problem with reallocating memory FLANGE
+FREEVERB
+JCHOR
+JDELAY 
+JFIR
+JGRAN
+MROOM
+# done PAN
+# done REV
+REVERBIT
+ROOM
+SROOM
+VOCODE
+
+#insts.rtperf (done?)
+HAR
+MIXN : needs fixing (from spawn)
+RAP
