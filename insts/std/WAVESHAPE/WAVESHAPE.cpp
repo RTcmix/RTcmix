@@ -1,140 +1,223 @@
-/* WAVESHAPE -- a waveshaping instrument
+/* WAVESHAPE -- waveshaping synthesis instrument
  
    p0 = start time
    p1 = duration
-   p2 = pitch (hz or oct.pc)
-   p3 = index low point
-   p4 = index high point
-   p5 = amp
-   p6 = stereo spread (0-1) <optional>
+   p2 = frequency (Hz or oct.pc)
+   p3 = minimum distortion index
+   p4 = maximum distortion index
+   p5 = amp *
+   p6 = pan (in percent-to-left form: 0-1) [optional; default is 0]
+   p7 = reference to oscillator waveform table [optional; if missing,
+        must use gen 2] **
+   p8 = reference to waveshaping tranfer function table [optional; if missing,
+        must use gen 3] ***
+   p9 = index guide [optional; if missing, must use gen 4] ****
+   p10 = amp normalization [optional; default is on (1)]
 
-   function slot 1 is amp envelope
-            slot 2 is waveform to be shaped (generally sine)
-            slot 3 is the transfer function
-            slot 4 is the index envelope
+   p2 (freq), p3 (min index), p4 (max index), p5 (amp), p6 (pan) and
+   p9 (index) can receive dynamic updates from a table or real-time
+   control source.
+
+   NOTE: The amp normalization in this instrument can cause clicks at
+   the beginning and ending of notes.  Passing zero for p10 turns it off.
+
+   ----
+
+   Notes about backward compatibility with pre-v4 scores:
+
+   * If an old-style gen table 1 is present, its values will be multiplied
+   by p5 (amplitude), even if the latter is dynamic.
+
+   ** If p7 is missing, you must use an old-style gen table 2 for the
+   oscillator waveform.
+
+   *** If p8 is missing, you must use an old-style gen table 3 for the
+   waveshaping transfer function.
+
+   **** If p9 is missing, you must use an old-style gen table 4 for the
+   distortion index curve.
+
+                                                rev for v4, JGG, 7/22/04
 */
-#include <iostream.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <math.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
+#include <PField.h>
 #include "WAVESHAPE.h"
 #include <rt.h>
 #include <rtdefs.h>
 
-#ifdef COMPATIBLE_FUNC_LOCS         /* set in makefile.conf */
-  #define AMP_GEN_SLOT     2
-  #define WAVE_GEN_SLOT    1
-  #define XFER_GEN_SLOT    3
-  #define INDEX_GEN_SLOT   4
-#else
-  #define AMP_GEN_SLOT     1        /* so that we can use setline instead */
-  #define WAVE_GEN_SLOT    2
-  #define XFER_GEN_SLOT    3
-  #define INDEX_GEN_SLOT   4
-#endif
+#define AMP_GEN_SLOT     1
+#define WAVE_GEN_SLOT    2
+#define XFER_GEN_SLOT    3
+#define INDEX_GEN_SLOT   4
 
 
 WAVESHAPE::WAVESHAPE() : Instrument()
 {
-	// future setup here?
+	osc = NULL;
+	branch = 0;
+}
+
+WAVESHAPE::~WAVESHAPE()
+{
+	delete osc;
 }
 
 int WAVESHAPE::init(double p[], int n_args)
 {
-	nsamps = rtsetoutput(p[0], p[1], this);
+	nargs = n_args;
+	float outskip = p[0];
+	float dur = p[1];
+	rawfreq = p[2];
+	doampnorm = n_args > 10 ? (bool) p[10] : true;
 
-	waveform = floc(WAVE_GEN_SLOT);
-	if (waveform == NULL) {
-		die("WAVESHAPE", "You need to store a waveform in function %d.",
-								WAVE_GEN_SLOT);
-		return(DONT_SCHEDULE);
+	nsamps = rtsetoutput(outskip, dur, this);
+	if (outputChannels() > 2)
+		return die("WAVESHAPE", "Can't handle more than 2 output channels.");
+
+	waveform = NULL;
+	int tablelen = 0;
+	if (n_args > 7) {		// handle table coming in as optional p7 TablePField
+		const PField &field = getPField(7);
+		tablelen = field.values();
+		waveform = (double *) field;
 	}
-	lenwave = fsize(WAVE_GEN_SLOT);
+	if (waveform == NULL) {
+		waveform = floc(WAVE_GEN_SLOT);
+		if (waveform == NULL)
+			return die("WAVESHAPE", "Either use the wavetable pfield (p7) or make "
+						"an old-style gen function in slot %d.", WAVE_GEN_SLOT);
+		tablelen = fsize(WAVE_GEN_SLOT);
+	}
 
-	if (p[2] < 15.0) p[2] = cpspch(p[2]);
-	si = p[2] * (float)(lenwave/SR);
+	float freq = rawfreq;
+	if (rawfreq < 15.0)
+		freq = cpspch(rawfreq);
+
+	osc = new Ooscili(freq, waveform, tablelen);
+
+	xferfunc = NULL;
+	lenxfer = 0;
+	if (n_args > 8) {		// handle table coming in as optional p8 TablePField
+		const PField &field = getPField(8);
+		lenxfer = field.values();
+		xferfunc = (double *) field;
+	}
+	if (xferfunc == NULL) {
+		xferfunc = floc(XFER_GEN_SLOT);
+		if (xferfunc == NULL)
+			return die("WAVESHAPE", "Either use the transfer function pfield "
+						"(p8) or make an old-style gen function in slot %d.",
+						XFER_GEN_SLOT);
+		lenxfer = fsize(XFER_GEN_SLOT);
+	}
+
+	indenv = NULL;
+	if (n_args < 10) {	// no p9 guide PField, so must use gen table
+		indenv = floc(INDEX_GEN_SLOT);
+		if (indenv == NULL)
+			return die("WAVESHAPE", "Either use the index pfield (p9) or make "
+						"an old-style gen function in slot %d.", INDEX_GEN_SLOT);
+		lenind = fsize(INDEX_GEN_SLOT);
+		tableset(dur, lenind, indtabs);
+	}
 
 	ampenv = floc(AMP_GEN_SLOT);
 	if (ampenv) {
 		int lenamp = fsize(AMP_GEN_SLOT);
-		tableset(p[1], lenamp, amptabs);
+		tableset(dur, lenamp, amptabs);
 	}
-	else
-		advise("WAVESHAPE", "Setting phrase curve to all 1's.");
 
-	xfer = floc(XFER_GEN_SLOT);
-	lenxfer = fsize(XFER_GEN_SLOT);
+	setDCBlocker(freq, true);		// initialize dc blocking filter
 
-	indenv = floc(INDEX_GEN_SLOT);
-	lenind = fsize(INDEX_GEN_SLOT);
-	tableset(p[1],lenind,indtabs);
+	skip = (int) (SR / (float) resetval);
 
-	diff = p[4] - p[3];
-	indbase = p[3];
-
-	/*initialize dc blocking filter*/
-	c=PI*(float)(p[2]/2./SR);  /*cutoff frequency at pitch/2 */
-	a0=1./(1.+c);
-	a1= -a0;
-	b1=a0*(1-c);
-	z1=0;
-
-	phs = 0.0;
-	amp = p[5];
-	spread = p[6];
-
-	skip = (int)(SR/(float)resetval);       // how often to update amp curve
-
-	return(nsamps);
+	return nSamps();
 }
 
+void WAVESHAPE::setDCBlocker(float freq, bool init)
+{
+	float c = M_PI * (freq / 2.0 / SR);  // cutoff frequency at freq/2
+	a0 = 1.0 / (1.0 + c);
+	a1 = -a0;
+	b1 = a0 * (1.0 - c);
+	if (init)
+		z1 = 0.0;
+}
+
+void WAVESHAPE::doupdate()
+{
+	double p[10];
+	update(p, 10, kFreq | kMinIndex | kMaxIndex | kAmp | kPan | kIndex);
+
+	if (rawfreq != p[2]) {
+		rawfreq = p[2];
+		float freq = rawfreq;
+		if (rawfreq < 15.0)
+			freq = cpspch(rawfreq);
+		osc->setfreq(freq);
+		setDCBlocker(freq, false);
+	}
+
+	float min_index = p[3];
+	float max_index = p[4];
+	if (max_index < min_index)
+		max_index = min_index;
+
+	float rawamp = p[5];
+	if (ampenv)
+		rawamp *= tablei(currentFrame(), ampenv, amptabs);
+
+	spread = p[6];
+
+	float rawindex;
+	if (nargs > 9)
+		rawindex = p[9];
+	else
+		rawindex = tablei(currentFrame(), indenv, indtabs);
+	index = min_index + ((max_index - min_index) * rawindex);
+
+	if (doampnorm)
+		amp = index ? rawamp / index : 0.0;
+	else
+		amp = rawamp;
+}
 
 int WAVESHAPE::run()
 {
-	int i;
-	float out[2];
-	float aamp,ampi=0.,val,val2,val3;
-	float index=0.;
-	int branch;
-
-	aamp = amp;            /* in case ampenv == NULL */
-
-	branch = 0;
-	for (i = 0; i < chunksamps; i++) {
-		if (--branch < 0) {
-			if (ampenv)
-				aamp = table(cursamp, ampenv, amptabs) * amp;
-			index = diff * tablei(cursamp,indenv,indtabs)+indbase;
-			ampi = index ? aamp/index : 0.0;
+	for (int i = 0; i < framesToRun(); i++) {
+		if (--branch <= 0) {
+			doupdate();
 			branch = skip;
-			}
+		}
 
-		val = oscili(1.0,si,waveform,lenwave,&phs);  /* wave */
-		val2 = wshape(val*index,xfer,lenxfer); /* waveshape */
-		/*dc blocking filter*/
-		val3 = a1*z1;
-		z1 = b1*z1+val2;
-		val3 += a0*z1;
-		val3 *= ampi;
-		out[0] = val3;
+		float sig = osc->next();
+		float wsig = wshape(sig * index, xferfunc, lenxfer);
 
-		if (outputchans == 2) { /* split stereo files between the channels */
+		// dc blocking filter
+		float osig = a1 * z1;
+		z1 = b1 * z1 + wsig;
+		osig += a0 * z1;
+
+		float out[2];
+		out[0] = osig * amp;
+
+		if (outputChannels() == 2) {
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
-			}
+		}
 
 		rtaddout(out);
-		cursamp++;
-		}
-	return i;
+		increment();
+	}
+	return framesToRun();
 }
 
 
-
-Instrument*
-makeWAVESHAPE()
+Instrument *makeWAVESHAPE()
 {
 	WAVESHAPE *inst;
 
