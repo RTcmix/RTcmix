@@ -20,6 +20,7 @@
 #include "mixerr.h"
 #include <string.h>
 
+int
 addrtInst(rt_item *rt_p)
 {
 	rt_item *rt_tail;

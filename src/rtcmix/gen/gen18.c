@@ -1,9 +1,9 @@
 #include "../H/ugens.h"
 
-gen18(gen)
-
-register struct gen *gen;
-
+double
+gen18(struct gen *gen)
 {
-        setline(gen->pvals,gen->nargs,gen->size,gen->array);
+   setline(gen->pvals, gen->nargs, gen->size, gen->array);
+   return 0.0;
 }
+

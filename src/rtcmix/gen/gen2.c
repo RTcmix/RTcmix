@@ -52,7 +52,8 @@ extern FILE *infile_desc[50];   /* contains file descriptors for data files */
 
                              [new way and comments by JGG, 21-Feb-00]
 */
-void gen2(register struct gen *gen)
+double
+gen2(struct gen *gen)
 {
    int i;
 
@@ -84,7 +85,7 @@ void gen2(register struct gen *gen)
 
       if (in_desc == NULL) {       /* Stop if infile seek failed */
          fprintf(stderr, "Input error. Gen02 exited.\n");
-         return;
+         return -1.0;
       }
 
       i = 0;
@@ -115,5 +116,8 @@ void gen2(register struct gen *gen)
       while (++i < gen->size)      /* fill remainder (if any) with zeros */
          gen->array[i] = 0.0;
    }
+
+   return 0.0;
 }
+
 

@@ -1,27 +1,27 @@
-
 #include "../H/ugens.h"
 
-gen24(gen)
-
-register struct gen *gen;
-
+double
+gen24(struct gen *gen)
 {
-	float scaler,amp2,amp1;
-	int j,k,l;
-	int i = 0;
+   float scaler, amp2, amp1;
+   int j, k, l;
+   int i = 0;
 
-	scaler = ((float) gen->size)/gen->pvals[gen->nargs-2];
-	amp2 = gen->pvals[1];
-	for(k = 1; k < gen->nargs; k += 2) {
-		amp1 = amp2;
-		amp2 = gen->pvals[k+2];
-		j = i + 1;
-		i = gen->pvals[k+1]*scaler + 1;
-		for(l=j; l<=i; l++) {
-			if(l <= gen->size)
-				gen->array[l-1] = amp1 +
-				(amp2-amp1) * (float)(l-j) / (i-j+1);
-			}
-		}
-	fnscl(gen);
+   scaler = ((float) gen->size) / gen->pvals[gen->nargs - 2];
+   amp2 = gen->pvals[1];
+   for (k = 1; k < gen->nargs; k += 2) {
+      amp1 = amp2;
+      amp2 = gen->pvals[k + 2];
+      j = i + 1;
+      i = gen->pvals[k + 1] * scaler + 1;
+      for (l = j; l <= i; l++) {
+         if (l <= gen->size)
+            gen->array[l - 1] = amp1
+                                + (amp2 - amp1) * (float) (l - j) / (i - j + 1);
+      }
+   }
+   fnscl(gen);
+
+   return 0.0;
 }
+
