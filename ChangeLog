@@ -1,6 +1,13 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Tuesday, February 17, 2004 John Gibson <johgibso-at-indiana.edu>
+
+   * Bug fix for gen 4: if a time span is so short that it covers
+     only one array slot, NaNs appear in the output, which can cause
+     clicks and other strange things.  This is a rare situation,
+     but it could (and did) happen.
+
 Sunday, February 8, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * VSTART1 and VFRET1 (STRUM) had a few bugs that could cause clicks
