@@ -5,12 +5,12 @@
 
 class Ooscili;
 
-class GrainVoice {
+class SynthGrainVoice {
 
 public:
-   GrainVoice(const double srate, double *waveTable, int tableLen,
+   SynthGrainVoice(const double srate, double *waveTable, int tableLen,
       const int numOutChans);
-   ~GrainVoice();
+   ~SynthGrainVoice();
 
    inline bool inUse() const { return _inuse; }
 

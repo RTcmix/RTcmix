@@ -12,8 +12,8 @@
 
 
 // NOTE: We don't own the table memory.
-GrainVoice::GrainVoice(const double srate, double *waveTable, int tableLen,
-   const int numOutChans)
+SynthGrainVoice::SynthGrainVoice(const double srate, double *waveTable,
+	int tableLen, const int numOutChans)
    : _srate(srate), _wavetab(waveTable), _wavetablen(tableLen),
      _numoutchans(numOutChans), _osc(NULL), _env(NULL),
      _inuse(false), _amp(0.0), _pan(0.0)
@@ -25,21 +25,21 @@ GrainVoice::GrainVoice(const double srate, double *waveTable, int tableLen,
    _osc = new Ooscili(_srate, 1.0, waveTable, tableLen);
 }
 
-GrainVoice::~GrainVoice()
+SynthGrainVoice::~SynthGrainVoice()
 {
    delete _osc;
    delete _env;
 }
 
 // NOTE: We don't own the table memory, just the envelope object.
-void GrainVoice::setGrainEnvelopeTable(double *table, int length)
+void SynthGrainVoice::setGrainEnvelopeTable(double *table, int length)
 {
    delete _env;
    _env = new Ooscili(_srate, 1.0, table, length);
 }
 
 // <pitch> is in linear octaves.
-void GrainVoice::startGrain(const int bufoutstart, const double startphase,
+void SynthGrainVoice::startGrain(const int bufoutstart, const double startphase,
    const double outdur, const double amp, const double pitch, const double pan)
 {
    _bufoutstart = bufoutstart;
@@ -66,7 +66,7 @@ void GrainVoice::startGrain(const int bufoutstart, const double startphase,
 }
 
 // If output is mono, <left> holds signal, and <right> is zero.
-void GrainVoice::next(float &left, float &right)
+void SynthGrainVoice::next(float &left, float &right)
 {
    float sig = _osc->next();
    sig *= _env->next() * _amp;
@@ -87,7 +87,7 @@ void GrainVoice::next(float &left, float &right)
       _inuse = false;
 }
 
-void GrainVoice::next(float *buffer, const int numFrames, const float amp)
+void SynthGrainVoice::next(float *buffer, const int numFrames, const float amp)
 {
 	for (int i = _bufoutstart; i < numFrames; i++) {
 		float sig = _osc->next() * amp;

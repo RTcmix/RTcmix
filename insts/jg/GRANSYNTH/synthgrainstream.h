@@ -6,19 +6,19 @@
 #define MAX_NUM_VOICES 50
 
 class Ooscil;
-class GrainVoice;
+class SynthGrainVoice;
 
-class GrainStream {
+class SynthGrainStream {
 
 public:
-   GrainStream(
+   SynthGrainStream(
       const float srate,            // sampling rate
       double *waveTable,            // oscillator waveform table
       int tableLen,                 // number of samples in table
       const int numOutChans,        // number of output chans (1 or 2)
       const int seed                // random seed
    );
-   ~GrainStream();
+   ~SynthGrainStream();
 
    void setGrainEnvelopeTable(double *table, int length);
 
@@ -96,7 +96,7 @@ private:
    int _transplen;
 
    // set internally
-   GrainVoice *_voices[MAX_NUM_VOICES];
+   SynthGrainVoice *_voices[MAX_NUM_VOICES];
    Random *_outrand;
    Random *_durrand;
    Random *_amprand;

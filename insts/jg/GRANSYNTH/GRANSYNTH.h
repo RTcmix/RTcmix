@@ -1,5 +1,5 @@
 
-class GrainStream;
+class SynthGrainStream;
 
 class GRANSYNTH : public Instrument {
 
@@ -14,7 +14,7 @@ private:
    int _nargs, _skip, _branch;
    bool _stereoOut;
    double _amp;
-   GrainStream *_stream;
+   SynthGrainStream *_stream;
    float *_block;
 
    void doupdate();

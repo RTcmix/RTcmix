@@ -19,15 +19,16 @@
 
 
 // NOTE: We don't own the table memory.
-GrainStream::GrainStream(const float srate, double *waveTable, int tableLen,
-   const int numOutChans, const int seed)
+SynthGrainStream::SynthGrainStream(const float srate, double *waveTable,
+	int tableLen, const int numOutChans, const int seed)
    : _srate(srate), _wavetab(waveTable), _wavetablen(tableLen),
      _outchans(numOutChans), _hop(0), _maxoutjitter(0.0),
      _pitch(8.0), _maxpitchjitter(0.0), _transptab(NULL), _transplen(0),
      _outframecount(0), _nextoutstart(0), _lastL(0.0f), _lastR(0.0f)
 {
    for (int i = 0; i < MAX_NUM_VOICES; i++)
-      _voices[i] = new GrainVoice(_srate, _wavetab, _wavetablen, numOutChans);
+      _voices[i] = new SynthGrainVoice(_srate, _wavetab, _wavetablen,
+									numOutChans);
    _outrand = new LinearRandom(0.0, 1.0, seed * 2);
    _durrand = new LinearRandom(0.0, 1.0, seed * 3);
    _amprand = new LinearRandom(0.0, 1.0, seed * 4);
@@ -39,7 +40,7 @@ GrainStream::GrainStream(const float srate, double *waveTable, int tableLen,
 }
 
 
-GrainStream::~GrainStream()
+SynthGrainStream::~SynthGrainStream()
 {
    for (int i = 0; i < MAX_NUM_VOICES; i++)
       delete _voices[i];
@@ -58,14 +59,15 @@ GrainStream::~GrainStream()
 // NOTE: We don't own the table memory.
 // Call this before ever calling prepare or processBlock.
 
-void GrainStream::setGrainEnvelopeTable(double *table, int length)
+void SynthGrainStream::setGrainEnvelopeTable(double *table, int length)
 {
    for (int i = 0; i < MAX_NUM_VOICES; i++)
       _voices[i]->setGrainEnvelopeTable(table, length);
 }
 
 
-void GrainStream::setGrainTranspositionCollection(double *table, int length)
+void SynthGrainStream::setGrainTranspositionCollection(double *table,
+	int length)
 {
    delete [] _transptab;
    if (table) {
@@ -85,7 +87,7 @@ void GrainStream::setGrainTranspositionCollection(double *table, int length)
 // Given _pitch and (possibly) _transptab, both in linear octaves, return
 // grain frequency in Hz.
 
-const double GrainStream::getPitch()
+const double SynthGrainStream::getPitch()
 {
    double pitch_linoct = _pitch;
    const double pitchjitter = (_maxpitchjitter == 0.0) ? 0.0
@@ -123,7 +125,7 @@ const double GrainStream::getPitch()
 
 
 // Return index of first freq grain voice, or -1 if none are free.
-const int GrainStream::firstFreeVoice()
+const int SynthGrainStream::firstFreeVoice()
 {
    for (int i = 0; i < MAX_NUM_VOICES; i++) {
       if (_voices[i]->inUse() == false)
@@ -137,7 +139,7 @@ const int GrainStream::firstFreeVoice()
 // <bufoutstart> is the offset into the output buffer for the grain to start.
 // This is relevant only when using block I/O.
 
-void GrainStream::maybeStartGrain(const int bufoutstart)
+void SynthGrainStream::maybeStartGrain(const int bufoutstart)
 {
    if (_outframecount >= _nextoutstart) {    // time to start another grain
 
@@ -171,7 +173,7 @@ void GrainStream::maybeStartGrain(const int bufoutstart)
 
 // Called for single-frame I/O.
 
-void GrainStream::playGrains()
+void SynthGrainStream::playGrains()
 {
    _lastL = 0.0f;
    _lastR = 0.0f;
@@ -188,7 +190,7 @@ void GrainStream::playGrains()
 
 // Called for block I/O.
 
-void GrainStream::playGrains(float buffer[], const int numFrames,
+void SynthGrainStream::playGrains(float buffer[], const int numFrames,
    const float amp)
 {
    const int count = numFrames * _outchans;
@@ -204,7 +206,7 @@ void GrainStream::playGrains(float buffer[], const int numFrames,
 // Compute one frame of samples across all active grains.  Activate a
 // new grain if it's time.
 
-void GrainStream::prepare()
+void SynthGrainStream::prepare()
 {
    maybeStartGrain();
    playGrains();
@@ -215,7 +217,7 @@ void GrainStream::prepare()
 // Compute a block of samples and write them into <buffer>, which is
 // assumed to hold <numFrames> frames of <_outchans> chans.
 
-void GrainStream::processBlock(float *buffer, const int numFrames,
+void SynthGrainStream::processBlock(float *buffer, const int numFrames,
    const float amp)
 {
    for (int i = 0; i < numFrames; i++) {

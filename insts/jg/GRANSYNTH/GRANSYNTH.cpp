@@ -118,7 +118,7 @@ int GRANSYNTH::init(double p[], int n_args)
    if (table == NULL)
       return die("GRANSYNTH", "You must create a table containing the "
                               "oscillator waveform.");
-   _stream = new GrainStream(SR, table, length, outputChannels(), seed);
+   _stream = new SynthGrainStream(SR, table, length, outputChannels(), seed);
 
    table = (double *) getPFieldTable(4, &length);
    if (table == NULL)
