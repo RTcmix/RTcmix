@@ -39,7 +39,7 @@
 #endif
 
 #ifdef MACOSX
-   #define DEFAULT_DEVICE_NAME ""
+   #define DEFAULT_DEVICE_NAME NULL
    #define BUF_FRAMES          1024
    // 4 glitches ... why?   XXX: still true?
    #define ROBUST_FACTOR       2
