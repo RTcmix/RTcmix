@@ -79,6 +79,7 @@ set_rtoutput_clobber(int state)
 
 int output_header_type = -1;
 int output_data_format = -1;
+int is_float_format = 0;
 int normalize_output_floats = 0;
 char *rtoutsfname;
 
@@ -219,6 +220,8 @@ parse_rtoutput_args(int nargs, double pp[])
    if (normfloat_requested)
       normalize_output_floats = 1;
 
+   is_float_format = IS_FLOAT_FORMAT(output_data_format);
+
 #ifdef ALLBUG
    fprintf(stderr, "name: %s, head: %d, data: %d, aifc: %d, norm: %d\n",
                    rtoutsfname, output_header_type, output_data_format,
@@ -303,9 +306,12 @@ rtoutput(float p[], int n_args, double pp[])
    }
 
    if (print_is_on) {
-     printf("Output file %s set for writing\n", rtoutsfname);
-     printf("    type:  %s\n", sound_type_name(output_header_type));
-     printf("  format:  %s\n\n", sound_format_name(output_data_format));
+     printf("Output file set for writing:\n");
+     printf("      name:  %s\n", rtoutsfname);
+     printf("      type:  %s\n", sound_type_name(output_header_type));
+     printf("    format:  %s\n", sound_format_name(output_data_format));
+     printf("     srate:  %g\n", SR);
+     printf("     chans:  %d\n", NCHANS);
    }
 
    rtfileit = 1;
