@@ -31,13 +31,13 @@ inline int min(int x, int y) { return (x < y) ? x : y; }
 
 #undef debug
 
-LPCPLAY::WarpFilter::WarpFilter() : _outold(0.0f)
+LPCINST::WarpFilter::WarpFilter() : _outold(0.0f)
 {
 	for (int i=0; i<MAXPOLES*2; i++) _past[i] = 0;
 }
 
 float
-LPCPLAY::WarpFilter::set(float d, float *c, int npoles)     
+LPCINST::WarpFilter::set(float d, float *c, int npoles)     
 {
 	_npoles = npoles;			// Store this
 	
@@ -49,7 +49,7 @@ LPCPLAY::WarpFilter::set(float d, float *c, int npoles)
 }
 
 void 
-LPCPLAY::WarpFilter::run(float *sig, float d, float *c, float *out, int nvals)
+LPCINST::WarpFilter::run(float *sig, float d, float *c, float *out, int nvals)
 {
 	float *past = _past;	// local copies of class state for efficiency
 	int npoles = _npoles;
@@ -86,18 +86,59 @@ extern int GetConfiguration(float *maxdev,
 							float *hnfactor);
 
 /* Construct an instance of this instrument and initialize a variable. */
+LPCINST::LPCINST(const char *name)
+	: _dataSet(NULL), _alpvals(NULL), _buzvals(NULL), _functionName(name)
+{
+	_jcount = _counter = 0; 
+	_leftOver = 0;
+	_savedOffset = 0;
+}
+
+/* Destruct an instance of this instrument. Here's where to free any memory
+   you may have allocated.
+*/
+LPCINST::~LPCINST()
+{
+	_dataSet->unref();
+	delete [] _alpvals;
+	delete [] _buzvals;
+}
+
+int LPCINST::init(float p[], int n_args)
+{
+	if (outputchans != 1) { 
+		die(name(), "Output file must have 1 channel only\n");
+	}
+	int status = localInit(p, n_args);
+
+	// Pull all the current configuration information out of the environment.
+	
+	GetDataSet(&_dataSet);
+	if (_dataSet == NULL) {
+		die("LPCPLAY", "No open dataset!\n");
+	}
+	_dataSet->ref();
+	
+	_nPoles = _dataSet->getNPoles();
+
+	// Finish the initialization
+	
+	for (int i=0; i<_nPoles*2; i++) _past[i] = 0;
+
+	/* NSamps() returns the number of sample
+      frames that will be written to output (dur * SR). */
+	return NSamps();
+}
+
+/* Construct an instance of this instrument and initialize a variable. */
 LPCPLAY::LPCPLAY()
-	: _dataSet(NULL), _pchvals(NULL),
-	  _alpvals(NULL), _buzvals(NULL), _noisvals(NULL)
+	: LPCINST("LPCPLAY"), _pchvals(NULL), _noisvals(NULL)
 {
 	_srd2 = SR/2.;
 	_magic = 512./SR;
 	_phs = 0.0;
-	_jcount = _counter = 0; 
 	_datafields = 10; /* number of fields before pitch curves */
 	_voiced = true;		// default state
-	_leftOver = 0;
-	_savedOffset = 0;
 	for (int i=0; i<9; i++)
 		_rsnetc[i]=0;
 }
@@ -108,10 +149,7 @@ LPCPLAY::LPCPLAY()
 */
 LPCPLAY::~LPCPLAY()
 {
-	_dataSet->unref();
 	delete [] _pchvals;
-	delete [] _alpvals;
-	delete [] _buzvals;
 	delete [] _noisvals;
 }
 
@@ -124,7 +162,7 @@ LPCPLAY::~LPCPLAY()
    the error and exit. If you just want to warn the user and keep going,
    call warn() with a message.
 */
-int LPCPLAY::init(float p[], int n_args)
+int LPCPLAY::localInit(float p[], int n_args)
 {
    int i;
 
@@ -159,22 +197,11 @@ int LPCPLAY::init(float p[], int n_args)
    */
 	rtsetoutput(outskip, ldur, this);
 
-	if (outputchans != 1) { 
-		die("LPCPLAY", "Output file must have 1 channel only\n");
-	}
-
 	_envFun = floc(2);
 	sbrrand(1);
 
 	// Pull all the current configuration information out of the environment.
 	
-	GetDataSet(&_dataSet);
-	if (_dataSet == NULL) {
-		die("LPCPLAY", "No open dataset!\n");
-	}
-	_dataSet->ref();
-	
-	_nPoles = _dataSet->getNPoles();
 	GetLPCStuff(&_highthresh,
 				&_lowthresh,
 				&_thresh,
@@ -192,8 +219,6 @@ int LPCPLAY::init(float p[], int n_args)
 
 	// Finish the initialization
 	
-	for (i=0; i<_nPoles*2; i++) _past[i] = 0;
-
 	float *cpoint = _coeffs + 4;
 	evset(getdur(), _risetime, _decaytime, 2, _evals);
 
@@ -266,10 +291,7 @@ int LPCPLAY::init(float p[], int n_args)
 	_cf_fact = p[7];
 	_bw_fact = p[8];
 	_frameno = _frame1;	/* in case first frame is unvoiced */
-			
-	/* NSamps() returns the number of sample
-      frames that will be written to output (dur * SR). */
-	return NSamps();
+	return 0;
 }
 
 /* Called by the scheduler for every time slice in which this instrument
@@ -499,6 +521,183 @@ LPCPLAY::readjust(float maxdev, float *pchval,
 		adjust(dev,maxdev,weight,pchval,firstframe,lastframe);
 }
 
+LPCIN::LPCIN() : LPCINST("LPCIN")
+{
+}
+
+LPCIN::~LPCIN()
+{
+}
+
+int LPCIN::localInit(float p[], int n_args)
+{
+   int i;
+
+	if (!n_args || n_args < 6 || n_args > 7) {
+		die("LPCIN",
+		"p[0]=outskip, p[1]=inskip, p[2]=duration, p[3]=amp, p[4]=frame1, p[5]=frame2, [ p[6]=warp ]\n");
+	}
+	float outskip = p[0];
+	float inskip = p[1];
+	float ldur = p[2];
+	_amp = p[3];
+
+	int startFrame = (int) p[4];
+	int endFrame = (int) p[5];
+	int frameCount = endFrame - startFrame + 1;
+
+	_warpFactor = p[6];	// defaults to 0
+
+	// Duration can be calculated from frame count
+
+	const float defaultFrameRate = 112.0;
+
+	ldur = (ldur > 0.) ? ldur : (frameCount/defaultFrameRate);
+
+   /* Tell scheduler when to start this inst. 
+   */
+    rtsetinput(inskip, this);
+	rtsetoutput(outskip, ldur, this);
+
+	if (inputchans != 1) { 
+		die("LPCIN", "Input file must have 1 channel only\n");
+	}
+					   	
+	SetupArrays(frameCount);
+
+	// Finish the initialization
+	
+	_frames = frameCount;
+	_frame1 = startFrame;
+	_frameno = _frame1;
+	return 0;
+}
+
+void
+LPCIN::SetupArrays(int)
+{
+	_alpvals = new float[MAXVALS];
+	_buzvals = new float[MAXVALS];
+}
+
+int LPCIN::run()
+{
+	int   n = 0;
+	float out[2];        /* Space for only 2 output chans! */
+
+	/* You MUST call the base class's run method here. */
+	Instrument::run();
+
+	// Samples may have been left over from end of previous run's block
+	if (_leftOver > 0)
+	{
+		int toAdd = min(_leftOver, FramesToRun());
+#ifdef debug
+		printf("using %d leftover samps starting at offset %d\n",
+			   _leftOver, _savedOffset);
+#endif
+		bmultf(&_alpvals[_savedOffset], _ampmlt, toAdd);	// Scale signal
+		rtbaddout(&_alpvals[_savedOffset], toAdd);
+		n += toAdd;
+		_leftOver -= toAdd;
+		_savedOffset += toAdd;
+	}
+	
+	/* FramesToRun() returns the number of sample frames -- 1 sample for each
+	  channel -- that we have to write during this scheduler time slice.
+	*/
+	for (; n < FramesToRun(); n += _counter) {
+		int loc;
+		_frameno = _frame1 + ((float)(CurrentFrame())/nsamps) * _frames;
+
+//		printf("\tgetting frame %g of %d (%d out of %d signal samps)\n",
+//			   _frameno, (int)_frames, CurrentFrame(), nsamps);
+		if (_dataSet->getFrame(_frameno,_coeffs) == -1)
+			break;
+		_ampmlt = _amp * _coeffs[RESIDAMP] / 10000.0;	// XXX normalize this!
+		float newpch = (_coeffs[PITCH] > 0.0) ? _coeffs[PITCH] : 256.0;
+
+//		if (_coeffs[RMSAMP] < _cutoff)
+//			_ampmlt = 0;
+// 		if (_reson_is_on) {
+// 			/* If _cf_fact is greater than 20, treat as absolute freq.
+// 			   Else treat as factor.
+// 			   If _bw_fact is greater than 20, treat as absolute freq.
+// 			   Else treat as factor (i.e., cf * factor == bw).
+// 			*/
+// 			float cf = (_cf_fact < 20.0) ? _cf_fact*cps : _cf_fact;
+// 			float bw = (_bw_fact < 20.0) ? cf * _bw_fact : _bw_fact;
+// 			rszset(cf, bw, 1., _rsnetc);
+// 			/* printf("%f %f %f %f\n",_cf_fact*cps,
+// 				_bw_fact*_cf_fact*cps,_cf_fact,_bw_fact,cps); */
+// 		}
+
+		float *cpoint = _coeffs + 4;
+		
+		if (_warpFactor != 0.0)
+		{
+			float warp = (_warpFactor > 1.) ? .0001 : _warpFactor;
+			_ampmlt *= _warpPole.set(warp, cpoint, _nPoles);
+		}
+//		_counter = int(((float)SR/newpch ) * .5);
+		_counter = (RTBUFSAMPS < MAXVALS) ? RTBUFSAMPS : MAXVALS;
+		_counter = (_counter > (nsamps - CurrentFrame())) ? nsamps - CurrentFrame() : _counter;
+				
+        if (_counter <= 0)
+			break;
+
+		rtgetin(_buzvals, this, _counter);
+#ifdef debug
+		printf("\t _buzvals[0] = %g\n", _buzvals[0]);
+#endif
+		if (_warpFactor) {
+//			float warp = (_warpFactor > 1.) ? shift(_coeffs[PITCH],newpch,(float)SR) : _warpFactor;
+			float warp = _warpFactor;
+#ifdef debug
+			printf("\tpch: %f newpch: %f d: %f\n",_coeffs[PITCH], newpch, warp);
+#endif
+			/*************
+			warp = ABS(warp) > .2 ? SIGN(warp) * .15 : warp;
+			***************/
+			_warpPole.run(_buzvals, warp, cpoint, _alpvals, _counter);
+		}
+		else
+		{
+			ballpole(_buzvals,&_jcount,_nPoles,_past,cpoint,_alpvals,_counter);
+		}
+#ifdef debug
+		{ int x; float maxamp=0; for (x=0;x<_counter;x++) { if (ABS(_alpvals[x]) > ABS(maxamp)) maxamp = _alpvals[x]; }
+			printf("\t maxamp = %g\n", maxamp);
+		}
+#endif
+//		if (_reson_is_on)
+//			bresonz(_alpvals,_rsnetc,_alpvals,_counter);
+
+		int sampsToAdd = min(_counter, FramesToRun() - n);
+		
+//		printf("\tscaling %d samples by %g\n", sampsToAdd, _ampmlt);
+
+		bmultf(_alpvals, _ampmlt, sampsToAdd);	// Scale signal
+		
+		/* Write this block to the output buffer. */
+		rtbaddout(_alpvals, sampsToAdd);
+		
+		/* Keep track of how many sample frames this instrument has generated. */
+		increment(_counter);
+	}
+	// Handle case where last synthesized block extended beyond FramesToRun()
+	if (n > FramesToRun())
+	{
+		_leftOver = n - FramesToRun();
+		_savedOffset = _counter - _leftOver;
+#ifdef debug
+		printf("saving %d samples left over at offset %d\n", _leftOver, _savedOffset);
+#endif
+	}
+
+	return FramesToRun();
+}
+
 /* The scheduler calls this to create an instance of this instrument,
    and to set up the bus-routing fields in the base Instrument class.
    This happens for every "note" in a score.
@@ -513,13 +712,26 @@ Instrument *makeLPCPLAY()
    return inst;
 }
 
-/* The rtprofile introduces this instrument to the RTcmix core, and
+Instrument *makeLPCIN()
+{
+   LPCIN *inst;
+
+   inst = new LPCIN();
+   inst->set_bus_config("LPCIN");
+
+   return inst;
+}
+
+extern Instrument *makeWAVETABLE();
+
+/* The rtprofile introduces the instruments to the RTcmix core, and
    associates a Minc name (in quotes below) with the instrument. This
    is the name the instrument goes by in a Minc script.
 */
 void rtprofile()
 {
    RT_INTRO("LPCPLAY", makeLPCPLAY);
+   RT_INTRO("LPCIN", makeLPCIN);
 }
 
 
