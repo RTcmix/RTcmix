@@ -1,21 +1,13 @@
 **** Released RTcmix-3.0.0 ****
 
-Sunday, May 28, 2000 John Gibson <johngibson@virginia.edu>
-
-   * New sample scores showing bus_config feature.
-   * Some last-minute fixes for SGI compilation.
-
 Saturday, May 27, 2000 John Gibson <johngibson@virginia.edu>
 
    * Added new instrument, REVMIX, by Ivica Bukvic, to insts.std.
-   * Removed all the USE_SNDLIB ifdefs, since we always use it.
+   * Revive the sndreverse program.
    * Input from files now ignores in-bus count entirely.
    * New function table assigns for FMINST and WAVESHAPE (see
      docs/README.table_assigns). This makes old scores incompatible!
-
-Friday, May 26, 2000 John Gibson <johngibson@virginia.edu>
-
-   * Revive the sndreverse program.
+   * New sample scores showing bus_config feature.
 
 Thursday, May 25, 2000 John Gibson <johngibson@virginia.edu>
 
@@ -24,14 +16,14 @@ Thursday, May 25, 2000 John Gibson <johngibson@virginia.edu>
 
 Tuesday, May 16, 2000 John Gibson <johngibson@virginia.edu>
 
-   * Fix compilation problem involving pthreads that triggered
-     errors on Irix 6.5 (and warnings on Irix 6.3).
-     (main.C, intraverse.C)
    * Many changes to ANSI-fy some older code and to enable more
      productive use of -Wall when compiling.
    * New message functions advise(), warn() and die() for use
      by instruments and others.
    * Add README.inst_porting and an instrument sample code dir.
+   * Fix compilation problem involving pthreads that triggered
+     errors on Irix 6.5 (and warnings on Irix 6.3).
+     (main.C, intraverse.C)
 
 Friday, May 12, 2000 John Gibson <johngibson@virginia.edu>
 
@@ -44,25 +36,45 @@ Wednesday, May 10, 2000 Dave Topper <topper@virginia.edu>
 
 Sunday, May 7, 2000 John Gibson <johngibson@virginia.edu>
 
-   * Update some RT insts to 2.3 API.
+   * Update RT insts to 3.0 API (for bus_config, etc.).
    * Allocate input buffer dynamically in all RT insts that need one.
      (This is because MIPSPro compiler can't size an automatic array
      by a variable -- that's a GNU extension.) Allocate in run method
      to avoid gobbling up all memory when insts init before playing.
 
+[Versions after 2.2.3 have new bus architecture, for instrument
+ chaining and better use of multi-chan cards.]
+
+
+**** Released RTcmix-2.2.3 ****
+
 Thursday, May 4, 2000 John Gibson <johngibson@virginia.edu>
 
-   * Reduce memory overhead of TRANS. (TRANS.C)
+   * Reduce memory overhead of these instruments:
+        COMBIT, DELAY, INPUTSIG, MIX, TRANS, STEREO, ELL, FILTSWEEP,
+        FLANGE, TRANS and JDELAY.
+     (Worth upgrading for this, since it was possible to exhaust
+     virtual memory if a script had many, many notes -- all grabbing
+     private buffers at the start, before playing.)
    * When reading off the end of a Minc array with get_array,
      return the last array element instead of zero.
      (minc_functions.c)
 
+Monday, April 24, 2000 John Gibson <johngibson@virginia.edu>
+
+   * If set_option("audio_off") precedes call to rtsetparams,
+     then audio output port not opened, and user can run multiple
+     jobs (writing to disk).
+
 Saturday, April 22, 2000 John Gibson <johngibson@virginia.edu>
 
+   * New instrument: stgran (Mara Helmuth)
    * Add prototypes for sound.c and minout.c functions to ugens.h
    * Various cleanups in sound.c
    * Add minout.c (from various disk-based insts) to sys dir
      (and remove from gravy and sgran)
+
+**** Released RTcmix-2.2.2 ****
 
 Friday, April 21, 2000 John Gibson <johngibson@virginia.edu>
 
@@ -75,14 +87,20 @@ Thursday, April 12, 2000 John Gibson <johngibson@virginia.edu>
    * Merged the INSTALL files into a top-level INSTALL file.
    * New PLACE instrument - just like disk-based place, but 
      using RT mechanism for faster file i/o.
-   * Added dBFS peak and location in seconds to peak stats report.
-     (rtsendsamps.c)
 
-Saturday March 26, 2000 John Gibson <johngibson@virginia.edu>
+Friday, March 31, 2000 John Gibson <johngibson@virginia.edu>
+
+   * Fixed bug in rtinput.c: sometimes got initial offset wrong in
+     fairly obscure circumstances. (rtinput.c)
+   * Added dBFS peak and location in seconds to peak stats report.
+     (rtwritesamps.C)
+
+Saturday, March 26, 2000 John Gibson <johngibson@virginia.edu>
 
    * Show peak stats, and close output file, even when killing with
      control-C. (main.C)
    * Added dbamp function for lib and Minc.
-   * Bumped version number (version.h) to 2.3.1.
-   * Finally created this ChangeLog.
+     (ampdb.c, minc_functions.c, ug_intro.c)
+	* Bumped version number (version.h) to 2.2.2. (version.h)
+	* Finally created this ChangeLog.
 
