@@ -28,13 +28,13 @@ endif
 
 # NB: need root for this; installs in python site-packages dir
 install: all
-ifeq ($(PYTHON_EXT_STATIC_LINK), )  # i.e., not TRUE
+ifeq ($(PYTHON_EXT_STATIC_LINK), FALSE)
 	$(PYTHON) setup.py install
 endif
 
 # NB: unfortunately, distutils doesn't support uninstall 
 uninstall:
-#ifeq ($(PYTHON_EXT_STATIC_LINK), ) # i.e., not TRUE
+#ifeq ($(PYTHON_EXT_STATIC_LINK), FALSE)
 #	$(PYTHON) setup.py uninstall
 #endif
 
