@@ -12,6 +12,9 @@
 #include "../rtstuff/rtdefs.h"
 #include "../H/dbug.h"
 
+/* #define TBUG 1 */
+/* #define ALLBUG 1 */
+
 extern "C" {
   void rtsendsamps(void);
   void rtsendzeros(int);
@@ -25,6 +28,8 @@ double baseTime;
 long elapsed;
 
 IBusClass checkClass(BusSlot *slot) {
+  if (slot == NULL)
+	return UNKNOWN;
   if ((slot->auxin_count > 0) && (slot->auxout_count > 0))
 	return AUX_TO_AUX;
   if ((slot->auxout_count > 0) && (slot->out_count > 0))
@@ -42,7 +47,7 @@ extern "C" {
     short rtInst;
     short playEm;
     int i,j,chunksamps;
-    int heapSize,rtQSize;
+    int heapSize,rtQSize,allQSize;
     int offset,endsamp;
     int keepGoing;
     int dummy;
@@ -136,6 +141,9 @@ extern "C" {
 		  for(i=0;i<bus_count;i++) {
 			bus = Iptr->bus_config->auxout[i];
 			busq = bus+bus_q_offset;
+#ifdef TBUG
+			cout << "Pushing on TO_AUX[" << busq << "] rtQueue\n";
+#endif
 			rtQueue[busq].push(Iptr);
 		  }
 		  break;
@@ -145,6 +153,9 @@ extern "C" {
 		  for(i=0;i<bus_count;i++) {
 			bus = Iptr->bus_config->auxout[i];
 			busq = bus+bus_q_offset;
+#ifdef TBUG
+			cout << "Pushing on AUX_TO_AUX[" << busq << "] rtQueue\n";
+#endif
 			rtQueue[busq].push(Iptr);
 		  }
 		  break;
@@ -154,6 +165,9 @@ extern "C" {
 		  for(i=0;i<bus_count;i++) {
 			bus = Iptr->bus_config->out[i];
 			busq = bus+bus_q_offset;
+#ifdef TBUG
+			cout << "Pushing on TO_OUT[" << busq << "] rtQueue\n";
+#endif
 			rtQueue[busq].push(Iptr);
 		  }
 		  break;
@@ -163,6 +177,9 @@ extern "C" {
 		  for(i=0;i<bus_count;i++) {
 			bus = Iptr->bus_config->out[i];
 			busq = bus+bus_q_offset;
+#ifdef TBUG
+			cout << "Pushing on TO_OUT2[" << busq << "] rtQueue\n";
+#endif
 			rtQueue[busq].push(Iptr);
 		  }
 		  bus_count = Iptr->bus_config->auxout_count;
@@ -170,6 +187,9 @@ extern "C" {
 		  for(i=0;i<bus_count;i++) {
 			bus = Iptr->bus_config->auxout[i];
 			busq = bus+bus_q_offset;
+#ifdef TBUG
+			cout << "Pushing on TO_AUX2[" << busq << "] rtQueue\n";
+#endif
 			rtQueue[busq].push(Iptr);
 		  }
 		  break;
@@ -188,6 +208,7 @@ extern "C" {
 	  qStatus = TO_AUX;
 	  play_bus = 0;
 	  aux_pb_done = NO;
+	  allQSize = 0;
 	  
 	  // rtQueue[] playback shuffling ----------------------------------------
 	  while (!aux_pb_done) {
@@ -214,16 +235,36 @@ extern "C" {
 		}
 
 		busq = bus+bus_q_offset;
-		rtQSize = rtQueue[busq].getSize();
-		if (bus == -1) // DJT might be a better way, but this should work
-		  rtQSize = 0;
-		if (rtQSize > 0)
-		  chunkStart = rtQueue[busq].nextChunk();
-		
+		if (bus != -1 ) {
+		  rtQSize = rtQueue[busq].getSize();
+		  allQSize += rtQSize;
+		  if (rtQSize > 0)
+			chunkStart = rtQueue[busq].nextChunk();
+		}		  
+		else {
+		  switch (qStatus) {
+		  case TO_AUX:
+			qStatus = AUX_TO_AUX;
+			play_bus = 0;
+			break;
+		  case AUX_TO_AUX:
+			qStatus = TO_OUT;
+			play_bus = 0;
+			break;
+		  case TO_OUT:
+			aux_pb_done = YES;
+			break;
+		  default:
+			cout << "ERROR (intraverse): unknown bus_class\n";
+			break;
+		  }
+		}
+
 		// Play elements on queue (insert back in if needed) - - - - - - - -
-		while ((rtQSize > 0) && (chunkStart < bufEndSamp)) {
+		while ((rtQSize > 0) && (chunkStart < bufEndSamp) && (bus != -1)) {
 		  
 #ifdef ALLBUG
+		  cout << "Begin iteration==========\n";
 		  cout << "Q-chunkStart:  " << chunkStart << endl;
 		  cout << "bufEndSamp:  " << bufEndSamp << endl;
 		  cout << "RTBUFSAMPS:  " << RTBUFSAMPS << endl;
@@ -234,7 +275,7 @@ extern "C" {
 		  
 		  // difference in sample start (countdown)
 		  offset = chunkStart - bufStartSamp;  
-  
+		  
 		  if (offset < 0) { // BGG: added this trap for robustness
 			cout << "WARNING: the scheduler is behind the queue!" << endl;
 			offset = 0;
@@ -251,6 +292,9 @@ extern "C" {
 		  
 		  Iptr->setchunk(chunksamps);  // set "chunksamps"
 		  
+#ifdef TBUG
+		  cout << "Iptr->exec(" << bus_type << "," << bus << ")\n";
+#endif		  
 		  Iptr->exec(bus_type, bus);    // write the samples * * * * * * * * * 
 		  
 		  // ReQueue or delete - - - - - - - - - - - - - - - - - - -
@@ -269,36 +313,19 @@ extern "C" {
 		  rtQSize = rtQueue[busq].getSize();
 		  if (rtQSize)
 			chunkStart = rtQueue[busq].nextChunk();
-		}
-		
-		switch (qStatus) {
-		case TO_AUX:
-		  if (bus == -1) {
-			qStatus = AUX_TO_AUX;
-			play_bus = 0;
-		  }
-		  break;
-		case AUX_TO_AUX:
-		  if (bus == -1) {
-			qStatus = TO_OUT;
-			play_bus = 0;
-		  }
-		  break;
-		case TO_OUT:
-		  if (bus == -1) {
-			aux_pb_done = YES;
-		  }
-		  break;
-		default:
-		  cout << "ERROR (intraverse): unknown bus_class\n";
-		  break;
+#ifdef TBUG
+		  cout << "rtQSize: " << rtQSize << endl;
+		  cout << "chunkStart:  " << chunkStart << endl;
+		  cout << "chunksamps:  " << chunksamps << endl;
+		  cout << "Iteration done==========\n";
+#endif
 		}
 	  }
 	  
 	  // Write buf to audio device -------------------------------------------
 	  if (chunkStart >= bufEndSamp) {  
 #ifdef ALLBUG
-		cout << "Writing samples\n";
+		cout << "Writing samples----------\n";
 		cout << "Q-chunkStart:  " << chunkStart << endl;
 		cout << "bufEndSamp:  " << bufEndSamp << endl;
 #endif
@@ -331,23 +358,22 @@ extern "C" {
 		heapChunkStart = rtHeap.getTop();
 	  }
 	  pthread_mutex_unlock(&heapLock);
-	  // DJT: this might be unecessary
-	  // but might cause problems without!
-	  if (busq > 0) {
-		rtQSize = rtQueue[busq].getSize();
-	  }
-	  else {
-		rtQSize = 0;
-	  }
+
 	  // Nothing on the queue and nothing on the heap for playing -------------
 	  // write zeros
-	  if (!(rtQSize) && (heapChunkStart > bufEndSamp)) {
+	  if (!(allQSize) && (heapChunkStart > bufEndSamp)) {
 		
 		// FIXME: old comment -- still valid?  -JGG
 		// Write audio buffer to file
 		// ***FIXME: this writes extra MAXBUF zeros to end of file
 		// ***need to make intraverse aware of what it's doing (e.g, server?)
 
+#ifdef TBUG
+		cout << "Queue and Heap empty ----------\n";
+		cout << "rtQSize: " << rtQSize << endl;
+		cout << "chunkStart:  " << chunkStart << endl;
+		cout << "chunksamps:  " << chunksamps << endl;
+#endif
 		if (rtInst)
 		  rtsendzeros(1);   // send zeros to audio device and to file
 		
@@ -365,10 +391,13 @@ extern "C" {
 		bufEndSamp += RTBUFSAMPS;
       }
 
-
       if (!rtInteractive) {  // Ending condition
-		if ((heapSize == 0) && (rtQSize == 0)) {
-		  // printf("PLAYEM = 0\n");
+		if ((heapSize == 0) && (allQSize == 0)) {
+#ifdef TBUG
+		  cout << "heapSize:  " << heapSize << endl;
+		  cout << "rtQSize:  " << rtQSize << endl;
+		  cout << "PLAYEM = 0\n";
+#endif
 		  playEm = 0;
 		}
       }
