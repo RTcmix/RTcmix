@@ -4,6 +4,7 @@ fixes that we don't bother putting here.
 Sunday, June 20, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * New spline table type for maketable.
+   * Added shifttable, quantizetable.
 
 Saturday, June 19, 2004 John Gibson <johgibso-at-indiana.edu>
 
