@@ -20,7 +20,6 @@ int
 main(int argc, char *argv[])
 {
 	RTcmix *rrr;
-	int term;
 	int num;
 	unsigned totalcmds = 0;
 	int numcommands = 4;
@@ -66,7 +65,6 @@ main(int argc, char *argv[])
 		rrr->printOn();
 	else
 		rrr->printOff();
-	sleep(1); // give the thread time to initialized
 
 	rrr->cmd("load", 1, "../../insts.std/STRUM/libSTRUM.so");
 	rrr->cmd("load", 1, "../../insts.std/TRANS/libTRANS.so");
@@ -113,8 +111,6 @@ main(int argc, char *argv[])
 				rrr->cmd("STEREO", 5, 0.0, 0.0, pval3, 0.04, pval2);
 				totalcmds += 2;
 				break;
-			case 27: /* ESC shuts it down */
-				return(1);
 			default:
 				break;
 		}
@@ -135,4 +131,5 @@ main(int argc, char *argv[])
 		  checkCount = checkInterval;
 		}
 	}
+	return 0;
 }
