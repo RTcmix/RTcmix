@@ -1,7 +1,7 @@
 #include <objlib.h>
 
 class JFIR : public Instrument {
-   int     inchan, insamps, skip;
+   int     inchan, insamps, skip, bypass;
    float   amp, spread;
    float   *in, *amparray, amptabs[2];
    NZero   *filt;

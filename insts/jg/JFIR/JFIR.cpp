@@ -7,6 +7,7 @@
    p4 = filter order (higher order allows steeper slope)
    p5 = input channel [optional, default is 0]
    p6 = stereo spread (0 - 1) [optional, default is .5 for stereo output]
+   p7 = bypass filter (0: no, 1: yes) [optional, default is 0]
 
    Can only process 1 channel at a time. To process stereo, call twice --
    once with inchan=0 and spread=1, again with inchan=1 and spread=0.
@@ -75,6 +76,7 @@ int JFIR :: init(float p[], int n_args)
    order = (int)p[4];
    inchan = (int)p[5];
    spread = n_args > 6 ? p[6] : 0.5;             /* default is center */
+   bypass = n_args > 7 ? (int) p[7] : 0;         /* default is no */
 
    ringdur = (float)order / SR;
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
@@ -144,7 +146,10 @@ int JFIR :: run()
          insig = 0.0;
 
       insig *= aamp;
-      out[0] = filt->tick(insig);
+      if (bypass)
+         out[0] = insig;
+      else
+         out[0] = filt->tick(insig);
 
 #ifdef DEBUG
 printf("%4d:  %18.12f ->%18.12f ->%18.12f ->%18.12f\n",
