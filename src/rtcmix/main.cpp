@@ -2,7 +2,7 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-//#define DBUG
+#define DBUG
 //#define DENORMAL_CHECK
 #define MAIN
 #include <pthread.h>

@@ -378,7 +378,10 @@ void RTcmix::panic()
 void RTcmix::close()
 {
 	run_status = RT_SHUTDOWN;
-	closesf_noexit();
+	//	closesf_noexit();
+      close_audio_ports();
+      rtreportstats();
+      rtcloseout();
 }
 
 
