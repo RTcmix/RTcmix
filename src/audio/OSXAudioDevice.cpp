@@ -628,7 +628,7 @@ int OSXAudioDevice::doGetFrameCount() const
 	return _impl->frameCount;
 }
 
-AudioDevice *createAudioDevice(const char *)
+AudioDevice *createAudioDevice(const char *, const char *, bool)
 {
 	return new OSXAudioDevice;
 }

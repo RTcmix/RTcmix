@@ -5,6 +5,7 @@
 #ifndef ALSA
 
 #include "OSSAudioDevice.h"
+#include "AudioIODevice.h"
 #include <sys/soundcard.h>
 #include <sys/time.h>
 #include <sys/ioctl.h>
@@ -15,6 +16,10 @@
 #include <string.h>	// strerror()
 
 #include <sndlibsupport.h>	// RTcmix header
+
+// TO DO:  Loop up default device in open()
+
+#define DEFAULT_DEVICE "/dev/dsp"
 
 OSSAudioDevice::OSSAudioDevice(const char *devPath)
 	: _inputDeviceName(devPath), _outputDeviceName(devPath), _bytesPerFrame(0)
@@ -242,9 +247,22 @@ void OSSAudioDevice::run()
 //	printf("OSSAudioDevice::run: thread exiting\n");
 }
 
-AudioDevice *createAudioDevice(const char *path)
+AudioDevice *createAudioDevice(const char *inputDesc, const char *outputDesc, bool fullDuplex)
 {
-	return new OSSAudioDevice(path);
+	AudioDevice *theDevice;
+	if (fullDuplex) {
+		// Create dual device if input and out are set and input != output.
+		if (inputDesc && outputDesc && strcmp(inputDesc, outputDesc))
+			theDevice = new AudioIODevice(new OSSAudioDevice(inputDesc), 
+										  new OSSAudioDevice(outputDesc));
+		else
+			theDevice = new OSSAudioDevice(inputDesc ? inputDesc : outputDesc ? outputDesc : DEFAULT_DEVICE);
+	}
+	// Create single device.
+	else {
+		theDevice = new OSSAudioDevice(inputDesc ? inputDesc : outputDesc ? outputDesc : DEFAULT_DEVICE);
+	}
+	return theDevice;
 }
 
 #endif	// !ALSA

@@ -187,10 +187,10 @@ JackAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 	return error("Not implemented");
 }
 
-// If your audio device needs a string descriptor, it will come in via 'path'.
-// Change your constructor to take a const char *path argument and pass it here.
+// If your audio device(s) needs a string descriptor, it will come in via 'inputDesc'
+// and/or 'outputDesc', allowing you to specify different HW for record and play.
 
-AudioDevice *createAudioDevice(const char *path)
+AudioDevice *createAudioDevice(const char *inputDesc, const char *outputDesc, bool fullDuplex)
 {
 	return new JackAudioDevice;
 }
