@@ -43,6 +43,13 @@ extern FILE *infile_desc[50];   /* contains file descriptors for data files */
       fewer than <tablesize> args, the remaining table slots
       are set to zero.
 
+      This function returns the number of elements placed into the
+      table, not including any zero-padding. This is useful if you
+      want to know how many elements the array contains, but don't
+      want to count them manually. Just use a larger <tablesize>
+      than you're likely to need, and get the real table size from
+      the value returned to Minc by makegen.
+
    Note that this code distinguishes between the old and new ways
    by the number of pfields. If there are only 4 pfields (i.e., 
    gen->nargs is 1), then it assumes the old way. Otherwise, it
@@ -55,7 +62,7 @@ extern FILE *infile_desc[50];   /* contains file descriptors for data files */
 double
 gen2(struct gen *gen)
 {
-   int i;
+   int i, num_elements;
 
    if (gen->nargs > 1) {        /* new way */
       int slots;
@@ -71,6 +78,8 @@ gen2(struct gen *gen)
 
       while (i < gen->size)     /* fill remainder (if any) with zeros */
          gen->array[i++] = 0.0;
+
+      num_elements = slots;
    }
    else {                       /* old way */
       float val;
@@ -107,15 +116,15 @@ gen2(struct gen *gen)
       if (i > gen->size)
          warn("gen2", "Out of array space!");
 
-      advise("gen2", "%d values loaded into array.",
-                                          (i <= gen->size) ? i : gen->size);
+      num_elements = (i <= gen->size) ? i : gen->size;
+      advise("gen2", "%d values loaded into array.", num_elements);
 
       i--;
       while (++i < gen->size)      /* fill remainder (if any) with zeros */
          gen->array[i] = 0.0;
    }
 
-   return 0.0;
+   return (double) num_elements;
 }
 
 
