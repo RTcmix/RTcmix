@@ -14,7 +14,7 @@
 
 #define DEFAULT_DEVICE "/dev/dsp"
 
-#define DEBUG 1
+#define DEBUG 0
 
 #if DEBUG > 1
 #define PRINT0 if (1) printf
