@@ -6,6 +6,7 @@
 #include <PField.h>
 #include <string.h>
 #include <stdio.h>   // for snprintf
+#include <math.h>
 
 inline int max(int x, int y) { return (x >= y) ? x : y; }
 inline int min(int x, int y) { return (x < y) ? x : y; }
@@ -291,5 +292,50 @@ double ReversePField::doubleValue(double didx) const
 double ReversePField::doubleValue(int idx) const
 {
 	return field()->doubleValue((_len - 1) - idx);
+}
+
+// ConverterPField
+
+ConverterPField::ConverterPField(PField *innerPField,
+					 ConverterPField::ConverterFunction cfun)
+	: PFieldWrapper(innerPField), _converter(cfun)
+{
+}
+
+double ConverterPField::doubleValue(double percent) const
+{
+	double val = field()->doubleValue(percent);
+	return (*_converter)(val);
+}  
+
+double ConverterPField::doubleValue(int idx) const
+{
+	double val = field()->doubleValue(idx);
+	return (*_converter)(val);
+}  
+
+double ConverterPField::ampdb(const double db)
+{
+	return pow(10.0, db / 20.0);
+}
+
+#define MIDC_OFFSET 261.62556530059868 / 256.0
+
+double ConverterPField::cpsoct(const double oct)
+{
+	return pow(2.0, oct) * MIDC_OFFSET;
+}
+
+double ConverterPField::octpch(const double pch)
+{
+	int octave = (int) pch;
+	double semitone = (100.0 / 12.0) * (pch - octave);
+	return octave + semitone;
+}
+
+double ConverterPField::cpspch(const double pch)
+{
+	double oct = octpch(pch);
+	return pow(2.0, oct) * MIDC_OFFSET;
 }
 

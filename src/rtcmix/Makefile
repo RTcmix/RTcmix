@@ -78,7 +78,8 @@ rtwritesamps.cpp \
 set_option.cpp \
 sockit.cpp \
 table.cpp \
-connection.cpp
+connection.cpp \
+converter.cpp
 
 # This is not linked into librtcmix
 #rtprofile.cpp

@@ -197,6 +197,23 @@ private:
 	int		_len;
 };
 
-	
+// Class for converting values read from another PField.
+
+class ConverterPField : public PFieldWrapper {
+public:
+	typedef double (*ConverterFunction)(double);
+	static double ampdb(const double);
+	static double cpsoct(const double);
+	static double octpch(const double);
+	static double cpspch(const double);
+
+	ConverterPField(PField *innerPField, ConverterFunction cfun);
+	virtual double doubleValue(double percent) const;
+	virtual double doubleValue(int indx = 0) const;
+private:
+	ConverterFunction _converter;
+};
+
+
 #endif	// _PFIELD_H_
 
