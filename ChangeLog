@@ -1,3 +1,14 @@
+Thursday, Jan 21, 2002 Dave Topper <topper@virginia.edu>
+
+   * New feature: real time control of pfield change.  ALPHA version.
+     Instruments can now have pfields controlled in real time.  Trajectories
+     can be set according to makegen functions, and time value pairs used to
+     specifiy which pfield should be what value, when.  See the docs inside
+     insts.vccm for more detailed info (pfpath_manual_short,
+     pfpath_user's_manual, rsd_users_manual).
+     NOTE: Only the instruments in the insts.vccm package work with this
+     feature currently.  Also, this feature does not yet work under Mac OS X.
+
 Tuesday, Jan 1, 2002 John Gibson <johgibso@indiana.edu>
 
    * Support for audio input under MacOS X.
