@@ -82,6 +82,8 @@ int WAVESHAPE::run()
 	float index;
 	int branch;
 
+	Instrument::run();
+
 	aamp = amp;            /* in case ampenv == NULL */
 
 	branch = 0;
@@ -103,7 +105,7 @@ int WAVESHAPE::run()
 		val3 *= ampi;
 		out[0] = val3;
 
-		if (NCHANS == 2) { /* split stereo files between the channels */
+		if (outputchans == 2) { /* split stereo files between the channels */
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
 			}
@@ -122,6 +124,8 @@ makeWAVESHAPE()
 	WAVESHAPE *inst;
 
 	inst = new WAVESHAPE();
+	inst->set_bus_config("WAVESHAPE");
+
 	return inst;
 }
 

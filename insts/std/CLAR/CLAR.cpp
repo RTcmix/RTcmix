@@ -76,6 +76,8 @@ int CLAR::run()
 	float del2sig,csig,ssig;
 	int branch;
 
+	Instrument::run();
+
 	aamp = 1.0;        /* in case amparr == NULL */
 
 	branch = 0;
@@ -107,7 +109,7 @@ int CLAR::run()
 		delput(sig,del2,dl2);
 		delput(sig,del1,dl1);
 		out[0] = sig * amp * oamp;
-		if (NCHANS == 2) {
+		if (outputchans == 2) {
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
 			}
@@ -126,6 +128,8 @@ makeCLAR()
 	CLAR *inst;
 
 	inst = new CLAR();
+	inst->set_bus_config("CLAR");
+
 	return inst;
 }
 

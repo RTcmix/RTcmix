@@ -15,16 +15,12 @@ extern "C" {
 
 FIR::FIR() : Instrument()
 {
-	in = new float [MAXBUF];
+	in = NULL;
 }
 
 FIR::~FIR()
 {
 	delete [] in;
-#ifdef CRASHME
-	delete [] pastsamps;
-	delete [] coefs;
-#endif
 }
 
 
@@ -45,6 +41,11 @@ int FIR::init(float p[], short n_args)
 
 	int i;
 
+	if (outputchans != 1) {
+		fprintf(stderr, "Ouput of FIR must be mono.\n");
+		exit(1);
+	}
+
 	rtsetinput(p[1], this);
 	nsamps = rtsetoutput(p[0], p[2], this);
 
@@ -63,6 +64,11 @@ int FIR::run()
 {
 	int i,j,rsamps;
 	float out[2];
+
+	if (in == NULL)        /* first time, so allocate it */
+		in = new float [RTBUFSAMPS * inputchans];
+
+	Instrument::run();
 
 	rsamps = chunksamps*inputchans;
 	rtgetin(in, this, rsamps);
@@ -91,6 +97,8 @@ makeFIR()
 	FIR *inst;
 
 	inst = new FIR();
+	inst->set_bus_config("FIR");
+
 	return inst;
 }
 

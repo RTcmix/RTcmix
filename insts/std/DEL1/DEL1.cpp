@@ -14,7 +14,7 @@ extern "C" {
 
 DEL1::DEL1() : Instrument()
 {
-    in = new float[MAXBUF];
+    in = NULL;
     delarray = NULL;
 }
 
@@ -38,7 +38,7 @@ int DEL1::init(float p[], short n_args)
 	nsamps = rtsetoutput(p[0], p[2]+p[4], this);
 	insamps = (int)(p[2] * SR);
 
-	if (NCHANS != 2) {
+	if (outputchans != 2) {
 		fprintf(stderr,"output must be stereo!!!!!!!\n");
 		return(-1);
 		}
@@ -78,6 +78,11 @@ int DEL1::run()
 	float aamp;
 	int branch;
 
+	if (in == NULL)     /* first time, so allocate it */
+		in = new float [RTBUFSAMPS * inputchans];
+
+	Instrument::run();
+
 	rsamps = chunksamps*inputchans;
 
 	rtgetin(in, this, rsamps);
@@ -114,6 +119,8 @@ makeDEL1()
 	DEL1 *inst;
 
 	inst = new DEL1();
+	inst->set_bus_config("DEL1");
+
 	return inst;
 }
 

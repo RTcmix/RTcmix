@@ -64,6 +64,8 @@ int SCULPT::run()
 	float si;
 	float overamp, aamp;
 
+	Instrument::run();
+
 	overamp = amp;            /* in case amptable == NULL */
 
 	for (i = 0; i < chunksamps; i++) {
@@ -77,7 +79,7 @@ int SCULPT::run()
 			}
 		out[0] = oscil(aamp, si, wave, len, &phase);
 
-		if (NCHANS == 2) { /* split stereo files between the channels */
+		if (outputchans == 2) { /* split stereo files between the channels */
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
 			}
@@ -96,6 +98,8 @@ makeSCULPT()
 	SCULPT *inst;
 
 	inst = new SCULPT();
+	inst->set_bus_config("SCULPT");
+
 	return inst;
 }
 
