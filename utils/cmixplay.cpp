@@ -34,14 +34,14 @@
 */
 
 #ifdef LINUX
-	#include <values.h>
+   #include <values.h>
    #define DEFAULT_DEVICE_NAME "plughw"
    #define BUF_FRAMES          1024
    #define ROBUST_FACTOR       4
 #endif
 
 #ifdef MACOSX
-	#include <limits.h>
+   #include <limits.h>
    #define DEFAULT_DEVICE_NAME NULL
    #define BUF_FRAMES          1024
    // 4 glitches ... why?   XXX: still true?
@@ -124,14 +124,14 @@ class Player {
 public:
    Player(const char       *fileName,
           const char       *deviceName,
-          const float      startTime,
-          const float      endTime,
+          const double     startTime,
+          const double     endTime,
           const int        playChan,
           const int        requestedBufFrames,   
           const float      rescaleFactor,
           const bool       forcePeak,
           const bool       useHotKeys,
-          const float      hotKeySkipTime,
+          const double     hotKeySkipTime,
           const bool       autoPause,
           const bool       quiet,
           const TimeFormat timeFormat
@@ -157,14 +157,14 @@ protected:
 private:
    const char  *_fileName;
    const char  *_deviceName;
-   float       _startTime;
-   float       _endTime;
+   double      _startTime;
+   double      _endTime;
    int         _playChan;
    int         _deviceFrames;
    float       _factor;
    bool        _force;
    bool        _useHotKeys;
-   float       _hotKeySkipTime;
+   double      _hotKeySkipTime;
    bool        _autoPause;
    bool        _quiet;
    TimeFormat  _timeFormat;
@@ -175,16 +175,16 @@ private:
    int         _fileChans;
    int         _datumSize;
    int         _fileSamps;    // number of samples, not frames, in file
-   float       _fileDur;
+   double      _fileDur;
    int         _dataLocation;
    bool        _isFloatFile;
    bool        _is24bitFile;
-   bool		   _is32bitFile;
+   bool        _is32bitFile;
    bool        _swap;
    int         _framesRead;
    int         _bufSamps;
    int         _endFrame;
-   float       _bufStartTime;
+   double      _bufStartTime;
    int         _bufStartFrame;
    long        _skipBytes;
    int         _curSecond;
@@ -207,14 +207,14 @@ private:
 Player::Player(
    const char        *fileName,
    const char        *deviceName,
-   const float       startTime,
-   const float       endTime,
+   const double      startTime,
+   const double      endTime,
    const int         playChan,
    const int         requestedBufFrames,   
    const float       rescaleFactor,
    const bool        forcePeak,
    const bool        useHotKeys,
-   const float       hotKeySkipTime,
+   const double      hotKeySkipTime,
    const bool        autoPause,
    const bool        quiet,
    const TimeFormat  timeFormat)
@@ -343,7 +343,7 @@ Player::openInputFile()
    _sRate = mus_header_srate();
    _fileChans = mus_header_chans();
    _fileSamps = mus_header_samples();
-   _fileDur = (float) (_fileSamps / _fileChans) / (float) _sRate;
+   _fileDur = (double) (_fileSamps / _fileChans) / (double) _sRate;
    _datumSize = mus_header_data_format_to_bytes_per_sample();
 
    return StatusGood;
@@ -369,7 +369,7 @@ Player::computeRescaleFactor()
          if (sfc.peak[n] > peak)
             peak = sfc.peak[n];
       if (peak > 0.0) {
-         float tmpFactor = 32767.0 / peak;
+         double tmpFactor = 32767.0 / peak;
          if (_factor) {
             if (_factor > tmpFactor && !_force) {
                fprintf(stderr, CLIPPING_FORCE_FACTOR_MSG, _factor);
@@ -499,17 +499,25 @@ Player::doHotKeys(int framesRead)
                   _gotoBuf[len] = 0;
             }
             else if (c == '\n') {   // prepare to exit goto mode
-               double seconds = get_seconds(_gotoBuf, &_timeFormat);
-               if (seconds >= 0.0) {        // update params for skip
-                  int gotoFrame = (int) (seconds * _sRate + 0.5);
-                  int skipFrames = gotoFrame - _bufStartFrame;
-                  _bufStartFrame = gotoFrame;
-                  _skipBytes = (long) (skipFrames * _fileChans * _datumSize);
-                  if (!_quiet) {
-                     _bufStartTime = seconds;
-                     _curSecond = (int) seconds;
+               if (len > 0) {
+                  double seconds = get_seconds(_gotoBuf, &_timeFormat);
+                  if (seconds >= 0.0) {        // update params for skip
+                     if (seconds > _fileDur) {
+                        seconds = _fileDur - 2.0;
+                        if (seconds < 0.0)
+                           seconds = 0.0;
+                        printf("\nRequest is past end of file...correcting.");
+                     }
+                     int gotoFrame = (int) (seconds * _sRate + 0.5);
+                     int skipFrames = gotoFrame - _bufStartFrame;
+                     _bufStartFrame = gotoFrame;
+                     _skipBytes = (long) (skipFrames * _fileChans * _datumSize);
+                     if (!_quiet) {
+                        _bufStartTime = seconds;
+                        _curSecond = (int) seconds;
+                     }
+                     skip = true;
                   }
-                  skip = true;
                }
                _gotoPending = false;
                if (!_quiet)
@@ -530,14 +538,19 @@ Player::doHotKeys(int framesRead)
             }
          }
          else if (c == 'f') {       // fast-forward
-            skip = true;
-            int skipFrames = (int) (_hotKeySkipTime * _sRate + 0.5);
-            _skipBytes = (long) (skipFrames * _fileChans * _datumSize);
-            _bufStartFrame += skipFrames;
-            if (!_quiet) {
-               _bufStartTime += _hotKeySkipTime;
-               _curSecond += (int) _hotKeySkipTime;
-               printf("\n");
+            double curTime = (double) _bufStartFrame / (double) _sRate;
+            if (curTime + _hotKeySkipTime > _fileDur)
+               printf("\nRequest is past end of file.\n");
+            else {
+               skip = true;
+               int skipFrames = (int) (_hotKeySkipTime * _sRate + 0.5);
+               _skipBytes = (long) (skipFrames * _fileChans * _datumSize);
+               _bufStartFrame += skipFrames;
+               if (!_quiet) {
+                  _bufStartTime += _hotKeySkipTime;
+                  _curSecond += (int) _hotKeySkipTime;
+                  printf("\n");
+               }
             }
          }
          else if (c == 'r') {       // rewind
@@ -658,7 +671,7 @@ Player::readBuffer()
       perror("read");
       return -1;
    }
-   if (bytesRead == 0)          // EOF
+   if (bytesRead == 0)        // EOF
       return 0;
 
    int sampsRead = bytesRead / _datumSize;
@@ -677,8 +690,8 @@ Player::readBuffer()
             _outBuf[i] = bufp[i] * _factor;
       }
    }
-   else if (_is32bitFile) {	// 32bit int
-  	 static const float intScale = 32768.0f/INT_MAX;
+   else if (_is32bitFile) {   // 32bit int
+      static const float intScale = 32768.0f / INT_MAX;
       int *bufp = (int *) _inBuf;
       if (_swap) {
          for (int i = 0; i < sampsRead; i++) {
@@ -740,7 +753,7 @@ Player::readBuffer()
    }
 
    _bufStartFrame += framesRead;
-   _bufStartTime += (float) framesRead / (float) _sRate;
+   _bufStartTime += (double) framesRead / (double) _sRate;
 
    return framesRead;
 }
@@ -890,14 +903,14 @@ get_seconds(const char timestr[], TimeFormat *format)
       char *pos = NULL;
       double minutes = strtod(str, &pos);
       if ((minutes == 0.0 && pos == str) || errno == ERANGE) {
-         fprintf(stderr, "Error converting time string (min:sec format).\n");
+         fprintf(stderr, "\nError converting time string (min:sec format).\n");
          free(str);
          return -1.0;
       }
       pos = NULL;
       seconds = strtod(p, &pos);
       if ((seconds == 0.0 && pos == p) || errno == ERANGE) {
-         fprintf(stderr, "Error converting time string (min:sec format).\n");
+         fprintf(stderr, "\nError converting time string (min:sec format).\n");
          free(str);
          return -1.0;
       }
@@ -908,7 +921,7 @@ get_seconds(const char timestr[], TimeFormat *format)
       char *pos = NULL;
       seconds = strtod(str, &pos);
       if ((seconds == 0.0 && pos == str) || errno == ERANGE) {
-         fprintf(stderr, "Error converting time string (seconds format).\n");
+         fprintf(stderr, "\nError converting time string (seconds format).\n");
          free(str);
          return -1.0;
       }
@@ -1002,7 +1015,8 @@ main(int argc, char *argv[])
 {
    int         play_chan, requested_bufframes;
    bool        quiet, robust, force, hotkeys, autopause;
-   float       start_time, end_time, request_dur, factor, hk_skip_time;
+   float       factor;
+   double      start_time, end_time, request_dur, hk_skip_time;
    char        *file_name, *device_name;
    Player      *player;
    Status      status;
@@ -1016,7 +1030,8 @@ main(int argc, char *argv[])
    quiet = robust = force = autopause = false;
    play_chan = ALL_CHANS;
    hotkeys = true;
-   start_time = end_time = request_dur = factor = 0.0;
+   factor = 0.0f;
+   start_time = end_time = request_dur = 0.0;
    hk_skip_time = SKIP_SECONDS;
 
    for (int i = 1; i < argc; i++) {
