@@ -33,7 +33,7 @@
 /* Scale <num>, which falls in range [0,1] so that it falls
    in range [min,max].  Return result.    -JGG, 12/4/01
 */
-static INLINE double
+static double
 fit_range(double min, double max, double num)
 {
    return min + (num * (max - min));
