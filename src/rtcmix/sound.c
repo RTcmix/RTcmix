@@ -41,13 +41,10 @@
 
 #ifdef USE_SNDLIB
 #include "../H/sndlibsupport.h"
-#include <errno.h>
-static short header_type[NFILES];
-static short data_format[NFILES];
-#endif /* USE_SNDLIB */
+#endif
 
 /* Used to determine if we should swap endian-ness */
-extern int swap;
+extern int swap;       /* defined in check_byte_order.c */
 int swap_bytes[NFILES];
 short is_Next[NFILES];
 extern short isNext;
@@ -112,10 +109,6 @@ double m_open(float *p, short n_args, double *pp)
 	char *malloc();
 	int   fno,i,new;
 	float *opk;
-#ifdef USE_SNDLIB
-	int   fd, err;
-	SFComment sfc;
-#endif
 
 	i = (int) pp[0];
 	name = (char *) i;
@@ -134,100 +127,42 @@ double m_open(float *p, short n_args, double *pp)
 		close(sfd[fno]);
 	}
 	else new = 1;
-	isopen[fno] = 1;
 
 	istape[fno] = (n_args == 4) ? 1 : 0;
 			/* in the case of a tape, there will be a 
 			   4th argument listing the file number */
 
-#ifdef USE_SNDLIB
-
-	/* init sndlib (these won't init more than once) */
-	create_header_buffer();
-
-    /* make sure file exists */
-	fd = open(name, O_RDONLY);
-	if (fd < 0) {
-		fprintf(stderr, "Can't open \"%\" (%s)\n", name, strerror(errno));
-		closesf();
-	}
-	close(fd);
-
-	/* read header; copy into our data structure */
-	if (c_read_header(name) < 0)
-		closesf();
-	if (stat(name, &sfst[fno])) {
-		fprintf(stderr, "cannot get status on %s\n", name);
-		closesf();
-	}
-	header_type[fno] = c_snd_header_type();
-	data_format[fno] = c_snd_header_format();
-	headersize[fno] = c_snd_header_data_location();
-	sfdesc[fno].sfinfo.sf_magic = 0;  /* unused */
-	sfdesc[fno].sfinfo.sf_srate = (float)c_snd_header_srate();
-	sfdesc[fno].sfinfo.sf_chans = c_snd_header_chans();
-	sfdesc[fno].sfinfo.sf_packmode = c_snd_header_datum_size();
-	sfdesc[fno].sfinfo.sf_codes = 0;  /* yikes! */
-
-	/* make sure it's a header we can deal with */
-	if (sfdesc[fno].sfinfo.sf_chans > SF_MAXCHAN) {
-		fprintf(stderr, "\"%s\" has too many channels\n", name);
-		fprintf(stderr, "This version of RTcmix can handle %d chans.\n", SF_MAXCHAN);
-		closesf();
-	}
-	if (!SUPPORTED_DATA_FORMAT(data_format[fno])) {
-		fprintf(stderr, "\"%s\" not in a supported data format\n", name);
-		fprintf(stderr, "This version of RTcmix accepts 16-bit linear and\n");
-		fprintf(stderr, "32-bit float formats (in either byte order)\n");
-		closesf();
-	}
-
-	/* reopen the file with the appropriate mode */
-	fd = open(name, status[fno]);
-	if (fd < 0) {
-		fprintf(stderr, "Can't open \"%\" (%s)\n", name, strerror(errno));
-		closesf();
-	}
-	sfd[fno] = fd;
-
-	/* seek to beg of snd data, like rwopensf (not really necessary) */
-	lseek(fd, headersize[fno], SEEK_SET);
-
- #ifdef SNDLIB_LITTLE_ENDIAN
-	swap_bytes[fno] = (data_format[fno] == snd_16_linear
-					|| data_format[fno] == snd_32_float);
- #else
-	swap_bytes[fno] = (data_format[fno] == snd_16_linear_little_endian
-					|| data_format[fno] == snd_32_float_little_endian);
- #endif
-	if (print_is_on) {
-		printf("name: %s   sr: %f   nchans: %d  class: %d sfd[fno] %d \n",name,
-			sfsrate(&sfdesc[fno]),sfchans(&sfdesc[fno]),
-			sfclass(&sfdesc[fno]),sfd[fno]);
-		printf("Soundfile type: %s\n", sound_type_name(header_type[fno]));
-		printf("   data format: %s\n", sound_format_name(data_format[fno]));
-		printf("Duration of file is %f seconds.\n",
-			(float)c_snd_header_data_size()
-			/ (float)(c_snd_header_chans() * c_snd_header_srate()));
-	}
-
-#else /* !USE_SNDLIB */
-
 	rwopensf(name,sfd[fno],sfdesc[fno],sfst[fno],"CMIX",i,status[fno]);
-	swap_bytes[fno] = swap;
+	if (i < 0)
+		closesf();
+
+#ifdef USE_SNDLIB
+	if (status[fno] == O_RDWR
+			&& !WRITEABLE_HEADER_TYPE(sfheadertype(&sfdesc[fno]))) {
+		fprintf(stderr, "m_open: can't write this type of header.\n");
+		closesf();
+	}
+#endif
+
+	isopen[fno] = 1;
+
+	swap_bytes[fno] = swap;  /* swap and isNext set in rwopensf */
 	is_Next[fno] = isNext;
-	
-	if(i<0) closesf();
 	headersize[fno] = getheadersize(&sfdesc[fno]);
+
 	if(print_is_on) {
-		printf("name: %s   sr: %f   nchans: %d  class: %d sfd[fno] %d \n",name,
+		printf("name: %s   sr: %.3f  nchans: %d  class: %d\n",name,
 			sfsrate(&sfdesc[fno]),sfchans(&sfdesc[fno]),
 			sfclass(&sfdesc[fno]),sfd[fno]);
+#ifdef USE_SNDLIB
+		printf("Soundfile type: %s\n",
+				sound_type_name(sfheadertype(&sfdesc[fno])));
+		printf("   data format: %s\n",
+				sound_format_name(sfdataformat(&sfdesc[fno])));
+#endif
 		printf("Duration of file is %f seconds.\n",
 			(float)(sfst[fno].st_size - headersize[fno])/(float)sfclass(&sfdesc[fno])/(float)sfchans(&sfdesc[fno])/sfsrate(&sfdesc[fno]));
 	}
-
-#endif /* !USE_SNDLIB */
 
 	originalsize[fno] = istape[fno] ? 999999999 : sfst[fno].st_size;
 	/*
@@ -274,29 +209,12 @@ double m_open(float *p, short n_args, double *pp)
 
 #ifdef USE_SNDLIB
 
-	/* In sndlib version, we store peak stats differently.
-	   See comments in sndlibsupport.c for an explanation.
+	/* In the sndlib version, we store peak stats differently. See
+	   comments in sndlibsupport.c for an explanation. The sndlib
+	   version of rwopensf reads peak stats, so here we just have to
+	   copy these into the sfm[fno] array. (No swapping necessary.)
 	*/
-
-	/* Read peak stats, if any, from file. */
-	err = sndlib_get_current_header_comment(name, &sfc);
-	if (err) {
-		/* errors reported in prev function */
-		closesf();
-	}
-
-	/* Copy stats into SFMAXAMP struct for this file. */
-	for (i = 0; i < sfchans(&sfdesc[fno]); i++) {
-		if (sfc.offset == -1) {    /* no peak stats in file */
-			sfm[fno].value[i] = 0.0;
-			sfm[fno].samploc[i] = 0L;
-		}
-		else {
-			sfm[fno].value[i] = sfc.peak[i];
-			sfm[fno].samploc[i] = sfc.peakloc[i];
-		}
-	}
-	sfm[fno].timetag = 0L;   /* sndlib version doesn't maintain this */
+	memcpy(&sfm[fno], &(sfmaxampstruct(&sfdesc[fno])), sizeof(SFMAXAMP));
 
 #else /* !USE_SNDLIB */
 
@@ -811,15 +729,6 @@ endnote(xno)
 		if(*(pk+i) > notepeak) notepeak = *(pk+i);
 	}
 	
-#ifdef USE_SNDLIB
-
-	err = sndlib_set_header_comment(sfname[fno],
-					sfm[fno].value, sfm[fno].samploc, NULL);
-	if (err)
-		closesf();
-
-#else /* !USE_SNDLIB */
-
 	gettimeofday(&tp,&tzp);
 	sfmaxamptime(&sfm[fno]) = tp.tv_sec;
 		
@@ -829,35 +738,48 @@ endnote(xno)
 		closesf();
 	}
 
-#endif /* !USE_SNDLIB */
 
 	times(&timbuf);
 
-	fprintf(stderr,"\n(%6.2f)",(float)(
+	printf("\n(%6.2f)",(float)(
 					(timbuf.tms_stime-clockin[fno].tms_stime)+
 					(timbuf.tms_utime-clockin[fno].tms_utime))/60.);
-	fprintf(stderr," %9.4f .. %9.4f MM ",starttime[fno],total);
+	printf(" %9.4f .. %9.4f MM ",starttime[fno],total);
 	
 	if(!peakoff[fno]) {
 		for(j=0;j<sfchans(&sfdesc[fno]);j++)
-			fprintf(stderr," c%d=%e",j,*(pk+j));
-		fprintf(stderr,"\n");
+			printf(" c%d=%e",j,*(pk+j));
+		printf("\n");
 		if(punch[fno]) {
-			fprintf(stderr,"alter(%e,%e,%e/%e",
+			printf("alter(%e,%e,%e/%e",
 						(double)starttime[fno],(double)(total-starttime[fno]),
 						punch[fno],notepeak);
 			for(i=0; i<sfchans(&sfdesc[fno]); i++)
-				fprintf(stderr,",1 ");
-			fprintf(stderr,")\n");
-			fprintf(stderr,"mix(%g,%g,%g,%g/%g",
+				printf(",1 ");
+			printf(")\n");
+			printf("mix(%g,%g,%g,%g/%g",
 							(double)starttime[fno],(double)starttime[fno],-(double)(total-starttime[fno]),punch[fno],notepeak);
 			for(i=0; i<sfchans(&sfdesc[fno]); i++)
-				fprintf(stderr,",%d ",i);
-			fprintf(stderr,")\n");
+				printf(",%d ",i);
+			printf(")\n");
 		}
 	}
 
-#ifndef USE_SNDLIB
+#ifdef USE_SNDLIB
+
+	/* Copy the updated peak stats into the SFHEADER struct for this
+	   output file. (No swapping necessary.)
+	*/
+	memcpy(&(sfmaxampstruct(&sfdesc[fno])), &sfm[fno], sizeof(SFMAXAMP));
+
+	/* Write header to file. */
+	if (wheader(sfd[fno], &sfdesc[fno])) {
+		fprintf(stderr, "endnote: bad header write\n");
+		perror("write");
+		closesf();
+	}
+
+#else /* !USE_SNDLIB */
 
 	/* This was the last part of the biggest pain in the ass I ever */
 	/* had to deal with in all my hacking into cmix.  In short, byte_swapping */
@@ -1007,21 +929,17 @@ peak_off(p,n_args)
 float *p;
 {
 	peakoff[(int)p[0]] = (char)p[1];
-	if(p[1]) fprintf(stderr,
-		     "      peak check turned off for file %d\n",(int)p[0]);
+	if(p[1]) printf("      peak check turned off for file %d\n",(int)p[0]);
 		else
-		 fprintf(stderr,
-		     "      peak check turned on for file %d\n",(int)p[0]);
+		 printf("      peak check turned on for file %d\n",(int)p[0]);
 }
 punch_on(p,n_args)
 float *p;
 {
 	punch[(int)p[0]] = p[1];
-	if(!p[1]) fprintf(stderr,
-		     "      punch turned off for file %d\n",(int)p[0]);
+	if(!p[1]) printf("      punch turned off for file %d\n",(int)p[0]);
 		else
-		 fprintf(stderr,
-		     "      punch check turned on for file %d\n",(int)p[0]);
+		 printf("      punch check turned on for file %d\n",(int)p[0]);
 }
 
 _readit(fno)
@@ -1162,7 +1080,7 @@ int fno;
 	}
   
 	if(!play_is_on)
-		fprintf(stderr,".");
+		printf(".");
 
 	return(n);
 }
@@ -1194,21 +1112,9 @@ closesf()
 
 	for(i = 0; i<NFILES; i++) {
 		if(isopen[i]) {
-#ifdef USE_SNDLIB
-			if (status[i]) {
-				int bytes_of_data = lseek(sfd[i], 0L, SEEK_END);
-				if (bytes_of_data >= headersize[i]) {
-					bytes_of_data -= headersize[i];
-					c_update_header_with_fd(sfd[i],
-								header_type[i],
-								bytes_of_data);
-				}
-				else
-					fprintf(stderr, "closesf: bad lseek\n");
-			}
-#else /* !USE_SNDLIB */
-			if(status[i]) 
-				putlength(sfname[i],sfd[i],&sfdesc[i]);  /* if NeXT header */
+			if (status[i]) 
+				putlength(sfname[i], sfd[i], &sfdesc[i]);
+#ifndef USE_SNDLIB
  #ifdef sgi
 			if(sfdesc[i].sfinfo.handle) AFclosefile(sfdesc[i].sfinfo.handle);
 			sfdesc[i].sfinfo.handle = NULL;
@@ -1223,10 +1129,6 @@ closesf()
 m_clean(p,n_args)
 float *p;		/* a fast clean of file, after header */
 {
-#ifdef USE_SNDLIB
-	/* probably not worth trying to make this work */
-	fprintf(stderr,"Clean not supported in this version of cmix.\n");
-#else /* !USE_SNDLIB */
 /* if p1-> = 0, clean whole file, else skip=p1, dur=p2, ch-on? p3--> */
 	int i,todo,nwrite,n;
 	char *point;
@@ -1239,7 +1141,11 @@ float *p;		/* a fast clean of file, after header */
 		fprintf(stderr,"fno %d is write-protected!\n",fno);
 		closesf();
 	}
+#ifdef USE_SNDLIB
+	todo = originalsize[fno] - headersize[fno];
+#else
 	todo = originalsize[fno] - sizeof(SFHEADER);
+#endif
 
 	segment = (n_args > 1) ? 1 : 0;
 
@@ -1262,7 +1168,7 @@ float *p;		/* a fast clean of file, after header */
 		fprintf(stderr,"CMIX: bad sflseek in clean\n");
 		closesf();
 	}
-	fprintf(stderr,"Clean %d bytes\n",todo);
+	printf("Clean %d bytes\n",todo);
 	while(todo) {
 		nwrite = (todo > nbytes) ? nbytes : todo;
 		if(segment) {
@@ -1297,7 +1203,7 @@ float *p;		/* a fast clean of file, after header */
 			sfmaxamploc(&sfm[fno],i) = 0;
 		}
 
-		putsfcode(&sfdesc[fno],&sfm[fno],&ampcode);
+		putsfcode(&sfdesc[fno],(char *)&sfm[fno],&ampcode);
 
 		if(wheader(sfd[fno],(char *)&sfdesc[fno])) {
 			fprintf(stderr,"Bad header write\n");
@@ -1311,8 +1217,7 @@ float *p;		/* a fast clean of file, after header */
 			closesf();
 		}
 	filepointer[fno] = headersize[fno];
-	fprintf(stderr,"Clean successfully finished.\n");
-#endif /* !USE_SNDLIB */
+	printf("Clean successfully finished.\n");
 }
 
 m_zapout(fno,buffer,nwrite,chlist)

@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
 #include "../H/sndlibsupport.h"
 
 /* #define DEBUG */
@@ -30,26 +35,49 @@ enum {
 #define MAXSRATE               96000
 
 #define USAGE_MSG  "\
-  option     description                    default                      \n\
-  ---------------------------------------------------------------------  \n\
-  -r NUM     sampling rate                  [44100]                      \n\
-  -c NUM     number of channels             [2]                          \n\
-  -i or -f   16-bit integer or 32-bit float [16-bit integer]             \n\
-  -b or -l   big-endian or little-endian    [LE for wav, BE for others]  \n\
-  -t NAME    file format name; one of...    [aiff, aifc for float]       \n\
-             aiff, aifc, wav, next, sun, ircam                           \n\
-             (sun is a synonym for next)                                 \n\
-                                                                         \n\
-  (Defaults take effect unless overridden by supplied values.)           \n\
-                                                                         \n\
-  NOTE: The following combinations are not available:                    \n\
-        aiff and -l                                                      \n\
-        aiff and -f (will substitute aifc here)                          \n\
-        aifc and -f and -l together (aifc floats are BE only)            \n\
-        ircam and -l                                                     \n\
-        next and -l                                                      \n\
-        wav and -b                                                       \n\
+  option     description                    default                     \n\
+  --------------------------------------------------------------------- \n\
+  -r NUM     sampling rate                  [44100]                     \n\
+  -c NUM     number of channels             [2]                         \n\
+  -i or -f   16-bit integer or 32-bit float [16-bit integer]            \n\
+  -b or -l   big-endian or little-endian    [LE for wav, BE for others] \n\
+  -t NAME    file format name; one of...    [aiff, aifc for float]      \n\
+             aiff, aifc, wav, next, sun, ircam                          \n\
+             (sun is a synonym for next)                                \n\
+                                                                        \n\
+  Defaults take effect unless overridden by supplied values.            \n\
+                                                                        \n\
+  If filename exists and seems to be a sound file, its header will      \n\
+  be overwritten with the one specified. If that might result in some   \n\
+  loss or corruption of sound data, the program will warn about this    \n\
+  and require you to use the \"--force\" flag on the command line.      \n\
+                                                                        \n\
+  NOTE: The following combinations are not available:                   \n\
+        aiff and -l                                                     \n\
+        aiff and -f (will substitute aifc here)                         \n\
+        aifc and -f and -l together (aifc floats are BE only)           \n\
+        ircam and -l                                                    \n\
+        next and -l                                                     \n\
+        wav and -b                                                      \n\
 "
+
+
+#define OVERWRITE_WARNING                                                 \
+"You're asking to change the header type or sound data format of an     \n\
+existing file. Changing the header type could result in good samples    \n\
+deleted from the beginning of the file (or garbage samples added there).\n\
+Also, channels could be swapped; sample words could even be corrupted.  \n\
+Changing the data format specified in the header would cause a program  \n\
+to interpret the existing sound data in a new way, probably as loud,    \n\
+painful noise. If you still want to write over the header, run the      \n\
+program with the \"--force\" option."
+
+#define WORD_INTEGRITY_WARNING                                            \
+"WARNING: Sample words have been corrupted!"
+
+#define CHANNEL_SWAP_WARNING                                              \
+"WARNING: Channels have been swapped!"
+
 
 char *progname, *sfname = NULL;
 int srate = DEFAULT_SRATE;
@@ -62,104 +90,25 @@ char comment[DEFAULT_COMMENT_LENGTH] = "";
 char format_name[FORMAT_NAME_LENGTH] = DEFAULT_FORMAT_NAME;
 
 /* these are assigned in check_params */
-int header_type;
-int data_format;
+static int header_type;
+static int data_format;
+static int is_aifc = FALSE;
 
-int main(int, char **);
-static int check_params(void);
 static void usage(void);
+static int check_params(void);
 
 
-/* Create a soundfile header of the specified type. The usage msg above
-   describes the kind of types you can create. (These are ones that
-   sndlib can write and that can be useful to the average cmix user.
-   There are other kinds of header sndlib can write -- for example,
-   for 24-bit files -- but we want to keep the sfcreate syntax as
-   simple as possible.
-
-   We allocate a generous comment area, because expanding it after
-   sound has already been written would mean copying the entire file.
-   (We use comments to store peak stats -- see sndlibsupport.c.)
-*/
-
-int
-main(int argc, char *argv[])
+/* ---------------------------------------------------------------- usage --- */
+static void
+usage()
 {
-   int     i, nsamps, loc, err;
-
-   /* get name of this program */
-   progname = strrchr(argv[0], '/');
-   if (progname == NULL)
-      progname = argv[0];
-   else
-      progname++;
-
-   if (argc < 2)
-      usage();
-
-   for (i = 1; i < argc; i++) {
-      char *arg = argv[i];
-
-      if (arg[0] == '-') {
-         switch (arg[1]) {
-            case 'c':
-               if (++i >= argc)
-                  usage();
-               nchans = atoi(argv[i]);
-               break;
-            case 'r':
-               if (++i >= argc)
-                  usage();
-               srate = atoi(argv[i]);
-               break;
-            case 'i':
-               is_short = TRUE;
-               break;
-            case 'f':
-               is_short = FALSE;
-               break;
-            case 'b':
-               endian = CREATE_BIG_ENDIAN;
-               break;
-            case 'l':
-               endian = CREATE_LITTLE_ENDIAN;
-               break;
-            case 't':
-               if (++i >= argc)
-                  usage();
-               strncpy(format_name, argv[i], FORMAT_NAME_LENGTH - 1);
-               format_name[FORMAT_NAME_LENGTH - 1] = 0;  /* ensure termination */
-               break;
-            default:  
-               usage();
-         }
-      }
-      else
-         sfname = arg;
-   }
-   if (sfname == NULL)
-      usage();
-
-   if (check_params())
-      usage();
-
-   create_header_buffer();
-
-// ***FIXME: see if file exists already ... what to do then?
-// CAUTION: writing a header on it will truncate file, I think!!
-// Not the familiar cmix behavior.  Use c_write_header_with_fd?
-
-   for (i = 0; i < DEFAULT_COMMENT_LENGTH; i++)
-      comment[i] = '\0';
-
-   nsamps = loc = 0;
-   err = c_write_header(sfname, header_type, srate, nchans, loc, nsamps,
-                                data_format, comment, DEFAULT_COMMENT_LENGTH);
-
-   return 0;
+   printf("\nusage: \"%s [options] filename\"\n\n", progname);
+   printf("%s", USAGE_MSG);
+   exit(1);
 }
 
 
+/* --------------------------------------------------------- check_params --- */
 /* Convert user specifications into a form we can hand off to sndlib.
    Validate input, and make sure the combination of parameters specifies
    a valid sound file format type (i.e., one whose header sndlib can write).
@@ -168,8 +117,6 @@ main(int argc, char *argv[])
 static int
 check_params()
 {
-   int is_aifc = FALSE;
-
    if (nchans < 1 || nchans > MAXCHANS) {
       fprintf(stderr, "Number of channels must be between 1 and %d.\n\n",
               MAXCHANS);
@@ -259,12 +206,226 @@ check_params()
 }
 
 
-static void
-usage()
+/* ----------------------------------------------------------------- main --- */
+/* Create a soundfile header of the specified type. The usage msg above
+   describes the kind of types you can create. (These are ones that
+   sndlib can write and that can be useful to the average cmix user.
+   There are other kinds of header sndlib can write -- for example,
+   for 24-bit files -- but we want to keep the sfcreate syntax as
+   simple as possible.
+
+   We allocate a generous comment area, because expanding it after a
+   sound has already been written would mean copying the entire file.
+   (We use comments to store peak stats -- see sys/sndlibsupport.c.)
+*/
+int
+main(int argc, char *argv[])
 {
-   printf("\nusage: \"%s [options] filename\"\n\n", progname);
-   printf("%s\n", USAGE_MSG);
-   exit(1);
+   int         i, fd, result, overwrite_file, old_format;
+   int         data_location, old_data_location, old_nsamps, old_datum_size;
+   int         force = FALSE;
+   struct stat statbuf;
+
+   /* get name of this program */
+   progname = strrchr(argv[0], '/');
+   if (progname == NULL)
+      progname = argv[0];
+   else
+      progname++;
+
+   if (argc < 2)
+      usage();
+
+   for (i = 1; i < argc; i++) {
+      char *arg = argv[i];
+
+      if (arg[0] == '-') {
+         switch (arg[1]) {
+            case 'c':
+               if (++i >= argc)
+                  usage();
+               nchans = atoi(argv[i]);
+               break;
+            case 'r':
+               if (++i >= argc)
+                  usage();
+               srate = atoi(argv[i]);
+               break;
+            case 'i':
+               is_short = TRUE;
+               break;
+            case 'f':
+               is_short = FALSE;
+               break;
+            case 'b':
+               endian = CREATE_BIG_ENDIAN;
+               break;
+            case 'l':
+               endian = CREATE_LITTLE_ENDIAN;
+               break;
+            case 't':
+               if (++i >= argc)
+                  usage();
+               strncpy(format_name, argv[i], FORMAT_NAME_LENGTH - 1);
+               format_name[FORMAT_NAME_LENGTH - 1] = 0; /* ensure termination */
+               break;
+            case '-':
+               if (strcmp(arg, "--force") == 0)
+                  force = TRUE;
+               else
+                  usage();
+               break;
+            default:  
+               usage();
+         }
+      }
+      else
+         sfname = arg;
+   }
+   if (sfname == NULL)
+      usage();
+
+   if (check_params())
+      usage();
+
+   old_data_location = old_nsamps = 0;
+
+   /* Test for existing file. If there is one, and we can read and write it,
+      and it seems to be a sound file, and the force flag is set ...
+      then we'll overwrite its header.
+      If there isn't an existing file, we'll create a new one.
+   */
+   overwrite_file = FALSE;
+   result = stat(sfname, &statbuf);
+   if (result == -1) {
+      if (errno == ENOENT) {       /* file doesn't exist, we'll create one */
+         fd = open(sfname, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+         if (fd == -1) {
+            fprintf(stderr, "Error creating file \"%s\" (%s)\n",
+                                                      sfname, strerror(errno));
+            exit(1);
+         }
+      }
+      else {
+         fprintf(stderr,
+              "File \"%s\" exists, but there was an error accessing it (%s)\n",
+                                                      sfname, strerror(errno));
+         exit(1);
+      }
+   }
+   else {
+      int type, drastic_change;
+
+      overwrite_file = TRUE;
+
+      /* File exists and we could stat it. If it's a regular file, open
+         it and see if it looks like a sound file.
+      */
+      if (!S_ISREG(statbuf.st_mode)) {
+         fprintf(stderr, "\"%s\" exists, but it's not a regular file.\n",
+                                                                      sfname);
+         exit(1);
+      }
+      fd = open(sfname, O_RDWR);
+      if (fd == -1) {
+         fprintf(stderr, "Error opening file (%s)\n", strerror(errno));
+         exit(1);
+      }
+      if (sndlib_read_header(fd) == -1) {
+         fprintf(stderr, "Error reading header (%s)\n", strerror(errno));
+         exit(1);
+      }
+      type = c_snd_header_type();
+      old_format = c_snd_header_format();
+      if (NOT_A_SOUND_FILE(type) || INVALID_DATA_FORMAT(old_format)) {
+         fprintf(stderr,
+               "\"%s\" exists, but doesn't look like a sound file.\n", sfname);
+         exit(1);
+      }
+
+      if (type == AIFF_sound_file
+                               && is_aifc != sndlib_current_header_is_aifc())
+         drastic_change = TRUE;
+      else if (type != header_type || old_format != data_format)
+         drastic_change = TRUE;
+      else
+         drastic_change = FALSE;
+
+      if (drastic_change && !force) {
+         fprintf(stderr, "%s\n", OVERWRITE_WARNING);
+         exit(1);
+      }
+
+      old_data_location = c_snd_header_data_location();
+      old_nsamps = c_snd_header_data_size();         /* samples, not frames */
+      old_datum_size = c_snd_header_datum_size();
+   }
+
+   result = sndlib_write_header(fd, 0, header_type, data_format, srate, nchans,
+                                                        NULL, &data_location);
+   if (result == -1) {
+      fprintf(stderr, "Error writing header (%s)\n", strerror(errno));
+      exit(1);
+   }
+
+   /* If we're overwriting a header, we have to fiddle around a bit
+      to get the correct data_size into the header.
+      (These will not likely be the same if we're changing header types.)
+   */
+   if (overwrite_file) {
+      int loc_byte_diff, datum_size, sound_bytes;
+
+      /* need to do this again */
+      if (sndlib_read_header(fd) == -1) {
+         fprintf(stderr, "Error re-reading header (%s)\n", strerror(errno));
+         exit(1);
+      }
+
+      if (data_format != old_format)
+        if (! FORMATS_SAME_BYTE_ORDER(data_format, old_format))
+            printf("WARNING: Byte order changed!\n");
+
+      datum_size = c_snd_header_datum_size();
+
+      loc_byte_diff = data_location - old_data_location;
+
+      /* If the data locations have changed, we're effectively adding or
+         subtracting sound data bytes. Depending on the number of bytes
+         added, this could result in swapped channels or worse. We can't
+         do anything about this, because our scheme for encoding peak stats
+         in the header comment requires a fixed comment allocation in the
+         header. (Otherwise, we could shrink or expand this to make things
+         right.) The best we can do is warn the user.
+      */
+      if (loc_byte_diff) {
+         if (loc_byte_diff > 0)
+            printf("Losing %d bytes of sound data\n", loc_byte_diff);
+         else if (loc_byte_diff < 0)
+            printf("Gaining %d bytes of sound data\n", -loc_byte_diff);
+
+         if (loc_byte_diff % datum_size)
+            printf("%s\n", WORD_INTEGRITY_WARNING);
+         else if (loc_byte_diff % (nchans * datum_size))
+            printf("%s\n", CHANNEL_SWAP_WARNING);
+         /* else got lucky: no shifted words or swapping */
+
+         sound_bytes = (old_nsamps * old_datum_size) - loc_byte_diff;  
+      }
+      else                               /* same number of bytes as before */
+         sound_bytes = old_nsamps * old_datum_size;  
+
+      result = sndlib_set_header_data_size(fd, header_type, sound_bytes);
+      if (result == -1) {
+         fprintf(stderr, "Error updating header\n");
+         exit(1);
+      }
+
+      close(fd);
+   }
+   else
+      close(fd);
+
+   return 0;
 }
 
 
@@ -281,7 +442,7 @@ usage()
 #include <signal.h>
 #include <errno.h>
 
-extern int swap;
+int swap;
 
 static SFCODE	ampcode = {
 	SF_MAXAMP,
@@ -415,7 +576,7 @@ usage:	if(argc < 7) {
 
 	if((sf = open(sfname,O_CREAT|O_RDWR,0644)) < 0 ) {
 		printf("Can't open file %s\n",sfname);
-		exit(-2);
+		exit(2);
 		}
 	if(comment && isnative)
 		printf("You cannot write a comment into a native file with this program.\n");
@@ -446,7 +607,7 @@ usage:	if(argc < 7) {
 
 		if (putsfcode(&sfh,&sfcm,&commentcode) < 0) {
 			printf("comment didn't get written, sorry!\n");
-			exit(-1);
+			exit(1);
 			}
 	}
 	else {
@@ -470,7 +631,7 @@ usage:	if(argc < 7) {
 
 		if (putsfcode(&sfh,&sfcm,&commentcode) < 0) {
 				printf("comment didn't get written, sorry!\n");
-				exit(-1);
+				exit(1);
 				}
 	}
 
@@ -517,7 +678,7 @@ writeit:
 	if(wheader(sf,(char *)&sfh)) {
 	       printf("Can't seem to write header on file %s\n",sfname);
 		perror("main");
-		exit(-1);
+		exit(1);
 	}
 	
 	if(dur) {
@@ -530,7 +691,7 @@ writeit:
 			todo = (nbytes > NBYTES) ? NBYTES : nbytes;
 			if(write(sf,buffer,todo) <= 0) {
 				printf("Bad write on file\n");
-				exit(-1);
+				exit(1);
 			}
 			nbytes -= todo;
 		}

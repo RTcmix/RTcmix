@@ -76,6 +76,87 @@ double m_DUR(float *p, int n_args)   /* returns duration for rtinput() files */
   return(inputFileTable[rtInputIndex].dur);
 }
 
+#ifdef USE_SNDLIB
+
+/* Note: the old versions of the peak info functions copy peak stats from
+   the file header in memory into the sfm[fno] array maintained in sound.c.
+   This seems unnecessary, since both are initialized on opening any file
+   and updated on endnote. When would they ever be different from the
+   perspective of these info functions, which can't be called from Minc
+   in the *middle* of an instrument run? Are they also called internally,
+   like m_dur?  -JGG
+*/ 
+double
+m_peak(float p[], int n_args)
+{
+	int      n, fno;
+	float    peak, chanpeak;
+
+	fno = p[0];
+	if (!isopen[fno]) {
+		fprintf(stderr, "You haven't opened file %d yet!\n", fno);
+		closesf();
+	}
+
+	peak = 0.0;
+
+	if (sfmaxamptime(&sfm[fno]) > 0L) {
+		for (n = 0; n < sfchans(&sfdesc[fno]); n++) {
+			chanpeak = sfmaxamp(&sfm[fno], n);
+			if (chanpeak > peak)
+				peak = chanpeak;
+		}
+	}
+	else
+		fprintf(stderr, "File %d has no peak stats!\n", fno);
+
+	return peak;
+}
+
+
+double
+m_left(float p[], int n_args)
+{
+	int      fno;
+
+	fno = p[0];
+	if (!isopen[fno]) {
+		fprintf(stderr, "You haven't opened file %d yet!\n", fno);
+		closesf();
+	}
+
+	if (sfmaxamptime(&sfm[fno]) > 0L)
+		return (sfmaxamp(&sfm[fno], 0));    /* for channel 0 */
+	else
+		fprintf(stderr, "File %d has no peak stats!\n", fno);
+
+	return 0.0;
+}
+
+
+double
+m_right(float p[], int n_args)
+{
+	int      fno;
+
+	fno = p[0];
+	if (!isopen[fno]) {
+		fprintf(stderr, "You haven't opened file %d yet!\n", fno);
+		closesf();
+	}
+
+	if (sfmaxamptime(&sfm[fno]) > 0L)
+		return (sfmaxamp(&sfm[fno], 1));    /* for channel 1 */
+	else
+		fprintf(stderr, "File %d has no peak stats!\n", fno);
+
+	return 0.0;
+}
+
+
+#else /* !USE_SNDLIB */
+
+
 double m_peak(p,n_args)
 float *p;
 {
@@ -131,6 +212,10 @@ float *p;
 		return(sfmaxamp(&sfm[j],1));
 	return(0.);
 }
+
+
+#endif /* !USE_SNDLIB */
+
 
 extern int sfd[NFILES];
 

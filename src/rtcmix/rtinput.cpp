@@ -7,14 +7,10 @@
 
 #ifdef USE_SNDLIB
   #include <errno.h>
-  #include "../sndlib/sndlib.h"
+  #include "../H/sndlibsupport.h"
 #else
   #include "../H/sfheader.h"
 #endif
-
-#define UNKNOWN_TYPE_MSG                          \
-"%s is either a headerless sound file, an unknown \
-type of sound file, or not a sound file at all.\n"
 
 extern int print_is_on;
 extern float SR;
@@ -57,10 +53,8 @@ double rtinput(float *p, short n_args, double *pp)
 	AFfilehandle rtinfile;
 	ALconfig in_port_config;
 #endif
-#ifdef USE_SNDLIB
-	int err;
-#else
-        struct stat sfst;
+	struct stat sfst;
+#ifndef USE_SNDLIB
 	SFHEADER sfh;
 #endif
 	int n, fd, result, header_type, data_format, data_location, nsamps;
@@ -108,42 +102,52 @@ double rtinput(float *p, short n_args, double *pp)
 	/* See if this file has already been opened. */
 
 	for (n = 0; n < MAX_INPUT_FDS; n++) {
-	    if (!strcmp(inputFileTable[n].filename, rtsfname)) {
-		rtInputIndex = n;
-		return 0.0;
-	    }
+		if (!strcmp(inputFileTable[n].filename, rtsfname)) {
+			rtInputIndex = n;
+			return 0.0;
+		}
 	}
 
 	/* It's a new file name, so open it and read its header. */
 
 #ifdef USE_SNDLIB
 
-//***FIXME: make a new function for sndlibsupport.c that reads header,
-// checks for errors, and stores all relevant data into a struct (i.e.,
-// the one used for file descriptors in sgi rtcmix?)
-// As far as error checking goes, follow sfprint.c in jgcmix (shows how
-// to guard against reading directories, non-sound files, etc.)
+	/* See if file exists and is a regular file or link. */
+	if (stat(rtsfname, &sfst) == -1) {
+		fprintf(stderr, "%s: %s\n", rtsfname, strerror(errno));
+		return -1.0;
+	}
+	if (!S_ISREG(sfst.st_mode) && !S_ISLNK(sfst.st_mode)) {
+		fprintf(stderr, "%s is not a regular file or a link.\n", rtsfname);
+		return -1.0;
+	}
 
-	create_header_buffer();  /* these two calls init sndlib */
-	create_descriptors();
-
-	err = c_read_header(rtsfname);
-	if (err) {
-		fprintf(stderr, "Can't read header of \"%s\"\n", rtsfname);
+	/* Open the file and read its header. Then info available from
+	   sndlib query functions. We use the new API in sndlibsupport.c
+	   instead of the cmix legacy support, because we'll also use
+	   sndlib for file I/O in rtwritesamps.C and rtgetin.C. The legacy
+	   functions don't bother to set up sndlib I/O.
+	*/
+	fd = sndlib_open_read(rtsfname);
+	if (fd == -1) {
+		fprintf(stderr, "Can't read header of \"%s\" (%s)\n",
+												rtsfname, strerror(errno));
 		return -1.0;
 	}
 
 	header_type = c_snd_header_type();
-	if (header_type == unsupported_sound_file
-					|| header_type == raw_sound_file) {
-		fprintf(stderr, UNKNOWN_TYPE_MSG, rtsfname);
+
+	if (NOT_A_SOUND_FILE(header_type)) {
+		fprintf(stderr, "\"%s\" is probably not a sound file\n", rtsfname);
+		sndlib_close(fd, 0, 0, 0, 0);
 		return -1.0;
 	}
 
 	data_format = c_snd_header_format();
-	if (data_format == snd_unsupported || data_format == snd_no_snd) {
-		fprintf(stderr, "\"%s\" has unsupported sound data type\n",
-			rtsfname);
+
+	if (INVALID_DATA_FORMAT(data_format)) {
+		fprintf(stderr, "\"%s\" has invalid sound data format\n", rtsfname);
+		sndlib_close(fd, 0, 0, 0, 0);
 		return -1.0;
 	}
 
@@ -152,17 +156,6 @@ double rtinput(float *p, short n_args, double *pp)
 
 	inSR = (double)c_snd_header_srate();
 	inNCHANS = c_snd_header_chans();
-
-	/* file header is ok, so let's open the file for reading */
-
-	fd = open(rtsfname, O_RDONLY);
-	if (fd == -1) {
-		fprintf(stderr, "%s: %s\n", rtsfname, strerror(errno));
-		return -1.0;
-	}
-	open_clm_file_descriptors(fd, data_format, c_snd_header_datum_size(),
-								data_location);
-
 
 #else /* !USE_SNDLIB */
 
@@ -174,13 +167,6 @@ double rtinput(float *p, short n_args, double *pp)
 	inSR = sfsrate(&sfh);
 	inNCHANS = sfchans(&sfh);
 
-	/* NOTE NOTE NOTE:  Unless you compile rtcmix with -DNeXT, readopensf
-	   and getheadersize think a 28-byte NeXT header is 1024 bytes.  But
-	   sound.c won't compile with -DNeXT. Might be possible to compile
-	   *just* wheader.c with -DNeXT to solve this problem.  Otherwise
-	   we'll start reading sound at an offset of 1024, regardless of the
-	   real header size. (This is an old RTcmix Linux problem.)
-	*/
 	data_location = getheadersize(&sfh);
 	nsamps = (sfst.st_size - data_location) / sfclass(&sfh);
 

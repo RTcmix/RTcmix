@@ -10,46 +10,52 @@
 #include <time.h>
 #include "../H/sndlibsupport.h"
 
-#define UNKNOWN_TYPE_MSG                          \
-"%s is either a headerless sound file, an unknown \
-type of sound file, or not a sound file at all.\n"
-
 #define MAX_TIME_CHARS  64
 
-int main(int, char **);
-static time_t file_write_date(char *);
+#define PRINT_HEADER_SIZE
+
+static void usage(void);
 
 
-/* ------------------------------------------------------ file_write_date --- */
-/* nabbed from sndlib's sound.c */
-static time_t
-file_write_date(char *filename)
-{ 
-   int         result;
-   struct stat statbuf;
 
-   result = stat(filename, &statbuf);
-   if (result < 0)
-      return result;
-   return (statbuf.st_mtime);
-} 
+/* ---------------------------------------------------------------- usage --- */
+static void
+usage()
+{
+   printf("usage:  \"sfprint [options] file [file...]\"\n");
+   printf("        options:  -v verbose\n");
+   exit(1);
+}
 
 
 /* ----------------------------------------------------------------- main --- */
 int
 main(int argc, char *argv[])
 {
-   int         n, fd, header_type, srate, nchans, class, nsamps, result;
+   int         i, fd, header_type, data_format, data_location, verbose = 0;
+   int         nsamps, result, is_aifc, srate, nchans, class;
    float       dur;
    char        *sfname, timestr[MAX_TIME_CHARS];
-   time_t      date;
    SFComment   sfc;
    struct stat statbuf;
 
-   create_header_buffer();
+   if (argc < 2)
+      usage();
 
-   while (--argc) {
-      sfname = *++argv;
+   for (i = 1; i < argc; i++) {
+      char *arg = argv[i];
+
+      if (arg[0] == '-') {
+         switch (arg[1]) {
+            case 'v':
+               verbose = 1;
+               break;
+            default:
+               usage();
+         }
+         continue;
+      }
+      sfname = arg;
 
       /* see if file exists and we can read it */
 
@@ -58,11 +64,10 @@ main(int argc, char *argv[])
          fprintf(stderr, "%s: %s\n", sfname, strerror(errno));
          continue;
       }
-      close(fd);
 
       /* make sure it's a regular file or symbolic link */
 
-      result = stat(sfname, &statbuf);
+      result = fstat(fd, &statbuf);
       if (result == -1) {
          fprintf(stderr, "%s: %s\n", sfname, strerror(errno));
          continue;
@@ -74,44 +79,67 @@ main(int argc, char *argv[])
  
       /* read header and gather the data */
 
-      result = c_read_header(sfname);
+      result = sndlib_read_header(fd);
       if (result == -1) {
          fprintf(stderr, "\nCan't read header of \"%s\"!\n\n", sfname);
+         close(fd);
          continue;
       }
       header_type = c_snd_header_type();
-      if (header_type == unsupported_sound_file
-                                           || header_type == raw_sound_file) {
-         fprintf(stderr, UNKNOWN_TYPE_MSG, sfname);
+      if (NOT_A_SOUND_FILE(header_type)) {
+         fprintf(stderr, "\"%s\" is probably not a sound file\n", sfname);
+         close(fd);
          continue;
       }
+      is_aifc = sndlib_current_header_is_aifc();
+      data_format = c_snd_header_format();
+      data_location = c_snd_header_data_location();
       srate = c_snd_header_srate();
       nchans = c_snd_header_chans();
       class = c_snd_header_datum_size();           /* bytes per sample */
       nsamps = c_snd_header_data_size();           /* samples, not frames */
       dur = (float)(nsamps / nchans) / (float)srate;
 
-      date = file_write_date(sfname);
-      strftime(timestr, MAX_TIME_CHARS, "%a %d-%b-%y %H:%M %Z",
-                                                         localtime(&date));
-      result = sndlib_get_current_header_comment(sfname, &sfc);
+      result = sndlib_get_current_header_comment(fd, &sfc);
       if (result == -1) {
-         fprintf(stderr, "\nCan't read header comment of \"%s\"\n\n", sfname);
-         continue;
+         fprintf(stderr, "Can't read header comment!\n");
+         sfc.offset = -1;          /* make sure it's ignored below */
+         sfc.comment[0] = '\0';
+         /* but keep going */
       }
+
+      close(fd);                                   /* done with this now */
+
+      /* format maxamp timetag string, as in "Fri May 28 09:41:51 EDT 1999" */
+      if (sfc.offset != -1)
+         strftime(timestr, MAX_TIME_CHARS, "%a %b %d %H:%M:%S %Z %Y",
+                                                    localtime(&sfc.timetag));
 
       /* print it out */
 
       printf(":::::::::::::::::::\n%s\n:::::::::::::::::::\n", sfname);
-      printf("sr: %d nchans: %d class: 2\n", srate, nchans, class);
-      if (sfc.offset >= 0) {
+      printf("%s, %s\n", is_aifc? "AIFC" : sound_type_name(header_type),
+                                           sound_format_name(data_format));
+      printf("sr: %d  nchans: %d  class: %d\n", srate, nchans, class);
+      if (verbose)
+         printf("frames: %d\nheader size: %d bytes\n",
+                                             nsamps / nchans, data_location);
+      if (sfc.offset != -1) {
+         int n;
          for (n = 0; n < nchans; n++)
-            printf("channel %d: maxamp: %g loc: %d\n",
+            printf("channel %d:  maxamp: %g  loc: %ld\n",
                                            n, sfc.peak[n], sfc.peakloc[n]);
+         printf("maxamp updated: %s\n", timestr);
+         if (statbuf.st_mtime > sfc.timetag + 2)
+            printf("WARNING: maxamp stats not up-to-date -- run sndpeak.\n\n");
       }
-      printf("date=%s\n\n", timestr);
-      printf("Comment on soundfile: %s\n", sfc.comment);
-      printf("Duration of file is %f seconds.\n", dur);
+      else {
+         printf("(no maxamp stats)\n");
+      }
+      if (sfc.comment[0])
+         printf("comment: %s\n", sfc.comment);
+      printf("duration: %f seconds\n", dur);
+
    }
 
    return 0;
@@ -135,7 +163,7 @@ static SFCODE	ampcode = {
 	sizeof(SFMAXAMP) + sizeof(SFCODE)
 }; 
 
-extern int swap;
+int swap;
 
 main(argc,argv)
      

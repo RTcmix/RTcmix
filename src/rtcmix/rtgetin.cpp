@@ -50,20 +50,12 @@ int rtgetin(float *inarr, Instrument *theInst, int nsmps)
 	}
 
 #ifdef USE_SNDLIB
-// should do this somewhere else?
 
 	if (inbufs == NULL) {    /* 1st time, so allocate array of buffers */
-		inbufs = (int **)malloc(MAXCHANS * sizeof(int *));
+		inbufs = sndlib_allocate_buffers(MAXCHANS, RTBUFSAMPS);
 		if (inbufs == NULL) {
-			fprintf(stderr, "Can't allocate file input buffer!\n");
+			perror("rtgetin: Can't allocate input buffers");
 			exit(1);
-		}
-		for (n = 0; n < MAXCHANS; n++) {
-			inbufs[n] = (int *)malloc(RTBUFSAMPS * sizeof(int));
-			if (inbufs[n] == NULL) {
-				fprintf(stderr, "Can't allocate file input buffer!\n");
-				exit(1);
-			}
 		}
 	}
 

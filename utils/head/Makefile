@@ -1,32 +1,35 @@
 include ../makefile.conf
 
+SYSOBJS = ../sys/sfcodes.o ../sys/printsf.o ../sys/wheader.o ../sys/check_byte_order.o
+SYSLIBS = -lm   # only this, overriding makefile.conf
+
 ifeq ($(USE_SNDLIB),TRUE)
-   SFSTUFF = ../sys/sndlibsupport.o
+   SYSOBJS += ../sys/sndlibsupport.o
    SYSLIBS += ../sndlib/sndlib.a
-   HEAD = sfcreate sfprint   # for now; others later
+   HEAD = sfcreate sfprint sfshrink sfhedit  # for now; others later
 else
-   SFSTUFF = ../sys/wheader.o ../sys/sfcodes.o ../sys/printsf.o \
-	../sys/check_byte_order.o
    HEAD = sfhedit sfcreate sfprint sfextend sfshrink 
 endif
+
+CFLAGS += -Wall
 
 
 all: $(HEAD)
 
-sfhedit: sfhedit.o $(SFSTUFF)
-	cc -o sfhedit sfhedit.o $(SFSTUFF) $(SYSLIBS)
+sfhedit: sfhedit.o $(SYSOBJS)
+	cc -o sfhedit sfhedit.o $(SYSOBJS) $(SYSLIBS)
 
-sfextend: sfextend.o $(SFSTUFF)
-	cc -o sfextend sfextend.o $(SFSTUFF) $(SYSLIBS)
+sfextend: sfextend.o $(SYSOBJS)
+	cc -o sfextend sfextend.o $(SYSOBJS) $(SYSLIBS)
 
-sfshrink: sfshrink.o $(SFSTUFF)
-	cc -o sfshrink sfshrink.o $(SFSTUFF) $(SYSLIBS)
+sfshrink: sfshrink.o $(SYSOBJS)
+	cc -o sfshrink sfshrink.o $(SYSOBJS) $(SYSLIBS)
 
-sfcreate: sfcreate.o $(SFSTUFF)
-	cc -o sfcreate sfcreate.o $(SFSTUFF) $(SYSLIBS)
+sfcreate: sfcreate.o $(SYSOBJS)
+	cc -o sfcreate sfcreate.o $(SYSOBJS) $(SYSLIBS)
 
-sfprint: sfprint.o  $(SFSTUFF)
-	cc -o sfprint sfprint.o $(SFSTUFF) $(SYSLIBS)
+sfprint: sfprint.o  $(SYSOBJS)
+	cc -o sfprint sfprint.o $(SYSOBJS) $(SYSLIBS)
 
 install:
 	@echo "making install..."	

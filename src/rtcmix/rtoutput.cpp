@@ -16,6 +16,7 @@ int rtoutfile;
 
 static int clobber = 0;         /* Default clobber mode (see comment below) */
 
+
 /* ------------------------------------------------- set_rtoutput_clobber --- */
 void
 set_rtoutput_clobber(int state)
@@ -88,12 +89,10 @@ int output_data_format = -1;
 int normalize_output_floats = 0;
 char *rtoutsfname;
 
-static char comment[DEFAULT_COMMENT_LENGTH] = "";
-
 #define CLOBBER_WARNING       \
 "Specified output file already exists! \n\n\
 Turn on \"clobber mode\" in your score to overwrite it.\n\
-(Put \"CLOBBER(1)\" before call to rtoutput).\n"
+(Put \"set_option(\"CLOBBER_ON\")\" before call to rtoutput).\n"
 
 
 typedef enum {
@@ -105,7 +104,7 @@ typedef enum {
 
 typedef struct {
    ParamType  type;
-   int        identifier;
+   int        value;
    char       arg[16];
 } Param;
 
@@ -175,13 +174,13 @@ parse_rtoutput_args(int nargs, double pp[])
 
       switch (param_list[j].type) {
          case HEADER_TYPE:
-            output_header_type = param_list[j].identifier;
+            output_header_type = param_list[j].value;
             if (output_header_type == AIFF_sound_file
                                 && strcasecmp(param_list[j].arg, "aifc") == 0)
                aifc_requested = 1;
             break;
          case DATA_FORMAT:
-            output_data_format = param_list[j].identifier;
+            output_data_format = param_list[j].value;
             if (output_data_format == snd_32_float
                            && strcasecmp(param_list[j].arg, "normfloat") == 0)
                normfloat_requested = 1;
@@ -254,7 +253,7 @@ parse_rtoutput_args(int nargs, double pp[])
 double
 rtoutput(float p[], int n_args, double pp[])
 {
-   int         i, error, loc, nsamps;
+   int         error;
    struct stat statbuf;
 
    if (rtfileit == 1) {
@@ -294,39 +293,23 @@ rtoutput(float p[], int n_args, double pp[])
          /* try to delete it */
          error = unlink(rtoutsfname);
          if (error) {
-            fprintf(stderr, "Error deleting clobbered file \"%s\": %s\n",
+            fprintf(stderr, "Error deleting clobbered file \"%s\" (%s)\n",
                                                 rtoutsfname, strerror(errno));
             exit(1);
          }
       }
    }
 
-   /* make sure relevant parts of sndlib are initialized */
-   create_header_buffer();
-   create_descriptors();
-
-   for (i = 0; i < DEFAULT_COMMENT_LENGTH; i++)
-      comment[i] = '\0';
-
-   nsamps = loc = 0;
-   error = c_write_header(rtoutsfname, output_header_type, (int)SR, NCHANS,
-                          loc, nsamps, output_data_format, comment,
-                          DEFAULT_COMMENT_LENGTH);
-   if (error == -1) {
-      fprintf(stderr, "%s: can't write header for output file\n", rtoutsfname); 
-      exit(1);
-   }
-   rtoutfile = clm_open_write(rtoutsfname);
+   rtoutfile = sndlib_create(rtoutsfname, output_header_type,
+                                         output_data_format, (int)SR, NCHANS);
    if (rtoutfile == -1) {
-      fprintf(stderr, "%s: can't write header for output file\n", rtoutsfname); 
+      fprintf(stderr, "Can't write \"%s\" (%s)\n",
+                                                rtoutsfname, strerror(errno));
       exit(1);
    }
-   open_clm_file_descriptors(rtoutfile, output_data_format,
-                             c_snd_datum_size(output_data_format),
-                             c_snd_header_data_location());
 
    if (print_is_on) {
-     printf("Input file %s set for reading\n", rtoutsfname);
+     printf("Output file %s set for writing\n", rtoutsfname);
      printf("    type:  %s\n", sound_type_name(output_header_type));
      printf("  format:  %s\n\n", sound_format_name(output_data_format));
    }

@@ -13,6 +13,30 @@
 int swap;
 short isNext;
 
+#ifdef USE_SNDLIB
+
+#include "../H/sndlibsupport.h"
+
+/* Assuming rheader called before this to fill in <sfh> and check it, 
+   all we need to do here is set the <swap> flag.
+*/
+int
+check_byte_order(SFHEADER *sfh, char *prog, char *sfname)
+{
+#ifdef SNDLIB_LITTLE_ENDIAN
+   swap = (sfdataformat(sfh) == snd_16_linear
+        || sfdataformat(sfh) == snd_32_float);
+#else
+   swap = (sfdataformat(sfh) == snd_16_linear_little_endian
+        || sfdataformat(sfh) == snd_32_float_little_endian);
+#endif
+   isNext = 0;
+
+   return 0;
+}
+
+#else /* !USE_SNDLIB */
+
 int check_byte_order(SFHEADER *sfh,char *prog,char *sfname)
 {
   int retval;
@@ -95,3 +119,4 @@ int check_byte_order(SFHEADER *sfh,char *prog,char *sfname)
   return(retval);
 }
 
+#endif /* !USE_SNDLIB */
