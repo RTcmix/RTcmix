@@ -21,8 +21,6 @@ public:
 };
 
 
-// Big to inline - but crucial for speed
-
 inline float fv_delay::process(float input)
 {
 	float output = buffer[bufidx];
@@ -36,4 +34,3 @@ inline float fv_delay::process(float input)
 
 #endif //_delay
 
-//ends
