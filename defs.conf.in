@@ -1,6 +1,8 @@
 # defs.conf generated automatically from defs.conf.in during configure
 
 ARCH = @ARCH@
+CC = @CC@
+CXX = @CXX@
 OPT = @CFLAGS@
 PERL_SUPPORT = @PERL_SUPPORT@
 PERL = @PERL@
