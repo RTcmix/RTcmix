@@ -245,7 +245,8 @@ PrintStreamList(AudioDeviceID devID, Boolean isInput, UInt32 *totChans)
 
 
 int
-PrintStreamChannelInformation(AudioDeviceID devID, UInt32 chan, Boolean isInput)
+PrintStreamChannelInformation(AudioDeviceID devID, UInt32 chan, Boolean isInput,
+   bool printFlags)
 {
    UInt32 size = sizeof(AudioStreamBasicDescription);
    AudioStreamBasicDescription strDesc;
@@ -299,6 +300,17 @@ PrintStreamChannelInformation(AudioDeviceID devID, UInt32 chan, Boolean isInput)
                chan, strDesc.mChannelsPerFrame);
    }
 
+   if (printFlags) {
+      err = AudioDeviceGetProperty(devID,
+                           chan, isInput,
+                           kAudioDevicePropertyStreamFormat,
+                           &size,
+                           &strDesc);
+      printf("      %s (flags=%x)\n",
+         (flags & kLinearPCMFormatFlagIsNonInterleaved) ? "nonInterleaved" : "",
+         strDesc.mFormatFlags);
+   }
+
    return 0;
 }
 
@@ -335,6 +347,7 @@ main(int argc, char *argv[])
    AudioDeviceID *devList;
    int devCount;
    Boolean printChanInfo = true;
+   Boolean printFlags = false;
 
    for (int i = 1; i < argc; i++) {
       char *arg = argv[i];
@@ -342,6 +355,9 @@ main(int argc, char *argv[])
       // Give this option if calling PrintStreamChannelInformation fails.
       if (strcmp(arg, "--nochaninfo") == 0)
          printChanInfo = false;
+
+      if (strcmp(arg, "--printflags") == 0)
+         printFlags = true;
    }
 
    if (GetDeviceList(&devList, &devCount) != 0)
@@ -376,7 +392,7 @@ main(int argc, char *argv[])
       if (printChanInfo) {
          // NOTE: We continue even if printing this info fails.
          for (UInt32 n = 1; n <= totChans; n++)
-            PrintStreamChannelInformation(devID, n, isInput);
+            PrintStreamChannelInformation(devID, n, isInput, printFlags);
          printf("\n");
       }
 
@@ -385,7 +401,7 @@ main(int argc, char *argv[])
          return -1;
       if (printChanInfo) {
          for (UInt32 n = 1; n <= totChans; n++)
-            PrintStreamChannelInformation(devID, n, isOutput);
+            PrintStreamChannelInformation(devID, n, isOutput, printFlags);
       }
 
 //    NOTE: This can cause a malloc err msg.  Why??  We're not using it again!
