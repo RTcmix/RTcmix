@@ -58,6 +58,7 @@ buffers.cpp \
 bus_config.cpp \
 checkInsts.cpp \
 dispatch.cpp \
+filter.cpp \
 Instrument.cpp \
 intraverse.cpp \
 lfo.cpp \
