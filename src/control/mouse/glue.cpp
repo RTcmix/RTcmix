@@ -14,7 +14,7 @@
 
 // ------------------------------------------------------- _mouse_connection ---
 //
-//    mouse = create_pfield("x", min, max, default, lag,
+//    mouse = makeconnection("mouse", "x", min, max, default, lag,
 //                                 [prefix[, units,]] [precision])
 //
 //    First argument is either "x" or "y", depending on which axis
