@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Friday, July 9, 2004 John Gibson <johgibso-at-indiana.edu>
+
+   * New Ocomb, Ozcomb and Ozdelay objects for genlib.
+
 2004-07-08  Douglas Scott  <netdscott-at-netscape.net>
 
 	* Cmix core now loaded as dynamic shared library on both Linux and OSX.
