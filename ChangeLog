@@ -1,9 +1,13 @@
 Wednesday, Feb 7, 2001 John Gibson <johngibson@virginia.edu>
 
-   * Change srand() so that if you don't give it a seed argument, it uses
+   * Changed srand() so that if you don't give it a seed argument, it uses
      the system microsecond counter to seed the random number generator.
      This way, you won't get the same random number sequence each time
      you run a score.
+   * New makegen, gen1, for loading samples from a sound file into a
+     function table.  (See syntax description in sys/gen1.c.)
+   * Make the "--force" option tell sfcreate to impose a sound file header
+     on a file that doesn't have a header.  Useful for raw sound files.
 
 Saturday, Feb 3, 2001 John Gibson <johngibson@virginia.edu>
 
