@@ -1,0 +1,12 @@
+-  Namespace clashes with Python builtin functions:
+
+      abs
+      input
+      max
+      open
+      pow
+      round
+
+   The cmix ones seem to have priority (because they were loaded
+   most recently?).
+  
