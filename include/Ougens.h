@@ -36,6 +36,7 @@ public:
 	Oonepole(float SR);
 	Oonepole(float SR, float freq);
 	void setfreq(float freq);
+	void setlag(float lag);		// for control rate signals
 	inline void clear() { _hist = 0.0; }
 
 	inline void setpole(float coeff)
