@@ -1,48 +1,40 @@
-Many of these are reworkings of older cmix instruments by other people.
-A few require objlib (in this directory), which is a C++ unit generator
-library based on Perry Cook's STK, the Objective C library in NeXT-era
-cmix, and some code from csound and clm.
+This package of instruments are written and maintained by John Gibson
+<johgibso at indiana dot edu>.
 
-(Note for SGI users: These instruments probably only work on the version
-of RTCmix with combined Linux and SGI support.)
+Many of them are original; some are based on code or ideas by others;
+a few are reworkings of instruments by others.  Some require objlib
+(in this directory), which is a C++ unit generator library based on
+Perry Cook's STK, the Objective C library in NeXT-era cmix, and some
+code from csound and clm.
 
 
-VOCODE    - a channel vocoder. Control a bank of band-pass filters from
-            a real-time analysis of another file.
-
-JFIR      - an FIR filter with frequency response sampling. Use a makegen
-            to "draw" a frequency response for the filter.
-
-FLANGE    - a flanger with choice of IIR comb or FIR notch filter. Serves
-            as a demonstration of some of the unit gen objects.
+BUTTER    - Butterworth filter with low-pass, high-pass, band-pass and
+            band-reject types, and time-varying cutoff (or center) frequency
+            and bandwidth.
 
 COMPLIMIT - a compressor / limiter with adjustable lookahead, envelope
             times, threshold and compression ratio
 
-JGRAN     - a granular synthesis instrument derived from a Cecilia module
-            by Mathieu Bezkorowajny and Jean Piche. Produces grains by
-            wavetable or FM synthesis.
+DECIMATE  - Sample bit-depth reducer, for nasty noisy effects.
 
-FILTSWEEP - two-pole filter with time-varying center freq. and bandwidth
-
-PAN       - simple mixing instrument that follows a pan curve
-
-JCHOR     - a variation on Lansky's chor program, which sprays a slice of
-            an input file around the stereo field. Some limitations have
-            been removed, and you can transpose the grain.
+DISTORT   - Distortion (very primitive at the moment)
 
 ELL       - an old cmix favorite, dusted off and RT-ified ... cascaded
             IIR filters with built-in elliptical design program.
-            ***NEWSFLASH: No longer requires libf2c.a and f2c.h, thanks
-            to Alistair Riddell and Ross Bencina.
 
-JDELAY    - a tweak of the standard RTcmix DELAY program, adding a low-pass
-            filter and dc-blocker, among other things. Useful for short
-            resonating delay times.
+EQ        - Equalizer with peak/notch, shelving and high/low pass types,
+            and time-varying frequency, Q and filter gain.
 
-REVERBIT  - a translation of Lansky's fast reverberator. Added low-pass filter
-            and removed a few limitations. Very effective for a moderate
-            amount of roominess.
+FILTSWEEP - two-pole filter with time-varying center freq. and bandwidth
+
+FLANGE    - a flanger with choice of IIR comb or FIR notch filter. Serves
+            as a demonstration of some of the unit gen objects.
+
+FOLLOWER  - three envelope-following instruments, which use the amp envelope
+            of an input to:
+               1. control the amp envelope of another sound,
+               2. control a Butterworth filter applied to another sound, or
+               3. to gate another sound.
 
 FREEVERB  - a version of the Freeverb reverberator written by "Jezar"
             (http://www.dreampoint.co.uk/~jzracc/freeverb.htm).  I added
@@ -51,17 +43,68 @@ FREEVERB  - a version of the Freeverb reverberator written by "Jezar"
             for each output channel, and it's tuned well.  This uses about
             60-70% of the CPU time that REVERBIT does, for some reason.
 
-SROOM     - the old cmix implementation of F.R. Moore's stationary-source room
-            simulation program. Not nearly as effective as place, but kind
-            of a kick to see running in real time.
+JCHOR     - a variation on Lansky's chor program, which sprays a slice of
+            an input file around the stereo field. Some limitations have
+            been removed, and you can transpose the grain.
 
-MROOM     - the old cmix implementation of F.R. Moore's moving-source room
-            simulation program. Not a replacement for move, but fun to run
-            in real time.
+JDELAY    - a tweak of the standard RTcmix DELAY program, adding a low-pass
+            filter and dc-blocker (useful for short resonating delay times),
+            among other things.
 
-ROOM      - Lansky's (and Garton's, I think) old room simulation.
+JFIR      - an FIR filter with frequency response sampling. Use a makegen
+            to "draw" a frequency response for the filter.
+
+JGRAN     - a granular synthesis instrument derived from a Cecilia module
+            by Mathieu Bezkorowajny and Jean Piche. Produces grains by
+            wavetable or FM synthesis.
+
+MOOGVCF   - Resonant low-pass filter with time-varying frequency and resonance,
+            based on work by Stilson, Smith and Kellett.
+
+MROOM     - RTcmix version of the old cmix implementation of F.R. Moore's
+            moving-source room simulation program.  You're better off with
+            MOVE (in insts.std/MOVE).
+
+PAN       - simple mixing instrument that follows a pan curve
 
 REV       - some Schroeder reverbs that are part of the STK package.
+
+REVERBIT  - RTcmix version of Lansky's reverberator. Added low-pass filter
+            and removed a few limitations.  Effective for a moderate amount
+            of roominess.  (See also PLACE in insts.std/MOVE.)
+
+ROOM      - RTcmix version of Lansky's (and Garton's, I think) old room
+            simulation.  A classic!
+
+SHAPE     - waveshaping instrument that differs from insts.std/WAVESHAPE in
+            that it can accept input from a bus and offers a different way
+            of performing amplitude normalization.
+
+SPECTACLE - a family of spectral processing instruments.  SPECTEQ offers
+            FFT-based equalization; SPECTACLE and TVSPECTACLE create specral
+            delay effects, in which each FFT bin has its own recirculating
+            delay line.
+
+SROOM     - RTcmix version of the old cmix implementation of F.R. Moore's
+            stationary-source room simulation program.  You're better off
+            with PLACE (in insts.std/MOVE).
+
+VOCODE    - a channel vocoder. Control a bank of band-pass filters from
+            a real-time analysis of another file.
+
+VOCODE2   - another channel vocoder, which allows input of both carrier and
+            modulator from buses.
+
+VOCODESYNTH - yet another channel vocoder, which synthesizes its output rather
+            than applying time-varying filters to a carrier signal.
+
+WIGGLE    - simple FM synthesis with a separate glissando function.  Cooler
+            than that description makes it sound...
+
+
+The following are disk-based instruments that operate in the old cmix way.
+(with files opened by input and output instead of rtinput and rtoutput).
+The only one worth bothering with is denoise.
 
 bender    - a variation on Lansky's vreadin program, which lets you bend
             the pitch of an input file along a glissando curve. Uses Doug
@@ -77,7 +120,4 @@ splice    - a simple program that makes it easy to stitch together final
 
 transpan  - revision of Doug Scott's trans program to allow static panning of
             a mono input file (NOTE: superceded by revised TRANS in insts.std)
-
-
-John Gibson <johngibson@virginia.edu>
 
