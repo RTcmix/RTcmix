@@ -109,10 +109,7 @@ int LPCINST::init(float p[], int n_args)
 	if (outputchans != 1) { 
 		die(name(), "Output file must have 1 channel only\n");
 	}
-	int status = localInit(p, n_args);
 
-	// Pull all the current configuration information out of the environment.
-	
 	GetDataSet(&_dataSet);
 	if (_dataSet == NULL) {
 		die("LPCPLAY", "No open dataset!\n");
@@ -120,6 +117,8 @@ int LPCINST::init(float p[], int n_args)
 	_dataSet->ref();
 	
 	_nPoles = _dataSet->getNPoles();
+
+	localInit(p, n_args);
 
 	// Finish the initialization
 	
