@@ -93,9 +93,7 @@ int AM::init(double p[], int n_args)
 	double *wavetable = NULL;
 	int tablelen = 0;
 	if (n_args > 7) {      // handle table coming in as optional p7 TablePField
-		const PField &field = getPField(7);
-		tablelen = field.values();
-		wavetable = (double *) field;
+		wavetable = (double *) getPFieldTable(7, &tablelen);
 	}
 	if (wavetable == NULL) {
 		wavetable = floc(2);

@@ -80,9 +80,7 @@ int FMINST::init(double p[], int n_args)
 	double *wavetable = NULL;
 	int tablelen = 0;
 	if (n_args > 8) {      // handle table coming in as optional p8 TablePField
-		const PField &field = getPField(8);
-		tablelen = field.values();
-		wavetable = (double *) field;
+		wavetable = (double *) getPFieldTable(8, &tablelen);
 	}
 	if (wavetable == NULL) {
 		wavetable = floc(WAVET_GEN_SLOT);

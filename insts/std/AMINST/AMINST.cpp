@@ -87,9 +87,7 @@ int AMINST::init(double p[], int n_args)
 	cartable = NULL;
 	int tablelen = 0;
 	if (n_args > 7) {      // handle table coming in as optional p7 TablePField
-		const PField &field = getPField(7);
-		tablelen = field.values();
-		cartable = (double *) field;
+		cartable = (double *) getPFieldTable(7, &tablelen);
 	}
 	if (cartable == NULL) {
 		cartable = floc(3);
@@ -103,9 +101,7 @@ int AMINST::init(double p[], int n_args)
 	modtable = NULL;
 	tablelen = 0;
 	if (n_args > 8) {      // handle table coming in as optional p8 TablePField
-		const PField &field = getPField(8);
-		tablelen = field.values();
-		modtable = (double *) field;
+		modtable = (double *) getPFieldTable(8, &tablelen);
 	}
 	if (modtable == NULL) {
 		modtable = floc(4);

@@ -81,9 +81,7 @@ int WAVESHAPE::init(double p[], int n_args)
 	waveform = NULL;
 	int tablelen = 0;
 	if (n_args > 7) {		// handle table coming in as optional p7 TablePField
-		const PField &field = getPField(7);
-		tablelen = field.values();
-		waveform = (double *) field;
+		waveform = (double *) getPFieldTable(7, &tablelen);
 	}
 	if (waveform == NULL) {
 		waveform = floc(WAVE_GEN_SLOT);
@@ -102,9 +100,7 @@ int WAVESHAPE::init(double p[], int n_args)
 	xferfunc = NULL;
 	lenxfer = 0;
 	if (n_args > 8) {		// handle table coming in as optional p8 TablePField
-		const PField &field = getPField(8);
-		lenxfer = field.values();
-		xferfunc = (double *) field;
+		xferfunc = (double *) getPFieldTable(8, &lenxfer);
 	}
 	if (xferfunc == NULL) {
 		xferfunc = floc(XFER_GEN_SLOT);
