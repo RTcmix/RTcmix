@@ -3,6 +3,8 @@ Tuesday, Jan 1, 2002 John Gibson <johgibso@indiana.edu>
    * Support for audio input under MacOS X.
    * Support for fplot calls to gnuplot under MacOS X.  (See INSTALL
      for where to find info about installing gnuplot.)
+   * New instruments - SHAPE (waveshape an input) and DECIMATE (reduce
+      sampling resolution of input)
 
 Saturday, Dec 5, 2001 John Gibson <johgibso@indiana.edu>
 
