@@ -61,12 +61,10 @@ typedef void *MincHandle;  // contents of this is opaque to Minc
    (any of the types represented in the MincDataType enum), and it can
    support nested lists.
 */
-// declared in advance for use in MincList
-typedef struct _minc_list_elem MincListElem;
 
 typedef struct {
    int len;                /* number of MincListElem's in <data> array */
-   MincListElem *data;
+   struct _minc_list_elem *data;
 } MincList;
 
 typedef union {
@@ -76,10 +74,10 @@ typedef union {
    MincList list;
 } MincValue;
 
-struct _minc_list_elem {
+typedef struct _minc_list_elem {
    MincDataType type;
    MincValue val;
-}; /* MincListElem */
+} MincListElem;
 
 
 /* scopes */
@@ -179,10 +177,8 @@ int call_builtin_function(const char *funcname, const MincListElem arglist[],
 /* callextfunc.c */
 int call_external_function(const char *funcname, const MincListElem arglist[],
    const int nargs, MincListElem *return_value);
-MincHandle minc_offsethandle(const MincHandle handle, const MincFloat val);
-MincHandle minc_scalehandle(const MincHandle handle, const MincFloat val);
-MincHandle minc_addhandles(const MincHandle handle1, const MincHandle handle2);
-MincHandle minc_multhandles(const MincHandle handle1, const MincHandle handle2);
+MincHandle minc_binop_handle_float(const MincHandle handle, const MincFloat val, OpKind op);
+MincHandle minc_binop_handles(const MincHandle handle1, const MincHandle handle2, OpKind op);
 
 /* error.c */
 void sys_error(char *msg);
