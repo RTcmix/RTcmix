@@ -2,21 +2,24 @@ include ../makefile.conf
 
 PLAY = cmixplay
 NPLAY = nplay
+SETUP = setup_rtcmixrc
 
 PLAY_HDRS = ../H/sndlibsupport.h ../sys/AudioDevice.h
 AUDIO_DEV_OBJS = ../sys/AudioDevice.o ../sys/AudioDeviceImpl.o \
    ../sys/AudioIODevice.o ../sys/ThreadedAudioDevice.o \
    ../sys/audio_dev_creator.o ../sys/NetAudioDevice.o \
    ../sys/check_byte_order.o ../sys/sndlibsupport.o
+OPTION_O = ../Minc/Option.o
+LIBCONF = ../Minc/conf/libconf.a
 
 ifeq ($(ARCH),LINUX)
-   PROGS = $(PLAY) playraw full-duplex-test
+   PROGS = $(PLAY) $(SETUP) playraw full-duplex-test
    RESAMPLE = resample
    AUDIO_DEV_OBJS += ../sys/ALSAAudioDevice.o ../sys/OSSAudioDevice.o
 #  SYSLIBS = -lm   # only this, overriding makefile.conf
 endif
 ifeq ($(ARCH),MACOSX)
-   PROGS = $(PLAY) #playraw full-duplex-test
+   PROGS = $(PLAY) $(SETUP) #playraw full-duplex-test
    RESAMPLE = resample
    AUDIO_DEV_OBJS += ../sys/OSXAudioDevice.o
    SYSLIBS = -framework CoreAudio
@@ -43,6 +46,13 @@ $(NPLAY):  $(NPLAY).o $(SYSOBJS)
 
 $(NPLAY).o:  $(NPLAY).c ../H/audio_port.h ../H/sndlibsupport.h
 	$(CC) $(CFLAGS) $(SOUND_DRIVER) -c $< -o $@
+
+$(SETUP):  $(SETUP).o $(OPTION_O) $(LIBCONF)
+	$(CXX) -o $(SETUP) $(SETUP).o $(SYSLIBS) $(OPTION_O) $(LIBCONF)
+
+#$(SETUP).o:  $(SETUP).cpp $(PLAY_HDRS)
+#	echo $(LIBDESTDIR)
+#	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c $< -o $@
 
 playraw: playraw.o
 	$(CC) -o playraw playraw.o
