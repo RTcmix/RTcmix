@@ -7,6 +7,7 @@
 
 #include <globals.h>
 #include <prototypes.h>
+#include <ugens.h>
 #include <stdio.h>
 #include <assert.h>
 #include "../rtstuff/Instrument.h"
@@ -14,8 +15,8 @@
 
 
 #define INCHANS_DISCREPANCY_WARNING "\
-WARNING: The bus config for this instrument specifies %d input channels, \n\
-but its input source has %d channels.\n"
+The bus config for this instrument specifies %d input channels, \n\
+but its input source has %d channels. Setting input channels to %d..."
 
 
 
@@ -26,30 +27,25 @@ but its input source has %d channels.\n"
 int
 rtsetinput(float start_time, Instrument *inst)
 {
-   int auxin_count = inst->bus_config->auxin_count;
-   int in_count = inst->bus_config->in_count;
+   int   auxin_count = inst->bus_config->auxin_count;
+   int   in_count = inst->bus_config->in_count;
+   char  *inst_name = NULL;      // FIXME: need this for better msgs
 
-   if (auxin_count == 0 && in_count == 0) {
-      fprintf(stderr, "This instrument requires input from either an in bus "
-                      "or an aux bus.\nChange this with bus_config().\n");
-      exit(1);
-   }
+   if (auxin_count == 0 && in_count == 0)
+      die(inst_name, "This instrument requires input from either an in bus "
+                      "or an aux bus.\nChange this with bus_config().");
 
    if (auxin_count > 0) {
-      if (start_time != 0.0) {
-         fprintf(stderr, "inskip must be 0 when reading from an aux bus.\n");
-         exit(1);
-      }
+      if (start_time != 0.0)
+         die(inst_name, "Input start must be 0 when reading from an aux bus.");
    }
 
    if (in_count > 0) {
       int src_chans;
       int index = get_last_input_index();
 
-      if (index < 0 || inputFileTable[index].fd < 1) {
-         fprintf(stderr, "No input source open for this instrument!\n");
-         return -1;
-      }
+      if (index < 0 || inputFileTable[index].fd < 1)
+         die(inst_name, "No input source open for this instrument!");
 
       /* File or audio device was opened in rtinput(). Here we store the
          index into the inputFileTable for the file or device.
@@ -62,16 +58,15 @@ rtsetinput(float start_time, Instrument *inst)
       src_chans = inputFileTable[index].chans;
 
       if (inst->inputchans != src_chans) {
-         fprintf(stderr, INCHANS_DISCREPANCY_WARNING, inst->inputchans,
-                                                                  src_chans);
+         warn(inst_name, INCHANS_DISCREPANCY_WARNING, inst->inputchans,
+                                                      src_chans, src_chans);
+         inst->inputchans = src_chans;
       }
 
       if (inputFileTable[index].is_audio_dev) {
-         if (start_time != 0.0) {
-            fprintf(stderr, "inskip must be 0 when reading from the real-time "
-                            "audio device.\n");
-            exit(1);
-         }
+         if (start_time != 0.0)
+            die(inst_name, "Input start must be 0 when reading from the "
+                           "real-time audio device.");
       }
       else {
          int datum_size, inskip;
@@ -94,8 +89,8 @@ rtsetinput(float start_time, Instrument *inst)
                             + (inskip * inst->inputchans * datum_size);
 
          if (start_time >= inputFileTable[index].dur)
-            fprintf(stderr, "WARNING: Attempt to read past end of input "
-                            "file: %s\n", inputFileTable[index].filename);
+            warn(inst_name, "Attempt to read past end of input file: %s",
+                                             inputFileTable[index].filename);
       }
 
       /* Increment the reference count for this file. */
