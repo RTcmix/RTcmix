@@ -82,24 +82,16 @@ open_linux_audio_input(AudioPortType port_type, int nchans)
 /* ---------------------------------------------- open_macosx_audio_input --- */
 /* The device has already been opened in rtsetparams.
 */
-static int
+static AudioDeviceID
 open_macosx_audio_input(AudioPortType port_type, int nchans)
 {
-#ifdef NOTYET
-   if (in_port[0])
-      return in_port[0];         /* global set in rtsetparams */
-   else
-#endif
-      return -1;
+   return in_port;         /* global set in rtsetparams */
 }
 #endif /* MACOSX */
 
 
 #ifdef SGI
 /* ------------------------------------------------- open_sgi_audio_input --- */
-/*
-   <port_type> is one of AL_INPUT_MIC, AL_INPUT_LINE, or AL_INPUT_DIGITAL.
-*/
 static int
 open_sgi_audio_input(AudioPortType port_type, int nchans)
 {
@@ -340,9 +332,16 @@ rtinput(float p[], int n_args, double pp[])
    if (!is_open) {                  /* then open audio device or file. */
 
       if (audio_in) {
+#ifdef MACOSX
+         if (open_audio_input(port_type, nchans) == kAudioDeviceUnknown)
+            die("rtinput",
+                     "Audio device not open yet.  Call rtsetparams first.");
+         fd = 0;  /* we don't use this */
+#else /* !MACOSX */
          fd = open_audio_input(port_type, nchans);
          if (fd == -1)
             exit(1);
+#endif /* !MACOSX */
          for (i = 0; i < nchans; i++) {
             allocate_audioin_buffer(i, RTBUFSAMPS);
          }
