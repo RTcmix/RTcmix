@@ -402,13 +402,16 @@ int OSXAudioDevice::openInput()
 	}
 	// Brute force: Find first audio channel for desired input stream
 	int streamChannel = 1;
-	for (int stream = 1; stream < port->streamDesc->mNumberBuffers; ++stream) {
-		if (stream == port->streamIndex) {
-			port->streamChannel = streamChannel;
-			printf("input port streamChannel = %d\n", port->streamChannel);
-			break;
+	const int streamCount = port->streamDesc->mNumberBuffers;
+	if (streamCount > 1) {
+		for (int stream = 0; stream < streamCount; ++stream) {
+			if (stream == port->streamIndex) {
+				port->streamChannel = streamChannel;
+				printf("input port streamChannel = %d\n", port->streamChannel);
+				break;
+			}
+			streamChannel += port->streamDesc->mBuffers[stream].mNumberChannels;
 		}
-		streamChannel += port->streamDesc->mBuffers[stream].mNumberChannels;
 	}
 
 	// Get current input format
@@ -482,13 +485,16 @@ int OSXAudioDevice::openOutput()
 	}
 	// Brute force: Find first audio channel for desired output stream
 	int streamChannel = 1;
-	for (int stream = 1; stream < port->streamDesc->mNumberBuffers; ++stream) {
-		if (stream == port->streamIndex) {
-			port->streamChannel = streamChannel;
-			printf("output port streamChannel = %d\n", port->streamChannel);
-			break;
+	const int streamCount = port->streamDesc->mNumberBuffers;
+	if (streamCount > 1) {
+		for (int stream = 0; stream < streamCount; ++stream) {
+			if (stream == port->streamIndex) {
+				port->streamChannel = streamChannel;
+				printf("output port streamChannel = %d\n", port->streamChannel);
+				break;
+			}
+			streamChannel += port->streamDesc->mBuffers[stream].mNumberChannels;
 		}
-		streamChannel += port->streamDesc->mBuffers[stream].mNumberChannels;
 	}
 
 	// Get current output format	
