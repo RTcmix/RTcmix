@@ -24,7 +24,7 @@ VFRET1::VFRET1() : Instrument()
 	// future setup here?
 }
 
-int VFRET1::init(float p[], short n_args)
+int VFRET1::init(float p[], int n_args)
 {
 // p0 = start; p1 = dur; p2 = pitch (oct.pc); p3 = fundamental decay time
 // p4 = nyquist decay time; p5 = distortion gain; p6 = feedback gain

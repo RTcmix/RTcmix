@@ -21,7 +21,7 @@ DEL1::~DEL1()
     delete [] delarray;
 }
 
-int DEL1::init(float p[], short n_args)
+int DEL1::init(float p[], int n_args)
 {
 // p0 = output skip; p1 = input skip; p2 = output duration
 // p3 = amplitude multiplier; p4 = delay time

@@ -23,7 +23,7 @@ NOISE::~NOISE()
 }
 
 
-int NOISE::init(float p[], short n_args)
+int NOISE::init(float p[], int n_args)
 {
 // p0 = start; p1 = duration; p2 = amplitude
 // p3 = stereo spread (0-1) [optional]

@@ -16,7 +16,7 @@ VSFLUTE::VSFLUTE() : Instrument()
 	// future setup here?
 }
 
-int VSFLUTE::init(float p[], short n_args)
+int VSFLUTE::init(float p[], int n_args)
 {
 // p0 = start; p1 = dur; p2 = noise amp; p3 = length1low; p4 = length1high
 // p5 = length2low; p6 = length2high; p7 = amp multiplier; 

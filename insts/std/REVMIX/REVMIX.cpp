@@ -46,7 +46,7 @@ REVMIX::~REVMIX()
    delete [] in;
 }
 
-int REVMIX::init(float p[], short n_args)
+int REVMIX::init(float p[], int n_args)
 {
    float outskip, inskip, dur;
 

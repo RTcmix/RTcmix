@@ -20,7 +20,7 @@ AM::~AM()
 }
 
 
-int AM::init(float p[], short n_args)
+int AM::init(float p[], int n_args)
 {
 // p0 = output skip; p1 = input skip; p2 = output duration
 // p3 = amplitude multiplier; p4 = AM modulator frequency (hz)

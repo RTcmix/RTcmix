@@ -22,7 +22,7 @@ SFLUTE::SFLUTE() : Instrument()
 	// future setup here?
 }
 
-int SFLUTE::init(float p[], short n_args)
+int SFLUTE::init(float p[], int n_args)
 {
 // p0 = start; p1 = dur; p2 = noise amp; p3 = length1; p4 = length2
 // p5 = amp multiplier; p6 = stereo spread (0-1) <optional>

@@ -38,7 +38,7 @@ FMINST::FMINST() : Instrument()
 	modphs = carphs = 0.0;
 }
 
-int FMINST::init(float p[], short n_args)
+int FMINST::init(float p[], int n_args)
 {
 	nsamps = rtsetoutput(p[0], p[1], this);
 

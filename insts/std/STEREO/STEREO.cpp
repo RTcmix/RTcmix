@@ -21,7 +21,7 @@ STEREO::~STEREO()
 }
 
 
-int STEREO::init(float p[], short n_args)
+int STEREO::init(float p[], int n_args)
 {
 // p0 = outsk; p1 = insk; p2 = dur (-endtime); p3 = amp; p4-n = channel mix matrix
 // we're stashing the setline info in gen table 1

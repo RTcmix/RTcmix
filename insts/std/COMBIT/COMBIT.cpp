@@ -23,7 +23,7 @@ COMBIT::~COMBIT()
 }
 
 
-int COMBIT::init(float p[], short n_args)
+int COMBIT::init(float p[], int n_args)
 {
 // p0 = outsk; p1 = insk; p2 = input dur; p3 = smplitude multiplier
 // p4 = pitch (cps); p5 = reverb time; p6 = input channel [optional]

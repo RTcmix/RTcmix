@@ -53,7 +53,7 @@ TRANS :: ~TRANS()
 }
 
 
-int TRANS :: init(float p[], short n_args)
+int TRANS :: init(float p[], int n_args)
 {
    float outskip, inskip, dur, transp, interval, total_indur, dur_to_read;
 
