@@ -54,7 +54,7 @@ gravy(float p[], int n_args)
 		die("gravy", "Error allocating input array... sorry!");
 	
 	outsamps = winsamps * (float)outchans;
-	if ( (outarr = (float *)malloc(outsamps*FLOAT)) == NULL ) {
+	if ( (outarr = (float *)malloc(outsamps*FLOAT)) == NULL )
 		die("gravy", "Error allocating output array... sorry!");
 
 	outshift = -(winsamps/2);
