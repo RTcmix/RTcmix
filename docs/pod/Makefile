@@ -107,6 +107,7 @@ $(HTML_INDEX): make_html_index.pl
 	@echo $(CMD_HTML) > cmd_html.tmp
 	@echo $(API_HTML) > api_html.tmp
 	@perl -w make_html_index.pl > $(HTML_INDEX)
+	@$(RM) inst_html.tmp script_html.tmp cmd_html.tmp api_html.tmp
 
 # FIXME: this won't build the API docs!
 $(PS): %.ps: %.1
@@ -165,6 +166,6 @@ installsyn: $(SYN)
 uninstallsyn:
 	( cd $(BINDIR); $(RM) $(SYN) )
 
-install: installman installhtml #installsyn
-uninstall: uninstallman uninstallhtml #uninstallsyn
+install: installman installhtml installsyn
+uninstall: uninstallman uninstallhtml uninstallsyn
 
