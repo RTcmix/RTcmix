@@ -45,7 +45,6 @@ GLOBAL int audioNCHANS;
 
 
 /* -------------------------------------------------------------------------- */
-GLOBAL int oldSched;
 GLOBAL int noParse;
 GLOBAL int audio_on;
 GLOBAL int play_audio;
