@@ -137,11 +137,19 @@ midi_connection(const Arg args[], const int nargs)
 		lag = args[4];
 	else
 		return _midi_usage();
+	if (lag < 0.0 || lag > 100.0) {
+		die("makeconnection (midi)", "<lag> must be between 0 and 100");
+		return NULL;
+	}
 
 	if (args[5].isType(DoubleType))
 		chan = (int) args[5] - 1;		// convert to zero-based channel
 	else
 		return _midi_usage();
+	if (chan < 0 || chan > 15) {
+		die("makeconnection (midi)", "<chan> must be between 1 and 16");
+		return NULL;
+	}
 
 	if (args[6].isType(StringType))
 		type = _string_to_type(args[6]);
