@@ -5,7 +5,9 @@ fixes that we don't bother putting here.
 Sunday, September 22 2002 John Gibson <johgibso@indiana.edu>
 
    * sfprint now also prints duration in minutes:seconds format.
-   * cmixplay now lets you rewind and fast-forward while playing.
+   * cmixplay now lets you rewind and fast-forward while playing,
+     and print the current playback time when you type 'm'.
+     ("cmixplay -h" to see help screen.)
 
 
 **** Released RTcmix-3.2, Thursday, Aug 29, 2002 ****
