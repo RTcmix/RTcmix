@@ -59,14 +59,12 @@ extern "C" {
 
 FILTSWEEP :: FILTSWEEP() : Instrument()
 {
-   in = new float[MAXBUF];
    balancer = NULL;              // might not use
 }
 
 
 FILTSWEEP :: ~FILTSWEEP()
 {
-   delete [] in;
    for (int i = 0; i < nfilts; i++)
       delete filt[i];
    if (balancer)
@@ -160,7 +158,9 @@ int FILTSWEEP :: run()
 {
    int   i, j, branch, rsamps;
    float aamp, bw, cf, insig;
-   float out[2];
+   float in[MAXBUF], out[2];
+
+   Instrument :: run();
 
    rsamps = chunksamps * inputchans;
 
@@ -215,6 +215,8 @@ Instrument *makeFILTSWEEP()
    FILTSWEEP *inst;
 
    inst = new FILTSWEEP();
+   inst->set_bus_config("FILTSWEEP");
+
    return inst;
 }
 

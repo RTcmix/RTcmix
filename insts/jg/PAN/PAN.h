@@ -1,7 +1,7 @@
 class PAN : public Instrument {
    int     inchan, skip;
    float   amp;
-   float   *amparray, amptabs[2], *panarray, pantabs[2], *in;
+   float   *amparray, amptabs[2], *panarray, pantabs[2];
 
 public:
    PAN();

@@ -48,13 +48,11 @@ extern "C" {
 
 PAN :: PAN() : Instrument()
 {
-   in = new float[MAXBUF];
 }
 
 
 PAN :: ~PAN()
 {
-   delete [] in;
 }
 
 
@@ -111,7 +109,9 @@ int PAN :: run()
 {
    int   i, branch, rsamps;
    float aamp, insig;
-   float out[2], pan[2];
+   float in[MAXBUF], out[2], pan[2];
+
+   Instrument::run();
 
    rsamps = chunksamps * inputchans;
 
@@ -147,6 +147,8 @@ Instrument *makePAN()
    PAN *inst;
 
    inst = new PAN();
+   inst->set_bus_config("PAN");
+
    return inst;
 }
 

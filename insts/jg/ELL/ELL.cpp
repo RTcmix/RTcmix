@@ -68,7 +68,6 @@ extern "C" {
 
 ELL::ELL() : Instrument()
 {
-   in = new float[MAXBUF];
    for (int n = 0; n < MAXCHANS; n++)
       es[n] = NULL;
 }
@@ -76,7 +75,6 @@ ELL::ELL() : Instrument()
 
 ELL::~ELL()
 {
-   delete [] in;
    for (int n = 0; n < MAXCHANS; n++)
       delete [] es[n];
 }
@@ -180,7 +178,9 @@ int ELL::run()
 {
    int   i, n, branch, rsamps;
    float aamp, insig;
-   float out[2];
+   float in[MAXBUF], out[2];
+
+   Instrument::run();
 
    rsamps = chunksamps * inputchans;
 
@@ -233,6 +233,8 @@ Instrument *makeELL()
    ELL *inst;
 
    inst = new ELL();
+   inst->set_bus_config("ELL");
+
    return inst;
 }
 

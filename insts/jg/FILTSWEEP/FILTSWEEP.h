@@ -8,7 +8,7 @@ class FILTSWEEP : public Instrument {
    float   *cfarray, cftabs[2], *bwarray, bwtabs[2];
    BiQuad  *filt[MAXFILTS];
    Balance *balancer;
-   float   *amparray, amptabs[2], *in;
+   float   *amparray, amptabs[2];
 
 public:
    FILTSWEEP();
