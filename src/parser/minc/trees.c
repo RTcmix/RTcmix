@@ -439,7 +439,6 @@ do_op_handle_num(Tree tp, const MincHandle val1, const MincFloat val2,
          tp->v.handle = minc_offsethandle(val1, val2);
          break;
       case OpMinus:
-//FIXME: this may not be correct for all cases! Check it out.
          tp->v.handle = minc_offsethandle(val1, -val2);
          break;
       case OpMul:
@@ -615,7 +614,13 @@ exct_operator(Tree tp, OpKind op)
                minc_warn("can't operate on a string");
                break;
             case MincHandleType:
-               do_op_handle_num(tp, child1->v.handle, child0->v.number, op);
+               /* Check for ops that are not commutative. */
+               if (op == OpMinus)
+                  minc_warn("can't subtract a handle from a number");
+               else if (op == OpDiv)
+                  minc_warn("can't divide a number by a handle");
+               else
+                  do_op_handle_num(tp, child1->v.handle, child0->v.number, op);
                break;
             case MincListType:
                do_op_list_iterate(tp, child1, child0->v.number, op);
