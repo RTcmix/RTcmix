@@ -3,6 +3,7 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #include <globals.h>
+#include <prototypes.h>
 #include <pthread.h>
 #include <iostream.h>
 #include <stdio.h>
@@ -14,15 +15,6 @@
 
 //#define TBUG
 //#define ALLBUG
-
-extern "C" {
-  void rtsendsamps(void);
-  void rtsendzeros(int);
-  void rtreportstats(void);
-  int rtcloseout(void);
-  void rtgetsamps(void);         // DT:  for use with real-time audio input
-  void close_audio_ports(void);
-}
 
 double baseTime;
 long elapsed;
