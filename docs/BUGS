@@ -33,6 +33,8 @@ NOT inputchans (2 in this case) inst member. So <in> is overwritten.
 
 -JGG (1/29/00)
 
+[NOTE: fixed   -JGG]
+
 ------------
 
 Problem with Irix MIPSPro compiler declaring float arrays on the stack,
@@ -42,6 +44,8 @@ the insts' private input buffer on construction of the inst. But this
 really chews up memory fast for some scores, so it's not the way to go.
 
 -JGG (2/8/00)
+
+[NOTE: fixed, sort of   -JGG]
 
 ------------
 
