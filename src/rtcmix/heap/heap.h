@@ -1,7 +1,7 @@
 #ifndef _HEAP_H_
 #define _HEAP_H_ 1
 
-#include <pthread.h>
+#include <Lockable.h>
 
 class Instrument;
 
@@ -45,21 +45,18 @@ public:
 
 // class for main heap structure
 
-class heap {
+class heap : public Lockable {
 private:
   queue leaves;  // queue used to hold next insertion point
-  pthread_mutex_t _mutex;	// for locking heap
 public:
   heapslot* bot;
   heapslot* top;
   heap();
   ~heap();
-  void lock();
-  void unlock();
   unsigned long getTop();
   long getSize();
   void insert(Instrument*, unsigned long chunkStart);
-  Instrument *deleteMin();
+  Instrument *deleteMin(unsigned long maxChunkStart, unsigned long *pChunkStart);
   void dump(heapslot*,int);
   long size;
 };

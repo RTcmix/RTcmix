@@ -6,39 +6,23 @@
 #include <lock.h>
 #include <iostream.h>
 
-heapslot::heapslot()
+heapslot::heapslot() : chunkStart(0), inst(NULL), 
+					   left(NULL), right(NULL), parent(NULL)   
 {
-  left=NULL;
-  right=NULL;
-  parent=NULL;
-  inst=NULL;
-  chunkStart = 0;
 }
 
 heap::heap() : size(0)
 {
-	pthread_mutex_init(&_mutex, NULL);
 }
 
 heap::~heap()
 {
-	pthread_mutex_destroy(&_mutex);
 }
 
 unsigned long heap::getTop()
 {
-//  Lock topLock(&_mutex);	// This will unlock when it goes out of scope
-  return top->chunkStart;
-}
-
-void heap::lock()
-{
-	pthread_mutex_lock(&_mutex);
-}
-
-void heap::unlock()
-{
-	pthread_mutex_unlock(&_mutex);
+  Lock topLock(getlockhandle());	// This will unlock when it goes out of scope
+  return top ? top->chunkStart : 0;
 }
 
 long heap::getSize()
@@ -53,7 +37,7 @@ void heap::insert(Instrument *newInst, unsigned long cStart)
   Instrument *tempInst;
   unsigned long tempChunkStart;
 
-  Lock insertLock(&_mutex);	// This will unlock when it goes out of scope
+  Lock insertLock(getlockhandle());	// This will unlock when it goes out of scope
 
 //  cout << "insert(in):  " << cStart << '\n';
 
@@ -99,7 +83,11 @@ void heap::insert(Instrument *newInst, unsigned long cStart)
 //  cout << "heap::insert ... size = " << size << "\n";
 }
 
-Instrument* heap::deleteMin()
+// Pull the top instrument if its start sample is < maxChunkStart
+// Returns start sample for the instrument as argument
+
+Instrument * 
+heap::deleteMin(unsigned long maxChunkStart, unsigned long *pChunkStart)
 {
   int sift;               // flag to tell loop when to stop sifting
   Instrument* retInst;
@@ -110,16 +98,22 @@ Instrument* heap::deleteMin()
   unsigned long tempChunkStart;
   unsigned long retChunkStart;
 
-  Lock deleteLock(&_mutex);	// This will unlock when it goes out of scope
+  Lock deleteLock(getlockhandle());	// This will unlock when it goes out of scope
 
   sift = 1;
 
   if (size == 0) {  // trap to catch attempt to pop empty heap
-    cerr << "ERROR:  heap underflow\n";
-    size=0;
+//    cerr << "heap is empty -- returning NULL\n";
+	*pChunkStart = 0;
     return NULL;
   }
 
+  // If instrument start time is > max, return NULL.
+  if (top->chunkStart >= maxChunkStart) {
+      *pChunkStart = top->chunkStart;
+	  return NULL;
+  }
+  
   retInst = top->inst;    // return instrument is the top instrument
   retChunkStart = top->chunkStart;
 
@@ -207,6 +201,7 @@ Instrument* heap::deleteMin()
   }
 //  cout << "deleteMin(): " << retChunkStart << "\n";
   size--;
+  *pChunkStart = retChunkStart;
   return retInst;
 }
 
