@@ -44,6 +44,11 @@ Ia.  Preliminaries
       source code tarball, and followed the build instructions at
       http://www.zope.org/Members/jens/docs/zope_osx.
 
+      NOTE: OS X 10.2 comes with Python, but unfortunately, they don't
+      supply the python library that's necessary to build RTcmix with
+      Python embedded.  You have to build your own Python from source
+      (as for previous versions of OS X), and point makefile.conf at it.
+
    c) If you want to use gnuplot with the fplot Minc function, you have
       to install both the command-line gnuplot from source and Aquaterm.
       See http://aquaterm.sourceforge.net for instructions.
