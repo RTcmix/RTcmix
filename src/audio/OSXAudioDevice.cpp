@@ -43,17 +43,21 @@ const char *errToString(OSStatus err)
 }
 
 static const int REC = 0, PLAY = 1;
+static const int kMasterChannel = 0;
 
 struct OSXAudioDevice::Impl {
 	AudioDeviceID				deviceID;
 	struct Port {
-		AudioStreamBasicDescription deviceFormat;			// format
-		unsigned int 				deviceBufFrames;		// hw buf length
-		float						*audioBuffer;			// circ. buffer
-		int							audioBufFrames;			// length of audioBuffers
-		int							audioBufChannels;		// channels in audioBuffers
-		int							inLoc, outLoc;			// circ. buffer indices
-		int							audioBufFilled;			// audioBuffer samples available
+		int							streamIndex;		// Which stream
+		int							streamChannel;		// 1st chan of that stream
+		AudioBufferList				*streamDesc;		// Properties for all strams
+		AudioStreamBasicDescription deviceFormat;		// format
+		unsigned int 				deviceBufFrames;	// hw buf length
+		float						*audioBuffer;		// circ. buffer
+		int							audioBufFrames;		// length of audioBuffers
+		int							audioBufChannels;	// channels in audioBuffers
+		int							inLoc, outLoc;		// circ. buffer indices
+		int							audioBufFilled;		// audioBuffer samples available
 	} 							port[2];
 	
 	int							bufferSampleFormat;
@@ -287,10 +291,13 @@ OSXAudioDevice::Impl::listenerProcess(AudioDeviceID inDevice,
 	case kAudioDevicePropertyDeviceIsRunning:
 		err = AudioDeviceGetProperty(
 						impl->deviceID,
-						0, impl->recording,
+						kMasterChannel, impl->recording,
 						kAudioDevicePropertyDeviceIsRunning,
 						&size,
 				   		(void *) &isRunning);
+		break;
+	case kAudioDeviceProcessorOverload:
+		fprintf(stderr, "OSXAudioDevice: I/O thread overload!\n");
 		break;
 	default:
 		// printf("Some other property was changed.\n");
@@ -304,16 +311,31 @@ OSXAudioDevice::Impl::listenerProcess(AudioDeviceID inDevice,
 	return err;
 }
 
-OSXAudioDevice::OSXAudioDevice() : _impl(new Impl)
+OSXAudioDevice::OSXAudioDevice(const char *desc) : _impl(new Impl)
 {
 	_impl->deviceID = 0;
 	for (int n = REC; n <= PLAY; ++n) {
+		_impl->port[n].streamIndex = 0;
+		_impl->port[n].streamChannel = 0;
+		_impl->port[n].streamDesc = NULL;
 		_impl->port[n].deviceBufFrames = 0;
 		_impl->port[n].audioBufFrames = 0;
 		_impl->port[n].audioBufChannels = 0;
 		_impl->port[n].audioBuffer = NULL;
 		_impl->port[n].inLoc = _impl->port[n].outLoc = 0;
 		_impl->port[n].audioBufFilled = 0;
+	}
+	char *substr = desc ? strstr(desc, ":") + 1 : NULL;
+	// Strip desc of form "OSXHW:inbuf,outbuf" into inbuf and outbuf
+	if (substr != NULL) {
+		char *outsubstr = NULL;
+		_impl->port[REC].streamIndex = strtol(substr, &outsubstr, 0);
+		printf("input streamIndex is %d\n", _impl->port[REC].streamIndex);
+		if (outsubstr) {
+			_impl->port[PLAY].streamIndex = strtol(outsubstr + 1, NULL, 0);
+			printf("output streamIndex is %d\n", _impl->port[PLAY].streamIndex);
+		}
+
 	}
 	_impl->bufferSampleFormat = MUS_UNKNOWN;
 	_impl->frameCount = 0;
@@ -326,7 +348,9 @@ OSXAudioDevice::OSXAudioDevice() : _impl(new Impl)
 OSXAudioDevice::~OSXAudioDevice()
 {
 	//printf("OSXAudioDevice::~OSXAudioDevice()\n");
+	delete [] _impl->port[REC].streamDesc;
 	delete [] _impl->port[REC].audioBuffer;
+	delete [] _impl->port[PLAY].streamDesc;
 	delete [] _impl->port[PLAY].audioBuffer;
 	delete _impl;
 }
@@ -337,6 +361,7 @@ int OSXAudioDevice::openInput()
 	OSXAudioDevice::Impl::Port *port = &impl->port[REC];
 	AudioDeviceID devID;
 	Boolean isInput = 1;
+	Boolean writeable = 0;
 	UInt32 size = sizeof(devID);
 	OSStatus err = AudioHardwareGetProperty(
 						kAudioHardwarePropertyDefaultInputDevice,
@@ -346,10 +371,47 @@ int OSXAudioDevice::openInput()
 		return error("Cannot find default input device: ", ::errToString(err));
 	}
 	impl->deviceID = devID;	// If we are opening for output as well, this gets reset.
+	// Get the complete stream description set for the input
+	err = AudioDeviceGetPropertyInfo(devID, 
+									 kMasterChannel,
+									 isInput,
+									 kAudioDevicePropertyStreamConfiguration,
+									 &size,
+									 &writeable);
+	if (err != kAudioHardwareNoError) {
+		return error("Can't get input device property info: ",
+					 ::errToString(err));
+	}
+	port->streamDesc = new AudioBufferList[size/sizeof(AudioBufferList)];
+	err = AudioDeviceGetProperty(devID, 
+								 kMasterChannel,
+								 isInput,
+								 kAudioDevicePropertyStreamConfiguration,
+								 &size,
+								 port->streamDesc);
+	if (err != kAudioHardwareNoError) {
+		return error("Can't get input device stream configuration: ",
+					 ::errToString(err));
+	}
+	// Check that user's request is a valid stream
+	if (port->streamIndex >= port->streamDesc->mNumberBuffers) {
+		return error("Invalid input stream index");
+	}
+	// Brute force: Find first audio channel for desired input stream
+	int streamChannel = 0;
+	for (int stream = 0; stream < port->streamDesc->mNumberBuffers; ++stream) {
+		if (stream == port->streamIndex) {
+			port->streamChannel = streamChannel;
+			printf("input port streamChannel = %d\n", port->streamChannel);
+			break;
+		}
+		streamChannel += port->streamDesc->mBuffers[stream].mNumberChannels;
+	}
+
 	// Get current input format
 	size = sizeof(port->deviceFormat);
 	err = AudioDeviceGetProperty(devID, 
-								  0, isInput,
+								  port->streamChannel, isInput,
 								  kAudioDevicePropertyStreamFormat, 
 								  &size, 
 								  &port->deviceFormat);
@@ -357,10 +419,9 @@ int OSXAudioDevice::openInput()
 		return error("Can't get input device format: ", ::errToString(err));
 	}
 	// Test and store whether or not audio format property is writable.
-	Boolean writeable;
 	size = sizeof(writeable);
 	err = AudioDeviceGetPropertyInfo(devID, 
-   									0, isInput,
+   									port->streamChannel, isInput,
 								    kAudioDevicePropertyStreamFormat,
 									&size,
 									&writeable);
@@ -378,6 +439,7 @@ int OSXAudioDevice::openOutput()
 	OSXAudioDevice::Impl::Port *port = &impl->port[PLAY];
 	AudioDeviceID devID;
 	Boolean isOutput = 0;
+	Boolean writeable = 0;
 	UInt32 size = sizeof(devID);
 	OSStatus err = AudioHardwareGetProperty(
 						kAudioHardwarePropertyDefaultOutputDevice,
@@ -389,10 +451,47 @@ int OSXAudioDevice::openOutput()
 	if (_impl->deviceID != 0 && _impl->deviceID != devID)
 		printf("Input device ID != output -- ???\n");
 	impl->deviceID = devID;
+	// Get the complete stream description set for the output
+	err = AudioDeviceGetPropertyInfo(devID, 
+									 kMasterChannel,
+									 isOutput,
+									 kAudioDevicePropertyStreamConfiguration,
+									 &size,
+									 &writeable);
+	if (err != kAudioHardwareNoError) {
+		return error("Can't get output device property info: ",
+					 ::errToString(err));
+	}
+	port->streamDesc = new AudioBufferList[size/sizeof(AudioBufferList)];
+	err = AudioDeviceGetProperty(devID, 
+								 kMasterChannel,
+								 isOutput,
+								 kAudioDevicePropertyStreamConfiguration,
+								 &size,
+								 port->streamDesc);
+	if (err != kAudioHardwareNoError) {
+		return error("Can't get output device stream configuration: ",
+					 ::errToString(err));
+	}
+	// Check that user's request is a valid stream
+	if (port->streamIndex >= port->streamDesc->mNumberBuffers) {
+		return error("Invalid output stream index");
+	}
+	// Brute force: Find first audio channel for desired output stream
+	int streamChannel = 0;
+	for (int stream = 0; stream < port->streamDesc->mNumberBuffers; ++stream) {
+		if (stream == port->streamIndex) {
+			port->streamChannel = streamChannel;
+			printf("output port streamChannel = %d\n", port->streamChannel);
+			break;
+		}
+		streamChannel += port->streamDesc->mBuffers[stream].mNumberChannels;
+	}
+
 	// Get current output format	
 	size = sizeof(port->deviceFormat);
 	err = AudioDeviceGetProperty(devID, 
-								  0, isOutput,
+								  port->streamChannel, isOutput,
 								  kAudioDevicePropertyStreamFormat, 
 								  &size, 
 								  &port->deviceFormat);
@@ -401,10 +500,9 @@ int OSXAudioDevice::openOutput()
 	}
 	// Cache this.
 	// Test and store whether or not audio format property is writable.
-	Boolean writeable;
 	size = sizeof(writeable);
 	err = AudioDeviceGetPropertyInfo(devID,
-   									0, isOutput,
+   									port->streamChannel, isOutput,
 								    kAudioDevicePropertyStreamFormat,
 									&size,
 									&writeable);
@@ -433,7 +531,7 @@ int OSXAudioDevice::doOpen(int mode)
 		
 	// Register our callback functions with the HAL.
 	err = AudioDeviceAddPropertyListener(_impl->deviceID,
-										0, isInput,
+										kMasterChannel, isInput,
 										kAudioDevicePropertyDeviceIsRunning,
 									   _impl->listenerProcess, 
 									   (void *) this);
@@ -461,7 +559,7 @@ int OSXAudioDevice::doClose()
 		error("OSXAudioDevice::doClose: error removing IO proc: ",
 			  errToString(err));
 	err = AudioDeviceRemovePropertyListener(_impl->deviceID,
-											0, _impl->recording,
+											kMasterChannel, _impl->recording,
 											kAudioDevicePropertyDeviceIsRunning,
 										   _impl->listenerProcess);
 	status = (err == kAudioHardwareNoError) ? status : -1;
@@ -519,7 +617,7 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 			UInt32 size = sizeof(requestedFormat);
 			OSStatus err = AudioDeviceSetProperty(_impl->deviceID,
 										 NULL,
-										 0, dir == REC,
+										 port->streamChannel, dir == REC,
 								    	 kAudioDevicePropertyStreamFormat,
 										 size,
 										 (void *)&requestedFormat);
@@ -529,7 +627,7 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 			// Now retrieve settings to see what we got (IS THIS NECESSARY?)
 			size = sizeof(port->deviceFormat);
 			err = AudioDeviceGetProperty(_impl->deviceID, 
-										  0, dir == REC,
+										  port->streamChannel, dir == REC,
 										  kAudioDevicePropertyStreamFormat, 
 										  &size, 
 										  &port->deviceFormat);
@@ -594,14 +692,7 @@ int OSXAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 {
 	Boolean writeable;
 	UInt32 size = sizeof(writeable);
-	OSStatus err = AudioDeviceGetPropertyInfo(_impl->deviceID, 
-   									0, _impl->recording,
-								    kAudioDevicePropertyBufferSize, 
-									&size,
-									&writeable);
-	if (err != kAudioHardwareNoError) {
-		return error("Can't get audio device property");
-	}
+	OSStatus err;
 	int reqQueueFrames = *pWriteSize;
 	unsigned int deviceBufferBytes = 0;
 
@@ -612,6 +703,14 @@ int OSXAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 #if DEBUG > 0
 		printf("========== CONFIGURING %s ==========\n", dir == REC ? "INPUT" : "OUTPUT");
 #endif
+		err = AudioDeviceGetPropertyInfo(_impl->deviceID, 
+   									port->streamChannel, dir == REC,
+								    kAudioDevicePropertyBufferSize, 
+									&size,
+									&writeable);
+		if (err != kAudioHardwareNoError) {
+			return error("Can't get audio device property");
+		}
 		// Audio buffer is always floating point.  Attempt to set size in bytes.
 		// Loop until request is accepted, halving value each time.
 		unsigned int reqBufBytes = sizeof(float) * port->deviceFormat.mChannelsPerFrame * reqQueueFrames;
@@ -619,7 +718,7 @@ int OSXAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 			size = sizeof(reqBufBytes);
 			while ( (err = AudioDeviceSetProperty(_impl->deviceID,
 											 NULL,
-											 0, dir == REC,
+											 port->streamChannel, dir == REC,
 											 kAudioDevicePropertyBufferSize,
 											 size,
 											 (void *)&reqBufBytes))
@@ -635,7 +734,7 @@ int OSXAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 		// Get and store the actual buffer size.  (Device may not want to change.)
 		size = sizeof(deviceBufferBytes);
 		err = AudioDeviceGetProperty(_impl->deviceID,
-									 0, dir == REC,
+									 port->streamChannel, dir == REC,
 									 kAudioDevicePropertyBufferSize,
 									 &size,
 									 &deviceBufferBytes);
@@ -822,12 +921,12 @@ int OSXAudioDevice::doGetFrameCount() const
 
 bool OSXAudioDevice::recognize(const char *desc)
 {
-	return true;
+	return desc == NULL | strncmp(desc, "OSXHW", 5) == 0;
 }
 
 AudioDevice *OSXAudioDevice::create(const char *inputDesc, const char *outputDesc, int mode)
 {
-	return new OSXAudioDevice;
+	return new OSXAudioDevice(inputDesc ? inputDesc : outputDesc);
 }
 
 #endif	// MACOSX

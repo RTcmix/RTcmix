@@ -7,7 +7,7 @@
 
 class OSXAudioDevice : public AudioDeviceImpl {
 public:
-	OSXAudioDevice();
+	OSXAudioDevice(const char *desc=NULL);
 	virtual ~OSXAudioDevice();
 	// Recognizer
 	static bool			recognize(const char *);
