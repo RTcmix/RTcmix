@@ -20,7 +20,6 @@ install:
 	@cd head; $(MAKE) install;
 	@cd utils; $(MAKE) install;
 	@cd insts.base; $(MAKE) install;
-	@cd insts.std; $(MAKE) install;
 	@echo "install done."; echo ""
 
 H::
