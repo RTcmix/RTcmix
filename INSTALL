@@ -40,6 +40,10 @@ Ia.  Preliminaries
       source code tarball, and followed the build instructions at
       http://www.zope.org/Members/jens/docs/zope_osx.
 
+   c) If you want to use gnuplot with the fplot Minc function, you have
+      to install both the command-line gnuplot from source and Aquaterm.
+      See http://aquaterm.sourceforge.net for instructions.
+
 
 3) For SGI:
 
