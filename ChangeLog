@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Saturday, June 19, 2004 John Gibson <johgibso-at-indiana.edu>
+
+   * Implement maketable versions of all the old gen types, with
+     some improvements.
+   * New tablelen script command to see how many items a table has.
+
 2004-06-18  Douglas Scott  <netdscott-at-netscape.net>
 
 	* Instrument::init() prototype changed to take double[], int. 
