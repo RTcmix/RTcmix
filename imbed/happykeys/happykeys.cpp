@@ -172,6 +172,7 @@ main(int argc, char *argv[])
 			case 27: /* ESC shuts it down */
 				printf("\n\nshutting down...\n");
 				fflush(stdout);
+				rrr->close();
 				endwin();
 				return(1);
 			default:

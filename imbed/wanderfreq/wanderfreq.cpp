@@ -107,6 +107,7 @@ void wander()
 	if (!wavesLeft)
 	{
 		printf("All waves have finished.  Exiting.\n");
+		rrr->close();
 		exit(0);
 	}
 }
