@@ -7,6 +7,8 @@
 #ifndef _GLOBALS_H_ 
 #define _GLOBALS_H_ 1
 
+#include "version.h"
+
 #ifdef MAIN
 #define GLOBAL
 #else
