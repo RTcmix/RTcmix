@@ -36,6 +36,7 @@ all : $(LIB)
 install:	all
 
 uninstall:
+	$(RM) $(LIBDIR)/$(LIB)
 
 $(LIB):	$(OBJECTS) $(OOBJECTS)
 	$(RM) $@
