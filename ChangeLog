@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Monday, April 14, 2003  Douglas Scott  <netdscott-at-netscape.net>
+
+    * Changed scheduling offset system to avoid all need for gettimeofday(),
+      etc.
+    * Perl-enhanced RTcmix object now subclass of RTcmix.
+
 Thursday, March 20, 2003 Douglas Scott <dscott-at-netscape.net>
 
    * More work on bus code (renames for clarity, memory cleanup).
