@@ -50,11 +50,17 @@ code provided in docs/sample_code.
    for the accessors to use when your code tries to use a private base
    class variable.
 
-6. Use a configure method (as in MIX.cpp) whenever your inst takes input.
+6. rtsetinput and rtsetoutput now return status (0: okay, -1: error) rather
+   than nsamps.  The way to handle this is to use the following idiom.
+
+      if (rtsetinput(inskip, this) == -1)
+         return DONT_SCHEDULE;
+
+7. Use a configure method (as in MIX.cpp) whenever your inst takes input.
    Not required, but recommended over the old way of handling memory
    allocation in the run method.
 
-7. Another recommended change...  When computing values at the control rate,
+8. Another recommended change...  When computing values at the control rate,
    many insts use this idiom in the run method:
 
          if (branch < 0) {
