@@ -99,6 +99,7 @@ ug_intro()
 	UG_INTRO("note_pfield_path", note_pfield_path);
 	UG_INTRO("inst_pfield_path", inst_pfield_path);
 	UG_INTRO("unset_pfield_path", unset_pfield_path);
+	UG_INTRO("set_inst_tag_number", set_inst_tag_number);
 }
 
 

@@ -266,7 +266,8 @@ main(int argc, char *argv[])
                printf("rtupdates enabled\n");
                curtag = 1;          /* "0" is reserved for all notes */
 			   curinst = 0;
-			   
+			   curgen = 1;
+
                for (j = 0; j < MAXPUPS; j++)     /* initialize element 0 */
                   pupdatevals[0][j] = NOPUPDATE;
 			   for(j = 0; j < MAXNUMTAGS; j++)

@@ -58,7 +58,6 @@ double checkInsts(char *fname, double *pp, int n_args)
 	
 			iv = Iptr->init(p, n_args);
 			rv = (double)iv;
-			printf("rv = %2.2f, iv = %d\n",rv,iv);
 
 			/* schedule instrument */
 

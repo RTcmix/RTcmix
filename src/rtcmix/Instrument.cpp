@@ -26,7 +26,7 @@ Instrument :: Instrument()
 	   pfpathcounter[i] = 0;
 	   cumulative_size[i] = 0;
 	   newpvalue[i] = 0;
-	   oldsamp[i] = 0;
+	   oldsamp[i] = -1;
    }
    j = 0;
    k = 0;
@@ -344,10 +344,8 @@ void Instrument::set_instnum(char* name)
 {
 	inst_list *tmp;
 //	printf("firstname = %s\n", name);
-//	printf("curinst = %i\n", curinst);
 	if(ilist == NULL)
 	{	
-//		printf("one\n");
 		ilist = (struct inst_list *) malloc(sizeof(struct inst_list));
 		ilist->next = NULL;
 		ilist->num = curinst++;
@@ -357,14 +355,11 @@ void Instrument::set_instnum(char* name)
 //		printf("iname = %s\n", ilist->name);
 	}
 	tmp = ilist;
-//	printf("two\n");
 //	printf("name = %s \n", name);
 	while((strcmp(name, tmp->name) != 0) && (tmp->next != NULL))
 	{
-//		printf("two\n");
 		tmp = tmp->next;
 	}
-//	printf("four\n");
 	if(strcmp(name, tmp->name) == 0)
 	{
 		instnum = tmp->num;
@@ -377,7 +372,6 @@ void Instrument::set_instnum(char* name)
 		tmp = tmp->next;
 		tmp->next = NULL;
 		tmp->num = curinst++;
-//		printf("curinst =%i\n", curinst);
 		tmp->name = name;
 		ilist->next = tmp;
 		instnum = tmp->num;
@@ -545,6 +539,8 @@ void Instrument::pf_path_update(int tag, int pval)
 					if(parray_size[tag][pval][j] <= cumulative_size[pval] + 1)
 						return;  // should this be tag instead of '0'?
 				}
+				if(oldsamp[pval] == -1)
+					oldsamp[pval] = cursamp;
 
 				diff = pfpath[tag][pval][cumulative_size[pval] + 1][1] 
                    - pfpath[tag][pval][cumulative_size[pval]][1];
@@ -553,12 +549,20 @@ void Instrument::pf_path_update(int tag, int pval)
                            - pfpath[tag][pval][cumulative_size[pval]][0];
 
 				tableset(difftime, psize(gen_type[tag][pval][j]), ptabs[pval]);
-
-				table_val = tablei(cursamp-oldsamp[pval], ptables[pval]
+				
+//				printf("cursamp - oldsamp = %i\n", cursamp - oldsamp[pval]);
+				table_val = tablei(cursamp - oldsamp[pval], ptables[pval]
                                    , ptabs[pval]);
 
 				pupdatevals[tag][pval] = 
              pfpath[tag][pval][cumulative_size[pval]][1] + (table_val * diff);
+
+//	   			printf("diff = %f\n", diff);
+//				printf("difftime = %f\n", difftime);
+//				printf("table_val = %f\n\n\n\n", table_val);
+//				printf("pfpath[%i][%i][%i][1] = %f\n", tag, pval
+//                       ,cumulative_size[pval]
+ //                      , pfpath[tag][pval][cumulative_size[pval]][1]);
 
 				printf("table result [%i] = %f\n"
                        , tag, pupdatevals[tag][pval]);
@@ -588,7 +592,10 @@ void Instrument::pf_path_update(int tag, int pval)
 					if(parray_size[0][pval][j] <= pfpathcounter[pval] + 1)
 						return;
 				}
-				
+
+				if(oldsamp[pval] == -1)
+					oldsamp[pval] = cursamp;
+
 				diff = pfpath[0][pval][cumulative_size[pval] + 1][1] 
                    - pfpath[0][pval][cumulative_size[pval]][1];
 

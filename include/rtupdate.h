@@ -34,6 +34,7 @@ GLOBAL int curtag;                /* current note tag */
 GLOBAL int tags_on;               /* using note tags for rtupdates */
 GLOBAL int tag_sem;
 GLOBAL int curinst;
+GLOBAL int curgen;
 
 struct inst_list
 {
@@ -43,6 +44,8 @@ struct inst_list
 }; //inst_list
 
 GLOBAL struct inst_list *ilist;
+GLOBAL struct inst_list *genlist;
+
 /* contains the values to be updated -- a recirculating array */
 
 GLOBAL float pupdatevals[MAXPUPARR][MAXPUPS];
