@@ -3,6 +3,10 @@
 # put classes like this into their own files, and load them in with
 # an import statement (as is done for the rtcmix extension).
 #
+# NOTE: This instrument can't play overlapping notes in a way that
+# you would expect, because the entire stream of WIGGLE notes flows
+# through the waveshaper and filter instruments.
+#
 # To run this script, type: "PYCMIX < synthclass.py"
 #
 # John Gibson, 8 Jan 2004
@@ -37,6 +41,8 @@ class Synth:
 
    def play(self, start, dur, gain, pitch, modfreq, moddepth, shspeed, shseed,
                                                             shmaxindex, fseed):
+      """Play one note, and return <start> + <dur>.  <start>, <dur> and the
+         return value are in beats."""
 
       # start, dur and shspeed are in beats; convert to time
       start = tb(start)
