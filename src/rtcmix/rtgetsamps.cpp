@@ -14,18 +14,14 @@
 #include "../rtstuff/rtdefs.h"
 #include "AudioDevice.h"
 
-extern AudioDevice *globalAudioDevice;	// audio_devices.cpp
-
 /* ----------------------------------------------------------- rtgetsamps --- */
 void
 rtgetsamps(AudioDevice *inputDevice)
 {
-	assert(audio_on == 1);
-	// Sorrowful hack:  The dual AudioDevice run the callback on the playback
-	// device, which means it cannot pass the record device to this function.
-	if (globalAudioDevice->getFrames(audioin_buffer, RTBUFSAMPS) < 0)
+	assert(record_audio == 1);
+	if (inputDevice->getFrames(audioin_buffer, RTBUFSAMPS) < 0)
 	{
-		fprintf(stderr, "rtgetsamps error: %s\n", globalAudioDevice->getLastError());
+		fprintf(stderr, "rtgetsamps error: %s\n", inputDevice->getLastError());
 	}
 }
 
