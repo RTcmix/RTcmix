@@ -20,7 +20,9 @@ int rtsetoutput(float start, float dur, Instrument *theInst)
 #ifdef DBUG
     cout << "rtsetoutput():  rtInteractive mode set\n";
 #endif
+	pthread_mutex_lock(&schedtime_lock);
     start += (float)schedtime;
+	pthread_mutex_unlock(&schedtime_lock);
   }
   
   theInst->start = start;
