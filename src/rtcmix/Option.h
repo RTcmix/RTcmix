@@ -62,6 +62,7 @@ public:
 	static void init();
 
 	static int readConfigFile(const char *fileName);
+	static int writeConfigFile(const char *fileName);
 
 	static bool audio() { return _audio; }
 	static bool audio(const bool setIt) { _audio = setIt; return _audio; }

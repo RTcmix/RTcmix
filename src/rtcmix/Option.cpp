@@ -146,8 +146,7 @@ int Option::readConfigFile(const char *fileName)
 		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
 	// string options .........................................................
-
-	char *sval;
+char *sval;
 
 	key = kOptionDevice;
 	result = conf.getValue(key, sval);
@@ -179,6 +178,76 @@ int Option::readConfigFile(const char *fileName)
 
 	return 0;
 }
+
+/* This is designed to be called from a utility program that writes a new
+   configuration file.
+*/
+#include <stdio.h>
+#include <errno.h>
+
+int Option::writeConfigFile(const char *fileName)
+{
+	if (fileName == NULL || fileName[0] == 0) {
+		warn(NULL, "Config file name is NULL or empty.");
+		return -1;
+	}
+
+	FILE *stream = fopen(fileName, "r");
+	if (stream != NULL || errno != ENOENT) {
+		warn(NULL, "Config file \"%s\" already exists.", fileName);
+		return -1;
+	}
+
+	stream = fopen(fileName, "w");
+	if (stream == NULL) {
+		warn(NULL, "Can't open \"%s\" for writing.", fileName);
+		return -1;
+	}
+
+   fprintf(stream, "# Default configuration file\n");
+
+	// write bool options
+   fprintf(stream, "\n# Boolean options: key = [true | false]\n");
+	fprintf(stream, "%s = %s\n", kOptionAudio, audio() ? "true" : "false");
+	fprintf(stream, "%s = %s\n", kOptionPlay, play() ? "true" : "false");
+	fprintf(stream, "%s = %s\n", kOptionRecord, record() ? "true" : "false");
+	fprintf(stream, "%s = %s\n", kOptionClobber, clobber() ? "true" : "false");
+	fprintf(stream, "%s = %s\n", kOptionPrint, print() ? "true" : "false");
+	fprintf(stream, "%s = %s\n", kOptionReportClipping,
+										reportClipping() ? "true" : "false");
+	fprintf(stream, "%s = %s\n", kOptionCheckPeaks,
+										checkPeaks() ? "true" : "false");
+
+	// write double options
+   fprintf(stream, "\n# Number options: key = value\n");
+	fprintf(stream, "%s = %g\n", kOptionBufferFrames, bufferFrames());
+
+	// write string options
+   fprintf(stream, "\n# String options: key = \"quoted string\"\n");
+	if (device()[0])
+		fprintf(stream, "%s = \"%s\"\n", kOptionDevice, device());
+	else
+		fprintf(stream, "# %s = \"%s\"\n", kOptionDevice, "mydevice");
+	if (inDevice()[0])
+		fprintf(stream, "%s = \"%s\"\n", kOptionInDevice, inDevice());
+	else
+		fprintf(stream, "# %s = \"%s\"\n", kOptionInDevice, "myindevice");
+	if (outDevice()[0])
+		fprintf(stream, "%s = \"%s\"\n", kOptionOutDevice, outDevice());
+	else
+		fprintf(stream, "# %s = \"%s\"\n", kOptionOutDevice, "myoutdevice");
+#ifdef SHAREDLIBDIR
+	fprintf(stream, "\n# %s is a colon-separated list of directories (full "
+			"path names) to \n# search for instruments.\n", kOptionDSOPath);
+	fprintf(stream, "%s = \"%s\"\n", kOptionDSOPath, SHAREDLIBDIR);
+#endif
+
+	fprintf(stream, "\n");
+	fclose(stream);
+
+	return 0;
+}
+
 
 // String option setting methods
 
