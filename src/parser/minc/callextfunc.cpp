@@ -99,3 +99,86 @@ call_external_function(const char *funcname, const MincListElem arglist[],
    return 0;
 }
 
+
+MincHandle
+minc_offsethandle(const MincHandle handle, const MincFloat val)
+{
+   Handle return_handle;
+
+   DPRINT2("minc_offsethandle (handle=%p, val=%f\n", handle, val);
+
+   /* extract PField from MincHandle
+      create ConstPField for MincFloat
+      create AddPField
+      create Handle for new AddPField, return it cast to MincHandle
+   */
+
+   return_handle = (Handle) malloc(sizeof(struct _handle));
+   return_handle->type = PFieldType;
+// return_handle->ptr = (void *) new AddPField(pfield1, pfield2);
+
+   return (MincHandle) return_handle;
+}
+
+
+MincHandle
+minc_scalehandle(const MincHandle handle, const MincFloat val)
+{
+   Handle return_handle;
+
+   DPRINT2("minc_scalehandle (handle=%p, val=%f\n", handle, val);
+
+   /* extract PField from MincHandle
+      create ConstPField for MincFloat
+      create MultPField
+      create Handle for new MultPField, return it cast to MincHandle
+   */
+
+   return_handle = (Handle) malloc(sizeof(struct _handle));
+   return_handle->type = PFieldType;
+// return_handle->ptr = (void *) new MultPField(pfield1, pfield2);
+
+   return (MincHandle) return_handle;
+}
+
+
+MincHandle
+minc_addhandles(const MincHandle handle1, const MincHandle handle2)
+{
+   Handle return_handle;
+
+   DPRINT2("minc_addhandles (handle1=%p, handle2=%p\n", handle1, handle2);
+
+   /* extract PFields from MincHandles
+      create AddPField
+      create Handle for new AddPField, return it cast to MincHandle
+   */
+
+   return_handle = (Handle) malloc(sizeof(struct _handle));
+   return_handle->type = PFieldType;
+// return_handle->ptr = (void *) new AddPField(pfield1, pfield2);
+
+   return (MincHandle) return_handle;
+}
+
+
+MincHandle
+minc_multhandles(const MincHandle handle1, const MincHandle handle2)
+{
+   Handle return_handle;
+
+   DPRINT2("minc_multhandles (handle1=%p, handle2=%p\n", handle1, handle2);
+
+   /* extract PFields from MincHandles
+      create MultPField
+      create Handle for new MultPField, return it cast to MincHandle
+   */
+
+   return_handle = (Handle) malloc(sizeof(struct _handle));
+   return_handle->type = PFieldType;
+// return_handle->ptr = (void *) new MultPField(pfield1, pfield2);
+
+   return (MincHandle) return_handle;
+}
+
+
