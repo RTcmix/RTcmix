@@ -133,23 +133,14 @@ int SHAPE :: init(double p[], int n_args)
    shaper->setTransferFunc(function, tablelen);
 
    function = NULL;
-   if (n_args > 10) {   // handle table coming in as optional p10 TablePField
-      const PField &field = getPField(10);
-      int len = field.values();
-      function = (double *) field;
-      if (function)
-         index_table = new TableL(dur, function, len);
-   }
-   if (function == NULL) {
+	if (n_args < 11) {		// no p10 guide PField, must use gen table
       function = floc(3);
       if (function) {
          int len = fsize(3);
          index_table = new TableL(dur, function, len);
       }
-      else {
+      else
          advise("SHAPE", "Setting distortion index curve to all 1's.");
-         index = 1.0;
-      }
    }
 
    /* Construct the <ampnorm> WavShape object if (1) p6 is a TablePField, or
@@ -204,12 +195,14 @@ void SHAPE :: doupdate()
    if (max_index < min_index)
       max_index = min_index;
 
+   float rawindex;
    if (nargs > 10)         // use index PField
-      index = p[10];
-   else if (index_table) {
-      index = index_table->tick(currentFrame(), 1.0);
-      index = min_index + (index * (max_index - min_index));
-   }
+      rawindex = p[10];
+   else if (index_table)   // use gen 3
+      rawindex = index_table->tick(currentFrame(), 1.0);
+   else
+      rawindex = 1.0;
+   index = min_index + (rawindex * (max_index - min_index));
 
    // scale index vals to range [-1, 1] in order to use WavShape
    if (ampnorm)
