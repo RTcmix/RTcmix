@@ -1303,7 +1303,7 @@ _cheby_table(const Arg args[], const int nargs, double *array, const int len)
 //    table = maketable("random", size, type[, seed[, min, max]])
 //
 // The distribution types are:
-//    0 = even distribution ["even"]
+//    0 = even distribution ["even" or "linear"]
 //    1 = low weighted linear distribution ["low"]
 //    2 = high weighted linear distribution ["high"]
 //    3 = triangle linear distribution ["triangle"]
@@ -1352,7 +1352,7 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
 		return die("maketable (random)", "Table length must be at least 2.");
 
 	if (args[0].isType(StringType)) {
-		if (args[0] == "even")
+		if (args[0] == "even" || args[0] == "linear")
 			type = 0;
 		else if (args[0] == "low")
 			type = 1;
