@@ -48,6 +48,7 @@ int MIX::init(float p[], int n_args)
 	}
 	else
 		advise("MIX", "Setting phrase curve to all 1's.");
+   aamp = amp;                     /* in case amptable == NULL */
 
 	skip = (int)(SR/(float)resetval);
 
@@ -58,7 +59,6 @@ int MIX::run()
 {
 	int i,j,k,rsamps;
 	float out[MAXBUS];
-	float aamp;
 
 	if (in == NULL)                 /* first time, so allocate it */
 		in = new float [RTBUFSAMPS * inputchans];
@@ -69,7 +69,6 @@ int MIX::run()
 
 	rtgetin(in, this, rsamps);
 
-   aamp = amp;                     /* in case amptable == NULL */
 	for (i = 0; i < rsamps; i += inputchans)  {
 		if (--branch < 0) {
 			if (amptable)

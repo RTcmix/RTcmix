@@ -2,7 +2,7 @@
 
 class MIX : public Instrument {
 	int outchan[MAXBUS];
-	float amp,*in,*amptable,tabs[2];
+	float amp,aamp,*in,*amptable,tabs[2];
 	int skip, branch;
 
 public:
