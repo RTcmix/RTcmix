@@ -98,6 +98,9 @@ at least the "insts.std" package. Here's how to install packages:
    Rename this to "insts.std", or use the full version name in
    makefile.conf (see below).
 
+   WARNING: If the package dir name doesn't match the one given
+   in makefile.conf, you'll get an infinite loop when you run make.
+
 4) Edit "makefile.conf" in the RTcmix directory.
 
    If the package is an instrument package (e.g., insts.std, insts.jg),
