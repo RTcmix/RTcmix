@@ -16,5 +16,6 @@ private:
     float *rholoc, *thetaloc;
     float tabr[2], tabt[2];
     double R_old, T_old, mindiff;
+    int m_updateSamps, m_updateCount;
     double oldOutlocs[2][13];
 };
