@@ -759,7 +759,7 @@ int OSXAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 			port->audioBufFrames = reqQueueFrames - (reqQueueFrames % deviceFrames);
 		}
 		// Notify caller of any change.
-		*pWriteSize = port->audioBufFrames;
+		*pWriteSize = port->audioBufFrames / *pCount;
 
 		port->deviceBufFrames = deviceBufferBytes / (port->deviceFormat.mChannelsPerFrame * sizeof(float));
 
@@ -924,7 +924,7 @@ int OSXAudioDevice::doGetFrameCount() const
 
 bool OSXAudioDevice::recognize(const char *desc)
 {
-	return desc == NULL || strcmp(desc, "OSXHW") == 0;
+	return (desc == NULL) || (strncmp(desc, "OSXHW", 5) == 0);
 }
 
 AudioDevice *OSXAudioDevice::create(const char *inputDesc, const char *outputDesc, int mode)
