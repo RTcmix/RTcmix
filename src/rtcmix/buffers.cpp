@@ -110,8 +110,68 @@ init_buf_ptrs()
 }
 
 
+/* ------------------------------------------------ clear_audioin_buffers --- */
+#ifdef __GNUC__
+inline void
+#else
+void
+#endif
+clear_audioin_buffers()
+{
+   int   i, j;
+
+   for (i = 0; i < MAXBUS; i++) {
+      BufPtr buf = audioin_buffer[i];
+      if (buf != NULL)
+         for (j = 0; j < RTBUFSAMPS; j++)
+            buf[j] = 0.0;
+   }
+}
+
+
+/* ---------------------------------------------------- clear_aux_buffers --- */
+#ifdef __GNUC__
+inline void
+#else
+void
+#endif
+clear_aux_buffers()
+{
+   int   i, j;
+
+   for (i = 0; i < MAXBUS; i++) {
+      BufPtr buf = aux_buffer[i];
+      if (buf != NULL)
+         for (j = 0; j < RTBUFSAMPS; j++)
+            buf[j] = 0.0;
+   }
+}
+
+
+/* ------------------------------------------------- clear_output_buffers --- */
+#ifdef __GNUC__
+inline void
+#else
+void
+#endif
+clear_output_buffers()
+{
+   int   i, j;
+
+   for (i = 0; i < NCHANS; i++) {          /* zero just the ones in use */
+      BufPtr buf = out_buffer[i];
+      for (j = 0; j < RTBUFSAMPS; j++)
+         buf[j] = 0.0;
+   }
+}
+
+
 /* ------------------------------------------------------ allocate_buffer --- */
+#ifdef __GNUC__
 static inline BufPtr
+#else
+static BufPtr
+#endif
 allocate_buffer(int nsamps)
 {
    BufPtr buf_ptr;
@@ -124,7 +184,11 @@ allocate_buffer(int nsamps)
 
 /* ---------------------------------------------- allocate_audioin_buffer --- */
 // called from ??
+#ifdef __GNUC__
+inline int
+#else
 int
+#endif
 allocate_audioin_buffer(short chan, int frames)
 {
    BufPtr buf_ptr;
@@ -142,8 +206,12 @@ allocate_audioin_buffer(short chan, int frames)
 
 
 /* -------------------------------------------------- allocate_aux_buffer --- */
-// called from bus_config()
+/* Called from bus_config. */
+#ifdef __GNUC__
+inline int
+#else
 int
+#endif
 allocate_aux_buffer(short chan, int frames)
 {
    BufPtr buf_ptr;
@@ -162,7 +230,11 @@ allocate_aux_buffer(short chan, int frames)
 
 /* -------------------------------------------------- allocate_out_buffer --- */
 /* Called from rtsetparams. */
+#ifdef __GNUC__
+inline int
+#else
 int
+#endif
 allocate_out_buffer(short chan, int frames)
 {
    BufPtr buf_ptr;
