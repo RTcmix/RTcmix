@@ -14,13 +14,13 @@ public:
    BASE();
    virtual ~BASE();
    virtual int init(float *, int);
+   virtual int configure();
    virtual int run();
 protected:
    virtual int localInit(float *, int) = 0;
    virtual int finishInit(double, double *) = 0;
    virtual int updatePosition(int) = 0;
    virtual void get_tap(int, int, int, int) = 0;
-   virtual const char * name() = 0;
 
    void setBufferSize(int size) { m_buffersize = size; }
    int getBufferSize(void) { return m_buffersize; }

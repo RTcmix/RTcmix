@@ -7,13 +7,15 @@
 #include <math.h>
 #include <ugens.h>
 #include <mixerr.h>
+#include <assert.h>
 #include "common.h"
 #include <rt.h>
 #include <rtdefs.h>
 
-#undef debug
-#undef SIG_DEBUG
-#undef LOOP_DEBUG
+//#define debug
+//#define SIG_DEBUG
+//#define LOOP_DEBUG
+//#define DELAY_DEBUG
 
 #ifdef SIG_DEBUG
 #define DBG(stmt) { stmt; }
@@ -37,7 +39,7 @@ extern int g_Nterms[13];                 /* defined in common.C */
 int BASE::primes[NPRIMES + 2];
 int BASE::primes_gotten = 0;
 
-BASE::BASE()
+BASE::BASE() : m_tapsize(0)
 {
     in = NULL;
     m_tapDelay = NULL;
@@ -76,7 +78,6 @@ int BASE::init(float p[], int n_args)
     float  outskip, inskip, abs_factor, rvb_time;
     double R, T, dist;
 
-
     outskip = p[0];
     inskip = p[1];
     m_dur = p[2];
@@ -86,7 +87,15 @@ int BASE::init(float p[], int n_args)
     rtsetinput(inskip, this);
     insamps = (int)(m_dur * SR);
     inamp = p[3];
-   
+
+    if (m_inchan >= inputchans)
+       die(name(), "You asked for channel %d of a %d-channel input file.",
+                                                         m_inchan, inputchans);
+    if (inputchans == 1)
+       m_inchan = 0;
+
+	if (outputchans != 2)
+		die(name(), "Output must be stereo.");
 
     double Matrix[12][12];
    
@@ -102,35 +111,14 @@ int BASE::init(float p[], int n_args)
     /* (perform some initialization that used to be in space.c) */
     int meanLength = MFP_samps(Dimensions);   /* mean delay length for reverb */
     get_lengths(meanLength);              /* sets up delay lengths */
-    alloc_delays();                     /* allocates memory for delays */
     set_gains(rvb_time);                /* sets gains for filters */
     set_walls(abs_factor);              /* sets wall filts for move routine */
     set_allpass();
     set_random();                       /* sets up random variation of delays */
 
-    if (m_inchan >= inputchans)
-       die(name(), "You asked for channel %d of a %d-channel input file.",
-                                                         m_inchan, inputchans);
-    if (inputchans == 1)
-       m_inchan = 0;
-
-   m_tapDelay = new double[m_tapsize + 8];
-   memset(m_tapDelay, 0, (m_tapsize + 8) * sizeof(double));
-#ifdef DELAY_DEBUG
-   printf("tap delay has length %d\n", (m_tapsize + 8));
-#endif
-
-   rvb_reset(m_tapDelay);                  // resets reverb & tap delay
 
    /* flag for use of ear filters */
    m_binaural = (!UseMikes && m_dist < 0.8 && m_dist != 0.0);
-   if (m_binaural) {
-      advise(name(), "Running in binaural mode.");
-      alloc_firfilters();                     // allocates memory for FIRs
-   }
-
-   if (outputchans != 2)
-      die(name(), "Output must be stereo.");
 
    amparray = floc(1);
    if (amparray) {
@@ -216,8 +204,26 @@ int BASE::getInput(int currentSample, int frames)
 		}
 	    in[n++] = insig;	// write back into input array to save space
     }
+#ifdef LOOP_DEBUG
 	DBG1(printf("getInput(): %d signal, %d zero padded\n", nsig, nzeros));
+#endif
 	return 0;
+}
+
+int BASE::configure()
+{
+    Instrument::configure();
+
+	in = new float [RTBUFSAMPS * inputchans];
+    alloc_delays();                     /* allocates memory for delays */
+
+	rvb_reset(m_tapDelay);                  // resets reverb & tap delay
+
+	if (m_binaural) {
+		advise(name(), "Running in binaural mode.");
+		alloc_firfilters();                     // allocates memory for FIRs
+	}
+	return 1;
 }
 
 /* ------------------------------------------------------------------ run --- */
@@ -225,9 +231,6 @@ int BASE::run()
 {
 	int    i = 0;
 	double roomsig[2][BUFLEN], rvbsig[2][BUFLEN];
-
-    if (in == NULL)                /* first time, so allocate it */
-       in = new float [RTBUFSAMPS * inputchans];
 
     Instrument::run();
     
@@ -417,26 +420,19 @@ void BASE::alloc_firfilters()
 }
 
 /* --------------------------------------------------------- alloc_delays --- */
-/* Sets aside the memory needed for the delays in RVB, and computes a
-   length for the tap delay line (m_tapsize).
+/* Sets aside the memory needed for tap delay and the delays in RVB
 */
 void BASE::alloc_delays()
 {
-   double diag, maxdim, mindim, d1, d0;
-
-   /* the length for the main tape delay */
-
-   d0 = Dimensions[0] - Dimensions[2];
-   d1 = Dimensions[1] - Dimensions[3];
-   maxdim = (d0 > d1) ? d0 : d1;
-   mindim = (d0 > d1) ? d1 : d0;
-   diag = hypot((3 * maxdim), mindim);
-   m_tapsize = (int)(diag / MACH1 * SR + 32);
+	assert(m_tapsize > 0);
+    m_tapDelay = new double[m_tapsize + 8];
+	memset(m_tapDelay, 0, (m_tapsize + 8) * sizeof(double));
 
    /* allocate memory for reverb delay lines */
    for (int i = 0; i < 2; i++) {
       for (int j = 0; j < 6; j++) {
-         m_rvbData[i][j].Rvb_del = new double[rvbdelsize];	// zeroed in rvb_reset
+         m_rvbData[i][j].Rvb_del = new double[rvbdelsize];
+         memset(m_rvbData[i][j].Rvb_del, 0, sizeof(double) * rvbdelsize);
       }
    }
 }
@@ -444,7 +440,8 @@ void BASE::alloc_delays()
 
 /* ---------------------------------------------------------- get_lengths --- */
 /* Computes the lengths for the 2x6 delays used in reverb, and determines
-   the max number of elements needed for allocation.
+   the max number of elements needed for allocation, and computes a
+   length for the tap delay line (m_tapsize).
 */
 void BASE::get_lengths(long m_length)
 {
@@ -466,6 +463,20 @@ void BASE::get_lengths(long m_length)
    }
    /* extra to allow for varying taps dur to random tap */
    rvbdelsize = (int)(max * 1.2);
+
+   double diag, maxdim, mindim, d1, d0;
+
+   /* get the length for the main tape delay */
+
+   d0 = Dimensions[0] - Dimensions[2];
+   d1 = Dimensions[1] - Dimensions[3];
+   maxdim = (d0 > d1) ? d0 : d1;
+   mindim = (d0 > d1) ? d1 : d0;
+   diag = hypot((3 * maxdim), mindim);
+   m_tapsize = (int)(diag / MACH1 * SR + 32);
+#ifdef DELAY_DEBUG
+   printf("tap delay has length %d\n", (m_tapsize + 8));
+#endif
 }
 
 
@@ -751,7 +762,7 @@ int BASE::roomtrig(double A,                 /* 'rho' or 'x' */
 
    if (X < Dimensions[3] || X > Dimensions[1] || Y > Dimensions[0] ||
        Y < Dimensions[2]) {
-      fprintf(stderr, "Source loc outside room bounds!!\n\n");
+      rterror(name(), "Source location is outside room bounds!!");
       return (1);
    }
 
@@ -856,7 +867,7 @@ int BASE::roomtrig(double A,                 /* 'rho' or 'x' */
    /* Check to see that source distance is not "zero" */
 
    if (m_vectors[0][0].Rho < 0.001 || m_vectors[1][0].Rho < 0.001) {
-      fprintf(stderr, "Zero source distance not allowed!\n\n");
+      rterror(name(), "Zero source distance not allowed!");
       return (1);
    }
 
@@ -917,7 +928,7 @@ void BASE::rvb_reset(double *m_tapDelay)
 		m_rvbPast[i] = 0.0;
 	}
 
-	/* reset tap delay for move */
+	/* reset tap delay */
 
 	for (i = 0; i < m_tapsize + 8; ++i)
 		m_tapDelay[i] = 0.0;

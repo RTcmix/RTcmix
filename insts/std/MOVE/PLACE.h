@@ -10,7 +10,6 @@ public:
     PLACE();
     virtual ~PLACE();
 protected:
-    virtual const char * name() { return "PLACE"; }
     virtual int localInit(float *, int);
     virtual int finishInit(double, double *);
     virtual int updatePosition(int);
