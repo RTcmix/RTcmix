@@ -37,7 +37,7 @@ minampdb = 75
 ampdiff = maxampdb - minampdb
 
 control_rate(20000)         # need high control rate for short synth notes
-makegen(1, 10, 10000, 0,0, 1,1, 20,0)
+makegen(1, 18, 10000, 0,0, 1,1, 20,0)
 makegen(2, 10, 10000, 1, .9, .7, .5, .3, .2, .1, .05, .02)
 
 st = 0
