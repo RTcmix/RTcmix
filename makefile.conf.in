@@ -48,9 +48,6 @@ OPT = -g -Wall -Wno-unused -O2
 # with your existing scores, uncomment this line:
 #CMIX_FLAGS += -DCOMPATIBLE_FUNC_LOCS
 
-# Uncomment to use real time pfield updating, for GUI and performance control
-# CMIX_FLAGS += -DUSE_RTUPDATE
-
 ###############################################################
 # Shouldn't need to edit below this line
 ###############################################################
