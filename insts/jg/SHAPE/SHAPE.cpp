@@ -1,15 +1,24 @@
 /* SHAPE - waveshaping instrument
 
+   This differs from insts.std/WAVESHAPE in that it accepts input from
+   a file or bus, and it offers a different way of performing amplitude
+   normalization.
+
    p0 = output start time
    p1 = input start time
    p2 = input duration
    p3 = amplitude multiplier
-   p4 = input channel [optional, default is 0]
-   p5 = percent of signal to left output channel [optional, default is .5]
+   p4 = minimum distortion index
+   p5 = maximum distortion index
+   p6 = table number of amplitude normalization function, or 0 for no norm.
+   p7 = input channel [optional, default is 0]
+   p8 = percent of signal to left output channel [optional, default is .5]
 
-   Assumes function table 1 is amplitude curve for the note. (Try gen 18.)
-   Or you can just call setline. If no setline or function table 1, uses
-   flat amplitude curve.
+   Function tables:
+      1  amplitude curve (or use setline)
+         If no setline or function table 1, uses flat amplitude curve.
+      2  transfer function
+      3  distortion index curve
 
    JGG <johgibso@indiana.edu>, 3 Jan 2002
 */
@@ -27,6 +36,10 @@
 SHAPE :: SHAPE() : Instrument()
 {
    in = NULL;
+   amp_table = NULL;
+   ampnorm = NULL;
+   index_table = NULL;
+   norm_index = 0.0;
    branch = 0;
 }
 
@@ -34,44 +47,81 @@ SHAPE :: SHAPE() : Instrument()
 SHAPE :: ~SHAPE()
 {
    delete [] in;
+   delete amp_table;
+   delete index_table;
    delete shaper;
+   delete ampnorm;
+   delete dcblocker;
 }
 
 
 int SHAPE :: init(float p[], int n_args)
 {
+   int   ampnorm_genno;
    float outskip, inskip, dur;
+   float *function;
 
    outskip = p[0];
    inskip = p[1];
    dur = p[2];
    amp = p[3];
-   inchan = n_args > 4 ? (int) p[4] : 0;             /* default is chan 0 */
-   pctleft = n_args > 5 ? p[5] : 0.5;                /* default is .5 */
+   min_index = p[4];
+   max_index = p[5];
+   ampnorm_genno = (int) p[6];
+   inchan = n_args > 7 ? (int) p[7] : 0;             /* default is chan 0 */
+   pctleft = n_args > 8 ? p[8] : 0.5;                /* default is .5 */
 
    nsamps = rtsetoutput(outskip, dur, this);
    rtsetinput(inskip, this);
 
-   if (inchan >= inputchans)
+   if (inchan >= InputChannels())
       die("SHAPE", "You asked for channel %d of a %d-channel file.",
-                                                         inchan, inputchans);
+                                                   inchan, InputChannels());
 
-   amparray = floc(1);
-   if (amparray) {
+   if (max_index < min_index)
+      die("SHAPE", "Max. distortion index must not be less than min. index.");
+
+   function = floc(1);
+   if (function) {
       int len = fsize(1);
-      tableset(dur, len, amptabs);
+      amp_table = new TableL(dur, function, len);
    }
    else
-      advise("SHAPE", "Setting phrase curve to all 1's.");
+      advise("SHAPE", "Setting amplitude curve to all 1's.");
 
-   shaper = new WavShape(1.0);
-   transfer_func = floc(2);
-   if (transfer_func) {
+   shaper = new WavShape();
+   function = floc(2);
+   if (function) {
       int len = fsize(2);
-      shaper->setTransferFunc(transfer_func, len);
+      shaper->setTransferFunc(function, len);
    }
    else
       die("SHAPE", "You haven't made the transfer function (table 2).");
+
+   function = floc(3);
+   if (function) {
+      int len = fsize(3);
+      index_table = new TableL(dur, function, len);
+   }
+   else {
+      advise("SHAPE", "Setting distortion index curve to all 1's.");
+      index = 1.0;
+   }
+
+   if (ampnorm_genno > 0) {
+      function = floc(ampnorm_genno);
+      if (function) {
+         ampnorm = new WavShape();
+         int len = fsize(ampnorm_genno);
+         ampnorm->setTransferFunc(function, len);
+      }
+      else
+         die("SHAPE", "You specified table %d as the amplitude normalization "
+                      "function, but you didn't create the table.",
+                      ampnorm_genno);
+   }
+
+   dcblocker = new DCBlock();
 
    skip = (int) (SR / (float) resetval);
    aamp = amp;                  /* in case amparray == NULL */
@@ -83,38 +133,51 @@ int SHAPE :: init(float p[], int n_args)
 int SHAPE :: run()
 {
    int   i, samps;
-   float insig;
+   float insig, outsig;
    float out[2];
 
    if (in == NULL)
-      in = new float [RTBUFSAMPS * inputchans];
+      in = new float [RTBUFSAMPS * InputChannels()];
 
    Instrument::run();
 
-   samps = chunksamps * inputchans;
+   samps = FramesToRun() * InputChannels();
    rtgetin(in, this, samps);
 
-   for (i = 0; i < samps; i += inputchans) {
+   for (i = 0; i < samps; i += InputChannels()) {
       if (--branch < 0) {
-         if (amparray)
-            aamp = tablei(cursamp, amparray, amptabs) * amp;
+         if (amp_table)
+            aamp = amp_table->tick(CurrentFrame(), amp);
+         if (index_table)
+            index = index_table->tick(CurrentFrame(), 1.0);
+         index = min_index + (index * (max_index - min_index));
+         if (ampnorm)
+            /* scale index vals to range [-1, 1] in order to use WavShape */
+            norm_index = (index / (max_index / 2.0)) - 1.0;
          branch = skip;
       }
 
-      insig = in[i + inchan];
-      out[0] = shaper->tick(insig * (1.0 / 32768.0));
-      out[0] *= 32768.0 * aamp;
+      /* NB: WavShape deals with samples in range [-1, 1]. */
+      insig = in[i + inchan] * (1.0 / 32768.0);
+      outsig = shaper->tick(insig * index);
+      if (outsig) {
+         if (ampnorm)
+            outsig = dcblocker->tick(outsig) * ampnorm->tick(norm_index);
+         else
+            outsig = dcblocker->tick(outsig);
+      }
+      out[0] = outsig * aamp * 32768.0;
 
-      if (outputchans == 2) {
+      if (OutputChannels() == 2) {
          out[1] = out[0] * (1.0 - pctleft);
          out[0] *= pctleft;
       }
 
       rtaddout(out);
-      cursamp++;
+      increment();
    }
 
-   return chunksamps;
+   return FramesToRun();
 }
 
 

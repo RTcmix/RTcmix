@@ -2,10 +2,11 @@
 
 class SHAPE : public Instrument {
    int      inchan, skip, branch;
-   float    amp, aamp, pctleft;
-   float    *in, *amparray, amptabs[2];
-   float    *transfer_func;
-   WavShape *shaper;
+   float    amp, aamp, index, min_index, max_index, norm_index, pctleft;
+   float    *in;
+   TableL   *amp_table, *index_table;
+   WavShape *shaper, *ampnorm;
+   DCBlock  *dcblocker;
 
 public:
    SHAPE();
