@@ -10,10 +10,11 @@ class RefCounted {
 public:
 	int ref() { return ++_refcount; }
 	int unref() { int r; if ((r=--_refcount) <= 0) { delete this; } return r; }
-	static int unref(RefCounted *r);	// defined in rtstuff/RefCounted.C
+	static void ref(RefCounted *r);
+	static int unref(RefCounted *r);
 protected:
 	RefCounted() : _refcount(0) {}
-	virtual ~RefCounted();				// defined in rtstuff/RefCounted.C
+	virtual ~RefCounted();
 private:
 	int _refcount;
 };
