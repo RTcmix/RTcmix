@@ -21,8 +21,8 @@ get_aux_in(
       BufPtr   dest,             /* interleaved buffer from inst */
       int      dest_chans,       /* number of chans interleaved */
       int      dest_frames,      /* frames in interleaved buffer */
-      int      src_chan_list[],  /* list of auxin-bus chan numbers from inst */
-      int      src_chans)        /* number of auxin-bus chans to copy */
+      short    src_chan_list[],  /* list of auxin-bus chan numbers from inst */
+      short    src_chans)        /* number of auxin-bus chans to copy */
 {
    assert(dest_chans >= src_chans);
 
@@ -45,8 +45,8 @@ get_audio_in(
       BufPtr   dest,             /* interleaved buffer from inst */
       int      dest_chans,       /* number of chans interleaved */
       int      dest_frames,      /* frames in interleaved buffer */
-      int      src_chan_list[],  /* list of in-bus chan numbers from inst */
-      int      src_chans)        /* number of in-bus chans to copy */
+      short    src_chan_list[],  /* list of in-bus chan numbers from inst */
+      short    src_chans)        /* number of in-bus chans to copy */
 {
    int   audioin_chans = 2;  // FIXME: where do we get this? rtinput pfield
 
@@ -72,10 +72,9 @@ read_float_samps(
       BufPtr      dest,             /* interleaved buffer from inst */
       int         dest_chans,       /* number of chans interleaved */
       int         dest_frames,      /* frames in interleaved buffer */
-      int         src_chan_list[],  /* list of in-bus chan numbers from inst */
-      int         src_chans,        /* number of in-bus chans to copy */
-      int         fd_index,         /* index into file table of input file */
-      off_t       file_pos)         /* offset into file for lseek */
+      short       src_chan_list[],  /* list of in-bus chan numbers from inst */
+      short       src_chans,        /* number of in-bus chans to copy */
+      Instrument  *inst)
 {
    int            fd, file_chans, seeked, nsamps, src_samps, swap;
    int            data_format, datum_size;
@@ -89,7 +88,7 @@ read_float_samps(
 
    assert(file_chans >= dest_chans);
 
-   data_format = inputFileTable[fd_index].data_format;
+   data_format = inputFileTable[inst->fdIndex].data_format;
 
 #ifdef SNDLIB_LITTLE_ENDIAN
    swap = IS_BIG_ENDIAN_FORMAT(data_format);
@@ -108,7 +107,7 @@ read_float_samps(
 
 // FIXME: Needs fix to rtsetinput when setting initial fileOffset for inst!
 
-   if (lseek(fd, file_pos, SEEK_SET) == -1) {
+   if (lseek(fd, inst->fileOffset, SEEK_SET) == -1) {
       perror("read_float_samps (lseek)");
       exit(1);
    }
@@ -170,10 +169,9 @@ sndlib_read_samps(
       BufPtr      dest,             /* interleaved buffer from inst */
       int         dest_chans,       /* number of chans interleaved */
       int         dest_frames,      /* frames in interleaved buffer */
-      int         src_chan_list[],  /* list of in-bus chan numbers from inst */
-      int         src_chans,        /* number of in-bus chans to copy */
-      int         fd_index,         /* index into file table of input file */
-      off_t       file_pos)         /* offset into file for lseek */
+      short       src_chan_list[],  /* list of in-bus chan numbers from inst */
+      short       src_chans,        /* number of in-bus chans to copy */
+      Instrument  *inst)
 {
    int         fd, file_chans, seeked, nsamps;
    static int  **inbufs = NULL;
@@ -195,7 +193,7 @@ sndlib_read_samps(
    /* Go to saved file offset for this instrument.
       NOTE: clm_seek handles any datum size as if it were 16 bits.
    */
-   seeked = clm_seek(fd, file_pos, SEEK_SET);
+   seeked = clm_seek(fd, inst->fileOffset, SEEK_SET);
    if (seeked == -1) {
       fprintf(stderr, "Bad seek on the input soundfile\n");
       exit(1);
@@ -226,8 +224,8 @@ get_file_in(
       BufPtr      dest,             /* interleaved buffer from inst */
       int         dest_chans,       /* number of chans interleaved */
       int         dest_frames,      /* frames in interleaved buffer */
-      int         src_chan_list[],  /* list of in-bus chan numbers from inst */
-      int         src_chans,        /* number of in-bus chans to copy */
+      short       src_chan_list[],  /* list of in-bus chan numbers from inst */
+      short       src_chans,        /* number of in-bus chans to copy */
       Instrument  *inst)
 {
    int   data_format, nsamps;
@@ -239,12 +237,12 @@ get_file_in(
    /* We read float files ourselves, rather than hand them to sndlib. */
    if (IS_FLOAT_FORMAT(data_format)) {
       nsamps = read_float_samps(dest, dest_chans, dest_frames, src_chan_list,
-                                  src_chans, inst->fdIndex, inst->fileOffset);
+                                                             src_chans, inst);
       inst->fileOffset += nsamps * sizeof(float);
    }
    else {
       nsamps = sndlib_read_samps(dest, dest_chans, dest_frames, src_chan_list,
-                                  src_chans, inst->fdIndex, inst->fileOffset);
+                                                             src_chans, inst);
       /* NOTE: This is right for sndlib, even if file isn't 16-bit: */
       inst->fileOffset += nsamps * sizeof(short);
    }
@@ -266,10 +264,10 @@ rtgetin(float      *inarr,         /* interleaved array of <inputchans> */
         Instrument *inst,
         int        nsamps)         /* samps, not frames */
 {
-   int frames, status;
-   int in_count = inst->bus_config->in_count;
-   int auxin_count = inst->bus_config->auxin_count;
-   int inchans = inst->inputchans;    /* total in chans inst expects */
+   int   frames, status;
+   int   inchans = inst->inputchans;    /* total in chans inst expects */
+   short in_count = inst->bus_config->in_count;
+   short auxin_count = inst->bus_config->auxin_count;
 
    assert(inarr != NULL);
 
@@ -280,22 +278,22 @@ rtgetin(float      *inarr,         /* interleaved array of <inputchans> */
       exit(1);
    }
 
-   if (inst->fdIndex == NO_FD) {                 /* input from aux buses */
-      int *auxin = inst->bus_config->auxin;      /* auxin channel list */
+   if (inst->fdIndex == NO_DEVICE_FDINDEX) {         /* input from aux buses */
+      short *auxin = inst->bus_config->auxin;        /* auxin channel list */
 
       assert(auxin_count > 0 && in_count == 0);
 
       status = get_aux_in(inarr, inchans, frames, auxin, auxin_count);
    }
-   else if (inst->fdIndex == AUDIO_DEVICE) {     /* input from mic/line */
-      int *in = inst->bus_config->in;            /* in channel list */
+   else if (inst->fdIndex == AUDIO_DEVICE_FDINDEX) { /* input from mic/line */
+      short *in = inst->bus_config->in;              /* in channel list */
 
       assert(in_count > 0 && auxin_count == 0);
 
       status = get_audio_in(inarr, inchans, frames, in, in_count);
    }
-   else {                                        /* input from file */
-      int *in = inst->bus_config->in;            /* in channel list */
+   else {                                            /* input from file */
+      short *in = inst->bus_config->in;              /* in channel list */
 
       assert(in_count > 0 && auxin_count == 0);
 
