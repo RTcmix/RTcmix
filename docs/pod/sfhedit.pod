@@ -5,26 +5,27 @@ sfhedit - edit soundfile header
 =head1 SYNOPSIS
 
 B<sfhedit>
-[B<-c> I<numchans>]
-[B<-i> | B<-f>]
-[B<-p> I<peak>]
-[B<-r> I<srate>]
-[B<-w>]
-[B<-z>]
-I<filename>
+[ B<-c> I<num_channels> ]
+[ B<-i> | B<-f> ]
+[ B<-p> ]
+[ B<-r> I<sampling_rate> ]
+[ B<-w> ]
+[ B<-z> ]
+I<file_name>
 
 =head1 DESCRIPTION
 
 B<sfhedit> lets you edit some parts of a soundfile header.
-Without a I<filename> argument, B<sfhedit> just prints a help summary.
+Without a I<file_name> argument, B<sfhedit> just prints a
+help summary.
 
 =head1 OPTIONS
 
 =over 8
 
-=item B<-c NUM>
+=item B<-c> I<num_channels>
 
-Set the number of channels to I<NUM>.
+Set the number of channels to I<num_channels>.
 
 =item B<-f>
 
@@ -34,14 +35,14 @@ Set the sample data format to floating-point.
 
 Set the sample data format to 16-bit (short) integer.
 
-=item B<-p NUM>
+=item B<-p>
 
-Set the peak amplitude to I<NUM>.  (Note that the peak location
-stored in the header will not be updated.)
+Interactively asks you for the peak amplitude and frame location
+for each channel.
 
-=item B<-r NUM>
+=item B<-r> I<sampling_rate>
 
-Set the sampling rate to I<NUM>.
+Set the sampling rate to I<sampling_rate>.
 
 =item B<-w>
 
@@ -53,12 +54,10 @@ Truncates the data in the file, leaving only the header.
 
 =back
 
-=head1 EXAMPLES
-
-
 =head1 BUGS
 
-There are currently many problems with this program.  Stay away.
+There are currently some problems with this program.  Don't use
+it on anything irreplaceable.
 
 =head1 SEE ALSO
 

@@ -5,21 +5,21 @@ sfcreate - create soundfile header, or change existing one
 =head1 SYNOPSIS
 
 B<sfcreate>
-[B<-r> I<srate>]
-[B<-c> I<numchans>]
-[B<-t> I<format>]
-[B<-i> | B<-f>]
-[B<-b> | B<-l>]
-[B<--force>]
-I<filename>
+[ B<-r> I<sampling_rate> ]
+[ B<-c> I<num_channels> ]
+[ B<-t> I<header_format> ]
+[ B<-i> | B<-f> ]
+[ B<-b> | B<-l> ]
+[ B<--force> ]
+I<file_name>
 
 =head1 DESCRIPTION
 
-If I<filename> doesn't exist, B<sfcreate> creates a new file with the
-specified soundfile header.  If I<filename> already exists,
+If I<file_name> doesn't exist, B<sfcreate> creates a new file with the
+specified soundfile header.  If I<file_name> already exists,
 B<sfcreate> puts a soundfile header at the beginning of the file,
 overwriting whatever was there.  (See B<WARNINGS> below.)  Without a
-I<filename> argument, B<sfcreate> just prints a help summary.
+I<file_name> argument, B<sfcreate> just prints a help summary.
 
 This command is mainly useful for disk-based Cmix scripts, in which
 the B<output> function expects to find a file with a soundfile header.
@@ -36,9 +36,9 @@ Use big-endian sample data format.
 This is the default for all file types except I<wav>.
 (Use either this or B<-l>.)
 
-=item B<-c NUM>
+=item B<-c> I<num_channels>
 
-Use I<NUM> number of channels.  The default is 2.
+Use I<num_channels> number of channels.  The default is 2.
 
 =item B<-f>
 
@@ -54,11 +54,11 @@ Use 16-bit (short) integer sample data format.  This is the default.
 Use little-endian sample data format.  This is the default for
 B<-t> I<wav>.  (Use either this or B<-b>.)
 
-=item B<-r NUM>
+=item B<-r> I<sampling_rate>
 
-Use the sampling rate given by I<NUM>.  44100 is the default.
+Use the sampling rate given by I<sampling_rate>.  44100 is the default.
 
-=item B<-t NAME>
+=item B<-t> I<header_format>
 
 Use the specified file format.  The possibilities are:
 
@@ -92,15 +92,15 @@ IRCAM format
 
 I<aiff> (or I<aifc> for floats) is the default.
 
+=item B<--force>
+
+Overwrite the header of an existing file, even if this might result
+in swapped channels or corrupted sample words.  You will be told if
+these things have happened after they've happened.  (Isn't that nice!)
+
 =back
 
 =head1 EXAMPLES
-
-
-=head1 RESTRICTIONS
-
-
-=head1 DIAGNOSTICS
 
 
 =head1 SEE ALSO
