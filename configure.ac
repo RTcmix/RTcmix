@@ -8,7 +8,7 @@
 # from the configure process, but we don't, at least for now.
 # -JGG, 7/29/04
 
-AC_INIT(RTcmix, VERSION)
+AC_INIT(RTcmix, 4.0)
 AC_CONFIG_SRCDIR(src/rtcmix/main.cpp)
 
 CMIXDIR=`pwd`
@@ -60,7 +60,7 @@ AC_SUBST(AUDIODRIVER)
 PERL_SUPPORT=FALSE                        # disable by default
 PERL=perl                                 # default perl name
 AC_ARG_WITH(perl, AC_HELP_STRING([--with-perl=PATH],
-   [build Perl-enabled RTcmix (PCMIX)]),
+   [build Perl-enabled RTcmix (PCMIX) (PATH optional)]),
    [if test "$withval" != "no"; then
       if test "$withval" != "yes"; then
          PERL="$withval"                  # the path to perl
@@ -73,7 +73,7 @@ AC_SUBST(PERL)
 PYTHON_SUPPORT=FALSE                      # disable by default
 PYTHON=python                             # default python name
 AC_ARG_WITH(python, AC_HELP_STRING([--with-python=PATH],
-   [build Python-enabled RTcmix (PYCMIX)]),
+   [build Python-enabled RTcmix (PYCMIX) (PATH optional)]),
    [if test "$withval" != "no"; then
       if test "$withval" != "yes"; then
          PYTHON="$withval"                # the path to python
@@ -125,28 +125,30 @@ if test "$AUDIODRIVER" = "ALSA"; then
    if test "$AUDIODRIVER" = "OSS"; then
       AC_MSG_WARN([ALSA library not present; using OSS instead of ALSA])
    fi
-   # test for ALSA version >= 0.9; if not, warn and use OSS (test from snd-6)
-   alsa_ok=yes
-   AC_MSG_CHECKING([for ALSA 0.9 or later])
-   AC_COMPILE_IFELSE(
-      [AC_LANG_PROGRAM([#include <alsa/asoundlib.h>],
-      [
-         #if ((SND_LIB_MAJOR == 0) && (SND_LIB_MINOR < 9))
-            #error too old
-         #endif
-      ])],
-      alsa_ok=yes,
-      alsa_ok=no)
-   AC_MSG_RESULT($alsa_ok)
-   if test "$alsa_ok" != "yes"; then
-      AC_MSG_WARN([ALSA version must be >= 0.9; using OSS instead of ALSA])
-      AUDIODRIVER=OSS
+   if test "$AUDIODRIVER" = "ALSA"; then
+      # test for ALSA version >= 0.9; if not, warn and use OSS (test from snd-6)
+      alsa_ok=yes
+      AC_MSG_CHECKING([for ALSA 0.9 or later])
+      AC_COMPILE_IFELSE(
+         [AC_LANG_PROGRAM([#include <alsa/asoundlib.h>],
+         [
+            #if ((SND_LIB_MAJOR == 0) && (SND_LIB_MINOR < 9))
+               #error too old
+            #endif
+         ])],
+         alsa_ok=yes,
+         alsa_ok=no)
+      AC_MSG_RESULT($alsa_ok)
+      if test "$alsa_ok" != "yes"; then
+         AC_MSG_WARN([ALSA version must be >= 0.9; using OSS instead of ALSA])
+         AUDIODRIVER=OSS
+      fi
    fi
 fi
 
 
 # Write output files ---------------------------------------------------------
-#AC_CONFIG_HEADER(config.h)
+#AC_CONFIG_HEADER(config.h)   # we don't need this yet
 AC_CONFIG_FILES(makefile.conf)
 AC_CONFIG_FILES(defs.conf)
 AC_OUTPUT
