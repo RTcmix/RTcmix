@@ -31,8 +31,6 @@ static int printing_dots = 0;
 static int write_to_audio_device(AudioDevice *);
 static void limiter(void);
 
-
-
 #ifdef DUMP_AUDIO_TO_RAW_FILE
 /* ----------------------------------------------- dump_audio_to_raw_file --- */
 /* For debugging audio device writes.
@@ -211,9 +209,7 @@ rtsendsamps(AudioDevice *device)
          return;        /* without limiting */
    }
 
-#ifdef LIMIT_OBUF_FOR_AUDIO_DEV
    limiter();    /* Limit output buffer data to +-32767.0 */
-#endif
 
    if (play_audio) {
       err = write_to_audio_device(device);
@@ -222,9 +218,6 @@ rtsendsamps(AudioDevice *device)
    }
 
    if (!is_float_format && rtfileit) {
-#ifndef LIMIT_OBUF_FOR_AUDIO_DEV
-      limiter();                        /* Do limiting just for output file. */
-#endif
 	  // FOR NOW, IF WE ARE BOTH PLAYING AND WRITING, DO IT WITH SEPARATE
 	  // AudioDevice INSTANCES.
 	  if (play_audio)
