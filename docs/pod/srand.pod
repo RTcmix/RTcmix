@@ -61,5 +61,5 @@ This series will be the same every time you run the script.
 
 L<rand|rand>, L<random|random>, L<irand|irand>, L<pickrand|pickrand>,
 L<pickwrand|pickwrand>, L<spray_init|spray_init>, L<get_spray|get_spray>,
-L<gen20>
+L<gen20|gen20>
 
