@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2004-06-15 Douglas Scott  <netdscott at netscape.net>
+
+	* More work on PFields, tables, and multi-type arguments in internals.
+
 Saturday, June 12, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * Rewrote cmixplay to make it compatible with new audio device
