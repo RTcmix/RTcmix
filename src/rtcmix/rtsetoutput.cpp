@@ -3,6 +3,7 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #include <globals.h>
+#include <ugens.h>
 #include <iostream.h>
 #include "../rtstuff/Instrument.h"
 #include "../rtstuff/rtdefs.h"
