@@ -8,43 +8,72 @@
 #include <RTcmixMouse.h>
 #include <PField.h>
 #include <stdio.h>
+#include <math.h>
 #include <assert.h>
 
 typedef enum {
-	RTMouseAxisX,
-	RTMouseAxisY
+	kRTMouseAxisX,
+	kRTMouseAxisY
 } RTMouseAxis;
+
+
+#define ALPHA	-6.0
+#define MAXLAG	10.0
+
+// For lag in range [0,MAXLAG], return smoothing coefficient in range [0,1).
+static double makeSmoothingCoefficient(double lag)
+{
+	assert(lag >= 0.0 && lag <= MAXLAG);
+	double c = (1.0 - exp(lag * ALPHA / MAXLAG)) / (1.0 - exp(ALPHA));
+	if (c > 0.999)		// coeff must not be 1.0, and best not be too near it
+		c = 0.999;
+	return c;
+}
 
 class RTMousePField : public RTNumberPField {
 public:
 	RTMousePField(
 			RTcmixMouse			*mousewin,
 			const RTMouseAxis	axis,
-			const char			*prefix,
-			const char			*units,
-			const int			precision,
 			const double		minval,
 			const double		maxval,
-			const double		defaultval)
+			const double		defaultval,
+			const double		lag,
+			const char			*prefix,
+			const char			*units,
+			const int			precision)
 		: RTNumberPField(0),
 		  _mousewin(mousewin), _axis(axis), _min(minval), _default(defaultval)
 	{
 		assert(_mousewin != NULL);
-//FIXME: replace with function pointers for each axis (and in doubleValue)
-		if (_axis == RTMouseAxisX)
-			_labelID = _mousewin->configureXLabel(prefix, units, precision);
-		else
-			_labelID = _mousewin->configureYLabel(prefix, units, precision);
-		if (_labelID == -1)
-			fprintf(stderr, "Warning: label setup failed.");
+//FIXME: set up function pointers for each axis, for use in doubleValue?
+
+		_labelID = -1;
+		if (prefix && prefix[0]) {	// no label if null or empty prefix string
+			if (_axis == kRTMouseAxisX)
+				_labelID = _mousewin->configureXLabel(prefix, units, precision);
+			else
+				_labelID = _mousewin->configureYLabel(prefix, units, precision);
+			if (_labelID == -1)
+				fprintf(stderr, "Warning: Max. number of labels already in use.");
+		}
+
 		_diff = maxval - minval;
-		_val = 0.0;
+		_val = _smoothval = 0.0;
 		_lastRawval = -999.9;	// must be a negative number other than -1.0
+
+		_coeffB = makeSmoothingCoefficient(lag);
+		_coeffA = 1.0 - _coeffB;
 	}
 
-	virtual double doubleValue()
+	virtual double doubleValue(double dummy)
 	{
-		return (_axis == RTMouseAxisX) ? doubleValueX() : doubleValueY();
+		if (_axis == kRTMouseAxisX)
+			computeValueX();
+		else
+			computeValueY();
+		_smoothval = (_coeffA * _val) + (_coeffB * _smoothval);
+		return setValue(_smoothval);
 	}
 
 protected:
@@ -58,10 +87,13 @@ private:
 
 	double _diff;
 	double _val;
+	double _smoothval;
 	double _lastRawval;
+	double _coeffA;
+	double _coeffB;
 	int _labelID;
 
-	double doubleValueX()
+	void computeValueX()
 	{
 		double rawval = _mousewin->getPositionX();
 		if (rawval != _lastRawval) {
@@ -72,10 +104,9 @@ private:
 			_mousewin->updateXLabelValue(_labelID, _val);
 			_lastRawval = rawval;
 		}
-		return setValue(_val);
 	}
 
-	double doubleValueY()
+	void computeValueY()
 	{
 		double rawval = _mousewin->getPositionY();
 		if (rawval != _lastRawval) {
@@ -86,7 +117,6 @@ private:
 			_mousewin->updateYLabelValue(_labelID, _val);
 			_lastRawval = rawval;
 		}
-		return setValue(_val);
 	}
 };
 

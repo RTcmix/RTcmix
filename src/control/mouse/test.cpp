@@ -16,26 +16,32 @@ int main()
 	int prec1 = 0;
 	double min1 = 10;
 	double max1 = 10000;
+	double default1 = min1;
+	double lag1 = 0.0;
 	char *prefix1 = "freq";
-	RTMousePField *pf1 = new RTMousePField(mouse, RTMouseAxisX, prefix1, "Hz",
-				prec1, min1, max1, min1);
+	char *units1 = "Hz";
+	RTMousePField *pf1 = new RTMousePField(mouse, RTMouseAxisX, min1, max1,
+				default1, lag1, prefix1, units1, prec1);
 
 	int prec2 = 4;
 	double min2 = 0;
 	double max2 = 2;
+	double default2 = min2;
+	double lag2 = 0.0;
 	char *prefix2 = "amp";
-	RTMousePField *pf2 = new RTMousePField(mouse, RTMouseAxisY, prefix2, NULL,
-				prec2, min2, max2, min2);
+	char *units2 = NULL;
+	RTMousePField *pf2 = new RTMousePField(mouse, RTMouseAxisY, min2, max2,
+				default2, lag2, prefix2, units2, prec2);
 
 	double oldval1 = min1 - 1.0;
 	double oldval2 = min2 - 1.0;
 	while (1) {
-		double val1 = pf1->doubleValue();
+		double val1 = pf1->doubleValue(0);
 		if (val1 != oldval1) {
 			printf("%s: %f\n", prefix1, val1);
 			oldval1 = val1;
 		}
-		double val2 = pf2->doubleValue();
+		double val2 = pf2->doubleValue(0);
 		if (val2 != oldval2) {
 			printf("%s: %f\n", prefix2, val2);
 			oldval2 = val2;

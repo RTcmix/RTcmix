@@ -11,42 +11,24 @@
 #include <ugens.h>		// for warn, die
 
 
-// -------------------------------------------------------- _midi_connection ---
-//
-//    midi = makeconnection("midi", min, max, default, chan, type, [subtype])
-//
-//    <type>      "noteon", "noteoff", "cntl", "prog", "bend", "monopress",
-//                "polypress"
-//
-//    <subtype>   depends on <type>:
-//                   noteon     "note", "velocity"
-//                   noteoff    "note", "velocity"
-//                   cntl       controller number or string symbol, such as
-//                              "mod", "foot", "breath", "data", "volume", "pan"
-//                   prog       not applicable
-//                   bend       not applicable
-//                   monopress  not applicable
-//                   polypress  MIDI note number
-//
-//
-
-
-
 // ------------------------------------------------------- _mouse_connection ---
 //
-//    mouse = makeconnection("mouseX", min, max, default, prefix, [units,]
-//                                                                [precision])
+//    mouse = makeconnection("mouseX", min, max, default, lag,
+//                                     [prefix[, units[, precision]]])
 //
 //    First argument is either "mouseX" or "mouseY", depending on which axis
 //    you want to read.  Other arguements:
 //
 //    <min>          minimum value [number]
 //    <max>          maximum value [number]
-//    <default>      value [number]
+//    <default>      value returned before device comes on line [number]
+//    <lag>          amount of smoothing for value stream [number: 0-100]
 //    <prefix>       label to display in window [string]
 //    <units>        units (e.g., "Hz") to display in window [string]
 //    <precision>    digits after decimal point to display in window [number]
 //
+//    If <prefix> is missing or an empty string, then no label printed in
+//    mouse window.
 //                                                               JGG, 8/14/04
 
 static RTNumberPField *
@@ -54,7 +36,7 @@ _mouse_usage()
 {
 	die("makeconnection (mouse)",
 		"Usage: makeconnection(\"mouseX\" or \"mouseY\", min, max, default, "
-		"prefix, [units,] [precision])");
+		"lag, [prefix[, units[, precision]]])");
 	return NULL;
 }
 
@@ -65,38 +47,54 @@ mouse_connection(const Arg args[], const int nargs)
 	if (mousewin == NULL)					// first time, so make window
 		mousewin = createMouseWindow();
 
-	RTMouseAxis axis = strchr(args[0], 'X') ? RTMouseAxisX : RTMouseAxisY;
+	RTMouseAxis axis = strchr(args[0], 'X') ? kRTMouseAxisX : kRTMouseAxisY;
 
-	double minval, maxval, defaultval;
-	const char *prefix, *units = NULL;
+	double minval, maxval, defaultval, lag;
+	const char *prefix = NULL, *units = NULL;
 	int precision = 3;
 
 	if (args[1].isType(DoubleType))
 		minval = args[1];
 	else
 		return _mouse_usage();
+
 	if (args[2].isType(DoubleType))
 		maxval = args[2];
 	else
 		return _mouse_usage();
+
 	if (args[3].isType(DoubleType))
 		defaultval = args[3];
 	else
 		return _mouse_usage();
-	if (args[4].isType(StringType))
-		prefix = args[4];
-	else
-		return _mouse_usage();
-	if (nargs > 5 && args[5].isType(StringType))
-		units = args[5];
-	else
-		return _mouse_usage();
-	if (nargs > 6 && args[6].isType(DoubleType))
-		precision = (int) args[6];
+
+	if (args[4].isType(DoubleType))
+		lag = args[4];
 	else
 		return _mouse_usage();
 
-	return new RTMousePField(mousewin, axis, prefix, units,
-										precision, minval, maxval, defaultval);
+	if (nargs > 5) {
+		if (args[5].isType(StringType))
+			prefix = args[5];
+		else
+			return _mouse_usage();
+	}
+
+	if (nargs > 6) {
+		if (args[6].isType(StringType))
+			units = args[6];
+		else
+			return _mouse_usage();
+	}
+
+	if (nargs > 7) {
+		if (args[7].isType(DoubleType))
+			precision = (int) args[7];
+		else
+			return _mouse_usage();
+	}
+
+	return new RTMousePField(mousewin, axis, minval, maxval, defaultval, lag,
+										prefix, units, precision);
 }
 
