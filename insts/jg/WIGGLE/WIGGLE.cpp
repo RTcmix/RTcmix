@@ -138,16 +138,13 @@ int WIGGLE :: init(float p[], int n_args)
       ringdur = 0.0;
    }
    else {
-      if (filter_type != LowPass && filter_type != HighPass) {
-         die("WIGGLE", "Filter type (p5) must be 0, 1, or 2.");
-			return(DONT_SCHEDULE);
-		}
+      if (filter_type != LowPass && filter_type != HighPass)
+         return die("WIGGLE", "Filter type (p5) must be 0, 1, or 2.");
       nfilts = n_args > 6 ? (int)p[6] : 1;
-      if (nfilts < 1 || nfilts > MAXFILTS) {
-         die("WIGGLE",
-             "Steepness (p6) must be an integer between 1 and %d.", MAXFILTS);
-			return(DONT_SCHEDULE);
-		}
+      if (nfilts < 1 || nfilts > MAXFILTS)
+         return die("WIGGLE",
+                    "Steepness (p6) must be an integer between 1 and %d.",
+                    MAXFILTS);
       do_balance = n_args > 7 ? (int)p[7] : 0;
       if (do_balance) {
          balancer = new Balance();
@@ -157,10 +154,8 @@ int WIGGLE :: init(float p[], int n_args)
    }
 
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
-   if (outputchans < 1 || outputchans > 2) {
-      die("WIGGLE", "Output must be mono or stereo.");
-		return(DONT_SCHEDULE);
-	}
+   if (outputchans < 1 || outputchans > 2)
+      return die("WIGGLE", "Output must be mono or stereo.");
 
    for (int i = 0; i < nfilts; i++)
       filt[i] = new Butter();
@@ -178,24 +173,20 @@ int WIGGLE :: init(float p[], int n_args)
       int len = fsize(CAR_WAVE_FUNC);
       carrier = new OscilL(0.0, carwave_array, len);
    }
-   else {
-      die("WIGGLE",
-               "You haven't made the carrier waveform function (table %d).",
-               CAR_WAVE_FUNC);
-		return(DONT_SCHEDULE);
-	}
+   else
+      return die("WIGGLE",
+                 "You haven't made the carrier waveform function (table %d).",
+                 CAR_WAVE_FUNC);
 
    cargliss_array = floc(CAR_GLISS_FUNC);
    if (cargliss_array) {
       int len = fsize(CAR_GLISS_FUNC);
       cargliss_table = new TableN(dur, cargliss_array, len);
    }
-   else {
-      die("WIGGLE",
-               "You haven't made the carrier glissando function (table %d).",
-               CAR_GLISS_FUNC);
-		return(DONT_SCHEDULE);
-	}
+   else
+      return die("WIGGLE",
+                 "You haven't made the carrier glissando function (table %d).",
+                 CAR_GLISS_FUNC);
 
    if (depth_type != NoModOsc) {
       modwave_array = floc(MOD_WAVE_FUNC);
@@ -203,36 +194,30 @@ int WIGGLE :: init(float p[], int n_args)
          int len = fsize(MOD_WAVE_FUNC);
          modulator = new OscilL(0.0, modwave_array, len);
       }
-      else {
-         die("WIGGLE",
-               "You haven't made the modulator waveform function (table %d).",
-               MOD_WAVE_FUNC);
-			return(DONT_SCHEDULE);
-		}
+      else
+         return die("WIGGLE",
+                 "You haven't made the modulator waveform function (table %d).",
+                 MOD_WAVE_FUNC);
 
       modfreq_array = floc(MOD_FREQ_FUNC);
       if (modfreq_array) {
          int len = fsize(MOD_FREQ_FUNC);
          modfreq_table = new TableL(dur, modfreq_array, len);
       }
-      else {
-         die("WIGGLE",
+      else
+         return die("WIGGLE",
                "You haven't made the modulator frequency function (table %d).",
                MOD_FREQ_FUNC);
-			return(DONT_SCHEDULE);
-		}
 
       moddepth_array = floc(MOD_DEPTH_FUNC);
       if (moddepth_array) {
          int len = fsize(MOD_DEPTH_FUNC);
          moddepth_table = new TableL(dur, moddepth_array, len);
       }
-      else {
-         die("WIGGLE",
-               "You haven't made the modulator depth function (table %d).",
-               MOD_DEPTH_FUNC);
-			return(DONT_SCHEDULE);
-		}
+      else
+         return die("WIGGLE",
+                    "You haven't made the modulator depth function (table %d).",
+                    MOD_DEPTH_FUNC);
    }
 
    if (filter_type != NoFilter) {
@@ -241,12 +226,10 @@ int WIGGLE :: init(float p[], int n_args)
          int len = fsize(FILTER_CF_FUNC);
          filtcf_table = new TableL(dur, filtcf_array, len);
       }
-      else {
-         die("WIGGLE",
-               "You haven't made the cutoff frequency function (table %d).",
-               FILTER_CF_FUNC);
-			return(DONT_SCHEDULE);
-		}
+      else
+         return die("WIGGLE",
+                  "You haven't made the cutoff frequency function (table %d).",
+                  FILTER_CF_FUNC);
    }
 
    if (outputchans == 2) {
@@ -255,11 +238,9 @@ int WIGGLE :: init(float p[], int n_args)
          int len = fsize(PAN_FUNC);
          pan_table = new TableL(dur, pan_array, len);
       }
-      else {
-         die("WIGGLE", "You haven't made the pan function (table %d).",
+      else
+         return die("WIGGLE", "You haven't made the pan function (table %d).",
                                                                      PAN_FUNC);
-			return(DONT_SCHEDULE);
-		}
    }
 
    branch = 0;
@@ -275,8 +256,6 @@ int WIGGLE :: run()
 {
    int   i;
    float sig, mod_sig, car_sig, out[2];
-
-   Instrument :: run();
 
    for (i = 0; i < chunksamps; i++) {
       if (--branch < 0) {
