@@ -109,7 +109,7 @@ VOCODE2 :: ~VOCODE2()
 
 int VOCODE2 :: init(float p[], int n_args)
 {
-   int   j, balance_window, subsample, rvin;
+   int   j, balance_window, subsample;
    float outskip, inskip, dur;
    float lowcf, spacemult, bwpct, responsetime, cf[MAXFILTS], carrier_transp;
    float hipasscf;
@@ -131,20 +131,14 @@ int VOCODE2 :: init(float p[], int n_args)
    pctleft = n_args > 14 ? p[14] : 0.5;            /* default: center */
 
    nsamps = rtsetoutput(outskip, dur, this);
-   rvin = rtsetinput(inskip, this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
+   if (rtsetinput(inskip, this) != 0)
+      return DONT_SCHEDULE;
 
-   if (outputchans > 2) {
-      die("VOCODE2", "Output must be either mono or stereo.");
-		return(DONT_SCHEDULE);
-	}
-   if (inputchans != 2) {
-      die("VOCODE2",
+   if (outputchans > 2)
+      return die("VOCODE2", "Output must be either mono or stereo.");
+   if (inputchans != 2)
+      return die("VOCODE2",
       "Must use 2 input channels: 'left' for carrier; 'right' for modulator.");
-		return(DONT_SCHEDULE);
-	}
 
    if (noise_amp > 0.0) {
       unsigned int seed = (unsigned int) 0;
@@ -158,10 +152,8 @@ int VOCODE2 :: init(float p[], int n_args)
       hipassmod->setHighPass(hipasscf);
    }
 
-   if (bwpct <= 0.0) {
-      die("VOCODE2", "Bandwidth proportion must be greater than 0.");
-		return(DONT_SCHEDULE);
-	}
+   if (bwpct <= 0.0)
+      return die("VOCODE2", "Bandwidth proportion must be greater than 0.");
 
    balance_window = (int) (responsetime * SR);
    if (balance_window < 2) {
@@ -175,15 +167,11 @@ int VOCODE2 :: init(float p[], int n_args)
       interval, in the form of a frequency multiplier, or by function table.
    */
    if (numfilts > 0) {   /* by interval */
-      if (numfilts > MAXFILTS) {
-         die("VOCODE2", "Can only use %d filters.", MAXFILTS);
-			return(DONT_SCHEDULE);
-		}
-      if (spacemult <= 1.0) {
-         die("VOCODE2",
+      if (numfilts > MAXFILTS)
+         return die("VOCODE2", "Can only use %d filters.", MAXFILTS);
+      if (spacemult <= 1.0)
+         return die("VOCODE2",
                      "Center frequency spacing factor must be greater than 1.");
-			return(DONT_SCHEDULE);
-		}
       if (lowcf < 15.0)                        /* interpreted as oct.pc */
          lowcf = cpspch(lowcf);
 
@@ -193,16 +181,13 @@ int VOCODE2 :: init(float p[], int n_args)
    else {                /* by function table */
       float transp = lowcf;                    /* pfield meaning changes */
       float *freqtable = floc(2);
-      if (freqtable == NULL) {
-         die("VOCODE2",
+      if (freqtable == NULL)
+         return die("VOCODE2",
                      "You haven't made the center freq. function (table 2).");
-			return(DONT_SCHEDULE);
-		}
       numfilts = fsize(2);
-      if (numfilts > MAXFILTS) {
-         die("VOCODE2", "Can only use %d filters.", MAXFILTS);
-			return(DONT_SCHEDULE);
-		}
+      if (numfilts > MAXFILTS)
+         return die("VOCODE2", "Can only use %d filters.", MAXFILTS);
+
       advise("VOCODE2", "Reading center freqs from function table...");
       for (j = 0; j < numfilts; j++) {
          float freq = freqtable[j];
@@ -280,8 +265,6 @@ int VOCODE2 :: run()
 
    if (in == NULL)              /* first time, so allocate it */
       in = new float [RTBUFSAMPS * inputchans];
-
-   Instrument :: run();
 
    rsamps = chunksamps * inputchans;
    rtgetin(in, this, rsamps);

@@ -44,7 +44,7 @@ SROOM::~SROOM()
 
 int SROOM::init(float p[], int n_args)
 {
-   int   rvbsamps, rvin;
+   int   rvbsamps;
    float outskip, inskip, dur;
    float xdim, ydim, xsrc, ysrc, rvbtime, reflect, innerwidth;
 
@@ -61,23 +61,18 @@ int SROOM::init(float p[], int n_args)
    innerwidth = p[10];        /* the room inside your head */
    inchan = n_args > 11 ? (int)p[11] : AVERAGE_CHANS;
 
-   if (outputchans != 2) {
-      die("SROOM", "Output must be stereo.");
-		return(DONT_SCHEDULE);
-	}
+   if (outputchans != 2)
+      return die("SROOM", "Output must be stereo.");
 
    nsamps = rtsetoutput(outskip, dur + rvbtime, this);
-   rvin = rtsetinput(inskip, this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
+   if (rtsetinput(inskip, this) != 0)
+      return DONT_SCHEDULE;
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans) {
-      die("SROOM", "You asked for channel %d of a %d-channel input file.",
-                                                       inchan, inputchans);
-		return(DONT_SCHEDULE);
-	}
+   if (inchan >= inputchans)
+      return die("SROOM",
+                 "You asked for channel %d of a %d-channel input file.",
+                 inchan, inputchans);
    if (inputchans == 1)
       inchan = 0;
 
@@ -112,8 +107,6 @@ int SROOM::run()
 
    if (in == NULL)                /* first time, so allocate it */
       in = new float [RTBUFSAMPS * inputchans];
-
-   Instrument::run();
 
    rsamps = chunksamps * inputchans;
 

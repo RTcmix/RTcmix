@@ -134,7 +134,6 @@ int VOCODESYNTH :: init(float p[], int n_args)
    int   i, window_len, wavetablelen = 0;
    float outskip, inskip, dur, lowcf, spacemult, bwpct, cf[MAXOSC];
    float carrier_transp, responsetime, attack_time, release_time, hipasscf;
-	int rvin;
 
    outskip = p[0];
    inskip = p[1];
@@ -155,10 +154,8 @@ int VOCODESYNTH :: init(float p[], int n_args)
    inchan = n_args > 16 ? (int) p[16] : 0;         // default: left
    pctleft = n_args > 17 ? p[17] : 0.5;            // default: center
 
-   if (bwpct <= 0.0) {
-      die("VOCODESYNTH", "Bandwidth proportion must be greater than 0.");
-		return(DONT_SCHEDULE);
-	}
+   if (bwpct <= 0.0)
+      return die("VOCODESYNTH", "Bandwidth proportion must be greater than 0.");
 
    window_len = (int) (responsetime * SR + 0.5);
    if (window_len < 2) {
@@ -168,10 +165,9 @@ int VOCODESYNTH :: init(float p[], int n_args)
       window_len = 2;
    }
 
-   if (smoothness < 0.0 || smoothness > 1.0) {
-      die("VOCODESYNTH", "Smoothness must be between 0 and 1.");
-		return(DONT_SCHEDULE);
-	}
+   if (smoothness < 0.0 || smoothness > 1.0)
+      return die("VOCODESYNTH", "Smoothness must be between 0 and 1.");
+
    /* Filter pole coefficient is non-linear -- very sensitive near 1, and
       not very sensitive below .5, so we use a log to reduce this nonlinearity
       for the user.  Constrain to range [1, 10], then take log10.
@@ -181,19 +177,13 @@ int VOCODESYNTH :: init(float p[], int n_args)
       smoothness = 0.9999;
    DPRINT1("smoothness: %f\n", smoothness);
 
-   if (threshold < 0.0 || threshold > 1.0) {
-      die("VOCODESYNTH", "Threshold must be between 0 and 1.");
-		return(DONT_SCHEDULE);
-	}
+   if (threshold < 0.0 || threshold > 1.0)
+      return die("VOCODESYNTH", "Threshold must be between 0 and 1.");
    threshold *= 32768.0;
-   if (attack_time < 0.0) {
-      die("VOCODESYNTH", "Attack time must be positive.");
-		return(DONT_SCHEDULE);
-	}
-   if (release_time < 0.0) {
-      die("VOCODESYNTH", "Release time must be positive.");
-		return(DONT_SCHEDULE);
-	}
+   if (attack_time < 0.0)
+      return die("VOCODESYNTH", "Attack time must be positive.");
+   if (release_time < 0.0)
+      return die("VOCODESYNTH", "Release time must be positive.");
    attack_rate = attack_time ? (1.0 / SR) / attack_time : 1.0;
    release_rate = release_time ? (1.0 / SR) / release_time : 1.0;
 
@@ -203,34 +193,25 @@ int VOCODESYNTH :: init(float p[], int n_args)
    }
 
    nsamps = rtsetoutput(outskip, dur + release_time, this);
-   rvin = rtsetinput(inskip, this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
+   if (rtsetinput(inskip, this) != 0)
+      return DONT_SCHEDULE;
 
-   if (outputChannels() > 2) {
-      die("VOCODESYNTH", "Output must be either mono or stereo.");
-		return(DONT_SCHEDULE);
-	}
-   if (inchan >= inputChannels()) {
-      die("VOCODESYNTH", "You asked for channel %d of a %d-channel file.",
-                                                      inchan, inputChannels());
-		return(DONT_SCHEDULE);
-	}
+   if (outputChannels() > 2)
+      return die("VOCODESYNTH", "Output must be either mono or stereo.");
+   if (inchan >= inputChannels())
+      return die("VOCODESYNTH",
+                 "You asked for channel %d of a %d-channel file.",
+                 inchan, inputChannels());
 
    /* <numbands> pfield lets user specify filter center frequencies either by
       interval, in the form of a frequency multiplier, or by function table.
    */
    if (numbands > 0) {           // specify by interval
-      if (numbands > MAXOSC) {
-         die("VOCODESYNTH", "Can only use %d filters.", MAXOSC);
-			return(DONT_SCHEDULE);
-		}
-      if (spacemult <= 1.0) {
-         die("VOCODESYNTH",
-               "Center frequency spacing factor must be greater than 1.");
-			return(DONT_SCHEDULE);
-		}
+      if (numbands > MAXOSC)
+         return die("VOCODESYNTH", "Can only use %d filters.", MAXOSC);
+      if (spacemult <= 1.0)
+         return die("VOCODESYNTH",
+                    "Center frequency spacing factor must be greater than 1.");
       if (lowcf < 15.0)                // interpreted as oct.pc
          lowcf = cpspch(lowcf);
       advise("VOCODESYNTH", "Building center freqs above %g...", lowcf);
@@ -241,16 +222,13 @@ int VOCODESYNTH :: init(float p[], int n_args)
       float transp = lowcf;            // p5 and p6 change meaning
       int format = (int) spacemult;
       float *freqtable = floc(4);
-      if (freqtable == NULL) {
-         die("VOCODESYNTH",
-                  "You haven't made the center freq. function (table 4).");
-			return(DONT_SCHEDULE);
-		}
+      if (freqtable == NULL)
+         return die("VOCODESYNTH",
+                    "You haven't made the center freq. function (table 4).");
       numbands = fsize(4);
-      if (numbands > MAXOSC) {
-         die("VOCODESYNTH", "Can only use %d filters.", MAXOSC);
-			return(DONT_SCHEDULE);
-		}
+      if (numbands > MAXOSC)
+         return die("VOCODESYNTH", "Can only use %d filters.", MAXOSC);
+
       advise("VOCODESYNTH", "Reading center freqs from function table 4...");
       for (i = 0; i < numbands; i++) {
          float freq = freqtable[i];
@@ -278,10 +256,8 @@ int VOCODESYNTH :: init(float p[], int n_args)
       // sort cf array, so that scaling curve will work correctly
       qsort(&cf, numbands, sizeof(float), compare_floats);
    }
-   else {
-      die("VOCODESYNTH", "<numbands> must be zero or more.");
-		return(DONT_SCHEDULE);
-	}
+   else
+      return die("VOCODESYNTH", "<numbands> must be zero or more.");
 
    for (i = 0; i < numbands; i++) {
       if (cf[i] > SR * 0.5) {
@@ -319,15 +295,12 @@ int VOCODESYNTH :: init(float p[], int n_args)
    if (function) {
       int len = fsize(3);
       scaletable = resample_gen(function, len, numbands, LINEAR_INTERP);
-      if (scaletable == NULL) {
-         die("VOCODESYNTH", "No memory for resizing scaling table.");
-			return(DONT_SCHEDULE);
-		}
+      if (scaletable == NULL)
+         return die("VOCODESYNTH", "No memory for resizing scaling table.");
    }
-   else {
-      die("VOCODESYNTH", "You haven't made the scaling curve (table 3).");
-		return(DONT_SCHEDULE);
-	}
+   else
+      return die("VOCODESYNTH",
+                           "You haven't made the scaling curve (table 3).");
 
    // make filters, oscillators ---------------------------------------------
 
@@ -369,8 +342,6 @@ int VOCODESYNTH :: run()
 
    if (in == NULL)            // first time, so allocate it
       in = new float [RTBUFSAMPS * inputChannels()];
-
-   Instrument :: run();
 
    const int frames = framesToRun() * inputChannels();
    rtgetin(in, this, frames);
