@@ -31,6 +31,7 @@ CC = gcc
 CXX = g++ 
 LD = ld
 MAKE = make
+INSTALL = cp -f
 
 INCLUDES = -I$(CMIXDIR)/H
 
