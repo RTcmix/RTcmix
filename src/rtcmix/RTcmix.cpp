@@ -266,6 +266,43 @@ Instrument *RTcmix::cmd(char name[], int n_args, char* p0, ...)
 	return (Instrument *) retval;
 }
 
+#ifdef PFIELD_CLASS
+
+#include <PFieldSet.h>
+#include <PField.h>
+
+// new PFieldSet sending command.
+Instrument *RTcmix::cmd(char name[], const PFieldSet &pfSet)
+{
+	void   *retval;
+	int nFields = pfSet.size();
+	Arg	*arglist = new Arg[nFields];
+	Arg retArg;
+	
+	// Copy PField pointers into arglist
+	
+	for (int field = 0; field < nFields; ++field) {
+		Handle handle = (Handle) malloc(sizeof(struct _handle));
+		handle->type = PFieldType;
+		handle->ptr = (void *) &pfSet[field];
+		arglist[field] = handle;
+	}
+
+	(void) dispatch(name, arglist, nFields, &retArg);
+
+	delete [] arglist;
+	
+	// Extract and return instrument pointer.
+	
+	Handle rethandle = (Handle) retArg;
+	if (rethandle->type == InstrumentPtrType)
+		return (Instrument *) rethandle->ptr;
+	else
+		return NULL;
+}
+
+#endif	// PFIELD_CLASS
+
 // for commands with no params -- the double return val is because
 // that's what these commands generally do.
 double RTcmix::cmd(char name[])

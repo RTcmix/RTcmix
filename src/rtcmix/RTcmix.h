@@ -1,5 +1,7 @@
 #include "../rtstuff/Instrument.h"
 
+class PFieldSet;
+
 class RTcmix
 {
 
@@ -9,6 +11,9 @@ public:
 	RTcmix(float, int, int, const char* opt1=NULL, const char *opt2=NULL, const char *opt3=NULL);	// set SR, NCHANS, BUFSIZE, up to 3 options
 	Instrument* cmd(char*, int, double, ...); // for numeric params
 	Instrument* cmd(char*, int, char*, ...); // for string params
+#ifdef PFIELD_CLASS
+	Instrument* cmd(char*, const PFieldSet &); // for PFieldSet
+#endif
 	double cmd(char*); // for commands with no params
 	double cmdval(char*, int, double, ...); // value return (numeric params)
 	double cmdval(char*, int, char*, ...); // value return (string params)
