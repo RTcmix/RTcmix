@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Monday, June 10, 2002 John Gibson <johgibso@indiana.edu>
+
+   * New instrument: VOCODE2
+
 Wednesday, May 22, 2002 John Gibson <johgibso@indiana.edu>
 
    * New instrument: MOOGVCF, based on work by Stilson, Smith and Kellett.
