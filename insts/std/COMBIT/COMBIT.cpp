@@ -71,10 +71,10 @@ int COMBIT::init(double p[], int n_args)
 		return DONT_SCHEDULE;
 	insamps = (int) (dur * SR + 0.5);
 
-	if (frequency < MINFREQ)
+	if (frequency <= 0.0)
 		return die("COMBIT", "Invalid frequency value!");
 	float loopt = 1.0 / frequency;
-	comb = new Ocomb(SR, loopt, 1.0 / MINFREQ, rvbtime);
+	comb = new Ocomb(SR, loopt, loopt, rvbtime);
    frequency = -1.0;    // force update in run()
 
 	amptable = floc(1);
@@ -111,16 +111,16 @@ int COMBIT::run()
 			if (amptable)
 				amp *= table(currentFrame(), amptable, tabs);
 			if (p[4] != frequency) {
-				if (p[4] < MINFREQ) {
-					if (give_minfreq_warning) {
-						warn("COMBIT", "Invalid frequency value!");
-						give_minfreq_warning = false;
-					}
-				}
-				else {
+//				if (p[4] < MINFREQ) {
+//					if (give_minfreq_warning) {
+//						warn("COMBIT", "Invalid frequency value!");
+//						give_minfreq_warning = false;
+//					}
+//				}
+//				else {
 					frequency = p[4];
 					delsamps = (int) ((1.0 / frequency) * SR + 0.5);
-				}
+//				}
 			}
 			if (p[5] != rvbtime) {
 				rvbtime = p[5];
