@@ -1,0 +1,33 @@
+#include "../H/ugens.h"
+
+gen17(gen)
+
+/* Computes transfer function using Chebyshev polynomials
+First argument (after number, 17, size) is the index value for
+which the function will create the harmonics specified by the following
+arguments.  */
+
+
+register struct gen *gen;
+{       
+	int i,j;
+	float Tn,Tn1,Tn2,x,d;
+
+	d=(float)(gen->size/2-.5);
+        for(i=0; i<gen->size; i++) {
+	      x=(i/d-1.)/gen->pvals[0];
+	      gen->array[i]=0;
+	      Tn1=1;
+	      Tn=x;
+	      for (j=1; j<gen->nargs; j++) {
+		  gen->array[i]=gen->pvals[j]*Tn+gen->array[i];
+		  Tn2=Tn1;
+		  Tn1=Tn;
+		  Tn=2*x*Tn1-Tn2;
+              }
+        }
+	/* no fnscl() done to this function */
+}
+
+		 
+

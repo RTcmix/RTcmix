@@ -1,0 +1,1 @@
+/musr/bin/sfcreate -r 22050 -c 2 -f $1

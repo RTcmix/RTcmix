@@ -1,0 +1,32 @@
+#include "../H/spray.h"
+
+sprayinit(slist,size,seed)
+struct slist *slist;
+float seed;
+{
+	int i;
+	slist->size = size;
+	slist->current = size;
+	srrand(seed);
+	for(i=0; i<size; i++) {
+		slist->array[i] = i;
+		}
+}
+spray(slist)
+struct  slist *slist;
+{
+	int n,i,j;
+	float rrand();
+	n = ((rrand() + 1.)/2.) * (slist->current -1) +.5 ;
+	j = slist->array[n];
+	for(i=n; i<(slist->current-1); i++)
+		slist->array[i] = slist->array[i+1];
+	slist->current--;
+	if(!slist->current) {
+		slist->current = slist->size;
+		for(i=0; i<slist->size; i++) {
+			slist->array[i] = i;
+		}
+	}
+	return(j);
+}

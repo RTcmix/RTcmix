@@ -1,0 +1,46 @@
+#
+# Set these based on where you put the source tree and where you wish to install
+#
+TOPDIR = /musr
+#
+# Set this to TRUE to use sndlib for file i/o; otherwise use the old cmix i/o.
+USE_SNDLIB = TRUE
+#USE_SNDLIB = FALSE
+
+###############################################################
+# Shouldn't need to edit below this line
+###############################################################
+#
+CMIXDIR = $(TOPDIR)/cmix
+LIBDIR = $(CMIXDIR)/lib
+DESTDIR = $(CMIXDIR)/bin
+BINDIR = $(DESTDIR)
+#
+# This is where it will install all the dynamic shared libraries
+#
+LIBDESTDIR =$(TOPDIR)/lib
+#
+#
+# Compile and link time flags
+#
+CC = gcc 
+CXX = g++ 
+LD = ld
+
+INCLUDES = -I$(CMIXDIR)/H
+
+CFLAGS = $(INCLUDES) -g -D_REENTRANT -DLINUX
+CXXFLAGS = $(INCLUDES) -g -D_REENTRANT -DLINUX
+
+ifeq ($(USE_SNDLIB),TRUE)
+  CFLAGS += -DUSE_SNDLIB
+  CXXFLAGS += -DUSE_SNDLIB
+endif
+
+FLAGS = $(CFLAGS)
+
+SYSLIBS = -lpthread -lm -ldl
+LDFLAGS = $(SYSLIBS)
+SHARED_LDFLAGS = -shared 
+
+

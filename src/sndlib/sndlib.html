@@ -1,0 +1,641 @@
+<html>
+<head><title>The Sound Library</title></head>
+<body bgcolor="#ffffff">
+<center>
+<h1>SndLib</h1>
+</center>
+<br><br>
+<center>Bill Schottstaedt (bil@ccrma.stanford.edu)</center>
+<br><br>
+
+<h2>Contents</h2>
+<dl>
+<dt><a href="#introduction">Introduction</a>
+<dt><a href="#headers">Headers</a>
+<dt><a href="#data">Data</a>
+<dt><a href="#hardware">Hardware</a>
+<dt><a href="#examples">Examples</a>
+<dd><a href="#sndinfo">SndInfo</a>
+<dd><a href="#sndplay">SndPlay</a>
+<dd><a href="#sndrecord">SndRecord</a>
+<dd><a href="#audinfo">AudInfo</a>
+<dd><a href="#sndsine">SndSine</a>
+<dd><a href="#otherexamples">Other Examples</a>
+<dt><a href="#building">How to Make Sndlib and the examples</a>
+<dt><a href="#currentstatus">Current Status</a>
+</dl>
+
+<h2><a name="introduction">Introduction</a></h2>
+
+<p>The sound library is a collection of sound file and audio hardware
+handlers written in C and running currently on SGI (either
+audio library), NeXT (NeXTStep and OpenStep), Sun, Be, OSS (Linux and others), Mac, HPUX, MkLinux, and Windoze systems.  
+It provides relatively straightforward access to many sound file headers and data
+types, and most of the features of the audio hardware. </p>
+
+<p>The following files make up sndlib: io.c (read and write sound
+file data), headers.c (read and write sound file headers), audio.c
+(read and write sound hardware ports), and sound.c (provide
+slightly higher level access to the preceding files).  The
+overall header file is sndlib.h.  (The stub file lispcall.c
+takes care of a function used in C-to-Lisp communication).</p>
+
+<h2><a name="headers">Headers</a></h2>
+
+<p>Sound files have built-in descriptors known as headers (we're
+in computer land, so no header is considered a kind of header).
+The following functions return the information in the header.
+In each case the argument to the function is the full file
+name of the sound file.
+</p>
+<pre>
+  int sound_samples (char *arg)          /* samples of sound according to header (can be incorrect) */
+  int sound_datum_size (char *arg)       /* bytes per sample */
+  int sound_data_location (char *arg)    /* location of first sample (bytes) */
+  int sound_chans (char *arg)            /* number of channels (samples are interleaved) */
+  int sound_srate (char *arg)            /* sampling rate */
+  int sound_header_type (char *arg)      /* header type (aiff etc) */
+  int sound_data_format (char *arg)      /* data format (alaw etc) */
+  int sound_original_format (char *arg)  /* unmodified data format specifier */
+  char *sound_comment (char *arg)        /* comment if any */
+  int sound_comment_start (char *arg)    /* comment start (bytes) if any */
+  int sound_comment_end (char *arg)      /* comment end (bytes) */
+  int sound_length (char *arg)           /* true file length (for error checks) */
+  int sound_fact_samples (char *arg)     /* compression scheme data */
+  int sound_distributed (char *arg)      /* is header scattered around in sound file */
+  int sound_write_date (char *arg)       /* bare (uninterpreted) file write date */
+  int sound_type_specifier (char *arg)   /* original header type identifier */
+  int sound_align (char *arg)            /* more compression data */
+  int sound_bits_per_sample(char *arg)   /* bits per sample */
+  int bytes_per_sample(int format)       /* bytes per sample */
+</pre>
+<p>The following can be used to provide user-understandable descriptions
+of the header type and the data format:</p>
+<pre>
+  char *sound_type_name(int type)          /* "AIFF" etc */
+  char *sound_format_name(int format)      /* "16-bit big endian linear" etc */
+</pre>
+<p>In all cases if an error occurs, -1 is returned; for information about
+the error use:</p>
+<pre>
+  int audio_error(void)                    /* returns error code indicated by preceding audio call */
+  char *audio_error_name(int err)          /* gives string decription of error code */
+</pre>
+
+<p>Header data is cached internally, so the actual header is read
+only if it hasn't already been read, or the write date has changed.
+Loop points are also available, if there's interest.
+</p>
+
+<h2><a name="data">Data</a></h2>
+
+<p>The following functions provide access to
+sound file data:</p>
+<pre>
+  int open_sound_input (char *arg) 
+  int open_sound_output (char *arg, int srate, int chans, int data_format, int header_type, char *comment)
+  int close_sound_input (int fd) 
+  int close_sound_output (int fd, int bytes_of_data) 
+  int read_sound (int fd, int beg, int end, int chans, int **bufs) 
+  int write_sound (int fd, int beg, int end, int chans, int **bufs) 
+  int seek_sound (int fd, long offset, int origin) 
+  void float_sound(char *charbuf, int samps, int charbuf_format, float *buffer)
+</pre>
+<p><i>open_sound_input</i> opens <i>arg</i> for reading.  Most standard
+uncompressed formats are readable.  This function returns the associated
+file number, or -1 upon failure. </p>
+
+<p><i>close_sound_input</i> closes an open sound file.  Its argument is
+the integer returned by open_sound_input.</p>
+
+<p><i>open_sound_output</i> opens <i>arg</i>, setting its sampling rate
+to be <i>srate</i>, number of channels to <i>chans</i>, data format
+to <i>data_format</i> (see sndlib.h for these types: snd_16_linear,
+for example, means 16-bit 2's complement big endian fractions),
+header type to <i>header_type</i> (AIFF for example; the available
+writable header types are AIFF_sound_file, RIFF_sound_file ('wave'),
+NeXT_sound_file, and IRCAM_sound_file), and comment (if any) to
+<i>comment</i>.  The header is not considered complete without
+an indication of the data size, but since this is rarely known
+in advance, it is supplied when the sound file is closed.  This
+function returns the associated file number.</p>
+
+<p><i>close_sound_output</i> first updates the file's header to 
+reflect the final data size <i>bytes_of_data</i>, then closes
+the file.  The argument <i>fd</i> is the integer returned by
+open_sound_output.</p>
+
+<p><i>read_sound</i> reads data from the file indicated by <i>fd</i>,
+placing data in the array <i>obufs</i> as 32-bit integers in the
+host's byte order.  <i>chans</i> determines how many arrays of
+ints are in obufs, which is filled by read_sound from its
+index <i>beg</i> to <i>end</i> with zero padding if necessary.
+See the sndplay example below if this is not obvious.</p>
+
+<p><i>write_sound</i> writes data to the file indicated by <i>fd</i>,
+starting for each of <i>chans</i> channels in <i>obufs</i> at
+<i>beg</i> and ending at <i>end</i>.</p>
+
+<p><i>seek_sound</i> moves the read or write position for the
+file indicated by <i>fd</i> to <i>offset</i> given the
+<i>origin</i> indication (both treated as in lseek).
+The new actual position attained is returned.  In both
+cases (the returned value and offset), the output datum
+size is considered to be 2, no matter what it really is.
+That is, use byte positions as if you were always reading
+and writing 16-bit data, and seek_sound will compensate
+if its actually 32-bit floats or whatever.</p>
+
+<p><a name="floatsound"><i>float_sound</i></a> takes a buffer full of sound data in
+some format (<i>charbuf_format</i> and returns the data
+as a buffer full of (unscaled) floats.</p>
+
+
+<h2><a name="hardware">Hardware</a></h2>
+
+<p>The following functions provide access to audio harware.  If an
+error occurs, they return -1, and the audio_error functions
+can be used to find out what went wrong.</p>
+<pre>
+  int initialize_audio(void)
+  void save_audio_state(void)
+  void restore_audio_state(void)
+  void describe_audio_state(void)
+  char *report_audio_state(void)
+  int open_audio_output(int dev, int srate, int chans, int format, int size)
+  int open_audio_input(int dev, int srate, int chans, int format, int size)
+  int write_audio(int line, char *buf, int bytes)
+  int close_audio(int line)
+  int read_audio(int line, char *buf, int bytes)
+  int read_audio_state(int dev, int field, int chan, float *val)
+  int write_audio_state(int dev, int field, int chan, float *val)
+  int audio_systems(void)
+  char *audio_system_name(int system)
+  void setup_dsps(int cards, int *dsps, int *mixers) /* OSS only */
+</pre>
+
+<p><i>initialize_audio</i> takes care of any necessary intialization.</p>
+
+<p><i>save_audio_state</i> saves the current audio hardware state.</p>
+
+<p><i>restore_audio_state</i> restores the audio hardware to the last saved state.</p>
+
+<p><i>describe_audio_state</i> prints to stdout a description of the
+current state of the audio hardware.  <i>report_audio_state</i>
+returns the same description as a string.</p>
+
+<p><i>audio_systems</i> returns the number of separate and complete
+audio systems (soundcards essentially) that are available.
+<i>audio_system_name</i>  returns some user-recognizable name for the given card.
+</p>
+
+<p><i>open_audio_input</i> opens an audio port to read sound data (i.e. a microphone, line in, etc).
+The input device is <i>dev</i> (see sndlib.h for details; when in doubt, use DEFAULT_DEVICE).
+The input sampling rate is <i>srate</i> or as close as we
+can get to it.  The number of input channels (if available) is <i>chans</i>.
+The input data format is <i>format</i> (when in doubt, use the macro COMPATIBLE_FORMAT).
+And the input buffer size (if settable at all) is <i>size</i> (bytes).  This
+function returns an integer to distinguish its port from others that might be
+in use.  In this and other related functions, the device has an optional second
+portion that refers to the soundcard or system for that device.  AUDIO_SYSTEM(n)
+refers to the nth such card, so (DAC_DEVICE | AUDIO_SYSTEM(1)) is the 2nd
+card's dac (the default is system 0, the first card).
+</p>
+
+<p><i>open_audio_output</i> opens an audio port to write date (i.e. speakers, line out, etc).
+The output device is <i>dev</i> (see sndlib.h).  Its sampling rate is <i>srate</i>, number
+of channels <i>chans</i>, data format <i>format</i>, and buffer size <i>size</i>.  This
+function returns the associated line number of the output port.</p>
+
+<p><i>close_audio</i> closes the port (input or output) associated with <i>line</i>.</p>
+
+<p><i>read_audio</i> reads sound data from <i>line</i>.  The incoming <i>bytes</i> bytes of data are placed
+in <i>buf</i>.  If no error was returned from open_audio_input, the data is in the format requested
+by that function with channels interleaved.</p>
+
+<p><i>write_audio</i> writes <i>bytes</i> bytes of data in <i>buf</i> to the output
+port associated with <i>line</i>.  This data is assumed to be in the format
+requested by open_audio_output with channels interleaved.</p>
+
+<p><a name="readaudiostate"><i>read_audio_state</i></a> and <i>write_audio_state</i> are complicated.  They
+get and set the audio hardware state.  The audio hardware is treated as a
+set of "systems" (sound cards) each of which has a set of "devices" (dacs, adcs, etc),
+with various "fields" that can be read or set (gain, channels active, etc).
+For example, a microphone is called
+the MICROPHONE_DEVICE, and its hardware gain setting (if any) is called
+the AMP_FIELD.  All gains are considered to be linear between 0.0 and
+1.0, so to set the microphone's first channel amplitude to .5 (that is,
+the gain of the signal before it reaches the analog-to-digital converter),</p>
+<pre>
+  float vals[1];
+  vals[0]=0.5;
+  write_audio_state(MICROPHONE_DEVICE,AMP_FIELD,0,vals);
+</pre>
+<p>Similarly</p>
+<pre>
+  read_audio_state(MICROPHONE_DEVICE,AMP_FIELD,0,vals);
+  amp=vals[0];
+</pre>
+<p>returns the current gain in the float array vals.  read_audio_state
+can also return a description of the currently available audio
+hardware.</p>
+
+<p>If a requested operation is not implemented, -1 is returned, and
+AUDIO_ERROR is set to CANT_READ or CANT_WRITE.  If an error occurs
+during the requested operation, -1 is returned, and AUDIO_ERROR
+is set to READ_ERROR or WRITE_ERROR.  If some operation cannot
+be performed on the current hardware, -1 is returned and AUDIO_ERROR
+tries to indicate what portion of the requested operation is
+impossible (SRATE_NOT_AVAILABLE, FORMAT_NOT_AVAILABLE, and so on).</p>
+
+<h4>Systems</h4>
+<p>Each separate sound card is called a system, accessible via the <i>device</i>
+argument through the macro AUDIO_SYSTEM(n). The count starts at 0 which is the default.  The
+function <b>audio_systems</b> returns how many such cards are available.  (Currently
+it returns more than one only on Linux systems with multiple sound cards).
+</p>
+
+<h4>Devices</h4>
+<p>Each audio system has a set of available devices.  To find out what is 
+available on a given system</p>
+<pre>
+  #define LIST_MAX_SIZE 32;
+  float device_list[LIST_MAX_SIZE];
+  read_audio_state(AUDIO_SYSTEM(0),DEVICE_FIELD,LIST_MAX_SIZE,device_list);
+</pre>
+<p>The list of available devices is returned in the device_list array,
+with the number of the devices as device_list[0].  The set of device
+identifiers is in sndlib.h (LINE_IN_DEVICE for example). Two special
+devices are MIXER_DEVICE and DAC_FILTER_DEVICE.  The latter refers
+to the low-pass filter often associated with a DAC.  The former
+refers to a set of analog gain and tone controls often associated
+with a sound card.  The individual gains are accessed through the
+various fields (described below).
+</p>
+
+<h4>Fields</h4>
+<p>The field argument in read-audio-state and write-audio-state selects
+one aspect of the given card's devices' controls.  
+The simplest operations involve AMP_FIELD and SRATE_FIELD.  The latter
+gets or sets the sampling rate of the device, and the former gets or sets
+the amplitude (between 0.0 and 1.0) of the specified channel of the device.
+The value to be set or returned is in the 0th element of the <i>vals</i>
+array.  An example of reading the current microphone gain is given above.
+The meaning of the field argument can depend on which device it is
+applied to, so there is some complexity here.  The <i>channel</i>
+argument usually selects which channel we are interested in, but in
+some cases it instead tells read-audio-state how big a returned list
+can get.  A brief description of the fields:</p>
+<pre>
+AMP_FIELD       gain or volume control (0.0 to 1.0)
+SRATE_FIELD     sampling rate
+CHANNEL_FIELD   active channels
+
+BASS_FIELD, TREBLE_FIELD    mixer's tone control
+LINE_FIELD      mixer's line-in gain control
+MIC_FIELD       mixer's microphone gain control
+similarly for IMIX_FIELD, IGAIN_FIELD, RECLEV_FIELD, PCM_FIELD, PCM2_FIELD,
+              OGAIN_FIELD, LINE1_FIELD, LINE2_FIELD, LINE3_FIELD, SYNTH_FIELD 
+
+FORMAT_FIELD    return list of usable sound formats (e.g. snd_16_linear)
+DEVICE_FIELD    return list of available devices (e.g. MICROPHONE_DEVICE)
+</pre>
+<p>Due to minor problems in the OSS (Linux) multi-card support, you
+sometimes need to set up the map of dsps and mixers by hand. 
+<i>setup_dsps</i>, called after audio_initialize, sets the number
+of cards and the device numbers of the main dsp (0 for /dev/dsp0),
+and mixer.
+</p>
+
+
+<h2><a name="examples">Examples</a></h2>
+
+<p>In the following examples I've omitted the usual garrulous C-header
+gab and other inessential stuff.  The full
+program code is available as noted below.</p>
+
+<h3><a name="sndinfo">SndInfo</a></h3>
+
+<p>This program prints out a description of a sound file (sndinfo.c).</p>
+<pre>
+<font size="2">
+int main(int argc, char *argv[])
+{
+  int fd,chans,srate,samples;
+  float length;
+  time_t date;
+  char *comment;
+  char timestr[64];
+  fd = clm_open_read(argv[1]); /* see if it exists */
+  if (fd != -1)
+    {
+      close(fd);
+      date = sound_write_date(argv[1]);
+      srate = sound_srate(argv[1]);
+      chans = sound_chans(argv[1]);
+      samples = sound_samples(argv[1]);
+      comment = sound_comment(argv[1]); 
+      length = (float)samples / (float)(chans * srate);
+      strftime(timestr,64,"%a %d-%b-%y %H:%M %Z",localtime(&amp;date));
+      fprintf(stdout,"%s:\n  srate: %d\n  chans: %d\n  length: %f\n",
+	      argv[1],srate,chans,length);
+      fprintf(stdout,"  type: %s\n  format: %s\n  written: %s\n  comment: %s\n",
+	      sound_type_name(sound_header_type(argv[1])),
+	      sound_format_name(sound_data_format(argv[1])),
+	      timestr,comment);
+    }
+  else
+    fprintf(stderr,"%s: %s\n",argv[1],strerror(errno));
+  return(0);
+}
+</font>
+</pre>
+
+<h3><a name="sndplay">SndPlay</a></h3>
+
+<p>This code plays a sound file (sndplay.c):</p>
+
+<pre>
+<font size="2">
+
+int main(int argc, char *argv[])
+{
+  int fd,afd,i,j,n,k,chans,srate,frames,outbytes;
+  int **bufs;
+  short *obuf;
+  fd = open_sound_input(argv[1]);
+  if (fd != -1)
+    {
+      initialize_audio();
+      chans = sound_chans(argv[1]);
+      srate = sound_srate(argv[1]);
+      frames = sound_samples(argv[1])/chans;
+      outbytes = BUFFER_SIZE * chans * 2;
+      bufs = (int **)calloc(chans,sizeof(int *));
+      for (i=0;i&lt;chans;i++) bufs[i] = (int *)calloc(BUFFER_SIZE,sizeof(int));
+      obuf = (short *)calloc(BUFFER_SIZE * chans,sizeof(short));
+      afd = open_audio_output(DEFAULT_DEVICE,srate,chans,COMPATIBLE_FORMAT,outbytes);
+      if (afd != -1)
+	{
+	  for (i=0;i&lt;frames;i+=BUFFER_SIZE)
+	    {
+	      read_sound(fd,0,BUFFER_SIZE-1,chans,bufs);
+	      for (k=0,j=0;k&lt;BUFFER_SIZE;k++,j+=chans)
+		for (n=0;n&lt;chans;n++) obuf[j+n] = bufs[n][k];
+	      write_audio(afd,(char *)obuf,outbytes);
+	    }
+	  close_audio(afd);
+	}
+      close_sound_input(fd);
+      for (i=0;i&lt;chans;i++) free(bufs[i]);
+      free(bufs);
+      free(obuf);
+    }
+  else
+    fprintf(stderr,"%s: %s ",argv[1],audio_error_name(audio_error()));
+  return(0);
+}
+
+</font>
+</pre>
+<h3><a name="sndrecord">SndRecord</a></h3>
+
+<p>This code records a couple seconds of sound from a microphone.
+Input formats and sampling rates are dependent on available
+hardware, so in a "real" program, you'd use <a href="#readaudiostate">read_audio_state</a>
+to find out what was available, then <a href="#floatsound">float-sound</a> to
+turn that data into a stream of floats.
+You'd also provide, no doubt,
+some whizzy user interface to turn the thing off. (sndrecord.c)</p>
+<pre>
+<font size="2">
+int main(int argc, char *argv[])
+{
+  int fd,afd,i,err;
+  short *ibuf;
+#if MACOS
+  argc = ccommand(&amp;argv);
+#endif
+  afd = -1;
+  fd = open_sound_output(argv[1],22050,1,snd_16_linear,NeXT_sound_file,"created by sndrecord");
+  if (fd != -1)
+    {
+      ibuf = (short *)calloc(BUFFER_SIZE,sizeof(short));
+      afd = open_audio_input(MICROPHONE_DEVICE,22050,1,snd_16_linear,BUFFER_SIZE);
+      if (afd != -1)
+	{
+	  for (i=0;i&lt;10;i++) /* grab 10 buffers of input */
+	    {
+	      err = read_audio(afd,(char *)ibuf,BUFFER_SIZE*2);
+	      if (err != NO_ERROR) {fprintf(stderr,audio_error_name(audio_error())); break;}
+	      write(fd,ibuf,BUFFER_SIZE*2);
+	    }
+	  close_audio(afd);
+	}
+      else 
+	fprintf(stderr,audio_error_name(audio_error()));
+      close_sound_output(fd,BUFFER_SIZE*10*2);
+      free(ibuf);
+    }
+  else
+    fprintf(stderr,"%s: %s ",argv[1],strerror(errno));
+  return(0);
+}
+</font>
+</pre>
+<h3><a name="audinfo">AudInfo</a></h3>
+
+<p>This program describes the current audio harware state (audinfo.c):</p>
+<pre>
+<font size="2">
+
+int main(int argc, char *argv[])
+{
+  describe_audio_state();
+  return(0);
+}
+</font>
+</pre>
+
+<h3><a name="sndsine">SndSine</a></h3>
+
+<p>This program writes a one channel NeXT/Sun sound file
+containing a sine wave at 440 Hz.</p>
+
+<pre>
+<font size="2">
+int main(int argc, char *argv[])
+{
+  int fd,i,k,frames;
+  float phase,incr;
+  int *obuf[1];
+  fd = open_sound_output(argv[1],22050,1,snd_16_linear,NeXT_sound_file,"created by sndsine");
+  if (fd != -1)
+    {
+      frames = 22050;
+      phase = 0.0;
+      incr = 2*PI*440.0/22050.0;
+      obuf[0] = (int *)calloc(BUFFER_SIZE,sizeof(int));
+      k=0;
+      for (i=0;i&lt;frames;i++)
+	{
+	  obuf[0][k] = (int)(3276.8 * sin(phase)); /* amp = .1 */
+	  phase += incr;
+	  k++;
+	  if (k == BUFFER_SIZE)
+	    {
+	      write_sound(fd,0,BUFFER_SIZE-1,1,obuf);
+	      k=0;
+	    }
+	}
+      if (k&gt;0) write_sound(fd,0,k-1,1,obuf);
+      close_sound_output(fd,22050*c_snd_datum_size(snd_16_linear));
+      free(obuf[0]);
+    }
+  return(0);
+}
+</font>
+</pre>
+
+<h3><a name="otherexamples">Other Examples</a></h3>
+
+<p>The primary impetus for the sound library was the development
+of Snd and CLM, both of which are freely available.</p>
+<hr>
+
+
+<h3><a name="building">How to Make Sndlib and the examples</a></h3>
+
+<p>The Sndlib files can be used as separate modules or made into a
+library.  The following sequence, for example, builds the sndplay
+program from scratch on an SGI:</p>
+<pre>
+cc -c io.c -O -DSGI
+cc -c headers.c -O -DSGI
+cc -c audio.c -O -DSGI
+cc -c sound.c -O -DSGI
+cc sndplay.c -o sndplay -O -DSGI audio.o io.o headers.o sound.o -laudio -lm
+</pre>
+<p>To make a library out of 
+the sndlib files, first compile them as above, then:</p>
+<pre>
+ld -r audio.o io.o headers.o sound.o -o sndlib.a
+cc sndplay.c -o sndplay -O -DSGI sndlib.a -laudio -lm
+</pre>
+<p>The full sequence in Linux:</p>
+<pre>
+cc -c io.c -O -DLINUX
+cc -c audio.c -O -DLINUX
+cc -c headers.c -O -DLINUX
+cc -c sound.c -O -DLINUX
+cc sndplay.c -o sndplay -O -DLINUX audio.o io.o headers.o sound.o -lm
+
+ld -r audio.o io.o headers.o sound.o -o sndlib.a
+cc sndplay.c -o sndplay -O -DLINUX sndlib.a -lm
+</pre>
+<p>And on a NeXT:</p>
+<pre>
+cc -c io.c -O -DNEXT
+cc -c audio.c -O -DNEXT
+cc -c headers.c -O -DNEXT
+cc -c sound.c -O -DNEXT
+cc sndplay.c -o sndplay -O -DNEXT audio.o io.o headers.o sound.o 
+
+ld -r audio.o io.o headers.o sound.o -o sndlib.a
+cc sndplay.c -o sndplay -O -DNEXT sndlib.a
+</pre>
+<p>Some similar sequence should work on a Sun (-DSOLARIS) or in HP-UX (-DHPUX).
+On a Mac, you need to make a project in CodeWarrior or whatever that
+includes all the basic sndlib .c and .h files (io.c, audio.c
+headers.c, sound.c, sndlib.h) as source
+files.  Add the main program you're interested in
+(say sndplay.c), and "Make" the project.  When the
+project is "Run", a dialog pops up asking for
+the arguments to the program (in this case the
+name of the file to be played, as a quoted string).
+In Windoze, you can use the C IDE (a project builder as in the Mac case),
+or run the compiler from a DOS shell.  In the latter case,
+(in Watcom C) cl io.c -DWINDOZE to create the object files (io.obj and so on), then</p>
+<pre>
+cl sndplay sndplay.obj -DWINDOZE audio.obj io.obj headers.obj sound.obj 
+</pre>
+<p>or in MS C</p>
+<pre>
+cl -c io.c -DWINDOZE
+(and so on)
+cl sndplay.c -DWINDOZE sndplay.obj audio.obj io.obj headers.obj sound.obj winmm
+</pre>
+<p>or in gcc (available via the cygwin project)</p>
+<pre>
+gcc -c io.c -DWINDOZE -O2
+</pre>
+<p>
+You can run the program from the DOS shell (sndplay oboe.snd or ./sndplay.exe oboe.snd).
+On a Be, you can either build a project or use a makefile.
+The C compiler's name is mwcc.
+The tricky part
+here is that you have to find and include explicitly
+the Be audio library, libmedia.so -- look first in beos/system/lib.  
+The Snd package includes make
+information for the sndlib examples as well, so if
+you have Snd, you can say:</p>
+<pre>
+make sndplay
+</pre>
+<p>and so on.
+</p>
+<hr>
+
+<h2><a name="currentstatus">Current Status</a></h2>
+
+<table border>
+  <tr><th>System<th>SndSine<th>SndInfo<th>Audinfo<th>SndPlay<th>SndRecord
+  <tr><td>NeXT 68k<td>ok<td>ok<td>ok<td>ok<td>ok
+  <tr><td>NeXT Intel<td>ok<td>ok<td>ok<td>interruptions<td>runs (*)
+  <tr><td>SGI old and new AL<td>ok<td>ok<td>ok<td>ok<td>ok
+  <tr><td>OSS (Linux et al)<td>ok<td>ok<td>ok<td>ok<td>ok
+  <tr><td>Be<td>ok<td>ok<td>ok<td>ok<td>ok
+  <tr><td>Mac<td>ok<td>ok<td>ok<td>ok<td>ok
+  <tr><td>Windoze<td>ok<td>ok<td>ok<td>ok<td>not written
+  <tr><td>Sun<td>ok<td>ok<td>ok<td>ok<td>runs (*)
+  <tr><td>HPUX<td>untested<td>untested<td>untested<td>untested<td>untested
+  <tr><td>MkLinux/LinuxPPC<td>ok<td>ok<td>ok<td>ok<td>untested
+</table>
+<br>
+<pre>
+<font size="2">
+(*) I can't find a microphone.
+</font>
+</pre>
+<br>
+
+<dl>
+<dt>headers supported read/write
+<dd>NeXT/Sun/DEC/AFsp
+<dd>AIFF/AIFC
+<dd>RIFF (Microsoft wave)
+<dd>IRCAM (old style)
+<dd>NIST-sphere
+<dd>no header
+<dt>headers supported read-only
+<dd>8SVX (IFF), IRCAM Vax float, EBICSF, INRS, ESPS, 
+<dd>SPPACK, ADC (OGI), AVR, VOC,
+<dd>Sound Tools, Turtle Beach SMP, SoundFont 2.0, 
+<dd>Sound Designer I and II, PSION, MAUD, Kurzweil 2000,
+<dd>Tandy DeskMate, Gravis Ultrasound, ASF,
+<dd>Comdisco SPW, Goldwave sample, omf, quicktime
+<dd>Sonic Foundry, SBStudio II, Delusion digital, 
+<dd>Digiplayer ST3, Farandole Composer WaveSample,
+<dd>Ultratracker WaveSample, Sample Dump exchange, 
+<dd>Yamaha SY85, SY99, and TX16, Covox v8, SPL, AVI, 
+</dl>
+
+<pre>
+<font size="2">
+Incomplete: OMF, AVI, ASF, QuickTime, SoundFont 2.0.
+Not handled: Esignal, ILS, HTK, DVSM, SoundEdit.
+Handled by Snd: Mus10, IEEE text, HCOM, various compression schemes.
+</font>
+</pre>
+
+</body></html>

@@ -1,0 +1,79 @@
+I.  INSTALLATION
+----------------
+
+1)  Set up your linux audio driver either compile the kernel with sound, 
+or get the OSS drivers:
+
+	http://www.4front-tech.com
+
+2)  Get the pthread libraries:
+
+	http://pauillac.inria.fr/~xleroy/linuxthreads/
+
+Installation is simple.
+
+Ia.  FOR THE CORE
+-----------------
+
+1)  Make directories called /musr and /musr/lib on your system
+2)  Get the file RTcmix2.0.Linux.tgz
+3)  untar RTcmix2.0.linux.tar.gz into /musr
+4)  create a link from RTcmix2.0.linux to cmix (to avoid version confusion):
+	ln -s /musr/RTcmix2.0.linux /musr/cmix
+5)  cd into /musr/cmix
+6)  do a make; make install
+7)  Put /musr/cmix/bin into your $PATH
+
+NOTE TO REDHAT USERS:  you may not have the lex libraries, in which case 
+you'll get an error about -ll not found.  Change the Makefile in the Minc
+directory to use -lfl (flex libraries) instead.
+
+Ib.  FOR SEPARATE PACKAGES
+--------------------------
+
+1)  cd into /musr/cmix
+2)  untar PACKAGE.tgz
+3)  cd into /musr/cmix/PACKAGE
+4)  do a make; make install
+
+NOTE:  many packages will not install into /musr/cmix/bin because they are 
+development work.  You'll have to CD into the specific directory and run 
+the ./program from there.
+
+The following instruments are included in the base distribution:
+
+mix/MIX
+wavetable/WAVETABLE
+
+If you want more, you should download insts.tgz and compile them.
+
+and so on...
+
+II.  RUN THEM SCOREFILES!
+-------------------------
+
+1)  Get or create two soundfiles (eg., /snd/test.snd (mono) and /snd/test2.snd
+(stereo))
+
+They must be NeXT/IRCAM style which means they can be either Next or IRCAM 
+style with the hybrid header.  You can put that header on with sfcreate or 
+one of the I* scripts.
+
+The SOX package is very useful for creating such files.  The following two lines will get 'em just right (for a mono, 44k file):
+
+sox $input.aiff -x -t .sf $name.snd # note the -x swaps bytes
+sfcreate -c 1 -r 44100 -i name.snd
+
+2) Start running stuff in ./cmix/insts/SAMPLE_SCORES
+
+EG.,
+
+	CMIX < mix1.sco  
+
+III. HAVE FUN!
+--------------
+:->
+
+
+Dave Topper
+topper@virginia.edu

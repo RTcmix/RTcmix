@@ -1,0 +1,6 @@
+sfprint.c prints soundfile header stats
+sfcreate.c creates soundfile headers in bsd/IRCAM style or NeXT style
+sfcreate.c creates only bsd header files
+sfextend.c extends the length of a soundfile, with a hole.
+sfhedit.c edits information in a header.
+sfshrink.c shrinks a soundfile to a given size
