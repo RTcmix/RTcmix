@@ -12,7 +12,7 @@ ifeq ($(ARCH), MACOSX)
    SRCS += OSXMouse.cpp
    APP = MouseWindow
    GUILIBS = -framework Carbon
-   CXXFLAGS += -DAPP_PATH=\"$(BINDIR)/$(APP).app\"
+   CXXFLAGS += -DAPP_PATH=\"$(DESTDIR)/$(APP).app\"
 else
    OBJS += XMouse.o
    SRCS += XMouse.cpp
@@ -61,13 +61,13 @@ depend:
 install: all
 	$(INSTALL) $(LIBMOUSE) $(LIBDESTDIR)
 ifeq ($(ARCH), MACOSX)
-	ditto $(APP).app $(LIBDESTDIR)/$(APP).app
+	ditto $(APP).app $(DESTDIR)/$(APP).app
 endif
 
 uninstall:
 	$(RM) $(LIBDESTDIR)/$(LIBMOUSE)
 ifeq ($(ARCH), MACOSX)
-	$(RM) -r $(LIBDESTDIR)/$(APP).app
+	$(RM) -r $(DESTDIR)/$(APP).app
 endif
 
 clean:
