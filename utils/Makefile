@@ -36,7 +36,7 @@ install:
 	done
 
 clean:
-	rm -rf *~ *.o core $(PROGS)
+	rm -f *~ *.o core $(PROGS)
 	@for PROG in $(PROGS); \
 	do \
 	( echo "rm -f $(BINDIR)/$$PROG"; \
