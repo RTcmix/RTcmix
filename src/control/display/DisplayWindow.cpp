@@ -257,9 +257,11 @@ pascal OSStatus doWindowMouseMoved(EventHandlerCallRef nextHandler,
 	GetEventParameter(theEvent, kEventParamWindowMouseLocation, typeQDPoint,
 		NULL, sizeof(Point), NULL, &mouseLoc);
 
-	if (y >= 0) {
+	const int x = mouseLoc.h;
+	const int y = mouseLoc.v - _titleBarHeight;
+
+	if (y >= 0)
 		SetThemeCursor(kThemeCrossCursor);
-	}
 	else
 		SetThemeCursor(kThemeArrowCursor);
 
@@ -325,8 +327,6 @@ int createWindow()
 								&rect, &_window); 
 	if (status != noErr)
 		return reportError("createWindow: Error creating window.", false);
-
-	setFactors();
 
 	SetWindowTitleWithCFString(_window, CFSTR("RTcmix Display"));
 
