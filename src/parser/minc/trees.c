@@ -1372,6 +1372,8 @@ free_tree(Tree tp)
          break;
    } /* switch kind */
 
+   if (tp->type == MincHandleType)
+      free(tp->v.handle);
    free(tp);   /* actually free space */
 }
 
