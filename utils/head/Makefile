@@ -39,5 +39,9 @@ install:
 	done
 
 clean:
+	@for PGM in $(HEAD); \
+	do \
+	( rm -f $(DESTDIR)/$$PGM; ) \
+	done
 	-rm -f *.o $(HEAD)
 
