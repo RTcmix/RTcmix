@@ -11,6 +11,7 @@
 #include <pmutil.h>
 
 #define SLEEP_MSEC			1		// How long to nap between polling of events
+#define INVALID_MIDIVAL    99999
 
 class RTcmixMIDI {
 public:
