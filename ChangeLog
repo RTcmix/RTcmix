@@ -1,6 +1,13 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2005-01-09  Douglas Scott  <netdscott at netscape.net>
+
+	*  Simplified audio I/O by moving all float limiting and peak detection
+	*  out of rtsendsamps, etc., into the AudioDevice classes.  HW audio 
+	*  devices and file audio devices are now combined as necessary into a
+	*  single compound audio device at creation time.
+
 Friday, January 7, 2005 John Gibson <johgibso-at-indiana.edu>
 
    * The mouse window, invoked by makeconnection("mouse", ...),
