@@ -25,19 +25,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
-#include <Instrument.h>
+#include <Ougens.h>
 #include "DELAY.h"
 #include <rt.h>
 #include <rtdefs.h>
 
-#define MAXDELTIME 20.0    // seconds (176400 bytes per second at SR=44100)
+inline long max(long x, long y) { return x > y ? x : y; }
 
 DELAY::DELAY() : Instrument()
 {
 	in = NULL;
 	delay = NULL;
 	branch = 0;
-	warn_deltime = true;
 }
 
 DELAY::~DELAY()
@@ -60,19 +59,17 @@ int DELAY::init(double p[], int n_args)
 
 	if (inchan >= inputChannels())
 		return die("DELAY", "You asked for channel %d of a %d-channel file.",
-														inchan, inputChannels());
+												inchan, inputChannels());
 
 	if (rtsetoutput(outskip, dur + ringdur, this) == -1)
 		return DONT_SCHEDULE;
 	insamps = (int) (dur * SR + 0.5);
 
-	if (deltime > MAXDELTIME)
-		return die("DELAY", "Maximum delay time (%g seconds) exceeded.",
-																			MAXDELTIME);
+	if (deltime <= 0.0)
+		return die("DELAY", "Invalid delay time (%g)", deltime);
 
-	// Delay is initialized to first delay time passed in, and will resize
-	// as necessary.
-	delay = new Odelayi((long) (deltime * SR + 0.5));
+	long defaultDelay = max(100L, long(deltime * SR + 0.5));
+	delay = new Odelayi(defaultDelay);
 	// This is how we check for memory failure.
 	if (delay->length() == 0)
 		return die("DELAY", "Can't allocate delay line memory.");
