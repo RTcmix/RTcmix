@@ -22,6 +22,7 @@
 #include <globals.h>
 #include <prototypes.h>
 #include <ugens.h>
+#include <version.h>
 #include "../rtstuff/rt.h"
 #include "sockdefs.h"
 #include "defs.h"
@@ -155,7 +156,8 @@ main(int argc, char *argv[])
    aargc = argc;
 
    /* Banner */
-   fprintf(stderr, " ---------> RTcmix/%s <----------\n", argv[0]);
+   printf("--------> %s %s (%s) <--------\n",
+                                      RTCMIX_NAME, RTCMIX_VERSION, argv[0]);
 
    /* Process command line. */
    if (argc >= 2) {
