@@ -3,43 +3,51 @@
    p0 = output start time
    p1 = input start time
    p2 = input duration
-   p3 = amplitude multiplier
+   p3 = amplitude multiplier *
    p4 = filter order (higher order allows steeper slope)
    p5 = input channel [optional, default is 0]
-   p6 = stereo spread (0 - 1) [optional, default is .5 for stereo output]
+   p6 = pan (in percent-to-left form: 0-1) [optional; default is 0.5]
    p7 = bypass filter (0: no, 1: yes) [optional, default is 0]
+   p8 = reference to frequency response table [optional; if missing, must
+        use gen 2 **]
 
-   Can only process 1 channel at a time. To process stereo, call twice --
-   once with inchan=0 and spread=1, again with inchan=1 and spread=0.
-   
-   Assumes function table 1 is amplitude curve for the note. (Try gen 18.)
-   Or you can just call setline. If no setline or function table 1, uses
-   flat amplitude curve.
+   p3 (amplitude), p6 (pan) and p7 (bypass) can receive dynamic updates from
+   a table or real-time control source.
 
-   Function table 2 is the desired frequency response curve, described
-   by freq,amp pairs. Frequency is in Hz, from 0 to Nyquist; amp is from
-   0 to 1. Ideally, frequencies with amplitude of 1 are passed without
-   attenuation; those with amplitude of 0 are attenuated totally. But
-   this behavior depends on the order of the filter. Try an order of 200,
-   and increase that as needed. (I've gotten an order of 600 in mono in
-   real time on a PII266.)
+   The desired frequency response curve is described by a table specification
+   of <frequency, amplitude> pairs.  Frequency is in Hz, from 0 to Nyquist;
+   amp is from 0 to 1.  Ideally, frequencies with amplitude of 1 are passed
+   without attenuation; those with amplitude of 0 are attenuated totally.  But
+   this behavior depends on the order of the filter. Try an order of 200, and
+   increase that as needed.
 
    Example:
 
-      nyquist = 44100 / 2
-      makegen(2, 24, 5000, 0,0, 200,0, 300,1, 2000,1, 4000,0, nyquist,0)
+      nyq = 44100 / 2
+      table = maketable("line", 5000, 0,0, 200,0, 300,1, 2000,1, 4000,0, nyq,0)
 
-   With a high order, this should attenuate everything below 200 Hz
-   and above 4000 Hz.
+   With a high order, this should attenuate everything below 200 Hz and
+   above 4000 Hz.
 
-   John Gibson (jgg9c@virginia.edu), 7/3/99.
+   ----
+
+   Notes about backward compatibility with pre-v4 scores:
+
+   * If an old-style gen table 1 is present, its values will be multiplied
+   by p3 (amplitude), even if the latter is dynamic.
+
+   ** If p8 is missing, you must use an old-style gen table 2 for the
+   frequency response curve.
+
+
+   John Gibson (jgg9c@virginia.edu), 7/3/99; rev for v4, JGG, 7/24/04
    Filter design code adapted from Bill Schottstaedt's Snd.
 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
+#include <PField.h>
 #include "JFIR.h"
 #include <rt.h>
 #include <rtdefs.h>
@@ -53,6 +61,7 @@
 JFIR :: JFIR() : Instrument()
 {
    in = NULL;
+   branch = 0;
 }
 
 
@@ -65,39 +74,42 @@ JFIR :: ~JFIR()
 
 int JFIR :: init(double p[], int n_args)
 {
-   int   order, tabsize;
-   float outskip, inskip, dur, ringdur;
+   nargs = n_args;
+   float outskip = p[0];
+   float inskip = p[1];
+   float dur = p[2];
+   int order = (int) p[4];
+   inchan = (int) p[5];
 
-   outskip = p[0];
-   inskip = p[1];
-   dur = p[2];
-   amp = p[3];
-   order = (int)p[4];
-   inchan = (int)p[5];
-   spread = n_args > 6 ? p[6] : 0.5;             /* default is center */
-   bypass = n_args > 7 ? (int) p[7] : 0;         /* default is no */
-
-   ringdur = (float)order / SR;
-   nsamps = rtsetoutput(outskip, dur + ringdur, this);
    if (rtsetinput(inskip, this) != 0)
       return DONT_SCHEDULE;
-   insamps = (int)(dur * SR);
-
-   if (inchan >= inputchans)
+   insamps = (int) (dur * SR + 0.5);
+   if (inchan >= inputChannels())
       return die("JFIR", "You asked for channel %d of a %d-channel file.",
-                                                         inchan, inputchans);
+                                                      inchan, inputChannels());
+   float ringdur = (float) order / SR;
+   nsamps = rtsetoutput(outskip, dur + ringdur, this);
 
-   double *response_tab = floc(2);
-   if (response_tab == NULL)
-      return die("JFIR",
-                 "You haven't made the frequency response function (table 2).");
-   tabsize = fsize(2);
+   double *response_table = NULL;
+	int tablelen = 0;
+	if (n_args > 8) {      // handle table coming in as optional p8 TablePField
+		const PField &field = getPField(8);
+		tablelen = field.values();
+		response_table = (double *) field;
+	}
+	if (response_table == NULL) {
+		response_table = floc(2);
+		if (response_table == NULL)
+			return die("JFIR", "Either use the frequency response pfield (p8) "
+                    "or make an old-style gen function in slot 2.");
+		tablelen = fsize(2);
+	}
 
    if (order < 1)
       return die("JFIR", "Order must be greater than 0.");
 
    filt = new NZero(SR, order);
-   filt->designFromFunctionTable(response_tab, tabsize, 0, 0);
+   filt->designFromFunctionTable(response_table, tablelen, 0, 0);
 #ifdef PRINT_RESPONSE
    print_freq_response();
 #endif
@@ -107,63 +119,68 @@ int JFIR :: init(double p[], int n_args)
       int lenamp = fsize(1);
       tableset(SR, dur, lenamp, amptabs);
    }
-   else
-      advise("JFIR", "Setting phrase curve to all 1's.");
 
-   skip = (int)(SR / (float)resetval);
+   skip = (int) (SR / (float) resetval);
 
-   return nsamps;
+   return nSamps();
+}
+
+
+void JFIR :: doupdate()
+{
+   double p[8];
+   update(p, 8, kAmp | kPan | kBypass);
+
+   amp = p[3];
+   if (amparray)
+      amp *= tablei(currentFrame(), amparray, amptabs);
+
+   pctleft = nargs > 6 ? p[6] : 0.5;            // default is center
+   bypass = nargs > 7 ? (bool) p[7] : false;    // default is no
+}
+
+
+int JFIR :: configure()
+{
+   in = new float [RTBUFSAMPS * inputChannels()];
+   return in ? 0 : -1;
 }
 
 
 int JFIR :: run()
 {
-   int   i, branch, rsamps;
-   float aamp, insig;
-   float out[2];
+   const int samps = framesToRun() * inputChannels();
 
-   if (in == NULL)              /* first time, so allocate it */
-      in = new float [RTBUFSAMPS * inputchans];
+   rtgetin(in, this, samps);
 
-   rsamps = chunksamps * inputchans;
-
-   rtgetin(in, this, rsamps);
-
-   aamp = amp;                  /* in case amparray == NULL */
-
-   branch = 0;
-   for (i = 0; i < rsamps; i += inputchans) {
-      if (--branch < 0) {
-         if (amparray)
-            aamp = tablei(cursamp, amparray, amptabs) * amp;
+   for (int i = 0; i < samps; i += inputChannels()) {
+      if (--branch <= 0) {
+         doupdate();
          branch = skip;
       }
-      if (cursamp < insamps)                 /* still taking input from file */
-         insig = in[i + inchan];
-      else                                   /* in ring-down phase */
+
+      float insig;
+      if (currentFrame() < insamps)          // still taking input
+         insig = in[i + inchan] * amp;
+      else                                   // in ring-down phase
          insig = 0.0;
 
-      insig *= aamp;
+      float out[2];
       if (bypass)
          out[0] = insig;
       else
          out[0] = filt->tick(insig);
 
-#ifdef DEBUG
-printf("%4d:  %18.12f ->%18.12f ->%18.12f ->%18.12f\n",
-       cursamp, insig, f1, f2, out[0]);
-#else
       if (outputchans == 2) {
-         out[1] = out[0] * (1.0 - spread);
-         out[0] *= spread;
+         out[1] = out[0] * (1.0 - pctleft);
+         out[0] *= pctleft;
       }
 
       rtaddout(out);
-#endif
-      cursamp++;
+      increment();
    }
 
-   return i;
+   return framesToRun();
 }
 
 
@@ -210,8 +227,7 @@ Instrument *makeJFIR()
 }
 
 
-void
-rtprofile()
+void rtprofile()
 {
    RT_INTRO("JFIR", makeJFIR);
 }
