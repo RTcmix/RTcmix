@@ -8,7 +8,7 @@
 
 #ifdef USE_SNDLIB
 
-#include <time.h>
+#include <sys/time.h>
 
 #define MAX_TIME_CHARS  64
 
