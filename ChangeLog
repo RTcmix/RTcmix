@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Saturday, June 12, 2004 John Gibson <johgibso-at-indiana.edu>
+
+   * Rewrote cmixplay to make it compatible with new audio device
+     code (incl. support for ALSA on Linux).  Added new pause
+     hotkey feature.
+
 2004-06-02 Douglas Scott  <netdscott at netscape.net>
 
    * Added in my work on new PField scheme.   More work cleaning up 
