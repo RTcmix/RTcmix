@@ -22,7 +22,7 @@ $$ all params cannot be changed SCULPT
 # done STEREO
 # done STRUM ??
 $$ issues with updating dur and interval TRANS
-TRANSBEND
+# done TRANSBEND
 # done WAVESHAPE
 
 # insts.jg
