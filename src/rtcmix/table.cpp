@@ -1087,7 +1087,7 @@ _spline(const int closed, const float konst, const int nknots, double *outbuf,
 
 
 static void
-getlim(SplineSpec *p, int nknots)
+_spline_getlimit(SplineSpec *p, int nknots)
 {
    for (int i = 0; i < nknots; i++) {
       if (!p->manual_lb && p->lower_bound > p->val[i])
@@ -1147,8 +1147,8 @@ _spline_table(const Arg args[], const int nargs, double *array, const int len)
       nknots++;
    }
 
-   getlim(&x, nknots);
-   //getlim(&y, nknots);   JGG: y.lower_bound and y.upper_bound not used
+   _spline_getlimit(&x, nknots);
+   //_spline_getlimit(&y, nknots);   JGG: y bounds not used
 
    if (_spline(closed, curvature, nknots, array, len, &x, &y) != 0)
       return -1;
