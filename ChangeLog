@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2004-06-22  Douglas Scott  <netdscott-at-netscape.net>
+
+	* Fixed problems with audio device stop/close and signal handler.
+
 Sunday, June 20, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * New spline table type for maketable.
