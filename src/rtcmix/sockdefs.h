@@ -1,5 +1,6 @@
 #include <netinet/in.h>
-#include "defs.h"  /* for MAXDISPARGS */
+#include "maxdispargs.h"
+
 #define MAXTEXTARGS ((MAXDISPARGS*sizeof(double))/512)
 
 #define MYPORT (IPPORT_RESERVED + 78)
