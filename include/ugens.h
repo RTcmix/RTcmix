@@ -3,10 +3,6 @@
  */
 #ifndef _UGENS_H_ 
 #define _UGENS_H_ 1
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-
 
 #define	UG_NSIZ	7	/*  Max len of UG name	*/
 #define NAMESIZE 128    /* Max size of file name */
@@ -27,14 +23,25 @@ struct	ug_item	{
 typedef	struct ug_item	ug_t;
 
 
-extern	ug_t	*ug_list;
-extern int addfunc(struct ug_item *);
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
+extern	ug_t	*ug_list;
+int addfunc(struct ug_item *);
+void merror(char *);
+
+#ifdef __cplusplus
+#define	UG_INTRO(flabel,func)	\
+	{ \
+		static ug_t this_ug = { UG_NULL, (double (*)()) func, flabel }; \
+		if (addfunc(&this_ug) == -1) merror(flabel);	}
+#else
 #define	UG_INTRO(flabel,func)	\
 	{ extern double func();	\
-	  extern int merror(char *);	\
 		static ug_t this_ug = { UG_NULL, func, flabel }; \
 		if (addfunc(&this_ug) == -1) merror(flabel);	}
+#endif
 
 
 #ifndef PI
