@@ -10,7 +10,6 @@
 
 extern "C" {
 	#include <ugens.h>
-	extern int lineset;
 	extern int resetval;
 }
 
