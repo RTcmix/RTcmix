@@ -140,7 +140,9 @@ int MultiPortOSSAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 	int status = 0;
 	// Set format on each open monaural device.
 	for (int dev = 0; dev < _devCount && status == 0; ++dev) {
-		status = setDeviceFormat(_devices[dev], sampleFormat, 1, (int) srate);
+		int monochans = 1;
+		status = setDeviceFormat(_devices[dev], sampleFormat,
+								 &monochans, (int) srate);
 	}
 	if (status == 0) {
 		// Store the device params to allow format conversion.

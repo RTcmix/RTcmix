@@ -106,12 +106,12 @@ int SinglePortOSSAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 			_bytesPerFrame = 0;
 			return error("Unsupported sample format");
 	};
-	int status = setDeviceFormat(device(), sampleFormat, chans, (int) srate);
+	int realChans = chans;
+	// realChans can return a different value than requested chans.
+	int status = setDeviceFormat(device(), sampleFormat, &realChans, (int) srate);
 	if (status == 0) {
 		// Store the device params to allow format conversion.
-		setDeviceParams(deviceFormat | MUS_INTERLEAVED,		// always interleaved
-						chans,
-						srate);
+		setDeviceParams(deviceFormat | MUS_INTERLEAVED, chans, srate);
 	}
 	return status;
 }
@@ -135,11 +135,11 @@ SinglePortOSSAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 	PRINT0("SinglePortOSSAudioDevice::doSetQueueSize: OSS returned fragment size of %d bytes\n",
 		   fragSize);
 	*pWriteSize = fragSize / getDeviceBytesPerFrame();
-	_bufferSize = fragSize * reqCount;
+	int bufferSize = fragSize * reqCount;
 	PRINT0("SinglePortOSSAudioDevice::doSetQueueSize: writesize = %d frames, count = %d\n",
 		   *pWriteSize, *pCount);
 	PRINT1("SinglePortOSSAudioDevice::doSetQueueSize: audio buffer will be %d bytes\n",
-		   _bufferSize);
+		   bufferSize);
 	return 0;
 }
 
@@ -165,6 +165,7 @@ SinglePortOSSAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 	int toWrite = frameCount * _bytesPerFrame;
 	int written = ::write(device(), frameBuffer, toWrite);
 	PRINT1("SinglePortOSSAudioDevice::doSendFrames: %d bytes to write, %d written\n", toWrite, written);
+//	if (toWrite < _bufferSize) {}
 	if (written > 0) {
 		int frames = written / _bytesPerFrame;
 		incrementFrameCount(frames);

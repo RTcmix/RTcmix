@@ -73,26 +73,40 @@ int OSSAudioDevice::doPause(bool isPaused)
 	return 0;
 }
 
-
 int
-OSSAudioDevice::setDeviceFormat(int dev, int sampleFormat, int chans, int srate)
+OSSAudioDevice::setDeviceFormat(int dev, int sampleFormat,
+								int *chans, int srate)
 {
 	int confirmedFormat = sampleFormat;
 	if (::ioctl(dev, SNDCTL_DSP_SETFMT, &confirmedFormat))
 		return error("OSS error while setting sample format: ", strerror(errno));
 	else if (confirmedFormat != sampleFormat)
 		return error("This sample format not supported by device.");
+
+	int reqChans = *chans;
 #ifndef SOUND_PCM_WRITE_CHANNELS	// OLD VERSION
-	if (chans != 1 && chans != 2)
+	if (reqChans != 1 && reqChans != 2)
 		return error("This device supports only mono and stereo");
 #else
-	int reqChans = chans;
-	if (::ioctl(dev, SOUND_PCM_WRITE_CHANNELS, &reqChans) || reqChans != chans)
+	if (::ioctl(dev, SOUND_PCM_WRITE_CHANNELS, &reqChans) == 0) {
+		if (reqChans != *chans) {
+			PRINT0("OSSAudioDevice::setDeviceFormat:  Device channel count is %d\n", reqChans);
+			*chans = reqChans;
+		}
+	}
+	else if (reqChans > 2) {
+		return error("This device does not support setting chans > 2");
+	}
+	else
 #endif
 	{
-		int dsp_stereo = (chans == 2);
-		if (::ioctl(dev, SNDCTL_DSP_STEREO, &dsp_stereo) || dsp_stereo != (chans == 2))
-			return error("OSS error while setting channel count: ", strerror(errno));
+		int dsp_stereo = (reqChans == 2);
+		if (::ioctl(dev, SNDCTL_DSP_STEREO, &dsp_stereo)
+			|| dsp_stereo != (reqChans == 2))
+		{
+			return error("OSS error while setting channel count: ",
+						 strerror(errno));
+		}
 	}
 	int dsp_speed = (int) srate;
 	if (::ioctl(dev, SNDCTL_DSP_SPEED, &dsp_speed))

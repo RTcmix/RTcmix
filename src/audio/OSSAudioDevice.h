@@ -31,7 +31,7 @@ protected:
 	// OSS device-level virtual implementation
 	virtual int closeDevice()=0;
 	// OSS device-level non-virtual implementation
-	int setDeviceFormat(int dev, int sampfmt, int chans, int srate);
+	int setDeviceFormat(int dev, int sampfmt, int *chans, int srate);
 
 protected:
 	char *	_inputDeviceName;
