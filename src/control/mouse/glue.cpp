@@ -22,7 +22,7 @@
 //    <min>          minimum value [number]
 //    <max>          maximum value [number]
 //    <default>      value returned before mouse first enters window [number]
-//    <lag>          amount of smoothing for value stream [number: 0-100]
+//    <lag>          amount of smoothing for value stream [percent: 0-100]
 //    <prefix>       label to display in window [string]
 //    <units>        units (e.g., "Hz") to display in window [string]
 //    <precision>    digits after decimal point to display in window [number]
@@ -74,6 +74,10 @@ mouse_connection(const Arg args[], const int nargs)
 		lag = args[4];
 	else
 		return _mouse_usage();
+	if (lag < 0.0 || lag > 100.0) {
+		die("makeconnection (mouse)", "<lag> must be between 0 and 100");
+		return NULL;
+	}
 
 	if (nargs > 5) {
 		if (args[5].isType(StringType))
