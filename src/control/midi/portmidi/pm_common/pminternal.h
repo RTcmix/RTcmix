@@ -110,7 +110,7 @@ typedef struct pm_internal_struct {
     
     long latency; /* time delay in ms between timestamps and actual output */
                   /* set to zero to get immediate, simple blocking output */
-                  /* if latency is zero, timestamps will be ignored;
+                  /* if latency is zero, timestamps will be ignored; */
                   /* if midi input device, this field ignored */
     
     int overflow; /* set to non-zero if input is dropped */
