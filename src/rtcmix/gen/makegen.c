@@ -5,6 +5,7 @@
 extern double gen1(struct gen *gen, char *sfname);
 extern double gen2(struct gen *gen);
 extern double gen3(struct gen *gen);
+extern double gen4(struct gen *gen);
 extern double gen5(struct gen *gen);
 extern double gen6(struct gen *gen);
 extern double gen7(struct gen *gen);
@@ -104,6 +105,9 @@ makegen(float p[], int n_args, double pp[])
          break;
       case 5:
          retval = gen5(&gen);
+         break;
+      case 4:
+         retval = gen4(&gen);
          break;
       case 3:
          retval = gen3(&gen);
