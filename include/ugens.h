@@ -90,6 +90,7 @@ extern int (*getsample)();
 float allpass(float, float *);
 float allpole(float, int*, int, float*, float*);
 double ampdb(float);
+double dbamp(float);
 float *ballpole(float*, long*, long, float*, float*, float*, long);
 float *bbuzz(float, float, float, float*, float*, float*, long);
 float boost(float);
