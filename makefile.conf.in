@@ -6,6 +6,9 @@ TOPDIR = /usr/local/src
 # The name of the RTcmix directory
 CMIXDIR = $(TOPDIR)/RTcmix-4.0
 
+# The path to this file
+MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
+
 # The dir that will contain the instrument dynamic shared objects
 LIBDESTDIR = $(CMIXDIR)/shlib
 
