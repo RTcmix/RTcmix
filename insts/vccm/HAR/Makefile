@@ -1,21 +1,45 @@
 include ../package.conf
 
+NAME = HAR
+
+CURDIR = $(CMIXDIR)/insts.vccm/$(NAME)
 OBJS = HOLD.o STORE.o FADE_HOLD.o rtprofile.o
-PROGS = HAR libHAR.so
 CMIXOBJS += $(PROFILE_O)
+PROGS = lib$(NAME).so $(NAME)
 
-all: libHAR.so
+.PHONY: all standalone install dso_install standalone_install \
+uninstall dso_uninstall standalone_uninstall clean cleanall
 
-standalone: HAR
+all: lib$(NAME).so
 
-libHAR.so: $(OBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+standalone: $(NAME)
 
-HAR: $(OBJS) $(CMIXOBJS)
+lib$(NAME).so: $(OBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+
+$(NAME): $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) $(HEADERS)
+$(OBJS): $(INSTRUMENT_H) HOLD.h FADE_HOLD.h STORE.h
+
+install: dso_install
+
+dso_install: lib$(NAME).so
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)/libi$(NAME).so
+
+standalone_install: standalone
+	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)/i$(NAME)
+
+uninstall: dso_uninstall standalone_uninstall
+
+dso_uninstall:
+	$(RM) $(LIBDESTDIR)/libi$(NAME).so
+
+standalone_uninstall:
+	$(RM) $(DESTDIR)/i$(NAME)
 
 clean:
-	$(RM) *.o $(OBJS) $(PROGS)
+	$(RM) $(OBJS) $(PROGS)
+
+cleanall: clean uninstall
 
