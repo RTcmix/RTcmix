@@ -1519,7 +1519,6 @@ extern "C" {
 	Handle copytable(const Arg args[], const int nargs);
 	Handle inverttable(const Arg args[], const int nargs);
 	Handle shifttable(const Arg args[], const int nargs);
-	Handle quantizetable(const Arg args[], const int nargs);
 	double samptable(const Arg args[], const int nargs);
 	double dumptable(const Arg args[], const int nargs);
 	double plottable(const Arg args[], const int nargs);
@@ -1972,58 +1971,6 @@ shifttable(const Arg args[], const int nargs)
 		warn("shifttable", "Your shift of %d has no effect on the table!", shift);
 	else
 		_do_shift_table(array, table->values(), shift);
-	TablePField *newtable = new TablePField(array, table->values());
-
-	return createPFieldHandle(newtable);
-}
-
-
-// ----------------------------------------------------------- quantizetable ---
-// Make a copy of the given table, and constrain the values of the copy to
-// the quantum.
-//                                                               -JGG, 6/20/04
-
-static void
-_do_quantize_table(double *array, const int len, const double quantum)
-{
-	// It'd be nice to let the C library do the rounding, but rintf rounds
-	// to the nearest even integer, and round and roundf don't even work
-	// on my Slackware 8.1 system.  Screw it, we'll roll our own.  -JGG
-
-	for (int i = 0; i < len; i++) {
-		double quotient = fabs(array[i] / quantum);
-		int floor = (int) quotient;
-		double remainder = quotient - (double) floor;
-		if (remainder >= 0.5)	// round to nearest
-			floor++;
-		if (array[i] < 0.0)
-			array[i] = -floor * quantum;
-		else
-			array[i] = floor * quantum;
-	}
-}
-
-Handle
-quantizetable(const Arg args[], const int nargs)
-{
-	if (nargs != 2) {
-		die("quantizetable", "Usage: newtable = quantizetable(table, quantum)");
-		return NULL;
-	}
-	TablePField *table = _getTablePField(&args[0]);
-	if (table == NULL) {
-		die("quantizetable", "Usage: newtable = quantizetable(table, quantum)");
-		return NULL;
-	}
-	if (!args[1].isType(DoubleType)) {
-		die("quantizetable", "Usage: newtable = quantizetable(table, quantum)");
-		return NULL;
-	}
-	double quantum = args[1];
-
-	double *array = new double[table->values()];
-	table->copyValues(array);
-	_do_quantize_table(array, table->values(), quantum);
 	TablePField *newtable = new TablePField(array, table->values());
 
 	return createPFieldHandle(newtable);
