@@ -51,7 +51,7 @@ MYSYNTH :: ~MYSYNTH()
    the error and exit. If you just want to warn the user and keep going,
    call warn() with a message.
 */
-int MYSYNTH :: init(float p[], short n_args)
+int MYSYNTH :: init(float p[], int n_args)
 {
    float outskip, dur;
 
