@@ -30,8 +30,8 @@ $(TEST).o: depend $(TEST).cpp RTMousePField.h
 	$(CXX) $(CXXFLAGS) -c -o $(TEST).o $(TEST).cpp
 
 $(TEST): depend $(TEST).o $(LIBMOUSE)
-	$(CXX) $(CXXFLAGS) $(TEST).o -o $(TEST) $(LIBMOUSE) $(PFIELD) $(GENLIB) \
-		$(GUILIBS) -lpthread
+	$(CXX) $(CXXFLAGS) $(TEST).o -o $(TEST) $(LIBMOUSE) $(PFIELD) \
+		$(LIBDIR)/$(LIBGEN) $(GUILIBS) -lpthread
 
 depend:
 	-$(SHELL) -ec '$(CXX) -M $(CXXFLAGS) $(TEST).cpp $(SRCS)' > depend
