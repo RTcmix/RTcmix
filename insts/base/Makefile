@@ -21,15 +21,9 @@ install:
 	@for DIR in $(DSODIRS); \
 	do \
 	  ( cd $$DIR; echo "making install in $$DIR..."; \
-	  ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR) ); \
+	  $(INSTALL) `pwd`/lib$$DIR.so $(LIBDESTDIR) ); \
 	done
-	@ln -fs `pwd`/MIX/MIX $(DESTDIR)/CMIX
-# @ln -fs `pwd`/MIX/MIX $(DESTDIR)/CMIX
-# The following assumes insts.base is inside RTcmix dir.
-# Not great, but the other way was making it cumbersome to install
-# this on our server without confusing its clients.
-	@ln -fs $(CMIXDIR)/$(INSTDIR)/MIX/MIX $(DESTDIR)/CMIX
-
+	@$(INSTALL) `pwd`/MIX/MIX $(DESTDIR)/CMIX
 
 dsos:  all
 
@@ -46,31 +40,30 @@ standalone_install:
 	@for DIR in $(LIBDIRS); \
 	do \
 	( cd $$DIR; echo "making install in $$DIR..."; \
-	  rm -f $(DESTDIR)/$$DIR; \
-	  ln -fs `pwd`/$$DIR $(DESTDIR); ) \
+	  $(INSTALL) `pwd`/$$DIR $(DESTDIR); ) \
 	done
 
 clean:
 	@for DIR in $(LIBDIRS); \
 	do \
-	  ( cd $$DIR; make clean; \
-	  rm -f $(DESTDIR)/$$DIR; \
-	  rm -f $(LIBDESTDIR)/lib$$DIR.so; ) \
+	  ( cd $$DIR; $(MAKE) clean; \
+	  $(RM) $(DESTDIR)/$$DIR; \
+	  $(RM) $(LIBDESTDIR)/lib$$DIR.so; ) \
 	done
-	rm -f $(DESTDIR)/CMIX
+	@$(RM) $(DESTDIR)/CMIX
 
 dso_clean:
 	@for DIR in $(LIBDIRS); \
 	do \
-	  ( cd $$DIR; make clean; \
-	  rm -f $(LIBDESTDIR)/lib$$DIR.so; ) \
+	  ( cd $$DIR; $(MAKE) clean; \
+	  $(RM) $(LIBDESTDIR)/lib$$DIR.so; ) \
 	done
-	rm -f $(DESTDIR)/CMIX
+	@$(RM) $(DESTDIR)/CMIX
 
 standalone_clean:
 	@for DIR in $(LIBDIRS); \
 	do \
-	  ( cd $$DIR; make clean; \
-	  rm -f $(DESTDIR)/$$DIR; \
+	  ( cd $$DIR; $(MAKE) clean; \
+	  $(RM) $(DESTDIR)/$$DIR; ) \
 	done
 

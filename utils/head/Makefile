@@ -38,13 +38,13 @@ install:
 	@echo "making install..."	
 	@for PGM in $(HEAD); \
 	do \
-	(ln -fs $(CMIXDIR)/head/$$PGM $(DESTDIR); ) \
+	   ( $(INSTALL) $(CMIXDIR)/head/$$PGM $(DESTDIR); ) \
 	done
 
 clean:
 	@for PGM in $(HEAD); \
 	do \
-	( rm -f $(DESTDIR)/$$PGM; ) \
+	   ( $(RM) $(DESTDIR)/$$PGM; ) \
 	done
-	-rm -f *.o $(HEAD)
+	-$(RM) *.o $(HEAD)
 

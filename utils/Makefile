@@ -37,17 +37,18 @@ install:
 	@echo "making install..."	
 	@for PROG in $(PROGS); \
 	do \
-	  ( ln -fs $(CMIXDIR)/utils/$$PROG $(DESTDIR); ) \
+	  ( $(INSTALL) $(CMIXDIR)/utils/$$PROG $(DESTDIR); ) \
 	done
-	@ln -fs $(CMIXDIR)/utils/resample/resample $(DESTDIR)
-	@ln -fs $(CMIXDIR)/utils/cmixplay $(DESTDIR)/play
+	-$(INSTALL) $(CMIXDIR)/utils/resample/resample $(DESTDIR)
+	-$(INSTALL) $(CMIXDIR)/utils/cmixplay $(DESTDIR)/play
 
 clean:
-	-rm -f *~ *.o core $(PROGS)
 	@for PROG in $(PROGS); \
 	do \
-	  ( rm -f $(DESTDIR)/$$PROG; ) \
+	  ( $(RM) $(DESTDIR)/$$PROG; ) \
 	done
 	@cd resample; $(MAKE) clean
-	-rm -f $(DESTDIR)/resample
+	-$(RM) $(DESTDIR)/resample
+	-$(RM) $(DESTDIR)/play
+	-$(RM) *.o core $(PROGS)
 
