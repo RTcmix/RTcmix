@@ -5,11 +5,7 @@
 
 #define SLEEPMSEC 50 * 1000
 
-#define PFIELD_TEST
-
 int resetval = 1000;
-
-#ifdef PFIELD_TEST
 
 int main()
 {
@@ -54,41 +50,8 @@ int main()
 	return 0;
 }
 
-#else
 
-#define DEFAULTVAL 0.0
+// satisfy linker for libgen.so;  FIXME: why doesn't this work??
+double *floc(int foo) { return NULL; }
+int fsize(int foo) { return 0; }
 
-int main()
-{
-	int xid[4], yid[4];
-
-	RTcmixMouse *mouse = createMouseWindow();
-	xid[0] = mouse->configureXLabel("freq", "Hz", 0);
-	if (xid[0] == -1)
-		fprintf(stderr, "Warning: X label setup failed.");
-	yid[0] = mouse->configureYLabel("amp", NULL, 4);
-	if (yid[0] == -1)
-		fprintf(stderr, "Warning: Y label setup failed.");
-
-	printf("CNTL-C to quit.\n");
-	double oldx = -1.0, oldy = -1.0;
-	while (1) {
-		double x = mouse->getPositionX();
-		if (x < 0.0)
-			x = DEFAULTVAL;
-		double y = mouse->getPositionY();
-		if (y < 0.0)
-			y = DEFAULTVAL;
-		if (x != oldx || y != oldy) {
-//			printf("x: %f, y: %f\n", x, y);
-			mouse->updateXLabelValue(xid[0], x * 20000);
-			mouse->updateYLabelValue(yid[0], y * -4);
-			oldx = x;
-			oldy = y;
-		}
-		usleep(SLEEPMSEC);
-	}
-	return 0;
-}
-
-#endif
