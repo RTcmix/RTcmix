@@ -12,20 +12,11 @@
 #include <ugens.h>
 #include <prototypes.h>
 
+#include "AudioDevice.h"
 #include "AudioFileDevice.h"
 #include "audio_devices.h"
 
-#if defined(ALSA)
-#define DEFAULT_DEVICE "hw:0,0"
-#define FULL_DUPLEX_NOT_SUPPORTED
-#elif defined(OSS)
-#define DEFAULT_DEVICE "/dev/dsp"
-#else
-#define DEFAULT_DEVICE NULL
-#endif
-
-AudioDevice *globalInputDevice;			// Used by Minc/audioLoop.C
-AudioDevice *globalOutputDevice;		// Used by Minc/audioLoop.C
+AudioDevice *globalAudioDevice;		// Used by Minc/audioLoop.C
 AudioDevice *globalOutputFileDevice;
 
 static const int numBuffers = 2;		// number of audio buffers to queue up
@@ -34,54 +25,10 @@ int
 create_audio_devices(int recordAndPlay, int chans, float srate, int *buffersize)
 {
 	int status;
-#ifdef FULL_DUPLEX_NOT_SUPPORTED
-	/* Open audio input and output ports. */
-	if (recordAndPlay) {
-		const char *inDeviceName = get_audio_indevice_name();	// from set_option.c
-		AudioDevice *idevice = createAudioDevice(inDeviceName ? inDeviceName : DEFAULT_DEVICE);
-		// We read noninterleaved floating point buffers from the device
-		int audioFormat = NATIVE_FLOAT_FMT | MUS_NON_INTERLEAVED;
-		// Don't run thread for input device if output device is running too.
-		int openMode = AudioFileDevice::Record | AudioDevice::Passive;
-		idevice->setFrameFormat(audioFormat, chans);
-		if ((status = idevice->open(openMode,
-									audioFormat, 
-									chans, 
-									srate)) == 0)
-		{
-			int reqsize = *buffersize;
-			int reqcount = numBuffers;
-			if ((status = idevice->setQueueSize(&reqsize, &reqcount)) < 0) {
-				die("rtsetparams",
-					"Trouble setting audio input device queue size: %s",
-					idevice->getLastError());
-				return -1;
-			}
-			if (reqsize != *buffersize) {
-				advise("rtsetparams",
-						"RTBUFSAMPS reset by input audio device from %d to %d",
-						*buffersize, reqsize);
-				*buffersize = reqsize;
-			}
-			// Passive start takes NULL callback and context.
-			if (idevice->start(NULL, NULL) != 0) {
-				die("rtsetparams", "Trouble starting input audio device: %s",
-					idevice->getLastError());
-				return -1;
-			}		
-		}
-		else {
-			die("rtsetparams", "Trouble opening input audio device: %s",
-				idevice->getLastError());
-			return -1;
-		}
-		globalInputDevice = idevice;
-		recordAndPlay = false;	// reset so code below will not attempt duplex
-	}
-#endif	// FULL_DUPLEX_NOT_SUPPORTED
-	const char *outDeviceName = get_audio_outdevice_name();	// from set_option.c
-	AudioDevice *device = createAudioDevice(outDeviceName ? outDeviceName : DEFAULT_DEVICE);
-	// We send the device noninterleaved floating point buffers.
+	const char *inDeviceName = get_audio_indevice_name();
+	const char *outDeviceName = get_audio_outdevice_name();
+	AudioDevice *device = createAudioDevice(inDeviceName, outDeviceName, recordAndPlay != 0);
+	// We hand the device noninterleaved floating point buffers.
 	int audioFormat = NATIVE_FLOAT_FMT | MUS_NON_INTERLEAVED;
 	int openMode = (recordAndPlay) ?
 						AudioDevice::RecordPlayback : AudioDevice::Playback;
@@ -113,10 +60,8 @@ create_audio_devices(int recordAndPlay, int chans, float srate, int *buffersize)
 		return -1;
 	}
 
-	globalOutputDevice = device;
+	globalAudioDevice = device;
 
-	if (recordAndPlay)
-		globalInputDevice = device;
 	return status;
 }
 
@@ -190,33 +135,26 @@ int create_audio_file_device(const char *outfilename,
 	
 	globalOutputFileDevice = fileDevice;
 	if (!play_audio_too) {
-		globalOutputDevice = fileDevice;
+		globalAudioDevice = fileDevice;
 	}
 	return 0;
 }
 
 int audio_input_is_initialized()
 {
-	return globalInputDevice != NULL;
+	return globalAudioDevice != NULL;
 }
 
 void
 destroy_audio_devices()
 {
-	// Delete input device if independent of output device.
+	globalAudioDevice->close();
 	
- 	if (globalInputDevice != globalOutputDevice) {
-		delete globalInputDevice;
-		globalInputDevice = NULL;
-	}
-
-	globalOutputDevice->close();
-	
-	if (globalOutputFileDevice == globalOutputDevice) {
-		delete globalOutputDevice;
+	if (globalOutputFileDevice == globalAudioDevice) {
+		delete globalAudioDevice;
 		globalOutputFileDevice = NULL;	// Dont delete elsewhere.
 	}
-	globalOutputDevice = NULL;
+	globalAudioDevice = NULL;
 }
 
 int
@@ -227,10 +165,10 @@ destroy_audio_file_device()
     	result = globalOutputFileDevice->close();
 	}
                                                                                                     
-	if (globalOutputFileDevice != globalOutputDevice) {
+	if (globalOutputFileDevice != globalAudioDevice) {
     	delete globalOutputFileDevice;
 	}
 	globalOutputFileDevice = NULL;
 
-	return 0;
+	return result;
 }
