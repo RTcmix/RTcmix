@@ -30,8 +30,7 @@ public:
 
    int            mytag;           // for note tagging/rtupdate() 
 
-   BUFTYPE        *inbuf;          // private interleaved buffers
-   BUFTYPE        *outbuf;
+   BUFTYPE        *outbuf;         // private interleaved buffer
 
    BusSlot        *bus_config;
 
