@@ -226,6 +226,8 @@ emalloc(int nbytes)
    s = (char *) malloc(nbytes);
    if (s == NULL)
       sys_error("system out of memory");
+
+   DPRINT2("emalloc: nbytes=%d, ptr=%p\n", nbytes, s);
    return s;
 }
 
