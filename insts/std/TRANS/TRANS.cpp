@@ -103,7 +103,7 @@ int TRANS :: init(float p[], short n_args)
    amptable = floc(1);
    if (amptable) {
       int amplen = fsize(1);
-      tableset(p[2], amplen, tabs);
+      tableset(dur, amplen, tabs);
    }
    else
       advise("TRANS", "Setting phrase curve to all 1's.");
