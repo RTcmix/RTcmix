@@ -1,4 +1,4 @@
-include ../insts.conf
+include ../package.conf
 
 # the new improved R. Luke DuBois lpc makefile.
 # good luck!
