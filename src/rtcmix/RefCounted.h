@@ -8,8 +8,8 @@
 
 class RefCounted {
 public:
-	void Ref() { ++_refcount; }
-	void Unref() { if (--_refcount == 0) delete this; }
+	int Ref() { return ++_refcount; }
+	int Unref() { int r; if ((r=--_refcount) == 0) { delete this; } return r; }
 protected:
 	RefCounted() : _refcount(0) {}
 	virtual ~RefCounted();	// defined in rtstuff/RefCounted.C
