@@ -18,7 +18,7 @@ class MROOM : public Instrument {
 public:
    MROOM();
    virtual ~MROOM();
-   int init(float *, short);
+   int init(float *, int);
    int run();
 private:
    void traject(int);

@@ -9,7 +9,7 @@ class REV : public Instrument {
 public:
    REV();
    virtual ~REV();
-   int init(float *, short);
+   int init(float *, int);
    int run();
 };
 

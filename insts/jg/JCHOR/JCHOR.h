@@ -16,7 +16,7 @@ class JCHOR : public Instrument {
 public:
    JCHOR();
    virtual ~JCHOR();
-   int init(float *, short);
+   int init(float *, int);
    int run();
 private:
    int setup_voices();

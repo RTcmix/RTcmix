@@ -28,7 +28,7 @@ class JGRAN : public Instrument {
 public:
    JGRAN();
    virtual ~JGRAN();
-   int init(float *, short);
+   int init(float *, int);
    int run();
 };
 

@@ -9,7 +9,7 @@ class JDELAY : public Instrument {
 public:
    JDELAY();
    virtual ~JDELAY();
-   int init(float *, short);
+   int init(float *, int);
    int run();
 };
 

@@ -12,7 +12,7 @@ class FLANGE : public Instrument {
 public:
    FLANGE();
    virtual ~FLANGE();
-   int init(float *, short);
+   int init(float *, int);
    int run();
 };
 

@@ -9,7 +9,7 @@ class JFIR : public Instrument {
 public:
    JFIR();
    virtual ~JFIR();
-   int init(float *, short);
+   int init(float *, int);
    int run();
    void print_freq_response();
 };

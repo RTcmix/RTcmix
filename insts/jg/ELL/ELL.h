@@ -10,7 +10,7 @@ class ELL : public Instrument {
 public:
    ELL();
    virtual ~ELL();
-   int init(float *, short);
+   int init(float *, int);
    int run();
 };
 

@@ -6,7 +6,7 @@ class PAN : public Instrument {
 public:
    PAN();
    virtual ~PAN();
-   int init(float *, short);
+   int init(float *, int);
    int run();
 };
 
