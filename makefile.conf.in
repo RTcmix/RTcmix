@@ -10,7 +10,7 @@ CMIXDIR = $(TOPDIR)/RTcmix
 LIBDESTDIR = $(CMIXDIR)/shlib
 
 # add new instruments to this list (e.g., insts.std, insts.jg)
-INST_DIRS = insts.vccm insts.base #insts.std insts.rtperf #insts.jg
+INST_DIRS = insts.vccm insts.base # insts.std insts.rtperf #insts.jg
 
 # add new packages to this list (e.g., interfaces.std)
 PACKAGE_DIRS =
@@ -98,7 +98,7 @@ CXXFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
 SNDLIB = ../sndlib/sndlib.a
 
 ifeq ($(ARCH),LINUX)
-  SYSLIBS = -lpthread -lm -ldl # -lefence
+  SYSLIBS = -lpthread -lm -ldl -lefence
   LDFLAGS = $(SYSLIBS)
   SHARED_LDFLAGS = -shared 
 endif

@@ -649,9 +649,11 @@ void Instrument::pf_path_update(int tag, int pval)
 
 				// This flag is used to test if this is the first time that 
 				// a value update will occur.  For the first update 
-                // cursamp - oldsamp[pval] should equal 0 because it is used
-				// as an index into the gen table, and the first index should
-				// always be 0
+                // cursamp - oldsamp[pval] should equal whatever the desired 
+				// first index into the table should be.  This is determined by
+				// the percentage of time that has elapsed in the current 
+				// interpolation multiplied by the total size of the table
+				// (SR * difftime)
 				if(oldsamp[pval] == -1)
 				{
 					oldsamp[pval] = cursamp;
@@ -660,17 +662,17 @@ void Instrument::pf_path_update(int tag, int pval)
 								 / difftime;
 					start_index *= SR * difftime;
 					oldsamp[pval] -= (int)start_index;
-				    printf("startindex = %f\n", start_index);
+//				    printf("startindex = %f\n", start_index);
 					
-					printf("difftime = %f\n", difftime);
-					printf("psize = %i\n"
-                            , psize(gen_type[tag][pval][j[pval]]));
-					printf("size = %f\n"
-                           , difftime * psize(gen_type[tag][pval][j[pval]]));
-					printf("resetval = %i\n", (int)(SR / resetval));
+//					printf("difftime = %f\n", difftime);
+//					printf("psize = %i\n"
+//                            , psize(gen_type[tag][pval][j[pval]]));
+//					printf("size = %f\n"
+//                           , difftime * psize(gen_type[tag][pval][j[pval]]));
+//					printf("resetval = %i\n", (int)(SR / resetval));
 			
 				}
-				printf("index = %i\n", cursamp - oldsamp[pval]);
+//				printf("index = %i\n", cursamp - oldsamp[pval]);
 				table_val = tablei(cursamp - oldsamp[pval], ptables[pval]
                                    , ptabs[pval]);
 
@@ -749,18 +751,19 @@ void Instrument::pf_path_update(int tag, int pval)
 
 				// This flag is used to test if this is the first time that 
 				// a value update will occur.  For the first update 
-                // cursamp - oldsamp[pval] should equal 0 because it is used
-				// as an index into the gen table, and the first index should
-				// always be 0
+                // cursamp - oldsamp[pval] should equal whatever the desired 
+				// first index into the table should be.  This is determined by
+				// the percentage of time that has elapsed in the current 
+				// interpolation multiplied by the total size of the table
+				// (SR * difftime)
 				if(oldsamp[pval] == -1)
 				{
 					oldsamp[pval] = cursamp;
 					start_index = (time 
                                  - pfpath[tag][pval][cumulative_size[pval]][0])
-							  * psize(gen_type[tag][pval][j[pval]]) / difftime;
-
-					oldsamp[pval] -= start_index;
-					printf("startindex = %i\n", start_index);
+								 / difftime;
+					start_index *= SR * difftime;
+					oldsamp[pval] -= (int)start_index;
 				}
 
 				table_val = tablei(cursamp - oldsamp[pval], ptables[pval]
