@@ -22,14 +22,15 @@ protected:
 	virtual 		~PField();
 };
 
-// Base class for operator PFields
+// Base class for operator PFields.  These may be instantianted with an
+// external Operator function.
 
 class PFieldBinaryOperator : public PField {
 public:
 	virtual double	doubleValue(double) const;
-protected:
 	typedef double (*Operator)(double, double);
 	PFieldBinaryOperator(PField *pf1, PField *pf2, Operator);
+protected:
 	virtual 		~PFieldBinaryOperator();
 private:
 	PField	*_pfield1, *_pfield2;
