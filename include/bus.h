@@ -4,6 +4,14 @@
 #define MAXBUS 16
 
 typedef enum {
+   NO_ERR = 0,
+   INVAL_BUS_ERR,
+   INVAL_BUS_CHAN_ERR,
+   LOOP_ERR,
+   UNKNOWN_ERR
+} ErrCode;
+
+typedef enum {
    BUS_IN,
    BUS_OUT,
    BUS_AUX_IN,
