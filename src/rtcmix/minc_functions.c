@@ -91,12 +91,13 @@ double m_stringify(float p, int n_args, double pp[])
 }
 
 /* get the transposed length for a given input length at interval */
-/* p0 = orig len   p1 = interval in linear octaves */
+/* p0 = orig len   p1 = interval in octave point pc */
 double m_translen(float p[], int n_args, double pp[])
 {
 	double origLen = pp[0];
-	double interval = 12.0 * pp[1];
-	double newLen = origLen * pow(2.0, -interval/12.0);
+	// This is exactly how TRANS does it, to assure a match.
+	double interval = octpch(pp[1]);
+	double newLen = origLen / (cpsoct(10.0 + interval) / cpsoct(10.0));
 	return newLen;
 }
 
