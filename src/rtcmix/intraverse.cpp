@@ -93,17 +93,14 @@ extern "C" {
 
     // printf("ENTERING inTraverse() FUNCTION\n");
 
-    // zero the output audio buffer
     if (out_port) {
-      for (j = 0; j < (RTBUFSAMPS*NCHANS); j++) {
-		outbuff[j] = 0.0;
-		inbuff[j] = 0;
-      }
+      clear_audioin_buffers();
+      clear_aux_buffers();
+      clear_output_buffers();
     }
 
     // read in an input buffer (if audio input is active)
     if (audio_on) {
-      outbptr = &outbuff[0];  // advance buffer pointer
       rtgetsamps();
       sbuf = rtrescale(outbuff);
       rtsendsamps(sbuf);  // send a buffer of zeros
@@ -286,12 +283,11 @@ extern "C" {
 		bufStartSamp += RTBUFSAMPS;
 		bufEndSamp += RTBUFSAMPS;
 		
-		// zero the output audio buffer
-		for (j = 0; j < (RTBUFSAMPS*NCHANS); j++) {
-		  outbuff[j] = 0.0;
-		  inbuff[j] = 0;
-		}
-		
+		// zero the buffers
+		clear_audioin_buffers();
+		clear_aux_buffers();
+		clear_output_buffers();
+
 		// read in an input buffer (if audio input is active)
 		if (audio_on) { 
 		  // cout << "Reading data from audio port\n";
@@ -334,9 +330,10 @@ extern "C" {
 		bufStartSamp += RTBUFSAMPS;
 		bufEndSamp += RTBUFSAMPS;
       
-		// zero the output audio buffer
-		for (j = 0; j < (RTBUFSAMPS*NCHANS); j++)
-		  outbuff[j] = 0.0;
+		// zero the buffers
+		clear_audioin_buffers();
+		clear_aux_buffers();
+		clear_output_buffers();
       }
 
 
