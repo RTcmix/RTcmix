@@ -531,7 +531,8 @@ bool inTraverse(AudioDevice *device, void *arg)
 
 bool doneTraverse(AudioDevice *device, void *arg)
 {
-	cout << "closing ...\n";
+	if (Option::print())
+		cout << "closing ...\n";
 #ifdef WBUG
 	cout << "ENTERING doneTraverse()\n";
 #endif
