@@ -1311,7 +1311,9 @@ _cheby_table(const Arg args[], const int nargs, double *array, const int len)
 //    5 = cauchy distribution ["cauchy"]
 //    6 = Mara Helmuth's probability distribution ["prob"]  *see below for usage
 //
-// If <seed> is zero, seed comes from microsecond clock, otherwise <seed>
+// Give either the string or number specification of type.
+//
+// If <seed> is zero, seed comes from the microsecond clock, otherwise <seed>
 // is used as the seed.  If no <seed> argument, the seed used is 1.
 //
 // <min> and <max> define the range (inclusive) for the random numbers.
@@ -1353,26 +1355,28 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
 
 	if (args[0].isType(StringType)) {
 		if (args[0] == "even" || args[0] == "linear")
-			type = 0;
+			type = kLinearRandom;
 		else if (args[0] == "low")
-			type = 1;
+			type = kLowLinearRandom;
 		else if (args[0] == "high")
-			type = 2;
+			type = kHighLinearRandom;
 		else if (args[0] == "triangle")
-			type = 3;
+			type = kTriangleRandom;
 		else if (args[0] == "gaussian")
-			type = 4;
+			type = kGaussianRandom;
 		else if (args[0] == "cauchy")
-			type = 5;
+			type = kCauchyRandom;
 		else if (args[0] == "prob")
-			type = 6;
+			type = kProbRandom;
 		else
 			return die("maketable (random)",
 						  "Unsupported distribution type \"%s\".",
 						  (const char *) args[0]);
 	}
-	else if (args[0].isType(DoubleType))
+	else if (args[0].isType(DoubleType)) {
+		// NB: enum vals in Random.h must match makegen ones for backward compat.
 		type = (int) args[0];
+	}
 	else
 		return die("maketable (random)",
 								"Distribution type must be string or number.");
@@ -1391,9 +1395,9 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
 				  "Usage: maketable(\"random\", size, type[, seed[, min, max]])");
 
 	double min, max, mid = 0.0, tight = 0.0;
-	if (type == 6) {			// Mara's function has special args
+	if (type == kProbRandom) {		// Mara's function has special args
 		if (nargs != 6)
-			die("maketable (random)", "Usage: maketable(\"random\", size, "
+			return die("maketable (random)", "Usage: maketable(\"random\", size, "
 										"\"prob\", seed, min, mid, max, tight)");
 		min = args[2];
 		mid = args[3];
@@ -1424,25 +1428,25 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
 	Random *gen;
 
 	switch (type) {
-		case 0:
+		case kLinearRandom:
 			gen = new LinearRandom(seed, min, max);
 			break;
-		case 1:
+		case kLowLinearRandom:
 			gen = new LowLinearRandom(seed, min, max);
 			break;
-		case 2:
+		case kHighLinearRandom:
 			gen = new HighLinearRandom(seed, min, max);
 			break;
-		case 3:
+		case kTriangleRandom:
 			gen = new TriangleRandom(seed, min, max);
 			break;
-		case 4:
+		case kGaussianRandom:
 			gen = new GaussianRandom(seed, min, max);
 			break;
-		case 5:
+		case kCauchyRandom:
 			gen = new CauchyRandom(seed, min, max);
 			break;
-		case 6:
+		case kProbRandom:
 			gen = new ProbRandom(seed, min, mid, max, tight);
 			break;
 		default:
