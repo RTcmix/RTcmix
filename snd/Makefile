@@ -1,0 +1,10 @@
+DEFAULT_MONO_INPUT = nucular.wav
+
+all:
+	rm -f input.wav
+	ln -s $(DEFAULT_MONO_INPUT) input.wav
+
+install: all
+
+clean:
+	rm -f input.wav
