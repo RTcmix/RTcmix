@@ -100,6 +100,7 @@ char *TablePField::dump() const
 	const int linemaxlen = 32;		// worst case line length
 	char buf[linemaxlen];
 	char *lines = new char[_len * linemaxlen];
+   lines[0] = 0;
 	for (int i = 0; i < _len; i++) {
 		snprintf(buf, linemaxlen, "%d %.6f\n", i, _table[i]);
 		strcat(lines, buf);
