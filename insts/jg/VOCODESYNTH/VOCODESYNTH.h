@@ -30,8 +30,9 @@ class VOCODESYNTH : public Instrument {
    int         skip, numbands, branch, inchan, insamps, inringdown;
    float       amp, aamp, pctleft, hipass_mod_amp, smoothness;
    float       threshold, attack_rate, release_rate;
-   float       *in, *car_wavetable, *scaletable;
+   float       *in;
    float       carfreq[MAXOSC], lastpower[MAXOSC];
+   double      *car_wavetable, *scaletable;
    Butter      *modulator_filt[MAXOSC], *hipassmod;
    OscilN      *carrier_osc[MAXOSC];
    TableL      *amptable;

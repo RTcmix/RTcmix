@@ -3,7 +3,8 @@ class JDELAY : public Instrument {
    int     deltabs[2];
    float   amp, wait, regen, cutoff, percent_wet, spread;
    float   prev_in, prev_out;
-   float   *in, *delarray, *amptable, amptabs[2];
+   float   *in, *delarray, amptabs[2];
+   double  *amptable;
    double  tonedata[3];
 
 public:

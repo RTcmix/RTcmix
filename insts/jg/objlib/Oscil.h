@@ -11,7 +11,7 @@
 class Oscil
 {
   protected:
-    MY_FLOAT *table;             // pointer to wave table
+    double   *table;             // pointer to wave table
     int      size;               // size of table
     double   phase;              // current index into table
     double   increment;          // increments phase
@@ -23,7 +23,7 @@ class Oscil
     MY_FLOAT lastOut();
 };
 
-MY_FLOAT *getSineTable();
+double *getSineTable();
 
 #endif
 

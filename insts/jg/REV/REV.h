@@ -3,7 +3,8 @@
 class REV : public Instrument {
    int     inchan, insamps, skip;
    float   amp, rvbtime, rvbpct;
-   float   *in, *amparray, amptabs[2];
+   float   *in, amptabs[2];
+   double  *amparray;
    Reverb  *reverb;
 
 public:

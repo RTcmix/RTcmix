@@ -13,11 +13,11 @@ class WavShape : public Filter
   protected:  
     int      lastIndex;
     int      indexFactor;
-    MY_FLOAT *transferFunc;
+    double   *transferFunc;
   public:
     WavShape(void);
     ~WavShape();
-    void setTransferFunc(MY_FLOAT *aFunc, int aSize);
+    void setTransferFunc(double *aFunc, int aSize);
     MY_FLOAT tick(MY_FLOAT sample);
 };
 

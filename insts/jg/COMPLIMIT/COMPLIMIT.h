@@ -20,7 +20,8 @@ class COMPLIMIT : public Instrument {
    float       ingain, outgain, gain, threshold, pctleft, oamp, dbref;
    float       target_peak, target_gain, next_target_gain, gain_increment;
    float       *in, *inptr, *readptr, *bufstartptr;
-   float       *amptable, amptabs[2];
+   float       amptabs[2];
+   double      *amptable;
    double      ratio;
    DetectType  detector_type;
    EnvState    env_state;

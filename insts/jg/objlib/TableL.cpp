@@ -10,7 +10,7 @@
    (Caller is responsible for ensuring that <aTable> stays valid for the
    life of this object.) <tableSize> is the length of the table.
 */
-TableL :: TableL(MY_FLOAT duration, MY_FLOAT *aTable, int tableSize)
+TableL :: TableL(MY_FLOAT duration, double *aTable, int tableSize)
         : TableN(duration, aTable, tableSize)
 {
 }
@@ -35,8 +35,8 @@ MY_FLOAT TableL :: tick(long nsample, MY_FLOAT amp = 1.0)
 
       index = (long) phase;
       frac = phase - (double) index;
-      val0 = (double) table[index];
-      val1 = (double) table[index + 1];
+      val0 = table[index];
+      val1 = table[index + 1];
       lastOutput = (MY_FLOAT) (val0 + frac * (val1 - val0));
    }
    lastOutput *= amp;

@@ -5,7 +5,8 @@
 class VOCODE2 : public Instrument {
    int       skip, numfilts, branch;
    float     amp, aamp, pctleft, noise_amp, hipass_mod_amp;
-   float     *in, *amparray, amptabs[2];
+   float     *in, amptabs[2];
+   double    *amparray;
    SubNoiseL *noise;
    Butter    *modulator_filt[MAXFILTS], *carrier_filt[MAXFILTS], *hipassmod;
    Balance   *balancer[MAXFILTS];

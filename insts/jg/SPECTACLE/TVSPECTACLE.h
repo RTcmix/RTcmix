@@ -5,9 +5,9 @@ class TVSPECTACLE : public SPECTACLE_BASE {
 private:
    long     maxdelsamps;
    float    eq_curve_weight, deltime_curve_weight, feedback_curve_weight;
-   float    *eqtableA, *deltimetableA, *feedbacktableA;
-   float    *eqtableB, *deltimetableB, *feedbacktableB;
-   float    *eqcurve, *deltimecurve, *feedbackcurve;
+   double   *eqtableA, *deltimetableA, *feedbacktableA;
+   double   *eqtableB, *deltimetableB, *feedbacktableB;
+   double   *eqcurve, *deltimecurve, *feedbackcurve;
    float    eqcurvetabs[2], deltimecurvetabs[2], feedbackcurvetabs[2];
    DLineN   *phase_delay[MAXFFTLEN / 2], *mag_delay[MAXFFTLEN / 2];
 

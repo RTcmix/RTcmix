@@ -9,8 +9,9 @@ class JCHOR : public Instrument {
    int     grainsamps, nvoices, skip, maintain_indur, grain_done, inchan;
    int     winarraylen;
    float   inskip, indur, transpose, minamp, ampdiff, minwait, waitdiff, seed;
-   float   *winarray, wintabs[2];
-   float   *grain, *amparray, amptabs[2], *in;
+   float   amptabs[2], wintabs[2];
+   double  *amparray, *winarray;
+   float   *grain, *in;
    Voice   *voices;
 
 public:

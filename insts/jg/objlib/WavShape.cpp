@@ -22,7 +22,7 @@ WavShape :: ~WavShape()
    Caller must make sure this storage remains valid for the life of
    the object.
 */
-void WavShape :: setTransferFunc(MY_FLOAT *aFunc, int aSize)
+void WavShape :: setTransferFunc(double *aFunc, int aSize)
 {
    transferFunc = aFunc;
    lastIndex = aSize - 1;
@@ -35,7 +35,6 @@ void WavShape :: setTransferFunc(MY_FLOAT *aFunc, int aSize)
 MY_FLOAT WavShape :: tick(MY_FLOAT sample)
 {
    int      loc1;
-   MY_FLOAT val1, val2;
    double   findex, frac;
 
    if (transferFunc) {
@@ -45,6 +44,8 @@ MY_FLOAT WavShape :: tick(MY_FLOAT sample)
 
       loc1 = (int)findex;
       frac = findex - (double)loc1;
+
+      double val1, val2;
       if (loc1 < lastIndex) {
          val1 = transferFunc[loc1];
          val2 = transferFunc[loc1 + 1];

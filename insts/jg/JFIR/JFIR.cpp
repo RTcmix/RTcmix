@@ -67,7 +67,6 @@ int JFIR :: init(double p[], int n_args)
 {
    int   order, tabsize;
    float outskip, inskip, dur, ringdur;
-   float *response_tab;
 
    outskip = p[0];
    inskip = p[1];
@@ -88,7 +87,7 @@ int JFIR :: init(double p[], int n_args)
       return die("JFIR", "You asked for channel %d of a %d-channel file.",
                                                          inchan, inputchans);
 
-   response_tab = floc(2);
+   double *response_tab = floc(2);
    if (response_tab == NULL)
       return die("JFIR",
                  "You haven't made the frequency response function (table 2).");

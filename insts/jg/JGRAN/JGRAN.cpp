@@ -97,7 +97,7 @@ make_table(int function_num, float dur)
 {
    TableL *table = NULL;
 
-   float *tab = floc(function_num);
+   double *tab = floc(function_num);
    if (tab) {
       int len = fsize(function_num);
       table = new TableL(dur, tab, len);      
@@ -111,7 +111,6 @@ int JGRAN :: init(double p[], int n_args)
 {
    int   seed, wavetablen = DEFAULT_WAVETABLE_SIZE;
    float outskip, dur;
-   float *wavetab, *envtab;
 
    outskip = p[0];
    dur = p[1];
@@ -131,7 +130,7 @@ int JGRAN :: init(double p[], int n_args)
       aamp = amp;
    }
 
-   envtab = floc(2);
+   double *envtab = floc(2);
    if (envtab) {
       int len = fsize(2);
       grainenv_oscil = new OscilN(0.0, envtab, len);
@@ -140,7 +139,7 @@ int JGRAN :: init(double p[], int n_args)
       return die("JGRAN",
                  "You haven't made the grain envelope function (table 2).");
 
-   wavetab = floc(3);
+   double *wavetab = floc(3);
    if (wavetab)
       wavetablen = fsize(3);
    else

@@ -6,7 +6,8 @@ class FREEVERB : public Instrument {
    int      inchan, skip, branch, insamps;
    float    amp, ringdur, roomsize, predelay_time, max_roomsize,
             damp, dry, wet, width;
-   float    *in, *amparray, amptabs[2];
+   float    *in, amptabs[2];
+   double   *amparray;
    revmodel *rvb;
 
    void updateRvb(double p[]);

@@ -12,7 +12,7 @@ class OscilL : public OscilN
   protected:  
   public:
     OscilL(MY_FLOAT initialPhase,
-           MY_FLOAT *waveTable,
+           double   *waveTable,
            int      tableSize);
     ~OscilL();
     MY_FLOAT tick(MY_FLOAT freq, MY_FLOAT amp);

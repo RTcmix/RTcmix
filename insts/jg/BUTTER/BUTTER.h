@@ -12,12 +12,12 @@ typedef enum {
 class BUTTER : public Instrument {
    int      inchan, branch, skip, insamps, nfilts, do_balance, bypass;
    float    amp, aamp, pctleft, scale, reson, curcf, curbw;
-   float    *cfarray, cftabs[2];
-   float    *bwarray, bwtabs[2];
+   double   *amparray, *cfarray, *bwarray;
+   float    amptabs[2], cftabs[2], bwtabs[2];
+   float    *in;
    FiltType type;
    Butter   *filt[MAXFILTS];
    Balance  *balancer;
-   float    *in, *amparray, amptabs[2];
 
 public:
    BUTTER();

@@ -9,7 +9,7 @@
 */
 OscilL :: OscilL(
    MY_FLOAT initialPhase = 0.0,
-   MY_FLOAT *waveTable = NULL,
+   double   *waveTable = NULL,
    int      tableSize = DEFAULT_WAVETABLE_SIZE)
         : OscilN(initialPhase, waveTable, tableSize)
 {

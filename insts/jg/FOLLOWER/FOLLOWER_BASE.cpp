@@ -59,7 +59,7 @@ int FOLLOWER_BASE :: init(double p[], int n_args)
       return die(instname(),
       "Must use 2 input channels: 'left' for carrier; 'right' for modulator.");
 
-   float *function = floc(1);
+   double *function = floc(1);
    if (function) {
       int len = fsize(1);
       amp_table = new TableL(dur, function, len);

@@ -5,10 +5,11 @@
 class FILTSWEEP : public Instrument {
    int     inchan, skip, insamps, nfilts, do_balance;
    float   amp, pctleft, scale;
-   float   *cfarray, cftabs[2], *bwarray, bwtabs[2];
+   float   *in;
+   float   amptabs[2], cftabs[2], bwtabs[2];
+   double  *amparray, *cfarray, *bwarray;
    BiQuad  *filt[MAXFILTS];
    Balance *balancer;
-   float   *in, *amparray, amptabs[2];
 
 public:
    FILTSWEEP();

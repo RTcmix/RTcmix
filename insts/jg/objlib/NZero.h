@@ -18,7 +18,7 @@ class NZero : public Filter
     void setZeroCoeffs(MY_FLOAT *coeffs);
     void setGain(MY_FLOAT aValue);
     float getFrequencyResponse(float freq);
-    void designFromFunctionTable(float *table, int size, float low, float high);
+    void designFromFunctionTable(double *table, int size, float low, float high);
     MY_FLOAT tick(MY_FLOAT sample);
 };
 

@@ -4,7 +4,8 @@ class REVERBIT : public Instrument {
    int     deltabs[2];
    float   amp, reverbtime, rtchan_delaytime, reverbpct, cutoff;
    float   prev_in[2], prev_out[2];
-   float   *in, *delarray, *rvbarray, *amparray, amptabs[2];
+   float   *in, *delarray, *rvbarray, amptabs[2];
+   double  *amparray;
    double  tonedata[3];
 
    void updateRvb(double p[]);

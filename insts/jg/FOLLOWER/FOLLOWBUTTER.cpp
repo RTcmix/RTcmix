@@ -130,7 +130,7 @@ int FOLLOWBUTTER :: post_init(double p[], int n_args)
       filt[i] = new Butter();
 
    if (type == BandPass || type == BandReject) {
-      float *function = floc(2);
+      double *function = floc(2);
       if (function) {
          int len = fsize(2);
          bwtable = new TableL(dur, function, len);

@@ -60,7 +60,6 @@ EQ :: ~EQ()
 int EQ :: init(double p[], int n_args)
 {
    float outskip, inskip, dur;
-   float *function;
    int   type;
    const float ringdur = 0.1;
 
@@ -100,7 +99,7 @@ int EQ :: init(double p[], int n_args)
          break;
    }
 
-   function = floc(1);
+   double *function = floc(1);
    if (function) {
       int len = fsize(1);
       amp_table = new TableL(dur, function, len);

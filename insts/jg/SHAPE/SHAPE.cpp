@@ -72,7 +72,6 @@ int SHAPE :: init(double p[], int n_args)
 {
    int   ampnorm_genno;
    float outskip, inskip, dur;
-   float *function;
 
    outskip = p[0];
    inskip = p[1];
@@ -96,7 +95,7 @@ int SHAPE :: init(double p[], int n_args)
       return die("SHAPE",
                  "Max. distortion index must not be less than min. index.");
 
-   function = floc(1);
+   double *function = floc(1);
    if (function) {
       int len = fsize(1);
       amp_table = new TableL(dur, function, len);

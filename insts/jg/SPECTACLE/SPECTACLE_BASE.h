@@ -47,7 +47,8 @@ private:
             *inbuf_endptr;
    float    *outbuf, *outbuf_startptr, *outbuf_readptr, *outbuf_writeptr,
             *outbuf_endptr;
-   float    *iamparray, *oamparray, iamptabs[2], oamptabs[2];
+   float    iamptabs[2], oamptabs[2];
+   double   *iamparray, *oamparray;
    DLineN   *dry_delay;
    WindowType window_type;
 protected:
@@ -63,7 +64,7 @@ public:
    virtual int init(double p[], int n_args);
    virtual int run();
 protected:
-   float *resample_functable(float *, int, int);
+   double *resample_functable(double *, int, int);
    int make_windows();
    void shiftin();
    void fold(int);

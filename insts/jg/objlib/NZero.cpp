@@ -75,25 +75,24 @@ float NZero :: getFrequencyResponse(float freq)
    its shape is described by <newsize> elements. Returns a new table,
    allocated with new, containing this resampled data.
 */
-float *
-resample_functable(float *table, int oldsize, int newsize)
+double *
+resample_functable(double *table, int oldsize, int newsize)
 {
-   float *newtable, incr, f, frac, next, diff = 0.0;
-
-   newtable = new float [newsize];
+   double *newtable = new double [newsize];
 
    if (newsize == oldsize) {                  // straight copy
       for (int i = 0; i < newsize; i++)
          newtable[i] = table[i];
    }
    else {
-      incr = (float)oldsize / (float)newsize;
-      f = 0.0;
+      double incr = (double) oldsize / (double) newsize;
+      double f = 0.0;
       for (int i = 0; i < newsize; i++) {
-         int n = (int)f;
-         frac = f - (float)n;
+         int n = (int) f;
+         double frac = f - (double) n;
+         double diff = 0.0;
          if (frac) {
-            next = (n + 1 < oldsize) ? table[n + 1] : table[oldsize - 1];
+            double next = (n + 1 < oldsize) ? table[n + 1] : table[oldsize - 1];
             diff = next - table[n];
          }
          newtable[i] = table[n] + (diff * frac);
@@ -117,15 +116,14 @@ resample_functable(float *table, int oldsize, int newsize)
    Basic idea explained in Dodge (2nd ed.), pp 205-8. Code adapted from Snd
    (make_filter in snd-dac.c). See also CLM mus.lisp for design-FIR-from-env.
 */
-void NZero :: designFromFunctionTable(float *table,
+void NZero :: designFromFunctionTable(double *table,
                                       int   size,
                                       float low,
                                       float high)
 {
-   int    i, n, j, jj, points;
+   int    i;
    float  nyquist = SR / 2.0;
-   float  *newtable;
-   float  am, q, xt = 0.0;
+   double *newtable;
 
    assert(table != NULL && size > 1 && low >= 0 && high >=0);
 
@@ -150,18 +148,15 @@ void NZero :: designFromFunctionTable(float *table,
       in <table>; set values above <high> to last value in <table>.
    */
    if (low != 0.0 || high != nyquist) {
-      int   newsize, insertat;
-      float *tmptab, *tp, first, last;
+      int newsize = (int)(size * (nyquist / (high - low)) + 0.5);
+      int insertat = (int)(newsize * (low / nyquist) + 0.5);
 
-      newsize = (int)(size * (nyquist / (high - low)) + 0.5);
-      insertat = (int)(newsize * (low / nyquist) + 0.5);
+      double *tmptab = new double [newsize];
 
-      tmptab = new float [newsize];
+      double first = table[0];
+      double last = table[size - 1];
 
-      first = table[0];
-      last = table[size - 1];
-
-      tp = tmptab;
+      double *tp = tmptab;
       for (i = 0; i < insertat; i++)
          *tp++ = first;
       for (i = 0; i < size; i++)
@@ -175,15 +170,16 @@ void NZero :: designFromFunctionTable(float *table,
    else
       newtable = resample_functable(table, size, (order + 1) / 2);
 
-   n = order;
-   points = (n + 1) / 2;
-   am = 0.5 * (n + 1);
-   q = TWO_PI / (float) n;
-   for (j = 0, jj = n - 1; j < points; j++, jj--) {
-      xt = newtable[0] * 0.5;
+   int n = order;
+   int points = (n + 1) / 2;
+   double am = 0.5 * (n + 1);
+   double q = TWO_PI / (double) n;
+   int jj;
+   for (int j = 0, jj = n - 1; j < points; j++, jj--) {
+      double xt = newtable[0] * 0.5;
       for (i = 1; i < points; i++)
          xt += (newtable[i] * cos(q * (am - j - 1) * i));
-      zeroCoeffs[j] = 2.0 * xt / (float) n;
+      zeroCoeffs[j] = 2.0 * xt / (double) n;
       zeroCoeffs[jj] = zeroCoeffs[j];       // symmetrical around middle coeff
    }
 

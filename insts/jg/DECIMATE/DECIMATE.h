@@ -5,7 +5,8 @@ class DECIMATE : public Instrument {
    int32_t  mask;
    int      nargs, inchan, skip, branch, bias, bits;
    float    preamp, postamp, cutoff, nyquist, pctleft;
-   float    *in, *amparray, amptabs[2];
+   float    *in, amptabs[2];
+   double   *amparray;
    Butter   *lpfilt;
 
    void changebits(int bits);

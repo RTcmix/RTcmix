@@ -180,7 +180,7 @@ int VOCODE2 :: init(double p[], int n_args)
    }
    else {                /* by function table */
       float transp = lowcf;                    /* pfield meaning changes */
-      float *freqtable = floc(2);
+      double *freqtable = floc(2);
       if (freqtable == NULL)
          return die("VOCODE2",
                      "You haven't made the center freq. function (table 2).");

@@ -96,7 +96,7 @@ TVSPECTACLE :: ~TVSPECTACLE()
 
 
 /* ----------------------------------------------------------- check_curve -- */
-static int check_curve(float table[], int len, float min, float max)
+static int check_curve(double table[], int len, double min, double max)
 {
    int change = 0;
    for (int i = 0; i < len; i++) {

@@ -29,19 +29,19 @@ MY_FLOAT Oscil :: lastOut()
 }
 
 
-MY_FLOAT *getSineTable()
+double *getSineTable()
 {
-   static MY_FLOAT *sinetab = NULL;
+   static double *sinetab = NULL;
 
    if (sinetab == NULL) {
       int     size = DEFAULT_WAVETABLE_SIZE;
       double  phs, incr;
 
-      sinetab = new MY_FLOAT [size];
+      sinetab = new double [size];
       incr = TWO_PI / (double) size;
       phs = 0.0;
       for (int i = 0; i < size; i++, phs += incr)
-         sinetab[i] = (MY_FLOAT) sin(phs);
+         sinetab[i] = sin(phs);
    }
    return sinetab;
 }

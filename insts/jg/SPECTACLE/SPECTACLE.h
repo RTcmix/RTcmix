@@ -2,7 +2,7 @@
 
 class SPECTACLE : public SPECTACLE_BASE {
 
-   float    *eqtable, *deltimetable, *feedbacktable;
+   double   *eqtable, *deltimetable, *feedbacktable;
    DLineN   *phase_delay[MAXFFTLEN / 2], *mag_delay[MAXFFTLEN / 2];
 
 public:

@@ -99,7 +99,7 @@ int FOLLOWGATE :: pre_init(double p[], int n_args)
 /* ------------------------------------------------------------- post_init -- */
 int FOLLOWGATE :: post_init(double p[], int n_args)
 {
-   float *function = floc(2);
+   double *function = floc(2);
    if (function) {
       int len = fsize(2);
       thresh_table = new TableL(dur, function, len);

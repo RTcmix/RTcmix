@@ -56,7 +56,6 @@ FLANGE :: ~FLANGE()
 int FLANGE :: init(double p[], int n_args)
 {
    float outskip, inskip, dur, maxdelay, ringdur;
-   float *modtable;
 
    outskip = p[0];
    inskip = p[1];
@@ -101,7 +100,7 @@ int FLANGE :: init(double p[], int n_args)
       return die("FLANGE", "You asked for channel %d of a %d-channel file.",
                                                        inchan, inputchans);
 
-   modtable = floc(2);
+   double *modtable = floc(2);
    if (modtable) {
       int len = fsize(2);
       modoscil = new OscilN(0.0, modtable, len);

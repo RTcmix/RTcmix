@@ -2,7 +2,7 @@
 
 class SPECTEQ : public SPECTACLE_BASE {
 
-   float    *eqtable;
+   double   *eqtable;
 
 public:
    SPECTEQ();

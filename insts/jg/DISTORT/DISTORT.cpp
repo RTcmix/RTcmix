@@ -76,7 +76,7 @@ int DISTORT :: init(double p[], int n_args)
       filt->setLowPass(cutoff);
    }
 
-   float *function = floc(1);
+   double *function = floc(1);
    if (function) {
       int len = fsize(1);
       amptable = new TableL(dur, function, len);

@@ -11,9 +11,10 @@ class MROOM : public Instrument {
    float  del[NTAPS], amp[NTAPS];
    float  timepts[TIME_ARRAY_SIZE];
    float  xvals[TIME_ARRAY_SIZE], yvals[TIME_ARRAY_SIZE];
-   float  xpos[POS_ARRAY_SIZE], ypos[POS_ARRAY_SIZE];
+   double xpos[POS_ARRAY_SIZE], ypos[POS_ARRAY_SIZE];
    float  amptabs[2], xpostabs[2], ypostabs[2];
-   float  *in, *delayline, *rvbarrayl, *rvbarrayr, *amparray;
+   float  *in, *delayline, *rvbarrayl, *rvbarrayr;
+   double *amparray;
 
 public:
    MROOM();

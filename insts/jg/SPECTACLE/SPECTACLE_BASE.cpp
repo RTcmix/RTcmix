@@ -115,25 +115,24 @@ int SPECTACLE_BASE :: make_windows()
    allocated with new, containing this resampled data.  Caller is responsible
    for deleting this table.
 */
-float * SPECTACLE_BASE :: resample_functable(float *table, int oldsize,
+double * SPECTACLE_BASE :: resample_functable(double *table, int oldsize,
                                                                int newsize)
 {
-   float *newtable, incr, f, frac, next, diff = 0.0;
-
-   newtable = new float [newsize];
+   double *newtable = new double [newsize];
 
    if (newsize == oldsize) {                  // straight copy
       for (int i = 0; i < newsize; i++)
          newtable[i] = table[i];
    }
    else {
-      incr = (float) oldsize / (float) newsize;
-      f = 0.0;
+      double incr = (double) oldsize / (double) newsize;
+      double f = 0.0;
       for (int i = 0; i < newsize; i++) {
-         int n = (int)f;
-         frac = f - (float) n;
+         int n = (int) f;
+         double frac = f - (double) n;
+         double diff = 0.0;
          if (frac) {
-            next = (n + 1 < oldsize) ? table[n + 1] : table[oldsize - 1];
+            double next = (n + 1 < oldsize) ? table[n + 1] : table[oldsize - 1];
             diff = next - table[n];
          }
          newtable[i] = table[n] + (diff * frac);

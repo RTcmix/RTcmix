@@ -1,8 +1,8 @@
 class MOOGVCF : public Instrument {
    int      inchan, skip, branch;
    float    amp, aamp, pctleft, cf, res;
-   float    *in, *amparray, amptabs[2];
-   float    *cfarray, cftabs[2], *resarray, restabs[2];
+   float    *in, amptabs[2], cftabs[2], restabs[2];
+   double   *amparray, *cfarray, *resarray;
    float    f, p, q, b0, b1, b2, b3, b4;
 
 public:

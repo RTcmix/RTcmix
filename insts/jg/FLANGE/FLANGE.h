@@ -3,7 +3,8 @@
 class FLANGE : public Instrument {
    int     inchan, insamps, skip, flangetype;
    float   amp, resonance, moddepth, modspeed, spread, wetdrymix, maxdelsamps;
-   float   *in, *amparray, amptabs[2];
+   float   *in, amptabs[2];
+   double  *amparray;
    Butter  *filt;
    ZComb   *zcomb;
    ZNotch  *znotch;

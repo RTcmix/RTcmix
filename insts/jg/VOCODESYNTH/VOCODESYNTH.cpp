@@ -221,7 +221,7 @@ int VOCODESYNTH :: init(double p[], int n_args)
    else if (numbands == 0) {     // specify by function table
       float transp = lowcf;            // p5 and p6 change meaning
       int format = (int) spacemult;
-      float *freqtable = floc(4);
+      double *freqtable = floc(4);
       if (freqtable == NULL)
          return die("VOCODESYNTH",
                     "You haven't made the center freq. function (table 4).");
@@ -279,7 +279,7 @@ int VOCODESYNTH :: init(double p[], int n_args)
 
    // function tables -------------------------------------------------------
 
-   float *function = floc(1);
+   double *function = floc(1);
    if (function) {
       int len = fsize(1);
       amptable = new TableL(dur, function, len);

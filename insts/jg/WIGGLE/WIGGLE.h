@@ -23,8 +23,8 @@ class WIGGLE : public Instrument {
    Balance  *balancer;
    OscilL   *carrier;
    OscilL   *modulator;
-   float    *amp_array, *carwave_array, *cargliss_array, *modwave_array;
-   float    *modfreq_array, *moddepth_array, *filtcf_array, *pan_array;
+   double   *amp_array, *carwave_array, *cargliss_array, *modwave_array;
+   double   *modfreq_array, *moddepth_array, *filtcf_array, *pan_array;
    TableL   *amp_table;
    TableN   *cargliss_table;
    TableL   *modfreq_table;

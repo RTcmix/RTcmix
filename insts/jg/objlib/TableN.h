@@ -11,7 +11,7 @@ class TableN : public Oscil
 {
   protected:  
   public:
-    TableN(MY_FLOAT duration, MY_FLOAT *aTable, int tableSize);
+    TableN(MY_FLOAT duration, double *aTable, int tableSize);
     ~TableN();
     MY_FLOAT tick(long nsample, MY_FLOAT amp);
 };

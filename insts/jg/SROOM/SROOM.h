@@ -5,7 +5,8 @@ class SROOM : public Instrument {
    int    deltabs[2];
    float  ovamp;
    float  del[NTAPS], amp[NTAPS];
-   float  *in, *delayline, *rvbarrayl, *rvbarrayr, *amparray, amptabs[2];
+   float  *in, *delayline, *rvbarrayl, *rvbarrayr, amptabs[2];
+   double *amparray;
 
 public:
    SROOM();
