@@ -108,7 +108,7 @@ LIBMINC = ../parser/minc/libminc.a
 AUDIOLIB = ../audio/librtaudio.a
 SNDLIB = ../sndlib/sndlib.a
 
-LIBS = $(AUDIOLIB) $(SNDLIB) $(LIBCONF) $(LIBDIR)/libgen.a
+LIBS = $(AUDIOLIB) $(SNDLIB) $(LIBCONF)
 
 PROGS = MIX
 TARGETS = $(RTLIB) RTcmix.o main.o $(PROGS)
@@ -170,16 +170,8 @@ $(AUDIOLIB):
 loader.o: loader.c
 	$(CC) $(CFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c loader.c
 
-# rules for creating dynamic shared librtcmix library
-
-ifeq ($(ARCH), MACOSX)
-RTLIB_SHARED_FLAGS = -flat_namespace -undefined suppress -dynamiclib -install_name $(LIBDIR)/$@
-else
-RTLIB_SHARED_FLAGS = $(SHARED_LDFLAGS)
-endif
-
 $(RTLIB): depend $(COMMON_OBJS) $(LIBMINC) $(LIBS)
-	$(CXX) $(RTLIB_SHARED_FLAGS) -o $@ $(COMMON_OBJS) $(LIBMINC) $(LIBS) $(SYSLIBS)
+	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(COMMON_OBJS) $(LIBMINC) $(LIBS) $(SYSLIBS)
 
 Option.o: Option.cpp Option.h
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c $< -o $@
