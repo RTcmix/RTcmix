@@ -6,13 +6,16 @@
 /* Originally by Brad Garton and Doug Scott (SGI code) and Dave Topper
    (Linux code). Reworked for v2.3 by John Gibson.
 */
-#include <globals.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <errno.h>
 #include <assert.h>
+#include <globals.h>
+#include <sndlibsupport.h>
 #include "../rtstuff/rtdefs.h"
+
+/* #define DEBUG */
 
 #ifdef LINUX
    #include <sys/types.h>
