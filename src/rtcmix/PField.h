@@ -156,6 +156,34 @@ private:
 	InterpFunction	_interpolator;
 };
 
+// Class for random number generator
+
+#include <Random.h>
+
+class RandomPField : public SingleValuePField {
+public:
+	typedef double (*InterpFunction)(Random *gen);
+	static double Truncate(Random *gen);
+	static double Interpolate1stOrder(Random *gen);
+public:
+	// NB: RandomPField takes ownership of generator, deletes on destruction.
+	RandomPField(double krate, Random *generator, PField *freq,
+						PField *min, PField *max, PField *mid, PField *tight,
+						InterpFunction fun=Interpolate1stOrder);
+	virtual double	doubleValue(double) const;
+protected:
+	virtual ~RandomPField();
+private:
+	double _sr;
+	Random *_gen;
+	PField *_freqPF;
+	PField *_minPF;
+	PField *_maxPF;
+	PField *_midPF;
+	PField *_tightPF;
+	InterpFunction	_interpolator;
+};
+
 // Class for interpolated reading of table.
 
 class TablePField : public PField, public RTFieldObject {

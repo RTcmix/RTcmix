@@ -201,6 +201,48 @@ double LFOPField::doubleValue(double percent) const
 	return (*_interpolator)(_oscil);
 }
 
+// RandomPField
+
+RandomPField::RandomPField(double krate, Random *generator, PField *freq,
+		PField *min, PField *max, PField *mid, PField *tight,
+		RandomPField::InterpFunction ifun)
+	: SingleValuePField(0.0), _sr(krate), _gen(generator), _freqPF(freq),
+	  _minPF(min), _maxPF(max), _midPF(mid), _tightPF(tight), _interpolator(ifun)
+{
+}
+
+RandomPField::~RandomPField()
+{
+// FIXME: error: Random.h:36: `Random::~Random()' is protected PField.cpp:216: within this context
+//	delete _gen;
+}
+
+double RandomPField::Truncate(Random *gen)
+{
+	return gen->value();
+}
+
+double RandomPField::Interpolate1stOrder(Random *gen)
+{
+//FIXME: need state (passed in) in order to ramp
+	return gen->value();
+}
+
+double RandomPField::doubleValue(double percent) const
+{
+	if (percent > 1.0)
+		percent = 1.0;
+//	_oscil->setfreq(_freqPF->doubleValue(percent));
+	_gen->setmin(_minPF->doubleValue(percent));
+	_gen->setmax(_maxPF->doubleValue(percent));
+	if (_midPF)
+		_gen->setmid(_midPF->doubleValue(percent));
+	if (_tightPF)
+		_gen->settight(_tightPF->doubleValue(percent));
+// NB: handle frequency
+	return (*_interpolator)(_gen);
+}
+
 // TablePField
 
 TablePField::TablePField(double *tableArray,
