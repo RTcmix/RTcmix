@@ -104,6 +104,8 @@ limiter()
    int      i, j, numclipped;
    BUFTYPE  clipmax, orig_samp;
    BufPtr   buf;
+   const bool checkPeaks = Option::checkPeaks();
+   const bool reportClipping = Option::reportClipping();
 
    numclipped = 0;
    clipmax = (BUFTYPE) 0;
@@ -124,7 +126,7 @@ limiter()
             buf[j] = 32767.0;
             numclipped++;
          }
-         if (Option::checkPeaks()) {
+         if (checkPeaks) {
             BUFTYPE abs_samp = (BUFTYPE) fabs((double) buf[j]);
             if (abs_samp > peaks[i]) {
                peaks[i] = abs_samp;
@@ -134,7 +136,7 @@ limiter()
       }
    }
 
-   if (numclipped && Option::reportClipping()) {
+   if (numclipped && reportClipping) {
       float loc1 = (float) bufStartSamp / SR;
       float loc2 = loc1 + ((float) RTBUFSAMPS / SR);
 
@@ -143,8 +145,6 @@ limiter()
               "%s  CLIPPING: %4d samps, max: %g, time range: %f - %f\n",
               (printing_dots? "\n" : ""), numclipped, clipmax, loc1, loc2);
    }
-
-//printf("limiter: bufStartSamp = %ld\n", bufStartSamp);
 }
 
 
@@ -187,11 +187,12 @@ void
 rtsendsamps(AudioDevice *device)
 {
    int   err;
-
+   const bool playing = Option::play();
+   
    /* If we're writing to a file, and not playing, print a dot to show
       we've output one buffer.
    */
-   if (!Option::play() && rtfileit) {
+   if (!playing && rtfileit) {
       printing_dots = 1;
       printf(".");    /* no '\n' */
    }
@@ -200,19 +201,19 @@ rtsendsamps(AudioDevice *device)
    if (is_float_format && rtfileit) {
 	  // FOR NOW, IF WE ARE BOTH PLAYING AND WRITING, DO IT WITH SEPARATE
 	  // AudioDevice INSTANCES.
-	  if (Option::play())
-      	err = rtwritesamps(globalOutputFileDevice);
+	  if (playing)
+         err = rtwritesamps(globalOutputFileDevice);
 	  else
-	  	err = rtwritesamps(device);
+	     err = rtwritesamps(device);
       if (err)
          fprintf(stderr, "rtsendsamps: bad write to output sound file\n");
-      if (!Option::play())
+      if (!playing)
          return;        /* without limiting */
    }
 
    limiter();    /* Limit output buffer data to +-32767.0 */
 
-   if (Option::play()) {
+   if (playing) {
       err = write_to_audio_device(device);
       if (err)
          fprintf(stderr, "rtsendsamps: Error: %s\n", device->getLastError());
@@ -221,10 +222,10 @@ rtsendsamps(AudioDevice *device)
    if (!is_float_format && rtfileit) {
 	  // FOR NOW, IF WE ARE BOTH PLAYING AND WRITING, DO IT WITH SEPARATE
 	  // AudioDevice INSTANCES.
-	  if (Option::play())
-      	err = rtwritesamps(globalOutputFileDevice);
+	  if (playing)
+         err = rtwritesamps(globalOutputFileDevice);
 	  else
-	  	err = rtwritesamps(device);
+	     err = rtwritesamps(device);
       if (err)
          fprintf(stderr, "rtsendsamps: bad write to output sound file\n");
    }
