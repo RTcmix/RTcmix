@@ -125,7 +125,7 @@ double dataset(float *p, int n_args, double *pp)
 	// Add to dataset list.
 	g_datasets[g_currentDataset] = dataSet;
 
-	dataset->ref();	// Note:  For now, datasets are never destroyed during run.
+	dataSet->ref();	// Note:  For now, datasets are never destroyed during run.
 
 	return (double) frms;
 }
