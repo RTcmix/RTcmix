@@ -62,20 +62,24 @@ install: dso_install
 dso_install: all
 	$(INSTALL) $(CURDIR)/libMPLACE.so $(LIBDESTDIR)
 	$(INSTALL) $(CURDIR)/libMMOVE.so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/libDMOVE.so $(LIBDESTDIR)
 
 standalone_install: standalone
 	$(INSTALL) $(CURDIR)/MPLACE $(DESTDIR)
 	$(INSTALL) $(CURDIR)/MMOVE $(DESTDIR)
+	$(INSTALL) $(CURDIR)/DMOVE $(DESTDIR)
 
 uninstall: dso_uninstall standalone_uninstall
 
 dso_uninstall:
 	$(RM) $(LIBDESTDIR)/libMPLACE.so
 	$(RM) $(LIBDESTDIR)/libMMOVE.so
+	$(RM) $(LIBDESTDIR)/libDMOVE.so
 
 standalone_uninstall:
 	$(RM) $(DESTDIR)/MPLACE
 	$(RM) $(DESTDIR)/MMOVE
+	$(RM) $(DESTDIR)/DMOVE
 
 clean:
 	$(RM) $(POBJS) $(MOBJS) $(DOBJS) $(PROGS) $(TRASH)
