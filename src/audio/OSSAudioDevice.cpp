@@ -146,11 +146,12 @@ int OSSAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 	if (ioctl(SNDCTL_DSP_SETFRAGMENT, &sizeCode) == -1) {
 		printf("ioctl(SNDCTL_DSP_SETFRAGMENT, ...) returned -1\n");
 	}
-	_bufferSize = 0;
-	if (ioctl(SNDCTL_DSP_GETBLKSIZE, &_bufferSize) == -1) {
-		return error("Error while retrieving block size.");
+	int fragSize = 0;
+	if (ioctl(SNDCTL_DSP_GETBLKSIZE, &fragSize) == -1) {
+		return error("Error while retrieving fragment size.");
 	}
-	*pWriteSize = _bufferSize / (*pCount * getDeviceBytesPerFrame());
+	*pWriteSize = fragSize / getDeviceBytesPerFrame();
+	_bufferSize = *pWriteSize * *pCount;
 	return 0;
 }
 
