@@ -1,15 +1,26 @@
+#include <Ougens.h>
+
 class DELAY : public Instrument {
-	float amp, *amptable, amptabs[2], *in;
-	float *delarray;
-	float wait,regen;
-	float spread;
-	int deltabs[2],inchan;
-	int skip;
-	int insamps;
+	bool warn_deltime;
+	double delsamps;
+	float amp, *in, pctleft, regen;
+	float *amptable, amptabs[2];
+	int inchan, insamps, skip, branch;
+	Ozdelay *delay;
 
 public:
 	DELAY();
 	virtual ~DELAY();
-	int init(double*, int);
-	int run();
-	};
+	virtual int init(double *, int);
+	virtual int configure();
+	virtual int run();
+};
+
+// update flags (shift amount is pfield number)
+enum {
+	kAmp = 1 << 3,
+	kDelTime = 1 << 4,
+	kDelRegen = 1 << 5,
+	kPan = 1 << 8
+};
+

@@ -1,126 +1,149 @@
-#include <iostream.h>
+/* DELAY - delay instrument with feedback
+
+      p0 = output start time
+      p1 = input start time
+      p2 = output duration
+      p3 = amplitude multiplier
+      p4 = delay time
+      p5 = delay feedback (i.e., regeneration multiplier) [0-1]
+      p6 = ring-down duration
+      p7 = input channel [optional, default is 0]
+      p8 = pan (in percent-to-left form: 0-1) [optional, default is 0] 
+
+   p3 (amplitude), p4 (delay time), p5 (feedback) and p8 (pan) can receive
+   dynamic updates from a table or real-time control source.
+
+   If an old-style gen table 1 is present, its values will be multiplied
+   by the p3 amplitude multiplier, even if the latter is dynamic.
+
+   The point of the ring-down duration parameter is to let you control
+   how long the delay will sound after the input has stopped.  Too short
+   a time, and the sound may be cut off prematurely.
+
+                                          rev. for v4.0 by JGG, 7/10/04
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "DELAY.h"
 #include <rt.h>
 #include <rtdefs.h>
 
+#define MAXDELTIME 20.0    // seconds (176400 bytes per second at SR=44100
 
 DELAY::DELAY() : Instrument()
 {
-    in = NULL;
-    delarray = NULL;
+	in = NULL;
+	delay = NULL;
+	branch = 0;
+	warn_deltime = true;
 }
 
 DELAY::~DELAY()
 {
-    delete [] in;
-    delete [] delarray;
+	delete [] in;
+	delete delay;
 }
 
 
 int DELAY::init(double p[], int n_args)
 {
-// p0 = output skip; p1 = input skip; p2 = output duration
-// p3 = amplitude multiplier; p4 = delay time
-// p5 = regeneration multiplier (< 1!)
-// p6 = ring-down duration
-// p7 = input channel [optional]
-// p8 = stereo spread (0-1) <optional>
-// assumes function table 1 is the amplitude envelope
+	float outskip = p[0];
+	float inskip = p[1];
+	float dur = p[2];
+	float deltime = p[4];
+	float ringdur = p[6];
+	inchan = n_args > 7 ? (int) p[7] : 0;
 
-	long delsamps;
-	int rvin;
+	if (rtsetinput(inskip, this) == -1)
+		return DONT_SCHEDULE;	// no input
 
-	rvin = rtsetinput(p[1], this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
-	nsamps = rtsetoutput(p[0], p[2]+p[6], this);
-	insamps = (int)(p[2] * SR);
+	if (inchan >= inputChannels())
+		return die("DELAY", "You asked for channel %d of a %d-channel file.",
+														inchan, inputChannels());
 
-	delsamps = (long)(p[4] * SR + 0.5);
-	if( (delarray = new float [delsamps]) == NULL ) {
-		die("DELAY", "Sorry, Charlie -- no space");
-		return(DONT_SCHEDULE);
-	}
+	nsamps = rtsetoutput(outskip, dur + ringdur, this);
+	insamps = (int) (dur * SR + 0.5);
 
-	wait = p[4];
-	regen = p[5];
-	delset(delarray, deltabs, wait);
+	if (deltime > MAXDELTIME)
+		return die("DELAY", "Maximum delay time (%g seconds) exceeded.",
+																			MAXDELTIME);
+
+	long maxdelsamps = (long) (MAXDELTIME * SR + 0.5);
+	delay = new Ozdelay(maxdelsamps);
+	if (delay == NULL)
+		return die("DELAY", "Can't allocate delay line memory.");
 
 	amptable = floc(1);
 	if (amptable) {
 		int amplen = fsize(1);
-		tableset(p[2], amplen, amptabs);
-	}
-	else
-		advise("DELAY", "Setting phrase curve to all 1's.");
-
-	amp = p[3];
-	skip = (int)(SR/(float)resetval);
-	inchan = (int)p[7];
-	if ((inchan+1) > inputchans) {
-		die("DELAY", "You asked for channel %d of a %d-channel file.",
-                                                       inchan, inputchans);
-		return(DONT_SCHEDULE);
+		tableset(dur, amplen, amptabs);
 	}
 
-	spread = p[8];
+	skip = (int) (SR / (float) resetval);
 
-	return(nsamps);
+	return nsamps;
+}
+
+int DELAY::configure()
+{
+	in = new float [RTBUFSAMPS * inputChannels()];
+	return in ? 0 : -1;
 }
 
 int DELAY::run()
 {
-	int i,rsamps;
-	float out[2];
-	float aamp;
-	int branch;
+	int samps = framesToRun() * inputChannels();
 
-	if (in == NULL)        /* first time, so allocate it */
-		in = new float [RTBUFSAMPS * inputchans];
+	if (currentFrame() < insamps)
+		rtgetin(in, this, samps);
 
-	rsamps = chunksamps*inputchans;
-
-	rtgetin(in, this, rsamps);
-
-	aamp = amp;           /* in case amptable == NULL */
-
-	branch = 0;
-	for (i = 0; i < rsamps; i += inputchans)  {
-		if (cursamp > insamps) {
-			out[0] = delget(delarray, wait, deltabs) * regen;
-			}
-		else {
-			if (--branch < 0) {
-				if (amptable)
-					aamp = tablei(cursamp, amptable, amptabs) * amp;
-				branch = skip;
+	for (int i = 0; i < samps; i += inputChannels())  {
+		if (--branch <= 0) {
+			double p[9];
+			update(p, 9, (kAmp | kDelTime | kDelRegen | kPan));
+			amp = p[3];
+			if (amptable)
+				amp *= tablei(cursamp, amptable, amptabs);
+			float deltime = p[4];
+			if (deltime > MAXDELTIME) {
+				if (warn_deltime) {
+					warn("DELAY", "Maximum delay time (%g seconds) exceeded!",
+																			MAXDELTIME);
+					warn_deltime = false;
 				}
-			out[0] = (in[i+inchan]*aamp) + (delget(delarray, wait, deltabs)*regen);
+				delsamps = MAXDELTIME * SR;
 			}
+			else
+				delsamps = deltime * SR;
+			regen = p[5];
+			pctleft = p[8];
+			branch = skip;
+		}
 
-		delput(out[0], delarray, deltabs);
+		float sig, out[2];
 
-		if (outputchans == 2) {
-			out[1] = out[0] * (1.0 - spread);
-			out[0] *= spread;
-			}
+		if (currentFrame() < insamps)
+			sig = in[i + inchan] * amp;
+		else
+			sig = 0.0;
+
+		out[0] = sig + (delay->getsamp(delsamps) * regen);
+		delay->putsamp(out[0]);
+
+		if (outputChannels() == 2) {
+			out[1] = out[0] * (1.0 - pctleft);
+			out[0] *= pctleft;
+		}
 
 		rtaddout(out);
-		cursamp++;
-		}
-	return(i);
+		increment();
+	}
+	return framesToRun();
 }
 
-
-
-Instrument*
-makeDELAY()
+Instrument *makeDELAY()
 {
 	DELAY *inst;
 

@@ -1,14 +1,17 @@
+#include <Ougens.h>
+
 class DEL1 : public Instrument {
-	float amp, *amptable, amptabs[2], *in;
-	float *delarray;
-	float wait,delamp;
-	int deltabs[2],inchan;
-	int skip;
-	int insamps;
+	bool warn_deltime;
+	int inchan, insamps, skip, branch;
+	float amp, delamp, *in;
+	float *amptable, amptabs[2];
+	double delsamps;
+	Ozdelay *delay;
 
 public:
 	DEL1();
 	virtual ~DEL1();
-	int init(double*, int);
-	int run();
-	};
+	virtual int init(double*, int);
+	virtual int configure();
+	virtual int run();
+};
