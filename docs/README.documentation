@@ -1,19 +1,39 @@
-There's not much documentation for recent versions of RTcmix.
+This distribution contains documentation in the form of man pages
+and html.  These are installed in the directories you specify in 
+makefile.conf.  (Adjust MANDESTDIR and HTMLDESTDIR to taste.)  To see
+the man pages, add the MANDESTDIR to your MANPATH.  In bash, but 
+something like this in your .profile (or wherever you put such things):
+
+   MANPATH="$MANPATH:/usr/local/rtcmix/docs/man"
+
+You can also build PostScript and PDF versions:
+
+   $ cd docs/pod
+   $ make ps
+   $ make pdf
+
+The "syn" command (installed wherever CMIX is installed) gives you
+a brief usage statement for any command it knows about.  (Type
+"syn commandname" at the command line.)
+
+This documentation is not at all complete, especially for instruments.
+
+Instead you may want to...
 
 Go to the CMC RTcmix web page at Columbia for lots of documentation
 and tutorials:
 
    http://music.columbia.edu/cmc/RTcmix
 
-You may also find helpful the tutorials on John Gibson's Music 540
-course web site:
+You may also find helpful the beginners' tutorials on John Gibson's
+Music 540 course web site:
 
    http://mypage.iu.edu/~johgibso/musi540
 
 The sample score directories in the current dir are probably your
 best guide. It's also useful to look at the source code for the
-instruments, especially since most of them have usage comments.
-Many instrument source code dirs also contain sample score files.
+instruments, especially since most of them have usage comments.  Many
+instrument source code directories also contain sample score files.
 
 For information about the bus-routing capability, read
 "README.bus_config" in this directory.
