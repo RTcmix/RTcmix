@@ -64,8 +64,8 @@ JFIR :: ~JFIR()
 
 int JFIR :: init(float p[], int n_args)
 {
-   int   order;
-   float outskip, inskip, dur, tabsize, ringdur;
+   int   order, tabsize;
+   float outskip, inskip, dur, ringdur;
    float *response_tab;
 
    outskip = p[0];
