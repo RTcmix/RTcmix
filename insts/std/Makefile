@@ -4,10 +4,12 @@ include package.conf
 RTLIBDIRS = AM AMINST CLAR COMBIT DELAY DEL1 FIR FMINST IIR METAFLUTE MOVE \
 MULTICOMB PANECHO REVMIX SCULPT STEREO STRUM TRANS TRANSBEND WAVESHAPE
 
-CMIXLIBDIRS = convolve gravy move noise numtest sgran stgran
+ifneq ($(ARCH),MACOSX)
+#CMIXLIBDIRS = convolve gravy move noise numtest sgran stgran
 #CMIXLIBDIRS = clar combit fir fminst iir multicomb place sculpt \
 #strum wah wahwah wow wsh metaflute trans am aminst pvoc rotate \
 #mrotate gravy vwavetable del1 delay panecho flange # lpc
+endif
 
 LIBDIRS = $(RTLIBDIRS)  $(CMIXLIBDIRS) 
 

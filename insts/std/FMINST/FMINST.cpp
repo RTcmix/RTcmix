@@ -99,6 +99,7 @@ int FMINST::run()
 			if (ampenv)
 				aamp = table(cursamp, ampenv, amptabs) * amp;
 			index = diff * tablei(cursamp,indexenv,indtabs) + indbase;
+#ifdef RTUPDATE
 			if (tags_on) {
 				tfreq = rtupdate(this->mytag, 3);
 				if (tfreq != NOPUPDATE)
@@ -113,6 +114,7 @@ int FMINST::run()
 				if (tamp != NOPUPDATE)
 					amp = tamp;
 			}
+#endif
 			branch = skip;
 		}
 

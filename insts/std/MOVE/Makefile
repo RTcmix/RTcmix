@@ -17,8 +17,7 @@ all: libPLACE.so libMOVE.so
 standalone: PLACE MOVE
 
 libPLACE.so: $(OBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	$(GENLIB) $(SYSLIBS)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
 PLACE: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS) $(PROF)
@@ -26,8 +25,7 @@ PLACE: $(OBJS) $(CMIXOBJS)
 $(OBJS): $(INSTRUMENT_H) PLACE.h cmixfuns.h setup.h common.h
 
 libMOVE.so: $(MOBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(MOBJS) \
-	$(GENLIB) $(SYSLIBS)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(MOBJS) $(GENLIB) $(SYSLIBS)
 
 MOVE: $(MOBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(MOBJS) $(CMIXOBJS) $(LDFLAGS) $(PROF)
