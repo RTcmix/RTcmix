@@ -111,7 +111,8 @@ table, not including any zero-padding at the end.
 
 =head1 EXAMPLES
 
-   num_items = makegen(5, 2, 20, 8.00, 8.02, 8.04, 8.05, 8.07, 8.09, 8.11)
+   num_items = makegen(5, 2, 20, 8.00, 8.02, 8.04, 8.05,
+                                       8.07, 8.09, 8.11)
 
 Table number 5 will contain 7 values, representing pitches in a C major
 scale (expressed in octave.pc notation).  After the call, I<num_items> will
