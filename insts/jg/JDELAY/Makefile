@@ -2,8 +2,8 @@ include ../package.conf
 
 OBJS = JDELAY.o
 CMIXOBJS += $(PROFILE_O)
-CFLAGS += -fPIC
-CXXFLAGS += -fPIC -Wall
+#CFLAGS += -fPIC
+#CXXFLAGS += -fPIC
 PROGS = libJDELAY.so JDELAY
 
 all: libJDELAY.so
@@ -11,8 +11,7 @@ all: libJDELAY.so
 standalone: JDELAY
 
 libJDELAY.so: $(OBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	$(GENLIB) $(SYSLIBS)
+	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
 JDELAY: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)

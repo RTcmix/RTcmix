@@ -79,6 +79,7 @@ static double interp(double, double, double, double);
 
 JCHOR::JCHOR() : Instrument()
 {
+   in = new float[MAXBUF];
    voices = NULL;
    grain = NULL;
 }
@@ -86,6 +87,7 @@ JCHOR::JCHOR() : Instrument()
 
 JCHOR::~JCHOR()
 {
+   delete [] in;
    delete [] voices;
    delete [] grain;
 }
@@ -294,7 +296,6 @@ int JCHOR::grain_input_and_transpose(
    int     getflag, incount, len;
    float   read_indur, store_indur, total_indur, interval, amp;
    float   *winarray, wintabs[2];
-   float   in[2 * MAXBUF];
    double  increment, newsig, oldsig, oldersig, frac, counter;
 
    if (inputchans == 1)

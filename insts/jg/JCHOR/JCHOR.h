@@ -8,7 +8,7 @@ typedef struct {
 class JCHOR : public Instrument {
    int     grainsamps, nvoices, skip;
    float   minamp, ampdiff, minwait, waitdiff, seed;
-   float   *grain, *amparray, amptabs[2];
+   float   *grain, *amparray, amptabs[2], *in;
    Voice   *voices;
 
 public:

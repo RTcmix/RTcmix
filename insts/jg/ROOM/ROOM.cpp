@@ -17,12 +17,14 @@ extern "C" {
 
 ROOM::ROOM() : Instrument()
 {
+   in = new float[MAXBUF];
    echo = NULL;
 }
 
 
 ROOM::~ROOM()
 {
+   delete [] in;
    delete [] echo;
 }
 
@@ -89,7 +91,7 @@ int ROOM::run()
 {
    int   i, branch, rsamps;
    float aamp, insig;
-   float in[2 * MAXBUF], out[2];
+   float out[2];
 
    rsamps = chunksamps * inputchans;
 

@@ -1,8 +1,8 @@
 include ../package.conf
 
 OBJS = ROOM.o roomset.o
-CFLAGS += -fPIC
-CXXFLAGS += -fPIC -Wall
+#CFLAGS += -fPIC
+#CXXFLAGS += -fPIC
 PROGS = libROOM.so ROOM
 
 all: libROOM.so
@@ -10,8 +10,7 @@ all: libROOM.so
 standalone: ROOM
 
 libROOM.so: $(OBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	$(GENLIB) $(SYSLIBS)
+	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
 ROOM: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)

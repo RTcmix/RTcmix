@@ -50,11 +50,13 @@ extern "C" {
 
 REV :: REV() : Instrument()
 {
+   in = new float[MAXBUF];
 }
 
 
 REV :: ~REV()
 {
+   delete [] in;
    delete reverb;
 }
 
@@ -117,7 +119,7 @@ int REV :: run()
 {
    int   i, branch, rsamps;
    float aamp, insig;
-   float in[2 * MAXBUF], out[2];
+   float out[2];
 
    rsamps = chunksamps * inputchans;
 

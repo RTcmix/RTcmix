@@ -43,6 +43,7 @@ extern "C" {
 
 FLANGE :: FLANGE() : Instrument()
 {
+   in = new float[MAXBUF];
    zcomb = NULL;       // only one of these will be created
    znotch = NULL;
 }
@@ -50,6 +51,7 @@ FLANGE :: FLANGE() : Instrument()
 
 FLANGE :: ~FLANGE()
 {
+   delete [] in;
    delete zcomb;
    delete znotch;
    delete modoscil;
@@ -137,7 +139,7 @@ int FLANGE :: run()
 {
    int   i, branch, rsamps;
    float aamp, modval, insig, fsig, delsamps, modsamps;
-   float in[2 * MAXBUF], out[2];
+   float out[2];
 
    rsamps = chunksamps * inputchans;
 

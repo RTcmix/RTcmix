@@ -66,11 +66,13 @@ static double tone(double, double []);
 
 REVERBIT::REVERBIT() : Instrument()
 {
+   in = new float[MAXBUF];
    delarray = rvbarray = NULL;
 }
 
 REVERBIT::~REVERBIT()
 {
+   delete [] in;
    delete [] delarray;
    delete [] rvbarray;
 }
@@ -160,7 +162,7 @@ int REVERBIT::run()
 {
    int   i, branch, rsamps;
    float aamp, insig[2], delsig, rvbsig;
-   float in[2 * MAXBUF], out[2];
+   float out[2];
 
    rsamps = chunksamps * inputchans;
 

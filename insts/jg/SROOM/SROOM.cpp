@@ -32,12 +32,14 @@ extern "C" {
 
 SROOM::SROOM() : Instrument()
 {
+   in = new float[MAXBUF];
    delayline = rvbarrayl = rvbarrayr = NULL;
 }
 
 
 SROOM::~SROOM()
 {
+   delete [] in;
    delete [] delayline;
    delete [] rvbarrayl;
    delete [] rvbarrayr;
@@ -108,7 +110,7 @@ int SROOM::run()
 {
    int   i, m, branch, rsamps;
    float aamp, insig, lout, rout, delval, rvbsig = 0.0;
-   float in[2 * MAXBUF], out[2];
+   float out[2];
 
    rsamps = chunksamps * inputchans;
 

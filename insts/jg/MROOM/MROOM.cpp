@@ -45,12 +45,14 @@ extern "C" {
 
 MROOM::MROOM() : Instrument()
 {
+   in = new float[MAXBUF];
    delayline = rvbarrayl = rvbarrayr = NULL;
 }
 
 
 MROOM::~MROOM()
 {
+   delete [] in;
    delete [] delayline;
    delete [] rvbarrayl;
    delete [] rvbarrayr;
@@ -137,7 +139,7 @@ int MROOM::run()
 {
    int   i, m, ampbranch, quantbranch, rsamps;
    float aamp, insig, lout, rout, delval, rvbsig = 0.0;
-   float in[2 * MAXBUF], out[2];
+   float out[2];
 
    rsamps = chunksamps * inputchans;
 

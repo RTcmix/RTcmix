@@ -6,8 +6,9 @@ OBJLIB_H = $(OBJLIBDIR)/objlib.h
 
 OBJS = REV.o
 CMIXOBJS += $(PROFILE_O)
-CFLAGS += -fPIC
-CXXFLAGS += -fPIC -I$(OBJLIBDIR) -Wall
+#CFLAGS += -fPIC
+#CXXFLAGS += -fPIC -I$(OBJLIBDIR) -Wall
+CXXFLAGS += -I$(OBJLIBDIR) -Wall
 PROGS = REV libREV.so
 
 all: libREV.so
