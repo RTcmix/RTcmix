@@ -73,7 +73,7 @@ double m_stringify(float p, short n_args, double pp[])
 	   to a 'floating point' pointer suitable for use in
 	   further cmix calls */
 
-	return(pp[0]);
+	return((double)(int) pp[0]);	/* was return (pp[0]) -- DS */
 }
 
 double m_log(float p[], short n_args)
@@ -93,13 +93,13 @@ double m_pow(float p[], short n_args, double pp[])
 	return(val);
 }
 
-double m_round(float p[], int n_args)
+double m_round(float p[], short n_args)
 {
 	int val = p[0] + .5;
 	return (double) val;
 }
 
-double m_wrap(float p[], int n_args)
+double m_wrap(float p[], short n_args)
 {
 	/* keeps value between 0 and p[1] */
 	int val = p[0];
@@ -122,19 +122,19 @@ double m_print(float p[], short n_args, double pp[])
 	return 0.0;
 }
 
-double m_abs(float p[], int n_args)
+double m_abs(float p[], short n_args)
 {
 	return((p[0] >= 0.0) ? p[0] : -(p[0]));
 }
 
-double m_mod(float p[], int n_args)
+double m_mod(float p[], short n_args)
 {
 	int i,j;
 	i = (int)p[0] % (int)p[1];
 	return((float)i);
 }
 
-double m_max(float p[], int n_args)
+double m_max(float p[], short n_args)
 {
 	int i;
 	float max = -1e+22;
@@ -143,13 +143,13 @@ double m_max(float p[], int n_args)
 	return(max);
 }
 
-double m_exit(float p[], int n_args)
+double m_exit(float p[], short n_args)
 {
 	closesf();
 	return 0.0;
 }
 
-double m_load_array(float p[], int n_args, double pp[])
+double m_load_array(float p[], short n_args, double pp[])
 {
 	int i,j;
 	if(n_args > ARRAY_SIZE) n_args = ARRAY_SIZE+1;
@@ -159,7 +159,7 @@ double m_load_array(float p[], int n_args, double pp[])
 	return(n_args-1);
 }
 
-double m_get_array(float p[], int n_args)
+double m_get_array(float p[], short n_args)
 {
 	int i, size, index;
 
@@ -173,7 +173,7 @@ double m_get_array(float p[], int n_args)
 	return (minc_array[i][index]);
 }
 
-double m_put_array(float p[], int n_args)
+double m_put_array(float p[], short n_args)
 { /* to load a single value from minc */
 	int i,j;
 	i=p[0];
@@ -184,7 +184,7 @@ double m_put_array(float p[], int n_args)
 	else return(-1);
 }
 
-double m_get_sum(float p[], int n_args)
+double m_get_sum(float p[], short n_args)
 {
 	int i,j,k;
 	float sum;
@@ -194,7 +194,7 @@ double m_get_sum(float p[], int n_args)
 	return(sum);
 }
 
-double m_get_size(float p[], int n_args)
+double m_get_size(float p[], short n_args)
 {
 	/* returns same value as load_array would */
 	return((double)minc_array_size[(int)p[0]]-1);
@@ -281,26 +281,26 @@ double str_num(float p[], short n_args, double pp[])
 	return 0.0;
 }
 
-double m_print_is_on(float p[], int n_args)
+double m_print_is_on(float p[], short n_args)
 {
 	print_is_on = 1;
 	return print_is_on;
 }
 
-double m_print_is_off(float p[], int n_args)
+double m_print_is_off(float p[], short n_args)
 {
 	print_is_on = 0;
 	return print_is_on;
 }
 
 struct slist slist[NUM_ARRAYS];
-double m_get_spray(float p[], int n_args)
+double m_get_spray(float p[], short n_args)
 {
 	int i = p[0];
 	return((double)(spray(&slist[i])));
 }
 
-double m_spray_init(float p[], int n_args)
+double m_spray_init(float p[], short n_args)
 {
 	int i,j;
 	i=p[0]; j=p[1];
@@ -311,7 +311,7 @@ double m_spray_init(float p[], int n_args)
 
 static int line_array_size = 1000;      /* modified by m_setline_size */
 
-double m_setline_size(float p[], int n_args)
+double m_setline_size(float p[], short n_args)
 {
 	if (p[0] < 2)
 		die("setline_size", "Setline array size must be at least 2!");
@@ -322,7 +322,7 @@ double m_setline_size(float p[], int n_args)
 }
 
 
-double m_setline(float p[], int n_args)
+double m_setline(float p[], short n_args)
 {
 	float	pp[MAXDISPARGS];
 	int	i;
@@ -339,6 +339,41 @@ double m_setline(float p[], int n_args)
 	return 0.0;
 }
 
+/* create exponential curve */
+
+double m_setexp(float p[], short n_args)
+{
+	float	pp[MAXDISPARGS];
+	float   prevloc, minloc, locRange;
+	int	i;
+
+	pp[0] = 1;
+	pp[1] = 5;           /* gen 5 creates exponential curve */
+	pp[2] = line_array_size;
+
+    minloc = p[0];	/* loc from first <loc, value> pair */
+	prevloc = minloc;
+    locRange = p[n_args - 2] - minloc;	/* delta betw. first & last loc */
+
+	/* copy args, but guard against negatives and zeroes! */
+	/* we convert <loc, val>, <loc2, val2>, ... into
+	 * val, deltaloc1, val2, deltaloc2, ... 
+	 */
+	for (i = 1; i < n_args - 1; i += 2)
+	{
+		float val = p[i];
+		float loc = p[i+1];
+		pp[i+2] = val > 0.0f ? val : 0.00001;
+		pp[i+3] = (int) (line_array_size * ((loc - prevloc) / locRange));
+		prevloc = loc;
+	}
+	/* add final value to arg list */
+	pp[i+2] = p[i] > 0.0f ? p[i] : 0.00001;
+
+	makegen(pp, n_args+2);
+
+	return 0.0;
+}
 
 /* Note: MIX used 200 as default; WAVETABLE used 1000. It needs a faster
    rate, since it's changing an oscillator at that speed, rather than just
@@ -346,7 +381,7 @@ double m_setline(float p[], int n_args)
 */
 int resetval = 1000;                 /* modified by m_reset; read by insts */
 
-double m_reset(float p[], int n_args)
+double m_reset(float p[], short n_args)
 {
 	if (p[0] <= 0)
 		die("reset", "Reset value must be greater than 0!");
@@ -356,4 +391,42 @@ double m_reset(float p[], int n_args)
 	return 0.0;
 }
 
+/* returns random choice from its arguments */
+double m_pickrand(float p[], short n_args, double pp[]) 
+{
+		float rindex;
+		if (n_args == 0)
+				die("pickrand", "Must have at least one value to choose from!");
+		rindex = (m_random() * n_args) - 0.000001; /* 0 to 1.9999 for 2 args */
+		return pp[(int) rindex];
+}
 
+/* returns choice based on <value, probability> pairs */
+double m_pickwrand(float p[], short n_args, double pp[])
+{
+		int n;
+		float totalchance = 0, rindex, psum = 0;
+		if (n_args == 0 || (n_args & 1))
+				die("pickwrand", "Arguments must be in <value, probability> pairs!");
+
+		/* sum up chances */
+		for (n = 1; n < n_args; n += 2)
+				totalchance += p[n];
+		rindex = m_random(p, 0) * totalchance;
+		for (n = 1; n < n_args; n += 2)
+		{
+				psum += p[n]/totalchance;
+				if (rindex <= psum)
+						return p[n-1];
+		}
+		return pp[n_args - 2];
+}
+
+/* returns a randomly-interpolated value between its two input values */
+double m_irand(float p[], short n_args, double pp[])
+{
+	double frac = m_random(p, 0);
+	if (n_args != 2)
+		die("irand", "Must have exactly two arguments.\n");
+	return (frac * pp[0]) + (1.0 - frac) * pp[1];
+}
