@@ -61,9 +61,10 @@ int WAVETABLE::init(double p[], int n_args)
 
 	wavetable = NULL;
 	int tablelen = 0;
-#if 0   // handle table coming in as optional p5 TablePField
-	if (n_args > 5) {
-		wavetable = getTable(5, &tablelen);
+	if (n_args > 5) {      // handle table coming in as optional p5 TablePField
+		const PField &field = getPField(5);
+		tablelen = field.values();
+		wavetable = (double *) field;
 	}
 	if (wavetable == NULL) {
 		wavetable = floc(WAVET_GEN_SLOT);
@@ -72,13 +73,6 @@ int WAVETABLE::init(double p[], int n_args)
                     "an old-style gen function in slot %d.", WAVET_GEN_SLOT);
 		tablelen = fsize(WAVET_GEN_SLOT);
 	}
-#else
-	wavetable = floc(WAVET_GEN_SLOT);
-	if (wavetable == NULL)
-		return die("WAVETABLE", "You need to store a waveform in function %d.",
-                                                               WAVET_GEN_SLOT);
-	tablelen = fsize(WAVET_GEN_SLOT);
-#endif
 
 	osc = new Ooscili(freq, wavetable, tablelen);
 
