@@ -170,6 +170,7 @@ public:
 	LoopedPField(PField *innerPField, double loopFactor);
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
+	virtual int		values() const { return _len; }
 private:
 	double	_factor;
 	int		_len;
