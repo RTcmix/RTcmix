@@ -1,9 +1,10 @@
 Saturday, Dec 5, 2001 John Gibson <johgibso@indiana.edu>
 
-   * Support for MacOS X 10.1 (output only).
-   * New function to see what's actually in a makegen array (fdump).
-   * New Butterworth filter instrument (BUTTER).
+   * Support for MacOS X 10.1 (output only).  Thanks to Christopher
+     Penrose for his help with this.
    * New FM instrument (WIGGLE).
+   * New Butterworth filter instrument (BUTTER).
+   * New function to see what's actually in a makegen array (fdump).
    * New gen 4 function - like setline, but lets you set curvature
      of each segment (derived from ucsd carl src).
    * Optional arguments to gen20 to set min and max.
