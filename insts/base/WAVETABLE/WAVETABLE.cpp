@@ -31,7 +31,8 @@ int WAVETABLE::init(float p[], short n_args)
 
 	wavetable = floc(WAVET_GEN_SLOT);
 	if (wavetable == NULL)
-		die("WAVETABLE", "You need to store a waveform in function 1.");
+		die("WAVETABLE", "You need to store a waveform in function %d.",
+							WAVET_GEN_SLOT);
 	len = fsize(WAVET_GEN_SLOT);
 
 	if (p[3] < 15.0) p[3] = cpspch(p[3]);
