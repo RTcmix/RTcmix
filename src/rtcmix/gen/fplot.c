@@ -6,7 +6,8 @@
 
 extern SFHEADER      sfdesc[NFILES];
  
-fplot(float *p, short n_args)
+double
+fplot(float p[], short n_args)
 {
 	float out[80],si,*f1,phase;
 	int i,k,j,len,wave;
@@ -45,4 +46,6 @@ fplot(float *p, short n_args)
 		puts(line);
 		phase = phase - si;
 	}
+	return 0.0;
 }
+

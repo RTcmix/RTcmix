@@ -32,7 +32,6 @@ float *floc(int genno)
          closesf();
       }
    }
-   else
-      return farrays[index];
+   return farrays[index];
 }
 
