@@ -8,6 +8,7 @@
 #include <assert.h>              /* put this before perl.h */
 #include <EXTERN.h>
 #include <perl.h>
+#include <XSUB.h>
 #include "rtcmix_parse.h"
 
 extern void boot_DynaLoader (CV* cv);
