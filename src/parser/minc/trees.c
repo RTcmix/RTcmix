@@ -992,6 +992,7 @@ exct_subscript_read(Tree tp)
             index = len - 1;
             fltindex = (MincFloat) index;
          }
+		 elem.type = MincVoidType;
 		 copy_listelem_elem(&elem, &theList->data[index]);		 	
 
          /* do linear interpolation for float items */
