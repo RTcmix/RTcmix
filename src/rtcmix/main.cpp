@@ -167,8 +167,10 @@ sigint_handler(int signo)
       rtcloseout();
    }
    else
-      closesf();
+      closesf_noexit();
 
+   fflush(stdout);
+   fflush(stderr);
    exit(1);
 }
 
