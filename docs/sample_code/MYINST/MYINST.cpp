@@ -75,7 +75,7 @@ int MYINST :: init(float p[], short n_args)
    inchan = n_args > 4 ? (int) p[4] : 0;             /* default is chan 0 */
    pctleft = n_args > 5 ? p[5] : 0.5;                /* default is .5 */
 
-   /* Set file pointer on audio output. <nsamps> is number of sample
+   /* Tell scheduler when to start this inst. <nsamps> is number of sample
       frames that will be written to output (dur * SR).
    */
    nsamps = rtsetoutput(outskip, dur, this);

@@ -67,7 +67,7 @@ int MYSYNTH :: init(float p[], short n_args)
    /* Here's how to handle an optional pfield: */
    pctleft = n_args > 3 ? p[3] : 0.5;                /* default is .5 */
 
-   /* Set file pointer on audio output. <nsamps> is number of sample
+   /* Tell scheduler when to start this inst. <nsamps> is number of sample
       frames that will be written to output (dur * SR).
    */
    nsamps = rtsetoutput(outskip, dur, this);
