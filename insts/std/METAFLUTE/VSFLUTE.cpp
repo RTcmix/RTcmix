@@ -1,6 +1,5 @@
 #include <iostream.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "VSFLUTE.h"
 #include <rt.h>
@@ -13,7 +12,7 @@ extern "C" {
 
 VSFLUTE::VSFLUTE() : Instrument()
 {
-	// future setup here?
+	branch = 0;
 }
 
 int VSFLUTE::init(double p[], int n_args)
@@ -28,8 +27,6 @@ int VSFLUTE::init(double p[], int n_args)
 // function slot 3 is the vibrato function for length 1
 // function slot 4 is the vibrato function for length 2
 
-	int imax;
-
 	nsamps = rtsetoutput(p[0], p[1], this);
 
 	dampcoef = .7;
@@ -39,42 +36,34 @@ int VSFLUTE::init(double p[], int n_args)
 		int len = fsize(1);
 		tableset(SR, p[1], len, amptabs);
 	}
-	else {
-		die("VSFLUTE", "You haven't made the noise amp envelope (table 1).");
-		return(DONT_SCHEDULE);
-	}
+	else
+		return die("VSFLUTE", "You haven't made the noise amp envelope (table 1).");
 
 	oamparr = floc(2);
 	if (oamparr) {
 		int len = fsize(2);
 		tableset(SR, p[1], len, oamptabs);
 	}
-	else {
-		die("VSFLUTE", "You haven't made the output amp envelope (table 2).");
-		return(DONT_SCHEDULE);
-	}
+	else
+		return die("VSFLUTE", "You haven't made the output amp envelope (table 2).");
 
 	pcurve1 = floc(3);
-	if (pcurve1 == NULL) {
-		die("VSFLUTE", "You haven't made the vibrato function for "
+	if (pcurve1 == NULL)
+		return die("VSFLUTE", "You haven't made the vibrato function for "
 					"length 1 (table 3).");
-		return(DONT_SCHEDULE);
-	}
 	psize1 = fsize(3);
 	si1lo = p[8] * psize1/SR;
 	si1hi = p[9] * psize1/SR;
 
 	pcurve2 = floc(4);
-	if (pcurve2 == NULL) {
-		die("VSFLUTE", "You haven't made the vibrato function for "
+	if (pcurve2 == NULL)
+		return die("VSFLUTE", "You haven't made the vibrato function for "
 					"length 2 (table 4).");
-		return(DONT_SCHEDULE);
-	}
 	psize2 = fsize(4);
 	si2lo = p[10] * psize2/SR;
 	si2hi = p[11] * psize2/SR;
 
-	imax = DELSIZE;
+	int imax = DELSIZE;
 	mdelset(del1,dl1,imax);
 	mdelset(del2,dl2,imax);
 
@@ -94,53 +83,51 @@ int VSFLUTE::init(double p[], int n_args)
 	phs1 = 0.0;
 	phs2 = 0.0;
 
-	return(nsamps);
+	aamp = oamp = 0.0;
+	si1 = si2 = 0.0;
+
+	return nSamps();
 }
 
 int VSFLUTE::run()
 {
-	int i;
-	float out[2];
-	float aamp=0.,oamp=0.;
-	float sig,del1sig;
-	float length1,length2;
-	float si1=0.,si2=0.;
-	int branch;
-
-	branch = 0;
-	for (i = 0; i < chunksamps; i++) {
-		if (--branch < 0) {
-			aamp = tablei(cursamp, amparr, amptabs);
-			oamp = tablei(cursamp, oamparr, oamptabs);
+	for (int i = 0; i < framesToRun(); i++) {
+		if (--branch <= 0) {
+			aamp = tablei(currentFrame(), amparr, amptabs);
+			oamp = tablei(currentFrame(), oamparr, oamptabs);
 			si1 = ((rrand()+1.0/2.0) * (si1hi - si1lo)) + si1lo;
 			si2 = ((rrand()+1.0/2.0) * (si2hi - si2lo)) + si2lo;
 			branch = skip;
-			}
+		}
 
-		length1 = l1base + (l1span * (oscili(0.5, si1, pcurve1, psize1, &phs1) + 0.5));
-		length2 = l2base + (l2span * (oscili(0.5, si2, pcurve2, psize2, &phs2) + 0.5));
-		sig = (rrand() * namp * aamp) + aamp;
-		del1sig = mdliget(del1,length1,dl1);
+		float length1 = l1base + (l1span
+				* (oscili(0.5, si1, pcurve1, psize1, &phs1) + 0.5));
+		float length2 = l2base + (l2span
+				* (oscili(0.5, si2, pcurve2, psize2, &phs2) + 0.5));
+		float sig = (rrand() * namp * aamp) + aamp;
+		float del1sig = mdliget(del1,length1,dl1);
 		sig = sig + (del1sig * -0.35);
 		delput(sig,del2,dl2);
 
 		sig = mdliget(del2,length2,dl2);
 		sig = (sig * sig * sig) - sig;
 		sig = (0.4 * sig) + (0.9 * del1sig);
+
+		float out[2];
 		out[0] = sig * amp * oamp;
 		sig = (dampcoef * sig) + ((1.0 - dampcoef) * oldsig);
 		oldsig = sig;
 		delput(sig,del1,dl1);
 
-		if (outputchans == 2) {
+		if (outputChannels() == 2) {
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
-			}
+		}
 
 		rtaddout(out);
-		cursamp++;
-		}
-	return i;
+		increment();
+	}
+	return framesToRun();
 }
 
 Instrument*

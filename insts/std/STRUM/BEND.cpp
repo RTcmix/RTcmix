@@ -1,6 +1,5 @@
 #include <iostream.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "BEND.h"
 #include <rt.h>
@@ -24,9 +23,7 @@ int BEND::init(double p[], int n_args)
 // p4 = gliss function; p5 = fundamental decay time; p6 = nyquist decay time;
 // p7 = update every nsamples; p8 = stereo spread [optional]
 
-	float dur;
-
-	dur = p[1];
+	float dur = p[1];
 	nsamps = rtsetoutput(p[0], dur, this);
 
 	strumq1 = curstrumq[0];
@@ -53,45 +50,40 @@ int BEND::init(double p[], int n_args)
 		int leng = fsize((int)p[4]);
 		tableset(SR, p[1],leng,tags);
 	}
-	else {
-		die("BEND", "You haven't made the glissando function (table %d).",
+	else
+		return die("BEND", "You haven't made the glissando function (table %d).",
 						(int)p[4]);
-		return(DONT_SCHEDULE);
-	}
 
 	reset = (int)p[7];
 	if (reset == 0) reset = 100;
 	spread = p[8];
 
-	return(nsamps);
+	return nSamps();
 }
 
 int BEND::run()
 {
-	int i;
-	float freq;
-	float out[2];
-
-	for (i = 0; i < chunksamps; i++) {
-		if (--branch < 0) {
+	for (int i = 0; i < framesToRun(); i++) {
+		if (--branch <= 0) {
 			if (amptable)
-				aamp = tablei(cursamp, amptable, amptabs);
-			freq = diff * tablei(cursamp, glissf, tags) + freq0;
+				aamp = tablei(currentFrame(), amptable, amptabs);
+			float freq = diff * tablei(currentFrame(), glissf, tags) + freq0;
 			sset(freq, tf0, tfN, strumq1);
 			branch = reset;
-			}
+		}
 
+		float out[2];
 		out[0] = strum(0.,strumq1) * aamp;
 
-		if (outputchans == 2) { /* split stereo files between the channels */
+		if (outputChannels() == 2) {
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
-			}
+		}
 
 		rtaddout(out);
-		cursamp++;
+		increment();
 	}
-	return i;
+	return framesToRun();
 }
 
 

@@ -2,10 +2,10 @@
 #include <rtdefs.h>
 
 class MOCKBEND : public Instrument {
-   int    incount, inframe, skip, inchan, get_frame;
+   int    incount, inframe, skip, branch, inchan, get_frame;
    int    in_frames_left;
-   double increment, counter;
-   float  amp, pctleft;
+   double incr, counter;
+   float  amp, aamp, pctleft;
    float  newsig, oldsig, oldersig;
    double *amptable, *pitchtable;
    float  tabs[2], ptabs[2];
@@ -13,7 +13,8 @@ class MOCKBEND : public Instrument {
 public:
    MOCKBEND();
    virtual ~MOCKBEND();
-   int init(double *, int);
-   int run();
+   virtual int init(double *, int);
+   virtual int configure();
+   virtual int run();
 };
 

@@ -12,11 +12,13 @@ class VSFLUTE : public Instrument {
 	float si2lo,si2hi;
 	int psize2;
 	float ampmult, spread;
-	int skip;
+	int skip, branch;
 	float phs1,phs2;
+	float aamp, oamp;
+	float si1, si2;
 
 public:
 	VSFLUTE();
-	int init(double*, int);
-	int run();
-	};
+	virtual int init(double*, int);
+	virtual int run();
+};

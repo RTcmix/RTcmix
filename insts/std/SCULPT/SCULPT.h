@@ -1,12 +1,12 @@
 class SCULPT : public Instrument {
 	double *wave, *amptable, *freqtable, *pamptable;
-	float phase, amp, amptabs[2];
+	float phase, si, amp, aamp, amptabs[2];
 	float spread;
 	int len;
-	int pdur, pcount, index;
+	int pdur, branch, index;
 
 public:
 	SCULPT();
-	int init(double*, int);
-	int run();
-	};
+	virtual int init(double*, int);
+	virtual int run();
+};

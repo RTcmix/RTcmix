@@ -5,10 +5,11 @@ class FRET : public Instrument {
 	float spread, aamp, amptabs[2];
 	double *amptable;
 	strumq *strumq1;
-	int firsttime,branch,skip;
+	int branch,skip;
 
 public:
 	FRET();
-	int init(double*, int);
-	int run();
-	};
+	virtual int init(double*, int);
+	virtual int configure();
+	virtual int run();
+};

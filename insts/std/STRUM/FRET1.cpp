@@ -1,6 +1,4 @@
-#include <iostream.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "FRET1.h"
 #include <rt.h>
@@ -48,7 +46,6 @@ int FRET1::init(double p[], int n_args)
 	amp = p[10];
 	spread = p[11];
 
-	firsttime = 1;
 	d = 0.0;
 
    amptable = floc(1);
@@ -63,44 +60,41 @@ int FRET1::init(double p[], int n_args)
 
 	skip = (int)(SR / (float)resetval);
 
-	return(nsamps);
+	return nSamps();
+}
+
+int FRET1::configure()
+{
+	sset(freq, tf0, tfN, strumq1);
+	delayset(fbpitch, dq);
+	return 0;
 }
 
 int FRET1::run()
 {
-	int i;
-	float out[2];
-	float a,b;
-
-	if (firsttime) {
-		sset(freq, tf0, tfN, strumq1);
-		delayset(fbpitch, dq);
-		firsttime = 0;
-		}
-
-	for (i = 0; i < chunksamps; i++) {
-		if (--branch < 0) {
+	for (int i = 0; i < framesToRun(); i++) {
+		if (--branch <= 0) {
 			if (amptable)
-				aamp = tablei(cursamp, amptable, amptabs) * amp;
+				aamp = tablei(currentFrame(), amptable, amptabs) * amp;
 			branch = skip;
 		}
-		a = strum(d, strumq1);
-		b = dist(dgain*a);
+		float a = strum(d, strumq1);
+		float b = dist(dgain*a);
 		d = fbgain*delay(b, dq);
 
+		float out[2];
 		out[0] = (cleanlevel*a + distlevel*b) * aamp;
 
-		if (outputchans == 2) { /* split stereo files between the channels */
+		if (outputChannels() == 2) { /* split stereo files between the channels */
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
-			}
+		}
 
 		rtaddout(out);
-		cursamp++;
+		increment();
 	}
-	return i;
+	return framesToRun();
 }
-
 
 
 Instrument*

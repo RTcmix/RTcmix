@@ -15,10 +15,11 @@ class VFRET1 : public Instrument {
 	float cleanlevel,distlevel;
 	float d, amptabs[2];
 	int reset;
-	int firsttime;
 
 public:
 	VFRET1();
-	int init(double*, int);
-	int run();
-	};
+	virtual int init(double*, int);
+	virtual int configure();
+	virtual int run();
+};
+

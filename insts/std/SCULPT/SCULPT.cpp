@@ -1,8 +1,6 @@
-#include <iostream.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "SCULPT.h"
 #include <rt.h>
@@ -11,7 +9,7 @@
 
 SCULPT::SCULPT() : Instrument()
 {
-	// future setup here?
+	branch = 0;
 }
 
 int SCULPT::init(double p[], int n_args)
@@ -21,17 +19,13 @@ int SCULPT::init(double p[], int n_args)
 // function slot 2 is waveform, slot 1 is overall amp envelope
 // function slot 3 is frequency points, slot 4 is amplitude points
 
-	float tdur;
-
 	nsamps = rtsetoutput(p[0], p[1]*p[3], this);
-	tdur = p[1] * p[3];
+	float tdur = p[1] * p[3];
 	pdur = (int)(p[1] * SR);
 
 	wave = floc(2);
-	if (wave == NULL) {
-		die("SCULPT", "You need to store a waveform in function 2.");
-		return(DONT_SCHEDULE);
-	}
+	if (wave == NULL)
+		return die("SCULPT", "You need to store a waveform in function 2.");
 	len = fsize(2);
 
 	amptable = floc(1);
@@ -43,58 +37,52 @@ int SCULPT::init(double p[], int n_args)
 		advise("SCULPT", "Setting phrase curve to all 1's.");
 
 	freqtable = floc(3);
-	if (freqtable == NULL) {
-		die("SCULPT",
+	if (freqtable == NULL)
+		return die("SCULPT",
 			"You haven't made the table of frequency points (table 3).");
-		return(DONT_SCHEDULE);
-	}
 
 	pamptable = floc(4);
-	if (pamptable == NULL) {
-		die("SCULPT",
+	if (pamptable == NULL)
+		return die("SCULPT",
 			"You haven't made the table of amplitude points (table 4).");
-		return(DONT_SCHEDULE);
-	}
 
 	amp = p[2];
 	phase = 0.0;
-	pcount = 0;
+	si = 0.0;
 	index = 0;
 
 	spread = p[4];
 
-	return(nsamps);
+	return nSamps();
 }
 
 int SCULPT::run()
 {
-	int i;
-	float out[2];
-	float si=0.;
-	float overamp, aamp=0.;
-
-	overamp = amp;            /* in case amptable == NULL */
-
-	for (i = 0; i < chunksamps; i++) {
-		if (--pcount < 0) {
+	for (int i = 0; i < framesToRun(); i++) {
+		if (--branch <= 0) {
 			si = freqtable[index] * (float)len/SR;
+			float overamp;
 			if (amptable)
 				overamp = table(cursamp, amptable, amptabs) * amp;
+			else
+				overamp = amp;
 			aamp = ampdb(60.0 + pamptable[index]) * overamp;
 			index++;
-			pcount = pdur;
-			}
+			branch = pdur;
+		}
+
+		float out[2];
 		out[0] = oscil(aamp, si, wave, len, &phase);
 
-		if (outputchans == 2) { /* split stereo files between the channels */
+		if (outputChannels() == 2) { /* split stereo files between the channels */
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
-			}
+		}
 
 		rtaddout(out);
-		cursamp++;
+		increment();
 	}
-	return i;
+	return framesToRun();
 }
 
 

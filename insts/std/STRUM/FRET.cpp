@@ -1,6 +1,4 @@
-#include <iostream.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "FRET.h"
 #include <rt.h>
@@ -33,7 +31,6 @@ int FRET::init(double p[], int n_args)
 	tfN = p[4];
 
 	spread = p[5];
-	firsttime = 1;
 
    amptable = floc(1);
 	if (amptable) {
@@ -47,37 +44,36 @@ int FRET::init(double p[], int n_args)
 
 	skip = (int)(SR / (float)resetval);
 
-	return(nsamps);
+	return nSamps();
+}
+
+int FRET::configure()
+{
+	sset(freq, tf0, tfN, strumq1);
+	return 0;
 }
 
 int FRET::run()
 {
-	int i;
-	float out[2];
-
-	if (firsttime) {
-		sset(freq, tf0, tfN, strumq1);
-		firsttime = 0;
-		}
-
-	for (i = 0; i < chunksamps; i++) {
-		if (--branch < 0) {
+	for (int i = 0; i < framesToRun(); i++) {
+		if (--branch <= 0) {
 			if (amptable)
-				aamp = tablei(cursamp, amptable, amptabs);
+				aamp = tablei(currentFrame(), amptable, amptabs);
 			branch = skip;
 		}
 
+		float out[2];
 		out[0] = strum(0.,strumq1) * aamp;
 
-		if (outputchans == 2) { /* split stereo files between the channels */
+		if (outputChannels() == 2) { /* split stereo files between the channels */
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
-			}
+		}
 
 		rtaddout(out);
-		cursamp++;
+		increment();
 	}
-	return i;
+	return framesToRun();
 }
 
 

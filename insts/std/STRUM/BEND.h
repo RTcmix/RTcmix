@@ -11,6 +11,6 @@ class BEND : public Instrument {
 
 public:
 	BEND();
-	int init(double*, int);
-	int run();
-	};
+	virtual int init(double*, int);
+	virtual int run();
+};

@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "CLAR.h"
 #include <rt.h>
@@ -14,7 +13,7 @@ extern "C" {
 
 CLAR::CLAR() : Instrument()
 {
-	// future setup here?
+	branch = 0;
 }
 
 int CLAR::init(double p[], int n_args)
@@ -62,56 +61,50 @@ int CLAR::init(double p[], int n_args)
 	spread = p[7];
 	skip = (int)(SR/(float)resetval);
 
-	return(nsamps);
+	aamp = oamp = 1.0;        /* in case amparr or oamparr are NULL */
+
+	return nSamps();
 }
 
 int CLAR::run()
 {
-	int i;
-	float out[2];
-	float aamp,oamp;
-	float sig,del1sig;
-	float del2sig,csig,ssig;
-	int branch;
-
-	aamp = oamp = 1.0;        /* in case amparr or oamparr are NULL */
-
-	branch = 0;
-	for (i = 0; i < chunksamps; i++) {
-		if (--branch < 0) {
+	for (int i = 0; i < framesToRun(); i++) {
+		if (--branch <= 0) {
 			if (amparr)
-				aamp = table(cursamp, amparr, amptabs);
+				aamp = table(currentFrame(), amparr, amptabs);
 			if (oamparr)
-				oamp = tablei(cursamp, oamparr, oamptabs);
+				oamp = tablei(currentFrame(), oamparr, oamptabs);
 			branch = skip;
-			}
+		}
 
-		sig = (rrand() * namp * aamp) + aamp;
-		del1sig = mdelget(del1,length1,dl1);
-		del2sig = mdelget(del2,length2,dl2);
+		float sig = (rrand() * namp * aamp) + aamp;
+		float del1sig = mdelget(del1,length1,dl1);
+		float del2sig = mdelget(del2,length2,dl2);
 		if (del1sig > 1.0) del1sig = 1.0;
 		if (del1sig < -1.0) del1sig = -1.0;
 		if (del2sig > 1.0) del2sig = 1.0;
 		if (del2sig < -1.0) del2sig = -1.0;
 		sig = sig + 0.9 * ((d2gain * del2sig) + ((0.9-d2gain) * del1sig));
-		csig = -0.5 * sig + aamp;
-		ssig = sig * sig;
+		float csig = -0.5 * sig + aamp;
+		float ssig = sig * sig;
 		sig = (0.3 * ssig) + (-0.8 * (sig * ssig));
 		sig = sig + csig;
 		sig = (0.7 * sig) + (0.3 * oldsig);
 		oldsig = sig;
 		delput(sig,del2,dl2);
 		delput(sig,del1,dl1);
+
+		float out[2];
 		out[0] = sig * amp * oamp;
-		if (outputchans == 2) {
+		if (outputChannels() == 2) {
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
-			}
+		}
 
 		rtaddout(out);
-		cursamp++;
-		}
-	return i;
+		increment();
+	}
+	return framesToRun();
 }
 
 

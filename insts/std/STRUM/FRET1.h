@@ -10,10 +10,11 @@ class FRET1 : public Instrument {
 	float cleanlevel,distlevel;
 	float d, amptabs[2];
 	double *amptable;
-	int firsttime,branch,skip;
+	int branch,skip;
 
 public:
 	FRET1();
-	int init(double*, int);
-	int run();
-	};
+	virtual int init(double*, int);
+	virtual int configure();
+	virtual int run();
+};

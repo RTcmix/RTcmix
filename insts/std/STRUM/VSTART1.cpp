@@ -1,8 +1,6 @@
-#include <iostream.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "VSTART1.h"
 #include <rt.h>
@@ -48,8 +46,6 @@ int VSTART1::init(double p[], int n_args)
 // assumes makegen 1 is the amplitude envelope, makegen 2 is the vibrato
 // function, and makegen 3 is the vibrato amplitude envelope
 
-	int elen;
-
 	nsamps = rtsetoutput(p[0], p[1], this);
 
 	strumq1 = new strumq;
@@ -77,10 +73,8 @@ int VSTART1::init(double p[], int n_args)
 	}
 
 	vloc = floc(2);
-	if (vloc == NULL) {
-		die("VSTART1", "You need to store a vibrato function in gen num. 2.");
-		return(DONT_SCHEDULE);
-	}
+	if (vloc == NULL)
+		return die("VSTART1", "You need to store a vibrato function in gen num. 2.");
 	vlen = fsize(2);
 
 	vsibot = p[12] * (float)vlen/SR;
@@ -91,11 +85,9 @@ int VSTART1::init(double p[], int n_args)
 	vphase = 0.0;
 
 	eloc = floc(3);
-	if (eloc == NULL) {
-		die("VSTART1", "You need to store a vibrato amp. envelope in gen num. 3.");
-		return(DONT_SCHEDULE);
-	}
-	elen = fsize(3);
+	if (eloc == NULL)
+		return die("VSTART1", "You need to store a vibrato amp. envelope in gen num. 3.");
+	int elen = fsize(3);
 	tableset(SR, p[1], elen, tab);
 
 	dgain = p[5];
@@ -110,49 +102,44 @@ int VSTART1::init(double p[], int n_args)
 
 	d = 0.0;
 
-	return(nsamps);
+	return nSamps();
 }
 
 int VSTART1::run()
 {
-	int i;
-	float out[2];
-	float a,b;
-	float vamp;
-	float freqch;
-
-	for (i = 0; i < chunksamps; i++) {
-		if (--branch1 < 0) {
+	for (int i = 0; i < framesToRun(); i++) {
+		if (--branch1 <= 0) {
 			vsi = (( (rrand()+1.0)/2.0) * vsidiff) + vsibot;
 			branch1 = (int)((float)vlen/vsi);
-			}
-		if (--branch2 < 0) {
+		}
+		if (--branch2 <= 0) {
 			if (amptable)
-				aamp = tablei(cursamp, amptable, amptabs) * amp;
-			vamp = tablei(cursamp, eloc, tab) * vdepth;
-			freqch = oscili(vamp,vsi,vloc,vlen,&vphase);
+				aamp = tablei(currentFrame(), amptable, amptabs) * amp;
+			float vamp = tablei(currentFrame(), eloc, tab) * vdepth;
+			float freqch = oscili(vamp,vsi,vloc,vlen,&vphase);
 			sset(freq+freqch, tf0, tfN, strumq1);
 			branch2 = reset;
 			vphase += (float)branch2 * vsi;
 			while (vphase >= (float) vlen)
 				vphase -= (float) vlen;
-			}
+		}
 
-		a = strum(d, strumq1);
-		b = dist(dgain*a);
+		float a = strum(d, strumq1);
+		float b = dist(dgain*a);
 		d = fbgain*delay(b, dq);
 
+		float out[2];
 		out[0] = (cleanlevel*a + distlevel*b) * aamp;
 
-		if (outputchans == 2) { /* split stereo files between the channels */
+		if (outputChannels() == 2) { /* split stereo files between the channels */
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
-			}
+		}
 
 		rtaddout(out);
-		cursamp++;
+		increment();
 	}
-	return i;
+	return framesToRun();
 }
 
 

@@ -14,6 +14,6 @@ class START1 : public Instrument {
 public:
 	START1();
 	virtual ~START1();
-	int init(double*, int);
-	int run();
-	};
+	virtual int init(double*, int);
+	virtual int run();
+};

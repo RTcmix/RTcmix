@@ -6,10 +6,11 @@ class LSFLUTE : public Instrument {
 	double *amparr, *oamparr;
 	float amptabs[2], oamptabs[2];
 	float ampmult, spread;
-	int skip;
+	float aamp, oamp;
+	int skip, branch;
 
 public:
 	LSFLUTE();
-	int init(double*, int);
-	int run();
-	};
+	virtual int init(double*, int);
+	virtual int run();
+};

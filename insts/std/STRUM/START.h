@@ -1,14 +1,14 @@
 #include "strums.h"
 
 class START : public Instrument {
-	float spread, amptabs[2];
+	float spread, aamp, amptabs[2];
 	double *amptable;
 	strumq *strumq1;
-	int deleteflag, skip;
+	int deleteflag, skip, branch;
 
 public:
 	START();
 	virtual ~START();
-	int init(double*, int);
-	int run();
-	};
+	virtual int init(double*, int);
+	virtual int run();
+};

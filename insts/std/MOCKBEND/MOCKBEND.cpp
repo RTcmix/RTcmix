@@ -30,7 +30,6 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include "MOCKBEND.h"
 #include <rt.h>
 
@@ -66,6 +65,8 @@ MOCKBEND :: MOCKBEND() : Instrument()
 
    //BUFAMP INIT
    //bufamp = 0.0;
+
+   branch = 0;
 }
 
 
@@ -77,20 +78,14 @@ MOCKBEND :: ~MOCKBEND()
 
 int MOCKBEND :: init(double p[], int n_args)
 {
-   float outskip, inskip, dur, transp, interval = 0, total_indur, dur_to_read;
-   float averageInc;
-   int pgen, rvin;
+   if (n_args < 5)
+      return die("MOCKBEND", "Wrong number of args.");
 
-   if (n_args < 5) {
-      die("MOCKBEND", "Wrong number of args.");
-		return(DONT_SCHEDULE);
-	}
-
-   outskip = p[0];
-   inskip = p[1];
-   dur = p[2];
+   float outskip = p[0];
+   float inskip = p[1];
+   float dur = p[2];
    amp = p[3];
-   pgen = (int) p[4];
+   int pgen = (int) p[4];
    inchan = (n_args > 5) ? (int) p[5] : 0;
    pctleft = (n_args > 6) ? p[6] : 0.5;
 
@@ -98,16 +93,14 @@ int MOCKBEND :: init(double p[], int n_args)
       dur = -dur - inskip;
 
    nsamps = rtsetoutput(outskip, dur, this);
-   rvin = rtsetinput(inskip, this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
+   if (rtsetinput(inskip, this) == -1)
+		return DONT_SCHEDULE;   // no input
 
-   if (inchan >= inputchans) {
-      die("MOCKBEND", "You asked for channel %d of a %d-channel file.",
-                                                       inchan, inputchans);
-		return(DONT_SCHEDULE);
-	}
+   if (inchan >= inputChannels())
+      return die("MOCKBEND", "You asked for channel %d of a %d-channel file.",
+                                                    inchan, inputChannels());
+
+   float interval = 0;
    pitchtable = floc(pgen);
    if (pitchtable) {
       int plen = fsize(pgen);
@@ -122,16 +115,14 @@ int MOCKBEND :: init(double p[], int n_args)
 #endif
       tableset(SR, dur, plen, ptabs);
    }
-   else {
-      die("MOCKBEND", "Unable to load pitch curve!");
-		return(DONT_SCHEDULE);
-	}
+   else
+      return die("MOCKBEND", "Unable to load pitch curve!");
 
-   averageInc = (double) cpsoct(10.0 + interval) / cpsoct(10.0);
+   float averageInc = (double) cpsoct(10.0 + interval) / cpsoct(10.0);
 
 #ifdef NOTYET
-   total_indur = (float) m_DUR(NULL, 0);
-   dur_to_read = dur * averageInc;
+   float total_indur = (float) m_DUR(NULL, 0);
+   float dur_to_read = dur * averageInc;
    if (inskip + dur_to_read > total_indur) {
       warn("MOCKBEND", "This note will read off the end of the input file.\n"
                     "You might not get the envelope decay you "
@@ -151,21 +142,29 @@ int MOCKBEND :: init(double p[], int n_args)
       int amplen = fsize(1);
       tableset(SR, dur, amplen, tabs);
    }
-   else
+   else {
       advise("MOCKBEND", "Setting phrase curve to all 1's.");
+      aamp = amp;
+   }
 
    skip = (int) (SR / (float) resetval);
 
-   return nsamps;
+   return nSamps();
+}
+
+
+int MOCKBEND :: configure()
+{
+   in = new float[inputChannels() * RTBUFSAMPS];
+   return in ? 0 : -1;
 }
 
 
 int MOCKBEND :: run()
 {
-   const int out_frames = chunksamps;
-   int       i, branch = 0, ibranch = 0;
-   float     aamp, *outp;
-   double    frac;
+   const int out_frames = framesToRun();
+   int       ibranch = 0;
+   float     *outp;
    const float cpsoct10 = cpsoct(10.0);
 
    //UGLY HACK
@@ -183,24 +182,17 @@ int MOCKBEND :: run()
    printf("out_frames: %d  in_frames_left: %d\n", out_frames, in_frames_left);
 #endif
 
-   /* If this is first call to run, allocate input buffer, which
-      must persist across calls to run.
-   */
-   if (in == NULL)
-      in = new float[inputchans * RTBUFSAMPS];
-
-   aamp = amp;                  /* in case amptable == NULL */
    outp = outbuf;               /* point to inst private out buffer */
 
-   for (i = 0; i < out_frames; i++) {
-      if (--branch < 0) {
+   for (int i = 0; i < out_frames; i++) {
+      if (--branch <= 0) {
          if (amptable)
-            aamp = table(cursamp, amptable, tabs) * amp;
+            aamp = table(currentFrame(), amptable, tabs) * amp;
          branch = skip;
       }
       while (get_frame) {
          if (inframe >= RTBUFSAMPS) {
-            rtgetin(in, this, RTBUFSAMPS * inputchans);
+            rtgetin(in, this, RTBUFSAMPS * inputChannels());
 
             in_frames_left -= RTBUFSAMPS;
 #ifdef DEBUG
@@ -212,7 +204,7 @@ int MOCKBEND :: run()
          oldersig = oldsig;
          oldsig = newsig;
 
-         newsig = in[(inframe * inputchans) + inchan];
+         newsig = in[(inframe * inputChannels()) + inchan];
 
          inframe++;
          incount++;
@@ -245,31 +237,31 @@ int MOCKBEND :: run()
              i, inframe, aamp, bufampABC);
      printf("interping %g, %g, %g => %g\n", oldersig, oldsig, newsig, outp[0]);
 */
-      frac = (counter - (double) incount) + 2.0;
+      double frac = (counter - (double) incount) + 2.0;
       outp[0] = interp(oldersig, oldsig, newsig, frac) * (aamp * bufampABC); //* BUFFER ENVELOPE
       //outp[0] = interp(oldersig, oldsig, newsig, frac) * aamp;
 
 #ifdef DEBUG_FULL
       printf("i: %d counter: %g incount: %d frac: %g inframe: %d cursamp: %d\n",
-             i, counter, incount, frac, inframe, cursamp);
+             i, counter, incount, frac, inframe, currentFrame());
       printf("interping %g, %g, %g => %g\n", oldersig, oldsig, newsig, outp[0]);
 #endif
 
-      if (outputchans == 2) {
+      if (outputChannels() == 2) {
          outp[1] = outp[0] * (1.0 - pctleft);
          outp[0] *= pctleft;
       }
 
-      outp += outputchans;
-      cursamp++;
+      outp += outputChannels();
+      increment();
 
-      if (--ibranch < 0) {
-		  float interval = table(cursamp, pitchtable, ptabs);
-	      increment = (double) cpsoct(10.0 + interval) / cpsoct10;
-          ibranch = 20;
+      if (--ibranch <= 0) {
+		   float interval = table(currentFrame(), pitchtable, ptabs);
+	      incr = (double) cpsoct(10.0 + interval) / cpsoct10;
+         ibranch = 20;
       }
 
-      counter += increment;         /* keeps track of interp pointer */
+      counter += incr;         /* keeps track of interp pointer */
       if (counter - (double) incount >= -0.5)
          get_frame = 1;
    }
@@ -278,7 +270,7 @@ int MOCKBEND :: run()
    printf("OUT %d frames\n\n", i);
 #endif
 
-   return i;
+   return framesToRun();
 }
 
 

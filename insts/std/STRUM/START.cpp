@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "START.h"
 #include <rt.h>
@@ -17,7 +16,7 @@ extern "C" {
 
 START::START() : Instrument()
 {
-	// future setup here?
+	branch = 0;
 }
 
 START::~START()
@@ -33,16 +32,13 @@ START::~START()
 
 int START::init(double p[], int n_args)
 {
-	int	squish;
-	float outskip, dur, pitch, fdecay, nydecay, amp, freq;
-
-	outskip = p[0];
-	dur = p[1];
-	pitch = p[2];
-	fdecay = p[3];
-	nydecay = p[4];
-	amp = p[5];
-	squish = (int)p[6];
+	float outskip = p[0];
+	float dur = p[1];
+	float pitch = p[2];
+	float fdecay = p[3];
+	float nydecay = p[4];
+	float amp = p[5];
+	int squish = (int)p[6];
 	spread = p[7];
 	deleteflag = (int)p[8];
 
@@ -50,7 +46,7 @@ int START::init(double p[], int n_args)
 
 	strumq1 = new strumq;
 	curstrumq[0] = strumq1;
-	freq = cpspch(pitch);
+	float freq = cpspch(pitch);
 	sset(freq, fdecay, nydecay, strumq1);
 	randfill(amp, squish, strumq1);
 
@@ -59,39 +55,37 @@ int START::init(double p[], int n_args)
 		int amplen = fsize(1);
 		tableset(SR, dur, amplen, amptabs);
 	}
-	else
+	else {
 		advise("START", "Setting phrase curve to all 1's.");
+		aamp = 1.0;
+	}
 
 	skip = (int)(SR / (float)resetval);
 
-	return(nsamps);
+	return nSamps();
 }
 
 int START::run()
 {
-	int i, branch;
-	float aamp, out[2];
-
-	aamp = 1.0;                  /* in case amptable == NULL */
-
-	branch = 0;
-	for (i = 0; i < chunksamps; i++) {
-		if (--branch < 0) {
+	for (int i = 0; i < framesToRun(); i++) {
+		if (--branch <= 0) {
 			if (amptable)
-				aamp = tablei(cursamp, amptable, amptabs);
+				aamp = tablei(currentFrame(), amptable, amptabs);
 			branch = skip;
 		}
+
+		float out[2];
 		out[0] = strum(0.,strumq1) * aamp;
 
-		if (outputchans == 2) { /* split stereo files between the channels */
+		if (outputChannels() == 2) { /* split stereo files between the channels */
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
-			}
+		}
 
 		rtaddout(out);
-		cursamp++;
+		increment();
 	}
-	return i;
+	return framesToRun();
 }
 
 Instrument*

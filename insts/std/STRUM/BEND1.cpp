@@ -1,6 +1,5 @@
 #include <iostream.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "BEND1.h"
 #include <rt.h>
@@ -61,11 +60,9 @@ int BEND1::init(double p[], int n_args)
 		int leng = fsize((int)p[4]);
 		tableset(SR, p[1],leng,tags);
 	}
-	else {
-		die("BEND1", "You haven't made the glissando function (table %d).",
+	else
+		return die("BEND1", "You haven't made the glissando function (table %d).",
 						(int)p[4]);
-		return(DONT_SCHEDULE);
-	}
 
 	dgain = p[7];
 	fbgain = p[8]/dgain;
@@ -77,40 +74,36 @@ int BEND1::init(double p[], int n_args)
 
 	d = 0.0;
 
-	return(nsamps);
+	return nSamps();
 }
 
 int BEND1::run()
 {
-	int i;
-	float out[2];
-	float freq;
-	float a,b;
-
-	for (i = 0; i < chunksamps; i++) {
-		if (--branch < 0) {
+	for (int i = 0; i < framesToRun(); i++) {
+		if (--branch <= 0) {
 			if (amptable)
-				aamp = tablei(cursamp, amptable, amptabs) * amp;
-			freq = diff * tablei(cursamp, glissf, tags) + freq0;
+				aamp = tablei(currentFrame(), amptable, amptabs) * amp;
+			float freq = diff * tablei(currentFrame(), glissf, tags) + freq0;
 			sset(freq, tf0, tfN, strumq1);
 			branch = reset;
-			}
+		}
 
-		a = strum(d, strumq1);
-		b = dist(dgain*a);
+		float a = strum(d, strumq1);
+		float b = dist(dgain*a);
 		d = fbgain*delay(b, dq);
 
+		float out[2];
 		out[0] = (cleanlevel*a + distlevel*b) * aamp;
 
-		if (outputchans == 2) { /* split stereo files between the channels */
+		if (outputChannels() == 2) { /* split stereo files between the channels */
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
-			}
+		}
 
 		rtaddout(out);
-		cursamp++;
+		increment();
 	}
-	return i;
+	return framesToRun();
 }
 
 

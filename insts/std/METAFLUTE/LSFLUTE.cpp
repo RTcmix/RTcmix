@@ -20,7 +20,7 @@ extern "C" {
 
 LSFLUTE::LSFLUTE() : Instrument()
 {
-	// future setup here?
+	branch = 0;
 }
 
 int LSFLUTE::init(double p[], int n_args)
@@ -29,8 +29,6 @@ int LSFLUTE::init(double p[], int n_args)
 // p5 = amp multiplier; p6 = stereo spread (0-1) <optional>
 // function slot 1 is the noise amp envelope
 // function slot 2 is the out amp envelope
-
-//	int imax;
 
 	nsamps = rtsetoutput(p[0], p[1], this);
 
@@ -41,22 +39,18 @@ int LSFLUTE::init(double p[], int n_args)
 		int len = fsize(1);
 		tableset(SR, p[1], len, amptabs);
 	}
-	else {
-		die("LSFLUTE", "You haven't made the noise amp envelope (table 1).");
-		return(DONT_SCHEDULE);
-	}
+	else
+		return die("LSFLUTE", "You haven't made the noise amp envelope (table 1).");
 
 	oamparr = floc(2);
 	if (oamparr) {
 		int len = fsize(2);
 		tableset(SR, p[1], len, oamptabs);
 	}
-	else {
-		die("LSFLUTE", "You haven't made the output amp envelope (table 2).");
-		return(DONT_SCHEDULE);
-	}
+	else
+		return die("LSFLUTE", "You haven't made the output amp envelope (table 2).");
 
-//	imax = DELSIZE;
+//	int imax = DELSIZE;
 //	mdelpartset(del1ptr,dl1ptr,imax);
 //	mdelpartset(del2ptr,dl2ptr,imax);
 
@@ -71,51 +65,48 @@ int LSFLUTE::init(double p[], int n_args)
 	spread = p[6];
 	skip = (int)(SR/(float)resetval);
 
-	return(nsamps);
+	aamp = oamp = 0.0;
+
+	return nSamps();
 }
 
 int LSFLUTE::run()
 {
-	int i;
-	float out[2];
-	float aamp=0.,oamp=0.;
-	float sig,del1sig;
-	int branch;
-
-	branch = 0;
-	for (i = 0; i < chunksamps; i++) {
+	for (int i = 0; i < framesToRun(); i++) {
 		if (olength1 < length1) olength1++;
 		if (olength1 > length1) olength1--;
 		if (olength2 < length2) olength2++;
 		if (olength2 > length2) olength2--;
-		if (--branch < 0) {
-			aamp = tablei(cursamp, amparr, amptabs);
-			oamp = tablei(cursamp, oamparr, oamptabs);
+		if (--branch <= 0) {
+			aamp = tablei(currentFrame(), amparr, amptabs);
+			oamp = tablei(currentFrame(), oamparr, oamptabs);
 			branch = skip;
-			}
+		}
 
-		sig = (rrand() * namp * aamp) + aamp;
-		del1sig = mdelget(del1ptr,olength1,dl1ptr);
+		float sig = (rrand() * namp * aamp) + aamp;
+		float del1sig = mdelget(del1ptr,olength1,dl1ptr);
 		sig = sig + (del1sig * -0.35);
 		delput(sig,del2ptr,dl2ptr);
 
 		sig = mdelget(del2ptr,olength2,dl2ptr);
 		sig = (sig * sig * sig) - sig;
 		sig = (0.4 * sig) + (0.9 * del1sig);
+
+		float out[2];
 		out[0] = sig * amp * oamp;
 		sig = (dampcoef * sig) + ((1.0 - dampcoef) * oldsig);
 		oldsig = sig;
 		delput(sig,del1ptr,dl1ptr);
 
-		if (outputchans == 2) {
+		if (outputChannels() == 2) {
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
-			}
+		}
 
 		rtaddout(out);
-		cursamp++;
-		}
-	return i;
+		increment();
+	}
+	return framesToRun();
 }
 
 Instrument*

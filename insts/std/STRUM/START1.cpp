@@ -1,6 +1,4 @@
-#include <iostream.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "START1.h"
 #include <rt.h>
@@ -41,13 +39,13 @@ int START1::init(double p[], int n_args)
 // p12 = stereo spread [optional]
 // p13 = flag for deleting pluck arrays (used by FRET, BEND, etc.) [optional]
 
-	float freq, dur = p[1];
+	float dur = p[1];
 
 	nsamps = rtsetoutput(p[0], dur, this);
 	 
 	strumq1 = new strumq;
 	curstrumq[0] = strumq1;
-	freq = cpspch(p[2]);
+	float freq = cpspch(p[2]);
 	sset(freq, p[3], p[4], strumq1);
 	randfill(1.0, (int)p[11], strumq1);
 
@@ -78,38 +76,34 @@ int START1::init(double p[], int n_args)
 
 	skip = (int)(SR / (float)resetval);
 
-	return(nsamps);
+	return nSamps();
 }
 
 int START1::run()
 {
-	int i;
-	float out[2];
-	float a,b;
-
-	for (i = 0; i < chunksamps; i++) {
-		if (--branch < 0) {
+	for (int i = 0; i < framesToRun(); i++) {
+		if (--branch <= 0) {
 			if (amptable)
-				aamp = tablei(cursamp, amptable, amptabs) * amp;
+				aamp = tablei(currentFrame(), amptable, amptabs) * amp;
 			branch = skip;
 		}
-		a = strum(d, strumq1);
-		b = dist(dgain*a);
+		float a = strum(d, strumq1);
+		float b = dist(dgain*a);
 		d = fbgain*delay(b, dq);
 
+		float out[2];
 		out[0] = (cleanlevel*a + distlevel*b) * aamp;
 
-		if (outputchans == 2) { /* split stereo files between the channels */
+		if (outputChannels() == 2) { /* split stereo files between the channels */
 			out[1] = (1.0 - spread) * out[0];
 			out[0] *= spread;
-			}
+		}
 
 		rtaddout(out);
-		cursamp++;
+		increment();
 	}
-	return i;
+	return framesToRun();
 }
-
 
 
 Instrument*
