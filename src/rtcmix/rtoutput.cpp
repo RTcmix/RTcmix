@@ -116,7 +116,7 @@ static Param param_list[] = {
    { DATA_FORMAT,  MUS_BFLOAT,   "float"     },
    { DATA_FORMAT,  MUS_BFLOAT,   "normfloat" },
    { DATA_FORMAT,  MUS_BSHORT,   "16"        },
-   { DATA_FORMAT,  MUS_B24INT,   "24"        },    /* not yet supported */
+   { DATA_FORMAT,  MUS_B24INT,   "24"        },
    { ENDIANNESS,   0,            "big"       },    /* not implemented */
    { ENDIANNESS,   1,            "little"    }
 };

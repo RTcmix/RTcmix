@@ -202,7 +202,8 @@ open_sound_file(
    }
 
    if (!SUPPORTED_DATA_FORMAT(*data_format)) {
-      rterror("rtinput", "Can read only 16-bit integer and 32-bit float files.");
+      rterror("rtinput",
+        "Can read only 16-bit integer, 24-bit integer and 32-bit float files.");
       sndlib_close(fd, 0, 0, 0, 0);
 	  return -1;
    }

@@ -265,6 +265,95 @@ read_float_samps(
 }
 
 
+/* ----------------------------------------------------- read_24bit_samps --- */
+static int
+read_24bit_samps(
+      int         fd,               /* file descriptor for open input file */
+      int         data_format,      /* sndlib data format of input file */
+      int         file_chans,       /* total chans in input file */
+      BufPtr      dest,             /* interleaved buffer from inst */
+      int         dest_chans,       /* number of chans interleaved */
+      int         dest_frames,      /* frames in interleaved buffer */
+      const short src_chan_list[],  /* list of in-bus chan numbers from inst */
+                                    /* (or NULL to fill all chans) */
+      short       src_chans         /* number of in-bus chans to copy */
+      )
+{
+   int            seeked, src_samps, src_bytes, swap, bytes_per_samp;
+   ssize_t        bytes_to_read, bytes_read;
+   unsigned char  *bufp;
+   static unsigned char *cbuf = NULL;
+   
+   bytes_per_samp = 3;         /* 24-bit int */
+
+   if (cbuf == NULL) {     /* 1st time, so allocate interleaved char buffer */
+      size_t nbytes = RTBUFSAMPS * MAXCHANS * bytes_per_samp;
+      cbuf = (unsigned char *) malloc(nbytes);
+      if (cbuf == NULL) {
+         perror("read_24bit_samps (malloc)");
+         exit(1);
+      }
+   }
+   bufp = cbuf;
+
+   bytes_to_read = dest_frames * file_chans * bytes_per_samp;
+
+   while (bytes_to_read > 0) {
+      bytes_read = read(fd, bufp, bytes_to_read);
+      if (bytes_read == -1) {
+         perror("read_24bit_samps (read)");
+         exit(1);
+      }
+      if (bytes_read == 0)          /* EOF */
+         break;
+
+      bufp += bytes_read;
+      bytes_to_read -= bytes_read;
+   }
+
+   /* If we reached EOF, zero out remaining part of buffer that we
+      expected to fill.
+   */
+   while (bytes_to_read > 0) {
+      *bufp++ = 0;
+      bytes_to_read--;
+   }
+
+   /* Copy interleaved file buffer to dest buffer, with bus mapping. */
+
+   src_samps = dest_frames * file_chans;
+
+   for (int n = 0; n < dest_chans; n++) {
+#ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT
+      int chan = n;
+#else
+      int chan = src_chan_list? src_chan_list[n] : n;
+#endif
+      int i = chan * bytes_per_samp;
+      int incr = file_chans * bytes_per_samp;
+      src_bytes = src_samps * bytes_per_samp;
+      if (data_format == MUS_L24INT) {
+         for (int j = n; i < src_bytes; i += incr, j += dest_chans) {
+            int samp = (int) (((cbuf[i + 2] << 24)
+                             + (cbuf[i + 1] << 16)
+                             + (cbuf[i] << 8)) >> 8);
+            dest[j] = (BUFTYPE) samp / (BUFTYPE) (1 << 8);
+         }
+      }
+      else {   /* data_format == MUS_B24INT */
+         for (int j = n; i < src_bytes; i += incr, j += dest_chans) {
+            int samp = (int) (((cbuf[i] << 24)
+                             + (cbuf[i + 1] << 16)
+                             + (cbuf[i + 2] << 8)) >> 8);
+            dest[j] = (BUFTYPE) samp / (BUFTYPE) (1 << 8);
+         }
+      }
+   }
+
+   return 0;
+}
+
+
 /* ----------------------------------------------------- read_short_samps --- */
 static int
 read_short_samps(
@@ -375,6 +464,11 @@ read_samps(
                                 dest, dest_chans, dest_frames,
                                 NULL, 0);
    }
+   else if (IS_24BIT_FORMAT(data_format)) {
+      status = read_24bit_samps(fd, data_format, file_chans,
+                                dest, dest_chans, dest_frames,
+                                NULL, 0);
+   }
    else {
       status = read_short_samps(fd, data_format, file_chans,
                                 dest, dest_chans, dest_frames,
@@ -417,6 +511,11 @@ get_file_in(
 
    if (inputFileTable[fdIndex].is_float_format) {
       status = read_float_samps(fd, data_format, file_chans,
+                                dest, dest_chans, dest_frames,
+                                src_chan_list, src_chans);
+   }
+   else if (IS_24BIT_FORMAT(data_format)) {
+      status = read_24bit_samps(fd, data_format, file_chans,
                                 dest, dest_chans, dest_frames,
                                 src_chan_list, src_chans);
    }
