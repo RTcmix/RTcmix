@@ -56,6 +56,8 @@ clean:
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) clean; ) \
 	done
 
+cleanall: clean
+
 depend:
 ifeq ($(ARCH),LINUX)
 	-$(SHELL) -ec '$(CC) -M $(CFLAGS) $(SRCS)' > depend
