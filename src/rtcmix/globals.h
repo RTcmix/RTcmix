@@ -20,7 +20,7 @@
 #ifdef __cplusplus
 
 #include "../rtstuff/heap/heap.h"
-GLOBAL rtQueue rtQueue[MAXBUS+2];
+GLOBAL rtQueue rtQueue[MAXBUS*3];
 GLOBAL heap rtHeap;  // DT:  main heap structure used to queue instruments
                      // formerly Qobject *rtqueue[];
 extern "C" {
@@ -93,10 +93,13 @@ typedef enum {
   TO_AUX,
   AUX_TO_AUX,
   TO_OUT,
+  TO_AUX_AND_OUT,
   UNKNOWN
 } IBusClass;
 
-GLOBAL short AuxPlayList[MAXBUS]; /* The playback order for AUX buses */
+GLOBAL short AuxToAuxPlayList[MAXBUS]; /* The playback order for AUX buses */
+GLOBAL short ToOutPlayList[MAXBUS]; /* The playback order for AUX buses */
+GLOBAL short ToAuxPlayList[MAXBUS]; /* The playback order for AUX buses */
 
 /* -------------------------------------------------------------------------- */
 /* rtupdate stuff */
