@@ -51,7 +51,7 @@ double checkInsts(char *fname, double *pp, int n_args)
 			
 			Iptr = (*(rt_p->rt_ptr))();
 
-			Iptr->init(p, (short) n_args);
+			Iptr->init(p, n_args);
 
 			/* schedule instrument */
 

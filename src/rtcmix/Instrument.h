@@ -44,7 +44,7 @@ public:
    Instrument();
    virtual ~Instrument();
    void set_bus_config(const char *);
-   virtual int init(float *, short);
+   virtual int init(float *, int);
    virtual int run();
 
    void exec(BusType bus_type, int bus);

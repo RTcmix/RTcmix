@@ -96,7 +96,7 @@ void Instrument :: set_bus_config(const char *inst_name)
 
 
 /* ----------------------------------------------------------------- init --- */
-int Instrument :: init(float p[], short n_args)
+int Instrument :: init(float p[], int n_args)
 {
    cout << "You haven't defined an init member of your Instrument class!"
                                                                    << endl;
