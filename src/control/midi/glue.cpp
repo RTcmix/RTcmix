@@ -184,23 +184,23 @@ create_pfield(const Arg args[], const int nargs)
 	MIDIType type = kMIDIInvalidType;
 	MIDISubType subtype = kMIDIInvalidSubType;
 
+	if (args[0].isType(DoubleType))
+		minval = args[0];
+	else
+		return _midi_usage();
+
 	if (args[1].isType(DoubleType))
-		minval = args[1];
+		maxval = args[1];
 	else
 		return _midi_usage();
 
 	if (args[2].isType(DoubleType))
-		maxval = args[2];
+		defaultval = args[2];
 	else
 		return _midi_usage();
 
 	if (args[3].isType(DoubleType))
-		defaultval = args[3];
-	else
-		return _midi_usage();
-
-	if (args[4].isType(DoubleType))
-		lag = args[4];
+		lag = args[3];
 	else
 		return _midi_usage();
 	if (lag < 0.0 || lag > 100.0) {
@@ -208,8 +208,8 @@ create_pfield(const Arg args[], const int nargs)
 		return NULL;
 	}
 
-	if (args[5].isType(DoubleType))
-		chan = (int) args[5] - 1;		// convert to zero-based channel
+	if (args[4].isType(DoubleType))
+		chan = (int) args[4] - 1;		// convert to zero-based channel
 	else
 		return _midi_usage();
 	if (chan < 0 || chan > 15) {
@@ -217,19 +217,19 @@ create_pfield(const Arg args[], const int nargs)
 		return NULL;
 	}
 
-	if (args[6].isType(StringType))
-		type = _string_to_type(args[6]);
+	if (args[5].isType(StringType))
+		type = _string_to_type(args[5]);
 	else
 		return _midi_usage();
 	if (type == kMIDIInvalidType)
 		return _midi_usage();
 
-	if (nargs > 7) {
-		if (args[7].isType(StringType))
-			subtype = _string_to_subtype(type, args[7]);
-		else if (args[7].isType(DoubleType))
+	if (nargs > 6) {
+		if (args[6].isType(StringType))
+			subtype = _string_to_subtype(type, args[6]);
+		else if (args[6].isType(DoubleType))
 			// NB: this can be a code or a literal int, e.g. note or controller num
-			subtype = (MIDISubType) (int) args[7];
+			subtype = (MIDISubType) (int) args[6];
 		else
 			return _midi_usage();
 		if (subtype == kMIDIInvalidSubType)
