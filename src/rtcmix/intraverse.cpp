@@ -147,8 +147,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	// in the inTraverse init code.
 	
 	if (startupBufCount-- > 0) {
-		rtsendzeros(device, 0);
-		return true;
+		return (rtsendzeros(device, 0) == 0) ? true : false;
 	}
 
 	if (rtInteractive && run_status == RT_PANIC)
@@ -467,8 +466,10 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 #endif
 
 	// DT_PANIC_MOD
-	if (!panic)
-		rtsendsamps(device);
+	if (!panic) {
+		if (rtsendsamps(device) != 0)
+			return false;
+	}
 
 	elapsed += RTBUFSAMPS;	
 	bufStartSamp += RTBUFSAMPS;

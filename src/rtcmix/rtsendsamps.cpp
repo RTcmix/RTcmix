@@ -159,18 +159,20 @@ RTcmix::limiter(BUFTYPE peaks[], long peaklocs[])
 
    NOTE NOTE NOTE: This clears all the global out_buffers!
 */
-void
+int
 RTcmix::rtsendzeros(AudioDevice *device, int also_write_to_file)
 {
-   int   err;
+   int   err = 0;
 
    clear_output_buffers();
 
    if (Option::play()) {
       int i, j, nsamps, nbufs;
       err = ::write_to_audio_device(out_buffer, bufsamps(), device);
-      if (err)
+      if (err) {
          fprintf(stderr, "rtsendzeros: Error: %s\n", device->getLastError());
+		 return err;
+	  }
    }
 
    if (also_write_to_file && rtfileit) {
@@ -178,6 +180,7 @@ RTcmix::rtsendzeros(AudioDevice *device, int also_write_to_file)
       if (err)
          fprintf(stderr, "rtsendzeros: bad write to output sound file\n");
    }
+   return err;
 }
 
 
@@ -188,7 +191,7 @@ RTcmix::rtsendzeros(AudioDevice *device, int also_write_to_file)
    avoid overflow during conversion to other formats.
 */
 
-void
+int
 RTcmix::rtsendsamps(AudioDevice *device)
 {
    int   err = 0;
@@ -215,29 +218,33 @@ RTcmix::rtsendsamps(AudioDevice *device)
       if (err)
          fprintf(stderr, "rtsendsamps: bad write to output sound file\n");
       if (!playing)
-         return;        /* without limiting */
+         return err;        /* without limiting */
    }
 
    limiter(peaks, peaklocs);    /* Limit output buffer data to +-32767.0 */
 
    if (playing) {
-      err = ::write_to_audio_device(out_buffer, bufsamps(), device);
-      if (err)
+      int ret = ::write_to_audio_device(out_buffer, bufsamps(), device);
+      if (ret)
          fprintf(stderr, "rtsendsamps: Error: %s\n", device->getLastError());
+	  err = (err == 0) ? ret : err;
    }
 
    if (!is_float_format && rtfileit) {
 	  // FOR NOW, IF WE ARE BOTH PLAYING AND WRITING, DO IT WITH SEPARATE
 	  // AudioDevice INSTANCES.
+	  int ret = 0;
 	  if (playing) {
 	  	if (globalOutputFileDevice)
-      		err = rtwritesamps(globalOutputFileDevice);
+      		ret = rtwritesamps(globalOutputFileDevice);
 	  }
 	  else
-	     err = rtwritesamps(device);
-      if (err)
+	     ret = rtwritesamps(device);
+      if (ret)
          fprintf(stderr, "rtsendsamps: bad write to output sound file\n");
+	  err = (err == 0) ? ret : err;
    }
+   return err;
 }
 
 

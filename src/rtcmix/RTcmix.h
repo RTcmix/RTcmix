@@ -157,10 +157,10 @@ private:
 	// Internal audio loop methods (called by runMainLoop())
 	
 	static bool inTraverse(AudioDevice *, void *);
-	static void rtsendsamps(AudioDevice *);
+	static int rtsendsamps(AudioDevice *);
 	static int rtwritesamps(AudioDevice *);
 	static void limiter(BUFTYPE peaks[], long peaklocs[]);
-	static void rtsendzeros(AudioDevice *device, int);
+	static int rtsendzeros(AudioDevice *device, int);
 	static void rtreportstats(AudioDevice *);
 	static bool doneTraverse(AudioDevice *, void *);
 	
