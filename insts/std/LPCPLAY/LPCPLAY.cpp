@@ -205,7 +205,8 @@ int LPCPLAY::localInit(double p[], int n_args)
 
    /* Tell scheduler when to start this inst. 
    */
-	rtsetoutput(outskip, ldur, this);
+	if (rtsetoutput(outskip, ldur, this) == -1)
+		return DONT_SCHEDULE;
 
 	_envFun = floc(ENV_SLOT);
 	sbrrand(1);
@@ -360,7 +361,7 @@ int LPCPLAY::run()
 		}
 		else
 		{
-			_frameno = _frame1 + ((float)(currentFrame())/nsamps) * _frames;
+			_frameno = _frame1 + ((float)(currentFrame())/nSamps()) * _frames;
 		}
 #if 0
 		printf("frame %g\n", _frameno);
@@ -412,7 +413,7 @@ int LPCPLAY::run()
 		}
 		float hn = (_hnfactor <= 1.0) ? (int)(_hnfactor*_srd2/newpch)-2 : _hnfactor;
 		_counter = int(((float)SR/(newpch * _perperiod) ) * .5);
-		_counter = (_counter > (nsamps - currentFrame())) ? nsamps - currentFrame() : _counter;
+		_counter = (_counter > (nSamps() - currentFrame())) ? nSamps() - currentFrame() : _counter;
 #ifdef debug
 		printf("fr: %g err: %g bzamp: %g noisamp: %g pch: %g ctr: %d\n",
 		 	   _frameno,_coeffs[THRESH],_ampmlt*buzamp,_ampmlt*noisamp,newpch,_counter);
@@ -653,8 +654,10 @@ int LPCIN::localInit(double p[], int n_args)
 
    /* Tell scheduler when to start this inst. 
    */
-    rtsetinput(inskip, this);
-	rtsetoutput(outskip, ldur, this);
+   if (rtsetinput(inskip, this) == -1)
+		return DONT_SCHEDULE;
+	if (rtsetoutput(outskip, ldur, this) == -1)
+		return DONT_SCHEDULE;
 
 	_frames = frameCount;
 	_frame1 = startFrame;
@@ -707,11 +710,11 @@ int LPCIN::run()
 		_bw_fact = p[LPCIN_bw];
 
 		int loc;
-		_frameno = _frame1 + ((float)(currentFrame())/nsamps) * _frames;
+		_frameno = _frame1 + ((float)(currentFrame())/nSamps()) * _frames;
 
 #ifdef debug
 		printf("\tgetting frame %g of %d (%d out of %d signal samps)\n",
-			   _frameno, (int)_frames, currentFrame(), nsamps);
+			   _frameno, (int)_frames, currentFrame(), nSamps());
 #endif
 		if (_dataSet->getFrame(_frameno,_coeffs) == -1)
 			break;
@@ -746,7 +749,7 @@ int LPCIN::run()
 		}
 		_counter = int(((float)SR/(newpch * /*_perperiod*/ 1.0) ) * .5);
 //		_counter = (RTBUFSAMPS < MAXVALS) ? RTBUFSAMPS : MAXVALS;
-//		_counter = (_counter > (nsamps - currentFrame())) ? nsamps - currentFrame() : _counter;
+//		_counter = (_counter > (nSamps() - currentFrame())) ? nSamps() - currentFrame() : _counter;
 		_counter = min(_counter, framesToRun() - n);
 				
         if (_counter <= 0)
