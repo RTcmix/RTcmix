@@ -56,6 +56,34 @@ BufPtr out_buffer[1];
 
 int sockno;
 
+// This is the struct sent as the one-way handshake.
+
+#define kAudioFmtCookie 0x12345678
+#define kAudioFmtCookieSwapped 0x78563412
+
+typedef struct NetAudioFormat {
+	int		cookie;			// kAudioFmtCookie
+	int		fmt;			// always SHORT, for now.
+	int		chans;
+	float	sr;
+	int		blockFrames;	// Number of frames per write
+} NetAudioFormat;
+
+static unsigned
+swapui(unsigned ul) {
+    return (ul >> 24) | ((ul >> 8) & 0xff00) | ((ul << 8) & 0xff0000) | (ul << 24);
+}
+
+static int swapi(int x) { return swapui((unsigned)x); }
+
+static float
+swapf(float uf) {
+    union { unsigned l; float f; } u;
+    u.f = uf;
+    u.l = swapui(u.l);
+    return (u.f);
+}
+
 #define VERBOSE             1       /* if true, print buffer size */
 
 /* command line args:  socketnumber [swap]
@@ -86,7 +114,7 @@ int main(int argc, char *argv[])
 	long pvbuf[2],buflen;
 	int srate;
 	int NCHANS;
-	char hdr[54];
+	NetAudioFormat hdr;
 	char *bufp;
 	int swap = 0;  	// swap bytes
 
@@ -156,7 +184,42 @@ int main(int argc, char *argv[])
 		printf("connection received.\n");
 	
 		// header
-		amt += read(ns, hdr, 872);
+		amt += read(ns, &hdr, sizeof(hdr));
+		switch (hdr.cookie) {
+		case kAudioFmtCookie:
+			swap = 0;
+			break;
+		case kAudioFmtCookieSwapped:
+			swap = 1;
+			break;
+		default:
+			fprintf(stderr, "nplay: missing or corrupt header: cookie = 0x%x", hdr.cookie);
+			exit(1);
+		}
+		if (swap) {
+			hdr.fmt = swapi(hdr.fmt);
+			hdr.chans = swapi(hdr.chans);
+			hdr.sr = swapf(hdr.sr);
+			hdr.blockFrames = swapi(hdr.blockFrames);
+		}
+		if (!IS_SHORT_FORMAT(hdr.fmt)) {
+			fprintf(stderr, "nplay: unknown or unsupported audio format\n");
+			exit(1);
+		}
+		else if (hdr.chans != NCHANS) {
+			fprintf(stderr, "nplay: audio stream has chans (%d) != ours (%d)\n",
+					hdr.chans, NCHANS);
+			exit(1);
+		}
+		else if (hdr.blockFrames != BUFSIZE / (NCHANS * sizeof(short))) {
+			fprintf(stderr, "nplay: audio stream bufsize (%d) != ours (%d)\n",
+					hdr.blockFrames * NCHANS * sizeof(short), BUFSIZE);
+			exit(1);
+		}
+		if ((int) hdr.sr != srate) {
+			fprintf(stderr, "nplay: SR mismatch.  Playing at incorrect rate.\n");
+		}
+		
 		result = 1;
 
 		while(result) {
