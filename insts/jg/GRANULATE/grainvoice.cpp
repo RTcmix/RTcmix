@@ -29,10 +29,12 @@ GrainVoice::GrainVoice(const double srate, double *inputTable, int inputFrames,
    _cpsoct10 = cpsoct(10.0);
 }
 
+
 GrainVoice::~GrainVoice()
 {
    delete _env;
 }
+
 
 // NOTE: We don't own the table memory, just the envelope object.
 void GrainVoice::setGrainEnvelopeTable(double *table, int length)
@@ -41,15 +43,17 @@ void GrainVoice::setGrainEnvelopeTable(double *table, int length)
    _env = new Ooscil(_srate, 1.0, table, length);
 }
 
+
 // <transp> is in linear octaves, relative to zero.
-void GrainVoice::startGrain(const int instartframe, const double outdur,
-   const int inchan, const double amp, const double transp, const double pan,
-   const bool forwards)
+void GrainVoice::startGrain(const int bufoutstart, const int instartframe,
+   const double outdur, const int inchan, const double amp, const double transp,
+   const double pan, const bool forwards)
 {
    assert(inchan < _numinchans);
 
    _forwards = forwards;
    _instartframe = instartframe;
+   _bufoutstart = bufoutstart;
 
    // Getting durations right is tricky when transposing, because our
    // transposition method doesn't preserve duration.  For example, if we
@@ -125,6 +129,7 @@ void GrainVoice::startGrain(const int instartframe, const double outdur,
 #endif
 }
 
+
 float GrainVoice::getSigNoTransp()
 {
    assert(_incurframe >= 0);
@@ -144,6 +149,7 @@ float GrainVoice::getSigNoTransp()
    }
    return (float) _inputtab[index];
 }
+
 
 inline float _interp2ndOrder(float y0, float y1, float y2, float t)
 {
@@ -206,6 +212,7 @@ float GrainVoice::getSig2ndOrder()
    }
    return sig;
 }
+
 
 inline float _interp3rdOrder(float ym2, float ym1, float yp1, float yp2,
    float t)
@@ -274,13 +281,9 @@ float GrainVoice::getSig3rdOrder()
    return sig;
 }
 
-// Compensate for hole in the middle.
-inline float _boost(const float panL, const float panR)
-{
-   return 1.0 / sqrt((panL * panL) + (panR * panR));
-}
 
 // If output is mono, <left> holds signal, and <right> is zero.
+
 void GrainVoice::next(float &left, float &right)
 {
    float sig;
@@ -296,7 +299,7 @@ void GrainVoice::next(float &left, float &right)
 
    if (_numoutchans > 1) {
       const float panR = 1.0 - _pan;
-      sig *= _boost(_pan, panR);
+      sig *= boost(_pan, panR);
       left = sig * _pan;
       right = sig * panR;
    }
@@ -305,4 +308,27 @@ void GrainVoice::next(float &left, float &right)
       right = 0.0f;
    }
 }
+
+
+void GrainVoice::next(float *buffer, const int numFrames, const float amp)
+{
+   if (_increment == 1.0) {
+      for (int i = _bufoutstart; i < numFrames; i++) {
+         float sig = getSigNoTransp() * amp;
+         addOutGrain(sig, buffer, i);           // inlined
+         if (!_inuse)
+            break;
+      }
+   }
+   else {
+      for (int i = _bufoutstart; i < numFrames; i++) {
+         float sig = getSig2ndOrder() * amp;
+         addOutGrain(sig, buffer, i);
+         if (!_inuse)
+            break;
+      }
+   }
+   _bufoutstart = 0;
+}
+
 

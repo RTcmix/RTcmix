@@ -75,20 +75,30 @@ public:
       _panrand->setmax(max);
    }
 
-   bool compute();
+   // Two APIs...
+
+   // Single-frame I/O.  Call prepare, then retrieve last computed
+   // values with lastL and lastR.
+   bool prepare();
 
    inline float lastL() const { return _lastL; }
    inline float lastR() const { return _lastR; }
+
+   // Block I/O.  Pass a buffer sized to <numFrames> * number of output chans.
+   bool processBlock(float *buffer, const int numFrames, const float amp);
 
 private:
    const int firstFreeVoice();
    const double getTransposition();
    void playGrains();
+   void playGrains(float buffer[], const int numFrames, const float amp);
+   bool maybeStartGrain(const int bufoutstart = 0);
 
    // set in response to user input
    double _srate;
    double *_inputtab;
    int _inputframes;
+   int _outchans;
    int _inchan;
    int _inskip;
    int _winstart;

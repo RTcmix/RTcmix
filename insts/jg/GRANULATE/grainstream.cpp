@@ -32,8 +32,8 @@ GrainStream::GrainStream(const float srate, double *inputTable, int tableLen,
    const int numInChans, const int numOutChans, const bool preserveGrainDur,
    const int seed)
    : _srate(srate), _inputtab(inputTable), _inputframes(tableLen / numInChans),
-     _inchan(0), _winstart(-1), _winend(_inputframes), _wrap(true), _inhop(0),
-     _outhop(0), _maxinjitter(0.0), _maxoutjitter(0.0), 
+     _outchans(numOutChans), _inchan(0), _winstart(-1), _winend(_inputframes),
+     _wrap(true), _inhop(0), _outhop(0), _maxinjitter(0.0), _maxoutjitter(0.0),
      _transp(0.0), _maxtranspjitter(0.0), _transptab(NULL), _transplen(0),
      _outframecount(0), _nextinstart(0), _nextoutstart(0), _travrate(1.0),
      _lastinskip(-DBL_MAX), _lastL(0.0f), _lastR(0.0f)
@@ -52,6 +52,7 @@ GrainStream::GrainStream(const float srate, double *inputTable, int tableLen,
 #endif
 }
 
+
 GrainStream::~GrainStream()
 {
    for (int i = 0; i < MAX_NUM_VOICES; i++)
@@ -68,13 +69,16 @@ GrainStream::~GrainStream()
 #endif
 }
 
+
 // NOTE: We don't own the table memory.
-// Call this before ever calling compute().
+// Call this before ever calling prepare().
+
 void GrainStream::setGrainEnvelopeTable(double *table, int length)
 {
    for (int i = 0; i < MAX_NUM_VOICES; i++)
       _voices[i]->setGrainEnvelopeTable(table, length);
 }
+
 
 // Set inskip, overriding current position, which results from the traversal
 // rate.  It's so important not to do this if the requested inskip hasn't
@@ -89,8 +93,9 @@ void GrainStream::setInskip(const double inskip)
    }
 }
 
+
 // Set input start and end point in frames.  If this is the first time we're
-// called, force next call to compute() to start playing at start point.
+// called, force next call to prepare() to start playing at start point.
 // Otherwise, we'll come back to new start point at wraparound.
 
 void GrainStream::setWindow(const double start, const double end)
@@ -114,6 +119,7 @@ void GrainStream::setWindow(const double start, const double end)
       _winend = _inputframes - 1;
 }
 
+
 // Set both the input traversal rate and the output grain hop.  Here are some
 // possible values for <rate>, along with their interpretation.
 //
@@ -123,7 +129,7 @@ void GrainStream::setWindow(const double start, const double end)
 //    -1    move backward at normal rate
 //
 // <hop> is the number of seconds to skip on the output before starting a
-// new grain.  We add jitter to this amount in compute().
+// new grain.  We add jitter to this amount in prepare().
 
 void GrainStream::setTraversalRateAndGrainHop(const double rate,
    const double hop)
@@ -140,6 +146,7 @@ void GrainStream::setTraversalRateAndGrainHop(const double rate,
 #endif
 }
 
+
 void GrainStream::setGrainTranspositionCollection(double *table, int length)
 {
    delete [] _transptab;
@@ -155,6 +162,7 @@ void GrainStream::setGrainTranspositionCollection(double *table, int length)
       _transplen = 0;
    }
 }
+
 
 // Given _transp and (possibly) _transptab, both in linear octaves, return
 // grain transposition value in linear octaves.
@@ -195,19 +203,6 @@ const double GrainStream::getTransposition()
    return transp;
 }
 
-void GrainStream::playGrains()
-{
-   _lastL = 0.0f;
-   _lastR = 0.0f;
-   for (int i = 0; i < MAX_NUM_VOICES; i++) {
-      if (_voices[i]->inUse()) {
-         float sigL, sigR;
-         _voices[i]->next(sigL, sigR);
-         _lastL += sigL;
-         _lastR += sigR;
-      }
-   }
-}
 
 // Return index of first freq grain voice, or -1 if none are free.
 const int GrainStream::firstFreeVoice()
@@ -219,12 +214,12 @@ const int GrainStream::firstFreeVoice()
    return ALL_VOICES_IN_USE;
 }
 
-// Compute one frame of samples across all active grains.  Activate a
-// new grain if it's time.  Return false if caller should terminate
-// prematurely, due to running out of input when not using wraparound mode;
-// otherwise return true.
 
-bool GrainStream::compute()
+// Decide whether to (re)initialize a grain.
+// <bufoutstart> is the offset into the output buffer for the grain to start.
+// This is relevant only when using block I/O.
+
+bool GrainStream::maybeStartGrain(const int bufoutstart)
 {
    bool keepgoing = true;
 
@@ -240,12 +235,12 @@ bool GrainStream::compute()
 #endif
          const double outdur = _durrand->value();
          const double amp = _amprand->value();
-         const double pan = _panrand->value();
+         const double pan = _outchans > 1 ? _panrand->value() : 1.0;
          const double transp = getTransposition();
 
          if (outdur >= 0.0)
-            _voices[voice]->startGrain(_nextinstart, outdur, _inchan, amp,
-                                                      transp, pan, forwards);
+            _voices[voice]->startGrain(bufoutstart, _nextinstart, outdur,
+                                       _inchan, amp, transp, pan, forwards);
       }
       const int injitter = (_maxinjitter == 0.0) ? 0
                                           : int(_inrand->value() * _srate);
@@ -293,9 +288,73 @@ bool GrainStream::compute()
       if (_nextoutstart <= _outframecount)
          _nextoutstart = _outframecount + 1;
    }
+
+   return keepgoing;
+}
+
+
+// Called for single-frame I/O.
+
+void GrainStream::playGrains()
+{
+   _lastL = 0.0f;
+   _lastR = 0.0f;
+   for (int i = 0; i < MAX_NUM_VOICES; i++) {
+      if (_voices[i]->inUse()) {
+         float sigL, sigR;
+         _voices[i]->next(sigL, sigR);
+         _lastL += sigL;
+         _lastR += sigR;
+      }
+   }
+}
+
+
+// Called for block I/O.
+
+void GrainStream::playGrains(float buffer[], const int numFrames,
+   const float amp)
+{
+   const int count = numFrames * _outchans;
+   for (int i = 0; i < count; i++)
+      buffer[i] = 0.0f;
+
+   for (int i = 0; i < MAX_NUM_VOICES; i++)
+      if (_voices[i]->inUse())
+         _voices[i]->next(buffer, numFrames, amp);
+}
+
+
+// Compute one frame of samples across all active grains.  Activate a
+// new grain if it's time.  Return false if caller should terminate
+// prematurely, due to running out of input when not using wraparound mode;
+// otherwise return true.
+
+bool GrainStream::prepare()
+{
+   bool keepgoing = maybeStartGrain();
    playGrains();
    _outframecount++;
 
    return keepgoing;
 }
+
+
+// Compute a block of samples and write them into <buffer>, which is
+// assumed to hold <numFrames> frames of <_outchans> chans.
+
+bool GrainStream::processBlock(float *buffer, const int numFrames,
+   const float amp)
+{
+   bool keepgoing = true;
+   for (int i = 0; i < numFrames; i++) {
+      keepgoing = maybeStartGrain(i);
+      _outframecount++;
+      if (!keepgoing)
+         break;
+   }
+   playGrains(buffer, numFrames, amp);
+   return keepgoing;
+}
+
 

@@ -7,6 +7,7 @@ public:
    GRANULATE();
    virtual ~GRANULATE();
    virtual int init(double p[], int n_args);
+   virtual int configure();
    virtual int run();
 
 private:
@@ -14,6 +15,7 @@ private:
    bool _stereoOut;
    double _amp, _curwinstart, _curwinend;
    GrainStream *_stream;
+   float *_block;
 
    void doupdate();
 };

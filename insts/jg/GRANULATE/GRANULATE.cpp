@@ -94,6 +94,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <float.h>
+#include <assert.h>
 #include <ugens.h>
 #include <Instrument.h>
 #include <PField.h>
@@ -103,6 +104,7 @@
 #include "grainstream.h"
 
 //#define DEBUG
+//#define NDEBUG     // disable asserts
 
 #define PRESERVE_GRAIN_DURATION  true     // regardless of transposition
 
@@ -122,12 +124,15 @@ GRANULATE::GRANULATE() : Instrument()
    _branch = 0;
    _curwinstart = -DBL_MAX;
    _curwinend = -DBL_MAX;
+   _block = NULL;
 }
+
 
 GRANULATE::~GRANULATE()
 {
    delete _stream;
 }
+
 
 int GRANULATE::init(double p[], int n_args)
 {
@@ -171,6 +176,7 @@ int GRANULATE::init(double p[], int n_args)
    return nSamps();
 }
 
+
 void GRANULATE::doupdate()
 {
    double p[_nargs];
@@ -201,13 +207,29 @@ void GRANULATE::doupdate()
    }
 }
 
+
+int GRANULATE::configure()
+{
+   _block = new float [RTBUFSAMPS * outputChannels()];
+   return _block ? 0 : -1;
+}
+
+
+inline const int min(const int a, const int b)
+{
+   return a < b ? a : b;
+}
+
+
+#if 0    // shows how to do single-frame I/O, but we use block I/O instead.
+
 int GRANULATE::run()
 {
-   int i;
-   const int outchans = outputChannels();
    const int frames = framesToRun();
    bool keepgoing = true;
 
+   const int outchans = outputChannels();
+   int i;
    for (i = 0; i < frames; i++) {
       if (--_branch <= 0) {
          doupdate();
@@ -215,7 +237,7 @@ int GRANULATE::run()
       }
 
       // If we're not in wrap mode, this returns false when it's time to stop.
-      keepgoing = _stream->compute();
+      keepgoing = _stream->prepare();
 
       float out[outchans];
       if (outchans == 2) {
@@ -227,6 +249,7 @@ int GRANULATE::run()
 
       rtaddout(out);
       increment();
+
       if (!keepgoing) {
 // FIXME: how do we remove note from RTcmix queue?
          break;
@@ -235,6 +258,47 @@ int GRANULATE::run()
 
    return i;
 }
+
+#else
+
+int GRANULATE::run()
+{
+   // NOTE: Without a lot more code, we can't guarantee that doupdate will
+   // be called exactly every _skip samples, the way we can when not doing
+   // block I/O.  But this seems worth sacrificing for the clear performance
+   // improvement that block I/O offers.
+
+   const int frames = framesToRun();
+   int blockframes = min(frames, _skip);
+   bool keepgoing = true;
+   int framesdone = 0;
+   while (1) {
+      if (_branch <= 0) {
+         doupdate();
+         _branch = _skip;
+      }
+      _branch -= blockframes;
+
+      // If we're not in wrap mode, this returns false when it's time to stop.
+      keepgoing = _stream->processBlock(_block, blockframes, _amp);
+      rtbaddout(_block, blockframes);
+      increment(blockframes);
+      if (!keepgoing) {
+// FIXME: how do we remove note from RTcmix queue?
+         return frames;    // need accurate count?
+      }
+      framesdone += blockframes;
+      if (framesdone == frames)
+         break;
+      assert(framesdone < frames);
+      const int remaining = frames - framesdone;
+      if (remaining < blockframes)
+         blockframes = remaining;
+   }
+   return frames;
+}
+
+#endif
 
 Instrument *makeGRANULATE()
 {
