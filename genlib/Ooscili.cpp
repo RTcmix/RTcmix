@@ -39,7 +39,7 @@ float Ooscili::next()
 	frac = phase - (float)i;
 	phase += si;
 	while (phase >= (float)length) phase -= (float)length;
-	return(*(array+i) + (*(array+k) - *(array+i)) * frac);
+	return (array[i] + (array[k] - array[i]) * frac);
 }
 
 float Ooscili::next(int nsample)
@@ -52,7 +52,7 @@ float Ooscili::next(int nsample)
 	loc1 = (int)frac;
 	loc2 = loc1+1;
 	frac = frac - (float)loc1;
-	return(*(array+loc1) + frac * (*(array+loc2) - *(array+loc1)));
+	return(array[loc1] + frac * (array[loc2] - array[loc1]));
 }
 
 void Ooscili::setfreq(float freq)
