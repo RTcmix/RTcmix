@@ -16,7 +16,7 @@ Ortgetin::Ortgetin(Instrument *ins)
 
 int Ortgetin::next(float *inarr)
 {
-	int nread;
+	int nread = 0;
 	int i;
 
 	chptr += chns;
