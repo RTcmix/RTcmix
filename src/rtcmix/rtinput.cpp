@@ -183,9 +183,9 @@ double rtinput(float *p, short n_args, double *pp)
 	  printf("Input file %s set for reading\n", rtsfname);
 #ifdef USE_SNDLIB
 	  printf("    type:  %s\n", sound_type_name(header_type));
-	  printf("  format:  %s\n\n", sound_format_name(data_format));
+	  printf("  format:  %s\n", sound_format_name(data_format));
 #endif
-	  printf("   SR: %f   nchannels: %d\n", inSR, inNCHANS);
+	  printf("      SR:  %f    nchannels: %d\n", inSR, inNCHANS);
 	}
 
 	/* New file:  take file descriptor and put it into the first
