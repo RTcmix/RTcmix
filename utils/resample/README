@@ -19,6 +19,9 @@ it should be in normalized format, i.e., in the range (-1.0, 1.0).)
 You can get the original resample-1.2 distribution from:
 ftp://ccrma-ftp.stanford.edu/pub/NeXT.
 
+Julius Smith maintains a web page about his resample package:
+http://www-ccrma.stanford.edu/~jos/resample/index.html
+
 Thanks to Julius O. Smith and Bill Schottstaedt.
 
 -John Gibson (jgg9c@virginia.edu)
