@@ -7,40 +7,54 @@
    p0 = output start time
    p1 = input start time
    p2 = input duration
-   p3 = amplitude multiplier
+   p3 = amplitude multiplier *
    p4 = minimum distortion index
    p5 = maximum distortion index
-   p6 = table number of amplitude normalization function, or 0 for no norm.
+   p6 = reference to an amplitude normalization table, or 0 for no norm. **
    p7 = input channel [optional, default is 0]
    p8 = percent of signal to left output channel [optional, default is .5]
+   p9 = reference to waveshaping tranfer function table [optional; if missing,
+        must use gen 2] ***
+   p10 = index guide [optional; if missing, can use gen 3] ****
 
-   Function tables:
-      1  amplitude curve (or use setline)
-         If no setline or function table 1, uses flat amplitude curve.
-      2  waveshaping transfer function
-      3  distortion index curve
+   p3 (amplitude), p4 (min index), p5 (max index), p8 (pan) and p10 (index)
+   can receive dynamic updates from a table or real-time control source.
 
-   NOTES:
-      - The amplitude normalization function allows you to decouple
-        amplitude and timbral change, to some extent.  (Read about this
-        in the Roads "Computer Music Tutorial" chapter on waveshaping.)
-        The table maps incoming signal amplitudes, on the X axis, to
-        amplitude multipliers, on the Y axis.  The multipliers should be
-        from 0 to 1.  The amplitude multipliers are applied to the 
-        output signal, along with whatever overall amplitude curve is
-        in effect.  Generally, you'll want a curve that starts high and
-        moves lower (see SHAPE2.sco) for the higher signal amplitudes.
-        This will keep the bright and dark timbres more equal in amplitude.
-        But anything's possible.
+   The amplitude normalization function allows you to decouple amplitude and
+   timbral change, to some extent.  (Read about this in the Roads "Computer
+   Music Tutorial" chapter on waveshaping.)  The table maps incoming signal
+   amplitudes, on the X axis, to amplitude multipliers, on the Y axis.  The
+   multipliers should be from 0 to 1.  The amplitude multipliers are applied
+   to the output signal, along with whatever overall amplitude curve is in
+   effect.  Generally, you'll want a normalization curve that starts high and
+   moves lower (see SHAPE2.sco) for the higher signal amplitudes.  This will
+   keep the bright and dark timbres more equal in amplitude.
 
-   John Gibson <johgibso at indiana dot edu>, 3 Jan 2002
+   ----
+
+   Notes about backward compatibility with pre-v4 scores:
+
+   * If an old-style gen table 1 is present, its values will be multiplied
+   by the p3 amplitude multiplier, even if the latter is dynamic.
+
+   ** If p6 is a non-zero constant, then that is the number of an old-style
+   gen table slot to use for the amplitude normalization function.
+
+   *** If p9 is missing, you must use an old-style gen table 2 for the
+   waveshaping transfer function.
+
+   **** If p10 is missing, you can use an old-style gen table 3 for the
+   distortion index curve.  Otherwise, a constant 1.0 will be used.
+
+
+   John Gibson <johgibso at indiana dot edu>, 3 Jan 2002; rev for v4, 7/21/04
 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
 #include <math.h>
-#include <mixerr.h>
 #include <Instrument.h>
+#include <PField.h>
 #include "SHAPE.h"
 #include <rt.h>
 #include <rtdefs.h>
@@ -70,18 +84,18 @@ SHAPE :: ~SHAPE()
 
 int SHAPE :: init(double p[], int n_args)
 {
-   int   ampnorm_genno;
-   float outskip, inskip, dur;
-
-   outskip = p[0];
-   inskip = p[1];
-   dur = p[2];
+   nargs = n_args;
+   float outskip = p[0];
+   float inskip = p[1];
+   float dur = p[2];
    amp = p[3];
    min_index = p[4];
    max_index = p[5];
-   ampnorm_genno = (int) p[6];
+   int ampnorm_genno = (int) p[6];
    inchan = n_args > 7 ? (int) p[7] : 0;             /* default is chan 0 */
-   pctleft = n_args > 8 ? p[8] : 0.5;                /* default is .5 */
+
+   if (n_args < 7)
+      return die("SHAPE", "Needs at least 7 arguments.");
 
    nsamps = rtsetoutput(outskip, dur, this);
    if (rtsetinput(inskip, this) != 0)
@@ -100,85 +114,133 @@ int SHAPE :: init(double p[], int n_args)
       int len = fsize(1);
       amp_table = new TableL(dur, function, len);
    }
-   else
-      advise("SHAPE", "Setting amplitude curve to all 1's.");
 
+   function = NULL;
+   int tablelen = 0;
+   if (n_args > 9) {    // handle table coming in as optional p9 TablePField
+      const PField &field = getPField(9);
+      tablelen = field.values();
+      function = (double *) field;
+   }
+   if (function == NULL) {
+      function = floc(2);
+      if (function == NULL)
+         return die("SHAPE", "Either use the transfer function pfield (p9) "
+                    "or make an old-style gen function in slot 2.");
+      tablelen = fsize(2);
+   }
    shaper = new WavShape();
-   function = floc(2);
-   if (function) {
-      int len = fsize(2);
-      shaper->setTransferFunc(function, len);
-   }
-   else
-      return die("SHAPE", "You haven't made the transfer function (table 2).");
+   shaper->setTransferFunc(function, tablelen);
 
-   function = floc(3);
-   if (function) {
-      int len = fsize(3);
-      index_table = new TableL(dur, function, len);
+   function = NULL;
+   if (n_args > 10) {   // handle table coming in as optional p10 TablePField
+      const PField &field = getPField(10);
+      int len = field.values();
+      function = (double *) field;
+      if (function)
+         index_table = new TableL(dur, function, len);
    }
-   else {
-      advise("SHAPE", "Setting distortion index curve to all 1's.");
-      index = 1.0;
-   }
-
-   if (ampnorm_genno > 0) {
-      function = floc(ampnorm_genno);
+   if (function == NULL) {
+      function = floc(3);
       if (function) {
-         ampnorm = new WavShape();
-         int len = fsize(ampnorm_genno);
-         ampnorm->setTransferFunc(function, len);
+         int len = fsize(3);
+         index_table = new TableL(dur, function, len);
       }
-      else
-         return die("SHAPE", "You specified table %d as the amplitude "
+      else {
+         advise("SHAPE", "Setting distortion index curve to all 1's.");
+         index = 1.0;
+      }
+   }
+
+   /* Construct the <ampnorm> WavShape object if (1) p6 is a TablePField, or
+      (2) if p6 is non-zero, in which case use p6 as the gen slot for the
+      amp norm function.  If p6 is zero, then don't construct <ampnorm>.
+   */
+   function = NULL;
+   const PField &field = getPField(6);
+   tablelen = field.values();
+   function = (double *) field;
+   if (function == NULL) {    // no table pfield
+      if (ampnorm_genno > 0) {
+         function = floc(ampnorm_genno);
+         if (function == NULL)
+            return die("SHAPE", "You specified table %d as the amplitude "
                     "normalization function, but you didn't create the table.",
                     ampnorm_genno);
+         tablelen = fsize(ampnorm_genno);
+      }
+   }
+   if (function) {
+      ampnorm = new WavShape();
+      ampnorm->setTransferFunc(function, tablelen);
    }
 
    dcblocker = new DCBlock();
 
    skip = (int) (SR / (float) resetval);
-   aamp = amp;                  /* in case amparray == NULL */
 
-   return nsamps;
+   return nSamps();
+}
+
+
+int SHAPE :: configure()
+{
+   in = new float [RTBUFSAMPS * inputChannels()];
+   return in ? 0 : -1;
+}
+
+
+void SHAPE :: doupdate()
+{
+   double p[11];
+   update(p, 11, kAmp | kMinIndex | kMaxIndex | kPan | kIndex);
+
+   amp = p[3];
+   if (amp_table)
+      amp *= amp_table->tick(currentFrame(), 1.0);
+
+   min_index = p[4];
+   max_index = p[5];
+   if (max_index < min_index)
+      max_index = min_index;
+
+   if (nargs > 10)         // use index PField
+      index = p[10];
+   else if (index_table) {
+      index = index_table->tick(currentFrame(), 1.0);
+      index = min_index + (index * (max_index - min_index));
+   }
+
+   // scale index vals to range [-1, 1] in order to use WavShape
+   if (ampnorm)
+      norm_index = (index / (max_index / 2.0)) - 1.0;
+
+   pctleft = nargs > 8 ? p[8] : 0.5;                // default is .5
 }
 
 
 int SHAPE :: run()
 {
-   int   i, samps;
-   float insig, outsig;
-   float out[2];
-
-   if (in == NULL)
-      in = new float [RTBUFSAMPS * inputChannels()];
-
-   samps = framesToRun() * inputChannels();
+   const int samps = framesToRun() * inputChannels();
    rtgetin(in, this, samps);
 
-   for (i = 0; i < samps; i += inputChannels()) {
-      if (--branch < 0) {
-         if (amp_table)
-            aamp = amp_table->tick(currentFrame(), amp);
-         if (index_table)
-            index = index_table->tick(currentFrame(), 1.0);
-         index = min_index + (index * (max_index - min_index));
-         if (ampnorm)
-            /* scale index vals to range [-1, 1] in order to use WavShape */
-            norm_index = (index / (max_index / 2.0)) - 1.0;
+   for (int i = 0; i < samps; i += inputChannels()) {
+      if (--branch <= 0) {
+         doupdate();
          branch = skip;
       }
 
-      /* NB: WavShape deals with samples in range [-1, 1]. */
-      insig = in[i + inchan] * (1.0 / 32768.0);
-      outsig = shaper->tick(insig * index);
+      // NB: WavShape deals with samples in range [-1, 1].
+      float insig = in[i + inchan] * (1.0 / 32768.0);
+      float outsig = shaper->tick(insig * index);
       if (outsig) {
          if (ampnorm)
             outsig = dcblocker->tick(outsig) * ampnorm->tick(norm_index);
          else
             outsig = dcblocker->tick(outsig);
       }
-      out[0] = outsig * aamp * 32768.0;
+      float out[2];
+      out[0] = outsig * amp * 32768.0;
 
       if (outputChannels() == 2) {
          out[1] = out[0] * (1.0 - pctleft);
