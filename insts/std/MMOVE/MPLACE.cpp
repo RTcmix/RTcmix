@@ -47,8 +47,7 @@ int PLACE::localInit(double p[], int n_args)
 	double R = (double)p[4];
 	double T = (double)p[5];
 	m_dist = (double)p[6];
-	m_rvbamp = p[7];
-	m_inchan = n_args > 8 ? (int)p[8] : AVERAGE_CHANS;
+	m_inchan = n_args > 7 ? (int)p[7] : AVERAGE_CHANS;
     if (m_dist < 0) {
         cartflag = 1;                    /* cartesian coordinates */
         m_dist *= -1.0;

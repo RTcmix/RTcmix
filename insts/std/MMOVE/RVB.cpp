@@ -6,6 +6,7 @@
 #include <rtdefs.h>
 #include <ugens.h>
 #include <string.h>
+#include <stdio.h>
 #include "msetup.h"
 
 //#define debug
@@ -52,6 +53,7 @@ Instrument *makeRVB()
 RVB::RVB()
 {
 	in = NULL;
+	_branch = 0;
     for (int i = 0; i < 2; i++) {
        int j;
        for (j = 0; j < 6; j++)
@@ -84,24 +86,17 @@ int RVB::init(double p[], int n_args)
     insamps = (int)(m_dur * SR);
     m_amp = p[3];
 
-    if (inputchans != 2) {
-		die(name(), "Input must be stereo.");
-		return DONT_SCHEDULE;
-	}
+    if (inputchans != 2)
+		return die(name(), "Input must be stereo.");
 
-	if (outputchans != 2) {
-		die(name(), "Output must be stereo.");
-		return DONT_SCHEDULE;
-	}
+	if (outputchans != 2)
+		return die(name(), "Output must be stereo.");
 
     double Matrix[12][12];
    
     /* Get results of Minc setup calls (space, mikes_on, mikes_off, matrix) */
     if (get_rvb_setup_params(Dimensions, Matrix, &rvb_time) == -1)
-	{
-       die(name(), "You must call setup routine `space' first.");
-	   return DONT_SCHEDULE;
-	}
+       return die(name(), "You must call setup routine `space' first.");
     /* (perform some initialization that used to be in space.c) */
     int meanLength = MFP_samps(Dimensions);   /* mean delay length for reverb */
     get_lengths(meanLength);              /* sets up delay lengths */
@@ -122,6 +117,8 @@ int RVB::init(double p[], int n_args)
 		memset(globalReverbInput[n], 0, sizeof(double) * RTBUFSAMPS);
 	}
 
+	_skip = (int) (SR / (float) resetval);
+	
 	nsamps = rtsetoutput(outskip, m_dur + rvb_time, this);
 	DBG1(printf("nsamps = %d\n", nsamps));
 	return nsamps;
@@ -151,14 +148,20 @@ int RVB::run()
 	register float *outptr = &this->outbuf[0];
 	/* run summed 1st and 2nd generation paths through reverberator */
  	for (int n = 0; n < frames; n++) {
+		if (--_branch <= 0) {
+			double p[4];
+			update(p, 4);
+			m_amp = p[3];
+			_branch = _skip;
+		}
 		if (m_amp != 0.0) {
 			double rmPair[2];
 			double rvbPair[2];
 			rmPair[0] = globalReverbInput[0][n];
 			rmPair[1] = globalReverbInput[1][n];
 			doRun(rmPair, rvbPair, cursamp + n);
-			rvbsig[0][n] = rvbPair[0];
-			rvbsig[1][n] = rvbPair[1];
+			rvbsig[0][n] = rvbPair[0] * m_amp;
+			rvbsig[1][n] = rvbPair[1] * m_amp;
 		}
 		else
 			rvbsig[0][n] = rvbsig[1][n] = 0.0;
@@ -202,7 +205,7 @@ delpipe(double sig, int *counter, double nsdel, int delsize, double *delay)
    
    *counter = ++intap;			// increment and store
   
-   double frac = nsdel - del1;
+   const double frac = nsdel - del1;
    return (delay[tap1] + (delay[tap2] - delay[tap1]) * frac);
 }
 

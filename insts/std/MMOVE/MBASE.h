@@ -45,7 +45,7 @@ protected:
    int    m_inchan, insamps, skip, m_binaural, m_tapsize, intap, tapcount;
    int    cartflag, rvbdelsize, m_buffersize;
    int 	  m_branch;
-   float  inamp, m_dur, m_rvbamp;
+   float  inamp, m_dur;
    float  amptabs[2], *in;
    double *amparray;
    double AIRCOEFFS[NCOEFFS];

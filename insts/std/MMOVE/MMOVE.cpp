@@ -83,8 +83,7 @@ int MOVE::localInit(double *p, int n_args)
 		return(DONT_SCHEDULE);
 	}
     m_dist = p[4];
-    m_rvbamp = p[5];
-    m_inchan = n_args > 6 ? (int)p[6] : AVERAGE_CHANS;
+    m_inchan = n_args > 5 ? (int)p[5] : AVERAGE_CHANS;
     
     // copy global params into instrument
     

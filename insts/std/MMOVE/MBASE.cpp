@@ -90,13 +90,7 @@ int MBASE::init(double p[], int n_args)
 	}
     insamps = (int)(m_dur * SR);
 	
-	double *testPtr = (double *) getPField(3);
-	printf("testPtr came back 0x%x\n", testPtr);
-	if (testPtr) {
-	}
-	else {
-    	inamp = p[3];
-	}
+   	inamp = p[3];
 
     if (m_inchan >= inputchans) {
        return die(name(), "You asked for channel %d of a %d-channel input file.",
@@ -105,9 +99,8 @@ int MBASE::init(double p[], int n_args)
     if (inputchans == 1)
        m_inchan = 0;
 
-	if (outputchans != 2) {
+	if (outputchans != 2)
 		return die(name(), "Output must be stereo.");
-	}
 
     /* Get results of Minc setup calls (space, mikes_on, mikes_off, matrix) */
     if (get_setup_params(Dimensions, &m_attenParams,
@@ -117,9 +110,8 @@ int MBASE::init(double p[], int n_args)
 	}
 
 	// call inst-specific init code
-    if (localInit(p, n_args) == DONT_SCHEDULE) {
+    if (localInit(p, n_args) == DONT_SCHEDULE)
 		  return die(name(), "localInit failed.");
-	}
 
     /* (perform some initialization that used to be in space.c) */
     int meanLength = MFP_samps(Dimensions);   /* mean delay length for reverb */
@@ -136,8 +128,6 @@ int MBASE::init(double p[], int n_args)
       int amplen = fsize(1);
       tableset(SR, m_dur, amplen, amptabs);      /* controls input dur only */
    }
-   else
-      advise(name(), "Setting phrase curve to all 1's.");
 
    skip = (int)(SR / (float)resetval);
    
@@ -175,9 +165,7 @@ int MBASE::getInput(int currentSample, int frames)
     int rsamps = frames * inputchans;
 
     rtgetin(in, this, rsamps);
-
-    float aamp = inamp;                  /* in case amparray == NULL */
-
+	
     int n = 0;
     int bufsamps = BUFLEN;	// adjust
     int lCurSamp;	// local copy for inner loops
@@ -195,8 +183,11 @@ int MBASE::getInput(int currentSample, int frames)
 			nsig++;
 #endif
 			if (--m_branch < 0) {
+			   double p[4];
+			   update(p, 4, 1 << 3);
+			   inamp = p[3];
 			   if (amparray)
-    			  aamp = tablei(lCurSamp, amparray, amptabs) * inamp;
+    			  inamp *= tablei(lCurSamp, amparray, amptabs);
 			   m_branch = skip;
 			}
 			if (m_inchan == AVERAGE_CHANS) {
@@ -207,7 +198,7 @@ int MBASE::getInput(int currentSample, int frames)
 			}
 			else
 			   insig = in[s + m_inchan];
-			insig *= aamp;
+			insig *= inamp;
 		}
 		else  {                               /* flushing delays & reverb */
 #ifdef LOOP_DEBUG
@@ -293,7 +284,7 @@ int MBASE::run()
 					get_tap(cursamp, ch, path, bufsamps);
 					DBG(PrintSig(vec->Sig, bufsamps));   
 					/* air absorpt. filters */
-         				air(vec->Sig, bufsamps, vec->Airdata);			
+         			air(vec->Sig, bufsamps, vec->Airdata);			
 					/* wall absorpt. filters */
 					if (path > 0)	// no filtering of direct signal
          				wall(vec->Sig, bufsamps, vec->Walldata);
@@ -312,8 +303,6 @@ int MBASE::run()
 					DBG(printf("after final scale before rvb:\n"));
 					DBG(PrintSig(vec->Sig, bufsamps, 0.1));
 		 		}
-				/* scale reverb input by amp factor */
-				scale(&globalReverbInput[ch][outputOffset+i], bufsamps, m_rvbamp);
 			}
 
 			DBG(printf("summing vectors\n"));
