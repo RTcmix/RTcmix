@@ -8,7 +8,7 @@ bus_config("JDELAY", "aux 0-1 in", "out0-1")
 
 totdur = 30
 
-/* 1: resonate strum notes, 2: echo strum notes */
+/* 1: resonate strum notes, 0: echo strum notes */
 resonate = 1
 
 /*----------------------------------------------------------------------------*/
