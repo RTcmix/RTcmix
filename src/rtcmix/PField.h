@@ -294,12 +294,15 @@ private:
 };
 
 // Class for constraining a control signal to the nearest value in a table.
+// <strength> [0,1] is the degree to which the input value approaches the
+// corresponding table value.  0: not at all; 1: table value replaces input
+// value; 0.5: output is halfway between input and table value; etc.   -JGG
 
 // helper class
 class Constrainer {
 public:
 	Constrainer(const double *table, const int tableLen);
-	double next(const double val, const double tightness);
+	double next(const double val, const double strength);
 private:
 	const double *_table;
 	const int _tableLen;
@@ -309,15 +312,45 @@ private:
 class ConstrainPField : public PFieldWrapper {
 public:
 	ConstrainPField(PField *innerPField, const double *table, const int tableLen,
-		PField *tightnessPField);
+		PField *strengthPField);
 	~ConstrainPField();
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
 	virtual int		values() const { return _len; }
 private:
 	int _len;
-	PField *_tightnessPField;
+	PField *_strengthPField;
 	Constrainer *_constrainer;
+};
+
+// Class for transforming a PField via a transfer function, supplied as
+// a TablePField, which we assume to be in range [0,1].  Input range is
+// fixed at construction.  -JGG
+
+// helper class
+class Mapper {
+public:
+	Mapper(TablePField *tablePF, const double inputMin, const double inputMax);
+	double next(const double val);
+private:
+	TablePField *_tablePF;
+	double _inputMin;
+	double _inputDiff;
+	double _lastVal;
+	double _lastOutput;
+};
+
+class MapPField : public PFieldWrapper {
+public:
+	MapPField(PField *innerPField, TablePField *tablePField, 
+		const double inputMin, const double inputMax);
+	~MapPField();
+	virtual double	doubleValue(double didx) const;
+	virtual double	doubleValue(int idx) const;
+	virtual int		values() const { return _len; }
+private:
+	int _len;
+	Mapper *_mapper;
 };
 
 // Class for converting values read from another PField.

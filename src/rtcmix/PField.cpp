@@ -263,7 +263,6 @@ double TablePField::Interpolate1stOrder(double *tab, int len, double didx)
 
 double TablePField::Interpolate2ndOrder(double *tab, int len, double didx)
 {
-	//FIXME: this is bound to be all wrong  -JGG
 	const int idx = int(didx);
 	const int idx2 = min(idx + 1, len - 1);
 	const int idx3 = min(idx + 2, len - 1);
@@ -464,7 +463,7 @@ Constrainer::Constrainer(const double *table, const int tableLen)
 {
 }
 
-double Constrainer::next(const double val, const double tightness)
+double Constrainer::next(const double val, const double strength)
 {
 	if (val != _lastVal) {
 		double min = DBL_MAX;
@@ -479,18 +478,18 @@ double Constrainer::next(const double val, const double tightness)
 		_lastTableVal = _table[closest];
 		_lastVal = val;
 	}
-	if (tightness == 0.0)
+	if (strength == 0.0)
 		return _lastVal;
-	else if (tightness == 1.0)
+	else if (strength == 1.0)
 		return _lastTableVal;
 	else
-		return _lastVal + ((_lastTableVal - _lastVal) * tightness);
+		return _lastVal + ((_lastTableVal - _lastVal) * strength);
 }
 
 ConstrainPField::ConstrainPField(PField *innerPField, const double *table,
-		const int tableLen, PField *tightnessPField)
+		const int tableLen, PField *strengthPField)
 	: PFieldWrapper(innerPField), _len(innerPField->values()),
-	  _tightnessPField(tightnessPField)
+	  _strengthPField(strengthPField)
 {
 	_constrainer = new Constrainer(table, tableLen);
 }
@@ -502,14 +501,57 @@ ConstrainPField::~ConstrainPField()
 
 double ConstrainPField::doubleValue(double didx) const
 {
-	return _constrainer->next(field()->doubleValue(didx), _tightnessPField->doubleValue(didx));
+	return _constrainer->next(field()->doubleValue(didx), _strengthPField->doubleValue(didx));
 }
 
 double ConstrainPField::doubleValue(int idx) const
 {
-	return _constrainer->next(field()->doubleValue(idx), _tightnessPField->doubleValue(idx));
+	return _constrainer->next(field()->doubleValue(idx), _strengthPField->doubleValue(idx));
 }
 
+// MapPField
+
+// helper class
+Mapper::Mapper(TablePField *tablePF, const double inputMin, const double inputMax)
+	: _tablePF(tablePF), _inputMin(inputMin), _lastVal(DBL_MAX), _lastOutput(0.0)
+{
+	_inputDiff = inputMax - inputMin;
+}
+
+double Mapper::next(const double val)
+{
+	if (val != _lastVal) {
+		// normalize inputVal to [0,1] and treat as table percentage
+		double percent = (val - _inputMin) / _inputDiff;
+		double tabval = _tablePF->doubleValue(percent);
+		// map table value to input range
+		_lastOutput = _inputMin + (tabval * _inputDiff);
+		_lastVal = val;
+	}
+	return _lastOutput;
+}
+
+MapPField::MapPField(PField *innerPField, TablePField *tablePField,
+		const double inputMin, const double inputMax)
+	: PFieldWrapper(innerPField), _len(innerPField->values())
+{
+	_mapper = new Mapper(tablePField, inputMin, inputMax);
+}
+
+MapPField::~MapPField()
+{
+	delete _mapper;
+}
+
+double MapPField::doubleValue(double didx) const
+{
+	return _mapper->next(field()->doubleValue(didx));
+}
+
+double MapPField::doubleValue(int idx) const
+{
+	return _mapper->next(field()->doubleValue(idx));
+}
 
 // ConverterPField
 
