@@ -49,8 +49,8 @@ main(int argc, char *argv[])
    int         i, fd, header_type, data_format, data_location;
    int         verbose = 0, quiet = 0, status = 0;
    int         nsamps, result, srate, nchans, class;
-   float       dur;
-   char        *sfname, timestr[MAX_TIME_CHARS];
+   float       dur, frac;
+   char        *sfname, timestr[MAX_TIME_CHARS], buf[32], *p;
    SFComment   sfc;
    struct stat statbuf;
 
@@ -168,7 +168,13 @@ main(int argc, char *argv[])
       }
       if (sfc.comment[0])
          printf("comment: %s\n", sfc.comment);
-      printf("duration: %f seconds\n", dur);
+
+      /* print duration in seconds and in 00:00.00 format */
+      frac = dur - (int)dur;
+      sprintf(buf, "%.2f", frac);   /* e.g., "0.14" */
+      p = buf + 1;                  /* skip 0 before decimal point */
+      printf("duration: %f seconds [%d:%02d%s]\n", dur, (int)dur / 60,
+               (int)dur % 60, frac? p : "");
 
       close(fd);
    }
