@@ -93,9 +93,7 @@ int JFIR :: init(double p[], int n_args)
    double *response_table = NULL;
 	int tablelen = 0;
 	if (n_args > 8) {      // handle table coming in as optional p8 TablePField
-		const PField &field = getPField(8);
-		tablelen = field.values();
-		response_table = (double *) field;
+		response_table = (double *) getPFieldTable(8, &tablelen);
 	}
 	if (response_table == NULL) {
 		response_table = floc(2);

@@ -149,9 +149,7 @@ int FLANGE :: init(double p[], int n_args)
    double *modtable = NULL;
    int tablelen = 0;
 	if (n_args > 13) {      // handle table coming in as optional p13 TablePField
-		const PField &field = getPField(13);
-		tablelen = field.values();
-		modtable = (double *) field;
+		modtable = (double *) getPFieldTable(13, &tablelen);
 	}
 	if (modtable == NULL) {
 		modtable = floc(2);

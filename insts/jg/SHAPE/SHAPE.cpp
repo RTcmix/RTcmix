@@ -118,9 +118,7 @@ int SHAPE :: init(double p[], int n_args)
    function = NULL;
    int tablelen = 0;
    if (n_args > 9) {    // handle table coming in as optional p9 TablePField
-      const PField &field = getPField(9);
-      tablelen = field.values();
-      function = (double *) field;
+      function = (double *) getPFieldTable(9, &tablelen);
    }
    if (function == NULL) {
       function = floc(2);

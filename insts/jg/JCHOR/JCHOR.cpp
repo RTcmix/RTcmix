@@ -153,9 +153,7 @@ int JCHOR::init(double p[], int n_args)
    }
 
 	if (n_args > 14) {      // handle table coming in as optional p14 TablePField
-		const PField &field = getPField(14);
-		winarraylen = field.values();
-		winarray = (double *) field;
+		winarray = (double *) getPFieldTable(14, &winarraylen);
 	}
 	if (winarray == NULL) {
       // MUST do this here, rather than in grain_input_and_transpose,

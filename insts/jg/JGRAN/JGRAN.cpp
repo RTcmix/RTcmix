@@ -136,9 +136,7 @@ int JGRAN :: init(double p[], int n_args)
    double *function = NULL;
    int tablelen = 0;
 	if (n_args > 6) {       // handle table coming in as optional p6 TablePField
-		const PField &field = getPField(6);
-		tablelen = field.values();
-		function = (double *) field;
+		function = (double *) getPFieldTable(6, &tablelen);
 	}
 	if (function == NULL) {
 		function = floc(2);
@@ -153,9 +151,7 @@ int JGRAN :: init(double p[], int n_args)
    function = NULL;
    tablelen = 0;
 	if (n_args > 7) {       // handle table coming in as optional p7 TablePField
-		const PField &field = getPField(7);
-		tablelen = field.values();
-		function = (double *) field;
+		function = (double *) getPFieldTable(7, &tablelen);
 	}
 	if (function == NULL) {
 		function = floc(3);
