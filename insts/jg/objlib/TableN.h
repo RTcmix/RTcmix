@@ -13,7 +13,7 @@ class TableN : public Oscil
   public:
     TableN(MY_FLOAT duration, MY_FLOAT *aTable, int tableSize);
     ~TableN();
-    MY_FLOAT tick(long nsample, MY_FLOAT amp = 1.0);
+    MY_FLOAT tick(long nsample, MY_FLOAT amp);
 };
 
 #endif

@@ -13,7 +13,7 @@ class TableL : public TableN
   public:
     TableL(MY_FLOAT duration, MY_FLOAT *aTable, int tableSize);
     ~TableL();
-    MY_FLOAT tick(long nsample, MY_FLOAT amp = 1.0);
+    MY_FLOAT tick(long nsample, MY_FLOAT amp);
 };
 
 #endif

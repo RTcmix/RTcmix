@@ -13,9 +13,9 @@ class Noise
   protected:  
     MY_FLOAT lastOutput;
   public:
-    Noise(unsigned int aSeed = 0);
+    Noise(unsigned int aSeed);
     virtual ~Noise();
-    void seed(unsigned int aSeed = 0);
+    void seed(unsigned int aSeed);
     MY_FLOAT tick();
     MY_FLOAT lastOut();
 };

@@ -18,7 +18,7 @@ class SubNoiseL : public SubNoise
     MY_FLOAT curVal;
     MY_FLOAT increment;
   public:
-    SubNoiseL(int subSample = 15, unsigned int aSeed = 0);
+    SubNoiseL(int subSample, unsigned int aSeed);
     ~SubNoiseL();
     MY_FLOAT tick();
     MY_FLOAT lastOut();

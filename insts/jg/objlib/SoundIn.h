@@ -30,7 +30,7 @@ class SoundIn
     int readBuffer();
 
   public:
-    SoundIn(char *fileName, MY_FLOAT inskip = 0.0);
+    SoundIn(char *fileName, MY_FLOAT inskip);
     ~SoundIn();
     int getChannels();
     int getSamplingRate();

@@ -21,7 +21,7 @@ class SubNoise : public Noise
   public:
     SubNoise();
     ~SubNoise();
-    SubNoise(int subSample, unsigned int aSeed = 0);
+    SubNoise(int subSample, unsigned int aSeed);
     void setHowOften(int howOft);
     MY_FLOAT tick();
 };

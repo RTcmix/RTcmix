@@ -11,11 +11,11 @@ class OscilL : public OscilN
 {
   protected:  
   public:
-    OscilL(MY_FLOAT initialPhase = 0.0,
-           MY_FLOAT *waveTable = NULL,
-           int      tableSize = DEFAULT_WAVETABLE_SIZE);
+    OscilL(MY_FLOAT initialPhase,
+           MY_FLOAT *waveTable,
+           int      tableSize);
     ~OscilL();
-    MY_FLOAT tick(MY_FLOAT freq, MY_FLOAT amp = 1.0);
+    MY_FLOAT tick(MY_FLOAT freq, MY_FLOAT amp);
 };
 
 #endif
