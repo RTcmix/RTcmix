@@ -4,6 +4,7 @@
 */
 
 #include <DataFile.h>
+#include <assert.h>
 #include <errno.h>
 #include <string.h>
 
@@ -88,7 +89,8 @@ int DataFile::formatStringToCode(const char *str)
    return -1;
 }
 
-// Return number of bytes to hold one element of given format.
+// Return number of bytes to hold one element of given format, or -1 if
+// format is invalid.
 int format_datumsize(const int format)
 {
 	switch (format) {
@@ -98,6 +100,7 @@ int format_datumsize(const int format)
 		case kDataFormatInt32:  return sizeof(int32_t); break;
 		case kDataFormatInt16:  return sizeof(int16_t); break;
 		case kDataFormatByte:   return sizeof(int8_t); break;
+		default:                return -1; break;
 	}
 	return 0;
 }
@@ -120,6 +123,7 @@ int DataFile::writeHeader(const int fileRate, const int format, const bool swap)
 {
 	_format = format;
 	_datumsize = format_datumsize(_format);
+	assert(_datumsize != -1);
 	_filerate = fileRate;
 	_increment = double(_controlrate) / double(_filerate);
 	_swap = swap;
@@ -130,18 +134,18 @@ int DataFile::writeHeader(const int fileRate, const int format, const bool swap)
 
 	size_t nitems = fwrite(&magic, sizeof(int32_t), 1, _stream);
 	if (nitems != 1)
-		goto err_return;
+		goto writeerr;
 
 	nitems = fwrite(&fmt, sizeof(int32_t), 1, _stream);
 	if (nitems != 1)
-		goto err_return;
+		goto writeerr;
 
 	nitems = fwrite(&rate, sizeof(int32_t), 1, _stream);
 	if (nitems != 1)
-		goto err_return;
+		goto writeerr;
 
 	return 0;
-err_return:
+writeerr:
 	fprintf(stderr, "Error writing header for data file \"%s\"\n", _filename);
 	return -1;
 }
@@ -189,15 +193,23 @@ long DataFile::readHeader(
 	nitems = fread(&format, sizeof(int32_t), 1, _stream);
 	if (nitems != 1)
 		goto readerr;
+	if (_swap)
+		format = _swapit(format);
 
 	int32_t filerate;
 	nitems = fread(&filerate, sizeof(int32_t), 1, _stream);
 	if (nitems != 1)
 		goto readerr;
+	if (_swap)
+		filerate = _swapit(filerate);
 
 	_format = format;
 	_datumsize = format_datumsize(_format);
+	if (_datumsize == -1)
+		goto invaldata;
 	_filerate = filerate;
+	if (_filerate < 1)
+		goto invaldata;
 	_increment = double(_controlrate) / double(_filerate);
 	_fileitems = fileItems(filebytes, _datumsize, true);
 	return _fileitems;
@@ -222,6 +234,10 @@ readerr:
 	else
 		fprintf(stderr, "There's hardly anything in data file \"%s\"!\n",
 				_filename);
+	return -1;
+
+invaldata:
+	fprintf(stderr, "Invalid header in data file \"%s\"\n", _filename);
 	return -1;
 }
 
