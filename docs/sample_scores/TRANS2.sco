@@ -11,7 +11,9 @@ high = octpch(0.05)
 low = octpch(-0.05)
 transp = maketable("line", "nonorm", 1000, 0,0, 1,low, 3,high)
 transp = makeconverter(transp, "pchoct")
-//transp = makedisplay(transp, "transp", "pch")   // shows oct.pc output
+
+// shows oct.pc output
+//transp = makemonitor(transp, "display", "transp", "pch")
 
 amp = maketable("line", 1000, 0,0, .1,1, dur-.1,1, dur,0)
 pan = maketable("line", 1000, 0,0, 1,1)   // pan right to left
