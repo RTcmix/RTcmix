@@ -49,6 +49,7 @@ MY_FLOAT SubNoise :: tick()
 
 void SubNoise :: setHowOften(int howOft)
 {
+   assert(howOft > 0);
    howOften = howOft;
 }
 

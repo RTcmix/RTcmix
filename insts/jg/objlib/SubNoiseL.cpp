@@ -13,6 +13,8 @@
 SubNoiseL :: SubNoiseL(int subSample = 15, unsigned int aSeed = 0)
            : SubNoise(subSample, aSeed)
 {    
+   assert(subSample > 0);
+
    prevRand = (MY_FLOAT) 0.0;
    curVal = (MY_FLOAT) 0.0;
    increment = (MY_FLOAT) 0.0;
