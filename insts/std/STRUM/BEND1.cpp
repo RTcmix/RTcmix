@@ -19,7 +19,7 @@ extern "C" {
 
 BEND1::BEND1() : Instrument()
 {
-	// future setup here?
+	branch = 0;
 }
 
 int BEND1::init(float p[], int n_args)
@@ -31,7 +31,9 @@ int BEND1::init(float p[], int n_args)
 // p11 = distortion signal level; p12 = amp; p13 = update gliss nsamples
 // p14 = stereo spread [optional]
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	float dur = p[1];
+
+	nsamps = rtsetoutput(p[0], dur, this);
 
 	strumq1 = curstrumq[0];
 	freq0 = cpspch(p[2]);
@@ -42,6 +44,16 @@ int BEND1::init(float p[], int n_args)
 
 	dq = curdelayq;
 	delayset(cpspch(p[9]), dq);
+
+	amptable = floc(1);
+	if (amptable) {
+		int amplen = fsize(1);
+		tableset(dur, amplen, amptabs);
+	}
+	else {
+		advise("FRET", "Setting phrase curve to all 1's.");
+		aamp = amp;
+	}
 
 	glissf = floc((int)p[4]);
 	if (glissf) {
@@ -72,13 +84,13 @@ int BEND1::run()
 	float out[2];
 	float freq;
 	float a,b;
-	int branch;
 
 	Instrument::run();
 
-	branch = 0;
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch < 0) {
+			if (amptable)
+				aamp = tablei(cursamp, amptable, amptabs) * amp;
 			freq = diff * tablei(cursamp, glissf, tags) + freq0;
 			sset(freq, tf0, tfN, strumq1);
 			branch = reset;
@@ -88,7 +100,7 @@ int BEND1::run()
 		b = dist(dgain*a);
 		d = fbgain*delay(b, dq);
 
-		out[0] = (cleanlevel*a + distlevel*b) * amp;
+		out[0] = (cleanlevel*a + distlevel*b) * aamp;
 
 		if (outputchans == 2) { /* split stereo files between the channels */
 			out[1] = (1.0 - spread) * out[0];

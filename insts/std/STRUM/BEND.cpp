@@ -15,7 +15,7 @@ extern "C" {
 
 BEND::BEND() : Instrument()
 {
-	// future setup here?
+	branch = 0;
 }
 
 int BEND::init(float p[], int n_args)
@@ -43,8 +43,10 @@ int BEND::init(float p[], int n_args)
 		int amplen = fsize(1);
 		tableset(dur, amplen, amptabs);
 	}
-	else
-		advise("BEND", "Setting phrase curve to all 1's.");
+	else {
+		advise("FRET", "Setting phrase curve to all 1's.");
+		aamp = 1.0;
+	}
 
 	glissf = floc((int)p[4]);
 	if (glissf) {
@@ -66,14 +68,10 @@ int BEND::run()
 {
 	int i;
 	float freq;
-	float aamp, out[2];
-	int branch;
+	float out[2];
 
 	Instrument::run();
 
-	aamp = 1.0;                  /* in case amptable == NULL */
-
-	branch = 0;
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch < 0) {
 			if (amptable)

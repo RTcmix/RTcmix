@@ -15,13 +15,15 @@ extern "C" {
 
 FRET::FRET() : Instrument()
 {
-	// future setup here?
+	branch = 0;
 }
 
 int FRET::init(float p[], int n_args)
 {
 // p0 = start; p1 = dur; p2 = pitch(oct.pc); p3 = fundamental decay time;
 // p4 = nyquist decay time; p5 = stereo spread [optional]
+
+	float	dur = p[1];
 
 	nsamps = rtsetoutput(p[0], p[1], this);
 
@@ -32,6 +34,18 @@ int FRET::init(float p[], int n_args)
 
 	spread = p[5];
 	firsttime = 1;
+
+   amptable = floc(1);
+	if (amptable) {
+		int amplen = fsize(1);
+		tableset(dur, amplen, amptabs);
+	}
+	else {
+		advise("FRET", "Setting phrase curve to all 1's.");
+		aamp = 1.0;
+	}
+
+	skip = (int)(SR / (float)resetval);
 
 	return(nsamps);
 }
@@ -49,7 +63,13 @@ int FRET::run()
 		}
 
 	for (i = 0; i < chunksamps; i++) {
-		out[0] = strum(0.,strumq1);
+		if (--branch < 0) {
+			if (amptable)
+				aamp = tablei(cursamp, amptable, amptabs);
+			branch = skip;
+		}
+
+		out[0] = strum(0.,strumq1) * aamp;
 
 		if (outputchans == 2) { /* split stereo files between the channels */
 			out[1] = (1.0 - spread) * out[0];

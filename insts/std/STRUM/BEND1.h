@@ -5,13 +5,14 @@ class BEND1 : public Instrument {
 	float freq0,diff;
 	float tf0,tfN;
 	float *glissf,tags[2];
-	float spread,amp;
+	float spread,amp,aamp;
+	float *amptable, amptabs[2];
 	strumq *strumq1;
 	delayq *dq;
 	float dgain,fbgain;
 	float cleanlevel,distlevel;
 	float d;
-	int reset;
+	int reset,branch;
 
 public:
 	BEND1();

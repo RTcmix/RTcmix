@@ -5,9 +5,9 @@ class BEND : public Instrument {
 	float tf0,tfN;
 	float *glissf,tags[2];
 	float *amptable, amptabs[2];
-	float spread;
+	float spread,aamp;
 	strumq *strumq1;
-	int reset;
+	int reset,branch;
 
 public:
 	BEND();
