@@ -17,17 +17,20 @@ extern int resetval;		// declared in src/rtcmix/minc_functions.c
 // -----------------------------------------------------------------------------
 //
 //    stream = makeconnection("datafile", filename, lag,
-//                            [timefactor[, filerate, format, swap]])
+//                   [skiptime[, timefactor[, filerate, format, swap]]])
 //
 //    <filename>     full or relative path to data file [string]
+//
 //    <lag>          amount of smoothing for value stream [percent: 0-100]
 //
-//    The next argument is optional.
+//    <skiptime>     time to skip before reading data file, prior to applying
+//                   <timefactor>.  This is optional; default is 0.
 //
-//    <timefactor>   scale time it takes to consume file [1: use the same
-//                   amount of time it took to create the file; 2: take twice
-//                   as long to play the file data; 0.5: take half as long;
-//                   default is 1.0]
+//    <timefactor>   scale time it takes to consume file: 1 means use the same
+//                   amount of time it took to create the file; 2 means take
+//                   twice as long to play the file data; 0.5 means take half
+//                   as long; etc.  This argument is optional; if used, 
+//                   <skiptime> must be given.  Default for <timefactor> is 1.0.
 //
 //    The next three are optional, used only if the data file has no header.
 //    If you give any, you must give all three.  We recommend that you give a
@@ -47,7 +50,7 @@ static RTNumberPField *_datafile_usage()
 {
 	die("makeconnection (datafile)",
 		"Usage: makeconnection(\"datafile\", filename, lag, "
-		"[filerate, format, swap])");
+		"[skiptime[, timefactor[, filerate, format, swap]]])");
 	return NULL;
 }
 
@@ -72,6 +75,7 @@ create_pfield(const Arg args[], const int nargs)
 	}
 	lag *= 0.01;
 
+	double skiptime = 0.0;
 	double timefactor = 1.0;
 	int filerate = -1;
 	int formatcode = -1;
@@ -79,33 +83,42 @@ create_pfield(const Arg args[], const int nargs)
 
 	// Handle the optional arguments.
 	if (nargs > 2) {
-		timefactor = args[2];
-		if (timefactor <= 0.0) {
+		skiptime = args[2];
+		if (skiptime < 0.0) {
 			die("makeconnection (datafile)",
-								"<timefactor> must be greater than zero.");
+								"<skiptime> must be zero or greater.");
 			return NULL;
 		}
-		if (nargs == 6) {
-			filerate = (int) args[3];
-			formatcode = DataFile::formatStringToCode(args[4]);
-			if (formatcode == -1) {
-				warn("makeconnection (datafile)", "Invalid format string. "
-								"Valid strings are:");
-				warn("makeconnection (datafile)", "\"double\", \"float\", "
-								"\"int64\", \"int32\", \"int16\", \"byte\"");
-				formatcode = kDataFormatFloat;
+		if (nargs > 3) {
+			timefactor = args[3];
+			if (timefactor <= 0.0) {
+				die("makeconnection (datafile)",
+									"<timefactor> must be greater than zero.");
+				return NULL;
 			}
-			swap = (bool) ((int) args[5]);
+			if (nargs == 7) {
+				filerate = (int) args[4];
+				formatcode = DataFile::formatStringToCode(args[5]);
+				if (formatcode == -1) {
+					warn("makeconnection (datafile)", "Invalid format string. "
+									"Valid strings are:");
+					warn("makeconnection (datafile)", "\"double\", \"float\", "
+									"\"int64\", \"int32\", \"int16\", \"byte\"");
+					formatcode = kDataFormatFloat;
+				}
+				swap = (bool) ((int) args[6]);
+			}
 		}
 	}
 
 	DataFileReaderPField *pfield;
 
 	if (formatcode == -1)	// use defaults in the PField
-		pfield = new DataFileReaderPField(filename, lag, resetval, timefactor);
+		pfield = new DataFileReaderPField(filename, lag, resetval, skiptime,
+                                                              timefactor);
 	else
-		pfield = new DataFileReaderPField(filename, lag, resetval, timefactor,
-							filerate, formatcode, swap);
+		pfield = new DataFileReaderPField(filename, lag, resetval, skiptime,
+                                  timefactor, filerate, formatcode, swap);
 
 	return pfield;
 }

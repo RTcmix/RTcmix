@@ -32,7 +32,7 @@ enum {
 // int32_t format        see enum above
 // int32_t controlrate   control rate in effect when file was saved
 
-const int kHeaderSize = sizeof(int32_t) * 3;
+const int kHeaderSize = sizeof(int32_t) * 3;		// header length in bytes
 
 
 class DataFile {
@@ -48,6 +48,16 @@ public:
 	long readHeader(const int  defaultFileRate = -1,
 						const int  defaultFormat = kDataFormatFloat,
 						const bool defaultSwap = false);
+
+	// Call setSkipTime after readHeader to start reading somewhere other than at
+	// the beginning of the file.  <skipTime> is the duration to skip, computed
+	// with reference to the file rate, and prior to any time-scaling of the
+	// data.  If <absolute> is true, skip from the end of the header; otherwise,
+	// skip relative to the current position.  setSkipTime can be called any
+	// number of times, as long as readHeader has already set a valid file rate.
+	// Returns -1 if seek error (and it reports error); 0 otherwise.
+
+	int setSkipTime(const double skipTime, const bool absolute = false);
 
 	int writeOne(const double val);
 	double readOne();
@@ -111,6 +121,7 @@ private:
 
 	char *_filename;
 	FILE *_stream;
+	int _headerbytes;
 	bool _swap;
 	int _format;
 	int _datumsize;

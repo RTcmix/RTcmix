@@ -8,9 +8,9 @@
 
 
 DataFileReaderPField::DataFileReaderPField(const char *fileName,
-		const double lag, const int controlRate, const double timeFactor,
-		const int defaultFileRate, const int defaultFormat,
-		const bool defaultSwap)
+		const double lag, const int controlRate, const double skipTime,
+		const double timeFactor, const int defaultFileRate,
+		const int defaultFormat, const bool defaultSwap)
 	: RTNumberPField(0)
 {
 	_datafile = new DataFile(fileName, controlRate, timeFactor);
@@ -23,6 +23,7 @@ DataFileReaderPField::DataFileReaderPField(const char *fileName,
 			delete _datafile;
 			_datafile = NULL;
 		}
+		_datafile->setSkipTime(skipTime);
 	}
 	_filter = new Oonepole(controlRate);
 	_filter->setlag(lag);

@@ -11,7 +11,7 @@
 
 DataFile::DataFile(const char *fileName, const int controlRate,
 		const double timeFactor)
-	: _stream(NULL), _swap(false),
+	: _stream(NULL), _headerbytes(0), _swap(false),
 	  _format(kDataFormatFloat), _datumsize(sizeof(float)), _fileitems(0),
 	  _controlrate(controlRate), _filerate(0), _timefactor(timeFactor),
 	  _increment(1.0), _counter(1.0), _lastval(0.0)
@@ -145,6 +145,8 @@ int DataFile::writeHeader(const int fileRate, const int format, const bool swap)
 	if (nitems != 1)
 		goto writeerr;
 
+	_headerbytes = kHeaderSize;
+
 	return 0;
 writeerr:
 	fprintf(stderr, "Error writing header for data file \"%s\"\n", _filename);
@@ -152,13 +154,10 @@ writeerr:
 }
 
 // Return the number of items in this file.
-static long fileItems(const long fileBytes, const int datumSize,
-	const bool hasHeader)
+static inline long fileItems(const long fileBytes, const int datumSize,
+	const int headerBytes)
 {
-	long bytes = fileBytes;
-	if (hasHeader)
-		bytes -= kHeaderSize;
-	return bytes / datumSize;
+	return (fileBytes - headerBytes) / datumSize;
 }
 
 // Attempt to interpret first few ints as a header.  If successful, leave
@@ -189,6 +188,7 @@ long DataFile::readHeader(
 		_swap = true;
 	else
 		goto noheader;
+	_headerbytes = kHeaderSize;
 
 	int32_t format;
 	nitems = fread(&format, sizeof(int32_t), 1, _stream);
@@ -212,7 +212,7 @@ long DataFile::readHeader(
 	if (_filerate < 1)
 		goto invaldata;
 	_increment = (double(_controlrate) / double(_filerate)) * _timefactor;
-	_fileitems = fileItems(filebytes, _datumsize, true);
+	_fileitems = fileItems(filebytes, _datumsize, _headerbytes);
 	return _fileitems;
 
 noheader:
@@ -226,7 +226,7 @@ noheader:
 				_filename, format_string(_format), _filerate,
 				_swap ? "with byte-swapping" : "no byte-swapping");
 	rewind(_stream);
-	_fileitems = fileItems(filebytes, _datumsize, false);
+	_fileitems = fileItems(filebytes, _datumsize, _headerbytes);
 	return _fileitems;
 
 readerr:
@@ -242,6 +242,23 @@ invaldata:
 	return -1;
 }
 
+int DataFile::setSkipTime(const double skipTime, const bool absolute)
+{
+	if (skipTime == 0.0)
+		return 0;
+	const long skipframes = int((_filerate * skipTime) + 0.5);
+	long skipbytes = skipframes * _datumsize;
+	int whence = absolute ? SEEK_SET : SEEK_CUR;
+	if (whence == SEEK_SET)
+		skipbytes += _headerbytes;
+//XXX If this would seek past end, print warning?
+	if (fseek(_stream, skipbytes, whence) != 0) {
+		fprintf(stderr, "Invalid seek into data file \"%s\": %s\n",
+												_filename, strerror(errno));
+		return -1;
+	}
+	return 0;
+}
 
 // XXX need to parameterize writeOne and readOne by datafile format and swap,
 // but these two are stored as class members.

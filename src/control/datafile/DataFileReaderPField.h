@@ -16,7 +16,8 @@ public:
 		const char   *fileName,
 		const double lag,
 		const int    controlRate,
-		const double timeFactor = 1.0,
+		const double skipTime = 0.0,     // time to skip (pre-scale) before read
+		const double timeFactor = 1.0,   // scale stream duration
 		// Use the following if the data file has no header.
 		const int    defaultFileRate = -1,
 		const int    defaultFormat = kDataFormatFloat,
