@@ -24,9 +24,9 @@ PROGS = MPLACE libMPLACE.so MMOVE libMMOVE.so
 .PHONY: all standalone install dso_install standalone_install \
 uninstall dso_uninstall standalone_uninstall clean cleanall
 
-all: libMPLACE.so libMMOVE.so
+all: libMPLACE.so libMMOVE.so libDMOVE.so
 
-standalone: MPLACE MMOVE
+standalone: MPLACE MMOVE DMOVE
 
 $(EXTERN_OBJS):
 	cd $(MOVEDIR); make
