@@ -1,21 +1,45 @@
 include ../package.conf
 
-OBJS = vMIX.o FADE_vMIX.o
-PROGS = vMIX libvMIX.so
+NAME = vMIX
+
+CURDIR = $(CMIXDIR)/insts.vccm/$(NAME)
+OBJS = $(NAME).o FADE_vMIX.o
 CMIXOBJS += $(PROFILE_O)
+PROGS = lib$(NAME).so $(NAME)
 
-all: libvMIX.so
+.PHONY: all standalone install dso_install standalone_install \
+uninstall dso_uninstall standalone_uninstall clean cleanall
 
-standalone: vMIX
+all: lib$(NAME).so
 
-libvMIX.so: $(OBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+standalone: $(NAME)
 
-vMIX: $(OBJS) $(CMIXOBJS)
+lib$(NAME).so: $(OBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+
+$(NAME): $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) $(HEADERS)
+$(OBJS): $(INSTRUMENT_H) $(NAME).h
+
+install: dso_install
+
+dso_install: lib$(NAME).so
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)/libi$(NAME).so
+
+standalone_install: standalone
+	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)/i$(NAME)
+
+uninstall: dso_uninstall standalone_uninstall
+
+dso_uninstall:
+	$(RM) $(LIBDESTDIR)/libi$(NAME).so
+
+standalone_uninstall:
+	$(RM) $(DESTDIR)/i$(NAME)
 
 clean:
-	$(RM) *.o $(OBJS) $(PROGS)
+	$(RM) $(OBJS) $(PROGS)
+
+cleanall: clean uninstall
 

@@ -1,21 +1,45 @@
 include ../package.conf
 
+NAME = RAP
+
+CURDIR = $(CMIXDIR)/insts.vccm/$(NAME)
 OBJS = PLAY.o RECORD.o rtprofile.o
-PROGS = RAP libRAP.so
 CMIXOBJS += $(PROFILE_O)
+PROGS = lib$(NAME).so $(NAME)
 
-all: libRAP.so
+.PHONY: all standalone install dso_install standalone_install \
+uninstall dso_uninstall standalone_uninstall clean cleanall
 
-standalone: RAP
+all: lib$(NAME).so
 
-libRAP.so: $(OBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+standalone: $(NAME)
 
-RAP: $(OBJS) $(CMIXOBJS)
+lib$(NAME).so: $(OBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+
+$(NAME): $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) $(HEADERS)
+$(OBJS): $(INSTRUMENT_H) $(NAME).h
+
+install: dso_install
+
+dso_install: lib$(NAME).so
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)/libi$(NAME).so
+
+standalone_install: standalone
+	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)/i$(NAME)
+
+uninstall: dso_uninstall standalone_uninstall
+
+dso_uninstall:
+	$(RM) $(LIBDESTDIR)/libi$(NAME).so
+
+standalone_uninstall:
+	$(RM) $(DESTDIR)/i$(NAME)
 
 clean:
-	$(RM) *.o $(OBJS) $(PROGS)
+	$(RM) $(OBJS) $(PROGS)
+
+cleanall: clean uninstall
 
