@@ -24,7 +24,7 @@ srand(4)
 for (st = 0; st < totdur; st = st + increment) {
    start = st + irand(0, increment * start_smear)
    inskip = minskip + ((maxskip - minskip) * random())
-   dur = dur + sampfunci(3, random() * 100)
+   dur = notedur + sampfunci(3, random() * 100)
    db = mindb + ((maxdb - mindb) * random())
    pctleft = random()
    STEREO(start, inskip, dur, ampdb(db), pctleft)
