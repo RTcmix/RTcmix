@@ -175,7 +175,7 @@ extern "C" {
 		  }
 		}
 
-		if ( (strcmp(sinfo->name, "RTcmix_off") == 0) ) {
+		if ( (strcmp(sinfo->name, "off") == 0) ) {
 		  rtInteractive = 0;
 		}
 	  

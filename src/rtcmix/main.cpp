@@ -381,7 +381,7 @@ main(int argc, char *argv[])
 #ifdef DBUG
       fprintf(stdout, "joining inTraverse() thread\n");
 #endif
-      /* retcode = pthread_join(inTraverseThread, NULL); */
+      retcode = pthread_join(inTraverseThread, NULL);
       if (retcode != 0) {
          fprintf(stderr, "inTraverse() thread join failed\n");
       }
@@ -390,7 +390,7 @@ main(int argc, char *argv[])
 #ifdef DBUG
       fprintf(stdout, "joining sockit() thread\n");
 #endif
-      /* retcode = pthread_join(sockitThread, NULL); */
+      retcode = pthread_join(sockitThread, NULL);
       if (retcode != 0) {
          fprintf(stderr, "sockit() thread join failed\n");
       }
