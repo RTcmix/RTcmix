@@ -166,7 +166,7 @@ protected:
 	int rtaddout(BUFTYPE samps[]);  				// replacement for old rtaddout
 	int rtbaddout(BUFTYPE samps[], int length);	// block version of same
 
-	const PField &	getPField(int index);
+	const PField &	getPField(int index) const;
 
 private:
    void				gone(); // decrements reference to input soundfile

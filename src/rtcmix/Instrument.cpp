@@ -439,7 +439,7 @@ void Instrument::gone()
 }
 
 const PField &
-Instrument::getPField(int index)
+Instrument::getPField(int index) const
 {
 	return (*_pfields)[index];
 }
