@@ -5,11 +5,11 @@
 #ifdef LINUX
 #include <endian.h>      /* so that sndlib.h will get host byte-order right */
 #endif
-#ifdef SGI
-#include <sys/endian.h>
-#endif
 #ifdef MACOSX
 #include <machine/endian.h>
+#endif
+#ifdef SGI
+#include <sys/endian.h>
 #endif
 #include <stdio.h>               /* for FILE, needed by sndlib.h */
 #include "../sndlib/sndlib.h"
