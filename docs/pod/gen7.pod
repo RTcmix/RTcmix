@@ -1,6 +1,6 @@
 =head1 NAME
 
-gen 7 - make a function with any number of straight line segments
+gen7 - make a function with any number of straight line segments
 
 =head1 SYNOPSIS
 

@@ -1,6 +1,6 @@
 =head1 NAME
 
-gen 1 - fill a function table with samples from a sound file
+gen1 - fill a function table with samples from a sound file
 
 =head1 SYNOPSIS
 

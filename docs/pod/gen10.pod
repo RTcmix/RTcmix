@@ -1,6 +1,6 @@
 =head1 NAME
 
-gen 10 - make a function with a waveform, composed of harmonic partials
+gen10 - make a function with a waveform, composed of harmonic partials
 
 =head1 SYNOPSIS
 

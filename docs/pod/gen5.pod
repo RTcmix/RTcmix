@@ -1,6 +1,6 @@
 =head1 NAME
 
-gen 5 - make a function with any number of exponential line segments
+gen5 - make a function with any number of exponential line segments
 
 =head1 SYNOPSIS
 

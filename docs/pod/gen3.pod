@@ -1,6 +1,6 @@
 =head1 NAME
 
-gen 3 - fill a function table with numbers from a binary data file
+gen3 - fill a function table with numbers from a binary data file
 
 =head1 SYNOPSIS
 

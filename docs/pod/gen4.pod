@@ -1,6 +1,6 @@
 =head1 NAME
 
-gen 4 - make a function from line segments with adjustable curvatures
+gen4 - make a function from line segments with adjustable curvatures
 
 =head1 SYNOPSIS
 

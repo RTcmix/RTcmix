@@ -1,6 +1,6 @@
 =head1 NAME
 
-gen 2 - fill a function table with arbitrary numbers
+gen2 - fill a function table with arbitrary numbers
 
 =head1 SYNOPSIS
 
