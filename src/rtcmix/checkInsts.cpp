@@ -23,8 +23,6 @@ extern heap rtHeap;     // intraverse.C
 
 //#define DEBUG
 
-#ifdef PFIELD_CLASS
-
 static void
 _printargs(const char *instname, const Arg arglist[], const int nargs)
 {
@@ -135,83 +133,3 @@ checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retv
    return 0.0;
 }
 
-#else /* !PFIELD_CLASS */
-
-double checkInsts(const char *fname, double *pp, int n_args, void **inst)
-{
-   int i;
-   rt_item *rt_p;
-   rt_item *rt_temp;
-   Instrument *Iptr;
-   double rv;
-
-#ifdef DEBUG
-   printf("ENTERING checkInsts() FUNCTION -----\n");
-#endif
-
-   /* zero out the unused p fields */
-   for (i = n_args; i < MAXDISPARGS; i++) pp[i] = 0.0;
-
-   mixerr = MX_FNAME;
-   rt_temp = rt_list;
-   rt_p = rt_list;
-
-   while (rt_p) {
-     
-      if (strcmp(rt_p->rt_name, fname) == 0) {
-         if (Option::print()) {
-            printf("========<rt-queueing>=======\n");
-            printf("%s:  ",fname);
-            for (i = 0; i < n_args; i++)
-               printf("%f ", pp[i]);
-            printf("\n");
-         }
-
-         /* set up the Instrument */
-         
-         Iptr = (*(rt_p->rt_ptr))();
-
-         Iptr->ref();   // We do this to assure one reference
-   
-         rv = (double) Iptr->init(pp, n_args);
-
-         if (rv != DONT_SCHEDULE) { // only schedule if no init() error
-            // For non-interactive case, configure() is delayed until just
-            // before instrument run time.
-            if (rtInteractive) {
-               if (Iptr->configure(RTBUFSAMPS) != 0) {
-			       mixerr = MX_FAIL;
-				   return -1;	// Configuration error!
-			   }
-			}
-
-            /* schedule instrument */
-            Iptr->schedule(&rtHeap);
-
-            mixerr = MX_NOERR;
-            rt_list = rt_temp;
-         } else {
-		    mixerr = MX_FAIL;
-            return rv;
-         }
-
-#ifdef DEBUG
-         printf("EXITING checkInsts() FUNCTION -----\n");
-#endif
-
-         if (inst != NULL)
-            *inst = (void *) Iptr;
-         return rv;
-      }
-      rt_p = rt_p->rt_next;
-   }
-   rt_list = rt_temp;
-
-#ifdef DEBUG
-   printf("EXITING checkInsts() FUNCTION (function not found) -----\n");
-#endif
-
-   return 0.0;
-}
-
-#endif /* !PFIELD_CLASS */

@@ -253,8 +253,6 @@ Instrument *RTcmix::cmd(char name[], int n_args, char* p0, ...)
 	return (Instrument *) retval;
 }
 
-#ifdef PFIELD_CLASS
-
 #include <PFieldSet.h>
 #include <PField.h>
 
@@ -287,8 +285,6 @@ Instrument *RTcmix::cmd(char name[], const PFieldSet &pfSet)
 	else
 		return NULL;
 }
-
-#endif	// PFIELD_CLASS
 
 // for commands with no params -- the double return val is because
 // that's what these commands generally do.

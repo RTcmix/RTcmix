@@ -2,7 +2,6 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-#ifdef PFIELD_CLASS
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
@@ -2223,4 +2222,3 @@ plottable(const Arg args[], const int nargs)
    return 0.0;
 }
 
-#endif /* PFIELD_CLASS */

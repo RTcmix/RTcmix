@@ -9,8 +9,6 @@
 #include "mixerr.h"
 #include <stdio.h>
 
-#ifdef PFIELD_CLASS
-
 int
 dispatch(const char *func_label, const Arg arglist[], const int nargs, Arg *retval)
 {
@@ -85,74 +83,6 @@ dispatch(const char *str, double *pp, int n_args, void **inst)
 
 	return retval;
 }
-
-#else /* !PFIELD_CLASS */
-
-/* This is the function -- called by the parser, the socket interface,
-   and the imbRTcmix.o imbeddable object -- that lets RTcmix perform
-   some action described by a command <str> and its associated pfields
-   <pp>.  There are <n_args> elements in the <pp> array.  If <str> is
-   not on the symbol list for non-RT functions (including legacy
-   disk-based instruments), then we ask a C++ function, checkInsts, to
-   look at the command.  If checkInsts thinks it's a real-time instrument,
-   it inits and queues the instrument and passes back a pointer to the
-   Instrument object, cast as a void pointer.  (We do this to avoid
-   the mess of having parse_dispatch know about a C++ class.)  The
-   caller to parse_dispatch can retrieve the Instrument pointer by
-   passing in a void pointer, <inst>, by reference, and casting it to
-   an Instrument pointer on return from parse_dispatch.  It the caller
-   doesn't care about Instrument pointers, it can just supply NULL as
-   the fourth argument to parse_dispatch.
-
-   Example:
-
-      void        *phantom;
-      Instrument  *instPtr;
-      double      pp[512];
-
-      pp[0] = 0.0; pp[1] = 1.0; pp[2] = 10000;
-
-      doubleval = dispatch("foo", pp, 3, &phantom);   // for RT inst
-      instPtr = (Instrument *) phantom;
-
-      // for Minc func, legacy inst, or if we just don't need ptr to RT inst
-      doubleval = dispatch("bar", pp, 0, NULL);
-
-   dispatch returns whatever double is returned by the RTcmix
-   instrument or function; or, if <str> is not recognized as a valid
-   RTcmix instrument or function name, it returns 0 and gives a warning.
-
-   This comment is now longer than the function, so it's time to stop!
-
-   -JGG, 12/12/02
-*/
-double dispatch(const char *str, double *pp, int n_args, void **inst)
-{
-	double rv;
-
-	if (inst != NULL)
-		*inst = NULL;
-
-	mixerr = MX_NOERR;      /* Clear up old errors */
-
-	/* Find and call the routine that goes with named function (non-rt!) */
-	rv = checkfuncs(str, pp, n_args);
-	if (mixerr == MX_NOERR)
-		return rv;
-
-	/* Else check to see if it's a real-time Instrument symbol.
-	   Note that *inst must be cast to Instrument * by caller. */
-	rv = checkInsts(str, pp, n_args, inst);
-
-	if (mixerr == MX_FNAME) {
-		advise(NULL, "(Note: %s() is an undefined function or Instrument.)", str);
-		return 0.0;
-	}
-
-	return rv;
-}
-
-#endif /* !PFIELD_CLASS */
 
 // This is an extern "C" wrapper for trees.c and RT.c
 
