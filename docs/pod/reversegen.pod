@@ -1,0 +1,35 @@
+=head1 NAME
+
+reversegen - reverse the order of values in a function table
+
+=head1 SYNOPSIS
+
+B<reversegen>(I<table_number>)
+
+=head1 DESCRIPTION
+
+Call B<reversegen> from a script to reverse the order of the values in
+a function table.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID for the function table.
+
+=head1 EXAMPLES
+
+   /* Make a table of 100 random numbers. */
+   makegen(1, 20, 100, 1)
+
+   /* Reverse it. */
+   reversegen(1)
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<addgens|addgens>, L<multgens|multgens>,
+L<copygen|copygen>, L<offsetgen|offsetgen>, L<scalegen|scalegen>,
+L<invertgen|invertgen>, L<rotategen|rotategen>, L<quantizegen|quantizegen>
+

@@ -58,5 +58,7 @@ elements.
 
 =head1 SEE ALSO
 
-L<makegen|makegen>, L<addgens|addgens>
+L<makegen|makegen>, L<addgens|addgens>, L<copygen|copygen>,
+L<offsetgen|offsetgen>, L<scalegen|scalegen>, L<invertgen|invertgen>,
+L<reversegen|reversegen>, L<rotategen|rotategen>, L<quantizegen|quantizegen>
 

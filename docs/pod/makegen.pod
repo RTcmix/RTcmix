@@ -167,6 +167,9 @@ before the first.
 =head1 SEE ALSO
 
 L<setline|setline>, L<setexp|setexp>, L<addgens|addgens>, L<multgens|multgens>,
+L<copygen|copygen>, L<offsetgen|offsetgen>, L<scalegen|scalegen>,
+L<invertgen|invertgen>, L<reversegen|reversegen>, L<rotategen|rotategen>,
+L<quantizegen|quantizegen>,
 L<sampfunc|sampfunc>, L<sampfunci|sampfunci>, L<fplot|fplot>, L<fdump|fdump>
 
 and documentation for each function type:

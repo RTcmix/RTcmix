@@ -1,0 +1,42 @@
+=head1 NAME
+
+scalegen - multiply every element of a function table by a fixed value
+
+=head1 SYNOPSIS
+
+B<scalegen>(I<table_number>, I<scale>)
+
+=head1 DESCRIPTION
+
+Call B<scalegen> from a script to multiply every element of a function table
+by a fixed value.  Note that this could make a table whose values fall
+outside of the range from -1 to 1.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID for the function table.
+
+=item I<scale>
+
+The amount to multiply every element of the function table by.
+
+=head1 EXAMPLES
+
+   /* Make a table of random numbers between 0 and 1. */
+   makegen(1, 20, 100, 0)
+
+   /* Scale the random numbers so they fall between 0 and 0.1. */
+   scalegen(1, 0.1)
+
+(Yes, this can be done directly inside B<gen20>, but it's only an example.)
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<addgens|addgens>, L<multgens|multgens>,
+L<copygen|copygen>, L<offsetgen|offsetgen>, L<invertgen|invertgen>,
+L<reversegen|reversegen>, L<rotategen|rotategen>, L<quantizegen|quantizegen>
+

@@ -1,0 +1,79 @@
+=head1 NAME
+
+copygen - copy a function table, with optional size and interpolation change
+
+=head1 SYNOPSIS
+
+B<copygen>(I<new_table>, I<old_table> [, I<new_size>
+[, I<interpolation_type> ]])
+
+=head1 DESCRIPTION
+
+Call B<addgens> from a script to make a new function table by adding
+corresponding points from two existing tables.  These two tables do
+not have to be the same size.  The new table will be as large as the
+larger of the two existing tables.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<new_table>
+
+The numeric ID for the new function table.  (This can be the same
+as I<old_table>, if you want to overwrite the old one.)
+
+=item I<old_table>
+
+The numeric ID for the existing function table.
+
+=item I<new_size>
+
+If this argument is given and is non-zero, then the new function
+table will have this number of elements.  If this argument is not
+given, then the new table will have the same number of elements
+as the old one.
+
+=item I<interpolation_type>
+
+This optional argument specifies the type of interpolation to use when
+copying the table to a new one with a larger size.  The types are:
+
+=over 8
+
+=for html <p>
+
+=item 0
+
+no interpolation
+
+=item 1
+
+linear interpolation
+
+=back
+
+If this argument is not given, then linear interpolation will be used.
+
+=back
+
+=head1 EXAMPLES
+
+   /* Make a low-resolution sine wave (only 30 table elements). */
+   makegen(1, 10, 30, 1)
+
+   /* Copy sine wave to a larger table with no interpolation. */
+   copygen(2, 1, 10000, 0)
+
+Table number 2 will contain a sine wave with stair-steps.  The reason
+you might want this is that most instruments using function tables will
+perform linear interpolation between adjacent table values, thus smoothing
+your low-resolution sine wave.  If you really want a jagged sine wave,
+then you have to make a very large table that preserves the jagged shape.
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<addgens|addgens>, L<multgens|multgens>,
+L<offsetgen|offsetgen>, L<scalegen|scalegen>, L<invertgen|invertgen>,
+L<reversegen|reversegen>, L<rotategen|rotategen>, L<quantizegen|quantizegen>
+

@@ -1,0 +1,44 @@
+=head1 NAME
+
+quantizegen - quantize the elements of a function table
+
+=head1 SYNOPSIS
+
+B<quantizegen>(I<table_number>, I<quantum>)
+
+=head1 DESCRIPTION
+
+Call B<quantizegen> from a script to quantize the elements of a function
+table.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID for the function table.
+
+=item I<quantum>
+
+Define a grid to which table elements snap.  Elements will never
+be closer in value than I<quantum>.
+
+=head1 EXAMPLES
+
+   /* Make a table of 20 random numbers between 0 and 1. */
+   makegen(1, 20, 20, 0)
+
+   /* Snap the values to a grid dividing the space between
+      0 and 1 into 4 parts.
+   */
+   quantizegen(1, 0.25)
+
+Now the table contains 5 different values: 0, 0.25, 0.5, 0.75, and 1.
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<addgens|addgens>, L<multgens|multgens>,
+L<copygen|copygen>, L<offsetgen|offsetgen>, L<scalegen|scalegen>,
+L<invertgen|invertgen>, L<reversegen|reversegen>, L<rotategen|rotategen>
+

@@ -1,0 +1,42 @@
+=head1 NAME
+
+offsetgen - add a fixed value to every element of a function table
+
+=head1 SYNOPSIS
+
+B<offsetgen>(I<table_number>, I<offset>)
+
+=head1 DESCRIPTION
+
+Call B<offsetgen> from a script to add a fixed amount to every
+element of a function table.  Note that this could make a table
+whose values fall outside of the range from -1 to 1.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID for the function table.
+
+=item I<offset>
+
+The amount to add to every element of the function table.
+
+=head1 EXAMPLES
+
+   /* Make a sine wave at half amplitude, ranging between
+      -0.5 and +0.5.
+   */
+   makegen(1, 9, 1000, 1, 0.5, 0)
+
+   /* Make it a unipolar sine wave, ranging between 0 and 1. */
+   offsetgen(1, 0.5)
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<addgens|addgens>, L<multgens|multgens>,
+L<copygen|copygen>, L<scalegen|scalegen>, L<invertgen|invertgen>,
+L<reversegen|reversegen>, L<rotategen|rotategen>, L<quantizegen|quantizegen>
+

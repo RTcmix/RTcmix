@@ -1,0 +1,45 @@
+=head1 NAME
+
+rotategen - change the phase of a function table
+
+=head1 SYNOPSIS
+
+B<rotategen>(I<table_number>, I<rotate>)
+
+=head1 DESCRIPTION
+
+Call B<rotategen> from a script to rotate the elements of a function table,
+shifting the phase of the table.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID for the function table.
+
+=item I<rotate>
+
+The number of table slots by which to shift the elements of the table.
+Elements that would run off the end of the table wrap around to the 
+beginning of the table.  Positive values of I<rotate> move elements
+to the right; negative values, to the left.
+
+=head1 EXAMPLES
+
+   /* Make a table of 10 random numbers. */
+   makegen(1, 20, 10, 0)
+
+   /* Shift the values to the right by 5 table slots. */
+   rotategen(1, 5)
+
+   /* Shift the values to the left by 2 table slots. */
+   rotategen(1, -2)
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<addgens|addgens>, L<multgens|multgens>,
+L<copygen|copygen>, L<offsetgen|offsetgen>, L<scalegen|scalegen>,
+L<invertgen|invertgen>, L<reversegen|reversegen>, L<quantizegen|quantizegen>
+

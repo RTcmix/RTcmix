@@ -1,0 +1,36 @@
+=head1 NAME
+
+invertgen - invert the values of a function table around their midpoint
+
+=head1 SYNOPSIS
+
+B<invertgen>(I<table_number>)
+
+=head1 DESCRIPTION
+
+Call B<invertgen> from a script to invert the values of a function table
+around their midpoint.  Specifically, this center of symmetry is a point
+halfway between the minimum and maximum values in the table.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<table_number>
+
+The numeric ID for the function table.
+
+=head1 EXAMPLES
+
+   /* Make a hanning window (bell curve). */
+   makegen(1, 25, 1000, 1)
+
+   /* Invert it. */
+   invertgen(1)
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<addgens|addgens>, L<multgens|multgens>,
+L<copygen|copygen>, L<offsetgen|offsetgen>, L<scalegen|scalegen>,
+L<reversegen|reversegen>, L<rotategen|rotategen>, L<quantizegen|quantizegen>
+

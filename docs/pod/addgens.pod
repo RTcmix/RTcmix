@@ -57,5 +57,8 @@ of as much as 0.1 from a straight line.  The table will have 1000 elements.
 
 =head1 SEE ALSO
 
-L<makegen|makegen>, L<multgens|multgens>
+L<makegen|makegen>, L<multgens|multgens>, L<copygen|copygen>,
+L<offsetgen|offsetgen>, L<scalegen|scalegen>, L<invertgen|invertgen>,
+L<reversegen|reversegen>, L<rotategen|rotategen>, L<quantizegen|quantizegen>
+
 
