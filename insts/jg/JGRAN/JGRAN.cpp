@@ -1,4 +1,4 @@
-/* JGRAN - a granular synthesis with FM or AS grains
+/* JGRAN - granular synthesis with FM or AS grains
 
    This was derived from a Cecilia module (StochasticGrains) by
    Mathieu Bezkorowajny and Jean Piche. See also Mara Helmuth's

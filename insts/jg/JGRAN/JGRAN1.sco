@@ -45,7 +45,7 @@ makegen(14, 18, 1000, 0,0, 1,1)             /* increasingly randomized */
 JGRAN(start=0, dur, amp, seed=.1, type=1, ranphase=1)
 
 
-/* JGRAN - a granular synthesis with FM or AS grains
+/* JGRAN - granular synthesis with FM or AS grains
 
    This was derived from a Cecilia module (StochasticGrains) by
    Mathieu Bezkorowajny and Jean Piche. See also Mara Helmuth's
