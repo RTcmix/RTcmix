@@ -11,8 +11,7 @@ VOCODE    - a channel vocoder. Control a bank of band-pass filters from
             a real-time analysis of another file.
 
 JFIR      - an FIR filter with frequency response sampling. Use a makegen
-            to "draw" a frequency response for the filter. (I can get up
-            to 600 taps in real-time on a PII266.)
+            to "draw" a frequency response for the filter.
 
 FLANGE    - a flanger with choice of IIR comb or FIR notch filter. Serves
             as a demonstration of some of the unit gen objects.
