@@ -1,3 +1,7 @@
+[NOTE:  This is the older RTcmix1.0 README -- read the README2.0 file
+ first...]
+
+
 Hey folks!
 
 I guess this is the "beta" version of RTcmix, complete with real-time 
@@ -20,6 +24,14 @@ strips it down to the source again for re-building.
 Some useful info:
 
 Running RTcmix instruments:
+
+  [NOTE to current users of RTcmix2.0:  The methodology of calling
+   RTcmix/CMIX instruments has changed to take advantage of the new
+   DSO capabilities (using the "load()" directive in scores).  The following
+   will still work, but the better way to do it is to invoke the base
+   CMIX executables by just typing "CMIX < score.file" or "cmix < score.file"
+   and using "load()" in the scorefiles to dynamically load the instruments
+   you need.  See the README in the insts/ subdirectory for more information.]
 
 You can run RTcmix instruments (there the ones in CAPITAL letters
 in the insts directory) in three modes --
@@ -51,13 +63,17 @@ rtsetparams() info) through the socket.  Your client application has
 to send rtsetparams() before any audio processing can occur.  It will not
 parse a scorefile at all, even if the " < score.file" is included.
 
-One weirdness that we had to do to make the interactive scheduling
-work is that p[0] HAS to be the start time of output for instruments
-running in interactive mode.  We add a slight amount of time (depending
-on the SR, NCHANS and the RTBUFSAMPS settings) in order to prevent
-scheduling notes tagged at time "0" in the real-time past.  This
-is something we should probably change in the future, but I'm not
-sure exactly how to do this.  Suggestions are welcome!
+
+  [NOTE:  Item 4 is actually new to RTcmix2.0, but it seemed appropriate
+   to include it here.]
+
+4.
+	INSTRUMENT -i -n -c
+
+will do all of the above stuff, plus engage "continuous update" mode,
+allowing instruments designed with the rtupdate() feature to change
+parameters as they execute.  The basic WAVETABLE and FMINST instruments
+show how this can be done.
 
 
 Each instrument in the insts directory has a number of sample scorefiles, 
@@ -121,7 +137,7 @@ rtoutput() -- This will write an aiff audio file as it creates
 	I'm not sure how well this works in interactive mode.
 
 
-INSTUMENT Level:
+INSTRUMENT Level:
 
 rtsetinput(), rtsetoutput() -- These replace setnote(), third param
 	is a pointer to the current instrument rather than a
@@ -135,6 +151,12 @@ rtaddout() -- replaces ADDOUT, only with 1 param (the output array).
 rtprofile() and RT_INTRO() -- these work in the same was as profile()
 	and UG_INTRO, only for real-time instruments.
 
+  [NOTE: new to RTcmix2.0...]
+
+rtupdate() -- this allows instruments to change parameters as they
+	are executing, this effecting continuous control.  Several examples
+	in the RTcmix2.0.interfaces.tar.gz package show how this is done.
+
 
 I also added a new gen routine, gen 25, that creates Hanning or
 Hamming windows.  it has only 1 p-field after the 3 setup p-fields,
@@ -145,20 +167,32 @@ i.e.
 	makegen(1, 25, 1000, 2) /* Hamming window */
 
 
+  [NOTE: new to RTcmix2.0...]
+
+Luke Dubois wrote gen 20, which will set up different random number
+distributions.  Like gen 25, it takes a single argument after the
+npoints parameter.  The arguments are:
+
+     /* fills a gen with random numbers b/t 0 and 1 --
+      * the argument is the distribution type:
+      * 0 = even distribution
+      * 1 = low weighted linear distribution
+      * 2 = high weighted linear distribution
+      * 3 = triangle linear distribution
+      * 4 = gaussian distribution
+      * 5 = cauchy distribution
+      *
+      * by r. luke dubois - CMC/CU, 1998.
+      *
+      * distribution equations adapted from dodge and jerse.
+      *
+      */
+
 
 
 There are a lot of sample instruments (plus a bunch of older CMIX
 routines) in the insts directory -- see the README there for
 a brief listing.  We'll be adding more!
-
-COMING SOON:
-
-This is also just the first part of an expanded RTcmix I'm working
-on with Dave Topper.  We want to add a call like "rtupdateparams()"
-that can be used in the sample-computing loop, reading values from
-a socket so that instruments can be controlled in real time.  We're
-planning to use Perry's SKINI as the protocol for this, thus we could
-run Perry's stuff and RTcmix from the same control system.
 
 
 The version here compiles on SGIs under IRIX 6.2, Dave Topper

@@ -1,46 +1,107 @@
-Ok, so I guess this is now officially "Release 2.0" of RTcmix.  There 
-are quite a few additions from the earlier RTcmix, mainly in some of the
-lower-level scheduling stuff (fixes) and expanded interface capabilities.
-We have decided to split off the interfaces into a separate package: 
+This package is what we are calling "Release 2.0" of RTcmix.  RTcmix
+is a superset of CMIX, an old and venerable(!) sound synthesis and
+signal-processing language written by Paul Lansky in the early 1980's.
+The "RT" part means it is "real-time", with the ability to process and
+create sound 'on-the-fly'.  All of the original CMIX code exists
+unchanged in this version, so that older scores and instruments should
+run (and also be re-compiled) with no difficulties.  For more information
+about CMIX or RTcmix, see the web sites at Columbia 
+
+	http://www.music.columbia.edu/cmix
+
+or Princeton 
+
+	http://www.music.princeton.edu/winham/cmix.html
+
+The Columbia web site is current with this version of RTcmix; the Princeton
+site has documentation on the disk-based CMIX included within this
+package.
+
+There are README files in most of the subdirectories of this package
+describing the files there -- full source is included in this package!
+Also see the "README1.0" file in this directory for some basic/background
+information (I added a couple of RTcmix2.0 comments there, too).
+
+
+--------------------------------------------------
+There are quite a few additions from the earlier RTcmix (1.0), mainly in
+some of the lower-level scheduling stuff (fixes) and expanded interface
+capabilities.  We have decided to split off the interfaces into a separate
+package: 
 
 	RTcmix2.0.interfaces.tar.gz 
 
 (available at http://www.music.columbia.edu/cmix)
 
-This interface package includes java, lisp (gcl), MIDI, motif, and a
-few other examples of how RTcmix can be driven from other apps.
+This interface package includes java, lisp (gcl), MIDI, OpenGL, X/motif,
+and a few other examples of how RTcmix can be driven from other apps.
 
 There is a fair amount of documentation included in this version in the
 cmix_docs subdir; but we will probably be updating it periodically, so
 please check http://www.music.columbia.edu/cmix every once in awhile.
 
+
 The Makefile is now set up for compiling on an SGI Indy running IRIX 6.2.
-It also assumes that you will be installing RTcmix in a /musr/cmix
-hierarchy.  You can easily change the Makefile in the top dir to
+It also assumes that you will be installing RTcmix in a /musr/cmix/
+hierarchy.  You can easily change the Makefile in the top directory to
 override this (and to set up optimization flags for IRIX 6.3 and 6.5).
 
-To compile, just unpack the RTcmix2.0.tar.gz file (it will unpack into
-an RTcmix2.0 subdir), rename this subdir or link it as /musr/cmix (or
-whatever you choose, editing the Makefile appropriately), and go
-to the top and type "make".  All of the executable programs are linked
-into the bin dir, so be sure to include it on your $path if you
-want easy access to the fun sound-things.
+To compile do the following:
 
-Check the README in the insts subdir for a description of the instruments.
+  1.  Unpack the RTcmix2.0.irix.tar.gz file (it will unpack
+	into an RTcmix2.0 subdir)
+  2.  Rename this subdir or link it as /musr/cmix/ (or whatever you
+	choose, editing the Makefile appropriately)
+  3.  Go to the top of this new direcory and type "make"
+
+All of the executable programs are linked into the bin/ dir, so be sure
+to include it on your $PATH if you want easy access to the fun sound-things.
+The total compiled space at present is about 25 Mbytes, this can be greatly
+reduced to < 10 Mbytes by removing all the "standalone" instruments in the
+insts/ directory and using the DSO "CMIX" or "cmix" command.  Typing 
+
+	make onlyDSO
+
+in the insts/ directory after building RTcmix will accomplish this.
+
+
+Check the README in the insts/ subdir for a description of the instruments.
 We're working on some documentation for those wanting to create their
 own interface or instrument -- stay tuned!  In the meantime, the 
-insts/TEMPLATE directory is a good place to start.  Also check
+insts/TEMPLATE/ directory is a good place to start.  Also check
 the README1.0 file in this directory for some basic information.
 
 Doug Scott (dscott@sgi.com) has made some significant improvements to
-this RTcmix -- see his "CHANGES" file below for a description.
+this RTcmix -- see his "CHANGES" file below for a description.  One
+of the biggest changes has to do with how we now invoke RTcmix/CMIX
+instruments.  Although it is still possible to use "standalone"
+instrument commands, the definitely cooler way to do this is to
+use the load() directive in the score and just call the generic
+"CMIX" or "cmix" command.  See the README file in the insts/ subdir for
+more information.
 
+
+--------------------------------------------------
+NOTE TO USERS OF OLDER CMIX/RTcmix PACKAGES:
+
+Ok, I lied when I said the older, disk-based CMIX existed unchanged
+within RTcmix.  We did change the p-field ordering of the older instruments
+in an attempt to standardize some of the basic p-fields.  The most obnoxious
+change is in the "mix" and "stereo" commands -- see the README in the
+insts/ directory for the new version.  The rest of the old code is
+untouched by human hands...
+
+
+--------------------------------------------------
 Dave Topper (topper@virginia.edu) has a Linux version, we'll be putting
 it on http://www.music.columbia.edu/cmix as soon as we get it merged
 with this 2.0 release.
 
-Many many thanks to Luke Dubois, Doug and Dave, and the rest of the
-happy Columbia folks for assisting with this.
+Many many thanks to Luke DuBois, Doug and Dave, John Gibson at UVa, and the
+rest of the happy Columbia folks for assisting with this.  And of course
+thanks to the original CMIX hackers: Paul Lansky(!), Andy Milburn, Dave Madole,
+Lars Graf...
+
 
 Send me e-mail with problems, snazzy ideas, whatever.
 
@@ -50,9 +111,11 @@ Columbia University
 brad@music.columbia.edu
 
 
+
+--------------------------------------------------
 Doug Scott's CHANGES:
 
--------------------------------------------------
+
 /* Here is a list of some of the changes I have made to RTcmix */
 
 1) Added missing 'int' or 'void' to extern decls wherever possible.
