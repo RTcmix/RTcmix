@@ -12,7 +12,7 @@
 #include <assert.h>
 #include <sndlibsupport.h>	// RTcmix header
 
-#define DEBUG 2
+#define DEBUG 0
 
 static const char *errToString(OSStatus err);
 static OSStatus getDeviceList(AudioDeviceID **devList, int *devCount);
@@ -578,7 +578,10 @@ OSXAudioDevice::OSXAudioDevice(const char *desc) : _impl(new Impl)
             // Now parse stream selecters
             const char *selecters[2] = { insubstr, outsubstr };
             for (int dir = REC; dir <= PLAY; ++dir) {
-               if (strchr(selecters[dir], '-') == NULL) {
+			   if (selecters[dir] == NULL) {
+				  // Do nothing;  use defaults.
+			   }
+               else if (strchr(selecters[dir], '-') == NULL) {
                   // Parse non-range selecter (single digit)
                   _impl->port[dir].streamIndex = strtol(selecters[dir], NULL, 0);
                }
