@@ -8,7 +8,7 @@ MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
 
 SNDLIB_DIR = sndlib
 
-DIRS = $(SNDLIB_DIR) H rtstuff Minc sys lib head cmd utils 
+DIRS = $(SNDLIB_DIR) H rtstuff Minc sys lib head cmd utils docs
 ifeq ($(PERL_SUPPORT), TRUE)
 	DIRS += Perl
 endif
@@ -37,11 +37,17 @@ endif
 ifeq ($(PERL_SUPPORT), TRUE)
 	@cd Perl; $(MAKE) install;
 endif
+	@cd docs/pod; $(MAKE) install
 	@echo "install done."; echo ""
 
 H::
 	@echo "making H..."
 	@cd H; $(MAKE) all
+	@echo "done."; echo""
+
+docs::
+	@echo "making docs ..."
+	@cd docs/pod; $(MAKE) all
 	@echo "done."; echo""
 
 heap::
@@ -172,6 +178,8 @@ clean::
 	  ( cd $$DIR; echo "making clean in $$DIR..."; \
 	  $(MAKE) clean ); \
 	done
+	echo "making clean in docs"
+	@cd docs/pod; $(MAKE) clean uninstall
 ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
 	@for DIR in $(PACKAGE_DIRS); \
 	do \
