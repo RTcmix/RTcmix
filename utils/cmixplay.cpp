@@ -41,9 +41,6 @@
 #define ROBUST_FACTOR       2
 #endif
 
-#define NUM_ZERO_BUFS_BEFORE 0
-#define NUM_ZERO_BUFS_AFTER 8
-
 #define SKIP_SECONDS        4.0     /* for fast-forward and rewind */
 #define MARK_PRECISION      2       /* digits after decimal point to print
                                        for mark */
@@ -644,7 +641,7 @@ int main(int argc, char *argv[])
    /* write buffers of zeros to prevent clicks */
    for (i = 0; i < buf_samps; i++)
       sbuf[i] = 0;
-   for (i = 0; i < NUM_ZERO_BUFS_BEFORE; i++) {
+   for (i = 0; i < ZERO_FRAMES_BEFORE / buf_frames; i++) {
 #ifdef LINUX
       status = write_buffer(afd, (char *)sbuf, AUDIO_DATUM_SIZE,
                                              buf_samps / in_chans, in_chans);
@@ -815,7 +812,7 @@ int main(int argc, char *argv[])
    /* write buffers of zeros to prevent clicks */
    for (i = 0; i < buf_samps; i++)
       sbuf[i] = 0;
-   for (i = 0; i < NUM_ZERO_BUFS_AFTER; i++) {
+   for (i = 0; i < ZERO_FRAMES_AFTER / buf_frames; i++) {
 #ifdef LINUX
       status = write_buffer(afd, (char *)sbuf, AUDIO_DATUM_SIZE, nframes,
                                                                   in_chans);
