@@ -1,3 +1,16 @@
+RTcmix version 3.1
+------------------
+
+RTcmix version 3.1 adds bug fixes, new features, new instruments,
+and support for Mac OS X.  (See ChangeLog.)  One new feature --
+the pgen Minc call and friends -- is still somewhat experimental.
+See docs in insts.vccm for info on using this.  This does not
+yet work in OS X.
+
+
+RTcmix version 3.0
+------------------
+
 In addition to many bug fixes, RTcmix version 3.0 adds a major feature:
 the ability to route signals between instruments and to multiple outputs.
 You set up the bus routing for each instrument using a new Minc call,
@@ -12,5 +25,6 @@ how to make your instruments compatible with this version of RTcmix.
 Later 3.0 versions add support for alternative parsers: Perl and Python.
 
 
-John Gibson
-johngibson@virginia.edu
+----------------------------------
+John Gibson <johgibso@indiana.edu>
+Dave Topper <topper@virginia.edu>
