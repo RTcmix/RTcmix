@@ -21,11 +21,13 @@
 //
 //    <min>          minimum value [number]
 //    <max>          maximum value [number]
-//    <default>      value returned before device comes on line [number]
+//    <default>      value returned before mouse first enters window [number]
 //    <lag>          amount of smoothing for value stream [number: 0-100]
 //    <prefix>       label to display in window [string]
 //    <units>        units (e.g., "Hz") to display in window [string]
 //    <precision>    digits after decimal point to display in window [number]
+//
+//    Making <min> greater than <max> lets you invert values.
 //
 //    If <prefix> is missing or an empty string, then no label printed in
 //    mouse window.
