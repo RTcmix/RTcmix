@@ -23,7 +23,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "MROOM.h"
 #include <rt.h>
@@ -43,6 +42,7 @@ MROOM::MROOM() : Instrument()
 {
    in = NULL;
    delayline = rvbarrayl = rvbarrayr = NULL;
+   branch = quantbranch = 0;
 }
 
 
@@ -58,40 +58,37 @@ MROOM::~MROOM()
 /* ----------------------------------------------------------------- init --- */
 int MROOM::init(double p[], int n_args)
 {
-   int   delsamps, rvbsamps, quant, ntimes;
-   float outskip, inskip, dur, rvbtime, ringdur;
-
-   outskip = p[0];
-   inskip = p[1];
-   dur = p[2];
+   float outskip = p[0];
+   float inskip = p[1];
+   float dur = p[2];
    ovamp = p[3];
    xdim = p[4];
    ydim = p[5];
-   rvbtime = p[6];
+   float rvbtime = p[6];
    reflect = p[7];
    innerwidth = p[8];
    inchan = n_args > 9 ? (int)p[9] : AVERAGE_CHANS;
-   quant = n_args > 10 ? (int)p[10] : DEFAULT_QUANTIZATION;
+   int quant = n_args > 10 ? (int)p[10] : DEFAULT_QUANTIZATION;
 
    if (outputchans != 2)
       return die("MROOM", "Requires stereo output.");
 
-   ringdur = (rvbtime > MAX_DELAY) ? rvbtime : MAX_DELAY;
+   float ringdur = (rvbtime > MAX_DELAY) ? rvbtime : MAX_DELAY;
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
 
    if (rtsetinput(inskip, this) != 0)
       return DONT_SCHEDULE;
-   insamps = (int)(dur * SR);
+   insamps = (int)(dur * SR + 0.5);
 
-   if (inchan >= inputchans)
+   if (inchan >= inputChannels())
       return die("MROOM",
                  "You asked for channel %d of a %d-channel input file.",
-                 inchan, inputchans);
-   if (inputchans == 1)
+                 inchan, inputChannels());
+   if (inputChannels() == 1)
       inchan = 0;
 
 // ***FIXME: input validation for trajectory points?
-   ntimes = get_timeset(timepts, xvals, yvals);
+   int ntimes = get_timeset(timepts, xvals, yvals);
    if (ntimes == 0)
       return die("MROOM", "Must have at least two timeset calls before MROOM.");
 
@@ -100,12 +97,12 @@ int MROOM::init(double p[], int n_args)
    tableset(SR, dur, POS_ARRAY_SIZE, xpostabs);
    tableset(SR, dur, POS_ARRAY_SIZE, ypostabs);
 
-   delsamps = (int)(MAX_DELAY * SR + 0.5);
+   int delsamps = (int)(MAX_DELAY * SR + 0.5);
    delayline = new float[delsamps];
    delset(SR, delayline, deltabs, MAX_DELAY);
 
    /* Array dimensions taken from lib/rvbset.c (+ 2 extra for caution). */
-   rvbsamps = (int)((0.1583 * SR) + 18 + 2);
+   int rvbsamps = (int)((0.1583 * SR) + 18 + 2);
    rvbarrayl = new float[rvbsamps];
    rvbarrayr = new float[rvbsamps];
    rvbset(SR, rvbtime, 0, rvbarrayl);
@@ -118,51 +115,51 @@ int MROOM::init(double p[], int n_args)
    }
    else
       advise("MROOM", "Setting phrase curve to all 1's.");
+   aamp = ovamp;                  /* in case amparray == NULL */
 
    skip = (int)(SR / (float)resetval);
    quantskip = (int)(SR / (float)quant);
 
-   return nsamps;
+   return nSamps();
+}
+
+
+/* ------------------------------------------------------------ configure --- */
+int MROOM::configure()
+{
+   in = new float [RTBUFSAMPS * inputChannels()];
+   return in ? 0 : -1;
 }
 
 
 /* ------------------------------------------------------------------ run --- */
 int MROOM::run()
 {
-   int   i, m, ampbranch, quantbranch, rsamps;
-   float aamp, insig, lout, rout, delval = 0.0, rvbsig = 0.0;
-   float out[2];
+   const int samps = framesToRun() * inputChannels();
 
-   if (in == NULL)                /* first time, so allocate it */
-      in = new float [RTBUFSAMPS * inputchans];
+   rtgetin(in, this, samps);
 
-   rsamps = chunksamps * inputchans;
+   for (int i = 0; i < samps; i += inputChannels()) {
+      float insig, delval = 0.0, rvbsig = 0.0;
 
-   rtgetin(in, this, rsamps);
-
-   aamp = ovamp;                  /* in case amparray == NULL */
-
-   ampbranch = quantbranch = 0;
-   for (i = 0; i < rsamps; i += inputchans) {
-      if (cursamp < insamps) {               /* still taking input from file */
-         if (amparray) {
-            if (--ampbranch < 0) {
-               aamp = tablei(cursamp, amparray, amptabs) * ovamp;
-               ampbranch = skip;
-            }
+      if (currentFrame() < insamps) {        /* still taking input */
+         if (--branch <= 0) {
+            if (amparray)
+               aamp = tablei(currentFrame(), amparray, amptabs) * ovamp;
+            branch = skip;
          }
-         if (--quantbranch < 0) {
-            float xposit = tablei(cursamp, xpos, xpostabs);
-            float yposit = tablei(cursamp, ypos, ypostabs);
+         if (--quantbranch <= 0) {
+            float xposit = tablei(currentFrame(), xpos, xpostabs);
+            float yposit = tablei(currentFrame(), ypos, ypostabs);
             distndelset(xposit, yposit, xdim, ydim, innerwidth, reflect);
             quantbranch = quantskip;
          }
 
          if (inchan == AVERAGE_CHANS) {
             insig = 0.0;
-            for (int n = 0; n < inputchans; n++)
+            for (int n = 0; n < inputChannels(); n++)
                insig += in[i + n];
-            insig /= (float)inputchans;
+            insig /= (float)inputChannels();
          }
          else
             insig = in[i + inchan];
@@ -173,8 +170,8 @@ int MROOM::run()
 
       DELPUT(insig, delayline, deltabs);
 
-      rout = 0.0;
-      for (m = 1; m < NTAPS; m += 2) {
+      float rout = 0.0;
+      for (int m = 1; m < NTAPS; m += 2) {
 #ifdef INTERP_GET
          DLIGET(delayline, del[m], deltabs, delval);
 #else
@@ -185,10 +182,12 @@ int MROOM::run()
             rvbsig = -rout;
       }
       rvbsig += rout;
+
+      float out[2];
       out[0] = rout + reverb(rvbsig, rvbarrayr);
 
-      lout = 0.;
-      for (m = 0; m < NTAPS; m += 2) {
+      float lout = 0.0;
+      for (int m = 0; m < NTAPS; m += 2) {
 #ifdef INTERP_GET
          DLIGET(delayline, del[m], deltabs, delval);
 #else
@@ -202,10 +201,10 @@ int MROOM::run()
       out[1] = lout + reverb(rvbsig, rvbarrayl);
 
       rtaddout(out);
-      cursamp++;
+      increment();
    }
 
-   return i;
+   return framesToRun();
 }
 
 

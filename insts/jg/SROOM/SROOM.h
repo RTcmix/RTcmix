@@ -1,9 +1,9 @@
 #define NTAPS 10
 
 class SROOM : public Instrument {
-   int    inchan, insamps, skip;
+   int    inchan, insamps, skip, branch;
    int    deltabs[3];
-   float  ovamp;
+   float  ovamp, aamp;
    float  del[NTAPS], amp[NTAPS];
    float  *in, *delayline, *rvbarrayl, *rvbarrayr, amptabs[2];
    double *amparray;
@@ -11,8 +11,9 @@ class SROOM : public Instrument {
 public:
    SROOM();
    virtual ~SROOM();
-   int init(double p[], int n_args);
-   int run();
+   virtual int init(double p[], int n_args);
+   virtual int configure();
+   virtual int run();
 private:
    float distndelset(float, float, float, float, float, float);
 };

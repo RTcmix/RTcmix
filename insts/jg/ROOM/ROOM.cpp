@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "ROOM.h"
 #include <rt.h>
@@ -15,6 +14,7 @@ ROOM::ROOM() : Instrument()
 {
    in = NULL;
    echo = NULL;
+   branch = 0;
 }
 
 
@@ -27,11 +27,9 @@ ROOM::~ROOM()
 
 int ROOM::init(double p[], int n_args)
 {
-   float outskip, inskip, dur, ringdur;
-
-   outskip = p[0];
-   inskip = p[1];
-   dur = p[2];
+   float outskip = p[0];
+   float inskip = p[1];
+   float dur = p[2];
    amp = p[3];
    inchan = n_args > 4 ? (int)p[4] : AVERAGE_CHANS;
 
@@ -40,12 +38,12 @@ int ROOM::init(double p[], int n_args)
 
    if (rtsetinput(inskip, this) != 0)
       return DONT_SCHEDULE;
-   insamps = (int)(dur * SR);
+   insamps = (int) (dur * SR + 0.5);
 
-   if (inchan >= inputchans)
+   if (inchan >= inputChannels())
       return die("ROOM", "You asked for channel %d of a %d-channel input file.",
-                                                      inchan, inputchans);
-   if (inputchans == 1)
+                                                   inchan, inputChannels());
+   if (inputChannels() == 1)
       inchan = 0;
 
    nmax = get_room(ipoint, lamp, ramp);
@@ -61,7 +59,7 @@ int ROOM::init(double p[], int n_args)
    printf("maximum delay = %d samples.\n", nmax);
 #endif
 
-   ringdur = (float)nmax / SR;
+   float ringdur = (float) nmax / SR;
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
 
    amparray = floc(1);
@@ -71,41 +69,41 @@ int ROOM::init(double p[], int n_args)
    }
    else
       advise("ROOM", "Setting phrase curve to all 1's.");
+   aamp = amp;                  /* in case amparray == NULL */
 
    skip = (int)(SR / (float)resetval);
 
-   return nsamps;
+   return nSamps();
+}
+
+
+int ROOM::configure()
+{
+   in = new float [RTBUFSAMPS * inputChannels()];
+   return in ? 0 : -1;
 }
 
 
 int ROOM::run()
 {
-   int   i, branch, rsamps;
-   float aamp, insig;
-   float out[2];
+   const int samps = framesToRun() * inputChannels();
 
-   if (in == NULL)              /* first time, so allocate it */
-      in = new float [RTBUFSAMPS * inputchans];
+   rtgetin(in, this, samps);
 
-   rsamps = chunksamps * inputchans;
-
-   rtgetin(in, this, rsamps);
-
-   aamp = amp;                  /* in case amparray == NULL */
-
-   branch = 0;
-   for (i = 0; i < rsamps; i += inputchans) {
-      if (--branch < 0) {
+   for (int i = 0; i < samps; i += inputChannels()) {
+      if (--branch <= 0) {
          if (amparray)
-            aamp = tablei(cursamp, amparray, amptabs) * amp;
+            aamp = tablei(currentFrame(), amparray, amptabs) * amp;
          branch = skip;
       }
-      if (cursamp < insamps) {               /* still taking input from file */
+
+      float insig;
+      if (currentFrame() < insamps) {        /* still taking input */
          if (inchan == AVERAGE_CHANS) {
             insig = 0.0;
-            for (int n = 0; n < inputchans; n++)
+            for (int n = 0; n < inputChannels(); n++)
                insig += in[i + n];
-            insig /= (float)inputchans;
+            insig /= (float) inputChannels();
          }
          else
             insig = in[i + inchan];
@@ -117,6 +115,7 @@ int ROOM::run()
       if (jpoint >= nmax)
          jpoint -= nmax;
 
+      float out[2];
       out[0] = out[1] = 0.0;
       for (int j = 0; j < NTAPS; j++) {
          float e = echo[ipoint[j]];
@@ -133,10 +132,10 @@ int ROOM::run()
       }
 
       rtaddout(out);
-      cursamp++;
+      increment();
    }
 
-   return i;
+   return framesToRun();
 }
 
 

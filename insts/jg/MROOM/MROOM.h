@@ -5,9 +5,9 @@ extern "C" {
 #define NTAPS 10
 
 class MROOM : public Instrument {
-   int    inchan, insamps, skip, quantskip;
+   int    inchan, insamps, skip, branch, quantbranch, quantskip;
    int    deltabs[3];
-   float  ovamp, xdim, ydim, reflect, innerwidth;
+   float  aamp, ovamp, xdim, ydim, reflect, innerwidth;
    float  del[NTAPS], amp[NTAPS];
    float  timepts[TIME_ARRAY_SIZE];
    float  xvals[TIME_ARRAY_SIZE], yvals[TIME_ARRAY_SIZE];
@@ -19,8 +19,9 @@ class MROOM : public Instrument {
 public:
    MROOM();
    virtual ~MROOM();
-   int init(double p[], int n_args);
-   int run();
+   virtual int init(double p[], int n_args);
+   virtual int configure();
+   virtual int run();
 private:
    void traject(int);
    float distndelset(float, float, float, float, float, float);
