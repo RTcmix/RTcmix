@@ -10,10 +10,10 @@ LIBDESTDIR = $(TOPDIR)/shlib
 
 # add new instruments to this list (e.g., insts.std, insts.jg)
 INST_DIRS = insts.base
-# insts.std
+# insts.std insts.jg
 
-# add new packages to this list (e.g., interface/OpenGL)
-PACKAGE_DIRS = interface/lib interface/MIDI.Linux
+# add new packages to this list (e.g., interfaces.std)
+PACKAGE_DIRS = 
 
 # Set this to TRUE to use sndlib for file i/o; otherwise use the old cmix i/o.
 USE_SNDLIB = TRUE
