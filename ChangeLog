@@ -1,3 +1,9 @@
+Saturday, September 9, 2000 John Gibson <johngibson@virginia.edu>
+
+   * Fix bug: some conversion and info functions would act
+     strange if they were to return -1.  (Cleaned up error
+     condition in parse_dispatch.c.)
+
 Monday, July 31, 2000 John Gibson <johngibson@virginia.edu>
 
    * Added support for Perl as an alternative to Minc.
