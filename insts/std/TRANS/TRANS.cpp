@@ -121,15 +121,6 @@ int TRANS :: init(float p[], short n_args)
 }
 
 
-inline int min(int x, int y)
-{
-   if (x < y)
-      return x;
-   else
-      return y;
-}
-
-
 int TRANS :: run()
 {
    const int out_frames = chunksamps;
