@@ -15,7 +15,7 @@
  *    p2 = input duration
  *    p3 = amplitude multiplier
  *    p4 = delay time
- *    p5 = regeneration multiplier (must be less than 1!)
+ *    p5 = regeneration multiplier (must be >= -1.0 and <= 1.0)
  *    p6 = ring-down duration
  *    p7 = cutoff freq for low-pass filter (in cps)  (0 to disable filter)
  *    p8 = wet/dry mix (0: dry -> 1: wet)

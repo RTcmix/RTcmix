@@ -15,7 +15,7 @@
  *    p2 = input duration
  *    p3 = amplitude multiplier
  *    p4 = delay time
- *    p5 = regeneration multiplier (must be less than 1!)
+ *    p5 = regeneration multiplier (must be >= -1.0 and <= 1.0)
  *    p6 = ring-down duration
  *    p7 = cutoff freq for low-pass filter (in cps)  (0 to disable filter)
  *    p8 = wet/dry mix (0: dry -> 1: wet)
@@ -104,7 +104,7 @@ int JDELAY::init(float p[], short n_args)
       exit(1);
    }
 
-   if (regen <= 0.0 || regen >= 1.0) {
+   if (regen <= -1.0 || regen >= 1.0) {
       fprintf(stderr,
            "Regeneration multiplier must be greater than 0 and less than 1.\n");
       exit(1);
