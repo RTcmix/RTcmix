@@ -190,13 +190,12 @@ PROFILE_O = $(CMIXDIR)/src/rtcmix/profile.o
 # for disk-based insts
 RTPROFILE_O = $(CMIXDIR)/src/rtcmix/rtprofile.o
 
-GENLIB = $(LIBDIR)/librtcmix.a $(LIBDIR)/libgen.a $(MINCLIB) \
-		 $(CONFDIR)/libconf.a $(AUDIOLIB) $(SNDLIB)
+GENLIB = $(LIBDIR)/libgen.a
 CMIX_O = $(LIBDIR)/main.o
 M_O =  $(PARSERDIR)/parse_with_minc.o
-IMB_RTCMIX_O = #$(CMIXDIR)/Minc/imbRTcmix.o
+IMB_RTCMIX_O =
 P_O =  $(PARSERDIR)/parse_with_perl.o
-PY_O = #$(CMIXDIR)/Minc/py.o
+PY_O = $(PARSERDIR)/parse_with_python.o $(PARSERDIR)/python/rtcmix_python_ext.o
 
 CMIXOBJS = $(CMIX_O) $(M_O) $(GENLIB)
 IMBCMIXOBJS = $(CMIX_O) $(IMB_RTCMIX_O) $(GENLIB)
