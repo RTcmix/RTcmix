@@ -1,6 +1,7 @@
 include ../../makefile.conf
 
-SNDLIB = ../../sys/sndlibsupport.o ../../sndlib/sndlib.a
+SNDLIB = ../../src/audio/sndlibsupport.o ../../src/sndlib/sndlib.a
+INCLUDES += -I../../src/audio -I../../src/sndlib -I../../src/rtcmix
 
 #CFLAGS += -Wall -O2
 
