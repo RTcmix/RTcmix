@@ -10,12 +10,13 @@ typedef struct pt {
 typedef struct loc {
   pt point;
   double time;
+  double atime;
   double xvel;
   double yvel;
-  double startsamp;
 } loc;
 
 typedef struct rfact {
   double factor;
+  double accel;
   double time;
 } rfact;

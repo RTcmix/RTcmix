@@ -1,4 +1,4 @@
-#define DBUG 1
+#define xDBUG 1
 #include <stdlib.h>
 #include <stdio.h>
 #include <globals.h>
