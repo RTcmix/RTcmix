@@ -12,9 +12,8 @@ ug_intro()
  */
 #ifdef PFIELD_CLASS
    UG_INTRO_HANDLE_RETURN("maketable", maketable);
-   UG_INTRO_FLOAT_RETURN("dumptable", dumptable);
-   UG_INTRO_FLOAT_RETURN("plottable", plottable);
-#else /* !PFIELD_CLASS */
+   UG_INTRO_DOUBLE_RETURN("dumptable", dumptable);
+   UG_INTRO_DOUBLE_RETURN("plottable", plottable);
 #endif /* !PFIELD_CLASS */
 	UG_INTRO("makegen", makegen);
 	UG_INTRO("open",m_open);
