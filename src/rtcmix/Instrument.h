@@ -36,6 +36,9 @@ public:
 
    BusSlot        *bus_config;
 
+private:
+   BUFTYPE        *obufptr;
+
 public:
    Instrument();
    virtual ~Instrument();
@@ -43,6 +46,7 @@ public:
    virtual int run();
 
    void exec();
+   int rtaddout(BUFTYPE samps[]);  // replacement for old rtaddout
    void addout(BusType bus_type, int bus);
 
    float getstart();
