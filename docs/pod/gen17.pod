@@ -42,7 +42,7 @@ a sine wave with this transfer function.
 
    makegen(3, 17, 1000, 0.9, 0.3, -0.2, 0.6, -0.7)
 
-solves a Chebyshev polynomial with an index of 0.9 and three harmonics.
+solves a Chebyshev polynomial with an index of 0.9 and four harmonics.
 
 =begin man
 
