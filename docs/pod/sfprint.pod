@@ -4,14 +4,14 @@ sfprint - print soundfile information
 
 =head1 SYNOPSIS
 
-B<sfprint> [B<-v>] I<filename> [I<filename>...]
+B<sfprint> [B<-v>] [B<-q>] I<filename> [I<filename>...]
 
 =head1 DESCRIPTION
 
 Prints the following information about a soundfile: the header type
 and data format, the sampling rate, the number of channels, the number
-of bytes per sample word, the maximum amplitude value for each channel
-and its location (if available), and the duration of the sound.
+of bytes per sample word ("class"), the maximum amplitude value for each
+channel and its location (if available), and the duration of the sound.
 
 Without a I<filename> argument, B<sfprint> prints a help summary.
 
@@ -23,7 +23,24 @@ Without a I<filename> argument, B<sfprint> prints a help summary.
 
 Also print the number of sample frames and the header size.
 
+=item B<-q>
+
+Don't print anything, not even error messages.  Only return status.
+
 =back
+
+=head1 RETURNS
+
+0 if successful; 1 if any of the file arguments is not a sound file.
+
+=head1 NOTES
+
+The output is roughly in the same format as sfprint in classic cmix.
+
+Recognizes any sound file type understood by the sndlib sound file
+library, including AIFF, AIFC, WAV, NeXT, Sun, IRCAM, among others.
+Raw (headerless) sound files are not recognized and will produce an
+error message.
 
 =head1 SEE ALSO
 
