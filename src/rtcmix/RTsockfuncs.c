@@ -218,7 +218,7 @@ void RTsetsockdata(struct sockdata *ssend, int arg, double val)
 
 void RTsetsocktext(struct sockdata *ssend, int arg, char *text)
 {
-  ssend->data.text[arg] = strdup(text);
+  strcpy(ssend->data.text[arg],text);
 }
 
 /* Print out a sockdata's values */
