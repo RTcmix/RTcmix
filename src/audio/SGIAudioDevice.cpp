@@ -35,7 +35,7 @@ struct SGIAudioDevice::Impl {
 	int		chans;
 };
 
-SGIAudioDevice::SGIAudioDevice() : _impl(new Impl) {}
+SGIAudioDevice::SGIAudioDevice(const char *selector) : _impl(new Impl) {}
 
 SGIAudioDevice::~SGIAudioDevice() { delete _impl; }
 
@@ -94,9 +94,9 @@ SGIAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 	return error("Not implemented");
 }
 
-AudioDevice *createAudioDevice()
+AudioDevice *createAudioDevice(const char *path)
 {
-	return new SGIAudioDevice;
+	return new SGIAudioDevice(path);
 }
 
 /* ------------------------------------------------- open_sgi_audio_input --- */

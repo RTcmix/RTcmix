@@ -8,7 +8,7 @@
 
 class SGIAudioDevice : public ThreadedAudioDevice {
 public:
-	SGIAudioDevice();
+	SGIAudioDevice(const char *);
 	virtual ~SGIAudioDevice();
 	
 protected:
