@@ -15,7 +15,7 @@ extern "C" {
 
 AM::AM() : Instrument()
 {
-	in = new float[MAXBUF];
+	in = NULL;
 }
 
 AM::~AM()
@@ -75,6 +75,11 @@ int AM::run()
 	float aamp;
 	int branch;
 
+	if (in == NULL)        /* first time, so allocate it */
+		in = new float [RTBUFSAMPS * inputchans];
+
+	Instrument::run();
+
 	rsamps = chunksamps*inputchans;
 
 	rtgetin(in, this, rsamps);
@@ -91,7 +96,7 @@ int AM::run()
 
 		out[0] = in[i+inchan] * oscili(aamp, si, amtable, lenam, &phase);
 
-		if (NCHANS == 2) {
+		if (outputchans == 2) {
 			out[1] = out[0] * (1.0 - spread);
 			out[0] *= spread;
 			}
@@ -110,6 +115,8 @@ makeAM()
 	AM *inst;
 
 	inst = new AM();
+	inst->set_bus_config("AM");
+
 	return inst;
 }
 
