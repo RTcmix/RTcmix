@@ -94,7 +94,8 @@ create_audio_devices(int record, int play, int chans, float srate, int *buffersi
 		openMode |= AudioDevice::ReportClipping;
 
 	printf("DEBUG: audio device: peak check: %d report clip: %d\n",
-		   openMode & AudioDevice::CheckPeaks, openMode & AudioDevice::ReportClipping);
+		   !!(openMode & AudioDevice::CheckPeaks),
+		   !!(openMode & AudioDevice::ReportClipping));
 
 	if ((status = device->open(openMode, audioFormat, chans, srate)) == 0)
 	{
