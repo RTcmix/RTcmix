@@ -99,7 +99,7 @@ int runMainLoop(void)
 
 	// read in an input buffer (if audio input is active)
 	// NOTE:  We cannot do this until audio device has been started, below
-	if (audio_on) {
+	if (record_audio) {
 //		rtgetsamps(globalAudioDevice);
 //		rtsendzeros(globalAudioDevice, 0);  // send a buffer of zeros to audio device
 	}
@@ -496,8 +496,8 @@ bool inTraverse(AudioDevice *device, void *arg)
 	clear_output_buffers();
 
 	// read in an input buffer (if audio input is active)
-	if (audio_on) { 
-		// cout << "Reading data from audio port\n";
+	if (record_audio) { 
+		// cout << "Reading data from audio device\n";
 		// DT_PANIC_MOD
 		if (!panic)
 			rtgetsamps(device);

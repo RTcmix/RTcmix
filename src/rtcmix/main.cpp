@@ -73,7 +73,7 @@ usage()
 #ifdef LINUX
       "           -p NUM   set process priority to NUM (as root only)\n"
 #endif
-#ifdef NETPLAYER
+#ifdef NETAUDIO
       "           -k NUM   socket number (netplay)\n"
       "           -r NUM   remote host ip (or name for netplay)\n"
 #endif
@@ -120,19 +120,16 @@ init_globals()
    socknew = 0;
    rtsetparams_called = 0;
 
-   audio_on = 0;
    audio_config = 1;
+   record_audio = 0;            /* modified with set_option */
    play_audio = 1;              /* modified with set_option */
-   full_duplex = 0;
    check_peaks = 1;
    report_clipping = 1;
 
    /* I can't believe these were never initialized */
-//    baseTime = 0;
-//    schedtime = 0;
    elapsed = 0;
 
-#ifdef NETPLAYER
+#ifdef NETAUDIO
    netplay = 0;      // for remote sound network playing
 #endif
 
@@ -165,15 +162,15 @@ init_globals()
 extern AudioDevice *globalOutputFileDevice;
 #endif
 
-static int sigint_handler_called = 0;
+static int signal_handler_called = 0;
 
-/* ------------------------------------------------------- sigint_handler --- */
+/* ------------------------------------------------------- signal_handler --- */
 static void
-sigint_handler(int signo)
+signal_handler(int signo)
 {
 	// Dont do handler work more than once
-	if (!sigint_handler_called) {
-		sigint_handler_called = 1;
+	if (!signal_handler_called) {
+		signal_handler_called = 1;
 #ifdef DBUG
 	   printf("Signal handler called (signo %d)\n", signo);
 #endif
@@ -230,7 +227,7 @@ main(int argc, char *argv[])
    char        *infile;
    char        *xargv[MAXARGS + 1];
    pthread_t   sockitThread, inTraverseThread;
-#ifdef NETPLAYER
+#ifdef NETAUDIO
    char        rhostname[60], thesocket[8];
 
    rhostname[0] = thesocket[0] = '\0';
@@ -248,8 +245,13 @@ main(int argc, char *argv[])
    flush_all_underflows_to_zero();
 #endif
 
-   /* Call sigint_handler on cntl-C. */
-   if (signal(SIGINT, sigint_handler) == SIG_ERR) {
+   /* Call signal_handler on cntl-C. */
+   if (signal(SIGINT, signal_handler) == SIG_ERR) {
+      fprintf(stderr, "Error installing signal handler.\n");
+      exit(1);
+   }
+   /* Call signal_handler on segv. */
+   if (signal(SIGSEGV, signal_handler) == SIG_ERR) {
       fprintf(stderr, "Error installing signal handler.\n");
       exit(1);
    }
@@ -291,14 +293,15 @@ main(int argc, char *argv[])
 			   priority = atoi(argv[i]);
 			   break;
 #endif
-#ifdef NETPLAYER
+#ifdef NETAUDIO
             case 'r':               /* set up for network playing */
               	if (++i >= argc) {
                   fprintf(stderr, "You didn't give a remote host ip.\n");
                   exit(1);
               	}
                /* host ip num */
-               strncpy(rhostname, argv[i], 59);    /* safe strcpy */
+               strcat(rhostname, "net:");
+               strncat(rhostname, argv[i], 59-4);    /* safe strcat */
                rhostname[59] = '\0';
                netplay = 1;
                break;
@@ -396,11 +399,11 @@ main(int argc, char *argv[])
       printf("--------> %s %s (%s) <--------\n",
                                       RTCMIX_NAME, RTCMIX_VERSION, argv[0]);
 
-#ifdef NETPLAYER
+#ifdef NETAUDIO
    if (netplay) {             /* set up socket for sending audio */
       extern int setnetplay(char *, char *);    // in setnetplay.C
-      netplaysock = setnetplay(rhostname, thesocket);
-      if (netplaysock == -1) {
+      int status = setnetplay(rhostname, thesocket);
+      if (status == -1) {
          fprintf(stderr, "Cannot establish network connection to '%s' for "
                                              "remote playing\n", rhostname);
          exit(-1);
@@ -486,10 +489,15 @@ main(int argc, char *argv[])
       status = parse_score(xargc, xargv);
 #ifdef PYTHON
       /* Have to reinstall this after running Python interpreter. (Why?) */
-      if (signal(SIGINT, sigint_handler) == SIG_ERR) {
+      if (signal(SIGINT, signal_handler) == SIG_ERR) {
          fprintf(stderr, "Error installing signal handler.\n");
          exit(1);
       }
+	   /* Call signal_handler on segv. */
+	   if (signal(SIGSEGV, signal_handler) == SIG_ERR) {
+		  fprintf(stderr, "Error installing signal handler.\n");
+		  exit(1);
+	   }
 #endif
       if (status == 0) {
 #ifdef LINUX
@@ -497,17 +505,14 @@ main(int argc, char *argv[])
 			 if (setpriority(PRIO_PROCESS, 0, priority) != 0)
 			 	perror("setpriority");
 #endif
-         runMainLoop();
-		 waitForMainLoop();
+         if ((status = runMainLoop()) == 0)
+			 waitForMainLoop();
 	  }
       else
          exit(status);
 
       destroy_parser();
    }
-
-   /* DJT:  this instead of above joins */
-   /* while (rtInteractive) {}; */
 
    closesf_noexit();
 

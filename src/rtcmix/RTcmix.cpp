@@ -39,16 +39,16 @@
 
 
 extern "C" {
-	int ug_intro();
+  int ug_intro();
 	// I don't call the profiles here, because dead-time instruments
 	// won't be compiled into the object file unless they are present at
 	// the build (i.e. they aren't DSO's).  RT instruments have the
 	// rtprofile() called when they get loaded.  Go Doug, go!
 #ifdef SGI
-	void flush_all_underflows_to_zero();
+  void flush_all_underflows_to_zero();
 #endif
 #ifdef LINUX
-	void sigfpe_handler(int sig);
+  void sigfpe_handler(int sig);
 #endif
 }
 
@@ -59,66 +59,64 @@ rt_item *rt_list;     /* can't put this in globals.h because of rt.h trouble */
 static void
 init_globals()
 {
-	int i;
+   int i;
 
-	RTBUFSAMPS = 8192; //default, modifiable with rtsetparams
-	NCHANS = 2;
-	audioNCHANS = 0;
+   RTBUFSAMPS = 8192;           /* default, modifiable with rtsetparams */
+   NCHANS = 2;
+   audioNCHANS = 0;
 	SR = 44100.0; // what the heck...
 	bufStartSamp = 0;
 
 #ifdef LINUX
-	for (i = 0; i < MAXBUS; i++) in_port[i] = out_port[i] = 0;
+   for (i = 0; i < MAXBUS; i++)
+      in_port[i] = out_port[i] = 0;
 #endif /* LINUX */
 #ifdef MACOSX
 #endif
 #ifdef SGI
-	in_port = 0;
-	out_port = 0;
+   in_port = 0;
+   out_port = 0;
 #endif /* SGI */
 
-	rtQueue = new RTQueue[MAXBUS*3];
+   rtQueue = new RTQueue[MAXBUS*3];
 
 	rtInteractive = 1; // keep the heap going for this object
 	rtsetparams_called = 0; // will call at object instantiation, though
 
-	audio_on = 0;
-	audio_config = 1;
-	play_audio = 1;              /* modified with set_option */
-	full_duplex = 0;
-	check_peaks = 1;
-	report_clipping = 1;
+   audio_config = 1;
+   record_audio = 0;            /* modified with set_option */
+   play_audio = 1;              /* modified with set_option */
+   check_peaks = 1;
+   report_clipping = 1;
 
-	/* I can't believe these were never initialized */
-	// hey, I'm that kinda guy! :-)
-// 	baseTime = 0;
-// 	schedtime = 0;
-	elapsed = 0;
+   /* I can't believe these were never initialized */
+   elapsed = 0;
 
-#ifdef NETPLAYER
+#ifdef NETAUDIO
    netplay = 0;      // for remote sound network playing
 #endif
 
-	output_data_format = -1;
-	output_header_type = -1;
-	normalize_output_floats = 0;
-	is_float_format = 0;
-	rtoutsfname = NULL;
+   output_data_format = -1;
+   output_header_type = -1;
+   normalize_output_floats = 0;
+   is_float_format = 0;
+   rtoutsfname = NULL;
 
-	rtfileit = 0;                /* signal writing to soundfile */
-	rtoutfile = 0;
+   rtfileit = 0;                /* signal writing to soundfile */
+   rtoutfile = 0;
 
 	print_is_on = 0; // default is off for the RTcmix object
 
-	for (i = 0; i < MAXBUS; i++) {
-		AuxToAuxPlayList[i] = -1; /* The playback order for AUX buses */
-		ToOutPlayList[i] = -1;    /* The playback order for AUX buses */
-		ToAuxPlayList[i] =-1;     /* The playback order for AUX buses */
-	}
+   for (i = 0; i < MAXBUS; i++) {
+      AuxToAuxPlayList[i] = -1; /* The playback order for AUX buses */
+      ToOutPlayList[i] = -1;    /* The playback order for AUX buses */
+      ToAuxPlayList[i] =-1;     /* The playback order for AUX buses */
+   }
 
-	for (i = 0; i < MAX_INPUT_FDS; i++) inputFileTable[i].fd = NO_FD;
+   for (i = 0; i < MAX_INPUT_FDS; i++)
+      inputFileTable[i].fd = NO_FD;
 
-	init_buf_ptrs();
+   init_buf_ptrs();
 }
 
 /* ----------------------------------------------------- detect_denormals --- */
@@ -134,11 +132,11 @@ init_globals()
 static void
 detect_denormals()
 {
-	#include <fpu_control.h>
-	int cw = 0;
-	_FPU_GETCW(cw);
-	cw &= ~_FPU_MASK_DM;
-	_FPU_SETCW(cw);
+   #include <fpu_control.h>
+   int cw = 0;
+   _FPU_GETCW(cw);
+   cw &= ~_FPU_MASK_DM;
+   _FPU_SETCW(cw);
 }
 #endif /* DENORMAL_CHECK */
 #endif /* LINUX */
@@ -162,7 +160,7 @@ RTcmix::RTcmix(float tsr, int tnchans)
 //  The RTcmix constructor with settable SR, NCHANS, and RTBUFSAMPS
 RTcmix::RTcmix(float tsr, int tnchans, int bsize)
 {
-	init_globals();
+   init_globals();
 	init(tsr, tnchans, bsize);
 }
 
@@ -180,7 +178,7 @@ RTcmix::init(float tsr, int tnchans, int bsize)
 	double pp[3];
 
 #ifdef SGI
-	flush_all_underflows_to_zero();
+   flush_all_underflows_to_zero();
 #endif
 
 	run_status = RT_GOOD;	// Make sure status is good.
@@ -188,7 +186,7 @@ RTcmix::init(float tsr, int tnchans, int bsize)
 	// set up the command lists, etc.
 	ug_intro();		/* introduce standard routines */
 	// no profiles!  See the note above about DSOs
-
+ 
 	setbuf(stdout, NULL);	/*  Want to see stdout errors */
 
 	// set the sampling rate and nchannels
@@ -208,28 +206,10 @@ RTcmix::init(float tsr, int tnchans, int bsize)
 // cmix, but it's a handy thing
 Instrument *RTcmix::cmd(char name[], int n_args, double p0, ...)
 {
-// 	double buftime,sec,usec;
-// 	struct timeval tv;
-// 	struct timezone tz;
 	va_list ap;
 	int i;
 	double p[MAXDISPARGS];
 	void   *retval;
-
-// 	buftime = (double)RTBUFSAMPS/SR;
-// 
-// 	gettimeofday(&tv, &tz);
-// 	sec = (double)tv.tv_sec;
-// 	usec = (double)tv.tv_usec;
-// 	pthread_mutex_lock(&schedtime_lock);
-// 	schedtime = (((sec * 1e6) + usec) - baseTime) * 1e-6;
-// 	schedtime += ((double)elapsed/(double)SR);
-// 	schedtime += buftime;
-// 	pthread_mutex_unlock(&schedtime_lock);
-
-	// schedtime is accessed in rtsetoutput() to set the current
-	// time.  Plus, in interactive mode we have to run a slight delay
-	// from "0" or we wind up scheduling events in the past.
 
 	p[0] = p0;
 	va_start(ap, p0); // start variable list after p0
@@ -263,7 +243,7 @@ Instrument *RTcmix::cmd(char name[], int n_args, char* p0, ...)
 			strcpy(st[i], va_arg(ap, char*));
 			tmpint = (int)st[i];
 			p[i] = (double)tmpint;
-		}
+      }
 	va_end(ap);
 
 	(double) parse_dispatch(name, p, n_args, &retval);
@@ -289,33 +269,15 @@ double RTcmix::cmd(char name[])
 // of the RTcmix command that was invoked
 double RTcmix::cmdval(char name[], int n_args, double p0, ...)
 {
-// 	double buftime,sec,usec;
-// 	struct timeval tv;
-// 	struct timezone tz;
 	va_list ap;
 	int i;
 	double p[MAXDISPARGS];
 	void   *retval;
 
-// 	buftime = (double)RTBUFSAMPS/SR;
-// 
-// 	gettimeofday(&tv, &tz);
-// 	sec = (double)tv.tv_sec;
-// 	usec = (double)tv.tv_usec;
-// 	pthread_mutex_lock(&schedtime_lock);
-// 	schedtime = (((sec * 1e6) + usec) - baseTime) * 1e-6;
-// 	schedtime += ((double)elapsed/(double)SR);
-// 	schedtime += buftime;
-// 	pthread_mutex_unlock(&schedtime_lock);
-
-	// schedtime is accessed in rtsetoutput() to set the current
-	// time.  Plus, in interactive mode we have to run a slight delay
-	// from "0" or we wind up scheduling events in the past.
-
 	p[0] = p0;
 	va_start(ap, p0); // start variable list after p0
-		for (i = 1; i < n_args; i++)
-			p[i] = va_arg(ap, double);
+	for (i = 1; i < n_args; i++)
+		p[i] = va_arg(ap, double);
 	va_end(ap);
 
 	return ((double) parse_dispatch(name, p, n_args, &retval));
@@ -343,7 +305,7 @@ double RTcmix::cmdval(char name[], int n_args, char* p0, ...)
 			strcpy(st[i], va_arg(ap, char*));
 			tmpint = (int)st[i];
 			p[i] = (double)tmpint;
-		}
+   }
 	va_end(ap);
 
 	return ((double) parse_dispatch(name, p, n_args, &retval));
