@@ -61,6 +61,11 @@ rtsetparams(float p[], int n_args, double pp[])
          printf("Playing through output port '%s'\n", out_port_str);
 #endif /* SGI */
    }
+   
+   if (SR <= 0.0) {
+	   fprintf(stderr, "Sampling rate must be greater than 0.\n");
+	   exit(1);
+   }
 
    if (NCHANS > MAXBUS) {
       fprintf(stderr, "You can only have %d output channels.\n", MAXBUS);
