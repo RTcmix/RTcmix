@@ -10,16 +10,56 @@
 #include <stdio.h>
 
 // Base class for all PFields.  Value can be retrieved at any time in any
-// of the 4 supported formats.
+// of the 3 supported formats.
 
 class PField : public RefCounted {
 public:
-	virtual double 	doubleValue(double dindex=0.0) const = 0;
+	virtual double 	doubleValue(int indx = 0) const = 0;
+	virtual double 	doubleValue(double dindex) const = 0;
 	int 			intValue(double dindex) const { return (int) doubleValue(dindex); }
 	const char * 	stringValue(double dindex) const { return (const char *) intValue(dindex); }
 	virtual int		print(FILE *) const;
+	virtual int		values() const = 0;
 protected:
 	virtual 		~PField();
+};
+
+// SingleValuePField is intermediate base class.
+
+class SingleValuePField : public PField {
+public:
+	virtual double 	doubleValue(int indx = 0) const { return doubleValue(0.0); }
+	virtual double 	doubleValue(double dindex) const;
+	virtual int		values() const { return 1; }
+protected:
+	SingleValuePField(double val) : _value(val) {}
+	double			setValue(double val) { return _value = val; }
+private:
+	double	_value;
+};
+
+// Constant-value PField used for all non-varying numeric parameters.
+
+class ConstPField : public SingleValuePField {
+public:
+	ConstPField(double value);
+protected:
+	virtual 		~ConstPField();
+};
+
+// Constant-value PField used for all strings.
+
+class StringPField : public PField {
+public:
+	StringPField(const char  *value);
+	virtual double 	doubleValue(int indx = 0) const { return doubleValue(0.0); }
+	virtual double	doubleValue(double) const;
+	virtual int		print(FILE *) const;
+	virtual int		values() const { return 1; }
+protected:
+	virtual 		~StringPField();
+private:
+	char	*_string;
 };
 
 // Base class for operator PFields.  These may be instantianted with an
@@ -27,9 +67,11 @@ protected:
 
 class PFieldBinaryOperator : public PField {
 public:
-	virtual double	doubleValue(double=0.0) const;
+	virtual double 	doubleValue(int indx = 0) const;
+	virtual double	doubleValue(double) const;
 	typedef double (*Operator)(double, double);
 	PFieldBinaryOperator(PField *pf1, PField *pf2, Operator);
+	virtual int		values() const;
 protected:
 	virtual 		~PFieldBinaryOperator();
 private:
@@ -59,46 +101,21 @@ protected:
 	virtual 		~MultPField() {}
 };
 
-// Constant-value PField used for all non-varying numeric parameters.
-
-class ConstPField : public PField {
-public:
-	ConstPField(double value);
-	virtual double	doubleValue(double=0.0) const;
-protected:
-	virtual 		~ConstPField();
-private:
-	double	_value;
-};
-
-// Constant-value PField used for all strings.
-
-class StringPField : public PField {
-public:
-	StringPField(const char  *value);
-	virtual double	doubleValue(double=0.0) const;
-protected:
-	virtual 		~StringPField();
-private:
-	char	*_string;
-};
-
 // Base class for all Real-Time-varying parameters.
 // This may eventually hold common code needed to
 // support multiple threads, etc.
 
-class RTPField : public PField {
+class RTFieldObject {
 public:
 protected:
-	virtual ~RTPField() {}
+	virtual ~RTFieldObject() {}
 };
 
 // Variable PField used for simple real-time setting of params
 
-class RTNumberPField : public RTPField {
+class RTNumberPField : public SingleValuePField, public RTFieldObject {
 public:
 	RTNumberPField(double value);
-	virtual double	doubleValue(double=0.0) const;
 	// Set value.  Returns same.
 	virtual double	set(double);
 	// Offset value by 'val'.  Returns new value.
@@ -112,20 +129,19 @@ public:
 	float operator -= (float value) { return (float) offset(-value); }
 protected:
 	virtual 		~RTNumberPField() {}
-private:
-	double	_value;
 };
 
 // Class for interpolated reading of table.
 
-class TablePField : public RTPField {
+class TablePField : public PField, public RTFieldObject {
 public:
 	TablePField(double *tableArray, int length);
+	virtual double 	doubleValue(int indx = 0) const;
 	virtual double	doubleValue(double) const;
 	virtual int		print(FILE *) const;	// redefined
+	virtual int		values() const { return _len; }
 protected:
 	virtual ~TablePField();
-	int		len() const { return _len; }
 private:
 	double	*_table;
 	int 	_len;
