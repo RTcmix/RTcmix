@@ -64,6 +64,9 @@ cmp(MincFloat f1, MincFloat f2)
 }
 
 
+/* ========================================================================== */
+/* Tree nodes */
+
 static Tree
 node(OpKind op, NodeKind kind)
 {
@@ -367,6 +370,9 @@ twhile(Tree e1, Tree e2)
 }
 
 
+/* ========================================================================== */
+/* Operators */
+
 /* ---------------------------------------------------------- do_op_string -- */
 static void
 do_op_string(Tree tp, const char *str1, const char *str2, OpKind op)
@@ -389,7 +395,10 @@ do_op_string(Tree tp, const char *str1, const char *str2, OpKind op)
       case OpMod:
       case OpPow:
       case OpNeg:
+         minc_warn("unsupported operation on a string");
+         break;
       default:
+         minc_internal_error("invalid string operator");
          break;
    }
    tp->type = MincStringType;
@@ -423,6 +432,7 @@ do_op_num(Tree tp, const MincFloat val1, const MincFloat val2, OpKind op)
          tp->v.number = -val1;        /* <val2> ignored */
          break;
       default:
+         minc_internal_error("invalid numeric operator");
          break;
    }
    tp->type = MincFloatType;
@@ -623,7 +633,13 @@ exct_operator(Tree tp, OpKind op)
                   do_op_handle_num(tp, child1->v.handle, child0->v.number, op);
                break;
             case MincListType:
-               do_op_list_iterate(tp, child1, child0->v.number, op);
+               /* Check for ops that are not commutative. */
+               if (op == OpMinus)
+                  minc_warn("can't subtract a list from a number");
+               else if (op == OpDiv)
+                  minc_warn("can't divide a number by a list");
+               else
+                  do_op_list_iterate(tp, child1, child0->v.number, op);
                break;
             default:
                minc_internal_error("exct_operator: invalid type");
@@ -930,6 +946,9 @@ exct_subscript_write(Tree tp)
       minc_die("list index must be a number");
 }
 
+
+/* ========================================================================== */
+/* Tree execution and disposal */
 
 /* ------------------------------------------------------------------ exct -- */
 /* This recursive function interprets the intermediate code.
