@@ -4,7 +4,8 @@
    p1 = input start time
    p2 = input duration
    p3 = amplitude multiplier
-   p4 = type of filter (0: no filter, 1: lowpass, 2: highpass)
+   p4 = type of filter (0: no filter, 1: lowpass, 2: highpass, 3: bandpass,
+           4: bandreject)
    p5 = steepness (> 0) [optional, default is 1]
    p6 = balance output and input signals (0:no, 1:yes) [optional, default is 1]
    p7 = input channel [optional, default is 0]
@@ -28,6 +29,9 @@
    Function table 2 is the cutoff frequency curve, described by time,cf pairs.
    Use gen 18.
 
+   For bandpass and bandreject types, function table 3 is the bandwidth curve,
+   described by time,bw pairs.  Bandwidth is in Hz.  Use gen 18.
+
    John Gibson (johgibso@indiana.edu), 12/1/01.
 */
 #include <stdio.h>
@@ -48,6 +52,9 @@ BUTTER :: BUTTER() : Instrument()
 {
    in = NULL;
    balancer = NULL;              // might not use
+   curcf = 0.0;
+   curbw = 0.0;
+   branch = 0;
 }
 
 
@@ -86,9 +93,10 @@ int BUTTER :: init(float p[], int n_args)
    if (nfilts < 1 || nfilts > MAXFILTS)
       die("BUTTER", "Sharpness (p5) must be an integer between 1 and %d.",
                                                                    MAXFILTS);
-   if (type != NoFilter && type != LowPass && type != HighPass)
-      die("BUTTER", "Filter type must be 0 (no filter), 1 (lowpass) "
-                    "or 2 (highpass).");
+   if (type != NoFilter && type != LowPass && type != HighPass
+         && type != BandPass && type != BandReject)
+      die("BUTTER", "Filter type must be 0 (no filter), 1 (lowpass), "
+                    "2 (highpass), 3 (bandpass) or 4 (bandreject).");
 
    for (int i = 0; i < nfilts; i++)
       filt[i] = new Butter();
@@ -118,7 +126,20 @@ int BUTTER :: init(float p[], int n_args)
       die("BUTTER",
             "You haven't made the cutoff frequency function (table 2).");
 
+   if (type == BandPass || type == BandReject) {
+      bwarray = floc(3);
+      if (bwarray) {
+         int lenbw = fsize(3);
+         tableset(dur, lenbw, bwtabs);
+      }
+      else
+         die("BUTTER",
+               "You haven't made the bandwidth function (table 3).");
+   }
+
    skip = (int)(SR / (float)resetval);
+
+   aamp = amp * scale;        /* in case amparray == NULL */
 
    return nsamps;
 }
@@ -126,8 +147,8 @@ int BUTTER :: init(float p[], int n_args)
 
 int BUTTER :: run()
 {
-   int   i, j, branch, rsamps;
-   float aamp, cf, insig;
+   int   i, j, rsamps;
+   float cf=0., bw=0., insig;
    float out[2];
 
    if (in == NULL)            /* first time, so allocate it */
@@ -140,9 +161,6 @@ int BUTTER :: run()
    if (cursamp < insamps)
       rtgetin(in, this, rsamps);
 
-   aamp = amp * scale;        /* in case amparray == NULL */
-
-   branch = 0;
    for (i = 0; i < rsamps; i += inputchans) {
       if (--branch < 0) {
          cf = tablei(cursamp, cfarray, cftabs);
@@ -150,14 +168,35 @@ int BUTTER :: run()
             cf = 1.0;
          if (cf > SR * 0.5)
             cf = SR * 0.5;
-         if (type == LowPass) {
+         if (type == LowPass && cf != curcf) {
             for (j = 0; j < nfilts; j++)
                filt[j]->setLowPass(cf);
+            curcf = cf;
          }
-         else if (type == HighPass) {
+         else if (type == HighPass && cf != curcf) {
             for (j = 0; j < nfilts; j++)
                filt[j]->setHighPass(cf);
+            curcf = cf;
          }
+         else if (type == BandPass) {
+            bw = tablei(cursamp, bwarray, bwtabs);
+            if (cf != curcf || bw != curbw) {
+               for (j = 0; j < nfilts; j++)
+                  filt[j]->setBandPass(cf, bw);
+               curcf = cf;
+               curbw = bw;
+            }
+         }
+         else if (type == BandReject) {
+            bw = tablei(cursamp, bwarray, bwtabs);
+            if (cf != curcf || bw != curbw) {
+               for (j = 0; j < nfilts; j++)
+                  filt[j]->setBandReject(cf, bw);
+               curcf = cf;
+               curbw = bw;
+            }
+         }
+
          if (amparray)
             aamp = tablei(cursamp, amparray, amptabs) * amp;
 
