@@ -42,6 +42,10 @@ Instrument :: Instrument()
 
    bus_config = NULL;
 
+   for (int i = 0; i < MAXBUS; i++)
+      bufstatus[i] = 0;
+   needs_to_run = 1;
+
    if (tags_on) {
       pthread_mutex_lock(&pfieldLock);
 
@@ -119,19 +123,47 @@ int Instrument :: run()
 
    obufptr = outbuf;
 
-#ifdef NOTYET
    for (int i = 0; i < outputchans; i++)
       bufstatus[i] = 0;
-#endif
+
+   needs_to_run = 0;
 
    return 0;
 }
 
 
 /* ----------------------------------------------------------------- exec --- */
-void Instrument :: exec()
+/* Called from inTraverse to do one or both of these tasks:
+
+      1) run the instrument for the current timeslice, and/or
+
+      2) call addout to transfer a channel from the private instrument
+         output buffer to one of the global output buffers.
+
+   exec(), run() and addout() work together to decide whether a given
+   call to exec needs to run or addout. The first call to exec for a
+   given timeslice does both; subsequent calls during the same timeslice
+   only addout.
+*/
+void Instrument :: exec(BusType bus_type, int bus)
 {
-   run();
+   int done;
+
+   if (needs_to_run)
+      run();
+
+   addout(bus_type, bus);
+
+   /* Decide whether we'll call run() next time. */
+   done = 1;
+   for (int i = 0; i < outputchans; i++) {
+      if (bufstatus[i] == 0) {
+         done = 0;
+         break;
+      }
+   }
+   if (done)
+      needs_to_run = 1;
 }
 
 
@@ -199,6 +231,9 @@ void Instrument :: addout(BusType bus_type, int bus)
    }
 
 // FIXME: pthread_mutex_unlock dest buffer
+
+   /* Show exec() that we've written this chan. */
+   bufstatus[src_chan] = 1;
 }
 
 
