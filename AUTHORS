@@ -1,8 +1,8 @@
-Cmix was started by Paul Lansky in 1985.
-RTCmix was derived from Cmix by Brad Garton in 1995.
+cmix was started by Paul Lansky in 1985.
+RTcmix was derived from cmix by Brad Garton in 1995.
 
 
-The RTCmix Development Team (in alphabetical order)
+The RTcmix Development Team (in alphabetical order)
 ---------------------------------------------------
 
 R. Luke DuBois    <luke@columbia.edu>
@@ -24,7 +24,7 @@ LICENSE and AUTHORS files.
 
 
 
-Original Authors of Cmix
+Original Authors of cmix
 ------------------------
 
 Paul Lansky, with help from (in alphabetical order) ...
@@ -36,9 +36,8 @@ Eric Lyon
 Dave Madole
 Andrew Milburn
 Doug Scott
-Peter Velikonja
 
-Please do not pester the original Cmix authors asking questions about RTCmix.
+Please do not pester the original cmix authors asking questions about RTcmix.
 
 If you know of others who are missing from this list, please send their
 names to John Gibson <johngibson@virginia.edu>.
@@ -54,7 +53,7 @@ whose authors were F. R. Moore, Gareth Loy, Mark Dolson and others.
 
 need to put in each src file...
 
-/* RTCmix  - Copyright (C) 1999  The RTCmix Development Team
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
    See ``AUTHORS'' for a list of contributors.
    See ``LICENSE'' for the license to this software and for a
      DISCLAIMER OF ALL WARRANTIES.
