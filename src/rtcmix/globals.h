@@ -83,6 +83,7 @@ GLOBAL double schedtime;
 #ifdef MAIN      /* Have to do this because must be inited in definition. */
 pthread_mutex_t heapLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t pfieldLock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t endsamp_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t audio_config_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t aux_to_aux_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t to_aux_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -101,6 +102,7 @@ pthread_mutex_t bus_slot_lock = PTHREAD_MUTEX_INITIALIZER;
 #else
 GLOBAL pthread_mutex_t heapLock;
 GLOBAL pthread_mutex_t pfieldLock;
+GLOBAL pthread_mutex_t endsamp_lock;
 GLOBAL pthread_mutex_t audio_config_lock;
 GLOBAL pthread_mutex_t aux_to_aux_lock;
 GLOBAL pthread_mutex_t to_aux_lock;
@@ -153,6 +155,14 @@ GLOBAL short ToAuxPlayList[MAXBUS]; /* The playback order for AUX buses */
 #define MAXPUPARR 100
 #define MAXPUPS 20
 #define NOPUPDATE 78787878 // hopefully never a real p-value!
+
+/* For rtperf */
+typedef enum {
+  NONE,
+  RISE,
+  SUSTAIN,
+  DECAY
+} EnvType;
 
 GLOBAL int curtag;                /* current note tag */
 GLOBAL int tags_on;               /* using note tags for rtupdates */
