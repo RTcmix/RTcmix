@@ -30,7 +30,7 @@ Arg::printInline(FILE *stream) const
 			PField *pf = (PField *) _val.handle->ptr;
 			double start = pf->doubleValue(0);
 			double end = pf->doubleValue(1.0);
-			fprintf(stream, ":[%g,...,%g] ", start, end);
+			fprintf(stream, "[%g,...,%g] ", start, end);
 		}
 		else
 			fprintf(stream, " ");
