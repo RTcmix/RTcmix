@@ -36,11 +36,16 @@
 #define MY_FLOAT_SIZE 4
 
 /* States for Envelopes, etc. */
-#define ATTACK  0
-#define DECAY   1
-#define SUSTAIN 2
-#define RELEASE 3
-#define END     4
+
+/* DJT:  removed ... use EnvType enum from rtupdate.h
+ *
+ * #define ATTACK  0 
+ * #define DECAY   1 
+ * #define SUSTAIN 2 
+ * #define RELEASE 3 
+ * #define END     4 */
+
+#include <rtupdate.h>  /* DJT */
 
 #endif
 
