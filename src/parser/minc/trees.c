@@ -918,22 +918,37 @@ exct_subscript_read(Tree tp)
          MincListElem elem;
          MincFloat fltindex = tp->u.child[1]->v.number;
          int index = (int) fltindex;
-         int index2 = index + 1;
-//FIXME: do linear interp for number items
+         MincFloat frac = fltindex - index;
          MincListElem *lst = tp->u.child[0]->u.symbol->v.list.data;
          int len = tp->u.child[0]->u.symbol->v.list.len;
          if (len < 1)
             minc_die("attempt to index an empty list");
-         if (fltindex == -1.0)   /* means last element */
+         if (fltindex < 0.0) {    /* -1 means last element */
+            if (fltindex <= -2.0)
+               minc_warn("negative index ... returning last element");
             index = len - 1;
+            fltindex = (MincFloat) index;
+         }
          else if (fltindex > (MincFloat) (len - 1)) {
             minc_warn("attempt to index past the end of list ... "
                                                 "returning last element");
             index = len - 1;
+            fltindex = (MincFloat) index;
          }
          elem = lst[index];
          tp->type = elem.type;
-         memcpy(&tp->v, &elem.val, sizeof(MincValue));
+
+         /* do linear interpolation for float items */
+         if (tp->type == MincFloatType && frac > 0.0 && index < len - 1) {
+            MincListElem elem2 = lst[index + 1];
+            if (elem2.type == MincFloatType)
+               tp->v.number = elem.val.number
+                        + (frac * (elem2.val.number - elem.val.number));
+            else  /* can't interpolate btw. a number and another type */
+               tp->v.number = elem.val.number;
+         }
+         else
+            memcpy(&tp->v, &elem.val, sizeof(MincValue));
       }
       else
          minc_die("attempt to index a variable that's not a list");
