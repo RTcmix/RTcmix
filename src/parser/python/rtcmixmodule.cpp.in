@@ -72,6 +72,11 @@ static OpaqueObject *newOpaqueObject(PyObject *arg)
 
 static void Opaque_dealloc(OpaqueObject *self)
 {
+// printf("Opaque_dealloc: %p\n", self);
+   if (self->handle) {
+	   free(self->handle);
+	   self->handle = NULL;
+   }
    Py_XDECREF(self->attrDict);
    PyObject_Del(self);
 }
@@ -88,6 +93,9 @@ static Handle createPFieldHandle(PField *pfield)
    Handle handle = (Handle) malloc(sizeof(struct _handle));
    handle->type = PFieldType;
    handle->ptr = (void *) pfield;
+#ifdef NOTYET
+   handle->refcount = 0;
+#endif
    return handle;
 }
 
