@@ -39,9 +39,10 @@ SOUND_DRIVER += -DSHARED_AUDIO_DEV
 # channels, even when you request fewer (in rtsetparams).
 #SOUND_DRIVER += -DUSE_CARD_CHANS
 
-# optimization and debugging flags
-OPT = -g #-O3
-# -Wall -Wno-unused
+# optimization, debugging and warning flags
+OPT = -g -Wall -Wno-unused #-O3
+# for Irix, try...
+#OPT = -O2
 
 # Uncomment to use old function table assignments for certain instruments.
 # For example, WAVETABLE used to expect function 1 to contain the wavetable
