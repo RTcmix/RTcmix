@@ -3,7 +3,7 @@
    we're stashing the setline info in gen table 1 */
 
 rtsetparams(44100, 2)
-rtinput("/snd/pablo1.snd")
+rtinput("../../../snd/input.wav")
 setline(0,0, 1, 1)
 MIX(0, 0, 7.0, 1, 0, 0)
 setline(0, 1, 1, 0)
