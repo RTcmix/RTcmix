@@ -12,6 +12,16 @@
 
 #include <RefCounted.h>
 
+enum {
+	kLinearRandom = 0,
+	kLowLinearRandom,
+	kHighLinearRandom,
+	kTriangleRandom,
+	kGaussianRandom,
+	kCauchyRandom,
+	kProbRandom
+}
+
 // Base class
 
 class Random : public RefCounted {
