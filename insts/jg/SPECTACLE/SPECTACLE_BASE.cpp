@@ -213,6 +213,8 @@ int SPECTACLE_BASE :: init(double p[], int n_args)
    /* derive decimation from overlap */
    decimation = (int) (fft_len / overlap);
 
+   DPRINT2("fft_len=%d, decimation=%d\n", fft_len, decimation);
+
    if (pre_init(p, n_args) != 0)    /* can modify ringdur */
       return DONT_SCHEDULE;
 
@@ -248,7 +250,7 @@ int SPECTACLE_BASE :: init(double p[], int n_args)
       return DONT_SCHEDULE;
    total_insamps = (int)(inputdur * SR);    /* without latency_dur */
    input_end_frame = total_insamps + latency;
-   DPRINT2("extra=%f, input_end_frame=%d\n", extra, input_end_frame);
+   DPRINT1("input_end_frame=%d\n", input_end_frame);
 
    input = new float [window_len];           /* input buffer */
    output = new float [window_len];          /* output buffer */
