@@ -1,4 +1,4 @@
-#define xDBUG
+#define DBUG 1
 #include <stdlib.h>
 #include <stdio.h>
 #include <globals.h>
@@ -20,6 +20,8 @@ Bool use_path;
 Bool use_rates;
 double cycle;  /* Length of 1 iteration ... last path time */
 
+/* calc_dist ------------------------------------------------------------------------- */
+
 double calc_dist(pt p1, pt p2) {
   double ret_dist;
   double x1,x2,y1,y2,a,b;
@@ -32,10 +34,15 @@ double calc_dist(pt p1, pt p2) {
   a = (x2-x1);
   b = (y2-y1);
 
+#ifdef DBUG2
+  printf("calc_dist:  %2.1f,%2.1f,%2.1f,%2.1f\n",x1,y1,x2,y2);
+#endif
   ret_dist = sqrt(pow(a,2) + pow(b,2));
  
   return ret_dist;
 }
+
+/* calc_total_dist ------------------------------------------------------------------- */
 
 double calc_tot_dist () {
   int i;
@@ -50,6 +57,8 @@ double calc_tot_dist () {
 
   return ret_dist;
 }
+
+/* speakerloc ------------------------------------------------------------------------ */
 
 double speakerloc(float p[], int n_args, double pp[]) {
   int i,j;
@@ -78,6 +87,8 @@ double speakerloc(float p[], int n_args, double pp[]) {
   return 0;
 }
 
+/* speakerloc_p ---------------------------------------------------------------------- */
+
 double speakerloc_p(float p[], int n_args, double pp[]) {
   int i,j;
   double x,y,r,a;
@@ -93,8 +104,8 @@ double speakerloc_p(float p[], int n_args, double pp[]) {
 
 	a = 2*PI*(a/360);  /* convert to radians */
 
-	x = r*(cos(a));
-	y = r*(sin(a));
+	x = r*(sin(a));
+	y = r*(cos(a));
 
 	spk_locs[i].x = x;
 	spk_locs[i].y = y;
@@ -110,9 +121,12 @@ double speakerloc_p(float p[], int n_args, double pp[]) {
   return 0;
 }
 
+/* rates ---------------------------------------------------------------------------- */
+
 double rates(float p[], int n_args, double pp[]) {
   int i,j;
   double s,time;
+  double r1,r2,t1,t2,accel;
 
   num_rates=0;
   if (p[0] != 0) {
@@ -126,7 +140,7 @@ double rates(float p[], int n_args, double pp[]) {
 
   i=j=0;
   while(i<n_args) {
-	time = p[i++];
+	time = p[i++] * (double) SR;
 	s = p[i++];
 	ratefs[j].factor = s;
 	ratefs[j].time = time;
@@ -134,12 +148,24 @@ double rates(float p[], int n_args, double pp[]) {
 	num_rates++;
   }
   use_rates = YES;
+  i=0;
+  while(i<num_rates-1) {
+	r1 = ratefs[i].factor;
+	r2 = ratefs[i+1].factor;
+	t1 = ratefs[i].time;
+	t2 = ratefs[i+1].time;
+	accel = (r2-r1)/(t2-t1);
+	ratefs[i+1].accel = accel;
+	i++;
+  }
   return 0;
 }
 
+/* path ------------------------------------------------------------------------------ */
+
 double path(float p[], int n_args, double pp[]) {
   int i,j;
-  double x,y,r,a,time,x1,x2,y1,y2,xvel,yvel,t1,t2,startsamp;
+  double x,y,r,a,time,x1,x2,y1,y2,xvel,yvel,t1,t2;
 
   time = 0;
   num_points=0;
@@ -155,16 +181,16 @@ double path(float p[], int n_args, double pp[]) {
   aud_locs = (loc *)malloc(MAXLOCS * sizeof(loc));
   
   while(i<n_args) {
-	time = p[i++];
+	time = p[i++] * (double)SR;
 	x = p[i++];
 	y = p[i++];
 
 	aud_locs[j].point.x = x;
 	aud_locs[j].point.y = y;
 	aud_locs[j].time = time;
+	aud_locs[j].atime = time;
 	aud_locs[j].xvel = 0;
 	aud_locs[j].yvel = 0;
-	aud_locs[j].startsamp = 0;
 #ifdef DBUG
      printf("Point [%d] set:  %2.2f,%2.2f,%2.2f\n",j,time,x,y);
 #endif
@@ -172,7 +198,6 @@ double path(float p[], int n_args, double pp[]) {
 	num_points++;
   }
   i=0;
-  startsamp = 0;
   while(i<num_points-1) {
 	x1 = aud_locs[i].point.x;
 	y1 = aud_locs[i].point.y;
@@ -182,12 +207,10 @@ double path(float p[], int n_args, double pp[]) {
 	t2 = aud_locs[i+1].time;
 	xvel = (x2-x1)/(t2-t1);
 	yvel = (y2-y1)/(t2-t1);
-	startsamp += (t2-t1)*SR;
 	aud_locs[i+1].xvel = xvel;
 	aud_locs[i+1].yvel = yvel;
-	aud_locs[i+1].startsamp = startsamp;
 #ifdef DBUG
-     printf("Point vel [%d] set:  %2.2f,%2.2f,%2.2f\n",i,xvel,yvel,startsamp);
+     printf("Point vel [%d] set:  %2.2f,%2.2f\n",i,xvel,yvel);
 #endif
      i++;
   }
@@ -199,9 +222,11 @@ double path(float p[], int n_args, double pp[]) {
 
 /* change to support xvel,yvel */
 
+/* path_p ---------------------------------------------------------------------------- */
+
 double path_p(float p[], int n_args, double pp[]) {
   int i,j;
-  double x,y,r,a,time,x1,x2,y1,y2,xvel,yvel,t1,t2,startsamp;
+  double x,y,r,a,time,x1,x2,y1,y2,xvel,yvel,t1,t2;
 
   if (p[0] != 0) {
 	fprintf(stderr,"WARNING:  path_p start not = 0!\n");
@@ -217,24 +242,24 @@ double path_p(float p[], int n_args, double pp[]) {
   aud_locs = (loc *)malloc(MAXLOCS * sizeof(loc));
 
   while(i<n_args) {
-	time = p[i++];
+	time = p[i++] * (double) SR;
 	r = p[i++];
 	a = p[i++];
 
 	a = 2*PI*(a/360);  /* convert to radians */
 
-	x = r*(cos(a));
-	y = r*(sin(a));
+	x = r*(sin(a));
+	y = r*(cos(a));
 
 
 	aud_locs[j].point.x = x;
 	aud_locs[j].point.y = y;
 	aud_locs[j].time = time;
+	aud_locs[j].atime = time;
 	j++;
 	num_points++;
   }
   i=0;
-  startsamp = 0;
   while(i<num_points-1) {
 	x1 = aud_locs[i].point.x;
 	y1 = aud_locs[i].point.y;
@@ -244,12 +269,11 @@ double path_p(float p[], int n_args, double pp[]) {
 	t2 = aud_locs[i+1].time;
 	xvel = (x2-x1)/(t2-t1);
 	yvel = (y2-y1)/(t2-t1);
-	startsamp += (t2-t1)*SR;
 	aud_locs[i+1].xvel = xvel;
 	aud_locs[i+1].yvel = yvel;
-	aud_locs[i+1].startsamp = startsamp;
 #ifdef DBUG
-     printf("Point [%d] set:  %2.2f,%2.2f,%2.2f\n",i,xvel,yvel,startsamp);
+     printf("Point [%d] set:  %2.2f,%2.2f,%2.2f,%2.2f (%f,%f)\n",
+	    i,x1,y1,x2,y2,xvel,yvel);
 #endif
      i++;
   }
@@ -258,8 +282,11 @@ double path_p(float p[], int n_args, double pp[]) {
   return 0;
 }
 
+/* calc_rate ------------------------------------------------------------------------- */
+
 double calc_rate(long samps) {
-  double r1,r2,t1,t2,tdiff,rdiff,start_samp,end_samp,run_samps,rate;
+  double r1,r2,t1,t2,tdiff,rdiff,start_samp,run_samps,rate;
+  double accel;
 
   r1 = ratefs[cur_rate].factor;
   t1 = ratefs[cur_rate].time;
@@ -267,16 +294,11 @@ double calc_rate(long samps) {
   if ((cur_rate+1) < num_rates) {
 	r2 = ratefs[cur_rate+1].factor;
 	t2 = ratefs[cur_rate+1].time;
+	accel = ratefs[cur_rate+1].accel;
+	
+	rdiff = accel * (samps-t1);
 
-	start_samp = t1*(double)SR;
-	end_samp = t2*(double)SR;
-	run_samps = (end_samp - start_samp);
-
-	tdiff = (samps-start_samp)/run_samps;
-	rdiff = (r2-r1);
-	rdiff *= tdiff;
-
-	if (samps > end_samp)
+	if (samps > t2)
 	  cur_rate++;
 
 	rate = r1+rdiff;
@@ -287,9 +309,11 @@ double calc_rate(long samps) {
   return rate;
 }
 
+/* calc_loc ------------------------------------------------------------------------- */
+
 void calc_loc(long samps, pt *in_point) {
   int i;
-  double slope,x1,x2,y1,y2,t1,t2,tdiff,ychange,xchange,start_samp,end_samp,run_samps,xdiff,ydiff,newx,newy,mag1,mag2;
+  double slope,x1,x2,y1,y2,t1,t2,tdiff,ychange,xchange,start_samp,run_samps,xdiff,ydiff,newx,newy,mag1,mag2;
   double rate=1,rate2=1;
   double xvel,yvel,dur;
   int old_point;
@@ -298,9 +322,16 @@ void calc_loc(long samps, pt *in_point) {
 
   x1 = aud_locs[cur_point].point.x;
   y1 = aud_locs[cur_point].point.y;
-  t1 = aud_locs[cur_point].time;
-  start_samp = aud_locs[cur_point].startsamp;
-  
+  if (use_rates)
+    t1 = aud_locs[cur_point].atime;
+  else
+    t1 = aud_locs[cur_point].time;
+
+#ifdef DBUG
+	printf("[%ld] %2.2f\t",samps,rate);
+	printf("(%2.2f,%2.2f)\t",x1,y1);
+#endif
+
   if ((cur_point+1) < num_points) {
 	x2 = aud_locs[cur_point+1].point.x;
 	y2 = aud_locs[cur_point+1].point.y;
@@ -309,13 +340,8 @@ void calc_loc(long samps, pt *in_point) {
 	yvel = aud_locs[cur_point+1].yvel;
 
 #ifdef DBUG
-     printf("v = %2.2f,%2.2f\n",xvel,yvel);
+     printf("v = %f,%f ->",xvel,yvel);
 #endif
-
-	/* tdiff = (samps-start_samp)/run_samps; */
-	
-	/* xchange = ((x2-x1)*tdiff); */
-	/* ychange = ((y2-y1)*tdiff); */
 
 	if (use_rates) {
 	  rate = calc_rate(samps);
@@ -323,19 +349,19 @@ void calc_loc(long samps, pt *in_point) {
 	else
 	  rate = 1;
 
-	dur = (t2-t1);
-	dur *= SR;
-	end_samp = start_samp + dur;
-	run_samps = (end_samp - start_samp);
-	tdiff = (samps-start_samp)/run_samps;
-	
 	xvel = xvel*rate;
 	yvel = yvel*rate;
-	xchange = xvel*tdiff;
-	ychange = yvel*tdiff;
+
+#ifdef DBUG
+     printf("v (%f,%f) r (%f)",xvel,yvel,rate);
+#endif
+
+	xchange = xvel*(samps-t1);
+	ychange = yvel*(samps-t1);
 	
-	/* xchange = ((xvel+(rate*xvel))/2)*tdiff; */
-	/* ychange = ((yvel+(rate*yvel))/2)*tdiff; */
+#ifdef DBUG
+     printf("change (%f,%f)  ",xchange,ychange);
+#endif
 
 	newx = x1 + xchange;
 	newy = y1 + ychange;
@@ -344,35 +370,37 @@ void calc_loc(long samps, pt *in_point) {
 	mag2 = sqrt(pow((x2-x1),2) + pow((y2-y1),2));
 
 	if (mag1 > mag2) {
+
 	  cur_point++;
-#ifdef DBUG
-	   printf("cur_point %d\n",cur_point);
-	  printf("old_point %d\n",old_point);
-#endif
-	   /* update things accordingly */
+	  /* update things accordingly */
 	  if ((use_rates) && ((cur_point+1) >= num_points)){
 		for(i=0;i<num_points;i++) {
 		  aud_locs[i].time += cycle;
 		}
 		cur_point = 0;
 	  }
-	  aud_locs[cur_point].startsamp = samps;
+	  aud_locs[cur_point].atime = samps;
+#ifdef DBUG
+	  printf("\ncur_point %d -> ",cur_point);
+	  printf("old_point %d : num_points %d\n",old_point,num_points);
+#endif
+
 	}
 
 	in_point->x = x1+xchange;
 	in_point->y = y1+ychange;
-
-#ifdef DBUG
-	printf("[%ld] %2.2f\t",samps,rate);
-	printf("(%2.2f,%2.2f)\n",in_point->x,in_point->y);
-#endif
-	
   }
   else {
 	in_point->x = x1;
 	in_point->y = y1;
   }
+#ifdef DBUG
+	printf("\n[%ld] %2.2f\t",samps,rate);
+	printf("(%2.2f,%2.2f)\n",in_point->x,in_point->y);
+#endif
 }
+
+/* calc_amps ------------------------------------------------------------------------- */
 
 void calc_amps(pt point) {
   int i,j;
@@ -387,17 +415,21 @@ void calc_amps(pt point) {
 	if (amp < 0)
 	  amp = 0;
      out_chan_amp[i] = amp;
-#ifdef DBUG
+#ifdef DBUG2
      printf("out_chan_amp[%d] = %2.2f\n",i,amp);
 #endif
   }	  
 }
+
+/* update_amps ----------------------------------------------------------------------- */
 
 void update_amps(long samps) {
   pt new_point;
   calc_loc(samps, &new_point);
   calc_amps(new_point);
 }
+
+/* profile --------------------------------------------------------------------------- */
 
 int profile() {
   UG_INTRO("speakerloc",speakerloc);
