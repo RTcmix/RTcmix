@@ -64,11 +64,11 @@ float *p;
 
 double m_time_beat(p)
 float *p;
-{ float time_beat(); return(time_beat(p[0])); }
+{ float time_beat(float); return(time_beat(p[0])); }
 
 double m_beat_time(p)
 float *p;
-{ float beat_time(); return(beat_time(p[0])); }
+{ float beat_time(float); return(beat_time(p[0])); }
 
 double m_trunc(p)
 float *p;
