@@ -2,6 +2,12 @@ NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
 
+**** Released RTcmix-3.4, Saturday, Jan 18, 2003 ****
+
+Tuesday, January 9, 2003 John Gibson <johgibso-at-indiana.edu>
+
+   * New instruments: FOLLOWER, NOISE
+
 Friday, December 13, 2002 Douglas Scott <netdscott-at-netscape.net>
 
    * Added min() Minc function to match max().
