@@ -37,7 +37,7 @@ Arg::printInline(FILE *stream) const
 				fprintf(stream, " ");
 		}
 		else
-			fprintf(stream, "NULL");
+			fprintf(stream, "NULL ");
 		break;
 	case ArrayType:
 		fprintf(stream, "[%g,...,%g] ", _val.array->data[0],
