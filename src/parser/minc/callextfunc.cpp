@@ -7,7 +7,7 @@
 #include <math.h>
 #include "minc_internal.h"
 #include <rtcmix_types.h>
-#include <parse_dispatch.h>
+#include <prototypes.h>
 #include <PField.h>
 
 
@@ -16,9 +16,9 @@ call_external_function(const char *funcname, const MincListElem arglist[],
    const int nargs, MincListElem *return_value)
 {
    int i, result, rtcmixargs_array_allocated = 0;
-   Arg retval, *rtcmixargs;
+   Arg retval;
 
-   rtcmixargs = (Arg *) emalloc(nargs * sizeof(Arg));
+   Arg *rtcmixargs = new Arg[nargs];
    if (rtcmixargs == NULL)
       return -1;
 
@@ -26,35 +26,33 @@ call_external_function(const char *funcname, const MincListElem arglist[],
    for (i = 0; i < nargs; i++) {
       switch (arglist[i].type) {
          case MincFloatType:
-            rtcmixargs[i].type = DoubleType;
-            rtcmixargs[i].val.number = arglist[i].val.number;
+            rtcmixargs[i] = arglist[i].val.number;
             break;
          case MincStringType:
-            rtcmixargs[i].type = StringType;
-            rtcmixargs[i].val.string = arglist[i].val.string;
+            rtcmixargs[i] = arglist[i].val.string;
             break;
          case MincHandleType:
-            rtcmixargs[i].type = HandleType;
-            rtcmixargs[i].val.handle = (Handle) arglist[i].val.handle;
+            rtcmixargs[i] = (Handle) arglist[i].val.handle;
             break;
          case MincListType:
             /* If list contains only floats, convert and pass it along.
                Otherwise, it's an error.
             */
-            rtcmixargs[i].val.array = (Array *) emalloc(sizeof(Array));
-            if (rtcmixargs[i].val.array == NULL)
+			{
+            Array *newarray = (Array *) emalloc(sizeof(Array));
+            if (newarray == NULL)
                return -1;
-            rtcmixargs[i].val.array->data
-                        = (double *) float_list_to_array(&arglist[i].val.list);
-            if (rtcmixargs[i].val.array->data != NULL) {
-               rtcmixargs[i].type = ArrayType;
-               rtcmixargs[i].val.array->len = arglist[i].val.list.len;
-               rtcmixargs_array_allocated = 1;
+            newarray->data = (double *) float_list_to_array(&arglist[i].val.list);
+            if (newarray->data != NULL) {
+               newarray->len = arglist[i].val.list.len;
+               rtcmixargs[i] = newarray;
             }
             else {
                minc_die("can't pass a mixed-type list to an RTcmix function");
+			   free(newarray);
                return -1;
             }
+			}
             break;
          default:
             minc_die("call_external_function: invalid argument type");
@@ -62,44 +60,39 @@ call_external_function(const char *funcname, const MincListElem arglist[],
       }
    }
 
-   result = parse_dispatch(funcname, rtcmixargs, nargs, &retval);
+   result = dispatch(funcname, rtcmixargs, nargs, &retval);
 
    /* Convert return value from RTcmix function. */
-   switch (retval.type) {
+   switch (retval.getType()) {
       case DoubleType:
          return_value->type = MincFloatType;
-         return_value->val.number = (MincFloat) retval.val.number;
+         return_value->val.number = (MincFloat) retval;
          break;
       case StringType:
          return_value->type = MincStringType;
-         return_value->val.string = retval.val.string;
+         return_value->val.string = (MincString) retval;
          break;
       case HandleType:
          return_value->type = MincHandleType;
-         return_value->val.handle = (MincHandle) retval.val.handle;
+         return_value->val.handle = (MincHandle) (Handle) retval;
          break;
       case ArrayType:
 #ifdef NOMORE
 // don't think functions will return non-opaque arrays to Minc, but if they do,
 // these should be converted to MincListType
          return_value->type = MincArrayType;
-         return_value->val.array.len = retval.val.array->len;
-         return_value->val.array.data = retval.val.array->data;
-         free(retval.val.array);
+		 {
+			 Array *array = (Array *) retval;
+			 return_value->val.array.len = array->len;
+			 return_value->val.array.data = array->data;
+		 }
 #endif
          break;
       default:
          break;
    }
 
-   /* Free memory allocated in this function that will no longer be used. */
-   if (rtcmixargs_array_allocated) {
-      for (i = 0; i < nargs; i++) {
-         if (rtcmixargs[i].type == ArrayType)
-            free(rtcmixargs[i].val.array);
-      }
-   }
-   free(rtcmixargs);
+   delete [] rtcmixargs;
 
    return 0;
 }
