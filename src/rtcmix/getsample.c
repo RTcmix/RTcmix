@@ -23,10 +23,9 @@ int (*getsample)();
 int getfsample();
 int getisample();
 
+
 int
-getsetnote(start,dur,filenum)
-float start,dur;
-int filenum;
+getsetnote(float start, float dur, int filenum)
 {
 	int nsamples = setnote(start,dur,filenum);
 	_backup(filenum);
@@ -37,10 +36,7 @@ int filenum;
 }
 
 int
-getisample(sampleno,c,input)
-double sampleno;
-float *c;
-int input;
+getisample(double sampleno, float *c, int input)
 {
 
 	int RECSIZE = bufsize[input];
@@ -104,10 +100,7 @@ int input;
 }
 
 int
-getfsample(sampleno,c,input)
-double sampleno;
-float *c;
-int input;
+getfsample(double sampleno, float *c, int input)
 {
 	int RECSIZE = bufsize[input];
 	int BPREC = RECSIZE * sizeof(float);
@@ -165,3 +158,4 @@ int input;
 	return(1);
 	}
 }
+
