@@ -1,3 +1,7 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
 #ifdef LINUX
 #include <endian.h>      /* so that sndlib.h will get host byte-order right */
 #endif
