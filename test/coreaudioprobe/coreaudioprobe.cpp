@@ -261,9 +261,11 @@ PrintStreamChannelInformation(AudioDeviceID devID, UInt32 chan, Boolean isInput,
    strDesc.mBitsPerChannel = 0;
    strDesc.mReserved = 0;
 
+   // NOTE: Digidesign CoreAudio driver can get this property only for
+   // channel 0.   -JGG
    OSStatus err = AudioDeviceGetProperty(devID,
                            chan, isInput,
-                           kAudioDevicePropertyStreamFormatMatch,
+                           kAudioDevicePropertyStreamFormat,
                            &size,
                            &strDesc);
    if (err != kAudioHardwareNoError) {
@@ -301,12 +303,7 @@ PrintStreamChannelInformation(AudioDeviceID devID, UInt32 chan, Boolean isInput,
    }
 
    if (printFlags) {
-      err = AudioDeviceGetProperty(devID,
-                           chan, isInput,
-                           kAudioDevicePropertyStreamFormat,
-                           &size,
-                           &strDesc);
-      printf("      %s (flags=%x)\n",
+      printf("      %s (flags=%X)\n",
          (strDesc.mFormatFlags  & kLinearPCMFormatFlagIsNonInterleaved)
             ? "nonInterleaved" : "",
          strDesc.mFormatFlags);
