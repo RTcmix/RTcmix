@@ -23,10 +23,7 @@
 
 #include "notetags.h"
 
-
-double schedtime; 	// up here so that rtsetoutput can access this info
-// (see below)
-
+// #define DBUG
 
 extern "C" {
   void *sockit(void*)
@@ -137,7 +134,7 @@ extern "C" {
 	  }
 	}
 
-	if ( (strcmp(sinfo->name, "end") == 0) ) {
+	if ( (strcmp(sinfo->name, "RTcmix_off") == 0) ) {
 	  rtInteractive = 0;
 	}
 	  
