@@ -18,7 +18,7 @@ install::
 	@cd cmd; $(MAKE) install;
 	@cd head; $(MAKE) install;
 	@cd utils; $(MAKE) install;
-	-mkdir $(LIBDESTDIR);
+	@if test ! -d $(LIBDESTDIR); then mkdir $(LIBDESTDIR); fi;
 	@for DIR in $(INST_DIRS); \
 	do \
 	  ( cd $$DIR; $(MAKE) install ); \
@@ -32,6 +32,7 @@ endif
 	@echo "install done."; echo ""
 
 H::
+	@if test ! -d $(LIBDESTDIR); then mkdir $(LIBDESTDIR); fi;
 	@echo "making H..."
 	@cd H; $(MAKE) all
 	@echo "done."; echo""
