@@ -1,0 +1,79 @@
+SOME NOTES ON THE LINUX VERSION OF RTCMIX 1.0:  May 1, 1998.
+
+I.  MAJOR CHANGES
+
+1)  byte swapping (eg., sfcreate can write BE or LE)
+2)  full duplex audio (not well supported by linux audio driver though)
+3)  soundfile output for RT instruments
+4)  play command takes args
+	-s (start) -e (end) -r (rescale factor for float files)
+5)  mix command is now in ./insts directory
+6)  proper implementation of "interactive" mode.  More on that later.
+
+II.  MISC NOTES
+
+1)  Command line args for ALL INSTRUMENTS
+====================================================
+
+-i = interactive mode (read data from socket)
+-s = socket offset
+-n = no parsing of scorefile (when rtsetparams is sent via socket)
+-o = use the old-style parser
+
+2)  rtsetparams() syntax (inside a scorefile)
+====================================================
+
+	rtsetparams(SAMPLE_RATE, CHANS, BUFFER_SIZE [optional], FULL_DUPLEX[optional)
+
+The default buffer size is 8192 ... and full duplex is initialized to off (0).
+
+so ...
+
+	rtsetparams(44100,1,4096)
+
+would set the audio port to 44100, mono, and use a 4096 byte buffer.
+
+	rtsetparams(44100,1,128,1)
+
+would set the audio port to 44100, mono, use a 128 byte buffer, and turn on full-duplex
+
+The default buffer size is 8192.
+
+3)  rtoutput("filename")
+====================================================
+
+You can now write to a hybrid BSD/Next soundfile!  If your scorefile is too intensive for real-time, don't worry.  The soundfile will be fine.  If you don't want to hear the bogged down output:  audio_set(0) = don't play audio output.
+
+4)  sfcreate -r <rate> -c <chans> -i/f -b/l
+====================================================
+
+-b = create big-endian file (default)
+-l = create little-endian file
+
+5)  "interactive mode"
+====================================================
+
+Ok ... please excuse this explanation, but I'd like for everyone to understand.
+
+You basically start two separate programs:  1 cmix instrument and 1 interface.  Let's take STRUM for example:
+
+	$ STRUM -i < inifile.sco
+
+will start up strum in "interactive mode."  And initfile.sco might look as follows:
+
+	rtsetparams(44100,1,256)
+
+a very simply one-liner.
+
+Then in a separate terminal, you might start up strumkeys, in ./cmix/interfaces:
+
+	$ strumkeys -h localhost
+
+Then start typing on the keyboard (eg., asdfghjk = a major scale).  You can even do chords!
+
+What is happening is that STRUM is listening to a socket connection for note info.  And strumkeys is sending that info.  Realize that it isn't too hard to bog down the machine in this mode.  You can hear when that happens.  There are internal mechanisms that will automatically correct that when it does.
+
+Have fun!
+
+Dave Topper
+topper@virginia.edu

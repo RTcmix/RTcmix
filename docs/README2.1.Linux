@@ -1,0 +1,381 @@
+New for v. 2.1
+==============
+
+Makefiles
+---------
+
+Makefile variables are no longer passed from makefile to makefile.  Instead,
+sub-level makefiles include the toplevel makefile.conf.  Similarly, instrument
+directories contain an insts.conf.
+
+Users can edit the .conf files in order to built RTcmix and/or instruments
+in any directory.
+
+Instrument .C and Makefiles have been changed to get rid of relative ../../
+links.  All necessary .h files are linked to RTcmix/H and that directory is
+part of INCLUDES.  
+
+
+Sndlib Support
+--------------
+
+RTcmix now uses Bill Schottstaedt's sndlib sound file library, which lets
+users read and write sound files with several different types of header. This
+means an end to converting files just so you can read them in RTcmix, or
+converting the files written by RTcmix just so you can read them in other
+programs. There are some changes to the sfcreate program and to the rtoutput
+Minc function that users need to know about. These are described below.
+
+For the programmer, there is a new API for reading and writing soundfile
+headers, though there is almost complete backward compatibility with the
+familiar cmix I/O mechanism (the SFHEADER struct and the various functions
+for reading and writing it). The code that interfaces with sndlib is in
+sys/sndlibsupport.c. There are additions to the standard sfheader.h, and
+there is a new sndlibsupport.h. The complete sndlib library is included in
+source form, with original documentation. To use it, make sure that the
+makefile.conf file sets USE_SNDLIB to TRUE. Otherwise, you'll compile the
+whole tree with the older code that reads and writes the EBICSF hybrid header.
+Anyone hacking the guts of RTcmix should browse sys/sndlibsupport.c.
+
+
+Float Output for RT Instruments
+-------------------------------
+
+Real-time instruments now can write floating-point output files. See the
+description of new rtoutput pfields below.
+
+
+Clipping: Reporting and Handling
+--------------------------------
+
+RTcmix now collects the output of simultaneously playing instruments into
+a floating-point buffer (as in the SGI version). Then it scales this to
+short integers for real-time playback or writing to a file. When it scales
+the float buffer, it checks for samples out of range. If it finds any, it
+clamps them to the nearest extreme value that short integers can represent
+and prints a report about what happened. For example, if one of your buffers
+had some clipped samples in it, you might see this as it plays (or writes):
+
+  CLIPPING:   28 samps, max: 38302, time range: 0.185760 - 0.371519
+
+This looks alarming, but it's often hard to notice a moderate amount of
+clipping, especially if the sound source is meant to have a noisy quality
+to begin with. You can even use this as an effect!
+
+In previous versions of RTcmix.Linux, instruments wrote directly into a short
+buffer, and any out-of-range floating-point samples were cast to shorts. This
+could cause noticeable clicks, even if only one or two samples were out of
+range. With the clamping technique described above, moderately out-of-range
+samples don't cause clicks. Another advantage of the internal float buffer
+is an increase in the signal-to-quantization-noise ratio when instruments
+play simultaneously.
+
+Note: This all applies to the output of RT instruments; the disk-based
+mechanism is the same as ever.
+
+
+Peak Amplitude Statistics
+-------------------------
+
+Users of classic Cmix are familiar with its method of storing "maxamp" in
+the sound file header: the peak amplitude (absolute value) and its frame
+location for each channel. This was useful mainly as a guide to the rescale
+program, but the relamp function of the mix and stereo instruments used it,
+and Minc scripts could access it. Of course, the disk-based instruments in
+RTcmix have continued to read and write these peak stats. But now the
+real-time instruments also write them. One application of this is to write
+the output of a real-time instrument into a floating-point file, and then
+rescale this to a 16-bit linear file with the rescale program, just like
+the old days. (The advantage is not having to worry about distortion caused
+by the clamping of out-of-range samples described above.)
+
+However, this new capability works only with the version of RTcmix compiled
+with sndlib support. And there's another gotcha: RTcmix stores these peak
+stats in the text comment of a sound file header in a specially encoded
+format. The good news is that this works for all the header types that
+sndlib can write. The bad news is that other programs have a nasty habit
+of discarding these comments, and the sndlib-savvy version of RTcmix can't
+read or write the old-style maxamp codes that classic cmix used. Comments
+about this new scheme are welcome.
+
+See below for a description of new Minc commands for getting the peak amp
+of a real-time input file.
+
+
+Sound File Descriptors
+----------------------
+
+Now uses the SGI version's mechanism for extending the upper limit on the
+number of instrument notes taking input from soundfiles. (Before this change,
+every Minc instrument call opened a new file descriptor for an input file,
+even if other instruments playing at the same time were reading from the
+same file. This meant you could easily run out of file descriptors.)
+
+
+Utility Programs
+----------------
+
+The old cmix utility programs -- sfcreate, sfprint, sndpeak, rescale
+and hist -- have all been updated for sndlib, meaning that they can
+read and write different types of sound file header where appropriate.
+Many improvements have also been made to these programs. There are a
+few differences in the command line arguments you feed them. Just type
+the name of the program (after installing them) to see a usage message.
+
+The cmixplay sound file player has been updated for sndlib compatibility,
+and a few features have been added or changed. Just invoke the program
+with no arguments for a usage summary.
+
+An adaptation of the resample program by Julius O. Smith is now included.
+This lets you do high quality sample rate conversion.
+
+A new program, sffixsize, updates a sound file header to reflect the actual
+amount of sound data the file contains. This is useful if the header wasn't
+updated correctly, perhaps because the writing program crashed first.
+
+
+New Gen 20 function
+-------------------
+
+There's a new gen type for makegen: gen 20, which fills a gen array with
+random numbers between 0 and 1, according to one of several distributions.
+The syntax:
+
+   makegen(loc, 20, array_size, distribution_type, seed)
+
+where <distribution_type> is one of...
+
+   0 - even distribution
+   1 - low weighted linear distribution
+   2 - high weighted linear distribution
+   3 - triangle linear distribution
+   4 - gaussian distribution
+   5 - cauchy distribution
+
+and <seed> is any integer. If it's 0, or if you don't use that pfield at
+all, then gen20 will use the current microsecond counter value as a seed.
+If you use your own seed, you can reproduce the same random array each
+time you run the score.
+
+Thanks to R. Luke Dubois for gen20.
+
+
+New and Revised Minc Functions
+------------------------------
+
+DUR()
+
+   Returns the duration of the sound file most recently opened by rtinput.
+   This is sort of like the disk-based dur(fno) function. Note that one is
+   only for real-time input files, the other only for disk-based input files.
+
+
+PEAK(), LEFT_PEAK(), RIGHT_PEAK()
+
+   These return the peak amplitude of the sound file most recently opened
+   by rtinput. LEFT_PEAK and RIGHT_PEAK return it for their respective
+   channels; PEAK returns the highest peak of all the channels. You can
+   specify an optional time range, and then these commands return the
+   peak within that range. This expanded syntax is:
+
+      PEAK([start_time] [, end_time])
+
+   The times are in seconds. If end_time is missing or is zero, that sets
+   end_time to the end of the file. (The expanded syntax applies also to
+   LEFT_PEAK and RIGHT_PEAK.)
+
+
+setline_size(ARRAY_SIZE)
+
+   Set the number of elements in the setline array. By default, this is
+   1000, but you might want a much higher number if you're trying to make
+   a steep slope on a long "note". The array size limits the resolution
+   of such a slope. If the note is 10 seconds long, and the array has
+   1000 elements, then each element governs .01 seconds (10 / 1000).
+   If you want a steeper slope, you'll need a bigger array.
+
+
+set_option("option_name" [, "option_name"]...)
+
+   The new mechanism for turning on and off a growing list of features.
+   Each option name must appear in double quotes. There can be more than
+   one option in the same set_option call, separated by commas. There can
+   be more than one set_option call in a Minc script. Here are the options
+   currently supported:
+
+     Feature                     Turn it on with...    Turn it off with...
+     -----------------------------------------------------------------------
+     Play real-time output       "AUDIO_ON"            "AUDIO_OFF"
+
+     Overwrite existing files    "CLOBBER_ON"          "CLOBBER_OFF"
+       without asking
+
+     Report instances of         "REPORT_CLIPPING_ON"  "REPORT_CLIPPING_OFF"
+       clipping
+
+     Check, report on and store  "CHECK_PEAKS_ON"      "CHECK_PEAKS_OFF"
+       peak amplitude stats
+
+   The case of these options is not significant, so "audio_on" works too.
+
+   NOTE: You have to use quotes, or the program will give up.
+
+
+rtoutput("filename" [, "header_type"] [, "sound_format")
+
+   This command now lets you set the type of output sound file that
+   real-time instruments write.
+
+   - "header_type" is one of:
+        "aiff", "aifc", "wav", "next", "sun", or "ircam"
+
+      The default is "aiff", since this is what most other unix
+      programs can use (Notam software, Cecilia, etc.).
+
+      "next" and "sun" (the familiar ".au" format) are synonyms.
+      "ircam" is the older, non-hybrid BICSF format.
+      (Note that sndlib can't write the hybrid EBICSF headers.)
+
+      *** All formats are bigendian, except for "wav".
+
+   - "sound_format" is one of:
+        "short"      16-bit linear
+        "float"      32-bit floating-point
+        "normfloat"  32-bit floating-point in range (mostly) from -1.0 to +1.0
+        "16"         synonym for "short"
+        "24"         24-bit linear, not yet supported in RTcmix
+
+        The default is "short".
+
+   EXAMPLES:
+
+        rtsetparams(22050, 2)
+        rtoutput("mysound")
+
+          Writes a stereo, 16-bit linear AIFF file with 22050 sampling rate.
+
+        rtsetparams(44100, 1)
+        rtoutput("myothersound", "wav", "float")
+
+          Writes a mono, 32-bit floating-point WAV file with 44100 srate.
+
+
+   NOTES:
+
+     (1) The sampling rate and number of channels are specified in
+         the call to rtsetparams.
+
+     (2) You must use quotation marks, otherwise the program'll bail.
+
+     (3) The case of the "header_type" and "sound_format" arguments
+         is not significant, nor is their order.
+
+     (4) If you ask for "aiff" and "float" (or "normfloat"),
+         you'll get "aifc" format instead. This is because sndlib
+         doesn't handle floats properly with the older AIFF format.
+
+     (5) If you want to use floating-point files in Snd, choose
+         "normfloat" format. If you want to use them in Mxv, choose
+         the "next" header type. Many programs don't read AIFC files,
+         because they assume these are always compressed.
+
+     (6) rtoutput differs from output:  the latter still needs a valid
+         soundfile header to write to.  The sfcreate function can of course
+         now create any kind of header.
+
+   There are other possibilities with sndlib, but limiting the choices
+   to those listed above makes for an easier Minc interface to rtoutput.
+
+
+
+New Internal Scheme for Setline
+-------------------------------
+
+The setline mechanism has changed internally. The visible changes are...
+
+(1) Setline is equivalent to makegen(1, 18, 1000, ....).
+    (But see the description of the new setline_size Minc function above.)
+
+(2) Instruments that required setline can now accept a makegen instead.
+    (But they'll still accept setline.) The makegen must create function
+    table number 1. The instruments affected are MIX/mix, STEREO/stereo,
+    COMBIT/combit, TRANS/trans, flange and sgran. This lets you use any
+    gen function as an envelope.
+
+(3) If an instrument says it looks to function table 1 for its amplitude
+    envelope, you can use the friendlier setline command in place of a
+    makegen. For example, in an AMINST score, you can say
+
+       setline(0,0, 1,1, 9,1, 10,0)
+
+    instead of
+
+       makegen(1, 18, 1000, 0,0, 1,1, 9,1, 10,0)
+
+    These two are exactly equivalent in effect.
+
+(4) If an instrument says it looks to any function table other than 1 for
+    its envelope, you must supply that, as before. You can't use setline
+    as a substitute for that makegen.
+
+
+
+Function Table Change for flange and sgran
+------------------------------------------
+
+This is annoying, but it couldn't be helped...
+
+flange:
+
+    Use function table 2 for the flange cycle, not function table 1,
+    which has been stolen for use by setline.
+
+sgran:
+
+    Use function table 8 for the grain envelope, not function table 1,
+    for the same reason. (#8 is not a clean choice for this, but it's
+    a way to leave the other 6 function tables the way they were.)
+
+
+
+Notes for Instrument Designers
+------------------------------
+
+(1) Please copy one of the revised Makefiles for your project. For RT
+    insts, try AMINST/Makefile; for disk-based insts, try wow/Makefile.
+    These are set up to allow compilation from anywhere, with no reliance
+    on a /musr directory or even on any paths at all in the Makefile.
+
+(2) Please refer to include files *without* using a path name. For example,
+    say "#include <ugens.h>", instead of "#include "../../H/ugens.h"".
+    The Makefiles and their helpers (makefile.conf, insts.conf) have 
+    been set up to pass the INCLUDES directory to your source files.
+    Using those will allow compilation from any directory.
+
+(3) floc(1) no longer complains and aborts the program if that gen array
+    doesn't exist. Instead, your instrument should test the return value of
+    floc(1). If it's NULL, it's up to you to handle the error. Note that
+    floc(n), for n > 1, behaves as it always did.
+
+(4) For new instruments, get an array for the overall amplitude envelope
+    from function table 1. (Call floc(1) to get a pointer to the array.)
+    This lets users supply either a makegen(1, ...) or a setline. If your
+    instrument doesn't have an overall envelope, please don't require
+    that gen #1 be used for some other purpose. Just ignore it.
+
+(5) If floc(1) returns NULL, ignore the amplitude envelope in your code.
+    See AMINST.C for an example of this.
+
+(6) Don't try to include your own setline code. Use what's in the core.
+
+(7) Don't include a reset function to let the user set the control rate.
+    This is also provided in the core (sys/minc_functions.c).
+    Just use resetval to calculate skip, as before. See AMINST.C.
+
+
+
+---------------------------------
+
+Dave Topper (topper@virginia.edu)
+John Gibson (jgg9c@virginia.edu)
+

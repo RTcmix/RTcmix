@@ -1,0 +1,19 @@
+Basically just some cleanup here:
+
+1.  Makefiles now have ../include makefile.conf so that you can compile from any directory
+
+2.  Cleanup of packages.  You can download them all separately.  See INSTALL for how all that works, its easy.
+
+3.  Full duplex audio now works!  Try out something like this:
+
+load("DELAY")
+rtsetparams(44100, 2, 64, 1)
+rtinput("AUDIO")
+makegen(1, 24, 1000, 0,0, 1,1, 9,1, 10,0)
+DELAY(0, 0, 7, 0.7, .14, 0.7, 3.5,0,0.5)   
+
+... plug your mic in first though.  :-)
+
+4.  Some cool new interfaces in ./interfaces/GTK.  You'll need insts.dev.tgz for them though.
+
+DT
