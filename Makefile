@@ -4,12 +4,11 @@
 
 include makefile.conf
 
-SNDLIB_LINK = sndlib
-SNDLIB_DIR = $(SNDLIB_LINK)-5.5
-
 MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
 
-DIRS = $(SNDLIB_LINK) H rtstuff Minc sys lib head cmd utils 
+SNDLIB_DIR = sndlib
+
+DIRS = $(SNDLIB_DIR) H rtstuff Minc sys lib head cmd utils 
 ifeq ($(PERL_SUPPORT), TRUE)
 	DIRS += Perl
 endif
@@ -60,11 +59,9 @@ sys::
 	@cd sys; $(MAKE) all
 	@echo "done.";echo""
 
-sndlib::
+$(SNDLIB_DIR)::
 	@echo "making sndlib..."
-	@rm -f $(SNDLIB_LINK);
-	@ln -sf $(SNDLIB_DIR) $(SNDLIB_LINK);
-	@cd sndlib; $(MAKE) all
+	@cd $(SNDLIB_DIR); $(MAKE) all
 	@echo "done.";echo""
 
 lib::
