@@ -103,7 +103,8 @@ Oequalizer.cpp \
 Oonepole.cpp \
 Ooscil.cpp \
 Ooscili.cpp \
-Orand.cpp
+Orand.cpp \
+Ortgetin.cpp
 
 OOBJECTS = \
 Ocomb.o \
@@ -114,7 +115,8 @@ Oequalizer.o \
 Oonepole.o \
 Ooscil.o \
 Ooscili.o \
-Orand.o
+Orand.o \
+Ortgetin.o
 
 .c.o:
 	$(CC) -c $(CFLAGS) -o $@ $<
