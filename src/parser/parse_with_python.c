@@ -7,17 +7,17 @@
 
 #include <assert.h>
 #include <Python.h>
-#include "python/rtcmix_python_ext.h"
 #include "rtcmix_parse.h"
 
-static FILE *script = NULL;
+static FILE *_script = NULL;
+static char *_script_name = NULL;
 
 
 /* ---------------------------------------------------------- parse_score --- */
 int
 parse_score(int argc, char *argv[])
 {
-   int   i, status, xargc;
+   int   status, xargc;
    char  *xargv[MAXARGS + 2];
 
    assert(argc <= MAXARGS);
@@ -30,27 +30,20 @@ parse_score(int argc, char *argv[])
    /* Define sys.argv in Python. */
    PySys_SetArgv(argc, argv);
 
-   /* Init our static module (../Python/rtcmix_python_ext.o). */
-   status = init_rtcmix_python_ext();
-
-   if (script == NULL)
-      script = stdin;
-   /* Otherwise, <script> will have been set by use_script_file. */
+   if (_script == NULL)
+      _script = stdin;
+   /* Otherwise, <_script> will have been set by use_script_file. */
 
    /* Run the Python interpreter. */
-   if (status == 0) {
-      PyRun_AnyFile(script, "");    // FIXME: 2nd arg should be script name
+   PyRun_AnyFile(_script, _script_name);
 
-      /* Kill interpreter, so that it won't trap cntl-C while insts play.
-         Actually, it turns out that this doesn't help, at least for 
-         Python 2.x, so we have to reinstall our SIGINT handler in main().
-      */
-      Py_Finalize();                /* any errors ignored internally */
-   }
-   else
-      fprintf(stderr, "Can't create Python interpreter.\n");
+   /* Kill interpreter, so that it won't trap cntl-C while insts play.
+      Actually, it turns out that this doesn't help, at least for 
+      Python 2.x, so we have to reinstall our SIGINT handler in main().
+   */
+   Py_Finalize();                /* any errors ignored internally */
 
-   return status;
+   return 0;
 }
 
 
@@ -59,11 +52,12 @@ parse_score(int argc, char *argv[])
 void
 use_script_file(char *fname)
 {
-   script = fopen(fname, "r+");
-   if (script == NULL) {
+   _script = fopen(fname, "r");
+   if (_script == NULL) {
       fprintf(stderr, "Can't open %s\n", fname);
-      exit(1);
+      return;
    }
+   _script_name = fname;
    printf("Using file %s\n", fname);
 }
 
