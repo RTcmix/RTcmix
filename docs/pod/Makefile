@@ -13,7 +13,7 @@ infile makegen multgens \
 sampfunc sampfunci setexp setline setline_size system
 
 # Commands invoked from the command line
-CMD = pchcps sfcreate sffixsize sfhedit sfprint
+CMD = pchcps rescale sfcreate sffixsize sfhedit sfprint
 
 # Programmer documentation
 API = 
