@@ -21,7 +21,7 @@ Ocombi::Ocombi(float SR, float loopTime, float maxLoopTime, float reverbTime)
 	assert(maxLoopTime >= loopTime);
 
 	long maxlen = (long) (maxLoopTime * _sr + 0.5);
-	_delay = new Ozdelay(maxlen);
+	_delay = new Odelayi(maxlen);
 	_delsamps = loopTime * _sr;
 	_delay->setdelay(_delsamps);
 	setReverbTime(reverbTime);
