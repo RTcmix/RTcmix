@@ -27,7 +27,7 @@ const char *errToString(OSStatus err)
 		errstring = "Unknown hardware property.";
 		break;
 	case kAudioDeviceUnsupportedFormatError:
-		errstring = "Unsuported audio format.";
+		errstring = "Unsupported audio format.";
 		break;
 	case kAudioHardwareBadPropertySizeError:
 		errstring = "Bad hardware propery size.";
@@ -58,7 +58,8 @@ struct OSXAudioDevice::Impl {
 	bool						playing;				// Used by OSX code
 	float						*audioBuffers[2];		// circ. buffers
 	int							audioBufSamps;			// length of buffers in samps
-	int							inLoc[2], outLoc[2];	// circ. buffer indices
+	int							inLoc[2],
+								outLoc[2];	// circ. buffer indices
 	static OSStatus				runProcess(
 									AudioDeviceID			inDevice,
 									const AudioTimeStamp	*inNow,
@@ -377,6 +378,7 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 		AudioStreamBasicDescription requestedFormat = _impl->deviceFormat;
 		requestedFormat.mSampleRate = srate;
 		requestedFormat.mChannelsPerFrame = _impl->channels;
+		printf("requesting srate %g, %d channels\n", srate, _impl->channels);
 		UInt32 size = sizeof(requestedFormat);
 		OSStatus err = AudioDeviceSetProperty(_impl->deviceID,
 									 NULL,
