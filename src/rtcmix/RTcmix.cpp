@@ -373,11 +373,13 @@ void RTcmix::panic()
 	//run_status = RT_GOOD;
 }
 
+extern AudioDevice *globalOutputFileDevice;		// from ../sys/audio_devices.cpp
+
 void RTcmix::close()
 {
 	run_status = RT_SHUTDOWN;
 	//	closesf_noexit();
-      rtreportstats();
+      rtreportstats(globalOutputFileDevice);
       close_audio_ports();
       rtcloseout();
 }
