@@ -147,6 +147,23 @@ Table number 5 will contain a sine wave at half amplitude, ranging from
 table from being normalized (scaled to fall between -1 and 1).  The table
 will have 2000 elements.
 
+=head1 NOTES
+
+If you call makegen again with the same table_number, then it
+replaces the old table, but only for instruments that have not
+yet been called in the script:
+
+   makegen(2, 10, 1000, 1)   /* sine wave */
+   WAVETABLE(start, dur, amp, freq)
+
+   makegen(2, 10, 1000, 1, 1, 1, 1, 1, 1, 1, 1, 1)  /* buzzy wave */
+   WAVETABLE(start, dur, amp, freq)
+
+The second call to makegen replaces the sine wave with a buzzy wave.
+But the first WAVETABLE note continues to use the sine wave.  It would
+still work this way even if the second note were set to start playing
+before the first.
+
 =head1 SEE ALSO
 
 L<setline|setline>, L<setexp|setexp>, L<addgens|addgens>, L<multgens|multgens>,
