@@ -103,6 +103,8 @@ init_globals()
    Option::init();
    Option::readConfigFile(Option::rcName());
 
+   Option::exitOnError(true); // we do this no matter what is in config file
+
    RTBUFSAMPS = (int) Option::bufferFrames();  /* modifiable with rtsetparams */
    NCHANS = 2;
    audioNCHANS = 0;
