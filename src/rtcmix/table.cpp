@@ -98,11 +98,7 @@ _getTablePField(const Arg *arg)
 {
    PField *tpf = NULL;
    if ((tpf = (PField *) *arg) != NULL) {
-#if __GNUG__ >= 3
-      return dynamic_cast<TablePField *> (tpf);
-#else
       return (TablePField *) tpf;
-#endif
    }
    return NULL;
 }
