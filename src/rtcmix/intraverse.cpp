@@ -56,6 +56,8 @@ extern "C" {
 	Bool aux_pb_done = NO;
 	short bus,bus_count,play_bus;
 	IBusClass bus_class,qStatus;
+	BusType bus_type;
+
 	
     // cout << "ENTERING inTraverse() FUNCTION *****\n";
 
@@ -162,12 +164,15 @@ extern "C" {
 		switch (qStatus) {
 		case TO_AUX:
 		  bus = MAXBUS+1;
+		  bus_type = BUS_AUX_OUT;
 		  break;
 		case AUX_TO_AUX:
 		  bus = AuxPlayList[play_bus];
+		  bus_type = BUS_AUX_OUT;
 		  break;
 		case TO_OUT:
 		  bus = MAXBUS+2;
+		  bus_type = BUS_OUT;
 		  break;
 		default:
 		  cout << "ERROR (intraverse): unknown bus_class\n";
@@ -209,8 +214,7 @@ extern "C" {
 		  
 		  Iptr->setchunk(chunksamps);  // set "chunksamps"
 		  
-//FIXME: DT, can you fill in these args?
-		  Iptr->exec(bus_type, bus_number);    // write the samples * * * * * * * * * * * 
+		  Iptr->exec(bus_type, bus);    // write the samples * * * * * * * * * 
 		  
 		  // ReQueue or delete - - - - - - - - - - - - - - - - - - -
 		  if (endsamp > bufEndSamp) {
