@@ -7,7 +7,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <time.h>
 #include "../H/sndlibsupport.h"
 
 static void usage(void);
