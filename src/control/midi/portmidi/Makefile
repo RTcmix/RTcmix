@@ -34,9 +34,11 @@ all: $(PMLIB) $(PTLIB) $(TESTPRG)
 
 $(PMLIB): Makefile $(PMOBJECTS)
 	ar -cr $(PMLIB) $(PMOBJECTS)
+	$(RANLIB) $(PMLIB)
 
 $(PTLIB): Makefile $(PTOBJECTS)
 	ar -cr $(PTLIB) $(PTOBJECTS)
+	$(RANLIB) $(PMLIB)
 
 pm_linux/pmlinuxalsa.o: Makefile pm_linux/pmlinuxalsa.c pm_linux/pmlinuxalsa.h
 	$(CC) $(CFLAGS) -c pm_linux/pmlinuxalsa.c -o pm_linux/pmlinuxalsa.o
