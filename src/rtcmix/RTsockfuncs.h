@@ -10,6 +10,8 @@ int RTsock(char *ihost, int rtsno);
 
 int RTopensocket(int socket, char *binaryname);
 
+int RTopensocket_syscall(int socket, char *binaryname);
+
 void RTkillsocket(int socket, int pid);
 
 void RTsendsock(const char *cmd, int theSock, int nargs, ...);
