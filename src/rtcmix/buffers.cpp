@@ -13,7 +13,6 @@
 
 /* #define NDEBUG */     /* define to disable asserts */
 
-
 /* local prototypes */
 static BufPtr allocate_buf_ptr(int nsamps);
 
@@ -23,11 +22,7 @@ static BufPtr allocate_buf_ptr(int nsamps);
 /* Copy the specified channel of an interleaved buffer to a one-channel
    buffer. Buffers must be of same type (e.g., float).
 */
-#ifdef __GNUC__
-inline void
-#else
-void
-#endif
+INLINE void
 copy_interleaved_buf_to_one_buf(
       BufPtr         dest,            /* buffer containing one chan */
       const BufPtr   src,             /* interleaved buffer */
@@ -46,11 +41,7 @@ copy_interleaved_buf_to_one_buf(
 /* Copy a one-channel buffer into the specified channel of an interleaved
    buffer. Buffers must be of same type (e.g., float).
 */
-#ifdef __GNUC__
-inline void
-#else
-void
-#endif
+INLINE void
 copy_one_buf_to_interleaved_buf(
       BufPtr         dest,            /* interleaved buffer */
       const BufPtr   src,             /* buffer containing one chan */
@@ -69,11 +60,7 @@ copy_one_buf_to_interleaved_buf(
 /* Copy one channel between two interleaved buffers. Buffers must be
    of same type (e.g., float).
 */
-#ifdef __GNUC__
-inline void
-#else
-void
-#endif
+INLINE void
 copy_interleaved_buf_to_buf(
       BufPtr         dest,            /* interleaved buffer */
       const BufPtr   src,             /* interleaved buffer */
@@ -113,11 +100,7 @@ init_buf_ptrs()
 /* ------------------------------------------------ clear_audioin_buffers --- */
 // FIXME: not sure we need to do this ever  -JGG
 /* Called from inTraverse. */
-#ifdef __GNUC__
-inline void
-#else
-void
-#endif
+INLINE void
 clear_audioin_buffers()
 {
    int   i, j;
@@ -133,11 +116,7 @@ clear_audioin_buffers()
 
 /* ---------------------------------------------------- clear_aux_buffers --- */
 /* Called from inTraverse. */
-#ifdef __GNUC__
-inline void
-#else
-void
-#endif
+INLINE void
 clear_aux_buffers()
 {
    int   i, j;
@@ -153,11 +132,7 @@ clear_aux_buffers()
 
 /* ------------------------------------------------- clear_output_buffers --- */
 /* Called from inTraverse. */
-#ifdef __GNUC__
-inline void
-#else
-void
-#endif
+INLINE void
 clear_output_buffers()
 {
    int   i, j;
@@ -171,11 +146,7 @@ clear_output_buffers()
 
 
 /* ----------------------------------------------------- allocate_buf_ptr --- */
-#ifdef __GNUC__
-static inline BufPtr
-#else
-static BufPtr
-#endif
+static INLINE BufPtr
 allocate_buf_ptr(int nsamps)       /* samples, not frames */
 {
    BufPtr buf_ptr;
@@ -190,11 +161,7 @@ allocate_buf_ptr(int nsamps)       /* samples, not frames */
 /* Allocate one of the global audio input bus buffers.
    Called from rtinput.
 */
-#ifdef __GNUC__
-inline int
-#else
-int
-#endif
+INLINE int
 allocate_audioin_buffer(short chan, int nsamps)
 {
    BufPtr buf_ptr;
@@ -215,11 +182,7 @@ allocate_audioin_buffer(short chan, int nsamps)
 /* Allocate one of the global aux bus buffers.
    Called from bus_config.
 */
-#ifdef __GNUC__
-inline int
-#else
-int
-#endif
+INLINE int
 allocate_aux_buffer(short chan, int nsamps)
 {
    BufPtr buf_ptr;
@@ -240,11 +203,7 @@ allocate_aux_buffer(short chan, int nsamps)
 /* Allocate one of the global out bus buffers.
    Called from rtsetparams.
 */
-#ifdef __GNUC__
-inline int
-#else
-int
-#endif
+INLINE int
 allocate_out_buffer(short chan, int nsamps)
 {
    BufPtr buf_ptr;
@@ -265,11 +224,7 @@ allocate_out_buffer(short chan, int nsamps)
 /* Allocate buffer of the type received from the audio input device.
    Called by rtgetsamps.c
 */
-#ifdef __GNUC__
-inline IBufPtr
-#else
-IBufPtr
-#endif
+INLINE IBufPtr
 allocate_ibuf_ptr(int nsamps)       /* samples, not frames */
 {
    IBufPtr ibuf_ptr;
@@ -285,11 +240,7 @@ allocate_ibuf_ptr(int nsamps)       /* samples, not frames */
 /* Allocate buffer of the type sent to the audio output device.
    Called by rtsendsamps.c
 */
-#ifdef __GNUC__
-inline OBufPtr
-#else
-OBufPtr
-#endif
+INLINE OBufPtr
 allocate_obuf_ptr(int nsamps)       /* samples, not frames */
 {
    OBufPtr obuf_ptr;

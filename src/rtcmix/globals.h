@@ -26,6 +26,12 @@ GLOBAL heap rtHeap;  // DT:  main heap structure used to queue instruments
 extern "C" {
 #endif /* __cplusplus */
 
+#ifdef __GNUC__
+#define INLINE inline    /* GNU C compiler can inline */
+#else
+#define INLINE           /* MIPSpro can't */
+#endif
+
 #ifdef LINUX
 GLOBAL int in_port[MAXBUS];    /* array, in case sound driver uses many devs */
 GLOBAL int out_port[MAXBUS];
