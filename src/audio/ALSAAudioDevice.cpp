@@ -270,7 +270,7 @@ int ALSAAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 //			*pWriteSize * *pCount, (int) _bufSize);
 	
 	int dir = 0;
-	snd_pcm_uframes_t periodsize = *pWriteSize, tryperiodsize;
+	snd_pcm_uframes_t periodsize = _bufSize / *pCount, tryperiodsize;
 
 	tryperiodsize = periodsize;
 	if ((status = snd_pcm_hw_params_set_period_size_near(_handle,
@@ -286,15 +286,16 @@ int ALSAAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 	}
 	unsigned periods = *pCount;
 
-//	printf("setting periods to %d\n", periods);
-	if ((status = snd_pcm_hw_params_set_periods(_handle,
+//	printf("setting periods near %d\n", periods);
+	if ((status = snd_pcm_hw_params_set_periods_near(_handle,
 												_hwParams, 
-												periods, 
-												dir)) < 0)
+												&periods, 
+												&dir)) < 0)
 	{
 		return error("Failed to set ALSA periods: ", snd_strerror(status));
 	}
 
+//	printf("periods set to %d\n", periods);
  	if ((status = snd_pcm_hw_params_get_buffer_size(_hwParams, &_bufSize)) < 0) {
 		return error("Cannot retrieve buffer size: ", snd_strerror(status));
 	}
@@ -314,9 +315,9 @@ int ALSAAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 		if ((status = snd_pcm_sw_params_current(_handle, swParams)) < 0) {
 			return error("Cannot initialize sw params: ", snd_strerror (status));
 		}
-		printf("Testing: HW will wake us when %d frames can be %s\n",
-			   *pWriteSize, isPlaying() ? "written" : "read");
-		if ((status = snd_pcm_sw_params_set_avail_min(_handle, swParams, *pWriteSize)) < 0) {
+//		printf("Testing: HW will wake us when %d frames can be %s\n",
+//			   tryperiodsize, isPlaying() ? "written" : "read");
+		if ((status = snd_pcm_sw_params_set_avail_min(_handle, swParams, tryperiodsize)) < 0) {
 			return error("Cannot set minimum available count: ", 
 						 snd_strerror (status));
 		}
