@@ -137,7 +137,7 @@ protected:
 
 // Class for low frequency control rate oscillator
 
-#include <Ougens.h>
+class Ooscili;
 
 class LFOPField : public SingleValuePField {
 public:
@@ -158,30 +158,24 @@ private:
 
 // Class for random number generator
 
-#include <Random.h>
+class Random;
+class RandomOscil;
 
 class RandomPField : public SingleValuePField {
 public:
-	typedef double (*InterpFunction)(Random *gen);
-	static double Truncate(Random *gen);
-	static double Interpolate1stOrder(Random *gen);
-public:
 	// NB: RandomPField takes ownership of generator, deletes on destruction.
 	RandomPField(double krate, Random *generator, PField *freq,
-						PField *min, PField *max, PField *mid, PField *tight,
-						InterpFunction fun=Interpolate1stOrder);
+						PField *min, PField *max, PField *mid=NULL, PField *tight=NULL);
 	virtual double	doubleValue(double) const;
 protected:
 	virtual ~RandomPField();
 private:
-	double _sr;
-	Random *_gen;
 	PField *_freqPF;
 	PField *_minPF;
 	PField *_maxPF;
 	PField *_midPF;
 	PField *_tightPF;
-	InterpFunction	_interpolator;
+	RandomOscil *_randOscil;
 };
 
 // Class for interpolated reading of table.
@@ -258,6 +252,26 @@ private:
 	int _len;
 	PField *_minPField;
 	PField *_maxPField;
+};
+
+// Class for smoothing a control signal.  Lag must be in range [0, 100].
+
+class Oonepole;
+
+class SmoothPField : public PFieldWrapper {
+public:
+	SmoothPField(PField *innerPField, double krate, PField *lagPField);
+	virtual double	doubleValue(double didx) const;
+	virtual double	doubleValue(int idx) const;
+	virtual int		values() const { return _len; }
+protected:
+	virtual ~SmoothPField();
+private:
+	void updateCutoffFreq(double percent = 0.0) const;
+	int _len;
+	double _lag;
+	Oonepole *_filter;
+	PField *_lagPField;
 };
 
 // Class for converting values read from another PField.

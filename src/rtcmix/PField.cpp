@@ -7,6 +7,8 @@
 #include <string.h>
 #include <stdio.h>   // for snprintf
 #include <math.h>
+#include <float.h>	// for DBL_MAX
+#include <Ougens.h>
 
 inline int max(int x, int y) { return (x >= y) ? x : y; }
 inline int min(int x, int y) { return (x < y) ? x : y; }
@@ -203,44 +205,32 @@ double LFOPField::doubleValue(double percent) const
 
 // RandomPField
 
+#include <Random.h>
+
 RandomPField::RandomPField(double krate, Random *generator, PField *freq,
-		PField *min, PField *max, PField *mid, PField *tight,
-		RandomPField::InterpFunction ifun)
-	: SingleValuePField(0.0), _sr(krate), _gen(generator), _freqPF(freq),
-	  _minPF(min), _maxPF(max), _midPF(mid), _tightPF(tight), _interpolator(ifun)
+		PField *min, PField *max, PField *mid, PField *tight)
+	: SingleValuePField(0.0), _freqPF(freq), _minPF(min), _maxPF(max), _midPF(mid), _tightPF(tight)
 {
+	_randOscil = new RandomOscil(generator, krate, _freqPF->doubleValue());
 }
 
 RandomPField::~RandomPField()
 {
-// FIXME: error: Random.h:36: `Random::~Random()' is protected PField.cpp:216: within this context
-//	delete _gen;
-}
-
-double RandomPField::Truncate(Random *gen)
-{
-	return gen->value();
-}
-
-double RandomPField::Interpolate1stOrder(Random *gen)
-{
-//FIXME: need state (passed in) in order to ramp
-	return gen->value();
+	delete _randOscil;
 }
 
 double RandomPField::doubleValue(double percent) const
 {
 	if (percent > 1.0)
 		percent = 1.0;
-//	_oscil->setfreq(_freqPF->doubleValue(percent));
-	_gen->setmin(_minPF->doubleValue(percent));
-	_gen->setmax(_maxPF->doubleValue(percent));
+	_randOscil->setmin(_minPF->doubleValue(percent));
+	_randOscil->setmax(_maxPF->doubleValue(percent));
 	if (_midPF)
-		_gen->setmid(_midPF->doubleValue(percent));
+		_randOscil->setmid(_midPF->doubleValue(percent));
 	if (_tightPF)
-		_gen->settight(_tightPF->doubleValue(percent));
-// NB: handle frequency
-	return (*_interpolator)(_gen);
+		_randOscil->settight(_tightPF->doubleValue(percent));
+	_randOscil->setfreq(_freqPF->doubleValue(percent));
+	return _randOscil->next();
 }
 
 // TablePField
@@ -390,6 +380,44 @@ double RangePField::doubleValue(int idx) const
 	const double max = _maxPField->doubleValue(idx);
 	const double normval = field()->doubleValue(idx);
 	return min + ((normval + 1.0) * 0.5 * (max - min));
+}
+
+// SmoothPField
+
+SmoothPField::SmoothPField(PField *innerPField, double krate, PField *lagPField)
+	: PFieldWrapper(innerPField), _len(innerPField->values()), _lagPField(lagPField)
+{
+	_lag = -DBL_MAX;
+	_filter = new Oonepole(krate);
+	updateCutoffFreq();
+}
+
+SmoothPField::~SmoothPField()
+{
+	delete _filter;
+}
+
+void SmoothPField::updateCutoffFreq(double percent) const
+{
+	const double lag = _lagPField->doubleValue(percent);
+	if (lag != _lag) {
+		_filter->setlag(lag * 0.01);
+// FIXME: can't update state if this function must be const
+// move this optimization into Oonepole?  Then should setfreq also track freq changes?
+//		_lag = lag;
+	}
+}
+
+double SmoothPField::doubleValue(double didx) const
+{
+	updateCutoffFreq(didx);
+	return _filter->next(field()->doubleValue(didx));
+}
+
+double SmoothPField::doubleValue(int idx) const
+{
+	updateCutoffFreq(idx);
+	return _filter->next(field()->doubleValue(idx));
 }
 
 // ConverterPField
