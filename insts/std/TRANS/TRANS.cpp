@@ -128,6 +128,8 @@ int TRANS :: run()
    aamp = amp;                  /* in case amptable == NULL */
 
    if (first_time) {
+      int offset = RTBUFSAMPS - chunksamps;
+      outp += offset * NCHANS;
       inframe = outframes;
       first_time = 0;
    }
