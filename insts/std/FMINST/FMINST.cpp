@@ -35,6 +35,7 @@
 
 FMINST::FMINST() : Instrument()
 {
+	modphs = carphs = 0.0;
 }
 
 int FMINST::init(float p[], short n_args)
