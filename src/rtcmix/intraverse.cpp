@@ -11,7 +11,6 @@ extern "C" {
 #include <unistd.h>
 #include <stdio.h>
    void *rtsendsamps(short[]);
-   short *rtzerosamps(void);
    short *rtrescale(float[]);
    void rtreportstats(void);
 #ifdef USE_SNDLIB
@@ -40,6 +39,9 @@ extern int rtfileit,rtoutfile,rtoutswap,play_audio;
 
 extern "C" int audio_on;
 
+/* traverse.C and sys/rtwritesamps.C import this */
+unsigned long bufStartSamp;
+
 extern "C" {
   void *inTraverse()
   {
@@ -54,7 +56,6 @@ extern "C" {
 
     Instrument *Iptr;
 
-    unsigned long bufStartSamp;
     unsigned long bufEndSamp;
     unsigned long chunkStart;
     unsigned long heapChunkStart;
@@ -108,7 +109,7 @@ extern "C" {
     if (audio_on) {
       outbptr = &outbuff[0];  // advance buffer pointer
       rtgetsamps();
-      sbuf = rtzerosamps();
+      sbuf = rtrescale(outbuff);
       rtsendsamps(sbuf);  // send a buffer of zeros
     }
   
@@ -260,7 +261,7 @@ extern "C" {
       
       }
       else {
-	sbuf = rtzerosamps();
+	sbuf = rtrescale(outbuff);
 	if (play_audio && rtInst) {
 	  rtsendsamps(sbuf);
 	}
@@ -303,7 +304,7 @@ extern "C" {
       // Play zero'd buffers to avoid clicks
       if (play_audio) {
 	int count = NCHANS * 2;
-	sbuf = rtzerosamps();
+	sbuf = rtrescale(outbuff);
 	for (j = 0; j < count; j++) 
 	  rtsendsamps(sbuf);
       }  
