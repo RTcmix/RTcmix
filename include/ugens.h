@@ -28,7 +28,7 @@ typedef	struct ug_item	ug_t;
 
 
 extern	ug_t	*ug_list;
-extern	addfunc(struct ug_item *);
+extern int addfunc(struct ug_item *);
 
 #define	UG_INTRO(flabel,func)	\
 	{ extern double func();	\
