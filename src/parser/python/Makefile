@@ -23,7 +23,7 @@ $(MODULE): $(MODULE_SRC)
 	$(PYTHON) setup.py build
 ifeq ($(PYTHON_EXT_STATIC_LINK), TRUE)
 	$(RM) $(MODULE)module.o
-	ln -s `find . -name $(MODULE)module.o` .
+	ln -s "`find . -name $(MODULE)module.o`" .
 endif
 
 # NB: need root for this; installs in python site-packages dir
