@@ -8,7 +8,7 @@ public:
     virtual ~MOVE();
 protected:
     virtual const char * name() { return "MOVE"; }
-    virtual int localInit(float *, short);
+    virtual int localInit(float *, int);
     virtual int finishInit(double, double *);
     virtual int updatePosition(int);
     virtual void get_tap(int, int, int, int);

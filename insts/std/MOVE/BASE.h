@@ -13,10 +13,10 @@ class BASE : public Instrument {
 public:
    BASE();
    virtual ~BASE();
-   virtual int init(float *, short);
+   virtual int init(float *, int);
    virtual int run();
 protected:
-   virtual int localInit(float *, short) = 0;
+   virtual int localInit(float *, int) = 0;
    virtual int finishInit(double, double *) = 0;
    virtual int updatePosition(int) = 0;
    virtual void get_tap(int, int, int, int) = 0;

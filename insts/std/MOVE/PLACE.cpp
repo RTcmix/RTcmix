@@ -38,7 +38,7 @@ PLACE::~PLACE()
 {
 }
 
-int PLACE::localInit(float p[], short n_args)
+int PLACE::localInit(float p[], int n_args)
 {
     if (n_args < 8)
         die(name(), "Wrong number of args.");
