@@ -81,6 +81,10 @@ int getsfmaxamp(SFHEADER *, SFMAXAMP *);
               (format) == MUS_BFLOAT                     \
            || (format) == MUS_LFLOAT                     )
 
+#define IS_24BIT_FORMAT(format) (                        \
+              (format) == MUS_B24INT                     \
+           || (format) == MUS_L24INT                     )
+
 #define NOT_A_SOUND_FILE(header_type) (                  \
               (header_type) == MUS_UNSUPPORTED           \
            || (header_type) == MUS_RAW                   )
@@ -96,8 +100,17 @@ int getsfmaxamp(SFHEADER *, SFMAXAMP *);
 
 #define INVALID_DATA_FORMAT(format) ((format) < 1)
 
-/* The data formats that disk-based cmix code can read and write. */
+/* The data formats that RTcmix can read and write. */
 #define SUPPORTED_DATA_FORMAT(format) (                  \
+               (format) == MUS_BSHORT                    \
+           ||  (format) == MUS_LSHORT                    \
+           ||  (format) == MUS_BFLOAT                    \
+           ||  (format) == MUS_LFLOAT                    \
+           ||  (format) == MUS_B24INT                    \
+           ||  (format) == MUS_L24INT                    )
+
+/* The data formats that disk-based cmix can read and write. */
+#define SUPPORTED_DATA_FORMAT_NO24BIT(format) (          \
                (format) == MUS_BSHORT                    \
            ||  (format) == MUS_LSHORT                    \
            ||  (format) == MUS_BFLOAT                    \
