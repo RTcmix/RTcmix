@@ -25,7 +25,7 @@ Ia.  Preliminaries
 
    This has been tested only on the internal audio devices on recent G4
    PowerMacs and PowerBooks.  It's possible that third-party hardware will
-   require some tweaks.  Please notify John Gibson (johgibso@indiana.edu)
+   require some tweaks.  Please notify John Gibson (johgibso at indiana.edu)
    if you can't get this to work.
 
    Note that this version currently cannot use the latest pfield-updating
