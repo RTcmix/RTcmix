@@ -88,6 +88,7 @@ ug_intro()
 	UG_INTRO("reset",m_reset);
 	UG_INTRO("control_rate",m_reset); /* because "reset" is a perlfunc */
 	UG_INTRO("load",m_load); /* allows loading of dynamic libraries */
+	UG_INTRO("CHANS",m_CHANS);  /* returns channels for rtinput files */
 	UG_INTRO("DUR",m_DUR);  /* returns duration for rtinput files */
 	UG_INTRO("SR",m_SR);  /* returns rate for rtinput files */
 	UG_INTRO("PEAK",m_PEAK);  /* returns peak amp for rtinput files */

@@ -69,6 +69,22 @@ float *p;
 	return(dur);
 }
 
+double m_CHANS(float *p, int n_args)   /* returns chans for rtinput() files */
+{
+   int index = get_last_input_index();
+
+   if (index < 0) {
+      fprintf(stderr, "There are no currently opened input files!\n");
+      return 0.0;
+   }
+   if (inputFileTable[index].is_audio_dev) {
+      fprintf(stderr, "WARNING: Requesting channels of audio input device "
+                      "(not sound file)!\n");
+      return 0.0;
+   }
+   return (inputFileTable[index].chans);
+}
+
 double m_DUR(float *p, int n_args)   /* returns duration for rtinput() files */
 {
    int index = get_last_input_index();
