@@ -32,6 +32,12 @@ ifeq ($(PYTHON_EXT_LINK), )
 	$(PYTHON) setup.py install
 endif
 
+# NB: unfortunately, distutils doesn't support uninstall 
+uninstall:
+#ifeq ($(PYTHON_EXT_LINK), )
+#	$(PYTHON) setup.py install
+#endif
+
 clean:
 	$(RM) $(FUNCLIST) $(MODULE).so $(MODULE)module.o $(MODULE_SRC)
 	$(RM) -r build

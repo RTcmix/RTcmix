@@ -48,6 +48,9 @@ endif
 
 -include depend
 
+install:
+uninstall:
+
 clean:
 	$(RM) $(OBJECTS) $(AUDIOLIB)
 

@@ -45,6 +45,7 @@ depend:
 -include depend
 
 install:
+uninstall:
 
 clean:
 	$(RM) *.o $(LIBCONF) $(TEST) *$(SYMPREFIX).c *.tab.cpp *.tab.hpp $(CONF).c \

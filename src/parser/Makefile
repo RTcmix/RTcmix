@@ -43,6 +43,12 @@ install: all
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) install; ) \
 	done
 
+uninstall:
+	@for DIR in $(DIRS); \
+	do \
+	  ( cd $$DIR; $(MAKE) $(MFLAGS) uninstall; ) \
+	done
+
 clean:
 	$(RM) *.o depend core
 	@for DIR in $(DIRS); \
