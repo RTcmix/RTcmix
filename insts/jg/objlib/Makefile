@@ -8,10 +8,6 @@ Noise.o SubNoise.o SubNoiseL.o SoundIn.o WavShape.o ZAllpass.o Equalizer.o
 
 all: objlib.a
 
-SoundIn.o: SoundIn.cpp SoundIn.h
-	$(CXX) $(CXXFLAGS) -I../../../src/rtcmix -I../../../src/audio \
-		-I../../../src/sndlib -c SoundIn.cpp
-
 objlib.a: $(OBJS)
 	$(RM) objlib.a
 	ld -r $(OBJS) -o objlib.a
