@@ -31,3 +31,14 @@ NOT inputchans (2 in this case) inst member. So <in> is overwritten.
 
 -JGG (1/29/00)
 
+------------
+
+Problem with Irix MIPSPro compiler declaring float arrays on the stack,
+if sized by a variable instead of a constant. This was happening in all
+insts that take input from a buffer. Solution was to dynamically allocate
+the insts' private input buffer on construction of the inst. But this
+really chews up memory fast for some scores, so it's not the way to go.
+
+-JGG (2/8/00)
+
+
