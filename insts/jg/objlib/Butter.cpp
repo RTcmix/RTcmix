@@ -2,6 +2,7 @@
    Just a knock-off of clm and csound ones, which come right outta Dodge.
 */
 #include "Butter.h"
+#include <assert.h>
 
 #define SQRT2  1.4142135623730950488
 
@@ -43,6 +44,9 @@ void Butter :: clear()
 
 void Butter :: setLowPass(MY_FLOAT cutoff)
 {
+   if (cutoff <= 0.0)
+      cutoff = 0.001;
+
    c = 1.0 / tan((double)(cutoff * PI / SR));
 
    gain = (MY_FLOAT)(1.0 / (1.0 + SQRT_TWO * c + c * c));
