@@ -1,0 +1,63 @@
+Cmix was started by Paul Lansky in 1985.
+RTCmix was derived from Cmix by Brad Garton in 1995.
+
+
+The RTCmix Development Team (in alphabetical order)
+---------------------------------------------------
+
+R. Luke DuBois    <luke@columbia.edu>
+Brad Garton       <garton@columbia.edu>
+John Gibson       <johngibson@virginia.edu>
+Doug Scott        <dscott@sgi.com>
+David Topper      <topper@virginia.edu>
+
+
+Thanks to Bill Schottstaedt for his sndlib sound library.
+[url for this]
+
+Thanks to Julius O. Smith for his resample program.
+[url for this]
+
+
+Individual instrument and interfaces packages may have their own
+LICENSE and AUTHORS files.
+
+
+
+Original Authors of Cmix
+------------------------
+
+Paul Lansky, with help from (in alphabetical order) ...
+Curtis Bahn
+Brad Garton
+Lars Graf
+Romain Kang
+Eric Lyon
+Dave Madole
+Andrew Milburn
+Doug Scott
+Peter Velikonja
+
+Please do not pester the original Cmix authors asking questions about RTCmix.
+
+If you know of others who are missing from this list, please send their
+names to John Gibson <johngibson@virginia.edu>.
+
+Some instruments (pvoc, convolve) contain code from the UCSD Carl package,
+whose authors were F. R. Moore, Gareth Loy, Mark Dolson and others.
+
+
+
+
+
+
+
+need to put in each src file...
+
+/* RTCmix  - Copyright (C) 1999  The RTCmix Development Team
+   See ``AUTHORS'' for a list of contributors.
+   See ``LICENSE'' for the license to this software and for a
+     DISCLAIMER OF ALL WARRANTIES.
+*/
+
+
