@@ -30,10 +30,10 @@ $(TEST).o: depend $(TEST).cpp
 $(TEST): depend $(TEST).o $(LIBCONF)
 	$(CXX) $(CXXFLAGS) $(TEST).o -o $(TEST) $(LIBCONF) -lm
 
-lex.yy.c: $(LSRC)
+lex.conf.c: $(LSRC)
 	$(LEX) $(LEXFLAGS) $(LSRC)
 
-conf.tab.cpp: lex.yy.c $(YSRC)
+conf.tab.cpp: lex.conf.c $(YSRC)
 	$(YACC) $(YFLAGS) $(YSRC)
 	@# these are in case we're using an older bison (1.28 in OS X 10.2.8)
 	@if test -f conf.ypp.tab.c; then mv conf.ypp.tab.c conf.tab.cpp; fi;
