@@ -10,60 +10,64 @@ scheme. Also, the VOCODE instrument uses a sound file input object that
 relies on sndlib, which hasn't been brought into the SGI version.)
 
 
-VOCODE   - a channel vocoder. Control a bank of band-pass filters from
-           a real-time analysis of another file. (Linux-only, because
-           of method used to open two rt input files.)
+VOCODE    - a channel vocoder. Control a bank of band-pass filters from
+            a real-time analysis of another file. (Linux-only, because
+            of method used to open two rt input files.)
 
-JFIR     - an FIR filter with frequency response sampling. Use a makegen
-           to "draw" a frequency response for the filter. (I can get up
-           to 600 taps in real-time on a PII266.)
+JFIR      - an FIR filter with frequency response sampling. Use a makegen
+            to "draw" a frequency response for the filter. (I can get up
+            to 600 taps in real-time on a PII266.)
 
-FLANGE   - a flanger with choice of IIR comb or FIR notch filter. Serves
-           as a demonstration of some of the unit gen objects.
+FLANGE    - a flanger with choice of IIR comb or FIR notch filter. Serves
+            as a demonstration of some of the unit gen objects.
 
-JCHOR    - a variation on Lansky's chor program, which sprays a slice of
-           an input file around the stereo field. Some limitations have
-           been removed, and you can transpose the grain.
+JCHOR     - a variation on Lansky's chor program, which sprays a slice of
+            an input file around the stereo field. Some limitations have
+            been removed, and you can transpose the grain.
 
-ELL      - an old cmix favorite, dusted off and RT-ified ... cascaded
-           IIR filters with built-in elliptical design program.
-           ***NOTE: Requires libf2c.a and f2c.h (both might be installed
-           with g77, the GNU Fortran-77 compiler).
+ELL       - an old cmix favorite, dusted off and RT-ified ... cascaded
+            IIR filters with built-in elliptical design program.
+            ***NEWSFLASH: No longer requires libf2c.a and f2c.h, thanks
+            to Alistair Riddel and Ross Bencina.
 
-JDELAY   - a tweak of the standard RTcmix DELAY program, adding a low-pass
-           filter and dc-blocker, among other things. Useful for short
-           resonating delay times.
+JDELAY    - a tweak of the standard RTcmix DELAY program, adding a low-pass
+            filter and dc-blocker, among other things. Useful for short
+            resonating delay times.
 
-REVERBIT - a translation of Lansky's fast reverberator. Added low-pass filter
-           and removed a few limitations. Very effective for a moderate
-           amount of roominess. (This'll be great for the future shared
-           audio buffer RTcmix.)
+REVERBIT  - a translation of Lansky's fast reverberator. Added low-pass filter
+            and removed a few limitations. Very effective for a moderate
+            amount of roominess. (This'll be great for the future shared
+            audio buffer RTcmix.)
 
-SROOM    - the old cmix implementation of F.R. Moore's stationary-source room
-           simulation program. Not nearly as effective as place, but kind
-           of a kick to see running in real time.
+SROOM     - the old cmix implementation of F.R. Moore's stationary-source room
+            simulation program. Not nearly as effective as place, but kind
+            of a kick to see running in real time.
 
-MROOM    - the old cmix implementation of F.R. Moore's moving-source room
-           simulation program. Not a replacement for move, but fun to run
-           in real time.
+MROOM     - the old cmix implementation of F.R. Moore's moving-source room
+            simulation program. Not a replacement for move, but fun to run
+            in real time.
 
-ROOM     - Lansky's (and Garton's, I think) old room simulation.
+ROOM      - Lansky's (and Garton's, I think) old room simulation.
 
-REV      - some Schroeder reverbs that are part of the STK package.
+REV       - some Schroeder reverbs that are part of the STK package.
 
-PAN      - simple mixing instrument that follows a pan curve
+PAN       - simple mixing instrument that follows a pan curve
 
-bender   - a variation on Lansky's vreadin program, which lets you bend
-           the pitch of an input file along a glissando curve. Uses Doug
-           Scott's trans interpolation.
+FILTSWEEP - two-pole filter with time-varying center freq. and bandwidth
 
-denoise  - a translation of Mark Dolson's old CARL program, which does
-           frequency-domain noise reduction. Pretty effective for cleaning
-           up files with a moderate amount of constant background noise.
+bender    - a variation on Lansky's vreadin program, which lets you bend
+            the pitch of an input file along a glissando curve. Uses Doug
+            Scott's trans interpolation.
 
-splice   - a simple program that makes it easy to stitch together final
-           mixes for a CD without getting any clicks at the splice points.
+denoise   - a translation of Mark Dolson's old CARL program, which does
+            frequency-domain noise reduction. Pretty effective for cleaning
+            up files with a moderate amount of constant background noise.
 
+splice    - a simple program that makes it easy to stitch together final
+            mixes for a CD without getting any clicks at the splice points.
+
+transpan  - revision of Doug Scott's trans program to allow static panning
+            of a mono input file
 
 
 John Gibson, jgg9c@virginia.edu
