@@ -1,23 +1,23 @@
-/* BUTTER - time-varying lowpass filter
+/* BUTTER - time-varying low/high-pass filter
 
    p0 = output start time
    p1 = input start time
    p2 = input duration
    p3 = amplitude multiplier
    p4 = type of filter (0: lowpass, 1: highpass)
-   p5 = sharpness (integer btw 1 and 5, inclusive) [optional, default is 1]
+   p5 = steepness (integer btw 1 and 5, inclusive) [optional, default is 1]
    p6 = balance output and input signals (0:no, 1:yes) [optional, default is 1]
    p7 = input channel [optional, default is 0]
    p8 = percent to left channel [optional, default is .5]
 
-   p5 (sharpness) is just the number of filters to add in series.  Using more
+   p5 (steepness) is just the number of filters to add in series.  Using more
    than 1 steepens the slope of the filter.  If you don't set p6 (balance)
    to 1, you'll need to change p3 (amp) to adjust for loss of power caused
    by connecting several filters in series.  Guard your ears!
 
    p6 (balance) tries to adjust the output of the filter so that it has
    the same power as the input.  This means there's less fiddling around
-   with p3 (amp) to get the right amplitude when sharpness is > 1.  However,
+   with p3 (amp) to get the right amplitude when steepness is > 1.  However,
    it has drawbacks: it can introduce a click at the start of the sound, it
    can cause the sound to pump up and down a bit, and it eats extra CPU time.
 
