@@ -1,3 +1,5 @@
+#include "Instrument.h"
+
 class Ooscili
 {
 	float si, phase, *array, dur;
@@ -27,4 +29,15 @@ public:
 	float random();
 	float rand();
 	float range(float, float);
+};
+
+class Ortgetin
+{
+	Instrument *theInst;
+	int chns, rsamps, chptr;
+	float *in;
+
+public:
+	Ortgetin(Instrument*);
+	int next(float*);
 };

@@ -137,6 +137,9 @@ public:
    float			RSD_get();
 #endif /* RTUPDATE */
 
+// BGG -- added this for Ortgetin object support (see lib/Ortgetin.C)
+   friend			class Ortgetin;
+
 protected:
    // Methods which are called from within other methods
 	Instrument();
