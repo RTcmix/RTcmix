@@ -67,6 +67,7 @@ If you really want to play the file with this factor anyway, use the    \n\
 /* We ignore these, but need them to link with audio_port.o */
 int play_audio = 1;
 typedef float *BufPtr;
+BufPtr audioin_buffer[1];
 BufPtr out_buffer[1];
 #endif
 
