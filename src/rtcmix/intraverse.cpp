@@ -40,14 +40,14 @@ extern "C" {
     short playEm;
     int i,j,chunksamps;
     int heapSize,rtQSize,allQSize;
-    int offset,endsamp;
+    int offset;
     int keepGoing;
     int dummy;
 	short bus_q_offset;
 
     Instrument *Iptr;
 
-    unsigned long bufEndSamp;
+    unsigned long bufEndSamp,endsamp;
     unsigned long chunkStart;
     unsigned long heapChunkStart;
 
@@ -56,24 +56,31 @@ extern "C" {
     double sec,usec;
 
 	Bool aux_pb_done,frame_done;
+	Bool audio_configured = NO;
 	short bus,bus_count,play_bus,busq,endbus,t_bus,t_count;
 	IBusClass bus_class,qStatus,t_class;
 	BusType bus_type;
 	
-#ifdef TBUG	
+#ifdef ALLBUG	
     cout << "ENTERING inTraverse() FUNCTION *****\n";
 #endif
 
     // Wait for the ok to go ahead
+	pthread_mutex_lock(&audio_config_lock);
     if (!audio_config) {
       cout << "inTraverse():  waiting for audio_config . . . ";
     }
+	pthread_mutex_unlock(&audio_config_lock);
 
-    while (!audio_config) {
-      // Do nothing
+    while (!audio_configured) {
+	  pthread_mutex_lock(&audio_config_lock);
+	  if (audio_config) {
+		audio_configured = YES;
+	  }
+	  pthread_mutex_unlock(&audio_config_lock);
     }
 
-    if (audio_config && rtInteractive) {
+    if (audio_configured && rtInteractive) {
       cout << "audio set.\n\n";
     }
 
@@ -107,7 +114,7 @@ extern "C" {
     while(playEm) { // the big loop ++++++++++++++++++++++++++++++++++++++++++
 
 #ifdef TBUG
-	  printf("Entering big loop ...\n");
+	  printf("Entering big loop .....................\n");
 #endif
 
       pthread_mutex_lock(&heapLock);
@@ -141,7 +148,7 @@ extern "C" {
 		  for(i=0;i<bus_count;i++) {
 			bus = Iptr->bus_config->auxout[i];
 			busq = bus+bus_q_offset;
-#ifdef TBUG
+#ifdef ALLBUG
 			cout << "Pushing on TO_AUX[" << busq << "] rtQueue\n";
 #endif
 			rtQueue[busq].push(Iptr,heapChunkStart);
@@ -153,7 +160,7 @@ extern "C" {
 		  for(i=0;i<bus_count;i++) {
 			bus = Iptr->bus_config->auxout[i];
 			busq = bus+bus_q_offset;
-#ifdef TBUG
+#ifdef ALLBUG
 			cout << "Pushing on AUX_TO_AUX[" << busq << "] rtQueue\n";
 #endif
 			rtQueue[busq].push(Iptr,heapChunkStart);
@@ -165,7 +172,7 @@ extern "C" {
 		  for(i=0;i<bus_count;i++) {
 			bus = Iptr->bus_config->out[i];
 			busq = bus+bus_q_offset;
-#ifdef TBUG
+#ifdef ALLBUG
 			cout << "Pushing on TO_OUT[" << busq << "] rtQueue\n";
 #endif
 			rtQueue[busq].push(Iptr,heapChunkStart);
@@ -177,7 +184,7 @@ extern "C" {
 		  for(i=0;i<bus_count;i++) {
 			bus = Iptr->bus_config->out[i];
 			busq = bus+bus_q_offset;
-#ifdef TBUG
+#ifdef ALLBUG
 			cout << "Pushing on TO_OUT2[" << busq << "] rtQueue\n";
 #endif
 			rtQueue[busq].push(Iptr,heapChunkStart);
@@ -187,7 +194,7 @@ extern "C" {
 		  for(i=0;i<bus_count;i++) {
 			bus = Iptr->bus_config->auxout[i];
 			busq = bus+bus_q_offset;
-#ifdef TBUG
+#ifdef ALLBUG
 			cout << "Pushing on TO_AUX2[" << busq << "] rtQueue\n";
 #endif
 			rtQueue[busq].push(Iptr,heapChunkStart);
@@ -253,7 +260,7 @@ extern "C" {
 			play_bus = 0;
 			break;
 		  case TO_OUT:
-#ifdef TBUG
+#ifdef ALLBUG
 			cout << "aux_pb_done\n";
 #endif
 			aux_pb_done = YES;
@@ -263,7 +270,7 @@ extern "C" {
 			break;
 		  }
 		}
-#ifdef TBUG
+#ifdef ALLBUG
 		cout << "bus: " << bus << endl;
 		cout << "busq:  " << busq << endl;
 #endif
@@ -271,12 +278,6 @@ extern "C" {
 		// Play elements on queue (insert back in if needed) ++++++++++++++++++
 		while ((rtQSize > 0) && (chunkStart < bufEndSamp) && (bus != -1)) {
 		  
-#ifdef ALLBUG
-		  cout << "Begin iteration==========\n";
-		  cout << "Q-chunkStart:  " << chunkStart << endl;
-		  cout << "bufEndSamp:  " << bufEndSamp << endl;
-		  cout << "RTBUFSAMPS:  " << RTBUFSAMPS << endl;
-#endif      
 		  Iptr = rtQueue[busq].pop();  // get next instrument off queue
 		  
 		  endsamp = Iptr->getendsamp();
@@ -284,6 +285,9 @@ extern "C" {
 		  // difference in sample start (countdown)
 		  offset = chunkStart - bufStartSamp;  
 		  
+		  // DJT:  may have to expand here.  IE., conditional above
+		  // (chunkStart >= bufStartSamp)
+		  // unlcear what that will do just now
 		  if (offset < 0) { // BGG: added this trap for robustness
 			cout << "WARNING: the scheduler is behind the queue!" << endl;
 			offset = 0;
@@ -298,6 +302,16 @@ extern "C" {
 			chunksamps = bufEndSamp-chunkStart;
 		  }
 
+#ifdef TBUG
+		  cout << "Begin playback iteration==========\n";
+		  cout << "Q-chunkStart:  " << chunkStart << endl;
+		  cout << "bufEndSamp:  " << bufEndSamp << endl;
+		  cout << "RTBUFSAMPS:  " << RTBUFSAMPS << endl;
+		  cout << "endsamp:  " << endsamp << endl;
+		  cout << "offset:  " << offset << endl;
+		  cout << "chunksamps:  " << chunksamps << endl;
+#endif      
+
 		  Iptr->setchunk(chunksamps);  // set "chunksamps"		 
 #ifdef TBUG
 		  cout << "Iptr->exec(" << bus_type << "," << bus << ")\n";
@@ -306,8 +320,8 @@ extern "C" {
 		  
 		  // ReQueue or delete ++++++++++++++++++++++++++++++++++++++++++++++
 		  if (endsamp > bufEndSamp) {
-#ifdef ALLBUG
-			cout << "inTraverse():  re queueing instrument\n";
+#ifdef TBUG
+			cout << "re queueing\n";
 #endif
 			rtQueue[busq].push(Iptr,chunkStart+chunksamps);   // put back onto queue
 		  }
@@ -346,8 +360,8 @@ extern "C" {
 		  // DJT:  not sure this check before new chunkStart is necessary
 		  rtQSize = rtQueue[busq].getSize();
 		  if (rtQSize) {
-			chunkStart = rtQueue[busq].nextChunk();
-			allQSize += rtQSize;
+			chunkStart = rtQueue[busq].nextChunk(); /* FIXME:  crapping out */
+			allQSize += tQSize;                /* in RT situation sometimes */
 		  }
 #ifdef TBUG
 		  cout << "rtQSize: " << rtQSize << endl;
@@ -359,7 +373,7 @@ extern "C" {
 	  }  // end aux_pb_done --------------------------------------------------
 	  
 	  // Write buf to audio device - - - - - - - - - - - - - - - - - - - - -
-#ifdef ALLBUG
+#ifdef TBUG
 	  cout << "Writing samples----------\n";
 	  cout << "Q-chunkStart:  " << chunkStart << endl;
 	  cout << "bufEndSamp:  " << bufEndSamp << endl;
@@ -387,7 +401,7 @@ extern "C" {
       
       if (!rtInteractive) {  // Ending condition
 		if ((heapSize == 0) && (allQSize == 0)) {
-#ifdef TBUG
+#ifdef ALLBUG
 		  cout << "heapSize:  " << heapSize << endl;
 		  cout << "rtQSize:  " << rtQSize << endl;
 		  cout << "PLAYEM = 0\n";
@@ -410,7 +424,7 @@ extern "C" {
 	}
 
 	cout << "\n";
-#ifdef TBUG
+#ifdef ALLBUG
 	cout << "EXITING inTraverse() FUNCTION *****\n";
 	exit(1);
 #endif
