@@ -1,0 +1,171 @@
+DESCRIPTION
+
+The resample program takes a mono or stereo sound file and converts it
+to a new sampling rate, writing a 16-bit linear output file.
+
+
+USAGE SUMMARY
+
+   resample -r NEW_SRATE [options] inputfile [outputfile]
+
+   If no output file specified, writes to "inputfile.resamp".
+
+   Two kinds of sampling rate conversion:
+      (1) using Kaiser-windowed low-pass filter (better)
+      (2) using linear interpolation only (faster)
+
+   For (1), default filter is ok, but for best quality, use -a.
+   Or design your own filter, using options -f, -b and -l.
+   (Read \"resample.doc\" to find out how.)
+   For (2), use -i.
+
+   Option Summary
+   ------------------------------------------------------------------
+     -a       triple-A quality resampling filter
+   OR:
+     -f NUM   rolloff Frequency (0 < freq <= 1)        [default: 0.9]
+     -b NUM   Beta ( >= 1)                             [default: 9.0]
+     -l NUM   filter Length (odd number <= 65)         [default: 65]
+
+     -n       No interpolation of filter coefficients (faster)
+     -i       resample by linear Interpolation, not with filter
+     -t       Terse (don't print out so much stuff)
+     -v       print Version of program and quit
+
+
+OPTIONS
+
+   -r    <new sampling Rate>
+
+         Specify new sampling rate in samples per second. A conversion
+         factor is computed as the new sampling rate divided by the
+         sampling rate of the input soundfile. The "conversion factor"
+         is the amount by which the sampling rate is changed. If the
+         sampling rate of the input signal is Srate1, then the sampling
+         rate of the output is factor * Srate1. For example, a factor 
+         of 2.0 gives twice as many samples in the output signal as in
+         the input.
+
+   -a    <triple-A quality filter>
+
+         Select the "triple-A quality" preloaded resampling filter. By
+         default, you get a filter which is good enough for most ears and
+         most signals. The triple-A filter is higher quality, but takes
+         about five times longer to compute. If option -a and any of the
+         filter design options (-f, -b or -l) are present, the filter
+         design options take precedence, and the -a option is ignored.
+
+   The following three parameters let you design your own resampling
+   filter. If at least one of these is given, then resample will design
+   a filter to use instead of the default small filter or the "triple-A
+   quality" filter. In this case, the parameters not specified will have
+   these default values: rolloff = 0.9, beta = 9.0, length = 65. Note
+   that these are exactly the values used to produce the triple-A filter.
+
+   -f    <rolloff Frequency>
+
+         Determines the frequency at which the low-pass filter begins to
+         roll off. If <rolloff> = 1, then there is no "guard zone," and the
+         filter roll-off region will be aliased. If <rolloff> is 0.90, for
+         example, then the filter begins rolling off at 0.90 * Srate / 2,
+         so that by Srate / 2, the filter is well down, and aliasing is
+         reduced. Since aliasing distortion is typically worse than loss of
+         the high-frequency spectral amplitude, a <rolloff> of less than 1
+         is highly recommended. The default of 0.90 sacrifices the upper
+         10 percent of the spectrum as an anti-aliasing guard zone.
+
+   -b    <Beta>
+
+         Beta trades the rejection of the lowpass filter against the
+         transition width from passband to stopband. Larger Beta means
+         a slower transition and greater stopband rejection. (See Rabiner
+         and Gold, Th. and App. of DSP, under Kaiser windows for more about
+         Beta.) The following table from Rabiner and Gold (p. 101) gives 
+         some feel for the effect of Beta:
+
+                     BETA    D       PB RIP   SB RIP
+                     -------------------------------
+                     2.120   1.50  +-0.27      -30
+                     3.384   2.23    0.0864    -40
+                     4.538   2.93    0.0274    -50
+                     5.658   3.62    0.00868   -60
+                     6.764   4.32    0.00275   -70
+                     7.865   5.0     0.000868  -80
+                     8.960   5.7     0.000275  -90
+                     10.056  6.4     0.000087  -100
+
+         Above, ripples are in dB, and the transition band width is
+         approximately D * Fs / N, where Fs = sampling rate, and N = window
+         length. PB = `pass band' and SB = `stop band'. Alternatively, D is
+         the transition widths in bins given a length N DFT (i.e. a window
+         transform with no zero padding.
+
+   -l    <filter Length>
+
+         The length of the symmetric FIR low-pass filter used by the sampling
+         rate converter. It must be odd. This is the number of multiplies per
+         output sample for up-conversions (Factor > 1), and is the number of
+         multiplies per input sample for down-conversions (Factor < 1). Thus
+         if the rate conversion is Srate2 = Factor * Srate1, then you have
+         <length> * Srate1 * MAXof(Factor, 1) multiplies per second of real
+         time. Naturally, higher <length> gives better low-pass filtering at
+         the expense of longer compute times. <length> should be odd because
+         it is the length of a symmetric FIR filter, and the current
+         implementation requires a coefficient at the time origin.
+
+
+   -n    <No filter coefficient interpolation>
+
+         By default, the resampling filter table is linearly interpolated
+         to provide high audio quality at arbitrary sampling-rate conversion
+         factors. This option turns off filter interpolation, thus cutting
+         the number of multiply-adds in half in the inner loop (for most
+         conversion factors).
+
+   -i    <linear Interpolation>
+
+         Select plain linear interpolation for resampling (which means
+         resampling filter table is not used at all). This option is very
+         fast, but the output quality is poor unless the signal is already
+         heavily oversampled. Do not confuse linear interpolation of the
+         signal with linear interpolation of the resampling filter table,
+         which is controlled by the -n option.
+
+   -t    <Terse>
+
+         Disable informational printout.
+
+   -v    <Version>
+
+         Print program version and quit.
+
+
+
+REFERENCES
+
+J. O. Smith and P. Gossett, "A Flexible Sampling-Rate Conversion Method,"
+Proceedings of the IEEE Conference on Acoustics, Speech, and Signal
+Processing, San Diego, CA, March, 1984.
+
+Digital Signal Processing Committee, ed., Programs for Digital Signal
+Processing, IEEE Press, New York, 1979.
+
+J. F. Kaiser, "Using the I0-sinh Window Function,"  Proc. IEEE Int. Symp.
+on Circuits and Syst., April 22-25, pp. 20-23, 1974.
+
+F. J. Harris, "On the Use of Windows for Harmonic Analysis with the Discrete
+Fourier Transform," Proceedings of the IEEE, vol. 66, no. 1, pp. 51-83.
+Jan. 1978.
+
+A. H. Nuttall, "Some Windows with Very Good Sidelobe Behavior,"
+IEEE Transactions on Acoustics, Speech, and Signal Processing,
+vol. ASSP-29, no. 1, pp. 84-91, Feb. 1981.
+
+L. R. Rabiner and B. Gold, Theory and Application of Digital Signal
+Processing, Prentice-Hall Inc., Englewood Cliffs, NJ, 1975.
+
+
+
+[this document adapted from resample.1 and windowfilter.c in the original
+resample-1.2 distribution]
+

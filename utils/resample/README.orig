@@ -1,0 +1,182 @@
+README file for resample-1.2.tar.Z (from ftp://ccrma-ftp.stanford.edu/pub/NeXT)
+
+SOFTWARE FOR SAMPLING-RATE CONVERSION AND FIR DIGITAL FILTER DESIGN
+
+The resample program "resamples" a soundfile to change its sampling rate.
+For example, it can be used to convert the sampling rate from 48 kHz (used
+by DAT machines) to 44.1 kHz (the standard sampling rate for Compact
+Discs).  The command line for this operation would look something like
+
+	resample -by 0.91875 dat.snd cd.snd
+
+or, more simply,
+
+	resample -to 44100 dat.snd cd.snd
+
+Any reasonable sampling rate can be converted to any other.
+
+The windowfilter program designs Finite-Impulse-Response (FIR) digital
+filters by the so-called "window method."  In this method, the ideal
+impulse response (a sinc function) is "windowed" by a Kaiser window (a
+popular window used in spectrum analysis).  A Mathematica notebook is
+provided for display the frequency response of the designed filter.
+
+The resample program uses 32-bit fixed-point arithmetic: 16-bits data and
+16-bits coefficients.  The input soundfile must be 16-bit mono or stereo
+(interleaved) audio data.  While everything is written in plain C, the I/O
+routines assume NeXT soundfile format (a header, usually 28 bytes, followed
+by 16-bit, two's-complement samples, interleaved for stereo).
+
+CONTENTS
+
+resample.c	Sampling-rate conversion program.
+resample.1	Manual page for resample. Try "nroff -man resample.1".
+resamplesubs.c	Subroutines used by resample.
+resample.h	Configuration constants for the sampling rate converter.
+stdefs.h	Machine-dependent definitions, useful constants and macros.
+
+testResample	Shell script for testing resample at various conversion ratios.
+testStereo	Shell script for testing resample on a stereo input soundfile.
+
+windowfilter.c	Program for designing FIR digital filters used by resample.
+windowfilter.1	Manual page for windowfilter.
+filterkit.c	Library for filter design, application, and file management.
+filterkit.h	Declarations (procedure prototypes) for the filterkit library.
+
+testFilter	Shell script for testing a filter written by windowfilter.
+		Note: The filter in largefilter.h (obtained using "resample -aaa")
+		is designed by windowfilter when you take all the defaults.
+		The filter in smallfilter.h (used when there is no "-aaa" option)
+		is designed by windowfilter when you take all the defaults except
+		NMULT which is set to 13.
+i.snd		Soundfile containing an "impulse" used to test filters.
+testFilter.ma	Mathematica file for displaying filter test results.
+
+warp.c		Program for time-varying warping of a sampling rate (NOT TESTED).
+
+
+COPYING
+
+This software package is Copyright 1994 by Julius O. Smith
+(jos@ccrma.stanford.edu), all rights reserved.  Permission to use and copy
+is granted subject to the terms of the "GNU Software General Public
+License" (see ftp://prep.ai.mit.edu/pub/gnu/COPYING).  In addition, we
+request that a copy of any modified files be sent by email to
+jos@ccrma.stanford.edu so that we may incorporate them in the CCRMA
+version.
+
+TEST SCRIPTS
+
+The test scripts testFilter and testResample make use of various utilities
+found on NeXT computers:
+
+	Mathematica	Obtainable from Wolfram Research, Champain-Urbana, IL
+
+	sndutil		Soundfile utility package (a copy may be picked up from
+			the directory ftp://ccrma-ftp.stanford.edu/pub/NeXT)
+
+	Music Kit	Computer music utility package (a copy may be picked up from
+			the directory ftp://ccrma-ftp.stanford.edu/pub/NeXT/MusicKit)
+
+The soundfile utilities are also written in plain C and support NeXT-format
+soundfiles.  The only Music Kit utility used is the program playscore which
+is used to generate a test tone.
+
+The following utilities and Mathematica are needed by the filter test
+script testFilter:
+
+sndtoascii	Utility for converting a sound file to an ascii file (for MMA)
+sndtrim		Utility for stripping leading and trailing zeros in a .snd file
+
+The following additional utilities are needed by the sampling-rate
+convertsion test script testResample:
+
+playscore	Utility for converting a scorefile to a sound file
+sndtomono	Utility for converting a stereo sound file to a mono sound file
+
+
+FILTERKIT CONTENTS
+
+	LpFilter() - Calculates the filter coeffs for a Kaiser-windowed
+		low-pass filter with a given roll-off frequency.  These
+		coeffs are stored into a array of doubles.
+
+	writeFilter() - Writes a filter to a file.
+
+	makeFilter() - A section of the original SAIL program.  Calls 
+		LpFilter() to create a filter, then scales the double
+		coeffs into a array of half words.
+
+	readFilter() - Reads a filter from a file.
+
+	FilterUp() - Applies a filter to a given sample when up-converting.
+
+	FilterUD() - Applies a filter to a given sample when up- or down-
+		converting.  Both are repoductions of the original SAIL
+		program.
+
+	initZerox() - Initialization routine for the zerox() function.  Must
+		be called before zerox() is called.  This routine loads
+		the correct filter so zerox() can use it.
+
+	zerox() - Given a pointer into a sample, finds a zero-crossing on the
+		interval [pointer-1:pointer+2] by iteration.
+
+	Query() - Ask the user for a yes/no question with prompt, default, 
+		and optional help.
+
+	GetUShort() - Ask the user for a unsigned short with prompt, default,
+		and optional help.
+
+	GetDouble() -  Ask the user for a double with prompt, default, and
+		optional help.
+
+	GetString() -  Ask the user for a string with prompt, default, and
+		optional help.
+
+
+FILTER FILE FORMAT
+
+	File Name: "F" Nmult "T" Nhc ".filter"
+		example: "F13T8.filter" and "F27T8.filter"
+
+	Structure of File:
+		"ScaleFactor" LpScl
+		"Length" Nwing
+		"Coeffs:"
+		Imp[0]
+		Imp[1]
+		  :
+		Imp[Nwing-1]
+		"Differences:"
+		ImpD[0]
+		ImpD[1]
+		  :
+		ImpD[Nwing-1]
+		EOF
+
+	where:	Something enclosed in "" indicates specific characters in the file.
+		Nmult, Nwing, Imp[], and ImpD[] are variables (HWORD)
+		Npc is a conversion constant.
+		EOF is the end of the file.
+
+	See writeFilter() and readFilter() in "filterkit.c" for more details.
+
+
+HISTORY AND REFERENCES
+
+The first version of this software was finished by Julius O. Smith at CCRMA
+in 1981.  It was called SRCONV and was written in SAIL for PDP-10
+compatible machines.  The algorithm was first published in
+
+Smith, Julius O. and Phil Gossett. ``A Flexible Sampling-Rate Conversion
+Method,'' Proceedings (2): 19.4.1-19.4.4, IEEE Conference on Acoustics,
+Speech, and Signal Processing, San Diego, March 1984.
+
+An expanded version of this paper is available via ftp (file
+BandlimitedInterpolation.eps.Z in directory
+ftp://ccrma-ftp.stanford.edu/pub/DSP/Tutorials).
+
+Ca. 1988, the SRCONV program was translated from SAIL to C by Christopher
+Lee Fraley working with Roger Dannenberg at CMU.  Since then, the C version
+has been maintained by JOS.

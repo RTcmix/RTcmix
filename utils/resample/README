@@ -1,0 +1,25 @@
+This is a modified version of Julius O. Smith's resample program
+(version 1.2). It now uses Bill Schottstaedt's sndlib sound file
+library. This means resample can read many different kinds of header.
+The output file it writes is AIFF, big-endian, 16-bit linear, though
+this can be changed to WAV, NeXT, or IRCAM in resample.c.
+
+The command line switches have been changed somewhat from those
+in the original program. This means the original README (README.orig)
+is not quite accurate. Read "resample.doc" instead, or just invoke the
+program with no arguments to get a usage summary.
+
+The resample program handles only mono and stereo, 16-bit linear,
+sound files. But since sndlib provides the application with 32-bit
+signed data, no matter what kind of data the sound file contains, it
+should be possible to read most any kind of data format. This hasn't
+been tested though. (Note that if the input data were floating point,
+it should be in normalized format, i.e., in the range (-1.0, 1.0).)
+
+You can get the original resample-1.2 distribution from:
+ftp://ccrma-ftp.stanford.edu/pub/NeXT.
+
+Thanks to Julius O. Smith and Bill Schottstaedt.
+
+-John Gibson (jgg9c@virginia.edu)
+
