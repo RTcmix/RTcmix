@@ -185,7 +185,7 @@ rtinput(float p[], int n_args, double pp[])
 		}
 
 		/* This signals inTraverse() to grab buffers from the audio device. */
-		set_bool_option(kOptionRecord, 1);
+		rtrecord = 1;
 
 // FIXME: need to replace this with the bus spec scheme below... -JGG
 		audioNCHANS = (n_args > 2) ? (int) p[2] : NCHANS;
@@ -212,16 +212,19 @@ rtinput(float p[], int n_args, double pp[])
 		str = (char *) anint;
 		if (str == NULL) {
 			rterror("rtinput", "NULL bus name!");
+			rtrecord = 0;
 			return -1;
 		}
 
 		err = parse_bus_name(str, &type, &startchan, &endchan);
 		if (err) {
 			rterror("rtinput", "Invalid bus name specification.");
+			rtrecord = 0;
 			return -1;
 		}
 		if (type != BUS_IN) {
 			rterror("rtinput", "You have to use an \"in\" bus with rtinput.");
+			rtrecord = 0;
 			return -1;
 		}
 
@@ -254,7 +257,7 @@ rtinput(float p[], int n_args, double pp[])
 					int nframes = RTBUFSAMPS;
 					if (create_audio_devices(get_bool_option(kOptionRecord), 0,
 												NCHANS, SR, &nframes) < 0) {
-						set_bool_option(kOptionRecord, 0);	/* because we failed */
+						rtrecord = 0;	/* because we failed */
 						return -1;
 					}
 					RTBUFSAMPS = nframes;
@@ -264,7 +267,7 @@ rtinput(float p[], int n_args, double pp[])
 				// If record disabled during rtsetparams(), we cannot force it on here.
 				else if (!get_bool_option(kOptionRecord)) {
 					die("rtinput", "Audio already configured for playback only via rtsetparams()");
-					set_bool_option(kOptionRecord, 0);	/* because we failed */
+					rtrecord = 0;	/* because we failed */
 					return -1;
 				}
 			}
@@ -276,13 +279,13 @@ rtinput(float p[], int n_args, double pp[])
 			if (rtsetparams_called && !get_bool_option(kOptionRecord)) {
 				die("rtinput", "Full duplex was not enabled for rtsetparams. "
 					"Set option \"full_duplex\" before calling rtsetparams()");
-				set_bool_option(kOptionRecord, 0);	/* because we failed */
+				rtrecord = 0;	/* because we failed */
 				return -1;
 			}
 			if (!audio_input_is_initialized()) {
 				die("rtinput", "Audio input device not open yet. "
 												"Call rtsetparams first.");
-				set_bool_option(kOptionRecord, 0);	/* because we failed */
+				rtrecord = 0;	/* because we failed */
 				return -1;
 			}
 #endif	// !NEW_CODE
@@ -294,6 +297,7 @@ rtinput(float p[], int n_args, double pp[])
 #endif /* INPUT_BUS_SUPPORT */
 		}
 		else {
+			rtrecord = 0;
 			fd = open_sound_file(sfname, &header_type, &data_format,
 							&data_location, &srate, &nchans, &nsamps);
 			if (fd == -1)
@@ -323,8 +327,8 @@ rtinput(float p[], int n_args, double pp[])
 				printf("     srate:  %g\n", srate);
 				printf("     chans:  %d\n", nchans);
 				printf("  duration:  %g\n", dur);
-	#ifdef INPUT_BUS_SUPPORT
-	#endif /* INPUT_BUS_SUPPORT */
+#ifdef INPUT_BUS_SUPPORT
+#endif /* INPUT_BUS_SUPPORT */
 			}
 			if (srate != SR) {
 				warn("rtinput", "The input file sampling rate is %g, but "

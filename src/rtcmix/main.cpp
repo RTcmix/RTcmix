@@ -132,6 +132,7 @@ init_globals()
    tags_on = 0;
 #endif
 
+   rtrecord = 0;                /* indicates reading from audio device */
    rtfileit = 0;                /* signal writing to soundfile */
    rtoutfile = 0;
 

@@ -490,7 +490,7 @@ bool inTraverse(AudioDevice *device, void *arg)
 	clear_output_buffers();
 
 	// read in an input buffer (if audio input is active)
-	if (Option::record()) { 
+	if (rtrecord) {
 		// cout << "Reading data from audio device\n";
 		// DT_PANIC_MOD
 		if (!panic)
