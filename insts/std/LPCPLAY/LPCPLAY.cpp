@@ -576,6 +576,15 @@ LPCPLAY::readjust(float maxdev, double *pchval,
 	}
 }
 
+//
+// LPCIN
+//
+
+static const int LPCIN_amp = 3;
+static const int LPCIN_warp = 7;
+static const int LPCIN_cf = 8;
+static const int LPCIN_bw = 9;
+
 LPCIN::LPCIN() : LPCINST("LPCIN"), _inbuf(NULL), _inChannel(0)
 {
 }
@@ -596,7 +605,7 @@ int LPCIN::localInit(double p[], int n_args)
 	float outskip = p[0];
 	float inskip = p[1];
 	float ldur = p[2];
-	_amp = p[3];
+	_amp = p[LPCIN_amp];
 
 	int startFrame = (int) p[4];
 	int endFrame = (int) p[5];
@@ -610,11 +619,11 @@ int LPCIN::localInit(double p[], int n_args)
 		return die("LPCIN", "Requested channel %d of a %d-channel input file",
 				   _inChannel, inputChannels());
 					   	
-	_warpFactor = p[7];	// defaults to 0
+	_warpFactor = p[LPCIN_warp];	// defaults to 0
 
-	_reson_is_on = p[8] ? true : false;
-	_cf_fact = p[8];
-	_bw_fact = p[9];
+	_reson_is_on = p[LPCIN_cf] ? true : false;
+	_cf_fact = p[LPCIN_cf];
+	_bw_fact = p[LPCIN_bw];
 
 	// Pull all the current configuration information out of the environment.
 	
@@ -690,12 +699,12 @@ int LPCIN::run()
 	*/
 	for (; n < framesToRun(); n += _counter) {
 		double p[10];
-		update(p, 10);
-		_amp = p[2];
-		_warpFactor = p[7];
-		_reson_is_on = p[8] ? true : false;
-		_cf_fact = p[8];
-		_bw_fact = p[9];
+		update(p, LPCIN_bw + 1);
+		_amp = p[LPCIN_amp];
+		_warpFactor = p[LPCIN_warp];
+		_reson_is_on = p[LPCIN_cf] ? true : false;
+		_cf_fact = p[LPCIN_cf];
+		_bw_fact = p[LPCIN_bw];
 
 		int loc;
 		_frameno = _frame1 + ((float)(currentFrame())/nsamps) * _frames;
