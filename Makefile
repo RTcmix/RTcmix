@@ -13,6 +13,9 @@ DIRS = $(SNDLIB_LINK) H rtstuff Minc sys lib head cmd utils
 ifeq ($(PERL_SUPPORT), TRUE)
 	DIRS += Perl
 endif
+ifeq ($(PYTHON_SUPPORT), TRUE)
+	DIRS += Python
+endif
 
 all: $(DIRS) insts packages
 
