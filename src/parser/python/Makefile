@@ -25,10 +25,10 @@ all: $(EXT_FILE).o
 # changed.  Not really what we want, but it's annoying to have
 # to remake this stuff every time you make at the top level...
 $(FUNCLIST): make_funclist.pl $(FUNCEXCEPT)
-	perl -w make_funclist.pl $(CMIXDIR) $(FIND_FLAGS)
+	$(PERL) -w make_funclist.pl $(CMIXDIR) $(FIND_FLAGS)
 
 $(EXT_FILE).c: make_python_ext.pl $(FUNCLIST)
-	perl -w make_python_ext.pl $(CMIXDIR) $(EXT_NAME) > $(EXT_FILE).c
+	$(PERL) -w make_python_ext.pl $(CMIXDIR) $(EXT_NAME) > $(EXT_FILE).c
 
 $(EXT_FILE).o: $(EXT_FILE).c $(EXT_FILE).h
 	$(CC) $(CFLAGS) -c $(EXT_FILE).c
