@@ -1,0 +1,57 @@
+// common.h -- decls for common free functions
+
+#include <math.h>
+
+#define MAXTERMS  33       // also defined in firdata.h
+#define NANGLES   24
+#define ARRAYSIZE 1024		// used for Rho, Theta arrays
+
+#ifdef __cplusplus
+
+extern "C" {
+#include <ugens.h>
+}
+
+const double MACH1 = 1080.0;
+
+// inline functions
+
+/* ----------------------------------------------------------------- tone --- */
+/* tone is a simple 1st order recursive lowpass filter
+*/
+
+inline double
+tone(double sig, double data[3])
+{
+   return data[2] = data[0] * sig + data[1] * data[2];
+}
+
+#endif /* __cplusplus */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* common non-inline functions */
+
+extern long MFP_samps(double []);
+extern int close_prime(int, int, int []);
+extern void setup_trigfuns(void);
+extern float cycle(double, int);
+extern void binaural(double, double, double, double, double,
+                                                          double *, double *);
+extern void fir(double *, long, int, double *, double *, int);
+extern void setfir(double, int, int, double *, double *);
+extern void scale(double *, int, double);
+extern void air(double *, int, double[3]);
+extern void wall(double *, int, double[3]);
+extern void copyBuf(double *to, double *from, int);
+extern void addBuf(double *to, double *from, int);
+extern double wrap(double);
+
+// global constants
+
+
+#ifdef __cplusplus
+}
+#endif
