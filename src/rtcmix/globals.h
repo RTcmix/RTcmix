@@ -9,7 +9,8 @@
 #include "version.h"
 #include "buffers.h"
 
-#define MAXBUS 16
+/* MAXBUS is one greater than the total number of useable buses. */
+#define MAXBUS 33
 
 #ifdef MAIN
 #define GLOBAL
