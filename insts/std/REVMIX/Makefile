@@ -4,7 +4,7 @@ NAME = REVMIX
 
 OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
-CXXFLAGS += -I. -Wall 
+CXXFLAGS += -I.
 PROGS = $(NAME) lib$(NAME).so
 
 all: lib$(NAME).so
