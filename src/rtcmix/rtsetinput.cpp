@@ -6,14 +6,12 @@
 /* rev for v2.3 by JGG */
 
 #include <globals.h>
+#include <prototypes.h>
 #include <stdio.h>
 #include <assert.h>
 #include "../rtstuff/Instrument.h"
 #include "../rtstuff/rtdefs.h"
 
-extern "C" {
-extern int get_last_input_index(void);       /* defined in rtinput.c */
-}
 
 #define INCHANS_DISCREPANCY_WARNING "\
 WARNING: The bus config for this instrument specifies %d input channels, \n\
