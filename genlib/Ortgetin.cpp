@@ -2,6 +2,8 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
+#include <RTcmix.h>
+#include <Instrument.h>
 #include <Ortgetin.h>
 #include <ugens.h>
 
@@ -11,7 +13,7 @@ Ortgetin::Ortgetin(Instrument *ins)
 
 	theInst = ins;
 	chns = theInst->inputChannels();
-	rsamps = RTBUFSAMPS * chns;
+	rsamps = RTcmix::bufsamps() * chns;
 	in = new float[rsamps];
 
 	// force a read for the very first access
