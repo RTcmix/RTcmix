@@ -48,7 +48,11 @@ Instrument *makeMOVE()
 /* ------------------------------------------------------------ rtprofile --- */
 void rtprofile()
 {
+#ifdef USE_BUGGY_CODE
+   RT_INTRO("OLDMOVE", makeMOVE);
+#else
    RT_INTRO("MOVE", makeMOVE);
+#endif
 }
 
 // Move methods

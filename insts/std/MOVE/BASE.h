@@ -86,6 +86,7 @@ protected:
    ReverbData m_rvbData[2][6];
    double Allpass_del[2][502];
    int allpassTap[2];
+   double m_rvbPast[2];	// For hi-pass filter
    // static data
    static int    primes[NPRIMES + 2];
    static int primes_gotten;

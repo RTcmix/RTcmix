@@ -9,6 +9,7 @@ static float  _front, _right, _back, _left, _ceiling, _abs_factor, _rvb_time;
 static double _MikeAngle = PI / 4.0;      /* in radians - default is 45 deg. */
 static double _MikePatternFactor = 0.0;   /* 0 = omnidir, 1 = figure-8 */
 static double _Matrix[12][12];
+static double _Matrix_Gain = 0.72;
 
 
 /* ---------------------------------------------------------- fill_matrix --- */
@@ -36,7 +37,7 @@ fill_matrix()
 
    for (i = 0; i < 12; i++)
       for (j = 0; j < 12; j++)
-         _Matrix[j][i] = 0.72 * default_matrix[j][i];
+         _Matrix[j][i] = _Matrix_Gain * default_matrix[j][i];
 }
 
 
@@ -162,7 +163,7 @@ mikes_off(float p[], int n_args)
    contain matrix vals.
 */
 double
-matrix(float p[], int n_args)
+oldmatrix(float p[], int n_args)
 {
    int   i, j;
    float amp, val;
@@ -186,4 +187,37 @@ matrix(float p[], int n_args)
    return 0.0;
 }
 
+double
+matrix(float p[], int n_args)
+{
+   int   i, j;
+   float amp, val;
 
+   amp = p[0];
+
+   if (amp) {
+	  if (n_args == 1)
+	  {
+	   	_Matrix_Gain = amp;
+		advise("matrix", "Default matrix.  Gain set to %g", amp);
+		return 0;
+	  }
+   	  else if (n_args != 145)
+	  {
+	  	warn("matrix", "Incorrect number of args.  Ignoring matrix.");
+		return 0;
+	  }
+      /* loop for 12 by 12 args */
+      for (i = 0; i < 12; i++) {
+         for (j = 0; j < 12; j++) {
+            _Matrix[i][j] = p[12*i+j+1] * amp;
+         }
+      }
+      advise("matrix", "Loaded 12x12 values.\n");
+      matrix_flag = 1;
+   }
+   else
+      matrix_flag = 0;
+
+   return 0.0;
+}

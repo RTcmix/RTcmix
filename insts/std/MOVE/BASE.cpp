@@ -657,8 +657,9 @@ Allpass(double sig, int *counter, double *data)
    return (delay[outtap] + gsig);
 }
 
-// recreate buggy code which produces decent reverb -- correct code does not!
-#define USE_BUGGY_CODE
+// define USE_BUGGY_CODE to recreate buggy code which produces decent reverb -- correct code does not!
+
+#undef USE_HI_PASS
 
 /* ------------------------------------------------------------------ RVB --- */
 /* This is the main routine, RVB. It is a bank of 2x6 randomly varying
@@ -694,7 +695,13 @@ void BASE::RVB(double *input, double *output, long counter)
          output[i] += rvb->delout;
       }
       /* run outputs through Allpass filter */
-      output[i] = Allpass(output[i], &allpassTap[i], Allpass_del[i]);
+	  double sigout = Allpass(output[i], &allpassTap[i], Allpass_del[i]);
+#ifdef USE_HI_PASS
+	  output[i] = 0.51 * sigout - 0.49 * m_rvbPast[i];	// Hi pass FIR filter
+      m_rvbPast[i] = sigout;
+#else
+	  output[i] = sigout;
+#endif
    }
 
    /* redistribute delpipe outs into delpipe ins */
@@ -907,6 +914,7 @@ void BASE::rvb_reset(double *m_tapDelay)
 		for (j = 2; j < 502; ++j)
 			Allpass_del[i][j] = 0.0;
 		allpassTap[i] = 0; 	// indices for allpass delay
+		m_rvbPast[i] = 0.0;
 	}
 
 	/* reset tap delay for move */

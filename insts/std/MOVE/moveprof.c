@@ -3,6 +3,7 @@
 int
 profile()
 {
+	UG_INTRO("oldmatrix",oldmatrix); 
 	UG_INTRO("matrix",matrix); 
 	UG_INTRO("space",space); 
 	UG_INTRO("mikes",mikes); 
