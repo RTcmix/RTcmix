@@ -20,8 +20,10 @@ FIR::FIR() : Instrument()
 
 FIR::~FIR()
 {
+#ifdef CRASHME
 	delete [] pastsamps;
 	delete [] coefs;
+#endif
 }
 
 
