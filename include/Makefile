@@ -21,6 +21,8 @@ depend:
 
 install: all
 
+uninstall:
+
 clean:
 	@echo "Nothing to be done for 'clean'."
 
