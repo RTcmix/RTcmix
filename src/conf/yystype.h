@@ -12,4 +12,7 @@ typedef union {
    char *str;
 } YYSTYPE;
 
+// This is to make bison 1.875 (et al) happy.
+#define YYSTYPE_IS_DEFINED
+
 #endif // _YYSTYPE_H_ 1
