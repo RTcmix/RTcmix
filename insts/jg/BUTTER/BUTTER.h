@@ -11,7 +11,7 @@ typedef enum {
 #define MAXFILTS 30
 
 class BUTTER : public Instrument {
-   int      inchan, branch, skip, insamps, nfilts, do_balance;
+   int      inchan, branch, skip, insamps, nfilts, do_balance, bypass;
    float    amp, aamp, pctleft, scale, reson, curcf, curbw;
    float    *cfarray, cftabs[2];
    float    *bwarray, bwtabs[2];
