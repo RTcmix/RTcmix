@@ -1,20 +1,12 @@
 include ../makefile.conf
 
-SYSOBJS = ../sys/sfcodes.o ../sys/printsf.o ../sys/wheader.o ../sys/check_byte_order.o
+SYSOBJS = ../sys/printsf.o ../sys/check_byte_order.o ../sys/sndlibsupport.o
 
 ifeq ($(ARCH),LINUX)
    SYSLIBS = -lm   # only this, overriding makefile.conf
 endif
 
-ifeq ($(USE_SNDLIB),TRUE)
-   SYSOBJS += ../sys/sndlibsupport.o
-   HEAD = sfcreate sfprint sfshrink sfhedit sffixsize
-else
-   HEAD = sfhedit sfcreate sfprint sfextend sfshrink 
-endif
-
-#CFLAGS += -Wall
-
+HEAD = sfcreate sfprint sfshrink sfhedit sffixsize
 
 all: $(HEAD)
 

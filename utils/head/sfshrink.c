@@ -5,12 +5,9 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
-#include "../H/sfheader.h"
-#include "../H/byte_routines.h"
-
-#ifdef USE_SNDLIB
-#include "../H/sndlibsupport.h"
-#endif
+#include <sndlibsupport.h>
+#include <sfheader.h>
+#include <byte_routines.h>
 
 extern int swap;    /* defined in sys/check_byte_order.c */
 

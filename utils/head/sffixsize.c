@@ -1,5 +1,3 @@
-#ifdef USE_SNDLIB
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -7,7 +5,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include "../H/sndlibsupport.h"
+#include <sndlibsupport.h>
 
 static void usage(void);
 
@@ -121,7 +119,4 @@ main(int argc, char *argv[])
 
    return 0;
 }
-
-
-#endif /* !USE_SNDLIB */
 

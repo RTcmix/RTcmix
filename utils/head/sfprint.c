@@ -1,5 +1,3 @@
-#ifdef USE_SNDLIB
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
@@ -8,7 +6,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <time.h>
-#include "../H/sndlibsupport.h"
+#include <sndlibsupport.h>
 
 #define MAX_TIME_CHARS  64
 
@@ -142,54 +140,4 @@ main(int argc, char *argv[])
 
    return 0;
 }
-
-
-/*****************************************************************************/
-#else /* !USE_SNDLIB */
-/*****************************************************************************/
-
-#include "../H/sfheader.h"
-#include <stdio.h>
-#include <sys/file.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <signal.h>
-#include <errno.h>
-#define  INT 2
-static SFCODE	ampcode = {
-	SF_MAXAMP,
-	sizeof(SFMAXAMP) + sizeof(SFCODE)
-}; 
-
-int swap;
-
-main(argc,argv)
-     
-     int argc;
-     char **argv;
-     
-{
-  int i,sf,result,headersize;
-  struct stat sfst;
-  float dur;
-  SFHEADER sfh;
-  char *sfname;
-  
-  while(--argc) {
-    sfname = *++argv;
-    readopensf(sfname,sf,sfh,sfst,"sfprint",result)
-      if(result < 0) continue;
-    printf(":::::::::::::::::::\n"); 
-    printf("%s \n:::::::::::::::::::\n" ,sfname);
-    printsf(&sfh);
-    headersize = sizeof(SFHEADER);
-    dur = (float)(sfst.st_size - headersize)
-      /(float)sfclass(&sfh)/(float)sfchans(&sfh)
-      /sfsrate(&sfh);
-    printf("Duration of file is %f seconds.\n",dur);
-    close(sf);
-  }
-}
-
-#endif /* !USE_SNDLIB */
 

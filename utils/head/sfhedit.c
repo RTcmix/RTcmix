@@ -1,5 +1,6 @@
-#include "../H/byte_routines.h"
-#include "../H/sfheader.h"
+#include <sndlibsupport.h>
+#include <byte_routines.h>
+#include <sfheader.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -11,9 +12,6 @@
 #include <time.h>
 #include <errno.h>
 #include <math.h>
-#ifdef USE_SNDLIB
-#include "../H/sndlibsupport.h"
-#endif
 
 int swap;
 
@@ -64,13 +62,6 @@ main(int argc, char *argv[])
 			case 'r': 
 				newsrate = atof(*++argv);
 				break;
-#if defined(NeXT) || defined(NEXT)
-		    case 'm':
-                newsrate = SND_RATE_CODEC;
-				newchans = 1;
-				newclass = SF_SHORT;
-				break;
-#endif
 			case 'i': 
 				newclass = SF_SHORT;
 				break;
@@ -80,8 +71,8 @@ main(int argc, char *argv[])
 			case 'c': 
 				newchans = atoi(*++argv);
 				if(newchans > 4) {
-                                     printf(" Sorry, maximum is 4 channels\n");
-				     exit(1);
+					printf(" Sorry, maximum is 4 channels\n");
+					exit(1);
 				}
 				break;
 			case 'p':
@@ -126,17 +117,6 @@ main(int argc, char *argv[])
 		}
 		sfmaxamptime(&sfm) = time(NULL);
 
-#ifndef USE_SNDLIB
-		if (swap) {
-		  printf("Swapping MAXAMP data\n");
-		  for (i=0;i<SF_MAXCHAN;i++) {
-		    byte_reverse4(&sfm.value[i]);
-		    byte_reverse4(&sfm.samploc[i]);
-		  }
-		  byte_reverse4(&sfm.timetag);
-		}
-#endif /* !USE_SNDLIB */
-
 		putsfcode(&sfh,(char *)&sfm,&ampcode);
 	}
 	if(zap) {
@@ -158,7 +138,7 @@ main(int argc, char *argv[])
 			i=0;
 			while ( (sfcomm(&sfcm,i) = getc(fcom)) != EOF ) {
 				if (++i > MAXCOMM) {
-		        		printf("Gimme a break! I can only take %d characters\n",MAXCOMM);
+					printf("Gimme a break! I can only take %d characters\n",MAXCOMM);
 					printf("comment truncated to %d characters\n",MAXCOMM);
 					commentcode.bsize = MAXCOMM + sizeof(SFCODE);
 					break;
@@ -177,48 +157,26 @@ main(int argc, char *argv[])
 			goto skip;
 		}
 
-#ifdef USE_SNDLIB
 		strncpy((char *)&sfcm, sfcommentstr(&sfh), MAXCOMM - 1);
 		sfcm.comment[MAXCOMM - 1] = '\0';
-#else
-		sizer = (SFCODE *) cp;
-		bcopy(cp + sizeof(SFCODE) , (char *) &sfcm, sizer->bsize - sizeof(SFCODE));
-#endif
 
 		tfd = open("/tmp/tmpcom",O_CREAT|O_RDWR,0644);
 		tn = write(tfd, &sfcomm(&sfcm,0), strlen(&sfcomm(&sfcm,0)));
 		close(tfd);
 		system("vi /tmp/tmpcom");
 		tfd = open("/tmp/tmpcom",0);
-#ifdef USE_SNDLIB
 		n = read(tfd,&sfcomm(&sfcm,0),MAXCOMM);
-#else
-		n = read(tfd,&sfcomm(&sfcm,0),sizer->bsize);
-#endif
 		system("rm /tmp/tmpcom");
 		if (n < tn) {
 			for (i = n; i <= tn; i++) {
 				sfcomm(&sfcm,i) = '\0';
 			}
 		}
-#ifdef USE_SNDLIB
 		if (putsfcode(&sfh,(char *)&sfcm,&commentcode) < 0) {
-#else
-		if (putsfcode(&sfh,(char *)&sfcm,sizer) < 0) {
-#endif
 			printf("comment didn't get written, sorry!\n");
 			exit(1);
 		}
 	}
-#ifndef USE_SNDLIB
-	/* Swap main header info */
-	if (swap) {
-	  byte_reverse4(&sfh.sfinfo.sf_magic);
-	  byte_reverse4(&sfh.sfinfo.sf_srate);
-	  byte_reverse4(&sfh.sfinfo.sf_chans);
-	  byte_reverse4(&sfh.sfinfo.sf_packmode); 
-	}
-#endif /* !USE_SNDLIB */
 
 skip:	lseek(sf,0,0);
 	if(wheader(sf,(char *)&sfh)) {
@@ -229,10 +187,7 @@ skip:	lseek(sf,0,0);
 
 	if (length) {      /* do this last, after wheader */
 		putlength(sfname,sf,&sfh);
-#if defined(NeXT) | defined(NEXT)
-		printf("NeXT header updated\n");
-#endif
-		}
+	}
 
 	return 0;
 }
