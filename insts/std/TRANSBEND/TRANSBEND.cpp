@@ -97,10 +97,9 @@ int TRANSBEND :: init(double p[], int n_args)
 		return(DONT_SCHEDULE);
 	}
 
-   if (inchan >= inputchans) {
-      die("TRANSBEND", "You asked for channel %d of a %d-channel file.",
-                                                       inchan, inputchans);
-		return(DONT_SCHEDULE);
+   if (inchan >= inputChannels()) {
+      return die("TRANSBEND", "You asked for channel %d of a %d-channel file.",
+												   inchan, inputChannels());
 	}
    pitchtable = floc(pgen);
    if (pitchtable) {
@@ -153,11 +152,16 @@ int TRANSBEND :: init(double p[], int n_args)
    return nsamps;
 }
 
+int TRANSBEND::configure()
+{
+   in = new float[inputChannels() * RTBUFSAMPS];
+   return in ? 0 : -1;
+}
 
 int TRANSBEND :: run()
 {
    const int out_frames = chunksamps;
-   int       i, branch = 0, ibranch = 0;
+   int       i, branch = 0, ibranch = 0, inChans = inputChannels();
    float     aamp, *outp;
    double    frac;
    const float cpsoct10 = cpsoct(10.0);
@@ -165,12 +169,6 @@ int TRANSBEND :: run()
 #ifdef DEBUG
    printf("out_frames: %d  in_frames_left: %d\n", out_frames, in_frames_left);
 #endif
-
-   /* If this is first call to run, allocate input buffer, which
-      must persist across calls to run.
-   */
-   if (in == NULL)
-      in = new float[inputchans * RTBUFSAMPS];
 
    aamp = amp;                  /* in case amptable == NULL */
    outp = outbuf;               /* point to inst private out buffer */
@@ -183,7 +181,7 @@ int TRANSBEND :: run()
       }
       while (get_frame) {
          if (inframe >= RTBUFSAMPS) {
-            rtgetin(in, this, RTBUFSAMPS * inputchans);
+            rtgetin(in, this, RTBUFSAMPS * inChans);
 
             in_frames_left -= RTBUFSAMPS;
 #ifdef DEBUG
@@ -195,7 +193,7 @@ int TRANSBEND :: run()
          oldersig = oldsig;
          oldsig = newsig;
 
-         newsig = in[(inframe * inputchans) + inchan];
+         newsig = in[(inframe * inChans) + inchan];
 
          inframe++;
          incount++;

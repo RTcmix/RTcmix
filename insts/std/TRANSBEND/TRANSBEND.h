@@ -14,6 +14,7 @@ public:
    TRANSBEND();
    virtual ~TRANSBEND();
    int init(double *, int);
+   int configure();
    int run();
 };
 

@@ -13,6 +13,7 @@ public:
    TRANS();
    virtual ~TRANS();
    int init(double *, int);
+   int configure();
    int run();
 };
 

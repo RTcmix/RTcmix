@@ -91,9 +91,9 @@ int TRANS :: init(double p[], int n_args)
 		return(DONT_SCHEDULE);
 	}
 
-   if (inchan >= inputchans) {
+   if (inchan >= inputChannels()) {
       die("TRANS", "You asked for channel %d of a %d-channel file.",
-                                                       inchan, inputchans);
+												   inchan, inputChannels());
 		return(DONT_SCHEDULE);
 	}
    interval = octpch(transp);
@@ -133,23 +133,22 @@ int TRANS :: init(double p[], int n_args)
    return nsamps;
 }
 
+int TRANS::configure()
+{
+   in = new float[inputChannels() * RTBUFSAMPS];
+   return in ? 0 : -1;
+}
 
 int TRANS :: run()
 {
-   const int out_frames = chunksamps;
-   int       i;
+   const int out_frames = framesToRun();
+   int       i, inChans = inputChannels();
    float     *outp;
    double    frac;
 
 #ifdef DEBUG
    printf("out_frames: %d  in_frames_left: %d\n", out_frames, in_frames_left);
 #endif
-
-   /* If this is first call to run, allocate input buffer, which
-      must persist across calls to run.
-   */
-   if (in == NULL)
-      in = new float[inputchans * RTBUFSAMPS];
 
    outp = outbuf;               /* point to inst private out buffer */
 
@@ -161,7 +160,7 @@ int TRANS :: run()
       }
       while (get_frame) {
          if (inframe >= RTBUFSAMPS) {
-            rtgetin(in, this, RTBUFSAMPS * inputchans);
+            rtgetin(in, this, RTBUFSAMPS * inChans);
 
             in_frames_left -= RTBUFSAMPS;
 #ifdef DEBUG
@@ -173,7 +172,7 @@ int TRANS :: run()
          oldersig = oldsig;
          oldsig = newsig;
 
-         newsig = in[(inframe * inputchans) + inchan];
+         newsig = in[(inframe * inChans) + inchan];
 
          inframe++;
          incount++;

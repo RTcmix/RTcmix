@@ -94,10 +94,9 @@ int TRANS3 :: init(double p[], int n_args)
 		return(DONT_SCHEDULE);
 	}
 
-   if (inchan >= inputchans) {
-      die("TRANS3", "You asked for channel %d of a %d-channel file.",
-                                                       inchan, inputchans);
-		return(DONT_SCHEDULE);
+   if (inchan >= inputChannels()) {
+      return die("TRANS3", "You asked for channel %d of a %d-channel file.",
+												   inchan, inputChannels());
 	}
    interval = octpch(transp);
    increment = (double) cpsoct(10.0 + interval) / cpsoct(10.0);
@@ -135,23 +134,22 @@ int TRANS3 :: init(double p[], int n_args)
    return nsamps;
 }
 
+int TRANS3::configure()
+{
+   in = new float[inputChannels() * RTBUFSAMPS];
+   return in ? 0 : -1;
+}
 
 int TRANS3 :: run()
 {
    const int out_frames = chunksamps;
-   int       i, branch = 0;
+   int       i, branch = 0, inChans = inputChannels();
    float     aamp, *outp;
    double    frac;
 
 #ifdef DEBUG
    printf("out_frames: %d  in_frames_left: %d\n", out_frames, in_frames_left);
 #endif
-
-   /* If this is first call to run, allocate input buffer, which
-      must persist across calls to run.
-   */
-   if (in == NULL)
-      in = new float[inputchans * RTBUFSAMPS];
 
    aamp = amp;                  /* in case amptable == NULL */
    outp = outbuf;               /* point to inst private out buffer */
@@ -164,7 +162,7 @@ int TRANS3 :: run()
       }
       while (get_frame) {
          if (inframe >= RTBUFSAMPS) {
-            rtgetin(in, this, RTBUFSAMPS * inputchans);
+            rtgetin(in, this, RTBUFSAMPS * inChans);
 
             in_frames_left -= RTBUFSAMPS;
 #ifdef DEBUG
@@ -177,7 +175,7 @@ int TRANS3 :: run()
          oldsig = newsig;
 		 newsig = newestsig;
 
-         newestsig = in[(inframe * inputchans) + inchan];
+         newestsig = in[(inframe * inChans) + inchan];
 
          inframe++;
          incount++;
