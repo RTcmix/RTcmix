@@ -2,9 +2,9 @@
 #include <defs.h>
 #include <ugens.h>
 #include "elldefs.h"
+#include "setell.h"
 
-extern int setell_(float *, float *, float *, float *, float *,
-                   float *, float *, int *);
+#define VERBOSE 0      /* print stuff during filter design (in setell) */
 
 double ellset(float p[], int n_args);
 int get_nsections(void);
@@ -13,25 +13,25 @@ float ellipse(float, int, EllSect [], float);
 
 // ***FIXME: Where did 461 come from?
 //    Seems like there only needs to be 4 * MAX_SECTIONS plus 1 for xnorm.
-static float coeffs[461];              /* array for coefficients */
-static int   nsections = 0;            /* number of sections */
+static double coeffs[461];              /* array for coefficients */
+static int    nsections = 0;            /* number of sections */
 
 
 double
 ellset(float p[], int n_args)
 {
-   float srate, f1, f2, f3, ripple, atten;
+   double srate, f1, f2, f3, ripple, atten;
 
-   f1 = p[0];
-   f2 = p[1];
-   f3 = p[2];
-   ripple = p[3];
-   atten = p[4];
-   srate = SR;
+   f1 = (double)p[0];
+   f2 = (double)p[1];
+   f3 = (double)p[2];
+   ripple = (double)p[3];
+   atten = (double)p[4];
+   srate = (double)SR;
 
 // ***FIXME: do some input validation here
 
-   setell_(&srate, &f1, &f2, &f3, &ripple, &atten, coeffs, &nsections);
+   setell(srate, f1, f2, f3, ripple, atten, coeffs, &nsections, VERBOSE);
 
    if (nsections < 1 || nsections > MAX_SECTIONS) {
       fprintf(stderr, "\nFilter design failed! Try relaxing specs.\n\n");
@@ -60,13 +60,13 @@ ellpset(EllSect es[], float *xnorm)
 
    for (j = i = 0; i < nsections; i++) {
       s = &es[i];
-      s->c0 = coeffs[j++];
-      s->c1 = coeffs[j++];
-      s->c2 = coeffs[j++];
-      s->c3 = coeffs[j++];
+      s->c0 = (float)coeffs[j++];
+      s->c1 = (float)coeffs[j++];
+      s->c2 = (float)coeffs[j++];
+      s->c3 = (float)coeffs[j++];
       s->x1 = s->x2 = s->y1 = s->y2 = 0.0;
    }
-   *xnorm = coeffs[j];
+   *xnorm = (float)coeffs[j];
 
    return 0;
 }

@@ -1,9 +1,8 @@
 include ../package.conf
 
-OBJS = ELL.o ellipse.o setell.o extramath.o
+OBJS = ELL.o ellipse.o setell.o
 #CFLAGS += -fPIC
 #CXXFLAGS += -fPIC
-SYSLIBS += -lf2c
 PROGS = libELL.so ELL
 
 all: libELL.so

@@ -1,138 +1,187 @@
-/* setell.f -- translated by f2c (version of 25 March 1992  12:58:56).
-   You must link the resulting object file with the libraries:
-	-lF77 -lI77 -lm -lc   (in that order)
+/*
+This is a C hack of the f2c version of the elliptical filter
+design program "filter" from the princeton cmix distribution
+rossb 17/10/95
 */
+#include <math.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
+#include "setell.h"
 
-#include <f2c.h>
-#include "extramath.h"
+#define abs(x) ((x) >= 0 ? (x) : -(x))
+#define min(a,b) ((a) <= (b) ? (a) : (b))
+#define max(a,b) ((a) >= (b) ? (a) : (b))
+
+typedef struct { double r, i; } complex;
+typedef struct { double r, i; } doublecomplex;
+
+static void z_div(doublecomplex *, doublecomplex *, doublecomplex *);
+static void d_cnjg(doublecomplex *, doublecomplex *);
+static double z_abs(doublecomplex *);
+static void z_sqrt(doublecomplex *, doublecomplex *);
+static void z_exp(doublecomplex *, doublecomplex *);
+void ellips_(double, double, double, double, double, double);
+void stuff1_(double q, double r, char *whatsi);
+void fresp_(long int, double, double, double, double);
+double kay_(double);
+void djelf_(double *, double *, double *, double, double);
+void setell(double, double, double, double, double, double,double *, int *,short );
+
+static void z_div(doublecomplex *c, doublecomplex *a, doublecomplex *b)
+{
+	double ratio, den;
+	double abr, abi;
+	
+	if( (abr = b->r) < 0.)
+		abr = - abr;
+	if( (abi = b->i) < 0.)
+		abi = - abi;
+	if( abr <= abi )
+	{
+		if(abi == 0)
+			;/*sig_die("complex division by zero", 1);*/
+		ratio = b->r / b->i ;
+		den = b->i * (1 + ratio*ratio);
+		c->r = (a->r*ratio + a->i) / den;
+		c->i = (a->i*ratio - a->r) / den;
+	}else{
+		ratio = b->i / b->r ;
+		den = b->r * (1 + ratio*ratio);
+		c->r = (a->r + a->i*ratio) / den;
+		c->i = (a->i - a->r*ratio) / den;
+	}
+}
+
+static void d_cnjg(doublecomplex *r, doublecomplex *z)
+{
+	r->r = z->r;
+	r->i = - z->i;
+}
+
+static double z_abs(doublecomplex *z)
+{
+	return (sqrt(z->r*z->r+z->i*z->i));
+}
+
+static void z_sqrt(doublecomplex *r, doublecomplex *z)
+{
+	double mag;
+
+	if( (mag = z_abs(z)) == 0.)
+		r->r = r->i = 0.;
+	else if(z->r > 0)
+	{
+		r->r = sqrt(0.5 * (mag + z->r) );
+		r->i = z->i / r->r / 2;
+	}else{
+		r->i = sqrt(0.5 * (mag - z->r) );
+		if(z->i < 0)
+			r->i = - r->i;
+		r->r = z->i / r->i / 2;
+	}
+}
+
+static void z_exp(doublecomplex *r, doublecomplex *z)
+{
+	double expx;
+
+	expx = exp(z->r);
+	r->r = expx * cos(z->i);
+	r->i = expx * sin(z->i);
+}
+
 
 /* Common Block Declarations */
 
+typedef struct {
+    double cn[30], cd[30];
+    long int mn, md;
+    double const_;
+} EllDesignData;
+
+EllDesignData b_1;
+
 struct {
-    doublereal cn[30], cd[30];
-    integer mn, md;
-    doublereal const_;
-} b_;
+    double k, kprime, cosp0, w1, hpass;
+} ellipt_1;
 
-#define b_1 b_
+/* set this to print diagnostics */
+static short print_diagnostics_ = 0;
 
-struct {
-    doublereal k, kprime, cosp0, w1, hpass;
-} ellipt_;
+void setell(double sr, double f1, double f2, double f3, double ripple, double atten,
+				double *retarr, int *nsects,short print_diagnostics)
+{
+double xnyq;
+long m2,jjj,i,i_1;
+ 	
+	b_1.mn = 0;
+	b_1.md = 0;
+	for (i = 0; i < 30; i++)
+	{
+		b_1.cn[i] = (double)0.;
+		b_1.cd[i] = (double)0.;
+	}
+	
+	xnyq = sr / 2.;
+	print_diagnostics_=print_diagnostics;
+	
+	ellips_(f1, f2, f3, ripple, atten, sr);
+	
+	/* fresp_ calculates   b_1.const_ and prints diagnostic output and frequency response */
+	fresp_(200, sr, 0., xnyq, f1);
+	
+	m2 = b_1.mn / 2;
+	*nsects = m2;
+	jjj = 0;
+	i_1 = b_1.mn;
+	for (i = 1; i <= i_1; ++i) {
+		retarr[jjj] = b_1.cn[i - 1];
+		retarr[jjj + 1] = b_1.cd[i - 1];
+		jjj += 2;
+	}
+	retarr[jjj] = b_1.const_;
+}
 
-#define ellipt_1 ellipt_
-
-/* Table of constant values */
-
-static integer c__200 = 200;
-static doublereal c_b3 = 0.;
-static doublereal c_b11 = 10.;
-
-/* Subroutine */ int setell_(zsmpr, zf1, zf2, zf3, zripple, zatten, zretarr, 
-	nsects)
-real *zsmpr, *zf1, *zf2, *zf3, *zripple, *zatten, *zretarr;
-integer *nsects;
+/*
+   ellips_() designs an elliptic filter. all parameters doubles
+   
+   f3=0 -> lowpass or highpass. f1=passband cutoff. f2=stopband cutoff. 
+   f1<f2 -> lowpass. 
+   f3>0 -> bandpass. f1,f2 are limits of passband. f3 is limit of 
+   either high or low stopband. we require f1<f2. 
+   ripple=passband ripple in db. atten=stopband attenuation in db. 
+   samr=sampling rate in hz. 
+    after gold+rader; written by bilofsky, revised by steiglitz 
+    pp.61-65 (elliptic filters), 72,76 (mappings 
+    from s-plane to z-plane), 87 (approximation 
+    for u0 and evaluation of elliptic functions).
+ */
+void ellips_(double f1, double f2, double f3, double ripple, double atten, double samr)
 {
     /* System generated locals */
-    integer i__1;
+    long int i_1;
+    double d_1, d_2, d_3, d_4, d_5, d_6;
 
     /* Local variables */
-    static doublereal smpr, xnyq;
-    static integer i;
-    static doublereal atten;
-    extern /* Subroutine */ int fresp_(), reset_();
-    static doublereal f1, f2, f3;
-    static integer m2;
-    extern /* Subroutine */ int ellips_();
-    static doublereal ripple;
-    static integer jjj;
-
-    /* Parameter adjustments */
-    --zretarr;
-
-    /* Function Body */
-    smpr = *zsmpr;
-    f1 = *zf1;
-    f2 = *zf2;
-    f3 = *zf3;
-    ripple = *zripple;
-    atten = *zatten;
-/*     print*, smpr, f1, f2, f3, ripple, atten, nsects */
-    reset_();
-    xnyq = smpr / 2.;
-    ellips_(&f1, &f2, &f3, &ripple, &atten, &smpr);
-    fresp_(&c__200, &smpr, &c_b3, &xnyq, &f1);
-    m2 = b_1.mn / 2;
-    *nsects = m2;
-    jjj = 1;
-    i__1 = b_1.mn;
-    for (i = 1; i <= i__1; ++i) {
-	zretarr[jjj] = b_1.cn[i - 1];
-	zretarr[jjj + 1] = b_1.cd[i - 1];
-	jjj += 2;
-/* L1414: */
-    }
-    zretarr[jjj] = b_1.const_;
-    return 0;
-} /* setell_ */
-
-/* Subroutine */ int reset_()
-{
-    static integer m;
-
-    b_1.mn = 0;
-    b_1.md = 0;
-    for (m = 1; m <= 30; ++m) {
-	b_1.cn[m - 1] = (float)0.;
-	b_1.cd[m - 1] = (float)0.;
-/* L100: */
-    }
-    return 0;
-} /* reset_ */
-
-/* Subroutine */ int ellips_(f1, f2, f3, ripple, atten, samr)
-doublereal *f1, *f2, *f3, *ripple, *atten, *samr;
-{
-    /* System generated locals */
-    integer i__1;
-    doublereal d__1, d__2, d__3, d__4, d__5, d__6;
-
-    /* Builtin functions */
-    double tan(), cos(), sin(), sqrt(), pow_dd(), log();
-
-    /* Local variables */
-    static doublereal a;
-    static integer i, n;
-    static doublereal k1;
-    static integer n2;
-    static doublereal u0, w2, w3, k1prim, dd, de;
-    extern /* Subroutine */ int stuff1_();
-    static doublereal kk, pi, nn, tt, kk1;
-    extern doublereal kay_();
-    static doublereal kkp, eps, kk1p;
-
-/*   designs an elliptic filter. all parameters real*8 . */
-/*   f3=0 -> lowpass or highpass. f1=passband cutoff. f2=stopband cutoff. 
-*/
-/*   f1<f2 -> lowpass. */
-/*   f3>0 -> bandpass. f1,f2 are limits of passband. f3 is limit of */
-/*   either high or low stopband. we require f1<f2. */
-/*   ripple=passband ripple in db. atten=stopband attenuation in db. */
-/*   samr=sampling rate in hz. */
-/*    after gold+rader; written by bilofsky, revised by steiglitz */
-/*    pp.61-65 (elliptic filters), 72,76 (mappings */
-/*    from s-plane to z-plane), 87 (approximation */
-/*    for u0 and evaluation of elliptic functions). */
+    double a;
+    long int i, n;
+    double k1;
+    long int n2;
+    double u0, w2, w3, k1prim, dd, de;
+    double kk, pi, nn, tt, kk1;
+    double kkp, eps, kk1p;
+ 
     pi = 3.14159265358979;
-    ellipt_1.w1 = pi * 2. * *f1 / *samr;
-    w2 = pi * 2. * *f2 / *samr;
-    w3 = pi * 2. * *f3 / *samr;
+    ellipt_1.w1 = pi * 2. * f1 / samr;
+    w2 = pi * 2. * f2 / samr;
+    w3 = pi * 2. * f3 / samr;
     ellipt_1.hpass = 0.;
     ellipt_1.cosp0 = 0.;
-    if (*f3 > 0.) {
+    if (f3 > 0.) {
 	goto L1;
     }
-    if (*f1 < *f2) {
+    if (f1 < f2) {
 	goto L2;
     }
 /*  modify frequencies for high pass. */
@@ -148,38 +197,38 @@ L2:
 L1:
     ellipt_1.cosp0 = cos((ellipt_1.w1 + w2) / 2.) / cos((ellipt_1.w1 - w2) / 
 	    2.);
-    ellipt_1.w1 = (d__1 = (ellipt_1.cosp0 - cos(ellipt_1.w1)) / sin(
-	    ellipt_1.w1), abs(d__1));
+    ellipt_1.w1 = (d_1 = (ellipt_1.cosp0 - cos(ellipt_1.w1)) / sin(
+	    ellipt_1.w1), abs(d_1));
     de = w3 - w2;
     if (de < 0.) {
 	de = ellipt_1.w1 - w3;
     }
-    d__1 = ellipt_1.w1 - de;
-    d__3 = w2 + de;
+    d_1 = ellipt_1.w1 - de;
+    d_3 = w2 + de;
 /* Computing MIN */
-    d__5 = (d__2 = (ellipt_1.cosp0 - cos(d__1)) / sin(d__1), abs(d__2)), d__6 
-	    = (d__4 = (ellipt_1.cosp0 - cos(d__3)) / sin(d__3), abs(d__4));
-    w2 = min(d__5,d__6);
+    d_5 = (d_2 = (ellipt_1.cosp0 - cos(d_1)) / sin(d_1), abs(d_2)), d_6 = (
+	    d_4 = (ellipt_1.cosp0 - cos(d_3)) / sin(d_3), abs(d_4));
+    w2 = min(d_5,d_6);
 /*  compute params for poles,zeros in lambda plane */
 L3:
     ellipt_1.k = ellipt_1.w1 / w2;
 /* Computing 2nd power */
-    d__1 = ellipt_1.k;
-    ellipt_1.kprime = sqrt(1. - d__1 * d__1);
-    d__1 = *ripple * .1;
-    eps = sqrt(pow_dd(&c_b11, &d__1) - 1.);
-    d__1 = *atten * .05;
-    a = pow_dd(&c_b11, &d__1);
+    d_1 = ellipt_1.k;
+    ellipt_1.kprime = sqrt(1. - d_1 * d_1);
+    d_1 = ripple * .1;
+    eps = sqrt(pow(10., d_1) - 1.);
+    d_1 = atten * .05;
+    a = pow(10., d_1);
     k1 = eps / sqrt(a * a - 1.);
 /* Computing 2nd power */
-    d__1 = k1;
-    k1prim = sqrt(1. - d__1 * d__1);
-    kk = kay_(&ellipt_1.k);
-    kk1 = kay_(&k1);
-    kkp = kay_(&ellipt_1.kprime);
-    kk1p = kay_(&k1prim);
-    n = (integer) (kk1p * kk / (kk1 * kkp)) + 1;
-    nn = (doublereal) n;
+    d_1 = k1;
+    k1prim = sqrt(1. - d_1 * d_1);
+    kk = kay_(ellipt_1.k);
+    kk1 = kay_(k1);
+    kkp = kay_(ellipt_1.kprime);
+    kk1p = kay_(k1prim);
+    n = (long int) (kk1p * kk / (kk1 * kkp)) + 1;
+    nn = (double) n;
 /* L5: */
     u0 = -kkp * log((sqrt(eps * eps + 1.) + 1.) / eps) / kk1p;
 /*  now compute poles,zeros in lambda plane, */
@@ -188,128 +237,117 @@ L3:
     tt = kk - dd;
     dd += dd;
     n2 = (n + 1) / 2;
-    i__1 = n2;
-    for (i = 1; i <= i__1; ++i) {
+    i_1 = n2;
+    for (i = 1; i <= i_1; ++i) {
 	if (i << 1 > n) {
 	    tt = 0.;
 	}
-	d__1 = -kkp;
-	stuff1_(&d__1, &tt, "zero", 4L);
-	stuff1_(&u0, &tt, "pole", 4L);
+	d_1 = -kkp;
+	stuff1_(d_1, tt, "zero");
+	stuff1_(u0, tt, "pole");
 /* L4: */
 	tt -= dd;
     }
-    return 0;
 } /* ellips_ */
 
-/* Subroutine */ int stuff1_(q, r, whatsi, whatsi_len)
-doublereal *q, *r;
-char *whatsi;
-ftnlen whatsi_len;
+
+void stuff1_(double q, double r, char *whatsi)
 {
     /* System generated locals */
-    doublereal d__1, d__2, d__3;
-    doublecomplex z__1, z__2, z__3, z__4, z__5, z__6, z__7, z__8;
-
-    /* Builtin functions */
-    void z_div();
-    double d_imag();
-    void d_cnjg();
-    integer s_cmp();
+    double d_1, d_2, d_3;
+    doublecomplex z_1, z_2, z_3, z_4, z_5, z_6, z_7, z_8;
 
     /* Local variables */
-    static doublereal cnqp, dnqp, snqp;
-    static integer j;
-    static doublecomplex s;
-    extern /* Subroutine */ int djelf_();
-    extern doublereal dreal_();
-    static doublereal omega, x;
-    static doublecomplex z;
-    static doublereal sigma;
-    extern /* Double Complex */ int cdsqrt_();
-    static doublereal cnr, dnr, snr;
+    double cnqp, dnqp, snqp;
+    long int j;
+    doublecomplex s;
+    double omega, x;
+    doublecomplex z;
+    double sigma;
+    double cnr, dnr, snr;
 
 /*    transforms poles and zeros to z-plane; stuffs coeff. array */
-    d__1 = ellipt_1.kprime * ellipt_1.kprime;
-    djelf_(&snr, &cnr, &dnr, r, &d__1);
-    d__1 = ellipt_1.k * ellipt_1.k;
-    djelf_(&snqp, &cnqp, &dnqp, q, &d__1);
+    d_1 = ellipt_1.kprime * ellipt_1.kprime;
+    djelf_(&snr, &cnr, &dnr, r, d_1);
+    d_1 = ellipt_1.k * ellipt_1.k;
+    djelf_(&snqp, &cnqp, &dnqp, q, d_1);
     omega = 1 - snqp * snqp * dnr * dnr;
     if (omega == 0.) {
 	omega = 1e-30;
     }
     sigma = ellipt_1.w1 * snqp * cnqp * cnr * dnr / omega;
     omega = ellipt_1.w1 * snr * dnqp / omega;
-    z__1.r = sigma, z__1.i = omega;
-    s.r = z__1.r, s.i = z__1.i;
+    z_1.r = sigma, z_1.i = omega;
+    s.r = z_1.r, s.i = z_1.i;
     j = 1;
     if (ellipt_1.cosp0 == 0.) {
 	goto L1;
     }
     j = -1;
 L4:
-    d__1 = -ellipt_1.cosp0;
-    d__2 = (doublereal) j;
-    d__3 = ellipt_1.cosp0 * ellipt_1.cosp0;
-    z__7.r = s.r * s.r - s.i * s.i, z__7.i = s.r * s.i + s.i * s.r;
-    z__6.r = d__3 + z__7.r, z__6.i = z__7.i;
-    z__5.r = z__6.r - 1., z__5.i = z__6.i;
-    cdsqrt_(&z__4, &z__5);
-    z__3.r = d__2 * z__4.r, z__3.i = d__2 * z__4.i;
-    z__2.r = d__1 + z__3.r, z__2.i = z__3.i;
-    z__8.r = s.r - 1., z__8.i = s.i;
-    z_div(&z__1, &z__2, &z__8);
-    z.r = z__1.r, z.i = z__1.i;
+    d_1 = -ellipt_1.cosp0;
+    d_2 = (double) j;
+    d_3 = ellipt_1.cosp0 * ellipt_1.cosp0;
+    z_7.r = s.r * s.r - s.i * s.i, z_7.i = s.r * s.i + s.i * s.r;
+    z_6.r = d_3 + z_7.r, z_6.i = z_7.i;
+    z_5.r = z_6.r - 1., z_5.i = z_6.i;
+    z_sqrt(&z_4, &z_5);
+    z_3.r = d_2 * z_4.r, z_3.i = d_2 * z_4.i;
+    z_2.r = d_1 + z_3.r, z_2.i = z_3.i;
+    z_8.r = s.r - 1., z_8.i = s.i;
+    z_div(&z_1, &z_2, &z_8);
+    z.r = z_1.r, z.i = z_1.i;
     goto L3;
 L1:
-    z__2.r = s.r + 1., z__2.i = s.i;
-    z__3.r = 1. - s.r, z__3.i = -s.i;
-    z_div(&z__1, &z__2, &z__3);
-    z.r = z__1.r, z.i = z__1.i;
+    z_2.r = s.r + 1., z_2.i = s.i;
+    z_3.r = 1. - s.r, z_3.i = -s.i;
+    z_div(&z_1, &z_2, &z_3);
+    z.r = z_1.r, z.i = z_1.i;
     if (ellipt_1.hpass != 0.) {
-	z__1.r = -z.r, z__1.i = -z.i;
-	z.r = z__1.r, z.i = z__1.i;
+	z_1.r = -z.r, z_1.i = -z.i;
+	z.r = z_1.r, z.i = z_1.i;
     }
 L3:
-    if ((d__1 = d_imag(&z), abs(d__1)) <= 1e-9) {
+    if ((d_1 = z.i, abs(d_1)) <= 1e-9) {
 	goto L2;
     }
-    if (d_imag(&z) < 0.) {
-	d_cnjg(&z__1, &z);
-	z.r = z__1.r, z.i = z__1.i;
+    if (z.i < 0.) {
+	d_cnjg(&z_1, &z);
+	z.r = z_1.r, z.i = z_1.i;
     }
-    if (s_cmp(whatsi, "pole", 4L, 4L) == 0) {
+    if (strcmp(whatsi, "pole") == 0) {
 	goto L5;
     }
     ++b_1.mn;
-    b_1.cn[b_1.mn - 1] = dreal_(&z) * -2.;
+    b_1.cn[b_1.mn - 1] = z.r * -2.;
     ++b_1.mn;
 /* Computing 2nd power */
-    d__1 = dreal_(&z);
+    d_1 = z.r;
 /* Computing 2nd power */
-    d__2 = d_imag(&z);
-    b_1.cn[b_1.mn - 1] = d__1 * d__1 + d__2 * d__2;
+    d_2 = z.i;
+    b_1.cn[b_1.mn - 1] = d_1 * d_1 + d_2 * d_2;
     goto L6;
 L5:
     ++b_1.md;
-    b_1.cd[b_1.md - 1] = dreal_(&z) * -2.;
+    b_1.cd[b_1.md - 1] = z.r * -2.;
     ++b_1.md;
 /* Computing 2nd power */
-    d__1 = dreal_(&z);
+    d_1 = z.r;
 /* Computing 2nd power */
-    d__2 = d_imag(&z);
-    b_1.cd[b_1.md - 1] = d__1 * d__1 + d__2 * d__2;
+    d_2 = z.i;
+    b_1.cd[b_1.md - 1] = d_1 * d_1 + d_2 * d_2;
 L6:
-/*    6 write(6,202)whatsi,z */
-/* L202: */
-    if (j > 0 || *r == 0.) {
-	return 0;
+	if(print_diagnostics_)
+		fprintf(stderr,"complex %.4s pair at %f +-j %f\n",whatsi,z.r,z.i);
+	
+    if (j > 0 || r == 0.) {
+	return;
     }
     j = 1;
     goto L4;
 L2:
-    x = dreal_(&z);
-    if (s_cmp(whatsi, "pole", 4L, 4L) == 0) {
+    x = z.r;
+    if (strcmp(whatsi, "pole") == 0) {
 	goto L7;
     }
     ++b_1.mn;
@@ -323,161 +361,155 @@ L7:
     ++b_1.md;
     b_1.cd[b_1.md - 1] = 0.;
 L8:
-/*    8 write(6,201)whatsi,x */
-/* L201: */
+	if(print_diagnostics_)
+		fprintf(stderr,"real %.4s at %f\n",whatsi,x);
+	
     if (j > 0) {
-	return 0;
+	return;
     }
     j = 1;
     goto L4;
 } /* stuff1_ */
 
-/* Subroutine */ int fresp_(k, samr, f1, f2, f3)
-integer *k;
-doublereal *samr, *f1, *f2, *f3;
+
+void fresp_(long int k, double samr, double f1, double f2, double f3)
 {
     /* System generated locals */
-    integer i__1, i__2, i__3, i__4, i__5, i__6;
-    doublereal d__1;
-    doublecomplex z__1, z__2, z__3, z__4, z__5, z__6, z__7, z__8, z__9, z__10;
-
-
-    /* Builtin functions */
-    void z_div();
-    double d_imag(), atan2(), d_lg10();
+    long int i_1, i_2, i_3, i_4, i_5, i_6;
+    double d_1;
+    doublecomplex z_1, z_2, z_3, z_4, z_5, z_6, z_7, z_8, z_9, z_10;
 
     /* Local variables */
-    static doublereal freq;
-    static integer i, j;
-    extern doublereal cdabs_();
-    static doublereal w, x;
-    extern doublereal dreal_();
-    static doublereal y, phase;
-    extern /* Double Complex */ int cdexp_();
-    static integer m2;
-    static doublereal db, pi;
-    static doublecomplex tf, zm, zm2;
-    static doublereal amp;
+    double freq;
+    long int i, j;
+    double w, x;
+    double y, phase;
+    long int m2;
+    double db, pi;
+    doublecomplex tf, zm, zm2;
+    double amp;
 
 /*    plots k pts. of freq. resp. from f1 to f2, norm. at f3 */
     pi = 3.14159265358979;
     m2 = b_1.mn / 2;
-/*      write(8,200)m2,(cn(i),cd(i),i=1,mn) */
-/* L200: */
-    w = pi * *f3 / (*samr * .5);
-    d__1 = w * -1.;
-    z__2.r = 0., z__2.i = d__1;
-    cdexp_(&z__1, &z__2);
-    zm.r = z__1.r, zm.i = z__1.i;
-    z__1.r = zm.r * zm.r - zm.i * zm.i, z__1.i = zm.r * zm.i + zm.i * zm.r;
-    zm2.r = z__1.r, zm2.i = z__1.i;
-    tf.r = 1., tf.i = 0.;
-    i__1 = b_1.mn;
-    for (i = 1; i <= i__1; i += 2) {
-/* L1: */
-	i__2 = i - 1;
-	z__5.r = b_1.cn[i__2] * zm.r, z__5.i = b_1.cn[i__2] * zm.i;
-	z__4.r = z__5.r + 1., z__4.i = z__5.i;
-	i__3 = i;
-	z__6.r = b_1.cn[i__3] * zm2.r, z__6.i = b_1.cn[i__3] * zm2.i;
-	z__3.r = z__4.r + z__6.r, z__3.i = z__4.i + z__6.i;
-	z__2.r = tf.r * z__3.r - tf.i * z__3.i, z__2.i = tf.r * z__3.i + tf.i 
-		* z__3.r;
-	i__4 = i - 1;
-	z__9.r = b_1.cd[i__4] * zm.r, z__9.i = b_1.cd[i__4] * zm.i;
-	z__8.r = z__9.r + 1., z__8.i = z__9.i;
-	i__5 = i;
-	z__10.r = b_1.cd[i__5] * zm2.r, z__10.i = b_1.cd[i__5] * zm2.i;
-	z__7.r = z__8.r + z__10.r, z__7.i = z__8.i + z__10.i;
-	z_div(&z__1, &z__2, &z__7);
-	tf.r = z__1.r, tf.i = z__1.i;
+    
+    if(print_diagnostics_)
+    {
+   	 	fprintf(stderr,"//\nelliptic filter with %ld sections\n",m2);
+    	i_1 = b_1.mn;
+    	 for (i = 1; i <= i_1; ++i) {
+    	 fprintf(stderr,"%f %f ",b_1.cn[i - 1],b_1.cd[i - 1]);
+    	}
     }
-    b_1.const_ = 1. / cdabs_(&tf);
-/*      write(8,201)const */
-/* L201: */
-/*      write(8,205) */
-/* L205: */
-    i__2 = *k;
-    for (j = 1; j <= i__2; ++j) {
-	freq = *f1 + (*f2 - *f1) * (doublereal) (j - 1) / (doublereal) (*k - 
-		1);
-	w = pi * freq / (*samr * .5);
-	d__1 = w * -1.;
-	z__2.r = 0., z__2.i = d__1;
-	cdexp_(&z__1, &z__2);
-	zm.r = z__1.r, zm.i = z__1.i;
-	z__1.r = zm.r * zm.r - zm.i * zm.i, z__1.i = zm.r * zm.i + zm.i * 
-		zm.r;
-	zm2.r = z__1.r, zm2.i = z__1.i;
-	z__1.r = b_1.const_, z__1.i = 0.;
-	tf.r = z__1.r, tf.i = z__1.i;
-	i__3 = b_1.mn;
-	for (i = 1; i <= i__3; i += 2) {
+    
+    w = pi * f3 / (samr * .5);
+    d_1 = w * -1.;
+    z_2.r = 0., z_2.i = d_1;
+    z_exp(&z_1, &z_2);
+    zm.r = z_1.r, zm.i = z_1.i;
+    z_1.r = zm.r * zm.r - zm.i * zm.i, z_1.i = zm.r * zm.i + zm.i * zm.r;
+    zm2.r = z_1.r, zm2.i = z_1.i;
+    tf.r = 1., tf.i = 0.;
+    i_1 = b_1.mn;
+    for (i = 1; i <= i_1; i += 2) {
+/* L1: */
+	i_2 = i - 1;
+	z_5.r = b_1.cn[i_2] * zm.r, z_5.i = b_1.cn[i_2] * zm.i;
+	z_4.r = z_5.r + 1., z_4.i = z_5.i;
+	i_3 = i;
+	z_6.r = b_1.cn[i_3] * zm2.r, z_6.i = b_1.cn[i_3] * zm2.i;
+	z_3.r = z_4.r + z_6.r, z_3.i = z_4.i + z_6.i;
+	z_2.r = tf.r * z_3.r - tf.i * z_3.i, z_2.i = tf.r * z_3.i + tf.i * 
+		z_3.r;
+	i_4 = i - 1;
+	z_9.r = b_1.cd[i_4] * zm.r, z_9.i = b_1.cd[i_4] * zm.i;
+	z_8.r = z_9.r + 1., z_8.i = z_9.i;
+	i_5 = i;
+	z_10.r = b_1.cd[i_5] * zm2.r, z_10.i = b_1.cd[i_5] * zm2.i;
+	z_7.r = z_8.r + z_10.r, z_7.i = z_8.i + z_10.i;
+	z_div(&z_1, &z_2, &z_7);
+	tf.r = z_1.r, tf.i = z_1.i;
+    }
+    b_1.const_ = 1. / z_abs(&tf);
+	
+	if(print_diagnostics_)
+    	fprintf(stderr,"\nconst= %f\n",b_1.const_);
+    
+    i_2 = k;
+    for (j = 1; j <= i_2; ++j) {
+	freq = f1 + (f2 - f1) * (double) (j - 1) / (double) (k - 1);
+	w = pi * freq / (samr * .5);
+	d_1 = w * -1.;
+	z_2.r = 0., z_2.i = d_1;
+	z_exp(&z_1, &z_2);
+	zm.r = z_1.r, zm.i = z_1.i;
+	z_1.r = zm.r * zm.r - zm.i * zm.i, z_1.i = zm.r * zm.i + zm.i * zm.r;
+	zm2.r = z_1.r, zm2.i = z_1.i;
+	z_1.r = b_1.const_, z_1.i = 0.;
+	tf.r = z_1.r, tf.i = z_1.i;
+	i_3 = b_1.mn;
+	for (i = 1; i <= i_3; i += 2) {
 /* L2: */
-	    i__4 = i - 1;
-	    z__5.r = b_1.cn[i__4] * zm.r, z__5.i = b_1.cn[i__4] * zm.i;
-	    z__4.r = z__5.r + 1., z__4.i = z__5.i;
-	    i__5 = i;
-	    z__6.r = b_1.cn[i__5] * zm2.r, z__6.i = b_1.cn[i__5] * zm2.i;
-	    z__3.r = z__4.r + z__6.r, z__3.i = z__4.i + z__6.i;
-	    z__2.r = tf.r * z__3.r - tf.i * z__3.i, z__2.i = tf.r * z__3.i + 
-		    tf.i * z__3.r;
-	    i__1 = i - 1;
-	    z__9.r = b_1.cd[i__1] * zm.r, z__9.i = b_1.cd[i__1] * zm.i;
-	    z__8.r = z__9.r + 1., z__8.i = z__9.i;
-	    i__6 = i;
-	    z__10.r = b_1.cd[i__6] * zm2.r, z__10.i = b_1.cd[i__6] * zm2.i;
-	    z__7.r = z__8.r + z__10.r, z__7.i = z__8.i + z__10.i;
-	    z_div(&z__1, &z__2, &z__7);
-	    tf.r = z__1.r, tf.i = z__1.i;
+	    i_4 = i - 1;
+	    z_5.r = b_1.cn[i_4] * zm.r, z_5.i = b_1.cn[i_4] * zm.i;
+	    z_4.r = z_5.r + 1., z_4.i = z_5.i;
+	    i_5 = i;
+	    z_6.r = b_1.cn[i_5] * zm2.r, z_6.i = b_1.cn[i_5] * zm2.i;
+	    z_3.r = z_4.r + z_6.r, z_3.i = z_4.i + z_6.i;
+	    z_2.r = tf.r * z_3.r - tf.i * z_3.i, z_2.i = tf.r * z_3.i + tf.i *
+		     z_3.r;
+	    i_1 = i - 1;
+	    z_9.r = b_1.cd[i_1] * zm.r, z_9.i = b_1.cd[i_1] * zm.i;
+	    z_8.r = z_9.r + 1., z_8.i = z_9.i;
+	    i_6 = i;
+	    z_10.r = b_1.cd[i_6] * zm2.r, z_10.i = b_1.cd[i_6] * zm2.i;
+	    z_7.r = z_8.r + z_10.r, z_7.i = z_8.i + z_10.i;
+	    z_div(&z_1, &z_2, &z_7);
+	    tf.r = z_1.r, tf.i = z_1.i;
 	}
-	amp = cdabs_(&tf);
+	amp = z_abs(&tf);
 	if (amp <= 1e-20) {
 	    amp = 1e-20;
 	}
-	x = dreal_(&tf);
-	y = d_imag(&tf);
+	x = tf.r;
+	y = tf.i;
 	phase = 0.;
 	if (x == 0. && y == 0.) {
 	    goto L4;
 	}
 	phase = 180. / pi * atan2(y, x);
 L4:
-	d__1 = max(amp,1e-40);
-	db = d_lg10(&d__1) * 20.;
+	d_1 = max(amp,1e-40);
+	db = log10(d_1) * 20.;
 /* L3: */
+	if(print_diagnostics_)
+		fprintf(stderr,"%f \t %f \t %f \t %f\n",freq,phase,amp,db);
     }
-/*    3 write(8,202)freq,phase,amp,db */
-/* L202: */
-    return 0;
+    return;
 } /* fresp_ */
 
-doublereal kay_(k)
-doublereal *k;
+
+double kay_(double k)
 {
     /* Initialized data */
-
-    static doublereal a[5] = { 1.38629436112,.09666344259,.03590092383,
+    static double a[5] = { 1.38629436112,.09666344259,.03590092383,
 	    .03742563713,.01451196212 };
-    static doublereal b[5] = { .5,.12498593597,.06880248576,.03328355346,
+    static double b[5] = { .5,.12498593597,.06880248576,.03328355346,
 	    .00441787012 };
 
     /* System generated locals */
-    doublereal ret_val;
-
-    /* Builtin functions */
-    double log();
+    double ret_val;
 
     /* Local variables */
-    static doublereal peta;
-    static integer i;
-    static doublereal kk, eta;
+    double peta;
+    long int i;
+    double kk, eta;
 
 /*    computes kay(k)=inverse sn(1) */
 /*    hastings, approx. for dig. comp., p. 172 */
     ret_val = a[0];
     kk = b[0];
-    eta = 1. - *k * *k;
+    eta = 1. - k * k;
     peta = eta;
     for (i = 2; i <= 5; ++i) {
 	ret_val += a[i - 1] * peta;
@@ -489,33 +521,30 @@ doublereal *k;
     return ret_val;
 } /* kay_ */
 
-/* Subroutine */ int djelf_(sn, cn, dn, x, sck)
-doublereal *sn, *cn, *dn, *x, *sck;
+
+void djelf_(double *sn, double *cn, double *dn, double x, double sck)
 {
     /* System generated locals */
-    integer i__1;
-    doublereal d__1;
+    long int i_1;
+    double d_1;
 
-    /* Builtin functions */
-    double exp(), sqrt(), sin(), cos();
-
-    /* Local variables */
-    static doublereal a, b, c, d;
-    static integer i, k, l;
-    static doublereal y, cm, geo[12], ari[12];
+   /* Local variables */
+    double a, b, c, d;
+    long int i, k, l;
+    double y, cm, geo[12], ari[12];
 
 /*     ssp program: finds jacobian elliptic functions sn,cn,dn. */
-    cm = *sck;
-    y = *x;
-    if (*sck < 0.) {
+    cm = sck;
+    y = x;
+    if (sck < 0.) {
 	goto L3;
-    } else if (*sck == 0) {
+    } else if (sck == 0) {
 	goto L1;
     } else {
 	goto L4;
     }
 L1:
-    d = exp(*x);
+    d = exp(x);
     a = 1. / d;
     b = a + d;
     *cn = 2. / b;
@@ -523,12 +552,12 @@ L1:
     a = (d - a) / 2.;
     *sn = a * *cn;
 L2:
-    return 0;
+    return;
 L3:
-    d = 1. - *sck;
-    cm = -(*sck) / d;
+    d = 1. - sck;
+    cm = -(sck) / d;
     d = sqrt(d);
-    y = d * *x;
+    y = d * x;
 L4:
     a = 1.;
     *dn = 1.;
@@ -538,7 +567,7 @@ L4:
 	cm = sqrt(cm);
 	geo[i - 1] = cm;
 	c = (a + cm) * .5;
-	if ((d__1 = a - cm, abs(d__1)) - a * 1e-9 <= 0.) {
+	if ((d_1 = a - cm, abs(d_1)) - a * 1e-9 <= 0.) {
 	    goto L7;
 	} else {
 	    goto L5;
@@ -560,8 +589,8 @@ L7:
 L8:
     a = *cn / *sn;
     c = a * c;
-    i__1 = l;
-    for (i = 1; i <= i__1; ++i) {
+    i_1 = l;
+    for (i = 1; i <= i_1; ++i) {
 	k = l - i + 1;
 	b = ari[k - 1];
 	a = c * a;
@@ -584,7 +613,7 @@ L11:
 L12:
     *cn = c * *sn;
 L13:
-    if (*sck >= 0.) {
+    if (sck >= 0.) {
 	goto L2;
     } else {
 	goto L14;
@@ -594,6 +623,6 @@ L14:
     *dn = *cn;
     *cn = a;
     *sn /= d;
-    return 0;
+    return;
 } /* djelf_ */
 
