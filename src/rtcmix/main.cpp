@@ -26,6 +26,7 @@
 #include <globals.h>
 #include <prototypes.h>
 #include <ugens.h>
+#include <ug_intro.h>
 #include <version.h>
 #include "rt.h"
 #include "heap.h"
