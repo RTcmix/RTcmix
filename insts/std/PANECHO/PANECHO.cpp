@@ -1,139 +1,163 @@
-#include <iostream.h>
+/* PANECHO - stereo panning delay instrument
+
+      p0 = output start time
+      p1 = input start time
+      p2 = input duration
+      p3 = amplitude multiplier
+      p4 = left channel delay time
+      p5 = right channel delay time
+      p6 = delay feedback (i.e., regeneration multiplier) [0-1]
+      p7 = ring-down duration
+      p8 = input channel [optional, default is 0]
+
+   p3 (amplitude), p4 (left delay time), p5 (right delay time) and
+   p6 (feedback) can receive dynamic updates from a table or real-time
+   control source.
+
+   If an old-style gen table 1 is present, its values will be multiplied
+   by the p3 amplitude multiplier, even if the latter is dynamic.
+
+   The point of the ring-down duration parameter is to let you control
+   how long the delay will sound after the input has stopped.  Too short
+   a time, and the sound may be cut off prematurely.
+
+                                          rev. for v4.0 by JGG, 7/10/04
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "PANECHO.h"
 #include <rt.h>
 #include <rtdefs.h>
 
+#define MAXDELTIME 20.0    // seconds (176400 bytes per second at SR=44100)
 
 PANECHO::PANECHO() : Instrument()
 {
 	in = NULL;
+	branch = 0;
+	warn_deltime = true;
 }
 
 PANECHO::~PANECHO()
 {
 	delete [] in;
-	delete [] delarray1;
-	delete [] delarray2;
+	delete delay0;
+	delete delay1;
 }
 
 int PANECHO::init(double p[], int n_args)
 {
-// p0 = output skip; p1 = input skip; p2 = output duration
-// p3 = amplitude multiplier 
-// p4 = chennel 0 delay time
-// p5 = chennel 1 delay time
-// p6 = regeneration multiplier (< 1!)
-// p7 = ring-down duration
-// p8 = input channel [optional]
-// assumes function table 1 is the amplitude envelope
+	float outskip = p[0];
+	float inskip = p[1];
+	float dur = p[2];
+	float deltime0 = p[4];
+	float deltime1 = p[5];
+	float ringdur = p[7];
+	inchan = n_args > 8 ? (int) p[8] : 0;
 
-	long delsamps;
-	int rvin;
+	if (rtsetinput(inskip, this) == -1)
+		return DONT_SCHEDULE;
 
-	rvin = rtsetinput(p[1], this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
-	nsamps = rtsetoutput(p[0], p[2]+p[7], this);
-	insamps = (int)(p[2] * SR);
+	if (inchan >= inputChannels())
+		return die("PANECHO", "You asked for channel %d of a %d-channel file.",
+                                                    inchan, inputChannels());
 
-	if (outputchans != 2) {
-		die("PANECHO", "Output must be stereo.");
-		return(DONT_SCHEDULE);
-	}
+	nsamps = rtsetoutput(outskip, dur + ringdur, this);
+	insamps = (int) (dur * SR + 0.5);
 
-	delsamps = (long)(p[4] * SR + 0.5);
-	delarray1 = new float[delsamps];
-	if (!delarray1) {
-		die("PANECHO", "Sorry, Charlie -- no space");
-		return(DONT_SCHEDULE);
-	}
+	if (outputChannels() != 2)
+		return die("PANECHO", "Output must be stereo.");
 
-	wait1 = p[4];
-	delset(delarray1, deltabs1, wait1);
-
-	delsamps = (long)(p[5] * SR + 0.5);
-	delarray2 = new float[delsamps];
-	if (!delarray2) {
-		die("PANECHO", "Sorry, Charlie -- no space");
-		return(DONT_SCHEDULE);
-	}
-
-	wait2 = p[5];
-	delset(delarray2, deltabs2, wait2);
-
-	regen = p[6];
+	if (deltime0 > MAXDELTIME || deltime1 > MAXDELTIME)
+		return die("PANECHO", "Maximum delay time (%g seconds) exceeded.",
+                                                            MAXDELTIME);
+	long maxdelsamps = (long) (MAXDELTIME * SR + 0.5);
+	delay0 = new Ozdelay(maxdelsamps);
+	delay1 = new Ozdelay(maxdelsamps);
+	if (delay0 == NULL || delay1 == NULL)
+		return die("PANECHO", "Can't allocate delay line memory.");
+	prevdeltime0 = prevdeltime1 = -999999999.9;		// force first update
 
 	amptable = floc(1);
 	if (amptable) {
 		int amplen = fsize(1);
-		tableset(p[2], amplen, amptabs);
-	}
-	else
-		advise("PANECHO", "Setting phrase curve to all 1's.");
-
-	amp = p[3];
-	skip = (int)(SR/(float)resetval);
-	inchan = (int)p[8];
-	if ((inchan+1) > inputchans) {
-		die("PANECHO", "You asked for channel %d of a %d-channel file.",
-                                                       inchan, inputchans);
-		return(DONT_SCHEDULE);
+		tableset(dur, amplen, amptabs);
 	}
 
-	return(nsamps);
+	skip = (int) (SR / (float) resetval);
+
+	return nSamps();
+}
+
+int PANECHO::configure()
+{
+	in = new float [RTBUFSAMPS * inputChannels()];
+	return in ? 0 : -1;
+}
+
+inline double PANECHO::getdelsamps(float deltime)
+{
+	if (deltime > MAXDELTIME) {
+		if (warn_deltime) {
+			warn("PANECHO", "Maximum delay time (%g seconds) exceeded!",
+                                                          MAXDELTIME);
+			warn_deltime = false;
+		}
+		return (MAXDELTIME * SR);
+	}
+	return (deltime * SR);
 }
 
 int PANECHO::run()
 {
-	int i,rsamps;
-	float out[2];
-	float aamp;
-	int branch;
+	int samps = framesToRun() * inputChannels();
 
-	if (in == NULL)     /* first time, so allocate it */
-		in = new float [RTBUFSAMPS * inputchans];
+	if (currentFrame() < insamps)
+		rtgetin(in, this, samps);
 
-	rsamps = chunksamps*inputchans;
-
-	rtgetin(in, this, rsamps);
-
-	aamp = amp;         /* in case amptable == NULL */
-
-	branch = 0;
-	for (i = 0; i < rsamps; i += inputchans)  {
-		if (cursamp > insamps) {
-			out[0] = delget(delarray2, wait2, deltabs2) * regen;
-			out[1] = delget(delarray1, wait1, deltabs1);
+	for (int i = 0; i < samps; i += inputChannels())  {
+		if (--branch <= 0) {
+			double p[7];
+			update(p, 7, kAmp | kDelTime0 | kDelTime1 | kDelRegen);
+			amp = p[3];
+			if (amptable)
+				amp *= tablei(cursamp, amptable, amptabs);
+			float thisdeltime = p[4];
+			if (thisdeltime != prevdeltime0) {
+				delsamps0 = getdelsamps(thisdeltime);
+				prevdeltime0 = thisdeltime;
 			}
-		else {
-			if (--branch < 0) {
-				if (amptable)
-					aamp = tablei(cursamp, amptable, amptabs) * amp;
-				branch = skip;
-				}
-			out[0] = (in[i+inchan]*aamp) + (delget(delarray2, wait2, deltabs2)*regen);
-			out[1] = delget(delarray1, wait1, deltabs1);
+			thisdeltime = p[5];
+			if (thisdeltime != prevdeltime1) {
+				delsamps1 = getdelsamps(thisdeltime);
+				prevdeltime1 = thisdeltime;
 			}
+			regen = p[6];
+			branch = skip;
+		}
 
-		delput(out[0], delarray1, deltabs1);
-		delput(out[1], delarray2, deltabs2);
+		float sig, out[2];
+
+		if (currentFrame() < insamps)
+			sig = in[i + inchan] * amp;
+		else
+			sig = 0.0;
+
+		out[0] = sig + (delay1->getsamp(delsamps1) * regen);
+		out[1] = delay0->getsamp(delsamps0);
+
+		delay0->putsamp(out[0]);
+		delay1->putsamp(out[1]);
 
 		rtaddout(out);
-		cursamp++;
-		}
-	return(i);
+		increment();
+	}
+	return framesToRun();
 }
 
-
-
-Instrument*
-makePANECHO()
+Instrument *makePANECHO()
 {
 	PANECHO *inst;
 
