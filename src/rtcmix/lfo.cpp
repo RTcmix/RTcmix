@@ -394,13 +394,12 @@ makerandom(const Arg args[], const int nargs)
 			break;
 	}
 
-#ifdef NOTYET
-	PField *rand = new RandomPField(resetval, type, gen, freqpf, minpf, midpf,
-									maxpf, tightpf, (interp == kInterp1stOrder));
+	PField *rand;
+	if (interp == kInterp1stOrder)
+		rand = new RandomPField(resetval, gen, freqpf, minpf, maxpf, midpf, tightpf);
+	else // (interp == kTruncate)
+		rand = new RandomPField(resetval, gen, freqpf, minpf, maxpf, midpf, tightpf, RandomPField::Truncate);
 
 	return _createPFieldHandle(rand);
-#else
-   return NULL;
-#endif
 }
 
