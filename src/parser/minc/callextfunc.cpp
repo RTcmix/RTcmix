@@ -17,7 +17,8 @@ call_external_function(const char *funcname, const MincListElem arglist[],
    Arg retval, *rtcmixargs;
 
    rtcmixargs = (Arg *) emalloc(nargs * sizeof(Arg));
-   /* NB: emalloc dies if no more memory */
+   if (rtcmixargs == NULL)
+      return -1;
 
    /* Convert arglist for passing to RTcmix function. */
    for (i = 0; i < nargs; i++) {
@@ -39,6 +40,8 @@ call_external_function(const char *funcname, const MincListElem arglist[],
                Otherwise, it's an error.
             */
             rtcmixargs[i].val.array = (Array *) emalloc(sizeof(Array));
+            if (rtcmixargs[i].val.array == NULL)
+               return -1;
             rtcmixargs[i].val.array->data
                         = (double *) float_list_to_array(&arglist[i].val.list);
             if (rtcmixargs[i].val.array->data != NULL) {
