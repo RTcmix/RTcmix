@@ -99,8 +99,6 @@ int WAVESHAPE::run()
 	float index=0.;
 	int branch;
 
-	Instrument::run();
-
 	aamp = amp;            /* in case ampenv == NULL */
 
 	branch = 0;

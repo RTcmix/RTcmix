@@ -279,13 +279,11 @@ int PVOC::configure()
 
 	_outbuf = new BUFTYPE[Nw];	// XXX CHECK THIS SIZE
 		
-	return Instrument::configure();
+	return 0;
 }
 
 int PVOC::run()
 {
-	/* You MUST call the base class's run method here. */
-	Instrument::run();
 #ifdef debug
 	printf("PVOC::run\n\n");
 #endif

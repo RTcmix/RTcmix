@@ -103,8 +103,6 @@ int REVMIX::run()
    if (in == NULL)                 /* first time, so allocate it */
       in = new float [RTBUFSAMPS * inputchans];
 
-   Instrument::run();
-
    samps = chunksamps * inputchans;
 
    rtinrepos(this, -chunksamps, SEEK_CUR);

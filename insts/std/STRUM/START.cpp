@@ -72,8 +72,6 @@ int START::run()
 	int i, branch;
 	float aamp, out[2];
 
-	Instrument::run();
-
 	aamp = 1.0;                  /* in case amptable == NULL */
 
 	branch = 0;

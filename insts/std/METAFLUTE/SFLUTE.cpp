@@ -87,8 +87,6 @@ int SFLUTE::run()
 	float sig,del1sig;
 	int branch;
 
-	Instrument::run();
-
 	branch = 0;
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch < 0) {

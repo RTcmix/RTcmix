@@ -102,8 +102,6 @@ int VFRET1::run()
 	float vamp;
 	float freqch;
 
-	Instrument::run();
-
 	if (firsttime) {
 		sset(freq, tf0, tfN, strumq1);
 		delayset(fbpitch, dq);

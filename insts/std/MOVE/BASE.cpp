@@ -226,8 +226,6 @@ int BASE::getInput(int currentSample, int frames)
 
 int BASE::configure()
 {
-    Instrument::configure();
-
 	in = new float [RTBUFSAMPS * inputchans];
     alloc_delays();                     /* allocates memory for delays */
 
@@ -237,7 +235,7 @@ int BASE::configure()
 		advise(name(), "Running in binaural mode.");
 		alloc_firfilters();                     // allocates memory for FIRs
 	}
-	return 1;
+	return 0;
 }
 
 /* ------------------------------------------------------------------ run --- */
@@ -246,8 +244,6 @@ int BASE::run()
 	int    i = 0;
 	double roomsig[2][BUFLEN], rvbsig[2][BUFLEN];
 
-    Instrument::run();
-    
 	const int totalSamps = insamps + tapcount;
 
 	DBG1(printf("%s::run(): totalSamps = %d\n", name(), totalSamps));

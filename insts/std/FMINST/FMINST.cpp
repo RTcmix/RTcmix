@@ -96,8 +96,6 @@ int FMINST::run()
 	int branch;
 	float tfreq,tamp;
 
-	Instrument::run();
-
 	aamp = amp;             /* in case ampenv == NULL */
 
 	branch = 0;

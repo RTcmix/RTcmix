@@ -107,8 +107,6 @@ int VSFLUTE::run()
 	float si1=0.,si2=0.;
 	int branch;
 
-	Instrument::run();
-
 	branch = 0;
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch < 0) {

@@ -64,8 +64,6 @@ int NOISE::run()
 	float aamp,val,sig;
 	int branch;
 
-	Instrument::run();
-
 	aamp = oamp;           /* in case amparr == NULL */
 
 	branch = 0;

@@ -80,8 +80,6 @@ int AMINST::run()
 	float tval1,tval2;
 	int branch;
 
-	Instrument::run();
-
 	aamp = amp;        /* in case amparr == NULL */
 
 	branch = 0;

@@ -129,21 +129,17 @@ int RVB::init(float p[], int n_args)
 
 int RVB::configure()
 {
-    Instrument::configure();
-
 	in = new float [RTBUFSAMPS * inputChannels()];
     alloc_delays();                     /* allocates memory for delays */
 
 	rvb_reset();
-	return 1;
+	return 0;
 }
 
 /* ------------------------------------------------------------------ run --- */
 int RVB::run()
 {
 	double rvbsig[2][8192];
-
-    Instrument::run();
 
 	// number of samples to process this time through
 

@@ -72,8 +72,6 @@ int FRET1::run()
 	float out[2];
 	float a,b;
 
-	Instrument::run();
-
 	if (firsttime) {
 		sset(freq, tf0, tfN, strumq1);
 		delayset(fbpitch, dq);

@@ -65,8 +65,6 @@ int NOISE :: run()
    int   i;
    float out[2];
 
-   Instrument::run();
-
    for (i = 0; i < framesToRun(); i++) {
       if (--branch < 0) {
          if (amparray)

@@ -136,9 +136,8 @@ int LPCINST::init(float p[], int n_args)
 int
 LPCINST::configure()
 {
-	int status = Instrument::configure();
 	SetupArrays((int)_frames);
-	return status;
+	return 0;
 }
 
 /* Construct an instance of this instrument and initialize a variable. */
@@ -269,7 +268,7 @@ int LPCPLAY::localInit(float p[], int n_args)
 	else
 		_transposition = cpspch(-_pitch);  /* flat pitch in octave pt */
 
-	if ((n_args <= _datafields) && (_pitch > 0)) {
+	if (n_args <= _datafields && _pitch > 0) {
 		advise("LPCPLAY", "Overall transp factor: %f, weighted av. pitch = %g Hz",
 			   _transposition, actualweight);
 		if (_maxdev) 
@@ -279,10 +278,9 @@ int LPCPLAY::localInit(float p[], int n_args)
 		}
 	}
 	else {
-		int nn=_datafields-1;
 		int lastfr=_frame1;
 		float transp, lasttr=_transposition;
-		while((nn+=2)<n_args) {
+		for (int nn = _datafields-1; nn < n_args; nn+=2) {
 			if (ABS(p[nn+1]) < 1.) {
 				transp = pow(2.0,(p[nn+1]/.12));
 			}
@@ -329,8 +327,6 @@ int LPCPLAY::run()
 	int   n = 0;
 	float out[2];        /* Space for only 2 output chans! */
 
-	/* You MUST call the base class's run method here. */
-	Instrument::run();
 #if 0
 		printf("\nLPCPLAY::run()\n");
 #endif
@@ -649,9 +645,6 @@ int LPCIN::run()
 	int   n = 0;
 	float out[2];        /* Space for only 2 output chans! */
 	const int inchans = inputChannels();
-
-	/* You MUST call the base class's run method here. */
-	Instrument::run();
 
 	// Samples may have been left over from end of previous run's block
 	if (_leftOver > 0)

@@ -105,8 +105,6 @@ int SGRANR::run()
 	float out[2];
 	float loc;
         
-	Instrument::run();
-
 //        if ( (durhi*(float)SR) > chunksamps)
 //		advise("SGRANR", "Grain duration larger than buffer.");
 

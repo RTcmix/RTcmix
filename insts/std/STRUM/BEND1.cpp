@@ -87,8 +87,6 @@ int BEND1::run()
 	float freq;
 	float a,b;
 
-	Instrument::run();
-
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch < 0) {
 			if (amptable)

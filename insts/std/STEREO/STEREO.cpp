@@ -93,8 +93,6 @@ int STEREO::run()
 	if (in == NULL)    /* first time, so allocate it */
 		in = new float [RTBUFSAMPS * inputchans];
 
-	Instrument::run();
-
 	rsamps = chunksamps*inputchans;
 
 	rtgetin(in, this, rsamps);

@@ -121,8 +121,6 @@ int VSTART1::run()
 	float vamp;
 	float freqch;
 
-	Instrument::run();
-
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch1 < 0) {
 			vsi = (( (rrand()+1.0)/2.0) * vsidiff) + vsibot;

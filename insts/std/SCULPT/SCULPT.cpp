@@ -73,8 +73,6 @@ int SCULPT::run()
 	float si=0.;
 	float overamp, aamp=0.;
 
-	Instrument::run();
-
 	overamp = amp;            /* in case amptable == NULL */
 
 	for (i = 0; i < chunksamps; i++) {

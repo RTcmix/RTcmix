@@ -218,8 +218,6 @@ int MBASE::getInput(int currentSample, int frames)
 
 int MBASE::configure()
 {
-    Instrument::configure();
-
 	in = new float [RTBUFSAMPS * inputchans];
     alloc_delays();                     /* allocates memory for delays */
 
@@ -229,7 +227,7 @@ int MBASE::configure()
 		advise(name(), "Running in binaural mode.");
 		alloc_firfilters();                     // allocates memory for FIRs
 	}
-	return 1;
+	return 0;
 }
 
 /* ------------------------------------------------------------------ run --- */
@@ -237,8 +235,6 @@ int MBASE::run()
 {
 	int    i = 0;
 
-    Instrument::run();
-    
 	const int totalSamps = insamps + tapcount;
 
 	DBG1(printf("%s::run(): totalSamps = %d\n", name(), totalSamps));

@@ -143,8 +143,6 @@ int HOLO::run()
 	if (out == NULL)        /* first time, so allocate it */
 		out = new float [RTBUFSAMPS * inputchans];
 
-	Instrument::run();
-
 	int rsamps = chunksamps*inputchans;
 	rtgetin(in, this, rsamps);
 

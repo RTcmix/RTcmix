@@ -144,8 +144,6 @@ int STGRANR::run()
 	if (in == NULL)        /* first time, so allocate it */
 		in = new float [RTBUFSAMPS * inputchans];
 
-	Instrument::run();
-
 //        if ( (durhi*(float)SR) > chunksamps)
 //		advise("STGRANR", "Grain duration larger than buffer.");
         

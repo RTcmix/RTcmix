@@ -87,8 +87,6 @@ int START1::run()
 	float out[2];
 	float a,b;
 
-	Instrument::run();
-
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch < 0) {
 			if (amptable)

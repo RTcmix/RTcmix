@@ -74,8 +74,6 @@ int CLAR::run()
 	float del2sig,csig,ssig;
 	int branch;
 
-	Instrument::run();
-
 	aamp = oamp = 1.0;        /* in case amparr or oamparr are NULL */
 
 	branch = 0;

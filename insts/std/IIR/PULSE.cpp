@@ -68,8 +68,6 @@ int PULSE::run()
 	int branch;
 	float mypulse(float, float, float*);
 
-	Instrument::run();
-
 	aamp = oamp;           /* in case amparr == NULL */
 
 	branch = 0;
