@@ -96,7 +96,7 @@ Instrument::rtsetinput(float start_time, Instrument *inst)
 
          inst->sfile_on = 1;
 
-         inskip_frames = (int) (start_time * inst->inputsr);
+         inskip_frames = (int) (start_time * inst->inputsr + 0.5);
 
          /* sndlib always uses 2 for datum size, even if the actual size is
             different. However, we don't use sndlib to read float files, so
