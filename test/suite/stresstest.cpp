@@ -28,6 +28,7 @@ main(int argc, char *argv[])
 	int checkCount, checkInterval;
 	int i;
 	int verbose = 0;
+	int bufsize = 256;
 	int duration = 10000;	// in seconds
 	double start, pval, pval2, pval3, spread;
 	struct timeval tv;
@@ -49,8 +50,11 @@ main(int argc, char *argv[])
 				duration = atoi(argv[++arg]);
 				printf("Running for %d seconds...\n", duration);
 				break;
+			case 'b':
+				bufsize = atoi(argv[++arg]);
+				break;
 			default:
-				fprintf(stderr, "usage: %s <-s randseed> <-v>\n", argv[0]);
+				fprintf(stderr, "usage: %s <-b bufsize> <-s randseed> <-v>\n", argv[0]);
 				exit(1);
 			}
 		}
@@ -60,7 +64,7 @@ main(int argc, char *argv[])
 		}
 	}
 
-	rrr = new RTcmix(44100.0, 2, 256);
+	rrr = new RTcmix(44100.0, 2, bufsize);
 	if (verbose)
 		rrr->printOn();
 	else
