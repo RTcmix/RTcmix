@@ -31,33 +31,30 @@ resample version 1.2 (jos@ccrma.stanford.edu)\n\
 #define DEFAULT_BETA      9.0
 #define DEFAULT_LENGTH    65     /* NOTE: depends on being MAXNWING >= 8192 */
 
-#define USAGE "\n\
-Usage: resample -r NEW_SRATE [options] inputfile [outputfile]        \n\
-                                                                     \n\
-  If no output file specified, writes to \"inputfile.resamp\".       \n\
-                                                                     \n\
+#define USAGE "\
   Two kinds of sampling rate conversion:                             \n\
      (1) using Kaiser-windowed low-pass filter (better)              \n\
-     (2) using linear interpolation only (faster)                    \n\
-                                                                     \n\
-  For (1), default filter is ok, but for best quality, use -a.       \n\
-  Or design your own filter, using options -f, -b and -l.            \n\
-  (Read \"resample.doc\" to find out how.)                           \n\
+     (2) using linear interpolation only, no filter (faster)         \n\
+  For (1), use either no option, in which case you get the default,  \n\
+  decent-quality resampling filter; use the -a option for a better   \n\
+  quality filter; or use a combination of the -f, -b and -l options  \n\
+  to design your own filter. (Read \"resample.doc\" to find out how.)\n\
   For (2), use -i.                                                   \n\
                                                                      \n\
-  Option Summary                                                     \n\
-  ------------------------------------------------------------------ \n\
-    -a       triple-A quality resampling filter                      \n\
-  OR:                                                                \n\
-    -f NUM   rolloff Frequency (0 < freq <= 1)        [default: 0.9] \n\
-    -b NUM   Beta ( >= 1)                             [default: 9.0] \n\
-    -l NUM   filter Length (odd number <= 65)         [default: 65]  \n\
+  Usage: resample -r NEW_SRATE [options] inputfile [outputfile]      \n\
                                                                      \n\
-    -n       No interpolation of filter coefficients (faster)        \n\
-    -i       resample by linear Interpolation, not with filter       \n\
-    -t       Terse (don't print out so much stuff)                   \n\
-    -v       print Version of program and quit                       \n\
-\n\
+  Options:                                                           \n\
+     -a       triple-A quality resampling filter                     \n\
+  OR:                                                                \n\
+     -f NUM   rolloff Frequency (0 < freq <= 1)       [default: 0.9] \n\
+     -b NUM   Beta ( >= 1)                            [default: 9.0] \n\
+     -l NUM   filter Length (odd number <= 65)        [default: 65]  \n\
+                                                                     \n\
+     -n       No interpolation of filter coefficients (faster)       \n\
+     -i       resample by linear Interpolation, not with filter      \n\
+     -t       Terse (don't print out so much)                        \n\
+     -v       print Version of program and quit                      \n\
+  If no output file specified, writes to \"inputfile.resamp\".       \n\
 "
 
 
