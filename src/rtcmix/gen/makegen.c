@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+extern double gen1(struct gen *gen, char *sfname);
 extern double gen2(struct gen *gen);
 extern double gen3(struct gen *gen);
 extern double gen5(struct gen *gen);
@@ -33,17 +34,18 @@ int f_goto[MAXGENS];   /* this is used to guarantee unique farrays in rtcmix */
 
 /* p0=storage loc, p1=gen no, p2=size, p3--> = args */
 double
-makegen(float p[], int n_args)
+makegen(float p[], int n_args, double pp[])
 {
-   float  *block;
+   int    genslot, genno;
    double retval = -1.0;
    struct gen gen;
 
-   int genno = p[0];
-   if (genno < 0)
-      genno = -genno;
+   genslot = (int) p[0];
+   genno = (int) p[1];
 
-   if (genno >= MAXGENS)
+   if (genslot < 0)
+      genslot = -genslot;
+   if (genslot >= MAXGENS)
       die("makegen", "no more simultaneous gens available!");
 
    /* makegen now creates a new function for *every* call to it - this
@@ -52,25 +54,27 @@ makegen(float p[], int n_args)
       of where to map a particular function table number during the
       queueing of RT Instruments
    */
-   f_goto[genno] = ngens;
+   f_goto[genslot] = ngens;
 
    gen.size = p[2];
 
 // FIXME: Should we really be using valloc here?  -JGG
-   block = (float *) valloc((unsigned) gen.size * FLOAT);
-   if (block == NULL)
-      die("makegen", "Not enough memory for function table %d.", genno);
-   farrays[f_goto[genno]] = block;
+   if (genno != 1) {    /* gen1 must allocate its own memory */
+      float *block = (float *) valloc((unsigned) gen.size * FLOAT);
+      if (block == NULL)
+         die("makegen", "Not enough memory for function table %d.", genslot);
+      farrays[f_goto[genslot]] = block;
+   }
    ngens++;
 
-   sizeof_farray[f_goto[genno]] = p[2];
+   sizeof_farray[f_goto[genslot]] = p[2];
 
    gen.nargs = n_args - 3;
    gen.pvals = p + 3;
-   gen.array = farrays[f_goto[genno]];
-   gen.slot = (int) p[0];
+   gen.array = farrays[f_goto[genslot]];
+   gen.slot = (int) p[0];   /* get from pfield, to preserve negative "flag" */
 
-   switch ((int) p[1]) {
+   switch (genno) {
       case 25:
          retval = gen25(&gen);
          break;
@@ -106,6 +110,19 @@ makegen(float p[], int n_args)
          break;
       case 2:
          retval = gen2(&gen);
+         break;
+      case 1:
+         {
+            char *sfname = (char *) ((int) pp[3]);
+            gen.pvals = p + 2;    /* gen1() needs size pfield */
+            gen.nargs++;
+            retval = gen1(&gen, sfname);
+            if (retval != -1.0) {
+               /* We don't know these before calling gen1, so get them now. */
+               farrays[f_goto[genslot]] = gen.array;
+               sizeof_farray[f_goto[genslot]] = gen.size;
+            }
+         }
          break;
       default:
          die("makegen", "There is no gen%d.", (int) p[1]);
