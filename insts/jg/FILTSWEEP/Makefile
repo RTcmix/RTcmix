@@ -1,0 +1,28 @@
+include ../package.conf
+
+OBJLIBDIR = ../objlib
+OBJLIB_A = $(OBJLIBDIR)/objlib.a
+OBJLIB_H = $(OBJLIBDIR)/objlib.h
+
+OBJS = FILTSWEEP.o
+CMIXOBJS += $(PROFILE_O)
+#CFLAGS += -fPIC
+#CXXFLAGS += -fPIC 
+CXXFLAGS += -I$(OBJLIBDIR)
+PROGS = FILTSWEEP libFILTSWEEP.so
+
+all: libFILTSWEEP.so
+
+standalone: FILTSWEEP
+
+libFILTSWEEP.so: $(OBJS) $(GENLIB) $(OBJLIB_A)
+	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
+	$(GENLIB) $(SYSLIBS) $(OBJLIB_A)
+
+FILTSWEEP: $(OBJS) $(CMIXOBJS) $(OBJLIB_A)
+	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(OBJLIB_A) $(LDFLAGS)
+
+$(OBJS): $(INSTRUMENT_H) FILTSWEEP.h
+
+clean:
+	$(RM) $(OBJS) $(PROGS)
