@@ -1,5 +1,17 @@
+Thursday, April 12, 2000 John Gibson <johngibson@virginia.edu>
+
+   * Changed the sample WAVETABLE scores to use new function
+     table assignments.
+   * Merged the INSTALL files into a top-level INSTALL file.
+   * New PLACE instrument - just like disk-based place, but 
+     using RT mechanism for faster file i/o.
+   * Added dBFS peak and location in seconds to peak stats report.
+     (rtsendsamps.c)
+
 Saturday March 26, 2000 John Gibson <johngibson@virginia.edu>
 
+   * Show peak stats, and close output file, even when killing with
+     control-C. (main.C)
    * Added dbamp function for lib and Minc.
 	* Bumped version number (version.h) to 2.3.1.
 	* Finally created this ChangeLog.
