@@ -1,14 +1,21 @@
 #include "../H/byte_routines.h"
 #include "../H/sfheader.h"
 #include <stdio.h>
-#include <sys/file.h>
+#include <stdlib.h>
+#include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
 #include <signal.h>
+#include <string.h>
+#include <time.h>
 #include <errno.h>
 #include <math.h>
+#ifdef USE_SNDLIB
+#include "../H/sndlibsupport.h"
+#endif
 
-extern int swap;
+int swap;
 
 static SFCODE	ampcode = {
 	SF_MAXAMP,
@@ -20,19 +27,11 @@ static SFCODE	commentcode = {
 	MINCOMM + sizeof(SFCODE)
 	};
 
-main(argc,argv)
-
-int argc;
-char *argv[];
-
+int
+main(int argc, char *argv[])
 {
 	int sf;
-	long atol();
-	float dur;
 	int comment = 0;
-#ifndef atof
-	double atof();
-#endif
 	struct stat sfst;
 	SFHEADER sfh;
 	SFMAXAMP sfm;
@@ -44,17 +43,18 @@ char *argv[];
 	float newsrate;
 	int zap;
 
-	length = zap = newchans = newclass = newsrate = newpeak = 0;
+	zap = newchans = newclass = newsrate = newpeak = 0;
+	length = 1;
 
 	if(argc > 1) {
 		if(*argv[1] != '-') {
 			printf("usage: \"sfhedit -r [srate] -[i=int;f=float] -c [nchans] -p [peak] -w [comment] -z\"\n");
-			exit(-1);
+			exit(1);
 		}
 	}
 	else if(argc == 1) {
 		printf("usage: \"sfhedit -r [srate] -[i=int;f=float] -c [nchans] -p [peak] -w [comment] -z\"\n");
-		exit(-1);
+		exit(1);
 	}
 
 	while((*++argv)[0] == '-') {
@@ -101,7 +101,7 @@ char *argv[];
 			}
 		}
 	}
-        sfname = argv[0];
+	sfname = argv[0];
 	rwopensf(sfname,sf,sfh,sfst,"sfhedit",result,2);
 	if(result < 0) {
 		exit(1);
@@ -122,9 +122,11 @@ char *argv[];
 	if(newpeak) {
 		for(i=0; i<sfchans(&sfh); i++) {
 			printf("Enter peak and time for channel %d\t",i);
-			scanf("%f %d",&sfmaxamp(&sfm,i),&sfmaxamploc(&sfm,i));
+			scanf("%f %ld",&sfmaxamp(&sfm,i),&sfmaxamploc(&sfm,i));
 		}
+		sfmaxamptime(&sfm) = time(NULL);
 
+#ifndef USE_SNDLIB
 		if (swap) {
 		  printf("Swapping MAXAMP data\n");
 		  for (i=0;i<SF_MAXCHAN;i++) {
@@ -133,25 +135,20 @@ char *argv[];
 		  }
 		  byte_reverse4(&sfm.timetag);
 		}
+#endif /* !USE_SNDLIB */
 
-		putsfcode(&sfh,&sfm,&ampcode);
+		putsfcode(&sfh,(char *)&sfm,&ampcode);
 	}
 	if(zap) {
 	 	if(ftruncate(sf,0) < 0) 
 			printf("Bad truncation\n");
 		for(i=0; i<sfchans(&sfh); i++) {
 			sfmaxamp(&sfm,i) = sfmaxamploc(&sfm,i) = 0;
-		putsfcode(&sfh,&sfm,&ampcode);
+		putsfcode(&sfh,(char *)&sfm,&ampcode);
 		putlength(sfname,sf,&sfh);
 		}
 		printf("file truncated to 0, and header adjusted\n");
 	}
-	if (length) {
-		putlength(sfname,sf,&sfh);
-#if defined(NeXT) | defined(NEXT)
-		printf("NeXT header updated\n");
-#endif
-		}
 	if(comment) {
 		cp = getsfcode(&sfh,SF_COMMENT);
 		if(cp == NULL) {
@@ -173,34 +170,47 @@ char *argv[];
 				commentcode.bsize = nchars + sizeof(SFCODE);
 			if (i > nchars)
 				commentcode.bsize = i + sizeof(SFCODE);
-			if (putsfcode(&sfh,&sfcm,&commentcode) < 0) {
+			if (putsfcode(&sfh,(char *)&sfcm,&commentcode) < 0) {
 				printf("comment didn't get written, sorry!\n");
-				exit(-1);
+				exit(1);
 			}
 			goto skip;
 		}
 
+#ifdef USE_SNDLIB
+		strncpy((char *)&sfcm, sfcommentstr(&sfh), MAXCOMM - 1);
+		sfcm.comment[MAXCOMM - 1] = '\0';
+#else
 		sizer = (SFCODE *) cp;
 		bcopy(cp + sizeof(SFCODE) , (char *) &sfcm, sizer->bsize - sizeof(SFCODE));
+#endif
 
 		tfd = open("/tmp/tmpcom",O_CREAT|O_RDWR,0644);
 		tn = write(tfd, &sfcomm(&sfcm,0), strlen(&sfcomm(&sfcm,0)));
 		close(tfd);
 		system("vi /tmp/tmpcom");
 		tfd = open("/tmp/tmpcom",0);
+#ifdef USE_SNDLIB
+		n = read(tfd,&sfcomm(&sfcm,0),MAXCOMM);
+#else
 		n = read(tfd,&sfcomm(&sfcm,0),sizer->bsize);
+#endif
 		system("rm /tmp/tmpcom");
 		if (n < tn) {
 			for (i = n; i <= tn; i++) {
 				sfcomm(&sfcm,i) = '\0';
 			}
 		}
-		if (putsfcode(&sfh,&sfcm,sizer) < 0) {
+#ifdef USE_SNDLIB
+		if (putsfcode(&sfh,(char *)&sfcm,&commentcode) < 0) {
+#else
+		if (putsfcode(&sfh,(char *)&sfcm,sizer) < 0) {
+#endif
 			printf("comment didn't get written, sorry!\n");
-			exit(-1);
+			exit(1);
 		}
 	}
-
+#ifndef USE_SNDLIB
 	/* Swap main header info */
 	if (swap) {
 	  byte_reverse4(&sfh.sfinfo.sf_magic);
@@ -208,11 +218,21 @@ char *argv[];
 	  byte_reverse4(&sfh.sfinfo.sf_chans);
 	  byte_reverse4(&sfh.sfinfo.sf_packmode); 
 	}
+#endif /* !USE_SNDLIB */
 
 skip:	lseek(sf,0,0);
 	if(wheader(sf,(char *)&sfh)) {
 	       printf("Can't seem to write header on file %s\n",sfname);
 		perror("main");
-		exit(-1);
+		exit(1);
 	}
+
+	if (length) {      /* do this last, after wheader */
+		putlength(sfname,sf,&sfh);
+#if defined(NeXT) | defined(NEXT)
+		printf("NeXT header updated\n");
+#endif
+		}
+
+	return 0;
 }
