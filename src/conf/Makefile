@@ -52,3 +52,6 @@ uninstall:
 clean:
 	$(RM) *.o $(LIBCONF) $(TEST) *$(SYMPREFIX).c *.tab.cpp *.tab.hpp $(CONF).c \
 		*.output depend
+
+cleanall: clean
+
