@@ -5,73 +5,37 @@
 
 #include <Odelayi.h>
 
-Odelayi::Odelayi(long maxLength)
+Odelayi::Odelayi(long defaultLen) : Odelay(defaultLen), _frac(0.0)
 {
-	_maxlen = maxLength;
-	_dline = new float[_maxlen];
-	clear();
-	_outpoint = 0;
-	_inpoint = _maxlen - 1;
-	_frac = 0.0;
 }
 
 Odelayi::~Odelayi()
 {
-	delete [] _dline;
-}
-
-void Odelayi::clear()
-{
-	for (long i = 0; i < _maxlen; i++)
-		_dline[i] = 0.0;
-	_lastout = 0.0;
-}
-
-void Odelayi::putsamp(float samp)
-{
-	_dline[_inpoint++] = samp;
-	if (_inpoint == _maxlen)
-		_inpoint = 0;
 }
 
 float Odelayi::getsamp(double lagsamps)
 {
-	double outptr = (double) _inpoint - lagsamps;
-	while (outptr < 0.0)
-		outptr += (double) _maxlen;
-	_outpoint = (long) outptr;
-	_frac = outptr - _outpoint;
-	_lastout = _dline[_outpoint++];
-	if (_outpoint < _maxlen)
-		_lastout += (_dline[_outpoint] - _lastout) * _frac;
+	_frac = lagsamps - (long) lagsamps;
+	const float out = Odelay::getsamp(lagsamps);	// This increments _outpoint
+	register float next;
+	if (_outpoint < _len)
+		next = _dline[_outpoint];
 	else
-		_lastout += (_dline[0] - _lastout) * _frac;
-	return _lastout;
+		next = _dline[0];
+	return _lastout = out + ((next - out) * _frac);
 }
 
-// Set output pointer <_outpoint> and interp fraction <_frac>.
+// Set interp fraction <_frac>.  Base class sets output pointer.
 
 void Odelayi::setdelay(double lagsamps)
 {
-	double outptr = (double) _inpoint - lagsamps;
-	while (outptr < 0.0)
-		outptr += (double) _maxlen;
-	_outpoint = (long) outptr;
-	_frac = outptr - _outpoint;
+	Odelay::setdelay(lagsamps);
+	_frac = lagsamps - (long) lagsamps;
 }
 
 float Odelayi::next(float input)
 {
-	_dline[_inpoint++] = input;
-	if (_inpoint == _maxlen)
-		_inpoint = 0;
-	_lastout = _dline[_outpoint++];
-	if (_outpoint < _maxlen)
-		_lastout += (_dline[_outpoint] - _lastout) * _frac;
-	else {
-		_lastout += (_dline[0] - _lastout) * _frac;
-		_outpoint -= _maxlen;
-	}
-	return _lastout;
+	const float out = Odelay::next(input);	// This increments and wraps _outpoint
+	return _lastout = (_dline[_outpoint] - out) * _frac;
 }
 

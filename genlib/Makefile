@@ -97,6 +97,7 @@ wshape.o
 OCFILES = \
 Ocomb.cpp \
 Ocombi.cpp \
+Odelay.cpp \
 Odelayi.cpp \
 Oequalizer.cpp \
 Oonepole.cpp \
@@ -107,6 +108,7 @@ Orand.cpp
 OOBJECTS = \
 Ocomb.o \
 Ocombi.o \
+Odelay.o \
 Odelayi.o \
 Oequalizer.o \
 Oonepole.o \
