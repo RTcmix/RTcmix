@@ -165,7 +165,7 @@ MincFloat
 _minc_printf(const MincListElem args[], const int nargs)
 {
    int n;
-   char *p;
+   const char *p;
 
    if (args[0].type != MincStringType) {
       minc_warn("printf: first argument must be format string");
@@ -215,7 +215,7 @@ _minc_printf(const MincListElem args[], const int nargs)
                   break;
                case 't':      /* print type of object */
                   {
-                     char *tstr = _make_type_string(args[n].type);
+                     char *tstr = (char *) _make_type_string(args[n].type);
                      fputs(tstr, stdout);
                      free(tstr);
                   }
