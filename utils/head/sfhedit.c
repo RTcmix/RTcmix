@@ -13,8 +13,6 @@
 #include <errno.h>
 #include <math.h>
 
-int swap;
-
 static SFCODE	ampcode = {
 	SF_MAXAMP,
 	sizeof(SFMAXAMP) + sizeof(SFCODE)
