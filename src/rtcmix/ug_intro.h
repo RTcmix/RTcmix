@@ -32,18 +32,7 @@ void addfunc(const char *func_label,
 } /* extern "C" */
 #endif
 
-#if defined(__cplusplus)
-#define UG_INTRO(flabel, func) \
-   { \
-	addfunc(flabel, (LegacyFunction) func, NULL, NULL, NULL, DoubleType, 1); \
-   }
-#else
-#define UG_INTRO(flabel, func) \
-   { \
-      extern double func(); \
-      addfunc(flabel, (LegacyFunction) func, NULL, NULL, NULL, DoubleType, 1); \
-   }
-#endif	/* __cplusplus */
+// Macros for internal function registration.  Public macro is in ugens.h
 
 #define UG_INTRO_DOUBLE_RETURN(flabel, func) \
    { \
