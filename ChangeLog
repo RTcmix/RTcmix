@@ -2,11 +2,15 @@ NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
 
-Sunday, October 20 2002 John Gibson <johgibso@indiana.edu>
+Friday, November 8, 2002 John Gibson <johgibso@indiana.edu>
+
+   * cmixplay lets you use a rescale factor for integer files.
+
+Sunday, October 20, 2002 John Gibson <johgibso@indiana.edu>
 
    * denoise now can process less than the entire input file.
 
-Sunday, September 22 2002 John Gibson <johgibso@indiana.edu>
+Sunday, September 22, 2002 John Gibson <johgibso@indiana.edu>
 
    * sfprint now also prints duration in minutes:seconds format.
    * cmixplay now lets you rewind and fast-forward while playing,
@@ -16,16 +20,16 @@ Sunday, September 22 2002 John Gibson <johgibso@indiana.edu>
 
 **** Released RTcmix-3.2, Thursday, Aug 29, 2002 ****
 
-Wednesday, August 28 2002 John Gibson <johgibso@indiana.edu>
+Wednesday, August 28, 2002 John Gibson <johgibso@indiana.edu>
 
    * Added preliminary documentation system in docs/pod.  See
      "__README__" in that directory.
 
-Monday, August 26 2002 Douglas Scott <netdscott-at-netscape.net>
+Monday, August 26, 2002 Douglas Scott <netdscott-at-netscape.net>
 
    * Added new TRANS3 instrument (3rd-order interp) to libTRANS library.
 
-Thursday, August 22 2002 Douglas Scott <netdscott-at-netscape.net>
+Thursday, August 22, 2002 Douglas Scott <netdscott-at-netscape.net>
 
    * Added new LPCIN instrument to libLPCPLAY library.
    * Minc now ignores text on a line that follows '#' or '//'
