@@ -17,9 +17,6 @@
 // #define ALLBUG
 // #define PBUG
 
-double baseTime;
-long elapsed;
-
 IBusClass checkClass(BusSlot *slot) {
   if (slot == NULL)
 	return UNKNOWN;
@@ -49,7 +46,7 @@ extern "C" {
     Instrument *Iptr;
 
     unsigned long bufEndSamp,endsamp;
-    unsigned long chunkStart;
+    unsigned long rtQchunkStart;
     unsigned long heapChunkStart;
 
     struct timeval tv;
@@ -90,10 +87,8 @@ extern "C" {
     // Initialize everything ... cause it's good practice
     bufStartSamp = 0;  // current end sample for buffer
     bufEndSamp = RTBUFSAMPS;
-    chunkStart = 0;
+    rtQchunkStart = 0;
     heapSize = 0;
-    chunkStart = 0;
-    elapsed = 0;
     rtInst = 0;
     playEm = 0;
 	// These from make warnings ... shouldn't be necessary
@@ -121,11 +116,13 @@ extern "C" {
 	gettimeofday(&tv, &tz);
 	sec = (double)tv.tv_sec;
 	usec = (double)tv.tv_usec;
+	pthread_mutex_lock(&schedtime_lock);
 	baseTime = (sec * 1e6) + usec;
+	pthread_mutex_unlock(&schedtime_lock);
 
     while(playEm) { // the big loop ++++++++++++++++++++++++++++++++++++++++++
 
-#ifdef TBUG
+#ifdef DBUG
 	  printf("Entering big loop .....................\n");
 #endif
 
@@ -136,7 +133,7 @@ extern "C" {
       }
       pthread_mutex_unlock(&heapLock);
 
-#ifdef TBUG
+#ifdef DBUG
 	  cout << "heapSize = " << heapSize << endl;
 	  cout << "heapChunkStart = " << heapChunkStart << endl;
 #endif
@@ -265,7 +262,7 @@ extern "C" {
 		  busq = bus+bus_q_offset;
 		  rtQSize = rtQueue[busq].getSize();
 		  if (rtQSize > 0) {
-			chunkStart = rtQueue[busq].nextChunk();
+			rtQchunkStart = rtQueue[busq].nextChunk();
 		  }
 		}
 		else {
@@ -295,22 +292,22 @@ extern "C" {
 #endif
 
 		// Play elements on queue (insert back in if needed) ++++++++++++++++++
-		while ((rtQSize > 0) && (chunkStart < bufEndSamp) && (bus != -1)) {
+		while ((rtQSize > 0) && (rtQchunkStart < bufEndSamp) && (bus != -1)) {
 		  
 		  Iptr = rtQueue[busq].pop();  // get next instrument off queue
-		  Iptr->set_ichunkstart(chunkStart);
+		  Iptr->set_ichunkstart(rtQchunkStart);
 		  
 		  endsamp = Iptr->getendsamp();
 		  
 		  // difference in sample start (countdown)
-		  offset = chunkStart - bufStartSamp;  
+		  offset = rtQchunkStart - bufStartSamp;  
 		  
 		  // DJT:  may have to expand here.  IE., conditional above
-		  // (chunkStart >= bufStartSamp)
+		  // (rtQchunkStart >= bufStartSamp)
 		  // unlcear what that will do just now
 		  if (offset < 0) { // BGG: added this trap for robustness
 			cout << "WARNING: the scheduler is behind the queue!" << endl;
-			cout << "chunkStart:  " << chunkStart << endl;
+			cout << "rtQchunkStart:  " << rtQchunkStart << endl;
 			cout << "bufStartSamp:  " << bufStartSamp << endl;
 			offset = 0;
 		  }
@@ -318,15 +315,15 @@ extern "C" {
 		  Iptr->set_output_offset(offset);
 		  
 		  if (endsamp < bufEndSamp) {  // compute # of samples to write
-			chunksamps = endsamp-chunkStart;
+			chunksamps = endsamp-rtQchunkStart;
 		  }
 		  else {
-			chunksamps = bufEndSamp-chunkStart;
+			chunksamps = bufEndSamp-rtQchunkStart;
 		  }
 
-#ifdef TBUG
+#ifdef DBUG
 		  cout << "Begin playback iteration==========\n";
-		  cout << "Q-chunkStart:  " << chunkStart << endl;
+		  cout << "Q-rtQchunkStart:  " << rtQchunkStart << endl;
 		  cout << "bufEndSamp:  " << bufEndSamp << endl;
 		  cout << "RTBUFSAMPS:  " << RTBUFSAMPS << endl;
 		  cout << "endsamp:  " << endsamp << endl;
@@ -342,10 +339,10 @@ extern "C" {
 		  
 		  // ReQueue or delete ++++++++++++++++++++++++++++++++++++++++++++++
 		  if (endsamp > bufEndSamp) {
-#ifdef TBUG
+#ifdef DBUG
 			cout << "re queueing\n";
 #endif
-			rtQueue[busq].push(Iptr,chunkStart+chunksamps);   // put back onto queue
+			rtQueue[busq].push(Iptr,rtQchunkStart+chunksamps);   // put back onto queue
 		  }
 		  else {
 			pthread_mutex_lock(&bus_slot_lock);
@@ -381,15 +378,15 @@ extern "C" {
 			pthread_mutex_unlock(&bus_slot_lock);
  		  }  // end rtQueue or delete ----------------------------------------
 		  
-		  // DJT:  not sure this check before new chunkStart is necessary
+		  // DJT:  not sure this check before new rtQchunkStart is necessary
 		  rtQSize = rtQueue[busq].getSize();
 		  if (rtQSize) {
-			chunkStart = rtQueue[busq].nextChunk(); /* FIXME:  crapping out */
+			rtQchunkStart = rtQueue[busq].nextChunk(); /* FIXME:  crapping out */
 			allQSize += rtQSize;                /* in RT situation sometimes */
 		  }
-#ifdef TBUG
+#ifdef DBUG
 		  cout << "rtQSize: " << rtQSize << endl;
-		  cout << "chunkStart:  " << chunkStart << endl;
+		  cout << "rtQchunkStart:  " << rtQchunkStart << endl;
 		  cout << "chunksamps:  " << chunksamps << endl;
 		  cout << "Iteration done==========\n";
 #endif
@@ -397,9 +394,9 @@ extern "C" {
 	  }  // end aux_pb_done --------------------------------------------------
 	  
 	  // Write buf to audio device - - - - - - - - - - - - - - - - - - - - -
-#ifdef TBUG
+#ifdef DBUG
 	  cout << "Writing samples----------\n";
-	  cout << "Q-chunkStart:  " << chunkStart << endl;
+	  cout << "Q-rtQchunkStart:  " << rtQchunkStart << endl;
 	  cout << "bufEndSamp:  " << bufEndSamp << endl;
 #endif
 	  
@@ -408,8 +405,10 @@ extern "C" {
 	  gettimeofday(&tv, &tz);
 	  sec = (double)tv.tv_sec;
 	  usec = (double)tv.tv_usec;
+	  pthread_mutex_lock(&schedtime_lock);
 	  baseTime = (sec * 1e6) + usec;
 	  elapsed += RTBUFSAMPS;	
+	  pthread_mutex_unlock(&schedtime_lock);
 	  bufStartSamp += RTBUFSAMPS;
 	  bufEndSamp += RTBUFSAMPS;
 

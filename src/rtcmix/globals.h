@@ -78,6 +78,9 @@ GLOBAL int socknew;
 GLOBAL unsigned long bufStartSamp;
 /* Used by rtsetoutput and sockit to sync up timing */
 GLOBAL double schedtime;
+/* Used by sockit / intraverse to sync up */
+GLOBAL double baseTime;
+GLOBAL long elapsed;
 
 #include <pthread.h>
 #ifdef MAIN      /* Have to do this because must be inited in definition. */
@@ -98,6 +101,7 @@ pthread_mutex_t aux_out_in_use_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t out_in_use_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t revplay_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t bus_slot_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t schedtime_lock = PTHREAD_MUTEX_INITIALIZER;
 /* pthread_mutex_t heapLock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP; */
 #else
 GLOBAL pthread_mutex_t heapLock;
@@ -117,6 +121,7 @@ GLOBAL pthread_mutex_t aux_out_in_use_lock;
 GLOBAL pthread_mutex_t out_in_use_lock;
 GLOBAL pthread_mutex_t revplay_lock;
 GLOBAL pthread_mutex_t bus_slot_lock;
+GLOBAL pthread_mutex_t schedtime_lock;
 #endif
 
 /* -------------------------------------------------------------------------- */

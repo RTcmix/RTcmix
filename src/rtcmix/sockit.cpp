@@ -29,8 +29,6 @@ extern "C" {
   void *sockit(void*)
   {
 
-    extern double baseTime;
-    extern long elapsed;
     double buftime,sec,usec;
     struct timeval tv;
     struct timezone tz;
@@ -161,9 +159,11 @@ extern "C" {
 		  gettimeofday(&tv, &tz);
 		  sec = (double)tv.tv_sec;
 		  usec = (double)tv.tv_usec;
+		  pthread_mutex_lock(&schedtime_lock);
 		  schedtime = (((sec * 1e6) + usec) - baseTime) * 1e-6;
 		  schedtime += ((double)elapsed/(double)SR);
 		  schedtime += buftime;
+		  pthread_mutex_unlock(&schedtime_lock);
 	  
 #ifdef DBUG
 		  cout << "sockit(): schedtime = " << schedtime << endl;

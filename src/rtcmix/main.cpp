@@ -107,6 +107,11 @@ init_globals()
    check_peaks = 1;
    report_clipping = 1;
 
+   /* I can't believe these were never initialized */
+   baseTime = 0;
+   elapsed = 0;
+   schedtime = 0;
+
    output_data_format = -1;
    output_header_type = -1;
    normalize_output_floats = 0;
