@@ -11,7 +11,7 @@ ifeq ($(ARCH), MACOSX_10.0)
    WORKAROUND = osx_workaround.o
 endif
 
-PERL_LDFLAGS = `perl -MExtUtils::Embed -e ldopts`
+PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts`
 
 TARGETS = MIX
 ifeq ($(PERL_SUPPORT), TRUE)

@@ -17,7 +17,7 @@ all: $(EXT_FILE)
 .PHONY: install clean cleanall
 
 $(EXT_FILE): $(XS_DIR)/$(XS_FILE) $(XS_DIR)/$(PM_FILE)
-	( cd $(XS_DIR); perl Makefile.PL; $(MAKE) )
+	( cd $(XS_DIR); $(PERL) Makefile.PL; $(MAKE) )
 
 install:
 	@echo "making install..."	
