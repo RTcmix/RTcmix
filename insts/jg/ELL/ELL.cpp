@@ -124,7 +124,7 @@ int ELL::init(float p[], short n_args)
    if (inchan == -1) {
       if (inputchans == 1)
          inchan = 0;
-      else if (inputchans != NCHANS) {
+      else if (inputchans != outputchans) {
          fprintf(stderr,
                  "Input and output files have differing numbers of channels,\n"
                  "so you have to specify 1 input channel.\n");
@@ -133,7 +133,7 @@ int ELL::init(float p[], short n_args)
    }
 
    /* <spread> relevant only when output is stereo and there's 1 input chan. */
-   if (NCHANS == 2 && inchan != -1) {
+   if (outputchans == 2 && inchan != -1) {
       if (spread == -1.0)
          spread = 0.5;                     /* just set it to middle */
    }
@@ -211,12 +211,12 @@ int ELL::run()
       }
       if (inchan != -1) {                     /* only one input chan */
          float val = ellipse(insig, nsects, es[inchan], xnorm);
-         if (NCHANS == 2) {                   /* then use spread */
+         if (outputchans == 2) {              /* then use spread */
             out[0] = val * spread; 
             out[1] = val * (1.0 - spread);
          }
          else {
-            for (n = 0; n < NCHANS; n++)
+            for (n = 0; n < outputchans; n++)
                out[n] = val;
          }
       }

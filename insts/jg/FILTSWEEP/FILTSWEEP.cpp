@@ -90,7 +90,7 @@ int FILTSWEEP :: init(float p[], short n_args)
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
    insamps = (int)(dur * SR);
 
-   if (NCHANS != 2) {
+   if (outputchans != 2) {
       fprintf(stderr, "Output must be stereo!\n");
       exit(1);
    }
@@ -197,7 +197,7 @@ int FILTSWEEP :: run()
       if (do_balance)
          out[0] = balancer->tick(out[0], insig);
 
-      if (NCHANS == 2) {
+      if (outputchans == 2) {
          out[1] = out[0] * (1.0 - pctleft);
          out[0] *= pctleft;
       }

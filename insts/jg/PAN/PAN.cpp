@@ -69,7 +69,7 @@ int PAN :: init(float p[], short n_args)
    nsamps = rtsetoutput(outskip, dur, this);
    rtsetinput(inskip, this);
 
-   if (NCHANS != 2) {
+   if (outputchans != 2) {
       fprintf(stderr, "Output must be stereo!\n");
       exit(1);
    }

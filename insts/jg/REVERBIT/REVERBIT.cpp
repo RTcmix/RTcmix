@@ -91,7 +91,7 @@ int REVERBIT::init(float p[], short n_args)
    cutoff = p[7];
    dcblock = n_args > 8 ? (int)p[8] : 1;           /* default is "yes" */
 
-   if (NCHANS != 2) {
+   if (outputchans != 2) {
       fprintf(stderr, "REVERBIT requires stereo output.\n");
       exit(1);
    }
