@@ -13,6 +13,11 @@ if (distribution < 0 || distribution > 5) {
    str_num("0=even, 1=low-weighted, 2=high-weighted, 3=triangle, 4=gaussian, 5=cauchy")
    exit(1)
 }
+if (n_arg() > 3)
+   seed = i_arg(2)
+else
+   seed = 0      /* take seed from microsecond clock */
+
 /* -------------------------------------------------------------------------- */
 
 if (distribution == 0)
@@ -28,7 +33,12 @@ else if (distribution == 4)
 else if (distribution == 5)
    str_num("You're making a Cauchy distribution, d'accord, c'est tout...")
 
-makegen(1, 20, slots, distribution)
+if (seed)
+   str_num("(using ", seed, " as a seed)")
+else
+   str_num("(consulting microsec counter for seed)")
+
+makegen(1, 20, slots, distribution, seed)
 
 for (i = 0; i < slots; i = i + 1) {
    num = sampfunc(1, i)
