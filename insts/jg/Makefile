@@ -50,6 +50,7 @@ clean:
 	  rm -f $(DESTDIR)/$$DIR; \
 	  rm -f $(LIBDESTDIR)/lib$$DIR.so; ) \
 	done
+	( cd objlib; make clean; )
 
 dso_clean:
 	@for DIR in $(LIBDIRS); \
