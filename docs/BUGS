@@ -17,6 +17,8 @@ If there's a space after "9.11", the job will bail with
 
 -JGG (11/15/99)
 
+[NOTE: fixed in new alternative implementation of gen2  -JGG]
+
 ------------
 
 problem in MIX (and no doubt any other processing inst)...
@@ -41,4 +43,12 @@ really chews up memory fast for some scores, so it's not the way to go.
 
 -JGG (2/8/00)
 
+------------
+
+Spurious "... is an undefined function or Instrument" error msgs from Minc.
+When a Minc function happens to return -1 (as trunc() does in STRUM9.sco),
+parse_dispatch interprets that as an error code from checkfuncs, and later
+from rtdispatch. Needs a minor redesign.
+
+-JGG (4/26/00)
 
