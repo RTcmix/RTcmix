@@ -324,7 +324,7 @@ extern "C" {
 			  endbus = Iptr->bus_config->auxout[t_count];
 			  break;
 			case TO_AUX_AND_OUT:
-			  if (qStatus = TO_OUT) {
+			  if (qStatus == TO_OUT) {
 				t_count = Iptr->bus_config->out_count;
 				endbus = Iptr->bus_config->out[t_count];			
 			  }
