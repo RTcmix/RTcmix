@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Wednesday, June 2, 2004 John Gibson <johgibso-at-indiana.edu>
+
+   * First version of experimental code: Minc v.2 and support
+     for new PField class scheme.
+
 2004-05-19  Douglas Scott  <netdscott at netscape.net>
 
 	* 4th revision to audio device code.  HW record and play are
