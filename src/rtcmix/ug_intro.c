@@ -12,6 +12,7 @@ ug_intro()
  */
 #ifdef PFIELD_CLASS
    UG_INTRO_HANDLE_RETURN("maketable", maketable);
+   UG_INTRO_DOUBLE_RETURN("tablelen", tablelen);
    UG_INTRO_HANDLE_RETURN("normtable", normtable);
    UG_INTRO_HANDLE_RETURN("copytable", copytable);
    UG_INTRO_DOUBLE_RETURN("dumptable", dumptable);
