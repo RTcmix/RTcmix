@@ -16,7 +16,7 @@
 #include <assert.h>
 
 
-
+/* ----------------------------------------------------------- Instrument --- */
 Instrument :: Instrument()
 {
    start = 0.0;
@@ -58,6 +58,7 @@ Instrument :: Instrument()
 }
 
 
+/* ---------------------------------------------------------- ~Instrument --- */
 Instrument :: ~Instrument()
 {
    if (sfile_on)
@@ -73,14 +74,15 @@ Instrument :: ~Instrument()
 }
 
 
-// Set the bus_config pointer to the right bus_config for this inst.
-// Then set the inputchans and outputchans members accordingly.
-//
-// Instruments *must* call this from within their makeINSTNAME method. E.g.,
-//
-//     WAVETABLE *inst = new WAVETABLE();
-//     inst->set_bus_config("WAVETABLE");
-//
+/* ------------------------------------------------------- set_bus_config --- */
+/* Set the bus_config pointer to the right bus_config for this inst.
+   Then set the inputchans and outputchans members accordingly.
+  
+   Instruments *must* call this from within their makeINSTNAME method. E.g.,
+  
+       WAVETABLE *inst = new WAVETABLE();
+       inst->set_bus_config("WAVETABLE");
+*/
 void Instrument :: set_bus_config(const char *inst_name)
 {
    bus_config = get_bus_config(inst_name);
@@ -90,6 +92,7 @@ void Instrument :: set_bus_config(const char *inst_name)
 }
 
 
+/* ----------------------------------------------------------------- init --- */
 int Instrument :: init(float p[], short n_args)
 {
    cout << "You haven't defined an init member of your Instrument class!"
@@ -98,16 +101,17 @@ int Instrument :: init(float p[], short n_args)
 }
 
 
-// Instruments *must* call this at the beginning of their run methods,
-// like this:
-//
-//    Instrument::run();
-//
-// This method allocates the instrument's private interleaved output buffer
-// and inits a buffer status array.
-// Note: We allocate here, rather than in ctor or init method, because this
-// will mean less memory overhead before the inst begins playing.
-//
+/* ------------------------------------------------------------------ run --- */
+/* Instruments *must* call this at the beginning of their run methods,
+   like this:
+  
+      Instrument::run();
+  
+   This method allocates the instrument's private interleaved output buffer
+   and inits a buffer status array.
+   Note: We allocate here, rather than in ctor or init method, because this
+   will mean less memory overhead before the inst begins playing.
+*/
 int Instrument :: run()
 {
    if (outbuf == NULL)
@@ -124,34 +128,39 @@ int Instrument :: run()
 }
 
 
+/* ----------------------------------------------------------------- exec --- */
 void Instrument :: exec()
 {
    run();
 }
 
 
-// Replacement for the old rtaddout (in rtaddout.C, now removed).
-// This one copies (not adds) into the inst's outbuf. Later the
-// schedular calls the insts addout method to add outbuf into the 
-// appropriate output buses. Inst's *must* call the class run method
-// before doing their own run stuff. (This is true even if they don't
-// use rtaddout.)
-// Assumes that <samps> contains exactly outputchans interleaved samples.
-// Returns outputchans (i.e., number of samples written).
-//
+/* ------------------------------------------------------------- rtaddout --- */
+/* Replacement for the old rtaddout (in rtaddout.C, now removed).
+   This one copies (not adds) into the inst's outbuf. Later the
+   scheduler calls the insts addout method to add outbuf into the 
+   appropriate output buses. Inst's *must* call the class run method
+   before doing their own run stuff. (This is true even if they don't
+   use rtaddout.)
+   Assumes that <samps> contains exactly outputchans interleaved samples.
+   Returns outputchans (i.e., number of samples written).
+*/
 int Instrument :: rtaddout(BUFTYPE samps[])
 {
    for (int i = 0; i < outputchans; i++)
       *obufptr++ = samps[i];
+
+   return outputchans;
 }
 
 
-// Add signal from one channel of instrument's private interleaved buffer
-// into the specified output bus.
-//
+/* --------------------------------------------------------------- addout --- */
+/* Add signal from one channel of instrument's private interleaved buffer
+   into the specified output bus.
+*/
 void Instrument :: addout(BusType bus_type, int bus)
 {
-   int      samp, endframe, src_chan, buses;
+   int      samp_index, endframe, src_chan, buses;
    short    *bus_list;
    BufPtr   src, dest;
 
@@ -162,7 +171,7 @@ void Instrument :: addout(BusType bus_type, int bus)
       buses = bus_config->auxout_count;
       bus_list = bus_config->auxout;
    }
-   else {       // BUS_OUT
+   else {       /* BUS_OUT */
       dest = out_buffer[bus];
       buses = bus_config->out_count;
       bus_list = bus_config->out;
@@ -180,59 +189,66 @@ void Instrument :: addout(BusType bus_type, int bus)
    assert(dest != NULL);
 
    endframe = output_offset + chunksamps;
-   samp = src_chan;
+   samp_index = src_chan;
 
 // FIXME: pthread_mutex_lock dest buffer
 
    for (int frame = output_offset; frame < endframe; frame++) {
-      dest[frame] += outbuf[samp];
-      samp += outputchans;
+      dest[frame] += outbuf[samp_index];
+      samp_index += outputchans;
    }
 
 // FIXME: pthread_mutex_unlock dest buffer
 }
 
 
+/* ------------------------------------------------------------- getstart --- */
 float Instrument :: getstart()
 {
    return start;
 }
 
+/* --------------------------------------------------------------- getdur --- */
 float Instrument :: getdur()
 {
    return dur;
 }
 
+/* ----------------------------------------------------------- getendsamp --- */
 int Instrument :: getendsamp()
 {
    return endsamp;
 }
 
+/* ----------------------------------------------------------- setendsamp --- */
 void Instrument :: setendsamp(int end)
 {
    endsamp = end;
 }
 
+/* ------------------------------------------------------------- setchunk --- */
 void Instrument :: setchunk(int csamps)
 {
    chunksamps = csamps;
 }
 
+/* -------------------------------------------------------- setchunkstart --- */
 void Instrument :: setchunkstart(int csamps)
 {
    chunkstart = csamps;
 }
 
+/* ---------------------------------------------------- set_output_offset --- */
 void Instrument :: set_output_offset(int offset)
 {
    output_offset = offset;
 }
 
-
-// If the reference count on the file referenced by the instrument
-// reaches zero, close the input soundfile and set the state to 
-// make sure this is obvious
-//
+/* ----------------------------------------------------------------- gone --- */
+/* If the reference count on the file referenced by the instrument
+   reaches zero, close the input soundfile and set the state to 
+   make sure this is obvious.
+*/
 void Instrument :: gone()
 {
 #ifdef DEBUG
