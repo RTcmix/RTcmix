@@ -240,7 +240,7 @@ private:
 	int		_len;
 };
 
-// Class for scaling normalized [-1, 1] PField output into a range.
+// Class for scaling normalized PField output into a range.
 
 class RangePField : public PFieldWrapper {
 public:
