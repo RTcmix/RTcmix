@@ -28,6 +28,7 @@
 #include <ugens.h>
 #include <version.h>
 #include "../rtstuff/rt.h"
+#include "../rtstuff/heap/heap.h"
 #include "sockdefs.h"
 #include "notetags.h"           // contains defs for note-tagging
 #include "../H/dbug.h"

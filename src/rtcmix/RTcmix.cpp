@@ -19,6 +19,7 @@
 #include <iostream.h>
 #include <sys/time.h>
 #include <string.h>
+#include <signal.h>
 #ifdef LINUX
    #include <sys/soundcard.h>
 #endif
@@ -31,6 +32,7 @@
 #include <ugens.h>
 #include <version.h>
 #include "rt.h"
+#include "../rtstuff/heap/heap.h"
 #include "maxdispargs.h"
 #include "dbug.h"
 
@@ -364,7 +366,6 @@ void RTcmix::close()
    timer */
 // I notice that because this uses SIGALRM it will wake up sleep()'s
 // put sleep()s in a while loop to keep the process alive...
-#include <signal.h>
 void RTtimeit(float interval, sig_t func)
 {
 	struct timeval tv;
