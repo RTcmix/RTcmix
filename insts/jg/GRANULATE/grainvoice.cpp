@@ -122,7 +122,7 @@ void GrainVoice::startGrain(const int bufoutstart, const int instartframe,
    _inuse = true;
 
 #if DEBUG > 0
-   printf("inputdur=%f, outputdur=%f, _inchan=%d, _numinchans=%d,
+   printf("inputdur=%f, outputdur=%f, _inchan=%d, _numinchans=%d, \
       _inputframes=%d, _instartframe=%d, _inendframe=%d, inframes=%d\n",
       inputdur, outputdur, _inchan, _numinchans, _inputframes, _instartframe,
       _inendframe, inframes);
