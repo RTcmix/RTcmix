@@ -88,7 +88,8 @@ int getsfmaxamp(SFHEADER *, SFMAXAMP *);
            ||  (type) == MUS_AIFF                        \
            ||  (type) == MUS_NEXT                        \
            ||  (type) == MUS_RIFF                        \
-           ||  (type) == MUS_IRCAM                       )
+           ||  (type) == MUS_IRCAM                       \
+           ||  (type) == MUS_RAW                         )
 
 #define INVALID_DATA_FORMAT(format) ((format) < 1)
 
