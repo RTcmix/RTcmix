@@ -84,7 +84,7 @@ ifeq ($(ARCH),MACOSX)
   CC = cc
   CXX = c++
   LD = ld
-  MAKE = gnumake
+  MAKE = make
   INSTALL = cp -f
   RANLIB = ranlib
   SHELL = /bin/sh
