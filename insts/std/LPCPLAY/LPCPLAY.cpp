@@ -700,7 +700,7 @@ int LPCIN::run()
 			stabilize(_coeffs, _nPoles);
 
 		_ampmlt = _amp * _coeffs[RESIDAMP] / 10000.0;	// XXX normalize this!
-		float newpch = (_coeffs[PITCH] > 0.0) ? _coeffs[PITCH] : 256.0;
+		float newpch = (_coeffs[PITCH] > 0.0) ? _coeffs[PITCH] : 64.0;
 
 		if (_coeffs[RMSAMP] < _cutoff)
 			_ampmlt = 0;
