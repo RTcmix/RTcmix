@@ -27,10 +27,10 @@ trans(float a, float alpha, float b, int n, float *output)
 
    delta = b - a;
 
-   if (n > 1)
-      interval = 1.0 / (n - 1.0);
-   else
-      die("gen4", "transition length <= 1"); //FIXME: an internal error?
+   if (n <= 1)
+      warn("gen4", "trying to transition over 1 array slot; time between "
+                   "points is too short");
+   interval = 1.0 / (n - 1.0);
 
    if (alpha != 0.0) {
       float denom = 1.0 / (1.0 - exp((double) alpha));
