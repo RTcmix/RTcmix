@@ -45,7 +45,8 @@ depend:
 
 -include depend
 
-install:
+install: all
+
 uninstall:
 
 clean:
