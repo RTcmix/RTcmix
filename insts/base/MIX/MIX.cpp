@@ -61,7 +61,7 @@ int MIX::init(float p[], short n_args)
 int MIX::run()
 {
 	int i,j,k,rsamps;
-	float in[MAXBUF], out[2];
+	float in[MAXBUF], out[MAXBUS];
 	float aamp;
 	int branch;
 
