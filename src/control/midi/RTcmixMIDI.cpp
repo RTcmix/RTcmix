@@ -21,6 +21,8 @@ enum {
 RTcmixMIDI::RTcmixMIDI()
 	: _instream(NULL), _outstream(NULL), _active(false)
 {
+	clear();
+
 	_MIDIToMain = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(long));
 	_mainToMIDI = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(long));
 //FIXME: how to handle error?
@@ -50,6 +52,13 @@ RTcmixMIDI::RTcmixMIDI()
 		return;
 	}
 
+	Pm_SetFilter(_instream, PM_FILT_ACTIVE | PM_FILT_CLOCK | PM_FILT_SYSEX);
+
+	// Empty buffer after setting filter, in case anything got through before.
+	PmEvent buffer;
+	while (Pm_Poll(_instream))
+		Pm_Read(_instream, &buffer, 1);
+
 	// enable processing in MIDI thread (_processMIDI)
 	active(true);
 
@@ -72,6 +81,45 @@ RTcmixMIDI::~RTcmixMIDI()
 		Pm_Close(_instream);
 	if (_outstream)
 		Pm_Close(_outstream);
+}
+
+void RTcmixMIDI::clear()
+{
+	for (int chan = 0; chan < 16; chan++) {
+		_bend[chan] = -1;
+		_program[chan] = -1;
+		_chanpress[chan] = -1;
+		for (int i = 0; i < 128; i++) {
+			_noteonvel[chan][i] = -1;
+			_noteoffvel[chan][i] = -1;
+			_control[chan][i] = -1;
+			_polypress[chan][i] = -1;
+		}
+	}
+}
+
+void RTcmixMIDI::dump()
+{
+	printf("\nDumping current MIDI state...\n");
+	for (int chan = 0; chan < 16; chan++) {
+		printf("---------------------------------------- Channel %d\n", chan + 1);
+		printf("   Bend:\t%d\n", _bend[chan]);
+		printf("   Program:\t%d\n", _program[chan]);
+		printf("   ChanPress:\t%d\n", _chanpress[chan]);
+		printf("   NoteOnVel:\n");
+		for (int i = 0; i < 128; i++)
+			printf("      [%d]:\t%d\n", i, _noteonvel[chan][i]);
+		printf("   NoteOffVel:\n");
+		for (int i = 0; i < 128; i++)
+			printf("      [%d]:\t%d\n", i, _noteoffvel[chan][i]);
+		printf("   Control:\n");
+		for (int i = 0; i < 128; i++)
+			printf("      [%d]:\t%d\n", i, _control[chan][i]);
+		printf("   PolyPress:\n");
+		for (int i = 0; i < 128; i++)
+			printf("      [%d]:\t%d\n", i, _polypress[chan][i]);
+		printf("\n");
+	}
 }
 
 
@@ -132,30 +180,25 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 
 			switch (status & 0xF0) {
 				case kNoteOn:
-					printf("NoteOn (chan=%ld):\tpitch=%ld vel=%ld\n",
-										chan, data1, data2);
+					obj->setNoteOnVel(chan, data1, data2);
 					break;
 				case kNoteOff:
-					printf("NoteOff (chan=%ld):\tpitch=%ld vel=%ld\n",
-										chan, data1, data2);
+					obj->setNoteOffVel(chan, data1, data2);
 					break;
 				case kPolyPress:
-					printf("PolyPress (chan=%ld):\tpitch=%ld press=%ld\n",
-										chan, data1, data2);
+					obj->setPolyPress(chan, data1, data2);
 					break;
 				case kControl:
-					printf("Control (chan=%ld):\tcntl=%ld val=%ld\n",
-										chan, data1, data2);
+					obj->setControl(chan, data1, data2);
 					break;
 				case kProgram:
-					printf("Program (chan=%ld):\tnum=%ld\n", chan, data1);
+					obj->setProgram(chan, data1);
 					break;
 				case kChanPress:
-					printf("ChanPress (chan=%ld):\tpress=%ld\n", chan, data1);
+					obj->setChanPress(chan, data1);
 					break;
 				case kPitchBend:
-					printf("PitchBend (chan=%ld):\tmsb=%ld lsb=%ld\n",
-										chan, data1, data2);
+					obj->setBend(chan, ((data2 << 7) + data1) - 8192);
 					break;
 				default:
 					printf("0x%.2x, %ld, %ld\n", (u_char) status, data1, data2);
