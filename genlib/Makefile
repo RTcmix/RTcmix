@@ -26,9 +26,12 @@ RT_SOCKET_STUFF = RTsockfuncs.o randfuncs.o
 all : genlib.a $(RT_SOCKET_STUFF)
 
 genlib.a:	$(OBJECTS)
-	rm -f genlib.a
+	$(RM) genlib.a
 	ar rv $(GENLIB) $(OBJECTS)
-#	$(RANLIB) $(GENLIB)
+ifeq ($(ARCH),MACOSX)
+	$(RANLIB) $(GENLIB)
+endif
+
 
 
 # $(CFILES): $(IFILES)

@@ -9,7 +9,7 @@
 #include <signal.h>
 #include <sys/signal.h>
 #include <sys/time.h>
-#ifdef SGI
+#ifndef LINUX
 #include <sys/socket.h>
 #endif
 
