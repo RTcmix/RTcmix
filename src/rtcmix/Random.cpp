@@ -155,10 +155,12 @@ ProbRandom::~ProbRandom() {}
 
 double ProbRandom::value()
 {
-   double min = getmin();
-   double max = getmax();
-   double hirange = max - _mid;
-   double lowrange = _mid - min;
+   const double min = getmin();
+   const double max = getmax();
+   const double mid = getmid();
+   const double tight = gettight();
+   double hirange = max - mid;
+   double lowrange = mid - min;
    double range = dmax(hirange, lowrange);
 
    double num;
@@ -169,7 +171,7 @@ double ProbRandom::value()
          sign = 1.0;
       else
          sign = -1.0;
-      num = _mid + (sign * (pow(rawvalue(), _tight) * range));
+      num = mid + (sign * (pow(rawvalue(), tight) * range));
    } while (num < min || num > max);
 
    return num;
