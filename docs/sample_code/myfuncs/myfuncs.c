@@ -13,23 +13,32 @@ somefunk(float p[], int n_args, double pp[])
 {
    int   an_int_arg;
    float val, a_float_arg;
+   char  *a_str_arg;
 
-   if (n_args < 1) {
-      fprintf(stderr, "somefunk: wrong number of args.\n");
-      exit(1);
-   }
+   if (n_args < 1)
+      die("somefunk", "Wrong number of args.");
 
    an_int_arg = (int) p[0];
    a_float_arg = p[0];
 
+   /* This is the very bizarre method of getting a string pointer
+      from Minc. Minc allocates space for the string that persists
+      for the life of the program, so we just need a pointer to it.
+   */
+   a_str_arg = (char *) ((int) pp[0]);
+
+   /* We'll just interpret the arg as a float here. */
    val = a_float_arg * 2;
 
    return val;
 }
 
+
 /* -------------------------------------------------------------- profile --- */
-void
+int
 profile()
 {
    UG_INTRO("somefunk", somefunk);
+   return 0;
 }
+
