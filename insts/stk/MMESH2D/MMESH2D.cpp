@@ -1,0 +1,108 @@
+/* MMESH2D - the "Mesh2D" physical model instrument in
+	Perry Cook/Gary Scavone's "stk" (synthesis tookkit).
+
+   p0 = output start time
+   p1 = duration
+   p2 = amplitude multiplier
+   p3 = # of X points (2-12)
+   p4 = # of Y points (2-12)
+   p5 = xpos (0.0-1.0)
+   p6 = ypos (0.0-1.0)
+   p7 = decay value (0.0-1.0)
+   p8 = strike energy (0.0-1.0)
+   p9 = percent of signal to left output channel [optional, default is .5]
+
+   Assumes function table 1 is amplitude curve for the note.
+   Or you can just call setline. If no setline or function table 1, uses
+   flat curve.
+*/
+
+#include <Stk.h>
+#include <Mesh2D.h> // from the stk library
+
+#include <iostream.h>        /* needed only for cout, etc. if you want it */
+#include <stdio.h>
+#include <stdlib.h>
+#include <ugens.h>
+#include <Ougens.h>
+#include <math.h>
+#include <mixerr.h>
+#include <Instrument.h>      /* the base class for this instrument */
+#include "MMESH2D.h"         /* declarations for this instrument class */
+#include <rt.h>
+#include <rtdefs.h>
+
+
+
+MMESH2D :: MMESH2D() : Instrument()
+{
+}
+
+MMESH2D :: ~MMESH2D()
+{
+	delete theMesh;
+}
+
+int MMESH2D :: init(double p[], int n_args)
+{
+	Stk::setSampleRate(SR);
+
+	nsamps = rtsetoutput(p[0], p[1], this);
+
+	amp = p[2]; // for some reason this needs normalizing...
+	if (floc(1)) { // the amplitude array has been created in the score
+		theEnv = new Ooscili(SR, 1.0/p[1], 1);
+	} else {
+		amparray[0] = amparray[1] = 1.0;
+		advise("MMESH2D", "Setting phrase curve to all 1's.");
+		theEnv = new Ooscili(SR, 1.0/p[1], amparray);
+	}
+
+	theMesh = new Mesh2D((short)p[3], (short)p[4]);
+	theMesh->setInputPosition(p[5], p[6]);
+	theMesh->setDecay( 0.9 + (p[7]*0.1)); // from the Mesh2D code
+	theMesh->noteOn(0.0, p[8]);
+
+	pctleft = n_args > 9 ? p[9] : 0.5;                /* default is .5 */
+
+	return nsamps;
+}
+
+
+int MMESH2D :: run()
+{
+	int   i;
+	float out[2];
+
+	for (i = 0; i < framesToRun(); i++) {
+		out[0] = theMesh->tick() * theEnv->next(currentFrame()) * amp;
+
+		if (outputChannels() == 2) {
+			out[1] = out[0] * (1.0 - pctleft);
+			out[0] *= pctleft;
+		}
+
+		rtaddout(out);
+		increment();
+	}
+
+	return framesToRun();
+}
+
+
+Instrument *makeMMESH2D()
+{
+	MMESH2D *inst;
+
+	inst = new MMESH2D();
+	inst->set_bus_config("MMESH2D");
+
+	return inst;
+}
+
+void rtprofile()
+{
+	RT_INTRO("MMESH2D", makeMMESH2D);
+}
+
+
