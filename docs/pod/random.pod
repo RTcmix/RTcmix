@@ -1,0 +1,57 @@
+=head1 NAME
+
+random - return a random number between 0 and 1
+
+=head1 SYNOPSIS
+
+value = B<random>()
+
+=head1 DESCRIPTION
+
+Call B<random> to get a random number between 0 and 1, inclusive.
+
+It's a good idea to call L<srand|srand> once to seed the random
+number generator before using B<random>.  Otherwise, a seed of
+1 will be used.
+
+There are no arguments to B<random>.
+
+=head1 EXAMPLES
+
+   srand(1)
+   for (i = 0; i < 10; i = i + 1) {
+      randval = random() * 1000
+      print(randval)
+   }
+
+prints 10 random numbers having values between 0 and 1000,
+inclusive.
+
+The following complete CMIX script plays repeated notes of the same
+pitch, sprayed randomly across the stereo field.  This is easy
+to do, because the I<stereo_loc> argument to most instruments
+has the same range as the value returned by B<random>.
+
+   rtsetparams(44100, 2)
+   load("WAVETABLE")
+
+   reset(20000)   /* short notes need high control rate */
+   makegen(1, 18, 10000, 0,0, 1,0, 10,1, 40,0)
+   makegen(2, 10, 10000, 1, 1, 1, 1, 1, 1, 0.5)
+
+   srand(10)
+   amp = 8000
+   freq = 80
+   dur = 0.04
+
+   for (start = 0; start < 8; start = start + 0.11) {
+      stereo_loc = random()
+      WAVETABLE(start, dur, amp, freq, stereo_loc)
+   }
+
+=head1 SEE ALSO
+
+L<srand|srand>, L<rand|rand>, L<irand|irand>, L<pickrand|pickrand>,
+L<pickwrand|pickwrand>, L<spray_init|spray_init>, L<get_spray|get_spray>,
+L<gen20>
+

@@ -1,0 +1,62 @@
+=head1 NAME
+
+rand - return a random number between -1 and 1
+
+=head1 SYNOPSIS
+
+value = B<rand>()
+
+=head1 DESCRIPTION
+
+Call B<rand> to get a random number between -1 and 1, inclusive.
+
+It's a good idea to call L<srand|srand> once to seed the random
+number generator before using B<rand>.  Otherwise, a seed of
+1 will be used.
+
+There are no arguments to B<rand>.
+
+=head1 EXAMPLES
+
+   srand(1)
+   for (i = 0; i < 20; i = i + 1) {
+      randval = rand() * 10
+      print(randval)
+   }
+
+prints 20 random numbers having values between -10 and 10.
+
+The following complete CMIX script plays repeated notes of the same
+pitch.  The attack times of the notes vary randomly from an even
+grid whose lines are spaced 0.14 seconds apart, and the amplitudes
+range from 400 to 3600.
+
+   rtsetparams(44100, 1)
+   load("WAVETABLE")
+
+   makegen(1, 18, 10000, 0,0, 1,0, 20,1, 40,0)
+   makegen(2, 10, 10000, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+
+   srand(0)
+   smear = 0.12
+   amp = 2000
+   dur = 0.06
+
+   for (start = smear; start < 10; start = start + 0.14) {
+      randval = rand()
+      st = start + (randval * smear)
+      randval = rand()
+      a = amp + (randval * (amp * 0.8))
+      WAVETABLE(st, dur, a, freq = 1200)
+   }
+
+The basic strategy is to multiply the return value of B<rand>,
+which falls between -1 and 1, by some factor that modifies this
+range.  You could randomize the frequency in the same manner.
+
+=head1 SEE ALSO
+
+L<srand|srand>, L<random|random>, L<irand|irand>, L<pickrand|pickrand>,
+L<pickwrand|pickwrand>, L<spray_init|spray_init>, L<get_spray|get_spray>,
+L<gen20>
+

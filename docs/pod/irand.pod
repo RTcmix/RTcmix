@@ -1,0 +1,46 @@
+=head1 NAME
+
+irand - return a random number within a specified range
+
+=head1 SYNOPSIS
+
+value = B<irand>(I<minimum>, I<maximum>)
+
+=head1 DESCRIPTION
+
+Call B<irand> to get a random number that falls within the
+range specified by the arguments.
+
+It's a good idea to call L<srand|srand> once to seed the random
+number generator before using B<irand>.  Otherwise, a seed of
+1 will be used.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<minimum>, I<maximum>
+
+These mandatory arguments define the range within which falls
+the random value returned by B<irand>.
+
+=back
+
+=head1 EXAMPLES
+
+   srand(0)
+   min = -30
+   max = 10
+   for (i = 0; i < 20; i = i + 1) {
+      randval = irand(min, max)
+      print(randval)
+   }
+
+prints 20 random numbers having values between -30 and 10, inclusive.
+
+=head1 SEE ALSO
+
+L<srand|srand>, L<random|random>, L<rand|rand>, L<pickrand|pickrand>,
+L<pickwrand|pickwrand>, L<spray_init|spray_init>, L<get_spray|get_spray>,
+L<gen20>
+
