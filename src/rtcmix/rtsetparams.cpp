@@ -109,10 +109,10 @@ rtsetparams(float p[], int n_args, double pp[])
 void
 close_audio_ports()
 {
+   int n;
+
 	// This closes and destroys the AudioDevices for input and output.
 	destroy_audio_devices();
-
-   int n;
 
 #ifdef LINUX
  #ifdef MONO_DEVICES
