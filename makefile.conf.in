@@ -4,7 +4,7 @@
 TOPDIR = /usr/local/src
 
 # The name of the RTcmix directory
-CMIXDIR = $(TOPDIR)/RTcmix-3.7
+CMIXDIR = $(TOPDIR)/RTcmix-3.9
 
 # The dir that will contain the instrument dynamic shared objects
 LIBDESTDIR = $(CMIXDIR)/shlib
@@ -13,11 +13,11 @@ LIBDESTDIR = $(CMIXDIR)/shlib
 MANDESTDIR = $(CMIXDIR)/docs/man
 HTMLDESTDIR = $(CMIXDIR)/docs/html
 
-# add new instruments to this list (e.g., insts.std, insts.jg)
-INST_DIRS = insts.base # insts.std insts.jg insts.stk insts.vccm
+# add new instruments to this list (e.g., insts/std, insts/jg)
+INST_DIRS = insts/base # insts/std insts/jg insts/stk insts/vccm
 
-# add new packages to this list (e.g., imbed)
-PACKAGE_DIRS = # imbed
+# add new packages to this list (e.g., apps/imbed)
+PACKAGE_DIRS = # apps/imbed
 
 # Which platform?
 ARCH = LINUX
@@ -47,13 +47,6 @@ PYTHON = python
 # sound over a network.  (See comments at the top of utils/nplay.c.)
 #NPLAY_SUPPORT = TRUE
 
-# Uncomment to use old function table assignments for certain instruments.
-# For example, WAVETABLE used to expect function 1 to contain the wavetable
-# and function 2 to contain the amp envelope. We swapped these so that you
-# can use setline to give the amp envelope. But if you prefer compatibility
-# with your existing scores, uncomment this line:
-#CMIX_FLAGS += -DCOMPATIBLE_FUNC_LOCS
-
 # Comment this out to set the die() function so that it will not exit on
 # encountering an error (you may want to do this if you are using
 # RTcmix in the context of another application where you don't want
@@ -65,7 +58,7 @@ CMIX_FLAGS += -DEXIT_ON_ERROR
 AUDIODRIVER = AUTO
 
 # Uncomment to enable new experimental pfield update scheme and Minc v.2
-#PFIELD_CLASS_SUPPORT = TRUE
+PFIELD_CLASS_SUPPORT = TRUE
 
 ###############################################################
 # Linux sound driver flags -- ignore for Irix and Mac OS X
