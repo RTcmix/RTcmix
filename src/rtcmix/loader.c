@@ -101,8 +101,30 @@ double m_load(float *p, int n_args, double *pp)
 
     return 0.0;
 broken:
-    /* We could give more detailed error reporting here, but... */
-    fprintf(stderr, "Unable to dynamically load '%s'\n", dsoPath);
+    {
+	char *err = "Unknown error";
+	switch (result) {
+	case NSObjectFileImageFailure:
+		err = "";	// error printed by API
+		break;
+	case NSObjectFileImageInappropriateFile:
+		err = "Wrong type of object";
+		break;
+	case NSObjectFileImageArch:
+		err = "Could not find correct CPU architecture in file";
+		break;
+	case NSObjectFileImageFormat:
+		err = "Malformed Mach-O format";
+		break;
+	case NSObjectFileImageAccess:
+		err = "File not accessible or not found";
+		break;
+	default:
+		break;
+	}
+    	fprintf(stderr, "Unable to dynamically load '%s':\n\t%s\n",
+		dsoPath, err);
+    }
     return 1.0;
 }
 
