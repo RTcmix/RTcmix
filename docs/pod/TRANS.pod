@@ -14,13 +14,17 @@ Function table 1 gives amplitude curve.
 B<TRANS> transposes the input for the specified output duration
 (I<outdur>), starting at the input start time (I<inskip>).
 
-B<TRANS> transposes by cubic interpolation, and does not maintain the
-input duration.  (So it's sort of like changing tape speed.)  When
-transposing up, then, it's possible to run off the end of the input file.
+B<TRANS> transposes by second-order polynomial interpolation.  It does not
+maintain the input duration, so it's sort of like changing tape speed.
+To transpose down, it interpolates samples between existing ones; to
+transpose up, it discards some existing samples.  When transposing up,
+then, it must consume more than I<outdur> seconds of samples, and this
+means that it's possible to run off the end of the input file.
 
-Note that you can use this instrument only with input from a sound file,
-not with a real-time input (microphone or aux bus) -- at least not without
-hearing clicks.
+It also means that you can use this instrument only with input from a
+sound file, not with a real-time input (microphone or aux bus) -- at
+least not without hearing clicks.  (That's because you can't read
+samples that haven't happened yet.)
 
 B<TRANS> uses the curve provided in function table 1 to scale the
 amplitudes of the input source.  Use L<setline|setline>, L<setexp|setexp>,
@@ -38,7 +42,7 @@ The output of B<TRANS> can be either mono or stereo.
 
 =item B<p1> (I<inskip>) input start time
 
-=item B<p2> (I<outdur>) output duration
+=item B<p2> (I<outdur>) output duration (if negative, output end time)
 
 =item B<p3> (I<ampmult>) amplitude multiplier
 
@@ -64,7 +68,7 @@ and continuing for 4 seconds.  It pans the sound hard right.
 
 =head1 SEE ALSO
 
-L<setline|setline>, L<setexp|setexp>, L<makegen|makegen>
+L<TRANS3|TRANS3>, L<setline|setline>, L<setexp|setexp>, L<makegen|makegen>
 
 =head1 AUTHOR
 
