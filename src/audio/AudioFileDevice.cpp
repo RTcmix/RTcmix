@@ -23,7 +23,6 @@ struct AudioFileDevice::Impl {
 	bool						paused;
 	int							fileType;		// wave, aiff, etc.
 	bool						checkPeaks;
-	bool						normalizeFloats;
 	float						peaks[MAXBUS];
 	long						peakLocs[MAXBUS];
 };
@@ -40,11 +39,6 @@ AudioFileDevice::AudioFileDevice(const char *path,
 	_impl->paused = false;
 	_impl->fileType = fileType;
 	_impl->checkPeaks = fileOptions & CheckPeaks;
-	_impl->normalizeFloats = fileOptions & NormalizeFloats;
-	for (int n = 0; n < MAXBUS; ++n) {
-		_impl->peaks[n] = 0.0;
-		_impl->peakLocs[n] = 0;
-	}
 	
 }
 
@@ -64,10 +58,15 @@ int AudioFileDevice::open(int mode, int fileSampFmt, int fileChans, double srate
 	if ((mode & Record) != 0)
 		return error("Record from file device not supported");
 	
+	for (int n = 0; n < MAXBUS; ++n) {
+		_impl->peaks[n] = 0.0;
+		_impl->peakLocs[n] = 0;
+	}
+
 	int status = 0;
 	if (!isOpen()) {
 		// Audio file formats are always interleaved.
-		setDeviceParams(MUS_GET_FORMAT(fileSampFmt) | MUS_INTERLEAVED,
+		setDeviceParams((fileSampFmt & ~MUS_INTERLEAVE_MASK) | MUS_INTERLEAVED,
 						fileChans,
 						srate);
 		if ((status = doOpen(mode)) == 0) {
@@ -95,13 +94,18 @@ int	AudioFileDevice::sendFrames(void *frameBuffer, int frames)
 			long bufStartSamp = frameCount();
 			float *peaks = _impl->peaks;
 			for (int c = 0; c < chans; ++c) {
-				float *bp;
-				if (isFrameInterleaved())
-					bp = &((float *) frameBuffer)[c];
-				else
-					bp = ((float **) frameBuffer)[c];
-				for (int n = 0; n < frames; ++n, bp += chans) {
-					double fabsamp = fabs((double) *bp);
+				float *fp;
+				int incr;
+				if (isFrameInterleaved()) {
+					fp = &((float *) frameBuffer)[c];
+					incr = 1;
+				}
+				else {
+					fp = ((float **) frameBuffer)[c];
+					incr = chans;
+				}
+				for (int n = 0; n < frames; ++n, fp += incr) {
+					double fabsamp = fabs((double) *fp);
 					if (fabsamp > (double) peaks[c]) {
 						peaks[c] = (float) fabsamp;
 						_impl->peakLocs[c] = bufStartSamp + n;	// frame count
@@ -116,7 +120,7 @@ int	AudioFileDevice::sendFrames(void *frameBuffer, int frames)
 double AudioFileDevice::getPeak(int chan, long *pLocation)
 {
 	*pLocation = _impl->peakLocs[chan];
-	return _impl->peaks[chan];
+	return isDeviceFmtNormalized() ? _impl->peaks[chan] /32768.0 : _impl->peaks[chan];
 }
 
 int AudioFileDevice::doOpen(int mode)
@@ -139,6 +143,10 @@ int AudioFileDevice::doClose()
 	if (!_impl->closing) {
 		_impl->closing = true;
 		if (_impl->checkPeaks) {
+			// Normalize peaks if file was normalized.
+			if (isDeviceFmtNormalized())
+				for (int chan = 0; chan < getDeviceChannels(); ++chan)
+					_impl->peaks[chan] /= 32768.0;
 			(void) sndlib_put_header_comment(device(),
 											 _impl->peaks,
 											 _impl->peakLocs,

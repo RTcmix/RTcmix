@@ -131,8 +131,6 @@ int create_audio_file_device(const char *outfilename,
 	// Pass global options into the device.
 	
 	int fileOptions = 0;
-	if (normalize_output_floats)
-		fileOptions |= AudioFileDevice::NormalizeFloats;
 	if (check_peaks)
 		fileOptions |= AudioFileDevice::CheckPeaks;
 
@@ -147,6 +145,10 @@ int create_audio_file_device(const char *outfilename,
 	int audioFormat = NATIVE_FLOAT_FMT | MUS_NON_INTERLEAVED;
 	fileDevice->setFrameFormat(audioFormat, chans);
 
+	// File format is interleaved and may be normalized.
+	sample_format |= MUS_INTERLEAVED;
+	if (normalize_output_floats)
+		sample_format |= MUS_NORMALIZED;
 	int ret = fileDevice->open(openMode, sample_format, chans, srate);
 	
 	if (ret == -1) {

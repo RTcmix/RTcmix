@@ -162,7 +162,8 @@ int ALSAAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 	snd_pcm_format_t sampleFormat = ::convertSampleFormat(deviceFormat);
 	if (sampleFormat == SND_PCM_FORMAT_UNKNOWN)
 		return error("Unknown or unsupported sample format");
-	deviceFormat = NATIVE_FLOAT_FMT;	// This is what we report back.
+	// This is what we report back.  It gets modified during loop.
+	deviceFormat = NATIVE_FLOAT_FMT | MUS_NORMALIZED;
 	// Find a suitable format, ratcheting down from float to short.
 	while ((status = snd_pcm_hw_params_set_format(_handle,
 												  _hwParams, 

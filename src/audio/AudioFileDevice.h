@@ -7,7 +7,7 @@
 
 class AudioFileDevice : public ThreadedAudioDevice {
 public:
-	enum { NormalizeFloats = 1, CheckPeaks = 2 };
+	enum { CheckPeaks = 1 };
 	AudioFileDevice(const char *path, int fileType, int fileOptions);
 	virtual ~AudioFileDevice();
 

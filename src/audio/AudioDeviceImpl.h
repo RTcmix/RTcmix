@@ -3,6 +3,7 @@
 #ifndef _RT_AUDIODEVICEIMPL_H_
 #define _RT_AUDIODEVICEIMPL_H_
 
+#include <sndlibsupport.h>	// RTcmix header
 #include "AudioDevice.h"
 
 typedef void *(ConversionFunction)(void *, void*, int, int);
@@ -10,29 +11,31 @@ typedef void *(ConversionFunction)(void *, void*, int, int);
 class AudioDeviceImpl : public AudioDevice {
 public:
 	// Redefined from AudioDevice
-	int			setFrameFormat(int sampfmt, int chans);
-	int			open(int mode, int sampfmt, int chans, double srate);
-	int			close();
-	int			start(Callback runCallback, void *callbackContext);
-	int			setStopCallback(Callback stopCallback, void *callbackContext);
-	int			pause(bool);
-	int			stop();
-	int			setFormat(int sampfmt, int chans, double srate);
-	int			setQueueSize(int *pWriteSize, int *pCount);
-	int			getFrames(void *frameBuffer, int frameCount);
-	int			sendFrames(void *frameBuffer, int frameCount);
-	bool		isOpen() const;
-	bool		isRunning() const;
-	bool		isPaused() const;
-	int			getFrameFormat() const;
-	int			getDeviceFormat() const;
-	bool		isFrameInterleaved() const;
-	bool		isDeviceInterleaved() const;
-	int			getFrameChannels() const;
-	int			getDeviceChannels() const;
-	double		getSamplingRate() const;
-	long		getFrameCount() const;
-	const char *getLastError() const;
+	int				setFrameFormat(int sampfmt, int chans);
+	int				open(int mode, int sampfmt, int chans, double srate);
+	int				close();
+	int				start(Callback runCallback, void *callbackContext);
+	int				setStopCallback(Callback stopCallback, void *callbackContext);
+	int				pause(bool);
+	int				stop();
+	int				setFormat(int sampfmt, int chans, double srate);
+	int				setQueueSize(int *pWriteSize, int *pCount);
+	int				getFrames(void *frameBuffer, int frameCount);
+	int				sendFrames(void *frameBuffer, int frameCount);
+	bool			isOpen() const;
+	bool			isRunning() const;
+	bool			isPaused() const;
+	inline int		getFrameFormat() const;
+	inline int		getDeviceFormat() const;
+	inline bool		isFrameFmtNormalized() const;
+	inline bool		isDeviceFmtNormalized() const;
+	inline bool		isFrameInterleaved() const;
+	inline bool		isDeviceInterleaved() const;
+	inline int		getFrameChannels() const;
+	inline int		getDeviceChannels() const;
+	inline double	getSamplingRate() const;
+	inline long		getFrameCount() const;
+	const char *	getLastError() const;
 
 protected:
 	// Ctor is passed the format and chans of frameBuffer.
@@ -77,8 +80,7 @@ private:
 	void 			destroyNoninterleavedBuffer(int fmt, int chans);
 	int				createConvertBuffer(int frames);
 	void			destroyConvertBuffer();
-	int				setConvertFunctions(int srcFormat, int dstFormat,
-									    bool srcInterleaved, bool dstInterleaved);
+	int				setConvertFunctions(int rawSrcFormat, int rawDstFormat);
 
 private:
 	int					_mode;		// Playback, Record, etc.
@@ -96,13 +98,6 @@ private:
 	enum { ErrLength = 128 };
 	char				_lastErr[ErrLength];
 };
-
-inline void AudioDeviceImpl::setDeviceParams(int fmt, int chans, double rate)
-{
-	_deviceFormat = fmt;
-	_deviceChannels = chans;
-	_samplingRate = rate;
-}
 
 inline void	AudioDeviceImpl::setMode(int m) { _mode = m; }
 
@@ -123,6 +118,64 @@ inline bool AudioDeviceImpl::isPaused() const { return _state == Paused; }
 inline bool	AudioDeviceImpl::isRecording() const { return (_mode & Record) != 0; }
 
 inline bool AudioDeviceImpl::isPlaying() const { return (_mode & Playback) != 0; }
+
+inline int AudioDeviceImpl::getFrameFormat() const
+{
+	return MUS_GET_FORMAT(_frameFormat);
+}
+
+inline int AudioDeviceImpl::getDeviceFormat() const
+{
+	return MUS_GET_FORMAT(_deviceFormat);
+}
+
+inline bool AudioDeviceImpl::isFrameInterleaved() const
+{
+	return IS_INTERLEAVED_FORMAT(_frameFormat);
+}
+
+inline bool AudioDeviceImpl::isDeviceInterleaved() const
+{
+	return IS_INTERLEAVED_FORMAT(_deviceFormat);
+}
+
+inline bool AudioDeviceImpl::isFrameFmtNormalized() const
+{
+	return IS_NORMALIZED_FORMAT(_frameFormat);
+}
+
+inline bool	AudioDeviceImpl::isDeviceFmtNormalized() const
+{
+	return IS_NORMALIZED_FORMAT(_deviceFormat);
+}
+
+inline int AudioDeviceImpl::getFrameChannels() const
+{
+	return isOpen() ? _frameChannels : 0;
+}
+
+inline int AudioDeviceImpl::getDeviceChannels() const
+{
+	return  _deviceChannels;
+}
+
+inline double AudioDeviceImpl::getSamplingRate() const
+{
+	return _samplingRate;
+}
+
+inline long AudioDeviceImpl::getFrameCount() const
+{
+	return isOpen() ? doGetFrameCount() : 0;
+}
+
+inline void AudioDeviceImpl::setDeviceParams(int fmt, int chans, double rate)
+{
+	_deviceFormat = fmt;
+	_deviceChannels = chans;
+	_samplingRate = rate;
+}
+
 
 inline AudioDevice::Callback 
 AudioDeviceImpl::getRunCallback() const { return _runCallback; }

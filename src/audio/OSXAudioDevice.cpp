@@ -294,7 +294,8 @@ int OSXAudioDevice::doOpen(int mode)
 									&size,
 									&writeable);
 	if (err != kAudioHardwareNoError) {
-		return error("Can't get audio device writeable property: ", errToString(err));
+		return error("Can't get audio device writeable property: ", 
+					 errToString(err));
 	}
 	_impl->formatWritable = (writeable != 0);
 	// Register our callback functions with the HAL.
@@ -304,13 +305,15 @@ int OSXAudioDevice::doOpen(int mode)
 									   _impl->listenerProcess, 
 									   (void *) this);
 	if (err != kAudioHardwareNoError) {
-		return error("Cannot register property listener with device: ", errToString(err));
+		return error("Cannot register property listener with device: ",
+					 errToString(err));
 	}
 	err = AudioDeviceAddIOProc(_impl->deviceID,
 							   _impl->runProcess, 
 							   (void *) this);
 	if (err != kAudioHardwareNoError) {
-		return error("Cannot register callback function with device: ", errToString(err));
+		return error("Cannot register callback function with device: ",
+					 errToString(err));
 	}
 
 	return 0;
@@ -392,7 +395,8 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 									  &size, 
 									  &_impl->deviceFormat);
 		if (err != kAudioHardwareNoError) {
-			return error("Can't retrieve audio device format: ", errToString(err));
+			return error("Can't retrieve audio device format: ",
+						 errToString(err));
 		}
 		else if (_impl->deviceFormat.mChannelsPerFrame != _impl->channels) {
 			return error("This channel count not supported.");
@@ -413,7 +417,7 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 	
 	// Set the device format based upon settings.  This will be used for format conversion.
 	
-	int deviceFormat = MUS_BFLOAT;
+	int deviceFormat = MUS_BFLOAT | MUS_NORMALIZED;
 	if ((_impl->deviceFormat.mFormatFlags & kLinearPCMFormatFlagIsNonInterleaved) != 0) {
 		printf("OSX HW is %d channel, non-interleaved\n", _impl->deviceFormat.mChannelsPerFrame);
 		deviceFormat |= MUS_NON_INTERLEAVED;
