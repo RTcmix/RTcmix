@@ -37,20 +37,22 @@
 // incoming packets.
 #define SLEEP_MSEC	20
 
-#define LABEL_FONT_NAME	"Monoco"
+//#define LABEL_FONT_NAME	"Monaco"
+#define LABEL_FONT_NAME	"Lucida Grande"
 #define LABEL_FONT_SIZE	12
-#define LABEL_FONT_FACE	0		// i.e., plain
+#define LABEL_FONT_FACE	bold		// 0 for plain
 
 const int _titleBarHeight = 22;	// FIXME: should get this from system
 const int _labelXpos = LABEL_FROM_LEFT;
 const int _labelYpos = LABEL_FROM_TOP;
 const int _maxLabelChars = WHOLE_LABEL_LENGTH;
 
-int _labelCount;
+int _labelCount = 0;
 char *_label[NLABELS];
 char *_prefix[NLABELS];
 char *_units[NLABELS];
 int _precision[NLABELS];
+Rect _labelRect;
 
 int _lineHeight = 0;
 int _charWidth = 0;
@@ -59,10 +61,10 @@ WindowRef _window;
 
 // Default window position and size
 enum {
-	kWindowXpos = 100,
+	kWindowXpos = 200,
 	kWindowYpos = 100,
-	kWindowWidth = 300,
-	kWindowHeight = 300
+	kWindowWidth = 180,
+	kWindowHeight = 140
 };
 
 // socket
@@ -74,6 +76,7 @@ int _sockport = SOCK_PORT;
 bool _runThread;
 pthread_t _listenerThread;
 
+void updateLabelRect();
 void drawLabels();
 int closeSocket();
 
@@ -144,6 +147,7 @@ void configureLabelPrefix(const int id, const char *prefix)
 	_label[id] = new char [WHOLE_LABEL_LENGTH];
 	_label[id][0] = 0;
 	_labelCount++;
+	updateLabelRect();
 }
 
 // Set (optional) units string for label with <id>.
@@ -168,9 +172,16 @@ void updateLabelValue(const int id, const double value)
 	const char *units = _units[id] ? _units[id] : "";
 	snprintf(_label[id], WHOLE_LABEL_LENGTH, "%s: %.*f %s",
 				_prefix[id], _precision[id], value, units);
-	drawLabels();
+	InvalWindowRect(_window, &_labelRect);
 }
 
+void updateLabelRect()
+{
+	const int height = _labelCount * _lineHeight;
+	const int width = _maxLabelChars * _charWidth;
+	SetRect(&_labelRect, _labelXpos, _labelYpos, _labelXpos + width,
+				_labelYpos + height);
+}
 
 // =============================================================================
 // Event callbacks and friends
@@ -187,21 +198,20 @@ void drawLabels()
 	if (_labelCount <= 0)
 		return;
 
+#ifdef NOMORE
 	GrafPtr oldPort;
 	GetPort(&oldPort);
 	SetPort(GetWindowPort(_window));
+#endif
+
+	int ypos = _labelYpos;
 
 	// Clear rect enclosing all labels.
-	const int height = _labelCount * _lineHeight;
-	const int width = _maxLabelChars * _charWidth;
-	int ypos = _labelYpos;
-	Rect rect;
-	SetRect(&rect, _labelXpos, ypos, _labelXpos + width, ypos + height);
-	EraseRect(&rect);
+	EraseRect(&_labelRect);
+
 #ifdef DEBUG
-	FrameRect(&rect);
-//	printf("drawLabels: xpos=%d, ypos=%d, width=%d, height=%d\n",
-//				_labelXpos, ypos, width, height);
+	FrameRect(&_labelRect);
+//	printf("drawLabels: xpos=%d, ypos=%d\n", _labelXpos, ypos);
 #endif
 
 	// Draw all labels.
@@ -215,7 +225,9 @@ void drawLabels()
 		line++;
 	}
 
+#ifdef NOMORE
 	SetPort(oldPort);
+#endif
 }
 
 void drawWindowContent()
@@ -319,8 +331,8 @@ int createWindow()
 {
 	Rect rect;
 
-	SetRect(&rect, kWindowYpos, kWindowXpos,
-				kWindowYpos + kWindowHeight, kWindowXpos + kWindowWidth);
+	SetRect(&rect, kWindowXpos, kWindowYpos, kWindowXpos + kWindowWidth,
+				kWindowYpos + kWindowHeight);
 
 	OSStatus status = CreateNewWindow(kDocumentWindowClass,
 								kWindowStandardDocumentAttributes,
@@ -377,6 +389,8 @@ int createWindow()
 	_charWidth = finfo.widMax;
 	_lineHeight = finfo.ascent + finfo.descent;
 	_fontAscent = finfo.ascent;
+
+	updateLabelRect();
 
 	return 0;
 }
