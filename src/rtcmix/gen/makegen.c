@@ -1,7 +1,8 @@
 #include "../H/ugens.h"
 #include <stdio.h>
 
-int   ngens = 0;       /* total number of gens so far */
+static int ngens = 1;       /* total number of gens so far */
+/* Note: This was 0, but then non-existant gen funcs were not caught.  -JGG */
 
 /* ok, TOTGENS is the absolute total number of gens we can have in
    a given run, MAXGENS is the number of simultaneous gens we can
