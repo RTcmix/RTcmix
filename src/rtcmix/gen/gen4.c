@@ -78,6 +78,8 @@ gen4(struct gen *gen)
       ptr += seglen - 1;
    }
 
+   fnscl(gen);
+
    return 0.0;
 }
 
