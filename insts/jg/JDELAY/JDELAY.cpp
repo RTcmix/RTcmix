@@ -105,8 +105,7 @@ int JDELAY::init(float p[], short n_args)
    }
 
    if (regen <= -1.0 || regen >= 1.0) {
-      fprintf(stderr,
-           "Regeneration multiplier must be greater than 0 and less than 1.\n");
+      fprintf(stderr, "Regeneration multiplier must be between -1 and 1.\n");
       exit(1);
    }
 
