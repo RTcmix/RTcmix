@@ -51,7 +51,7 @@
 #define MAXDELTIME 30.0    // seconds (176400 bytes per second at SR=44100)
 
 // local functions
-static void toneset(double, int, double []);
+static void toneset(double, double, int, double []);
 static double tone(double, double []);
 
 
@@ -108,7 +108,7 @@ int JDELAY::init(double p[], int n_args)
       advise("JDELAY", "Low-pass filter disabled.");
    else {
       usefilt = true;
-      toneset(cutoff, 1, tonedata);
+      toneset(SR, cutoff, 1, tonedata);
    }
 
    if (percent_wet < 0.0 || percent_wet > 1.0)
@@ -171,7 +171,7 @@ void JDELAY::doupdate()
       cutoff = p[7];
       if (cutoff <= 0.0)
          cutoff = 0.1;
-      toneset(cutoff, 0, tonedata);
+      toneset(SR, cutoff, 0, tonedata);
    }
 
    percent_wet = p[8];
@@ -266,7 +266,7 @@ int JDELAY::run()
    NOTE: JDELAY doesn't try to use the inverse function cited below.
 */
 static void
-toneset(double cutoff, int flag, double data[])
+toneset(double SR, double cutoff, int flag, double data[])
 {
    double x;
 

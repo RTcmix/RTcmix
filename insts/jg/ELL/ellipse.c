@@ -9,6 +9,8 @@ double ellset(float p[], int n_args);
 int get_nsections(void);
 int ellpset(EllSect [], float *);
 float ellipse(float, int, EllSect [], float);
+extern float SR(); // hack to access what was global
+
 
 // ***FIXME: Where did 461 come from?
 //    Seems like there only needs to be 4 * MAX_SECTIONS plus 1 for xnorm.
@@ -26,7 +28,7 @@ ellset(float p[], int n_args)
    f3 = (double)p[2];
    ripple = (double)p[3];
    atten = (double)p[4];
-   srate = (double)SR;
+   srate = (double)SR();
 
 // ***FIXME: do some input validation here
 
