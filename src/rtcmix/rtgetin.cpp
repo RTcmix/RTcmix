@@ -204,14 +204,16 @@ read_float_samps(
 
    data_format = inputFileTable[inst->fdIndex].data_format;
 
-#ifdef SNDLIB_LITTLE_ENDIAN
+#ifdef MUS_LITTLE_ENDIAN
    swap = IS_BIG_ENDIAN_FORMAT(data_format);
 #else
    swap = IS_LITTLE_ENDIAN_FORMAT(data_format);
 #endif
 
+   datum_size = sizeof(float);
+
    if (fbuf == NULL) {     /* 1st time, so allocate interleaved float buffer */
-      fbuf = (float *) malloc((size_t) RTBUFSAMPS * MAXCHANS);
+      fbuf = (float *) malloc((size_t) RTBUFSAMPS * MAXCHANS * datum_size);
       if (fbuf == NULL) {
          perror("read_float_samps (malloc)");
          exit(1);
@@ -223,8 +225,6 @@ read_float_samps(
       perror("read_float_samps (lseek)");
       exit(1);
    }
-
-   datum_size = sizeof(float);
 
    bytes_to_read = dest_frames * file_chans * datum_size;
 
@@ -280,6 +280,108 @@ read_float_samps(
 }
 
 
+/* ----------------------------------------------------- read_short_samps --- */
+static int
+read_short_samps(
+      BufPtr      dest,             /* interleaved buffer from inst */
+      int         dest_chans,       /* number of chans interleaved */
+      int         dest_frames,      /* frames in interleaved buffer */
+      short       src_chan_list[],  /* list of in-bus chan numbers from inst */
+      short       src_chans,        /* number of in-bus chans to copy */
+      Instrument  *inst)
+{
+   int            fd, file_chans, seeked, src_samps, swap;
+   int            data_format, datum_size;
+   ssize_t        bytes_to_read, bytes_read;
+   char           *bufp;
+   static short   *sbuf = NULL;
+   
+   /* File opened by earlier call to rtinput. */
+   fd = inputFileTable[inst->fdIndex].fd;
+   file_chans = inputFileTable[inst->fdIndex].chans;
+
+   assert(file_chans >= dest_chans);
+
+   data_format = inputFileTable[inst->fdIndex].data_format;
+
+#ifdef MUS_LITTLE_ENDIAN
+   swap = IS_BIG_ENDIAN_FORMAT(data_format);
+#else
+   swap = IS_LITTLE_ENDIAN_FORMAT(data_format);
+#endif
+
+   datum_size = 2;         /* short int */
+
+   if (sbuf == NULL) {     /* 1st time, so allocate interleaved short buffer */
+      sbuf = (short *) malloc((size_t) RTBUFSAMPS * MAXCHANS * datum_size);
+      if (sbuf == NULL) {
+         perror("read_short_samps (malloc)");
+         exit(1);
+      }
+   }
+   bufp = (char *) sbuf;
+
+   if (lseek(fd, inst->fileOffset, SEEK_SET) == -1) {
+      perror("read_short_samps (lseek)");
+      exit(1);
+   }
+
+   bytes_to_read = dest_frames * file_chans * datum_size;
+
+   while (bytes_to_read > 0) {
+      bytes_read = read(fd, bufp, bytes_to_read);
+      if (bytes_read == -1) {
+         perror("read_short_samps (read)");
+         exit(1);
+      }
+      if (bytes_read == 0)          /* EOF */
+         break;
+
+      bufp += bytes_read;
+      bytes_to_read -= bytes_read;
+   }
+
+   /* If we reached EOF, zero out remaining part of buffer that we
+      expected to fill.
+   */
+   while (bytes_to_read > 0) {
+      (* (short *) bufp) = 0;
+      bufp += datum_size;
+      bytes_to_read -= datum_size;
+   }
+
+   /* Copy interleaved input buffer to inst's input buffer, with bus mapping. */
+
+   src_samps = dest_frames * file_chans;
+
+   for (int n = 0; n < dest_chans; n++) {
+#ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT
+      int chan = n;
+#else
+      int chan = src_chan_list[n];
+#endif
+      if (swap) {
+         int j = n;
+         for (int i = chan; i < src_samps; i += file_chans, j += dest_chans)
+            dest[j] = (BUFTYPE) reverse_int2(&sbuf[i]);
+      }
+      else {
+         int j = n;
+         for (int i = chan; i < src_samps; i += file_chans, j += dest_chans)
+            dest[j] = (BUFTYPE) sbuf[i];
+      }
+   }
+
+   /* Advance saved offset by the number of samps (not frames) read.
+      Note that this includes samples in channels that were read but
+      not copied into the dest buffer!
+   */
+   inst->fileOffset += dest_frames * file_chans * datum_size;
+
+   return 0;
+}
+
+
 /* ---------------------------------------------------- sndlib_read_samps --- */
 static int
 sndlib_read_samps(
@@ -290,7 +392,7 @@ sndlib_read_samps(
       short       src_chans,        /* number of in-bus chans to copy */
       Instrument  *inst)
 {
-   int         fd, file_chans, seeked;
+   int         fd, file_chans, seeked, total_read;
    static int  **inbufs = NULL;
 
    /* File opened by earlier call to rtinput. */
@@ -308,16 +410,19 @@ sndlib_read_samps(
    }
 
    /* Go to saved file offset for this instrument.
-      NOTE: clm_seek handles any datum size as if it were 16 bits.
+      NOTE: mus_file_seek handles any datum size as if it were 16 bits.
    */
-   seeked = clm_seek(fd, inst->fileOffset, SEEK_SET);
+   seeked = mus_file_seek(fd, inst->fileOffset, SEEK_SET);
    if (seeked == -1) {
       fprintf(stderr, "Bad seek on the input soundfile\n");
       exit(1);
    }
 
-// FIXME: doesn't return an error code! Upgrade to new sndlib for that.
-   clm_read(fd, 0, dest_frames-1, file_chans, inbufs);
+   total_read = mus_file_read(fd, 0, dest_frames-1, file_chans, inbufs);
+   if (total_read == MUS_ERROR) {
+      fprintf(stderr, "Bad read on the input soundfile\n");
+      exit(1);
+   }
 
    for (int n = 0; n < dest_chans; n++) {
 #ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT
@@ -363,8 +468,13 @@ get_file_in(
                                                              src_chans, inst);
    }
    else {
+#ifdef NOMORE
       status = sndlib_read_samps(dest, dest_chans, dest_frames, src_chan_list,
                                                              src_chans, inst);
+#else
+      status = read_short_samps(dest, dest_chans, dest_frames, src_chan_list,
+                                                             src_chans, inst);
+#endif
    }
 
    return status;

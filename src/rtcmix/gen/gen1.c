@@ -132,7 +132,7 @@ gen1(struct gen *gen, char *sfname)
    if (buf == NULL)
       die("gen1", "Not enough memory for temporary buffer.");
 
-   bytes_per_samp = c_snd_datum_size(data_format);
+   bytes_per_samp = mus_data_format_to_bytes_per_sample(data_format);
 
    seek_to = data_location + (start_frame * file_chans * bytes_per_samp);
    if (lseek(fd, seek_to, SEEK_SET) == -1) {
@@ -140,7 +140,7 @@ gen1(struct gen *gen, char *sfname)
       exit(1);
    }
 
-#ifdef SNDLIB_LITTLE_ENDIAN
+#ifdef MUS_LITTLE_ENDIAN
    byteswap = IS_BIG_ENDIAN_FORMAT(data_format);
 #else
    byteswap = IS_LITTLE_ENDIAN_FORMAT(data_format);

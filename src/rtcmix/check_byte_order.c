@@ -18,12 +18,12 @@ short isNext;
 int
 check_byte_order(SFHEADER *sfh, char *prog, char *sfname)
 {
-#ifdef SNDLIB_LITTLE_ENDIAN
-   swap = (sfdataformat(sfh) == snd_16_linear
-        || sfdataformat(sfh) == snd_32_float);
+#ifdef MUS_LITTLE_ENDIAN
+   swap = (sfdataformat(sfh) == MUS_BSHORT
+        || sfdataformat(sfh) == MUS_BFLOAT);
 #else
-   swap = (sfdataformat(sfh) == snd_16_linear_little_endian
-        || sfdataformat(sfh) == snd_32_float_little_endian);
+   swap = (sfdataformat(sfh) == MUS_LSHORT
+        || sfdataformat(sfh) == MUS_LFLOAT);
 #endif
    isNext = 0;
 

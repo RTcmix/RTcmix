@@ -171,7 +171,7 @@ open_sound_file(
 
    /* Now info is available from sndlib query functions. */
 
-   *header_type = c_snd_header_type();
+   *header_type = mus_header_type();
 
    if (NOT_A_SOUND_FILE(*header_type)) {
       fprintf(stderr, "\"%s\" is probably not a sound file\n", sfname);
@@ -179,7 +179,7 @@ open_sound_file(
       return -1;
    }
 
-   *data_format = c_snd_header_format();
+   *data_format = mus_header_format();
 
    if (INVALID_DATA_FORMAT(*data_format)) {
       fprintf(stderr, "\"%s\" has invalid sound data format\n", sfname);
@@ -187,10 +187,10 @@ open_sound_file(
       return -1;
    }
 
-   *data_location = c_snd_header_data_location();
-   *srate = (double) c_snd_header_srate();
-   *nchans = c_snd_header_chans();
-   *nsamps = c_snd_header_data_size();
+   *data_location = mus_header_data_location();
+   *srate = (double) mus_header_srate();
+   *nchans = mus_header_chans();
+   *nsamps = mus_header_samples();
 
    return fd;
 }
@@ -233,8 +233,8 @@ rtinput(float p[], int n_args, double pp[])
    char           *sfname, *str;
    AudioPortType  port_type = MIC;
 
-   header_type = unsupported_sound_file;
-   data_format = snd_unsupported;
+   header_type = MUS_UNSUPPORTED;
+   data_format = MUS_UNSUPPORTED;
    data_location = 0;
    dur = 0.0;
 
@@ -352,8 +352,8 @@ rtinput(float p[], int n_args, double pp[])
          if (print_is_on) {
             printf("Input file set for reading:\n");
             printf("      name:  %s\n", sfname);
-            printf("      type:  %s\n", sound_type_name(header_type));
-            printf("    format:  %s\n", sound_format_name(data_format));
+            printf("      type:  %s\n", mus_header_type_name(header_type));
+            printf("    format:  %s\n", mus_data_format_name(data_format));
             printf("     srate:  %g\n", srate);
             printf("     chans:  %d\n", nchans);
             printf("  duration:  %g\n", dur);

@@ -159,9 +159,9 @@ double m_open(float *p, short n_args, double *pp)
 		printf("name: %s   sr: %.3f  nchans: %d  class: %d\n",name,
 			sfsrate(&sfdesc[fno]),sfchans(&sfdesc[fno]), sfclass(&sfdesc[fno]));
 		printf("Soundfile type: %s\n",
-				sound_type_name(sfheadertype(&sfdesc[fno])));
+				mus_header_type_name(sfheadertype(&sfdesc[fno])));
 		printf("   data format: %s\n",
-				sound_format_name(sfdataformat(&sfdesc[fno])));
+				mus_data_format_name(sfdataformat(&sfdesc[fno])));
 		printf("Duration of file is %f seconds.\n",
 			(float)(sfst[fno].st_size - headersize[fno])/(float)sfclass(&sfdesc[fno])/(float)sfchans(&sfdesc[fno])/sfsrate(&sfdesc[fno]));
 	}

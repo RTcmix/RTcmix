@@ -74,13 +74,13 @@ set_rtoutput_clobber(int state)
             imposed by the various formats, and by sndlib and any
             programs (Mxv, Mix, Cecilia) that should be compatible.
 */
-#define DEFAULT_HEADER_TYPE    AIFF_sound_file
-#define DEFAULT_DATA_FORMAT    snd_16_linear
+#define DEFAULT_HEADER_TYPE    MUS_AIFF
+#define DEFAULT_DATA_FORMAT    MUS_BSHORT
 
 #define CLOBBER_WARNING       \
 "Specified output file already exists! \n\n\
 Turn on \"clobber mode\" in your score to overwrite it.\n\
-(Put \"set_option(\"CLOBBER_ON\")\" before call to rtoutput).\n"
+(Put \"set_option(\"clobber_on\")\" before call to rtoutput).\n"
 
 
 typedef enum {
@@ -103,19 +103,19 @@ typedef struct {
    Not worth the trouble.)
 */
 static Param param_list[] = {
-   { HEADER_TYPE,  NeXT_sound_file,  "next"      },
-   { HEADER_TYPE,  NeXT_sound_file,  "sun"       },
-   { HEADER_TYPE,  AIFF_sound_file,  "aiff"      },
-   { HEADER_TYPE,  AIFF_sound_file,  "aifc"      },
-   { HEADER_TYPE,  RIFF_sound_file,  "wav"       },
-   { HEADER_TYPE,  IRCAM_sound_file, "ircam"     },
-   { DATA_FORMAT,  snd_16_linear,    "short"     },
-   { DATA_FORMAT,  snd_32_float,     "float"     },
-   { DATA_FORMAT,  snd_32_float,     "normfloat" },
-   { DATA_FORMAT,  snd_16_linear,    "16"        },
-   { DATA_FORMAT,  snd_24_linear,    "24"        },    /* not yet supported */
-   { ENDIANNESS,   0,                "big"       },    /* not implemented */
-   { ENDIANNESS,   1,                "little"    }
+   { HEADER_TYPE,  MUS_NEXT,     "next"      },
+   { HEADER_TYPE,  MUS_NEXT,     "sun"       },
+   { HEADER_TYPE,  MUS_AIFF,     "aiff"      },
+   { HEADER_TYPE,  MUS_AIFC,     "aifc"      },
+   { HEADER_TYPE,  MUS_RIFF,     "wav"       },
+   { HEADER_TYPE,  MUS_IRCAM,    "ircam"     },
+   { DATA_FORMAT,  MUS_BSHORT,   "short"     },
+   { DATA_FORMAT,  MUS_BFLOAT,   "float"     },
+   { DATA_FORMAT,  MUS_BFLOAT,   "normfloat" },
+   { DATA_FORMAT,  MUS_BSHORT,   "16"        },
+   { DATA_FORMAT,  MUS_B24INT,   "24"        },    /* not yet supported */
+   { ENDIANNESS,   0,            "big"       },    /* not implemented */
+   { ENDIANNESS,   1,            "little"    }
 };
 static int num_params = sizeof(param_list) / sizeof(Param);
 
@@ -163,13 +163,14 @@ parse_rtoutput_args(int nargs, double pp[])
       switch (param_list[j].type) {
          case HEADER_TYPE:
             output_header_type = param_list[j].value;
-            if (output_header_type == AIFF_sound_file
+//FIXME: ??no longer needed?
+            if (output_header_type == MUS_AIFC
                                 && strcasecmp(param_list[j].arg, "aifc") == 0)
                aifc_requested = 1;
             break;
          case DATA_FORMAT:
             output_data_format = param_list[j].value;
-            if (output_data_format == snd_32_float
+            if (output_data_format == MUS_BFLOAT
                            && strcasecmp(param_list[j].arg, "normfloat") == 0)
                normfloat_requested = 1;
             break;
@@ -183,27 +184,28 @@ parse_rtoutput_args(int nargs, double pp[])
    /* Handle some special cases. */
 
    /* If "wav", make data format little-endian. */
-   if (output_header_type == RIFF_sound_file) {
+   if (output_header_type == MUS_RIFF) {
       switch (output_data_format) {
-         case snd_16_linear:
-            output_data_format = snd_16_linear_little_endian;
+         case MUS_BSHORT:
+            output_data_format = MUS_LSHORT;
             break;
-         case snd_24_linear:
-            output_data_format = snd_24_linear_little_endian;
+         case MUS_B24INT:
+            output_data_format = MUS_L24INT;
             break;
-         case snd_32_float:
-            output_data_format = snd_32_float_little_endian;
+         case MUS_BFLOAT:
+            output_data_format = MUS_LFLOAT;
             break;
       }
    }
 
-   /* If AIFF, use AIFC only if explicitely requested, or if
+   /* If AIFF, use AIFC only if explicitly requested, or if
       the data format is float.
    */
-   if (output_header_type == AIFF_sound_file) {
-      if (output_data_format == snd_32_float)
-         aifc_requested = 1;
-      set_aifc_header(aifc_requested);      /* in sndlib/headers.c */
+   if (output_header_type == MUS_AIFF) {
+      if (output_data_format == MUS_BFLOAT)
+         output_header_type = MUS_AIFC;
+// FIXME: no longer does anything...
+//      mus_header_set_aifc(aifc_requested);      /* in sndlib/headers.c */
    }
 
    /* If writing to a float file, decide whether to normalize the
@@ -302,8 +304,8 @@ rtoutput(float p[], int n_args, double pp[])
    if (print_is_on) {
      printf("Output file set for writing:\n");
      printf("      name:  %s\n", rtoutsfname);
-     printf("      type:  %s\n", sound_type_name(output_header_type));
-     printf("    format:  %s\n", sound_format_name(output_data_format));
+     printf("      type:  %s\n", mus_header_type_name(output_header_type));
+     printf("    format:  %s\n", mus_data_format_name(output_data_format));
      printf("     srate:  %g\n", SR);
      printf("     chans:  %d\n", NCHANS);
    }
