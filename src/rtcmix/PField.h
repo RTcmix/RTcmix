@@ -293,6 +293,21 @@ private:
 	PField *_quantumPField;
 };
 
+// Class for clipping a control signal to extrema. <maxPField> can be NULL,
+// in which case only the minimum is clipped.
+
+class ClipPField : public PFieldWrapper {
+public:
+	ClipPField(PField *innerPField, PField *minPField, PField *maxPField);
+	virtual double	doubleValue(double didx) const;
+	virtual double	doubleValue(int idx) const;
+	virtual int		values() const { return _len; }
+private:
+	int _len;
+	PField *_minPField;
+	PField *_maxPField;
+};
+
 // Class for constraining a control signal to the nearest value in a table.
 // <strength> [0,1] is the degree to which the input value approaches the
 // corresponding table value.  0: not at all; 1: table value replaces input

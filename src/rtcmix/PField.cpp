@@ -455,6 +455,33 @@ double QuantizePField::doubleValue(int idx) const
 	return quantizeValue(field()->doubleValue(idx), _quantumPField->doubleValue(idx));
 }
 
+// ClipPField
+
+ClipPField::ClipPField(PField *innerPField, PField *minPField, PField *maxPField)
+	: PFieldWrapper(innerPField), _len(innerPField->values()),
+	  _minPField(minPField), _maxPField(maxPField)
+{
+}
+
+double ClipPField::doubleValue(double didx) const
+{
+	double val = field()->doubleValue(didx);
+	const double min = _minPField->doubleValue(didx);
+	if (val < min)
+		return min;
+	else if (_maxPField) {
+		const double max = _maxPField->doubleValue(didx);
+		if (val > max)
+			return max;
+	}
+	return val;
+}
+
+double ClipPField::doubleValue(int idx) const
+{
+	return doubleValue((double) idx);
+}
+
 // ConstrainPField
 
 // helper class
