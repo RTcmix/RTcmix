@@ -20,7 +20,7 @@ enum {
 	kGaussianRandom,
 	kCauchyRandom,
 	kProbRandom
-}
+};
 
 // Base class
 
