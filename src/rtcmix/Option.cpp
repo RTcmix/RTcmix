@@ -351,6 +351,33 @@ char *Option::dsoPath(const char *pathName)
 	return _dsoPath;
 }
 
+char *Option::dsoPathPrepend(const char *pathName)
+{
+	char *str = new char[strlen(pathName) + 1 + strlen(_dsoPath) + 1];
+	strcpy(str, pathName);
+	if (strlen(_dsoPath)) {
+		strcat(str, ":");
+		strcat(str, _dsoPath);
+	}
+	strncpy(_dsoPath, str, DSOPATH_MAX);
+	_dsoPath[DSOPATH_MAX - 1] = 0;
+	delete [] str;
+	return _dsoPath;
+}
+
+char *Option::dsoPathAppend(const char *pathName)
+{
+	char *str = new char[strlen(_dsoPath) + 1 + strlen(pathName) + 1];
+	strcpy(str, _dsoPath);
+	if (strlen(_dsoPath))
+		strcat(str, ":");
+	strcat(str, pathName);
+	strncpy(_dsoPath, str, DSOPATH_MAX);
+	_dsoPath[DSOPATH_MAX - 1] = 0;
+	delete [] str;
+	return _dsoPath;
+}
+
 char *Option::rcName(const char *rcName)
 {
 	strncpy(_rcName, rcName, PATH_MAX);
@@ -386,6 +413,11 @@ void Option::dump()
 int get_print_option()
 {
 	return (int) Option::print();
+}
+
+char *get_dsopath_option()
+{
+	return Option::dsoPath();
 }
 
 int get_bool_option(const char *option_name)

@@ -7,9 +7,9 @@
 #include <stdlib.h>
 #include <iostream.h>
 #include <sys/socket.h>
-#ifdef linux
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
-#endif
 
 #include <RTcmixMain.h>
 #include <Option.h>
@@ -89,11 +89,56 @@ int				RTcmixMain::socknew			= 0;
 int				RTcmixMain::netplay 		= 0;	// for remote sound network playing
 #endif
 
+
+// ------------------------------------------------------------- makeDSOPath ---
+// Assuming that our default shared lib dir is in the same directory as our
+// bin dir, return the path name of the shared lib dir.  Return empty string
+// if path to RTcmix executable <progPath> isn't deep enough, or if derived
+// dir name doesn't exist.  Caller is responsible for deleting returned 
+// string.  -JGG
+
+#define PATH_DELIMITER  '/'
+#define DSO_DIRNAME     "shlib"     // FIXME: move to site.conf?
+
+char *RTcmixMain::makeDSOPath(const char *progPath)
+{
+   char *dsoPath = new char [PATH_MAX + 1];
+   strncpy(dsoPath, progPath, PATH_MAX);
+   dsoPath[PATH_MAX] = 0;
+
+   // back up two delimiters (e.g., "RTcmix/bin/CMIX" to "RTcmix/")
+   char *p = strrchr(dsoPath, PATH_DELIMITER);
+   if (p) {
+      *p = 0;
+      p = strrchr(dsoPath, PATH_DELIMITER);
+      if (p) {
+         p++;
+         strcpy(p, DSO_DIRNAME);
+
+         // use directory only if it exists
+         struct stat statbuf;
+         if (stat(dsoPath, &statbuf) == 0 && S_ISDIR(statbuf.st_mode))
+            return dsoPath;
+      }
+   }
+
+   // give up in case there weren't two delimiters or dir is invalid
+   dsoPath[0] = 0;
+   return dsoPath;
+}
+
 RTcmixMain::RTcmixMain(int argc, char **argv) : RTcmix(false)
 {
    set_sig_handlers();
-   init_globals(true);		// indicates we were called from main
+
+// FIXME: should consult a makefile variable to tell us whether we should
+// let dsoPath constructed at run time override SHAREDLIBDIR.
+   char *dsoPath = makeDSOPath(argv[0]);
+   init_globals(true, dsoPath);		// 'true' indicates we were called from main
+   delete [] dsoPath;
+
    parseArguments(argc, argv);
+
    // Note:  What follows was done in main().  Some of it is identical
    // to RTcmix::init() for imbedded.  Factor this out.
    /* Banner */

@@ -121,7 +121,7 @@ protected:
 
 	// Initialization methods.
 	void init(float, int, int, const char*, const char*, const char*);	// called by all constructors
-	static void init_globals(bool fromMain);
+	static void init_globals(bool fromMain, const char *defaultDSOPath);
 	
 	// Audio loop methods
 	

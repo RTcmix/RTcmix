@@ -14,10 +14,12 @@ static int
 get_dso_path(double pfield, char dsoPath[])
 {
     char *str;
+    char *directory = get_dsopath_option();
+    if (strlen(directory) == 0)
 #ifdef SHAREDLIBDIR
-    const char *directory = SHAREDLIBDIR;
+        directory = SHAREDLIBDIR;
 #else
-    const char *directory = "/musr/lib";
+        directory = "/musr/lib";   /* nobody uses this anymore */
 #endif
 
     /* cast double to string pointer */

@@ -14,6 +14,7 @@
 #include <rtcmix_types.h>
 #include <PField.h>
 #include <ugens.h>		// for warn, die
+#include <Option.h>
 
 #include "DynamicLib.h"
 
@@ -50,7 +51,10 @@ makeconnection(const Arg args[], const int nargs)
 	HandleCreator creator = NULL;
 	const char *selector = (const char *) args[0];
 	char loadPath[1024];
-	sprintf(loadPath, "%s/lib%sconn.so", SHAREDLIBDIR, selector);
+	char *dsoPath = Option::dsoPath();
+	if (strlen(dsoPath) == 0)
+		dsoPath = SHAREDLIBDIR;
+	sprintf(loadPath, "%s/lib%sconn.so", dsoPath, selector);
 
 	DynamicLib theDSO;
 	if (theDSO.load(loadPath) == 0) {

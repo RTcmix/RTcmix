@@ -18,6 +18,7 @@ protected:
 	static void *	sockit(void *);
 	
 private:
+	char *			makeDSOPath(const char *progPath);
 	static int 		xargc;	// local copy of arg count
 	static char *	xargv[/*MAXARGS + 1*/];
 	static int 		interrupt_handler_called;

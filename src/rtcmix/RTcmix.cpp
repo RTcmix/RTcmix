@@ -126,11 +126,11 @@ struct _func *	RTcmix::_func_list = NULL;
 
 /* --------------------------------------------------------- init_globals --- */
 void
-RTcmix::init_globals(bool fromMain)
+RTcmix::init_globals(bool fromMain, const char *defaultDSOPath)
 {
-   int i;
-
    Option::init();
+   if (defaultDSOPath && defaultDSOPath[0])
+      Option::dsoPathPrepend(defaultDSOPath);
 
    if (fromMain) {
       Option::readConfigFile(Option::rcName());
@@ -149,19 +149,24 @@ RTcmix::init_globals(bool fromMain)
    rtQueue = new RTQueue[MAXBUS*3];
 
 
-   for (i = 0; i < MAXBUS; i++) {
+   for (int i = 0; i < MAXBUS; i++) {
       AuxToAuxPlayList[i] = -1; /* The playback order for AUX buses */
       ToOutPlayList[i] = -1;    /* The playback order for AUX buses */
       ToAuxPlayList[i] =-1;     /* The playback order for AUX buses */
    }
 
-   for (i = 0; i < MAX_INPUT_FDS; i++)
+   for (int i = 0; i < MAX_INPUT_FDS; i++)
       inputFileTable[i].fd = NO_FD;
 
    init_buf_ptrs();
 
-   if (Option::autoLoad())
-	   registerDSOs(SHAREDLIBDIR);
+   if (Option::autoLoad()) {
+      const char *dsoPath = Option::dsoPath();
+      if (strlen(dsoPath) == 0)
+         registerDSOs(SHAREDLIBDIR);
+      else
+         registerDSOs(dsoPath);
+   }
 }
 
 
@@ -190,14 +195,14 @@ detect_denormals()
 //  The RTcmix constructor with default SR, NCHANS, and RTBUFSAMPS
 RTcmix::RTcmix() 
 {
-	init_globals(false);
+	init_globals(false, NULL);
 	init(SR, NCHANS, RTBUFSAMPS, NULL, NULL, NULL);
 }
 
 //  The RTcmix constructor with settable SR, NCHANS; default RTBUFSAMPS
 RTcmix::RTcmix(float tsr, int tnchans)
 {
-	init_globals(false);
+	init_globals(false, NULL);
 	init(tsr, tnchans, RTBUFSAMPS, NULL, NULL, NULL);
 }
 
@@ -207,7 +212,7 @@ RTcmix::RTcmix(float tsr, int tnchans)
 RTcmix::RTcmix(float tsr, int tnchans, int bsize,
 			   const char *opt1, const char *opt2, const char *opt3)
 {
-   init_globals(false);
+   init_globals(false, NULL);
    init(tsr, tnchans, bsize, opt1, opt2, opt3);
 }
 

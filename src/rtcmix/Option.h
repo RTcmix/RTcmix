@@ -128,6 +128,8 @@ public:
 
 	static char *dsoPath() { return _dsoPath; }
 	static char *dsoPath(const char *pathName);
+	static char *dsoPathPrepend(const char *pathName);
+	static char *dsoPathAppend(const char *pathName);
 
 	static char *homeDir() { return _homeDir; }
 
@@ -168,6 +170,7 @@ extern "C" {
 // supported option_name strings.
 
 int get_print_option();
+char *get_dsopath_option();
 int get_bool_option(const char *option_name);
 void set_bool_option(const char *option_name, int value);
 double get_double_option(const char *option_name);
