@@ -2,11 +2,11 @@
 #include <stdio.h>
 #include <sys/file.h>
 #include <sys/types.h>
+#include <unistd.h>
 #include <math.h>
-#include "../H/ugens.h"
-#include "../H/sfheader.h"
-#include "../H/spray.h"
-#include "../H/defs.h"
+#include <ugens.h>
+#include <sfheader.h>
+#include <maxdispargs.h>
 
 #define ARRAY_SIZE 256
 #define NUM_ARRAYS  32
@@ -60,7 +60,7 @@ double m_random()
 
 double m_srand(p)
 float *p;
-{ srrand(p[0]); }
+{ srrand(p[0]); return 0.0; }
 
 double m_time_beat(p)
 float *p;
@@ -149,6 +149,7 @@ short n_args;
 double m_print(float *pp,short n_args,double *p)
 {
 	printf("Value = %10.8f\n", p[0]);
+	return 0.0;
 }
 
 double
@@ -181,6 +182,7 @@ double m_exit(p,n_args)
 float *p;
 {
 	closesf();
+	return 0.0;
 }
 
 double m_load_array(p,n_args, pp)
@@ -338,6 +340,7 @@ float *p; short n_args; double *pp;
                 printf("%s%s",name,buf);
         }
         printf("\n");
+	return 0.0;
 }
 
 double m_print_is_on(p,n_args)
@@ -368,6 +371,7 @@ float *p;
 	int i,j;
 	i=p[0]; j=p[1];
 	sprayinit(&slist[i],j,p[2]);
+	return 0.0;
 }
 
 

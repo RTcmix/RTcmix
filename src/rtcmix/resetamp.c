@@ -1,6 +1,10 @@
 #include "../H/ugens.h"
 #include "../H/sfheader.h"
 #include <stdio.h>
+#include <unistd.h>
+#ifdef USE_SNDLIB
+#include <sndlibsupport.h>
+#endif
 
 extern SFMAXAMP      sfm[NFILES];
 extern SFHEADER	     sfdesc[NFILES];
@@ -13,15 +17,16 @@ static SFCODE ampcode = {
 	SF_MAXAMP,
 	sizeof(SFMAXAMP) + sizeof(SFCODE)
 };
-resetamp(p,n_args)
-float *p;
+
+double
+resetamp(float p[], int n_args)
 {
 	int i;	
 	int fno;
 	fno = p[0];
 	if(!isopen[fno]) {
 		printf("File number %d has not been opened\n",fno);
-		return;
+		return -1.0;
 	}
 	for(i = 0; i<sfchans(&sfdesc[fno]); i++) {
 		sfmaxamp(&sfm[fno],i) = 0;
@@ -33,7 +38,7 @@ float *p;
 		closesf();
 	}
 
-	putsfcode(&sfdesc[fno],&sfm[fno],&ampcode);
+	putsfcode(&sfdesc[fno],(char *)&sfm[fno],&ampcode);
 
 	if(wheader(sfd[fno],(char *)&sfdesc[fno])) {
 		fprintf(stderr,"Bad header write\n");
@@ -41,5 +46,7 @@ float *p;
 		closesf();
 	}
 	printf("reset header amplitudes to 0 in file %d\n",fno);
+
+	return 0.0;
 }
 

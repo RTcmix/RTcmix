@@ -1,4 +1,5 @@
 #include <globals.h>
+#include <prototypes.h>
 #include "../H/ugens.h"
 #include "../H/sfheader.h"
 #include <stdio.h>
@@ -14,7 +15,7 @@ extern SFMAXAMP      sfm[NFILES];
 extern struct stat   sfst[NFILES];
 extern int headersize[NFILES];
 
-extern int get_last_input_index(void);       /* defined in rtinput.c */
+extern void sfstats(int fd);       /* defined in sfstats.c */
 
 
 double m_sr(p,n_args)
