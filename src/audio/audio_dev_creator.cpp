@@ -71,6 +71,11 @@ createAudioDevice(const char *inputDesc,
 				break;
 			}
 		}
+		if (iCreator == NULL) {
+			die("rtsetparams", "Unrecognized input device name '%s'.",
+				inputDesc);
+			return NULL;
+		}
 	}
 	if (playing) {
 		// Search for creator for outputDesc.
@@ -82,6 +87,11 @@ createAudioDevice(const char *inputDesc,
 				oCreator = currentEntry->creator;
 				break;
 			}
+		}
+		if (oCreator == NULL) {
+			die("rtsetparams", "Unrecognized output device name '%s'.",
+				outputDesc);
+			return NULL;
 		}
 	}
 	// Handle full duplex requests.

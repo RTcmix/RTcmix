@@ -11,6 +11,7 @@
 #include <math.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <errno.h>
 #include <string.h>	// strerror()
 
 #include <sndlibsupport.h>	// RTcmix header
@@ -46,9 +47,12 @@ int OSSAudioDevice::doOpen(int mode)
 		closing(false);
 		break;
 	default:
-		error("AudioDevice: Illegal open mode.");
+		return error("AudioDevice: Illegal open mode.");
 	}
-	return (fd > 0) ? 0 : -1;
+	if (fd < 0)
+		return error("OSS device open failed: ", strerror(errno));
+	else
+		return 0;
 }
 
 int OSSAudioDevice::doClose()
@@ -114,7 +118,7 @@ int OSSAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 	};
 	int confirmedFormat = sampleFormat;
 	if (ioctl(SNDCTL_DSP_SETFMT, &confirmedFormat))
-		return error("Error while setting sample format.");
+		return error("OSS error while setting sample format: ", strerror(errno));
 	else if (confirmedFormat != sampleFormat)
 		return error("This sample format not supported by device.");
 #ifndef SOUND_PCM_WRITE_CHANNELS	// OLD VERSION
@@ -127,11 +131,11 @@ int OSSAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 	{
 		int dsp_stereo = (chans == 2);
 		if (ioctl(SNDCTL_DSP_STEREO, &dsp_stereo) || dsp_stereo != (chans == 2))
-			return error("Unable to set channel count.");
+			return error("OSS error while setting channel count: ", strerror(errno));
 	}
 	int dsp_speed = (int) srate;
 	if (ioctl (SNDCTL_DSP_SPEED, &dsp_speed))
-		return error("Error while setting sample rate.");
+		return error("OSS error while setting sample rate: ", strerror(errno));
 	if (dsp_speed != (int) srate)
 		return error("Device does not support this sample rate");
 	// Store the device params to allow format conversion.
@@ -151,7 +155,7 @@ int OSSAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 	}
 	int fragSize = 0;
 	if (ioctl(SNDCTL_DSP_GETBLKSIZE, &fragSize) == -1) {
-		return error("Error while retrieving fragment size.");
+		return error("OSS error while retrieving fragment size: ", strerror(errno));
 	}
 	*pWriteSize = fragSize / getDeviceBytesPerFrame();
 	_bufferSize = *pWriteSize * *pCount;
@@ -169,7 +173,7 @@ int	OSSAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 		return frames;
 	}
 	else {
-		return error("Error reading from device:", strerror(read));
+		return error("Error reading from OSS device: ", strerror(-read));
 	}
 }
 
@@ -184,7 +188,7 @@ int	OSSAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 		return frames;
 	}
 	else {
-		return error("Error writing to device.");
+		return error("Error writing to OSS device: ", strerror(-written));
 	}
 }
 
@@ -201,11 +205,11 @@ void OSSAudioDevice::run()
 		if (ioctl(isPlaying() ? SNDCTL_DSP_GETOSPACE : SNDCTL_DSP_GETISPACE,
 				  &info))
 		{
-			error("OSS error");
+			error("OSS error: ", strerror(errno));
 			break;
 		}
 		if (info.bytes < bufferSize() / 2) {
-//			printf("\tOSSAudioDevice::run: %d bytes avail...waiting\n", info.bytes);
+			printf("\tOSSAudioDevice::run: %d bytes avail...waiting\n", info.bytes);
 			usleep(10);
 			continue;
 		}

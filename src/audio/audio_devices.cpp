@@ -46,7 +46,7 @@ create_audio_devices(int record, int play, int chans, float srate, int *buffersi
 	// See audio_dev_creator.cpp for this function.
 	device = createAudioDevice(inDeviceName, outDeviceName, record, play);
 	if (device == NULL) {
-		die("rtsetparams", "Failed to create audio device");
+		die("rtsetparams", "Failed to create audio device.");
 		return -1;
 	}
 
@@ -61,21 +61,19 @@ create_audio_devices(int record, int play, int chans, float srate, int *buffersi
 		int reqsize = *buffersize;
 		int reqcount = numBuffers;
 		if ((status = device->setQueueSize(&reqsize, &reqcount)) < 0) {
-			die("rtsetparams", "Trouble setting audio device queue size: %s",
-				device->getLastError());
+			die("rtsetparams", "%s", device->getLastError());
 			return -1;
 		}
 		if (reqsize != *buffersize) {
 			advise("rtsetparams",
-				   "RTBUFSAMPS reset by audio device from %d to %d",
+				   "RTBUFSAMPS reset by audio device from %d to %d.",
 					*buffersize, reqsize);
 			*buffersize = reqsize;
 		}
 	}
 	else
 	{
-		die("rtsetparams", "Trouble opening audio device: %s", 
-			device->getLastError());
+		die("rtsetparams", "%s", device->getLastError());
 		return -1;
 	}
 
