@@ -21,7 +21,7 @@ extern "C" {
 
 #include "../H/dbug.h"
 
-#ifdef sgi
+#ifdef SGI
 	#include <dmedia/audio.h>
 #endif
 #ifdef LINUX
@@ -30,13 +30,13 @@ extern "C" {
 #endif
 
 extern "C" {
-        int ug_intro();
+	int ug_intro();
+	void *yyparse();
 	int profile();
-  //	void *yyparse();
 	void *sockit();
 	Tree exct(Tree);
 	int closesf();
-#ifdef sgi
+#ifdef SGI
 	void flush_all_underflows_to_zero();
 #endif
 #ifdef LINUX
@@ -44,13 +44,14 @@ extern "C" {
 #endif
 }
 
-#ifdef sgi
+#ifdef SGI
+	extern ALport in_port;
 	extern ALport out_port;
 #endif
 
 #ifdef LINUX 
-        extern int out_port;   // this is the descriptor for the audio port.
-        extern int in_port;
+	extern int out_port;   // this is the descriptor for the audio port.
+	extern int in_port;
 #endif
 
 heap rtHeap;  // DT:  main heap structure used to queue instruments
@@ -90,7 +91,7 @@ int RTBUFSAMPS;
 int MAXBUF;
 int oldSched;
 int noParse = 0;
-int audio_on;
+int audio_on = 0;        // JGG inited this
 int play_audio;
 int full_duplex;
 
@@ -137,7 +138,7 @@ main(int argc, char *argv[])
 	an R3000.
 	*/
 
-#ifdef sgi
+#ifdef SGI
 	flush_all_underflows_to_zero();
 #endif
 #ifdef LINUX
@@ -280,7 +281,7 @@ main(int argc, char *argv[])
 	  inTraverse();
 	}
 
-#ifdef sgi
+#ifdef SGI
 	if (out_port) while (ALgetfilled(out_port) > 0) {};
 #endif
 	closesf();

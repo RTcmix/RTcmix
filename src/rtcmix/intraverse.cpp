@@ -42,6 +42,10 @@ extern "C" int audio_on;
 /* traverse.C and sys/rtwritesamps.C import this */
 unsigned long bufStartSamp;
 
+extern float *outbuff, *outbptr; /* defined in main.C */
+extern short *inbuff;
+
+
 extern "C" {
   void *inTraverse()
   {

@@ -5,15 +5,15 @@
 include makefile.conf
 
 ifeq ($(USE_SNDLIB),TRUE)
-  SNDLIB = sndlib
-  SNDLIB_DIR = $(SNDLIB)-5.5
+  SNDLIB_LINK = sndlib
+  SNDLIB_DIR = $(SNDLIB_LINK)-5.5
 else
-  SNDLIB = 
+  SNDLIB_LINK = 
 endif
 
 MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
 
-DIRS = $(SNDLIB) H rtstuff Minc sys lib head cmd utils 
+DIRS = $(SNDLIB_LINK) H rtstuff Minc sys lib head cmd utils 
 
 all: $(DIRS) insts packages
 
@@ -22,7 +22,7 @@ install::
 	@cd cmd; $(MAKE) install;
 	@cd head; $(MAKE) install;
 	@cd utils; $(MAKE) install;
-	-mkdir $(LIBDESTDIR)
+	-mkdir $(LIBDESTDIR);
 	@for DIR in $(INST_DIRS); \
 	do \
 	  ( cd $$DIR; $(MAKE) install ); \
@@ -55,8 +55,8 @@ sys::
 
 sndlib::
 	@echo "making sndlib..."
-	@rm -f $(SNDLIB);
-	@ln -sf $(SNDLIB_DIR) $(SNDLIB);
+	@rm -f $(SNDLIB_LINK);
+	@ln -sf $(SNDLIB_DIR) $(SNDLIB_LINK);
 	@cd sndlib; $(MAKE) all
 	@echo "done.";echo""
 
@@ -92,7 +92,7 @@ dsos::
 	@for DIR in $(INST_DIRS); \
 	do \
 	  ( cd $$DIR; echo "making $$DIR..."; \
-	   @echo "include $(MAKEFILE_CONF)" > package.conf 	
+	   @echo "include $(MAKEFILE_CONF)" > package.conf \
 	   $(MAKE) all; echo "done.";echo"" ); \
 	done
 
@@ -100,7 +100,7 @@ dso_install:
 	@for DIR in $(INST_DIRS); \
 	do \
 	  ( cd $$DIR; echo "making dso_clean $$DIR..."; \
-	   @echo "include $(MAKEFILE_CONF)" > package.conf 	
+	   @echo "include $(MAKEFILE_CONF)" > package.conf \
 	   $(MAKE) install; echo "done.";echo"" ); \
 	done
 
@@ -108,7 +108,7 @@ dso_clean::
 	@for DIR in $(INST_DIRS); \
 	do \
 	  ( cd $$DIR; echo "making dso_clean $$DIR..."; \
-	   @echo "include $(MAKEFILE_CONF)" > package.conf 	
+	   @echo "include $(MAKEFILE_CONF)" > package.conf \
 	   $(MAKE) dso_clean; echo "done.";echo"" ); \
 	done
 
@@ -116,7 +116,7 @@ standalone::
 	@for DIR in $(INST_DIRS); \
 	do \
 	  ( cd $$DIR; echo "making standalone $$DIR..."; \
-	   @echo "include $(MAKEFILE_CONF)" > package.conf 	
+	   @echo "include $(MAKEFILE_CONF)" > package.conf \
 	   $(MAKE) standalone; echo "done.";echo"" ); \
 	done
 
@@ -124,7 +124,7 @@ standalone_install::
 	@for DIR in $(INST_DIRS); \
 	do \
 	  ( cd $$DIR; echo "making standalone $$DIR..."; \
-	   @echo "include $(MAKEFILE_CONF)" > package.conf 	
+	   @echo "include $(MAKEFILE_CONF)" > package.conf \
 	   $(MAKE) standalone_install; echo "done.";echo"" ); \
 	done
 
@@ -132,7 +132,7 @@ standalone_clean::
 	@for DIR in $(INST_DIRS); \
 	do \
 	  ( cd $$DIR; echo "making standalone_clean $$DIR..."; \
-	   @echo "include $(MAKEFILE_CONF)" > package.conf 	
+	   @echo "include $(MAKEFILE_CONF)" > package.conf \
 	   $(MAKE) standalone_clean; echo "done.";echo"" ); \
 	done
 

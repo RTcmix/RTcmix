@@ -1,5 +1,5 @@
 # The directory containing the RTcmix directory
-TOPDIR = /musr
+TOPDIR = /usr/local/src
 
 # The name of the RTcmix directory
 CMIXDIR = $(TOPDIR)/RTcmix
@@ -8,15 +8,19 @@ CMIXDIR = $(TOPDIR)/RTcmix
 LIBDESTDIR = $(CMIXDIR)/shlib
 
 # add new instruments to this list (e.g., insts.std, insts.jg)
-INST_DIRS = insts.base insts.std
+INST_DIRS = insts.base 
 # insts.std insts.jg
 
 # add new packages to this list (e.g., interfaces.std)
-PACKAGE_DIRS = 
+PACKAGE_DIRS =
 
 # Set this to TRUE to use sndlib for file i/o; otherwise use the old cmix i/o.
 USE_SNDLIB = TRUE
 #USE_SNDLIB = FALSE
+
+ARCH = LINUX
+#ARCH = SGI
+
 
 ###############################################################
 # Shouldn't need to edit below this line
@@ -27,27 +31,55 @@ DESTDIR = $(CMIXDIR)/bin
 BINDIR = $(DESTDIR)
 
 # Compile and link time flags
-CC = gcc 
-CXX = g++ 
-LD = ld
-MAKE = make
-INSTALL = cp -f
+
+ifeq ($(ARCH),LINUX)
+  ARCHFLAGS = -D_REENTRANT -DLINUX
+  CC = gcc 
+  CXX = g++ 
+  LD = ld
+  MAKE = make
+  INSTALL = cp -f
+  SHELL = /bin/sh
+endif
+ifeq ($(ARCH),SGI)
+  ARCHFLAGS = -D_REENTRANT -DSGI
+  CC = cc  -Xcpluscomm
+  CXX = CC
+  LD = ld
+  MAKE = gnumake
+  INSTALL = cp -f
+  SHELL = /bin/bash
+  # Using the default /bin/sh on SGI complains about any Makefile
+  # "for" loops where arg to "for" is empty
+endif
 
 INCLUDES = -I$(CMIXDIR)/H
 
-CFLAGS = $(INCLUDES) -g -D_REENTRANT -DLINUX
-CXXFLAGS = $(INCLUDES) -g -D_REENTRANT -DLINUX
+CFLAGS = $(INCLUDES) -g $(ARCHFLAGS)
+CXXFLAGS = $(INCLUDES) -g $(ARCHFLAGS)
 
 ifeq ($(USE_SNDLIB),TRUE)
   CFLAGS += -DUSE_SNDLIB
   CXXFLAGS += -DUSE_SNDLIB
+  SNDLIB = ../sndlib/sndlib.a
+else
+  SNDLIB =
 endif
 
 FLAGS = $(CFLAGS)
 
-SYSLIBS = -lpthread -lm -ldl
-LDFLAGS = $(SYSLIBS)
-SHARED_LDFLAGS = -shared 
+# Library flags
+
+ifeq ($(ARCH),LINUX)
+  SYSLIBS = -lpthread -lm -ldl
+  LDFLAGS = $(SYSLIBS)
+  SHARED_LDFLAGS = -shared 
+endif
+ifeq ($(ARCH),SGI)
+  SYSLIBS = -lpthread -laudio -lm
+  LDFLAGS = $(SYSLIBS)
+  SHARED_LDFLAGS = -shared -update_registry $(LIBDESTDIR)/so_locations
+endif
 
 # For benefit of inst makefiles that live outside CMIXDIR hierarchy
 UGENS_H = $(CMIXDIR)/H/ugens.h
@@ -61,3 +93,4 @@ RTPROFILE_O = $(CMIXDIR)/rtstuff/rtprofile.o
 
 GENLIB = $(LIBDIR)/genlib.a
 CMIXOBJS = $(CMIXDIR)/sys/cmix.o $(LIBDIR)/genlib.a
+
