@@ -42,7 +42,7 @@ makegen(13, 18, 1000, 0,.5, 1,.5)           /* image centered in middle */
 makegen(14, 18, 1000, 0,0, 1,1)             /* increasingly randomized */
 
 
-JGRAN(start=0, dur, amp, seed=.1, type=1, ranphase=1)
+JGRAN(start=0, dur, amp, seed=0, type=1, ranphase=1)
 
 
 /* JGRAN - granular synthesis with FM or AS grains
@@ -54,7 +54,7 @@ JGRAN(start=0, dur, amp, seed=.1, type=1, ranphase=1)
    p0 = output start time
    p1 = duration
    p2 = amplitude multiplier
-   p3 = random seed (if 0, seed from system clock) [default: 0]
+   p3 = random seed (any integer; if 0, seed from system clock) [default: 0]
    p4 = oscillator configuration (0: additive, 1: FM, 2: sampled) [default: 0]
    p5 = randomize oscillator starting phase (0: no, 1: yes) [default: yes]
 

@@ -45,13 +45,13 @@ makegen(13, 18, 1000, 0,.5, 1,.5)           /* image centered in middle */
 makegen(14, 18, 1000, 0,0, 1,1)             /* increasingly randomized */
 
 
-JGRAN(start=0, dur, amp=.5, seed=.1, type=1, ranphase=1)
+JGRAN(start=0, dur, amp=.5, seed=0, type=1, ranphase=1)
 
 makegen(3, 10, 10000, 1, .5, .3, .2, .1)
 makegen(6, 18, 1000, 0,900, 1,840)
 makegen(7, 18, 1000, 0,900, 1,1000)
 makegen(14, 18, 1000, 0,1, 1,0)
-JGRAN(start=0, dur, amp=1, seed=.3, type=0, ranphase=1)
+JGRAN(start=0, dur, amp=1, seed=1, type=0, ranphase=1)
 
 /* --------------------------------------------------------------- reverb --- */
 amp = 1.0 * masteramp

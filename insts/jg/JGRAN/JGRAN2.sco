@@ -44,7 +44,7 @@ makegen(13, 18, 1000, 0,.5, 1,.5)
 makegen(14, 18, 1000, 0,0, 1,1)
 
 
-JGRAN(start=0, dur, amp, seed=.1, type=1)
+JGRAN(start=0, dur, amp, seed=0, type=1)
 
 /* a second grain stream, with some different params */
 setline(0,0, 1,1, 4,1, 10,0)
@@ -52,6 +52,6 @@ makegen(6, 18, 1000, 0,1000, 1,1000)        /* min */
 makegen(7, 18, 1000, 0,1100, 1,1100)        /* max */
 makegen(14, 18, 1000, 0,1, 1,0)
 amp = 2
-JGRAN(start=0, dur, amp, seed=.2, type=0)
+JGRAN(start=0, dur, amp, seed=1, type=0)
 
 
