@@ -1,3 +1,7 @@
+Thursday, Feb 15 2001 Doug Scott <netdscott@netscape.net>
+
+   * More work on optimizing and cleaning up MOVE and PLACE.
+
 Wednesday, Feb 14, 2001 John Gibson <johngibson@virginia.edu>
 
    * Added (optional) support for Python as an alternative to Minc.
