@@ -17,7 +17,7 @@
 
 rtsetparams(44100, 1, 512);
 load("PVOC")
-rtinput("/home/dscott/sounds/fine4.wav");
+rtinput("../../../snd/input.wav");
 
 /* PVOC(start, inskip, indur, amp, inchan, */
 /*     fftsize, windowsize, decim, interp, pitch, nLpcoeffs, synthThresh); */

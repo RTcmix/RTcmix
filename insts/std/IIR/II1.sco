@@ -46,7 +46,7 @@
 
 rtsetparams(44100, 1)
 load("IIR")
-rtinput("/snd/pablo1.snd")
+rtinput("../../../snd/input.wav");
 
 makegen(1, 24, 1000, 0, 0, 1,1, 5,1, 7,0)
 setup(149.0, 25.0, 1.0, 1415.0, 100.0, 0.8)
