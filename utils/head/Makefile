@@ -38,10 +38,15 @@ install:
 	   ( $(INSTALL) $(CMIXDIR)/head/$$PGM $(DESTDIR); ) \
 	done
 
-clean:
+uninstall:
+	@echo "making uninstall..."	
 	@for PGM in $(HEAD); \
 	do \
 	   ( $(RM) $(DESTDIR)/$$PGM; ) \
 	done
-	@$(RM) *.o $(HEAD)
+
+clean:
+	$(RM) *.o $(HEAD)
+
+cleanall: clean uninstall
 

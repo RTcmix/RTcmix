@@ -17,6 +17,8 @@ PYTHON_INCLUDE_DIR = `$(PYTHON) print_python_includedir.py`
 # Note: any optimization makes huge object file, due to extensive inlining
 CFLAGS = -I$(PYTHON_INCLUDE_DIR) $(OPT)
 
+.PHONY: all clean cleanall
+
 all: $(EXT_FILE).o
 
 # This dependency prevents making unless the funcexcept file has
@@ -31,7 +33,8 @@ $(EXT_FILE).c: make_python_ext.pl $(FUNCLIST)
 $(EXT_FILE).o: $(EXT_FILE).c $(EXT_FILE).h
 	$(CC) $(CFLAGS) -c $(EXT_FILE).c
 
-.PHONY: clean
 clean:
-	@$(RM) $(FUNCLIST) $(EXT_FILE).o $(EXT_FILE).c
+	$(RM) $(FUNCLIST) $(EXT_FILE).o $(EXT_FILE).c
+
+cleanall: clean
 

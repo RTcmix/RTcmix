@@ -44,3 +44,6 @@ randfuncs.o: randfuncs.c
 
 clean:
 	rm -f *.o *~ *\# $(OBJECTS) $(GENLIB) $(RT_SOCKET_STUFF)
+
+cleanall: clean
+

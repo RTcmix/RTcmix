@@ -11,6 +11,7 @@ sndlib.a: $(OBJS)
 clean: 
 	$(RM) $(OBJS) sndlib.a
 
-distclean:
-	$(RM) $(OBJS) sndlib.a
+cleanall: clean
+
+distclean: clean
 

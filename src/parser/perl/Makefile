@@ -14,7 +14,7 @@ EXT_FILE = $(XS_DIR)/blib/arch/auto/$(EXT_NAME)/$(EXT_NAME)$(XT_SUFFIX)
 
 all: $(EXT_FILE)
 
-.PHONY: install clean
+.PHONY: install clean cleanall
 
 $(EXT_FILE): $(XS_DIR)/$(XS_FILE) $(XS_DIR)/$(PM_FILE)
 	( cd $(XS_DIR); perl Makefile.PL; $(MAKE) )
@@ -29,4 +29,6 @@ clean:
 		(cd $(XS_DIR); $(MAKE) clean; $(RM) Makefile.old) \
 	fi
 	@$(RM) $(LIBDESTDIR)/$(PM_FILE) $(LIBDESTDIR)/$(EXT_NAME)$(XT_SUFFIX)
+
+cleanall: clean
 

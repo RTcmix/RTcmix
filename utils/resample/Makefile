@@ -20,5 +20,5 @@ libfilterkit.a: $(HFILES) filterkit.o
 	ranlib libfilterkit.a
 
 clean:
-	$(RM) *.o libfilterkit.a $(PROG) $(DESTDIR)/resample
+	$(RM) *.o libfilterkit.a $(PROG)
 

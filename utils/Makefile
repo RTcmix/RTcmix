@@ -57,16 +57,22 @@ ifneq ($(strip $(PLAY)),)        # do only if PLAY is nonempty
 	@cd $(DESTDIR); ln -fs $(PLAY) play
 endif
 
-clean:
+uninstall:
+	@echo "making uninstall..."	
 ifneq ($(strip $(PROGS)),)       # do only if PROGS is nonempty
 	@for PROG in $(PROGS); \
 	do \
 	  ( $(RM) $(DESTDIR)/$$PROG; ) \
 	done
-	@$(RM) $(DESTDIR)/play
 endif
+	 $(RM) $(DESTDIR)/play
+	 $(RM) $(DESTDIR)/resample
+
+clean:
+	$(RM) *.o core $(PROGS)
 ifneq ($(strip $(RESAMPLE)),)    # do only if RESAMPLE is nonempty
 	@cd $(RESAMPLE); $(MAKE) clean
 endif
-	@$(RM) *.o core $(PROGS)
+
+cleanall: clean uninstall
 
