@@ -9,13 +9,14 @@
 /* DJT:  modified to work with JG's objlib.h */
 typedef enum {
   NONE,
-  ATTACK,
-  DECAY,
+  RISE,
   SUSTAIN,
-  RELEASE,
-  END
+  DECAY
 } EnvType;
 
+#ifndef GLOBAL
+#define GLOBAL extern
+#endif
 GLOBAL int curtag;                /* current note tag */
 GLOBAL int tags_on;               /* using note tags for rtupdates */
 GLOBAL int tag_sem;
