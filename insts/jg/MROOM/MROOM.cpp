@@ -128,7 +128,7 @@ int MROOM::init(float p[], int n_args)
 int MROOM::run()
 {
    int   i, m, ampbranch, quantbranch, rsamps;
-   float aamp, insig, lout, rout, delval, rvbsig = 0.0;
+   float aamp, insig, lout, rout, delval = 0.0, rvbsig = 0.0;
    float out[2];
 
    if (in == NULL)                /* first time, so allocate it */

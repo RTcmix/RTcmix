@@ -170,7 +170,7 @@ int ELL::init(float p[], int n_args)
 int ELL::run()
 {
    int   i, n, branch, rsamps;
-   float aamp, insig;
+   float aamp, insig = 0.0;
    float out[2];
 
    if (in == NULL)              /* first time, so allocate it */

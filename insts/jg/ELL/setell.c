@@ -529,7 +529,7 @@ void djelf_(double *sn, double *cn, double *dn, double x, double sck)
     double d_1;
 
    /* Local variables */
-    double a, b, c, d;
+    double a, b, c, d = 0.0;
     long int i, k, l;
     double y, cm, geo[12], ari[12];
 
