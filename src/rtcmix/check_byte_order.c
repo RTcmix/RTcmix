@@ -9,26 +9,13 @@
 #include <sys/file.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <netinet/in.h>
 
-extern int big_endian;
 int swap;
 short isNext;
 
 int check_byte_order(SFHEADER *sfh,char *prog,char *sfname)
 {
-  char *fixsfcodes();
-  SFMAXAMP sfm;
-  SFCODE *sizer;
-  SFCOMMENT sfcm;
-  char *cp,*cp2,*getsfcode();
-  char date[26];
-  float swapfloat();
-  int i,is_bsd_next,retval,fixsfcode();
-
-  int dataFormat;
-
-  FILE *ifp;
+  int retval;
  
   /* return 0 if file is ok (native or can be swapped) */
   /* return 1 otherwise */
