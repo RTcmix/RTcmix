@@ -1,3 +1,13 @@
+Friday, Dec 08, 2000 Douglas Scott <netdscott@netscape.net>
+
+   * Added TRANSBEND instrument which allows time-varying pitch changes.
+   * Fixed bug in TRANS call to tableset().
+   * Completely rewrote PLACE program to make it real-time.
+   * Added RT MOVE to same directory (builds both MOVE and PLACE).
+   * Added builtin utilities for generating random and weighted random vals.
+   * Added setexp() command to generate exponential lines for amplitudes, etc.
+   * Cleaned up n_args decls in ./sys.
+   * Added a check for SR <= 0 to rtsetparams().
 
 **** Released RTcmix-3.0.3 ****
 
