@@ -316,7 +316,7 @@ int TablePField::print(FILE *file) const
 {
 	int chars = 0;
 	for (int i = 0; i < values(); i++) {
-		chars += fprintf(file, "%d %.6f\n", i, _table[i]);
+		chars += fprintf(file, "%.6f\n", _table[i]);
 	}
 	return chars;
 }
