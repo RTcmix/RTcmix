@@ -20,7 +20,30 @@ ARCH = LINUX
 #ARCH = MACOSX
 #ARCH = SGI
 
-# Sound driver API for Linux (and other than SGI)
+# optimization, debugging and warning flags
+OPT = -g -Wall -Wno-unused -O2
+# for Irix, try just...
+#OPT = -O2
+
+# Uncomment this to enable use of the Perl front end to RTcmix.
+# This requires a perl version >= 5.005_62.
+#PERL_SUPPORT = TRUE
+
+# Uncomment this to enable use of the Python front end to RTcmix.
+#PYTHON_SUPPORT = TRUE
+
+# Uncomment to use old function table assignments for certain instruments.
+# For example, WAVETABLE used to expect function 1 to contain the wavetable
+# and function 2 to contain the amp envelope. We swapped these so that you
+# can use setline to give the amp envelope. But if you prefer compatibility
+# with your existing scores, uncomment this line:
+#CMIX_FLAGS += -DCOMPATIBLE_FUNC_LOCS
+
+###############################################################
+# Linux sound driver flags -- ignore for Irix and Mac OS X
+# (It doesn't matter how any of these are set for Irix and Mac OS X.)
+
+# Sound driver API
 # NOTE: no support for ALSA yet, sorry
 SOUND_DRIVER = -DOSS
 #SOUND_DRIVER = -DALSA
@@ -38,26 +61,6 @@ SOUND_DRIVER += -DSHARED_AUDIO_DEV
 # NOTE: This seems to be broken right now.  Leave it commented out.
 #SOUND_DRIVER += -DUSE_CARD_CHANS
 
-# optimization, debugging and warning flags
-OPT = -g -Wall -Wno-unused -O2
-# for Irix, try just...
-#OPT = -O2
-
-# Uncomment this to enable use of the Perl front end to RTcmix.
-# This requires a perl version >= 5.005_62.
-#PERL_SUPPORT = TRUE
-
-# Uncomment this to enable use of the Python front end to RTcmix.
-# This has been tested only with Python 1.5.2, but should work for more
-# recent versions.
-#PYTHON_SUPPORT = TRUE
-
-# Uncomment to use old function table assignments for certain instruments.
-# For example, WAVETABLE used to expect function 1 to contain the wavetable
-# and function 2 to contain the amp envelope. We swapped these so that you
-# can use setline to give the amp envelope. But if you prefer compatibility
-# with your existing scores, uncomment this line:
-#CMIX_FLAGS += -DCOMPATIBLE_FUNC_LOCS
 
 ###############################################################
 # Shouldn't need to edit below this line
