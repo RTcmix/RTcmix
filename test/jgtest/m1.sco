@@ -1,5 +1,5 @@
 print_off()
-if (n_arg() < 3) {
+if (n_arg() < 2) {
    str_num("usage:  CMIX rtlevel headertype < scorefile")
    str_num("  (rtlevel: 0=diskbased, 1=rtdiskonly, 2=rtaudioonly, 3=rtboth)")
    str_num("  (headertype: 0=sun, 1=aif, 2=wav, 3=ircam)")

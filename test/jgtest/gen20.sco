@@ -1,5 +1,5 @@
 print_off()
-if (n_arg() < 3) {
+if (n_arg() < 2) {
    str_num("usage:  CMIX num_array_slots distribution_type < gen20.sco")
    str_num("  distribution_type:")
    str_num("    0=even, 1=low-weighted, 2=high-weighted, 3=triangle")
@@ -13,7 +13,7 @@ if (distribution < 0 || distribution > 5) {
    str_num("0=even, 1=low-weighted, 2=high-weighted, 3=triangle, 4=gaussian, 5=cauchy")
    exit(1)
 }
-if (n_arg() > 3)
+if (n_arg() > 2)
    seed = i_arg(2)
 else
    seed = 0      /* take seed from microsecond clock */

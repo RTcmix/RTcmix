@@ -1,5 +1,5 @@
 print_off()
-if (n_arg() < 2) {
+if (n_arg() < 1) {
    str_num("usage:  CMIX rtlevel < scorefile")
    str_num("  (rtlevel: 0=diskbased, 1=rtdiskonly, 2=rtaudioonly, 3=rtboth)")
    exit(1)

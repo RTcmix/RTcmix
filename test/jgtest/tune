@@ -4,8 +4,8 @@ progname=`basename $0`
 
 if [ $# -lt 1 ]
 then
-   echo Usage: ${progname} freq [dur]
-   echo        \(freq in Hz or oct.pc\)
+   echo Usage: ${progname} freq [dur [amp]]
+   echo "       (freq in Hz or oct.pc; amp 1-32767, 10000 by default)"
    exit
 fi
 
@@ -14,9 +14,11 @@ scriptloc=`dirname ${scriptloc}`
 scriptname=${scriptloc}/tuningfork.sco
 
 if [ $# -eq 1 ] ; then
-   CMIX $1 < ${scriptname} >& /dev/null
+   CMIX -q $1 < ${scriptname}
+elif [ $# -eq 2 ] ; then
+   CMIX -q $1 $2 < ${scriptname}
 else
-   CMIX $1 $2 < ${scriptname} >& /dev/null
+   CMIX -q $1 $2 $3 < ${scriptname}
 fi
 
 # Note: no way to tell whether this failed, because cmix returns 0

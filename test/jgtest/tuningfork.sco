@@ -2,8 +2,7 @@
    Shows how cmix scripts can take command line args and print err msgs.
    Can use this with the ``tune'' shell script in this dir.
 */
-print_off()
-if (n_arg() < 2) {
+if (n_arg() < 1) {
    str_num("usage:  CMIX freq [dur [amp]] < tuningfork.sco")
    str_num("        (freq in hz or oct.pc; amp 1-32767, 10000 if omitted)")
    exit(1)
@@ -20,9 +19,9 @@ if (freq <= 0 || freq > sr / 2) {      /* NB: if < 15, oct.pc (conv in inst) */
    exit(1)
 }
 
-if (n_arg() > 2) {
+if (n_arg() > 1) {
    dur = f_arg(1)
-   if (n_arg() > 3)
+   if (n_arg() > 2)
       amp = f_arg(2)
    else
       amp = default_amp
@@ -44,6 +43,8 @@ if (amp < 1 || amp > 32767) {
 /* -------------------------------------------------------------------------- */
 rtsetparams(sr, 2)
 load("WAVETABLE")
+
+set_option("report_clipping_off")
 
 makegen(1, 18, 5000, 0,0, envramp,1, dur-envramp,1, dur,0)
 makegen(2, 10, 5000, 1)
