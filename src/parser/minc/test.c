@@ -18,7 +18,7 @@ parse_dispatch(const char *funcname, const Arg arglist[], const int nargs,
    Arg *retval)
 {
    retval->val.number = 0.0;
-   retval->type = FloatType;
+   retval->type = DoubleType;
 
    printf("parse_dispatch: n_args=%d\n", nargs);
    return 0;
