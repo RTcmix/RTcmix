@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include <fcntl.h>
+#include <sys/select.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -105,6 +108,7 @@ bool NetAudioDevice::waitForDevice(unsigned int wTime)
 void
 NetAudioDevice::run()
 {
+//	printf("NetAudioDevice::run: top of loop\n");
 	// waitForDevice() waits on the descriptor you passed to setDevice() until
 	// the device is ready to give/get audio.  It returns false if 
 	// AudioDevice::stop() is called, to allow the loop to exit.
@@ -114,6 +118,7 @@ NetAudioDevice::run()
             break;
         }
  	}
+//	printf("NetAudioDevice::run: after loop\n");
 	// If we stopped due to callback being done, set the state so that the
 	// call to close() does not attempt to call stop, which we cannot do in
 	// this thread.  Then, check to see if we are being closed by the main
@@ -125,7 +130,7 @@ NetAudioDevice::run()
 			close();
 		}
 	}
-	
+//	printf("NetAudioDevice::run: calling stop callback\n");	
 	// Now call the stop callback.
 	stopCallback();
 }
@@ -197,14 +202,14 @@ NetAudioDevice::doStart()
 		netformat.chans = getDeviceChannels();
 		netformat.sr = (float) getSamplingRate();
 		netformat.blockFrames = _impl->framesPerWrite;
-		printf("NetAudioDevice::doStart: writing header to stream...\n");
+//		printf("NetAudioDevice::doStart: writing header to stream...\n");
 		int wr;
 		if ((wr = ::write(device(), &netformat, kNetAudioFormat_Size)) != kNetAudioFormat_Size)
 		{
 			return error("NetAudioDevice: unable to write header: ",
 				  		 (wr >= 0) ? "partial or zero write" : strerror(errno));
 		}
-		printf("NetAudioDevice::doStart: wrote header\n");
+//		printf("NetAudioDevice::doStart: wrote header\n");
 	}
 	else if (isRecording()) {
 		bool ready = false;
@@ -289,6 +294,29 @@ int NetAudioDevice::waitForConnect()
 					 strerror(errno));
 	}
 	printf("NetAudioDevice: waiting for input connection...\n");
+	// Make sure we wont block.
+	fcntl(_impl->sockdesc, F_SETFL, O_NONBLOCK);
+	// Select on socket, waiting until there is a connection to accept.
+	// This allows us to break out if device stops or closes.
+	fd_set rfdset;
+	struct timeval timeout;
+	const int nfds = _impl->sockdesc + 1;
+	int ret;
+	FD_ZERO(&rfdset);
+	do {
+		if (closing() || stopping()) {
+//			printf("breaking out of wait for stop or close\n");
+			return -1;
+		}
+		timeout.tv_sec = 0;
+		timeout.tv_usec = 100000;
+		FD_SET(_impl->sockdesc, &rfdset);
+//		printf("in select loop...\n");
+	} while ((ret = select(nfds, &rfdset, NULL, NULL, &timeout)) == 0);
+	if (ret == -1) {
+//		printf("select() returned -1, breaking out of wait\n");
+		return -1;
+	}
 #ifdef MACOSX
 	int len = sizeof(_impl->sss);
 #else
@@ -297,8 +325,7 @@ int NetAudioDevice::waitForConnect()
 	int sockdev = accept(_impl->sockdesc, (struct sockaddr *)&_impl->sss, &len);
 	if (sockdev < 0) {
 		::close(_impl->sockdesc);
-		return error("NetAudioDevice: accept failed: ", 
-					 strerror(errno));
+		return error("NetAudioDevice: accept failed: ", strerror(errno));
 	}
 	setDevice(sockdev);
 	printf("NetAudioDevice: got connection\n");
@@ -308,10 +335,14 @@ int NetAudioDevice::waitForConnect()
 int NetAudioDevice::disconnect()
 {
 	int status = 0;
-	if ((status = ::close(device())) == 0)
-		setDevice(-1);
-	else
-		error("NetAudioDevice: close failed: ", strerror(errno));
+	const int dev = device();
+	if (dev > 0) {
+		// NOTE:  Still possible to have race condition with _device.
+		if ((status = ::close(dev)) == 0)
+			setDevice(-1);
+		else
+			error("NetAudioDevice: close failed: ", strerror(errno));
+	}
 	return status;
 }
 
