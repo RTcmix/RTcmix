@@ -23,7 +23,6 @@ install:
 	  ( cd $$DIR; echo "making install in $$DIR..."; \
 	  ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR); ) \
 	done
-	@ln -fs `pwd`/MIX/MIX $(DESTDIR)/CMIX
 
 dsos:  all
 
@@ -51,7 +50,6 @@ clean:
 	  rm -f $(DESTDIR)/$$DIR; \
 	  rm -f $(LIBDESTDIR)/lib$$DIR.so; ) \
 	done
-	rm -f $(DESTDIR)/CMIX
 
 dso_clean:
 	@for DIR in $(LIBDIRS); \
@@ -59,7 +57,6 @@ dso_clean:
 	  ( cd $$DIR; make clean; \
 	  rm -f $(LIBDESTDIR)/lib$$DIR.so; ) \
 	done
-	rm -f $(DESTDIR)/CMIX
 
 standalone_clean:
 	@for DIR in $(LIBDIRS); \
