@@ -16,6 +16,7 @@ Oonepole::Oonepole(float SR, float freq) : _sr(SR), _hist(0.0)
 }
 
 // Positive freq gives lowpass; negative freq gives highpass.
+
 void Oonepole::setfreq(float freq)
 {
 	if (freq >= 0.0) {
@@ -27,5 +28,20 @@ void Oonepole::setfreq(float freq)
 		_b = -(c - sqrt(c * c - 1.0));
 	}
 	_a = (_b > 0.0) ? 1.0 - _b : 1.0 + _b;
+}
+
+// Convert lag, in range [0, 1] to cutoff frequency, and set it.  Lag is
+// inversely proportional to cf: the lower the cf, the longer the lag time.
+
+// Empirically determined to offer linear "feel" range.  -JGG
+#define LAGFACTOR	12.0
+#define MAXCF		500.0
+
+void Oonepole::setlag(float lag)
+{
+	double cf = MAXCF * pow(2, -lag * LAGFACTOR);
+	if (cf > _sr * 0.5)		// if control rate < 1000
+		cf = _sr * 0.5;
+	setfreq(cf);
 }
 
