@@ -22,8 +22,8 @@ INPUTSIG::INPUTSIG() : Instrument()
 
 INPUTSIG::~INPUTSIG()
 {
-	delete [] myrsnetc;
-	delete [] myamp;
+//	delete [] myrsnetc;
+//	delete [] myamp;
 }
 
 

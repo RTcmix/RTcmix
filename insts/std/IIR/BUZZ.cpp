@@ -21,8 +21,8 @@ BUZZ::BUZZ() : Instrument()
 
 BUZZ::~BUZZ()
 {
-	delete [] myrsnetc;
-	delete [] myamp;
+//	delete [] myrsnetc;
+//	delete [] myamp;
 }
 
 

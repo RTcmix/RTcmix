@@ -21,8 +21,8 @@ NOISE::NOISE() : Instrument()
 
 NOISE::~NOISE()
 {
-	delete [] myrsnetc;
-	delete [] myamp;
+//	delete [] myrsnetc;
+//	delete [] myamp;
 }
 
 

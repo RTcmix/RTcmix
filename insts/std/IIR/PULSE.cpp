@@ -21,8 +21,8 @@ PULSE::PULSE() : Instrument()
 
 PULSE::~PULSE()
 {
-	delete [] myrsnetc;
-	delete [] myamp;
+//	delete [] myrsnetc;
+//	delete [] myamp;
 }
 
 
