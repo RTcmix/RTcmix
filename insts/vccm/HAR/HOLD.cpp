@@ -13,6 +13,9 @@ extern int samp_marker;
 extern int hold_samps;
 extern int hold_start;
 extern float hold_dur;
+extern Bool stop_hold;
+extern Bool start_fade;
+extern Bool fade_started;
 
 HOLD::HOLD() : Instrument()
 {

@@ -14,6 +14,8 @@ int samp_marker;
 int hold_samps;
 int hold_start;
 float hold_dur;
+Bool stop_hold;
+extern Bool fade_started;
 
 STORE::STORE() : Instrument()
 {
