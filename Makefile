@@ -14,7 +14,7 @@ DIRS = rtstuff/heap rtstuff $(SNDLIB) Minc sys lib head cmd utils insts.base
 # CVS CHANGE
 # Another one for testing
 
-all: H heap rtstuff $(SNDLIB) Minc sys lib head cmd utils insts.base
+all: $(SNDLIB) H heap rtstuff Minc sys lib head cmd utils insts.base
 
 install:
 	@echo "making install..."
