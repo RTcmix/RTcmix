@@ -13,7 +13,7 @@ inchan = 0
 inskip = 0.45
 winstart = 0.01
 winend = filedur - 0.01
-wrap = true
+wrap = 1
 
 travrate = makeconnection("mouse", "x", min=-1, max=1, dflt=0, lag=30,
                           "traversal rate", "", 6)

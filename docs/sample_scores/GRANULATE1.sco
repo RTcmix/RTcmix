@@ -14,7 +14,7 @@ inchan = 0
 inskip = 0.45
 winstart = 0.1
 winend = filedur - 0.1
-wrap = true
+wrap = 1
 
 travrate = 0.01
 
