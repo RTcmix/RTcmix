@@ -20,12 +20,15 @@ LIBMIDI = libmidiconn.$(SHLIB_SUFFIX)
 
 all: $(LIBMIDI)
 
-$(LIBMIDI): depend $(OBJS)
+$(LIBMIDI): depend $(OBJS) $(PMLIB)
 	$(RM) $@
 	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(OBJS) $(PMLIB) $(PTLIB) $(MIDISYSLIB)
 
 glue.o: depend glue.cpp RTMidiPField.h
 	$(CXX) $(CXXFLAGS) -c -o glue.o glue.cpp
+
+$(PMLIB):
+	( cd portmidi; $(MAKE) $(MFLAGS) all; )
 
 depend:
 	-$(SHELL) -ec '$(CXX) -M $(CXXFLAGS) $(SRCS)' > depend
@@ -39,6 +42,7 @@ uninstall:
 	$(RM) $(LIBDESTDIR)/$(LIBMIDI)
 
 clean:
+	( cd portmidi; $(MAKE) $(MFLAGS) clean; )
 	$(RM) *.o $(LIBMIDI) depend
 
 cleanall: clean
