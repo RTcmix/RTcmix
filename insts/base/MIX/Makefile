@@ -3,6 +3,7 @@
 
 include ../package.conf
 
+CURDIR = $(CMIXDIR)/insts.base/MIX
 OBJS = MIX.o
 PROGS = MIX PMIX PYMIX
 
@@ -53,12 +54,12 @@ install: standalone_install
 dso_install: standalone_install		# otherwise can't run the dso's
 
 standalone_install: all
-	$(INSTALL) MIX $(DESTDIR)/CMIX
+	$(INSTALL) $(CURDIR)/MIX $(DESTDIR)/CMIX
 ifeq ($(PERL_SUPPORT), TRUE)
-	$(INSTALL) PMIX $(DESTDIR)/PCMIX
+	$(INSTALL) $(CURDIR)/PMIX $(DESTDIR)/PCMIX
 endif
 ifeq ($(PYTHON_SUPPORT), TRUE)
-	$(INSTALL) PYMIX $(DESTDIR)/PYCMIX
+	$(INSTALL) $(CURDIR)/PYMIX $(DESTDIR)/PYCMIX
 endif
 
 uninstall: standalone_uninstall
