@@ -49,8 +49,10 @@ int WAVETABLE::init(float p[], int n_args)
 		alen = fsize(AMP_GEN_SLOT);
 		tableset(p[1], alen, tabs);
 	}
-	else
+	else {
 		advise("WAVETABLE", "Setting phrase curve to all 1's.");
+		aamp = amp;
+	}
 	
 	spread = p[4];
 	skip = (int)(SR/(float)resetval);
@@ -62,11 +64,10 @@ int WAVETABLE::run()
 {
 	int i;
 	float out[2];
-	float aamp,tfreq,tamp,tdur,tspread;
+	float tfreq,tamp,tdur,tspread;
 	
 	Instrument::run();
 
-   aamp = amp;                     /* in case amptable == NULL */
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch < 0) {
 			if (amptable)

@@ -1,5 +1,5 @@
 class WAVETABLE : public Instrument {
-   float *wavetable,si,phase,amp;
+   float *wavetable,si,phase,amp,aamp;
    float *amptable,tabs[2];
    float spread;
    int len,alen;
