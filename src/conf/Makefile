@@ -37,7 +37,7 @@ conf.tab.cpp: lex.yy.c $(YSRC)
 	$(YACC) $(YFLAGS) $(YSRC)
 	@# these are in case we're using an older bison (1.28 in OS X 10.2.8)
 	@if test -f conf.ypp.tab.c; then mv conf.ypp.tab.c conf.tab.cpp; fi;
-	@if test -f conf.ypp.tab.h; then mv conf.ypp.tab.c conf.tab.hpp; fi;
+	@if test -f conf.ypp.tab.h; then mv conf.ypp.tab.h conf.tab.hpp; fi;
 
 depend:
 	-$(SHELL) -ec '$(CXX) -M $(CXXFLAGS) $(TEST).cpp $(SRCS)' > depend
