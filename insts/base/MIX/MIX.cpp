@@ -11,6 +11,7 @@
 MIX::MIX() : Instrument()
 {
 	in = NULL;
+	branch = 0;
 }
 
 MIX::~MIX()
@@ -58,7 +59,6 @@ int MIX::run()
 	int i,j,k,rsamps;
 	float out[MAXBUS];
 	float aamp;
-	int branch;
 
 	if (in == NULL)                 /* first time, so allocate it */
 		in = new float [RTBUFSAMPS * inputchans];
@@ -70,7 +70,6 @@ int MIX::run()
 	rtgetin(in, this, rsamps);
 
    aamp = amp;                     /* in case amptable == NULL */
-	branch = 0;
 	for (i = 0; i < rsamps; i += inputchans)  {
 		if (--branch < 0) {
 			if (amptable)

@@ -20,6 +20,7 @@
 
 WAVETABLE::WAVETABLE() : Instrument()
 {
+	branch = 0;
 }
 
 int WAVETABLE::init(float p[], int n_args)
@@ -62,12 +63,10 @@ int WAVETABLE::run()
 	int i;
 	float out[2];
 	float aamp,tfreq,tamp,tdur,tspread;
-	int branch;
 	
 	Instrument::run();
 
    aamp = amp;                     /* in case amptable == NULL */
-	branch = 0;
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch < 0) {
 			if (amptable)
