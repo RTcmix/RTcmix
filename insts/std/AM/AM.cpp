@@ -13,6 +13,20 @@
    p3 (amplitude), p4 (mod freq) and p6 (pan) can receive dynamic updates
    from a table or real-time control source.
 
+   Note that you get either amplitude modulation or ring modulation,
+   depending on whether the modulator waveform is unipolar or bipolar
+   (unipolar = amp. mod., bipolar = ring mod.).
+
+   To make a unipolar sine wave, you have to add a DC component 90 degrees
+   out of phase.  For example, the following creates a sine wave that
+   oscillates between 0 and 1:
+
+      wave = maketable("wave3", 1000, 0,.5,90, 1,.5,0)
+
+   ---
+
+   Notes about backward compatibility with pre-v4 scores:
+
    * If an old-style gen table 1 is present, its values will be multiplied
    by the p3 amplitude multiplier, even if the latter is dynamic.
 
@@ -24,16 +38,6 @@
    
    *** If p7 is missing, you must use an old-style gen table 2 for the
    modulator waveform.
-
-   Note that you get either amplitude modulation or ring modulation,
-   depending on whether the modulator waveform is unipolar or bipolar
-   (unipolar = amp. mod., bipolar = ring mod.).
-
-   To make a unipolar sine wave, you have to add a DC component 90 degrees
-   out of phase.  For example, the following creates a sine wave that
-   oscillates between 0 and 1:
-
-      wave = maketable("wave3", 1000, 0,.5,90, 1,.5,0)
 
 
    Author unknown (probably Brad Garton).
