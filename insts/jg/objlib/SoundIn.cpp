@@ -39,17 +39,18 @@ SoundIn :: SoundIn(char *fileName, MY_FLOAT inskip = 0.0)
       sndlib_close(fd, 0, 0, 0, 0);
       exit(-1);                 // do something more graceful later...
    }
+   bytes_per_samp = mus_data_format_to_bytes_per_sample(data_format);
    srate = mus_header_srate();
    nchans = mus_header_chans();
    nframes = (long)(mus_header_samples() / nchans);
    data_location = mus_header_data_location();
 
-   /* Allocate array of 1-channel I/O buffers. */
-   bufframes = RTBUFSAMPS;
-   inbufs = sndlib_allocate_buffers(nchans, bufframes);
-   if (inbufs == NULL) {
-      fprintf(stderr, "SoundIn can't allocate sndlib input buffers!\n");
-      exit(-1);                 // do something more graceful later...
+   /* Allocate input float buffer. */
+   bufframes = RTBUFSAMPS;   // NB: MUST be RTBUFSAMPS for read_samps to work
+   inbuf = new BUFTYPE [nchans * bufframes];
+   if (inbuf == NULL) {
+      fprintf(stderr, "SoundIn can't allocate input buffer!\n");
+      exit(-1);
    }
 
    if (inskip > 0.0) {
@@ -73,7 +74,7 @@ SoundIn :: SoundIn(char *fileName, MY_FLOAT inskip = 0.0)
 
 SoundIn :: ~SoundIn()
 {
-   sndlib_free_buffers(inbufs, nchans);
+   delete [] inbuf;
    sndlib_close(fd, 0, 0, 0, 0);             // close, no update
 }
 
@@ -111,8 +112,10 @@ MY_FLOAT SoundIn :: getDuration()
 */
 int SoundIn :: readBuffer()
 {
-   int total_read = mus_file_read(fd, 0, bufframes - 1, nchans, inbufs);
-   if (total_read == MUS_ERROR)
+   int status;
+
+   status = read_samps(fd, data_format, nchans, inbuf, nchans, bufframes);
+   if (status != 0)
       return -1;
 
    curbufstart += bufframes;
@@ -143,10 +146,9 @@ int SoundIn :: seekFrame(long frame)
    curbufstart = frame - bufframes;     // compensate for next readBuffer incr.
    curbufframe = bufframes;             // force next tick to read new buffer
 
-   /* NOTE: mus_file_seek handles any datum size as if it had 16 bits. */
-   byteoffset = data_location + (frame * nchans * 2);
+   byteoffset = data_location + (frame * nchans * bytes_per_samp);
 
-   result = mus_file_seek(fd, byteoffset, SEEK_SET);
+   result = lseek(fd, byteoffset, SEEK_SET);
 
    return result;
 }
@@ -162,8 +164,9 @@ MY_FLOAT *SoundIn :: tick()
    if (curbufframe >= bufframes)
       readBuffer();
 
+   BufPtr frame = &inbuf[curbufframe * nchans];
    for (int n = 0; n < nchans; n++)
-      outputs[n] = (MY_FLOAT) inbufs[n][curbufframe];
+      outputs[n] = frame[n];
 
    curbufframe++;                  // update for next time
 
@@ -177,7 +180,7 @@ MY_FLOAT *SoundIn :: tick()
 */
 MY_FLOAT SoundIn :: lastOutput(int chan)
 {
-   return (MY_FLOAT)inbufs[chan][curbufframe];
+   return outputs[chan];
 }
 
 

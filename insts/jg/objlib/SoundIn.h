@@ -7,6 +7,9 @@
 #include "objdefs.h"
 #include <sys/stat.h>
 #include <sndlibsupport.h>
+#include <buffers.h>          /* for BUFTYPE and BufPtr */
+                              /* NB: assumes BUFTYPE is same as MY_FLOAT */
+#include <prototypes.h>       /* for read_samps */
 
 class SoundIn
 {
@@ -16,13 +19,14 @@ class SoundIn
     int      srate;
     int      header_type;      // header type, e.g., NeXT, AIFF (see sndlib.h)
     int      data_format;      // sample format (see sndlib.h)
+    int      bytes_per_samp;
     int      data_location;    // offset in bytes of sound data
     long     nframes;          // number of frames in file
     int      bufframes;        // number of frames in buffer
     long     curbufstart;      // index of first buffer frame, relative to
                                //    start of sound data
     int      curbufframe;      // frame index within current buffer
-    int      **inbufs;         // sndlib-style array of 1-channel buffers
+    BufPtr   inbuf;            // interleaved array of nchans channels
     MY_FLOAT outputs[MAXCHANS];
 
     int readBuffer();
