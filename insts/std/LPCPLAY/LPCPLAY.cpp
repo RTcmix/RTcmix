@@ -110,11 +110,13 @@ int LPCINST::init(float p[], int n_args)
 {
 	if (outputchans != 1) { 
 		die(name(), "Output file must have 1 channel only\n");
+		return DONT_SCHEDULE;
 	}
 
 	GetDataSet(&_dataSet);
 	if (_dataSet == NULL) {
 		die("LPCPLAY", "No open dataset!\n");
+		return DONT_SCHEDULE;
 	}
 	_dataSet->ref();
 	
@@ -179,6 +181,7 @@ int LPCPLAY::localInit(float p[], int n_args)
 	if (!n_args || n_args < 6) {
 		die("LPCPLAY",
 		"p[0]=starting time, p[1]=duration, p[2]=amp, p[3]=pitch, p[4]=frame1, p[5]=frame2, [ p[6]=warp p7=resoncf, p8=resonbw [ p9--> pitchcurves ] ]\n");
+		return DONT_SCHEDULE;
 	}
 
    /* Store pfields in variables, to allow for easy pfield renumbering.
@@ -195,8 +198,10 @@ int LPCPLAY::localInit(float p[], int n_args)
 	int endFrame = (int) p[5];
 	int frameCount = endFrame - startFrame + 1;
 
-	if (frameCount <= 0)
+	if (frameCount <= 0) {
 		die("LPCPLAY", "Ending frame must be > starting frame.");
+		return DONT_SCHEDULE;
+	}
 
 	_warpFactor = p[6];	// defaults to 0
 
@@ -414,8 +419,10 @@ int LPCPLAY::run()
         if (_counter <= 0)
 			break;
 		// Catch bad pitches which generate array overruns
-		else if (_counter > _arrayLen)
-			die("LPCPLAY", "Counter exceeds array size.  Frame pitch: %f", newpch);
+		else if (_counter > _arrayLen) {
+			warn("LPCPLAY", "Counter exceeded array size -- limiting.  Frame pitch: %f", newpch);
+			_counter = _arrayLen;
+		}
 
 		bbuzz(_ampmlt*buzamp,si,hn,_sineFun,&_phs,_buzvals,_counter);
 #ifdef debug
@@ -584,6 +591,7 @@ int LPCIN::localInit(float p[], int n_args)
 	if (!n_args || n_args < 6 || n_args > 8) {
 		die("LPCIN",
 		"p[0]=outskip, p[1]=inskip, p[2]=duration, p[3]=amp, p[4]=frame1, p[5]=frame2, [ p[6]=warp p[7]=in_channel ]\n");
+		return DONT_SCHEDULE;
 	}
 	float outskip = p[0];
 	float inskip = p[1];
@@ -600,6 +608,7 @@ int LPCIN::localInit(float p[], int n_args)
 	if (_inChannel >= inputChannels()) { 
 		die("LPCIN", "Requested channel %d of a %d-channel input file",
 			_inChannel, inputChannels());
+		return DONT_SCHEDULE;
 	}
 					   	
 	float dummy1, dummy2, dummy3;
