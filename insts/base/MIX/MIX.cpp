@@ -34,7 +34,7 @@ int MIX::init(float p[], short n_args)
 	amp = p[3];
 
 	for (i = 0; i < inputchans; i++) {
-		outchan[i] = p[i+4];
+		outchan[i] = (int)p[i+4];
 		if (outchan[i]+1 > NCHANS) {
 			fprintf(stderr,"You wanted output channel %d, but have only specified %d output channels\n",outchan[i],NCHANS);
 			exit(-1);
@@ -47,14 +47,14 @@ int MIX::init(float p[], short n_args)
 		tableset(p[2], amplen, tabs);
 		}
 
-	skip = SR/(float)resetval; // how often to update amp curve, default 200/sec.
+	skip = (int)(SR/(float)resetval); // how often to update amp curve, default 200/sec.
 
 	return(nsamps);
 }
 
 int MIX::run()
 {
-	int i,j,rsamps;
+	int i,j,k,rsamps;
 	float in[2*MAXBUF],out[2];
 	float aamp;
 	int branch;
@@ -66,14 +66,17 @@ int MIX::run()
 	branch = 0;
 	for (i = 0; i < rsamps; i += inputchans)  {
 		if (--branch < 0) {
-			if (lineset) aamp = table(cursamp, amptable, tabs) * amp;
+			if (lineset) aamp = tablei(cursamp, amptable, tabs) * amp;
 			else aamp = amp;
 			branch = skip;
 			}
 
 		for (j = 0; j < NCHANS; j++) {
 			out[j] = 0.0;
-			if (outchan[j] == j) out[j] = in[i+outchan[j]] * aamp;
+			for (k = 0; k < inputchans; k++) {
+				if (outchan[k] == j)
+					out[j] += in[i+k] * aamp;
+				}
 			}
 
 		rtaddout(out);
