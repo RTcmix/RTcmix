@@ -397,8 +397,8 @@ int resetval = 1000;                 /* modified by m_reset; read by insts */
 
 double m_reset(float p[], int n_args)
 {
-	if (p[0] < 0) {
-		fprintf(stderr, "reset must be positive!\n");
+	if (p[0] <= 0) {
+		fprintf(stderr, "reset must be greater than 0!\n");
 		exit(1);
 	}
 	resetval = p[0];
