@@ -39,6 +39,7 @@ public:
 private:
    BUFTYPE        *obufptr;
    short          bufstatus[MAXBUS];
+   short          needs_to_run;
 
 public:
    Instrument();
@@ -47,7 +48,7 @@ public:
    virtual int init(float *, short);
    virtual int run();
 
-   void exec();
+   void exec(BusType bus_type, int bus);
    int rtaddout(BUFTYPE samps[]);  // replacement for old rtaddout
    void addout(BusType bus_type, int bus);
 
