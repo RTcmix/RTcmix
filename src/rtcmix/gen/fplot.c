@@ -88,14 +88,14 @@ fplot(float p[], short n_args, double pp[])
 						"set title \"Function %d\"\n"
 						"set grid\n"
 						"plot '%s' notitle %s\n"
-						"pause %d\n"
-						"!rm '%s' '%s'\n",
+						"!rm '%s' '%s'\n"
+						"pause %d\n",
 #ifdef MACOSX
 // FIXME: ??nevertheless, gnuplots after the first die with bus error
                   plot_count++,
 #endif
 						genslot, data_file, n_args > 2 ? plotcmds : "",
-						pause, data_file, cmd_file);
+						data_file, cmd_file, pause);
 			fclose(fcmd);
 
 			snprintf(cmd, 255, "gnuplot %s &", cmd_file);
