@@ -23,7 +23,7 @@ envtab = maketable("window", 1000, "hanning")
 injitter = 0.0
 outjitter = 0.001
 
-density = makeconnection("mouse", "y", min=1, max=120, dflt=10, lag=20,
+density = makeconnection("mouse", "y", min=5, max=120, dflt=10, lag=20,
                          "density", "grains/sec")
 hoptime = makeconverter(density, "inverse")
 
