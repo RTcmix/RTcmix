@@ -1,4 +1,7 @@
-# Change stuff in here as needed
+###############################################################
+# makefile.conf
+# Edit user.conf for everything other than TOPDIR and CMIXDIR
+###############################################################
 
 # The directory containing the RTcmix directory
 TOPDIR = /usr/local/src
@@ -6,88 +9,23 @@ TOPDIR = /usr/local/src
 # The name of the RTcmix directory
 CMIXDIR = $(TOPDIR)/RTcmix-4.0
 
+###############################################################
+# YOU SHOULD NOT NEED TO CHANGE ANYTHING BELOW THIS POINT
+###############################################################
+
+# This is the default for non-Linux systems.
+# Leave it, and override in user.conf if you are running LINUX
+AUDIODRIVER = AUTO
+
+# This is the file which contains site-specific settings.
+include $(CMIXDIR)/site.conf
+
 # The path to this file
 MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
 
-# The dir that will contain the instrument dynamic shared objects
-LIBDESTDIR = $(CMIXDIR)/shlib
-
-# Dirs in which to install documentation
-MANDESTDIR = $(CMIXDIR)/docs/man
-HTMLDESTDIR = $(CMIXDIR)/docs/html
-
-# add new instruments to this list (e.g., insts/std, insts/jg)
-INST_DIRS = insts/base # insts/std insts/jg insts/stk insts/vccm
-
-# add new packages to this list (e.g., apps/imbed)
-PACKAGE_DIRS = # apps/imbed
-
-# Which platform?
-ARCH = LINUX
-#ARCH = MACOSX
-#ARCH = SGI
-#ARCH = FREEBSD
-
-# optimization, debugging and warning flags
-OPT = -g -Wall -Wno-unused -O2
-# for Irix, try just...
-#OPT = -O2
-
-# Uncomment this to enable use of the Perl front end to RTcmix.
-# This requires a perl version >= 5.005_62.
-#PERL_SUPPORT = TRUE
-# Say which perl to use: just "perl" if you only have one; otherwise,
-# give full path name of perl to use, e.g., /usr/local/bin/perl.
-PERL = perl
-# Set this to FALSE if your perl libraries are NOT in /usr/local/lib,
-# but rather are installed in /usr/lib.
-PERL_IN_LOCAL_LIB = FALSE
-
-# Uncomment this to enable use of the Python front end to RTcmix.
-#PYTHON_SUPPORT = TRUE
-# Say which python to use: just "python" if you only have one; otherwise,
-# give full path name of python to use, e.g., /usr/local/bin/python.
-PYTHON = python
-# We use a python extension to make RTcmix commands accessible inside
-# python.  The default is to link this extension statically.  If you
-# would like (or need) to link it dynamically, comment out the following
-# symbol.  Then go into src/parser/python and "make install" as root.
-# That will copy the extension into your system-wide site-packages dir,
-# where PYMIX will be able to find it at run time.
-PYTHON_EXT_LINK = TRUE
-
-# Uncomment this to enable code that lets you send and receive audio
-# sound over a network.  (See comments at the top of utils/nplay.c.)
-#NPLAY_SUPPORT = TRUE
-
-# Comment this out to set the die() function so that it will not exit on
-# encountering an error (you may want to do this if you are using
-# RTcmix in the context of another application where you don't want
-# to terminate the application because of an RTcmix error
-CMIX_FLAGS += -DEXIT_ON_ERROR
-
-# This is the default for non-Linux systems -- leave it, and override below
-# if you are running LINUX
-AUDIODRIVER = AUTO
-
-# Uncomment to enable new experimental pfield update scheme and Minc v.2
 PFIELD_CLASS_SUPPORT = TRUE
 
-###############################################################
-# Linux sound driver flags -- ignore for Irix and Mac OS X
-# It doesn't matter how any of these are set for Irix and Mac OS X.
-# The Linux flags should work for FreeBSD, using OSS or an emulation of 
-# the OSS API, or ALSA if it is installed.
-
-# Linux Sound driver API -- overrides default
-#AUDIODRIVER = ALSA
-AUDIODRIVER = OSS
-
-SOUND_DRIVER = -D$(AUDIODRIVER)
-
-###############################################################
-# Shouldn't need to edit below this line
-###############################################################
+SOUND_DRIVER = -D$(AUDIODRIVER) -DOSS
 
 LIBDIR = $(CMIXDIR)/lib
 DESTDIR = $(CMIXDIR)/bin
@@ -112,8 +50,8 @@ AUDIOLIB = $(AUDIODIR)/librtaudio.a
 
 ifeq ($(ARCH),LINUX)
   ARCHFLAGS = -D_REENTRANT -DLINUX #-DRTUPDATE
-  CC = gcc 
-  CXX = g++ 
+  CC = /usr/bin/gcc 
+  CXX = /usr/bin/g++ -Wno-deprecated
   LD = ld
   MAKE = make
   INSTALL = cp -f
