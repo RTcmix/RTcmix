@@ -1,3 +1,4 @@
+#include <netinet/in.h>
 #include "defs.h"  /* for MAXDISPARGS */
 #define MAXTEXTARGS ((MAXDISPARGS*sizeof(double))/512)
 
