@@ -53,6 +53,8 @@ EQBand :: EQBand(float srate, OeqType type, float freq, float Q, float gain,
    : _type(type), _freq(freq), _Q(Q), _gain(gain), _bypass(bypass)
 {
    _eq = new Oequalizer(srate, _type);
+   if (_eq)
+      _eq->setparams(_freq, _Q, _gain);
 }
 
 
