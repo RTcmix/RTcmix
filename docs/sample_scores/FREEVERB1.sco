@@ -1,5 +1,4 @@
 rtsetparams(44100, 2)
-load("MIX")
 load("FREEVERB")
 
 bus_config("MIX", "in 0", "aux 0 out")

@@ -1,5 +1,4 @@
 rtsetparams(44100, 2)
-load("MIX")
 load("COMBIT")
 
 totdur = 15
