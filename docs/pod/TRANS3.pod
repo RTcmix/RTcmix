@@ -1,0 +1,80 @@
+=head1 NAME
+
+TRANS3 - transposing instrument
+
+=head1 SYNOPSIS
+
+B<TRANS3>(I<outskip>, I<inskip>, I<outdur>, I<ampmult>, I<transposition>
+[, I<inchan>, I<stereoloc> ])
+
+Function table 1 gives amplitude curve.
+
+=head1 DESCRIPTION
+
+B<TRANS3> transposes the input for the specified output duration
+(I<outdur>), starting at the input start time (I<inskip>).
+
+B<TRANS3> transposes by third-order polynomial interpolation.  It does not
+maintain the input duration, so it's sort of like changing tape speed.
+To transpose down, it interpolates samples between existing ones; to
+transpose up, it discards some existing samples.  When transposing up,
+then, it must consume more than I<outdur> seconds of samples, and this
+means that it's possible to run off the end of the input file.
+
+It also means that you can use this instrument only with input from a
+sound file, not with a real-time input (microphone or aux bus) -- at
+least not without hearing clicks.  (That's because you can't read
+samples that haven't happened yet.)
+
+B<TRANS3> uses the curve provided in function table 1 to scale the
+amplitudes of the input source.  Use L<setline|setline>, L<setexp|setexp>,
+or L<makegen|makegen> to create function table 1.  If this table has not
+been created, no amplitude scaling (other than that given by I<ampmult>)
+will occur.
+
+The output of B<TRANS3> can be either mono or stereo.
+
+=head1 PFIELDS
+
+=over 8
+
+=item B<p0> (I<outskip>) output start time
+
+=item B<p1> (I<inskip>) input start time
+
+=item B<p2> (I<outdur>) output duration (if negative, output end time)
+
+=item B<p3> (I<ampmult>) amplitude multiplier
+
+=item B<p4> (I<transposition>) interval of transposition, in octave.pc
+
+=item B<p5> (I<inchan>) input channel [optional, default is 0]
+
+=item B<p6> (I<stereoloc>) percent (from 0 to 1) of input signal to place in left output channel [optional, default is 0.5 if output is stereo]
+
+=back
+
+=head1 NOTES
+
+To use B<TRANS3>, first call "load(TRANS)."  That's right: load TRANS, not
+TRANS3.  TRANS is a family of instruments that includes TRANS3 as well as TRANS.
+
+=head1 EXAMPLES
+
+   rtinput("a_stereo_sound")
+
+   trans = -0.02
+   TRANS3(outskip=1, inskip=2, dur=4, amp=1, trans, inchan=0, loc=0)
+
+This transposes the left channel of the stereo input file down by two
+semitones, starting at a point 2 seconds from the beginning of the file
+and continuing for 4 seconds.  It pans the sound hard right.
+
+=head1 SEE ALSO
+
+L<TRANS|TRANS>, L<setline|setline>, L<setexp|setexp>, L<makegen|makegen>
+
+=head1 AUTHOR
+
+Douglas Scott E<lt>dscott at netscape netE<gt>
+
