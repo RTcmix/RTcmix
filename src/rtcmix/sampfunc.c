@@ -39,7 +39,6 @@ short n_args;
 	fnumber = p[0];
 	skipin = p[1];
 	frac = p[1] - skipin;
-	thefunct = (float *) floc(fnumber);
 	size = fsize(fnumber);
 	if(skipin >= size-2) {
 		skipin = size - 1;
@@ -47,5 +46,7 @@ short n_args;
 	}
 	else
 		skipin2 = skipin + 1;
+	thefunct = (float *)floc(fnumber);
 	return(thefunct[skipin] + frac * (thefunct[skipin2]-thefunct[skipin]));
 }
+
