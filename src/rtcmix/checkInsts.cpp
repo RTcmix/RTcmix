@@ -53,14 +53,14 @@ double checkInsts(char *fname, double *pp, int n_args, void **inst)
 			/* set up the Instrument */
 			
 			Iptr = (*(rt_p->rt_ptr))();
+
+			Iptr->Ref();	// We do this to assure one reference
 	
 			rv = (double) Iptr->init(p, n_args, pp);
 
 			/* schedule instrument */
 
-//			pthread_mutex_lock(&heapLock);
 			Iptr->schedule(&rtHeap);
-//			pthread_mutex_unlock(&heapLock);
 
 			mixerr = MX_NOERR;
 			rt_list = rt_temp;
