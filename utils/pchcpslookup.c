@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "../H/ugens.h"
+#include <ugens.h>
 
 int
 main(int argc, char *argv[])

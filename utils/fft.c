@@ -1,6 +1,6 @@
 #include <math.h>
 #include "fft.h"
-#include "../H/complexf.h"
+#include "../genlib/complexf.h"
 
 int
 fft(isi,nl,s) 

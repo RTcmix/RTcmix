@@ -8,8 +8,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/file.h>
-#include "../H/sfheader.h"
-#include "../H/byte_routines.h"
+#include <sfheader.h>
+#include <byte_routines.h>
 #include <sndlibsupport.h>
 
 /* This program is designed to reverse existing soundfiles.

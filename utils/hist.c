@@ -10,9 +10,9 @@
 #include <math.h>
 #include <signal.h>
 #include <errno.h>
-#include "../H/complexf.h"
-#include "../H/byte_routines.h"
-#include "../H/sfheader.h"
+#include "../genlib/complexf.h"
+#include <byte_routines.h>
+#include <sfheader.h>
 #include <sndlibsupport.h>
 
 #define  BUFSIZE 32768

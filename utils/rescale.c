@@ -7,8 +7,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <math.h>
-#include "../H/byte_routines.h"
-#include "../H/sndlibsupport.h"
+#include <byte_routines.h>
+#include <sndlibsupport.h>
 
 /* Revision of cmix rescale program with sndlib support and other improvements.
    The drescale program has been folded into this one.
