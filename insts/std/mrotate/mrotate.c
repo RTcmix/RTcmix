@@ -27,8 +27,8 @@ extern	SFHEADER	sfdesc[NFILES];
 double
 mrotate(float p[], int n_args)
 {
-	float samplenum1,samplenum2,x,interval;
-	float val1,val2,amp,in[2],out[2];
+	float samplenum1,samplenum2,x,interval=0.0;
+	float val1,val2,amp=0.0,in[2],out[2];
 	int nsamps,i,j,k,off,reinit,chans,inchan;
 	int octpart1, octpart2;
 	float pcpart1, pcpart2, prange, pcbase, ival;

@@ -31,7 +31,7 @@ int n_args;
 {
 	int insamps,outsamps,winsamps,inmove;
 	int inshift,outshift,inchans,outchans,inchan;
-	float *inarr,*outarr,*winfunc,skip,val,wintabs[2];
+	float *inarr,*outarr,*winfunc,skip,val=0.0,wintabs[2];
 	int winsize;
 	double vold,old,new,frac,count;
 	long i,j,k,m,intt,lgc,n,ncuts;

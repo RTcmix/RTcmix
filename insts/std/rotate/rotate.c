@@ -26,7 +26,7 @@ double
 rotate(float p[], int n_args)
 {
 	float samplenum1,samplenum2,x,interval;
-	float val1,val2,amp,in[2],out[2];
+	float val1,val2,amp=0.0,in[2],out[2];
 	int nsamps,i,j,k,off,reinit,chans,inchan;
 	int octpart;
 	float pcpart;

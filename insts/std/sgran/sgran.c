@@ -55,15 +55,13 @@ static float *array, tabs[2];         /* for setline */
 */
 
 double
-sgran(p,n_args)
-float *p; /* array of p-fields */
-int n_args; /* number of p-fields */
+sgran(float p[], int n_args)
 {
 	long n,bgrainsamps,bgraindist,bgrainslide;
 	long i,nsamps,gstt_var,count;
 	long egrainsamps,egraindist,egrainslide;
 	long grainsamps,grainslide,graindistdiff;
-	float si,phase,val,amp,out[2],chb,freq;
+	float si=0.0,phase,val=0.0,amp,out[2],chb,freq;
 	float tab[2],tab2[2],tab3[2],tab4[2],tab5[2];
 	float *wave,*envel,*rate_shape,*dur_shape,*loc_shape,*freq_shape;
 	float gdist_inc;

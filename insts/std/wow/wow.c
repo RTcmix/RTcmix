@@ -52,17 +52,15 @@ wow(float p[], int n_args)
 	output_start = p[0] * SR;
 	duration =  p[2] * SR;
 
-	amp = p[3];
+	amp = aamp = p[3];
 
 	amparr = floc(1);
 	if (amparr) {
 		int lenamp = fsize(1);
 		tableset(p[2], lenamp, amptabs);
 	}
-	else {
-		aamp = amp;
+	else
 		printf("Setting phrase curve to all 1's\n");
-	}
 
 	modulator_index = p[4];
 	modulator_freq = p[5];
@@ -132,6 +130,7 @@ printf ("     Avg of modulator: %f.  Max of integral: %f.  Min: %f.\n",
 	inchan = p[6];
 	mphase = 0;
 	input_offset = 0;
+	j = 0;
 	for (n = 0; n < nsamps; n++) {
 		while (!j--) {
 			if (amparr)

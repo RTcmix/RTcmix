@@ -190,9 +190,9 @@ stgran(float p[], int n_args)
    double dlodiff, dmiddiff, dhidiff, dtidiff;
    double alodiff, amiddiff, ahidiff, atidiff, grainamp;
    double tlodiff, tmiddiff, thidiff, ttidiff;
-   double llodiff, lmiddiff, lhidiff, ltidiff, pctleft;
+   double llodiff, lmiddiff, lhidiff, ltidiff, pctleft = 0.0;
    double tlobeg, tmidbeg, thibeg, tloend, tmidend, thiend;
-   double voldsig, oldsig, newsig, interval, increment;
+   double voldsig = 0.0, oldsig, newsig, interval, increment;
    double counter = 0., frac;
    register int incount = 1, getflag = 1;
 
