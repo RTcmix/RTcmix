@@ -42,8 +42,8 @@ QPAN::QPAN() : Instrument()
 
    // speakers at 4 corners of a square
    speaker_angles[0] = PI_OVER_4 * 3;     // front left
-   speaker_angles[1] = PI_OVER_4;         // front left
-   speaker_angles[2] = -PI_OVER_4 * 3;    // back left (NB: unused)
+   speaker_angles[1] = PI_OVER_4;         // front right
+   speaker_angles[2] = -PI_OVER_4 * 3;    // back left (NB: unused value)
    speaker_angles[3] = -PI_OVER_4;        // back right
 }
 
@@ -79,7 +79,7 @@ int QPAN::init(double p[], int n_args)
       return die("QPAN", "Must have 4 output channels.");
 
    if (inchan >= inputChannels())
-      return die("QPAN", "You asked for channel %d of a %d-channel file.",
+      return die("QPAN", "You asked for channel %d of %d-channel input.",
                                                    inchan, inputChannels());
 
    skip = (int) (SR / (float) resetval);
