@@ -138,7 +138,11 @@ protected:
 
 class TablePField : public PField, public RTFieldObject {
 public:
-	TablePField(double *tableArray, int length);
+	typedef double (*InterpFunction)(double *, int, double);
+	static double Interpolate1stOrder(double *, int, double);
+	static double Interpolate2ndOrder(double *, int, double);
+public:
+	TablePField(double *tableArray, int length, InterpFunction fun=Interpolate1stOrder);
 	virtual double 	doubleValue(int indx = 0) const;
 	virtual double	doubleValue(double) const;
 	virtual int		print(FILE *) const;	// redefined
@@ -147,8 +151,9 @@ public:
 protected:
 	virtual ~TablePField();
 private:
-	double	*_table;
-	int 	_len;
+	double				*_table;
+	int 				_len;
+	InterpFunction		_interpolator;
 };
 
 class PFieldWrapper : public PField {

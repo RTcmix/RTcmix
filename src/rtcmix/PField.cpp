@@ -160,14 +160,39 @@ int PFieldBinaryOperator::copyValues(double *array) const
 
 // TablePField
 
-TablePField::TablePField(double *tableArray, int length)
-	: _table(tableArray), _len(length)
+TablePField::TablePField(double *tableArray,
+						 int length,
+						 TablePField::InterpFunction ifun)
+	: _table(tableArray), _len(length), _interpolator(ifun)
 {
 }
 
 TablePField::~TablePField()
 {
 	delete [] _table;
+}
+
+double TablePField::Interpolate1stOrder(double *tab, int len, double didx)
+{
+	const int idx = int(didx);
+	const int idx2 = min(idx + 1, len - 1);
+	double frac = didx - idx;
+	return tab[idx] + frac * (tab[idx2] - tab[idx]);
+}
+
+double TablePField::Interpolate2ndOrder(double *tab, int len, double didx)
+{
+	//FIXME: this is bound to be all wrong  -JGG
+	const int idx = int(didx);
+	const int idx2 = min(idx + 1, len - 1);
+	const int idx3 = min(idx + 2, len - 1);
+	double frac = didx - idx;
+	double a = tab[idx];
+	double hy0 = a / 2.0;
+	double hy2 = tab[idx3] / 2.0;
+	double b = (-3.0 * hy0) + (2.0 * tab[idx2]) - hy2;
+	double c = hy0 - tab[idx2] + hy2;
+	return a + (b * frac) + (c * frac * frac);
 }
 
 double TablePField::doubleValue(int indx) const
@@ -181,10 +206,7 @@ double TablePField::doubleValue(double percent) const
 		percent = 1.0;
 	const int len = values();
 	double didx = (len - 1) * percent;
-	const int idx = int(didx);
-	const int idx2 = min(idx + 1, len - 1);
-	double frac = didx - idx;
-	return _table[idx] + frac * (_table[idx2] - _table[idx]);
+	return (*_interpolator)(_table, len, didx);
 }
 
 int TablePField::print(FILE *file) const
