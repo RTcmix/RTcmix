@@ -1,3 +1,7 @@
+/* RTcmix - Copyright (C) 2004  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
 #include <ugens.h>
 #include <Ougens.h>
 
@@ -5,72 +9,56 @@ Ooscili::Ooscili(float freq, int arr)
 {
 	array = floc(arr);
 	length = fsize(arr);
-
-	si = freq * (float)length/SR;
-	phase = 0.0;
-	dur = 1.0/freq; // for arbitrary lookups in the next(nsample) method
+	init(freq);
 }
 
 Ooscili::Ooscili(float freq, float arr[])
 {
 	array = arr;
 	length = sizeof(arr);
-
-	si = freq * (float)length/SR;
-	phase = 0.0;
+	init(freq);
 }
 
 Ooscili::Ooscili(float freq, float arr[], int len)
 {
 	array = arr;
 	length = len;
+	init(freq);
+}
 
-	si = freq * (float)length/SR;
+void Ooscili::init(float freq)
+{
+	lendivSR = (double) length / SR;
+	si = freq * lendivSR;
 	phase = 0.0;
+	dur = 1.0 / freq;	// for arbitrary lookups in the next(nsample) method
 }
 
 float Ooscili::next()
 {
-	int i,k;
-	float frac;
+	int i = (int) phase;
+	int k = (i+1) % length;
+	double frac = phase - (double) i;
+	float output = array[i] + ((array[k] - array[i]) * frac);
 
-	i = (int)phase;
-	k = (i+1) % length;
-	frac = phase - (float)i;
+	// prepare for next call
 	phase += si;
-	while (phase >= (float)length) phase -= (float)length;
-	return (array[i] + (array[k] - array[i]) * frac);
+	while (phase >= (double) length)
+		phase -= (double) length;
+	while (phase < 0.0)
+		phase += (double) length;
+
+	return output;
 }
 
 float Ooscili::next(int nsample)
 {
-	int loc1, loc2;
-	float frac;
-
-	frac = ((float)nsample/SR)/dur * (float)(length-1);
-	if (frac >= (float)(length-1)) return(array[length-1]);
-	loc1 = (int)frac;
-	loc2 = loc1+1;
-	frac = frac - (float)loc1;
-	return(array[loc1] + frac * (array[loc2] - array[loc1]));
+	double frac = ((double)nsample/SR)/dur * (double)(length-1);
+	if (frac >= (double)(length-1))
+		return array[length-1];
+	int loc1 = (int) frac;
+	int loc2 = loc1 + 1;
+	frac = frac - (double) loc1;
+	return array[loc1] + (frac * (array[loc2] - array[loc1]));
 }
 
-void Ooscili::setfreq(float freq)
-{
-	si = freq * (float)length/SR;
-}
-
-void Ooscili::setphase(float phs)
-{
-	phase = phs;
-}
-
-int Ooscili::getlength()
-{
-	return length;
-}
-
-float Ooscili::getdur()
-{
-	return dur;
-}
