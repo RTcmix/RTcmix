@@ -131,8 +131,9 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 
 #if DEBUG > 0
 		printf("OSXAudioDevice: record section\n");
-		printf("framesToRead = %d, framesAvail = %d\n", framesToRead, framesAvail);
+		printf("framesToRead = %d, framesAvail = %d, Filled = %d\n", framesToRead, framesAvail, port->audioBufFilled);
 #endif
+
 		// Run this loop while not enough space to copy audio from HW.
 		while (framesAvail < framesToRead && keepGoing) {
 			keepGoing = device->runCallback();
@@ -142,10 +143,10 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 			printf("\tafter run callback, framesAvail = %d\n", framesAvail);
 #endif
 		}
+
 		if (keepGoing == true) {
 #if DEBUG > 1
-			printf("\tREC inLoc begins at %d (out of %d)\n",
-			 		  port->inLoc, bufLen);
+			printf("\tREC inLoc begins at %d (out of %d)\n", port->inLoc, bufLen);
 #endif
 			int	framesCopied = 0;
 			// Write new audio data into port->audioBuffer.
@@ -172,6 +173,9 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 				framesCopied = framesToRead;
 			}
 			framesAdvanced = framesCopied;
+#if DEBUG > 0
+			printf("\tREC Filled = %d\n", port->audioBufFilled);
+#endif
 #if DEBUG > 1
 			printf("\tREC inLoc ended at %d\n", port->inLoc);
 #endif
@@ -197,7 +201,7 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 		
 #if DEBUG > 0
 		printf("OSXAudioDevice: playback section\n");
-		printf("framesAvail = %d\n", framesAvail);
+		printf("framesAvail (Filled) = %d\n", framesAvail);
 #endif
 		while (framesAvail < framesToWrite && keepGoing) {
 			assert(!callbackCalled);
@@ -207,7 +211,7 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 			keepGoing = device->runCallback();
 			framesAvail = port->audioBufFilled;
 #if DEBUG > 0
-			printf("\tafter run callback, framesAvail = %d\n", framesAvail);
+			printf("\tafter run callback, framesAvail (Filled) = %d\n", framesAvail);
 #endif
 			if (framesAvail == 0) {
 				assert(device->isPassive());
@@ -246,6 +250,9 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 				framesDone += framesToWrite;
 				framesAdvanced = framesDone;
 			}
+#if DEBUG > 0
+			printf("\tPLAY Filled = %d\n", port->audioBufFilled);
+#endif
 #if DEBUG > 1
 			printf("\tPLAY outLoc ended at %d\n", port->outLoc);
 #endif
@@ -662,6 +669,9 @@ int OSXAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 		if (port->audioBuffer == NULL)
 			return error("Memory allocation failure for OSXAudioDevice buffer!");
 		memset(port->audioBuffer, 0, sizeof(float) * buflen);
+		// NEW: Set play buffer as filled with zeros.
+		if (dir == PLAY)
+			port->audioBufFilled = port->audioBufFrames;
 		port->inLoc = 0;
 		port->outLoc = 0;
 	}
@@ -676,12 +686,12 @@ int	OSXAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 	const int bufLen = port->audioBufFrames * bufChannels;
 	int outLoc = port->outLoc;
 #if DEBUG > 0
-	printf("OSXAudioDevice::doGetFrames: frameCount = %d\n", frameCount);
+	printf("OSXAudioDevice::doGetFrames: frameCount = %d REC filled = %d\n", frameCount, port->audioBufFilled);
 #endif
 #if DEBUG > 1
 	printf("\tREC outLoc begins at %d (out of %d)\n", outLoc, bufLen);
 #endif
-	assert(frameCount == port->audioBufFrames);
+	assert(frameCount <= port->audioBufFilled);
 
 	switch (frameChans) {
 	case 1:
@@ -727,8 +737,11 @@ int	OSXAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 	}
 	port->outLoc = outLoc;
 	port->audioBufFilled -= frameCount;
+#if DEBUG > 0
+	printf("\tREC Filled now %d\n", port->audioBufFilled);
+#endif
 #if DEBUG > 1
-	printf("\tREC outLoc ended at %d.  Returning frameCount = %d\n", outLoc, frameCount);
+	printf("\tREC outLoc ended at %d. Returning frameCount = %d\n", outLoc, frameCount);
 #endif
 	return frameCount;
 }
@@ -742,7 +755,7 @@ int	OSXAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 	const int bufLen = port->audioBufFrames * port->audioBufChannels;
 	int inLoc = port->inLoc;
 #if DEBUG > 0
-	printf("OSXAudioDevice::doSendFrames: frameCount = %d\n", frameCount);
+	printf("OSXAudioDevice::doSendFrames: frameCount = %d, PLAY filled = %d\n", frameCount, port->audioBufFilled);
 #endif
 #if DEBUG > 1
 	printf("\tPLAY inLoc begins at %d (out of %d)\n", inLoc, bufLen);
@@ -790,8 +803,11 @@ int	OSXAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 	}
 	port->audioBufFilled += frameCount;
 	port->inLoc = inLoc;
+#if DEBUG > 0
+	printf("\tPLAY Filled now %d\n", port->audioBufFilled);
+#endif
 #if DEBUG > 1
-	printf("\tPLAY inLoc ended at %d.  Returning frameCount = %d\n", inLoc, frameCount);
+	printf("\tPLAY inLoc ended at %d. Returning frameCount = %d\n", inLoc, frameCount);
 #endif
 	return frameCount;
 }
