@@ -1,6 +1,8 @@
 include ../makefile.conf
 
-GENLIB = genlib.a
+INCLUDES += -I../src/include -I../src/rtcmix
+
+GENLIB = libgen.a
 CFILES =  oscil.c oscili.c osciln.c oscilni.c table.c tablei.c evp.c reson.c \
 	  rsnset.c evset.c tableset.c cpspch.c cpsoct.c octpch.c buzz.c\
 	  rrand.c boost.c allpole.c delset.c delput.c delget.c dliget.c\
@@ -9,7 +11,8 @@ CFILES =  oscil.c oscili.c osciln.c oscilni.c table.c tablei.c evp.c reson.c \
 	  hpluck.c hcomb.c setline.c random.c ampdb.c\
 	  getsample.c breson.c resonz.c pluck.c hplset.c pluckset.c randf.c spray.c wshape.c bpluck.c\
 	  pchmidi.c midipch.c
-OCFILES = Ooscili.C Orand.C Ortgetin.C
+#OCFILES = Ooscili.cpp Orand.cpp Ortgetin.cpp
+OCFILES = Ooscili.cpp Orand.cpp
 
 OBJECTS = oscil.o oscili.o osciln.o oscilni.o table.o tablei.o evp.o reson.o \
 	  rsnset.o evset.o tableset.o cpspch.o cpsoct.o octpch.o buzz.o\
@@ -19,31 +22,44 @@ OBJECTS = oscil.o oscili.o osciln.o oscilni.o table.o tablei.o evp.o reson.o \
 	  hpluck.o hcomb.o setline.o random.o ampdb.o\
 	  getsample.o breson.o resonz.o pluck.o hplset.o pluckset.o randf.o spray.o wshape.o bpluck.o\
 	  pchmidi.o midipch.o
-OOBJECTS = Ooscili.o Orand.o Ortgetin.o
+#OOBJECTS = Ooscili.o Orand.o Ortgetin.o
+OOBJECTS = Ooscili.o Orand.o
 
-IFILES =  ../H/ugens.h ../H/Ougens.h
+.c.o:
+	$(CC) -c $(CFLAGS) -o $@ $<
 
-RT_SOCKET_STUFF = RTsockfuncs.o randfuncs.o 
+.cpp.o:
+	$(CXX) -c $(CXXFLAGS) -o $@ $<
+	
+all : $(GENLIB)
 
-all : genlib.a $(RT_SOCKET_STUFF)
+install:	all
+	@if test ! -d $(LIBDIR); then mkdir $(LIBDIR); fi;
+	$(INSTALL) $(GENLIB) $(LIBDIR)
 
-genlib.a:	$(OBJECTS) $(OOBJECTS)
-	$(RM) genlib.a
-	ar rv $(GENLIB) $(OBJECTS) $(OOBJECTS)
+$(GENLIB):	$(OBJECTS) $(OOBJECTS)
+	$(RM) $@
+	ar rv $@ $(OBJECTS) $(OOBJECTS)
 ifeq ($(ARCH),MACOSX)
-	$(RANLIB) $(GENLIB)
+	$(RANLIB) $@
 endif
 
-# $(CFILES): $(IFILES)
+depend:
+ifeq ($(ARCH),LINUX)
+	-$(SHELL) -ec '$(CC) -M $(CFLAGS) $(CFILES)' > depend
+endif
+ifeq ($(ARCH),SGI)
+# Note: -MM is a gcc extension. If no gcc, use -M.
+# Unfortunately, this doesn't work...   -JGG
+#	$(SHELL) -ec '$(CC) -M $(CFLAGS) $(SRCS) $(CPPSRCS)' > depend
+endif
 
-RTsockfuncs.o: RTsockfuncs.c
-	$(CC) $(CFLAGS) -c RTsockfuncs.c
-
-randfuncs.o: randfuncs.c
-	$(CC) $(CFLAGS) -c randfuncs.c
+-include depend
 
 clean:
-	rm -f *.o *~ *\# $(OBJECTS) $(GENLIB) $(RT_SOCKET_STUFF)
+	rm -f *.o *~ $(GENLIB)
 
 cleanall: clean
+	rm -f depend
+
 
