@@ -21,15 +21,33 @@ usage()
 {
    printf("usage:  \"sfprint [options] file [file...]\"\n");
    printf("        options:  -v verbose\n");
+   printf("                  -q quiet (return status only)\n");
    exit(1);
 }
 
 
 /* ----------------------------------------------------------------- main --- */
+/* Prints info about any number of sound files given as cmd-line arguments.
+   If there's an error reading file, or if it's not a sound file with 
+   recognizable header, prints error message to stderr, but continues
+   processing argument list.  The info includes the file name, header type
+   and data format, sampling rate, number of channels, "class" (number of
+   bytes per sample word), duration, and maxamp stats (if any).  The format
+   of much of this information intentionally looks like it always has in cmix.
+
+   With the -v flag, also prints header size in bytes and number of sample
+   frames in file.  With the -q flag, prints nothing.  This is intended for
+   scripts that just want to know whether the file arguments are all sound
+   files (and so only care about the return value).
+
+   Returns 1 if any file could not be read or was not a sound file; 
+   otherwise returns 0.
+*/
 int
 main(int argc, char *argv[])
 {
-   int         i, fd, header_type, data_format, data_location, verbose = 0;
+   int         i, fd, header_type, data_format, data_location;
+   int         verbose = 0, quiet = 0, status = 0;
    int         nsamps, result, srate, nchans, class;
    float       dur;
    char        *sfname, timestr[MAX_TIME_CHARS];
@@ -44,6 +62,9 @@ main(int argc, char *argv[])
 
       if (arg[0] == '-') {
          switch (arg[1]) {
+            case 'q':
+               quiet = 1;
+               break;
             case 'v':
                verbose = 1;
                break;
@@ -58,7 +79,9 @@ main(int argc, char *argv[])
 
       fd = open(sfname, O_RDONLY);
       if (fd == -1) {
-         fprintf(stderr, "%s: %s\n", sfname, strerror(errno));
+         if (!quiet)
+            fprintf(stderr, "%s: %s\n", sfname, strerror(errno));
+         status = 1;
          continue;
       }
 
@@ -66,11 +89,15 @@ main(int argc, char *argv[])
 
       result = fstat(fd, &statbuf);
       if (result == -1) {
-         fprintf(stderr, "%s: %s\n", sfname, strerror(errno));
+         if (!quiet)
+            fprintf(stderr, "%s: %s\n", sfname, strerror(errno));
+         status = 1;
          continue;
       }
       if (!S_ISREG(statbuf.st_mode) && !S_ISLNK(statbuf.st_mode)) {
-         fprintf(stderr, "%s is not a regular file or a link.\n", sfname);
+         if (!quiet)
+            fprintf(stderr, "%s is not a regular file or a link.\n", sfname);
+         status = 1;
          continue;
       }
  
@@ -78,16 +105,25 @@ main(int argc, char *argv[])
 
       result = sndlib_read_header(fd);
       if (result == -1) {
-         fprintf(stderr, "\nCan't read header of \"%s\"!\n\n", sfname);
+         if (!quiet)
+            fprintf(stderr, "\nCan't read header of \"%s\"!\n\n", sfname);
          close(fd);
+         status = 1;
          continue;
       }
       header_type = mus_header_type();
       if (NOT_A_SOUND_FILE(header_type)) {
-         fprintf(stderr, "\"%s\" is probably not a sound file\n", sfname);
+         if (!quiet)
+            fprintf(stderr, "\"%s\" is probably not a sound file\n", sfname);
          close(fd);
+         status = 1;
          continue;
       }
+
+      /* If we're just returning status, no need to compute print-out info. */
+      if (quiet)
+         continue;
+
       data_format = mus_header_format();
       data_location = mus_header_data_location();
       srate = mus_header_srate();
@@ -137,6 +173,6 @@ main(int argc, char *argv[])
       close(fd);
    }
 
-   return 0;
+   return status;
 }
 
