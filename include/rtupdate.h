@@ -51,16 +51,37 @@ GLOBAL struct inst_list *genlist; // list of gen-name/tag pairs
 
 GLOBAL float pupdatevals[MAXPUPARR][MAXPUPS];  
 
-// used to store note_pfield_path data.  
-GLOBAL int parray_size[MAXNUMTAGS][MAXNUMPARAMS][MAXNUMCALLS];
-GLOBAL int gen_type[MAXNUMTAGS][MAXNUMPARAMS][MAXNUMCALLS];
+// used to store note_pfield_path data
+// usage is pfpath[(the tag to operate on)][(the parameter to update)]
+// [(the current time-value pair that you're working on)][(0 or 1 to specify
+// time(0) or value(1)]
 GLOBAL double pfpath[MAXNUMTAGS][MAXNUMPARAMS][MAXPARRAYSIZE][2];
 
+// number of time-value pairs for each tag, paramater, and call to note_pfield
+// path
+GLOBAL int parray_size[MAXNUMTAGS][MAXNUMPARAMS][MAXNUMCALLS];
+
+// specifies which pgen call to use when interpolating between time-value pairs
+// for each tag, parameter, and call to note_pfield_path
+GLOBAL int gen_type[MAXNUMTAGS][MAXNUMPARAMS][MAXNUMCALLS];
+
+// used to allow multiple calls to the same instrument tag (works much like 
+// the f_goto array in the code for makegen)
 GLOBAL int pi_goto[MAXNUMINSTS];
-GLOBAL int piarray_size[MAXNUMINSTS][MAXNUMPARAMS][MAXNUMCALLS];
-GLOBAL int igen_type[MAXNUMINSTS][MAXNUMPARAMS][MAXNUMCALLS];
+
+// used to store inst_pfield_path data
 GLOBAL double pipath[MAXNUMINSTS][MAXNUMPARAMS][MAXPARRAYSIZE][2];
 
+// number of time-value pairs for each inst, paramater, and call to inst_pfield
+// path
+GLOBAL int piarray_size[MAXNUMINSTS][MAXNUMPARAMS][MAXNUMCALLS];
+
+// which pgen function to use for above
+GLOBAL int igen_type[MAXNUMINSTS][MAXNUMPARAMS][MAXNUMCALLS];
+
+// this information is used to allow multiple calls to note_pfield_path and 
+// inst_pfield_path to be cumulative calls and not just have one overwrite the
+// other
 GLOBAL int numcalls[MAXNUMTAGS][MAXNUMPARAMS];
 GLOBAL int cum_parray_size[MAXNUMTAGS][MAXNUMPARAMS];
 

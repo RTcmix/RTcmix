@@ -286,7 +286,6 @@ main(int argc, char *argv[])
 			   for(j = 0; j < MAXNUMINSTS; j++)
 			   {
 				   pi_goto[j] = -1;
-//				   printf("pi_goto[%i] = %i \n", j, pi_goto[j]);
 				   for(k = 0; k < MAXNUMPARAMS; k++)
 				   {
 						numinstcalls[j][k] = 0;

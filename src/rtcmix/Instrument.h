@@ -41,22 +41,39 @@ private:
    short          bufstatus[MAXBUS];
    short          needs_to_run;
 
+// stores the current index into the pfpath array
    int			  cumulative_size[MAXNUMPARAMS];
+
+// stores the current index for each 'j' value
    int 			  pfpathcounter[MAXNUMPARAMS];
+
+// used in linear interpolation to store the updated value
    double 		  newpvalue[MAXNUMPARAMS];
+
+// used in linear interpolation to store the last updated value
    double 		  oldpvalue[MAXNUMPARAMS][2];
+
+// These are the tables used by the gen interpolation
    float		  *ptables[MAXNUMPARAMS];
    float 		  ptabs[MAXNUMPARAMS][2];
+
+// stores the sample number when updating begins to allow valid indexing into
+// the gen array
    int 			  oldsamp[MAXNUMPARAMS];
 
+// stores the current index into the pipath array
    int			  cumulative_isize[MAXNUMPARAMS];
 
+// The instrument number and instrument slot number
    int 			  instnum;
    int			  slot;
 	
+// used to keep track of which set of data in the pfpath array we are looking 
+// at.  This allows multiple calls to note_pfield_path and inst_pfield_path
+// with different envelopes specified
    int			  j;
    int 			  k;
-//   double 		  increment[MAXNUMPARAMS];
+
 public:
    Instrument();
    virtual ~Instrument();
