@@ -6,9 +6,11 @@ PRCRev.o JCRev.o NRev.o Comb.o ZComb.o Notch.o ZNotch.o Allpass.o \
 Envelope.o ADSR.o Oscil.o OscilN.o OscilL.o KOscilN.o TableN.o TableL.o \
 Noise.o SubNoise.o SubNoiseL.o SoundIn.o WavShape.o ZAllpass.o Equalizer.o
 
-#CXXFLAGS += -Wall -O3
-
 all: objlib.a
+
+SoundIn.o: SoundIn.cpp SoundIn.h
+	$(CXX) $(CXXFLAGS) -I../../../src/rtcmix -I../../../src/audio \
+		-I../../../src/sndlib -c SoundIn.cpp
 
 objlib.a: $(OBJS)
 	$(RM) objlib.a
