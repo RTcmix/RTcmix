@@ -5,141 +5,221 @@
 #include <globals.h>
 #include <pthread.h>
 #include <iostream.h>
+#include <stdio.h>
 #include "Instrument.h"
 #include "rt.h"
 #include "rtdefs.h"
-#include "../Minc/notetags.h"
-#ifdef USE_SNDLIB
-#include "../sndlib/sndlib.h"
+#include <notetags.h>
+#include <sndlibsupport.h>
+#include <assert.h>
+
+
+
+Instrument :: Instrument()
+{
+   start = 0.0;
+   dur = 0.0;
+   cursamp = 0;
+   chunksamps = 0;
+   endsamp = 0;
+   nsamps = 0;
+   chunkstart = 0;
+   output_offset = 0;
+
+   sfile_on = 0;                // default is no input soundfile
+   fdIndex = -1;
+   fileOffset = 0;
+
+   inputsr = 0.0;
+   inputchans = 0;
+   outputchans = 0;
+
+// FIXME: not clear we need inbuf - better to leave it on run method's stack?
+   inbuf = NULL;
+   outbuf = NULL;
+
+   bus_config = NULL;
+
+   if (tags_on) {
+      pthread_mutex_lock(&pfieldLock);
+
+      for (int i = 0; i < MAXPUPS; i++)  // initialize this element
+         pupdatevals[curtag][i] = NOPUPDATE;
+      mytag = curtag++;
+
+      if (curtag >= MAXPUPARR)
+         curtag = 1;            // wrap it around
+      // 0 is reserved for all-note rtupdates
+
+      pthread_mutex_unlock(&pfieldLock);
+   }
+}
+
+
+Instrument :: ~Instrument()
+{
+   if (sfile_on)
+      gone();                   // decrement input soundfile reference
+
+   delete inbuf [];
+   delete outbuf [];
+
+// FIXME: Also...
+// Call something that decrements refcount for bus_config, and if that
+// reaches zero, and is no longer the most recent for that instname,
+// then delete that bus_config node.
+}
+
+
+int Instrument :: init(float p[], short n_args)
+{
+   cout << "You haven't defined an init member of your Instrument class!"
+                                                                   << endl;
+   return -1;
+}
+
+
+// Instruments *must* call this at the beginning of their run methods,
+// like this:
+//
+//    Instrument::run();
+//
+// This method allocates the instrument's private interleaved output buffer
+// and inits a buffer status array.
+
+int Instrument :: run()
+{
+   if (outbuf == NULL)
+      outbuf = new BUFTYPE [RTBUFSAMPS * outputchans];
+
+#ifdef NOTYET
+   for (int i = 0; i < outputchans; i++)
+      bufstatus[i] = 0;
 #endif
 
-#ifdef DEBUG
-#include <stdio.h>
-#endif
-
-extern int setinput(float, Instrument*);
-extern InputDesc inputFileTable[];
-
-Instrument::Instrument()
-{
-  int i;
-
-  fileOffset = 0;
-  fdIndex = -1;
-  sfile_on = 0; // default is no input soundfile
-  start = 0.0;
-  dur = 0.0;
-  cursamp = 0;
-  endsamp = 0;
-  chunkstart = 0;
-  chunksamps = 0;
-  
-  if (tags_on) {
-    pthread_mutex_lock(&pfieldLock);
-    for (i = 0; i < MAXPUPS; i++) // initialize this element
-      pupdatevals[curtag][i] = NOPUPDATE;
-    mytag = curtag++;
-    if (curtag >= MAXPUPARR) curtag = 1; // wrap it around
-    // 0 is reserved for all-note rtupdates
-    pthread_mutex_unlock(&pfieldLock);
-  }
+   return 0;
 }
 
-Instrument::~Instrument()
-{ 
-	if (sfile_on)
-		gone(); // decrement input soundfile reference
+
+void Instrument :: exec()
+{
+   run();
 }
 
-int Instrument::init(float p[], short n_args)
+
+// Add signal from one channel of instrument's private interleaved buffer
+// into the specified output bus.
+
+void Instrument :: addout(BusType bus_type, int bus)
 {
-	cout << "you haven't defined an init member of your Instrument class!" << endl;
-	return -1;
-}
+   int      samp, endframe, src_chan, buses, *bus_list;
+   BufPtr   src, dest;
 
-int Instrument::run()
-{
-	cout << "you haven't defined a run member of your Instrument class!" << endl;
-	return -1;
-}
+   assert(bus >= 0 && bus < MAXBUS);
 
-float Instrument::getstart()
-{
-	return start;
-}
+   if (bus_type == BUS_AUX_OUT) {
+      dest = aux_buffer[bus];
+      buses = bus_config->auxout_count;
+      bus_list = bus_config->auxout;
+   }
+   else {       // BUS_OUT
+      dest = out_buffer[bus];
+      buses = bus_config->out_count;
+      bus_list = bus_config->out;
+   }
 
-float Instrument::getdur()
-{
-	return dur;
-}
-
-int Instrument::getendsamp()
-{
-	return endsamp;
-}
-
-void Instrument::setchunk(int csamps)
-{
-  chunksamps = csamps;
-}
-
-void Instrument::setchunkstart(int csamps)
-{
-	chunkstart = csamps;
-}
-
-void Instrument::setendsamp(int end)
-{
-	endsamp = end;
-}
-
-void Instrument::gone()
-{
-  // If the reference count on the file referenced by the instrument
-  // reaches zero, close the input soundfile and set the state to 
-  // make sure this is obvious
-
-#ifdef DEBUG
-  printf("Instrument::gone(this=0x%x): index %d refcount = %d\n",
-	 this, fdIndex, inputFileTable[fdIndex].refcount);
-#endif
-
-  // BGG -- added this to prevent file closings in interactive mode
-  // we don't know if a file will be referenced again in the future
-  if (!rtInteractive) {
-    if (fdIndex >= 0 && --inputFileTable[fdIndex].refcount <= 0) {
-      if (inputFileTable[fdIndex].fd > 0) {
-#ifdef DEBUG
-	printf("\tclosing fd %d\n", inputFileTable[fdIndex].fd);
-#endif
-
-#ifdef USE_SNDLIB
-	clm_close(inputFileTable[fdIndex].fd);
-#else /* !USE_SNDLIB */
-  #ifdef sgi
-	// free the file handle opened for this file
-	afCloseFile((AFfilehandle) inputFileTable[fdIndex].handle);
-  #else
-	close(inputFileTable[fdIndex].fd);
-  #endif
-#endif /* !USE_SNDLIB */
+   src_chan = -1;
+   for (int i = 0; i < buses; i++) {
+      if (bus_list[i] == bus) {
+         src_chan = i;
+         break;
       }
-      inputFileTable[fdIndex].fd = 0;
-#ifdef USE_SNDLIB
-      inputFileTable[fdIndex].header_type = unsupported_sound_file;
-      inputFileTable[fdIndex].data_format = snd_unsupported;
-#else /* !USE_SNDLIB */
-  #ifdef sgi
-      inputFileTable[fdIndex].handle = NULL;
-  #endif
-#endif /* !USE_SNDLIB */
-      inputFileTable[fdIndex].data_location = 0;
-      inputFileTable[fdIndex].dur = 0.0;
-      inputFileTable[fdIndex].filename[0] = '\0';
-      fdIndex = -1;
-    }
-  }
+   }
+
+   assert(src_chan != -1);
+   assert(dest != NULL);
+
+   endframe = output_offset + chunksamps;
+   samp = src_chan;
+
+// FIXME: pthread_mutex_lock dest buffer
+
+   for (int frame = output_offset; frame < endframe; frame++) {
+      dest[frame] += outbuf[samp];
+      samp += outputchans;
+   }
+
+// FIXME: pthread_mutex_unlock dest buffer
 }
 
 
+float Instrument :: getstart()
+{
+   return start;
+}
+
+float Instrument :: getdur()
+{
+   return dur;
+}
+
+int Instrument :: getendsamp()
+{
+   return endsamp;
+}
+
+void Instrument :: setendsamp(int end)
+{
+   endsamp = end;
+}
+
+void Instrument :: setchunk(int csamps)
+{
+   chunksamps = csamps;
+}
+
+void Instrument :: setchunkstart(int csamps)
+{
+   chunkstart = csamps;
+}
+
+void Instrument :: set_output_offset(int offset)
+{
+   output_offset = offset;
+}
+
+
+// If the reference count on the file referenced by the instrument
+// reaches zero, close the input soundfile and set the state to 
+// make sure this is obvious
+
+void Instrument :: gone()
+{
+#ifdef DEBUG
+   printf("Instrument::gone(this=0x%x): index %d refcount = %d\n",
+          this, fdIndex, inputFileTable[fdIndex].refcount);
+#endif
+
+   // BGG -- added this to prevent file closings in interactive mode
+   // we don't know if a file will be referenced again in the future
+   if (!rtInteractive) {
+      if (fdIndex >= 0 && --inputFileTable[fdIndex].refcount <= 0) {
+         if (inputFileTable[fdIndex].fd > 0) {
+#ifdef DEBUG
+            printf("\tclosing fd %d\n", inputFileTable[fdIndex].fd);
+#endif
+            clm_close(inputFileTable[fdIndex].fd);
+         }
+         inputFileTable[fdIndex].fd = 0;
+         inputFileTable[fdIndex].header_type = unsupported_sound_file;
+         inputFileTable[fdIndex].data_format = snd_unsupported;
+         inputFileTable[fdIndex].chans = 0;
+         inputFileTable[fdIndex].srate = 0.0;
+         inputFileTable[fdIndex].data_location = 0;
+         inputFileTable[fdIndex].dur = 0.0;
+         inputFileTable[fdIndex].filename[0] = '\0';
+         fdIndex = -1;
+      }
+   }
+}
 
