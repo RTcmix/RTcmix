@@ -145,7 +145,7 @@ main(int argc, char *argv[])
    flush_all_underflows_to_zero();
 #endif
 
-   /* Call this function on cntl-C. */
+   /* Call signal_handler on cntl-C. */
    if (signal(SIGINT, signal_handler) == SIG_ERR) {
       fprintf(stderr, "Error installing signal handler.\n");
       exit(1);
