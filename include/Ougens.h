@@ -2,6 +2,9 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
+#ifndef _OUGENS_H_
+#define _OUGENS_H_ 1
+
 #include <math.h>
 
 class Ooscili
@@ -19,6 +22,7 @@ public:
 	Ooscili(float SR, float freq, double arr[], int len);
 	float next();
 	float next(int nsample);
+	float nextn();
 	inline void setfreq(float freq) { si = freq * lendivSR; }
 	inline void setphase(double phs) { phase = phs; }
 	inline int getlength() { return length; }
@@ -182,3 +186,5 @@ public:
 	Ortgetin(Instrument*);
 	int next(float*);
 };
+
+#endif // _OUGENS_H_
