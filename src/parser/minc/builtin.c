@@ -6,11 +6,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 /* Minc builtin functions, for use only in Minc scripts.
    To add a builtin function, make an entry for it in the function ptr array
    below, make a prototype for it, and define the function in this file.
-   Follow the model of the existing builtins.
+   Follow the model of the existing builtins at the bottom of the file.
 
    John Gibson, 1/24/2004
 */
@@ -19,6 +20,7 @@
 static MincFloat _minc_print(const MincListElem args[], const int nargs);
 static MincFloat _minc_printf(const MincListElem args[], const int nargs);
 static MincFloat _minc_len(const MincListElem args[], const int nargs);
+static MincFloat _minc_index(const MincListElem args[], const int nargs);
 static MincString _minc_type(const MincListElem args[], const int nargs);
 
 /* other prototypes */
@@ -36,6 +38,7 @@ static struct _builtins {
    { "print",     _minc_print,   NULL },
    { "printf",    _minc_printf,  NULL },
    { "len",       _minc_len,     NULL },
+   { "index",     _minc_index,   NULL },
    { "type",      NULL,          _minc_type },
    { NULL,        NULL,          NULL }         /* marks end of list */
 };
@@ -305,6 +308,71 @@ _minc_len(const MincListElem args[], const int nargs)
       }
    }
    return (MincFloat) len;
+}
+
+
+/* ----------------------------------------------------------------- index -- */
+/* Given an item (float, string or handle), return the index of the item within
+   the given list, or -1 if the item is not in the list.  Example:
+
+      list = {1, 2, "three", 4}
+      id = index(list, 2)
+
+   <id> equals 1 after this call.
+*/
+MincFloat
+_minc_index(const MincListElem args[], const int nargs)
+{
+   int i, len, index = -1;
+   MincDataType argtype;
+   MincListElem *data;
+
+   if (nargs != 2) {
+      minc_warn("index: must have two arguments (list, item_to_find)");
+      return -1.0;
+   }
+   if (args[0].type != MincListType) {
+      minc_warn("index: first argument must be a list");
+      return -1.0;
+   }
+   argtype = args[1].type;
+   assert(argtype == MincFloatType || argtype == MincStringType
+            || argtype == MincHandleType || argtype == MincListType);
+
+   len = args[0].val.list->len;
+   data = args[0].val.list->data;
+
+   for (i = 0; i < len; i++) {
+      if (data[i].type == argtype) {
+         if (argtype == MincFloatType) {
+            if (data[i].val.number == args[1].val.number) {
+               index = i;
+               break;
+            }
+         }
+         else if (argtype == MincStringType) {
+            if (strcmp(data[i].val.string, args[1].val.string) == 0) {
+               index = i;
+               break;
+            }
+         }
+//FIXME: should this recurse and match entire list contents??
+         else if (argtype == MincListType) {
+            if (data[i].val.list == args[1].val.list) {
+               index = i;
+               break;
+            }
+         }
+         else if (argtype == MincHandleType) {
+            if (data[i].val.handle == args[1].val.handle) {
+               index = i;
+               break;
+            }
+         }
+      }
+   }
+
+   return (MincFloat) index;
 }
 
 
