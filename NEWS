@@ -1,0 +1,14 @@
+In addition to many bug fixes, RTcmix version 3.0 adds a major feature:
+the ability to route signals between instruments and to multiple outputs.
+You set up the bus routing for each instrument using a new Minc call,
+bus_config. See "docs/README.bus_config" for explanation.
+
+A new instrument, MIXN, takes full advantage of the multiple-output
+capability.
+
+Instrument designers should see "docs/README.inst_porting" to find out
+how to make your instruments compatible with this version of RTcmix.
+
+
+
+JGG
