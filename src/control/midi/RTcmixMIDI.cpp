@@ -93,16 +93,25 @@ int RTcmixMIDI::init()
 
 	int id = 0;
 	const char *devname = Option::midiInDevice();
+#if DEBUG > 0
+	printf("Requested MIDI input device: \"%s\"\n", devname);
+#endif
 	if (strlen(devname)) {
+		bool found = false;
 		const int numdev = Pm_CountDevices();
 		for ( ; id < numdev; id++) {
 			const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
 			if (info->input) {
-				if (strcmp(info->name, devname) == 0)
+#if DEBUG > 0
+				printf("Found MIDI input device: \"%s\"\n", info->name);
+#endif
+				if (strcmp(info->name, devname) == 0) {
+					found = true;
 					break;
+				}
 			}
 		}
-		if (id == 0 || id == numdev) {
+		if (!found) {
 			fprintf(stderr, "WARNING: no match for MIDI input device \"%s\""
 							" ... using default.\n", devname);
 			id = Pm_GetDefaultInputDeviceID();
@@ -286,12 +295,12 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 					break;
 				case kSystem:
 				default:
-#if DEBUG > 0
+#if DEBUG > 1
 					printf("0x%.2x, %ld, %ld\n", (u_char) status, data1, data2);
 #endif
 					break;
 			}
-#if DEBUG > 0
+#if DEBUG > 1
 			obj->dump(chan);
 #endif
 		}
