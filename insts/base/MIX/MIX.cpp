@@ -65,6 +65,8 @@ int MIX::run()
 	float aamp;
 	int branch;
 
+	Instrument::run();
+
 	rsamps = chunksamps*inputchans;
 
 	rtgetin(in, this, rsamps);
