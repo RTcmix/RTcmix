@@ -11,7 +11,7 @@ CFILES =  oscil.c oscili.c osciln.c oscilni.c table.c tablei.c evp.c reson.c \
 	  hpluck.c hcomb.c setline.c random.c ampdb.c\
 	  breson.c resonz.c pluck.c hplset.c pluckset.c randf.c spray.c wshape.c bpluck.c\
 	  pchmidi.c midipch.c
-OCFILES = Ooscili.cpp Orand.cpp Odelayi.cpp Ocomb.cpp Ocombi.cpp
+OCFILES = Ooscili.cpp Orand.cpp Odelayi.cpp Ocomb.cpp Ocombi.cpp Oequalizer.cpp Oonepole.cpp
 
 OBJECTS = oscil.o oscili.o osciln.o oscilni.o table.o tablei.o evp.o reson.o \
 	  rsnset.o evset.o tableset.o cpspch.o cpsoct.o octpch.o buzz.o\
@@ -21,7 +21,7 @@ OBJECTS = oscil.o oscili.o osciln.o oscilni.o table.o tablei.o evp.o reson.o \
 	  hpluck.o hcomb.o setline.o random.o ampdb.o\
 	  breson.o resonz.o pluck.o hplset.o pluckset.o randf.o spray.o wshape.o bpluck.o\
 	  pchmidi.o midipch.o
-OOBJECTS = Ooscili.o Orand.o Odelayi.o Ocomb.o Ocombi.o
+OOBJECTS = Ooscili.o Orand.o Odelayi.o Ocomb.o Ocombi.o Oequalizer.o Oonepole.o
 
 .c.o:
 	$(CC) -c $(CFLAGS) -o $@ $<
