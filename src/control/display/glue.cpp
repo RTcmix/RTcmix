@@ -75,7 +75,7 @@ create_pfield(const Arg args[], const int nargs)
 			precision = (int) args[1];
 	}
 
-	static RTcmixMouse *displaywin = NULL;
+	static RTcmixDisplay *displaywin = NULL;
 	if (displaywin == NULL)					// first time, so make window
 		displaywin = createDisplayWindow();
 	if (displaywin == NULL) {
