@@ -3,11 +3,14 @@
 	and wander towards it
 
     demonstration of the RTcmix object -- BGG, 11/2002
+
+	Modified to show new Instrument functionality DS 03/2003
 */
 
 #define MAIN
 #include <iostream.h>
 #include <unistd.h>
+#include <stdio.h>
 
 #include <globals.h>
 #include "RTcmix.h"
@@ -26,6 +29,10 @@ main(int argc, char *argv[])
 {
 	int i;
 	void *wander();
+	double duration = 999.00;	// default to loooong time
+
+	if (argc == 2)
+		duration = atof(argv[1]);
 
 	rrr = new RTcmix(44100.0, 2, 8192);
 //	rrr->printOn();
@@ -48,8 +55,9 @@ main(int argc, char *argv[])
 
 		// start the notes, looooong duration
 		theWaves[i] = (MYWAVETABLE*)rrr->cmd("MYWAVETABLE", 5,
-			0.0, 999.0, 30000.0/(double)NINSTS, curfreq[i],
+			0.0, duration, 30000.0/(double)NINSTS, curfreq[i],
 			(double)i*(1.0/(double)NINSTS));
+		theWaves[i]->Ref();	// Keep these from being destroyed
 	}
 
 /* ok, I know scheduling a function to fire every 0.02 seconds is a little
@@ -64,9 +72,18 @@ main(int argc, char *argv[])
 
 void wander()
 {
-	int i;
+	bool wavesLeft = false;
+	for (int i = 0; i < NINSTS; i++) {
+		if (theWaves[i] == NULL)
+			continue;				// Already released this one
+	    else if (theWaves[i]->IsDone())
+		{
+			theWaves[i]->Unref();	// Release our hold on this
+			theWaves[i] = NULL;
+			continue;
+		}
 
-	for (i = 0; i < NINSTS; i++) {
+		wavesLeft = true;
 		curfreq[i] += freqinc[i];
 		// this is where we change the frequency of each executing note
 		theWaves[i]->setfreq(curfreq[i]);
@@ -86,5 +103,10 @@ void wander()
 					freqinc[i] = -freqinc[i];
 			}
 		}
+	}
+	if (!wavesLeft)
+	{
+		printf("All waves have finished.  Exiting.\n");
+		exit(0);
 	}
 }
