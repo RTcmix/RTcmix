@@ -22,6 +22,8 @@
 #include "DualOutputAudioDevice.h"
 #include "audio_devices.h"
 
+#define DEBUG	0
+
 #ifdef NETAUDIO
 char globalNetworkPath[128];			// Set by Minc/setnetplay.c
 #endif
@@ -93,9 +95,11 @@ create_audio_devices(int record, int play, int chans, float srate, int *buffersi
 	if (Option::reportClipping())
 		openMode |= AudioDevice::ReportClipping;
 
+#if DEBUG > 0
 	printf("DEBUG: audio device: peak check: %d report clip: %d\n",
 		   !!(openMode & AudioDevice::CheckPeaks),
 		   !!(openMode & AudioDevice::ReportClipping));
+#endif
 
 	if ((status = device->open(openMode, audioFormat, chans, srate)) == 0)
 	{
@@ -157,8 +161,10 @@ int create_audio_file_device(const char *outfilename,
 	if (Option::reportClipping() && !playing)
 		openMode |= AudioDevice::ReportClipping;	// Ditto for reporting of clipping
 
+#if DEBUG > 0
 	printf("DEBUG: file device: peak check: %d report clip: %d\n",
 		   openMode & AudioDevice::CheckPeaks, openMode & AudioDevice::ReportClipping);
+#endif
 
 	// We send the device noninterleaved, floating point buffers.  If we are playing
 	// to HW at the same time, the data received by the file device will already be
@@ -196,7 +202,9 @@ int create_audio_file_device(const char *outfilename,
 	}
 	else {							// To file, plus record and/or playback.
 		if (playing && !recording) {		// Dual outputs to both HW and file.
+#if DEBUG > 0
 			printf("DEBUG: Group output device for file and HW playback\n");
+#endif
 			bool fileDoesLimiting = !fileIsRawFloats;
 			globalAudioDevice = new DualOutputAudioDevice(globalAudioDevice,
 														  fileDevice,
@@ -204,11 +212,15 @@ int create_audio_file_device(const char *outfilename,
 		}
 		else if (recording && !playing) {	// Record from HW, write to file.
 			assert(globalAudioDevice != NULL);
+#if DEBUG > 0
 			printf("DEBUG: Dual device for HW record, file playback\n");
+#endif
 			globalAudioDevice = new AudioIODevice(globalAudioDevice, fileDevice, true);
 		}
 		else {	// HW Record and playback, plus write to file.
+#if DEBUG > 0
 			printf("DEBUG: Dual device for HW record/playback, file playback\n");
+#endif
 			bool fileDoesLimiting = !fileIsRawFloats;
 			globalAudioDevice = new DualOutputAudioDevice(globalAudioDevice,
 														  fileDevice,
