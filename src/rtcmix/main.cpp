@@ -97,6 +97,8 @@ init_globals()
    for (i = 0; i < MAXBUS; i++)
       in_port[i] = out_port[i] = 0;
 #endif /* LINUX */
+#ifdef MACOSX
+#endif
 #ifdef SGI
    in_port = 0;
    out_port = 0;
@@ -261,6 +263,7 @@ main(int argc, char *argv[])
                fprintf(stderr, "-s, -d, -e options not yet implemented\n");
                exit(1);
                break;
+#ifdef RTUPDATE
             case 'c':     /* set up for continuous control (note tags on) */
                tags_on = 1;
                printf("rtupdates enabled\n");
@@ -297,6 +300,7 @@ main(int argc, char *argv[])
 				   }
 			   }
                break;
+#endif /* RTUPDATE */
             case 'f':     /* use file name arg instead of stdin as score */
                if (++i >= argc) {
                   fprintf(stderr, "You didn't give a file name.\n");
@@ -394,8 +398,6 @@ main(int argc, char *argv[])
       if (retcode != 0) {
          fprintf(stderr, "inTraverse() thread join failed\n");
       }
-
-
 
       if (!noParse)
          destroy_parser();
