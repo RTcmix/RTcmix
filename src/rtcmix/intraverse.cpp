@@ -15,6 +15,7 @@
 
 // #define TBUG
 // #define ALLBUG
+// #define PBUG
 
 double baseTime;
 long elapsed;
@@ -297,6 +298,7 @@ extern "C" {
 		while ((rtQSize > 0) && (chunkStart < bufEndSamp) && (bus != -1)) {
 		  
 		  Iptr = rtQueue[busq].pop();  // get next instrument off queue
+		  Iptr->set_ichunkstart(chunkStart);
 		  
 		  endsamp = Iptr->getendsamp();
 		  
