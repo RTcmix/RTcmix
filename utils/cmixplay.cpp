@@ -148,6 +148,8 @@ protected:
    Status      doHotKeys(int framesRead);
    void        printTime();
    float       *getOutBuf() const { return _outBuf; }
+   float       *getOutZeroBuf() const { return _outZeroBuf; }
+   int         getDeviceFrames() const { return _deviceFrames; }
 
 private:
    const char  *_fileName;
@@ -184,6 +186,7 @@ private:
    int         _curSecond;
    void        *_inBuf;       // filled from file read
    float       *_outBuf;      // passed to audio device
+   float       *_outZeroBuf;  // used during pause
    State       _state;
    AudioDevice *_device;
 
@@ -215,6 +218,7 @@ Player::Player(
 {
    _inBuf = NULL;
    _outBuf = NULL;
+   _outZeroBuf = NULL;
    _device = NULL;
    _state = StateStopped;
 }
@@ -225,6 +229,7 @@ Player::~Player()
 {
    delete [] (float *) _inBuf;
    delete [] _outBuf;
+   delete [] _outZeroBuf;
 }
 
 
@@ -267,6 +272,9 @@ Player::configure()
    // allocate input and output buffers
    _inBuf = (void *) new char [_bufSamps * _datumSize];
    _outBuf = new float [_bufSamps];
+   _outZeroBuf = new float [_bufSamps];
+   for (int i = 0; i < _bufSamps; i++)
+      _outZeroBuf[i] = 0.0;
 
    printStats();
 
@@ -687,6 +695,12 @@ Player::playCallback(AudioDevice *device, void *arg)
          fprintf(stderr, "Error: %s\n", device->getLastError());
 
       player->printTime();
+   }
+   else if (player->getState() == StatePaused) {
+      const int nframes = player->getDeviceFrames();
+      int framesWritten = device->sendFrames(player->getOutZeroBuf(), nframes);
+      if (framesWritten != nframes)
+         fprintf(stderr, "Error: %s\n", device->getLastError());
    }
    Status status = player->doHotKeys(framesRead);
    if (status != StatusGood)
