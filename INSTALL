@@ -53,7 +53,8 @@ Ib.  Compile and install the core
    SGI users must change the definition of ARCH to SGI.
 
    Also note the backwards-compatibility flag -DCOMPATIBLE_FUNC_LOCS,
-   which you may want to enable if you have old WAVETABLE scores.
+   which you may want to enable if you have old WAVETABLE, FMINST and
+   WAVESHAPE scores. Read "docs/README.table_assigns" for more.
 
 3) From your RTcmix directory, type "make && make install"
    (or, for SGI, "gmake && gmake install").
@@ -91,9 +92,13 @@ at least the "insts.std" package. Here's how to install packages:
 
 1) cd into your RTcmix directory
 
-2) Untar PACKAGE.tar.gz  ("tar xfz PACKAGE.tar.gz")
+2) Untar PACKAGE.tar.gz  ("tar xfz PACKAGE-version.tar.gz")
 
-3) Edit "makefile.conf" in the RTcmix directory.
+3) The package dir will have a version number, like "insts.std-3.0.0".
+   Rename this to "insts.std", or use the full version name in
+   makefile.conf (see below).
+
+4) Edit "makefile.conf" in the RTcmix directory.
 
    If the package is an instrument package (e.g., insts.std, insts.jg),
    then add the package directory name to INST_DIRS.
@@ -101,7 +106,7 @@ at least the "insts.std" package. Here's how to install packages:
    If the package is not an instrument package (e.g., interfaces.dt),
    then add the package directory name to PACKAGE_DIRS.
 
-4) Do a "make && make install" (or gmake for SGI) from the RTcmix directory
+5) Do a "make && make install" (or gmake for SGI) from the RTcmix directory
    (not from inside the package directory). This creates a .conf file in the
    package directory, which the sub-level makefiles need.
 
