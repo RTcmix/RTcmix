@@ -844,7 +844,7 @@ SPECTACLE: SPECTACLE(start, inskip, dur, amp, ringdur, fft_len, window_len,
 
    New signature:
 
-   SPECTACLE(start, inskip, dur, amp, ringdur, fft_len, 
+   SPECTACLE(start, inskip, dur, amp, ringdur, fft_len, window_len,
                window_type, overlap, [wetdry_mix, inchan, pctleft, in_amp,
                eq_table, delay_time_table, delay_feedback_table])
 
@@ -872,7 +872,7 @@ SPECTACLE: SPECTEQ(start, inskip, dur, amp, ringdur, fft_len, window_len,
 
    New signature:
 
-   SPECTEQ(start, inskip, dur, amp, ringdur, fft_len, 
+   SPECTEQ(start, inskip, dur, amp, ringdur, fft_len, window_len,
                window_type, overlap, [wetdry_mix, inchan, pctleft,
                in_amp, eq_table)
 
@@ -904,7 +904,7 @@ SPECTACLE: TVSPECTACLE(start, inskip, dur, amp, ringdur, fft_len, window_len,
 
    New signature:
 
-   TVSPECTACLE(start, inskip, dur, amp, ringdur, fft_len, 
+   TVSPECTACLE(start, inskip, dur, amp, ringdur, fft_len, window_len,
                window_type, overlap, [wetdry_mix, inchan, pctleft, in_amp,
                eq_table_A, delay_time_table_A, delay_feedback_table_A,
                eq_table_B, delay_time_table_B, delay_feedback_table_B,
