@@ -50,7 +50,7 @@ rtsetparams(float p[], int n_args, double pp[])
 
    SR = p[0];
    NCHANS = (int) p[1];
-   RTBUFSAMPS = n_args > 2 ? (int) p[2] : 8192;
+   RTBUFSAMPS = n_args > 2 ? (int) p[2] : 4096;
 
    if (n_args > 3) {
 #ifdef SGI
