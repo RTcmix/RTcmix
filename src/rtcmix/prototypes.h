@@ -70,6 +70,8 @@ int rtcloseout(void);
 
 /* set_option.c */
 const char *get_audio_device_name(void);
+const char *get_audio_indevice_name(void);
+const char *get_audio_outdevice_name(void);
 
 /* sockit.C */
 void *sockit(void *);
