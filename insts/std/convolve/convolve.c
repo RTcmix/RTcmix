@@ -120,7 +120,7 @@ convolve(float p[], int n_args)
 
     ichan = sfchans(&sfdesc[impulse]);
 
-    for (c=0;c<ichan;c++){
+    for (c=0;c<2;c++){
    	ocnt[c] = 0;
 	icnt[c] = 0;
 	}
@@ -194,6 +194,7 @@ convolve(float p[], int n_args)
       *(filt[c] + i) *= max;
   } 
   /* get target file samps */
+  c = 0; // JGG
   for (i=0; i<N2; i++){
      if (cmixgetfloat(xin,inchan) <= 0)
           break;
@@ -225,6 +226,7 @@ convolve(float p[], int n_args)
 	by FFT of filter impulse response.  Inverse FFT and add first N/2
 	resulting samples to last N/2 samples of previous FFT.  */
  ringtotal = N;
+ ringdown[1] = 0; // JGG: otherwise hangs if impulse file is mono
  for(c=0;c<ichan;c++){
     ringdown[c] = ringtotal;
     }
