@@ -115,11 +115,11 @@ double rtinput(float *p, short n_args, double *pp)
 	/* See if file exists and is a regular file or link. */
 	if (stat(rtsfname, &sfst) == -1) {
 		fprintf(stderr, "%s: %s\n", rtsfname, strerror(errno));
-		return -1.0;
+		exit(1);   // was return -1, but results in misleading err msgs  -JGG
 	}
 	if (!S_ISREG(sfst.st_mode) && !S_ISLNK(sfst.st_mode)) {
 		fprintf(stderr, "%s is not a regular file or a link.\n", rtsfname);
-		return -1.0;
+		exit(1);   // was return -1, but results in misleading err msgs  -JGG
 	}
 
 	/* Open the file and read its header. Then info available from
@@ -132,7 +132,7 @@ double rtinput(float *p, short n_args, double *pp)
 	if (fd == -1) {
 		fprintf(stderr, "Can't read header of \"%s\" (%s)\n",
 												rtsfname, strerror(errno));
-		return -1.0;
+		exit(1);   // was return -1, but results in misleading err msgs  -JGG
 	}
 
 	header_type = c_snd_header_type();
@@ -140,7 +140,7 @@ double rtinput(float *p, short n_args, double *pp)
 	if (NOT_A_SOUND_FILE(header_type)) {
 		fprintf(stderr, "\"%s\" is probably not a sound file\n", rtsfname);
 		sndlib_close(fd, 0, 0, 0, 0);
-		return -1.0;
+		exit(1);   // was return -1, but results in misleading err msgs  -JGG
 	}
 
 	data_format = c_snd_header_format();
@@ -148,8 +148,14 @@ double rtinput(float *p, short n_args, double *pp)
 	if (INVALID_DATA_FORMAT(data_format)) {
 		fprintf(stderr, "\"%s\" has invalid sound data format\n", rtsfname);
 		sndlib_close(fd, 0, 0, 0, 0);
-		return -1.0;
+		exit(1);   // was return -1, but results in misleading err msgs  -JGG
 	}
+	if (IS_FLOAT_FORMAT(data_format)) {
+		fprintf(stderr, "\"%s\": can't handle float input files yet.\n",
+					rtsfname);
+		sndlib_close(fd, 0, 0, 0, 0);
+		exit(1);   // was return -1, but results in misleading err msgs  -JGG
+   }
 
 	data_location = c_snd_header_data_location();
 	nsamps = c_snd_header_data_size();          /* samples, not frames */
