@@ -50,15 +50,15 @@ high-weighted linear distribution
 
 =item 3
 
-triangular linear distribution
+triangular distribution weighted towards 0.5
 
 =item 4
 
-gaussian distribution
+gaussian distribution, with mean of 0.5 and standard deviation of 0.166666
 
 =item 5
 
-cauchy distribution
+cauchy distribution, with mean of 0.5 and alpha of 0.00628338
 
 =back
 
