@@ -4,7 +4,7 @@
 if [ $# -ne 3 ]
 then
    echo  Usage: `basename $0` infile outfile outformat
-   echo "       outformat: aiff, aifc, wav, next, sun, ircam"
+   echo "       outformat: aiff, aifc, wav, next, sun, ircam, raw"
    exit 1
 fi
 
@@ -28,10 +28,10 @@ then
    exit 1
 fi
 
-if [ $3 != "aiff" -a $3 != "aifc" -a $3 != "wav" \
-                  -a $3 != "next" -a $3 != "sun" -a $3 != "ircam" ]
+if [ $3 != "aiff" -a $3 != "aifc" -a $3 != "wav" -a $3 != "next" \
+                  -a $3 != "sun" -a $3 != "ircam" -a $3 != "raw" ]
 then
-   echo Output format must be one of aiff, aifc, wav, next, sun or ircam.
+   echo Output format must be one of aiff, aifc, wav, next, sun, ircam, or raw.
    exit 1
 fi
 
