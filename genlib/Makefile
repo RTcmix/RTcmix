@@ -21,8 +21,9 @@ OBJECTS = oscil.o oscili.o osciln.o oscilni.o table.o tablei.o evp.o reson.o \
 
 IFILES =  ../H/ugens.h
 
+RT_SOCKET_STUFF = RTsockfuncs.o randfuncs.o 
 
-all : genlib.a
+all : genlib.a $(RT_SOCKET_STUFF)
 
 genlib.a:	$(OBJECTS)
 	rm -f genlib.a
@@ -32,5 +33,11 @@ genlib.a:	$(OBJECTS)
 
 # $(CFILES): $(IFILES)
 
+RTsockfuncs.o: RTsockfuncs.c
+	$(CC) $(CFLAGS) -c RTsockfuncs.c
+
+randfuncs.o: randfuncs.c
+	$(CC) $(CFLAGS) -c randfuncs.c
+
 clean:
-	rm -f $(OBJECTS) $(GENLIB)
+	rm -f *.o *~ *\# $(OBJECTS) $(GENLIB) $(RT_SOCKET_STUFF)
