@@ -17,7 +17,7 @@ dsos: all
 
 standalone: all
 
-install: all
+install:
 	@for DIR in $(DIRS); \
 	do \
 	  ( cd $$DIR; echo "making install in $$DIR..."; \
