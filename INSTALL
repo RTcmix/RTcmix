@@ -21,7 +21,27 @@ Ia.  Preliminaries
       the Minc directory to use -lfl (flex libraries) instead.
 
 
-2) For SGI:
+2) For MAC OS X:
+
+   This version currently cannot use the latest pfield-updating code by
+   John Rhoads and Dave Topper.  Hopefully, we'll figure out how to get
+   that to compile.
+
+   Also, this has been tested only on the internal audio devices on
+   recent G4 PowerMacs and PowerBooks.  It's likely that third-party
+   hardware will require some tweaks.  Please notify John Gibson if
+   you can't get this to work.
+
+   a) You must use OS X 10.1 or later, and you must have installed
+      the appropriate version of the Developer Tools.
+
+   b) If you want to enable the Python front-end, you'll have to install
+      Python, which doesn't come with OS X.  We used the Python-2.1.1
+      source code tarball, and followed the build instructions at
+      http://www.zope.org/Members/jens/docs/zope_osx.
+
+
+3) For SGI:
 
    The Irix port was done rather quickly by John Gibson, so as to have the
    same RTcmix features under Irix as we had under Linux at UVA. You may
@@ -68,6 +88,7 @@ Ib.  Compile and install the core
 
    It's easier to manage versions of RTcmix if you make an "RTcmix" link to
    the current version, and then put the link into your PATH.)
+
 
 SGI compilation problems:
 
@@ -143,6 +164,7 @@ If these seem to work, your installation is probably ok.
 The instruments (both real-time and disk-based) that process input
 files will accept files in a variety of formats without any special
 effort on your part.
+
 
 Before using a disk-based instrument (lower case), you have to use
 sfcreate to make an empty sound file.
