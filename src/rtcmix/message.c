@@ -103,16 +103,16 @@ die(const char *inst_name, const char *format, ...)
    else
       fprintf(stderr, PREFIX "FATAL ERROR:  %s\n", buf);
 
-#ifdef EXIT_ON_ERROR
-   if (rtsetparams_called)
-      rtcloseout();
-   else
-      closesf_noexit();
+   if (get_bool_option(kOptionExitOnError)) {
+      if (rtsetparams_called)
+         rtcloseout();
+      else
+         closesf_noexit();
 
-   exit(1);
-   return 0;	/*NOTREACHED*/
-#else
-   return DO_NOT_SCHEDULE;
-#endif /* EXIT_ON_ERROR */
+      exit(1);
+      return 0;	/*NOTREACHED*/
+   }
+   else
+      return DONT_SCHEDULE;
 }
 

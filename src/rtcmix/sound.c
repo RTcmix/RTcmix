@@ -1004,9 +1004,8 @@ closesf()
 		}
 	}
 
-#ifdef EXIT_ON_ERROR
-	exit(0);
-#endif /* EXIT_ON_ERROR */
+	if (get_bool_option(kOptionExitOnError))
+		exit(1);
 }
 
 void
