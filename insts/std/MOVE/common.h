@@ -24,9 +24,6 @@ inline double
 tone(double sig, double data[3])
 {
     double out = data[0] * sig + data[1] * data[2];
-#if defined(i386)
-	out += 1.0e-35;	// adding this small offset avoids FP underflow
-#endif
     return data[2] = out;
 }
 

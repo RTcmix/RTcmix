@@ -39,14 +39,22 @@ scale(double *Sig, int len, double amp)
 		Sig[i] *= amp;
 }
 
+#if defined(i386)
+float airOffset =  1.0e-35;
+#endif
 
 /* ------------------------------------------------------------------ air --- */
 /* air is the tone filter that simulates air absorption */
 void
 air(double *Sig, int len, double airdata[3])
 {
-   for (int i = 0; i < len; ++i)
-       Sig[i] = tone(Sig[i], &airdata[0]);
+	for (int i = 0; i < len; ++i) {
+		Sig[i] = tone(Sig[i], &airdata[0]);
+#if defined(i386)
+		Sig[i] += airOffset;	// adding this small offset avoids FP underflow
+		airOffset = -airOffset;
+#endif
+	}
 }
 
 
@@ -55,11 +63,20 @@ air(double *Sig, int len, double airdata[3])
    frequencies by the walls of the room. These are set up in the separate
    setup routine, space.
 */
+#if defined(i386)
+float wallOffset = -1.0e-35;
+#endif
+
 void
 wall(double *Sig, int len, double Walldata[3])
 {
-	for (int i = 0; i < len; ++i)
+	for (int i = 0; i < len; ++i) {
    		Sig[i] = tone(Sig[i], &Walldata[0]);
+#if defined(i386)
+		Sig[i] += wallOffset;	// adding this small offset avoids FP underflow
+		wallOffset = -wallOffset;
+#endif
+	}
 }
 
 // other buffer routines
