@@ -13,9 +13,9 @@
 #include <utils.h>		// for createPFieldHandle
 
 
-// ------------------------------------------------------------- makedisplay ---
+// -----------------------------------------------------------------------------
 //
-//    display = makedisplay(handle, [prefix[, units,]] [precision])
+//    display = makemonitor(handle, "display", [prefix[, units,]] [precision])
 //
 //    First argument is a PField handle, such as that returned by a call
 //    to makeconnection("midi", ...). Other arguments, which are optional:
@@ -29,10 +29,10 @@
 //                                                               JGG, 2/8/05
 
 static PFieldWrapper *
-_makedisplay_usage()
+_display_usage()
 {
-	die("makedisplay",
-		"Usage: makedisplay(handle, [prefix[, units,]] [precision])");
+	die("makemonitor",
+		"Usage: makemonitor(handle, \"display\", [prefix[, units,]] [precision])");
 	return NULL;
 }
 
@@ -40,10 +40,10 @@ static PFieldWrapper *
 create_pfield(const Arg args[], const int nargs)
 {
 	if (nargs < 1)
-		return _makedisplay_usage();
+		return _display_usage();
 
 	if (!args[0].isType(HandleType)) {
-		die("makedisplay", "First argument must be a valid pfield handle.");
+		die("makemonitor (display)", "First argument must be a valid pfield handle.");
 		return NULL;
 	}
 	PField *pfield = (PField *) args[0];
@@ -65,7 +65,7 @@ create_pfield(const Arg args[], const int nargs)
 						if (args[3].isType(DoubleType))
 							precision = (int) args[3];
 						else
-							return _makedisplay_usage();
+							return _display_usage();
 					}
 				}
 				else
@@ -80,7 +80,7 @@ create_pfield(const Arg args[], const int nargs)
 	if (displaywin == NULL)					// first time, so make window
 		displaywin = createDisplayWindow();
 	if (displaywin == NULL) {
-		die("makedisplay", "Failed to create display window");
+		die("makemonitor (display)", "Failed to create display window");
 		return NULL;
 	}
 
