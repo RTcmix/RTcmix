@@ -65,6 +65,10 @@ code provided in docs/sample_code.
    expect; instead it effectively set the control rate to 22050.  The new
    test fixes this.
 
+   Also, make branch a data member, not a variable local to the run method.
+   In the latter case, the control rate is not decoupled completely from
+   the rtsetparams buffer size.  (It should be.)
+
 
 -------------------------------------------------------------------------------
 To support the new dynamic PField capabilities, you need to do these things:
