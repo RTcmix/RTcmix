@@ -27,10 +27,12 @@ install::
 	do \
 	  ( cd $$DIR; $(MAKE) install ); \
 	done
+ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
 	@for DIR in $(PACKAGE_DIRS); \
 	do \
-	  ( cd $$DIR; $(MAKE) install ); \
+		( cd $$DIR; $(MAKE) install ); \
 	done
+endif
 	@echo "install done."; echo ""
 
 H::
@@ -145,16 +147,26 @@ insts::
 	done
 
 packages::
+ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
 	@for DIR in $(PACKAGE_DIRS); \
 	do \
-	  ( cd $$DIR; echo "making $$DIR..."; \
-	   echo "include $(MAKEFILE_CONF)" > package.conf; \
-	   $(MAKE) all; echo "done.";echo"" ); \
+		( cd $$DIR; echo "making $$DIR..."; \
+		echo "include $(MAKEFILE_CONF)" > package.conf; \
+		$(MAKE) all; echo "done.";echo"" ); \
 	done
+endif
 
 clean::
-	@for DIR in $(DIRS) $(INST_DIRS) $(PACKAGE_DIRS); \
+	@for DIR in $(DIRS) $(INST_DIRS); \
 	do \
 	  ( cd $$DIR; echo "making clean in $$DIR..."; \
 	  $(MAKE) clean ); \
 	done
+ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
+	@for DIR in $(PACKAGE_DIRS); \
+	do \
+		( cd $$DIR; echo "making clean in $$DIR..."; \
+		$(MAKE) clean ); \
+	done
+endif
+
