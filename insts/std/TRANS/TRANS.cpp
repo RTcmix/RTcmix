@@ -118,6 +118,7 @@ int TRANS :: init(float p[], int n_args)
    }
    else
       advise("TRANS", "Setting phrase curve to all 1's.");
+   aamp = amp;
 
    skip = (int) (SR / (float) resetval);
 
@@ -129,7 +130,7 @@ int TRANS :: run()
 {
    const int out_frames = chunksamps;
    int       i;
-   float     aamp, *outp;
+   float     *outp;
    double    frac;
 
 #ifdef DEBUG
@@ -144,7 +145,6 @@ int TRANS :: run()
 
    Instrument :: run();
 
-   aamp = amp;                  /* in case amptable == NULL */
    outp = outbuf;               /* point to inst private out buffer */
 
    for (i = 0; i < out_frames; i++) {
