@@ -82,7 +82,7 @@ print qq~
                pp[i] = SvNV(ST(i));
          }
 
-         RETVAL = parse_dispatch(_rtcmix_funcs[ix], pp, (short) items);
+         RETVAL = parse_dispatch(_rtcmix_funcs[ix], pp, items);
       }
    OUTPUT:
       RETVAL
