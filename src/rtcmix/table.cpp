@@ -391,8 +391,6 @@ _wave_table(const Arg args[], const int nargs, double *array,
          }
       }
    }
-// FIXME: ?? should be optional in maketable, for consistency...
-// _normalize_table(array, len, 1.0);
 
    return 0;
 }
@@ -472,8 +470,6 @@ _window_table(const Arg args[], const int nargs, double *array,
          die("maketable", "Unsupported window type (%d).", window_type);
          return -1;
    }
-// FIXME: should be optional in maketable, for consistency...
-// _normalize_table(array, len, 1.0);
 
    return 0;
 }
@@ -575,23 +571,31 @@ extern "C" {
 };
 
 /* ------------------------------------------------------------- maketable -- */
+void
+_maketable_usage()
+{
+   die("maketable",
+      "\n    usage: table = maketable(type, [option, ] length, ...)\n");
+}
+
 Handle
 maketable(const Arg args[], const int nargs)
 {
-   int status, lenindex, normalize = 0;
+   int status, lenindex;
+   bool normalize = true;
    unsigned int len;
    double *data;
    Handle handle;
 
    if (nargs < 2) {
-      die("maketable", "Requires at least two arguments.");
+      _maketable_usage();
       return NULL;
    }
    if (args[1].type == StringType) {
-      if (strncmp(args[1].val.string, "norm", 4) == 0)
-         normalize = 1;
+      if (strncmp(args[1].val.string, "nonorm", 6) == 0)
+         normalize = false;
       else {
-         die("maketable", "Invalid string option.");
+         die("maketable", "Invalid string option \"%s\".", args[1].val.string);
          return NULL;
       }
       lenindex = 2;
@@ -599,8 +603,7 @@ maketable(const Arg args[], const int nargs)
    else
       lenindex = 1;
    if (args[lenindex].type != DoubleType) {
-      die("maketable", "%s argument must be length of table.",
-         lenindex == 1 ? "Second" : "Third");
+      _maketable_usage();
       return NULL;
    }
    len = (unsigned int) args[lenindex].val.number;
@@ -706,7 +709,7 @@ normtable(const Arg args[], const int nargs)
 	}
 	tableToNormalize->normalize(peak);
 #endif
-//   _normalize_table(args[0].val.array->data, args[0].val.array->len, peak);
+
 	return _createPFieldHandle(tableToNormalize);
 }
 
