@@ -9,12 +9,13 @@ public:
 	
 protected:
 	BUFTYPE	*_inbuf;         // private interleaved buffer
-	int		_inOffset, _outOffset;
+	int		_inReadOffset, _inWriteOffset;
+	int		_cachedInFrames;
+	int		_outReadOffset, _outWriteOffset;
+	int		_cachedOutFrames;
 	int		_first, _valid;
 	int		_inputchannel;
-	int		_sampsRead;
 	int		_currentsample;
-	int		_leftOver;
 	int		R, N, N2, Nw, Nw2, D, I, i, _in, _on, obank, Np;
 	float	_amp;
 	float	P, *Hwin, *Wanal, *Wsyn, *_pvInput, *winput;
@@ -36,8 +37,8 @@ private:
 	void	oscbank(float C[], int N, float lpcoef[], int npoles,
 					int R, int Nw, int I, float P, float O[]);
 
-	int		shiftin(float A[], int N, int D, float *input );
+	int		shiftin(float A[], int N, int D);
 	void	convert(float S[], float C[], int N2, int D, int R);
 	void	unconvert(float C[], float S[], int N2, int I, int R);
-	void	shiftout(float A[], int N, int I, int n, float *output);
+	void	shiftout(float A[], int N, int I, int n);
 };
