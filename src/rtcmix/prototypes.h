@@ -17,6 +17,11 @@ class AudioDevice;
 
 double dispatch(const char *str, double *pp, int n_args, void **inst);
 
+/* tableutils.cpp */
+void fill_linebrk_table(const Arg [], const int, double *, const int);
+void fill_wave_table(const Arg [], const int, double *, const int);
+int wavetable_from_string(const char *, double *, const int, const char *);
+
 /* Note that C++ functions prototyped below really are defined within
    extern "C" braces in their files.
 */
