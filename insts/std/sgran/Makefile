@@ -1,9 +1,9 @@
 include ../package.conf
 
-OBJS = sgran.o minout.o
+OBJS = sgran.o
 CMIXOBJS += $(RTPROFILE_O)
 ifeq ($(ARCH),LINUX)
-   CFLAGS += -funroll-loops -Wall
+   CFLAGS += -funroll-loops
 endif
 PROGS = sgran libsgran.so
 

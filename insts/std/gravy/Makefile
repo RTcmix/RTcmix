@@ -1,9 +1,7 @@
 include ../package.conf
 
-OBJS = gravy.o minout.o
+OBJS = gravy.o
 CMIXOBJS += $(RTPROFILE_O)
-#CFLAGS += -fPIC
-#CXXFLAGS += -fPIC 
 PROGS = gravy libgravy.so
 
 all: libgravy.so
