@@ -1,7 +1,8 @@
 #ifndef _BUS_H_ 
 #define _BUS_H_ 1
 
-#include <globals.h>
+/* MAXBUS is one greater than the total number of useable buses. */
+#define MAXBUS 33
 
 #ifdef __cplusplus
 
