@@ -27,10 +27,11 @@ JCRev :: JCRev(MY_FLOAT T60)
 #else
    int lens[9] = { 4799, 4999, 5399, 5801, 1051, 337, 113, 573, 487 };
 #endif
+   int i;  // had to declare here to appease SGI compiler  -JGG
 
    if (SR < 44100.0) {
       double srscale = SR / 44100.0;
-      for (int i = 0; i < 9; i++)   {
+      for (i = 0; i < 9; i++)   {
          int val = (int) floor(srscale * lens[i]);
          if ((val & 1) == 0)
             val++;
@@ -39,11 +40,11 @@ JCRev :: JCRev(MY_FLOAT T60)
          lens[i] = val;
       }
    }
-   for (int i = 0; i < 3; i++) {
+   for (i = 0; i < 3; i++) {
       APdelayLine[i] = new DLineN(lens[i + 4] + 2);
       APdelayLine[i]->setDelay(lens[i + 4]);
    }
-   for (int i = 0; i < 4; i++) {
+   for (i = 0; i < 4; i++) {
       CdelayLine[i] = new DLineN(lens[i] + 2);
       CdelayLine[i]->setDelay(lens[i]);
       combCoeff[i] = (MY_FLOAT) pow(10, (-3 * lens[i] / (T60 * SR)));

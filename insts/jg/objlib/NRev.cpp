@@ -18,11 +18,12 @@
 
 NRev :: NRev(MY_FLOAT T60)
 {
+   int i;
    double srscale = SR / 25641.0;
    int lens[15] = { 1433, 1601, 1867, 2053, 2251, 2399,
                     347, 113, 37, 59, 53, 43, 37, 29, 19 };
 
-   for (int i = 0; i < 15; i++) {
+   for (i = 0; i < 15; i++) {
       int val = (int)floor(srscale * lens[i]);
       if ((val & 1) == 0)
          val++;
@@ -30,12 +31,12 @@ NRev :: NRev(MY_FLOAT T60)
          val += 2;
       lens[i] = val;
    }
-   for (int i = 0; i < 6; i++) {
+   for (i = 0; i < 6; i++) {
       CdelayLine[i] = new DLineN((long)(lens[i]) + 2);
       CdelayLine[i]->setDelay((long)(lens[i]));
       combCoef[i] = (MY_FLOAT)pow(10, (-3 * lens[i] / (T60 * SR)));
    }
-   for (int i = 0; i < 6; i++) {
+   for (i = 0; i < 6; i++) {
       APdelayLine[i] = new DLineN((long)(lens[i + 6]) + 2);
       APdelayLine[i]->setDelay((long)(lens[i + 6]));
    }
@@ -57,18 +58,22 @@ NRev :: NRev(MY_FLOAT T60)
 
 NRev :: ~NRev()
 {
-   for (int i = 0; i < 6; i++)
+   int i;
+
+   for (i = 0; i < 6; i++)
       delete CdelayLine[i];
-   for (int i = 0; i < 8; i++)
+   for (i = 0; i < 8; i++)
       delete APdelayLine[i];
 }
 
 
 void NRev :: clear()
 {
-   for (int i = 0; i < 6; i++)
+   int i;
+
+   for (i = 0; i < 6; i++)
       CdelayLine[i]->clear();
-   for (int i = 0; i < 6; i++)
+   for (i = 0; i < 6; i++)
       APdelayLine[i]->clear();
    if (NCHANS == 4) {
       APdelayLine[6]->clear();
@@ -106,14 +111,15 @@ MY_FLOAT NRev :: lastOutputR()
 
 MY_FLOAT NRev :: tick(MY_FLOAT input)
 {
+   int i;
    MY_FLOAT temp, temp0, temp1, temp2, temp3;
 
    temp0 = 0.0;
-   for (int i = 0; i < 6; i++) {
+   for (i = 0; i < 6; i++) {
       temp = input + (combCoef[i] * CdelayLine[i]->lastOut());
       temp0 += CdelayLine[i]->tick(temp);
    }
-   for (int i = 0; i < 3; i++) {
+   for (i = 0; i < 3; i++) {
       temp = APdelayLine[i]->lastOut();
       temp1 = allPassCoeff * temp;
       temp1 += temp0;
