@@ -22,7 +22,6 @@ endif
 CXXFLAGS += -I. -I../../rtcmix
 LIBDISPLAY = libdisplayconn.so
 
-TEST = test
 PFIELD = ../PField.o ../RefCounted.o
 GENLIB = -Wl,-rpath ../../../lib -L../../../lib -lgen
 
@@ -46,15 +45,8 @@ $(APP): $(APP).o
 	cp -f osx_bundle_items/PkgInfo $(APP).app/Contents
 	cp -f osx_bundle_items/Info.plist $(APP).app/Contents
 
-$(TEST).o: depend $(TEST).cpp DisplayPField.h
-	$(CXX) $(CXXFLAGS) -c -o $(TEST).o $(TEST).cpp
-
-$(TEST): depend $(TEST).o $(LIBDISPLAY)
-	$(CXX) $(CXXFLAGS) $(TEST).o -o $(TEST) $(LIBDISPLAY) $(PFIELD) $(GENLIB) \
-		$(GUILIBS) -lpthread
-
 depend:
-	-$(SHELL) -ec '$(CXX) -M $(CXXFLAGS) $(TEST).cpp $(SRCS)' > depend
+	-$(SHELL) -ec '$(CXX) -M $(CXXFLAGS) $(SRCS)' > depend
 
 -include depend
 
@@ -71,7 +63,7 @@ ifeq ($(ARCH), MACOSX)
 endif
 
 clean:
-	$(RM) *.o $(LIBDISPLAY) $(APP) $(TEST) depend
+	$(RM) *.o $(LIBDISPLAY) $(APP) depend
 ifeq ($(ARCH), MACOSX)
 	$(RM) -r $(APP).app
 endif
