@@ -134,21 +134,25 @@ ifeq ($(ARCH),LINUX)
   SYSLIBS = -lpthread -lm -ldl #-lefence
   LDFLAGS = $(SYSLIBS)
   SHARED_LDFLAGS = -shared -Wl,-soname,$@
+  DYN = -rdynamic
 endif
 ifeq ($(ARCH),MACOSX)
   SYSLIBS = 
   LDFLAGS = $(SYSLIBS) -framework CoreAudio
   SHARED_LDFLAGS = -bundle -flat_namespace -undefined suppress
+  DYN = 
 endif
 ifeq ($(ARCH),SGI)
   SYSLIBS = -lpthread -laudio -lm
   LDFLAGS = $(SYSLIBS)
   SHARED_LDFLAGS = -shared -update_registry $(LIBDESTDIR)/so_locations
+  DYN = 
 endif
 ifeq ($(ARCH),FREEBSD)
   SYSLIBS = -pthread -lm -ll
   LDFLAGS = -export-dynamic $(SYSLIBS)
   SHARED_LDFLAGS = -shared -Wl,-soname,$@
+  DYN = -rdynamic
 endif
 
 # For benefit of inst makefiles that live outside CMIXDIR hierarchy
