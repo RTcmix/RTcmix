@@ -7,10 +7,12 @@
 
 #include <RTcmixMouse.h>
 #include <PField.h>
-#include <LowPass.h>
+#include <Ougens.h>
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
+
+extern int resetval;
 
 typedef enum {
 	kRTMouseAxisX,
@@ -48,8 +50,13 @@ public:
 
 		_diff = maxval - minval;
 
-		_filter = new LowPass();
-		_filter->setLag(lag);
+#define USEEQ
+#ifdef USEEQ
+		_filter = new Oequalizer(resetval, OeqLowPass);
+		_filter->setparams(lag, 0.5);
+#else
+		_filter = new Oonepole(lag);
+#endif
 	}
 
 	virtual double doubleValue(double dummy) const
@@ -64,7 +71,11 @@ protected:
 private:
 	RTcmixMouse *_mousewin;
 	RTMouseAxis _axis;
-	LowPass *_filter;
+#ifdef USEEQ
+	Oequalizer *_filter;
+#else
+	Oonepole *_filter;
+#endif
 	double _min;
 	double _default;
 
