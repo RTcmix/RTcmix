@@ -163,8 +163,7 @@ NetAudioDevice::doOpen(int mode)
 	
 	// Create the socket
 	if( (_impl->sockdesc = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		return error("NetAudioDevice: socket call failed: ",
-					 strerror(errno));
+		return error("Network socket call failed: ", strerror(errno));
 	}
 	// set up the socket address
 	_impl->sss.sin_family = AF_INET;
@@ -177,7 +176,7 @@ NetAudioDevice::doOpen(int mode)
 						 strerror(errno));
 		bcopy(hp->h_addr, &(_impl->sss.sin_addr.s_addr), hp->h_length);
 		if (connect(_impl->sockdesc, (struct sockaddr *)&_impl->sss, len) < 0) {
-			return error("NetAudioDevice: connect failed: ",
+			return error("Network socket connect failed: ",
 						 strerror(errno));
 		}
 		setDevice(_impl->sockdesc);
@@ -185,8 +184,7 @@ NetAudioDevice::doOpen(int mode)
 	case Record:
 		_impl->sss.sin_addr.s_addr = INADDR_ANY;
 		if (bind(_impl->sockdesc, (struct sockaddr *)&_impl->sss, len) < 0) {
-			return error("NetAudioDevice: bind failed: ", 
-						 strerror(errno));
+			return error("Network bind failed: ", strerror(errno));
 		}
 		break;
 	default:
@@ -287,7 +285,7 @@ NetAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 			return 0;
 		}
 		if (bytes < 0) {
-			return error("NetAudioDevice: read failed: ", strerror(errno));
+			return error("Network socket read failed: ", strerror(errno));
 		}
 		bytesRead += bytes;
 	}
@@ -304,7 +302,7 @@ NetAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 	int bytesWritten = ::write(device(), frameBuffer, bytesToWrite);
 //	printf("NetAudioDevice::doSendFrames: wrote %d bytes\n", bytesWritten);
 	if (bytesWritten <= 0) {
-		return error("NetAudioDevice: write failed: ",
+		return error("Network socket write failed: ",
 					 (bytesWritten < 0) ? strerror(errno) : "wrote zero bytes");
 	}
 	int framesWritten = bytesWritten / getDeviceBytesPerFrame();
@@ -315,8 +313,7 @@ NetAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 int NetAudioDevice::waitForConnect()
 {
 	if (listen(_impl->sockdesc, 1) < 0) {
-		return error("NetAudioDevice: listen failed: ", 
-					 strerror(errno));
+		return error("Network socket listen failed: ", strerror(errno));
 	}
 	printf("NetAudioDevice: waiting for input connection...\n");
 	// Make sure we wont block.
@@ -350,7 +347,7 @@ int NetAudioDevice::waitForConnect()
 	int sockdev = accept(_impl->sockdesc, (struct sockaddr *)&_impl->sss, &len);
 	if (sockdev < 0) {
 		::close(_impl->sockdesc);
-		return error("NetAudioDevice: accept failed: ", strerror(errno));
+		return error("Network accept failed: ", strerror(errno));
 	}
 	setDevice(sockdev);
 	printf("NetAudioDevice: got connection\n");
@@ -366,7 +363,7 @@ int NetAudioDevice::disconnect()
 		if ((status = ::close(dev)) == 0)
 			setDevice(-1);
 		else
-			error("NetAudioDevice: close failed: ", strerror(errno));
+			error("Network socket close failed: ", strerror(errno));
 	}
 	return status;
 }
