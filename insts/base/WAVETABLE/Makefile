@@ -1,8 +1,8 @@
-include ../package.conf
+include ../../../makefile.conf
 
 NAME = WAVETABLE
 
-CURDIR = $(CMIXDIR)/insts.base/$(NAME)
+CURDIR = $(CMIXDIR)/insts/base/$(NAME)
 OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
 PROGS = lib$(NAME).so $(NAME)
