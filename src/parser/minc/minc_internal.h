@@ -190,7 +190,6 @@ void minc_advise(const char *msg, ...);
 void minc_warn(const char *msg, ...);
 void minc_die(const char *msg, ...);
 void minc_internal_error(const char *msg, ...);
-void msg(char *msg);
 void yyerror(char *msg);
 
 /* sym.c */
