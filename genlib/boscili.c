@@ -2,7 +2,7 @@ int
 boscili(float amp, float si, float *farray, int len, float *phs,
 			float *array, int alen)      
 {
-	int i,j,k;
+	register int i,j,k;
 	float frac,temp;
 	float *fp = array; 
 

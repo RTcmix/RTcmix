@@ -1,6 +1,6 @@
 float evp(long nsample, float *f1, float *f2, float *q)
 {
-	int jloc;
+	register int jloc;
 	float far = (float)(nsample) / *q;
 	if (far > *(q+1)) {
 		jloc = (1. - ((far - *(q+1))/ *(q+4))) * *(q+3);
