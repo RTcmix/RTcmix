@@ -34,7 +34,8 @@ int SGRANR::init(double p[], int n_args)
         starttime = p[0];
         evdur = p[1];
 
-	nsamps = rtsetoutput(starttime, evdur, this);
+	if (rtsetoutput(starttime, evdur, this) == -1)
+		return(DONT_SCHEDULE);
 
 	if (outputChannels() > 2) {
 		die("SGRANR", "Can't handle more than 2 output channels.");
@@ -95,7 +96,7 @@ int SGRANR::init(double p[], int n_args)
 	granlyrs = (int)p[20];
 	srrand((int)(p[21]));
 
-	return(nsamps);
+	return nSamps();
 }
 
 int SGRANR::run()

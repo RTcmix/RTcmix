@@ -63,39 +63,34 @@ int STGRANR::init(double p[], int n_args)
 *  p22 seed
 *  makegen slot 1 is amp env, makegen slot 2 is grain env
 */
-	int rvin;
+	starttime = p[0];
+	inskip = p[1];
+	evdur = p[2];
+	if (evdur < 0.0)
+		evdur = -evdur - inskip;
 
-        starttime = p[0];
-        inskip = p[1];
-        evdur = p[2];
-        if (evdur < 0.0)
-            evdur = -evdur - inskip;
+	if (rtsetinput(inskip, this) == -1)
+      return DONT_SCHEDULE; // no input
+	if (rtsetoutput(starttime, evdur, this) == -1)
+		return DONT_SCHEDULE;
 
-	rvin = rtsetinput(inskip, this);
-   if (rvin == -1) { // no input
-      return(DONT_SCHEDULE);
-   }
-	nsamps = rtsetoutput(starttime, evdur, this);
-
-	if (outputChannels() > 2) {
-		die("STGRANR", "Can't handle more than 2 output channels.");
-		return(DONT_SCHEDULE);
-	}
+	if (outputChannels() > 2)
+		return die("STGRANR", "Can't handle more than 2 output channels.");
 
 	amp = p[3];
-	
-        inframe = RTBUFSAMPS;
+
+	inframe = RTBUFSAMPS;
         
 	amptable = floc(1);
 	if (amptable) {
-            alen = fsize(1);
-            tableset(SR, evdur, alen, tabs);
+		alen = fsize(1);
+		tableset(SR, evdur, alen, tabs);
 	}
 	else
 		advise("STGRANR", "Setting phrase curve to all 1's.");
 	grenvtable = floc(2);
 	if (grenvtable) {
-            grlen = fsize(2);
+		grlen = fsize(2);
 	}
 	else
 		advise("STGRANR", "Setting grain envelope to all 1's.");
@@ -130,7 +125,7 @@ int STGRANR::init(double p[], int n_args)
 	granlyrs = (int)p[21];
 	srrand((int)(p[22]));
 
-	return(nsamps);
+	return nSamps();
 }
 
 int STGRANR::run()

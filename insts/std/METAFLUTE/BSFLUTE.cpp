@@ -24,7 +24,8 @@ int BSFLUTE::init(double p[], int n_args)
 // function slot 3 is the pitch-tracking curve for length 1
 // function slot 4 is the pitch-tracking curve for length 2
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	if (rtsetoutput(p[0], p[1], this) == -1)
+		return DONT_SCHEDULE;
 
 	dampcoef = .7;
 

@@ -30,7 +30,8 @@ int LSFLUTE::init(double p[], int n_args)
 // function slot 1 is the noise amp envelope
 // function slot 2 is the out amp envelope
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	if (rtsetoutput(p[0], p[1], this) == -1)
+		return DONT_SCHEDULE;
 
 	dampcoef = .7;
 
