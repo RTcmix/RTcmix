@@ -280,7 +280,7 @@ err:
 MincFloat
 _minc_len(const MincListElem args[], const int nargs)
 {
-   unsigned int len = 0;
+   int len = 0;
 
    if (nargs != 1)
       minc_warn("len: must have one argument");
@@ -293,6 +293,7 @@ _minc_len(const MincListElem args[], const int nargs)
             len = strlen(args[0].val.string);
             break;
          case MincHandleType:
+// FIXME: query Handle for length (e.g., TablePField)
             len = 1;
             break;
          case MincListType:

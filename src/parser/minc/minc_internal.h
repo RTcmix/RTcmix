@@ -65,7 +65,7 @@ typedef void *MincHandle;  // contents of this is opaque to Minc
 typedef struct _minc_list_elem MincListElem;
 
 typedef struct {
-   unsigned int len;       // number of MincListElem's in <data> array
+   int len;                /* number of MincListElem's in <data> array */
    MincListElem *data;
 } MincList;
 
@@ -222,7 +222,7 @@ void free_tree(Tree tp);
 /* utils.c */
 int is_float_list(const MincList *list);
 MincFloat *float_list_to_array(const MincList *list);
-MincList *array_to_float_list(const MincFloat *array, const unsigned int len);
+MincList *array_to_float_list(const MincFloat *array, const int len);
 
 /* y.tab.c */
 void declare(MincDataType type);

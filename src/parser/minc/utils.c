@@ -56,7 +56,7 @@ float_list_to_array(const MincList *list)
    before this function returns.
 */
 MincList *
-array_to_float_list(const MincFloat *array, const unsigned int len)
+array_to_float_list(const MincFloat *array, const int len)
 {
    int i;
    MincList *list;
