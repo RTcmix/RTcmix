@@ -17,7 +17,7 @@ setline(float *p, short n_args, int length, double *array)
 
    if ((n_args % 2) != 0) {
       fprintf(stderr, "Something wrong with phrase, check args\n");
-      closesf();
+//    closesf();
    }
 
    /* increm is time span for each array slot */
@@ -30,7 +30,7 @@ setline(float *p, short n_args, int length, double *array)
             points = 1;
          if ((p[j + 2] < p[j]) || (points > length)) {
             fprintf(stderr, " confusion on phrase card\n");
-            closesf();
+//          closesf();
          }
 #ifdef PAUL_FIX
          i = (double) p[j] / increm + .5;      /* force right position */
