@@ -877,6 +877,8 @@ Usage: %s [options] filename  \n\
                           'm': mark (print current buffer start time)\n\
                           't': toggle time display              \n\
                           'p': pause / resume                   \n\
+                          '-': decrease volume                  \n\
+                          '+' or '=': increase volume           \n\
                  To stop playing: cntl-D or cntl-C              \n\
 "
 
