@@ -45,7 +45,7 @@ public:
 	void updateYLabelValue(const int id, const double value);
 
 
-	// to be called only by createMouse
+	// to be called only by createMouseWindow
 	int spawnEventLoop();
 
 protected:
