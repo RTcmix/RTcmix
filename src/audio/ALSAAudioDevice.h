@@ -39,6 +39,7 @@ private:
 	snd_pcm_hw_params_t *_hwParams;
 	snd_pcm_uframes_t 	_bufSize;
 	bool				_stopDuringPause;
+	int					_pipeFds[2];
 };
 
 #endif	// ALSA

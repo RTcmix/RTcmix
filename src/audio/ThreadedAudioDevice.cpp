@@ -10,6 +10,7 @@
 #include <string.h>			// memset()
 #include <stdio.h>
 #include <assert.h>
+#include <errno.h>
 
 ThreadedAudioDevice::ThreadedAudioDevice()
 	  : _device(-1), _thread(0), _frameCount(0),
@@ -62,12 +63,34 @@ void ThreadedAudioDevice::waitForThread(int waitMs)
 	}
 }
 
+inline void	ThreadedAudioDevice::setFDSet()
+{
+	fd_set *thisSet = NULL;
+#ifdef PREFER_SELECT_ON_WRITE
+	if ((isRecording() && !isPlaying())
+		// Use read fd_set for half-duplex record only.
+		thisSet = &_rfdset;
+	else if (isPlaying())
+		// Use write fd_set for full-duplex and half-duplex play.
+		thisSet = &_wfdset;
+#else
+	if (isRecording())
+		// Use read fd_set for for full-duplex and half-duplex record.
+		thisSet = &_rfdset;
+	else if (isPlaying() && !isRecording())
+		// Use write fd_set for half-duplex play only.
+		thisSet = &_wfdset;
+#endif
+	FD_SET(_device, thisSet);
+}
+
 void ThreadedAudioDevice::setDevice(int dev)
 {
 	_device = dev;
 	if (_device > 0) {
-		FD_ZERO(&_fdset);
-		FD_SET(_device, &_fdset);
+		FD_ZERO(&_rfdset);
+		FD_ZERO(&_wfdset);
+		setFDSet();
 	}
 }
 
@@ -77,34 +100,25 @@ bool ThreadedAudioDevice::waitForDevice(unsigned int wTime) {
 	unsigned waitUsecs = (wTime * 1000) - unsigned(waitSecs * 1.0e+06);
 	// Wait wTime msecs for select to return, then bail.
 	if (!stopping()) {
-#ifdef PREFER_SELECT_ON_WRITE
-		// Use read fd_set for half-duplex record only.
-		fd_set *rfdset = (isRecording() && !isPlaying()) ? &_fdset : NULL;
-		// Use write fd_set for full-duplex and half-duplex play.
-		fd_set *wfdset = isPlaying() ? &_fdset : NULL;
-#else
-		// Use read fd_set for for full-duplex and half-duplex record.
-		fd_set *rfdset = isRecording() ? &_fdset : NULL;
-		// Use write fd_set for half-duplex play only.
-		fd_set *wfdset = (isPlaying() && !isRecording()) ? &_fdset : NULL;
-#endif
+		int nfds = _device + 1;
 		struct timeval tv;
 		tv.tv_sec = waitSecs;
 		tv.tv_usec = waitUsecs;
 		// If wTime == 0, wait forever by passing NULL as the final arg.
 //		if (!isPlaying())
 //			printf("select(%d, 0x%x, 0x%x, NULL, 0x%x)...\n", 
-//					_device + 1, rfdset, wfdset, wTime == 0 ?  NULL : &tv);
-		int selret = ::select(_device + 1, rfdset, wfdset,
+//					nfds, &_rfdset, &_wfdset, wTime == 0 ?  NULL : &tv);
+		int selret = ::select(nfds, &_rfdset, &_wfdset,
 							  NULL, wTime == 0 ?  NULL : &tv);
 		if (selret <= 0) {
-			fprintf(stderr,
-					"ThreadedAudioDevice::waitForDevice: select %s\n",
-					(selret == 0) ? "timed out" : "returned error");
+			if (errno != EINTR)
+				fprintf(stderr,
+						"ThreadedAudioDevice::waitForDevice: select %s\n",
+						(selret == 0) ? "timed out" : "returned error");
 			ret = false;
 		}
 		else {
-			FD_SET(_device, &_fdset);
+			setFDSet();
 			ret = true;
 		}
 	}

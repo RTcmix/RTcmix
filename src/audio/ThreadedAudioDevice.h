@@ -41,8 +41,10 @@ protected:
 	bool		closing() const { return _closing; }
 	static void *		_runProcess(void *);
 private:
+	inline void	setFDSet();
+private:
 	int			_device;
-	fd_set		_fdset;
+	fd_set		_rfdset, _wfdset;
 	pthread_t	_thread;
 	int			_frameCount;
 	bool		_paused;

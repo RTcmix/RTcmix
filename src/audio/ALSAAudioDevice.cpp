@@ -15,6 +15,21 @@
 
 #define DEFAULT_DEVICE "hw:0,0"
 
+#define DEBUG 0
+
+#if DEBUG > 0
+#define PRINT0 if (1) printf
+#define PRINT1 if (0) printf
+#else 
+#if DEBUG > 1
+#define PRINT0 if (1) printf
+#define PRINT1 if (1) printf
+#else
+#define PRINT0 if (0) printf
+#define PRINT1 if (0) printf
+#endif
+#endif
+
 inline int getstatus(int x) { return (x == 0) ? 0 : -1; }
 
 ALSAAudioDevice::ALSAAudioDevice(const char *devName)
@@ -25,7 +40,7 @@ ALSAAudioDevice::ALSAAudioDevice(const char *devName)
 
 ALSAAudioDevice::~ALSAAudioDevice()
 {
-//	printf("ALSAAudioDevice::~ALSAAudioDevice\n");
+	PRINT0("ALSAAudioDevice::~ALSAAudioDevice\n");
 	close();
 	snd_pcm_hw_params_free (_hwParams);
 }
@@ -72,7 +87,7 @@ int ALSAAudioDevice::doOpen(int mode)
 int ALSAAudioDevice::doClose()
 {
 	resetFrameCount();
-//	printf("ALSAAudioDevice::doClose\n");
+	PRINT0("ALSAAudioDevice::doClose\n");
 	setDevice(0);
 	return snd_pcm_close(_handle);
 }
@@ -101,7 +116,7 @@ int ALSAAudioDevice::doPause(bool isPaused)
 int ALSAAudioDevice::doStop()
 {
 	if (!stopping()) {
-//		printf("ALSAAudioDevice::doStop: waiting for thread to finish...\n");
+	PRINT0("ALSAAudioDevice::doStop: waiting for thread to finish...\n");
 		stopping(true);		// signals play thread
 		if (paused()) {
 			_stopDuringPause = true;	// we handle this case as special
@@ -111,7 +126,7 @@ int ALSAAudioDevice::doStop()
 		else if (isRecording() || isPlaying()) {
 			waitForThread();
 		}
-//		printf("ALSAAudioDevice::doStop: done\n");
+		PRINT0("ALSAAudioDevice::doStop: done\n");
 	}
 	return 0;
 }
@@ -159,8 +174,8 @@ static snd_pcm_format_t convertSampleFormat(int sampfmt)
 int ALSAAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 {
 	int status;
-//	printf("ALSAAudioDevice::doSetFormat: fmt: 0x%x chans: %d rate: %g\n",
-//		   sampfmt, chans, srate);
+	PRINT0("ALSAAudioDevice::doSetFormat: fmt: 0x%x chans: %d rate: %g\n",
+		   sampfmt, chans, srate);
 	int deviceFormat = MUS_GET_FORMAT(sampfmt);
 	snd_pcm_format_t sampleFormat = ::convertSampleFormat(deviceFormat);
 	if (sampleFormat == SND_PCM_FORMAT_UNKNOWN)
@@ -237,11 +252,11 @@ int ALSAAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 
 	// Store the device params to allow format conversion.
 	if (hwAccess == SND_PCM_ACCESS_RW_INTERLEAVED) {
-//		printf("\tHW uses interleaved channels\n");
+		PRINT1("\tHW uses interleaved channels\n");
 		deviceFormat |= MUS_INTERLEAVED;
 	}
 	else {
-//		printf("\tHW uses non-interleaved channels\n");
+		PRINT1("\tHW uses non-interleaved channels\n");
 		deviceFormat |= MUS_NON_INTERLEAVED;
 	}
 
@@ -260,8 +275,8 @@ int ALSAAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 	{
  		return error("Cannot set buffer size: ", snd_strerror(status));
  	}
-//	printf("ALSAAudioDevice::doSetQueueSize: requested %d frames total, got %d\n",
-//			*pWriteSize * *pCount, (int) _bufSize);
+	PRINT1("ALSAAudioDevice::doSetQueueSize: requested %d frames total, got %d\n",
+			*pWriteSize * *pCount, (int) _bufSize);
 	
 	int dir = 0;
 	snd_pcm_uframes_t periodsize = _bufSize / *pCount, tryperiodsize;
@@ -275,12 +290,12 @@ int ALSAAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 		return error("Failed to set ALSA period size: ", snd_strerror(status));
 	}
 	else {
-//		printf("ALSAAudioDevice::doSetQueueSize: requested period size near %d, got %d\n",
-//			   (int) periodsize, (int)tryperiodsize);
+		PRINT1("ALSAAudioDevice::doSetQueueSize: requested period size near %d, got %d\n",
+			   (int) periodsize, (int)tryperiodsize);
 	}
 	unsigned periods = *pCount;
 
-//	printf("setting periods near %d\n", periods);
+	PRINT1("setting periods near %d\n", periods);
 	if ((status = snd_pcm_hw_params_set_periods_near(_handle,
 												_hwParams, 
 												&periods, 
@@ -289,7 +304,7 @@ int ALSAAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 		return error("Failed to set ALSA periods: ", snd_strerror(status));
 	}
 
-//	printf("periods set to %d\n", periods);
+	PRINT1("periods set to %d\n", periods);
  	if ((status = snd_pcm_hw_params_get_buffer_size(_hwParams, &_bufSize)) < 0) {
 		return error("Cannot retrieve buffer size: ", snd_strerror(status));
 	}
@@ -365,9 +380,9 @@ int	ALSAAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 			fwritten = snd_pcm_writei(_handle, frameBuffer, frameCount);
 		else
 			fwritten = snd_pcm_writen(_handle, (void **) frameBuffer, frameCount);
-//		printf("ALSAAudioDevice::doSendFrames: %d frames to write, %d written\n", frameCount, fwritten);
+		PRINT1("ALSAAudioDevice::doSendFrames: %d frames to write, %d written\n", frameCount, fwritten);
 		if (fwritten == -EPIPE) {
-//			printf("ALSAAudioDevice::doSendFrames: underrun on write -- recovering and calling again\n");
+			PRINT1("ALSAAudioDevice::doSendFrames: underrun on write -- recovering and calling again\n");
 			snd_pcm_prepare(_handle);
 		}
 		else if (fwritten < 0) {
@@ -376,8 +391,8 @@ int	ALSAAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 		}
 	}
 	if (fwritten > 0) {
-		if (fwritten < frameCount)
-			printf("ALSAAudioDevice::doSendFrames: write %d out of %d frames!\n",
+		if (fwritten < frameCount && !stopping())
+			printf("ALSAAudioDevice::doSendFrames: wrote %d out of %d frames!\n",
 				   fwritten, frameCount);
 		incrementFrameCount(fwritten);
 		return fwritten;
@@ -399,13 +414,13 @@ static char *nonInterleavedZeroBuffer[] = {
 
 void ALSAAudioDevice::run()
 {
-//	printf("ALSAAudioDevice::run: top of loop\n");
+	PRINT0("ALSAAudioDevice::run: top of loop\n");
 	while (waitForDevice(isPlaying() ? 0 : 1000) == true) {
 		if (runCallback() != true) {
 			break;
 		}
 	}
-//	printf("ALSAAudioDevice::run: after loop\n");
+	PRINT0("ALSAAudioDevice::run: after loop\n");
 	if (!_stopDuringPause) {
 		const int zFrames = sizeof(interleavedZeroBuffer)/getDeviceBytesPerFrame();
 		if (isDeviceInterleaved())
@@ -416,8 +431,9 @@ void ALSAAudioDevice::run()
 		_stopDuringPause = false;	// reset
 	}
 	setState(Configured);	// no longer running
+	PRINT0("ALSAAudioDevice::run: calling stop callback\n");
 	stopCallback();
-//	printf("ALSAAudioDevice::run: thread exiting\n");
+	PRINT0("ALSAAudioDevice::run: thread exiting\n");
 }
 
 bool ALSAAudioDevice::recognize(const char *desc)

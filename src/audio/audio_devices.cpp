@@ -185,6 +185,12 @@ int audio_input_is_initialized()
 	return globalAudioDevice != NULL;
 }
 
+void
+stop_audio_devices()
+{
+	globalAudioDevice->stop();
+}
+
 static bool destroying = false;	// avoid reentrancy
 
 void
@@ -194,7 +200,7 @@ destroy_audio_devices()
 		destroying = true;
 		globalAudioDevice->close();
 	
-		if (globalOutputFileDevice == globalAudioDevice) {
+		if (globalOutputFileDevice == NULL || globalOutputFileDevice == globalAudioDevice) {
 			delete globalAudioDevice;
 			globalOutputFileDevice = NULL;	// Dont delete elsewhere.
 		}

@@ -6,6 +6,21 @@
 #include <stdio.h>
 #include <assert.h>
 
+#define DEBUG 0
+
+#if DEBUG > 0
+#define PRINT0 if (1) printf
+#define PRINT1 if (0) printf
+#else 
+#if DEBUG > 1
+#define PRINT0 if (1) printf
+#define PRINT1 if (1) printf
+#else
+#define PRINT0 if (0) printf
+#define PRINT1 if (0) printf
+#endif
+#endif
+
 // AudioDeviceImpl is the "workhorse" intermediate base class for most
 // AudioDevice leaf classes.  It holds the common state, handles all logic
 // that can be considered common to all AudioDevices (including state checking
@@ -63,22 +78,22 @@ int AudioDeviceImpl::open(int mode, int sampfmt, int chans, double srate)
 
 int AudioDeviceImpl::close()
 {
-//	printf("AudioDeviceImpl::close -- begin\n");
+	PRINT0("AudioDeviceImpl::close -- begin\n");
 	int status = 0;
 	if (isOpen()) {
-//		printf("AudioDeviceImpl::close: was open, calling stop()\n");
+		PRINT0("AudioDeviceImpl::close: was open, calling stop()\n");
 		stop();
-//		printf("AudioDeviceImpl::close: now calling doClose()\n");
+		PRINT0("AudioDeviceImpl::close: now calling doClose()\n");
 		if ((status = doClose()) == 0) {
 			destroyConvertBuffer();
 			setState(Closed);
 			_frameFormat = MUS_UNSUPPORTED;
 			_frameChannels = 0;
 			_samplingRate = 0;
-//			printf("AudioDeviceImpl::close: state now set to Closed\n");
+			PRINT0("AudioDeviceImpl::close: state now set to Closed\n");
 		}
 	}
-//	printf("AudioDeviceImpl::close -- finish\n");
+	PRINT0("AudioDeviceImpl::close -- finish\n");
 	return status;
 }
 
@@ -132,17 +147,17 @@ bool AudioDeviceImpl::stopCallback() {
 
 int AudioDeviceImpl::stop()
 {
-//	printf("AudioDeviceImpl::stop -- begin\n");
+	PRINT0("AudioDeviceImpl::stop -- begin\n");
 	int status = 0;
 	if (isRunning()) {
-//		printf("AudioDeviceImpl::stop: was running, calling doStop()\n");
+		PRINT0("AudioDeviceImpl::stop: was running, calling doStop()\n");
 		if ((status = doStop()) == 0) {
 			setState(Configured);
 		}
 	}
 	delete _runCallback;
 	_runCallback = NULL;
-//	printf("AudioDeviceImpl::stop -- finish\n");
+	PRINT0("AudioDeviceImpl::stop -- finish\n");
 	return status;
 }
 

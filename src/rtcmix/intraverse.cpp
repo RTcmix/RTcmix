@@ -19,6 +19,7 @@
 //#define TBUG
 //#define ALLBUG
 //#define DBUG
+//#define WBUG	/* this new one turns on prints of where we are */
 
 // DT:  main heap structure used to queue instruments
 // D.S. Taken out of globals.h since only defined here.
@@ -40,7 +41,7 @@ int runMainLoop(void)
 {
 	Bool audio_configured = NO;
 
-#ifdef ALLBUG	
+#ifdef WBUG	
 	cout << "ENTERING runMainLoop() FUNCTION *****\n";
 #endif
 
@@ -62,9 +63,9 @@ int runMainLoop(void)
 			if (run_status == RT_GOOD || run_status == RT_PANIC)
 				continue;
 			else if (run_status == RT_SHUTDOWN)
-				cout << "runMainLoop():  shutting down" << endl;
+				cout << "runMainLoop:  shutting down" << endl;
 			else if (run_status == RT_ERROR)
-				cout << "runMainLoop():  shutting down due to error" << endl;
+				cout << "runMainLoop:  shutting down due to error" << endl;
 			return -1;
 		}
 	}
@@ -101,7 +102,7 @@ int runMainLoop(void)
 
 int waitForMainLoop()
 {
-#ifdef ALLBUG	
+#ifdef WBUG	
 	cout << "ENTERING waitForMainLoop() FUNCTION *****\n";
 #endif
 	while (!audioDone) {
@@ -111,7 +112,9 @@ int waitForMainLoop()
 		sleep(1);
 #endif
 	}
-#ifdef ALLBUG	
+	destroy_audio_devices();
+	rtcloseout();
+#ifdef WBUG	
 	cout << "EXITING waitForMainLoop() FUNCTION *****\n";
 #endif
 	return 0;
@@ -506,15 +509,15 @@ bool inTraverse(AudioDevice *device, void *arg)
 	else {
 		// Check status from other threads
 		if (run_status == RT_SHUTDOWN) {
-			cout << "inTraverse():  shutting down" << endl;
+			cout << "inTraverse:  shutting down" << endl;
 			playEm = 0;
 		}
 		else if (run_status == RT_ERROR) {
-			cout << "inTraverse():  shutting down due to error" << endl;
+			cout << "inTraverse:  shutting down due to error" << endl;
 			playEm = 0;
 		}
 		else if (panic && run_status == RT_GOOD) {
-			cout << "inTraverse():  panic mode finished" << endl;
+			cout << "inTraverse:  panic mode finished" << endl;
 			panic = NO;
 		}
 		// DT_PANIC_MOD
@@ -527,15 +530,13 @@ bool inTraverse(AudioDevice *device, void *arg)
 bool doneTraverse(AudioDevice *device, void *arg)
 {
 	cout << "closing ...\n";
-#ifdef ALLBUG
-	cout << "doneTraverse() closing ports and devices *****\n";
+#ifdef WBUG
+	cout << "ENTERING doneTraverse()\n";
 #endif
 	rtreportstats(device);
-	destroy_audio_devices();
-	rtcloseout();
 	cout << "\n";
-	audioDone = true;
-#ifdef ALLBUG
+	audioDone = true;	// This signals waitForMainLoop()
+#ifdef WBUG
 	cout << "EXITING doneTraverse() FUNCTION *****\n";
 #endif
 

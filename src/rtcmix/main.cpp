@@ -146,9 +146,24 @@ init_globals()
    init_buf_ptrs();
 }
 
-#ifndef MACOSX
-extern AudioDevice *globalOutputFileDevice;
-#endif
+static int interrupt_handler_called = 0;
+
+/* ------------------------------------------------------- interrupt_handler --- */
+static void
+interrupt_handler(int signo)
+{
+	// Dont do handler work more than once
+	if (!interrupt_handler_called) {
+		interrupt_handler_called = 1;
+	   fprintf(stderr, "\n<<< Caught interrupt signal >>>\n");
+
+	   if (rtsetparams_called) {
+		   stop_audio_devices();
+	   }
+	   else
+		   closesf_noexit();
+	}
+}
 
 static int signal_handler_called = 0;
 
@@ -159,21 +174,17 @@ signal_handler(int signo)
 	// Dont do handler work more than once
 	if (!signal_handler_called) {
 		signal_handler_called = 1;
-	   fprintf(stderr, "\n<<< Signal handler called (signo %d) >>>\n", signo);
+	   fprintf(stderr, "\n<<< Caught internal signal (%d) >>>\n", signo);
 
-	   if (rtsetparams_called) {
-		  destroy_audio_devices();
-		  rtcloseout();
+	   switch (signo) {
+	   default:
+		   fflush(stdout);
+		   fflush(stderr);
+  	 	   exit(1);
+	       break;
 	   }
-	   else
-		  closesf_noexit();
-
-	   fflush(stdout);
-	   fflush(stderr);
 	}
-   exit(1);
 }
-
 
 /* ----------------------------------------------------- detect_denormals --- */
 /* Unmask "denormalized operand" bit of the x86 FPU control word, so that
@@ -228,16 +239,22 @@ main(int argc, char *argv[])
    flush_all_underflows_to_zero();
 #endif
 
-   /* Call signal_handler on cntl-C. */
-   if (signal(SIGINT, signal_handler) == SIG_ERR) {
+   /* Call interrupt_handler on cntl-C. */
+   if (signal(SIGINT, interrupt_handler) == SIG_ERR) {
       fprintf(stderr, "Error installing signal handler.\n");
       exit(1);
    }
-   /* Call signal_handler on segv. */
+   /* Call signal_handler on segv, etc. */
    if (signal(SIGSEGV, signal_handler) == SIG_ERR) {
       fprintf(stderr, "Error installing signal handler.\n");
       exit(1);
    }
+#if defined(SIGBUS)
+   if (signal(SIGBUS, signal_handler) == SIG_ERR) {
+      fprintf(stderr, "Error installing signal handler.\n");
+      exit(1);
+   }
+#endif
 
    xargv[0] = argv[0];
    for (i = 1; i <= MAXARGS; i++)
