@@ -72,7 +72,7 @@ createAudioDevice(const char *inputDesc,
 			}
 		}
 		if (iCreator == NULL) {
-			die("rtsetparams", "Unrecognized input device name '%s'.",
+			fprintf(stderr, "Unrecognized input device name '%s'.\n",
 				inputDesc);
 			return NULL;
 		}
@@ -89,7 +89,7 @@ createAudioDevice(const char *inputDesc,
 			}
 		}
 		if (oCreator == NULL) {
-			die("rtsetparams", "Unrecognized output device name '%s'.",
+			fprintf(stderr, "Unrecognized output device name '%s'.\n",
 				outputDesc);
 			return NULL;
 		}
@@ -111,12 +111,12 @@ createAudioDevice(const char *inputDesc,
 			AudioDevice *inDev = iCreator(inputDesc, NULL, AudioDevice::Record);
 			AudioDevice *outDev = oCreator(NULL, outputDesc, AudioDevice::Playback);
 			if (!inDev) {
-				die("rtsetparams", "Failed to create input audio device!");
+				fprintf(stderr, "Failed to create input audio device!\n");
 				delete outDev;
 				return NULL;
 			}
 			else if (!outDev) {
-				die("rtsetparams", "Failed to create output audio device!");
+				fprintf(stderr, "Failed to create output audio device!\n");
 				delete inDev;
 				return NULL;
 			}

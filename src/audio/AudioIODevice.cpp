@@ -1,7 +1,7 @@
 // AudioIODevice.cpp
 
 #include "AudioIODevice.h"
-#include <ugens.h>
+#include <stdio.h>
 #include <assert.h>
 #include <string.h>
  
@@ -130,7 +130,7 @@ int AudioIODevice::setQueueSize(int *pWriteSize, int *pCount)
 		if (status == 0) {
 			// If this happens, we have already tried setting 
 			if (!queuesAgree && (queueSize != oldQueueSize)) {
-				rterror(NULL, "Cannot reconcile input and output queue sizes");
+				fprintf(stderr, "Cannot reconcile input and output queue sizes.\n");
 				return -1;
 			}
 			oldQueueSize = queueSize;
