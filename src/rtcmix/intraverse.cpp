@@ -462,4 +462,7 @@ void *inTraverse(void *arg)
   cout << "EXITING inTraverse() FUNCTION *****\n";
   exit(1);
 #endif
+
+  return NULL;
 }
+
