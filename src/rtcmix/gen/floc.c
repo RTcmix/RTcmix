@@ -1,5 +1,5 @@
-#include "../H/ugens.h"
 #include <stdio.h>
+#include <ugens.h>
 
 /* these 3 defined in makegen.c */
 extern float *farrays[];
@@ -15,9 +15,15 @@ extern int f_goto[];
 */
 float *floc(int genno)
 {
-   int index = f_goto[genno];
+   int index;
+
+   if (genno < 0)
+      return NULL;
+      
+   index = f_goto[genno];
    if (sizeof_farray[index] == 0)
       return NULL;
+
    return farrays[index];
 }
 
