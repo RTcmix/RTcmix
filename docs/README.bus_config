@@ -1,6 +1,6 @@
-In addition to many bug fixes, RTcmix version 3.0 adds a major feature:
-the ability to route signals between instruments and to multiple outputs.
-A new instrument, MIXN, takes full advantage of multiple outputs.
+RTcmix version 3.0 adds a major feature: the ability to route signals
+between instruments and to multiple outputs. A new instrument by Dave
+Topper, MIXN, takes full advantage of multiple outputs.
 
 
 
@@ -37,9 +37,9 @@ The first argument to bus_config is the name of the instrument, in
 double quotes. Following that are any number of bus specification
 strings, which combine the name of a bus type ("in", "out") with a
 bus number or range of numbers. Buses are numbered from zero. Since
-aux buses can be an input or an output, you have to say which.
+an aux bus can be an input or an output, you have to say which.
 
-Some examples:
+Some examples (the quotes are obligatory):
 
    bus_config("WAVETABLE", "out 0-1")
 
@@ -60,13 +60,14 @@ Some examples:
       Output goes to aux buses 0 and 1. Unless another instrument reads
       these and sends output to the sound card, you'll hear nothing.
 
-   bus_config("INPUTSIG", "aux 0-1 in", "out 0-1")
+   bus_config("INPUTSIG", "aux 4-5 in", "out 0-1")
 
-      Input comes from aux buses 0 and 1; output goes to channels 0 
+      Input comes from aux buses 4 and 5; output goes to channels 0 
       and 1 of the sound card (or rtoutput file).
-      (Notice the instrument name is not the family name ("IIR"),
-      but the name of the function you call to make sound. Same
-      thing goes for the STRUM family.)
+
+      (Notice that the instrument name is not the family name ("IIR"),
+      but the name of the function you call to make sound. Same thing
+      goes for the STRUM family.)
 
    bus_config("FILTSWEEP", "aux 2 in", "aux 5 in", "aux 1 out", "aux 7 out")
 
@@ -78,7 +79,7 @@ Some examples:
       if the file has more channels. But RTcmix insists on reading all
       channels from a file. (See below for more about this inconsistency.)
       If the last rtinput call gives the source as "MIC", then the inst
-      does read just the first channel.
+      does read just from the first channel.
 
 
 There are 16 "aux" buses available (defined as MAXBUS in H/bus.h). You
@@ -89,11 +90,21 @@ a default configuration roughly equal to:
 
    bus_config("FOO", "in 0-1", "out 0-1")
 
+Currently it is not possible to read from both an "in" bus and an "aux"
+bus in the same instrument. Nor is it possible to write to both an "out"
+bus and an "aux" bus. This restriction will be removed later.
+
 
 
 An inconsistency for file input
 -------------------------------
 
+Executive summary:
+When reading from a file, RTcmix ignores the bus numbers you use with
+the "in" bus in the call to bus_config. Instead, it reads all the
+channels in the file. This behavior may change in a future version.
+
+More detail:
 "Aux" buses and real-time "in" buses (e.g., mic) are shared among all
 instruments using them. Unlike these, sound file input buses are not
 shared between instruments. They aren't really buses at all, but private
