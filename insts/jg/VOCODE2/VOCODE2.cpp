@@ -10,10 +10,22 @@
    p1  = input start time (must be 0 for aux bus)
    p2  = duration
    p3  = amplitude multiplier (post-processing)
-   p4  = number of filters (greater than 0)
-   p5  = lowest filter center frequency (in Hz or oct.pc)
-   p6  = center frequency spacing multiplier (greater than 1)
-         (multiplies each cf by this to get next higher cf)
+
+   Two ways to specify filter bank center frequencies:
+
+    (1) Spread evenly above a given center frequency:
+          p4 = number of filters (greater than 0)
+          p5 = lowest filter center frequency (in Hz or oct.pc)
+          p6 = center frequency spacing multiplier (greater than 1)
+               (multiplies each cf by this to get next higher cf)
+
+    (2) A list of center frequencies, given in function table 2 (Use gen 2.)
+          p4 = 0 (must be zero: tells program to look for function table)
+          p5 = transposition of function table, in oct.pc
+          p6 = if > 1, add filters at p6 multiples of table frequencies
+               E.g., if table has 300 and 500, and p6 is 2: 300, 500, 600, 1000
+        Number of filters determined by length of function table.
+
    p7  = amount to transpose carrier filters (in Hz or oct.pc)
    p8  = filter bandwidth proportion of center frequency (greater than 0)
    p9  = filter response time (seconds)  [optional; default is 0.01]
@@ -150,19 +162,53 @@ int VOCODE2 :: init(float p[], int n_args)
       balance_window = 2;
    }
 
-   /* User specifies filter center frequencies by interval, in the form of a
-      frequency multiplier.
+   /* <numfilts> pfield lets user specify filter center frequencies by
+      interval, in the form of a frequency multiplier, or by function table.
    */
-   if (numfilts > MAXFILTS)
-      die("VOCODE2", "Can only use %d filters.", MAXFILTS);
-   if (spacemult <= 1.0)
-      die("VOCODE2", "Center frequency spacing factor must be greater than 1.");
-   if (lowcf < 15.0)                        /* interpreted as oct.pc */
-      lowcf = cpspch(lowcf);
+   if (numfilts > 0) {   /* by interval */
+      if (numfilts > MAXFILTS)
+         die("VOCODE2", "Can only use %d filters.", MAXFILTS);
+      if (spacemult <= 1.0)
+         die("VOCODE2",
+                     "Center frequency spacing factor must be greater than 1.");
+      if (lowcf < 15.0)                        /* interpreted as oct.pc */
+         lowcf = cpspch(lowcf);
 
-   for (j = 0; j < numfilts; j++)
-      cf[j] = lowcf * (float) pow((double) spacemult, (double) j);
-
+      for (j = 0; j < numfilts; j++)
+         cf[j] = lowcf * (float) pow((double) spacemult, (double) j);
+   }
+   else {                /* by function table */
+      float transp = lowcf;                    /* pfield meaning changes */
+      float *freqtable = floc(2);
+      if (freqtable == NULL)
+         die("VOCODE2",
+                     "You haven't made the center freq. function (table 2).");
+      numfilts = fsize(2);
+      if (numfilts > MAXFILTS)
+         die("VOCODE2", "Can only use %d filters.", MAXFILTS);
+      advise("VOCODE2", "Reading center freqs from function table...");
+      for (j = 0; j < numfilts; j++) {
+         float freq = freqtable[j];
+         if (freq < 15.0) {                    /* interpreted as oct.pc */
+            if (transp)
+               cf[j] = cpsoct(octpch(freq) + octpch(transp));
+            else
+               cf[j] = cpspch(freq);
+         }
+         else {                                /* interpreted as Hz */
+            if (transp)
+               cf[j] = cpsoct(octcps(freq) + octpch(transp));
+            else
+               cf[j] = freq;
+         }
+      }
+      if (spacemult > 1.0) {
+         int i = j;
+         for (j = 0; i < MAXFILTS && j < numfilts; i++, j++)
+            cf[i] = cf[j] * spacemult;
+         numfilts = i;
+      }
+   }
    for (j = 0; j < numfilts; j++) {
       if (cf[j] > SR * 0.5) {
          warn("VOCODE2", "A cf was above Nyquist. Correcting...");
