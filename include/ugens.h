@@ -187,13 +187,13 @@ void addLegacyfunc(const char *label, double (*func_ptr)(float *, int, double *)
 #if defined(__cplusplus)
 #define UG_INTRO(flabel, func) \
    { \
-	addLegacyfunc(flabel, (LegacyFunction) func); \
+	addLegacyfunc(flabel, (double (*)(float *, int, double *)) func); \
    }
 #else
 #define UG_INTRO(flabel, func) \
    { \
       extern double func(); \
-      addLegacyfunc(flabel, (LegacyFunction) func); \
+      addLegacyfunc(flabel, (double (*)(float *, int, double *)) func); \
    }
 #endif	/* __cplusplus */
 
