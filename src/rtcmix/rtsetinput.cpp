@@ -25,7 +25,7 @@ but its input source has %d channels. Setting input channels to %d..."
    Returns 0 if ok, -1 if error.
 */
 int
-rtsetinput(float start_time, Instrument *inst)
+Instrument::rtsetinput(float start_time, Instrument *inst)
 {
    int   auxin_count = inst->bus_config->auxin_count;
    int   in_count = inst->bus_config->in_count;

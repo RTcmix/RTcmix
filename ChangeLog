@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Sunday, May 19, 2002 Doug Scott <netdscott@netscape.net>
+
+   * Second set of revisions to Instrument class - made all members protected
+     and renamed new inline methods to follow agreed-upon convention.  Tracked
+	 these changes into source where needed.  Made all sys/rtset** functions
+	 into static Instrument methods because they modify private state.
 
 Saturday, Mar 30, 2002 John Gibson <johgibso@indiana.edu>
 

@@ -13,10 +13,10 @@
 #define MAXNUMPARAMS 100
 
 class Instrument {
-public:
+protected:
 
-   float          start;
-   float          dur;
+   float          _start;
+   float          _dur;
    int            cursamp;
    int            chunksamps;
    int            i_chunkstart;   // we need this for rtperf
@@ -90,59 +90,94 @@ private:
 #endif /* RTUPDATE */
 
 public:
-   Instrument();
-   virtual ~Instrument();
+	Instrument();
+	virtual		~Instrument();
 	// Instruments should use these to access variables.
-	inline int currentFrame() const { return cursamp; }
-	inline int framesToRun() const { return chunksamps; }
-	inline int nSamps() const { return nsamps; }
-	inline int inputChannels() const { return inputchans; }
-	inline int outputChannels() const { return outputchans; }
-	// Use this to increment cursamp inside run loops.
-	inline void increment() { ++cursamp; }
+	inline int		CurrentFrame() const { return cursamp; }
+	inline int		FramesToRun() const { return chunksamps; }
+	inline int		NSamps() const { return nsamps; }
+	inline int		InputChannels() const { return inputchans; }
+	inline int		OutputChannels() const { return outputchans; }
+	// Use this to increment cursamp inside single-frame run loops.
+	inline void		increment() { ++cursamp; }
+	// Use this to increment cursamp inside block-based run loops.
+	inline void	    increment(int amount) { cursamp += amount; }
+	inline float	getstart();
+	inline float	getdur();
+	inline int		getendsamp();
+	void			setendsamp(int);
+	inline void		setchunk(int);
+	inline void		set_ichunkstart(int);
+	inline void		set_output_offset(int);
 
-   void set_bus_config(const char *);
-   virtual int init(float *, int);
-   virtual int run();
+	void			set_bus_config(const char *);
+	virtual int		init(float *, int);
+	virtual int		run();
 
-   void exec(BusType bus_type, int bus);
-   void addout(BusType bus_type, int bus);
+	void			exec(BusType bus_type, int bus);
+	void			addout(BusType bus_type, int bus);
 
-   float getstart();
-   float getdur();
-   int getendsamp();
-   void setendsamp(int);
-   void setchunk(int);
-   void set_ichunkstart(int);
-   void set_output_offset(int);
 #ifdef RTUPDATE
-   float rtupdate(int, int);  // tag, p-field for return value
-   void pf_path_update(int tag, int pval);
-   void pi_path_update(int pval);
-   void set_instnum(char* name);
+   float			rtupdate(int, int);  // tag, p-field for return value
+   void				pf_path_update(int tag, int pval);
+   void				pi_path_update(int pval);
+   void				set_instnum(char* name);
 
-   void RSD_setup(int RISE_SLOT, int SUSTAIN_SLOT
-                  , int DECAY_SLOT, float duration);
-   void RSD_check();
-   float RSD_get();
+   void				RSD_setup(int RISE_SLOT, int SUSTAIN_SLOT,
+              				  int DECAY_SLOT, float duration);
+   void				RSD_check();
+   float			RSD_get();
 #endif /* RTUPDATE */
+
 protected:
    // Methods which are called from within other methods
-   int rtaddout(BUFTYPE samps[]);  				// replacement for old rtaddout
-   int rtbaddout(BUFTYPE samps[], int length);	// block version of same
+
+	static int		rtsetoutput(float, float, Instrument *);
+	static int		rtsetinput(float, Instrument *);
+	static int		rtinrepos(Instrument *, int, int);
+	static int		rtgetin(float *, Instrument *, int);
+	int rtaddout(BUFTYPE samps[]);  				// replacement for old rtaddout
+	int rtbaddout(BUFTYPE samps[], int length);	// block version of same
 
 private:
-   void gone();                    // decrements reference to input soundfile
-
+   void				gone(); // decrements reference to input soundfile
 };
 
+/* ------------------------------------------------------------- getstart --- */
+inline float Instrument::getstart()
+{
+   return _start;
+}
 
-// prototypes for functions called by instruments
-// probably should move these somewhere else
-int rtsetoutput(float, float, Instrument *);
-int rtsetinput(float, Instrument *);
-int rtinrepos(Instrument *, int, int);
-int rtgetin(float *, Instrument *, int);
+/* --------------------------------------------------------------- getdur --- */
+inline float Instrument::getdur()
+{
+   return _dur;
+}
 
+/* ----------------------------------------------------------- getendsamp --- */
+inline int Instrument::getendsamp()
+{
+   return endsamp;
+}
+
+
+/* ------------------------------------------------------------- setchunk --- */
+inline void Instrument::setchunk(int csamps)
+{
+   chunksamps = csamps;
+}
+
+/* ------------------------------------------------------ set_ichunkstart --- */
+inline void Instrument::set_ichunkstart(int csamps)
+{
+   i_chunkstart = csamps;
+}
+
+/* ---------------------------------------------------- set_output_offset --- */
+inline void Instrument::set_output_offset(int offset)
+{
+   output_offset = offset;
+}
 
 #endif /* _INSTRUMENT_H_  */

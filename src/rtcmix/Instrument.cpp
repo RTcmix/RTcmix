@@ -17,7 +17,10 @@
 #include <ugens.h>
 
 /* ----------------------------------------------------------- Instrument --- */
-Instrument :: Instrument()
+Instrument::Instrument()
+	: _start(0.0), _dur(0.0), cursamp(0), chunksamps(0), i_chunkstart(0),
+	  endsamp(0), nsamps(0), output_offset(0), fdIndex(NO_DEVICE_FDINDEX),
+	  fileOffset(0), inputsr(0.0), inputchans(0), outputchans(0)
 {
    int i;
 
@@ -33,28 +36,12 @@ Instrument :: Instrument()
    }
 #endif /* RTUPDATE */
 
-   start = 0.0;
-   dur = 0.0;
-   cursamp = 0;
-   chunksamps = 0;
-   i_chunkstart = 0;
-   endsamp = 0;
-   nsamps = 0;
-   output_offset = 0;
-
    sfile_on = 0;                // default is no input soundfile
-   fdIndex = NO_DEVICE_FDINDEX;
-   fileOffset = 0;
-
-   inputsr = 0.0;
-   inputchans = 0;
-   outputchans = 0;
 
    outbuf = NULL;
-
    bus_config = NULL;
 
-   for (int i = 0; i < MAXBUS; i++)
+   for (i = 0; i < MAXBUS; i++)
       bufstatus[i] = 0;
    needs_to_run = 1;
 
@@ -77,7 +64,7 @@ Instrument :: Instrument()
 
 
 /* ---------------------------------------------------------- ~Instrument --- */
-Instrument :: ~Instrument()
+Instrument::~Instrument()
 {
    if (sfile_on)
       gone();                   // decrement input soundfile reference
@@ -100,7 +87,7 @@ Instrument :: ~Instrument()
        WAVETABLE *inst = new WAVETABLE();
        inst->set_bus_config("WAVETABLE");
 */
-void Instrument :: set_bus_config(const char *inst_name)
+void Instrument::set_bus_config(const char *inst_name)
 {
   pthread_mutex_lock(&bus_slot_lock);
   bus_config = get_bus_config(inst_name);
@@ -116,7 +103,7 @@ void Instrument :: set_bus_config(const char *inst_name)
 // This function initializes the newpvalue and oldpvalue arrays which are 
 // used in the linear interpolation case.  It also identifies the slot number
 // for the instrument
-int Instrument :: init(float p[], int n_args)
+int Instrument::init(float p[], int n_args)
 {
 #ifdef RTUPDATE
    int i;
@@ -148,7 +135,7 @@ int Instrument :: init(float p[], int n_args)
    Note: We allocate here, rather than in ctor or init method, because this
    will mean less memory overhead before the inst begins playing.
 */
-int Instrument :: run()
+int Instrument::run()
 {
    if (outbuf == NULL)
       outbuf = new BUFTYPE [RTBUFSAMPS * outputchans];
@@ -177,7 +164,7 @@ int Instrument :: run()
    given timeslice does both; subsequent calls during the same timeslice
    only addout.
 */
-void Instrument :: exec(BusType bus_type, int bus)
+void Instrument::exec(BusType bus_type, int bus)
 {
    int done;
 
@@ -209,7 +196,7 @@ void Instrument :: exec(BusType bus_type, int bus)
    Assumes that <samps> contains at least outputchans interleaved samples.
    Returns outputchans (i.e., number of samples written).
 */
-int Instrument :: rtaddout(BUFTYPE samps[])
+int Instrument::rtaddout(BUFTYPE samps[])
 {
    for (int i = 0; i < outputchans; i++)
       *obufptr++ = samps[i];
@@ -222,7 +209,7 @@ int Instrument :: rtaddout(BUFTYPE samps[])
    in chunks, and can write them to the output buffer in one operation.
 */
 
-int Instrument :: rtbaddout(BUFTYPE samps[], int length)
+int Instrument::rtbaddout(BUFTYPE samps[], int length)
 {
 	const int sampcount = length * outputchans;
 	for (int i = 0; i < sampcount; i++)
@@ -236,7 +223,7 @@ int Instrument :: rtbaddout(BUFTYPE samps[], int length)
 /* Add signal from one channel of instrument's private interleaved buffer
    into the specified output bus.
 */
-void Instrument :: addout(BusType bus_type, int bus)
+void Instrument::addout(BusType bus_type, int bus)
 {
    int      samp_index, endframe, src_chan, buses;
    short    *bus_list;
@@ -283,48 +270,12 @@ void Instrument :: addout(BusType bus_type, int bus)
 }
 
 
-/* ------------------------------------------------------------- getstart --- */
-float Instrument :: getstart()
-{
-   return start;
-}
-
-/* --------------------------------------------------------------- getdur --- */
-float Instrument :: getdur()
-{
-   return dur;
-}
-
-/* ----------------------------------------------------------- getendsamp --- */
-int Instrument :: getendsamp()
-{
-   return endsamp;
-}
-
 /* ----------------------------------------------------------- setendsamp --- */
-void Instrument :: setendsamp(int end)
+void Instrument::setendsamp(int end)
 {
   pthread_mutex_lock(&endsamp_lock);
   endsamp = end;
   pthread_mutex_unlock(&endsamp_lock);
-}
-
-/* ------------------------------------------------------------- setchunk --- */
-void Instrument :: setchunk(int csamps)
-{
-   chunksamps = csamps;
-}
-
-/* ------------------------------------------------------ set_ichunkstart --- */
-void Instrument :: set_ichunkstart(int csamps)
-{
-   i_chunkstart = csamps;
-}
-
-/* ---------------------------------------------------- set_output_offset --- */
-void Instrument :: set_output_offset(int offset)
-{
-   output_offset = offset;
 }
 
 /* ----------------------------------------------------------------- gone --- */
@@ -332,7 +283,7 @@ void Instrument :: set_output_offset(int offset)
    reaches zero, close the input soundfile and set the state to 
    make sure this is obvious.
 */
-void Instrument :: gone()
+void Instrument::gone()
 {
 #ifdef DEBUG
    printf("Instrument::gone(this=0x%x): index %d refcount = %d\n",
@@ -486,7 +437,7 @@ void Instrument::pf_path_update(int tag, int pval)
 		// on to the next call
 		if(parray_size[tag][pval][j[pval]] > pfpathcounter[pval])
 		{
-			time = cursamp / SR + start;
+			time = cursamp / SR + _start;
 
 			// this statement insures that time 0 = "now" for the real time
 			// performance case
@@ -544,7 +495,7 @@ void Instrument::pf_path_update(int tag, int pval)
 		// be checked
 		if(parray_size[0][pval][j[pval]] > pfpathcounter[pval])
 		{		
-			time = cursamp / SR + start;
+			time = cursamp / SR + _start;
 
 			// this statement insures that time 0 = "now" for the real time
 			// performance case
@@ -607,7 +558,7 @@ void Instrument::pf_path_update(int tag, int pval)
 		{
 			ptables[pval] = ploc(gen_type[tag][pval][j[pval]]);
 			
-			time = cursamp / SR + start;
+			time = cursamp / SR + _start;
 			time -= schedtime;
 
 			// cumulative size is storing the current index into the pfpath 
@@ -695,7 +646,7 @@ void Instrument::pf_path_update(int tag, int pval)
 			
 			   
 
-			time = cursamp / SR + start;
+			time = cursamp / SR + _start;
 
 			// this statement insures that time 0 = "now" for the real time
 			// performance case
@@ -861,10 +812,10 @@ void Instrument::RSD_setup(int RISE_SLOT, int SUSTAIN_SLOT, int DECAY_SLOT
 
 	if((rise_table) || (sustain_table) || (decay_table))
 	{
-		dur = (rise_time + sustain_time + decay_time);
+		_dur = (rise_time + sustain_time + decay_time);
 	}
 	else
-		dur = duration;
+		_dur = duration;
 	return;
 }
 

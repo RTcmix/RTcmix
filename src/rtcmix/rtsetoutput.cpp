@@ -10,7 +10,7 @@
 
 extern double schedtime;
 
-int rtsetoutput(float start, float dur, Instrument *theInst)
+int Instrument::rtsetoutput(float start, float dur, Instrument *theInst)
 {
 // I know this is silly, but I wanted nsamps and I wanted it to
 // look like "setnote" in orig cmix insts
@@ -25,8 +25,8 @@ int rtsetoutput(float start, float dur, Instrument *theInst)
 	pthread_mutex_unlock(&schedtime_lock);
   }
   
-  theInst->start = start;
-  theInst->dur = dur;
+  theInst->_start = start;
+  theInst->_dur = dur;
   theInst->nsamps = (int)(dur * SR);
   
   return(theInst->nsamps);

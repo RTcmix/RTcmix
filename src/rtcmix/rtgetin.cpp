@@ -75,7 +75,7 @@
    <fileOffset> for the next read.
 */
 int
-rtinrepos(Instrument *inst, int frames, int whence)
+Instrument::rtinrepos(Instrument *inst, int frames, int whence)
 {
    int   fdindex, fd, bytes_per_samp;
    off_t bytes;
@@ -126,7 +126,7 @@ get_aux_in(
       int         dest_frames,      /* frames in interleaved buffer */
       short       src_chan_list[],  /* list of auxin-bus chan nums from inst */
       short       src_chans,        /* number of auxin-bus chans to copy */
-      Instrument  *inst)
+      int  	      output_offset)
 {
    assert(dest_chans >= src_chans);
 
@@ -139,7 +139,7 @@ get_aux_in(
       /* The inst might be playing only the last part of a buffer. If so,
          we want it to read the corresponding segment of the aux buffer.
       */
-      src += inst->output_offset;
+      src += output_offset;
 
       copy_one_buf_to_interleaved_buf(dest, src, dest_chans, n, dest_frames);
    }
@@ -156,7 +156,7 @@ get_audio_in(
       int         dest_frames,      /* frames in interleaved buffer */
       short       src_chan_list[],  /* list of in-bus chan numbers from inst */
       short       src_chans,        /* number of in-bus chans to copy */
-      Instrument  *inst)
+      int  		  output_offset)
 {
 #ifdef NOMORE  // FIXME: not sure these are right
    assert(dest_chans >= src_chans);
@@ -172,7 +172,7 @@ get_audio_in(
       /* The inst might be playing only the last part of a buffer. If so,
          we want it to read the corresponding segment of the audioin buffer.
       */
-      src += inst->output_offset;
+      src += output_offset;
 
       copy_one_buf_to_interleaved_buf(dest, src, dest_chans, n, dest_frames);
    }
@@ -392,7 +392,8 @@ get_file_in(
       int         dest_frames,      /* frames in interleaved buffer */
       short       src_chan_list[],  /* list of in-bus chan numbers from inst */
       short       src_chans,        /* number of in-bus chans to copy */
-      Instrument  *inst)
+      int		  fdIndex,			/* index into input file desc. array */
+	  off_t		  *pFileOffset)		/* ptr to inst's file offset (updated) */
 {
    int   status, fd, data_format, bytes_per_samp, file_chans;
 
@@ -401,19 +402,19 @@ get_file_in(
 #endif
 
    /* File opened by earlier call to rtinput. */
-   fd = inputFileTable[inst->fdIndex].fd;
-   file_chans = inputFileTable[inst->fdIndex].chans;
+   fd = inputFileTable[fdIndex].fd;
+   file_chans = inputFileTable[fdIndex].chans;
    assert(file_chans <= MAXCHANS);
    assert(file_chans >= dest_chans);
-   data_format = inputFileTable[inst->fdIndex].data_format;
+   data_format = inputFileTable[fdIndex].data_format;
    bytes_per_samp = mus_data_format_to_bytes_per_sample(data_format);
 
-   if (lseek(fd, inst->fileOffset, SEEK_SET) == -1) {
+   if (lseek(fd, *pFileOffset, SEEK_SET) == -1) {
       perror("get_file_in (lseek)");
       exit(1);
    }
 
-   if (inputFileTable[inst->fdIndex].is_float_format) {
+   if (inputFileTable[fdIndex].is_float_format) {
       status = read_float_samps(fd, data_format, file_chans,
                                 dest, dest_chans, dest_frames,
                                 src_chan_list, src_chans);
@@ -428,7 +429,7 @@ get_file_in(
       Note that this includes samples in channels that were read but
       not copied into the dest buffer!
    */
-   inst->fileOffset += dest_frames * file_chans * bytes_per_samp;
+   *pFileOffset += dest_frames * file_chans * bytes_per_samp;
 
    return status;
 }
@@ -444,7 +445,7 @@ get_file_in(
    rtsetinput makes sure that inst->inputchans matches the file chans.)
 */
 int
-rtgetin(float      *inarr,         /* interleaved array of <inputchans> */
+Instrument::rtgetin(float      *inarr,         /* interleaved array of <inputchans> */
         Instrument *inst,
         int        nsamps)         /* samps, not frames */
 {
@@ -469,21 +470,22 @@ rtgetin(float      *inarr,         /* interleaved array of <inputchans> */
 
       assert(auxin_count > 0 && in_count == 0);
 
-      status = get_aux_in(inarr, inchans, frames, auxin, auxin_count, inst);
+      status = get_aux_in(inarr, inchans, frames, auxin, auxin_count, inst->output_offset);
    }
    else if (inputFileTable[fdindex].is_audio_dev) {  /* input from mic/line */
       short *in = inst->bus_config->in;              /* in channel list */
 
       assert(in_count > 0 && auxin_count == 0);
 
-      status = get_audio_in(inarr, inchans, frames, in, in_count, inst);
+      status = get_audio_in(inarr, inchans, frames, in, in_count, inst->output_offset);
    }
    else {                                            /* input from file */
       short *in = inst->bus_config->in;              /* in channel list */
 
       assert(in_count > 0 && auxin_count == 0);
 
-      status = get_file_in(inarr, inchans, frames, in, in_count, inst);
+      status = get_file_in(inarr, inchans, frames, in, in_count,
+	  					   inst->fdIndex, &inst->fileOffset);
    }
 
    return nsamps;   // this seems pointless, but no insts pay attention anyway
