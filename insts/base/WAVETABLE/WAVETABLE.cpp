@@ -13,6 +13,15 @@ extern "C" {
 	extern int resetval;
 	}
 
+#ifdef COMPATIBLE_FUNC_LOCS
+  #define AMP_GEN_SLOT     2
+  #define WAVET_GEN_SLOT   1
+#else
+  #define AMP_GEN_SLOT     1        /* so that we can use setline instead */
+  #define WAVET_GEN_SLOT   2
+#endif
+
+
 WAVETABLE::WAVETABLE() : Instrument()
 {
 }
@@ -24,21 +33,21 @@ WAVETABLE::init(float p[], short n_args)
 
 	nsamps = rtsetoutput(p[0], p[1], this);
 
-	wavetable = floc(1);
+	wavetable = floc(WAVET_GEN_SLOT);
 	if (wavetable == NULL) {
 		fprintf(stderr, "You need to store a waveform in function 1.\n");
 		exit(1);
 	}
-	len = fsize(1);
+	len = fsize(WAVET_GEN_SLOT);
 
 	if (p[3] < 15.0) p[3] = cpspch(p[3]);
 	si = p[3] * (float)len/SR;
 	phase = 0.0;
 	amp = p[2];
 	
-	amptable = floc(2);
+	amptable = floc(AMP_GEN_SLOT);
 	if (amptable) {
-		alen = fsize(2);
+		alen = fsize(AMP_GEN_SLOT);
 		tableset(p[1], alen, tabs);
 	}
 	else
