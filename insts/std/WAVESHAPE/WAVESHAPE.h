@@ -6,6 +6,7 @@ class WAVESHAPE : public Instrument {
 	float si,phs,amp;
 	float a0,a1,b1,c,z1;
 	float spread;
+	int skip;
 
 public:
 	WAVESHAPE();

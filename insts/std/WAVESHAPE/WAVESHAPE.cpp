@@ -9,6 +9,7 @@
 
 extern "C" {
 	#include <ugens.h>
+	extern int resetval;
 }
 
 WAVESHAPE::WAVESHAPE() : Instrument()
@@ -29,6 +30,10 @@ int WAVESHAPE::init(float p[], short n_args)
 	nsamps = rtsetoutput(p[0], p[1], this);
 
 	waveform = floc(1);    /* function 1 is waveform */
+	if (waveform == NULL) {
+		fprintf(stderr, "You need to store a waveform in function 1.\n");
+		exit(1);
+	}
 	lenwave = fsize(1);
 	if (p[2] < 15.0) p[2] = cpspch(p[2]);
 	si = p[2] * (float)(lenwave/SR);
@@ -62,6 +67,8 @@ int WAVESHAPE::init(float p[], short n_args)
 	amp = p[5];
 	spread = p[6];
 
+	skip = (int)(SR/(float)resetval);       // how often to update amp curve
+
 	return(nsamps);
 }
 
@@ -82,8 +89,8 @@ int WAVESHAPE::run()
 			if (ampenv)
 				aamp = table(cursamp, ampenv, amptabs) * amp;
 			index = diff * tablei(cursamp,indenv,indtabs)+indbase;
-			ampi = aamp/index;
-			branch = 0;
+			ampi = index ? aamp/index : 0.0;
+			branch = skip;
 			}
 
 		val = oscili(1.0,si,waveform,lenwave,&phs);  /* wave */
