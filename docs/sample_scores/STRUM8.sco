@@ -1,3 +1,3 @@
-rtsetparams(22050, 1, 512)
+rtsetparams(44100, 1, 512)
 load("STRUM")
 /*print_off() */

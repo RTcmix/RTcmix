@@ -8,7 +8,7 @@
 *  function slot 1 is amp envelope, slot 2 is waveform
 */
 
-rtsetparams(22050, 2)
+rtsetparams(44100, 2)
 load("WAVETABLE")
 print_off()
 makegen(1, 24, 1000, 0, 1,  950, 0)

@@ -14,7 +14,7 @@
 *
 */
 
-rtsetparams(22050, 1)
+rtsetparams(44100, 1)
 reset(10000) 
 load("METAFLUTE")
 makegen(1, 24, 1000, 0, 1, 1.5, 1)

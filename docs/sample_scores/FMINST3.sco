@@ -13,7 +13,7 @@
 */
 
 
-rtsetparams(22050, 1)
+rtsetparams(44100, 1)
 load("FMINST")
 print_off()
 makegen(1, 7, 1000, 0, 500, 1, 500, 0)
