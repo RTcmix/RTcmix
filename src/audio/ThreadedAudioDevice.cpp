@@ -67,7 +67,7 @@ inline void	ThreadedAudioDevice::setFDSet()
 {
 	fd_set *thisSet = NULL;
 #ifdef PREFER_SELECT_ON_WRITE
-	if ((isRecording() && !isPlaying())
+	if (isRecording() && !isPlaying())
 		// Use read fd_set for half-duplex record only.
 		thisSet = &_rfdset;
 	else if (isPlaying())
