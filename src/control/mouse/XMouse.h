@@ -25,12 +25,6 @@ protected:
 		return 1.0 - (_yraw * _yfactor);
 	}
 
-	virtual inline void getPositionXY(double &x, double &y) const
-	{
-		x = getPositionX();
-		y = getPositionY();
-	}
-
 	virtual bool handleEvents();
 	virtual void drawXLabels();
 	virtual void drawYLabels();
