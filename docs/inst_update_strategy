@@ -617,7 +617,7 @@ TRANSBEND(start, inskip, dur, amp, pitch_curve_genno, [inchan, pctleft])
             must return a local table.  If both, then arg overrides gen.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-JGRAN(start, dur, amp, [seed, osc_type, rand_phase])
+### JGRAN(start, dur, amp, [seed, osc_type, rand_phase])
    [1. overall amplitude envelope]
     2. grain envelope
    [3. grain waveform]
@@ -635,7 +635,10 @@ JGRAN(start, dur, amp, [seed, osc_type, rand_phase])
 
    New signature:
 
-   JGRAN(start, dur, amp, [seed, osc_type, rand_phase])
+   JGRAN(start, dur, amp, [seed, osc_type, rand_phase, grain_envelope,
+         grain_waveform, mod_freq_mult, index_env, minfreq, maxfreq,
+         minspeed, maxspeed, minintensity, maxintensity, density,
+         pan, pan_rand])
 
    PFields: amp, osc_type, grain_envelope, grain_waveform, mod_freq_mult,
             mod_index, min_freq, max_freq, min_speed, max_speed, min_intensity,
@@ -653,9 +656,6 @@ JGRAN(start, dur, amp, [seed, osc_type, rand_phase])
             must return a local table.  If both, then arg overrides gen.
 
    ***NOTE: All other tables/pfields function analogously to gen 4.
-
-   ***NOTE: Not sure it's worth doing this, as opposed to writing a
-            new instrument.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 LPCPLAY(start, dur, amp, pitch_factor, start_frame, end_frame,
