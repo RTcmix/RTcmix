@@ -68,6 +68,8 @@ int AMINST::run()
 	float tval1,tval2;
 	int branch;
 
+	Instrument::run();
+
 	aamp = amp;        /* in case amparr == NULL */
 
 	branch = 0;
@@ -84,7 +86,7 @@ int AMINST::run()
 		out[0] = (tval1*(1.0-maamp)) + (tval2*maamp);
 		out[0] *= aamp;
 
-		if (NCHANS == 2) {
+		if (outputchans == 2) {
 			out[1] = out[0] * (1.0 - spread);
 			out[0] *= spread;
 			}
@@ -103,6 +105,8 @@ makeAMINST()
 	AMINST *inst;
 
 	inst = new AMINST();
+	inst->set_bus_config("AMINST");
+
 	return inst;
 }
 
