@@ -42,7 +42,9 @@
       2: carrier oscillator waveform (e.g., gen 9 or 10)
       3: carrier glissando curve (linear octave offsets from p3 frequency)
       4: modulator oscillator waveform
-      5: modulator frequency (in Hz)
+      5: modulator frequency (in Hz; or, if negative, ratio to carrier freq)
+         E.g., "makegen(5, 18, 1000, 0,-2, 1,-2.3)" will change gradually from
+         a C:M ratio of 1:2 to a ratio of 1:2.3 over the course of the note.
       6: modulator depth (p4 determines how these values are interpreted)
       7: filter cutoff frequency
       8: pan curve (from 0 to 1)
