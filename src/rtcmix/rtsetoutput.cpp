@@ -21,7 +21,7 @@ int rtsetoutput(float start, float dur, Instrument *theInst)
   
   theInst->start = start;
   theInst->dur = dur;
-  theInst->nsamps = dur * SR;
+  theInst->nsamps = (int)(dur * SR);
   
   return(theInst->nsamps);
 }
