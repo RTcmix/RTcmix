@@ -251,8 +251,11 @@ void Instrument::schedule(heap *rtHeap)
    call to exec needs to run or addout. The first call to exec for a
    given timeslice does both; subsequent calls during the same timeslice
    only addout.
+
+   If we've written (i.e., called addout) all the buses for the current
+   chunk, then return 1.  Else, return 0.
 */
-void Instrument::exec(BusType bus_type, int bus)
+int Instrument::exec(BusType bus_type, int bus)
 {
    int done;
 
@@ -271,6 +274,8 @@ void Instrument::exec(BusType bus_type, int bus)
    }
    if (done)
       needs_to_run = 1;
+
+   return (int) needs_to_run;
 }
 
 

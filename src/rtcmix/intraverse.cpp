@@ -35,7 +35,7 @@ void *inTraverse(void *arg)
 	int rtQSize = 0, allQSize;
 	int offset;
 	int keepGoing;
-	int dummy;
+	int dummy, inst_chunk_finished = 0;
 	short bus_q_offset;
 
 	Instrument *Iptr;
@@ -358,7 +358,7 @@ void *inTraverse(void *arg)
 #endif		  
 				// DT_PANIC_MOD
 				if (!panic) {
-					Iptr->exec(bus_type, bus);    // write the samples * * * * * * * * * 
+					inst_chunk_finished = Iptr->exec(bus_type, bus);    // write the samples * * * * * * * * * 
 					endsamp = Iptr->getendsamp();
 				}
 				else // DT_PANIC_MOD ... just keep on incrementing endsamp
@@ -402,7 +402,9 @@ void *inTraverse(void *arg)
 						break;
 					}
 					pthread_mutex_unlock(&bus_slot_lock);
-					if (qStatus == t_class && bus == endbus) {
+
+					// unref only after all buses have played -- i.e., if inst_chunk_finished
+					if (qStatus == t_class && inst_chunk_finished) {
 #ifdef DBUG
 						cout << "unref'ing inst " << (void *) Iptr << endl;
 #endif

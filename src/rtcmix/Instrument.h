@@ -120,7 +120,7 @@ public:
 	virtual int		configure();					// Called by inTraverse
 	virtual int		run();
 
-	void			exec(BusType bus_type, int bus);
+	int			exec(BusType bus_type, int bus);
 	void			addout(BusType bus_type, int bus);
 	bool			isDone() const { return cursamp >= nsamps; }
 	const char *	name() const { return _name; }
