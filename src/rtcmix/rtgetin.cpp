@@ -75,6 +75,10 @@ get_audio_in(
 
 
 /* ----------------------------------------------------- read_float_samps --- */
+/* Returns number of samples copied into destination buffer. This will not
+   be the same as the number of samples read from the file, if <dest_chans>
+   is not the same as <file_chans> below.
+*/
 static int
 read_float_samps(
       BufPtr      dest,             /* interleaved buffer from inst */
@@ -162,6 +166,12 @@ read_float_samps(
          byte_reverse4(&dest[i]);
    }
 
+   /* Advance saved offset by the number of samps (not frames) read.
+      Note that this includes samples in channels that were read but
+      not copied into the dest buffer!
+   */
+   inst->fileOffset += dest_frames * file_chans * sizeof(float);
+
    /* NOTE: Just return size of entire buffer, even if we had to do
             some zero padding.
    */
@@ -172,6 +182,10 @@ read_float_samps(
 
 
 /* ---------------------------------------------------- sndlib_read_samps --- */
+/* Returns number of samples copied into destination buffer. This will not
+   be the same as the number of samples read from the file, if <dest_chans>
+   is not the same as <file_chans> below.
+*/
 static int
 sndlib_read_samps(
       BufPtr      dest,             /* interleaved buffer from inst */
@@ -217,6 +231,13 @@ sndlib_read_samps(
          dest[j] = (BUFTYPE) inbufs[chan][i];
    }
 
+   /* Advance saved offset by the number of samps (not frames) read.
+      Note that this includes samples in channels that were read but
+      not copied into the dest buffer! Note also that sndlib wants
+      offsets as if the file were 16 bits (even when it's not).
+   */
+   inst->fileOffset += dest_frames * file_chans * 2;
+
    /* NOTE: We can't know how much zero padding sndlib did, so just use
             dest_frames.
    */
@@ -246,13 +267,10 @@ get_file_in(
    if (IS_FLOAT_FORMAT(data_format)) {
       nsamps = read_float_samps(dest, dest_chans, dest_frames, src_chan_list,
                                                              src_chans, inst);
-      inst->fileOffset += nsamps * sizeof(float);
    }
    else {
       nsamps = sndlib_read_samps(dest, dest_chans, dest_frames, src_chan_list,
                                                              src_chans, inst);
-      /* NOTE: This is right for sndlib, even if file isn't 16-bit: */
-      inst->fileOffset += nsamps * sizeof(short);
    }
 
    return nsamps;
