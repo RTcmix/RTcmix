@@ -1,6 +1,15 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Thursday, March 20, 2003 Douglas Scott <dscott-at-netscape.net>
+
+   * More work on bus code (renames for clarity, memory cleanup).
+   * Bus configs now refcounted and cleaned up.
+   * All Instrument methods now start with lowercase, i.e., inputChannels().
+   * Added Instrument::configure(), which allows explicit deferred allocation
+     of memory until just before run time.
+   * Updated all instruments which depend on these things.
+
 Sunday, March 16, 2003 Douglas Scott <dscott-at-netscape.net>
 
    * Reworked inTraverse code to streamline, fix bugs.  More work on bus code.
