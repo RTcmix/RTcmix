@@ -10,7 +10,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC -I$(OBJLIBDIR) -Wall
 PROGS = REV libREV.so
 
-all: libREV.so #REV
+all: libREV.so
+
+standalone: REV
 
 libREV.so: $(OBJS) $(GENLIB) $(OBJLIB_A)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

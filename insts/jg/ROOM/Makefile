@@ -5,7 +5,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC -Wall
 PROGS = libROOM.so ROOM
 
-all: libROOM.so #ROOM
+all: libROOM.so
+
+standalone: ROOM
 
 libROOM.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

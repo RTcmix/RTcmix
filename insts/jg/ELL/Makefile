@@ -6,7 +6,9 @@ CXXFLAGS += -fPIC -Wall -O3
 SYSLIBS += -lf2c
 PROGS = libELL.so ELL
 
-all: libELL.so #ELL
+all: libELL.so
+
+standalone: ELL
 
 libELL.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

@@ -10,7 +10,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC -I$(OBJLIBDIR) -O3 -Wall
 PROGS = libJFIR.so JFIR
 
-all: libJFIR.so #JFIR
+all: libJFIR.so
+
+standalone: JFIR
 
 libJFIR.so: $(OBJS) $(GENLIB) $(OBJLIB_A)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

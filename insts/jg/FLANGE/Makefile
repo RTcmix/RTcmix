@@ -10,7 +10,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC -I$(OBJLIBDIR) -Wall
 PROGS = FLANGE libFLANGE.so
 
-all: libFLANGE.so #FLANGE
+all: libFLANGE.so
+
+standalone: FLANGE
 
 libFLANGE.so: $(OBJS) $(GENLIB) $(OBJLIB_A)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

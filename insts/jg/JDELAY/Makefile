@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC -Wall
 PROGS = libJDELAY.so JDELAY
 
-all: libJDELAY.so #JDELAY
+all: libJDELAY.so
+
+standalone: JDELAY
 
 libJDELAY.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

@@ -6,7 +6,9 @@ CFLAGS += -fPIC -Wall -O3
 CXXFLAGS += -fPIC -Wall -O3
 PROGS = libdenoise.so denoise
 
-all: libdenoise.so #denoise
+all: libdenoise.so
+
+standalone: denoise
 
 libdenoise.so: $(UGENS_H) $(OBJS)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \

@@ -6,7 +6,9 @@ CFLAGS += -fPIC
 CXXFLAGS += -fPIC -Wall
 PROGS = libREVERBIT.so REVERBIT
 
-all: libREVERBIT.so #REVERBIT
+all: libREVERBIT.so
+
+standalone: REVERBIT
 
 libREVERBIT.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
