@@ -209,7 +209,7 @@ const char *AudioDeviceImpl::getLastError() const {
 double AudioDeviceImpl::getPeak(int chan, long *pLocation) const
 {
 	*pLocation = _peakLocs[chan];
-	return isDeviceFmtNormalized() ? _peaks[chan] / 32768.0 : _peaks[chan];
+	return _peaks[chan];
 }
 
 int AudioDeviceImpl::error(const char *msg, const char *msg2)
