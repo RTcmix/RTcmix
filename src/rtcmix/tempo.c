@@ -8,6 +8,9 @@
 float xtime[TLENP],temp[TLENP],rxtime[TLENP],accel[TLENP],BASIS = 60.;
 short tset = 0,npts;
 
+float time_beat(float timein);
+float beat_time(float beatin);
+
 
 double
 tbase(float p[], int n_args)
@@ -104,7 +107,7 @@ beat_time(float beatin)    /* returns beats from times */
 double
 t(float p[], int n_args)
 {
-	float time_beat(),x,y;
+	float x,y;
 	x = time_beat(p[0]);
 	y = beat_time(p[0]);
 	printf("%f %f %f\n",p[0],x,y);
