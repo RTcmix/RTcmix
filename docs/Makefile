@@ -2,8 +2,6 @@
 # See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
 # the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RTcmix help system makefile by John Gibson
-# 
 include ../makefile.conf
 
 DIRS = pod
@@ -14,7 +12,11 @@ all:
 		( cd $$DIR; $(MAKE) $(MFLAGS) all; ) \
 	done
 
-install: all
+install:
+	@for DIR in $(DIRS); \
+	do \
+		( cd $$DIR; $(MAKE) $(MFLAGS) install; ) \
+	done
 
 uninstall:
 	@for DIR in $(DIRS); \
@@ -23,10 +25,11 @@ uninstall:
 	done
 
 clean:
-	@echo "'clean' does not affect docs"
-
-cleanall: uninstall
 	@for DIR in $(DIRS); \
 	do \
 		( cd $$DIR; $(MAKE) $(MFLAGS) clean; ) \
 	done
+
+cleanall: uninstall
+distclean: cleanall
+
