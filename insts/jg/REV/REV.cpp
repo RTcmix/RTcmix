@@ -92,7 +92,7 @@ int REV :: init(double p[], int n_args)
    amparray = floc(1);
    if (amparray) {
       int lenamp = fsize(1);
-      tableset(dur, lenamp, amptabs);
+      tableset(SR, dur, lenamp, amptabs);
    }
 
    skip = (int) (SR / (float) resetval);

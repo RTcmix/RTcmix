@@ -221,7 +221,7 @@ int TVSPECTACLE :: pre_init(double p[], int n_args)
       if (check_curve(eqcurve, len, 0.0, 1.0))
          warn(instname(), "EQ curve values must be between 0 and 1.\n"
                           "Fixing...");
-      tableset(inputdur + ringdur, len, eqcurvetabs);
+      tableset(SR, inputdur + ringdur, len, eqcurvetabs);
       eq_curve_weight = eqcurve[0];
    }
    else {
@@ -235,7 +235,7 @@ int TVSPECTACLE :: pre_init(double p[], int n_args)
       if (check_curve(deltimecurve, len, 0.0, 1.0))
          warn(instname(), "Delay time curve values must be between 0 and 1.\n"
                           "Fixing...");
-      tableset(inputdur + ringdur, len, deltimecurvetabs);
+      tableset(SR, inputdur + ringdur, len, deltimecurvetabs);
       deltime_curve_weight = deltimecurve[0];
    }
    else {
@@ -249,7 +249,7 @@ int TVSPECTACLE :: pre_init(double p[], int n_args)
       if (check_curve(feedbackcurve, len, 0.0, 1.0))
          warn(instname(), "Feedback curve values must be between 0 and 1.\n"
                           "Fixing...");
-      tableset(inputdur + ringdur, len, feedbackcurvetabs);
+      tableset(SR, inputdur + ringdur, len, feedbackcurvetabs);
       feedback_curve_weight = feedbackcurve[0];
    }
    else {

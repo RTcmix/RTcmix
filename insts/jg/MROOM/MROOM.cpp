@@ -97,24 +97,24 @@ int MROOM::init(double p[], int n_args)
 
    traject(ntimes);
 
-   tableset(dur, POS_ARRAY_SIZE, xpostabs);
-   tableset(dur, POS_ARRAY_SIZE, ypostabs);
+   tableset(SR, dur, POS_ARRAY_SIZE, xpostabs);
+   tableset(SR, dur, POS_ARRAY_SIZE, ypostabs);
 
    delsamps = (int)(MAX_DELAY * SR + 0.5);
    delayline = new float[delsamps];
-   delset(delayline, deltabs, MAX_DELAY);
+   delset(SR, delayline, deltabs, MAX_DELAY);
 
    /* Array dimensions taken from lib/rvbset.c (+ 2 extra for caution). */
    rvbsamps = (int)((0.1583 * SR) + 18 + 2);
    rvbarrayl = new float[rvbsamps];
    rvbarrayr = new float[rvbsamps];
-   rvbset(rvbtime, 0, rvbarrayl);
-   rvbset(rvbtime, 0, rvbarrayr);
+   rvbset(SR, rvbtime, 0, rvbarrayl);
+   rvbset(SR, rvbtime, 0, rvbarrayr);
 
    amparray = floc(1);
    if (amparray) {
       int amplen = fsize(1);
-      tableset(dur, amplen, amptabs);
+      tableset(SR, dur, amplen, amptabs);
    }
    else
       advise("MROOM", "Setting phrase curve to all 1's.");

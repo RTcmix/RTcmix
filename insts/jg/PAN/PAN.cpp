@@ -81,7 +81,7 @@ int PAN :: init(double p[], int n_args)
    amparray = floc(1);
    if (amparray) {
       int lenamp = fsize(1);
-      tableset(dur, lenamp, amptabs);
+      tableset(SR, dur, lenamp, amptabs);
    }
    else
       advise("PAN", "Setting phrase curve to all 1's.");
@@ -89,7 +89,7 @@ int PAN :: init(double p[], int n_args)
    panarray = floc(2);
    if (panarray) {
       int lenpan = fsize(2);
-      tableset(dur, lenpan, pantabs);
+      tableset(SR, dur, lenpan, pantabs);
    }
    else
       return die("PAN", "You haven't made the pan curve function (table 2).");

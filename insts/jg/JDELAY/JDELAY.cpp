@@ -126,9 +126,9 @@ int JDELAY::init(double p[], int n_args)
    if (amptable) {
       int amplen = fsize(1);
       if (prefadersend)
-         tableset(dur + ringdur, amplen, amptabs);
+         tableset(SR, dur + ringdur, amplen, amptabs);
       else
-         tableset(dur, amplen, amptabs);
+         tableset(SR, dur, amplen, amptabs);
    }
 
    skip = (int) (SR / (float) resetval);

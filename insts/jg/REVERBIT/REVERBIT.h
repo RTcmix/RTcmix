@@ -1,7 +1,7 @@
 class REVERBIT : public Instrument {
    bool    dcblock, usefilt;
    int     insamps, skip, branch;
-   int     deltabs[2];
+   int     deltabs[3];
    float   amp, reverbtime, rtchan_delaytime, reverbpct, cutoff;
    float   prev_in[2], prev_out[2];
    float   *in, *delarray, *rvbarray, amptabs[2];

@@ -112,7 +112,7 @@ int FLANGE :: init(double p[], int n_args)
    amparray = floc(1);
    if (amparray) {
       int len = fsize(1);
-      tableset(dur, len, amptabs);
+      tableset(SR, dur, len, amptabs);
    }
    else
       advise("FLANGE", "Setting phrase curve to all 1's.");

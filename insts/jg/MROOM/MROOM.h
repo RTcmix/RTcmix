@@ -6,7 +6,7 @@ extern "C" {
 
 class MROOM : public Instrument {
    int    inchan, insamps, skip, quantskip;
-   int    deltabs[2];
+   int    deltabs[3];
    float  ovamp, xdim, ydim, reflect, innerwidth;
    float  del[NTAPS], amp[NTAPS];
    float  timepts[TIME_ARRAY_SIZE];

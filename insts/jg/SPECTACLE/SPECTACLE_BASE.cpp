@@ -222,7 +222,7 @@ int SPECTACLE_BASE :: init(double p[], int n_args)
    iamparray = floc(1);
    if (iamparray) {
       int lenamp = fsize(1);
-      tableset(inputdur, lenamp, iamptabs);
+      tableset(SR, inputdur, lenamp, iamptabs);
    }
    else
       advise(instname(), "Setting input amplitude curve to all 1's.");
@@ -230,7 +230,7 @@ int SPECTACLE_BASE :: init(double p[], int n_args)
    oamparray = floc(2);
    if (oamparray) {
       int lenamp = fsize(2);
-      tableset(inputdur + ringdur, lenamp, oamptabs);
+      tableset(SR, inputdur + ringdur, lenamp, oamptabs);
    }
    else
       advise(instname(), "Setting output amplitude curve to all 1's.");

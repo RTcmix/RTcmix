@@ -67,7 +67,7 @@ int ROOM::init(double p[], int n_args)
    amparray = floc(1);
    if (amparray) {
       int amplen = fsize(1);
-      tableset(dur + ringdur, amplen, amptabs);
+      tableset(SR, dur + ringdur, amplen, amptabs);
    }
    else
       advise("ROOM", "Setting phrase curve to all 1's.");

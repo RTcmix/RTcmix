@@ -82,13 +82,13 @@ int SROOM::init(double p[], int n_args)
    rvbsamps = (int)((0.1583 * SR) + 18 + 2);
    rvbarrayl = new float[rvbsamps];
    rvbarrayr = new float[rvbsamps];
-   rvbset(rvbtime, 0, rvbarrayl);
-   rvbset(rvbtime, 0, rvbarrayr);
+   rvbset(SR, rvbtime, 0, rvbarrayl);
+   rvbset(SR, rvbtime, 0, rvbarrayr);
 
    amparray = floc(1);
    if (amparray) {
       int amplen = fsize(1);
-      tableset(dur, amplen, amptabs);
+      tableset(SR, dur, amplen, amptabs);
    }
    else
       advise("SROOM", "Setting phrase curve to all 1's.");
@@ -212,7 +212,7 @@ float SROOM::distndelset(float xsource,
 
    delayline = new float[nmax];
 
-   delset(delayline, deltabs, (float)nmax / SR);
+   delset(SR, delayline, deltabs, (float)nmax / SR);
 
    if (!ysource) {
       if (xsource < inner)

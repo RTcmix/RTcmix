@@ -70,7 +70,7 @@ int MOOGVCF :: init(double p[], int n_args)
    amparray = floc(1);
    if (amparray) {
       int lenamp = fsize(1);
-      tableset(dur, lenamp, amptabs);
+      tableset(SR, dur, lenamp, amptabs);
    }
    else
       advise("MOOGVCF", "Setting phrase curve to all 1's.");
@@ -78,7 +78,7 @@ int MOOGVCF :: init(double p[], int n_args)
    cfarray = floc(2);
    if (cfarray) {
       int lencf = fsize(2);
-      tableset(dur, lencf, cftabs);
+      tableset(SR, dur, lencf, cftabs);
    }
    else {
       cf = 1000.0;
@@ -88,7 +88,7 @@ int MOOGVCF :: init(double p[], int n_args)
    resarray = floc(3);
    if (resarray) {
       int lenres = fsize(3);
-      tableset(dur, lenres, restabs);
+      tableset(SR, dur, lenres, restabs);
    }
    else {
       res = 0.5;

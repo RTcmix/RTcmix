@@ -108,7 +108,7 @@ int FILTSWEEP :: init(double p[], int n_args)
    amparray = floc(1);
    if (amparray) {
       int lenamp = fsize(1);
-      tableset(dur, lenamp, amptabs);
+      tableset(SR, dur, lenamp, amptabs);
    }
    else
       advise("FILTSWEEP", "Setting phrase curve to all 1's.");
@@ -116,7 +116,7 @@ int FILTSWEEP :: init(double p[], int n_args)
    cfarray = floc(2);
    if (cfarray) {
       int lencf = fsize(2);
-      tableset(dur, lencf, cftabs);
+      tableset(SR, dur, lencf, cftabs);
    }
    else
       return die("FILTSWEEP",
@@ -125,7 +125,7 @@ int FILTSWEEP :: init(double p[], int n_args)
    bwarray = floc(3);
    if (bwarray) {
       int lenbw = fsize(3);
-      tableset(dur, lenbw, bwtabs);
+      tableset(SR, dur, lenbw, bwtabs);
    }
    else
       return die("FILTSWEEP",

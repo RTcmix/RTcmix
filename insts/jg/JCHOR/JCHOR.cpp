@@ -138,7 +138,7 @@ int JCHOR::init(double p[], int n_args)
    amparray = floc(ENVELOPE_TABLE_SLOT);
    if (amparray) {
       int len = fsize(ENVELOPE_TABLE_SLOT);
-      tableset(outdur, len, amptabs);
+      tableset(SR, outdur, len, amptabs);
    }
    else
       advise("JCHOR", "Setting phrase curve to all 1's.");
@@ -329,7 +329,7 @@ int JCHOR::grain_input_and_transpose()
 
    grain = new float[grainsamps];
 
-   tableset(store_indur, winarraylen, wintabs);
+   tableset(SR, store_indur, winarraylen, wintabs);
 
    inframes = (int)(SR / read_indur);
    bufframes = RTBUFSAMPS;

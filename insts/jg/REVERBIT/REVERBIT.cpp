@@ -135,17 +135,17 @@ int REVERBIT::init(double p[], int n_args)
       maxdeltime *= DELAY_FACTOR;
    int delsamps = (int) (maxdeltime * SR + 0.5);
    delarray = new float[delsamps];
-   delset(delarray, deltabs, maxdeltime);
+   delset(SR, delarray, deltabs, maxdeltime);
 
    // Array dimensions taken from lib/rvbset.c (+ 2 extra for caution).
    int rvbsamps = (int)((0.1583 * SR) + 18 + 2);
    rvbarray = new float[rvbsamps];
-   rvbset(reverbtime, 0, rvbarray);
+   rvbset(SR, reverbtime, 0, rvbarray);
 
    amparray = floc(1);
    if (amparray) {
       int amplen = fsize(1);
-      tableset(dur, amplen, amptabs);
+      tableset(SR, dur, amplen, amptabs);
    }
 
    skip = (int) (SR / (float) resetval);
@@ -173,7 +173,7 @@ void REVERBIT::updateRvb(double p[])
       reverbtime = p[4];
       if (reverbtime <= 0.0)
          reverbtime = 0.0001;
-      rvbset(reverbtime, 1, rvbarray);
+      rvbset(SR, reverbtime, 1, rvbarray);
    }
    reverbpct = p[5];
    if (reverbpct < 0.0)
