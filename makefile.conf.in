@@ -37,7 +37,7 @@ SOUND_DRIVER += -DSHARED_AUDIO_DEV
 #SOUND_DRIVER += -DUSE_CARD_CHANS
 
 # optimization, debugging and warning flags
-OPT = -g -Wall -Wno-unused
+OPT = -g -Wall -Wno-unused -O2
 # for Irix, try just...
 #OPT = -O2
 
