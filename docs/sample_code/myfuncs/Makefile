@@ -12,7 +12,7 @@ all: lib$(NAME).so
 standalone: $(NAME)
 
 lib$(NAME).so: $(UGENS_H) $(OBJS)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
 $(NAME): $(UGENS_H) $(CMIXOBJS) $(OBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
