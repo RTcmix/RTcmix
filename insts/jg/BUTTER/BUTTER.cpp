@@ -72,7 +72,6 @@ int BUTTER :: init(float p[], int n_args)
 {
    float outskip, inskip, dur;
    const float ringdur = 0.1;
-	int rvin;
 
    outskip = p[0];
    inskip = p[1];
@@ -85,29 +84,22 @@ int BUTTER :: init(float p[], int n_args)
    pctleft = n_args > 8 ? p[8] : 0.5;               /* default is center */
    bypass = n_args > 9 ? (int) p[9] : 0;            /* default is no */
 
-   rvin = rtsetinput(inskip, this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
+   if (rtsetinput(inskip, this) != 0)
+      return DONT_SCHEDULE;
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans) {
-      die("BUTTER", "You asked for channel %d of a %d-channel file.",
+   if (inchan >= inputchans)
+      return die("BUTTER", "You asked for channel %d of a %d-channel file.",
                                                          inchan, inputchans);
-		return(DONT_SCHEDULE);
-	}
-   if (nfilts < 1 || nfilts > MAXFILTS) {
-      die("BUTTER", "Steepness (p5) must be an integer between 1 and %d.",
-                                                                   MAXFILTS);
-		return(DONT_SCHEDULE);
-	}
+   if (nfilts < 1 || nfilts > MAXFILTS)
+      return die("BUTTER",
+                 "Steepness (p5) must be an integer between 1 and %d.",
+                 MAXFILTS);
    if (type != LowPass && type != HighPass && type != BandPass
-         && type != BandReject) {
-      die("BUTTER", "Filter type must be 1 (lowpass), 2 (highpass), "
-                    "3 (bandpass) or 4 (bandreject).");
-		return(DONT_SCHEDULE);
-	}
+         && type != BandReject)
+      return die("BUTTER", "Filter type must be 1 (lowpass), 2 (highpass), "
+                 "3 (bandpass) or 4 (bandreject).");
 
    for (int i = 0; i < nfilts; i++)
       filt[i] = new Butter();
@@ -133,11 +125,9 @@ int BUTTER :: init(float p[], int n_args)
       int lencf = fsize(2);
       tableset(dur, lencf, cftabs);
    }
-   else {
-      die("BUTTER",
-            "You haven't made the cutoff frequency function (table 2).");
-		return(DONT_SCHEDULE);
-	}
+   else
+      return die("BUTTER",
+                 "You haven't made the cutoff frequency function (table 2).");
 
    if (type == BandPass || type == BandReject) {
       bwarray = floc(3);
@@ -145,11 +135,9 @@ int BUTTER :: init(float p[], int n_args)
          int lenbw = fsize(3);
          tableset(dur, lenbw, bwtabs);
       }
-      else {
-         die("BUTTER",
-               "You haven't made the bandwidth function (table 3).");
-			return(DONT_SCHEDULE);
-		}
+      else
+         return die("BUTTER",
+                    "You haven't made the bandwidth function (table 3).");
    }
 
    skip = (int)(SR / (float)resetval);
@@ -168,8 +156,6 @@ int BUTTER :: run()
 
    if (in == NULL)            /* first time, so allocate it */
       in = new float [RTBUFSAMPS * inputchans];
-
-   Instrument :: run();
 
    rsamps = chunksamps * inputchans;
 

@@ -57,7 +57,6 @@ int FLANGE :: init(float p[], int n_args)
 {
    float outskip, inskip, dur, maxdelay, ringdur;
    float *modtable;
-	int rvin;
 
    outskip = p[0];
    inskip = p[1];
@@ -84,41 +83,32 @@ int FLANGE :: init(float p[], int n_args)
 
    maxdelsamps = maxdelay * SR;            // yes, maxdelsamps is float
 
-   if (moddepth < 0.0 || moddepth > 100.0) {
-      die("FLANGE", "Modulation depth must be between 0 and 100.");
-		return(DONT_SCHEDULE);
-	}
+   if (moddepth < 0.0 || moddepth > 100.0)
+      return die("FLANGE", "Modulation depth must be between 0 and 100.");
    moddepth /= 100.0;         // convert to [0, 1]
 
-   if (wetdrymix < 0.0 || wetdrymix > 1.0) {
-      die("FLANGE", "Wet/dry mix must be between 0 and 1.");
-		return(DONT_SCHEDULE);
-	}
+   if (wetdrymix < 0.0 || wetdrymix > 1.0)
+      return die("FLANGE", "Wet/dry mix must be between 0 and 1.");
 
    ringdur = (resonance < 0) ? -resonance : resonance;
 
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
-   rvin = rtsetinput(inskip, this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
+   if (rtsetinput(inskip, this) != 0)
+      return DONT_SCHEDULE;
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans) {
-      die("FLANGE", "You asked for channel %d of a %d-channel file.",
+   if (inchan >= inputchans)
+      return die("FLANGE", "You asked for channel %d of a %d-channel file.",
                                                        inchan, inputchans);
-		return(DONT_SCHEDULE);
-	}
 
    modtable = floc(2);
    if (modtable) {
       int len = fsize(2);
       modoscil = new OscilN(0.0, modtable, len);
    }
-   else {
-      die("FLANGE", "You haven't made the modulation waveform (table 2).");
-		return(DONT_SCHEDULE);
-	}
+   else
+      return die("FLANGE",
+                 "You haven't made the modulation waveform (table 2).");
 
    amparray = floc(1);
    if (amparray) {
@@ -142,8 +132,6 @@ int FLANGE :: run()
 
    if (in == NULL)              /* first time, so allocate it */
       in = new float [RTBUFSAMPS * inputchans];
-
-   Instrument :: run();
 
    rsamps = chunksamps * inputchans;
 

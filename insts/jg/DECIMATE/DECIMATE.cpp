@@ -49,7 +49,7 @@ DECIMATE :: ~DECIMATE()
 
 int DECIMATE :: init(float p[], int n_args)
 {
-   int   bits, rvin;
+   int   bits;
    float outskip, inskip, dur, cutoff;
 
    outskip = p[0];
@@ -62,17 +62,14 @@ int DECIMATE :: init(float p[], int n_args)
    pctleft = n_args > 7 ? p[7] : 0.5;                /* default is .5 */
 
    nsamps = rtsetoutput(outskip, dur, this);
-   rvin = rtsetinput(inskip, this);
+   if (rtsetinput(inskip, this) != 0)
+      return DONT_SCHEDULE;
 
-   if (inchan >= inputchans) {
-      die("DECIMATE", "You asked for channel %d of a %d-channel file.",
+   if (inchan >= inputchans)
+      return die("DECIMATE", "You asked for channel %d of a %d-channel file.",
                                                          inchan, inputchans);
-		return(DONT_SCHEDULE);
-	}
-   if (bits > 16 || bits < 1) {
-      die("DECIMATE", "Bits must be between 1 and 16.");
-		return(DONT_SCHEDULE);
-	}
+   if (bits > 16 || bits < 1)
+      return die("DECIMATE", "Bits must be between 1 and 16.");
 
    /* NB: This depends on int being 32 bits! */
    mask = (int) ( ((int) pow(2.0, (double) bits) - 1) << (16 - bits) );
@@ -95,10 +92,9 @@ int DECIMATE :: init(float p[], int n_args)
    else
       advise("DECIMATE", "Setting phrase curve to all 1's.");
 
-   if (cutoff < 0.0 || cutoff > SR * 0.5) {
-      die("DECIMATE", "Cutoff frequency must be between 0 and %g.", SR * 0.5);
-		return(DONT_SCHEDULE);
-	}
+   if (cutoff < 0.0 || cutoff > SR * 0.5)
+      return die("DECIMATE",
+                 "Cutoff frequency must be between 0 and %g.", SR * 0.5);
 
    if (cutoff > 0.0) {
       lpfilt = new Butter();
@@ -118,8 +114,6 @@ int DECIMATE :: run()
 
    if (in == NULL)
       in = new float [RTBUFSAMPS * inputchans];
-
-   Instrument::run();
 
    samps = chunksamps * inputchans;
    rtgetin(in, this, samps);

@@ -85,7 +85,7 @@ inline int min(int a, int b) {
 
 int COMPLIMIT::init(float p[], int n_args)
 {
-   int   detector_int, rvin;
+   int   detector_int;
    float outskip, inskip, dur, atk_time, rel_time, lookahead_time;
 
    outskip = p[0];
@@ -104,26 +104,18 @@ int COMPLIMIT::init(float p[], int n_args)
    inchan = (n_args > 13) ? (int) p[13] : 0;
    pctleft = (n_args > 14) ? p[14] : 0.5;
 
-   rvin = rtsetinput(inskip, this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
+   if (rtsetinput(inskip, this) != 0)
+      return DONT_SCHEDULE;
    nsamps = rtsetoutput(outskip, dur, this);
 
-   if (inchan >= inputchans) {
-      die("COMPLIMIT", "You asked for channel %d of a %d-channel file.",
+   if (inchan >= inputchans)
+      return die("COMPLIMIT", "You asked for channel %d of a %d-channel file.",
                                                         inchan, inputchans);
-		return(DONT_SCHEDULE);
-	}
-   if (outputchans > 2) {
-      die("COMPLIMIT", "Can't use more than 2 output channels.");
-		return(DONT_SCHEDULE);
-	}
+   if (outputchans > 2)
+      return die("COMPLIMIT", "Can't use more than 2 output channels.");
 
-   if (atk_time < 0.0 || rel_time < 0.0) {
-      die("COMPLIMIT", "Invalid envelope times.");
-		return(DONT_SCHEDULE);
-	}
+   if (atk_time < 0.0 || rel_time < 0.0)
+      return die("COMPLIMIT", "Invalid envelope times.");
 
    atk_samps = (int) (atk_time * SR + 0.5);
    rel_samps = (int) (rel_time * SR + 0.5);
@@ -132,17 +124,13 @@ int COMPLIMIT::init(float p[], int n_args)
 
    dbref = dbamp(32768.0);           // FIXME: but what about 24-bit output?
 
-   if (threshold < -dbref || threshold > 0.0) {
-      die("COMPLIMIT", "Threshold must be between %.2f and 0.", -dbref);
-		return(DONT_SCHEDULE);
-	}
+   if (threshold < -dbref || threshold > 0.0)
+      return die("COMPLIMIT", "Threshold must be between %.2f and 0.", -dbref);
 
    threshold = ampdb(threshold + dbref);
 
-   if (ratio < 1.0) {
-      die("COMPLIMIT", "Compression ratio must be 1 or greater.");
-		return(DONT_SCHEDULE);
-	}
+   if (ratio < 1.0)
+      return die("COMPLIMIT", "Compression ratio must be 1 or greater.");
 
    if (ratio >= 100.0)
       ratio = DBL_MAX;
@@ -156,15 +144,11 @@ int COMPLIMIT::init(float p[], int n_args)
                         "(currently %d frames).  Correcting...", RTBUFSAMPS);
       window_frames = RTBUFSAMPS;
    }
-   else if (RTBUFSAMPS % window_frames) {
-      die("COMPLIMIT", "Window size must be a power of two.");
-		return(DONT_SCHEDULE);
-	}
+   else if (RTBUFSAMPS % window_frames)
+      return die("COMPLIMIT", "Window size must be a power of two.");
 
-   if (detector_int < 0 || detector_int > 2) {
-      die("COMPLIMIT", "Invalid detector type.");
-		return(DONT_SCHEDULE);
-	}
+   if (detector_int < 0 || detector_int > 2)
+      return die("COMPLIMIT", "Invalid detector type.");
 
    detector_type = (DetectType) detector_int;
 
@@ -276,8 +260,6 @@ int COMPLIMIT::run()
 {
    int   i, samps, win_count, win_end_count, over_thresh_offset;
    float *bufendptr, sig, out[2];
-
-   Instrument::run();
 
    samps = chunksamps * inputchans;
 

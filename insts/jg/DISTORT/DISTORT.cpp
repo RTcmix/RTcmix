@@ -48,7 +48,6 @@ DISTORT :: ~DISTORT()
 int DISTORT :: init(float p[], int n_args)
 {
    float outskip, inskip, dur, cf;
-	int rvin;
 
    outskip = p[0];
    inskip = p[1];
@@ -61,21 +60,16 @@ int DISTORT :: init(float p[], int n_args)
    pctleft = n_args > 8 ? p[8] : 0.5;              /* default is center */
    bypass = n_args > 9 ? (int) p[9] : 0;           /* default is no */
 
-   rvin = rtsetinput(inskip, this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
+   if (rtsetinput(inskip, this) != 0)
+      return DONT_SCHEDULE;
    nsamps = rtsetoutput(outskip, dur, this);
 
-   if (inchan >= inputChannels()) {
-      die("DISTORT", "You asked for channel %d of a %d-channel file.",
+   if (inchan >= inputChannels())
+      return die("DISTORT", "You asked for channel %d of a %d-channel file.",
                                                       inchan, inputChannels());
-		return(DONT_SCHEDULE);
-	}
-   if (type != SoftClip && type != Tube) {
-      die("DISTORT", "Distortion type must be 1 (soft clip) or 2 (tube).");
-		return(DONT_SCHEDULE);
-	}
+   if (type != SoftClip && type != Tube)
+      return die("DISTORT",
+                 "Distortion type must be 1 (soft clip) or 2 (tube).");
 
    if (cf > 0.0) {
       filt = new Butter();
@@ -167,8 +161,6 @@ int DISTORT :: run()
 
    if (in == NULL)                  // first time, so allocate it
       in = new float [RTBUFSAMPS * inputchans];
-
-   Instrument :: run();
 
    const int insamps = framesToRun() * inputChannels();
    rtgetin(in, this, insamps);

@@ -72,7 +72,6 @@ FILTSWEEP :: ~FILTSWEEP()
 int FILTSWEEP :: init(float p[], int n_args)
 {
    float outskip, inskip, dur, ringdur;
-	int rvin;
 
    outskip = p[0];
    inskip = p[1];
@@ -84,23 +83,17 @@ int FILTSWEEP :: init(float p[], int n_args)
    inchan = n_args > 7 ? (int)p[7] : 0;             /* default is chan 0 */
    pctleft = n_args > 8 ? p[8] : 0.5;               /* default is center */
 
-   rvin = rtsetinput(inskip, this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
+   if (rtsetinput(inskip, this) != 0)
+      return DONT_SCHEDULE;
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
    insamps = (int)(dur * SR);
 
-   if (inchan >= inputchans) {
-      die("FILTSWEEP", "You asked for channel %d of a %d-channel file.",
+   if (inchan >= inputchans)
+      return die("FILTSWEEP", "You asked for channel %d of a %d-channel file.",
                                                          inchan, inputchans);
-		return(DONT_SCHEDULE);
-	}
-   if (nfilts < 1 || nfilts > MAXFILTS) {
-      die("FILTSWEEP", "Sharpness (p5) must be an integer between 1 and %d.",
-                                                                   MAXFILTS);
-		return(DONT_SCHEDULE);
-	}
+   if (nfilts < 1 || nfilts > MAXFILTS)
+      return die("FILTSWEEP",
+               "Sharpness (p5) must be an integer between 1 and %d.", MAXFILTS);
    for (int i = 0; i < nfilts; i++)
       filt[i] = new BiQuad();
 
@@ -125,21 +118,18 @@ int FILTSWEEP :: init(float p[], int n_args)
       int lencf = fsize(2);
       tableset(dur, lencf, cftabs);
    }
-   else {
-      die("FILTSWEEP",
-               "You haven't made the center frequency function (table 2).");
-		return(DONT_SCHEDULE);
-	}
+   else
+      return die("FILTSWEEP",
+                 "You haven't made the center frequency function (table 2).");
 
    bwarray = floc(3);
    if (bwarray) {
       int lenbw = fsize(3);
       tableset(dur, lenbw, bwtabs);
    }
-   else {
-      die("FILTSWEEP", "You haven't made the bandwidth function (table 3).");
-		return(DONT_SCHEDULE);
-	}
+   else
+      return die("FILTSWEEP",
+                 "You haven't made the bandwidth function (table 3).");
 
    skip = (int)(SR / (float)resetval);
 
@@ -155,8 +145,6 @@ int FILTSWEEP :: run()
 
    if (in == NULL)              /* first time, so allocate it */
       in = new float [RTBUFSAMPS * inputchans];
-
-   Instrument :: run();
 
    rsamps = chunksamps * inputchans;
 

@@ -61,7 +61,7 @@ int EQ :: init(float p[], int n_args)
 {
    float outskip, inskip, dur;
    float *function;
-   int   type, rvin;
+   int   type;
    const float ringdur = 0.1;
 
    outskip = p[0];
@@ -73,18 +73,14 @@ int EQ :: init(float p[], int n_args)
    pctleft = n_args > 6 ? p[6] : 0.5;              /* default is .5 */
    bypass = n_args > 7 ? (int) p[7] : 0;           /* default is no */
 
-   rvin = rtsetinput(inskip, this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
+   if (rtsetinput(inskip, this) != 0)
+      return DONT_SCHEDULE;
    nsamps = rtsetoutput(outskip, dur + ringdur, this);
    insamps = (int)(dur * SR + 0.5);
 
-   if (inchan >= inputChannels()) {
-      die("EQ", "You asked for channel %d of a %d-channel file.",
+   if (inchan >= inputChannels())
+      return die("EQ", "You asked for channel %d of a %d-channel file.",
                                                    inchan, inputChannels());
-		return(DONT_SCHEDULE);
-	}
 
    switch (type) {
       case 0:
@@ -119,20 +115,16 @@ int EQ :: init(float p[], int n_args)
       int len = fsize(2);
       freq_table = new TableL(dur, function, len);
    }
-   else {
-      die("EQ", "You haven't made the EQ frequency function (table 2).");
-		return(DONT_SCHEDULE);
-	}
+   else
+      return die("EQ", "You haven't made the EQ frequency function (table 2).");
 
    function = floc(3);
    if (function) {
       int len = fsize(3);
       q_table = new TableL(dur, function, len);
    }
-   else {
-      die("EQ", "You haven't made the EQ Q function (table 3).");
-		return(DONT_SCHEDULE);
-	}
+   else
+      return die("EQ", "You haven't made the EQ Q function (table 3).");
 
    if (eqtype != EQLowPass && eqtype != EQHighPass) {
       function = floc(4);
@@ -140,10 +132,8 @@ int EQ :: init(float p[], int n_args)
          int len = fsize(4);
          gain_table = new TableL(dur, function, len);
       }
-      else {
-         die("EQ", "You haven't made the EQ gain function (table 4).");
-			return(DONT_SCHEDULE);
-		}
+      else
+         return die("EQ", "You haven't made the EQ gain function (table 4).");
    }
    else
       gain = 0.0;
@@ -164,8 +154,6 @@ int EQ :: run()
 
    if (in == NULL)
       in = new float [RTBUFSAMPS * inputChannels()];
-
-   Instrument::run();
 
    samps = framesToRun() * inputChannels();
    if (currentFrame() < insamps)
