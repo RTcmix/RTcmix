@@ -44,8 +44,8 @@ Ib.  Compile and install the core
 ---------------------------------
 
 1) Unpack the RTcmix archive into any directory on your machine
-   (e.g., with "gunzip -c RTcmix-2.4.0.tar.gz | tar xf -").
-   This will create a directory called "RTcmix-2.4.0" with all
+   (e.g., with "gunzip -c RTcmix-3.0.1.tar.gz | tar xf -").
+   This will create a directory called "RTcmix-3.0.1" with all
    the core source inside. We call this the "RTcmix directory" below.
 
 2) Edit "makefile.conf" inside this directory.
