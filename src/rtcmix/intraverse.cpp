@@ -27,9 +27,13 @@ long elapsed;
 IBusClass checkClass(BusSlot *slot) {
   if ((slot->auxin_count > 0) && (slot->auxout_count > 0))
 	return AUX_TO_AUX;
+  if ((slot->auxout_count > 0) && (slot->out_count > 0))
+	return TO_AUX_AND_OUT;
   if (slot->auxout_count > 0)
 	return TO_AUX;
-  return TO_OUT;
+  if (slot->out_count > 0)
+	return TO_OUT;
+  return UNKNOWN;
 }
 
 extern "C" {
@@ -42,6 +46,7 @@ extern "C" {
     int offset,endsamp;
     int keepGoing;
     int dummy;
+	short bus_q_offset;
 
     Instrument *Iptr;
 
@@ -53,8 +58,8 @@ extern "C" {
     struct timezone tz;
     double sec,usec;
 
-	Bool aux_pb_done = NO;
-	short bus,bus_count,play_bus;
+	Bool aux_pb_done;
+	short bus,bus_count,play_bus,busq;
 	IBusClass bus_class,qStatus;
 	BusType bus_type;
 
@@ -90,7 +95,6 @@ extern "C" {
     rtInst = 0;
     playEm = 0;
 
-
     // printf("ENTERING inTraverse() FUNCTION\n");
 
     // NOTE: audioin, aux and output buffers are zero'd during allocation
@@ -101,10 +105,6 @@ extern "C" {
       rtsendzeros(0);  // send a buffer of zeros to audio device
     }
   
-    bufStartSamp = 0;  // current end sample for buffer
-    bufEndSamp = RTBUFSAMPS;
-    chunkStart = 0;
-
     if (rtsetparams_called)         // otherwise, disk-based only
       playEm = 1;
 
@@ -131,17 +131,47 @@ extern "C" {
 		bus_class = checkClass(Iptr->bus_config);
 		switch (bus_class) {
 		case TO_AUX:
-		  rtQueue[MAXBUS+1].push(Iptr);
+		  bus_count = Iptr->bus_config->auxout_count;
+		  bus_q_offset = 0;
+		  for(i=0;i<bus_count;i++) {
+			bus = Iptr->bus_config->auxout[i];
+			busq = bus+bus_q_offset;
+			rtQueue[busq].push(Iptr);
+		  }
 		  break;
 		case AUX_TO_AUX:
 		  bus_count = Iptr->bus_config->auxout_count;
+		  bus_q_offset = MAXBUS;
 		  for(i=0;i<bus_count;i++) {
 			bus = Iptr->bus_config->auxout[i];
-			rtQueue[bus].push(Iptr);
+			busq = bus+bus_q_offset;
+			rtQueue[busq].push(Iptr);
 		  }
 		  break;
 		case TO_OUT:
-		  rtQueue[MAXBUS+2].push(Iptr);
+		  bus_count = Iptr->bus_config->out_count;
+		  bus_q_offset = MAXBUS*2;
+		  for(i=0;i<bus_count;i++) {
+			bus = Iptr->bus_config->out[i];
+			busq = bus+bus_q_offset;
+			rtQueue[busq].push(Iptr);
+		  }
+		  break;
+		case TO_AUX_AND_OUT:
+		  bus_count = Iptr->bus_config->out_count;
+		  bus_q_offset = MAXBUS;
+		  for(i=0;i<bus_count;i++) {
+			bus = Iptr->bus_config->out[i];
+			busq = bus+bus_q_offset;
+			rtQueue[busq].push(Iptr);
+		  }
+		  bus_count = Iptr->bus_config->auxout_count;
+		  bus_q_offset = 2*MAXBUS;
+		  for(i=0;i<bus_count;i++) {
+			bus = Iptr->bus_config->auxout[i];
+			busq = bus+bus_q_offset;
+			rtQueue[busq].push(Iptr);
+		  }
 		  break;
 		default:
 		  cout << "ERROR (intraverse): unknown bus_class\n";
@@ -157,21 +187,25 @@ extern "C" {
 
 	  qStatus = TO_AUX;
 	  play_bus = 0;
+	  aux_pb_done = NO;
 	  
 	  // rtQueue[] playback shuffling ----------------------------------------
 	  while (!aux_pb_done) {
 
 		switch (qStatus) {
 		case TO_AUX:
-		  bus = MAXBUS+1;
+		  bus_q_offset = 0;
 		  bus_type = BUS_AUX_OUT;
+		  bus = ToAuxPlayList[play_bus++];
 		  break;
 		case AUX_TO_AUX:
-		  bus = AuxPlayList[play_bus];
+		  bus_q_offset = MAXBUS;
+		  bus = AuxToAuxPlayList[play_bus++];
 		  bus_type = BUS_AUX_OUT;
 		  break;
 		case TO_OUT:
-		  bus = MAXBUS+2;
+		  bus_q_offset = MAXBUS*2;
+		  bus = ToOutPlayList[play_bus++];
 		  bus_type = BUS_OUT;
 		  break;
 		default:
@@ -179,10 +213,13 @@ extern "C" {
 		  break;
 		}
 
-		rtQSize = rtQueue[bus].getSize();
+		busq = bus+bus_q_offset;
+		rtQSize = rtQueue[busq].getSize();
+		if (bus == -1) // DJT might be a better way, but this should work
+		  rtQSize = 0;
 		if (rtQSize > 0)
-		  chunkStart = rtQueue[bus].nextChunk();
-
+		  chunkStart = rtQueue[busq].nextChunk();
+		
 		// Play elements on queue (insert back in if needed) - - - - - - - -
 		while ((rtQSize > 0) && (chunkStart < bufEndSamp)) {
 		  
@@ -191,7 +228,7 @@ extern "C" {
 		  cout << "bufEndSamp:  " << bufEndSamp << endl;
 		  cout << "RTBUFSAMPS:  " << RTBUFSAMPS << endl;
 #endif      
-		  Iptr = rtQueue[bus].pop();  // get next instrument off queue
+		  Iptr = rtQueue[busq].pop();  // get next instrument off queue
 		  
 		  endsamp = Iptr->getendsamp();
 		  
@@ -222,30 +259,35 @@ extern "C" {
 #ifdef ALLBUG
 			cout << "inTraverse():  re queueing instrument\n";
 #endif
-			rtQueue[bus].push(Iptr);   // put back onto queue
+			rtQueue[busq].push(Iptr);   // put back onto queue
 		  }
 		  else {
 			delete Iptr;
 		  }
 		  
 		  // DJT:  not sure this check before new chunkStart is necessary
-		  rtQSize = rtQueue[bus].getSize();
+		  rtQSize = rtQueue[busq].getSize();
 		  if (rtQSize)
-			chunkStart = rtQueue[bus].nextChunk();
+			chunkStart = rtQueue[busq].nextChunk();
 		}
 		
 		switch (qStatus) {
 		case TO_AUX:
-		  qStatus = AUX_TO_AUX;
+		  if (bus == -1) {
+			qStatus = AUX_TO_AUX;
+			play_bus = 0;
+		  }
 		  break;
 		case AUX_TO_AUX:
-		  play_bus++;
-		  bus = AuxPlayList[play_bus];
-		  if (bus == -1) 
+		  if (bus == -1) {
 			qStatus = TO_OUT;
+			play_bus = 0;
+		  }
 		  break;
 		case TO_OUT:
-		  aux_pb_done = YES;
+		  if (bus == -1) {
+			aux_pb_done = YES;
+		  }
 		  break;
 		default:
 		  cout << "ERROR (intraverse): unknown bus_class\n";
@@ -290,8 +332,13 @@ extern "C" {
 	  }
 	  pthread_mutex_unlock(&heapLock);
 	  // DJT: this might be unecessary
-      rtQSize = rtQueue[bus].getSize();
-	  
+	  // but might cause problems without!
+	  if (busq > 0) {
+		rtQSize = rtQueue[busq].getSize();
+	  }
+	  else {
+		rtQSize = 0;
+	  }
 	  // Nothing on the queue and nothing on the heap for playing -------------
 	  // write zeros
 	  if (!(rtQSize) && (heapChunkStart > bufEndSamp)) {
