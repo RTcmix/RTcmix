@@ -1,66 +1,55 @@
 include ../makefile.conf
 
 PLAY = cmixplay
-NPLAY = nplay
 SETUP = setup_rtcmixrc
 
+PROGS = $(PLAY) $(SETUP) hist cpspch pchcps rescale sndpeak sndreverse
+
+HISTOBJ = fft.o hist.o
+SYSOBJS = $(SRCDIR)/rtcmix/printsf.o $(SRCDIR)/rtcmix/check_byte_order.o \
+	$(AUDIODIR)/sndlibsupport.o
 PLAY_HDRS = ../src/audio/sndlibsupport.h ../src/audio/AudioDevice.h
 OPTION_O = ../src/rtcmix/Option.o
 LIBCONF = ../src/conf/libconf.a
-LIBAUDIO = ../src/audio/librtaudio.a
-INCLUDES += -I../src/audio -I../src/sndlib -I../src/rtcmix
+INCLUDES += -I$(AUDIODIR) -I$(SRCDIR)/sndlib -I$(SRCDIR)/rtcmix
 
-ifeq ($(ARCH),LINUX)
-   PROGS = $(PLAY) $(SETUP) # full-duplex-test playraw
-   RESAMPLE = resample
-#  SYSLIBS = -lm   # only this, overriding makefile.conf
-endif
-ifeq ($(ARCH),MACOSX)
-   PROGS = $(PLAY) $(SETUP) #playraw full-duplex-test
-   RESAMPLE = resample
-   SYSLIBS = -framework CoreAudio
-endif
+all: $(PROGS) head resample
 
-# nplay won't compile with current RTcmix; it will be replaced soon
-#ifeq ($(NPLAY_SUPPORT), TRUE)
-#   PROGS += $(NPLAY)
-#endif
+$(PLAY): $(PLAY).o $(AUDIOLIB) $(SNDLIB)
+	$(CXX) $(CXXFLAGS) -o $(PLAY) $(PLAY).o $(LDFLAGS) $(AUDIOLIB) $(SNDLIB)
 
-SYSOBJS = ../src/rtcmix/check_byte_order.o
-
-all: $(PROGS) $(RESAMPLE)
-
-$(PLAY):  $(PLAY).o $(AUDIO_DEV_OBJS)
-	$(CXX) -o $(PLAY) $(PLAY).o $(SYSLIBS) $(LIBAUDIO) $(SNDLIB)
-
-$(PLAY).o:  $(PLAY).cpp $(PLAY_HDRS)
+$(PLAY).o: $(PLAY).cpp $(PLAY_HDRS)
 	$(CXX) $(CXXFLAGS) $(SOUND_DRIVER) -c $< -o $@
 
-$(NPLAY):  $(NPLAY).o $(SYSOBJS)
-	$(CC) -o $(NPLAY) $(SOUND_DRIVER) $(NPLAY).o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
+$(SETUP): $(SETUP).o $(OPTION_O) $(LIBCONF)
+	$(CXX) $(CXXFLAGS) -o $(SETUP) $(SETUP).o $(OPTION_O) $(LIBCONF)
 
-$(NPLAY).o:  $(NPLAY).c ../H/audio_port.h ../H/sndlibsupport.h
-	$(CC) $(CFLAGS) $(SOUND_DRIVER) -c $< -o $@
+hist: $(HISTOBJ) $(SYSOBJS)
+	$(CC) $(CFLAGS) -o hist $(HISTOBJ) $(SYSOBJS) $(SNDLIB) -lm
 
-$(SETUP):  $(SETUP).o $(OPTION_O) $(LIBCONF)
-	$(CXX) -o $(SETUP) $(SETUP).o $(SYSLIBS) $(OPTION_O) $(LIBCONF)
+cpspch: cpspchlookup.o $(GENLIB)
+	$(CC) $(CFLAGS) -o cpspch cpspchlookup.c $(GENLIB) -lm
 
-#$(SETUP).o:  $(SETUP).cpp $(PLAY_HDRS)
-#	echo $(LIBDESTDIR)
-#	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c $< -o $@
+pchcps: pchcpslookup.o $(GENLIB)
+	$(CC) $(CFLAGS) -o pchcps pchcpslookup.c $(GENLIB) -lm
 
-playraw: playraw.o
-	$(CC) -o playraw playraw.o
+rescale: rescale.o $(SYSOBJS)
+	$(CC) $(CFLAGS) -o rescale rescale.o $(SYSOBJS) $(SNDLIB) -lm
 
-full-duplex-test: full-duplex-test.o
-	$(CC) -o full-duplex-test full-duplex-test.o -lm
+sndpeak: sndpeak.o $(SYSOBJS)
+	$(CC) $(CFLAGS) -o sndpeak sndpeak.o $(SYSOBJS) $(SNDLIB) -lm
 
-sfrecord:  sfrecord.o $(SYSOBJS)
-	$(CC) -o sfrecord sfrecord.o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
+sndreverse: sndreverse.o $(SYSOBJS)
+	$(CC) $(CFLAGS) -o sndreverse sndreverse.o $(SYSOBJS) $(SNDLIB) -lm
 
-$(RESAMPLE)::
+head::
+	@echo ""; echo "making head ..."
+	@cd head; $(MAKE) $(MFLAGS) all
+	@echo "done."; echo ""
+
+resample::
 	@echo "making resample ..."
-	@cd $(RESAMPLE); $(MAKE) all
+	@cd resample; $(MAKE) $(MFLAGS) all
 	@echo "done."; echo ""
 
 install:
@@ -71,12 +60,9 @@ ifneq ($(strip $(PROGS)),)       # do only if PROGS is nonempty
 	  ( $(INSTALL) $(CMIXDIR)/utils/$$PROG $(DESTDIR); ) \
 	done
 endif
-ifneq ($(strip $(RESAMPLE)),)    # do only if RESAMPLE is nonempty
-	@$(INSTALL) $(CMIXDIR)/utils/resample/resample $(DESTDIR)
-endif
-ifneq ($(strip $(PLAY)),)        # do only if PLAY is nonempty
-	@cd $(DESTDIR); ln -fs $(PLAY) play
-endif
+	@cd $(DESTDIR); if test -f $(PLAY); then ln -fs $(PLAY) play; fi
+	@cd head; $(MAKE) $(MFLAGS) install
+	@cd resample; $(MAKE) $(MFLAGS) install
 
 uninstall:
 	@echo "making uninstall..."	
@@ -87,13 +73,13 @@ ifneq ($(strip $(PROGS)),)       # do only if PROGS is nonempty
 	done
 endif
 	$(RM) $(DESTDIR)/play
-	$(RM) $(DESTDIR)/resample
+	@cd head; $(MAKE) $(MFLAGS) uninstall
+	@cd resample; $(MAKE) $(MFLAGS) uninstall
 
 clean:
 	$(RM) *.o core $(PROGS)
-ifneq ($(strip $(RESAMPLE)),)    # do only if RESAMPLE is nonempty
-	@cd $(RESAMPLE); $(MAKE) clean
-endif
+	@cd head; $(MAKE) $(MFLAGS) clean
+	@cd resample; $(MAKE) $(MFLAGS) clean
 
 cleanall: clean uninstall
 
