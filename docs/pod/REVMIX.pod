@@ -44,8 +44,7 @@ The output of B<REVMIX> can be either mono or stereo.
 
 =item B<p4> (I<inchan>) input channel [optional, default is 0]
 
-=item B<p5> (I<stereoloc>) percent (from 0 to 1) of input signal to place
-in left output channel [optional, default is 0.5 if output is stereo]
+=item B<p5> (I<stereoloc>) percent (from 0 to 1) of input signal to place in left output channel [optional, default is 0.5 if output is stereo]
 
 =back
 

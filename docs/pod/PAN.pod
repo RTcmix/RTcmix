@@ -45,8 +45,7 @@ The output of B<PAN> must be stereo.
 
 =item B<p4> (I<inchan>) input channel [optional, default is 0]
 
-=item B<p5> (I<const_power>) 1: use constant-power panning;
-0: use linear panning [optional, default is 1]
+=item B<p5> (I<const_power>) 1: use constant-power panning; 0: use linear panning [optional, default is 1]
 
 =back
 

@@ -41,8 +41,7 @@ The output of B<WAVETABLE> can be either stereo or mono.
 
 =item B<p3> (I<freq>) frequency (or pitch in octave.pc if < 15)
 
-=item B<p4> (I<stereoloc>) percent (from 0 to 1) of signal to place
-in left output channel [optional, default is 0 if output is stereo]
+=item B<p4> (I<stereoloc>) percent (from 0 to 1) of signal to place in left output channel [optional, default is 0 if output is stereo]
 
 =back
 

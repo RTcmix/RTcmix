@@ -42,14 +42,11 @@ The output of B<STEREO> must be stereo.
 
 =item B<p3> (I<ampmult>) amplitude multiplier
 
-=item B<p4> (I<outloc0>) percent (from 0 to 1) of signal from input
-channel 0 to place in left output channel
+=item B<p4> (I<outloc0>) percent (from 0 to 1) of signal from input channel 0 to place in left output channel
 
-=item B<p5> (I<outloc1>) percent of signal from input channel 1 to place
-in left output channel [optional]
+=item B<p5> (I<outloc1>) percent of signal from input channel 1 to place in left output channel [optional]
 
-=item B<p6+> (I<outlocN>) percent of signal from input channel N to place
-in left output channel [optional]
+=item B<p6+> (I<outlocN>) percent of signal from input channel N to place in left output channel [optional]
 
 =back
 

@@ -83,17 +83,13 @@ Feeds output to optional lowpass and DC-blocking filters.
 
 =item B<p4> (I<revtime>) reverb time (in seconds, greater than 0)
 
-=item B<p5> (I<wetpercent>) percent (from 0 to 1) of wet signal in
-output
+=item B<p5> (I<wetpercent>) percent (from 0 to 1) of wet signal in output
 
-=item B<p6> (I<rtchandelay>) right channel delay time (in seconds,
-greater than 0)
+=item B<p6> (I<rtchandelay>) right channel delay time (in seconds, greater than 0)
 
-=item B<p7> (I<cutoff>) cutoff frequency (in Hz) of lowpass filter
-applied to output of reverberator (0 to disable filter)
+=item B<p7> (I<cutoff>) cutoff frequency (in Hz) of lowpass filter applied to output of reverberator (0 to disable filter)
 
-=item B<p8> (I<dcblock>) apply DC blocking filter (0: No, 1: Yes)
-[optional; default is Yes.  Turn off for a bit more speed.]
+=item B<p8> (I<dcblock>) apply DC blocking filter (0: No, 1: Yes) [optional; default is Yes.  Turn off for a bit more speed.]
 
 =back
 

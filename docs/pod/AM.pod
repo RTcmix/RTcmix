@@ -53,13 +53,11 @@ The output of B<AM> can be either mono or stereo.
 
 =item B<p3> (I<ampmult>) amplitude multiplier
 
-=item B<p4> (I<modfreq>) modulation oscillator frequency in Hz
-(or 0 to use table 3)
+=item B<p4> (I<modfreq>) modulation oscillator frequency in Hz (or 0 to use table 3)
 
 =item B<p5> (I<inchan>) input channel [optional, default is 0]
 
-=item B<p6> (I<stereoloc>) percent (from 0 to 1) of input signal to place
-in left output channel [optional, default is 0.5 if output is stereo]
+=item B<p6> (I<stereoloc>) percent (from 0 to 1) of input signal to place in left output channel [optional, default is 0.5 if output is stereo]
 
 =back
 
