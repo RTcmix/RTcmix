@@ -35,9 +35,9 @@ double
 RTcmix::rtsetparams(float p[], int n_args, double pp[])
 {
    int         i, status;
-   int         verbose = get_print_option();
-   int         play_audio = get_bool_option(kOptionPlay);
-   int         record_audio = get_bool_option(kOptionRecord);
+   int         verbose = Option::print();
+   int         play_audio = Option::play();
+   int         record_audio = Option::record();
 #ifdef SGI
    static char *out_port_str = NULL;
 #endif /* SGI */
@@ -51,8 +51,8 @@ RTcmix::rtsetparams(float p[], int n_args, double pp[])
 
    SR = p[0];
    NCHANS = (int) p[1];
-   RTBUFSAMPS = n_args > 2 ? (int) p[2]
-                                 : (int) get_double_option(kOptionBufferFrames);
+   RTBUFSAMPS = n_args > 2 ? (int) p[2] : (int) Option::bufferFrames();
+   int numBuffers = Option::bufferCount();
 
    if (n_args > 3 && pp[3] != 0.0) {
 #ifdef SGI
@@ -84,7 +84,8 @@ RTcmix::rtsetparams(float p[], int n_args, double pp[])
    if (play_audio || record_audio) {
       int nframes = RTBUFSAMPS;
 		
-	  if (create_audio_devices(record_audio, play_audio, NCHANS, SR, &nframes) < 0)
+	  if (create_audio_devices(record_audio, play_audio, 
+	  						   NCHANS, SR, &nframes, numBuffers) < 0)
 	  	return -1;
 
       /* This may have been reset by driver. */

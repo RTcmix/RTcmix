@@ -27,6 +27,7 @@ bool Option::_exitOnError = false;	// we override this in main.cpp
 bool Option::_autoLoad = false;
 
 double Option::_bufferFrames = DEFAULT_BUFFER_FRAMES;
+int Option::_bufferCount = DEFAULT_BUFFER_COUNT;
 
 char Option::_device[DEVICE_MAX];
 char Option::_inDevice[DEVICE_MAX];
@@ -166,6 +167,13 @@ int Option::readConfigFile(const char *fileName)
 	else if (result != kConfigNoValueForKey)
 		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
+	key = kOptionBufferCount;
+	result = conf.getValue(key, dval);
+	if (result == kConfigNoErr)
+		bufferCount((int)dval);
+	else if (result != kConfigNoValueForKey)
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+
 	// string options .........................................................
 
 	char *sval;
@@ -260,6 +268,7 @@ int Option::writeConfigFile(const char *fileName)
 	// write double options
 	fprintf(stream, "\n# Number options: key = value\n");
 	fprintf(stream, "%s = %g\n", kOptionBufferFrames, bufferFrames());
+	fprintf(stream, "%s = %d\n", kOptionBufferCount, bufferCount());
 
 	// write string options
 	fprintf(stream, "\n# String options: key = \"quoted string\"\n");
@@ -429,6 +438,9 @@ double get_double_option(const char *option_name)
 	if (!strcmp(option_name, kOptionBufferFrames))
 		return Option::bufferFrames();
 
+	else if (!strcmp(option_name, kOptionBufferCount))
+		return Option::bufferCount();
+
 	assert(0 && "unsupported option name");
 	return 0;
 }
@@ -437,6 +449,8 @@ void set_double_option(const char *option_name, double value)
 {
 	if (!strcmp(option_name, kOptionBufferFrames))
 		Option::bufferFrames(value);
+	else if (!strcmp(option_name, kOptionBufferCount))
+		Option::bufferCount((int)value);
 	else
 		assert(0 && "unsupported option name");
 }

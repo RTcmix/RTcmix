@@ -26,6 +26,7 @@
 
 #define CONF_FILENAME ".rtcmixrc"
 #define DEFAULT_BUFFER_FRAMES 4096.0
+#define DEFAULT_BUFFER_COUNT 2
 
 // Option names.  These are the keys that appear in the .rtcmixrc file.
 // They're also the <option_name> used with the get_*_option C functions.
@@ -43,6 +44,7 @@
 
 // double options
 #define kOptionBufferFrames     "buffer_frames"
+#define kOptionBufferCount     "buffer_count"
 
 // string options
 #define kOptionDevice           "device"
@@ -98,6 +100,10 @@ public:
 	static double bufferFrames() { return _bufferFrames; }
 	static double bufferFrames(const double frames) { _bufferFrames = frames;
 													return _bufferFrames; }
+
+	static int bufferCount() { return _bufferCount; }
+	static int bufferCount(int count) { _bufferCount = count;
+													return _bufferCount; }
 	static bool autoLoad() { return _autoLoad; }
 	static bool autoLoad(const bool setIt) { _autoLoad = setIt;
 													return _autoLoad; }
@@ -142,6 +148,7 @@ private:
 	static bool _autoLoad;
 
 	static double _bufferFrames;
+	static int _bufferCount;
 
 	static char _device[];
 	static char _inDevice[];

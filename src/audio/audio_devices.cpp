@@ -27,9 +27,6 @@ char globalNetworkPath[128];			// Set by Minc/setnetplay.c
 AudioDevice *globalAudioDevice;			// Used by Minc/intraverse.C
 AudioDevice *globalOutputFileDevice;	// Used by rtsendsamps.C
 
-static const int numBuffers = 2;		// number of audio buffers to queue up
-
-
 // Return pointers to the most recently specified audio device strings.
 
 const char *get_audio_device_name()
@@ -61,7 +58,7 @@ const char *get_audio_outdevice_name()
 
 
 int
-create_audio_devices(int record, int play, int chans, float srate, int *buffersize)
+create_audio_devices(int record, int play, int chans, float srate, int *buffersize, int numBuffers)
 {
 	int status;
 	const char *inDeviceName = get_audio_indevice_name();

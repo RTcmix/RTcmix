@@ -6,7 +6,7 @@ AudioDevice *createAudioDevice(const char *inputDesc, const char *outputDesc, bo
 extern "C" {
 #endif
 
-int create_audio_devices(int record, int play, int chans, float sr, int *buffersize);
+int create_audio_devices(int record, int play, int chans, float sr, int *buffersize, int numBuffers);
 
 int create_audio_file_device(const char *outfilename,
 							 int header_type,

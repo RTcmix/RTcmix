@@ -18,6 +18,7 @@ enum ParamType {
 	DEVICE,
 	INDEVICE,
 	OUTDEVICE,
+	BUFFER_COUNT,
 	AUDIO,
 	RECORD,
 	CLOBBER,
@@ -38,6 +39,7 @@ static Param param_list[] = {
 	{ "DEVICE", DEVICE, false},
 	{ "INDEVICE", INDEVICE, false},
 	{ "OUTDEVICE", OUTDEVICE, false},
+	{ "BUFFER_COUNT", BUFFER_COUNT, false},
 	{ "AUDIO_ON", AUDIO, true},
 	{ "AUDIO_OFF", AUDIO, false},
 	{ "RECORD_ON", RECORD, true},
@@ -138,6 +140,20 @@ double RTcmix::set_option(float *p, int nargs, double pp[])
 				 return -1.0;
 			}
 			Option::outDevice(p);
+			break;
+		case BUFFER_COUNT:
+			if (p == NULL) {
+				 die("set_option", "No value for \"buffer_count\"");
+				 return -1.0;
+			}
+			else {
+				int count = atoi(p);
+				if (count <= 0) {
+					 die("set_option", "\"buffer_count\" value must be > 0");
+					 return -1.0;
+				}
+				Option::bufferCount(count);
+			}
 			break;
 		case AUDIO:
 			Option::play(param_list[j].value);

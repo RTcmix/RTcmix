@@ -253,10 +253,11 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 			if (rtsetparams_called) {
 				// If audio *playback* was disabled, but there is a request for
 				// input audio, create the audio input device here.
-				if (!audio_input_is_initialized() && !get_bool_option(kOptionPlay)) {
+				if (!audio_input_is_initialized() && !Option::play()) {
 					int nframes = RTBUFSAMPS;
-					if (create_audio_devices(get_bool_option(kOptionRecord), 0,
-												NCHANS, SR, &nframes) < 0) {
+					if (create_audio_devices(Option::record(), 0,
+												NCHANS, SR, &nframes,
+												Option::bufferCount()) < 0) {
 						rtrecord = 0;	/* because we failed */
 						return -1;
 					}
@@ -265,7 +266,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 						printf("Input audio set:  %g sampling rate, %d channels\n", SR, NCHANS);
 				}
 				// If record disabled during rtsetparams(), we cannot force it on here.
-				else if (!get_bool_option(kOptionRecord)) {
+				else if (!Option::record()) {
 					die("rtinput", "Audio already configured for playback only via rtsetparams()");
 					rtrecord = 0;	/* because we failed */
 					return -1;
@@ -273,11 +274,11 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 			}
 			else {
 				// This allows rtinput("AUDIO") to turn on record
-				set_bool_option(kOptionRecord, 1);
+				Option::record(1);
 				rtrecord = 1;
 			}
 #else		// !NEW_CODE
-			if (rtsetparams_called && !get_bool_option(kOptionRecord)) {
+			if (rtsetparams_called && !Option::record()) {
 				die("rtinput", "Full duplex was not enabled for rtsetparams. "
 					"Set option \"full_duplex\" before calling rtsetparams()");
 				rtrecord = 0;	/* because we failed */
