@@ -26,6 +26,19 @@ Performance
 Other
 -----
 
+ - Some Minc functions have the same names as internal Perl functions.
+   For some of these (e.g., system and exit), we just arrange for the
+   Perl ones to be used, by putting these names in "funcexcept" before
+   making the RT extension.  But for others that won't work well.  For
+   example, the RTcmix and Perl reset functions do completely different
+   things.  To be sure you're getting the RTcmix reset, use the alias
+   "control_rate" instead of "reset".  (The alias is installed in
+   sys/ug_intro.c.)  Other functions need work.  For example, rand()
+   and srand() exist in both RTcmix and Perl.  I can imagine someone
+   wanting to use both in different situations.  Probably we should
+   list these names in "funcexcept" and provide aliases for the RTcmix
+   versions (in sys/ug_intro.c) -- perhaps "rtsrand" and "rtrand".
+
  - A way of registering RTcmix function names that aren't part of 
    the installation tree, i.e., user functions?
 
