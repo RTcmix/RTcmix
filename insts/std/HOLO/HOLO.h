@@ -7,6 +7,7 @@ class HOLO : public Instrument {
 	float *pastsamps2[2];
 	float amp, *in, *out;
 	float xtalkAmp;
+	int skip, count;
 
 public:
 	HOLO();

@@ -68,6 +68,7 @@ const int nCoeffs = sizeof(sameSideCoeffs) / sizeof(sameSideCoeffs[0]);
 
 HOLO::HOLO() : Instrument(), in(NULL), out(NULL)
 {
+	count = 0;
     pastsamps[0] = pastsamps[1] = NULL;
     pastsamps2[0] = pastsamps2[1] = NULL;
 }
@@ -130,6 +131,8 @@ int HOLO::init(double p[], int n_args)
 
 	intap = 0;
 
+	skip = (int)(SR / (float) resetval);
+
 	return 0;
 }
 
@@ -145,11 +148,17 @@ int HOLO::run()
 	int i, j;
 	float output[2];
 
-
 	int rsamps = framesToRun()*inputChannels();
 	rtgetin(in, this, rsamps);
 
 	for (i = 0; i < rsamps; i += 2) {
+		if (--count <= 0) {
+			double p[5];
+			update(p, 5);
+			amp = p[3];
+			xtalkAmp = (p[4] != 0.0) ? p[4] : 1.0;
+			count = skip;
+		}
 	    for (int n = 0; n < 2; n++) {
 		    int c;
 			output[n] = 0.0;
