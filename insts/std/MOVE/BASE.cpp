@@ -351,7 +351,7 @@ int BASE::run()
 			register float *outptr = &this->outbuf[i*2];
 			DBG1(printf("  flushing reverb: i = %d, bufsamps = %d\n", i, bufsamps));
 			for (int n = 0; n < bufsamps; n++) {
-				if (m_rvbamp >= 0.0) {
+				if (m_rvbamp > 0.0) {
 					double rmPair[2];
 					double rvbPair[2];
 					rmPair[0] = 0.0;
@@ -606,22 +606,24 @@ void BASE::matrix_mix()
 /* delpipe is a delay with a variable interpolated tap, used by reverb. */
 
 inline double
-delpipe(double sig, long counter, double nsdel, int delsize, double *delay)
+delpipe(double sig, int *counter, double nsdel, int delsize, double *delay)
 {
    register int intap, tap1, tap2, del1;
 
-   intap = counter;
-   while (intap >= delsize)
+   intap = *counter;
+   if (intap >= delsize)
        intap -= delsize;
    delay[intap] = sig;                    /* put samp into delay */
    del1 = (int)nsdel;
    tap1 = intap - del1;
-   while (tap1 < 0)
+   if (tap1 < 0)
        tap1 += delsize;
    tap2 = tap1 - 1;
-   while (tap2 < 0)
+   if (tap2 < 0)
        tap2 += delsize;
-
+   
+   *counter = ++intap;			// increment and store
+  
    double frac = nsdel - del1;
    return (delay[tap1] + (delay[tap2] - delay[tap1]) * frac);
 }
@@ -629,7 +631,7 @@ delpipe(double sig, long counter, double nsdel, int delsize, double *delay)
 /* -------------------------------------------------------------- Allpass --- */
 /* Allpass is the allpass filter used by reverb */
 inline double
-Allpass(double sig, long counter, double *data)
+Allpass(double sig, int *counter, double *data)
 {
    register int nsdel, intap, length, outtap;
    double gsig;
@@ -637,8 +639,8 @@ Allpass(double sig, long counter, double *data)
 
    nsdel = (int)data[1];
    length = nsdel + 1;
-   intap = counter;
-   while (intap >= length)
+   intap = *counter;
+   if (intap >= length)
        intap -= length;
    outtap = intap - nsdel;
    if (outtap < 0)
@@ -649,8 +651,9 @@ Allpass(double sig, long counter, double *data)
    gsig = data[0] * (sig - delay[outtap]);
    delay[intap] = sig + gsig;
 
+   *counter = ++intap;	// increment and store
+   
    /* Output = delayed out + gain * (sig - delayed out)  */
-
    return (delay[outtap] + gsig);
 }
 
@@ -678,7 +681,7 @@ void BASE::RVB(double *input, double *output, long counter)
             put samp into delay & get new delayed samp out
          */
          double delay = Nsdelay[i][j] + randi(&rvb->Rand_info[0]);
-         delsig = delpipe(sig, counter, delay, rvbdelsize, &rvb->Rvb_del[0]);
+         delsig = delpipe(sig, &rvb->deltap, delay, rvbdelsize, &rvb->Rvb_del[0]);
 
 #ifdef USE_BUGGY_CODE
          if (i == 1 && j > 0)
@@ -691,7 +694,7 @@ void BASE::RVB(double *input, double *output, long counter)
          output[i] += rvb->delout;
       }
       /* run outputs through Allpass filter */
-      output[i] = Allpass(output[i], counter, Allpass_del[i]);
+      output[i] = Allpass(output[i], &allpassTap[i], Allpass_del[i]);
    }
 
    /* redistribute delpipe outs into delpipe ins */
@@ -895,6 +898,7 @@ void BASE::rvb_reset(double *m_tapDelay)
 		for (j = 0, k = 0; j < 6; ++j) {
 			ReverbData *r = &m_rvbData[i][j];
 			r->delin = r->delout = 0.0;
+			r->deltap = 0;	// index for each delay unit
 			r->Rvb_air[2] = 0.0;
 			register double *point = r->Rvb_del;
 			while (k < rvbdelsize)
@@ -902,6 +906,7 @@ void BASE::rvb_reset(double *m_tapDelay)
 		}
 		for (j = 2; j < 502; ++j)
 			Allpass_del[i][j] = 0.0;
+		allpassTap[i] = 0; 	// indices for allpass delay
 	}
 
 	/* reset tap delay for move */
