@@ -5,7 +5,7 @@ TOPDIR = /musr
 CMIXDIR = $(TOPDIR)/RTcmix
 
 # The dir that will contain links to the instrument dynamic shared objects
-LIBDESTDIR = $(TOPDIR)/lib
+LIBDESTDIR = $(TOPDIR)/shlib
 #or this: LIBDESTDIR = $(CMIXDIR)/shlib
 
 # add new packages to this list (e.g., insts.std, insts.dev)
