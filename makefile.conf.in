@@ -60,13 +60,17 @@ PYTHON = python
 # to terminate the application because of an RTcmix error
 CMIX_FLAGS += -DEXIT_ON_ERROR
 
+# This is the default for non-Linux systems -- leave it, and override below
+# if you are running LINUX
+AUDIODRIVER=AUTO
+
 ###############################################################
 # Linux sound driver flags -- ignore for Irix and Mac OS X
 # It doesn't matter how any of these are set for Irix and Mac OS X.
-# The Linux flags should work for FreeBSD, using OSS or an emulation of the OSS API, or ALSA if
-# it is installed.
+# The Linux flags should work for FreeBSD, using OSS or an emulation of 
+# the OSS API, or ALSA if it is installed.
 
-# Linux Sound driver API
+# Linux Sound driver API -- overrides default
 #AUDIODRIVER=ALSA
 AUDIODRIVER=OSS
 
