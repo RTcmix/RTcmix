@@ -1,0 +1,2 @@
+echo od -Ad -tcx1 $1
+od -Ad -tcx1 $1
