@@ -1,19 +1,19 @@
 include ../package.conf
 
-OBJS = mrotate.o
+NAME = mrotate
+
+OBJS = $(NAME).o
 CMIXOBJS += $(RTPROFILE_O)
-#CFLAGS += -fPIC
-#CXXFLAGS += -fPIC 
-PROGS = mrotate libmrotate.so
+PROGS = $(NAME) lib$(NAME).so
 
-all: libmrotate.so
+all: lib$(NAME).so
 
-standalone: mrotate
+standalone: $(NAME)
 
-libmrotate.so:  $(UGENS_H) $(OBJS)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+lib$(NAME).so:  $(UGENS_H) $(OBJS)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
-mrotate:  $(UGENS_H) $(OBJS) $(CMIXOBJS)
+$(NAME):  $(UGENS_H) $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
 clean:

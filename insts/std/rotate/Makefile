@@ -1,19 +1,19 @@
 include ../package.conf
 
-OBJS = rotate.o
+NAME = rotate
+
+OBJS = $(NAME).o
 CMIXOBJS += $(RTPROFILE_O)
-#CFLAGS += -fPIC
-#CXXFLAGS += -fPIC 
-PROGS = rotate librotate.so
+PROGS = $(NAME) lib$(NAME).so
 
-all: librotate.so
+all: lib$(NAME).so
 
-standalone: rotate
+standalone: $(NAME)
 
-librotate.so:  $(UGENS_H) $(OBJS)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+lib$(NAME).so:  $(UGENS_H) $(OBJS)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
-rotate:  $(UGENS_H) $(OBJS) $(CMIXOBJS)
+$(NAME):  $(UGENS_H) $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
 clean:

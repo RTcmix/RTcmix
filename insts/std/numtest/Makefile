@@ -1,19 +1,19 @@
 include ../package.conf
 
-OBJS = numtest.o
+NAME = numtest
+
+OBJS = $(NAME).o
 CMIXOBJS += $(RTPROFILE_O)
-#CFLAGS += -fPIC
-#CXXFLAGS += -fPIC 
-PROGS = numtest libnumtest.so
+PROGS = $(NAME) lib$(NAME).so
 
-all:  libnumtest.so
+all:  lib$(NAME).so
 
-standalone: numtest
+standalone: $(NAME)
 
-libnumtest.so:  $(UGENS_H) $(OBJS)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+lib$(NAME).so:  $(UGENS_H) $(OBJS)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
-numtest:  $(UGENS_H) $(OBJS) $(CMIXOBJS)
+$(NAME):  $(UGENS_H) $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
 clean:

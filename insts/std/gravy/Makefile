@@ -1,17 +1,19 @@
 include ../package.conf
 
-OBJS = gravy.o
+NAME = gravy
+
+OBJS = $(NAME).o
 CMIXOBJS += $(RTPROFILE_O)
-PROGS = gravy libgravy.so
+PROGS = $(NAME) lib$(NAME).so
 
-all: libgravy.so
+all: lib$(NAME).so
 
-standalone:  gravy
+standalone:  $(NAME)
 
-libgravy.so:  $(UGENS_H) $(OBJS)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+lib$(NAME).so:  $(UGENS_H) $(OBJS)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
-gravy:  $(UGENS_H) $(OBJS) $(CMIXOBJS)
+$(NAME):  $(UGENS_H) $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
 clean:

@@ -1,19 +1,19 @@
 include ../package.conf
 
-OBJS = fft.o convolve.o
+NAME = convolve
+
+OBJS = fft.o $(NAME).o
 CMIXOBJS += $(RTPROFILE_O)
-#CFLAGS += -fPIC
-#CXXFLAGS += -fPIC
-PROGS = convolve libconvolve.so
+PROGS = $(NAME) lib$(NAME).so
 
-all: libconvolve.so
+all: lib$(NAME).so
 
-standalone: convolve
+standalone: $(NAME)
 
-libconvolve.so:  $(UGENS_H) $(OBJS)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+lib$(NAME).so:  $(UGENS_H) $(OBJS)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
-convolve: $(UGENS_H) $(OBJS) $(CMIXOBJS)
+$(NAME): $(UGENS_H) $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
 clean:
