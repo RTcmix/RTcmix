@@ -56,8 +56,8 @@ dump_gen_to_raw_file(float *buf, int nsamps)
    If <inchan> is missing, reads all channels from the file; otherwise,
    reads just the channel specified by <inchan> (with zero as first chan).
 
-   As usual, if the slot number is negative, the table will be rescaled
-   to fit in the range [-1,1].
+   As usual, if the slot number is positive, the table will be rescaled
+   to fit in the range [-1,1]; if it's negative, it will not be rescaled.
 
    Returns to Minc the number of sample frames read.
 
