@@ -1,20 +1,44 @@
 include ../package.conf
 
-OBJS = WAVETABLE.o
+NAME = WAVETABLE
+
+OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
-PROGS = WAVETABLE libWAVETABLE.so
+PROGS = lib$(NAME).so $(NAME)
 
-all: libWAVETABLE.so
+.PHONY: all standalone install dso_install standalone_install \
+uninstall dso_uninstall standalone_uninstall clean cleanall
 
-standalone:  WAVETABLE
+all: lib$(NAME).so
 
-libWAVETABLE.so: $(OBJS) $(GENLIB)
+standalone: $(NAME)
+
+lib$(NAME).so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
-WAVETABLE: $(OBJS) $(CMIXOBJS)
+$(NAME): $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H)
+$(OBJS): $(INSTRUMENT_H) $(NAME).h
+
+install: dso_install
+
+dso_install: lib$(NAME).so
+	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
+
+standalone_install: standalone
+	$(INSTALL) $(NAME) $(DESTDIR)
+
+uninstall: dso_uninstall standalone_uninstall
+
+dso_uninstall:
+	$(RM) $(LIBDESTDIR)/lib$(NAME).so
+
+standalone_uninstall:
+	$(RM) $(DESTDIR)/$(NAME)
 
 clean:
-	$(RM) *.o $(OBJS) $(PROGS)
+	$(RM) $(OBJS) $(PROGS)
+
+cleanall: clean uninstall
+
