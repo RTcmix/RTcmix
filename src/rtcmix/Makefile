@@ -74,7 +74,6 @@ rtsendsamps.cpp \
 rtsetinput.cpp \
 rtsetoutput.cpp \
 rtwritesamps.cpp \
-setnetplay.cpp \
 set_option.cpp \
 sockit.cpp \
 table.cpp
@@ -104,14 +103,12 @@ ifeq ($(ARCH), MACOSX_10.0)
    COMMON_OBJS += osx_workaround.o
 endif
 
-RTLIB = librtcmix.a
-
 LIBCONF = ../conf/libconf.a
 LIBMINC = ../parser/minc/libminc.a
 AUDIOLIB = ../audio/librtaudio.a
 SNDLIB = ../sndlib/sndlib.a
 
-LIBS = $(RTLIB) $(AUDIOLIB) $(SNDLIB) $(LIBCONF) $(LIBDIR)/libgen.a
+LIBS = $(AUDIOLIB) $(SNDLIB) $(LIBCONF) $(LIBDIR)/libgen.a
 
 PROGS = MIX
 TARGETS = $(RTLIB) RTcmix.o main.o $(PROGS)
@@ -138,7 +135,15 @@ ifeq ($(PYTHON_SUPPORT), TRUE)
    endif
 endif
 
+# This workaround converts the linker path "/usr/local/lib" to "/usr/lib" for machines
+# which have perl installed in /usr/bin, but have the broken config which adds the
+# wrong linker path anyway.
+
+ifeq ($(PERL_IN_LOCAL), TRUE)
 PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts`
+else
+PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts | sed 's/usr\/local/usr/'`
+endif
 
 all: $(TARGETS)
 
@@ -165,10 +170,16 @@ $(AUDIOLIB):
 loader.o: loader.c
 	$(CC) $(CFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c loader.c
 
-# rules for librtcmix.a
+# rules for creating dynamic shared librtcmix library
 
-$(RTLIB): depend $(COMMON_OBJS) $(LIBMINC) $(LIBCONF)
-	ar q $@ $(COMMON_OBJS) 
+ifeq ($(ARCH), MACOSX)
+RTLIB_SHARED_FLAGS = -flat_namespace -undefined suppress -dynamiclib -install_name $(LIBDIR)/$@
+else
+RTLIB_SHARED_FLAGS = $(SHARED_LDFLAGS)
+endif
+
+$(RTLIB): depend $(COMMON_OBJS) $(LIBMINC) $(LIBS)
+	$(CXX) $(RTLIB_SHARED_FLAGS) -o $@ $(COMMON_OBJS) $(LIBMINC) $(LIBS) $(SYSLIBS)
 
 Option.o: Option.cpp Option.h
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c $< -o $@
@@ -181,17 +192,16 @@ heap/rtHeap.o:
 
 # rules for three executables we build
 
-MIX: main.o $(M_O) $(LIBMINC) $(LIBS) $(PROFILE_O) $(WORKAROUND)
-	$(CXX) -o MIX $(WORKAROUND) $(DYN) main.o $(PROFILE_O) \
-		$(M_O) $(LIBMINC) $(LIBS) $(LDFLAGS)
+MIX: main.o $(M_O) $(LIBS) $(RTLIB) $(PROFILE_O) $(WORKAROUND)
+	$(CXX) -o MIX $(WORKAROUND) $(DYN) main.o $(PROFILE_O) $(M_O) -L. $(LDFLAGS)
 
-PMIX: main.o $(P_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
+PMIX: main.o $(P_O) $(LIBS) $(RTLIB) $(PROFILE_O) $(WORKAROUND)
 	$(CXX) -o PMIX $(WORKAROUND) $(DYN) main.o $(PROFILE_O) \
-		$(P_O) $(LIBS) $(LDFLAGS) $(PERL_LDFLAGS)
+		$(P_O) -L. $(LDFLAGS) $(PERL_LDFLAGS)
 
-PYMIX: main.o $(PY_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
+PYMIX: main.o $(PY_O) $(LIBS) $(RTLIB) $(PROFILE_O) $(WORKAROUND)
 	$(CXX) -o PYMIX $(WORKAROUND) $(DYN) main.o $(PROFILE_O) \
-		$(PY_O) $(LIBS) $(LDFLAGS) $(PYEXT) $(PYTHONLIBS)
+		$(PY_O) -L. $(LDFLAGS) $(PYEXT) $(PYTHONLIBS)
 
 .PHONY: all standalone install standalone_install \
 		uninstall standalone_uninstall clean cleanall
