@@ -23,7 +23,6 @@ install:
 	  ( cd $$DIR; echo "making install in $$DIR..."; \
 	  ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR); ) \
 	done
-	@ln -fs `pwd`/MIX/MIX $(DESTDIR)/CMIX
 
 dsos:  all
 
