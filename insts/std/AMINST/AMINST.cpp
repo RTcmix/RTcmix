@@ -71,7 +71,7 @@ int AMINST::init(double p[], int n_args)
 	amparr = floc(1);
 	if (amparr) {
 		int lenamp = fsize(1);
-		tableset(dur, lenamp, amptabs);
+		tableset(SR, dur, lenamp, amptabs);
 	}
 
 	modamparr = NULL;
@@ -81,7 +81,7 @@ int AMINST::init(double p[], int n_args)
 			return die("AMINST", "Either use the mod. amp pfield (p6) or "
 							"make an old-style gen function in slot 2.");
 		int len = fsize(2);
-		tableset(dur, len, modamptabs);
+		tableset(SR, dur, len, modamptabs);
 	}
 
 	cartable = NULL;
@@ -98,7 +98,7 @@ int AMINST::init(double p[], int n_args)
 						"or make an old-style gen function in slot 3.");
 		tablelen = fsize(3);
 	}
-	carosc = new Ooscili(carfreq, cartable, tablelen);
+	carosc = new Ooscili(SR, carfreq, cartable, tablelen);
 
 	modtable = NULL;
 	tablelen = 0;
@@ -114,7 +114,7 @@ int AMINST::init(double p[], int n_args)
 						"or make an old-style gen function in slot 4.");
 		tablelen = fsize(4);
 	}
-	modosc = new Ooscili(modfreq, modtable, tablelen);
+	modosc = new Ooscili(SR, modfreq, modtable, tablelen);
 
 	skip = (int) (SR / (float) resetval);
 

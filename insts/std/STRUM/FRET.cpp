@@ -38,7 +38,7 @@ int FRET::init(double p[], int n_args)
    amptable = floc(1);
 	if (amptable) {
 		int amplen = fsize(1);
-		tableset(dur, amplen, amptabs);
+		tableset(SR, dur, amplen, amptabs);
 	}
 	else {
 		advise("FRET", "Setting phrase curve to all 1's.");

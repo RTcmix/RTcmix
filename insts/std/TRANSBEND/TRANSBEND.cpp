@@ -114,7 +114,7 @@ int TRANSBEND :: init(double p[], int n_args)
 #ifdef DEBUG
       printf("average interval: %g\n", interval);
 #endif
-      tableset(dur, plen, ptabs);
+      tableset(SR, dur, plen, ptabs);
    }
    else {
       die("TRANSBEND", "Unable to load pitch curve (table %d)!", pgen);
@@ -143,7 +143,7 @@ int TRANSBEND :: init(double p[], int n_args)
    amptable = floc(1);
    if (amptable) {
       int amplen = fsize(1);
-      tableset(dur, amplen, tabs);
+      tableset(SR, dur, amplen, tabs);
    }
    else
       advise("TRANSBEND", "Setting phrase curve to all 1's.");

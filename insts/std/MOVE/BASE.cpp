@@ -137,7 +137,7 @@ int BASE::init(double p[], int n_args)
    amparray = floc(1);
    if (amparray) {
       int amplen = fsize(1);
-      tableset(m_dur, amplen, amptabs);          /* controls input dur only */
+      tableset(SR, m_dur, amplen, amptabs);      /* controls input dur only */
    }
    else
       advise(name(), "Setting phrase curve to all 1's.");

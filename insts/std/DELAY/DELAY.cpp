@@ -77,7 +77,7 @@ int DELAY::init(double p[], int n_args)
 	amptable = floc(1);
 	if (amptable) {
 		int amplen = fsize(1);
-		tableset(dur, amplen, amptabs);
+		tableset(SR, dur, amplen, amptabs);
 	}
 
 	skip = (int) (SR / (float) resetval);

@@ -35,7 +35,7 @@ int BSFLUTE::init(double p[], int n_args)
 	amparr = floc(1);
 	if (amparr) {
 		int len = fsize(1);
-		tableset(p[1], len, amptabs);
+		tableset(SR, p[1], len, amptabs);
 	}
 	else {
 		die("BSFLUTE", "You haven't made the noise amp envelope (table 1).");
@@ -45,7 +45,7 @@ int BSFLUTE::init(double p[], int n_args)
 	oamparr = floc(2);
 	if (oamparr) {
 		int len = fsize(2);
-		tableset(p[1], len, oamptabs);
+		tableset(SR, p[1], len, oamptabs);
 	}
 	else {
 		die("BSFLUTE", "You haven't made the output amp envelope (table 2).");
@@ -55,7 +55,7 @@ int BSFLUTE::init(double p[], int n_args)
 	pcurve1 = floc(3);
 	if (pcurve1) {
 		int len = fsize(3);
-		tableset(p[1], len, ptabs1);
+		tableset(SR, p[1], len, ptabs1);
 	}
 	else {
 		die("BSFLUTE", "You haven't made the pitch-tracking curve for "
@@ -66,7 +66,7 @@ int BSFLUTE::init(double p[], int n_args)
 	pcurve2 = floc(4);
 	if (pcurve2) {
 		int len = fsize(4);
-		tableset(p[1], len, ptabs2);
+		tableset(SR, p[1], len, ptabs2);
 	}
 	else {
 		die("BSFLUTE", "You haven't made the pitch-tracking curve for "

@@ -236,7 +236,7 @@ int LPCPLAY::localInit(double p[], int n_args)
 	// Finish the initialization
 	
 	float *cpoint = _coeffs + 4;
-	evset(getdur(), _risetime, _decaytime, ENV_SLOT, _evals);
+	evset(SR, getdur(), _risetime, _decaytime, ENV_SLOT, _evals);
 
 	_frames = frameCount;
 	_frame1 = startFrame;
@@ -302,7 +302,7 @@ int LPCPLAY::localInit(double p[], int n_args)
 				_pchvals[i-startFrame] *= transp;
 		}
 	}
-	tableset(getdur(), frameCount, _tblvals);
+	tableset(SR, getdur(), frameCount, _tblvals);
 //	actualweight = weight(startFrame,endFrame,_thresh);
 	float actualcps = cpspch(ABS(_pitch));
 	
@@ -386,7 +386,7 @@ int LPCPLAY::run()
 			*/
 			float cf = (_cf_fact < 20.0) ? _cf_fact*cps : _cf_fact;
 			float bw = (_bw_fact < 20.0) ? cf * _bw_fact : _bw_fact;
-			rszset(cf, bw, 1., _rsnetc);
+			rszset(SR, cf, bw, 1., _rsnetc);
 			/* printf("%f %f %f %f\n",_cf_fact*cps,
 				_bw_fact*_cf_fact*cps,_cf_fact,_bw_fact,cps); */
 		}
@@ -711,7 +711,7 @@ int LPCIN::run()
 			*/
 			float cf = _cf_fact;
 			float bw = (_bw_fact < 20.0) ? cf * _bw_fact : _bw_fact;
-			rszset(cf, bw, 1., _rsnetc);
+			rszset(SR, cf, bw, 1., _rsnetc);
 			/* printf("%f %f %f %f\n",_cf_fact*cps,
 				_bw_fact*_cf_fact*cps,_cf_fact,_bw_fact,cps); */
 		}

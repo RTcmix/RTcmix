@@ -87,7 +87,7 @@ int AM::init(double p[], int n_args)
 	amptable = floc(1);
 	if (amptable) {
 		int amplen = fsize(1);
-		tableset(dur, amplen, amptabs);
+		tableset(SR, dur, amplen, amptabs);
 	}
 
 	double *wavetable = NULL;
@@ -106,13 +106,13 @@ int AM::init(double p[], int n_args)
 	}
 
 	modfreq = p[4];
-	modosc = new Ooscili(modfreq, wavetable, tablelen);
+	modosc = new Ooscili(SR, modfreq, wavetable, tablelen);
 
 	if (modfreq == 0.0) {
 		freqtable = floc(3);
 		if (freqtable) {
 			int len = fsize(3);
-      	tableset(dur, len, freqtabs);
+      	tableset(SR, dur, len, freqtabs);
 		}
 		else
 			return die("AM", "If p4 is zero, old-style gen table 3 must "

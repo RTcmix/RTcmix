@@ -462,7 +462,7 @@ setwindow(float p[], int n_args)
 	int number = p[0];
 
 	advise("convolve", "Creating window %d.", number);
-	tableset(p[1],SIZE,tabs[number]);
+	tableset(SR, p[1],SIZE,tabs[number]);
 	setline(&p[2],n_args-2,SIZE,array[number]);
 	haswindow=1;
 
@@ -481,7 +481,7 @@ setwarp(float p[], int n_args)
 	int number = p[0];
 
 	advise("convolve", "Creating warp table %d.", number);
-	tableset(p[1],SIZE,warptabs[number]);
+	tableset(SR, p[1],SIZE,warptabs[number]);
 	setline(&p[2],n_args-2,SIZE,warparray[number]);
 
 	return 0.0;
@@ -516,7 +516,7 @@ setrange(float p[], int n_args)
 	int number = p[0];
 
 	advise("convolve", "Creating range table %d.", number);
-	tableset(p[1],SIZE,rangetabs[number]);
+	tableset(SR, p[1],SIZE,rangetabs[number]);
 	setline(&p[2],n_args-2,SIZE,rangearray[number]);
 
 	return 0.0;
@@ -552,7 +552,7 @@ setring(float p[], int n_args)
 	int number = p[0];
 
 	advise("convolve", "Creating ring table %d.", number);
-	tableset(p[1],SIZE,ringtabs[number]);
+	tableset(SR, p[1],SIZE,ringtabs[number]);
 	setline(&p[2],n_args-2,SIZE,ringarray[number]);
 
 	return 0.0;
@@ -586,7 +586,7 @@ double
 setdry(float p[], int n_args)
 {
 	advise("convolve", "Creating dry table.");
-	tableset(p[0],SIZE,drytabs);
+	tableset(SR, p[0],SIZE,drytabs);
 	setline(&p[1],n_args-1,SIZE,dryarray);
 
 	return 0.0;

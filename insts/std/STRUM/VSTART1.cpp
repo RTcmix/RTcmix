@@ -69,7 +69,7 @@ int VSTART1::init(double p[], int n_args)
 	amptable = floc(1);
 	if (amptable) {
 		int amplen = fsize(1);
-		tableset(p[1], amplen, amptabs);
+		tableset(SR, p[1], amplen, amptabs);
 	}
 	else {
 		advise("VSTART1", "Setting phrase curve to all 1's.");
@@ -96,7 +96,7 @@ int VSTART1::init(double p[], int n_args)
 		return(DONT_SCHEDULE);
 	}
 	elen = fsize(3);
-	tableset(p[1], elen, tab);
+	tableset(SR, p[1], elen, tab);
 
 	dgain = p[5];
 	fbgain = p[6]/dgain;

@@ -33,7 +33,7 @@ int CLAR::init(double p[], int n_args)
 	amparr = floc(1);
 	if (amparr) {
 		int lenamp = fsize(1);
-		tableset(p[1], lenamp, amptabs);
+		tableset(SR, p[1], lenamp, amptabs);
 	}
 	else
 		advise("CLAR", "Setting noise amp curve to all 1's.");
@@ -41,7 +41,7 @@ int CLAR::init(double p[], int n_args)
 	oamparr = floc(2);
 	if (oamparr) {
 		int olenamp = fsize(2);
-		tableset(p[1], olenamp, oamptabs);
+		tableset(SR, p[1], olenamp, oamptabs);
 	}
 	else
 		advise("CLAR", "Setting output amp curve to all 1's.");

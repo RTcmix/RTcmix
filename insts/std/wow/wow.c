@@ -59,7 +59,7 @@ wow(float p[], int n_args)
 	amparr = floc(1);
 	if (amparr) {
 		int lenamp = fsize(1);
-		tableset(p[2], lenamp, amptabs);
+		tableset(SR, p[2], lenamp, amptabs);
 	}
 	else
 		advise("wow", "Setting phrase curve to all 1's.");

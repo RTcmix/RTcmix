@@ -77,7 +77,7 @@ int REVMIX::init(double p[], int n_args)
    amparray = floc(1);
    if (amparray) {
       int amplen = fsize(1);
-      tableset(dur, amplen, amptabs);
+      tableset(SR, dur, amplen, amptabs);
    }
 
    skip = (int) (SR / (float) resetval);

@@ -92,8 +92,8 @@ int FMINST::init(double p[], int n_args)
 		tablelen = fsize(WAVET_GEN_SLOT);
 	}
 
-	carosc = new Ooscili(carfreq, wavetable, tablelen);
-	modosc = new Ooscili(modfreq, wavetable, tablelen);
+	carosc = new Ooscili(SR, carfreq, wavetable, tablelen);
+	modosc = new Ooscili(SR, modfreq, wavetable, tablelen);
 
 	if (n_args < 10) {		// no p9 guide PField, must use gen table
 		indexenv = floc(INDEX_GEN_SLOT);
@@ -101,13 +101,13 @@ int FMINST::init(double p[], int n_args)
 			return die("FMINST", "Either use the index guide pfield (p9) or make "
                     "an old-style gen function in slot %d.", INDEX_GEN_SLOT);
 		int len = fsize(INDEX_GEN_SLOT);
-		tableset(dur, len, indtabs);
+		tableset(SR, dur, len, indtabs);
 	}
 
 	ampenv = floc(AMP_GEN_SLOT);
 	if (ampenv) {
 		int lenamp = fsize(AMP_GEN_SLOT);
-		tableset(dur, lenamp, amptabs);
+		tableset(SR, dur, lenamp, amptabs);
 	}
 
 	skip = (int) (SR / (float) resetval);

@@ -45,7 +45,7 @@ gravy(float p[], int n_args)
 	if (winfunc == NULL)
 		die("gravy", "You haven't made a window envelope function (table 1).");
 	winsize = fsize(1);
-	tableset(p[3], winsize, wintabs);
+	tableset(SR, p[3], winsize, wintabs);
 
 	inchans = sfchans(&sfdesc[0]);
 	outchans = sfchans(&sfdesc[1]);

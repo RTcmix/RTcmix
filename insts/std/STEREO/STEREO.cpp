@@ -67,7 +67,7 @@ int STEREO::init(double p[], int n_args)
 	amptable = floc(1);
 	if (amptable) {
 		int amplen = fsize(1);
-		tableset(p[2], amplen, tabs);
+		tableset(SR, p[2], amplen, tabs);
 	}
 	amp = p[3];
 

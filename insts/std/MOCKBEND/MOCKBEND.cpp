@@ -120,7 +120,7 @@ int MOCKBEND :: init(double p[], int n_args)
 #ifdef DEBUG
       printf("average interval: %g\n", interval);
 #endif
-      tableset(dur, plen, ptabs);
+      tableset(SR, dur, plen, ptabs);
    }
    else {
       die("MOCKBEND", "Unable to load pitch curve!");
@@ -149,7 +149,7 @@ int MOCKBEND :: init(double p[], int n_args)
    amptable = floc(1);
    if (amptable) {
       int amplen = fsize(1);
-      tableset(dur, amplen, tabs);
+      tableset(SR, dur, amplen, tabs);
    }
    else
       advise("MOCKBEND", "Setting phrase curve to all 1's.");

@@ -41,7 +41,7 @@ rotate(float p[], int n_args)
 	amptable = floc(1);
 	if (amptable) {
 		int alen = fsize(1);
-		tableset(p[2], alen, amptabs);
+		tableset(SR, p[2], alen, amptabs);
 	}
 	else
 		advise("rotate", "Setting phrase curve to all 1's.");

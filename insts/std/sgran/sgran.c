@@ -84,7 +84,7 @@ sgran(float p[], int n_args)
 	array = floc(1);             /* used to be setline  -JGG */
 	if (array) {
 		int amplen = fsize(1);
-		tableset(p[1], amplen, tabs);
+		tableset(SR, p[1], amplen, tabs);
 	}
 	else
 		advise("sgran", "Setting phrase curve to all 1's.");
@@ -112,22 +112,22 @@ sgran(float p[], int n_args)
 	rate_shape = floc(2);
 	if (rate_shape == NULL)
 		die("sgran", "You haven't made the grain density function (table 2).");
-	tableset(p[1]-p[4],fsize(2),tab2);
+	tableset(SR, p[1]-p[4],fsize(2),tab2);
 
 	dur_shape = floc(3);
 	if (dur_shape == NULL)
 		die("sgran", "You haven't made the grain duration function (table 3).");
-	tableset(p[1]-p[4],fsize(3),tab3);
+	tableset(SR, p[1]-p[4],fsize(3),tab3);
 
 	loc_shape = floc(4);
 	if (loc_shape == NULL)
 		die("sgran", "You haven't made the grain location function (table 4).");
-	tableset(p[1]-p[4],fsize(4),tab4);
+	tableset(SR, p[1]-p[4],fsize(4),tab4);
 
 	freq_shape = floc(5);
 	if (freq_shape == NULL)
 		die("sgran", "You haven't made the grain frequency function (table 5).");
-	tableset(p[1]-p[4],fsize(5),tab5);
+	tableset(SR, p[1]-p[4],fsize(5),tab5);
 
 	slodiff = (double)(p[9]-p[5])/nsamps; /* get stt zero/one differences */
 	smiddiff = (double)(p[10]-p[6])/nsamps;
@@ -165,7 +165,7 @@ sgran(float p[], int n_args)
 	for(i = 0; i < nsamps; i++) {
 		count++;
 		phase = 0;
-		tableset(grainsamps/SR,fsize(8),tab);
+		tableset(SR, grainsamps/SR,fsize(8),tab);
 		if(!randflag) {
 			lo = p[29] + flodiff*tablei(i,freq_shape,tab5);
 			mid = p[30] + fmiddiff*tablei(i,freq_shape,tab5);

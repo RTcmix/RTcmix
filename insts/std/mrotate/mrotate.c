@@ -44,7 +44,7 @@ mrotate(float p[], int n_args)
 	amptable = floc(1);
 	if (amptable) {
 		int alen = fsize(1);
-		tableset(p[2], alen, amptabs);
+		tableset(SR, p[2], alen, amptabs);
 	}
 	else
 		advise("mrotate", "Setting phrase curve to all 1's.");
@@ -58,7 +58,7 @@ mrotate(float p[], int n_args)
 	if (pcurve == NULL)
 		die("mrotate", "You haven't made the pitch shift envelope (table 3).");
 	plen = fsize(3);
-	tableset(p[2], plen, ptabs);
+	tableset(SR, p[2], plen, ptabs);
 
 	octpart1 = (int)p[4] * 12;
 	pcpart1 = (p[4] * 100.0) - (float)(octpart1*100);

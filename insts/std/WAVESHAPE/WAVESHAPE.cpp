@@ -97,7 +97,7 @@ int WAVESHAPE::init(double p[], int n_args)
 	if (rawfreq < 15.0)
 		freq = cpspch(rawfreq);
 
-	osc = new Ooscili(freq, waveform, tablelen);
+	osc = new Ooscili(SR, freq, waveform, tablelen);
 
 	xferfunc = NULL;
 	lenxfer = 0;
@@ -122,13 +122,13 @@ int WAVESHAPE::init(double p[], int n_args)
 			return die("WAVESHAPE", "Either use the index pfield (p9) or make "
 						"an old-style gen function in slot %d.", INDEX_GEN_SLOT);
 		lenind = fsize(INDEX_GEN_SLOT);
-		tableset(dur, lenind, indtabs);
+		tableset(SR, dur, lenind, indtabs);
 	}
 
 	ampenv = floc(AMP_GEN_SLOT);
 	if (ampenv) {
 		int lenamp = fsize(AMP_GEN_SLOT);
-		tableset(dur, lenamp, amptabs);
+		tableset(SR, dur, lenamp, amptabs);
 	}
 
 	setDCBlocker(freq, true);		// initialize dc blocking filter

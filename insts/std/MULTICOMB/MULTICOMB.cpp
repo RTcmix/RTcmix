@@ -76,7 +76,7 @@ int MULTICOMB::init(double p[], int n_args)
 	amptable = floc(1);
 	if (amptable) {
 		int amplen = fsize(1);
-		tableset(dur, amplen, amptabs);
+		tableset(SR, dur, amplen, amptabs);
 	}
 
 	for (int j = 0; j < NCOMBS; j++) {
@@ -84,7 +84,7 @@ int MULTICOMB::init(double p[], int n_args)
 		advise("MULTICOMB", "comb number %d: %g Hz", j, cfreq);
 		float loopt = 1.0 / cfreq;
 		delsamps[j] = (int) (loopt * SR + 0.5);
-		comb[j] = new Ocomb(loopt, rvbtime);
+		comb[j] = new Ocomb(SR, loopt, rvbtime);
 		spread[j] = (float) j / (float) (NCOMBS - 1);
 	}
 

@@ -85,7 +85,7 @@ int BUZZ::init(double p[], int n_args)
 	amparr = floc(1);
 	if (amparr) {
 		int lenamp = fsize(1);
-		tableset(dur, lenamp, amptabs);
+		tableset(SR, dur, lenamp, amptabs);
 	}
 
 	sinetable = floc(2);

@@ -79,7 +79,7 @@ int COMBIT::init(double p[], int n_args)
 	amptable = floc(1);
 	if (amptable) {
 		int amplen = fsize(1);
-		tableset(dur + rvbtime, amplen, tabs);
+		tableset(SR, dur + rvbtime, amplen, tabs);
 	}
 
 	skip = (int) (SR / (float) resetval);

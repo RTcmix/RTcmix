@@ -125,8 +125,8 @@ int MOVE::localInit(double *p, int n_args)
 
     // tables for positional lookup
     
-    tableset(m_dur, ARRAYSIZE, tabr);
-    tableset(m_dur, ARRAYSIZE, tabt);
+    tableset(SR, m_dur, ARRAYSIZE, tabr);
+    tableset(SR, m_dur, ARRAYSIZE, tabt);
     
     return 0;
 }

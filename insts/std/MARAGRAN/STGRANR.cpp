@@ -89,7 +89,7 @@ int STGRANR::init(double p[], int n_args)
 	amptable = floc(1);
 	if (amptable) {
             alen = fsize(1);
-            tableset(evdur, alen, tabs);
+            tableset(SR, evdur, alen, tabs);
 	}
 	else
 		advise("STGRANR", "Setting phrase curve to all 1's.");
@@ -179,7 +179,7 @@ int STGRANR::run()
 		ratevar = (float)prob(ratevarlo, ratevarmid, ratevarhi, ratevarti);
                 waitsamps = (long)(ratevar*(float)(attacksamps - grainsamps));
 		spread = (float)prob(loclo,locmid,lochi,locti);
-		tableset(gdur, grlen, tabg); 
+		tableset(SR, gdur, grlen, tabg); 
 		for ( j = 0; j < attacksamps; j++ ) {
 			if (--branch < 0) { 
 				aamp = tablei(cursamp, amptable, tabs) * amp;

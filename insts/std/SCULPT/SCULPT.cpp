@@ -37,7 +37,7 @@ int SCULPT::init(double p[], int n_args)
 	amptable = floc(1);
 	if (amptable) {
 		int len = fsize(1);
-		tableset(tdur, len, amptabs);
+		tableset(SR, tdur, len, amptabs);
 	}
 	else
 		advise("SCULPT", "Setting phrase curve to all 1's.");

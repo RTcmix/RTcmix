@@ -49,7 +49,7 @@ int BEND1::init(double p[], int n_args)
 	amptable = floc(1);
 	if (amptable) {
 		int amplen = fsize(1);
-		tableset(dur, amplen, amptabs);
+		tableset(SR, dur, amplen, amptabs);
 	}
 	else {
 		advise("BEND1", "Setting phrase curve to all 1's.");
@@ -59,7 +59,7 @@ int BEND1::init(double p[], int n_args)
 	glissf = floc((int)p[4]);
 	if (glissf) {
 		int leng = fsize((int)p[4]);
-		tableset(p[1],leng,tags);
+		tableset(SR, p[1],leng,tags);
 	}
 	else {
 		die("BEND1", "You haven't made the glissando function (table %d).",

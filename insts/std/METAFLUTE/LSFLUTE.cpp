@@ -39,7 +39,7 @@ int LSFLUTE::init(double p[], int n_args)
 	amparr = floc(1);
 	if (amparr) {
 		int len = fsize(1);
-		tableset(p[1], len, amptabs);
+		tableset(SR, p[1], len, amptabs);
 	}
 	else {
 		die("LSFLUTE", "You haven't made the noise amp envelope (table 1).");
@@ -49,7 +49,7 @@ int LSFLUTE::init(double p[], int n_args)
 	oamparr = floc(2);
 	if (oamparr) {
 		int len = fsize(2);
-		tableset(p[1], len, oamptabs);
+		tableset(SR, p[1], len, oamptabs);
 	}
 	else {
 		die("LSFLUTE", "You haven't made the output amp envelope (table 2).");

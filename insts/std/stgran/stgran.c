@@ -251,35 +251,35 @@ stgran(float p[], int n_args)
 	if (in_rate_shape == NULL)
 		die("stgran",
 				"You haven't made the grain input rate function (table 2).");
-   tableset(indur - p[6], fsize(2), tab2);
+   tableset(SR, indur - p[6], fsize(2), tab2);
 
    rate_shape = floc(3);
 	if (rate_shape == NULL)
 		die("stgran",
 				"You haven't made the grain output rate function (table 3).");
-   tableset(outdur - p[8], fsize(3), tab3);
+   tableset(SR, outdur - p[8], fsize(3), tab3);
 
    dur_shape = floc(4);
 	if (dur_shape == NULL)
 		die("stgran", "You haven't made the grain duration function (table 4).");
-   tableset(outdur - p[8], fsize(4), tab4);
+   tableset(SR, outdur - p[8], fsize(4), tab4);
 
    transp_shape = floc(5);
 	if (transp_shape == NULL)
 		die("stgran",
 				"You haven't made the grain transposition function (table 5).");
-   tableset(outdur - p[8], fsize(5), tab5);
+   tableset(SR, outdur - p[8], fsize(5), tab5);
 
    amp_shape = floc(6);
 	if (amp_shape == NULL)
 		die("stgran", "You haven't made the grain amplitude function (table 6).");
-   tableset(outdur - p[8], fsize(6), tab6);
+   tableset(SR, outdur - p[8], fsize(6), tab6);
 
    loc_shape = floc(7);
 	if (loc_shape == NULL)
 		die("stgran",
 				"You haven't made the grain stereo location function (table 7).");
-   tableset(outdur - p[8], fsize(7), tab7);
+   tableset(SR, outdur - p[8], fsize(7), tab7);
 
    envel = floc(8);           /* tableset in sample loop */
 	if (envel == NULL)
@@ -335,7 +335,7 @@ stgran(float p[], int n_args)
    slarray = floc(1);
    if (slarray) {
       int len = fsize(1);
-      tableset(outdur, len, tab1);
+      tableset(SR, outdur, len, tab1);
    }
    else
       advise("stgran", "Setting phrase curve to all 1's.");
@@ -361,7 +361,7 @@ stgran(float p[], int n_args)
       lo = (lo > mid) ? mid : lo;
       hi = (hi < mid) ? mid : hi;
       grainsamps = (long) (prob(lo, mid, hi, ti) * SR);
-      tableset(grainsamps / SR, fsize(8), tab8);
+      tableset(SR, grainsamps / SR, fsize(8), tab8);
 
       /* calculate grain amplitude */
       table_val = (double) tablei(i, amp_shape, tab6);
