@@ -4,7 +4,7 @@ RTLIBDIRS = AM AMINST CLAR COMBIT DELAY DEL1 FIR FMINST IIR LPCPLAY \
 METAFLUTE MOVE MULTICOMB NOISE PANECHO PVOC REVMIX SCULPT STEREO STRUM TRANS \
 TRANSBEND WAVESHAPE
 
-CMIXLIBDIRS = convolve gravy mrotate numtest pvoc rotate \
+CMIXLIBDIRS = convolve gravy mrotate numtest rotate \
 sgran stgran vwavetable wah wahwah wow
 
 LIBDIRS = $(RTLIBDIRS) $(CMIXLIBDIRS)
