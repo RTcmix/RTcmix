@@ -13,8 +13,8 @@ all:
 	@for DIR in $(LIBDIRS) MIX; \
 	do \
 	( cd $$DIR; echo "making in $$DIR..."; \
-	$(MAKE) $(MFLAGS); echo "done in $$DIR" ); \
-	ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR); \
+	$(MAKE) $(MFLAGS); echo "done in $$DIR"; \
+	ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR) ); \
 	done
 	@ln -fs `pwd`/MIX/MIX $(DESTDIR)/CMIX
 
