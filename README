@@ -1,4 +1,4 @@
-This is RTcmix version 3.2, for Linux, Mac OS X, and Irix platforms.
+This is RTcmix version 3.6, for Linux, Mac OS X, and Irix platforms.
 
 See the INSTALL file for compilation and installation instructions.
 
@@ -8,7 +8,7 @@ using RTcmix.
 See the AUTHORS and LICENSE files for information about the license
 to this software.
 
-RTcmix is frequently updated.  New versions appear at:
+New versions of RTcmix appear at:
 
    ftp://presto.music.virginia.edu/pub/rtcmix
 
