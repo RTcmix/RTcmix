@@ -1,5 +1,7 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
+
+
 Friday, December 13, 2002 Douglas Scott <netdscott-at-netscape.net>
 
    * Added min() Minc function to match max().
@@ -48,7 +50,7 @@ Wednesday, November 20, 2002 Douglas Scott <netdscott-at-netscape.net>
 Sunday, November 17, 2002 John Gibson <johgibso-at-indiana.edu>
 
    * Added several makegen table processing functions: offsetgen,
-     scalegen, invertgen, reversegen, rotategen.
+     scalegen, invertgen, reversegen, shiftgen.
 
 Friday, November 8, 2002 John Gibson <johgibso-at-indiana.edu>
 

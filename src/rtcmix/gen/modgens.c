@@ -209,52 +209,52 @@ m_reversegen(float p[], int n_args, double pp[])
 }
 
 
-/* ------------------------------------------------------------ rotategen --- */
-/* Rotate the values of the gen whose table number is given in p0 by the number
-   of array locations given in p1.  Positive values rotate to the right;
-   negative values to the left.  If a value is rotated off the end of the
+/* ------------------------------------------------------------- shiftgen --- */
+/* Shift the values of the gen whose table number is given in p0 by the number
+   of array locations given in p1.  Positive values shift to the right;
+   negative values to the left.  If a value is shifted off the end of the
    array in either direction, it reenters the other end of the array.
+
+   Two examples:
+      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]      source table, size = 10
+      [7, 8, 9, 0, 1, 2, 3, 4, 5, 6]      shift = 3
+      [3, 4, 5, 6, 7, 8, 9, 0, 1, 2]      shift = -3
 */
 double
-m_rotategen(float p[], int n_args, double pp[])
+m_shiftgen(float p[], int n_args, double pp[])
 {
-   int      slot, size, rotate, absrotate;
+   int      slot, size, shift, abs_shift;
    size_t   movesize;
    float    *table, *scratch;
 
    slot = (int) p[0];
    table = floc(slot);
    if (table == NULL)
-      die("rotategen", "No function table defined for slot %d.", slot);
+      die("shiftgen", "No function table defined for slot %d.", slot);
    size = fsize(slot);
-   rotate = (int) p[1];
-   if (rotate == 0) {
-      advise("rotategen", "You're rotating by 0 locations!");
+   shift = (int) p[1];
+   abs_shift = abs(shift);
+   if (abs_shift == 0 || abs_shift == size) {
+      advise("shiftgen", "Your shift of %d has no effect on the table!", shift);
       return (double) size;
    }
-   absrotate = abs(rotate);
-   if (absrotate >= size)
-      die("rotategen", "Rotate value must be less than table size.");
+   if (abs_shift > size)
+      die("shiftgen", "You can't shift by more than the table size.");
 
-   scratch = (float *) malloc((size_t)(absrotate * sizeof(float)));
+   scratch = (float *) malloc((size_t)(abs_shift * sizeof(float)));
    if (scratch == NULL)
-      die("rotategen", "No memory for scratch buffer!");
+      die("shiftgen", "No memory for scratch buffer!");
 
-   /* an example of what should happen...
-      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]      src table, size = 10
-      [7, 8, 9, 0, 1, 2, 3, 4, 5, 6]      dest, rotate = 3
-      [3, 4, 5, 6, 7, 8, 9, 0, 1, 2]      dest, rotate = -3
-   */
-   movesize = (size_t) (size - absrotate);  /* floats to shift within table */
-   if (rotate > 0) {
-      memcpy(scratch, table + movesize, (size_t) absrotate * sizeof(float));
-      memmove(table + absrotate, table, movesize * sizeof(float));
-      memcpy(table, scratch, (size_t) absrotate * sizeof(float));
+   movesize = (size_t) (size - abs_shift);  /* floats to shift within table */
+   if (shift > 0) {
+      memcpy(scratch, table + movesize, (size_t) abs_shift * sizeof(float));
+      memmove(table + abs_shift, table, movesize * sizeof(float));
+      memcpy(table, scratch, (size_t) abs_shift * sizeof(float));
    }
    else {
-      memcpy(scratch, table, (size_t) absrotate * sizeof(float));
-      memmove(table, table + absrotate, movesize * sizeof(float));
-      memcpy(table + movesize, scratch, (size_t) absrotate * sizeof(float));
+      memcpy(scratch, table, (size_t) abs_shift * sizeof(float));
+      memmove(table, table + abs_shift, movesize * sizeof(float));
+      memcpy(table + movesize, scratch, (size_t) abs_shift * sizeof(float));
    }
 
    free(scratch);

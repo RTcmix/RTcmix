@@ -8,9 +8,9 @@ SCRIPT = addgens bus_config copygen fdump fplot \
 gen1 gen2 gen3 gen4 gen5 gen6 gen7 gen9 gen10 gen17 gen18 gen20 gen24 gen25 \
 get_spray \
 infile invertgen irand makegen multgens offsetgen pickrand pickwrand \
-quantizegen rand random reversegen rotategen rtinput rtoutput rtsetparams \
+quantizegen rand random reversegen rtinput rtoutput rtsetparams \
 sampfunc sampfunci scalegen set_option setexp setline setline_size \
-spray_init srand system
+shiftgen spray_init srand system
 
 # Commands invoked from the command line
 CMD = pchcps rescale sfcreate sffixsize sfhedit sfprint

@@ -1,14 +1,14 @@
 =head1 NAME
 
-rotategen - change the phase of a function table
+shiftgen - change the phase of a function table
 
 =head1 SYNOPSIS
 
-B<rotategen>(I<table_number>, I<rotate>)
+B<shiftgen>(I<table_number>, I<rotate>)
 
 =head1 DESCRIPTION
 
-Call B<rotategen> from a script to rotate the elements of a function table,
+Call B<shiftgen> from a script to rotate the elements of a function table,
 shifting the phase of the table.
 
 =head1 ARGUMENTS
@@ -34,10 +34,10 @@ to the right; negative values, to the left.
    makegen(1, 20, 10, 0)
 
    /* Shift the values to the right by 5 table slots. */
-   rotategen(1, 5)
+   shiftgen(1, 5)
 
    /* Shift the values to the left by 2 table slots. */
-   rotategen(1, -2)
+   shiftgen(1, -2)
 
 =head1 SEE ALSO
 
