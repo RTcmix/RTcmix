@@ -148,7 +148,7 @@ int OSSAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 int OSSAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 {
 	int reqQueueBytes = *pWriteSize * getDeviceBytesPerFrame();
-	int queuecode = ((int) (log(reqQueueBytes) / log(2.0))) + 1;
+	int queuecode = ((int) (log(reqQueueBytes) / log(2.0)));
 	int sizeCode = (*pCount << 16) | (queuecode & 0x0000ffff);
 	if (ioctl(SNDCTL_DSP_SETFRAGMENT, &sizeCode) == -1) {
 		printf("ioctl(SNDCTL_DSP_SETFRAGMENT, ...) returned -1\n");
@@ -209,7 +209,7 @@ void OSSAudioDevice::run()
 			break;
 		}
 		if (info.bytes < bufferSize() / 2) {
-			printf("\tOSSAudioDevice::run: %d bytes avail...waiting\n", info.bytes);
+//			printf("\tOSSAudioDevice::run: %d bytes avail...waiting\n", info.bytes);
 			usleep(10);
 			continue;
 		}
