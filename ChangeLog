@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Friday, March 5, 2004 John Gibson <johgibso-at-indiana.edu>
+
+   * Read and write 24-bit sound files.  (Doesn't work for old
+     cmix disk-based insts.)
+
 
 **** Released RTcmix-3.6, Sunday, Feb 29, 2004 ****
 
