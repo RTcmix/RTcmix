@@ -33,6 +33,21 @@
 // its "handshake" data to notify the listener of the audio format.  Currently
 // the NetAudioDevices only communicate using short integer audio.
 
+#define DEBUG 0
+
+#if DEBUG > 0
+#define PRINT0 if (1) printf
+#define PRINT1 if (0) printf
+#else
+#if DEBUG > 1
+#define PRINT0 if (1) printf
+#define PRINT1 if (1) printf
+#else
+#define PRINT0 if (0) printf
+#define PRINT1 if (0) printf
+#endif
+#endif
+
 static const int kDefaultSockNumber = 9999;
 
 // The cookie is used to identify whether the data coming over the socket
@@ -108,7 +123,7 @@ bool NetAudioDevice::waitForDevice(unsigned int wTime)
 void
 NetAudioDevice::run()
 {
-//	printf("NetAudioDevice::run: top of loop\n");
+	PRINT1("NetAudioDevice::run: top of loop\n");
 	// waitForDevice() waits on the descriptor you passed to setDevice() until
 	// the device is ready to give/get audio.  It returns false if 
 	// AudioDevice::stop() is called, to allow the loop to exit.
@@ -118,7 +133,7 @@ NetAudioDevice::run()
             break;
         }
  	}
-//	printf("NetAudioDevice::run: after loop\n");
+	PRINT1("NetAudioDevice::run: after loop\n");
 	// If we stopped due to callback being done, set the state so that the
 	// call to close() does not attempt to call stop, which we cannot do in
 	// this thread.  Then, check to see if we are being closed by the main
@@ -130,7 +145,7 @@ NetAudioDevice::run()
 			close();
 		}
 	}
-//	printf("NetAudioDevice::run: calling stop callback\n");	
+	PRINT1("NetAudioDevice::run: calling stop callback\n");	
 	// Now call the stop callback.
 	stopCallback();
 }
@@ -141,6 +156,8 @@ NetAudioDevice::doOpen(int mode)
 {
 	struct hostent *hp;
 	int len = sizeof(_impl->sss);
+
+	PRINT0("NetAudioDevice::doOpen()\n");
 
 	bzero(&_impl->sss, len);
 	
@@ -184,6 +201,8 @@ NetAudioDevice::doClose()
 	int status;
 	// In record, the data device descriptor is not
 	// the socket descriptor.
+	PRINT0("NetAudioDevice::doClose()\n");
+	closing(true);	// This allows waitForConnect() to exit.
 	if (isRecording() && _impl->sockdesc > 0) {
 		if (::close(_impl->sockdesc) == 0)
 			_impl->sockdesc = -1;
@@ -202,14 +221,14 @@ NetAudioDevice::doStart()
 		netformat.chans = getDeviceChannels();
 		netformat.sr = (float) getSamplingRate();
 		netformat.blockFrames = _impl->framesPerWrite;
-//		printf("NetAudioDevice::doStart: writing header to stream...\n");
+		PRINT1("NetAudioDevice::doStart: writing header to stream...\n");
 		int wr;
 		if ((wr = ::write(device(), &netformat, kNetAudioFormat_Size)) != kNetAudioFormat_Size)
 		{
 			return error("NetAudioDevice: unable to write header: ",
 				  		 (wr >= 0) ? "partial or zero write" : strerror(errno));
 		}
-//		printf("NetAudioDevice::doStart: wrote header\n");
+		PRINT1("NetAudioDevice::doStart: wrote header\n");
 	}
 	else if (isRecording()) {
 		bool ready = false;
@@ -305,7 +324,7 @@ int NetAudioDevice::waitForConnect()
 	FD_ZERO(&rfdset);
 	do {
 		if (closing() || stopping()) {
-//			printf("breaking out of wait for stop or close\n");
+			PRINT0("breaking out of wait for stop or close\n");
 			return -1;
 		}
 		timeout.tv_sec = 0;
@@ -314,7 +333,7 @@ int NetAudioDevice::waitForConnect()
 //		printf("in select loop...\n");
 	} while ((ret = select(nfds, &rfdset, NULL, NULL, &timeout)) == 0);
 	if (ret == -1) {
-//		printf("select() returned -1, breaking out of wait\n");
+		PRINT0("select() returned -1, breaking out of wait\n");
 		return -1;
 	}
 #ifdef MACOSX
@@ -387,7 +406,7 @@ int NetAudioDevice::configure()
 		return error("NetAudioDevice: missing or corrupt header");
 	}
 	if (swapped) {
-		printf("debug: header cookie was opposite endian\n");
+		PRINT0("debug: header cookie was opposite endian\n");
 		netformat.fmt = swap(netformat.fmt);
 		netformat.chans = swap(netformat.chans);
 		netformat.sr = swap(netformat.sr);
@@ -414,7 +433,7 @@ int NetAudioDevice::configure()
 		fprintf(stderr, "NetAudioDevice: warning: SR mismatch.  Playing at incorrect rate.\n");
 	}
 	setDeviceParams(netformat.fmt, netformat.chans, netformat.sr);
-//	printf("NetAudioDevice::configure(): resetting conversion routines\n");
+	PRINT1("NetAudioDevice::configure(): resetting conversion routines\n");
 	return resetFormatConversion();
 }
 

@@ -217,7 +217,7 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 #if DEBUG > 0
 			printf("\tafter run callback, framesAvail (Filled) = %d\n", framesAvail);
 #endif
-			if (framesAvail == 0) {
+			if (framesAvail <= 0) {
 				assert(!keepGoing || device->isPassive());
 #if DEBUG > 0
 				printf("\tzeroing input buffer and going on\n");
