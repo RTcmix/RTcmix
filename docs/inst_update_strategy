@@ -1,0 +1,1137 @@
+Hey gang,
+
+Here is a list of RT instruments in base, std and jg, along with their
+current (v3.8) pfield lists and gen slot requirements.  When a pfield
+or gen table is optional, it appears in brackets.  Below each spec are
+comments about what a revised 4.0 version could look like.
+
+The insts are grouped into categories, depending on the kinds of change
+that will be necessary to make them support both old and new style scores.
+
+Suggestions for updateable pfields are given, though only a close look
+at the instrument code will show which ones are feasible.
+
+Some instruments don't seem worth updating, either because the new
+capabilities make them obsolete, or because there's not much that
+the new capabilities could add, or because updating them in a hybrid
+way would make an overly complex monstrosity.  In that case, new
+instruments, with new names, should be designed.
+
+
+JG
+
+
+===========================================================================
+1. No gens.
+   Add PField update support where appropriate.
+---------------------------------------------------------------------------
+
+FIR(start, inskip, dur, amp, num_coeff, coef1, coef2, ..., coeff99)
+   [no gens]
+
+   PFields: amp
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+HOLO(start, inskip, dur, amp, xtalk_amp)
+   [no gens]
+
+   PFields:: amp, xtalk_amp
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+MMOVE: RVB(start, inskip, dur, amp)
+   [no gens]
+
+   PFields: amp
+
+   ***NOTE: called in conjunction with MMOVE insts, in a different category
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+PVOC(start, inskip, dur, amp, inchan, fftsize, windowsize, decimation,
+                              interpolation, pitch_mul, npoles, syn_thresh)
+   [no gens]
+
+   PFields: amp
+
+   ***NOTE: PVOC can be preceded by call to set_filter:
+
+      set_filter(filter_slot)   ??
+
+
+===========================================================================
+2. Has one or more gens that correspond to existing pfields.
+   The common case is a gen for amp envelope vs. an amp pfield.
+   If gen present, multiply it by the pfield update value.
+   Add PField update support where appropriate.
+---------------------------------------------------------------------------
+
+CLAR(start, dur, noise_amp, length1, length2, output_amp, d2_gain, [pctleft])
+   [1. noise amp envelope]
+   [2. output amp envelope]
+
+   PFields: noise_amp, length1, length2, output_amp, d2_gain, pctleft
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+COMBIT(start, inskip, dur, amp, pitch, rvb_time, [inchan, pctleft])
+   [1. amp envelope]
+
+   PFields: amp, pitch, rvb_time, pctleft
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+COMPLIMIT(start, inskip, dur, pre_amp, post_amp, attack, release, threshold,
+     ratio, lookahead, windowsize, detection_type, bypass, [inchan, pctleft])
+   [1. amp envelope]
+
+   PFields: amp, pre_amp, post_amp, attack, release, threshold, ratio,
+            bypass, pctleft
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+DECIMATE(start, inskip, dur, amp, num_bits, [lowpass_cf, inchan, pctleft])
+   [1. amp envelope]
+
+   PFields: amp, num_bits, lowpass_cf, pctleft
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+DEL1(start, inskip, dur, amp, delay_time, delay_amp, [inchan])
+   [1. amp envelope]
+
+   PFields: amp, delay_time, delay_amp
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+DELAY(start, inskip, dur, amp, delay_time, regen, ringdur, [inchan, pctleft])
+   [1. amp envelope]
+
+   PFields: amp, delay_time, regen, pctleft
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+DISTORT(start, inskip, dur, amp, type, gain, lowpass_cf,
+                                                [inchan, pctleft, bypass])
+   [1. amp envelope]
+
+   PFields: amp, gain, lowpass_cf, pctleft, bypass
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ELL(start, inskip, dur, amp, ringdur, [inchan, pctleft])
+   [1. amp envelope]
+
+   PFields: amp, pctleft
+
+   ***NOTE: ELL must be preceded by call to ellset:
+
+      ellset(p0, p1, p2, ripple, atten)
+
+   ***NOTE: should be superseded by an inst that incorporates RT ellset
+      functionality (MMELL?)
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+FOLLOWER: FOLLOWER(start, inskip, dur, car_amp, mod_amp, window_len,
+                                                         smooth, [pctleft])
+   [1. amp envelope]
+
+   PFields: car_amp, mod_amp, window_len, smooth, pctleft
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+FREEVERB(start, inskip, dur, amp, room_size, predelay, ringdur, damp, dry,
+                                                                wet, width)
+   [1. amp envelope]
+
+   PFields: amp, room_size, predelay, damp, dry, wet, width, pctleft
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+IIR: INPUTSIG(start, inskip, dur, amp, inchan, [pctleft])
+   [1. amp envelope]
+
+   PFields: amp, pctleft
+
+IIR: NOISE(start, dur, amp, [pctleft])
+   [1. amp envelope]
+
+   PFields: amp, pctleft
+
+IIR: PULSE(start, dur, amp, pitch, [pctleft])
+   [1. amp envelope]
+
+   PFields: amp, pctleft
+
+   ***NOTE: IIR insts preceded by call to setup:
+
+      setup(cf1, bw1, amp1, cf2, bw2, amp2, ...)
+
+   ***NOTE: IIR BUZZ inst in another category
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+JDELAY(start, inskip, dur, amp, deltime, regen, ringdur, lowpass_cf,
+                     wetdry_mix, [inchan, pctleft, prefader_send, dcblock])
+   [1. amp envelope]
+
+   PFields: amp, deltime, regen, lowpass_cf, wetdry_mix, pctleft,
+            prefader_send
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+METAFLUTE: LSFLUTE(start, dur, noise_amp, length1, length2, output_amp,
+                                                               [pctleft])
+   1. noise amp envelope
+   2. output amp envelope
+
+   PFields: noise_amp, output_amp, pctleft (others?)
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+METAFLUTE: SFLUTE(start, dur, noise_amp, length1, length2, output_amp,
+                                                               [pctleft])
+   1. noise amp envelope
+   2. output amp envelope
+
+   PFields: noise_amp, output_amp, pctleft (others?)
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+MIX(start, inskip, dur, amp, chan0out, [chan1out, ..., chanNout])
+   [1. amp envelope]
+
+   PFields: amp
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+MROOM(start, inskip, dur, amp, right_dist, front_dist, rvb_time, reflect,
+                                       inner_room_width, [inchan, update])
+   [1. amp envelope]
+
+   PFields: amp, ??
+
+   ***NOTE: MROOM preceded by one or more calls to timeset:
+
+      timeset(time, x, y)
+
+   ***NOTE: not sure this inst is worth maintaining
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+MULTICOMB(start, inskip, dur, amp, freq_low, freq_high, rvb_time)
+   [1. amp envelope]
+
+   PFields: amp, freq_low, freq_high, rvb_time
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+NOISE(start, dur, amp, [pctleft])
+   [1. amp envelope]
+
+   PFields: amp
+
+   ***NOTE: name conflict with IIR NOISE inst
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+PANECHO(start, inskip, dur, amp, chan0del, chan1del, regen, ringdur, [inchan])
+   [1. amp envelope]
+
+   PFields: amp, chan0del, chan1del, regen
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+REV(start, inskip, dur, amp, type, rvb_time, rvb_pct, [inchan])
+   [1. amp envelope]
+
+   PFields: amp, rvb_time, rvb_pct
+
+   ***NOTE: not sure this inst is worth maintaining
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+REVERBIT(start, inskip, dur, amp, rvb_time, rvb_pct, rt_chan_delay,
+                                                   [lowpass_cf, dcblock])
+   [1. amp envelope]
+
+   PFields: amp, rvb_time, rvb_pct, rt_chan_delay, lowpass_cf
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+REVMIX(start, inskip, dur, amp, [inchan, pctleft])
+   [1. amp envelope]
+
+   PFields: amp, pctleft
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ROOM(start, inskip, dur, amp, [inchan])
+   [1. amp envelope]
+
+   PFields: amp
+
+   ***NOTE: ROOM preceded by call to roomset:
+
+      roomset(x_wall_len, y_wall_len, x_src_pos, y_src_pos, x_wall_left,
+               y_wall_left, x_wall_right, y_wall_right, abs_factor, [seed])
+
+   ***NOTE: not sure this inst is worth maintaining
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+SROOM(start, inskip, dur, amp, right_dist, front_dist, x_src_pos, y_src_pos,
+                              rvb_time, reflect, inner_room_width, [inchan])
+   [1. amp envelope]
+
+   PFields: amp
+
+   ***NOTE: not sure this inst is worth maintaining
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+STEREO(start, inskip, dur, amp, pctleft1, [pctleft2, ..., pctleftN])
+   [1. amp envelope]
+
+   PFields: amp, pctleft1...pctleftN
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+STRUM: START(start, dur, pitch, fund_decay, nyq_decay, amp, squish,
+                                                      [pctleft, delflag])
+   [1. amp envelope]
+
+   PFields: amp, pitch, pctleft
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+STRUM: START1(start, dur, pitch, fund_decay, nyq_decay, dist_gain,
+               feedback_gain, feedback_pitch, clean_level, dist_level, amp,
+               squish, [pctleft, delflag])
+   [1. amp envelope]
+
+   PFields: amp, pitch, dist_gain, feedback_gain, feedback_pitch,
+            clean_level, dist_level, pctleft
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+STRUM: FRET(start, dur, pitch, fund_decay, nyq_decay, [pctleft])
+   [1. amp envelope]
+
+   PFields: amp, pitch, pctleft
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+STRUM: FRET1(start, dur, pitch, fund_decay, nyq_decay, dist_gain,
+               feedback_gain, feedback_pitch, clean_level, dist_level, amp,
+                                                                  [pctleft])
+   [1. amp envelope]
+
+   PFields: amp, pitch, dist_gain, feedback_gain, feedback_pitch,
+            clean_level, dist_level, pctleft
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+TRANS(start, inskip, dur, amp, transp, [inchan, pctleft])
+   [1. amp envelope]
+
+   PFields:: amp, transp, pctleft
+
+   ***NOTE: same for TRANS3
+
+
+===========================================================================
+3. Has amp gen plus one or more gens specified by genno pfields.
+   Handle amp gen as in category 2.
+   If genno field is TablePField, get local copy of table to use with 
+      tablei, etc.; else look to floc(genno) for table.  Drawback: can't
+      use real-time data stream pfields in place of gen.
+   Add PField update support where appropriate.
+---------------------------------------------------------------------------
+
+MOCKBEND(start, inskip, dur, amp, pitch_curve_genno, [inchan, pctleft])
+   [1. amp envelope]
+    X. pitch curve
+
+   ***NOTE: This is derived from TRANSBEND, but is intended to work
+            with real-time (or bus) input
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+STRUM: BEND(start, dur, pitch0, pitch1, gliss_genno, fund_decay, nyq_decay,
+                                                         update, [pctleft])
+   [1. amp envelope]
+    X. gliss curve
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+STRUM: BEND1(start, dur, pitch0, pitch1, gliss_genno, fund_decay, nyq_decay,
+               dist_gain, feedback_gain, feedback_pitch, clean_level,
+               dist_level, amp, update, [pctleft])
+   [1. amp envelope]
+    X. gliss curve
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+TRANSBEND(start, inskip, dur, amp, pitch_curve_genno, [inchan, pctleft])
+   [1. amp envelope]
+    X. pitch curve
+
+   PFields: amp; transp pfield vs. genno; pctleft pfield
+
+   ***NOTE: TRANS transp pfield makes TRANSBEND obsolete.
+
+
+===========================================================================
+4. One gen for amp envelope vs. amp pfield.
+   If gen present, multiply it by amp pfield update value.
+   Add PField update support where appropriate.
+   Has one or more gens with no corresponding pfield argument.
+   If there are any arguments beyond the ones listed below, use them
+      in place of the appropriate gen.  The argument order for these
+      pfields should follow the gen table number order.  Obviously,
+      this scheme places constraints on the ability to make some
+      arguments optional.
+   When there is no extra pfield argument corresponding to a particular
+      gen, look to floc for that gen.
+   Some params need a local table; others can work like amp gen/pfield:
+      use table or update.
+---------------------------------------------------------------------------
+
+AM(start, inskip, dur, amp, mod_osc_freq, [inchan, pctleft])
+   [1. amp envelope]
+    2. mod wavetable
+   [3. mod freq curve]
+
+   New signature:
+
+   AM(start, inskip, dur, amp, mod_osc_freq, [inchan, pctleft, mod_wavetable])
+
+   PFields: amp, mod_osc_freq, pctleft, mod_wavetable
+
+   ***NOTE: If no gen 2, then <mod_wavetable> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+   ***NOTE: gen 3 and <mod_osc_freq> arg are exactly analogous to
+            gen 1 and <amp> arg: they are multiplied.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+AMINST(start, dur, amp, car_freq, mod_freq, [pctleft])
+   [1. amp envelope]
+    2. mod envelope
+    3. car wavetable
+    4. mod wavetable
+
+   New signature:
+
+   AMINST(start, dur, amp, car_freq, mod_freq, [pctleft, mod_amp,
+                                             car_wavetable, mod_wavetable])
+
+   PFields: amp, car_freq, mod_freq, pctleft, mod_amp, car_wavetable,
+                                                            mod_wavetable
+
+   ***NOTE: If no gen 2, then <mod_amp> arg must be present.
+            If both, then arg overrides gen.
+
+   ***NOTE: If no gen 3, then <car_wavetable> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+   ***NOTE: If no gen 4, then <mod_wavetable> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+BUTTER(start, inskip, dur, amp, type, steep, [balance, inchan, pctleft, bypass])
+   [1. amp envelope]
+    2. cutoff freq curve
+    3. bandwidth curve
+
+   New signature:
+
+   BUTTER(start, inskip, dur, amp, type, steep, [balance, inchan, pctleft,
+                                                            bypass, cf, bw])
+
+   PFields: amp, pctleft, bypass, cf, bw
+
+   ***NOTE: If no gen 2, then <cf> arg must be present.
+            If both, then arg overrides gen.
+
+   ***NOTE: If no gen 3, then <bw> arg must be present.
+            If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+EQ(start, inskip, dur, amp, type, [inchan, pctleft, bypass])
+   [1. amp envelope]
+    2. cutoff freq curve
+    3. Q curve
+   [4. gain curve]
+
+   New signature:
+
+   EQ(start, inskip, dur, amp, type, [inchan, pctleft, bypass, cf, Q,
+                                                               filt_gain])
+
+   PFields: amp, pctleft, bypass, cf, Q, file_gain
+
+   ***NOTE: If no gen 2, then <cf> arg must be present.
+            If both, then arg overrides gen.
+
+   ***NOTE: If no gen 3, then <Q> arg must be present.
+            If both, then arg overrides gen.
+
+   ***NOTE: If no gen 4, and type is shelf or peak/notch, then <Q> arg
+            must be present.  If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+FILTSWEEP(start, inskip, dur, amp, ringdur, [steep, balance, inchan, pctleft])
+   [1. amp envelope]
+    2. cutoff freq curve
+    3. bandwidth curve
+
+   New signature:
+
+   FILTSWEEP(start, inskip, dur, amp, ringdur, [steep, balance, inchan,
+                                                            pctleft, cf, bw])
+
+   PFields: amp, pctleft, cf, bw
+
+   ***NOTE: If no gen 2, then <cf> arg must be present.
+            If both, then arg overrides gen.
+
+   ***NOTE: If no gen 3, then <bw> arg must be present.
+            If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+FLANGE(start, inskip, dur, amp, resonance, maxdeltime, moddepth, modspeed,
+                                 [wet_dry_mix, flanger_type, inchan, pctleft])
+   [1. amp envelope]
+    2. modulation wavetable
+
+   New signature:
+
+   FLANGE(start, inskip, dur, amp, resonance, maxdeltime, moddepth,
+      modspeed, [wet_dry_mix, flanger_type, inchan, pctleft, mod_wavetable])
+
+   PFields: amp, resonance, maxdeltime, moddepth, modspeed, wet_dry_mix,
+            pctleft, mod_wavetable
+
+   ***NOTE: If no gen 2, then <mod_wavetable> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+FMINST(start, dur, amp, car_freq, mod_freq, index_low, index_high, [pctleft])
+   [1. amp envelope]
+    2. wavetable
+    3. index guide function
+
+   New signature:
+
+   FMINST(start, dur, amp, car_freq, mod_freq, index_low, index_high,
+                                             [pctleft, wavetable, index])
+
+   PFields: amp, car_freq, mod_freq, pctleft, osc_wavetable, index
+
+   ***NOTE: If no gen 2, then <wavetable> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+   ***NOTE: If no gen 3, then <index> arg must be present.  If both, then
+            arg overrides gen.  PField values should range from 0 to 1.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+FOLLOWER: FOLLOWBUTTER(start, inskip, dur, car_amp, mod_amp, window_len,
+                     smooth, filter_type, min_cf, max_cf, [steep, pctleft])
+   [1. amp envelope]
+    2. bandwidth curve
+
+   New signature:
+
+   FOLLOWBUTTER(start, inskip, dur, car_amp, mod_amp, window_len, smooth,
+                        filter_type, min_cf, max_cf, [steep, pctleft, bw])
+
+   PFields: car_amp, mod_amp, smooth, minc_cf, max_cf, pctleft, bw
+
+   ***NOTE: If no gen 2, then <bw> arg must be present.
+            If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+FOLLOWER: FOLLOWGATE(start, inskip, dur, car_amp, mod_amp, window_len,
+                                       smooth, attack, release, [pctleft])
+   [1. amp envelope]
+    2. power threshold table
+    3. range table
+
+   New signature:
+
+   FOLLOWGATE(start, inskip, dur, car_amp, mod_amp, window_len, smooth,
+                              attack, release, [pctleft, threshold, range])
+
+   PFields: car_amp, mod_amp, smooth, attack, release, pctleft, threshold range
+
+   ***NOTE: If no gen 2, then <threshold> arg must be present.
+            If both, then arg overrides gen.
+
+   ***NOTE: If no gen 3, then <range> arg must be present.
+            If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+IIR: BUZZ(start, dur, amp, pitch, [pctleft])
+   [1. amp envelope]
+    2. sine wavetable
+
+   ***NOTE: IIR insts preceded by call to setup:
+
+      setup(cf1, bw1, amp1, cf2, bw2, amp2, ...)
+
+   New signature:
+
+   BUZZ(start, dur, amp, pitch, [pctleft, wavetable])
+
+   PFields: amp, pitch, pctleft, wavetable
+
+   ***NOTE: If no gen 2, then <wavetable> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+JCHOR(start, inskip, dur, indur, maintain_dur, transp, num_voices,
+            min_grain_amp, max_grain_amp, min_grain_wait, max_grain_wait,
+            seed, [inchan])
+   [1. amp envelope]
+    2. grain envelope
+
+   New signature:
+
+   JCHOR(start, inskip, dur, indur, maintain_dur, transp, num_voices,
+            min_grain_amp, max_grain_amp, min_grain_wait, max_grain_wait,
+            seed, [inchan, grain_envelope])
+
+   PFields: transp, min_grain_amp, max_grain_amp, min_grain_wait,
+            max_grain_wait, grain_envelope
+
+   ***NOTE: If no gen 2, then <grain_envelope> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+JFIR(start, inskip, dur, amp, filt_order, [inchan, pctleft, bypass])
+   [1. amp envelope]
+    2. freq response function
+
+   New signature:
+
+   JFIR(start, inskip, dur, amp, filt_order, [inchan, pctleft, bypass,
+                                                            freq_response])
+
+   PFields: amp, pctleft, bypass, freq_response
+
+   ***NOTE: If no gen 2, then <freq_response> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+JGRAN(start, dur, amp, [seed, osc_type, rand_phase])
+   [1. overall amplitude envelope]
+    2. grain envelope
+   [3. grain waveform]
+   [4. modulator frequency multiplier]
+   [5. index of modulation envelope (per grain)]
+    6. minimum grain frequency
+    7. maximum grain frequency
+    8. minumum grain speed
+    9. maximum grain speed
+   10. minumum grain intensity
+   11. maximum grain intensity
+   12. grain density
+  [13. grain stereo location]
+  [14. grain stereo location randomization]
+
+   New signature:
+
+   JGRAN(start, dur, amp, [seed, osc_type, rand_phase])
+
+   PFields: amp, osc_type, grain_envelope, grain_waveform, mod_freq_mult,
+            mod_index, min_freq, max_freq, min_speed, max_speed, min_intensity,
+            max_intensity, density, grain_loc, grain_loc_rand
+
+   ***NOTE: If no gen 2, then <grain_envelope> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+   ***NOTE: If no gen 3, and no <grain_waveform> arg, then oscil is sine
+            wave.  If no gen 3 and <grain_waveform> arg is present, it
+            must return a local table.  If both are present, then arg
+            overrides gen.
+
+   ***NOTE: If no gen 4, then <mod_freq_mult> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+   ***NOTE: All other tables/pfields function analogously to gen 4.
+
+   ***NOTE: Not sure it's worth doing this, as opposed to writing a
+            new instrument.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+LPCPLAY(start, dur, amp, pitch_factor, start_frame, end_frame,
+                                             [warp, reson_cf, reson_bw])
+   25. sine wavetable [optional??]
+   26. amp envelope
+
+   New signature:
+
+   LPCPLAY(start, dur, amp, pitch_factor, start_frame, end_frame,
+                                  [warp, reson_cf, reson_bw, wavetable])
+
+   PFields: amp, wavetable (others?)
+
+   ***NOTE: If no gen 25, then <wavetable> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+METAFLUTE: BSFLUTE(start, dur, noise_amp, length1low, length1high,
+                           length2low, length2high, output_amp, [pctleft])
+   1. noise amp envelope
+   2. output amp envelope
+   3. length 1 pitch-track curve 
+   4. length 2 pitch-track curve 
+
+   New signature:
+
+   BSFLUTE(start, dur, noise_amp, length1low, length1high, length2low,
+            length2high, output_amp, [pctleft, length1_pitch_track,
+                                                length2_pitch_track])
+
+   PFields: noise_amp, output_amp, pctleft, length1_pitch_track,
+                                                   length2_pitch_track
+
+   ***NOTE: Gens 1 and 2 function as a category 2 situation, w/r/t
+            <noise_amp> and <output_amp> pfields.
+
+   ***NOTE: If no gen 3, then <length1_pitch_track> arg must be present.
+            If both, then arg overrides gen.  PField values should range
+            from 0 to 1.
+
+   ***NOTE: Gen 4 functions similarly to gen 3.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+METAFLUTE: VSFLUTE(start, dur, noise_amp, length1low, length1high,
+                     length2low, length2high, output_amp, vibfreq1_low,
+                     vibfreq1_high, vibfreq2_low, vibfreq2_hight, [pctleft])
+   1. noise amp envelope
+   2. output amp envelope
+   3. vibrato 1 function
+   4. vibrato 2 function
+
+   New signature:
+
+   VSFLUTE(start, dur, noise_amp, length1low, length1high, length2low,
+            length2high, output_amp, vibfreq1_low, vibfreq1_high,
+            vibfreq2_low, vibfreq2_hight, [pctleft, vib1_func, vib2_func])
+
+   PFields: noise_amp, output_amp, pctleft, length1_pitch_track,
+                                                   length2_pitch_track
+
+   ***NOTE: Gens 1 and 2 function as a category 2 situation, w/r/t
+            <noise_amp> and <output_amp> pfields.
+
+   ***NOTE: If no gen 3, then <vib1_func> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+   ***NOTE: Gen 4 functions similarly to gen 3.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+MMOVE: MMOVE(outskip, inskip, dur, pre_amp, dist_mikes, post_amp, [inchan])
+   [1. amp envelope]
+    X. used with param/cparam
+    Y. used with param/cparam
+
+MMOVE: MPLACE(outskip, inskip, dur, pre_amp, dist2sound, angle, dist_mikes,
+                                                        post_amp, [inchan])
+   [1. amp envelope]
+    X. used with param/cparam
+    Y. used with param/cparam
+
+   ***NOTE: MMOVE insts preceded by these calls, some optional:
+
+      space (front, right, -back, -left, ceiling, abs_fac, rvbtime)
+      mikes(angle, pattern)
+      mikes_off()
+      path(<time, distance, angle> triplets...)
+      cpath(<time, x, y> triplets...)
+      matrix(...)
+      threshold(reset)
+
+   ***NOTE: call RVB to get reverb; RVB is in a different category
+
+   ***NOTE: Is it worth revising this to use param/cparam TablePFields?
+            Otherwise, it's a category 2 situation.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+MOVE: same as MMOVE, but no RVB
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+MOOGVCF(start, inskip, dur, amp, [inchan, pctleft])
+   [1. amp envelope]
+    2. cutoff freq curve
+    3. bandwidth curve
+
+   New signature:
+
+   MOOGVCF(start, inskip, dur, amp, [inchan, pctleft, cf, bw])
+
+   PFields: amp, pctleft, cf, bw
+
+   ***NOTE: If no gen 2, then <cf> arg must be present.
+            If both, then arg overrides gen.
+
+   ***NOTE: If no gen 3, then <bw> arg must be present.
+            If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+PAN(start, inskip, dur, amp, [inchan, use_const_power])
+   [1. amp envelope]
+    2. pan curve
+
+   New signature:
+
+   PAN(start, inskip, dur, amp, [inchan, use_const_power, pctleft])
+
+   ***NOTE: If no gen 2, then <pctleft> arg must be present.
+            If both, then arg overrides gen.
+
+   ***NOTE: this inst probably superseded by pctleft update capability
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+SCULPT(start, dur, amp, num_points, [pctleft])
+   [1. amp envelope]
+    2. wavetable
+    3. freq points table
+    4. amp points table
+
+   New signature:
+
+   SCULPT(start, dur, amp, num_points, [pctleft, wavetable, freq_points,
+                                                               amp_points])
+
+   PFields: amp, pctleft, wavetable, freq_points, amp_points
+
+   ***NOTE: If no gen 2, then <wavetable> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+   ***NOTE: Gens 3 and 4 function similarly to gen 2.  Is it worth it?
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+SGRANR(start, dur, amp, rate, ratevar1, ratevar2, ratevar3, ratevar4,
+                        dur1, dur2, dur3, dur4, loc1, loc2, loc3, loc4,
+                        trans1, trans2, trans3, trans4)
+   [1. amp envelope]
+    2. grain wavetable
+   [3. grain envelope]
+
+   New signature:
+
+   SGRANR(start, dur, amp, rate, ratevar1, ratevar2, ratevar3, ratevar4,
+                        dur1, dur2, dur3, dur4, loc1, loc2, loc3, loc4,
+                        trans1, trans2, trans3, trans4)
+
+   PFields: amp, rate, pctleft, grain_wavetable, grain_envelope (others?)
+
+   ***NOTE: If no gen 2, then <grain_wavetable> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+   ***NOTE: If no gen 3, and no <grain_envelope> arg, then envelope amp
+            multiplier is 1.  If no gen 3, and <grain_envelope> arg is
+            present, then it must return a local table.  If both are 
+            present, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+SPECTACLE: SPECTACLE(start, inskip, dur, amp, ringdur, fft_len, window_len,
+                        window_type, overlap, [wetdry_mix, inchan, pctleft])
+   [1. input amp envelope]
+   [2. output amp envelope]
+    3. EQ table
+    4. delay time table
+    5. delay feedback table
+
+   New signature:
+
+   SPECTACLE(start, inskip, dur, amp, ringdur, fft_len, window_len,
+               window_type, overlap, [wetdry_mix, inchan, pctleft, in_amp,
+               eq_table, delay_time_table, delay_feedback_table])
+
+   PFields: amp, wetdry_mix, pctleft, in_amp, eq_table, delay_time_table,
+            delay_feedback_table
+
+   ***NOTE: Gen 2 and <amp> make for a category 2 situation.
+
+   ***NOTE: If no gen 1, and no <in_amp> arg, then a const 1.0 is used.
+            If no gen 1 and <in_amp> is present, it must return a local
+            table.  If both are present, then arg overrides gen.
+
+   ***NOTE: If no gen 3, then <eq_table> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+   ***NOTE: Gens 4 and 5 function similarly to gen 3, w/r/t the
+            <delay_time_table> and <delay_feedback_table> pfields.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+SPECTACLE: SPECTEQ(start, inskip, dur, amp, ringdur, fft_len, window_len,
+                        window_type, overlap, [inchan, pctleft])
+   [1. input amp envelope]
+   [2. output amp envelope]
+    3. EQ table
+
+   New signature:
+
+   SPECTEQ(start, inskip, dur, amp, ringdur, fft_len, window_len,
+               window_type, overlap, [wetdry_mix, inchan, pctleft,
+               in_amp, eq_table)
+
+   PFields: amp, wetdry_mix, pctleft, in_amp, eq_table
+
+   ***NOTE: Gen 2 and <amp> make for a category 2 situation.
+
+   ***NOTE: If no gen 1, and no <in_amp> arg, then a const 1.0 is used.
+            If no gen 1 and <in_amp> is present, it must return a local
+            table.  If both are present, then arg overrides gen.
+
+   ***NOTE: If no gen 3, then <eq_table> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+SPECTACLE: TVSPECTACLE(start, inskip, dur, amp, ringdur, fft_len, window_len,
+                        window_type, overlap, [wetdry_mix, inchan, pctleft])
+   [1. input amp envelope]
+   [2. output amp envelope]
+    3. EQ table A
+    4. delay time table A
+    5. delay feedback table A
+    6. EQ table B
+    7. delay time table B
+    8. delay feedback table B
+    9. EQ A<->B curve
+   10. delay time A<->B curve
+   11. delay feedback A<->B curve
+
+   New signature:
+
+   TVSPECTACLE(start, inskip, dur, amp, ringdur, fft_len, window_len,
+               window_type, overlap, [wetdry_mix, inchan, pctleft, in_amp,
+               eq_table_A, delay_time_table_A, delay_feedback_table_A,
+               eq_table_B, delay_time_table_B, delay_feedback_table_B,
+               eq_curve, delay_time_curve, delay_feedback_curve])
+
+   PFields: amp, wetdry_mix, pctleft, in_amp, eq_table_A, delay_time_table_A,
+            delay_feedback_table_A, eq_table_B, delay_time_table_B,
+            delay_feedback_table_B, eq_curve, delay_time_curve,
+            delay_feedback_curve])
+
+   ***NOTE: Gen 2 and <amp> make for a category 2 situation.
+
+   ***NOTE: If no gen 1, and no <in_amp> arg, then a const 1.0 is used.
+            If no gen 1 and <in_amp> is present, it must return a local
+            table.  If both are present, then arg overrides gen.
+
+   ***NOTE: If no gen 3, then <eq_table_A> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+   ***NOTE: The remaining gens and pfield args function like gen 3.
+
+   ***NOTE: This instrument should be redesigned (and renamed) to take
+            less confusing advantage of the new pfield features.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+STRUM: VSTART1(start, dur, pitch, fund_decay, nyq_decay, dist_gain,
+               feedback_gain, feedback_pitch, clean_level, dist_level, amp,
+               squish, low_vib_freq, high_vib_freq, vib_depth, seed, update,
+               [pctleft, delflag])
+   [1. amp envelope]
+    2. vibrato wavetable
+    3. vibrato amp envelope
+
+   New signature:
+
+   VSTART1(start, dur, pitch, fund_decay, nyq_decay, dist_gain,
+               feedback_gain, feedback_pitch, clean_level, dist_level, amp,
+               squish, low_vib_freq, high_vib_freq, vib_depth, seed, update,
+               [pctleft, delflag, vib_wavetable, vib_amp])
+
+   PFields: amp, pitch, dist_gain, feedback_gain, feedback_pitch,
+            clean_level, dist_level, vib_depth, pctleft, vib_wavetable,
+            vib_amp
+
+   ***NOTE: If no gen 2, then <vib_wavetable> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+   ***NOTE: If no gen 3, then <vib_amp> arg must be present.
+            If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+STRUM: VFRET1(start, dur, pitch, fund_decay, nyq_decay, dist_gain,
+               feedback_gain, feedback_pitch, clean_level, dist_level, amp,
+               low_vib_freq, high_vib_freq, vib_depth, update, [pctleft])
+   [1. amp envelope]
+    2. vibrato wavetable
+    3. vibrato amp envelope
+
+   New signature:
+
+   VFRET1(start, dur, pitch, fund_decay, nyq_decay, dist_gain,
+               feedback_gain, feedback_pitch, clean_level, dist_level, amp,
+               low_vib_freq, high_vib_freq, vib_depth, update,
+               [pctleft, vib_wavetable, vib_amp])
+
+   PFields: amp, pitch, dist_gain, feedback_gain, feedback_pitch,
+            clean_level, dist_level, vib_depth, pctleft, vib_wavetable,
+            vib_amp
+
+   ***NOTE: If no gen 2, then <vib_wavetable> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+   ***NOTE: If no gen 3, then <vib_amp> arg must be present.
+            If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+VOCODE(start, inskip, dur, amp, numfilt, lowcf, space_mult, bwpct,
+            [response_time, excit_inskip, excit_inchan, inchan, pctleft])
+   [1. amp envelope]
+    2. cf freq table
+
+   ***NOTE: VOCODE preceded by optional call to excitationfile:
+
+      excitationfile(filename)
+
+   New signature:
+
+   VOCODE(start, inskip, dur, amp, numfilt, lowcf, space_mult, bwpct,
+            [response_time, excit_inskip, excit_inchan, inchan, pctleft,
+                                                          cf_freq_table])
+
+   PFields: amp, response_time, pctleft, cf_freq_table
+
+   ***NOTE: If no gen 2, then <cf_freq_table> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+VOCODE2(start, inskip, dur, amp, numfilt, lowcf, space_mult, car_transp,
+         bwpct, [response_time, mod_hipass_amp, mod_hipass_cf, noise_amp,
+         noise_rate, pctleft])
+   [1. amp envelope]
+    2. cf freq table
+
+   New signature:
+
+   VOCODE2(start, inskip, dur, amp, numfilt, lowcf, space_mult, car_transp,
+         bwpct, [response_time, mod_hipass_amp, mod_hipass_cf, noise_amp,
+         noise_rate, pctleft, cf_freq_table])
+
+   PFields: amp, response_time, mod_hipass_amp, mod_hipass_cf, noise_amp,
+            noise_rate, pctleft, cf_freq_table
+
+   ***NOTE: If no gen 2, then <cf_freq_table> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+VOCODESYNTH(start, inskip, dur, amp, numfile, lowcf, space_mult, car_transp,
+               bwpct, [window_len, smoothness, threshold, attack, release,
+               mod_hipass_amp, mod_hipass_cf, inchan, pctleft])
+   [1. amp envelope]
+   [2. carrier wavetable]
+    3. scaling curve
+    4. cf freq table
+
+   New signature:
+
+   VOCODESYNTH(start, inskip, dur, amp, numfile, lowcf, space_mult,
+            car_transp, bwpct, [window_len, smoothness, threshold, attack,
+            release, mod_hipass_amp, mod_hipass_cf, inchan, pctleft,
+            car_wavetable, scaling_curve, cf_freq_table])
+
+   PFields: amp, response_time, mod_hipass_amp, mod_hipass_cf, pctleft,
+            car_wavetable, scaling_curve, cf_freq_table
+
+   ***NOTE: If no gen 2 and no <car_wavetable> arg, then sine wave is
+            used.  If no gen 2 and <car_wavetable> is present, then it
+            must return a local table.  If both are present, then arg
+            overrides gen.
+
+   ***NOTE: If no gen 3, then <scaling_curve> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+   ***NOTE: If no gen 4, then <cf_freq_table> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+WAVESHAPE(start, dur, pitch, index_low, index_high, amp, [pctleft])
+   [1. amp envelope]
+    2. wavetable
+    3. transfer function
+    4. index envelope
+
+   New signature:
+
+   WAVESHAPE(start, dur, pitch, index_low, index_high, amp, [pctleft,
+                                    wavetable, transfer_function, index])
+
+   PFields: amp, pitch, pctleft, wavetable, transfer_function, index
+
+   ***NOTE: If no gen 2, then <wavetable> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+   ***NOTE: If no gen 3, then <transfer_function> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+   ***NOTE: If no gen 4, then <index> arg must be present.  If both, then
+            arg overrides gen.  PField values should range from 0 to 1.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+WAVETABLE(start, dur, amp, freq, [pctleft])
+   [1. amp envelope]
+    2. wavetable
+
+   New signature:
+
+   WAVETABLE(start, dur, amp, freq, [pctleft, wavetable])
+
+   PFields: amp, freq, pctleft, wavetable
+
+   ***NOTE: If no gen 2, then <wavetable> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+WIGGLE(start, dur, car_amp, car_freq, [mod_depth_type, filt_type, steep,
+                                                               balance])
+   [1. amp envelope]
+    2. carrier wavetable
+    3. carrier glissando curve
+   [4. modulator wavetable]
+   [5. modulator freq curve]
+   [6. modulator depth curve]
+    7. filter cutoff freq curve
+    8. pan curve
+
+   New signature:
+
+   WIGGLE(start, dur, car_amp, car_freq, [mod_depth_type, filt_type, steep,
+            balance, car_wavetable, mod_wavetable, mod_freq, mod_depth,
+            lowpass_cf, pctleft])
+
+   PFields: car_amp, car_freq, car_wavetable, mod_wavetable, mod_freq,
+            mod_depth, lowpass_cf, pctleft
+
+   ***NOTE: If no gen 2, then <car_wavetable> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+   ***NOTE: Gen 3 and <car_freq> function analogously to to gen 1 and <amp>.
+
+   ***NOTE: If (mod_depth_type != NoModOsc) and if no gen 4, then
+            <mod_wavetable> arg must be present, and must return a local
+            table.  If both, then arg overrides gen.
+
+   ***NOTE: If (mod_depth_type != NoModOsc) and if no gen 5, then
+            <mod_freq> arg must be present, and must return a local
+            table.  If both, then arg overrides gen.
+
+   ***NOTE: If (mod_depth_type != NoModOsc) and if no gen 6, then
+            <mod_depth> arg must be present, and must return a local
+            table.  If both, then arg overrides gen.
+
+   ***NOTE: If (filt_type != NoFilter) and no gen 7, then <lowpass_cf> arg
+            must be present.  If both, then arg overrides gen.
+
+   ***NOTE: If stereo output and no gen 8, then <pctleft> arg must be
+            present.  If both, then arg overrides gen.
+
+   ***NOTE: Should write a new, renamed version of this instead!
+
+
+===========================================================================
+5. Combination of categories 3 and 4: has at least one gen with no
+   corresponding pfield argument and at least one gen whose number is
+   given as a genno argument.  Handle these as for categories 3 and 4.
+---------------------------------------------------------------------------
+
+SHAPE(start, inskip, dur, amp, min_dist_index, max_dist_index,
+                                          amp_norm_genno, [inchan, pctleft])
+   [1. amp envelope]
+    2. transfer function
+    3. distortion index curve
+    X. normalization table
+
+   New signature:
+
+   SHAPE(start, inskip, dur, amp, min_dist_index, max_dist_index,
+                  amp_norm_genno, [inchan, pctleft, transfer_func, index])
+
+   PFields: amp, amp_norm_genno, pctleft
+
+   ***NOTE: If no gen 2, then <transfer_func> arg must be present, and
+            must return a local table.  If both, then arg overrides gen.
+
+   ***NOTE: If no gen 3, then <index> arg must be present.  If both, then
+            arg overrides gen.  PField values should range from 0 to 1.
+
+   ***NOTE: Gen 4 should be handled as in category 3.
+
+
