@@ -10,20 +10,20 @@ B<spray_init>(I<spray_table_number>, I<spray_table_size>, I<random_seed>)
 
 Call B<spray_init> from a script to set up a random integer spray can.
 The idea is that you create a table of integers and then use
-L<get_spray|get_spray> to retrieve them one after the other.  The
-table contains integers from zero to one less than the table size.
-(Another way to look at this is that the table values are the randomly
-scrambled table indices.)  Repeatedly calling L<get_spray|get_spray>
-reads the table from left to right, so that no number appears twice
-before all the other numbers have appeared once.
+L<get_spray|get_spray> to retrieve them.  The table contains integers
+from zero to one less than the table size.  (Another way to look at
+it is that each element takes its index as its value.)  Repeatedly
+calling L<get_spray|get_spray> reads the table randomly, but in such
+a way that no number appears twice before all the other numbers have
+appeared once.
 
 =over 8
 
 =item I<spray_table_number>
 
 The numeric ID for the spray table.  Note that these are distinct
-from the tables you create with makegen.  You can have as many as
-32 tables, numbered from 0 to 31.
+from the tables you create with L<makegen|makegen>.  You can have
+as many as 32 tables, numbered from 0 to 31.
 
 =item I<spray_table_size>
 
