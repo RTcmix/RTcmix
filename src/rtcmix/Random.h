@@ -13,13 +13,13 @@
 #include <RefCounted.h>
 
 enum {
-	kLinearRandom = 0,
-	kLowLinearRandom,
-	kHighLinearRandom,
-	kTriangleRandom,
-	kGaussianRandom,
-	kCauchyRandom,
-	kProbRandom
+   kLinearRandom = 0,
+   kLowLinearRandom,
+   kHighLinearRandom,
+   kTriangleRandom,
+   kGaussianRandom,
+   kCauchyRandom,
+   kProbRandom
 };
 
 // Base class
@@ -27,9 +27,11 @@ enum {
 class Random : public RefCounted {
 public:
    Random(int aseed, double min, double max)
-                  : _min(min), _max(max) { seed(aseed); }
+                  : _min(min), _max(max) { setseed(aseed); }
    virtual double value() = 0;      // NB: not const, because it changes _randx
-   void           seed(int aseed) { _randx = (long) aseed; }
+   void           setseed(const int aseed) { _randx = (long) aseed; }
+   void           setmin(const double min) { _min = min; }
+   void           setmax(const double max) { _max = max; }
 protected:
    virtual        ~Random();
    double         rawvalue();
@@ -97,8 +99,12 @@ class ProbRandom : public Random {
 public:
    ProbRandom(int seed, double min, double mid, double max, double tight);
    virtual double value();
+   void           setmid(const double mid) { _mid = mid; }
+   void           settight(const double tight) { _tight = tight; }
 protected:
    virtual        ~ProbRandom();
+   double         getmid() const { return _mid; }
+   double         gettight() const { return _tight; }
 private:
    double         _mid;
    double         _tight;
