@@ -86,29 +86,26 @@ int AudioFileDevice::open(int mode, int fileSampFmt, int fileChans, double srate
 
 int	AudioFileDevice::sendFrames(void *frameBuffer, int frames)
 {
-	if (IS_FLOAT_FORMAT(getDeviceFormat())) {
-		// Will not have gone through limiter, so do peak check here.
-		if (_impl->checkPeaks) {
-			int chans = getDeviceChannels();
-			long bufStartSamp = frameCount();
-			float *peaks = _impl->peaks;
-			for (int c = 0; c < chans; ++c) {
-				float *fp;
-				int incr;
-				if (isFrameInterleaved()) {
-					fp = &((float *) frameBuffer)[c];
-					incr = chans;
-				}
-				else {
-					fp = ((float **) frameBuffer)[c];
-					incr = 1;
-				}
-				for (int n = 0; n < frames; ++n, fp += incr) {
-					double fabsamp = fabs((double) *fp);
-					if (fabsamp > (double) peaks[c]) {
-						peaks[c] = (float) fabsamp;
-						_impl->peakLocs[c] = bufStartSamp + n;	// frame count
-					}
+	if (IS_FLOAT_FORMAT(getDeviceFormat()) || _impl->checkPeaks) {
+		int chans = getDeviceChannels();
+		long bufStartSamp = frameCount();
+		float *peaks = _impl->peaks;
+		for (int c = 0; c < chans; ++c) {
+			float *fp;
+			int incr;
+			if (isFrameInterleaved()) {
+				fp = &((float *) frameBuffer)[c];
+				incr = chans;
+			}
+			else {
+				fp = ((float **) frameBuffer)[c];
+				incr = 1;
+			}
+			for (int n = 0; n < frames; ++n, fp += incr) {
+				double fabsamp = fabs((double) *fp);
+				if (fabsamp > (double) peaks[c]) {
+					peaks[c] = (float) fabsamp;
+					_impl->peakLocs[c] = bufStartSamp + n;	// frame count
 				}
 			}
 		}
@@ -119,7 +116,7 @@ int	AudioFileDevice::sendFrames(void *frameBuffer, int frames)
 double AudioFileDevice::getPeak(int chan, long *pLocation)
 {
 	*pLocation = _impl->peakLocs[chan];
-	return isDeviceFmtNormalized() ? _impl->peaks[chan] /32768.0 : _impl->peaks[chan];
+	return isDeviceFmtNormalized() ? _impl->peaks[chan] / 32768.0 : _impl->peaks[chan];
 }
 
 int AudioFileDevice::doOpen(int mode)
