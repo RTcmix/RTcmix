@@ -17,7 +17,7 @@ public:
 	virtual double 	doubleValue(int indx = 0) const = 0;
 	virtual double 	doubleValue(double dindex) const = 0;
 	int 			intValue(double dindex) const { return (int) doubleValue(dindex); }
-	const char * 	stringValue(double dindex) const { return (const char *) intValue(dindex); }
+	const char * 	stringValue(double dindex) const;
 	virtual int		print(FILE *) const;
 	virtual operator double *() const { /* default is to */ return 0; }
 	virtual int		copyValues(double *) const;

@@ -14,6 +14,16 @@ inline int min(int x, int y) { return (x < y) ? x : y; }
 
 PField::~PField() {}
 
+// Return a string version of the pfield value if the pointer address seems
+// to be valid, else NULL (which means the PField did not contain a string).
+
+const char * 	
+PField::stringValue(double dindex) const
+{
+	const int ivalue = intValue(dindex);
+	return (const char *) ((ivalue < 0x100000) ? 0 : ivalue);
+}
+
 int PField::print(FILE *file) const
 {
 	int chars = 0;
