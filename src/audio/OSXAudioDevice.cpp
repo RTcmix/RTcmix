@@ -10,13 +10,35 @@
 #include <stdio.h>
 #include <sndlibsupport.h>	// RTcmix header
 
-static char s_ErrString[7];
-
 const char *errToString(OSStatus err)
 {
-	sprintf(s_ErrString, "'%.4s'", (const char *) &err);
-	s_ErrString[6] = '\0';
-	return s_ErrString;
+	const char *errstring;
+	switch (err) {
+	case kAudioHardwareNoError:
+		errstring = "No error.";
+		break;
+	case kAudioHardwareNotRunningError:
+		errstring = "Hardware not running.";
+		break;
+	case kAudioHardwareUnspecifiedError:
+		errstring = "Unspecified error.";
+		break;
+	case kAudioHardwareUnknownPropertyError:
+		errstring = "Unknown hardware property.";
+		break;
+	case kAudioDeviceUnsupportedFormatError:
+		errstring = "Unsuported audio format.";
+		break;
+	case kAudioHardwareBadPropertySizeError:
+		errstring = "Bad hardware propery size.";
+		break;
+	case kAudioHardwareIllegalOperationError:
+		errstring = "Illegal operation.";
+		break;
+	default:
+		errstring = "Unknown error.";
+	}
+	return errstring;
 }
 
 static const int REC = 0, PLAY = 1;
@@ -29,7 +51,7 @@ struct OSXAudioDevice::Impl {
 	int							deviceChannels;			// hw value
 	int							channels;				// what user req's
 	int							frameCount;
-	bool						formatWritable;
+	bool						formatWritable;			// true if device allows changes to fmt
 	bool						paused;
 	bool						stopping;
 	bool						recording;				// Used by OSX code
@@ -261,6 +283,9 @@ int OSXAudioDevice::doOpen(int mode)
 	if (err != kAudioHardwareNoError) {
 		return error("Can't get audio device format: ", errToString(err));
 	}
+	// Cache this.
+	_impl->deviceChannels = _impl->deviceFormat.mChannelsPerFrame;
+	// Test and store whether or not audio format property is writable.
 	Boolean writeable;
 	size = sizeof(writeable);
 	err = AudioDeviceGetPropertyInfo(_impl->deviceID, 
@@ -269,7 +294,7 @@ int OSXAudioDevice::doOpen(int mode)
 									&size,
 									&writeable);
 	if (err != kAudioHardwareNoError) {
-		return error("Can't get audio device property: ", errToString(err));
+		return error("Can't get audio device writeable property: ", errToString(err));
 	}
 	_impl->formatWritable = (writeable != 0);
 	// Register our callback functions with the HAL.
@@ -335,30 +360,55 @@ int OSXAudioDevice::doStop()
 int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 {
 	// Sanity check, because we do the conversion to float ourselves.
-	if ((fmt != MUS_BFLOAT && fmt != MUS_BSHORT) || (chans != 1 && chans != 2))
-		return error("Only 16bit and float mono and stereo supported.");
+	if (fmt != MUS_BFLOAT && fmt != MUS_BSHORT)
+		return error("Only 16bit and float audio buffers supported.");
 
 	_impl->bufferSampleFormat = fmt;
-	_impl->channels = chans;
-	_impl->deviceChannels = 2;		// ALWAYS, for now
+	// We catch mono input and do the conversion ourselves.
+	_impl->channels = (chans == 1) ? 2 : chans;
 	if (_impl->formatWritable)
 	{
-		_impl->deviceFormat.mSampleRate = srate;
-		_impl->deviceFormat.mChannelsPerFrame = _impl->deviceChannels;
-		UInt32 size = sizeof(_impl->deviceFormat);
+		// Default all values to device's defaults (from doOpen()), then set
+		// our sample rate and channel count.
+		AudioStreamBasicDescription requestedFormat = _impl->deviceFormat;
+		requestedFormat.mSampleRate = srate;
+		requestedFormat.mChannelsPerFrame = _impl->channels;
+		UInt32 size = sizeof(requestedFormat);
 		OSStatus err = AudioDeviceSetProperty(_impl->deviceID,
 									 NULL,
 									 0, _impl->recording,
 								     kAudioDevicePropertyStreamFormat,
 									 size,
-									 (void *)&_impl->deviceFormat);
+									 (void *)&requestedFormat);
 		if (err != kAudioHardwareNoError) {
 			return error("Can't set audio device format: ", errToString(err));
 		}
+		// Now retrieve settings to see what we got (IS THIS NECESSARY?)
+		size = sizeof(_impl->deviceFormat);
+		err = AudioDeviceGetProperty(_impl->deviceID, 
+									  0, _impl->recording,
+									  kAudioDevicePropertyStreamFormat, 
+									  &size, 
+									  &_impl->deviceFormat);
+		if (err != kAudioHardwareNoError) {
+			return error("Can't retrieve audio device format: ", errToString(err));
+		}
+		else if (_impl->deviceFormat.mChannelsPerFrame != _impl->channels) {
+			return error("This channel count not supported.");
+		}
+		else if (_impl->deviceFormat.mSampleRate != srate) {
+			return error("This sampling rate not supported.");
+		}
+		// We are OK.  Cache retrieved device channel count.
+		_impl->deviceChannels = _impl->deviceFormat.mChannelsPerFrame;
 		return 0;
 	}
+	// If format was not writable, see if our request matches defaults.
 	else if (_impl->deviceFormat.mSampleRate != srate) {
-		return error("Audio format/srate not writable on this device");
+		return error("Audio srate not writable on this device");
+	}
+	else if (_impl->deviceFormat.mChannelsPerFrame != _impl->channels) {
+		return error("Audio channel count not writable on this device");
 	}
 	return 0;
 }
@@ -425,24 +475,6 @@ int OSXAudioDevice::doSetQueueSize(int *pQueueSize)
 	printf("device bufsize: %d bytes (%d frames). circ buffer %d frames\n",
 			deviceBufferBytes, deviceFrames, _impl->audioBufSamps/_impl->deviceChannels);
 
-#if 0
-   // Adjust scheduling policy for our thread.  Using "time constraint"
-   //   scheduling prevents GUI manipulations from causing dropouts.
-
-   float host_clock_rate = AudioGetHostClockFrequency();
-   uint32_t period = (uint32_t)( ((deviceBufferSize / _impl->channels)
-                                 / _impl->deviceFormat.mSampleRate) * host_clock_rate );
-   thread_time_constraint_policy_data_t thread_policy;
-   thread_policy.period = period;
-   thread_policy.computation = AudioGetHostClockMinimumTimeDelta() * 2000;
-   thread_policy.constraint = thread_policy.computation * 2;
-   thread_policy.preemptible = 1;
-   thread_policy_set(pthread_mach_thread_np(pthread_self()),
-                     THREAD_TIME_CONSTRAINT_POLICY,
-                     (thread_policy_t) &thread_policy,
-                     THREAD_TIME_CONSTRAINT_POLICY_COUNT);
-#endif	// 0
-
 	delete [] _impl->audioBuffers[REC];  _impl->audioBuffers[REC] = NULL;
 	delete [] _impl->audioBuffers[PLAY]; _impl->audioBuffers[PLAY] = NULL;
 	if (_impl->recording) {
@@ -503,6 +535,7 @@ int	OSXAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 			return error("This sample format conversion not supported");
 		}
 		break;
+
 	case 2:
 		switch (_impl->bufferSampleFormat) {
 		case MUS_BSHORT:
@@ -534,6 +567,10 @@ int	OSXAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 		default:
 			return error("This sample format conversion not supported");
 		}
+		break;
+
+	default:
+		return error("This channel count not yet supported by format conversion code");
 	}
 	_impl->outLoc[REC] = outLoc;
 	// printf("\toutLoc ended at %d.  Returning frameCount = %d\n", outLoc, frameCount);
@@ -552,7 +589,7 @@ int	OSXAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 	switch (chans) {
 	case 1:
 		switch (_impl->bufferSampleFormat) {
-		case MUS_BSHORT:
+		case MUS_BSHORT:	// mono short to stereo float
 			{
 				scale = 1.0/32768.0;
 				short *from = (short *) frameBuffer;
@@ -566,7 +603,7 @@ int	OSXAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 				}
 			}
 			break;
-		case MUS_BFLOAT:
+		case MUS_BFLOAT:	// mono float to stereo float
 			{
 				scale = 1.0/32768.0;
 				float *from = (float *) frameBuffer;
@@ -584,9 +621,10 @@ int	OSXAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 			return error("This sample format conversion not supported");
 		}
 		break;
+
 	case 2:
 		switch (_impl->bufferSampleFormat) {
-		case MUS_BSHORT:
+		case MUS_BSHORT:	// stereo short to stereo float
 			{
 				scale = 1.0/32768.0;
 				short *from = (short *) frameBuffer;
@@ -600,7 +638,7 @@ int	OSXAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 				}
 			}
 			break;
-		case MUS_BFLOAT:
+		case MUS_BFLOAT:	// stereo float to stereo float (rescaled)
 			{
 				scale = 1.0/32768.0;
 				float *from = (float *) frameBuffer;
@@ -617,6 +655,10 @@ int	OSXAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 		default:
 			return error("This sample format conversion not supported");
 		}
+		break;
+
+	default:
+		return error("This channel count not yet supported by format conversion code");
 	}
 	_impl->inLoc[PLAY] = inLoc;
 	// printf("\tinLoc ended at %d.  Returning frameCount = %d\n", inLoc, frameCount);
