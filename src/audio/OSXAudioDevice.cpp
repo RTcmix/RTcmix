@@ -47,9 +47,8 @@ struct OSXAudioDevice::Impl {
 	AudioDeviceID				deviceID;
 	AudioStreamBasicDescription deviceFormat;
 	int							bufferSampleFormat;
-	unsigned int 				deviceBufSamps;			// hw size in samps
+	unsigned int 				deviceBufFrames;		// hw buf length
 	int							deviceChannels;			// hw value
-	int							channels;				// what user req's
 	int							frameCount;
 	bool						formatWritable;			// true if device allows changes to fmt
 	bool						paused;
@@ -57,7 +56,8 @@ struct OSXAudioDevice::Impl {
 	bool						recording;				// Used by OSX code
 	bool						playing;				// Used by OSX code
 	float						*audioBuffers[2];		// circ. buffers
-	int							audioBufSamps;			// length of buffers in samps
+	int							audioBufFrames;			// length of audioBuffers
+	int							audioBufChannels;		// channels in audioBuffers
 	int							inLoc[2],
 								outLoc[2];	// circ. buffer indices
 	static OSStatus				runProcess(
@@ -100,83 +100,99 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 	OSXAudioDevice::Impl *impl = device->_impl;
 	// printf("OSXAudioDevice: top of runProcess\n");
 	bool keepGoing = true;
-	// Samps, not frames.
-	const int bufLen = impl->audioBufSamps;
-	// How many samples are available from HW.
-	const int sampsToRead = impl->deviceBufSamps;
 	if (impl->recording) {
-		// How many samples' space are available in our buffer.
-		int spaceAvail = ::inRemaining(impl->outLoc[REC], impl->inLoc[REC], bufLen);
+		const int destframes = impl->audioBufFrames;
+		const int destchans = impl->deviceChannels;
+		const int bufLen = destframes * destchans;
+		// How many frames are available from HW.
+		const int framesToRead = impl->deviceBufFrames;
+		// How many frames' space are available in our buffer.
+		int framesAvail = ::inRemaining(impl->outLoc[REC], impl->inLoc[REC], bufLen) / destchans;
 
-		// printf("OSXAudioDevice: record section\n");
-		// printf("sampsToRead = %d, spaceAvail = %d\n", sampsToRead, spaceAvail);
+//		printf("OSXAudioDevice: record section\n");
+//		printf("framesToRead = %d, framesAvail = %d\n", framesToRead, framesAvail);
 
 		// Run this loop while not enough space to copy audio from HW.
-		while (spaceAvail < sampsToRead && keepGoing) {
+		while (framesAvail < framesToRead && keepGoing) {
 			keepGoing = device->runCallback();
-			spaceAvail = ::inRemaining(impl->outLoc[REC], impl->inLoc[REC], bufLen);
-			// printf("\tafter run callback, spaceAvail = %d\n", spaceAvail);
+			framesAvail = ::inRemaining(impl->outLoc[REC], impl->inLoc[REC], bufLen) / destchans;
+//			printf("\tafter run callback, framesAvail = %d\n", framesAvail);
 		}
 		if (keepGoing == true) {
-			// printf("\tinLoc begins at %d (out of %d)\n",
-			// 		  impl->inLoc[REC], bufLen);
-			int	sampsCopied = 0;
+//			printf("\tinLoc begins at %d (out of %d)\n",
+//			 		  impl->inLoc[REC], bufLen);
+			int	framesCopied = 0;
 			// Write new audio data into audioBuffers[REC].
 			//   Treat it as circular buffer.
-			while (sampsCopied < sampsToRead) {
+			while (framesCopied < framesToRead) {
 				register float *src = (float *) inInputData->mBuffers[0].mData;
 				register float *dest = impl->audioBuffers[REC];
 				int inLoc = impl->inLoc[REC];
-				for (int n = 0; n < sampsToRead; ++n) {
+				for (int n = 0; n < framesToRead; ++n) {
 					if (inLoc == bufLen)	// wrap
 						inLoc = 0;
-					dest[inLoc++] = src[n];
+					for (int ch = 0; ch < destchans; ++ch) {
+						dest[inLoc++] = src[ch];
+					}
+					src += destchans;
 				}
 				impl->inLoc[REC] = inLoc;
-				sampsCopied = sampsToRead;
+				framesCopied = framesToRead;
 			}
-			// printf("\tinLoc ended at %d\n", impl->inLoc[REC]);
+//			printf("\tinLoc ended at %d\n", impl->inLoc[REC]);
 		}
 		else if (!impl->playing) {
 			// printf("OSXAudioDevice: run callback returned false -- calling stop callback\n");
 			device->stopCallback();
 			device->close();
-			// printf("OSXAudioDevice: leaving runProcess\n");
+//			printf("OSXAudioDevice: leaving runProcess\n");
 			return kAudioHardwareNoError;
 		}
 	}
 	if (impl->playing) {
 		// Samps, not frames.
-		const int sampsToWrite = impl->deviceBufSamps;
-		int sampsAvail = ::outRemaining(impl->inLoc[PLAY], impl->outLoc[PLAY], bufLen);
+		const int framesToWrite = impl->deviceBufFrames;
+		const int srcframes = impl->audioBufFrames;
+		const int srcchans = impl->audioBufChannels;	// THIS CAN BE LESS THAN 'destchans'
+		const int bufLen = srcframes * srcchans;
+		const int destchans = impl->deviceChannels;
+		const int chansToCopy = (srcchans < destchans) ? srcchans : destchans;
 
-		// printf("OSXAudioDevice: playback section\n");
-		// printf("sampsAvail = %d\n", sampsAvail);
-		while (sampsAvail < sampsToWrite && keepGoing) {
-			// printf("\tsampsAvail < needed (%d), so run callback for more\n", sampsToWrite);
+		int framesAvail = ::outRemaining(impl->inLoc[PLAY], impl->outLoc[PLAY], bufLen) / srcchans;
+		
+//		printf("OSXAudioDevice: playback section\n");
+//		printf("framesAvail = %d\n", framesAvail);
+		while (framesAvail < framesToWrite && keepGoing) {
+//			printf("\tframesAvail < needed (%d), so run callback for more\n", framesToWrite);
 			keepGoing = device->runCallback();
-			sampsAvail = ::outRemaining(impl->inLoc[PLAY], impl->outLoc[PLAY], bufLen);
-			// printf("\tafter run callback, sampsAvail = %d\n", sampsAvail);
+			framesAvail = ::outRemaining(impl->inLoc[PLAY], impl->outLoc[PLAY], bufLen) / srcchans;
+//			printf("\tafter run callback, framesAvail = %d\n", framesAvail);
 		}
 		if (keepGoing == true) {
-			// printf("\toutLoc begins at %d (out of %d)\n",
-			//	   impl->outLoc[PLAY], bufLen);
-			int samplesDone = 0;
+//			printf("\toutLoc begins at %d (out of %d)\n",
+//				   impl->outLoc[PLAY], bufLen);
+			int framesDone = 0;
 			// Audio data has been written into audioBuffers[PLAY] during doSendFrames.
 			//   Treat it as circular buffer.
-			while (samplesDone < sampsToWrite) {
+			while (framesDone < framesToWrite) {
 				register float *src = impl->audioBuffers[PLAY];
 				register float *dest = (float *) outOutputData->mBuffers[0].mData;
 				int outLoc = impl->outLoc[PLAY];
-				for (int n = 0; n < sampsToWrite; ++n) {
+				for (int n = 0; n < framesToWrite; ++n) {
 					if (outLoc == bufLen)	// wrap
 						outLoc = 0;
-					dest[n] = src[outLoc++];
+					for (int ch = 0; ch < destchans; ++ch) {
+						if (ch < chansToCopy)
+							dest[ch] = src[outLoc++];
+						else
+							dest[ch] = 0.0f;
+					}
+					dest += destchans;
 				}
 				impl->outLoc[PLAY] = outLoc;
-				samplesDone += sampsToWrite;
+				framesDone += framesToWrite;
 			}
-			// printf("\toutLoc ended at %d\n", impl->outLoc[PLAY]);
+//			printf("\toutLoc ended at %d\n", impl->outLoc[PLAY]);
 		}
 		else {
 			// printf("OSXAudioDevice: run callback returned false -- calling stop callback\n");
@@ -184,7 +200,7 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 			device->close();
 		}
 	}
-	impl->frameCount += sampsToRead / impl->deviceChannels;
+	impl->frameCount += impl->deviceBufFrames;
 //	printf("OSXAudioDevice: leaving runProcess\n\n");
 	return kAudioHardwareNoError;
 }
@@ -227,10 +243,10 @@ OSXAudioDevice::OSXAudioDevice() : _impl(new Impl)
 {
 	_impl->deviceID = 0;
 	_impl->bufferSampleFormat = MUS_UNKNOWN;
-	_impl->deviceBufSamps = 0;
+	_impl->deviceBufFrames = 0;
 	_impl->deviceChannels = 0;
-	_impl->audioBufSamps = 0;
-	_impl->channels = 0;
+	_impl->audioBufFrames = 0;
+	_impl->audioBufChannels = 0;
 	_impl->audioBuffers[REC] = _impl->audioBuffers[PLAY] = NULL;
 	_impl->frameCount = 0;
 	_impl->inLoc[REC] = _impl->inLoc[PLAY] = 0;
@@ -358,16 +374,21 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 	if (_impl->bufferSampleFormat != MUS_BFLOAT)
 		return error("Only float audio buffers supported at this time.");
 
-	// We catch mono input and do the conversion ourselves.
-	_impl->channels = (chans == 1) ? 2 : chans;
+	// We catch mono input and do the conversion ourselves.  Otherwise we
+	// create a buffer equal to the requested channel count.
+	_impl->audioBufChannels = (chans == 1) ? 2 : chans;
+	int requestedChannels = chans;
 	if (_impl->formatWritable)
 	{
 		// Default all values to device's defaults (from doOpen()), then set
 		// our sample rate and channel count.
+		// NOTE:  For now, dont even try to set channel count on HW.
 		AudioStreamBasicDescription requestedFormat = _impl->deviceFormat;
 		requestedFormat.mSampleRate = srate;
-		requestedFormat.mChannelsPerFrame = _impl->channels;
-		printf("requesting srate %g, %d channels\n", srate, _impl->channels);
+#ifdef TRY_TO_SET_CHANNELS
+		requestedFormat.mChannelsPerFrame = requestedChannels;
+		printf("requesting srate %g, %d channels\n", srate, requestedChannels);
+#endif
 		UInt32 size = sizeof(requestedFormat);
 		OSStatus err = AudioDeviceSetProperty(_impl->deviceID,
 									 NULL,
@@ -389,24 +410,23 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 			return error("Can't retrieve audio device format: ",
 						 errToString(err));
 		}
-		else if (_impl->deviceFormat.mChannelsPerFrame != _impl->channels) {
+#ifdef TRY_TO_SET_CHANNELS
+		else if (_impl->deviceFormat.mChannelsPerFrame != requestedChannels) {
 			return error("This channel count not supported.");
 		}
+#endif
 		else if (_impl->deviceFormat.mSampleRate != srate) {
 			return error("This sampling rate not supported.");
 		}
-		// We are OK.  Cache retrieved device channel count.
-		_impl->deviceChannels = _impl->deviceFormat.mChannelsPerFrame;
 	}
 	// If format was not writable, see if our request matches defaults.
 	else if (_impl->deviceFormat.mSampleRate != srate) {
-		return error("Audio srate not writable on this device");
-	}
-	else if (_impl->deviceFormat.mChannelsPerFrame != _impl->channels) {
-		return error("Audio channel count not writable on this device");
-	}
+		return error("Audio sample rate not configurable on this device");
+	}	
 	
-	
+	// Cache retrieved device channel count.
+	_impl->deviceChannels = _impl->deviceFormat.mChannelsPerFrame;
+
 	int deviceFormat = MUS_BFLOAT | MUS_NORMALIZED;
 
 #ifdef WHEN_NONINTERLEAVED_IS_FINISHED
@@ -450,7 +470,7 @@ int OSXAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 	int reqQueueFrames = *pWriteSize * *pCount;
 	// Audio buffer is always floating point.  Attempt to set size in bytes.
 	// Loop until request is accepted, halving value each time.
-	unsigned int reqBufBytes = sizeof(float) * _impl->channels * reqQueueFrames;
+	unsigned int reqBufBytes = sizeof(float) * _impl->deviceChannels * reqQueueFrames;
 	if (writeable) {
 		size = sizeof(reqBufBytes);
 		while ( (err = AudioDeviceSetProperty(_impl->deviceID,
@@ -485,28 +505,28 @@ int OSXAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 
 	// We allocate the circular buffers to be the max(2_times_HW, user_req).
 	if (deviceFrames * 2 > reqQueueFrames) {
-		_impl->audioBufSamps = 2 * deviceFrames * _impl->deviceChannels;
+		_impl->audioBufFrames = 2 * deviceFrames;
 	}
 	else {
-		_impl->audioBufSamps = reqQueueFrames * _impl->deviceChannels;
+		_impl->audioBufFrames = reqQueueFrames;
 	}
 
-	_impl->deviceBufSamps = deviceBufferBytes / sizeof(float);	// in samples, not frames
+	_impl->deviceBufFrames = deviceBufferBytes / (_impl->deviceChannels * sizeof(float));
 
 
 	printf("device bufsize: %d bytes (%d frames). circ buffer %d frames\n",
-			deviceBufferBytes, deviceFrames, _impl->audioBufSamps/_impl->deviceChannels);
+			deviceBufferBytes, deviceFrames, _impl->audioBufFrames);
 
 	delete [] _impl->audioBuffers[REC];  _impl->audioBuffers[REC] = NULL;
 	delete [] _impl->audioBuffers[PLAY]; _impl->audioBuffers[PLAY] = NULL;
 	if (_impl->recording) {
-		_impl->audioBuffers[REC] = new float[_impl->audioBufSamps];
+		_impl->audioBuffers[REC] = new float[_impl->audioBufFrames * _impl->audioBufChannels];
 		if (_impl->audioBuffers[REC] == NULL)
 			return error("Memory allocation failure for OSXAudioDevice buffer!");
 		_impl->inLoc[REC] = _impl->outLoc[REC] = 0;
 	}
 	if (_impl->playing) {
-		_impl->audioBuffers[PLAY] = new float[_impl->audioBufSamps];
+		_impl->audioBuffers[PLAY] = new float[_impl->audioBufFrames * _impl->audioBufChannels];
 		if (_impl->audioBuffers[PLAY] == NULL)
 			return error("Memory allocation failure for OSXAudioDevice buffer!");
 		_impl->inLoc[PLAY] = _impl->outLoc[PLAY] = 0;
@@ -518,18 +538,17 @@ int	OSXAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 {
 	const int chans = getFrameChannels();
 	float *from = _impl->audioBuffers[REC];
-	const int bufLen = _impl->audioBufSamps;
+	const int bufLen = _impl->audioBufFrames * _impl->audioBufChannels;
 	int outLoc = _impl->outLoc[REC];
 	// printf("OSXAudioDevice::doGetFrames: frameCount = %d\n", frameCount);
 	// printf("\toutLoc begins at %d (out of %d)\n", outLoc, bufLen);
 
-	float scale;
 	switch (chans) {
 	case 1:
-		if (getDeviceChannels() == 2) {
-			scale = 0.707;
+		if (_impl->audioBufChannels == 2) {
+			const float scale = 0.707;
 			float *outbuf = (float *) frameBuffer;
-			// Combine stereo channels from circ. buffer into single frame channel.
+			// Combine stereo channels from circ. buffer into mono output frame.
 			for (int out=0; out < frameCount; ++out) {
 				if (outLoc >= bufLen)	// wrap
 					outLoc -= bufLen;
@@ -542,9 +561,9 @@ int	OSXAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 		break;
 
 	default:
-		if (getDeviceChannels() == getFrameChannels()) {
+		if (_impl->audioBufChannels == getFrameChannels()) {
 			float *outbuf = (float *) frameBuffer;
-			// Write all channels of each frame from circular buf into frame.
+			// Write all channels of each frame from circ. buffer into output frame.
 			for (int out=0; out < frameCount; ++out) {
 				if (outLoc >= bufLen)
 					outLoc -= bufLen;	// wrap
@@ -568,13 +587,13 @@ int	OSXAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 {
 	const int chans = getFrameChannels();
 	float *outbuf = _impl->audioBuffers[PLAY];
-	const int bufLen = _impl->audioBufSamps;
+	const int bufLen = _impl->audioBufFrames * _impl->audioBufChannels;
 	int inLoc = _impl->inLoc[PLAY];
-	//printf("OSXAudioDevice::doSendFrames: frameCount = %d\n", frameCount);
-	// printf("\tinLoc begins at %d (out of %d)\n", inLoc, bufLen);
+//	printf("OSXAudioDevice::doSendFrames: frameCount = %d\n", frameCount);
+//	printf("\tinLoc begins at %d (out of %d)\n", inLoc, bufLen);
 	switch (chans) {
-	case 1:
-		if (getDeviceChannels() == 2) {
+	case 1:			// Mono input converted to stereo circ. buffer;  HW 2-N channels.
+		if (_impl->audioBufChannels == 2) {
 			float *from = (float *) frameBuffer;
 			for (int in=0; in < frameCount; ++in) {
 				if (inLoc >= bufLen)	// wrap
@@ -589,8 +608,8 @@ int	OSXAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 			return error("Only mono-to-stereo playback conversion is currently supported");
 		break;
 
-	default:
-		if (getDeviceChannels() == getFrameChannels()) {
+	default:		// 2-N channel input to 2-N channel circ. buffer; HW 2-N channels.
+		if (_impl->audioBufChannels == getFrameChannels()) {
 			float *from = (float *) frameBuffer;
 			// Write all channels of each frame from frame into circular buf.
 			for (int in=0; in < frameCount; ++in) {
@@ -608,7 +627,7 @@ int	OSXAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 		break;
 	}
 	_impl->inLoc[PLAY] = inLoc;
-	// printf("\tinLoc ended at %d.  Returning frameCount = %d\n", inLoc, frameCount);
+//	printf("\tinLoc ended at %d.  Returning frameCount = %d\n", inLoc, frameCount);
 	return frameCount;
 }
 

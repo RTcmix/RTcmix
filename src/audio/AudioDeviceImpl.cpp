@@ -5,12 +5,20 @@
 #include <stdio.h>
 #include <assert.h>
 
+// AudioDeviceImpl is the "workhorse" intermediate base class for most
+// AudioDevice leaf classes.  It holds the common state, handles all logic
+// that can be considered common to all AudioDevices (including state checking
+// and format conversion), and handles the callbacks associated with playback
+// and stop.  All primary AudioDevice methods are implemented in this class,
+// where they in turn call the protected virtual "hook" functions, which
+// perform the HW-specific operations.
+
 AudioDeviceImpl::AudioDeviceImpl() 
 	: _mode(Unset), _state(Closed),
 	  _frameFormat(MUS_UNSUPPORTED), _deviceFormat(MUS_UNSUPPORTED),
 	  _frameChannels(0), _deviceChannels(0), _samplingRate(0.0), _maxFrames(0),
 	  _runCallback(NULL), _stopCallback(NULL),
-	  _convertBuffer(NULL),
+	  _convertBuffer(NULL), 
 	  _recConvertFunction(NULL), _playConvertFunction(NULL)
 {
 }

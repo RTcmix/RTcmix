@@ -17,13 +17,32 @@
 #include "NetAudioDevice.h"
 #include "sndlibsupport.h"
 
+// This subclass allows a network audio connection between two machines.  The
+// input NetAudioDevice will block in start(), waiting for a connection.  When
+// a connection is established, a one-way "handshake" verifies the format of
+// the audio coming over the socket, and the input device (re)configures itself
+// to handle the audio format, if possible.  If the input connection is lost,
+// the input NetAudioDevice returns to the point where it blocks, and the cycle
+// may repeat.
+//
+// The output NetAudioDevice can only be open()d if there is an input device
+// waiting for it.  Once a connection is established, the output device sends
+// its "handshake" data to notify the listener of the audio format.  Currently
+// the NetAudioDevices only communicate using short integer audio.
+
 static const int kDefaultSockNumber = 9999;
+
+// The cookie is used to identify whether the data coming over the socket
+// is (1) a valid stream and (2) little- or big-endian.
+
 static const int kAudioFmtCookie = 0x12345678;
 static const int kAudioFmtCookieSwapped = 0x78563412;
 
+// This is the struct sent as the one-way handshake.
+
 struct NetAudioFormat {
-	int		cookie;
-	int		fmt;			// MUS_BFLOAT, etc.
+	int		cookie;			// kAudioFmtCookie
+	int		fmt;			// always SHORT, for now.
 	int		chans;
 	float	sr;
 	int		blockFrames;	// Number of frames per write
@@ -158,8 +177,6 @@ NetAudioDevice::doOpen(int mode)
 			return error("NetAudioDevice: bind failed: ", 
 						 strerror(errno));
 		}
-//		if (waitForConnect() < 0)
-//			return -1;
 		break;
 	default:
 		return error("NetAudioDevice: Illegal open mode.");
