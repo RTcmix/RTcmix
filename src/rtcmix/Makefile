@@ -157,6 +157,9 @@ $(SNDLIB):
 $(AUDIOLIB):
 	(cd ../audio; $(MAKE) $(MFLAGS) all;)
 
+loader.o: loader.c
+	$(CC) $(CFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c loader.c
+
 # rules for librtcmix.a
 
 $(RTLIB): depend $(COMMON_OBJS) $(LIBMINC) $(LIBCONF)
