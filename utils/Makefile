@@ -14,7 +14,7 @@ else
 endif
 
 
-all:  $(PROGS)
+all: $(PROGS) resample
 
 cmixplay:  $(PLAY) $(SYSOBJS)
 	$(CC) -o cmixplay $(PLAY) $(SYSOBJS) $(SYSLIBS)
@@ -28,12 +28,18 @@ full-duplex-test: full-duplex-test.o
 sfrecord:  sfrecord.o $(SYSOBJS)
 	$(CC) -o sfrecord sfrecord.o $(SYSOBJS) $(SYSLIBS)
 
+resample::
+	@echo "making resample ..."
+	@cd resample; $(MAKE) all
+	@echo "done."; echo ""
+
 install:
 	@for PROG in $(PROGS); \
 	do \
 	( echo "ln -fs $(CMIXDIR)/utils/$$PROG $(BINDIR)"; \
 	ln -fs $(CMIXDIR)/utils/$$PROG $(BINDIR); ) \
 	done
+	ln -fs $(CMIXDIR)/utils/resample/resample $(BINDIR)
 
 clean:
 	rm -f *~ *.o core $(PROGS)
@@ -42,4 +48,6 @@ clean:
 	( echo "rm -f $(BINDIR)/$$PROG"; \
 	rm -f $(BINDIR)/$$PROG; ) \
 	done
+	@cd resample; $(MAKE) clean
+	rm -f $(BINDIR)/resample
 
