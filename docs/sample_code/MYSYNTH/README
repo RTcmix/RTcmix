@@ -1,0 +1,35 @@
+This is an example of an instrument that just plays noise. The comments
+should explain most of what you have to do to make an RTcmix synthesis
+instrument work.
+
+If you've already written RTcmix instruments for older versions of RTcmix,
+see the "README.inst_porting" file in the docs directory.
+
+
+If you base an instrument on this example, copy the entire directory somewhere
+(it doesn't matter where), and modify it as follows...
+
+1) Change the name of the directory to the name of your instrument, which
+   should be in all caps, like other RTcmix real-time instruments.
+   Likewise change the names of MYSYNTH.C and MYSYNTH.h.
+
+2) Replace "MYSYNTH" with your instrument name everywhere in MYSYNTH.C and .h.
+
+3) In Makefile, set the "NAME" variable to the name of your instrument.
+
+4) Change package.conf so that it points to the "makefile.conf" in the
+   RTcmix distribution. (If you have a lot of instruments in one directory,
+   they can share one package.conf. Put it in the directory containing all
+   the instrument directories, and change their Makefiles to
+   "include ../package.conf". See insts.std for an example.)
+
+5) In "test.sco", change the load statement so that it loads the shared
+   lib in your src directory. For example, if your .C file is called
+   "MYSYNTH.C" and its full path is "/home/bubba/src/MYSYNTH/MYSYNTH.C",
+   then the load statement you must put in all scores that use your
+   instrument is:  load("/home/bubba/src/MYSYNTH/libMYSYNTH.so").
+
+
+
+-John Gibson, 5/17/00
+

@@ -1,0 +1,24 @@
+This is an example of an "instrument" that doesn't make any sound. Instead,
+if returns a number to Minc. This is a way to add functions to Minc that
+you're missing.
+
+Change these files...
+
+1) In Makefile, set "NAME" to the name of your .c file.
+
+2) Change package.conf so that it points to the "makefile.conf" in the
+   RTcmix distribution. (If you have a lot of instruments in one directory,
+   they can share one package.conf. Put it in the directory containing all
+   the instrument directories, and change their Makefiles to
+   "include ../package.conf". See insts.std for an example.)
+
+3) In "test.sco", change the load statement so that it loads the shared
+   lib in your src directory. For example, if your .c file is called
+   "myfuncs.c" and its full path is "/home/bubba/src/myfuncs/myfuncs.c",
+   then the load statement you must put in all scores that use your
+   functions is:  load("/home/bubba/src/myfuncs/libmyfuncs.so").
+
+
+
+-John Gibson, 5/17/00
+
