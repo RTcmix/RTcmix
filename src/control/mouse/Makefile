@@ -12,7 +12,7 @@ else
    GUILIBS = -L$(XLIBDIR) -lX11
 endif
 CXXFLAGS += -I. -I../../rtcmix
-LIBMOUSE = libmouseconn.$(SHLIB_SUFFIX)
+LIBMOUSE = libmouseconn.so
 TEST = test
 PFIELD = ../../rtcmix/PField.o ../../rtcmix/RefCounted.o
 GENLIB = -Wl,-rpath ../../../lib -L../../../lib -lgen
