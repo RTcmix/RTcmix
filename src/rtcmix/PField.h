@@ -20,6 +20,42 @@ protected:
 	virtual 		~PField();
 };
 
+// Base class for operator PFields
+
+class PFieldOperator : public PField {
+public:
+	virtual double	doubleValue(double) const;
+protected:
+	typedef double (*Operator)(double, double);
+	PFieldOperator(PField *pf1, PField *pf2, Operator);
+	virtual 		~PFieldOperator();
+private:
+	PField	*_pfield1, *_pfield2;
+	Operator _operator;
+};
+
+// PField which adds two other PFields
+
+class AddPField : public PFieldOperator {
+protected:
+	static double Add(double x, double y) { return x + y; }
+public:
+	AddPField(PField *pf1, PField *pf2) : PFieldOperator(pf1, pf2, Add) {}
+protected:
+	virtual 		~AddPField() {}
+};
+
+// PField which multiplies two other PFields
+
+class MultPField : public PFieldOperator {
+protected:
+	static double Mult(double x, double y) { return x * y; }
+public:
+	MultPField(PField *pf1, PField *pf2) : PFieldOperator(pf1, pf2, Mult) {}
+protected:
+	virtual 		~MultPField() {}
+};
+
 // Constant-value PField used for all non-varying numeric parameters.
 
 class ConstPField : public PField {

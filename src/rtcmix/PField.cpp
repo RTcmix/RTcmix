@@ -10,6 +10,26 @@
 
 PField::~PField() {}
 
+// PFieldOperator
+
+PFieldOperator::PFieldOperator(PField *pf1, PField *pf2, PFieldOperator::Operator op)
+	: _pfield1(pf1), _pfield2(pf2), _operator(op)
+{
+	_pfield1->ref();
+	_pfield2->ref();
+}
+
+PFieldOperator::~PFieldOperator()
+{
+	_pfield2->unref();
+	_pfield1->unref();
+}
+
+double	PFieldOperator::doubleValue(double frac) const
+{
+	return (*_operator)(_pfield1->doubleValue(frac), _pfield2->doubleValue(frac));
+}
+
 // ConstPField
 
 ConstPField::ConstPField(double value) : _value(value) {}
