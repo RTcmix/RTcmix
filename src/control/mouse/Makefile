@@ -1,6 +1,6 @@
 include ../../../makefile.conf
 
-OBJS = RTcmixMouse.o RTMousePField.o
+OBJS = RTcmixMouse.o RTMousePField.o glue.o
 SRCS = RTcmixMouse.cpp RTMousePField.cpp glue.cpp
 ifeq ($(ARCH), MACOSX)
    OBJS += OSXMouse.o
@@ -9,19 +9,18 @@ ifeq ($(ARCH), MACOSX)
 else
    OBJS += XMouse.o
    SRCS += XMouse.cpp
-   GUILIBS = -L/usr/X11/lib -lX11
+   GUILIBS = -L$(XLIBDIR) -lX11
 endif
 CXXFLAGS += -I. -I../../rtcmix
-LIBMOUSE = libmouse.a
+LIBMOUSE = libmouseconn.$(SHLIB_SUFFIX)
 TEST = test
 PFIELD = ../../rtcmix/PField.o ../../rtcmix/RefCounted.o
 GENLIB = -Wl,-rpath ../../../lib -L../../../lib -lgen
 
-all: $(LIBMOUSE) glue.o
+all: $(LIBMOUSE)
 
-# FIXME: make this a dso
 $(LIBMOUSE): depend $(OBJS)
-	$(LD) -r $(OBJS) -o $(LIBMOUSE)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GUILIBS)
 
 glue.o: depend glue.cpp RTMousePField.h
 	$(CXX) $(CXXFLAGS) -c -o glue.o glue.cpp
@@ -39,8 +38,10 @@ depend:
 -include depend
 
 install: all
+	$(INSTALL) $(LIBMOUSE) $(LIBDESTDIR)
 
 uninstall:
+	$(RM) $(LIBDESTDIR)/$(LIBMOUSE)
 
 clean:
 	$(RM) *.o $(LIBMOUSE) $(TEST) depend

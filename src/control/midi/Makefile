@@ -1,6 +1,6 @@
 include ../../../makefile.conf
 
-OBJS = RTcmixMIDI.o RTMidiPField.o
+OBJS = RTcmixMIDI.o RTMidiPField.o glue.o
 SRCS = RTcmixMIDI.cpp RTMidiPField.cpp glue.cpp
 
 PTLIB = portmidi/porttime/libporttime.a
@@ -16,19 +16,13 @@ endif
 
 CXXFLAGS += -I. -I../../rtcmix -Iportmidi/pm_common -Iportmidi/porttime
 
-# when we make this a dso
-#LIBMIDI = libmidicon.$(SHLIB_SUFFIX)
-LIBMIDI = libmidicon.a
+LIBMIDI = libmidiconn.$(SHLIB_SUFFIX)
 
-all: $(LIBMIDI) glue.o
+all: $(LIBMIDI)
 
-# FIXME: make this a dso
 $(LIBMIDI): depend $(OBJS)
-	$(LD) -r $(OBJS) $(PMLIB) $(PTLIB) $(MIDISYSLIB) -o $@
-
-#$(LIBMIDI): depend $(OBJS)
-#	$(RM) $@
-#	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(OBJS) $(PMLIB) $(PTLIB) $(MIDISYSLIB)
+	$(RM) $@
+	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(OBJS) $(PMLIB) $(PTLIB) $(MIDISYSLIB)
 
 glue.o: depend glue.cpp RTMidiPField.h
 	$(CXX) $(CXXFLAGS) -c -o glue.o glue.cpp
@@ -39,8 +33,10 @@ depend:
 -include depend
 
 install: all
+	$(INSTALL) $(LIBMIDI) $(LIBDESTDIR)
 
 uninstall:
+	$(RM) $(LIBDESTDIR)/$(LIBMIDI)
 
 clean:
 	$(RM) *.o $(LIBMIDI) depend

@@ -14,7 +14,7 @@
 
 // ------------------------------------------------------- _mouse_connection ---
 //
-//    mouse = makeconnection("mouseX", min, max, default, lag,
+//    mouse = create_pfield("mouseX", min, max, default, lag,
 //                                     [prefix[, units[, precision]]])
 //
 //    First argument is either "mouseX" or "mouseY", depending on which axis
@@ -43,8 +43,8 @@ _mouse_usage()
 	return NULL;
 }
 
-RTNumberPField *
-mouse_connection(const Arg args[], const int nargs)
+static RTNumberPField *
+create_pfield(const Arg args[], const int nargs)
 {
 	static RTcmixMouse *mousewin = NULL;
 	if (mousewin == NULL)					// first time, so make window
@@ -105,3 +105,28 @@ mouse_connection(const Arg args[], const int nargs)
 										prefix, units, precision);
 }
 
+// The following functions are the publically-visible ones called by the
+// system.
+
+extern "C" {
+	Handle create_handle(const Arg args[], const int nargs);
+	int register_dso();
+};
+
+Handle
+create_handle(const Arg args[], const int nargs)
+{
+	PField *pField = create_pfield(args, nargs);
+	Handle handle = NULL;
+	if (pField != NULL) {
+		handle = new struct _handle;
+		handle->type = PFieldType;
+		handle->ptr = (void *) pField;
+	}
+	return handle;
+}
+
+int register_dso()
+{
+	 return 0;
+}
