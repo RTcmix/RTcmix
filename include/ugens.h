@@ -32,6 +32,7 @@ extern	addfunc(struct ug_item *);
 
 #define	UG_INTRO(flabel,func)	\
 	{ extern double func();	\
+	  extern int merror(char *);	\
 		static ug_t this_ug = { UG_NULL, func, flabel }; \
 		if (addfunc(&this_ug) == -1) merror(flabel);	}
 
