@@ -931,6 +931,9 @@ _wave3_table(const Arg args[], const int nargs, double *array, const int len)
 {
    if (len < 2)
       return die("maketable (wave3)", "Table length must be at least 2.");
+   if ((nargs % 3) != 0)
+      return die("maketable (wave3)",
+                                 "Incomplete <partial, amp, phase> triplet.");
 
    for (int i = 0; i < len; i++)
       array[i] = 0.0;
