@@ -1,0 +1,5 @@
+load("numtest")
+system("rm -f num.snd")
+system("sfcreate -c 1 -t next num.snd")
+output("num.snd")
+numtest(st=0, dur=1, val=10000)
