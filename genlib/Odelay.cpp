@@ -11,9 +11,9 @@
 Odelay::Odelay(long defaultLength) : _dline(NULL), _len(0)
 {
 	assert(defaultLength > 0);
+	_outpoint = 0;
 	resize(defaultLength);
 	clear();
-	_outpoint = 0;
 	_inpoint = _len - 1;
 }
 
