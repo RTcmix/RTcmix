@@ -2,42 +2,63 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-/* Class for storing all our run-time options.  -JGG, 6/27/04 */
+/* Class for storing all our run-time options,
+	by John Gibson and Doug Scott, 6/27/04.
+*/
 
 #include <assert.h>
+#include <limits.h>        // PATH_MAX
 #include "Option.h"
 #include "conf/Config.h"
 #include <ugens.h>         // FIXME: pull all this in just for warn()?
 
+#define DEVICE_MAX   64
+#define DSOPATH_MAX  PATH_MAX * 2
 
-Option::Option()
-	: _audioOn(true), _playOn(true), _recordOn(false), _clobberOn(false),
-	_printOn(true), _reportClippingOn(true), _checkPeaksOn(true),
-	_bufferFrames(DEFAULT_BUFFER_FRAMES),
-	_device(NULL), _inDevice(NULL), _outDevice(NULL),
-	_dsoPath(NULL), _homeDir(NULL), _rcName(NULL)
+bool Option::_audio = true;
+bool Option::_play = true;
+bool Option::_record = false;
+bool Option::_clobber = false;
+bool Option::_print = true;
+bool Option::_reportClipping = true;
+bool Option::_checkPeaks = true;
+
+double Option::_bufferFrames = DEFAULT_BUFFER_FRAMES;
+
+char Option::_device[DEVICE_MAX];
+char Option::_inDevice[DEVICE_MAX];
+char Option::_outDevice[DEVICE_MAX];
+char Option::_dsoPath[DSOPATH_MAX];
+char Option::_homeDir[PATH_MAX];
+char Option::_rcName[PATH_MAX];
+
+
+void Option::init()
 {
+   _device[0] = 0;
+   _inDevice[0] = 0;
+   _outDevice[0] = 0;
+   _dsoPath[0] = 0;
+   _homeDir[0] = 0;
+   _rcName[0] = 0;
+
 	// initialize home directory and full path of user's configuration file
+
 	char *dir = getenv("HOME");
 	if (dir == NULL)
 		return;
-	if (strlen(dir) > 256)
+	if (strlen(dir) > 256)     // legit HOME not likely to be longer
 		return;
+	strncpy(_homeDir, dir, PATH_MAX);
+	_homeDir[PATH_MAX - 1] = 0;
+
 	char *rc = new char[strlen(dir) + 1 + strlen(CONF_FILENAME) + 1];
 	strcpy(rc, dir);
 	strcat(rc, "/");
 	strcat(rc, CONF_FILENAME);
-	_homeDir = dir;
-	_rcName = rc;
-}
-
-Option::~Option()
-{
-	delete _device;
-	delete _inDevice;
-	delete _outDevice;
-	delete _dsoPath;
-	delete _rcName;
+	strncpy(_rcName, rc, PATH_MAX);
+	_rcName[PATH_MAX - 1] = 0;
+	delete [] rc;
 }
 
 /* Read configuration file <fileName>, which is probably the full path name
@@ -162,74 +183,63 @@ int Option::readConfigFile(const char *fileName)
 	return 0;
 }
 
-
 // String option setting methods
 
 char *Option::device(const char *devName)
 {
-	delete _device;
-	_device = _strdup(devName);
+	strncpy(_device, devName, DEVICE_MAX);
+	_device[DEVICE_MAX - 1] = 0;
 	return _device;
 }
 
 char *Option::inDevice(const char *devName)
 {
-	delete _inDevice;
-	_inDevice = _strdup(devName);
+	strncpy(_inDevice, devName, DEVICE_MAX);
+	_inDevice[DEVICE_MAX - 1] = 0;
 	return _inDevice;
 }
 
 char *Option::outDevice(const char *devName)
 {
-	delete _outDevice;
-	_outDevice = _strdup(devName);
+	strncpy(_outDevice, devName, DEVICE_MAX);
+	_outDevice[DEVICE_MAX - 1] = 0;
 	return _outDevice;
 }
 
 char *Option::dsoPath(const char *pathName)
 {
-	delete _dsoPath;
-	_dsoPath = _strdup(pathName);
+	strncpy(_dsoPath, pathName, DSOPATH_MAX);
+	_dsoPath[DSOPATH_MAX - 1] = 0;
 	return _dsoPath;
 }
 
 char *Option::rcName(const char *rcName)
 {
-	delete _rcName;
-	_rcName = _strdup(rcName);
+	strncpy(_rcName, rcName, PATH_MAX);
+	_rcName[PATH_MAX - 1] = 0;
 	return _rcName;
-}
-
-// version of strdup that new's its memory
-char *Option::_strdup(const char *str)
-{
-	char *dest = new char[strlen(str) + 1];
-	strcpy(dest, str);
-	return dest;
 }
 
 
 // ----------------------------------------------------------------------------
 // These functions are for C code that needs to query options.
 
-extern Option options;	// FIXME: declared in globals.h
-
 int get_bool_option(const char *option_name)
 {
 	if (!strcmp(option_name, kOptionPrint))
-		return (int) options.print();
+		return (int) Option::print();
 	else if (!strcmp(option_name, kOptionReportClipping))
-		return (int) options.reportClipping();
+		return (int) Option::reportClipping();
 	else if (!strcmp(option_name, kOptionCheckPeaks))
-		return (int) options.checkPeaks();
+		return (int) Option::checkPeaks();
 	else if (!strcmp(option_name, kOptionClobber))
-		return (int) options.clobber();
+		return (int) Option::clobber();
 	else if (!strcmp(option_name, kOptionAudio))
-		return (int) options.audio();
+		return (int) Option::audio();
 	else if (!strcmp(option_name, kOptionPlay))
-		return (int) options.play();
+		return (int) Option::play();
 	else if (!strcmp(option_name, kOptionRecord))
-		return (int) options.record();
+		return (int) Option::record();
 
 	assert(0 && "unsupported option name");		// program error
 	return 0;
@@ -238,19 +248,19 @@ int get_bool_option(const char *option_name)
 void set_bool_option(const char *option_name, int value)
 {
 	if (!strcmp(option_name, kOptionPrint))
-		options.print((bool) value);
+		Option::print((bool) value);
 	else if (!strcmp(option_name, kOptionReportClipping))
-		options.reportClipping((bool) value);
+		Option::reportClipping((bool) value);
 	else if (!strcmp(option_name, kOptionCheckPeaks))
-		options.checkPeaks((bool) value);
+		Option::checkPeaks((bool) value);
 	else if (!strcmp(option_name, kOptionClobber))
-		options.clobber((bool) value);
+		Option::clobber((bool) value);
 	else if (!strcmp(option_name, kOptionAudio))
-		options.audio((bool) value);
+		Option::audio((bool) value);
 	else if (!strcmp(option_name, kOptionPlay))
-		options.play((bool) value);
+		Option::play((bool) value);
 	else if (!strcmp(option_name, kOptionRecord))
-		options.record((bool) value);
+		Option::record((bool) value);
 	else
 		assert(0 && "unsupported option name");
 }
@@ -258,7 +268,7 @@ void set_bool_option(const char *option_name, int value)
 double get_double_option(const char *option_name)
 {
 	if (!strcmp(option_name, kOptionBufferFrames))
-		return options.bufferFrames();
+		return Option::bufferFrames();
 
 	assert(0 && "unsupported option name");
 	return 0;
@@ -267,7 +277,7 @@ double get_double_option(const char *option_name)
 void set_double_option(const char *option_name, double value)
 {
 	if (!strcmp(option_name, kOptionBufferFrames))
-		options.bufferFrames(value);
+		Option::bufferFrames(value);
 	else
 		assert(0 && "unsupported option name");
 }
@@ -275,13 +285,13 @@ void set_double_option(const char *option_name, double value)
 char *get_string_option(const char *option_name)
 {
 	if (!strcmp(option_name, kOptionDevice))
-		return options.device();
+		return Option::device();
 	else if (!strcmp(option_name, kOptionInDevice))
-		return options.inDevice();
+		return Option::inDevice();
 	else if (!strcmp(option_name, kOptionOutDevice))
-		return options.outDevice();
+		return Option::outDevice();
 	else if (!strcmp(option_name, kOptionDSOPath))
-		return options.dsoPath();
+		return Option::dsoPath();
 
 	assert(0 && "unsupported option name");
 	return 0;
@@ -290,13 +300,13 @@ char *get_string_option(const char *option_name)
 void set_string_option(const char *option_name, const char *value)
 {
 	if (!strcmp(option_name, kOptionDevice))
-		options.device(value);
+		Option::device(value);
 	else if (!strcmp(option_name, kOptionInDevice))
-		options.inDevice(value);
+		Option::inDevice(value);
 	else if (!strcmp(option_name, kOptionOutDevice))
-		options.outDevice(value);
+		Option::outDevice(value);
 	else if (!strcmp(option_name, kOptionDSOPath))
-		options.dsoPath(value);
+		Option::dsoPath(value);
 	else
 		assert(0 && "unsupported option name");
 }

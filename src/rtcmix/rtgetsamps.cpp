@@ -19,7 +19,7 @@
 void
 rtgetsamps(AudioDevice *inputDevice)
 {
-	assert(options.record() == true);
+	assert(Option::record() == true);
 	if (inputDevice->getFrames(audioin_buffer, RTBUFSAMPS) < 0)
 	{
 		fprintf(stderr, "rtgetsamps error: %s\n", inputDevice->getLastError());

@@ -99,9 +99,10 @@ init_globals()
 {
    int i;
 
-   options.readConfigFile(options.rcName());
+   Option::init();
+   Option::readConfigFile(Option::rcName());
 
-   RTBUFSAMPS = (int) options.bufferFrames();  /* modifiable with rtsetparams */
+   RTBUFSAMPS = (int) Option::bufferFrames();  /* modifiable with rtsetparams */
    NCHANS = 2;
    audioNCHANS = 0;
 
@@ -275,9 +276,9 @@ main(int argc, char *argv[])
                noParse = 1;
                break;
             case 'Q':               /* reall quiet */
-               options.reportClipping(false); /* (then fall through) */
+               Option::reportClipping(false); /* (then fall through) */
             case 'q':               /* quiet */
-               options.print(false);
+               Option::print(false);
                break;
 #ifdef LINUX
 			case 'p':
@@ -390,7 +391,7 @@ main(int argc, char *argv[])
    }
 
    /* Banner */
-   if (options.print())
+   if (Option::print())
       printf("--------> %s %s (%s) <--------\n",
                                       RTCMIX_NAME, RTCMIX_VERSION, argv[0]);
 
@@ -424,7 +425,7 @@ main(int argc, char *argv[])
    */
    if (rtInteractive) {
 
-      if (options.print())
+      if (Option::print())
          fprintf(stdout, "rtInteractive mode set\n");
 
       /* Read an initialization score. */

@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <Option.h>
 
 extern heap rtHeap;     // intraverse.C
 
@@ -30,7 +31,7 @@ _printargs(const char *instname, const Arg arglist[], const int nargs)
    int i;
    Arg arg;
 
-   if (options.print()) {
+   if (Option::print()) {
       printf("========<rt-queueing>=======\n");
       printf("%s:  ", instname);
       for (i = 0; i < nargs; i++) {
@@ -158,7 +159,7 @@ double checkInsts(const char *fname, double *pp, int n_args, void **inst)
    while (rt_p) {
      
       if (strcmp(rt_p->rt_name, fname) == 0) {
-         if (options.print()) {
+         if (Option::print()) {
             printf("========<rt-queueing>=======\n");
             printf("%s:  ",fname);
             for (i = 0; i < n_args; i++)

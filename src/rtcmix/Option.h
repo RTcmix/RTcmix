@@ -2,7 +2,21 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-/* Class for storing all our run-time options.  -JGG, 6/27/04 */
+/* Class for storing all our run-time options.
+
+   The class is static, containing only static members and methods.  To 
+   use from C++, refer to the method you want with the class name prefix:
+
+      if (Option::print())
+         print some stuff
+
+   From C code, you must use the get* and set* option code at the bottom
+   of this file.
+
+   You must call Option::init() early in main() so that some data members
+   will be initialized.
+                                  by John Gibson and Doug Scott, 6/27/04
+*/
 
 #ifndef _OPTION_H_
 #define _OPTION_H_ 1
@@ -11,100 +25,104 @@
 #include <string.h>
 
 #define CONF_FILENAME ".rtcmixrc"
-#define DEFAULT_BUFFER_FRAMES 4096
+#define DEFAULT_BUFFER_FRAMES 4096.0
 
 // Option names.  These are the keys that appear in the .rtcmixrc file.
 // They're also the <option_name> used with the get_*_option C functions.
 
 // bool options
-#define kOptionAudio				"audio"
-#define kOptionPlay				"play"
-#define kOptionRecord			"record"
-#define kOptionClobber			"clobber"
-#define kOptionPrint				"print"
-#define kOptionReportClipping	"report_clipping"
-#define kOptionCheckPeaks		"check_peaks"
+#define kOptionAudio            "audio"
+#define kOptionPlay             "play"
+#define kOptionRecord           "record"
+#define kOptionClobber          "clobber"
+#define kOptionPrint            "print"
+#define kOptionReportClipping   "report_clipping"
+#define kOptionCheckPeaks       "check_peaks"
 
 // double options
-#define kOptionBufferFrames	"buffer_frames"
+#define kOptionBufferFrames     "buffer_frames"
 
 // string options
-#define kOptionDevice			"device"
-#define kOptionInDevice			"indevice"
-#define kOptionOutDevice		"outdevice"
-#define kOptionDSOPath			"dso_path"
+#define kOptionDevice           "device"
+#define kOptionInDevice         "indevice"
+#define kOptionOutDevice        "outdevice"
+#define kOptionDSOPath          "dso_path"
 
 
 #ifdef __cplusplus
 
 class Option {
 public:
-	Option();
-	~Option();
+	Option() {};
+	~Option() {};
 
-	int readConfigFile(const char *fileName);
+	// must call this to initialize string members
+	static void init();
 
-	bool audio() const { return _audioOn; }
-	bool audio(const bool setIt) { _audioOn = setIt; return _audioOn; }
+	static int readConfigFile(const char *fileName);
 
-	bool play() const { return _playOn; }
-	bool play(const bool setIt) { _playOn = setIt; return _playOn; }
+	static bool audio() { return _audio; }
+	static bool audio(const bool setIt) { _audio = setIt; return _audio; }
 
-	bool record() const { return _recordOn; }
-	bool record(const bool setIt) { _recordOn = setIt; return _recordOn; }
+	static bool play() { return _play; }
+	static bool play(const bool setIt) { _play = setIt; return _play; }
 
-	bool clobber() const { return _clobberOn; }
-	bool clobber(const bool setIt) { _clobberOn = setIt; return _clobberOn; }
+	static bool record() { return _record; }
+	static bool record(const bool setIt) { _record = setIt; return _record; }
 
-	bool print() const { return _printOn; }
-	bool print(const bool setIt) { _printOn = setIt; return _printOn; }
+	static bool clobber() { return _clobber; }
+	static bool clobber(const bool setIt) { _clobber = setIt; return _clobber; }
 
-	bool reportClipping() const { return _reportClippingOn; }
-	bool reportClipping(const bool setIt) { _reportClippingOn = setIt; return _reportClippingOn; }
+	static bool print() { return _print; }
+	static bool print(const bool setIt) { _print = setIt; return _print; }
 
-	bool checkPeaks() const { return _checkPeaksOn; }
-	bool checkPeaks(const bool setIt) { _checkPeaksOn = setIt; return _checkPeaksOn; }
+	static bool reportClipping() { return _reportClipping; }
+	static bool reportClipping(const bool setIt) { _reportClipping = setIt;
+													return _reportClipping; }
 
-	double bufferFrames() const { return _bufferFrames; }
-	double bufferFrames(const double frames) { _bufferFrames = frames; return _bufferFrames; }
+	static bool checkPeaks() { return _checkPeaks; }
+	static bool checkPeaks(const bool setIt) { _checkPeaks = setIt;
+													return _checkPeaks; }
 
-	char *device() const { return _device; }
-	char *device(const char *devName);
+	static double bufferFrames() { return _bufferFrames; }
+	static double bufferFrames(const double frames) { _bufferFrames = frames;
+													return _bufferFrames; }
 
-	char *inDevice() const { return _inDevice; }
-	char *inDevice(const char *devName);
+	static char *device() { return _device; }
+	static char *device(const char *devName);
 
-	char *outDevice() const { return _outDevice; }
-	char *outDevice(const char *devName);
+	static char *inDevice() { return _inDevice; }
+	static char *inDevice(const char *devName);
 
-	char *dsoPath() const { return _dsoPath; }
-	char *dsoPath(const char *pathName);
+	static char *outDevice() { return _outDevice; }
+	static char *outDevice(const char *devName);
 
-	char *homeDir() const { return _homeDir; }
+	static char *dsoPath() { return _dsoPath; }
+	static char *dsoPath(const char *pathName);
 
-	char *rcName() const { return _rcName; }
-	char *rcName(const char *rcName);
+	static char *homeDir() { return _homeDir; }
+
+	static char *rcName() { return _rcName; }
+	static char *rcName(const char *rcName);
 
 private:
-	char *_strdup(const char *str);
+	static bool _audio;
+	static bool _play;
+	static bool _record;
+	static bool _clobber;
+	static bool _print;
+	static bool _reportClipping;
+	static bool _checkPeaks;
 
-	bool _audioOn;
-	bool _playOn;
-	bool _recordOn;
-	bool _clobberOn;
-	bool _printOn;
-	bool _reportClippingOn;
-	bool _checkPeaksOn;
+	static double _bufferFrames;
 
-	double _bufferFrames;
+	static char _device[];
+	static char _inDevice[];
+	static char _outDevice[];
+	static char _dsoPath[];
 
-	char *_device;
-	char *_inDevice;
-	char *_outDevice;
-	char *_dsoPath;
-
-	char *_homeDir;
-	char *_rcName;
+	static char _homeDir[];
+	static char _rcName[];
 };
 
 extern "C" {

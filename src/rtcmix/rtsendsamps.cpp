@@ -124,7 +124,7 @@ limiter()
             buf[j] = 32767.0;
             numclipped++;
          }
-         if (options.checkPeaks()) {
+         if (Option::checkPeaks()) {
             BUFTYPE abs_samp = (BUFTYPE) fabs((double) buf[j]);
             if (abs_samp > peaks[i]) {
                peaks[i] = abs_samp;
@@ -134,7 +134,7 @@ limiter()
       }
    }
 
-   if (numclipped && options.reportClipping()) {
+   if (numclipped && Option::reportClipping()) {
       float loc1 = (float) bufStartSamp / SR;
       float loc2 = loc1 + ((float) RTBUFSAMPS / SR);
 
@@ -161,7 +161,7 @@ rtsendzeros(AudioDevice *device, int also_write_to_file)
 
    clear_output_buffers();
 
-   if (options.play()) {
+   if (Option::play()) {
       int i, j, nsamps, nbufs;
       err = write_to_audio_device(device);
       if (err)
@@ -191,7 +191,7 @@ rtsendsamps(AudioDevice *device)
    /* If we're writing to a file, and not playing, print a dot to show
       we've output one buffer.
    */
-   if (!options.play() && rtfileit) {
+   if (!Option::play() && rtfileit) {
       printing_dots = 1;
       printf(".");    /* no '\n' */
    }
@@ -200,19 +200,19 @@ rtsendsamps(AudioDevice *device)
    if (is_float_format && rtfileit) {
 	  // FOR NOW, IF WE ARE BOTH PLAYING AND WRITING, DO IT WITH SEPARATE
 	  // AudioDevice INSTANCES.
-	  if (options.play())
+	  if (Option::play())
       	err = rtwritesamps(globalOutputFileDevice);
 	  else
 	  	err = rtwritesamps(device);
       if (err)
          fprintf(stderr, "rtsendsamps: bad write to output sound file\n");
-      if (!options.play())
+      if (!Option::play())
          return;        /* without limiting */
    }
 
    limiter();    /* Limit output buffer data to +-32767.0 */
 
-   if (options.play()) {
+   if (Option::play()) {
       err = write_to_audio_device(device);
       if (err)
          fprintf(stderr, "rtsendsamps: Error: %s\n", device->getLastError());
@@ -221,7 +221,7 @@ rtsendsamps(AudioDevice *device)
    if (!is_float_format && rtfileit) {
 	  // FOR NOW, IF WE ARE BOTH PLAYING AND WRITING, DO IT WITH SEPARATE
 	  // AudioDevice INSTANCES.
-	  if (options.play())
+	  if (Option::play())
       	err = rtwritesamps(globalOutputFileDevice);
 	  else
 	  	err = rtwritesamps(device);
@@ -239,7 +239,7 @@ rtreportstats(AudioDevice *device)
 	double dbref = dbamp(32768.0);
 	AudioFileDevice *fileDevice = dynamic_cast<AudioFileDevice *>(device);
 	
-   if (options.reportClipping() && options.checkPeaks()) {
+   if (Option::reportClipping() && Option::checkPeaks()) {
       printf("\nPeak amplitudes of output:\n");
       for (n = 0; n < NCHANS; n++) {
 	  	if (is_float_format && rtfileit)

@@ -126,36 +126,36 @@ double set_option(float *p, short nargs, double pp[])
 				 die("set_option", "No value for \"device\"");
 				 return -1.0;
 			}
-			options.device(p);
+			Option::device(p);
 			break;
 		case INDEVICE:
 			if (p == NULL) {
 				 die("set_option", "No value for \"indevice\"");
 				 return -1.0;
 			}
-			options.inDevice(p);
+			Option::inDevice(p);
 			break;
 		case OUTDEVICE:
 			if (p == NULL) {
 				 die("set_option", "No value for \"outdevice\"");
 				 return -1.0;
 			}
-			options.outDevice(p);
+			Option::outDevice(p);
 			break;
 		case AUDIO:
-			options.play(param_list[j].value);
+			Option::play(param_list[j].value);
 			break;
 		case RECORD:
-			options.record(param_list[j].value);
+			Option::record(param_list[j].value);
 			break;
 		case CLOBBER:
-			options.clobber(param_list[j].value);
+			Option::clobber(param_list[j].value);
 			break;
 		case REPORT_CLIPPING:
-			options.reportClipping(param_list[j].value);
+			Option::reportClipping(param_list[j].value);
 			break;
 		case CHECK_PEAKS:
-			options.checkPeaks(param_list[j].value);
+			Option::checkPeaks(param_list[j].value);
 			break;
 		case FULL_DUPLEX:
 			bool full_duplex = param_list[j].value;
@@ -167,14 +167,14 @@ double set_option(float *p, short nargs, double pp[])
 			// <record> options, used during audio setup. rtsetparams() checks
 			// <record>.
 			if (full_duplex)
-				options.record(true);
+				Option::record(true);
 			else {
 				// If not play, then record.
-				bool state = options.record() && !options.play();
-				options.record(state);
+				bool state = Option::record() && !Option::play();
+				Option::record(state);
 			}
 			// Same check as above, for record.
-			if (options.record() && rtsetparams_called) {
+			if (Option::record() && rtsetparams_called) {
 				die("set_option", "Turn on record BEFORE calling rtsetparams.");
 				return -1.0;
 			}

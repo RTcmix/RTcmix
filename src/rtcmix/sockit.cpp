@@ -18,6 +18,7 @@
 
 #include <globals.h>
 #include <prototypes.h>
+#include <Option.h>
 #include "../rtstuff/rtdefs.h"
 #include "sockdefs.h"
 #include "../H/dbug.h"
@@ -114,7 +115,7 @@ extern "C" {
 		// Wait for the ok to go ahead
 		pthread_mutex_lock(&audio_config_lock);
 		if (!audio_config) {
-		  if (options.print())
+		  if (Option::print())
 			cout << "sockit():  waiting for audio_config . . . \n";
 		}
 		pthread_mutex_unlock(&audio_config_lock);
@@ -147,7 +148,7 @@ extern "C" {
 		}
 		
 		if (audio_configured && rtInteractive) {
-			if (options.print())
+			if (Option::print())
 				cout << "sockit():  audio set.\n";
 		}
 		

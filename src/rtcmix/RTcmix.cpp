@@ -32,6 +32,7 @@
 #include <prototypes.h>
 #include <ugens.h>
 #include <version.h>
+#include <Option.h>
 #include "rt.h"
 #include "../rtstuff/heap/heap.h"
 #include "maxdispargs.h"
@@ -59,7 +60,9 @@ init_globals()
 {
    int i;
 
-   RTBUFSAMPS = (int) options.bufferFrames();  /* modifiable with rtsetparams */
+   Option::init();
+
+   RTBUFSAMPS = (int) Option::bufferFrames();  /* modifiable with rtsetparams */
    NCHANS = 2;
    audioNCHANS = 0;
 	SR = 44100.0; // what the heck...
@@ -85,8 +88,8 @@ init_globals()
    rtfileit = 0;                /* signal writing to soundfile */
    rtoutfile = 0;
 
-	options.print(false);
-	options.reportClipping(false);
+	Option::print(false);
+	Option::reportClipping(false);
 
    for (i = 0; i < MAXBUS; i++) {
       AuxToAuxPlayList[i] = -1; /* The playback order for AUX buses */
@@ -349,8 +352,8 @@ double RTcmix::cmdval(char name[], int n_args, char* p0, ...)
 
 void RTcmix::printOn()
 {
-	options.print(true);
-	options.reportClipping(true);
+	Option::print(true);
+	Option::reportClipping(true);
 
 	/* Banner */
 	printf("--------> %s %s <--------\n", RTCMIX_NAME, RTCMIX_VERSION);
@@ -358,8 +361,8 @@ void RTcmix::printOn()
 
 void RTcmix::printOff()
 {
-	options.print(false);
-	options.reportClipping(false);
+	Option::print(false);
+	Option::reportClipping(false);
 }
 
 void RTcmix::panic()

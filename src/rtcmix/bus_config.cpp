@@ -608,7 +608,7 @@ get_bus_config(const char *inst_name)
    index = get_last_input_index();
    /* Otherwise grab from audio device, if active */
    if (index == -1) {
-	 if (options.record() && options.play())
+	 if (Option::record() && Option::play())
 	   in_chans = NCHANS;
 	 else
 	   in_chans = 0;

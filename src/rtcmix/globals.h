@@ -23,9 +23,6 @@
 class RTQueue;
 GLOBAL RTQueue *rtQueue;
 
-#include "../Minc/Option.h"
-GLOBAL Option options;
-
 extern "C" {
 #endif /* __cplusplus */
 

@@ -144,7 +144,7 @@ _printargs(const char *funcname, const Arg arglist[], const int nargs)
    int i;
    Arg arg;
 
-   if (options.print()) {
+   if (Option::print()) {
       printf("============================\n");
       printf("%s:  ", funcname);
       for (i = 0; i < nargs; i++) {

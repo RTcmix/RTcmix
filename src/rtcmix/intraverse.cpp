@@ -13,6 +13,7 @@
 #include "../rtstuff/rtdefs.h"
 #include "../sys/AudioDevice.h"
 #include <Instrument.h>
+#include <Option.h>
 #include <bus.h>
 #include "../H/dbug.h"
 
@@ -48,7 +49,7 @@ int runMainLoop(void)
 	// Wait for the ok to go ahead
 	pthread_mutex_lock(&audio_config_lock);
 	if (!audio_config) {
-		if (options.print())
+		if (Option::print())
 			cout << "runMainLoop():  waiting for audio_config . . .\n";
 	}
 	pthread_mutex_unlock(&audio_config_lock);
@@ -71,7 +72,7 @@ int runMainLoop(void)
 	}
 
 	if (audio_configured && rtInteractive) {
-		if (options.print())
+		if (Option::print())
 			cout << "runMainLoop():  audio set." << endl;
 	}
 
@@ -488,7 +489,7 @@ bool inTraverse(AudioDevice *device, void *arg)
 	clear_output_buffers();
 
 	// read in an input buffer (if audio input is active)
-	if (options.record()) { 
+	if (Option::record()) { 
 		// cout << "Reading data from audio device\n";
 		// DT_PANIC_MOD
 		if (!panic)
