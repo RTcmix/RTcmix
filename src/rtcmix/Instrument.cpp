@@ -23,6 +23,7 @@ Instrument :: Instrument()
    dur = 0.0;
    cursamp = 0;
    chunksamps = 0;
+   i_chunkstart = 0;
    endsamp = 0;
    nsamps = 0;
    output_offset = 0;
@@ -256,13 +257,21 @@ int Instrument :: getendsamp()
 /* ----------------------------------------------------------- setendsamp --- */
 void Instrument :: setendsamp(int end)
 {
-   endsamp = end;
+  pthread_mutex_lock(&endsamp_lock);
+  endsamp = end;
+  pthread_mutex_unlock(&endsamp_lock);
 }
 
 /* ------------------------------------------------------------- setchunk --- */
 void Instrument :: setchunk(int csamps)
 {
    chunksamps = csamps;
+}
+
+/* ------------------------------------------------------ set_ichunkstart --- */
+void Instrument :: set_ichunkstart(int csamps)
+{
+   i_chunkstart = csamps;
 }
 
 /* ---------------------------------------------------- set_output_offset --- */
