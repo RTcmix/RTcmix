@@ -267,6 +267,7 @@ rtinput(float p[], int n_args, double pp[])
 // FIXME: need to replace this with the bus spec scheme below... -JGG
       audioNCHANS = (n_args > 2) ? (int) p[2] : NCHANS;
       nchans = audioNCHANS;
+      srate = SR;
    }
 
 #ifdef INPUT_BUS_SUPPORT
