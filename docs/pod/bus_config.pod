@@ -146,7 +146,7 @@ a default configuration roughly equal to:
    bus_config("FOO", "in 0-1", "out 0-1")
 
 There are 16 aux buses (though this can be changed by recompiling your
-copy of RTcmix -- see MAXBUS in H/bus.h).
+copy of RTcmix -- see MAXBUS in H/globals.h).
 
 =head1 LIMITATIONS
 
