@@ -325,6 +325,8 @@ int VOCODESYNTH :: init(double p[], int n_args)
          smoother[i] = new OnePole(SR);
          smoother[i]->setPole(smoothness);
       }
+      else
+         smoother[i] = NULL;   // so we can delete it safely at dtor
 
       envelope[i] = new Envelope(SR);
       state[i] = belowThreshold;
