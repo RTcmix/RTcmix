@@ -5,7 +5,7 @@
 #include <assert.h>
 #include <Ougens.h>
 #include <ugens.h>   // for octpch, cpsoct
-#include "grainvoice.h"
+#include "synthgrainvoice.h"
 
 #define DEBUG 0
 //#define NDEBUG     // disable asserts

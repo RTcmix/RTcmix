@@ -68,7 +68,7 @@
 #include <rt.h>
 #include <rtdefs.h>
 #include "GRANSYNTH.h"
-#include "grainstream.h"
+#include "synthgrainstream.h"
 
 #define DEBUG
 //#define NDEBUG     // disable asserts

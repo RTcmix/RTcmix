@@ -4,7 +4,7 @@ NAME = GRANSYNTH
 
 CURDIR = $(CMIXDIR)/insts/jg/$(NAME)
 RANDOM = ../../../src/rtcmix/Random
-OBJS = $(NAME).o grainstream.o grainvoice.o $(RANDOM).o
+OBJS = $(NAME).o synthgrainstream.o synthgrainvoice.o $(RANDOM).o
 PROGS = lib$(NAME).so $(NAME)
 #CXXFLAGS += -pg
 #LDFLAGS += -pg
@@ -22,7 +22,7 @@ lib$(NAME).so: $(OBJS) $(GENLIB)
 $(NAME): $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) $(NAME).h grainstream.h grainvoice.h $(RANDOM).h
+$(OBJS): $(INSTRUMENT_H) $(NAME).h synthgrainstream.h synthgrainvoice.h $(RANDOM).h
 
 install: dso_install
 

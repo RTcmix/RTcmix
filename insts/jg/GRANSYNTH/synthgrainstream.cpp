@@ -6,8 +6,8 @@
 #include <float.h>
 #include <ugens.h>   // for octpch and ampdb
 #include <Ougens.h>  // for Ooscil
-#include "grainstream.h"
-#include "grainvoice.h"
+#include "synthgrainstream.h"
+#include "synthgrainvoice.h"
 #include <assert.h>
 
 #define DEBUG 0
