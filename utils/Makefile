@@ -22,9 +22,10 @@ ifeq ($(ARCH),MACOSX)
    SYSLIBS = -framework CoreAudio
 endif
 
-ifeq ($(NPLAY_SUPPORT), TRUE)
-   PROGS += $(NPLAY)
-endif
+# nplay won't compile with current RTcmix; it will be replaced soon
+#ifeq ($(NPLAY_SUPPORT), TRUE)
+#   PROGS += $(NPLAY)
+#endif
 
 SYSOBJS = ../sys/check_byte_order.o ../sys/sndlibsupport.o ../sys/audio_port.o
 
