@@ -14,6 +14,16 @@
 int rtfileit = 0;        /* signal writing to soundfile */
 int rtoutfile;
 
+static int clobber = 0;         /* Default clobber mode (see comment below) */
+
+/* ------------------------------------------------- set_rtoutput_clobber --- */
+void
+set_rtoutput_clobber(int state)
+{
+   clobber = state;
+}
+
+
 #ifdef USE_SNDLIB
 
 /* The syntax of rtoutput is expanded when using sndlib:
@@ -84,8 +94,6 @@ static char comment[DEFAULT_COMMENT_LENGTH] = "";
 "Specified output file already exists! \n\n\
 Turn on \"clobber mode\" in your score to overwrite it.\n\
 (Put \"CLOBBER(1)\" before call to rtoutput).\n"
-
-static int clobber = 0;         /* Default clobber mode (see comment below) */
 
 
 typedef enum {
@@ -225,14 +233,6 @@ parse_rtoutput_args(int nargs, double pp[])
 #endif
 
    return 0;
-}
-
-
-/* ------------------------------------------------- set_rtoutput_clobber --- */
-void
-set_rtoutput_clobber(int state)
-{
-   clobber = state;
 }
 
 
