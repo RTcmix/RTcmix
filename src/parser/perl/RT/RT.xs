@@ -3,7 +3,7 @@
 #include "EXTERN.h"
 #include "perl.h"
 #include "XSUB.h"
-#include "../../H/maxdispargs.h"
+#include "../../../include/maxdispargs.h"
 
 extern double parse_dispatch(char *, double [], int, void **);
 
