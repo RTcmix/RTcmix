@@ -22,14 +22,14 @@ float strum(float xin, strumq *q)
    if(p4 < 0) p4 = p4 + maxlen;
 
 
-   /*averaging filter*/
+   /* averaging filter */
    x = q->a[3]*q->d[p4];
    x += q->a[2]*q->d[p3];
    x += q->a[1]*q->d[p2];
    x += q->a[0]*q->d[p1];
 
 
-  /*dc blocking filter, for which xin+x is input, q->d[q->p] output*/
+   /* dc blocking filter, for which xin+x is input, q->d[q->p] output */
    q->d[q->p]  = q->dca1 * q->dcz1;
    q->dcz1     = q->dcb1 * q->dcz1 + xin + x;
    q->d[q->p] += q->dca0 * q->dcz1;
