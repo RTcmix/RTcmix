@@ -106,7 +106,7 @@ int REVMIX::run()
    aamp = amp;                     /* in case amparray == NULL */
 
    branch = 0;
-   for (i = samps - 1; i >=  0; i -= inputchans)  {
+   for (i = samps - inputchans; i >=  0; i -= inputchans)  {
       if (--branch < 0) {
          if (amparray)
             aamp = tablei(cursamp, amparray, amptabs) * amp;
