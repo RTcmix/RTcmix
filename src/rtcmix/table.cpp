@@ -725,7 +725,7 @@ dumptable(const Arg args[], const int nargs)
       die("dumptable", "Usage: dumptable(table_handle [, out_file])");
       return -1.0;
    }
-   TablePField *table = _getTablePField(&args[0]);
+   PField *table = _getPField(&args[0]);
    if (table == NULL) {
       die("dumptable", "First argument must be a handle to the table to dump.");
       return -1.0;
@@ -746,14 +746,12 @@ dumptable(const Arg args[], const int nargs)
    else
       f = stdout;
 
-   char *lines = table->dump();
-   fwrite(lines, 1, strlen(lines), f);
-   delete lines;
+   int chars = table->print(f);
 
    if (f != stdout)
       fclose(f);
 
-   return 0.0;
+   return (chars > 0) ? 0.0 : -1.0;
 }
 
 
@@ -775,7 +773,7 @@ plottable(const Arg args[], const int nargs)
          "Usage: plottable(table_handle [, pause] [, plot_commands])");
       return -1.0;
    }
-   TablePField *table = _getTablePField(&args[0]);
+   PField *table = _getPField(&args[0]);
    if (table == NULL) {
       die("plottable", "First argument must be the table to plot.");
       return -1.0;
@@ -819,11 +817,13 @@ plottable(const Arg args[], const int nargs)
       return -1.0;
    }
 
-   table = (TablePField *) args[0].val.handle->ptr;
-   char *lines = table->dump();
-   fwrite(lines, 1, strlen(lines), fdata);
+   int chars = table->print(fdata);
    fclose(fdata);
-   delete lines;
+   
+	if (chars <= 0) {
+		die("dumptable", "Cannot print this kind of table");
+		return -1;
+	}
 
    fprintf(fcmd, 
 #ifdef MACOSX  /* NB: requires installation of Aquaterm and gnuplot 3.8 */
