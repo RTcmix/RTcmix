@@ -3,6 +3,8 @@ Saturday, May 27, 2000 John Gibson <johngibson@virginia.edu>
    * Added new instrument, REVMIX, by Ivica Bukvic, to insts.std.
    * Removed all the USE_SNDLIB ifdefs, since we always use it.
    * Input from files now ignores in-bus count entirely.
+   * New function table assigns for FMINST and WAVESHAPE (see
+     docs/README.table_assigns). This makes old scores incompatible!
 
 Friday, May 26, 2000 John Gibson <johngibson@virginia.edu>
 
