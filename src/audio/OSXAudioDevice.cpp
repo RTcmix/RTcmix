@@ -534,8 +534,9 @@ OSXAudioDevice::Impl::listenerProcess(AudioDeviceID inDevice,
 
 OSXAudioDevice::OSXAudioDevice(const char *desc) : _impl(new Impl)
 {
-	_impl->deviceName = NULL;
+	_impl->deviceIDs = NULL;
 	_impl->deviceID = 0;
+	_impl->deviceName = NULL;
 	for (int n = REC; n <= PLAY; ++n) {
 		_impl->port[n].streamIndex = 0;
 		_impl->port[n].streamCount = 1;		// Default;  reset if necessary
