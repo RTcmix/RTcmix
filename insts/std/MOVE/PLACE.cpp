@@ -109,16 +109,28 @@ void rtprofile()
 void PLACE::get_tap(int intap, int chan, int path, int len)
 {
 	Vector *vec = &m_vectors[chan][path];
-	const int iloc = (int) vec->outloc;
 	register double *tapdel = m_tapDelay;
 	register double *Sig = vec->Sig;
 	register int tap = intap % m_tapsize;
+    int outtap = tap - (int) vec->outloc;
+    if (outtap < 0) outtap += m_tapsize;
 
-	for (int i = 0; i < len; ++i, ++tap) {
-    	int outtap = tap - iloc;
-    	if (outtap < 0)
-        	outtap += m_tapsize;
-    	Sig[i] = tapdel[outtap];
+	int len1 = min(len, m_tapsize - outtap);
+	int i;
+
+    // run till the output tap wraps, or len reached
+
+	for (i = 0; i < len1; ++i) {
+    	Sig[i] = tapdel[outtap++];
+	}
+	
+	// wrap outtap and finish if necessary
+	
+	if (outtap >= m_tapsize)
+	    outtap -= m_tapsize;
+
+	for (; i < len; ++i) {
+    	Sig[i] = tapdel[outtap++];
 	}
 }
 
