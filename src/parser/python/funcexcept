@@ -5,7 +5,9 @@ exit
 f_arg
 i_arg
 log
+max
 open
+round
 s_arg
 somefunk
 system
