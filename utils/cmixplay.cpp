@@ -47,11 +47,12 @@
    #define ROBUST_FACTOR       2
 #endif
 
-#define SKIP_SECONDS        4.0     // for fast-forward and rewind
+#define SKIP_SECONDS        4.0f    // for fast-forward and rewind
 #define MARK_PRECISION      2       // digits after decimal point to print
                                     // for mark
-#define MARK_DELAY          0.05    // report mark time earlier by this much,
+#define MARK_DELAY          0.05f   // report mark time earlier by this much,
                                     // to make up for delay when typing key
+#define FACTOR_INCREMENT    0.1f    // for hotkey volume changes
 
 #define ALL_CHANS           -1
 
@@ -499,6 +500,16 @@ Player::doHotKeys(int framesRead)
             }
             else
                _state = StatePlaying;
+         }
+         else if (c == '-') {    // decrease volume (factor)
+            _factor -= FACTOR_INCREMENT;
+            if (_factor < 0.0)
+               _factor = 0.0;
+            printf("\nRescale factor: %.2f\n", _factor);
+         }
+         else if (c == '+' || c == '=') { // increase volume
+            _factor += FACTOR_INCREMENT;
+            printf("\nRescale factor: %.2f\n", _factor);
          }
 
          if (skip) {
