@@ -22,125 +22,125 @@ Random::~Random() {}
 // Return a random number in range [0, 1]
 inline double Random::rawvalue()
 {
-   _randx = (_randx * 1103515245) + 12345;
-   int k = (_randx >> 16) & 077777;
-   return (double) k / 32768.0;
+	_randx = (_randx * 1103515245) + 12345;
+	int k = (_randx >> 16) & 077777;
+	return (double) k / 32768.0;
 }
 
 // Scale <num>, which must be in range [0, 1], to fit range [_min, _max]
 inline double Random::fitrange(double num) const
 {
-   assert(num >= 0.0 && num <= 1.0);
-   return _min + (num * (_max - _min));
+	assert(num >= 0.0 && num <= 1.0);
+	return _min + (num * (_max - _min));
 }
 
 
 // Linear distribution subclass -----------------------------------------------
 
 LinearRandom::LinearRandom(int seed, double min, double max)
-   : Random(seed, min, max) {}
+	: Random(seed, min, max) {}
 
 LinearRandom::~LinearRandom() {}
 
 double LinearRandom::value()
 {
-   return fitrange(rawvalue());
+	return fitrange(rawvalue());
 }
 
 
 // Low-weighted linear distribution subclass ----------------------------------
 
 LowLinearRandom::LowLinearRandom(int seed, double min, double max)
-   : Random(seed, min, max) {}
+	: Random(seed, min, max) {}
 
 LowLinearRandom::~LowLinearRandom() {}
 
 double LowLinearRandom::value()
 {
-   double num1 = rawvalue();
-   double num2 = rawvalue();
-   return fitrange(dmin(num1, num2));
+	double num1 = rawvalue();
+	double num2 = rawvalue();
+	return fitrange(dmin(num1, num2));
 }
 
 
 // High-weighted linear distribution subclass ---------------------------------
 
 HighLinearRandom::HighLinearRandom(int seed, double min, double max)
-   : Random(seed, min, max) {}
+	: Random(seed, min, max) {}
 
 HighLinearRandom::~HighLinearRandom() {}
 
 double HighLinearRandom::value()
 {
-   double num1 = rawvalue();
-   double num2 = rawvalue();
-   return fitrange(dmax(num1, num2));
+	double num1 = rawvalue();
+	double num2 = rawvalue();
+	return fitrange(dmax(num1, num2));
 }
 
 
 // Triangle distribution subclass ---------------------------------------------
 
 TriangleRandom::TriangleRandom(int seed, double min, double max)
-   : Random(seed, min, max) {}
+	: Random(seed, min, max) {}
 
 TriangleRandom::~TriangleRandom() {}
 
 double TriangleRandom::value()
 {
-   double num1 = rawvalue();
-   double num2 = rawvalue();
-   double tmp = 0.5 * (num1 + num2);
-   return fitrange(tmp);
+	double num1 = rawvalue();
+	double num2 = rawvalue();
+	double tmp = 0.5 * (num1 + num2);
+	return fitrange(tmp);
 }
 
 
 // Gaussian distribution subclass ---------------------------------------------
 
 GaussianRandom::GaussianRandom(int seed, double min, double max)
-   : Random(seed, min, max) {}
+	: Random(seed, min, max) {}
 
 GaussianRandom::~GaussianRandom() {}
 
 double GaussianRandom::value()
 {
-   const int N = 12;
-   const double halfN = 6.0;
-   const double scale = 1.0;
-   const double mu = 0.5;
-   const double sigma = 0.166666;
+	const int N = 12;
+	const double halfN = 6.0;
+	const double scale = 1.0;
+	const double mu = 0.5;
+	const double sigma = 0.166666;
 
-   double num;
-   do {
-      num = 0.0;
-      for (int j = 0; j < N; j++)
-         num += rawvalue();
-      num = sigma * scale * (num - halfN) + mu;
-   } while (num < 0.0 || num > 1.0);
+	double num;
+	do {
+		num = 0.0;
+		for (int j = 0; j < N; j++)
+			num += rawvalue();
+		num = sigma * scale * (num - halfN) + mu;
+	} while (num < 0.0 || num > 1.0);
 
-   return fitrange(num);
+	return fitrange(num);
 }
 
 
 // Cauchy distribution subclass -----------------------------------------------
 
 CauchyRandom::CauchyRandom(int seed, double min, double max)
-   : Random(seed, min, max) {}
+	: Random(seed, min, max) {}
 
 CauchyRandom::~CauchyRandom() {}
 
 double CauchyRandom::value()
 {
-   const double alpha = 0.00628338;
+	const double alpha = 0.00628338;
 
-   double num;
-   do {
-      do {
-         num = rawvalue();
-      } while (num == 0.5);
-      num = (alpha * tan(num * M_PI)) + 0.5;
-   } while (num < 0.0 || num > 1.0);
+	double num;
+	do {
+		do {
+			num = rawvalue();
+		} while (num == 0.5);
+		num = (alpha * tan(num * M_PI)) + 0.5;
+	} while (num < 0.0 || num > 1.0);
 
-   return fitrange(num);
+	return fitrange(num);
 }
 
 
@@ -149,31 +149,63 @@ double CauchyRandom::value()
 
 ProbRandom::ProbRandom(int seed, double min, double mid, double max,
                                                                 double tight)
-   : Random(seed, min, max, mid, tight) {}
+	: Random(seed, min, max, mid, tight) {}
 
 ProbRandom::~ProbRandom() {}
 
 double ProbRandom::value()
 {
-   const double min = getmin();
-   const double max = getmax();
-   const double mid = getmid();
-   const double tight = gettight();
-   double hirange = max - mid;
-   double lowrange = mid - min;
-   double range = dmax(hirange, lowrange);
+	const double min = getmin();
+	const double max = getmax();
+	const double mid = getmid();
+	const double tight = gettight();
+	double hirange = max - mid;
+	double lowrange = mid - min;
+	double range = dmax(hirange, lowrange);
 
-   double num;
-   do {
-      double sign;
-      num = rawvalue();       // num is [0,1]
-      if (num > 0.5)
-         sign = 1.0;
-      else
-         sign = -1.0;
-      num = mid + (sign * (pow(rawvalue(), tight) * range));
-   } while (num < min || num > max);
+	double num;
+	do {
+		double sign;
+		num = rawvalue();       // num is [0,1]
+		if (num > 0.5)
+			sign = 1.0;
+		else
+			sign = -1.0;
+		num = mid + (sign * (pow(rawvalue(), tight) * range));
+	} while (num < min || num > max);
 
-   return num;
+	return num;
 }
+
+
+// RandomOscil
+
+RandomOscil::RandomOscil(Random *gen, double srate, double freq)
+	: _gen(gen), _srate(srate)
+{
+	setfreq(freq);
+	_counter = _limit;		// trigger first _gen->value()
+}
+
+RandomOscil::~RandomOscil()
+{
+	delete _gen;
+}
+
+void RandomOscil::setfreq(double freq)
+{
+	_limit = (int) (_srate / freq);
+}
+
+double RandomOscil::next()
+{
+	if (_counter >= _limit) {
+		_curval = _gen->value();
+		_counter = 0;
+	}
+	else
+		_counter++;
+	return _curval;
+}
+
 
