@@ -245,6 +245,21 @@ private:
 	int		_len;
 };
 
+// Class for inverting PField output around a variable center of symmetry.
+
+class InvertPField : public PFieldWrapper {
+public:
+	InvertPField(PField *innerPField, PField *centerPField);
+	virtual double	doubleValue(double didx) const;
+	virtual double	doubleValue(int idx) const;
+	virtual int		values() const { return _len; }
+protected:
+	virtual ~InvertPField();
+private:
+	int _len;
+	PField *_centerPField;
+};
+
 // Class for scaling normalized PField output into a range.
 
 class RangePField : public PFieldWrapper {

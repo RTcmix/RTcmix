@@ -385,6 +385,32 @@ double ReversePField::doubleValue(int idx) const
 	return field()->doubleValue((_len - 1) - idx);
 }
 
+// InvertPField
+
+InvertPField::InvertPField(PField *innerPField, PField *centerPField)
+	: PFieldWrapper(innerPField), _len(innerPField->values()),
+	  _centerPField(centerPField)
+{
+	_centerPField->ref();
+}
+
+InvertPField::~InvertPField()
+{
+	_centerPField->unref();
+}
+
+double InvertPField::doubleValue(double didx) const
+{
+	const double center = _centerPField->doubleValue(didx);
+	const double diff = field()->doubleValue(didx) - center;
+	return center - diff;
+}
+
+double InvertPField::doubleValue(int idx) const
+{
+	return doubleValue((double) idx);
+}
+
 // RangePField
 
 RangePField::RangePField(PField *innerPField,
