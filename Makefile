@@ -1,5 +1,5 @@
 ################################################################################
-# You shouldn't need to edit this file. Edit makefile.conf instead.
+# You shouldn't need to edit this file. Edit site.conf instead.
 ################################################################################
 
 include makefile.conf
