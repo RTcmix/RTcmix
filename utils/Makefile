@@ -1,27 +1,28 @@
 include ../makefile.conf
 
+PLAY = cmixplay
 
 ifeq ($(ARCH),LINUX)
-   PROGS = cmixplay playraw sfrecord full-duplex-test
+   PROGS = $(PLAY) playraw sfrecord full-duplex-test
    RESAMPLE = resample
    SYSLIBS = -lm   # only this, overriding makefile.conf
 endif
 
+# nothing here supported under Irix yet
 ifeq ($(ARCH),SGI)
    PROGS =
    RESAMPLE =
 endif
 
-PLAY = cmixplay.o
 SYSOBJS = ../sys/check_byte_order.o ../sys/sndlibsupport.o ../sys/audio_port.o
 
 
 all: $(PROGS) $(RESAMPLE)
 
-cmixplay:  $(PLAY) $(SYSOBJS)
-	$(CC) -o cmixplay $(SOUND_DRIVER) $(PLAY) $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
+$(PLAY):  $(PLAY).o $(SYSOBJS)
+	$(CC) -o cmixplay $(SOUND_DRIVER) $(PLAY).o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
 
-cmixplay.o:  cmixplay.c ../H/audio_port.h ../H/sndlibsupport.h
+$(PLAY).o:  $(PLAY).c ../H/audio_port.h ../H/sndlibsupport.h
 	$(CC) $(CFLAGS) $(SOUND_DRIVER) -c $< -o $@
 
 playraw: playraw.o
@@ -48,6 +49,9 @@ ifneq ($(strip $(PROGS)),)       # do only if PROGS is nonempty
 endif
 ifneq ($(strip $(RESAMPLE)),)    # do only if RESAMPLE is nonempty
 	@$(INSTALL) $(CMIXDIR)/utils/resample/resample $(DESTDIR)
+endif
+ifneq ($(strip $(PLAY)),)        # do only if PLAY is nonempty
+	@cd $(DESTDIR); ln -s $(PLAY) play
 endif
 
 clean:
