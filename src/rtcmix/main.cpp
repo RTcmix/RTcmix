@@ -60,12 +60,14 @@ extern FILE *yyin;
 static void
 init_globals()
 {
+   int i;
+
    RTBUFSAMPS = 8192;           /* default, modifyable with rtsetparams */
    NCHANS = 2;
    audioNCHANS = 0;
 
 #ifdef LINUX
-   for (int i = 0; i < MAXBUS; i++)
+   for (i = 0; i < MAXBUS; i++)
       in_port[i] = out_port[i] = 0;
 #endif /* LINUX */
 #ifdef SGI
@@ -100,13 +102,13 @@ init_globals()
    print_is_on = 1;
 
    Bus_Configed = NO;
-   for(i=0;i<MAXBUS;i++) {
-	 AuxToAuxPlayList[i] = -1; /* The playback order for AUX buses */
-	 ToOutPlayList[i] = -1; /* The playback order for AUX buses */
-	 ToAuxPlayList[i] =-1; /* The playback order for AUX buses */
+   for (i = 0; i < MAXBUS; i++) {
+      AuxToAuxPlayList[i] = -1; /* The playback order for AUX buses */
+      ToOutPlayList[i] = -1;    /* The playback order for AUX buses */
+      ToAuxPlayList[i] =-1;     /* The playback order for AUX buses */
    }
 
-   for (int i = 0; i < MAX_INPUT_FDS; i++)
+   for (i = 0; i < MAX_INPUT_FDS; i++)
       inputFileTable[i].fd = NO_FD;
 
    init_buf_ptrs();
