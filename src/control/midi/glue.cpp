@@ -7,9 +7,40 @@
 #include <string.h>
 #include <rtcmix_types.h>
 #include <PField.h>
-#include <RTMousePField.h>
+#include <RTcmixMIDI.h>
+#include <RTMidiPField.h>
 #include <ugens.h>		// for warn, die
 
+//FIXME: better to have a struct with one field a string, the other type
+
+#define NAME_VARIANTS 4
+static char *_midi_type_name[][NAME_VARIANTS] = {
+	// NB: Order of these must correspond to indices given by MIDIType enum!
+	{ "cntl", "control", NULL, NULL },
+	{ "noteon", NULL, NULL, NULL },
+	{ "noteoff", NULL, NULL, NULL },
+	{ "bend", "pitchbend", NULL, NULL },
+	{ "prog", "program", NULL, NULL },
+	{ "chanpress", "monopress", "at", "aftertouch" },
+	{ "polypress", "keypress", "polyat", "polyaftertouch" },
+	{ NULL, NULL, NULL, NULL }
+};
+
+static char *_midi_controller_name[][NAME_VARIANTS] = {
+	{ "banksel", NULL, NULL, NULL },
+	{ "mod", "modwheel", "modulation", NULL },
+	{ "breath", NULL, NULL, NULL },
+	{ NULL, NULL, NULL, NULL },
+	{ "foot", NULL, NULL, NULL },
+	{ "port time", "portamento time", NULL, NULL },
+	{ "data", NULL, NULL, NULL },
+	{ "vol", "volume", NULL, NULL },
+	{ "bal", "balance", NULL, NULL },
+	{ NULL, NULL, NULL, NULL },
+	{ "pan", NULL, NULL, NULL },
+	{ "exp", "expression", NULL, NULL },
+	{ NULL, NULL, NULL, NULL }
+};
 
 // -------------------------------------------------------- _midi_connection ---
 //
@@ -18,7 +49,7 @@
 //
 //    <chan>      MIDI channel (1-16)
 //
-//    <type>      "noteon", "noteoff", "cntl", "prog", "bend", "monopress",
+//    <type>      "noteon", "noteoff", "cntl", "prog", "bend", "chanpress",
 //                "polypress"
 //
 //    <subtype>   depends on <type>:
@@ -33,8 +64,6 @@
 //
 //
 
-
-
 static RTNumberPField *
 _midi_usage()
 {
@@ -45,21 +74,41 @@ _midi_usage()
 }
 
 static MIDIType
-_convert_type(const char *type)
+_string_to_type(const char *type)
 {
+	for (int i = 0; _midi_type_name[i][0] != NULL; i++) {
+		for (int j = 0; j < NAME_VARIANTS; j++) {
+			const char *name = _midi_type_name[i][j];
+			if (name == NULL)
+				break;
+			if (strcasecmp(type, name) == 0)
+				return (MIDIType) i;
+		}
+	}
+	return kMIDIInvalidType;
 }
 
 static MIDISubType
-_convert_subtype(const MIDIType type, const char *subtype)
+_string_to_subtype(const MIDIType type, const char *subtype)
 {
+	if (type == kMIDIControlType) {
+//FIXME
+	}
+	else if (type == kMIDINoteOnType || type == kMIDINoteOffType) {
+		if (strcmp(subtype, "note") == 0)
+			return kMIDINoteSubType;
+		else if (strncmp(subtype, "vel", 3) == 0)
+			return kMIDIVelocitySubType;
+	}
+	return kMIDIInvalidSubType;
 }
 
 RTNumberPField *
 midi_connection(const Arg args[], const int nargs)
 {
-	static RTcmixMIDI *mididriver = NULL;
-	if (mididriver == NULL)					// first time, so init driver
-		mididriver = createMIDIDriver();
+	static RTcmixMIDI *midiport = NULL;
+	if (midiport == NULL)				// first time, so init midi system
+		midiport = createMIDIPort();
 
 	double minval, maxval, defaultval, lag;
 	int chan;
@@ -92,25 +141,25 @@ midi_connection(const Arg args[], const int nargs)
 		return _midi_usage();
 
 	if (args[6].isType(StringType))
-		type = _convert_type(args[6]);
+		type = _string_to_type(args[6]);
 	else
 		return _midi_usage();
-	if (type == kMIDITypeInvalid)
+	if (type == kMIDIInvalidType)
 		return _midi_usage();
 
 	if (nargs > 7) {
 		if (args[7].isType(StringType))
-			subtype = _convert_subtype(type, args[7]);
+			subtype = _string_to_subtype(type, args[7]);
 		else if (args[7].isType(DoubleType))
-//FIXME: not right: this is not a code, it's a literal int, e.g. controller num
-			subtype = (MIDISubType) args[7];
+			// NB: this can be a code or a literal int, e.g. note or controller num
+			subtype = (MIDISubType) (int) args[7];
 		else
 			return _midi_usage();
-		if (subtype == kMIDISubTypeInvalid)
+		if (subtype == kMIDIInvalidSubType)
 			return _midi_usage();
 	}
 
-	return new RTMIDIPField(mousewin, axis, minval, maxval, defaultval, lag,
-										chan, type, subtype);
+	return new RTMidiPField(midiport, minval, maxval, defaultval, lag, chan,
+																		type, subtype);
 }
 
