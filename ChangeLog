@@ -1,3 +1,10 @@
+Friday, June 9, 2000 John Gibson <johngibson@virginia.edu>
+
+   * Fix to sample_scos_1.0/STRUM2.sco. Would bail out before.
+   * For Irix, create LIBDESTDIR before making instruments. That's
+     the default location for the so_locations file.
+
+
 **** Released RTcmix-3.0.1 ****
 
 NOTE: If you're running 3.0.0 now, you *really* want this update, due
