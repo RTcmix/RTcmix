@@ -52,6 +52,8 @@ clean:
 	  $(RM) $(DESTDIR)/$$DIR; \
 	  $(RM) $(LIBDESTDIR)/lib$$DIR.so; ) \
 	done
+	@# temporary workaround to clean PLACE dso:
+	@$(RM) $(LIBDESTDIR)/libPLACE.so
 
 dso_clean:
 	@for DIR in $(LIBDIRS); \
