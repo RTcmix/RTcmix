@@ -23,6 +23,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 //#include <builtin.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 // error handling
 
