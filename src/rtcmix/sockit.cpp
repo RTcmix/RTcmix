@@ -1,3 +1,7 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
 #include <pthread.h>
 #include <iostream.h>
 #include <stdio.h>
@@ -11,6 +15,7 @@
 #include <string.h>
 #include <sys/time.h>
 
+#include <globals.h>
 #include "../rtstuff/rtdefs.h"
 #include "sockdefs.h"
 #include "../H/dbug.h"
@@ -21,20 +26,10 @@ extern "C" {
   double parse_dispatch(char*, double*, int);
 }
 
-extern "C" int rtInteractive;
-
-
-
-extern int noParse;
 
 double schedtime; 	// up here so that rtsetoutput can access this info
 // (see below)
 
-extern int socknew; 	// defined in main.C, offset from MYPORT for more than one simultaneous instrument
-extern int noaudio;
-extern int audio_config;
-
-extern pthread_mutex_t pfieldLock;
 
 extern "C" {
   void *sockit(void*)
