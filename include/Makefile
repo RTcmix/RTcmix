@@ -18,7 +18,7 @@ all:
 
 depend:
 
-install:
+install: all
 
 clean:
 	@echo "Nothing to be done for 'clean'."
