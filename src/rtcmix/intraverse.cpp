@@ -105,8 +105,12 @@ extern "C" {
 
     // NOTE: audioin, aux and output buffers are zero'd during allocation
 
-   for (i = 0; i < ZERO_FRAMES_BEFORE / RTBUFSAMPS; i++)
-     rtsendzeros(0);  // send a buffer of zeros to audio output device
+	if (rtsetparams_called) {
+	  for (i = 0; i < ZERO_FRAMES_BEFORE / RTBUFSAMPS; i++)
+		rtsendzeros(0);  // send a buffer of zeros to audio output device
+
+      playEm = 1;
+	}
 
     // read in an input buffer (if audio input is active)
     if (audio_on) {
@@ -114,9 +118,6 @@ extern "C" {
       rtsendzeros(0);  // send a buffer of zeros to audio device
     }
   
-    if (rtsetparams_called)         // otherwise, disk-based only
-      playEm = 1;
-
 	// Try and be tight with time
 	gettimeofday(&tv, &tz);
 	sec = (double)tv.tv_sec;
