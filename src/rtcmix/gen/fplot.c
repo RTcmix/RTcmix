@@ -68,12 +68,12 @@ fplot(float p[], short n_args, double pp[])
 			FILE *fdata, *fcmd;
 
 			if (mkstemp(data_file) == -1 || mkstemp(cmd_file) == -1)
-				die("fplot", "Can't make temp files for gnuplot.");
+				return die("fplot", "Can't make temp files for gnuplot.");
 
 			fdata = fopen(data_file, "w");
 			fcmd = fopen(cmd_file, "w");
 			if (fdata == NULL || fcmd == NULL)
-				die("fplot", "Can't open temp files for gnuplot.");
+				return die("fplot", "Can't open temp files for gnuplot.");
 
 			for (i = 0; i < len; i++)
 				fprintf(fdata, "%d %.6f\n", i, array[i]);
@@ -103,18 +103,21 @@ fplot(float p[], short n_args, double pp[])
 			system(cmd);
 		}
 		else
-			die(NULL, "You must make a gen before plotting it!");
+			return die("fplot", "You must make a gen before plotting it!");
 	}
 	else {
-		float out[80],si,*f1,phase;
+		double *f1;
+		float out[80],si,phase;
 		int i,k,j,len,wave;
 		static char line[80];
 
 		wave = p[0];
 		phase = 0;
+		f1 = floc(wave);
+		if (f1 == NULL)
+			return die("fplot", "You must make a gen before plotting it!");
 		len = fsize(wave);
 		si = (float) len/79.;
-		f1 = (float *) floc(wave);
 		for(i = 0; i < 80; i++) {
 			out[i] =  oscil(1.,si,f1,len,&phase);
 		}
