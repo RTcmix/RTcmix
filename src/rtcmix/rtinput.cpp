@@ -40,7 +40,7 @@ typedef enum {
    #define open_audio_input open_sgi_audio_input
 #endif
 
-static last_input_index = -1;
+static int last_input_index = -1;
 
 
 

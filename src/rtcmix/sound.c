@@ -334,7 +334,7 @@ _igetin(float *in, int fno)
 static int
 _fgetin(float *in, int fno)
 {
-	register i;
+	register int i;
 	register int ipoint = pointer[fno];
 	register int incr = sfchans(&sfdesc[fno]);
 	register float *fbuf;
@@ -352,7 +352,7 @@ _fgetin(float *in, int fno)
 static int
 _ilayout(float *out, int *chlist, int fno)
 {
-	register i;
+	register int i;
 	register int ipoint = pointer[fno];
 	register int incr = sfchans(&sfdesc[fno]);
 	register short *ibuf;
@@ -375,7 +375,7 @@ _ilayout(float *out, int *chlist, int fno)
 static int
 _flayout(float *out, int *chlist, int fno)
 {
-	register i;
+	register int i;
 	register int ipoint = pointer[fno];
 	register int incr = sfchans(&sfdesc[fno]);
 	register float *fbuf;
@@ -398,7 +398,7 @@ _flayout(float *out, int *chlist, int fno)
 static int
 _iwipeout(float *out, int fno)   /* to force destructive writes */ 
 {
-	register i;
+	register int i;
 	register int ipoint = pointer[fno];
 	register int incr = sfchans(&sfdesc[fno]);
 	register short *ibuf;
@@ -422,7 +422,7 @@ _iwipeout(float *out, int fno)   /* to force destructive writes */
 static int
 _fwipeout(float *out, int fno)   /* to force destructive writes */ 
 {
-	register i;
+	register int i;
 	register int ipoint = pointer[fno];
 	register int incr = sfchans(&sfdesc[fno]);
 	register float *fbuf;
@@ -749,7 +749,7 @@ endnote(int xno)
 void
 _flushbuf(int fno)
 {
-	register i;
+	register int i;
 	for(i=pointer[fno]*sfclass(&sfdesc[fno]); i<nbytes; i++)
 		*(sndbuf[fno] + i) = 0;
 }
