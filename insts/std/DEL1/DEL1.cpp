@@ -57,7 +57,7 @@ int DEL1::init(float p[], short n_args)
 
 	amp = p[3];
 	skip = SR/(float)resetval;
-	inchan = p[5];
+	inchan = p[6];
 	if ((inchan+1) > inputchans) {
 		fprintf(stderr,"uh oh, you have asked for channel %d of a %d-channel file...\n",inchan,inputchans);
 		exit(-1);
