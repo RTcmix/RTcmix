@@ -15,6 +15,14 @@ Oscil :: ~Oscil()
 }
 
 
+// Change offset into the wave table. <aPhase> is in radians.
+// Caution: Changing this when osc amplitude is non-zero can cause clicks, etc.
+void Oscil :: setPhase(MY_FLOAT aPhase)
+{
+   phase = (double) (aPhase * ONE_OVER_TWO_PI * (double) size);
+}
+
+
 MY_FLOAT Oscil :: lastOut()
 {
    return lastOutput;

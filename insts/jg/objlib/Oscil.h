@@ -19,6 +19,7 @@ class Oscil
   public:
     Oscil();
     virtual ~Oscil();
+    void setPhase(MY_FLOAT aPhase);
     MY_FLOAT lastOut();
 };
 
