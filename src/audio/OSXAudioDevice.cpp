@@ -25,17 +25,17 @@ struct OSXAudioDevice::Impl {
 	AudioDeviceID				deviceID;
 	AudioStreamBasicDescription deviceFormat;
 	int							bufferSampleFormat;
-	unsigned int 				deviceBufferSize;	// driver value
-	int							deviceChannels;		// driver value
-	int							channels;			// what user req's
+	unsigned int 				deviceBufSamps;			// hw size in samps
+	int							deviceChannels;			// hw value
+	int							channels;				// what user req's
 	int							frameCount;
 	bool						formatWritable;
 	bool						paused;
 	bool						stopping;
-	bool						recording;			// Used by OSX code
-	bool						playing;			// Used by OSX code
+	bool						recording;				// Used by OSX code
+	bool						playing;				// Used by OSX code
 	float						*audioBuffers[2];		// circ. buffers
-	int							audioBufSamps;		// length of buffer
+	int							audioBufSamps;			// length of buffers in samps
 	int							inLoc[2], outLoc[2];	// circ. buffer indices
 	static OSStatus				runProcess(
 									AudioDeviceID			inDevice,
@@ -80,7 +80,7 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 	// Samps, not frames.
 	const int bufLen = impl->audioBufSamps;
 	// How many samples are available from HW.
-	const int sampsToRead = impl->deviceBufferSize / sizeof(float);
+	const int sampsToRead = impl->deviceBufSamps;
 	if (impl->recording) {
 		// How many samples' space are available in our buffer.
 		int spaceAvail = ::inRemaining(impl->outLoc[REC], impl->inLoc[REC], bufLen);
@@ -128,12 +128,13 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 	}
 	if (impl->playing) {
 		// Samps, not frames.
-		const int sampsToWrite = sampsToRead;
+		const int sampsToWrite = impl->deviceBufSamps;
 		int sampsAvail = ::outRemaining(impl->inLoc[PLAY], impl->outLoc[PLAY], bufLen);
 
 		// printf("OSXAudioDevice: playback section\n");
 		// printf("sampsAvail = %d\n", sampsAvail);
 		while (sampsAvail < sampsToWrite && keepGoing) {
+			// printf("\tsampsAvail < needed (%d), so run callback for more\n", sampsToWrite);
 			Callback runCallback = device->getRunCallback();
 			keepGoing = (*runCallback)(device, device->getRunCallbackContext());
 			sampsAvail = ::outRemaining(impl->inLoc[PLAY], impl->outLoc[PLAY], bufLen);
@@ -155,7 +156,7 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 					outbuf[n] = inbuf[outLoc++];
 				}
 				impl->outLoc[PLAY] = outLoc;
-				samplesDone = sampsToWrite;
+				samplesDone += sampsToWrite;
 			}
 			// printf("\toutLoc ended at %d\n", impl->outLoc[PLAY]);
 		}
@@ -169,7 +170,7 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 		}
 	}
 	impl->frameCount += sampsToRead / impl->deviceChannels;
-	// printf("OSXAudioDevice: leaving runProcess\n\n");
+//	printf("OSXAudioDevice: leaving runProcess\n\n");
 	return kAudioHardwareNoError;
 }
 
@@ -214,7 +215,7 @@ OSXAudioDevice::OSXAudioDevice() : _impl(new Impl)
 {
 	_impl->deviceID = 0;
 	_impl->bufferSampleFormat = MUS_UNKNOWN;
-	_impl->deviceBufferSize = 0;
+	_impl->deviceBufSamps = 0;
 	_impl->deviceChannels = 0;
 	_impl->audioBufSamps = 0;
 	_impl->channels = 0;
@@ -230,7 +231,7 @@ OSXAudioDevice::OSXAudioDevice() : _impl(new Impl)
 
 OSXAudioDevice::~OSXAudioDevice()
 {
-	printf("OSXAudioDevice::~OSXAudioDevice()\n");
+	//printf("OSXAudioDevice::~OSXAudioDevice()\n");
 	delete [] _impl->audioBuffers[REC];
 	delete [] _impl->audioBuffers[PLAY];
 	delete _impl;
@@ -374,49 +375,62 @@ int OSXAudioDevice::doSetQueueSize(int *pQueueSize)
 	if (err != kAudioHardwareNoError) {
 		return error("Can't get audio device property");
 	}
-	int reqQueueSize = *pQueueSize;
+	int reqQueueFrames = *pQueueSize;
 	// Audio buffer is always floating point.  Attempt to set size in bytes.
-	unsigned int reqBufSize = sizeof(float) * _impl->channels * reqQueueSize;
+	// Loop until request is accepted, halving value each time.
+	unsigned int reqBufBytes = sizeof(float) * _impl->channels * reqQueueFrames;
 	if (writeable) {
-		size = sizeof(reqBufSize);
-		err = AudioDeviceSetProperty(_impl->deviceID,
-									 NULL,
-									 0, _impl->recording,
-								     kAudioDevicePropertyBufferSize,
-									 size,
-									 (void *)&reqBufSize);
-		// NB: even if err != kAudioHardwareNoError, we continue and use
-		//  the default buffer size.
+		size = sizeof(reqBufBytes);
+		while ( (err = AudioDeviceSetProperty(_impl->deviceID,
+										 NULL,
+										 0, _impl->recording,
+										 kAudioDevicePropertyBufferSize,
+										 size,
+										 (void *)&reqBufBytes))
+				!= kAudioHardwareNoError && reqBufBytes > 64)
+		{
+			reqBufBytes /= 2;
+		}
+		// Check for total failure.
+		if (err != kAudioHardwareNoError) {
+			return error("Can't set audio device buffer size to any value");
+		}
 	}
 	// Get and store the actual buffer size.  (Device may not want to change.)
-	size = sizeof(_impl->deviceBufferSize);
+	unsigned int deviceBufferBytes = 0;
+	size = sizeof(deviceBufferBytes);
 	err = AudioDeviceGetProperty(_impl->deviceID,
 								 0, _impl->recording,
 								 kAudioDevicePropertyBufferSize,
 								 &size,
-								 &_impl->deviceBufferSize);
+								 &deviceBufferBytes);
 	if (err != kAudioHardwareNoError) {
 		return error("Can't get audio device buffer size");
 	}
-	// printf("OSX device buffer size is %d bytes, user req was %d bytes\n",
-	//		_impl->deviceBufferSize, reqBufSize);
-	// We only revise the user's request if it was *smaller* than what the
-	// device allows.  If it is larger, we handle the difference.
-	int actualFrames = _impl->deviceBufferSize / (sizeof(float) * _impl->deviceChannels);
-	int audioBufferSize = 0;
-	if (actualFrames > reqQueueSize) {
-		*pQueueSize = actualFrames;
-		audioBufferSize = _impl->deviceBufferSize;
+	int deviceFrames = deviceBufferBytes / (sizeof(float) * _impl->deviceChannels);
+	printf("OSX device buffer size is %d frames, user req was %d frames\n",
+			deviceFrames, reqQueueFrames);
+
+	// We allocate the circular buffers to be the max(2_times_HW, user_req).
+	if (deviceFrames * 2 > reqQueueFrames) {
+		_impl->audioBufSamps = 2 * deviceFrames * _impl->deviceChannels;
 	}
 	else {
-		audioBufferSize = reqBufSize;
+		_impl->audioBufSamps = reqQueueFrames * _impl->deviceChannels;
 	}
 
+	_impl->deviceBufSamps = deviceBufferBytes / sizeof(float);	// in samples, not frames
+
+
+	printf("device bufsize: %d bytes (%d frames). circ buffer %d frames\n",
+			deviceBufferBytes, deviceFrames, _impl->audioBufSamps/_impl->deviceChannels);
+
+#if 0
    // Adjust scheduling policy for our thread.  Using "time constraint"
    //   scheduling prevents GUI manipulations from causing dropouts.
 
    float host_clock_rate = AudioGetHostClockFrequency();
-   uint32_t period = (uint32_t)( ((_impl->deviceBufferSize / _impl->channels)
+   uint32_t period = (uint32_t)( ((deviceBufferSize / _impl->channels)
                                  / _impl->deviceFormat.mSampleRate) * host_clock_rate );
    thread_time_constraint_policy_data_t thread_policy;
    thread_policy.period = period;
@@ -427,22 +441,22 @@ int OSXAudioDevice::doSetQueueSize(int *pQueueSize)
                      THREAD_TIME_CONSTRAINT_POLICY,
                      (thread_policy_t) &thread_policy,
                      THREAD_TIME_CONSTRAINT_POLICY_COUNT);
+#endif	// 0
 
 	delete [] _impl->audioBuffers[REC];  _impl->audioBuffers[REC] = NULL;
 	delete [] _impl->audioBuffers[PLAY]; _impl->audioBuffers[PLAY] = NULL;
-	// We allocate the circular buffers to be 2x what the user expects to send us.
-	audioBufferSize *= 2;
 	if (_impl->recording) {
-		_impl->audioBuffers[REC] = new float[audioBufferSize];
+		_impl->audioBuffers[REC] = new float[_impl->audioBufSamps];
+		if (_impl->audioBuffers[REC] == NULL)
+			return error("Memory allocation failure for OSXAudioDevice buffer!");
 		_impl->inLoc[REC] = _impl->outLoc[REC] = 0;
 	}
 	if (_impl->playing) {
-		_impl->audioBuffers[PLAY] = new float[audioBufferSize];
+		_impl->audioBuffers[PLAY] = new float[_impl->audioBufSamps];
+		if (_impl->audioBuffers[PLAY] == NULL)
+			return error("Memory allocation failure for OSXAudioDevice buffer!");
 		_impl->inLoc[PLAY] = _impl->outLoc[PLAY] = 0;
 	}
-	_impl->audioBufSamps = audioBufferSize / sizeof(float);	// in samples, not frames
-	// printf("device bufsize: %d bytes (%d frames). circ buffer %d frames\n",
-	//		_impl->deviceBufferSize, actualFrames, _impl->audioBufSamps/_impl->deviceChannels);
 	return 0;
 }
 
@@ -532,7 +546,7 @@ int	OSXAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 	float *outbuf = _impl->audioBuffers[PLAY];
 	const int bufLen = _impl->audioBufSamps;
 	int inLoc = _impl->inLoc[PLAY];
-	// printf("OSXAudioDevice::doSendFrames: frameCount = %d\n", frameCount);
+	//printf("OSXAudioDevice::doSendFrames: frameCount = %d\n", frameCount);
 	// printf("\tinLoc begins at %d (out of %d)\n", inLoc, bufLen);
 	float scale;
 	switch (chans) {
