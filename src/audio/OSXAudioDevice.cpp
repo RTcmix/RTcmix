@@ -910,18 +910,19 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 		return error("Only float audio buffers supported at this time.");
 
 	int reportedChannelCount = 0;
+	const int startDir = _impl->recording ? REC : PLAY;
+	const int endDir = _impl->playing ? PLAY : REC;
 	
-	if (_impl->formatWritable)
-	{
-		const int startDir = _impl->recording ? REC : PLAY;
-		const int endDir = _impl->playing ? PLAY : REC;
-		for (int dir = startDir; dir <= endDir; ++dir) {
-			port = &_impl->port[dir];
-			// Default all values to device's defaults (from doOpen()), then set
-			// our sample rate.
-			AudioStreamBasicDescription requestedFormat = port->deviceFormat;
-			requestedFormat.mSampleRate = srate;
-			UInt32 size = sizeof(requestedFormat);
+	for (int dir = startDir; dir <= endDir; ++dir) {
+		port = &_impl->port[dir];
+		AudioStreamBasicDescription requestedFormat = port->deviceFormat;
+		requestedFormat.mSampleRate = srate;
+		UInt32 size = sizeof(requestedFormat);
+		OSStatus err;
+		if (_impl->formatWritable)
+		{
+			// Default all values to device's defaults (from doOpen()), 
+			// then set our sample rate.
 			OSStatus err = AudioDeviceSetProperty(_impl->deviceID,
 										 NULL,
 										 port->streamChannel, dir == REC,
@@ -929,57 +930,55 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 										 size,
 										 (void *)&requestedFormat);
 			if (err != kAudioHardwareNoError) {
-				return error("Can't set audio device format: ", ::errToString(err));
-			}
-			// Now retrieve settings to see what we got, and compare with request.
-			size = sizeof(port->deviceFormat);
-			err = AudioDeviceGetProperty(_impl->deviceID, 
-										  port->streamChannel, dir == REC,
-										  kAudioDevicePropertyStreamFormat, 
-										  &size, 
-										  &port->deviceFormat);
-			if (err != kAudioHardwareNoError) {
-				return error("Can't retrieve audio device format: ",
+				return error("Can't set audio device format: ", 
 							 ::errToString(err));
 			}
-			else if (port->deviceFormat.mSampleRate != srate) {
-				return error("This sampling rate not supported.");
+		}
+		// Now retrieve settings to see what we got, and compare with request.
+		size = sizeof(port->deviceFormat);
+		err = AudioDeviceGetProperty(_impl->deviceID, 
+									  port->streamChannel, dir == REC,
+									  kAudioDevicePropertyStreamFormat, 
+									  &size, 
+									  &port->deviceFormat);
+		if (err != kAudioHardwareNoError) {
+			return error("Can't retrieve audio device format: ",
+						 ::errToString(err));
+		}
+		else if (port->deviceFormat.mSampleRate != srate) {
+			return error("Sampling rate not supported or cannot be set.");
+		}
+		// We catch mono input and do the conversion ourselves.  Otherwise we
+		// create a buffer equal to the internal HW channel count.
+		if (port->streamCount == 1) {
+			if (port->deviceFormat.mChannelsPerFrame < chans && chans > 2) {
+				char errmsg[64];
+				sprintf(errmsg, "Cannot open %u-channel OSX device for %d channels",
+						port->deviceFormat.mChannelsPerFrame, chans);
+				return error(errmsg);
 			}
-			// We catch mono input and do the conversion ourselves.  Otherwise we
-			// create a buffer equal to the internal HW channel count.
-			if (port->streamCount == 1) {
-				if (port->deviceFormat.mChannelsPerFrame < chans && chans > 2) {
-					char errmsg[64];
-					sprintf(errmsg, "Cannot open %u-channel OSX device for %d channels",
-							port->deviceFormat.mChannelsPerFrame, chans);
-					return error(errmsg);
-				}
-				else if (port->deviceFormat.mChannelsPerFrame == 2 && chans == 1) {
+			else if (port->deviceFormat.mChannelsPerFrame == 2 && chans == 1) {
 #if DEBUG > 0
-					printf("Performing internal mono-to-stereo conversion\n");
-					reportedChannelCount = chans;
+				printf("Performing internal mono-to-stereo conversion\n");
 #endif
-				}
-				else
-					reportedChannelCount = port->deviceFormat.mChannelsPerFrame;
-				port->audioBufChannels = port->deviceFormat.mChannelsPerFrame;
+				reportedChannelCount = chans;
 			}
 			else {
-				port->audioBufChannels = 1;
-				reportedChannelCount = port->deviceFormat.mChannelsPerFrame * port->streamCount;
+				reportedChannelCount = port->deviceFormat.mChannelsPerFrame;
 			}
-#if DEBUG > 0
-			printf("OSX %s HW (stream index %d, stream channel %d): %u %s channel(s)\n",
-				   dir == REC ? "input" : "output",
-				   port->streamIndex, port->streamChannel,
-				   port->deviceFormat.mChannelsPerFrame,
-				   port->deviceFormat.mFormatFlags & kLinearPCMFormatFlagIsNonInterleaved ? "non-interleaved" : "interleaved");
-#endif
+			port->audioBufChannels = port->deviceFormat.mChannelsPerFrame;
 		}
-	}
-	// If format was not writable, see if our request matches defaults.
-	else if (_impl->port[_impl->playing ? PLAY : REC].deviceFormat.mSampleRate != srate) {
-		return error("Audio sample rate not configurable on this device");
+		else {
+			port->audioBufChannels = 1;
+			reportedChannelCount = port->deviceFormat.mChannelsPerFrame * port->streamCount;
+		}
+#if DEBUG > 0
+		printf("OSX %s HW (stream index %d, stream channel %d): %u %s channel(s)\n",
+			   dir == REC ? "input" : "output",
+			   port->streamIndex, port->streamChannel,
+			   port->deviceFormat.mChannelsPerFrame,
+			   port->deviceFormat.mFormatFlags & kLinearPCMFormatFlagIsNonInterleaved ? "non-interleaved" : "interleaved");
+#endif
 	}
 	
 	int deviceFormat = MUS_BFLOAT | MUS_NORMALIZED;
