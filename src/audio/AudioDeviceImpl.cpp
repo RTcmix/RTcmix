@@ -1,6 +1,7 @@
 // AudioDeviceImpl.cpp
 
 #include "AudioDeviceImpl.h"
+#include "audiostream.h"
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
@@ -40,11 +41,11 @@ int	AudioDeviceImpl::setFrameFormat(int frameSampFmt, int frameChans)
 
 int AudioDeviceImpl::open(int mode, int sampfmt, int chans, double srate)
 {
-	printf("AudioDeviceImpl::open: opening device 0x%x for %s in %s mode\n",
-		   this,
-		   (mode & DirectionMask) == RecordPlayback ? "Record/Playback"
-		   : (mode & DirectionMask) == Playback ? "Playback" : "Record",
-		   (mode & Passive) ? "Passive" : "Active");
+//	printf("AudioDeviceImpl::open: opening device 0x%x for %s in %s mode\n",
+//		   this,
+//		   (mode & DirectionMask) == RecordPlayback ? "Record/Playback"
+//		   : (mode & DirectionMask) == Playback ? "Playback" : "Record",
+//		   (mode & Passive) ? "Passive" : "Active");
 	_lastErr[0] = 0;
 	if (!IS_FLOAT_FORMAT(MUS_GET_FORMAT(sampfmt))) {
 		return error("Only floating point buffers are accepted as input");
@@ -445,65 +446,8 @@ AudioDeviceImpl::convertFrame(void *inbuffer, void *outbuffer,
 static const float kFloatNormalizer = (1.0 / 32768.0);
 typedef unsigned char *UCharP;
 
-// Template functions for lowest-level -toType conversion,
 
-template <class OutType>
-inline void setLE(OutType *pOut, float in);
 
-template <class OutType>
-inline void setBE(OutType *pOut, float in);
-
-// Specializations of the above.
-
-template <>
-inline void setLE<float>(float *pOut, float in)
-{
-	m_set_little_endian_float((UCharP) pOut, in);	
-}
-
-template <>
-inline void setBE<float>(float *pOut, float in)
-{
-	m_set_big_endian_float((UCharP) pOut, in);	
-}
-
-template <>
-inline void setLE<short>(short *pOut, float in)
-{
-	m_set_little_endian_short((UCharP) pOut, in);	
-}
-
-template <>
-inline void setBE<short>(short *pOut, float in)
-{
-	m_set_big_endian_short((UCharP) pOut, in);	
-}
-
-#ifdef USING_INTERLEAVED_BUFFERS
-
-//
-// Interleaved to interleaved converters
-//
-
-template <class Intype, class OutType>
-static void _convertIToIBig(void *in, void *out, int chans, int frames)
-{
-	Intype *tin = (Intype *) in;
-	OutType *tout = (OutType *) out;
-	const int samps = chans * frames;
-	for (int s = 0; s < samps; ++s)
-		setBE(&tout[s], tin[s]);	
-}
-
-template <class Intype, class OutType>
-static void _convertIToILittle(void *in, void *out, int chans, int frames)
-{
-	Intype *tin = (Intype *) in;
-	OutType *tout = (OutType *) out;
-	int samps = chans * frames;
-	for (int s = 0; s < samps; ++s)
-		setLE(&tout[s], tin[s]);	
-}
 
 // Note:  The 24bit converters are only used for writing soundfiles to disk.
 
@@ -534,61 +478,6 @@ static void _convertIToIL24Bit(void *in, void *out, int chans, int frames)
 		cout[0] = (samp & 0xFF);
 	}
 }
-
-// These two are for writing normalized floats to file (or for interleaved HW
-// which supports normalized floats).
-
-static void _convertIFloatToIBFloatNormalized(void *in, void *out, int chans, int frames)
-{
-	float *fin = (float *) in;
-	float *fout = (float *) out;
-	int samps = chans * frames;
-	for (int s = 0; s < samps; ++s)
-		m_set_big_endian_float((UCharP)&fout[s], fin[s] * kFloatNormalizer);	
-}
-
-static void _convertIFloatToILFloatNormalized(void *in, void *out, int chans, int frames)
-{
-	float *fin = (float *) in;
-	float *fout = (float *) out;
-	int samps = chans * frames;
-	for (int s = 0; s < samps; ++s)
-		m_set_little_endian_float((UCharP)&fout[s], fin[s] * kFloatNormalizer);	
-}
-
-#endif // USING_INTERLEAVED_BUFFERS
-
-//
-// Non-interleaved to interleaved converters.
-//
-
-template <class Intype, class OutType>
-static void _convertNToIBig(void *in, void *out, int chans, int frames)
-{
-	Intype **tin = (Intype **) in;
-	for (int ch = 0; ch < chans; ++ch) {
-		Intype *tbuffer = tin[ch];
-		OutType *tout = ((OutType *) out) + ch;
-		for (int fr = 0; fr < frames; ++fr, tout += chans) {
-			setBE(tout, tbuffer[fr]);
-		}
-	}
-}
-
-template <class Intype, class OutType>
-static void _convertNToILittle(void *in, void *out, int chans, int frames)
-{
-	Intype **tin = (Intype **) in;
-	for (int ch = 0; ch < chans; ++ch) {
-		Intype *tbuffer = tin[ch];
-		OutType *tout = ((OutType *) out) + ch;
-		for (int fr = 0; fr < frames; ++fr, tout += chans) {
-			setLE(tout, tbuffer[fr]);
-		}
-	}
-}
-
-// Note:  The 24bit converters are only used for writing soundfiles to disk.
 
 static void _convertNFloatToIB24Bit(void *in, void *out, int chans, int frames)
 {
@@ -622,111 +511,34 @@ static void _convertNFloatToIL24Bit(void *in, void *out, int chans, int frames)
 	}
 }
 
-static void _convertNFloatToIBFloatNormalized(void *in, void *out, int chans, int frames)
+// This is the master template function which can handle conversion from one
+// sample format, interleave, normalization, and endian-ness to another.
+// The definitions of the Instream and Outstream classes are in audiostream.h.
+// ABANDON HOPE, ALL YE WHO ENTER HERE...
+
+template< class InStream, class OutStream >
+static void convert(void *_in, void *_out, int chans, int frames)
 {
-	float **fin = (float **) in;
-	for (int ch = 0; ch < chans; ++ch) {
-		float *fbuffer = fin[ch];
-		float *fout = ((float *) out) + ch;
-		for (int fr = 0; fr < frames; ++fr, fout += chans) {
-			m_set_big_endian_float((UCharP)fout, fbuffer[fr] * kFloatNormalizer);
-		}
-	}
+	typedef typename InStream::StreamType InType;
+    typedef typename OutStream::StreamType OutType;    
+	InType *in = (InType *)_in;
+    OutType *out = (OutType *)_out;
+    for (int ch = 0; ch < chans; ++ch) {
+		typedef typename InStream::ChannelType InChanType;
+		typedef typename OutStream::ChannelType OutChanType;    
+        InChanType *inbuffer = InStream::innerFromOuter(in, ch);
+        OutChanType *outbuffer = OutStream::innerFromOuter(out, ch);
+		const int inIncr = InStream::channelIncrement(chans);
+		const int outIncr = OutStream::channelIncrement(chans);
+        for (int fr = 0; fr < frames; ++fr, inbuffer += inIncr, outbuffer += outIncr) {
+            *outbuffer = ::swap(OutStream::endian != kMachineEndian,
+								::normalize(OutStream::normalized,
+											((OutChanType) ::deNormalize(InStream::normalized,
+								 									 	 ::swap(InStream::endian != kMachineEndian,
+																		 		*inbuffer)))));
+        }
+    }
 }
-
-static void _convertNFloatToILFloatNormalized(void *in, void *out, int chans, int frames)
-{
-	float **fin = (float **) in;
-	for (int ch = 0; ch < chans; ++ch) {
-		float *fbuffer = fin[ch];
-		float *fout = ((float *) out) + ch;
-		for (int fr = 0; fr < frames; ++fr, fout += chans) {
-			m_set_little_endian_float((UCharP)fout, fbuffer[fr] * kFloatNormalizer);
-		}
-	}
-}
-
-//
-// Interleaved to non-interleaved converters
-//
-
-template <class Intype, class OutType>
-static void _convertIToN(void *in, void *out, int chans, int frames)
-{
-	Intype *tin = (Intype *) in;
-	OutType **tout = (OutType **) out;
-	for (int ch = 0; ch < chans; ++ch) {
-		Intype *ibuffer = &tin[ch];
-		OutType *obuffer = tout[ch];
-		for (int fr = 0; fr < frames; ++fr, ibuffer += chans) {
-			obuffer[fr] = (OutType) *ibuffer;
-		}
-	}
-}
-
-static void _convertIFloatNormalizedToNFloat(void *in, void *out, int chans, int frames)
-{
-	float *fin = (float *) in;
-	float **fout = (float **) out;
-	for (int ch = 0; ch < chans; ++ch) {
-		float *ibuffer = &fin[ch];
-		float *obuffer = fout[ch];
-		for (int fr = 0; fr < frames; ++fr, ibuffer += chans) {
-			obuffer[fr] = *ibuffer * 32768.0;
-		}
-	}
-}
-
-//
-// Non-interleaved to non-interleaved converters
-//
-
-template <class Intype, class OutType>
-static void _convertNToN(void *in, void *out, int chans, int frames)
-{
-	Intype **tin = (Intype **) in;
-	OutType **tout = (OutType **) out;
-	for (int ch = 0; ch < chans; ++ch) {
-		Intype *ibuffer = tin[ch];
-		OutType *obuffer = tout[ch];
-		for (int fr = 0; fr < frames; ++fr) {
-			obuffer[fr] = (OutType) ibuffer[fr];
-		}
-	}
-}
-
-// Note: For now, because we know that non-interleaved floats are ALWAYS
-// from or to audio HW, and all known audio HW that takes floats, takes
-// them normalized, we only need one function in cases where normalizing
-// needs to be done, and one for de-normalizing.
-
-static void _convertNFloatToNFloatNormalized(void *in, void *out, int chans, int frames)
-{
-	float **fin = (float **) in;
-	float **fout = (float **) out;
-	for (int ch = 0; ch < chans; ++ch) {
-		float *finbuffer = fin[ch];
-		float *foutbuffer = fout[ch];
-		for (int fr = 0; fr < frames; ++fr) {
-			foutbuffer[fr] = (finbuffer[fr] * kFloatNormalizer);
-		}
-	}
-}
-
-template <class OutType>
-static void _convertNFloatNormalizedToN(void *in, void *out, int chans, int frames)
-{
-	float **fin = (float **) in;
-	OutType **tout = (OutType **) out;
-	for (int ch = 0; ch < chans; ++ch) {
-		float *finbuffer = fin[ch];
-		float *toutbuffer = tout[ch];
-		for (int fr = 0; fr < frames; ++fr) {
-			toutbuffer[fr] = OutType(finbuffer[fr] * 32768.0f);
-		}
-	}
-}
-
 
 // Conversion functions are assigned in pairs, regardless of rec/pb state.
 
@@ -738,89 +550,227 @@ int AudioDeviceImpl::setConvertFunctions(int rawFrameFormat,
 	const bool deviceNormalized = IS_NORMALIZED_FORMAT(rawDeviceFormat);
 	const bool deviceInterleaved = IS_INTERLEAVED_FORMAT(rawDeviceFormat);
 	
-	// For simplicity's sake, this routine does not account for interleaved
-	// frames passed in from RTcmix, because we never do that anymore.  If
-	// this code is used in other applications, the if (frameInterleaved)
-	// blocks can be added back in.  -DS
-	
-	assert(!frameInterleaved);
-	
 	_recConvertFunction = NULL;
 	_playConvertFunction = NULL;
 	
 	// The device may be a file or HW, so take endian-ness into account for
 	// playback and some record options.
-	if (deviceInterleaved) {
-		switch (MUS_GET_FORMAT(rawDeviceFormat)) {
-		case MUS_LFLOAT:	// float frame, LE float device
-			if (deviceNormalized == frameNormalized) {
-				_recConvertFunction = _convertIToN<float, float>;
-				_playConvertFunction = _convertNToILittle<float, float>;
+	if (frameInterleaved) {
+		if (deviceInterleaved) {
+			switch (MUS_GET_FORMAT(rawDeviceFormat)) {
+			case MUS_LFLOAT:	// float frame, LE float device
+				if (deviceNormalized == frameNormalized) {
+					_recConvertFunction = 
+						::convert< InterleavedStream<float, Little>, InterleavedStream<float, kMachineEndian> >;
+					_playConvertFunction =
+						::convert< InterleavedStream<float, kMachineEndian>, InterleavedStream<float, Little> >;
+				}
+				else if (deviceNormalized && !frameNormalized) {
+					_recConvertFunction = 
+						::convert< InterleavedStream<float, Little, true>, InterleavedStream<float, kMachineEndian> >;
+					_playConvertFunction =
+						::convert< InterleavedStream<float, kMachineEndian>, InterleavedStream<float, Little, true> >;
+				}
+				break;
+
+			case MUS_BFLOAT:	// float frame, BE float device
+				if (deviceNormalized == frameNormalized) {
+					_recConvertFunction = 
+						::convert< InterleavedStream<float, Big>, InterleavedStream<float, kMachineEndian> >;
+					_playConvertFunction =
+						::convert< InterleavedStream<float, kMachineEndian>, InterleavedStream<float, Big> >;
+				}
+				else if (deviceNormalized && !frameNormalized) {
+					_recConvertFunction = 
+						::convert< InterleavedStream<float, Big, true>, InterleavedStream<float, kMachineEndian> >;
+					_playConvertFunction =
+						::convert< InterleavedStream<float, kMachineEndian>, InterleavedStream<float, Big, true> >;
+				}
+				break;
+
+			case MUS_B24INT:	// float frame, BE 24bit file.  HW record not supported
+				_playConvertFunction = _convertIToIL24Bit<float>;
+				break;
+
+			case MUS_L24INT:	// float frame, BE 24bit file.  HW record not supported
+				_playConvertFunction = _convertIToIB24Bit<float>;
+				break;
+
+			case MUS_LSHORT:	// float frame, LE short device
+				_recConvertFunction = 
+					::convert< InterleavedStream<short, Little>, InterleavedStream<float, kMachineEndian> >;
+				_playConvertFunction =
+					::convert< InterleavedStream<float, kMachineEndian>, InterleavedStream<short, Little> >;
+				break;
+
+			case MUS_BSHORT:	// float frame, BE short device
+				_recConvertFunction = 
+					::convert< InterleavedStream<short, Big>, InterleavedStream<float, kMachineEndian> >;
+				_playConvertFunction =
+					::convert< InterleavedStream<float, kMachineEndian>, InterleavedStream<short, Big> >;
+				break;
+
+			default:
+				break;
 			}
-			else if (deviceNormalized && !frameNormalized) {
-				_recConvertFunction = _convertIFloatNormalizedToNFloat;
-				_playConvertFunction = _convertNFloatToILFloatNormalized;
-			}
-			break;
-
-		case MUS_BFLOAT:	// float frame, BE float device
-			if (deviceNormalized == frameNormalized) {
-				_recConvertFunction = _convertIToN<float, float>;
-				_playConvertFunction = _convertNToIBig<float, float>;
-			}
-			else if (deviceNormalized && !frameNormalized) {
-				_recConvertFunction = _convertIFloatNormalizedToNFloat;
-				_playConvertFunction = _convertNFloatToIBFloatNormalized;
-			}
-			break;
-
-		case MUS_B24INT:	// float frame, BE 24bit file.  HW record not supported
-			_playConvertFunction = _convertNFloatToIB24Bit;
-			break;
-
-		case MUS_L24INT:	// float frame, BE 24bit file.  HW record not supported
-			_playConvertFunction = _convertNFloatToIL24Bit;
-			break;
-
-		case MUS_LSHORT:	// float frame, LE short device
-			_recConvertFunction = _convertIToN<short, float>;
-			_playConvertFunction = _convertNToILittle<float, short>;
-			break;
-
-		case MUS_BSHORT:	// float frame, BE short device
-			_recConvertFunction = _convertIToN<short, float>;
-			_playConvertFunction = _convertNToIBig<float, short>;
-			break;
-			
-		default:
-			break;
 		}
+		else /* !deviceInterleaved */ {
+			switch (MUS_GET_FORMAT(rawDeviceFormat)) {
+			case MUS_LFLOAT:	// float frame, LE float device
+				if (deviceNormalized == frameNormalized) {
+					_recConvertFunction = 
+						::convert< NonInterleavedStream<float, Little>, InterleavedStream<float, kMachineEndian> >;
+					_playConvertFunction =
+						::convert< InterleavedStream<float, kMachineEndian>, NonInterleavedStream<float, Little> >;
+				}
+				else if (deviceNormalized && !frameNormalized) {
+					_recConvertFunction = 
+						::convert< NonInterleavedStream<float, Little, true>, InterleavedStream<float, kMachineEndian> >;
+					_playConvertFunction =
+						::convert< InterleavedStream<float, kMachineEndian>, NonInterleavedStream<float, Little, true> >;
+				}
+				break;
+			case MUS_BFLOAT:	// float frame, BE float device
+				if (deviceNormalized == frameNormalized) {
+					_recConvertFunction = 
+						::convert< NonInterleavedStream<float, Big>, InterleavedStream<float, kMachineEndian> >;
+					_playConvertFunction =
+						::convert< InterleavedStream<float, kMachineEndian>, NonInterleavedStream<float, Big> >;
+				}
+				else if (deviceNormalized && !frameNormalized) {
+					_recConvertFunction = 
+						::convert< NonInterleavedStream<float, Big, true>, InterleavedStream<float, kMachineEndian> >;
+					_playConvertFunction =
+						::convert< InterleavedStream<float, kMachineEndian>, NonInterleavedStream<float, Big, true> >;
+				}
+				break;
+
+			case MUS_LSHORT:
+				_recConvertFunction = 
+					::convert< NonInterleavedStream<short, Little>, InterleavedStream<float, kMachineEndian> >;
+				_playConvertFunction =
+					::convert< InterleavedStream<float, kMachineEndian>, NonInterleavedStream<short, Little> >;
+				break;
+			case MUS_BSHORT:
+				_recConvertFunction = 
+					::convert< NonInterleavedStream<short, Big>, InterleavedStream<float, kMachineEndian> >;
+				_playConvertFunction =
+					::convert< InterleavedStream<float, kMachineEndian>, NonInterleavedStream<short, Big> >;
+				break;
+
+			default:
+				break;
+			}
+		}	// !deviceInterleaved
 	}
-	// Non-interleaved devices are always local HW, so no endian issues.
-	else {
-		switch (MUS_GET_FORMAT(rawDeviceFormat)) {
-		case MUS_LFLOAT:	// float frame, BE float device
-		case MUS_BFLOAT:	// float frame, BE float device
-			if (deviceNormalized == frameNormalized) {
-				_recConvertFunction = _convertNToN<float, float>;
-				_playConvertFunction = _convertNToN<float, float>;
-			}
-			else if (deviceNormalized && !frameNormalized) {
-				_recConvertFunction = _convertNFloatNormalizedToN<float>;
-				_playConvertFunction = _convertNFloatToNFloatNormalized;
-			}
-			break;
+	else /* !frameInterleaved */ {
+		if (deviceInterleaved) {
+			switch (MUS_GET_FORMAT(rawDeviceFormat)) {
+			case MUS_LFLOAT:	// float frame, LE float device
+				if (deviceNormalized == frameNormalized) {
+					_recConvertFunction = 
+						::convert< InterleavedStream<float, Little>, NonInterleavedStream<float, kMachineEndian> >;
+					_playConvertFunction =
+						::convert< NonInterleavedStream<float, kMachineEndian>, InterleavedStream<float, Little> >;
+				}
+				else if (deviceNormalized && !frameNormalized) {
+					_recConvertFunction = 
+						::convert< InterleavedStream<float, Little, true>, NonInterleavedStream<float, kMachineEndian> >;
+					_playConvertFunction =
+						::convert< NonInterleavedStream<float, kMachineEndian>, InterleavedStream<float, Little, true> >;
+				}
+				break;
 
-		case MUS_LSHORT:
-		case MUS_BSHORT:
-			_recConvertFunction = _convertNToN<short, float>;
-			_playConvertFunction = _convertNToN<float, short>;
-			break;
+			case MUS_BFLOAT:	// float frame, BE float device
+				if (deviceNormalized == frameNormalized) {
+					_recConvertFunction = 
+						::convert< InterleavedStream<float, Big>, NonInterleavedStream<float, kMachineEndian> >;
+					_playConvertFunction =
+						::convert< NonInterleavedStream<float, kMachineEndian>, InterleavedStream<float, Big> >;
+				}
+				else if (deviceNormalized && !frameNormalized) {
+					_recConvertFunction = 
+						::convert< InterleavedStream<float, Big, true>, NonInterleavedStream<float, kMachineEndian> >;
+					_playConvertFunction =
+						::convert< NonInterleavedStream<float, kMachineEndian>, InterleavedStream<float, Big, true> >;
+				}
+				break;
 
-		default:
-			break;
+			case MUS_B24INT:	// float frame, BE 24bit file.  HW record not supported
+				_playConvertFunction = _convertNFloatToIB24Bit;
+				break;
+
+			case MUS_L24INT:	// float frame, BE 24bit file.  HW record not supported
+				_playConvertFunction = _convertNFloatToIL24Bit;
+				break;
+
+			case MUS_LSHORT:	// float frame, LE short device
+				_recConvertFunction = 
+					::convert< InterleavedStream<short, Little>, NonInterleavedStream<float, kMachineEndian> >;
+				_playConvertFunction =
+					::convert< NonInterleavedStream<float, kMachineEndian>, InterleavedStream<short, Little> >;
+				break;
+
+			case MUS_BSHORT:	// float frame, BE short device
+				_recConvertFunction = 
+					::convert< InterleavedStream<short, Big>, NonInterleavedStream<float, kMachineEndian> >;
+				_playConvertFunction =
+					::convert< NonInterleavedStream<float, kMachineEndian>, InterleavedStream<short, Big> >;
+				break;
+
+			default:
+				break;
+			}
 		}
-	}
+		else /* !deviceInterleaved */ {
+			switch (MUS_GET_FORMAT(rawDeviceFormat)) {
+			case MUS_LFLOAT:	// float frame, LE float device
+				if (deviceNormalized == frameNormalized) {
+					_recConvertFunction = 
+						::convert< NonInterleavedStream<float, Little>, NonInterleavedStream<float, kMachineEndian> >;
+					_playConvertFunction =
+						::convert< NonInterleavedStream<float, kMachineEndian>, NonInterleavedStream<float, Little> >;
+				}
+				else if (deviceNormalized && !frameNormalized) {
+					_recConvertFunction = 
+						::convert< NonInterleavedStream<float, Little, true>, NonInterleavedStream<float, kMachineEndian> >;
+					_playConvertFunction =
+						::convert< NonInterleavedStream<float, kMachineEndian>, NonInterleavedStream<float, Little, true> >;
+				}
+				break;
+			case MUS_BFLOAT:	// float frame, BE float device
+				if (deviceNormalized == frameNormalized) {
+					_recConvertFunction = 
+						::convert< NonInterleavedStream<float, Big>, NonInterleavedStream<float, kMachineEndian> >;
+					_playConvertFunction =
+						::convert< NonInterleavedStream<float, kMachineEndian>, NonInterleavedStream<float, Big> >;
+				}
+				else if (deviceNormalized && !frameNormalized) {
+					_recConvertFunction = 
+						::convert< NonInterleavedStream<float, Big, true>, NonInterleavedStream<float, kMachineEndian> >;
+					_playConvertFunction =
+						::convert< NonInterleavedStream<float, kMachineEndian>, NonInterleavedStream<float, Big, true> >;
+				}
+				break;
+
+			case MUS_LSHORT:
+				_recConvertFunction = 
+					::convert< NonInterleavedStream<short, Little>, NonInterleavedStream<float, kMachineEndian> >;
+				_playConvertFunction =
+					::convert< NonInterleavedStream<float, kMachineEndian>, NonInterleavedStream<short, Little> >;
+				break;
+			case MUS_BSHORT:
+				_recConvertFunction = 
+					::convert< NonInterleavedStream<short, Big>, NonInterleavedStream<float, kMachineEndian> >;
+				_playConvertFunction =
+					::convert< NonInterleavedStream<float, kMachineEndian>, NonInterleavedStream<short, Big> >;
+				break;
+
+			default:
+				break;
+			}
+		}	// !deviceInterleaved
+	}	// !frameInterleaved
 	
 	if (isPlaying() && _playConvertFunction == NULL)
 		return error("This format conversion is currently not supported!");
