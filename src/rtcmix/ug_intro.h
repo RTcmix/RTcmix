@@ -28,12 +28,22 @@ void addfunc(const char *func_label,
 			 RTcmixType return_type,
 			 int legacy);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
+#if defined(__cplusplus)
+#define UG_INTRO(flabel, func) \
+   { \
+	addfunc(flabel, (LegacyFunction) func, NULL, NULL, NULL, DoubleType, 1); \
+   }
+#else
 #define UG_INTRO(flabel, func) \
    { \
       extern double func(); \
       addfunc(flabel, (LegacyFunction) func, NULL, NULL, NULL, DoubleType, 1); \
    }
+#endif	/* __cplusplus */
 
 #define UG_INTRO_DOUBLE_RETURN(flabel, func) \
    { \
@@ -53,8 +63,5 @@ void addfunc(const char *func_label,
       addfunc(flabel, NULL, NULL, NULL, func, HandleType, 0); \
    }
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
 #endif /* _UG_INTRO_H_ */
 
