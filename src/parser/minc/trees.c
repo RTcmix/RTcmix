@@ -611,6 +611,31 @@ do_op_handle_num(Tree tp, const MincHandle val1, const MincFloat val2,
 }
 
 
+/* ------------------------------------------------------ do_op_num_handle -- */
+static void
+do_op_num_handle(Tree tp, const MincFloat val1, const MincHandle val2,
+      OpKind op)
+{
+   switch (op) {
+      case OpPlus:
+      case OpMinus:
+      case OpMul:
+      case OpDiv:
+      case OpMod:
+      case OpPow:
+         tp->v.handle = minc_binop_float_handle(val1, val2, op);
+         ref_handle(tp->v.handle);
+         break;
+      case OpNeg:
+         /* fall through */
+      default:
+         minc_internal_error("invalid operator for handle and number");
+         break;
+   }
+   tp->type = MincHandleType;
+}
+
+
 /* --------------------------------------------------- do_op_handle_handle -- */
 static void
 do_op_handle_handle(Tree tp, const MincHandle val1, const MincHandle val2,
@@ -757,16 +782,10 @@ exct_operator(Tree tp, OpKind op)
                }
                break;
             case MincHandleType:
-               /* Check for ops that are not commutative. */
-               if (op == OpMinus)
-                  minc_warn("can't subtract a handle from a number");
-               else if (op == OpDiv)
-                  minc_warn("can't divide a number by a handle");
-               else
-                  do_op_handle_num(tp, child1->v.handle, child0->v.number, op);
+               do_op_num_handle(tp, child0->v.number, child1->v.handle, op);
                break;
             case MincListType:
-               /* Check for ops that are not commutative. */
+               /* Check for nonsensical ops. */
                if (op == OpMinus)
                   minc_warn("can't subtract a list from a number");
                else if (op == OpDiv)

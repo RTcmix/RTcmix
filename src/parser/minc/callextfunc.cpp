@@ -192,6 +192,27 @@ MincHandle minc_binop_handle_float(const MincHandle mhandle,
 	return (MincHandle) _createPFieldHandle(outpfield);
 }
 
+MincHandle minc_binop_float_handle(const MincFloat val,
+	const MincHandle mhandle, OpKind op)
+{
+	Handle return_handle;
+
+	DPRINT2("minc_binop_float_handle (val=%f, handle=%p\n", val, mhandle);
+
+	// Create ConstPField for MincFloat.
+	PField *pfield1 = new ConstPField(val);
+
+	// Extract PField from MincHandle.
+	Handle handle = (Handle) mhandle;
+	assert(handle->type == PFieldType);
+	PField *pfield2 = (PField *) handle->ptr;
+
+	// Create PField using appropriate operator.
+	PField *outpfield = createBinopPField(pfield1, pfield2, op);
+
+	return (MincHandle) _createPFieldHandle(outpfield);
+}
+
 MincHandle minc_binop_handles(const MincHandle mhandle1,
 	const MincHandle mhandle2, OpKind op)
 {

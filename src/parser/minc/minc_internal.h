@@ -179,6 +179,7 @@ int call_builtin_function(const char *funcname, const MincListElem arglist[],
 int call_external_function(const char *funcname, const MincListElem arglist[],
    const int nargs, MincListElem *return_value);
 MincHandle minc_binop_handle_float(const MincHandle handle, const MincFloat val, OpKind op);
+MincHandle minc_binop_float_handle(const MincFloat val, const MincHandle handle, OpKind op);
 MincHandle minc_binop_handles(const MincHandle handle1, const MincHandle handle2, OpKind op);
 
 /* error.c */
