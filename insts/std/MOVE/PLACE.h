@@ -1,10 +1,5 @@
 #include "BASE.h"
 
-#define NPRIMES   5000
-#define NCOEFFS   512
-#define BUFLEN	  256
-#define MAX_INPUTS  4
-
 class PLACE : public BASE {
 public:
     PLACE();
