@@ -14,8 +14,7 @@ int create_audio_file_device(const char *outfilename,
 							 int chans,
 							 float srate,
 							 int normalize_output_floats,
-							 int check_peaks,
-							 int play_audio_too);
+							 int check_peaks);
 
 int audio_input_is_initialized();
 

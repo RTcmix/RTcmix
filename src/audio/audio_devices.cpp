@@ -12,6 +12,7 @@
 #include <sndlibsupport.h>
 #include <ugens.h>
 #include <prototypes.h>
+#include <assert.h>
 
 #include "AudioDevice.h"
 #include "AudioFileDevice.h"
@@ -19,12 +20,11 @@
 #include "audio_devices.h"
 
 #ifdef NETAUDIO
-char globalNetworkPath[128];
-extern AudioDevice *createNetAudioDevice(const char *);
+char globalNetworkPath[128];			// Set by Minc/setnetplay.c
 #endif
 
-AudioDevice *globalAudioDevice;		// Used by Minc/audioLoop.C
-AudioDevice *globalOutputFileDevice;
+AudioDevice *globalAudioDevice;			// Used by Minc/intraverse.C
+AudioDevice *globalOutputFileDevice;	// Used by rtsendsamps.C
 
 static const int numBuffers = 2;		// number of audio buffers to queue up
 
@@ -90,10 +90,10 @@ int create_audio_file_device(const char *outfilename,
 							 int chans,
 							 float srate,
 							 int normalize_output_floats,
-							 int check_peaks,
-							 int play_audio_too)
+							 int check_peaks)
 {
-	// Pass global options into the device.
+
+	assert(rtsetparams_called);
 	
 	int fileOptions = 0;
 	if (check_peaks)
@@ -108,8 +108,9 @@ int create_audio_file_device(const char *outfilename,
 		return -1;
 	}
 	int openMode = AudioFileDevice::Playback;
-	if (play_audio)
+	if (play_audio | record_audio)
 		openMode |= AudioDevice::Passive;	// Don't run thread for file device.
+
 	// We send the device noninterleaved floating point buffers.
 	int audioFormat = NATIVE_FLOAT_FMT | MUS_NON_INTERLEAVED;
 	fileDevice->setFrameFormat(audioFormat, chans);
@@ -134,12 +135,40 @@ int create_audio_file_device(const char *outfilename,
 				 fileDevice->getLastError());
 		return -1;
 	}
-	if (play_audio) {
-		// Passive start takes NULL callback and context.
-		if (fileDevice->start(NULL, NULL) == -1) {
-			rterror("rtoutput", "Can't start file device: %s", 
-				 	fileDevice->getLastError());
-			return -1;
+
+	// This will soon go away entirely.
+	globalOutputFileDevice = fileDevice;
+
+	if (!play_audio && !record_audio) {				// To file only.
+		// If we are only writing to disk, we only have a single output device.  
+		// When all this is finished, we should be able to "play" to file, with 
+		// no distinction in the RTcmix code between to-disk and to-audio-hw.
+		globalAudioDevice = fileDevice;
+	}
+	else {	// To file, plus record and/or playback.
+		if (play_audio && !record_audio) {	// Dual outputs to both HW and file.
+			printf("DEBUG: Independent devices for file and HW playback\n");
+			// For this one, we need to leave the two globals for now, until
+			// I write a dual-output AudioDevice.
+			// Passive start takes NULL callback and context.
+			if (fileDevice->start(NULL, NULL) == -1) {
+				rterror("rtoutput", "Can't start file device: %s", 
+				 		fileDevice->getLastError());
+				return -1;
+			}
+		}
+		else if (record_audio && !play_audio) {	// Record from HW, write to file.
+			assert(globalAudioDevice != NULL);
+			printf("DEBUG: Creating dual device with HW record, file playback\n");
+			globalAudioDevice = new AudioIODevice(globalAudioDevice, fileDevice, true);
+			globalOutputFileDevice = NULL;
+		}
+		else {	// HW Record and playback, plus write to file.
+			if (fileDevice->start(NULL, NULL) == -1) {
+				rterror("rtoutput", "Can't start file device: %s", 
+				 		fileDevice->getLastError());
+				return -1;
+			}
 		}
 	}
 
@@ -152,14 +181,6 @@ int create_audio_file_device(const char *outfilename,
 		 printf("     chans:  %d\n", chans);
 	}
 
-	// If we are only writing to disk, we only have a single output device.  
-	// When all this is finished, we should be able to "play" to file, with 
-	// no distinction in the RTcmix code between to-disk and to-audio-hw.
-	
-	globalOutputFileDevice = fileDevice;
-	if (!play_audio_too) {
-		globalAudioDevice = fileDevice;
-	}
 	return 0;
 }
 
