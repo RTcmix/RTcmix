@@ -55,6 +55,7 @@ float *p;
 	switch ((int)p[1]) {
 		case 25: gen25(&gen); break;
 		case 24: gen24(&gen); break;
+		case 20: gen20(&gen); break;
 		case 18: gen18(&gen); break;
 		case 17: gen17(&gen); break;
 		case 10: gen10(&gen); break;
