@@ -61,8 +61,8 @@ Instrument :: ~Instrument()
    if (sfile_on)
       gone();                   // decrement input soundfile reference
 
-   delete inbuf [];
-   delete outbuf [];
+   delete [] inbuf;
+   delete [] outbuf;
 
 // FIXME: Also...
 // Call something that decrements refcount for bus_config, and if that
@@ -112,7 +112,8 @@ void Instrument :: exec()
 
 void Instrument :: addout(BusType bus_type, int bus)
 {
-   int      samp, endframe, src_chan, buses, *bus_list;
+   int      samp, endframe, src_chan, buses;
+   short    *bus_list;
    BufPtr   src, dest;
 
    assert(bus >= 0 && bus < MAXBUS);
