@@ -86,10 +86,9 @@ int JFIR :: init(float p[], int n_args)
                                                          inchan, inputchans);
 
    response_tab = floc(2);
-   if (response_tab == NULL) {
-      // Note: we won't get here with current floc implementation
-      die("JFIR", "You haven't made the frequency response function.");
-   }
+   if (response_tab == NULL)
+      die("JFIR",
+               "You haven't made the frequency response function (table 2).");
    tabsize = fsize(2);
 
    if (order < 1)

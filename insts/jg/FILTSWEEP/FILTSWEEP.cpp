@@ -117,16 +117,17 @@ int FILTSWEEP :: init(float p[], int n_args)
       int lencf = fsize(2);
       tableset(dur, lencf, cftabs);
    }
-   else     // Note: we won't get here with current floc implementation
-      die("FILTSWEEP", "You haven't made the center frequency function.");
+   else
+      die("FILTSWEEP",
+               "You haven't made the center frequency function (table 2).");
 
    bwarray = floc(3);
    if (bwarray) {
       int lenbw = fsize(3);
       tableset(dur, lenbw, bwtabs);
    }
-   else     // Note: we won't get here with current floc implementation
-      die("FILTSWEEP", "You haven't made the bandwidth function.");
+   else
+      die("FILTSWEEP", "You haven't made the bandwidth function (table 3).");
 
    skip = (int)(SR / (float)resetval);
 

@@ -90,10 +90,8 @@ int PAN :: init(float p[], int n_args)
       int lenpan = fsize(2);
       tableset(dur, lenpan, pantabs);
    }
-   else {
-      // Note: we won't get here with current floc implementation
-      die("PAN", "You haven't made the pan curve function.");
-   }
+   else
+      die("PAN", "You haven't made the pan curve function (table 2).");
 
    skip = (int)(SR / (float)resetval);
 

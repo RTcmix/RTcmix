@@ -66,7 +66,7 @@ extern "C" {
 //#define DEBUG
 
 #define ENVELOPE_TABLE_SLOT  1
-#define WINDOW_FUNC_SLOT    2
+#define WINDOW_FUNC_SLOT     2
 #define AVERAGE_CHANS        -1           /* average input chans flag value */
 #define WINDOW_CONTROL_RATE  22051.       /* don't skimp on this */
 
@@ -146,7 +146,10 @@ int JCHOR::init(float p[], int n_args)
       because by the time that is called, the makegen for this slot
       may have changed.
    */
-   winarray = floc(WINDOW_FUNC_SLOT);   /* NB: floc aborts if slot empty */
+   winarray = floc(WINDOW_FUNC_SLOT);
+   if (winarray == NULL)
+      die("JCHOR", "You haven't made the grain window function (table %d).",
+                                                            WINDOW_FUNC_SLOT);
    winarraylen = fsize(WINDOW_FUNC_SLOT);
 
    skip = (int)(SR / (float)resetval);

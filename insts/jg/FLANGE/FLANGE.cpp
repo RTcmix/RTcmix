@@ -55,7 +55,6 @@ FLANGE :: ~FLANGE()
 
 int FLANGE :: init(float p[], int n_args)
 {
-   int   len;
    float outskip, inskip, dur, maxdelay, ringdur;
    float *modtable;
 
@@ -102,13 +101,17 @@ int FLANGE :: init(float p[], int n_args)
                                                        inchan, inputchans);
 
    modtable = floc(2);
-   len = fsize(2);
-   modoscil = new OscilN(0.0, modtable, len);
+   if (modtable) {
+      int len = fsize(2);
+      modoscil = new OscilN(0.0, modtable, len);
+   }
+   else
+      die("FLANGE", "You haven't made the modulation waveform (table 2).");
 
    amparray = floc(1);
    if (amparray) {
-      int lenamp = fsize(1);
-      tableset(dur, lenamp, amptabs);
+      int len = fsize(1);
+      tableset(dur, len, amptabs);
    }
    else
       advise("FLANGE", "Setting phrase curve to all 1's.");

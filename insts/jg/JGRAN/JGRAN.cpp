@@ -103,9 +103,6 @@ make_table(int function_num, float dur, int exit_on_fail, const char *message)
       table = new TableL(dur, tab, len);      
    }
    else {
-      /* Note: we won't get here with current floc implementation, unless
-         <function_num> is 1.
-      */
       if (message) {
          if (exit_on_fail)
             die("JGRAN", message);
@@ -146,40 +143,39 @@ int JGRAN :: init(float p[], int n_args)
       grainenv_oscil = new OscilN(0.0, envtab, len);
    }
    else
-      die("JGRAN", "You haven't made the grain envelope function.");
+      die("JGRAN", "You haven't made the grain envelope function (table 2).");
 
    wavetab = floc(3);
    if (wavetab)
       wavetablen = fsize(3);
    else
-      /* Note: current floc implementation won't let us get here. */
-      advise("JGRAN", "Using sine for grain waveform.");
+      advise("JGRAN", "Using sine for grain waveform (no table 3).");
 
    if (osctype == FM) {
       modmult_table = make_table(4, dur, 1,
-            "You haven't made the modulation frequency multiplier function.");
+   "You haven't made the modulation frequency multiplier function (table 4).");
       modindex_table = make_table(5, dur, 1,
-                             "You haven't made the index envelope function.");
+                    "You haven't made the index envelope function (table 5).");
    }
    minfreq_table = make_table(6, dur, 1,
-                    "You haven't made the minimum grain frequency function.");
+           "You haven't made the minimum grain frequency function (table 6).");
    maxfreq_table = make_table(7, dur, 1,
-                    "You haven't made the maximum grain frequency function.");
+           "You haven't made the maximum grain frequency function (table 7).");
    minspeed_table = make_table(8, dur, 1,
-                        "You haven't made the minimum grain speed function.");
+               "You haven't made the minimum grain speed function (table 8).");
    maxspeed_table = make_table(9, dur, 1,
-                        "You haven't made the maximum grain speed function.");
+               "You haven't made the maximum grain speed function (table 9).");
    minintens_table = make_table(10, dur, 1,
-                    "You haven't made the minimum grain intensity function.");
+           "You haven't made the minimum grain intensity function (table 10).");
    maxintens_table = make_table(11, dur, 1,
-                    "You haven't made the maximum grain intensity function.");
+           "You haven't made the maximum grain intensity function (table 11).");
    density_table = make_table(12, dur, 1,
-                                    "You haven't made the density function.");
+                           "You haven't made the density function (table 12).");
    if (outputchans == 2) {
       pan_table = make_table(13, dur, 1,
-                            "You haven't made the stereo location function.");
+                   "You haven't made the stereo location function (table 13).");
       panvar_table = make_table(14, dur, 1,
-              "You haven't made the stereo location randomization function.");
+     "You haven't made the stereo location randomization function (table 14).");
    }
 
    car_oscil = new OscilN(0.0, wavetab, wavetablen);

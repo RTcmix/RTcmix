@@ -128,32 +128,32 @@ int TVSPECTACLE :: pre_init(float p[], int n_args)
       int len = fsize(3);
       eqtableA = resample_functable(eqtableA, len, half_fft_len);
    }
-   else     // Note: we won't get here with current floc implementation
-      die(instname(), "You haven't made EQ function table A.");
+   else
+      die(instname(), "You haven't made EQ function A (table 3).");
 
    eqtableB = floc(6);
    if (eqtableB) {
       int len = fsize(6);
       eqtableB = resample_functable(eqtableB, len, half_fft_len);
    }
-   else     // Note: we won't get here with current floc implementation
-      die(instname(), "You haven't made EQ function table B.");
+   else
+      die(instname(), "You haven't made EQ function B (table 6).");
 
    deltimetableA = floc(4);
    if (deltimetableA) {
       int len = fsize(4);
       deltimetableA = resample_functable(deltimetableA, len, half_fft_len);
    }
-   else     // Note: we won't get here with current floc implementation
-      die(instname(), "You haven't made delay time function table A.");
+   else
+      die(instname(), "You haven't made delay time function A (table 4).");
 
    deltimetableB = floc(7);
    if (deltimetableB) {
       int len = fsize(7);
       deltimetableB = resample_functable(deltimetableB, len, half_fft_len);
    }
-   else     // Note: we won't get here with current floc implementation
-      die(instname(), "You haven't made delay time function table B.");
+   else
+      die(instname(), "You haven't made delay time function B (table 7).");
 
    /* Compute maximum delay lag and create delay lines for FFT magnitude
       and phase values.  Make ringdur at least as long as the longest
@@ -198,16 +198,16 @@ int TVSPECTACLE :: pre_init(float p[], int n_args)
       int len = fsize(5);
       feedbacktableA = resample_functable(feedbacktableA, len, half_fft_len);
    }
-   else     // Note: we won't get here with current floc implementation
-      die(instname(), "You haven't made delay feedback function table A.");
+   else
+      die(instname(), "You haven't made delay feedback function A (table 5).");
 
    feedbacktableB = floc(8);
    if (feedbacktableB) {
       int len = fsize(8);
       feedbacktableB = resample_functable(feedbacktableB, len, half_fft_len);
    }
-   else     // Note: we won't get here with current floc implementation
-      die(instname(), "You haven't made delay feedback function table B.");
+   else
+      die(instname(), "You haven't made delay feedback function B (table 8).");
 
    eqcurve = floc(9);
    if (eqcurve) {
@@ -219,7 +219,7 @@ int TVSPECTACLE :: pre_init(float p[], int n_args)
       eq_curve_weight = eqcurve[0];
    }
    else {
-      advise(instname(), "Setting EQ table curve to all 0's.");
+      advise(instname(), "Setting EQ table curve to all 0's (no table 9).");
       eq_curve_weight = 0.0;
    }
 
@@ -233,7 +233,7 @@ int TVSPECTACLE :: pre_init(float p[], int n_args)
       deltime_curve_weight = deltimecurve[0];
    }
    else {
-      advise(instname(), "Setting EQ table curve to all 0's.");
+      advise(instname(), "Setting EQ table curve to all 0's (no table 10).");
       deltime_curve_weight = 0.0;
    }
 
@@ -247,11 +247,11 @@ int TVSPECTACLE :: pre_init(float p[], int n_args)
       feedback_curve_weight = feedbackcurve[0];
    }
    else {
-      advise(instname(), "Setting EQ table curve to all 0's.");
+      advise(instname(), "Setting EQ table curve to all 0's (no table 11).");
       feedback_curve_weight = 0.0;
    }
 
-printf("deltimecurvetabs: %f, %f\n", deltimecurvetabs[0], deltimecurvetabs[1]);
+//printf("deltimecurvetabs: %f, %f\n", deltimecurvetabs[0], deltimecurvetabs[1]);
    return 0;
 }
 

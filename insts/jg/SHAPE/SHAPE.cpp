@@ -71,7 +71,7 @@ int SHAPE :: init(float p[], int n_args)
       shaper->setTransferFunc(transfer_func, len);
    }
    else
-      die("SHAPE", "You need a transfer function in gen slot 2.");
+      die("SHAPE", "You haven't made the transfer function (table 2).");
 
    skip = (int) (SR / (float) resetval);
    aamp = amp;                  /* in case amparray == NULL */

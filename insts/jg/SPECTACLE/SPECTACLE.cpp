@@ -93,16 +93,16 @@ int SPECTACLE :: pre_init(float p[], int n_args)
       int len = fsize(3);
       eqtable = resample_functable(eqtable, len, half_fft_len);
    }
-   else     // Note: we won't get here with current floc implementation
-      die(instname(), "You haven't made the EQ function table.");
+   else
+      die(instname(), "You haven't made the EQ function (table 3).");
 
    deltimetable = floc(4);
    if (deltimetable) {
       int len = fsize(4);
       deltimetable = resample_functable(deltimetable, len, half_fft_len);
    }
-   else     // Note: we won't get here with current floc implementation
-      die(instname(), "You haven't made the delay time function table.");
+   else
+      die(instname(), "You haven't made the delay time function (table 4).");
 
    /* Compute maximum delay lag and create delay lines for FFT magnitude
       and phase values.  Make ringdur at least as long as the longest
@@ -134,8 +134,9 @@ int SPECTACLE :: pre_init(float p[], int n_args)
       int len = fsize(5);
       feedbacktable = resample_functable(feedbacktable, len, half_fft_len);
    }
-   else     // Note: we won't get here with current floc implementation
-      die(instname(), "You haven't made the delay feedback function table.");
+   else
+      die(instname(),
+                  "You haven't made the delay feedback function (table 5).");
 
    return 0;
 }

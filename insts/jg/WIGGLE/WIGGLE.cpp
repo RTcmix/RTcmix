@@ -170,16 +170,20 @@ int WIGGLE :: init(float p[], int n_args)
       int len = fsize(CAR_WAVE_FUNC);
       carrier = new OscilL(0.0, carwave_array, len);
    }
-   else     // Note: we won't get here with current floc implementation
-      die("WIGGLE", "You haven't made the carrier waveform function.");
+   else
+      die("WIGGLE",
+               "You haven't made the carrier waveform function (table %d).",
+               CAR_WAVE_FUNC);
 
    cargliss_array = floc(CAR_GLISS_FUNC);
    if (cargliss_array) {
       int len = fsize(CAR_GLISS_FUNC);
       cargliss_table = new TableN(dur, cargliss_array, len);
    }
-   else     // Note: we won't get here with current floc implementation
-      die("WIGGLE", "You haven't made the carrier glissando function.");
+   else
+      die("WIGGLE",
+               "You haven't made the carrier glissando function (table %d).",
+               CAR_GLISS_FUNC);
 
    if (depth_type != NoModOsc) {
       modwave_array = floc(MOD_WAVE_FUNC);
@@ -187,24 +191,30 @@ int WIGGLE :: init(float p[], int n_args)
          int len = fsize(MOD_WAVE_FUNC);
          modulator = new OscilL(0.0, modwave_array, len);
       }
-      else     // Note: we won't get here with current floc implementation
-         die("WIGGLE", "You haven't made the modulator waveform function.");
+      else
+         die("WIGGLE",
+               "You haven't made the modulator waveform function (table %d).",
+               MOD_WAVE_FUNC);
 
       modfreq_array = floc(MOD_FREQ_FUNC);
       if (modfreq_array) {
          int len = fsize(MOD_FREQ_FUNC);
          modfreq_table = new TableL(dur, modfreq_array, len);
       }
-      else     // Note: we won't get here with current floc implementation
-         die("WIGGLE", "You haven't made the modulator frequency function.");
+      else
+         die("WIGGLE",
+               "You haven't made the modulator frequency function (table %d).",
+               MOD_FREQ_FUNC);
 
       moddepth_array = floc(MOD_DEPTH_FUNC);
       if (moddepth_array) {
          int len = fsize(MOD_DEPTH_FUNC);
          moddepth_table = new TableL(dur, moddepth_array, len);
       }
-      else     // Note: we won't get here with current floc implementation
-         die("WIGGLE", "You haven't made the modulator depth function.");
+      else
+         die("WIGGLE",
+               "You haven't made the modulator depth function (table %d).",
+               MOD_DEPTH_FUNC);
    }
 
    if (filter_type != NoFilter) {
@@ -213,8 +223,10 @@ int WIGGLE :: init(float p[], int n_args)
          int len = fsize(FILTER_CF_FUNC);
          filtcf_table = new TableL(dur, filtcf_array, len);
       }
-      else  // Note: we won't get here with current floc implementation
-         die("WIGGLE", "You haven't made the cutoff frequency function.");
+      else
+         die("WIGGLE",
+               "You haven't made the cutoff frequency function (table %d).",
+               FILTER_CF_FUNC);
    }
 
    if (outputchans == 2) {
@@ -223,8 +235,9 @@ int WIGGLE :: init(float p[], int n_args)
          int len = fsize(PAN_FUNC);
          pan_table = new TableL(dur, pan_array, len);
       }
-      else  // Note: we won't get here with current floc implementation
-         die("WIGGLE", "You haven't made the pan function.");
+      else
+         die("WIGGLE", "You haven't made the pan function (table %d).",
+                                                                     PAN_FUNC);
    }
 
    branch = 0;

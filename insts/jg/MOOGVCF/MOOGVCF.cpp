@@ -79,7 +79,7 @@ int MOOGVCF :: init(float p[], int n_args)
       int lencf = fsize(2);
       tableset(dur, lencf, cftabs);
    }
-   else {   // NB: We'll never get here with current floc! 
+   else {
       cf = 1000.0;
       warn("MOOGVCF", "Without table 2, cutoff frequency set to 1kHz.");
    }
@@ -89,7 +89,7 @@ int MOOGVCF :: init(float p[], int n_args)
       int lenres = fsize(3);
       tableset(dur, lenres, restabs);
    }
-   else {   // NB: We'll never get here with current floc! 
+   else {
       res = 0.5;
       warn("MOOGVCF", "Without table 3, resonance set to 0.5.");
    }

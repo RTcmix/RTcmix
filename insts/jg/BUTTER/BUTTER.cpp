@@ -87,7 +87,8 @@ int BUTTER :: init(float p[], int n_args)
       die("BUTTER", "Sharpness (p5) must be an integer between 1 and %d.",
                                                                    MAXFILTS);
    if (type != NoFilter && type != LowPass && type != HighPass)
-      die("BUTTER", "Filter type must be 0 (no filter), 1 (lowpass) or 2 (highpass).");
+      die("BUTTER", "Filter type must be 0 (no filter), 1 (lowpass) "
+                    "or 2 (highpass).");
 
    for (int i = 0; i < nfilts; i++)
       filt[i] = new Butter();
@@ -113,8 +114,9 @@ int BUTTER :: init(float p[], int n_args)
       int lencf = fsize(2);
       tableset(dur, lencf, cftabs);
    }
-   else     // Note: we won't get here with current floc implementation
-      die("BUTTER", "You haven't made the cutoff frequency function.");
+   else
+      die("BUTTER",
+            "You haven't made the cutoff frequency function (table 2).");
 
    skip = (int)(SR / (float)resetval);
 
