@@ -159,27 +159,24 @@ extern "C" {
 		sptr = (char *)sinfo;
 		amt = read(ns, (void *)sptr, sizeof(struct sockdata));
 		while (amt < sizeof(struct sockdata)) amt += read(ns, (void *)(sptr+amt), sizeof(struct sockdata)-amt);
-		  if ( (strcmp(sinfo->name, "rtinput") == 0) ||
-			   (strcmp(sinfo->name, "rtoutput") == 0) ||
-			   (strcmp(sinfo->name,"set_option") == 0) ||
-			   (strcmp(sinfo->name,"bus_config") == 0) ||
-			   (strcmp(sinfo->name, "load")==0) ) {
-
-		  // these two commands use text data
-		  // replace the text[i] with p[i] pointers
-		  for (i = 0; i < sinfo->n_args; i++)
-			strcpy(ttext[i],sinfo->data.text[i]);
-		  for (i = 0; i < sinfo->n_args; i++) {
-			tmpint = (int)ttext[i];
-			sinfo->data.p[i] = (double)tmpint;
-		  }
+		if ( (strcmp(sinfo->name, "rtinput") == 0) ||
+			(strcmp(sinfo->name, "rtoutput") == 0) ||
+			(strcmp(sinfo->name,"set_option") == 0) ||
+			(strcmp(sinfo->name,"bus_config") == 0) ||
+			(strcmp(sinfo->name, "load")==0) ) {
+			
+			// these two commands use text data
+			// replace the text[i] with p[i] pointers
+			for (i = 0; i < sinfo->n_args; i++)
+				strcpy(ttext[i],sinfo->data.text[i]);
+			for (i = 0; i < sinfo->n_args; i++) {
+				tmpint = (int)ttext[i];
+				sinfo->data.p[i] = (double)tmpint;
+			}
 		}
 
-		if ( (strcmp(sinfo->name, "off") == 0) ) {
-		  rtInteractive = 0;
-		}
-	  
-		// if it is an rtupdate, set the pval array
+
+	 		// if it is an rtupdate, set the pval array
 		if (strcmp(sinfo->name, "rtupdate") == 0) {
 		  // rtupdate params are:
 		  //	p0 = note tag # 0 for all notes
@@ -194,6 +191,9 @@ extern "C" {
 		  tag_sem=1;
 		}
 
+		else if ( (strcmp(sinfo->name, "RTcmix_off") == 0) ) {
+			rtInteractive = 0;
+		}
 		else {
 	
 		  gettimeofday(&tv, &tz);
