@@ -7,14 +7,11 @@
 
 
 extern "C" {
-	double rtdispatch(char *fname, double *pp, int n_args)
+	double rtdispatch(char *fname, double *pp, int n_args, void **inst)
 	{
 		double rv;
 
-		// BGG -- if an RT instrument was found, "rv" is now a double
-	        // coerced from an int that represents an Instrument* pointer
-		// to the scheduled object
-		rv = checkInsts(fname, pp, n_args);
+		rv = checkInsts(fname, pp, n_args, inst);
 		return rv;
 	}
 }

@@ -32,7 +32,7 @@ print qq~
 #include <string.h>
 #include $maxdispargs_h
 
-extern double parse_dispatch(char *, double [], int);
+extern double parse_dispatch(char *, double [], int, void **);
 
 
 static double
@@ -70,7 +70,7 @@ _call_parse_dispatch(PyObject *args, char *funcname)
             exit(1);
          }
       }
-      retval = parse_dispatch(funcname, pp, count);
+      retval = parse_dispatch(funcname, pp, count, NULL);
    }
    return retval;
 }

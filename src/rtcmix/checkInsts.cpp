@@ -17,8 +17,8 @@
 
 extern void heapSched(Instrument *Iptr);
 
-extern "C" {
-double checkInsts(char *fname, double *pp, int n_args)
+//extern "C" {
+double checkInsts(char *fname, double *pp, int n_args, void **inst)
 {
 	int i;
 	rt_item *rt_p;
@@ -55,7 +55,7 @@ double checkInsts(char *fname, double *pp, int n_args)
 			
 			Iptr = (*(rt_p->rt_ptr))();
 	
-			rv = Iptr->init(p, n_args);
+			rv = (double) Iptr->init(p, n_args);
 
 			/* schedule instrument */
 
@@ -70,15 +70,9 @@ double checkInsts(char *fname, double *pp, int n_args)
 			printf("EXITING checkInsts() FUNCTION -----\n");
 #endif
 
-/* ooooh, this is almost as bad as the string-int-double coercion
-   that happend when passing strings in through parse_dispatch.
-   checkInsts should return an Instrument*, to be used in imbRTcmix for
-   direct modification of Instrument values.  However, a slew of
-   existing funcs return double values (i.e. random()) to the
-   score-parser.  Hence the conversion to int, and then double.
-   We'll have to reconvert later and hope that the pointer retains
-   it's integrity -- BGG */
-			return (double)((int)Iptr);
+			if (inst != NULL)
+				*inst = (void *) Iptr;
+			return rv;
 		}
 		rt_p = rt_p->rt_next;
 	}
@@ -91,5 +85,5 @@ double checkInsts(char *fname, double *pp, int n_args)
 	return 0.0;
 }
 
-} /* extern "C" */
+//} /* extern "C" */
 

@@ -5,7 +5,7 @@
 #include "XSUB.h"
 #include "../../H/maxdispargs.h"
 
-extern double parse_dispatch(char *, double [], int);
+extern double parse_dispatch(char *, double [], int, void **);
 
 MODULE = RT     PACKAGE = RT
 
@@ -45,7 +45,7 @@ handle_minc_function(...)
             }
          }
 
-         RETVAL = parse_dispatch(function_name, pp, items - 1);
+         RETVAL = parse_dispatch(function_name, pp, items - 1, NULL);
       }
    OUTPUT:
       RETVAL

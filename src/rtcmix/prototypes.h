@@ -21,7 +21,7 @@ extern "C" {
 double checkfuncs(char *fname, double *pp, int n_args);
 
 /* checkInsts.C */
-double checkInsts(char *fname, double *pp, int n_args);
+double checkInsts(char *fname, double *pp, int n_args, void **inst);
 
 /* intraverse.C */
 void *inTraverse(void *);
@@ -30,10 +30,10 @@ void *inTraverse(void *);
 void *parseit(void *);
 
 /* parse_dispatch.c */
-double parse_dispatch(char *str, double *pp, int n_args);
+double parse_dispatch(char *str, double *pp, int n_args, void **inst);
 
 /* rtdispatch.C */
-double rtdispatch(char *fname, double *pp, int n_args);
+double rtdispatch(char *fname, double *pp, int n_args, void **inst);
 
 /* rtgetin.C */
 int read_samps(int fd, int data_format, int file_chans, BufPtr dest,

@@ -264,7 +264,7 @@ Instrument *RTcmix::cmd(char name[], int n_args, double p0, ...)
 	va_list ap;
 	int i;
 	double p[MAXDISPARGS];
-	Instrument* retval;
+	void   *retval;
 
 	buftime = (double)RTBUFSAMPS/SR;
 
@@ -287,9 +287,9 @@ Instrument *RTcmix::cmd(char name[], int n_args, double p0, ...)
 			p[i] = va_arg(ap, double);
 	va_end(ap);
 
-	retval = (Instrument*)((int)parse_dispatch(name, p, n_args));
+	(double) parse_dispatch(name, p, n_args, &retval);
 
-	return(retval);
+	return (Instrument *) retval;
 }
 
 // string p-field sending command.  the first "char*" is to disambiguate
@@ -302,7 +302,7 @@ Instrument *RTcmix::cmd(char name[], int n_args, char* p0, ...)
 	char st[100];
 	int tmpint;
 	double p[MAXDISPARGS];
-	Instrument* retval;
+	void *retval;
 
 	// this kludge dates from the olden days!
 	strcpy(st, p0);
@@ -316,9 +316,9 @@ Instrument *RTcmix::cmd(char name[], int n_args, char* p0, ...)
 		}
 	va_end(ap);
 
-	retval = (Instrument*)((int)parse_dispatch(name, p, n_args));
+	(double) parse_dispatch(name, p, n_args, &retval);
 
-	return(retval);
+	return (Instrument *) retval;
 }
 
 // for commands with no params -- the double return val is because
@@ -329,7 +329,7 @@ double RTcmix::cmd(char name[])
 	double p[MAXDISPARGS]; // for passing into parse_dispatch only
 	double retval;
 
-	retval = parse_dispatch(name, p, 0);
+	retval = parse_dispatch(name, p, 0, NULL);
 
 	return(retval);
 }
