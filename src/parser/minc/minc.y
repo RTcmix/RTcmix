@@ -243,7 +243,7 @@ declare(MincDataType type)
 			sym->type = type;
 		}
 		else {
-			install(idlist[i], S_GLOBAL);
+			sym = install(idlist[i], S_GLOBAL);
 			sym->type = type;
 		}
 	}
