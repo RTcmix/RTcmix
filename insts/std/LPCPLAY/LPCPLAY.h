@@ -1,7 +1,7 @@
 #include <Instrument.h>      /* the base class for this instrument */
 #include "lp.h"
 
-#define MAXVALS 10000
+#define MAXVALS 2000
 
 class DataSet;
 
@@ -34,9 +34,10 @@ protected:
 		float	_past[MAXPOLES*2];
 	};
 	WarpFilter	_warpPole;
+
 private:
-	int     inchan;
-	
+	void	SetupArrays(int frameCount);
+
 	// These are set via external routines and copied in during init.
 	DataSet	*_dataSet;
 	double	_lowthresh, _highthresh;
@@ -60,8 +61,8 @@ private:
 	float	_past[MAXPOLES*2];
 	float	_evals[5];
 	float	_rsnetc[9];
-	float	_alpvals[MAXVALS],_buzvals[MAXVALS],_noisvals[MAXVALS];
-	float	_pchvals[MAXVALS];
+	float	*_pchvals;						// pitch table
+	float	*_alpvals,*_buzvals,*_noisvals;	// signal arrays
 	float	_tblvals[2];
 	float	_srd2, _phs, _magic;
 	float	*_sineFun, *_envFun;

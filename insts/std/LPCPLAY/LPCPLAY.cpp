@@ -3,11 +3,16 @@
    p0 = output start time
    p1 = duration
    p2 = amplitude multiplier
-   p3 = percent of signal to left output channel [optional, default is .5]
+   p3 = pitch factor
+   p4 = starting LPC frame
+   p5 = ending LPC frame
 
-   Assumes function table 1 is amplitude curve for the note. (Try gen 18.)
-   Or you can just call setline. If no setline or function table 1, uses
-   flat amplitude curve.
+   // Optional
+
+   p6 = warp		[0 == none]
+   p7 = reson cf	[0 == none]
+   p8 = reson bw		
+
 */
 
 #include <stdio.h>
@@ -82,7 +87,8 @@ extern int GetConfiguration(float *maxdev,
 
 /* Construct an instance of this instrument and initialize a variable. */
 LPCPLAY::LPCPLAY()
-	: _dataSet(NULL)
+	: _dataSet(NULL), _pchvals(NULL),
+	  _alpvals(NULL), _buzvals(NULL), _noisvals(NULL)
 {
 	_srd2 = SR/2.;
 	_magic = 512./SR;
@@ -92,6 +98,8 @@ LPCPLAY::LPCPLAY()
 	_voiced = true;		// default state
 	_leftOver = 0;
 	_savedOffset = 0;
+	for (int i=0; i<9; i++)
+		_rsnetc[i]=0;
 }
 
 
@@ -101,6 +109,10 @@ LPCPLAY::LPCPLAY()
 LPCPLAY::~LPCPLAY()
 {
 	_dataSet->unref();
+	delete [] _pchvals;
+	delete [] _alpvals;
+	delete [] _buzvals;
+	delete [] _noisvals;
 }
 
 /* Called by the scheduler to initialize the instrument. Things done here:
@@ -114,12 +126,11 @@ LPCPLAY::~LPCPLAY()
 */
 int LPCPLAY::init(float p[], int n_args)
 {
-   float outskip, dur;
    int i;
 
 	if (!n_args || n_args < 6) {
 		die("LPCPLAY",
-		"p[0]=starting time, p[1]=duration, p[2]=pitch,p[3]=frame1, p[4]=frame2 p[5]=amp, [ p[6]=warp p7=resoncf, p8=resonbw [ p9--> pitchcurves ] ]\n");
+		"p[0]=starting time, p[1]=duration, p[2]=amp, p[3]=pitch, p[4]=frame1, p[5]=frame2, [ p[6]=warp p7=resoncf, p8=resonbw [ p9--> pitchcurves ] ]\n");
 	}
 
    /* Store pfields in variables, to allow for easy pfield renumbering.
@@ -127,10 +138,22 @@ int LPCPLAY::init(float p[], int n_args)
       4 pfields: outskip, inskip, dur, amp; or, for instruments that 
       take no input: outskip, dur, amp.
    */
-	outskip = p[0];
-	dur = (p[1] > 0.) ? p[1] : ((p[4] - p[3] + 1.)/112.);
-	_pitch = p[2];
-	_amp = p[5];	// for now
+	float outskip = p[0];
+	float dur = p[1];
+	_amp = p[2];
+	_pitch = p[3];
+
+	int startFrame = (int) p[4];
+	int endFrame = (int) p[5];
+	int frameCount = endFrame - startFrame + 1;
+
+	_warpFactor = p[6];	// defaults to 0
+
+	// Duration can be calculated from frame count
+
+	const float defaultFrameRate = 112.0;
+
+	dur = (dur > 0.) ? dur : (frameCount/defaultFrameRate);
 
    /* Tell scheduler when to start this inst. <nsamps> is number of sample
       frames that will be written to output (dur * SR).
@@ -166,24 +189,26 @@ int LPCPLAY::init(float p[], int n_args)
 					 &_perperiod,
 					 &_hnfactor);
 	
+	SetupArrays(frameCount);
+
 	// Finish the initialization
 	
 	for (i=0; i<_nPoles*2; i++) _past[i] = 0;
 
 	float *cpoint = _coeffs + 4;
 	evset(dur, _risetime, _decaytime, 2, _evals);
-	_frames = p[4] - p[3] + 1.;
-	_frame1 = (int)p[3];
-	for (i = (int) p[3]; i <= (int) p[4]; ++i) {
+
+	_frames = frameCount;
+	_frame1 = startFrame;
+	for (i = startFrame; i <= endFrame; ++i) {
 		float findex = i;
 		if (_dataSet->getFrame(findex, _coeffs) < 0)
 			break;
-		_pchvals[i - (int)p[3]] = (_coeffs[PITCH] ? _coeffs[PITCH] : 256.);
+		_pchvals[i - startFrame] = (_coeffs[PITCH] ? _coeffs[PITCH] : 256.);
 		/* just in case I am using datasets with no pitch value
 			stored */
 	}
-	/*p[4] = i; */
-	float actualweight = weight(p[3],p[4],_thresh);
+	float actualweight = weight(startFrame, endFrame, _thresh);
 	if (!actualweight)
 		actualweight = cpspch(_pitch);
 	if (ABS(_pitch) < 1.0)
@@ -196,9 +221,9 @@ int LPCPLAY::init(float p[], int n_args)
 		advise("LPCPLAY", "Overall transposition: %f, weighted av. pitch = %f",
 			   _transposition,actualweight);
 		if (_maxdev) 
-			readjust(_maxdev,_pchvals,p[3],p[4],_thresh,actualweight);
-		for (i=_frame1;i<=(int)p[4];i++) {
-			_pchvals[(i - _frame1)] *= _transposition;
+			readjust(_maxdev,_pchvals,startFrame,endFrame,_thresh,actualweight);
+		for (i=startFrame; i<=endFrame; ++i) {
+			_pchvals[i - startFrame] *= _transposition;
 		}
 	}
 	else {
@@ -216,31 +241,28 @@ int LPCPLAY::init(float p[], int n_args)
 			float tranincr=(transp-lasttr)/(p[nn]-lastfr);
 			transp=lasttr;
 			for (i=lastfr;i<(int)p[nn];i++) {
-					_pchvals[i-_frame1]*=transp;
-					transp+=tranincr;
+				_pchvals[i-_frame1]*=transp;
+				transp+=tranincr;
 			}
-			lastfr= (int) p[nn];
-			lasttr=transp;
+			lastfr = (int) p[nn];
+			lasttr = transp;
 		}
-		if (p[n_args-2] < p[4]) {
+		if (p[n_args-2] < (float) endFrame) {
 			/* if last frame in couplets wasn't last frame in batch,
 			   use base value from there to the end */
 			transp = _transposition;
-			for (i=lastfr;i<(int)p[4];i++)
-				_pchvals[i-_frame1]*=transp;
+			for (i=lastfr; i<endFrame; ++i)
+				_pchvals[i-startFrame] *= transp;
 		}
 	}
-	tableset(p[1],(int)(p[4]-p[3]+1),_tblvals);
-//	actualweight = weight(p[3],p[4],_thresh);
+	tableset(dur, frameCount, _tblvals);
+//	actualweight = weight(startFrame,endFrame,_thresh);
 	float actualcps = cpspch(ABS(_pitch));
 	
-	_warpFactor = p[6];	// defaults to 0
 	
-	/* note, dont use this feature unless pitch is specified in p[2]*/
+	/* note, dont use this feature unless pitch is specified in p[3]*/
 	
 	_sineFun = (float *)floc(1);
-	for (i=0; i<9; i++)
-		_rsnetc[i]=0;
 	_reson_is_on = p[7] ? true : false;
 	_cf_fact = p[7];
 	_bw_fact = p[8];
@@ -248,17 +270,6 @@ int LPCPLAY::init(float p[], int n_args)
 			
 	return nsamps;
 }
-
-// int rtbaddout(LPCPLAY *inst, float *buf, int len)
-// {
-//     float out[2];
-// 	for (int n = 0; n < len; ++n)
-// 	{
-// 		out[0] = buf[n];
-// 		inst->rtaddout(out);
-// 	}
-// 	return len;
-// }
 
 /* Called by the scheduler for every time slice in which this instrument
    should run. This is where the real work of the instrument is done.
@@ -276,7 +287,7 @@ int LPCPLAY::run()
 	{
 		int toAdd = min(_leftOver, chunksamps);
 #ifdef debug
-		printf("adding out %d leftover samps starting at offset %d\n",
+		printf("using %d leftover samps starting at offset %d\n",
 			   _leftOver, _savedOffset);
 #endif
 		rtbaddout(&_alpvals[_savedOffset], toAdd);
@@ -314,9 +325,12 @@ int LPCPLAY::run()
 		if (_reson_is_on) {
 			/* If _cf_fact is greater than 20, treat as absolute freq.
 			   Else treat as factor.
+			   If _bw_fact is greater than 20, treat as absolute freq.
+			   Else treat as factor (i.e., cf * factor == bw).
 			*/
 			float cf = (_cf_fact < 20.0) ? _cf_fact*cps : _cf_fact;
-			rszset(cf, _bw_fact*cf, 1., _rsnetc);
+			float bw = (_bw_fact < 20.0) ? cf * _bw_fact : _bw_fact;
+			rszset(cf, bw, 1., _rsnetc);
 			/* printf("%f %f %f %f\n",_cf_fact*cps,
 				_bw_fact*_cf_fact*cps,_cf_fact,_bw_fact,cps); */
 		}
@@ -391,11 +405,24 @@ int LPCPLAY::run()
 		_leftOver = n - chunksamps;
 		_savedOffset = _counter - _leftOver;
 #ifdef debug
-		printf("%d samples left over at offset %d\n", _leftOver, _savedOffset);
+		printf("saving %d samples left over at offset %d\n", _leftOver, _savedOffset);
 #endif
 	}
 
 	return chunksamps;
+}
+
+void
+LPCPLAY::SetupArrays(int frameCount)
+{
+	// Pitch table
+	_pchvals = new float[frameCount];
+	// Signal arrays -- size depends on update rate.
+	const int siglen = _perperiod < 1.0 ?
+		(int) (0.5 + MAXVALS / _perperiod) : MAXVALS;
+	_alpvals = new float[siglen];
+	_buzvals = new float[siglen];
+	_noisvals = new float[siglen];
 }
 
 double
