@@ -56,6 +56,9 @@ dump_gen_to_raw_file(float *buf, int nsamps)
    If <inchan> is missing, reads all channels from the file; otherwise,
    reads just the channel specified by <inchan> (with zero as first chan).
 
+   As usual, if the slot number is negative, the table will be rescaled
+   to fit in the range [-1,1].
+
    Returns to Minc the number of sample frames read.
 
    JGG, 07 Feb 2001
@@ -243,6 +246,8 @@ gen1(struct gen *gen, char *sfname)
 
    gen->array = block;
    gen->size = gen_samps;
+
+   fnscl(gen);
 
 #ifdef DUMP_GEN_TO_RAW_FILE
    dump_gen_to_raw_file(block, gen_samps);
