@@ -35,11 +35,7 @@ print qq~
 extern double parse_dispatch(char *, double [], int);
 
 
-#ifdef __GNUC__
-static inline double
-#else
 static double
-#endif
 _call_parse_dispatch(PyObject *args, char *funcname)
 {
    double   pp[MAXDISPARGS], retval = 0.0;
