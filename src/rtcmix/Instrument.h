@@ -1,6 +1,4 @@
-extern "C" {
 #include <sys/types.h>
-}
 
 class Instrument {
 public:
@@ -40,5 +38,5 @@ extern int rtsetoutput(float, float, Instrument*);
 extern int rtsetinput(float, Instrument*);
 extern int rtaddout(float*);
 extern int rtbaddout(float*, int);
-extern "C" int rtgetin(float*, Instrument*, int);
+extern int rtgetin(float*, Instrument*, int);
 extern float rtupdate(int, int); // tag, p-field for return value
