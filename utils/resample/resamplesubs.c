@@ -63,8 +63,8 @@ readData(int   infd,          /* input file descriptor */
 
    framecount += Nsamps;
 
-   if (framecount >= inCount)
-      return ((Nsamps - (framecount - inCount)) - 1);   /* index of last samp */
+   if (framecount >= inCount)            /* return index of last samp */
+      return (((Nsamps - (framecount - inCount)) - 1) + Xoff);
    else
       return 0;
 }
