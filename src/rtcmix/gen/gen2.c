@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "../H/ugens.h"
+#include <ugens.h>
 
 extern FILE *infile_desc[50];   /* contains file descriptors for data files */
 
@@ -83,10 +83,8 @@ gen2(struct gen *gen)
       else
          in_desc = infile_desc[(int) gen->pvals[0]];
 
-      if (in_desc == NULL) {       /* Stop if infile seek failed */
-         fprintf(stderr, "Input error. Gen02 exited.\n");
-         return -1.0;
-      }
+      if (in_desc == NULL)         /* Stop if infile seek failed */
+         die("gen2", "You haven't opened an input data file.");
 
       i = 0;
       if (gen->pvals[0] == 0) {    /* if reading from stdin */
@@ -107,9 +105,9 @@ gen2(struct gen *gen)
          }
       }
       if (i > gen->size)
-         fprintf(stderr, "Out of array space in gen02!!\n");
+         warn("gen2", "Out of array space!");
 
-      printf("%d values loaded into array.\n",
+      advise("gen2", "%d values loaded into array.",
                                           (i <= gen->size) ? i : gen->size);
 
       i--;
