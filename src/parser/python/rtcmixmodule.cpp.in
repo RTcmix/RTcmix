@@ -34,6 +34,7 @@
 #include <rtcmix_types.h>
 #include <PField.h>
 #include <utils.h>
+#include <math.h>
 #include <string.h>
 #include "../../include/maxdispargs.h"
 #include "../../rtcmix/prototypes.h"
@@ -110,7 +111,6 @@ static PField *PFieldFromPyObject(PyObject *obj)
       }
       double val = PyFloat_AsDouble(obj);
       pfield = new ConstPField(val);
-      pfield->ref();
    }
    return pfield;
 }
@@ -185,7 +185,7 @@ static double minus_binop(double x, double y) { return x - y; }
 static double mult_binop(double x, double y) { return x * y; }
 static double divide_binop(double x, double y) { return (y != 0.0)
                                              ? x / y : 999999999999999999.9; }
-static double mod_binop(double x, double y) { return (int) x % (int) y; }
+static double mod_binop(double x, double y) { return fmod(x, y); }
 static double pow_binop(double x, double y) { return pow(x, y); }
 
 typedef enum {
@@ -283,6 +283,27 @@ Opaque_divide(PyObject *a, PyObject *b)
 }
 
 static PyObject *
+Opaque_remainder(PyObject *a, PyObject *b)
+{
+   return _do_numop(a, b, OpMod);
+}
+
+#ifdef NOTYET
+static PyObject *
+Opaque_divmod(PyObject *a, PyObject *b)
+{
+   // FIXME: should return 2-tuple of (quotient, remainder)?
+}
+#endif
+
+static PyObject *
+Opaque_power(PyObject *a, PyObject *b, PyObject *c)
+{
+   // FIXME: <c> is optional modulo, which we ignore here
+   return _do_numop(a, b, OpPow);
+}
+
+static PyObject *
 Opaque_neg(PyObject *a)
 {
    if (!OpaqueObject_Check(a)) {          // not sure how this could happen
@@ -299,7 +320,6 @@ Opaque_neg(PyObject *a)
 
    PField *pfield1 = (PField *) handle->ptr;
    PField *pfield2 = new ConstPField(-1.0);
-   pfield2->ref();
    PField *opfield = createBinopPField(pfield1, pfield2, OpMul);
 
    OpaqueObject *newobj = newOpaqueObject(NULL);
@@ -327,9 +347,9 @@ static PyNumberMethods Opaque_as_number = {
    (binaryfunc) Opaque_subtract,             // nb_subtract
    (binaryfunc) Opaque_multiply,             // nb_multiply
    (binaryfunc) Opaque_divide,               // nb_divide
-   (binaryfunc) Opaque_not_implemented,      // nb_remainder
+   (binaryfunc) Opaque_remainder,            // nb_remainder
    (binaryfunc) Opaque_not_implemented,      // nb_divmod
-   (ternaryfunc) Opaque_not_implemented,     // nb_power
+   (ternaryfunc) Opaque_power,               // nb_power
    (unaryfunc) Opaque_neg,                   // nb_negative
    (unaryfunc) Opaque_not_implemented,       // nb_positive
    (unaryfunc) Opaque_not_implemented,       // nb_absolute
