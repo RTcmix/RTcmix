@@ -743,7 +743,7 @@ int main(int argc, char *argv[])
             if (factor) {
                for (i = 0; i < samps_read; i++) {
                   sbuf[i] = reverse_int2(&sbuf[i]);
-                  sbuf[i] = (int) (factor * sbuf[i]);
+                  sbuf[i] = (int) (factor * (float) sbuf[i]);
                }
             }
             else {
@@ -752,8 +752,10 @@ int main(int argc, char *argv[])
             }
          }
          else {
-            if (factor)
-               sbuf[i] = (int) (factor * sbuf[i]);
+            if (factor) {
+               for (i = 0; i < samps_read; i++)
+                  sbuf[i] = (int) (factor * (float) sbuf[i]);
+            }
          }
       }
 
