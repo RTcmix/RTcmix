@@ -54,7 +54,8 @@ char *aargv[CMAX];
 char name[NAMESIZE];
 int aargc;
 
-FILE *fp;
+/* <yyin> is yacc's input file. If we leave it alone, stdin will be used. */
+extern FILE *yyin;
 
 
 
@@ -79,8 +80,6 @@ init_globals()
    noParse = 0;
    socknew = 0;
    rtsetparams_called = 0;
-
-   fp = NULL;
 
    audio_on = 0;
    audio_config = 1;
@@ -186,14 +185,15 @@ main(int argc, char *argv[])
                   for (i = 0; i < MAXPUPS; i++)     /* initialize element 0 */
                      pupdatevals[0][i] = NOPUPDATE;
                   break;
-               case 'f':
+               case 'f':     /* use file name arg instead of stdin as score */
                   infile = *++argv;
-                  fp = fopen(infile, "r+");
-                  if (fp == NULL) {
+                  yyin = fopen(infile, "r+");
+                  if (yyin == NULL) {
                      printf("Can't open %s\n", infile);
                      exit(1);
                   }
                   fprintf(stderr, "Using file %s\n", infile);
+                  argc -= 1;
                   break;
                default:
                   printf("Don't know about option '%c'\n", *cp);
