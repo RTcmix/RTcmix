@@ -67,7 +67,7 @@ double m_ampdb(float p[])
 double m_dbamp(float p[])
 { return(dbamp(p[0])); }
 
-double m_stringify(float p, short n_args, double pp[])
+double m_stringify(float p, int n_args, double pp[])
 {
 	/* coerces a string passed in from Minc in quotes in p[0]
 	   to a 'floating point' pointer suitable for use in
@@ -76,7 +76,7 @@ double m_stringify(float p, short n_args, double pp[])
 	return((double)(int) pp[0]);	/* was return (pp[0]) -- DS */
 }
 
-double m_log(float p[], short n_args)
+double m_log(float p[], int n_args)
 {
    double val;
 
@@ -85,7 +85,7 @@ double m_log(float p[], short n_args)
    return(val);
 }
 
-double m_pow(float p[], short n_args, double pp[])
+double m_pow(float p[], int n_args, double pp[])
 {
 	double val;
 
@@ -93,13 +93,13 @@ double m_pow(float p[], short n_args, double pp[])
 	return(val);
 }
 
-double m_round(float p[], short n_args)
+double m_round(float p[], int n_args)
 {
 	int val = p[0] + .5;
 	return (double) val;
 }
 
-double m_wrap(float p[], short n_args)
+double m_wrap(float p[], int n_args)
 {
 	/* keeps value between 0 and p[1] */
 	int val = p[0];
@@ -116,25 +116,25 @@ double m_wrap(float p[], short n_args)
 	return (double) val;
 }
 
-double m_print(float p[], short n_args, double pp[])
+double m_print(float p[], int n_args, double pp[])
 {
 	printf("Value = %10.8f\n", pp[0]);
 	return 0.0;
 }
 
-double m_abs(float p[], short n_args)
+double m_abs(float p[], int n_args)
 {
 	return((p[0] >= 0.0) ? p[0] : -(p[0]));
 }
 
-double m_mod(float p[], short n_args)
+double m_mod(float p[], int n_args)
 {
 	int i,j;
 	i = (int)p[0] % (int)p[1];
 	return((float)i);
 }
 
-double m_max(float p[], short n_args)
+double m_max(float p[], int n_args)
 {
 	int i;
 	float max = -1e+22;
@@ -143,13 +143,13 @@ double m_max(float p[], short n_args)
 	return(max);
 }
 
-double m_exit(float p[], short n_args)
+double m_exit(float p[], int n_args)
 {
 	closesf();
 	return 0.0;
 }
 
-double m_load_array(float p[], short n_args, double pp[])
+double m_load_array(float p[], int n_args, double pp[])
 {
 	int i,j;
 	if(n_args > ARRAY_SIZE) n_args = ARRAY_SIZE+1;
@@ -159,7 +159,7 @@ double m_load_array(float p[], short n_args, double pp[])
 	return(n_args-1);
 }
 
-double m_get_array(float p[], short n_args)
+double m_get_array(float p[], int n_args)
 {
 	int i, size, index;
 
@@ -173,7 +173,7 @@ double m_get_array(float p[], short n_args)
 	return (minc_array[i][index]);
 }
 
-double m_put_array(float p[], short n_args)
+double m_put_array(float p[], int n_args)
 { /* to load a single value from minc */
 	int i,j;
 	i=p[0];
@@ -184,7 +184,7 @@ double m_put_array(float p[], short n_args)
 	else return(-1);
 }
 
-double m_get_sum(float p[], short n_args)
+double m_get_sum(float p[], int n_args)
 {
 	int i,j,k;
 	float sum;
@@ -194,13 +194,13 @@ double m_get_sum(float p[], short n_args)
 	return(sum);
 }
 
-double m_get_size(float p[], short n_args)
+double m_get_size(float p[], int n_args)
 {
 	/* returns same value as load_array would */
 	return((double)minc_array_size[(int)p[0]]-1);
 }
 
-double m_getpch(float p[], short n_args, double pp[])
+double m_getpch(float p[], int n_args, double pp[])
 {
 	int pchfd;
 	int frameno,nbframe,iname;
@@ -231,7 +231,7 @@ double m_getpch(float p[], short n_args, double pp[])
 	return((double) vals[0]);
 }
 
-double m_getamp(float p[], short n_args, double pp[])
+double m_getamp(float p[], int n_args, double pp[])
 {
 	int pchfd;
 	int frameno,nbframe,iname;
@@ -262,7 +262,7 @@ double m_getamp(float p[], short n_args, double pp[])
 	return((double) vals[1]);
 }
 
-double str_num(float p[], short n_args, double pp[])
+double str_num(float p[], int n_args, double pp[])
 {
 	char *name;
 	int i,j;
@@ -281,26 +281,26 @@ double str_num(float p[], short n_args, double pp[])
 	return 0.0;
 }
 
-double m_print_is_on(float p[], short n_args)
+double m_print_is_on(float p[], int n_args)
 {
 	print_is_on = 1;
 	return print_is_on;
 }
 
-double m_print_is_off(float p[], short n_args)
+double m_print_is_off(float p[], int n_args)
 {
 	print_is_on = 0;
 	return print_is_on;
 }
 
 struct slist slist[NUM_ARRAYS];
-double m_get_spray(float p[], short n_args)
+double m_get_spray(float p[], int n_args)
 {
 	int i = p[0];
 	return((double)(spray(&slist[i])));
 }
 
-double m_spray_init(float p[], short n_args)
+double m_spray_init(float p[], int n_args)
 {
 	int i,j;
 	i=p[0]; j=p[1];
@@ -311,7 +311,7 @@ double m_spray_init(float p[], short n_args)
 
 static int line_array_size = 1000;      /* modified by m_setline_size */
 
-double m_setline_size(float p[], short n_args)
+double m_setline_size(float p[], int n_args)
 {
 	if (p[0] < 2)
 		die("setline_size", "Setline array size must be at least 2!");
@@ -322,7 +322,7 @@ double m_setline_size(float p[], short n_args)
 }
 
 
-double m_setline(float p[], short n_args)
+double m_setline(float p[], int n_args)
 {
 	float	pp[MAXDISPARGS];
 	int	i;
@@ -341,7 +341,7 @@ double m_setline(float p[], short n_args)
 
 /* create exponential curve */
 
-double m_setexp(float p[], short n_args)
+double m_setexp(float p[], int n_args)
 {
 	float	pp[MAXDISPARGS];
 	float   prevloc, minloc, locRange;
@@ -381,7 +381,7 @@ double m_setexp(float p[], short n_args)
 */
 int resetval = 1000;                 /* modified by m_reset; read by insts */
 
-double m_reset(float p[], short n_args)
+double m_reset(float p[], int n_args)
 {
 	if (p[0] <= 0)
 		die("reset", "Reset value must be greater than 0!");
@@ -392,7 +392,7 @@ double m_reset(float p[], short n_args)
 }
 
 /* returns random choice from its arguments */
-double m_pickrand(float p[], short n_args, double pp[]) 
+double m_pickrand(float p[], int n_args, double pp[]) 
 {
 		float rindex;
 		if (n_args == 0)
@@ -402,7 +402,7 @@ double m_pickrand(float p[], short n_args, double pp[])
 }
 
 /* returns choice based on <value, probability> pairs */
-double m_pickwrand(float p[], short n_args, double pp[])
+double m_pickwrand(float p[], int n_args, double pp[])
 {
 		int n;
 		float totalchance = 0, rindex, psum = 0;
@@ -423,7 +423,7 @@ double m_pickwrand(float p[], short n_args, double pp[])
 }
 
 /* returns a randomly-interpolated value between its two input values */
-double m_irand(float p[], short n_args, double pp[])
+double m_irand(float p[], int n_args, double pp[])
 {
 	double frac = m_random(p, 0);
 	if (n_args != 2)
