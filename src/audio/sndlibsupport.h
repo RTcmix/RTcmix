@@ -8,6 +8,10 @@
 #ifdef SGI
 #include <sys/endian.h>
 #endif
+#ifdef MACOSX
+#include <machine/endian.h>
+#endif
+#include <stdio.h>               /* for FILE, needed by sndlib.h */
 #include "../sndlib/sndlib.h"
 #include "../H/sfheader.h"       /* for SFHEADER */
 #include "../rtstuff/rtdefs.h"   /* just for MAXCHANS */
@@ -74,46 +78,47 @@ int getsfmaxamp(SFHEADER *, SFMAXAMP *);
 /* some handy macros */
 
 #define IS_FLOAT_FORMAT(format) (                        \
-              (format) == snd_32_float                   \
-           || (format) == snd_32_float_little_endian     )
+              (format) == MUS_BFLOAT                     \
+           || (format) == MUS_LFLOAT                     )
 
 #define NOT_A_SOUND_FILE(header_type) (                  \
-              (header_type) == unsupported_sound_file    \
-           || (header_type) == raw_sound_file            )
+              (header_type) == MUS_UNSUPPORTED           \
+           || (header_type) == MUS_RAW                   )
 
-/* The header types that sndlib can write, as of sndlib-5.5. */
+/* The header types that sndlib can write, as of sndlib-13.1. */
 #define WRITEABLE_HEADER_TYPE(type) (                    \
-               (type) == AIFF_sound_file                 \
-           ||  (type) == NeXT_sound_file                 \
-           ||  (type) == RIFF_sound_file                 \
-           ||  (type) == IRCAM_sound_file                )
+               (type) == MUS_AIFC                        \
+           ||  (type) == MUS_AIFF                        \
+           ||  (type) == MUS_NEXT                        \
+           ||  (type) == MUS_RIFF                        \
+           ||  (type) == MUS_IRCAM                       )
 
 #define INVALID_DATA_FORMAT(format) ((format) < 1)
 
 /* The data formats that disk-based cmix code can read and write. */
 #define SUPPORTED_DATA_FORMAT(format) (                  \
-               (format) == snd_16_linear                 \
-           ||  (format) == snd_16_linear_little_endian   \
-           ||  (format) == snd_32_float                  \
-           ||  (format) == snd_32_float_little_endian    )
+               (format) == MUS_BSHORT                    \
+           ||  (format) == MUS_LSHORT                    \
+           ||  (format) == MUS_BFLOAT                    \
+           ||  (format) == MUS_LFLOAT                    )
 
 /* Usually endianness is handled for us by sndlib, but there are some
    cases where it's helpful to know (e.g., sfcreate). These are the
    more common formats sndlib supports -- not all of them.
 */
 #define IS_BIG_ENDIAN_FORMAT(format) (                   \
-              (format) == snd_16_linear                  \
-           || (format) == snd_32_float                   \
-           || (format) == snd_24_linear                  \
-           || (format) == snd_32_linear                  \
-           || (format) == snd_16_unsigned                )
+              (format) == MUS_BSHORT                     \
+           || (format) == MUS_BFLOAT                     \
+           || (format) == MUS_B24INT                     \
+           || (format) == MUS_BINT                       \
+           || (format) == MUS_UBSHORT                    )
 
 #define IS_LITTLE_ENDIAN_FORMAT(format) (                \
-              (format) == snd_16_linear_little_endian    \
-           || (format) == snd_32_float_little_endian     \
-           || (format) == snd_24_linear_little_endian    \
-           || (format) == snd_32_linear_little_endian    \
-           || (format) == snd_16_unsigned_little_endian  )
+              (format) == MUS_LSHORT                     \
+           || (format) == MUS_LFLOAT                     \
+           || (format) == MUS_L24INT                     \
+           || (format) == MUS_LINT                       \
+           || (format) == MUS_ULSHORT                    )
 
 #define FORMATS_SAME_BYTE_ORDER(format1, format2) (      \
              ( IS_BIG_ENDIAN_FORMAT(format1)             \
@@ -125,26 +130,76 @@ int getsfmaxamp(SFHEADER *, SFMAXAMP *);
 
 
 /* These macros nabbed from sndlib/io.c, since they aren't exposed to us,
-   and they're useful for doing our own float i/o.
+   and they're useful for doing our own i/o.
 */
 
-#ifdef SNDLIB_LITTLE_ENDIAN
-  #define m_big_endian_float(n)                   (get_big_endian_float(n))
-  #define m_little_endian_float(n)                (*((float *)n))
-  #define m_set_big_endian_float(n,x)             set_big_endian_float(n,x)
-  #define m_set_little_endian_float(n,x)          (*((float *)n)) = x
-#else
-  #ifndef SUN
-    #define m_big_endian_float(n)                   (*((float *)n))
-    #define m_set_big_endian_float(n,x)             (*((float *)n)) = x
-  #else
-    #define m_big_endian_float(n)                   (get_big_endian_float(n))
-    #define m_set_big_endian_float(n,x)             set_big_endian_float(n,x)
-  #endif
-  #define m_little_endian_float(n)                  (get_little_endian_float(n))
-  #define m_set_little_endian_float(n,x)            set_little_endian_float(n,x)
-#endif
+#if MUS_LITTLE_ENDIAN
 
+  #define m_big_endian_short(n)                   (mus_char_to_bshort(n))
+  #define m_big_endian_int(n)                     (mus_char_to_bint(n))
+  #define m_big_endian_float(n)                   (mus_char_to_bfloat(n))
+  #define m_big_endian_double(n)                  (mus_char_to_bdouble(n))
+  #define m_big_endian_unsigned_short(n)          (mus_char_to_ubshort(n))
+
+  #define m_little_endian_short(n)                (*((short *)n))
+  #define m_little_endian_int(n)                  (*((int *)n))
+  #define m_little_endian_float(n)                (*((float *)n))
+  #define m_little_endian_double(n)               (*((double *)n))
+  #define m_little_endian_unsigned_short(n)       (*((unsigned short *)n))
+
+  #define m_set_big_endian_short(n, x)             mus_bshort_to_char(n, x)
+  #define m_set_big_endian_int(n, x)               mus_bint_to_char(n, x)
+  #define m_set_big_endian_float(n, x)             mus_bfloat_to_char(n, x)
+  #define m_set_big_endian_double(n, x)            mus_bdouble_to_char(n, x)
+  #define m_set_big_endian_unsigned_short(n, x)    mus_ubshort_to_char(n, x)
+
+  #define m_set_little_endian_short(n, x)          (*((short *)n)) = x
+  #define m_set_little_endian_int(n, x)            (*((int *)n)) = x
+  #define m_set_little_endian_float(n, x)          (*((float *)n)) = x
+  #define m_set_little_endian_double(n, x)         (*((double *)n)) = x
+  #define m_set_little_endian_unsigned_short(n, x) (*((unsigned short *)n)) = x
+
+#else
+
+  #ifndef SUN
+    #define m_big_endian_short(n)                   (*((short *)n))
+    #define m_big_endian_int(n)                     (*((int *)n))
+    #define m_big_endian_float(n)                   (*((float *)n))
+    #define m_big_endian_double(n)                  (*((double *)n))
+    #define m_big_endian_unsigned_short(n)          (*((unsigned short *)n))
+
+    #define m_set_big_endian_short(n, x)             (*((short *)n)) = x
+    #define m_set_big_endian_int(n, x)               (*((int *)n)) = x
+    #define m_set_big_endian_float(n, x)             (*((float *)n)) = x
+    #define m_set_big_endian_double(n, x)            (*((double *)n)) = x
+    #define m_set_big_endian_unsigned_short(n, x)    (*((unsigned short *)n)) = x
+  #else
+    #define m_big_endian_short(n)                   (mus_char_to_bshort(n))
+    #define m_big_endian_int(n)                     (mus_char_to_bint(n))
+    #define m_big_endian_float(n)                   (mus_char_to_bfloat(n))
+    #define m_big_endian_double(n)                  (mus_char_to_bdouble(n))
+    #define m_big_endian_unsigned_short(n)          (mus_char_to_ubshort(n))
+
+    #define m_set_big_endian_short(n, x)             mus_bshort_to_char(n, x)
+    #define m_set_big_endian_int(n, x)               mus_bint_to_char(n, x)
+    #define m_set_big_endian_float(n, x)             mus_bfloat_to_char(n, x)
+    #define m_set_big_endian_double(n, x)            mus_bdouble_to_char(n, x)
+    #define m_set_big_endian_unsigned_short(n, x)    mus_ubshort_to_char(n, x)
+  #endif
+
+  #define m_little_endian_short(n)                  (mus_char_to_lshort(n))
+  #define m_little_endian_int(n)                    (mus_char_to_lint(n))
+  #define m_little_endian_float(n)                  (mus_char_to_lfloat(n))
+  #define m_little_endian_double(n)                 (mus_char_to_ldouble(n))
+  #define m_little_endian_unsigned_short(n)         (mus_char_to_ulshort(n))
+
+  #define m_set_little_endian_short(n, x)            mus_lshort_to_char(n, x)
+  #define m_set_little_endian_int(n, x)              mus_lint_to_char(n, x)
+  #define m_set_little_endian_float(n, x)            mus_lfloat_to_char(n, x)
+  #define m_set_little_endian_double(n, x)           mus_ldouble_to_char(n, x)
+  #define m_set_little_endian_unsigned_short(n, x)   mus_ulshort_to_char(n, x)
+
+#endif
 
 #ifdef __cplusplus
 } /* extern "C" */

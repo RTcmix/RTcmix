@@ -30,7 +30,7 @@ int
 main(int argc, char *argv[])
 {
    int         i, fd, header_type, data_format, data_location, verbose = 0;
-   int         nsamps, result, is_aifc, srate, nchans, class;
+   int         nsamps, result, srate, nchans, class;
    float       dur;
    char        *sfname, timestr[MAX_TIME_CHARS];
    SFComment   sfc;
@@ -82,19 +82,18 @@ main(int argc, char *argv[])
          close(fd);
          continue;
       }
-      header_type = c_snd_header_type();
+      header_type = mus_header_type();
       if (NOT_A_SOUND_FILE(header_type)) {
          fprintf(stderr, "\"%s\" is probably not a sound file\n", sfname);
          close(fd);
          continue;
       }
-      is_aifc = sndlib_current_header_is_aifc();
-      data_format = c_snd_header_format();
-      data_location = c_snd_header_data_location();
-      srate = c_snd_header_srate();
-      nchans = c_snd_header_chans();
-      class = c_snd_header_datum_size();           /* bytes per sample */
-      nsamps = c_snd_header_data_size();           /* samples, not frames */
+      data_format = mus_header_format();
+      data_location = mus_header_data_location();
+      srate = mus_header_srate();
+      nchans = mus_header_chans();
+      class = mus_header_data_format_to_bytes_per_sample();
+      nsamps = mus_header_samples();                 /* samples, not frames */
       dur = (float)(nsamps / nchans) / (float)srate;
 
       result = sndlib_get_current_header_comment(fd, &sfc);
@@ -115,8 +114,8 @@ main(int argc, char *argv[])
       /* print it out */
 
       printf(":::::::::::::::::::\n%s\n:::::::::::::::::::\n", sfname);
-      printf("%s, %s\n", is_aifc? "AIFC" : sound_type_name(header_type),
-                                           sound_format_name(data_format));
+      printf("%s, %s\n", mus_header_type_name(header_type),
+                         mus_data_format_name(data_format));
       printf("sr: %d  nchans: %d  class: %d\n", srate, nchans, class);
       if (verbose)
          printf("frames: %d\nheader size: %d bytes\n",

@@ -8,8 +8,8 @@
 #include <errno.h>
 #include <math.h>
 #include <assert.h>
-#include "../H/byte_routines.h"
-#include "../H/sndlibsupport.h"
+#include <byte_routines.h>
+#include <sndlibsupport.h>
 
 /* Revision of cmix sndpeak program with sndlib support and other improvements.
                                                           -- J. Gibson, 6/6/99
@@ -131,8 +131,8 @@ main(int argc, char *argv[])
          CONTINUE;
       }
 
-      type = c_snd_header_type();
-      format = c_snd_header_format();
+      type = mus_header_type();
+      format = mus_header_format();
 
       if (NOT_A_SOUND_FILE(type) || INVALID_DATA_FORMAT(format)) {
          fprintf(stderr, "\"%s\" is probably not a sound file\n", sfname);
@@ -158,9 +158,9 @@ main(int argc, char *argv[])
       }
 
       /* NOTE: must get these before tmp outfd becomes current header! */
-      nchans = c_snd_header_chans();
-      indataloc = c_snd_header_data_location();
-      nframes = c_snd_header_data_size() / nchans;
+      nchans = mus_header_chans();
+      indataloc = mus_header_data_location();
+      nframes = mus_header_samples() / nchans;
 
       /* Make sure this is a header type sndlib can write, and that
          there's enough room in the header to store the peak stats comment.
@@ -174,15 +174,12 @@ main(int argc, char *argv[])
             CONTINUE;
          }
 
-         if (type == AIFF_sound_file)
-            sndlib_current_header_match_aiff_flavor();
-
          /* If input file doesn't have a large enough space for the structured
             peak stats comment, write to a tmp file, and replace the input
             file with it when we're all done.
          */
          if (!sndlib_current_header_comment_alloc_good(NULL)) {
-            int srate = c_snd_header_srate();
+            int srate = mus_header_srate();
 #ifdef AUTO_SHUFFLE
             outname = strdup(tmpnam(NULL));
             if (outname == NULL) {
@@ -292,14 +289,14 @@ main(int argc, char *argv[])
       }
 
       if (!quiet) {
-         int n, ds = c_snd_datum_size(format);
+         int n, class = mus_data_format_to_bytes_per_sample(format);
 
          printf("Peak stats for file \"%s\":\n", sfname);
          for (n = 0; n < nchans; n++) {
             printf("  channel %d:  ", n);
             if (peak[n])
                printf("%f (absolute %f) at frame %ld\n",
-                      NORM(ds, peak[n]), peak[n], peakloc[n]);
+                      NORM(class, peak[n]), peak[n], peakloc[n]);
             else
                printf("silence\n");
          }

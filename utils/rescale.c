@@ -287,12 +287,12 @@ main(int argc, char *argv[])
       exit(1);
    }
 
-   intype = c_snd_header_type();
-   informat = c_snd_header_format();
-   nchans = c_snd_header_chans();
-   srate = c_snd_header_srate();
-   inheadersize = c_snd_header_data_location();
-   inclass = c_snd_header_datum_size();
+   intype = mus_header_type();
+   informat = mus_header_format();
+   nchans = mus_header_chans();
+   srate = mus_header_srate();
+   inheadersize = mus_header_data_location();
+   inclass = mus_header_data_format_to_bytes_per_sample();
 
    if (NOT_A_SOUND_FILE(intype) || INVALID_DATA_FORMAT(informat)) {
       fprintf(stderr, "\"%s\" probably not a sound file.\n", insfname);
@@ -378,18 +378,17 @@ main(int argc, char *argv[])
 
    outclass = SF_SHORT;           /* we always rescale to shorts */
 
-   outformat = IS_BIG_ENDIAN_FORMAT(informat) ?
-                                 snd_16_linear : snd_16_linear_little_endian;
+   outformat = IS_BIG_ENDIAN_FORMAT(informat) ?  MUS_BSHORT : MUS_LSHORT;
 
    /* If input header is a type that sndlib can't write, output to AIFF. */
    if (WRITEABLE_HEADER_TYPE(intype))
       outtype = intype;
    else {
-      outtype = AIFF_sound_file;
-      outformat = snd_16_linear;
+      outtype = MUS_AIFC;
+      outformat = MUS_BSHORT;
    }
-   if (outtype == AIFF_sound_file)
-      set_aifc_header(0);                      /* we want AIFF, not AIFC */
+   if (outtype == MUS_AIFC)
+      mus_header_set_aifc(0);                    /* we want AIFF, not AIFC */
 
    if (replace) {                 /* will open 2 descriptors for same file */
       int      fd;
@@ -505,7 +504,7 @@ main(int argc, char *argv[])
       exit(1);
    }
 
-#ifdef SNDLIB_LITTLE_ENDIAN
+#ifdef MUS_LITTLE_ENDIAN
    inswap = IS_BIG_ENDIAN_FORMAT(informat);
    outswap = IS_BIG_ENDIAN_FORMAT(outformat);
 #else

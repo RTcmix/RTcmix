@@ -84,7 +84,7 @@ main(int argc, char *argv[])
          close(fd);
          continue;
       }
-      header_type = c_snd_header_type();
+      header_type = mus_header_type();
       if (NOT_A_SOUND_FILE(header_type)) {
          fprintf(stderr, "\"%s\" is probably not a sound file\n", sfname);
          close(fd);
@@ -95,10 +95,10 @@ main(int argc, char *argv[])
          close(fd);
          continue;
       }
-      data_location = c_snd_header_data_location();
+      data_location = mus_header_data_location();
 #ifdef NOT_NEEDED
-      nchans = c_snd_header_chans();
-      nsamps = c_snd_header_data_size();           /* samples, not frames */
+      nchans = mus_header_chans();
+      nsamps = mus_header_samples();           /* samples, not frames */
 #endif
 
       true_file_length = lseek(fd, 0, SEEK_END);

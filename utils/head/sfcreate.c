@@ -91,7 +91,6 @@ char format_name[FORMAT_NAME_LENGTH] = DEFAULT_FORMAT_NAME;
 /* these are assigned in check_params */
 static int header_type;
 static int data_format;
-static int is_aifc = FALSE;
 
 static void usage(void);
 static int check_params(void);
@@ -128,19 +127,17 @@ check_params()
    }
 
    if (strcasecmp(format_name, "aiff") == 0)
-      header_type = AIFF_sound_file;
-   else if (strcasecmp(format_name, "aifc") == 0) {
-      header_type = AIFF_sound_file;
-      is_aifc = TRUE;
-   }
+      header_type = MUS_AIFF;
+   else if (strcasecmp(format_name, "aifc") == 0)
+      header_type = MUS_AIFC;
    else if (strcasecmp(format_name, "wav") == 0)
-      header_type = RIFF_sound_file;
+      header_type = MUS_RIFF;
    else if (strcasecmp(format_name, "next") == 0)
-      header_type = NeXT_sound_file;
+      header_type = MUS_NEXT;
    else if (strcasecmp(format_name, "sun") == 0)
-      header_type = NeXT_sound_file;
+      header_type = MUS_NEXT;
    else if (strcasecmp(format_name, "ircam") == 0)
-      header_type = IRCAM_sound_file;
+      header_type = MUS_IRCAM;
    else {
       fprintf(stderr, "Invalid file format name: %s\n", format_name);
       fprintf(stderr, "Valid names: aiff, aifc, wav, next, sun, ircam\n");
@@ -148,51 +145,48 @@ check_params()
    }
 
    if (endian == UNSPECIFIED_ENDIAN) {
-      if (header_type == RIFF_sound_file)
+      if (header_type == MUS_RIFF)
          endian = CREATE_LITTLE_ENDIAN;
       else
          endian = DEFAULT_ENDIAN;
    }
 
    if (endian == CREATE_BIG_ENDIAN)
-      data_format = is_short? snd_16_linear : snd_32_float;
+      data_format = is_short? MUS_BSHORT : MUS_BFLOAT;
    else
-      data_format = is_short? snd_16_linear_little_endian :
-                                                   snd_32_float_little_endian;
+      data_format = is_short? MUS_LSHORT : MUS_LFLOAT;
 
    /* Check for combinations of parameters we don't allow.
       See the NOTE at bottom of usage message.
    */
-   if (header_type == AIFF_sound_file) {
-      if (!is_aifc && endian == CREATE_LITTLE_ENDIAN) {
+   if (header_type == MUS_AIFF) {
+      if (endian == CREATE_LITTLE_ENDIAN) {
          fprintf(stderr, "AIFF little-endian header not allowed.\n");
          exit(1);
       }
-      if (!is_aifc && !is_short) {
-         is_aifc = TRUE;
+      if (!is_short) {
+         header_type = MUS_AIFC;
          fprintf(stderr, "WARNING: using AIFC header for floats.\n");
       }
-      if (is_aifc && data_format == snd_32_float_little_endian) {
+   }
+   if (header_type == MUS_AIFC) {
+      if (data_format == MUS_LFLOAT) {
          fprintf(stderr, "AIFC little-endian float header not allowed.\n");
          exit(1);
       }
    }
-   if (header_type == IRCAM_sound_file && endian == CREATE_LITTLE_ENDIAN) {
+   if (header_type == MUS_IRCAM && endian == CREATE_LITTLE_ENDIAN) {
       fprintf(stderr, "IRCAM little-endian header not allowed.\n");
       exit(1);
    }
-   if (header_type == NeXT_sound_file && endian == CREATE_LITTLE_ENDIAN) {
+   if (header_type == MUS_NEXT && endian == CREATE_LITTLE_ENDIAN) {
       fprintf(stderr, "NeXT little-endian header not allowed.\n");
       exit(1);
    }
-   if (header_type == RIFF_sound_file && endian == CREATE_BIG_ENDIAN) {
+   if (header_type == MUS_RIFF && endian == CREATE_BIG_ENDIAN) {
       fprintf(stderr, "RIFF big-endian header not allowed.\n");
       exit(1);
    }
-
-   /* Tell sndlib which AIF flavor to write. */
-   if (header_type == AIFF_sound_file)
-      set_aifc_header(is_aifc);
 
 #ifdef DEBUG
    printf("%s: nchans=%d, srate=%d, fmtname=%s, %s, %s\n",
@@ -335,18 +329,15 @@ main(int argc, char *argv[])
          fprintf(stderr, "Error reading header (%s)\n", strerror(errno));
          exit(1);
       }
-      old_header_type = c_snd_header_type();
-      old_format = c_snd_header_format();
+      old_header_type = mus_header_type();
+      old_format = mus_header_format();
       if (NOT_A_SOUND_FILE(old_header_type)
                                          || INVALID_DATA_FORMAT(old_format)) {
          fprintf(stderr, "\nWARNING: \"%s\" exists, but doesn't look like "
                          "a sound file.\n\n", sfname);
          drastic_change = TRUE;
-         old_header_type = raw_sound_file;
+         old_header_type = MUS_RAW;
       }
-      else if (old_header_type == AIFF_sound_file
-                               && is_aifc != sndlib_current_header_is_aifc())
-         drastic_change = TRUE;
       else if (old_header_type != header_type || old_format != data_format)
          drastic_change = TRUE;
       else
@@ -357,9 +348,9 @@ main(int argc, char *argv[])
          exit(1);
       }
 
-      old_data_location = c_snd_header_data_location();
-      old_nsamps = c_snd_header_data_size();         /* samples, not frames */
-      old_datum_size = c_snd_header_datum_size();
+      old_data_location = mus_header_data_location();
+      old_nsamps = mus_header_samples();         /* samples, not frames */
+      old_datum_size = mus_header_data_format_to_bytes_per_sample();
    }
 
    result = sndlib_write_header(fd, 0, header_type, data_format, srate, nchans,
@@ -382,11 +373,11 @@ main(int argc, char *argv[])
          exit(1);
       }
 
-      if (data_format != old_format && old_header_type != raw_sound_file)
+      if (data_format != old_format && old_header_type != MUS_RAW)
         if (! FORMATS_SAME_BYTE_ORDER(data_format, old_format))
             printf("WARNING: Byte order changed!\n");
 
-      datum_size = c_snd_header_datum_size();
+      datum_size = mus_header_data_format_to_bytes_per_sample();
 
       loc_byte_diff = data_location - old_data_location;
 
