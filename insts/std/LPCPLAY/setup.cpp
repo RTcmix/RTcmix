@@ -6,6 +6,7 @@
 #include "setup.h"
 #include "lp.h"
 #include "DataSet.h"
+#include <RTcmix.h>
 
 static double lowthresh, highthresh;
 static float maxdev;	// lpcplay, set from outside
@@ -115,7 +116,7 @@ double dataset(float *p, int n_args, double *pp)
 
 	DataSet *dataSet = new DataSet;
 	
-	int frms = dataSet->open(name, npolesGuess, SR);
+	int frms = dataSet->open(name, npolesGuess, RTcmix::sr());
 	
 	if (frms < 0)
 	{
