@@ -85,16 +85,33 @@ OSSAudioDevice::setDeviceFormat(int dev, int sampleFormat,
 
 	int reqChans = *chans;
 #ifndef SOUND_PCM_WRITE_CHANNELS	// OLD VERSION
-	if (reqChans != 1 && reqChans != 2)
+	if (reqChans != 1 && reqChans != 2) {
 		return error("This device supports only mono and stereo");
+	}
 #else
 	if (::ioctl(dev, SOUND_PCM_WRITE_CHANNELS, &reqChans) == 0) {
-		if (reqChans != *chans) {
-			PRINT0("OSSAudioDevice::setDeviceFormat:  Device channel count is %d\n", reqChans);
+		if (reqChans < *chans) {
+			PRINT0("OSSAudioDevice::setDeviceFormat:  Max device channel count is %d\n", reqChans);
+			return error("OSS device does not support this channel count");
+		}
+		else if (reqChans > *chans) {
+			PRINT0("OSSAudioDevice::setDeviceFormat:  Device forced channel count to %d\n", reqChans);
 			*chans = reqChans;
 		}
 	}
-	else if (reqChans > 2) {
+	else if (*chans < 8) {
+		PRINT0("OSSAudioDevice::setDeviceFormat: ioctl for SOUND_PCM_WRITE_CHANNELS returned %s -- trying 8 channels\n",
+		 	   strerror(errno));
+		// Try opening device in 8-channel mode
+		reqChans = 8;
+		if (::ioctl(dev, SOUND_PCM_WRITE_CHANNELS, &reqChans) == 0) {
+			PRINT0("OSSAudioDevice::setDeviceFormat:  Device forced channel count to %d\n", reqChans);
+			*chans = reqChans;
+		}
+	}
+	else if (*chans > 2) {
+		PRINT0("OSSAudioDevice::setDeviceFormat: ioctl for SOUND_PCM_WRITE_CHANNELS returned %s\n",
+		 	   strerror(errno));
 		return error("This device does not support setting chans > 2");
 	}
 	else
@@ -129,18 +146,19 @@ static char zeroBuffer[32768];
 void OSSAudioDevice::run()
 {
 	audio_buf_info info;
+	const bool playing = isPlaying();
 	PRINT1("OSSAudioDevice::run: top of loop\n");
 	while (waitForDevice(0) == true) {
-		if (ioctl(isPlaying() ? SNDCTL_DSP_GETOSPACE : SNDCTL_DSP_GETISPACE,
+		if (ioctl(playing ? SNDCTL_DSP_GETOSPACE : SNDCTL_DSP_GETISPACE,
 				  &info))
 		{
 			error("OSS error: ", strerror(errno));
 			break;
 		}
-		PRINT1("\tOSSAudioDevice::run: %d out of %d frags (%d bytes) can be written\n",
-			   info.fragments, info.fragstotal, info.bytes);
+		PRINT1("\tOSSAudioDevice::run: %d out of %d frags (%d bytes) can be %s\n",
+			   info.fragments, info.fragstotal, info.bytes, playing ? "written" : "read");
 		if (info.bytes < bufferSize() / 2) {
-			PRINT1("\tOSSAudioDevice::run: %d bytes avail...waiting\n", info.bytes);
+			PRINT1("\tOSSAudioDevice::run: only %d bytes avail...waiting\n", info.bytes);
 			usleep(10);
 			continue;
 		}
@@ -155,12 +173,14 @@ void OSSAudioDevice::run()
 			}
 		}
 	}
-	// Write buffer of zeros.
-	doSendFrames(zeroBuffer, sizeof(zeroBuffer)/getDeviceBytesPerFrame());
+	if (playing) {
+		// Write buffer of zeros.
+		doSendFrames(zeroBuffer, sizeof(zeroBuffer)/getDeviceBytesPerFrame());
 	
-	PRINT1("OSSAudioDevice::run: flushing...\n");
-	// Flush device.
-	ioctl(SNDCTL_DSP_SYNC, 0);
+		PRINT1("OSSAudioDevice::run: flushing...\n");
+		// Flush device.
+		ioctl(SNDCTL_DSP_SYNC, 0);
+	}
 
 	// If we stopped due to callback being done, set the state so that the
 	// call to close() does not attempt to call stop, which we cannot do in
@@ -174,9 +194,9 @@ void OSSAudioDevice::run()
 			close();
 		}
 	}
-//		printf("OSSAudioDevice::run: stop callback\n");
+	PRINT1("OSSAudioDevice::run: stop callback\n");
 	stopCallback();
-//	printf("OSSAudioDevice::run: thread exiting\n");
+	PRINT1("OSSAudioDevice::run: thread exiting\n");
 }
 
 #endif	// LINUX

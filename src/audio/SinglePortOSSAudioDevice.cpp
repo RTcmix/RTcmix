@@ -111,7 +111,7 @@ int SinglePortOSSAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 	int status = setDeviceFormat(device(), sampleFormat, &realChans, (int) srate);
 	if (status == 0) {
 		// Store the device params to allow format conversion.
-		setDeviceParams(deviceFormat | MUS_INTERLEAVED, chans, srate);
+		setDeviceParams(deviceFormat | MUS_INTERLEAVED, realChans, srate);
 	}
 	return status;
 }
@@ -165,7 +165,6 @@ SinglePortOSSAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 	int toWrite = frameCount * _bytesPerFrame;
 	int written = ::write(device(), frameBuffer, toWrite);
 	PRINT1("SinglePortOSSAudioDevice::doSendFrames: %d bytes to write, %d written\n", toWrite, written);
-//	if (toWrite < _bufferSize) {}
 	if (written > 0) {
 		int frames = written / _bytesPerFrame;
 		incrementFrameCount(frames);

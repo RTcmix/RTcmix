@@ -439,7 +439,6 @@ void *
 AudioDeviceImpl::convertFrame(void *inbuffer, void *outbuffer,
 							  int frames, bool recording)
 {
-	const int chans = getFrameChannels();
 		
 	if (_frameFormat == _deviceFormat) {
 		return inbuffer;
@@ -448,12 +447,18 @@ AudioDeviceImpl::convertFrame(void *inbuffer, void *outbuffer,
 		assert(inbuffer != NULL);
 		assert(outbuffer != NULL);
 		if (recording) {
+			const int inchans = getDeviceChannels();
+			const int outchans = getFrameChannels();
 			assert(_recConvertFunction != NULL);
-			(*_recConvertFunction)(inbuffer, outbuffer, chans, frames);
+			(*_recConvertFunction)(inbuffer, outbuffer,
+								   inchans, outchans, frames);
 		}
 		else {
+			const int inchans = getFrameChannels();
+			const int outchans = getDeviceChannels();
 			assert(_playConvertFunction != NULL);
-			(*_playConvertFunction)(inbuffer, outbuffer, chans, frames);
+			(*_playConvertFunction)(inbuffer, outbuffer, 
+									inchans, outchans, frames);
 		}
 		return outbuffer;
 	}
@@ -466,11 +471,13 @@ typedef unsigned char *UCharP;
 // Note:  The 24bit converters are only used for writing soundfiles to disk.
 
 template <class Type>
-static void _convertIToIB24Bit(void *in, void *out, int chans, int frames)
+static void _convertIToIB24Bit(void *in, void *out,
+							   int inchans, int outchans, int frames)
 {
 	Type *tin = (Type *) in;
 	unsigned char *cout = (unsigned char *) out;
-	int samps = chans * frames;
+	assert(inchans == outchans);
+	int samps = inchans * frames;
 	for (int s = 0; s < samps; ++s, cout += 3) {
 		const int samp = (int) (tin[s] * (1 << 8));
 		cout[0] = (samp >> 16);
@@ -480,11 +487,13 @@ static void _convertIToIB24Bit(void *in, void *out, int chans, int frames)
 }
 
 template <class Type>
-static void _convertIToIL24Bit(void *in, void *out, int chans, int frames)
+static void _convertIToIL24Bit(void *in, void *out,
+							   int inchans, int outchans, int frames)
 {
 	Type *tin = (Type *) in;
 	unsigned char *cout = (unsigned char *) out;
-	int samps = chans * frames;
+	assert(inchans == outchans);
+	int samps = inchans * frames;
 	for (int s = 0; s < samps; ++s, cout += 3) {
 		const int samp = (int) (tin[s] * (1 << 8));
 		cout[2] = (samp >> 16);
@@ -493,13 +502,15 @@ static void _convertIToIL24Bit(void *in, void *out, int chans, int frames)
 	}
 }
 
-static void _convertNFloatToIB24Bit(void *in, void *out, int chans, int frames)
+static void _convertNFloatToIB24Bit(void *in, void *out,
+									int inchans, int outchans, int frames)
 {
 	float **fin = (float **) in;
-	for (int ch = 0; ch < chans; ++ch) {
+	assert(inchans == outchans);
+	for (int ch = 0; ch < inchans; ++ch) {
 		float *fbuffer = fin[ch];
 		unsigned char *cout = ((unsigned char *) out) + (ch * 3);
-		int incr = chans * 3;
+		int incr = inchans * 3;
 		for (int fr = 0; fr < frames; ++fr, cout += incr) {
 			const int samp = (int) (fbuffer[fr] * (1 << 8));
 			cout[0] = (samp >> 16);
@@ -509,13 +520,15 @@ static void _convertNFloatToIB24Bit(void *in, void *out, int chans, int frames)
 	}
 }
 
-static void _convertNFloatToIL24Bit(void *in, void *out, int chans, int frames)
+static void _convertNFloatToIL24Bit(void *in, void *out,
+									int inchans, int outchans, int frames)
 {
 	float **fin = (float **) in;
-	for (int ch = 0; ch < chans; ++ch) {
+	assert(inchans == outchans);
+	for (int ch = 0; ch < inchans; ++ch) {
 		float *fbuffer = fin[ch];
 		unsigned char *cout = ((unsigned char *) out) + (ch * 3);
-		int incr = chans * 3;
+		int incr = outchans * 3;
 		for (int fr = 0; fr < frames; ++fr, cout += incr) {
 			int samp = (int) (fbuffer[fr] * (1 << 8));
 			cout[2] = (samp >> 16);
@@ -526,38 +539,48 @@ static void _convertNFloatToIL24Bit(void *in, void *out, int chans, int frames)
 }
 
 // This is the master template function which can handle conversion from one
-// sample format, interleave, normalization, and endian-ness to another.
+// sample format, channel count, interleave, normalization, and endian-ness 
+// to another.
 // The definitions of the Instream and Outstream classes are in audiostream.h.
 // ABANDON HOPE, ALL YE WHO ENTER HERE...
 
 template< class InStream, class OutStream >
-static void convert(void *_in, void *_out, int chans, int frames)
+static void convert(void *_in, void *_out, int inchans, int outchans, int frames)
 {
 	typedef typename InStream::StreamType InType;
     typedef typename OutStream::StreamType OutType;    
 	InType *in = (InType *)_in;
     OutType *out = (OutType *)_out;
-    for (int ch = 0; ch < chans; ++ch) {
-		typedef typename InStream::ChannelType InChanType;
-		typedef typename OutStream::ChannelType OutChanType;    
+	typedef typename InStream::ChannelType InChanType;
+	typedef typename OutStream::ChannelType OutChanType;    
+	int ch;
+    for (ch = 0; ch < inchans; ++ch) {
         InChanType *inbuffer = InStream::innerFromOuter(in, ch);
         OutChanType *outbuffer = OutStream::innerFromOuter(out, ch);
-		const int inIncr = InStream::channelIncrement(chans);
-		const int outIncr = OutStream::channelIncrement(chans);
+		const int inIncr = InStream::channelIncrement(inchans);
+		const int outIncr = OutStream::channelIncrement(outchans);
         for (int fr = 0; fr < frames;
 			 ++fr, inbuffer += inIncr, outbuffer += outIncr)
 		{
 			const OutChanType intermediate = 
 				::deNormalize<InChanType, OutChanType>(
 						InStream::normalized,
-								 			::swap(InStream::endian != kMachineEndian,
-												   *inbuffer));
+						::swap(InStream::endian != kMachineEndian,
+							   *inbuffer));
             *outbuffer = ::swap(OutStream::endian != kMachineEndian,
 								::normalize(OutStream::normalized,
 											intermediate));
-											
         }
     }
+	// Zero out any output channels beyond input channel count
+	for (; ch < outchans; ++ch) {
+        OutChanType *outbuffer = OutStream::innerFromOuter(out, ch);
+		const int outIncr = OutStream::channelIncrement(outchans);
+        for (int fr = 0; fr < frames; ++fr, outbuffer += outIncr)
+		{
+            *outbuffer = (OutChanType) 0;
+		}
+	}
 }
 
 // Conversion functions are assigned in pairs, regardless of rec/pb state.
@@ -572,7 +595,7 @@ int AudioDeviceImpl::setConvertFunctions(int rawFrameFormat,
 	
 	_recConvertFunction = NULL;
 	_playConvertFunction = NULL;
-	
+
 	// The device may be a file or HW, so take endian-ness into account for
 	// playback and some record options.
 	if (frameInterleaved) {

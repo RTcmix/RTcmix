@@ -6,7 +6,7 @@
 #include <sndlibsupport.h>	// RTcmix header
 #include "AudioDevice.h"
 
-typedef void (*ConversionFunction)(void *, void*, int, int);
+typedef void (*ConversionFunction)(void *, void*, int, int, int);
 
 class AudioDeviceImpl : public AudioDevice {
 public:

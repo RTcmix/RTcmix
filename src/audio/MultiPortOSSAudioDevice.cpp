@@ -133,9 +133,8 @@ int MultiPortOSSAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 			_bytesPerFrame = 0;
 			return error("Unsupported sample format");
 	};
-	// Eventually we will handle subsets of the open device count.
-	if (chans != _devCount)
-		return error("Channel count must match open device count for now");
+	if (chans > _devCount)
+		return error("Channel count must be <= device channel count.");
 
 	int status = 0;
 	// Set format on each open monaural device.
@@ -147,7 +146,7 @@ int MultiPortOSSAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 	if (status == 0) {
 		// Store the device params to allow format conversion.
 		setDeviceParams(deviceFormat | MUS_NON_INTERLEAVED,
-						chans,
+						_devCount,
 						srate);
 	}
 	return status;
