@@ -23,7 +23,7 @@ extern "C" {
 
 VSTART1::VSTART1() : Instrument()
 {
-	// future setup here?
+	branch1 = branch2 = 0;
 }
 
 VSTART1::~VSTART1()
@@ -45,8 +45,8 @@ int VSTART1::init(float p[], int n_args)
 // p16 = pitch update (default 200/sec)
 // p17 = stereo spread [optional]
 // p18 = flag for deleting pluck arrays (used by FRET, BEND, etc.) [optional]
-// assumes makegen 1 is the vibrato function and makegen 2 is the
-// vibrato amplitude envelope
+// assumes makegen 1 is the amplitude envelope, makegen 2 is the vibrato
+// function, and makegen 3 is the vibrato amplitude envelope
 
 	int elen;
 
@@ -65,10 +65,21 @@ int VSTART1::init(float p[], int n_args)
 	delayset(cpspch(p[7]), dq);
 	delayclean(dq);
 
-	vloc = floc(1);
+	amp = p[10];
+	amptable = floc(1);
+	if (amptable) {
+		int amplen = fsize(1);
+		tableset(p[1], amplen, amptabs);
+	}
+	else {
+		advise("VSTART1", "Setting phrase curve to all 1's.");
+		aamp = amp;
+	}
+
+	vloc = floc(2);
 	if (vloc == NULL)
-		die("VSTART1", "You need to store a vibrato function in gen num. 1.");
-	vlen = fsize(1);
+		die("VSTART1", "You need to store a vibrato function in gen num. 2.");
+	vlen = fsize(2);
 
 	vsibot = p[12] * (float)vlen/SR;
 	vsidiff = vsibot - (p[13] * (float)vlen/SR);
@@ -77,17 +88,16 @@ int VSTART1::init(float p[], int n_args)
 	vsi += vsibot;
 	vphase = 0.0;
 
-	eloc = floc(2);
+	eloc = floc(3);
 	if (eloc == NULL)
-		die("VSTART1", "You need to store a vibrato amp. envelope in gen num. 2.");
-	elen = fsize(2);
+		die("VSTART1", "You need to store a vibrato amp. envelope in gen num. 3.");
+	elen = fsize(3);
 	tableset(p[1], elen, tab);
 
 	dgain = p[5];
 	fbgain = p[6]/dgain;
 	cleanlevel = p[8];
 	distlevel = p[9];
-	amp = p[10];
 	vdepth = p[14];
 	reset = (int)p[16];
 	if (reset == 0) reset = 200;
@@ -106,29 +116,31 @@ int VSTART1::run()
 	float a,b;
 	float vamp;
 	float freqch;
-	int branch1,branch2;
 
 	Instrument::run();
 
-	branch1 = branch2 = 0;
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch1 < 0) {
 			vsi = (( (rrand()+1.0)/2.0) * vsidiff) + vsibot;
 			branch1 = (int)((float)vlen/vsi);
 			}
 		if (--branch2 < 0) {
+			if (amptable)
+				aamp = tablei(cursamp, amptable, amptabs) * amp;
 			vamp = tablei(cursamp, eloc, tab) * vdepth;
 			freqch = oscili(vamp,vsi,vloc,vlen,&vphase);
 			sset(freq+freqch, tf0, tfN, strumq1);
 			branch2 = reset;
 			vphase += (float)branch2 * vsi;
+			while (vphase >= (float) vlen)
+				vphase -= (float) vlen;
 			}
 
 		a = strum(d, strumq1);
 		b = dist(dgain*a);
 		d = fbgain*delay(b, dq);
 
-		out[0] = (cleanlevel*a + distlevel*b) * amp;
+		out[0] = (cleanlevel*a + distlevel*b) * aamp;
 
 		if (outputchans == 2) { /* split stereo files between the channels */
 			out[1] = (1.0 - spread) * out[0];
