@@ -51,6 +51,7 @@ FREEVERB :: FREEVERB() : Instrument()
 FREEVERB :: ~FREEVERB()
 {
    delete [] in;
+   delete rvb;
 }
 
 
