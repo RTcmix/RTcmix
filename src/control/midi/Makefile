@@ -16,13 +16,13 @@ endif
 
 CXXFLAGS += -I. -I../../rtcmix -Iportmidi/pm_common -Iportmidi/porttime
 
-LIBMIDI = libmidiconn.$(SHLIB_SUFFIX)
+LIBMIDI = libmidiconn.so
 
 all: $(LIBMIDI)
 
 $(LIBMIDI): depend $(OBJS) $(PMLIB)
 	$(RM) $@
-	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(OBJS) $(PMLIB) $(PTLIB) $(MIDISYSLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(PMLIB) $(PTLIB) $(MIDISYSLIB)
 
 glue.o: depend glue.cpp RTMidiPField.h
 	$(CXX) $(CXXFLAGS) -c -o glue.o glue.cpp
