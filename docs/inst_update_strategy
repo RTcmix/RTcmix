@@ -402,7 +402,7 @@ TRANSBEND(start, inskip, dur, amp, pitch_curve_genno, [inchan, pctleft])
             be present.  This is for backward compatibility.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-AMINST(start, dur, amp, car_freq, mod_freq, [pctleft])
+### AMINST(start, dur, amp, car_freq, mod_freq, [pctleft])
    [1. amp envelope]
     2. mod envelope
     3. car wavetable
@@ -451,7 +451,7 @@ BUTTER(start, inskip, dur, amp, type, steep, [balance, inchan, pctleft, bypass])
    PFields: pre-amp, num_bits, lowpass_cf, pctleft
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-EQ(start, inskip, dur, amp, type, [inchan, pctleft, bypass])
+### EQ(start, inskip, dur, amp, type, [inchan, pctleft, bypass])
    [1. amp envelope]
     2. cutoff freq curve
     3. Q curve
@@ -983,6 +983,9 @@ VOCODE(start, inskip, dur, amp, numfilt, lowcf, space_mult, bwpct,
    [1. amp envelope]
     2. cf freq table
 
+   ***NOTE NOTE NOTE: VOCODE removed from v4 collection, because it used
+      the objlib/SoundIn object, which seems pointless to maintain.
+
    ***NOTE: VOCODE preceded by optional call to excitationfile:
 
       excitationfile(filename)
@@ -1048,7 +1051,7 @@ VOCODESYNTH(start, inskip, dur, amp, numfile, lowcf, space_mult, car_transp,
             must return a local table.  If both, then arg overrides gen.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-WAVESHAPE(start, dur, pitch, index_low, index_high, amp, [pctleft])
+### WAVESHAPE(start, dur, pitch, index_low, index_high, amp, [pctleft])
    [1. amp envelope]
     2. wavetable
     3. transfer function
@@ -1071,7 +1074,7 @@ WAVESHAPE(start, dur, pitch, index_low, index_high, amp, [pctleft])
             arg overrides gen.  PField values should range from 0 to 1.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-WAVETABLE(start, dur, amp, freq, [pctleft])
+### WAVETABLE(start, dur, amp, freq, [pctleft])
    [1. amp envelope]
     2. wavetable
 
