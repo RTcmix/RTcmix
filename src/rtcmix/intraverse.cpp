@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/time.h>           // DT: 3/97 needed for time function
+#include <assert.h>
 #include "../H/audio_port.h"    // JGG: for ZERO_FRAMES_BEFORE
 #include "../rtstuff/heap/heap.h"
 #include "../rtstuff/rtdefs.h"
