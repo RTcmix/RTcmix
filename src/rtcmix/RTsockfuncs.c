@@ -9,9 +9,7 @@
 #include <signal.h>
 #include <sys/signal.h>
 #include <sys/time.h>
-#ifndef LINUX
 #include <sys/socket.h>
-#endif
 
 #include <RTsockfuncs.h>
 

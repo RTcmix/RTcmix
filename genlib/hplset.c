@@ -126,6 +126,7 @@ complex a,b;
 	f.re = d.re/e.re;
 	f.im = d.im/e.re;
 	/*prtcmplx(a); prtcmplx(b); prtcmplx(c); prtcmplx(d); prtcmplx(e); prtcmplx(f);*/
+	return(f);
 }
 complex xmultiply(a,b)
 complex a,b;
