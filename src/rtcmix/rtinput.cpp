@@ -42,7 +42,7 @@ static last_input_index = -1;
 
 
 
-/* ------------------------------------------------- get_last_inpud_index --- */
+/* ------------------------------------------------- get_last_input_index --- */
 /* Called by rtsetinput to find out which file to set for the inst.
 */
 int
@@ -59,10 +59,14 @@ get_last_input_index()
 static int
 open_linux_audio_input()
 {
-   if (in_port)
-      return in_port;         /* global set in rtsetparams */
+#ifdef MONO_DEVICES
+// FIXME: what do we return?
+#else /* !MONO_DEVICES */
+   if (in_port[0])
+      return in_port[0];         /* global set in rtsetparams */
    else
       return -1;
+#endif /* !MONO_DEVICES */
 }
 #endif /* LINUX */
 
@@ -266,6 +270,9 @@ rtinput(float p[], int n_args, double pp[])
 
       /* This signals inTraverse() to grab buffers from the audio device. */
       audio_on = 1;
+
+// FIXME: need to replace this with the bus spec scheme below... -JGG
+      audioNCHANS = (n_args > 2) ? (int) p[2] : NCHANS;
    }
 
 #ifdef INPUT_BUS_SUPPORT
