@@ -68,10 +68,8 @@ ug_intro()
 	UG_INTRO("i_arg",i_arg); /* to return int from command line */
 	UG_INTRO("s_arg",s_arg); /* to return string from command line */
 	UG_INTRO("n_arg",n_arg); /* to return num args from command line */
-/*        UG_INTRO("play_on",play_on);  to turn on real time play */
-/*        UG_INTRO("play_off",play_off); to turn off real time play */
-        UG_INTRO("print_on",m_print_is_on); /* to turn on printing*/
-        UG_INTRO("print_off",m_print_is_off); /* to turn off printing*/
+	UG_INTRO("print_on",m_print_is_on); /* to turn on printing*/
+	UG_INTRO("print_off",m_print_is_off); /* to turn off printing*/
 	UG_INTRO("str_num",str_num); /* string,num,strin,num, etc print out */
 	UG_INTRO("get_spray",m_get_spray);
 	UG_INTRO("spray_init",m_spray_init);
@@ -87,11 +85,9 @@ ug_intro()
 	UG_INTRO("reset",m_reset);
 	UG_INTRO("load",m_load); /* allows loading of dynamic libraries */
 	UG_INTRO("DUR",m_DUR);  /* returns duration for rtinput files */
-#ifdef USE_SNDLIB
 	UG_INTRO("PEAK",m_PEAK);  /* returns peak amp for rtinput files */
 	UG_INTRO("LEFT_PEAK",m_LEFT_PEAK);
 	UG_INTRO("RIGHT_PEAK",m_RIGHT_PEAK);
-#endif
 	UG_INTRO("bus_config", bus_config);
 }
 

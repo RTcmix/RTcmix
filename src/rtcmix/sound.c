@@ -24,13 +24,15 @@
 				worth it.  PL
 	10/95 -- moved common play_on() routine here.  play_off() still in
 	         soundio.c or soundio.m due to platform-specific stuff -DS
+	6/99 -- many changes to accommodate sndlib support, etc.  -JGG
 */
 
 #define SOUND
 #include <globals.h>
-#include "../H/ugens.h"
-#include "../H/sfheader.h"
-#include "../H/byte_routines.h"
+#include <ugens.h>
+#include <sndlibsupport.h>
+#include <sfheader.h>
+#include <byte_routines.h>
 #include "../H/dbug.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,9 +44,6 @@
 #include <sys/times.h>
 #include <string.h>
 
-#ifdef USE_SNDLIB
-#include "../H/sndlibsupport.h"
-#endif
 
 /* Used to determine if we should swap endian-ness */
 extern int swap;       /* defined in check_byte_order.c */
@@ -144,13 +143,11 @@ double m_open(float *p, short n_args, double *pp)
 	if (i < 0)
 		closesf();
 
-#ifdef USE_SNDLIB
 	if (status[fno] == O_RDWR
 			&& !WRITEABLE_HEADER_TYPE(sfheadertype(&sfdesc[fno]))) {
 		fprintf(stderr, "m_open: can't write this type of header.\n");
 		closesf();
 	}
-#endif
 
 	isopen[fno] = 1;
 
@@ -161,12 +158,10 @@ double m_open(float *p, short n_args, double *pp)
 	if(print_is_on) {
 		printf("name: %s   sr: %.3f  nchans: %d  class: %d\n",name,
 			sfsrate(&sfdesc[fno]),sfchans(&sfdesc[fno]), sfclass(&sfdesc[fno]));
-#ifdef USE_SNDLIB
 		printf("Soundfile type: %s\n",
 				sound_type_name(sfheadertype(&sfdesc[fno])));
 		printf("   data format: %s\n",
 				sound_format_name(sfdataformat(&sfdesc[fno])));
-#endif
 		printf("Duration of file is %f seconds.\n",
 			(float)(sfst[fno].st_size - headersize[fno])/(float)sfclass(&sfdesc[fno])/(float)sfchans(&sfdesc[fno])/sfsrate(&sfdesc[fno]));
 	}
@@ -214,37 +209,12 @@ double m_open(float *p, short n_args, double *pp)
 
 	/* read in former peak amplitudes, make sure zero'ed out to start.*/
 
-#ifdef USE_SNDLIB
-
 	/* In the sndlib version, we store peak stats differently. See
 	   comments in sndlibsupport.c for an explanation. The sndlib
 	   version of rwopensf reads peak stats, so here we just have to
 	   copy these into the sfm[fno] array. (No swapping necessary.)
 	*/
 	memcpy(&sfm[fno], &(sfmaxampstruct(&sfdesc[fno])), sizeof(SFMAXAMP));
-
-#else /* !USE_SNDLIB */
-
-	/* But need to pass swap flag to getsfcode ... and the header is swapped by now */
-	/* Could modify getsfcode to take fno as an arg too ... */
-	cp = getsfcode(&sfdesc[fno],SF_MAXAMP);
-	if(cp == NULL) {
-		fprintf(stderr, "Unable to read peak amp from header: code = NULL\n");
-		closesf();
-	}
-
-	bcopy(cp + sizeof(SFCODE), (char *) &sfm[fno], sizeof(SFMAXAMP));
-	
-	/* Need to swap here as well ... ugh */
-	if (swap_bytes[fno]) {
-	  for (i=0;i<SF_MAXCHAN;i++) {
-	    byte_reverse4(&(sfm[fno]).value[i]);
-	    byte_reverse4(&(sfm[fno]).samploc[i]);
-	  }
-	  byte_reverse4(&(sfm[fno]).timetag);
-	}
-
-#endif /* !USE_SNDLIB */
 
 	for(opk = (float *)peak[fno], i = 0; i<sfchans(&sfdesc[fno]); i++) 
 		*(opk+i) = sfmaxamp(&sfm[fno],i);
@@ -762,8 +732,6 @@ endnote(int xno)
 		}
 	}
 
-#ifdef USE_SNDLIB
-
 	/* Copy the updated peak stats into the SFHEADER struct for this
 	   output file. (No swapping necessary.)
 	*/
@@ -776,95 +744,6 @@ endnote(int xno)
 		closesf();
 	}
 	return 0;
-
-#else /* !USE_SNDLIB */
-
-	/* This was the last part of the biggest pain in the ass I ever */
-	/* had to deal with in all my hacking into cmix.  In short, byte_swapping */
-	/* sucks ! Dave Topper - Feb. 5, 1998 */
-	/* At this point I thought I was finished */
-	/* I was wrong */
-	/* It remained a pain the ass until Feb 10.  I hope I'm done now */
-	/* Nope:  2/22/97 - 11:53pm */ 
-
-	/* Here we need to do some header maintenance for the old Next stuff */
-	if (!is_Next[fno]) {
-		if(stat((char *)sfname[fno],&st))  {
-			fprintf(stderr, "putlength:  Couldn't stat file %s\n",sfname);
-			return(1);
-		}
-		NSchans(&sfdesc[fno]) = sfchans(&sfdesc[fno]);
-		NSmagic(&sfdesc[fno]) = SND_MAGIC;
-		NSsrate(&sfdesc[fno]) = sfsrate(&sfdesc[fno]);
-		NSdsize(&sfdesc[fno]) = (st.st_size - 1024);
-		NSdloc(&sfdesc[fno]) = 1024;
-	  
-		switch(sfclass(&sfdesc[fno])) {
-			case SF_SHORT:
-				NSclass(&sfdesc[fno]) = SND_FORMAT_LINEAR_16;
-				break;
-			case SF_FLOAT:
-				NSclass(&sfdesc[fno]) = SND_FORMAT_FLOAT;
-				break;
-			default:
-				NSclass(&sfdesc[fno]) = 0;
-				break;
-		}
-		if (swap_bytes[fno]) {
-			byte_reverse4(&NSchans(&sfdesc[fno]));
-  			byte_reverse4(&NSmagic(&sfdesc[fno]));
-			byte_reverse4(&NSsrate(&sfdesc[fno]));
-			byte_reverse4(&NSdsize(&sfdesc[fno]));
-  			byte_reverse4(&NSdloc(&sfdesc[fno]));
-  			byte_reverse4(&NSclass(&sfdesc[fno]));
-  		}
- 	}
-	
-	/* First, we swap the sfcode maxamp info, if we need to */
-	swap = swap_bytes[fno];
-	if (swap_bytes[fno]) {
-	  
-		for (i=0;i<SF_MAXCHAN;i++) { 
-			byte_reverse4(&(sfm[fno].value[i])); 
-			byte_reverse4(&(sfm[fno].samploc[i]));
-		}
-		byte_reverse4(&(sfm[fno].timetag));
-	  
-		/* Then we write that information to the header */
-		/* NOTE:  the putsfcode swaps and un-swaps the sfm[] data internally */
-		putsfcode(&sfdesc[fno],&sfm[fno],&ampcode); 
-	  
-		/* Then swap the main header struct info */
-		byte_reverse4(&sfdesc[fno].sfinfo.sf_magic);
-		byte_reverse4(&sfdesc[fno].sfinfo.sf_srate);
-		byte_reverse4(&sfdesc[fno].sfinfo.sf_chans);
-		byte_reverse4(&sfdesc[fno].sfinfo.sf_packmode); 
-	  
-		/* Then write that header to the soundfile descriptor */
-		if(wheader(sfd[fno],(char *)&sfdesc[fno])) {  
-			fprintf(stderr,"Bad header write\n");
-			perror("write");
-			closesf();
-		}
-
-		/* THEN (this was the tricky part we SWAP THE HEADER INFO BACK !*/
-		byte_reverse4(&sfdesc[fno].sfinfo.sf_magic);
-		byte_reverse4(&sfdesc[fno].sfinfo.sf_srate);
-		byte_reverse4(&sfdesc[fno].sfinfo.sf_chans);
-		byte_reverse4(&sfdesc[fno].sfinfo.sf_packmode); 
-	}
-	
-	else {
-		/* Just do the normal thing */
-		putsfcode(&sfdesc[fno],&sfm[fno],&ampcode);
-		if(wheader(sfd[fno],(char *)&sfdesc[fno])) {
-			fprintf(stderr,"Bad header write\n");
-			perror("write");
-			closesf();
-		}
-	}
-
-#endif /* !USE_SNDLIB */
 }
 
 void
@@ -1117,12 +996,6 @@ closesf()
 		if(isopen[i]) {
 			if (status[i]) 
 				putlength(sfname[i], sfd[i], &sfdesc[i]);
-#ifndef USE_SNDLIB
- #ifdef sgi
-			if(sfdesc[i].sfinfo.handle) AFclosefile(sfdesc[i].sfinfo.handle);
-			sfdesc[i].sfinfo.handle = NULL;
- #endif
-#endif /* !USE_SNDLIB */
 			close(sfd[i]);
 		}
 	}
@@ -1144,11 +1017,7 @@ m_clean(float p[], int n_args) /* a fast clean of file, after header */
 		fprintf(stderr,"fno %d is write-protected!\n",fno);
 		closesf();
 	}
-#ifdef USE_SNDLIB
 	todo = originalsize[fno] - headersize[fno];
-#else
-	todo = originalsize[fno] - sizeof(SFHEADER);
-#endif
 
 	segment = (n_args > 1) ? 1 : 0;
 

@@ -2,9 +2,7 @@
 #include "../H/sfheader.h"
 #include <stdio.h>
 #include <unistd.h>
-#ifdef USE_SNDLIB
 #include <sndlibsupport.h>
-#endif
 
 extern SFMAXAMP      sfm[NFILES];
 extern SFHEADER	     sfdesc[NFILES];

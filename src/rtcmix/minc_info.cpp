@@ -1,20 +1,21 @@
 #include <globals.h>
 #include <prototypes.h>
-#include "../H/ugens.h"
-#include "../H/sfheader.h"
+#include <ugens.h>
+#include <sndlibsupport.h>
+#include <sfheader.h>
+#include "../rtstuff/rtdefs.h"
 #include <stdio.h>
 #include <sys/file.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "../rtstuff/rtdefs.h"
 
 
+/* These are all for the older disk-based cmix functions. */
 extern int	     isopen[NFILES];        /* open status */
 extern SFHEADER      sfdesc[NFILES];
 extern SFMAXAMP      sfm[NFILES];
 extern struct stat   sfst[NFILES];
 extern int headersize[NFILES];
-
 extern void sfstats(int fd);       /* defined in sfstats.c */
 
 
@@ -84,7 +85,6 @@ double m_DUR(float *p, int n_args)   /* returns duration for rtinput() files */
    return (inputFileTable[index].dur);
 }
 
-#ifdef USE_SNDLIB
 
 /* Note: the old versions of the peak info functions copy peak stats from
    the file header in memory into the sfm[fno] array maintained in sound.c.
@@ -162,72 +162,6 @@ m_right(float p[], int n_args)
 }
 
 
-#else /* !USE_SNDLIB */
-
-
-double m_peak(p,n_args)
-float *p;
-{
-	char *cp,*getsfcode();
-	int i,j;
-	float peak;
-	j = p[0];
-	if(!isopen[j]) {
-		fprintf(stderr, "You haven't opened file %d yet!\n", j);
-		closesf();
-	}
-	cp = getsfcode(&sfdesc[j],SF_MAXAMP);
-	bcopy(cp + sizeof(SFCODE), (char *) &sfm[j], sizeof(SFMAXAMP));
-	if(cp != NULL) {
-		for(i=0,peak=0; i<sfchans(&sfdesc[j]); i++)
-			if(sfmaxamp(&sfm[j],i) > peak) peak=sfmaxamp(&sfm[j],i);
-		return(peak);
-		}
-	return(0.);
-}
-
-double m_left(p,n_args)
-float *p;
-{
-	char *cp,*getsfcode();
-	int i,j;
-	j = p[0];
-	if(!isopen[j]) {
-		fprintf(stderr, "You haven't opened file %d yet!\n", j);
-		closesf();
-	}
-	cp = getsfcode(&sfdesc[j],SF_MAXAMP);
-	bcopy(cp + sizeof(SFCODE), (char *) &sfm[j], sizeof(SFMAXAMP));
-	if(cp != NULL) 
-		return(sfmaxamp(&sfm[j],0));
-	return(0.);
-}
-
-double m_right(p,n_args)
-float *p;
-{
-	char *cp,*getsfcode();
-	int i,j;
-	j = p[0];
-	if(!isopen[j]) {
-		fprintf(stderr, "You haven't opened file %d yet!\n", j);
-		closesf();
-	}
-	if(sfchans(&sfdesc[j]) == 1) return(0);
-	cp = getsfcode(&sfdesc[j],SF_MAXAMP);
-	bcopy(cp + sizeof(SFCODE), (char *) &sfm[j], sizeof(SFMAXAMP));
-	if(cp != NULL) 
-		return(sfmaxamp(&sfm[j],1));
-	return(0.);
-}
-
-
-#endif /* !USE_SNDLIB */
-
-
-#ifdef USE_SNDLIB
-
-#include <sndlibsupport.h>
 
 #define ALL_CHANS -1
 
@@ -343,9 +277,6 @@ m_RIGHT_PEAK(float p[], int n_args)
 {
    return get_peak(p[0], p[1], 1);
 }
-
-
-#endif /* !USE_SNDLIB */
 
 
 extern int sfd[NFILES];
