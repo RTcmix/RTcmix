@@ -36,6 +36,7 @@
 #include <string.h>
 #include "../../include/maxdispargs.h"
 #include "../../rtcmix/prototypes.h"
+#include "../../rtcmix/RTcmix.h"
 
 static PyObject *ErrorObject;
 
@@ -533,7 +534,7 @@ static PyObject *_call_dispatch(PyObject *args, char *funcname)
    }
 
    Arg retval;
-   int result = dispatch(funcname, rtcmixargs, nargs, &retval);
+   int result = RTcmix::dispatch(funcname, rtcmixargs, nargs, &retval);
 
    delete [] rtcmixargs;
 
