@@ -98,7 +98,7 @@ CXXFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
 SNDLIB = ../sndlib/sndlib.a
 
 ifeq ($(ARCH),LINUX)
-  SYSLIBS = -lpthread -lm -ldl -lefence
+  SYSLIBS = -lpthread -lm -ldl # -lefence
   LDFLAGS = $(SYSLIBS)
   SHARED_LDFLAGS = -shared 
 endif
