@@ -1,66 +1,84 @@
 include package.conf
 
-RTLIBDIRS = HAR JDELAY vMIX FREEVERB WAVETABLE FMINST STRUM RAP AM AMINST CLAR METAFLUTE STEREO WAVESHAPE FLANGE COMBFILT PAN IIR REVMIX TRANS MIXN TRANSBEND JFIR REV
+RTLIBDIRS = HAR JDELAY vMIX FREEVERB WAVETABLE FMINST STRUM RAP AM AMINST
+CLAR METAFLUTE STEREO WAVESHAPE FLANGE COMBFILT PAN IIR REVMIX TRANS MIXN
+TRANSBEND JFIR REV
 
-CMIXLIBDIRS = # bender denoise splice transpan
+CMIXLIBDIRS = 
 
 LIBDIRS = $(RTLIBDIRS) $(CMIXLIBDIRS)
+
+.PHONY: all progs dsos standalone install dso_install standalone_install \
+uninstall dso_uninstall standalone_uninstall clean cleanall
 
 all: progs
 
 progs:
 	@for DIR in $(LIBDIRS); \
 	do \
-	  ( cd $$DIR; echo "making in $$DIR..."; \
-	  $(MAKE) $(MFLAGS); echo "done in $$DIR"; ) \
+	  ( if test -d $$DIR; then cd $$DIR; echo "making in $$DIR..."; \
+	  $(MAKE) $(MFLAGS); echo "done in $$DIR"; fi ) \
+	done
+
+dsos: all
+
+standalone:
+	@for DIR in $(LIBDIRS); \
+	do \
+	  ( if test -d $$DIR; then cd $$DIR; echo "making standalone in $$DIR..."; \
+	  $(MAKE) $(MFLAGS) standalone; echo "done in $$DIR"; fi ) \
 	done
 
 install:
 	@for DIR in $(LIBDIRS); \
 	do \
-	  ( cd $$DIR; echo "making install in $$DIR..."; \
-	  $(INSTALL) `pwd`/lib$$DIR.so $(LIBDESTDIR)/libi$$DIR.so ; ) \
+	  ( if test -d $$DIR; then cd $$DIR; echo "making install in $$DIR..."; \
+	  $(MAKE) $(MFLAGS) install; fi ) \
 	done
 
-dsos:  all
-
-dso_install:  install
-
-standalone:
+dso_install:
 	@for DIR in $(LIBDIRS); \
 	do \
-	  ( cd $$DIR; echo "making in $$DIR..."; \
-	  $(MAKE) $(MFLAGS) standalone; echo "done in $$DIR" ); \
+	( if test -d $$DIR; then cd $$DIR; echo "making dso_install in $$DIR..."; \
+	  $(MAKE) $(MFLAGS) dso_install; fi ) \
 	done
 
 standalone_install:
 	@for DIR in $(LIBDIRS); \
 	do \
-	( cd $$DIR; echo "making install in $$DIR..."; \
-	  $(INSTALL) `pwd`/$$DIR $(DESTDIR); ) \
+	( if test -d $$DIR; then cd $$DIR; \
+	  echo "making standalone_install in $$DIR..."; \
+	  $(MAKE) $(MFLAGS) standalone_install; fi ) \
+	done
+
+uninstall:
+	@for DIR in $(LIBDIRS); \
+	do \
+	( if test -d $$DIR; then cd $$DIR; echo "making uninstall in $$DIR..."; \
+	  $(MAKE) $(MFLAGS) uninstall; fi ) \
+	done
+
+dso_uninstall:
+	@for DIR in $(LIBDIRS); \
+	do \
+	( if test -d $$DIR; then cd $$DIR; echo "making dso_uninstall in $$DIR..."; \
+	  $(MAKE) $(MFLAGS) dso_uninstall; fi ) \
+	done
+
+standalone_uninstall:
+	@for DIR in $(LIBDIRS); \
+	do \
+	( if test -d $$DIR; then cd $$DIR; \
+	  echo "making standalone_uninstall in $$DIR..."; \
+	  $(MAKE) $(MFLAGS) standalone_uninstall; fi ) \
 	done
 
 clean:
 	@for DIR in $(LIBDIRS); \
 	do \
-	  ( cd $$DIR; $(MAKE) clean; \
-	  $(RM) $(DESTDIR)/$$DIR; \
-	  $(RM) $(LIBDESTDIR)/lib$$DIR.so; ) \
+	  ( if test -d $$DIR; then cd $$DIR; echo "making clean in $$DIR..."; \
+		$(MAKE) $(MFLAGS) clean; fi ) \
 	done
 
-dso_clean:
-	@for DIR in $(LIBDIRS); \
-	do \
-	  ( cd $$DIR; $(MAKE) clean; \
-	  $(RM) $(LIBDESTDIR)/lib$$DIR.so; ) \
-	done
-
-standalone_clean:
-	@for DIR in $(LIBDIRS); \
-	do \
-	  ( cd $$DIR; $(MAKE) clean; \
-	  $(RM) $(DESTDIR)/$$DIR; \
-	done
-
-.PHONY: objlib
+cleanall: clean uninstall
 
