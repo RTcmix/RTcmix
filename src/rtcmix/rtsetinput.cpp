@@ -39,7 +39,14 @@ rtsetinput(float start_time, Instrument *inst)
 
    /* Fill in relevant data members of instrument class. */
    inst->inputsr = inputFileTable[index].srate;
-   inst->inputchans = inputFileTable[index].chans;
+
+// FIXME: not sure this is how we should do it. inputchans set according
+// to what bus_config specifies. Does user necessarily want that to change
+// to conform to sound file chans? Maybe just a warning and no change?  -JGG
+   if (inst->inputchans > inputFileTable[index].chans) {
+      fprintf(stderr, "WARNING: Changing bus config to match input chans.\n");
+      inst->inputchans = inputFileTable[index].chans;
+   }
 
    if (!inputFileTable[index].is_audio_dev) {
       int datum_size = sizeof(short);
