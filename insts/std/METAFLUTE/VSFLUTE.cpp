@@ -79,10 +79,10 @@ int VSFLUTE::run()
 {
 	int i;
 	float out[2];
-	float aamp,oamp;
+	float aamp=0.,oamp=0.;
 	float sig,del1sig;
 	float length1,length2;
-	float si1,si2;
+	float si1=0.,si2=0.;
 	int branch;
 
 	Instrument::run();

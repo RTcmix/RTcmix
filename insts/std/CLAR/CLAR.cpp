@@ -76,7 +76,7 @@ int CLAR::run()
 
 	Instrument::run();
 
-	aamp = 1.0;        /* in case amparr == NULL */
+	aamp = oamp = 1.0;        /* in case amparr or oamparr are NULL */
 
 	branch = 0;
 	for (i = 0; i < chunksamps; i++) {
@@ -85,8 +85,6 @@ int CLAR::run()
 				aamp = table(cursamp, amparr, amptabs);
 			if (oamparr)
 				oamp = tablei(cursamp, oamparr, oamptabs);
-			else
-				oamp = 1.0;
 			branch = skip;
 			}
 

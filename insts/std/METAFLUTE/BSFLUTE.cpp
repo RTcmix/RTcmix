@@ -73,9 +73,9 @@ int BSFLUTE::run()
 {
 	int i;
 	float out[2];
-	float aamp,oamp;
+	float aamp=0.,oamp=0.;
 	float sig,del1sig;
-	float length1,length2;
+	float length1=0.,length2=0.;
 	int branch;
 
 	Instrument::run();

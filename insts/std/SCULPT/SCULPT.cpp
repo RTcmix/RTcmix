@@ -57,8 +57,8 @@ int SCULPT::run()
 {
 	int i;
 	float out[2];
-	float si;
-	float overamp, aamp;
+	float si=0.;
+	float overamp, aamp=0.;
 
 	Instrument::run();
 

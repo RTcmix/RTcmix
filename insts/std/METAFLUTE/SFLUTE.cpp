@@ -71,7 +71,7 @@ int SFLUTE::run()
 {
 	int i;
 	float out[2];
-	float aamp,oamp;
+	float aamp=0.,oamp=0.;
 	float sig,del1sig;
 	int branch;
 

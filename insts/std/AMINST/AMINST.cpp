@@ -60,7 +60,7 @@ int AMINST::run()
 {
 	int i;
 	float out[2];
-	float aamp,maamp;
+	float aamp,maamp=0.;
 	float tval1,tval2;
 	int branch;
 
