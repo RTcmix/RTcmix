@@ -2,6 +2,7 @@
 #include "../H/complexf.h"
 #include <math.h>
 
+int
 fft(isi,nl,s) 
 long isi;
 long nl;
@@ -56,4 +57,6 @@ complex s[8192];
 			multiply( w, s[i], s[i]);
 		}
 	}
+
+	return 0;
 }
