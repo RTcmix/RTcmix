@@ -3,19 +3,23 @@ include ../makefile.conf
 PLAY = cmixplay
 NPLAY = nplay
 
+PLAY_HDRS = ../H/sndlibsupport.h ../sys/AudioDevice.h
+AUDIO_DEV_OBJS = ../sys/AudioDevice.o ../sys/AudioDeviceImpl.o \
+   ../sys/AudioIODevice.o ../sys/ThreadedAudioDevice.o \
+   ../sys/audio_dev_creator.o ../sys/NetAudioDevice.o \
+   ../sys/check_byte_order.o ../sys/sndlibsupport.o
+
 ifeq ($(ARCH),LINUX)
    PROGS = $(PLAY) playraw full-duplex-test
    RESAMPLE = resample
-   SYSLIBS = -lm   # only this, overriding makefile.conf
+   AUDIO_DEV_OBJS += ../sys/ALSAAudioDevice.o ../sys/OSSAudioDevice.o
+#  SYSLIBS = -lm   # only this, overriding makefile.conf
 endif
 ifeq ($(ARCH),MACOSX)
    PROGS = $(PLAY) #playraw full-duplex-test
    RESAMPLE = resample
+   AUDIO_DEV_OBJS += ../sys/OSXAudioDevice.o
    SYSLIBS = -framework CoreAudio
-endif
-ifeq ($(ARCH),SGI) # nothing here supported under Irix yet
-   PROGS =
-   RESAMPLE =
 endif
 
 ifeq ($(NPLAY_SUPPORT), TRUE)
@@ -27,11 +31,11 @@ SYSOBJS = ../sys/check_byte_order.o ../sys/sndlibsupport.o ../sys/audio_port.o
 
 all: $(PROGS) $(RESAMPLE)
 
-$(PLAY):  $(PLAY).o $(SYSOBJS)
-	$(CC) -o $(PLAY) $(SOUND_DRIVER) $(PLAY).o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
+$(PLAY):  $(PLAY).o $(AUDIO_DEV_OBJS)
+	$(CXX) -o $(PLAY) $(PLAY).o $(SYSLIBS) $(AUDIO_DEV_OBJS) $(SNDLIB)
 
-$(PLAY).o:  $(PLAY).c ../H/audio_port.h ../H/sndlibsupport.h
-	$(CC) $(CFLAGS) $(SOUND_DRIVER) -c $< -o $@
+$(PLAY).o:  $(PLAY).cpp $(PLAY_HDRS)
+	$(CXX) $(CXXFLAGS) $(SOUND_DRIVER) -c $< -o $@
 
 $(NPLAY):  $(NPLAY).o $(SYSOBJS)
 	$(CC) -o $(NPLAY) $(SOUND_DRIVER) $(NPLAY).o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
