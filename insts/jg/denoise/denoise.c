@@ -38,18 +38,22 @@ static void malerr(char *, int);
    can be the same as the input file.) Denoise can only process one
    channel at a time.
 
-   p0  N: number of bandpass filters (size of FFT) [must be power of 2]
-   p1  M: analysis window length [N]
-   p2  L: synthesis window length [M]
-   p3  D: decimation factor [M/8]
-   p4  b: begin time in noise reference soundfile
-   p5  e: end time in noise reference soundfile
-   p6  t: threshold above noise reference in dB [try 30]
-   p7  s: sharpness of noise-gate turnoff [1-5]
-   p8  n: number of fft frames to average over [5]
-   p9  m: minimum gain of noise-gate when off, in dB [-40]
-   p10 channel number (0=left, 1=right)
+   p0  input start time
+   p1  input duration (use dur(0) to get total file duration)
+   p2  N: number of bandpass filters (size of FFT) [must be power of 2]
+   p3  M: analysis window length [N]
+   p4  L: synthesis window length [M]
+   p5  D: decimation factor [M/8]
+   p6  b: begin time in noise reference soundfile
+   p7  e: end time in noise reference soundfile
+   p8  t: threshold above noise reference in dB [try 30]
+   p9  s: sharpness of noise-gate turnoff [1-5]
+   p10 n: number of fft frames to average over [5]
+   p11 m: minimum gain of noise-gate when off, in dB [-40]
+   p12 channel number (0=left, 1=right)
 
+   NOTE: the previous version of denoise did not have the first two pfields
+   listed above.  Scores for that version still work correctly with this one.
 
    Dolson's comments from the original source...
 
@@ -120,7 +124,7 @@ denoise(float p[], int n_args)
     nId,                       /* delayed input (analysis) sample */
     nOd,                       /* delayed output (synthesis) sample */
 //  nMin = 0,                  /* first input (analysis) sample */
-    nMax = 100000000;          /* last input sample (unless EOF) */
+    nMax = 200000000;          /* last input sample (unless EOF) */
 
    float Pi,                   /* 3.14159... */
     TwoPi,                     /* 2*Pi */
@@ -149,30 +153,51 @@ denoise(float p[], int n_args)
     flag;                      /* end-of-input flag */
 
    float srate;                /* sample rate from header on input file */
-
-   long nsampsIn, nsampsNoise;
-   int inchan, outchan, nchans, noiseInChan, class;
+   float inskip=0.0, indur=0.0;
+   long nsampsIn, nsampsNoise, samps_read;
+   int inchan, outchan, nchans, noiseInChan, class, process_whole_file=0;
    float inputdur, noiseInskip, noiseInend, noiseDur;
    float noiseIn[SF_MAXCHAN], in[SF_MAXCHAN], out[SF_MAXCHAN];
 
-   N = p[0];
-   M = p[1];
-   L = p[2];
-   D = p[3];
-   noiseInskip = p[4];
-   noiseInend = p[5];
-   noiseDur = p[5] - p[4];
-   th = p[6];
-   sh = p[7];
-   m = p[8];
-   g0 = p[9];
-   inchan = p[10];
-
-
-   /* initial sanity checks */
-
-   if (n_args < 10)
+   /* If 13 args, then first two are inskip and indur, followed by the
+      original 11 args. */
+   if (n_args == 11)
+      process_whole_file = 1;
+   else if (n_args == 13)
+      process_whole_file = 0;
+   else
       die("denoise", "Wrong number of arguments.");
+
+   if (process_whole_file) {
+      N = p[0];
+      M = p[1];
+      L = p[2];
+      D = p[3];
+      noiseInskip = p[4];
+      noiseInend = p[5];
+      noiseDur = p[5] - p[4];
+      th = p[6];
+      sh = p[7];
+      m = p[8];
+      g0 = p[9];
+      inchan = p[10];
+   }
+   else {
+      inskip = p[0];
+      indur = p[1];
+      N = p[2];
+      M = p[3];
+      L = p[4];
+      D = p[5];
+      noiseInskip = p[6];
+      noiseInend = p[7];
+      noiseDur = p[7] - p[6];
+      th = p[8];
+      sh = p[9];
+      m = p[10];
+      g0 = p[11];
+      inchan = p[12];
+   }
 
 
    /* input file */
@@ -183,9 +208,12 @@ denoise(float p[], int n_args)
       die("denoise", "You asked for channel %d of a %d-channel file.",
                                                               inchan, nchans);
    class = sfclass(&sfdesc[INPUT]);
-   inputdur = (float)(sfst[INPUT].st_size - headersize[INPUT])
+   if (process_whole_file)
+      inputdur = (float)(sfst[INPUT].st_size - headersize[INPUT])
                                       / (float)class / (float)nchans / srate;
-   nsampsIn = setnote(0., inputdur, INPUT);      /* processes the whole file */
+   else
+      inputdur = indur;
+   nsampsIn = setnote(inskip, inputdur, INPUT);
 
 
    /* output file */
@@ -470,12 +498,15 @@ denoise(float p[], int n_args)
 /* main loop:  If nMax is not specified it is assumed to be very large
    and then readjusted when getfloat detects the end of input. */
 
+   samps_read = 0;
    while (nId < (nMax + analWinLen)) {
 
       for (i = 0; i < Dd; i++) {
 #ifdef CMIX
          if (!GETIN(in, INPUT))
             Dd = i;             /* EOF ? */
+         if (++samps_read > nsampsIn)
+            Dd = i;
          *nextIn++ = in[inchan];
 #else
          if (getfloat(nextIn++) <= 0)
