@@ -62,7 +62,7 @@ int PANECHO::init(float p[], short n_args)
 	wait2 = p[5];
 	delset(delarray2, deltabs2, wait2);
 
-	regen = p[5];
+	regen = p[6];
 
 	amptable = floc(1);
 	if (amptable) {
