@@ -42,7 +42,7 @@ extern "C" {
 
     // socket stuff
     int s, ns;
-    int len;
+    unsigned int len;
     struct sockaddr_in sss;
     int err;
     struct sockdata *sinfo;
