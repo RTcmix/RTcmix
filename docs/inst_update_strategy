@@ -17,6 +17,7 @@ the new capabilities could add, or because updating them in a hybrid
 way would make an overly complex monstrosity.  In that case, new
 instruments, with new names, should be designed.
 
+Insts marked with "###" have already been updated.
 
 JG
 
@@ -26,7 +27,7 @@ JG
    Add PField update support where appropriate.
 ---------------------------------------------------------------------------
 
-FIR(start, inskip, dur, amp, num_coeff, coef1, coef2, ..., coeff99)
+### FIR(start, inskip, dur, amp, num_coeff, coef1, coef2, ..., coeff99)
    [no gens]
 
    PFields: amp
@@ -71,7 +72,7 @@ CLAR(start, dur, noise_amp, length1, length2, output_amp, d2_gain, [pctleft])
    PFields: noise_amp, length1, length2, output_amp, d2_gain, pctleft
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-COMBIT(start, inskip, dur, amp, pitch, rvb_time, [inchan, pctleft])
+### COMBIT(start, inskip, dur, amp, pitch, rvb_time, [inchan, pctleft])
    [1. amp envelope]
 
    PFields: amp, pitch, rvb_time, pctleft
@@ -85,32 +86,26 @@ COMPLIMIT(start, inskip, dur, pre_amp, post_amp, attack, release, threshold,
             bypass, pctleft
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-DECIMATE(start, inskip, dur, amp, num_bits, [lowpass_cf, inchan, pctleft])
-   [1. amp envelope]
-
-   PFields: amp, num_bits, lowpass_cf, pctleft
-
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-DEL1(start, inskip, dur, amp, delay_time, delay_amp, [inchan])
+### DEL1(start, inskip, dur, amp, delay_time, delay_amp, [inchan])
    [1. amp envelope]
 
    PFields: amp, delay_time, delay_amp
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-DELAY(start, inskip, dur, amp, delay_time, regen, ringdur, [inchan, pctleft])
+### DELAY(start, inskip, dur, amp, delay_time, regen, ringdur, [inchan, pctleft])
    [1. amp envelope]
 
    PFields: amp, delay_time, regen, pctleft
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-DISTORT(start, inskip, dur, amp, type, gain, lowpass_cf,
+### DISTORT(start, inskip, dur, amp, type, gain, lowpass_cf,
                                                 [inchan, pctleft, bypass])
    [1. amp envelope]
 
    PFields: amp, gain, lowpass_cf, pctleft, bypass
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-ELL(start, inskip, dur, amp, ringdur, [inchan, pctleft])
+### ELL(start, inskip, dur, amp, ringdur, [inchan, pctleft])
    [1. amp envelope]
 
    PFields: amp, pctleft
@@ -130,24 +125,24 @@ FOLLOWER: FOLLOWER(start, inskip, dur, car_amp, mod_amp, window_len,
    PFields: car_amp, mod_amp, window_len, smooth, pctleft
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-FREEVERB(start, inskip, dur, amp, room_size, predelay, ringdur, damp, dry,
+### FREEVERB(start, inskip, dur, amp, room_size, predelay, ringdur, damp, dry,
                                                                 wet, width)
    [1. amp envelope]
 
    PFields: amp, room_size, predelay, damp, dry, wet, width, pctleft
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-IIR: INPUTSIG(start, inskip, dur, amp, inchan, [pctleft])
+### IIR: INPUTSIG(start, inskip, dur, amp, inchan, [pctleft])
    [1. amp envelope]
 
    PFields: amp, pctleft
 
-IIR: NOISE(start, dur, amp, [pctleft])
+### IIR: NOISE(start, dur, amp, [pctleft])
    [1. amp envelope]
 
    PFields: amp, pctleft
 
-IIR: PULSE(start, dur, amp, pitch, [pctleft])
+### IIR: PULSE(start, dur, amp, pitch, [pctleft])
    [1. amp envelope]
 
    PFields: amp, pctleft
@@ -183,7 +178,7 @@ METAFLUTE: SFLUTE(start, dur, noise_amp, length1, length2, output_amp,
    PFields: noise_amp, output_amp, pctleft (others?)
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-MIX(start, inskip, dur, amp, chan0out, [chan1out, ..., chanNout])
+### MIX(start, inskip, dur, amp, chan0out, [chan1out, ..., chanNout])
    [1. amp envelope]
 
    PFields: amp
@@ -202,13 +197,13 @@ MROOM(start, inskip, dur, amp, right_dist, front_dist, rvb_time, reflect,
    ***NOTE: not sure this inst is worth maintaining
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-MULTICOMB(start, inskip, dur, amp, freq_low, freq_high, rvb_time)
+### MULTICOMB(start, inskip, dur, amp, freq_low, freq_high, rvb_time)
    [1. amp envelope]
 
    PFields: amp, freq_low, freq_high, rvb_time
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-NOISE(start, dur, amp, [pctleft])
+### NOISE(start, dur, amp, [pctleft])
    [1. amp envelope]
 
    PFields: amp
@@ -216,7 +211,7 @@ NOISE(start, dur, amp, [pctleft])
    ***NOTE: name conflict with IIR NOISE inst
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-PANECHO(start, inskip, dur, amp, chan0del, chan1del, regen, ringdur, [inchan])
+### PANECHO(start, inskip, dur, amp, chan0del, chan1del, regen, ringdur, [inchan])
    [1. amp envelope]
 
    PFields: amp, chan0del, chan1del, regen
@@ -237,7 +232,7 @@ REVERBIT(start, inskip, dur, amp, rvb_time, rvb_pct, rt_chan_delay,
    PFields: amp, rvb_time, rvb_pct, rt_chan_delay, lowpass_cf
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-REVMIX(start, inskip, dur, amp, [inchan, pctleft])
+### REVMIX(start, inskip, dur, amp, [inchan, pctleft])
    [1. amp envelope]
 
    PFields: amp, pctleft
@@ -265,7 +260,7 @@ SROOM(start, inskip, dur, amp, right_dist, front_dist, x_src_pos, y_src_pos,
    ***NOTE: not sure this inst is worth maintaining
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-STEREO(start, inskip, dur, amp, pctleft1, [pctleft2, ..., pctleftN])
+### STEREO(start, inskip, dur, amp, pctleft1, [pctleft2, ..., pctleftN])
    [1. amp envelope]
 
    PFields: amp, pctleft1...pctleftN
@@ -426,6 +421,12 @@ BUTTER(start, inskip, dur, amp, type, steep, [balance, inchan, pctleft, bypass])
             If both, then arg overrides gen.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### DECIMATE(start, inskip, dur, pre-amp, num_bits, [lowpass_cf, inchan, pctleft])
+   [1. post-processing amp envelope]
+
+   PFields: pre-amp, num_bits, lowpass_cf, pctleft
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 EQ(start, inskip, dur, amp, type, [inchan, pctleft, bypass])
    [1. amp envelope]
     2. cutoff freq curve
@@ -540,7 +541,7 @@ FOLLOWER: FOLLOWGATE(start, inskip, dur, car_amp, mod_amp, window_len,
             If both, then arg overrides gen.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-IIR: BUZZ(start, dur, amp, pitch, [pctleft])
+### IIR: BUZZ(start, dur, amp, pitch, [pctleft])
    [1. amp envelope]
     2. sine wavetable
 
