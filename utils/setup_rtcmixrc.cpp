@@ -20,17 +20,18 @@ int main()
 
 /* We make our own warn function so that we don't have to pull in more
    RTcmix code.  This must have the same signature as the real one in
-   message.c.
+   message.c.  It doesn't print WARNING ***, though.
 */
 #include <stdarg.h>
 
-#define PREFIX  "*** "       /* print before WARNING and ERROR */
 #define BUFSIZE 1024
 
 extern "C" {
 void
 warn(const char *inst_name, const char *format, ...)
 {
+   // ignore inst_name
+
    char     buf[BUFSIZE];
    va_list  args;
 
@@ -38,9 +39,7 @@ warn(const char *inst_name, const char *format, ...)
    vsnprintf(buf, BUFSIZE, format, args);
    va_end(args);
 
-   if (inst_name)
-      fprintf(stderr, "\n" PREFIX "WARNING [%s]:  %s\n\n", inst_name, buf);
-   else
-      fprintf(stderr, "\n" PREFIX "WARNING:  %s\n\n", buf);
+   fprintf(stderr, "\n%s\n\n", buf);
 }
-}
+} // extern "C"
+
