@@ -67,7 +67,7 @@ static void *Pt_CallbackProc(void *p)
         select(0, NULL, NULL, NULL, &timeout);
         (*(parameters->callback))(Pt_Time(), parameters->userData);
     }
-    printf("Pt_CallbackProc exiting\n");
+//  printf("Pt_CallbackProc exiting\n");
 //    free(parameters);
     return NULL;
 }
@@ -97,7 +97,7 @@ PtError Pt_Start(int resolution, PtCallback *callback, void *userData)
 
 PtError Pt_Stop()
 {
-    printf("Pt_Stop called\n");
+//  printf("Pt_Stop called\n");
     pt_callback_proc_id++;
     time_started_flag = FALSE;
     return ptNoError;

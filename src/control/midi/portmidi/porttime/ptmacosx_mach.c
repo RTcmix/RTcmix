@@ -57,7 +57,7 @@ static void *Pt_CallbackProc(void *p)
     
     
     /* to kill a process, just increment the pt_callback_proc_id */
-    printf("pt_callback_proc_id %d, id %d\n", pt_callback_proc_id, parameters->id);
+//  printf("pt_callback_proc_id %d, id %d\n", pt_callback_proc_id, parameters->id);
     while (pt_callback_proc_id == parameters->id) {
         /* wait for a multiple of resolution ms */
         UInt64 wait_time;
@@ -68,7 +68,7 @@ static void *Pt_CallbackProc(void *p)
         error = mach_wait_until(wait_time);
         (*(parameters->callback))(Pt_Time(), parameters->userData);
     }
-    printf("Pt_CallbackProc exiting\n");
+//  printf("Pt_CallbackProc exiting\n");
     free(parameters);
     return NULL;
 }
@@ -100,7 +100,7 @@ PtError Pt_Start(int resolution, PtCallback *callback, void *userData)
 
 PtError Pt_Stop()
 {
-    printf("Pt_Stop called\n");
+//  printf("Pt_Stop called\n");
     pt_callback_proc_id++;
     time_started_flag = FALSE;
     return ptNoError;
