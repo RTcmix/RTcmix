@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2004-06-18  Douglas Scott  <netdscott-at-netscape.net>
+
+	* Instrument::init() prototype changed to take double[], int. 
+	* Added mixerr value for intstrument initialize failure.
+
 Thursday, June 17, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * Added test program "coreaudioprobe," which prints out some useful
