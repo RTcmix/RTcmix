@@ -93,7 +93,7 @@ write_buffer(int ports[], char *buf, int datum_size, int nframes, int nchans)
    buf_bytes = nframes * datum_size;
 
    if (tmpbuf == NULL) {                   /* first time, so allocate */
-      tmpbuf = (short *)malloc((size_t)buf_bytes);
+      tmpbuf = malloc((size_t)buf_bytes);
       assert(tmpbuf != NULL);
    }
    for (n = 0; n < nchans; n++) {
@@ -121,16 +121,12 @@ write_buffer(int ports[], char *buf, int datum_size, int nframes, int nchans)
       chans in the larger array.
    */
    if (card_chans > nchans) {
-      int k;
-
-      buf_bytes = nframes * card_chans * datum_size;
-
       if (tmpbuf == NULL) {                   /* first time, so allocate */
-         tmpbuf = (short *)malloc((size_t)buf_bytes);
+         tmpbuf = calloc(nframes * card_chans, sizeof(short));   /* zeros mem */
          assert(tmpbuf != NULL);
       }
-
       for (n = 0; n < nchans; n++) {
+         int k;
          j = k = n;
          for (i = 0; i < nframes; i++) {
             tmpbuf[k] = ((short *)buf)[j];
@@ -138,10 +134,7 @@ write_buffer(int ports[], char *buf, int datum_size, int nframes, int nchans)
             k += card_chans;
          }
       }
-      for ( ; n < card_chans; n++)
-         for (i = 0, k = n; i < nframes; i++, k += card_chans)
-            tmpbuf[k] = 0;
-
+      buf_bytes = nframes * card_chans * datum_size;
       bytes_written = write(ports[0], tmpbuf, buf_bytes);
    }
    else {
