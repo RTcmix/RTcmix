@@ -1,3 +1,4 @@
+#include <globals.h>
 #include "../H/ugens.h"
 #include "../H/sfheader.h"
 #include <stdio.h>
@@ -13,8 +14,6 @@ extern SFMAXAMP      sfm[NFILES];
 extern struct stat   sfst[NFILES];
 extern int headersize[NFILES];
 
-extern int rtInputIndex;
-extern InputDesc inputFileTable[];
 
 
 double m_sr(p,n_args)

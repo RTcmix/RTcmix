@@ -2,15 +2,12 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-#include <iostream.h>
+#include <globals.h>
 #include <stdio.h>
 #include "../rtstuff/Instrument.h"
 #include "../rtstuff/rtdefs.h"
 
 /* these are defined in rtinput.c */
-extern InputDesc inputFileTable[];
-extern off_t rtInitialOffset;
-extern int rtInputIndex;
 extern double inSR;
 extern int inNCHANS;
 extern int input_on;
