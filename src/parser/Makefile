@@ -1,7 +1,7 @@
 include ../../makefile.conf
 
 ifeq ($(PYTHON_SUPPORT), TRUE)
-PYTHON_INCLUDE_DIR = `$(PYTHON) ../parser/python/print_python_includedir.py`
+PYTHON_INCLUDE_DIR = `$(PYTHON) python/print_python_includedir.py`
 endif
 
 .PHONY: minc perl python install-perl install-python clean
