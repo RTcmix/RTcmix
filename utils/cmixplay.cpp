@@ -16,6 +16,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <ctype.h>
+#include <stdint.h>  // for int32_t, int16_t
 #include <termios.h>
 #include <errno.h>
 #include <assert.h>
@@ -692,7 +693,7 @@ Player::readBuffer()
    }
    else if (_is32bitFile) {   // 32bit int
       static const float intScale = 32768.0f / INT_MAX;
-      int *bufp = (int *) _inBuf;
+      int32_t *bufp = (int32_t *) _inBuf;
       if (_swap) {
          for (int i = 0; i < sampsRead; i++) {
             bufp[i] = reverse_int4(&bufp[i]);
@@ -727,7 +728,7 @@ Player::readBuffer()
       }
    }
    else {      // 16bit int
-      short *bufp = (short *) _inBuf;
+      int16_t *bufp = (int16_t *) _inBuf;
       if (_swap) {
          for (int i = 0; i < sampsRead; i++) {
             bufp[i] = reverse_int2(&bufp[i]);
@@ -885,7 +886,7 @@ make_time_string(const double seconds, const int precision)
 static const double
 get_seconds(const char timestr[], TimeFormat *format)
 {
-   double seconds;
+   double seconds = 0.0;
 
    assert(timestr != NULL);
    assert(format != NULL);
@@ -907,12 +908,15 @@ get_seconds(const char timestr[], TimeFormat *format)
          free(str);
          return -1.0;
       }
-      pos = NULL;
-      seconds = strtod(p, &pos);
-      if ((seconds == 0.0 && pos == p) || errno == ERANGE) {
-         fprintf(stderr, "\nError converting time string (min:sec format).\n");
-         free(str);
-         return -1.0;
+      if (strlen(p) > 0) {    // NB: "12:" is valid, meaning "12:00"
+         pos = NULL;
+         seconds = strtod(p, &pos);
+         if ((seconds == 0.0 && pos == p) || errno == ERANGE) {
+            fprintf(stderr,
+                         "\nError converting time string (min:sec format).\n");
+            free(str);
+            return -1.0;
+         }
       }
       seconds += minutes * 60.0;
       *format = TimeFormatMinutesSeconds;
@@ -1106,8 +1110,9 @@ main(int argc, char *argv[])
       fprintf(stderr, "You didn't give a valid filename.\n");
       exit(EXIT_FAILURE);
    }
-   if (start_time < 0.0) {
-      fprintf(stderr, "Start time must be positive.\n");
+   if (start_time < 0.0 || end_time < 0.0 || request_dur < 0.0
+         || hk_skip_time < 0.0) {
+      // bad time format; get_seconds already gave error message
       exit(EXIT_FAILURE);
    }
    if (start_time > 0.0 && end_time > 0.0 && start_time >= end_time) {
