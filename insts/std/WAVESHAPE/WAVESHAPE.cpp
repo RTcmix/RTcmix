@@ -1,3 +1,18 @@
+/* WAVESHAPE -- a waveshaping instrument
+ 
+   p0 = start time
+   p1 = duration
+   p2 = pitch (hz or oct.pc)
+   p3 = index low point
+   p4 = index high point
+   p5 = amp
+   p6 = stereo spread (0-1) <optional>
+
+   function slot 1 is amp envelope
+            slot 2 is waveform to be shaped (generally sine)
+            slot 3 is the transfer function
+            slot 4 is the index envelope
+*/
 #include <iostream.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -8,6 +23,18 @@
 #include <rt.h>
 #include <rtdefs.h>
 
+#ifdef COMPATIBLE_FUNC_LOCS         /* set in makefile.conf */
+  #define AMP_GEN_SLOT     2
+  #define WAVE_GEN_SLOT    1
+  #define XFER_GEN_SLOT    3
+  #define INDEX_GEN_SLOT   4
+#else
+  #define AMP_GEN_SLOT     1        /* so that we can use setline instead */
+  #define WAVE_GEN_SLOT    2
+  #define XFER_GEN_SLOT    3
+  #define INDEX_GEN_SLOT   4
+#endif
+
 
 WAVESHAPE::WAVESHAPE() : Instrument()
 {
@@ -16,37 +43,30 @@ WAVESHAPE::WAVESHAPE() : Instrument()
 
 int WAVESHAPE::init(float p[], short n_args)
 {
-// p0 = start; p1 = dur; p2 = pitch (hz or oct.pc); 
-// p3 = index low point; p4 = index  high point; p5 = amp
-// p6 = stereo spread (0-1) <optional>
-// function slot 1 is waveform to be shaped (generally sine)
-//    slot 2 is amp envelope
-//    slot 3 is the transfer function
-//    slot 4 is the index envelope
-
 	nsamps = rtsetoutput(p[0], p[1], this);
 
-	waveform = floc(1);    /* function 1 is waveform */
+	waveform = floc(WAVE_GEN_SLOT);
 	if (waveform == NULL)
-		die("WAVESHAPE", "You need to store a waveform in function 1.");
-	lenwave = fsize(1);
+		die("WAVESHAPE", "You need to store a waveform in function %d.",
+								WAVE_GEN_SLOT);
+	lenwave = fsize(WAVE_GEN_SLOT);
 
 	if (p[2] < 15.0) p[2] = cpspch(p[2]);
 	si = p[2] * (float)(lenwave/SR);
 
-	ampenv = floc(2);
+	ampenv = floc(AMP_GEN_SLOT);
 	if (ampenv) {
-		int lenamp = fsize(2);
+		int lenamp = fsize(AMP_GEN_SLOT);
 		tableset(p[1], lenamp, amptabs);
 	}
 	else
 		advise("WAVESHAPE", "Setting phrase curve to all 1's.");
 
-	xfer = floc(3);
-	lenxfer = fsize(3);
+	xfer = floc(XFER_GEN_SLOT);
+	lenxfer = fsize(XFER_GEN_SLOT);
 
-	indenv = floc(4);  /* function 4 is index guide */
-	lenind = fsize(4);
+	indenv = floc(INDEX_GEN_SLOT);
+	lenind = fsize(INDEX_GEN_SLOT);
 	tableset(p[1],lenind,indtabs);
 
 	diff = p[4] - p[3];
