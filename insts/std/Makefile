@@ -21,13 +21,9 @@ install:
 	@for DIR in $(LIBDIRS); \
 	do \
 	( cd $$DIR; echo "making install in $$DIR..."; \
-	ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR); ) \
-	done
-	@for DIR in $(LIBDIRS); \
-	do \
-	( cd $$DIR; echo "making install in $$DIR..."; \
-	rm -f $(DESTDIR)/$$DIR; \
-	ln -fs `pwd`/$$DIR $(DESTDIR); ) \
+	  ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR); \
+	  rm -f $(DESTDIR)/$$DIR; \
+	  ln -fs `pwd`/$$DIR $(DESTDIR); ) \
 	done
 
 clean:
