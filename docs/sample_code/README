@@ -2,8 +2,6 @@ Here's some stuff to help you learn how to write RTcmix instruments.
 
 MYINST - how to write a very simple processor instrument
 MYSYNTH - how to write a very simple synthesis instrument
-myfuncs - how to write custom Minc functions (not an instrument)
-          (not really worthwhile now that Perl is available)
 
 -JGG
 
