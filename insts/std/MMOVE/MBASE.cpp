@@ -16,11 +16,11 @@
 #include <common.h>
 #include "msetup.h"
 
-//#define debug
-//#define SIG_DEBUG
-//#define LOOP_DEBUG
-//#define DELAY_DEBUG
-//#define MYDEBUG
+// #define debug
+// #define SIG_DEBUG
+// #define LOOP_DEBUG
+// #define DELAY_DEBUG
+// #define MYDEBUG
 
 #ifdef SIG_DEBUG
 #define DBG(stmt) { stmt; }
@@ -277,7 +277,6 @@ int MBASE::run()
 				exit(-1);
 
 			DBG1(printf("  inner loop: bufsamps = %d\n", bufsamps));
-
 			for (int ch = 0; ch < 2; ch++) {
 				for (int path = 0; path < 13; path++) {
 					Vector *vec = &m_vectors[ch][path];
@@ -306,7 +305,6 @@ int MBASE::run()
 					DBG(PrintSig(vec->Sig, bufsamps, 0.1));
 		 		}
 			}
-
 			DBG(printf("summing vectors\n"));
 			if (!m_binaural) {
 				// re-sum scaled reflected paths as early response

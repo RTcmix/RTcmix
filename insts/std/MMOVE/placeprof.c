@@ -13,3 +13,17 @@ profile()
    return 0;
 }
 
+static const char *dsoName = "libMPLACE";
+
+int
+registerSelf()
+{
+	registerFunction("MPLACE", dsoName);
+	registerFunction("RVB", dsoName);
+	registerFunction("matrix", dsoName); 
+	registerFunction("space", dsoName); 
+	registerFunction("mikes", dsoName); 
+	registerFunction("mikes_off", dsoName); 
+  	registerFunction("set_attenuation_params", dsoName); 
+	return 0;
+}
