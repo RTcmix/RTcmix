@@ -128,6 +128,9 @@ ifeq ($(PYTHON_SUPPORT), TRUE)
       # Pythons.  -JGG
       PYTHONLIBS += -lutil
    endif
+   ifeq ($(PYTHON_EXT_LINK), TRUE)
+      PYEXT = ../parser/python/rtcmix.so
+   endif
 endif
 
 PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts`
@@ -177,7 +180,7 @@ PMIX: $(CMIX_O) $(P_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
 
 PYMIX: $(CMIX_O) $(PY_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
 	$(CXX) -o PYMIX $(WORKAROUND) $(DYN) $(CMIX_O) $(PROFILE_O) \
-		$(PY_O) $(LIBS) $(LDFLAGS) $(PYTHONLIBS)
+		$(PY_O) $(LIBS) $(LDFLAGS) $(PYEXT) $(PYTHONLIBS)
 
 .PHONY: all standalone install dso_install standalone_install \
 		uninstall dso_uninstall standalone_uninstall clean cleanall

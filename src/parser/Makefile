@@ -1,7 +1,10 @@
 include ../../makefile.conf
 
 ifeq ($(PYTHON_SUPPORT), TRUE)
-PYTHON_INCLUDE_DIR = `$(PYTHON) python/print_python_includedir.py`
+   PYTHON_INCLUDE_DIR = `$(PYTHON) python/print_python_includedir.py`
+   ifeq ($(PYTHON_EXT_LINK), TRUE)
+      PYDEF = -DPYEXT_INIT
+   endif
 endif
 
 .PHONY: minc perl python install-perl install-python clean
@@ -16,7 +19,7 @@ perl: parse_with_perl.c rtcmix_parse.h
 	(cd perl; $(MAKE) $(MFLAGS) all;)
 
 python: parse_with_python.c rtcmix_parse.h
-	$(CC) $(CFLAGS) -I$(PYTHON_INCLUDE_DIR) -c parse_with_python.c
+	$(CC) $(CFLAGS) -I$(PYTHON_INCLUDE_DIR) $(PYDEF) -c parse_with_python.c
 	(cd python; $(MAKE) $(MFLAGS) all;)
 
 install-perl:

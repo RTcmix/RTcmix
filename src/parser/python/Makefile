@@ -21,10 +21,16 @@ $(MODULE_SRC): make_python_ext.pl $(MODULE_SRC).in $(FUNCLIST)
 
 $(MODULE): $(MODULE_SRC)
 	$(PYTHON) setup.py build
+ifeq ($(PYTHON_EXT_LINK), TRUE)
+	mv -f `find . -name rtcmix.so` .
+	$(RM) -r build
+endif
 
 # NB: need root for this; installs in python site-packages dir
 install:
+ifeq ($(PYTHON_EXT_LINK), )
 	$(PYTHON) setup.py install
+endif
 
 clean:
 	$(RM) $(FUNCLIST) $(MODULE).so $(MODULE)module.o $(MODULE_SRC)

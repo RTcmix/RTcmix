@@ -12,6 +12,9 @@
 static FILE *_script = NULL;
 static char *_script_name = NULL;
 
+#ifdef PYEXT_INIT
+extern void initrtcmix(void);    /* defined in rtcmixmodule.cpp */
+#endif
 
 /* ---------------------------------------------------------- parse_score --- */
 int
@@ -29,6 +32,11 @@ parse_score(int argc, char *argv[])
 
    /* Define sys.argv in Python. */
    PySys_SetArgv(argc, argv);
+
+   /* If we're linking statically to extension module, init it */
+#ifdef PYEXT_INIT
+   initrtcmix();
+#endif
 
    if (_script == NULL)
       _script = stdin;

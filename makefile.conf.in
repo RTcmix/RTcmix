@@ -42,6 +42,13 @@ PERL = perl
 # Say which python to use: just "python" if you only have one; otherwise,
 # give full path name of python to use, e.g., /usr/local/bin/python.
 PYTHON = python
+# We use a python extension to make RTcmix commands accessible inside
+# python.  The default is to link this extension statically.  If you
+# would like (or need) to link it dynamically, comment out the following
+# symbol.  Then go into src/parser/python and "make install" as root.
+# That will copy the extension into your system-wide site-packages dir,
+# where PYMIX will be able to find it at run time.
+PYTHON_EXT_LINK = TRUE
 
 # Uncomment this to enable code that lets you send and receive audio
 # sound over a network.  (See comments at the top of utils/nplay.c.)
@@ -67,8 +74,8 @@ PFIELD_CLASS_SUPPORT = TRUE
 # the OSS API, or ALSA if it is installed.
 
 # Linux Sound driver API -- overrides default
-#AUDIODRIVER=ALSA
-AUDIODRIVER=OSS
+#AUDIODRIVER = ALSA
+AUDIODRIVER = OSS
 
 SOUND_DRIVER = -D$(AUDIODRIVER)
 
