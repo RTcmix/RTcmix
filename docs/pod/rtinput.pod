@@ -1,0 +1,78 @@
+=head1 NAME
+
+rtinput - open a sound file or audio device for reading
+
+=head1 SYNOPSIS
+
+B<rtinput>(I<input_source> [, I<audio_type> ])
+
+=head1 DESCRIPTION
+
+Call B<rtinput> to open a sound file, or an audio device,
+for subsequent reading by real-time instruments.
+
+("Audio device" just refers to the hardware that handles sound I/O,
+such as a sound card on a PC or the built-in hardware on a Mac.)
+
+After B<rtinput> opens a sound file, it prints information about
+the file, such as the header type and sampling rate.
+
+The older disk-based Cmix instruments use L<input|input> to open
+files for reading, not B<rtinput>.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<input_source>
+
+The name of a sound file, in double-quotes, having a header format
+that RTcmix understands.  (These include, but are not limited to,
+AIFF, AIFC, WAVE, NeXT, and IRCAM.)  Only files with data formats
+of 32-bit floating point or 16-bit integer are readable.
+
+If I<input_source> is "AUDIO," then input comes from the audio
+device.  This lets you send input to RTcmix from a microphone
+or line-level source.
+
+=item I<audio_type>
+
+A specific input source for the audio device, in double-quotes.
+This is relevant only for SGI systems.  There are three audio
+device input sources:
+
+=for html <p>
+
+=over 8
+
+=item I<MIC> - microphone input
+
+=item I<LINE> - line input
+
+=item I<DIGITAL> - digital input
+
+=back
+
+I<MIC> is the default if no type is given.
+
+=back
+
+=head1 EXAMPLES
+
+   rtinput("myfile.aif")
+
+Opens "myfile.aif," an AIFF file in the current directory, for reading
+by any instruments that follow this line in the script.
+
+   rtinput("/home/bubba/snd/trouble.wav")
+
+Opens "trouble.wav" using a full path name.
+
+   rtinput("AUDIO")
+
+Opens the audio device for reading.
+
+=head1 SEE ALSO
+
+L<rtsetparams|rtsetparams>, L<rtoutput|rtoutput>, L<input|input>
+

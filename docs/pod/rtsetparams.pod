@@ -1,0 +1,81 @@
+=head1 NAME
+
+rtsetparams - set sampling rate, output channels, etc.
+
+=head1 SYNOPSIS
+
+B<rtsetparmas>(I<sampling_rate>, I<num_channels> [, I<buffer_size> ])
+
+=head1 DESCRIPTION
+
+Set the sampling rate, number of output channels, and (optionally)
+the buffer size for an RTcmix session.
+
+You must call B<rtsetparams> before calls to L<rtinput|rtinput>,
+L<rtoutput|rtoutput>, or instruments.  You can only call B<rtsetparams>
+once in a script.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<sampling_rate>
+
+The sampling rate for all synthesis and processing.  Any input sound
+files must have this rate, and the output sound file will have this
+rate.
+
+=item I<num_channels>
+
+The number of output channels.  This affects any file opened for
+writing by L<rtoutput|rtoutput>, as well as the audio output device.
+
+=item I<buffer_size>
+
+The number of sample frames in each buffer.  RTcmix instruments
+process sound in buffer-sized chunks.  The buffer size determines
+the latency for real-time applications, such as sending sound from
+a microphone into a reverb instrument.  For situations like that,
+you'll want to reduce the I<buffer_size> to minimize the delay
+between the input signal and its processed output.  You can have a
+I<buffer_size> as small as 64 or even 32, depending on the audio
+driver and machine load.
+
+The default I<buffer_size> is 4096 sample frames.  At a sampling
+rate of 44100 kHz, this gives a latency of nearly 0.1 seconds, which
+is unsuitable for real-time work.
+
+=back
+
+=head1 NOTES
+
+You do not have to call B<rtsetparams> for a script that uses only
+the older disk-based Cmix instruments.  Sampling rate and number of
+channels for these instruments are determined by the input and output
+sound files, which must already have been created.  (See L<input|input>,
+L<output|output>, and L<sfcreate|sfcreate>.)
+
+To have an audio device that handles input and output at the same, you
+must turn on I<full duplex> before calling B<rtsetparams>.  Do this with
+L<set_option|set_option> (by saying set_option("full_duplex_on")).
+
+If you want to write a sound file that has more channels than your 
+audio device permits, turn off the audio device with
+L<set_option|set_option> before calling B<rtsetparams> (by saying
+set_option("audio_off")).
+
+=head1 EXAMPLES
+
+   rtsetparams(44100, 2)
+
+sets up the session for 44100 sampling rate and two output channels.
+
+   rtsetparams(44100, 4, 128)
+
+sets up the session for 44100 sampling rate, four output channels, and
+a buffer size of 128 sample frames.
+
+=head1 SEE ALSO
+
+L<rtinput|rtinput>, L<rtoutput|rtoutput>, L<set_option|set_option>
+

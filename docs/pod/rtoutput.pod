@@ -1,0 +1,143 @@
+=head1 NAME
+
+rtoutput - open a new sound file for writing
+
+=head1 SYNOPSIS
+
+B<rtoutput>(I<file_name> [, I<header_type> ] [, I<data_format> ])
+
+=head1 DESCRIPTION
+
+Call B<rtoutput> to open a new sound file for subsequent writing
+by real-time instruments.
+
+After B<rtoutput> creates a sound file, it prints information about
+the file, such as the header type and sampling rate.
+
+The older disk-based Cmix instruments use L<output|output> to open
+files for writing, not B<rtoutput>.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<file_name>
+
+The name of a sound file, in double-quotes.  If the file already
+exists, the script will terminate with an error, unless you've
+turned on file clobbering with L<set_option|set_option> (by saying
+set_option("clobber_on")).
+
+=item I<header_type>
+
+The type of header to use for the sound file, as a double-quoted
+string.
+
+=over 8
+
+=for html <p>
+
+=item I<aiff>
+
+AIFF format
+
+=item I<aifc>
+
+AIFC format (uncompressed)
+
+=item I<wav>
+
+Microsoft RIFF (Wav) format
+
+=item I<next>
+
+NeXT format (same as I<sun>)
+
+=item I<sun>
+
+Sun "au" format (same as I<next>)
+
+=item I<ircam>
+
+IRCAM format (the older, non-hybrid BICSF format)
+
+=item I<raw>
+
+raw (headerless) format
+
+=back
+
+AIFF is the default if no header type is given.
+
+=item I<data_format>
+
+The type of data format to use for the sound file, as a double-quoted
+string.
+
+NOTE: The sampling rate and number of channels are specified in a
+call to L<rtsetparams|rtsetparams> at the beginning of the script.
+
+=over 8
+
+=item I<short>
+
+16-bit linear
+
+=item I<float>
+
+32-bit floating point
+
+=item I<normfloat>
+
+32-bit floating point, with samples normally between -1 and +1.
+
+=item S< >I<16>
+
+synonym for "short"
+
+=back
+
+"short" is the default if no data format is given.
+
+=back
+
+=head1 NOTES
+
+If you don't want RTcmix to play while you're writing a file,
+use L<set_option|set_option> to turn off playing
+before you invoke any instruments, by saying set_option("audio_off").
+
+The case of the I<header_type> and I<data_format> arguments is not
+significant, nor is their order.
+
+All formats are big-endian, except for "wav," which is always
+little-endian, and "raw," which has host byte order.
+
+If you ask for "aiff" and "float" (or "normfloat"), you'll get "aifc"
+format instead, because AIFF doesn't support floating-point files.
+
+If you want to use floating-point files in the B<Snd>, choose
+"normfloat" format.  If you want to use them in B<Mxv>, choose
+the "next" header type.  Many programs don't read AIFC files,
+maybe because they assume these are always compressed.
+
+=head1 EXAMPLES
+
+   rtsetparams(22050, 2)
+   rtoutput("mysound")
+
+writes a stereo, 16-bit linear AIFF file with 22050 sampling rate.
+
+   rtsetparams(44100, 1)
+   set_option("audio_off", "clobber_on")
+   rtoutput("myothersound", "wav", "float")
+
+writes a mono, 32-bit floating-point WAV file with 44100 sampling rate.
+RTcmix will write over any existing file with the same name, and will
+not play audio while writing.
+
+=head1 SEE ALSO
+
+L<rtsetparams|rtsetparams>, L<set_option|set_option>, L<rtinput|rtinput>,
+L<output|output>
+
