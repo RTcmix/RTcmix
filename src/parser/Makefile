@@ -37,7 +37,7 @@ parse_with_python.o: parse_with_python.c rtcmix_parse.h
 
 .PHONY: install clean
 
-install: all
+install:
 	@for DIR in $(DIRS); \
 	do \
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) install; ) \
