@@ -96,6 +96,8 @@ ug_intro()
 	UG_INTRO("pickwrand", m_pickwrand);
 	UG_INTRO("irand", m_irand);
 	UG_INTRO("setexp", m_setexp);
+	UG_INTRO("addgens", m_addgens);
+	UG_INTRO("multgens", m_multgens);
 #ifdef RTUPDATE
 	UG_INTRO("pgen", pgen);
 	UG_INTRO("note_pfield_path", note_pfield_path);
