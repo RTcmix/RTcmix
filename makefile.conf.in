@@ -1,10 +1,10 @@
 ###############################################################
 # makefile.conf
-# Edit user.conf for everything other than TOPDIR and CMIXDIR
+# Edit site.conf for everything other than TOPDIR and CMIXDIR
 ###############################################################
 
 # The directory containing the RTcmix directory
-TOPDIR = /usr/local/src/music
+TOPDIR = /usr/local/src
 
 # The name of the RTcmix directory
 CMIXDIR = $(TOPDIR)/RTcmix-4.0
@@ -25,7 +25,7 @@ MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
 
 PFIELD_CLASS_SUPPORT = TRUE
 
-SOUND_DRIVER = -D$(AUDIODRIVER) -DOSS
+SOUND_DRIVER = -D$(AUDIODRIVER)
 
 LIBDIR = $(CMIXDIR)/lib
 DESTDIR = $(CMIXDIR)/bin
