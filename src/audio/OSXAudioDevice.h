@@ -26,6 +26,10 @@ protected:
 	virtual int	doGetFrames(void *frameBuffer, int frameCount);
 	virtual int	doSendFrames(void *frameBuffer, int frameCount);
 	virtual int doGetFrameCount() const;
+	
+private:
+	int			openInput();
+	int			openOutput();
 private:
 	struct	Impl;
 	friend struct Impl;
