@@ -201,14 +201,14 @@ extern "C" {
 		  endsamp = Iptr->getendsamp();
 		  
 		  // difference in sample start (countdown)
-		  offset = (chunkStart-bufStartSamp)*NCHANS;  
-		  
+		  offset = chunkStart - bufStartSamp;  
+  
 		  if (offset < 0) { // BGG: added this trap for robustness
 			cout << "WARNING: the scheduler is behind the queue!" << endl;
 			offset = 0;
 		  }
 		  
-		  outbptr = &outbuff[offset];  // advance buffer pointer
+		  Iptr->set_output_offset(offset);
 		  
 		  if (endsamp < bufEndSamp) {  // compute # of samples to write
 			chunksamps = endsamp-chunkStart;
