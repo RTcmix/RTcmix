@@ -442,7 +442,6 @@ public:
 	static double pchmidi(const double);
 	static double octmidi(const double);
 	static double boost(const double);
-	static double inverse(const double);
 
 	ConverterPField(PField *innerPField, ConverterFunction cfun);
 	virtual double doubleValue(double percent) const;

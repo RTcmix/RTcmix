@@ -858,8 +858,3 @@ double ConverterPField::boost(const double pan)
 	return ::boost(pan);
 }
 
-double ConverterPField::inverse(const double val)
-{
-	return 1.0 / val;
-}
-
