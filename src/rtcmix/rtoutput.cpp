@@ -127,7 +127,7 @@ static int
 parse_rtoutput_args(int nargs, double pp[])
 {
    int   anint, i, j, matched;
-   int   aifc_requested, normfloat_requested;
+   int   normfloat_requested;
    char  *arg;
 
    if (nargs == 0) {
@@ -142,7 +142,7 @@ parse_rtoutput_args(int nargs, double pp[])
    output_header_type = DEFAULT_HEADER_TYPE;
    output_data_format = DEFAULT_DATA_FORMAT;
 
-   aifc_requested = normfloat_requested = 0;
+   normfloat_requested = 0;
 
    for (i = 1; i < nargs; i++) {
       anint = (int)pp[i];
@@ -163,10 +163,6 @@ parse_rtoutput_args(int nargs, double pp[])
       switch (param_list[j].type) {
          case HEADER_TYPE:
             output_header_type = param_list[j].value;
-//FIXME: ??no longer needed?
-            if (output_header_type == MUS_AIFC
-                                && strcasecmp(param_list[j].arg, "aifc") == 0)
-               aifc_requested = 1;
             break;
          case DATA_FORMAT:
             output_data_format = param_list[j].value;
@@ -201,12 +197,8 @@ parse_rtoutput_args(int nargs, double pp[])
    /* If AIFF, use AIFC only if explicitly requested, or if
       the data format is float.
    */
-   if (output_header_type == MUS_AIFF) {
-      if (output_data_format == MUS_BFLOAT)
-         output_header_type = MUS_AIFC;
-// FIXME: no longer does anything...
-//      mus_header_set_aifc(aifc_requested);      /* in sndlib/headers.c */
-   }
+   if (output_header_type == MUS_AIFF && output_data_format == MUS_BFLOAT)
+      output_header_type = MUS_AIFC;
 
    /* If writing to a float file, decide whether to normalize the
       samples, i.e., to divide them all by 32768 so as to make the
@@ -219,9 +211,9 @@ parse_rtoutput_args(int nargs, double pp[])
    is_float_format = IS_FLOAT_FORMAT(output_data_format);
 
 #ifdef ALLBUG
-   fprintf(stderr, "name: %s, head: %d, data: %d, aifc: %d, norm: %d\n",
+   fprintf(stderr, "name: %s, head: %d, data: %d, norm: %d\n",
                    rtoutsfname, output_header_type, output_data_format,
-                   aifc_requested, normalize_output_floats);
+                   normalize_output_floats);
 #endif
 
    return 0;

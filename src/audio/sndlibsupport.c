@@ -47,6 +47,9 @@
  #include <byte_routines.h>
 #endif
 
+#ifndef SGI
+ #define HAVE_SNPRINTF
+#endif
 
 /* #define NDEBUG */     /* define to disable asserts */
 
@@ -106,8 +109,6 @@ sndlib_create(char *sfname, int type, int format, int srate, int chans)
 
    /* make sure relevant parts of sndlib are initialized */
    mus_header_initialize();
-// FIXME:
-//   create_descriptors();
 
    fd = open(sfname, O_RDWR | O_CREAT | O_TRUNC, 0666);
    if (fd == -1)
@@ -133,9 +134,6 @@ open_rd_or_rdwr(char *sfname, int accesstype)
    int fd, format, loc, chans, type;
 
    assert(sfname != NULL && strlen(sfname) <= FILENAME_MAX);
-
-// FIXME:
-//   create_descriptors();
 
    fd = open(sfname, accesstype);
    if (fd == -1)
@@ -328,8 +326,12 @@ sndlib_write_header(int  fd,
       perror("sndlib_write_header: calloc");
       return -1;
    }
-//FIXME: Is this the right kludge? JGG, 7/20/01
-comment[0] = COMMENT_START_CHAR;
+
+   /* sndlib now ignores comments that start with nulls or spaces, so
+      we trick it into accepting our comment by storing a different
+      character into the beginning of the string.  -JGG, 7/20/01
+   */
+   comment[0] = COMMENT_START_CHAR;
 
    if (rawcomment)
       strncpy(comment, rawcomment, comment_len);
@@ -430,13 +432,13 @@ sndlib_print_current_header_stats(int fd, SFComment *sfc, int verbosity)
    nsamps = mus_header_samples();           /* samples, not frames */
    duration = (float)(nsamps / nchans) / (float)srate;
 
-#ifdef SGI
-   nchars = sprintf(str, 
+#ifdef HAVE_SNPRINTF
+   nchars = snprintf(str, 256,
                     "%s, %s\nsrate: %d  chans: %d\nduration: %g seconds\n",
                      mus_header_type_name(type),
                      mus_data_format_name(format), srate, nchans, duration);
 #else
-   nchars = snprintf(str, 256,
+   nchars = sprintf(str, 
                     "%s, %s\nsrate: %d  chans: %d\nduration: %g seconds\n",
                      mus_header_type_name(type),
                      mus_data_format_name(format), srate, nchans, duration);
@@ -445,11 +447,11 @@ sndlib_print_current_header_stats(int fd, SFComment *sfc, int verbosity)
    if (verbosity == 2) {
       char tmp[128];
 
-#ifdef SGI
-      sprintf(tmp, "frames: %ld\nheader size: %d bytes\n",
+#ifdef HAVE_SNPRINTF
+      snprintf(tmp, 128, "frames: %ld\nheader size: %d bytes\n",
                                                  nsamps / nchans, data_loc);
 #else
-      snprintf(tmp, 128, "frames: %ld\nheader size: %d bytes\n",
+      sprintf(tmp, "frames: %ld\nheader size: %d bytes\n",
                                                  nsamps / nchans, data_loc);
 #endif
       strcat(str, tmp);
@@ -461,11 +463,11 @@ sndlib_print_current_header_stats(int fd, SFComment *sfc, int verbosity)
       if (SFCOMMENT_PEAKSTATS_VALID(sfcp)) {
          strcat(str, "peak amplitudes:\n");
          for (n = 0; n < nchans; n++) {
-#ifdef SGI
-            sprintf(tmp, "  chan %d:  peak: %g  loc: %ld\n",
+#ifdef HAVE_SNPRINTF
+            snprintf(tmp, 80, "  chan %d:  peak: %g  loc: %ld\n",
                                          n, sfcp->peak[n], sfcp->peakloc[n]);
 #else
-            snprintf(tmp, 80, "  chan %d:  peak: %g  loc: %ld\n",
+            sprintf(tmp, "  chan %d:  peak: %g  loc: %ld\n",
                                          n, sfcp->peak[n], sfcp->peakloc[n]);
 #endif
             strcat(str, tmp);
@@ -561,18 +563,11 @@ sndlib_get_current_header_comment(int fd, SFComment *sfc)
       return -1;
    if (len == 0)
       return 0;                     /* no comment text at all (not an error) */
-//FIXME:
-#if 1
+
    if (buf[0] == COMMENT_START_CHAR) { /* empty comment (not an error) */
       free(buf);
       return 0;
    }
-#else
-   if (buf[0] == '\0') {            /* empty comment (not an error) */
-      free(buf);
-      return 0;
-   }
-#endif
 
    maxchars = MIN(len, MAX_COMMENT_CHARS - 1);   /* not including term. NULL */
 
@@ -871,12 +866,6 @@ sndlib_put_current_header_comment(int    fd,
       goto err;
    }
 
-#ifdef NOMORE
-   /* Make sure we maintain AIFF/AIFC distinction when re-writing header. */
-   if (header_type == MUS_AIFC)
-      sndlib_current_header_match_aiff_flavor();
-#endif
-
    result = sndlib_write_header(fd, 1, header_type, mus_header_format(),
                                 mus_header_srate(), chans, rawcomment, NULL);
    if (result == -1)
@@ -1026,95 +1015,6 @@ get_current_header_raw_comment(int fd, char **rawcomment)
    /* else no comment text at all (not an error) */
 
    return len;
-}
-
-
-#ifdef NOMORE
-/* ------------------------------ sndlib_current_header_match_aiff_flavor --- */
-/* Sndlib doesn't make it easy to distinguish between AIFF and AIFC
-   flavors of header type MUS_AIFC. We can set the one we want by using
-   mus_header_set_aifc(), but what if we're using an existing header
-   (e.g., one created by sfcreate for disk-based cmix)?
-
-   sndlib_current_header_match_aiff_flavor finds out which flavor the current
-   header is, and calls mus_header_set_aifc so that a subsequent call to one
-   of the sndlib header-writing functions will keep the same flavor.
- 
-   Assumes the header we want has already been read into the sndlib
-   header buffer (sndlib_read_header), and that we know this
-   header to be of type MUS_AIFC.
-*/
-void
-sndlib_current_header_match_aiff_flavor()
-{
-   unsigned char aifc[4] = {'A','I','F','C'};
-
-   /* This is as complicated as it is, because it needs to work
-      regardless of host byte-order.
-   */
-   int is_aifc = (mus_header_type_specifier()
-                       == mus_char_to_uninterpreted_int((unsigned char *)aifc));
-   mus_header_set_aifc(is_aifc);
-}
-
-
-/* ---------------------------------------- sndlib_current_header_is_aifc --- */
-/* Is the sound file header currently in sndlib's header buffer of type AIFC?
-*/
-int
-sndlib_current_header_is_aifc()
-{
-   unsigned char aifc[4] = {'A','I','F','C'};
-
-   return ( (mus_header_type() == MUS_AIFC)
-         && (mus_header_type_specifier()
-                     == mus_char_to_uninterpreted_int((unsigned char *)aifc)) );
-}
-#endif
-
-
-/* ---------------------------------------------- sndlib_allocate_buffers --- */
-/* Allocate the multi-dimensional array required by sndlib I/O functions.
-   Returns an array of <nchans> arrays of <nframes> integers. The memory
-   is cleared.
-*/
-int **
-sndlib_allocate_buffers(int nchans, int nframes)
-{
-   int **bufs, n;
-
-   assert(nchans > 0 && nchans <= MAXCHANS && nframes > 0);
-
-   bufs = (int **)calloc(nchans, sizeof(int *));
-   if (bufs == NULL)
-      return NULL;
-
-   for (n = 0; n < nchans; n++) {
-      bufs[n] = (int *)calloc(nframes, sizeof(int));
-      if (bufs[n] == NULL) {
-         sndlib_free_buffers(bufs, nchans);
-         return NULL;
-      }
-   }
-
-   return bufs;
-}
-
-
-/* -------------------------------------------------- sndlib_free_buffers --- */
-/* Free the multi-dimensional array <bufs> with <nchans> elements.
-*/
-void
-sndlib_free_buffers(int **bufs, int nchans)
-{
-   int n;
-
-   assert(bufs != NULL);
-
-   for (n = 0; n < nchans; n++)
-      if (bufs[n])
-         free(bufs[n]);
-   free(bufs);
 }
 
 
@@ -1285,7 +1185,7 @@ static int sf_class_to_data_format(int, int);
 
    Seeks to beginning of sound data.
 
-   Returns 0 if OK, -1 if error. Don't bother checking errno.
+   Returns 0 if OK, -1 if error.
 */
 int
 sndlib_rheader(int fd, SFHEADER *sfh)
@@ -1408,13 +1308,8 @@ sndlib_wheader(int fd, SFHEADER *sfh)
    sfdataformat(sfh) = data_format;
 
    /* Use AIFF, not AIFC, unless it's a float file. */
-#ifdef NOMORE
-   if (header_type == MUS_AIFF)
-      mus_header_set_aifc((data_format == MUS_BFLOAT));
-#else
    if (header_type == MUS_AIFF && data_format == MUS_BFLOAT)
       header_type = MUS_AIFC;
-#endif
 
    file_length = lseek(fd, 0, SEEK_END);
    if (file_length == -1) {

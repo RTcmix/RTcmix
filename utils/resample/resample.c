@@ -17,7 +17,7 @@ resample version 1.2 (jos@ccrma.stanford.edu)\n\
 #include <errno.h>
 #include <sndlibsupport.h>
 
-#define OUT_TYPE    MUS_AIFC
+#define OUT_TYPE    MUS_AIFF
 //#define OUT_TYPE    MUS_RIFF
 //#define OUT_TYPE    MUS_NEXT
 //#define OUT_TYPE    MUS_IRCAM
@@ -87,7 +87,7 @@ main(int argc, char *argv[])
    BOOL   largeFilter = FALSE;    /* TRUE means use 65-tap FIR filter */
    BOOL   linearInterp = FALSE;   /* TRUE => no filter, linearly interpolate */
    int    trace = TRUE, designFilter = FALSE;
-   int    infd, outfd, insrate, nChans, result;
+   int    infd, outfd, insrate, nChans, inFormat, result;
    int    inCount, outCount, outCountReal;
    char   *insfname, *outsfname;
    struct stat statbuf;
@@ -198,6 +198,7 @@ main(int argc, char *argv[])
       fails("Could not open input file \"%s\"", insfname);
    if (NOT_A_SOUND_FILE(mus_header_type()))
       fails("\"%s\" is probably not a sound file.", insfname);
+   inFormat = mus_header_format();
    nChans = mus_header_chans();
    insrate = mus_header_srate();
    inCount = mus_header_samples();
@@ -209,7 +210,6 @@ main(int argc, char *argv[])
       printf("Sampling rate conversion factor set to %f\n", factor);
 
    /* Create and open output file */
-   mus_header_set_aifc(0);                        /* we want AIFF, not AIFC */
    outfd = sndlib_create(outsfname, OUT_TYPE, OUT_FORMAT, newsrate, nChans);
    if (outfd == -1)
       fails("Could not create output file \"%s\"", outsfname);
@@ -241,7 +241,8 @@ main(int argc, char *argv[])
    if (trace)
       printf("Starting Conversion\n");
 
-   outCountReal = resample(factor, infd, outfd, inCount, outCount, nChans,
+   outCountReal = resample(factor, infd, outfd, inFormat, OUT_FORMAT,
+                           inCount, outCount, nChans,
                            interpFilt, linearInterp, largeFilter,
                            designFilter ? &filtspec : NULL);
    if (outCountReal <= 0)

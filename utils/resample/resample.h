@@ -77,8 +77,10 @@ typedef struct {
 
 int resample(           /* number of output sample returned */
     double factor,      /* factor = Sndout/Sndin */
-    int    infd,        /* input and output file descriptors */
-    int    outfd,
+    int infd,           /* input and output file descriptors */
+    int outfd,
+    int inDataFormat,   /* sndlib data format code */
+    int outDataFormat,
     int inCount,        /* number of input samples to convert */
     int outCount,       /* number of output samples to compute */
     int nChans,         /* number of sound channels (1 or 2) */

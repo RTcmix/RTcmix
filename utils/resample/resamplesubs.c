@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <math.h>
 #include <string.h>
 #include "resample.h"
@@ -10,10 +11,10 @@
 #include "largefilter.h"
 #include "filterkit.h"
 #include <sndlibsupport.h>
+#include <byte_routines.h>
 
 #define ATTENUATE_SCALE_FACTOR
 
-/* NOTE: This has no effect on flat pitch when 48K->44.1   -JGG */
 #define IBUFFSIZE 4096    /* Input buffer size */
 
 
@@ -22,51 +23,179 @@
 /*        >0 - index of last sample */
 static int
 readData(int   infd,          /* input file descriptor */
+         int   inDataFormat,  /* sndlib data format code */
          int   inCount,       /* _total_ number of frames in input file */
          HWORD *outPtr1,      /* array receiving left chan samps */
          HWORD *outPtr2,      /* array receiving right chan samps */
-         int   dataArraySize, /* size of these arrays */
+         int   dataArraySize, /* size of these arrays (in frames) */
          int   nChans,
          int   Xoff)          /* read into input array starting at this index */
 {
-   int    i, Nsamps;
+   int      i, n, nFrames, swap, bytesPerSamp;
+   ssize_t  bytesToRead, bytesRead;
+   char     *bufp;
    static unsigned int framecount;  /* frames previously read */
-   static int **ibufs = NULL;
+   static short *ibuf = NULL;
 
-   if (ibufs == NULL) {             /* first time called, so allocate it */
-      ibufs = sndlib_allocate_buffers(nChans, dataArraySize);
-      if (ibufs == NULL) {
-         fprintf(stderr, "readData: Can't allocate input buffers!\n");
+   bytesPerSamp = sizeof(short);
+
+   if (ibuf == NULL) {             /* first time called, so allocate it */
+      ibuf = (short *) calloc(dataArraySize * nChans, bytesPerSamp);
+      if (ibuf == NULL) {
+         fprintf(stderr, "readData: Can't allocate input buffer!\n");
          exit(1);
       }
       framecount = 0;               /* init this too */
    }
 
-   Nsamps = dataArraySize - Xoff;   /* Calculate number of samples to get */
+   nFrames = dataArraySize - Xoff;   /* Calculate number of samples to get */
    outPtr1 += Xoff;                 /* Start at designated sample number */
    outPtr2 += Xoff;
 
-   mus_file_read(infd, 0, Nsamps - 1, nChans, ibufs);
-   /* NOTE: doesn't return an error code! */
+   bufp = (char *) ibuf;
 
-   /* NB: sndlib pads ibufs with zeros if it reads past EOF. */
-   if (nChans == 1) {
-      for (i = 0; i < Nsamps; i++)
-         *outPtr1++ = (HWORD) ibufs[0][i];
+   bytesToRead = nFrames * nChans * bytesPerSamp;
+
+   while (bytesToRead > 0) {
+      bytesRead = read(infd, bufp, bytesToRead);
+      if (bytesRead == -1) {
+         perror("readData (read)");
+         exit(1);
+      }
+      if (bytesRead == 0)          /* EOF */
+         break;
+
+      bufp += bytesRead;
+      bytesToRead -= bytesRead;
    }
-   else {
-      for (i = 0; i < Nsamps; i++) {
-         *outPtr1++ = (HWORD) ibufs[0][i];
-         *outPtr2++ = (HWORD) ibufs[1][i];
+
+   /* If we reached EOF, zero out remaining part of buffer that we
+      expected to fill.
+   */
+   while (bytesToRead > 0) {
+      (* (short *) bufp) = 0;
+      bufp += bytesPerSamp;
+      bytesToRead -= bytesPerSamp;
+   }
+
+#ifdef MUS_LITTLE_ENDIAN
+   swap = IS_BIG_ENDIAN_FORMAT(inDataFormat);
+#else
+   swap = IS_LITTLE_ENDIAN_FORMAT(inDataFormat);
+#endif
+
+   if (nChans == 1) {
+      if (swap) {
+         for (i = 0; i < nFrames; i++) {
+            ibuf[i] = reverse_int2(&ibuf[i]);
+            *outPtr1++ = (HWORD) ibuf[i];
+         }
+      }
+      else {
+         for (i = 0; i < nFrames; i++)
+            *outPtr1++ = (HWORD) ibuf[i];
+      }
+   }
+   else {  /* nChans = 2 */
+      int nSamps = nFrames * nChans;
+      if (swap) {
+         for (i = 0; i < nSamps; i += nChans) {
+            ibuf[i] = reverse_int2(&ibuf[i]);
+            *outPtr1++ = (HWORD) ibuf[i];
+            ibuf[i + 1] = reverse_int2(&ibuf[i + 1]);
+            *outPtr2++ = (HWORD) ibuf[i + 1];
+         }
+      }
+      else {
+         for (i = 0; i < nSamps; i += nChans) {
+            *outPtr1++ = (HWORD) ibuf[i];
+            *outPtr2++ = (HWORD) ibuf[i + 1];
+         }
       }
    }
 
-   framecount += Nsamps;
+   framecount += nFrames;
 
    if (framecount >= inCount)            /* return index of last samp */
-      return (((Nsamps - (framecount - inCount)) - 1) + Xoff);
+      return (((nFrames - (framecount - inCount)) - 1) + Xoff);
    else
       return 0;
+}
+
+
+static int
+writeData(int   outfd,          /* output file descriptor */
+          int   outDataFormat,  /* sndlib data format code for output file */
+          HWORD *outPtr1,       /* array containing left chan samps */
+          HWORD *outPtr2,       /* array containing right chan samps */
+          int   dataArraySize,  /* size of these arrays (in frames) */
+          int   nChans)
+{
+   int i, bytesPerSamp, nBytes;
+   unsigned char *bufp;
+   static short *obuf = NULL;
+
+   bytesPerSamp = sizeof(short);
+
+   if (obuf == NULL) {             /* first time called, so allocate it */
+      obuf = (short *) calloc(dataArraySize * nChans, bytesPerSamp);
+      if (obuf == NULL) {
+         fprintf(stderr, "writeData: Can't allocate output buffer!\n");
+         exit(1);
+      }
+   }
+
+   /* Copy & byteswap samples from output arrays to interleaved file buffer. */
+
+   bufp = (unsigned char *) obuf;
+
+   switch (outDataFormat) {
+      case MUS_BSHORT:
+         if (nChans == 1) {
+            for (i = 0; i < dataArraySize; i++) {
+               m_set_big_endian_short(bufp, outPtr1[i]);
+               bufp += bytesPerSamp;
+            }
+         }
+         else {  /* nChans = 2 */
+            for (i = 0; i < dataArraySize; i++) {
+               m_set_big_endian_short(bufp, outPtr1[i]);
+               bufp += bytesPerSamp;
+               m_set_big_endian_short(bufp, outPtr2[i]);
+               bufp += bytesPerSamp;
+            }
+         }
+         break;
+      case MUS_LSHORT:
+         if (nChans == 1) {
+            for (i = 0; i < dataArraySize; i++) {
+               m_set_little_endian_short(bufp, outPtr1[i]);
+               bufp += bytesPerSamp;
+            }
+         }
+         else {  /* nChans = 2 */
+            for (i = 0; i < dataArraySize; i++) {
+               m_set_little_endian_short(bufp, outPtr1[i]);
+               bufp += bytesPerSamp;
+               m_set_little_endian_short(bufp, outPtr2[i]);
+               bufp += bytesPerSamp;
+            }
+         }
+         break;
+      default:
+         fprintf(stderr, "writeData: unknown output data format!\n");
+         exit(1);
+         break;
+   }
+
+   nBytes = dataArraySize * nChans * bytesPerSamp;
+
+   if (write(outfd, obuf, nBytes) == -1) {
+      perror("writeData (write)");
+      exit(1);
+   }
+
+   return 0;
 }
 
 
@@ -227,6 +356,8 @@ static int
 resampleFast(double factor,        /* factor = Sndout/Sndin */
              int    infd,          /* input and output file descriptors */
              int    outfd,
+             int    inDataFormat,  /* sndlib data format code */
+             int    outDataFormat,
              int    inCount,       /* number of input samples to convert */
              int    outCount,      /* number of output samples to compute */
              int    nChans)        /* number of sound channels (1 or 2) */
@@ -238,10 +369,6 @@ resampleFast(double factor,        /* factor = Sndout/Sndin */
    HWORD X2[IBUFFSIZE], Y2[OBUFFSIZE];      /* I/O buffers */
    UHWORD Nout, Nx;
    int i, Ycount, last;
-
-   int **obufs = sndlib_allocate_buffers(nChans, OBUFFSIZE);
-   if (obufs == NULL)
-      return err_ret("Can't allocate output buffers");
 
    Xoff = 10;
 
@@ -259,7 +386,8 @@ resampleFast(double factor,        /* factor = Sndout/Sndin */
 
    do {
       if (!last) {              /* If haven't read last sample yet */
-         last = readData(infd, inCount, X1, X2, IBUFFSIZE, nChans, (int)Xread);
+         last = readData(infd, inDataFormat, inCount, X1, X2, IBUFFSIZE,
+                                                      nChans, (int)Xread);
          if (last && (last - Xoff < Nx)) {  /* If last sample has been read, */
             Nx = last - Xoff;            /* calc last samp affected by filter */
             if (Nx <= 0)
@@ -304,18 +432,7 @@ resampleFast(double factor,        /* factor = Sndout/Sndin */
       if (Nout > OBUFFSIZE)        /* Check to see if output buff overflowed */
          return err_ret("Output array overflow");
 
-      if (nChans == 1) {
-         for (i = 0; i < Nout; i++)
-            obufs[0][i] = (int) Y1[i];
-      }
-      else {
-         for (i = 0; i < Nout; i++) {
-            obufs[0][i] = (int) Y1[i];
-            obufs[1][i] = (int) Y2[i];
-         }
-      }
-      /* NB: errors reported within sndlib */
-      mus_file_write(outfd, 0, Nout - 1, nChans, obufs);
+      (void) writeData(outfd, outDataFormat, Y1, Y2, Nout, nChans);
 
       printf("."); fflush(stdout);
 
@@ -330,6 +447,8 @@ static int
 resampleWithFilter(double factor,      /* factor = Sndout/Sndin */
                    int    infd,        /* input and output file descriptors */
                    int    outfd,
+                   int    inDataFormat, /* sndlib data format code */
+                   int    outDataFormat,
                    int    inCount,     /* number of input samples to convert */
                    int    outCount,    /* number of output samples to compute */
                    int    nChans,      /* number of sound channels (1 or 2) */
@@ -347,10 +466,6 @@ resampleWithFilter(double factor,      /* factor = Sndout/Sndin */
    HWORD X2[IBUFFSIZE], Y2[OBUFFSIZE];  /* I/O buffers */
    UHWORD Nout, Nx;
    int i, Ycount, last;
-
-   int **obufs = sndlib_allocate_buffers(nChans, OBUFFSIZE);
-   if (obufs == NULL)
-      return err_ret("Can't allocate output buffers");
 
    /* Account for increased filter gain when using factors less than 1 */
    if (factor < 1)
@@ -377,7 +492,8 @@ resampleWithFilter(double factor,      /* factor = Sndout/Sndin */
 
    do {
       if (!last) {                       /* If haven't read last sample yet */
-         last = readData(infd, inCount, X1, X2, IBUFFSIZE, nChans, (int)Xread);
+         last = readData(infd, inDataFormat, inCount, X1, X2, IBUFFSIZE,
+                                                      nChans, (int)Xread);
          if (last && (last - Xoff < Nx)) {  /* If last sample has been read, */
             Nx = last - Xoff;            /* calc last samp affected by filter */
             if (Nx <= 0)
@@ -432,18 +548,7 @@ resampleWithFilter(double factor,      /* factor = Sndout/Sndin */
       if (Nout > OBUFFSIZE)        /* Check to see if output buff overflowed */
          return err_ret("Output array overflow");
 
-      if (nChans == 1) {
-         for (i = 0; i < Nout; i++)
-            obufs[0][i] = (int) Y1[i];
-      }
-      else {
-         for (i = 0; i < Nout; i++) {
-            obufs[0][i] = (int) Y1[i];
-            obufs[1][i] = (int) Y2[i];
-         }
-      }
-      /* NB: errors reported within sndlib */
-      mus_file_write(outfd, 0, Nout - 1, nChans, obufs);
+      (void) writeData(outfd, outDataFormat, Y1, Y2, Nout, nChans);
 
       printf("."); fflush(stdout);
 
@@ -458,6 +563,8 @@ int
 resample(double factor,         /* factor = Sndout/Sndin */
          int    infd,           /* input and output file descriptors */
          int    outfd,
+         int    inDataFormat,   /* sndlib data format code */
+         int    outDataFormat,
          int    inCount,        /* number of input samples to convert */
          int    outCount,       /* number of output samples to compute */
          int    nChans,         /* number of sound channels (1 or 2) */
@@ -473,7 +580,8 @@ resample(double factor,         /* factor = Sndout/Sndin */
    HWORD *ImpD = 0;             /* ImpD[n] = Imp[n+1]-Imp[n] */
 
    if (fastMode)
-      return resampleFast(factor, infd, outfd, inCount, outCount, nChans);
+      return resampleFast(factor, infd, outfd, inDataFormat, outDataFormat,
+                                                inCount, outCount, nChans);
 
 #ifdef DEBUG
    /* Check for illegal constants */
@@ -532,7 +640,8 @@ resample(double factor,         /* factor = Sndout/Sndin */
  #endif
    LpScl *= 0.95;
 #endif
-   return resampleWithFilter(factor, infd, outfd, inCount, outCount, nChans,
+   return resampleWithFilter(factor, infd, outfd, inDataFormat,
+                             outDataFormat, inCount, outCount, nChans,
                              interpFilt, Imp, ImpD, LpScl, Nmult, Nwing);
 }
 
