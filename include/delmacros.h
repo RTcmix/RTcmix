@@ -14,7 +14,7 @@ float xx,xfrac;
 
 #define DLIGET(a,wait,l,result)\
 	xx = wait * SR;\
-	ii = xx;\
+	ii = (int)xx;\
 	xfrac = xx - ii;\
 	ii = *l - ii;\
 	im1 = ii - 1;\
