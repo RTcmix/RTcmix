@@ -29,6 +29,14 @@ extern "C" {
 
 #endif /* __cplusplus */
 
+#ifdef PFIELD_CLASS
+#include <rtcmix_types.h>
+
+/* addcheckfuncs.c */
+int checkfunc(const char *funcname, const Arg arglist[], const int nargs,
+   Arg *retval);
+#endif /* PFIELD_CLASS */
+
 /* audio_port.c:  prototypes in audio_port.h */
 
 /* buffers.c:  prototypes in buffers.h */
@@ -37,7 +45,12 @@ extern "C" {
 double checkfuncs(char *fname, double *pp, int n_args);
 
 /* checkInsts.C */
+#ifdef PFIELD_CLASS
+double checkInsts(const char *instname, const Arg arglist[], const int nargs,
+   Arg *retval);
+#else
 double checkInsts(char *fname, double *pp, int n_args, void **inst);
+#endif
 
 /* audioLoop.C */
 int runMainLoop(void);
@@ -47,7 +60,11 @@ int waitForMainLoop(void);
 void *parseit(void *);
 
 /* parse_dispatch.c */
+#ifdef PFIELD_CLASS
+double old_parse_dispatch(char *str, double *pp, int n_args, void **inst);
+#else
 double parse_dispatch(char *str, double *pp, int n_args, void **inst);
+#endif
 
 /* rtdispatch.C */
 double rtdispatch(char *fname, double *pp, int n_args, void **inst);

@@ -22,15 +22,20 @@ struct	ug_item	{
 
 typedef	struct ug_item	ug_t;
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
 
 extern	ug_t	*ug_list;
+#ifndef PFIELD_CLASS
 int addfunc(struct ug_item *);
+#endif
 void merror(char *);
 
+#ifdef PFIELD_CLASS
+#include <ug_intro.h>
+#else /* !PFIELD_CLASS */
+void ug_intro(void);
 #ifdef __cplusplus
 #define	UG_INTRO(flabel,func)	\
 	{ \
@@ -42,6 +47,7 @@ void merror(char *);
 		static ug_t this_ug = { UG_NULL, func, flabel }; \
 		if (addfunc(&this_ug) == -1) merror(flabel);	}
 #endif
+#endif /* !PFIELD_CLASS */
 
 
 #ifndef PI
