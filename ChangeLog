@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2004-10-08  Douglas Scott  <netdscott at netscape.net>
+
+	* Added auto-registration of DSOs (optional).
+	* Created platform-independent dynamic loading utils.
+
 2004-09-27  Douglas Scott  <netdscott at netscape.net>
 
 	* First pass at consolidating all globals into RTcmix object.
