@@ -23,9 +23,13 @@ void RTsetsockstr(struct sockdata *ssend, char *cmd, int nargs, double *fields);
 
 void RTsetsockdata(struct sockdata *ssend, int arg, double val);
 
+void RTsetsocktext(struct sockdata *ssend, int arg, char *text);
+
 void RTprintsockstr(struct sockdata *ssend);
 
 void RTsendsockstr(int theSock, struct sockdata *sockstr);
+
+RTsockstr *newRTsockstr(char *name);
 
 RTsockstr *RTnewsockstr(char *name);
 
