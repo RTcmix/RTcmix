@@ -23,6 +23,9 @@
 class RTQueue;
 GLOBAL RTQueue *rtQueue;
 
+#include "../Minc/Option.h"
+GLOBAL Option options;
+
 extern "C" {
 #endif /* __cplusplus */
 
@@ -44,11 +47,8 @@ GLOBAL int audioNCHANS;
 
 /* -------------------------------------------------------------------------- */
 GLOBAL int noParse;
-GLOBAL int record_audio;	// was audio_on
-GLOBAL int play_audio;
 GLOBAL int audio_config;
 GLOBAL int rtInteractive;
-GLOBAL int print_is_on;
 GLOBAL int rtsetparams_called;
 
 GLOBAL int output_data_format;
@@ -67,8 +67,6 @@ GLOBAL FILE *infile_desc[MAX_INFILE_DESC + 1];
 /* max amplitude encountered -- reported at end of run */
 GLOBAL BUFTYPE peaks[MAXBUS];
 GLOBAL long peaklocs[MAXBUS];
-GLOBAL int report_clipping;
-GLOBAL int check_peaks;
 
 #ifdef NETAUDIO
 GLOBAL int netplay;     // for remote sound network playing
