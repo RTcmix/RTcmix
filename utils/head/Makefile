@@ -6,7 +6,7 @@ SYSLIBS = -lm   # only this, overriding makefile.conf
 ifeq ($(USE_SNDLIB),TRUE)
    SYSOBJS += ../sys/sndlibsupport.o
    SYSLIBS += ../sndlib/sndlib.a
-   HEAD = sfcreate sfprint sfshrink sfhedit  # for now; others later
+   HEAD = sfcreate sfprint sfshrink sfhedit sffixsize
 else
    HEAD = sfhedit sfcreate sfprint sfextend sfshrink 
 endif
@@ -30,6 +30,9 @@ sfcreate: sfcreate.o $(SYSOBJS)
 
 sfprint: sfprint.o  $(SYSOBJS)
 	cc -o sfprint sfprint.o $(SYSOBJS) $(SYSLIBS)
+
+sffixsize: sffixsize.o  $(SYSOBJS)
+	cc -o sffixsize sffixsize.o $(SYSOBJS) $(SYSLIBS)
 
 install:
 	@echo "making install..."	
