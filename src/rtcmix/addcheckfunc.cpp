@@ -132,7 +132,6 @@ _printargs(const char *funcname, const Arg arglist[], const int nargs)
    }
 }
 
-
 /* ------------------------------------------------------------- checkfunc -- */
 int
 RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
@@ -141,8 +140,17 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
    RTcmixFunction *func;
 
    func = ::findfunc(_func_list, funcname);
-   if (func == NULL)
-      return -1;
+
+   // If we did not find it, try loading it from our list of registered DSOs.
+   if (func == NULL) {
+      if (findAndLoadFunction(funcname) == 0) {
+         func = ::findfunc(_func_list, funcname);
+            if (func == NULL)
+               return -1;
+      }
+      else
+         return -1;
+   }
 
    /* function found, so call it */
 
@@ -197,6 +205,147 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
    return 0;
 }
 
+// Code for function/DSO registry, which allows RTcmix to auto-load a DSO
+// for a given function.
+
+struct FunctionEntry {
+	FunctionEntry(const char *fname, const char *dsoPath);
+	~FunctionEntry();
+	char *funcName;
+	char *dsoPath;
+	struct FunctionEntry *next;
+};
+
+FunctionEntry::FunctionEntry(const char *fname, const char *dso_path)
+	: funcName(strdup(fname)), dsoPath(strdup(dso_path)), next(NULL)
+{
+}
+
+FunctionEntry::~FunctionEntry()
+{
+	free(dsoPath);
+	free(funcName);
+}
+
+const char *
+getDSOPath(FunctionEntry *entry, const char *funcname)
+{
+	while (entry != NULL) {
+		if (!strcmp(entry->funcName, funcname))
+			return entry->dsoPath;
+		entry = entry->next;
+	}
+	return NULL;
+}
+
+extern "C" double m_load(float *, int, double *);	// loader.c
+
+/* --------------------------------------------------- findAndLoadFunction -- */
+
+// Called by RTcmix::checkfunc() to allow auto-loading of DSOs.
+
+int
+RTcmix::findAndLoadFunction(const char *funcname)
+{
+	const char *path;
+	int status = -1;
+	if ((path = ::getDSOPath(_functionRegistry, funcname)) != NULL) {
+		char fullDSOPath[128];
+		float p[1];
+		double pp[1];
+		sprintf(fullDSOPath, "%s.%s", path, SHLIB_SUFFIX);
+		p[0] = 0;
+		pp[0] = (double)(int) fullDSOPath;
+		if (m_load(p, 1, pp) == 1)
+			status = 0;
+		else
+			status = -1; 
+	}
+	return status;
+}
+
+/* ------------------------------------------------------ registerFunction -- */
+
+// This is called by each DSO's registerMe() function to register a given
+// Minc command name (function name) with a particular DSO name.  When
+// RTcmix::checkfunc() fails to find a functions, it calls findAndLoadFunction()
+// to search the function/DSO database for a matching DSO.
+
+int 
+RTcmix::registerFunction(const char *funcName, const char *dsoPath)
+{
+	const char *path;
+	if ((path = ::getDSOPath(_functionRegistry, funcName)) == NULL) {
+		FunctionEntry *newEntry = new FunctionEntry(funcName, dsoPath);
+		newEntry->next = _functionRegistry;
+		_functionRegistry = newEntry;
+		printf("RTcmix::registerFunction: registered function '%s' for dso '%s'\n", 
+				funcName, dsoPath);
+		return 0;
+	}
+	else {
+		warn("RTcmix::registerFunction",
+			  "'%s' already registered for DSO '%s'", funcName, path);
+		return -1;
+	}
+}
+
+#include <dirent.h>
+#include "load_utils.h"
+
+/* ------------------------------------------------------ registerDSOs -- */
+// This is called at initialization time to scan a supplied semicolon-separated
+// list of directories for DSOs (files which begin with "lib").  When found,
+// each is searched for a "registerSelf()" function, which is called.
+
+typedef int (*RegisterFunction)();
+
+int
+RTcmix::registerDSOs(const char *pathList)
+{
+	const char *list = pathList;
+	bool done = false;
+	while (list != NULL) {
+		char path[1024];
+		int itemLen;
+		const char *nextItem = strchr(list, ':');
+		if (nextItem != NULL) {
+			itemLen = nextItem - list;
+			++nextItem;		// skip semicolon
+		}
+		else {
+			itemLen = strlen(list);
+		}
+		strncpy(path, list, itemLen);
+		path[itemLen] = '\0';
+		
+		DIR *dsoDir = opendir(path);
+		if (dsoDir != NULL) {
+			struct dirent *entry;
+			while ((entry = readdir(dsoDir)) != NULL) {
+				if (strncmp(entry->d_name, "lib", 3) == 0) {
+					char fullPath[1024];
+					sprintf(fullPath, "%s/%s", path, entry->d_name);
+					void *dso = find_dso(fullPath);
+					if (dso) {
+						RegisterFunction registerMe = (RegisterFunction) find_symbol(dso, "registerSelf");
+//						printf("opened DSO '%s'\n", fullPath);
+						if (registerMe)
+						{
+//							printf("\tfound register function.\n");
+							(*registerMe)();
+						}
+						unload_dso(dso);
+					}
+				}
+			}
+			closedir(dsoDir);
+		}
+		list = nextItem;
+	}
+	return 0;
+}
+
 // Wrappers for UG_INTRO() use.
 
 extern "C" {
@@ -220,3 +369,8 @@ addLegacyfunc(const char *label, double (*func_ptr)(float *, int, double *))
 	RTcmix::addfunc(label, func_ptr, NULL, NULL, NULL, DoubleType, 1);
 }
 
+int
+registerFunction(const char *funcName, const char *dsoPath)
+{
+	return RTcmix::registerFunction(funcName, dsoPath);
+}

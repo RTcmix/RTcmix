@@ -26,6 +26,7 @@ struct BusQueue;
 struct CheckNode;
 struct BusSlot;
 struct _func;
+struct FunctionEntry;
 struct InputState;	// part of Instrument class
 
 enum RTstatus {
@@ -70,7 +71,9 @@ public:
 	static bool outputOpen() { return rtfileit != -1; }
 	static bool rtsetparams_was_called() { return rtsetparams_called; }
 	
-	static int dispatch(const char *func_label, const Arg arglist[], const int nargs, Arg *retval);
+	static int registerFunction(const char *funcName, const char *dsoPath);
+	static int dispatch(const char *func_label, const Arg arglist[], 
+						const int nargs, Arg *retval);
 	static void addfunc(const char *func_label,
 					   double (*func_ptr_legacy)(float*, int, double*),
                        double (*func_ptr_number)(const Arg[], int),
@@ -128,6 +131,7 @@ protected:
 	// These were standalone but are now static methods
 	static double checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retval);
 	static int checkfunc(const char *funcname, const Arg arglist[], const int nargs, Arg *retval);
+	static int findAndLoadFunction(const char *funcname);
 
 protected:
 	/* Note: these 3 vars also extern in rtdefs.h, for use by insts */
@@ -147,6 +151,8 @@ private:
 	static int allocate_audioin_buffer(short chan, int len);
 	static int allocate_aux_buffer(short chan, int len);
 	static int allocate_out_buffer(short chan, int len);
+
+	static int registerDSOs(const char *dsoPaths);
 
 	// Internal audio loop methods (called by runMainLoop())
 	
@@ -252,6 +258,9 @@ private:
 	
 	// END of bus config
 	
+	// Function registry
+	static FunctionEntry *_functionRegistry;
+
 	// Function table variables
 	static struct _func *	_func_list;
 	// End of function table

@@ -10,29 +10,16 @@
 */
 #include <stdlib.h>
 #include <stdio.h>
-#include <dlfcn.h>
 
 #include <rtcmix_types.h>
 #include <PField.h>
 #include <ugens.h>		// for warn, die
 
+#include "load_utils.h"
+
 #if !defined(SHAREDLIBDIR) || !defined(SHLIB_SUFFIX)
 #error "Compile flags are missing macros for SHAREDLIBDIR and/or SHLIB_SUFFIX"
 #endif
-
-// --------------------------------------------------------- local utilities ---
-void *
-find_dso(const char *selector)
-{
-	char loadPath[1024];
-	dlerror();	// clear error queue
-	sprintf(loadPath, "%s/lib%sconn.%s", SHAREDLIBDIR, selector, SHLIB_SUFFIX);
-	void *dso = dlopen(loadPath, RTLD_LAZY);
-	if (!dso) {
-		die("makeconnection", "dynamic load failed: %s\n", dlerror());
-	}
-	return dso;
-}
 
 // =============================================================================
 // The remaining functions are public, callable from scripts.
@@ -62,17 +49,23 @@ makeconnection(const Arg args[], const int nargs)
 	Handle handle = NULL;
 	HandleCreator creator = NULL;
 	const char *selector = (const char *) args[0];
+	char loadPath[1024];
+	sprintf(loadPath, "%s/lib%sconn.%s", SHAREDLIBDIR, selector, SHLIB_SUFFIX);
 
-	void *dso = find_dso(selector);
+	void *dso = find_dso(loadPath);
 	if (dso) {
-		creator = (HandleCreator) dlsym(dso, "create_handle");
+		creator = (HandleCreator) find_symbol(dso, "create_handle");
 		if (creator) {
 			// Pass 2nd thru last args, leaving off selector
 			handle = (*creator)(&args[1], nargs - 1);
 		}
 		else {
-			die("makeconnection", "symbol lookup failed: %s\n", dlerror());
+			die("makeconnection", "symbol lookup failed: %s\n", get_dso_error());
+			unload_dso(dso);
 		}
+	}
+	else {
+		die("makeconnection", "dso load failed: %s\n", get_dso_error());
 	}
 	return handle;
 }

@@ -10,6 +10,7 @@ funderflow.c \
 getsample.c \
 infile.c \
 io.c \
+load_utils.c \
 loader.c \
 merror.c \
 message.c \
@@ -179,6 +180,12 @@ loader.o: loader.c
 
 connection.o: connection.cpp
 	$(CXX) $(CXXFLAGS) -DSHLIB_SUFFIX=\"$(SHLIB_SUFFIX)\" -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c connection.cpp
+
+addcheckfunc.o: addcheckfunc.cpp
+	$(CXX) $(CXXFLAGS) -DSHLIB_SUFFIX=\"$(SHLIB_SUFFIX)\" -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c addcheckfunc.cpp
+
+RTcmix.o: RTcmix.cpp
+	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c RTcmix.cpp
 
 $(RTLIB): depend $(COMMON_OBJS) $(LIBMINC) $(LIBS)
 	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(COMMON_OBJS) $(LIBMINC) $(LIBS) $(SYSLIBS)

@@ -116,9 +116,12 @@ Bool			RTcmix::AuxOutInUse[MAXBUS];
 Bool			RTcmix::OutInUse[MAXBUS];
 short			RTcmix::RevPlay[MAXBUS];
 
-// Function table state
+// Function registry
+FunctionEntry *	RTcmix::_functionRegistry = NULL;
 
+// Function table state
 struct _func *	RTcmix::_func_list = NULL;
+
 
 
 /* --------------------------------------------------------- init_globals --- */
@@ -128,7 +131,6 @@ RTcmix::init_globals(bool fromMain)
    int i;
 
    Option::init();
-
 
    if (fromMain) {
       Option::readConfigFile(Option::rcName());
@@ -157,6 +159,9 @@ RTcmix::init_globals(bool fromMain)
       inputFileTable[i].fd = NO_FD;
 
    init_buf_ptrs();
+
+   if (Option::autoLoad())
+	   registerDSOs(SHAREDLIBDIR);
 }
 
 
