@@ -16,8 +16,8 @@ char	*mix_errlist[] = {
 void
 merror(char *s)
 {
-	register char *c;
-	register n;
+	char *c;
+	int n;
 
 	c = "Unknown error";
 	if (mixerr < MX_NERR)
