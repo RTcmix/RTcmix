@@ -71,16 +71,13 @@ void Option::init()
 int Option::readConfigFile(const char *fileName)
 {
 	char *key;
+	Config conf;
 
-	Config *conf = new Config();
-	ConfigErrorCode result = conf->parseFile(fileName);
-	if (result == kConfigFileMissingErr) {
-		delete conf;
+	ConfigErrorCode result = conf.parseFile(fileName);
+	if (result == kConfigFileMissingErr)
 		return -1;			// user doesn't have an rc file; fail silently
-	}
 	if (result != kConfigNoErr) {
-		warn(NULL, "%s \"%s\"", conf->getLastErrorText(), fileName);
-		delete conf;
+		warn(NULL, "%s \"%s\"", conf.getLastErrorText(), fileName);
 		return -1;
 	}
 
@@ -89,98 +86,97 @@ int Option::readConfigFile(const char *fileName)
 	bool bval;
 
 	key = kOptionAudio;
-	result = conf->getValue(key, bval);
+	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
 		audio(bval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
 	key = kOptionPlay;
-	result = conf->getValue(key, bval);
+	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
 		play(bval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
 	key = kOptionRecord;
-	result = conf->getValue(key, bval);
+	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
 		record(bval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
 	key = kOptionClobber;
-	result = conf->getValue(key, bval);
+	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
 		clobber(bval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
 	key = kOptionPrint;
-	result = conf->getValue(key, bval);
+	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
 		print(bval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
 	key = kOptionReportClipping;
-	result = conf->getValue(key, bval);
+	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
 		reportClipping(bval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
 	key = kOptionCheckPeaks;
-	result = conf->getValue(key, bval);
+	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
 		checkPeaks(bval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
 	// double options .........................................................
 
 	double dval;
 
 	key = kOptionBufferFrames;
-	result = conf->getValue(key, dval);
+	result = conf.getValue(key, dval);
 	if (result == kConfigNoErr)
 		bufferFrames(dval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
 	// string options .........................................................
 
 	char *sval;
 
 	key = kOptionDevice;
-	result = conf->getValue(key, sval);
+	result = conf.getValue(key, sval);
 	if (result == kConfigNoErr)
 		device(sval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
 	key = kOptionInDevice;
-	result = conf->getValue(key, sval);
+	result = conf.getValue(key, sval);
 	if (result == kConfigNoErr)
 		inDevice(sval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
 	key = kOptionOutDevice;
-	result = conf->getValue(key, sval);
+	result = conf.getValue(key, sval);
 	if (result == kConfigNoErr)
 		outDevice(sval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
 	key = kOptionDSOPath;
-	result = conf->getValue(key, sval);
+	result = conf.getValue(key, sval);
 	if (result == kConfigNoErr)
 		dsoPath(sval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
-	delete conf;
 	return 0;
 }
 
