@@ -3,7 +3,7 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 /* Class for storing all our run-time options,
-	by John Gibson and Doug Scott, 6/27/04.
+   by John Gibson and Doug Scott, 6/27/04.
 */
 
 #include <assert.h>
@@ -39,14 +39,14 @@ char Option::_rcName[PATH_MAX];
 
 void Option::init()
 {
-   _device[0] = 0;
-   _inDevice[0] = 0;
-   _outDevice[0] = 0;
-   _midiInDevice[0] = 0;
-   _midiOutDevice[0] = 0;
-   _dsoPath[0] = 0;
-   _homeDir[0] = 0;
-   _rcName[0] = 0;
+	_device[0] = 0;
+	_inDevice[0] = 0;
+	_outDevice[0] = 0;
+	_midiInDevice[0] = 0;
+	_midiOutDevice[0] = 0;
+	_dsoPath[0] = 0;
+	_homeDir[0] = 0;
+	_rcName[0] = 0;
 
 	// initialize home directory and full path of user's configuration file
 
@@ -232,10 +232,10 @@ int Option::writeConfigFile(const char *fileName)
 		return -1;
 	}
 
-   fprintf(stream, "# Default configuration file\n");
+	fprintf(stream, "# Default configuration file\n");
 
 	// write bool options
-   fprintf(stream, "\n# Boolean options: key = [true | false]\n");
+	fprintf(stream, "\n# Boolean options: key = [true | false]\n");
 	fprintf(stream, "%s = %s\n", kOptionAudio, audio() ? "true" : "false");
 	fprintf(stream, "%s = %s\n", kOptionPlay, play() ? "true" : "false");
 	fprintf(stream, "%s = %s\n", kOptionRecord, record() ? "true" : "false");
@@ -248,11 +248,11 @@ int Option::writeConfigFile(const char *fileName)
 	// intentionally leaving out exitOnError
 
 	// write double options
-   fprintf(stream, "\n# Number options: key = value\n");
+	fprintf(stream, "\n# Number options: key = value\n");
 	fprintf(stream, "%s = %g\n", kOptionBufferFrames, bufferFrames());
 
 	// write string options
-   fprintf(stream, "\n# String options: key = \"quoted string\"\n");
+	fprintf(stream, "\n# String options: key = \"quoted string\"\n");
 	if (device()[0])
 		fprintf(stream, "%s = \"%s\"\n", kOptionDevice, device());
 	else
