@@ -64,7 +64,8 @@ int DEL1::init(double p[], int n_args)
 		return die("DEL1", "You asked for channel %d of a %d-channel file.",
 													inchan, inputChannels());
 
-	nsamps = rtsetoutput(outskip, dur + ringdur, this);
+	if (rtsetoutput(outskip, dur + ringdur, this) == -1)
+		return DONT_SCHEDULE;
 	insamps = (int) (dur * SR + 0.5);
 
 	if (outputChannels() != 2)
@@ -86,7 +87,7 @@ int DEL1::init(double p[], int n_args)
 
 	skip = (int) (SR / (float) resetval);
 
-	return nsamps;
+	return nSamps();
 }
 
 int DEL1::configure()

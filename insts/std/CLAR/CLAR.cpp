@@ -25,7 +25,8 @@ int CLAR::init(double p[], int n_args)
 
 	int imax;
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	if (rtsetoutput(p[0], p[1], this) == -1)
+		return DONT_SCHEDULE;
 
 	dampcoef = .7;
 

@@ -80,7 +80,8 @@ int AM::init(double p[], int n_args)
 	if (inchan >= inputChannels())
 		return die("AM", "You asked for channel %d of a %d-channel file.",
 														inchan, inputChannels());
-	nsamps = rtsetoutput(outskip, dur, this);
+	if (rtsetoutput(outskip, dur, this) == -1)
+		return DONT_SCHEDULE;
 	if (outputChannels() > 2)
 		return die("AM", "Can't handle more than 2 output channels.");
 

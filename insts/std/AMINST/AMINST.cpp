@@ -64,7 +64,8 @@ int AMINST::init(double p[], int n_args)
 	float carfreq = p[3];
 	float modfreq = p[4];
 
-	nsamps = rtsetoutput(outskip, dur, this);
+	if (rtsetoutput(outskip, dur, this) == -1)
+		return DONT_SCHEDULE;
 	if (outputChannels() > 2)
 		return die("AMINST", "Can't handle more than 2 output channels.");
 

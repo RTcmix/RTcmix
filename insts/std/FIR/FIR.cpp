@@ -33,17 +33,13 @@ FIR::~FIR()
 
 int FIR::init(double p[], int n_args)
 {
-
-	int i, rvin;
-
-	rvin = rtsetinput(p[1], this);
-	if (rvin == -1) { // no input
-		return(DONT_SCHEDULE);
-	}
-	nsamps = rtsetoutput(p[0], p[2], this);
+	if (rtsetinput(p[1], this) == -1)
+		return DONT_SCHEDULE; // no input
+	if (rtsetoutput(p[0], p[2], this) == -1)
+		return DONT_SCHEDULE;
 
 	ncoefs = (int)p[4];
-	for (i = 0; i < ncoefs; i++) {
+	for (int i = 0; i < ncoefs; i++) {
 		coefs[i] = p[i+6]; 
 		pastsamps[i] = 0.0;
 	}
@@ -52,7 +48,7 @@ int FIR::init(double p[], int n_args)
 
 	skip = (int) (SR / (float) resetval);
 
-	return(nsamps);
+	return nSamps();
 }
 
 int FIR::configure()
