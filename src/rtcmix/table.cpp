@@ -1833,7 +1833,6 @@ _do_invert_table(double *array, const int len, const bool use_center,
       _get_table_bounds(array, len, min, max);
       center = min + ((max - min) / 2.0);
    }
-printf("\n*** center of symmetry is %f\n\n", center);
    for (int i = 0; i < len; i++) {
       double diff = array[i] - center;
       array[i] = center - diff;
