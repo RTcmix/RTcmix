@@ -14,7 +14,7 @@ extern "C" {
 static float interp(float, float, float, float);
 
 extern int resetval;
-extern int lineset;
+
 
 TRANS::TRANS() : Instrument()
 {
