@@ -2,9 +2,9 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
+#include <prototypes.h>
 #include "../sys/mixerr.h"
 
-extern "C" double checkInsts(char*, double*, short);
 
 extern "C" {
 	double rtdispatch(char *fname, double *pp, short n_args)
