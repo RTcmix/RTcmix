@@ -6,21 +6,33 @@ typedef struct {
 } Voice;
 
 class JCHOR : public Instrument {
-   int     grainsamps, nvoices, skip, maintain_indur, grain_done, inchan;
+   bool    maintain_indur, grain_done;
+   int     nargs, grainsamps, nvoices, skip, branch, inchan;
    int     winarraylen;
    float   inskip, indur, transpose, minamp, ampdiff, minwait, waitdiff, seed;
-   float   amptabs[2], wintabs[2];
+   float   amp, amptabs[2], wintabs[2];
    double  *amparray, *winarray;
    float   *grain, *in;
    Voice   *voices;
 
+   void doupdate();
 public:
    JCHOR();
    virtual ~JCHOR();
-   int init(double p[], int n_args);
-   int run();
+   virtual int init(double p[], int n_args);
+   virtual int configure();
+   virtual int run();
 private:
    int setup_voices();
    int grain_input_and_transpose();
+};
+
+// update flags (shift amount is pfield index)
+enum {
+	kMinAmp = 1 << 7,
+	kMaxAmp = 1 << 8,
+	kMinWait = 1 << 9,
+	kMaxWait = 1 << 10,
+	kAmp = 1 << 13
 };
 

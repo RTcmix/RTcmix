@@ -13,21 +13,19 @@
    p9  = minimum grain wait (seconds)
    p10 = maximum grain wait (seconds)
    p11 = seed (0 - 1)
-   p12 = input channel [optional]
-         (If p12 is missing and input has > 1 chan, input channels averaged.)
+   p12 = input channel [optional; if missing and input has > 1 chan, input
+         channels averaged]
+   p13 = overall amplitude multiplier [optional; if missing, must use gen 1 *]
+   p14 = reference to grain envelope table [optional; if missing, must use
+         gen 2 **]
 
-   Assumes function table 1 is amplitude curve for the note. (Try gen 18.)
-   Or you can just call setline. If no setline or function table 1, uses
-   flat amplitude curve. By default, the amplitude envelope is updated 1000
-   times per second, but this can be changed by calling reset() with a
-   different value.
-
-   Assumes function table 2 is grain window function. (Try gen 25.)
+   p7 (min amp), p8 (max amp), p9 (min wait), p10 (max wait) and p13 (amp mult)
+   can receive dynamic updates from a table or real-time control source.
 
    Output can be either mono or stereo. If it's stereo, the program randomly
    distributes the voices across the stereo field.
 
-   Notes on p4 (maintain input duration)...
+   Notes on p4 (maintain input duration):
 
       Because the transposition method doesn't try to maintain duration -- it
       works like the speed control on a tape deck -- you have an option about
@@ -42,19 +40,31 @@
         grain length will be shorter or longer than p3, depending on the
         transposition.
 
+   ----
+
+   Notes about backward compatibility with pre-v4 scores:
+
+   * If an old-style gen table 1 is present, its values will be multiplied
+   by p13 (amplitude multiplier), even if the latter is dynamic.
+
+   ** If p14 is missing, you must use an old-style gen table 2 for the
+   grain envelope.
+
+   ----
+
    Differences between JCHOR and chor (besides RT ability):
       - No limit on input duration or number of voices
       - Transpose the input signal
       - Specify the input channel to use (or an average of them)
-      - Specify overall amplitude curve and grain window function via makegens
+      - Specify overall amplitude curve and grain window function
 
-   John Gibson (jgg9c@virginia.edu), 9/20/98, RT'd 6/24/99.
+   John Gibson (jgg9c@virginia.edu), 9/20/98, RT'd 6/24/99; rev for v4, 7/24/04
 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
+#include <PField.h>
 #include "JCHOR.h"
 #include <rt.h>
 #include <rtdefs.h>
@@ -67,20 +77,22 @@ extern "C" {
 
 #define ENVELOPE_TABLE_SLOT  1
 #define WINDOW_FUNC_SLOT     2
-#define AVERAGE_CHANS        -1           /* average input chans flag value */
-#define WINDOW_CONTROL_RATE  22051.       /* don't skimp on this */
+#define AVERAGE_CHANS        -1           // average input chans flag value
+#define WINDOW_CONTROL_RATE  22050.0      // don't skimp on this
 
-/* local functions */
+// local functions
 static double interp(double, double, double, double);
-
 
 
 JCHOR::JCHOR() : Instrument()
 {
    in = NULL;
+   winarray = NULL;
+   winarraylen = 0;
    voices = NULL;
    grain = NULL;
-   grain_done = 0;
+   grain_done = false;
+   branch = 0;
 }
 
 
@@ -94,21 +106,20 @@ JCHOR::~JCHOR()
 
 int JCHOR::init(double p[], int n_args)
 {
-   float outskip, outdur, maxamp, maxwait;
-
-   outskip = p[0];
+   nargs = n_args;
+   float outskip = p[0];
    inskip = p[1];
-   outdur = p[2];
+   float outdur = p[2];
    indur = p[3];
-   maintain_indur = (int)p[4];
+   maintain_indur = (bool) p[4];
    transpose = p[5];
-   nvoices = (int)p[6];
+   nvoices = (int) p[6];
    minamp = p[7];
-   maxamp = p[8];
+   float maxamp = p[8];
    minwait = p[9];
-   maxwait = p[10];
+   float maxwait = p[10];
    seed = p[11];
-   inchan = (n_args > 12) ? (int)p[12] : AVERAGE_CHANS;
+   inchan = (n_args > 12) ? (int) p[12] : AVERAGE_CHANS;
 
    if (n_args < 12)
       return die("JCHOR", "Not enough pfields.");
@@ -117,13 +128,13 @@ int JCHOR::init(double p[], int n_args)
       return DONT_SCHEDULE;
    nsamps = rtsetoutput(outskip, outdur, this);
 
-   if (outputchans > 2)
+   if (outputChannels() > 2)
       return die("JCHOR", "Output must have no more than two channels.");
 
    if (nvoices < 1)
       return die("JCHOR", "Must have at least one voice.");
 
-   if (minamp < 0.0 || maxamp <= 0.0 || minamp > maxamp)
+   if (minamp < 0.0 || maxamp < 0.0 || minamp > maxamp)
       return die("JCHOR", "Grain amplitude range confused.");
    ampdiff = maxamp - minamp;
 
@@ -140,67 +151,106 @@ int JCHOR::init(double p[], int n_args)
       int len = fsize(ENVELOPE_TABLE_SLOT);
       tableset(SR, outdur, len, amptabs);
    }
-   else
-      advise("JCHOR", "Setting phrase curve to all 1's.");
 
-   /* MUST do this here, rather than in grain_input_and_transpose,
-      because by the time that is called, the makegen for this slot
-      may have changed.
-   */
-   winarray = floc(WINDOW_FUNC_SLOT);
-   if (winarray == NULL)
-      return die("JCHOR",
-                 "You haven't made the grain window function (table %d).",
-                 WINDOW_FUNC_SLOT);
-   winarraylen = fsize(WINDOW_FUNC_SLOT);
+	if (n_args > 14) {      // handle table coming in as optional p14 TablePField
+		const PField &field = getPField(14);
+		winarraylen = field.values();
+		winarray = (double *) field;
+	}
+	if (winarray == NULL) {
+      // MUST do this here, rather than in grain_input_and_transpose,
+      // because by the time that is called, the makegen for this slot
+      // may have changed.
+      winarray = floc(WINDOW_FUNC_SLOT);
+		if (winarray == NULL)
+			return die("JCHOR", "Either use the grain envelope pfield (p14) "
+                    "or make an old-style gen function in slot %d.",
+                    WINDOW_FUNC_SLOT);
+      winarraylen = fsize(WINDOW_FUNC_SLOT);
+	}
 
-   skip = (int)(SR / (float)resetval);
+   skip = (int) (SR / (float) resetval);
 
    return nsamps;
 }
 
 
+void JCHOR::doupdate()
+{
+   double p[14];
+   update(p, 14, kMinAmp | kMaxAmp | kMinWait | kMaxWait | kAmp);
+
+   minamp = p[7];
+   float maxamp = p[8];
+   if (minamp < 0.0)
+      minamp = 0.0;
+   if (maxamp < 0.0)
+      maxamp = 0.0;
+   if (maxamp < minamp)
+      maxamp = minamp;
+   ampdiff = maxamp - minamp;
+
+   minwait = p[9];
+   float maxwait = p[10];
+   if (minwait < 0.0)
+      minwait = 0.0;
+   if (maxwait < 0.0)
+      maxwait = 0.0;
+   if (maxwait < minwait)
+      maxwait = minwait;
+   waitdiff = (maxwait - minwait) * SR;
+   minwait *= SR;
+
+   if (nargs > 13)
+      amp = p[13];
+   else
+      amp = 1.0;
+   if (amparray)
+      amp *= tablei(currentFrame(), amparray, amptabs);
+}
+
+
+int JCHOR::configure()
+{
+   in = new float [RTBUFSAMPS * inputChannels()];
+   return in ? 0 : -1;
+}
+
+
 int JCHOR::run()
 {
-   int   i, j, branch;
-   float amp;
-   float out[2];
-   Voice *v;
-
    if (!grain_done) {
-      in = new float [RTBUFSAMPS * inputchans];
       grain_input_and_transpose();
       setup_voices();
    }
 
-   amp = 1.0;                   /* in case amparray == NULL */
-
-   branch = 0;
-   for (i = 0; i < chunksamps; i++) {
-      if (--branch < 0) {
-         if (amparray)
-            amp = tablei(cursamp, amparray, amptabs);
+   for (int i = 0; i < framesToRun(); i++) {
+      if (--branch <= 0) {
+         doupdate();
          branch = skip;
       }
 
+      float out[2];
       out[0] = out[1] = 0.0;
-      for (j = 0, v = voices; j < nvoices; j++, v++) {
+
+      Voice *v = voices;
+      for (int j = 0; j < nvoices; j++, v++) {
          if (v->index++ < 0)
             continue;
          if (v->index >= grainsamps) {
             seed = crandom(seed);
-            v->index = (int)(-((seed * waitdiff) + minwait));
-            if (outputchans > 1) {
+            v->index = (int) -(minwait + (seed * waitdiff));
+            if (outputChannels() > 1) {
                seed = crandom(seed);
                v->left_amp = seed;
                v->right_amp = 1.0 - v->left_amp;
             }
             seed = crandom(seed);
-            v->overall_amp = (seed * ampdiff) + minamp;
+            v->overall_amp = minamp + (seed * ampdiff);
          }
          else {
             float sig = grain[v->index] * v->overall_amp;
-            if (outputchans > 1) {
+            if (outputChannels() > 1) {
                out[0] += sig * v->left_amp;
                out[1] += sig * v->right_amp;
             }
@@ -212,10 +262,10 @@ int JCHOR::run()
       out[1] *= amp;
 
       rtaddout(out);
-      cursamp++;
+      increment();
    }
 
-   return i;
+   return framesToRun();
 }
 
 
@@ -241,26 +291,24 @@ interp(double y0, double y1, double y2, double t)
 /* --------------------------------------------------------- setup_voices --- */
 int JCHOR::setup_voices()
 {
-   int   i;
-   Voice *v;
-
    voices = new Voice[nvoices];
 
-   for (i = 0, v = voices; i < nvoices; i++, v++) {
+   Voice *v = voices;
+   for (int i = 0; i < nvoices; i++, v++) {
       seed = crandom(seed);
-      v->index = (int)(-seed * (grainsamps - 1));
-      if (outputchans > 1) {
+      v->index = (int) (-seed * (grainsamps - 1));
+      if (outputChannels() > 1) {
          seed = crandom(seed);
          v->left_amp = seed;
          v->right_amp = 1.0 - v->left_amp;
       }
       seed = crandom(seed);
-      v->overall_amp = (seed * ampdiff) + minamp;
+      v->overall_amp = minamp + (seed * ampdiff);
    }
 #ifdef DEBUG
    printf("\n%d grainsamps\n", grainsamps);
    printf("Voices:\n");
-   for (i = 0, v = voices; i < nvoices; i++, v++)
+   for (int i = 0, v = voices; i < nvoices; i++, v++)
       printf("%6d: index=%d, left=%g, right=%g, amp=%g\n",
              i, v->index, v->left_amp, v->right_amp, v->overall_amp);
 #endif
@@ -299,10 +347,10 @@ int JCHOR::grain_input_and_transpose()
 {
    int     i, j, k, n, reset_count, inframes, bufframes;
    int     getflag, incount;
-   float   read_indur, store_indur, total_indur, interval, amp = 0.0;
+   float   read_indur, store_indur, total_indur, interval, grainamp = 0.0;
    double  increment, newsig, oldsig, oldersig, frac, counter;
 
-   if (inputchans == 1)
+   if (inputChannels() == 1)
       inchan = 0;
 
    interval = octpch(transpose);
@@ -334,7 +382,7 @@ int JCHOR::grain_input_and_transpose()
    inframes = (int)(SR / read_indur);
    bufframes = RTBUFSAMPS;
 
-   reset_count = (int)(SR / WINDOW_CONTROL_RATE);
+   reset_count = (int) (SR / WINDOW_CONTROL_RATE);
 
    getflag = 1;
    incount = 0;            /* frames */
@@ -344,23 +392,23 @@ int JCHOR::grain_input_and_transpose()
    k = bufframes;
    for (i = j = 0; i < grainsamps; i++) {
       if (--j < 0) {
-         amp = tablei(i, winarray, wintabs);
+         grainamp = tablei(i, winarray, wintabs);
          j = reset_count;
       }
       while (getflag) {
          int index;
          if (k == bufframes) {              /* time for an input buffer */
-            rtgetin(in, this, inputchans * bufframes);
+            rtgetin(in, this, inputChannels() * bufframes);
             k = 0;
          }
-         index = k * inputchans;
+         index = k * inputChannels();
          oldersig = oldsig;
          oldsig = newsig;
          if (inchan == AVERAGE_CHANS) {
             newsig = 0.0;
-            for (n = 0; n < inputchans; n++)
+            for (n = 0; n < inputChannels(); n++)
                newsig += (double)in[index + n];
-            newsig /= (double)inputchans;
+            newsig /= (double)inputChannels();
          }
          else
             newsig = (double)in[index + inchan];
@@ -370,13 +418,13 @@ int JCHOR::grain_input_and_transpose()
             getflag = 0;
       }
       frac = counter - (double)incount + 2.0;
-      grain[i] = (float)interp(oldersig, oldsig, newsig, frac) * amp;
+      grain[i] = (float)interp(oldersig, oldsig, newsig, frac) * grainamp;
       counter += increment;
       if (counter - (float)incount >= -0.5)
          getflag = 1;
    }
 
-   grain_done = 1;
+   grain_done = true;
 
    return 0;
 }
