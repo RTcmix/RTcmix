@@ -174,7 +174,8 @@ enum {
 	kControl = 0xB0,
 	kProgram = 0xC0,
 	kChanPress = 0xD0,
-	kPitchBend = 0xE0
+	kPitchBend = 0xE0,
+	kSystem = 0xF0
 } StatusByte;
 
 // This is called from the MIDI worker thread.  The RTcmixMIDI object, held by
@@ -200,26 +201,25 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 	} while (result);         
 
 	// Don't poll MIDI until initialization completes.  We still listen for
-	// messages, in case RTcmixMIDI::init fails and dtor then called.
+	// messages, in case RTcmixMIDI::init fails and dtor is then called.
 	if (!obj->active())
 		return;
 
-	// See if there is any midi input to process.
+	// See if there is any MIDI input to process.
 	do {
 		result = Pm_Poll(obj->instream());
 		if (result) {
-			long status, chan, data1, data2;
 			PmEvent buffer;
 
 			if (Pm_Read(obj->instream(), &buffer, 1) == pmBufferOverflow) 
 				continue;
 
-			// unless there was overflow, we should have a message now
-			status = Pm_MessageStatus(buffer.message);
-			data1 = Pm_MessageData1(buffer.message);
-			data2 = Pm_MessageData2(buffer.message);
+			// Unless there was overflow, we should have a message now.
+			const long status = Pm_MessageStatus(buffer.message);
+			const long data1 = Pm_MessageData1(buffer.message);
+			const long data2 = Pm_MessageData2(buffer.message);
 
-			chan = status & 0x0F;
+			const long chan = status & 0x0F;
 
 			switch (status & 0xF0) {
 				case kNoteOn:
@@ -243,14 +243,13 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 				case kPitchBend:
 					obj->setBend(chan, ((data2 << 7) + data1) - 8192);
 					break;
+				case kSystem:
 				default:
-					printf("0x%.2x, %ld, %ld\n", (u_char) status, data1, data2);
+//					printf("0x%.2x, %ld, %ld\n", (u_char) status, data1, data2);
 					break;
 			}
 		}
 	} while (result);
-
-//sleep(2); obj->dump();
 }
 
 
