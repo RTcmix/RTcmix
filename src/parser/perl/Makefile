@@ -5,8 +5,6 @@ EXT_NAME = RT
 XS_DIR = $(CMIXDIR)/Perl/$(EXT_NAME)
 XS_FILE = $(EXT_NAME).xs
 PM_FILE = $(EXT_NAME).pm
-FUNCLIST = funclist
-FUNCEXCEPT = funcexcept
 ifeq ($(ARCH),MACOSX)
   XT_SUFFIX = .bundle
   FIND_FLAG = -H
@@ -14,6 +12,8 @@ else
   XT_SUFFIX = .so
   FIND_FLAG = 
 endif
+FUNCLIST = funclist
+FUNCEXCEPT = funcexcept
 
 all: RT_extension
 
@@ -36,12 +36,13 @@ RT_extension: $(XS_DIR)/$(XS_FILE) $(XS_DIR)/$(PM_FILE)
 
 install:
 	@$(INSTALL) $(XS_DIR)/$(PM_FILE) $(LIBDESTDIR)
-	@$(INSTALL) $(XS_DIR)/blib/arch/auto/$(EXT_NAME)/$(EXT_NAME).so $(LIBDESTDIR)
+	@$(INSTALL) $(XS_DIR)/blib/arch/auto/$(EXT_NAME)/$(EXT_NAME)$(XT_SUFFIX) \
+               $(LIBDESTDIR)
 
 clean:
 	@if (test -f $(XS_DIR)/Makefile) then \
 		(cd $(XS_DIR); $(MAKE) clean; $(RM) $(XS_FILE) $(PM_FILE) Makefile.old) \
 	fi
 	@$(RM) $(FUNCLIST)
-	@$(RM) $(LIBDESTDIR)/$(PM_FILE) $(LIBDESTDIR)/$(EXT_NAME).so
+	@$(RM) $(LIBDESTDIR)/$(PM_FILE) $(LIBDESTDIR)/$(EXT_NAME)$(XT_SUFFIX)
 
