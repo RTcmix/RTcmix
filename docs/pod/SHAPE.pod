@@ -1,0 +1,84 @@
+=head1 NAME
+
+SHAPE - waveshaping instrument
+
+=head1 SYNOPSIS
+
+B<SHAPE>(I<outskip>, I<inskip>, I<indur>, I<ampmult>, I<mindist>, I<maxdist>,
+I<ampnorm_table> [, I<inchan>, I<stereoloc> ])
+
+Function table 1 gives amplitude curve.
+
+Function table 2 gives waveshaping transfer function.
+
+Function table 3 gives distortion index curve.
+
+Function table I<ampnorm_table> gives amplitude normalization function.
+
+=head1 DESCRIPTION
+
+B<SHAPE> applies a waveshaping transfer function to the input source.  (See
+Dodge and Jerse, or any other computer music text, for a detailed explanation
+of this process.)
+
+B<SHAPE> uses the curve provided in function table 1 to scale the
+amplitude of the output.  Use L<setline|setline>, L<setexp|setexp>,
+or L<makegen|makegen> to create function table 1.  If this table has not
+been created, no amplitude scaling will occur.
+
+B<SHAPE> uses function table 2 as the waveshaping transfer function.  Use
+L<gen 17|gen17> to get the Chebyshev polynomials that let you predict the
+frequencies and amplitudes of harmonic partials.  Or use any other table type
+for arbitrary distortion effects.
+
+Function table 3 describes the path between I<mindist> and I<maxdist>.
+
+If you want to perform amplitude normalization, set I<ampnorm_table> to the
+number of the function table giving the normalization curve.  Otherwise, set
+I<ampnorm_table> to zero.  The amplitude normalization function allows you to
+decouple amplitude and timbral change, to some extent.  (Read about this in the
+Roads "Computer Music Tutorial" chapter on waveshaping.) The table maps
+incoming signal amplitudes, on the X axis, to amplitude multipliers, on the Y
+axis.  The multipliers should be from 0 to 1.  The amplitude multipliers are
+applied to the output signal, along with whatever overall amplitude curve is in
+effect.  Generally, you'll want a curve that starts high and moves lower for
+the higher signal amplitudes.  This will keep the bright and dark timbres more
+equal in amplitude.  But anything is possible.
+
+The output of B<SHAPE> can be either stereo or mono.
+
+=head1 PFIELDS
+
+=over 8
+
+=item B<p0> (I<outskip>) output start time
+
+=item B<p1> (I<inskip>) input  start time
+
+=item B<p2> (I<indur>) input duration
+
+=item B<p3> (I<ampmult>) amplitude multiplier
+
+=item B<p4> (I<mindist>) minimum distortion index
+
+=item B<p5> (I<maxdist>) maximum distortion index
+
+=item B<p6> (I<ampnorm_table>) number of amplitude normalization table, or 0 for no normalization
+
+=item B<p4> (I<inchan>) input channel [optional, default is 0]
+
+=item B<p5> (I<stereoloc>) percent (from 0 to 1) of input signal to place in left output channel [optional, default is 0.5 if output is stereo]
+
+=back
+
+=head1 EXAMPLES
+
+=head1 SEE ALSO
+
+L<setline|setline>, L<setexp|setexp>, L<makegen|makegen>, L<gen17|gen17>,
+L<WAVESHAPE|WAVESHAPE>
+
+=head1 AUTHOR
+
+John Gibson E<lt>johgibso at indiana eduE<gt>
+
