@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <ugens.h>
 #include <mixerr.h>
-#include <Instrument.h>
 #include "COMBFILT.h"
 #include <rt.h>
 #include <rtdefs.h>
@@ -26,7 +25,7 @@ COMBFILT::~COMBFILT()
 }
 
 
-int COMBFILT::init(float p[], int n_args)
+int COMBFILT::init(double p[], int n_args)
 {
 
   // p0 = outsk; p1 = insk; p2 = input dur; p3 = amp mult
@@ -37,11 +36,12 @@ int COMBFILT::init(float p[], int n_args)
   // p12 = sustain
   // p13 = decay
   // assumes function table 1 is the amplitude envelope
-  Instrument::init(p, n_args);
 
+  if (rtsetinput(p[1], this) != 0)
+	  return DONT_SCHEDULE;
+  if (rtsetoutput(p[0], p[2], this) != 0)
+	  return DONT_SCHEDULE;
 
-  rtsetinput(p[1], this);
-  nsamps = rtsetoutput(p[0], p[2], this);
   insamps = (int)(p[2] * SR);
 
   if (p[4] < 15.0)
@@ -67,9 +67,9 @@ int COMBFILT::init(float p[], int n_args)
   type = (int)p[7];
   skip = (int)(SR/(float)resetval); // how often to update amp curve
   inchan = (int)p[9];
-  if ((inchan+1) > inputchans)
-	die("COMBFILT", "You asked for channel %d of a %d-channel file.", 
-		inchan,inputchans);
+  if ((inchan+1) > inputChannels())
+	return die("COMBFILT", "You asked for channel %d of a %d-channel file.", 
+				inchan,inputChannels());
   wetdry = p[8];
   spread = p[10];
 
@@ -77,6 +77,17 @@ int COMBFILT::init(float p[], int n_args)
   runsamp = 0;
 
   return(this->mytag);
+}
+
+int COMBFILT::configure()
+{
+	in = new float [RTBUFSAMPS * inputChannels()];
+	x = new float[maxdelay];
+	y = new float[maxdelay];
+	for (int i=0;i<maxdelay;i++) {
+	  x[i] = y[i] = 0.0;
+	}
+	return 0;
 }
 
 int COMBFILT::run()
@@ -90,33 +101,23 @@ int COMBFILT::run()
   float tdur, tamp, tpitch, ta, tb, ttype, twetdry, tchan, tspread;
   int finalsamp;
 
-  tsize = (RTBUFSAMPS * inputchans);
+  tsize = (RTBUFSAMPS * inputChannels());
 
-  if (in == NULL) {    /* first time, allocate buffers */
-	in = new float [RTBUFSAMPS * inputchans];
-	x = new float[maxdelay];
-	y = new float[maxdelay];
-	for (i=0;i<maxdelay;i++) {
-	  x[i] = y[i] = 0.0;
-	}
-  }
-
-  Instrument::run();
-
-  rsamps = chunksamps*inputchans;
+  rsamps = chunksamps*inputChannels();
 
   rtgetin(in, this, rsamps);
 
   aamp = amp;        /* in case amptable == NULL */
 
   branch = 0;
-  for (i = 0; i < rsamps; i += inputchans)  {
+  for (i = 0; i < rsamps; i += inputChannels())  {
 	if (cursamp > insamps) {
-	  for (j = 0; j < inputchans; j++) 
+	  for (j = 0; j < inputChannels(); j++) 
 		in[i+j] = 0.0;
 	}
 
 	if (--branch < 0) {
+#ifdef RTUPDATE
 	  // Update P-Fields + + + + + + + + + + + + + + + + + + + 
 	  if(tags_on)
 	  {
@@ -160,14 +161,15 @@ int COMBFILT::run()
 		if(tchan != NOPUPDATE)
 		{
 		  inchan = (int)tchan;
-		  if ((inchan+1) > inputchans)
-			die("COMBFILT", "You asked for channel %d of a %d-channel file.", 
-		        inchan,inputchans);
+		  if ((inchan+1) > inputChannels())
+			return die("COMBFILT", "You asked for channel %d of a %d-channel file.", 
+		        inchan,inputChannels());
 		}   
 		tspread = rtupdate(this->mytag, 10);
 		if(tspread != NOPUPDATE)
 		  spread = tspread;
 	  }  
+#endif	// RTUPDATE
 	  // End P-Field Updating - - - - - - - - - - - - - - - - - - - - -
 	  if (amptable)
 		aamp = table(cursamp, amptable, tabs) * amp;
@@ -216,8 +218,9 @@ makeCOMBFILT()
 
   inst = new COMBFILT();
   inst->set_bus_config("COMBFILT");
-
+#ifdef RTUPDATE
   inst->set_instnum("COMBFILT");
+#endif
   return inst;
 }
 

@@ -1,3 +1,5 @@
+#include <Instrument.h>
+
 typedef enum {
   FIR=0,
   IIR
@@ -5,7 +7,8 @@ typedef enum {
 
 class COMBFILT : public Instrument {
 	int insamps;
-	float amp, *amptable, tabs[2], *in;
+	float amp, tabs[2], *in;
+	double *amptable;
 	int skip,inchan;
 	float spread;
 	float a,b, combfreq,wetdry;
@@ -17,6 +20,7 @@ class COMBFILT : public Instrument {
 public:
 	COMBFILT();
 	virtual ~COMBFILT();
-	int init(float*, int);
+	int init(double*, int);
+	int configure();
 	int run();
 };
