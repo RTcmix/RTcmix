@@ -4,6 +4,7 @@ include ../package.conf
 
 NAME = STRUM
 
+CURDIR = $(CMIXDIR)/insts.std/$(NAME)
 OBJS = START.o BEND.o FRET.o START1.o BEND1.o FRET1.o VSTART1.o VFRET1.o \
 rtprofile.o randfill.o sset.o strum.o squisher.o delayset.o delayclean.o \
 dist.o delay.o
@@ -30,10 +31,10 @@ $(OBJS): $(INSTRUMENT_H) $(HEADERS)
 install: dso_install
 
 dso_install: lib$(NAME).so
-	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)
 
 standalone_install: standalone
-	$(INSTALL) $(NAME) $(DESTDIR)
+	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)
 
 uninstall: dso_uninstall standalone_uninstall
 

@@ -2,6 +2,7 @@
 
 include ../package.conf
 
+CURDIR = $(CMIXDIR)/insts.std/MOVE
 COMMON_OBJS = BASE.o cmixfuns.o setup.o common.o
 COMMON_HDRS = cmixfuns.h setup.h common.h
 OBJS = PLACE.o placeprof.o $(COMMON_OBJS)
@@ -41,12 +42,12 @@ BASE.o : $(INSTRUMENT_H) $(COMMON_HDRS) BASE.h
 install: dso_install
 
 dso_install: all
-	$(INSTALL) libPLACE.so $(LIBDESTDIR)
-	$(INSTALL) libMOVE.so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/libPLACE.so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/libMOVE.so $(LIBDESTDIR)
 
 standalone_install: standalone
-	$(INSTALL) PLACE $(DESTDIR)
-	$(INSTALL) MOVE $(DESTDIR)
+	$(INSTALL) $(CURDIR)/PLACE $(DESTDIR)
+	$(INSTALL) $(CURDIR)/MOVE $(DESTDIR)
 
 uninstall: dso_uninstall standalone_uninstall
 

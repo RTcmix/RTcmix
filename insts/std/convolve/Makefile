@@ -2,6 +2,7 @@ include ../package.conf
 
 NAME = convolve
 
+CURDIR = $(CMIXDIR)/insts.std/$(NAME)
 OBJS = $(NAME).o fft.o
 CMIXOBJS += $(RTPROFILE_O)
 PROGS = lib$(NAME).so $(NAME)
@@ -24,10 +25,10 @@ fft.o: fft.h
 install: dso_install
 
 dso_install: lib$(NAME).so
-	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)
 
 standalone_install: standalone
-	$(INSTALL) $(NAME) $(DESTDIR)
+	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)
 
 uninstall: dso_uninstall standalone_uninstall
 

@@ -2,6 +2,7 @@ include ../package.conf
 
 NAME = stgran
 
+CURDIR = $(CMIXDIR)/insts.std/$(NAME)
 OBJS = $(NAME).o
 CMIXOBJS += $(RTPROFILE_O)
 ifeq ($(ARCH), LINUX)
@@ -25,10 +26,10 @@ $(NAME): $(UGENS_H) $(CMIXOBJS) $(OBJS)
 install: dso_install
 
 dso_install: lib$(NAME).so
-	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)
 
 standalone_install: standalone
-	$(INSTALL) $(NAME) $(DESTDIR)
+	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)
 
 uninstall: dso_uninstall standalone_uninstall
 

@@ -4,6 +4,7 @@ include ../package.conf
 
 NAME = IIR
 
+CURDIR = $(CMIXDIR)/insts.std/$(NAME)
 OBJS = INPUTSIG.o NOISE.o BUZZ.o PULSE.o cfuncs.o rtprofile.o
 HEADERS = INPUTSIG.h NOISE.h BUZZ.h PULSE.h
 PROGS = lib$(NAME).so $(NAME)
@@ -26,10 +27,10 @@ $(OBJS): $(INSTRUMENT_H) $(HEADERS)
 install: dso_install
 
 dso_install: lib$(NAME).so
-	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)
 
 standalone_install: standalone
-	$(INSTALL) $(NAME) $(DESTDIR)
+	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)
 
 uninstall: dso_uninstall standalone_uninstall
 

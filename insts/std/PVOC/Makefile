@@ -2,6 +2,7 @@ include ../package.conf
 
 NAME = PVOC
 
+CURDIR = $(CMIXDIR)/insts.std/$(NAME)
 OBJS = PVOC.o lpa.o lpamp.o makewindows.o fft.o fold.o overlapadd.o
 
 CMIXOBJS += $(PROFILE_O)
@@ -24,10 +25,10 @@ $(NAME):	$(UGENS_H) $(OBJS) $(CMIXOBJS)
 install: dso_install
 
 dso_install: lib$(NAME).so
-	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)
 
 standalone_install: standalone
-	$(INSTALL) $(NAME) $(DESTDIR)
+	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)
 
 uninstall: dso_uninstall standalone_uninstall
 

@@ -2,6 +2,8 @@ include ../package.conf
 
 NAME = LPCPLAY
 
+CURDIR = $(CMIXDIR)/insts.std/$(NAME)
+
 # NOTE: Using lib versions for some now -- optimize them!
 #LPCPLAY_O = allpole.o readjust.o mp.o shift.o buzz.o bmultf.o lpcheader.o rand.o
 LPCPLAY_O = DataSet.o setup.o shift.o buzz.o bmultf.o lpcheader.o rand.o stabilize.o Complex.o
@@ -41,10 +43,10 @@ rand.o: rand.c lp.h
 install: dso_install
 
 dso_install: lib$(NAME).so
-	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)
 
 standalone_install: standalone
-	$(INSTALL) $(NAME) $(DESTDIR)
+	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)
 
 uninstall: dso_uninstall standalone_uninstall
 
