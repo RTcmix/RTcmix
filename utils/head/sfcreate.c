@@ -45,10 +45,11 @@ enum {
                                                                         \n\
   Defaults take effect unless overridden by supplied values.            \n\
                                                                         \n\
-  If filename exists and seems to be a sound file, its header will      \n\
-  be overwritten with the one specified. If that might result in some   \n\
-  loss or corruption of sound data, the program will warn about this    \n\
-  and require you to use the \"--force\" flag on the command line.      \n\
+  If filename exists, its header will be overwritten with the one       \n\
+  specified.  If filename doesn't already have a valid header, or       \n\
+  if overwriting an existing header might result in some loss or        \n\
+  corruption of sound data, the program will warn about this and        \n\
+  require you to use the \"--force\" flag on the command line.          \n\
                                                                         \n\
   NOTE: The following combinations are not available:                   \n\
         aiff and -l                                                     \n\
@@ -219,7 +220,7 @@ check_params()
 int
 main(int argc, char *argv[])
 {
-   int         i, fd, result, overwrite_file, old_format;
+   int         i, fd, result, overwrite_file, old_format, old_header_type=0;
    int         data_location, old_data_location, old_nsamps, old_datum_size;
    int         force = FALSE;
    struct stat statbuf;
@@ -289,8 +290,9 @@ main(int argc, char *argv[])
    old_data_location = old_format = old_datum_size = old_nsamps = 0;
 
    /* Test for existing file. If there is one, and we can read and write it,
-      and it seems to be a sound file, and the force flag is set ...
-      then we'll overwrite its header.
+      and the force flag is set, then we'll overwrite its header.  Note that
+      we slap on a header even if the file doesn't have one already, as 
+      would be the case with a raw sound file (or a precious text file...).
       If there isn't an existing file, we'll create a new one.
    */
    overwrite_file = FALSE;
@@ -312,7 +314,7 @@ main(int argc, char *argv[])
       }
    }
    else {
-      int type, drastic_change;
+      int drastic_change;
 
       overwrite_file = TRUE;
 
@@ -333,18 +335,19 @@ main(int argc, char *argv[])
          fprintf(stderr, "Error reading header (%s)\n", strerror(errno));
          exit(1);
       }
-      type = c_snd_header_type();
+      old_header_type = c_snd_header_type();
       old_format = c_snd_header_format();
-      if (NOT_A_SOUND_FILE(type) || INVALID_DATA_FORMAT(old_format)) {
-         fprintf(stderr,
-               "\"%s\" exists, but doesn't look like a sound file.\n", sfname);
-         exit(1);
+      if (NOT_A_SOUND_FILE(old_header_type)
+                                         || INVALID_DATA_FORMAT(old_format)) {
+         fprintf(stderr, "\nWARNING: \"%s\" exists, but doesn't look like "
+                         "a sound file.\n\n", sfname);
+         drastic_change = TRUE;
+         old_header_type = raw_sound_file;
       }
-
-      if (type == AIFF_sound_file
+      else if (old_header_type == AIFF_sound_file
                                && is_aifc != sndlib_current_header_is_aifc())
          drastic_change = TRUE;
-      else if (type != header_type || old_format != data_format)
+      else if (old_header_type != header_type || old_format != data_format)
          drastic_change = TRUE;
       else
          drastic_change = FALSE;
@@ -379,7 +382,7 @@ main(int argc, char *argv[])
          exit(1);
       }
 
-      if (data_format != old_format)
+      if (data_format != old_format && old_header_type != raw_sound_file)
         if (! FORMATS_SAME_BYTE_ORDER(data_format, old_format))
             printf("WARNING: Byte order changed!\n");
 
