@@ -33,6 +33,7 @@
 #include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "PAN.h"
