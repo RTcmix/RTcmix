@@ -71,12 +71,12 @@ int DEL1::init(double p[], int n_args)
 	if (outputChannels() != 2)
 		return die("DEL1", "Output must be stereo.");
 
-	if (deltime > MAXDELTIME)
-		return die("DEL1", "Maximum delay time (%g) exceeded.", MAXDELTIME);
+	if (deltime <= 0.0)
+		return die("DEL1", "Illegal delay time (%g).", deltime);
 
-	long maxdelsamps = (long) (MAXDELTIME * SR + 0.5);
-	delay = new Odelayi(maxdelsamps);
-	if (delay == NULL)
+	long delsamps = (long) (deltime * SR + 0.5);
+	delay = new Odelayi(delsamps);
+	if (delay->length() == 0)
 		return die("DEL1", "Can't allocate delay line memory.");
 
 	amptable = floc(1);
@@ -111,15 +111,7 @@ int DEL1::run()
 			if (amptable)
 				amp *= tablei(cursamp, amptable, amptabs);
 			float deltime = p[4];
-			if (deltime > MAXDELTIME) {
-				if (warn_deltime) {
-					warn("DEL1", "Maximum delay time (%g) exceeded!", MAXDELTIME);
-					warn_deltime = false;
-				}
-				delsamps = MAXDELTIME * SR;
-			}
-			else
-				delsamps = deltime * SR;
+			delsamps = deltime * SR;
 			delamp = p[5];
 			branch = skip;
 		}
