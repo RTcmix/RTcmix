@@ -11,6 +11,7 @@
 #include <iostream.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include <globals.h>
 #include "RTcmix.h"
@@ -34,14 +35,13 @@ main(int argc, char *argv[])
 	if (argc == 2)
 		duration = atof(argv[1]);
 
-	rrr = new RTcmix(44100.0, 2, 8192);
+	rrr = new RTcmix(44100.0, 2);
 //	rrr->printOn();
 	rrr->printOff();
 	sleep(1); // give the thread time to initialize
 
 	// load up MYWAVETABLE and set the makegens
 	rrr->cmd("load", 1, "./MYWAVETABLE/libMYWAVETABLE.so");
-//	rrr->cmd("load", 1, "/home/jg/rtcmix/imbed/wanderfreq/MYWAVETABLE/libMYWAVETABLE.so");
 	rrr->cmd("makegen", 9,
 			1.0, 24.0, 1000.0, 0.0, 0.0, 1.0, 1.0, 999.0, 1.0);
 	rrr->cmd("makegen", 6, 2.0, 10.0, 1000.0, 1.0, 0.3, 0.1);
@@ -75,7 +75,7 @@ void wander()
 	bool wavesLeft = false;
 	for (int i = 0; i < NINSTS; i++) {
 		if (theWaves[i] == NULL)
-			continue;				// Already released this one
+			continue;		// Already released this one
 	    else if (theWaves[i]->IsDone())
 		{
 			theWaves[i]->Unref();	// Release our hold on this
