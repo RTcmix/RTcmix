@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Friday, August 9, 2002 John Gibson <johgibso@indiana.edu>
+
+   * PCMIX (the Perl front end to RTcmix) can now recognize functions
+     stored outside of the RTcmix source tree.  This improvement
+     courtesy of Doug Scott.
+
 Friday, June 14, 2002 John Gibson <johgibso@indiana.edu>
 
    * Make cmixplay handle times in 0:00.0 format in addition to raw seconds.
