@@ -3,204 +3,151 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #include <OSXMouse.h>
+#include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <string.h>
-#include <limits.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <errno.h>
+#include <float.h>
 
 //#define DEBUG
-
-#define LABEL_FROM_LEFT	10		// pixels from left border
-#define LABEL_FROM_TOP	10
-#define LABEL_FONT_NAME	"fixed"
 
 
 OSXMouse::OSXMouse() : RTcmixMouse()
 {
-	_window = NULL;
-	_xraw = -INT_MAX;		// forces getpos* to return negative
-	_yraw = INT_MAX;
-	_labelXpos = LABEL_FROM_LEFT;
-	_labelYpos = LABEL_FROM_TOP;
-	_maxLabelChars = LABEL_LENGTH;	// defined in base class
-	_lineHeight = 0;
-	_charWidth = 0;
-	_fontName = LABEL_FONT_NAME;
-	_windowname = "RTcmix Mouse Input";
+	_x = -DBL_MAX;		// forces getpos* to return negative
+	_y = DBL_MAX;
+	_sockport = SOCK_PORT;
+	_packet = new MouseSockPacket [1];
 }
 
 OSXMouse::~OSXMouse()
 {
-	DisposeWindow(_window);
+// XXX send quit msg to MouseWindow?
+	delete [] _packet;
 }
 
 int OSXMouse::show()
 {
-	InitCursor();
-	_cursor = GetCursor(crossCursor);
-	if (_cursor == NULL)
-		return -1;
+// XXX launch MouseWindow.app if it's not already running, establish socket
+// connection as client, handshake
+	return 0;
+}
 
-	const int xpos = 100;
-	const int ypos = 100;
-	const int width = 200;
-	const int height = 200;
-	_window = createWindow(xpos, ypos, width, height);
-	if (_window != NULL) {
-		setFactors();           // must do after creating window
-		return 0;
-	}
+int OSXMouse::reportError(const char *err)
+{
+	fprintf(stderr, "%s\n", err);
 	return -1;
 }
 
-WindowRef OSXMouse::createWindow(
-		const int xpos,
-		const int ypos,
-		const int width,
-		const int height)
+int OSXMouse::readPacket(MouseSockPacket *packet)
 {
-	const unsigned int borderwidth = 0;
+	char *ptr = (char *) packet;
+	const int packetsize = sizeof(MouseSockPacket);
+	ssize_t amt = 0;
+	do {
+		ssize_t n = read(_newdesc, ptr + amt, packetsize - amt);
+		if (n < 0)
+			return reportError(strerror(errno));
+		amt += n;
+	} while (amt < packetsize);
 
-	Rect rect;
-	SetRect(&rect, ypos, xpos, ypos + height, xpos + width);
-
-	WindowRef wref;
-	OSStatus result = CreateNewWindow(kDocumentWindowClass,
-								kWindowStandardDocumentAttributes,
-								&rect, &wref); 
-	if (result != noErr) {
-		fprintf(stderr, "Error creating mouse window.\n");
-		return NULL;
-	}
-
-#ifdef NOMORE
-	XSetWindowAttributes attr;
-	attr.backing_store = WhenMapped;
-	attr.event_mask = ExposureMask | PointerMotionMask | ButtonMotionMask
-				| ButtonPressMask | ButtonReleaseMask | StructureNotifyMask;
-	attr.background_pixel = XWhitePixel(_display, _screen);
-	const unsigned long valuemask = CWBackingStore | CWEventMask | CWBackPixel
-							| CWCursor;
-
-
-	XFontStruct *font = XLoadQueryFont(_display, _fontName);
-	if (font == NULL) {
-		fprintf(stderr, "Mouse window font not found.\n");
-		return None;
-	}
-	XSetFont(_display, _gc, font->fid);
-	_charWidth = XTextWidth(font, "X", 1);
-   _lineHeight = font->ascent + font->descent;
-   _fontAscent = font->ascent;
-
-	XStoreName(_display, window, _windowname);
-	ShowWindow(_display, window);
-#endif
-
-	return wref;
+	return 0;
 }
 
-void OSXMouse::setFactors()
+int OSXMouse::writePacket(const MouseSockPacket *packet)
 {
-	Rect rect;
-	GetWindowBounds(_window, kWindowContentRgn, &rect);
-	const int width = rect.right - rect.left;
-	const int height = rect.bottom - rect.top;
-	_xfactor = 1.0 / (double) (width - 1);
-	_yfactor = 1.0 / (double) (height - 1);
+	const char *ptr = (char *) packet;
+	const int packetsize = sizeof(MouseSockPacket);
+	ssize_t amt = 0;
+	do {
+		ssize_t n = write(_newdesc, ptr + amt, packetsize - amt);
+		if (n < 0)
+			return reportError(strerror(errno));
+		amt += n;
+	} while (amt < packetsize);
+
+	return 0;
 }
 
-void OSXMouse::drawXLabels()
+// Ensures null termination.  <len> includes the null.
+void mystrncpy(char *dest, const char *src, int len)
 {
-	GrafPtr oldPort;
-	GetPort(&oldPort);
-	SetPort(_window); // FIXME: how do I get GrafPtr from WindowRef?
+	strncpy(dest, src, len - 1);
+	dest[len - 1] = 0;
+}
 
-	if (_xlabelCount > 0) {
-		// Clear rect enclosing all X labels.
-		int height = _xlabelCount * _lineHeight;
-		int width = _maxLabelChars * _charWidth;
-		int ypos = _labelYpos;
-		Rect rect;
-		SetRect(&rect, ypos, _labelXpos, ypos + height, _labelXpos + width);
-		EraseRect(&rect);
-#ifdef DEBUG
-		FrameRect(&rect);
-		printf("drawXLabel: xpos=%d, ypos=%d, width=%d, height=%d\n",
-					_labelXpos, ypos, width, height);
-#endif
+// Send prefix, units and precision to MouseWindow for given label id and axis.
+void OSXMouse::sendLabel(const bool isXAxis, const int id, const char *prefix,
+		const char *units, const int precision)
+{
+	_packet->id = id;
 
-		// Draw all X labels.
-		ypos += _fontAscent;
-		int line = 0;
-		for (int i = 0; i < _xlabelCount; i++) {
-			Str255 str;
-			CopyCStringToPascal(_xlabel[i], str);
-			MoveTo(_labelXpos, ypos + (line * _lineHeight));
-			DrawString(str);
-			line++;
-		}
+	_packet->type = isXAxis ? kPacketConfigureXLabelPrefix
+									: kPacketConfigureYLabelPrefix;
+	mystrncpy(_packet->data.str, prefix, PART_LABEL_LENGTH);
+	writePacket(_packet);
+
+	if (units) {		// units string is optional
+		_packet->type = isXAxis ? kPacketConfigureXLabelUnits
+										: kPacketConfigureYLabelUnits;
+		mystrncpy(_packet->data.str, units, PART_LABEL_LENGTH);
+		writePacket(_packet);
 	}
-	SetPort(oldPort);
+
+	_packet->type = isXAxis ? kPacketConfigureXLabelPrecision
+									: kPacketConfigureXLabelPrecision;
+	_packet->data.precision = precision;
+	writePacket(_packet);
 }
 
-void OSXMouse::drawYLabels()
+void OSXMouse::doConfigureXLabel(const int id, const char *prefix,
+		const char *units, const int precision)
 {
-	if (_ylabelCount > 0) {
-		// Clear rect enclosing all Y labels.
-		int height = _ylabelCount * _lineHeight;
-		int width = _maxLabelChars * _charWidth;
-		int ypos = _labelYpos + (_xlabelCount * _lineHeight);
-		XClearArea(_display, _window, _labelXpos, ypos, width, height, False);
-#ifdef DEBUG
-		XDrawRectangle(_display, _window, _gc, _labelXpos, ypos, width, height);
-		printf("drawYLabel: xpos=%d, ypos=%d, width=%d, height=%d\n",
-					_labelXpos, ypos, width, height);
-#endif
-
-		// Draw all Y labels.
-		ypos += _fontAscent;
-		int line = 0;
-		for (int i = 0; i < _ylabelCount; i++) {
-			XDrawString(_display, _window, _gc,
-							_labelXpos, ypos + (line * _lineHeight),
-							_ylabel[i], strlen(_ylabel[i]));
-			line++;
-		}
-		XFlush(_display);
-	}
+	sendLabel(true, id, prefix, units, precision);
 }
 
-void OSXMouse::drawWindowContent()
+void OSXMouse::doConfigureYLabel(const int id, const char *prefix,
+		const char *units, const int precision)
 {
-	drawXLabels();
-	drawYLabels();
+	sendLabel(false, id, prefix, units, precision);
+}
+
+// Send label value to MouseWindow for given label id and axis.
+void OSXMouse::sendLabelValue(const bool isXAxis, const int id,
+	const double value)
+{
+	_packet->id = id;
+	_packet->type = isXAxis ? kPacketUpdateXLabel : kPacketUpdateYLabel;
+	_packet->data.value = value;
+	writePacket(_packet);
+}
+
+void OSXMouse::doUpdateXLabelValue(const int id, const double value)
+{
+	sendLabelValue(true, id, value);
+}
+
+void OSXMouse::doUpdateYLabelValue(const int id, const double value)
+{
+	sendLabelValue(false, id, value);
 }
 
 bool OSXMouse::handleEvents()
 {
-	XEvent event;
-	const unsigned long evtmask =
-		  ExposureMask
-		| PointerMotionMask
-		| StructureNotifyMask;
+// XXX read incoming data from MouseWindow.app
+// throw away all but the last set of x/y coords.
+// Question: should we ever exit loop when data is still available to read?
+// Yes, we must exit every time we read a message, because otherwise
+// we'd never be able to receive the configure label message!
+//
+// Each message will have a message type: coords (in range [0,1]),
+// quit (meaning that user has quit MouseWindow app before we're done),
+// and ack (which is handled in ctor and dtor instead of here).
 
-	bool keepgoing = true;
-	while (XCheckWindowEvent(_display, _window, evtmask, &event)) {
-		switch (event.type) {
-			case MotionNotify:
-				_xraw = event.xmotion.x;
-				_yraw = event.xmotion.y;
-				break;
-			case Expose:
-				drawWindowContent();
-				break;
-			case ConfigureNotify:
-				setFactors();
-				break;
-			default:
-				break;
-		}
-	}
-	return keepgoing;
+	return true;
 }
 

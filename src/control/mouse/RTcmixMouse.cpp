@@ -38,47 +38,31 @@ RTcmixMouse::~RTcmixMouse()
 	}
 }
 
-int RTcmixMouse::configureXLabel(const char *prefix, const char *units)
-{
-	return configureXLabel(prefix, units, DEFAULT_PRECISION);
-}
-
 int RTcmixMouse::configureXLabel(const char *prefix, const char *units,
-		const int prec)
+		const int precision)
 {
 	assert(prefix != NULL);
 	if (_xlabelCount == NLABELS)
 		return -1;
 	const int id = _xlabelCount;
 	_xlabelCount++;
-	_xprefix[id] = strdup(prefix);
-	if (units)
-		_xunits[id] = strdup(units);
-	_xlabel[id] = new char [LABEL_LENGTH];
-	_xlabel[id][0] = 0;
-	_xprecision[id] = prec;
+
+	doConfigureXLabel(id, prefix, units, precision);
+
 	return id;
 }
 
-int RTcmixMouse::configureYLabel(const char *prefix, const char *units)
-{
-	return configureYLabel(prefix, units, DEFAULT_PRECISION);
-}
-
 int RTcmixMouse::configureYLabel(const char *prefix, const char *units,
-		const int prec)
+		const int precision)
 {
 	assert(prefix != NULL);
 	if (_ylabelCount == NLABELS)
 		return -1;
 	const int id = _ylabelCount;
 	_ylabelCount++;
-	_yprefix[id] = strdup(prefix);
-	if (units)
-		_yunits[id] = strdup(units);
-	_ylabel[id] = new char [LABEL_LENGTH];
-	_ylabel[id][0] = 0;
-	_yprecision[id] = prec;
+
+	doConfigureYLabel(id, prefix, units, precision);
+
 	return id;
 }
 
@@ -86,13 +70,12 @@ void RTcmixMouse::updateXLabelValue(const int id, const double value)
 {
 	if (id < 0)							// this is valid if caller wants no label
 		return;
+	assert(id < _xlabelCount);
 	if (value == _lastx[id])
 		return;
-	assert(id < _xlabelCount);		// this would be a program error
-	const char *units = _xunits[id] ? _xunits[id] : "";
-	snprintf(_xlabel[id], LABEL_LENGTH, "%s: %.*f %s",
-				_xprefix[id], _xprecision[id], value, units);
-	drawXLabels();
+
+	doUpdateXLabelValue(id, value);
+
 	_lastx[id] = value;
 }
 
@@ -100,13 +83,12 @@ void RTcmixMouse::updateYLabelValue(const int id, const double value)
 {
 	if (id < 0)							// this is valid if caller wants no label
 		return;
+	assert(id < _ylabelCount);
 	if (value == _lasty[id])
 		return;
-	assert(id < _ylabelCount);		// this would be a program error
-	const char *units = _yunits[id] ? _yunits[id] : "";
-	snprintf(_ylabel[id], LABEL_LENGTH, "%s: %.*f %s",
-				_yprefix[id], _yprecision[id], value, units);
-	drawYLabels();
+
+	doUpdateYLabelValue(id, value);
+
 	_lasty[id] = value;
 }
 

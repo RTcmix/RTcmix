@@ -7,12 +7,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <assert.h>
 
 //#define DEBUG
 
-#define LABEL_FROM_LEFT	10		// pixels from left border
-#define LABEL_FROM_TOP	10
-#define LABEL_FONT_NAME	"fixed"
+#define LABEL_FONT_NAME	"fixed"	// platform-specific
 
 
 XMouse::XMouse() : RTcmixMouse()
@@ -23,7 +22,7 @@ XMouse::XMouse() : RTcmixMouse()
 	_yraw = INT_MAX;
 	_labelXpos = LABEL_FROM_LEFT;
 	_labelYpos = LABEL_FROM_TOP;
-	_maxLabelChars = LABEL_LENGTH;	// defined in base class
+	_maxLabelChars = WHOLE_LABEL_LENGTH;	// defined in labels.h
 	_lineHeight = 0;
 	_charWidth = 0;
 	_fontName = LABEL_FONT_NAME;
@@ -36,6 +35,44 @@ XMouse::~XMouse()
 		XUnmapWindow(_display, _window);
 		XDestroyWindow(_display, _window);
 	}
+}
+
+void XMouse::doConfigureXLabel(const int id, const char *prefix,
+		const char *units, const int precision)
+{
+	_xprefix[id] = strdup(prefix);
+	if (units)
+		_xunits[id] = strdup(units);
+	_xlabel[id] = new char [WHOLE_LABEL_LENGTH];
+	_xlabel[id][0] = 0;
+	_xprecision[id] = precision;
+}
+
+void XMouse::doConfigureYLabel(const int id, const char *prefix,
+		const char *units, const int precision)
+{
+	_yprefix[id] = strdup(prefix);
+	if (units)
+		_yunits[id] = strdup(units);
+	_ylabel[id] = new char [WHOLE_LABEL_LENGTH];
+	_ylabel[id][0] = 0;
+	_yprecision[id] = precision;
+}
+
+void XMouse::doUpdateXLabelValue(const int id, const double value)
+{
+	const char *units = _xunits[id] ? _xunits[id] : "";
+	snprintf(_xlabel[id], WHOLE_LABEL_LENGTH, "%s: %.*f %s",
+				_xprefix[id], _xprecision[id], value, units);
+	drawXLabels();
+}
+
+void XMouse::doUpdateYLabelValue(const int id, const double value)
+{
+	const char *units = _yunits[id] ? _yunits[id] : "";
+	snprintf(_ylabel[id], WHOLE_LABEL_LENGTH, "%s: %.*f %s",
+				_yprefix[id], _yprecision[id], value, units);
+	drawYLabels();
 }
 
 int XMouse::show()

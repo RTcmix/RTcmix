@@ -6,6 +6,7 @@
 #define _OSXMOUSE_H_
 #include <RTcmixMouse.h>
 #include <Carbon/Carbon.h>
+#include "mouse_ipc.h"
 
 class OSXMouse : public RTcmixMouse {
 public:
@@ -17,42 +18,31 @@ public:
 protected:
 	// RTcmixMouse reimplementations
 
-	virtual inline double getPositionX() const
-	{
-		return _xraw * _xfactor;
-	}
+	virtual inline double getPositionX() const { return _x; }
+	virtual inline double getPositionY() const { return _y; }
 
-	virtual inline double getPositionY() const
-	{
-		return 1.0 - (_yraw * _yfactor);
-	}
+	virtual void doConfigureXLabel(const int id, const char *prefix,
+                                 const char *units, const int precision);
+	virtual void doConfigureYLabel(const int id, const char *prefix,
+                                 const char *units, const int precision);
+	virtual void doUpdateXLabelValue(const int id, const double value);
+	virtual void doUpdateYLabelValue(const int id, const double value);
 
 	virtual bool handleEvents();
-	virtual void drawXLabels();
-	virtual void drawYLabels();
 
 private:
-	WindowRef createWindow(const int xpos, const int ypos,
-					const int width, const int height);
-	void setFactors();
-	void drawWindowContent();
+	int reportError(const char *err);
+	int readPacket(MouseSockPacket *packet);
+	int writePacket(const MouseSockPacket *packet);
+	void sendLabel(const bool isXAxis, const int id, const char *prefix,
+                  const char *units, const int precision);
+	void sendLabelValue(const bool isXAxis, const int id, const double value);
 
-	WindowRef _window;
-	char *_windowname;
-	CursHandle _cursor;
-
-	int _xraw;
-	int _yraw;
-	double _xfactor;
-	double _yfactor;
-
-	char *_fontName;
-	int _labelXpos;
-	int _labelYpos;
-	int _fontAscent;
-	int _lineHeight;
-	int _maxLabelChars;
-	int _charWidth;
+	int _sockport;
+	int _newdesc;
+	double _x;
+	double _y;
+	MouseSockPacket *_packet;
 };
 
 #endif // _OSXMOUSE_H_
