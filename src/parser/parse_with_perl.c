@@ -14,7 +14,7 @@ extern void boot_DynaLoader (CV* cv);
 
 static PerlInterpreter *perl_interp = NULL;
 static PerlInterpreter *my_perl = NULL;
-
+static SV *perlBuf;
 static char *extra_lib_dir = "-I"SHAREDLIBDIR;
 
 
@@ -33,7 +33,7 @@ int perl_parse_buf (char *inBuf) {
 	
 	STRLEN n_a;
 	char *embedding[] = { "", "-e", "" };
-	SV *text = NEWSV(1099,0);
+
 	
 	if (!my_perl) {
 		my_perl = perl_alloc();
@@ -43,10 +43,10 @@ int perl_parse_buf (char *inBuf) {
 		perl_run(my_perl);
 	}
 
-	sv_setpv(text,inBuf);
-	eval_sv(text,G_SCALAR);
+/* 	sv_setpv(text,inBuf); */
+/* 	eval_sv(text,G_SCALAR); */
 
-	/* eval_pv(inBuf, TRUE); */
+	perlBuf = eval_pv(inBuf, TRUE);
 	
 	if (0) {
 		perl_destruct(my_perl);
@@ -55,6 +55,14 @@ int perl_parse_buf (char *inBuf) {
 
 	return 0;
 	
+}
+
+void set_perl_var(char *string, double value) {
+	sv_setpvf(perlBuf, "%f", value);
+}	
+
+double get_perl_var(char *string) {
+	return SvNV(get_sv(string, FALSE));
 }
 
 /* ---------------------------------------------------------- parse_score --- */
