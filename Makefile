@@ -5,7 +5,7 @@
 include makefile.conf
 
 BASE = insts/base
-DIRS = include genlib src insts utils apps docs
+DIRS = include genlib src insts utils apps docs snd
 
 all:	install_dirs
 	@echo "making all ..."
@@ -41,6 +41,11 @@ utils::
 docs::
 	@echo "making docs ..."
 	@cd docs; $(MAKE) $(MFLAGS) all
+	@echo "done."; echo ""
+
+snd::
+	@echo "making snd ..."
+	@cd snd; $(MAKE) $(MFLAGS) all
 	@echo "done."; echo ""
 
 insts::
