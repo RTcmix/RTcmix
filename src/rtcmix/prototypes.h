@@ -49,15 +49,18 @@ int checkfunc(const char *funcname, const Arg arglist[], const int nargs,
 /* buffers.c:  prototypes in buffers.h */
 
 /* checkfuncs.c */
-double checkfuncs(char *fname, double *pp, int n_args);
+double checkfuncs(const char *fname, double *pp, int n_args);
 
 /* checkInsts.C */
 #ifdef PFIELD_CLASS
 double checkInsts(const char *instname, const Arg arglist[], const int nargs,
    Arg *retval);
 #else
-double checkInsts(char *fname, double *pp, int n_args, void **inst);
+double checkInsts(const char *fname, double *pp, int n_args, void **inst);
+/* this is just a wrapper */
+double parse_dispatch(const char *str, double *pp, int n_args, void **inst);
 #endif
+
 
 /* audioLoop.C */
 int runMainLoop(void);

@@ -137,7 +137,7 @@ checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retv
 
 #else /* !PFIELD_CLASS */
 
-double checkInsts(char *fname, double *pp, int n_args, void **inst)
+double checkInsts(const char *fname, double *pp, int n_args, void **inst)
 {
    int i;
    rt_item *rt_p;
