@@ -1,0 +1,70 @@
+#!/usr/bin/perl -w
+# Replacement for the old syn command, using pod documentation as info source.
+# JGG, 11/29/03
+
+# NOTE: this line is modified at install time by docs/pod/Makefile
+$cmixdir = _CMIXDIR_;
+$poddir = $cmixdir . "/docs/pod";
+
+$use_color = 1;
+# uncomment the color you want to use for parameter names
+$esc = "[31m"; # red
+#$esc = "[32m"; # green
+#$esc = "[33m"; # brown
+#$esc = "[34m"; # blue
+#$esc = "[35m"; # magenta
+#$esc = "[36m"; # cyan
+#$esc = "[37m"; # light gray
+
+if ($#ARGV == 0) {
+   $cmd = $ARGV[0];
+}
+else {
+   print "Usage: syn command\n";
+   exit(1);
+}
+
+if ($cmd eq "all") {
+   print "Cmd listing not yet implemented...sorry\n";
+   exit(0);
+}
+
+$pod = $poddir . "/" . $cmd . ".pod";
+#print $pod, "\n";
+
+# FIXME: use pod dir listing to verify cmd
+
+# slurp in the entire man page
+if ($use_color) {
+   @lines = `pod2text -i 0 -c $pod`;
+}
+else {
+   @lines = `pod2text -i 0 $pod`;
+}
+
+print "\n";
+
+$printit = 0;
+foreach $line (@lines) {
+   if ($printit == 0) {
+      if ($line =~ /SYNOPSIS/) {
+         $printit = 1;     # begin printing at next line
+      }
+   }
+   else {
+      if ($line =~ /DESCRIPTION/) {
+         exit(0);          # end printing
+      }
+      else {
+         if ($use_color) {
+            $line =~ s/\[33m/$esc/g;   # sub for default ASCII color escape
+         }
+         else {
+            $line =~ s/\*//g;    # strip stars used to display italic pod text
+         }
+         chomp $line;
+         print $line . "\n";
+      }
+   }
+}
+
