@@ -1,0 +1,6 @@
+rtsetparams(44100,2)
+rtinput("/tmp/chor.snd")
+pk = PEAK(0.3, 1)
+lpk = LEFT_PEAK(0.3, 1)
+rpk = RIGHT_PEAK(0.3, 1)
+str_num("pk: ", pk, ", lpk: ", lpk, ", rpk: ", rpk)
