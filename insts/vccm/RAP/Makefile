@@ -20,7 +20,7 @@ lib$(NAME).so: $(OBJS) $(GENLIB)
 $(NAME): $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) $(NAME).h
+$(OBJS): $(INSTRUMENT_H) RECORD.h PLAY.h
 
 install: dso_install
 
