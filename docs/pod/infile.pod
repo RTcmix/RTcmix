@@ -1,0 +1,48 @@
+=head1 NAME
+
+infile - open a data file for use with gen2 or gen3
+
+=head1 SYNOPSIS
+
+B<infile>(I<file_name>, I<file_number>)
+
+=head1 DESCRIPTION
+
+Open a file containing ASCII or binary data for use with L<gen 2|gen2>
+or L<gen 3|gen3>, respectively.
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item I<file_name>
+
+The name of the data file to open, in double quotes.
+
+=item I<file_number>
+
+A number that identifies the data file to your script.  You pass this
+number to L<gen 2|gen2> or L<gen 3|gen3>.
+
+Must be between 1 and 50.
+
+=back
+
+=head1 RETURNS
+
+Returns the file number (though this will never be different from
+I<file_number>).
+
+=head1 EXAMPLES
+
+   file_num = 1
+   infile("myfile", file_num)
+   makegen(2, 3, 20, file_num)
+
+Table number 2 will contain 20 values read from the binary data file,
+"myfile."
+
+=head1 SEE ALSO
+
+L<makegen|makegen>, L<gen2|gen2>, L<gen3|gen3>
+
