@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Monday, August 26 2002 Douglas Scott <netdscott-at-netscape.net>
+
+   * Added new TRANS3 instrument (3rd-order interp) to libTRANS library.
+
 Thursday, August 22 2002 Douglas Scott <netdscott-at-netscape.net>
 
    * Added new LPCIN instrument to libLPCPLAY library.
