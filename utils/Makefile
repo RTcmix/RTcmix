@@ -24,7 +24,7 @@ endif
 all: $(PROGS) $(RESAMPLE)
 
 cmixplay:  $(PLAY) $(SYSOBJS)
-	$(CC) -o cmixplay $(PLAY) $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
+	$(CC) -o cmixplay $(SOUND_DRIVER) $(PLAY) $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
 
 playraw: playraw.o
 	$(CC) -o playraw playraw.o
