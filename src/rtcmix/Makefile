@@ -191,14 +191,14 @@ heap/rtHeap.o:
 
 # rules for three executables we build
 
-MIX: main.o $(M_O) $(LIBS) $(RTLIB) $(PROFILE_O) $(WORKAROUND)
+MIX: main.o $(M_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
 	$(CXX) -o MIX $(WORKAROUND) $(DYN) main.o $(PROFILE_O) $(M_O) -L. $(LDFLAGS)
 
-PMIX: main.o $(P_O) $(LIBS) $(RTLIB) $(PROFILE_O) $(WORKAROUND)
+PMIX: main.o $(P_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
 	$(CXX) -o PMIX $(WORKAROUND) $(DYN) main.o $(PROFILE_O) \
 		$(P_O) -L. $(LDFLAGS) $(PERL_LDFLAGS)
 
-PYMIX: main.o $(PY_O) $(LIBS) $(RTLIB) $(PROFILE_O) $(WORKAROUND)
+PYMIX: main.o $(PY_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
 	$(CXX) -o PYMIX $(WORKAROUND) $(DYN) main.o $(PROFILE_O) \
 		$(PY_O) -L. $(LDFLAGS) $(PYEXT) $(PYTHONLIBS)
 
