@@ -1,15 +1,19 @@
 #include <objlib.h>
 
 class DECIMATE : public Instrument {
-   int      inchan, skip, branch, mask, bias;
-   float    amp, aamp, pctleft;
+   bool     warn_bits, warn_cutoff, usefilt;
+   int32_t  mask;
+   int      nargs, inchan, skip, branch, bias, bits;
+   float    preamp, postamp, cutoff, nyquist, pctleft;
    float    *in, *amparray, amptabs[2];
    Butter   *lpfilt;
 
+   void changebits(int bits);
 public:
    DECIMATE();
    virtual ~DECIMATE();
-   int init(double p[], int n_args);
-   int run();
+   virtual int init(double p[], int n_args);
+   virtual int configure();
+   virtual int run();
 };
 
