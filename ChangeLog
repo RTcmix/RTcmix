@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Wednesday, June 30, 2004 John Gibson <johgibso-at-indiana.edu>
+
+   * New .rtcmixrc configuration file feature.
+   * All global options now contained in an Option object.
+
 2004-06-26  Douglas Scott  <netdscott-at-netscape.net>
 
 	* More work on stop/close/signal handler.
