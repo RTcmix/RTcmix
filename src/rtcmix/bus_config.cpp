@@ -21,10 +21,21 @@
 // BusSlot "class" methods
 //
 
-BusSlot::BusSlot()
+BusSlot::BusSlot() : next(NULL), prev(NULL), in_count(0), out_count(0),
+					 auxin_count(0), auxout_count(0), refcount(0)
 {
-	memset(this, 0, sizeof(*this));		// Quicker than zeroing all the members
+	for (int n=0; n<MAXBUS; ++n)
+	    in[n] = out[n] = auxin[n] = auxout[n] = 0;
 }
+
+//
+// BusQueue class methods
+//
+
+BusQueue::BusQueue(char *name, BusSlot *theQueue)
+		: inst_name(strdup(name)), queue(theQueue), next(NULL) {}
+
+BusQueue::~BusQueue() { free(inst_name); }
 
 /* Special flags and whatnot */
 typedef enum {
@@ -156,7 +167,7 @@ print_inst_bus_config() {
 
    while (t_array) {
 
-	  printf("%s",t_array->inst_name);
+	  printf("%s",t_array->instName());
 	  check_q = t_array->queue;
 	  
 	  if (check_q == NULL) {
@@ -210,9 +221,7 @@ check_bus_inst_config(BusSlot *slot, Bool visit) {
   pthread_mutex_lock(&bus_config_status_lock);
   if (Bus_Config_Status == NO) {
 	for (i=0;i<MAXBUS;i++) {
-	  t_node = (CheckNode*)malloc(sizeof(CheckNode));
-	  t_node->bus_list = (short*)malloc(sizeof(short)*MAXBUS);
-	  t_node->bus_count = 0;
+	  t_node = new CheckNode;
 	  pthread_mutex_lock(&bus_in_config_lock);
 	  Bus_In_Config[i] = t_node;
 	  pthread_mutex_unlock(&bus_in_config_lock);
@@ -248,12 +257,8 @@ check_bus_inst_config(BusSlot *slot, Bool visit) {
   }
 
   /* Put the slot being checked on the list of "to be checked" */
-  t_node = (CheckNode*)malloc(sizeof(CheckNode));
-  t_node->bus_list = slot->auxin;
-  t_node->bus_count = slot->auxin_count;
-  in_check_queue = (CheckQueue*)malloc(sizeof(CheckQueue));
-  in_check_queue->node = t_node;
-  in_check_queue->next = NULL;
+  t_node = new CheckNode(slot->auxin, slot->auxin_count);
+  in_check_queue = new CheckQueue(t_node);
   last = in_check_queue;
 
   /* Go down the list of things (nodes) to be checked */
@@ -274,8 +279,7 @@ check_bus_inst_config(BusSlot *slot, Bool visit) {
 
 		/* If they're equal, then return the error */
 		if (t_in == t_out) {
-		  fprintf(stderr,"ERROR:  bus_config loop ...");
-		  fprintf(stderr," config not allowed.\n");
+		  rterror(NULL, "ERROR:  bus_config loop ... config not allowed.\n");
 		  return LOOP_ERR;
 		}
 	  }
@@ -302,9 +306,7 @@ check_bus_inst_config(BusSlot *slot, Bool visit) {
 		}
 		pthread_mutex_unlock(&has_parent_lock);
 		Visited[t_in] = YES;
-		t_queue = (CheckQueue*)malloc(sizeof(CheckQueue));
-		t_queue->node = Bus_In_Config[t_in];
-		t_queue->next = NULL;
+		t_queue = new CheckQueue(Bus_In_Config[t_in]);
 		last->next = t_queue;
 		last = t_queue;
 	  }
@@ -374,24 +376,19 @@ insert_bus_slot(char *name, BusSlot *slot) {
   /* Create initial node for Inst_Bus_Config */
   pthread_mutex_lock(&inst_bus_config_lock);
   if (Inst_Bus_Config == NULL) {
-	t_queue = (BusQueue *)malloc(sizeof(BusQueue));
-	t_queue->queue = slot;
-	t_queue->inst_name = strdup(name);
-	t_queue->next = NULL;
-	Inst_Bus_Config=t_queue;
+	Inst_Bus_Config = new BusQueue(name, slot);
 	pthread_mutex_unlock(&inst_bus_config_lock);
 	return NO_ERR;
   }
   t_array = Inst_Bus_Config;
   pthread_mutex_unlock(&inst_bus_config_lock);
+  
+  Lock lock(&inst_bus_config_lock);	// unlocks when out of scope
 
   /* Traverse down each list */
-  while(t_array) {
-	
-	check_q = t_array->queue;
-	
+  while(t_array) {	
 	/* If names match, then put onto the head of the slot's list */
-	if (strcmp(t_array->inst_name,name) == 0) {
+	if (strcmp(t_array->instName(), name) == 0) {
 	  slot->next = t_array->queue;
 	  t_array->queue = slot;
 	  return NO_ERR;
@@ -399,11 +396,7 @@ insert_bus_slot(char *name, BusSlot *slot) {
 	
 	/* We've reached the end ... so put a new node on with inst's name */
 	if (t_array->next == NULL) {
-	  t_queue = (BusQueue *)malloc(sizeof(BusQueue));
-	  t_queue->queue = slot;
-	  t_queue->inst_name = strdup(name);
-	  t_queue->next = NULL;
-	  t_array->next = t_queue;
+	  t_array->next = new BusQueue(name, slot);
   	  return NO_ERR;
 	}
 	t_array = t_array->next;
@@ -503,7 +496,7 @@ get_bus_config(const char *inst_name)
 
    pthread_mutex_lock(&inst_bus_config_lock);
    for (q = Inst_Bus_Config; q; q = q->next) {
-	 if (strcmp(inst_name, q->inst_name) == 0) {
+	 if (strcmp(inst_name, q->instName()) == 0) {
 	   pthread_mutex_unlock(&inst_bus_config_lock);   
 	   return q->queue;
 	 }

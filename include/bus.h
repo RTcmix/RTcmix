@@ -2,6 +2,7 @@
 #define _BUS_H_ 1
 
 #include <globals.h>
+#include <Lockable.h>
 
 enum ErrCode {
    NO_ERR = 0,
@@ -26,7 +27,8 @@ enum IBusClass {
   UNKNOWN
 };
 
-struct BusSlot {
+class BusSlot : public Lockable {
+public:
 	BusSlot();
 	inline IBusClass Class() const;
 	BusSlot    *next;
@@ -58,24 +60,24 @@ BusSlot::Class() const
   return UNKNOWN;
 }
 
-typedef struct _BusQueue BusQueue;
-
-struct _BusQueue {
-   char *inst_name;
-   BusSlot *queue;
-   BusQueue *next;
+struct BusQueue {
+	BusQueue(char *name, BusSlot *theQueue);
+	~BusQueue();
+	char *instName() { return inst_name; }
+	char *inst_name;
+	BusSlot *queue;
+	BusQueue *next;
 };
 
-typedef struct _CheckNode CheckNode;
-
-struct _CheckNode {
+struct CheckNode {
+   CheckNode() : bus_list(new short[MAXBUS]), bus_count(0) {}
+   CheckNode(short *list, short count) : bus_list(list), bus_count(count) {}
    short *bus_list;
    short bus_count;
 };
 
-typedef struct _CheckQueue CheckQueue;
-
-struct _CheckQueue {
+struct CheckQueue {
+   CheckQueue(CheckNode *theNode) : node(theNode), next(NULL) {}
    CheckNode *node;
    CheckQueue *next;
 };
