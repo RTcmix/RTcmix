@@ -30,7 +30,6 @@ typedef struct inputdesc {
 
 
 /* for insts - so they don't have to include globals.h */
-extern int NCHANS;
 extern int RTBUFSAMPS;
 extern float SR;
 
