@@ -14,9 +14,9 @@
    fplot with just the <genslot> argument plots the function at that
    slot with ascii chars to stdout.
 
-   fplot with more than one argument sends data to gnuplot.  The first
+   fplot with more than one argument sends data to gnuplot.  The second
    argument tells gnuplot how long to keep the window up before quitting.
-   (This is the "pause" parameter in gnuplot.)  The second, optional, 
+   (This is the "pause" parameter in gnuplot.)  The third, optional, 
    argument is any string that gnuplot understands after a plot command.
    This is most useful for controlling the type of plot, e.g., with lines,
    points, dots, impulses, etc.  See the gnuplot manual for more info.
