@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/time.h>           // DT: 3/97 needed for time function
+#include "../H/audio_port.h"    // JGG: for ZERO_FRAMES_BEFORE
 #include "../rtstuff/heap/heap.h"
 #include "../rtstuff/rtdefs.h"
 #include "../H/dbug.h"
@@ -103,6 +104,9 @@ extern "C" {
 	endbus = 999;  // Don't end yet
 
     // NOTE: audioin, aux and output buffers are zero'd during allocation
+
+   for (i = 0; i < ZERO_FRAMES_BEFORE / RTBUFSAMPS; i++)
+     rtsendzeros(0);  // send a buffer of zeros to audio output device
 
     // read in an input buffer (if audio input is active)
     if (audio_on) {
