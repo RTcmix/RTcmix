@@ -34,7 +34,7 @@ _printargs(const char *instname, const Arg arglist[], const int nargs)
       for (i = 0; i < nargs; i++) {
          arg = arglist[i];
          switch (arg.type) {
-            case FloatType:
+            case DoubleType:
                printf("%g ", arg.val.number);
                break;
             case StringType:
@@ -92,7 +92,7 @@ checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retv
 		for (int arg = 0; arg < nargs; ++arg) {
 		  const Arg *pArg = &arglist[arg];
 		  switch (pArg->type) {
-    		 case FloatType:
+    		 case DoubleType:
         		pfieldset->load(new ConstPField((double) pArg->val.number), arg);
         		break;
     		 case StringType:

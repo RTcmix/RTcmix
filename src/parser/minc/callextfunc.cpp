@@ -23,8 +23,8 @@ call_external_function(const char *funcname, const MincListElem arglist[],
    for (i = 0; i < nargs; i++) {
       switch (arglist[i].type) {
          case MincFloatType:
-            rtcmixargs[i].type = FloatType;
-            rtcmixargs[i].val.number = (Float) arglist[i].val.number;
+            rtcmixargs[i].type = DoubleType;
+            rtcmixargs[i].val.number = arglist[i].val.number;
             break;
          case MincStringType:
             rtcmixargs[i].type = StringType;
@@ -38,10 +38,9 @@ call_external_function(const char *funcname, const MincListElem arglist[],
             /* If list contains only floats, convert and pass it along.
                Otherwise, it's an error.
             */
-//FIXME: this only works if Float and MincFloat are same size!
             rtcmixargs[i].val.array = (Array *) emalloc(sizeof(Array));
             rtcmixargs[i].val.array->data
-                        = (Float *) float_list_to_array(&arglist[i].val.list);
+                        = (double *) float_list_to_array(&arglist[i].val.list);
             if (rtcmixargs[i].val.array->data != NULL) {
                rtcmixargs[i].type = ArrayType;
                rtcmixargs[i].val.array->len = arglist[i].val.list.len;
@@ -62,7 +61,7 @@ call_external_function(const char *funcname, const MincListElem arglist[],
 
    /* Convert return value from RTcmix function. */
    switch (retval.type) {
-      case FloatType:
+      case DoubleType:
          return_value->type = MincFloatType;
          return_value->val.number = (MincFloat) retval.val.number;
          break;
@@ -80,7 +79,6 @@ call_external_function(const char *funcname, const MincListElem arglist[],
 // these should be converted to MincListType
          return_value->type = MincArrayType;
          return_value->val.array.len = retval.val.array->len;
-//FIXME: this only works if Float and MincFloat are same size!
          return_value->val.array.data = retval.val.array->data;
          free(retval.val.array);
 #endif

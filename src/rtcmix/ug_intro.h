@@ -15,26 +15,26 @@ void ug_intro(void);       /* called by RTcmix main and RTcmix.C */
 
 #include "rtcmix_types.h"
 
-void addfunc(char *func_label, Float (*func_ptr_number)(),
-   String (*func_ptr_string)(), Handle (*func_ptr_handle)(),
+void addfunc(char *func_label, double (*func_ptr_number)(),
+   char *(*func_ptr_string)(), Handle (*func_ptr_handle)(),
    RTcmixType return_type, int legacy);
 
 
 #define UG_INTRO(flabel, func) \
    { \
-      extern Float func(); \
-      addfunc(flabel, func, NULL, NULL, FloatType, 1); \
+      extern double func(); \
+      addfunc(flabel, func, NULL, NULL, DoubleType, 1); \
    }
 
-#define UG_INTRO_FLOAT_RETURN(flabel, func) \
+#define UG_INTRO_DOUBLE_RETURN(flabel, func) \
    { \
-      extern Float func(); \
-      addfunc(flabel, func, NULL, NULL, FloatType, 0); \
+      extern double func(); \
+      addfunc(flabel, func, NULL, NULL, DoubleType, 0); \
    }
 
 #define UG_INTRO_STRING_RETURN(flabel, func) \
    { \
-      extern String func(); \
+      extern char *func(); \
       addfunc(flabel, NULL, func, NULL, StringType, 0); \
    }
 

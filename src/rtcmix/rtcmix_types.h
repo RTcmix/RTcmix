@@ -3,18 +3,11 @@
 
 typedef enum {
    VoidType = 0,
-   FloatType,
+   DoubleType,
    StringType,
    HandleType,
    ArrayType
 } RTcmixType;
-
-// XXX Needs to be double; otherwise, legacy func calls don't work
-// MincFloat (Minc/minc_internal.h) must match this type!
-//typedef float Float;
-typedef double Float;
-
-typedef char *String;
 
 typedef enum {
    PFieldType,
@@ -30,13 +23,13 @@ struct _handle {
 typedef struct _handle *Handle;
 
 typedef struct {
-   unsigned int len;    // number of Float's in <data> array
-   Float *data;
+   unsigned int len;    // number of elements in <data> array
+   double *data;
 } Array;
 
 typedef union {
-   Float  number;
-   String string;
+   double number;
+   char   *string;
    Handle handle;
    Array  *array;
 } Value;

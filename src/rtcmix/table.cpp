@@ -121,19 +121,19 @@ args_have_same_type(const Arg args[], const int nargs, const RTcmixType type)
    Similar to cmix fnscl.
 */
 static void
-_normalize_table(Float *array, const unsigned int len, const Float peak)
+_normalize_table(double *array, const unsigned int len, const double peak)
 {
-   int i;
+   unsigned int i;
    double max = 0.0;
 
-   for (i = 0; i < (int) len; i++) {
-      double absval = fabs((double) array[i]);
+   for (i = 0; i < len; i++) {
+      double absval = fabs(array[i]);
       if (absval > max)
          max = absval;
    }
    max /= peak;
-   for (i = 0; i < (int) len; i++)
-      array[i] /= (Float) max;
+   for (i = 0; i < len; i++)
+      array[i] /= max;
 }
 
 
@@ -156,7 +156,7 @@ _normalize_table(Float *array, const unsigned int len, const Float peak)
    for 0 <= i < n
 */
 static void
-_transition(double a, double alpha, double b, int n, Float *output)
+_transition(double a, double alpha, double b, int n, double *output)
 {
    int    i;
    double delta, interval = 0.0;
@@ -166,31 +166,30 @@ _transition(double a, double alpha, double b, int n, Float *output)
    if (n <= 1) {
       warn("maketable", "'curve' trying to transition over 1 array slot; "
                                        "time between points is too short");
-      *output = (Float) a;
+      *output = a;
       return;
    }
    interval = 1.0 / (n - 1.0);
 
    if (alpha != 0.0) {
-      double denom = 1.0 / (1.0 - exp((double) alpha));
+      double denom = 1.0 / (1.0 - exp(alpha));
       for (i = 0; i < n; i++)
-         *output++ = (Float) (a + delta
+         *output++ = (a + delta
                         * (1.0 - exp((double) i * alpha * interval)) * denom);
    }
    else
       for (i = 0; i < n; i++)
-         *output++ = (Float) (a + delta * i * interval);
+         *output++ = a + delta * i * interval;
 }
 
 #define MAX_CURVE_PTS 256
 
 static int
-_curve_table(const Arg args[], const int nargs, Float *array,
+_curve_table(const Arg args[], const int nargs, double *array,
    const unsigned int len)
 {
    int    i, points, seglen = 0;
-   double factor;
-   Float  *ptr;
+   double factor, *ptr;
    double time[MAX_CURVE_PTS], value[MAX_CURVE_PTS], alpha[MAX_CURVE_PTS];
 
    if (nargs < 5 || (nargs % 3) != 2) {      /* check number of args */
@@ -201,7 +200,7 @@ _curve_table(const Arg args[], const int nargs, Float *array,
       die("maketable", "too many arguments for curve.");
       return -1;
    }
-   if (!args_have_same_type(args, nargs, FloatType)) {
+   if (!args_have_same_type(args, nargs, DoubleType)) {
       die("maketable", "<time, value, alpha> pairs must be numbers.");
       return -1;
    }
@@ -258,13 +257,13 @@ time_err:
 */
 #define NEWWAY
 static int
-_line_table(const Arg args[], const int nargs, Float *array,
+_line_table(const Arg args[], const int nargs, double *array,
    const unsigned int len)
 {
    double scaler, starttime, thistime, thisval, nexttime, nextval, endtime;
    int i, j, k, l;
 
-   if (!args_have_same_type(args, nargs, FloatType)) {
+   if (!args_have_same_type(args, nargs, DoubleType)) {
       die("maketable", "<time, value> pairs must be numbers.");
       return -1;
    }
@@ -303,8 +302,8 @@ _line_table(const Arg args[], const int nargs, Float *array,
 #endif
       for (l = j; l <= i; l++) {
          if (l <= (int) len)
-            array[l - 1] = (Float) (thisval + (nextval - thisval)
-                                          * (double) (l - j) / ((i - j) + 1));
+            array[l - 1] = thisval + (nextval - thisval)
+                                          * (double) (l - j) / ((i - j) + 1);
       }
    }
 #ifdef NEWWAY
@@ -322,23 +321,24 @@ time_err:
 /* Similar to cmix gen 9, but no normalization.
 */
 static int
-_wave3_table(const Arg args[], const int nargs, Float *array,
+_wave3_table(const Arg args[], const int nargs, double *array,
    const unsigned int len)
 {
-   int i, j;
+   unsigned int i;
+   int j;
 
-   for (i = 0; i < (int) len; i++)
+   for (i = 0; i < len; i++)
       array[i] = 0.0;
 
    for (j = nargs - 1; j > 0; j -= 3) {
       assert(j > 0);
       assert(j < nargs);
       if (args[j - 1].val.number != 0.0) {
-         for (i = 0; i < (int) len; i++) {
+         for (i = 0; i < len; i++) {
             double val = sin(TWOPI * ((double) i
                                  / ((double) len / args[j - 2].val.number)
                                  + args[j].val.number / 360.0));
-            array[i] += (Float) (val * args[j - 1].val.number);
+            array[i] += (val * args[j - 1].val.number);
          }
       }
    }
@@ -351,7 +351,7 @@ _wave3_table(const Arg args[], const int nargs, Float *array,
 /* Equivalent to cmix gen 10.
 */
 static int
-_wave_table(const Arg args[], const int nargs, Float *array,
+_wave_table(const Arg args[], const int nargs, double *array,
    const unsigned int len)
 {
    unsigned int i, j;
@@ -360,14 +360,14 @@ _wave_table(const Arg args[], const int nargs, Float *array,
       array[i] = 0.0;
    j = nargs;
    while (j--) {
-      if (args[j].type != FloatType) {
+      if (args[j].type != DoubleType) {
          die("maketable", "Harmonic amplitudes must be numbers.");
          return -1;
       }
       if (args[j].val.number != 0.0) {
          for (i = 0; i < len; i++) {
             double val = TWOPI * (double) i / (double) len / (double) (j + 1);
-            array[i] += (Float) (sin(val) * args[j].val.number);
+            array[i] += (sin(val) * args[j].val.number);
          }
       }
    }
@@ -384,14 +384,15 @@ _wave_table(const Arg args[], const int nargs, Float *array,
    create the harmonics specified by the following arguments.
 */
 static int
-_cheby_table(const Arg args[], const int nargs, Float *array,
+_cheby_table(const Arg args[], const int nargs, double *array,
    const unsigned int len)
 {
-   int i, j;
+   unsigned int i;
+   int j;
    double Tn, Tn1, Tn2, x, d;
 
    d = (double) ((len / 2) - 0.5);
-   for (i = 0; i < (int) len; i++) {
+   for (i = 0; i < len; i++) {
       x = (i / d - 1.0) / args[0].val.number;
       array[i] = 0.0;
       Tn1 = 1.0;
@@ -412,7 +413,7 @@ _cheby_table(const Arg args[], const int nargs, Float *array,
 /* Equivalent to cmix gen 25.
 */
 static int
-_window_table(const Arg args[], const int nargs, Float *array,
+_window_table(const Arg args[], const int nargs, double *array,
    const unsigned int len)
 {
    unsigned int i, window_type = 0;
@@ -431,7 +432,7 @@ _window_table(const Arg args[], const int nargs, Float *array,
          return -1;
       }
    }
-   else if (args[0].type != FloatType) {
+   else if (args[0].type != DoubleType) {
       die("maketable", "Window type must be a string or numeric code.");
       return -1;
    }
@@ -476,13 +477,13 @@ _string_to_tablekind(const char *str)
 
 static int
 _dispatch_table(const Arg args[], const int nargs, const int startarg,
-   Float *array, unsigned int *len)
+   double *array, unsigned int *len)
 {
    int status;
    TableKind tablekind;
 
    /* Call the appropriate factory function, skipping over first two args. */
-   if (args[0].type == FloatType)
+   if (args[0].type == DoubleType)
       tablekind = (TableKind) args[0].val.number;
    else if (args[0].type == StringType) {
       tablekind = _string_to_tablekind(args[0].val.string);
@@ -546,9 +547,9 @@ unimplemented:
 
 extern "C" {
 	Handle maketable(const Arg args[], const int nargs);
-	Float normtable(const Arg args[], const int nargs);
-	Float plottable(const Arg args[], const int nargs);
-	Float dumptable(const Arg args[], const int nargs);
+	double normtable(const Arg args[], const int nargs);
+	double plottable(const Arg args[], const int nargs);
+	double dumptable(const Arg args[], const int nargs);
 };
 
 /* ------------------------------------------------------------- maketable -- */
@@ -557,7 +558,7 @@ maketable(const Arg args[], const int nargs)
 {
    int status, lenindex, normalize = 0;
    unsigned int len;
-   Float *data;
+   double *data;
    Handle handle;
 
    if (nargs < 2) {
@@ -575,7 +576,7 @@ maketable(const Arg args[], const int nargs)
    }
    else
       lenindex = 1;
-   if (args[lenindex].type != FloatType) {
+   if (args[lenindex].type != DoubleType) {
       die("maketable", "%s argument must be length of table.",
          lenindex == 1 ? "Second" : "Third");
       return NULL;
@@ -589,7 +590,7 @@ maketable(const Arg args[], const int nargs)
 
    // Allocate table array.  TablePField will own and delete this.
    
-   data = new Float[len];
+   data = new double[len];
    if (data == NULL) {
       die("maketable", "Out of memory.");
       return NULL;
@@ -610,11 +611,11 @@ maketable(const Arg args[], const int nargs)
 
 /* ------------------------------------------------------------- normtable -- */
 //FIXME: should return type be Handle? See below.
-Float
+double
 normtable(const Arg args[], const int nargs)
 {
    int copy_table = 0;
-   Float peak = 1.0;
+   double peak = 1.0;
 
    if (nargs < 1) {
       die("normtable", "Requires at least one argument (table to normalize).");
@@ -624,12 +625,12 @@ normtable(const Arg args[], const int nargs)
       die("normtable", "First argument must be the table to normalize.");
       return -1.0;
    }
-   if (nargs > 1 && args[1].type == FloatType)
+   if (nargs > 1 && args[1].type == DoubleType)
       peak = args[1].val.number;
-   if (nargs > 2 && args[2].type == FloatType)
+   if (nargs > 2 && args[2].type == DoubleType)
       copy_table = (args[2].val.number == 1.0);
 #ifdef NOTYET
-// FIXME: this would require returning a Handle instead of a Float
+// FIXME: this would require returning a Handle instead of a double
    if (copy_table) {
    }
 #endif
@@ -639,11 +640,11 @@ normtable(const Arg args[], const int nargs)
 
 
 /* ------------------------------------------------------------- dumptable -- */
-Float
+double
 dumptable(const Arg args[], const int nargs)
 {
    int   len, status;
-   float *array; 
+   double *array; 
    FILE  *f = NULL;
    char  *fname = NULL;
 
@@ -692,7 +693,7 @@ dumptable(const Arg args[], const int nargs)
 
 
 /* ------------------------------------------------------------- plottable -- */
-Float
+double
 plottable(const Arg args[], const int nargs)
 {
    if (nargs != 1) {
