@@ -29,6 +29,11 @@ dso_install: all
 standalone_install: standalone
 
 uninstall:
+	@for DIR in $(DIRS); \
+	do \
+	  ( cd $$DIR; echo "making uninstall in $$DIR..."; \
+		$(MAKE) $(MFLAGS) uninstall ); \
+	done
 
 dso_uninstall:
 

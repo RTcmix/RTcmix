@@ -193,8 +193,8 @@ PYMIX: main.o $(PY_O) $(LIBS) $(PROFILE_O) $(WORKAROUND)
 	$(CXX) -o PYMIX $(WORKAROUND) $(DYN) main.o $(PROFILE_O) \
 		$(PY_O) $(LIBS) $(LDFLAGS) $(PYEXT) $(PYTHONLIBS)
 
-.PHONY: all standalone install dso_install standalone_install \
-		uninstall dso_uninstall standalone_uninstall clean cleanall
+.PHONY: all standalone install standalone_install \
+		uninstall standalone_uninstall clean cleanall
 
 depend:
 ifeq ($(ARCH),LINUX)
@@ -236,6 +236,8 @@ standalone_uninstall:
 	$(RM) $(DESTDIR)/CMIX
 	$(RM) $(DESTDIR)/PCMIX
 	$(RM) $(DESTDIR)/PYCMIX
+
+uninstall: standalone_uninstall
 
 clean:
 	(cd heap; $(MAKE) $(MFLAGS) clean;)
