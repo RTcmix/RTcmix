@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Tuesday, August 12, 2003 John Gibson <johgibso-at-indiana.edu>
+
+   * New instruments: SPECTEQ - FFT-based EQ
+
 Saturday, August 9, 2003 John Gibson <johgibso-at-indiana.edu>
 
    * New instruments:
