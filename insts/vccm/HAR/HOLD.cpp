@@ -62,7 +62,7 @@ int HOLD::init(float p[], int n_args)
 		  "has only been compiled for %d", aud_idx, MAX_AUD_IDX);
 	}
 
-	return(nsamps);
+	return(this->mytag);
 }
 
 int HOLD::run()

@@ -51,7 +51,7 @@ int PLAY::init(float p[], short n_args)
 
 	skip = (int)(SR/(float)resetval);
 
-	return(nsamps);
+	return(this->mytag);
 }
 
 int PLAY::run()

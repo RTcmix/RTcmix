@@ -75,7 +75,7 @@ int COMBFILT::init(float p[], int n_args)
   maxdelay = (int)rint(SR);
   runsamp = 0;
 
-  return(nsamps);
+  return(this->mytag);
 }
 
 int COMBFILT::run()

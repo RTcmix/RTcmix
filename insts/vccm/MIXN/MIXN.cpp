@@ -80,7 +80,7 @@ int MIXN::init(float p[], short n_args)
 
   skip = (int)(SR/(float)resetval); // how often to update amp curve, default 200/sec.
 
-  return(nsamps);
+  return(this->mytag);
 }
 
 int MIXN::run()

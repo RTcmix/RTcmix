@@ -51,7 +51,7 @@ int RECORD::init(float p[], short n_args)
 		  "has only been compiled for %d", aud_idx, MAX_AUD_IDX);
 	}
 
-	return(nsamps);
+	return(this->mytag);
 }
 
 int RECORD::run()
