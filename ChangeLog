@@ -14,6 +14,10 @@ Thursday, November 18, 2004 John Gibson <johgibso-at-indiana.edu>
 
 	* First pass at consolidating all globals into RTcmix object.
 
+Monday, September 13, 2004 John Gibson <johgibso-at-indiana.edu>
+
+   * New mouse and MIDI control signal objects (in src/control/).
+
 Thursday, August 12, 2004 John Gibson <johgibso-at-indiana.edu>
 
    * Two new features for cmixplay: "goto" hotkey (type number to
