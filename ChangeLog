@@ -1,7 +1,14 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Friday, July 30, 2004 John Gibson <johgibso-at-indiana.edu>
+
+   * Remove EXIT_ON_ERROR macro from site.conf; it's replaced
+     by Option::exitOnError, which is false by default, but
+     set to true in main.cpp.
+
 2004-07-27  Douglas Scott  <netdscott at netscape.net>
+
 	*  cmixplay now supports 32bit integer files.
 
 Saturday, July 24, 2004 John Gibson <johgibso-at-indiana.edu>
@@ -88,7 +95,7 @@ Thursday, June 17, 2004 John Gibson <johgibso-at-indiana.edu>
         and checkInsts() now check this return value, because it is possible
         for configure() to fail to to memory allocation failure, etc.
 
- 	* The other thing I did was make the die() function return DO_NOT_SCHEDULE
+ 	* The other thing I did was make the die() function return DONT_SCHEDULE
      in configurations where EXIT_ON_ERROR (or whatever it is called) is NOT
      defined.  This allows the simplified 'return die("some error message");'
 
