@@ -131,6 +131,14 @@ int LPCINST::init(float p[], int n_args)
 	return nSamps();
 }
 
+int
+LPCINST::configure()
+{
+	int status = Instrument::configure();
+	SetupArrays((int)_frames);
+	return status;
+}
+
 /* Construct an instance of this instrument and initialize a variable. */
 LPCPLAY::LPCPLAY()
 	: LPCINST("LPCPLAY"), _pchvals(NULL), _noisvals(NULL)
@@ -221,7 +229,8 @@ int LPCPLAY::localInit(float p[], int n_args)
 					 &_hnfactor,
 					 &_autoCorrect);
 	
-	SetupArrays(frameCount);
+	// Pitch table
+	_pchvals = new float[frameCount];
 
 	// Finish the initialization
 	
@@ -470,8 +479,6 @@ int LPCPLAY::run()
 void
 LPCPLAY::SetupArrays(int frameCount)
 {
-	// Pitch table
-	_pchvals = new float[frameCount];
 	// Signal arrays -- size depends on update rate.
 	const int siglen = _perperiod < 1.0 ?
 		(int) (0.5 + MAXVALS / _perperiod) : MAXVALS;
@@ -561,21 +568,22 @@ LPCPLAY::readjust(float maxdev, float *pchval,
 	}
 }
 
-LPCIN::LPCIN() : LPCINST("LPCIN")
+LPCIN::LPCIN() : LPCINST("LPCIN"), _inbuf(NULL), _inChannel(0)
 {
 }
 
 LPCIN::~LPCIN()
 {
+	delete [] _inbuf;
 }
 
 int LPCIN::localInit(float p[], int n_args)
 {
    int i;
 
-	if (!n_args || n_args < 6 || n_args > 7) {
+	if (!n_args || n_args < 6 || n_args > 8) {
 		die("LPCIN",
-		"p[0]=outskip, p[1]=inskip, p[2]=duration, p[3]=amp, p[4]=frame1, p[5]=frame2, [ p[6]=warp ]\n");
+		"p[0]=outskip, p[1]=inskip, p[2]=duration, p[3]=amp, p[4]=frame1, p[5]=frame2, [ p[6]=warp p[7]=in_channel ]\n");
 	}
 	float outskip = p[0];
 	float inskip = p[1];
@@ -588,6 +596,12 @@ int LPCIN::localInit(float p[], int n_args)
 
 	_warpFactor = p[6];	// defaults to 0
 
+	_inChannel = (int) p[7];
+	if (_inChannel >= inputChannels()) { 
+		die("LPCIN", "Requested channel %d of a %d-channel input file",
+			_inChannel, inputChannels());
+	}
+					   	
 	// Duration can be calculated from frame count
 
 	const float defaultFrameRate = 112.0;
@@ -599,23 +613,18 @@ int LPCIN::localInit(float p[], int n_args)
     rtsetinput(inskip, this);
 	rtsetoutput(outskip, ldur, this);
 
-	if (inputchans != 1) { 
-		die("LPCIN", "Input file must have 1 channel only\n");
-	}
-					   	
-	SetupArrays(frameCount);
-
-	// Finish the initialization
-	
 	_frames = frameCount;
 	_frame1 = startFrame;
 	_frameno = _frame1;
 	return 0;
 }
 
+// Called by LPCINST::configure()
+
 void
 LPCIN::SetupArrays(int)
 {
+	_inbuf = new BUFTYPE[inputChannels() * RTBUFSAMPS];
 	_alpvals = new float[MAXVALS];
 	_buzvals = new float[MAXVALS];
 }
@@ -624,6 +633,7 @@ int LPCIN::run()
 {
 	int   n = 0;
 	float out[2];        /* Space for only 2 output chans! */
+	const int inchans = inputChannels();
 
 	/* You MUST call the base class's run method here. */
 	Instrument::run();
@@ -686,7 +696,11 @@ int LPCIN::run()
         if (_counter <= 0)
 			break;
 
-		rtgetin(_buzvals, this, _counter);
+		rtgetin(_inbuf, this, _counter);
+		// Deinterleave input
+		for (int from=_inChannel, to=0; to < _counter; from += inchans, ++to)
+			_buzvals[to] = _inbuf[from];
+
 #ifdef debug
 		printf("\t _buzvals[0] = %g\n", _buzvals[0]);
 #endif

@@ -10,7 +10,7 @@ public:
 	LPCINST(const char *name);
 	virtual ~LPCINST();
 	virtual int init(float	*, int);
-//	virtual int run();
+	virtual int configure();
 	
 protected:
 	class WarpFilter
@@ -108,4 +108,8 @@ public:
 protected:
 	virtual int		localInit(float *, int);
 	virtual void	SetupArrays(int frameCount);
+
+private:
+	BUFTYPE 	*_inbuf;
+	int			_inChannel;
 };
