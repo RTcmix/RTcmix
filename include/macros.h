@@ -3,22 +3,23 @@
 
 extern float FTEMP1,FTEMP2,FTEMP3,FTEMP4;
 extern int ITEMP1,ITEMP2;
-extern float *PTEMP1;
 
 #define COMB(val,samp,a)\
 if ( a[STARTM1] >= (int) a[0]) a[STARTM1] = START;\
-PTEMP1 = a + (int)a[STARTM1];\
+{ float *PTEMP1 = a + (int)a[STARTM1];\
 a[STARTM1] += 1;\
 val = *PTEMP1;\
-*PTEMP1 = *PTEMP1 * a[1] + samp
+*PTEMP1 = *PTEMP1 * a[1] + samp; \
+}
 
 #define ALLPASS(val,samp,a)\
 if ( a[STARTM1] >= (int) a[0]) a[STARTM1] = START;\
-PTEMP1 = a + (int)a[STARTM1];\
+{ float *PTEMP1 = a + (int)a[STARTM1];\
 a[STARTM1] += 1;\
 val = *PTEMP1;\
 *PTEMP1 = *PTEMP1 * a[1] + samp;\
-val -= a[1] * *PTEMP1
+val -= a[1] * *PTEMP1; \
+}
 
 #define OSCIL(val,amp,si,farray,len,phs) \
 ITEMP1 = phs;\
