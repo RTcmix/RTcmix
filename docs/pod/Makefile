@@ -1,23 +1,23 @@
 include ../../makefile.conf
 
-MANDIR = ../man
-
-# WARNING: do not use a dir here that contains anything else!
-# The install process in this script is not yet refined.
-HTMLDIR = ../html
+MANDIR = $(CMIXDIR)/docs/man
+HTMLDIR = $(CMIXDIR)/docs/html
 
 # RTcmix instruments
 INST = ELL PAN REVERBIT REVMIX STEREO
 
 # Commands invoked from the command line
-CMD = sfcreate sffixsize sfprint sfhedit pchcps
+CMD = pchcps sfcreate sffixsize sfhedit sfprint
 
 # Commands invoked from within an RTcmix script (in Minc, Perl, Python)
-SCRIPT = makegen setline setline_size setexp addgens multgens fdump fplot \
-gen1 gen2 gen3 gen4 gen5 gen7
+SCRIPT = addgens fdump fplot gen1 gen2 gen3 gen4 gen5 gen7 \
+makegen multgens setexp setline setline_size
 
 # Programmer documentation
 API = 
+
+IMAGES = addgens.png fplot.png gen4a.png gen4b.png gen4c.png gen4d.png \
+gen5a.png gen5b.png gen7.png multgens.png
 
 
 ################################################################################
@@ -53,6 +53,8 @@ API_TITLE = "RTcmix Programmer Documentation"
 
 VERS = "$(shell perl print_rtcmix_vers.pl $(CMIXDIR))"
 DATE = "$(shell date +'%d %b, %Y')"
+
+mkinstalldirs = $(SHELL) $(CMIXDIR)/docs/pod/mkinstalldirs
 
 all: $(MAN) $(HTML)
 
@@ -94,8 +96,8 @@ clean:
 	$(RM) *.man *.html *.ps *.pdf pod2htm*
 
 installman: $(MAN)
-	mkinstalldirs $(MANDIR)/man1
-	mkinstalldirs $(MANDIR)/man3
+	$(mkinstalldirs) $(MANDIR)/man1
+	$(mkinstalldirs) $(MANDIR)/man3
 	$(INSTALL) $(INST_MAN) $(CMD_MAN) $(SCRIPT_MAN) $(MANDIR)/man1
 ifneq ($(strip $(API_MAN)),)    # do only if API_MAN is nonempty
 	$(INSTALL) $(API_MAN) $(MANDIR)/man3
@@ -106,14 +108,14 @@ uninstallman:
 	( cd $(MANDIR)/man3; $(RM) $(API_MAN) )
 
 installhtml: $(HTML)
-	mkinstalldirs $(HTMLDIR)
+	$(mkinstalldirs) $(HTMLDIR)
 	$(INSTALL) $(HTML) $(HTMLDIR)
-	mkinstalldirs $(HTMLDIR)/images
-	$(INSTALL) images/* $(HTMLDIR)/images
+	$(mkinstalldirs) $(HTMLDIR)/images
+	( cd images; $(INSTALL) $(IMAGES) $(HTMLDIR)/images )
 
 uninstallhtml:
 	( cd $(HTMLDIR); $(RM) $(HTML) )
-	$(RM) -rf $(HTMLDIR)/images/*
+	( cd $(HTMLDIR)/images; $(RM) $(IMAGES) )
 
 install: installman installhtml
 uninstall: uninstallman uninstallhtml
