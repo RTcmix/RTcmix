@@ -92,9 +92,13 @@ sgran(float p[], int n_args)
 		advise("sgran", "Setting phrase curve to all 1's.");
 
 	wave = floc(6); /* finds starting loc. of waveform */
+	if (wave == NULL)
+		die("sgran", "You haven't made the oscillator waveform (table 6).");
 	len = fsize(6); /* length of playing waveform function */
 
 	envel = floc(8);  /* NOTE: used to be floc(1), now stolen by setline  -JGG */
+	if (envel == NULL)
+		die("sgran", "You haven't made the grain envelope (table 8).");
 	/* NOTE: fsize(8) called in loop below */
 
 	bgrainsamps = grainsamps = p[14] * SR;
@@ -107,13 +111,24 @@ sgran(float p[], int n_args)
 
 	graindistdiff = egraindist - bgraindist;
 
-	rate_shape = (float *)floc(2);
+	rate_shape = floc(2);
+	if (rate_shape == NULL)
+		die("sgran", "You haven't made the grain density function (table 2).");
 	tableset(p[1]-p[4],fsize(2),tab2);
-	dur_shape = (float *)floc(3);
+
+	dur_shape = floc(3);
+	if (dur_shape == NULL)
+		die("sgran", "You haven't made the grain duration function (table 3).");
 	tableset(p[1]-p[4],fsize(3),tab3);
-	loc_shape = (float *)floc(4);
+
+	loc_shape = floc(4);
+	if (loc_shape == NULL)
+		die("sgran", "You haven't made the grain location function (table 4).");
 	tableset(p[1]-p[4],fsize(4),tab4);
-	freq_shape = (float *)floc(5);
+
+	freq_shape = floc(5);
+	if (freq_shape == NULL)
+		die("sgran", "You haven't made the grain frequency function (table 5).");
 	tableset(p[1]-p[4],fsize(5),tab5);
 
 	slodiff = (double)(p[9]-p[5])/nsamps; /* get stt zero/one differences */
@@ -132,7 +147,7 @@ sgran(float p[], int n_args)
 	ltidiff = (double)(p[28]-p[24]);
 	chb = p[21];
 
-	if(p[29] < 0) 		/* if negative, noise is the input */
+	if (p[29] < 0) 		/* if negative, noise is the input */
 		randflag = 1;
 
 	flodiff = (double)(p[33]-p[29]); /*freq zero/one differences */

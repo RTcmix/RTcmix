@@ -47,10 +47,10 @@ int VFRET1::init(float p[], int n_args)
 	dq = curdelayq;
 	fbpitch = cpspch(p[7]);
 
-	vlen = fsize(1);
 	vloc = floc(1);
 	if (vloc == NULL)
 		die("VFRET1", "You need to store a vibrato function in gen num. 1.");
+	vlen = fsize(1);
 
 	vsibot = p[11] * (float)vlen/SR;
 	vsidiff = vsibot - (p[12] * (float)vlen/SR);
@@ -58,8 +58,10 @@ int VFRET1::init(float p[], int n_args)
 	vsi += vsibot;
 	vphase = 0.0;
 
-	elen = fsize(2);
 	eloc = floc(2);
+	if (eloc == NULL)
+		die("VFRET1", "You need to store a vibrato amp. envelope in gen num. 2.");
+	elen = fsize(2);
 	tableset(p[1], elen, tab);
 
 	dgain = p[5];

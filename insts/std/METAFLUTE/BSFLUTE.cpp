@@ -33,20 +33,38 @@ int BSFLUTE::init(float p[], int n_args)
 	dampcoef = .7;
 
 	amparr = floc(1);
-	lenamp = fsize(1);
-	tableset(p[1], lenamp, amptabs);
+	if (amparr) {
+		int len = fsize(1);
+		tableset(p[1], len, amptabs);
+	}
+	else
+		die("BSFLUTE", "You haven't made the noise amp envelope (table 1).");
 
 	oamparr = floc(2);
-	olenamp = fsize(2);
-	tableset(p[1], olenamp, oamptabs);
+	if (oamparr) {
+		int len = fsize(2);
+		tableset(p[1], len, oamptabs);
+	}
+	else
+		die("BSFLUTE", "You haven't made the output amp envelope (table 2).");
 
 	pcurve1 = floc(3);
-	psize1 = fsize(3);
-	tableset(p[1],psize1,ptabs1);
+	if (pcurve1) {
+		int len = fsize(3);
+		tableset(p[1], len, ptabs1);
+	}
+	else
+		die("BSFLUTE", "You haven't made the pitch-tracking curve for "
+					"length 1 (table 3).");
 
 	pcurve2 = floc(4);
-	psize2 = fsize(4);
-	tableset(p[1],psize2,ptabs2);
+	if (pcurve2) {
+		int len = fsize(4);
+		tableset(p[1], len, ptabs2);
+	}
+	else
+		die("BSFLUTE", "You haven't made the pitch-tracking curve for "
+					"length 2 (table 4).");
 
 	imax = DELSIZE;
 	mdelset(del1,dl1,imax);

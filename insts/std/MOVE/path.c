@@ -76,13 +76,17 @@ double
 param (float p[], int n_args)	/* parametric setup for polar coordinates */
 {
     	int i;
-    	float *fun1, *fun2, *floc();
+    	float *fun1, *fun2;
 
     	if (n_args != 2)
        die("param", "Incorrect number of args. Should have 2.");
 
     	fun1 = floc((int) p[0]);
+    	if (fun1 == NULL)
+       		die("param", "You haven't made function table %d.", (int) p[0]);
 	fun2 = floc((int) p[1]);
+    	if (fun2 == NULL)
+       		die("param", "You haven't made function table %d.", (int) p[1]);
 
 	for (i = 0; i < ARRAYSIZE; i++)
     	{
@@ -99,13 +103,17 @@ double
 cparam (float p[], int n_args) /* parametric setup for cartesian coordinates */
 {
     	int i;
-    	float *fun1, *fun2, *floc();
+    	float *fun1, *fun2;
 
     	if (n_args != 2)
        die("cparam", "Incorrect number of args. Should have 2.");
 
     	fun1 = floc((int) p[0]);
+    	if (fun1 == NULL)
+       		die("cparam", "You haven't made function table %d.", (int) p[0]);
 	fun2 = floc((int) p[1]);
+    	if (fun2 == NULL)
+       		die("cparam", "You haven't made function table %d.", (int) p[1]);
 
 	for (i = 0; i < ARRAYSIZE; i++)
     	{

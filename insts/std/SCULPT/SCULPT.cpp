@@ -41,7 +41,14 @@ int SCULPT::init(float p[], int n_args)
 		advise("SCULPT", "Setting phrase curve to all 1's.");
 
 	freqtable = floc(3);
+	if (freqtable == NULL)
+		die("SCULPT",
+			"You haven't made the table of frequency points (table 3).");
+
 	pamptable = floc(4);
+	if (pamptable == NULL)
+		die("SCULPT",
+			"You haven't made the table of amplitude points (table 4).");
 
 	amp = p[2];
 	phase = 0.0;

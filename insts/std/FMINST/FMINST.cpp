@@ -67,6 +67,9 @@ int FMINST::init(float p[], int n_args)
 		advise("FMINST", "Setting phrase curve to all 1's.");
 	
 	indexenv = floc(INDEX_GEN_SLOT);
+	if (indexenv == NULL)
+		die("FMINST", "You haven't made the index guide function (table %d).",
+					INDEX_GEN_SLOT);
 	lenind = fsize(INDEX_GEN_SLOT);
 	tableset(p[1], lenind, indtabs);
 	

@@ -24,10 +24,7 @@ extern SFHEADER      sfdesc[NFILES];
 */
 
 double
-gravy(p,n_args)
-float p[];
-int n_args;
-
+gravy(float p[], int n_args)
 {
 	int insamps,outsamps,winsamps,inmove;
 	int inshift,outshift,inchans,outchans,inchan;
@@ -44,10 +41,8 @@ int n_args;
 	p[6] = transpose(p[6]);
 
 	winfunc = floc(1);
-	if (winfunc == NULL) {
-		fprintf(stderr, "You need to store the window envelope in function 1.\n");
-		exit(1);
-	}
+	if (winfunc == NULL)
+		die("gravy", "You haven't made a window envelope function (table 1).");
 	winsize = fsize(1);
 	tableset(p[3], winsize, wintabs);
 
@@ -55,16 +50,12 @@ int n_args;
 	outchans = sfchans(&sfdesc[1]);
 
 	insamps = (p[3] * SR * p[6] + 1.0) * (float)inchans;
-	if ( (inarr = (float *)malloc(insamps*FLOAT)) == NULL ) {
-		fprintf(stderr,"error in allocating input array... sorry!\n");
-		exit(-2);
-		}
+	if ( (inarr = (float *)malloc(insamps*FLOAT)) == NULL )
+		die("gravy", "Error allocating input array... sorry!");
 	
 	outsamps = winsamps * (float)outchans;
 	if ( (outarr = (float *)malloc(outsamps*FLOAT)) == NULL ) {
-		fprintf(stderr,"error allocating output array... sorry!\n");
-		exit(-2);
-		}
+		die("gravy", "Error allocating output array... sorry!");
 
 	outshift = -(winsamps/2);
 	inmove = (1.0/p[5]) * (winsamps/2);

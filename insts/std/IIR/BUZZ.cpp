@@ -46,6 +46,8 @@ int BUZZ::init(float p[], int n_args)
 		advise("BUZZ", "Setting phrase curve to all 1's.");
 
 	sinetable = floc(2);
+	if (sinetable == NULL)
+		die("BUZZ", "You need to store a sine wave in function table 2.");
 	lensine = fsize(2);
 	si = p[3] < 15.0 ? cpspch(p[3])*(float)lensine/SR : p[3]*(float)lensine/SR;
 	hn = (int)(0.5/(si/(float)lensine));

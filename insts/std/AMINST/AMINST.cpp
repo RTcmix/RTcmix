@@ -24,8 +24,6 @@ int AMINST::init(float p[], int n_args)
 // function table 3 is the carrier waveform
 // function table 4 is the modulator waveform
 
-	int lenmamp;
-
 	nsamps = rtsetoutput(p[0], p[1], this);
 
 	amparr = floc(1);
@@ -37,16 +35,28 @@ int AMINST::init(float p[], int n_args)
 		advise("AMINST", "Setting phrase curve to all 1's.");
 
 	mamparr = floc(2);
-	lenmamp = fsize(2);
-	tableset(p[1], lenmamp, mamptabs);
+	if (mamparr) {
+		int len = fsize(2);
+		tableset(p[1], len, mamptabs);
+	}
+	else
+		die("AMINST", "You haven't made the modulation envelope (table 2).");
 
 	cartable = floc(3);
-	lencar = fsize(3);
-	sicar = p[3] * (float)lencar/SR;
+	if (cartable) {
+		lencar = fsize(3);
+		sicar = p[3] * (float)lencar/SR;
+	}
+	else
+		die("AMINST", "You haven't made the carrier waveform (table 3).");
 
 	modtable = floc(4);
-	lenmod = fsize(4);
-	simod = p[4] * (float)lenmod/SR;
+	if (modtable) {
+		lenmod = fsize(4);
+		simod = p[4] * (float)lenmod/SR;
+	}
+	else
+		die("AMINST", "You haven't made the modulator waveform (table 4).");
 
 	amp = p[2];
 	skip = (int)(SR/(float)resetval);

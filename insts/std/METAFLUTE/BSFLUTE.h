@@ -6,13 +6,9 @@ class BSFLUTE : public Instrument {
 	float del1[DELSIZE],del2[DELSIZE];
 	float amp,namp,dampcoef,oldsig;
 	float *amparr,amptabs[2];
-	int lenamp;
 	float *oamparr,oamptabs[2];
-	int olenamp;
 	float *pcurve1,ptabs1[2];
-	int psize1;
 	float *pcurve2,ptabs2[2];
-	int psize2;
 	float ampmult, spread;
 	int skip;
 

@@ -24,7 +24,6 @@ int BEND::init(float p[], int n_args)
 // p4 = gliss function; p5 = fundamental decay time; p6 = nyquist decay time;
 // p7 = update every nsamples; p8 = stereo spread [optional]
 
-	int leng;
 	float dur;
 
 	dur = p[1];
@@ -48,8 +47,13 @@ int BEND::init(float p[], int n_args)
 		advise("BEND", "Setting phrase curve to all 1's.");
 
 	glissf = floc((int)p[4]);
-	leng = fsize((int)p[4]);
-	tableset(p[1],leng,tags);
+	if (glissf) {
+		int leng = fsize((int)p[4]);
+		tableset(p[1],leng,tags);
+	}
+	else
+		die("BEND", "You haven't made the glissando function (table %d).",
+						(int)p[4]);
 
 	reset = (int)p[7];
 	if (reset == 0) reset = 100;

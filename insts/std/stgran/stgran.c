@@ -247,19 +247,42 @@ stgran(float p[], int n_args)
    ingraindistdiff = inegraindist - inbgraindist;
 
    in_rate_shape = floc(2);
+	if (in_rate_shape == NULL)
+		die("stgran",
+				"You haven't made the grain input rate function (table 2).");
    tableset(indur - p[6], fsize(2), tab2);
+
    rate_shape = floc(3);
+	if (rate_shape == NULL)
+		die("stgran",
+				"You haven't made the grain output rate function (table 3).");
    tableset(outdur - p[8], fsize(3), tab3);
+
    dur_shape = floc(4);
+	if (dur_shape == NULL)
+		die("stgran", "You haven't made the grain duration function (table 4).");
    tableset(outdur - p[8], fsize(4), tab4);
+
    transp_shape = floc(5);
+	if (transp_shape == NULL)
+		die("stgran",
+				"You haven't made the grain transposition function (table 5).");
    tableset(outdur - p[8], fsize(5), tab5);
+
    amp_shape = floc(6);
+	if (amp_shape == NULL)
+		die("stgran", "You haven't made the grain amplitude function (table 6).");
    tableset(outdur - p[8], fsize(6), tab6);
+
    loc_shape = floc(7);
+	if (loc_shape == NULL)
+		die("stgran",
+				"You haven't made the grain stereo location function (table 7).");
    tableset(outdur - p[8], fsize(7), tab7);
 
    envel = floc(8);           /* tableset in sample loop */
+	if (envel == NULL)
+		die("stgran", "You haven't made the grain envelope (table 8).");
 
    /* get infile stt var zero/one differences */
    ilodiff = (double) (p[13] - p[9]) / nsamps;

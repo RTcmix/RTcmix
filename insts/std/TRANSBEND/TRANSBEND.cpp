@@ -110,7 +110,7 @@ int TRANSBEND :: init(float p[], int n_args)
       tableset(dur, plen, ptabs);
    }
    else
-      die("TRANSBEND", "Unable to load pitch curve!");
+      die("TRANSBEND", "Unable to load pitch curve (table %d)!", pgen);
 
    averageInc = (double) cpsoct(10.0 + interval) / cpsoct(10.0);
 

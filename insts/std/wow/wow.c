@@ -60,12 +60,14 @@ wow(float p[], int n_args)
 		tableset(p[2], lenamp, amptabs);
 	}
 	else
-		printf("Setting phrase curve to all 1's\n");
+		advise("wow", "Setting phrase curve to all 1's.");
 
 	modulator_index = p[4];
 	modulator_freq = p[5];
 
 	modulator = floc(2);       /* Pointer to start of gen array */
+	if (modulator == NULL)
+		die("wow", "You haven't made the modulator waveform (table 2).");
 	msize = fsize(2); /* Size of gen array */
 
 /* ---------------------------------------------------------------------- */

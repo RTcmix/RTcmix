@@ -37,12 +37,20 @@ int LSFLUTE::init(float p[], int n_args)
 	dampcoef = .7;
 
 	amparr = floc(1);
-	lenamp = fsize(1);
-	tableset(p[1], lenamp, amptabs);
+	if (amparr) {
+		int len = fsize(1);
+		tableset(p[1], len, amptabs);
+	}
+	else
+		die("LSFLUTE", "You haven't made the noise amp envelope (table 1).");
 
 	oamparr = floc(2);
-	olenamp = fsize(2);
-	tableset(p[1], olenamp, oamptabs);
+	if (oamparr) {
+		int len = fsize(2);
+		tableset(p[1], len, oamptabs);
+	}
+	else
+		die("LSFLUTE", "You haven't made the output amp envelope (table 2).");
 
 //	imax = DELSIZE;
 //	mdelpartset(del1ptr,dl1ptr,imax);

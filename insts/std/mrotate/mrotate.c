@@ -48,12 +48,16 @@ mrotate(float p[], int n_args)
 		tableset(p[2], alen, amptabs);
 	}
 	else
-		printf("Setting phrase curve to all 1's\n");	
+		advise("mrotate", "Setting phrase curve to all 1's.");
 	
 	wintable = floc(2);
+	if (wintable == NULL)
+		die("mrotate", "You haven't made the window envelope (table 2).");
 	wlen = fsize(2);
 
 	pcurve = floc(3);
+	if (pcurve == NULL)
+		die("mrotate", "You haven't made the pitch shift envelope (table 3).");
 	plen = fsize(3);
 	tableset(p[2], plen, ptabs);
 

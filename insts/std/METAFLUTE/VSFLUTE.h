@@ -6,9 +6,7 @@ class VSFLUTE : public Instrument {
 	float del1[DELSIZE],del2[DELSIZE];
 	float amp,namp,dampcoef,oldsig;
 	float *amparr,amptabs[2];
-	int lenamp;
 	float *oamparr,oamptabs[2];
-	int olenamp;
 	float *pcurve1,si1lo,si1hi;
 	int psize1;
 	float *pcurve2,si2lo,si2hi;

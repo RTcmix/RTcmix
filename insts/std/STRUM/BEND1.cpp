@@ -31,8 +31,6 @@ int BEND1::init(float p[], int n_args)
 // p11 = distortion signal level; p12 = amp; p13 = update gliss nsamples
 // p14 = stereo spread [optional]
 
-	int leng;
-
 	nsamps = rtsetoutput(p[0], p[1], this);
 
 	strumq1 = curstrumq[0];
@@ -46,8 +44,13 @@ int BEND1::init(float p[], int n_args)
 	delayset(cpspch(p[9]), dq);
 
 	glissf = floc((int)p[4]);
-	leng = fsize((int)p[4]);
-	tableset(p[1], leng, tags);
+	if (glissf) {
+		int leng = fsize((int)p[4]);
+		tableset(p[1],leng,tags);
+	}
+	else
+		die("BEND1", "You haven't made the glissando function (table %d).",
+						(int)p[4]);
 
 	dgain = p[7];
 	fbgain = p[8]/dgain;
