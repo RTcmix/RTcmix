@@ -12,7 +12,6 @@ Saturday, May 27, 2000 John Gibson <johngibson@virginia.edu>
 Thursday, May 25, 2000 John Gibson <johngibson@virginia.edu>
 
    * New files: NEWS and docs/README.bus_config
-   * Bumped version number (version.h) to 3.0.0.
 
 Tuesday, May 16, 2000 John Gibson <johngibson@virginia.edu>
 
@@ -101,6 +100,5 @@ Saturday, March 26, 2000 John Gibson <johngibson@virginia.edu>
      control-C. (main.C)
    * Added dbamp function for lib and Minc.
      (ampdb.c, minc_functions.c, ug_intro.c)
-	* Bumped version number (version.h) to 2.2.2. (version.h)
 	* Finally created this ChangeLog.
 
