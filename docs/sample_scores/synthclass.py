@@ -59,7 +59,7 @@ class Synth:
       WIGGLE(start, dur, self.__wigamp, pitch + self.__detune, self.__modtype)
 
       # wave shaper -----------------------------------------------------------
-      makegen(2, 4, 1000, 0,-1,self.__shwarp, 1,0,self.__shwarp*-1, 2,1)
+      makegen(2, 4, 1000, 0,-1,self.__shwarp, 1,0,-self.__shwarp, 2,1)
       shsize = dur * shspeed
       makegen(3, 20, shsize, 1, shseed)
       copygen(3, 3, shsize * self.__shjaggedness, 0)
