@@ -48,7 +48,9 @@ bool MultiPortOSSAudioDevice::recognize(const char *desc)
 }
 
 AudioDevice *
-MultiPortOSSAudioDevice::create(const char *inputDesc, const char *outputDesc, int mode)
+MultiPortOSSAudioDevice::create(const char *inputDesc, 
+								const char *outputDesc, 
+								int mode)
 {
 	const char *desc = inputDesc ? inputDesc : outputDesc;
 	char devName[32];
@@ -56,7 +58,6 @@ MultiPortOSSAudioDevice::create(const char *inputDesc, const char *outputDesc, i
 	// Find first digit
 	while (!isdigit(desc[devLen]))
 		++devLen;
-	
 	const char *devnum = desc + devLen;	// skip "/dev/xxx"
 	if (strchr(devnum, '-') != NULL) {		// "/dev/xxx0-7", etc.
 		strcpy(devName, desc);
@@ -110,31 +111,36 @@ int MultiPortOSSAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 	switch (MUS_GET_FORMAT(sampfmt)) {
 		case MUS_UBYTE:
 			sampleFormat = AFMT_U8;
-			_bytesPerFrame = chans;
+			_bytesPerFrame = 1;
 			break;
 		case MUS_BYTE:
 			sampleFormat = AFMT_S8;
-			_bytesPerFrame = chans;
+			_bytesPerFrame = 1;
 			break;
 		case MUS_LFLOAT:
 			deviceFormat = NATIVE_SHORT_FMT;
 		case MUS_LSHORT:
-			_bytesPerFrame = 2 * chans;
+			_bytesPerFrame = 2;
 			sampleFormat = AFMT_S16_LE;
 			break;
 		case MUS_BFLOAT:
 			deviceFormat = NATIVE_SHORT_FMT;
 		case MUS_BSHORT:
-			_bytesPerFrame = 2 * chans;
+			_bytesPerFrame = 2;
 			sampleFormat = AFMT_S16_BE;
 			break;
 		default:
 			_bytesPerFrame = 0;
 			return error("Unsupported sample format");
 	};
+	// Eventually we will handle subsets of the open device count.
+	if (chans != _devCount)
+		return error("Channel count must match open device count for now");
+
 	int status = 0;
+	// Set format on each open monaural device.
 	for (int dev = 0; dev < _devCount && status == 0; ++dev) {
-		status = setDeviceFormat(_devices[dev], sampleFormat, chans, (int) srate);
+		status = setDeviceFormat(_devices[dev], sampleFormat, 1, (int) srate);
 	}
 	if (status == 0) {
 		// Store the device params to allow format conversion.
