@@ -3,7 +3,8 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
  */
  
-#include "PField.h"
+#include <PField.h>
+#include <string.h>
 
 // PField
 
@@ -20,9 +21,28 @@ double ConstPField::doubleValue(double) const
 	return _value;
 }
 
+// StringPField
+
+StringPField::StringPField(const char *value)
+	: _string(new char [strlen(value) + 1])
+{
+	strcpy(_string, value);
+}
+
+StringPField::~StringPField() { delete [] _string; }
+
+// Note:  We use the same old trick here to pass the string as a double,
+// but the conversion is entirely contained within the PField class system.
+// PField::stringValue() casts it back to a const char *.
+
+double StringPField::doubleValue(double) const
+{
+	return (double) (int) _string;
+}
+
 // TablePField
 
-TablePField::TablePField(double *tableArray, int length)
+TablePField::TablePField(float *tableArray, int length)
 	: _table(tableArray), _len(length)
 {
 }
@@ -44,5 +64,4 @@ double TablePField::doubleValue(double percent) const
 	double frac = didx - idx;
 	return _table[idx] + frac * (_table[idx] - _table[idx2]);
 }
-
 

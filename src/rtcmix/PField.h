@@ -20,7 +20,7 @@ protected:
 	virtual 		~PField();
 };
 
-// Constant-value PField used for all non-varying parameters.
+// Constant-value PField used for all non-varying numeric parameters.
 
 class ConstPField : public PField {
 public:
@@ -32,21 +32,36 @@ private:
 	double	_value;
 };
 
+// Constant-value PField used for all strings.
+
+class StringPField : public PField {
+public:
+	StringPField(const char  *value);
+	virtual double	doubleValue(double) const;
+protected:
+	virtual 		~StringPField();
+private:
+	char	*_string;
+};
+
 // Base class for all Real-Time-varying parameters.
+
 class RTPField : public PField {
 public:
 protected:
 	virtual ~RTPField() {}
 };
 
+// Class for interpolated reading of table.
+
 class TablePField : public RTPField {
 public:
-	TablePField(double *tableArray, int length);
+	TablePField(float *tableArray, int length);
 	virtual double	doubleValue(double) const;
 protected:
 	virtual ~TablePField();
 private:
-	double *_table;
+	float	*_table;
 	int 	_len;
 };
 
