@@ -147,6 +147,7 @@ PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts | sed 's/usr\/local/usr/'`
 endif
 
 all: $(TARGETS)
+	$(INSTALL) main.o $(LIBDIR)
 	$(INSTALL) RTcmix.o $(LIBDIR)
 ifeq ($(PERL_SUPPORT), TRUE)
 	$(INSTALL) pRTcmix.o $(LIBDIR)
@@ -230,6 +231,7 @@ endif
 
 uninstall: standalone_uninstall
 	$(RM) $(LIBDIR)/$(RTLIB)
+	$(RM) $(LIBDIR)/main.o
 	$(RM) $(LIBDIR)/RTcmix.o
 	$(RM) $(LIBDIR)/pRTcmix.o
 
