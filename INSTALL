@@ -87,6 +87,15 @@ SGI compilation problems:
          size 10000 within specified range.  Please check your registry
          file /share/RTcmix/shlib/so_locations.
 
+3) If you get other complaints about the so_locations file in Irix 6.5,
+   try changing the definition of SHARED_LDFLAGS in makefile.conf to
+   look like the following, and then "make clean; make":
+
+   SHARED_LDFLAGS = -shared -check_registry /usr/lib/so_locations
+
+   This inhibits creation of a new so_locations file, which we don't
+   seem to need.
+
 
 Ic.  Compile and install separate packages
 ------------------------------------------
