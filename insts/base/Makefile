@@ -1,19 +1,10 @@
 # change these if needed
 include package.conf
 
-INSTDIR = insts.base
-
 RTLIBDIRS = MIX WAVETABLE
 
-ifeq ($(ARCH),MACOSX)
-# can't have these because of HFS+ is non case-sensitive
-   CMIXLIBDIRS = 
-else
-   CMIXLIBDIRS = mix wavetable
-endif
-
-LIBDIRS = $(RTLIBDIRS)  $(CMIXLIBDIRS) 
-DSODIRS = WAVETABLE $(CMIXLIBDIRS)
+LIBDIRS = $(RTLIBDIRS)
+DSODIRS = WAVETABLE
 
 all:
 	@for DIR in $(LIBDIRS); \
