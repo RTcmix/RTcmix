@@ -42,7 +42,7 @@ IBusClass checkClass(BusSlot *slot) {
 }
 
 extern "C" {
-  void *inTraverse()
+  void *inTraverse(void *arg)
   {
     short rtInst;
     short playEm;
