@@ -1,3 +1,8 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+
 /*
  * addrtInst()
  *	Function: Introduce a new rt creation func/object to CMIX 
@@ -9,12 +14,11 @@
  *		MX_EMEM	  - No memory to create ug_item
  *	Side Effects:
  */
-#include "../rtstuff/Instrument.h"
+#include <globals.h>
 #include "../rtstuff/rt.h"
+#include "../rtstuff/Instrument.h"
 #include "mixerr.h"
 #include <string.h>
-
-extern rt_item *rt_list;
 
 addrtInst(rt_item *rt_p)
 {
