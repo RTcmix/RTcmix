@@ -65,10 +65,8 @@ fplot(float p[], short n_args, double pp[])
 
 			fdata = fopen(data_file, "w");
 			fcmd = fopen(cmd_file, "w");
-			if (fdata == NULL || fcmd == NULL) {
-				warn("fplot", "Can't open tmp files for gnuplot.");
-				return -1.0;
-			}
+			if (fdata == NULL || fcmd == NULL)
+				die("fplot", "Can't open temp files for gnuplot.");
 
 			for (i = 0; i < len; i++)
 				fprintf(fdata, "%d %.6f\n", i, array[i]);
