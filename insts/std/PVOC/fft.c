@@ -1,6 +1,13 @@
 #include "pv.h"
 #include <ugens.h>
 
+#ifdef MACOSX
+	#define atanf(x) (float) atan((double)(x))
+	#define sinf(x) (float) sin((double)(x))
+	#define powf(x, y) (float) pow((double)(x), (double)(y))
+#endif
+
+
 /*
  * bitreverse places float array x containing N/2 complex values
  * into bit-reversed order

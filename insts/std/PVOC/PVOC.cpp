@@ -11,6 +11,14 @@
 #include "pv.h"
 #include "PVOC.h"
 
+#ifdef MACOSX
+	#define cosf(x) (float) cos((double)(x))
+	#define sinf(x) (float) sin((double)(x))
+	#define hypotf(x, y) (float) hypot((double)(x), (double)(y))
+	#define atan2f(y, x) (float) atan2((double)(y), (double)(x))
+#endif
+	
+
 const complex zero = { 0., 0. };
 const complex one = { 1., 0. };
 float TWOPI;
