@@ -42,7 +42,11 @@ extern "C" {
 
     // socket stuff
     int s, ns;
+#ifdef SGI
+    int len;
+#else
     unsigned int len;
+#endif
     struct sockaddr_in sss;
     int err;
     struct sockdata *sinfo;
