@@ -34,15 +34,15 @@ $$ not sure if ringdur or damp is changing FREEVERB
 $$ most pertinent parameters tied up in function call that occurs before the 
    sampling loop JCHOR
 # done but doesn't have RSD envelope JDELAY 
-JFIR
-JGRAN
-MROOM
+$$ won't load library for some reason JFIR
+$$ can only update amplitude and dur JGRAN
+$$ uses distndelset function MROOM
 # done PAN
 # done REV
-REVERBIT
-ROOM
-SROOM
-VOCODE
+$$ could update amp, dur, dcblockfilt, and reverbpct REVERBIT
+$$ could update amp, channel, and spread but interesting parameters are tied in   to roomset ROOM
+$$ parameters tied into distndelset SROOM
+$$ most parameters are used in init and not run VOCODE
 
 #insts.rtperf (done?)
 HAR
