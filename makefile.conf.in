@@ -9,7 +9,8 @@ LIBDESTDIR = $(TOPDIR)/shlib
 #or this: LIBDESTDIR = $(CMIXDIR)/shlib
 
 # add new packages to this list (e.g., insts.std, insts.dev)
-PACKAGE_DIRS = insts.std
+PACKAGE_DIRS = insts.base
+# insts.std
 
 # Set this to TRUE to use sndlib for file i/o; otherwise use the old cmix i/o.
 USE_SNDLIB = TRUE
