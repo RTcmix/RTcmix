@@ -191,8 +191,14 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
                                                       (arglist, nargs);
       break;
    case HandleType:
-      *retval = (Handle) (*(func->func_ptr.handle_return))
+	  {
+      Handle h = (Handle) (*(func->func_ptr.handle_return))
                                                       (arglist, nargs);
+	  *retval = h;
+      if (h == NULL) {
+         return -1;		// NULL handles are always an error
+	  }
+	  }
       break;
    case StringType:
       *retval = (const char *) (*(func->func_ptr.string_return))
