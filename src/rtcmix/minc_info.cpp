@@ -16,10 +16,6 @@ extern int headersize[NFILES];
 extern int rtInputIndex;
 extern InputDesc inputFileTable[];
 
-static SFCODE ampcode = {
-	SF_MAXAMP,
-	sizeof(SFMAXAMP) + sizeof(SFCODE)
-};
 
 double m_sr(p,n_args)
 float *p;
@@ -58,7 +54,6 @@ float *p;
 double m_dur(p,n_args)
 float *p;
 {
-	char *cp,*getsfcode();
 	int i;
 	float dur;
 	i = p[0];
@@ -66,8 +61,6 @@ float *p;
 		fprintf(stderr, "You haven't opened file %d yet!\n", i);
 		closesf();
 	}
-	cp = getsfcode(&sfdesc[i],SF_MAXAMP);
-	bcopy(cp + sizeof(SFCODE), (char *) &sfm[i], sizeof(SFMAXAMP));
 	dur = (float)(sfst[i].st_size - headersize[i])
 		 /(float)sfclass(&sfdesc[i])/(float)sfchans(&sfdesc[i])
 		 /sfsrate(&sfdesc[i]);
