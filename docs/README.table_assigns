@@ -1,0 +1,37 @@
+The function table assignments for some instruments have been changed.
+This means that existing scores will be incompatible. If you don't have
+any existing scores, don't bother reading the rest of this.
+
+You can get the old assignments back by uncommenting the following line
+in makefile.conf, and recompiling the affected instruments:
+
+#CMIX_FLAGS = -DCOMPATIBLE_FUNC_LOCS
+
+Without the COMPATIBLE_FUNC_LOCS symbol defined, you get the new assignments.
+
+In all cases, the changes were made so that slot 1 is the overall amp
+envelope. In some instruments this was the osc waveform, and the amp
+envelope was slot 2. These have been switched.
+
+The reason for having amp envelope in slot 1 is that setline is now just
+an alias for "makegen(1, 18, 1000, [setline args...])". If you were to
+define a makegen for slot 1, followed by a setline, the setline would
+wipe out the contents of the first makegen.
+
+Here are the affected instruments:
+
+inst name        NEW table assignments
+------------------------------------------
+WAVETABLE        1: amp envelope, 2: waveform
+FMINST           1: amp envelope, 2: waveform, 3: index guide
+
+
+
+Sorry about this irritating change. Of course, if you don't like it,
+it's easy to switch back to the old way. (Note that all the example
+scores use the new way.)
+
+
+...donning anti-flame suit...
+
+John Gibson <johngibson@virginia.edu>
