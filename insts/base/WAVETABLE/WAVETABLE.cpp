@@ -7,7 +7,6 @@
 #include "WAVETABLE.h"
 #include <rt.h>
 #include <rtdefs.h>
-#include <notetags.h>
 
 #ifdef COMPATIBLE_FUNC_LOCS
   #define AMP_GEN_SLOT     2
