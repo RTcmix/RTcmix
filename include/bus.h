@@ -57,4 +57,8 @@ struct _CheckQueue {
    CheckQueue *next;
 };
 
+
+/* exported functions */
+ErrCode parse_bus_name(char*, BusType*, int*, int*);
+
 #endif /* _BUS_H_ */
