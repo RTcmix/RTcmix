@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Monday, Mar 18, 2002 John Gibson <johgibso@indiana.edu>
+
+   * Fix pvoc bug: transposing would fail for pvoc calls after
+     the first in a script.
+
 Saturday, Mar 16, 2002 Doug Scott <netdscott@netscape.net>
 
    * Added first revisions of Instrument class - inline accessor methods for 
