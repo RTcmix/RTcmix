@@ -41,11 +41,11 @@ $(SPECTACLE_OBJS): $(INSTRUMENT_H) $(OBJLIB_H) $(COMMON_HEADERS) SPECTACLE.h
 
 $(TVSPECTACLE_OBJS): $(INSTRUMENT_H) $(OBJLIB_H) $(COMMON_HEADERS) TVSPECTACLE.h
 
-install: all
+install: dso_install
+
+dso_install: libSPECTACLE.so libTVSPECTACLE.so
 	$(INSTALL) libSPECTACLE.so $(LIBDESTDIR)
 	$(INSTALL) libTVSPECTACLE.so $(LIBDESTDIR)
-
-dso_install: install
 
 standalone_install: standalone
 	$(INSTALL) SPECTACLE $(DESTDIR)

@@ -21,10 +21,10 @@ $(NAME): $(UGENS_H) $(CMIXOBJS) $(OBJS)
 
 $(OBJS): $(NAME).h
 
-install: all
-	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
+install: dso_install
 
-dso_install: install
+dso_install: lib$(NAME).so
+	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
 
 standalone_install: standalone
 	$(INSTALL) $(NAME) $(DESTDIR)

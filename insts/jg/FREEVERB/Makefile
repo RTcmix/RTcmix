@@ -23,10 +23,10 @@ $(NAME): $(OBJS) $(CMIXOBJS)
 
 $(OBJS): $(INSTRUMENT_H) $(NAME).h $(HDRS)
 
-install: all
-	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
+install: dso_install
 
-dso_install: install
+dso_install: lib$(NAME).so
+	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
 
 standalone_install: standalone
 	$(INSTALL) $(NAME) $(DESTDIR)
