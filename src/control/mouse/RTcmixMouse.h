@@ -58,27 +58,27 @@ protected:
 
 	int _xlabelCount;
 	int _ylabelCount;
-	char *_xlabel[NLABELS];
-	char *_ylabel[NLABELS];
-	char *_xprefix[NLABELS];
-	char *_yprefix[NLABELS];
-	char *_xunits[NLABELS];
-	char *_yunits[NLABELS];
-	int _xprecision[NLABELS];
-	int _yprecision[NLABELS];
+	char *_xlabel[kNumLabels];
+	char *_ylabel[kNumLabels];
+	char *_xprefix[kNumLabels];
+	char *_yprefix[kNumLabels];
+	char *_xunits[kNumLabels];
+	char *_yunits[kNumLabels];
+	int _xprecision[kNumLabels];
+	int _yprecision[kNumLabels];
 
 private:
 	inline unsigned long getSleepTime() { return _sleeptime; }
 	inline bool runThread() { return _runThread; }
 	static void *_eventLoop(void *);
 
-	double _lastx[NLABELS];
-	double _lasty[NLABELS];
+	double _lastx[kNumLabels];
+	double _lasty[kNumLabels];
 	unsigned long _sleeptime;
 	pthread_t _eventthread;
 	bool _runThread;
-	int _xthrottleCount[NLABELS];
-	int _ythrottleCount[NLABELS];
+	int _xthrottleCount[kNumLabels];
+	int _ythrottleCount[kNumLabels];
 	int _throttle;
 };
 

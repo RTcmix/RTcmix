@@ -11,7 +11,7 @@
 
 //#define DEBUG
 
-#define LABEL_FONT_NAME	"fixed"	// platform-specific
+const char *kLabelFontName = "fixed";	// platform-specific
 
 
 XMouse::XMouse() : RTcmixMouse()
@@ -20,12 +20,12 @@ XMouse::XMouse() : RTcmixMouse()
 	_window = None;
 	_xraw = -INT_MAX;		// forces getpos* to return negative
 	_yraw = INT_MAX;
-	_labelXpos = LABEL_FROM_LEFT;
-	_labelYpos = LABEL_FROM_TOP;
-	_maxLabelChars = WHOLE_LABEL_LENGTH;	// defined in labels.h
+	_labelXpos = kLabelFromLeft;
+	_labelYpos = kLabelFromTop;
+	_maxLabelChars = kWholeLabelLength;	// defined in labels.h
 	_lineHeight = 0;
 	_charWidth = 0;
-	_fontName = LABEL_FONT_NAME;
+	_fontName = (char *) kLabelFontName;
 	_windowname = "RTcmix Mouse Input";
 }
 
@@ -43,7 +43,7 @@ void XMouse::doConfigureXLabel(const int id, const char *prefix,
 	_xprefix[id] = strdup(prefix);
 	if (units)
 		_xunits[id] = strdup(units);
-	_xlabel[id] = new char [WHOLE_LABEL_LENGTH];
+	_xlabel[id] = new char [kWholeLabelLength];
 	_xlabel[id][0] = 0;
 	_xprecision[id] = precision;
 }
@@ -54,7 +54,7 @@ void XMouse::doConfigureYLabel(const int id, const char *prefix,
 	_yprefix[id] = strdup(prefix);
 	if (units)
 		_yunits[id] = strdup(units);
-	_ylabel[id] = new char [WHOLE_LABEL_LENGTH];
+	_ylabel[id] = new char [kWholeLabelLength];
 	_ylabel[id][0] = 0;
 	_yprecision[id] = precision;
 }
@@ -62,7 +62,7 @@ void XMouse::doConfigureYLabel(const int id, const char *prefix,
 void XMouse::doUpdateXLabelValue(const int id, const double value)
 {
 	const char *units = _xunits[id] ? _xunits[id] : "";
-	snprintf(_xlabel[id], WHOLE_LABEL_LENGTH, "%s: %.*f %s",
+	snprintf(_xlabel[id], kWholeLabelLength, "%s: %.*f %s",
 				_xprefix[id], _xprecision[id], value, units);
 	drawXLabels();
 }
@@ -70,7 +70,7 @@ void XMouse::doUpdateXLabelValue(const int id, const double value)
 void XMouse::doUpdateYLabelValue(const int id, const double value)
 {
 	const char *units = _yunits[id] ? _yunits[id] : "";
-	snprintf(_ylabel[id], WHOLE_LABEL_LENGTH, "%s: %.*f %s",
+	snprintf(_ylabel[id], kWholeLabelLength, "%s: %.*f %s",
 				_yprefix[id], _yprecision[id], value, units);
 	drawYLabels();
 }

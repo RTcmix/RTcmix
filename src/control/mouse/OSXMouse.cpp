@@ -14,21 +14,23 @@
 #include <netinet/in.h>
 #include <errno.h>
 
-// If RTcmix fails to connect to MouseWindow, increase this.
-#define LAUNCH_SLEEP_MSEC		500
+const char *kServerName = "localhost";
 
-#define NUM_CONNECT_ATTEMPTS	10
-#define CONNECT_SLEEP_MSEC		200
+// If RTcmix fails to connect to MouseWindow, increase this.
+const int kLaunchSleepMsec = 500;
+
+const int kNumConnectAttempts = 10;
+const int kConnectSleepMsec = 200;
 
 
 OSXMouse::OSXMouse() : RTcmixMouse(), _sockdesc(0)
 {
 	_x = -1.0;	// force RTMousePField to use default vals until these are valid
 	_y = -1.0;
-	_sockport = SOCK_PORT;
+	_sockport = kSockPort;
 	_packet = new MouseSockPacket [1];
 	_evtpacket = new MouseSockPacket [1];
-	_servername = strdup(SERVER_NAME);
+	_servername = strdup(kServerName);
 }
 
 OSXMouse::~OSXMouse()
@@ -66,10 +68,10 @@ int OSXMouse::openSocket()
 	// This loop *should* work, but if the initial attempt is refused, all others
 	// fail with EINVAL.  So instead, we sleep before attempting to connect.
 #if 1
-	usleep(LAUNCH_SLEEP_MSEC * 1000L);
+	usleep(kLaunchSleepMsec * 1000L);
 #endif
 	bool connected = false;
-	int attempts = NUM_CONNECT_ATTEMPTS;
+	int attempts = kNumConnectAttempts;
 	while (attempts-- > 0) {
 		// printf("connection attempt %d...\n", NUM_CONNECT_ATTEMPTS - attempts);
 		int result = connect(_sockdesc, (struct sockaddr *) &servaddr,
@@ -80,7 +82,7 @@ int OSXMouse::openSocket()
 		}
 		else if (result < 0 && result != ECONNREFUSED)
 			return reportError("OSXMouse::openSocket (connect)", true);
-		usleep(CONNECT_SLEEP_MSEC * 1000L);
+		usleep(kConnectSleepMsec * 1000L);
 	}
 	if (!connected)
 		return reportError("OSXMouse::openSocket (connect)", true);
@@ -166,13 +168,13 @@ void OSXMouse::sendLabel(const bool isXAxis, const int id, const char *prefix,
 
 	_packet->type = isXAxis ? kPacketConfigureXLabelPrefix
 									: kPacketConfigureYLabelPrefix;
-	mystrncpy(_packet->data.str, prefix, PART_LABEL_LENGTH);
+	mystrncpy(_packet->data.str, prefix, kPartLabelLength);
 	writePacket(_packet);
 
 	if (units) {		// units string is optional
 		_packet->type = isXAxis ? kPacketConfigureXLabelUnits
 										: kPacketConfigureYLabelUnits;
-		mystrncpy(_packet->data.str, units, PART_LABEL_LENGTH);
+		mystrncpy(_packet->data.str, units, kPartLabelLength);
 		writePacket(_packet);
 	}
 

@@ -8,8 +8,6 @@
 #include <Carbon/Carbon.h>
 #include "mouse_ipc.h"
 
-#define SERVER_NAME	"localhost"
-
 class OSXMouse : public RTcmixMouse {
 public:
 	OSXMouse();

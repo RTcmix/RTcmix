@@ -34,27 +34,27 @@
 
 // Important tuning parameter: how often to nap between polling for 
 // incoming packets.
-#define SLEEP_MSEC	10
+const int kSleepMsec = 10;
 
-#define LABEL_FONT_NAME	"Monoco"
-#define LABEL_FONT_SIZE	10
-#define LABEL_FONT_FACE	0		// i.e., plain
+const char *kLabelFontName = "Monoco";
+const int kLabelFontSize = 10;
+const int kLabelFontFace = 0;		// i.e., plain
 
 const int _titleBarHeight = 22;	// FIXME: should get this from system
-const int _labelXpos = LABEL_FROM_LEFT;
-const int _labelYpos = LABEL_FROM_TOP;
-const int _maxLabelChars = WHOLE_LABEL_LENGTH;
+const int _labelXpos = kLabelFromLeft;
+const int _labelYpos = kLabelFromTop;
+const int _maxLabelChars = kWholeLabelLength;
 
 int _xlabelCount;
 int _ylabelCount;
-char *_xlabel[NLABELS];
-char *_ylabel[NLABELS];
-char *_xprefix[NLABELS];
-char *_yprefix[NLABELS];
-char *_xunits[NLABELS];
-char *_yunits[NLABELS];
-int _xprecision[NLABELS];
-int _yprecision[NLABELS];
+char *_xlabel[kNumLabels];
+char *_ylabel[kNumLabels];
+char *_xprefix[kNumLabels];
+char *_yprefix[kNumLabels];
+char *_xunits[kNumLabels];
+char *_yunits[kNumLabels];
+int _xprecision[kNumLabels];
+int _yprecision[kNumLabels];
 
 double _xfactor;
 double _yfactor;
@@ -75,7 +75,7 @@ enum {
 // socket
 int _servdesc;
 int _newdesc;
-int _sockport = SOCK_PORT;
+int _sockport = kSockPort;
 
 // thread
 bool _runThread;
@@ -147,9 +147,9 @@ int writePacket(const MouseSockPacket *packet)
 // the count of xlabels in use.
 void configureXLabelPrefix(const int id, const char *prefix)
 {
-	assert(id >= 0 && id < NLABELS);
+	assert(id >= 0 && id < kNumLabels);
 	_xprefix[id] = strdup(prefix);
-	_xlabel[id] = new char [WHOLE_LABEL_LENGTH];
+	_xlabel[id] = new char [kWholeLabelLength];
 	_xlabel[id][0] = 0;
 	_xlabelCount++;
 }
@@ -158,7 +158,7 @@ void configureXLabelPrefix(const int id, const char *prefix)
 // NOTE: This will have no effect if we don't receive a prefix for this label.
 void configureXLabelUnits(const int id, const char *units)
 {
-	assert(id >= 0 && id < NLABELS);
+	assert(id >= 0 && id < kNumLabels);
 	_xunits[id] = strdup(units);
 }
 
@@ -166,7 +166,7 @@ void configureXLabelUnits(const int id, const char *units)
 // NOTE: This will have no effect if we don't receive a prefix for this label.
 void configureXLabelPrecision(const int id, const int precision)
 {
-	assert(id >= 0 && id < NLABELS);
+	assert(id >= 0 && id < kNumLabels);
 	_xprecision[id] = precision;
 }
 
@@ -174,9 +174,9 @@ void configureXLabelPrecision(const int id, const int precision)
 // the count of ylabels in use.
 void configureYLabelPrefix(const int id, const char *prefix)
 {
-	assert(id >= 0 && id < NLABELS);
+	assert(id >= 0 && id < kNumLabels);
 	_yprefix[id] = strdup(prefix);
-	_ylabel[id] = new char [WHOLE_LABEL_LENGTH];
+	_ylabel[id] = new char [kWholeLabelLength];
 	_ylabel[id][0] = 0;
 	_ylabelCount++;
 }
@@ -185,7 +185,7 @@ void configureYLabelPrefix(const int id, const char *prefix)
 // NOTE: This will have no effect if we don't receive a prefix for this label.
 void configureYLabelUnits(const int id, const char *units)
 {
-	assert(id >= 0 && id < NLABELS);
+	assert(id >= 0 && id < kNumLabels);
 	_yunits[id] = strdup(units);
 }
 
@@ -193,24 +193,24 @@ void configureYLabelUnits(const int id, const char *units)
 // NOTE: This will have no effect if we don't receive a prefix for this label.
 void configureYLabelPrecision(const int id, const int precision)
 {
-	assert(id >= 0 && id < NLABELS);
+	assert(id >= 0 && id < kNumLabels);
 	_yprecision[id] = precision;
 }
 
 void updateXLabelValue(const int id, const double value)
 {
-	assert(id >= 0 && id < NLABELS);
+	assert(id >= 0 && id < kNumLabels);
 	const char *units = _xunits[id] ? _xunits[id] : "";
-	snprintf(_xlabel[id], WHOLE_LABEL_LENGTH, "%s: %.*f %s",
+	snprintf(_xlabel[id], kWholeLabelLength, "%s: %.*f %s",
 				_xprefix[id], _xprecision[id], value, units);
 	drawXLabels();
 }
 
 void updateYLabelValue(const int id, const double value)
 {
-	assert(id >= 0 && id < NLABELS);
+	assert(id >= 0 && id < kNumLabels);
 	const char *units = _yunits[id] ? _yunits[id] : "";
-	snprintf(_ylabel[id], WHOLE_LABEL_LENGTH, "%s: %.*f %s",
+	snprintf(_ylabel[id], kWholeLabelLength, "%s: %.*f %s",
 				_yprefix[id], _yprecision[id], value, units);
 	drawYLabels();
 }
@@ -480,14 +480,14 @@ int createWindow()
 	// NB: This is the deprecated way, but the new way seems too complicated.
 	// We'll figure it out when it's really necessary.
 	Str255 str;
-	CopyCStringToPascal(LABEL_FONT_NAME, str);
+	CopyCStringToPascal(kLabelFontName, str);
 	SInt16 fontID;
 	GetFNum(str, &fontID);
 	if (fontID == 0)
 		fontID = applFont;
 	TextFont(fontID);
-	TextSize(LABEL_FONT_SIZE);
-	TextFace(LABEL_FONT_FACE);
+	TextSize(kLabelFontSize);
+	TextFace(kLabelFontFace);
 	FontInfo finfo;
 	GetFontInfo(&finfo);
 	_charWidth = finfo.widMax;
@@ -564,7 +564,7 @@ void *listenerLoop(void *context)
 				}
 			}
 		} while (result > 0);
-		usleep(SLEEP_MSEC * 1000L);
+		usleep(kSleepMsec * 1000L);
 	}
 	delete [] packet;
 
@@ -656,7 +656,7 @@ void initdata(bool reinit);
 void initdata(bool reinit)
 {
 	if (reinit) {
-		for (int i = 0; i < NLABELS; i++) {
+		for (int i = 0; i < kNumLabels; i++) {
 			delete [] _xprefix[i];
 			delete [] _yprefix[i];
 			delete [] _xunits[i];
@@ -668,7 +668,7 @@ void initdata(bool reinit)
 
 	_xlabelCount = 0;
 	_ylabelCount = 0;
-	for (int i = 0; i < NLABELS; i++) {
+	for (int i = 0; i < kNumLabels; i++) {
 		_xprefix[i] = NULL;
 		_yprefix[i] = NULL;
 		_xunits[i] = NULL;

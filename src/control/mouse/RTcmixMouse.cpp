@@ -14,7 +14,7 @@ const int kThrottle = 50;		// How many intervening values to skip drawing
 RTcmixMouse::RTcmixMouse()
 	: _xlabelCount(0), _ylabelCount(0), _sleeptime(kSleepMsec * 1000)
 {
-	for (int i = 0; i < NLABELS; i++) {
+	for (int i = 0; i < kNumLabels; i++) {
 		_xprefix[i] = NULL;
 		_yprefix[i] = NULL;
 		_xunits[i] = NULL;
@@ -35,7 +35,7 @@ RTcmixMouse::~RTcmixMouse()
 		_runThread = false;
 		pthread_join(_eventthread, NULL);
 	}
-	for (int i = 0; i < NLABELS; i++) {
+	for (int i = 0; i < kNumLabels; i++) {
 		delete _xprefix[i];
 		delete _yprefix[i];
 		delete _xunits[i];
@@ -49,7 +49,7 @@ int RTcmixMouse::configureXLabel(const char *prefix, const char *units,
 		const int precision)
 {
 	assert(prefix != NULL);
-	if (_xlabelCount == NLABELS)
+	if (_xlabelCount == kNumLabels)
 		return -1;
 	const int id = _xlabelCount;
 	_xlabelCount++;
@@ -63,7 +63,7 @@ int RTcmixMouse::configureYLabel(const char *prefix, const char *units,
 		const int precision)
 {
 	assert(prefix != NULL);
-	if (_ylabelCount == NLABELS)
+	if (_ylabelCount == kNumLabels)
 		return -1;
 	const int id = _ylabelCount;
 	_ylabelCount++;

@@ -3,7 +3,7 @@
 
 #include <labels.h>
 
-#define SOCK_PORT			9797
+const int kSockPort = 9797;
 
 enum {
 	kPacketConfigureXLabelPrefix = 0,
@@ -28,7 +28,7 @@ typedef struct {
 			double x;
 			double y;
 		} point;
-		char str[PART_LABEL_LENGTH];	// kPacketConfigure?LabelPrefix and *Units
+		char str[kPartLabelLength];	// kPacketConfigure?LabelPrefix and *Units
 	} data;
 } MouseSockPacket;						// should be 20 bytes
 
