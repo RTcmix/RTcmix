@@ -2,26 +2,39 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-#ifdef LINUX
+#if defined(LINUX)
 #include <endian.h>      /* so that sndlib.h will get host byte-order right */
-#endif
-#ifdef MACOSX
+#elif defined(MACOSX)
 #include <machine/endian.h>
-#endif
-#ifdef SGI
+#elif defined(SGI)
 #include <sys/endian.h>
-#endif
-#ifdef FREEBSD
+#elif defined(FREEBSD)
 #include <machine/endian.h>
+#else
+#error "This platform is not supported by sndlibsupport.h"
 #endif
 #include <stdio.h>               /* for FILE, needed by sndlib.h */
 #include "../sndlib/sndlib.h"
 #include "../H/sfheader.h"       /* for SFHEADER */
 #include "../rtstuff/rtdefs.h"   /* just for MAXCHANS */
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+/* This value must be OR'd into our sample format when it is used to set the
+ * format of an input or output audio device
+ */
+enum { MUS_NON_INTERLEAVED = 0x1000, MUS_INTERLEAVED = 0x2000 };
+
+#define MUS_INTERLEAVE_MASK 0x3000
+#define MUS_FORMAT_MASK 0x0fff
+#define MUS_GET_INTERLEAVE(fmt) ((fmt) & MUS_INTERLEAVE_MASK)
+#define IS_INTERLEAVED_FORMAT(fmt) (MUS_GET_INTERLEAVE(fmt) == MUS_INTERLEAVED)
+#define MUS_GET_FORMAT(fmt) ((fmt) & MUS_FORMAT_MASK)
+
+/* Use this to describe the floating point data we hand to an AudioDevice */
+#if MUS_LITTLE_ENDIAN
+#define NATIVE_FLOAT_FMT MUS_LFLOAT
+#else
+#define NATIVE_FLOAT_FMT MUS_BFLOAT
+#endif
 
 /* used to handle encoding peak stats in sound file comment */
 
@@ -38,6 +51,9 @@ typedef struct {
    char    comment[MAX_COMMENT_CHARS];
 } SFComment;
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
 
 /* functions in sys/sndlibsupport.c */
 
@@ -74,6 +90,9 @@ char *getsfcode(SFHEADER *, int);
 int putsfcode(SFHEADER *, char *, SFCODE *);
 int getsfmaxamp(SFHEADER *, SFMAXAMP *);
 
+#ifdef __cplusplus
+} /* extern "C" */
+#endif /* __cplusplus */
 
 /* some handy macros */
 
@@ -84,6 +103,10 @@ int getsfmaxamp(SFHEADER *, SFMAXAMP *);
 #define IS_24BIT_FORMAT(format) (                        \
               (format) == MUS_B24INT                     \
            || (format) == MUS_L24INT                     )
+
+#define IS_SHORT_FORMAT(format) (                        \
+              (format) == MUS_BSHORT                     \
+           || (format) == MUS_LSHORT                     )
 
 #define NOT_A_SOUND_FILE(header_type) (                  \
               (header_type) == MUS_UNSUPPORTED           \
@@ -214,8 +237,4 @@ int getsfmaxamp(SFHEADER *, SFMAXAMP *);
   #define m_set_little_endian_unsigned_short(n, x)   mus_ulshort_to_char(n, x)
 
 #endif
-
-#ifdef __cplusplus
-} /* extern "C" */
-#endif /* __cplusplus */
 
