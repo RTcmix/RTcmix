@@ -361,7 +361,7 @@ extern "C" {
 		  rtQSize = rtQueue[busq].getSize();
 		  if (rtQSize) {
 			chunkStart = rtQueue[busq].nextChunk(); /* FIXME:  crapping out */
-			allQSize += tQSize;                /* in RT situation sometimes */
+			allQSize += rtQSize;                /* in RT situation sometimes */
 		  }
 #ifdef TBUG
 		  cout << "rtQSize: " << rtQSize << endl;
