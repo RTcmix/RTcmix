@@ -1,51 +1,61 @@
 /* JGRAN - granular synthesis with FM or AS grains
 
-   This was derived from a Cecilia module (StochasticGrains) by
-   Mathieu Bezkorowajny and Jean Piche. See also Mara Helmuth's
-   sgran (RTcmix/insts.std) for more control over randomness.
+   p0  = output start time
+   p1  = duration
+   p2  = amplitude multiplier [See Note 1.]
+   p3  = random seed (any integer; if 0, seed from system clock) [default: 0]
+   p4  = oscillator configuration (0: additive, 1: FM) [default: 0]
+   p5  = randomize oscillator starting phase (0: no, 1: yes) [default: yes]
 
-   p0 = output start time
-   p1 = duration
-   p2 = amplitude multiplier
-   p3 = random seed (any integer; if 0, seed from system clock) [default: 0]
-   p4 = oscillator configuration (0: additive, 1: FM, 2: sampled) [default: 0]
-   p5 = randomize oscillator starting phase (0: no, 1: yes) [default: yes]
+   The following pfields replace old-style gens in v3.7 [See Note 2.]
 
-   Function table (makegen) assignments:
+   p6  = reference to grain envelope table [if missing, must use gen 2]
+   p7  = reference to grain waveform table [if missing, must use gen 3]
+   p8  = modulation frequency multiplier [if missing, can use gen 4]
+   p9  = index of modulation [if missing, can use gen 5]
+   p10 = minimum grain frequency [if missing, must use gen 6]
+   p11 = maximum grain frequency [if missing, must use gen 7]
+   p12 = minimum grain speed [if missing, must use gen 8]
+   p13 = maximum grain speed [if missing, must use gen 9]
+   p14 = minimum grain intensity [if missing, must use gen 10]
+   p15 = maximum grain intensity [if missing, must use gen 11]
+   p16 = grain density [if missing, must use gen 12]
+   p17 = grain pan (in percent-to-left form: 0-1) [if missing, can use gen 13]
+   p18 = grain pan randomization [if missing, can use gen 14]
 
-    1   overall amplitude envelope (or use setline)
-    2   grain envelope
-    3   grain waveform
-    4   modulator frequency multiplier            (can skip if p4 is not 1)
-    5   index of modulation envelope (per grain)  (can skip if p4 is not 1)
-    6   minimum grain frequency
-    7   maximum grain frequency
-    8   minumum grain speed
-    9   maximum grain speed
-   10   minumum grain intensity
-   11   maximum grain intensity
-   12   grain density
-   13   grain stereo location                     (can skip if output is mono)
-   14   grain stereo location randomization       (can skip if output is mono)
+   p2 (amplitude), p8 (mod. freq.), p9 (mod. index), p10 (min. grain freq.),
+   p11 (max. grain freq.), p12 (min. grain speed), p13 (max. grain speed),
+   p14 (min. grain intensity), p15 (max. grain intensity), p16 (grain density),
+   p17 (grain pan) and p18 (grain pan randomization) can receive dynamic
+   updates from a table or real-time control source.
 
-   NOTES:
-     1. Produces only one stream of non-overlapping grains. To get more
-        streams, call JGRAN more than once (maybe with different seeds).
-     2. Uses non-interpolating oscillators for efficiency, so make large
-        tables for the grain waveform and grain envelope.
-     3. For functions 5-11, either use gen18 or make the slot number negative,
-        to tell the gen routine not to rescale values to fit between 0 and 1.
-     4. Grains within one stream (note) never overlap. (Use sgran for this.)
-     5. Ability to use a sampled waveform is not implemented yet.
+   JGRAN produces only one stream of non-overlapping grains. To get more
+   streams, call JGRAN more than once (maybe with different seeds).  Grains
+   within one stream (note) never overlap.  (Use Mara Helmuth's SGRAN for this.)
 
-   John Gibson (johngibson@virginia.edu), 4/15/00.
+   ----
+
+   Notes about backward compatibility with pre-v4 scores:
+
+   [1] If an old-style gen table 1 is present, its values will be multiplied
+       by p2 (amplitude), even if the latter is dynamic.
+
+   [2] If this pfield is missing, you must use an old-style gen table in the
+       specified gen slot instead.  For pfields whose comment says "can use"
+       rather than "must use", the JGRAN provides a default if missing.
+
+
+   JGRAN was derived from a Cecilia module (StochasticGrains) by Mathieu
+   Bezkorowajny and Jean Piche.
+
+   John Gibson (johngibson@virginia.edu), 4/15/00; rev for v4, JGG, 7/25/04
 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
+#include <PField.h>
 #include "JGRAN.h"
 #include <rt.h>
 #include <rtdefs.h>
@@ -109,94 +119,131 @@ make_table(int function_num, float dur)
 
 int JGRAN :: init(double p[], int n_args)
 {
-   int   seed, wavetablen = DEFAULT_WAVETABLE_SIZE;
-   float outskip, dur;
-
-   outskip = p[0];
-   dur = p[1];
-   amp = p[2];
-   seed = (int) p[3];
+   nargs = n_args;
+   float outskip = p[0];
+   float dur = p[1];
+   int seed = (int) p[3];
    osctype = (OscType) p[4];
-   randomize_phase = n_args > 5 ? (int) p[5] : 1;           /* default: yes */
-
-   if (outputchans > 2)
-      return die("JGRAN", "Output must be mono or stereo.");
+   randomize_phase = n_args > 5 ? (bool) p[5] : true;    // default: yes
 
    nsamps = rtsetoutput(outskip, dur, this);
+   if (outputChannels() > 2)
+      return die("JGRAN", "Output must be mono or stereo.");
 
    amp_table = make_table(1, dur);
-   if (amp_table == NULL) {
-      advise("JGRAN", "Setting phrase curve to all 1's.");
-      aamp = amp;
-   }
 
-   double *envtab = floc(2);
-   if (envtab) {
-      int len = fsize(2);
-      grainenv_oscil = new OscilN(SR, 0.0, envtab, len);
-   }
-   else
-      return die("JGRAN",
-                 "You haven't made the grain envelope function (table 2).");
+   // get grain envelope table
+   double *function = NULL;
+   int tablelen = 0;
+	if (n_args > 6) {       // handle table coming in as optional p6 TablePField
+		const PField &field = getPField(6);
+		tablelen = field.values();
+		function = (double *) field;
+	}
+	if (function == NULL) {
+		function = floc(2);
+		if (function == NULL)
+			return die("JGRAN", "Either use the grain envelope pfield (p6) "
+                    "or make an old-style gen function in slot 2.");
+		tablelen = fsize(2);
+	}
+   grainenv_oscil = new OscilL(SR, 0.0, function, tablelen);
 
-   double *wavetab = floc(3);
-   if (wavetab)
-      wavetablen = fsize(3);
-   else
-      advise("JGRAN", "Using sine for grain waveform (no table 3).");
-
-   if (osctype == FM) {
-      modmult_table = make_table(4, dur);
-      if (modmult_table == NULL)
-         return die("JGRAN", "You haven't made the modulation frequency "
-                             "multiplier function (table 4).");
-      modindex_table = make_table(5, dur);
-      if (modindex_table == NULL)
-         return die("JGRAN",
-                    "You haven't made the index envelope function (table 5).");
-   }
-   minfreq_table = make_table(6, dur);
-   if (minfreq_table == NULL)
-      return die("JGRAN", "You haven't made the minimum grain frequency "
-                          "function (table 6).");
-   maxfreq_table = make_table(7, dur);
-   if (maxfreq_table == NULL)
-      return die("JGRAN", "You haven't made the maximum grain frequency "
-                          "function (table 7).");
-   minspeed_table = make_table(8, dur);
-   if (minspeed_table == NULL)
-      return die("JGRAN", "You haven't made the minimum grain speed "
-                          "function (table 8).");
-   maxspeed_table = make_table(9, dur);
-   if (maxspeed_table == NULL)
-      return die("JGRAN", "You haven't made the maximum grain speed "
-                          "function (table 9).");
-   minintens_table = make_table(10, dur);
-   if (minintens_table == NULL)
-      return die("JGRAN", "You haven't made the minimum grain intensity "
-                          "function (table 10).");
-   maxintens_table = make_table(11, dur);
-   if (maxintens_table == NULL)
-      return die("JGRAN", "You haven't made the maximum grain intensity "
-                          "function (table 11).");
-   density_table = make_table(12, dur);
-   if (density_table == NULL)
-      return die("JGRAN", "You haven't made the density function (table 12).");
-   if (outputchans == 2) {
-      pan_table = make_table(13, dur);
-      if (pan_table == NULL)
-         return die("JGRAN", "You haven't made the stereo location "
-                             "function (table 13).");
-      panvar_table = make_table(14, dur);
-      if (panvar_table == NULL)
-         return die("JGRAN", "You haven't made the stereo location "
-                             "randomization function (table 14).");
-   }
-
-   car_oscil = new OscilN(SR, 0.0, wavetab, wavetablen);
+   // get grain waveform table and create oscillator(s)
+   function = NULL;
+   tablelen = 0;
+	if (n_args > 7) {       // handle table coming in as optional p7 TablePField
+		const PField &field = getPField(7);
+		tablelen = field.values();
+		function = (double *) field;
+	}
+	if (function == NULL) {
+		function = floc(3);
+		if (function == NULL) {
+         tablelen = DEFAULT_WAVETABLE_SIZE;
+         advise("JGRAN", "Using sine for grain waveform (no table 3).");
+      }
+      else
+		   tablelen = fsize(3);
+	}
+   car_oscil = new OscilL(SR, 0.0, function, tablelen);
    if (osctype == FM)
-      mod_oscil = new OscilN(SR, 0.0, wavetab, wavetablen);
+      mod_oscil = new OscilL(SR, 0.0, function, tablelen);
 
+   // create additional tables, if corresponding pfield is missing
+   if (osctype == FM) {
+      if (n_args <= 8) {
+         modmult_table = make_table(4, dur);
+         if (modmult_table == NULL)
+            return die("JGRAN", "Either use the modulation frequency "
+                                "multiplier pfield (p8) or make an old-style "
+                                "gen function in slot 4.");
+      }
+      if (n_args <= 9) {
+         modindex_table = make_table(5, dur);
+         if (modindex_table == NULL)
+            return die("JGRAN", "Either use the index envelope pfield (p9) "
+                                "or make an old-style gen function in slot 5.");
+      }
+   }
+   if (n_args <= 10) {
+      minfreq_table = make_table(6, dur);
+      if (minfreq_table == NULL)
+         return die("JGRAN", "Either use the min. grain frequency pfield (p10) "
+                             "or make an old-style gen function in slot 6.");
+   }
+   if (n_args <= 11) {
+      maxfreq_table = make_table(7, dur);
+      if (maxfreq_table == NULL)
+         return die("JGRAN", "Either use the max. grain frequency pfield (p11) "
+                             "or make an old-style gen function in slot 7.");
+   }
+   if (n_args <= 12) {
+      minspeed_table = make_table(8, dur);
+      if (minspeed_table == NULL)
+         return die("JGRAN", "Either use the min. grain speed pfield (p12) "
+                             "or make an old-style gen function in slot 8.");
+   }
+   if (n_args <= 13) {
+      maxspeed_table = make_table(9, dur);
+      if (maxspeed_table == NULL)
+         return die("JGRAN", "Either use the max. grain speed pfield (p13) "
+                             "or make an old-style gen function in slot 9.");
+   }
+   if (n_args <= 14) {
+      minintens_table = make_table(10, dur);
+      if (minintens_table == NULL)
+         return die("JGRAN", "Either use the min. grain intensity pfield (p14) "
+                             "or make an old-style gen function in slot 10.");
+   }
+   if (n_args <= 15) {
+      maxintens_table = make_table(11, dur);
+      if (maxintens_table == NULL)
+         return die("JGRAN", "Either use the max. grain intensity pfield (p15) "
+                             "or make an old-style gen function in slot 11.");
+   }
+   if (n_args <= 16) {
+      density_table = make_table(12, dur);
+      if (density_table == NULL)
+         return die("JGRAN", "Either use the grain density pfield (p16) "
+                             "or make an old-style gen function in slot 12.");
+   }
+   if (outputChannels() == 2) {
+      if (n_args <= 17) {
+         pan_table = make_table(13, dur);
+         if (pan_table == NULL)
+            return die("JGRAN", "Either use the pan pfield (p17) or make an "
+                                "old-style gen function in slot 13.");
+      }
+      if (n_args <= 18) {
+         panvar_table = make_table(14, dur);
+         if (panvar_table == NULL)
+            return die("JGRAN", "Either use the pan randomization pfield (p18) "
+                               "or make an old-style gen function in slot 14.");
+      }
+   }
+
+   // seed multipliers straight from Piche/Bezkorowajny source
    durnoi = new Noise((unsigned int) seed * 243);
    freqnoi = new Noise((unsigned int) seed * 734);
    pannoi = new Noise((unsigned int) seed * 634);
@@ -207,91 +254,140 @@ int JGRAN :: init(double p[], int n_args)
    krate = resetval;
    skip = (int) (SR / (float) krate);
 
-   return nsamps;
+   return nSamps();
+}
+
+
+void JGRAN :: doupdate()
+{
+   double p[19];
+   update(p, 19);
+
+   amp = p[2];
+   if (amp_table)
+      amp *= amp_table->tick(currentFrame(), 1.0);
+
+   // Get new random values.
+   double randur = fabs(durnoi->tick());          // [0, 1]
+   double ranfreq = fabs(freqnoi->tick());
+   double ranamp = fabs(ampnoi->tick());
+   if (randomize_phase)
+      ranphase = fabs(phasenoi->tick()) * TWO_PI;
+
+   // Read pfields or tables, depending on number of args to inst.  All this
+   // nargs testing is for backwards compatibility with pre-v4 scores.
+
+   double minfreq, maxfreq;
+   if (nargs > 10)
+      minfreq = p[10];
+   else
+      minfreq = minfreq_table->tick(currentFrame(), 1.0);
+   if (nargs > 11)
+      maxfreq = p[11];
+   else
+      maxfreq = maxfreq_table->tick(currentFrame(), 1.0);
+
+   double minspeed, maxspeed;
+   if (nargs > 12)
+      minspeed = p[12];
+   else
+      minspeed = minspeed_table->tick(currentFrame(), 1.0);
+   if (nargs > 13)
+      maxspeed = p[13];
+   else
+      maxspeed = maxspeed_table->tick(currentFrame(), 1.0);
+
+   double minintens, maxintens;
+   if (nargs > 14)
+      minintens = p[14];
+   else
+      minintens = minintens_table->tick(currentFrame(), 1.0);
+   if (nargs > 15)
+      maxintens = p[15];
+   else
+      maxintens = maxintens_table->tick(currentFrame(), 1.0);
+
+   double density;
+   if (nargs > 16)
+      density = p[16];
+   else
+      density = density_table->tick(currentFrame(), 1.0);
+
+   // Compute next grain duration.
+   double logminspeed = log(minspeed);
+   double speeddiff = fabs(log(maxspeed) - logminspeed);
+   int tmp = (int) ((double) krate / exp(logminspeed + (randur * speeddiff)));
+   next_graindur = ((double) tmp / (double) krate) + (1.0 / (double) krate);
+
+   // Compute next grain amplitude multiplier.
+   if (ranamp < density) {
+      double intens = minintens + ((maxintens - minintens) * ranamp);
+      next_grainamp = ampdb(intens);
+   }
+   else
+      next_grainamp = 0.0;
+
+   // Compute next carrier frequency.
+   double logminfreq = log(minfreq);
+   double freqdiff = fabs(log(maxfreq) - logminfreq);
+   next_carfreq = exp(logminfreq + (ranfreq * freqdiff));
+
+   // Compute next modulator frequency and depth, if we're doing FM.
+   if (osctype == FM) {
+      double modmult, index;
+      if (nargs > 8)
+         modmult = p[8];
+      else
+         modmult = modmult_table->tick(currentFrame(), 1.0);
+      if (nargs > 9)
+         index = p[9];
+      else
+         index = modindex_table->tick(currentFrame(), 1.0);
+
+      next_modfreq = next_carfreq * modmult;
+      next_moddepth = index * next_modfreq;
+   }
+
+   // Compute next pan.
+   if (outputChannels() == 2) {
+      double pan, panvar;
+      if (nargs > 17)
+         pan = p[17];
+      else
+         pan = pan_table->tick(currentFrame(), 1.0);
+      if (nargs > 18)
+         panvar = p[18];
+      else
+         panvar = panvar_table->tick(currentFrame(), 1.0);
+
+      next_grainpan = pan;
+      double ranpan = pannoi->tick();                     // [-1, 1]
+      ranpan *= panvar;
+      next_grainpan += ranpan;
+      if (next_grainpan > 1.0)
+         next_grainpan = 1.0;
+      else if (next_grainpan < 0.0)
+         next_grainpan = 0.0;
+   }
 }
 
 
 int JGRAN :: run()
 {
-   int      i;
-   float    carsig, grainenv, out[2];
-
-   for (i = 0; i < chunksamps; i++) {
-      if (--branch < 0) {                       /* updates at control rate */
-         int    tmp;
-         float  minfreq, maxfreq, freqdiff, minspeed, maxspeed, speeddiff;
-         float  ranamp, ranpan, density, minintens, maxintens;
-         double randur, ranfreq, logminfreq, logminspeed;
-
-         if (amp_table)
-            aamp = amp_table->tick(cursamp, amp);
-
-         /* get new random values */
-         randur = fabs((double) durnoi->tick());          /* [0, 1] */
-         ranfreq = fabs((double) freqnoi->tick());
-         ranamp = (float) fabs((double) ampnoi->tick());
-         if (randomize_phase)
-            ranphase = (float) fabs((double) phasenoi->tick()) * TWO_PI;
-
-         /* read tables */
-         minfreq = minfreq_table->tick(cursamp, 1.0);
-         maxfreq = maxfreq_table->tick(cursamp, 1.0);
-         minspeed = minspeed_table->tick(cursamp, 1.0);
-         maxspeed = maxspeed_table->tick(cursamp, 1.0);
-         minintens = minintens_table->tick(cursamp, 1.0);
-         maxintens = maxintens_table->tick(cursamp, 1.0);
-         density = density_table->tick(cursamp, 1.0);
-
-         /* compute next grain duration */
-         logminspeed = log((double) minspeed);
-         speeddiff = fabs(log((double) maxspeed) - logminspeed);
-         tmp = (int) ((double) krate / exp(logminspeed + (randur * speeddiff)));
-         next_graindur = ((float) tmp / (float) krate) + (1.0 / (float) krate);
-
-         /* compute next grain amplitude multiplier */
-         if (ranamp < density) {
-            float intens = minintens + ((maxintens - minintens) * ranamp);
-            next_grainamp = (float) ampdb(intens);
-         }
-         else
-            next_grainamp = 0.0;
-
-         /* compute next carrier frequency */
-         logminfreq = log((double) minfreq);
-         freqdiff = fabs(log((double) maxfreq) - logminfreq);
-         next_carfreq = (float) exp(logminfreq + (ranfreq * freqdiff));
-
-         /* compute next modulator frequency and depth, if we're doing FM */
-         if (osctype == FM) {
-            float modmult = modmult_table->tick(cursamp, 1.0);
-            float index = modindex_table->tick(cursamp, 1.0);
-            next_modfreq = next_carfreq * modmult;
-            next_moddepth = index * next_modfreq;
-         }
-
-         /* compute next pctleft */
-         if (outputchans == 2) {
-            float panvar = panvar_table->tick(cursamp, 1.0);
-            next_grainpan = pan_table->tick(cursamp, 1.0);
-            ranpan = pannoi->tick();                      /* [-1, 1] */
-            ranpan *= panvar;
-            next_grainpan += ranpan;
-            if (next_grainpan > 1.0)
-               next_grainpan = 1.0;
-            else if (next_grainpan < 0.0)
-               next_grainpan = 0.0;
-         }
+   for (int i = 0; i < framesToRun(); i++) {
+      if (--branch <= 0) {                      // updates at control rate
+         doupdate();
          branch = skip;
       }
 
-      if (--gsampcount < 0) {                   /* updates at each grain */
+      if (--gsampcount < 0) {                   // updates at each grain
 
-         /* set starting phase of carrier and grain envelope oscillators */
+         // set starting phase of carrier and grain envelope oscillators
          if (randomize_phase)
             car_oscil->setPhase(ranphase);
          grainenv_oscil->setPhase(0.0);
 
-         /* update these at start of each grain, not during one */
+         // update these at start of each grain, not during one
          graindur = next_graindur;
          envoscil_freq = 1.0 / graindur;
          grainamp = next_grainamp;
@@ -300,9 +396,9 @@ int JGRAN :: run()
             modfreq = next_modfreq;
             moddepth = next_moddepth;
          }
-         if (outputchans == 2) {
-            grainpan[0] = (float) sqrt((double) next_grainpan);
-            grainpan[1] = (float) sqrt(1.0 - (double) next_grainpan);
+         if (outputChannels() == 2) {
+            grainpan[0] = sqrt(next_grainpan);
+            grainpan[1] = sqrt(1.0 - next_grainpan);
          }
          gsampcount = (int) (graindur * SR + 0.5);
          curgsamp = 0;
@@ -312,18 +408,20 @@ int JGRAN :: run()
 #endif
       }
 
-      grainenv = grainenv_oscil->tick(envoscil_freq, grainamp);
+      double grainenv = grainenv_oscil->tick(envoscil_freq, grainamp);
 
+      double carsig;
       if (osctype == FM) {
-         float modsig = mod_oscil->tick(modfreq, moddepth);
+         double modsig = mod_oscil->tick(modfreq, moddepth);
          carsig = car_oscil->tick(carfreq + modsig, grainenv);
       }
       else
          carsig = car_oscil->tick(carfreq, grainenv);
 
-      carsig *= aamp;                          /* apply overall setline */
+      carsig *= amp;
 
-      if (outputchans == 2) {
+      float out[2];
+      if (outputChannels() == 2) {
          out[0] = carsig * grainpan[0];
          out[1] = carsig * grainpan[1];
       }
@@ -331,11 +429,11 @@ int JGRAN :: run()
          out[0] = carsig;
 
       rtaddout(out);
-      cursamp++;
+      increment();
       curgsamp++;
    }
 
-   return i;
+   return framesToRun();
 }
 
 
@@ -348,10 +446,8 @@ Instrument *makeJGRAN()
    return inst;
 }
 
-void
-rtprofile()
+void rtprofile()
 {
    RT_INTRO("JGRAN", makeJGRAN);
 }
-
 
