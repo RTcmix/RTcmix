@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Saturday, Mar 16, 2002 Doug Scott <netdscott@netscape.net>
+
+   * Added first revisions of Instrument class - inline accessor methods for 
+     state, new block-add method, rtbaddout.
+   * Added first version of LPCPLAY instrument (with more revisions to follow)
 
 Thursday, Mar 7, 2002 John Gibson <johgibso@indiana.edu>
 
