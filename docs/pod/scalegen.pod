@@ -24,6 +24,8 @@ The numeric ID for the function table.
 
 The amount to multiply every element of the function table by.
 
+=back
+
 =head1 EXAMPLES
 
    /* Make a table of random numbers between 0 and 1. */

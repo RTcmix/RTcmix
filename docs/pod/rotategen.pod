@@ -26,6 +26,8 @@ Elements that would run off the end of the table wrap around to the
 beginning of the table.  Positive values of I<rotate> move elements
 to the right; negative values, to the left.
 
+=back
+
 =head1 EXAMPLES
 
    /* Make a table of 10 random numbers. */

@@ -24,6 +24,8 @@ The numeric ID for the function table.
 Define a grid to which table elements snap.  Elements will never
 be closer in value than I<quantum>.
 
+=back
+
 =head1 EXAMPLES
 
    /* Make a table of 20 random numbers between 0 and 1. */

@@ -19,6 +19,8 @@ a function table.
 
 The numeric ID for the function table.
 
+=back
+
 =head1 EXAMPLES
 
    /* Make a table of 100 random numbers. */

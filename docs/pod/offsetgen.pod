@@ -24,6 +24,8 @@ The numeric ID for the function table.
 
 The amount to add to every element of the function table.
 
+=back
+
 =head1 EXAMPLES
 
    /* Make a sine wave at half amplitude, ranging between

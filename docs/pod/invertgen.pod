@@ -20,6 +20,8 @@ halfway between the minimum and maximum values in the table.
 
 The numeric ID for the function table.
 
+=back
+
 =head1 EXAMPLES
 
    /* Make a hanning window (bell curve). */
