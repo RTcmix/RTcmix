@@ -64,9 +64,6 @@ int AudioDeviceImpl::open(int mode, int sampfmt, int chans, double srate)
 //		   : (mode & DirectionMask) == Playback ? "Playback" : "Record",
 //		   (mode & Passive) ? "Passive" : "Active");
 	_lastErr[0] = 0;
-	if (!IS_FLOAT_FORMAT(MUS_GET_FORMAT(sampfmt))) {
-		return error("Only floating point buffers are accepted as input");
-	}
 	setMode(mode);
 	int status = 0;
 	close();
@@ -662,6 +659,10 @@ int AudioDeviceImpl::setConvertFunctions(int rawFrameFormat,
 	
 	_recConvertFunction = NULL;
 	_playConvertFunction = NULL;
+	
+	if (!IS_FLOAT_FORMAT(rawFrameFormat)) {
+		return error("Only floating point frame data supported");
+	}
 
 	// The device may be a file or HW, so take endian-ness into account for
 	// playback and some record options.
