@@ -34,15 +34,17 @@ public:
 	virtual bool		isOpen() const = 0;
 	virtual bool		isRunning() const = 0;
 	virtual bool		isPaused() const = 0;
-	virtual int			getFrameFormat() const = 0;
-	virtual int			getDeviceFormat() const = 0;
-	virtual bool		isFrameInterleaved() const = 0;
-	virtual bool		isDeviceInterleaved() const = 0;
-	virtual int			getFrameChannels() const = 0;
-	virtual int			getDeviceChannels() const = 0;
-	virtual double		getSamplingRate() const = 0;
-	virtual long		getFrameCount() const = 0;
 	virtual	const char *getLastError() const = 0;
+
+protected:
+// 	virtual int			getFrameFormat() const = 0;
+// 	virtual int			getDeviceFormat() const = 0;
+// 	virtual bool		isFrameInterleaved() const = 0;
+// 	virtual bool		isDeviceInterleaved() const = 0;
+// 	virtual int			getFrameChannels() const = 0;
+// 	virtual int			getDeviceChannels() const = 0;
+// 	virtual double		getSamplingRate() const = 0;
+// 	virtual long		getFrameCount() const = 0;
 protected:
 	// For use by all
 	enum State {
@@ -57,6 +59,6 @@ protected:
 // createAudioDevice must be implemented by each platform's derived AudioDevice
 //	implementation code.
 
-AudioDevice *createAudioDevice(const char *path);
+AudioDevice *createAudioDevice(const char *inputDesc, const char *outputDesc, bool fullDuplex);
 
 #endif	// _AUDIODEVICE_H_
