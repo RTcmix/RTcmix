@@ -192,7 +192,7 @@ RTPROFILE_O = $(CMIXDIR)/src/rtcmix/rtprofile.o
 
 CMIX_O = $(LIBDIR)/main.o $(LIBDIR)/RTcmixMain.o
 M_O =  $(PARSERDIR)/parse_with_minc.o
-IMB_RTCMIX_O = $(LIBDIR)/RTcmix.o
+IMB_RTCMIX_O =
 P_O =  $(PARSERDIR)/parse_with_perl.o
 PY_O = $(PARSERDIR)/parse_with_python.o
 
