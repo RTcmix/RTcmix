@@ -22,6 +22,8 @@ int haswindow = 0;
 #define NCMAX 16777216
 extern SFHEADER sfdesc[NFILES];
 
+extern float SR();	// avoiding globals
+
 int sferror;
 int sinbuf;
 int tail;
@@ -462,7 +464,7 @@ setwindow(float p[], int n_args)
 	int number = p[0];
 
 	advise("convolve", "Creating window %d.", number);
-	tableset(SR, p[1],SIZE,tabs[number]);
+	tableset(SR(), p[1],SIZE,tabs[number]);
 	setline(&p[2],n_args-2,SIZE,array[number]);
 	haswindow=1;
 
@@ -481,7 +483,7 @@ setwarp(float p[], int n_args)
 	int number = p[0];
 
 	advise("convolve", "Creating warp table %d.", number);
-	tableset(SR, p[1],SIZE,warptabs[number]);
+	tableset(SR(), p[1],SIZE,warptabs[number]);
 	setline(&p[2],n_args-2,SIZE,warparray[number]);
 
 	return 0.0;
@@ -499,7 +501,7 @@ getwarp(float p[], int n_args)
 	float newskip;
 
 	number = p[0];
-	insamp = (int)(p[1] * SR);
+	insamp = (int)(p[1] * SR());
 	newskip  = table(insamp,warparray[number],warptabs[number]); 
 	return newskip;
 }
@@ -516,7 +518,7 @@ setrange(float p[], int n_args)
 	int number = p[0];
 
 	advise("convolve", "Creating range table %d.", number);
-	tableset(SR, p[1],SIZE,rangetabs[number]);
+	tableset(SR(), p[1],SIZE,rangetabs[number]);
 	setline(&p[2],n_args-2,SIZE,rangearray[number]);
 
 	return 0.0;
@@ -534,7 +536,7 @@ getrange(float p[], int n_args)
 	float range;
 
 	number = p[0];
-	insamp = (int)(p[1] * SR);
+	insamp = (int)(p[1] * SR());
 	range = table(insamp,rangearray[number],rangetabs[number]); 
 
 	return range;
@@ -552,7 +554,7 @@ setring(float p[], int n_args)
 	int number = p[0];
 
 	advise("convolve", "Creating ring table %d.", number);
-	tableset(SR, p[1],SIZE,ringtabs[number]);
+	tableset(SR(), p[1],SIZE,ringtabs[number]);
 	setline(&p[2],n_args-2,SIZE,ringarray[number]);
 
 	return 0.0;
@@ -571,7 +573,7 @@ getring(float p[], int n_args)
 	float newindow;
 
 	number = p[0];
-	insamp = (long)(p[1] * SR);
+	insamp = (long)(p[1] * SR());
 	newindow  = table(insamp,ringarray[number],ringtabs[number]); 
 
 	return newindow;
@@ -586,7 +588,7 @@ double
 setdry(float p[], int n_args)
 {
 	advise("convolve", "Creating dry table.");
-	tableset(SR, p[0],SIZE,drytabs);
+	tableset(SR(), p[0],SIZE,drytabs);
 	setline(&p[1],n_args-1,SIZE,dryarray);
 
 	return 0.0;
@@ -603,7 +605,7 @@ getdry(float p[], int n_args)
 	long insamp;
 	float dry;
 
-	insamp = (long)(p[0] * SR);
+	insamp = (long)(p[0] * SR());
 	dry = table(insamp,dryarray,drytabs); 
 
 	return dry;

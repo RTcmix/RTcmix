@@ -6,6 +6,7 @@
 #include <math.h>
 
 extern SFHEADER      sfdesc[NFILES];
+extern float SR();
 
 /*
    sgran:
@@ -84,7 +85,7 @@ sgran(float p[], int n_args)
 	array = floc(1);             /* used to be setline  -JGG */
 	if (array) {
 		int amplen = fsize(1);
-		tableset(SR, p[1], amplen, tabs);
+		tableset(SR(), p[1], amplen, tabs);
 	}
 	else
 		advise("sgran", "Setting phrase curve to all 1's.");
@@ -99,12 +100,12 @@ sgran(float p[], int n_args)
 		die("sgran", "You haven't made the grain envelope (table 8).");
 	/* NOTE: fsize(8) called in loop below */
 
-	bgrainsamps = grainsamps = p[14] * SR;
-	bgraindist = p[3] * SR;
+	bgrainsamps = grainsamps = p[14] * SR();
+	bgraindist = p[3] * SR();
 	bgrainslide = grainslide = bgraindist - bgrainsamps;
 
-	egrainsamps = p[18] * SR;
-	egraindist = p[4] * SR;
+	egrainsamps = p[18] * SR();
+	egraindist = p[4] * SR();
 	egrainslide = egraindist - egrainsamps;
 
 	graindistdiff = egraindist - bgraindist;
@@ -112,22 +113,22 @@ sgran(float p[], int n_args)
 	rate_shape = floc(2);
 	if (rate_shape == NULL)
 		die("sgran", "You haven't made the grain density function (table 2).");
-	tableset(SR, p[1]-p[4],fsize(2),tab2);
+	tableset(SR(), p[1]-p[4],fsize(2),tab2);
 
 	dur_shape = floc(3);
 	if (dur_shape == NULL)
 		die("sgran", "You haven't made the grain duration function (table 3).");
-	tableset(SR, p[1]-p[4],fsize(3),tab3);
+	tableset(SR(), p[1]-p[4],fsize(3),tab3);
 
 	loc_shape = floc(4);
 	if (loc_shape == NULL)
 		die("sgran", "You haven't made the grain location function (table 4).");
-	tableset(SR, p[1]-p[4],fsize(4),tab4);
+	tableset(SR(), p[1]-p[4],fsize(4),tab4);
 
 	freq_shape = floc(5);
 	if (freq_shape == NULL)
 		die("sgran", "You haven't made the grain frequency function (table 5).");
-	tableset(SR, p[1]-p[4],fsize(5),tab5);
+	tableset(SR(), p[1]-p[4],fsize(5),tab5);
 
 	slodiff = (double)(p[9]-p[5])/nsamps; /* get stt zero/one differences */
 	smiddiff = (double)(p[10]-p[6])/nsamps;
@@ -165,7 +166,7 @@ sgran(float p[], int n_args)
 	for(i = 0; i < nsamps; i++) {
 		count++;
 		phase = 0;
-		tableset(SR, grainsamps/SR,fsize(8),tab);
+		tableset(SR(), grainsamps/SR(),fsize(8),tab);
 		if(!randflag) {
 			lo = p[29] + flodiff*tablei(i,freq_shape,tab5);
 			mid = p[30] + fmiddiff*tablei(i,freq_shape,tab5);
@@ -175,7 +176,7 @@ sgran(float p[], int n_args)
 			hi = (hi < mid) ? mid : hi;
 			ti = (ti < 0) ? 0 : ti; 
 			freq = prob(lo, mid, hi, ti);
-			si = freq * (float)len/SR; 
+			si = freq * (float)len/SR(); 
 		}
 
 /*
@@ -221,7 +222,7 @@ sgran(float p[], int n_args)
 		lo = (lo > mid) ? mid : lo;
 		hi = (hi < mid) ? mid : hi;
 		ti = (ti < 0) ? 0 : ti; 
-		grainsamps = (long)(prob(lo, mid, hi, ti)*SR);
+		grainsamps = (long)(prob(lo, mid, hi, ti)*SR());
 
 
 		/*	get percentage to vary next stt of grain */

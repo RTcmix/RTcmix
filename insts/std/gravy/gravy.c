@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 extern SFHEADER      sfdesc[NFILES];
+extern float SR();
 
 /* gravy -- a time and pitch-shifting instrument
 *  	(modified 11/89 by D.S. to use parabolic interpolation)
@@ -45,12 +46,12 @@ gravy(float p[], int n_args)
 	if (winfunc == NULL)
 		die("gravy", "You haven't made a window envelope function (table 1).");
 	winsize = fsize(1);
-	tableset(SR, p[3], winsize, wintabs);
+	tableset(SR(), p[3], winsize, wintabs);
 
 	inchans = sfchans(&sfdesc[0]);
 	outchans = sfchans(&sfdesc[1]);
 
-	insamps = (p[3] * SR * p[6] + 1.0) * (float)inchans;
+	insamps = (p[3] * SR() * p[6] + 1.0) * (float)inchans;
 	if ( (inarr = (float *)malloc(insamps*FLOAT)) == NULL )
 		die("gravy", "Error allocating input array... sorry!");
 	
@@ -62,7 +63,7 @@ gravy(float p[], int n_args)
 	inmove = (1.0/p[5]) * (winsamps/2);
 	inshift = -((insamps/inchans) - inmove);
 
-	skip = SR/(float)resetval;
+	skip = SR()/(float)resetval;
 	inchan = p[7];
 
 	for (n = 0; n < ncuts; n++) {

@@ -4,6 +4,7 @@
 #include <math.h>
 
 extern	SFHEADER	sfdesc[NFILES];
+extern float SR();
 
 /*  mrotate -- a pitch-shifting instrument based upon the idea
 *	of old rotating tape-head pitch shifters
@@ -44,7 +45,7 @@ mrotate(float p[], int n_args)
 	amptable = floc(1);
 	if (amptable) {
 		int alen = fsize(1);
-		tableset(SR, p[2], alen, amptabs);
+		tableset(SR(), p[2], alen, amptabs);
 	}
 	else
 		advise("mrotate", "Setting phrase curve to all 1's.");
@@ -58,7 +59,7 @@ mrotate(float p[], int n_args)
 	if (pcurve == NULL)
 		die("mrotate", "You haven't made the pitch shift envelope (table 3).");
 	plen = fsize(3);
-	tableset(SR, p[2], plen, ptabs);
+	tableset(SR(), p[2], plen, ptabs);
 
 	octpart1 = (int)p[4] * 12;
 	pcpart1 = (p[4] * 100.0) - (float)(octpart1*100);
@@ -67,12 +68,12 @@ mrotate(float p[], int n_args)
 	prange = (octpart2+pcpart2) - (octpart1+pcpart1);
 	pcbase = octpart1 + pcpart1;
 
-	reinit = p[6] * SR;
+	reinit = p[6] * SR();
 	off = reinit/2;
 	k = off;
 	chans = sfchans(&sfdesc[1]); 
 	inchan = p[7];
-	skip = SR/(float)resetval;
+	skip = SR()/(float)resetval;
 	cdown = 0;
 	j = 0;
 	for(i = 0; i < nsamps; i++) {

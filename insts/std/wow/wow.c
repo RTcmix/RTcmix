@@ -25,6 +25,7 @@
 */
 
 extern SFHEADER      sfdesc[NFILES];
+extern float SR();
 
 #define MIN(x,y) ((x)<(y) ? (x) : (y))
 #define MAX(x,y) ((x)>(y) ? (x) : (y))
@@ -50,16 +51,16 @@ wow(float p[], int n_args)
 	inchans = sfchans(&sfdesc[0]);
 	outchans = sfchans(&sfdesc[1]);
 
-	input_start = p[1] * SR;     /* All measured in # of samples */
-	output_start = p[0] * SR;
-	duration =  p[2] * SR;
+	input_start = p[1] * SR();     /* All measured in # of samples */
+	output_start = p[0] * SR();
+	duration =  p[2] * SR();
 
 	amp = aamp = p[3];
 
 	amparr = floc(1);
 	if (amparr) {
 		int lenamp = fsize(1);
-		tableset(SR, p[2], lenamp, amptabs);
+		tableset(SR(), p[2], lenamp, amptabs);
 	}
 	else
 		advise("wow", "Setting phrase curve to all 1's.");
@@ -76,7 +77,7 @@ wow(float p[], int n_args)
 /* We would like to find the average of gen array 1, so we can subtract it
       to normalize the modulator (so its integral is zero). */
 
-	nsamps = setnote(output_start/SR, duration/SR, 1);
+	nsamps = setnote(output_start/SR(), duration/SR(), 1);
 	integral = 0;
 	for (i = 0; i < msize; i++) integral += modulator[i];
 
@@ -87,7 +88,7 @@ wow(float p[], int n_args)
       store. */
 
 	mphase = 0;
-	si = (float)msize * modulator_freq/SR;
+	si = (float)msize * modulator_freq/SR();
 
 	integral = min_x = max_x = 0;
 	for (n = 0; n < nsamps; n++) {
@@ -120,7 +121,7 @@ printf ("     Avg of modulator: %f.  Max of integral: %f.  Min: %f.\n",
 	i = -MIN (input_start, 0);
 	input_start = MAX(input_start, 0);
 	duration += (q_size/inchans) - 1;
-	setnote(input_start/SR, duration/SR, 0);
+	setnote(input_start/SR(), duration/SR(), 0);
 
 	for (i; i < q_size; i += inchans) GETIN (queue+i, 0);
 
@@ -130,7 +131,7 @@ printf ("     Avg of modulator: %f.  Max of integral: %f.  Min: %f.\n",
 /* ---------------------------------------------------------------------- */
 /* Enough setting up.  Let's get down to it. */
 
-	skip = SR/(float)resetval;
+	skip = SR()/(float)resetval;
 	inchan = p[6];
 	mphase = 0;
 	input_offset = 0;
