@@ -199,6 +199,14 @@ standalone_uninstall::
 	done
 	@echo "standalone_uninstall done."; echo ""
 
+###############################################################  make depend  ##
+depend::
+	@for DIR in Minc sys; \
+	do \
+	  ( cd $$DIR; echo "making depend in $$DIR..."; \
+	  $(RM) depend; \
+	  $(MAKE) $(MFLAGS) depend ); \
+	done
 ###############################################################  make clean  ###
 
 # NB: leave docs/pod alone, so we don't have to rebuild docs all the time
