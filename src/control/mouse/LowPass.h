@@ -13,7 +13,7 @@
 
 class LowPass {
 public:
-	LowPass() : _coeffA(0.001), _coeffB(0.999), _hist(0.0) {}
+	LowPass() : _coeffA(0.5), _coeffB(0.5), _hist(0.0) {}
 
 	// For lag in range [0,MAXLAG], return smoothing coefficient in range [0,1).
 	void setLag(double lag)
@@ -28,9 +28,8 @@ public:
 
 	inline double next(const double val)
 	{
-		double newval = (_coeffA * val) + (_coeffB * _hist);
-		_hist = newval;
-		return newval;
+		_hist = (_coeffA * val) + (_coeffB * _hist);
+		return _hist;
 	}
 
 private:
