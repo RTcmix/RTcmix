@@ -14,7 +14,7 @@
 #include <errno.h>
 #include <string.h>	// strerror()
 
-#define DEBUG 2
+#define DEBUG 1
 
 #if DEBUG > 1
 #define PRINT0 if (1) printf
@@ -157,6 +157,10 @@ void OSSAudioDevice::run()
 		}
 		PRINT1("\tOSSAudioDevice::run: %d out of %d frags (%d bytes) can be %s\n",
 			   info.fragments, info.fragstotal, info.bytes, playing ? "written" : "read");
+		else if (info.bytes < 0) {
+			error("OSS error: ", "available audio queue space < 0");
+			break;
+		}
 		if (info.bytes < bufferSize() / 2) {
 			PRINT1("\tOSSAudioDevice::run: only %d bytes avail...waiting\n", info.bytes);
 			usleep(10);

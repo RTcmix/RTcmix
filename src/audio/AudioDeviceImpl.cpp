@@ -345,16 +345,16 @@ AudioDeviceImpl::destroyNoninterleavedBuffer(int fmt, int chans)
 
 int AudioDeviceImpl::createConvertBuffer(int frames)
 {
-		if (isDeviceInterleaved())
-			_convertBuffer = createInterleavedBuffer(getDeviceFormat(),
-													 getDeviceChannels(),
-													 frames);
-		else
-			_convertBuffer = createNoninterleavedBuffer(getDeviceFormat(),
-														getDeviceChannels(),
-														frames);
-		if (!_convertBuffer)
-			return -1;
+	if (isDeviceInterleaved())
+		_convertBuffer = createInterleavedBuffer(getDeviceFormat(),
+												 getDeviceChannels(),
+												 frames);
+	else
+		_convertBuffer = createNoninterleavedBuffer(getDeviceFormat(),
+													getDeviceChannels(),
+													frames);
+	if (!_convertBuffer)
+		return -1;
 	return 0;
 }
 
@@ -405,16 +405,14 @@ int AudioDeviceImpl::setQueueSize(int *pWriteSize, int *pCount)
 int AudioDeviceImpl::setupConversion()
 {
 	int status = 0;
-	bool needFormatConversion = getFrameFormat() != getDeviceFormat();
-	bool needInterleaveConversion = isFrameInterleaved() != isDeviceInterleaved();
-	bool needNormalizeConversion = isFrameFmtNormalized() != isDeviceFmtNormalized();
-	if (needFormatConversion || needInterleaveConversion || needNormalizeConversion) {
+	// Use the raw format because the accessor functions
+	// filter out the interleave and normalize bits.
+	if (_frameFormat != _deviceFormat || getFrameChannels() != getDeviceChannels())
+	{
 		status = createConvertBuffer(_maxFrames);
-	if (status == 0) {
-		// Hand in the raw format because the accessor functions
-		// filter out the interleave and normalize bits.
-		status = setConvertFunctions(_frameFormat, _deviceFormat);
-	}
+		if (status == 0) {
+			status = setConvertFunctions(_frameFormat, _deviceFormat);
+		}
 	}
 	return status;
 }
@@ -439,26 +437,23 @@ void *
 AudioDeviceImpl::convertFrame(void *inbuffer, void *outbuffer,
 							  int frames, bool recording)
 {
-		
-	if (_frameFormat == _deviceFormat) {
+	const int devChans = getDeviceChannels();
+	const int frmChans = getFrameChannels();
+	if (_frameFormat == _deviceFormat && devChans == frmChans) {
 		return inbuffer;
 	}
 	else {
 		assert(inbuffer != NULL);
 		assert(outbuffer != NULL);
 		if (recording) {
-			const int inchans = getDeviceChannels();
-			const int outchans = getFrameChannels();
 			assert(_recConvertFunction != NULL);
 			(*_recConvertFunction)(inbuffer, outbuffer,
-								   inchans, outchans, frames);
+								   devChans, frmChans, frames);
 		}
 		else {
-			const int inchans = getFrameChannels();
-			const int outchans = getDeviceChannels();
 			assert(_playConvertFunction != NULL);
 			(*_playConvertFunction)(inbuffer, outbuffer, 
-									inchans, outchans, frames);
+									frmChans, devChans, frames);
 		}
 		return outbuffer;
 	}

@@ -12,11 +12,9 @@
 #include <errno.h>
 #include <string.h>	// strerror()
 
-// TO DO:  Look up default device in open()
-
 #define DEFAULT_DEVICE "/dev/dsp"
 
-#define DEBUG 2
+#define DEBUG 1
 
 #if DEBUG > 1
 #define PRINT0 if (1) printf
@@ -84,22 +82,22 @@ int SinglePortOSSAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 	switch (MUS_GET_FORMAT(sampfmt)) {
 		case MUS_UBYTE:
 			sampleFormat = AFMT_U8;
-			_bytesPerFrame = chans;
+			_bytesPerFrame = 1;
 			break;
 		case MUS_BYTE:
 			sampleFormat = AFMT_S8;
-			_bytesPerFrame = chans;
+			_bytesPerFrame = 1;
 			break;
 		case MUS_LFLOAT:
 			deviceFormat = NATIVE_SHORT_FMT;
 		case MUS_LSHORT:
-			_bytesPerFrame = 2 * chans;
+			_bytesPerFrame = 2;
 			sampleFormat = AFMT_S16_LE;
 			break;
 		case MUS_BFLOAT:
 			deviceFormat = NATIVE_SHORT_FMT;
 		case MUS_BSHORT:
-			_bytesPerFrame = 2 * chans;
+			_bytesPerFrame = 2;
 			sampleFormat = AFMT_S16_BE;
 			break;
 		default:
@@ -110,6 +108,7 @@ int SinglePortOSSAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 	// realChans can return a different value than requested chans.
 	int status = setDeviceFormat(device(), sampleFormat, &realChans, (int) srate);
 	if (status == 0) {
+		_bytesPerFrame *= realChans;
 		// Store the device params to allow format conversion.
 		setDeviceParams(deviceFormat | MUS_INTERLEAVED, realChans, srate);
 	}
