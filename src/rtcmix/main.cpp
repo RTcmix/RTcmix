@@ -36,7 +36,6 @@
 
 
 extern "C" {
-  int ug_intro();
   int profile();
   void rtprofile();
 #ifdef SGI

@@ -37,9 +37,11 @@
 #include "maxdispargs.h"
 #include "dbug.h"
 
+#ifdef PFIELD_CLASS
+   #define parse_dispatch old_parse_dispatch
+#endif
 
 extern "C" {
-  int ug_intro();
 	// I don't call the profiles here, because dead-time instruments
 	// won't be compiled into the object file unless they are present at
 	// the build (i.e. they aren't DSO's).  RT instruments have the

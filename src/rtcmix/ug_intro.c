@@ -1,4 +1,7 @@
 #include	"../H/ugens.h"
+#ifdef PFIELD_CLASS
+#include <ug_intro.h>
+#endif
 
 void
 ug_intro()
@@ -7,6 +10,12 @@ ug_intro()
  *  This cute macro (from ugens.h) makes the necessary declarations
  *  and adds the function to ug_list
  */
+#ifdef PFIELD_CLASS
+   UG_INTRO_HANDLE_RETURN("maketable", maketable);
+   UG_INTRO_FLOAT_RETURN("dumptable", dumptable);
+   UG_INTRO_FLOAT_RETURN("plottable", plottable);
+#else /* !PFIELD_CLASS */
+#endif /* !PFIELD_CLASS */
 	UG_INTRO("makegen", makegen);
 	UG_INTRO("open",m_open);
 	UG_INTRO("peakoff",peak_off);
@@ -116,5 +125,4 @@ ug_intro()
 	UG_INTRO("set_inst_tag_num", set_itag_num);
 #endif /* RTUPDATE */
 }
-
 

@@ -26,6 +26,10 @@
 
 // #define DBUG
 
+#ifdef PFIELD_CLASS
+   #define parse_dispatch old_parse_dispatch
+#endif
+
 extern "C" {
   void *sockit(void*)
   {
