@@ -61,6 +61,8 @@ makeconverter(const Arg args[], const int nargs)
 		converter = new ConverterPField(pfield, ConverterPField::cpspch);
 	else if (args[1] == "pchoct")
 		converter = new ConverterPField(pfield, ConverterPField::pchoct);
+	else if (args[1] == "boost")
+		converter = new ConverterPField(pfield, ConverterPField::boost);
 
 	if (converter == NULL) {
 		die("makeconverter", "Invalid converter type \"%s\".", args[1]);

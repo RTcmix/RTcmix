@@ -346,3 +346,9 @@ double ConverterPField::pchoct(const double oct)
 	return octave + (0.12 * linsemitone); 
 }
 
+// NB: returns an amp multiplier; feed this to an amp pfield, not a pan pfield
+double ConverterPField::boost(const double pan)
+{
+	return 1.0 / sqrt((pan * pan) + ((1.0 - pan) * (1.0 - pan)));
+}
+
