@@ -46,7 +46,7 @@ int PANECHO::init(float p[], short n_args)
 		exit(-1);
 		}
 
-	delsamps = p[4] * SR;
+	delsamps = p[4] * SR + 0.5;
 	delarray1 = new float[delsamps];
 	if (!delarray1) {
 		fprintf(stderr,"Sorry, Charlie -- no space\n");
