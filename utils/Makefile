@@ -16,7 +16,7 @@ INCLUDES += -I$(AUDIODIR) -I$(SRCDIR)/sndlib -I$(SRCDIR)/rtcmix
 all: $(PROGS) head resample
 
 $(PLAY): $(PLAY).o $(AUDIOLIB) $(SNDLIB)
-	$(CXX) $(CXXFLAGS) -o $(PLAY) $(PLAY).o $(LDFLAGS) $(AUDIOLIB) $(SNDLIB)
+	$(CXX) $(CXXFLAGS) -o $(PLAY) $(PLAY).o $(AUDIOLIB) $(SNDLIB) $(SYSLIBS)
 
 $(PLAY).o: $(PLAY).cpp $(PLAY_HDRS)
 	$(CXX) $(CXXFLAGS) $(SOUND_DRIVER) -c $< -o $@
@@ -63,6 +63,10 @@ endif
 	@cd $(DESTDIR); if test -f $(PLAY); then ln -fs $(PLAY) play; fi
 	@cd head; $(MAKE) $(MFLAGS) install
 	@cd resample; $(MAKE) $(MFLAGS) install
+
+install_scripts::
+	@echo "installing scripts..."	
+	@cd scripts; $(INSTALL) *[1,2]* $(DESTDIR)
 
 uninstall:
 	@echo "making uninstall..."	
