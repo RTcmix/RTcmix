@@ -3,9 +3,10 @@ include ../package.conf
 NAME = PVOC
 
 CURDIR = $(CMIXDIR)/insts.std/$(NAME)
-OBJS = PVOC.o lpa.o lpamp.o makewindows.o fft.o fold.o overlapadd.o
+OBJS = PVOC.o lpa.o lpamp.o makewindows.o fft.o fold.o overlapadd.o PVFilter.o \
+		setup.o
 
-CMIXOBJS += $(PROFILE_O)
+#CMIXOBJS += $(PROFILE_O)
 
 PROGS = $(NAME) lib$(NAME).so
 
