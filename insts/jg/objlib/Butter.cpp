@@ -144,10 +144,6 @@ void Butter :: setBandReject(MY_FLOAT freq, MY_FLOAT bandwidth)
 }
 
 
-// y0 = g x(n) + a1 x(n-1) + a2 x(n-2) + b1 y(n-1) + b2 y(n-2)
-// Note: signs of b1 and b2 flipped compared to what you often see
-// Note: This is the canonical form, needing only 2 history vals.
-
 //#define DISABLE_CLAMP_DENORMALS
 #include "ClampDenormals.h"
 
