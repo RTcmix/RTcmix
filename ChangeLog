@@ -1,6 +1,11 @@
+Wednesday, Feb 14, 2001 John Gibson <johngibson@virginia.edu>
+
+   * Added (optional) support for Python as an alternative to Minc.
+
 Sunday, Feb 11, 2001 Doug Scott <netdscott@netscape.net>
+
    * Fixed bugs in real time PLACE and MOVE commands that were causing
-   * slowdowns.
+     slowdowns.
 
 Wednesday, Feb 7, 2001 John Gibson <johngibson@virginia.edu>
 
@@ -56,7 +61,7 @@ Saturday, September 9, 2000 John Gibson <johngibson@virginia.edu>
 
 Monday, July 31, 2000 John Gibson <johngibson@virginia.edu>
 
-   * Added support for Perl as an alternative to Minc.
+   * Added (optional) support for Perl as an alternative to Minc.
    * CMIX -h (or PCMIX -h) give a usage statement.
 
 
