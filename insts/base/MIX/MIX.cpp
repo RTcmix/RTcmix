@@ -11,12 +11,12 @@
 
 	If an old-style gen table 1 is present, its values will be multiplied
 	by the p3 amplitude multiplier, even if the latter is dynamic.
+
+	rev for v4, JGG, 7/9/04
 */
-#include <iostream.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include <rt.h>
 #include <rtdefs.h>
@@ -35,13 +35,16 @@ MIX::~MIX()
 
 int MIX::init(double p[], int n_args)
 {
-	if (p[2] < 0.0)
-		p[2] = -p[2] - p[1];
+	float outskip = p[0];
+	float inskip = p[1];
+	float dur = p[2];
 
-	nsamps = rtsetoutput(p[0], p[2], this);
-	int rvin = rtsetinput(p[1], this);
-	if (rvin == -1)	// no input
-		return DONT_SCHEDULE;
+	if (dur < 0.0)
+		dur = -dur - inskip;
+
+	nsamps = rtsetoutput(outskip, dur, this);
+	if (rtsetinput(inskip, this) == -1)
+		return DONT_SCHEDULE;	// no input
 
 	for (int i = 0; i < inputChannels(); i++) {
 		outchan[i] = (int) p[i + 4];
@@ -54,12 +57,12 @@ int MIX::init(double p[], int n_args)
 	amptable = floc(1);
 	if (amptable) {
 		int amplen = fsize(1);
-		tableset(p[2], amplen, tabs);
+		tableset(dur, amplen, tabs);
 	}
 
 	skip = (int) (SR / (float) resetval);
 
-	return nsamps;
+	return nSamps();
 }
 
 
@@ -79,7 +82,7 @@ int MIX::run()
 	for (int i = 0; i < samps; i += inputChannels())  {
 		if (--branch <= 0) {
 			double p[4];
-			update(p, 4);
+			update(p, 4, 1 << 3);
 			amp = p[3];
 			if (amptable)
 				amp *= tablei(currentFrame(), amptable, tabs);
