@@ -110,9 +110,14 @@ CXXFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
 
 RTLIB = librtcmix.$(SHLIB_SUFFIX)
 LIBRTCMIX = $(LIBDIR)/$(RTLIB)
-RTLDFLAGS = -L$(LIBDIR) -lrtcmix
+RTLDFLAGS = -L$(LIBDIR) -lrtcmix -lgen
+SYSLIBS = -Wl,-rpath $(LIBDIR) -L$(LIBDIR) -lgen
 
-GENLIB = $(LIBDIR)/libgen.a
+LIBGEN = libgen.$(SHLIB_SUFFIX)
+# GENLIB macro is no longer needed because it is dynamically linked
+# via SYSLIBS
+
+GENLIB =
 
 # Platform-specific library flags Key:
 #
@@ -121,37 +126,42 @@ GENLIB = $(LIBDIR)/libgen.a
 # CMIXOBJS:             Non-lib .o files which standalone binaries need.
 # LDFLAGS:              Libraries which standalone binaries link against.
 # IMBCMIXOBJS:          Non-lib .o files which imbedded binaries need.
+# DYNAMIC_LDFLAGS:		Linker flags when creating dynamic shared libraries.
 
 ifeq ($(ARCH),LINUX)
 	ifeq ($(AUDIODRIVER),ALSA)
-	  SYSLIBS = -lasound -lpthread -lm -ldl #-lefence
+	  SYSLIBS += -lasound -lpthread -lm -ldl #-lefence
 	else
-	  SYSLIBS = -lpthread -lm -ldl #-lefence
+	  SYSLIBS += -lpthread -lm -ldl #-lefence
 	endif
   ARCH_RTLDFLAGS = -Wl,-rpath $(LIBDIR)
   DSO_LDFLAGS = $(OPT) $(SYSLIBS)
   SHARED_LDFLAGS = -shared -Wl,-soname,$@
+  DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
   DYN = -rdynamic
 endif
 ifeq ($(ARCH),MACOSX)
-  SYSLIBS = -framework CoreAudio
+  SYSLIBS += -framework CoreAudio
   ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX)
   DSO_LDFLAGS = $(SYSLIBS)
   SHARED_LDFLAGS = -bundle -flat_namespace -undefined suppress
+  DYNAMIC_LDFLAGS = -flat_namespace -undefined suppress -dynamiclib -install_name $(LIBDIR)/$@
   DYN = 
 endif
 ifeq ($(ARCH),SGI)
-  SYSLIBS = -lpthread -laudio -lm
+  SYSLIBS += -lpthread -laudio -lm
   ARCH_RTLDFLAGS =
   DSO_LDFLAGS = $(SYSLIBS)
   SHARED_LDFLAGS = -shared -update_registry $(LIBDESTDIR)/so_locations
+  DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
   DYN = 
 endif
 ifeq ($(ARCH),FREEBSD)
-  SYSLIBS = -pthread -lm -ll
+  SYSLIBS += -pthread -lm -ll
   ARCH_RTLDFLAGS =
   DSO_LDFLAGS = -export-dynamic $(SYSLIBS)
   SHARED_LDFLAGS = -shared -Wl,-soname,$@
+  DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
   DYN = -rdynamic
 endif
 
