@@ -35,9 +35,9 @@ double
 rtsetparams(float p[], int n_args, double pp[])
 {
    int         i, status;
-   int         verbose = get_bool_option(PRINT_STR);
-   int         play_audio = get_bool_option(PLAY_STR);
-   int         record_audio = get_bool_option(RECORD_STR);
+   int         verbose = get_bool_option(kOptionPrint);
+   int         play_audio = get_bool_option(kOptionPlay);
+   int         record_audio = get_bool_option(kOptionRecord);
 #ifdef SGI
    static char *out_port_str = NULL;
 #endif /* SGI */
@@ -52,7 +52,7 @@ rtsetparams(float p[], int n_args, double pp[])
    SR = p[0];
    NCHANS = (int) p[1];
    RTBUFSAMPS = n_args > 2 ? (int) p[2]
-                                 : (int) get_double_option(BUFFER_FRAMES_STR);
+                                 : (int) get_double_option(kOptionBufferFrames);
 
    if (n_args > 3 && pp[3] != 0.0) {
 #ifdef SGI

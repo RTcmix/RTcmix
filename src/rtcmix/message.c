@@ -34,7 +34,7 @@
 void
 advise(const char *inst_name, const char *format, ...)
 {
-   if (get_bool_option(PRINT_STR)) {
+   if (get_bool_option(kOptionPrint)) {
       char     buf[BUFSIZE];
       va_list  args;
 
@@ -54,7 +54,7 @@ advise(const char *inst_name, const char *format, ...)
 void
 warn(const char *inst_name, const char *format, ...)
 {
-   if (get_bool_option(PRINT_STR)) {
+   if (get_bool_option(kOptionPrint)) {
       char     buf[BUFSIZE];
       va_list  args;
 

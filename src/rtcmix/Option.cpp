@@ -66,49 +66,49 @@ int Option::readConfigFile(const char *fileName)
 
 	bool bval;
 
-	key = AUDIO_STR;
+	key = kOptionAudio;
 	result = conf->getValue(key, bval);
 	if (result == kConfigNoErr)
 		audio(bval);
 	else if (result != kConfigNoValueForKey)
 		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
 
-	key = PLAY_STR;
+	key = kOptionPlay;
 	result = conf->getValue(key, bval);
 	if (result == kConfigNoErr)
 		play(bval);
 	else if (result != kConfigNoValueForKey)
 		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
 
-	key = RECORD_STR;
+	key = kOptionRecord;
 	result = conf->getValue(key, bval);
 	if (result == kConfigNoErr)
 		record(bval);
 	else if (result != kConfigNoValueForKey)
 		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
 
-	key = CLOBBER_STR;
+	key = kOptionClobber;
 	result = conf->getValue(key, bval);
 	if (result == kConfigNoErr)
 		clobber(bval);
 	else if (result != kConfigNoValueForKey)
 		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
 
-	key = PRINT_STR;
+	key = kOptionPrint;
 	result = conf->getValue(key, bval);
 	if (result == kConfigNoErr)
 		print(bval);
 	else if (result != kConfigNoValueForKey)
 		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
 
-	key = REPORT_CLIPPING_STR;
+	key = kOptionReportClipping;
 	result = conf->getValue(key, bval);
 	if (result == kConfigNoErr)
 		reportClipping(bval);
 	else if (result != kConfigNoValueForKey)
 		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
 
-	key = CHECK_PEAKS_STR;
+	key = kOptionCheckPeaks;
 	result = conf->getValue(key, bval);
 	if (result == kConfigNoErr)
 		checkPeaks(bval);
@@ -119,7 +119,7 @@ int Option::readConfigFile(const char *fileName)
 
 	double dval;
 
-	key = BUFFER_FRAMES_STR;
+	key = kOptionBufferFrames;
 	result = conf->getValue(key, dval);
 	if (result == kConfigNoErr)
 		bufferFrames(dval);
@@ -130,28 +130,28 @@ int Option::readConfigFile(const char *fileName)
 
 	char *sval;
 
-	key = DEVICE_STR;
+	key = kOptionDevice;
 	result = conf->getValue(key, sval);
 	if (result == kConfigNoErr)
 		device(sval);
 	else if (result != kConfigNoValueForKey)
 		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
 
-	key = INDEVICE_STR;
+	key = kOptionInDevice;
 	result = conf->getValue(key, sval);
 	if (result == kConfigNoErr)
 		inDevice(sval);
 	else if (result != kConfigNoValueForKey)
 		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
 
-	key = OUTDEVICE_STR;
+	key = kOptionOutDevice;
 	result = conf->getValue(key, sval);
 	if (result == kConfigNoErr)
 		outDevice(sval);
 	else if (result != kConfigNoValueForKey)
 		warn(NULL, "%s: %s.\n", conf->getLastErrorText(), key);
 
-	key = DSO_PATH_STR;
+	key = kOptionDSOPath;
 	result = conf->getValue(key, sval);
 	if (result == kConfigNoErr)
 		dsoPath(sval);
@@ -216,19 +216,19 @@ extern Option options;	// FIXME: declared in globals.h
 
 int get_bool_option(const char *option_name)
 {
-	if (!strcmp(option_name, PRINT_STR))
+	if (!strcmp(option_name, kOptionPrint))
 		return (int) options.print();
-	else if (!strcmp(option_name, REPORT_CLIPPING_STR))
+	else if (!strcmp(option_name, kOptionReportClipping))
 		return (int) options.reportClipping();
-	else if (!strcmp(option_name, CHECK_PEAKS_STR))
+	else if (!strcmp(option_name, kOptionCheckPeaks))
 		return (int) options.checkPeaks();
-	else if (!strcmp(option_name, CLOBBER_STR))
+	else if (!strcmp(option_name, kOptionClobber))
 		return (int) options.clobber();
-	else if (!strcmp(option_name, AUDIO_STR))
+	else if (!strcmp(option_name, kOptionAudio))
 		return (int) options.audio();
-	else if (!strcmp(option_name, PLAY_STR))
+	else if (!strcmp(option_name, kOptionPlay))
 		return (int) options.play();
-	else if (!strcmp(option_name, RECORD_STR))
+	else if (!strcmp(option_name, kOptionRecord))
 		return (int) options.record();
 
 	assert(0 && "unsupported option name");		// program error
@@ -237,19 +237,19 @@ int get_bool_option(const char *option_name)
 
 void set_bool_option(const char *option_name, int value)
 {
-	if (!strcmp(option_name, PRINT_STR))
+	if (!strcmp(option_name, kOptionPrint))
 		options.print((bool) value);
-	else if (!strcmp(option_name, REPORT_CLIPPING_STR))
+	else if (!strcmp(option_name, kOptionReportClipping))
 		options.reportClipping((bool) value);
-	else if (!strcmp(option_name, CHECK_PEAKS_STR))
+	else if (!strcmp(option_name, kOptionCheckPeaks))
 		options.checkPeaks((bool) value);
-	else if (!strcmp(option_name, CLOBBER_STR))
+	else if (!strcmp(option_name, kOptionClobber))
 		options.clobber((bool) value);
-	else if (!strcmp(option_name, AUDIO_STR))
+	else if (!strcmp(option_name, kOptionAudio))
 		options.audio((bool) value);
-	else if (!strcmp(option_name, PLAY_STR))
+	else if (!strcmp(option_name, kOptionPlay))
 		options.play((bool) value);
-	else if (!strcmp(option_name, RECORD_STR))
+	else if (!strcmp(option_name, kOptionRecord))
 		options.record((bool) value);
 	else
 		assert(0 && "unsupported option name");
@@ -257,7 +257,7 @@ void set_bool_option(const char *option_name, int value)
 
 double get_double_option(const char *option_name)
 {
-	if (!strcmp(option_name, BUFFER_FRAMES_STR))
+	if (!strcmp(option_name, kOptionBufferFrames))
 		return options.bufferFrames();
 
 	assert(0 && "unsupported option name");
@@ -266,7 +266,7 @@ double get_double_option(const char *option_name)
 
 void set_double_option(const char *option_name, double value)
 {
-	if (!strcmp(option_name, BUFFER_FRAMES_STR))
+	if (!strcmp(option_name, kOptionBufferFrames))
 		options.bufferFrames(value);
 	else
 		assert(0 && "unsupported option name");
@@ -274,13 +274,13 @@ void set_double_option(const char *option_name, double value)
 
 char *get_string_option(const char *option_name)
 {
-	if (!strcmp(option_name, DEVICE_STR))
+	if (!strcmp(option_name, kOptionDevice))
 		return options.device();
-	else if (!strcmp(option_name, INDEVICE_STR))
+	else if (!strcmp(option_name, kOptionInDevice))
 		return options.inDevice();
-	else if (!strcmp(option_name, OUTDEVICE_STR))
+	else if (!strcmp(option_name, kOptionOutDevice))
 		return options.outDevice();
-	else if (!strcmp(option_name, DSO_PATH_STR))
+	else if (!strcmp(option_name, kOptionDSOPath))
 		return options.dsoPath();
 
 	assert(0 && "unsupported option name");
@@ -289,13 +289,13 @@ char *get_string_option(const char *option_name)
 
 void set_string_option(const char *option_name, const char *value)
 {
-	if (!strcmp(option_name, DEVICE_STR))
+	if (!strcmp(option_name, kOptionDevice))
 		options.device(value);
-	else if (!strcmp(option_name, INDEVICE_STR))
+	else if (!strcmp(option_name, kOptionInDevice))
 		options.inDevice(value);
-	else if (!strcmp(option_name, OUTDEVICE_STR))
+	else if (!strcmp(option_name, kOptionOutDevice))
 		options.outDevice(value);
-	else if (!strcmp(option_name, DSO_PATH_STR))
+	else if (!strcmp(option_name, kOptionDSOPath))
 		options.dsoPath(value);
 	else
 		assert(0 && "unsupported option name");

@@ -92,7 +92,7 @@ double m_load(float *p, int n_args, double *pp)
 	NSUnLinkModule(module, 0);
 	return 1.0;
     }
-    if (get_bool_option(PRINT_STR)) {
+    if (get_bool_option(kOptionPrint)) {
 	printf("Loaded %s functions from shared library '%s'.\n",
 	    (profileLoaded == 3) ? "standard and RT" :
 			(profileLoaded == 2) ? "RT" : "standard",
@@ -161,7 +161,7 @@ double m_load(float *p, int n_args, double *pp)
 		return 0;
     }
 
-    if (get_bool_option(PRINT_STR)) {
+    if (get_bool_option(kOptionPrint)) {
 		printf("Loaded %s functions from shared library '%s'.\n",
 			  (profileLoaded == 3) ? "standard and RT" :
 							   (profileLoaded == 2) ? "RT" : "standard",

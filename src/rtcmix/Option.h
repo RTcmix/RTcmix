@@ -17,22 +17,22 @@
 // They're also the <option_name> used with the get_*_option C functions.
 
 // bool options
-#define AUDIO_STR					"audio"
-#define PLAY_STR					"play"
-#define RECORD_STR				"record"
-#define CLOBBER_STR				"clobber"
-#define PRINT_STR					"print"
-#define REPORT_CLIPPING_STR	"report_clipping"
-#define CHECK_PEAKS_STR			"check_peaks"
+#define kOptionAudio				"audio"
+#define kOptionPlay				"play"
+#define kOptionRecord			"record"
+#define kOptionClobber			"clobber"
+#define kOptionPrint				"print"
+#define kOptionReportClipping	"report_clipping"
+#define kOptionCheckPeaks		"check_peaks"
 
 // double options
-#define BUFFER_FRAMES_STR		"buffer_frames"
+#define kOptionBufferFrames	"buffer_frames"
 
 // string options
-#define DEVICE_STR				"device"
-#define INDEVICE_STR				"indevice"
-#define OUTDEVICE_STR			"outdevice"
-#define DSO_PATH_STR				"dso_path"
+#define kOptionDevice			"device"
+#define kOptionInDevice			"indevice"
+#define kOptionOutDevice		"outdevice"
+#define kOptionDSOPath			"dso_path"
 
 
 #ifdef __cplusplus

@@ -318,13 +318,13 @@ double str_num(float p[], int n_args, double pp[])
 
 double m_print_is_on(float p[], int n_args)
 {
-	set_bool_option(PRINT_STR, 1);
+	set_bool_option(kOptionPrint, 1);
 	return 1.0;
 }
 
 double m_print_is_off(float p[], int n_args)
 {
-	set_bool_option(PRINT_STR, 0);
+	set_bool_option(kOptionPrint, 0);
 	return 0.0;
 }
 

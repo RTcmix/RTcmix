@@ -185,7 +185,7 @@ rtinput(float p[], int n_args, double pp[])
 		}
 
 		/* This signals inTraverse() to grab buffers from the audio device. */
-		set_bool_option(RECORD_STR, 1);
+		set_bool_option(kOptionRecord, 1);
 
 // FIXME: need to replace this with the bus spec scheme below... -JGG
 		audioNCHANS = (n_args > 2) ? (int) p[2] : NCHANS;
@@ -250,38 +250,39 @@ rtinput(float p[], int n_args, double pp[])
 			if (rtsetparams_called) {
 				// If audio *playback* was disabled, but there is a request for
 				// input audio, create the audio input device here.
-				if (!audio_input_is_initialized() && !get_bool_option(PLAY_STR)) {
+				if (!audio_input_is_initialized() && !get_bool_option(kOptionPlay)) {
 					int nframes = RTBUFSAMPS;
-					if (create_audio_devices(get_bool_option(RECORD_STR), 0,
+					if (create_audio_devices(get_bool_option(kOptionRecord), 0,
 												NCHANS, SR, &nframes) < 0) {
-						set_bool_option(RECORD_STR, 0);	/* because we failed */
+						set_bool_option(kOptionRecord, 0);	/* because we failed */
 						return -1;
 					}
 					RTBUFSAMPS = nframes;
-					if (get_bool_option(PRINT_STR))
+					if (get_bool_option(kOptionPrint))
 						printf("Input audio set:  %g sampling rate, %d channels\n", SR, NCHANS);
 				}
 				// If record disabled during rtsetparams(), we cannot force it on here.
-				else if (!get_bool_option(RECORD_STR)) {
+				else if (!get_bool_option(kOptionRecord)) {
 					die("rtinput", "Audio already configured for playback only via rtsetparams()");
-					set_bool_option(RECORD_STR, 0);	/* because we failed */
+					set_bool_option(kOptionRecord, 0);	/* because we failed */
 					return -1;
 				}
 			}
 			else {
-				set_bool_option(RECORD_STR, 1);	// This allows rtinput("AUDIO") to turn on record
+				// This allows rtinput("AUDIO") to turn on record
+				set_bool_option(kOptionRecord, 1);
 			}
 #else		// !NEW_CODE
-			if (rtsetparams_called && !get_bool_option(RECORD_STR)) {
+			if (rtsetparams_called && !get_bool_option(kOptionRecord)) {
 				die("rtinput", "Full duplex was not enabled for rtsetparams. "
 					"Set option \"full_duplex\" before calling rtsetparams()");
-				set_bool_option(RECORD_STR, 0);	/* because we failed */
+				set_bool_option(kOptionRecord, 0);	/* because we failed */
 				return -1;
 			}
 			if (!audio_input_is_initialized()) {
 				die("rtinput", "Audio input device not open yet. "
 												"Call rtsetparams first.");
-				set_bool_option(RECORD_STR, 0);	/* because we failed */
+				set_bool_option(kOptionRecord, 0);	/* because we failed */
 				return -1;
 			}
 #endif	// !NEW_CODE
@@ -314,7 +315,7 @@ rtinput(float p[], int n_args, double pp[])
 #endif /* INPUT_BUS_SUPPORT */
 
 			dur = (double) (nsamps / nchans) / srate;
-			if (get_bool_option(PRINT_STR)) {
+			if (get_bool_option(kOptionPrint)) {
 				printf("Input file set for reading:\n");
 				printf("      name:  %s\n", sfname);
 				printf("      type:  %s\n", mus_header_type_name(header_type));

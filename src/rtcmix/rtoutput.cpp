@@ -316,7 +316,7 @@ rtoutput(float p[], int n_args, double pp[])
       }
    }
    else {               /* File exists; find out whether we can clobber it */
-      if (!get_bool_option(CLOBBER_STR)) {
+      if (!get_bool_option(kOptionClobber)) {
          rterror("rtoutput", "\n%s", CLOBBER_WARNING);
          return -1;
       }
@@ -333,7 +333,7 @@ rtoutput(float p[], int n_args, double pp[])
    if (create_audio_file_device(rtoutsfname, output_header_type,
                                 output_data_format, NCHANS, SR,
                                 normalize_output_floats,
-                                get_bool_option(CHECK_PEAKS_STR)) < 0)
+                                get_bool_option(kOptionCheckPeaks)) < 0)
       return -1;  /* failed! */
 
    rtfileit = 1;  /* here we finally set this to 1 */
