@@ -156,7 +156,9 @@ int n_args;
     if ((dry[c] = (float *) calloc(N+2, sizeof(float))) == NULL)
       malerr("convolvesf: insufficient memory", 1);
   }
+#ifdef DEBUG
     printf("buffers allocated.....\n");
+#endif
 
    for (i=0; i<N2; i++){
        if (GETIN(xin,impulse) <= 0)
@@ -355,7 +357,9 @@ int n_args;
   } /* end of while loop*/
   endnote(output);
   
+#ifdef DEBUG
   printf(">   freeing memory    <\n");
+#endif
   for(c=0; c<ichan;c++){
      free(sbuf[c]);
      free(tbuf[c]);
