@@ -6,7 +6,7 @@ class WAVETABLE : public Instrument {
 	double *wavetable, *amptable;
 	Ooscili *osc;
 
-	void doupdate(double p[]);
+	void doupdate();
 public:
 	WAVETABLE();
 	virtual ~WAVETABLE();

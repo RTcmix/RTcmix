@@ -88,8 +88,11 @@ int WAVETABLE::init(double p[], int n_args)
 	return nSamps();
 }
 
-void WAVETABLE::doupdate(double p[])
+void WAVETABLE::doupdate()
 {
+	double p[5];
+	update(p, 5);
+
 	amp = p[2];
 	if (amptable)
 		amp *= table(currentFrame(), amptable, amptabs);
@@ -111,9 +114,7 @@ int WAVETABLE::run()
 {
 	for (int i = 0; i < framesToRun(); i++) {
 		if (--branch <= 0) {
-			double p[5];
-			update(p, 5);
-			doupdate(p);
+			doupdate();
 			branch = skip;
 		}
 
