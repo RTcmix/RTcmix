@@ -80,7 +80,7 @@ standalone::
 
 install:	install_dirs
 	@echo "beginning install..."
-	@for DIR in $(DIRS) $(INST_DIRS); \
+	@for DIR in $(DIRS); \
 	do \
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) install ); \
 	done
@@ -99,10 +99,7 @@ base_install:
 
 dso_install: 
 	@echo "beginning dso_install..."
-	@for DIR in $(INST_DIRS); \
-	do \
-	  ( cd $$DIR; $(MAKE) $(MFLAGS) dso_install ); \
-	done
+	cd insts; $(MAKE) $(MFLAGS) dso_install;
 	@echo "dso_install done."; echo ""
 
 standalone_install::
@@ -165,7 +162,7 @@ ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
 endif
 
 cleanall::
-	@for DIR in $(DIRS) $(INST_DIRS); \
+	@for DIR in $(DIRS); \
 	do \
 	  ( cd $$DIR; echo "making cleanall in $$DIR..."; \
 	  $(MAKE) $(MFLAGS) cleanall ); \
@@ -180,14 +177,12 @@ endif
 
 # Make it clean for distribution or for moving to another system
 distclean: cleanall
-	@for DIR in $(INST_DIRS); \
-	do \
-	  ( cd $$DIR; $(RM) package.conf );  \
-	done
+	@cd insts; $(MAKE) $(MFLAGS) distclean; 
 ifneq ($(strip $(PACKAGE_DIRS)),)    # do only if PACKAGE_DIRS is nonempty
 	@for DIR in $(PACKAGE_DIRS); \
 	do \
 	  ( cd $$DIR; $(RM) package.conf );  \
 	done
 endif
+	@find . -name depend -exec rm -f '{}' ';'
 
