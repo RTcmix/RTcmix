@@ -1,21 +1,20 @@
 include ../insts.conf
 
 OBJS = DELAY.o reset.o
-CMIXOBJS = ../../sys/cmix.o ../../lib/genlib.a
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = DELAY libDELAY.so
 
-all: DELAY libDELAY.so
+all: libDELAY.so DELAY
 
-libDELAY.so: $(OBJS) ../../lib/genlib.a
+libDELAY.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	../../lib/genlib.a $(SYSLIBS)
+	$(GENLIB) $(SYSLIBS)
 
 DELAY: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): ../../rtstuff/Instrument.h
+$(OBJS): $(INSTRUMENT_H)
 
 clean:
 	rm -f *.o $(OBJS) $(PROGS)

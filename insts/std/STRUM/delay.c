@@ -1,6 +1,6 @@
 #define maxdl 14000
 #include <math.h>
-#include "../../H/ugens.h"
+#include <ugens.h>
 #include "delayq.h"
 
 float delay(float xin, delayq *q) 

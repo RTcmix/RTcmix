@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "../../H/ugens.h"
+#include <ugens.h>
 
 void
 mdelset(float *a, int *l, int imax)

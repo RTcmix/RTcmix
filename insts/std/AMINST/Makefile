@@ -1,21 +1,20 @@
 include ../insts.conf
 
 OBJS = AMINST.o reset.o
-CMIXOBJS = ../../sys/cmix.o ../../lib/genlib.a
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = AMINST libAMINST.so
 
-all: AMINST libAMINST.so
+all: libAMINST.so AMINST
 
-libAMINST.so: $(OBJS) ../../lib/genlib.a
+libAMINST.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	../../lib/genlib.a $(SYSLIBS)
+	$(GENLIB) $(SYSLIBS)
 
 AMINST: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): ../../rtstuff/Instrument.h
+$(OBJS): $(INSTRUMENT_H)
 
 clean:
 	rm -f *.o $(OBJS) $(PROGS)

@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include "../../Minc/defs.h"
-#include "../../H/ugens.h"
+#include <defs.h>
+#include <ugens.h>
 
 int resetval = 1000;
 

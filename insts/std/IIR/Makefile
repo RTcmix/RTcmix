@@ -1,21 +1,20 @@
 include ../insts.conf
 
 OBJS = INPUTSIG.o NOISE.o BUZZ.o PULSE.o cfuncs.o rtprofile.o
-CMIXOBJS = ../../sys/cmix.o ../../lib/genlib.a
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = IIR libIIR.so
 
-all: IIR libIIR.so
+all: libIIR.so IIR
 
-libIIR.so: $(OBJS) ../../lib/genlib.a
+libIIR.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	../../lib/genlib.a $(SYSLIBS)
+	$(GENLIB) $(SYSLIBS)
 
 IIR: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): ../../rtstuff/Instrument.h
+$(OBJS): $(INSTRUMENT_H)
 
 clean:
 	rm -f *.o $(OBJS) $(PROGS)

@@ -1,18 +1,18 @@
 include ../insts.conf
 
 OBJS = fft.o convolve.o
-CMIXOBJS =  ../../sys/cmix.o ../../lib/genlib.a ../../rtstuff/rtprofile.o
+CMIXOBJS += $(RTPROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = convolve libconvolve.so
 
-all: convolve libconvolve.so
+all: libconvolve.so convolve
 
-libconvolve.so:  ../../H/ugens.h  $(OBJS)
+libconvolve.so:  $(UGENS_H) $(OBJS)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	../../lib/genlib.a $(SYSLIBS)
+	$(GENLIB) $(SYSLIBS)
 
-convolve: ../../H/ugens.h $(OBJS) $(CMIXOBJS)
+convolve: $(UGENS_H) $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
 clean:

@@ -1,8 +1,8 @@
 #include <iostream.h>
-#include "../../sys/mixerr.h"
-#include "../../rtstuff/Instrument.h"
-#include "../../rtstuff/rt.h"
-#include "../../rtstuff/rtdefs.h"
+#include <mixerr.h>
+#include <Instrument.h>
+#include <rt.h>
+#include <rtdefs.h>
 
 void
 rtprofile()

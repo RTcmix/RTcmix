@@ -1,21 +1,21 @@
 include ../insts.conf
 
 OBJS = SCULPT.o
-CMIXOBJS = ../../sys/cmix.o ../../lib/genlib.a ../../rtstuff/profile.o
+CMIXOBJS += $(PROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = SCULPT libSCULPT.so
 
-all: SCULPT libSCULPT.so
+all: libSCULPT.so SCULPT
 
-libSCULPT.so: $(OBJS) ../../lib/genlib.a
+libSCULPT.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	../../lib/genlib.a $(SYSLIBS)
+	$(GENLIB) $(SYSLIBS)
 
 SCULPT: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): ../../rtstuff/Instrument.h
+$(OBJS): $(INSTRUMENT_H)
 
 clean:
 	rm -f *.o $(OBJS) $(PROGS)

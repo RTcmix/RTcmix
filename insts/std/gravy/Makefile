@@ -1,18 +1,18 @@
 include ../insts.conf
 
 OBJS = gravy.o reset.o minout.o
-CMIXOBJS =  ../../sys/cmix.o ../../lib/genlib.a ../../rtstuff/rtprofile.o
+CMIXOBJS += $(RTPROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = gravy libgravy.so
 
-all: gravy libgravy.so
+all: libgravy.so gravy
 
-libgravy.so:  ../../H/ugens.h  $(OBJS)
+libgravy.so:  $(UGENS_H) $(OBJS)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	../../lib/genlib.a $(SYSLIBS)
+	$(GENLIB) $(SYSLIBS)
 
-gravy:  ../../H/ugens.h  $(OBJS) $(CMIXOBJS)
+gravy:  $(UGENS_H) $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
 clean:

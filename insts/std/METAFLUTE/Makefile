@@ -1,21 +1,20 @@
 include ../insts.conf
 
 OBJS = SFLUTE.o BSFLUTE.o VSFLUTE.o LSFLUTE.o sflcfuncs.o rtprofile.o
-CMIXOBJS = ../../sys/cmix.o ../../lib/genlib.a
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = METAFLUTE libMETAFLUTE.so
 
-all: METAFLUTE libMETAFLUTE.so
+all: libMETAFLUTE.so METAFLUTE
 
-libMETAFLUTE.so: $(OBJS) ../../lib/genlib.a
+libMETAFLUTE.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	../../lib/genlib.a $(SYSLIBS)
+	$(GENLIB) $(SYSLIBS)
 
 METAFLUTE: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): ../../rtstuff/Instrument.h
+$(OBJS): $(INSTRUMENT_H)
 
 clean:
 	rm -f *.o $(OBJS) $(PROGS)

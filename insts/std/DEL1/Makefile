@@ -1,21 +1,20 @@
 include ../insts.conf
 
 OBJS = DEL1.o reset.o
-CMIXOBJS = ../../sys/cmix.o ../../lib/genlib.a
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = DEL1 libDEL1.so
 
-all: DEL1 libDEL1.so
+all: libDEL1.so DEL1
 
-libDEL1.so: $(OBJS) ../../lib/genlib.a
+libDEL1.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	../../lib/genlib.a $(SYSLIBS)
+	$(GENLIB) $(SYSLIBS)
 
 DEL1: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): ../../rtstuff/Instrument.h
+$(OBJS): $(INSTRUMENT_H)
 
 clean:
 	rm -f *.o $(OBJS) $(PROGS)

@@ -1,4 +1,4 @@
-#include "../../H/ugens.h"
+#include <ugens.h>
 #include "delayq.h"
 
 void delayclean(delayq *q)

@@ -1,18 +1,18 @@
 include ../insts.conf
 
 OBJS = sgran.o setline.o minout.o
-CMIXOBJS =  ../../sys/cmix.o ../../lib/genlib.a ../../rtstuff/rtprofile.o
+CMIXOBJS += $(RTPROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = sgran libsgran.so
 
-all: sgran libsgran.so
+all: libsgran.so sgran
 
-libsgran.so:  ../../H/ugens.h  $(OBJS)
+libsgran.so:  $(UGENS_H) $(OBJS)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	../../lib/genlib.a $(SYSLIBS)
+	$(GENLIB) $(SYSLIBS)
 
-sgran:  ../../H/ugens.h  $(OBJS) $(CMIXOBJS)
+sgran:  $(UGENS_H) $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
 clean:

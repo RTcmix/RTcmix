@@ -1,14 +1,14 @@
 #include <iostream.h>
-#include "../../sys/mixerr.h"
-#include "../../rtstuff/Instrument.h"
+#include <mixerr.h>
+#include <Instrument.h>
 #include "VSFLUTE.h"
-#include "../../rtstuff/rt.h"
-#include "../../rtstuff/rtdefs.h"
+#include <rt.h>
+#include <rtdefs.h>
 
 extern int resetval;
 
 extern "C" {
-	#include "../../H/ugens.h"
+	#include <ugens.h>
 	void mdelset(float*, int*, int);
 	float mdliget(float*, float, int*);
 }

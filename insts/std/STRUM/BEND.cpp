@@ -1,14 +1,14 @@
 #include <iostream.h>
-#include "../../sys/mixerr.h"
-#include "../../rtstuff/Instrument.h"
+#include <mixerr.h>
+#include <Instrument.h>
 #include "BEND.h"
-#include "../../rtstuff/rt.h"
-#include "../../rtstuff/rtdefs.h"
+#include <rt.h>
+#include <rtdefs.h>
 
 extern strumq *curstrumq[6];
 
 extern "C" {
-	#include "../../H/ugens.h"
+	#include <ugens.h>
 	void sset(float, float, float, strumq*);
 	float strum(float, strumq*);
 }

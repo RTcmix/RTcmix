@@ -1,7 +1,7 @@
 /* frequeny modulate an input sound -- thanks to Sam Fenster! */
 
-#include "../../H/ugens.h"
-#include "../../H/sfheader.h"
+#include <ugens.h>
+#include <sfheader.h>
 #include <stdio.h>
 #include <sys/file.h>
 #include <sys/types.h>

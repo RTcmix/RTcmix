@@ -1,21 +1,20 @@
 include ../insts.conf
 
 OBJS = MULTICOMB.o reset.o
-CMIXOBJS = ../../sys/cmix.o ../../lib/genlib.a
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = MULTICOMB libMULTICOMB.so
 
-all: MULTICOMB libMULTICOMB.so
+all: libMULTICOMB.so MULTICOMB
 
-libMULTICOMB.so: $(OBJS) ../../lib/genlib.a
+libMULTICOMB.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	../../lib/genlib.a $(SYSLIBS)
+	$(GENLIB) $(SYSLIBS)
 
 MULTICOMB: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): ../../rtstuff/Instrument.h
+$(OBJS): $(INSTRUMENT_H)
 
 clean:
 	rm -f *.o $(OBJS) $(PROGS)

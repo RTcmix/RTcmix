@@ -1,19 +1,19 @@
 #include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "../../sys/mixerr.h"
-#include "../../rtstuff/Instrument.h"
+#include <mixerr.h>
+#include <Instrument.h>
 #include "COMBIT.h"
-#include "../../rtstuff/rt.h"
-#include "../../rtstuff/rtdefs.h"
+#include <rt.h>
+#include <rtdefs.h>
 
 
 extern int lineset;
 extern int resetval;
 
 extern "C" {
-#include "../../H/ugens.h"
-#include "../../H/combs.h"
+#include <ugens.h>
+#include <combs.h>
 }
 
 COMBIT::COMBIT() : Instrument()

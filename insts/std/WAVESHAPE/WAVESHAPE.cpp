@@ -1,13 +1,13 @@
 #include <iostream.h>
-#include "../../sys/mixerr.h"
-#include "../../rtstuff/Instrument.h"
+#include <mixerr.h>
+#include <Instrument.h>
 #include "WAVESHAPE.h"
-#include "../../rtstuff/rt.h"
-#include "../../rtstuff/rtdefs.h"
+#include <rt.h>
+#include <rtdefs.h>
 
 
 extern "C" {
-	#include "../../H/ugens.h"
+	#include <ugens.h>
 }
 
 WAVESHAPE::WAVESHAPE() : Instrument()

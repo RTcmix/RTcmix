@@ -1,15 +1,15 @@
 #include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "../../sys/mixerr.h"
-#include "../../rtstuff/Instrument.h"
+#include <mixerr.h>
+#include <Instrument.h>
 #include "INPUTSIG.h"
-#include "../../rtstuff/rt.h"
-#include "../../rtstuff/rtdefs.h"
+#include <rt.h>
+#include <rtdefs.h>
 
 
 extern "C" {
-	#include "../../H/ugens.h"
+	#include <ugens.h>
 	extern int resetval;
 	extern float rsnetc[64][5],amp[64];
 	extern int nresons;

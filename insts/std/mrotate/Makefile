@@ -1,18 +1,18 @@
 include ../insts.conf
 
 OBJS = mrotate.o reset.o
-CMIXOBJS =  ../../sys/cmix.o ../../lib/genlib.a ../../rtstuff/rtprofile.o
+CMIXOBJS += $(RTPROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = mrotate libmrotate.so
 
-all: mrotate libmrotate.so
+all: libmrotate.so mrotate
 
-libmrotate.so:  ../../H/ugens.h  $(OBJS)
+libmrotate.so:  $(UGENS_H) $(OBJS)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	../../lib/genlib.a $(SYSLIBS)
+	$(GENLIB) $(SYSLIBS)
 
-mrotate:  ../../H/ugens.h  $(OBJS) $(CMIXOBJS)
+mrotate:  $(UGENS_H) $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
 clean:

@@ -1,18 +1,18 @@
 include ../insts.conf
 
 OBJS = wow.o reset.o
-CMIXOBJS =  ../../sys/cmix.o ../../lib/genlib.a ../../rtstuff/rtprofile.o
+CMIXOBJS += $(RTPROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = wow libwow.so
 
-all: wow libwow.so
+all: libwow.so wow
 
-libwow.so:  ../../H/ugens.h  $(OBJS)
+libwow.so:  $(UGENS_H) $(OBJS)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	../../lib/genlib.a $(SYSLIBS)
+	$(GENLIB) $(SYSLIBS)
 
-wow:  ../../H/ugens.h  $(OBJS) $(CMIXOBJS)
+wow:  $(UGENS_H) $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
 clean:

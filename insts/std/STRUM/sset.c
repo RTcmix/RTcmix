@@ -1,5 +1,5 @@
 #include <math.h>
-#include "../../H/ugens.h"
+#include <ugens.h>
 #include "strums.h"
 
 void sset(float freq, float tf0, float tNy, strumq *q) 

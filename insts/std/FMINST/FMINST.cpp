@@ -1,14 +1,14 @@
 #include <iostream.h>
-#include "../../sys/mixerr.h"
-#include "../../rtstuff/Instrument.h"
+#include <mixerr.h>
+#include <Instrument.h>
 #include "FMINST.h"
-#include "../../rtstuff/rt.h"
-#include "../../rtstuff/rtdefs.h"
-#include "../../Minc/notetags.h"
+#include <rt.h>
+#include <rtdefs.h>
+#include <notetags.h>
 
 
 extern "C" {
-	#include "../../H/ugens.h"
+	#include <ugens.h>
 	extern int resetval;
 	}
 

@@ -1,21 +1,20 @@
 include ../insts.conf
 
 OBJS = FMINST.o reset.o
-CMIXOBJS = ../../sys/cmix.o ../../lib/genlib.a
 CFLAGS += -fPIC
-CXXFLAGS += -fPIC 
+CXXFLAGS += -fPIC
 PROGS = FMINST libFMINST.so
 
-all: FMINST libFMINST.so
+all: libFMINST.so FMINST
 
-libFMINST.so: $(OBJS) ../../lib/genlib.a
+libFMINST.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	../../lib/genlib.a $(SYSLIBS)
+	$(GENLIB) $(SYSLIBS)
 
 FMINST: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): ../../rtstuff/Instrument.h
+$(OBJS): $(INSTRUMENT_H)
 
 clean:
 	rm -f *.o $(OBJS) $(PROGS)

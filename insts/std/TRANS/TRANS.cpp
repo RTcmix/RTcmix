@@ -1,14 +1,14 @@
 #include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "../../sys/mixerr.h"
+#include <mixerr.h>
 #include "TRANS.h"
-#include "../../rtstuff/rt.h"
+#include <rt.h>
 
 #define DEBUG
 
 extern "C" {
-#include "../../H/ugens.h"
+#include <ugens.h>
 }
 
 float interp(float, float, float, float);

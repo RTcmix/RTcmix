@@ -1,21 +1,21 @@
 include ../insts.conf   
 
 OBJS = WAVESHAPE.o
-CMIXOBJS = ../../sys/cmix.o ../../lib/genlib.a ../../rtstuff/profile.o
+CMIXOBJS += $(PROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = WAVESHAPE libWAVESHAPE.so
 
-all:  WAVESHAPE libWAVESHAPE.so
+all:  libWAVESHAPE.so WAVESHAPE
 
-libWAVESHAPE.so: $(OBJS) ../../lib/genlib.a
+libWAVESHAPE.so: $(OBJS) $(GENLIB)
 	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	../../lib/genlib.a $(SYSLIBS)
+	$(GENLIB) $(SYSLIBS)
 
 WAVESHAPE: $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): ../../rtstuff/Instrument.h
+$(OBJS): $(INSTRUMENT_H)
 
 clean:
 	rm -f *.o $(OBJS) $(PROGS)

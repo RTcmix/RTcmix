@@ -1,5 +1,5 @@
 #include <math.h>
-#include "../../H/ugens.h"
+#include <ugens.h>
 #include "strums.h"
 
 float strum(float xin, strumq *q) 
