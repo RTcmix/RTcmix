@@ -3,6 +3,9 @@
 
 #include <globals.h>
 #include <Lockable.h>
+#include <RefCounted.h>
+
+#ifdef __cplusplus
 
 enum ErrCode {
    NO_ERR = 0,
@@ -27,7 +30,7 @@ enum IBusClass {
   UNKNOWN
 };
 
-class BusSlot : public Lockable {
+class BusSlot : public RefCounted, public Lockable {
 public:
 	BusSlot();
 	inline IBusClass Class() const;
@@ -41,7 +44,8 @@ public:
 	short      auxin[MAXBUS];
 	short      auxout_count;
 	short      auxout[MAXBUS];
-	int        refcount;
+protected:
+	virtual ~BusSlot();
 };
 
 inline IBusClass 
@@ -65,33 +69,15 @@ struct BusQueue {
 	~BusQueue();
 	char *instName() { return inst_name; }
 	char *inst_name;
-	BusSlot *queue;
+	BusSlot *slot;
 	BusQueue *next;
 };
 
-struct CheckNode {
-   CheckNode() : bus_list(new short[MAXBUS]), bus_count(0) {}
-   CheckNode(short *list, short count) : bus_list(list), bus_count(count) {}
-   short *bus_list;
-   short bus_count;
-};
-
-struct CheckQueue {
-   CheckQueue(CheckNode *theNode) : node(theNode), next(NULL) {}
-   CheckNode *node;
-   CheckQueue *next;
-};
-
-#ifdef __cplusplus
 extern "C" {
-#endif /* __cplusplus */
-
 /* exported functions */
 BusSlot *get_bus_config(const char *inst_name);
 ErrCode parse_bus_name(char*, BusType*, int*, int*);
-
-
-#ifdef __cplusplus
 } /* extern "C" */
-#endif
+#endif	/* __cplusplus */
+
 #endif /* _BUS_H_ */

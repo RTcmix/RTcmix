@@ -13,35 +13,72 @@
 #include <prototypes.h>
 #include <lock.h>
   
-/* #define PRINTPLAY */
-/* #define DEBUG  */
-/* #define PRINTALL */
+//#define PRINTPLAY
+//#define DEBUG
+//#define PRINTALL
+//#define DEBUGMEM
+
+#ifdef DEBUGMEM
+#define MPRINT(string, ptr) printf(string, (unsigned) ptr)
+#else
+#define MPRINT(string, ptr)
+#endif
 
 //
 // BusSlot "class" methods
 //
 
 BusSlot::BusSlot() : next(NULL), prev(NULL), in_count(0), out_count(0),
-					 auxin_count(0), auxout_count(0), refcount(0)
+					 auxin_count(0), auxout_count(0)
 {
 	for (int n=0; n<MAXBUS; ++n)
 	    in[n] = out[n] = auxin[n] = auxout[n] = 0;
+}
+
+BusSlot::~BusSlot()
+{
+	MPRINT("BusSlot 0x%x destroyed\n", this);
 }
 
 //
 // BusQueue class methods
 //
 
-BusQueue::BusQueue(char *name, BusSlot *theQueue)
-		: inst_name(strdup(name)), queue(theQueue), next(NULL) {}
+BusQueue::BusQueue(char *name, BusSlot *theSlot)
+		: inst_name(strdup(name)), slot(theSlot), next(NULL)
+{
+	slot->Ref();
+}
 
-BusQueue::~BusQueue() { free(inst_name); }
+BusQueue::~BusQueue()
+{
+	MPRINT("BusQueue 0x%x destroyed\n", this);
+	free(inst_name);
+	slot->Unref();
+}
 
 /* Special flags and whatnot */
-typedef enum {
+enum ConfigStatus {
   CONFIG,
   NOT_CONFIG
-} ConfigStatus;
+};
+
+// Local classes for configuration checking
+
+struct CheckNode : public RefCounted {
+   CheckNode() : bus_list(new short[MAXBUS]), bus_count(0) {}
+   CheckNode(short *list, short count) : bus_list(list), bus_count(count) {}
+   ~CheckNode() { MPRINT("CheckNode 0x%x destroyed\n", this); }
+   short *bus_list;
+   short bus_count;
+};
+
+struct CheckQueue {
+   CheckQueue(CheckNode *theNode) : node(theNode), next(NULL) { node->Ref(); }
+   ~CheckQueue() { RefCounted::Unref(node); }
+   CheckNode *node;
+   CheckQueue *next;
+};
 
 /* List of lists of BusSlots used by Insts to get their bus_config setup */
 static BusQueue *Inst_Bus_Config;
@@ -151,37 +188,35 @@ print_bus_slot(BusSlot *bs)
    printf("\n   auxout_count=%d :", bs->auxout_count);
    for (i = 0; i < bs->auxout_count; i++)
       printf(" %d", bs->auxout[i]);
-   printf("\n   refcount=%d\n", bs->refcount);
+   printf("\n");
 }
 
 /* ----------------------------------------------------- print_bus_config --- */
 /* Prints config from Inst. point of view */
 static ErrCode
 print_inst_bus_config() {
-   BusQueue *t_array;
-   BusSlot *check_q;
+   BusQueue *qEntry;
+   BusSlot *check_slot;
 
    pthread_mutex_lock(&inst_bus_config_lock);
-   t_array = Inst_Bus_Config;
+   qEntry = Inst_Bus_Config;
    pthread_mutex_unlock(&inst_bus_config_lock);
 
-   while (t_array) {
+   while (qEntry) {
 
-	  printf("%s",t_array->instName());
-	  check_q = t_array->queue;
+	  printf("%s",qEntry->instName());
+	  check_slot = qEntry->slot;
 	  
-	  if (check_q == NULL) {
+	  if (check_slot == NULL) {
 		 printf("done\n");
 		 return NO_ERR;
 	  }
 	  
-	  while(check_q) {
-		 print_bus_slot(check_q);
-		 check_q = check_q->next;
+	  while (check_slot) {
+		 print_bus_slot(check_slot);
+		 check_slot = check_slot->next;
 	  }
-	  
-	  t_array = t_array->next;
-	  
+	  qEntry = qEntry->next; 
    }
    return NO_ERR;
 }
@@ -206,119 +241,127 @@ print_play_order() {
 
 static ErrCode
 check_bus_inst_config(BusSlot *slot, Bool visit) {
-  int i,j,aux_ctr,out_ctr;
-  short *in_check_list;
-  short in_check_count;
-  CheckQueue *in_check_queue,*t_queue,*last;
-  CheckNode *t_check_node,*t_node;
-  short t_in,t_out;
-  static Bool Visited[MAXBUS];
-  Bool Checked[MAXBUS];
-  short r_p_count=0;
+	int i,j,aux_ctr,out_ctr;
+	short *in_check_list;
+	short in_check_count;
+	CheckQueue *in_check_queue,*last;
+	static Bool Visited[MAXBUS];
+	Bool Checked[MAXBUS];
+	short r_p_count=0;
 
-  /* If we haven't gotten a config yet ... allocate the graph array */
-  /* and the playback order list */
-  pthread_mutex_lock(&bus_config_status_lock);
-  if (Bus_Config_Status == NO) {
-	for (i=0;i<MAXBUS;i++) {
-	  t_node = new CheckNode;
-	  pthread_mutex_lock(&bus_in_config_lock);
-	  Bus_In_Config[i] = t_node;
-	  pthread_mutex_unlock(&bus_in_config_lock);
-	}
-	Bus_Config_Status = YES;
-  }
-  pthread_mutex_unlock(&bus_config_status_lock);
-
-
-  aux_ctr = out_ctr = 0;
-  j=0;
-  for(i=0;i<MAXBUS;i++) {
-	if (visit)
-	  Visited[i] = NO;
-	Checked[i] = NO;
-	pthread_mutex_lock(&revplay_lock);
-	RevPlay[i] = -1;
-	pthread_mutex_unlock(&revplay_lock);
-	pthread_mutex_lock(&out_in_use_lock);
-	if (OutInUse[i]) {  // DJT For scheduling
-	  pthread_mutex_lock(&to_out_lock);
-	  ToOutPlayList[out_ctr++] = i;
-	  pthread_mutex_unlock(&to_out_lock);
-	}
-	pthread_mutex_unlock(&out_in_use_lock);
-	pthread_mutex_lock(&aux_out_in_use_lock);
-	if (AuxOutInUse[i]) {
-	  pthread_mutex_lock(&to_aux_lock);
-	  ToAuxPlayList[aux_ctr++] = i;
-	  pthread_mutex_unlock(&to_aux_lock);
-	}
-	pthread_mutex_unlock(&aux_out_in_use_lock);
-  }
-
-  /* Put the slot being checked on the list of "to be checked" */
-  t_node = new CheckNode(slot->auxin, slot->auxin_count);
-  in_check_queue = new CheckQueue(t_node);
-  last = in_check_queue;
-
-  /* Go down the list of things (nodes) to be checked */
-  while (in_check_queue) {
-	t_check_node = in_check_queue->node;
-	in_check_list = t_check_node->bus_list;
-	in_check_count = t_check_node->bus_count;
-	
-	for (i=0;i<in_check_count;i++) {
-	  t_in = in_check_list[i];
-	  
-	  /* Compare to each of the input slot's output channels */
-	  for (j=0;(j<slot->auxout_count) && (!Checked[t_in]);j++) {
-		t_out = slot->auxout[j];
-#ifdef PRINTALL
-		printf("checking in=%d out=%d\n",t_in,t_out);
-#endif
-
-		/* If they're equal, then return the error */
-		if (t_in == t_out) {
-		  rterror(NULL, "ERROR:  bus_config loop ... config not allowed.\n");
-		  return LOOP_ERR;
+	/* If we haven't gotten a config yet ... allocate the graph array */
+	/* and the playback order list */
+	pthread_mutex_lock(&bus_config_status_lock);
+	if (Bus_Config_Status == NO) {
+		for (i=0;i<MAXBUS;i++) {
+			CheckNode *t_node = new CheckNode;
+			pthread_mutex_lock(&bus_in_config_lock);
+			Bus_In_Config[i] = t_node;
+			t_node->Ref();
+			pthread_mutex_unlock(&bus_in_config_lock);
 		}
-	  }
-	  if (!Checked[t_in]) {
-		Checked[t_in] = YES;
-	  }
+		Bus_Config_Status = YES;
+	}
+	pthread_mutex_unlock(&bus_config_status_lock);
 
-	  /* If this input channel has other input channels */
-	  /* put them on the list "to be checked" */
-	  
-	  pthread_mutex_lock(&bus_in_config_lock);
-	  if ((Bus_In_Config[t_in]->bus_count > 0) && (!Visited[t_in])) {
+	aux_ctr = out_ctr = 0;
+	j=0;
+	for(i=0;i<MAXBUS;i++) {
+		if (visit)
+			Visited[i] = NO;
+		Checked[i] = NO;
+		pthread_mutex_lock(&revplay_lock);
+		RevPlay[i] = -1;
+		pthread_mutex_unlock(&revplay_lock);
+		pthread_mutex_lock(&out_in_use_lock);
+		if (OutInUse[i]) {  // DJT For scheduling
+			pthread_mutex_lock(&to_out_lock);
+			ToOutPlayList[out_ctr++] = i;
+			pthread_mutex_unlock(&to_out_lock);
+		}
+		pthread_mutex_unlock(&out_in_use_lock);
+		pthread_mutex_lock(&aux_out_in_use_lock);
+		if (AuxOutInUse[i]) {
+			pthread_mutex_lock(&to_aux_lock);
+			ToAuxPlayList[aux_ctr++] = i;
+			pthread_mutex_unlock(&to_aux_lock);
+		}
+		pthread_mutex_unlock(&aux_out_in_use_lock);
+	}
+
+	/* Put the slot being checked on the list of "to be checked" */
+	CheckNode *t_node = new CheckNode(slot->auxin, slot->auxin_count);
+	last = in_check_queue = new CheckQueue(t_node);
+	CheckQueue *savedQueueHead = in_check_queue;
+
+	/* Go down the list of things (nodes) to be checked */
+	while (in_check_queue) {
+		CheckNode *t_check_node = in_check_queue->node;
+		in_check_list = t_check_node->bus_list;
+		in_check_count = t_check_node->bus_count;
+
+		for (i=0;i<in_check_count;i++) {
+			short t_in = in_check_list[i];
+
+			/* Compare to each of the input slot's output channels */
+			for (j=0;(j<slot->auxout_count) && (!Checked[t_in]);j++) {
+				short t_out = slot->auxout[j];
 #ifdef PRINTALL
-		printf("adding Bus[%d] to list\n",t_in);
+				printf("checking in=%d out=%d\n",t_in,t_out);
 #endif
-		pthread_mutex_lock(&has_parent_lock);
-		if (HasParent[t_in]) {
+				/* If they're equal, then return the error */
+				if (t_in == t_out) {
+					rterror(NULL, "ERROR:  bus_config loop ... config not allowed.\n");
+					return LOOP_ERR;
+				}
+			}
+			if (!Checked[t_in]) {
+				Checked[t_in] = YES;
+			}
+
+			/* If this input channel has other input channels */
+			/* put them on the list "to be checked" */
+
+			pthread_mutex_lock(&bus_in_config_lock);
+			if ((Bus_In_Config[t_in]->bus_count > 0) && !Visited[t_in]) {
+#ifdef PRINTALL
+				printf("adding Bus[%d] to list\n",t_in);
+#endif
+				pthread_mutex_lock(&has_parent_lock);
+				if (HasParent[t_in]) {
 #ifdef PRINTPLAY
-		  printf("RevPlay[%d] = %d\n",r_p_count,t_in);
+					printf("RevPlay[%d] = %d\n",r_p_count,t_in);
 #endif
-		  pthread_mutex_lock(&revplay_lock);
-		  RevPlay[r_p_count++] = t_in;
-		  pthread_mutex_unlock(&revplay_lock);
+					pthread_mutex_lock(&revplay_lock);
+					RevPlay[r_p_count++] = t_in;
+					pthread_mutex_unlock(&revplay_lock);
+				}
+				pthread_mutex_unlock(&has_parent_lock);
+				Visited[t_in] = YES;
+				CheckQueue *t_queue = new CheckQueue(Bus_In_Config[t_in]);
+				last->next = t_queue;
+				last = t_queue;
+			}
+			pthread_mutex_unlock(&bus_in_config_lock);
 		}
-		pthread_mutex_unlock(&has_parent_lock);
-		Visited[t_in] = YES;
-		t_queue = new CheckQueue(Bus_In_Config[t_in]);
-		last->next = t_queue;
-		last = t_queue;
-	  }
-	  pthread_mutex_unlock(&bus_in_config_lock);
-	}
 #ifdef PRINTALL
-	printf("popping ...\n");
+		printf("popping ...\n");
 #endif
-	in_check_queue = in_check_queue->next;
-  }
+		in_check_queue = in_check_queue->next;
+	}
 
-  return NO_ERR;
+#ifdef PRINTALL
+	printf("cleaning up\n");
+#endif
+	// Now clean up
+	CheckQueue *queue = savedQueueHead;
+	while (queue) {
+		CheckQueue *next = queue->next;
+		delete queue;
+		queue = next;
+	}
+	
+	return NO_ERR;
 }
 
 /* ------------------------------------------------------ insert_bus_slot --- */
@@ -329,79 +372,94 @@ check_bus_inst_config(BusSlot *slot, Bool visit) {
 static ErrCode
 insert_bus_slot(char *name, BusSlot *slot) {
   
-  BusQueue *t_array,*t_queue;
-  BusSlot *check_q;
-  short i,j,t_in_count,s_in,s_out;
+	short i,j,t_in_count,s_in,s_out;
 
-  /* Insert into bus graph */
-  for(i=0;i<slot->auxout_count;i++) {
-	s_out = slot->auxout[i];
-	pthread_mutex_lock(&aux_in_use_lock);
-	if (!AuxInUse[s_out]) {
-	  AuxInUse[s_out] = YES;
-	}
-	pthread_mutex_unlock(&aux_in_use_lock);
-	for(j=0;j<slot->auxin_count;j++) {
-	  s_in = slot->auxin[j];
-	  pthread_mutex_lock(&has_parent_lock);
-	  if ((!HasParent[s_out]) && (s_in != 333)) {
-#ifdef PRINTALL
-		printf("HasParent[%d]\n",s_out);
-#endif
-		HasParent[s_out] = YES;
-	  }
-	  pthread_mutex_unlock(&has_parent_lock);
-
-	  pthread_mutex_lock(&bus_in_config_lock);
-	  t_in_count = Bus_In_Config[s_out]->bus_count;
-	  pthread_mutex_unlock(&bus_in_config_lock);
-#ifdef PRINTALL
-	  printf("Inserting Bus_In[%d] = %d\n",s_out,s_in);
-#endif
-	  if (s_in != 333) {
-		pthread_mutex_lock(&bus_in_config_lock);
-		Bus_In_Config[s_out]->bus_list[t_in_count] = s_in;
-		Bus_In_Config[s_out]->bus_count++;
-		pthread_mutex_unlock(&bus_in_config_lock);
-		pthread_mutex_lock(&has_child_lock);
-		HasChild[s_in] = YES;
-		pthread_mutex_unlock(&has_child_lock);
+	/* Insert into bus graph */
+	for(i=0;i<slot->auxout_count;i++) {
+		s_out = slot->auxout[i];
 		pthread_mutex_lock(&aux_in_use_lock);
-		AuxInUse[s_in] = YES;
+		if (!AuxInUse[s_out]) {
+			AuxInUse[s_out] = YES;
+		}
 		pthread_mutex_unlock(&aux_in_use_lock);
-	  }
-	}
-  }
+		for(j=0;j<slot->auxin_count;j++) {
+			s_in = slot->auxin[j];
+			pthread_mutex_lock(&has_parent_lock);
+			if ((!HasParent[s_out]) && (s_in != 333)) {
+#ifdef PRINTALL
+				printf("HasParent[%d]\n",s_out);
+#endif
+				HasParent[s_out] = YES;
+			}
+			pthread_mutex_unlock(&has_parent_lock);
 
-  /* Create initial node for Inst_Bus_Config */
-  pthread_mutex_lock(&inst_bus_config_lock);
-  if (Inst_Bus_Config == NULL) {
-	Inst_Bus_Config = new BusQueue(name, slot);
+			pthread_mutex_lock(&bus_in_config_lock);
+			t_in_count = Bus_In_Config[s_out]->bus_count;
+			pthread_mutex_unlock(&bus_in_config_lock);
+#ifdef PRINTALL
+			printf("Inserting Bus_In[%d] = %d\n",s_out,s_in);
+#endif
+			if (s_in != 333) {
+				pthread_mutex_lock(&bus_in_config_lock);
+				Bus_In_Config[s_out]->bus_list[t_in_count] = s_in;
+				Bus_In_Config[s_out]->bus_count++;
+				pthread_mutex_unlock(&bus_in_config_lock);
+				pthread_mutex_lock(&has_child_lock);
+				HasChild[s_in] = YES;
+				pthread_mutex_unlock(&has_child_lock);
+				pthread_mutex_lock(&aux_in_use_lock);
+				AuxInUse[s_in] = YES;
+				pthread_mutex_unlock(&aux_in_use_lock);
+			}
+		}
+	}
+
+	/* Create initial node for Inst_Bus_Config */
+	pthread_mutex_lock(&inst_bus_config_lock);
+	if (Inst_Bus_Config == NULL) {
+		Inst_Bus_Config = new BusQueue(name, slot);
+		pthread_mutex_unlock(&inst_bus_config_lock);
+		return NO_ERR;
+	}
+
+	BusQueue *qEntry = Inst_Bus_Config;
 	pthread_mutex_unlock(&inst_bus_config_lock);
-	return NO_ERR;
-  }
-  t_array = Inst_Bus_Config;
-  pthread_mutex_unlock(&inst_bus_config_lock);
-  
-  Lock lock(&inst_bus_config_lock);	// unlocks when out of scope
 
-  /* Traverse down each list */
-  while(t_array) {	
-	/* If names match, then put onto the head of the slot's list */
-	if (strcmp(t_array->instName(), name) == 0) {
-	  slot->next = t_array->queue;
-	  t_array->queue = slot;
-	  return NO_ERR;
+	Lock lock(&inst_bus_config_lock);	// unlocks when out of scope
+#define TEST_SLOT_CLEANUP
+	/* Traverse down each list */
+	while (qEntry) {	
+		/* If names match, then put onto the head of the slot's list */
+		if (strcmp(qEntry->instName(), name) == 0) {
+#ifdef TEST_SLOT_CLEANUP
+			BusSlot *next = qEntry->slot->next;
+			// Remove our reference to this slot and replace.
+			qEntry->slot->Unref();
+#ifdef PRINTALL
+			printf("replacing slot entry for '%s'\n", name);
+#endif
+			slot->next = next;
+			qEntry->slot = slot;
+			slot->Ref();
+#else	//	TEST_SLOT_CLEANUP
+#ifdef PRINTALL
+			printf("prepending new slot entry for '%s'\n", name);
+#endif
+			slot->next = qEntry->slot;
+			qEntry->slot = slot;
+			slot->Ref();
+#endif	//	TEST_SLOT_CLEANUP
+			return NO_ERR;
+		}
+
+		/* We've reached the end ... so put a new node on with inst's name */
+		if (qEntry->next == NULL) {
+			qEntry->next = new BusQueue(name, slot);
+  			return NO_ERR;
+		}
+		qEntry = qEntry->next;
 	}
-	
-	/* We've reached the end ... so put a new node on with inst's name */
-	if (t_array->next == NULL) {
-	  t_array->next = new BusQueue(name, slot);
-  	  return NO_ERR;
-	}
-	t_array = t_array->next;
-  }
-  return NO_ERR;
+	return NO_ERR;
 }
 
 
@@ -410,13 +468,19 @@ insert_bus_slot(char *name, BusSlot *slot) {
 /* filtered out in insert() */
 static void
 bf_traverse(int bus, Bool visit) {
+#ifdef PRINTPLAY
+  printf("entering bf_traverse(%d)\n", bus);
+#endif
   BusSlot *temp = new BusSlot;
   temp->auxin[0] = bus;
   temp->auxin_count=1;
   temp->auxout[0] = 333;
   temp->auxout_count=1;
   check_bus_inst_config(temp, visit);
-  delete temp;
+  temp->Unref();
+#ifdef PRINTPLAY
+  printf("exiting bf_traverse(%d)\n", bus);
+#endif
 }
 
 /* ----------------------------------------------------- create_play_order -- */
@@ -447,9 +511,6 @@ static void create_play_order() {
 	if (AuxInUse[i]) {
 	  pthread_mutex_lock(&has_child_lock);
 	  if (!HasChild[i]) {
-#ifdef PRINTPLAY
-		printf("bf_traverse(%d)\n",i);
-#endif
 		bf_traverse(i,visit);
 		if (visit) 
 		  visit = NO;
@@ -498,7 +559,7 @@ get_bus_config(const char *inst_name)
    for (q = Inst_Bus_Config; q; q = q->next) {
 	 if (strcmp(inst_name, q->instName()) == 0) {
 	   pthread_mutex_unlock(&inst_bus_config_lock);   
-	   return q->queue;
+	   return q->slot;
 	 }
    }
    pthread_mutex_unlock(&inst_bus_config_lock);
@@ -654,7 +715,7 @@ double bus_config(float p[], int n_args, double pp[])
    /* do the old Minc casting rigamarole to get string pointers from a double */
    anint = (int)pp[0];
    str = (char *)anint;
-   instname = strdup(str);
+   instname = strdup(str);	// Note:  If we exit nonfatally, we have to free.
 
    for (i = 1; i < n_args; i++) {
       anint = (int)pp[i];
@@ -761,9 +822,11 @@ double bus_config(float p[], int n_args, double pp[])
 #endif
 
    advise("bus_config", "(%s) => %s => (%s)", inbusses, instname, outbusses);
-
+   free(instname);
    return 0.0;
+
  error:
+   free(instname);
    die("bus_config", "Cannot parse arguments.");
    return -1.0;
 }

@@ -124,7 +124,7 @@ get_aux_in(
       BufPtr      dest,             /* interleaved buffer from inst */
       int         dest_chans,       /* number of chans interleaved */
       int         dest_frames,      /* frames in interleaved buffer */
-      short       src_chan_list[],  /* list of auxin-bus chan nums from inst */
+      const short src_chan_list[],  /* list of auxin-bus chan nums from inst */
       short       src_chans,        /* number of auxin-bus chans to copy */
       int  	      output_offset)
 {
@@ -154,7 +154,7 @@ get_audio_in(
       BufPtr      dest,             /* interleaved buffer from inst */
       int         dest_chans,       /* number of chans interleaved */
       int         dest_frames,      /* frames in interleaved buffer */
-      short       src_chan_list[],  /* list of in-bus chan numbers from inst */
+      const short src_chan_list[],  /* list of in-bus chan numbers from inst */
       short       src_chans,        /* number of in-bus chans to copy */
       int  		  output_offset)
 {
@@ -190,7 +190,7 @@ read_float_samps(
       BufPtr      dest,             /* interleaved buffer from inst */
       int         dest_chans,       /* number of chans interleaved */
       int         dest_frames,      /* frames in interleaved buffer */
-      short       src_chan_list[],  /* list of in-bus chan numbers from inst */
+      const short src_chan_list[],  /* list of in-bus chan numbers from inst */
                                     /* (or NULL to fill all chans) */
       short       src_chans         /* number of in-bus chans to copy */
       )
@@ -273,7 +273,7 @@ read_short_samps(
       BufPtr      dest,             /* interleaved buffer from inst */
       int         dest_chans,       /* number of chans interleaved */
       int         dest_frames,      /* frames in interleaved buffer */
-      short       src_chan_list[],  /* list of in-bus chan numbers from inst */
+      const short src_chan_list[],  /* list of in-bus chan numbers from inst */
                                     /* (or NULL to fill all chans) */
       short       src_chans         /* number of in-bus chans to copy */
       )
@@ -390,7 +390,7 @@ get_file_in(
       BufPtr      dest,             /* interleaved buffer from inst */
       int         dest_chans,       /* number of chans interleaved */
       int         dest_frames,      /* frames in interleaved buffer */
-      short       src_chan_list[],  /* list of in-bus chan numbers from inst */
+      const short src_chan_list[],  /* list of in-bus chan numbers from inst */
       short       src_chans,        /* number of in-bus chans to copy */
       int		  fdIndex,			/* index into input file desc. array */
 	  off_t		  *pFileOffset)		/* ptr to inst's file offset (updated) */
@@ -451,8 +451,9 @@ Instrument::rtgetin(float      *inarr,         /* interleaved array of <inputcha
 {
    int   frames, status, fdindex;
    int   inchans = inst->inputchans;    /* total in chans inst expects */
-   short in_count = inst->bus_config->in_count;
-   short auxin_count = inst->bus_config->auxin_count;
+   const BusSlot *bus_config = inst->GetBusSlot();
+   short in_count = bus_config->in_count;
+   short auxin_count = bus_config->auxin_count;
 
    assert(inarr != NULL);
 
@@ -466,21 +467,21 @@ Instrument::rtgetin(float      *inarr,         /* interleaved array of <inputcha
    }
 
    if (fdindex == NO_DEVICE_FDINDEX) {               /* input from aux buses */
-      short *auxin = inst->bus_config->auxin;        /* auxin channel list */
+      const short *auxin = bus_config->auxin;        /* auxin channel list */
 
       assert(auxin_count > 0 && in_count == 0);
 
       status = get_aux_in(inarr, inchans, frames, auxin, auxin_count, inst->output_offset);
    }
    else if (inputFileTable[fdindex].is_audio_dev) {  /* input from mic/line */
-      short *in = inst->bus_config->in;              /* in channel list */
+      const short *in = bus_config->in;              /* in channel list */
 
       assert(in_count > 0 && auxin_count == 0);
 
       status = get_audio_in(inarr, inchans, frames, in, in_count, inst->output_offset);
    }
    else {                                            /* input from file */
-      short *in = inst->bus_config->in;              /* in channel list */
+      const short *in = bus_config->in;              /* in channel list */
 
       assert(in_count > 0 && auxin_count == 0);
 

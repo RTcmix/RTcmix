@@ -41,7 +41,7 @@ Instrument::Instrument()
    sfile_on = 0;                // default is no input soundfile
 
    outbuf = NULL;
-   bus_config = NULL;
+   _busSlot = NULL;
 
    for (i = 0; i < MAXBUS; i++)
       bufstatus[i] = 0;
@@ -73,15 +73,12 @@ Instrument::~Instrument()
 
    delete [] outbuf;
 
-// FIXME: Also...
-// Call something that decrements refcount for bus_config, and if that
-// reaches zero, and is no longer the most recent for that instname,
-// then delete that bus_config node.
+	RefCounted::Unref(_busSlot);	// release our reference	
 }
 
 
 /* ------------------------------------------------------- set_bus_config --- */
-/* Set the bus_config pointer to the right bus_config for this inst.
+/* Set the _busSlot pointer to the right bus_config for this inst.
    Then set the inputchans and outputchans members accordingly.
   
    Instruments *must* call this from within their makeINSTNAME method. E.g.,
@@ -92,10 +89,11 @@ Instrument::~Instrument()
 void Instrument::set_bus_config(const char *inst_name)
 {
   pthread_mutex_lock(&bus_slot_lock);
-  bus_config = ::get_bus_config(inst_name);
+  _busSlot = ::get_bus_config(inst_name);
+  _busSlot->Ref();		// add our reference to this
   
-  inputchans = bus_config->in_count + bus_config->auxin_count;
-  outputchans = bus_config->out_count + bus_config->auxout_count;
+  inputchans = _busSlot->in_count + _busSlot->auxin_count;
+  outputchans = _busSlot->out_count + _busSlot->auxout_count;
   pthread_mutex_unlock(&bus_slot_lock);
 }
 
@@ -271,13 +269,13 @@ void Instrument::addout(BusType bus_type, int bus)
 
    if (bus_type == BUS_AUX_OUT) {
       dest = aux_buffer[bus];
-      buses = bus_config->auxout_count;
-      bus_list = bus_config->auxout;
+      buses = _busSlot->auxout_count;
+      bus_list = _busSlot->auxout;
    }
    else {       /* BUS_OUT */
       dest = out_buffer[bus];
-      buses = bus_config->out_count;
-      bus_list = bus_config->out;
+      buses = _busSlot->out_count;
+      bus_list = _busSlot->out;
    }
 
    src_chan = -1;

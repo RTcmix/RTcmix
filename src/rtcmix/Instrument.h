@@ -39,7 +39,7 @@ protected:
 
    BUFTYPE        *outbuf;         // private interleaved buffer
 
-   BusSlot        *bus_config;
+   BusSlot        *_busSlot;
 
 #ifdef RTUPDATE
    // new RSD variables
@@ -192,7 +192,7 @@ inline void Instrument::set_output_offset(int offset)
 
 inline const BusSlot *	Instrument::GetBusSlot() const
 {
-	return bus_config;
+	return _busSlot;
 }
 
 #endif /* _INSTRUMENT_H_  */
