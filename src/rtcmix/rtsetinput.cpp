@@ -57,23 +57,25 @@ rtsetinput(float start_time, Instrument *inst)
 
       src_chans = inputFileTable[index].chans;
 
-      if (inst->inputchans != src_chans) {
-         warn(inst_name, INCHANS_DISCREPANCY_WARNING, inst->inputchans,
-                                                      src_chans, src_chans);
-         inst->inputchans = src_chans;
-      }
-
       if (inputFileTable[index].is_audio_dev) {
          if (start_time != 0.0)
             die(inst_name, "Input start must be 0 when reading from the "
                            "real-time audio device.");
       }
       else {
-         int datum_size, inskip;
+         int datum_size, inskip_frames;
+
+         if (inst->inputchans != src_chans) {
+#ifdef NOMORE // pointless ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT in rtgetin.C
+            advise(inst_name, INCHANS_DISCREPANCY_WARNING, inst->inputchans,
+                                                        src_chans, src_chans);
+#endif
+            inst->inputchans = src_chans;
+         }
 
          inst->sfile_on = 1;
 
-         inskip = (int) (start_time * inst->inputsr);
+         inskip_frames = (int) (start_time * inst->inputsr);
 
          /* sndlib always uses 2 for datum size, even if the actual size is
             different. However, we don't use sndlib to read float files, so
@@ -86,7 +88,7 @@ rtsetinput(float start_time, Instrument *inst)
 
          /* Offset is measured from the header size determined in rtinput(). */
          inst->fileOffset = inputFileTable[index].data_location
-                            + (inskip * inst->inputchans * datum_size);
+                            + (inskip_frames * inst->inputchans * datum_size);
 
          if (start_time >= inputFileTable[index].dur)
             warn(inst_name, "Attempt to read past end of input file: %s",
