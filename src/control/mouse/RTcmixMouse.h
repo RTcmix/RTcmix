@@ -7,17 +7,12 @@
 #ifndef _RTCMIXMOUSE_H_
 #define _RTCMIXMOUSE_H_
 
-#include <stdlib.h>
-#include <pthread.h>
+#include <RTcmixWindow.h>
 #include <labels.h>
-#include <RefCounted.h>
 
-class RTcmixMouse : public RefCounted {
+class RTcmixMouse : public RTcmixWindow {
 public:
 	RTcmixMouse();
-
-	// Display the mouse window on the screen.
-	virtual int show() = 0;
 
 	// Deliver coordinate(s) in range [0, 1].  If coord. is negative, it means
 	// that the coord. is invalid, and the caller should use a default instead.
@@ -44,11 +39,11 @@ public:
 	void updateYLabelValue(const int id, const double value);
 
 
-	// to be called only by createMouseWindow
-	int spawnEventLoop();
-
 protected:
 	virtual ~RTcmixMouse();
+	// Display the mouse window on the screen.
+	virtual int show() = 0;
+
 	virtual void doConfigureXLabel(const int id, const char *prefix,
                                  const char *units, const int precision) = 0;
 	virtual void doConfigureYLabel(const int id, const char *prefix,
@@ -56,7 +51,6 @@ protected:
 	virtual void doUpdateXLabelValue(const int id, const double value) = 0;
 	virtual void doUpdateYLabelValue(const int id, const double value) = 0;
 	virtual bool handleEvents() = 0;
-	void shutdownEventLoop();
 
 	int _xlabelCount;
 	int _ylabelCount;
@@ -70,15 +64,8 @@ protected:
 	int _yprecision[kNumLabels];
 
 private:
-	inline unsigned long getSleepTime() { return _sleeptime; }
-	inline bool runThread() { return _runThread; }
-	static void *_eventLoop(void *);
-
 	double _lastx[kNumLabels];
 	double _lasty[kNumLabels];
-	unsigned long _sleeptime;
-	pthread_t _eventthread;
-	bool _runThread;
 	int _xthrottleCount[kNumLabels];
 	int _ythrottleCount[kNumLabels];
 	int _throttle;

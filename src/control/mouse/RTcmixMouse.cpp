@@ -11,8 +11,8 @@
 const int kSleepMsec = 10;		// How long to nap between polling of events
 const int kThrottle = 50;		// How many intervening values to skip drawing
 
-RTcmixMouse::RTcmixMouse()
-	: _xlabelCount(0), _ylabelCount(0), _sleeptime(kSleepMsec * 1000)
+RTcmixMouse::RTcmixMouse() 
+	: RTcmixWindow(kSleepMsec), _xlabelCount(0), _ylabelCount(0)
 {
 	for (int i = 0; i < kNumLabels; i++) {
 		_xprefix[i] = NULL;
@@ -31,7 +31,6 @@ RTcmixMouse::RTcmixMouse()
 
 RTcmixMouse::~RTcmixMouse()
 {
-	shutdownEventLoop();
 	for (int i = 0; i < kNumLabels; i++) {
 		delete _xprefix[i];
 		delete _yprefix[i];
@@ -100,35 +99,6 @@ void RTcmixMouse::updateYLabelValue(const int id, const double value)
 	}
 }
 
-void *RTcmixMouse::_eventLoop(void *context)
-{
-	RTcmixMouse *obj = (RTcmixMouse *) context;
-	while (obj->runThread()) {
-		if (obj->handleEvents() == false)
-			break;
-		usleep(obj->getSleepTime());
-	}
-	return NULL;
-}
-
-int RTcmixMouse::spawnEventLoop()
-{
-	_runThread = true;
-	int retcode = pthread_create(&_eventthread, NULL, _eventLoop, this);
-	if (retcode != 0)
-		fprintf(stderr, "Error creating mouse window thread (%d).\n", retcode);
-	return retcode;
-}
-
-void RTcmixMouse::shutdownEventLoop()
-{
-	if (_eventthread) {
-		_runThread = false;
-		pthread_join(_eventthread, NULL);
-	}
-	_eventthread = 0;
-}
-
 #ifdef MACOSX
 	#include <OSXMouse.h>
 #else
@@ -142,7 +112,7 @@ RTcmixMouse *createMouseWindow()
 #else
 	RTcmixMouse *mousewin = new XMouse();
 #endif
-	if (mousewin->show() != 0 || mousewin->spawnEventLoop() != 0) {
+	if (mousewin->run() != 0) {
 		mousewin->ref();
 		mousewin->unref();
 		mousewin = NULL;

@@ -11,8 +11,7 @@
 const int kSleepMsec = 40;		// How long to nap between polling of events
 const int kThrottle = 50;		// How many intervening values to skip drawing
 
-RTcmixDisplay::RTcmixDisplay()
-	: _labelCount(0), _sleeptime(kSleepMsec * 1000)
+RTcmixDisplay::RTcmixDisplay() : RTcmixWindow(kSleepMsec), _labelCount(0)
 {
 	for (int i = 0; i < kNumLabels; i++) {
 		_prefix[i] = NULL;
@@ -26,10 +25,6 @@ RTcmixDisplay::RTcmixDisplay()
 
 RTcmixDisplay::~RTcmixDisplay()
 {
-	if (_eventthread) {
-		_runThread = false;
-		pthread_join(_eventthread, NULL);
-	}
 	for (int i = 0; i < kNumLabels; i++) {
 		delete _prefix[i];
 		delete _units[i];
@@ -66,26 +61,6 @@ void RTcmixDisplay::updateLabelValue(const int id, const double value)
 	}
 }
 
-void *RTcmixDisplay::_eventLoop(void *context)
-{
-	RTcmixDisplay *obj = (RTcmixDisplay *) context;
-	while (obj->runThread()) {
-		if (obj->handleEvents() == false)
-			break;
-		usleep(obj->getSleepTime());
-	}
-	return NULL;
-}
-
-int RTcmixDisplay::spawnEventLoop()
-{
-	_runThread = true;
-	int retcode = pthread_create(&_eventthread, NULL, _eventLoop, this);
-	if (retcode != 0)
-		fprintf(stderr, "Error creating display window thread (%d).\n", retcode);
-	return retcode;
-}
-
 
 #ifdef MACOSX
 	#include <OSXDisplay.h>
@@ -100,8 +75,9 @@ RTcmixDisplay *createDisplayWindow()
 #else
 	RTcmixDisplay *displaywin = new XDisplay();
 #endif
-	if (displaywin->show() != 0 || displaywin->spawnEventLoop() != 0) {
-		delete displaywin;
+	if (displaywin->run() != 0) {
+		displaywin->ref();
+		displaywin->unref();
 		displaywin = NULL;
 	}
 

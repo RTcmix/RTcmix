@@ -1,6 +1,6 @@
 include ../../../makefile.conf
 
-OBJS = RTcmixDisplay.o DisplayPField.o glue.o
+OBJS = RTcmixDisplay.o DisplayPField.o glue.o ../common/RTcmixWindow.o
 SRCS = RTcmixDisplay.cpp DisplayPField.cpp glue.cpp
 
 # For OS X, we have to use a helper app, which communicates with RTcmix
@@ -19,7 +19,7 @@ else
    APP = 
    GUILIBS = -L$(XLIBDIR) -lX11
 endif
-CXXFLAGS += -I. -I../../rtcmix
+CXXFLAGS += -I. -I../common -I../../rtcmix
 LIBDISPLAY = libdisplayconn.so
 
 PFIELD = ../PField.o ../RefCounted.o

@@ -1,6 +1,6 @@
 include ../../../makefile.conf
 
-OBJS = RTcmixMouse.o RTMousePField.o glue.o
+OBJS = RTcmixMouse.o RTMousePField.o glue.o ../common/RTcmixWindow.o
 SRCS = RTcmixMouse.cpp RTMousePField.cpp glue.cpp
 
 # For OS X, we have to use a helper app, which communicates with RTcmix
@@ -19,7 +19,7 @@ else
    APP = 
    GUILIBS = -L$(XLIBDIR) -lX11
 endif
-CXXFLAGS += -I. -I../../rtcmix
+CXXFLAGS += -I. -I ../common -I../../rtcmix
 LIBMOUSE = libmouseconn.so
 
 TEST = test

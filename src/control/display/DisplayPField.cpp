@@ -20,6 +20,7 @@ DisplayPField::DisplayPField(
 	  _displaywin(displaywin), _labelID(-1)
 {
 	assert(_displaywin != NULL);
+	_displaywin->ref();
 
 	if (prefix && prefix[0]) {	// no label if null or empty prefix string
 		_labelID = _displaywin->configureLabel(prefix, units, precision);
@@ -28,7 +29,10 @@ DisplayPField::DisplayPField(
 	}
 }
 
-DisplayPField::~DisplayPField() {}
+DisplayPField::~DisplayPField()
+{
+	_displaywin->unref();
+}
 
 double DisplayPField::doubleValue(double didx) const
 {

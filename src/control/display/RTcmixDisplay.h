@@ -7,17 +7,12 @@
 #ifndef _RTCMIXDISPLAY_H_
 #define _RTCMIXDISPLAY_H_
 
-#include <stdlib.h>
-#include <pthread.h>
+#include <RTcmixWindow.h>
 #include <labels.h>
 
-class RTcmixDisplay {
+class RTcmixDisplay : public RTcmixWindow {
 public:
 	RTcmixDisplay();
-	virtual ~RTcmixDisplay();
-
-	// Show the display window on the screen.
-	virtual int show() = 0;
 
 	// Labels have the format: "prefix: value units", where value is a formatted
 	// double and units is optional.  Example: "cutoff: 2000.0 Hz"
@@ -33,10 +28,10 @@ public:
 	// Update the value used in the label.
 	void updateLabelValue(const int id, const double value);
 
-	// to be called only by createDisplayWindow
-	int spawnEventLoop();
-
 protected:
+	virtual ~RTcmixDisplay();
+	// Show the display window on the screen.
+	virtual int show() = 0;
 	virtual void doConfigureLabel(const int id, const char *prefix,
                                  const char *units, const int precision) = 0;
 	virtual void doUpdateLabelValue(const int id, const double value) = 0;
@@ -49,14 +44,7 @@ protected:
 	int _precision[kNumLabels];
 
 private:
-	inline unsigned long getSleepTime() { return _sleeptime; }
-	inline bool runThread() { return _runThread; }
-	static void *_eventLoop(void *);
-
 	double _last[kNumLabels];
-	unsigned long _sleeptime;
-	pthread_t _eventthread;
-	bool _runThread;
 	int _throttleCount[kNumLabels];
 	int _throttle;
 };
