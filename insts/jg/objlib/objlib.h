@@ -3,6 +3,7 @@
 #include "Balance.h"
 #include "BiQuad.h"
 #include "Butter.h"
+#include "ClampDenormals.h"
 #include "Comb.h"
 #include "DCBlock.h"
 #include "DLineA.h"
