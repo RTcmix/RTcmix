@@ -112,7 +112,7 @@ public:
 
 	void			set_bus_config(const char *);
 	inline const BusSlot *	GetBusSlot() const;
-	virtual int		init(float *, int);
+	virtual int		init(float *, int, double *);	// Called by checkInsts
 	virtual int		run();
 
 	void			exec(BusType bus_type, int bus);
@@ -132,6 +132,10 @@ public:
 
 protected:
    // Methods which are called from within other methods
+   
+   // This is called by the public init() when it is not redefined
+
+	virtual int		init(float *, int);
 
 	static int		rtsetoutput(float, float, Instrument *);
 	static int		rtsetinput(float, Instrument *);

@@ -99,7 +99,17 @@ void Instrument::set_bus_config(const char *inst_name)
 }
 
 
-/* ------------------------------------------------------------ init --- */
+/* ------------------------------------------------------------ init (1) --- */
+
+// This function is the one called by checkInsts().  It includes the double
+// version of the p array, pp, for instruments which need it.
+
+int Instrument::init(float p[], int n_args, double pp[])
+{
+	return init(p, n_args);
+}
+
+/* ------------------------------------------------------------ init (2) --- */
 
 // This function initializes the newpvalue and oldpvalue arrays which are 
 // used in the linear interpolation case.  It also identifies the slot number
