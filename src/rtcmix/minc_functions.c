@@ -78,9 +78,9 @@ double m_ampdb(p)
 float *p;
 { return(ampdb(p[0])); }
 
-/* double m_dbamp(p)
+double m_dbamp(p)
 float *p;
-{ return(dbamp(p[0])); } */
+{ return(dbamp(p[0])); }
 
 double
 m_stringify(p,n_args,pp)

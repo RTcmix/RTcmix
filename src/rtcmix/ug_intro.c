@@ -20,7 +20,7 @@ ug_intro()
 	UG_INTRO("pchcps",m_pchcps);
  	UG_INTRO("pchoct",m_pchoct);
  	UG_INTRO("octpch",m_octpch);
-/* 	UG_INTRO("dbamp",m_dbamp); */
+ 	UG_INTRO("dbamp",m_dbamp);
 	UG_INTRO("octcps",m_octcps);
 	UG_INTRO("cpsoct",m_cpsoct);
 	UG_INTRO("random",m_random);
