@@ -24,6 +24,11 @@ install:
 	@$(INSTALL) $(XS_DIR)/$(PM_FILE) $(LIBDESTDIR)
 	@$(INSTALL) $(EXT_FILE) $(LIBDESTDIR)
 
+uninstall:
+	@echo "making uninstall..."	
+	$(RM) $(LIBDESTDIR)/$(PM_FILE)
+	$(RM) $(LIBDESTDIR)/$(EXT_NAME)$(XT_SUFFIX)
+
 clean:
 	@if (test -f $(XS_DIR)/Makefile) then \
 		(cd $(XS_DIR); $(MAKE) clean; $(RM) Makefile.old) \
