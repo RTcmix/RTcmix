@@ -1,41 +1,48 @@
-#include "../H/sfheader.h"
 #include <stdio.h>
-#include <sys/file.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <signal.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <errno.h>
-static SFCODE	ampcode = {
-	SF_MAXAMP,
-	sizeof(SFMAXAMP) + sizeof(SFCODE)
-}; 
+#include "../H/sfheader.h"
+#include "../H/byte_routines.h"
 
-extern int swap;
+#ifdef USE_SNDLIB
+#include "../H/sndlibsupport.h"
+#endif
 
-main(argc,argv)
-int argc;
-char **argv;
+extern int swap;    /* defined in sys/check_byte_order.c */
+
+int
+main(int argc, char *argv[])
 {
-	int sf,result;
-	struct stat sfst;
-	long dur;
-	SFHEADER sfh;
-	char *sfname;
-	double atof(),amount;
+   int         fd, result;
+   struct stat sfst;
+   size_t      nbytes;
+   double      amount;
+   char        *sfname;
+   SFHEADER    sfh;
 
-	if(argc != 3) {
-		printf("format: sfshrink  new_duration_in_seconds filename\n");
-		exit(-1);
-	}
-	amount = atof(*++argv);
-	sfname = *++argv;
-	rwopensf(sfname,sf,sfh,sfst,"sfshrink",result,2)
-	if(result < 0) exit(-1);
-	dur = amount * sfsrate(&sfh) * sfclass(&sfh) 
-		* sfchans(&sfh) + getheadersize(&sfh);
-	dur -= dur % (sfclass(&sfh) * sfchans(&sfh));
-	if(ftruncate(sf,(long)dur) < 0) 
-		printf("Bad truncation\n");
-	putlength(sfname,sf,&sfh);
-	close(sf);
+   if (argc != 3) {
+      printf("usage: sfshrink new_duration_in_seconds filename\n");
+      printf("       (to extend with zeros, add to current duration)\n");
+      exit(1);
+   }
+   amount = atof(*++argv);
+   sfname = *++argv;
+   rwopensf(sfname, fd, sfh, sfst, "sfshrink", result, O_RDWR)
+   if (result == -1)
+      exit(1);
+   nbytes = amount * sfsrate(&sfh) * sfclass(&sfh) * sfchans(&sfh)
+                                                     + getheadersize(&sfh);
+   nbytes -= nbytes % (sfclass(&sfh) * sfchans(&sfh));
+   if (ftruncate(fd, nbytes) == -1)
+      perror("sfshrink: ftruncate");
+   else
+      putlength(sfname, fd, &sfh);
+   close(fd);
+
+   return 0;
 }
+
