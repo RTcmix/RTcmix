@@ -1,3 +1,21 @@
+/* TRANS - transpose a mono input signal using cubic spline interpolation
+
+   p0 = output start time
+   p1 = input start time
+   p2 = output duration (time to end if negative)
+   p3 = amplitude multiplier
+   p4 = interval of transposition, in octave.pc
+   p5 = input channel [optional, default is 0]
+   p6 = percent to left [optional, default is .5]
+
+   Processes only one channel at a time.
+
+   Assumes function table 1 is amplitude curve for the note.
+   You can call setline for this.
+
+   TRANS was written by Doug Scott.
+   Revised by John Gibson <johngibson@virginia.edu>, 2/29/00.
+*/
 #include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -5,160 +23,188 @@
 #include "TRANS.h"
 #include <rt.h>
 
-#define DEBUG
+//#define DEBUG
 
 extern "C" {
-#include <ugens.h>
+   #include <ugens.h>
+   extern int resetval;
 }
 
 static float interp(float, float, float, float);
 
-extern int resetval;
 
 
-TRANS::TRANS() : Instrument()
+TRANS :: TRANS() : Instrument()
 {
-	incount = 2.0f;
-	counter = 0;
+   in = new float[MAXBUF + (MAXCHANS * 2)];
+   out = new float[MAXBUF];
+
+   inframe = RTBUFSAMPS;
+   incount = 0;
+   counter = 0.0;
+   getflag = 1;
+   first_time = 1;
+
+   /* clear sample history */
+   oldersig = 0.0;
+   oldsig = 0.0;
+   newsig = 0.0;
 }
 
-//  p0 = outskp  p1 = inskp  p2 = dur (tmnd)  p3 = intrvl of trnsp. p4 = amp
-//  we're stashing the setline info in gen table 1
 
-int
-TRANS::init(float p[], short n_args)
+TRANS :: ~TRANS()
 {
-	if (n_args != 5) {
-             cerr << "Wrong number of args for TRANS!" << endl;
-             return -1;
-	}
-	if (p[2] < 0.0) p[2] = -p[2] - p[1];
-	nsamps = rtsetoutput(p[0], p[2], this);
-	rtsetinput(p[1], this);
-	float interval = octpch(p[3]);  /* convert interval to lin octave */
-	increment = cpsoct(10.0+interval)/cpsoct(10.0);  /* the samp incr. */
-	amp = p[4];
-	
-	printf("increment: %g\n", increment);
-	
-	amptable = floc(1);
-	if (amptable) {
-		int amplen = fsize(1);
-		tableset(p[2], amplen, tabs);
-	}
-	else
-		printf("Setting phrase curve to all 1's\n");
-	
-	skip = (int)(SR/(float)resetval);        // how often to update amp curve
-	
-	// clear sample history
-	
-	for(int n=0; n < NCHANS; n++) {
-		vold[n] = 0;
-		old[n] = 0;
-	}
-
-	return(nsamps);
+   delete [] in;
+   delete [] out;
 }
 
-inline int min(int x, int y) { if (x < y) return x; else return y; }
 
-int
-TRANS::run()
+int TRANS :: init(float p[], short n_args)
 {
-	const int nchans = NCHANS;
-	const int sampsout = 0, outsamps = chunksamps;
-	int insamp = 0, sampsread = 0;
-	float in[MAXCHANS*(MAXBUF+2)], out[MAXCHANS*MAXBUF], aamp;
-	int branch = 0;
-	float *inp = &in[0], *outp = &out[0];
-	
-	aamp = amp;       /* in case amptable == NULL */
+   float outskip, inskip, dur, transp, interval;
 
-	// read initial block of input at offset +2 frames
-	
-	int totalinleft = 0.5 + (outsamps * increment);
-	int toRead = min(totalinleft, MAXBUF);
-	printf("READ %d samples\n", toRead);
-	rtgetin(&in[2 * nchans], this, toRead * inputchans);
-	sampsread += toRead;
+   if (n_args < 5) {
+      cerr << "TRANS: Wrong number of args." << endl;
+      return -1;
+   }
+   outskip = p[0];
+   inskip = p[1];
+   dur = p[2];
+   amp = p[3];
+   transp = p[4];
+   inchan = (n_args > 5) ? (int) p[5] : 0;
+   pctleft = (n_args > 6) ? p[6] : 0.5;
 
-	// retrieve history and store into first two frames of input array
-	
-	for (int n = 0; n < nchans; n++) {
-		in[n] = vold[n];
-		in[n + nchans] = old[n];
-	}
+   if (dur < 0.0)
+      dur = -dur - inskip;
 
-	for (int i = 0; i < outsamps; i++) {
-		if (insamp > sampsread) {
-			totalinleft = 0.5 + ((outsamps - i) * increment);
-			toRead = min(totalinleft, MAXBUF);
-			printf("READ %d samples\n", toRead);
-			rtgetin(&in[0], this, toRead * inputchans);
-			inp = &in[0];	// reset
-			sampsread += toRead;
-		}
-		if (--branch < 0) {
-			if (amptable)
-				aamp = table(cursamp, amptable, tabs) * amp;
-			branch = skip;
-		}
-		float frac = (counter - incount) + 2.0f;
+   nsamps = rtsetoutput(outskip, dur, this);
+   rtsetinput(inskip, this);
+
+   interval = octpch(transp);
+   increment = (double) cpsoct(10.0 + interval) / cpsoct(10.0);
 #ifdef DEBUG
-		printf("i: %d counter: %g incount: %d frac: %g insamp: %d cursamp: %d\n",
-					i, counter, incount, frac, insamp, cursamp);
+   printf("increment: %g\n", increment);
 #endif
-		for (n = 0; n < nchans; n++) {
+
+   amptable = floc(1);
+   if (amptable) {
+      int amplen = fsize(1);
+      tableset(p[2], amplen, tabs);
+   }
+   else
+      printf("Setting phrase curve to all 1's\n");
+
+   skip = (int) (SR / (float) resetval);
+
+   return nsamps;
+}
+
+
+inline int min(int x, int y)
+{
+   if (x < y)
+      return x;
+   else
+      return y;
+}
+
+
+int TRANS :: run()
+{
+   const int outframes = chunksamps;
+   int       i;
+   int       branch = 0;
+   float     aamp;
+   float     *outp = out;
+
+   aamp = amp;                  /* in case amptable == NULL */
+
+   if (first_time) {
+      inframe = outframes;
+      first_time = 0;
+   }
+
+   for (i = 0; i < outframes; i++) {
+      if (--branch < 0) {
+         if (amptable)
+            aamp = table(cursamp, amptable, tabs) * amp;
+         branch = skip;
+      }
+      while (getflag) {
+         int index;
+
+         if (inframe == outframes) {          /* time for an input buffer */
+            rtgetin(in, this, inputchans * outframes);
 #ifdef DEBUG
-			printf("interping %g, %g, %g\n", inp[0], inp[1], inp[2]);
+            printf("READ %d frames\n", outframes);
 #endif
-			outp[n] = interp(inp[0], inp[1], inp[2], frac) * aamp;
-		}
-		outp += nchans;
-		cursamp++;
-		counter += increment;	// keeps track of interp pointer
+            inframe = 0;
+         }
+         oldersig = oldsig;
+         oldsig = newsig;
 
-		// increment input
-		while ((counter - (float)incount) >= -0.5f) {
-			inp += nchans;
-			incount++;
-			insamp++;
-		}
-	}
-	// save history for next time
-	printf("saving samps %g, %g\n", in[insamp+1], in[insamp+2]);
-	for (n = 0; n < nchans; n++) {
-		vold[n] = in[(nchans * (insamp + 1)) + n];
-		old[n] = in[(nchans * (insamp + 2)) + n];
-	}
-	rtbaddout(out, outsamps * nchans);
-	printf("OUT %d samples\n\n", i);
-	return (i);
+         index = inframe * inputchans;
+         newsig = in[index + inchan];
+
+         incount++;
+         inframe++;
+         if (counter - (double) incount < 0.5)
+            getflag = 0;
+      }
+
+      double frac = counter - (double) incount + 2.0;
+      outp[0] = interp(oldersig, oldsig, newsig, frac) * aamp;
+#ifdef DEBUG
+      printf("i: %d counter: %g incount: %d frac: %g inframe: %d cursamp: %d\n",
+             i, counter, incount, frac, inframe, cursamp);
+      printf("interping %g, %g, %g\n", oldersig, oldsig, newsig);
+#endif
+
+      if (NCHANS == 2) {
+         outp[1] = outp[0] * (1.0 - pctleft);
+         outp[0] *= pctleft;
+      }
+
+      outp += NCHANS;
+      cursamp++;
+
+      counter += increment;     // keeps track of interp pointer
+      if (counter - (double) incount >= -0.5)
+         getflag = 1;
+   }
+
+   rtbaddout(out, outframes * NCHANS);
+#ifdef DEBUG
+   printf("OUT %d samples\n\n", i);
+#endif
+
+   return i;
 }
 
-Instrument *
-makeTRANS()
+
+Instrument *makeTRANS()
 {
-	return new TRANS();
+   return new TRANS();
 }
 
-void
-rtprofile()
+
+void rtprofile()
 {
-	RT_INTRO("TRANS",makeTRANS);
+   RT_INTRO("TRANS", makeTRANS);
 }
 
-static float
-interp(float y0, float y1, float y2, float t)
+
+static float interp(float y0, float y1, float y2, float t)
 {
-    float hy2, hy0, a, b, c;
-    
-    a = y0;
-    hy0 = y0/2.0f;
-    hy2 =  y2/2.0f;
-    b = (-3.0f * hy0) + (2.0f * y1) - hy2;
-    c = hy0 - y1 + hy2;
+   float hy2, hy0, a, b, c;
 
-    return(a + b*t + c*t*t);
+   a = y0;
+   hy0 = y0 / 2.0f;
+   hy2 = y2 / 2.0f;
+   b = (-3.0f * hy0) + (2.0f * y1) - hy2;
+   c = hy0 - y1 + hy2;
+
+   return (a + b * t + c * t * t);
 }
+

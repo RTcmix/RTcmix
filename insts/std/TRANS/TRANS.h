@@ -2,15 +2,16 @@
 #include <rtdefs.h>
 
 class TRANS : public Instrument {
-	float *amptable, tabs[2];
-	int incount;
-	float increment;
-	float counter;
-	float skip;
-	float amp;
-	float old[MAXCHANS], vold[MAXCHANS];
+   int    incount, inframe, skip, inchan, getflag, first_time;
+   double increment, counter;
+   float  amp, pctleft;
+   float  newsig, oldsig, oldersig;
+   float  *amptable, tabs[2];
+   float  *in, *out;
 public:
-	TRANS();
-	int init(float*, short);
-	int run();
+   TRANS();
+   virtual ~TRANS();
+   int init(float *, short);
+   int run();
 };
+
