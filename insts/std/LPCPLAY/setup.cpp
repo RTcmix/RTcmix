@@ -16,7 +16,7 @@ static float thresh, randamp, unvoiced_rate;
 static float risetime, decaytime;	// enveloping; set externally
 static bool  autoCorrect = false;	// whether to stabilize each frame as it runs
 
-static const int maxDataSets = 8;
+static const int maxDataSets = 16;
 
 // For right now, datasets are created each time they are needed and are
 //	not shared.
