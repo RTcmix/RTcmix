@@ -71,8 +71,8 @@ private:
 // used to keep track of which set of data in the pfpath array we are looking 
 // at.  This allows multiple calls to note_pfield_path and inst_pfield_path
 // with different envelopes specified
-   int			  j;
-   int 			  k;
+   int			  j[MAXNUMPARAMS];
+   int 			  k[MAXNUMPARAMS];
 
 public:
    Instrument();
