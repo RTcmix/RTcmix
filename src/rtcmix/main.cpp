@@ -3,6 +3,7 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 //#define DBUG
+//#define DENORMAL_CHECK
 #define MAIN
 #include <pthread.h>
 #include <ctype.h>
@@ -44,7 +45,6 @@ extern "C" {
 }
 
 rt_item *rt_list;     /* can't put this in globals.h because of rt.h trouble */
-
 
 
 /* ---------------------------------------------------------------- usage --- */
@@ -164,6 +164,27 @@ signal_handler(int signo)
 }
 
 
+/* ----------------------------------------------------- detect_denormals --- */
+/* Unmask "denormalized operand" bit of the x86 FPU control word, so that
+   any operations with denormalized numbers will raise a SIGFPE signal,
+   and our handler will be called.  NOTE: This is for debugging only!
+   This will not tell you how many denormal ops there are, so just because
+   the exception is thrown doesn't mean there's a serious problem.  For
+   more info, see: http://www.smartelectronix.com/musicdsp/text/other001.txt.
+*/
+static void
+detect_denormals()
+{
+#ifdef LINUX
+   #include <fpu_control.h>
+   int cw = 0;
+   _FPU_GETCW(cw);
+   cw &= ~_FPU_MASK_DM;
+   _FPU_SETCW(cw);
+#endif
+}
+
+
 /* ----------------------------------------------------------------- main --- */
 int
 main(int argc, char *argv[])
@@ -177,8 +198,11 @@ main(int argc, char *argv[])
    init_globals();
 
 #ifdef LINUX
+ #ifdef DENORMAL_CHECK
+   detect_denormals();
+ #endif
    signal(SIGFPE, flush_fpe);          /* Install signal handler */
-#endif
+#endif /* LINUX */
 #ifdef SGI
    flush_all_underflows_to_zero();
 #endif
