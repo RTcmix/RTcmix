@@ -72,7 +72,13 @@ create_audio_devices(int recordAndPlay, int chans, float srate, int *buffersize)
 					idevice->getLastError());
 				return -1;
 			}
-			*buffersize = reqsize / numBuffers;
+			int newBufferSize = reqsize / numBuffers;
+			if (newBufferSize != *buffersize) {
+				advise("rtsetparams",
+						"RTBUFSAMPS reset by input audio device from %d to %d",
+						*buffersize, newBufferSize);
+				*buffersize = newBufferSize;
+			}
 			// Passive start takes NULL callback and context.
 			if (idevice->start(NULL, NULL) != 0) {
 				die("rtsetparams", "Trouble starting input audio device: %s",
@@ -101,11 +107,17 @@ create_audio_devices(int recordAndPlay, int chans, float srate, int *buffersize)
 		int reqsize = *buffersize * numBuffers;
 		if ((status = device->setQueueSize(&reqsize)) < 0) {
 			die("rtsetparams",
-				"Trouble setting audio output device queue size: %s",
+				"Trouble setting audio device queue size: %s",
 				device->getLastError());
 			return -1;
 		}
-		*buffersize = reqsize / numBuffers;
+		int newBufferSize = reqsize / numBuffers;
+		if (newBufferSize != *buffersize) {
+			advise("rtsetparams",
+					"RTBUFSAMPS reset by audio device from %d to %d",
+					*buffersize, newBufferSize);
+			*buffersize = newBufferSize;
+		}
 	}
 	else
 	{
