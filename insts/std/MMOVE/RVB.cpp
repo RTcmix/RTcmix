@@ -77,7 +77,6 @@ RVB::~RVB()
 
 int RVB::init(double p[], int n_args)
 {
-    int    flag, UseMikes, cartflag = 0;
     float  outskip, inskip, rvb_time;
 
     outskip = p[0];
@@ -510,7 +509,7 @@ RVB::rvb_reset()
 void
 RVB::get_primes(int x, int p[])
 {
-   int val = 5, flag, i, index = 2;
+   int val = 5, index = 2;
 
    if (!primes_gotten)
    {
@@ -519,8 +518,8 @@ RVB::get_primes(int x, int p[])
 	p[1] = 3;
 
 	while (index < x) {
-	   flag = 1;
-	   for (i = 1; flag && val / p[i] >= p[i]; ++i)
+	   int flag = 1;
+	   for (int i = 1; flag && val / p[i] >= p[i]; ++i)
               if (val % p[i] == 0)
         	 flag = 0;
 	   if (flag) {
