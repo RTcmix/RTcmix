@@ -29,7 +29,10 @@ int
 rtsetinput(float start_time, Instrument *inst)
 {
    if (inst->bus_config->auxin_count > 0) {
-// FIXME: not sure we have to do anything here  -JGG
+      if (start_time != 0.0) {
+         fprintf(stderr, "inskip must be 0 when reading from an aux bus.\n");
+         exit(1);
+      }
    }
 
    if (inst->bus_config->in_count > 0) {
@@ -56,7 +59,14 @@ rtsetinput(float start_time, Instrument *inst)
                                                                   src_chans);
       }
 
-      if (!inputFileTable[index].is_audio_dev) {
+      if (inputFileTable[index].is_audio_dev) {
+         if (start_time != 0.0) {
+            fprintf(stderr, "inskip must be 0 when reading from the real-time "
+                            "audio device.\n");
+            exit(1);
+         }
+      }
+      else {
          int datum_size, inskip;
 
          inst->sfile_on = 1;
