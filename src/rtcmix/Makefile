@@ -84,7 +84,8 @@ set_option.cpp \
 table.cpp \
 rt_ug_intro.cpp \
 connection.cpp \
-converter.cpp
+converter.cpp \
+display.cpp
 
 MAIN_CPPSRCS = RTcmixMain.cpp main.cpp
 
