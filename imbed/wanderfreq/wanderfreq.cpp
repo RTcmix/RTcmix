@@ -57,7 +57,7 @@ main(int argc, char *argv[])
 		theWaves[i] = (MYWAVETABLE*)rrr->cmd("MYWAVETABLE", 5,
 			0.0, duration, 30000.0/(double)NINSTS, curfreq[i],
 			(double)i*(1.0/(double)NINSTS));
-		theWaves[i]->Ref();	// Keep these from being destroyed
+		theWaves[i]->ref();	// Keep these from being destroyed
 	}
 
 /* ok, I know scheduling a function to fire every 0.02 seconds is a little
@@ -76,9 +76,9 @@ void wander()
 	for (int i = 0; i < NINSTS; i++) {
 		if (theWaves[i] == NULL)
 			continue;		// Already released this one
-	    else if (theWaves[i]->IsDone())
+	    else if (theWaves[i]->isDone())
 		{
-			theWaves[i]->Unref();	// Release our hold on this
+			theWaves[i]->unref();	// Release our hold on this
 			theWaves[i] = NULL;
 			continue;
 		}
