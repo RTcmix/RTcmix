@@ -2,7 +2,7 @@
 include insts.conf
 
 RTLIBDIRS = FMINST CLAR COMBIT FMINST SCULPT STEREO WAVESHAPE \
-METAFLUTE MULTICOMB AM AMINST IIR DEL1 DELAY PANECHO STRUM
+METAFLUTE MULTICOMB AM AMINST IIR DEL1 DELAY PANECHO STRUM TRANS FIR
 
 CMIXLIBDIRS = clar combit fir fminst iir move multicomb noise place sculpt \
 numtest strum wah wahwah wow wshape metaflute trans am aminst pvoc rotate \
@@ -36,5 +36,12 @@ clean:
 	( cd $$DIR; make clean; \
 	rm -f $(DESTDIR)/$$DIR; \
 	rm -f $(LIBDESTDIR)/lib$$DIR.so; ) \
+	done
+
+onlyDSO:
+	@for DIR in $(LIBDIRS); \
+	do \
+	( cd $$DIR; echo "removing standalone instrument in $$DIR..."; \
+	rm -f $$DIR; ) \
 	done
 
