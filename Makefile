@@ -55,6 +55,7 @@ sys::
 
 sndlib::
 	@echo "making sndlib..."
+	@rm -f $(SNDLIB);
 	@ln -sf $(SNDLIB_DIR) $(SNDLIB);
 	@cd sndlib; $(MAKE) all
 	@echo "done.";echo""
