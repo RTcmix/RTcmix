@@ -14,6 +14,7 @@
 
 class Instrument {
 public:
+
    float          start;
    float          dur;
    int            cursamp;
@@ -91,12 +92,20 @@ private:
 public:
    Instrument();
    virtual ~Instrument();
+	// Instruments should use these to access variables.
+	inline int currentFrame() const { return cursamp; }
+	inline int framesToRun() const { return chunksamps; }
+	inline int nSamps() const { return nsamps; }
+	inline int inputChannels() const { return inputchans; }
+	inline int outputChannels() const { return outputchans; }
+	// Use this to increment cursamp inside run loops.
+	inline void increment() { ++cursamp; }
+
    void set_bus_config(const char *);
    virtual int init(float *, int);
    virtual int run();
 
    void exec(BusType bus_type, int bus);
-   int rtaddout(BUFTYPE samps[]);  // replacement for old rtaddout
    void addout(BusType bus_type, int bus);
 
    float getstart();
@@ -117,6 +126,10 @@ public:
    void RSD_check();
    float RSD_get();
 #endif /* RTUPDATE */
+protected:
+   // Methods which are called from within other methods
+   int rtaddout(BUFTYPE samps[]);  				// replacement for old rtaddout
+   int rtbaddout(BUFTYPE samps[], int length);	// block version of same
 
 private:
    void gone();                    // decrements reference to input soundfile

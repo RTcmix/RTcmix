@@ -217,6 +217,20 @@ int Instrument :: rtaddout(BUFTYPE samps[])
    return outputchans;
 }
 
+/* ------------------------------------------------------------ rtbaddout --- */
+/* Block version of rtaddout.  Useful for instruments which generate samples
+   in chunks, and can write them to the output buffer in one operation.
+*/
+
+int Instrument :: rtbaddout(BUFTYPE samps[], int length)
+{
+	const int sampcount = length * outputchans;
+	for (int i = 0; i < sampcount; i++)
+		*obufptr++ = samps[i];
+
+	return sampcount;
+}
+
 
 /* --------------------------------------------------------------- addout --- */
 /* Add signal from one channel of instrument's private interleaved buffer
