@@ -2,6 +2,7 @@ include ../package.conf
 
 NAME = denoise
 
+CURDIR = $(CMIXDIR)/insts.jg/$(NAME)
 OBJS = $(NAME).o cfast.o cfsst.o cfr2tr.o cfr4tr.o cfr4syn.o cford1.o cford2.o
 CMIXOBJS += $(RTPROFILE_O)
 PROGS = lib$(NAME).so $(NAME)
@@ -24,10 +25,10 @@ $(OBJS): $(NAME).h
 install: dso_install
 
 dso_install: lib$(NAME).so
-	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)
 
 standalone_install: standalone
-	$(INSTALL) $(NAME) $(DESTDIR)
+	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)
 
 uninstall: dso_uninstall standalone_uninstall
 

@@ -2,6 +2,7 @@ include ../package.conf
 
 NAME = MOOGVCF
 
+CURDIR = $(CMIXDIR)/insts.jg/$(NAME)
 OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
 CXXFLAGS += -I. -Wall 
@@ -25,10 +26,10 @@ $(OBJS): $(INSTRUMENT_H) $(NAME).h
 install: dso_install
 
 dso_install: lib$(NAME).so
-	$(INSTALL) lib$(NAME).so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)
 
 standalone_install: standalone
-	$(INSTALL) $(NAME) $(DESTDIR)
+	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)
 
 uninstall: dso_uninstall standalone_uninstall
 

@@ -1,5 +1,6 @@
 include ../package.conf
 
+CURDIR = $(CMIXDIR)/insts.jg/SPECTACLE
 OBJLIBDIR = ../objlib
 OBJLIB_A = $(OBJLIBDIR)/objlib.a
 OBJLIB_H = $(OBJLIBDIR)/objlib.h
@@ -46,12 +47,12 @@ SPECTACLE_BASE.o: $(INSTRUMENT_H) $(COMMON_HEADERS)
 install: dso_install
 
 dso_install: all
-	$(INSTALL) libSPECTACLE.so $(LIBDESTDIR)
-	$(INSTALL) libTVSPECTACLE.so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/libSPECTACLE.so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/libTVSPECTACLE.so $(LIBDESTDIR)
 
 standalone_install: standalone
-	$(INSTALL) SPECTACLE $(DESTDIR)
-	$(INSTALL) TVSPECTACLE $(DESTDIR)
+	$(INSTALL) $(CURDIR)/SPECTACLE $(DESTDIR)
+	$(INSTALL) $(CURDIR)/TVSPECTACLE $(DESTDIR)
 
 uninstall: dso_uninstall standalone_uninstall
 
