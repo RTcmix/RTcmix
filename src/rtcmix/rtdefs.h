@@ -30,9 +30,15 @@ extern short *inbuff;  // DT:  for use with real-time audio input
 // NOTE: MAXBUF is a constant in SGI version!
 extern int MAXBUF;
 
-// NOTE: these are wrapped with extern "C" in SGI version
+#ifdef _LANGUAGE_C_PLUS_PLUS     /* Needed for MIPSpro */
+extern "C" {
+#endif
 extern float SR;
 extern int NCHANS;
 extern int RTBUFSAMPS;
+#ifdef _LANGUAGE_C_PLUS_PLUS
+}
+#endif
 
-#endif  /* _RTDEFS_H_ */
+#endif /* _RTDEFS_H_ */
+
