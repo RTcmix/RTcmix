@@ -2,6 +2,7 @@
 #include <iostream.h>
 #include "MYWAVETABLE.h"
 #include <rt.h>
+#include <rtdefs.h>	/* for SR */
 
 MYWAVETABLE::MYWAVETABLE() : Instrument()
 {
@@ -17,9 +18,9 @@ int MYWAVETABLE::init(double p[], int n_args)
 
 	nsamps = rtsetoutput(p[0], p[1], this);
 
-	theOscil = new Ooscili(p[3], 2); // assumes makegen 2 for waveform
+	theOscil = new Ooscili(SR, p[3], 2); // assumes makegen 2 for waveform
 
-	theEnv = new Ooscili(1.0/p[1], 1); // assumes makegen 1 for amp env
+	theEnv = new Ooscili(SR, 1.0/p[1], 1); // assumes makegen 1 for amp env
 
 	amp = p[2];
 	spread = p[4];
