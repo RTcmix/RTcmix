@@ -241,7 +241,7 @@ main(int argc, char *argv[])
 #ifdef DBUG
       fprintf(stdout, "creating sockit() thread\n");
 #endif
-      retcode = pthread_create(&sockitThread, NULL, sockit, "");
+      retcode = pthread_create(&sockitThread, NULL, sockit, (void *) "");
       if (retcode != 0) {
          fprintf(stderr, "sockit() thread create failed\n");
       }
@@ -250,7 +250,8 @@ main(int argc, char *argv[])
 #ifdef DBUG
       fprintf(stdout, "creating inTraverse() thread\n");
 #endif
-      retcode = pthread_create(&inTraverseThread, NULL, inTraverse, "");
+      retcode = pthread_create(&inTraverseThread, NULL, inTraverse,
+                                                             (void *) "");
       if (retcode != 0) {
          fprintf(stderr, "inTraverse() thread create failed\n");
       }
