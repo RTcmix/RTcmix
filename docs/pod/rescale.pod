@@ -1,0 +1,128 @@
+=head1 NAME
+
+rescale - convert 32-bit float to 16-bit integer sound file
+
+=head1 SYNOPSIS
+
+B<rescale>
+[ B<-P> I<desired_peak> ]
+[ B<-p> I<input_peak> ]
+[ B<-f> I<factor> ]
+[ B<-r> ]
+[ B<-t> ]
+[ B<-s> I<input_skip> ]
+[ B<-o> I<output_skip> ]
+[ B<-d> I<duration> ]
+[ B<-e> I<end_silence> ]
+[ B<-h> ]
+I<input_file>
+[ I<output_file> ]
+
+=head1 DESCRIPTION
+
+This command-line utility converts a 32-bit floating-point sound file
+to 16-bit integer.  It does this by first scaling every sample by a
+factor, and then chopping off the portion to the right of the decimal
+point.  (So if the factor is 1, a sample of 22091.428915 becomes 22091.)
+
+There are several options that affect what factor B<rescale> uses, where
+the output goes, and whether to dither before truncating from 32 bits.
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<-P> I<desired_peak>
+
+Rescale so that I<desired_peak> is the new peak.  Ignored if you also
+specify I<factor>.
+This is 32767 by default.
+
+=item B<-p> I<input_peak>
+
+Specify the peak of the input file.
+This is taken from the input file header by default.
+
+=item B<-f> I<factor>
+
+Multiply every sample value by this factor before converting to integer.
+This is I<desired_peak> / I<input_peak> by default.
+
+=item B<-r>
+
+Replace I<input_file> with the rescaled version.  Ignores I<output_file>.
+By default, B<rescale> writes to a new file.  (See I<output_file> below.)
+
+=item B<-t>
+
+Use dithering algorithm.
+This is off by default.
+
+=item B<-s> I<input_skip>
+
+Skip this many seconds on the input file before reading.
+This is 0 by default.
+
+=item B<-o> I<output_skip>
+
+Skip this many seconds on the output file before writing.
+This is 0 by default.
+
+=item B<-d> I<duration>
+
+Rescale this many seconds of the input file.
+This is the entire file by default.
+
+=item B<-e> I<end_silence>
+
+Write this many seconds of zeros at the end of the output file.
+This is 0 by default.
+
+=item B<-h>
+
+Print usage summary.
+
+=item B<input_file>
+
+The name of the input file, which can be either 32-bit floating point
+or 16-bit integer in any of the formats understood by RTcmix.
+
+=item B<output_file>
+
+Write rescaled output to this file, which cannot already exist.
+Ignored if B<-r> also specified.
+If neither B<-r> nor B<output_file> given, rescale writes to a new file
+with the same name as I<input_file>, but with ".rescale" appended.
+
+This file has the same header format as the input file, as long as
+that is one of the types that RTcmix can write (AIFF, AIFC, WAVE,
+NeXT, IRCAM).  If it's a type that RTcmix can read, but not write,
+then the output format will be AIFF.
+
+=back
+
+=head1 EXAMPLES
+
+   rescale foo.wav
+
+Assuming "foo.wav" is a 32-bit float file, this command rescales
+the file so that its peak amplitude is 32767, and writes the 16-bit
+output to "foo.wav.rescale."
+
+   rescale -r -f 1 foo.wav
+
+rescales "foo.wav" using a factor of 1.0 (i.e., it merely drops
+digits of precision to the right of the decimal point), and writes
+the output to "foo.wav," overwriting the original 32-bit file.
+
+   rescale -P 20000 -t foo.wav newfoo.wav
+
+rescales "foo.wav" so that its peak amplitude is 20000, and writes
+the output to a new file, "newfoo.wav."  Before truncating to 16
+bits, applies the dithering algorithm to each sample.
+
+=head1 AUTHORS
+
+John Gibson E<lt>johgibso@indiana.eduE<gt>, based on the original
+Cmix B<rescale>, but revised and expanded.
+
