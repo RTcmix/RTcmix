@@ -63,9 +63,7 @@ int WAVETABLE::init(double p[], int n_args)
 	wavetable = NULL;
 	int tablelen = 0;
 	if (n_args > 5) {      // handle table coming in as optional p5 TablePField
-		const PField &field = getPField(5);
-		tablelen = field.values();
-		wavetable = (double *) field;
+		wavetable = (double *) getPFieldTable(5, &tablelen);
 	}
 	if (wavetable == NULL) {
 		wavetable = floc(WAVET_GEN_SLOT);
