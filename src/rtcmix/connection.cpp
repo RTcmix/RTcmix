@@ -58,6 +58,8 @@ makeconnection(const Arg args[], const int nargs)
 #else
 		connection = mouse_connection(args, nargs);
 #endif
+	else if (args[0] == "midi")
+		connection = midi_connection(args, nargs);
 
 	if (connection == NULL)
 		return NULL;
