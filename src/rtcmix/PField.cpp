@@ -67,6 +67,17 @@ double StringPField::doubleValue(double) const
 	return (double) (int) _string;
 }
 
+// RTNumberPField
+
+RTNumberPField::RTNumberPField(double value) { set(value); }
+
+double RTNumberPField::set(double value) { return (_value = value); }
+
+double RTNumberPField::doubleValue(double) const
+{
+	return _value;
+}
+
 // TablePField
 
 TablePField::TablePField(double *tableArray, int length)

@@ -27,7 +27,7 @@ protected:
 
 class PFieldBinaryOperator : public PField {
 public:
-	virtual double	doubleValue(double) const;
+	virtual double	doubleValue(double=0.0) const;
 	typedef double (*Operator)(double, double);
 	PFieldBinaryOperator(PField *pf1, PField *pf2, Operator);
 protected:
@@ -64,7 +64,7 @@ protected:
 class ConstPField : public PField {
 public:
 	ConstPField(double value);
-	virtual double	doubleValue(double) const;
+	virtual double	doubleValue(double=0.0) const;
 protected:
 	virtual 		~ConstPField();
 private:
@@ -76,7 +76,7 @@ private:
 class StringPField : public PField {
 public:
 	StringPField(const char  *value);
-	virtual double	doubleValue(double) const;
+	virtual double	doubleValue(double=0.0) const;
 protected:
 	virtual 		~StringPField();
 private:
@@ -84,11 +84,36 @@ private:
 };
 
 // Base class for all Real-Time-varying parameters.
+// This may eventually hold common code needed to
+// support multiple threads, etc.
 
 class RTPField : public PField {
 public:
 protected:
 	virtual ~RTPField() {}
+};
+
+// Variable PField used for simple real-time setting of params
+
+class RTNumberPField : public RTPField {
+public:
+	RTNumberPField(double value);
+	virtual double	doubleValue(double=0.0) const;
+	// Set value.  Returns same.
+	virtual double	set(double);
+	// Offset value by 'val'.  Returns new value.
+	double offset(double val) { return set(doubleValue() + val); }
+	// Overloaded operators for ease of use.
+	double operator = (double value) { return set(value); }
+	float operator = (float value) { return (float) set(value); }
+	double operator += (double value) { return offset(value); }
+	float operator += (float value) { return (float) offset(value); }
+	double operator -= (double value) { return offset(-value); }
+	float operator -= (float value) { return (float) offset(-value); }
+protected:
+	virtual 		~RTNumberPField() {}
+private:
+	double	_value;
 };
 
 // Class for interpolated reading of table.
