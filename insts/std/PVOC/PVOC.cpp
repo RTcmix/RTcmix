@@ -169,7 +169,7 @@ int PVOC::init(float *p, int n_args)
 	I	 = (int)p[8];		/* interpolation factor */
 	P	 = p[9];			/* oscillator bank pitch factor */
 	Np	= (int)p[10];		/* linear prediction order */
-	_oscThreshold  = (int)p[11];		/* synthesis threshhold */
+	_oscThreshold  = p[11];		/* synthesis threshhold */
 
 /*	freopen( "pv.out", "w", stderr ); */
 #ifdef debug
