@@ -175,7 +175,11 @@ void RTsendsock(const char *cmd, int theSock, int nargs, ...)
 	strcpy(ssend.name, cmd);
 
 	va_start(ap, nargs);
-	if ( (strcmp(ssend.name, "rtinput") == 0) || (strcmp(ssend.name, "rtoutput") == 0) || (strcmp(ssend.name, "load") == 0) ) {
+		if ( (strcmp(ssend.name, "rtinput") == 0) ||
+			(strcmp(ssend.name, "rtoutput") == 0) ||
+			(strcmp(ssend.name,"set_option") == 0) ||
+			(strcmp(ssend.name,"bus_config") == 0) ||
+			(strcmp(ssend.name, "load")==0) ) {
 		for (i = 0; i < nargs; i++) {
 			strcpy(ssend.data.text[i], va_arg(ap, char*));
 		}
