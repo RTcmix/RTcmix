@@ -15,102 +15,99 @@
 
 int
 call_external_function(const char *funcname, const MincListElem arglist[],
-   const int nargs, MincListElem *return_value)
+	const int nargs, MincListElem *return_value)
 {
-   int i, result, rtcmixargs_array_allocated = 0;
-   Arg retval;
+	int i, result, rtcmixargs_array_allocated = 0;
+	Arg retval;
 
-   Arg *rtcmixargs = new Arg[nargs];
-   if (rtcmixargs == NULL)
-      return -1;
+	Arg *rtcmixargs = new Arg[nargs];
+	if (rtcmixargs == NULL)
+		return -1;
 
-   /* Convert arglist for passing to RTcmix function. */
-   for (i = 0; i < nargs; i++) {
-      switch (arglist[i].type) {
-         case MincFloatType:
-            rtcmixargs[i] = arglist[i].val.number;
-            break;
-         case MincStringType:
-            rtcmixargs[i] = arglist[i].val.string;
-            break;
-         case MincHandleType:
-            rtcmixargs[i] = (Handle) arglist[i].val.handle;
-            break;
-         case MincListType:
-            /* If list contains only floats, convert and pass it along.
-               Otherwise, it's an error.
-            */
+	// Convert arglist for passing to RTcmix function.
+	for (i = 0; i < nargs; i++) {
+		switch (arglist[i].type) {
+		case MincFloatType:
+			rtcmixargs[i] = arglist[i].val.number;
+			break;
+		case MincStringType:
+			rtcmixargs[i] = arglist[i].val.string;
+			break;
+		case MincHandleType:
+			rtcmixargs[i] = (Handle) arglist[i].val.handle;
+			break;
+		case MincListType:
+			// If list contains only floats, convert and pass it along.
+			// Otherwise, it's an error.
 			{
-            Array *newarray = (Array *) emalloc(sizeof(Array));
-            if (newarray == NULL)
-               return -1;
-            newarray->data = (double *) float_list_to_array(arglist[i].val.list);
-            if (newarray->data != NULL) {
-               newarray->len = arglist[i].val.list->len;
-               rtcmixargs[i] = newarray;
-            }
-            else {
-               minc_die("can't pass a mixed-type list to an RTcmix function");
-			   free(newarray);
-               return -1;
-            }
+				Array *newarray = (Array *) emalloc(sizeof(Array));
+				if (newarray == NULL)
+					return -1;
+				newarray->data = (double *) float_list_to_array(arglist[i].val.list);
+				if (newarray->data != NULL) {
+					newarray->len = arglist[i].val.list->len;
+					rtcmixargs[i] = newarray;
+				}
+				else {
+					minc_die("can't pass a mixed-type list to an RTcmix function");
+					free(newarray);
+					return -1;
+				}
 			}
-            break;
-         default:
-            minc_die("call_external_function: invalid argument type");
-            break;
-      }
-   }
+			break;
+		default:
+			minc_die("call_external_function: invalid argument type");
+			break;
+		}
+	}
 
-   result = RTcmix::dispatch(funcname, rtcmixargs, nargs, &retval);
+	result = RTcmix::dispatch(funcname, rtcmixargs, nargs, &retval);
    
-   /* Convert return value from RTcmix function. */
-   switch (retval.type()) {
-      case DoubleType:
-         return_value->type = MincFloatType;
-         return_value->val.number = (MincFloat) retval;
-         break;
-      case StringType:
-         return_value->type = MincStringType;
-         return_value->val.string = (MincString) retval;
-         break;
-      case HandleType:
-         return_value->type = MincHandleType;
-         return_value->val.handle = (MincHandle) (Handle) retval;
-		 ref_handle(return_value->val.handle);
-         break;
-      case ArrayType:
+	// Convert return value from RTcmix function.
+	switch (retval.type()) {
+	case DoubleType:
+		return_value->type = MincFloatType;
+		return_value->val.number = (MincFloat) retval;
+		break;
+	case StringType:
+		return_value->type = MincStringType;
+		return_value->val.string = (MincString) retval;
+		break;
+	case HandleType:
+		return_value->type = MincHandleType;
+		return_value->val.handle = (MincHandle) (Handle) retval;
+		ref_handle(return_value->val.handle);
+		break;
+	case ArrayType:
 #ifdef NOMORE
 // don't think functions will return non-opaque arrays to Minc, but if they do,
 // these should be converted to MincListType
-         return_value->type = MincArrayType;
-		 {
-			 Array *array = (Array *) retval;
-			 return_value->val.array.len = array->len;
-			 return_value->val.array.data = array->data;
-		 }
+		return_value->type = MincArrayType;
+		{
+			Array *array = (Array *) retval;
+			return_value->val.array.len = array->len;
+			return_value->val.array.data = array->data;
+		}
 #endif
-         break;
-      default:
-         break;
-   }
+		break;
+	default:
+		break;
+	}
 
-   delete [] rtcmixargs;
+	delete [] rtcmixargs;
 
-   return 0;
+	return 0;
 }
 
-static Handle
-_createPFieldHandle(PField *pfield)
+static Handle _createPFieldHandle(PField *pfield)
 {
-   Handle handle = (Handle) malloc(sizeof(struct _handle));
-   handle->type = PFieldType;
-   handle->ptr = (void *) pfield;
-   pfield->ref();
-   handle->refcount = 0;
-   return handle;
+	Handle handle = (Handle) malloc(sizeof(struct _handle));
+	handle->type = PFieldType;
+	handle->ptr = (void *) pfield;
+	pfield->ref();
+	handle->refcount = 0;
+	return handle;
 }
-
 
 static double plus_binop(double x, double y)
 {
@@ -174,12 +171,12 @@ PField *createBinopPField(PField *pfield1, PField *pfield2, OpKind op)
 	return new PFieldBinaryOperator(pfield1, pfield2, binop);
 }
 
-MincHandle
-minc_binop_handle_float(const MincHandle mhandle, const MincFloat val, OpKind op)
+MincHandle minc_binop_handle_float(const MincHandle mhandle,
+	const MincFloat val, OpKind op)
 {
-   Handle return_handle;
+	Handle return_handle;
 
-   DPRINT2("minc_binop_handle_float (handle=%p, val=%f\n", mhandle, val);
+	DPRINT2("minc_binop_handle_float (handle=%p, val=%f\n", mhandle, val);
 
 	// Extract PField from MincHandle.
 	Handle handle = (Handle) mhandle;
@@ -188,20 +185,20 @@ minc_binop_handle_float(const MincHandle mhandle, const MincFloat val, OpKind op
 
 	// Create ConstPField for MincFloat.
 	PField *pfield2 = new ConstPField(val);
-	
-    // Create PField using appropriate operator.
-    PField *outpfield = createBinopPField(pfield1, pfield2, op);
-	
+
+	// Create PField using appropriate operator.
+	PField *outpfield = createBinopPField(pfield1, pfield2, op);
+
 	return (MincHandle) _createPFieldHandle(outpfield);
 }
 
-MincHandle
-minc_binop_handles(const MincHandle mhandle1, const MincHandle mhandle2, OpKind op)
+MincHandle minc_binop_handles(const MincHandle mhandle1,
+	const MincHandle mhandle2, OpKind op)
 {
 	DPRINT2("minc_binop_handles (handle1=%p, handle2=%p\n", mhandle1, mhandle2);
 
 	// Extract PFields from MincHandles
-	
+
 	Handle handle1 = (Handle) mhandle1;
 	Handle handle2 = (Handle) mhandle2;
 	assert(handle1->type == PFieldType);
@@ -209,7 +206,7 @@ minc_binop_handles(const MincHandle mhandle1, const MincHandle mhandle2, OpKind 
 	PField *pfield1 = (PField *) handle1->ptr;
 	PField *pfield2 = (PField *) handle2->ptr;
 	PField *opfield = createBinopPField(pfield1, pfield2, op);
-	
+
 	// create Handle for new PField, return it cast to MincHandle
 
 	return (MincHandle) _createPFieldHandle(opfield);
