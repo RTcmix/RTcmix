@@ -1,135 +1,324 @@
-/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
-   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
-   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
-*/
-#include <globals.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include "../rtstuff/Instrument.h"
-#include "../rtstuff/rtdefs.h"
-#include "../H/byte_routines.h"
+#include <globals.h>
+#include <sndlibsupport.h>
+#include <byte_routines.h>
+#include <Instrument.h>
+#include <rtdefs.h>
+#include <assert.h>
 
-#ifdef USE_SNDLIB
-  #include <stdlib.h>
-  #include "../H/sndlibsupport.h"
-#endif
 
-extern InputDesc inputFileTable[];
+// FIXME: Need to clean up return value confusion below. Should return val
+//        indicate status, nframes, nsamps, nbytes?
+//        (Was nbytes, but always ignored.)
 
-extern int swap;
 
-int rtgetin(float *inarr, Instrument *theInst, int nsmps)
+
+/* ----------------------------------------------------------- get_aux_in --- */
+static int
+get_aux_in(
+      BufPtr   dest,             /* interleaved buffer from inst */
+      int      dest_chans,       /* number of chans interleaved */
+      int      dest_frames,      /* frames in interleaved buffer */
+      int      src_chan_list[],  /* list of auxin-bus chan numbers from inst */
+      int      src_chans)        /* number of auxin-bus chans to copy */
 {
-	int i;
-	int fdesc, seeked;
-#ifdef USE_SNDLIB
-	int n, j, frames, chans;
-	static int **inbufs = NULL;
-#else
-	int nbytes, sampsRead;
-	short in[MAXBUF];
+   assert(dest_chans >= src_chans);
 
-  #ifdef DBUG
-	if (swap) {
-		printf("!!!!!!!!!!!!SWAPPING!!!!!!!!!\n");
-	}
-  #endif
-#endif /* !USE_SNDLIB */
+   for (int n = 0; n < src_chans; n++) {
+      int chan = src_chan_list[n];
 
-	if (theInst->fdIndex == AUDIO_DEVICE) {
-		for (i = 0; i < nsmps; i++)
-			inarr[i] = inbuff[i];
-		return 0;
-	}
+      BufPtr src = aux_buffer[chan];
+      assert(src != NULL);
 
-	/* look up file descriptor in table.  It will have been opened by
-	 * an earlier call to rtinput().
-	 */
-
-	fdesc = inputFileTable[theInst->fdIndex].fd; 
-
-	if (fdesc < 1) { 
-		fprintf(stderr, "No input file open for this instrument!\n");
-		return -1; 
-	}
-
-#ifdef USE_SNDLIB
-
-	if (inbufs == NULL) {    /* 1st time, so allocate array of buffers */
-		inbufs = sndlib_allocate_buffers(MAXCHANS, RTBUFSAMPS);
-		if (inbufs == NULL) {
-			perror("rtgetin: Can't allocate input buffers");
-			exit(1);
-		}
-	}
-
-	/* go to saved file offset for this instrument */
-
-	/* NOTE: clm_seek handles any datum size as if it were a 16bit file.
-	 * If we don't care, lseek would be faster.
-	 */
-	seeked = clm_seek(fdesc, theInst->fileOffset, SEEK_SET);
-	if (seeked == -1) {
-		fprintf(stderr, "Bad seek on the input soundfile\n");
-		return -1;
-	}
-
-   chans = theInst->inputchans;
-	frames = nsmps / chans;
-   if (frames > RTBUFSAMPS) {
-      fprintf(stderr, "Internal Error: rtgetin: nsmps out of range!\n");
-      exit(1);
+      copy_one_buf_to_interleaved_buf(dest, src, dest_chans, n, dest_frames);
    }
-	clm_read(fdesc, 0, frames-1, chans, inbufs);
-//NOTE: doesn't return an error code!!
 
-	for (i = j = 0; i < frames; i++, j += chans)
-		for (n = 0; n < chans; n++)
-			inarr[j+n] = (short)inbufs[n][i];
-
-	/* update our file offset
-	 * NOTE: we can't know how much zero padding sndlib did
-	 */
-	theInst->fileOffset += nsmps * sizeof(short);
-
-	return nsmps;
-
-#else /* !USE_SNDLIB */
-
-	/* go to saved file offset for this instrument */
-
-	seeked = lseek(fdesc, theInst->fileOffset, SEEK_SET);
-	if (seeked == -1) {
-		fprintf(stderr, "Bad seek on the input soundfile\n");
-		return -1;
-	}
-
-	nbytes = read(fdesc, (void *)in, nsmps*sizeof(short));
-
-	/* update our file offset */
-
-	if (nbytes > 0)
-		theInst->fileOffset += nbytes;
-
-	sampsRead = nbytes / sizeof(short);
-	if (sampsRead < 0)
-		sampsRead = 0;
-
-	for (i = 0; i < sampsRead; i++) {
-		if (swap) {
-			byte_reverse2(&in[i]);
-		}
-		inarr[i] = in[i];
-	}
-
-	/* zero out remainder of array */
-	for ( ; i < nsmps; i++)
-		inarr[i] = 0.0;
-
-	return nbytes;
-
-#endif /* !USE_SNDLIB */
-
+   return 0;
 }
 
 
+/* --------------------------------------------------------- get_audio_in --- */
+static int
+get_audio_in(
+      BufPtr   dest,             /* interleaved buffer from inst */
+      int      dest_chans,       /* number of chans interleaved */
+      int      dest_frames,      /* frames in interleaved buffer */
+      int      src_chan_list[],  /* list of in-bus chan numbers from inst */
+      int      src_chans)        /* number of in-bus chans to copy */
+{
+   int   audioin_chans = 2;  // FIXME: where do we get this? rtinput pfield
+
+   assert(dest_chans >= src_chans);
+   assert(audioin_chans >= src_chans);
+
+   for (int n = 0; n < src_chans; n++) {
+      int chan = src_chan_list[n];
+
+      BufPtr src = audioin_buffer[chan];
+      assert(src != NULL);
+
+      copy_one_buf_to_interleaved_buf(dest, src, dest_chans, n, dest_frames);
+   }
+
+   return 0;
+}
+
+
+/* ----------------------------------------------------- read_float_samps --- */
+static int
+read_float_samps(
+      BufPtr      dest,             /* interleaved buffer from inst */
+      int         dest_chans,       /* number of chans interleaved */
+      int         dest_frames,      /* frames in interleaved buffer */
+      int         src_chan_list[],  /* list of in-bus chan numbers from inst */
+      int         src_chans,        /* number of in-bus chans to copy */
+      int         fd_index,         /* index into file table of input file */
+      off_t       file_pos)         /* offset into file for lseek */
+{
+   int            fd, file_chans, seeked, nsamps, src_samps, swap;
+   int            data_format, datum_size;
+   ssize_t        bytes_to_read, bytes_read;
+   char           *bufp;
+   static float   *fbuf = NULL;
+   
+   /* File opened by earlier call to rtinput. */
+   fd = inputFileTable[inst->fdIndex].fd;
+   file_chans = inputFileTable[inst->fdIndex].chans;
+
+   assert(file_chans >= dest_chans);
+
+   data_format = inputFileTable[fd_index].data_format;
+
+#ifdef SNDLIB_LITTLE_ENDIAN
+   swap = IS_BIG_ENDIAN_FORMAT(data_format);
+#else
+   swap = IS_LITTLE_ENDIAN_FORMAT(data_format);
+#endif
+
+   if (fbuf == NULL) {     /* 1st time, so allocate interleaved float buffer */
+      fbuf = (float *) malloc((size_t) RTBUFSAMPS * MAXCHANS);
+      if (fbuf == NULL) {
+         perror("read_float_samps (malloc)");
+         exit(1);
+      }
+   }
+   bufp = (char *) fbuf;
+
+// FIXME: Needs fix to rtsetinput when setting initial fileOffset for inst!
+
+   if (lseek(fd, file_pos, SEEK_SET) == -1) {
+      perror("read_float_samps (lseek)");
+      exit(1);
+   }
+
+   datum_size = sizeof(float);
+
+   bytes_to_read = dest_frames * file_chans * datum_size;
+
+   while (bytes_to_read > 0) {
+      bytes_read = read(fd, bufp, bytes_to_read);
+      if (bytes_read == -1) {
+         perror("read_float_samps (read)");
+         exit(1);
+      }
+      if (bytes_read == 0)          /* EOF */
+         break;
+
+      bufp += bytes_read;
+      bytes_to_read -= bytes_read;
+   }
+
+   /* If we reached EOF, zero out remaining part of buffer that we
+      expected to fill.
+   */
+   while (bytes_to_read > 0) {
+      (* (float *) bufp) = 0.0;
+      bufp += datum_size;
+      bytes_to_read -= datum_size;
+   }
+
+   /* Copy interleaved input buffer to inst's input buffer, with bus mapping. */
+
+   src_samps = dest_frames * file_chans;
+
+   for (int n = 0; n < dest_chans; n++) {
+      int chan = src_chan_list[n];
+      int j = n;
+      for (int i = chan; i < src_samps; i += file_chans, j += dest_chans)
+         dest[j] = (BUFTYPE) fbuf[i];
+   }
+
+   if (swap) {
+      for (int i = 0; i < src_samps; i++)
+         byte_reverse4(&dest[i]);
+   }
+
+   /* NOTE: Just return size of entire buffer, even if we had to do
+            some zero padding.
+   */
+   nsamps = dest_frames / dest_chans;
+
+   return nsamps;
+}
+
+
+/* ---------------------------------------------------- sndlib_read_samps --- */
+static int
+sndlib_read_samps(
+      BufPtr      dest,             /* interleaved buffer from inst */
+      int         dest_chans,       /* number of chans interleaved */
+      int         dest_frames,      /* frames in interleaved buffer */
+      int         src_chan_list[],  /* list of in-bus chan numbers from inst */
+      int         src_chans,        /* number of in-bus chans to copy */
+      int         fd_index,         /* index into file table of input file */
+      off_t       file_pos)         /* offset into file for lseek */
+{
+   int         fd, file_chans, seeked, nsamps;
+   static int  **inbufs = NULL;
+
+   /* File opened by earlier call to rtinput. */
+   fd = inputFileTable[inst->fdIndex].fd;
+   file_chans = inputFileTable[inst->fdIndex].chans;
+
+   assert(file_chans >= dest_chans);
+
+   if (inbufs == NULL) {    /* 1st time, so allocate array of buffers */
+      inbufs = sndlib_allocate_buffers(MAXCHANS, RTBUFSAMPS);
+      if (inbufs == NULL) {
+         perror("sndlib_read_samps: Can't allocate input buffers");
+         exit(1);
+      }
+   }
+
+   /* Go to saved file offset for this instrument.
+      NOTE: clm_seek handles any datum size as if it were 16 bits.
+   */
+   seeked = clm_seek(fd, file_pos, SEEK_SET);
+   if (seeked == -1) {
+      fprintf(stderr, "Bad seek on the input soundfile\n");
+      exit(1);
+   }
+
+// FIXME: doesn't return an error code! Upgrade to new sndlib for that.
+   clm_read(fd, 0, dest_frames-1, file_chans, inbufs);
+
+   for (int n = 0; n < dest_chans; n++) {
+      int chan = src_chan_list[n];
+      int j = n;
+      for (int i = 0; i < dest_frames; i++, j += dest_chans)
+         dest[j] = (BUFTYPE) inbufs[chan][i];
+   }
+
+   /* NOTE: We can't know how much zero padding sndlib did, so just use
+            dest_frames.
+   */
+   nsamps = dest_frames / dest_chans;
+
+   return nsamps;
+}
+
+
+/* ---------------------------------------------------------- get_file_in --- */
+static int
+get_file_in(
+      BufPtr      dest,             /* interleaved buffer from inst */
+      int         dest_chans,       /* number of chans interleaved */
+      int         dest_frames,      /* frames in interleaved buffer */
+      int         src_chan_list[],  /* list of in-bus chan numbers from inst */
+      int         src_chans,        /* number of in-bus chans to copy */
+      Instrument  *inst)
+{
+   int   data_format, nsamps;
+
+   assert(dest_chans >= src_chans);
+
+   data_format = inputFileTable[inst->fdIndex].data_format;
+
+   /* We read float files ourselves, rather than hand them to sndlib. */
+   if (IS_FLOAT_FORMAT(data_format)) {
+      nsamps = read_float_samps(dest, dest_chans, dest_frames, src_chan_list,
+                                  src_chans, inst->fdIndex, inst->fileOffset);
+      inst->fileOffset += nsamps * sizeof(float);
+   }
+   else {
+      nsamps = sndlib_read_samps(dest, dest_chans, dest_frames, src_chan_list,
+                                  src_chans, inst->fdIndex, inst->fileOffset);
+      /* NOTE: This is right for sndlib, even if file isn't 16-bit: */
+      inst->fileOffset += nsamps * sizeof(short);
+   }
+
+   return nsamps;
+}
+
+
+/* -------------------------------------------------------------- rtgetin --- */
+// some limitations for now...
+
+/* For use by instruments that take input either from an in buffer or from
+   an aux buffer, but not from both at once. Also, input from files or
+   from the audio in device can come only through an in buffer, not from
+   an aux buffer.
+*/
+int
+rtgetin(float      *inarr,         /* interleaved array of <inputchans> */
+        Instrument *inst,
+        int        nsamps)         /* samps, not frames */
+{
+   int frames, status;
+   int in_count = inst->bus_config->in_count;
+   int auxin_count = inst->bus_config->auxin_count;
+   int inchans = inst->inputchans;    /* total in chans inst expects */
+
+   assert(inarr != NULL);
+
+   frames = nsamps / inchans;
+
+   if (frames > RTBUFSAMPS) {
+      fprintf(stderr, "Internal Error: rtgetin: nsamps out of range!\n");
+      exit(1);
+   }
+
+   if (inst->fdIndex == NO_FD) {                 /* input from aux buses */
+      int *auxin = inst->bus_config->auxin;      /* auxin channel list */
+
+      assert(auxin_count > 0 && in_count == 0);
+
+      status = get_aux_in(inarr, inchans, frames, auxin, auxin_count);
+   }
+   else if (inst->fdIndex == AUDIO_DEVICE) {     /* input from mic/line */
+      int *in = inst->bus_config->in;            /* in channel list */
+
+      assert(in_count > 0 && auxin_count == 0);
+
+      status = get_audio_in(inarr, inchans, frames, in, in_count);
+   }
+   else {                                        /* input from file */
+      int *in = inst->bus_config->in;            /* in channel list */
+
+      assert(in_count > 0 && auxin_count == 0);
+
+      status = get_file_in(inarr, inchans, frames, in, in_count, inst);
+   }
+
+   return status;  // FIXME: or was this supposed to be nsamps or nbytes?
+}
+
+
+
+/*
+
+// How about an alternative function for insts that want to be more bus savvy?
+
+int rtgetin_from_bus(float inarr[], Instrument *inst, int nsamps,
+                     BusType bus_type, int bus_chan)
+
+// Problem #1: what buses get input from fdIndex?
+// Need more than one fdIndex per inst (for convolve, e.g.)?
+
+// Hook up with idea for:  rtinput("foo.aiff", "aux 1-2 in")
+
+// Would need many changes all over this file (and others).
+
+*/
