@@ -36,15 +36,18 @@ extern "C" {
 // -------------------------------------------------------------- makefilter ---
 
 enum {
-	kSmoothFilter,
+	kConstrainFilter,
+	kFitRangeFilter,
 	kQuantizeFilter,
-	kFitRangeFilter
+	kSmoothFilter
 };
 
 static Handle
 _makefilter_usage()
 {
 	die("makefilter",
+		"\n   usage: filt = makefilter(pfield, \"constrain\", table, tightness)"
+		"\nOR"
 		"\n   usage: filt = makefilter(pfield, \"fitrange\", min, max [, \"bipolar\"])"
 		"\nOR"
 		"\n   usage: filt = makefilter(pfield, \"quantize\", quantum)"
@@ -66,12 +69,14 @@ makefilter(const Arg args[], const int nargs)
 
 	int type;
 	if (args[1].isType(StringType)) {
-		if (args[1] == "smooth" || args[1] == "lowpass")
-			type = kSmoothFilter;
-		else if (args[1] == "quantize")
-			type = kQuantizeFilter;
+		if (args[1] == "constrain")
+			type = kConstrainFilter;
 		else if (args[1] == "fitrange")
 			type = kFitRangeFilter;
+		else if (args[1] == "quantize")
+			type = kQuantizeFilter;
+		else if (args[1] == "smooth" || args[1] == "lowpass")
+			type = kSmoothFilter;
 		else {
 			die("makefilter", "Unsupported filter type \"%s\".",
 								(const char *) args[1]);
@@ -101,10 +106,13 @@ makefilter(const Arg args[], const int nargs)
 	}
 
 	PField *filt = NULL;
-	if (type == kSmoothFilter)
-		filt = new SmoothPField(innerpf, resetval, arg1pf);
-	else if (type == kQuantizeFilter)
-		filt = new QuantizePField(innerpf, arg1pf);
+	if (type == kConstrainFilter) {
+		const double *table = (double *) *arg1pf;
+		const int len = arg1pf->values();
+		if (table == NULL || len < 1)
+			return _makefilter_usage();
+		filt = new ConstrainPField(innerpf, table, len, arg2pf);
+	}
 	else if (type == kFitRangeFilter) {
 		if (arg2pf) {
 			if (nargs > 4 && args[4] == "bipolar")
@@ -115,6 +123,10 @@ makefilter(const Arg args[], const int nargs)
 		else
 			return _makefilter_usage();
 	}
+	else if (type == kQuantizeFilter)
+		filt = new QuantizePField(innerpf, arg1pf);
+	else if (type == kSmoothFilter)
+		filt = new SmoothPField(innerpf, resetval, arg1pf);
 
 	return _createPFieldHandle(filt);
 }
