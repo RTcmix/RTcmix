@@ -49,6 +49,7 @@ protected:
 	float	*_alpvals,*_buzvals;	// signal arrays
 	long	_jcount;
 	int		_counter;
+	bool	_autoCorrect;
 	int		_leftOver, _savedOffset;
 
 private:
