@@ -69,7 +69,7 @@ gen1(struct gen *gen, char *sfname)
    int      i, fd, header_type, data_format, data_location, inchan;
    int      gen_chans, gen_frames, gen_samps, file_chans, file_frames;
    int      start_frame, bytes_per_samp, byteswap, is_float;
-   int      buf_start_frame, end_frame, frames_read, buf_frames, buf_samps;
+   int      buf_start_frame, end_frame, frames_read, buf_frames;
    long     file_samps;
    off_t    seek_to;
    float    request_dur, filedur, inskip, *block, *blockp;
@@ -123,8 +123,6 @@ gen1(struct gen *gen, char *sfname)
       gen_frames = file_frames - start_frame;
 
    gen_samps = gen_frames * gen_chans;
-
-   end_frame = start_frame + gen_frames;
  
    block = (float *) malloc((size_t) (gen_samps * sizeof(float)));
    if (block == NULL)
@@ -142,15 +140,16 @@ gen1(struct gen *gen, char *sfname)
       exit(1);
    }
 
-   buf_samps = BUFSIZE / bytes_per_samp;
-   buf_frames = buf_samps / file_chans;
-
 #ifdef SNDLIB_LITTLE_ENDIAN
    byteswap = IS_BIG_ENDIAN_FORMAT(data_format);
 #else
    byteswap = IS_LITTLE_ENDIAN_FORMAT(data_format);
 #endif
    is_float = IS_FLOAT_FORMAT(data_format);
+
+   buf_frames = (BUFSIZE / bytes_per_samp) / file_chans;
+
+   end_frame = start_frame + gen_frames;
 
    blockp = block;
    frames_read = 0;
