@@ -8,7 +8,7 @@ CMIXDIR = $(TOPDIR)/RTcmix-2.3.0
 LIBDESTDIR = $(CMIXDIR)/shlib
 
 # add new instruments to this list (e.g., insts.std, insts.jg)
-INST_DIRS = insts.base insts.std insts.jg
+INST_DIRS = insts.base #insts.std insts.jg
 
 # add new packages to this list (e.g., interfaces.std)
 PACKAGE_DIRS =
