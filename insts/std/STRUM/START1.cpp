@@ -21,7 +21,7 @@ extern "C" {
 
 START1::START1() : Instrument()
 {
-	// future setup here?
+	branch = 0;
 }
 
 START1::~START1()
@@ -41,9 +41,9 @@ int START1::init(float p[], int n_args)
 // p12 = stereo spread [optional]
 // p13 = flag for deleting pluck arrays (used by FRET, BEND, etc.) [optional]
 
-	float freq;
+	float freq, dur = p[1];
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	nsamps = rtsetoutput(p[0], dur, this);
 	 
 	strumq1 = new strumq;
 	curstrumq[0] = strumq1;
@@ -66,6 +66,18 @@ int START1::init(float p[], int n_args)
 
 	d = 0.0;
 
+   amptable = floc(1);
+	if (amptable) {
+		int amplen = fsize(1);
+		tableset(dur, amplen, amptabs);
+	}
+	else {
+		advise("START1", "Setting phrase curve to all 1's.");
+		aamp = amp;
+	}
+
+	skip = (int)(SR / (float)resetval);
+
 	return(nsamps);
 }
 
@@ -78,11 +90,16 @@ int START1::run()
 	Instrument::run();
 
 	for (i = 0; i < chunksamps; i++) {
+		if (--branch < 0) {
+			if (amptable)
+				aamp = tablei(cursamp, amptable, amptabs) * amp;
+			branch = skip;
+		}
 		a = strum(d, strumq1);
 		b = dist(dgain*a);
 		d = fbgain*delay(b, dq);
 
-		out[0] = (cleanlevel*a + distlevel*b) * amp;
+		out[0] = (cleanlevel*a + distlevel*b) * aamp;
 
 		if (outputchans == 2) { /* split stereo files between the channels */
 			out[1] = (1.0 - spread) * out[0];

@@ -19,7 +19,7 @@ extern "C" {
 
 FRET1::FRET1() : Instrument()
 {
-	// future setup here?
+	branch = 0;
 }
 
 int FRET1::init(float p[], int n_args)
@@ -29,7 +29,9 @@ int FRET1::init(float p[], int n_args)
 // p7 = feedback pitch (oct.pc); p8 = clean signal level
 // p9 = distortion signal level; p10 = amp; p11 = stereo spread [optional]
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	float	dur = p[1];
+
+	nsamps = rtsetoutput(p[0], dur, this);
 
 	strumq1 = curstrumq[0];
 	freq = cpspch(p[2]);
@@ -49,6 +51,18 @@ int FRET1::init(float p[], int n_args)
 	firsttime = 1;
 	d = 0.0;
 
+   amptable = floc(1);
+	if (amptable) {
+		int amplen = fsize(1);
+		tableset(dur, amplen, amptabs);
+	}
+	else {
+		advise("FRET1", "Setting phrase curve to all 1's.");
+		aamp = amp;
+	}
+
+	skip = (int)(SR / (float)resetval);
+
 	return(nsamps);
 }
 
@@ -67,11 +81,16 @@ int FRET1::run()
 		}
 
 	for (i = 0; i < chunksamps; i++) {
+		if (--branch < 0) {
+			if (amptable)
+				aamp = tablei(cursamp, amptable, amptabs) * amp;
+			branch = skip;
+		}
 		a = strum(d, strumq1);
 		b = dist(dgain*a);
 		d = fbgain*delay(b, dq);
 
-		out[0] = (cleanlevel*a + distlevel*b) * amp;
+		out[0] = (cleanlevel*a + distlevel*b) * aamp;
 
 		if (outputchans == 2) { /* split stereo files between the channels */
 			out[1] = (1.0 - spread) * out[0];

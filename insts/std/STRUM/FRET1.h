@@ -3,13 +3,14 @@
 
 class FRET1 : public Instrument {
 	float freq,tf0,tfN,fbpitch;
-	float spread,amp;
+	float spread,amp,aamp;
 	strumq *strumq1;
 	delayq *dq;
 	float dgain,fbgain;
 	float cleanlevel,distlevel;
 	float d;
-	int firsttime;
+	float *amptable, amptabs[2];
+	int firsttime,branch,skip;
 
 public:
 	FRET1();
