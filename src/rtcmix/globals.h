@@ -42,11 +42,11 @@ GLOBAL ALport in_port;
 GLOBAL ALport out_port;
 #endif
 
-/* Note: these 4 vars also extern in rtdefs.h, for use by insts */
-GLOBAL int MAXBUF;    /* NOTE NOTE NOTE: MAXBUF is a constant in SGI version! */
+/* Note: these 3 vars also extern in rtdefs.h, for use by insts */
 GLOBAL int NCHANS;
 GLOBAL int RTBUFSAMPS;
 GLOBAL float SR;
+
 GLOBAL int audioNCHANS;
 
 
