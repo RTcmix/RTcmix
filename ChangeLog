@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+Thursday, March 13, 2005 John Gibson <johgibso-at-indiana.edu>
+
+   * Two new makefilter modes: constrain (for constraining pfield output
+     to values stored in a table) and map (for routing pfield output
+     through a transfer function)
+
 Thursday, March 10, 2005 John Gibson <johgibso-at-indiana.edu>
 
    * New additive synthesis instrument: MULTIWAVE
