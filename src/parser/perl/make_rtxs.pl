@@ -32,7 +32,7 @@ print qq~
 #include "XSUB.h"
 #include $maxdispargs_h
 
-extern double parse_dispatch(char *, double [], short);
+extern double parse_dispatch(char *, double [], int);
 
 static char *_rtcmix_funcs[] = {"",
 ~;
