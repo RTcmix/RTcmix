@@ -207,6 +207,7 @@ public:
 	static double octpch(const double);
 	static double cpspch(const double);
 	static double pchoct(const double);
+	static double pchmidi(const double);
 	static double boost(const double);
 
 	ConverterPField(PField *innerPField, ConverterFunction cfun);
