@@ -1,12 +1,12 @@
 # Change stuff in here as needed
 
 # The directory containing the RTcmix directory
-#TOPDIR = /usr/local/src
-TOPDIR = /musr/src
+TOPDIR = /usr/local/src
+#TOPDIR = /musr/src
 
 # The name of the RTcmix directory
-#CMIXDIR = $(TOPDIR)/RTcmix-3.0.2
-CMIXDIR = $(TOPDIR)/RTcmix.dev
+CMIXDIR = $(TOPDIR)/RTcmix-3.0.2
+#CMIXDIR = $(TOPDIR)/RTcmix.dev
 
 # The dir that will contain links to the instrument dynamic shared objects
 LIBDESTDIR = $(CMIXDIR)/shlib
