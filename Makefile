@@ -67,24 +67,6 @@ rtstuff::
 	@cd rtstuff; $(MAKE) all
 	@echo "done.";echo""
 
-insts.base::
-	@echo "making insts..."
-	@echo "include $(MAKEFILE_CONF)" > insts.base/insts.conf
-	@cd insts.base; $(MAKE) all
-	@echo "done.";echo""
-
-insts.dev::
-	@echo "making insts.dev..."
-	@echo "include $(MAKEFILE_CONF)" > insts.dev/insts.conf
-	@cd insts.dev; $(MAKE) all
-	@echo "done.";echo""
-
-insts.std::
-	@echo "making insts.std..."
-	@echo "include $(MAKEFILE_CONF)" > insts.std/insts.conf
-	@cd insts.std; $(MAKE) all
-	@echo "done.";echo""
-
 head::
 	@echo "making head..."
 	@cd head; $(MAKE) all
