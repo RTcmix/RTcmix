@@ -1,6 +1,7 @@
 /* message functions, designed for use by instruments and others.
                                                         -JGG, 5/16/00
 */
+#include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <globals.h>

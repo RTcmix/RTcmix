@@ -1,6 +1,8 @@
 /*
  *	merror.c: text of mix error messages
  */
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include	"mixerr.h"
 
