@@ -1,6 +1,13 @@
 /*
  *	ugens.h: define unit generator structure
  */
+#ifndef _UGENS_H_ 
+#define _UGENS_H_ 1
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+
+
 #define	UG_NSIZ	7	/*  Max len of UG name	*/
 #define NAMESIZE 128    /* Max size of file name */
 #define	UG_NULL	(struct ug_item *)0
@@ -131,6 +138,10 @@ float table(long, float*, float*);
 float tablei(long, float*, float*);
 void tableset(float, int, float*);
 float wshape(float, float*, int);
-/* int rtgetin(float *, int, int);  Perhaps not w/o full-duplex */
 float rrand(void);
 
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+#endif /* _UGENS_H_ */
