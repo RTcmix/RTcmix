@@ -11,7 +11,7 @@
 #include <sys/socket.h>
 #endif
 
-#include "RTsockfuncs.h"
+#include <RTsockfuncs.h>
 
 /* RTsockfuncs.c - a set of utility functions for real-time cmix interface
    programming */
@@ -78,8 +78,6 @@ int RTopensocket(int socket, char *binaryname) {
 	int s;
 	struct sockaddr_in sss;
 	struct hostent *hp;
-	void parse();
-	int execute();
 
 	sprintf(syscall, "%s ", binaryname);
 	sprintf(flags, "-i -n -s ");
@@ -246,17 +244,17 @@ void RTtimeit(float interval, void *func)
 
 void parse(char *buf, char **args)
 {
-	while (*buf != NULL) {
+	while (*buf != '\0') {
 		/* Strip whitespace.  Use nulls, so that the previous argument
 		    is terminated automatically. */
 		while ((*buf == ' ') || (*buf == '\t')) 
-			*buf++ = NULL;
+			*buf++ = '\0';
 
 		/* Save the argument */
 		*args++ = buf;
 
 		/* Skip over the argument. */
-		while ((*buf != NULL) && (*buf != ' ') && (*buf != '\t')) 
+		while ((*buf != '\0') && (*buf != ' ') && (*buf != '\t')) 
 			buf++;
 	}
 
