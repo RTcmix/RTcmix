@@ -1,0 +1,221 @@
+This package is what we are calling "Release 2.0" of RTcmix.  RTcmix
+is a superset of CMIX, an old and venerable(!) sound synthesis and
+signal-processing language written by Paul Lansky in the early 1980's.
+The "RT" part means it is "real-time", with the ability to process and
+create sound 'on-the-fly'.  All of the original CMIX code exists
+unchanged in this version, so that older scores and instruments should
+run (and also be re-compiled) with no difficulties.  For more information
+about CMIX or RTcmix, see the web sites at Columbia 
+
+	http://www.music.columbia.edu/cmix
+
+or Princeton 
+
+	http://www.music.princeton.edu/winham/cmix.html
+
+The Columbia web site is current with this version of RTcmix; the Princeton
+site has documentation on the disk-based CMIX included within this
+package.
+
+There are README files in most of the subdirectories of this package
+describing the files there -- full source is included in this package!
+Also see the "README1.0" file in this directory for some basic/background
+information (I added a couple of RTcmix2.0 comments there, too).
+
+
+--------------------------------------------------
+There are quite a few additions from the earlier RTcmix (1.0), mainly in
+some of the lower-level scheduling stuff (fixes) and expanded interface
+capabilities.  We have decided to split off the interfaces into a separate
+package: 
+
+	RTcmix2.0.interfaces.tar.gz 
+
+(available at http://www.music.columbia.edu/cmix)
+
+This interface package includes java, lisp (gcl), MIDI, OpenGL, X/motif,
+and a few other examples of how RTcmix can be driven from other apps.
+
+There is a fair amount of documentation included in this version in the
+cmix_docs subdir; but we will probably be updating it periodically, so
+please check http://www.music.columbia.edu/cmix every once in awhile.
+
+
+The Makefile is now set up for compiling on an SGI Indy running IRIX 6.2.
+It also assumes that you will be installing RTcmix in a /musr/cmix/
+hierarchy.  You can easily change the Makefile in the top directory to
+override this (and to set up optimization flags for IRIX 6.3 and 6.5).
+
+To compile do the following:
+
+  1.  Unpack the RTcmix2.0.irix.tar.gz file (it will unpack
+	into an RTcmix2.0 subdir)
+  2.  Rename this subdir or link it as /musr/cmix/ (or whatever you
+	choose, editing the Makefile appropriately)
+  3.  Go to the top of this new direcory and type "make"
+
+All of the executable programs are linked into the bin/ dir, so be sure
+to include it on your $PATH if you want easy access to the fun sound-things.
+The total compiled space at present is about 25 Mbytes, this can be greatly
+reduced to < 10 Mbytes by removing all the "standalone" instruments in the
+insts/ directory and using the DSO "CMIX" or "cmix" command.  Typing 
+
+	make onlyDSO
+
+in the insts/ directory after building RTcmix will accomplish this.
+
+
+Check the README in the insts/ subdir for a description of the instruments.
+We're working on some documentation for those wanting to create their
+own interface or instrument -- stay tuned!  In the meantime, the 
+insts/TEMPLATE/ directory is a good place to start.  Also check
+the README1.0 file in this directory for some basic information.
+
+Doug Scott (dscott@sgi.com) has made some significant improvements to
+this RTcmix -- see his "CHANGES" file below for a description.  One
+of the biggest changes has to do with how we now invoke RTcmix/CMIX
+instruments.  Although it is still possible to use "standalone"
+instrument commands, the definitely cooler way to do this is to
+use the load() directive in the score and just call the generic
+"CMIX" or "cmix" command.  See the README file in the insts/ subdir for
+more information.
+
+
+--------------------------------------------------
+NOTE TO USERS OF OLDER CMIX/RTcmix PACKAGES:
+
+Ok, I lied when I said the older, disk-based CMIX existed unchanged
+within RTcmix.  We did change the p-field ordering of the older instruments
+in an attempt to standardize some of the basic p-fields.  The most obnoxious
+change is in the "mix" and "stereo" commands -- see the README in the
+insts/ directory for the new version.  The rest of the old code is
+untouched by human hands...
+
+
+--------------------------------------------------
+Dave Topper (topper@virginia.edu) has a Linux version, we'll be putting
+it on http://www.music.columbia.edu/cmix as soon as we get it merged
+with this 2.0 release.
+
+Many many thanks to Luke DuBois, Doug and Dave, John Gibson at UVa, and the
+rest of the happy Columbia folks for assisting with this.  And of course
+thanks to the original CMIX hackers: Paul Lansky(!), Andy Milburn, Dave Madole,
+Lars Graf...
+
+
+Send me e-mail with problems, snazzy ideas, whatever.
+
+Brad Garton
+Columbia University
+11/1998
+brad@music.columbia.edu
+
+
+
+--------------------------------------------------
+Doug Scott's CHANGES:
+
+
+/* Here is a list of some of the changes I have made to RTcmix */
+
+1) Added missing 'int' or 'void' to extern decls wherever possible.
+
+2) Rewrote Makefiles to allow changes in compiler, flags, etc., all in the top
+   level Makefile -- and these settings will be used in ALL subdirectories
+   automatically, if you run your make from the top level.  You can still do
+   run 'make' in any individual subdir:  You will end up with the default
+   flags, etc, that were there before I made my changes, but you must specify
+   that you want to make the standalone binary.  For example, in the FMINST
+   directory you would have to type 'make FMINST' because 'make' will attempt
+   (unsuccessfully) to create the DSO without the necessary flags.
+   If any thing seems broken in this regard, let me know.
+   There is no reason why anyone should need the old binaries anymore.
+
+3) Expanded rtsetparams() to handle up to 4 channels, and to allow
+   specification of an output port as p[3] (if running under IRIX 6.3 or
+   later).  Fixed bug:  channels must be specified before queue size to have
+   an effect.  Also allows reset of values if rtsetparams() called more than 
+   once.
+
+4) Rewrote rtaddout() to leave the data in floating point format.  The AL
+   ports can handle floating point data, and this reduces the CPU time needed
+   to write samples out, and gives a better signal-to-noise ratio.  Also added
+   a block call rtbaddout() which works like baddout() used to.  More
+   efficient than doing it one sample at a time.
+
+5) Rewrote rtinput(), rtsetinput(), and rtgetin() to use a new global input
+   file descriptor table.  Each instrument instance has an index into this
+   table.  All instruments which share an input file have the same index,
+   and the table has a reference count on each open fdesc to allow the file
+   to be closed when all references are done.  rtgetin() simply seeks the file
+   to wherever the current instrument needs it, and then reads and updates
+   the file offset (stored in the Instrument).
+
+   This allows any number of simultaneous instrument calls using any given
+   file, and allows up to whatever the max file descriptor count or 128
+   (whichever is less) number of different files within a single run.
+
+   Instruments no longer store the filename, because they never have to reopen
+   the file.  There is no longer any "first time" behavior;  every call to
+   rtgetin() is the same.
+
+6) Added virtual destructor to Instrument class so users can declare their own
+   subclass destructors to clean up private subclass memory.
+
+7) All CMIX instruments with the exception of MIX and mix are now created as 
+   dynamically shared libraries (DSOs) rather than stand-alone executables.
+
+   This means:
+
+   A) Each customized instrument is small (most are ~ 25kbytes).
+
+   B) Custom instruments do not link against cmix.o or the rt*.o file.  This
+      means that changes to the core cmix code (except changes to headers)
+      do NOT require a recompile of the instrument DSO!
+
+      And Most Importantly:
+
+   C) You can call ANY RTCMIX INSTRUMENT routine -- any number of them -- even
+      ALL of them, should you choose -- from one (1) program, the original
+      'MIX' binary.  No more 'FMINST' for fm work, 'AMINST' for am work,
+      or 'STRUM' for strumming.  You can do all these in MIX.  How?  There is
+      one new routine called load().  It is this simple:  To run FMINST from
+      MIX, your score would look like this:
+
+      rtsetparams(44100, 1);	/* set output params */
+      rtinput("/snd/myfile.snd");
+
+      load("FMINST");	/* this loads the FMINST DSO */
+
+      FMINST(....);	/* use FMINST */
+
+      Then feed this score to MIX!
+
+
+      If you have created a custom instrument DSO following the TEMPLATE
+      example, you will end up with a file called libMYINSTRUMENT.so, where
+      "MYINSTRUMENT" is whatever you named your instrument.  To use it, 
+      just put a line:
+
+      load("./libMYINSTRUMENT.so");
+
+      at the top of your score.  Note that this is specified as a file name,
+      where the FMINST was not.  Any pre-existing RTCMIX instrument which has
+      a pre-installed DSO can use the first form;  custom DSOs use the latter
+      form.
+
+      How does this work?  SGI's IRIX (and most other UNIX operating systems)
+      allow object code to be dynamically loaded, i.e., read from a file and
+      added to a running program.  They also include a feature for accessing
+      the functions and other symbols which are in that dynamically loaded
+      object.  When you give a load("FOO") command, cmix looks in its default
+      DSO location for a file called "libFOO.so".  If it doesn't find it, it
+      returns an error message.  If it does find it, it loads it in.  It then
+      looks in that object to see if it has the magic "profile" and/or
+      "rtprofile" functions.  It it does, it calls them -- and this makes all
+      the cmix functions in that DSO available to MIX!
+
+Douglas Scott
+September, 1998
+
+

@@ -1,0 +1,206 @@
+[NOTE:  This is the older RTcmix1.0 README -- read the README2.0 file
+ first...]
+
+
+Hey folks!
+
+I guess this is the "beta" version of RTcmix, complete with real-time 
+signal-processing, scheduling on-the-fly via a TCP/IP socket, and (of
+course!) all other sorts of cool stuff.  Dave Topper and I
+managed to fix most of the bugs with the preliminary version,
+and this seems reasonably stable.  We still plan to add a
+bit more, so it may shift around slightly in the next few
+months.  It runs all the older CMIX routines ok, I think, if
+you use the correct flags, etc. in the Makefiles.  The only
+hard-wired constraint that I know of right now is that we have
+an upper bound of 10000 makegens that can be instantiated in
+any given run.  Of course this number can be changed, and we'll
+make it dynamically allocable in the very near future.
+
+Build it by typing "make" in the top-level directory.  "make clean"
+strips it down to the source again for re-building.
+
+
+Some useful info:
+
+Running RTcmix instruments:
+
+  [NOTE to current users of RTcmix2.0:  The methodology of calling
+   RTcmix/CMIX instruments has changed to take advantage of the new
+   DSO capabilities (using the "load()" directive in scores).  The following
+   will still work, but the better way to do it is to invoke the base
+   CMIX executables by just typing "CMIX < score.file" or "cmix < score.file"
+   and using "load()" in the scorefiles to dynamically load the instruments
+   you need.  See the README in the insts/ subdirectory for more information.]
+
+You can run RTcmix instruments (there the ones in CAPITAL letters
+in the insts directory) in three modes --
+
+1.
+	INSTRUMENT < score.file
+
+will run the same as "normal" cmix, only will realize sound in
+real-time.  Processing will start after the scorefile is completely
+parsed, and will finish at the end of the last scheduled event.
+
+2.
+	INSTRUMENT -i < score.file
+
+will run in "interactive" mode.  It will parse the entire scorefile and
+schedule any events found, but will then continue to listen for sockdata
+structures through TCP/IP socket number 1102.  Often I use a scorefile that
+only contains some initialization commands (such as rtsetparams(), maybe
+some makegens, etc.) and then do the rest through the socket.  You can
+also use this mode to "play along" with a set scorefile.  NOTE:  you
+*must* have an rtsetparams() in the scorefile to run in this mode!  Some
+important variables (SR, RTBUFSAMPS, etc.) won't get set otherwise.
+
+3.
+	INSTRUMENT -i -n
+
+will start the instrument running and will listen for all data (including
+rtsetparams() info) through the socket.  Your client application has
+to send rtsetparams() before any audio processing can occur.  It will not
+parse a scorefile at all, even if the " < score.file" is included.
+
+
+  [NOTE:  Item 4 is actually new to RTcmix2.0, but it seemed appropriate
+   to include it here.]
+
+4.
+	INSTRUMENT -i -n -c
+
+will do all of the above stuff, plus engage "continuous update" mode,
+allowing instruments designed with the rtupdate() feature to change
+parameters as they execute.  The basic WAVETABLE and FMINST instruments
+show how this can be done.
+
+
+Each instrument in the insts directory has a number of sample scorefiles, 
+and there are a few sample client applications in the interface directory
+-- see the README there for how to run them.
+
+
+MINC Level:
+
+rtsetparams() --  This replaces the output() call in a scorefile,
+	it sets up the convertors, etc.  p[0] is the sampling
+	rate and p[1] is the number of output channels.  p[2]
+	(optional) will set the size of the i/o buffers used by
+	RTcmix.  The default is 8192 samples, but it can be set
+	as low as 256 and things still work.  The trade-off is
+	available computation time vs. interactive latency --
+	you will have to experiment until you find what works
+	and what doesn't.  p[2] does not necessarily have to
+	be a power of 2.
+
+rtinput() -- This replaces the input() call in the score, and
+	has the same basic operation with respect to existing
+	soundfiles.  However, if the filename is "AUDIO", then
+	it will set up for real-time input from the mic, line
+	or digital input ports.  The default values are to read
+	sound from the mic in stereo.  It uses the same sampling
+	rate as set by rtsetparams().  For example:
+
+	rtsetparams(44100, 2)
+	rtinput("AUDIO")
+
+	will read from the microphone at 44.1k SR, reading
+	a stereo signal
+
+	rtinput("AUDIO", "LINE", 1)
+
+	will read from the line input at 44.1k, mono.
+	(p[1] and p[2] are both optional)
+
+	NOTE:  I wrote this under IRIX 6.2, using the old SGI
+	API for setting audio devices.  We need to change this
+	to conform to the new way of selecting which audio resource
+	to use -- I think "MIC" will tend to read from the 'camera
+	mic' on 02s running 6.3.  Arg!
+
+rtoutput() -- This will write an aiff audio file as it creates
+	the sound.  For example:
+
+	rtoutput("cool.snd") 
+
+	will produce an aiff file called "cool.snd" in the current 
+	directory; with no "gaps" or bobbles that might be present 
+	because of overloading in real-time (i.e. the writing of the 
+	file can occur out of real-time and still produce a continuous
+	soundfile).  rtoutput() is destructive, so it checks and
+	exits with a warning if it finds an existing file of
+	the same name.  Note that this doesn't need "sfcreate"
+	or anything like that to work, but of course it only
+	writes integer soundfiles.
+
+	I'm not sure how well this works in interactive mode.
+
+
+INSTRUMENT Level:
+
+rtsetinput(), rtsetoutput() -- These replace setnote(), third param
+	is a pointer to the current instrument rather than a
+	CMIX filedesc.
+
+rtgetin() -- replaces bgetin(), call it once at the beginning
+	of each "chunk" of samples to compute.
+
+rtaddout() -- replaces ADDOUT, only with 1 param (the output array).
+
+rtprofile() and RT_INTRO() -- these work in the same was as profile()
+	and UG_INTRO, only for real-time instruments.
+
+  [NOTE: new to RTcmix2.0...]
+
+rtupdate() -- this allows instruments to change parameters as they
+	are executing, this effecting continuous control.  Several examples
+	in the RTcmix2.0.interfaces.tar.gz package show how this is done.
+
+
+I also added a new gen routine, gen 25, that creates Hanning or
+Hamming windows.  it has only 1 p-field after the 3 setup p-fields,
+a "1" creates a Hanning window and a "2" creates a Hamming window,
+i.e.
+
+	makegen(1, 25, 1000, 1) /* Hanning window */
+	makegen(1, 25, 1000, 2) /* Hamming window */
+
+
+  [NOTE: new to RTcmix2.0...]
+
+Luke Dubois wrote gen 20, which will set up different random number
+distributions.  Like gen 25, it takes a single argument after the
+npoints parameter.  The arguments are:
+
+     /* fills a gen with random numbers b/t 0 and 1 --
+      * the argument is the distribution type:
+      * 0 = even distribution
+      * 1 = low weighted linear distribution
+      * 2 = high weighted linear distribution
+      * 3 = triangle linear distribution
+      * 4 = gaussian distribution
+      * 5 = cauchy distribution
+      *
+      * by r. luke dubois - CMC/CU, 1998.
+      *
+      * distribution equations adapted from dodge and jerse.
+      *
+      */
+
+
+
+There are a lot of sample instruments (plus a bunch of older CMIX
+routines) in the insts directory -- see the README there for
+a brief listing.  We'll be adding more!
+
+
+The version here compiles on SGIs under IRIX 6.2, Dave Topper
+has a Linux port of this if anyone wants it (topper@panix.com).
+
+Let me know what you think!
+
+brad
+
+
+July 31, 1997

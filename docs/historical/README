@@ -1,0 +1,192 @@
+Hey ho!
+
+These are the essential directories for a really beta version of 
+real-time cmix.  I hacked the dickens out of a lot of stuff, and in
+the process probably killed most of Doug's elegant portability #ifdefs,
+etc.  This will only compile on an SGI (mine was running 6.2 at home,
+gonna try 5.3 tomorrow).   It seems to work ok; I'm getting about 30 or
+so 44.1k mono wavetable instruments running on my 133MHz Indie.  What fun!
+I do know already  of several bugs -- listed below.
+
+Anyhow, some info:
+
+In insts/WAVETABLE is an example of an RTcmix instrument.  Try running
+it by saying "WAVETABLE < TT1.sco" or "WAVETABLE < TT2.sco" (just like good
+ole cmix!).  It may sound a little grungy because I'm using oscil (not oscili)
+in this version + I'm updating the amplitude envelope only every 10 samples.
+
+
+HERE'S HOW IT WORKS
+
+from the perspective of the score --
+
+	the "rtsetparams" Minc function sets up the convertors with
+	two arguments; p0 = sampling rate and p1 = nchannels.  The
+	code for this is in sys/rtsetparams.c.  Any non-Minc function
+	in the score is then examined as a possible RT instrument, and
+	then gets slotted into the RT queue.  At the end of score
+	parsing, RTcmix simply pops down the queue and fires off
+	the instruments.
+
+from the Minc perspective --
+
+	I did some heavy damage to the Minc directory (didn't touch
+	the parser, though!).  Basically, Minc does what it normally
+	does EXCEPT that the "parse_dispatch" function does two different
+	things now.  It first takes the parsed Minc token and examines
+	it with "checkfuncs".  If it is indeed a valid Minc function,
+	it goes ahead and does the standard cmix thing with it.  If
+	it isn't, it pops the token onto a list called "pd_list" with
+	some limited state info about the active makegens, p-fields,
+	etc.
+
+	After score parsing, this list is then passed one element at a
+	time to the checkInsts function, which looks for valid RTInstrument
+	tokens.  Any that it finds are then created and initialized,
+	and slotted into the big "rtqueue" list.  "rtqueue" is a list
+	of lihked-lists of Instrument names, with each element in the top 
+	list representing RTBUFSAMPS samples.  The "traverse" function
+	then simply goes down this list of lists and collects samples
+	from all the active Instruments (accomplished in "rtdispatch").
+	At the end of each list entry, it sends the filled sample
+	buffers to the hungrily-awaiting convertors (using "rtsendsamps",
+	in sys/rtsendsamps.c).
+
+from the Instrument's perspective --
+
+	Each Instrument has two member functions that must be defined
+	by the Instrument designer.  A new instrument is intended to
+	inherit the basic stuff from the base Instrument class (in
+	rtstuff/Instrument.C), but the base class only contains a few
+	variables used in setting up the sample loop.  I tried to make
+	an Instrument look as much like an existing cmix function
+	as possible, mainly to simplify the job of porting stuff
+	already done.  The Instrument::init(p, n_args) member function
+	does all the setup stuff prior to the sample loop (the code
+	should look familiar).  Note that the traditional call to
+	"setnote()" is replaced with a call to "setqueue()".  setqueue()
+	schedules the instrument into the appropriate slot(s) on the
+	rtqueue list.
+
+	The Instrument::run() member function is called
+	from the rtqueue list, and it is expected to deliver
+	RTBUFSAMPS worth of samples each time (except when it
+	finished by reaching nsamps).  The countdown variable
+	is used to send out zeroes for notes that don't start exactly
+	on an RTBUFSAMPS boundary (i.e. most notes).  The "cursamp"
+	variable is used to mark how many samples have actually
+	passed, and it holds its value between Instrument::run()
+	calls, so it can be used in table() calls, etc.
+
+	So the user-written Instrument sees a call to init() when
+	it gets set up on the rtqueue list, and then it sees a number
+	of calls to run() depending on how long the note is.
+
+	Note the rtprofile() function used to introduce the Instrument
+	to the Minc list of RTinstruments.  It is slightly different
+	than the equivalent profile() cmix function.  rtprofile()
+	has to create a new instance of the user-written Instrument,
+	so it has to have an 'auxiliary' function (makeWAVETABLE() in
+	my example) to do the job.  RT_INTRO cannot call the constructor
+	or the init routine of the user-written Instrument directly.
+
+
+
+The cool thing is that all existing cmix instruments and functions
+should compile and run correctly with the sys/cmix.o that this
+system builds.  I have included a sample wavetable instrument
+in the insts/wavetable directory with some sample scores.  I didn't
+touch the code in this at all -- the only big thing I had to
+do was to add a dummy rtprofile() function because main.C
+now calls it (you must also include a dummy profile() function
+when creating an RTinstrument).
+
+I had to do some major changes in H/ugens.h, but I think it works ok
+with existing instruments.  I'll be compiling more of mine soon.  You
+can even mix older cmix instruments with the RTinstruments --
+the older ones will go first and then the rtqueue will fire up
+at the end of unpacking the Minc code.  Wheeeeeee!
+
+ONE BIG PROBLEM with existing cmix instruments:  Where oh where is
+the correct version of wheader.c and the head/ directory so that
+sfcreate and SGI's sfplay are happy with each other?  I grabbed
+the one from strat, but sfplay doesn't like it at all.  I tested my
+wavetable instrument by using the 'raw' option of sfplay -- pretty
+ugly.  I'm hoping that there exists a happy aiff/bsd cmix that will
+allow us to transport files back and forth.
+
+
+BUGS AND GUNK I KNOW ABOUT (RT stuff only)
+
+-- There seems to be a problem with notes shorter than RTBUFSAMPS.  I
+   think that with short notes the Instrument is fast enough that
+   it overwrites part of the buffers it sends to the audio_port.  Not
+   100% sure this is the problem, though.  If you want to hear it
+   mess up, go into TT2.sco in the insts/WAVETABLE dir, and make
+   the note duration (p[2]) shorter than 0.3 in the WAVETABLE()
+   calls.
+
+-- The rtqueue[] list is set arbitrarily at 10000 elements now (in
+   Minc/main.C).  RTBUFSAMPS (in rtstuff/rtdefs.h) is set at 8192,
+   giving us a maximum of 81920000 samples (about 30 minutes at 441k
+   mono).  This list should be malloc'd to prevent memory waste
+   and allow us to go longer if we want.
+
+   Actually, I'm surprised that this doesn't seem more a memory
+   hog than it is.  There is a lot that can be done to clean it up.
+
+-- Similarly, the maximum number of RTinstruments that can queue'd
+   is set at #define MAXCALLS 500 (in Minc/defs.h).  The pd_list[]
+   using this should also be malloc'd.
+
+-- I had to change the way makegen, floc and fsize work because
+   the RTinstruments run *after* the Minc score unpacks.  I
+   increased the farray[] storage area from 256 to 1000 because
+   makegen now creates unique copies of every gen called, even when
+   it supposedly "overwrites" a gen  -- the TT2.sco in insts/WAVETABLE
+   demonstrates this.
+
+   This brings up a more general problem about preserving state
+   information existing 'outside' a traditional cmix user-written
+   instrument.  For example, many of us have written code that uses
+   "setline" to build an amplitude envelope.  RTInstruments cannot
+   access the array that "setline" fills, because they won't see
+   the array until after the Minc score has finished.  In other
+   words, if "setline" is called with different values during a
+   scorefile, the RTinstruments will only see the last set of
+   values.  Other setup functions will suffer in the same way --
+   the "setup" Minc call in the iir instrument; the "space"
+   Minc call in place and move; all these guys write information
+   outside the function that is then accessed by the sample-computing
+   code.
+
+   If it is possible to call C++ functions from within an external
+   C function, then this problem is easily solved.  I can call
+   'extern "C" { ... }' functions from C++, but I haven't been able
+   to see how a C++ function can be called from within one of these
+   external functions.  (the function in question is the
+   parse_dispatch function, called from yyparse() in Minc).
+   Do any of you know if this is possible?
+
+-- There is a lot of optimization that could be done to make this
+   even faster.  I'm using floating-point oscils, etc.  My knowledge
+   of C++ is just barely beyond the rudimentary stage (look at
+   my heavy-handed use of public variables in the WAVETABLE.h
+   file), and I'm certain that there are some fairly obvious
+   speed-ups that we could do.
+
+
+This is also just the first part of an expanded RTcmix I'm working
+on with Dave Topper.  We want to add a call like "rtupdateparams()"
+that can be used in the sample-computing loop, reading values from
+a socket so that instruments can be controlled in real time.  We're
+planning to use Perry's SKINI as the protocol for this, thus we could
+run Perry's stuff and RTcmix from the same control system.  We also
+want to set up scheduling-on-the-fly so that we can do some Snazzy Cool
+Algorithmic Interactive stuff and become real famous.
+
+Let me know what you think!
+
+brad
+
+(sept 15, 1996)
