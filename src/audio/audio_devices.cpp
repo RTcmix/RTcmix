@@ -8,7 +8,7 @@
 //
 
 #include <string.h>
-#include <globals.h>
+#include <RTcmix.h>
 #include <sndlibsupport.h>
 #include <ugens.h>
 #include <prototypes.h>
@@ -123,7 +123,7 @@ int create_audio_file_device(const char *outfilename,
 							 int check_peaks)
 {
 
-	assert(rtsetparams_called);
+	assert(rtsetparams_was_called());
 	
 	int fileOptions = 0;
 	if (check_peaks)
@@ -157,7 +157,7 @@ int create_audio_file_device(const char *outfilename,
 		return -1;
 	}
 	// Cheating -- should hand in queue size as argument!
-	int queueSize = RTBUFSAMPS;
+	int queueSize = RTcmix::bufsamps();
 	int count = 1;
 	ret = fileDevice->setQueueSize(&queueSize, &count);
 	if (ret == -1) {
