@@ -15,8 +15,9 @@
 
 extern void heapSched(Instrument *Iptr);
 
-extern "C" {
-double checkInsts(char *fname, double *pp, short n_args)
+extern "C" double checkInsts(char *fname, double *pp, int n_args);
+
+double checkInsts(char *fname, double *pp, int n_args)
 {
 	int i;
 	rt_item *rt_p;
@@ -50,7 +51,7 @@ double checkInsts(char *fname, double *pp, short n_args)
 			
 			Iptr = (*(rt_p->rt_ptr))();
 
-			Iptr->init(p,n_args);
+			Iptr->init(p, (short) n_args);
 
 			/* schedule instrument */
 
@@ -70,6 +71,5 @@ double checkInsts(char *fname, double *pp, short n_args)
 	rt_list = rt_temp;
 	/* printf("EXITING checkInsts() FUNCTION (function not found) -----\n"); */
 	return 0; /* This was NULL on SGI's ... not good */
-}
 }
 

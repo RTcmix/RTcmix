@@ -16,10 +16,10 @@ extern "C" {
 /* buffers.c:  prototypes in buffers.h */
 
 /* checkfuncs.c */
-double checkfuncs(char *fname, double *pp, short n_args);
+double checkfuncs(char *fname, double *pp, int n_args);
 
 /* checkInsts.C */
-double checkInsts(char *fname, double *pp, short n_args);
+double checkInsts(char *fname, double *pp, int n_args);
 
 /* intraverse.C */
 void *inTraverse(void *);
@@ -28,10 +28,10 @@ void *inTraverse(void *);
 void *parseit(void *);
 
 /* parse_dispatch.c */
-double parse_dispatch(char *str, double *pp, short n_args);
+double parse_dispatch(char *str, double *pp, int n_args);
 
 /* rtdispatch.C */
-double rtdispatch(char *fname, double *pp, short n_args);
+double rtdispatch(char *fname, double *pp, int n_args);
 
 /* rtinput.c */
 int get_last_input_index(void);

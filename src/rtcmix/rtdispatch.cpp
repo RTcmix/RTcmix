@@ -7,7 +7,7 @@
 
 
 extern "C" {
-	double rtdispatch(char *fname, double *pp, short n_args)
+	double rtdispatch(char *fname, double *pp, int n_args)
 	{
 		double rv;
 
