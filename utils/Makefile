@@ -34,20 +34,19 @@ resample::
 	@echo "done."; echo ""
 
 install:
+	@echo "making install..."	
 	@for PROG in $(PROGS); \
 	do \
-	( echo "ln -fs $(CMIXDIR)/utils/$$PROG $(BINDIR)"; \
-	ln -fs $(CMIXDIR)/utils/$$PROG $(BINDIR); ) \
+	  ( ln -fs $(CMIXDIR)/utils/$$PROG $(DESTDIR); ) \
 	done
-	ln -fs $(CMIXDIR)/utils/resample/resample $(BINDIR)
+	@ln -fs $(CMIXDIR)/utils/resample/resample $(DESTDIR)
 
 clean:
-	rm -f *~ *.o core $(PROGS)
+	-rm -f *~ *.o core $(PROGS)
 	@for PROG in $(PROGS); \
 	do \
-	( echo "rm -f $(BINDIR)/$$PROG"; \
-	rm -f $(BINDIR)/$$PROG; ) \
+	  ( rm -f $(DESTDIR)/$$PROG; ) \
 	done
 	@cd resample; $(MAKE) clean
-	rm -f $(BINDIR)/resample
+	-rm -f $(DESTDIR)/resample
 
