@@ -7,7 +7,7 @@
 include ../../makefile.conf
 
 # RTcmix instruments
-INST = AM ELL PAN REVERBIT REVMIX STEREO TRANS TRANS3 WAVETABLE
+INST = AM ELL PAN REVERBIT REVMIX SHAPE STEREO TRANS TRANS3 WAVETABLE
 
 # Commands invoked from within an RTcmix script (in Minc, Perl, Python)
 SCRIPT = addgens bus_config copygen fdump fplot \
