@@ -156,6 +156,13 @@ int JCHOR::init(float p[], short n_args)
    else
       printf("JCHOR: Setting phrase curve to all 1's\n");
 
+   /* MUST do this here, rather than in grain_input_and_transpose,
+      because by the time that is called, the makegen for this slot
+      may have changed.
+   */
+   winarray = floc(WINDOW_FUNC_SLOT);   /* NB: floc aborts if slot empty */
+   winarraylen = fsize(WINDOW_FUNC_SLOT);
+
    skip = (int)(SR / (float)resetval);
 
    return nsamps;
@@ -300,9 +307,8 @@ int JCHOR::setup_voices()
 int JCHOR::grain_input_and_transpose()
 {
    int     i, j, k, n, reset_count, inframes, bufframes;
-   int     getflag, incount, len;
+   int     getflag, incount;
    float   read_indur, store_indur, total_indur, interval, amp;
-   float   *winarray, wintabs[2];
    double  increment, newsig, oldsig, oldersig, frac, counter;
 
    if (inputchans == 1)
@@ -334,9 +340,7 @@ int JCHOR::grain_input_and_transpose()
 
    grain = new float[grainsamps];
 
-   winarray = floc(WINDOW_FUNC_SLOT);   /* NB: floc aborts if slot empty */
-   len = fsize(WINDOW_FUNC_SLOT);
-   tableset(store_indur, len, wintabs);
+   tableset(store_indur, winarraylen, wintabs);
 
    inframes = (int)(SR / read_indur);
    bufframes = RTBUFSAMPS;
