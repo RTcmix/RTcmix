@@ -1,6 +1,8 @@
 // Copyright (C) 2005 John Gibson.  See ``LICENSE'' for the license to this
 // software and for a DISCLAIMER OF ALL WARRANTIES.
 
+#include <math.h>
+
 class Ooscil;
 
 class GrainVoice {
