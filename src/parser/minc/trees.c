@@ -13,6 +13,7 @@
 /* This file holds the intermediate tree representation. */
 
 #include "minc_internal.h"
+#include "handle.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
