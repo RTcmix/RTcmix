@@ -4,7 +4,7 @@
 ###############################################################
 
 # The directory containing the RTcmix directory
-TOPDIR = /usr/local/src
+TOPDIR = /usr/local/src/music
 
 # The name of the RTcmix directory
 CMIXDIR = $(TOPDIR)/RTcmix-4.0
@@ -128,7 +128,7 @@ ifeq ($(ARCH),LINUX)
 	else
 	  SYSLIBS = -lpthread -lm -ldl #-lefence
 	endif
-  ARCH_RTLDFLAGS =
+  ARCH_RTLDFLAGS = -Wl,-rpath $(LIBDIR)
   DSO_LDFLAGS = $(OPT) $(SYSLIBS)
   SHARED_LDFLAGS = -shared -Wl,-soname,$@
   DYN = -rdynamic
