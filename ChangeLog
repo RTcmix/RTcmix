@@ -1,8 +1,12 @@
+**** Released RTcmix-3.0.2 ****
+
 Friday, June 9, 2000 John Gibson <johngibson@virginia.edu>
 
    * Fix to sample_scos_1.0/STRUM2.sco. Would bail out before.
    * For Irix, create LIBDESTDIR before making instruments. That's
      the default location for the so_locations file.
+   * Fix to sockit.C accept call that could affect compilation in
+     some Linux distributions.
 
 
 **** Released RTcmix-3.0.1 ****
@@ -13,9 +17,8 @@ instruments, so you can still use the 3.0.0 ones.   -JG
 
 Thursday, June 8, 2000 John Gibson <johngibson@virginia.edu>
 
-   * Fixes to main.C and sockit.C supplied by Doug Scott. These affect
-     compilation on Linux Mandrake (and probably other distros), as
-     well as Irix 6.5.
+   * Fix to main.C supplied by Doug Scott -- affects compilation on
+     Linux Mandrake (and probably other distros), as well as Irix 6.5.
    * Some other minor changes to encourage compilation on Irix 6.5.
 
 Thursday, June 8, 2000 Dave Topper <topper@virginia.edu>
