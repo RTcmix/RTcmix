@@ -73,7 +73,7 @@ int COMBIT::init(double p[], int n_args)
 	if (frequency < MINFREQ)
 		return die("COMBIT", "Invalid frequency value!");
 	float loopt = 1.0 / frequency;
-	comb = new Ocomb(loopt, 1.0 / MINFREQ, rvbtime);
+	comb = new Ocomb(SR, loopt, 1.0 / MINFREQ, rvbtime);
    frequency = -1.0;    // force update in run()
 
 	amptable = floc(1);
