@@ -117,13 +117,6 @@ SNDLIB = ../sndlib/sndlib.a
 
 LIBS = $(AUDIOLIB) $(SNDLIB) $(LIBCONF)
 
-# JGG mouse test...
-#LIBS += ../control/mouse/libmouse.a ../control/mouse/glue.o
-#LDFLAGS += -L/usr/X11/lib -lX11
-
-# JGG midi test...
-#LIBS += ../control/midi/libmidicon.a ../control/midi/glue.o
-
 PROGS = MIX
 MAIN_OBJS = RTcmixMain.o main.o
 TARGETS = $(RTLIB) $(MAIN_OBJS) RTsockfuncs.o $(PROGS)
@@ -154,6 +147,7 @@ endif
 
 all: $(TARGETS)
 	$(INSTALL) main.o $(LIBDIR)
+	$(INSTALL) RTcmix.o $(LIBDIR)
 	$(INSTALL) RTcmixMain.o $(LIBDIR)
 	$(INSTALL) RTsockfuncs.o $(LIBDIR)
 ifeq ($(PERL_SUPPORT), TRUE)
@@ -183,6 +177,9 @@ $(AUDIOLIB):
 
 loader.o: loader.c
 	$(CC) $(CFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c loader.c
+
+connection.o: connection.cpp
+	$(CXX) $(CXXFLAGS) -DSHLIB_SUFFIX=\"$(SHLIB_SUFFIX)\" -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c connection.cpp
 
 $(RTLIB): depend $(COMMON_OBJS) $(LIBMINC) $(LIBS)
 	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(COMMON_OBJS) $(LIBMINC) $(LIBS) $(SYSLIBS)
@@ -248,6 +245,7 @@ endif
 uninstall: standalone_uninstall
 	$(RM) $(LIBDIR)/$(RTLIB)
 	$(RM) $(LIBDIR)/main.o
+	$(RM) $(LIBDIR)/RTcmix.o
 	$(RM) $(LIBDIR)/RTcmixMain.o
 	$(RM) $(LIBDIR)/RTsockfuncs.o
 	$(RM) $(LIBDIR)/pRTcmix.o
