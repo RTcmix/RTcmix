@@ -104,7 +104,7 @@ init_globals()
 	print_is_on = 1;
 
    for (int i = 0; i < MAX_INPUT_FDS; i++)
-      inputFileTable[i].fd == NO_FD;
+      inputFileTable[i].fd = NO_FD;
 
 	init_buf_ptrs();
 }
