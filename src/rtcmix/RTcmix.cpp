@@ -95,6 +95,10 @@ init_globals()
 // 	schedtime = 0;
 	elapsed = 0;
 
+#ifdef NETPLAYER
+   netplay = 0;      // for remote sound network playing
+#endif
+
 	output_data_format = -1;
 	output_header_type = -1;
 	normalize_output_floats = 0;

@@ -73,6 +73,10 @@ usage()
 #ifdef LINUX
       "           -p NUM   set process priority to NUM (as root only)\n"
 #endif
+#ifdef NETPLAYER
+      "           -k NUM   socket number (netplay)\n"
+      "           -r NUM   remote host ip (or name for netplay)\n"
+#endif
       "          NOTE: -s, -d, and -e are not yet implemented\n"
       "           -s NUM   start time (seconds)\n"
       "           -d NUM   duration (seconds)\n"
@@ -127,6 +131,10 @@ init_globals()
 //    baseTime = 0;
 //    schedtime = 0;
    elapsed = 0;
+
+#ifdef NETPLAYER
+   netplay = 0;      // for remote sound network playing
+#endif
 
    output_data_format = -1;
    output_header_type = -1;
@@ -211,6 +219,11 @@ main(int argc, char *argv[])
    char        *infile;
    char        *xargv[MAXARGS + 1];
    pthread_t   sockitThread, inTraverseThread;
+#ifdef NETPLAYER
+   char        rhostname[60], thesocket[8];
+
+   rhostname[0] = thesocket[0] = '\0';
+#endif
 
    init_globals();
 
@@ -266,6 +279,28 @@ main(int argc, char *argv[])
                }
 			   priority = atoi(argv[i]);
 			   break;
+#endif
+#ifdef NETPLAYER
+            case 'r':               /* set up for network playing */
+              	if (++i >= argc) {
+                  fprintf(stderr, "You didn't give a remote host ip.\n");
+                  exit(1);
+              	}
+               /* host ip num */
+               strncpy(rhostname, argv[i], 59);    /* safe strcpy */
+               rhostname[59] = '\0';
+               netplay = 1;
+               break;
+            case 'k':               /* socket number for network playing */
+                                    /* defaults to 9999 */
+               if (++i >= argc) {
+                  fprintf(stderr, "You didn't give a socket number.\n");
+                  exit(1);
+               }
+               strncpy(thesocket, argv[i], 7);
+               thesocket[7] = '\0';
+               netplay = 1;
+               break;
 #endif
             case 'o':               /* NOTE NOTE NOTE: will soon replace -s */
             case 's':               /* set up a socket offset */
@@ -349,6 +384,20 @@ main(int argc, char *argv[])
    if (print_is_on)
       printf("--------> %s %s (%s) <--------\n",
                                       RTCMIX_NAME, RTCMIX_VERSION, argv[0]);
+
+#ifdef NETPLAYER
+   if (netplay) {             /* set up socket for sending audio */
+      extern int setnetplay(char *, char *);    // in setnetplay.C
+      netplaysock = setnetplay(rhostname, thesocket);
+      if (netplaysock == -1) {
+         fprintf(stderr, "Cannot establish network connection to '%s' for "
+                                             "remote playing\n", rhostname);
+         exit(-1);
+      }
+      fprintf(stderr, "Network sound playing enabled on machine '%s'\n",
+                                                                  rhostname);
+    }
+#endif
 
    ug_intro();                  /* introduce standard routines */
    profile();                   /* introduce user-written routines etc. */

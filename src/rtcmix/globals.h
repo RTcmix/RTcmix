@@ -88,6 +88,11 @@ GLOBAL long peaklocs[MAXBUS];
 GLOBAL int report_clipping;
 GLOBAL int check_peaks;
 
+#ifdef NETPLAYER
+GLOBAL int netplay;     // for remote sound network playing
+GLOBAL int netplaysock; // socket for remote sound network playing
+#endif
+
 /* for more than 1 socket, set by -s flag to CMIX as offset from MYPORT */
 GLOBAL int socknew;
 
