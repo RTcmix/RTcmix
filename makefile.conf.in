@@ -73,7 +73,6 @@ ifeq ($(ARCH),LINUX)
   MAKE = make
   INSTALL = cp -f
   RANLIB = touch
-#  INSTALL = ln -fs
   SHELL = /bin/sh
   SHLIB_SUFFIX = so
 endif
