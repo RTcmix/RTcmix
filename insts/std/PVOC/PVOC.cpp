@@ -10,6 +10,8 @@
 
 #include "pv.h"
 #include "PVOC.h"
+#include "setup.h"
+#include "PVFilter.h"
 
 #ifdef MACOSX
 	#define cosf(x) (float) cos((double)(x))
@@ -101,6 +103,7 @@ PVOC::PVOC() : _first(1), _valid(-1), _currentsample(0)
 	_cachedOutFrames = 0;
 	_inbuf = NULL;
 	_outbuf = NULL;
+	_pvFilter = NULL;
 	Wanal= NULL;
 	Wsyn= NULL;
 	_pvInput= NULL;
@@ -127,6 +130,7 @@ PVOC::~PVOC()
 	delete [] _pvInput;
 	delete [] Hwin;
 	delete [] winput;
+	RefCounted::unref(_pvFilter);
 	delete [] lpcoef;
 	delete [] _fftBuf;
 	delete [] channel;
@@ -229,6 +233,12 @@ int PVOC::init(float *p, int n_args)
 		_on = (_in*I)/D;
 	else
 		_on = _in;
+
+	// Get pv filter if present
+
+	::GetFilter(&_pvFilter);
+	if (_pvFilter)
+		_pvFilter->ref();
 
 	return nSamps();
 }
@@ -347,6 +357,11 @@ int PVOC::run()
 		 * while time modifications are generally well (and more
 		 * efficiently) suited to overlap-add resynthesis
 		 */
+
+		 	if (_pvFilter) {
+				_pvFilter->run(channel, N2);
+			}
+
 			if ( obank ) {
 				/*
 				 * oscillator bank resynthesis
@@ -454,7 +469,7 @@ int PVOC::shiftin( float A[], int winLen, int D)
 			printf("\tshiftin: calling rtgetin for %d sampframes into offset %d\n",
 				  toRead, _inWriteOffset);
 #endif
-			in = &_inbuf[_inWriteOffset * inchans + _inputchannel];
+			in = &_inbuf[_inWriteOffset * inchans];
 			int framesRead = rtgetin(in, this, toRead*inchans) / inchans;
 			_cachedInFrames += framesRead;
 			_inWriteOffset += framesRead;
