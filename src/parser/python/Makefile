@@ -19,8 +19,20 @@ $(FUNCLIST): make_funclist.pl $(FUNCEXCEPT)
 $(MODULE_SRC): make_python_ext.pl $(MODULE_SRC).in $(FUNCLIST)
 	$(PERL) -w make_python_ext.pl $(MODULE) $(MODULE_SRC).in > $(MODULE_SRC)
 
+# Mac OS X 10.3 fails to build shared lib, so complain if that's requested.
+# If it's not requested, then ignore complaints about shared lib build failure
+# from setup.py build.  Not sure what is causing the failure.
 $(MODULE): $(MODULE_SRC)
+ifeq ($(ARCH), MACOSX)
+ifeq ($(PYTHON_EXT_STATIC_LINK), FALSE)
+	@echo "Currently cannot build shared lib rtcmix extension under Mac OS X."
+	@exit 1
+endif
+	-$(PYTHON) setup.py build
+	@echo "Don't worry about shared lib build failure.  We're using static link."
+else
 	$(PYTHON) setup.py build
+endif
 ifeq ($(PYTHON_EXT_STATIC_LINK), TRUE)
 	$(RM) $(MODULE)module.o
 	ln -s "`find . -name $(MODULE)module.o`" .
