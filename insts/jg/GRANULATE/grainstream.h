@@ -129,6 +129,7 @@ private:
    int _nextoutstart;
    int _maxvoice;
    double _travrate;
+   double _lasttravrate;
    double _lastinskip;
    float _lastL;
    float _lastR;

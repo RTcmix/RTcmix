@@ -17,7 +17,7 @@
 
 #define COUNT_VOICES
 
-const inline int _clamp(const int min, const int val, const int max)
+inline int _clamp(const int min, const int val, const int max)
 {
    if (val < min)
       return min;
@@ -36,7 +36,7 @@ GrainStream::GrainStream(const float srate, double *inputTable, int tableLen,
      _wrap(true), _inhop(0), _outhop(0), _maxinjitter(0.0), _maxoutjitter(0.0),
      _transp(0.0), _maxtranspjitter(0.0), _transptab(NULL), _transplen(0),
      _outframecount(0), _nextinstart(0), _nextoutstart(0), _travrate(1.0),
-     _lastinskip(-DBL_MAX), _lastL(0.0f), _lastR(0.0f)
+     _lasttravrate(1.0), _lastinskip(DBL_MAX), _lastL(0.0f), _lastR(0.0f)
 {
    for (int i = 0; i < MAX_NUM_VOICES; i++)
       _voices[i] = new GrainVoice(_srate, _inputtab, _inputframes, numInChans,
@@ -83,6 +83,7 @@ void GrainStream::setGrainEnvelopeTable(double *table, int length)
 // Set inskip, overriding current position, which results from the traversal
 // rate.  It's so important not to do this if the requested inskip hasn't
 // changed that we do that checking here, rather than asking the caller to.
+// Call setInskip just after calling setWindow.
 
 void GrainStream::setInskip(const double inskip)
 {
@@ -95,8 +96,8 @@ void GrainStream::setInskip(const double inskip)
 
 
 // Set input start and end point in frames.  If this is the first time we're
-// called, force next call to prepare() to start playing at start point.
-// Otherwise, we'll come back to new start point at wraparound.
+// called, force next call to prepare() or processBlock() to start playing at
+// start point.  Otherwise, we'll come back to new start point at wraparound.
 
 void GrainStream::setWindow(const double start, const double end)
 {
@@ -223,9 +224,22 @@ bool GrainStream::maybeStartGrain(const int bufoutstart)
 {
    bool keepgoing = true;
 
-   if (_outframecount >= _nextoutstart) {
-      // time to start another grain
+   if (_outframecount >= _nextoutstart) {    // time to start another grain
+
       bool forwards = (_travrate >= 0.0);
+
+      // When grain traversal changes sign, we need to adjust _nextinstart,
+      // because this is interpreted differently for the two directions.
+      // When moving forward, it's the lowest index we read for the grain;
+      // when moving backward, it's the highest.
+      int inoffset = 0;
+      if (_travrate != _lasttravrate) {
+         if (_travrate < 0.0 && _lasttravrate >= 0.0)
+            inoffset = 1;     // add grain duration to _nextinstart below
+         else if (_lasttravrate <= 0.0 && _travrate > 0.0)
+            inoffset = -1;    // subtract grain duration from _nextinstart below
+         _lasttravrate = _travrate;
+      }
 
       const int voice = firstFreeVoice();
       if (voice != ALL_VOICES_IN_USE) {
@@ -234,6 +248,14 @@ bool GrainStream::maybeStartGrain(const int bufoutstart)
             _maxvoice = voice;
 #endif
          const double outdur = _durrand->value();
+
+         // Try to prevent glitch when traversal rate crosses zero.
+         if (inoffset != 0) {
+            inoffset *= int((outdur * _srate) + 0.5);
+            _nextinstart += inoffset;
+            _nextinstart = _clamp(0, _nextinstart, _inputframes - 1);
+         }
+
          const double amp = _amprand->value();
          const double pan = _outchans > 1 ? _panrand->value() : 1.0;
          const double transp = getTransposition();
@@ -246,7 +268,7 @@ bool GrainStream::maybeStartGrain(const int bufoutstart)
                                           : int(_inrand->value() * _srate);
       _nextinstart += _inhop + injitter;
 
-      // NB: injitter can be negative, and _inhop can be <= 0.
+      // NB: injitter and _inhop can be negative.
       if (forwards) {
          if (_nextinstart < _winstart)
             _nextinstart = _winstart;
