@@ -14,6 +14,12 @@
 #include <netinet/in.h>
 #include <errno.h>
 
+// If RTcmix fails to connect to MouseWindow, increase this.
+#define LAUNCH_SLEEP_MSEC		500
+
+#define NUM_CONNECT_ATTEMPTS	10
+#define CONNECT_SLEEP_MSEC		200
+
 
 OSXMouse::OSXMouse() : RTcmixMouse(), _sockdesc(0)
 {
@@ -38,17 +44,17 @@ int OSXMouse::openSocket()
 {
 	_sockdesc = socket(AF_INET, SOCK_STREAM, 0);
 	if (_sockdesc < 0)
-		return reportError("OSXMouse::openSocket", true);
+		return reportError("OSXMouse::openSocket (socket)", true);
 
 	struct hostent *server = gethostbyname(_servername);
 	if (server == NULL)
 		return reportError("OSXMouse::openSocket: Can't find mouse server "
 		                   "address.", false);
 
-	socklen_t optlen = sizeof(char);
 	int val = sizeof(MouseSockPacket);
+	int optlen = sizeof(int);
 	if (setsockopt(_sockdesc, SOL_SOCKET, SO_RCVBUF, &val, optlen) < 0)
-		return reportError("OSXMouse::openSocket", true);
+		return reportError("OSXMouse::openSocket (setsockopt)", true);
 
 	struct sockaddr_in servaddr;
 	memset((char *) &servaddr, 0, sizeof(servaddr));
@@ -57,23 +63,47 @@ int OSXMouse::openSocket()
                                                        server->h_length);
 	servaddr.sin_port = htons(_sockport);
 
-	if (connect(_sockdesc, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0)
-		return reportError("OSXMouse::openSocket", true);
-
-//	fcntl(_sockdesc, F_SETFL, O_NONBLOCK);
+	// This loop *should* work, but if the initial attempt is refused, all others
+	// fail with EINVAL.  So instead, we sleep before attempting to connect.
+#if 1
+	usleep(LAUNCH_SLEEP_MSEC * 1000L);
+#endif
+	bool connected = false;
+	int attempts = NUM_CONNECT_ATTEMPTS;
+	while (attempts-- > 0) {
+		// printf("connection attempt %d...\n", NUM_CONNECT_ATTEMPTS - attempts);
+		int result = connect(_sockdesc, (struct sockaddr *) &servaddr,
+	                                               sizeof(servaddr));
+		if (result == 0) {
+			connected = true;
+			break;
+		}
+		else if (result < 0 && result != ECONNREFUSED)
+			return reportError("OSXMouse::openSocket (connect)", true);
+		usleep(CONNECT_SLEEP_MSEC * 1000L);
+	}
+	if (!connected)
+		return reportError("OSXMouse::openSocket (connect)", true);
 
 	return 0;
 }
 
 int OSXMouse::show()
 {
-// XXX launch MouseWindow.app if it's not already running
+	// Launch MouseWindow.app if it's not already running
+#ifdef APP_PATH
+	const char *app = APP_PATH;
+#else
+	const char *app = "MouseWindow";
+#endif
+// FIXME: should probably do this via an AppleEvent
+	char buf[PATH_MAX];
+	snprintf(buf, PATH_MAX, "open -a %s", app);
+	system(buf);
 
 	// Establish socket connection as client
 	if (openSocket() == -1)
 		return -1;
-
-// XXX handshake?
 
 	return 0;
 }
@@ -87,6 +117,8 @@ int OSXMouse::reportError(const char *err, const bool useErrno)
 	return -1;
 }
 
+// Read one packet, and store in <packet>.  Return 0 if okay, -1 if error,
+// and 1 if EOF.
 int OSXMouse::readPacket(MouseSockPacket *packet)
 {
 	char *ptr = (char *) packet;
@@ -94,8 +126,10 @@ int OSXMouse::readPacket(MouseSockPacket *packet)
 	ssize_t amt = 0;
 	do {
 		ssize_t n = read(_sockdesc, ptr + amt, packetsize - amt);
-		if (n < 0)
+		if (n == -1)
 			return reportError("OSXMouse::readPacket", true);
+		else if (n == 0)	// EOF
+			return 1;
 		amt += n;
 	} while (amt < packetsize);
 
@@ -205,7 +239,7 @@ bool OSXMouse::handleEvents()
 		if (result == -1)
 			return false;
 		else if (result > 0) {
-			if (readPacket(_evtpacket) == -1)
+			if (readPacket(_evtpacket) != 0)
 				return false;
 
 			switch (_evtpacket->type) {
@@ -214,6 +248,8 @@ bool OSXMouse::handleEvents()
 					_y = _evtpacket->data.point.y;
 					break;
 				case kPacketQuit:
+					if (close(_sockdesc) == -1)
+						reportError("OSXMouse::handleEvents", true);
 					return false;
 					break;
 				default:

@@ -1,9 +1,9 @@
 #ifndef _MOUSE_IPC_H_
-#define _MOUSE_IPCH_
+#define _MOUSE_IPC_H_
 
 #include <labels.h>
 
-#define SOCK_PORT		9797
+#define SOCK_PORT			9797
 
 enum {
 	kPacketConfigureXLabelPrefix = 0,
@@ -32,4 +32,4 @@ typedef struct {
 	} data;
 } MouseSockPacket;						// should be 20 bytes
 
-#endif // _MOUSE_IPCH_
+#endif // _MOUSE_IPC_H_

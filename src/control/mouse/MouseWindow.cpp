@@ -20,15 +20,21 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <string.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <limits.h>
 #include <errno.h>
 #include <assert.h>
 #include "labels.h"
 #include "mouse_ipc.h"
 
-#define DEBUG
+//#define DEBUG
+
+// Important tuning parameter: how often to nap between polling for 
+// incoming packets.
+#define SLEEP_MSEC	10
 
 #define LABEL_FONT_NAME	"Monoco"
 #define LABEL_FONT_SIZE	10
@@ -72,12 +78,12 @@ int _newdesc;
 int _sockport = SOCK_PORT;
 
 // thread
-#define SLEEP_MSEC	10
 bool _runThread;
 pthread_t _listenerThread;
 
 void drawXLabels();
 void drawYLabels();
+int closeSocket();
 
 
 // =============================================================================
@@ -94,7 +100,7 @@ int reportConsoleError(const char *err, const bool useErrno)
 
 int reportError(const char *err, const bool useErrno)
 {
-//FIXME: pop alert instead of console print.
+//FIXME: pop alert instead of console print?  maybe not
 	reportConsoleError(err, useErrno);
 	return -1;
 }
@@ -103,6 +109,8 @@ int reportError(const char *err, const bool useErrno)
 // =============================================================================
 // IPC stuff
 
+// Read one packet, and store in <packet>.  Return 0 if okay, -1 if error,
+// and 1 if EOF.
 int readPacket(MouseSockPacket *packet)
 {
 	char *ptr = (char *) packet;
@@ -110,8 +118,10 @@ int readPacket(MouseSockPacket *packet)
 	ssize_t amt = 0;
 	do {
 		ssize_t n = read(_newdesc, ptr + amt, packetsize - amt);
-		if (n < 0)
+		if (n == -1)
 			return reportError("readPacket", true);
+		else if (n == 0)	// EOF
+			return 1;
 		amt += n;
 	} while (amt < packetsize);
 
@@ -131,11 +141,6 @@ int writePacket(const MouseSockPacket *packet)
 	} while (amt < packetsize);
 
 	return 0;
-}
-
-void remoteQuit()
-{
-	QuitApplicationEventLoop();
 }
 
 // Set prefix string for xlabel with <id>, allocate a new xlabel, and increment
@@ -220,7 +225,6 @@ void sendCoordinates(const int x, const int y)
 	if (packet == NULL) {
 		packet = new MouseSockPacket [1];
 		packet->type = kPacketMouseCoords;
-		packet->id = -1;		// unused for this type of packet
 	}
 
 	packet->data.point.x = xscaled;
@@ -323,7 +327,6 @@ void setFactors()
 	Rect rect;
 	GetWindowBounds(_window, kWindowContentRgn, &rect);
 	const int width = rect.right - rect.left;
-// FIXME: probably must subtract window title bar height from this...?
 	const int height = rect.bottom - rect.top;
 	_xfactor = 1.0 / (double) (width - 1);
 	_yfactor = 1.0 / (double) (height - 1);
@@ -521,9 +524,11 @@ void *listenerLoop(void *context)
 			if (result == -1)
 				_runThread = false;
 			else if (result > 0) {
-				if (readPacket(packet) == -1)
+				if (readPacket(packet) != 0) {
 					_runThread = false;
-
+					break;
+				}
+				
 				switch (packet->type) {
 					case kPacketConfigureXLabelPrefix:
 						configureXLabelPrefix(packet->id, packet->data.str);
@@ -562,6 +567,9 @@ void *listenerLoop(void *context)
 		usleep(SLEEP_MSEC * 1000L);
 	}
 	delete [] packet;
+
+	QuitApplicationEventLoop();
+
 	return NULL;
 }
 
@@ -580,12 +588,23 @@ int openSocket()
 {
 	_servdesc = socket(AF_INET, SOCK_STREAM, 0);
 	if (_servdesc < 0)
-		return reportError("openSocket", true);
+		return reportError("openSocket (socket)", true);
 
-	socklen_t optlen = sizeof(char);
 	int val = sizeof(MouseSockPacket);
+	int optlen = sizeof(int);
 	if (setsockopt(_servdesc, SOL_SOCKET, SO_RCVBUF, &val, optlen) < 0)
-		return reportError("openSocket", true);
+		return reportError("openSocket (setsockopt)", true);
+
+	// This allows us to bind to the same address as last time, even if
+	// the kernel is still keeping the old binding active.  In practical
+	// terms, this means we can quit the MouseWindow program while RTcmix
+	// is running, and then the next launch of MouseWindow will not fail
+	// with "Address already in use."  It takes a minute or so for the
+	// kernel to relinquish the old binding, so that can be annoying.
+	val = 1;
+	optlen = sizeof(int);
+	if (setsockopt(_servdesc, SOL_SOCKET, SO_REUSEADDR, &val, optlen) < 0)
+		return reportError("openSocket (setsockopt)", true);
 
 	struct sockaddr_in servaddr;
 	servaddr.sin_family = AF_INET;
@@ -593,33 +612,46 @@ int openSocket()
 	servaddr.sin_port = htons(_sockport);
 
 	if (bind(_servdesc, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0)
-		return reportError("openSocket", true);
+		return reportError("openSocket (bind)", true);
 
 	if (listen(_servdesc, 1) < 0)
-		return reportError("openSocket", true);
+		return reportError("openSocket (listen)", true);
 
 	int len = sizeof(servaddr);
 	_newdesc = accept(_servdesc, (struct sockaddr *) &servaddr, &len);
 	if (_newdesc < 0)
-		return reportError("openSocket", true);
+		return reportError("openSocket (accept)", true);
 
 	return 0;
+}
+
+void sendQuit()
+{
+	MouseSockPacket packet;
+	packet.type = kPacketQuit;
+	writePacket(&packet);
 }
 
 int closeSocket()
 {
-// XXX send close message to client, and then close socket
+	sendQuit();
 
-	if (close(_servdesc) == -1)
-		return reportError("closeSocket", true);
-	if (close(_newdesc) == -1)
-		return reportError("closeSocket", true);
+	if (_servdesc > -1) {
+		if (close(_servdesc) == -1)
+			return reportError("closeSocket", true);
+		_servdesc = -1;
+	}
+	if (_newdesc > -1) {
+		if (close(_newdesc) == -1)
+			return reportError("closeSocket", true);
+		_newdesc = -1;
+	}
 
 	return 0;
 }
 
-// XXX have to clear memory and reinit if accepting connection from
-// another RTcmix run.
+// XXX have to clear memory and reinit if we want to accept a connection from
+// another RTcmix run.  But for now, we quit MouseWindow each time.
 void initdata(bool reinit);
 void initdata(bool reinit)
 {
@@ -645,14 +677,16 @@ void initdata(bool reinit)
 		_ylabel[i] = NULL;
 	}
 
-	_servdesc = 0;
-	_newdesc = 0;
+	_servdesc = -1;
+	_newdesc = -1;
 }
 
 int initialize()
 {
 	initdata(false);
 
+	if (openSocket() != 0)		// Make server listen asap
+		return -1;
 	if (createApp() != 0)
 		return -1;
 #ifdef NOTYET
@@ -660,8 +694,6 @@ int initialize()
 		return -1;
 #endif
 	if (createWindow() != 0)
-		return -1;
-	if (openSocket() != 0)
 		return -1;
 	if (createListenerThread() != 0)
 		return -1;
