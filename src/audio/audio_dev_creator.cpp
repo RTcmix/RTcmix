@@ -7,7 +7,7 @@
 
 #include <ugens.h>
 
-#ifdef OSS
+#ifdef LINUX
 #include "OSSAudioDevice.h"
 #endif
 #ifdef ALSA
@@ -33,17 +33,17 @@ struct AudioDevEntry {
 };
 
 AudioDevEntry s_AudioDevEntries[] = {
+#ifdef NETAUDIO
+	{ &NetAudioDevice::recognize, &NetAudioDevice::create },
+#endif
 #ifdef MACOSX
 	{ &OSXAudioDevice::recognize, &OSXAudioDevice::create },
 #endif
 #ifdef ALSA
 	{ &ALSAAudioDevice::recognize, &ALSAAudioDevice::create },
 #endif
-#ifdef OSS
+#ifdef LINUX
 	{ &OSSAudioDevice::recognize, &OSSAudioDevice::create },
-#endif
-#ifdef NETAUDIO
-	{ &NetAudioDevice::recognize, &NetAudioDevice::create },
 #endif
 #ifdef SGI
 	{ &SGIAudioDevice::recognize, &SGIAudioDevice::create },
