@@ -11,19 +11,20 @@
 
 //#define DEBUG
 
-#define LABEL_FONT_NAME	"fixed"	// platform-specific
+const char *kLabelFontName = "fixed";	// platform-specific
+const int kExtraLineHeight = 3;
 
 
 XDisplay::XDisplay() : RTcmixDisplay()
 {
 	_display = NULL;
 	_window = None;
-	_labelXpos = LABEL_FROM_LEFT;
-	_labelYpos = LABEL_FROM_TOP;
-	_maxLabelChars = WHOLE_LABEL_LENGTH;	// defined in labels.h
+	_labelXpos = kLabelFromLeft;
+	_labelYpos = kLabelFromTop;
+	_maxLabelChars = kWholeLabelLength;	// defined in labels.h
 	_lineHeight = 0;
 	_charWidth = 0;
-	_fontName = LABEL_FONT_NAME;
+	_fontName = (char *) kLabelFontName;
 	_windowname = "RTcmix Display";
 }
 
@@ -41,7 +42,7 @@ void XDisplay::doConfigureLabel(const int id, const char *prefix,
 	_prefix[id] = strdup(prefix);
 	if (units)
 		_units[id] = strdup(units);
-	_label[id] = new char [WHOLE_LABEL_LENGTH];
+	_label[id] = new char [kWholeLabelLength];
 	_label[id][0] = 0;
 	_precision[id] = precision;
 }
@@ -49,9 +50,9 @@ void XDisplay::doConfigureLabel(const int id, const char *prefix,
 void XDisplay::doUpdateLabelValue(const int id, const double value)
 {
 	const char *units = _units[id] ? _units[id] : "";
-	snprintf(_label[id], WHOLE_LABEL_LENGTH, "%s: %.*f %s",
+	snprintf(_label[id], kWholeLabelLength, "%s: %.*f %s",
 				_prefix[id], _precision[id], value, units);
-	drawLabels();
+	drawLabel(id);
 }
 
 int XDisplay::show()
@@ -116,11 +117,33 @@ Window XDisplay::createWindow(
 	return window;
 }
 
+void XDisplay::drawLabel(const int id)
+{
+	assert(id < _labelCount);
+
+	// Clear rect enclosing label.
+	int width = _maxLabelChars * _charWidth;
+	int ypos = _labelYpos + (id * (_lineHeight + kExtraLineHeight));
+	XClearArea(_display, _window, _labelXpos, ypos, width, _lineHeight, False);
+#ifdef DEBUG
+	XDrawRectangle(_display, _window, _gc, _labelXpos, ypos, width, _lineHeight);
+	printf("drawLabel: xpos=%d, ypos=%d, width=%d, height=%d\n",
+				_labelXpos, ypos, width, _lineHeight);
+#endif
+
+	// Draw label.
+	ypos += _fontAscent;
+	XDrawString(_display, _window, _gc,
+					_labelXpos, ypos,
+					_label[id], strlen(_label[id]));
+	XFlush(_display);
+}
+
 void XDisplay::drawLabels()
 {
 	if (_labelCount > 0) {
 		// Clear rect enclosing all labels.
-		int height = _labelCount * _lineHeight;
+		int height = _labelCount * (_lineHeight + kExtraLineHeight);
 		int width = _maxLabelChars * _charWidth;
 		int ypos = _labelYpos;
 		XClearArea(_display, _window, _labelXpos, ypos, width, height, False);
@@ -132,12 +155,10 @@ void XDisplay::drawLabels()
 
 		// Draw all labels.
 		ypos += _fontAscent;
-		int line = 0;
 		for (int i = 0; i < _labelCount; i++) {
 			XDrawString(_display, _window, _gc,
-							_labelXpos, ypos + (line * _lineHeight),
+							_labelXpos, ypos + (i * (_lineHeight + kExtraLineHeight)),
 							_label[i], strlen(_label[i]));
-			line++;
 		}
 		XFlush(_display);
 	}

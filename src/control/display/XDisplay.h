@@ -24,6 +24,7 @@ private:
 	Window createWindow(const int xpos, const int ypos,
 					const unsigned int width, const unsigned int height);
 	void drawWindowContent();
+	void drawLabel(const int id);
 	void drawLabels();
 
 	int _screen;
