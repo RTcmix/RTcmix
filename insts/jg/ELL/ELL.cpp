@@ -32,9 +32,11 @@
      p5  input channel [optional]
      p6  stereo percent to left channel [optional]
 
-   Assumes function table 1 holds amplitude envelope. (Or you can just use
-   setline.) If this function table is empty, uses flat envelope.
+   p3 (amplitude) and p6 (pan) can receive dynamic updates from a table
+   or real-time control source.
 
+   If an old-style gen table 1 is present, its values will be multiplied
+   by the p3 amplitude multiplier, even if the latter is dynamic.
 
    NOTES:
 
@@ -55,7 +57,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "ELL.h"
 #include <rt.h>
@@ -73,6 +74,7 @@ ELL::ELL() : Instrument()
    in = NULL;
    for (int n = 0; n < MAXCHANS; n++)
       es[n] = NULL;
+   branch = 0;
 }
 
 
@@ -89,6 +91,7 @@ int ELL::init(double p[], int n_args)
    int   n;
    float outskip, inskip, dur, ringdur;
 
+   nargs = n_args;
    outskip = p[0];
    inskip = p[1];
    dur = p[2];
@@ -105,9 +108,9 @@ int ELL::init(double p[], int n_args)
    */
    if (n_args > 5) {
       inchan = (int)p[5];
-      if (inchan >= inputchans)
+      if (inchan >= inputChannels())
          return die("ELL", "You asked for channel %d of a %d-channel file.",
-                                                        inchan, inputchans);
+                                                     inchan, inputChannels());
    }
    else
       inchan = -1;
@@ -123,9 +126,9 @@ int ELL::init(double p[], int n_args)
    /* Set up for the various channel possibilities. */
 
    if (inchan == -1) {
-      if (inputchans == 1)
+      if (inputChannels() == 1)
          inchan = 0;
-      else if (inputchans != outputchans)
+      else if (inputChannels() != outputchans)
          return die("ELL",
                     "Input and output files have differing numbers of channels,"
                     "so you have to specify 1 input channel.");
@@ -146,7 +149,7 @@ int ELL::init(double p[], int n_args)
    if (nsects == 0)
       return die("ELL", "You haven't called ellset to specify filter.");
    if (inchan == -1) {                     /* use all input chans */
-      for (n = 0; n < inputchans; n++) {
+      for (n = 0; n < inputChannels(); n++) {
          es[n] = new EllSect[nsects];
          ellpset(es[n], &xnorm);
       }
@@ -163,47 +166,47 @@ int ELL::init(double p[], int n_args)
       int amplen = fsize(1);
       tableset(dur, amplen, amptabs);
    }
-   else
-      advise("ELL", "Setting phrase curve to all 1's.");
 
-   skip = (int)(SR / (float)resetval);
+   skip = (int) (SR / (float) resetval);
 
    return nsamps;
 }
 
+int ELL::configure()
+{
+   in = new float [RTBUFSAMPS * inputChannels()];
+   return in ? 0 : -1;
+}
 
 int ELL::run()
 {
-   int   i, n, branch, rsamps;
-   float aamp, insig = 0.0;
-   float out[2];
+   int samps = framesToRun() * inputChannels();
 
-   if (in == NULL)              /* first time, so allocate it */
-      in = new float [RTBUFSAMPS * inputchans];
+   if (currentFrame() < insamps)
+      rtgetin(in, this, samps);
 
-   rsamps = chunksamps * inputchans;
-
-   rtgetin(in, this, rsamps);
-
-   aamp = amp;                  /* in case amptable == NULL */
-
-   branch = 0;
-   for (i = 0; i < rsamps; i += inputchans) {
-      if (cursamp < insamps) {
-         if (--branch < 0) {
+   for (int i = 0; i < samps; i += inputChannels()) {
+      float out[2], insig = 0.0;
+      if (currentFrame() < insamps) {
+         if (--branch <= 0) {
+            double p[7];
+            update(p, 7, kAmp | kPan);
+            amp = p[3];
             if (amptable)
-               aamp = tablei(cursamp, amptable, amptabs) * amp;
+               amp *= tablei(currentFrame(), amptable, amptabs);
+            if (inchan != -1)
+               pctleft = nargs > 6 ? p[6] : 0.5;
             branch = skip;
          }
          if (inchan == -1)                    /* use all input chans */
-            for (n = 0; n < inputchans; n++)
-               out[n] = ellipse(in[i + n] * aamp, nsects, es[n], xnorm);
+            for (int n = 0; n < inputChannels(); n++)
+               out[n] = ellipse(in[i + n] * amp, nsects, es[n], xnorm);
          else
-            insig = in[i + inchan] * aamp;
+            insig = in[i + inchan] * amp;
       }
       else {
          if (inchan == -1)                    /* use all input chans */
-            for (n = 0; n < inputchans; n++)
+            for (int n = 0; n < inputChannels(); n++)
                out[n] = ellipse(0.0, nsects, es[n], xnorm);
          else
             insig = 0.0;
@@ -215,15 +218,15 @@ int ELL::run()
             out[1] = val * (1.0 - pctleft);
          }
          else {
-            for (n = 0; n < outputchans; n++)
+            for (int n = 0; n < outputchans; n++)
                out[n] = val;
          }
       }
       rtaddout(out);
-      cursamp++;
+      increment();
    }
 
-   return i;
+   return framesToRun();
 }
 
 

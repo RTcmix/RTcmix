@@ -2,7 +2,7 @@
 #include "elldefs.h"
 
 class ELL : public Instrument {
-   int     insamps, skip, inchan, nsects;
+   int     nargs, insamps, skip, branch, inchan, nsects;
    float   amp, pctleft, xnorm;
    float   *in, *amptable, amptabs[2];
    EllSect *es[MAXCHANS];
@@ -10,7 +10,13 @@ class ELL : public Instrument {
 public:
    ELL();
    virtual ~ELL();
-   int init(double p[], int n_args);
-   int run();
+   virtual int init(double p[], int n_args);
+   virtual int configure();
+   virtual int run();
 };
 
+// update flags (shift amount is pfield number)
+enum {
+	kAmp = 1 << 3,
+	kPan = 1 << 6
+};
