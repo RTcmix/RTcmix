@@ -85,17 +85,14 @@ int open_sound_file(char *sfname, int *header_type, int *data_format,
 void stop_audio_devices();
 void destroy_audio_devices();
 
-/* rtsetparams.C */
+/* rtsetparams.c */
 double rtsetparams(float *p, int n_args, double *pp);
 
 /* rtwritesamps.C */
 int rtcloseout(void);
 
 /* set_option.c */
-const char *get_audio_device_name(void);
-const char *get_audio_indevice_name(void);
-const char *get_audio_outdevice_name(void);
-int set_option(float *p, int n_args, double *pp);
+double set_option(float *p, int n_args, double *pp);
 
 /* sockit.C */
 void *sockit(void *);
@@ -103,4 +100,6 @@ void *sockit(void *);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
+
+
 #endif /* _PROTOTYPES_H_ */
