@@ -57,6 +57,8 @@ MOVE::MOVE()
 {
     R_old = -100000.0;
     T_old = 0.0;
+    m_updateCount = 0;
+    m_updateSamps = BUFLEN;
     setup_trigfuns();
     rholoc = new float[ARRAYSIZE];
     thetaloc = new float[ARRAYSIZE];
@@ -85,8 +87,33 @@ int MOVE::localInit(float *p, int n_args)
         return -1;
 
 	// treat mindiff as update rate in seconds
-	if (mindiff > 0.0)
-	    setBufferSize((int) SR * mindiff);
+	if (mindiff > 0.0) {
+		m_updateSamps = (int) (SR * mindiff + 0.5);
+		if (m_updateSamps <= BUFLEN)
+		{
+	        setBufferSize(m_updateSamps);
+#ifdef debug
+			printf("buffer size reset to %d samples\n", getBufferSize());
+#endif
+		}
+		// if update rate is larger than BUFLEN samples, set buffer size
+		// to be some integer fraction of the desired update count, then
+		// reset update count to be multiple of this.
+		else {
+		    int divisor = 2;
+			int newBufferLen;
+			while ((newBufferLen = m_updateSamps / divisor) > BUFLEN)
+			    divisor++;
+			setBufferSize(newBufferLen);
+			m_updateSamps = newBufferLen * divisor;
+#ifdef debug
+			printf("buffer size reset to %d samples\n", getBufferSize());
+#endif
+		}
+#ifdef debug
+	    printf("updating every %d samps\n", m_updateSamps);
+#endif
+	}
 
     // tables for positional lookup
     
@@ -151,31 +178,34 @@ void MOVE::get_tap(int currentSamp, int chan, int path, int len)
    }
 }
 
-// This gets called every internal buffer's worth of samples.
-// The angle filters are only reset once every N degrees, where N is variable.
+// This gets called every internal buffer's worth of samples.  The actual
+// update of source angles and delays only happens if we are due for an update
+// (based on the update count) and there has been a change of position
 
 int MOVE::updatePosition(int currentSamp)
 {
     double R = tablei(currentSamp, rholoc, tabr);
     double T = tablei(currentSamp, thetaloc, tabt);
     int maxtap = tapcount;
-    int resetFlag = 0;	// no reset during update
-    if (R != R_old || T != T_old) {
+	m_updateCount -= getBufferSize();
+    if (m_updateCount <= 0 && (R != R_old || T != T_old)) {
 #ifdef debug
-        printf("updatePosition: R: %f  T: %f\n", R, T);
+        printf("updatePosition[%d]:\t\tR: %f  T: %f\n", currentSamp, R, T);
 #endif
-	if (roomtrig(R , T, m_dist, cartflag)) {
+		if (roomtrig(R , T, m_dist, cartflag)) {
             return (-1);
-	}
+		}
         // set taps, return max samp
         maxtap = tap_set(m_binaural);
-	airfil_set(resetFlag);
-	if (m_binaural)
-	   earfil_set(resetFlag);
-	else
-	   mike_set();
-	R_old = R;
-	T_old = T;
+ 	    int resetFlag = 0;	// no reset during update
+		airfil_set(resetFlag);
+		if (m_binaural)
+		   earfil_set(resetFlag);
+		else
+		   mike_set();
+		R_old = R;
+		T_old = T;
+		m_updateCount = m_updateSamps;	// reset counter
     }
     return maxtap;	// return new maximum delay in samples
 }
