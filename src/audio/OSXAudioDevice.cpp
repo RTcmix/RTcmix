@@ -8,48 +8,28 @@
 #include <mach/policy.h>
 #include <pthread.h>
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 #include <sndlibsupport.h>	// RTcmix header
 
-const char *errToString(OSStatus err)
-{
-	const char *errstring;
-	switch (err) {
-	case kAudioHardwareNoError:
-		errstring = "No error.";
-		break;
-	case kAudioHardwareNotRunningError:
-		errstring = "Hardware not running.";
-		break;
-	case kAudioHardwareUnspecifiedError:
-		errstring = "Unspecified error.";
-		break;
-	case kAudioHardwareUnknownPropertyError:
-		errstring = "Unknown hardware property.";
-		break;
-	case kAudioDeviceUnsupportedFormatError:
-		errstring = "Unsupported audio format.";
-		break;
-	case kAudioHardwareBadPropertySizeError:
-		errstring = "Bad hardware propery size.";
-		break;
-	case kAudioHardwareIllegalOperationError:
-		errstring = "Illegal operation.";
-		break;
-	default:
-		errstring = "Unknown error.";
-	}
-	return errstring;
-}
+#define DEBUG 1
+
+static const char *errToString(OSStatus err);
+static OSStatus getDeviceList(AudioDeviceID **devList, int *devCount);
+static AudioDeviceID findDeviceID(const char *devName, AudioDeviceID *devList, int devCount, Boolean isInput);
 
 static const int REC = 0, PLAY = 1;
 static const int kMasterChannel = 0;
 
 struct OSXAudioDevice::Impl {
+	AudioDeviceID				*deviceIDs;				// Queried on system.
+	int							deviceCount;			// Queried on system.
+	char 						*deviceName;			// Passed in by user.
 	AudioDeviceID				deviceID;
 	struct Port {
 		int							streamIndex;		// Which stream
-		int							streamChannel;		// 1st chan of that stream
+		int							streamCount;		// How many streams open
+		int							streamChannel;		// 1st chan of first stream
 		AudioBufferList				*streamDesc;		// Properties for all strams
 		AudioStreamBasicDescription deviceFormat;		// format
 		unsigned int 				deviceBufFrames;	// hw buf length
@@ -58,6 +38,12 @@ struct OSXAudioDevice::Impl {
 		int							audioBufChannels;	// channels in audioBuffers
 		int							inLoc, outLoc;		// circ. buffer indices
 		int							audioBufFilled;		// audioBuffer samples available
+		typedef int (*FrameFunction)(struct Port *, void *, int, int);
+		FrameFunction				frameFn;
+		static int					interleavedGetFrames(struct Port *, void *, int, int);
+		static int					interleavedSendFrames(struct Port *, void *, int, int);
+		static int					noninterleavedGetFrames(struct Port *, void *, int, int);
+		static int					noninterleavedSendFrames(struct Port *, void *, int, int);
 	} 							port[2];
 	
 	int							bufferSampleFormat;
@@ -86,6 +72,236 @@ struct OSXAudioDevice::Impl {
 	inline int					outputDeviceChannels() const;						
 };
 
+// I/O Functions
+
+int
+OSXAudioDevice::Impl::Port::interleavedGetFrames(struct Port *port, 
+                                                 void *frameBuffer,
+                                                 int frameCount, int frameChans)
+{
+	const int bufChannels = port->audioBufChannels;
+	const int bufLen = port->audioBufFrames * bufChannels;
+	int outLoc = port->outLoc;
+#if DEBUG > 0
+	printf("OSXAudioDevice::doGetFrames: frameCount = %d REC filled = %d\n", frameCount, port->audioBufFilled);
+#endif
+#if DEBUG > 1
+	printf("\tREC outLoc begins at %d (out of %d)\n", outLoc, bufLen);
+#endif
+	assert(frameCount <= port->audioBufFilled);
+
+	switch (frameChans) {
+	case 1:
+		if (bufChannels == 2) {
+#if DEBUG > 1
+			printf("Copying stereo buf into mono user frame\n");
+#endif
+			const float scale = 0.707;
+			float *from = port->audioBuffer;
+			float *outbuf = (float *) frameBuffer;
+			// Combine stereo channels from circ. buffer into mono output frame.
+			for (int out=0; out < frameCount; ++out) {
+				if (outLoc >= bufLen)	// wrap
+					outLoc -= bufLen;
+				outbuf[out] = (from[outLoc] + from[outLoc+1]) * scale;	
+				outLoc += 2;
+			}
+		}
+		else
+//			return error("Only stereo-to-mono record conversion is currently supported");
+			return -1;
+		break;
+
+	default:
+		if (bufChannels == frameChans) {
+#if DEBUG > 1
+			printf("Copying buf into user frame\n");
+#endif
+			float *from = port->audioBuffer;
+			float *outbuf = (float *) frameBuffer;
+			// Write all channels of each frame from circ. buffer into output frame.
+			for (int out=0; out < frameCount; ++out) {
+				if (outLoc >= bufLen)
+					outLoc -= bufLen;	// wrap
+				for (int ch = 0; ch < frameChans; ++ch) {
+					outbuf[ch] = from[outLoc++];	
+				}
+				outbuf += frameChans;
+			}
+		}
+		else
+	//		return error("Channel count conversion not supported for record");
+			return -1;
+		break;
+	}
+	port->outLoc = outLoc;
+	port->audioBufFilled -= frameCount;
+#if DEBUG > 0
+	printf("\tREC Filled now %d\n", port->audioBufFilled);
+#endif
+#if DEBUG > 1
+	printf("\tREC outLoc ended at %d. Returning frameCount = %d\n", outLoc, frameCount);
+#endif
+	return frameCount;
+}
+
+int
+OSXAudioDevice::Impl::Port::interleavedSendFrames(struct Port *port,
+                                                  void *frameBuffer,
+                                                  int frameCount, int frameChans)
+{
+	float *outbuf = port->audioBuffer;
+	const int bufChannels = port->audioBufChannels;
+	const int bufLen = port->audioBufFrames * port->audioBufChannels;
+	int inLoc = port->inLoc;
+#if DEBUG > 0
+	printf("OSXAudioDevice::doSendFrames: frameCount = %d, PLAY filled = %d\n", frameCount, port->audioBufFilled);
+#endif
+#if DEBUG > 1
+	printf("\tPLAY inLoc begins at %d (out of %d)\n", inLoc, bufLen);
+#endif
+	switch (frameChans) {
+	case 1:		// Mono input converted to stereo circ. buffer;  HW 2-N channels.
+		if (bufChannels == 2) {
+#if DEBUG > 1
+			printf("Copying mono user frame into stereo buf\n");
+#endif
+			float *from = (float *) frameBuffer;
+			for (int in=0; in < frameCount; ++in) {
+				if (inLoc >= bufLen)	// wrap
+					inLoc -= bufLen;
+				// Write single channel from frame into both chans of circular buf.
+				outbuf[inLoc+1] = outbuf[inLoc] = (float)(*from);	
+				++from;
+				inLoc += 2;
+			}
+		}
+		else
+	//		return error("Only mono-to-stereo playback conversion is currently supported");
+			return -1;
+		break;
+
+	default:		// 2-N channel input to 2-N channel circ. buffer; HW 2-N channels.
+		if (bufChannels == frameChans) {
+#if DEBUG > 1
+			printf("Copying user frame into buf\n");
+#endif
+			float *from = (float *) frameBuffer;
+			// Write all channels of each frame from frame into circular buf.
+			for (int in=0; in < frameCount; ++in) {
+				if (inLoc >= bufLen)
+					inLoc -= bufLen;	// wrap
+				for (int ch = 0; ch < frameChans; ++ch) {
+					outbuf[inLoc+ch] = (float) from[ch];	
+				}
+				from += frameChans;
+				inLoc += bufChannels;
+			}
+		}
+		else
+//			return error("Channel count conversion not supported for playback");
+			return -1;
+		break;
+	}
+	port->audioBufFilled += frameCount;
+	port->inLoc = inLoc;
+#if DEBUG > 0
+	printf("\tPLAY Filled now %d\n", port->audioBufFilled);
+#endif
+#if DEBUG > 1
+	printf("\tPLAY inLoc ended at %d. Returning frameCount = %d\n", inLoc, frameCount);
+#endif
+	return frameCount;
+}
+
+int
+OSXAudioDevice::Impl::Port::noninterleavedGetFrames(struct Port *port, 
+                                                    void *frameBuffer,
+                                                    int frameCount, int frameChans)
+{
+	const int bufChannels = port->streamCount;
+	const int bufLen = port->audioBufFrames;
+	int outLoc = port->outLoc;
+	float **fFrameBuffer = (float **) frameBuffer;		// non-interleaved
+#if DEBUG > 0
+	printf("OSXAudioDevice::doGetFrames: frameCount = %d REC filled = %d\n", frameCount, port->audioBufFilled);
+#endif
+	assert(frameCount <= port->audioBufFilled);
+
+	if (bufChannels == frameChans) {
+#if DEBUG > 1
+		printf("Copying non-interleaved internal bufs into user frame\n");
+#endif
+		for (int stream = 0; stream < port->streamCount; ++stream) {
+			outLoc = port->outLoc;
+			const int strIdx = stream + port->streamIndex;
+			register float *from = &port->audioBuffer[stream * port->audioBufFrames];
+			float *outbuf = fFrameBuffer[stream];
+			// Write each monaural frame from circ. buffer into output frame.
+			for (int out=0; out < frameCount; ++out) {
+				if (outLoc >= bufLen)
+					outLoc -= bufLen;	// wrap
+				outbuf[out] = from[outLoc++];	
+			}
+		}
+	}
+	else
+	//	return error("Channel count conversion not supported for record");
+		return -1;
+	port->outLoc = outLoc;
+	port->audioBufFilled -= frameCount;
+#if DEBUG > 0
+	printf("\tREC Filled now %d\n", port->audioBufFilled);
+#endif
+#if DEBUG > 1
+	printf("\tREC outLoc ended at %d. Returning frameCount = %d\n", outLoc, frameCount);
+#endif
+	return frameCount;
+}
+
+int
+OSXAudioDevice::Impl::Port::noninterleavedSendFrames(struct Port *port,
+                                                     void *frameBuffer,
+                                                     int frameCount, int frameChans)
+{
+	float **fFrameBuffer = (float **) frameBuffer;		// non-interleaved
+	const int bufChannels = port->streamCount;
+	const int bufLen = port->audioBufFrames;
+	int inLoc = port->inLoc;
+#if DEBUG > 0
+	printf("OSXAudioDevice::doSendFrames: frameCount = %d, PLAY filled = %d\n", frameCount, port->audioBufFilled);
+#endif
+	if (bufChannels == frameChans) {
+#if DEBUG > 1
+		printf("Copying non-interleaved user frame into internal bufs\n");
+#endif
+		for (int stream = 0; stream < port->streamCount; ++stream) {
+			inLoc = port->inLoc;
+			float *from = fFrameBuffer[stream];
+			const int strIdx = stream + port->streamIndex;
+			float *outbuf = &port->audioBuffer[strIdx];
+			// Write each input frame into circular buf.
+			for (int in=0; in < frameCount; ++in) {
+				if (inLoc >= bufLen)
+					inLoc -= bufLen;	// wrap
+				outbuf[inLoc++] = from[in];	
+			}
+		}
+	}
+	else
+	//	return error("Channel count conversion not supported for playback");
+		return -1;
+	port->audioBufFilled += frameCount;
+	port->inLoc = inLoc;
+#if DEBUG > 0
+	printf("\tPLAY Filled now %d\n", port->audioBufFilled);
+#endif
+#if DEBUG > 1
+	printf("\tPLAY inLoc ended at %d. Returning frameCount = %d\n", inLoc, frameCount);
+#endif
+	return frameCount;
+}
+
 inline int OSXAudioDevice::Impl::inputDeviceChannels() const
 {
 	return port[REC].deviceFormat.mChannelsPerFrame;
@@ -103,8 +319,6 @@ inline int min(int x, int y) { return (x <= y) ? x : y; }
 inline int inAvailable(int filled, int size) {
 	return size - filled;
 }
-
-#define DEBUG 0
 
 OSStatus
 OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
@@ -157,23 +371,27 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 			//   Treat it as circular buffer.
 			while (framesCopied < framesToRead) {
 				const int srcchans = impl->inputDeviceChannels();
-				register float *src = (float *) inInputData->mBuffers[port->streamIndex].mData;
-				register float *dest = port->audioBuffer;
 				int inLoc = port->inLoc;
-				for (int n = 0; n < framesToRead; ++n) {
-					if (inLoc == bufLen)	// wrap
-						inLoc = 0;
-					for (int ch = 0; ch < destchans; ++ch) {
-						if (ch < srcchans)
-							dest[inLoc] = src[ch];
-						else
-							dest[inLoc] = 0.0f;
-						++inLoc;
+				for (int stream = 0; stream < port->streamCount; ++stream) {
+					inLoc = port->inLoc;
+					const int strIdx = stream + port->streamIndex;
+					register float *src = (float *) inInputData->mBuffers[strIdx].mData;
+					register float *dest = &port->audioBuffer[stream * port->audioBufFrames];
+					for (int n = 0; n < framesToRead; ++n) {
+						if (inLoc == bufLen)	// wrap
+							inLoc = 0;
+						for (int ch = 0; ch < destchans; ++ch) {
+							if (ch < srcchans)
+								dest[inLoc] = src[ch];
+							else
+								dest[inLoc] = 0.0f;
+							++inLoc;
+						}
+						src += srcchans;
 					}
-					src += srcchans;
 				}
-				port->audioBufFilled += framesToRead;
 				port->inLoc = inLoc;
+				port->audioBufFilled += framesToRead;
 				framesCopied = framesToRead;
 			}
 			framesAdvanced = framesCopied;
@@ -235,19 +453,23 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 			// Audio data has been written into port->audioBuffer during doSendFrames.
 			//   Treat it as circular buffer.
 			while (framesDone < framesToWrite) {
-				register float *src = port->audioBuffer;
-				register float *dest = (float *) outOutputData->mBuffers[port->streamIndex].mData;
 				int outLoc = port->outLoc;
-				for (int n = 0; n < framesToWrite; ++n) {
-					if (outLoc == bufLen)	// wrap
-						outLoc = 0;
-					for (int ch = 0; ch < destchans; ++ch) {
-						if (ch < chansToCopy)
-							dest[ch] = src[outLoc++];
-						else
-							dest[ch] = 0.0f;
+				for (int stream = 0; stream < port->streamCount; ++stream) {
+					const int strIdx = stream + port->streamIndex;
+					register float *src = &port->audioBuffer[stream * port->audioBufFrames];
+					register float *dest = (float *) outOutputData->mBuffers[strIdx].mData;
+					outLoc = port->outLoc;
+					for (int n = 0; n < framesToWrite; ++n) {
+						if (outLoc == bufLen)	// wrap
+							outLoc = 0;
+						for (int ch = 0; ch < destchans; ++ch) {
+							if (ch < chansToCopy)
+								dest[ch] = src[outLoc++];
+							else
+								dest[ch] = 0.0f;
+						}
+						dest += destchans;
 					}
-					dest += destchans;
 				}
 				port->audioBufFilled -= framesToWrite;
 				port->outLoc = outLoc;
@@ -313,9 +535,11 @@ OSXAudioDevice::Impl::listenerProcess(AudioDeviceID inDevice,
 
 OSXAudioDevice::OSXAudioDevice(const char *desc) : _impl(new Impl)
 {
+	_impl->deviceName = NULL;
 	_impl->deviceID = 0;
 	for (int n = REC; n <= PLAY; ++n) {
 		_impl->port[n].streamIndex = 0;
+		_impl->port[n].streamCount = 0;
 		_impl->port[n].streamChannel = 0;
 		_impl->port[n].streamDesc = NULL;
 		_impl->port[n].deviceBufFrames = 0;
@@ -324,21 +548,67 @@ OSXAudioDevice::OSXAudioDevice(const char *desc) : _impl(new Impl)
 		_impl->port[n].audioBuffer = NULL;
 		_impl->port[n].inLoc = _impl->port[n].outLoc = 0;
 		_impl->port[n].audioBufFilled = 0;
+		_impl->port[n].frameFn = NULL;
 	}
-	char *substr = desc ? strstr(desc, ":") + 1 : NULL;
-	// Strip desc of form "OSXHW:inbuf,outbuf" into inbuf and outbuf
-	if (substr != NULL) {
-		char *outsubstr = NULL;
-		int idx1 = 0, idx2 = -1;
-		idx1 = strtol(substr, &outsubstr, 0);
-		_impl->port[REC].streamIndex = idx1;
-		if (outsubstr && strlen(outsubstr) > 0)
-			idx2 = strtol(outsubstr + 1, NULL, 0);
-		_impl->port[PLAY].streamIndex = (idx2 >= 0) ? idx2 : idx1;
+	::getDeviceList(&_impl->deviceIDs, &_impl->deviceCount);
+	
+	if (desc != NULL) {
+		char *substr = strstr(desc, ":");
+		if (substr == NULL) {
+			// Descriptor is just the device name
+			_impl->deviceName = new char[strlen(desc) + 1];
+			strcpy(_impl->deviceName, desc);
+		}
+		else {
+			// Extract device name
+			int nameLen = (int) substr - (int) desc;
+			_impl->deviceName = new char[nameLen + 1];
+			strncpy(_impl->deviceName, desc, nameLen);
+			_impl->deviceName[nameLen] = '\0';
+			++substr;	// skip ':'
+			char *outsubstr = NULL;
+			if (strchr(substr, '-') == NULL) {
+				// Parse desc of form "DEVICE:in,out"
+				int idx1 = 0, idx2 = -1;
+				idx1 = strtol(substr, &outsubstr, 0);
+				_impl->port[REC].streamIndex = idx1;
+				if (outsubstr && strlen(outsubstr) > 0)
+					idx2 = strtol(outsubstr + 1, NULL, 0);
+				_impl->port[PLAY].streamIndex = (idx2 >= 0) ? idx2 : idx1;
+				_impl->port[REC].streamCount = 1;
+				_impl->port[PLAY].streamCount = 1;
+			}
+			else {
+				// Parse desc of form "DEVICE:in0-inX,out0-outX"
+				int idx0, idx1, idx2, idx3;
+				int found = sscanf(substr, "%d-%d,%d-%d", &idx0, &idx1, &idx2, &idx3);
+				if (found == 4) {
+					_impl->port[REC].streamIndex = idx0;
+					_impl->port[REC].streamCount = idx1 - idx0 + 1;
+					_impl->port[PLAY].streamIndex = idx2;
+					_impl->port[PLAY].streamCount = idx3 - idx2 + 1;
+				}
+				else if (found == 2) {
+					_impl->port[PLAY].streamIndex = idx0;
+					_impl->port[PLAY].streamCount = idx1 - idx0 + 1;
+				}
+				else {
+					printf("Could not parse OSX device descriptor \"%s\"", desc);
+				}
+			}
+			printf("input streamIndex is %d\n", _impl->port[REC].streamIndex);
+			printf("output streamIndex is %d\n", _impl->port[PLAY].streamIndex);
+		}
+		// Treat old-stye device name as "default".
+		if (!strcmp(_impl->deviceName, "OSXHW")) {
+			delete [] _impl->deviceName;
+			_impl->deviceName = NULL;
+		}
+	}
 
-		printf("input streamIndex is %d\n", _impl->port[REC].streamIndex);
-		printf("output streamIndex is %d\n", _impl->port[PLAY].streamIndex);
-
+	if (_impl->deviceName == NULL) {
+		_impl->deviceName = new char[strlen("default") + 1];
+		strcpy(_impl->deviceName, "default");
 	}
 	_impl->bufferSampleFormat = MUS_UNKNOWN;
 	_impl->frameCount = 0;
@@ -355,6 +625,8 @@ OSXAudioDevice::~OSXAudioDevice()
 	delete [] _impl->port[REC].audioBuffer;
 	delete [] _impl->port[PLAY].streamDesc;
 	delete [] _impl->port[PLAY].audioBuffer;
+	delete [] _impl->deviceIDs;
+	delete [] _impl->deviceName;
 	delete _impl;
 }
 
@@ -362,17 +634,17 @@ int OSXAudioDevice::openInput()
 {
 	OSXAudioDevice::Impl *impl = _impl;
 	OSXAudioDevice::Impl::Port *port = &impl->port[REC];
-	AudioDeviceID devID;
+	AudioDeviceID devID = 0;
 	Boolean isInput = 1;
 	Boolean writeable = 0;
 	UInt32 size = sizeof(devID);
-	OSStatus err = AudioHardwareGetProperty(
-						kAudioHardwarePropertyDefaultInputDevice,
-						&size,
-				   		(void *) &devID);
-	if (err != kAudioHardwareNoError || devID == kAudioDeviceUnknown) {
-		return error("Cannot find default input device: ", ::errToString(err));
+	OSStatus err;
+	devID = ::findDeviceID(impl->deviceName, impl->deviceIDs, impl->deviceCount, isInput);
+
+	if (devID == 0) {
+		return error("No matching input device found");
 	}
+	
 	impl->deviceID = devID;	// If we are opening for output as well, this gets reset.
 	// Get the complete stream description set for the input
 	err = AudioDeviceGetPropertyInfo(devID, 
@@ -396,9 +668,10 @@ int OSXAudioDevice::openInput()
 		return error("Can't get input device stream configuration: ",
 					 ::errToString(err));
 	}
-	// Check that user's request is a valid stream
-	if (port->streamIndex >= port->streamDesc->mNumberBuffers) {
-		return error("Invalid input stream index");
+	// Check that user's request is a valid stream set
+	if (port->streamIndex + port->streamCount > (int) port->streamDesc->mNumberBuffers)
+	{
+		return error("Invalid input stream set");
 	}
 	// Brute force: Find first audio channel for desired input stream
 	int streamChannel = 1;
@@ -443,20 +716,21 @@ int OSXAudioDevice::openOutput()
 {
 	OSXAudioDevice::Impl *impl = _impl;
 	OSXAudioDevice::Impl::Port *port = &impl->port[PLAY];
-	AudioDeviceID devID;
+	AudioDeviceID devID = 0;
 	Boolean isOutput = 0;
 	Boolean writeable = 0;
 	UInt32 size = sizeof(devID);
-	OSStatus err = AudioHardwareGetProperty(
-						kAudioHardwarePropertyDefaultOutputDevice,
-						&size,
-				   		(void *) &devID);
-	if (err != kAudioHardwareNoError || devID == kAudioDeviceUnknown) {
-		return error("Cannot find default output device: ", ::errToString(err));
+	OSStatus err;
+	if (impl->deviceID == 0) {
+		devID = ::findDeviceID(impl->deviceName, impl->deviceIDs, impl->deviceCount, isOutput);
+		if (devID == 0) {
+			return error("No matching output device found");
+		}
+		impl->deviceID = devID;
 	}
-	if (_impl->deviceID != 0 && _impl->deviceID != devID)
-		printf("Input device ID != output -- ???\n");
-	impl->deviceID = devID;
+	else
+		devID = impl->deviceID;
+	
 	// Get the complete stream description set for the output
 	err = AudioDeviceGetPropertyInfo(devID, 
 									 kMasterChannel,
@@ -480,8 +754,9 @@ int OSXAudioDevice::openOutput()
 					 ::errToString(err));
 	}
 	// Check that user's request is a valid stream
-	if (port->streamIndex >= port->streamDesc->mNumberBuffers) {
-		return error("Invalid output stream index");
+	if (port->streamIndex + port->streamCount > (int) port->streamDesc->mNumberBuffers)
+	{
+		return error("Invalid output stream set");
 	}
 	// Brute force: Find first audio channel for desired output stream
 	int streamChannel = 1;
@@ -623,7 +898,10 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 			port = &_impl->port[dir];
 			// We catch mono input and do the conversion ourselves.  Otherwise we
 			// create a buffer equal to the requested channel count.
-			port->audioBufChannels = (chans == 1) ? 2 : chans;
+			if (port->streamCount == 1)
+				port->audioBufChannels = (chans == 1) ? 2 : chans;
+			else
+				port->audioBufChannels = 1;
 			// Default all values to device's defaults (from doOpen()), then set
 			// our sample rate.
 			AudioStreamBasicDescription requestedFormat = port->deviceFormat;
@@ -653,7 +931,7 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 				return error("This sampling rate not supported.");
 			}
 #if DEBUG > 0
-			printf("OSX %s HW (stream index %d, stream channel %d): %d %s channel(s)\n",
+			printf("OSX %s HW (stream index %d, stream channel %d): %u %s channel(s)\n",
 				   dir == REC ? "input" : "output",
 				   port->streamIndex, port->streamChannel,
 				   port->deviceFormat.mChannelsPerFrame,
@@ -671,31 +949,27 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 	int portIndex = _impl->playing ? PLAY : REC;
 	port = &_impl->port[portIndex];
 
-#ifdef WHEN_NONINTERLEAVED_IS_FINISHED
 	// Set the device format based upon settings.  This will be used for format conversion.
-	if ((port->deviceFormat.mFormatFlags & kLinearPCMFormatFlagIsNonInterleaved) != 0) {
+	// This also sets the frame I/O function.
+	if (port->streamCount > 1) {
 #if DEBUG > 0
-		printf("OSX HW is %d channel, non-interleaved\n", port->deviceFormat.mChannelsPerFrame);
+		printf("OSX HW is non-interleaved %d streams (%u channel)\n",
+			   port->streamCount, port->deviceFormat.mChannelsPerFrame);
 #endif
 		deviceFormat |= MUS_NON_INTERLEAVED;
+		_impl->port[REC].frameFn = Impl::Port::noninterleavedGetFrames;
+		_impl->port[PLAY].frameFn = Impl::Port::noninterleavedSendFrames;
 	}
 	else {
 #if DEBUG > 0
-		printf("OSX HW is %d channel, interleaved\n", port->deviceFormat.mChannelsPerFrame);
+		assert(port->streamCount == 1);
+		printf("OSX HW is 1 interleaved stream (%d channel)\n",
+			   port->deviceFormat.mChannelsPerFrame);
 #endif
 		deviceFormat |= MUS_INTERLEAVED;
+		_impl->port[REC].frameFn = Impl::Port::interleavedGetFrames;
+		_impl->port[PLAY].frameFn = Impl::Port::interleavedSendFrames;
 	}
-#else	/* WHEN_NONINTERLEAVED_IS_FINISHED */
-	// Temporarily, we report back the format of the circular buffers
-	// that I use as my intermediate buffers.  This is different from
-	// the AudioDeviceImpl's conversion buffer, and involves a second
-	// buffer copy, for the time being.
-
-#if DEBUG > 0
-	printf("OSX HW is %d channel, uses temp interleaved buffer\n", _impl->port[portIndex].deviceFormat.mChannelsPerFrame);
-#endif
-	deviceFormat |= MUS_INTERLEAVED;
-#endif	/* WHEN_NONINTERLEAVED_IS_FINISHED */
 
 	setDeviceParams(deviceFormat,
 					port->deviceFormat.mChannelsPerFrame,
@@ -780,7 +1054,7 @@ int OSXAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 				dir == REC ? "input" : "output", deviceBufferBytes,
 				port->deviceBufFrames, port->audioBufFrames);
 #endif
-		int buflen = port->audioBufFrames * port->audioBufChannels;
+		int buflen = port->audioBufFrames * port->audioBufChannels * port->streamCount;
 		delete [] port->audioBuffer;
 		port->audioBuffer = new float[buflen];
 		if (port->audioBuffer == NULL)
@@ -799,134 +1073,14 @@ int	OSXAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 {
 	const int frameChans = getFrameChannels();
 	Impl::Port *port = &_impl->port[REC];
-	const int bufChannels = port->audioBufChannels;
-	const int bufLen = port->audioBufFrames * bufChannels;
-	int outLoc = port->outLoc;
-#if DEBUG > 0
-	printf("OSXAudioDevice::doGetFrames: frameCount = %d REC filled = %d\n", frameCount, port->audioBufFilled);
-#endif
-#if DEBUG > 1
-	printf("\tREC outLoc begins at %d (out of %d)\n", outLoc, bufLen);
-#endif
-	assert(frameCount <= port->audioBufFilled);
-
-	switch (frameChans) {
-	case 1:
-		if (bufChannels == 2) {
-#if DEBUG > 1
-			printf("Copying stereo buf into mono user frame\n");
-#endif
-			const float scale = 0.707;
-			float *from = port->audioBuffer;
-			float *outbuf = (float *) frameBuffer;
-			// Combine stereo channels from circ. buffer into mono output frame.
-			for (int out=0; out < frameCount; ++out) {
-				if (outLoc >= bufLen)	// wrap
-					outLoc -= bufLen;
-				outbuf[out] = (from[outLoc] + from[outLoc+1]) * scale;	
-				outLoc += 2;
-			}
-		}
-		else
-			return error("Only stereo-to-mono record conversion is currently supported");
-		break;
-
-	default:
-		if (bufChannels == frameChans) {
-#if DEBUG > 1
-			printf("Copying buf into user frame\n");
-#endif
-			float *from = port->audioBuffer;
-			float *outbuf = (float *) frameBuffer;
-			// Write all channels of each frame from circ. buffer into output frame.
-			for (int out=0; out < frameCount; ++out) {
-				if (outLoc >= bufLen)
-					outLoc -= bufLen;	// wrap
-				for (int ch = 0; ch < frameChans; ++ch) {
-					outbuf[ch] = from[outLoc++];	
-				}
-				outbuf += frameChans;
-			}
-		}
-		else
-			return error("Channel count conversion not supported for record");
-		break;
-	}
-	port->outLoc = outLoc;
-	port->audioBufFilled -= frameCount;
-#if DEBUG > 0
-	printf("\tREC Filled now %d\n", port->audioBufFilled);
-#endif
-#if DEBUG > 1
-	printf("\tREC outLoc ended at %d. Returning frameCount = %d\n", outLoc, frameCount);
-#endif
-	return frameCount;
+	return (*port->frameFn)(port, frameBuffer, frameCount, frameChans);
 }
 
 int	OSXAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 {
 	const int frameChans = getFrameChannels();
 	Impl::Port *port = &_impl->port[PLAY];
-	float *outbuf = port->audioBuffer;
-	const int bufChannels = port->audioBufChannels;
-	const int bufLen = port->audioBufFrames * port->audioBufChannels;
-	int inLoc = port->inLoc;
-#if DEBUG > 0
-	printf("OSXAudioDevice::doSendFrames: frameCount = %d, PLAY filled = %d\n", frameCount, port->audioBufFilled);
-#endif
-#if DEBUG > 1
-	printf("\tPLAY inLoc begins at %d (out of %d)\n", inLoc, bufLen);
-#endif
-	switch (frameChans) {
-	case 1:		// Mono input converted to stereo circ. buffer;  HW 2-N channels.
-		if (bufChannels == 2) {
-#if DEBUG > 1
-			printf("Copying mono user frame into stereo buf\n");
-#endif
-			float *from = (float *) frameBuffer;
-			for (int in=0; in < frameCount; ++in) {
-				if (inLoc >= bufLen)	// wrap
-					inLoc -= bufLen;
-				// Write single channel from frame into both chans of circular buf.
-				outbuf[inLoc+1] = outbuf[inLoc] = (float)(*from);	
-				++from;
-				inLoc += 2;
-			}
-		}
-		else
-			return error("Only mono-to-stereo playback conversion is currently supported");
-		break;
-
-	default:		// 2-N channel input to 2-N channel circ. buffer; HW 2-N channels.
-		if (bufChannels == frameChans) {
-#if DEBUG > 1
-			printf("Copying user frame into buf\n");
-#endif
-			float *from = (float *) frameBuffer;
-			// Write all channels of each frame from frame into circular buf.
-			for (int in=0; in < frameCount; ++in) {
-				if (inLoc >= bufLen)
-					inLoc -= bufLen;	// wrap
-				for (int ch = 0; ch < frameChans; ++ch) {
-					outbuf[inLoc+ch] = (float) from[ch];	
-				}
-				from += frameChans;
-				inLoc += bufChannels;
-			}
-		}
-		else
-			return error("Channel count conversion not supported for playback");
-		break;
-	}
-	port->audioBufFilled += frameCount;
-	port->inLoc = inLoc;
-#if DEBUG > 0
-	printf("\tPLAY Filled now %d\n", port->audioBufFilled);
-#endif
-#if DEBUG > 1
-	printf("\tPLAY inLoc ended at %d. Returning frameCount = %d\n", inLoc, frameCount);
-#endif
-	return frameCount;
+	return (*port->frameFn)(port, frameBuffer, frameCount, frameChans);
 }
 
 int OSXAudioDevice::doGetFrameCount() const
@@ -936,12 +1090,130 @@ int OSXAudioDevice::doGetFrameCount() const
 
 bool OSXAudioDevice::recognize(const char *desc)
 {
-	return (desc == NULL) || (strncmp(desc, "OSXHW", 5) == 0);
+//	return (desc == NULL) || (strncmp(desc, "OSXHW", 5) == 0);
+	return true;
 }
 
 AudioDevice *OSXAudioDevice::create(const char *inputDesc, const char *outputDesc, int mode)
 {
 	return new OSXAudioDevice(inputDesc ? inputDesc : outputDesc);
+}
+
+// Static utilities
+
+static const char *
+errToString(OSStatus err)
+{
+	const char *errstring;
+	switch (err) {
+	case kAudioHardwareNoError:
+		errstring = "No error.";
+		break;
+	case kAudioHardwareNotRunningError:
+		errstring = "Hardware not running.";
+		break;
+	case kAudioHardwareUnspecifiedError:
+		errstring = "Unspecified error.";
+		break;
+	case kAudioHardwareUnknownPropertyError:
+		errstring = "Unknown hardware property.";
+		break;
+	case kAudioDeviceUnsupportedFormatError:
+		errstring = "Unsupported audio format.";
+		break;
+	case kAudioHardwareBadPropertySizeError:
+		errstring = "Bad hardware propery size.";
+		break;
+	case kAudioHardwareIllegalOperationError:
+		errstring = "Illegal operation.";
+		break;
+	default:
+		errstring = "Unknown error.";
+	}
+	return errstring;
+}
+
+static OSStatus
+getDeviceList(AudioDeviceID **devList, int *devCount)
+{
+   UInt32 size;
+
+   OSStatus err = AudioHardwareGetPropertyInfo(
+                        kAudioHardwarePropertyDevices,
+                        &size, NULL);
+   if (err != kAudioHardwareNoError) {
+      printf("Can't get hardware device list property info.\n");
+      return err;
+   }
+   *devCount = size / sizeof(AudioDeviceID);
+   *devList = new AudioDeviceID[*devCount];
+   err = AudioHardwareGetProperty(
+                        kAudioHardwarePropertyDevices,
+                        &size, *devList);
+   if (err != kAudioHardwareNoError) {
+      printf("Can't get hardware device list.\n");
+      return err;
+   }
+
+   return 0;
+}
+
+static AudioDeviceID
+findDeviceID(const char *devName, AudioDeviceID *devList, int devCount, Boolean isInput)
+{
+	AudioDeviceID devID = 0;
+    UInt32 size = sizeof(devID);
+	if (!strcasecmp(devName, "default")) {
+		OSStatus err = AudioHardwareGetProperty(
+							isInput ?
+								kAudioHardwarePropertyDefaultInputDevice :
+									kAudioHardwarePropertyDefaultOutputDevice,
+							&size,
+				   			(void *) &devID);
+		if (err != kAudioHardwareNoError || devID == kAudioDeviceUnknown) {
+			fprintf(stderr, "Cannot find default OSX device: %s\n", ::errToString(err));
+			return 0;
+		}
+		return devID;
+	}
+	for (int dev = 0; dev < devCount && devID == 0; ++dev) {
+
+	   OSStatus err = AudioDeviceGetPropertyInfo(devList[dev],
+                                            	 0,
+                                            	 isInput,
+                                            	 kAudioDevicePropertyDeviceName,
+                                            	 &size, NULL);
+	   if (err != kAudioHardwareNoError) {
+    	  fprintf(stderr, "findDeviceID: Can't get device name property info for device %d.\n",
+                  devList[dev]);
+    	  continue;
+	   }
+
+	   char *name = new char[size + 1];
+	   err = AudioDeviceGetProperty(devList[dev],
+                                	0,
+                                	isInput,
+                                	kAudioDevicePropertyDeviceName,
+                                	&size, name);
+	   if (err != kAudioHardwareNoError) {
+    	  fprintf(stderr, "findDeviceID: Can't get device name property for device %d.\n",
+			  	  devList[dev]);
+		  delete [] name;
+    	  continue;
+	   }
+#if DEBUG > 0
+		printf("Checking device %d -- name: \"%s\"\n", dev, name);
+#endif
+	   // For now, we must match the case as well because strcasestr() does not exist.
+	   if (strstr(name, devName) != NULL) {
+#if DEBUG > 0
+			printf("MATCH FOUND\n");
+#endif
+			devID = devList[dev];
+	   }
+	   delete [] name;
+	}
+	return devID;
 }
 
 #endif	// MACOSX
