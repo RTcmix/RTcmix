@@ -51,5 +51,5 @@ L<gen20|gen20>
 
 =head1 AUTHOR
 
-Douglas Scott E<lt>dscott at netscape net<gt>
+Douglas Scott E<lt>dscott at netscape netE<gt>
 
