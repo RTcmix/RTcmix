@@ -175,7 +175,7 @@ parse_rtoutput_args(int nargs, double pp[])
    char  *arg;
 
    if (nargs == 0) {
-      warn("rtoutput", "you didn't specify a file name!");
+      rterror("rtoutput", "you didn't specify a file name!");
       return -1;
    }
 
@@ -184,7 +184,7 @@ parse_rtoutput_args(int nargs, double pp[])
    rtoutsfname = (char *)anint;
    if (rtoutsfname == NULL)
    {
-      warn("rtoutput", "NULL file name!");
+      rterror("rtoutput", "NULL file name!");
       return -1;
    }
 
@@ -207,7 +207,7 @@ parse_rtoutput_args(int nargs, double pp[])
          }
       }
       if (!matched) {
-         warn("rtoutput", "unrecognized argument \"%s\"", arg);
+         rterror("rtoutput", "unrecognized argument \"%s\"", arg);
          return -1;
       }
 
@@ -293,7 +293,7 @@ rtoutput(float p[], int n_args, double pp[])
    struct stat statbuf;
 
    if (rtfileit == 1) {
-      warn("rtoutput", "A soundfile is already open for writing...");
+      rterror("rtoutput", "A soundfile is already open for writing...");
       return -1;
    }
 
@@ -317,20 +317,20 @@ rtoutput(float p[], int n_args, double pp[])
          ;              /* File doesn't exist -- no problem */
       }
       else {
-         warn("rtoutput", "Error accessing file \"%s\": %s",
+         rterror("rtoutput", "Error accessing file \"%s\": %s",
                                                 rtoutsfname, strerror(errno));
 	  	 return -1;	/* was exit() */
       }
    }
    else {               /* File exists; find out whether we can clobber it */
       if (!clobber) {
-         warn("rtoutput", "\n%s", CLOBBER_WARNING);
+         rterror("rtoutput", "\n%s", CLOBBER_WARNING);
 		 return -1;
       }
       else {
          /* make sure it's a regular file */
          if (!S_ISREG(statbuf.st_mode)) {
-            warn("rtoutput", "\"%s\" isn't a regular file; won't clobber it",
+            rterror("rtoutput", "\"%s\" isn't a regular file; won't clobber it",
                                                                  rtoutsfname);
 			return -1;
          }
@@ -340,7 +340,7 @@ rtoutput(float p[], int n_args, double pp[])
    rtoutfile = sndlib_create(rtoutsfname, output_header_type,
                                          output_data_format, (int)SR, NCHANS);
    if (rtoutfile == -1) {
-      warn("rtoutput", "Can't write \"%s\": %s", rtoutsfname, strerror(errno));
+      rterror("rtoutput", "Can't write \"%s\": %s", rtoutsfname, strerror(errno));
 	  return -1;
    }
 
