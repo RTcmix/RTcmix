@@ -98,6 +98,11 @@ ug_intro()
 	UG_INTRO("setexp", m_setexp);
 	UG_INTRO("addgens", m_addgens);
 	UG_INTRO("multgens", m_multgens);
+	UG_INTRO("offsetgen", m_offsetgen);
+	UG_INTRO("scalegen", m_scalegen);
+	UG_INTRO("invertgen", m_invertgen);
+	UG_INTRO("reversegen", m_reversegen);
+	UG_INTRO("rotategen", m_rotategen);
 #ifdef RTUPDATE
 	UG_INTRO("pgen", pgen);
 	UG_INTRO("note_pfield_path", note_pfield_path);

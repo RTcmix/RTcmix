@@ -2,10 +2,19 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>  /* for memmove */
+#include <float.h>   /* for FLT_MIN and FLT_MAX */
 #include <ugens.h>
 
 
 /* -------------------------------------------------------------- addgens --- */
+/* Add corresponding values of gens whose table numbers are given in
+   p1 and p2, placing the result in a new gen in the table number given in
+   p0.  If the input tables are not the same size, the smaller one is resampled
+   to have the size of the larger one before adding corresponding values.
+*/
 double
 m_addgens(float p[], int n_args, double pp[])
 {
@@ -23,6 +32,11 @@ m_addgens(float p[], int n_args, double pp[])
 
 
 /* ------------------------------------------------------------- multgens --- */
+/* Multiply corresponding values of gens whose table numbers are given in
+   p1 and p2, placing the result in a new gen in the table number given in
+   p0.  If the input tables are not the same size, the smaller one is resampled
+   to have the size of the larger one before multiplying corresponding values.
+*/
 double
 m_multgens(float p[], int n_args, double pp[])
 {
@@ -35,6 +49,182 @@ m_multgens(float p[], int n_args, double pp[])
 
    size = combine_gens(destslot, srcslot1, srcslot2, normalize,
                                                 MULT_GENS, "multgens");
+   return (double) size;
+}
+
+
+/* ------------------------------------------------------------ offsetgen --- */
+/* Add a constant, given in p1, to the values of the gen whose table number
+   is given in p0.  Note that no rescaling of the resulting table is done,
+   so that values outside [-1, 1] are possible.
+*/
+double
+m_offsetgen(float p[], int n_args, double pp[])
+{
+   int   i, slot, size;
+   float *table, offset;
+
+   slot = (int) p[0];
+   table = floc(slot);
+   if (table == NULL)
+      die("offsetgen", "No function table defined for slot %d.", slot);
+   size = fsize(slot);
+   offset = p[1];
+
+   for (i = 0; i < size; i++)
+      table[i] = table[i] + offset;
+
+   return (double) size;
+}
+
+
+/* ------------------------------------------------------------- scalegen --- */
+/* Multiply by a constant, given in p1, the values of the gen whose table
+   number is given in p0.  Note that no rescaling of the resulting table is
+   done, so that values outside [-1, 1] are possible.
+*/
+double
+m_scalegen(float p[], int n_args, double pp[])
+{
+   int   i, slot, size;
+   float *table, scale;
+
+   slot = (int) p[0];
+   table = floc(slot);
+   if (table == NULL)
+      die("scalegen", "No function table defined for slot %d.", slot);
+   size = fsize(slot);
+   scale = p[1];
+
+   for (i = 0; i < size; i++)
+      table[i] = table[i] * scale;
+
+   return (double) size;
+}
+
+
+/* ------------------------------------------------------------ invertgen --- */
+/* Invert the values of the gen whose table number is given in p0.  The
+   y-axis center of symmetry is a point halfway between the min and max
+   table values; inversion is performed around this center of symmetry.
+*/
+double
+m_invertgen(float p[], int n_args, double pp[])
+{
+   int   i, slot, size;
+   float min, max, center, *table;
+
+   slot = (int) p[0];
+   table = floc(slot);
+   if (table == NULL)
+      die("invertgen", "No function table defined for slot %d.", slot);
+   size = fsize(slot);
+
+   /* determine central y-axis value */
+   min = FLT_MAX;
+   max = FLT_MIN;
+   for (i = 0; i < size; i++) {
+      if (table[i] < min)
+         min = table[i];
+      if (table[i] > max)
+         max = table[i];
+   }
+   center = min + ((max - min) / 2.0);
+
+//advise("invertgen", "min: %f, max: %f, center: %f", min, max, center);
+
+   /* invert values around center */
+   for (i = 0; i < size; i++) {
+      float diff = table[i] - center;
+      table[i] = center - diff;
+   }
+
+   return (double) size;
+}
+
+
+/* ----------------------------------------------------------- reversegen --- */
+/* Reverse the values of the gen whose table number is given in p0. */
+double
+m_reversegen(float p[], int n_args, double pp[])
+{
+   int   i, j, slot, size;
+   float *table;
+
+   slot = (int) p[0];
+   table = floc(slot);
+   if (table == NULL)
+      die("reversegen", "No function table defined for slot %d.", slot);
+   size = fsize(slot);
+
+   for (i = 0, j = size - 1; i < size / 2; i++, j--) {
+      float temp = table[i];
+      table[i] = table[j];
+      table[j] = temp;
+   }
+
+   return (double) size;
+}
+
+
+/* ------------------------------------------------------------ rotategen --- */
+/* Rotate the values of the gen whose table number is given in p0 by the number
+   of array locations given in p1.  Positive values rotate to the right;
+   negative values to the left.  If a value is rotated off the end of the
+   array in either direction, it reenters the other end of the array.
+*/
+double
+m_rotategen(float p[], int n_args, double pp[])
+{
+   int      i, j, slot, size, rotate, absrotate;
+   size_t   movesize;
+   float    *table, *scratch;
+
+   slot = (int) p[0];
+   table = floc(slot);
+   if (table == NULL)
+      die("rotategen", "No function table defined for slot %d.", slot);
+   size = fsize(slot);
+   rotate = (int) p[1];
+   if (rotate == 0) {
+      advise("rotategen", "You're rotating by 0 locations!");
+      return (double) size;
+   }
+   absrotate = abs(rotate);
+   if (absrotate >= size)
+      die("rotategen", "Rotate value must be less than table size.");
+
+   scratch = (float *) malloc((size_t)(absrotate * sizeof(float)));
+   if (scratch == NULL)
+      die("rotategen", "No memory for scratch buffer!");
+
+/*
+   j = (rotate > 0) ? size - rotate : 0;
+   for (i = 0; i < absrotate; i++, j++) {
+      scratch[i] = table[j];
+printf("scratch[%d]: %f\n", i, scratch[i]);
+   }
+*/
+
+   /* an example of what should happen...
+      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]      src table, size = 10
+      [7, 8, 9, 0, 1, 2, 3, 4, 5, 6]      dest, rotate = 3
+      [3, 4, 5, 6, 7, 8, 9, 0, 1, 2]      dest, rotate = -3
+   */
+   movesize = (size_t) (size - absrotate);  /* floats to shift within table */
+   if (rotate > 0) {
+      memcpy(scratch, table + movesize, (size_t) absrotate * sizeof(float));
+      memmove(table + absrotate, table, movesize * sizeof(float));
+      memcpy(table, scratch, (size_t) absrotate * sizeof(float));
+   }
+   else {
+      memcpy(scratch, table, (size_t) absrotate * sizeof(float));
+      memmove(table, table + absrotate, movesize * sizeof(float));
+      memcpy(table + movesize, scratch, (size_t) absrotate * sizeof(float));
+   }
+
+   free(scratch);
+
    return (double) size;
 }
 

@@ -2,6 +2,11 @@ NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
 
+Sunday, November 17, 2002 John Gibson <johgibso@indiana.edu>
+
+   * Added several makegen table processing functions: offsetgen,
+     scalegen, invertgen, reversegen, rotategen.
+
 Friday, November 8, 2002 John Gibson <johgibso@indiana.edu>
 
    * cmixplay lets you use a rescale factor for integer files.
