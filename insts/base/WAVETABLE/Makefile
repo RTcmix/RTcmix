@@ -2,8 +2,8 @@ include ../package.conf
 
 OBJS = WAVETABLE.o
 CMIXOBJS += $(PROFILE_O)
-CFLAGS += -fPIC
-CXXFLAGS += -fPIC 
+#CFLAGS += -fPIC
+#CXXFLAGS += -fPIC 
 PROGS = WAVETABLE libWAVETABLE.so
 
 all: libWAVETABLE.so
@@ -20,4 +20,4 @@ WAVETABLE: $(OBJS) $(CMIXOBJS)
 $(OBJS): $(INSTRUMENT_H)
 
 clean:
-	rm -f *.o $(OBJS) $(PROGS)
+	$(RM) *.o $(OBJS) $(PROGS)

@@ -1,5 +1,6 @@
 #include <iostream.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "WAVETABLE.h"
