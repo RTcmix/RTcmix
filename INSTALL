@@ -1,193 +1,100 @@
-I.  INSTALLATION
-----------------
+Here is how to install RTcmix and its instrument packages.
 
-Ia.  Preliminaries
-------------------
+1. Download RTcmix-[version].tar.gz and unpack it anywhere you like (in your
+   home directory, or in /usr/local/src, for example) by typing
 
-1) For Linux:
+      tar xfz RTcmix-[version].tar.gz
+      (or: gunzip -c RTcmix-[version].tar.gz | tar xf - )
 
-   a) Set up your linux audio driver: either compile the kernel with sound, 
-      or get the OSS drivers:
+2. If you downloaded the "cadillac version," which contains the optional
+   instrument packages, skip this step.
 
-         http://www.4front-tech.com
+   a. Download at least the std and jg packages, and unpack them into the
+      "insts" directory of your RTcmix.
 
-   b) If you're still using a distribution of Linux that only has libc5
-      C libraries, then you'll need to get and install the pthread libraries:
+   b. The package directory will have a version number, like "std-4.0.0".  It's
+      a good idea to rename this to remove the version number (e.g., "std").
 
-         http://pauillac.inria.fr/~xleroy/linuxthreads/
+3. cd into the top level of the RTcmix directory, and run the configure script:
 
-   c) If you're using RedHat, you may not have the lex libraries, in which
-      case you'll get an error about -ll not found. Change the Makefile in
-      the Minc directory to use -lfl (flex libraries) instead.
+      ./configure
 
-
-2) For MAC OS X:
-
-   This has been tested only on the internal audio devices on recent G4
-   PowerMacs and PowerBooks.  It's possible that third-party hardware will
-   require some tweaks.  Please notify John Gibson (johgibso at indiana dot edu)
-   if you can't get this to work.
-
-   Note that this version currently cannot use the latest pfield-updating
-   code by John Rhoads and Dave Topper.  Hopefully, we'll figure out how to get
-   that to compile.  (It's disabled for OS X now.)
-
-   The only instrument packages that have been tested with an OS X build
-   are "insts.std" and "insts.jg."  "insts.mch" compiles but hasn't been
-   tested.
-
-   a) You must use OS X 10.1 or later, and you must have installed
-      the appropriate version of the Developer Tools.
-
-   b) If you want to enable the Python front-end, you'll have to build
-      Python from source, because the Python supplied with the Developer
-      Tools CD is incomplete.  See the instructions in RTcmix/Python/NOTES.
-
-   c) If you want to use gnuplot with the fplot Minc function, you have
-      to install both the command-line gnuplot from source and Aquaterm.
-      See http://aquaterm.sourceforge.net for instructions.
-
-
-3) For SGI:
-
-   The Irix port was done rather quickly by John Gibson, so as to have the
-   same RTcmix features under Irix as we had under Linux at UVA. You may
-   prefer to try the Irix version made by Brad Garton and folks at Columbia.
-
-   a) This version of RTcmix requires GNU make, which you can get from
-      ftp://ftp.gnu.org/gnu/make/ (current version is make-3.78.1.tar.gz).
-      Install it as "gmake". Then you'll make RTcmix by saying "gmake".
-
-      If you already have GNU make, either change its name to gmake, or 
-      edit RTcmix's makefile.conf to point to the right make program name.
-
-      If you don't use GNU make, you'll see errors like this:
-
-         make: file `makefile.conf' line 35: Must be a separator (: or ::)
-               for rules (bu39)
-
-   NOTE: This has been compiled and tested under Irix 6.3. Some folks
-   have reported problems compiling under Irix 6.5. If you solve these,
-   please let us know.
+   There are some options you might want to give this script.  Here's a
+   description of them.  If you already ran configure without the options,
+   it's okay to run it again with the options you want.
  
+      --with-alsa       Use the ALSA driver on Linux
+      --with-perl       Build the Perl-enabled RTcmix (PCMIX)
+      --with-python     Build the Python-enabled RTcmix (PYCMIX)
+      --with-netplay    Enable code that lets you play RTcmix over a network
 
-Ib.  Compile and install the core
----------------------------------
+   If you have more than one version of perl or python on your system, you
+   can tell RTcmix which one to use by giving its path with the option, e.g.:
 
-1) Unpack the RTcmix archive into any directory on your machine
-   (e.g., with "gunzip -c RTcmix-3.1.0.tar.gz | tar xf -").
-   This will create a directory called "RTcmix-3.1.0" with all
-   the core source inside. We call this the "RTcmix directory" below.
+      --with-python=/usr/local/bin/python
 
-2) Edit "makefile.conf" inside this directory.
-   Make sure TOPDIR and LIBDESTDIR are right for your situation.
-   Mac OS X users must change the definition of ARCH to MACOSX.
-   SGI users must change the definition of ARCH to SGI, and change
-   the compiler optimization flags, as suggested in the comments there.
+   Give these options in any order, following the configure script name:
 
-   Also note the backwards-compatibility flag -DCOMPATIBLE_FUNC_LOCS,
-   which you may want to enable if you have old WAVETABLE, FMINST and
-   WAVESHAPE scores. Read "docs/README.table_assigns" for more.
+      ./configure --with-alsa --with-perl --with-python
 
-3) From your RTcmix directory, type "make && make install"
-   (or, for SGI, "gmake && gmake install").
+4. There are some special settings that you can make in the "site.conf" file,
+   though most people will never need to do this.
 
-4) Add the bin directory inside of the RTcmix directory to your $PATH.
+5. Make the package.  Be sure you're still in the top RTcmix directory and type:
 
-   It's easier to manage versions of RTcmix if you make an "RTcmix" link to
-   the current version, and then put the link into your PATH.)
+      make
 
+6. If the package builds without errors, install it:
 
-SGI compilation problems:
+      make install
 
-1) Don't worry if you see errors like the following; they're harmless:
+7. Add the bin directory inside of the RTcmix directory to your $PATH.  For
+   example, if you're using the bash shell, put this in .bashrc:
 
-      ld: WARNING 84: /usr/lib/libaudio.so is not used for resolving any symbol
+      PATH="/path/to/rtcmix:$PATH"
 
-2) If you see errors like the following, it probably means that you're
-   compiling in an NFS-mounted directory. (It's possible that this only
-   crops up if the NFS directory is served to the SGI by a Linux machine.)
-   Quick solution: put the so_locations file on a local disk, and change
-   makefile.conf to reflect the new location of this file.
-
-      ld: ERROR 48: Cannot access registry file
-         /share/RTcmix/shlib/so_locations (No locks available) - ignored.
-      ld: FATAL 51: Can't assign virtual addresses for libWAVETABLE.so of
-         size 10000 within specified range.  Please check your registry
-         file /share/RTcmix/shlib/so_locations.
-
-3) If you get other complaints about the so_locations file in Irix 6.5,
-   try changing the definition of SHARED_LDFLAGS in makefile.conf to
-   look like the following, and then "make clean; make":
-
-   SHARED_LDFLAGS = -shared -check_registry /usr/lib/so_locations
-
-   This inhibits creation of a new so_locations file, which we don't
-   seem to need.
-
-
-Ic.  Compile and install separate packages
-------------------------------------------
-
-Packages usually contain additional instruments. The base distribution
-only contains MIX and WAVETABLE, so you'll want to grab at least the
-"insts.std" package. Here's how to install packages:
-
-1) cd into your RTcmix directory
-
-2) Untar PACKAGE-version.tar.gz  ("tar xfz PACKAGE-version.tar.gz")
-
-3) The package dir will have a version number, like "insts.std-3.0.0".
-   Rename this to "insts.std", or use the full version name in
-   makefile.conf (see below).
-
-   WARNING: If the package dir name doesn't match the one given
-   in makefile.conf, you'll get an infinite loop when you run make.
-
-4) Edit "makefile.conf" in the RTcmix directory.
-
-   If the package is an instrument package (e.g., insts.std, insts.jg),
-   then add the package directory name to INST_DIRS.
-
-   If the package is not an instrument package (e.g., interfaces.dt),
-   then add the package directory name to PACKAGE_DIRS.
-
-5) Do a "make && make install" (or gmake for SGI) from the RTcmix directory
-   (not from inside the package directory). This creates a .conf file in the
-   package directory, which the sub-level makefiles need.
-
-
-II.  RUN THEM SCOREFILES!
--------------------------
-
-There are sample score files in docs/sample_scos_1.0.
-
-To run any score, type "CMIX < scorefile.sco".
-
-The ones to start with are the real-time (upper case) ones that
-don't need input files, like WAVETABLE, AMINST, FMINST and STRUM.
-
-If these seem to work, your installation is probably ok.
-
-The instruments (both real-time and disk-based) that process input
-files will accept files in a variety of formats without any special
-effort on your part.
-
-
-Before using a disk-based instrument (lower case), you have to use
-sfcreate to make an empty sound file.
+8. Try running some of the scores in docs/sample_scores.  To run any score,
+   type "CMIX < scorefile.sco".  If these seem to work, your installation
+   is probably ok.
 
 See the README files in the docs dir for information on recent features.
 
-You may also find helpful the tutorials on John Gibson's Music 540
-course web site, http://mypage.iu.edu/~johgibso/musi540.
+For some help getting started, check out the RTcmix web pages at Columbia
+University, which have lots of documentation and tutorials:
+
+   http://music.columbia.edu/cmc/RTcmix
 
 
-III. HAVE FUN!
---------------
-:->
+--------------------------------------------------------------------------------
+Platform Notes
 
 
-Dave Topper <topper at virginia dot edu>
-John Gibson <johgibso at indiana dot edu>
+Linux
+-----
+
+
+Mac OS X
+--------
+
+   - You must use OS X 10.1 or later, and you must have installed the
+     appropriate version of the Developer Tools.
+
+   - If you want to use gnuplot with the fplot Minc function, you have
+     to install both the command-line gnuplot from source and Aquaterm.
+     See http://aquaterm.sourceforge.net for instructions.
+
+   - If you want to enable the Python front-end, you may have to build
+     Python from source, because the Python supplied with the Developer
+     Tools CD is incomplete.  See the instructions in RTcmix/Python/NOTES.
+
+
+SGI Irix
+--------
+
+   - It's been a long time since any of us have compiled RTcmix on Irix, so
+     who knows whether it will work or even build.  Let us know what you find.
+
+
+
+-JGG, 8/1/04
 
