@@ -71,6 +71,7 @@ extern int (*bwipeoutpointer[NFILES])();
 #define  SIGN(x) (ABS(x)/(x ? x : 1.))
 
 /* declarations of units */
+double makegen(float [], int);
 float *floc(int);
 int fsize(int);
 
