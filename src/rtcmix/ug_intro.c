@@ -15,6 +15,8 @@ ug_intro()
    UG_INTRO_DOUBLE_RETURN("tablelen", tablelen);
    UG_INTRO_HANDLE_RETURN("normtable", normtable);
    UG_INTRO_HANDLE_RETURN("copytable", copytable);
+   UG_INTRO_HANDLE_RETURN("shifttable", shifttable);
+   UG_INTRO_HANDLE_RETURN("quantizetable", quantizetable);
    UG_INTRO_DOUBLE_RETURN("dumptable", dumptable);
    UG_INTRO_DOUBLE_RETURN("plottable", plottable);
    UG_INTRO_HANDLE_RETURN("mul", multtable);

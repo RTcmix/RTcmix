@@ -1585,11 +1585,14 @@ extern "C" {
    double tablelen(const Arg args[], const int nargs);
    Handle normtable(const Arg args[], const int nargs);
    Handle copytable(const Arg args[], const int nargs);
+   Handle shifttable(const Arg args[], const int nargs);
+   Handle quantizetable(const Arg args[], const int nargs);
    Handle multtable(const Arg args[], const int nargs);
    Handle addtable(const Arg args[], const int nargs);
    double plottable(const Arg args[], const int nargs);
    double dumptable(const Arg args[], const int nargs);
 };
+
 
 /* ------------------------------------------------------------- maketable -- */
 static void
@@ -1656,6 +1659,7 @@ maketable(const Arg args[], const int nargs)
    return _createPFieldHandle(new TablePField(data, len));
 }
 
+
 /* -------------------------------------------------------------- tablelen -- */
 double
 tablelen(const Arg args[], const int nargs)
@@ -1673,6 +1677,7 @@ tablelen(const Arg args[], const int nargs)
 
    return (double) table->values();
 }
+
 
 /* ------------------------------------------------------------- multtable -- */
 Handle
@@ -1699,6 +1704,7 @@ multtable(const Arg args[], const int nargs)
    return NULL;
 }
 
+
 /* -------------------------------------------------------------- addtable -- */
 Handle
 addtable(const Arg args[], const int nargs)
@@ -1723,6 +1729,7 @@ addtable(const Arg args[], const int nargs)
    die("addtable", "Usage: add(table1, table2) or add(table1, const1)");
    return NULL;
 }
+
 
 /* ------------------------------------------------------------- normtable -- */
 Handle
@@ -1751,17 +1758,18 @@ normtable(const Arg args[], const int nargs)
    return _createPFieldHandle(newtable);
 }
 
+
 /* ------------------------------------------------------------- copytable -- */
 Handle
 copytable(const Arg args[], const int nargs)
 {
    if (nargs != 1) {
-      die("copytable", "Usage: newtable = copytable(table_to_copy);");
+      die("copytable", "Usage: newtable = copytable(table_to_copy)");
       return NULL;
    }
    PField *table = (PField *) args[0], *copyOfTable = NULL;
    if (table == NULL) {
-      die("copytable", "Usage: newtable = copytable(table_to_copy);");
+      die("copytable", "Usage: newtable = copytable(table_to_copy)");
       return NULL;
    }
    if (table->values() == 1)
@@ -1772,6 +1780,122 @@ copytable(const Arg args[], const int nargs)
       copyOfTable = new TablePField(values, table->values());
    }
    return _createPFieldHandle(copyOfTable);
+}
+
+
+/* ------------------------------------------------------------ shifttable -- */
+/* Make a copy of the given table, and shift the values of the copy by 
+   <shift> array locations.  Positive values of <shift> shift to the right;
+   negative values to the left.  If a value is shifted off the end of the
+   array in either direction, it reenters the other end of the array.
+
+   Two examples:
+      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]      original table, size = 10
+      [7, 8, 9, 0, 1, 2, 3, 4, 5, 6]      shift = 3
+      [3, 4, 5, 6, 7, 8, 9, 0, 1, 2]      shift = -3
+*/
+static void
+_do_shift_table(double *array, const int len, const int shift)
+{
+   /* We can't shift in place, so need temp copy of <array>. */
+   double *src = new double[len];
+   memcpy(src, array, len * sizeof(double));
+
+   const int abs_shift = abs(shift);
+   size_t movesize = (size_t) (len - abs_shift);   /* elements to shift */
+   if (shift > 0) {
+      memcpy(array, src + movesize, (size_t) abs_shift * sizeof(double));
+      memcpy(array + abs_shift, src, movesize * sizeof(double));
+   }
+   else {
+      memcpy(array, src + abs_shift, movesize * sizeof(double));
+      memcpy(array + movesize, src, (size_t) abs_shift * sizeof(double));
+   }
+   delete [] src;
+}
+
+Handle
+shifttable(const Arg args[], const int nargs)
+{
+   if (nargs != 2) {
+      die("shifttable", "Usage: newtable = shifttable(table, shift)");
+      return NULL;
+   }
+   TablePField *table = _getTablePField(&args[0]);
+   if (table == NULL) {
+      die("shifttable", "Usage: newtable = shifttable(table, shift)");
+      return NULL;
+   }
+   if (!args[1].isType(DoubleType)) {
+      die("shifttable", "Usage: newtable = shifttable(table, shift)");
+      return NULL;
+   }
+   int shift = args[1];
+   const int abs_shift = abs(shift);
+   if (abs_shift > table->values()) {
+      die("shiftgen", "You can't shift by more than the table size.");
+      return NULL;
+   }
+
+   double *array = new double[table->values()];
+   table->copyValues(array);
+   if (abs_shift == 0 || abs_shift == table->values())
+      warn("shifttable", "Your shift of %d has no effect on the table!", shift);
+   else
+      _do_shift_table(array, table->values(), shift);
+   TablePField *newtable = new TablePField(array, table->values());
+
+   return _createPFieldHandle(newtable);
+}
+
+
+/* --------------------------------------------------------- quantizetable -- */
+/* Make a copy of the given table, and constrain the values of the copy to
+   the quantum.
+*/
+static void
+_do_quantize_table(double *array, const int len, const double quantum)
+{
+   /* It'd be nice to let the C library do the rounding, but rintf rounds
+      to the nearest even integer, and round and roundf don't even work
+      on my Slackware 8.1 system.  Screw it, we'll roll our own.  -JGG
+   */
+   for (int i = 0; i < len; i++) {
+      double quotient = fabs(array[i] / quantum);
+      int floor = (int) quotient;
+      double remainder = quotient - (double) floor;
+      if (remainder >= 0.5)   /* round to nearest */
+         floor++;
+      if (array[i] < 0.0)
+         array[i] = -floor * quantum;
+      else
+         array[i] = floor * quantum;
+   }
+}
+
+Handle
+quantizetable(const Arg args[], const int nargs)
+{
+   if (nargs != 2) {
+      die("quantizetable", "Usage: newtable = quantizetable(table, quantum)");
+      return NULL;
+   }
+   TablePField *table = _getTablePField(&args[0]);
+   if (table == NULL) {
+      die("quantizetable", "Usage: newtable = quantizetable(table, quantum)");
+      return NULL;
+   }
+   if (!args[1].isType(DoubleType)) {
+      die("quantizetable", "Usage: newtable = quantizetable(table, quantum)");
+      return NULL;
+   }
+   double quantum = args[1];
+   double *array = new double[table->values()];
+   table->copyValues(array);
+   _do_quantize_table(array, table->values(), quantum);
+   TablePField *newtable = new TablePField(array, table->values());
+
+   return _createPFieldHandle(newtable);
 }
 
 
@@ -1810,6 +1934,7 @@ dumptable(const Arg args[], const int nargs)
 
    return (chars > 0) ? 0.0 : -1.0;
 }
+
 
 /* ------------------------------------------------------------- plottable -- */
 #define DEFAULT_PLOTCMD "with lines"
