@@ -68,6 +68,7 @@ private:
 // probably should move these somewhere else
 int rtsetoutput(float, float, Instrument *);
 int rtsetinput(float, Instrument *);
+int rtinrepos(Instrument *, int, int);
 int rtgetin(float *, Instrument *, int);
 float rtupdate(int, int);  // tag, p-field for return value
 
