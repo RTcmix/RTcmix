@@ -12,8 +12,6 @@
 
 #define MAX_TIME_CHARS  64
 
-#define PRINT_HEADER_SIZE
-
 static void usage(void);
 
 
