@@ -83,6 +83,9 @@ newList(int len)
 			free(list);
 			list = NULL;
 		 }
+		 else {
+            memset(list->data, 0, len * sizeof(MincListElem));
+		 }
 	  }
 	  else
          list->data = NULL;
