@@ -94,7 +94,7 @@ OSXAudioDevice::Impl::Port::interleavedGetFrames(struct Port *port,
 	switch (frameChans) {
 	case 1:
 		if (bufChannels == 2) {
-#if DEBUG > 1
+#if DEBUG > 0
 			printf("Copying stereo buf into mono user frame\n");
 #endif
 			const float scale = 0.707;
@@ -115,7 +115,7 @@ OSXAudioDevice::Impl::Port::interleavedGetFrames(struct Port *port,
 
 	default:
 		if (bufChannels == frameChans) {
-#if DEBUG > 1
+#if DEBUG > 0
 			printf("Copying %d-channel interleaved buf into user frame\n", bufChannels);
 #endif
 			float *from = port->audioBuffer;
@@ -139,7 +139,7 @@ OSXAudioDevice::Impl::Port::interleavedGetFrames(struct Port *port,
 	}
 	port->outLoc = outLoc;
 	port->audioBufFilled -= frameCount;
-#if DEBUG > 0
+#if DEBUG > 1
 	printf("\tREC Filled now %d\n", port->audioBufFilled);
 #endif
 #if DEBUG > 1
@@ -158,7 +158,7 @@ OSXAudioDevice::Impl::Port::interleavedSendFrames(struct Port *port,
 	// Length in samples, not frames.
 	const int bufLen = port->audioBufFrames * bufChannels;
 	int inLoc = port->inLoc;
-#if DEBUG > 0
+#if DEBUG > 1
 	printf("OSXAudioDevice::doSendFrames: frameCount = %d, PLAY filled = %d\n", frameCount, port->audioBufFilled);
 #endif
 #if DEBUG > 1
@@ -167,7 +167,7 @@ OSXAudioDevice::Impl::Port::interleavedSendFrames(struct Port *port,
 	switch (frameChans) {
 	case 1:		// Mono input converted to stereo circ. buffer;  HW 2-N channels.
 		if (bufChannels == 2) {
-#if DEBUG > 1
+#if DEBUG > 0
 			printf("Copying mono user frame into interleaved stereo buf\n");
 #endif
 			float *from = (float *) frameBuffer;
@@ -180,14 +180,15 @@ OSXAudioDevice::Impl::Port::interleavedSendFrames(struct Port *port,
 				inLoc += 2;
 			}
 		}
-		else
-	//		return error("Only mono-to-stereo playback conversion is currently supported");
+		else {
+			printf("Only mono-to-stereo playback conversion is currently supported"\n);
 			return -1;
+		}
 		break;
 
 	default:		// 2-N channel input to 2-N channel circ. buffer; HW 2-N channels.
 		if (bufChannels == frameChans) {
-#if DEBUG > 1
+#if DEBUG > 0
 			printf("Copying %d-channel user frame into buf\n", frameChans);
 #endif
 			float *from = (float *) frameBuffer;
@@ -211,7 +212,7 @@ OSXAudioDevice::Impl::Port::interleavedSendFrames(struct Port *port,
 	}
 	port->audioBufFilled += frameCount;
 	port->inLoc = inLoc;
-#if DEBUG > 0
+#if DEBUG > 1
 	printf("\tPLAY Filled now %d\n", port->audioBufFilled);
 #endif
 #if DEBUG > 1
@@ -229,7 +230,7 @@ OSXAudioDevice::Impl::Port::noninterleavedGetFrames(struct Port *port,
 	const int bufFrames = port->audioBufFrames;
 	int outLoc = port->outLoc;
 	float **fFrameBuffer = (float **) frameBuffer;		// non-interleaved
-#if DEBUG > 0
+#if DEBUG > 1
 	printf("OSXAudioDevice::doGetFrames: frameCount = %d REC filled = %d\n", frameCount, port->audioBufFilled);
 #endif
 	assert(frameCount <= port->audioBufFilled);
@@ -261,7 +262,7 @@ OSXAudioDevice::Impl::Port::noninterleavedGetFrames(struct Port *port,
 	}
 	port->outLoc = outLoc;
 	port->audioBufFilled -= frameCount;
-#if DEBUG > 0
+#if DEBUG > 1
 	printf("\tREC Filled now %d\n", port->audioBufFilled);
 #endif
 #if DEBUG > 1
@@ -280,7 +281,7 @@ OSXAudioDevice::Impl::Port::noninterleavedSendFrames(struct Port *port,
 	const int bufChannels = port->streamCount;
 	const int bufFrames = port->audioBufFrames;
 	int inLoc = port->inLoc;
-#if DEBUG > 0
+#if DEBUG > 1
 	printf("OSXAudioDevice::doSendFrames: frameCount = %d, PLAY filled = %d\n", frameCount, port->audioBufFilled);
 #endif
 	if (bufChannels == frameChans) {
@@ -308,7 +309,7 @@ OSXAudioDevice::Impl::Port::noninterleavedSendFrames(struct Port *port,
 	}
 	port->audioBufFilled += frameCount;
 	port->inLoc = inLoc;
-#if DEBUG > 0
+#if DEBUG > 1
 	printf("\tPLAY Filled now %d\n", port->audioBufFilled);
 #endif
 #if DEBUG > 1
