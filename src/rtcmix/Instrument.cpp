@@ -73,9 +73,20 @@ Instrument :: ~Instrument()
 }
 
 
+// Set the bus_config pointer to the right bus_config for this inst.
+// Then set the inputchans and outputchans members accordingly.
+//
+// Instruments *must* call this from within their makeINSTNAME method. E.g.,
+//
+//     WAVETABLE *inst = new WAVETABLE();
+//     inst->set_bus_config("WAVETABLE");
+//
 void Instrument :: set_bus_config(const char *inst_name)
 {
    bus_config = get_bus_config(inst_name);
+
+   inputchans = bus_config->in_count + bus_config->auxin_count;
+   outputchans = bus_config->out_count + bus_config->auxout_count;
 }
 
 
@@ -94,7 +105,9 @@ int Instrument :: init(float p[], short n_args)
 //
 // This method allocates the instrument's private interleaved output buffer
 // and inits a buffer status array.
-
+// Note: We allocate here, rather than in ctor or init method, because this
+// will mean less memory overhead before the inst begins playing.
+//
 int Instrument :: run()
 {
    if (outbuf == NULL)
@@ -125,7 +138,7 @@ void Instrument :: exec()
 // use rtaddout.)
 // Assumes that <samps> contains exactly outputchans interleaved samples.
 // Returns outputchans (i.e., number of samples written).
-
+//
 int Instrument :: rtaddout(BUFTYPE samps[])
 {
    for (int i = 0; i < outputchans; i++)
@@ -135,7 +148,7 @@ int Instrument :: rtaddout(BUFTYPE samps[])
 
 // Add signal from one channel of instrument's private interleaved buffer
 // into the specified output bus.
-
+//
 void Instrument :: addout(BusType bus_type, int bus)
 {
    int      samp, endframe, src_chan, buses;
@@ -219,7 +232,7 @@ void Instrument :: set_output_offset(int offset)
 // If the reference count on the file referenced by the instrument
 // reaches zero, close the input soundfile and set the state to 
 // make sure this is obvious
-
+//
 void Instrument :: gone()
 {
 #ifdef DEBUG
