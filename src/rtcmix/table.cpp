@@ -80,32 +80,11 @@ static char *_table_name[] = {
 
 /* ------------------------------------------------------- local utilities -- */
 
-/* Return 1 if <arg> points to a TablePField; otherwise, return 0. */
-static int
-_arg_is_table_pfield(const Arg *arg)
-{
-   if (arg->type != HandleType)
-      return 0;
-   if (arg->val.handle->type != PFieldType)
-      return 0;
-   return 1;
-}
-
-static PField *
-_getPField(const Arg *arg)
-{
-	PField *pf = NULL;
-	if (_arg_is_table_pfield(arg)) {
-		pf = (PField *) (arg->val.handle->ptr);
-	}
-	return pf;
-}
-
 static TablePField *
 _getTablePField(const Arg *arg)
 {
 	PField *tpf = NULL;
-	if ((tpf = _getPField(arg)) != NULL) {
+	if ((tpf = (PField *) *arg) != NULL) {
 #if __GNUG__ >= 3
 		return dynamic_cast<TablePField *> (tpf);
 #else
@@ -130,7 +109,7 @@ int
 args_have_same_type(const Arg args[], const int nargs, const RTcmixType type)
 {
    for (int i = 0; i < nargs; i++)
-      if (args[i].type != type)
+      if (!args[i].isType(type))
          return 0;
    return 1;
 }
@@ -224,18 +203,18 @@ _curve_table(const Arg args[], const int nargs, double *array,
       die("maketable", "<time, value, alpha> pairs must be numbers.");
       return -1;
    }
-   if (args[0].val.number != 0.0) {
+   if ((double) args[0] != 0.0) {
       die("maketable", "'curve' first time must be zero.");
       return -1;
    }
 
    for (i = points = 0; i < nargs; points++) {
-      time[points] = args[i++].val.number;
+      time[points] = (double) args[i++];
       if (points > 0 && time[points] < time[points - 1])
          goto time_err;
-      value[points] = args[i++].val.number;
+      value[points] = (double) args[i++];
       if (i < nargs)
-         alpha[points] = args[i++].val.number;
+         alpha[points] = (double) args[i++];
    }
 
    factor = (double) (len - 1) / time[points - 1];
@@ -292,8 +271,8 @@ _line_table(const Arg args[], const int nargs, double *array,
       return -1;
    }
 
-   endtime = args[nargs - 2].val.number;
-   starttime = args[0].val.number;
+   endtime = (double) args[nargs - 2];
+   starttime = (double) args[0];
    if (endtime - starttime <= 0.0)
       goto time_err;
 #ifdef NEWWAY
@@ -301,16 +280,16 @@ _line_table(const Arg args[], const int nargs, double *array,
 #else
    scaler = (double) len / (endtime - starttime);
 #endif
-   nextval = args[1].val.number;
+   nextval = (double) args[1];
    thistime = starttime;
    i = 0;
    for (k = 1; k < nargs; k += 2) {
       thisval = nextval;
       if (k < nargs - 1) {
-         nexttime = args[k + 1].val.number - starttime;
+         nexttime = (double) args[k + 1] - starttime;
          if (nexttime - thistime < 0.0)   /* okay for them to be the same */
             goto time_err;
-         nextval = args[k + 2].val.number;
+         nextval = (double) args[k + 2];
       }
       else
          nextval = nexttime = 0.0;     /* don't read off end of args array */
@@ -327,7 +306,7 @@ _line_table(const Arg args[], const int nargs, double *array,
       }
    }
 #ifdef NEWWAY
-   array[len - 1] = args[nargs - 1].val.number;
+   array[len - 1] = (double) args[nargs - 1];
 #endif
 
    return 0;
@@ -353,12 +332,12 @@ _wave3_table(const Arg args[], const int nargs, double *array,
    for (j = nargs - 1; j > 0; j -= 3) {
       assert(j > 0);
       assert(j < nargs);
-      if (args[j - 1].val.number != 0.0) {
+      if ((double) args[j - 1] != 0.0) {
          for (i = 0; i < len; i++) {
             double val = sin(TWOPI * ((double) i
-                                 / ((double) len / args[j - 2].val.number)
-                                 + args[j].val.number / 360.0));
-            array[i] += (val * args[j - 1].val.number);
+                                 / ((double) len / (double) args[j - 2])
+                                 + (double) args[j] / 360.0));
+            array[i] += (val * (double) args[j - 1]);
          }
       }
    }
@@ -380,14 +359,14 @@ _wave_table(const Arg args[], const int nargs, double *array,
       array[i] = 0.0;
    j = nargs;
    while (j--) {
-      if (args[j].type != DoubleType) {
+      if (!args[j].isType(DoubleType)) {
          die("maketable", "Harmonic amplitudes must be numbers.");
          return -1;
       }
-      if (args[j].val.number != 0.0) {
+      if ((double) args[j] != 0.0) {
          for (i = 0; i < len; i++) {
             double val = TWOPI * (double) i / (len / (j + 1));
-            array[i] += (sin(val) * args[j].val.number);
+            array[i] += (sin(val) * (double) args[j]);
          }
       }
    }
@@ -411,12 +390,12 @@ _cheby_table(const Arg args[], const int nargs, double *array,
 
    d = (double) ((len / 2) - 0.5);
    for (i = 0; i < len; i++) {
-      x = (i / d - 1.0) / args[0].val.number;
+      x = (i / d - 1.0) / (double) args[0];
       array[i] = 0.0;
       Tn1 = 1.0;
       Tn = x;
       for (j = 1; j < nargs; j++) {
-         array[i] += args[j].val.number * Tn;
+         array[i] += (double) args[j] * Tn;
          Tn2 = Tn1;
          Tn1 = Tn;
          Tn = (2.0 * x * Tn1) - Tn2;
@@ -440,17 +419,20 @@ _window_table(const Arg args[], const int nargs, double *array,
       die("maketable", "Missing window type.");
       return -1;
    }
-   if (args[0].type == StringType) {
-      if (strcmp(args[0].val.string, "hanning") == 0)
+   if (args[0].isType(StringType)) {
+      if (args[0] == "hanning")
          window_type = 1;
-      else if (strcmp(args[0].val.string, "hamming") == 0)
+      else if (args[0] == "hamming")
          window_type = 2;
       else {
-         die("maketable", "Unsupported window type '%s'.", args[0].val.string);
+         die("maketable", "Unsupported window type '%s'.", (const char *) args[0]);
          return -1;
       }
    }
-   else if (args[0].type != DoubleType) {
+   else if (args[0].isType(DoubleType)) {
+   	  window_type = (int) args[0];
+   }
+   else {
       die("maketable", "Window type must be a string or numeric code.");
       return -1;
    }
@@ -499,12 +481,12 @@ _dispatch_table(const Arg args[], const int nargs, const int startarg,
    TableKind tablekind;
 
    /* Call the appropriate factory function, skipping over first two args. */
-   if (args[0].type == DoubleType)
-      tablekind = (TableKind) args[0].val.number;
-   else if (args[0].type == StringType) {
-      tablekind = _string_to_tablekind(args[0].val.string);
+   if (args[0].isType(DoubleType))
+      tablekind = (TableKind) (int) args[0];
+   else if (args[0].isType(StringType)) {
+      tablekind = _string_to_tablekind((const char *) args[0]);
       if (tablekind == InvalidTable) {
-         die("maketable", "Invalid table type string '%s'", args[0].val.string);
+         die("maketable", "Invalid table type string '%s'", (const char *) args[0]);
          return -1;
       }
    }
@@ -564,6 +546,7 @@ unimplemented:
 extern "C" {
 	Handle maketable(const Arg args[], const int nargs);
 	Handle normtable(const Arg args[], const int nargs);
+	Handle copytable(const Arg args[], const int nargs);
 	Handle multtable(const Arg args[], const int nargs);
 	Handle addtable(const Arg args[], const int nargs);
 	double plottable(const Arg args[], const int nargs);
@@ -591,22 +574,22 @@ maketable(const Arg args[], const int nargs)
       _maketable_usage();
       return NULL;
    }
-   if (args[1].type == StringType) {
-      if (strncmp(args[1].val.string, "nonorm", 6) == 0)
+   if (args[1].isType(StringType)) {
+      if (args[1] == "nonorm")
          normalize = false;
       else {
-         die("maketable", "Invalid string option \"%s\".", args[1].val.string);
+         die("maketable", "Invalid string option \"%s\".", (const char *) args[1]);
          return NULL;
       }
       lenindex = 2;
    }
    else
       lenindex = 1;
-   if (args[lenindex].type != DoubleType) {
+   if (!args[lenindex].isType(DoubleType)) {
       _maketable_usage();
       return NULL;
    }
-   len = (unsigned int) args[lenindex].val.number;
+   len = (unsigned int) args[lenindex];
    if (len > MAX_ARRAY_LEN) {
       warn("maketable", "Requesting larger than maximum table length.  "
                                           "Setting to %d.", MAX_ARRAY_LEN);
@@ -634,16 +617,16 @@ Handle
 multtable(const Arg args[], const int nargs)
 {
 	if (nargs == 2) {
-		PField *table0 = _getPField(&args[0]);
-		PField *table1 = _getPField(&args[1]);
+		PField *table0 = (PField *) args[0];
+		PField *table1 = (PField *) args[1];
 		if (!table1) {
-			if (args[1].type == DoubleType) {
-				table1 = new ConstPField(args[1].val.number);
+			if (args[1].isType(DoubleType)) {
+				table1 = new ConstPField((double) args[1]);
 			}
 		}
 		else if (!table0) {
-			if (args[0].type == DoubleType) {
-				table0 = new ConstPField(args[0].val.number);
+			if (args[0].isType(DoubleType)) {
+				table0 = new ConstPField((double) args[0]);
 			}
 		}
 		if (table0 && table1) {
@@ -659,16 +642,16 @@ Handle
 addtable(const Arg args[], const int nargs)
 {
 	if (nargs == 2) {
-		PField *table0 = _getPField(&args[0]);
-		PField *table1 = _getPField(&args[1]);
+		PField *table0 = (PField *) args[0];
+		PField *table1 = (PField *) args[1];
 		if (!table1) {
-			if (args[1].type == DoubleType) {
-				table1 = new ConstPField(args[1].val.number);
+			if (args[1].isType(DoubleType)) {
+				table1 = new ConstPField((double) args[1]);
 			}
 		}
 		else if (!table0) {
-			if (args[0].type == DoubleType) {
-				table0 = new ConstPField(args[0].val.number);
+			if (args[0].isType(DoubleType)) {
+				table0 = new ConstPField((double) args[0]);
 			}
 		}
 		if (table0 && table1) {
@@ -695,10 +678,10 @@ normtable(const Arg args[], const int nargs)
       die("normtable", "First argument must be a handle to the table to normalize.");
       return NULL;
    }
-   if (nargs > 1 && args[1].type == DoubleType)
-      peak = args[1].val.number;
-   if (nargs > 2 && args[2].type == DoubleType)
-      copy_table = (args[2].val.number == 1.0);
+   if (nargs > 1 && args[1].isType(DoubleType))
+      peak = (double) args[1];
+   if (nargs > 2 && args[2].isType(DoubleType))
+      copy_table = ((double) args[2] == 1.0);
 	TablePField *tableToNormalize = NULL;
 #ifdef NOTYET
 	if (copy_table) {
@@ -713,6 +696,30 @@ normtable(const Arg args[], const int nargs)
 	return _createPFieldHandle(tableToNormalize);
 }
 
+/* ------------------------------------------------------------- copytable -- */
+Handle
+copytable(const Arg args[], const int nargs)
+{
+   if (nargs != 1) {
+      die("copytable", "Usage: newtable = copytable(table_to_copy);");
+      return NULL;
+   }
+   PField *table = (PField *) args[0], *copyOfTable = NULL;
+   if (table == NULL) {
+      die("copytable", "Usage: newtable = copytable(table_to_copy);");
+      return NULL;
+   }
+   if (table->values() == 1)
+	copyOfTable = new ConstPField(table->doubleValue());
+   else {
+   	double *values = new double[table->values()];
+	table->copyValues(values);
+	copyOfTable = new TablePField(values, table->values());
+   }
+   return _createPFieldHandle(copyOfTable);
+}
+
+
 /* ------------------------------------------------------------- dumptable -- */
 double
 dumptable(const Arg args[], const int nargs)
@@ -726,14 +733,14 @@ dumptable(const Arg args[], const int nargs)
       die("dumptable", "Usage: dumptable(table_handle [, out_file])");
       return -1.0;
    }
-   PField *table = _getPField(&args[0]);
+   PField *table = (PField *) args[0];
    if (table == NULL) {
       die("dumptable", "First argument must be a handle to the table to dump.");
       return -1.0;
    }
 
    if (nargs > 1) {
-      if (args[1].type != StringType) {
+      if (!args[1].isType(StringType)) {
          die("dumptable", "Second argument must be output file name.");
          return -1.0;
       }
@@ -773,7 +780,7 @@ plottable(const Arg args[], const int nargs)
          "Usage: plottable(table_handle [, pause] [, plot_commands])");
       return -1.0;
    }
-   PField *table = _getPField(&args[0]);
+   PField *table = (PField *) args[0];
    if (table == NULL) {
       die("plottable", "First argument must be the table to plot.");
       return -1.0;
@@ -781,9 +788,9 @@ plottable(const Arg args[], const int nargs)
 
    /* 2nd and 3rd args are optional and can be in either order */
    if (nargs > 1) {
-      if (args[1].type == DoubleType)
+      if (args[1].isType(DoubleType))
          pause = (int) args[1];
-      else if (args[1].type == StringType)
+      else if (args[1].isType(StringType))
          plotcmds = (const char *) args[1];
       else {
          die("plottable",
@@ -791,10 +798,10 @@ plottable(const Arg args[], const int nargs)
          return -1.0;
       }
       if (nargs > 2) {
-         if (args[2].type == DoubleType)
-            pause = (int) args[2].val.number;
-         else if (args[2].type == StringType)
-            plotcmds = args[2].val.string;
+         if (args[2].isType(DoubleType))
+            pause = (int) args[2];
+         else if (args[2].isType(StringType))
+            plotcmds = (const char *) args[2];
          else {
             die("plottable",
                "Third argument can be pause length or plot commands.");

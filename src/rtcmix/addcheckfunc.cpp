@@ -180,7 +180,7 @@ checkfunc(const char *funcname, const Arg arglist[], const int nargs,
          for (int i = 0; i < nargs; i++) {
 			const Arg &theArg = arglist[i];
             p[i] = (float) theArg;
-			switch (theArg.getType()) {
+			switch (theArg.type()) {
             case DoubleType:
                pp[i] = (double) theArg;
 			   break;

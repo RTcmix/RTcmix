@@ -61,9 +61,9 @@ call_external_function(const char *funcname, const MincListElem arglist[],
    }
 
    result = dispatch(funcname, rtcmixargs, nargs, &retval);
-
+   
    /* Convert return value from RTcmix function. */
-   switch (retval.getType()) {
+   switch (retval.type()) {
       case DoubleType:
          return_value->type = MincFloatType;
          return_value->val.number = (MincFloat) retval;

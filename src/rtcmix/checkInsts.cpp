@@ -76,24 +76,18 @@ checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retv
 		PFieldSet *pfieldset = new PFieldSet(nargs);
 		for (int arg = 0; arg < nargs; ++arg) {
 		  const Arg &theArg = arglist[arg];
-		  switch (theArg.getType()) {
-		  case DoubleType:
+		  if (theArg.isType(DoubleType))
 			pfieldset->load(new ConstPField((double) theArg), arg);
-			break;
-    	  case StringType:
-			pfieldset->load(new StringPField((const char *) theArg), arg);
-			break;
-    	  case HandleType:
-			{
+		  else if (theArg.isType(StringType))
+			pfieldset->load(new StringPField(theArg.string()), arg);
+		  else if (theArg.isType(HandleType)) {
 			Handle handle = (Handle) theArg;
 			if (handle->type == PFieldType) {
 				assert(handle->ptr != NULL);
 				pfieldset->load((PField *) handle->ptr, arg);
 			}
-			}
-			break;
-		  case ArrayType:
-    	  default:
+		  }
+		  else {
 			// For now, default to using a zero PField.
 			pfieldset->load(new ConstPField(0.0), arg);
 			break;

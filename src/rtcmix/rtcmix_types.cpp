@@ -1,38 +1,44 @@
 #include <rtcmix_types.h>
 #include <PField.h>
+#include <string.h>		// for strcmp()
 #include <stdlib.h>		// for free()
 
-Arg::~Arg() { if (type == ArrayType) free(val.array); }
+Arg::~Arg() { if (_type == ArrayType) free(_val.array); }
+
+bool
+Arg::operator == (const char *str) const {
+	return isType(StringType) && !strcmp(_val.string, str);
+}
 
 void 
 Arg::printInline(FILE *stream) const
 {
-	switch (type) {
+	switch (type()) {
 	case DoubleType:
-		fprintf(stream, "%g ", val.number);
+		fprintf(stream, "%g ", _val.number);
 		break;
 	case StringType:
-		fprintf(stream, "\"%s\" ", val.string);
+		fprintf(stream, "\"%s\" ", _val.string);
 		break;
 	case HandleType:
 		fprintf(stream, "%sHandle:%p",
-				val.handle->type == PFieldType ? "PF" :
-				val.handle->type == InstrumentPtrType ? "Inst" :
-				val.handle->type == PFieldType ? "AudioStr" : "Unknown",
-				val.handle);
-		if (val.handle->type == PFieldType) {
+				_val.handle->type == PFieldType ? "PF" :
+				_val.handle->type == InstrumentPtrType ? "Inst" :
+				_val.handle->type == PFieldType ? "AudioStr" : "Unknown",
+				_val.handle);
+		if (_val.handle->type == PFieldType) {
 			// Print PField start and end values.
-			PField *pf = (PField *) val.handle->ptr;
+			PField *pf = (PField *) _val.handle->ptr;
 			double start = pf->doubleValue(0);
-			double end = pf->doubleValue(1);
-			fprintf(stream, ":[%g...%g] ", start, end);
+			double end = pf->doubleValue(1.0);
+			fprintf(stream, ":[%g,...,%g] ", start, end);
 		}
 		else
 			fprintf(stream, " ");
 		break;
 	case ArrayType:
-		fprintf(stream, "[%g...%g] ", val.array->data[0],
-				val.array->data[val.array->len - 1]);
+		fprintf(stream, "[%g,...,%g] ", _val.array->data[0],
+				_val.array->data[_val.array->len - 1]);
 		break;
 	default:
 		break;

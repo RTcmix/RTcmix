@@ -58,13 +58,13 @@ dispatch(const char *str, double *pp, int n_args, void **inst)
 	// Handle state returned from dispatch()
 	
 	if (status == 0) {
-		if (retarg.getType() == DoubleType) {
+		if (retarg.isType(DoubleType)) {
 		   retval = (double) retarg;
 		}
-		else if (retarg.getType() == StringType) {
-		   retval = (double) (int) (const char *) retarg;
+		else if (retarg.isType(StringType)) {
+		   retval = (double) (int) retarg.string();
 		}
-		else if (retarg.getType() == HandleType) {
+		else if (retarg.isType(HandleType)) {
 			// Retrieve instrument pointer from retval.handle.
 			if (inst != NULL) {
 				Handle rethandle = (Handle) retarg;

@@ -37,26 +37,41 @@ typedef union {
 // Arg operates as a struct in C, and a class in C++.
 
 #ifdef __cplusplus
+class PField;
+class Instrument;
 struct Arg {
 #else
 typedef struct {
 #endif
-   RTcmixType type;
-   Value val;
+   RTcmixType _type;
+   Value _val;
 #ifdef __cplusplus
-   Arg() : type(VoidType) {}
+   Arg() : _type(VoidType) { _val.number = 0.0; }
    ~Arg();
-   RTcmixType getType() const { return type; }
-   void operator = (double d) { type = DoubleType; val.number = d; }
-   void operator = (const char *c) { type = StringType; val.string = c; }
-   void operator = (const Handle h) { type = HandleType; val.handle = h; }
-   void operator = (Array *a) { type = ArrayType; val.array = a; }
-   operator double () const { return val.number; }
-   operator float () const { return (float) val.number; }
-   operator int () const { return (int) val.number; }
-   operator const char *() const { return val.string; }
-   operator Handle () const { return val.handle; }
-   operator Array *() const { return val.array; }
+   RTcmixType type() const { return this->_type; }
+   bool isType(RTcmixType type) const { return _type == type; }
+   void operator = (double d) { _type = DoubleType; _val.number = d; }
+   void operator = (const char *c) { _type = StringType; _val.string = c; }
+   void operator = (const Handle h) { _type = HandleType; _val.handle = h; }
+   void operator = (Array *a) { _type = ArrayType; _val.array = a; }
+   operator double () const { return _val.number; }
+   operator float () const { return (float) _val.number; }
+   operator int () const { return (int) _val.number; }
+   operator unsigned int () const { return (unsigned int) _val.number; }
+   const char * string() const { return _val.string; }
+   operator const char * () const { return string(); }
+   bool operator == (const char *str) const;
+   bool operator != (const char *str) const { return !(*this == str); }
+   operator Handle () const { return _val.handle; }
+   operator Array *() const { return _val.array; }
+   operator PField *() const {
+	   return (isType(HandleType) && _val.handle->type == PFieldType) ?
+		   (PField *) _val.handle->ptr : NULL;
+   }
+   operator Instrument *() const {
+	   return (isType(HandleType) && _val.handle->type == InstrumentPtrType) ?
+		   (Instrument *) _val.handle->ptr : NULL;
+   }
    void printInline(FILE *) const;
 };
 #else
