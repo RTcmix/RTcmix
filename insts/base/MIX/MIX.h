@@ -1,4 +1,4 @@
-#include <bus.h>        /* for MAXBUS */
+#include <Instrument.h>
 
 class MIX : public Instrument {
 	int outchan[MAXBUS];
