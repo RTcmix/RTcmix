@@ -308,6 +308,7 @@ extern "C" {
 	for (j = 0; j < count; j++) 
 	  rtsendsamps(sbuf);
       }  
+      rtreportstats();   /* only if rtsetparams was called */
       close(out_port);
     }
     if (in_port) {
@@ -320,7 +321,6 @@ extern "C" {
       close(rtoutfile);
 #endif //!USE_SNDLIB
     }
-   rtreportstats();
 
    cout << "\n";
    // cout << "EXITING inTraverse() FUNCTION *****\n";
