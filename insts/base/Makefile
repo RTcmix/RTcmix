@@ -24,6 +24,12 @@ install:
 	  ln -fs `pwd`/lib$$DIR.so $(LIBDESTDIR) ); \
 	done
 	@ln -fs `pwd`/MIX/MIX $(DESTDIR)/CMIX
+# @ln -fs `pwd`/MIX/MIX $(DESTDIR)/CMIX
+# The following assumes insts.base is inside RTcmix dir.
+# Not great, but the other way was making it cumbersome to install
+# this on our server without confusing its clients.
+	@ln -fs $(CMIXDIR)/$(INSTDIR)/MIX/MIX $(DESTDIR)/CMIX
+
 
 dsos:  all
 
