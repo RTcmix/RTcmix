@@ -105,5 +105,5 @@ conferror(char *msg)
    return 0;
 }
 
-static int yywrap() { return 1; }
+int yywrap() { return 1; }
 
