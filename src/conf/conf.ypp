@@ -96,9 +96,9 @@ my_strdup(char *src)
 int
 conferror(char *msg)
 {
-   fprintf(stderr, "near line %d: %s\n", yylineno, msg);
+   fprintf(stderr, "near line %d: %s\n", conflineno, msg);
    return 0;
 }
 
-int yywrap() { return 1; }
+int confwrap() { return 1; }
 
