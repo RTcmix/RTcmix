@@ -7,6 +7,7 @@
 
 #include "../genlib/Ocomb.h"
 #include "../genlib/Ocombi.h"
+#include "../genlib/Odelay.h"
 #include "../genlib/Odelayi.h"
 #include "../genlib/Oequalizer.h"
 #include "../genlib/Oonepole.h"
