@@ -27,8 +27,10 @@ if (mode != play)
 if (mode == record)
 	detune = makedatafile(detune, "mousedetune.detune", 200)
 else if (mode == play) {
+   starttime = 0.0
    timefact = 1.0   // < 1: play data faster; > 1: play data slower
-   detune = makeconnection("datafile", "mousedetune.detune", lag = 50, timefact)
+   detune = makeconnection("datafile", "mousedetune.detune", lag = 50,
+                           starttime, timefact)
 }
 
 pan = makeconnection("mouse", "x", min=1, max=0, dflt=.5, lag=80, "pan")
