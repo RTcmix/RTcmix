@@ -79,7 +79,7 @@ static double interp(double, double, double, double);
 
 JCHOR::JCHOR() : Instrument()
 {
-   in = new float[MAXBUF];
+   in = NULL;
    voices = NULL;
    grain = NULL;
    grain_done = 0;
@@ -179,6 +179,7 @@ int JCHOR::run()
    Instrument::run();
 
    if (!grain_done) {
+      in = new float [RTBUFSAMPS * inputchans];
       grain_input_and_transpose();
       setup_voices();
    }
