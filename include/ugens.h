@@ -185,6 +185,7 @@ void fnscl(struct gen *gen);
 /* message.c */
 void advise(const char *inst_name, const char *format, ...);
 void warn(const char *inst_name, const char *format, ...);
+void rterror(const char *inst_name, const char *format, ...);
 void die(const char *inst_name, const char *format, ...);
 
 // pgen function declarations

@@ -64,6 +64,23 @@ warn(const char *inst_name, const char *format, ...)
 }
 
 
+/* -------------------------------------------------------------- rterror --- */
+void
+rterror(const char *inst_name, const char *format, ...)
+{
+   char     buf[BUFSIZE];
+   va_list  args;
+
+   va_start(args, format);
+   vsnprintf(buf, BUFSIZE, format, args);
+   va_end(args);
+
+   if (inst_name)
+      fprintf(stderr, PREFIX "ERROR [%s]: %s\n", inst_name, buf);
+   else
+      fprintf(stderr, PREFIX "ERROR: %s\n", buf);
+}
+
 /* ------------------------------------------------------------------ die --- */
 void
 die(const char *inst_name, const char *format, ...)
@@ -76,9 +93,9 @@ die(const char *inst_name, const char *format, ...)
    va_end(args);
 
    if (inst_name)
-      fprintf(stderr, PREFIX "ERROR [%s]:  %s\n", inst_name, buf);
+      fprintf(stderr, PREFIX "FATAL ERROR [%s]:  %s\n", inst_name, buf);
    else
-      fprintf(stderr, PREFIX "ERROR:  %s\n", buf);
+      fprintf(stderr, PREFIX "FATAL ERROR:  %s\n", buf);
 
    if (rtsetparams_called)
       rtcloseout();
