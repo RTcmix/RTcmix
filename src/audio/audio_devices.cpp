@@ -34,11 +34,11 @@ int
 create_audio_devices(int recordAndPlay, int chans, float srate, int *buffersize)
 {
 	int status;
-	const char *deviceName = get_audio_device_name();	// from set_option.c
 #ifdef FULL_DUPLEX_NOT_SUPPORTED
 	/* Open audio input and output ports. */
 	if (recordAndPlay) {
-		AudioDevice *idevice = createAudioDevice(deviceName ? deviceName : DEFAULT_DEVICE);
+		const char *inDeviceName = get_audio_indevice_name();	// from set_option.c
+		AudioDevice *idevice = createAudioDevice(inDeviceName ? inDeviceName : DEFAULT_DEVICE);
 		// We read noninterleaved floating point buffers from the device
 		int audioFormat = NATIVE_FLOAT_FMT | MUS_NON_INTERLEAVED;
 		// Don't run thread for input device if output device is running too.
@@ -79,7 +79,8 @@ create_audio_devices(int recordAndPlay, int chans, float srate, int *buffersize)
 		recordAndPlay = false;	// reset so code below will not attempt duplex
 	}
 #endif	// FULL_DUPLEX_NOT_SUPPORTED
-	AudioDevice *device = createAudioDevice(deviceName ? deviceName : DEFAULT_DEVICE);
+	const char *outDeviceName = get_audio_outdevice_name();	// from set_option.c
+	AudioDevice *device = createAudioDevice(outDeviceName ? outDeviceName : DEFAULT_DEVICE);
 	// We send the device noninterleaved floating point buffers.
 	int audioFormat = NATIVE_FLOAT_FMT | MUS_NON_INTERLEAVED;
 	int openMode = (recordAndPlay) ?

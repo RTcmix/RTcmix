@@ -156,13 +156,15 @@ static snd_pcm_format_t convertSampleFormat(int sampfmt)
 int ALSAAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 {
 	int status;
-	printf("ALSAAudioDevice::doSetFormat: fmt: %d chans: %d rate: %g\n",
+	printf("ALSAAudioDevice::doSetFormat: fmt: 0x%x chans: %d rate: %g\n",
 		   sampfmt, chans, srate);
 	int deviceFormat = MUS_GET_FORMAT(sampfmt);
 	snd_pcm_format_t sampleFormat = ::convertSampleFormat(deviceFormat);
 	if (sampleFormat == SND_PCM_FORMAT_UNKNOWN)
 		return error("Unknown or unsupported sample format");
 	// This is what we report back.  It gets modified during loop.
+	// Note that if we supported short int frame input, 'deviceFormat'
+	// would be initialized to NATIVE_SHORT_FMT.
 	deviceFormat = NATIVE_FLOAT_FMT | MUS_NORMALIZED;
 	// Find a suitable format, ratcheting down from float to short.
 	while ((status = snd_pcm_hw_params_set_format(_handle,
@@ -172,7 +174,7 @@ int ALSAAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 		if (sampleFormat == SND_PCM_FORMAT_FLOAT) {
 			printf("\tTried float -- switching to 24bit.\n");
 			sampleFormat = SND_PCM_FORMAT_S24;
-			deviceFormat = MUS_L24INT;	// This is what we report back.
+			deviceFormat = NATIVE_24BIT_FMT;	// This is what we report back.
 		}
 		else if (sampleFormat == SND_PCM_FORMAT_S24) {
 			printf("\tTried 24bit -- switching to 16bit.\n");

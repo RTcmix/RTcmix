@@ -98,11 +98,11 @@ int	AudioFileDevice::sendFrames(void *frameBuffer, int frames)
 				int incr;
 				if (isFrameInterleaved()) {
 					fp = &((float *) frameBuffer)[c];
-					incr = 1;
+					incr = chans;
 				}
 				else {
 					fp = ((float **) frameBuffer)[c];
-					incr = chans;
+					incr = 1;
 				}
 				for (int n = 0; n < frames; ++n, fp += incr) {
 					double fabsamp = fabs((double) *fp);

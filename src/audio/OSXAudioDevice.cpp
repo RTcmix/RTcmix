@@ -366,8 +366,8 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 	_impl->bufferSampleFormat = MUS_GET_FORMAT(fmt);
 
 	// Sanity check, because we do the conversion to float ourselves.
-	if (_impl->bufferSampleFormat != MUS_BFLOAT && _impl->bufferSampleFormat != MUS_BSHORT)
-		return error("Only 16bit and float audio buffers supported.");
+	if (_impl->bufferSampleFormat != MUS_BFLOAT)
+		return error("Only float audio buffers supported at this time.");
 
 	// We catch mono input and do the conversion ourselves.
 	_impl->channels = (chans == 1) ? 2 : chans;
@@ -417,9 +417,11 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 		return error("Audio channel count not writable on this device");
 	}
 	
-	// Set the device format based upon settings.  This will be used for format conversion.
 	
 	int deviceFormat = MUS_BFLOAT | MUS_NORMALIZED;
+
+#ifdef WHEN_NONINTERLEAVED_IS_FINISHED
+	// Set the device format based upon settings.  This will be used for format conversion.
 	if ((_impl->deviceFormat.mFormatFlags & kLinearPCMFormatFlagIsNonInterleaved) != 0) {
 		printf("OSX HW is %d channel, non-interleaved\n", _impl->deviceFormat.mChannelsPerFrame);
 		deviceFormat |= MUS_NON_INTERLEAVED;
@@ -428,6 +430,15 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 		printf("OSX HW is %d channel, interleaved\n", _impl->deviceFormat.mChannelsPerFrame);
 		deviceFormat |= MUS_INTERLEAVED;
 	}
+#else
+	// Temporarily, we report back the format of the circular buffers
+	// that I use as my intermediate buffers.  This is different from
+	// the AudioDeviceImpl's conversion buffer, and involves a second
+	// buffer copy, for the time being.
+
+	printf("OSX HW is %d channel, uses temp interleaved buffer\n", _impl->deviceFormat.mChannelsPerFrame);
+	deviceFormat |= MUS_INTERLEAVED;
+#endif
 
 	setDeviceParams(deviceFormat,
 					_impl->deviceFormat.mChannelsPerFrame,
@@ -516,7 +527,7 @@ int OSXAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 
 int	OSXAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 {
-	const int chans = _impl->channels;
+	const int chans = getFrameChannels();
 	float *from = _impl->audioBuffers[REC];
 	const int bufLen = _impl->audioBufSamps;
 	int outLoc = _impl->outLoc[REC];
@@ -526,73 +537,38 @@ int	OSXAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 	float scale;
 	switch (chans) {
 	case 1:
-		switch (_impl->bufferSampleFormat) {
-		case MUS_BSHORT:
-			{
-				scale = 32768.0 * 0.707;
-				short *outbuf = (short *) frameBuffer;
-				for (int out=0; out < frameCount; ++out) {
-					if (outLoc >= bufLen)	// wrap
-						outLoc -= bufLen;
-					outbuf[out] = (short) (from[outLoc] * scale);	
-					outbuf[out] += (short) (from[outLoc+1] * scale);	
-					outLoc += 2;
-				}
+		if (getDeviceChannels() == 2) {
+			scale = 0.707;
+			float *outbuf = (float *) frameBuffer;
+			// Combine stereo channels from circ. buffer into single frame channel.
+			for (int out=0; out < frameCount; ++out) {
+				if (outLoc >= bufLen)	// wrap
+					outLoc -= bufLen;
+				outbuf[out] = (from[outLoc] + from[outLoc+1]) * scale;	
+				outLoc += 2;
 			}
-			break;
-		case MUS_BFLOAT:
-			{
-				scale = 32768.0 * 0.707;
-				float *outbuf = (float *) frameBuffer;
-				for (int out=0; out < frameCount; ++out) {
-					if (outLoc >= bufLen)	// wrap
-						outLoc -= bufLen;
-					outbuf[out] = from[outLoc] * scale;	
-					outbuf[out] += from[outLoc+1] * scale;	
-					outLoc += 2;
-				}
-			}
-			break;
-		default:
-			return error("This sample format conversion not supported");
 		}
-		break;
-
-	case 2:
-		switch (_impl->bufferSampleFormat) {
-		case MUS_BSHORT:
-			{
-				scale = 32768.0;
-				short *outbuf = (short *) frameBuffer;
-				for (int out=0; out < frameCount; ++out) {
-					if (outLoc >= bufLen)	// wrap
-						outLoc -= bufLen;
-					outbuf[out] = (short) (from[outLoc] * scale);	
-					outbuf[out+1] = (short) (from[outLoc+1] * scale);	
-					outLoc += 2;
-				}
-			}
-			break;
-		case MUS_BFLOAT:
-			{
-				scale = 32768.0;
-				float *outbuf = (float *) frameBuffer;
-				for (int out=0; out < frameCount; ++out) {
-					if (outLoc >= bufLen)
-						outLoc -= bufLen;	// wrap
-					outbuf[out] = from[outLoc] * scale;	
-					outbuf[out+1] = from[outLoc+1] * scale;	
-					outLoc += 2;
-				}
-			}
-			break;
-		default:
-			return error("This sample format conversion not supported");
-		}
+		else
+			return error("Only stereo-to-mono record conversion is currently supported");
 		break;
 
 	default:
-		return error("This channel count not yet supported by format conversion code");
+		if (getDeviceChannels() == getFrameChannels()) {
+			float *outbuf = (float *) frameBuffer;
+			// Write all channels of each frame from circular buf into frame.
+			for (int out=0; out < frameCount; ++out) {
+				if (outLoc >= bufLen)
+					outLoc -= bufLen;	// wrap
+				for (int ch = 0; ch < chans; ++ch) {
+					outbuf[ch] = from[outLoc+ch];	
+				}
+				outLoc += chans;
+				outbuf += chans;
+			}
+		}
+		else
+			return error("Channel count conversion not supported for record");
+		break;
 	}
 	_impl->outLoc[REC] = outLoc;
 	// printf("\toutLoc ended at %d.  Returning frameCount = %d\n", outLoc, frameCount);
@@ -601,86 +577,46 @@ int	OSXAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 
 int	OSXAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 {
-	const int chans = _impl->channels;
+	const int chans = getFrameChannels();
 	float *outbuf = _impl->audioBuffers[PLAY];
 	const int bufLen = _impl->audioBufSamps;
 	int inLoc = _impl->inLoc[PLAY];
 	//printf("OSXAudioDevice::doSendFrames: frameCount = %d\n", frameCount);
 	// printf("\tinLoc begins at %d (out of %d)\n", inLoc, bufLen);
-	float scale;
 	switch (chans) {
 	case 1:
-		switch (_impl->bufferSampleFormat) {
-		case MUS_BSHORT:	// mono short to stereo float
-			{
-				scale = 1.0/32768.0;
-				short *from = (short *) frameBuffer;
-				for (int in=0; in < frameCount; ++in) {
-					if (inLoc >= bufLen)	// wrap
-						inLoc -= bufLen;
-					outbuf[inLoc] = (float)(*from * scale);	
-					outbuf[inLoc+1] = (float)(*from * scale);	
-					++from;
-					inLoc += 2;
-				}
+		if (getDeviceChannels() == 2) {
+			float *from = (float *) frameBuffer;
+			for (int in=0; in < frameCount; ++in) {
+				if (inLoc >= bufLen)	// wrap
+					inLoc -= bufLen;
+				// Write single channel from frame into both chans of circular buf.
+				outbuf[inLoc+1] = outbuf[inLoc] = (float)(*from);	
+				++from;
+				inLoc += 2;
 			}
-			break;
-		case MUS_BFLOAT:	// mono float to stereo float
-			{
-				scale = 1.0/32768.0;
-				float *from = (float *) frameBuffer;
-				for (int in=0; in < frameCount; ++in) {
-					if (inLoc >= bufLen)	// wrap
-						inLoc -= bufLen;
-					outbuf[inLoc] = (float)(*from * scale);	
-					outbuf[inLoc+1] = (float)(*from * scale);	
-					++from;
-					inLoc += 2;
-				}
-			}
-			break;
-		default:
-			return error("This sample format conversion not supported");
 		}
-		break;
-
-	case 2:
-		switch (_impl->bufferSampleFormat) {
-		case MUS_BSHORT:	// stereo short to stereo float
-			{
-				scale = 1.0/32768.0;
-				short *from = (short *) frameBuffer;
-				for (int in=0; in < frameCount; ++in) {
-					if (inLoc >= bufLen)	// wrap
-						inLoc -= bufLen;
-					outbuf[inLoc] = (float)(from[0] * scale);	
-					outbuf[inLoc+1] = (float)(from[1] * scale);	
-					from += 2;
-					inLoc += 2;
-				}
-			}
-			break;
-		case MUS_BFLOAT:	// stereo float to stereo float (rescaled)
-			{
-				scale = 1.0/32768.0;
-				float *from = (float *) frameBuffer;
-				for (int in=0; in < frameCount; ++in) {
-					if (inLoc >= bufLen)
-						inLoc -= bufLen;	// wrap
-					outbuf[inLoc] = (float)(from[0] * scale);	
-					outbuf[inLoc+1] = (float)(from[1] * scale);	
-					from += 2;
-					inLoc += 2;
-				}
-			}
-			break;
-		default:
-			return error("This sample format conversion not supported");
-		}
+		else
+			return error("Only mono-to-stereo playback conversion is currently supported");
 		break;
 
 	default:
-		return error("This channel count not yet supported by format conversion code");
+		if (getDeviceChannels() == getFrameChannels()) {
+			float *from = (float *) frameBuffer;
+			// Write all channels of each frame from frame into circular buf.
+			for (int in=0; in < frameCount; ++in) {
+				if (inLoc >= bufLen)
+					inLoc -= bufLen;	// wrap
+				for (int ch = 0; ch < chans; ++ch) {
+					outbuf[inLoc+ch] = (float) from[ch];	
+				}
+				from += chans;
+				inLoc += chans;
+			}
+		}
+		else
+			return error("Channel count conversion not supported for playback");
+		break;
 	}
 	_impl->inLoc[PLAY] = inLoc;
 	// printf("\tinLoc ended at %d.  Returning frameCount = %d\n", inLoc, frameCount);
