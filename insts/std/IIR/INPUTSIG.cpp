@@ -41,17 +41,18 @@ int INPUTSIG::init(float p[], short n_args)
 		myrsnetc[i][1] = rsnetc[i][1];
 		myrsnetc[i][2] = rsnetc[i][2];
 		myrsnetc[i][3] = myrsnetc[i][4] = 0.0;
+		myamp[i] = amp[i];
 		}
 	mynresons = nresons;
 
 	oamp = p[3];
-	inchan = p[4];
+	inchan = (int)p[4];
 	if ((inchan+1) > inputchans) {
 	fprintf(stderr,"uh oh, you have asked for channel %d of a %d-channel file...\n",inchan,inputchans);
 		exit(-1);
 		}
 
-	skip = SR/(float)resetval;
+	skip = (int)(SR/(float)resetval);
 	spread = p[5];
 
 	return(nsamps);
@@ -78,7 +79,7 @@ int INPUTSIG::run()
 		out[0] = 0.0;
 		for(j = 0; j < mynresons; j++) {
 			val = reson(in[i+inchan],myrsnetc[j]);
-			out[0] += val * amp[j];
+			out[0] += val * myamp[j];
 			}
 
 		out[0] *= aamp;
