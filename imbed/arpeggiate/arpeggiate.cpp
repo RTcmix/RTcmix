@@ -7,6 +7,7 @@
 #define MAIN
 #include <iostream.h>
 #include <unistd.h>
+#include <math.h>
 
 #include <globals.h>
 #include "RTcmix.h"
@@ -19,8 +20,20 @@ main(int argc, char *argv[])
 {
 	int i;
 	void *gonotes();
+	int rtsamps = 8192;
+	float time = 0.8;
 
-	rrr = new RTcmix(44100.0, 2);
+	for (int arg = 1; arg < argc; ++arg) {
+		char *c = argv[arg];
+		if (c[0] == '-') {
+			if (c[1] == 'b')
+				rtsamps = atoi(argv[++arg]);
+			if (c[1] == 't')
+				time = atof(argv[++arg]);
+		}
+	}
+
+	rrr = new RTcmix(44100.0, 2, rtsamps);
 //	rrr->printOn();
 	rrr->printOff();
 	sleep(1); // give the thread time to initialize
@@ -29,7 +42,7 @@ main(int argc, char *argv[])
 	rrr->cmd("load", 1, "STRUM");
 
 	// set up the scheduling function, update every 0.8 seconds
-	RTtimeit(0.8, (sig_t)gonotes);
+	RTtimeit(time, (sig_t)gonotes);
 
 	// and don't exit!
 	while(1) sleep(1);
