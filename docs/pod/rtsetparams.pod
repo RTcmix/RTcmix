@@ -76,6 +76,14 @@ sets up the session for 44100 sampling rate and two output channels.
 sets up the session for 44100 sampling rate, four output channels, and
 a buffer size of 128 sample frames.
 
+   set_option("full_duplex_on")
+   rtsetparams(44100, 2, 64)
+   rtinput("AUDIO")
+
+sets up the session for real-time processing of a signal reaching RTcmix
+from the audio device.  You must turn on full duplex operation to tell
+the audio device to handle input and output simultaneously.
+
 =head1 SEE ALSO
 
 L<rtinput|rtinput>, L<rtoutput|rtoutput>, L<set_option|set_option>
