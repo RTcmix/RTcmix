@@ -1674,8 +1674,15 @@ maketable(const Arg args[], const int nargs)
    if (normalize)
       _normalize_table(data, len, 1.0);
 
-// FIXME: here is where we would use the interp value
-   return _createPFieldHandle(new TablePField(data, len));
+   TablePField *table;
+   if (interp == kInterp1stOrder)
+      table = new TablePField(data, len);
+   else if (interp == kTruncate)
+      table = new TablePField(data, len, TablePField::Truncate);
+   else // interp == kInterp2ndOrder
+      table = new TablePField(data, len, TablePField::Interpolate2ndOrder);
+
+   return _createPFieldHandle(table);
 }
 
 
