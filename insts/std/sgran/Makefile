@@ -1,6 +1,6 @@
 include ../insts.conf
 
-OBJS = sgran.o setline.o minout.o
+OBJS = sgran.o minout.o
 CMIXOBJS += $(RTPROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 

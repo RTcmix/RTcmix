@@ -1,4 +1,5 @@
 #include <iostream.h>
+#include <stdio.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "FMINST.h"
@@ -40,8 +41,12 @@ int FMINST::init(float p[], short n_args)
 		simod = p[4] * lensine/SR;
 	
 	ampenv = floc(2);
-	lenamp = fsize(2);
-	tableset(p[1], lenamp, amptabs);
+	if (ampenv) {
+		int lenamp = fsize(2);
+		tableset(p[1], lenamp, amptabs);
+	}
+	else
+		printf("Setting phrase curve to all 1's\n");
 	
 	indexenv = floc(3);
 	lenind = fsize(3);
@@ -53,7 +58,7 @@ int FMINST::init(float p[], short n_args)
 	
 	amp = p[2];
 	spread = p[7];
-	skip = SR/(float)resetval;
+	skip = (int)(SR/(float)resetval);
 
 	return(nsamps);
 }
@@ -66,10 +71,13 @@ int FMINST::run()
 	int branch;
 	float tfreq,tamp;
 
+	aamp = amp;             /* in case ampenv == NULL */
+
 	branch = 0;
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch < 0) {
-			aamp = table(cursamp, ampenv, amptabs) * amp;
+			if (ampenv)
+				aamp = table(cursamp, ampenv, amptabs) * amp;
 			index = diff * tablei(cursamp,indexenv,indtabs) + indbase;
 			if (tags_on) {
 				tfreq = rtupdate(this->mytag, 3);

@@ -5,22 +5,70 @@
 #include <sys/types.h>
 #include <math.h>
 
-#define SIZE 512
-
 extern SFHEADER      sfdesc[NFILES];
-extern float array[SIZE],tabs[2];	/* for setline */
-extern int lineset;
+static float *array, tabs[2];         /* for setline */
+
+
+/*
+   sgran:
+      0              start time of group
+      1              duration of group
+      2              amplitude
+      3              beginning grain rate
+      4              ending grain rate
+
+      amount of variation in rate: (percentage of grain rate)
+      5-8            beg: lo, average, hi, tightness (0-1, is 0-100%)
+      9-12           end: lo, average, hi, tightness (0-1, is 0-100%)
+
+      average duration:
+      13-16          starting lo, average, hi, tightness
+      17-20          ending lo, average, hi, tightness
+
+      location:
+      21-24          starting lo, average, hi, tightness
+      25-28          ending lo, average, hi, tightness
+
+      pitch band AS:
+      29-32          starting lo, average, hi, tightness
+                     (if p29 < 0, noise is the input)
+      33-36          ending lo, average, hi, tightness
+
+      input type 0=AS 1=FM 2=SAM   [which pfield does this refer to?  -JGG]
+
+                 *       *       *
+
+   functions: (stt variation changes are linear)
+
+      1              grain envelope
+
+      shape of change:
+      2              grain density
+      3              grain duration
+      4              grain location
+
+      AS-band
+      5              shape of change: frequency (usually linear for all shapes)
+      6              waveform
+
+      FM
+      5              shape of change: carrier frequency
+      6              shape of change: c:m ratio
+      7              shape of change: mi
+
+      8              overall envelope (setline)
+*/
 
 double
 sgran(p,n_args)
 float *p; /* array of p-fields */
 int n_args; /* number of p-fields */
 {
-        long n,bgrainsamps,bgraindist,bgrainslide;
+	long n,bgrainsamps,bgraindist,bgrainslide;
 	long i,nsamps,gstt_var,count;
-        long egrainsamps,egraindist,egrainslide;
-        long grainsamps,grainslide,graindistdiff;
-        float si,phase,val,amp,out[2],chb,freq;
+	long egrainsamps,egraindist,egrainslide;
+	long grainsamps,grainslide,graindistdiff;
+	float si,phase,val,amp,out[2],chb,freq;
 	float tab[2],tab2[2],tab3[2],tab4[2],tab5[2];
 	float *wave,*envel,*rate_shape,*dur_shape,*loc_shape,*freq_shape;
 	float gdist_inc;
@@ -28,7 +76,7 @@ int n_args; /* number of p-fields */
 	double dlodiff,dmiddiff,dhidiff,dtidiff;
 	double llodiff,lmiddiff,lhidiff,ltidiff;
 	double flodiff,fmiddiff,fhidiff,ftidiff;
-        int len,j,z,chans,randflag=0;
+	int len,j,z,chans,randflag=0;
 
 	int outrepos();
 	float rrand();
@@ -37,55 +85,18 @@ int n_args; /* number of p-fields */
 
 	srrand(.3);
 
-/*
-sgran:
-0       start time of group
-1       duration of group
-2       amplitude
-3       beginning grain rate
-4       ending grain rate
-	amount of variation in rate: (percentage of grain rate)
-5-8             beg: lo, average, hi, tightness (0-1, is 0-100%)
-9-12            end: lo, average, hi, tightness (0-1, is 0-100%)
-	average duration:
-13-16           starting lo, average, hi, tightness
-17-20           ending lo, average, hi, tightness
-	location:
-21-24           starting lo, average, hi, tightness
-25-28           ending lo, average, hi, tightness
-	pitch band AS:
-29-32           starting lo, average, hi, tightness
-			if p29 < 0, noise is the input
-33-36           ending lo, average, hi, tightness
-      input type 0=AS 1=FM 2=SAM
-	*       *       *
-functions: (stt variation changes are linear)
-
-1       grain envelope
-	shape of change:
-2               grain density
-3               grain duration
-4               grain location
-AS-band
-5       shape of change: frequency (usually linear for all shapes)
-6       waveform
-FM
-5       shape of change: carrier frequency
-6       shape of change: c:m ratio
-7       shape of change: mi
-*/
 	if(p[37] > 0)
 		srrand(p[37]);
 
-        nsamps = setnote(p[0],p[1],1); /* set file position */
-        wave = (float *) floc(6); /* finds starting loc. of waveform */
-        len = fsize(6); /* length of playing waveform function */
-	envel = (float *) floc(1);
+	nsamps = setnote(p[0],p[1],1); /* set file position */
+
+	wave = floc(6); /* finds starting loc. of waveform */
+	len = fsize(6); /* length of playing waveform function */
+	envel = floc(1);
 
 	bgrainsamps = grainsamps = p[14] * SR;
 	bgraindist = p[3] * SR;
 	bgrainslide = grainslide = bgraindist - bgrainsamps;
-
 
 	egrainsamps = p[18] * SR;
 	egraindist = p[4] * SR;
@@ -126,25 +137,26 @@ FM
 	fhidiff = (double)(p[35]-p[31]);
 	ftidiff = (double)(p[36]-p[32]);
 
-        z =  2;
+	z = 2;
 
-        chans = sfchans(&sfdesc[1]); /* get file number of channels */
-        amp = p[2];
+	chans = sfchans(&sfdesc[1]); /* get file number of channels */
+	amp = p[2];
 	gstt_var = 0;
 	count = 0;
-	tableset(p[1],SIZE,tabs);
 
-   	if(!lineset) {
-		for(j = 0; j < SIZE; j++) 
-			array[j] = 1;
-		fprintf(stderr,"Set phrase curve to all 1's\n");
-		lineset = 1;
-   	}
-        j = 0; /* "branch once a cycle" loop for amp envelope */
+	array = floc(8);             /* used to be setline  -JGG */
+	if (array) {
+		int amplen = fsize(8);
+		tableset(p[1], amplen, tabs);
+	}
+	else
+		printf("Setting phrase curve to all 1's\n");
 
-        for(i = 0; i < nsamps; i++) {
+	j = 0; /* "branch once a cycle" loop for amp envelope */
+
+	for(i = 0; i < nsamps; i++) {
 		count++;
-        	phase = 0;
+		phase = 0;
 		tableset(grainsamps/SR,fsize(1),tab);
 		if(!randflag) {
 			lo = p[29] + flodiff*tablei(i,freq_shape,tab5);
@@ -163,22 +175,25 @@ FM
 */
 
 		for (n = 0; n < grainsamps; n++) {
-	                while (!j--) {   /* branch in here when j reaches 0 */
-	                        val = amp * tablei(n,envel,tab)*tablei(i,array,tabs);
-                        	j = ((grainsamps-n) > z) ? z : (grainsamps-n);
-                       	}
+			while (!j--) {   /* branch in here when j reaches 0 */
+				float tmp = 1.0;
+				if (array)
+					tmp = tablei(i,array,tabs);
+				val = amp * tablei(n,envel,tab) * tmp;
+				j = ((grainsamps-n) > z) ? z : (grainsamps-n);
+			}
 			if(randflag)
 				out[0] = rrand()*val;
 			else
-                		out[0] =  oscili(val,si,wave,len,&phase);
+				out[0] =  oscili(val,si,wave,len,&phase);
 
-                	if (chans > 1) { /* stereo */
-                        	out[1] = (1.0 - chb) * out[0];
-                        	out[0] *= chb;
-                       	}
-                	ADDOUT(out,1);
-               	}
- 
+			if (chans > 1) { /* stereo */
+				out[1] = (1.0 - chb) * out[0];
+				out[0] *= chb;
+			}
+			ADDOUT(out,1);
+		}
+
 		if((i+grainslide+gstt_var+grainsamps) < 0) {
 			outrepos((grainslide),1);
 			i += grainsamps;
@@ -224,11 +239,11 @@ FM
 		hi = (hi < mid) ? mid : hi;
 		ti = (ti < 0) ? 0 : ti; 
 		chb = prob(lo, mid, hi, ti);
-
 	}
 	printf("%ld grains\n",count);
-        endnote(1);
+	endnote(1);
 }
+
 
 double prob(low,mid,high,tight)  
 double low, mid, high, tight;      /* Returns a value within a range
@@ -260,8 +275,6 @@ double low, mid, high, tight;      /* Returns a value within a range
 }
 
 
-int NBYTES = 16384;
- 
 profile()
 {
 	UG_INTRO("sgran",sgran); 

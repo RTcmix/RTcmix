@@ -1,4 +1,5 @@
 #include <iostream.h>
+#include <stdio.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "SCULPT.h"
@@ -25,13 +26,19 @@ int SCULPT::init(float p[], short n_args)
 
 	nsamps = rtsetoutput(p[0], p[1]*p[3], this);
 	tdur = p[1] * p[3];
-	pdur = p[1] * SR;
+	pdur = (int)(p[1] * SR);
 
 	wave = floc(1);
 	len = fsize(1);
 
 	amptable = floc(2);
-	tableset(tdur, fsize(2), amptabs);
+	if (amptable) {
+		int len = fsize(2);
+		tableset(tdur, len, amptabs);
+	}
+	else
+		printf("Setting phrase curve to all 1's\n");
+
 	freqtable = floc(3);
 	pamptable = floc(4);
 
@@ -52,10 +59,13 @@ int SCULPT::run()
 	float si;
 	float overamp, aamp;
 
+	overamp = amp;            /* in case amptable == NULL */
+
 	for (i = 0; i < chunksamps; i++) {
 		if (--pcount < 0) {
 			si = freqtable[index] * (float)len/SR;
-			overamp = table(cursamp, amptable, amptabs) * amp;
+			if (amptable)
+				overamp = table(cursamp, amptable, amptabs) * amp;
 			aamp = ampdb(60.0 + pamptable[index]) * overamp;
 			index++;
 			pcount = pdur;

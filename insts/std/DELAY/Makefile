@@ -1,6 +1,7 @@
 include ../insts.conf
 
-OBJS = DELAY.o reset.o
+OBJS = DELAY.o
+CMIXOBJS += $(PROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = DELAY libDELAY.so

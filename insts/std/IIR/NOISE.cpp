@@ -1,4 +1,5 @@
 #include <iostream.h>
+#include <stdio.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "NOISE.h"
@@ -24,25 +25,29 @@ int NOISE::init(float p[], short n_args)
 // p3 = stereo spread (0-1) [optional]
 // assumes function table 1 is the amplitude envelope
 
-
-	int i,lenamp;
+	int i;
 
 	nsamps = rtsetoutput(p[0], p[1], this);
 
 	amparr = floc(1);
-	lenamp = fsize(1);
-	tableset(p[1], lenamp, amptabs);
+	if (amparr) {
+		int lenamp = fsize(1);
+		tableset(p[1], lenamp, amptabs);
+	}
+	else
+		printf("Setting phrase curve to all 1's\n");
 
 	for(i = 0; i < nresons; i++) {
 		myrsnetc[i][0] = rsnetc[i][0];
 		myrsnetc[i][1] = rsnetc[i][1];
 		myrsnetc[i][2] = rsnetc[i][2];
 		myrsnetc[i][3] = myrsnetc[i][4] = 0.0;
+		myamp[i] = amp[i];
 		}
 	mynresons = nresons;
 
 	oamp = p[2];
-	skip = SR/(float)resetval;
+	skip = (int)(SR/(float)resetval);
 	spread = p[3];
 
 	return(nsamps);
@@ -55,10 +60,13 @@ int NOISE::run()
 	float aamp,val,sig;
 	int branch;
 
+	aamp = oamp;           /* in case amparr == NULL */
+
 	branch = 0;
 	for (i = 0; i < chunksamps; i++)  {
 		if (--branch < 0) {
-			aamp = tablei(cursamp, amparr, amptabs) * oamp;
+			if (amparr)
+				aamp = tablei(cursamp, amparr, amptabs) * oamp;
 			branch = skip;
 			}
 
@@ -67,7 +75,7 @@ int NOISE::run()
 		out[0] = 0.0;
 		for(j = 0; j < mynresons; j++) {
 			val = reson(sig, myrsnetc[j]);
-			out[0] += val * amp[j];
+			out[0] += val * myamp[j];
 			}
 
 		out[0] *= aamp;

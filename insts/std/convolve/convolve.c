@@ -3,9 +3,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
-#include "carl.h"
-#include "procom.h"
-#include "defaults.h"
+//#include "carl.h"      /* these ucsd headers aren't used  -JGG */
+//#include "procom.h"
+//#include "defaults.h"
 #include <sys/types.h>
 #include <sys/stat.h>
 
@@ -394,7 +394,6 @@ malerr(str, ex)
   exit(ex);
 }
 
-int NBYTES=16384;		
 profile()
 {
 	UG_INTRO("convolve",convolve);	        

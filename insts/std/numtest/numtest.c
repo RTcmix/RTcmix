@@ -30,9 +30,8 @@ int n_args;
 }
 
 
-int NBYTES = 32768;
- 
 profile()
 {
 	UG_INTRO("numtest",numtest);
 }
+

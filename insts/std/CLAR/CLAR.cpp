@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <iostream.h>
 #include <mixerr.h>
 #include <Instrument.h>
@@ -5,10 +6,10 @@
 #include <rt.h>
 #include <rtdefs.h>
 
-extern int resetval;
 
 extern "C" {
 	#include <ugens.h>
+	extern int resetval;
 	void mdelset(float*, int*, int);
 	float mdelget(float*, int, int*);
 }
@@ -32,21 +33,28 @@ int CLAR::init(float p[], short n_args)
 	dampcoef = .7;
 
 	amparr = floc(1);
-	lenamp = fsize(1);
-	tableset(p[1], lenamp, amptabs);
+	if (amparr) {
+		int lenamp = fsize(1);
+		tableset(p[1], lenamp, amptabs);
+	}
+	else
+		printf("Setting noise amp curve to all 1's\n");
 
 	oamparr = floc(2);
-	olenamp = fsize(2);
-	tableset(p[1], olenamp, oamptabs);
-
+	if (oamparr) {
+		int olenamp = fsize(2);
+		tableset(p[1], olenamp, oamptabs);
+	}
+	else
+		printf("Setting output amp curve to all 1's\n");
 
 	imax = DELSIZE;
 	mdelset(del1,dl1,imax);
 	mdelset(del2,dl2,imax);
 
 //	srrand(0.1);
-	length1 = p[3];
-	length2 = p[4];
+	length1 = (int)p[3];
+	length2 = (int)p[4];
 
 	oldsig = 0; /* for the filter */
 
@@ -54,7 +62,7 @@ int CLAR::init(float p[], short n_args)
 	namp = p[2];
 	d2gain = p[6];
 	spread = p[7];
-	skip = SR/(float)resetval;
+	skip = (int)(SR/(float)resetval);
 
 	return(nsamps);
 }
@@ -68,11 +76,17 @@ int CLAR::run()
 	float del2sig,csig,ssig;
 	int branch;
 
+	aamp = 1.0;        /* in case amparr == NULL */
+
 	branch = 0;
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch < 0) {
-			aamp = table(cursamp, amparr, amptabs);
-			oamp = tablei(cursamp, oamparr, oamptabs);
+			if (amparr)
+				aamp = table(cursamp, amparr, amptabs);
+			if (oamparr)
+				oamp = tablei(cursamp, oamparr, oamptabs);
+			else
+				oamp = 1.0;
 			branch = skip;
 			}
 

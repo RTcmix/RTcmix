@@ -1,6 +1,7 @@
 include ../insts.conf
 
-OBJS = COMBIT.o cfuncs.o
+OBJS = COMBIT.o
+CMIXOBJS += $(PROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = COMBIT libCOMBIT.so

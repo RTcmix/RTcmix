@@ -1,6 +1,7 @@
 include ../insts.conf
 
-OBJS = DEL1.o reset.o
+OBJS = DEL1.o
+CMIXOBJS += $(PROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = DEL1 libDEL1.so

@@ -51,6 +51,7 @@ mdliget(float *a, float samps, int *l)
 }
 
 
+#ifdef NOMORE
 int resetval = 1000;
 
 double reset(float *p, int n_args)
@@ -67,3 +68,5 @@ int profile()
 {
 	UG_INTRO("reset",reset);
 }
+#endif
+

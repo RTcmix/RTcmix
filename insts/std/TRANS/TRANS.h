@@ -1,5 +1,5 @@
-#include "../../rtstuff/Instrument.h"
-#include "../../rtstuff/rtdefs.h"
+#include <Instrument.h>
+#include <rtdefs.h>
 
 class TRANS : public Instrument {
 	float *amptable, tabs[2];

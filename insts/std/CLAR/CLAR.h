@@ -5,9 +5,7 @@ class CLAR : public Instrument {
 	float del1[DELSIZE],del2[DELSIZE];
 	float amp,namp,dampcoef,oldsig;
 	float *amparr,amptabs[2];
-	int lenamp;
 	float *oamparr,oamptabs[2];
-	int olenamp;
 	float d2gain, spread;
 	int skip;
 

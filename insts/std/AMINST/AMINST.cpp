@@ -28,13 +28,17 @@ int AMINST::init(float p[], short n_args)
 // function table 3 is the carrier waveform
 // function table 4 is the modulator waveform
 
-	int lenamp,lenmamp;
+	int lenmamp;
 
 	nsamps = rtsetoutput(p[0], p[1], this);
 
 	amparr = floc(1);
-	lenamp = fsize(1);
-	tableset(p[1], lenamp, amptabs);
+	if (amparr) {
+		int lenamp = fsize(1);
+		tableset(p[1], lenamp, amptabs);
+	}
+	else
+		printf("Setting phrase curve to all 1's\n");
 
 	mamparr = floc(2);
 	lenmamp = fsize(2);
@@ -49,7 +53,7 @@ int AMINST::init(float p[], short n_args)
 	simod = p[4] * (float)lenmod/SR;
 
 	amp = p[2];
-	skip = SR/(float)resetval;
+	skip = (int)(SR/(float)resetval);
 	phasecar = phasemod = 0.0;
 	spread = p[5];
 
@@ -64,10 +68,13 @@ int AMINST::run()
 	float tval1,tval2;
 	int branch;
 
+	aamp = amp;        /* in case amparr == NULL */
+
 	branch = 0;
 	for (i = 0; i < chunksamps; i++)  {
 		if (--branch < 0) {
-			aamp = tablei(cursamp, amparr, amptabs) * amp;
+			if (amparr)
+				aamp = tablei(cursamp, amparr, amptabs) * amp;
 			maamp = tablei(cursamp,mamparr,mamptabs);
 			branch = skip;
 			}

@@ -33,7 +33,6 @@ float *p;
 	int octpart1, octpart2;
 	float pcpart1, pcpart2, prange, pcbase, ival;
 	float *amptable, amptabs[2];
-	int alen;
 	float *wintable;
 	int wlen;
 	float *pcurve, ptabs[2];
@@ -45,8 +44,12 @@ float *p;
 	nsamps = setnote(p[0], p[2], 1);
 
 	amptable = floc(1);
-	alen = fsize(1);
-	tableset(p[2], alen, amptabs);
+	if (amptable) {
+		int alen = fsize(1);
+		tableset(p[2], alen, amptabs);
+	}
+	else
+		printf("Setting phrase curve to all 1's\n");	
 	
 	wintable = floc(2);
 	wlen = fsize(2);
@@ -74,7 +77,10 @@ float *p;
 		while (!cdown--) {
 			ival = pcbase + (tablei(i,pcurve,ptabs)*prange);
 			interval =  pow(2.0, ival/12.0) - 1.0;
-			amp = tablei(i, amptable, amptabs) * p[3];
+			if (amptable)
+				amp = tablei(i, amptable, amptabs) * p[3];
+			else
+				amp = p[3];
 			cdown = skip;
 			}
 
@@ -103,10 +109,9 @@ float *p;
 	endnote(1);
 }
 
-int NBYTES = 16384;
 
 profile()
 {
 	UG_INTRO("mrotate",mrotate);
-	UG_INTRO("reset",reset);
 }
+

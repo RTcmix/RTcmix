@@ -27,14 +27,18 @@ int INPUTSIG::init(float p[], short n_args)
 // p5 = stereo spread (0-1) [optional]
 // assumes function table 1 is the amplitude envelope
 
-	int i,lenamp;
+	int i;
 
 	rtsetinput(p[1], this);
 	nsamps = rtsetoutput(p[0], p[2], this);
 
 	amparr = floc(1);
-	lenamp = fsize(1);
-	tableset(p[2], lenamp, amptabs);
+	if (amparr) {
+		int lenamp = fsize(1);
+		tableset(p[2], lenamp, amptabs);
+	}
+	else
+		printf("Setting phrase curve to all 1's\n");
 
 	for(i = 0; i < nresons; i++) {
 		myrsnetc[i][0] = rsnetc[i][0];
@@ -69,10 +73,13 @@ int INPUTSIG::run()
 
 	rtgetin(in, this, rsamps);
 
+	aamp = oamp;           /* in case amparr == NULL */
+
 	branch = 0;
 	for (i = 0; i < rsamps; i += inputchans)  {
 		if (--branch < 0) {
-			aamp = tablei(cursamp, amparr, amptabs) * oamp;
+			if (amparr)
+				aamp = tablei(cursamp, amparr, amptabs) * oamp;
 			branch = skip;
 			}
 

@@ -1,6 +1,7 @@
 include ../insts.conf
 
-OBJS = PANECHO.o reset.o
+OBJS = PANECHO.o
+CMIXOBJS += $(PROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = PANECHO libPANECHO.so

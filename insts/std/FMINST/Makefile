@@ -1,6 +1,7 @@
 include ../insts.conf
 
-OBJS = FMINST.o reset.o
+OBJS = FMINST.o
+CMIXOBJS += $(PROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC
 PROGS = FMINST libFMINST.so

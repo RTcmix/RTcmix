@@ -1,4 +1,5 @@
 #include <iostream.h>
+#include <stdio.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "BUZZ.h"
@@ -26,13 +27,17 @@ int BUZZ::init(float p[], short n_args)
 // assumes function table 2 is a sine wave
 
 
-	int i,lenamp,lensine;
+	int i,lensine;
 
 	nsamps = rtsetoutput(p[0], p[1], this);
 
 	amparr = floc(1);
-	lenamp = fsize(1);
-	tableset(p[1], lenamp, amptabs);
+	if (amparr) {
+		int lenamp = fsize(1);
+		tableset(p[1], lenamp, amptabs);
+	}
+	else
+		printf("Setting phrase curve to all 1's\n");
 
 	sinetable = floc(2);
 	lensine = fsize(2);
@@ -44,11 +49,12 @@ int BUZZ::init(float p[], short n_args)
 		myrsnetc[i][1] = rsnetc[i][1];
 		myrsnetc[i][2] = rsnetc[i][2];
 		myrsnetc[i][3] = myrsnetc[i][4] = 0.0;
+		myamp[i] = amp[i];
 		}
 	mynresons = nresons;
 
 	oamp = p[2];
-	skip = SR/(float)resetval;
+	skip = (int)(SR/(float)resetval);
 	spread = p[4];
 	phase = 0.0;
 
@@ -62,10 +68,13 @@ int BUZZ::run()
 	float aamp,val,sig;
 	int branch;
 
+	aamp = oamp;           /* in case amparr == NULL */
+
 	branch = 0;
 	for (i = 0; i < chunksamps; i++)  {
 		if (--branch < 0) {
-			aamp = tablei(cursamp, amparr, amptabs) * oamp;
+			if (amparr)
+				aamp = tablei(cursamp, amparr, amptabs) * oamp;
 			branch = skip;
 			}
 
@@ -74,7 +83,7 @@ int BUZZ::run()
 		out[0] = 0.0;
 		for(j = 0; j < mynresons; j++) {
 			val = reson(sig, myrsnetc[j]);
-			out[0] += val * amp[j];
+			out[0] += val * myamp[j];
 			}
 
 		out[0] *= aamp;

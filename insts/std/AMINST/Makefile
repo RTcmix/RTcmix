@@ -1,6 +1,7 @@
 include ../insts.conf
 
-OBJS = AMINST.o reset.o
+OBJS = AMINST.o
+CMIXOBJS += $(PROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = AMINST libAMINST.so

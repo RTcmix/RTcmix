@@ -1,6 +1,7 @@
 include ../insts.conf
 
 OBJS = CLAR.o cfuncs.o
+CMIXOBJS += $(PROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = CLAR libCLAR.so

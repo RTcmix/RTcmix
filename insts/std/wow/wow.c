@@ -36,7 +36,7 @@ int n_args; /* number of args */
 	int i,j,input_offset_floor;
 	int q_size, q_past, q_future, q_middle, q_end, q_pos, q_pos1;
 	int inchan,inchans,outchans;
-	int lenamp,skip;
+	int skip;
 	extern int resetval;
 
 	float input_start, output_start, duration;
@@ -53,10 +53,17 @@ int n_args; /* number of args */
 	output_start = p[0] * SR;
 	duration =  p[2] * SR;
 
-	amparr = floc(1);
-	lenamp = fsize(1);
-	tableset(p[2], lenamp, amptabs);
 	amp = p[3];
+
+	amparr = floc(1);
+	if (amparr) {
+		int lenamp = fsize(1);
+		tableset(p[2], lenamp, amptabs);
+	}
+	else {
+		aamp = amp;
+		printf("Setting phrase curve to all 1's\n");
+	}
 
 	modulator_index = p[4];
 	modulator_freq = p[5];
@@ -128,7 +135,8 @@ printf ("     Avg of modulator: %f.  Max of integral: %f.  Min: %f.\n",
 	input_offset = 0;
 	for (n = 0; n < nsamps; n++) {
 		while (!j--) {
-			aamp = tablei(n,amparr,amptabs) * amp;
+			if (amparr)
+				aamp = tablei(n,amparr,amptabs) * amp;
 			j = skip;
 			}
 

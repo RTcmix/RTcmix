@@ -1,6 +1,6 @@
 include ../insts.conf
 
-OBJS = mrotate.o reset.o
+OBJS = mrotate.o
 CMIXOBJS += $(RTPROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 

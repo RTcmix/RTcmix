@@ -27,25 +27,33 @@ int AM::init(float p[], short n_args)
 // assumes function table 1 is the amplitude envelope
 // assumes function table 2 is the AM modulator waveform
 
-	int amplen;
-
 	rtsetinput(p[1], this);
 	nsamps = rtsetoutput(p[0], p[2], this);
 
 	amptable = floc(1);
-	amplen = fsize(1);
-	tableset(p[2], amplen, amptabs);
+	if (amptable) {
+		int amplen = fsize(1);
+		tableset(p[2], amplen, amptabs);
+	}
+	else
+		printf("Setting phrase curve to all 1's\n");
 
 	amtable = floc(2);
+	if (amtable == NULL) {
+		fprintf(stderr, "You need a function table 2 containing mod. waveform\n");
+		exit(1);
+	}
 	lenam = fsize(2);
 	si = p[4] * (float)lenam/SR;
 
 	amp = p[3];
-	skip = SR/(float)resetval; // how often to update amp curve, default 200/sec
+	skip = (int)(SR/(float)resetval);      // how often to update amp curve
 	phase = 0.0;
-	inchan = p[5];
+	inchan = (int)p[5];
 	if ((inchan+1) > inputchans) {
-		fprintf(stderr,"uh oh, you have asked for channel %d of a %d-channel file...\n",inchan,inputchans);
+		fprintf(stderr,
+			"uh oh, you have asked for channel %d of a %d-channel file...\n",
+																				inchan,inputchans);
 		exit(-1);
 		}
 
@@ -65,10 +73,13 @@ int AM::run()
 
 	rtgetin(in, this, rsamps);
 
+	aamp = amp;            /* in case amptable == NULL */
+
 	branch = 0;
 	for (i = 0; i < rsamps; i += inputchans)  {
 		if (--branch < 0) {
-			aamp = tablei(cursamp, amptable, amptabs) * amp;
+			if (amptable)
+				aamp = tablei(cursamp, amptable, amptabs) * amp;
 			branch = skip;
 			}
 

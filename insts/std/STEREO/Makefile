@@ -1,6 +1,7 @@
 include ../insts.conf
 
-OBJS = STEREO.o cfuncs.o
+OBJS = STEREO.o
+CMIXOBJS += $(PROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = STEREO libSTEREO.so

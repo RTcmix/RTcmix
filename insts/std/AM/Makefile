@@ -1,6 +1,7 @@
 include ../insts.conf
 
-OBJS = AM.o reset.o
+OBJS = AM.o
+CMIXOBJS += $(PROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = AM libAM.so

@@ -1,6 +1,6 @@
 include ../insts.conf
 
-OBJS = gravy.o reset.o minout.o
+OBJS = gravy.o minout.o
 CMIXOBJS += $(RTPROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 

@@ -1,6 +1,7 @@
 include ../insts.conf
 
-OBJS = MULTICOMB.o reset.o
+OBJS = MULTICOMB.o
+CMIXOBJS += $(PROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = MULTICOMB libMULTICOMB.so

@@ -24,14 +24,14 @@ int STEREO::init(float p[], short n_args)
 // p0 = outsk; p1 = insk; p2 = dur (-endtime); p3 = amp; p4-n = channel mix matrix
 // we're stashing the setline info in gen table 1
 
-	int i, amplen;
+	int i;
 
 	if (NCHANS != 2) {
 		fprintf(stderr,"output must be stereo!\n");
 		exit(-1);
 		}
 
-	if (p[2] < 0.0) p[2] = p[2] - p[1];
+	if (p[2] < 0.0) p[2] = -p[2] - p[1];
 
 	nsamps = rtsetoutput(p[0], p[2], this);
 	rtsetinput(p[1], this);
@@ -42,13 +42,15 @@ int STEREO::init(float p[], short n_args)
 		outspread[i] = p[i+4];
 		}
 
-	if (lineset) {
-		amptable = floc(1);
-		amplen = fsize(1);
+	amptable = floc(1);
+	if (amptable) {
+		int amplen = fsize(1);
 		tableset(p[2], amplen, tabs);
-		}
+	}
+	else
+		printf("Setting phrase curve to all 1's\n");
 
-	skip = SR/(float)resetval; // how often to update amp curve, default 200/sec.
+	skip = (int)(SR/(float)resetval);       // how often to update amp curve
 
 	return(nsamps);
 }
@@ -64,11 +66,13 @@ int STEREO::run()
 
 	rtgetin(in, this, rsamps);
 
+	aamp = amp;        /* in case amptable == NULL */
+
 	branch = 0;
 	for (i = 0; i < rsamps; i += inputchans)  {
 		if (--branch < 0) {
-			if (lineset) aamp = table(cursamp, amptable, tabs) * amp;
-			else aamp = amp;
+			if (amptable)
+				aamp = table(cursamp, amptable, tabs) * amp;
 			branch = skip;
 			}
 

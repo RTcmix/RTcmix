@@ -1,6 +1,7 @@
 include ../insts.conf
 
-OBJS = TRANS.o reset.o
+OBJS = TRANS.o
+CMIXOBJS += $(PROFILE_O)
 CFLAGS += -fPIC
 CXXFLAGS += -fPIC 
 PROGS = TRANS libTRANS.so

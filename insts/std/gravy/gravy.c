@@ -144,10 +144,8 @@ double interp(y0,y1,y2,t)
 }
 
 
-int NBYTES = 16384;
-
-
 profile()
 {
 	UG_INTRO("gravy",gravy);
 }
+

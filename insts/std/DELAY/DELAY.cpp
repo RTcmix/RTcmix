@@ -32,14 +32,13 @@ int DELAY::init(float p[], short n_args)
 // p8 = stereo spread (0-1) <optional>
 // assumes function table 1 is the amplitude envelope
 
-	int amplen;
 	long delsamps;
 
 	rtsetinput(p[1], this);
 	nsamps = rtsetoutput(p[0], p[2]+p[6], this);
-	insamps = p[2] * SR;
+	insamps = (int)(p[2] * SR);
 
-	delsamps = p[4] * SR + 0.5;
+	delsamps = (long)(p[4] * SR + 0.5);
 	if( (delarray = new float [delsamps]) == NULL ) {
 		fprintf(stderr,"Sorry, Charlie -- no space\n");
 		exit(-1);
@@ -49,12 +48,16 @@ int DELAY::init(float p[], short n_args)
 	delset(delarray, deltabs, wait);
 
 	amptable = floc(1);
-	amplen = fsize(1);
-	tableset(p[2], amplen, amptabs);
+	if (amptable) {
+		int amplen = fsize(1);
+		tableset(p[2], amplen, amptabs);
+	}
+	else
+		printf("Setting phrase curve to all 1's\n");
 
 	amp = p[3];
-	skip = SR/(float)resetval;
-	inchan = p[7];
+	skip = (int)(SR/(float)resetval);
+	inchan = (int)p[7];
 	if ((inchan+1) > inputchans) {
 		fprintf(stderr,"uh oh, you have asked for channel %d of a %d-channel file...\n",inchan,inputchans);
 		exit(-1);
@@ -76,6 +79,8 @@ int DELAY::run()
 
 	rtgetin(in, this, rsamps);
 
+	aamp = amp;           /* in case amptable == NULL */
+
 	branch = 0;
 	for (i = 0; i < rsamps; i += inputchans)  {
 		if (cursamp > insamps) {
@@ -83,7 +88,8 @@ int DELAY::run()
 			}
 		else {
 			if (--branch < 0) {
-				aamp = tablei(cursamp, amptable, amptabs) * amp;
+				if (amptable)
+					aamp = tablei(cursamp, amptable, amptabs) * amp;
 				branch = skip;
 				}
 			out[0] = (in[i+inchan]*aamp) + (delget(delarray, wait, deltabs)*regen);

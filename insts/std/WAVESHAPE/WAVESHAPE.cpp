@@ -1,4 +1,5 @@
 #include <iostream.h>
+#include <stdio.h>
 #include <mixerr.h>
 #include <Instrument.h>
 #include "WAVESHAPE.h"
@@ -33,8 +34,12 @@ int WAVESHAPE::init(float p[], short n_args)
 	si = p[2] * (float)(lenwave/SR);
 
 	ampenv = floc(2);
-	lenamp = fsize(2);
-	tableset(p[1], lenamp, amptabs);
+	if (ampenv) {
+		int lenamp = fsize(2);
+		tableset(p[1], lenamp, amptabs);
+	}
+	else
+		printf("Setting phrase curve to all 1's\n");
 
 	xfer = floc(3);
 	lenxfer = fsize(3);
@@ -69,10 +74,13 @@ int WAVESHAPE::run()
 	float index;
 	int branch;
 
+	aamp = amp;            /* in case ampenv == NULL */
+
 	branch = 0;
 	for (i = 0; i < chunksamps; i++) {
 		if (--branch < 0) {
-			aamp = table(cursamp, ampenv, amptabs) * amp;
+			if (ampenv)
+				aamp = table(cursamp, ampenv, amptabs) * amp;
 			index = diff * tablei(cursamp,indenv,indtabs)+indbase;
 			ampi = aamp/index;
 			branch = 0;
