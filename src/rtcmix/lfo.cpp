@@ -112,7 +112,6 @@ _makewavetable(const char *wavetype)
 extern "C" {
 	Handle makeLFO(const Arg args[], const int nargs);
 	Handle makerandom(const Arg args[], const int nargs);
-	Handle makesmoother(const Arg args[], const int nargs);
 }
 
 typedef enum {
@@ -386,35 +385,4 @@ makerandom(const Arg args[], const int nargs)
 	return _createPFieldHandle(rand);
 }
 
-// ------------------------------------------------------------ makesmoother ---
-
-static Handle
-_makesmoother_usage()
-{
-	die("makesmoother",
-		"\n   usage: smoother = makesmoother(pfield, lag)\n");
-	return NULL;
-}
-
-Handle
-makesmoother(const Arg args[], const int nargs)
-{
-	if (nargs != 2)
-		return _makesmoother_usage();
-
-	PField *innerpf = (PField *) args[0];
-	if (innerpf == NULL)
-		return _makesmoother_usage();
-
-	PField *lagpf = (PField *) args[1];
-	if (lagpf == NULL) {
-		if (args[1].isType(DoubleType))
-			lagpf = new ConstPField((double) args[1]);
-		else
-			return _makesmoother_usage();
-	}
-	PField *smoother = new SmoothPField(innerpf, resetval, lagpf);
-
-	return _createPFieldHandle(smoother);
-}
 
