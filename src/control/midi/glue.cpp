@@ -207,6 +207,7 @@ create_pfield(const Arg args[], const int nargs)
 		die("makeconnection (midi)", "<lag> must be between 0 and 100");
 		return NULL;
 	}
+	lag *= 0.01;
 
 	if (args[4].isType(DoubleType))
 		chan = (int) args[4] - 1;		// convert to zero-based channel
