@@ -20,6 +20,8 @@
 
 /* #define DEBUG */
 
+extern int record_is_on;	/* set_option.c */
+
 /* ---------------------------------------------------------- rtsetparams --- */
 /* Minc function that sets output sampling rate (p0), maximum number of
    output channels (p1), and (optionally) I/O buffer size (p2).
@@ -73,16 +75,18 @@ rtsetparams(float p[], int n_args, double pp[])
       rtsetparams. This would let user run multiple jobs, as long as only one
       needs the audio drivers.  -JGG
 
-	  record_audio is false unless user has called set_option("full_duplex_on") or
-	  has explicity turned record on by itself via set_option("record_on"), or  
-	  has already called rtinput("AUDIO").  -DS
+	  record_is_on is false unless user has called set_option("full_duplex_on")
+	  or has explicity turned record on by itself via set_option("record_on"),
+	  or has already called rtinput("AUDIO").  -DS
    */
-   if (play_audio || record_audio) {
+   if (play_audio || record_is_on) {
       int nframes = RTBUFSAMPS;
 		
-	  if (create_audio_devices(record_audio, play_audio, NCHANS, SR, &nframes) < 0)
+	  if (create_audio_devices(record_is_on, play_audio, NCHANS, SR, &nframes) < 0)
 	  	return -1;
 
+	  record_audio = record_is_on;		/* used by inTraverse() */
+	  
       /* This may have been reset by driver. */
       RTBUFSAMPS = nframes;
    }
