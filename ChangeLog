@@ -1,3 +1,10 @@
+Wednesday, Feb 7, 2001 John Gibson <johngibson@virginia.edu>
+
+   * Change srand() so that if you don't give it a seed argument, it uses
+     the system microsecond counter to seed the random number generator.
+     This way, you won't get the same random number sequence each time
+     you run a score.
+
 Saturday, Feb 3, 2001 John Gibson <johngibson@virginia.edu>
 
    * New reverb instrument, FREEVERB, derived from code by Jezar
