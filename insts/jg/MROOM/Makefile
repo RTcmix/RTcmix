@@ -1,21 +1,21 @@
 include ../package.conf
 
-OBJS = MROOM.o timeset.o
-#CFLAGS += -fPIC
-#CXXFLAGS += -fPIC
-PROGS = libMROOM.so MROOM
+NAME = MROOM
 
-all: libMROOM.so
+OBJS = $(NAME).o timeset.o
+PROGS = lib$(NAME).so $(NAME)
 
-standalone: MROOM
+all: lib$(NAME).so
 
-libMROOM.so: $(OBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+standalone: $(NAME)
 
-MROOM: $(OBJS) $(CMIXOBJS)
+lib$(NAME).so: $(OBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+
+$(NAME): $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) MROOM.h timeset.h
+$(OBJS): $(INSTRUMENT_H) $(NAME).h timeset.h
 
 clean:
 	$(RM) $(OBJS) $(PROGS)

@@ -1,19 +1,19 @@
 include ../package.conf
 
-OBJS = denoise.o cfast.o cfsst.o cfr2tr.o cfr4tr.o cfr4syn.o cford1.o cford2.o
+NAME = denoise
+
+OBJS = $(NAME).o cfast.o cfsst.o cfr2tr.o cfr4tr.o cfr4syn.o cford1.o cford2.o
 CMIXOBJS += $(RTPROFILE_O)
-#CFLAGS += -fPIC
-#CXXFLAGS += -fPIC
-PROGS = libdenoise.so denoise
+PROGS = lib$(NAME).so $(NAME)
 
-all: libdenoise.so
+all: lib$(NAME).so
 
-standalone: denoise
+standalone: $(NAME)
 
-libdenoise.so: $(UGENS_H) $(OBJS)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+lib$(NAME).so: $(UGENS_H) $(OBJS)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
-denoise: $(UGENS_H) $(CMIXOBJS) $(OBJS)
+$(NAME): $(UGENS_H) $(CMIXOBJS) $(OBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
 clean:

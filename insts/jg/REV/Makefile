@@ -1,28 +1,27 @@
 include ../package.conf
 
+NAME = REV
+
 OBJLIBDIR = ../objlib
 OBJLIB_A = $(OBJLIBDIR)/objlib.a
 OBJLIB_H = $(OBJLIBDIR)/objlib.h
 
-OBJS = REV.o
+OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
-#CFLAGS += -fPIC
-#CXXFLAGS += -fPIC -I$(OBJLIBDIR) -Wall
 CXXFLAGS += -I$(OBJLIBDIR)
-PROGS = REV libREV.so
+PROGS = $(NAME) lib$(NAME).so
 
-all: libREV.so
+all: lib$(NAME).so
 
-standalone: REV
+standalone: $(NAME)
 
-libREV.so: $(OBJS) $(GENLIB) $(OBJLIB_A)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	$(GENLIB) $(SYSLIBS) $(OBJLIB_A)
+lib$(NAME).so: $(OBJS) $(GENLIB) $(OBJLIB_A)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS) $(OBJLIB_A)
 
-REV: $(OBJS) $(CMIXOBJS) $(OBJLIB_A)
+$(NAME): $(OBJS) $(CMIXOBJS) $(OBJLIB_A)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(OBJLIB_A) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) REV.h
+$(OBJS): $(INSTRUMENT_H) $(NAME).h
 
 clean:
 	$(RM) $(OBJS) $(PROGS)

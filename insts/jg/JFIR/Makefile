@@ -1,28 +1,27 @@
 include ../package.conf
 
+NAME = JFIR
+
 OBJLIBDIR = ../objlib
 OBJLIB_A = $(OBJLIBDIR)/objlib.a
 OBJLIB_H = $(OBJLIBDIR)/objlib.h
 
-OBJS = JFIR.o
+OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
-#CFLAGS += -fPIC
-#CXXFLAGS += -fPIC -I$(OBJLIBDIR) -O3 -Wall
 CXXFLAGS += -I$(OBJLIBDIR)
-PROGS = libJFIR.so JFIR
+PROGS = lib$(NAME).so $(NAME)
 
-all: libJFIR.so
+all: lib$(NAME).so
 
-standalone: JFIR
+standalone: $(NAME)
 
-libJFIR.so: $(OBJS) $(GENLIB) $(OBJLIB_A)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	$(GENLIB) $(SYSLIBS) $(OBJLIB_A)
+lib$(NAME).so: $(OBJS) $(GENLIB) $(OBJLIB_A)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS) $(OBJLIB_A)
 
-JFIR: $(OBJS) $(CMIXOBJS) $(OBJLIB_A)
+$(NAME): $(OBJS) $(CMIXOBJS) $(OBJLIB_A)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(OBJLIB_A) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) JFIR.h
+$(OBJS): $(INSTRUMENT_H) $(NAME).h
 
 clean:
 	$(RM) $(OBJS) $(PROGS)

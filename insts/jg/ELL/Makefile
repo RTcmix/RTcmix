@@ -1,21 +1,21 @@
 include ../package.conf
 
-OBJS = ELL.o ellipse.o setell.o
-#CFLAGS += -fPIC
-#CXXFLAGS += -fPIC
-PROGS = libELL.so ELL
+NAME = ELL
 
-all: libELL.so
+OBJS = $(NAME).o ellipse.o setell.o
+PROGS = lib$(NAME).so $(NAME)
 
-standalone: ELL
+all: lib$(NAME).so
 
-libELL.so: $(OBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+standalone: $(NAME)
 
-ELL: $(OBJS) $(CMIXOBJS)
+lib$(NAME).so: $(OBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+
+$(NAME): $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) ELL.h elldefs.h
+$(OBJS): $(INSTRUMENT_H) $(NAME).h elldefs.h
 
 clean:
 	$(RM) $(OBJS) $(PROGS)

@@ -1,22 +1,22 @@
 include ../package.conf
 
-OBJS = REVERBIT.o
+NAME = REVERBIT
+
+OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
-#CFLAGS += -fPIC
-#CXXFLAGS += -fPIC
-PROGS = libREVERBIT.so REVERBIT
+PROGS = lib$(NAME).so $(NAME)
 
-all: libREVERBIT.so
+all: lib$(NAME).so
 
-standalone: REVERBIT
+standalone: $(NAME)
 
-libREVERBIT.so: $(OBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+lib$(NAME).so: $(OBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
-REVERBIT: $(OBJS) $(CMIXOBJS)
+$(NAME): $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) REVERBIT.h
+$(OBJS): $(INSTRUMENT_H) $(NAME).h
 
 clean:
 	$(RM) $(OBJS) $(PROGS)

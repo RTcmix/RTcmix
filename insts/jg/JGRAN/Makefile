@@ -16,8 +16,7 @@ all: lib$(NAME).so
 standalone: $(NAME)
 
 lib$(NAME).so: $(OBJS) $(GENLIB) $(OBJLIB_A)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	$(GENLIB) $(SYSLIBS) $(OBJLIB_A)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS) $(OBJLIB_A)
 
 $(NAME): $(OBJS) $(CMIXOBJS) $(OBJLIB_A)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(OBJLIB_A) $(LDFLAGS)

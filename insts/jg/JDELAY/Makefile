@@ -1,22 +1,22 @@
 include ../package.conf
 
-OBJS = JDELAY.o
+NAME = JDELAY
+
+OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
-#CFLAGS += -fPIC
-#CXXFLAGS += -fPIC
-PROGS = libJDELAY.so JDELAY
+PROGS = lib$(NAME).so $(NAME)
 
-all: libJDELAY.so
+all: lib$(NAME).so
 
-standalone: JDELAY
+standalone: $(NAME)
 
-libJDELAY.so: $(OBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+lib$(NAME).so: $(OBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
-JDELAY: $(OBJS) $(CMIXOBJS)
+$(NAME): $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) JDELAY.h
+$(OBJS): $(INSTRUMENT_H) $(NAME).h
 
 clean:
 	$(RM) $(OBJS) $(PROGS)

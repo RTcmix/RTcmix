@@ -1,22 +1,22 @@
 include ../package.conf
 
-OBJS = JCHOR.o
+NAME = JCHOR
+
+OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
-#CFLAGS += -fPIC
-#CXXFLAGS += -fPIC
-PROGS = libJCHOR.so JCHOR
+PROGS = lib$(NAME).so $(NAME)
 
-all: libJCHOR.so
+all: lib$(NAME).so
 
-standalone: JCHOR
+standalone: $(NAME)
 
-libJCHOR.so: $(OBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+lib$(NAME).so: $(OBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
-JCHOR: $(OBJS) $(CMIXOBJS)
+$(NAME): $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) JCHOR.h
+$(OBJS): $(INSTRUMENT_H) $(NAME).h
 
 clean:
 	$(RM) $(OBJS) $(PROGS)

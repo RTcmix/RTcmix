@@ -1,21 +1,21 @@
 include ../package.conf
 
-OBJS = ROOM.o roomset.o
-#CFLAGS += -fPIC
-#CXXFLAGS += -fPIC
-PROGS = libROOM.so ROOM
+NAME = ROOM
 
-all: libROOM.so
+OBJS = $(NAME).o roomset.o
+PROGS = lib$(NAME).so $(NAME)
 
-standalone: ROOM
+all: lib$(NAME).so
 
-libROOM.so: $(OBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+standalone: $(NAME)
 
-ROOM: $(OBJS) $(CMIXOBJS)
+lib$(NAME).so: $(OBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+
+$(NAME): $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) ROOM.h roomset.h
+$(OBJS): $(INSTRUMENT_H) $(NAME).h roomset.h
 
 clean:
 	$(RM) $(OBJS) $(PROGS)

@@ -1,28 +1,27 @@
 include ../package.conf
 
+NAME = FLANGE
+
 OBJLIBDIR = ../objlib
 OBJLIB_A = $(OBJLIBDIR)/objlib.a
 OBJLIB_H = $(OBJLIBDIR)/objlib.h
 
-OBJS = FLANGE.o
+OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
-#CFLAGS += -fPIC
-#CXXFLAGS += -fPIC -I$(OBJLIBDIR) -Wall
 CXXFLAGS += -I$(OBJLIBDIR)
-PROGS = FLANGE libFLANGE.so
+PROGS = $(NAME) lib$(NAME).so
 
-all: libFLANGE.so
+all: lib$(NAME).so
 
-standalone: FLANGE
+standalone: $(NAME)
 
-libFLANGE.so: $(OBJS) $(GENLIB) $(OBJLIB_A)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) \
-	$(GENLIB) $(SYSLIBS) $(OBJLIB_A)
+lib$(NAME).so: $(OBJS) $(GENLIB) $(OBJLIB_A)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS) $(OBJLIB_A)
 
-FLANGE: $(OBJS) $(CMIXOBJS) $(OBJLIB_A)
+$(NAME): $(OBJS) $(CMIXOBJS) $(OBJLIB_A)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(OBJLIB_A) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) FLANGE.h
+$(OBJS): $(INSTRUMENT_H) $(NAME).h
 
 clean:
 	$(RM) $(OBJS) $(PROGS)

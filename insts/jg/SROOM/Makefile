@@ -1,22 +1,22 @@
 include ../package.conf
 
-OBJS = SROOM.o
+NAME = SROOM
+
+OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
-#CFLAGS += -fPIC
-#CXXFLAGS += -fPIC
-PROGS = libSROOM.so SROOM
+PROGS = lib$(NAME).so $(NAME)
 
-all: libSROOM.so
+all: lib$(NAME).so
 
-standalone: SROOM
+standalone: $(NAME)
 
-libSROOM.so: $(OBJS) $(GENLIB)
-	$(CXX) $(SHARED_LDFLAGS) -Wl,-soname,$@ -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+lib$(NAME).so: $(OBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
-SROOM: $(OBJS) $(CMIXOBJS)
+$(NAME): $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) SROOM.h
+$(OBJS): $(INSTRUMENT_H) $(NAME).h
 
 clean:
 	$(RM) $(OBJS) $(PROGS)
