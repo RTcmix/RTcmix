@@ -7,6 +7,7 @@
 #include "../../H/dbug.h"
 #include "../rtdefs.h"
 #include <globals.h>
+#include <Instrument.h>
 
 // #define DBUG
 
@@ -41,6 +42,7 @@ void RTQueue::push(Instrument *newInst, unsigned long new_chunkstart)
   rtQElt *tempElt; // BGG: for queue insertion
   newElt = new rtQElt;
   newElt->Inst = newInst;
+  newElt->Inst->Ref();
   newElt->chunkstart = new_chunkstart; 
   newElt->next = NULL;
   newElt->prev = NULL;
@@ -148,8 +150,8 @@ Instrument *RTQueue::pop()
   head = head->next;
   delete tQelt;
   size--;
+  retInst->Unref();
   return retInst;
-
 }
 
 
