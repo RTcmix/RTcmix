@@ -8,10 +8,8 @@
 #define NAMESIZE 128    /* Max size of file name */
 #define	UG_NULL	(struct ug_item *)0
 
-#define FLOAT (sizeof(float))   /* nbytes in floating point word*/
-#define INT   (sizeof(int))   /* nbytes in integer word */
-#define SHORT (sizeof(short))
-#define LONG  (sizeof(long))
+#include <rt_types.h>
+
 #define NFILES       12       /* maximum number of opened files */
 
 struct	ug_item	{
@@ -27,35 +25,7 @@ extern "C" {
 #endif /* __cplusplus */
 
 extern	ug_t	*ug_list;
-#ifndef PFIELD_CLASS
-int addfunc(struct ug_item *);
-#endif
 void merror(char *);
-
-#ifdef PFIELD_CLASS
-#include <ug_intro.h>
-#else /* !PFIELD_CLASS */
-void ug_intro(void);
-#ifdef __cplusplus
-#define	UG_INTRO(flabel,func)	\
-	{ \
-		static ug_t this_ug = { UG_NULL, (double (*)()) func, flabel }; \
-		if (addfunc(&this_ug) == -1) merror(flabel);	}
-#else
-#define	UG_INTRO(flabel,func)	\
-	{ extern double func();	\
-		static ug_t this_ug = { UG_NULL, func, flabel }; \
-		if (addfunc(&this_ug) == -1) merror(flabel);	}
-#endif
-#endif /* !PFIELD_CLASS */
-
-
-#ifndef PI
-#define      PI     3.141592654
-#endif
-#ifndef PI2
-#define      PI2    6.2831853
-#endif
 
 extern float SR;
 
@@ -207,7 +177,24 @@ float *ploc(int tag);
 int psize(int tag);
 int piloc(int instnum);
 
+
+void addLegacyfunc(const char *label, double (*func_ptr)(float *, int, double *));
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif
+
+#if defined(__cplusplus)
+#define UG_INTRO(flabel, func) \
+   { \
+	addLegacyfunc(flabel, (LegacyFunction) func); \
+   }
+#else
+#define UG_INTRO(flabel, func) \
+   { \
+      extern double func(); \
+      addLegacyfunc(flabel, (LegacyFunction) func); \
+   }
+#endif	/* __cplusplus */
+
 #endif /* _UGENS_H_ */
