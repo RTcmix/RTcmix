@@ -15,6 +15,11 @@
 #define THRESH       2
 #define PITCH        3
 
+/* where we call makegen() to store the private tables we need */
+
+#define SINE_SLOT	25
+#define ENV_SLOT	26
+
 #ifdef __cplusplus
 extern "C" {
 #endif
