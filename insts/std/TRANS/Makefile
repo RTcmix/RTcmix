@@ -1,6 +1,6 @@
 include ../package.conf
 
-OBJS = TRANS.o
+OBJS = TRANS.o TRANS3.o
 CMIXOBJS += $(PROFILE_O)
 PROGS = TRANS libTRANS.so
 

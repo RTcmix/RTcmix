@@ -1,4 +1,4 @@
-/* TRANS - transpose a mono input signal using cubic spline interpolation
+/* TRANS3 - transpose a mono input signal using 3rd-order interpolation
 
    p0 = output start time
    p1 = input start time
@@ -13,36 +13,39 @@
    Assumes function table 1 is amplitude curve for the note.
    You can call setline for this.
 
-   TRANS was written by Doug Scott.
-   Revised by John Gibson <johngibson@virginia.edu>, 2/29/00.
+   TRANS3 was written by Doug Scott.
 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include <ugens.h>
 #include <mixerr.h>
-#include "TRANS.h"
+#include "TRANS3.h"
 #include <rt.h>
 
 //#define DEBUG
 //#define DEBUG_FULL
 
+const float one = 1.0;
+const float two = 2.0;
+const float three = 3.0;
+const float onehalf = 0.5;
+const float onesixth = 0.166666666667;
 
-inline float interp(float y0, float y1, float y2, float t)
+inline float interp3rdOrder(float ym2, float ym1, float yp1, float yp2, float t)
 {
-   float hy2, hy0, a, b, c;
+	const float a = t + one;
+	const float c = t - one;
+	const float d = t - two;
 
-   a = y0;
-   hy0 = y0 / 2.0f;
-   hy2 = y2 / 2.0f;
-   b = (-3.0f * hy0) + (2.0f * y1) - hy2;
-   c = hy0 - y1 + hy2;
+	const float e = a * t;
+	const float f = c * d;
 
-   return (a + b * t + c * t * t);
+	return onehalf * (a * f * ym1 - e * d * yp1) +
+	       onesixth * (e * c * yp2 - t * f * ym2);
 }
 
-
-TRANS :: TRANS() : Instrument()
+TRANS3 :: TRANS3() : Instrument()
 {
    in = NULL;
 
@@ -54,21 +57,22 @@ TRANS :: TRANS() : Instrument()
    oldersig = 0.0;
    oldsig = 0.0;
    newsig = 0.0;
+   newestsig = 0.0;
 }
 
 
-TRANS :: ~TRANS()
+TRANS3 :: ~TRANS3()
 {
    delete [] in;
 }
 
 
-int TRANS :: init(float p[], int n_args)
+int TRANS3 :: init(float p[], int n_args)
 {
    float outskip, inskip, dur, transp, interval, total_indur, dur_to_read;
 
    if (n_args < 5)
-      die("TRANS", "Wrong number of args.");
+      die("TRANS3", "Wrong number of args.");
 
    outskip = p[0];
    inskip = p[1];
@@ -85,7 +89,7 @@ int TRANS :: init(float p[], int n_args)
    rtsetinput(inskip, this);
 
    if (inchan >= inputchans)
-      die("TRANS", "You asked for channel %d of a %d-channel file.",
+      die("TRANS3", "You asked for channel %d of a %d-channel file.",
                                                        inchan, inputchans);
    interval = octpch(transp);
    increment = (double) cpsoct(10.0 + interval) / cpsoct(10.0);
@@ -97,7 +101,7 @@ int TRANS :: init(float p[], int n_args)
    total_indur = (float) m_DUR(NULL, 0);
    dur_to_read = dur * increment;
    if (inskip + dur_to_read > total_indur) {
-      warn("TRANS", "This note will read off the end of the input file.\n"
+      warn("TRANS3", "This note will read off the end of the input file.\n"
                     "You might not get the envelope decay you "
                     "expect from setline.\nReduce output duration.");
       /* no exit() */
@@ -116,7 +120,7 @@ int TRANS :: init(float p[], int n_args)
       tableset(dur, amplen, tabs);
    }
    else
-      advise("TRANS", "Setting phrase curve to all 1's.");
+      advise("TRANS3", "Setting phrase curve to all 1's.");
 
    skip = (int) (SR / (float) resetval);
 
@@ -124,7 +128,7 @@ int TRANS :: init(float p[], int n_args)
 }
 
 
-int TRANS :: run()
+int TRANS3 :: run()
 {
    const int out_frames = chunksamps;
    int       i, branch = 0;
@@ -165,23 +169,25 @@ int TRANS :: run()
          }
          oldersig = oldsig;
          oldsig = newsig;
+		 newsig = newestsig;
 
-         newsig = in[(inframe * inputchans) + inchan];
+         newestsig = in[(inframe * inputchans) + inchan];
 
          inframe++;
          incount++;
 
-         if (counter - (double) incount < 0.5)
+         if (counter - (double) incount < 0.)
             get_frame = 0;
       }
 
-      frac = (counter - (double) incount) + 2.0;
-      outp[0] = interp(oldersig, oldsig, newsig, frac) * aamp;
+//      frac = (counter - (double) incount) + 2.0;
+      frac = (counter - (double) incount) + 1.0;
+      outp[0] = interp3rdOrder(oldersig, oldsig, newsig, newestsig, frac) * aamp;
 
 #ifdef DEBUG_FULL
       printf("i: %d counter: %g incount: %d frac: %g inframe: %d cursamp: %d\n",
              i, counter, incount, frac, inframe, cursamp);
-      printf("interping %g, %g, %g => %g\n", oldersig, oldsig, newsig, outp[0]);
+      printf("interping %g, %g, %g, %g => %g\n", oldersig, oldsig, newsig, newestsig, outp[0]);
 #endif
 
       if (outputchans == 2) {
@@ -193,7 +199,7 @@ int TRANS :: run()
       cursamp++;
 
       counter += increment;         /* keeps track of interp pointer */
-      if (counter - (double) incount >= -0.5)
+      if (counter - (double) incount >= 0.0)
          get_frame = 1;
    }
 
@@ -205,22 +211,13 @@ int TRANS :: run()
 }
 
 
-Instrument *makeTRANS()
+Instrument *makeTRANS3()
 {
-   TRANS *inst;
+   TRANS3 *inst;
 
-   inst = new TRANS();
-   inst->set_bus_config("TRANS");
+   inst = new TRANS3();
+   inst->set_bus_config("TRANS3");
 
    return inst;
 }
-
-extern Instrument *makeTRANS3();	// from TRANS3.C
-
-void rtprofile()
-{
-   RT_INTRO("TRANS", makeTRANS);
-   RT_INTRO("TRANS3", makeTRANS3);
-}
-
 
