@@ -16,11 +16,11 @@
 #include <common.h>
 #include "msetup.h"
 
-// #define debug
+//#define debug
 // #define SIG_DEBUG
 // #define LOOP_DEBUG
 // #define DELAY_DEBUG
-// #define MYDEBUG
+//#define MYDEBUG
 
 #ifdef SIG_DEBUG
 #define DBG(stmt) { stmt; }
@@ -600,9 +600,10 @@ int MBASE::roomtrig(double A,                 /* 'rho' or 'x' */
       rvec->Theta = Ta[1];
    }
 
-   /* Check to see that source distance is not "zero" */
+   /* Check to see that source distance is not "zero" unless we have a min distance */
 
-   if (m_vectors[0][0].Rho < 0.001 || m_vectors[1][0].Rho < 0.001) {
+   if (m_attenParams.minDistance == 0.0 && 
+       (m_vectors[0][0].Rho < 0.001 || m_vectors[1][0].Rho < 0.001)) {
       rterror(name(), "Zero source distance not allowed!");
       return (1);
    }
