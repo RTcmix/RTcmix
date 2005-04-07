@@ -95,6 +95,7 @@ int RTcmix::runMainLoop(void)
 			return 0;	// Playing, thru HW and/or to FILE.
 		}
 	}
+	audioDone = true;
 	return -1;	// Not playing, signal caller not to wait.
 }
 
