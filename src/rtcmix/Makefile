@@ -202,7 +202,7 @@ Option.o: Option.cpp Option.h
 $(MIX_INST):	
 	(cd ../../insts/base/MIX; make all)
 
-heap/rtHeap.o:
+heap/rtHeap.o:	heap/heap.o heap/queue.o
 	@echo compiling heap.
 	(cd heap; $(MAKE) $(MFLAGS) all;)
 
