@@ -235,6 +235,8 @@ RTcmix::RTcmix(bool dummy) {}
 
 RTcmix::~RTcmix()
 {
+	run_status = RT_SHUTDOWN;
+	waitForMainLoop();
 	free_globals();
 }
 
@@ -244,8 +246,6 @@ void
 RTcmix::init(float tsr, int tnchans, int bsize,
 			 const char *opt1, const char *opt2, const char *opt3)
 {
-	int retcode;		/* for mutexes */
-
 	// for rtsetparams -- I forget why it's set up with both double
 	// and float p-field arrays.  Also, these aren't 0-ed out
 	// so no need to dimension them at MAXDISPARGS
@@ -281,9 +281,15 @@ RTcmix::init(float tsr, int tnchans, int bsize,
 	nargs = 3;
 	rtsetparams(p, nargs, pp);
 
-	retcode = runMainLoop();
-	if (retcode != 0)
-		fprintf(stderr, "runMainLoop() failed\n");
+	if (Option::play() || Option::record()) {
+		int retcode = runMainLoop();
+		if (retcode != 0)
+			fprintf(stderr, "runMainLoop() failed\n");
+	}
+	else {
+		// If we are not playing or recording from HW, we cannot be interactive
+		rtInteractive = 0;
+	}
 }
 
 
@@ -451,9 +457,38 @@ void RTcmix::printOff()
 
 void RTcmix::panic()
 {
-	run_status = RT_PANIC;
+	run_status = RT_PANIC;	// resets itself in other thread
 	//	sleep(2);
 	//run_status = RT_GOOD;
+}
+
+// This method is called by imbedded apps only, and only those apps which
+// do not write to an audio device.  It causes the audio loop to run until
+// it completes, and run() blocks until it does.
+
+void RTcmix::run()
+{
+	int retcode;
+	if (!Option::play() && !Option::record() && rtfileit == 1) {
+		/* Create scheduling/audio thread. */
+#ifdef DBUG
+		fprintf(stdout, "calling runMainLoop()\n");
+#endif
+		retcode = runMainLoop();
+		if (retcode != 0) {
+			fprintf(stderr, "runMainLoop() failed\n");
+		}
+		else {
+			/* Wait for audio thread. */
+#ifdef DBUG
+			fprintf(stdout, "calling waitForMainLoop()\n");
+#endif
+			retcode = waitForMainLoop();
+			if (retcode != 0) {
+				fprintf(stderr, "waitForMailLoop() failed\n");
+			}
+		}
+	}
 }
 
 void RTcmix::close()
