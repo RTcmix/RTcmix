@@ -14,12 +14,15 @@ public:
   heapslot *left, *right, *parent;
 
   heapslot();
+  ~heapslot();
   void dump(int);
 };
 
 // class for queue used to hold heap end
 
 class qElt {
+public:
+  qElt(heapslot *hs) : next(NULL), prev(NULL), heap(hs) {}
   friend class queue;
   friend class heap;
   qElt *next;
@@ -35,7 +38,7 @@ private:
   qElt *head;
   qElt *tail;
 public:
-  queue();
+  queue() : head(NULL), tail(NULL) {}
   ~queue();
   void pushTail(heapslot*);
   void push(heapslot*);
@@ -52,10 +55,10 @@ private:
 public:
   heapslot* bot;
   heapslot* top;
-  heap();
+  heap() : bot(NULL), top(NULL), size(0) {}
   ~heap();
   unsigned long getTop();
-  long getSize();
+  long getSize() const { return size; }
   void insert(Instrument*, unsigned long chunkStart);
   Instrument *deleteMin(unsigned long maxChunkStart, unsigned long *pChunkStart);
   void dump(heapslot*,int);
@@ -84,11 +87,13 @@ private:
   rtQElt *tail;
   int size;
 public:
-  RTQueue();
+  RTQueue() : head(NULL), tail(NULL), size(0) {}
+  ~RTQueue();
   void push(Instrument*, unsigned long);
   Instrument *pop();
   int nextChunk();
-  int getSize();
+  // Return the number of elements on the RTQueue
+  int getSize() const { return size; }
   void print();  // For debugging
 };
 

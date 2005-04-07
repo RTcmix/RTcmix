@@ -11,18 +11,14 @@
 
 //#define DBUG
 
-RTQueue::RTQueue()
+RTQueue::~RTQueue()
 {
-  head=NULL;
-  tail=NULL;
-  size=0;
-}
-
-// Return the number of elements on the RTQueue
-
-int RTQueue::getSize()
-{
-  return size;
+	rtQElt *elt = head;
+	while (elt && elt != tail) {
+		rtQElt *next = elt->next;
+		delete elt;
+		elt = next;
+	}
 }
 
 // Return the starting sample chunk of the top Instrument

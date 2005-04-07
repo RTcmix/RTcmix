@@ -5,24 +5,25 @@
 #include <iostream.h>
 #include "heap.h"
 
-queue::queue() : head(NULL), tail(NULL)
-{
-}
-
 queue::~queue()
 {
-//	while (head) {
-//		pop();
-//	}
+//	cout << "queue::~queue()\n";
+	if (tail != head) {
+	    delete tail;
+	}
+	delete head;
+// 	while (head) {
+// 		qElt *next = head->next;
+// 		delete head;
+// 		head = next; 
+// 	}
 }
 
-void queue::pushTail(heapslot *newHeapElt)
+void 
+queue::pushTail(heapslot *newHeapElt)
 {
-  qElt *newElt;  // create new qElt
-  newElt = new qElt;
-  newElt->heap = newHeapElt;
-  newElt->next = NULL;
-  newElt->prev = NULL;
+  // create new qElt
+  qElt *newElt = new qElt(newHeapElt);
 
   if (head == NULL)  // if first item on queue
     head = tail = newElt;
@@ -33,11 +34,10 @@ void queue::pushTail(heapslot *newHeapElt)
   }
 }
 
-void queue::push(heapslot *newHeapElt)
+void 
+queue::push(heapslot *newHeapElt)
 {
-  qElt *newElt;
-  newElt = new qElt;
-  newElt->heap = newHeapElt;
+  qElt *newElt = new qElt(newHeapElt);
   
   if (head == NULL)
     head = tail = newElt;
@@ -48,7 +48,8 @@ void queue::push(heapslot *newHeapElt)
   }
 }
 
-heapslot *queue::pop() 
+heapslot *
+queue::pop() 
 {
   qElt *tQelt;
   heapslot *retHeap;
@@ -63,7 +64,8 @@ heapslot *queue::pop()
   return retHeap;
 }
 
-heapslot *queue::popTail()
+heapslot *
+queue::popTail()
 {
   qElt *tQelt;
   heapslot *retHeap;

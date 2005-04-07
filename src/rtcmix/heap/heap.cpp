@@ -12,23 +12,23 @@ heapslot::heapslot() : chunkStart(0), inst(NULL),
 {
 }
 
-heap::heap() : size(0)
+heapslot::~heapslot()
 {
+//	cout << "heapslot::~heapslot()\n";
+	delete left;
+	delete right;
 }
 
 heap::~heap()
 {
+    delete top;
+//	cout << "heap::~heap()\n";
 }
 
 unsigned long heap::getTop()
 {
   Lock topLock(getLockHandle());	// This will unlock when it goes out of scope
   return top ? top->chunkStart : 0;
-}
-
-long heap::getSize()
-{
-  return size;
 }
 
 void heap::insert(Instrument *newInst, unsigned long cStart)
@@ -235,4 +235,5 @@ rtQElt::rtQElt(Instrument *inst, unsigned long start)
 rtQElt::~rtQElt()
 {
 	Inst->unref();
+	Inst = NULL;
 }
