@@ -606,12 +606,14 @@ ClipPField::ClipPField(PField *innerPField, PField *minPField, PField *maxPField
 	: PFieldWrapper(innerPField), _minPField(minPField), _maxPField(maxPField)
 {
 	_minPField->ref();
-	_maxPField->ref();
+	if (_maxPField)
+		_maxPField->ref();
 }
 
 ClipPField::~ClipPField()
 {
-	_maxPField->unref();
+	if (_maxPField)
+		_maxPField->unref();
 	_minPField->unref();
 }
 
