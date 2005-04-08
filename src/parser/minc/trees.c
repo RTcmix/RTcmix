@@ -1420,7 +1420,7 @@ static void copy_value(MincValue *dest, MincDataType destType,
       DPRINT3("list %p refcount %d -> %d\n", src->list, src->list->refcount, src->list->refcount+1);
       ++src->list->refcount;
    }
-   if (destType == MincHandleType) {
+   if (destType == MincHandleType && dest->handle != NULL) {
 #ifdef DEBUG
       DPRINT("\toverwriting existing Handle value\n");
 #endif
