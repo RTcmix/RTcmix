@@ -32,7 +32,7 @@ threshold(0.0005);
 path(0,50,-90, 10,50,0, 11,10,20, 12,80,30, 15,30,90);
 
 // MMOVE does not have rvb level arg that MOVE had.  Handled in RVB call now
-MMOVE(insk,outsk,dur,pre_amp,dist_mikes,inchan);
+MMOVE(outsk,insk,dur,pre_amp,dist_mikes,inchan);
 
 // Reverb gain increases over time
 handle rvblevel;
