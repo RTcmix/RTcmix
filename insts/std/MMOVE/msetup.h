@@ -15,6 +15,10 @@ int get_setup_params(double dimensions[], AttenuationParams *params,
 int get_rvb_setup_params(double dimensions[], double matrix[12][12], 
 						 float *rvbTime);
 
+void increment_users();
+void decrement_users();
+int check_users();
+
 extern "C" {
 double m_space(float p[], int);
 double m_mikes(float p[], int);

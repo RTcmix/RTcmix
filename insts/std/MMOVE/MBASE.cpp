@@ -58,6 +58,7 @@ MBASE::MBASE() : m_tapsize(0)
           m_vectors[i][j].Fircoeffs = NULL;
        }
     }
+	increment_users();
 }
 
 MBASE::~MBASE()
@@ -71,6 +72,7 @@ MBASE::~MBASE()
          delete [] m_vectors[i][j].Fircoeffs;
       }
    }
+	decrement_users();
 }
 
 int MBASE::init(double p[], int n_args)

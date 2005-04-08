@@ -44,6 +44,28 @@ fill_matrix()
          _Matrix[j][i] = _Matrix_Gain * default_matrix[j][i];
 }
 
+// These next routines are used to assure access to the RVB's input arrays
+
+static int s_userCount = 0;
+
+void
+increment_users()
+{
+	++s_userCount;
+}
+
+void
+decrement_users()
+{
+	--s_userCount;
+}
+
+int
+check_users()
+{
+	return s_userCount;
+}
+
 /* ------------------------------------------------ get_rvb_setup_params --- */
 /* Transfers Minc setup data to the RVB object, which continues some of the
    initialization formerly done in space().

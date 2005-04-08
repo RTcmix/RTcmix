@@ -65,13 +65,16 @@ RVB::RVB()
 RVB::~RVB()
 {
 	delete [] in;
-	for (int i = 0; i < 2; i++) {
-		for (int j = 0; j < 6; j++)
-			delete [] m_rvbData[i][j].Rvb_del;
-		delete [] globalEarlyResponse[i];
-		globalEarlyResponse[i] = NULL;
-		delete [] globalReverbInput[i];
-		globalReverbInput[i] = NULL;
+	// Dont delete memory for global arrays if insts are still active
+	if (check_users() == 0) {
+		for (int i = 0; i < 2; i++) {
+			for (int j = 0; j < 6; j++)
+				delete [] m_rvbData[i][j].Rvb_del;
+			delete [] globalEarlyResponse[i];
+			globalEarlyResponse[i] = NULL;
+			delete [] globalReverbInput[i];
+			globalReverbInput[i] = NULL;
+		}
 	}
 }
 
