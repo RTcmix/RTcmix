@@ -480,7 +480,8 @@ double InvertPField::doubleValue(double didx) const
 
 double InvertPField::doubleValue(int idx) const
 {
-	const double center = _centerPField->doubleValue(idx);
+	double frac = (double) idx / (values() - 1);
+	const double center = _centerPField->doubleValue(frac);
 	const double diff = field()->doubleValue(idx) - center;
 	return center - diff;
 }
@@ -525,8 +526,9 @@ double RangePField::doubleValue(double didx) const
 
 double RangePField::doubleValue(int idx) const
 {
-	const double min = _minPField->doubleValue(idx);
-	const double max = _maxPField->doubleValue(idx);
+	double frac = (double) idx / (values() - 1);
+	const double min = _minPField->doubleValue(frac);
+	const double max = _maxPField->doubleValue(frac);
 	const double normval = field()->doubleValue(idx);
 	return (*_rangefitter)(normval, min, max);
 }
@@ -561,7 +563,8 @@ double SmoothPField::doubleValue(double didx) const
 
 double SmoothPField::doubleValue(int idx) const
 {
-	updateCutoffFreq(idx);
+	double frac = (double) idx / (values() - 1);
+	updateCutoffFreq(frac);
 	return _filter->next(field()->doubleValue(idx));
 }
 
@@ -597,7 +600,9 @@ double QuantizePField::doubleValue(double didx) const
 
 double QuantizePField::doubleValue(int idx) const
 {
-	return quantizeValue(field()->doubleValue(idx), _quantumPField->doubleValue(idx));
+	double frac = (double) idx / (values() - 1);
+	double quantum = _quantumPField->doubleValue(frac);
+	return quantizeValue(field()->doubleValue(idx), quantum);
 }
 
 // ClipPField
@@ -634,11 +639,12 @@ double ClipPField::doubleValue(double didx) const
 double ClipPField::doubleValue(int idx) const
 {
 	double val = field()->doubleValue(idx);
-	const double min = _minPField->doubleValue(idx);
+	double frac = (double) idx / (values() - 1);
+	const double min = _minPField->doubleValue(frac);
 	if (val < min)
 		return min;
 	else if (_maxPField) {
-		const double max = _maxPField->doubleValue(idx);
+		const double max = _maxPField->doubleValue(frac);
 		if (val > max)
 			return max;
 	}
