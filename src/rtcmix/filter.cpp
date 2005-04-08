@@ -14,6 +14,138 @@
 
 extern int resetval;		// declared in src/rtcmix/minc_functions.c
 
+#define CLIP_USAGE "filt = makefilter(pfield, \"clip\", min[, max])"
+#define CONSTRAIN_USAGE "filt = makefilter(pfield, \"constrain\", table, strength)"
+#define FITRANGE_USAGE "filt = makefilter(pfield, \"fitrange\", min, max [, \"bipolar\"])"
+#define INVERT_USAGE "filt = makefilter(pfield, \"invert\", center)"
+#define MAP_USAGE "filt = makefilter(pfield, \"map\", transferTable[, inputMin, inputMax])"
+#define QUANTIZE_USAGE "filt = makefilter(pfield, \"quantize\", quantum)"
+#define SMOOTH_USAGE "filt = makefilter(pfield, \"smooth\", lag)"
+
+
+// =============================================================================
+// local utilities
+
+// Given a valid argument (one appearing in the caller's Arg array with an
+// index lower than caller's nargs), return the argument as a PField, creating
+// one if necessary for a constant double argument.  Return NULL if arg is not
+// already a PField or a constant double.
+static PField *_get_pfield(const Arg& arg)
+{
+	PField *pf = (PField *) arg;
+	if (pf == NULL && arg.isType(DoubleType))
+		pf = new ConstPField((double) arg);
+	return pf;
+}
+
+// Return true if PField appears to be a TablePField, else return false.
+static inline bool _is_table(const PField *pf)
+{
+	if (pf == NULL)
+		return false;
+	const double *table = (double *) *pf;
+	const int len = pf->values();
+	return (table != NULL && len > 0);
+}
+
+static PField *_filter_usage(const char *msg)
+{
+	die(NULL, "Usage: %s", msg);
+	return NULL;
+}
+
+
+// =============================================================================
+// Set up the various filter types
+
+static PField *
+_clip_filter(PField *innerpf, const Arg args[], const int nargs)
+{
+	if (nargs < 1)
+		return _filter_usage(CLIP_USAGE);
+	PField *minpf = _get_pfield(args[0]);
+	PField *maxpf = NULL;
+	if (nargs > 1)
+		maxpf = _get_pfield(args[1]);
+	// NB: It's okay for max PField to be NULL.
+	return new ClipPField(innerpf, minpf, maxpf);
+}
+
+static PField *
+_constrain_filter(PField *innerpf, const Arg args[], const int nargs)
+{
+	if (nargs < 2)
+		return _filter_usage(CONSTRAIN_USAGE);
+	PField *tablepf = _get_pfield(args[0]);
+	if (!_is_table(tablepf))
+		return _filter_usage(CONSTRAIN_USAGE);
+	PField *strengthpf = _get_pfield(args[1]);
+	if (strengthpf == NULL)
+		return _filter_usage(CONSTRAIN_USAGE);
+	return new ConstrainPField(innerpf, (TablePField *) tablepf, strengthpf);
+}
+
+static PField *
+_fitrange_filter(PField *innerpf, const Arg args[], const int nargs)
+{
+	if (nargs < 2)
+		return _filter_usage(FITRANGE_USAGE);
+	PField *minpf = _get_pfield(args[0]);
+	PField *maxpf = _get_pfield(args[1]);
+	if (minpf == NULL || maxpf == NULL)
+		return _filter_usage(FITRANGE_USAGE);
+	if (nargs > 2 && args[2] == "bipolar")
+		return new RangePField(innerpf, minpf, maxpf, RangePField::BipolarSource);
+	return new RangePField(innerpf, minpf, maxpf);
+}
+
+static PField *
+_invert_filter(PField *innerpf, const Arg args[], const int nargs)
+{
+	if (nargs < 1)
+		return _filter_usage(INVERT_USAGE);
+	PField *centerpf = _get_pfield(args[0]);
+	if (centerpf == NULL)
+		return _filter_usage(INVERT_USAGE);
+	return new InvertPField(innerpf, centerpf);
+}
+
+static PField *
+_map_filter(PField *innerpf, const Arg args[], const int nargs)
+{
+	if (nargs < 1)
+		return _filter_usage(MAP_USAGE);
+	PField *xferfunc = _get_pfield(args[0]);
+	if (!_is_table(xferfunc))
+		return _filter_usage(MAP_USAGE);
+	double min = nargs > 1 ? (double) args[1] : 0.0;
+	double max = nargs > 2 ? (double) args[2] : 1.0;
+	return new MapPField(innerpf, (TablePField *) xferfunc, min, max);
+}
+
+static PField *
+_quantize_filter(PField *innerpf, const Arg args[], const int nargs)
+{
+	if (nargs < 1)
+		return _filter_usage(QUANTIZE_USAGE);
+	PField *quantumpf = _get_pfield(args[0]);
+	if (quantumpf == NULL)
+		return _filter_usage(QUANTIZE_USAGE);
+	return new QuantizePField(innerpf, quantumpf);
+}
+
+static PField *
+_smooth_filter(PField *innerpf, const Arg args[], const int nargs)
+{
+	if (nargs < 1)
+		return _filter_usage(SMOOTH_USAGE);
+	PField *lagpf = _get_pfield(args[0]);
+	if (lagpf == NULL)
+		return _filter_usage(SMOOTH_USAGE);
+	return new SmoothPField(innerpf, resetval, lagpf);
+}
+
+
 // =============================================================================
 // The remaining functions are public, callable from scripts.
 
@@ -23,64 +155,51 @@ extern "C" {
 
 
 // -------------------------------------------------------------- makefilter ---
-
-enum {
-	kClipFilter,
-	kConstrainFilter,
-	kFitRangeFilter,
-	kInvertFilter,
-	kMapFilter,
-	kQuantizeFilter,
-	kSmoothFilter
-};
-
-static Handle
-_makefilter_usage()
+static Handle _makefilter_usage()
 {
 	die("makefilter",
-		"\n   usage: filt = makefilter(pfield, \"clip\", min[, max])"
+		"\n   usage: " CLIP_USAGE
 		"\nOR"
-		"\n   usage: filt = makefilter(pfield, \"constrain\", table, strength)"
+		"\n   usage: " CONSTRAIN_USAGE
 		"\nOR"
-		"\n   usage: filt = makefilter(pfield, \"fitrange\", min, max [, \"bipolar\"])"
+		"\n   usage: " FITRANGE_USAGE
 		"\nOR"
-		"\n   usage: filt = makefilter(pfield, \"invert\", center)"
+		"\n   usage: " INVERT_USAGE
 		"\nOR"
-		"\n   usage: filt = makefilter(pfield, \"map\", transferTable[, inputMin, inputMax])"
+		"\n   usage: " MAP_USAGE
 		"\nOR"
-		"\n   usage: filt = makefilter(pfield, \"quantize\", quantum)"
+		"\n   usage: " QUANTIZE_USAGE
 		"\nOR"
-		"\n   usage: filt = makefilter(pfield, \"smooth\", lag)"
+		"\n   usage: " SMOOTH_USAGE
 		"\n");
 	return NULL;
 }
 
-Handle
-makefilter(const Arg args[], const int nargs)
+Handle makefilter(const Arg args[], const int nargs)
 {
-	if (nargs < 3)
+	if (nargs < 2)
 		return _makefilter_usage();
 
 	PField *innerpf = (PField *) args[0];
 	if (innerpf == NULL)
 		return _makefilter_usage();
 
-	int type;
+	PField *filt = NULL;
 	if (args[1].isType(StringType)) {
 		if (args[1] == "clip")
-			type = kClipFilter;
+			filt = _clip_filter(innerpf, &args[2], nargs - 2);
 		else if (args[1] == "constrain")
-			type = kConstrainFilter;
+			filt = _constrain_filter(innerpf, &args[2], nargs - 2);
 		else if (args[1] == "fitrange")
-			type = kFitRangeFilter;
+			filt = _fitrange_filter(innerpf, &args[2], nargs - 2);
 		else if (args[1] == "invert")
-			type = kInvertFilter;
+			filt = _invert_filter(innerpf, &args[2], nargs - 2);
 		else if (args[1] == "map")
-			type = kMapFilter;
+			filt = _map_filter(innerpf, &args[2], nargs - 2);
 		else if (args[1] == "quantize")
-			type = kQuantizeFilter;
-		else if (args[1] == "smooth" || args[1] == "lowpass")
-			type = kSmoothFilter;
+			filt = _quantize_filter(innerpf, &args[2], nargs - 2);
+		else if (args[1] == "smooth")
+			filt = _smooth_filter(innerpf, &args[2], nargs - 2);
 		else {
 			die("makefilter", "Unsupported filter type \"%s\".",
 								(const char *) args[1]);
@@ -89,61 +208,6 @@ makefilter(const Arg args[], const int nargs)
 	}
 	else
 		return _makefilter_usage();
-
-	PField *arg1pf = (PField *) args[2];
-	if (arg1pf == NULL) {
-		if (args[2].isType(DoubleType))
-			arg1pf = new ConstPField((double) args[2]);
-		else
-			return _makefilter_usage();
-	}
-
-	PField *arg2pf = NULL;
-	if (nargs > 3) {
-		arg2pf = (PField *) args[3];
-		if (arg2pf == NULL) {
-			if (args[3].isType(DoubleType))
-				arg2pf = new ConstPField((double) args[3]);
-			else
-				return _makefilter_usage();
-		}
-	}
-
-	PField *filt = NULL;
-	if (type == kClipFilter) {
-		// NB: It's okay for max PField to be NULL.
-		filt = new ClipPField(innerpf, arg1pf, arg2pf);
-	}
-	else if (type == kConstrainFilter) {
-		const double *table = (double *) *arg1pf;
-		const int len = arg1pf->values();
-		if (table == NULL || len < 1)
-			return _makefilter_usage();
-		filt = new ConstrainPField(innerpf, (TablePField *) arg1pf, arg2pf);
-	}
-	else if (type == kFitRangeFilter) {
-		if (arg2pf) {
-			if (nargs > 4 && args[4] == "bipolar")
-				filt = new RangePField(innerpf, arg1pf, arg2pf, RangePField::BipolarSource);
-			else
-				filt = new RangePField(innerpf, arg1pf, arg2pf);
-		}
-		else
-			return _makefilter_usage();
-	}
-	else if (type == kInvertFilter)
-		filt = new InvertPField(innerpf, arg1pf);
-	else if (type == kMapFilter) {
-		TablePField *xferfunc = (TablePField *) arg1pf;
-		double min = arg2pf ? arg2pf->doubleValue(0) : 0.0;
-		double max = nargs > 4 ? (double) args[4] : 1.0;
-		filt = new MapPField(innerpf, xferfunc, min, max);
-	}
-	else if (type == kQuantizeFilter)
-		filt = new QuantizePField(innerpf, arg1pf);
-	else if (type == kSmoothFilter)
-		filt = new SmoothPField(innerpf, resetval, arg1pf);
-
-	return createPFieldHandle(filt);
+	return (filt == NULL) ? NULL : createPFieldHandle(filt);
 }
 
