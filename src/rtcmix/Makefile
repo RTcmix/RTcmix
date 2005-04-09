@@ -84,6 +84,7 @@ rtwritesamps.cpp \
 set_option.cpp \
 table.cpp \
 tableutils.cpp \
+modtable.cpp \
 utils.cpp \
 rt_ug_intro.cpp \
 connection.cpp \
