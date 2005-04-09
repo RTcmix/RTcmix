@@ -1898,8 +1898,7 @@ dumptable(const Arg args[], const int nargs)
 // of the window earlier by typing 'q' at it.
 //
 // NOTE: Under MacOS X, using Aquaterm to display output from gnuterm, <pause>
-// has no effect.  Also, you can only do one plot per run of RTcmix under OS X,
-// because gnuplot dies if there's already another one running.
+// has no effect.
 //
 // If something goes wrong with the gnuplot syntax, there'll be some leftover
 // files in the /tmp directory, with names like "rtcmix_plot_data_xAb5x8."
@@ -1979,7 +1978,6 @@ plottable(const Arg args[], const int nargs)
 		"!rm '%s' '%s'\n"
 		"pause %d\n",
 #ifdef MACOSX
-// FIXME: ??nevertheless, gnuplots after the first die with bus error
 		plot_count++,
 #endif
 		table_name,
