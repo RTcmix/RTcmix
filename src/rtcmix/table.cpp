@@ -1497,7 +1497,6 @@ extern "C" {
 	Handle maketable(const Arg args[], const int nargs);
 	double tablelen(const Arg args[], const int nargs);
 	Handle copytable(const Arg args[], const int nargs);
-	Handle inverttable(const Arg args[], const int nargs);
 	Handle shifttable(const Arg args[], const int nargs);
 	double samptable(const Arg args[], const int nargs);
 	double dumptable(const Arg args[], const int nargs);
@@ -1716,63 +1715,6 @@ copytable(const Arg args[], const int nargs)
 	_do_copy_table(oldarray, oldtable->values(), newarray, newsize, interp);
 	delete [] oldarray;
 	TablePField *newtable = new TablePField(newarray, newsize);
-
-	return createPFieldHandle(newtable);
-}
-
-
-// ------------------------------------------------------------- inverttable ---
-// Make a copy of the given table, and invert the values of the copy.  By
-// default, the y-axis center of symmetry is a point halfway between the min
-// and max table values; inversion is performed around this center of symmetry.
-// Alternatively, if you supply the second, optional, argument <center>, this
-// will be the vertical center of symmetry.  No normalization of the table
-// is performed after the inversion.  Use modtable(..., "normalize") for this.
-//                                                            -JGG, 6/21/04
-
-static void
-_do_invert_table(double *array, const int len, const bool use_center,
-																	double center)
-{
-	if (!use_center) {
-		double min, max;
-		get_table_bounds(array, len, min, max);
-		center = min + ((max - min) / 2.0);
-	}
-	for (int i = 0; i < len; i++) {
-		double diff = array[i] - center;
-		array[i] = center - diff;
-	}
-}
-
-Handle
-inverttable(const Arg args[], const int nargs)
-{
-	if (nargs != 1 && nargs != 2) {
-		die("inverttable", "Usage: newtable = inverttable(table[, center])");
-		return NULL;
-	}
-	TablePField *table = _getTablePField(&args[0]);
-	if (table == NULL) {
-		die("inverttable", "Usage: newtable = inverttable(table[, center])");
-		return NULL;
-	}
-
-	double center = 0.0;
-	bool use_center = false;
-	if (nargs == 2) {
-		if (!args[1].isType(DoubleType)) {
-			die("inverttable", "Usage: newtable = inverttable(table[, center])");
-			return NULL;
-		}
-		center = args[1];
-		use_center = true;
-	}
-
-	double *array = new double[table->values()];
-	table->copyValues(array);
-	_do_invert_table(array, table->values(), use_center, center);
-	TablePField *newtable = new TablePField(array, table->values());
 
 	return createPFieldHandle(newtable);
 }
