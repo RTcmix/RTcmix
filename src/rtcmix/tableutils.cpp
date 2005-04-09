@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <float.h>		// for DBL_MAX
 #include <assert.h>
 #include <tableutils.h>
 #include <rtcmix_types.h>
@@ -19,7 +20,38 @@
 #endif
 
 
-// -------------------------------------------------------fill_linebrk_table ---
+// ---------------------------------------------------------------- is_table ---
+// Return true if the PField is a TablePField, else return false.
+
+bool is_table(const PField *pf)
+{
+	if (pf == NULL)
+		return false;
+	const double *table = (double *) *pf;
+	const int len = pf->values();
+	return (table != NULL && len > 0);
+}
+
+
+// -------------------------------------------------------- get_table_bounds ---
+// Update the <min> and <max> references with the lower and upper bounds of
+// the given <array> of length <len>.
+
+void get_table_bounds(const double *array, const int len,
+	double &min, double &max)
+{
+	min = DBL_MAX;
+	max = -DBL_MAX;
+	for (int i = 0; i < len; i++) {
+		if (array[i] < min)
+			min = array[i];
+		if (array[i] > max)
+			max = array[i];
+	}
+}
+
+
+// ------------------------------------------------------ fill_linebrk_table ---
 // Given a breakpoint specification, fill the table <array> of length <len>
 // with a series of straight line segments.
 
@@ -37,19 +69,23 @@ void fill_linebrk_table(const Arg args[], const int nargs, double *array,
 			if (l <= len) {
 				array[l - 1] = amp1
 									+ (amp2 - amp1) * (double) (l - j) / (i - j + 1);
-         } else {
-            warn("maketable (linebrk)", "the number of points requested exceeds the table size, ignoring the excess.");
-            k = nargs; // force the loop to exit)
-            break;
-         }
+			}
+			else {
+				warn("maketable (linebrk)", "The number of points requested "
+						"exceeds the table size...ignoring the excess.");
+				k = nargs; // force the loop to exit
+				break;
+			}
 		}
 	}
 
-   // fill the rest of the array with the last value if all locs weren't used
-   if (i < len)
-      for (int m = i; m < len; m++) array[m] = args[nargs-1];
+	// fill the rest of the array with the last value if all locs weren't used
+	if (i < len)
+		for (int m = i; m < len; m++)
+			array[m] = args[nargs - 1];
 
 }
+
 
 // --------------------------------------------------------- fill_wave_table ---
 // Given a specification of a waveform comprising harmonic partials, fill
@@ -70,6 +106,7 @@ void fill_wave_table(const Arg args[], const int nargs, double *array,
 		}
 	}
 }
+
 
 // --------------------------------------------------- wavetable_from_string ---
 // Create an appropriate TablePField from a string description.  Choose either

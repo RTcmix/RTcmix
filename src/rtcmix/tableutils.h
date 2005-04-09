@@ -6,6 +6,10 @@
 
 #include <rtcmix_types.h>
 
+class PField;
+
+bool is_table(const PField *pf);
+void get_table_bounds(const double *array, const int len, double &min, double &max);
 void fill_linebrk_table(const Arg [], const int, double *, const int);
 void fill_wave_table(const Arg [], const int, double *, const int);
 int wavetable_from_string(const char *, double *, const int, const char *);
