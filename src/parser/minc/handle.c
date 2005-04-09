@@ -15,5 +15,6 @@ void
 unref_handle(MincHandle h)
 {
 	Handle handle = (Handle) h;
-	unrefHandle(handle);
+	if (handle)
+		unrefHandle(handle);
 }
