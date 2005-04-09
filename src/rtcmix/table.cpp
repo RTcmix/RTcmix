@@ -7,7 +7,6 @@
 #include <errno.h>
 #include <string.h>
 #include <math.h>
-#include <float.h>		// for DBL_MAX
 #include <stdint.h>		// for int32_t, etc.
 #include <assert.h>
 #include <unistd.h>
@@ -116,24 +115,6 @@ args_have_same_type(const Arg args[], const int nargs, const RTcmixType type)
 		if (!args[i].isType(type))
 			return 0;
 	return 1;
-}
-
-
-// ------------------------------------------------------- _get_table_bounds ---
-// Update the <min> and <max> references with the lower and upper bounds of
-// the given <array> of length <len>.
-
-static void
-_get_table_bounds(const double *array, const int len, double &min, double &max)
-{
-	min = DBL_MAX;
-	max = -DBL_MAX;
-	for (int i = 0; i < len; i++) {
-		if (array[i] < min)
-			min = array[i];
-		if (array[i] > max)
-			max = array[i];
-	}
 }
 
 
@@ -770,9 +751,11 @@ _expbrk_table(const Arg args[], const int nargs, double *array, const int len)
 		for (int l = j; l < i; l++) {
 			if (l < len) {
 				array[l] = array[l - 1] * c;
-			} else { 
-				warn("maketable (expbrk)", "the number of points requested exceeds the table size, ignoring the excess.");
-				k = nargs; // force the loop to exit)
+			}
+			else {
+				warn("maketable (expbrk)", "The number of points requested "
+						"exceeds the table size...ignoring the excess.");
+				k = nargs; // force the loop to exit
 				break;
 			}
 		}
@@ -780,7 +763,8 @@ _expbrk_table(const Arg args[], const int nargs, double *array, const int len)
 
 	// fill the rest of the array with the last value if all locs weren't used
 	if (i < len)
-		for (int m = i; m < len; m++) array[m] = args[nargs-1];
+		for (int m = i; m < len; m++)
+			array[m] = args[nargs - 1];
 
 	return 0;
 }
@@ -1514,8 +1498,6 @@ extern "C" {
 	double tablelen(const Arg args[], const int nargs);
 	Handle multtable(const Arg args[], const int nargs);
 	Handle addtable(const Arg args[], const int nargs);
-	Handle reversetable(const Arg args[], const int nargs);
-	Handle normtable(const Arg args[], const int nargs);
 	Handle copytable(const Arg args[], const int nargs);
 	Handle inverttable(const Arg args[], const int nargs);
 	Handle shifttable(const Arg args[], const int nargs);
@@ -1689,65 +1671,6 @@ addtable(const Arg args[], const int nargs)
 }
 
 
-// ------------------------------------------------------------ reversetable ---
-// Make a copy of the given table, and reverse the values of the copy.
-// Note: this creates a ReversePField class, which performs the reverse 
-// reading on the fly when called upon to do so.
-
-Handle
-reversetable(const Arg args[], const int nargs)
-{
-	if (nargs != 1) {
-		die("reversetable", "Usage: newtable = reversetable(table)");
-		return NULL;
-	}
-	PField *table = (PField *) args[0];
-	if (table == NULL) {
-		die("reversetable", "Usage: newtable = reversetable(table)");
-		return NULL;
-	}
-	return createPFieldHandle(new ReversePField(table));
-}
-
-
-// --------------------------------------------------------------- normtable ---
-// Make a copy of the given table, and normalize the values of the copy,
-// using args[1] as the desired peak.  If no peak argument, peak is 1.
-// Here is what happens, depending on the sign of values in the table:
-//
-//    sign of values          resulting range of values
-//    --------------------------------------------------------------
-//    all positive            between 0 and peak
-//    all negative            between 0 and -peak
-//    positive and negative   between -peak and peak
-
-Handle
-normtable(const Arg args[], const int nargs)
-{
-	double peak = 1.0;
-
-	if (nargs < 1) {
-		die("normtable", "Requires at least one argument (table to normalize).");
-		return NULL;
-	}
-	TablePField *table = _getTablePField(&args[0]);
-	if (table == NULL) {
-		die("normtable",
-			 "First argument must be a handle to the table to normalize.");
-		return NULL;
-	}
-	if (nargs > 1 && args[1].isType(DoubleType))
-		peak = (double) args[1];
-
-	double *values = new double[table->values()];
-	table->copyValues(values);
-	_normalize_table(values, table->values(), peak);
-	TablePField *newtable = new TablePField(values, table->values());
-
-	return createPFieldHandle(newtable);
-}
-
-
 // --------------------------------------------------------------- copytable ---
 // Make a copy of the given table, and return the copy.	If the optional
 // <newsize> differs from the original size, resample the table to fit the
@@ -1858,7 +1781,7 @@ copytable(const Arg args[], const int nargs)
 // and max table values; inversion is performed around this center of symmetry.
 // Alternatively, if you supply the second, optional, argument <center>, this
 // will be the vertical center of symmetry.  No normalization of the table
-// is performed after the inversion.  Use normtable for this.
+// is performed after the inversion.  Use modtable(..., "normalize") for this.
 //                                                            -JGG, 6/21/04
 
 static void
@@ -1867,7 +1790,7 @@ _do_invert_table(double *array, const int len, const bool use_center,
 {
 	if (!use_center) {
 		double min, max;
-		_get_table_bounds(array, len, min, max);
+		get_table_bounds(array, len, min, max);
 		center = min + ((max - min) / 2.0);
 	}
 	for (int i = 0; i < len; i++) {
@@ -2024,29 +1947,23 @@ samptable(const Arg args[], const int nargs)
 // --------------------------------------------------------------- dumptable ---
 // Dump the table given in args[0] to stdout, or if args[1] is a filename,
 // to that file as text.  The dump format is a line of text for each table
-// entry, giving index, whitespace and table value.  E.g., for index 12:
-//
-//    12 0.618034
+// entry, which is printed with 6 digits of precision.
 
 double
 dumptable(const Arg args[], const int nargs)
 {
-	int len;
-	double *array; 
-	FILE	*f = NULL;
-	const char	*fname = NULL;
-
 	if (nargs < 1 || nargs > 2)
-		return die("dumptable", "Usage: dumptable(table_handle [, out_file])");
+		return die("dumptable", "Usage: dumptable(table [, out_file])");
 	PField *table = (PField *) args[0];
 	if (table == NULL)
 		return die("dumptable",
 					  "First argument must be a handle to the table to dump.");
 
+	FILE *f = NULL;
 	if (nargs > 1) {
 		if (!args[1].isType(StringType))
 			return die("dumptable", "Second argument must be output file name.");
-		fname = (const char *) args[1];
+		const char *fname = (const char *) args[1];
 		f = fopen(fname, "w+");
 		if (f == NULL)
 			return die("dumptable",
@@ -2071,7 +1988,8 @@ dumptable(const Arg args[], const int nargs)
 //    <pause>       amount of time to show the gnuplot window [default: 10]
 //    <plot_cmds>   commands passed to gnuplot [default: "with lines"]
 //
-// The optional arguments can appear in either order.
+// These optional arguments can appear in either order.  If there is a fourth
+// argument, it's a string to incorporate into the title of the plot.
 //
 // Plot commands are most useful for controlling the type of plot, e.g., with
 // lines, points, dots, impulses, etc.  See the gnuplot manual for more info.
@@ -2114,13 +2032,15 @@ plottable(const Arg args[], const int nargs)
 
 	if (nargs < 1 || nargs > 3)
 		return die("plottable",
-					  "Usage: plottable(table_handle [, pause] [, plot_commands])");
+					  "Usage: plottable(table [, pause] [, plot_commands])");
 
 	PField *table = (PField *) args[0];
 	if (table == NULL)
 		return die("plottable", "First argument must be the table to plot.");
 
-	// 2nd and 3rd args are optional and can be in either order
+	// 2nd and 3rd args are optional and can be in either order.  If there's
+	// a 4th arg, it must be a string for the plot label.
+	const char *table_name = "Table";
 	if (nargs > 1) {
 		if (args[1].isType(DoubleType))
 			pause = (int) args[1];
@@ -2138,6 +2058,10 @@ plottable(const Arg args[], const int nargs)
 				return die("plottable",
 							  "Third argument can be pause length or plot commands.");
 		}
+		if (nargs > 3) {
+			if (args[3].isType(StringType))
+				table_name = (const char *) args[3];
+		}
 	}
 
 	char data_file[256] = "/tmp/rtcmix_plot_data_XXXXXX";
@@ -2149,23 +2073,19 @@ plottable(const Arg args[], const int nargs)
 	FILE *fdata = fopen(data_file, "w");
 	FILE *fcmd = fopen(cmd_file, "w");
 	if (fdata == NULL || fcmd == NULL)
-		return die("dumptable", "Can't open temp files for gnuplot.");
+		return die("plottable", "Can't open temp files for gnuplot.");
 
 	int chars = table->print(fdata);
 	fclose(fdata);
 	
 	if (chars <= 0)
-		return die("dumptable", "Cannot print this kind of table");
+		return die("plottable", "Cannot print this kind of table");
 
 	fprintf(fcmd, 
-#ifdef MACOSX	// NB: requires installation of Aquaterm and gnuplot 3.8
+#ifdef MACOSX	// NB: requires installation of Aquaterm and gnuplot >=3.8
 		"set term aqua %d\n"
 #endif
-#ifdef TABNAME // FIXME: there *is* no table number, and we don't have var name!
-		"set title \"Table %s\"\n"
-#else
-		"set title \"Table\"\n"
-#endif
+		"set title \"%s\"\n"
 		"set grid\n"
 		"plot '%s' notitle %s\n"
 		"!rm '%s' '%s'\n"
@@ -2174,9 +2094,7 @@ plottable(const Arg args[], const int nargs)
 // FIXME: ??nevertheless, gnuplots after the first die with bus error
 		plot_count++,
 #endif
-#ifdef TABNAME
 		table_name,
-#endif
 		data_file, plotcmds, data_file, cmd_file, pause);
 	fclose(fcmd);
 
