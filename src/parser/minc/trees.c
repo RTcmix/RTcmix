@@ -1413,7 +1413,7 @@ static void copy_value(MincValue *dest, MincDataType destType,
                        MincValue *src, MincDataType srcType)
 {
    assert(srcType != MincVoidType);
-   if (srcType == MincHandleType) {
+   if (srcType == MincHandleType && src->handle != NULL) {
       ref_handle(src->handle);	// ref before unref
    }
    else if (srcType == MincListType) {
