@@ -18,8 +18,10 @@ ug_intro()
    UG_INTRO_DOUBLE_RETURN("samptable", samptable);
    UG_INTRO_DOUBLE_RETURN("dumptable", dumptable);
    UG_INTRO_DOUBLE_RETURN("plottable", plottable);
-   UG_INTRO_HANDLE_RETURN("mul", multtable);
-   UG_INTRO_HANDLE_RETURN("add", addtable);
+   UG_INTRO_HANDLE_RETURN("mul", mul);
+   UG_INTRO_HANDLE_RETURN("add", add);
+   UG_INTRO_HANDLE_RETURN("div", div);
+   UG_INTRO_HANDLE_RETURN("sub", sub);
    UG_INTRO_HANDLE_RETURN("modtable", modtable);
    UG_INTRO_HANDLE_RETURN("makeconnection", makeconnection);
    UG_INTRO_HANDLE_RETURN("makeLFO", makeLFO);
