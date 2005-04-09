@@ -13,16 +13,14 @@ ug_intro()
  */
    UG_INTRO_HANDLE_RETURN("maketable", maketable);
    UG_INTRO_DOUBLE_RETURN("tablelen", tablelen);
-   UG_INTRO_HANDLE_RETURN("normtable", normtable);
    UG_INTRO_HANDLE_RETURN("copytable", copytable);
-   UG_INTRO_HANDLE_RETURN("inverttable", inverttable);
    UG_INTRO_HANDLE_RETURN("shifttable", shifttable);
    UG_INTRO_DOUBLE_RETURN("samptable", samptable);
    UG_INTRO_DOUBLE_RETURN("dumptable", dumptable);
    UG_INTRO_DOUBLE_RETURN("plottable", plottable);
    UG_INTRO_HANDLE_RETURN("mul", multtable);
    UG_INTRO_HANDLE_RETURN("add", addtable);
-   UG_INTRO_HANDLE_RETURN("reversetable", reversetable);
+   UG_INTRO_HANDLE_RETURN("modtable", modtable);
    UG_INTRO_HANDLE_RETURN("makeconnection", makeconnection);
    UG_INTRO_HANDLE_RETURN("makeLFO", makeLFO);
    UG_INTRO_HANDLE_RETURN("makerandom", makerandom);
