@@ -439,6 +439,52 @@ LoopedPField::LoopedPField(PField *innerPField, double loopFactor)
 {
 }
 
+// ShiftPField (structured like LoopedPField)
+
+class ShiftPField::ShiftIIFunctor : public IIFunctor {
+public:
+	ShiftIIFunctor(int shift) : _shift(shift) {}
+	virtual int operator ()(int i1, int i2);
+private:
+	int _shift;
+};
+
+class ShiftPField::ShiftDIFunctor : public DIFunctor {
+public:
+	ShiftDIFunctor(int shift) : _shift(shift) {}
+	virtual double operator ()(double d1, int i1);
+private:
+	int _shift;
+};
+
+int ShiftPField::ShiftIIFunctor::operator ()(int idx, int len)
+{
+	int nidx = idx + _shift;
+	while (nidx < 0)
+		nidx += len;
+	while (nidx >= len)
+		nidx -= len;
+	return nidx;
+}
+
+double ShiftPField::ShiftDIFunctor::operator ()(double didx, int len)
+{
+	const double dlen = double(len);
+	double index = (didx * dlen) + _shift;
+	while (index < 0.0)
+		index += dlen;
+	while (index > dlen)
+		index -= dlen;
+	return index / (dlen - 1.0);
+}  
+
+ShiftPField::ShiftPField(PField *innerPField, int shift)
+	: ModifiedIndexPFieldWrapper(innerPField,
+								 new ShiftIIFunctor(shift),
+								 new ShiftDIFunctor(shift))
+{
+}
+
 #endif	// !OLD
 
 // ReversePField

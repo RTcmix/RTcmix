@@ -75,11 +75,7 @@ _shift_table(PField *intable, const Arg args[], const int nargs)
 	if (nargs < 1)
 		return _modtable_usage(SHIFT_USAGE);
 	const int shift = (int) args[0];
-#ifdef NOTYET
 	return new ShiftPField(intable, shift);
-#else
-	return NULL;
-#endif
 }
 
 

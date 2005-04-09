@@ -238,7 +238,7 @@ private:
 	DIFunctor *_difun;
 };
 
-#define OLD
+//#define OLD
 // Class for looped reading of table.  'loopFactor' is how many times
 // table will loop for doubleValue(0 through 1.0)
 
@@ -256,8 +256,16 @@ class LoopedPField : public ModifiedIndexPFieldWrapper {
 public:
 	LoopedPField(PField *innerPField, double loopFactor);
 private:
-    class LoopIIFunctor;
+	class LoopIIFunctor;
 	class LoopDIFunctor;
+};
+
+class ShiftPField : public ModifiedIndexPFieldWrapper {
+public:
+	ShiftPField(PField *innerPField, int shift);
+private:
+	class ShiftIIFunctor;
+	class ShiftDIFunctor;
 };
 #endif
 
