@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <rtcmix_types.h>
+#include <tableutils.h>
 #include <PField.h>
 #include <utils.h>
 #include <ugens.h>		// for warn, die
@@ -17,7 +18,7 @@ extern int resetval;		// declared in src/rtcmix/minc_functions.c
 #define CLIP_USAGE "filt = makefilter(pfield, \"clip\", min[, max])"
 #define CONSTRAIN_USAGE "filt = makefilter(pfield, \"constrain\", table, strength)"
 #define FITRANGE_USAGE "filt = makefilter(pfield, \"fitrange\", min, max [, \"bipolar\"])"
-#define INVERT_USAGE "filt = makefilter(pfield, \"invert\", center)"
+#define INVERT_USAGE "filt = makefilter(pfield, \"invert\" [, center])"
 #define MAP_USAGE "filt = makefilter(pfield, \"map\", transferTable[, inputMin, inputMax])"
 #define QUANTIZE_USAGE "filt = makefilter(pfield, \"quantize\", quantum)"
 #define SMOOTH_USAGE "filt = makefilter(pfield, \"smooth\", lag)"
@@ -36,16 +37,6 @@ static PField *_get_pfield(const Arg& arg)
 	if (pf == NULL && arg.isType(DoubleType))
 		pf = new ConstPField((double) arg);
 	return pf;
-}
-
-// Return true if PField appears to be a TablePField, else return false.
-static inline bool _is_table(const PField *pf)
-{
-	if (pf == NULL)
-		return false;
-	const double *table = (double *) *pf;
-	const int len = pf->values();
-	return (table != NULL && len > 0);
 }
 
 static PField *_filter_usage(const char *msg)
@@ -77,7 +68,7 @@ _constrain_filter(PField *innerpf, const Arg args[], const int nargs)
 	if (nargs < 2)
 		return _filter_usage(CONSTRAIN_USAGE);
 	PField *tablepf = _get_pfield(args[0]);
-	if (!_is_table(tablepf))
+	if (!is_table(tablepf))
 		return _filter_usage(CONSTRAIN_USAGE);
 	PField *strengthpf = _get_pfield(args[1]);
 	if (strengthpf == NULL)
@@ -99,14 +90,30 @@ _fitrange_filter(PField *innerpf, const Arg args[], const int nargs)
 	return new RangePField(innerpf, minpf, maxpf);
 }
 
+// Invert <innerpf> values around a center of symmetry given by arg[0].
+// If this arg is missing, assume 0.5, unless <innerpf> is a table -- in 
+// which case compute the center.
+
 static PField *
 _invert_filter(PField *innerpf, const Arg args[], const int nargs)
 {
-	if (nargs < 1)
-		return _filter_usage(INVERT_USAGE);
-	PField *centerpf = _get_pfield(args[0]);
-	if (centerpf == NULL)
-		return _filter_usage(INVERT_USAGE);
+	PField *centerpf = NULL;
+	if (nargs > 0) {
+		PField *centerpf = _get_pfield(args[0]);
+		if (centerpf == NULL)
+			return _filter_usage(INVERT_USAGE);
+	}
+	else {
+		double center = 0.5;
+		if (is_table(innerpf)) {	// find center of symmetry
+			const double *array = (double *) *innerpf;
+			const int len = innerpf->values();
+			double min, max;
+			get_table_bounds(array, len, min, max);
+			center = min + ((max - min) / 2.0);
+		}
+		centerpf = new ConstPField(center);
+	}
 	return new InvertPField(innerpf, centerpf);
 }
 
@@ -116,7 +123,7 @@ _map_filter(PField *innerpf, const Arg args[], const int nargs)
 	if (nargs < 1)
 		return _filter_usage(MAP_USAGE);
 	PField *xferfunc = _get_pfield(args[0]);
-	if (!_is_table(xferfunc))
+	if (!is_table(xferfunc))
 		return _filter_usage(MAP_USAGE);
 	double min = nargs > 1 ? (double) args[1] : 0.0;
 	double max = nargs > 2 ? (double) args[2] : 1.0;
