@@ -85,6 +85,7 @@ set_option.cpp \
 table.cpp \
 tableutils.cpp \
 modtable.cpp \
+ops.cpp \
 utils.cpp \
 rt_ug_intro.cpp \
 connection.cpp \
