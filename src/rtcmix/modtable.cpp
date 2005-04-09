@@ -69,6 +69,17 @@ _reverse_table(PField *intable, const Arg args[], const int nargs)
 	return new ReversePField(intable);
 }
 
+// Shift values of the table by <shift> array locations.  Positive values of
+// <shift> shift to the right; negative values to the left.  If a value is
+// shifted off the end of the array in either direction, it reenters the other
+// end of the array.  Two examples:
+//
+//    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]      original table, size = 10
+//    [7, 8, 9, 0, 1, 2, 3, 4, 5, 6]      shift = 3
+//    [3, 4, 5, 6, 7, 8, 9, 0, 1, 2]      shift = -3
+//
+// Note that the shifting is actually done on-the-fly by ShiftPField.
+
 static PField *
 _shift_table(PField *intable, const Arg args[], const int nargs)
 {
