@@ -12,15 +12,15 @@
 #include <ugens.h>		// for warn, die
 
 extern "C" {
-	Handle mul(const Arg args[], const int nargs);
-	Handle add(const Arg args[], const int nargs);
-	Handle div(const Arg args[], const int nargs);
-	Handle sub(const Arg args[], const int nargs);
+	Handle opmul(const Arg args[], const int nargs);
+	Handle opadd(const Arg args[], const int nargs);
+	Handle opdiv(const Arg args[], const int nargs);
+	Handle opsub(const Arg args[], const int nargs);
 };
 
 
-// --------------------------------------------------------------------- mul ---
-Handle mul(const Arg args[], const int nargs)
+// ------------------------------------------------------------------- opmul ---
+Handle opmul(const Arg args[], const int nargs)
 {
 	if (nargs == 2) {
 		PField *pf0 = (PField *) args[0];
@@ -38,8 +38,8 @@ Handle mul(const Arg args[], const int nargs)
 }
 
 
-// --------------------------------------------------------------------- add ---
-Handle add(const Arg args[], const int nargs)
+// ------------------------------------------------------------------- opadd ---
+Handle opadd(const Arg args[], const int nargs)
 {
 	if (nargs == 2) {
 		PField *pf0 = (PField *) args[0];
@@ -57,13 +57,13 @@ Handle add(const Arg args[], const int nargs)
 }
 
 
-// --------------------------------------------------------------------- div ---
-static double divop(double x, double y)
+// ------------------------------------------------------------------- opdiv ---
+static double _dodiv(double x, double y)
 {
 	return (y != 0) ? x / y : 999999999999999999.9;
 }
 
-Handle div(const Arg args[], const int nargs)
+Handle opdiv(const Arg args[], const int nargs)
 {
 	if (nargs == 2) {
 		PField *pf0 = (PField *) args[0];
@@ -73,7 +73,7 @@ Handle div(const Arg args[], const int nargs)
 		if (!pf1 && args[1].isType(DoubleType))
 			pf1 = new ConstPField((double) args[1]);
 		if (pf0 && pf1)
-			return createPFieldHandle(new PFieldBinaryOperator(pf0, pf1, divop));
+			return createPFieldHandle(new PFieldBinaryOperator(pf0, pf1, _dodiv));
 	}
 	die("div", "Usage: pfield = div(arg1, arg2)\n"
 					"(Args can be pfields or constants.)");
@@ -81,13 +81,13 @@ Handle div(const Arg args[], const int nargs)
 }
 
 
-// --------------------------------------------------------------------- sub ---
-static double subop(double x, double y)
+// ------------------------------------------------------------------- opsub ---
+static double _dosub(double x, double y)
 {
 	return x - y;
 }
 
-Handle sub(const Arg args[], const int nargs)
+Handle opsub(const Arg args[], const int nargs)
 {
 	if (nargs == 2) {
 		PField *pf0 = (PField *) args[0];
@@ -97,7 +97,7 @@ Handle sub(const Arg args[], const int nargs)
 		if (!pf1 && args[1].isType(DoubleType))
 			pf1 = new ConstPField((double) args[1]);
 		if (pf0 && pf1)
-			return createPFieldHandle(new PFieldBinaryOperator(pf0, pf1, subop));
+			return createPFieldHandle(new PFieldBinaryOperator(pf0, pf1, _dosub));
 	}
 	die("sub", "Usage: pfield = sub(arg1, arg2)\n"
 					"(Args can be pfields or constants.)");
