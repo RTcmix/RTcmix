@@ -1496,8 +1496,6 @@ _dispatch_table(const Arg args[], const int nargs, const int startarg,
 extern "C" {
 	Handle maketable(const Arg args[], const int nargs);
 	double tablelen(const Arg args[], const int nargs);
-	Handle multtable(const Arg args[], const int nargs);
-	Handle addtable(const Arg args[], const int nargs);
 	Handle copytable(const Arg args[], const int nargs);
 	Handle inverttable(const Arg args[], const int nargs);
 	Handle shifttable(const Arg args[], const int nargs);
@@ -1616,58 +1614,6 @@ tablelen(const Arg args[], const int nargs)
 		return die("tablelen", "Argument must be a valid table handle.");
 
 	return (double) table->values();
-}
-
-
-// --------------------------------------------------------------- multtable ---
-Handle
-multtable(const Arg args[], const int nargs)
-{
-	if (nargs == 2) {
-		PField *table0 = (PField *) args[0];
-		PField *table1 = (PField *) args[1];
-		if (!table1) {
-			if (args[1].isType(DoubleType)) {
-				table1 = new ConstPField((double) args[1]);
-			}
-		}
-		else if (!table0) {
-			if (args[0].isType(DoubleType)) {
-				table0 = new ConstPField((double) args[0]);
-			}
-		}
-		if (table0 && table1) {
-			return createPFieldHandle(new MultPField(table0, table1));
-		}
-	}
-	die("multtable", "Usage: mul(table1, table2) or mul(table, constant)");
-	return NULL;
-}
-
-
-// ---------------------------------------------------------------- addtable ---
-Handle
-addtable(const Arg args[], const int nargs)
-{
-	if (nargs == 2) {
-		PField *table0 = (PField *) args[0];
-		PField *table1 = (PField *) args[1];
-		if (!table1) {
-			if (args[1].isType(DoubleType)) {
-				table1 = new ConstPField((double) args[1]);
-			}
-		}
-		else if (!table0) {
-			if (args[0].isType(DoubleType)) {
-				table0 = new ConstPField((double) args[0]);
-			}
-		}
-		if (table0 && table1) {
-			return createPFieldHandle(new AddPField(table0, table1));
-		}
-	}
-	die("addtable", "Usage: add(table1, table2) or add(table, constant)");
-	return NULL;
 }
 
 
