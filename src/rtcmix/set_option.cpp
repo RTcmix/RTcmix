@@ -334,9 +334,8 @@ static int _parse_arg(const char *arg, const bool rtsetparams_called)
 	p = strchr(opt, '=');				// check for "key=value"
 	if (p) {
 		*p++ = '\0';						// <opt> is now key only
-		if (*p == '\0')
+		if (*p == '\0')					// p now points to value string
 			return die("set_option", "Missing value for key \"%s\"", opt);
-		// p now points to value string
 		status = _set_key_value_option(opt, p, rtsetparams_called);
 	}
 	else										// check for single "value"
