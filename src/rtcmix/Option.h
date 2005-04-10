@@ -44,7 +44,7 @@
 
 // double options
 #define kOptionBufferFrames     "buffer_frames"
-#define kOptionBufferCount     "buffer_count"
+#define kOptionBufferCount      "buffer_count"
 
 // string options
 #define kOptionDevice           "device"
@@ -97,6 +97,10 @@ public:
 	static bool exitOnError(const bool setIt) { _exitOnError = setIt;
 													return _exitOnError; }
 
+	static bool autoLoad() { return _autoLoad; }
+	static bool autoLoad(const bool setIt) { _autoLoad = setIt;
+													return _autoLoad; }
+
 	static double bufferFrames() { return _bufferFrames; }
 	static double bufferFrames(const double frames) { _bufferFrames = frames;
 													return _bufferFrames; }
@@ -104,9 +108,6 @@ public:
 	static int bufferCount() { return _bufferCount; }
 	static int bufferCount(int count) { _bufferCount = count;
 													return _bufferCount; }
-	static bool autoLoad() { return _autoLoad; }
-	static bool autoLoad(const bool setIt) { _autoLoad = setIt;
-													return _autoLoad; }
 
 	// WARNING: If no string as been assigned, do not expect the get method
 	// to return NULL!  Instead, check that strlen is > 0.
