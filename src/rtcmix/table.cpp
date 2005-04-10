@@ -184,8 +184,10 @@ _textfile_table(const Arg args[], const int nargs, double *array, const int len)
 		if (fscanf(stream, "%128s", buf) == EOF)
 			break;
 		char *pos = NULL;
+		errno = 0;
 		double val = strtod(buf, &pos);
-		if (val == 0.0 && pos == buf) {	// no conversion performed; warn once
+		if (val == 0.0 && pos == buf) {
+			// no conversion performed; warn once
 			if (!non_convertible_found)
 				warn("maketable (textfile)",
 					 "File contains some text that can't be converted to a number.");
