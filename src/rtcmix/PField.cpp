@@ -459,7 +459,7 @@ private:
 
 int ShiftPField::ShiftIIFunctor::operator ()(int idx, int len)
 {
-	int nidx = idx + _shift;
+	int nidx = idx - _shift;
 	while (nidx < 0)
 		nidx += len;
 	while (nidx >= len)
@@ -470,7 +470,7 @@ int ShiftPField::ShiftIIFunctor::operator ()(int idx, int len)
 double ShiftPField::ShiftDIFunctor::operator ()(double didx, int len)
 {
 	const double dlen = double(len);
-	double index = (didx * dlen) + _shift;
+	double index = (didx * dlen) - _shift;
 	while (index < 0.0)
 		index += dlen;
 	while (index > dlen)
