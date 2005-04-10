@@ -395,15 +395,17 @@ void Option::dump()
 	cout << kOptionReportClipping << ": " << _reportClipping << endl;
 	cout << kOptionCheckPeaks << ": " << _checkPeaks << endl;
 	cout << kOptionExitOnError << ": " << _exitOnError << endl;
+	cout << kOptionAutoLoad << ": " << _autoLoad << endl;
 	cout << kOptionBufferFrames << ": " << _bufferFrames << endl;
+	cout << kOptionBufferCount << ": " << _bufferCount << endl;
 	cout << kOptionDevice << ": " << _device << endl;
 	cout << kOptionInDevice << ": " << _inDevice << endl;
 	cout << kOptionOutDevice << ": " << _outDevice << endl;
 	cout << kOptionMidiInDevice << ": " << _midiInDevice << endl;
 	cout << kOptionMidiOutDevice << ": " << _midiOutDevice << endl;
 	cout << kOptionDSOPath << ": " << _dsoPath << endl;
-	cout << kOptionHomeDir << ": " << _homeDir << endl;
 	cout << kOptionRCName << ": " << _rcName << endl;
+	cout << kOptionHomeDir << ": " << _homeDir << endl;
 }
 
 
