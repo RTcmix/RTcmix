@@ -116,6 +116,7 @@ void process_midi(PtTimestamp timestamp, void *userData)
 					printf("0x%.2x, %ld, %ld\n", (u_char) status, data1, data2);
 					break;
 			}
+			fflush(stdout);
 		}
 	} while (result);
 }
