@@ -1,11 +1,23 @@
-/* RTcmix - Copyright (C) 2000 The RTcmix Development Team
+/* RTcmix - Copyright (C) 2005 The RTcmix Development Team
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-/* The set_option function, called from a script, lets the user override
-   default options (and those stored in the .rtcmixrc file).  The options
-   are kept in the <options> object (see Option.h).      -JGG, 6/30/04
-*/
+// The set_option function, called from a script, lets the user override
+// default options (and those stored in the .rtcmixrc file).  The options
+// are kept in the <options> object (see Option.h).
+//
+// To add new options...
+//
+// 1. add a symbol to the ParamType enum below,
+// 2. add an entry to the Param struct array, and
+// 3. write a case statement to match the enum symbol in _set_key_value_option,
+//    using the _str_to_* functions for string conversion.
+//
+// Please keep the items created in the steps above in the same order that they
+// appear in Option.h -- makes this file easier to maintain.
+//
+// -JGG, 6/30/04, rev. 4/10/05
+
 #include <RTcmix.h>
 #include <ugens.h>		// for die()
 #include <stdio.h>
@@ -69,7 +81,8 @@ static Param _param_list[] = {
 	{ kOptionDSOPath, DSOPATH, false},
 	{ kOptionRCName, RCNAME, false},
 
-	// These are old-style, single value, option strings.
+	// These are the deprecated single-value option strings.
+	// Please don't add more.
 	{ "AUDIO_ON", AUDIO, true},
 	{ "AUDIO_OFF", AUDIO, false},
 	{ "RECORD_ON", RECORD, true},
