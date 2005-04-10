@@ -29,6 +29,14 @@ num   {dig}+
 <INIT>TRUE              return TOK_TRUE;
 <INIT>false             return TOK_FALSE;
 <INIT>FALSE             return TOK_FALSE;
+<INIT>yes               return TOK_TRUE;
+<INIT>YES               return TOK_TRUE;
+<INIT>no                return TOK_FALSE;
+<INIT>NO                return TOK_FALSE;
+<INIT>on                return TOK_TRUE;
+<INIT>ON                return TOK_TRUE;
+<INIT>off               return TOK_FALSE;
+<INIT>OFF               return TOK_FALSE;
 <INIT>[=+\-*/^;]        return (*conftext);
 <INIT>"\n"              ;
 <INIT>" "|"\t"          ;
