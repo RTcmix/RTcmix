@@ -260,6 +260,11 @@ private:
 	class LoopDIFunctor;
 };
 
+// Class for shifting table values by a number of array locations, with index
+// computation performed on the fly.  Positive values of <shift> shift contents
+// to the right; negative values to the left.  If a value is shifted off the end
+// of the array in either direction, it reenters the other end.  -JGG
+
 class ShiftPField : public ModifiedIndexPFieldWrapper {
 public:
 	ShiftPField(PField *innerPField, int shift);
