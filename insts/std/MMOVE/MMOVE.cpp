@@ -128,6 +128,7 @@ int MOVE::localInit(double *p, int n_args)
 int MOVE::finishInit(double rvb_time, double *ringdur)
 {
     *ringdur = rvb_time;	// default
+	tapcount = updatePosition(0);
     return 0;
 }
 
@@ -199,7 +200,7 @@ int MOVE::updatePosition(int currentSamp)
 		}
         // set taps, return max samp
         maxtap = tap_set(m_binaural);
- 	    int resetFlag = 0;	// no reset during update
+ 	    int resetFlag = (currentSamp == 0);
 		airfil_set(resetFlag);
 		if (m_binaural)
 		   earfil_set(resetFlag);

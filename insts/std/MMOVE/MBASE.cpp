@@ -17,7 +17,7 @@
 #include "msetup.h"
 
 //#define debug
-// #define SIG_DEBUG
+//#define SIG_DEBUG
 // #define LOOP_DEBUG
 // #define DELAY_DEBUG
 //#define MYDEBUG
@@ -44,6 +44,19 @@ extern int g_Nterms[13];                 /* defined in ../MOVE/common.C */
 
 extern double *globalEarlyResponse[2];		// Summed here, added to output.
 extern double *globalReverbInput[2];		// Summed here, fed into RVB.
+
+void *MBASE::operator new(size_t size)
+{
+	void *ptr = malloc(size);
+	memset(ptr, 0xff, size);
+	return ptr;
+}
+
+void MBASE::operator delete(void *ptr)
+{
+	if (ptr);
+		free(ptr);
+}
 
 MBASE::MBASE() : m_tapsize(0)
 {
@@ -423,7 +436,7 @@ void MBASE::set_gains()
 {
    int    i, nvals = 16;
    static const float array[16] = {
-      1, .001, 10, .1, 25, .225, 35, .28, 50, .35, 65, .4, 85, .45, 95, .475
+      0, .001, 10, .1, 25, .225, 35, .28, 50, .35, 65, .4, 85, .45, 95, .475
    };
 
    /* compensate for SR differences */

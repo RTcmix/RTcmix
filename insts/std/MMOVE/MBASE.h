@@ -14,6 +14,8 @@
 
 class MBASE : public Instrument {
 public:
+   void *operator new(size_t);
+   void operator delete(void*);
    MBASE();
    virtual ~MBASE();
    virtual int init(double *, int);
@@ -42,8 +44,8 @@ protected:
    long tap_set(int);
    void mike_set();
 protected:
-   int    m_inchan, insamps, skip, m_binaural, m_tapsize, intap, tapcount;
-   int    cartflag, rvbdelsize, m_buffersize;
+   int    m_inchan, insamps, skip, m_binaural, m_tapsize, tapcount;
+   int    cartflag, m_buffersize;
    int 	  m_branch;
    float  inamp, m_dur;
    float  amptabs[2], *in;
