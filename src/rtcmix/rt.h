@@ -1,3 +1,6 @@
+#ifndef __RT_H__
+#define __RT_H__
+
 class Instrument;
 
 struct rt_item {
@@ -26,3 +29,5 @@ extern "C" {
 		if (addrtInst(&this_rt) == -1) \
 		  merror(flabel); \
 	}
+
+#endif	// __RT_H__
