@@ -45,19 +45,6 @@ extern int g_Nterms[13];                 /* defined in ../MOVE/common.C */
 extern double *globalEarlyResponse[2];		// Summed here, added to output.
 extern double *globalReverbInput[2];		// Summed here, fed into RVB.
 
-void *MBASE::operator new(size_t size)
-{
-	void *ptr = malloc(size);
-	memset(ptr, 0xff, size);
-	return ptr;
-}
-
-void MBASE::operator delete(void *ptr)
-{
-	if (ptr);
-		free(ptr);
-}
-
 MBASE::MBASE() : m_tapsize(0)
 {
     in = NULL;
@@ -125,7 +112,7 @@ int MBASE::init(double p[], int n_args)
     if (inputChannels() == 1)
        m_inchan = 0;
 
-	if (outputchans != 2)
+	if (outputChannels() != 2)
 		return die(name(), "Output must be stereo.");
 
     /* (perform some initialization that used to be in space.c) */

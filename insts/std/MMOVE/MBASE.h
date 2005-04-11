@@ -14,8 +14,6 @@
 
 class MBASE : public Instrument {
 public:
-   void *operator new(size_t);
-   void operator delete(void*);
    MBASE();
    virtual ~MBASE();
    virtual int init(double *, int);
