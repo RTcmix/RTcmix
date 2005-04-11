@@ -138,7 +138,7 @@ GRANULATE::GRANULATE() : Instrument()
 GRANULATE::~GRANULATE()
 {
    delete _stream;
-   delete _block;
+   delete [] _block;
 }
 
 

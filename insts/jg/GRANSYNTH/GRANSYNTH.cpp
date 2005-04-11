@@ -93,7 +93,7 @@ GRANSYNTH::GRANSYNTH() : Instrument()
 GRANSYNTH::~GRANSYNTH()
 {
    delete _stream;
-   delete _block;
+   delete [] _block;
 }
 
 
