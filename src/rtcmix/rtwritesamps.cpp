@@ -45,12 +45,3 @@ RTcmix::rtwritesamps(AudioDevice *fileDevice)
    return 0;
 }
 
-/* ----------------------------------------------------------- rtcloseout --- */
-/* Close the output file device.  No longer needed */
-int
-RTcmix::rtcloseout()
-{
-	return 0;
-}
-
-

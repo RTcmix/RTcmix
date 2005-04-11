@@ -29,6 +29,7 @@
 #include <Option.h>
 #include <utils.h>
 #include <ug_intro.h>
+#include <AudioDevice.h>
 #include "rt.h"
 #include "heap.h"
 #include "maxdispargs.h"
@@ -61,6 +62,7 @@ int				RTcmix::rtsetparams_called = 0; // will call at object instantiation, tho
 int				RTcmix::audio_config 	= 1;
 long			RTcmix::elapsed 		= 0;
 RTstatus		RTcmix::run_status      = RT_GOOD;
+AudioDevice *	RTcmix::audioDevice     = NULL;
 
 heap *			RTcmix::rtHeap			= NULL;
 RTQueue *		RTcmix::rtQueue			= NULL;
@@ -458,8 +460,6 @@ void RTcmix::printOff()
 void RTcmix::panic()
 {
 	run_status = RT_PANIC;	// resets itself in other thread
-	//	sleep(2);
-	//run_status = RT_GOOD;
 }
 
 // This method is called by imbedded apps only, and only those apps which
@@ -494,8 +494,8 @@ void RTcmix::run()
 void RTcmix::close()
 {
 	run_status = RT_SHUTDOWN;
-	destroy_audio_devices();
-	rtcloseout();
+	delete audioDevice;
+	audioDevice = NULL;
 }
 
 

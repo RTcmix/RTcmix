@@ -105,9 +105,7 @@ die(const char *inst_name, const char *format, ...)
       fprintf(stderr, PREFIX "FATAL ERROR:  %s\n", buf);
 
    if (get_bool_option(kOptionExitOnError)) {
-      if (rtsetparams_was_called())
-         rtcloseout();
-      else
+      if (!rtsetparams_was_called())
          closesf_noexit();
 
       exit(1);

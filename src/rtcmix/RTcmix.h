@@ -101,8 +101,6 @@ public:
 	static void addToBus(BusType type, int bus, BufPtr buf, int offset, int endfr, int chans);
 	static void releaseInput(int fdIndex);
 
-	static int rtcloseout();
-
 	// These are functions called from the parser via pointers, and are
 	// registered via rt_ug_intro().
 	static double rtsetparams(float*, int, double *);
@@ -149,6 +147,8 @@ protected:
 	static int		rtInteractive;
 	static int		rtsetparams_called;
 	static int		audio_config;
+
+	static AudioDevice *audioDevice;
 
 	static RTstatus	run_status;
 

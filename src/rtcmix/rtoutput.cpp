@@ -330,11 +330,15 @@ RTcmix::rtoutput(float p[], int n_args, double pp[])
       }
    }
 
-   if (create_audio_file_device(rtoutsfname, output_header_type,
+   AudioDevice *dev;
+   if ((dev = create_audio_file_device(audioDevice,
+				   				rtoutsfname, output_header_type,
                                 output_data_format, NCHANS, SR,
                                 normalize_output_floats,
-                                get_bool_option(kOptionCheckPeaks)) < 0)
+                                get_bool_option(kOptionCheckPeaks))) == NULL)
       return -1;  /* failed! */
+
+   audioDevice = dev;
 
    rtfileit = 1;  /* here we finally set this to 1 */
 

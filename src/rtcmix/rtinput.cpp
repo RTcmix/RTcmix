@@ -253,11 +253,12 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 			if (rtsetparams_called) {
 				// If audio *playback* was disabled, but there is a request for
 				// input audio, create the audio input device here.
-				if (!audio_input_is_initialized() && !Option::play()) {
+				if (!audioDevice && !Option::play()) {
 					int nframes = RTBUFSAMPS;
-					if (create_audio_devices(true, false,
+					if ((audioDevice = create_audio_devices(true, false,
 											 NCHANS, SR, &nframes,
-											 Option::bufferCount()) < 0) {
+											 Option::bufferCount())) == NULL)
+					{
 						rtrecord = 0;	/* because we failed */
 						return -1;
 					}
@@ -285,7 +286,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 				rtrecord = 0;	/* because we failed */
 				return -1;
 			}
-			if (!audio_input_is_initialized()) {
+			if (!audioDevice) {
 				die("rtinput", "Audio input device not open yet. "
 												"Call rtsetparams first.");
 				rtrecord = 0;	/* because we failed */

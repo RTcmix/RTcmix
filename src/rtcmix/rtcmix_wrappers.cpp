@@ -5,11 +5,6 @@
 #include <prototypes.h>
 #include <RTcmix.h>
 
-void rtcloseout()
-{
-	RTcmix::rtcloseout();
-}
-
 int rtsetparams_was_called()
 {
 	return RTcmix::rtsetparams_was_called();

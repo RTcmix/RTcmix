@@ -32,8 +32,6 @@ static bool audioDone = false;
 bool inTraverse(AudioDevice *device, void *arg);
 bool doneTraverse(AudioDevice *device, void *arg);
 
-extern AudioDevice *globalAudioDevice;	// from audio/audio_port.cpp
-
 int RTcmix::runMainLoop(void)
 {
 	Bool audio_configured = NO;
@@ -84,12 +82,12 @@ int RTcmix::runMainLoop(void)
 //		startupBufCount = ZERO_FRAMES_BEFORE / RTBUFSAMPS;
 		startupBufCount = 0;
 
-		if (globalAudioDevice) {
+		if (audioDevice) {
 			// Set done callback on device.
-			globalAudioDevice->setStopCallback(doneTraverse, this);
+			audioDevice->setStopCallback(doneTraverse, this);
 			// Start audio output device, handing it our callback.
-			if (globalAudioDevice->start(inTraverse, this) != 0) {
-				cerr << globalAudioDevice->getLastError() << endl;
+			if (audioDevice->start(inTraverse, this) != 0) {
+				cerr << audioDevice->getLastError() << endl;
 				return -1;
 			}
 			return 0;	// Playing, thru HW and/or to FILE.
@@ -111,8 +109,9 @@ int RTcmix::waitForMainLoop()
 		sleep(1);
 #endif
 	}
-	::destroy_audio_devices();
-	rtcloseout();
+	AudioDevice *tmp = audioDevice;
+	audioDevice = NULL;
+	delete tmp;
 #ifdef WBUG	
 	cout << "EXITING waitForMainLoop() FUNCTION *****\n";
 #endif

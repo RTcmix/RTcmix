@@ -84,8 +84,8 @@ RTcmix::rtsetparams(float p[], int n_args, double pp[])
    if (play_audio || record_audio) {
       int nframes = RTBUFSAMPS;
 		
-	  if (create_audio_devices(record_audio, play_audio, 
-	  						   NCHANS, SR, &nframes, numBuffers) < 0)
+	  if ((audioDevice = create_audio_devices(record_audio, play_audio, 
+	  						   NCHANS, SR, &nframes, numBuffers)) == NULL)
 	  	return -1;
 
       /* This may have been reset by driver. */

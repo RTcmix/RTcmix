@@ -12,6 +12,7 @@
 #include <unistd.h>
 
 #include <RTcmixMain.h>
+#include <AudioDevice.h>
 #include <Option.h>
 #include <version.h>
 #include <ugens.h>
@@ -438,8 +439,8 @@ RTcmixMain::interrupt_handler(int signo)
 		interrupt_handler_called = 1;
 	   fprintf(stderr, "\n<<< Caught interrupt signal >>>\n");
 
-	   if (rtsetparams_called) {
-		   stop_audio_devices();
+	   if (audioDevice) {
+		   audioDevice->close();
 	   }
 	   else {
 		   closesf();	// We exit if we have not yet configured audio.

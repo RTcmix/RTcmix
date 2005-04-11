@@ -28,8 +28,6 @@
 char globalNetworkPath[128];			// Set by Minc/setnetplay.c
 #endif
 
-AudioDevice *globalAudioDevice;			// Used by Minc/intraverse.C
-
 // Return pointers to the most recently specified audio device strings.
 // "indevice" always overrides "device", and same with "outdevice".
 
@@ -61,7 +59,7 @@ const char *get_audio_outdevice_name()
 }
 
 
-int
+AudioDevice *
 create_audio_devices(int record, int play, int chans, float srate, int *buffersize, int numBuffers)
 {
 	int status;
@@ -80,7 +78,7 @@ create_audio_devices(int record, int play, int chans, float srate, int *buffersi
 	device = createAudioDevice(inDeviceName, outDeviceName, record, play);
 	if (device == NULL) {
 		die("rtsetparams", "Failed to create audio device.");
-		return -1;
+		return NULL;
 	}
 
 	// We hand the device noninterleaved, full-range floating point buffers.
@@ -107,7 +105,8 @@ create_audio_devices(int record, int play, int chans, float srate, int *buffersi
 		int reqcount = numBuffers;
 		if ((status = device->setQueueSize(&reqsize, &reqcount)) < 0) {
 			die("rtsetparams", "%s", device->getLastError());
-			return -1;
+			delete device;
+			return NULL;
 		}
 		int newSize = reqsize * numBuffers / reqcount;
 		if (newSize != *buffersize) {
@@ -120,30 +119,33 @@ create_audio_devices(int record, int play, int chans, float srate, int *buffersi
 	else
 	{
 		die("rtsetparams", "%s", device->getLastError());
-		return -1;
+		delete device;
+		return NULL;
 	}
 
-	globalAudioDevice = device;
-
-	return status;
+	return device;
 }
 
-int create_audio_file_device(const char *outfilename,
-							 int header_type,
-							 int sample_format,
-							 int chans,
-							 float srate,
-							 int normalize_output_floats,
-							 int check_peaks)
+AudioDevice *
+create_audio_file_device(AudioDevice *inDevice,
+						 const char *outfilename,
+						 int header_type,
+						 int sample_format,
+						 int chans,
+						 float srate,
+						 int normalize_output_floats,
+						 int check_peaks)
 {
 	assert(rtsetparams_was_called());
 	
+	AudioDevice *device = NULL;
+
 	AudioFileDevice *fileDevice = new AudioFileDevice(outfilename,
 													  header_type);
 													
 	if (fileDevice == NULL) {
 		rterror("rtoutput", "Failed to create audio file device");
-		return -1;
+		return NULL;
 	}
 	
 	// Here is the logic for opening the file device.  We do this all in
@@ -184,7 +186,8 @@ int create_audio_file_device(const char *outfilename,
 	if (ret == -1) {
 		rterror("rtoutput", "Can't create output for \"%s\": %s", 
 				 outfilename, fileDevice->getLastError());
-		return -1;
+		delete fileDevice;
+		return NULL;
 	}
 	// Cheating -- should hand in queue size as argument!
 	int queueSize = RTcmix::bufsamps();
@@ -193,38 +196,40 @@ int create_audio_file_device(const char *outfilename,
 	if (ret == -1) {
 		rterror("rtoutput", "Failed to set queue size on file device:  %s", 
 				 fileDevice->getLastError());
-		return -1;
+		delete fileDevice;
+		return NULL;
 	}
 
 	if (!playing && !recording) {	// To file only.
 		// If we are only writing to disk, we only have a single output device. 
-		globalAudioDevice = fileDevice;
+		assert(inDevice == NULL);	// We should not have been passed anything.
+		device = fileDevice;
 	}
 	else {							// To file, plus record and/or playback.
+		assert(inDevice != NULL);
 		if (playing && !recording) {		// Dual outputs to both HW and file.
 #if DEBUG > 0
 			printf("DEBUG: Group output device for file and HW playback\n");
 #endif
 			bool fileDoesLimiting = !fileIsRawFloats;
-			globalAudioDevice = new DualOutputAudioDevice(globalAudioDevice,
-														  fileDevice,
-														  fileDoesLimiting);
+			device = new DualOutputAudioDevice(inDevice,
+											  fileDevice,
+											  fileDoesLimiting);
 		}
 		else if (recording && !playing) {	// Record from HW, write to file.
-			assert(globalAudioDevice != NULL);
 #if DEBUG > 0
 			printf("DEBUG: Dual device for HW record, file playback\n");
 #endif
-			globalAudioDevice = new AudioIODevice(globalAudioDevice, fileDevice, true);
+			device = new AudioIODevice(inDevice, fileDevice, true);
 		}
 		else {	// HW Record and playback, plus write to file.
 #if DEBUG > 0
 			printf("DEBUG: Dual device for HW record/playback, file playback\n");
 #endif
 			bool fileDoesLimiting = !fileIsRawFloats;
-			globalAudioDevice = new DualOutputAudioDevice(globalAudioDevice,
-														  fileDevice,
-														  fileDoesLimiting);
+			device = new DualOutputAudioDevice(inDevice,
+											   fileDevice,
+											   fileDoesLimiting);
 		}
 	}
 
@@ -237,42 +242,6 @@ int create_audio_file_device(const char *outfilename,
 		 printf("     chans:  %d\n", chans);
 	}
 
-	return 0;
+	return device;
 }
 
-int audio_input_is_initialized()
-{
-	return globalAudioDevice != NULL;
-}
-
-void
-stop_audio_devices()
-{
-	// Turns out we need to close, not just stop (close calls stop)
-	globalAudioDevice->close();
-}
-
-static bool destroying = false;	// avoid reentrancy
-
-void
-destroy_audio_devices()
-{
-	if (!destroying) {
-		destroying = true;
-		delete globalAudioDevice;
-		globalAudioDevice = NULL;
-	}
-}
-
-int
-destroy_audio_file_device()
-{
-	int result = 0;
-                                                                                                    
-// 	if (globalOutputFileDevice != globalAudioDevice) {
-//     	delete globalOutputFileDevice;
-// 	}
-// 	globalOutputFileDevice = NULL;
-
-	return result;
-}

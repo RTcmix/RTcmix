@@ -53,7 +53,6 @@ void destroy_audio_devices();
 
 /* rtcmix_wrappers.c */
 
-void rtcloseout();
 int rtsetparams_was_called();
 float SR();
 void set_SR(float);
