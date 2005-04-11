@@ -10,10 +10,8 @@
 typedef enum {
 	kMIDIInvalidType = -1,
 	kMIDIControlType = 0,
-	kMIDINoteOnPitchType,
-	kMIDINoteOnVelType,
-	kMIDINoteOffPitchType,
-	kMIDINoteOffVelType,
+	kMIDINoteOnType,
+	kMIDINoteOffType,
 	kMIDIPitchBendType,
 	kMIDIProgramType,
 	kMIDIChanPressType,

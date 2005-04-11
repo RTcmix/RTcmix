@@ -58,15 +58,19 @@ double RTMidiPField::computeValue() const
 	else if (_type == kMIDIChanPressType)
 		rawval = _midiport->getChanPress(_chan);
 
-	else if (_type == kMIDINoteOnPitchType)
-		rawval = _midiport->getNoteOnPitch(_chan);
-	else if (_type == kMIDINoteOnVelType)
-		rawval = _midiport->getNoteOnVel(_chan);
+	else if (_type == kMIDINoteOnType) {
+		if (_subtype == kMIDINotePitchSubType)
+			rawval = _midiport->getNoteOnPitch(_chan);
+		else
+			rawval = _midiport->getNoteOnVel(_chan);
+	}
 
-	else if (_type == kMIDINoteOffPitchType)
-		rawval = _midiport->getNoteOffPitch(_chan);
-	else if (_type == kMIDINoteOffVelType)
-		rawval = _midiport->getNoteOffVel(_chan);
+	else if (_type == kMIDINoteOffType) {
+		if (_subtype == kMIDINotePitchSubType)
+			rawval = _midiport->getNoteOffPitch(_chan);
+		else
+			rawval = _midiport->getNoteOffVel(_chan);
+	}
 
 	else if (_type == kMIDIPolyPressType)
 		rawval = _midiport->getPolyPress(_chan, _subtype);

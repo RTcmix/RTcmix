@@ -20,10 +20,8 @@
 static char *_midi_type_name[][NAME_VARIANTS] = {
 	// NB: Order of these must correspond to indices given by MIDIType enum!
 	{ "cntl", "control", NULL, NULL },
-	{ "noteonpitch", "onpitch", NULL, NULL },
-	{ "noteonvel", "onvel", NULL, NULL },
-	{ "noteoffpitch", "offpitch", NULL, NULL },
-	{ "noteoffvel", "offvel", NULL, NULL },
+	{ "noteon", NULL, NULL, NULL },
+	{ "noteoff", NULL, NULL, NULL },
 	{ "bend", "pitchbend", NULL, NULL },
 	{ "prog", "program", NULL, NULL },
 	{ "chanpress", "monopress", "at", "aftertouch" },
@@ -67,10 +65,12 @@ static char *_midi_controller_name[128] = {
 //
 //    <chan>      MIDI channel (1-16)
 //
-//    <type>      "noteonpitch", "noteonvel", "noteoffpitch", "noteoffpitch"
-//                "cntl", "prog", "bend", "chanpress", "polypress"
+//    <type>      "noteon", "noteoff", "cntl", "prog", "bend", "chanpress",
+//                "polypress"
 //
 //    <subtype>   depends on <type>:
+//                   noteon     note number or velocity
+//                   noteoff    note number or velocity
 //                   cntl       controller number or string symbol, such as
 //                              "mod", "foot", "breath", "data", "volume", "pan"
 //                   polypress  MIDI note number
@@ -113,6 +113,10 @@ _string_to_subtype(const MIDIType type, const char *subtype)
 	}
 	return kMIDIInvalidSubType;
 }
+
+
+// XXX NOTE NOTE NOTE: This code will go away later, in favor of making
+// conf parser read string lists.  Leave it here for reference.
 
 /* Parse MIDI control name string, a sequence of colon-separated strings,
    with line-splicing recognition and some white-space eating.  Reads this:
