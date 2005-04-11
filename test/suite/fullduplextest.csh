@@ -1,7 +1,7 @@
 #!/bin/csh
 #
 # This script tests full duplex mode using a variety of settings.  Depending on
-# your platform and HW, varous tests will file and succeed
+# your platform and HW, varous tests will fail and succeed
 # (i.e., OSS under MACOSX).
 #
 
