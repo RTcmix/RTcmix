@@ -1499,7 +1499,6 @@ extern "C" {
 	Handle maketable(const Arg args[], const int nargs);
 	double tablelen(const Arg args[], const int nargs);
 	Handle copytable(const Arg args[], const int nargs);
-	Handle shifttable(const Arg args[], const int nargs);
 	double samptable(const Arg args[], const int nargs);
 	double dumptable(const Arg args[], const int nargs);
 	double plottable(const Arg args[], const int nargs);
@@ -1717,74 +1716,6 @@ copytable(const Arg args[], const int nargs)
 	_do_copy_table(oldarray, oldtable->values(), newarray, newsize, interp);
 	delete [] oldarray;
 	TablePField *newtable = new TablePField(newarray, newsize);
-
-	return createPFieldHandle(newtable);
-}
-
-
-// -------------------------------------------------------------- shifttable ---
-// Make a copy of the given table, and shift the values of the copy by 
-// <shift> array locations.  Positive values of <shift> shift to the right;
-// negative values to the left.  If a value is shifted off the end of the
-// array in either direction, it reenters the other end of the array.
-//
-// Two examples:
-//    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]      original table, size = 10
-//    [7, 8, 9, 0, 1, 2, 3, 4, 5, 6]      shift = 3
-//    [3, 4, 5, 6, 7, 8, 9, 0, 1, 2]      shift = -3
-//
-//                                                             -JGG, 6/20/04
-
-static void
-_do_shift_table(double *array, const int len, const int shift)
-{
-	// We can't shift in place, so need temp copy of <array>.
-	double *src = new double[len];
-	memcpy(src, array, len * sizeof(double));
-
-	const int abs_shift = abs(shift);
-	size_t movesize = (size_t) (len - abs_shift);	// elements to shift
-	if (shift > 0) {
-		memcpy(array, src + movesize, (size_t) abs_shift * sizeof(double));
-		memcpy(array + abs_shift, src, movesize * sizeof(double));
-	}
-	else {
-		memcpy(array, src + abs_shift, movesize * sizeof(double));
-		memcpy(array + movesize, src, (size_t) abs_shift * sizeof(double));
-	}
-	delete [] src;
-}
-
-Handle
-shifttable(const Arg args[], const int nargs)
-{
-	if (nargs != 2) {
-		die("shifttable", "Usage: newtable = shifttable(table, shift)");
-		return NULL;
-	}
-	TablePField *table = _getTablePField(&args[0]);
-	if (table == NULL) {
-		die("shifttable", "Usage: newtable = shifttable(table, shift)");
-		return NULL;
-	}
-	if (!args[1].isType(DoubleType)) {
-		die("shifttable", "Usage: newtable = shifttable(table, shift)");
-		return NULL;
-	}
-	int shift = args[1];
-	const int abs_shift = abs(shift);
-	if (abs_shift > table->values()) {
-		die("shiftgen", "You can't shift by more than the table size.");
-		return NULL;
-	}
-
-	double *array = new double[table->values()];
-	table->copyValues(array);
-	if (abs_shift == 0 || abs_shift == table->values())
-		warn("shifttable", "Your shift of %d has no effect on the table!", shift);
-	else
-		_do_shift_table(array, table->values(), shift);
-	TablePField *newtable = new TablePField(array, table->values());
 
 	return createPFieldHandle(newtable);
 }
