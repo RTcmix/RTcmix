@@ -26,8 +26,8 @@ protected:
    int getBufferSize(void) { return m_buffersize; }
    int getInput(int currentSample, int frames);
    void wire_matrix(double [12][12]);
-   void alloc_delays(void);
-   void alloc_firfilters(void);
+   int alloc_delays(void);
+   int alloc_firfilters(void);
    void get_lengths(long);
    void set_gains(float);
    void set_walls(float);
@@ -46,8 +46,8 @@ protected:
    // static methods
    static void get_primes(int x, int p[]);
 protected:
-   int    m_inchan, insamps, skip, m_binaural, m_tapsize, intap, tapcount;
-   int    cartflag, rvbdelsize, m_buffersize;
+   int    m_inchan, insamps, skip, m_binaural, m_tapsize, tapcount;
+   int    cartflag, rvbdelsize, m_buffersize, m_branch;
    float  inamp, m_dur, m_rvbamp;
    float  amptabs[2], *in;
    double *amparray;

@@ -77,7 +77,6 @@ int BASE::init(double p[], int n_args)
     int    flag, UseMikes, cartflag = 0;
     float  outskip, inskip, abs_factor, rvb_time;
     double R, T, dist;
-	 int rval;
 
     outskip = p[0];
     inskip = p[1];
@@ -85,12 +84,24 @@ int BASE::init(double p[], int n_args)
     if (m_dur < 0)                      /* "dur" represents timend */
         m_dur = -m_dur - inskip;
 
-    rval = rtsetinput(inskip, this);
-	 if (rval == -1) { // no input
-		  return(DONT_SCHEDULE);
-	 }
+	if (rtsetinput(inskip, this) == -1) { // no input
+	  return(DONT_SCHEDULE);
+	}
     insamps = (int)(m_dur * SR);
     inamp = p[3];
+
+    double Matrix[12][12];
+   
+    /* Get results of Minc setup calls (space, mikes_on, mikes_off, matrix) */
+    if (get_setup_params(Dimensions, Matrix, &abs_factor, &rvb_time,
+                         &UseMikes, &MikeAngle, &MikePatternFactor) == -1) {
+       return die(name(), "You must call setup routine `space' first.");
+	}
+
+    // call inst-specific init code
+	if (localInit(p, n_args) == DONT_SCHEDULE) {
+		return die(name(), "localInit failed.");
+	}
 
     if (m_inchan >= inputChannels()) {
        return die(name(),
@@ -103,19 +114,6 @@ int BASE::init(double p[], int n_args)
 	if (outputChannels() != 2) {
 		return die(name(), "Output must be stereo.");
 	}
-
-    double Matrix[12][12];
-   
-    /* Get results of Minc setup calls (space, mikes_on, mikes_off, matrix) */
-    if (get_setup_params(Dimensions, Matrix, &abs_factor, &rvb_time,
-                         &UseMikes, &MikeAngle, &MikePatternFactor) == -1) {
-       return die(name(), "You must call setup routine `space' first.");
-	}
-
-    rval = localInit(p, n_args);	// call inst-specific init code
-	 if (rval == DONT_SCHEDULE) {
-		  return die(name(), "localInit failed.");
-	 }
 
     wire_matrix(Matrix);
 
@@ -144,6 +142,8 @@ int BASE::init(double p[], int n_args)
    double ringdur = 0.0;
    finishInit(rvb_time, &ringdur);
    
+   m_branch = 0;
+
    if (rtsetoutput(outskip, m_dur + ringdur, this) == -1)
       return DONT_SCHEDULE;
    DBG1(printf("nsamps = %d\n", nSamps()));
@@ -177,7 +177,7 @@ int BASE::getInput(int currentSample, int frames)
 
     float aamp = inamp;                  /* in case amparray == NULL */
 
-    int n = 0, branch = 0;
+    int n = 0;
     int bufsamps = BUFLEN;	// adjust
     int lCurSamp;	// local copy for inner loops
     float insig;
@@ -193,10 +193,10 @@ int BASE::getInput(int currentSample, int frames)
 #ifdef LOOP_DEBUG
 			nsig++;
 #endif
-			if (--branch < 0) {
+			if (--m_branch < 0) {
 			   if (amparray)
     			  aamp = tablei(lCurSamp, amparray, amptabs) * inamp;
-			   branch = skip;
+			   m_branch = skip;
 			}
 			if (m_inchan == AVERAGE_CHANS) {
 			   insig = 0.0;
@@ -224,16 +224,18 @@ int BASE::getInput(int currentSample, int frames)
 
 int BASE::configure()
 {
+	int status = 0;
+	
 	in = new float [RTBUFSAMPS * inputChannels()];
-    alloc_delays();                     /* allocates memory for delays */
+    status = alloc_delays();			/* allocates memory for delays */
 
 	rvb_reset(m_tapDelay);                  // resets reverb & tap delay
 
-	if (m_binaural) {
+	if (status == 0 && m_binaural) {
 		advise(name(), "Running in binaural mode.");
-		alloc_firfilters();                     // allocates memory for FIRs
+		status = alloc_firfilters();	// allocates memory for FIRs
 	}
-	return 0;
+	return status;
 }
 
 /* ------------------------------------------------------------------ run --- */
@@ -415,34 +417,52 @@ BASE::wire_matrix(double Matrix[12][12])
 /* The following functions from the original space.c. */
 /* -------------------------------------------------------------------------- */
 
-void BASE::alloc_firfilters()
+int BASE::alloc_firfilters()
 {
    /* allocate memory for FIR filters and zero delays */
    for (int i = 0; i < 2; i++) {
       for (int j = 0; j < 13; j++) {
          m_vectors[i][j].Firtaps = new double[g_Nterms[j] + 1];
+		 if (m_vectors[i][j].Firtaps == NULL) {
+		 	fprintf(stderr, "Memory failure during setup\n");
+			return -1;
+		 }
 		 memset(m_vectors[i][j].Firtaps, 0, (g_Nterms[j] + 1) * sizeof(double));
          m_vectors[i][j].Fircoeffs = new double[g_Nterms[j]];
+		 if (m_vectors[i][j].Fircoeffs == NULL) {
+		 	fprintf(stderr, "Memory failure during setup\n");
+			return -1;
+		 }
       }
    }
+   return 0;
 }
 
 /* --------------------------------------------------------- alloc_delays --- */
 /* Sets aside the memory needed for tap delay and the delays in RVB
 */
-void BASE::alloc_delays()
+int BASE::alloc_delays()
 {
 	assert(m_tapsize > 0);
     m_tapDelay = new double[m_tapsize + 8];
+	if (m_tapDelay == NULL) {
+		fprintf(stderr, "Memory failure during setup\n");
+		return -1;
+    }
 	memset(m_tapDelay, 0, (m_tapsize + 8) * sizeof(double));
 
    /* allocate memory for reverb delay lines */
    for (int i = 0; i < 2; i++) {
       for (int j = 0; j < 6; j++) {
          m_rvbData[i][j].Rvb_del = new double[rvbdelsize];
+		 if (m_rvbData[i][j].Rvb_del == NULL) {
+            fprintf(stderr, "Memory failure during setup\n");
+            return -1;
+         }
          memset(m_rvbData[i][j].Rvb_del, 0, sizeof(double) * rvbdelsize);
       }
    }
+   return 0;
 }
 
 
@@ -499,7 +519,7 @@ void BASE::set_gains(float rvbtime)
    float  rescale, gain, dist, G1, temp = SR / MACH1;
    double adjust;
    static float array[16] = {
-      1, .001, 10, .1, 25, .225, 35, .28, 50, .35, 65, .4, 85, .45, 95, .475
+      0, .001, 10, .1, 25, .225, 35, .28, 50, .35, 65, .4, 85, .45, 95, .475
    };
 
    /* compensate for variable delay lengths */
