@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2005-04-11  Douglas Scott  <netdscott at netscape.net>
+
+	* Audio device pointer is now owned by the RTcmix class.  Simplified
+	  the routines which manipulate the device.
+
 Thursday, March 24, 2005 Brad Garton <brad-at-music.columbia.edu>
 
 	* added code to the "expbrk" and "linebrk" functions of maketable()
