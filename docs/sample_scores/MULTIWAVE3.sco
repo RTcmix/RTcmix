@@ -38,7 +38,7 @@ for (i = 0; i < numwaves; i += 1) {
    freq[i] = makefilter(freq[i], "constrain", pitchtable, 0.95)
    freq[i] = makefilter(freq[i], "smooth", glide)
    freq[i] = makeconverter(freq[i], "cpsoct")
-   min = mod(i, 2)
+   min = i % 2
    if (min == 0)
       max = 1
    else
