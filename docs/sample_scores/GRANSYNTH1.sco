@@ -13,7 +13,7 @@ envtab = maketable("window", 2000, "hanning")
 outjitter = 0.0001
 
 density = makeconnection("mouse", "x", 1, 500, 1, 10, "density")
-hoptime = makeconverter(density, "inverse")
+hoptime = 1.0 / density
 
 mindur = .05
 maxdur = mindur
