@@ -16,7 +16,8 @@ dB = makeconnection("midi", min=0, max=90, dflt=60, lag, chan=1, "cntl", "mod")
 amp = makeconverter(dB, "ampdb")
 
 lag = 10	// If lag is too high, the freqs will not be accurate.
-notenum = makeconnection("midi", min=0, max=127, dflt=60, lag, chan=1, "noteonpitch")
+notenum = makeconnection("midi", min=0, max=127, dflt=60, lag, chan=1,
+                         "noteon", "pitch")
 freq = makeconverter(notenum, "pchmidi")
 
 pan = makeconnection("mouse", "x", min=1, max=0, dflt=.5, lag=50, "pan")
