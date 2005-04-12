@@ -34,7 +34,7 @@ GRANSYNTH(st, dur, amp, wavetab, envtab, hoptime, outjitter,
 bus_config("GRANSYNTH", "out 1")
 st += 0.01
 seed += 1
-pitch += 0.002
+pitch = pitch + 0.002
 GRANSYNTH(st, dur, amp, wavetab, envtab, hoptime, outjitter,
    mindur, maxdur, minamp, maxamp, pitch, transpcoll, pitchjitter, seed)
 
