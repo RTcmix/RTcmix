@@ -5,6 +5,7 @@
 #include <RTcmixMouse.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
@@ -32,12 +33,12 @@ RTcmixMouse::RTcmixMouse()
 RTcmixMouse::~RTcmixMouse()
 {
 	for (int i = 0; i < kNumLabels; i++) {
-		delete _xprefix[i];
-		delete _yprefix[i];
-		delete _xunits[i];
-		delete _yunits[i];
-		delete _xlabel[i];
-		delete _ylabel[i];
+		free(_xprefix[i]);
+		free(_yprefix[i]);
+		free(_xunits[i]);
+		free(_yunits[i]);
+		delete [] _xlabel[i];
+		delete [] _ylabel[i];
 	}
 }
 
