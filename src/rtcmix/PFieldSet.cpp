@@ -33,9 +33,3 @@ PFieldSet::load(PField *pf, int index)
 	}
 }
 
-PField & 
-PFieldSet::operator[](int index) const
-{
-	return *_array[index];
-}
-

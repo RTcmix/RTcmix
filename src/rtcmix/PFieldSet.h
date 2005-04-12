@@ -15,7 +15,7 @@ public:
 	PFieldSet(int numfields);
 	~PFieldSet();
 	void		load(PField *, int index);
-	PField & 	operator[](int index) const;
+	PField & 	operator[](int index) const { return *_array[index]; }
 	int			size() const { return _size; }
 private:
 	PField	**_array;
