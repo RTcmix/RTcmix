@@ -111,6 +111,12 @@ _string_to_subtype(const MIDIType type, const char *subtype)
 				return (MIDISubType) i;
 		}
 	}
+	else if (type == kMIDINoteOnType || type == kMIDINoteOffType) {
+		if (strcmp(subtype, "pitch") == 0)
+			return kMIDINotePitchSubType;
+		else if (strncmp(subtype, "velocity", 3) == 0)
+			return kMIDINoteVelSubType;
+	}
 	return kMIDIInvalidSubType;
 }
 
