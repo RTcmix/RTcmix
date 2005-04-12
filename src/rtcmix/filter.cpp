@@ -99,7 +99,7 @@ _invert_filter(PField *innerpf, const Arg args[], const int nargs)
 {
 	PField *centerpf = NULL;
 	if (nargs > 0) {
-		PField *centerpf = _get_pfield(args[0]);
+		centerpf = _get_pfield(args[0]);
 		if (centerpf == NULL)
 			return _filter_usage(INVERT_USAGE);
 	}
