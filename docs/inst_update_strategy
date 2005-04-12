@@ -318,7 +318,7 @@ STRUM: FRET1(start, dur, pitch, fund_decay, nyq_decay, dist_gain,
             clean_level, dist_level, pctleft
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-TRANS(start, inskip, dur, amp, transp, [inchan, pctleft])
+### TRANS(start, inskip, dur, amp, transp, [inchan, pctleft])
    [1. amp envelope]
 
    PFields:: amp, transp, pctleft
@@ -327,6 +327,8 @@ TRANS(start, inskip, dur, amp, transp, [inchan, pctleft])
 
    ***NOTE: <transp> difficulty: it's octave.pc for pfield, but rt curve
       needs to use linear octaves.
+      [decided to force user to use a pfield converter to present inst with
+      oct.pc]
 
 
 ===========================================================================
