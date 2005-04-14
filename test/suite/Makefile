@@ -27,6 +27,7 @@ test_bus_loop \
 test_simple_mix \
 test_scheduler \
 test_stereo \
+test_load \
 run_stresstest \
 run_sockettest \
 $(NULL)
@@ -126,6 +127,13 @@ test_stereo:
 	@echo
 	@echo Testing stereo placement \(left-center-right\):
 	-$(CMD) < test-stereo.sco
+
+test_load:
+	@echo
+	@echo Testing load of all shlib dsos
+	@find ../../shlib/ -name lib\* | grep -v conn | sed 's/\(.*\)/load("&");/' > load_test.sco
+	-$(CMD) < load_test.sco
+#	rm load_test.sco
 
 clean:
 	@echo Cleaning test suite.
