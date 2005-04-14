@@ -3,8 +3,8 @@
 #include <ugens.h>
 
 
-float loopt[6] = {.0297,.0371,.0411,.0437,.005,.0017};
-float alprvt[2] = {.096835,.032924};
+static const float loopt[6] = {.0297,.0371,.0411,.0437,.005,.0017};
+static const float alprvt[2] = {.096835,.032924};
 
 /* storage reqs for above are .1583*SR+18 */
 

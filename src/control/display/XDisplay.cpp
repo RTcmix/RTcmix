@@ -11,8 +11,8 @@
 
 //#define DEBUG
 
-const char *kLabelFontName = "fixed";	// platform-specific
-const int kExtraLineHeight = 3;
+static const char *kLabelFontName = "fixed";	// platform-specific
+static const int kExtraLineHeight = 3;
 
 
 XDisplay::XDisplay() : RTcmixDisplay()

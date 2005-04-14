@@ -49,28 +49,28 @@
 /* Used to determine if we should swap endian-ness */
 extern int swap;       /* defined in check_byte_order.c */
 int swap_bytes[NFILES];
-short is_Next[NFILES];
+static short is_Next[NFILES];
 extern short isNext;
 
 /* size of buffer to allocate.  this is no longer user-configurable */
 /* JGG: might want to make this 64*1024 in Linux */
 int nbytes = 32768;          /* exported only for the sake of sfcopy.c */
 
-int play_is_on=0;
+static int play_is_on=0;
 int  sfd[NFILES];            /* soundfile descriptors */
 int  pointer[NFILES];	     /* to be used as pointer within sound buffer */
 int  bufsize[NFILES];        /* word length of buffer */
 
 char *sndbuf[NFILES];        /* address of buffer */
-char *peak[NFILES];          /* array to store peak amplitude for nchannels */
-char *peakloc[NFILES];       /* overall peak amplitude */
+static char *peak[NFILES];          /* array to store peak amplitude for nchannels */
+static char *peakloc[NFILES];       /* overall peak amplitude */
 			   
 char wipe_is_off[NFILES];    /* this is for wipeout */
 char peakoff[NFILES];        /* this will set peak test on or off*/
-float punch[NFILES];	     /* punch alteration flags */
-char istape[NFILES];         /* flag to see if it is a tape unit */
-double starttime[NFILES];    /* to save starting time of note */
-long  originalsize[NFILES];  /* to save byte length of file */
+static float punch[NFILES];	     /* punch alteration flags */
+static char istape[NFILES];         /* flag to see if it is a tape unit */
+static double starttime[NFILES];    /* to save starting time of note */
+static long  originalsize[NFILES];  /* to save byte length of file */
 long  filepointer[NFILES];   /* to save current pointer in file */
 int status[NFILES];	     /* save read/write flage as well */
 int isopen[NFILES];	     /* open status */
@@ -85,7 +85,7 @@ static SFCODE ampcode = {
 	sizeof(SFMAXAMP) + sizeof(SFCODE)
 };
 
-struct tms    clockin[NFILES];
+static struct tms    clockin[NFILES];
  
 float getpeakval(float peakflag, int fno);
 void m_zapout(int fno, char *buffer, int nwrite, int *chlist);
@@ -105,12 +105,12 @@ int (*wipeoutpointer[NFILES])();
 int (*getinpointer[NFILES])();
 
 /*****   for macros */
-float FTEMP1,FTEMP2,FTEMP3,FTEMP4;
-int ITEMP1,ITEMP2;
-float *PTEMP1;
+static float FTEMP1,FTEMP2,FTEMP3,FTEMP4;
+static int ITEMP1,ITEMP2;
+static float *PTEMP1;
 
-char *sfname[NFILES];
-float peakflag;
+static char *sfname[NFILES];
+static float peakflag;
 
 double m_open(float *p, short n_args, double *pp) 
 {

@@ -34,7 +34,7 @@ struct AudioDevEntry {
 	CreatorFun	creator;
 };
 
-AudioDevEntry s_AudioDevEntries[] = {
+static const AudioDevEntry s_AudioDevEntries[] = {
 #ifdef NETAUDIO
 	{ &NetAudioDevice::recognize, &NetAudioDevice::create },
 #endif
@@ -64,7 +64,7 @@ createAudioDevice(const char *inputDesc,
 {
 	CreatorFun iCreator = NULL, oCreator = NULL;
 	AudioDevice *theDevice = NULL;
-	AudioDevEntry *currentEntry;
+	const AudioDevEntry *currentEntry;
 
 	if (recording) {
 		// Search for creator for inputDesc.

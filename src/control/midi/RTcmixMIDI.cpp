@@ -206,7 +206,7 @@ void RTcmixMIDI::dump(const int chan)
 
 // ------------------------------------------------------------ _processMIDI ---
 
-enum {
+static enum {
 	kNoteOff = 0x80,
 	kNoteOn = 0x90,
 	kPolyPress = 0xA0,

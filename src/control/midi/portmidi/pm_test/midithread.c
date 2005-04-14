@@ -73,7 +73,7 @@ int active = FALSE;
 int monitor = FALSE;
 int midi_thru = TRUE;
 
-long transpose;
+static long transpose;
 PmStream *midi_in;
 PmStream *midi_out;
 

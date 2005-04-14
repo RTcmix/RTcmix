@@ -34,35 +34,35 @@
 
 // Important tuning parameter: how often to nap between polling for 
 // incoming packets.
-const int kSleepMsec = 10;
+static const int kSleepMsec = 10;
 
-const char *kLabelFontName = "Monoco";
-const int kLabelFontSize = 10;
-const int kLabelFontFace = 0;		// i.e., plain
+static const char *kLabelFontName = "Monoco";
+static const int kLabelFontSize = 10;
+static const int kLabelFontFace = 0;		// i.e., plain
 
-const int _titleBarHeight = 22;	// FIXME: should get this from system
-const int _labelXpos = kLabelFromLeft;
-const int _labelYpos = kLabelFromTop;
-const int _maxLabelChars = kWholeLabelLength;
+static const int _titleBarHeight = 22;	// FIXME: should get this from system
+static const int _labelXpos = kLabelFromLeft;
+static const int _labelYpos = kLabelFromTop;
+static const int _maxLabelChars = kWholeLabelLength;
 
-int _xlabelCount;
-int _ylabelCount;
-char *_xlabel[kNumLabels];
-char *_ylabel[kNumLabels];
-char *_xprefix[kNumLabels];
-char *_yprefix[kNumLabels];
-char *_xunits[kNumLabels];
-char *_yunits[kNumLabels];
-int _xprecision[kNumLabels];
-int _yprecision[kNumLabels];
+static int _xlabelCount;
+static int _ylabelCount;
+static char *_xlabel[kNumLabels];
+static char *_ylabel[kNumLabels];
+static char *_xprefix[kNumLabels];
+static char *_yprefix[kNumLabels];
+static char *_xunits[kNumLabels];
+static char *_yunits[kNumLabels];
+static int _xprecision[kNumLabels];
+static int _yprecision[kNumLabels];
 
-double _xfactor;
-double _yfactor;
+static double _xfactor;
+static double _yfactor;
 
-int _lineHeight = 0;
-int _charWidth = 0;
-int _fontAscent = 0;
-WindowRef _window;
+static int _lineHeight = 0;
+static int _charWidth = 0;
+static int _fontAscent = 0;
+static WindowRef _window;
 
 // Default window position and size
 enum {
@@ -73,13 +73,13 @@ enum {
 };
 
 // socket
-int _servdesc;
-int _newdesc;
-int _sockport = kSockPort;
+static int _servdesc;
+static int _newdesc;
+static int _sockport = kSockPort;
 
 // thread
-bool _runThread;
-pthread_t _listenerThread;
+static bool _runThread;
+static pthread_t _listenerThread;
 
 void drawXLabels();
 void drawYLabels();

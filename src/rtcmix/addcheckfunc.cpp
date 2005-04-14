@@ -89,7 +89,8 @@ RTcmix::addfunc(
    for ( ; cur_node->next; cur_node = cur_node->next) {
 #ifdef WARN_DUPLICATES
       if (strcmp(cur_node->func_label, this_node->func_label) == 0) {
-         warn("addfunc", "function already introduced");
+         warn("addfunc", "Function '%s' already introduced",
+			  this_node->func_label);
          return;
       }
 #endif

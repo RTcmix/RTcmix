@@ -42,7 +42,7 @@ _makeLFO_usage()
 	return NULL;
 }
 
-const int kLFOWavetableSize = 1000;
+static const int kLFOWavetableSize = 1000;
 
 Handle
 makeLFO(const Arg args[], const int nargs)

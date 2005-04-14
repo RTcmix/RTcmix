@@ -19,8 +19,8 @@ extern char *sndbuf[NFILES];
 extern int headersize[NFILES];
 
 int (*getsample)();
-int getfsample();
-int getisample();
+static int getfsample();
+static int getisample();
 
 
 int
@@ -34,7 +34,7 @@ getsetnote(float start, float dur, int filenum)
 
 }
 
-int
+static int
 getisample(double sampleno, float *c, int input)
 {
 
@@ -94,7 +94,7 @@ getisample(double sampleno, float *c, int input)
 
 }
 
-int
+static int
 getfsample(double sampleno, float *c, int input)
 {
 	int RECSIZE = bufsize[input];

@@ -35,30 +35,29 @@
 
 // Important tuning parameter: how often to nap between polling for 
 // incoming packets.
-const int kSleepMsec = 20;
+static const int kSleepMsec = 20;
 
 //const char *kLabelFontName = "Monaco";
-const char *kLabelFontName = "Lucida Grande";
-const int kLabelFontSize = 14;
-const int kLabelFontFace = bold;		// 0 for plain
-const int kExtraLineHeight = 5;
+static const char *kLabelFontName = "Lucida Grande";
+static const int kLabelFontSize = 14;
+static const int kLabelFontFace = bold;		// 0 for plain
+static const int kExtraLineHeight = 5;
 
-const int _titleBarHeight = 22;	// FIXME: should get this from system
-const int _labelXpos = kLabelFromLeft;
-const int _labelYpos = kLabelFromTop;
-const int _maxLabelChars = kWholeLabelLength;
+static const int _titleBarHeight = 22;	// FIXME: should get this from system
+static const int _labelXpos = kLabelFromLeft;
+static const int _labelYpos = kLabelFromTop;
+static const int _maxLabelChars = kWholeLabelLength;
+static int _labelCount = 0;
+static char *_label[kNumLabels];
+static char *_prefix[kNumLabels];
+static char *_units[kNumLabels];
+static int _precision[kNumLabels];
+static Rect _labelRect;
 
-int _labelCount = 0;
-char *_label[kNumLabels];
-char *_prefix[kNumLabels];
-char *_units[kNumLabels];
-int _precision[kNumLabels];
-Rect _labelRect;
-
-int _lineHeight = 0;
-int _charWidth = 0;
-int _fontAscent = 0;
-WindowRef _window;
+static int _lineHeight = 0;
+static int _charWidth = 0;
+static int _fontAscent = 0;
+static WindowRef _window;
 
 // Default window position and size
 enum {
@@ -69,13 +68,13 @@ enum {
 };
 
 // socket
-int _servdesc;
-int _newdesc;
-int _sockport = kSockPort;
+static int _servdesc;
+static int _newdesc;
+static int _sockport = kSockPort;
 
 // thread
-bool _runThread;
-pthread_t _listenerThread;
+static bool _runThread;
+static pthread_t _listenerThread;
 
 void updateLabelRect();
 void drawLabels();

@@ -92,7 +92,7 @@ int DataFile::formatStringToCode(const char *str)
 
 // Return number of bytes to hold one element of given format, or -1 if
 // format is invalid.
-int format_datumsize(const int format)
+static int format_datumsize(const int format)
 {
 	switch (format) {
 		case kDataFormatDouble: return sizeof(double); break;
@@ -107,7 +107,7 @@ int format_datumsize(const int format)
 }
 
 // Return a string describing the given format.
-const char *format_string(const int format)
+static const char *format_string(const int format)
 {
 	switch (format) {
 		case kDataFormatDouble: return "doubles"; break;

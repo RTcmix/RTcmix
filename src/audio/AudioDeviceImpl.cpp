@@ -280,7 +280,7 @@ AudioDeviceImpl::destroyInterleavedBuffer(int fmt)
 // Code for creating and destroying non-interleaved conversion buffer
 
 template <class Type> 
-Type **newNoninterleavedBuffer(int chans, int len) {
+static Type **newNoninterleavedBuffer(int chans, int len) {
 	Type **tbuf = new Type *[chans];
 	if (tbuf) {
 		for (int c = 0; c < chans; ++c) {
@@ -297,7 +297,7 @@ Type **newNoninterleavedBuffer(int chans, int len) {
 }
 
 template <class Type> 
-void deleteNoninterleavedBuffer(void *buf, int chans) {
+static void deleteNoninterleavedBuffer(void *buf, int chans) {
 	Type **tbuf = (Type **) buf;
 	if (tbuf) {
 		for (int c = 0; c < chans; ++c)

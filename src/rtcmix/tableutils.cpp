@@ -132,8 +132,8 @@ static int string_to_partials(const char *str)
 	return num;
 }
 
-const int kMaxPartials = 1000;
-const int kDefaultBuzzPartials = 10;
+static const int kMaxPartials = 1000;
+static const int kDefaultBuzzPartials = 10;
 
 int wavetable_from_string(
 	const char *wavestr,		// string describing waveform

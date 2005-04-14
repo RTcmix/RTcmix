@@ -5,8 +5,8 @@
 #define TLENP 21
 #define TWO  2.
 
-float xtime[TLENP],temp[TLENP],rxtime[TLENP],accel[TLENP],BASIS = 60.;
-short tset = 0,npts;
+static float xtime[TLENP],temp[TLENP],rxtime[TLENP],accel[TLENP],BASIS = 60.;
+static short tset = 0,npts;
 
 float time_beat(float timein);
 float beat_time(float beatin);

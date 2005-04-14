@@ -13,7 +13,7 @@
 
 #define ARRAY_SIZE 256
 #define NUM_ARRAYS  32
-double minc_array[NUM_ARRAYS][ARRAY_SIZE],minc_array_size[NUM_ARRAYS];
+static double minc_array[NUM_ARRAYS][ARRAY_SIZE],minc_array_size[NUM_ARRAYS];
 
 
 double m_boost(float p[])
@@ -328,7 +328,7 @@ double m_print_is_off(float p[], int n_args)
 	return 0.0;
 }
 
-struct slist slist[NUM_SPRAY_ARRAYS];
+static struct slist slist[NUM_SPRAY_ARRAYS];
 
 double m_get_spray(float p[], int n_args)
 {

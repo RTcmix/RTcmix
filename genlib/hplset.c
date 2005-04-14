@@ -7,26 +7,26 @@ static float ABS(float x)
 	return (x >= 0.0f) ? x : -x;
 }
 
-float frand(float x)
+static float frand(float x)
 {
       int n;
       n=x*1048576.;
       return((float)((1061*n+221589) % 1048576)/1048576.);
 }
-complex xcexp(complex a)
+static complex xcexp(complex a)
 {
 	complex b;
 	b.re = exp(a.re) * cos(a.im);
 	b.im = exp(a.re) * sin(a.im);
 	return(b);
 }
-complex xcmplx(float a, float b)
+static complex xcmplx(float a, float b)
 {
 	complex c;
 	cmplx(a,b,c);
 	return(c);
 }
-complex xdivide(complex a, complex b)
+static complex xdivide(complex a, complex b)
 {
 	complex c,d,e,f;
 	conjugate(b,c);
@@ -37,28 +37,28 @@ complex xdivide(complex a, complex b)
 	/*prtcmplx(a); prtcmplx(b); prtcmplx(c); prtcmplx(d); prtcmplx(e); prtcmplx(f);*/
 	return(f);
 }
-complex xmultiply(complex a, complex b)
+static complex xmultiply(complex a, complex b)
 {
 	complex c;
 	c.re = a.re * b.re - a.im * b.im;
 	c.im = a.re * b.im + a.im * b.re;
 	return(c);
 }
-complex xadd(complex x, complex y)
+static complex xadd(complex x, complex y)
 {
 	complex z;
 	z.re = x.re + y.re;
 	z.im = x.im + y.im;
 	return(z);
 }
-complex xsubtract(complex x, complex y)
+static complex xsubtract(complex x, complex y)
 {
 	complex z;
 	z.re = x.re - y.re;
 	z.im = x.im - y.im;
 	return(z);
 }
-complex smultiply(float x, complex y)
+static complex smultiply(float x, complex y)
 {	complex z;
 	z.re = y.re * x;
 	z.im = y.im * x;
@@ -156,7 +156,7 @@ L20:    pc=(sr/freq)-n-pa;
 
 }
 
-void qnew(float SR, float freq2, float *q)
+static void qnew(float SR, float freq2, float *q)
 {
 	float w,xlp,pa,pc,c;
 	int n;
