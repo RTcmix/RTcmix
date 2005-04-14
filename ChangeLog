@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2005-04-14  Douglas Scott  <netdscott at netscape.net>
+
+	* First pass on reducing clutter in global symbol space.  
+	  Added 'static' to many global vars and to some functions
+	  only used within a single compilation unit.
+
 2005-04-11  Douglas Scott  <netdscott at netscape.net>
 
 	* Audio device pointer is now owned by the RTcmix class.  Simplified
