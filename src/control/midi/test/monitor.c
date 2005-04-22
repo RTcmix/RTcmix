@@ -30,8 +30,8 @@ enum {
 /**********************************/
 
 int active = FALSE;
-
 PmStream *midi_in;
+int showchan = 0;
 
 /****************************/
 /* END OF process_midi DATA */
@@ -83,8 +83,11 @@ void process_midi(PtTimestamp timestamp, void *userData)
 			data1 = Pm_MessageData1(buffer.message);
 			data2 = Pm_MessageData2(buffer.message);
 
-			chan = status & 0x0F;
+			chan = (status & 0x0F) + 1;
+			if (showchan > 0 && chan != showchan)
+				continue;
 
+			//printf("raw: %lx %lx %lx\n", status, data1, data2);
 			switch (status & 0xF0) {
 				case kNoteOn:
 					printf("NoteOn (chan=%ld):\tpitch=%ld vel=%ld\n",
@@ -129,14 +132,30 @@ void exit_with_message(char *msg)
 	exit(1);
 }
 
-int main()
+int main(int argc, char **argv)
 {
-	int id;
+	int i, id;
 	long n;
 	const PmDeviceInfo *info;
 	char line[STRING_MAX];
 	int spin;
 	int done = FALSE;
+
+	for (i = 1; i < argc; i++) {
+		char *arg = argv[i];
+
+		if (arg[0] == '-') {
+			switch (arg[1]) {
+				case 'c':
+					showchan = atoi(&arg[2]);
+					if (showchan < 1 || showchan > 16) {
+						fprintf(stderr, "Invalid channel number %d\n", showchan);
+						exit(1);
+					}
+					break;
+			}
+		}
+	}
 
 	midi_to_main = Pm_QueueCreate(32, sizeof(long));
 	assert(midi_to_main != NULL);
