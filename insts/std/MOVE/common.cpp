@@ -293,28 +293,29 @@ setfir(double theta, int nterms, int flag, double *coeffs, double *firtap)
 
    /* reset filter histories if flag = 1 */
 
-   if (flag) {
+   if (flag && firtap) {
       for (int i = 0; i <= nterms; ++i)
          firtap[i] = 0.0;
    }
    /* calculations to produce interpolated data */
 
-   rad_inc = radmax / NANGLES;  /* distance in rads betw. data pts.  */
-   angle = theta / rad_inc;     /* current angle in rad_incs */
-   lower = (int)angle;          /* truncate to lower integer */
-   frac = angle - lower;        /* for interpolating */
-   upper = (lower + 1) % NANGLES;
+   if (coeffs) {
+	   rad_inc = radmax / NANGLES;  /* distance in rads betw. data pts.  */
+	   angle = theta / rad_inc;     /* current angle in rad_incs */
+	   lower = (int)angle;          /* truncate to lower integer */
+	   frac = angle - lower;        /* for interpolating */
+	   upper = (lower + 1) % NANGLES;
 
-   /* since not all firs use max # of terms stored, here is skip pt. */
+	   /* since not all firs use max # of terms stored, here is skip pt. */
 
-   skip = (MAXTERMS - nterms) / 2;
+	   skip = (MAXTERMS - nterms) / 2;
 
-   /* interpolate and load coefficients */
-
-   for (int i = 0; i < nterms; ++i) {
-      int j = i + skip;
-      coeffs[i] = FIRDATA[lower][j]
-                  + (FIRDATA[upper][j] - FIRDATA[lower][j]) * frac;
+	   /* interpolate and load coefficients */
+	   for (int i = 0; i < nterms; ++i) {
+    	  int j = i + skip;
+    	  coeffs[i] = FIRDATA[lower][j]
+                	  + (FIRDATA[upper][j] - FIRDATA[lower][j]) * frac;
+	   }
    }
 }
 
