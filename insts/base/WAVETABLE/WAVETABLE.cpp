@@ -33,9 +33,11 @@
 #define AMP_GEN_SLOT     1
 #define WAVET_GEN_SLOT   2
 
+#define USE_AMP_INTERP	// DEFINE THIS TO GET NEW AMP INTERP
 
 WAVETABLE::WAVETABLE() : Instrument()
 {
+	ampinc = 0.0f;	// only used when USE_AMP_INTERP defined
 	branch = 0;
 }
 
@@ -83,18 +85,38 @@ int WAVETABLE::init(double p[], int n_args)
 	}
 
 	skip = (int) (SR / (float) resetval);
-
+	
+#ifdef USE_AMP_INTERP
+	// Handle case where initial amp value is not zero
+	
+	if (p[2] != 0) {
+		amp = p[2];
+	}
+#endif
 	return nSamps();
 }
 
 void WAVETABLE::doupdate()
 {
 	double p[5];
-	update(p, 5);
+	update(p, 5, 1 << 2 | 1 << 3 | 1 << 4);
 
+#ifdef USE_AMP_INTERP
+	float newamp = p[2];
+	if (amptable)
+		newamp *= table(currentFrame(), amptable, amptabs);
+		
+	if (newamp != amp) {
+		ampinc = (newamp - amp) / (skip - 1);
+	}
+	else {
+		ampinc = 0.0f;
+	}
+#else
 	amp = p[2];
 	if (amptable)
 		amp *= table(currentFrame(), amptable, amptabs);
+#endif
 
 	if (p[3] != freqraw) {
 		float freq;
@@ -118,6 +140,10 @@ int WAVETABLE::run()
 		}
 
 		float out[2];
+		
+#ifdef USE_AMP_INTERP
+		amp += ampinc;
+#endif
 
 		out[0] = osc->next() * amp;
 

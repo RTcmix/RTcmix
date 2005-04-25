@@ -2,7 +2,7 @@
 
 class WAVETABLE : public Instrument {
 	int skip, branch;
-	float amp, freqraw, spread, amptabs[2];
+	float amp, ampinc, freqraw, spread, amptabs[2];
 	double *wavetable, *amptable;
 	Ooscili *osc;
 
