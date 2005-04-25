@@ -87,6 +87,9 @@ int WAVETABLE::init(double p[], int n_args)
 	skip = (int) (SR / (float) resetval);
 	
 #ifdef USE_AMP_INTERP
+	if (skip < 1)
+		skip = 1;
+
 	// Handle case where initial amp value is not zero
 	
 	if (p[2] != 0) {
@@ -107,7 +110,7 @@ void WAVETABLE::doupdate()
 		newamp *= table(currentFrame(), amptable, amptabs);
 		
 	if (newamp != amp) {
-		ampinc = (newamp - amp) / (skip - 1);
+		ampinc = (newamp - amp) / skip;
 	}
 	else {
 		ampinc = 0.0f;
