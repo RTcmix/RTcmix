@@ -57,6 +57,8 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
    mixerr = MX_FNAME;
    rt_temp = rt_list;
    rt_p = rt_list;
+   
+   *retval = 0.0;	// Default to float 0
 
    while (rt_p) {
       if (strcmp(rt_p->rt_name, instname) == 0) {
@@ -66,12 +68,21 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
          /* Create the Instrument */
          
          Iptr = (*(rt_p->rt_ptr))();
+		 
+		 if (!Iptr) {
+		 	mixerr = MX_FAIL;
+			return -1;
+		 }
 
          Iptr->ref();   // We do this to assure one reference
    
 		// Load PFieldSet with ConstPField instances for each 
 		// valid p field.
          PFieldSet *pfieldset = new PFieldSet(nargs);
+		 if (!pfieldset) {
+		 	mixerr = MX_FAIL;
+			return -1;
+		 }
          for (int arg = 0; arg < nargs; ++arg) {
 			const Arg &theArg = arglist[arg];
 			if (theArg.isType(DoubleType))
