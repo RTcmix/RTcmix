@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2005-04-27  Douglas Scott  <netdscott at netscape.net>
+
+	* Cleaned up several instruments to remove direct use of base class member.
+
 2005-04-14  Douglas Scott  <netdscott at netscape.net>
 
 	* First pass on reducing clutter in global symbol space.  
