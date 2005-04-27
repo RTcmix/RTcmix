@@ -66,7 +66,7 @@ int NOISE :: run()
          update(p, nargs);
          amp = p[2];
          if (amparray)
-            amp *= tablei(cursamp, amparray, amptabs);
+            amp *= tablei(currentFrame(), amparray, amptabs);
          pctleft = nargs > 3 ? p[3] : 0.5;         // default is .5
          branch = skip;
       }

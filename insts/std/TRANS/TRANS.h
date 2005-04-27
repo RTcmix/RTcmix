@@ -4,7 +4,7 @@
 class TRANS : public Instrument {
    int    incount, inframe, skip, branch, inchan, nargs;
    bool   getframe;
-   double increment, counter, oneover_cpsoct10;
+   double _increment, counter, oneover_cpsoct10;
    float  amp, pctleft, transp;
    float  newsig, oldsig, oldersig;
    double *amptable;

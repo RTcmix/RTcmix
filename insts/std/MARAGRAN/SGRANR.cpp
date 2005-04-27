@@ -132,7 +132,7 @@ int SGRANR::run()
                         left = 0;
                     for ( j = 0; j < left; j++ ) {
                         if (--branch < 0) { 
-                            aamp = tablei(cursamp, amptable, tabs) * amp;
+                            aamp = tablei(currentFrame(), amptable, tabs) * amp;
                             branch = skip;
                         }
                         out[0] = oscili(aamp, si, wavetable, len, &phase);
@@ -142,7 +142,7 @@ int SGRANR::run()
                             out[0] *= spread;
                         }
                         rtaddout(out);
-                        cursamp++; // sample of whole note
+                        increment(); // sample of whole note
                         totalgrains++;
                     }
                     grainoverlap = 0;
@@ -167,7 +167,7 @@ int SGRANR::run()
 		tableset(SR, gdur, grlen, tabg); 
 		for ( j = 0; j < attacksamps; j++ ) {
 			if (--branch < 0) { 
-				aamp = tablei(cursamp, amptable, tabs) * amp;
+				aamp = tablei(currentFrame(), amptable, tabs) * amp;
 				branch = skip;
 			}
                         if(( j < grainsamps + waitsamps) && ( j > waitsamps )) { 
@@ -181,7 +181,7 @@ int SGRANR::run()
                             out[0] *= spread;
                         }
                         rtaddout(out);
-			cursamp++; // sample of whole note
+						increment(); // sample of whole note
                         thechunksamp++; // sample within chunk
 		}
                 totalgrains++;
@@ -192,7 +192,7 @@ int SGRANR::run()
                 out[0] = 0.0;
                 if (outputChannels() == 2) out[1] = 0.0;
                 rtaddout(out);
-                cursamp++; // sample of whole note
+                increment(); // sample of whole note
                 thechunksamp++; // sample within chunk
            }
         }

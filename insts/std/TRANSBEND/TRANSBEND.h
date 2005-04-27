@@ -4,7 +4,7 @@
 class TRANSBEND : public Instrument {
    int    incount, inframe, skip, inchan, get_frame;
    int    in_frames_left;
-   double increment, counter;
+   double _increment, counter;
    float  amp, pctleft;
    float  newsig, oldsig, oldersig;
    float  tabs[2], ptabs[2];

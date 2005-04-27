@@ -116,7 +116,7 @@ int PANECHO::run()
 			update(p, 7, kAmp | kDelTime0 | kDelTime1 | kDelRegen);
 			amp = p[3];
 			if (amptable)
-				amp *= tablei(cursamp, amptable, amptabs);
+				amp *= tablei(currentFrame(), amptable, amptabs);
 			float thisdeltime = p[4];
 			if (thisdeltime != prevdeltime0) {
 				delsamps0 = getdelsamps(thisdeltime);

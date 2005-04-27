@@ -52,6 +52,7 @@ TRANS3 :: TRANS3() : Instrument()
    incount = 1;
    counter = 0.0;
    get_frame = 1;
+   _increment = 0.0;
 
    /* clear sample history */
    oldersig = 0.0;
@@ -97,14 +98,14 @@ int TRANS3 :: init(double p[], int n_args)
 												   inchan, inputChannels());
 	}
    interval = octpch(transp);
-   increment = (double) cpsoct(10.0 + interval) / cpsoct(10.0);
+   _increment = (double) cpsoct(10.0 + interval) / cpsoct(10.0);
 #ifdef DEBUG
-   printf("increment: %g\n", increment);
+   printf("_increment: %g\n", _increment);
 #endif
 
 #ifdef NOTYET
    total_indur = (float) m_DUR(NULL, 0);
-   dur_to_read = dur * increment;
+   dur_to_read = dur * _increment;
    if (inskip + dur_to_read > total_indur) {
       warn("TRANS3", "This note will read off the end of the input file.\n"
                     "You might not get the envelope decay you "
@@ -114,7 +115,7 @@ int TRANS3 :: init(double p[], int n_args)
 #endif
 
    /* total number of frames to read during life of inst */
-   in_frames_left = (int) (nSamps() * increment + 0.5);
+   in_frames_left = (int) (nSamps() * _increment + 0.5);
 
    /* to trigger first read in run() */
    inframe = RTBUFSAMPS;
@@ -155,7 +156,7 @@ int TRANS3 :: run()
    for (i = 0; i < out_frames; i++) {
       if (--branch < 0) {
          if (amptable)
-            aamp = table(cursamp, amptable, tabs) * amp;
+            aamp = table(currentFrame(), amptable, tabs) * amp;
          branch = skip;
       }
       while (get_frame) {
@@ -188,7 +189,7 @@ int TRANS3 :: run()
 
 #ifdef DEBUG_FULL
       printf("i: %d counter: %g incount: %d frac: %g inframe: %d cursamp: %d\n",
-             i, counter, incount, frac, inframe, cursamp);
+             i, counter, incount, frac, inframe, currentFrame());
       printf("interping %g, %g, %g, %g => %g\n", oldersig, oldsig, newsig, newestsig, outp[0]);
 #endif
 
@@ -198,9 +199,9 @@ int TRANS3 :: run()
       }
 
       outp += outputchans;
-      cursamp++;
+      increment();
 
-      counter += increment;         /* keeps track of interp pointer */
+      counter += _increment;         /* keeps track of interp pointer */
       if (counter - (double) incount >= 0.0)
          get_frame = 1;
    }

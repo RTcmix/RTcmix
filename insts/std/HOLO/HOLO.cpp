@@ -191,7 +191,7 @@ int HOLO::run()
 			output[n] *= amp;
 		}
 		rtaddout(output);
-		cursamp++;
+		increment();
 		if (--intap < 0)
 		    intap = ncoefs - 1;
 	}

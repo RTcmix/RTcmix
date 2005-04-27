@@ -170,7 +170,7 @@ int SCRUB::run()
 			amp = p[3];
 			speed = p[4];
 			if (amptable)
-				aamp = table(cursamp, amptable, tabs) * amp;
+				aamp = table(currentFrame(), amptable, tabs) * amp;
 			branch = skip;
 		}
 
@@ -421,7 +421,7 @@ void SCRUB::GetFrames(float* frames, const int nframes, const float speed) {
 	float ascaler = (F2OverF1 >= 1.0 ? 1.0 : F2OverF1); // amplitude scaler
 	float tunit = ascaler * kSincOversampling; // sinc table index scaler
 
-	int cursamp;			// integral (in samples) and ...
+	int cursmp;			// integral (in samples) and ...
 	float frac;			// ... fractional part of fCurRawFramesIdx
 	int sincidx;			// integral and ...
 	float sincfrac;		// ... fractional part of the real sinc index
@@ -435,17 +435,17 @@ void SCRUB::GetFrames(float* frames, const int nframes, const float speed) {
 
 	for (int frm = 0; frm < nframes; frm++) { // for each frame do ...
 		EnsureRawFramesIdxInbound(); // rotate ring buffer, if necessary
-		cursamp = int(fCurRawFramesIdx);
-		frac = fCurRawFramesIdx - cursamp;
-		cursamp *= fChannels;
+		cursmp = int(fCurRawFramesIdx);
+		frac = fCurRawFramesIdx - cursmp;
+		cursmp *= fChannels;
 		tleft = frac * tunit;
 		tright = tunit - tleft;
 		for (int chn = 0; chn < fChannels; chn++) { // for each channel do ...
 			sum = 0.0f;
 			tl = tleft;
 			tr = tright;
-			sampl = cursamp;
-			sampr = cursamp + fChannels;
+			sampl = cursmp;
+			sampr = cursmp + fChannels;
 			for (int k = 0; k < sincwidth; k++) { // for each k'th neighboring sample
 				// Note: interpolation here may be omitted if so desired for
 				// performance reasons.  Substitute 
@@ -471,7 +471,7 @@ void SCRUB::GetFrames(float* frames, const int nframes, const float speed) {
 				sampr += fChannels;
 			}
 			frames[outidx++] = sum * ascaler;	// could optimize * for upsampling
-			cursamp++;		// advance to next channel
+			cursmp++;		// advance to next channel
 		}
 		fCurRawFramesIdx += speed;
 	}

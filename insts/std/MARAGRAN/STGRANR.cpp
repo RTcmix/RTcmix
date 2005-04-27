@@ -177,7 +177,7 @@ int STGRANR::run()
 		tableset(SR, gdur, grlen, tabg); 
 		for ( j = 0; j < attacksamps; j++ ) {
 			if (--branch < 0) { 
-				aamp = tablei(cursamp, amptable, tabs) * amp;
+				aamp = tablei(currentFrame(), amptable, tabs) * amp;
 				branch = skip;
 			}
                         while (get_frame) {
@@ -213,7 +213,7 @@ int STGRANR::run()
                             outp[1] = (1.0 - spread) * outp[0];
                             outp[0] *= spread;
                         }
-			cursamp++; // sample of whole note
+						Instrument::increment(); // sample of whole note
                         thechunksamp++; // sample within chunk
                         outp += outputChannels();  
                         counter += increment;         /* keeps track of interp pointer */
@@ -228,7 +228,7 @@ int STGRANR::run()
                 outp[0] = 0.0;
                 if (outputChannels() == 2) outp[1] = 0.0;
                 outp += outputChannels();
-                cursamp++; // sample of whole note
+				Instrument::increment(); // sample of whole note
                 thechunksamp++; // sample within chunk
            }
         }

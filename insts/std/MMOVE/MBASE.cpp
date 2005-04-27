@@ -240,15 +240,16 @@ int MBASE::run()
 	int    i = 0;
 
 	const int totalSamps = insamps + tapcount;
+	int thisFrame = currentFrame();
 
 	DBG1(printf("%s::run(): totalSamps = %d\n", name(), totalSamps));
 
 	// this will return chunksamps' worth of input, even if we have
 	// passed the end of the input (will produce zeros)
 
-	getInput(cursamp, chunksamps);
+	getInput(thisFrame, chunksamps);
 
-	DBG1(printf("getInput(%d, %d) called\n", cursamp, chunksamps));
+	DBG1(printf("getInput(%d, %d) called\n", thisFrame, chunksamps));
 	
 	int bufsamps = getBufferSize();
 	const int outputOffset = this->output_offset;
@@ -260,22 +261,24 @@ int MBASE::run()
         if (chunksamps - i < bufsamps)
             bufsamps = max(0, chunksamps - i);
 
+		thisFrame = currentFrame();	// store this locally for efficiency
+
 		DBG1(printf("top of main loop: i = %d  cursamp = %d  bufsamps = %d\n",
-                   i, cursamp, bufsamps));
+                   i, thisFrame, bufsamps));
 		DBG(printf("input signal:\n"));
 		DBG(PrintInput(&in[i], bufsamps));
 		
 		// add signal to delay
-		put_tap(cursamp, &in[i], bufsamps);
+		put_tap(thisFrame, &in[i], bufsamps);
 
 		// if processing input signal or flushing delay lines ... 
 
-		if (cursamp < totalSamps) {
+		if (thisFrame < totalSamps) {
 			// limit buffer size of end of input data
-			if (totalSamps - cursamp < bufsamps)
-				bufsamps = max(0, totalSamps - cursamp);
+			if (totalSamps - thisFrame < bufsamps)
+				bufsamps = max(0, totalSamps - thisFrame);
 
-			if ((tapcount = updatePosition(cursamp)) < 0)
+			if ((tapcount = updatePosition(thisFrame)) < 0)
 				exit(-1);
 
 			DBG1(printf("  inner loop: bufsamps = %d\n", bufsamps));
@@ -284,7 +287,7 @@ int MBASE::run()
 					Vector *vec = &m_vectors[ch][path];
 					DBG(printf("vector[%d][%d]:\n", ch, path));
 					/* get delayed samps */
-					get_tap(cursamp, ch, path, bufsamps);
+					get_tap(thisFrame, ch, path, bufsamps);
 					DBG(PrintSig(vec->Sig, bufsamps));   
 					/* air absorpt. filters */
          			air(vec->Sig, bufsamps, vec->Airdata);			
@@ -293,7 +296,7 @@ int MBASE::run()
          				wall(vec->Sig, bufsamps, vec->Walldata);
 					/* do binaural angle filters if necessary*/
 					if (m_binaural)						
-						fir(vec->Sig, cursamp, g_Nterms[path], 
+						fir(vec->Sig, thisFrame, g_Nterms[path], 
 					    	vec->Fircoeffs, vec->Firtaps, bufsamps);
 
           	 		// sum unscaled reflected paths as global input for RVB.
@@ -347,7 +350,7 @@ int MBASE::run()
 		increment(bufsamps);
 		i += bufsamps;
 		bufsamps = getBufferSize();		// update
-		DBG1(printf("\tinner loop done.  cursamp now %d\n", cursamp));
+		DBG1(printf("\tinner loop done.  cursamp now %d\n", currentFrame()));
 	}
 	DBG1(printf("%s::run done\n\n", name()));
 	return i;

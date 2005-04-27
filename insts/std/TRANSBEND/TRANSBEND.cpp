@@ -55,6 +55,7 @@ TRANSBEND :: TRANSBEND() : Instrument()
    incount = 1;
    counter = 0.0;
    get_frame = 1;
+   _increment = 0.0;
 
    /* clear sample history */
    oldersig = 0.0;
@@ -175,7 +176,7 @@ int TRANSBEND :: run()
    for (i = 0; i < out_frames; i++) {
       if (--branch < 0) {
          if (amptable)
-            aamp = table(cursamp, amptable, tabs) * amp;
+            aamp = table(currentFrame(), amptable, tabs) * amp;
          branch = skip;
       }
       while (get_frame) {
@@ -206,7 +207,7 @@ int TRANSBEND :: run()
 
 #ifdef DEBUG_FULL
       printf("i: %d counter: %g incount: %d frac: %g inframe: %d cursamp: %d\n",
-             i, counter, incount, frac, inframe, cursamp);
+             i, counter, incount, frac, inframe, currentFrame());
       printf("interping %g, %g, %g => %g\n", oldersig, oldsig, newsig, outp[0]);
 #endif
 
@@ -216,15 +217,15 @@ int TRANSBEND :: run()
       }
 
       outp += outputchans;
-      cursamp++;
+      increment();
 
       if (--ibranch < 0) {
-		  float interval = table(cursamp, pitchtable, ptabs);
-	      increment = (double) cpsoct(10.0 + interval) / cpsoct10;
+		  float interval = table(currentFrame(), pitchtable, ptabs);
+	      _increment = (double) cpsoct(10.0 + interval) / cpsoct10;
           ibranch = 20;
       }
 
-      counter += increment;         /* keeps track of interp pointer */
+      counter += _increment;         /* keeps track of interp pointer */
       if (counter - (double) incount >= -0.5)
          get_frame = 1;
    }

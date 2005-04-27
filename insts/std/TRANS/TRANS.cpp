@@ -66,7 +66,7 @@ TRANS::TRANS() : Instrument()
    branch = 0;
    transp = FLT_MAX;
    incount = 1;
-   increment = 0.0;
+   _increment = 0.0;
    counter = 0.0;
    getframe = true;
 
@@ -143,9 +143,9 @@ void TRANS::doupdate()
    float newtransp = p[4];
    if (newtransp != transp) {
       transp = newtransp;
-      increment = cpsoct(10.0 + octpch(transp)) * oneover_cpsoct10;
+      _increment = cpsoct(10.0 + octpch(transp)) * oneover_cpsoct10;
 #ifdef DEBUG
-      printf("increment: %g\n", increment);
+      printf("_increment: %g\n", _increment);
 #endif
    }
 }
@@ -183,7 +183,7 @@ int TRANS::run()
 
 #ifdef DEBUG_FULL
       printf("i: %d counter: %g incount: %d frac: %g inframe: %d cursamp: %d\n",
-             i, counter, incount, frac, inframe, cursamp);
+             i, counter, incount, frac, inframe, currentFrame());
       printf("interping %g, %g, %g => %g\n", oldersig, oldsig, newsig, outp[0]);
 #endif
 
@@ -193,9 +193,9 @@ int TRANS::run()
       }
 
       outp += outputchans;
-      cursamp++;
+	  increment();
 
-      counter += increment;         // keeps track of interp pointer
+      counter += _increment;         // keeps track of interp pointer
       if (counter - (double) incount >= -0.5)
          getframe = true;
    }

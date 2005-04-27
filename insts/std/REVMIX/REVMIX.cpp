@@ -108,7 +108,7 @@ int REVMIX::run()
          update(p, nargs);
          amp = p[3];
          if (amparray)
-            amp *= tablei(cursamp, amparray, amptabs);
+            amp *= tablei(currentFrame(), amparray, amptabs);
          pctleft = nargs > 5 ? p[5] : 0.5;         // default is .5
          branch = skip;
       }
@@ -122,7 +122,7 @@ int REVMIX::run()
       }
 
       rtaddout(out);
-      cursamp++;
+      increment();
    }
    rtinrepos(this, -framesToRun(), SEEK_CUR);
 

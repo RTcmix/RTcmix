@@ -166,7 +166,7 @@ int RVB::run()
 			double rvbPair[2];
 			rmPair[0] = globalReverbInput[0][n];
 			rmPair[1] = globalReverbInput[1][n];
-			doRun(rmPair, rvbPair, cursamp + n);
+			doRun(rmPair, rvbPair, currentFrame() + n);
 			rvbsig[0][n] = rvbPair[0] * m_amp;
 			rvbsig[1][n] = rvbPair[1] * m_amp;
 		}

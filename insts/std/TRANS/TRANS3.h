@@ -4,7 +4,7 @@
 class TRANS3 : public Instrument {
    int    incount, inframe, skip, inchan, get_frame;
    int    in_frames_left;
-   double increment, counter;
+   double _increment, counter;
    float  amp, pctleft;
    float  newestsig, newsig, oldsig, oldersig;
    double *amptable;
