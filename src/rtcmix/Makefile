@@ -11,7 +11,6 @@ getsample.c \
 infile.c \
 io.c \
 load_utils.c \
-loader.c \
 merror.c \
 message.c \
 minc_functions.c \
@@ -61,6 +60,7 @@ dispatch.cpp \
 filter.cpp \
 Instrument.cpp \
 intraverse.cpp \
+loader.cpp \
 lfo.cpp \
 minc_info.cpp \
 DataFile.cpp \
@@ -183,8 +183,8 @@ $(SNDLIB):
 $(AUDIOLIB):
 	(cd ../audio; $(MAKE) $(MFLAGS) all;)
 
-loader.o: loader.c
-	$(CC) $(CFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c loader.c
+loader.o: loader.cpp
+	$(CXX) $(CFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c loader.cpp
 
 connection.o: connection.cpp
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c connection.cpp

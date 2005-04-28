@@ -5,21 +5,20 @@
 #include <ugens.h>
 #include <Option.h>
 
-#include "load_utils.h"
+#include "DynamicLib.h"
 
 typedef void (*ProfileFun)();
+extern "C" double m_load(float *, int, double *);
 
 /* Assemble path to the shared library, and pass back as <dsoPath>. */
 static int
 get_dso_path(double pfield, char dsoPath[])
 {
     char *str;
-    char *directory = get_dsopath_option();
-    if (strlen(directory) == 0)
 #ifdef SHAREDLIBDIR
-        directory = SHAREDLIBDIR;
+    const char *directory = SHAREDLIBDIR;
 #else
-        directory = "/musr/lib";   /* nobody uses this anymore */
+    const char *directory = "/musr/lib";
 #endif
 
     /* cast double to string pointer */
@@ -27,6 +26,7 @@ get_dso_path(double pfield, char dsoPath[])
 
     if (!str || strlen(str) == 0) {
 		die("load", "Bad argument for p[0]!");
+		return -1;
     }
     /* if name contains a '/', assume it is a full or relative path */
     if (strchr(str, '/'))
@@ -45,16 +45,19 @@ double m_load(float *p, int n_args, double *pp)
 {
     char dsoPath[1024];
     int profileLoaded;
-    void *handle;
-    ProfileFun profileFun;
+    DynamicLib theDSO;
+    ProfileFun profileFun = NULL;
 
-    get_dso_path(pp[0], dsoPath);
+    if (get_dso_path(pp[0], dsoPath) != 0)
+		return 0;
 
-    handle = find_dso(dsoPath);
-
-    if (!handle) {
+    if (theDSO.load(dsoPath) != 0) {
+#ifdef linux
+		warn("load", theDSO.error());
+#else
 		warn("load", "Unable to dynamically load '%s': %s",
-			 dsoPath, get_dso_error());
+			 dsoPath, theDSO.error());
+#endif
 		return 0;
     }
 
@@ -62,12 +65,11 @@ double m_load(float *p, int n_args, double *pp)
 
     profileLoaded = 0;
 
-    profileFun = (ProfileFun) find_symbol(handle, "profile");
-    if (profileFun) {
-	profileLoaded++;
-	(*profileFun)();
+    if (theDSO.loadFunction(&profileFun, "profile") == 0) {
+      profileLoaded++;
+      (*profileFun)();
 #ifdef DBUG
-	printf("Loaded standard profile\n");
+      printf("Loaded standard profile\n");
 #endif
     }
 
@@ -76,18 +78,17 @@ double m_load(float *p, int n_args, double *pp)
      * unmangled symbol name due to its extern "C" decl in rt.h.
      */
 
-     profileFun = (ProfileFun) find_symbol(handle, "rtprofile");
-     if (profileFun) {
- 	profileLoaded += 2; 
- 	(*profileFun)(); 
+	if (theDSO.loadFunction(&profileFun, "rtprofile") == 0) {
+      profileLoaded += 2; 
+      (*profileFun)(); 
 #ifdef DBUG
- 	printf("Loaded RT profile\n"); 
+      printf("Loaded RT profile\n"); 
 #endif
      } 
 
     if (!profileLoaded) {
 		warn("load", "Unable to find a profile routine in DSO '%s'", dsoPath);
-		unload_dso(handle);
+		theDSO.unload();
 		return 0;
     }
 
