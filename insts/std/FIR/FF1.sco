@@ -13,10 +13,10 @@
 
 rtsetparams(44100, 1)
 load("FIR")
-rtinput("/snd/pablo1.snd")
+rtinput("../../../snd/nucular.wav")
 
 dur = DUR()
-env = maketable("curve", 1000, 0,0,2, 2,1,-4, dur,0)
+env = maketable("curve", 1000, 0,0,2, dur/4,1,-4, dur,0);
 
 FIR(0, 0, dur, env * 0.05,
 32, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9,
