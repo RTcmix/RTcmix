@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2005-04-28  Douglas Scott  <netdscott at netscape.net>
+
+	* Added 'include' feature to Minc parser.  
+	* Updated loader functions to c++.
+
 2005-04-27  Douglas Scott  <netdscott at netscape.net>
 
 	* Cleaned up several instruments to remove direct use of base class member.
