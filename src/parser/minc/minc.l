@@ -3,12 +3,17 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 %START INIT IGNORE COM CPCOM
+%x INCLUDE
 %{
 #include "y.tab.h"
 #define YY_ALWAYS_INTERACTIVE 1
 static int comments = 0;
 static int cpcomments = 0;
 extern void yyerror(char *);
+/* To allow includes of subfiles */
+#define MAX_INCLUDE_DEPTH 10
+YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH];
+int include_stack_ptr = 0;
 %}
 
 let   [a-zA-Z]
@@ -65,6 +70,37 @@ num   {dig}+
 <INIT>" "|"\t"       ;
 <INIT>{let}({let}|{dig}|"#"|"_"|".")*   return TOK_IDENT;
 <INIT>.                 yyerror("invalid character");
+^include		  		{ BEGIN INCLUDE; }
 .|"\n"                  { BEGIN INIT; unput(yytext[0]); }
+<INCLUDE>[ \t]*      /* eat the whitespace */
+<INCLUDE>[^ \t\n]+  { /* got the include file name */
+			if (include_stack_ptr >= MAX_INCLUDE_DEPTH)
+			{
+				yyerror( "Includes nested too deeply");
+				exit(1);
+			}
+			include_stack[include_stack_ptr++] = YY_CURRENT_BUFFER;
+			yyin = fopen( yytext, "r" );
+			if (!yyin)
+			{
+				char msg[1024];
+				snprintf(msg, 1024, "Unable to open include file \"%s\"",
+						 yytext);
+				yyerror(msg);
+				exit(1);
+			}
+			yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
+			BEGIN INIT;
+		}
+
+<<EOF>> {	if (--include_stack_ptr < 0)
+			{
+				yyterminate();
+			}
+			else {
+				yy_delete_buffer(YY_CURRENT_BUFFER);
+				yy_switch_to_buffer(include_stack[include_stack_ptr]);
+			}
+		} 
 %%
 
