@@ -23,7 +23,7 @@ endif
 ifeq ($(ARCH),SGI)
 OBJECTS += SGIAudioDevice.o
 endif
-ifeq ($(JACK), TRUE)
+ifeq ($(JACK_SUPPORT), TRUE)
 OBJECTS += JackAudioDevice.o
 endif
 
@@ -41,6 +41,9 @@ $(AUDIOLIB):	$(OBJECTS)
 
 .cpp.o:
 	$(CXX) $(CXXFLAGS) $(SOUND_DRIVER) -c $< -o $@
+
+JackAudioDevice.o:
+	$(CXX) $(CXXFLAGS) `pkg-config --cflags jack` $(SOUND_DRIVER) -c $< -o $@
 
 depend:
 ifeq ($(ARCH),LINUX)
