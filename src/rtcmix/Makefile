@@ -124,6 +124,10 @@ LIBMINC = ../parser/minc/libminc.a
 AUDIOLIB = ../audio/librtaudio.a
 SNDLIB = ../sndlib/sndlib.a
 
+ifeq ($(JACK_SUPPORT), TRUE)
+   AUDIOLIB += `pkg-config --libs jack`
+endif
+
 LIBS = $(AUDIOLIB) $(SNDLIB) $(LIBCONF)
 
 PROGS = MIX
