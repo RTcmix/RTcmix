@@ -161,6 +161,7 @@ distclean: cleanall
 
 configure: configure.ac
 	autoconf
+	aclocal
 
 cleanac:
 	@$(RM) -r autom4te.cache config.log config.status config.cache \
