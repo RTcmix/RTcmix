@@ -14,6 +14,9 @@ AC_CONFIG_SRCDIR(src/rtcmix/main.cpp)
 CMIXDIR=`pwd`
 AC_SUBST(CMIXDIR)
 
+# pay attention to our aclocal.m4 (for PKG_CHECK_MODULES, etc.)
+AC_CONFIG_MACRO_DIR("$CMIXDIR")
+
 # Determine host ---------------------------------------------------------------
 # NB: This requires that we distribute install-sh, config.sub and config.guess.
 AC_CANONICAL_HOST
@@ -105,6 +108,15 @@ AC_ARG_WITH(netplay, AC_HELP_STRING([--with-netplay],
    fi])
 AC_SUBST(NPLAY_SUPPORT)
 
+# JACK options
+JACK_SUPPORT=FALSE                        # default
+AC_ARG_WITH(jack, AC_HELP_STRING([--with-jack],
+   [support JACK]),
+   [if test "$withval" != "no"; then
+      JACK_SUPPORT=TRUE
+   fi])
+AC_SUBST(JACK_SUPPORT)
+
 #AC_SUBST(WITH_VAL, "$withval")    # for debugging this script
 
 
@@ -161,6 +173,10 @@ if test "$AUDIODRIVER" = "ALSA"; then
    fi
 fi
 
+# JACK
+if test "$JACK_SUPPORT" = "TRUE"; then
+   PKG_CHECK_MODULES(JACK,jack)
+fi
 
 # Write output files -----------------------------------------------------------
 #AC_CONFIG_HEADER(config.h)   # we don't need this yet
