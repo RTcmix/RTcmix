@@ -24,6 +24,9 @@
 #ifdef SGI
 #include "SGIAudioDevice.h"
 #endif
+#ifdef JACK
+#include "JackAudioDevice.h"
+#endif
 
 #include "AudioIODevice.h"
 
@@ -53,6 +56,9 @@ static const AudioDevEntry s_AudioDevEntries[] = {
 #endif
 #ifdef SGI
 	{ &SGIAudioDevice::recognize, &SGIAudioDevice::create },
+#endif
+#ifdef JACK
+	{ &JackAudioDevice::recognize, &JackAudioDevice::create },
 #endif
 	{ NULL, NULL }
 };

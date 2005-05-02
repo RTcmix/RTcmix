@@ -23,6 +23,9 @@ endif
 ifeq ($(ARCH),SGI)
 OBJECTS += SGIAudioDevice.o
 endif
+ifeq ($(JACK), TRUE)
+OBJECTS += JackAudioDevice.o
+endif
 
 SNDLIB = ../sndlib/sndlib.a
 
