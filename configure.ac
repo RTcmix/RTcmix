@@ -55,16 +55,19 @@ AC_SUBST(ARCH)
 
 # Audio driver options
 AUDIODRIVER=AUTO                          # default
+WITH_ALSA="false"                         # just for summary display below
 AC_ARG_WITH(alsa, AC_HELP_STRING([--with-alsa],
    [use ALSA audio driver]),
    [if test "$withval" != "no"; then
       AUDIODRIVER=ALSA              # this is ignored on irrelevant platforms
+      WITH_ALSA="true"
    fi])
 AC_SUBST(AUDIODRIVER)
 
 # Perl options
 PERL_SUPPORT=FALSE                        # disable by default
 PERL=perl                                 # default perl name
+WITH_PERL="false"                         # just for summary display below
 AC_ARG_WITH(perl, AC_HELP_STRING([--with-perl=PATH],
    [build Perl-enabled RTcmix (PCMIX) (PATH optional)]),
    [if test "$withval" != "no"; then
@@ -72,6 +75,7 @@ AC_ARG_WITH(perl, AC_HELP_STRING([--with-perl=PATH],
          PERL="$withval"                  # the path to perl
       fi
       PERL_SUPPORT=TRUE
+      WITH_PERL="true"
    fi])
 AC_SUBST(PERL_SUPPORT)
 AC_SUBST(PERL)
@@ -79,6 +83,7 @@ AC_SUBST(PERL)
 # Python options
 PYTHON_SUPPORT=FALSE                      # disable by default
 PYTHON=python                             # default python name
+WITH_PYTHON="false"                       # just for summary display below
 AC_ARG_WITH(python, AC_HELP_STRING([--with-python=PATH],
    [build Python-enabled RTcmix (PYCMIX) (PATH optional)]),
    [if test "$withval" != "no"; then
@@ -86,6 +91,7 @@ AC_ARG_WITH(python, AC_HELP_STRING([--with-python=PATH],
          PYTHON="$withval"                # the path to python
       fi
       PYTHON_SUPPORT=TRUE
+      WITH_PYTHON="true"
    fi])
 AC_SUBST(PYTHON_SUPPORT)
 AC_SUBST(PYTHON)
@@ -101,19 +107,23 @@ AC_SUBST(HTMLDESTDIR)
 
 # NetPlay options
 NPLAY_SUPPORT=FALSE                       # default
+WITH_NPLAY="false"                        # just for summary display below
 AC_ARG_WITH(netplay, AC_HELP_STRING([--with-netplay],
    [support NetPlay]),
    [if test "$withval" != "no"; then
       NPLAY_SUPPORT=TRUE
+      WITH_NPLAY="true"
    fi])
 AC_SUBST(NPLAY_SUPPORT)
 
 # JACK options
 JACK_SUPPORT=FALSE                        # default
+WITH_JACK="false"                         # just for summary display below
 AC_ARG_WITH(jack, AC_HELP_STRING([--with-jack],
    [support JACK]),
    [if test "$withval" != "no"; then
       JACK_SUPPORT=TRUE
+      WITH_JACK="true"
    fi])
 AC_SUBST(JACK_SUPPORT)
 
@@ -169,6 +179,7 @@ if test "$AUDIODRIVER" = "ALSA"; then
       if test "$alsa_ok" != "yes"; then
          AC_MSG_WARN([ALSA version must be >= 0.9; using OSS instead of ALSA])
          AUDIODRIVER=OSS
+         WITH_ALSA="false"
       fi
    fi
 fi
@@ -183,4 +194,14 @@ fi
 AC_CONFIG_FILES(makefile.conf)
 AC_CONFIG_FILES(defs.conf)
 AC_OUTPUT
+
+# Output summary message
+echo
+echo "Summary..."
+echo "  " Build with Perl support............................... : $WITH_PERL
+echo "  " Build with Python support............................. : $WITH_PYTHON
+echo "  " Build with ALSA support............................... : $WITH_ALSA
+echo "  " Build with JACK support............................... : $WITH_JACK
+echo "  " Build with NetPlay support............................ : $WITH_NPLAY
+echo
 
