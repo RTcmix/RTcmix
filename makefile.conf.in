@@ -118,6 +118,9 @@ INCLUDES = -I. -I$(CMIXDIR)/include
 ifeq ($(NPLAY_SUPPORT), TRUE)
 CMIX_FLAGS += -DNETAUDIO
 endif
+ifeq ($(JACK_SUPPORT), TRUE)
+CMIX_FLAGS += -DJACK
+endif
 
 CFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
 CXXFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
@@ -147,6 +150,10 @@ GENLIB =
 ifeq ($(ARCH),LINUX)
   ifeq ($(AUDIODRIVER),ALSA)
     SYS_LDFLAGS = -lasound -lpthread -lm -ldl #-lefence
+    ifeq ($(JACK_SUPPORT), TRUE)
+       SYS_LDFLAGS = `pkg-config --libs jack`
+       CXXFLAGS = `pkg-config --cflags jack`
+    endif
   else
     SYS_LDFLAGS = -lpthread -lm -ldl #-lefence
   endif
@@ -157,6 +164,10 @@ ifeq ($(ARCH),LINUX)
 endif
 ifeq ($(ARCH),MACOSX)
   SYS_LDFLAGS = -framework CoreAudio
+  ifeq ($(JACK_SUPPORT), TRUE)
+    SYS_LDFLAGS = `pkg-config --libs jack`
+    CXXFLAGS = `pkg-config --cflags jack`
+  endif
   DSO_LDFLAGS = $(SYS_LDFLAGS)
   SHARED_LDFLAGS = -bundle -flat_namespace -undefined suppress
   DYNAMIC_LDFLAGS = -flat_namespace -undefined suppress -dynamiclib -install_name $(LIBDIR)/$@
