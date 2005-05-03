@@ -14,8 +14,6 @@ AC_CONFIG_SRCDIR(src/rtcmix/main.cpp)
 CMIXDIR=`pwd`
 AC_SUBST(CMIXDIR)
 
-# pay attention to our aclocal.m4 (for PKG_CHECK_MODULES, etc.)
-AC_CONFIG_MACRO_DIR("$CMIXDIR")
 
 # Determine host ---------------------------------------------------------------
 # NB: This requires that we distribute install-sh, config.sub and config.guess.
