@@ -160,8 +160,8 @@ distclean: cleanall
 ####################################################### for maintainers only ###
 
 configure: configure.ac
-	autoconf
 	aclocal
+	autoconf
 
 cleanac:
 	@$(RM) -r autom4te.cache config.log config.status config.cache \
