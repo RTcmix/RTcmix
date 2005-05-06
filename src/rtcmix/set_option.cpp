@@ -105,10 +105,10 @@ static int _num_params = sizeof(_param_list) / sizeof(Param);
 static int _str_to_bool(const char *str, bool &val)
 {
 	if (strcasecmp(str, "yes") == 0 || strcasecmp(str, "true") == 0
-			|| strcasecmp(str, "on") == 0)
+			|| strcasecmp(str, "on") == 0 || strcmp(str, "1"))
 		val = true;
 	else if (strcasecmp(str, "no") == 0 || strcasecmp(str, "false") == 0
-			|| strcasecmp(str, "off") == 0)
+			|| strcasecmp(str, "off") == 0 || strcmp(str, "0"))
 		val = false;
 	else {
 		val = false;
