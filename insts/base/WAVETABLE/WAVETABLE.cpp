@@ -84,11 +84,15 @@ int WAVETABLE::init(double p[], int n_args)
 		tableset(SR, dur, alen, amptabs);
 	}
 
+	int totalSamps = nSamps();
+
 	skip = (int) (SR / (float) resetval);
 	
 #ifdef USE_AMP_INTERP
 	if (skip < 1)
 		skip = 1;
+	else if (skip > totalSamps)
+		skip = totalSamps;
 
 	// Handle case where initial amp value is not zero
 	
@@ -96,7 +100,7 @@ int WAVETABLE::init(double p[], int n_args)
 		amp = p[2];
 	}
 #endif
-	return nSamps();
+	return totalSamps;
 }
 
 void WAVETABLE::doupdate()
