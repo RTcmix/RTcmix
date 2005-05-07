@@ -57,7 +57,9 @@ void DUMP::doupdate()
 	if (p[2] != amp) {
 		amp = p[2];
 
-		advise("DUMP", "%f", amp);
+		// Print regardless of global print flag state, so we can debug 
+		// problems caused by argument printing invoking PField::doubleValue.
+		printf("DUMP (frame=%d):  amp=%f\n", currentFrame(), amp);
 	}
 }
 
