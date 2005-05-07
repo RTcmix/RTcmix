@@ -24,6 +24,7 @@ void flush_all_underflows_to_zero()
 
 #include <stdio.h>
 #include <signal.h>
+#include <unistd.h>
 
 void sigfpe_handler(int sig)
 {
