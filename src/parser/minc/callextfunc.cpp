@@ -56,7 +56,8 @@ call_external_function(const char *funcname, const MincListElem arglist[],
 			}
 			break;
 		default:
-			minc_die("call_external_function: invalid argument type");
+			minc_die("call_external_function: %s(): invalid argument type",
+					 funcname);
 			break;
 		}
 	}
