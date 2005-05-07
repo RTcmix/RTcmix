@@ -16,12 +16,19 @@ inline int min(int x, int y) { return (x < y) ? x : y; }
 
 // PField
 
+#ifdef JGHACK
+PField::PField() : _fastTable(NULL), _fastTableLen(0)
+{
+	this;
+}
+#else // !JGHACK
 #ifdef DEBUG
 PField::PField()
 {
 	this;
 }
 #endif
+#endif // !JGHACK
 
 PField::~PField()
 {
@@ -263,6 +270,9 @@ TablePField::TablePField(double *tableArray,
 						 TablePField::InterpFunction ifun)
 	: _table(tableArray), _len(length), _interpolator(ifun)
 {
+#ifdef JGHACK
+	setFastTable(_table, _len);
+#endif
 }
 
 TablePField::~TablePField()
@@ -526,7 +536,8 @@ double InvertPField::doubleValue(double didx) const
 
 double InvertPField::doubleValue(int idx) const
 {
-	double frac = (double) idx / (values() - 1);
+	int endidx = values() - 1;
+	double frac = (endidx == 0) ? 0.0 : (double) idx / endidx;
 	const double center = _centerPField->doubleValue(frac);
 	const double diff = field()->doubleValue(idx) - center;
 	return center - diff;
@@ -572,7 +583,8 @@ double RangePField::doubleValue(double didx) const
 
 double RangePField::doubleValue(int idx) const
 {
-	double frac = (double) idx / (values() - 1);
+	int endidx = values() - 1;
+	double frac = (endidx == 0) ? 0.0 : (double) idx / endidx;
 	const double min = _minPField->doubleValue(frac);
 	const double max = _maxPField->doubleValue(frac);
 	const double normval = field()->doubleValue(idx);
@@ -609,7 +621,8 @@ double SmoothPField::doubleValue(double didx) const
 
 double SmoothPField::doubleValue(int idx) const
 {
-	double frac = (double) idx / (values() - 1);
+	int endidx = values() - 1;
+	double frac = (endidx == 0) ? 0.0 : (double) idx / endidx;
 	updateCutoffFreq(frac);
 	return _filter->next(field()->doubleValue(idx));
 }
@@ -646,7 +659,8 @@ double QuantizePField::doubleValue(double didx) const
 
 double QuantizePField::doubleValue(int idx) const
 {
-	double frac = (double) idx / (values() - 1);
+	int endidx = values() - 1;
+	double frac = (endidx == 0) ? 0.0 : (double) idx / endidx;
 	double quantum = _quantumPField->doubleValue(frac);
 	return quantizeValue(field()->doubleValue(idx), quantum);
 }
@@ -685,7 +699,8 @@ double ClipPField::doubleValue(double didx) const
 double ClipPField::doubleValue(int idx) const
 {
 	double val = field()->doubleValue(idx);
-	double frac = (double) idx / (values() - 1);
+	int endidx = values() - 1;
+	double frac = (endidx == 0) ? 0.0 : (double) idx / endidx;
 	const double min = _minPField->doubleValue(frac);
 	if (val < min)
 		return min;
@@ -753,7 +768,8 @@ double ConstrainPField::doubleValue(double didx) const
 
 double ConstrainPField::doubleValue(int idx) const
 {
-	double frac = (double) idx / (values() - 1);
+	int endidx = values() - 1;
+	double frac = (endidx == 0) ? 0.0 : (double) idx / endidx;
 	return _constrainer->next(field()->doubleValue(idx), _strengthPField->doubleValue(frac));
 }
 
