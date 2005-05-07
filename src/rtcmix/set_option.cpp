@@ -362,11 +362,23 @@ static int _parse_arg(const char *arg, const bool rtsetparams_called)
 //--------------------------------------------------------------- set_option ---
 double RTcmix::set_option(float *p, int nargs, double pp[])
 {
+	// Because options can be set in any order, we need to check certain state
+	// at the starting point and compare it to the finished state to determine if
+	// a legal change has been made.
+	
+	bool playWasOn = Option::play();
+	
 	for (int i = 0; i < nargs; i++) {
 		char *arg = (char *) ((int) pp[i]);		// cast pfield to string
 
-		if (_parse_arg(arg, rtsetparams_called) == -1)
+		if (_parse_arg(arg, rtsetparams_was_called()) == -1)
 			return -1.0;
+	}
+	
+	// Now we check the finished state
+	
+	if (rtsetparams_was_called() && playWasOn && !Option::play()) {
+		return die("set_option", "Turn off audio/play BEFORE calling rtsetparams.");
 	}
 	return 0.0;
 }
