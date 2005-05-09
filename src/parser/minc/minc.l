@@ -68,6 +68,7 @@ num   {dig}+
 <INIT>"("|")"           return (*yytext);
 <INIT>"\n"        ;
 <INIT>" "|"\t"       ;
+<INIT>^include		  	{ BEGIN INCLUDE; }
 <INIT>{let}({let}|{dig}|"#"|"_"|".")*   return TOK_IDENT;
 <INIT>.                 yyerror("invalid character");
 ^include		  		{ BEGIN INCLUDE; }
