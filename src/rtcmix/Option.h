@@ -41,6 +41,7 @@
 #define kOptionCheckPeaks       "check_peaks"
 #define kOptionExitOnError      "exit_on_error"
 #define kOptionAutoLoad         "auto_load"
+#define kOptionFastUpdate       "fast_update"
 
 // double options
 #define kOptionBufferFrames     "buffer_frames"
@@ -101,6 +102,10 @@ public:
 	static bool autoLoad(const bool setIt) { _autoLoad = setIt;
 													return _autoLoad; }
 
+	static bool fastUpdate() { return _fastUpdate; }
+	static bool fastUpdate(const bool setIt) { _fastUpdate = setIt;
+													return _fastUpdate; }
+
 	static double bufferFrames() { return _bufferFrames; }
 	static double bufferFrames(const double frames) { _bufferFrames = frames;
 													return _bufferFrames; }
@@ -149,6 +154,7 @@ private:
 	static bool _checkPeaks;
 	static bool _exitOnError;
 	static bool _autoLoad;
+	static bool _fastUpdate;
 
 	static double _bufferFrames;
 	static int _bufferCount;

@@ -25,6 +25,7 @@ bool Option::_reportClipping = true;
 bool Option::_checkPeaks = true;
 bool Option::_exitOnError = false;	// we override this in main.cpp
 bool Option::_autoLoad = false;
+bool Option::_fastUpdate = false;
 
 double Option::_bufferFrames = DEFAULT_BUFFER_FRAMES;
 int Option::_bufferCount = DEFAULT_BUFFER_COUNT;
@@ -93,13 +94,6 @@ int Option::readConfigFile(const char *fileName)
 
 	bool bval;
 
-	key = kOptionAutoLoad;
-	result = conf.getValue(key, bval);
-	if (result == kConfigNoErr)
-		autoLoad(bval);
-	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
-
 	key = kOptionAudio;
 	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
@@ -153,6 +147,20 @@ int Option::readConfigFile(const char *fileName)
 	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
 		exitOnError(bval);
+	else if (result != kConfigNoValueForKey)
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+
+	key = kOptionAutoLoad;
+	result = conf.getValue(key, bval);
+	if (result == kConfigNoErr)
+		autoLoad(bval);
+	else if (result != kConfigNoValueForKey)
+		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+
+	key = kOptionFastUpdate;
+	result = conf.getValue(key, bval);
+	if (result == kConfigNoErr)
+		fastUpdate(bval);
 	else if (result != kConfigNoValueForKey)
 		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
 
@@ -252,8 +260,6 @@ int Option::writeConfigFile(const char *fileName)
 
 	// write bool options
 	fprintf(stream, "\n# Boolean options: key = [true | false]\n");
-	fprintf(stream, "%s = %s\n", kOptionAutoLoad, 
-										autoLoad() ? "true" : "false");
 	fprintf(stream, "%s = %s\n", kOptionAudio, audio() ? "true" : "false");
 	fprintf(stream, "%s = %s\n", kOptionPlay, play() ? "true" : "false");
 	fprintf(stream, "%s = %s\n", kOptionRecord, record() ? "true" : "false");
@@ -264,6 +270,10 @@ int Option::writeConfigFile(const char *fileName)
 	fprintf(stream, "%s = %s\n", kOptionCheckPeaks,
 										checkPeaks() ? "true" : "false");
 	// intentionally leaving out exitOnError
+	fprintf(stream, "%s = %s\n", kOptionAutoLoad, 
+										autoLoad() ? "true" : "false");
+	fprintf(stream, "%s = %s\n", kOptionFastUpdate, 
+										fastUpdate() ? "true" : "false");
 
 	// write double options
 	fprintf(stream, "\n# Number options: key = value\n");
@@ -396,6 +406,7 @@ void Option::dump()
 	cout << kOptionCheckPeaks << ": " << _checkPeaks << endl;
 	cout << kOptionExitOnError << ": " << _exitOnError << endl;
 	cout << kOptionAutoLoad << ": " << _autoLoad << endl;
+	cout << kOptionFastUpdate << ": " << _fastUpdate << endl;
 	cout << kOptionBufferFrames << ": " << _bufferFrames << endl;
 	cout << kOptionBufferCount << ": " << _bufferCount << endl;
 	cout << kOptionDevice << ": " << _device << endl;
@@ -440,6 +451,10 @@ int get_bool_option(const char *option_name)
 		return (int) Option::record();
 	else if (!strcmp(option_name, kOptionExitOnError))
 		return (int) Option::exitOnError();
+	else if (!strcmp(option_name, kOptionAutoLoad))
+		return (int) Option::autoLoad();
+	else if (!strcmp(option_name, kOptionFastUpdate))
+		return (int) Option::fastUpdate();
 
 	assert(0 && "unsupported option name");		// program error
 	return 0;
@@ -463,6 +478,10 @@ void set_bool_option(const char *option_name, int value)
 		Option::record((bool) value);
 	else if (!strcmp(option_name, kOptionExitOnError))
 		Option::exitOnError((bool) value);
+	else if (!strcmp(option_name, kOptionAutoLoad))
+		Option::autoLoad((bool) value);
+	else if (!strcmp(option_name, kOptionFastUpdate))
+		Option::fastUpdate((bool) value);
 	else
 		assert(0 && "unsupported option name");
 }
