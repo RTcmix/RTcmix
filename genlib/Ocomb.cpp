@@ -54,6 +54,13 @@ void Ocomb::setReverbTime(float reverbTime)
 	_gain = pow(0.001, (_delsamps / _sr) / reverbTime);
 }
 
+float Ocomb::next(float input)
+{
+	float tmp = input + (_gain * _delay->last());
+	_lastout = _delay->next(tmp);
+	return _lastout;
+}
+
 float Ocomb::next(float input, float delaySamps)
 {
 	if (delaySamps != _delsamps) {
