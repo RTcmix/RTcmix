@@ -147,8 +147,8 @@ _makerandom_usage()
 {
 	die("makerandom",
 		"\n   usage: rand = makerandom(type, freq, min, max[, seed])"
-		"\n          where <type> is \"linear\", \"low\", \"high\", "
-						"\"triangle\", \"gaussian\", \"cauchy\""
+		"\n          where <type> is \"linear\", \"low\", \"high\","
+		"\n          \"triangle\", \"gaussian\" or \"cauchy\""
 		"\nOR"
 		"\n   usage: rand = makerandom(\"prob\", freq, min, max, mid, "
 						"tight[, seed])"
@@ -178,11 +178,8 @@ makerandom(const Arg args[], const int nargs)
 			type = kCauchyRandom;
 		else if (args[0] == "prob")
 			type = kProbRandom;
-		else {
-			die("makerandom", "Unsupported distribution type \"%s\".",
-						  (const char *) args[0]);
-			return NULL;
-		}
+		else
+			return _makerandom_usage();
 	}
 	else
 		return _makerandom_usage();

@@ -1263,9 +1263,7 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
 		else if (args[0] == "prob")
 			type = kProbRandom;
 		else
-			return die("maketable (random)",
-						  "Unsupported distribution type \"%s\".",
-						  (const char *) args[0]);
+			return _random_table_usage();
 	}
 	else if (args[0].isType(DoubleType)) {
 		// NB: enum vals in Random.h must match makegen ones for backward compat.
