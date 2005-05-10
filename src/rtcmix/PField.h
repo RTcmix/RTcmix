@@ -347,6 +347,7 @@ protected:
 private:
 	void updateDelayTime(double percent = 0.0) const;
 	double _krate;
+	mutable double _curdeltime;
 	Odelayi *_delay;
 	PField *_deltimePField;
 };

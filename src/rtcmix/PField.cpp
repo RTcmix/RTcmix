@@ -620,10 +620,12 @@ double SmoothPField::doubleValue(int idx) const
 // DelayPField
 
 DelayPField::DelayPField(PField *innerPField, double krate, PField *deltimePField)
-	: PFieldWrapper(innerPField), _krate(krate), _deltimePField(deltimePField)
+	: PFieldWrapper(innerPField), _krate(krate), _curdeltime(-DBL_MAX),
+		_deltimePField(deltimePField)
 {
 	_deltimePField->ref();
 	_delay = new Odelayi((long) _krate);	// 1 second max by default (can grow)
+	_delay->fill(field()->doubleValue());
 	updateDelayTime();
 }
 
@@ -636,7 +638,10 @@ DelayPField::~DelayPField()
 void DelayPField::updateDelayTime(double percent) const
 {
 	const double deltime = _deltimePField->doubleValue(percent);
-	_delay->setdelay((deltime * _krate) + 0.5);
+	if (deltime != _curdeltime) {
+		_delay->setdelay((deltime * _krate) + 0.5);
+		_curdeltime = deltime;
+	}
 }
 
 double DelayPField::doubleValue(double didx) const
