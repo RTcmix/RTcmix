@@ -8,7 +8,11 @@
 #ifndef _denormals_
 #define _denormals_
 
+#if 0
 #define undenormalise(sample) if(((*(unsigned int*)&sample)&0x7f800000)==0) sample=0.0f
+#else
+#define undenormalise(sample)
+#endif
 
 #endif//_denormals_
 
