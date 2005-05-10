@@ -17,6 +17,7 @@ extern int resetval;		// declared in src/rtcmix/minc_functions.c
 
 #define CLIP_USAGE "filt = makefilter(pfield, \"clip\", min[, max])"
 #define CONSTRAIN_USAGE "filt = makefilter(pfield, \"constrain\", table, strength)"
+#define DELAY_USAGE "filt = makefilter(pfield, \"delay\", time)"
 #define FITRANGE_USAGE "filt = makefilter(pfield, \"fitrange\", min, max [, \"bipolar\"])"
 #define INVERT_USAGE "filt = makefilter(pfield, \"invert\" [, center])"
 #define MAP_USAGE "filt = makefilter(pfield, \"map\", transferTable[, inputMin, inputMax])"
@@ -31,6 +32,7 @@ extern int resetval;		// declared in src/rtcmix/minc_functions.c
 // index lower than caller's nargs), return the argument as a PField, creating
 // one if necessary for a constant double argument.  Return NULL if arg is not
 // already a PField or a constant double.
+
 static PField *_get_pfield(const Arg& arg)
 {
 	PField *pf = (PField *) arg;
@@ -74,6 +76,17 @@ _constrain_filter(PField *innerpf, const Arg args[], const int nargs)
 	if (strengthpf == NULL)
 		return _filter_usage(CONSTRAIN_USAGE);
 	return new ConstrainPField(innerpf, (TablePField *) tablepf, strengthpf);
+}
+
+static PField *
+_delay_filter(PField *innerpf, const Arg args[], const int nargs)
+{
+	if (nargs < 1)
+		return _filter_usage(DELAY_USAGE);
+	PField *deltimepf = _get_pfield(args[0]);
+	if (deltimepf == NULL)
+		return _filter_usage(DELAY_USAGE);
+	return new DelayPField(innerpf, resetval, deltimepf);
 }
 
 static PField *
@@ -169,6 +182,8 @@ static Handle _makefilter_usage()
 		"\nOR"
 		"\n   usage: " CONSTRAIN_USAGE
 		"\nOR"
+		"\n   usage: " DELAY_USAGE
+		"\nOR"
 		"\n   usage: " FITRANGE_USAGE
 		"\nOR"
 		"\n   usage: " INVERT_USAGE
@@ -197,6 +212,8 @@ Handle makefilter(const Arg args[], const int nargs)
 			filt = _clip_filter(innerpf, &args[2], nargs - 2);
 		else if (args[1] == "constrain")
 			filt = _constrain_filter(innerpf, &args[2], nargs - 2);
+		else if (args[1] == "delay")
+			filt = _delay_filter(innerpf, &args[2], nargs - 2);
 		else if (args[1] == "fitrange")
 			filt = _fitrange_filter(innerpf, &args[2], nargs - 2);
 		else if (args[1] == "invert")

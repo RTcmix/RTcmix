@@ -333,6 +333,24 @@ private:
 	PField *_lagPField;
 };
 
+// Class for delaying a control signal.
+
+class Odelayi;
+
+class DelayPField : public PFieldWrapper {
+public:
+	DelayPField(PField *innerPField, double krate, PField *deltimePField);
+	virtual double	doubleValue(double didx) const;
+	virtual double	doubleValue(int idx) const;
+protected:
+	virtual ~DelayPField();
+private:
+	void updateDelayTime(double percent = 0.0) const;
+	double _krate;
+	Odelayi *_delay;
+	PField *_deltimePField;
+};
+
 // Class for quantizing a control signal.
 
 class QuantizePField : public PFieldWrapper {

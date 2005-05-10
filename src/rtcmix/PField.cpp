@@ -16,19 +16,12 @@ inline int min(int x, int y) { return (x < y) ? x : y; }
 
 // PField
 
-#ifdef JGHACK
-PField::PField() : _fastTable(NULL), _fastTableLen(0)
-{
-	this;
-}
-#else // !JGHACK
 #ifdef DEBUG
 PField::PField()
 {
 	this;
 }
 #endif
-#endif // !JGHACK
 
 PField::~PField()
 {
@@ -270,9 +263,6 @@ TablePField::TablePField(double *tableArray,
 						 TablePField::InterpFunction ifun)
 	: _table(tableArray), _len(length), _interpolator(ifun)
 {
-#ifdef JGHACK
-	setFastTable(_table, _len);
-#endif
 }
 
 TablePField::~TablePField()
@@ -625,6 +615,42 @@ double SmoothPField::doubleValue(int idx) const
 	double frac = (endidx == 0) ? 0.0 : (double) idx / endidx;
 	updateCutoffFreq(frac);
 	return _filter->next(field()->doubleValue(idx));
+}
+
+// DelayPField
+
+DelayPField::DelayPField(PField *innerPField, double krate, PField *deltimePField)
+	: PFieldWrapper(innerPField), _krate(krate), _deltimePField(deltimePField)
+{
+	_deltimePField->ref();
+	_delay = new Odelayi((long) _krate);	// 1 second max by default (can grow)
+	updateDelayTime();
+}
+
+DelayPField::~DelayPField()
+{
+	delete _delay;
+	_deltimePField->unref();
+}
+
+void DelayPField::updateDelayTime(double percent) const
+{
+	const double deltime = _deltimePField->doubleValue(percent);
+	_delay->setdelay((deltime * _krate) + 0.5);
+}
+
+double DelayPField::doubleValue(double didx) const
+{
+	updateDelayTime(didx);
+	return _delay->next(field()->doubleValue(didx));
+}
+
+double DelayPField::doubleValue(int idx) const
+{
+	int endidx = values() - 1;
+	double frac = (endidx == 0) ? 0.0 : (double) idx / endidx;
+	updateDelayTime(frac);
+	return _delay->next(field()->doubleValue(idx));
 }
 
 // QuantizePField
