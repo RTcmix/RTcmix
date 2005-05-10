@@ -2,6 +2,9 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
+#ifndef _OPTION_H_
+#define _OPTION_H_ 1
+
 /* Class for storing all our run-time options.
 
    The class is static, containing only static members and methods.  To 
@@ -15,11 +18,52 @@
 
    You must call Option::init() early in main() so that some data members
    will be initialized.
+
+   ---
+
+   To add new options, you need to edit Option.cpp/h and set_option.cpp.
+   Please add your option after the existing ones of the same type (bool,
+   double or string), so that each block of changes has all the options
+   in the same order.  This makes it easier to find things.
+
+   1. Add a kOption* define below.  This is the key string that a user will
+      write in .rtcmixrc or in the set_option script call.  Please stick to
+      the naming conventions already established.
+
+   2. Add static accessor definitions for a bool, double or string option
+      below.  Note that (only) the string setter function must be declared
+      here and defined in Option.cpp (search for "String option setting
+      methods").
+
+   3. Add a private static member variable to hold the option state, below.
+
+   4. Initialize the static member variable at the top of Option.cpp.
+      Strings must be initialized instead in the init method, in Option.cpp.
+
+   5. Add code to Option::readConfigFile (Option.cpp) for your option.
+      Keep bool, double and string options separate, as they are now.
+
+   6. Add code to Option::writeConfigFile (Option.cpp) for your option.
+
+   7. Add a line to Option::dump() (Option.cpp).
+
+   8. If your option would need to be read/written from a C file, add it
+      to the appropriate get_* and set_* C functions at the bottom of 
+      Option.cpp.
+
+   9. Add a symbol to the ParamType enum at the top of set_option.cpp.
+      Please keep all items in set_option.cpp in the same order that
+      they appear in Option.cpp/h, for ease of maintenance.
+
+  10. Below this enum, add an entry to the _param_list array.
+
+  11. In set_option.cpp, write a case statement to match your enum symbol
+      in _set_key_value_option, using the _str_to_* functions for string
+      conversion.
+
+
                                   by John Gibson and Doug Scott, 6/27/04
 */
-
-#ifndef _OPTION_H_
-#define _OPTION_H_ 1
 
 #include <stdlib.h>
 #include <string.h>
@@ -173,8 +217,8 @@ private:
 extern "C" {
 #endif // __cplusplus
 
-// These are for C code that needs to query options.	See Option.h for the
-// supported option_name strings.
+// These are for C code that needs to query options.	See the top of this
+// file for the supported option_name strings.
 
 int get_print_option();
 char *get_dsopath_option();
