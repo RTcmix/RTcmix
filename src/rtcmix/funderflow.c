@@ -23,8 +23,8 @@ void flush_all_underflows_to_zero()
 #ifdef LINUX
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <signal.h>
-#include <unistd.h>
 
 void sigfpe_handler(int sig)
 {
