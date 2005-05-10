@@ -17,6 +17,7 @@ public:
 	Odelay(long defaultLength);
 	virtual ~Odelay();
 	void clear();
+	void fill(double val);
 
 	// --------------------------------------------------------------------------
 	// API 1: putsamp / getsamp

@@ -30,6 +30,13 @@ void Odelay::clear()
 	_lastout = 0.0;
 }
 
+void Odelay::fill(double val)
+{
+	for (long i = 0; i < _len; i++)
+		_dline[i] = val;
+	_lastout = val;
+}
+
 void Odelay::putsamp(float samp)
 {
 	_dline[_inpoint++] = samp;
