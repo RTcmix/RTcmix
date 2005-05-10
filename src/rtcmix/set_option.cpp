@@ -4,14 +4,8 @@
 */
 // The set_option function, called from a script, lets the user override
 // default options (and those stored in the .rtcmixrc file).  The options
-// are kept in the <options> object (see Option.h).
-//
-// To add new options...
-//
-// 1. add a symbol to the ParamType enum below,
-// 2. add an entry to the Param struct array, and
-// 3. write a case statement to match the enum symbol in _set_key_value_option,
-//    using the _str_to_* functions for string conversion.
+// are kept in the <options> object.  See Option.h for advice on how to add
+// new options.
 //
 // Please keep the items created in the steps above in the same order that they
 // appear in Option.h -- makes this file easier to maintain.
@@ -38,6 +32,7 @@ enum ParamType {
 	FULL_DUPLEX,
 	EXIT_ON_ERROR,
 	AUTO_LOAD,
+	FAST_UPDATE,
 	BUFFER_FRAMES,
 	BUFFER_COUNT,
 	DEVICE,
@@ -69,6 +64,7 @@ static Param _param_list[] = {
 	{ kOptionCheckPeaks, CHECK_PEAKS, false},
 	{ kOptionExitOnError, EXIT_ON_ERROR, false},
 	{ kOptionAutoLoad, AUTO_LOAD, false},
+	{ kOptionFastUpdate, FAST_UPDATE, false},
 
 	{ kOptionBufferFrames, BUFFER_FRAMES, false},
 	{ kOptionBufferCount, BUFFER_COUNT, false},
@@ -222,6 +218,13 @@ static int _set_key_value_option(const char *key, const char *sval,
 			status = _str_to_bool(sval, bval);
 			Option::autoLoad(bval);
 			break;
+		case FAST_UPDATE:
+			status = _str_to_bool(sval, bval);
+			Option::fastUpdate(bval);
+			if (bval)
+				warn("set_option", "With \"%s\" on, certain instruments run "
+					"faster at the expense of reduced capabilities.\n", key);
+			break;
 		case BUFFER_FRAMES:
 			status = _str_to_int(sval, ival);
 			if (status == 0) {
@@ -270,6 +273,7 @@ static int _set_key_value_option(const char *key, const char *sval,
 
 //-------------------------------------------------------- _set_value_option ---
 // This way of setting options is deprecated, in favor of the new key=value way.
+// Do not handle new options in this function; use _set_key_value_option.
 static int _set_value_option(const char *sval, const bool rtsetparams_called)
 {
 	int type = -1;
