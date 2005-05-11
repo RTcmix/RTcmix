@@ -18,16 +18,16 @@ space(dist_front,dist_right,dist_rear,dist_left,height,abs_fac,rvbtime)
 insk=0
 outsk=0
 dur=DUR(0);
-pre_amp=8
+pre_amp=120
 dist2sound=60
 angle_sound=90
 dist_mikes=5
 //dist_mikes=0.67	/* binaural */
-post_amp=2
 inchan=0
-MPLACE(insk,outsk+(256/44100),dur,pre_amp,dist2sound,angle_sound,dist_mikes,post_amp,inchan);
-MPLACE(insk,outsk,dur,pre_amp,dist2sound,angle_sound+180,dist_mikes,post_amp,inchan);
-MPLACE(insk,outsk+0.5,dur,pre_amp,dist2sound*1.3,angle_sound+270,dist_mikes,post_amp,inchan);
+
+MPLACE(outsk,insk,dur,pre_amp,dist2sound,angle_sound+180,dist_mikes,inchan);
+MPLACE(outsk+(256/44100),insk,dur,pre_amp,dist2sound,angle_sound,dist_mikes,inchan);
+MPLACE(outsk+0.5,insk,dur,pre_amp,dist2sound*1.3,angle_sound+270,dist_mikes,inchan);
 
 RVB(0, 0, dur+rvbtime+0.5, 1);
 
