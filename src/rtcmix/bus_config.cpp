@@ -576,6 +576,12 @@ RTcmix::get_bus_config(const char *inst_name)
 	   pthread_mutex_lock(&out_in_use_lock);
 	   OutInUse[i] = NO;
 	   pthread_mutex_unlock(&out_in_use_lock);
+	   // Added this initialization as well -- DS 5/2005
+	   CheckNode *t_node = new CheckNode;
+	   pthread_mutex_lock(&bus_in_config_lock);
+	   Bus_In_Config[i] = t_node;
+	   t_node->ref();
+	   pthread_mutex_unlock(&bus_in_config_lock);
 	 }
 	 Bus_Config_Status = YES;
    }
