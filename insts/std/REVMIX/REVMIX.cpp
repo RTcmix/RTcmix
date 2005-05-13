@@ -68,7 +68,7 @@ int REVMIX::init(double p[], int n_args)
 
    if (rtsetoutput(outskip, dur, this) == -1)
 		return DONT_SCHEDULE;
-   if (rtsetinput(dur, this) == -1)
+   if (rtsetinput(inskip, this) == -1)
 		return DONT_SCHEDULE;  // no input
 
    if (inchan >= inputChannels())
