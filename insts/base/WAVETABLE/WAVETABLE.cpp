@@ -21,11 +21,13 @@
 
                                                 rev for v4, JGG, 7/12/04
 */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
 #include <Instrument.h>
 #include <PField.h>
+#include <Option.h>	// fastUpdate
 #include "WAVETABLE.h"
 #include <rt.h>
 #include <rtdefs.h>
@@ -33,17 +35,53 @@
 #define AMP_GEN_SLOT     1
 #define WAVET_GEN_SLOT   2
 
-#define USE_AMP_INTERP	// DEFINE THIS TO GET NEW AMP INTERP
 
 WAVETABLE::WAVETABLE() : Instrument()
 {
-	ampinc = 0.0f;	// only used when USE_AMP_INTERP defined
+	ampinc = 0.0f;
 	branch = 0;
 }
 
 WAVETABLE::~WAVETABLE()
 {
 	delete osc;
+}
+
+// In fastUpdate mode, we skip doupdate() entirely, instead updating only amp,
+// and only from a table.  The table can be a makegen or a PField table.  PField
+// tables must be "flattened" using copytable if they are compound (e.g. passed
+// through a PField filter or multiplied by a constant).  We use p[ampindex] as
+// an amp multiplier, unless using a PField table, in which case there is no amp
+// multiplier -- the p[ampindex] value is the first table value.   -JGG
+
+void WAVETABLE::initamp(float dur, double p[], int ampindex, int ampgenslot)
+{
+	fastUpdate = Option::fastUpdate();
+	if (fastUpdate) {
+		// Prefer PField table, otherwise makegen
+		int tablen = 0;
+		amptable = (double *) getPFieldTable(ampindex, &tablen);
+		if (amptable)
+			ampmult = 1.0f;
+		else {
+			ampmult = p[ampindex];
+			amptable = floc(ampgenslot);
+			if (amptable)
+				tablen = fsize(ampgenslot);
+		}
+		if (amptable)
+			tableset(SR, dur, tablen, amptabs);
+		else
+			amp = ampmult;
+	}
+	else {
+		// NB: ampmult never used, first amp set in doupdate
+		amptable = floc(ampgenslot);
+		if (amptable) {
+			int tablen = fsize(ampgenslot);
+			tableset(SR, dur, tablen, amptabs);
+		}
+	}
 }
 
 int WAVETABLE::init(double p[], int n_args)
@@ -56,6 +94,12 @@ int WAVETABLE::init(double p[], int n_args)
 	if (outputChannels() > 2)
 		return die("WAVETABLE", "Can't handle more than 2 output channels.");
 
+	initamp(dur, p, 2, AMP_GEN_SLOT);
+
+	// Handle case where initial amp value is not zero (for ampinc computation).
+	if (p[2] != 0.0)
+		amp = p[2];
+
 	freqraw = p[3];
 	float freq;
 	if (freqraw < 15.0)
@@ -63,11 +107,12 @@ int WAVETABLE::init(double p[], int n_args)
 	else
 		freq = freqraw;
 
+	spread = p[4];
+
 	wavetable = NULL;
 	int tablelen = 0;
-	if (n_args > 5) {      // handle table coming in as optional p5 TablePField
+	if (n_args > 5)		// handle table coming in as optional p5 TablePField
 		wavetable = (double *) getPFieldTable(5, &tablelen);
-	}
 	if (wavetable == NULL) {
 		wavetable = floc(WAVET_GEN_SLOT);
 		if (wavetable == NULL)
@@ -75,31 +120,17 @@ int WAVETABLE::init(double p[], int n_args)
                     "an old-style gen function in slot %d.", WAVET_GEN_SLOT);
 		tablelen = fsize(WAVET_GEN_SLOT);
 	}
-
 	osc = new Ooscili(SR, freq, wavetable, tablelen);
-
-	amptable = floc(AMP_GEN_SLOT);
-	if (amptable) {
-		int alen = fsize(AMP_GEN_SLOT);
-		tableset(SR, dur, alen, amptabs);
-	}
 
 	int totalSamps = nSamps();
 
 	skip = (int) (SR / (float) resetval);
-	
-#ifdef USE_AMP_INTERP
+
 	if (skip < 1)
 		skip = 1;
 	else if (skip > totalSamps)
 		skip = totalSamps;
 
-	// Handle case where initial amp value is not zero
-	
-	if (p[2] != 0) {
-		amp = p[2];
-	}
-#endif
 	return totalSamps;
 }
 
@@ -108,22 +139,15 @@ void WAVETABLE::doupdate()
 	double p[5];
 	update(p, 5, 1 << 2 | 1 << 3 | 1 << 4);
 
-#ifdef USE_AMP_INTERP
 	float newamp = p[2];
 	if (amptable)
 		newamp *= table(currentFrame(), amptable, amptabs);
-		
-	if (newamp != amp) {
+
+	// Interpolate between successive amp values.
+	if (newamp != amp)
 		ampinc = (newamp - amp) / skip;
-	}
-	else {
+	else
 		ampinc = 0.0f;
-	}
-#else
-	amp = p[2];
-	if (amptable)
-		amp *= table(currentFrame(), amptable, amptabs);
-#endif
 
 	if (p[3] != freqraw) {
 		float freq;
@@ -140,18 +164,20 @@ void WAVETABLE::doupdate()
 
 int WAVETABLE::run()
 {
-	for (int i = 0; i < framesToRun(); i++) {
+	const int nframes = framesToRun();
+	for (int i = 0; i < nframes; i++) {
 		if (--branch <= 0) {
-			doupdate();
+			if (fastUpdate) {
+				if (amptable)
+					amp = ampmult * tablei(currentFrame(), amptable, amptabs);
+			}
+			else
+				doupdate();
 			branch = skip;
 		}
+		amp += ampinc;
 
 		float out[2];
-		
-#ifdef USE_AMP_INTERP
-		amp += ampinc;
-#endif
-
 		out[0] = osc->next() * amp;
 
 		if (outputChannels() == 2) {
