@@ -141,7 +141,7 @@ void WAVETABLE::doupdate()
 
 	float newamp = p[2];
 	if (amptable)
-		newamp *= table(currentFrame(), amptable, amptabs);
+		newamp *= tablei(currentFrame(), amptable, amptabs);
 
 	// Interpolate between successive amp values.
 	if (newamp != amp)
