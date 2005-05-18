@@ -64,7 +64,7 @@ int SCULPT::run()
 			si = freqtable[index] * (float)len/SR;
 			float overamp;
 			if (amptable)
-				overamp = table(cursamp, amptable, amptabs) * amp;
+				overamp = table(currentFrame(), amptable, amptabs) * amp;
 			else
 				overamp = amp;
 			aamp = ampdb(60.0 + pamptable[index]) * overamp;
