@@ -1,6 +1,7 @@
 class DUMP : public Instrument {
-	int skip, branch;
+	int nargs, skip, branch, tablelen;
 	float amp;
+	double *table;
 
 	void doupdate();
 public:
