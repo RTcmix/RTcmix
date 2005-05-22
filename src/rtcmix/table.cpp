@@ -492,25 +492,47 @@ _literal_table(const Arg args[], const int nargs, double **array, int *len)
 	double *block = *array;
 	int length = *len;
 
+	// Compute number of single array items, flattening any script arrays
+	// (as long as they aren't nested -- an array within an array).
+	int content_length = 0;
+	for (int i = 0; i < nargs; i++) {
+		if (args[i].isType(ArrayType)) {
+			Array *a = args[i];
+			content_length += a->len;
+		}
+		else
+			content_length++;
+	}
+
 	if (length == 0) {
-		length = nargs;
+		length = content_length;
 		delete [] block;
 		block = new double[length];
 	}
 
-	const int n = _min(nargs, length);
+	const int fill_len = _min(content_length, length);
 
-	for (int i = 0; i < n; i++)
-		block[i] = args[i];
+	int j = 0;
+	for (int i = 0; i < nargs && j < fill_len; i++) {
+		if (args[i].isType(ArrayType)) {
+			Array *a = args[i];
+			const int alen = a->len;
+			const double *adata = a->data;
+			for (int k = 0; k < alen && j < fill_len; k++)
+				block[j++] = adata[k];
+		}
+		else
+			block[j++] = args[i];
+	}
 
-	if (nargs < length) {
-		for (int i = nargs; i < length; i++)
+	if (content_length < length) {
+		for (int i = content_length; i < length; i++)
 			block[i] = 0.0;
 		advise("maketable (literal)",
 							"Table is larger than the number of elements given "
 							"to fill it.  Adding zeros to pad.");
 	}
-	else if (length < nargs)
+	else if (length < content_length)
 		warn("maketable (literal)",
 							"Table is large enough for only %d numbers.", length);
 
