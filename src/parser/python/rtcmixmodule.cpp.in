@@ -456,12 +456,44 @@ static PyObject *_call_dispatch(PyObject *args, char *funcname)
       else if (PyString_Check(obj)) {
          // dup the string, because we'll kill interpreter before
          // insts have run.
-// FIXME: Not necessary for insts, because StringPField dups string.
+// FIXME: leak -- not necessary, because StringPField dups string?
          char *str = strdup(PyString_AS_STRING(obj));
          rtcmixargs[i] = str;
 #ifdef DEBUG
          printf("%d: \"%s\"\n", i, str);
 #endif
+      }
+// XXX NOTE NOTE NOTE: The arrays created below are deleted right after the
+//     dispatch call.  Hopefully, cmix functions will _copy_ the array contents.
+      else if (PyTuple_Check(obj)) {
+         int len = PyTuple_Size(obj);
+         double *data = new double [len];
+         for (int j = 0; j < len; j++) {
+            PyObject *item = PyTuple_GET_ITEM(obj, j);
+            if (PyNumber_Check(item))
+               data[j] = PyFloat_AsDouble(item);
+            else
+               data[j] = 0.0;
+         }
+         Array *array = new Array;
+         array->data = data;
+         array->len = len;
+         rtcmixargs[i] = array;
+      }
+      else if (PyList_Check(obj)) {    // similar to tuples
+         int len = PyList_Size(obj);
+         double *data = new double [len];
+         for (int j = 0; j < len; j++) {
+            PyObject *item = PyList_GET_ITEM(obj, j);
+            if (PyNumber_Check(item))
+               data[j] = PyFloat_AsDouble(item);
+            else
+               data[j] = 0.0;
+         }
+         Array *array = new Array;
+         array->data = data;
+         array->len = len;
+         rtcmixargs[i] = array;
       }
       else {
          char buf[128];
@@ -474,6 +506,16 @@ static PyObject *_call_dispatch(PyObject *args, char *funcname)
    Arg retval;
    int result = RTcmix::dispatch(funcname, rtcmixargs, nargs, &retval);
 
+   for (int i = 0; i < nargs; i++) {
+      if (rtcmixargs[i].isType(ArrayType)) {
+         Array *array = rtcmixargs[i];
+         delete [] array->data;
+#ifdef NOTYET
+// FIXME: results in double delete.  so is array valid when we deref it to delete data??
+         delete array;
+#endif
+      }
+   }
    delete [] rtcmixargs;
 
    PyObject *retobj = NULL;
