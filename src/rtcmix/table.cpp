@@ -473,7 +473,8 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 //
 // <a>, <b>, <c>, etc. are the numbers that go into the table.  The
 // "nonorm" tag is recommended, unless you want the numbers to be
-// normalized to [-1,1] or [0,1].
+// normalized to [-1,1] or [0,1].  The arguments can also be
+// one-dimensional arrays created in the scripting language.
 //
 // The function loads as many as <size> numbers into the table.  If there
 // are not that many number arguments, it zeros out the extra table values.
