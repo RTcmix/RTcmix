@@ -50,18 +50,31 @@
          This pfield ignored if p10 is zero.  [optional; default is 5000 Hz]
    p16 = input channel [optional; default is 0]
    p17 = percent to left channel  [optional; default is 0.5]
+   p18 = waveform table for the carrier oscillators **
+   p19 = table giving the carrier scaling curve, as <frequency, amplitude>
+         pairs ***
+   p20 = table giving list of center frequencies (if p4 is zero) ****
 
-   Function tables:
+   p3 (amplitude) and p17 (pan) can receive dynamic updates from a table or
+   real-time control source.
 
-      1  amplitude curve for note.  This curve, combined with the amplitude
-         multiplier, affect the signal after synthesis.
+   ----
 
-      2  waveform for carrier oscillators
+   Notes about backward compatibility with pre-v4 scores:
 
-      3  scaling curve for carrier notes, as <frequency, amplitude> pairs
+   * If an old-style gen table 1 is present, its values will be multiplied
+   by the p3 amplitude multiplier, even if the latter is dynamic.  This
+   affects the signal after synthesis.
 
-      4  list of center frequencies, for use with the second method of
-         specifying center frequencies
+   ** If p18 is missing, you must use an old-style gen table 2 for the
+   carrier oscillator waveform.
+
+   *** If p19 is missing, you must use an old-style gen table 3 for the
+   carrier scaling curve.
+
+   **** If p4 is zero and p20 is missing, you must use an old-style gen table 4
+   for the list of center frequencies (using gen2).
+
 
    NOTES:
 
@@ -71,14 +84,20 @@
         Use this to get stacks of an equal tempered interval (in oct.pc):
            p6 = cpspch(interval) / cpspch(0.0)
 
-     - If using second method for specifying center frequencies...
-       Make function table 4, for example, by using gen 2.  So, to make
-       cf's from a list of pitches in oct.pc notation:
+     - If using second method for specifying center frequencies, pass a
+       "literal" table, comprising a list of pitches in oct.pc notation,
+       to pfield 20:
+
           num_bands = 5
-          makegen(2, 2, num_bands, 8.00, 8.07, 9.00, 9.07, 10.02)
+          freqtable = maketable("literal", "nonorm", num_bands,
+                                        8.00, 8.07, 9.00, 9.07, 10.02)
+
        You can transpose these by the number of semitones given in p5.
        Or, to specify cf's in Hz:
-          makegen(2, 2, 9, 100, 200, 300, 400, 500, 600, 700, 800, 900)
+
+          freqtable = maketable("literal", "nonorm", 9,
+                            100, 200, 300, 400, 500, 600, 700, 800, 900)
+
        Transposition (still specified as oct.pc) works here also, and it
        preserves harmonic structure.
 
@@ -94,6 +113,7 @@ VOCODESYNTH :: VOCODESYNTH() : Instrument()
    inringdown = 0;
    in = NULL;
    amptable = NULL;
+   car_wavetable = NULL;
    scaletable = NULL;
    hipassmod = NULL;
 }
@@ -131,6 +151,7 @@ int compare_floats(const void *a, const void *b)
 /* ------------------------------------------------------------------ init -- */
 int VOCODESYNTH :: init(double p[], int n_args)
 {
+   nargs = n_args;
    float outskip = p[0];
    float inskip = p[1];
    float dur = p[2];
@@ -148,7 +169,6 @@ int VOCODESYNTH :: init(double p[], int n_args)
    hipass_mod_amp = n_args > 14 ? p[14] : 0.0;        // default: 0
    float hipasscf = n_args > 15 ? p[15] : 5000.0;     // default: 5000 Hz
    inchan = n_args > 16 ? (int) p[16] : 0;            // default: left
-   pctleft = n_args > 17 ? p[17] : 0.5;               // default: center
 
    if (bwpct <= 0.0)
       return die("VOCODESYNTH", "Bandwidth proportion must be greater than 0.");
@@ -219,11 +239,16 @@ int VOCODESYNTH :: init(double p[], int n_args)
    else if (numbands == 0) {     // specify by function table
       float transp = lowcf;            // p5 and p6 change meaning
       int format = (int) spacemult;
-      double *freqtable = floc(4);
-      if (freqtable == NULL)
-         return die("VOCODESYNTH",
-                    "You haven't made the center freq. function (table 4).");
-      numbands = fsize(4);
+      double *freqtable = NULL;
+      if (nargs > 20)
+         freqtable = (double *) getPFieldTable(20, &numbands);
+      if (freqtable == NULL) {
+         freqtable = floc(4);
+         if (freqtable == NULL)
+            return die("VOCODESYNTH", "Either use the center frequency table "
+                   "pfield (p20) or make an old-style gen function in slot 4.");
+         numbands = fsize(4);
+      }
       if (numbands > MAXOSC)
          return die("VOCODESYNTH", "Can only use %d filters.", MAXOSC);
 
@@ -273,7 +298,6 @@ int VOCODESYNTH :: init(double p[], int n_args)
 
    insamps = (int) (dur * SR + 0.5);
    skip = (int) (SR / (float) resetval);
-   aamp = amp;                  // in case amptable == NULL
 
    // function tables -------------------------------------------------------
 
@@ -282,24 +306,30 @@ int VOCODESYNTH :: init(double p[], int n_args)
       int len = fsize(1);
       amptable = new TableL(SR, dur, function, len);
    }
-   else
-      advise("VOCODESYNTH", "Setting phrase curve to all 1's.");
 
-   car_wavetable = floc(2);
    int wavetablelen = 0;
-   if (car_wavetable)
-      wavetablelen = fsize(2);
+   if (nargs > 18)
+      car_wavetable = (double *) getPFieldTable(18, &wavetablelen);
+   if (car_wavetable == NULL) {
+      car_wavetable = floc(2);
+      if (car_wavetable)
+         wavetablelen = fsize(2);
+   }
 
-   function = floc(3);
-   if (function) {
+   function = NULL;
+   int tablelen = 0;
+   if (nargs > 19)
+      function = (double *) getPFieldTable(19, &tablelen);
+   if (function == NULL) {
+      function = floc(3);
+      if (function == NULL)
+         return die("VOCODESYNTH", "Either use the scaling curve table pfield "
+                      "(p19) or make an old-style gen function in slot 3.");
       int len = fsize(3);
       scaletable = resample_gen(function, len, numbands, LINEAR_INTERP);
       if (scaletable == NULL)
          return die("VOCODESYNTH", "No memory for resizing scaling table.");
    }
-   else
-      return die("VOCODESYNTH",
-                           "You haven't made the scaling curve (table 3).");
 
    // make filters, oscillators ---------------------------------------------
 
@@ -344,6 +374,20 @@ int VOCODESYNTH :: configure()
 }
 
 
+/* -------------------------------------------------------------- doupdate -- */
+void VOCODESYNTH :: doupdate()
+{
+   double p[nargs];
+   update(p, nargs, kAmp | kPan);
+
+   amp = p[3];
+   if (amptable)
+      amp *= amptable->tick(currentFrame(), 1.0);
+
+   pctleft = nargs > 17 ? p[17] : 0.5f;             // default: center
+}
+
+
 /* ------------------------------------------------------------------- run -- */
 int VOCODESYNTH :: run()
 {
@@ -354,8 +398,7 @@ int VOCODESYNTH :: run()
       float modsig;
       if (currentFrame() < insamps) {
          if (--branch <= 0) {
-            if (amptable)
-               aamp = amptable->tick(currentFrame(), 1.0) * amp;
+            doupdate();
             branch = skip;
          }
          modsig = in[i + inchan];
@@ -413,7 +456,7 @@ int VOCODESYNTH :: run()
          out[0] += hpmodsig * hipass_mod_amp;
       }
 
-      out[0] *= aamp;
+      out[0] *= amp;
       if (outputChannels() == 2) {
          out[1] = out[0] * (1.0 - pctleft);
          out[0] *= pctleft;

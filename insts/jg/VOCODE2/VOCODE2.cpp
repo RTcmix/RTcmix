@@ -9,7 +9,7 @@
    p0  = output start time
    p1  = input start time (must be 0 for aux bus)
    p2  = duration
-   p3  = amplitude multiplier (post-processing)
+   p3  = amplitude multiplier (post-processing) *
 
    Two ways to specify filter bank center frequencies:
 
@@ -19,7 +19,7 @@
           p6 = center frequency spacing multiplier (greater than 1)
                (multiplies each cf by this to get next higher cf)
 
-    (2) A list of center frequencies, given in function table 2 (Use gen 2.)
+    (2) A list of center frequencies, given in p15 function table
           p4 = 0 (must be zero: tells program to look for function table)
           p5 = transposition of function table, in oct.pc
           p6 = if > 1, add filters at p6 multiples of table frequencies
@@ -41,11 +41,21 @@
          the noise generator.  This pfield is ignored if p12 is zero.
          [optional; default is 1 -- a new value every sample]  
    p14 = percent to left channel  [optional, default is 0.5]
+   p15 = table giving list of center frequencies (if p4 is zero) **
 
-   Assumes function table 1 is an amplitude curve for the note.  (Try gen 18.)
-   Or you can just call setline.  If no setline or function table 1, uses a
-   flat amplitude curve.  This curve, combined with the amplitude multiplier,
-   affect the signal after processing by the filter bank.
+   p3 (amplitude), p12 (noise amp) and p14 (pan) can receive dynamic updates
+   from a table or real-time control source.
+
+   ----
+
+   Notes about backward compatibility with pre-v4 scores:
+
+   * If an old-style gen table 1 is present, its values will be multiplied
+   by the p3 amplitude multiplier, even if the latter is dynamic.
+
+   ** If p4 is zero and p15 is missing, you must use an old-style gen table 2
+   for the list of center frequencies.
+
 
    NOTES:
 
@@ -89,7 +99,6 @@ VOCODE2 :: VOCODE2() : Instrument()
 {
    branch = 0;
    in = NULL;
-   noise = NULL;
    hipassmod = NULL;
 }
 
@@ -109,21 +118,19 @@ VOCODE2 :: ~VOCODE2()
 
 int VOCODE2 :: init(double p[], int n_args)
 {
+   nargs = n_args;
    float outskip = p[0];
    float inskip = p[1];
    float dur = p[2];
-   amp = p[3];
    numfilts = (int) p[4];
    float lowcf = p[5];
    float spacemult = p[6];
    float carrier_transp = p[7];
    float bwpct = p[8];
-   float responsetime = n_args > 9 ? p[9] : 0.01;  // default: .01 secs
-   hipass_mod_amp = p[10];                         // default: 0
-   float hipasscf = n_args > 11 ? p[11] : 5000.0;  // default: 5000 Hz
-   noise_amp = p[12];                              // default: 0
-   int subsample = (int) p[13];                    // default: 1 (see below)
-   pctleft = n_args > 14 ? p[14] : 0.5;            // default: center
+   float responsetime = nargs > 9 ? p[9] : 0.01;   // default: .01 secs
+   hipass_mod_amp = nargs > 10 ? p[10] : 0.0;      // default: 0
+   float hipasscf = nargs > 11 ? p[11] : 5000.0;   // default: 5000 Hz
+   int subsample = nargs > 13 ? (int) p[13] : 1;   // default: 1 (see below)
 
    if (rtsetoutput(outskip, dur, this) == -1)
       return DONT_SCHEDULE;
@@ -136,12 +143,9 @@ int VOCODE2 :: init(double p[], int n_args)
       return die("VOCODE2",
       "Must use 2 input channels: 'left' for carrier; 'right' for modulator.");
 
-   if (noise_amp > 0.0) {
-      unsigned int seed = (unsigned int) 0;
-      if (subsample < 1)
-         subsample = 1;
-      noise = new SubNoiseL(subsample, seed);
-   }
+   if (subsample < 1)
+      subsample = 1;
+   noise = new SubNoiseL(subsample, 0);
 
    if (hipass_mod_amp > 0.0) {
       hipassmod = new Butter(SR);
@@ -177,11 +181,17 @@ int VOCODE2 :: init(double p[], int n_args)
    }
    else {                /* by function table */
       float transp = lowcf;                    /* pfield meaning changes */
-      double *freqtable = floc(2);
-      if (freqtable == NULL)
-         return die("VOCODE2",
-                     "You haven't made the center freq. function (table 2).");
-      numfilts = fsize(2);
+      int numfilts;
+      double *freqtable = NULL;
+      if (nargs > 15)
+         freqtable = (double *) getPFieldTable(15, &numfilts);
+      if (freqtable == NULL) {
+         freqtable = floc(2);
+         if (freqtable == NULL)
+            return die("VOCODE2", "Either use the center frequency table "
+                   "pfield (p15) or make an old-style gen function in slot 2.");
+         numfilts = fsize(2);
+      }
       if (numfilts > MAXFILTS)
          return die("VOCODE2", "Can only use %d filters.", MAXFILTS);
 
@@ -245,11 +255,8 @@ int VOCODE2 :: init(double p[], int n_args)
       int lenamp = fsize(1);
       tableset(SR, dur, lenamp, amptabs);
    }
-   else
-      advise("VOCODE2", "Setting phrase curve to all 1's.");
 
    skip = (int) (SR / (float) resetval);
-   aamp = amp;                  /* in case amparray == NULL */
 
    return nSamps();
 }
@@ -262,6 +269,20 @@ int VOCODE2 :: configure()
 }
 
 
+void VOCODE2 :: doupdate()
+{
+   double p[nargs];
+   update(p, nargs, kAmp | kNoiseAmp | kPan);
+
+   amp = p[3];
+   if (amparray)
+      amp *= tablei(currentFrame(), amparray, amptabs);
+
+   noise_amp = nargs > 12 ? p[12] : 0.0f;           // default: 0
+   pctleft = nargs > 14 ? p[14] : 0.5f;             // default: center
+}
+
+
 int VOCODE2 :: run()
 {
    const int samps = framesToRun() * inputChannels();
@@ -269,8 +290,7 @@ int VOCODE2 :: run()
 
    for (int i = 0; i < samps; i += inputChannels()) {
       if (--branch <= 0) {
-         if (amparray)
-            aamp = tablei(currentFrame(), amparray, amptabs) * amp;
+         doupdate();
          branch = skip;
       }
       float carsig = in[i];
@@ -294,7 +314,7 @@ int VOCODE2 :: run()
          out[0] += hpmodsig * hipass_mod_amp;
       }
 
-      out[0] *= aamp;
+      out[0] *= amp;
       if (outputChannels() == 2) {
          out[1] = out[0] * (1.0 - pctleft);
          out[0] *= pctleft;

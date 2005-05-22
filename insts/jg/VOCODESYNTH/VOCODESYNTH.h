@@ -26,8 +26,8 @@ typedef enum {
 } PowerState;
 
 class VOCODESYNTH : public Instrument {
-   int         skip, numbands, branch, inchan, insamps, inringdown;
-   float       amp, aamp, pctleft, hipass_mod_amp, smoothness;
+   int         nargs, skip, numbands, branch, inchan, insamps, inringdown;
+   float       amp, pctleft, hipass_mod_amp, smoothness;
    float       threshold, attack_rate, release_rate;
    float       *in;
    float       carfreq[MAXOSC], lastpower[MAXOSC];
@@ -40,11 +40,18 @@ class VOCODESYNTH : public Instrument {
    Envelope    *envelope[MAXOSC];
    PowerState  state[MAXOSC];
 
+   void doupdate();
 public:
    VOCODESYNTH();
    virtual ~VOCODESYNTH();
    virtual int init(double p[], int n_args);
    virtual int configure();
    virtual int run();
+};
+
+// update flags (shift amount is pfield number)
+enum {
+	kAmp = 1 << 3,
+	kPan = 1 << 14
 };
 
