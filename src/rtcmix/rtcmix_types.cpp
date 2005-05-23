@@ -9,8 +9,11 @@
 // and their scope is always local within the parser.
 
 Arg::~Arg() {
-	if (_type == ArrayType)
+	if (_type == ArrayType) {
+		if (_val.array->data)
+			free(_val.array->data);
 		free(_val.array);
+	}
 //	else if (_type == HandleType)
 //		unrefHandle(_val.handle);
 }
