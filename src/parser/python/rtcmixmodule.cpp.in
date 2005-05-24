@@ -34,6 +34,7 @@
 #include <rtcmix_types.h>
 #include <PField.h>
 #include <utils.h>
+#include <stdlib.h>
 #include <math.h>
 #include <string.h>
 #include "../../include/maxdispargs.h"
@@ -463,37 +464,54 @@ static PyObject *_call_dispatch(PyObject *args, char *funcname)
          printf("%d: \"%s\"\n", i, str);
 #endif
       }
-// XXX NOTE NOTE NOTE: The arrays created below are deleted right after the
-//     dispatch call.  Hopefully, cmix functions will _copy_ the array contents.
+      // NOTE: The memory allocated below is free'd right after the dispatch
+      // call, during "delete rtcmixargs" (in Arg::~Arg).  Hopefully, cmix
+      // functions will _copy_ the array contents.
       else if (PyTuple_Check(obj)) {
          int len = PyTuple_Size(obj);
-         double *data = new double [len];
-         for (int j = 0; j < len; j++) {
-            PyObject *item = PyTuple_GET_ITEM(obj, j);
-            if (PyNumber_Check(item))
-               data[j] = PyFloat_AsDouble(item);
+         double *data = (double *) malloc(sizeof(double) * len);
+         if (data) {
+            for (int j = 0; j < len; j++) {
+               PyObject *item = PyTuple_GET_ITEM(obj, j);
+               if (PyNumber_Check(item))
+                  data[j] = PyFloat_AsDouble(item);
+               else
+                  data[j] = 0.0;
+            }
+            Array *array = (Array *) malloc(sizeof(Array));
+            if (array) {
+               array->data = data;
+               array->len = len;
+               rtcmixargs[i] = array;
+            }
             else
-               data[j] = 0.0;
+               rtcmixargs[i] = 0.0;
          }
-         Array *array = new Array;
-         array->data = data;
-         array->len = len;
-         rtcmixargs[i] = array;
+         else
+            rtcmixargs[i] = 0.0;
       }
       else if (PyList_Check(obj)) {    // similar to tuples
          int len = PyList_Size(obj);
-         double *data = new double [len];
-         for (int j = 0; j < len; j++) {
-            PyObject *item = PyList_GET_ITEM(obj, j);
-            if (PyNumber_Check(item))
-               data[j] = PyFloat_AsDouble(item);
+         double *data = (double *) malloc(sizeof(double) * len);
+         if (data) {
+            for (int j = 0; j < len; j++) {
+               PyObject *item = PyList_GET_ITEM(obj, j);
+               if (PyNumber_Check(item))
+                  data[j] = PyFloat_AsDouble(item);
+               else
+                  data[j] = 0.0;
+            }
+            Array *array = (Array *) malloc(sizeof(Array));
+            if (array) {
+               array->data = data;
+               array->len = len;
+               rtcmixargs[i] = array;
+            }
             else
-               data[j] = 0.0;
+               rtcmixargs[i] = 0.0;
          }
-         Array *array = new Array;
-         array->data = data;
-         array->len = len;
-         rtcmixargs[i] = array;
+         else
+            rtcmixargs[i] = 0.0;
       }
       else {
          char buf[128];
@@ -506,16 +524,6 @@ static PyObject *_call_dispatch(PyObject *args, char *funcname)
    Arg retval;
    int result = RTcmix::dispatch(funcname, rtcmixargs, nargs, &retval);
 
-   for (int i = 0; i < nargs; i++) {
-      if (rtcmixargs[i].isType(ArrayType)) {
-         Array *array = rtcmixargs[i];
-         delete [] array->data;
-#ifdef NOTYET
-// FIXME: results in double delete.  so is array valid when we deref it to delete data??
-         delete array;
-#endif
-      }
-   }
    delete [] rtcmixargs;
 
    PyObject *retobj = NULL;
