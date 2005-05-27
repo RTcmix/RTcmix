@@ -90,8 +90,9 @@ int MBOWED :: run()
 
 	for (i = 0; i < framesToRun(); i++) {
 		if (--vibupdate < 0) {
-			theVib->setfreq(theRand->range(viblo, vibhi));
-			vibupdate = (int)(theVib->getdur() * SR);
+			float vibfreq = theRand->range(viblo, vibhi);
+			theVib->setfreq(vibfreq);
+			vibupdate = (int)(SR/vibfreq);
 		}
 
 		out[0] = theBow->tick(theEnv->next()) * amp;
