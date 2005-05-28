@@ -1,9 +1,9 @@
 #include <Ougens.h>
 
 class WAVETABLE : public Instrument {
-	int skip, branch;
+	int branch;
 	bool fastUpdate;
-	float amp, ampmult, ampinc, freqraw, spread, amptabs[2];
+	float amp, ampmult, freqraw, spread, amptabs[2];
 	double *wavetable, *amptable;
 	Ooscili *osc;
 

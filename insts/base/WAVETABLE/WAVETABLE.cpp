@@ -38,7 +38,6 @@
 
 WAVETABLE::WAVETABLE() : Instrument()
 {
-	ampinc = 0.0f;
 	branch = 0;
 }
 
@@ -96,10 +95,6 @@ int WAVETABLE::init(double p[], int n_args)
 
 	initamp(dur, p, 2, AMP_GEN_SLOT);
 
-	// Handle case where initial amp value is not zero (for ampinc computation).
-	if (p[2] != 0.0)
-		amp = p[2];
-
 	freqraw = p[3];
 	float freq;
 	if (freqraw < 15.0)
@@ -122,40 +117,21 @@ int WAVETABLE::init(double p[], int n_args)
 	}
 	osc = new Ooscili(SR, freq, wavetable, tablelen);
 
-	int totalSamps = nSamps();
-
-	skip = (int) (SR / (float) resetval);
-
-	if (skip < 1)
-		skip = 1;
-	else if (skip > totalSamps)
-		skip = totalSamps;
-
-	return totalSamps;
+	return nSamps();
 }
 
 void WAVETABLE::doupdate()
 {
-	double p[5];
-	update(p, 5, 1 << 2 | 1 << 3 | 1 << 4);
+	double p[6];
+	update(p, 6, 1 << 2 | 1 << 3 | 1 << 4 | 1 << 5);
 
-	float newamp = p[2];
+	amp = p[2];
 	if (amptable)
-		newamp *= tablei(currentFrame(), amptable, amptabs);
-
-	// Interpolate between successive amp values.
-	if (newamp != amp)
-		ampinc = (newamp - amp) / skip;
-	else
-		ampinc = 0.0f;
+		amp *= tablei(currentFrame(), amptable, amptabs);
 
 	if (p[3] != freqraw) {
-		float freq;
 		freqraw = p[3];
-		if (freqraw < 15.0)
-			freq = cpspch(freqraw);
-		else
-			freq = freqraw;
+		float freq = (freqraw < 15.0) ? cpspch(freqraw) : freqraw;
 		osc->setfreq(freq);
 	}
 
@@ -173,9 +149,8 @@ int WAVETABLE::run()
 			}
 			else
 				doupdate();
-			branch = skip;
+			branch = getSkip();
 		}
-		amp += ampinc;
 
 		float out[2];
 		out[0] = osc->next() * amp;
