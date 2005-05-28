@@ -72,6 +72,7 @@ private:
    BUFTYPE        *obufptr;
    char           bufstatus[MAXBUS];
    char           needs_to_run;
+	int            _skip;
 
    static pthread_mutex_t endsamp_lock;
 
@@ -118,6 +119,7 @@ public:
 	int				nSamps() const { return nsamps; }
 	int				inputChannels() const { return _input.inputchans; }
 	int				outputChannels() const { return outputchans; }
+	int				getSkip() const { return _skip; }
 	// Use this to increment cursamp inside single-frame run loops.
 	void			increment() { ++cursamp; }
 	// Use this to increment cursamp inside block-based run loops.

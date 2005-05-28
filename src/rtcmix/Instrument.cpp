@@ -143,7 +143,13 @@ int Instrument::setup(PFieldSet *pfields)
 	_pfields = pfields;
 	int nargs = MAXDISPARGS;
 	update(s_dArray, nargs);
-	return init(s_dArray, pfields->size());
+	int nsamps = init(s_dArray, pfields->size());
+	_skip = int(SR / (float) resetval);
+	if (_skip < 1)
+		_skip = 1;
+	else if (_skip > nSamps())
+		_skip = nSamps();
+	return nsamps;
 }
 
 /* ------------------------------------------------------------ update () --- */
