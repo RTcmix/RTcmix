@@ -487,6 +487,108 @@ ShiftPField::ShiftPField(PField *innerPField, int shift)
 
 #endif	// !OLD
 
+// DrawTablePField
+
+DrawTablePField::DrawTablePField(PField *innerPField, PField *indexPField,
+	PField *valuePField, PField *widthPField)
+	: PFieldWrapper(innerPField), _indexPField(indexPField),
+	  _valuePField(valuePField), _widthPField(widthPField)
+{
+	_indexPField->ref();
+	_valuePField->ref();
+	_widthPField->ref();
+}
+
+DrawTablePField::~DrawTablePField()
+{
+	_widthPField->unref();
+	_valuePField->unref();
+	_indexPField->unref();
+}
+
+double DrawTablePField::doubleValue(double didx) const
+{
+	// get table and length; if it doesn't look like a table, do nothing
+	double *table = (double *) *field();
+	if (table == NULL)
+		return 0.0;
+	const int len = values();
+	if (len < 0)
+		return 0.0;
+	const int lastindex = len - 1;
+
+	// get target index
+	int targetindex = int(_indexPField->doubleValue(didx) * len);
+	if (targetindex < 0)
+		targetindex = 0;
+	else if (targetindex > lastindex)
+		targetindex = lastindex;
+
+	// new value to place at targeted index
+	const double newval = _valuePField->doubleValue(didx);
+	const double curval = table[targetindex];
+	if (curval == newval)
+		return 0.0;		// no change to table
+
+printf("[%d]\tcur=%f, new=%f\n", targetindex, curval, newval);
+
+	// The width PField defines the range of values affected.  From it we derive
+	// three points across <span> indices: start, target, stop.  Target gets
+	// <newval>; start keeps its current val; then we linearly interpolate
+	// between start's val and <newval> across the intervening indices.  Same
+	// thing between target and stop indices.
+
+// FIXME: would be much better to use a higher order interpolation
+
+	int span = int(_widthPField->doubleValue(didx) * len);
+	if (span < 0)
+		span = 0;
+	if (span > 0) {
+		// set up first segment, between start and target
+		int startindex = targetindex - (span >> 1);
+		if (startindex < 0)
+			startindex = 0;
+		const double startval = table[startindex];
+		const int seg1numvals = targetindex - startindex;
+		const double seg1incr = (seg1numvals == 0) ? 0.0
+										: (newval - startval) / seg1numvals;
+		// set up second segment, between target and stop
+		int stopindex = targetindex + (span >> 1);
+		if (stopindex > lastindex)
+			stopindex = lastindex;
+		const double stopval = table[stopindex];
+		const int seg2numvals = stopindex - targetindex;
+		const double seg2incr = (seg2numvals == 0) ? 0.0
+										: (stopval - newval) / seg2numvals;
+
+		// change table values in place
+		// caution: startindex and/or stopindex might == targetindex
+		for (int i = startindex; i < stopindex; i++) {
+			if (i < targetindex) {
+				int diff = i - startindex;
+				table[i] = startval + (diff * seg1incr);
+			}
+			else if (i == targetindex)
+				table[i] = newval;
+			else if (i > targetindex) {
+				int diff = seg2numvals - (stopindex - i);
+				table[i] = newval + (diff * seg2incr);
+			}
+		}
+	}
+	else
+		table[targetindex] = newval;
+
+	return 1.0;		// table was changed
+}
+
+double DrawTablePField::doubleValue(int idx) const
+{
+	int endidx = values() - 1;
+	double percent = (endidx == 0) ? 0.0 : (double) idx / endidx;
+	return doubleValue(percent);
+}
+
 // ReversePField
 
 ReversePField::ReversePField(PField *innerPField) : PFieldWrapper(innerPField)

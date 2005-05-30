@@ -274,6 +274,22 @@ private:
 };
 #endif
 
+// Class for real-time rewriting of a table.
+
+class DrawTablePField : public PFieldWrapper {
+public:
+	DrawTablePField(PField *innerPField, PField *indexPField,
+		PField *valuePField, PField *widthPField);
+	virtual double	doubleValue(double didx) const;
+	virtual double	doubleValue(int idx) const;
+protected:
+	virtual ~DrawTablePField();
+private:
+	PField *_indexPField;
+	PField *_valuePField;
+	PField *_widthPField;
+};
+
 // Class for reverse-reading table.
 
 class ReversePField : public PFieldWrapper {

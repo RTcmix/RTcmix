@@ -13,6 +13,7 @@
 
 // Functions for modifying table PFields.   -JGG, 4/8/05
 
+#define DRAW_USAGE "table = modtable(table, \"draw\", index, value[, width])"
 #define NORMALIZE_USAGE "table = modtable(table, \"normalize\" [, peak])"
 #define REVERSE_USAGE "table = modtable(table, \"reverse\")"
 #define SHIFT_USAGE "table = modtable(table, \"shift\", shift)"
@@ -21,15 +22,55 @@
 // =============================================================================
 // local utilities
 
+// FIXME: This is copied from filter.cpp; should put in utils.cpp?
+
+// Given a valid argument (one appearing in the caller's Arg array with an
+// index lower than caller's nargs), return the argument as a PField, creating
+// one if necessary for a constant double argument.  Return NULL if arg is not
+// already a PField or a constant double.
+
+static PField *_get_pfield(const Arg& arg)
+{
+	PField *pf = (PField *) arg;
+	if (pf == NULL && arg.isType(DoubleType))
+		pf = new ConstPField((double) arg);
+	return pf;
+}
+
 static PField *_modtable_usage(const char *msg)
 {
 	die(NULL, "Usage: %s", msg);
 	return NULL;
 }
 
+static Handle _modtable_usage()
+{
+	die("modtable",
+		"\n   usage: " DRAW_USAGE
+		"\nOR"
+		"\n   usage: " NORMALIZE_USAGE
+		"\nOR"
+		"\n   usage: " REVERSE_USAGE
+		"\nOR"
+		"\n   usage: " SHIFT_USAGE
+		"\n");
+	return NULL;
+}
+
 
 // =============================================================================
 // Set up the various table modifications.
+
+static PField *
+_draw_table(PField *intable, const Arg args[], const int nargs)
+{
+	if (nargs < 2)
+		return _modtable_usage(DRAW_USAGE);
+	PField *indexpf = _get_pfield(args[0]);
+	PField *valuepf = _get_pfield(args[1]);
+	PField *widthpf = (nargs > 2) ? _get_pfield(args[2]) : new ConstPField(0);
+	return new DrawTablePField(intable, indexpf, valuepf, widthpf);
+}
 
 // Rescale the values in table so that the maximum absolute value is <peak>.
 // If no <peak>, peak is 1.  Result depends on the sign of values in the table.
@@ -99,17 +140,6 @@ extern "C" {
 
 
 // ---------------------------------------------------------------- modtable ---
-static Handle _modtable_usage()
-{
-	die("modtable",
-		"\n   usage: " NORMALIZE_USAGE
-		"\nOR"
-		"\n   usage: " REVERSE_USAGE
-		"\nOR"
-		"\n   usage: " SHIFT_USAGE
-		"\n");
-	return NULL;
-}
 
 Handle modtable(const Arg args[], const int nargs)
 {
@@ -122,17 +152,16 @@ Handle modtable(const Arg args[], const int nargs)
 
 	PField *outtable = NULL;
 	if (args[1].isType(StringType)) {
-		if (args[1] == "normalize")
+		if (args[1] == "draw")
+			outtable = _draw_table(intable, &args[2], nargs - 2);
+		else if (args[1] == "normalize")
 			outtable = _normalize_table(intable, &args[2], nargs - 2);
 		else if (args[1] == "reverse")
 			outtable = _reverse_table(intable, &args[2], nargs - 2);
 		else if (args[1] == "shift")
 			outtable = _shift_table(intable, &args[2], nargs - 2);
-		else {
-			die("modtable", "Unsupported modification \"%s\".",
-								(const char *) args[1]);
-			return NULL;
-		}
+		else
+			return _modtable_usage();
 	}
 	else
 		return _modtable_usage();
