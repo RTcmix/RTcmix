@@ -1,13 +1,15 @@
 #include <bus.h>        /* for MAXBUS */
 
 class STEREO : public Instrument {
-	bool warn_invalid;
-	int skip, branch, nargs, outslots;
-	float outspread[MAXBUS];
-	float amp, *in, tabs[2];
+	bool warnInvalid, fastUpdate;
+	int branch, nargs, outslots;
+	float outPan[MAXBUS];
+	float amp, ampmult, *in, amptabs[2];
 	double *amptable;
 
+	void initamp(float dur, double p[], int ampindex, int ampgenslot);
 	void updatePans(double p[]);
+	void doupdate();
 public:
 	STEREO();
 	virtual ~STEREO();

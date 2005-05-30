@@ -34,6 +34,7 @@
 #include <ugens.h>
 #include <Instrument.h>
 #include <PField.h>
+#include <Option.h>		// for fastUpdate
 #include "FMINST.h"
 #include <rt.h>
 #include <rtdefs.h>
@@ -53,6 +54,43 @@ FMINST::~FMINST()
 {
 	delete carosc;
 	delete modosc;
+}
+
+// In fastUpdate mode, we skip doupdate() entirely, instead updating only amp,
+// and only from a table.  The table can be a makegen or a PField table.  PField
+// tables must be "flattened" using copytable if they are compound (e.g. passed
+// through a PField filter or multiplied by a constant).  We use p[ampindex] as
+// an amp multiplier, unless using a PField table, in which case there is no amp
+// multiplier -- the p[ampindex] value is the first table value.   -JGG
+
+void FMINST::initamp(float dur, double p[], int ampindex, int ampgenslot)
+{
+	fastUpdate = Option::fastUpdate();
+	if (fastUpdate) {
+		// Prefer PField table, otherwise makegen
+		int tablen = 0;
+		amptable = (double *) getPFieldTable(ampindex, &tablen);
+		if (amptable)
+			ampmult = 1.0f;
+		else {
+			ampmult = p[ampindex];
+			amptable = floc(ampgenslot);
+			if (amptable)
+				tablen = fsize(ampgenslot);
+		}
+		if (amptable)
+			tableset(SR, dur, tablen, amptabs);
+		else
+			amp = ampmult;
+	}
+	else {
+		// NB: ampmult never used, first amp set in doupdate
+		amptable = floc(ampgenslot);
+		if (amptable) {
+			int tablen = fsize(ampgenslot);
+			tableset(SR, dur, tablen, amptabs);
+		}
+	}
 }
 
 int FMINST::init(double p[], int n_args)
@@ -103,13 +141,12 @@ int FMINST::init(double p[], int n_args)
 		tableset(SR, dur, len, indtabs);
 	}
 
-	ampenv = floc(AMP_GEN_SLOT);
-	if (ampenv) {
-		int lenamp = fsize(AMP_GEN_SLOT);
-		tableset(SR, dur, lenamp, amptabs);
+	initamp(dur, p, 2, 1);
+	if (fastUpdate) {
+		minindex = p[5];
+		indexdiff = p[6] - minindex;
+		pan = p[7];
 	}
-
-	skip = (int) (SR / (float) resetval);
 
 	return nSamps();
 }
@@ -120,8 +157,8 @@ void FMINST::doupdate()
    update(p, 10);
 
 	amp = p[2];
-	if (ampenv)
-		amp *= table(currentFrame(), ampenv, amptabs);
+	if (amptable)
+		amp *= tablei(currentFrame(), amptable, amptabs);
 
 	if (p[3] != carfreqraw) {
 		carfreqraw = p[3];
@@ -139,7 +176,7 @@ void FMINST::doupdate()
 		modosc->setfreq(modfreq);
 	}
 
-	float minindex = p[5];
+	minindex = p[5];
 	float maxindex = p[6];
 	if (minindex > maxindex) {		// swap if wrong order
 		float tmp = minindex;
@@ -154,15 +191,23 @@ void FMINST::doupdate()
 	float index = minindex + ((maxindex - minindex) * guide);
 	peakdev = index * modfreq;
 
-	spread = p[7];
+	pan = p[7];
 }
 
 int FMINST::run()
 {
-	for (int i = 0; i < framesToRun(); i++) {
+	const int nframes = framesToRun();
+	for (int i = 0; i < nframes; i++) {
 		if (--branch <= 0) {
-			doupdate();
-			branch = skip;
+			if (fastUpdate) {
+				if (amptable)
+					amp = ampmult * tablei(currentFrame(), amptable, amptabs);
+				float guide = tablei(currentFrame(), indexenv, indtabs);
+				peakdev = modfreq * (minindex + (indexdiff * guide));
+			}
+			else
+				doupdate();
+			branch = getSkip();
 		}
 
 		float out[2];
@@ -172,8 +217,8 @@ int FMINST::run()
 		out[0] = carosc->next() * amp;
 
 		if (outputChannels() == 2) {
-			out[1] = (1.0 - spread) * out[0];
-			out[0] *= spread;
+			out[1] = (1.0 - pan) * out[0];
+			out[0] *= pan;
 		}
 
 		rtaddout(out);

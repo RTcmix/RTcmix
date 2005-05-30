@@ -1,13 +1,15 @@
 #include <Ougens.h>
 
 class FMINST : public Instrument {
-	int nargs, skip, branch;
-	int lenind;
-	float amp, carfreq, carfreqraw, modfreq, modfreqraw, peakdev, spread;
-	double *indexenv, *ampenv;
+	int nargs, branch, lenind;
+	bool fastUpdate;
+	float amp, ampmult, carfreq, carfreqraw, modfreq, modfreqraw, peakdev, pan;
+	float minindex, indexdiff;
+	double *indexenv, *amptable;
 	float indtabs[2], amptabs[2];
 	Ooscili *carosc, *modosc;
 
+	void initamp(float dur, double p[], int ampindex, int ampgenslot);
 	void doupdate();
 public:
 	FMINST();

@@ -39,6 +39,8 @@
 #include <assert.h>
 #include <ugens.h>
 #include <mixerr.h>
+#include <PField.h>
+#include <Option.h>     // for fastUpdate
 #include "TRANS.h"
 #include <rt.h>
 
@@ -83,20 +85,58 @@ TRANS::~TRANS()
 }
 
 
+// In fastUpdate mode, we skip doupdate() entirely, instead updating only amp,
+// and only from a table.  The table can be a makegen or a PField table.  PField
+// tables must be "flattened" using copytable if they are compound (e.g. passed
+// through a PField filter or multiplied by a constant).  We use p[ampindex] as
+// an amp multiplier, unless using a PField table, in which case there is no amp
+// multiplier -- the p[ampindex] value is the first table value.   -JGG
+
+void TRANS::initamp(float dur, double p[], int ampindex, int ampgenslot)
+{
+   fastUpdate = Option::fastUpdate();
+   if (fastUpdate) {
+      // Prefer PField table, otherwise makegen
+      int tablen = 0;
+      amptable = (double *) getPFieldTable(ampindex, &tablen);
+      if (amptable)
+         ampmult = 1.0f;
+      else {
+         ampmult = p[ampindex];
+         amptable = floc(ampgenslot);
+         if (amptable)
+            tablen = fsize(ampgenslot);
+      }
+      if (amptable)
+         tableset(SR, dur, tablen, amptabs);
+      else
+         amp = ampmult;
+   }
+   else {
+      // NB: ampmult never used, first amp set in doupdate
+      amptable = floc(ampgenslot);
+      if (amptable) {
+         int tablen = fsize(ampgenslot);
+         tableset(SR, dur, tablen, amptabs);
+      }
+   }
+}
+
+
 int TRANS::init(double p[], int n_args)
 {
    nargs = n_args;
    if (nargs < 5)
-      return die("TRANS", "Wrong number of args.");
+      return die("TRANS",
+                 "Usage: TRANS(start, inskip, dur, amp, trans[, inchan, pan])");
 
-   float outskip = p[0];
-   float inskip = p[1];
+   const float outskip = p[0];
+   const float inskip = p[1];
    float dur = p[2];
-   amp = p[3];
-   inchan = (nargs > 5) ? (int) p[5] : 0;
-
    if (dur < 0.0)
       dur = -dur - inskip;
+   inchan = (nargs > 5) ? (int) p[5] : 0;
+   pctleft = (nargs > 6) ? p[6] : 0.5;
 
    if (rtsetoutput(outskip, dur, this) == -1)
       return DONT_SCHEDULE;
@@ -111,15 +151,11 @@ int TRANS::init(double p[], int n_args)
    // to trigger first read in run()
    inframe = RTBUFSAMPS;
 
-   amptable = floc(1);
-   if (amptable) {
-      int amplen = fsize(1);
-      tableset(SR, dur, amplen, tabs);
-   }
+   initamp(dur, p, 3, 1);
 
    oneover_cpsoct10 = 1.0 / cpsoct(10.0);
-
-   skip = (int) (SR / (float) resetval);
+   if (fastUpdate)   // no transp updates
+      _increment = cpsoct(10.0 + octpch(p[4])) * oneover_cpsoct10;
 
    return nSamps();
 }
@@ -137,7 +173,7 @@ void TRANS::doupdate()
 
    amp = p[3];
    if (amptable)
-      amp *= tablei(currentFrame(), amptable, tabs);
+      amp *= tablei(currentFrame(), amptable, amptabs);
    pctleft = (nargs > 6) ? p[6] : 0.5;
 
    float newtransp = p[4];
@@ -158,8 +194,13 @@ int TRANS::run()
 
    for (int i = 0; i < outframes; i++) {
       if (--branch <= 0) {
-         doupdate();
-         branch = skip;
+         if (fastUpdate) {
+            if (amptable)
+               amp = ampmult * tablei(currentFrame(), amptable, amptabs);
+         }
+         else
+            doupdate();
+         branch = getSkip();
       }
       while (getframe) {
          if (inframe >= RTBUFSAMPS) {
@@ -193,7 +234,7 @@ int TRANS::run()
       }
 
       outp += outputchans;
-	  increment();
+      increment();
 
       counter += _increment;         // keeps track of interp pointer
       if (counter - (double) incount >= -0.5)

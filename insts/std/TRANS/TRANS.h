@@ -2,14 +2,15 @@
 #include <rtdefs.h>
 
 class TRANS : public Instrument {
-   int    incount, inframe, skip, branch, inchan, nargs;
-   bool   getframe;
+   int    incount, inframe, branch, inchan, nargs;
+   bool   getframe, fastUpdate;
    double _increment, counter, oneover_cpsoct10;
-   float  amp, pctleft, transp;
+   float  amp, ampmult, pctleft, transp;
    float  newsig, oldsig, oldersig;
    double *amptable;
-   float  *in, tabs[2];
+   float  *in, amptabs[2];
 
+   void initamp(float dur, double p[], int ampindex, int ampgenslot);
    void doupdate();
 public:
    TRANS();
