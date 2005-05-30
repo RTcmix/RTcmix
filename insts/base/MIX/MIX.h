@@ -1,11 +1,12 @@
 #include <Instrument.h>
 
 class MIX : public Instrument {
-	int outchan[MAXBUS];
-	float amp, *in, tabs[2];
+	int branch, outchan[MAXBUS];
+	bool fastUpdate;
+	float amp, ampmult, *in, amptabs[2];
 	double *amptable;
-	int skip, branch;
 
+	void initamp(float dur, double p[], int ampindex, int ampgenslot);
 public:
 	MIX();
 	virtual ~MIX();
