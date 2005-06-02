@@ -5,7 +5,7 @@
 #include <rtdefs.h>
 
 extern "C" {
-	void mdelset(float*, int*, int);
+	void mdelset(float, float*, int*, int);
 	float mdliget(float*, float, int*);
 }
 
@@ -64,8 +64,8 @@ int BSFLUTE::init(double p[], int n_args)
 					"length 2 (table 4).");
 
 	int imax = DELSIZE;
-	mdelset(del1,dl1,imax);
-	mdelset(del2,dl2,imax);
+	mdelset(SR, del1,dl1,imax);
+	mdelset(SR, del2,dl2,imax);
 
 //	srrand(0.1);
 

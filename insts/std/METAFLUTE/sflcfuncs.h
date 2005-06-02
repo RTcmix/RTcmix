@@ -4,7 +4,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-	void mdelset(float *, int *, int);
+	void mdelset(float, float *, int *, int);
 	void mdelput(float, float *, int *);
 	float mdelget(float *, int, int *);
 	float mdliget(float *, float, int *);

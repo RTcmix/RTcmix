@@ -6,7 +6,7 @@
 #include <rtdefs.h>
 
 extern "C" {
-	void mdelset(float*, int*, int);
+	void mdelset(float, float*, int*, int);
 	float mdliget(float*, float, int*);
 }
 
@@ -65,8 +65,8 @@ int VSFLUTE::init(double p[], int n_args)
 	si2hi = p[11] * psize2/SR;
 
 	int imax = DELSIZE;
-	mdelset(del1,dl1,imax);
-	mdelset(del2,dl2,imax);
+	mdelset(SR, del1,dl1,imax);
+	mdelset(SR, del2,dl2,imax);
 
 //	srrand(0.1);
 

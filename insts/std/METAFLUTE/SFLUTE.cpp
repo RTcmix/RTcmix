@@ -45,8 +45,8 @@ int SFLUTE::init(double p[], int n_args)
 		return die("SFLUTE", "You haven't made the output amp envelope (table 2).");
 
 	int imax = DELSIZE;
-	mdelset(del1,dl1,imax);
-	mdelset(del2,dl2,imax);
+	mdelset(SR, del1,dl1,imax);
+	mdelset(SR, del2,dl2,imax);
 	dl1ptr = dl1;
 	dl2ptr = dl2;
 	del1ptr = del1;
@@ -82,7 +82,9 @@ int SFLUTE::run()
 		float sig = (rrand() * namp * aamp) + aamp;
 		float del1sig = mdelget(del1,length1,dl1);
 		sig = sig + (del1sig * -0.35);
-		mdelput(sig,del2,dl2);
+// BGG mm -- delput works fine
+//		mdelput(sig,del2,dl2);
+		delput(sig,del2,dl2);
 
 		sig = mdelget(del2,length2,dl2);
 		sig = (sig * sig * sig) - sig;
@@ -92,7 +94,9 @@ int SFLUTE::run()
 		out[0] = sig * amp * oamp;
 		sig = (dampcoef * sig) + ((1.0 - dampcoef) * oldsig);
 		oldsig = sig;
-		mdelput(sig,del1,dl1);
+// BGG mm -- delput works fine
+//		mdelput(sig,del1,dl1);
+		delput(sig,del1,dl1);
 
 		if (outputChannels() == 2) {
 			out[1] = (1.0 - spread) * out[0];
