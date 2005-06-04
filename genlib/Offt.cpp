@@ -13,7 +13,7 @@ Offt::Offt(int fftsize, unsigned int flags)
 	: _len(fftsize)
 {
 #ifdef FFTW
-	_plan_r2c = _plan_r2c = NULL;
+	_plan_r2c = _plan_c2r = NULL;
 	_buf = (float *) fftwf_malloc(sizeof(float) * _len);
 	int csize = sizeof(fftwf_complex) * ((_len / 2) + 1);
 	_cbuf = (fftwf_complex *) fftwf_malloc(csize);
