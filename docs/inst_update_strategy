@@ -1007,7 +1007,9 @@ VOCODE(start, inskip, dur, amp, numfilt, lowcf, space_mult, bwpct,
             must return a local table.  If both, then arg overrides gen.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-VOCODE2(start, inskip, dur, amp, numfilt, lowcf, space_mult, car_transp,
+*****NB: only supporting amp, noise_amp, pan and cf_freq_table pfields
+
+### VOCODE2(start, inskip, dur, amp, numfilt, lowcf, space_mult, car_transp,
          bwpct, [response_time, mod_hipass_amp, mod_hipass_cf, noise_amp,
          noise_rate, pctleft])
    [1. amp envelope]
@@ -1026,7 +1028,10 @@ VOCODE2(start, inskip, dur, amp, numfilt, lowcf, space_mult, car_transp,
             must return a local table.  If both, then arg overrides gen.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-VOCODESYNTH(start, inskip, dur, amp, numfile, lowcf, space_mult, car_transp,
+*****NB: only supporting amp, pan car_wavetable, scaling_curve and
+cf_freq_table pfields
+
+### VOCODESYNTH(start, inskip, dur, amp, numfile, lowcf, space_mult, car_transp,
                bwpct, [window_len, smoothness, threshold, attack, release,
                mod_hipass_amp, mod_hipass_cf, inchan, pctleft])
    [1. amp envelope]
