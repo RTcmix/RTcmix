@@ -95,11 +95,13 @@ tableset.o \
 wshape.o
 
 OCFILES = \
+Obucket.cpp \
 Ocomb.cpp \
 Ocombi.cpp \
 Odelay.cpp \
 Odelayi.cpp \
 Oequalizer.cpp \
+Offt.cpp \
 Oonepole.cpp \
 Ooscil.cpp \
 Ooscili.cpp \
@@ -107,16 +109,23 @@ Orand.cpp \
 Ortgetin.cpp
 
 OOBJECTS = \
+Obucket.o \
 Ocomb.o \
 Ocombi.o \
 Odelay.o \
 Odelayi.o \
 Oequalizer.o \
+Offt.o \
 Oonepole.o \
 Ooscil.o \
 Ooscili.o \
 Orand.o \
 Ortgetin.o
+
+ifeq ($(FFTW_SUPPORT), FALSE)
+	OCFILES += FFTReal.cpp
+	OOBJECTS += FFTReal.o
+endif
 
 .c.o:
 	$(CC) -c $(CFLAGS) -o $@ $<
@@ -140,6 +149,7 @@ $(LIB):	$(OBJECTS) $(OOBJECTS)
 depend:
 ifeq ($(ARCH),LINUX)
 	-$(SHELL) -ec '$(CC) -M $(CFLAGS) $(CFILES)' > depend
+	-$(SHELL) -ec '$(CXX) -M $(CXXFLAGS) $(OCFILES)' >> depend
 endif
 ifeq ($(ARCH),SGI)
 # Note: -MM is a gcc extension. If no gcc, use -M.
