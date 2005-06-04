@@ -46,7 +46,6 @@
 #include <Instrument.h>
 #include <PField.h>
 #include "CONVOLVE1.h"
-#include "fft.h"
 #include <rt.h>
 #include <rtdefs.h>
 
