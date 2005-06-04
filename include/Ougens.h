@@ -5,11 +5,13 @@
 #ifndef _OUGENS_H_
 #define _OUGENS_H_ 1
 
+#include "../genlib/Obucket.h"
 #include "../genlib/Ocomb.h"
 #include "../genlib/Ocombi.h"
 #include "../genlib/Odelay.h"
 #include "../genlib/Odelayi.h"
 #include "../genlib/Oequalizer.h"
+#include "../genlib/Offt.h"
 #include "../genlib/Oonepole.h"
 #include "../genlib/Ooscil.h"
 #include "../genlib/Ooscili.h"
