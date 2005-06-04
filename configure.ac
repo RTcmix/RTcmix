@@ -125,6 +125,17 @@ AC_ARG_WITH(jack, AC_HELP_STRING([--with-jack],
    fi])
 AC_SUBST(JACK_SUPPORT)
 
+# FFTW options
+FFTW_SUPPORT=FALSE                        # default
+WITH_FFTW="false"                         # just for summary display below
+AC_ARG_WITH(fftw, AC_HELP_STRING([--with-fftw],
+   [use FFTW]),
+   [if test "$withval" != "no"; then
+      FFTW_SUPPORT=TRUE
+      WITH_FFTW="true"
+   fi])
+AC_SUBST(FFTW_SUPPORT)
+
 #AC_SUBST(WITH_VAL, "$withval")    # for debugging this script
 
 
@@ -187,6 +198,12 @@ if test "$JACK_SUPPORT" = "TRUE"; then
    PKG_CHECK_MODULES(JACK,jack)
 fi
 
+# FFTW
+# NOTE: If this fails, it could be because user hasn't built FFTW --enable-float
+if test "$FFTW_SUPPORT" = "TRUE"; then
+   PKG_CHECK_MODULES(FFTW,fftw3f)
+fi
+
 # Write output files -----------------------------------------------------------
 #AC_CONFIG_HEADER(config.h)   # we don't need this yet
 AC_CONFIG_FILES(makefile.conf)
@@ -201,5 +218,6 @@ echo "  " Build with Python support............................. : $WITH_PYTHON
 echo "  " Build with ALSA support............................... : $WITH_ALSA
 echo "  " Build with JACK support............................... : $WITH_JACK
 echo "  " Build with NetPlay support............................ : $WITH_NPLAY
+echo "  " Build with FFTW support............................... : $WITH_FFTW
 echo
 
