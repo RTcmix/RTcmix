@@ -10,7 +10,7 @@
       p2  = total duration
     * p3  = amplitude multiplier
 
-      p4  = input sound table (e.g., maketable("sndfile", ...))
+      p4  = input sound table (e.g., maketable("soundfile", ...))
       p5  = number of channels in sample table
     * p6  = input channel of sample table
 
