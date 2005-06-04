@@ -213,6 +213,7 @@ inline void FREEVERB :: updateRvb(double p[])
       }
       rvb->setwidth(width * 0.01);
    }
+// printf("rmsz=%f, predel=%f, damp=%f, dry=%f, wet=%f, width=%f\n", roomsize, predelay_time, damp, dry, wet, width);
 }
 
 
