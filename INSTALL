@@ -37,6 +37,9 @@ Here is how to install RTcmix and its instrument packages.
    NOTE: If you're running a Mac OS X earlier than 10.3 and want to enable
    Python, see the instructions below.
 
+   For additional configure options, run "./configure --help".  Some of the
+   standard GNU options are not yet enabled for RTcmix.
+
 4. There are some special settings that you can make in the "site.conf" file,
    though most people will never need to do this.
 
