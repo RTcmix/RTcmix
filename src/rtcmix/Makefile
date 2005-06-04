@@ -125,7 +125,15 @@ AUDIOLIB = ../audio/librtaudio.a
 SNDLIB = ../sndlib/sndlib.a
 
 ifeq ($(JACK_SUPPORT), TRUE)
+ ifeq ($(FFTW_SUPPORT), TRUE)
+   AUDIOLIB += `pkg-config --libs jack fftw3f`
+ else
    AUDIOLIB += `pkg-config --libs jack`
+ endif
+else
+ ifeq ($(FFTW_SUPPORT), TRUE)
+   AUDIOLIB += `pkg-config --libs fftw3f`
+ endif
 endif
 
 LIBS = $(AUDIOLIB) $(SNDLIB) $(LIBCONF)
