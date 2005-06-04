@@ -1,6 +1,19 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2005-06-04  John Gibson <johgibso-at-indiana.edu>
+
+	* New Ougens objects: Offt, Obucket.  Offt is a simple wrapper around
+	  one of two FFT libraries chosen at compile time: fftw3, and FFTReal,
+	  the latter by Laurent de Soras.  The API to Offt is very similar to
+	  that of the C version used in cmix for many years.  Obucket is a
+	  simple delay line that invokes a callback when the output index wraps
+	  around.  This makes the buffering and manipulation of FFT data -- the
+	  buffer sizes of which hardly ever align cleanly with the RTcmix run()
+	  buffer size -- much easier to handle.
+	* New instrument: CONVOLVE1.  This is similar to insts/std/convolve; it
+	  has fewer capabilities, but it can run with in real-time input.
+
 2005-04-28  Douglas Scott  <netdscott at netscape.net>
 
 	* Added 'include' feature to Minc parser.  
