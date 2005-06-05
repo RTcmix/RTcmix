@@ -597,6 +597,8 @@ ReversePField::ReversePField(PField *innerPField) : PFieldWrapper(innerPField)
 
 double ReversePField::doubleValue(double didx) const
 {
+	if (didx > 1.0)
+		didx = 1.0;
 	return field()->doubleValue(1.0 - didx);
 }
 
