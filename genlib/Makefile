@@ -105,6 +105,7 @@ Offt.cpp \
 Oonepole.cpp \
 Ooscil.cpp \
 Ooscili.cpp \
+Oreson.cpp \
 Orand.cpp \
 Ortgetin.cpp
 
@@ -120,6 +121,7 @@ Oonepole.o \
 Ooscil.o \
 Ooscili.o \
 Orand.o \
+Oreson.o \
 Ortgetin.o
 
 ifeq ($(FFTW_SUPPORT), FALSE)
