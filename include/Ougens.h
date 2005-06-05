@@ -16,6 +16,7 @@
 #include "../genlib/Ooscil.h"
 #include "../genlib/Ooscili.h"
 #include "../genlib/Orand.h"
+#include "../genlib/Oreson.h"
 #include "../genlib/Ortgetin.h"
 
 #endif // _OUGENS_H_
