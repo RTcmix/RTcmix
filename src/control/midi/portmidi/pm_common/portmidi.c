@@ -223,6 +223,7 @@ const char *Pm_GetErrorText( PmError errnum ) {
         break;
     case pmBadData:
         msg = "PortMidi: `Invalid MIDI message Data'";
+        break;
     default:                         
         msg = "PortMidi: `Illegal error number'"; 
         break;
