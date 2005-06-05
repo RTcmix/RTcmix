@@ -1,9 +1,17 @@
-class NOISE : public Instrument {
-	int skip, branch, mynresons;
-	float myrsnetc[64][5], myamp[64];
-	float oamp, spread, amptabs[2];
-	double *amparr;
+#include "cfuncs.h"
 
+class Oreson;
+
+class NOISE : public Instrument {
+	bool fastUpdate;
+	int branch, nresons;
+	float amp, ampmult, pan, amptabs[2];
+	double *amptable;
+	Oreson *resons[MAXFILTER];
+	float resonamp[MAXFILTER];
+
+	void initamp(float dur, double p[], int ampindex, int ampgenslot);
+	void doupdate();
 public:
 	NOISE();
 	virtual ~NOISE();

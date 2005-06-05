@@ -1,40 +1,82 @@
-#include <stdio.h>
+#include <stddef.h>	// for NULL
 #include <ugens.h>
+#include "cfuncs.h"
 
-float rsnetc[64][5],amp[64];
-int nresons;
-extern float SR();	// hack to access what was global
+typedef struct {
+	float cf;
+	float bw;
+	float amp;
+} FilterSpec;
 
+static FilterSpec _filter_spec[MAXFILTER];
+static int _num_filters = 0;
 
-double setup(float *p, int n_args)
+/* setup filters for IIR instruments
+
+   p0 - center frequency
+        if < 15, indicates oct.pc format instead of Hz
+        if negative, abs. value is multiplier of first frequency given
+   p1 - bandwidth (Hz)
+        if negative, abs. value is percent (from 0 to 1) of frequency
+   p2 - amplitude multiplier
+
+   followed by additional triplets for a total of 64 filters.
+*/
+double setup(float p[], int n_args)
 {
-	int i,j;
-	float first,bw,cf;
+	int i, j;
+	float first = 1.0f;
 
-	first = (p[0] < 15.0) ? cpspch(p[0]) : p[0];
-	bw = p[1] < 0 ? -p[1] * first : p[1];
-	rsnset(SR(), first,bw,1.,0.,rsnetc[0]);
 	advise("IIR setup", "centerfreq    bandwidth  relative amp");
-	amp[0] = p[2];
-	advise(NULL, "            %10.4f %10.4f %10.4f",first,bw,amp[0]);
-	for(i=3,j=1; i<n_args; i += 3)  {
-	        if(p[i] < 0.) cf = -p[i] * first;
-	        else  cf = (p[i] < 15.0) ? cpspch(p[i]) : p[i];
-	        bw = p[i+1] < 0 ? -p[i+1] * cf : p[i+1];
-	        amp[j] = p[i+2];
-	        rsnset(SR(), cf ,bw ,1.,0.,rsnetc[j]);
-	        advise(NULL, "            %10.4f %10.4f %10.4f",cf,bw,amp[j]);
-	        j++;
+
+	for (i = 0, j = 0; i < n_args; i += 3, j++)  {
+		float cf, bw, amp;
+
+		if (j == MAXFILTER)
+			return die("IIR setup", "Can't have more than %d filters.", MAXFILTER);
+
+		if (p[i] < 0.0)
+			cf = -p[i] * first;
+		else
+			cf = (p[i] < 15.0) ? cpspch(p[i]) : p[i];
+		if (i == 0)
+			first = cf;
+		bw = p[i + 1] < 0.0 ? -p[i + 1] * cf : p[i + 1];
+		amp = p[i + 2];
+
+		_filter_spec[j].cf = cf;
+		_filter_spec[j].bw = bw;
+		_filter_spec[j].amp = amp;
+
+		advise(NULL, "            %10.4f %10.4f %10.4f", cf, bw, amp);
 	}
-	nresons = j;
-	return((double)nresons);
+	_num_filters = j;
+	return (double) _num_filters;
 }
 
 
-int
-profile()
+/* Retrieve current descriptions of up to MAXFILTER filters.  Returns the
+   actual number of filters, and fills in the <cf>, <bw> and <amp> arrays
+   appropriately.  These arrays must be dimensioned by caller to MAXFILTER!
+   Returns 0 if script has not called setup yet (or has called it with no args).
+*/
+int get_iir_filter_specs(float cf[MAXFILTER], float bw[MAXFILTER],
+                                                        float amp[MAXFILTER])
 {
-	UG_INTRO("setup",setup);
+	int i;
+
+	for (i = 0; i < _num_filters; i++) {
+		cf[i] = _filter_spec[i].cf;
+		bw[i] = _filter_spec[i].bw;
+		amp[i] = _filter_spec[i].amp;
+	}
+	return _num_filters;
+}
+
+
+int profile()
+{
+	UG_INTRO("setup", setup);
 	return 0;
 }
 

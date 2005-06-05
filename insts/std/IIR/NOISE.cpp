@@ -27,82 +27,124 @@
 */
 #include <stdio.h>
 #include <ugens.h>
-#include <mixerr.h>
+#include <Ougens.h>
 #include <Instrument.h>
+#include <PField.h>
+#include <Option.h>	// fastUpdate
 #include "NOISE.h"
 #include <rt.h>
 #include <rtdefs.h>
 
 
-extern "C" {
-	extern float rsnetc[64][5],amp[64];  /* defined in cfuncs.c */
-	extern int nresons;
-}
-
 NOISE::NOISE() : Instrument()
 {
 	branch = 0;
+	nresons = 0;
 }
 
 NOISE::~NOISE()
 {
+	for (int i = 0; i < nresons; i++)
+		delete resons[i];
 }
 
+
+// In fastUpdate mode, we skip doupdate() entirely, instead updating only amp,
+// and only from a table.  The table can be a makegen or a PField table.  PField
+// tables must be "flattened" using copytable if they are compound (e.g. passed
+// through a PField filter or multiplied by a constant).  We use p[ampindex] as
+// an amp multiplier, unless using a PField table, in which case there is no amp
+// multiplier -- the p[ampindex] value is the first table value.   -JGG
+
+void NOISE::initamp(float dur, double p[], int ampindex, int ampgenslot)
+{
+	fastUpdate = Option::fastUpdate();
+	if (fastUpdate) {
+		// Prefer PField table, otherwise makegen
+		int tablen = 0;
+		amptable = (double *) getPFieldTable(ampindex, &tablen);
+		if (amptable)
+			ampmult = 1.0f;
+		else {
+			ampmult = p[ampindex];
+			amptable = floc(ampgenslot);
+			if (amptable)
+				tablen = fsize(ampgenslot);
+		}
+		if (amptable)
+			tableset(SR, dur, tablen, amptabs);
+		else
+			amp = ampmult;
+	}
+	else {
+		// NB: ampmult never used, first amp set in doupdate
+		amptable = floc(ampgenslot);
+		if (amptable) {
+			int tablen = fsize(ampgenslot);
+			tableset(SR, dur, tablen, amptabs);
+		}
+	}
+}
 
 int NOISE::init(double p[], int n_args)
 {
 	float outskip = p[0];
 	float dur = p[1];
+	pan = p[3];
 
 	if (rtsetoutput(outskip, dur, this) == -1)
 		return DONT_SCHEDULE;
 
-	amparr = floc(1);
-	if (amparr) {
-		int lenamp = fsize(1);
-		tableset(SR, dur, lenamp, amptabs);
-	}
+	initamp(dur, p, 2, 1);
+
+	float cf[MAXFILTER], bw[MAXFILTER], gain[MAXFILTER];
+	nresons = get_iir_filter_specs(cf, bw, gain);
+	if (nresons == 0)
+		die("NOISE", "You must call setup() first to describe filters.");
 
 	for (int i = 0; i < nresons; i++) {
-		myrsnetc[i][0] = rsnetc[i][0];
-		myrsnetc[i][1] = rsnetc[i][1];
-		myrsnetc[i][2] = rsnetc[i][2];
-		myrsnetc[i][3] = myrsnetc[i][4] = 0.0;
-		myamp[i] = amp[i];
+		// NB: All the IIR insts used the RMS scale factor.
+		resons[i] = new Oreson(SR, cf[i], bw[i], Oreson::kRMSResponse);
+		resonamp[i] = gain[i];
 	}
-	mynresons = nresons;
-
-	skip = (int) (SR / (float) resetval);
 
 	return nSamps();
+}
+
+void NOISE::doupdate()
+{
+	double p[4];
+	update(p, 4, kAmp | kPan);
+	amp = p[2];
+	if (amptable)
+		amp *= tablei(currentFrame(), amptable, amptabs);
+	pan = p[3];
 }
 
 int NOISE::run()
 {
 	for (int i = 0; i < framesToRun(); i++)  {
 		if (--branch <= 0) {
-			double p[4];
-			update(p, 4, kAmp | kPan);
-			oamp = p[2];
-			if (amparr)
-				oamp *= tablei(cursamp, amparr, amptabs);
-			spread = p[3];
-			branch = skip;
+			if (fastUpdate) {
+				if (amptable)
+					amp = ampmult * tablei(currentFrame(), amptable, amptabs);
+			}
+			else
+				doupdate();
+			branch = getSkip();
 		}
 
 		float sig = rrand();
 
 		float out[2];
-		out[0] = 0.0;
-		for (int j = 0; j < mynresons; j++) {
-			float val = reson(sig, myrsnetc[j]);
-			out[0] += val * myamp[j];
-		}
+		out[0] = 0.0f;
+		for (int j = 0; j < nresons; j++)
+			out[0] += resons[j]->next(sig) * resonamp[j];
 
-		out[0] *= oamp;
-		if (outputchans == 2) {
-			out[1] = out[0] * (1.0 - spread);
-			out[0] *= spread;
+		out[0] *= amp;
+		if (outputChannels() == 2) {
+			out[1] = out[0] * (1.0f - pan);
+			out[0] *= pan;
 		}
 
 		rtaddout(out);

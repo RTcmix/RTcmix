@@ -1,9 +1,17 @@
-class INPUTSIG : public Instrument {
-	int inchan, skip, branch, mynresons;
-	float myrsnetc[64][5], myamp[64];
-	float oamp, spread, *in, amptabs[2];
-	double *amparr;
+#include "cfuncs.h"
 
+class Oreson;
+
+class INPUTSIG : public Instrument {
+	bool fastUpdate;
+	int inchan, branch, nresons;
+	float amp, ampmult, pan, *in, amptabs[2];
+	double *amptable;
+	Oreson *resons[MAXFILTER];
+	float resonamp[MAXFILTER];
+
+	void initamp(float dur, double p[], int ampindex, int ampgenslot);
+	void doupdate();
 public:
 	INPUTSIG();
 	virtual ~INPUTSIG();
