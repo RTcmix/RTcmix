@@ -3,12 +3,11 @@ nyquist = sr / 2
 rtsetparams(sr, 2)
 load("SPECTEQ")
 
-/* ftp://presto.music.virginia.edu/pub/rtcmix/snd/ah.snd */
-rtinput("/snd/Public_Sounds/vccm_old/ah.snd")
+rtinput("../../../snd/huhh.wav")
 
 inchan = 0
-inskip = .4
-indur = 2
+inskip = 0
+indur = DUR()
 ringdur = 0
 amp = 15
 fftlen = 1024           /* yielding 512 frequency bands */
