@@ -141,12 +141,14 @@ static int parse_rtoutput_args(int, double []);
 static int
 header_type_from_filename(char *fname)
 {
-   int   i, format = -1;
+   int   i, format = -2;
    char  *p;
 
    p = strrchr(fname, '.');
    if (p != NULL) {
       p++;     /* skip over '.' */
+      if (strcasecmp(p, "sco") == 0)
+         return die("rtoutput", "You asked to overwrite a \".sco\" file!");
       for (i = 0; i < num_format_extensions; i++) {
          if (strcasecmp(format_extension_list[i].arg, p) == 0) {
             format = format_extension_list[i].format;
@@ -182,6 +184,8 @@ RTcmix::parse_rtoutput_args(int nargs, double pp[])
 
    output_header_type = header_type_from_filename(rtoutsfname);
    if (output_header_type == -1)
+      return -1;
+   if (output_header_type == -2)
       output_header_type = DEFAULT_HEADER_TYPE;
    output_data_format = DEFAULT_DATA_FORMAT;
 
