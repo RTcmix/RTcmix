@@ -125,7 +125,7 @@ RTcmix::rtsendsamps(AudioDevice *device)
    /* If we're writing to a file, and not playing, print a dot to show
       we've output one buffer.
    */
-   if (!playing && rtfileit) {
+   if (!playing && rtfileit && Option::print()) {
       printing_dots = 1;
       printf(".");    /* no '\n' */
    }
