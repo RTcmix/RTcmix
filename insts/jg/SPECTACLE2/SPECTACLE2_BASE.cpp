@@ -654,6 +654,7 @@ void SPECTACLE2_BASE::update_bin_groups(
 						 cntltabslot, startfreq, int(_nyquist), nbins - startbin);
 		else
 			printf("  [%d]\t%d Hz\n\n", cntltabslot, startfreq);
+		fflush(stdout);
 	}
 
 #ifdef DEBUG_BINGROUPS
