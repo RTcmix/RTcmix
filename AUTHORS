@@ -28,6 +28,9 @@ Thanks to Julius O. Smith for his resample program.
 Thanks to Laurent de Soras <http://ldesoras.free.fr> for his
 FFTReal class, which is our default FFT for the Offt object.
 
+Thanks to Roger Dannenberg and others for PortMidi, which we
+use in the MIDI control plugin.
+
 Thanks to Christopher Penrose for help with Mac OS X audio I/O.
 
 Thanks to Carl McTague and Judd Storrs for FreeBSD support.
