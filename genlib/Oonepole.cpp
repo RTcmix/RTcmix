@@ -2,7 +2,7 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-#include <Ougens.h>
+#include <Oonepole.h>
 #include <math.h>
 #include <float.h>	// for -FLT_MAX
 
