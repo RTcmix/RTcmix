@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2005-06-12  John Gibson <johgibso-at-indiana.edu>
+
+	* New instrument family: SPECTACLE2, for FFT-based delay and EQ processing.
+	  Other variants to come.  This is a vastly cleaned up version of SPECTACLE
+	  and includes support for some real-time updates.
+
 2005-06-04  John Gibson <johgibso-at-indiana.edu>
 
 	* New Ougens objects: Offt, Obucket.  Offt is a simple wrapper around
