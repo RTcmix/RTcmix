@@ -2,10 +2,7 @@
 
 void rsnset(float SR, float cf, float bw, float scl, float xinit, float a[])
 {
-	float c,temp;
-	float tval1,tval2,tval3,tval4;
-
-	c=temp=tval1=tval2=tval3=tval4=0;
+	float c, temp;
 
 	if(!xinit) {
 		a[4] = 0;
