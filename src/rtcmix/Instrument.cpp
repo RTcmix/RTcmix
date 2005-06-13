@@ -183,29 +183,25 @@ int Instrument::update(double p[], int nvalues, unsigned fields)
 	return 0;
 }
 
-// This alternative update() serves two purposes.
-//    1. Sometimes a pfield needs to span a duration that's different from the
-//       total note duration (for example, an envelope that controls only the
-//       input duration for an instrument that has a long ring-down duration.)
-//       Calling this update() with the optional <totframes> argument makes the
-//       pfield span the duration corresponding to <totframes> instead of
-//       nSamps().
-//    2. Sometimes an instrument needs to update a pfield from a function that's
-//       different from the one in which other pfields are updated.  (There is
-//       an example in SPECTACLE_BASE.cpp that is like this.)  It can be more
-//       convenient then to request just the pfield you need.
-// Note that it is much more efficient to grab all the pfields using the main
-// update() method instead of this one.
+// This alternative update method serves one main purpose: sometimes a pfield
+// needs to span a duration that's different from the total note duration (for
+// example, an envelope that controls only the input duration for an instrument
+// that has a long ring-down duration.)  Calling this update() with the optional
+// <totframes> argument makes the pfield span the duration corresponding to
+// <totframes> instead of nSamps().  Note that it's much more efficient to grab
+// all the pfields using the first update method than to use this update method
+// multiple times, so try to avoid this method when you can use the other one.
 //                                                              -JGG, 6/5/05
 
 double Instrument::update(int index, int totframes)
 {
 	assert(index < _pfields->size());
-	int nframes = (totframes > 0) ? totframes : nSamps();
+	const int nframes = (totframes == 0) ? nSamps() : totframes;
 	double percent = double(currentFrame()) / nframes;
 	// NB: PFields must force <percent> to be <= 1.0
 	return (*_pfields)[index].doubleValue(percent);
 }
+
 
 /* ------------------------------------------------------------ init() --- */
 
