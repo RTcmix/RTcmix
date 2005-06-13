@@ -530,7 +530,7 @@ double DrawTablePField::doubleValue(double didx) const
 	if (curval == newval)
 		return 0.0;		// no change to table
 
-printf("[%d]\tcur=%f, new=%f\n", targetindex, curval, newval);
+	// printf("[%d]\tcur=%f, new=%f\n", targetindex, curval, newval);
 
 	// The width PField defines the range of values affected.  From it we derive
 	// three points across <span> indices: start, target, stop.  Target gets
