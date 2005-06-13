@@ -24,7 +24,7 @@
    defined below (p13-16).
    
    p10 = EQ table (i.e., amplitude scaling of each band), in dB (0 dB means
-         no change, + dB boost, - dB cut).
+         no change, + dB boost, - dB cut).  Affects only input duration.
    p11 = delay time table (seconds)
    p12 = delay feedback table.  Feedback is an amplitude multiplier for signal
          reentering the delay line from its output.  Feedback values greater
@@ -105,10 +105,18 @@
    John Gibson <johgibso at indiana dot edu>, 6/12/05.
 */
 
-//#define DUMP
-//#define DEBUG
 #include "SPECTACLE2.h"
 #include <float.h>
+
+//#define DUMP
+//#define DEBUG
+//#define PRINT_DELTIMES
+//#define PRINT_DELTIME_CHANGES
+
+#if defined(PRINT_DELTIME_CHANGES) && !defined(PRINT_DELTIMES)
+	#define PRINT_DELTIMES
+#endif
+
 
 const float kMaxDelayTime = 20.0f;
 
@@ -230,8 +238,8 @@ int SPECTACLE2::subinit(double p[], int n_args)
 		if (_deltimetable)
 			deltime = _deltimetable[_bin_groups[i]];
 		if (deltime < 0.0f || deltime > kMaxDelayTime)
-			return die(instname(), "Delay times must be >= 0 and <= %g.",
-			                                                 kMaxDelayTime);
+			return die(instname(), "Delay times must be between 0 and %g seconds.",
+			                                                       kMaxDelayTime);
 		if (deltime > maxtime)
 			maxtime = deltime;
 	}
@@ -338,6 +346,21 @@ void SPECTACLE2::modify_analysis(bool reading_input)
 	dump_anal_bins();
 #endif
 
+#ifdef PRINT_DELTIMES
+	static float *prevdeltimes = NULL;
+	if (prevdeltimes == NULL) {
+		prevdeltimes = new float [_control_table_size];
+		printf("\nmodify_analysis: delay times --------------------------\n");
+		for (int i = 0; i < _control_table_size; i++) {
+			prevdeltimes[i] = _deltimetable[i];
+			printf("[%d] %f\n", i, _deltimetable[i]);
+		}
+ #ifdef PRINT_DELTIME_CHANGES
+		printf("\nmodify_analysis: delay time changes -------------------\n");
+ #endif
+	}
+#endif
+
 	for (int i = 0; i <= _half_fftlen; i++) {
 		int index = i << 1;
 
@@ -354,6 +377,12 @@ void SPECTACLE2::modify_analysis(bool reading_input)
 
 		float deltime = _deltimetable ? _deltimetable[bg] : _deltimeconst;
 		deltime = _fclamp(0.0f, deltime, kMaxDelayTime);
+#ifdef PRINT_DELTIME_CHANGES
+		if (deltime != prevdeltimes[bg]) {
+			printf("[%d] %f\n", bg, deltime);
+			prevdeltimes[bg] = deltime;
+		}
+#endif
 
 		float mag = reading_input ? (_anal_bins[index] * _ampdb(eq)) : 0.0f;
 		float phase = _anal_bins[index + 1];
