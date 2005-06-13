@@ -9,6 +9,8 @@
 #include "AudioFileDevice.h"
 #include <byte_routines.h>
 #include <assert.h>
+#include <errno.h>
+#include <string.h>
 #ifdef linux
 #include <unistd.h>
 #endif
@@ -84,6 +86,10 @@ int AudioFileDevice::doOpen(int mode)
 	int fd = sndlib_create((char *)_impl->path, _impl->fileType,
 						   getDeviceFormat(), (int) getSamplingRate(), 
 						   getDeviceChannels());
+	// Catch and store any error
+	if (fd < 0) {
+		error(::strerror(errno));
+	}
 	setDevice(fd);
 	closing(false);
 	resetFrameCount();
