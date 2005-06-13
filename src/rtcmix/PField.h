@@ -199,6 +199,7 @@ public:
 	virtual int		print(FILE *) const;	// redefined
 	virtual int		copyValues(double *) const;
 	virtual int		values() const { return _len; }
+	void setInterpFunction(InterpFunction fun) { _interpolator = fun; }
 protected:
 	virtual ~TablePField();
 private:
