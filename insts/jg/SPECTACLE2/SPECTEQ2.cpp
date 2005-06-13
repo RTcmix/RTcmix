@@ -161,7 +161,7 @@ void SPECTEQ2::subupdate()
 	update(p, 14, 1 << 3 | 1 << 8 | 1 << 9 | 1 << 10 | 1 << 11 | 1 << 13);
 
 	set_oamp(p[3]);
-	set_freqrange(p[9], p[10]);
+	set_freqrange(p[9], p[10], "EQ");
 	set_wet(bool(p[11]) ? 0.0f : 1.0f);
 	if (_nargs > 13)
 		set_pan(p[13]);

@@ -19,7 +19,7 @@ protected:
 private:
 	int usage();
 	void dump_anal_bins();
-	void set_eq_freqrange(float min, float max);
+	bool set_eq_freqrange(float min, float max);
 
 	long _maxdelsamps;
 	float _eqconst, _deltimeconst, _feedbackconst, _eq_minfreq, _eq_rawmaxfreq;

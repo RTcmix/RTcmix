@@ -268,8 +268,8 @@ bad_alloc:
 
 
 // --------------------------------------------------------- set_eq_freqrange --
-// This works exactly like set_freqrange in base class, but for _eq_bin_groups.
-void SPECTACLE2::set_eq_freqrange(float min, float max)
+// Similar to set_freqrange in base class, but for _eq_bin_groups.
+bool SPECTACLE2::set_eq_freqrange(float min, float max)
 {
 	if (min != _eq_minfreq || max != _eq_rawmaxfreq) {
 		_eq_rawmaxfreq = max;
@@ -280,8 +280,10 @@ void SPECTACLE2::set_eq_freqrange(float min, float max)
 		if (max > _nyquist)
 			max = _nyquist;
 		_eq_minfreq = _fclamp(0.0f, min, max);
-		update_bin_groups(_eq_bin_groups, _eq_minfreq, max, _eqtablen);
+		update_bin_groups(_eq_bin_groups, _eq_minfreq, max, _eqtablen, "EQ");
+		return true;
 	}
+	return false;
 }
 
 

@@ -11,6 +11,7 @@
 
 #include "SPECTACLE2_BASE.h"
 #include <float.h>
+#include <Option.h>
 
 const int kMaxWindowLen = kMaxFFTLen * 8;
 const int kMinOverlap = 1;
@@ -159,6 +160,11 @@ int SPECTACLE2_BASE::make_windows(const double *table, const int len)
 int SPECTACLE2_BASE::init(double p[], int n_args)
 {
 	_nargs = n_args;
+#ifdef NOTYET
+	_print_stats = Option::printStats();
+#else
+	_print_stats = true;
+#endif
 
 	if (getargs(p, n_args) < 0)	// subclass gets args
 		return DONT_SCHEDULE;
@@ -433,7 +439,11 @@ void SPECTACLE2_BASE::process(const float *buf, const int)
 
 
 // ------------------------------------------------------------ set_freqrange --
-void SPECTACLE2_BASE::set_freqrange(float min, float max)
+// Update the frequency range within which control tables operate.  Return true
+// if range has actually changed, resulting in an update_bin_groups call.
+// Otherwise, return false.
+
+bool SPECTACLE2_BASE::set_freqrange(float min, float max, const char *type)
 {
 	if (min != _minfreq || max != _rawmaxfreq) {
 		_rawmaxfreq = max;
@@ -444,8 +454,10 @@ void SPECTACLE2_BASE::set_freqrange(float min, float max)
 		if (max > _nyquist)
 			max = _nyquist;
 		_minfreq = _fclamp(0.0f, min, max);
-		update_bin_groups(_bin_groups, _minfreq, max, _control_table_size);
+		update_bin_groups(_bin_groups, _minfreq, max, _control_table_size, type);
+		return true;
 	}
+	return false;
 }
 
 
@@ -457,7 +469,8 @@ void SPECTACLE2_BASE::update_bin_groups(
 	int bin_groups[],
 	const float minfreq,
 	const float maxfreq,
-	const int control_table_size)
+	const int control_table_size,
+	const char *type)		// to identify bin groups to user
 {
 	if (control_table_size == 0)				// no control table
 		return;
@@ -480,9 +493,9 @@ void SPECTACLE2_BASE::update_bin_groups(
 		if (control_table_size > _half_fftlen) {
 			const int ignorevals = control_table_size - _half_fftlen;
 			if (ignorevals != _prev_bg_ignorevals) {
-				advise(instname(), "Control table of size %d too large for "
-			                      "frequency range...ignoring last %d values",
-			                      control_table_size, ignorevals);
+				warn(instname(), "Control table of size %d too large for "
+			                    "frequency range...ignoring last %d values",
+			                    control_table_size, ignorevals);
 				_prev_bg_ignorevals = ignorevals;
 			}
 		}
@@ -527,9 +540,9 @@ void SPECTACLE2_BASE::update_bin_groups(
 			if (ignorevals > 0) {
 				cntltablen = control_table_size - ignorevals;
 				if (ignorevals != _prev_bg_ignorevals) {
-					advise(instname(), "Control table of size %d too large for "
-			                         "frequency range...ignoring last %d values",
-			                         control_table_size, ignorevals);
+					warn(instname(), "Control table of size %d too large for "
+			                       "frequency range...ignoring last %d values",
+			                       control_table_size, ignorevals);
 					_prev_bg_ignorevals = ignorevals;
 				}
 			}
@@ -612,13 +625,44 @@ void SPECTACLE2_BASE::update_bin_groups(
 			bin_groups[bidx++] = last;
 	}
 
+	// print a user-readable listing of bin groups
+	if (_print_stats) {
+		printf("\n%s:  %s table bin groups\n", instname(), type);
+		printf("------------------------------------------\n");
+		int cntltabslot = 0;
+		int startbin = 0;
+		for (int i = 0; i < nbins; i++) {
+			const int thisslot = bin_groups[i];
+			if (thisslot > cntltabslot) {
+				// print stats for previous control table slot <cntltabslot>
+				const int startfreq = int(_fund_anal_freq * startbin + 0.5f);
+				if (i - startbin > 1) {
+					const int endfreq = int(_fund_anal_freq * (i - 1) + 0.5f);
+					printf("  [%d]\t%d-%d Hz (%d bins)\n",
+					          cntltabslot, startfreq, endfreq, i - startbin);
+				}
+				else
+					printf("  [%d]\t%d Hz\n", cntltabslot, startfreq);
+				cntltabslot = thisslot;
+				startbin = i;
+			}
+		}
+		// print stats for last control table slot
+		const int startfreq = int(_fund_anal_freq * startbin + 0.5f);
+		if (nbins - startbin > 1)
+			printf("  [%d]\t%d-%d Hz (%d bins)\n\n",
+						 cntltabslot, startfreq, int(_nyquist), nbins - startbin);
+		else
+			printf("  [%d]\t%d Hz\n\n", cntltabslot, startfreq);
+	}
+
 #ifdef DEBUG_BINGROUPS
 	printf("bin_groups[] -----------------------------\n");
-	for (int i = 0; i <= _half_fftlen; i++)
+	for (int i = 0; i < nbins; i++)
 		printf("[%d] %d (%f)\n", i, bin_groups[i], i * _fund_anal_freq);
 #endif
 #ifdef CHECK_BINGROUPS
-	for (int i = 1; i <= _half_fftlen; i++) {
+	for (int i = 1; i < nbins; i++) {
 		int diff = bin_groups[i] - bin_groups[i - 1];
 		if (diff < 0 || diff > 1)
 			printf("bin group (%p) index %d not 0 or 1 greater than prev entry\n",

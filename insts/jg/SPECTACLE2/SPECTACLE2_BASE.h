@@ -46,7 +46,7 @@ protected:
 	                                                const int newsize);
 	inline int closest_bin(const float freq);
 	void update_bin_groups(int bin_groups[], const float minfreq,
-		const float maxfreq, const int control_table_size);
+		const float maxfreq, const int control_table_size, const char *type);
 
 	// helper functions
 	float _ampdb(float db) { return powf(10.0f, db * 0.05f); }
@@ -68,7 +68,7 @@ protected:
 	int get_window_len() const { return _window_len; }
 	void set_overlap(int overlap) { _overlap = overlap; }
 	int get_overlap() const { return _overlap; }
-	void set_freqrange(float min, float max);
+	bool set_freqrange(float min, float max, const char *type = "delay");
 	void set_wet(float wet) {
 		if (wet != _wet) {
 			_wet = _fclamp(0.0f, wet, 1.0f);
@@ -77,6 +77,12 @@ protected:
 	}
 	void set_inchan(int inchan) { _inchan = inchan; }
 	void set_pan(float pan) { _pan = pan; }
+
+	// For a subclass that wants to change the base class array for some reason.
+	void set_bin_groups(int bin_groups[]) {
+		delete [] _bin_groups;
+		_bin_groups = bin_groups;	// assume new one is valid
+	}
 
 	int _input_frames, _nargs, _decimation, _overlap, _half_fftlen;
 	float _inputdur, _fund_anal_freq, _nyquist;
@@ -114,6 +120,7 @@ private:
 	inline void increment_out_read_index();
 	inline void increment_out_write_index();
 
+	bool _print_stats;
 	int _branch, _inchan, _fftlen, _window_len, _input_end_frame;
 	int _prev_bg_ignorevals;
 	int _out_read_index, _out_write_index, _outframes, _latency;
