@@ -147,14 +147,14 @@ header_type_from_filename(char *fname)
    p = strrchr(fname, '.');
    if (p != NULL) {
       p++;     /* skip over '.' */
-      if (strcasecmp(p, "sco") == 0)
-         return die("rtoutput", "You asked to overwrite a \".sco\" file!");
       for (i = 0; i < num_format_extensions; i++) {
          if (strcasecmp(format_extension_list[i].arg, p) == 0) {
             format = format_extension_list[i].format;
             break;
          }
       }
+		if (format == -2)
+         return die("rtoutput", "Unrecognized sound file extension: \".%s\"", p);
    }
    return format;
 }
