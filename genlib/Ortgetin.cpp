@@ -5,7 +5,6 @@
 #include <RTcmix.h>
 #include <Instrument.h>
 #include <Ortgetin.h>
-#include <ugens.h>
 
 Ortgetin::Ortgetin(Instrument *ins)
 {
