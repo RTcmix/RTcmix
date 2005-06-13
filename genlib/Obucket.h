@@ -17,7 +17,7 @@ public:
 	                                                  void *context);
 	Obucket(int len, ProcessFunction callback, void *context);
 	~Obucket();
-	inline void drop(float item);		// call this to drop <item> in bucket
+	inline bool drop(float item);		// call this to drop <item> in bucket
 	void flush(float defaultval = 0.0f);
 	void clear(float defaultval = 0.0f);
 
@@ -29,12 +29,18 @@ private:
 	float *_buf;
 };
 
-inline void Obucket::drop(float item)
+
+// Store <item> into the buffer; if full, invoke callback and return true;
+// otherwise return false.
+
+inline bool Obucket::drop(float item)
 {
 	_buf[_index++] = item;
 	if (_index == _len) {
 		(*_callback)(_buf, _len, _context);
 		_index = 0;
+		return true;
 	}
+	return false;
 }
 
