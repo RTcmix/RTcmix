@@ -526,7 +526,7 @@ int SPECTACLE_BASE :: run()
       overlapadd(currentFrame());
       shiftout();
 
-      cursamp += decimation;
+      increment(decimation);
    }
 
    if (currentFrame() < input_end_frame) {
