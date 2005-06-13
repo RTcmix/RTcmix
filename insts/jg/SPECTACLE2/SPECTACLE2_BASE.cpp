@@ -7,6 +7,7 @@
 //#define DUMP
 //#define DEBUG
 //#define DEBUG_BINGROUPS
+//#define CHECK_BINGROUPS
 
 #include "SPECTACLE2_BASE.h"
 #include <float.h>
@@ -23,6 +24,7 @@ SPECTACLE2_BASE::SPECTACLE2_BASE()
 	_iamp_pfield_index = 0;		// mark as invalid
 	_window_pfield_index = 0;
 	_control_table_size = 0;
+	_prev_bg_ignorevals = -1;
 
 	_inbuf = _outbuf = _input = _output = NULL;
 	_anal_window = _synth_window = _anal_bins = NULL;
@@ -477,9 +479,12 @@ void SPECTACLE2_BASE::update_bin_groups(
 		bin_groups[_half_fftlen] = _half_fftlen - 1;
 		if (control_table_size > _half_fftlen) {
 			const int ignorevals = control_table_size - _half_fftlen;
-			advise(instname(), "Control table of size %d too large for frequency "
-			                   "range...ignoring last %d values",
-			                   control_table_size, ignorevals);
+			if (ignorevals != _prev_bg_ignorevals) {
+				advise(instname(), "Control table of size %d too large for "
+			                      "frequency range...ignoring last %d values",
+			                      control_table_size, ignorevals);
+				_prev_bg_ignorevals = ignorevals;
+			}
 		}
 	}
 
@@ -516,14 +521,17 @@ void SPECTACLE2_BASE::update_bin_groups(
 		int cntltablen = control_table_size;
 		const float endflatrange = minfreq + (cntltablen * _fund_anal_freq);
 		bool linear_map = true;
-		if (endflatrange > maxfreq) {
+		if (endflatrange > maxfreq - _fund_anal_freq) {
 			const int ignorevals = int((endflatrange - maxfreq)
 			                                                 / _fund_anal_freq);
 			if (ignorevals > 0) {
 				cntltablen = control_table_size - ignorevals;
-				advise(instname(), "Control table of size %d too large for "
-			                   "frequency range...ignoring last %d values",
-			                   control_table_size, ignorevals);
+				if (ignorevals != _prev_bg_ignorevals) {
+					advise(instname(), "Control table of size %d too large for "
+			                         "frequency range...ignoring last %d values",
+			                         control_table_size, ignorevals);
+					_prev_bg_ignorevals = ignorevals;
+				}
 			}
 		}
 		else
@@ -608,6 +616,14 @@ void SPECTACLE2_BASE::update_bin_groups(
 	printf("bin_groups[] -----------------------------\n");
 	for (int i = 0; i <= _half_fftlen; i++)
 		printf("[%d] %d (%f)\n", i, bin_groups[i], i * _fund_anal_freq);
+#endif
+#ifdef CHECK_BINGROUPS
+	for (int i = 1; i <= _half_fftlen; i++) {
+		int diff = bin_groups[i] - bin_groups[i - 1];
+		if (diff < 0 || diff > 1)
+			printf("bin group (%p) index %d not 0 or 1 greater than prev entry\n",
+			       bin_groups, i);
+	}
 #endif
 }
 

@@ -115,6 +115,7 @@ private:
 	inline void increment_out_write_index();
 
 	int _branch, _inchan, _fftlen, _window_len, _input_end_frame;
+	int _prev_bg_ignorevals;
 	int _out_read_index, _out_write_index, _outframes, _latency;
 	int _iamp_pfield_index, _window_pfield_index, _window_len_minus_decimation;
 	float _wet, _dry, _pan, _ringdur, _iamp, _oamp;
