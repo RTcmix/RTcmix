@@ -19,7 +19,7 @@
 
     * p6  = grain output time jitter
             Maximum randomly determined amount to add or subtract from the
-            output start time for a grain, which is controlled by p12 (grain
+            output start time for a grain, which is controlled by p5 (grain
             hop time).
 
     * p7  = grain duration minimum
