@@ -1,12 +1,17 @@
+
 class MYSYNTH : public Instrument {
-   int     inchan, skip, branch;
-   float   amp, aamp, pctleft;
-   float   *amparray, amptabs[2];
 
 public:
-   MYSYNTH();
-   virtual ~MYSYNTH();
-   int init(double *, int);
-   int run();
+	MYSYNTH();
+	virtual ~MYSYNTH();
+	virtual int init(double *, int);
+	virtual int configure();
+	virtual int run();
+
+private:
+	void doupdate();
+
+	int _nargs, _branch;
+	float _amp, _pan;
 };
 

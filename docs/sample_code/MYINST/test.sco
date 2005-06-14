@@ -3,5 +3,8 @@ load("/home/me/MYINST/libMYINST.so")
 
 rtinput("/mysounds/foo.aiff")
 
-MYINST(st=0, inskip=0, DUR(), amp=1, inchan=0, pctleft=.2)
+amp = maketable("line", 1000, 0,0, 1,1, 5,1, 6,0)
+pan = maketable("line", 1000, 0,0, 1,1)
+
+MYINST(st=0, inskip=0, DUR(), amp, inchan=0, pan)
 

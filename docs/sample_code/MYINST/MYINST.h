@@ -1,13 +1,18 @@
+
 class MYINST : public Instrument {
-   int     inchan, skip, branch;
-   float   amp, aamp, pctleft;
-   float   *in, *amparray, amptabs[2];
 
 public:
-   MYINST();
-   virtual ~MYINST();
-   virtual int init(double *, int);
-   virtual int configure();
-   virtual int run();
+	MYINST();
+	virtual ~MYINST();
+	virtual int init(double *, int);
+	virtual int configure();
+	virtual int run();
+
+private:
+	void doupdate();
+
+	int _nargs, _inchan, _branch;
+	float _amp, _pan;
+	float *_in;
 };
 
