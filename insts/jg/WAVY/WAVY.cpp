@@ -1,3 +1,6 @@
+// Copyright (C) 2005 John Gibson.  See ``LICENSE'' for the license to this
+// software and for a DISCLAIMER OF ALL WARRANTIES.
+
 /* WAVY - dual wavetable oscillator instrument
 
       p0 = output start time
@@ -6,12 +9,22 @@
       p3 = frequency (Hz, or if < 15: oct.pc)
       p4 = phase offset for second oscillator (0-1)
       p5 = wavetable (use maketable("wave", ...) for this)
-      p6 = combination mode ("nocombine", "add", "subtract", "multiply")
+      p6 = combination expression ("a + b", "a - b", "a * b", etc.; see note 2)
       p7 = pan (in percent-to-left form: 0-1)
 
-   p2 (amplitude), p3 (freq), p4 (phase offset) and p7 (pan) can receive
-   updates from a table or real-time control source.  You can also update
-	the wavetable (p5) using modtable(wavetable, "draw", ...).
+
+   NOTES
+
+   1. p2 (amplitude), p3 (freq), p4 (phase offset) and p7 (pan) can receive
+      updates from a table or real-time control source.  You can also update
+   	the wavetable (p5) using modtable(wavetable, "draw", ...).
+
+   2. You can use most any mathematical expression to combine the two
+      oscillator streams.  "a" represents the output of the 1st oscillator,
+      "b", the second one.  The complete list of possibilities is given in
+      "fparser.txt," the documentation for the wonderful math expression
+      library that WAVY uses.  The library is by Juha Nieminen <warp at iki
+      dot fi> and Joel Yliluoma.  (More at: http://iki.fi/warp/FunctionParser)
 
    John Gibson, 6/15/05
 */
@@ -25,7 +38,10 @@
 #include "WAVY.h"
 #include <rt.h>
 #include <rtdefs.h>
+//#define NDEBUG
+#include <assert.h>
 
+#define OPTIMIZE_EXPRESSION
 //#define DEBUG
 
 
@@ -36,6 +52,8 @@ WAVY::WAVY() : Instrument()
 	_phaseOffset = -DBL_MAX;
 	_oscil1 = NULL;
 	_oscil2 = NULL;
+	_fp = NULL;
+	_combiner = NULL;
 }
 
 
@@ -43,6 +61,7 @@ WAVY::~WAVY()
 {
 	delete _oscil1;
 	delete _oscil2;
+	delete _fp;
 }
 
 
@@ -50,23 +69,52 @@ int WAVY::usage() const
 {
 	return die("WAVY",
 	           "Usage: WAVY(start, dur, amp, freq, phase_offset, wavetable, "
-	           "mode, pan");
+	           "expression, pan");
 }
 
 
-int WAVY::getCombinationMode() const
+int WAVY::setExpression()
 {
 	const PField &field = getPField(6);
-	const char *str = field.stringValue(0.0);
-	if (str[0] == 'n')
-		return kNoCombineMode;
-	else if (str[0] == 'a')
-		return kAddMode;
-	else if (str[0] == 's')
-		return kSubtractMode;
-	else if (str[0] == 'm')
-		return kMultiplyMode;
-	return -1;
+	const char *fieldstr = field.stringValue(0.0);
+
+	// copy expression string to <str>, stripping all white space
+	const int len = strlen(fieldstr);
+	char str[len + 1];
+	char *p = str;
+	for (int i = 0; i < len; i++) {
+		const char c = fieldstr[i];
+		if (!isspace(c))
+			*p++ = c;
+	}
+	str[len] = 0;
+
+	// Take care of some common simple cases first, since it's more efficient
+	// to process them without using the fparser library.
+	if (strcmp(str, "a") == 0)
+		setCombineFunc(a);
+	else if (strcmp(str, "b") == 0)
+		setCombineFunc(b);
+	else if (strcmp(str, "a+b") == 0)
+		setCombineFunc(add);
+	else if (strcmp(str, "a-b") == 0)
+		setCombineFunc(subtract);
+	else if (strcmp(str, "a*b") == 0)
+		setCombineFunc(multiply);
+	else {
+		_fp = new FunctionParser();
+		// use orig string so char offsets in err msg will be right
+		int ret = _fp->Parse(fieldstr, "a,b");
+		if (ret >= 0)
+			return die("WAVY", "Parser error for expression \"%s\" at character "
+			           "%d ('%c'): %s.",
+			           fieldstr, ret, fieldstr[ret], _fp->ErrorMsg());
+#ifdef OPTIMIZE_EXPRESSION
+		_fp->Optimize();
+#endif
+	}
+
+	return 0;
 }
 
 
@@ -92,15 +140,10 @@ int WAVY::init(double p[], int n_args)
 	_oscil1 = new Ooscil(SR, 440.0, wavet, wavelen);
 	_oscil2 = new Ooscil(SR, 440.0, wavet, wavelen);
 
-	const int mode = getCombinationMode();
-	if (mode == kNoCombineMode)
-		setCombineFunc(nocombine);
-	else if (mode == kAddMode)
-		setCombineFunc(add);
-	else if (mode == kSubtractMode)
-		setCombineFunc(subtract);
-	else if (mode == kMultiplyMode)
-		setCombineFunc(multiply);
+	if (setExpression() != 0)
+		return DONT_SCHEDULE;
+
+	assert(_fp != NULL || _combiner != NULL);
 
 	return nSamps();
 }
@@ -147,7 +190,10 @@ int WAVY::run()
 		float sig2 = _oscil2->nexti();
 
 		float out[chans];
-		out[0] = (*_combiner)(sig1, sig2) * _amp;
+		if (_fp)
+			out[0] = eval(sig1, sig2) * _amp;
+		else
+			out[0] = (*_combiner)(sig1, sig2) * _amp;
 
 		if (chans == 2) {
 			out[1] = out[0] * (1.0f - _pan);
@@ -162,7 +208,7 @@ int WAVY::run()
 }
 
 
-Instrument *makeWAVEY()
+Instrument *makeWAVY()
 {
 	WAVY *inst = new WAVY();
 	inst->set_bus_config("WAVY");

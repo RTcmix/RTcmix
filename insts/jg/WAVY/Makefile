@@ -3,7 +3,8 @@ include ../package.conf
 NAME = WAVY
 
 CURDIR = $(CMIXDIR)/insts/jg/$(NAME)
-OBJS = $(NAME).o
+FPARSER = fparser27/fparser
+OBJS = $(NAME).o $(FPARSER).o
 CMIXOBJS += $(PROFILE_O)
 PROGS = lib$(NAME).so $(NAME)
 
@@ -20,7 +21,7 @@ lib$(NAME).so: $(OBJS) $(GENLIB)
 $(NAME): $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) $(NAME).h
+$(OBJS): $(INSTRUMENT_H) $(NAME).h $(FPARSER).hh
 
 install: dso_install
 
