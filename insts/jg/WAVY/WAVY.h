@@ -40,10 +40,14 @@ inline float WAVY::add(float a, float b) { return a + b; }
 inline float WAVY::subtract(float a, float b) { return a - b; }
 inline float WAVY::multiply(float a, float b) { return a * b; }
 
+#include <math.h>		// for isnan()
+
 inline float WAVY::eval(float a, float b)
 {
 	double vars[] = { a, b };
 	float val = _fp->Eval(vars);
-	return (_fp->EvalError() == 0) ? val : 0.0f;
+	if (isnan(val) || _fp->EvalError())
+		val = 0.0f;
+	return val;
 }
 
