@@ -163,7 +163,7 @@ int SPECTACLE2_BASE::init(double p[], int n_args)
 #ifdef NOTYET
 	_print_stats = Option::printStats();
 #else
-	_print_stats = true;
+	_print_stats = false;
 #endif
 
 	if (getargs(p, n_args) < 0)	// subclass gets args
@@ -268,8 +268,10 @@ int SPECTACLE2_BASE::configure()
 	_dry_delay = new Odelay(_window_len);
    _dry_delay->setdelay(_latency);
 
-	// read index chases write index by _decimation
-	_outframes = _imax(_decimation, RTBUFSAMPS) * 2;
+	// Read index chases write index by _decimation; add 2 extra locations to
+	// keep read point from stepping on write point.  Verify with asserts in
+	// increment_out_*_index().
+	_outframes = _decimation + 2;
 	_out_read_index = _outframes - _decimation;
 	_out_write_index = 0;
 	_outbuf = new float [_outframes];
