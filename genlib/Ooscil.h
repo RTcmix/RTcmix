@@ -25,7 +25,8 @@ public:
 
 	inline void setfreq(float freq) { _si = freq * _lendivSR; }
 	inline void setphase(double phase) { _phase = phase; }
-	inline int getlength() { return _length; }
+	inline double getphase() const { return _phase; }
+	inline int getlength() const { return _length; }
 };
 
 #endif // _OOSCIL_H_
