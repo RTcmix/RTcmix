@@ -12,7 +12,6 @@
       p6 = combination expression ("a + b", "a - b", "a * b", etc.; see note 2)
       p7 = pan (in percent-to-left form: 0-1)
 
-
    NOTES
 
    1. p2 (amplitude), p3 (freq), p4 (phase offset) and p7 (pan) can receive
@@ -25,6 +24,9 @@
       "fparser.txt," the documentation for the wonderful math expression
       library that WAVY uses.  The library is by Juha Nieminen <warp at iki
       dot fi> and Joel Yliluoma.  (More at: http://iki.fi/warp/FunctionParser)
+      If you create a very complicated expression, using trig functions, etc.,
+      then this will not run very quickly.
+
 
    John Gibson, 6/15/05
 */
