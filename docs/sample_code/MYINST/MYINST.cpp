@@ -77,10 +77,11 @@ int MYINST::init(double p[], int n_args)
 	// no need to retrieve amp or pan here, because these will be set 
 	// before their first use inside of doupdate().
 
-	// Tell scheduler when to start this inst. <nsamps> is number of sample
-	// frames that will be written to output (dur * SR).
+	// Tell scheduler when to start this inst.  If rtsetoutput returns -1 to
+	// indicate an error, then return DONT_SCHEDULE, so that
 
-	nsamps = rtsetoutput(outskip, dur, this);
+	if (rtsetoutput(outskip, dur, this) == -1)
+		return DONT_SCHEDULE;
 
 	// Test whether the requested number of output channels is right for your
 	// instrument.  The die function reports the error; the system decides
@@ -90,10 +91,11 @@ int MYINST::init(double p[], int n_args)
 		return die("MYINST", "Use mono or stereo output only.");
 
 	// Set file pointer on audio input.  If the input source is real-time or
-	// an aux bus, then <inskip> must be zero.  If not, the system will prevent
-	// us ever getting here.
+	// an aux bus, then <inskip> must be zero.  The system will return an
+	// an error in this case, which we must pass along.
 
-	rtsetinput(inskip, this);
+	if (rtsetinput(inskip, this) == -1)
+		return DONT_SCHEDULE;
 
 	// Make sure requested input channel number is valid for this input source.
 	// inputChannels() gives the total number of input channels, initialized
@@ -103,9 +105,10 @@ int MYINST::init(double p[], int n_args)
 		return die("MYINST", "You asked for channel %d of a %d-channel input.",
 		                                             _inchan, inputChannels());
 
-	// Return the number of sample frames that we'll write to output.  This is
-	// the same as <nsamps> above, but eventually this Instrument class 
-	// accessor function will be the only way to retrieve this value.
+	// Return the number of sample frames that we'll write to output, which
+	// the base class has already computed in response to our rtsetoutput call
+	// above.  nSamps() equals the duration passed to rtsetoutput multiplied
+	// by the sampling rate and then rounded to the nearest integer.
 
 	return nSamps();
 }

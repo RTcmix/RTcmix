@@ -62,10 +62,11 @@ int MYSYNTH::init(double p[], int n_args)
 	const float outskip = p[0];
 	const float dur = p[1];
 
-	// Tell scheduler when to start this inst. <nsamps> is number of sample
-	// frames that will be written to output (dur * SR).
+	// Tell scheduler when to start this inst.  If rtsetoutput returns -1 to
+	// indicate an error, then return DONT_SCHEDULE, so that
 
-	nsamps = rtsetoutput(outskip, dur, this);
+	if (rtsetoutput(outskip, dur, this) == -1)
+		return DONT_SCHEDULE;
 
 	// Test whether the requested number of output channels is right for your
 	// instrument.  The die function reports the error; the system decides
@@ -74,9 +75,10 @@ int MYSYNTH::init(double p[], int n_args)
 	if (outputChannels() > 2)
 		return die("MYSYNTH", "Use mono or stereo output only.");
 
-	// Return the number of sample frames that we'll write to output.  This is
-	// the same as <nsamps> above, but eventually this Instrument class 
-	// accessor function will be the only way to retrieve this value.
+	// Return the number of sample frames that we'll write to output, which
+	// the base class has already computed in response to our rtsetoutput call
+	// above.  nSamps() equals the duration passed to rtsetoutput multiplied
+	// by the sampling rate and then rounded to the nearest integer.
 
 	return nSamps();
 }
