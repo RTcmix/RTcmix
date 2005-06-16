@@ -1060,6 +1060,11 @@ double ConverterPField::pchcps(const double cps)
 	return ::pchcps(cps);
 }
 
+double ConverterPField::midipch(const double pch)
+{
+	return ::midipch(pch);
+}
+
 double ConverterPField::pchmidi(const double midi)
 {
 	return ::pchmidi((unsigned char) midi);

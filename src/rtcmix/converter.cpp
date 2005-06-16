@@ -55,6 +55,8 @@ makeconverter(const Arg args[], const int nargs)
 		converter = new ConverterPField(pfield, ConverterPField::pchoct);
 	else if (args[1] == "pchcps")
 		converter = new ConverterPField(pfield, ConverterPField::pchcps);
+	else if (args[1] == "midipch")
+		converter = new ConverterPField(pfield, ConverterPField::midipch);
 	else if (args[1] == "pchmidi")
 		converter = new ConverterPField(pfield, ConverterPField::pchmidi);
 	else if (args[1] == "octmidi")

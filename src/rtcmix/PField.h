@@ -488,6 +488,7 @@ public:
 	static double cpspch(const double);
 	static double pchoct(const double);
 	static double pchcps(const double);
+	static double midipch(const double);
 	static double pchmidi(const double);
 	static double octmidi(const double);
 	static double boost(const double);
