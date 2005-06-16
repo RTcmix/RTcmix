@@ -99,7 +99,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <float.h>
-#include <assert.h>
 #include <ugens.h>
 #include <Instrument.h>
 #include <PField.h>
@@ -107,9 +106,10 @@
 #include <rtdefs.h>
 #include "GRANULATE.h"
 #include "grainstream.h"
+//#define NDEBUG     // disable asserts
+#include <assert.h>
 
 //#define DEBUG
-//#define NDEBUG     // disable asserts
 
 #define PRESERVE_GRAIN_DURATION  true     // regardless of transposition
 
