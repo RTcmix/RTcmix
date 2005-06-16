@@ -299,14 +299,14 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 		}
 	}
 
-	int header_type, data_format, data_location, file_chans;
+	int data_format, data_location, file_chans;
 	long file_samps;
 	double srate;
 
-	int fd = open_sound_file((char *) fname, &header_type, &data_format,
-							&data_location, &srate, &file_chans, &file_samps);
+	int fd = open_sound_file("maketable (soundfile)", (char *) fname, NULL,
+                &data_format, &data_location, &srate, &file_chans, &file_samps);
 	if (fd == -1)
-		return die("maketable (soundfile)", "Can't open input file \"%s\".", fname);
+		return -1;
 
 	if (srate != RTcmix::sr())
 		warn("maketable (soundfile)", "The input file sampling rate is %g, but "
