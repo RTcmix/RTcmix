@@ -17,7 +17,7 @@
    parameters for additional partials, can receive updates from a table
    or real-time control source.
 
-   John Gibson, 3/9/06
+   John Gibson, 3/9/05
 */
 #include <stdio.h>
 #include <stdlib.h>
