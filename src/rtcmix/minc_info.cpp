@@ -9,6 +9,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#define ALL_CHANS -1
+
 
 /* These are all for the older disk-based cmix functions. */
 extern int	     isopen[NFILES];        /* open status */
@@ -67,6 +69,112 @@ double m_dur(float *p, int n_args)
 }
 
 }	// end extern "C"
+
+
+// Functions for returning info about sound files to the script.  -JGG
+
+extern "C" {
+	double filedur(const Arg args[], const int nargs);
+	double filechans(const Arg args[], const int nargs);
+	double filesr(const Arg args[], const int nargs);
+	double filepeak(const Arg args[], const int nargs);
+};
+
+double filedur(const Arg args[], const int nargs)
+{
+	if (nargs != 1)
+		return die("filedur", "Usage:  duration = filedur(\"filename\")");
+	const char *fname = args[0];
+
+	int nchans;
+	long nsamps;
+	double srate;
+	int fd = open_sound_file("filedur", (char *) fname, NULL, NULL, NULL,
+	                         &srate, &nchans, &nsamps);
+	if (fd == -1)
+		return -1.0;
+   sndlib_close(fd, 0, 0, 0, 0);
+
+   return double(nsamps / nchans) / srate;
+}
+
+double filechans(const Arg args[], const int nargs)
+{
+	if (nargs != 1)
+		return die("filechans", "Usage:  chans = filechans(\"filename\")");
+	const char *fname = args[0];
+
+	int nchans;
+	int fd = open_sound_file("filechans", (char *) fname, NULL, NULL, NULL,
+	                         NULL, &nchans, NULL);
+	if (fd == -1)
+		return -1.0;
+   sndlib_close(fd, 0, 0, 0, 0);
+
+   return double(nchans);
+}
+
+double filesr(const Arg args[], const int nargs)
+{
+	if (nargs != 1)
+		return die("filesr", "Usage:  sr = filesr(\"filename\")");
+	const char *fname = args[0];
+
+	double srate;
+	int fd = open_sound_file("filesr", (char *) fname, NULL, NULL, NULL,
+	                         &srate, NULL, NULL);
+	if (fd == -1)
+		return -1.0;
+   sndlib_close(fd, 0, 0, 0, 0);
+
+   return srate;
+}
+
+double filepeak(const Arg args[], const int nargs)
+{
+	if (nargs < 1)
+		return die("filepeak", "Usage:  "
+		           "peak = filepeak(\"filename\"[, start[, end[, chan]]])");
+	const char *fname = args[0];
+
+	int format, dataloc, nchans;
+	double srate;
+	long nsamps;
+	int fd = open_sound_file("filepeak", (char *) fname, NULL, &format, &dataloc,
+	                         &srate, &nchans, &nsamps);
+	if (fd == -1)
+		return -1.0;
+
+	long startframe = (nargs > 1) ? long(((double) args[1] * srate) + 0.5) : 0L;
+	long nframes = (nsamps / nchans) - startframe;
+	if (nargs > 2) {
+		long endframe = nframes;
+		nframes = long(((double) args[2] * srate) + 0.5) + startframe;
+		if (nframes > endframe)
+			nframes = endframe;
+	}
+	int chan = (nargs > 3) ? int(args[3]) : ALL_CHANS;
+	if (chan != ALL_CHANS && chan >= nchans)
+		return die("filepeak", "You specified channel %d for a %d-channel file.",
+		           chan, nchans);
+	float peak[nchans];
+	long peakloc[nchans];
+   int result = sndlib_findpeak(fd, -1, dataloc, -1, format, nchans,
+                                startframe, nframes, peak, peakloc);
+   sndlib_close(fd, 0, 0, 0, 0);
+	if (result == -1)
+		return -1.0;
+
+	if (chan == ALL_CHANS) {
+		float max = 0.0;
+		for (int i = 0; i < nchans; i++)
+			if (peak[i] > max)
+				max = peak[i];
+		return max;
+	}
+	return peak[chan];
+}
+
 
 double
 RTcmix::input_chans(float *p, int n_args)   /* returns chans for rtinput() files */
@@ -198,8 +306,6 @@ m_right(float p[], int n_args)
 
 } // end of extern "C"
 
-
-#define ALL_CHANS -1
 
 /* Returns peak for <chan> of current RT input file, between <start> and
    <end> times (in seconds). If <chan> is -1, returns the highest peak

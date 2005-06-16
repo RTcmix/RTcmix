@@ -28,6 +28,10 @@ ug_intro()
    UG_INTRO_HANDLE_RETURN("makefilter", makefilter);
    UG_INTRO_HANDLE_RETURN("makeconverter", makeconverter);
    UG_INTRO_HANDLE_RETURN("makemonitor", makemonitor);
+	UG_INTRO_DOUBLE_RETURN("filedur", filedur);
+	UG_INTRO_DOUBLE_RETURN("filechans", filechans);
+	UG_INTRO_DOUBLE_RETURN("filesr", filesr);
+	UG_INTRO_DOUBLE_RETURN("filepeak", filepeak);
 	UG_INTRO("makegen", makegen);
 	UG_INTRO("open",m_open);
 	UG_INTRO("peakoff",peak_off);
