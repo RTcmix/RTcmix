@@ -85,7 +85,7 @@ gen1(struct gen *gen, char *sfname)
       inchan = -1;   /* read all chans */
    dump = gen->nargs > 4? (int) gen->pvals[4] : 0;
 
-   fd = open_sound_file(sfname, &header_type, &data_format,
+   fd = open_sound_file("gen1", sfname, &header_type, &data_format,
                         &data_location, &srate, &file_chans, &file_samps);
    if (fd == -1)
       return die("gen1", "Can't open input file: \"%s\"!", sfname);
