@@ -31,6 +31,9 @@ FFTReal class, which is our default FFT for the Offt object.
 Thanks to Roger Dannenberg and others for PortMidi, which we
 use in the MIDI control plugin.
 
+Thanks Juha Nieminen <warp at iki dot fi> and Joel Yliluoma for
+their FunctionParser library.  (More at: http://iki.fi/warp/FunctionParser)
+
 Thanks to Christopher Penrose for help with Mac OS X audio I/O.
 
 Thanks to Carl McTague and Judd Storrs for FreeBSD support.
