@@ -49,64 +49,71 @@ get_last_input_index()
 /* ------------------------------------------------------ open_sound_file --- */
 int
 open_sound_file(
-      char     *sfname,
-      int      *header_type,
-      int      *data_format,
-      int      *data_location,
-      double   *srate,
+      char     *funcname,       // for error messages
+      char     *sfname,         // name of sound file to open
+      int      *header_type,    // Remaining args are pointers to storage for
+      int      *data_format,    //    various bits of file header info.  If
+      int      *data_location,  //    pointer is NULL, it will be ignored.
+      double   *srate,          //    Info is undefined on error return (-1).
       int      *nchans,
       long     *nsamps)
 {
-   int         fd;
+   // See if file exists and is a regular file or link.
    struct stat sfst;
-
-   /* See if file exists and is a regular file or link. */
    if (stat(sfname, &sfst) == -1) {
-      rterror("rtinput", "%s: %s", sfname, strerror(errno));
+      rterror(funcname, "\"%s\": %s", sfname, strerror(errno));
       return -1;
    }
    if (!S_ISREG(sfst.st_mode) && !S_ISLNK(sfst.st_mode)) {
-      rterror("rtinput", "%s is not a regular file or a link.\n", sfname);
+      rterror(funcname, "\"%s\" is not a regular file or a link.\n", sfname);
       return -1;
    }
 
-   /* Open the file and read its header. */
-   fd = sndlib_open_read(sfname);
+   // Open the file and read its header.
+   int fd = sndlib_open_read(sfname);
    if (fd == -1) {
-      rterror("rtinput", "Can't read header from \"%s\" (%s)\n",
+      rterror(funcname, "Can't read header from \"%s\" (%s)\n",
 		   sfname, strerror(errno));
       return -1;
    }
 
-   /* Now info is available from sndlib query functions. */
+   // Now info is available from sndlib query functions.
 
-   *header_type = mus_header_type();
+   int type = mus_header_type();
 
-   if (NOT_A_SOUND_FILE(*header_type)) {
-      rterror("rtinput", "\"%s\" is probably not a sound file\n", sfname);
+   if (NOT_A_SOUND_FILE(type)) {
+      rterror(funcname, "\"%s\" is probably not a sound file\n", sfname);
       sndlib_close(fd, 0, 0, 0, 0);
       return -1;
    }
 
-   *data_format = mus_header_format();
+   int format = mus_header_format();
 
-   if (INVALID_DATA_FORMAT(*data_format)) {
-      rterror("rtinput", "\"%s\" has invalid sound data format\n", sfname);
+   if (INVALID_DATA_FORMAT(format)) {
+      rterror(funcname, "\"%s\" has invalid sound data format\n", sfname);
       sndlib_close(fd, 0, 0, 0, 0);
       return -1;
    }
 
-   if (!SUPPORTED_DATA_FORMAT(*data_format)) {
-      rterror("rtinput",
-        "Can read only 16-bit integer, 24-bit integer and 32-bit float files.");
+   if (!SUPPORTED_DATA_FORMAT(format)) {
+      rterror(funcname, "Can't open \"%s\": can read only 16-bit integer, "
+                        "24-bit integer and 32-bit float files.", sfname);
       sndlib_close(fd, 0, 0, 0, 0);
 	  return -1;
    }
 
-   *data_location = mus_header_data_location();
-   *srate = (double) mus_header_srate();
-   *nchans = mus_header_chans();
-   *nsamps = mus_header_samples();
+   if (header_type)
+      *header_type = type;
+   if (data_format)
+      *data_format = format;
+   if (data_location)
+      *data_location = mus_header_data_location();
+   if (srate)
+      *srate = (double) mus_header_srate();
+   if (nchans)
+      *nchans = mus_header_chans();
+   if (nsamps)
+      *nsamps = mus_header_samples();
 
    return fd;
 }
@@ -302,7 +309,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 		}
 		else {
 			rtrecord = 0;
-			fd = ::open_sound_file(sfname, &header_type, &data_format,
+			fd = ::open_sound_file("rtinput", sfname, &header_type, &data_format,
 							&data_location, &srate, &nchans, &nsamps);
 			if (fd == -1)
 				return -1;
