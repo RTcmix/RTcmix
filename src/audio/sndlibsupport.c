@@ -1036,7 +1036,7 @@ sfcomment_peakstats_current(const SFComment *sfc, const int fd)
 
 /* ------------------------------------------------------ sndlib_findpeak --- */
 /* Finds the peak absolute value per channel, and the location (in frames)
-   of this peak, in the soundfile window specfied by <startframe> and
+   of this peak, in the soundfile window specified by <startframe> and
    <nframes>. If <outfd> is not -1, writes each input buffer to <outfd>
    with no change. (So the files must have same byte order.)
    Stores peak stats into <peak> and <peakloc> arrays, which are assumed
@@ -1139,6 +1139,11 @@ sndlib_findpeak(int    infd,
                }
             }
          }
+      }
+      else if (bytespersamp == 3) {
+//FIXME
+         fprintf(stderr, "finding peak of 24bit file not yet implemented.");
+         return -1;
       }
       else if (bytespersamp == 2) {      /* short ints */
          short samp, absamp;
