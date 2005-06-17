@@ -4,8 +4,8 @@
 
 rtsetparams(44100, 2)
 load("STEREO")
-rtinput("/snd/pablo1.snd")
+rtinput("../../../snd/input.wav")
 setline(0,0, 1, 1, 1.1, 0)
-STEREO(0, 0, 3.5, 0.7, 0.5, 0.5)
+STEREO(0, 0, DUR(), 0.7, 0.5, 0.5)
 setline(0,0, 0.1, 1, 1, 0)
-STEREO(2, 0, 3.5, 0.7, 0.1, 0.1)
+STEREO(2, 0, DUR(), 0.7, 0.1, 0.1)
