@@ -44,6 +44,7 @@ code provided in docs/sample_code.
       base class vars      accessor function
       ---------------------------------------
       cursamp++            increment()      // at end of run method loop
+      cursamp += amount    increment(amount)
 
    These are the ones typically used in old instruments.  There may
    be others that crop up from time to time.  See src/rtcmix/Instrument.h
@@ -58,20 +59,30 @@ code provided in docs/sample_code.
 
 7. Use a configure method (as in MIX.cpp) whenever your inst takes input.
    Not required, but recommended over the old way of handling memory
-   allocation in the run method.
+   allocation in the run method.  Whatever you do, don't allocate lots of
+   memory in the init method, because if a score plays many notes, they
+   *all* will allocate memory at the start of the run, possibly resulting
+   in an insane memory footprint.
 
-8. Another recommended change...  When computing values at the control rate,
+9. More recommended changes...  When computing values at the control rate,
    many insts use this idiom in the run method:
 
          if (branch < 0) {
-            // update some vars from a table
-            branch = skip
+            // update parameters
+            branch = skip;
          }
 
-   Change the "branch < 0" test to "branch <= 0".  We discovered that
-   the old way meant that reset(44100) in a script would not do what you 
-   expect; instead it effectively set the control rate to 22050.  The new
-   test fixes this.
+   Now the Instrument base class initializes and maintains the skip value,
+   so you should write this instead...
+
+         if (branch <= 0) {
+            // update parameters
+            branch = getSkip();
+         }
+
+   Notice the "<=" in place of the "<".  We discovered that the old way meant
+   that reset(44100) in a script would not do what you expect; instead it
+   effectively set the control rate to 22050.  The new test fixes this.
 
    Also, make branch a data member, not a variable local to the run method.
    In the latter case, the control rate is not decoupled completely from
@@ -107,11 +118,11 @@ To support the new dynamic PField capabilities, you need to do these things:
    }
 
 
-Consult insts/base/WAVETABLE for a simple example of the technique.  This
-instrument also shows how you can use a pfield to receive a table that
-you need to set up your inst (e.g., a wavetable).
+Consult docs/sample_code for simple examples of the technique.  If you 
+need to use a table directly, such as a wavetable, look at WAVETABLE
+for an example of how to do this.
 
 
 
-JGG, 7/25/04
+JGG, 6/17/05
 
