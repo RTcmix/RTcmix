@@ -6,13 +6,12 @@ amp = ampdb(-9)
 
 fname = "../../../../snd/nucular.wav"
 intab = maketable("soundfile", "nonorm", 0, fname)
-filedur = 1.578957
 numchans = 1
 inchan = 0
 
 inskip = 0.45
 winstart = 0.01
-winend = filedur - 0.01
+winend = filedur(fname) - 0.01
 wrap = 1
 
 travrate = makeconnection("mouse", "x", min=-1, max=1, dflt=0, lag=30,
@@ -25,7 +24,7 @@ outjitter = 0.001
 
 density = makeconnection("mouse", "y", min=5, max=120, dflt=10, lag=20,
                          "density", "grains/sec")
-hoptime = makeconverter(density, "inverse")
+hoptime = 1 / density
 
 mindur = hoptime * 10   // Since hoptime is dynamic, so is mindur and maxdur.
 maxdur = mindur
