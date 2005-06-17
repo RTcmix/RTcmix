@@ -17,13 +17,12 @@ R. Luke DuBois    <luke-at-columbia.edu>
 Mara Helmuth      <mara.helmuth-at-uc.edu>
 John Rhoads       <rhoads-at-virginia.edu>
 
+
 Thanks to Bill Schottstaedt for his sndlib sound library.
 (http://ccrma-www.stanford.edu/CCRMA/Software/sndlib)
 
 Thanks to Julius O. Smith for his resample program.
 (http://www-ccrma.stanford.edu/~jos/resample/index.html)
-
-(sndlib and resample have their own licenses.)
 
 Thanks to Laurent de Soras <http://ldesoras.free.fr> for his
 FFTReal class, which is our default FFT for the Offt object.
@@ -31,12 +30,15 @@ FFTReal class, which is our default FFT for the Offt object.
 Thanks to Roger Dannenberg and others for PortMidi, which we
 use in the MIDI control plugin.
 
-Thanks Juha Nieminen <warp at iki dot fi> and Joel Yliluoma for
+Thanks to Juha Nieminen <warp at iki dot fi> and Joel Yliluoma for
 their FunctionParser library.  (More at: http://iki.fi/warp/FunctionParser)
 
 Thanks to Christopher Penrose for help with Mac OS X audio I/O.
 
 Thanks to Carl McTague and Judd Storrs for FreeBSD support.
+
+Some instruments (pvoc, convolve) contain code from the UCSD Carl package,
+whose authors were F. R. Moore, Gareth Loy, Mark Dolson and others.
 
 
 Original Authors of cmix
@@ -58,14 +60,4 @@ Please do not pester the original cmix authors asking questions about RTcmix.
 
 If you know of others who are missing from this list, please send their
 names to John Gibson <johgibso-at-indiana.edu>.
-
-Some instruments (pvoc, convolve) contain code from the UCSD Carl package,
-whose authors were F. R. Moore, Gareth Loy, Mark Dolson and others.
-
-
-See ``LICENSE'' for the license to this software and for a DISCLAIMER OF
-ALL WARRANTIES.
-
-Individual instrument and interfaces packages may have their own
-LICENSE and AUTHORS files.
 

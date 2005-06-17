@@ -1,5 +1,10 @@
 Here is how to install RTcmix and its instrument packages.
 
+If you have trouble, please join the rtcmix-discuss mailing list
+<http://music.columbia.edu/mailman/listinfo/rtcmix-discuss>, and 
+as for help.
+
+
 1. Download RTcmix-[version].tar.gz and unpack it anywhere you like (in your
    home directory, or in /usr/local/src, for example) by typing
 
@@ -24,6 +29,7 @@ Here is how to install RTcmix and its instrument packages.
       --with-perl       Build the Perl-enabled RTcmix (PCMIX)
       --with-python     Build the Python-enabled RTcmix (PYCMIX)
       --with-netplay    Enable code that lets you play RTcmix over a network
+      --with-fftw       Use the FFTW3 library, instead of the builtin FFT code
 
    If you have more than one version of Perl or Python on your system, you
    can tell RTcmix which one to use by giving its path with the option, e.g.:
@@ -63,10 +69,8 @@ Here is how to install RTcmix and its instrument packages.
 
 See the README files in the docs dir for information on recent features.
 
-For some help getting started, check out the RTcmix web pages at Columbia
-University, which have lots of documentation and tutorials:
-
-   http://music.columbia.edu/cmc/RTcmix
+For some help getting started, check out the documentation and tutorials
+at rtcmix.org.
 
 
 --------------------------------------------------------------------------------
@@ -116,5 +120,5 @@ SGI Irix
 
 
 
--JGG, 8/1/04
+-JGG, 8/1/04; rev. for v4, 6/17/05
 
