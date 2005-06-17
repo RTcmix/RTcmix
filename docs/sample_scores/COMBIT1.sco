@@ -13,6 +13,6 @@
 
 rtsetparams(44100, 2)
 load("COMBIT")
-rtinput("../snd/nucular.wav")
+rtinput("../../../snd/nucular.wav")
 COMBIT(0, 0, DUR(), 0.5, cpspch(7.09), .9)
 COMBIT(0.2, 0, DUR(), 0.5, cpspch(7.07), .9, 0, 1)

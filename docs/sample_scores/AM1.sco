@@ -1,6 +1,6 @@
 rtsetparams(44100, 1)
 load("AM")
-rtinput("../snd/nucular.wav")
+rtinput("../../../snd/nucular.wav")
 makegen(1, 24, 1000, 0,0, 2,1, 5,1, 7,0)
 makegen(2, 10, 1000, 1)
 dur = DUR()
