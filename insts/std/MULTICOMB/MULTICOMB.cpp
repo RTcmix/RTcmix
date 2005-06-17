@@ -40,6 +40,7 @@ MULTICOMB::MULTICOMB() : Instrument()
 	in = NULL;
 	for (int n = 0; n < NCOMBS; n++)
 		comb[n] = NULL;	
+	branch = 0;
 }
 
 MULTICOMB::~MULTICOMB()
@@ -91,8 +92,6 @@ int MULTICOMB::init(double p[], int n_args)
 		spread[j] = (float) j / (float) (NCOMBS - 1);
 	}
 
-	skip = (int) (SR / (float) resetval);
-
 	return nSamps();
 }
 
@@ -121,7 +120,7 @@ int MULTICOMB::run()
 				for (int j = 0; j < NCOMBS; j++)
 					comb[j]->setReverbTime(rvbtime);
 			}
-			branch = skip;
+			branch = getSkip();
 		}
 
 		float insig, out[2];
