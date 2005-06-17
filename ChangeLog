@@ -3,12 +3,17 @@ fixes that we don't bother putting here.
 
 2005-06-15  John Gibson <johgibso-at-indiana.edu>
 
-	* New instrument: WAVEY, a dual-oscillator WAVETABLE variant.  Lets you
+	* New instrument: WAVY, a dual-oscillator WAVETABLE variant.  Lets you
 	  update the wavetable in real time (using modtable(..., "draw", ...))
 	  and has various oscillator combination modes.  For example, setting
-	  the mode to "subtract" and using a sawtooth waveform gives you a pulse
+	  the mode to "a - b" and using a sawtooth waveform gives you a pulse
 	  waveform.  Then you can modulate the phase offset between the oscillators
-	  to get pulse width modulation.
+	  to get pulse width modulation.  Most any arbitrary expression can 
+	  govern the combination of 'a' and 'b' oscillators.
+
+	* New script info functions: filedur(), filechans(), filesr(), filepeak(),
+	  for getting info about a sound file other than the one most recently
+	  loaded using rtinput().  For example: dur = filedur("my.wav")
 
 2005-06-12  John Gibson <johgibso-at-indiana.edu>
 
@@ -26,6 +31,7 @@ fixes that we don't bother putting here.
 	  around.  This makes the buffering and manipulation of FFT data -- the
 	  buffer sizes of which hardly ever align cleanly with the RTcmix run()
 	  buffer size -- much easier to handle.
+
 	* New instrument: CONVOLVE1.  This is similar to insts/std/convolve; it
 	  has fewer capabilities, but it can run with in real-time input.
 
