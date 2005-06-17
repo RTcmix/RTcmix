@@ -1,7 +1,7 @@
 rtsetparams(44100, 2)
 load("ELL")
 
-rtinput("../snd/conga.snd")
+rtinput("../../../snd/conga.snd")
 inchan = 0
 inskip = 0
 dur = DUR()
