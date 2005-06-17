@@ -2,10 +2,9 @@ rtsetparams(44100, 2)
 load("STEREO")
 
 reset(10000)
-xsetline(0,0, 1,1, 5,1, 6,0)
 makegen(1, 25, 10000, 1)
 
-rtinput("../../../snd/huhh.wav");
+rtinput("../../../snd/huhh.wav")
 
 totdur = 10
 incr = .02
