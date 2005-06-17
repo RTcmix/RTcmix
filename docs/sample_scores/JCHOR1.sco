@@ -13,21 +13,17 @@
    p9  = minimum grain wait (seconds)
    p10 = maximum grain wait (seconds)
    p11 = seed (0 - 1)
-   p12 = input channel [optional]
-         (If p12 is missing and input has > 1 chan, input channels averaged.)
+   p12 = input channel
+   p13 = overall amplitude multiplier
+   p14 = reference to grain envelope table
 
-   Assumes function table 1 is amplitude curve for the note. (Try gen 18.)
-   Or you can just call setline. If no setline or function table 1, uses
-   flat amplitude curve. By default, the amplitude envelope is updated 1000
-   times per second, but this can be changed by calling reset() with a
-   different value.
-
-   Assumes function table 2 is grain window function. (Try gen 25.)
+   p7 (min amp), p8 (max amp), p9 (min wait), p10 (max wait) and p13 (amp mult)
+   can receive dynamic updates from a table or real-time control source.
 
    Output can be either mono or stereo. If it's stereo, the program randomly
    distributes the voices across the stereo field.
 
-   Notes on p4 (maintain input duration)...
+   Notes on p4 (maintain input duration):
 
       Because the transposition method doesn't try to maintain duration -- it
       works like the speed control on a tape deck -- you have an option about
@@ -42,34 +38,33 @@
         grain length will be shorter or longer than p3, depending on the
         transposition.
 
-   Differences between JCHOR and chor (besides RT ability):
-      - No limit on input duration or number of voices
-      - Transpose the input signal
-      - Specify the input channel to use (or an average of them)
-      - Specify overall amplitude curve and grain window function via makegens
-
-   John Gibson (jgg9c@virginia.edu), 9/20/98, RT'd 6/24/99.
+   John Gibson, 9/20/98, RT'd 6/24/99; rev for v4, 7/24/04
 */
+
 rtsetparams(44100, 2)
 load("JCHOR")
 
-rtinput("your_input.snd")
-
-outskip = 0
-outdur = 10
+rtinput("../../../snd/huhh.wav")
+inchan = 0
 inskip = 0.20
-indur = 0.20
+
+outdur = 10
+
+indur = 0.60
 maintain_dur = 1
 transposition = 0.07
-nvoices = 60
+nvoices = 50
 minamp = 0.01
 maxamp = 1.0
 minwait = 0.00
-maxwait = 0.60
+maxwait = 0.30
 seed = 0.9371
 
-makegen(2, 25, 1000, 1)                /* last arg: 1=hanning, 2=hamming */
+amp = 0.8
+env = maketable("line", 1000, 0,0, 1,1, outdur-1,1, outdur,0)
 
-JCHOR(outskip, inskip, outdur, indur, maintain_dur, transposition, nvoices,
-      minamp, maxamp, minwait, maxwait, seed)
+grainenv = maketable("window", 1000, "hanning")
+
+JCHOR(0, inskip, outdur, indur, maintain_dur, transposition, nvoices,
+      minamp, maxamp, minwait, maxwait, seed, inchan, amp * env, grainenv)
 
