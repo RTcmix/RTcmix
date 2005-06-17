@@ -13,7 +13,7 @@
 
 rtsetparams(44100, 2)
 load("MULTICOMB")
-rtinput("/snd/pablo1.snd")
+rtinput("../../../snd/input.wav")
 reset(20000)
 makegen(1, 24, 1000, 0,0, 0.5,1, 8.6,1, 8.7,0, 8.8,0)
-MULTICOMB(0, 0, 8.8, 0.01, cpspch(7.02), cpspch(8.05), 5)
+MULTICOMB(0, 0, DUR() + 3, 0.1, cpspch(7.02), cpspch(8.05), 4)

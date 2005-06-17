@@ -3,14 +3,15 @@
    we're stashing the setline info in gen table 1 */
 
 rtsetparams(44100, 2)
-rtinput("/snd/pablo1.snd")
+rtinput("../../../snd/input.wav")
+filedur = DUR()
 setline(0,0, .1, 1, 2,0)
 
 reset(10000)
 dur = 1
 outsk = 0.0
 for(i = 0; i < 550; i = i + 1) {
-	insk = random() * 7.0
+	insk = random() * filedur
 	dur = random() * 0.2
 
 	if (random() > 0.5) ch1 = 0
