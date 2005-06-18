@@ -528,7 +528,8 @@ bool RTcmix::doneTraverse(AudioDevice *device, void *arg)
 	cout << "ENTERING doneTraverse()\n";
 #endif
 	rtreportstats(device);
-	cout << "\n";
+	if (Option::print())
+		cout << "\n";
 	audioDone = true;	// This signals waitForMainLoop()
 #ifdef WBUG
 	cout << "EXITING doneTraverse() FUNCTION *****\n";
