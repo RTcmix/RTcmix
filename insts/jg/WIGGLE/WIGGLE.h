@@ -15,16 +15,16 @@ typedef enum {
 #define MAXFILTS 50
 
 class WIGGLE : public Instrument {
-   int      inchan, skip, depth_type, nfilts, do_balance, branch;
-   float    amp, aamp, pctleft, base_freq, cpsoct10;
-   float    car_freq, car_gliss, mod_freq, mod_depth;
+   bool     do_balance;
+   int      depth_type, nfilts, branch;
+   float    amp, pan, cpsoct10, car_freq_raw, base_car_freq, car_freq;
+   float    mod_freq, mod_depth, nyquist, cf_raw;
    FiltType filter_type;
    Butter   *filt[MAXFILTS];
    Balance  *balancer;
    OscilL   *carrier;
    OscilL   *modulator;
-   double   *amp_array, *carwave_array, *cargliss_array, *modwave_array;
-   double   *modfreq_array, *moddepth_array, *filtcf_array, *pan_array;
+   double   *carwave_array, *modwave_array;
    TableL   *amp_table;
    TableN   *cargliss_table;
    TableL   *modfreq_table;
@@ -32,6 +32,7 @@ class WIGGLE : public Instrument {
    TableL   *filtcf_table;
    TableN   *pan_table;
 
+   void doupdate();
 public:
    WIGGLE();
    virtual ~WIGGLE();
