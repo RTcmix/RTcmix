@@ -13,7 +13,7 @@
 
 // Functions for modifying table PFields.   -JGG, 4/8/05
 
-#define DRAW_USAGE "table = modtable(table, \"draw\", index, value[, width])"
+#define DRAW_USAGE "table = modtable(table, \"draw\", [\"literal\",] index, value[, width])"
 #define NORMALIZE_USAGE "table = modtable(table, \"normalize\" [, peak])"
 #define REVERSE_USAGE "table = modtable(table, \"reverse\")"
 #define SHIFT_USAGE "table = modtable(table, \"shift\", shift)"
@@ -61,16 +61,46 @@ static Handle _modtable_usage()
 // =============================================================================
 // Set up the various table modifications.
 
+
+// NOTE NOTE NOTE - This modtable variant is an experimental feature!
+//
+// Rewrite a portion of the table, possibly while an instrument is accessing it.
+//
+//    table = modtable(table, "draw", ["literal",] index, value[, width])
+//
+// <table> is a table already created using maketable
+// <index> is the central table index to affect.  Normally this is 0-1, acting
+//    as a percentage of the table, but with the optional "literal" tag, <index>
+//    is interpreted as a literal table index (from 0 to the table length - 1).
+// <value> is the new value to place at <index>
+// <width> indicates how many neighboring table slots are affected by the 
+//    central value change.  This is a "percentage" from 0 to 1.
+// Both <index> and <value> can be dynamic control sources.
+//
+// -JGG, 6/18/05
+
 static PField *
 _draw_table(PField *intable, const Arg args[], const int nargs)
 {
 	if (nargs < 2)
 		return _modtable_usage(DRAW_USAGE);
-	PField *indexpf = _get_pfield(args[0]);
-	PField *valuepf = _get_pfield(args[1]);
-	PField *widthpf = (nargs > 2) ? _get_pfield(args[2]) : new ConstPField(0);
-	return new DrawTablePField(intable, indexpf, valuepf, widthpf);
+	const char *str = (const char *) args[0];
+	int argoffset = 0;
+	bool literalIndex = false;
+	if (str) {
+		if (str == "literal")
+			literalIndex = true;
+		else
+			return _modtable_usage(DRAW_USAGE);
+		argoffset = 1;
+	}
+	PField *indexpf = _get_pfield(args[argoffset]);
+	PField *valuepf = _get_pfield(args[argoffset + 1]);
+	PField *widthpf = (nargs > argoffset + 2) ? _get_pfield(args[argoffset + 2])
+	                                          : new ConstPField(0);
+	return new DrawTablePField(intable, literalIndex, indexpf, valuepf, widthpf);
 }
+
 
 // Rescale the values in table so that the maximum absolute value is <peak>.
 // If no <peak>, peak is 1.  Result depends on the sign of values in the table.
@@ -104,11 +134,15 @@ _normalize_table(PField *intable, const Arg args[], const int nargs)
 	return new MultPField(intable, factorpf);
 }
 
+
+// Read the values of the table backward.
+
 static PField *
 _reverse_table(PField *intable, const Arg args[], const int nargs)
 {
 	return new ReversePField(intable);
 }
+
 
 // Shift values of the table by <shift> array locations.  Positive values of
 // <shift> shift to the right; negative values to the left.  If a value is

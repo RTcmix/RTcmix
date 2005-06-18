@@ -279,13 +279,14 @@ private:
 
 class DrawTablePField : public PFieldWrapper {
 public:
-	DrawTablePField(PField *innerPField, PField *indexPField,
+	DrawTablePField(PField *innerPField, bool literalIndex, PField *indexPField,
 		PField *valuePField, PField *widthPField);
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
 protected:
 	virtual ~DrawTablePField();
 private:
+	bool _literalIndex;
 	PField *_indexPField;
 	PField *_valuePField;
 	PField *_widthPField;

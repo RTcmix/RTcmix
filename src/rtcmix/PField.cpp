@@ -489,10 +489,11 @@ ShiftPField::ShiftPField(PField *innerPField, int shift)
 
 // DrawTablePField
 
-DrawTablePField::DrawTablePField(PField *innerPField, PField *indexPField,
-	PField *valuePField, PField *widthPField)
-	: PFieldWrapper(innerPField), _indexPField(indexPField),
-	  _valuePField(valuePField), _widthPField(widthPField)
+DrawTablePField::DrawTablePField(PField *innerPField, bool literalIndex,
+	PField *indexPField, PField *valuePField, PField *widthPField)
+	: PFieldWrapper(innerPField), _literalIndex(literalIndex),
+	  _indexPField(indexPField), _valuePField(valuePField),
+	  _widthPField(widthPField)
 {
 	_indexPField->ref();
 	_valuePField->ref();
@@ -518,7 +519,8 @@ double DrawTablePField::doubleValue(double didx) const
 	const int lastindex = len - 1;
 
 	// get target index
-	int targetindex = int(_indexPField->doubleValue(didx) * len);
+	double dindex = _indexPField->doubleValue(didx);
+	int targetindex = _literalIndex ? int(dindex) : int(dindex * len);
 	if (targetindex < 0)
 		targetindex = 0;
 	else if (targetindex > lastindex)
@@ -538,7 +540,7 @@ double DrawTablePField::doubleValue(double didx) const
 	// between start's val and <newval> across the intervening indices.  Same
 	// thing between target and stop indices.
 
-// FIXME: would be much better to use a higher order interpolation
+// FIXME: would it be better to use a higher order interpolation?
 
 	int span = int(_widthPField->doubleValue(didx) * len);
 	if (span < 0)
