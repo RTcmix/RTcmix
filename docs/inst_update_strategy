@@ -836,6 +836,9 @@ SGRANR(start, dur, amp, rate, ratevar1, ratevar2, ratevar3, ratevar4,
             present, then arg overrides gen.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+*** NOTE NOTE NOTE:  There is now a SPECTACLE2, so there won't be any
+v4-style updates to the original SPECTACLE instruments.  -JGG
+
 SPECTACLE: SPECTACLE(start, inskip, dur, amp, ringdur, fft_len, window_len,
                         window_type, overlap, [wetdry_mix, inchan, pctleft])
    [1. input amp envelope]
@@ -1098,7 +1101,7 @@ cf_freq_table pfields
             must return a local table.  If both, then arg overrides gen.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-WIGGLE(start, dur, car_amp, car_freq, [mod_depth_type, filt_type, steep,
+### WIGGLE(start, dur, car_amp, car_freq, [mod_depth_type, filt_type, steep,
                                                                balance])
    [1. amp envelope]
     2. carrier wavetable
@@ -1140,8 +1143,6 @@ WIGGLE(start, dur, car_amp, car_freq, [mod_depth_type, filt_type, steep,
 
    ***NOTE: If stereo output and no gen 8, then <pctleft> arg must be
             present.  If both, then arg overrides gen.
-
-   ***NOTE: Should write a new, renamed version of this instead!
 
 
 ===========================================================================
