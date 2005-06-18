@@ -84,11 +84,10 @@ _draw_table(PField *intable, const Arg args[], const int nargs)
 {
 	if (nargs < 2)
 		return _modtable_usage(DRAW_USAGE);
-	const char *str = (const char *) args[0];
 	int argoffset = 0;
 	bool literalIndex = false;
-	if (str) {
-		if (str == "literal")
+	if (args[0].isType(StringType)) {
+		if (args[0] == "literal")
 			literalIndex = true;
 		else
 			return _modtable_usage(DRAW_USAGE);
