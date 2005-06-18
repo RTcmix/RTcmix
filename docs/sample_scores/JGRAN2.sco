@@ -1,57 +1,57 @@
-rtsetparams(44100, 2);
+rtsetparams(44100, 2)
 load("JGRAN")
-bus_config("JGRAN", "out0-1")
+bus_config("JGRAN", "out 0-1")
 
 dur = 10
 amp = .5
 
-/* overall amplitude envelope */
-setline(0,0, 6,1, 9,1, 10,0)
+// overall amplitude envelope
+env = maketable("line", 1000, 0,0, 6,1, 9,1, 10,0)
 
-/* grain envelope */
-makegen(2, 18, 10000, 0,0, 1,1, 10,.2, 20,0)
-makegen(2, 25, 10000, 1)
+// grain envelope
+genv = maketable("window", 10000, "hanning")
 
-/* grain waveform */
-makegen(3, 10, 10000, 1, .1, .05)
+// grain waveform
+gwave = maketable("wave", 10000, 1, .1, .05)
 
-/* modulation frequency multiplier */
-makegen(4, 18, 1000, 0,1.3, 1,1.7)
-makegen(4, 20, 1000, 2)
+// modulation frequency multiplier
+mfreqmult = maketable("random", "nonorm", 1000, "high", min=0, max=1, seed=1)
 
-/* index of modulation envelope (per grain) */
-makegen(5, 18, 1000, 0,0, 1,6)
+// index of modulation envelope (per grain)
+modindex = maketable("line", "nonorm", 1000, 0,0, 1,6)
 
-/* grain frequency */
-makegen(6, 18, 1000, 0,500, 1,500)          /* min */
-makegen(7, 18, 1000, 0,500, 1,500)          /* max */
+// grain frequency
+minfreq = maxfreq = 500
 
-/* grain speed */
-makegen(8, 18, 1000, 0,20, 1,20)            /* min */
-makegen(9, 18, 1000, 0,90, 1,90)            /* max */
+// grain speed
+minspeed = 20
+maxspeed = 90
 
-/* grain intensity (decibels above 0) */
-makegen(10, 18, 1000, 0,80, 1,80)           /* min */
-makegen(11, 18, 1000, 0,80, 1,80)           /* max */
+// grain intensity (decibels above 0)
+mindb = 80
+maxdb = 80
 
-/* grain density */
-makegen(12, 18, 1000, 0,1, 1,1)
+density = 1
 
-/* grain stereo location */
-makegen(13, 18, 1000, 0,.5, 1,.5)
+// grain stereo location
+pan = 0.5
 
-/* grain stereo location randomization */
-makegen(14, 18, 1000, 0,0, 1,1)
+// grain stereo location randomization
+panrand = maketable("line", "nonorm", 1000, 0,0, 1,1)
+
+JGRAN(start=0, dur, amp * env, seed=1, type=1, ranphase=1,
+   genv, gwave, mfreqmult, modindex, minfreq, maxfreq, minspeed, maxspeed,
+   mindb, maxdb, density, pan, panrand)
 
 
-JGRAN(start=0, dur, amp, seed=.1, type=1)
-
-/* a second grain stream, with some different params */
-setline(0,0, 1,1, 4,1, 10,0)
-makegen(6, 18, 1000, 0,1000, 1,1000)        /* min */
-makegen(7, 18, 1000, 0,1100, 1,1100)        /* max */
-makegen(14, 18, 1000, 0,1, 1,0)
+// a second grain stream, with some different params
+env = maketable("line", 1000, 0,0, 1,1, 4,1, 10,0)
+minfreq = 1000
+maxfreq = 1100
+panrand = maketable("line", "nonorm", 1000, 0,1, 1,0)
 amp = 2
-JGRAN(start=0, dur, amp, seed=.2, type=0)
+JGRAN(start=0, dur, amp * env, seed=2, type=0, ranphase=1,
+   genv, gwave, mfreqmult, modindex, minfreq, maxfreq, minspeed, maxspeed,
+   mindb, maxdb, density, pan, panrand)
 
 
