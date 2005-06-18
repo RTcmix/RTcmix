@@ -143,7 +143,7 @@ RTcmix::rtreportstats(AudioDevice *device)
 {
    static const double dbref = ::dbamp(32768.0);
 	
-   if (Option::checkPeaks()) {
+   if (Option::reportClipping() && Option::checkPeaks()) {
       BUFTYPE peaks[MAXBUS];
       long peaklocs[MAXBUS];
       printf("\nPeak amplitudes of output:\n");
