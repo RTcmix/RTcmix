@@ -12,7 +12,7 @@ env = maketable("line", 1000, 0,0, 1,1, 2,1, 4,0)
 genv = maketable("window", 1000, "hanning")
 
 // grain waveform
-gwave = maketable("wave", 10000, 1) // sine wave
+gwave = maketable("wave", 10000, "sine")
 
 // modulation frequency multiplier
 mfreqmult = maketable("line", "nonorm", 1000, 0,2, 1,2.1) // slight increase
@@ -35,8 +35,8 @@ maxdb = 80
 // grain density
 density = maketable("line", "nonorm", 1000, 0,1, 1,1, 2,.8)  // slight decrease
 
-// grain stereo location
-pan = maketable("line", "nonorm", 1000, 0,.5, 1,.5) // image centered in middle
+// grain stereo location -- image centered in middle
+pan = 0.5
 
 // grain stereo location randomization
 panrand = maketable("line", "nonorm", 1000, 0,0, 1,1) // increasingly randomized
