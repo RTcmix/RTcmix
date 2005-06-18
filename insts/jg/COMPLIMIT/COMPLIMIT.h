@@ -14,17 +14,22 @@ typedef enum {
 } EnvState;
 
 class COMPLIMIT : public Instrument {
-   int         skip, inchan, atk_samps, rel_samps, bypass, branch, first_time;
+   bool        first_time, bypass;
+   int         nargs, inchan, atk_samps, rel_samps, branch;
    int         lookahead_samps, offset, window_frames, window_len, buf_samps;
    int         wins_under_thresh, env_count, sus_count, next_env_count;
-   float       ingain, outgain, gain, threshold, pctleft, oamp, dbref;
+   float       inamp, outamp, gain, dbref, threshold_amp, pan;
    float       target_peak, target_gain, next_target_gain, gain_increment;
    float       *in, *inptr, *readptr, *bufstartptr;
    float       amptabs[2];
    double      *amptable;
-   double      ratio;
+   double      ingain, outgain, atk_time, rel_time, ratio, threshold_db;
+   double      threshold_dbfs;
    DetectType  detector_type;
    EnvState    env_state;
+
+   int usage();
+   void doupdate();
 
 public:
    COMPLIMIT();

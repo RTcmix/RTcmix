@@ -1,32 +1,42 @@
-/* COMPLIMIT: a compressor-limiter
+/* COMPLIMIT - a compressor-limiter, with lookahead
 
-   p0  = output start time
-   p1  = input start time
-   p2  = duration
-   p3  = gain applied to input before compression (in dB)
-   p4  = gain applied to output after compression - "makeup gain" (in dB)
-   p5  = attack time (seconds)
-   p6  = release time (seconds)
-   p7  = threshold (in dBFS)
-   p8  = compression ratio - e.g. 20 means 20:1 (100 is infinity)
-   p9  = look-ahead time (seconds)
-   p10 = peak detection window size (power of 2 <= RTCmix output buffer size)
-   p11 = detection type (0: peak, 1: average peak, 2: rms)
-   p12 = bypass (1: bypass on, 0: bypass off)
-   p13 = input channel  [optional; default is 0]
-   p14 = percent output to left channel (0 - 1)  [optional; default is 0.5]
+   The parameters marked with '*' can receive dynamic updates from a table
+   or a real-time control source.
 
-   BUGS:
-      - Sometimes the compressor will stay in sustain for too long.
-        This happens when the source sound has a long decaying envelope
-        where some of the decay is above the threshold.
+      p0  = output start time
+      p1  = input start time
+      p2  = duration
+    * p3  = gain applied to input before compression (in dBFS; 0 is no change)
+    * p4  = gain applied to output after compression - "makeup gain" (in dBFS)
+    * p5  = attack time (seconds)
+    * p6  = release time (seconds)
+    * p7  = threshold (in dBFS)
+    * p8  = compression ratio - e.g. 20 means 20:1 (100 is infinity)
+      p9  = look-ahead time (seconds)
+      p10 = peak detection window size (power of 2 <= RTCmix output buffer size)
+    * p11 = detection type (0: peak, 1: average peak, 2: rms)
+            [optional; default is 0)
+    * p12 = bypass (1: bypass on, 0: bypass off) [optional; default is 0]
+    * p13 = input channel  [optional; default is 0]
+    * p14 = percent output to left channel (0 - 1)  [optional; default is 0.5]
 
-   John Gibson <johngibson@virginia.edu>,  21 April, 2000
+   NOTES
+
+   1. For backward compatibility with pre-v4 scores, the optional gen table 1
+      scales the makeup gain (p4), after conversion from dB to linear amp.
+      When bypass (p12) is on, there is no enveloping at all in this version.
+
+   2. BUG: Sometimes the compressor will stay in sustain for too long.  This
+      happens when the source sound has a long decaying envelope during which
+      some of the decay is above the threshold.
+
+
+   John Gibson <johgibso at indiana dot edu>, 4/21/00; rev. for v4, 6/18/05
 */
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <float.h>       /* for DBL_MAX */
+#include <float.h>       // DBL_MAX
 #include <ugens.h>
 #include <Instrument.h>
 #include "COMPLIMIT.h"
@@ -35,20 +45,20 @@
 #include <assert.h>
 
 //#define DEBUG
+//#define DEBUG2
 
 #ifdef DEBUG
-   #define dprint(msg)        printf((msg))
-   #define dprint1(msg, arg)  printf((msg), (arg))
+   #define DPRINT(msg)        printf((msg))
+   #define DPRINT1(msg, arg)  printf((msg), (arg))
 #else
-   #define dprint(msg)
-   #define dprint1(msg, arg)
+   #define DPRINT(msg)
+   #define DPRINT1(msg, arg)
 #endif
 
-/* experiment to relieve symptom of bug described in comment above
-   (major problem for pnoEb2stop.tm2.aif)
-*/
+// experiment to relieve symptom of bug described in comment above
+// (major problem for pnoEb2stop.tm2.aif)
 #define LONG_SUSTAIN_FIX
-#define MAX_WINS 5        /* just a guess */
+#define MAX_WINS 5        // just a guess
 
 #define DEFAULT_WINDOW_SIZE   128
 
@@ -56,82 +66,74 @@
 COMPLIMIT::COMPLIMIT() : Instrument()
 {
    in = NULL;
-   first_time = 1;
+   first_time = true;
    env_state = ENV_INACTIVE;
    env_count = -1;
    sus_count = 0;
+   gain = 0.0;
+   ingain = -DBL_MAX;
+   outgain = -DBL_MAX;
+   threshold_dbfs = -DBL_MAX;
+   atk_time = -DBL_MAX;
+   rel_time = -DBL_MAX;
    target_peak = 0.0;
    next_target_gain = 0.0;
    wins_under_thresh = 0;
    branch = 0;
-   oamp = 1.0;                  /* in case amptable == NULL */
 }
-
 
 COMPLIMIT::~COMPLIMIT()
 {
    delete [] in;
 }
 
-
-inline int min(int a, int b) {
-   if (a < b)
-      return a;
-   else
-      return b;
+int COMPLIMIT::usage()
+{
+	return die("COMPLIMIT", "Usage: COMPLIMIT(start, inskip, dur, ingain, "
+              "outgain, atktime, reltime, threshold, ratio, lookahead, "
+              "[windowsize, detection_type, bypass, inchan, pan])");
 }
 
+inline int min(int a, int b) { return (a < b) ? a : b; }
 
 int COMPLIMIT::init(double p[], int n_args)
 {
-   float outskip = p[0];
-   float inskip = p[1];
-   float dur = p[2];
-   ingain = ampdb(p[3]);           // in dB, 0 means no change
-   outgain = ampdb(p[4]);          // in dB
-   float atk_time = p[5];
-   float rel_time = p[6];
-   threshold = p[7];               // in dBFS
-   ratio = p[8];
-   float lookahead_time = p[9];
-   window_frames = (int) p[10];
-   int detector_int = (int) p[11];
-   bypass = (int) p[12];
-   inchan = (n_args > 13) ? (int) p[13] : 0;
-   pctleft = (n_args > 14) ? p[14] : 0.5;
+   nargs = n_args;
+   if (nargs < 11)
+      return usage();
+
+   const float outskip = p[0];
+   const float inskip = p[1];
+   const float dur = p[2];
 
    if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;
    if (rtsetoutput(outskip, dur, this) == -1)
       return DONT_SCHEDULE;
 
+   inchan = int(p[13]);
    if (inchan >= inputChannels())
-      return die("COMPLIMIT", "You asked for channel %d of a %d-channel file.",
+      return die("COMPLIMIT", "You asked for channel %d of a %d-channel input.",
                                                      inchan, inputChannels());
    if (outputChannels() > 2)
       return die("COMPLIMIT", "Can't use more than 2 output channels.");
 
-   if (atk_time < 0.0 || rel_time < 0.0)
-      return die("COMPLIMIT", "Invalid envelope times.");
+   const float lookahead_time = p[9];
+   lookahead_samps = int(lookahead_time * SR + 0.5);
 
-   atk_samps = (int) (atk_time * SR + 0.5);
-   rel_samps = (int) (rel_time * SR + 0.5);
-
-   lookahead_samps = (int) (lookahead_time * SR + 0.5);
-
-   dbref = dbamp(32768.0);           // FIXME: but what about 24-bit output?
-
-   if (threshold < -dbref || threshold > 0.0)
+   dbref = dbamp(32768.0);
+   // Verify initial value of threshold, in dbFS.
+   if (p[7] < -dbref || p[7] > 0.0)
       return die("COMPLIMIT", "Threshold must be between %.2f and 0.", -dbref);
 
-   threshold = ampdb(threshold + dbref);
-
+   // Verify initial value of ratio.
+   ratio = p[8];
    if (ratio < 1.0)
       return die("COMPLIMIT", "Compression ratio must be 1 or greater.");
-
    if (ratio >= 100.0)
       ratio = DBL_MAX;
 
+   window_frames = int(p[10]);
    if (window_frames == 0) {
       window_frames = min(DEFAULT_WINDOW_SIZE, RTBUFSAMPS);
       advise("COMPLIMIT", "Setting window size to %d frames.", window_frames);
@@ -142,27 +144,23 @@ int COMPLIMIT::init(double p[], int n_args)
       window_frames = RTBUFSAMPS;
    }
    else if (RTBUFSAMPS % window_frames)
-      return die("COMPLIMIT", "Window size must be a power of two.");
+      return die("COMPLIMIT", "RTcmix buffer size must be a multiple of the "
+                              "COMPLIMIT window size.");
 
+   int detector_int = int(p[11]);
    if (detector_int < 0 || detector_int > 2)
       return die("COMPLIMIT", "Invalid detector type.");
-
    detector_type = (DetectType) detector_int;
 
+   // for backward compatibility with pre-v4 scores
    amptable = floc(1);
    if (amptable) {
       int amplen = fsize(1);
       tableset(SR, dur, amplen, amptabs);
    }
-   else
-      advise("COMPLIMIT", "Setting phrase curve to all 1's.");
-
-   skip = (int) (SR / (float) resetval);
 
 #ifdef DEBUG
-   printf("ingain: %g, outgain: %g, threshold: %g, ratio: %g:1, atk_samps: %d,"
-          " rel_samps: %d, lookahead_samps: %d, window_frames: %d\n",
-          ingain, outgain, threshold, ratio, atk_samps, rel_samps,
+   printf("lookahead_samps: %d, window_frames: %d\n",
           lookahead_samps, window_frames);
 #endif
 
@@ -180,22 +178,23 @@ int COMPLIMIT::init(double p[], int n_args)
 */
 inline float COMPLIMIT::get_peak(int offset, int *over_thresh_offset)
 {
-   int   endsamp;
    float pk = 0.0;
 #ifdef DEBUG
    float over = 0.0;
 #endif
 
-   endsamp = offset + (window_len * inputChannels());
+   const int inchans = inputChannels();
+   const int endsamp = offset + (window_len * inchans);
+
    *over_thresh_offset = 0;
 
    if (detector_type == PEAK_DETECTOR) {
       int loc = -1;
-      for (int i = offset; i < endsamp; i += inputChannels()) {
+      for (int i = offset; i < endsamp; i += inchans) {
          float samp = in[i + inchan];
          if (samp < 0.0)
             samp = -samp;
-         if (loc == -1 && samp > threshold) {
+         if (loc == -1 && samp > threshold_amp) {
             loc = i - offset;
 #ifdef DEBUG
             over = samp;
@@ -204,28 +203,28 @@ inline float COMPLIMIT::get_peak(int offset, int *over_thresh_offset)
          if (samp > pk)
             pk = samp;
       }
-      *over_thresh_offset = loc / inputChannels();
+      *over_thresh_offset = loc / inchans;
    }
    else if (detector_type == AVERAGE_DETECTOR) {
       double dpk = 0.0;
-      for (int i = offset; i < endsamp; i += inputChannels()) {
-         double samp = (double) in[i + inchan];
+      for (int i = offset; i < endsamp; i += inchans) {
+         double samp = in[i + inchan];
          if (samp < 0.0)
             samp = -samp;
          dpk += samp;
       }
-      pk = (float) (dpk / (double) window_len);
+      pk = dpk / window_len;
    }
-   else {  /* detector_type == RMS_DETECTOR */
+   else {  // detector_type == RMS_DETECTOR
       double dpk = 0.0;
-      for (int i = offset; i < endsamp; i += inputChannels()) {
-         double samp = (double) in[i + inchan];
+      for (int i = offset; i < endsamp; i += inchans) {
+         double samp = in[i + inchan];
          dpk += samp * samp;
       }
-      pk = (float) sqrt(dpk / (double) window_len);
+      pk = sqrt(dpk / window_len);
    }
 
-#ifdef DEBUG
+#ifdef DEBUG2
    printf("\npeak: %g, over: %g, over_thresh_offset: %d, firstsamp: %d, "
           "window_len: %d, offset: %d\n", pk, over, *over_thresh_offset,
                          currentFrame() + lookahead_samps, window_len, offset);
@@ -237,17 +236,15 @@ inline float COMPLIMIT::get_peak(int offset, int *over_thresh_offset)
 
 inline float COMPLIMIT::get_gain_reduction()
 {
-   float  gain_reduction;
-   double peak_db, threshold_db, level_db, diff;
+   const double peak_db = dbamp(target_peak);
+   const double diff = peak_db - threshold_db;
+   const double level_db = threshold_db + (diff / ratio);
+   const float gain_reduction = float(level_db - peak_db);
 
-   peak_db = dbamp(target_peak);
-   threshold_db = dbamp(threshold);      // FIXME: pre-calculate this
-
-   diff = peak_db - threshold_db;
-   level_db = threshold_db + (diff / ratio);
-   gain_reduction = (float) (level_db - peak_db);
-
-   dprint1("gain reduction: %f\n", gain_reduction);
+#ifdef DEBUG
+   printf("get_gain_reduction(): target=%g, thresh=%g dB, level=%g dB, "
+         "reduction=%g\n", target_peak, threshold_db, level_db, gain_reduction);
+#endif
 
    return gain_reduction;
 }
@@ -259,28 +256,89 @@ int COMPLIMIT::configure()
 }
 
 
+void COMPLIMIT::doupdate()
+{
+   double p[15];
+   update(p, 15, 1 << 3 | 1 << 4 | 1 << 5 | 1 << 6 | 1 << 7 | 1 << 8
+                                 | 1 << 11 | 1 << 12 | 1 << 13 | 1 << 14);
+
+   if (ingain != p[3]) {
+      ingain = p[3];
+      inamp = ampdb(ingain);
+   }
+   if (outgain != p[4]) {
+      outgain = p[4];
+      outamp = ampdb(outgain);
+   }
+   if (amptable)  // backwards compatibility
+      outamp *= tablei(currentFrame(), amptable, amptabs);
+
+   if (atk_time != p[5]) {
+      atk_time = p[5];
+      atk_samps = (atk_time < 0.0) ? 0 : int(atk_time * SR + 0.5);
+   }
+   if (rel_time != p[6]) {
+      rel_time = p[6];
+      rel_samps = (rel_time < 0.0) ? 0 : int(rel_time * SR + 0.5);
+   }
+
+   if (threshold_dbfs != p[7]) {
+      threshold_dbfs = p[7];
+      if (threshold_dbfs < -dbref)
+         threshold_dbfs = -dbref;
+      else if (threshold_dbfs > 0.0)
+         threshold_dbfs = 0;
+      // pre-calculate for get_gain_reduction()...
+      threshold_db = threshold_dbfs + dbref;
+      threshold_amp = ampdb(threshold_db);
+   }
+
+   ratio = p[8];
+   if (ratio < 1.0)
+      ratio = 1.0;
+   else if (ratio >= 100.0)
+      ratio = DBL_MAX;
+
+   int detector_int = int(p[11]);
+   if (detector_int < 0 || detector_int > 2)
+      detector_int = 0;
+   detector_type = (DetectType) detector_int;
+
+   bypass = bool(p[12]);
+   inchan = int(p[13]);
+   pan = (nargs > 14) ? p[14] : 0.5f;
+
+#ifdef DEBUG
+   printf("inamp: %g, outamp: %g, threshold: %g (amp), ratio: %g:1, "
+          "atk_samps: %d, rel_samps: %d\n",
+          inamp, outamp, threshold_amp, ratio, atk_samps, rel_samps);
+#endif
+}
+
+
 int COMPLIMIT::run()
 {
-
-   const int samps = framesToRun() * inputChannels();
+   const int nframes = framesToRun();
+   const int inchans = inputChannels();
+   const int samps = nframes * inchans;
 
    if (first_time) {
       int nbufs = (lookahead_samps / RTBUFSAMPS) + 2;
-      int extrasamps = RTBUFSAMPS - framesToRun();
+      int extrasamps = RTBUFSAMPS - nframes;
       if (extrasamps)
          nbufs++;
-      buf_samps = nbufs * RTBUFSAMPS * inputChannels();
+      buf_samps = nbufs * RTBUFSAMPS * inchans;
       in = new float [buf_samps];
       for (int i = 0; i < buf_samps; i++)
          in[i] = 0.0;
 
-      /* Note: input ptr chases read ptr by lookahead_samps */
-      inptr = in + (buf_samps - (lookahead_samps * inputChannels()));
-      bufstartptr = in + (extrasamps * inputChannels());
+      // Note: input ptr chases read ptr by lookahead_samps
+      inptr = in + (buf_samps - (lookahead_samps * inchans));
+      bufstartptr = in + (extrasamps * inchans);
       readptr = bufstartptr;
 
-      offset = extrasamps * inputChannels();
-      window_len = framesToRun() % window_frames;
+      offset = extrasamps * inchans;
+      window_len = nframes % window_frames;
       if (window_len == 0)
          window_len = window_frames;
    }
@@ -288,7 +346,7 @@ int COMPLIMIT::run()
    float *bufendptr = in + buf_samps;
 
    int win_end_count = window_len - 1;
-   int win_count = 0;                  /* trigger first look-ahead */
+   int win_count = 0;                  // trigger first look-ahead
 
 #ifdef DEBUG
    printf("\nin=%p, inptr=%p, readptr=%p, bufstartptr=%p, bufendptr=%p\n",
@@ -298,68 +356,67 @@ int COMPLIMIT::run()
 
    int over_thresh_offset;
 
-   for (int i = 0; i < framesToRun(); i++) {
+   for (int i = 0; i < nframes; i++) {
       if (--branch <= 0) {
-         if (amptable)
-            oamp = tablei(currentFrame(), amptable, amptabs);
-         branch = skip;
+         doupdate();
+         branch = getSkip();
       }
 
       if (win_count == 0) {
          float peak = get_peak(offset, &over_thresh_offset);
 
-         if (peak > threshold) {
-            dprint1("current increment: %f\n", gain_increment);
+         if (peak > threshold_amp) {
+            DPRINT1("current increment: %f\n", gain_increment);
             switch (env_state) {
                case ENV_INACTIVE:
                   target_peak = peak;
                   target_gain = get_gain_reduction();
-                  gain_increment = target_gain / (float) atk_samps;
-                  gain = 0.0;                   /* in dB */
+                  gain_increment = target_gain / float(atk_samps);
+                  gain = 0.0;                   // in dB
                   env_count = atk_samps;
                   sus_count = window_len - (over_thresh_offset + 1);
                   env_state = ENV_ATTACK_WAIT;
                   break;
                case ENV_ATTACK:
-                  if (peak > target_peak) {      /* re-start attack */
+                  if (peak > target_peak) {      // re-start attack
                      target_peak = peak;
                      float tmpgain = get_gain_reduction();
                      float tmpincr = (tmpgain - gain)
-                                    / (float) (atk_samps + over_thresh_offset);
-                     if (next_target_gain) {    /* new gain already pending */
-                        next_target_gain = 0;   /* override it */
-                        dprint("W ATTACK: OVERRIDE PENDING GAIN...\n");
+                                    / float(atk_samps + over_thresh_offset);
+                     if (next_target_gain) {    // new gain already pending
+                        next_target_gain = 0;   // override it
+                        DPRINT("W ATTACK: OVERRIDE PENDING GAIN...\n");
                      }
-                     if (tmpincr < gain_increment) {   /* NB: both negative */
+                     if (tmpincr < gain_increment) {   // NB: both negative
                         target_gain = tmpgain;
                         gain_increment = tmpincr;
                         env_count = atk_samps + over_thresh_offset;
                         sus_count = window_len - (over_thresh_offset + 1);
-                        dprint("W ATTACK: RESTART ATTACK\n");
+                        DPRINT("W ATTACK: RESTART ATTACK\n");
                      }
                      else {
-                        /* delay new ramp until current target_gain reached */
+                        // delay new ramp until current target_gain reached
                         next_target_gain = tmpgain;
                         next_env_count = (atk_samps + over_thresh_offset)
                                                                    - env_count;
-                        dprint("W ATTACK: NEW GAIN PENDING...\n");
+                        DPRINT("W ATTACK: NEW GAIN PENDING...\n");
                      }
                   }
-                  else                          /* stay in sustain for longer */
+                  else                          // stay in sustain for longer
                      sus_count += window_len * (wins_under_thresh + 1);
                   break;
                case ENV_SUSTAIN:
-                  if (peak > target_peak) {     /* re-start attack */
+                  if (peak > target_peak) {     // re-start attack
                      target_peak = peak;
                      target_gain = get_gain_reduction();
                      gain_increment = (target_gain - gain)
-                                    / (float) (atk_samps + over_thresh_offset);
+                                    / float(atk_samps + over_thresh_offset);
                      env_count = atk_samps + over_thresh_offset;
                      sus_count = window_len - (over_thresh_offset + 1);
                      env_state = ENV_ATTACK;
-                     dprint("W SUSTAIN -> RESTART ATTACK\n");
+                     DPRINT("W SUSTAIN -> RESTART ATTACK\n");
                   }
-                  else {                        /* stay in sustain for longer */
+                  else {                        // stay in sustain for longer
 #ifdef LONG_SUSTAIN_FIX
                      if (wins_under_thresh < MAX_WINS)
                         sus_count += window_len * (wins_under_thresh + 1);
@@ -372,32 +429,32 @@ int COMPLIMIT::run()
                   target_peak = peak;
                   target_gain = get_gain_reduction();
                   gain_increment = (target_gain - gain)
-                                    / (float) (atk_samps + over_thresh_offset);
+                                    / float(atk_samps + over_thresh_offset);
                   env_count = atk_samps + over_thresh_offset;
                   sus_count = window_len - (over_thresh_offset + 1);
                   env_state = ENV_ATTACK;
                   break;
-               case ENV_ATTACK_WAIT:            /* should never get here */
+               case ENV_ATTACK_WAIT:            // should never get here
                   assert(env_state != ENV_ATTACK_WAIT);
                   break;
             }
-            dprint1("new increment: %f\n", gain_increment);
+            DPRINT1("new increment: %f\n", gain_increment);
             wins_under_thresh = 0;
-         }  /* if (peak > threshold) */
+         }  // if (peak > threshold_amp)
          else
             wins_under_thresh++;
 
-         offset += window_len * inputChannels();
+         offset += window_len * inchans;
          if (offset >= buf_samps)
             offset = 0;
-         if (window_len != window_frames) {     /* after first window */
+         if (window_len != window_frames) {     // after first window
             window_len = window_frames;
             win_count = win_end_count;
             win_end_count = window_len - 1;
          }
          else
             win_count = win_end_count;
-#ifdef DEBUG
+#ifdef DEBUG2
          printf("sus_count=%d, wins_under_thresh=%d\n",
                                                 sus_count, wins_under_thresh);
 #endif
@@ -407,16 +464,16 @@ int COMPLIMIT::run()
 
       if (env_state == ENV_ATTACK_WAIT) {
          if (over_thresh_offset == 0)
-            env_state = ENV_ATTACK;  /* timer elapsed; start attack this samp */
+            env_state = ENV_ATTACK;  // timer elapsed; start attack this samp
          else
             over_thresh_offset--;
       }
 
-      float sig = inptr[inchan] * ingain;
+      float sig = inptr[inchan] * inamp;
 
       if (env_state == ENV_ATTACK) {
-         double scale = ampdb(gain);
-#ifdef DEBUG
+         const double scale = ampdb(gain);
+#ifdef DEBUG2
          printf("attack:   cursamp=%d, envcount=%d, insig=% f, gain=%f, sc=%f",
                                  currentFrame(), env_count, sig, gain, scale);
 #endif
@@ -428,7 +485,7 @@ int COMPLIMIT::run()
                target_gain = next_target_gain;
                next_target_gain = 0;
                env_count = next_env_count - 1;
-               gain_increment = (target_gain - gain) / (float) env_count;
+               gain_increment = (target_gain - gain) / float(env_count);
             }
             else {
                gain = target_gain;
@@ -441,16 +498,16 @@ int COMPLIMIT::run()
          }
       }
       else if (env_state == ENV_SUSTAIN) {
-         /* not efficient to keep converting from the same gain, but... */
+         // not efficient to keep converting from the same gain, but...
          double scale = ampdb(gain);
-#ifdef DEBUG
+#ifdef DEBUG2
          printf("sustain:  cursamp=%d, envcount=%d, insig=% f, gain=%f, sc=%f",
                                  currentFrame(), env_count, sig, gain, scale);
 #endif
          sig *= scale;
 
          if (sus_count == 0) {
-            gain_increment = gain / (float) rel_samps;
+            gain_increment = gain / float(rel_samps);
             env_count = rel_samps;
             env_state = ENV_RELEASE;
          }
@@ -459,7 +516,7 @@ int COMPLIMIT::run()
       }
       else if (env_state == ENV_RELEASE) {
          double scale = ampdb(gain);
-#ifdef DEBUG
+#ifdef DEBUG2
          printf("release:  cursamp=%d, envcount=%d, insig=% f, gain=%f, sc=%f",
                                  currentFrame(), env_count, sig, gain, scale);
 #endif
@@ -473,21 +530,21 @@ int COMPLIMIT::run()
          else
             env_count--;
       }
-#ifdef DEBUG
+#ifdef DEBUG2
       if (env_state != ENV_INACTIVE)
          printf(", outsig=% f\n", sig);
-      if (fabs(sig) > threshold)
-         printf("OUTPUT EXCEEDS THRESHOLD! (%f, %f)\n", sig, threshold);
+      if (fabs(sig) > threshold_amp)
+         printf("OUTPUT EXCEEDS THRESHOLD! (%f, %f)\n", sig, threshold_amp);
 #endif
-      sig *= outgain * oamp;
+      sig *= outamp;
 
       if (bypass)
-         sig = inptr[inchan] * oamp;
+         sig = inptr[inchan];
 
       float out[2];
       if (outputChannels() == 2) {
-         out[0] = sig * pctleft;
-         out[1] = sig * (1.0 - pctleft);
+         out[0] = sig * pan;
+         out[1] = sig * (1.0f - pan);
       }
       else
          out[0] = sig;
@@ -495,11 +552,11 @@ int COMPLIMIT::run()
       rtaddout(out);
       increment();
 
-      inptr += inputChannels();
+      inptr += inchans;
       if (inptr >= bufendptr) {
          inptr = bufstartptr;
          bufstartptr = in;
-         dprint1("    resetting inptr=%p\n", inptr);
+         DPRINT1("    resetting inptr=%p\n", inptr);
       }
    }
    readptr += samps;
@@ -507,9 +564,9 @@ int COMPLIMIT::run()
       readptr = in;
 
    if (first_time)
-      first_time = 0;
+      first_time = false;
 
-   return framesToRun();
+   return nframes;
 }
 
 
