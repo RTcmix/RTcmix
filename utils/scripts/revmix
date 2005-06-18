@@ -1,0 +1,38 @@
+#!/bin/sh
+# Play a sound file backwards (with optional amp scaling and inskip).
+# Only works for mono and stereo files.
+# JGG, 9/9/03
+
+if [ $# -lt 1 ]
+then
+   echo  Usage: `basename $0` file \[inskip, \[ampmult\]\]
+   echo "       (plays backward from <inskip>, which is end of file by default)"
+   exit 1
+fi
+
+flags='-q'
+
+script='
+infile = s_arg(0);
+inskip = 0; amp = 1;
+if (n_arg() > 1) {
+   inskip = f_arg(1);
+   if (n_arg() > 2)
+      amp = f_arg(2);
+}
+rtsetparams(44100, 2);
+load("REVMIX");
+rtinput(infile);
+chans = CHANS();
+if (inskip == 0)
+   inskip = DUR();
+dur = inskip;
+if (chans == 1)
+   REVMIX(0, inskip, dur, amp)
+else {
+   REVMIX(0, inskip, dur, amp, 0, 1)
+   REVMIX(0, inskip, dur, amp, 1, 0)
+}
+'
+echo $script | CMIX $flags $*
+

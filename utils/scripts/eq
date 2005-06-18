@@ -1,0 +1,78 @@
+#!/bin/sh
+# Play a sound file through a parametric or shelving EQ, with optional inskip,
+# amp scaling and other parameters.
+# Only works for mono and stereo files.
+# JGG, 1/7/04
+
+if [ $# -lt 3 ]
+then
+   echo  Usage: `basename $0` file type cf eqgain Q [inskip [ampmult]]
+   echo "       (type: 0-lowpass, 1-highpass, 2-lowshelf, 3-highshelf, 4-peaknotch;"
+   echo "       center freq <cf> in Hz; eqgain in dB)"
+   exit 1
+fi
+
+flags='-q'
+
+script='
+inskip = 0; amp = 1;
+infile = s_arg(0);
+type = i_arg(1);
+cf = f_arg(2);
+eqgain = f_arg(3);
+Q = f_arg(4);
+if (n_arg() > 5) {
+   inskip = f_arg(5);
+   if (n_arg() > 6) {
+      amp = f_arg(6);
+   }
+}
+
+if (type == 0) {
+   str_num("type: 0 (low pass)");
+   type = 0
+}
+else if (type == 1) {
+   str_num("type: 1 (high pass)");
+   type = 1
+}
+else if (type == 2) {
+   str_num("type: 2 (low shelf)");
+   type = 2
+}
+else if (type == 3) {
+   str_num("type: 3 (high shelf)");
+   type = 3
+}
+else if (type == 4) {
+   str_num("type: 4 (peaknotch)");
+   type = 4
+}
+str_num("cf: ", cf);
+str_num("eqgain: ", eqgain);
+str_num("Q: ", Q);
+str_num("inskip: ", inskip);
+str_num("ampmult: ", amp);
+
+rtsetparams(44100, 2);
+load("EQ");
+rtinput(infile);
+chans = CHANS();
+dur = DUR() - inskip;
+reset(10000);
+setline_size(10000);
+ramp = .02
+setline(0,0, ramp,1, dur-ramp,1, dur,0);
+makegen(2, 18, 10, 0,cf, 1,cf);
+makegen(3, 18, 10, 0,Q, 1,Q);
+makegen(4, 18, 10, 0,eqgain, 1,eqgain);
+if (chans == 1) {
+   EQ(0, inskip, dur, amp, type)
+}
+else {
+   EQ(0, inskip, dur, amp, type, 0, 1)
+   EQ(0, inskip, dur, amp, type, 1, 0)
+}
+'
+echo $script | CMIX $flags $*
+

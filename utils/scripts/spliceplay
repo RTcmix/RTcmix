@@ -1,0 +1,71 @@
+#!/bin/sh
+# Splice together multiple segments of a sound file and play them.
+# If last out time not given, play until end of file.
+# Only works for mono and stereo files.
+# JGG, 7/31/03
+
+if [ $# -lt 4 ]
+then
+   echo  Usage: `basename $0` file in1 out1 in2 \[out2 in3 \[out3 etc...\]
+   echo "       splice multiple segments -- defined by in,out times -- of one sound file"
+   exit 1
+fi
+
+flags='-q'
+
+script='
+ramplen = .002;
+infile = s_arg(0);
+numargs = n_arg() - 1;
+i = 0;
+for (arg = 1; arg <= numargs; arg = arg + 2) {
+   in = f_arg(arg);
+   if (arg < numargs) {
+      out = f_arg(arg + 1);
+      if (out <= in) {
+         str_num("out time (", out, ") must be greater than in time (", in, ")");
+         exit(1);
+      }
+   }
+   else {
+      out = -1
+   }
+   put_array(1, i, in);
+   put_array(1, i + 1, out);
+   i = i + 2;
+}
+num_segments = i / 2;
+rtsetparams(44100, 2);
+load("STEREO");
+rtinput(infile);
+chans = CHANS();
+sfdur = DUR();
+outskip = 0;
+amp = 1;
+setline_size(20000);
+reset(20000);
+index = 0;
+for (seg = 0; seg < num_segments; seg = seg + 1) {
+   inskip = get_array(1, index);
+   endin = get_array(1, index + 1);
+   if (endin == -1) {
+      dur = sfdur - inskip
+   }
+   else {
+      dur = endin - inskip
+   }
+   setline(0,0, ramplen,1, dur-ramplen,1, dur,0);
+   if (chans == 1) {
+      STEREO(outskip, inskip, dur, amp, .5)
+   }
+   else {
+      STEREO(outskip, inskip, dur, amp, 1, 0)
+   }
+   outskip = outskip + dur;
+   index = index + 2;
+}
+'
+echo $script | CMIX $flags $*
+
+# NB: it wasn't possible to use '*' in the script, because bash expands
+# this (to list of file names) even if single-quoted!

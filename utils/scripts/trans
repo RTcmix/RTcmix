@@ -1,0 +1,39 @@
+#!/bin/sh
+# Play a sound file at a transposition (with optional amp scaling and inskip).
+# Only works for mono and stereo files.
+# JGG, 7/30/03
+
+if [ $# -lt 2 ]
+then
+   echo  Usage: `basename $0` file transposition \[inskip, \[ampmult\]\]
+   echo "       (transposition in octave.pc)"
+   exit 1
+fi
+
+flags='-q'
+
+script='
+infile = s_arg(0);
+trans = f_arg(1);
+inskip = 0; amp = 1;
+if (n_arg() > 2) {
+   inskip = f_arg(2);
+   if (n_arg() > 3)
+      amp = f_arg(3);
+}
+rtsetparams(44100, 2);
+load("TRANS");
+rtinput(infile);
+chans = CHANS();
+dur = DUR() - inskip;
+if (trans < 0)
+   dur = translen(dur, trans);
+if (chans == 1)
+   TRANS(0, inskip, dur, amp, trans)
+else {
+   TRANS(0, inskip, dur, amp, trans, 0, 1)
+   TRANS(0, inskip, dur, amp, trans, 1, 0)
+}
+'
+echo $script | CMIX $flags $*
+

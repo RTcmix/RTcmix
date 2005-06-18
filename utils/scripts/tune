@@ -1,0 +1,62 @@
+#!/bin/sh
+
+progname=`basename $0`
+
+if [ $# -lt 1 ]
+then
+   echo "Usage: ${progname} freq [dur [amp]]"
+   echo "       (freq in Hz or oct.pc; amp 1-32767, 10000 by default)"
+   exit
+fi
+
+flags=-Q
+
+script='
+sr = 44100;
+envramp = .05;
+default_dur = .5;
+default_amp = 10000;
+
+freq = f_arg(0);
+if (freq <= 0 || freq > sr / 2) {
+   str_num("freq out of range");
+   exit(1);
+}
+
+nargs = n_arg();
+if (nargs > 1) {
+   dur = f_arg(1);
+   if (nargs > 2) {
+      amp = f_arg(2);
+   }
+   else {
+      amp = default_amp;
+   }
+}
+else {
+   dur = default_dur;
+   amp = default_amp;
+}
+
+if (dur < envramp + envramp || dur > 90) {
+   str_num("dur must be between ", envramp + envramp, " and 90");
+   exit(1);
+}
+if (amp < 1 || amp > 32767) {
+   str_num("amp must be between 1 and 32767");
+   exit(1);
+}
+
+rtsetparams(sr, 2);
+load("WAVETABLE");
+
+makegen(1, 18, 5000, 0,0, envramp,1, dur-envramp,1, dur,0);
+makegen(2, 10, 5000, 1, .2, .05);
+reset(10000);
+WAVETABLE(0, dur, amp, freq, .5);
+'
+echo $script | CMIX $flags $*
+
+# Note: no way to tell whether this failed, because cmix returns 0
+# status after Minc exit(1)  (problem in minc_functions.c)
+# If it don't make noise, it don't work  ;-)
