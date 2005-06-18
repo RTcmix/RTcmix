@@ -91,12 +91,14 @@ CLAR(start, dur, noise_amp, length1, length2, output_amp, d2_gain, [pctleft])
    PFields: amp, pitch, rvb_time, pctleft
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-COMPLIMIT(start, inskip, dur, pre_amp, post_amp, attack, release, threshold,
+### COMPLIMIT(start, inskip, dur, pre_amp, post_amp, attack, release, threshold,
      ratio, lookahead, windowsize, detection_type, bypass, [inchan, pctleft])
    [1. amp envelope]
 
-   PFields: amp, pre_amp, post_amp, attack, release, threshold, ratio,
+   PFields: pre_amp, post_amp, attack, release, threshold, ratio,
             bypass, pctleft
+
+   ***NOTE: optional gen 1 scales post_amp
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ### DEL1(start, inskip, dur, amp, delay_time, delay_amp, [inchan])
