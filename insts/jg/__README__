@@ -15,6 +15,8 @@ BUTTER    - Butterworth filter with low-pass, high-pass, band-pass and
 COMPLIMIT - a compressor / limiter with adjustable lookahead, envelope
             times, threshold and compression ratio
 
+CONVOLVE1 - convolution instrument
+
 DECIMATE  - Sample bit-depth reducer, for nasty noisy effects.
 
 DISTORT   - Distortion (very primitive at the moment)
@@ -43,6 +45,10 @@ FREEVERB  - a version of the Freeverb reverberator written by "Jezar"
             for each output channel, and it's tuned well.  This uses about
             60-70% of the CPU time that REVERBIT does, for some reason.
 
+GRANSYNTH - granular synthesis with extensive real-time control
+
+GRANULATE - granulation with extensive real-time control
+
 JCHOR     - a variation on Lansky's chor program, which sprays a slice of
             an input file around the stereo field. Some limitations have
             been removed, and you can transpose the grain.
@@ -66,6 +72,8 @@ MROOM     - RTcmix version of the old cmix implementation of F.R. Moore's
             MMOVE (in insts/std/MMOVE).
 
 MULTEQ    - version of EQ that lets you connect many EQs in series.
+
+MULTIWAVE - additive synthesis instrument with real-time control
 
 NPAN      - Multichannel pair-wise intensity panner, based on the design
             described in F. R. Moore's "Elements of Computer Music."  (See
@@ -95,6 +103,8 @@ SPECTACLE - a family of spectral processing instruments.  SPECTEQ offers
             delay effects, in which each FFT bin has its own recirculating
             delay line.
 
+SPECTACLE2  improved version of SPECTACLE, with extensive real-time control
+
 SROOM     - RTcmix version of the old cmix implementation of F.R. Moore's
             stationary-source room simulation program.  You're better off
             with MPLACE (in insts/std/MMOVE).
@@ -105,6 +115,9 @@ VOCODE2   - a channel vocoder, which allows input of both carrier and
 
 VOCODESYNTH - yet another channel vocoder, which synthesizes its output rather
             than applying time-varying filters to an external carrier signal.
+
+WAVY      - dual-oscillator wavetable instrument, with various ways to combine
+            the oscillators
 
 WIGGLE    - simple FM synthesis with a separate glissando function.  Cooler
             than that description makes it sound...
