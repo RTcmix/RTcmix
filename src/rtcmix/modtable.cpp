@@ -74,7 +74,9 @@ static Handle _modtable_usage()
 //    is interpreted as a literal table index (from 0 to the table length - 1).
 // <value> is the new value to place at <index>
 // <width> indicates how many neighboring table slots are affected by the 
-//    central value change.  This is a "percentage" from 0 to 1.
+//    central value change.  Normally, this is a percentage (0 to 1) of the
+//    slots, but with the "literal" tag, <width> is interpreted as the number
+//    of slots affected.
 // Both <index> and <value> can be dynamic control sources.
 //
 // -JGG, 6/18/05

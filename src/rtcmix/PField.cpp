@@ -540,9 +540,8 @@ double DrawTablePField::doubleValue(double didx) const
 	// between start's val and <newval> across the intervening indices.  Same
 	// thing between target and stop indices.
 
-// FIXME: would it be better to use a higher order interpolation?
-
-	int span = int(_widthPField->doubleValue(didx) * len);
+	double dwidth = _widthPField->doubleValue(didx);
+	int span = _literalIndex ? int(dwidth) : int(dwidth * len);
 	if (span < 0)
 		span = 0;
 	if (span > 0) {
