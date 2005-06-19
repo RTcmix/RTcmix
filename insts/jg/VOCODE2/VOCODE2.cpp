@@ -181,7 +181,6 @@ int VOCODE2 :: init(double p[], int n_args)
    }
    else {                /* by function table */
       float transp = lowcf;                    /* pfield meaning changes */
-      int numfilts;
       double *freqtable = NULL;
       if (nargs > 15)
          freqtable = (double *) getPFieldTable(15, &numfilts);
