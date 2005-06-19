@@ -7,7 +7,7 @@
 
 extern "C" {
 	/* defined in cfuncs.c */
-	void mdelset(float*, int*, int);
+	void mdelset(float, float*, int*, int);
 	float mdelget(float*, int, int*);
 }
 
@@ -47,8 +47,8 @@ int CLAR::init(double p[], int n_args)
 		advise("CLAR", "Setting output amp curve to all 1's.");
 
 	imax = DELSIZE;
-	mdelset(del1,dl1,imax);
-	mdelset(del2,dl2,imax);
+	mdelset(SR, del1,dl1,imax);
+	mdelset(SR, del2,dl2,imax);
 
 //	srrand(0.1);
 	length1 = (int)p[3];
