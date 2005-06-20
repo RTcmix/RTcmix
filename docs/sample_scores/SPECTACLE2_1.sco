@@ -43,7 +43,7 @@ fb = .9
 // do it for the left chan
 SPECTACLE2(0, inskip, indur, amp * oenv, ienv, ringdur, fftlen, winlen,
 	window, overlap, eq, deltime, fb, mineqfreq, maxeqfreq,
-	mindelfreq, maxdelfreq, wet, inchan, pan=1)
+	mindelfreq, maxdelfreq, 0, wet, inchan, pan=1)
 
 // shift delay table to decorrelate channels
 deltime = copytable(modtable(deltime, "shift", 2))
@@ -51,6 +51,6 @@ deltime = copytable(modtable(deltime, "shift", 2))
 // do it for the right chan
 SPECTACLE2(0, inskip, indur, amp * oenv, ienv, ringdur, fftlen, winlen,
 	window, overlap, eq, deltime, fb, mineqfreq, maxeqfreq,
-	mindelfreq, maxdelfreq, wet, inchan, pan=0)
+	mindelfreq, maxdelfreq, 0, wet, inchan, pan=0)
 
 
