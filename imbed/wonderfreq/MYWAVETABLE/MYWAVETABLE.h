@@ -7,7 +7,6 @@ class MYWAVETABLE : public Instrument {
 	float _amp;
 	float _pitch;
 	float _spread;
-	int	  _updateCount;
 	int	  _updateCounter;
 
 public:

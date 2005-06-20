@@ -26,8 +26,6 @@ int MYWAVETABLE::init(double p[], int n_args)
 
 	_spread = p[4];
 	
-	_updateCount = (int) (SR/(float)resetval);	// from global
-
 	return nSamps();
 }
 
@@ -38,7 +36,7 @@ int MYWAVETABLE::run()
 	for (int i = 0; i < framesToRun(); i++) {
 		// Here is where we call Instrument::update() at whatever rate
 		// we desire.  We check for pitch diffs to avoid extra work.
-		if (_updateCounter-- <= 0) {
+		if (--_updateCounter <= 0) {
 			double p[5];
 			update(p, 5);
 			_amp = p[2];
@@ -47,7 +45,7 @@ int MYWAVETABLE::run()
 				theOscil->setfreq(_pitch);
 			}
 			_spread = p[4];
-			_updateCounter = _updateCount;
+			_updateCounter = getSkip();
 		}
 		out[0] = theOscil->next() * theEnv->next() * _amp;
 		
