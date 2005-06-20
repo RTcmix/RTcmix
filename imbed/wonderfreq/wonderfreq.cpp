@@ -11,7 +11,6 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <globals.h>
 #include <RTcmix.h>
 #include "MYWAVETABLE/MYWAVETABLE.h"
 #include <PField.h>
