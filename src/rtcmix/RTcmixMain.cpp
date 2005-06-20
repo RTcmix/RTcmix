@@ -60,7 +60,7 @@ usage()
       "                      (Minc and Python only)\n"
       "           --debug  enter parser debugger (Perl only)\n"
       "           -q       quiet -- suppress print to screen\n"
-      "           -Q       really quiet -- not even peak stats\n"
+      "           -Q       really quiet -- not even clipping or peak stats\n"
       "           -h       this help blurb\n"
       "        Other options, and arguments, passed on to parser.\n\n");
    exit(1);
@@ -204,8 +204,9 @@ RTcmixMain::parseArguments(int argc, char **argv)
             case 'n':               /* for use in rtInteractive mode only */
                noParse = 1;
                break;
-            case 'Q':               /* reall quiet */
-               Option::reportClipping(false); /* (then fall through) */
+            case 'Q':               /* really quiet */
+               Option::reportClipping(false);
+               Option::checkPeaks(false); /* (then fall through) */
             case 'q':               /* quiet */
                Option::print(false);
                break;
