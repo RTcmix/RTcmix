@@ -22,6 +22,6 @@ private:
 	void dump_anal_bins();
 
 	float _eqconst;
-	double *_eqtable;
+	double *_eqtable, *_binmaptable;
 };
 

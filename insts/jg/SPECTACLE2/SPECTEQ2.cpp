@@ -3,35 +3,43 @@
 
 /* SPECTEQ2 - FFT-based EQ
 
-   p0  = output start time
-   p1  = input start time
-   p2  = duration
-   p3  = amplitude multiplier
+   Parameters marked with '*' can receive dynamic updates from a table or
+   real-time control source.  See note 1 below.
 
-   p4  = FFT length (power of 2, usually 1024)
-   p5  = window length (power of 2, usually FFT length * 2)
-   p6  = window table (or zero for internally generated Hamming window)
-   p7  = overlap - how much FFT windows overlap (positive power of 2)
-         1: no overlap, 2: hopsize=FFTlen/2, 4: hopsize=FFTlen/4, etc.
-         2 or 4 is usually fine; 1 is fluttery; higher overlaps use more CPU.
+     p0  = output start time
+     p1  = input start time
+     p2  = duration
+   * p3  = amplitude multiplier
 
-   p8  = EQ table (i.e., amplitude scaling of each band), in dB (0 dB means
-         no change, + dB boost, - dB cut).
+     p4  = FFT length (power of 2, usually 1024)
+     p5  = window length (power of 2, usually FFT length * 2)
+     p6  = window table (or zero for internally generated Hamming window)
+     p7  = overlap - how much FFT windows overlap (positive power of 2)
+           1: no overlap, 2: hopsize=FFTlen/2, 4: hopsize=FFTlen/4, etc.
+           2 or 4 is usually fine; 1 is fluttery; higher overlaps use more CPU.
+
+   * p8  = EQ table (i.e., amplitude scaling of each band), in dB (0 dB means
+           no change, + dB boost, - dB cut).
 
    The next two parameters define the range within which the EQ table functions.
    See note (3) below for more information.
 
-   p9  = minimum frequency [optional, default is 0 Hz]
-   p10 = maximum frequency [optional, default is Nyquist] 
-         If zero, max. freq. will be set to the Nyquist frequency.
+   * p9  = minimum frequency [optional, default is 0 Hz]
+   * p10 = maximum frequency [optional, default is Nyquist] 
+           If zero, max. freq. will be set to the Nyquist frequency.
 
-   p11 = bypass (0: not bypassed, 1: bypassed) [optional, default is 0]
-   p12 = input channel [optional, default is 0]
-   p13 = pan (in percent-to-left format) [optional, default is .5]
+     p11 = bin-mapping table -- gives the number of adjacent FFT bins to affect
+           for each of the elements in the EQ control table.  To ignore this,
+           just pass a zero here.  See note 4 for tips on using this feature.
+           [optional, default is zero]
+
+   * p12 = bypass (0: not bypassed, 1: bypassed) [optional, default is 0]
+     p13 = input channel [optional, default is 0]
+   * p14 = pan (in percent-to-left format) [optional, default is .5]
 
    NOTES:
 
-   1. p3 (amp), p9 (min. freq.), p10 (max. freq.), p11 (bypass) and p13 (pan)
+   1. p3 (amp), p9 (min. freq.), p10 (max. freq.), p12 (bypass) and p14 (pan)
       can receive dynamic updates from a table or real-time control source.
       Note that updating min. or max. freq. can be rather expensive.
 
@@ -71,6 +79,16 @@
       to bins for the lower frequencies.  For the higher frequencies, one table
       element might control 30 or more bins.
 
+   4. If using the bin-mapping table (p11), it must be the same size as the EQ
+      table (p8).  If the sum of all the elements of the mapping table is less
+      than the total number of FFT bins -- which is (FFT size / 2) + 1, and
+      includes 0 Hz and Nyquist bins) -- then the extra higher-frequency bins
+      will be assigned to the last EQ table element.  If the sum of mapping
+      table elements is greater than the number of bins, then some higher-
+      frequency bins will be omitted.  Don't you wish you had passed zero here
+      to ignore this feature?
+
+
    John Gibson <johgibso at indiana dot edu>, 6/12/05.
 */
 
@@ -99,7 +117,7 @@ int SPECTEQ2::usage()
 {
 	return die(NULL,
 		"Usage: %s(start, inskip, indur, amp, fftlen, windowlen, windowtype, "
-		"overlap, eqtable, minfreq, maxfreq, bypass, inchan, pan)",
+		"overlap, eqtable, minfreq, maxfreq, binmaptable, bypass, inchan, pan)",
 		instname());
 }
 
@@ -120,7 +138,7 @@ int SPECTEQ2::getargs(double p[], int n_args)
 	set_window_len(int(p[5]));
 	set_window_pfield_index(6);
 	set_overlap(int(p[7]));
-	set_inchan(int(p[12]));
+	set_inchan(int(p[13]));
 	set_pan(0.5f);			// default, maybe overridden in doupdate
 
 	return 0;
@@ -140,6 +158,15 @@ int SPECTEQ2::subinit(double p[], int n_args)
 	else
 		_control_table_size = eqtablen;
 
+	int len;
+	_binmaptable = (double *) getPFieldTable(11, &len);
+	if (_binmaptable) {
+		if (len != eqtablen)
+			die(instname(), "The bin-mapping table (p11) must be the same size as "
+			                "the EQ table (p8).");
+		warn(instname(), "The bin-mapping feature is not yet implemented.");
+	}
+
 	set_ringdur(0.0f);
 
 	return 0;
@@ -157,14 +184,14 @@ int SPECTEQ2::subconfigure()
 void SPECTEQ2::subupdate()
 {
 	// NB: update EQ table, so that live table draw will work
-	double p[14];
-	update(p, 14, 1 << 3 | 1 << 8 | 1 << 9 | 1 << 10 | 1 << 11 | 1 << 13);
+	double p[15];
+	update(p, 15, 1 << 3 | 1 << 8 | 1 << 9 | 1 << 10 | 1 << 12 | 1 << 14);
 
 	set_oamp(p[3]);
 	set_freqrange(p[9], p[10], "EQ");
-	set_wet(bool(p[11]) ? 0.0f : 1.0f);
-	if (_nargs > 13)
-		set_pan(p[13]);
+	set_wet(bool(p[12]) ? 0.0f : 1.0f);
+	if (_nargs > 14)
+		set_pan(p[14]);
 }
 
 

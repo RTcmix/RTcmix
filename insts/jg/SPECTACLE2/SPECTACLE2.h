@@ -23,7 +23,7 @@ private:
 
 	long _maxdelsamps;
 	float _eqconst, _deltimeconst, _feedbackconst, _eq_minfreq, _eq_rawmaxfreq;
-	double *_eqtable, *_deltimetable, *_feedbacktable;
+	double *_eqtable, *_deltimetable, *_feedbacktable, *_binmaptable;
 	int *_eq_bin_groups, _eqtablen;
 	Odelay *_phase_delay[(kMaxFFTLen / 2) + 1];
 	Odelay *_mag_delay[(kMaxFFTLen / 2) + 1];
