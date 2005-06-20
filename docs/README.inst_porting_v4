@@ -54,6 +54,8 @@ code provided in docs/sample_code.
 6. rtsetinput and rtsetoutput now return status (0: okay, -1: error) rather
    than nsamps.  The way to handle this is to use the following idiom.
 
+      if (rtsetoutput(outskip, dur, this) == -1)
+         return DONT_SCHEDULE;
       if (rtsetinput(inskip, this) == -1)
          return DONT_SCHEDULE;
 
