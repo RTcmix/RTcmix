@@ -16,7 +16,7 @@ int MYWAVETABLE::init(double p[], int n_args)
 {
 // p0 = start; p1 = dur; p2 = amplitude; p3 = frequency; p4 = stereo spread;
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	rtsetoutput(p[0], p[1], this);
 
 	theEnv = new Ooscili(SR, 1.0/p[1], 1); // assumes makegen 1 for amp env
 
