@@ -1,8 +1,7 @@
-#include <stdlib.h>
 #include <Instrument.h>
 #include "MYWAVETABLE.h"
 #include <rt.h>
-#include <ugens.h>	// some globals
+#include <rtdefs.h>
 
 MYWAVETABLE::MYWAVETABLE() : Instrument(), _updateCounter(0)
 {
@@ -16,7 +15,8 @@ int MYWAVETABLE::init(double p[], int n_args)
 {
 // p0 = start; p1 = dur; p2 = amplitude; p3 = frequency; p4 = stereo spread;
 
-	rtsetoutput(p[0], p[1], this);
+	if (rtsetoutput(p[0], p[1], this) == -1)
+		return DONT_SCHEDULE;
 
 	theEnv = new Ooscili(SR, 1.0/p[1], 1); // assumes makegen 1 for amp env
 
