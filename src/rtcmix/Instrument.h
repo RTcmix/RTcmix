@@ -39,7 +39,6 @@ protected:
    int            chunksamps;
    int            i_chunkstart;   // we need this for rtperf
    int            endsamp;
-   int            nsamps;
    int            output_offset;
 
    int            sfile_on;        // a soundfile is open (for closing later)
@@ -73,6 +72,7 @@ private:
    char           bufstatus[MAXBUS];
    char           needs_to_run;
 	int            _skip;
+   int            nsamps;
 
    static pthread_mutex_t endsamp_lock;
 
