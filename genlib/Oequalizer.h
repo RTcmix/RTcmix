@@ -34,17 +34,8 @@ public:
 	void setparams(float freq, float Q, float gain = 0.0);
 	inline void clear() { _x1 = _x2 = _y1 = _y2 = 0.0; }
 
-	inline float next(float input)
-	{
-		double y0 = (_c0 * input) + (_c1 * _x1) + (_c2 * _x2)
-										  - (_c3 * _y1) - (_c4 * _y2);
-		_x2 = _x1;
-		_x1 = input;
-		_y2 = _y1;
-		_y1 = y0;
-
-		return y0;
-	}
+	inline float next(float input);
+	float last() const { return _y1; }
 
 private:
 	double _sr;
@@ -52,5 +43,18 @@ private:
 	double _c0, _c1, _c2, _c3, _c4;
 	double _x1, _x2, _y1, _y2;
 };
+
+
+inline float Oequalizer::next(float input)
+{
+	double y0 = (_c0 * input) + (_c1 * _x1) + (_c2 * _x2)
+									  - (_c3 * _y1) - (_c4 * _y2);
+	_x2 = _x1;
+	_x1 = input;
+	_y2 = _y1;
+	_y1 = y0;
+
+	return y0;
+}
 
 #endif // _OEQUALIZER_H_
