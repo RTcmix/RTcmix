@@ -334,6 +334,12 @@ RTcmix::rtoutput(float p[], int n_args, double pp[])
       }
    }
 
+   // If user has chosen to turn off audio playback, we delete
+   // the device that might have been created during rtsetparams().
+   if (!Option::record() && !Option::play()) {
+       delete audioDevice;
+	   audioDevice = NULL;
+   }
    AudioDevice *dev;
    if ((dev = create_audio_file_device(audioDevice,
 				   				rtoutsfname, output_header_type,
