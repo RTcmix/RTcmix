@@ -36,7 +36,7 @@ pthread_mutex_t Instrument::endsamp_lock = PTHREAD_MUTEX_INITIALIZER;
 /* ----------------------------------------------------------- Instrument --- */
 Instrument::Instrument()
 	: _start(0.0), _dur(0.0), cursamp(0), chunksamps(0), i_chunkstart(0),
-	  endsamp(0), nsamps(0), output_offset(0), outputchans(0), _name(NULL)
+	  endsamp(0), output_offset(0), outputchans(0), _name(NULL), nsamps(0)
 {
    int i;
 
@@ -143,13 +143,13 @@ int Instrument::setup(PFieldSet *pfields)
 	_pfields = pfields;
 	int nargs = MAXDISPARGS;
 	update(s_dArray, nargs);
-	int nsamps = init(s_dArray, pfields->size());
+	int samps = init(s_dArray, pfields->size());
 	_skip = int(SR / (float) resetval);
 	if (_skip < 1)
 		_skip = 1;
 	else if (_skip > nSamps())
 		_skip = nSamps();
-	return nsamps;
+	return samps;
 }
 
 /* ------------------------------------------------------------ update () --- */
