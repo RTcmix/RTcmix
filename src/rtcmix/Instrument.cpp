@@ -36,7 +36,7 @@ pthread_mutex_t Instrument::endsamp_lock = PTHREAD_MUTEX_INITIALIZER;
 /* ----------------------------------------------------------- Instrument --- */
 Instrument::Instrument()
 	: _start(0.0), _dur(0.0), cursamp(0), chunksamps(0), i_chunkstart(0),
-	  endsamp(0), output_offset(0), outputchans(0), _name(NULL), nsamps(0)
+	  endsamp(0), output_offset(0), outputchans(0), _name(NULL), _nsamps(0)
 {
    int i;
 
@@ -293,8 +293,8 @@ void Instrument::schedule(heap *rtHeap)
 {
   // Calculate variables for heap insertion
   float dur = getdur();
-  int nsamps = (int) (0.5 + dur * SR);	// Rounded to nearest - DS
-  //  cout << "nsamps = " << nsamps << endl;
+  int samps = (int) (0.5 + dur * SR);	// Rounded to nearest - DS
+  //  cout << "nsamps = " << samps << endl;
   
   float start = getstart();
   int startsamp = (int) (0.5 + start * SR);	// Rounded to nearest - DS
@@ -307,7 +307,7 @@ void Instrument::schedule(heap *rtHeap)
   	startsamp += RTcmix::getElapsedFrames();
   }
   
-  int endsamp = startsamp+nsamps;
+  int endsamp = startsamp+samps;
   setendsamp(endsamp);  // used by intraverse.cpp
   
   // place instrument into heap

@@ -71,8 +71,8 @@ private:
    BUFTYPE        *obufptr;
    char           bufstatus[MAXBUS];
    char           needs_to_run;
-	int            _skip;
-   int            nsamps;
+   int            _skip;
+   int            _nsamps;
 
    static pthread_mutex_t endsamp_lock;
 
@@ -116,7 +116,7 @@ public:
 	// Instruments should use these to access variables.
 	int				currentFrame() const { return cursamp; }
 	int				framesToRun() const { return chunksamps; }
-	int				nSamps() const { return nsamps; }
+	int				nSamps() const { return _nsamps; }
 	int				inputChannels() const { return _input.inputchans; }
 	int				outputChannels() const { return outputchans; }
 	int				getSkip() const { return _skip; }
@@ -145,7 +145,7 @@ public:
 
 	int				exec(BusType bus_type, int bus);
 	void			addout(BusType bus_type, int bus);
-	bool			isDone() const { return cursamp >= nsamps; }
+	bool			isDone() const { return cursamp >= _nsamps; }
 	const char *	name() const { return _name; }
 
 	// These are called by the base class methods declared above.
