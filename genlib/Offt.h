@@ -19,9 +19,9 @@
 //
 // Check out Obucket also.  This class makes it fairly easy to decouple the
 // FFT length from your instrument's buffer size and to have a fixed latency,
-// regardless of note start time.  See insts/jg/CONVOLVE1.cpp for an example.
-//
-// -John Gibson, 6/4/05
+// regardless of note start time.  See insts/jg/SPECTACLE2_BASE.cpp for an
+// example.
+//                                                     -John Gibson, 6/4/05
 
 #ifdef FFTW
 #include <fftw3.h>
