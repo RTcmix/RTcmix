@@ -213,8 +213,9 @@ void BandedWG :: setFrequency(MY_FLOAT frequency)
     if ( radius < 0.0 ) radius = 0.0;
     bandpass[i].setResonance(freakency * modes[i], radius, true);
 
-    delay[i].clear();
-    bandpass[i].clear();
+// BGG -- took this out to allow freq-shifting
+//    delay[i].clear();
+//    bandpass[i].clear();
   }
 
   //int olen = (int)(delay[0].getDelay());
