@@ -11,10 +11,21 @@
    p7 = Tonehole state (1 == "open"; 0 == "closed")
    p8 = Register vent state (1 == "open"; 0 == "closed")
    p9 = percent of signal to left output channel [optional, default is .5]
+   p10 = breath pressure table [optional]
+      (must be normalized between 0.0 - 1.0)
 
-   Assumes function table 1 is breathPressure (amplitude) curve for the note.
-   Or you can just call setline. If no setline or function table 1, uses
-   flat curve.
+   PField updating:
+      p2 (amplitude)
+         (or assumes function table 1 is breathPressure (amplitude) curve
+         for the note.  If no setline or function table 1, uses flat
+         amplitude curve.)
+      p3 (frequency)
+      p4 (noise amp)
+      p6 = (reed stiffness)
+      p7 = (tonehole state)
+      p8 = (register vent state)
+      p9 = (pan)
+      p10 (breath pressure table)
 */
 
 #include <Stk.h>
@@ -36,6 +47,8 @@
 
 MBLOWHOLE :: MBLOWHOLE() : Instrument()
 {
+	branch = 0;
+	amptable = NULL;
 }
 
 MBLOWHOLE :: ~MBLOWHOLE()
@@ -45,31 +58,75 @@ MBLOWHOLE :: ~MBLOWHOLE()
 
 int MBLOWHOLE :: init(double p[], int n_args)
 {
+	nargs = n_args;
 	Stk::setSampleRate(SR);
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	if (rtsetoutput(p[0], p[1], this) == -1)
+		return DONT_SCHEDULE;
 
-	amp = p[2] * 3.0; // for some reason this needs normalizing...
-	if (floc(1)) { // the amplitude array has been created in the score
+	amptable = floc(1);
+	if (amptable) // the amp array has been created using makegen
 		theEnv = new Ooscili(SR, 1.0/p[1], 1);
-	} else {
-		amparray[0] = amparray[1] = 1.0;
-		advise("MBLOWHOLE", "Setting phrase curve to all 1's.");
-		theEnv = new Ooscili(SR, 1.0/p[1], amparray);
-	}
 
 	theClar = new BlowHole(50.0); // 50 Hz is lowest freq for now
+	noiseamp = p[4];
 	theClar->setNoise(p[4]);
+	stiff = p[6];
 	theClar->setReedStiffness(p[6]);
+	tone = p[7];
 	theClar->setTonehole(p[7]);
+	vent = p[8];
 	theClar->setVent(p[8]);
+	freq = p[3];
 	theClar->noteOn(p[3], p[5]);
 
 	pctleft = n_args > 9 ? p[9] : 0.5;                /* default is .5 */
 
-	return nsamps;
+	return nSamps();
 }
 
+void MBLOWHOLE :: doupdate()
+{
+	double p[11];
+	update(p, 11, kAmp | kFreq | kNoise | kStiff | kTone | kVent | kPan | kBreathPress);
+
+	// "amp" is now separate from the breath pressure.
+	// breath pressure is controlled by makegen 1, or a table, or it is 1.0
+	amp = p[2]*2.0; // needs normalizing
+	if (amptable)
+		breathamp = theEnv->next(currentFrame());
+	else if (nargs > 10)
+		breathamp = p[10];
+	else
+		breathamp = 1.0;
+
+	if (freq != p[3]) {
+		theClar->setFrequency(p[3]);
+		freq = p[3];
+	}
+
+	if (noiseamp != p[4]) {
+		theClar->setNoise(p[4]);
+		noiseamp = p[4];
+	}
+
+	if (stiff != p[6]) {
+		theClar->setReedStiffness(p[6]);
+		stiff = p[6];
+	}
+
+	if (tone != p[7]) {
+		theClar->setTonehole(p[7]);
+		tone = p[7];
+	}
+
+	if (vent != p[8]) {
+		theClar->setVent(p[8]);
+		vent = p[8];
+	}
+
+	if (nargs > 9) pctleft = p[9];
+}
 
 int MBLOWHOLE :: run()
 {
@@ -77,7 +134,12 @@ int MBLOWHOLE :: run()
 	float out[2];
 
 	for (i = 0; i < framesToRun(); i++) {
-		out[0] = theClar->tick(theEnv->next()) * amp;
+		if (--branch <= 0) {
+			doupdate();
+			branch = getSkip();
+		}
+
+		out[0] = theClar->tick(breathamp) * amp;
 
 		if (outputChannels() == 2) {
 			out[1] = out[0] * (1.0 - pctleft);
