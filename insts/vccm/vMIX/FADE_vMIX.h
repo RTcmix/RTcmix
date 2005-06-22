@@ -7,6 +7,5 @@ public:
 	FADE_vMIX();
 	virtual ~FADE_vMIX();
 	int init(double*, int);
-	int configure();
 	int run();
 	};
