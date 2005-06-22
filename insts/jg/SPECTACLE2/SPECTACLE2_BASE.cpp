@@ -479,12 +479,36 @@ void SPECTACLE2_BASE::update_bin_groups(
 
 	const int nbins = _half_fftlen + 1;		// including DC and Nyquist
 
+	// The optional <_binmaptable> has <control_table_size> elements, each giving
+	// the number of adjacent FFT bins controlled by that element in any of the
+	// control tables (e.g., EQ).  Copy this information into the <bin_groups>
+	// array, which is sized to <nbins>.  We ignore minfreq and maxfreq.
+
+	if (_binmaptable != NULL) {
+		int bidx = 0;
+		for (int i = 0; i < control_table_size; i++) {
+			int bincount = int(_binmaptable[i]);
+			while (bincount-- > 0) {
+				if (bidx == nbins)
+					goto highcount;
+				bin_groups[bidx++] = i;
+			}
+		}
+highcount:
+		if (bidx < nbins) {
+			const int last = control_table_size - 1;
+			while (bidx < nbins)
+				bin_groups[bidx++] = last;
+		}
+	}
+
+	// If there is no binmap table...
 	// If freq. range is full bandwidth, and control table size is >= to the
 	// number of bins, then use linear mapping of control table slots to bins,
 	// as in SPECTACLE v1.  If table is larger than the number of bins, warn 
 	// about ignoring the extra table slots.
 
-	if (minfreq == 0 && maxfreq == _nyquist
+	else if (minfreq == 0 && maxfreq == _nyquist
 	                  && control_table_size >= _half_fftlen) {
 		for (int i = 0; i < _half_fftlen; i++)
 			bin_groups[i] = i;

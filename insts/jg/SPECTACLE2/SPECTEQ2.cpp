@@ -85,8 +85,9 @@
       includes 0 Hz and Nyquist bins) -- then the extra higher-frequency bins
       will be assigned to the last EQ table element.  If the sum of mapping
       table elements is greater than the number of bins, then some higher-
-      frequency bins will be omitted.  Don't you wish you had passed zero here
-      to ignore this feature?
+      frequency bins will be omitted.  The frequency ranges discussed in
+      note 3 are ignored when using the bin-mapping table.  Don't you wish you
+      had passed zero here to ignore this feature?
 
 
    John Gibson <johgibso at indiana dot edu>, 6/12/05.
@@ -159,12 +160,15 @@ int SPECTEQ2::subinit(double p[], int n_args)
 		_control_table_size = eqtablen;
 
 	int len;
-	_binmaptable = (double *) getPFieldTable(11, &len);
-	if (_binmaptable) {
+	double *binmaptable = (double *) getPFieldTable(11, &len);
+	if (binmaptable) {
 		if (len != eqtablen)
 			die(instname(), "The bin-mapping table (p11) must be the same size as "
 			                "the EQ table (p8).");
-		warn(instname(), "The bin-mapping feature is not yet implemented.");
+		set_binmap_table(binmaptable);
+		if (p[9] != 0.0 || (p[10] != 0.0 || p[10] != _nyquist))
+			warn(instname(), "Use of the bin-mapping table ignores the freq. "
+			                 "range set in p9-10.");
 	}
 
 	set_ringdur(0.0f);

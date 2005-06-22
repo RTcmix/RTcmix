@@ -83,6 +83,7 @@ protected:
 		delete [] _bin_groups;
 		_bin_groups = bin_groups;	// assume new one is valid
 	}
+	void set_binmap_table(double *table) { _binmaptable = table; }
 
 	int _input_frames, _nargs, _decimation, _overlap, _half_fftlen;
 	float _inputdur, _fund_anal_freq, _nyquist;
@@ -129,6 +130,7 @@ private:
 	float _minfreq, _rawmaxfreq;
 	float *_anal_window, *_synth_window, *_input, *_output, *_fft_buf;
 	float *_inbuf, *_outbuf;
+	double *_binmaptable;
 	Offt *_fft;
 	Obucket *_bucket;
 	Odelay *_dry_delay;

@@ -117,8 +117,9 @@
       (FFT size / 2) + 1, and includes 0 Hz and Nyquist bins -- then the extra
       higher-frequency bins will be assigned to the last control table element.
       If the sum of mapping table elements is greater than the number of bins,
-      then some higher-frequency bins will be omitted.  Don't you wish you had
-      passed zero here to ignore this feature?
+      then some higher-frequency bins will be omitted.  The frequency ranges
+      discussed in note 3 are ignored when using the bin-mapping table.
+      Don't you wish you had passed zero here to ignore this feature?
 
 
    John Gibson <johgibso at indiana dot edu>, 6/12/05.
@@ -133,7 +134,7 @@
 //#define PRINT_DELTIME_CHANGES
 
 #if defined(PRINT_DELTIME_CHANGES) && !defined(PRINT_DELTIMES)
-	#define PRINT_DELTIMES
+ #define PRINT_DELTIMES
 #endif
 
 
@@ -236,12 +237,18 @@ int SPECTACLE2::subinit(double p[], int n_args)
 	_control_table_size = cntltablen;
 
 	int binmaptablen;
-	_binmaptable = (double *) getPFieldTable(17, &binmaptablen);
-	if (_binmaptable) {
+	double *binmaptable = (double *) getPFieldTable(17, &binmaptablen);
+	if (binmaptable) {
 		if (binmaptablen != _eqtablen || binmaptablen != _control_table_size)
 			die(instname(), "The bin-mapping table (p17) must be the same size as "
 			                "the EQ and delay tables (p10-12).");
-		warn(instname(), "The bin-mapping feature is not yet implemented.");
+		set_binmap_table(binmaptable);
+		if (p[13] != 0.0
+			|| (p[14] != 0.0 || p[14] != _nyquist)
+			|| p[15] != 0.0
+			|| (p[16] != 0.0 || p[16] != _nyquist))
+			warn(instname(), "Use of the bin-mapping table ignores the freq. "
+			                 "ranges set in p13-16.");
 	}
 
 	// Init delay minfreq and maxfreq, so that bin groups will be ready for use
