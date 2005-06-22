@@ -18,7 +18,7 @@ int Instrument::rtsetoutput(float start, float dur, Instrument *theInst)
   
   theInst->_start = start;
   theInst->_dur = dur;
-  theInst->nsamps = (int)(0.5 + dur * RTcmix::sr());
+  theInst->_nsamps = (int)(0.5 + dur * RTcmix::sr());
   
   return 0;
 }
