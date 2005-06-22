@@ -129,8 +129,7 @@ void MBANDEDWG :: doupdate()
 		integrate = p[10];
 	}
 
-	if (nargs > 11)
-		if (pctleft != p[11]) pctleft = p[11];
+	if (nargs > 11) pctleft = p[11];
 
 	if (veltable) velocity = theVeloc->next(currentFrame());
 	else velocity = p[12];
