@@ -25,7 +25,7 @@ int MYWAVETABLE::init(double p[], int n_args)
 
 	amp = p[2];
 	spread = p[4];
-	return(nsamps);
+	return nSamps();
 }
 
 int MYWAVETABLE::run()
