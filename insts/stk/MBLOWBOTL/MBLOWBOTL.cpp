@@ -57,6 +57,7 @@ int MBLOWBOTL :: init(double p[], int n_args)
 	if (rtsetoutput(p[0], p[1], this) == -1)
 		return DONT_SCHEDULE;
 
+	amp = p[2];
 	amptable = floc(1);
 	if (amptable) // the amp array has been created using makegen
 		theEnv = new Ooscili(SR, 1.0/p[1], 1);
