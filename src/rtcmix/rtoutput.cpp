@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sndlibsupport.h>
+#include "AudioDevice.h"
 #include "audio_devices.h"
 #include "rtdefs.h"
 #include <Option.h>
