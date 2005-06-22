@@ -8,10 +8,17 @@
    p4 = noise gain (0.0-1.0)
    p5 = max pressure (0.0 - 1.0, I think...)
    p6 = percent of signal to left output channel [optional, default is .5]
+   p7 = breath pressure table [optional]
+      (must be normalized between 0.0 - 1.0)
 
-   Assumes function table 1 is breathPressure (amplitude) curve for the note.
-   Or you can just call setline. If no setline or function table 1, uses
-   flat curve.
+   PField updating:
+      p2 (amplitude)
+         (or assumes function table 1 is breathPressure (amplitude) curve
+         for the note.  If no setline or function table 1, uses flat
+         amplitude curve.)
+      p3 (frequency)
+      p4 (noise amp)
+      p7 (breath pressure table)
 */
 
 #include <Stk.h>
@@ -33,6 +40,8 @@
 
 MBLOWBOTL :: MBLOWBOTL() : Instrument()
 {
+	branch = 0;
+	amptable = NULL;
 }
 
 MBLOWBOTL :: ~MBLOWBOTL()
@@ -42,21 +51,20 @@ MBLOWBOTL :: ~MBLOWBOTL()
 
 int MBLOWBOTL :: init(double p[], int n_args)
 {
+	nargs = n_args;
 	Stk::setSampleRate(SR);
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	if (rtsetoutput(p[0], p[1], this) == -1)
+		return DONT_SCHEDULE;
 
-	amp = p[2]; // for some reason this needs normalizing...
-	if (floc(1)) { // the amplitude array has been created in the score
+	amptable = floc(1);
+	if (amptable) // the amp array has been created using makegen
 		theEnv = new Ooscili(SR, 1.0/p[1], 1);
-	} else {
-		amparray[0] = amparray[1] = 1.0;
-		advise("MBLOWBOTL", "Setting phrase curve to all 1's.");
-		theEnv = new Ooscili(SR, 1.0/p[1], amparray);
-	}
 
 	theBotl = new BlowBotl();
+	noiseamp = p[4];
 	theBotl->setNoise(p[4]);
+	freq = p[3];
 	theBotl->noteOn(p[3], p[5]);
 
 	pctleft = n_args > 6 ? p[6] : 0.5;                /* default is .5 */
@@ -64,6 +72,34 @@ int MBLOWBOTL :: init(double p[], int n_args)
 	return nsamps;
 }
 
+void MBLOWBOTL :: doupdate()
+{
+	double p[8];
+	update(p, 8, kAmp | kFreq | kNoise | kPan | kBreathPress);
+
+	// "amp" is now separate from the breath pressure.
+	// breath pressure is controlled by makegen 1, or a table, or it is 1.0
+	if (amp != p[2])
+		amp = p[2];
+	if (amptable)
+		breathamp = theEnv->next(currentFrame());
+	else if (nargs > 7)
+		breathamp = p[7];
+	else
+		breathamp = 1.0;
+
+	if (freq != p[3]) {
+		theBotl->setFrequency(p[3]);
+		freq = p[3];
+	}
+
+	if (noiseamp != p[4]) {
+		theBotl->setNoise(p[4]);
+		noiseamp = p[4];
+	}
+
+	if (nargs > 6) pctleft = p[6];
+}
 
 int MBLOWBOTL :: run()
 {
@@ -71,7 +107,12 @@ int MBLOWBOTL :: run()
 	float out[2];
 
 	for (i = 0; i < framesToRun(); i++) {
-		out[0] = theBotl->tick(theEnv->next()) * amp;
+		if (--branch <= 0) {
+			doupdate();
+			branch = getSkip();
+		}
+		
+		out[0] = theBotl->tick(breathamp) * amp;
 
 		if (outputChannels() == 2) {
 			out[1] = out[0] * (1.0 - pctleft);
