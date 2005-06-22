@@ -69,7 +69,7 @@ int MBLOWBOTL :: init(double p[], int n_args)
 
 	pctleft = n_args > 6 ? p[6] : 0.5;                /* default is .5 */
 
-	return nsamps;
+	return nSamps();
 }
 
 void MBLOWBOTL :: doupdate()
