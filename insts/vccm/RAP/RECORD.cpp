@@ -35,7 +35,8 @@ int RECORD::init(double p[], int n_args)
 
 	if (p[1] < 0.0) p[1] = -p[1] - p[0];
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	if (rtsetoutput(p[0], p[1], this) != 0)
+		return DONT_SCHEDULE;
 	rtsetinput(p[0], this);
 
 	dur = p[1];
