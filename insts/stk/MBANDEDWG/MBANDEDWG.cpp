@@ -24,6 +24,7 @@
       p2 (amplitude)
          (or assumes function table 1 is amplitude curve for the note.
          If no setline or function table 1, uses flat amplitude curve.)
+      p3 (frequency)
       p8 (bow pressure)
       p9 (mode resonance)
       p10 (integration constant)
@@ -84,7 +85,11 @@ int MBANDEDWG :: init(double p[], int n_args)
 	}
 
 	theBar = new BandedWG(); // 50 Hz is default lowest frequency
-	theBar->setFrequency(p[3]);
+
+	freq = p[3];
+	theBar->setFrequency(freq);
+	theBar->clear(); // BGG: I took this out of the BandedWG model code
+
 	theBar->setStrikePosition(p[4]);
 
 	if (p[5] < 1.0) theBar->setPluck(false);
@@ -108,11 +113,16 @@ int MBANDEDWG :: init(double p[], int n_args)
 void MBANDEDWG :: doupdate()
 {
 	double p[13];
-	update(p, 13, kAmp | kBowPress | kModeReson | kIntegrate | kPan | kVel);
+	update(p, 13, kAmp | kFreq | kBowPress | kModeReson | kIntegrate | kPan | kVel);
 
 	amp = p[2] * 30.0; // for some reason this needs normalizing...
 	if (amptable)
 		amp *= theEnv->next(currentFrame());
+
+	if (freq != p[3]) {
+		freq = p[3];
+		theBar->setFrequency(p[3]);
+	}
 
 	if (bowpress != p[8]) {
 		theBar->setBowPressure(p[8]);

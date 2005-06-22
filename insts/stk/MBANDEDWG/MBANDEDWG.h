@@ -8,7 +8,7 @@ class MBANDEDWG : public Instrument {
 	Ooscili *theEnv;
 	Ooscili *theVeloc;
 	BandedWG *theBar;
-	double bowpress, modereson, integrate;
+	double freq, bowpress, modereson, integrate;
 	void doupdate();
 
 public:
@@ -21,6 +21,7 @@ public:
 // update flags (shift amount is pfield number)
 enum {
 	kAmp = 1 << 2,
+	kFreq = 1 << 3,
 	kBowPress = 1 << 8,
 	kModeReson = 1 << 9,
 	kIntegrate = 1 << 10,
