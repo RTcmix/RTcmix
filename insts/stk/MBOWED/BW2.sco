@@ -1,0 +1,12 @@
+rtsetparams(44100, 2)
+load("./libMBOWED.so")
+
+amp = maketable("line", 1000, 0,0, 1,1, 9,1,10,0)
+bowvel = makeLFO("sine", 0.5, 0.2, 0.8)
+freq = maketable("line", "nonorm", 1000, 0,287, 1,350, 5,197.5)
+vdepth = maketable("line", "nonorm", 1000, 0,0, 1,0.1)
+pan = makeLFO("saw", 1.0, 0.0, 1.0)
+bowpress = maketable("line", 1000, 0,1, 1,0.8, 2,1, 3,0.7, 4,1)
+bowpos = maketable("line", 1000, 0,0, 2,1, 3,0)
+vibtable = maketable("wave", 1000, 1, 1)
+MBOWED(0, 7, amp*20000, freq, 3, 7, vdepth, pan, bowvel, bowpress, bowpos, vibtable)

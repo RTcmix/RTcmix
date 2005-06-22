@@ -1,6 +1,7 @@
 class MBOWED : public Instrument {
-	float   amp, pctleft;
-	double   amparray[2];
+	int nargs, branch;
+	float amp, pctleft;
+	double *amptable, *vibtable;
 	Ooscili *theEnv;
 	Ooscili *thePressure;
 	Ooscili *thePosition;
@@ -10,6 +11,8 @@ class MBOWED : public Instrument {
 	float freqbase, freqamp;
 	float viblo, vibhi;
 	Orand *theRand;
+	void doupdate();
+	double bowvel;
 
 public:
 	MBOWED();
@@ -18,3 +21,13 @@ public:
 	virtual int run();
 };
 
+// update flags (shift amount is pfield number)
+enum {
+	kAmp = 1 << 2,
+	kFreq = 1 << 3,
+	kVibDepth = 1 << 6,
+	kPan = 1 << 7,
+	kBowVel = 1 << 8,
+	kBowPress = 1 << 9,
+	kBowPos = 1 << 10
+};
