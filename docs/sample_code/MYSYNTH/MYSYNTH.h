@@ -1,3 +1,4 @@
+#include <Instrument.h>		  // the base class for this instrument
 
 class MYSYNTH : public Instrument {
 

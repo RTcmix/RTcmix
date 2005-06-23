@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
-#include <Instrument.h>      // the base class for this instrument
 #include "MYINST.h"          // declarations for this instrument class
 #include <rt.h>
 #include <rtdefs.h>
@@ -33,10 +32,9 @@
 // to see at a glance whether you're looking at a local variable or a
 // data member.
 
-MYINST::MYINST() : Instrument()
+MYINST::MYINST()
+	: _in(NULL), _branch(0)
 {
-	_in = NULL;
-	_branch = 0;
 }
 
 
