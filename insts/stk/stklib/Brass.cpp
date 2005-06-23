@@ -75,8 +75,7 @@ void Brass :: setFrequency(MY_FLOAT frequency)
   delayLine->setDelay(slideTarget); // play a harmonic
 
   lipTarget = freakency;
-// BGG commented this out, not sure why it's here (see setLip())
-//  lipFilter->setResonance( freakency, 0.997 );
+  lipFilter->setResonance( freakency, 0.997 );
 }
 
 void Brass :: setLip(MY_FLOAT frequency)
