@@ -7,10 +7,17 @@
    p3 = frequency (Hz)
    p4 = pluck amp (0.0-1.0)
    p5 = percent of signal to left output channel [optional, default is .5]
+   p6 = amplitude table [optional]
 
-   Assumes function table 1 is amplitude curve for the note.
-   Or you can just call setline. If no setline or function table 1, uses
-   flat curve.
+   PField updating:
+      p2 (amplitude)
+         (or assumes function table 1 is string amplitude curve for the
+         note.  Essentially this is just a 0.0-1.0 function that operates
+         inside the stklib.  If no setline or function table 1, uses flat
+         amplitude curve.  A table-handle in p6 may also be used)
+      p3 (frequency)
+      p5 (pan)
+      p6 (amplitude table)
 */
 
 #include <Stk.h>
@@ -32,6 +39,8 @@
 
 MSITAR :: MSITAR() : Instrument()
 {
+	branch = 0;
+	amptable = NULL;
 }
 
 MSITAR :: ~MSITAR()
@@ -41,25 +50,23 @@ MSITAR :: ~MSITAR()
 
 int MSITAR :: init(double p[], int n_args)
 {
+	nargs = n_args;
 	Stk::setSampleRate(SR);
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	if (rtsetoutput(p[0], p[1], this) == -1)
+		return DONT_SCHEDULE;
 
-	amp = p[2]; // for some reason this needs normalizing...
-	if (floc(1)) { // the amplitude array has been created in the score
+	amptable = floc(1);
+	if (amptable) // the amp array has been created using makegen
 		theEnv = new Ooscili(SR, 1.0/p[1], 1);
-	} else {
-		amparray[0] = amparray[1] = 1.0;
-		advise("MSITAR", "Setting phrase curve to all 1's.");
-		theEnv = new Ooscili(SR, 1.0/p[1], amparray);
-	}
 
 	theSitar = new Sitar(50.0); // 50 Hz is lowest freq for now
+	freq = p[3];
 	theSitar->noteOn(p[3], p[4]);
 
 	pctleft = n_args > 5 ? p[5] : 0.5;                /* default is .5 */
 
-	return nsamps;
+	return nSamps();
 }
 
 
@@ -69,7 +76,31 @@ int MSITAR :: run()
 	float out[2];
 
 	for (i = 0; i < framesToRun(); i++) {
-		out[0] = theSitar->tick(theEnv->next()) * amp;
+		if (--branch <= 0) {
+			double p[7];
+			update(p, 7, kAmp | kFreq | kPan | kStramp);
+
+			// "amp" is now separate from the internal string amp
+			// string amp is controlled by makegen 1, or a table, or it is 1.0
+			amp = p[2];
+			if (amptable)
+				stramp = theEnv->next(currentFrame());
+			else if (nargs > 6)
+				stramp = p[6];
+			else 
+				stramp = 1.0;
+
+			if (freq != p[3]) {
+				theSitar->setFrequency(p[3]);
+				freq = p[3];
+			}
+
+			if (nargs > 5) pctleft = p[5];
+
+			branch = getSkip();
+		}
+
+		out[0] = theSitar->tick(stramp) * amp;
 
 		if (outputChannels() == 2) {
 			out[1] = out[0] * (1.0 - pctleft);
