@@ -76,7 +76,7 @@ int MYINST::init(double p[], int n_args)
 	// before their first use inside of doupdate().
 
 	// Tell scheduler when to start this inst.  If rtsetoutput returns -1 to
-	// indicate an error, then return DONT_SCHEDULE, so that
+	// indicate an error, then return DONT_SCHEDULE.
 
 	if (rtsetoutput(outskip, dur, this) == -1)
 		return DONT_SCHEDULE;
