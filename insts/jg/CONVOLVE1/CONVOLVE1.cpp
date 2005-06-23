@@ -43,7 +43,6 @@
 #include <math.h>
 #include <ugens.h>
 #include <Ougens.h>
-#include <Instrument.h>
 #include <PField.h>
 #include "CONVOLVE1.h"
 #include <rt.h>
@@ -77,16 +76,16 @@ inline float clamp(float low, float val, float high)
 }
 
 
-CONVOLVE1::CONVOLVE1() : Instrument()
+CONVOLVE1::CONVOLVE1()
+	: _branch(0),
+	  _inbuf(NULL),      // buffer to read (possibly multichannel) input
+	  _imp(NULL),        // buffer holding impulse response spectrum
+	  _ovadd(NULL),      // buffer for overlap-adding fft output
+	  _dry(NULL),        // dry signal for output
+	  _wet(NULL),        // wet signal for output
+	  _bucket(NULL),     // input bucket
+	  _winosc(NULL)      // window function table oscillator
 {
-	_inbuf = NULL;			// buffer to read (possibly multichannel) input
-	_imp = NULL;			// buffer holding impulse response spectrum
-	_ovadd = NULL;			// buffer for overlap-adding fft output
-	_dry = NULL;			// dry signal for output
-	_wet = NULL;			// wet signal for output
-	_winosc = NULL;		// window function table oscillator
-	_bucket = NULL;		// input bucket
-	_branch = 0;
 }
 
 CONVOLVE1::~CONVOLVE1()

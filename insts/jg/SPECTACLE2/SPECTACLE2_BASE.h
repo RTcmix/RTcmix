@@ -126,8 +126,7 @@ private:
 	int _prev_bg_ignorevals;
 	int _out_read_index, _out_write_index, _outframes, _latency;
 	int _iamp_pfield_index, _window_pfield_index, _window_len_minus_decimation;
-	float _wet, _dry, _pan, _ringdur, _iamp, _oamp;
-	float _minfreq, _rawmaxfreq;
+	float _wet, _dry, _pan, _ringdur, _iamp, _oamp, _minfreq, _rawmaxfreq;
 	float *_anal_window, *_synth_window, *_input, *_output, *_fft_buf;
 	float *_inbuf, *_outbuf;
 	double *_binmaptable;

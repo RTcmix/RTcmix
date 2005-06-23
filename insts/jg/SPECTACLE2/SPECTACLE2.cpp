@@ -142,13 +142,11 @@ const float kMaxDelayTime = 20.0f;
 
 
 // --------------------------------------------------------------- SPECTACLE2 --
-SPECTACLE2::SPECTACLE2() : SPECTACLE2_BASE()
+SPECTACLE2::SPECTACLE2()
+	: _eqconst(0.0f), _deltimeconst(0.0f), _feedbackconst(0.0f),
+	  _eq_minfreq(-FLT_MAX), _eq_rawmaxfreq(-FLT_MAX), _eq_bin_groups(NULL),
+	  _eqtablen(0)
 {
-	_eqconst = _deltimeconst = _feedbackconst = 0.0f;
-	_eq_bin_groups = NULL;
-	_eqtablen = 0;
-	_eq_minfreq = -FLT_MAX;
-	_eq_rawmaxfreq = -FLT_MAX;
 }
 
 

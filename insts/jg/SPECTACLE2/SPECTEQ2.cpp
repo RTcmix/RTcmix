@@ -100,9 +100,9 @@
 // This inst is just a stripped down version of SPECTACLE2.cpp.  -JGG
 
 // ----------------------------------------------------------------- SPECTEQ2 --
-SPECTEQ2::SPECTEQ2() : SPECTACLE2_BASE()
+SPECTEQ2::SPECTEQ2()
+	: _eqconst(0.0f)
 {
-   _eqconst = 0.0f;
 }
 
 

@@ -19,26 +19,25 @@ const int kMaxOverlap = 64;
 
 
 // ---------------------------------------------------------- SPECTACLE2_BASE --
-SPECTACLE2_BASE::SPECTACLE2_BASE()
+SPECTACLE2_BASE::SPECTACLE2_BASE() :
+	_nyquist(SR / 2),
+	_anal_bins(NULL),
+	_control_table_size(0),
+	_branch(0),
+	_prev_bg_ignorevals(-1),
+	_iamp_pfield_index(0),       // mark as invalid
+	_window_pfield_index(0),
+	_wet(-FLT_MAX),
+	_ringdur(0.0f),
+	_iamp(1.0f),     // in case no input amp envelope
+	_minfreq(-FLT_MAX), _rawmaxfreq(-FLT_MAX),
+	_anal_window(NULL), _synth_window(NULL),
+	_input(NULL), _output(NULL),
+	_inbuf(NULL), _outbuf(NULL),
+	_fft(NULL),
+	_bucket(NULL),
+	_dry_delay(NULL)
 {
-	_branch = 0;
-	_iamp_pfield_index = 0;		// mark as invalid
-	_window_pfield_index = 0;
-	_control_table_size = 0;
-	_prev_bg_ignorevals = -1;
-
-	_inbuf = _outbuf = _input = _output = NULL;
-	_anal_window = _synth_window = _anal_bins = NULL;
-	_bucket = NULL;
-	_fft = NULL;
-	_dry_delay = NULL;
-
-	_iamp = 1.0f;		// in case no input amp envelope
-	_ringdur = 0.0f;
-	_minfreq = -FLT_MAX;
-	_rawmaxfreq = -FLT_MAX;
-	_wet = -FLT_MAX;
-	_nyquist = SR / 2;
 }
 
 
@@ -163,7 +162,7 @@ int SPECTACLE2_BASE::init(double p[], int n_args)
 #ifdef NOTYET
 	_print_stats = Option::printStats();
 #else
-	_print_stats = false;
+	_print_stats = true;
 #endif
 
 	if (getargs(p, n_args) < 0)	// subclass gets args
