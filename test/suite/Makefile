@@ -131,7 +131,7 @@ test_stereo:
 test_load:
 	@echo
 	@echo Testing load of all shlib dsos
-	@find ../../shlib/ -name lib\* | grep -v conn | sed 's/\(.*\)/load("&");/' > load_test.sco
+	@find ../../shlib/ -name lib\* | grep -v conn | sed 's/\(.*\)/if (load("&") != 1) { print("& LOAD FAILED"); }/' > load_test.sco
 	-$(CMD) < load_test.sco
 #	rm load_test.sco
 
