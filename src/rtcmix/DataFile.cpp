@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <string.h>
+#include <ugens.h>	// for message.c functions
 
 
 DataFile::DataFile(const char *fileName, const int controlRate,
@@ -29,7 +30,7 @@ int DataFile::openFileWrite(const bool clobber)
 {
 	_stream = fopen(_filename, "w");
 	if (_stream == NULL) {
-		fprintf(stderr, "Can't open data file \"%s\" for writing: %s\n",
+		rterror(NULL, "Can't open data file \"%s\" for writing: %s\n",
 						_filename, strerror(errno));
 		return -1;
 	}
@@ -40,7 +41,7 @@ int DataFile::openFileRead()
 {
 	_stream = fopen(_filename, "r");
 	if (_stream == NULL) {
-		fprintf(stderr, "Can't open data file \"%s\" for reading: %s\n",
+		rterror(NULL, "Can't open data file \"%s\" for reading: %s\n",
 						_filename, strerror(errno));
 		return -1;
 	}
@@ -52,8 +53,8 @@ int DataFile::closeFile()
 	int status = 0;
 	if (_stream) {
 		if (fclose(_stream) != 0) {
-			fprintf(stderr, "Error closing data file \"%s\": %s\n",
-					_filename, strerror(errno));
+			rterror(NULL, "Error closing data file \"%s\": %s\n",
+						_filename, strerror(errno));
 			status = -1;
 		}
 		_stream = NULL;
@@ -149,7 +150,7 @@ int DataFile::writeHeader(const int fileRate, const int format, const bool swap)
 
 	return 0;
 writeerr:
-	fprintf(stderr, "Error writing header for data file \"%s\"\n", _filename);
+	rterror(NULL, "Error writing header for data file \"%s\"\n", _filename);
 	return -1;
 }
 
@@ -171,7 +172,7 @@ long DataFile::readHeader(
 		const bool  defaultSwap)
 {
 	if (fseek(_stream, 0, SEEK_END) != 0) {
-		fprintf(stderr, "Seek error for data file \"%s\": %s\n",
+		rterror(NULL, "Seek error for data file \"%s\": %s\n",
 					_filename, strerror(errno));
 		return -1;
 	}
@@ -192,7 +193,7 @@ long DataFile::readHeader(
 		_datumsize = format_datumsize(_format);
 		_filerate = (defaultFileRate == -1) ? _controlrate : defaultFileRate;
 		_increment = (double(_controlrate) / double(_filerate)) * _timefactor;
-		printf("No header for data file \"%s\";\n"
+		advise(NULL, "No header for data file \"%s\";\n"
 					"assuming %s at %d per second, %s.\n",
 					_filename, format_string(_format), _filerate,
 					_swap ? "with byte-swapping" : "no byte-swapping");
@@ -229,14 +230,14 @@ long DataFile::readHeader(
 
 readerr:
 	if (ferror(_stream))
-		fprintf(stderr, "Read error for data file \"%s\"\n", _filename);
+		rterror(NULL, "Read error for data file \"%s\"\n", _filename);
 	else
-		fprintf(stderr, "There's hardly anything in data file \"%s\"!\n",
+		warn(NULL, "There's hardly anything in data file \"%s\"!\n",
 				_filename);
 	return -1;
 
 invaldata:
-	fprintf(stderr, "Invalid header in data file \"%s\"\n", _filename);
+	rterror(NULL, "Invalid header in data file \"%s\"\n", _filename);
 	return -1;
 }
 
@@ -251,7 +252,7 @@ int DataFile::setSkipTime(const double skipTime, const bool absolute)
 		skipbytes += _headerbytes;
 //XXX If this would seek past end, print warning?
 	if (fseek(_stream, skipbytes, whence) != 0) {
-		fprintf(stderr, "Invalid seek into data file \"%s\": %s\n",
+		rterror(NULL, "Invalid seek into data file \"%s\": %s\n",
 												_filename, strerror(errno));
 		return -1;
 	}
@@ -317,7 +318,7 @@ int DataFile::writeOne(const double val)
 				break;
 		}
 		if (status != 0)
-			fprintf(stderr, "Error writing data file \"%s\"\n", _filename);
+			rterror(NULL, "Error writing data file \"%s\"\n", _filename);
 	}
 	return status;
 }
