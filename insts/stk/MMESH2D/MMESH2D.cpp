@@ -12,9 +12,11 @@
    p8 = strike energy (0.0-1.0)
    p9 = percent of signal to left output channel [optional, default is .5]
 
-   Assumes function table 1 is amplitude curve for the note.
-   Or you can just call setline. If no setline or function table 1, uses
-   flat curve.
+   PField updating:
+      p2 (amplitude)
+         (or assumes function table 1 is amplitude curve for the note.
+         If no setline or function table 1, uses flat amplitude curve.)
+      p9 (pan)
 */
 
 #include <Stk.h>
@@ -36,6 +38,8 @@
 
 MMESH2D :: MMESH2D() : Instrument()
 {
+	branch = 0;
+	amptable = NULL;
 }
 
 MMESH2D :: ~MMESH2D()
@@ -45,18 +49,15 @@ MMESH2D :: ~MMESH2D()
 
 int MMESH2D :: init(double p[], int n_args)
 {
+	nargs = n_args;
 	Stk::setSampleRate(SR);
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	if (rtsetoutput(p[0], p[1], this) == -1)
+		return DONT_SCHEDULE;
 
-	amp = p[2]; // for some reason this needs normalizing...
-	if (floc(1)) { // the amplitude array has been created in the score
+	amptable = floc(1);
+	if (amptable) // the amp array has been created using makegen
 		theEnv = new Ooscili(SR, 1.0/p[1], 1);
-	} else {
-		amparray[0] = amparray[1] = 1.0;
-		advise("MMESH2D", "Setting phrase curve to all 1's.");
-		theEnv = new Ooscili(SR, 1.0/p[1], amparray);
-	}
 
 	theMesh = new Mesh2D((short)p[3], (short)p[4]);
 	theMesh->setInputPosition(p[5], p[6]);
@@ -65,7 +66,7 @@ int MMESH2D :: init(double p[], int n_args)
 
 	pctleft = n_args > 9 ? p[9] : 0.5;                /* default is .5 */
 
-	return nsamps;
+	return nSamps();
 }
 
 
@@ -75,7 +76,20 @@ int MMESH2D :: run()
 	float out[2];
 
 	for (i = 0; i < framesToRun(); i++) {
-		out[0] = theMesh->tick() * theEnv->next(currentFrame()) * amp;
+		if (--branch <= 0) {
+			double p[10];
+			update (p, 10, kAmp | kPan);
+
+			amp = p[2];
+			if (amptable)
+				amp *= theEnv->next(currentFrame());
+
+			if (nargs > 9) pctleft = p[9];
+
+			branch = getSkip();
+		}
+
+		out[0] = theMesh->tick() * amp;
 
 		if (outputChannels() == 2) {
 			out[1] = out[0] * (1.0 - pctleft);

@@ -1,6 +1,7 @@
 class MMESH2D : public Instrument {
-	float   amp, pctleft;
-	double  amparray[2];
+	int nargs, branch;
+	float amp, pctleft;
+	double *amptable;
 	Ooscili *theEnv;
 	Mesh2D *theMesh;
 
@@ -11,3 +12,8 @@ public:
 	virtual int run();
 };
 
+// update flags (shift amount is pfield number)
+enum {
+	kAmp = 1 << 2,
+	kPan = 1 << 9
+};
