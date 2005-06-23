@@ -11,9 +11,9 @@ ringdur = 10
 bus_config("MIX", "in 0", "aux 0 out")
 
 // try all these...
-//rtinput("../../../snd/huhh.wav")
-//rtinput("../../../snd/conga.snd")
-rtinput("../../../snd/nucular.wav")
+//rtinput("../../snd/huhh.wav")
+//rtinput("../../snd/conga.snd")
+rtinput("../../snd/nucular.wav")
 
 dur = DUR()
 amp = 0.9

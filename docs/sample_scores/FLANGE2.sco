@@ -1,7 +1,7 @@
 rtsetparams(44100, 2)
 load("FLANGE")
 
-rtinput("../../../snd/nucular.wav")
+rtinput("../../snd/nucular.wav")
 inchan = 0
 
 start = 0

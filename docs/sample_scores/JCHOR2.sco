@@ -1,7 +1,7 @@
 rtsetparams(44100, 2)
 load("JCHOR")
 
-rtinput("../../../snd/huhh.wav")
+rtinput("../../snd/huhh.wav")
 inchan = 0
 
 outdur = 16

@@ -1,7 +1,7 @@
 rtsetparams(44100, 2)
 load("CONVOLVE1")
 
-rtinput("../../../snd/nucular.wav")
+rtinput("../../snd/nucular.wav")
 inchan = 0
 inskip = 0.0
 indur = DUR()

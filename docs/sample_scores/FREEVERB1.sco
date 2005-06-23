@@ -5,7 +5,7 @@ bus_config("MIX", "in 0", "aux 0 out")
 bus_config("FREEVERB", "aux 0 in", "out 0-1")
 
 //-----------------------------------------------------------------
-rtinput("../../../../snd/nucular.wav")
+rtinput("../../snd/nucular.wav")
 inskip = 0
 dur = DUR()
 

@@ -26,7 +26,7 @@
 rtsetparams(44100, 2)
 load("IIR")
 
-rtinput("../../../snd/nucular.wav")
+rtinput("../../snd/nucular.wav")
 inchan = 0
 inskip = 0
 dur = DUR()

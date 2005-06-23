@@ -3,7 +3,7 @@
    we're stashing the setline info in gen table 1 */
 
 rtsetparams(44100, 2)
-rtinput("../../../snd/input.wav")
+rtinput("../../snd/input.wav")
 filedur = DUR()
 
 amp = 1.0

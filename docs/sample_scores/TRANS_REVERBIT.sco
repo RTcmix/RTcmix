@@ -8,7 +8,7 @@ bus_config("REVERBIT", "aux 0-1 in", "out 0-1")
 totdur = 20
 
 //----------------------------------------------------------------------
-rtinput("../../../../snd/conga.snd")
+rtinput("../../snd/conga.snd")
 inskip = 0
 dur = DUR()
 

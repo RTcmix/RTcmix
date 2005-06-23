@@ -1,7 +1,7 @@
 rtsetparams(44100, 2)
 load("TRANS")
 
-rtinput("../../../../snd/huhh.wav")
+rtinput("../../snd/huhh.wav")
 dur = DUR()
 
 // Express dynamic transposition in terms of linear octaves, then convert

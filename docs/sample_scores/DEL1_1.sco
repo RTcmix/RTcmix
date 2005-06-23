@@ -23,7 +23,7 @@
 rtsetparams(44100, 2)
 load("DEL1")
 
-rtinput("../../../snd/huhh.wav")
+rtinput("../../snd/huhh.wav")
 dur = DUR()
 
 env = maketable("line", 1000, 0,0, 0.5,1, 3.5,1, 7,0)

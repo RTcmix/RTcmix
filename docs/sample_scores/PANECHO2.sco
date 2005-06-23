@@ -14,7 +14,7 @@
 
 rtsetparams(44100, 2)
 load("PANECHO")
-rtinput("../../../snd/input.wav");
+rtinput("../../snd/input.wav");
 makegen(1, 24, 1000, 0,0, 0.5,1, 3.5,1, 7,0)
 PANECHO(0, 0, 7, 0.8, .14, 0.14, .7, 3.5)
 

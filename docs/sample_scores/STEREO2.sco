@@ -1,7 +1,7 @@
 rtsetparams(44100, 2)
 load("STEREO")
 
-rtinput("../../../snd/input.wav")
+rtinput("../../snd/input.wav")
 filedur = DUR()
 
 setline(0,0, .1, 1, 2,0)

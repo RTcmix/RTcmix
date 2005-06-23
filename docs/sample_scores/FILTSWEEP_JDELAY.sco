@@ -5,7 +5,7 @@ load("JDELAY")
 bus_config("FILTSWEEP", "in 0", "aux 0 out")
 bus_config("JDELAY", "aux 0 in", "out 0", "out 1")
 
-rtinput("../../../../snd/conga.snd");
+rtinput("../../snd/conga.snd");
 inskip = 0
 
 masteramp = 2.0

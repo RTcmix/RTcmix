@@ -3,6 +3,6 @@
 
 set_option("outdevice=net:localhost:9999")
 rtsetparams(44100, 2, 1024)
-rtinput("../../../../snd/nucular.wav")
+rtinput("../../snd/nucular.wav")
 MIX(0, 0, DUR(), 1, 0)
 

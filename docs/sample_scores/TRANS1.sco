@@ -20,7 +20,7 @@
 rtsetparams(44100, 2)
 load("TRANS")
 
-rtinput("../../../snd/input.wav");
+rtinput("../../snd/input.wav");
 
 setline(0,0, 1,1, 9,1, 10,0)
 makegen(2, 24, 1000, 0, 0, 1, 1)

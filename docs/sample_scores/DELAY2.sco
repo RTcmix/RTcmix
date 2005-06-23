@@ -23,7 +23,7 @@
 
 rtsetparams(44100, 2)
 load("DELAY")
-rtinput("../../../snd/input.wav")
+rtinput("../../snd/input.wav")
 dur = DUR()
 inchan = 0
 

@@ -1,7 +1,7 @@
 rtsetparams(44100, 2)
 load("SPECTACLE2")
 
-rtinput("../../../snd/huhh.wav")
+rtinput("../../snd/huhh.wav")
 inchan = 0
 inskip = 0
 indur = DUR()

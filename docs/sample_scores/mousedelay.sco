@@ -13,7 +13,7 @@ control_rate(44100)
 
 if (use_file_input) {
    bus_config("MIX", "in 0-1", "aux 0 out")
-   rtinput("../../../../snd/huhh.wav")
+   rtinput("../../snd/huhh.wav")
    inchan = 0
    inskip = 0.35
    inend = 0.45
