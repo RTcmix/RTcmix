@@ -73,7 +73,7 @@ int MBRASS :: init(double p[], int n_args)
 
 	pctleft = n_args > 7 ? p[7] : 0.5;                /* default is .5 */
 
-	return nsamps;
+	return nSamps();
 }
 
 void MBRASS :: doupdate()
