@@ -18,7 +18,7 @@
       p2 (amplitude)
          (or assumes function table 1 is breathPressure (amplitude) curve
          for the note.  If no setline or function table 1, uses flat
-         amplitude curve.)
+         amplitude curve. A table-handle in p10 may also be used)
       p3 (frequency)
       p4 (noise amp)
       p6 = (reed stiffness)
