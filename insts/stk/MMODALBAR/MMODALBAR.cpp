@@ -18,10 +18,15 @@
 	- Two Fixed = 7
 	- Clump = 8
    p7 = percent of signal to left output channel [optional, default is .5]
+   p8 = amplitude envelope table [optional]
 
-   Assumes function table 1 is amplitude curve for the note.
-   Or you can just call setline. If no setline or function table 1, uses
-   flat curve.
+   PField updating:
+      p2 (amplitude)
+         (or assumes function table 1 is the amplitude curve for the note.
+         If no setline or function table 1, uses flat amplitude curve.
+         A table-handle in p8 may also be used.)
+      p3 (frequency)
+      p7 (pan)
 */
 
 #include <Stk.h>
@@ -43,6 +48,8 @@
 
 MMODALBAR :: MMODALBAR() : Instrument()
 {
+	branch = 0;
+	amptable = NULL;
 }
 
 MMODALBAR :: ~MMODALBAR()
@@ -56,18 +63,15 @@ int MMODALBAR :: init(double p[], int n_args)
 {
 	int i;
 
+	nargs = n_args;
 	Stk::setSampleRate(SR);
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	if (rtsetoutput(p[0], p[1], this) == -1)
+		return DONT_SCHEDULE;
 
-	amp = p[2]; // for some reason this needs normalizing...
-	if (floc(1)) { // the amplitude array has been created in the score
+	amptable = floc(1);
+	if (amptable) // the amp array has been created using makegen
 		theEnv = new Ooscili(SR, 1.0/p[1], 1);
-	} else {
-		amparray[0] = amparray[1] = 1.0;
-		advise("MMODALBAR", "Setting phrase curve to all 1's.");
-		theEnv = new Ooscili(SR, 1.0/p[1], amparray);
-	}
 
 	theBar = new ModalBar();
 
@@ -87,15 +91,38 @@ int MMODALBAR :: init(double p[], int n_args)
 	theBar->setStickHardness(p[4]);
 	theBar->setStrikePosition(p[5]);
 
+	freq = p[3];
 	// not sure if this normalizes the amplitude enough to compensate
 	// for the filtering.  oh well.
 	theBar->noteOn(p[3], p[4]); // amplitude handled by p[2] in this one
 
 	pctleft = n_args > 7 ? p[7] : 0.5;                /* default is .5 */
 
-	return nsamps;
+	return nSamps();
 }
 
+void MMODALBAR :: doupdate()
+{
+	double p[9];
+	update(p, 9, kAmp | kFreq | kPan | kAmpEnv);
+
+	// "amp" is now separate from the excitation amp
+	// excitation amp is controlled by makegen 1, or a table, or it is 1.0
+	amp = p[2];
+	if (amptable)
+		exciteamp = theEnv->next(currentFrame());
+	else if (nargs > 8)
+		exciteamp = p[8];
+	else 
+		exciteamp = 1.0;
+
+	if (freq != p[3]) {
+		theBar->setFrequency(p[3]);
+		freq = p[3];
+	}
+
+	if (nargs > 7) pctleft = p[7];
+}
 
 int MMODALBAR :: run()
 {
@@ -103,10 +130,15 @@ int MMODALBAR :: run()
 	float out[2];
 
 	for (i = 0; i < framesToRun(); i++) {
+		if (--branch <=0) {
+			doupdate();
+			branch = getSkip();
+		}
+
 		if (currentFrame() < 256) // feed in excitation
-			out[0] = theBar->tick(theEnv->next(), excite[currentFrame()]) * amp;
+			out[0] = theBar->tick(exciteamp, excite[currentFrame()]) * amp;
 		else
-			out[0] = theBar->tick(theEnv->next(), 0.0) * amp;
+			out[0] = theBar->tick(exciteamp, 0.0) * amp;
 
 		if (outputChannels() == 2) {
 			out[1] = out[0] * (1.0 - pctleft);
