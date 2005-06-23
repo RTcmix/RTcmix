@@ -20,7 +20,7 @@ st = 0
 inst = 0
 for (j = 0; j < 23; j = j+1)
 {
-	for (i = 0; i < 20; i = i+1)
+	for (i = 0; i < 7; i = i+1)
 	{
 		MSHAKERS(st, 0.5, 20000, 0.9, 0.8, 0.5, 0.7, inst)
 		st = st + 0.2
