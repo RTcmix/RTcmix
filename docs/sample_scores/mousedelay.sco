@@ -19,7 +19,7 @@ if (use_file_input) {
    inend = 0.45
    notedur = inend - inskip
    increment = notedur * 3
-   amp = 1.5
+   amp = 0.5
    amp = maketable("line", "nonorm", 2000, 0,0, 1,amp, 4,amp, 5,0)
    end = dur - notedur
    for (st = 0; st < end; st += increment)
