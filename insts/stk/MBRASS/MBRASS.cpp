@@ -9,10 +9,17 @@
    p5 = lip filter (Hz)
    p6 = max pressure (0.0 - 1.0, I think...)
    p7 = percent of signal to left output channel [optional, default is .5]
+   p8 = breath pressure table [optional]
 
-   Assumes function table 1 is amplitude curve for the note. (Try gen 18.)
-   Or you can just call setline. If no setline or function table 1, uses
-   flat amplitude curve.
+   PField updating:
+      p2 (amplitude)
+         (or assumes function table 1 is breathPressure (amplitude) curve
+         for the note.  If no setline or function table 1, uses flat
+         amplitude curve.)
+      p3 (frequency)
+      p4 (slide length)
+      p5 (lip filter)
+      p7 (pan)
 */
 
 #include <Stk.h>
@@ -34,6 +41,8 @@
 
 MBRASS :: MBRASS() : Instrument()
 {
+	branch = 0;
+	amptable = NULL;
 }
 
 MBRASS :: ~MBRASS()
@@ -43,23 +52,23 @@ MBRASS :: ~MBRASS()
 
 int MBRASS :: init(double p[], int n_args)
 {
+	nargs = n_args;
 	Stk::setSampleRate(SR);
 
-	nsamps = rtsetoutput(p[0], p[1], this);
+	if (rtsetoutput(p[0], p[1], this) == -1)
+		return DONT_SCHEDULE;
 
-	amp = p[2] * 10.0; // for some reason this needs normalizing...
-	if (floc(1)) { // the amplitude array has been created in the score
+	amptable = floc(1);
+	if (amptable) // the amp array has been created using makegen
 		theEnv = new Ooscili(SR, 1.0/p[1], 1);
-	} else {
-		amparray[0] = amparray[1] = 1.0;
-		advise("MBRASS", "Setting phrase curve to all 1's.");
-		theEnv = new Ooscili(SR, 1.0/p[1], amparray);
-	}
 
 	theHorn = new Brass(50.0); // 50 Hz is default lowest frequency
+	freq = p[3];
 	theHorn->setFrequency(p[3]);
 	theHorn->startBlowing(p[6], 0.0);
+	slength = p[4];
 	theHorn->setSlide((int)p[4]);
+	lipfilt = p[5];
 	theHorn->setLip(p[5]);
 
 	pctleft = n_args > 7 ? p[7] : 0.5;                /* default is .5 */
@@ -67,6 +76,38 @@ int MBRASS :: init(double p[], int n_args)
 	return nsamps;
 }
 
+void MBRASS :: doupdate()
+{
+	double p[9];
+	update(p, 9, kAmp | kFreq | kSlide | kLip | kPan | kBreathPress);
+
+	// "amp" is now separate from the breath pressure.
+	// breath pressure is controlled by makegen 1, or a table, or it is 1.0
+	amp = p[2] * 10.0; // for some reason this needs normalizing...
+	if (amptable)
+		breathamp = theEnv->next(currentFrame());
+	else if (nargs > 8)
+		breathamp = p[8];
+	else
+		breathamp = 1.0;
+
+	if (freq != p[3]) {
+		theHorn->setFrequency(p[3]);
+		freq = p[3];
+	}
+
+	if (slength != p[4]) {
+		theHorn->setSlide((int)p[4]);
+		slength = p[4];
+	}
+
+	if (lipfilt != p[5]) {
+		theHorn->setLip(p[5]);
+		lipfilt = p[5];
+	}
+
+	if (nargs > 7) pctleft = p[7];
+}
 
 int MBRASS :: run()
 {
@@ -74,7 +115,12 @@ int MBRASS :: run()
 	float out[2];
 
 	for (i = 0; i < framesToRun(); i++) {
-		out[0] = theHorn->tick(theEnv->next()) * amp;
+		if (--branch <= 0) {
+			doupdate();
+			branch = getSkip();
+		}
+
+		out[0] = theHorn->tick(breathamp) * amp;
 
 		if (outputChannels() == 2) {
 			out[1] = out[0] * (1.0 - pctleft);
