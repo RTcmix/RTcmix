@@ -1,5 +1,5 @@
 rtsetparams(44100, 2)
-load("CONVOLVE")
+load("CONVOLVE1")
 
 rtinput("../../../snd/nucular.wav")
 inchan = 0
@@ -17,12 +17,12 @@ amp = maketable("line", 2000, 0,0, .1,1, indur-.1,1, indur,0)
 wintab = 0
 wetpct = 1.0
 
-CONVOLVE(0, inskip, indur, amp, imptab, impskip, impdur, impgain,
+CONVOLVE1(0, inskip, indur, amp, imptab, impskip, impdur, impgain,
 		wintab, wetpct, inchan, pan=1)
 
 // decorrelate channels by shifting noise samples by half table length
 // could also create a new table with a different seed
 imptab = copytable(modtable(imptab, "shift", tablelen(imptab) / 2))
 
-CONVOLVE(0, inskip, indur, amp, imptab, impskip, impdur, impgain,
+CONVOLVE1(0, inskip, indur, amp, imptab, impskip, impdur, impgain,
 		wintab, wetpct, inchan, pan=0)
