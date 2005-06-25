@@ -45,7 +45,7 @@ extern "C" {
    and our handler will be called.  NOTE: This is for debugging only!
    This will not tell you how many denormal ops there are, so just because
    the exception is thrown doesn't mean there's a serious problem.  For
-   more info, see: http://www.smartelectronix.com/musicdsp/text/other001.txt.
+   more info, see: http://www.musicdsp.org/files/other001.txt.
 */
 #ifdef LINUX
 #ifdef DENORMAL_CHECK
