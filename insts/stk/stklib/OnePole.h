@@ -71,6 +71,11 @@ public:
 
   //! Input \e vectorSize samples to the filter and return an equal number of outputs in \e vector.
   MY_FLOAT *tick(MY_FLOAT *vector, unsigned int vectorSize);
+
+#if defined(i386)
+private:
+  MY_FLOAT antidenorm;
+#endif
 };
 
 #endif
