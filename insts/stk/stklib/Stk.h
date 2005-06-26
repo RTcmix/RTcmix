@@ -175,6 +175,11 @@ typedef double FLOAT64;
   #define __STK_REALTIME__
 #endif
 
+#if defined(i386)
+  // NB: this works for OnePole with MY_FLOAT as double  -JGG
+  #define ANTI_DENORM_CONSTANT 1e-35
+#endif
+
 //#define _STK_DEBUG_
 
 #endif

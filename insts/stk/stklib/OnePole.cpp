@@ -23,6 +23,9 @@ OnePole :: OnePole() : Filter()
   MY_FLOAT B = 0.1;
   MY_FLOAT A[2] = {1.0, -0.9};
   Filter::setCoefficients( 1, &B, 2, A );
+#if defined(i386)
+  antidenorm = ANTI_DENORM_CONSTANT;
+#endif
 }
 
 OnePole :: OnePole(MY_FLOAT thePole) : Filter()
@@ -38,6 +41,9 @@ OnePole :: OnePole(MY_FLOAT thePole) : Filter()
 
   A[1] = -thePole;
   Filter::setCoefficients( 1, &B, 2,  A );
+#if defined(i386)
+  antidenorm = ANTI_DENORM_CONSTANT;
+#endif
 }
 
 OnePole :: ~OnePole()    
@@ -90,6 +96,12 @@ MY_FLOAT OnePole :: tick(MY_FLOAT sample)
   inputs[0] = gain * sample;
   outputs[0] = b[0] * inputs[0] - a[1] * outputs[1];
   outputs[1] = outputs[0];
+#if defined(i386)
+  outputs[1] = outputs[0] + antidenorm;
+  antidenorm = -antidenorm;
+#else
+  outputs[1] = outputs[0];
+#endif
 
   return outputs[0];
 }
