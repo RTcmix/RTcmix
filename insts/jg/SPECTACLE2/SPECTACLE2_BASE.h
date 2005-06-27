@@ -147,14 +147,14 @@ inline void SPECTACLE2_BASE::increment_out_read_index()
 {
 	if (++_out_read_index == _outframes)
 		_out_read_index = 0;
-	assert(_out_read_index != _out_write_index);
+//	assert(_out_read_index != _out_write_index);
 }
 
 inline void SPECTACLE2_BASE::increment_out_write_index()
 {
 	if (++_out_write_index == _outframes)
 		_out_write_index = 0;
-	assert(_out_write_index != _out_read_index);
+//	assert(_out_write_index != _out_read_index);
 }
 
 
