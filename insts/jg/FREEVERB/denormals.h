@@ -8,11 +8,28 @@
 #ifndef _denormals_
 #define _denormals_
 
-#if 0
-#define undenormalise(sample) if(((*(unsigned int*)&sample)&0x7f800000)==0) sample=0.0f
-#else
-#define undenormalise(sample)
-#endif
+#if defined(i386)
+
+#ifdef NOMORE	// original code doesn't work on recent gcc compilers
+#define undenormalise(sample) \
+	if (((*(unsigned int*)&sample)&0x7f800000) == 0) sample = 0.0f
+
+#else // !NOMORE
+
+// see <ccrma-mail.stanford.edu/pipermail/planetccrma/2005-January/007868.html>
+
+static inline float undenormalise(volatile float s)
+{
+	s += 9.8607615E-32f;
+	return s - 9.8607615E-32f;
+}
+
+//#define undenormalise(sample)
+#endif // !NOMORE
+
+#else // !defined(i386)
+#define undenormalise(sample) // nothing
+#endif // !defined(i386)
 
 #endif//_denormals_
 
