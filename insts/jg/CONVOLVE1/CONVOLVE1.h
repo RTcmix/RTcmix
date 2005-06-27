@@ -32,7 +32,7 @@ private:
 };
 
 
-//#define NDEBUG
+#define NDEBUG
 #include <assert.h>
 
 inline void CONVOLVE1::incrementOutReadIndex()
