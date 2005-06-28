@@ -11,7 +11,7 @@ $(PROG): $(OBJS)
 	$(LD) -r $(OBJS) -o $(PROG)
 
 clean:
-	$(RM) $(PROG) $(OBJS)
+	$(RM) $(PROG) $(OBJS) depend
 
 depend:
 ifeq ($(ARCH),LINUX)
