@@ -163,7 +163,30 @@ _minc_print(const MincListElem args[], const int nargs)
 
 
 /* ---------------------------------------------------------------- printf -- */
-/* A primitive version of printf, supporting some Minc-specific things. */
+/* A primitive version of printf, supporting some Minc-specific things.
+   Conversion specifiers are:
+
+      d      print float as integer
+      f      print float
+      l      print list
+      s      print string
+      t      print type of object
+      z      print using the style appropriate for the type
+
+   Escapes are \n for newline, \t for tab.  You must put the newline in
+   if you want one.
+
+   Example:
+
+      a = 1.2345
+      b = { -2, -1, 0, 1, 2, 99.99 }
+      c = "boo!"
+      printf("a=%d, a=%f, b=%l, c=%s, type of c: %t\n", a, a, b, c, c)
+
+   This will print...
+
+      a=1, a=1.2345, b=[-2, -1, 0, 1, 2, 99.99], c=boo!, type of c: string
+*/
 MincFloat
 _minc_printf(const MincListElem args[], const int nargs)
 {
@@ -280,6 +303,9 @@ err:
 
 
 /* ------------------------------------------------------------------- len -- */
+/* Print the length of the argument.  This is useful for getting the number
+   of items in a list or the number of characters in a string.
+*/
 MincFloat
 _minc_len(const MincListElem args[], const int nargs)
 {
@@ -296,7 +322,7 @@ _minc_len(const MincListElem args[], const int nargs)
             len = strlen(args[0].val.string);
             break;
          case MincHandleType:
-// FIXME: query Handle for length (e.g., TablePField)
+            /* NB: To get length of a table, call tablelen(handle) */
             len = 1;
             break;
          case MincListType:
@@ -377,6 +403,8 @@ _minc_index(const MincListElem args[], const int nargs)
 
 
 /* ------------------------------------------------------------------ type -- */
+/* Print the object type of the argument: float, string, handle, list.
+*/
 MincString
 _minc_type(const MincListElem args[], const int nargs)
 {
