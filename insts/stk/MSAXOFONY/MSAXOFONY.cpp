@@ -25,6 +25,7 @@
       p7 (reed aperture)
       p8 (blow position)
       p9 (pan)
+      p10 (breath pressure table)
 */
 
 #include <Stk.h>
