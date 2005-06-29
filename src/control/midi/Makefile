@@ -43,7 +43,8 @@ uninstall:
 
 clean:
 	( cd portmidi; $(MAKE) $(MFLAGS) clean; )
-	$(RM) *.o $(LIBMIDI) depend
+	$(RM) *.o $(LIBMIDI)
 
 cleanall: clean
+	$(RM) depend
 

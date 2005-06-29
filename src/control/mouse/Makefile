@@ -71,10 +71,11 @@ ifeq ($(ARCH), MACOSX)
 endif
 
 clean:
-	$(RM) *.o $(LIBMOUSE) $(APP) $(TEST) depend
+	$(RM) *.o $(LIBMOUSE) $(APP) $(TEST)
 ifeq ($(ARCH), MACOSX)
 	$(RM) -r $(APP).app
 endif
 
 cleanall: clean
+	$(RM) depend
 

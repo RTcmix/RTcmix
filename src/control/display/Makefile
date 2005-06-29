@@ -63,10 +63,11 @@ ifeq ($(ARCH), MACOSX)
 endif
 
 clean:
-	$(RM) *.o $(LIBDISPLAY) $(APP) depend
+	$(RM) *.o $(LIBDISPLAY) $(APP)
 ifeq ($(ARCH), MACOSX)
 	$(RM) -r $(APP).app
 endif
 
 cleanall: clean
+	$(RM) depend
 

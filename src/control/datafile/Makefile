@@ -28,7 +28,8 @@ uninstall:
 	$(RM) $(LIBDESTDIR)/$(CONNLIB)
 
 clean:
-	$(RM) *.o $(CONNLIB) depend
+	$(RM) *.o $(CONNLIB)
 
 cleanall: clean
+	$(RM) depend
 

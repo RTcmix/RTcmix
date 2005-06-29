@@ -18,7 +18,8 @@ install: all
 uninstall:
 
 clean:
-	$(RM) *.o depend
+	$(RM) *.o
 
 cleanall: clean
+	$(RM) depend
 
