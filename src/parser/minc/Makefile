@@ -34,6 +34,8 @@ install: all
 uninstall:
 
 clean:
-	$(RM) *.o $(MINC) lex.yy.c y.tab.c y.tab.h y.output depend
+	$(RM) *.o $(MINC) lex.yy.c y.tab.c y.tab.h y.output
 
 cleanall: clean
+	$(RM) depend
+

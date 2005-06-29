@@ -282,7 +282,8 @@ standalone_uninstall:
 
 clean:
 	(cd heap; $(MAKE) $(MFLAGS) clean;)
-	$(RM) $(COMMON_OBJS) $(TARGETS) core depend
+	$(RM) $(COMMON_OBJS) $(TARGETS) core
 
 cleanall: clean
+	$(RM) depend
 
