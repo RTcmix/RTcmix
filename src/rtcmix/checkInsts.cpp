@@ -80,6 +80,7 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 		// valid p field.
          PFieldSet *pfieldset = new PFieldSet(nargs);
 		 if (!pfieldset) {
+			Iptr->unref();
 		 	mixerr = MX_FAIL;
 			return -1;
 		 }
@@ -96,22 +97,36 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 				      assert(handle->ptr != NULL);
 				      pfieldset->load((PField *) handle->ptr, arg);
 				   }
+				   else {
+				 	  fprintf(stderr, "%s: arg %d: Unsupported handle type!\n",
+						   	  instname, arg);
+			 	  	  mixerr = MX_FAIL;
+				   }
 			    }
 			    else {
-				   fprintf(stderr, "%s: NULL handle passed as arg %d!\n",
+				   fprintf(stderr, "%s: arg %d: NULL handle!\n",
 						   instname, arg);
-				   delete pfieldset;
-				   Iptr->unref();
-				   mixerr = MX_FAIL;
-				   return -1.0;
+			 	   mixerr = MX_FAIL;
 			    }
 			}
+			else if (theArg.isType(ArrayType)) {
+			   fprintf(stderr, "%s: arg %d: Array (list) types cannot be passed to instruments.\n\tUse maketable(\"literal\", ...) instead.\n",
+					   instname, arg);
+			   mixerr = MX_FAIL;
+			}
 			else {
-			   // For now, default to using a zero PField.
-			   pfieldset->load(new ConstPField(0.0), arg);
-			   break;
+			   fprintf(stderr, "%s: arg %d: Illegal argument type!\n",
+					   instname, arg);
+			   mixerr = MX_FAIL;
 			}
 		}
+		
+		if (mixerr == MX_FAIL) {
+			delete pfieldset;
+			Iptr->unref();
+			return -1.0;
+		}
+		
         double rv = (double) Iptr->setup(pfieldset);
 
         if (rv != (double) DONT_SCHEDULE) { // only schedule if no setup() error

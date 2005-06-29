@@ -42,19 +42,26 @@ Arg::printInline(FILE *stream) const
 		break;
 	case HandleType:
 		if (_val.handle != NULL) {
-			fprintf(stream, "%s:",
-					_val.handle->type == PFieldType ? "PF" :
-					_val.handle->type == InstrumentPtrType ? "Inst" :
-					_val.handle->type == PFieldType ? "AudioStr" : "Unknown");
-			if (_val.handle->type == PFieldType) {
+			switch (_val.handle->type) {
+			case PFieldType:
+			{
 				// Print PField start and end values.
 				PField *pf = (PField *) _val.handle->ptr;
 				double start = pf->doubleValue(0);
 				double end = pf->doubleValue(1.0);
-				fprintf(stream, "[%g,...,%g] ", start, end);
+				fprintf(stream, "PF:[%g,...,%g] ", start, end);
+				break;
 			}
-			else
-				fprintf(stream, " ");
+			case InstrumentPtrType:
+				fprintf(stream, "Inst:0x%x ", _val.handle->ptr);
+				break;
+			case AudioStreamType:
+				fprintf(stream, "AudioStr:0x%x", _val.handle->ptr);
+				break;
+			default:
+				fprintf(stream, "Unknown ");
+				break;
+			}
 		}
 		else
 			fprintf(stream, "NULL ");
