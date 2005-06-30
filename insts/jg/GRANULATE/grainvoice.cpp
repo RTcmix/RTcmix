@@ -4,13 +4,13 @@
 // The transposition code comes from Doug Scott's TRANS instrument.
 
 #include <stdio.h>
-#include <assert.h>
 #include <Ougens.h>
 #include <ugens.h>   // for octpch, cpsoct
 #include "grainvoice.h"
+//#define NDEBUG     // disable asserts
+#include <assert.h>
 
 #define DEBUG 0
-//#define NDEBUG     // disable asserts
 
 
 // NOTE: We don't own the table memory.

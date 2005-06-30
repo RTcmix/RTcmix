@@ -14,7 +14,7 @@
 
     * p5  = grain hop time (time between successive grains).  This is the 
             inverse of grain density (grains per second); you can use
-            makeconverter(..., "inverse") to convert a table or real-time
+            "hoptime = 1 / density" to convert a table or real-time
             control source from density to hop time.
 
     * p6  = grain output time jitter
@@ -62,7 +62,6 @@
 #include <stdlib.h>
 #include <float.h>
 #include <ugens.h>
-#include <Instrument.h>
 #include <PField.h>
 #include <rt.h>
 #include <rtdefs.h>
@@ -82,11 +81,9 @@
 "    grain_pitch_jitter, random_seed, grain_pan_min, grain_pan_max\n"
 
 
-GRANSYNTH::GRANSYNTH() : Instrument()
+GRANSYNTH::GRANSYNTH()
+	: _branch(0), _stream(NULL), _block(NULL)
 {
-   _stream = NULL;
-   _branch = 0;
-   _block = NULL;
 }
 
 
@@ -131,8 +128,6 @@ int GRANSYNTH::init(double p[], int n_args)
       if (table != NULL)
          _stream->setGrainTranspositionCollection(table, length);
    }
-
-   _skip = (int) (SR / (float) resetval);
 
    return nSamps();
 }
@@ -183,7 +178,7 @@ int GRANSYNTH::run()
    for (i = 0; i < frames; i++) {
       if (--_branch <= 0) {
          doupdate();
-         _branch = _skip;
+         _branch = getSkip();
       }
 
       _stream->prepare();
@@ -208,17 +203,17 @@ int GRANSYNTH::run()
 int GRANSYNTH::run()
 {
    // NOTE: Without a lot more code, we can't guarantee that doupdate will
-   // be called exactly every _skip samples, the way we can when not doing
+   // be called exactly every getSkip() samples, the way we can when not doing
    // block I/O.  But this seems worth sacrificing for the clear performance
    // improvement that block I/O offers.
 
    const int frames = framesToRun();
-   int blockframes = min(frames, _skip);
+   int blockframes = min(frames, getSkip());
    int framesdone = 0;
    while (1) {
       if (_branch <= 0) {
          doupdate();
-         _branch = _skip;
+         _branch = getSkip();
       }
       _branch -= blockframes;
 

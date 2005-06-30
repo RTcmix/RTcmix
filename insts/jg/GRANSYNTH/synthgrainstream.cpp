@@ -8,10 +8,10 @@
 #include <Ougens.h>  // for Ooscil
 #include "synthgrainstream.h"
 #include "synthgrainvoice.h"
+//#define NDEBUG       // disable asserts
 #include <assert.h>
 
 #define DEBUG 0
-//#define NDEBUG       // disable asserts
 
 #define ALL_VOICES_IN_USE  -1
 

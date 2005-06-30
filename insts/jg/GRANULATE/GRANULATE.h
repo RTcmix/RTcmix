@@ -1,3 +1,4 @@
+#include <Instrument.h>
 
 class GrainStream;
 
@@ -11,7 +12,7 @@ public:
    virtual int run();
 
 private:
-   int _nargs, _skip, _branch;
+   int _nargs, _branch;
    bool _stereoOut;
    double _amp, _curwinstart, _curwinend;
    GrainStream *_stream;

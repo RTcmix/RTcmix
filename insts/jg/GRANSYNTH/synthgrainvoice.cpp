@@ -2,13 +2,13 @@
 // software and for a DISCLAIMER OF ALL WARRANTIES.
 
 #include <stdio.h>
-#include <assert.h>
 #include <Ougens.h>
 #include <ugens.h>   // for octpch, cpsoct
 #include "synthgrainvoice.h"
+//#define NDEBUG     // disable asserts
+#include <assert.h>
 
 #define DEBUG 0
-//#define NDEBUG     // disable asserts
 
 
 // NOTE: We don't own the table memory.

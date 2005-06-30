@@ -43,7 +43,7 @@
 
     * p12 = grain hop time (time between successive grains).  This is the 
             inverse of grain density (grains per second); you can use
-            makeconverter(..., "inverse") to convert a table or real-time
+            "hoptime = 1 / density" to convert a table or real-time
             control source from density to hop time.
 
     * p13 = grain input time jitter
@@ -100,7 +100,6 @@
 #include <stdlib.h>
 #include <float.h>
 #include <ugens.h>
-#include <Instrument.h>
 #include <PField.h>
 #include <rt.h>
 #include <rtdefs.h>
@@ -123,15 +122,10 @@
 "    grain_transposition_jitter, random_seed, grain_pan_min, grain_pan_max\n"
 
 
-GRANULATE::GRANULATE() : Instrument()
+GRANULATE::GRANULATE()
+	: _branch(0), _curwinstart(-DBL_MAX), _curwinend(-DBL_MAX), _stream(NULL),
+   _block(NULL), _keepgoing(true), _stopped(false)
 {
-   _stream = NULL;
-   _branch = 0;
-   _curwinstart = -DBL_MAX;
-   _curwinend = -DBL_MAX;
-   _block = NULL;
-   _keepgoing = true;
-   _stopped = false;
 }
 
 
@@ -179,8 +173,6 @@ int GRANULATE::init(double p[], int n_args)
       if (table != NULL)
          _stream->setGrainTranspositionCollection(table, length);
    }
-
-   _skip = (int) (SR / (float) resetval);
 
    return nSamps();
 }
@@ -242,7 +234,7 @@ int GRANULATE::run()
    for (i = 0; i < frames; i++) {
       if (--_branch <= 0) {
          doupdate();
-         _branch = _skip;
+         _branch = getSkip();
       }
 
       // If we're not in wrap mode, this returns false when it's time to stop.
@@ -273,17 +265,17 @@ int GRANULATE::run()
 int GRANULATE::run()
 {
    // NOTE: Without a lot more code, we can't guarantee that doupdate will
-   // be called exactly every _skip samples, the way we can when not doing
+   // be called exactly every getSkip() samples, the way we can when not doing
    // block I/O.  But this seems worth sacrificing for the clear performance
    // improvement that block I/O offers.
 
    const int frames = framesToRun();
-   int blockframes = min(frames, _skip);
+   int blockframes = min(frames, getSkip());
    int framesdone = 0;
    while (1) {
       if (_branch <= 0) {
          doupdate();
-         _branch = _skip;
+         _branch = getSkip();
       }
       _branch -= blockframes;
 
