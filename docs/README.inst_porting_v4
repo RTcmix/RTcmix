@@ -113,7 +113,7 @@ To support the new dynamic PField capabilities, you need to do these things:
    for (int i = 0; i < framesToRun(); i += inputChannels()) {
       if (branch <= 0) {
          doupdate();
-         branch = skip;
+         branch = getSkip();
       }
       // use updated values to make a cool signal
       ...
