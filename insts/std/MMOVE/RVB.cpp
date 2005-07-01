@@ -88,7 +88,10 @@ int RVB::init(double p[], int n_args)
     if (m_dur < 0)                      /* "dur" represents timend */
         m_dur = -m_dur - inskip;
 
-    rtsetinput(inskip, this);
+	if (rtsetinput(inskip, this) == -1) { // no input
+	  return(DONT_SCHEDULE);
+	}
+
     insamps = (int)(m_dur * SR);
     m_amp = p[3];
 
@@ -385,7 +388,7 @@ RVB::set_gains(float rvbtime)
    float  rescale, gain, dist, G1, temp = SR / MACH1;
    double adjust;
    static float array[16] = {
-      1, .001, 10, .1, 25, .225, 35, .28, 50, .35, 65, .4, 85, .45, 95, .475
+      0, .001, 10, .1, 25, .225, 35, .28, 50, .35, 65, .4, 85, .45, 95, .475
    };
 
    /* compensate for variable delay lengths */
