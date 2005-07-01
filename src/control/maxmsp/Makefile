@@ -1,3 +1,7 @@
+# NOTE:  This will not build the correct loadable object lib
+# for RTcmix!  It is intended to function to create a lib
+# for the rtcmix~ object.  BGG 7/1/2005
+
 include ../../../makefile.conf
 
 OBJS = RTInletPField.o inletglue.o
