@@ -122,8 +122,8 @@ int WAVETABLE::init(double p[], int n_args)
 
 void WAVETABLE::doupdate()
 {
-	double p[6];
-	update(p, 6, 1 << 2 | 1 << 3 | 1 << 4);
+	double p[5];
+	update(p, 5, 1 << 2 | 1 << 3 | 1 << 4);
 
 	amp = p[2];
 	if (amptable)
