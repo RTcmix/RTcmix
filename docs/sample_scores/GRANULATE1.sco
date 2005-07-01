@@ -5,7 +5,7 @@ dur = 60
 amp = ampdb(-9)
 env = maketable("curve", 1000, 0,0,1, 2,1,0, 7,1,-1, 10,0)
 
-fname = "../../../../snd/nucular.wav"
+fname = "../../snd/nucular.wav"
 intab = maketable("soundfile", "nonorm", 0, fname)
 filedur = 1.578957
 numchans = 1

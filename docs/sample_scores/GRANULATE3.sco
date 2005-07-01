@@ -4,7 +4,7 @@ load("GRANULATE")
 dur = 360
 amp = ampdb(-9)
 
-fname = "../../../../snd/nucular.wav"
+fname = "../../snd/nucular.wav"
 intab = maketable("soundfile", "nonorm", 0, fname)
 numchans = 1
 inchan = 0
