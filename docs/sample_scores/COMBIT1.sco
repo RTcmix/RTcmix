@@ -1,18 +1,17 @@
-/* COMBIT --  comb filter instrument
-*
-* p0 = output skip
-* p1 = input skip
-* p2 = input duration
-* p3 = amplitude multiplier
-* p4 = pitch (cps)
-* p5 = reverb time
-* p6 = input channel [optional]
-* p7 = stereo spread [optional]
-*
-*/
-
 rtsetparams(44100, 2)
 load("COMBIT")
-rtinput("../../snd/nucular.wav")
-COMBIT(0, 0, DUR(), 0.5, cpspch(7.09), .9)
-COMBIT(0.2, 0, DUR(), 0.5, cpspch(7.07), .9, 0, 1)
+
+rtinput("../../snd/input.wav")
+inchan = 0
+inskip = 0
+dur = DUR()
+
+amp = 0.5
+freq = cpspch(7.09)
+reverbtime = 0.9
+
+COMBIT(start=0, inskip, dur, amp, freq, reverbtime, inchan, pan=0)
+
+freq = cpspch(7.07)
+COMBIT(start=0.2, inskip, dur, amp, freq, reverbtime, inchan, pan=1)
+
