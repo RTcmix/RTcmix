@@ -134,7 +134,7 @@ void MBANDEDWG :: doupdate()
 		modereson = p[9];
 	}
 
-	if (modereson != p[10]) {
+	if (integrate != p[10]) {
 		theBar->setIntegration(p[10]);
 		integrate = p[10];
 	}
