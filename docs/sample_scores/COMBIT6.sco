@@ -25,11 +25,11 @@ env = maketable("line", 1000, 0,0, 1,1, 7,1, 10,0)
 
 freq = maketable("random", "nonorm", totdur * 8, "cauchy", 50, 180, 1)
 rvbtime = maketable("line", "nonorm", 1000, 0,2, 2,10, 3,5)
-pctleft = maketable("wave", "nonorm", 1000, .5) + 0.5
+pan = maketable("wave", "nonorm", 1000, .5) + 0.5	// vals btw. 0 and 1
 ringdur = 0.5
-reset(10000)
+control_rate(2000)
 
-COMBIT(0, 0, totdur, amp * env, freq, rvbtime, 0, pctleft, ringdur)
+COMBIT(0, 0, totdur, amp * env, freq, rvbtime, 0, pan, ringdur)
 
 
 // -JGG, 7/12/04
