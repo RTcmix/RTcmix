@@ -1,21 +1,8 @@
-/* DELAY: regenerating delay instrument
-*
-*  p0 = output start time
-*  p1 = input start time
-*  p2 = input duration
-*  p3 = amplitude multiplier
-*  p4 = delay time
-*  p5 = regeneration multiplier (< 1!)
-*  p6 = ring-down duration
-*  p7 = input channel number <optional>
-*  p8 = stereo spread (0-1) <optional>
-*  assumes function slot 1 is the amplitude envelope
-*/
-
-set_option("full_duplex_on")  /* must do this before rtsetparams */
+set_option("record = on")
 rtsetparams(44100, 2, 512)
 load("DELAY")
-rtinput("AUDIO", "MIC")
-makegen(1, 24, 1000, 0,1, 100,1)
-DELAY(0, 0, 14, 1.0, .078, 0.8, 3.5, 0, 0.1)
-DELAY(7, 0, 10, 1, .415, 0.5, 3, 0, 0.9)
+rtinput("AUDIO")
+
+DELAY(start=0, 0, dur=14, amp=1, deltime=.078, fdbk=0.8, ring=3.5, 0, pan=0.1)
+DELAY(start=7, 0, dur=10, amp=1, deltime=.415, fdbk=0.5, ring=3, 0, pan=0.9)
+
