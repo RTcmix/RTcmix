@@ -18,6 +18,6 @@ ringdur = 1.0
 
 pan = maketable("curve", 1000, 0,0,-2, dur,1)
 
-reset(20000)
+control_rate(20000)
 DELAY(start=0, inskip, dur, amp * env, deltime, delamp, ringdur, inchan, pan)
 
