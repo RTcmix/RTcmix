@@ -41,19 +41,16 @@
 #include <ugens.h>
 #include <Ougens.h>
 #include <math.h>
-#include <mixerr.h>
-#include <Instrument.h>      /* the base class for this instrument */
+#include <float.h>
 #include "MBANDEDWG.h"         /* declarations for this instrument class */
 #include <rt.h>
 #include <rtdefs.h>
 
 
 
-MBANDEDWG :: MBANDEDWG() : Instrument()
+MBANDEDWG :: MBANDEDWG()
+	: branch(0), theBar(NULL)
 {
-	branch = 0;
-	amptable = NULL;
-	veltable = NULL;
 }
 
 MBANDEDWG :: ~MBANDEDWG()
@@ -84,30 +81,39 @@ int MBANDEDWG :: init(double p[], int n_args)
 		}
 	}
 
-	theBar = new BandedWG(); // 50 Hz is default lowest frequency
-
 	freq = p[3];
-	theBar->setFrequency(freq);
-	theBar->clear(); // BGG: I took this out of the BandedWG model code
-
-	theBar->setStrikePosition(p[4]);
-
-	if (p[5] < 1.0) theBar->setPluck(false);
-	else theBar->setPluck(true);
-
+	strikepos = p[4];
+	pluck = p[5];
+	maxvelocity = p[6];
+	preset = int(p[7]);
 	bowpress = p[8];
-	theBar->setBowPressure(bowpress);
 	modereson = p[9];
-	theBar->setModeResonance(modereson);
 	integrate = p[10];
-	theBar->setIntegration(integrate);
-
-	theBar->setPreset((int)p[7]);
-	theBar->noteOn(p[3], p[6]); // this will initialize the maxVelocity
-
 	pctleft = n_args > 11 ? p[11] : 0.5;                /* default is .5 */
 
 	return nSamps();
+}
+
+int MBANDEDWG :: configure()
+{
+	theBar = new BandedWG(); // 50 Hz is default lowest frequency
+
+	theBar->setFrequency(freq);
+	theBar->clear(); // BGG: I took this out of the BandedWG model code
+
+	theBar->setStrikePosition(strikepos);
+
+	if (pluck < 1.0) theBar->setPluck(false);
+	else theBar->setPluck(true);
+
+	theBar->setBowPressure(bowpress);
+	theBar->setModeResonance(modereson);
+	theBar->setIntegration(integrate);
+
+	theBar->setPreset(preset);
+	theBar->noteOn(freq, maxvelocity); // this will initialize the maxVelocity
+
+	return 0;
 }
 
 void MBANDEDWG :: doupdate()
