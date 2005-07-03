@@ -98,6 +98,7 @@ OCFILES = \
 Obucket.cpp \
 Ocomb.cpp \
 Ocombi.cpp \
+Odcblock.cpp \
 Odelay.cpp \
 Odelayi.cpp \
 Oequalizer.cpp \
@@ -113,6 +114,7 @@ OOBJECTS = \
 Obucket.o \
 Ocomb.o \
 Ocombi.o \
+Odcblock.o \
 Odelay.o \
 Odelayi.o \
 Oequalizer.o \
