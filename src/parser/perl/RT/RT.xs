@@ -36,10 +36,10 @@ handle_minc_function(...)
             stack_item = ST(i);
 
 			if (SvROK(stack_item)) {
-				printf("DEBUG: handle_minc_function: argument[%d] was a reference\n", i-1);
+//				printf("DEBUG: handle_minc_function: argument[%d] was a reference\n", i-1);
 				arg->_type = HandleType;
 				arg->_val.handle = (Handle) SvIV(SvRV(stack_item));
-				printf("DEBUG: retrieved handle at 0x%x\n", arg->_val.handle);
+//				printf("DEBUG: retrieved handle at 0x%x\n", arg->_val.handle);
 			}
             /* NOTE: Check for double/integer first; otherwise you might
                get the string version of a number, which we'll then cast
