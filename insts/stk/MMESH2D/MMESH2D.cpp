@@ -21,30 +21,26 @@
 
 #include <Stk.h>
 #include <Mesh2D.h> // from the stk library
-
 #include <iostream.h>        /* needed only for cout, etc. if you want it */
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
 #include <Ougens.h>
 #include <math.h>
-#include <mixerr.h>
-#include <Instrument.h>      /* the base class for this instrument */
 #include "MMESH2D.h"         /* declarations for this instrument class */
 #include <rt.h>
 #include <rtdefs.h>
 
 
-
-MMESH2D :: MMESH2D() : Instrument()
+MMESH2D :: MMESH2D()
+	: branch(0), theMesh(NULL), dcblocker(NULL)
 {
-	branch = 0;
-	amptable = NULL;
 }
 
 MMESH2D :: ~MMESH2D()
 {
 	delete theMesh;
+	delete dcblocker;
 }
 
 int MMESH2D :: init(double p[], int n_args)
@@ -63,6 +59,8 @@ int MMESH2D :: init(double p[], int n_args)
 	theMesh->setInputPosition(p[5], p[6]);
 	theMesh->setDecay( 0.9 + (p[7]*0.1)); // from the Mesh2D code
 	theMesh->noteOn(0.0, p[8]);
+
+	dcblocker = new Odcblock();
 
 	pctleft = n_args > 9 ? p[9] : 0.5;                /* default is .5 */
 
@@ -89,7 +87,7 @@ int MMESH2D :: run()
 			branch = getSkip();
 		}
 
-		out[0] = theMesh->tick() * amp;
+		out[0] = dcblocker->next(theMesh->tick()) * amp;
 
 		if (outputChannels() == 2) {
 			out[1] = out[0] * (1.0 - pctleft);
