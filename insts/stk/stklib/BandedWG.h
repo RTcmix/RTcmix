@@ -32,7 +32,8 @@
 #if !defined(__BANDEDWG_H)
 #define __BANDEDWG_H
 
-#define MAX_BANDED_MODES 20
+//#define MAX_BANDED_MODES 20
+#define MAX_BANDED_MODES 12 // included presets don't use more than this -JGG
 
 #include "Instrmnt.h"
 #include "DelayL.h"
