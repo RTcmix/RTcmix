@@ -58,6 +58,7 @@ BandedWG :: BandedWG()
   baseGain = (MY_FLOAT) 0.999;
   
   integrationConstant = 0.0;
+  velocityInput = 0.0;      // JGG: was never inited
   trackVelocity = false;
 
   bowVelocity = 0.0;
