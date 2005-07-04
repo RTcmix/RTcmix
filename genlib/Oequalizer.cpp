@@ -6,6 +6,19 @@
 #include <math.h>
 #include <assert.h>
 
+#ifndef cosf
+	#define cosf(theta) cos((theta))
+#endif
+#ifndef sinf
+	#define sinf(theta) sin((theta))
+#endif
+#ifndef powf
+	#define powf(val, exp) pow((val), (exp))
+#endif
+#ifndef sqrtf
+	#define sqrtf(val) sqrt((val))
+#endif
+
 Oequalizer::Oequalizer(float srate, OeqType type)
 	: _sr(srate), _type(type), 
 	  _c0(0), _c1(0), _c2(0), _c3(0), _c4(0),
