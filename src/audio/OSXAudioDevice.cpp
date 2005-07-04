@@ -628,6 +628,7 @@ OSXAudioDevice::OSXAudioDevice(const char *desc) : _impl(new Impl)
 OSXAudioDevice::~OSXAudioDevice()
 {
 	//printf("OSXAudioDevice::~OSXAudioDevice()\n");
+	close();
 	delete [] _impl->port[REC].streamDesc;
 	delete [] _impl->port[REC].audioBuffer;
 	delete [] _impl->port[PLAY].streamDesc;
