@@ -5,47 +5,51 @@ load("JDELAY")
 bus_config("FILTSWEEP", "in 0", "aux 0 out")
 bus_config("JDELAY", "aux 0 in", "out 0", "out 1")
 
-rtinput("../../snd/conga.snd");
+rtinput("../../snd/input.wav")
 inskip = 0
 
-masteramp = 2.0
+masteramp = 3.0
 
 /* --------------------------------------------------------------- sweep1 --- */
-amp = 1.0 * masteramp
-balance = 1
+start = 0
+
+amp = 2.5 * masteramp
+balance = 0
 sharpness = 3
 ringdur = .2
+bypass = 0
 
-dur = 8
-setline(0,0, dur-.1,1, dur,0)
+dur = DUR()
+env = maketable("curve", 1000, 0,0,2, dur-.1,1,0, dur,0)
 
-makegen(2, 18, 2000,   0, 0,  1, 1400,  2, 0)    /* center freq. curve */
-makegen(3, 18, 2000,   0, -.008,  1, -.7)        /* bandwidth curve */
+cf = maketable("line", "nonorm", 1000, 0,0, 1,1400, 2,0)
+bw = maketable("line", "nonorm", 1000, 0,-.008, 1,-.7)
 
-start = 0
-FILTSWEEP(start, inskip, dur, amp, ringdur, sharpness, balance)
+FILTSWEEP(start, inskip, dur, amp * env, ringdur, sharpness, balance,
+	inchan=0, pan=0, bypass, cf, bw)
 
 /* --------------------------------------------------------------- sweep2 --- */
-amp = 1.0 * masteramp
-makegen(2, 18, 2000,   0, 0,  1, 5000,  2, 0)
-makegen(3, 18, 2000,   0, -.008,  1, -.08)
+start = dur + 2
 
-start = 8.5
-FILTSWEEP(start, inskip, dur, amp, ringdur, sharpness, balance)
+amp = 0.05 * masteramp
+cf = maketable("line", "nonorm", 1000, 0,0, 1,5000, 2,0)
+bw = maketable("line", "nonorm", 1000, 0,-.01, 1,-.08)
+
+FILTSWEEP(start, inskip, dur, amp * env, ringdur, sharpness, balance,
+	inchan=0, pan=0, bypass, cf, bw)
 
 /* ---------------------------------------------------------------- delay --- */
-amp = 1.0
+amp = maketable("line", 1000, 0,1, 9,1, 10,0)
 regen = 0.88
 ringdur = 12
 
-setline(0,1, 9,1, 10,0)
-
-dur = dur * 2.2
+dur = start + dur
+wetdry = 1
 
 deltime = 0.2
 JDELAY(st=0, insk=0, dur, amp, deltime, regen, ringdur, cutoff=0, 
-       wetdry=1, inchan=0, pctleft=1, 1)
+       wetdry, inchan=0, pan=1, 1)
 deltime = 0.3
 JDELAY(st, insk, dur, amp, deltime, regen, ringdur, cutoff=0, 
-       wetdry=1, inchan=0, pctleft=0, 1)
+       wetdry, inchan=0, pan=0, 1)
 
