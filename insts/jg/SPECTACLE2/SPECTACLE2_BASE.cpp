@@ -13,6 +13,13 @@
 #include <float.h>
 #include <Option.h>
 
+#ifndef cosf
+	#define cosf(theta) cos((theta))
+#endif
+#ifndef sinf
+	#define sinf(theta) sin((theta))
+#endif
+
 const int kMaxWindowLen = kMaxFFTLen * 8;
 const int kMinOverlap = 1;
 const int kMaxOverlap = 64;

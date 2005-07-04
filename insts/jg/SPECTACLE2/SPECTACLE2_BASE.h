@@ -14,6 +14,10 @@
 
 const int kMaxFFTLen = 16384;
 
+#ifndef powf
+	#define powf(val, exp) pow((val), (exp))
+#endif
+
 #ifdef DEBUG
 	#define DPRINT(msg) printf((msg))
 	#define DPRINT1(msg, arg) printf((msg), (arg))
