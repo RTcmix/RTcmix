@@ -1,22 +1,27 @@
-/* FMINST -- simple fm instrument
-*
-*  p0 = start time
-*  p1 = duration
-*  p2 = amp
-*  p3 = pitch of carrier (hz or oct.pc)
-*  p4 = pitch of modulator (hz or oct.pc)
-*  p5 = fm index low point
-*  p6 = fm index high point
-*  p7 = stereo spread (0-1) <optional>
-*  function slot 1 is amp envelope, slot 2 is oscillator waveform,
-*     slot 3 is index guide
-*/
-
 rtsetparams(44100, 2)
 load("FMINST")
-makegen(1, 24, 1000, 0, 0, 3.5,1, 7,0)
-makegen(2, 10, 1000, 1)
-makegen(3, 24, 1000, 0, 0, 5,1, 7, 0)
-FMINST(0, 7, 10000, 8.00, 179, 0, 10, 0.1)
-makegen(3, 24, 1000, 0,1, 7,0)
-FMINST(3.5, 7, 10000, 8.07, 179, 0, 10, 0.9)
+
+dur = 7
+
+amp = maketable("line", 1000, 0, 0, 3.5,1, 7,0) * 20000
+
+carfreq = cpspch(8.00)
+modfreq = 179
+minindex = 0
+maxindex = 10
+pan = 0.1
+
+wavetable = maketable("wave", 1000, "sine")
+guide = maketable("line", "nonorm", 1000, 0, 0, 5,1, 7, 0)
+
+FMINST(0, dur, amp, carfreq, modfreq, minindex, maxindex, pan,
+	wavetable, guide)
+
+start = dur / 2
+carfreq = cpspch(8.07)
+pan = 0.9
+guide = maketable("line", "nonorm", 1000, 0,1, 7,0)
+
+FMINST(start, dur, amp, carfreq, modfreq, minindex, maxindex, pan,
+	wavetable, guide)
+
