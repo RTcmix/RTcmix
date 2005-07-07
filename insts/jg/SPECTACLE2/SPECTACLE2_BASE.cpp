@@ -14,10 +14,16 @@
 #include <Option.h>
 
 #ifndef cosf
-	#define cosf(theta) cos((theta))
+	#define cosf(x) cos((x))
 #endif
 #ifndef sinf
-	#define sinf(theta) sin((theta))
+	#define sinf(x) sin((x))
+#endif
+#ifndef hypotf
+	#define hypotf(x, y) hypot((x), (y))
+#endif
+#ifndef atan2f
+	#define atan2f(y, x) atan2((y), (x))
 #endif
 
 const int kMaxWindowLen = kMaxFFTLen * 8;
