@@ -39,7 +39,7 @@ RTMousePField::RTMousePField(
 		else
 			_labelID = _mousewin->configureYLabel(prefix, units, precision);
 		if (_labelID == -1)
-			fprintf(stderr, "Warning: Max. number of labels already in use.");
+			fprintf(stderr, "WARNING: Max. number of labels already in use.\n");
 	}
 
 	_diff = maxval - minval;

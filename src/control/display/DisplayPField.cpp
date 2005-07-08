@@ -25,7 +25,7 @@ DisplayPField::DisplayPField(
 	if (prefix && prefix[0]) {	// no label if null or empty prefix string
 		_labelID = _displaywin->configureLabel(prefix, units, precision);
 		if (_labelID == -1)
-			fprintf(stderr, "Warning: Max. number of labels already in use.");
+			fprintf(stderr, "WARNING: Max. number of labels already in use.\n");
 	}
 }
 
