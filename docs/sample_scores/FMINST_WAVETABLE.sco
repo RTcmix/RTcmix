@@ -1,35 +1,42 @@
+print_off()
+
 rtsetparams(44100, 2)
 load("FMINST")
 load("WAVETABLE")
-reset(2000)
-print_off()
 
-makegen(1, 7, 1000, 0, 500, 1, 500, 0)
-makegen(2, 10, 1000, 1)
-makegen(3, 24, 1000, 0,1, 2,0)
+control_rate(2000)
 
+env = maketable("linebrk", 1000, 0, 500, 1, 500, 0)
+wave = maketable("wave", 1000, "sine")
+guide = maketable("line", "nonorm", 1000, 0,1, 2,0)
+
+amp = 6000 * env
 freq = 8.00
-for (start = 0; start < 20; start = start + 0.5) {
-	FMINST(start, .5, 3000, freq, 179, 0, 10, random())
-	freq = freq + 0.002
+for (start = 0; start < 20; start += 0.5) {
+	pan = random()
+	FMINST(start, dur=0.5, amp, freq, modfreq=179, 0, 10, pan, wave, guide)
+	freq += 0.002
 }
 
-makegen(1, 24, 1000, 0, 1,  950, 0)
-makegen(2, 10, 2000, 1, 0.3, 0.2)
+
+env = maketable("line", 1000, 0,1, 1,0)
+amp = 4000 * env
+
+wave = maketable("wave", 2000, 1, 0.3, 0.2)
 
 srand(0)
 
-for (start = 0; start < 20; start = start + 0.14) {
-	freq = random() * 200 + 35
-	for (i = 0; i < 3; i = i+1) {
-		WAVETABLE(start, 0.4, 1500, freq, 0)
-		WAVETABLE(start+random()*0.1, 0.4, 1500, freq+(random()*7), 1)
+for (start = 0; start < 20; start += 0.14) {
+	freq = (random() * 200) + 35
+	for (i = 0; i < 3; i += 1) {
+		WAVETABLE(start, 0.4, amp, freq, 0, wave)
+		WAVETABLE(start+random()*0.1, 0.4, amp, freq+(random()*7), 1, wave)
 		if (start > 10) {
-			makegen(2, 10, 2000, 1, random(), random(), random(), random(),
-						random(), random(), random(), random(),
+			wave = maketable("wave", 2000, 1, random(), random(), random(),
+						random(), random(), random(), random(), random(),
 						random(), random(), random())
 		}
-		freq = freq + 125
+		freq += 125
 	}
 }
 

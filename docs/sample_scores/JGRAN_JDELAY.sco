@@ -1,4 +1,6 @@
-rtsetparams(44100, 2);
+// -JGG, 5/28/00, rev for v4, 7/12/05
+
+rtsetparams(44100, 2)
 load("JGRAN")
 load("JDELAY")
 
@@ -6,62 +8,60 @@ bus_config("JGRAN", "aux 0-1 out")
 bus_config("JDELAY", "aux 0-1 in", "out0-1")
 
 dur = 16
-masteramp = 1.5
+masteramp = 1.4
 
-/*----------------------------------------------------------------------------*/
-/* overall amplitude envelope */
-setline(0,0, 1,1, 2,1, 4,0)
+//----------------------------------------------------------------------------
+// overall amplitude envelope
+env = maketable("line", 1000, 0,0, 1,1, 2,1, 4,0)
 
-/* grain envelope */
-makegen(2, 25, 10000, 1)                    /* hanning window */
+// grain envelope
+genv = maketable("window", 10000, "hanning")
 
-/* grain waveform */
-makegen(3, 10, 10000, 1)                    /* sine wave */
+// grain waveform
+gwave = maketable("wave", 10000, "sine")
 
-/* modulation frequency multiplier */
-makegen(4, 18, 1000, 0,2, 1,2.1)            /* slightly increasing multiplier */
+// modulation frequency multiplier
+mfreqmult = maketable("line", "nonorm", 1000, 0,2, 1,2.1) // slight increase
 
-/* index of modulation envelope (per grain) */
-makegen(5, 18, 1000, 0,0, 1,8)              /* increasing index */
+// index of modulation envelope (per grain)
+modindex = maketable("line", "nonorm", 1000, 0,0, 1,8) // increasing index
 
-/* grain frequency */
-makegen(6, 18, 1000, 0,450, 1,450)          /* constant minimum */
-makegen(7, 18, 1000, 0,450, 1,550)          /* increasing maximum */
+// grain frequency
+minfreq = 500
+maxfreq = maketable("line", "nonorm", 1000, 0,450, 1,550) // increasing maximum
 
-/* grain speed */
-makegen(8, 18, 1000, 0,100, 1,10)           /* decreasing minimum */
-makegen(9, 18, 1000, 0,100, 1,100)          /* constant maximum */
+// grain speed
+minspeed = maketable("line", "nonorm", 1000, 0,100, 1,10) // decreasing minimum
+maxspeed = 100
 
-/* grain intensity (decibels above 0) */
-makegen(10, 18, 1000, 0,80, 1,80)           /* min */
-makegen(11, 18, 1000, 0,80, 1,80)           /* max */
+// grain intensity (decibels above 0)
+mindb = 80
+maxdb = 80
 
-/* grain density */
-makegen(12, 18, 1000, 0,1, 1,1, 2,.8)       /* slightly decreasing density */
+// grain density
+density = maketable("line", "nonorm", 1000, 0,1, 1,1, 2,.8)  // slight decrease
 
-/* grain stereo location */
-makegen(13, 18, 1000, 0,.5, 1,.5)           /* image centered in middle */
+// grain stereo location -- image centered in middle
+pan = 0.5
 
-/* grain stereo location randomization */
-makegen(14, 18, 1000, 0,0, 1,1)             /* increasingly randomized */
+// grain stereo location randomization
+panrand = maketable("line", "nonorm", 1000, 0,0, 1,1) // increasingly randomized
 
 
-JGRAN(start=0, dur, amp=1, seed=1, type=1, ranphase=1)
+JGRAN(start=0, dur, env, seed=1, type=1, ranphase=1,
+   genv, gwave, mfreqmult, modindex, minfreq, maxfreq, minspeed, maxspeed,
+   mindb, maxdb, density, pan, panrand)
 
-/*----------------------------------------------------------------------------*/
-deltime1 = .37
-deltime2 = .38
+//----------------------------------------------------------------------------
+deltime1 = 0.37
+deltime2 = 0.38
 regen = 0.88
 wetdry = 0.75
 ringdur = 14.0
 cutoff = 0
 
-setline(0,1,1,1)
-
 JDELAY(st=0, insk=0, dur, masteramp, deltime1, regen, ringdur, cutoff, wetdry,
-       inchan=0, pctleft=1)
+       inchan=0, pan=1)
 JDELAY(st=0, insk=0, dur, masteramp, deltime2, regen, ringdur, cutoff, wetdry,
-       inchan=1, pctleft=0)
+       inchan=1, pan=0)
 
-
-/* JGG, 28-may-00 */

@@ -1,4 +1,6 @@
-rtsetparams(44100, 2);
+// JGG, 5/28/00, rev for v4, 7/12/05
+
+rtsetparams(44100, 2)
 load("JGRAN")
 load("REVERBIT")
 bus_config("JGRAN", "aux 0-1 out")
@@ -8,62 +10,49 @@ masteramp = 1.0
 
 dur = 20
 
-/* overall amplitude envelope */
-setline(0,0, 1,1, 2,1, 4,0)
+env = maketable("line", 1000, 0,0, 1,1, 2,1, 4,0)
 
-/* grain envelope */
-makegen(2, 25, 10000, 1)                    /* hanning window */
+genv = maketable("window", 10000, "hanning")
+gwave = maketable("wave", 10000, "sine")
 
-/* grain waveform */
-makegen(3, 10, 10000, 1)                    /* sine wave */
+mfreqmult = maketable("line", "nonorm", 1000, 0,2, 1,2.2)
+modindex = maketable("line", "nonorm", 1000, 0,0, 1,9)
 
-/* modulation frequency multiplier */
-makegen(4, 18, 1000, 0,2, 1,2.2)            /* slightly increasing multiplier */
+minfreq = maketable("line", "nonorm", 1000, 0,200, 1,100)
+maxfreq = maketable("line", "nonorm", 1000, 0,200, 1,550)
 
-/* index of modulation envelope (per grain) */
-makegen(5, 18, 1000, 0,0, 1,9)              /* increasing index */
+minspeed = maketable("line", "nonorm", 1000, 0,100, 1,10)
+maxspeed = 100
 
-/* grain frequency */
-makegen(6, 18, 1000, 0,200, 1,100)          /* decreasing minimum */
-makegen(7, 18, 1000, 0,200, 1,550)          /* increasing maximum */
+mindb = 65
+maxdb = 80
 
-/* grain speed */
-makegen(8, 18, 1000, 0,100, 1,10)           /* decreasing minimum */
-makegen(9, 18, 1000, 0,100, 1,100)          /* constant maximum */
+density = maketable("line", "nonorm", 1000, 0,1, 1,1, 2,.8)
 
-/* grain intensity (decibels above 0) */
-makegen(10, 18, 1000, 0,65, 1,65)           /* min */
-makegen(11, 18, 1000, 0,80, 1,80)           /* max */
+pan = 0.5	// image centered in middle
 
-/* grain density */
-makegen(12, 18, 1000, 0,1, 1,1, 2,.8)       /* slightly decreasing density */
+// grain stereo location randomization -- decreasingly randomized
+panrand = maketable("line", "nonorm", 1000, 0,1, 1,0)
 
-/* grain stereo location */
-makegen(13, 18, 1000, 0,.5, 1,.5)           /* image centered in middle */
+JGRAN(start=0, dur, env, seed=0, type=1, ranphase=1,
+   genv, gwave, mfreqmult, modindex, minfreq, maxfreq, minspeed, maxspeed,
+   mindb, maxdb, density, pan, panrand)
 
-/* grain stereo location randomization */
-makegen(14, 18, 1000, 0,1, 1,0)             /* decreasingly randomized */
+env = maketable("line", 1000, 0,0, 1,.1, 3,1, 4,0)
+gwave = maketable("wave", 10000, 1, .5, .3, .2, .1)
+minfreq = 2000
+maxfreq = 2100
+panrand = maketable("line", "nonorm", 1000, 0,0, 1,1)
 
+JGRAN(start=2, dur-start, env, seed=1, type=0, ranphase=1,
+   genv, gwave, mfreqmult, modindex, minfreq, maxfreq, minspeed, maxspeed,
+   mindb, maxdb, density, pan, panrand)
 
-JGRAN(start=0, dur, amp=1, seed=0, type=1, ranphase=1)
-
-setline(0,0, 1,.1, 3,1, 4,0)
-makegen(3, 10, 10000, 1, .5, .3, .2, .1)
-makegen(6, 18, 1000, 0,2000, 1,2000)
-makegen(7, 18, 1000, 0,2100, 1,2100)
-makegen(14, 18, 1000, 0,0, 1,1)
-JGRAN(start=2, dur-start, amp=1, seed=1, type=0, ranphase=1)
-
-/* --------------------------------------------------------------- reverb --- */
+// --------------------------------------------------------------- reverb ---
 revtime = 3.0
-revpct = .8
+revpct = maketable("line", "nonorm", 1000, 0,0.8, 1,0.8, 2,0.1)
 rtchandel = .05
 cf = 800
 
-setline(0,1, 1,1)
-
 REVERBIT(st=0, insk=0, dur, masteramp, revtime, revpct, rtchandel, cf)
 
-
-
-/* JGG, 28-may-00 */
