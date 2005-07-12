@@ -1,29 +1,24 @@
-/* WAVESHAPE -- a waveshaping instrument
- 
-   p0 = start time
-   p1 = duration
-   p2 = pitch (hz or oct.pc)
-   p3 = index low point
-   p4 = index high point
-   p5 = amp
-   p6 = stereo spread (0-1) <optional>
-
-   function slot 1 is amp envelope
-            slot 2 is waveform to be shaped (generally sine)
-            slot 3 is the transfer function
-            slot 4 is the index envelope
-*/
 rtsetparams(44100, 2)
 load("WAVESHAPE")
 
-makegen(1, 24, 1000, 0,0, 3.5,1, 7,0)
-makegen(2, 10, 1000, 1)
-makegen(3, 17, 1000, 0.9, 0.3, -0.2, 0.6, -0.7)
-makegen(4, 24, 1000, 0,0, 3.5,1, 7,0)
+masteramp = 2.0
 
-WAVESHAPE(0, 7, 7.02, 0, 1, 9000, 0.99)
+dur = 7
+pitch = 7.02
+amp = 12000 * masteramp
+env = maketable("line", 1000, 0,0, .1,0, 3.5,1, 7,0)
+wavetable = maketable("wave", 1000, "sine")
+transferfunc = maketable("cheby", 1000, 0.9, 0.3, -0.2, 0.6, -0.7)
+indexguide = maketable("line", 1000, 0,0, 3.5,1, 7,0)
 
-makegen(1, 24, 1000, 0,0, 1.5,1, 7,0)
-makegen(4, 24, 1000, 0,1, 7,0)
+WAVESHAPE(st=0, dur, pitch, 0, 1, amp * env, pan=0.99,
+	wavetable, transferfunc, indexguide)
 
-WAVESHAPE(4, 7, 6.091, 0, 1, 10000, 0.01)
+pitch = 6.091
+amp = 18000 * masteramp
+env = maketable("line", 1000, 0,0, 1.5,1, 7,0)
+indexguide = maketable("line", 1000, 0,1, 7,0)
+
+WAVESHAPE(st=4, dur, pitch, 0, 1, amp * env, pan=0.01,
+	wavetable, transferfunc, indexguide)
+

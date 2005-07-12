@@ -1,21 +1,25 @@
-/* PANECHO: stereo panning delay instrument
-*
-*  p0 = output start time
-*  p1 = input start time
-*  p2 = duration
-*  p3 = amplitude multiplier
-*  p4 = channel 0 delay time
-*  p5 = channel 1 delay time
-*  p6 = regeneration multiplier (< 1!)
-*  p7 = ring-down duration
-*  p8 = input channel number <optional>
-*  assumes function slot 1 is the amplitude envelope
-*/
-
-set_option("full_duplex_on")  /* must do this before rtsetparams */
+set_option("record = on")  // must do this before rtsetparams
 rtsetparams(44100, 2)
 load("PANECHO")
-rtinput("AUDIO", "MIC")
-setline(0,1, 1,1)
-PANECHO(0, 0, 14, 1.0, 5.14, 1.14, .7, 9.5)
-PANECHO(10, 0, 7, 1.0, 1.14, 0.14, .7, 3.5)
+rtinput("AUDIO")
+
+start = 0
+inskip = 0
+dur = 14
+amp = 1.0
+delayL = 5.14
+delayR = 1.14
+feedback = 0.7
+ringdur = 9.5
+
+PANECHO(start, inskip, dur, amp, delayL, delayR, feedback, ringdur)
+
+start = 10
+dur = 7
+delayL = 1.14
+delayR = 0.14
+feedback = 0.7
+ringdur = 3.5
+
+PANECHO(start, inskip, dur, amp, delayL, delayR, feedback, ringdur)
+

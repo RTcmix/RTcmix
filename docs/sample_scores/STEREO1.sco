@@ -29,9 +29,9 @@ load("STEREO")
 
 rtinput("../../snd/input.wav")
 
-setline(0,0, 1, 1, 1.1, 0)
-STEREO(0, 0, DUR(), 0.7, 0.5, 0.5)
+amp = maketable("line", 1000, 0,0, 1, 1, 1.1, 0) * 1.5
+STEREO(0, 0, DUR(), amp, 0.8)
 
-setline(0,0, 0.1, 1, 1, 0)
-STEREO(DUR() + .2, 0, DUR(), 0.7, 0.1, 0.1)
+amp = maketable("line", 1000, 0,0, 0.1, 1, 1, 0) * 1.5
+STEREO(DUR() + .2, 0, DUR(), amp, 0.1)
 

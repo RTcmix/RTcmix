@@ -4,13 +4,15 @@ load("STEREO")
 rtinput("../../snd/input.wav")
 filedur = DUR()
 
-setline(0,0, .1, 1, 2,0)
+amp = maketable("line", 1000, 0,0, .1, 1, 2,0)
 
+// to make sure these very short notes are enveloped precisely
 reset(10000)
-dur = 1;
-for (start = 0; start < 10.0; start = start + dur) {
+
+dur = 1	// must init before loop, because we use it in for() statement
+for (start = 0; start < 10.0; start += dur) {
 	dur = random() * 0.2
 	inskip = random() * (filedur - dur)
-	STEREO(start, inskip, dur, 1, random(), -1)
+	STEREO(start, inskip, dur, amp, random(), -1)
 }
 

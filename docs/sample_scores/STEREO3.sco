@@ -1,22 +1,24 @@
 rtsetparams(44100, 2)
 load("STEREO")
 
-reset(10000)
-makegen(1, 25, 10000, 1)
+// to make sure these very short notes are enveloped precisely
+reset(5000)
+
+env = maketable("window", 10000, "hanning")
 
 rtinput("../../snd/huhh.wav")
 
 totdur = 10
-incr = .02
-dur = .25
-amp = 1.0
+incr = 0.02
+dur = 0.25
+amp = 1.0 * env
 min_inskip = 0.7
-max_inskip = DUR(0) - dur
+max_inskip = DUR() - dur
 inskip_diff = max_inskip - min_inskip
 
-for (st = 0; st < totdur; st = st + incr) {
+for (st = 0; st < totdur; st += incr) {
    inskip = min_inskip + (inskip_diff * random())
-   pctleft = random()
-   STEREO(st, inskip, dur, amp, pctleft)
+   pan = random()
+   STEREO(st, inskip, dur, amp, pan)
 }
 
