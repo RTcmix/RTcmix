@@ -12,9 +12,9 @@
    function, and makegen 3 is the vibrato amplitude envelope
 */
 
-rtsetparams(44100, 1)
+rtsetparams(44100, 2)
 load("STRUM")
 makegen(1, 18, 1000, 0,1, 19,1, 20,0)
 makegen(2, 10, 1000, 1)
 makegen(3, 24, 1000, 0, 0, 1, 1, 2, 0)
-VSTART1(0, 7, 7.07, 1, 1, 10, 0.05, 7.00, 0, 1, 10000, 2, 4, 7, 5, 0.314)
+VSTART1(0, 7, 7.07, 1, 1, 10, 0.05, 7.00, 0, 1, 10000, 2, 4, 7, 5, 0.314, 200, .5)
