@@ -1,6 +1,7 @@
 // Copyright (C) 2005 John Gibson.  See ``LICENSE'' for the license to this
 // software and for a DISCLAIMER OF ALL WARRANTIES.
 
+#include <Instrument.h>
 #include <fparser27/fparser.hh>
 
 class Ooscil;
@@ -18,8 +19,8 @@ class WAVY : public Instrument {
 
 	int _nargs, _branch;
 	float _amp, _pan;
-	double _freqraw, _phaseOffset;
-	Ooscil *_oscil1, *_oscil2;
+	double _freqAraw, _freqBraw, _phaseOffset;
+	Ooscil *_oscilA, *_oscilB;
 	CombineFunction _combiner;
 	FunctionParser *_fp;
 
