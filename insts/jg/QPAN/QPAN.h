@@ -1,6 +1,7 @@
+#include <Instrument.h>
 
 class QPAN : public Instrument {
-   int     inchan, skip, branch;
+   int     inchan, branch;
    double  amp, src_x, src_y, gains[4];
    double  speaker_angles[4];
    float   *in;

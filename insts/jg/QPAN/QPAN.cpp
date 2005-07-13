@@ -22,7 +22,6 @@
 #include <math.h>
 #include <float.h>   // for DBL_MAX
 #include <ugens.h>
-#include <Instrument.h>
 #include <PField.h>
 #include "QPAN.h"
 #include <rt.h>
@@ -33,7 +32,7 @@
 #define PI_OVER_4    M_PI / 4.0
 
 
-QPAN::QPAN() : Instrument()
+QPAN::QPAN()
 {
    in = NULL;
    branch = 0;
@@ -81,8 +80,6 @@ int QPAN::init(double p[], int n_args)
    if (inchan >= inputChannels())
       return die("QPAN", "You asked for channel %d of %d-channel input.",
                                                    inchan, inputChannels());
-
-   skip = (int) (SR / (float) resetval);
 
    return nSamps();
 }
@@ -145,18 +142,20 @@ int QPAN::configure()
 int QPAN::run()
 {
    float out[outputChannels()];
-   const int samps = framesToRun() * inputChannels();
+   const int inchans = inputChannels();
+   const int outchans = outputChannels();
+   const int samps = framesToRun() * inchans;
 
    rtgetin(in, this, samps);
 
-   for (int i = 0; i < samps; i += inputChannels()) {
+   for (int i = 0; i < samps; i += inchans) {
       if (--branch <= 0) {
          doupdate();
-         branch = skip;
+         branch = getSkip();
       }
       float insig = in[i + inchan] * amp;
 
-      for (int j = 0; j < outputChannels(); j++)
+      for (int j = 0; j < outchans; j++)
          out[j] = insig * gains[j];
 
       rtaddout(out);
@@ -169,9 +168,7 @@ int QPAN::run()
 
 Instrument *makeQPAN()
 {
-   QPAN *inst;
-
-   inst = new QPAN();
+   QPAN *inst = new QPAN();
    inst->set_bus_config("QPAN");
 
    return inst;
