@@ -104,18 +104,14 @@
    John Gibson <johgibso at indiana dot edu>, 8/7/03.
 */
 #include "VOCODESYNTH.h"
-
+#include <Ougens.h>
+#include <objlib.h>
 
 /* ----------------------------------------------------------- VOCODESYNTH -- */
-VOCODESYNTH :: VOCODESYNTH() : Instrument()
+VOCODESYNTH :: VOCODESYNTH()
+   : branch(0), inringdown(0), in(NULL), car_wavetable(NULL), scaletable(NULL),
+     hipassmod(NULL), amptable(NULL)
 {
-   branch = 0;
-   inringdown = 0;
-   in = NULL;
-   amptable = NULL;
-   car_wavetable = NULL;
-   scaletable = NULL;
-   hipassmod = NULL;
 }
 
 
@@ -297,7 +293,6 @@ int VOCODESYNTH :: init(double p[], int n_args)
       carrier_transp = octpch(carrier_transp);
 
    insamps = (int) (dur * SR + 0.5);
-   skip = (int) (SR / (float) resetval);
 
    // function tables -------------------------------------------------------
 
@@ -312,8 +307,9 @@ int VOCODESYNTH :: init(double p[], int n_args)
       car_wavetable = (double *) getPFieldTable(18, &wavetablelen);
    if (car_wavetable == NULL) {
       car_wavetable = floc(2);
-      if (car_wavetable)
-         wavetablelen = fsize(2);
+      if (car_wavetable == NULL)
+         return die("VOCODESYNTH", "Use the carrier waveform pfield (p18).");
+      wavetablelen = fsize(2);
    }
 
    function = NULL;
@@ -342,11 +338,7 @@ int VOCODESYNTH :: init(double p[], int n_args)
       if (carrier_transp)
          thecf = cpsoct(octcps(thecf) + carrier_transp);
 
-      if (car_wavetable)
-         carrier_osc[i] = new OscilN(SR, 0, car_wavetable, wavetablelen);
-      else
-         carrier_osc[i] = new OscilN(SR, 0, NULL, 2000);
-      carfreq[i] = thecf;
+      carrier_osc[i] = new Ooscili(SR, thecf, car_wavetable, wavetablelen);
 
       gauge[i] = new RMS(SR);
       gauge[i]->setWindowSize(window_len);
@@ -384,7 +376,7 @@ void VOCODESYNTH :: doupdate()
    if (amptable)
       amp *= amptable->tick(currentFrame(), 1.0);
 
-   pctleft = nargs > 17 ? p[17] : 0.5f;             // default: center
+   pan = (nargs > 17) ? p[17] : 0.5f;             // default: center
 }
 
 
@@ -399,7 +391,7 @@ int VOCODESYNTH :: run()
       if (currentFrame() < insamps) {
          if (--branch <= 0) {
             doupdate();
-            branch = skip;
+            branch = getSkip();
          }
          modsig = in[i + inchan];
       }
@@ -445,7 +437,7 @@ int VOCODESYNTH :: run()
          float env = envelope[j]->tick();
          if (env > 0.0) {
             float gain = power * env * scaletable[j];
-            car = carrier_osc[j]->tick(carfreq[j], gain);
+            car = carrier_osc[j]->next() * gain;
          }
          out[0] += car;
 //printf("%d: power=%f, state=%d, env=%f\n", currentFrame(), power, state[j], env);
@@ -458,8 +450,8 @@ int VOCODESYNTH :: run()
 
       out[0] *= amp;
       if (outputChannels() == 2) {
-         out[1] = out[0] * (1.0 - pctleft);
-         out[0] *= pctleft;
+         out[1] = out[0] * (1.0 - pan);
+         out[0] *= pan;
       }
 
       rtaddout(out);

@@ -6,7 +6,6 @@
 #include <rt.h>
 #include <rtdefs.h>
 #include <assert.h>
-#include <objlib.h>
 
 #ifdef DEBUG
    #define DPRINT(msg)                    printf((msg))
@@ -20,20 +19,27 @@
 
 #define MAXOSC 200
 
+class Butter;
+class Envelope;
+class OnePole;
+class RMS;
+class TableL;
+class Ooscili;
+
 typedef enum {
    belowThreshold,
    aboveThreshold
 } PowerState;
 
 class VOCODESYNTH : public Instrument {
-   int         nargs, skip, numbands, branch, inchan, insamps, inringdown;
-   float       amp, pctleft, hipass_mod_amp, smoothness;
+   int         nargs, numbands, branch, inchan, insamps, inringdown;
+   float       amp, pan, hipass_mod_amp, smoothness;
    float       threshold, attack_rate, release_rate;
    float       *in;
-   float       carfreq[MAXOSC], lastpower[MAXOSC];
+   float       lastpower[MAXOSC];
    double      *car_wavetable, *scaletable;
    Butter      *modulator_filt[MAXOSC], *hipassmod;
-   OscilN      *carrier_osc[MAXOSC];
+   Ooscili     *carrier_osc[MAXOSC];
    TableL      *amptable;
    RMS         *gauge[MAXOSC];
    OnePole     *smoother[MAXOSC];
