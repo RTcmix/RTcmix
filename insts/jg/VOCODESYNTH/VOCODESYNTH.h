@@ -52,6 +52,6 @@ public:
 // update flags (shift amount is pfield number)
 enum {
 	kAmp = 1 << 3,
-	kPan = 1 << 14
+	kPan = 1 << 17
 };
 
