@@ -325,11 +325,11 @@ int VOCODESYNTH :: init(double p[], int n_args)
       if (function == NULL)
          return die("VOCODESYNTH", "Either use the scaling curve table pfield "
                       "(p19) or make an old-style gen function in slot 3.");
-      int len = fsize(3);
-      scaletable = resample_gen(function, len, numbands, LINEAR_INTERP);
-      if (scaletable == NULL)
-         return die("VOCODESYNTH", "No memory for resizing scaling table.");
+      tablelen = fsize(3);
    }
+   scaletable = resample_gen(function, tablelen, numbands, LINEAR_INTERP);
+   if (scaletable == NULL)
+      return die("VOCODESYNTH", "No memory for resizing scaling table.");
 
    // make filters, oscillators ---------------------------------------------
 
