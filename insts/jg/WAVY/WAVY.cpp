@@ -180,11 +180,10 @@ void WAVY::doupdate()
 	if (p[5] != _phaseOffset) {
 		_phaseOffset = p[5];
 		// Get current phase of oscilA; offset oscilB phase from this by
-		// _phaseOffset, in units relative to wavetable lengths.
-		const int lenA = _oscilA->getlength();
+		// _phaseOffset, in units relative to wavetable lengths.  We try to 
+		// handle the case where the two freqs are different.
 		const int lenB = _oscilB->getlength();
-		const double phaseA = _oscilA->getphase() / lenA;
-		//const double phaseB = _oscilB->getphase() / lenB;
+		const double phaseA = _oscilA->getphase() / _oscilA->getlength();
 		const double freqscale = _freqB / _freqA;
 		double phase = (phaseA + (_phaseOffset * freqscale)) * lenB;
 		while (phase >= double(lenB))
