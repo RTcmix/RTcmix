@@ -29,10 +29,11 @@ if (wavedraw) {
 	wavet = modtable(wavet, "draw", index, value, .1)
 }
 
-WAVY(start=0, dur, amp * env, pitch, phase_offset1, wavet, expr, pan=.6)
+WAVY(start=0, dur, amp * env, pitch, 0, phase_offset1, wavet, 0, expr, pan=.6)
 
 // need a separate LFO instance for this
 phase_offset2 = makeLFO("tri", lfreq + 0.02, min=low, max=high)
 
-WAVY(start=0, dur, amp * env, pitch + .001, phase_offset2, wavet, expr, pan=.4)
+pitch += 0.001
+WAVY(start=0, dur, amp * env, pitch, 0, phase_offset2, wavet, 0, expr, pan=.4)
 

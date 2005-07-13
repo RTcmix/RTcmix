@@ -15,5 +15,5 @@ index = makeconnection("mouse", "x", min=0, max=1, dflt=0, lag=80, "index")
 value = makeconnection("mouse", "y", min=-1, max=1, dflt=0, lag=80, "value")
 wavet = modtable(wavet, "draw", index, value, .1)
 
-WAVY(start=0, dur, amp, pitch, phase_offset=0, wavet, "a", pan=.5)
+WAVY(start=0, dur, amp, pitch, 0, phase_offset=0, wavet, 0, "a", pan=.5)
 
