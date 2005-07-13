@@ -18,7 +18,7 @@ class WAVY : public Instrument {
 	inline float eval(float, float);
 
 	int _nargs, _branch;
-	float _amp, _pan;
+	float _amp, _freqA, _freqB, _pan;
 	double _freqAraw, _freqBraw, _phaseOffset;
 	Ooscil *_oscilA, *_oscilB;
 	CombineFunction _combiner;

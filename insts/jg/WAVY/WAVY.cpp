@@ -163,16 +163,18 @@ void WAVY::doupdate()
 
 	if (p[3] != _freqAraw) {
 		_freqAraw = p[3];
-		float freq = (_freqAraw < 15.0) ? cpspch(_freqAraw) : _freqAraw;
-		_oscilA->setfreq(freq);
-		if (p[4] == 0.0)
-			_oscilB->setfreq(freq);
+		_freqA = (_freqAraw < 15.0) ? cpspch(_freqAraw) : _freqAraw;
+		_oscilA->setfreq(_freqA);
+		if (p[4] == 0.0) {
+			_freqB = _freqA;
+			_oscilB->setfreq(_freqB);
+		}
 	}
 
 	if (p[4] != 0.0 && p[4] != _freqBraw) {
 		_freqBraw = p[4];
-		float freq = (_freqBraw < 15.0) ? cpspch(_freqBraw) : _freqBraw;
-		_oscilB->setfreq(freq);
+		_freqB = (_freqBraw < 15.0) ? cpspch(_freqBraw) : _freqBraw;
+		_oscilB->setfreq(_freqB);
 	}
 
 	if (p[5] != _phaseOffset) {
@@ -181,9 +183,10 @@ void WAVY::doupdate()
 		// _phaseOffset, in units relative to wavetable lengths.
 		const int lenA = _oscilA->getlength();
 		const int lenB = _oscilB->getlength();
-		double phaseA = _oscilA->getphase() / lenA;
-		double phaseB = _oscilB->getphase() / lenB;
-		double phase = (phaseA + _phaseOffset) * lenB;
+		const double phaseA = _oscilA->getphase() / lenA;
+		//const double phaseB = _oscilB->getphase() / lenB;
+		const double freqscale = _freqB / _freqA;
+		double phase = (phaseA + (_phaseOffset * freqscale)) * lenB;
 		while (phase >= double(lenB))
 			phase -= double(lenB);
 		_oscilB->setphase(phase);
