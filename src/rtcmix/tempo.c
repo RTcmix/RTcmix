@@ -74,6 +74,8 @@ time_beat(float timein)
 	int m = 0;
 	float durp = 0;
 
+	if (timein < 0.0)
+		timein = 0.0;
 
 	if(!tset) return(timein);
 
