@@ -147,12 +147,56 @@ WIGGLE::~WIGGLE()
 }
 
 
+DepthType WIGGLE::getDepthType(double pval)
+{
+   int intval = int(pval);
+   DepthType type = NoModOsc;
+
+   switch (intval) {
+      case 0:
+         type = NoModOsc;
+         break;
+      case 1:
+         type = CarPercent;
+         break;
+      case 2:
+         type = ModIndex;
+         break;
+      default:
+         die("WIGGLE", "Invalid depth type %d\n.", intval);
+         break;
+   }
+   return type;
+}
+
+FiltType WIGGLE::getFiltType(double pval)
+{
+   int intval = int(pval);
+   FiltType type = NoFilter;
+
+   switch (intval) {
+      case 0:
+         type = NoFilter;
+         break;
+      case 1:
+         type = LowPass;
+         break;
+      case 2:
+         type = HighPass;
+         break;
+      default:
+         die("WIGGLE", "Invalid filter type %d\n.", intval);
+         break;
+   }
+   return type;
+}
+
 int WIGGLE::init(double p[], int n_args)
 {
    const float outskip = p[0];
    const float dur = p[1];
-   depth_type = (n_args > 4) ? int(p[4]) : 0;
-   filter_type = (n_args > 5) ? (FiltType) p[5] : NoFilter;
+   depth_type = (n_args > 4) ? getDepthType(p[4]) : NoModOsc;
+   filter_type = (n_args > 5) ? getFiltType(p[5]) : NoFilter;
 
    float ringdur;
    if (filter_type == NoFilter) {

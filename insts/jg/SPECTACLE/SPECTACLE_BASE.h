@@ -77,6 +77,8 @@ protected:
    virtual int post_init(double p[], int n_args) = 0;
    virtual void modify_analysis() = 0;
    virtual const char *instname() = 0;
+private:
+   WindowType getWindowType(double pval);
 };
 
 inline int odd(long x) { return (x & 0x00000001); }

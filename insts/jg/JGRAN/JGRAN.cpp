@@ -123,7 +123,7 @@ int JGRAN :: init(double p[], int n_args)
    float outskip = p[0];
    float dur = p[1];
    int seed = (int) p[3];
-   osctype = (OscType) p[4];
+   osctype = (p[4] == 0.0) ? AS : FM;
    randomize_phase = n_args > 5 ? (bool) p[5] : true;    // default: yes
 
    if (rtsetoutput(outskip, dur, this) == -1)

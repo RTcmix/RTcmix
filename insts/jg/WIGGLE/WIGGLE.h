@@ -32,6 +32,8 @@ class WIGGLE : public Instrument {
    TableL   *filtcf_table;
    TableN   *pan_table;
 
+   DepthType getDepthType(double pval);
+   FiltType getFiltType(double pval);
    void doupdate();
 public:
    WIGGLE();

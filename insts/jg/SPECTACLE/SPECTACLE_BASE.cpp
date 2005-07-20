@@ -144,6 +144,37 @@ double * SPECTACLE_BASE :: resample_functable(double *table, int oldsize,
 
 
 /* ------------------------------------------------------------------ init -- */
+WindowType SPECTACLE_BASE :: getWindowType(double pval)
+{
+   int intval = int(pval);
+   WindowType type = Hamming;
+
+   switch (intval) {
+      case 0:
+         type = Hamming;
+         break;
+      case 1:
+         type = Hanning;
+         break;
+      case 2:
+         type = Rectangle;
+         break;
+      case 3:
+         type = Triangle;
+         break;
+      case 4:
+         type = Blackman;
+         break;
+      case 5:
+         type = Kaiser;
+         break;
+      default:
+         die(instname(), "Invalid window type %d\n.", intval);
+         break;
+   }
+   return type;
+}
+
 int SPECTACLE_BASE :: init(double p[], int n_args)
 {
    float outskip = p[0];
@@ -153,7 +184,7 @@ int SPECTACLE_BASE :: init(double p[], int n_args)
    ringdur = p[4];
    fft_len = (int) p[5];
    window_len = (int) p[6];
-   window_type = (WindowType) p[7];
+   window_type = getWindowType(p[7]);
    float overlap = p[8];
 
    /* Make sure FFT length is a power of 2 <= MAXFFTLEN and <= RTBUFSAMPS. */
