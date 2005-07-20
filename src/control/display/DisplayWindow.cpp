@@ -508,7 +508,7 @@ int openSocket()
 	if (listen(_servdesc, 1) < 0)
 		return reportError("openSocket (listen)", true);
 
-	int len = sizeof(servaddr);
+	socklen_t len = sizeof(servaddr);
 	_newdesc = accept(_servdesc, (struct sockaddr *) &servaddr, &len);
 	if (_newdesc < 0)
 		return reportError("openSocket (accept)", true);
