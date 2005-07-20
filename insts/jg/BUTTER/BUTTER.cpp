@@ -135,7 +135,6 @@ int BUTTER :: init(double p[], int n_args)
    float inskip = p[1];
    float dur = p[2];
    amp = p[3];
-   type = (FiltType) p[4];
    nfilts = n_args > 5 ? (int) p[5] : 1;
    do_balance = n_args > 6 ? (bool) p[6] : true;
    inchan = n_args > 7 ? (int) p[7] : 0;            // default is chan 0
