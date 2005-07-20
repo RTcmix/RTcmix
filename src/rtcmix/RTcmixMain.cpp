@@ -541,7 +541,11 @@ RTcmixMain::sockit(void *arg)
 
     listen(s, 1);
 
+#ifdef JAGUAR
+    int len = sizeof(sss);
+#else
     socklen_t len = sizeof(sss);
+#endif
     ns = accept(s, (struct sockaddr *)&sss, &len);
     if(ns < 0) {
       perror("accept");
