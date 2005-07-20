@@ -1,8 +1,8 @@
 
 typedef enum {
    PEAK_DETECTOR = 0,
-   AVERAGE_DETECTOR,
-   RMS_DETECTOR
+   AVERAGE_DETECTOR = 1,
+   RMS_DETECTOR = 2
 } DetectType;
 
 typedef enum {
@@ -28,6 +28,7 @@ class COMPLIMIT : public Instrument {
    DetectType  detector_type;
    EnvState    env_state;
 
+   DetectType getDetectType(double pval);
    int usage();
    void doupdate();
 

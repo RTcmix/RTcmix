@@ -96,6 +96,28 @@ int COMPLIMIT::usage()
 
 inline int min(int a, int b) { return (a < b) ? a : b; }
 
+DetectType getDetectType(double pval)
+{
+   int intval = int(pval);
+   DetectType type = PEAK_DETECTOR;
+
+   switch (intval) {
+      case 0:
+         type = PEAK_DETECTOR;
+         break;
+      case 1:
+         type = AVERAGE_DETECTOR;
+         break;
+      case 2:
+         type = RMS_DETECTOR;
+         break;
+      default:
+         die("COMPLIMIT", "Invalid detector type %d\n.", intval);
+         break;
+   }
+   return type;
+}
+
 int COMPLIMIT::init(double p[], int n_args)
 {
    nargs = n_args;
@@ -147,10 +169,7 @@ int COMPLIMIT::init(double p[], int n_args)
       return die("COMPLIMIT", "RTcmix buffer size must be a multiple of the "
                               "COMPLIMIT window size.");
 
-   int detector_int = int(p[11]);
-   if (detector_int < 0 || detector_int > 2)
-      return die("COMPLIMIT", "Invalid detector type.");
-   detector_type = (DetectType) detector_int;
+   detector_type = getDetectType(p[11]);
 
    // for backward compatibility with pre-v4 scores
    amptable = floc(1);
@@ -299,10 +318,7 @@ void COMPLIMIT::doupdate()
    else if (ratio >= 100.0)
       ratio = DBL_MAX;
 
-   int detector_int = int(p[11]);
-   if (detector_int < 0 || detector_int > 2)
-      detector_int = 0;
-   detector_type = (DetectType) detector_int;
+   detector_type = getDetectType(p[11]);
 
    bypass = bool(p[12]);
    inchan = int(p[13]);

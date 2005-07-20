@@ -49,13 +49,32 @@ DISTORT :: ~DISTORT()
 }
 
 
+DistortType DISTORT :: getDistortType(double pval)
+{
+   int intval = int(pval);
+   DistortType type = SoftClip;
+
+   switch (intval) {
+      case 1:
+         type = SoftClip;
+         break;
+      case 2:
+         type = Tube;
+         break;
+      default:
+         die("DISTORT", "Invalid distortion type %d\n.", intval);
+         break;
+   }
+   return type;
+}
+
 int DISTORT :: init(double p[], int n_args)
 {
    nargs = n_args;
    float outskip = p[0];
    float inskip = p[1];
    float dur = p[2];
-   type = (DistortType) p[4];
+   type = getDistortType(p[4]);
    cutoff = n_args > 6 ? p[6] : 0.0;               // filter disabled
    inchan = n_args > 7 ? (int) p[7] : 0;           // default is chan 0
 
