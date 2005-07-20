@@ -96,7 +96,7 @@ int COMPLIMIT::usage()
 
 inline int min(int a, int b) { return (a < b) ? a : b; }
 
-DetectType getDetectType(double pval)
+DetectType COMPLIMIT::getDetectType(double pval)
 {
    int intval = int(pval);
    DetectType type = PEAK_DETECTOR;
