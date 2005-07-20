@@ -7,27 +7,11 @@
 #include <rt.h>
 #include <rtdefs.h>
 #include "MIXN.h"
+#include <ugens.h>
+
+#include "funcs.h"
 
 extern int resetval;
-
-extern "C" {
-#include <ugens.h>
-  loc *aud_locs=NULL;
-  pt *spk_locs=NULL;
-  rfact *ratefs=NULL;
-  int num_rates=0;
-  int cur_rate=0;
-  int cur_point=0;
-  int num_points;
-  float *out_chan_amp; /* Used by inst */
-  double tot_dist;
-  int n_spk;
-  Bool use_path;
-  Bool use_rates;
-  double cycle;  /* Length of 1 iteration ... last path time */
-  void update_amps(long);
-}
-
 
 MIXN::MIXN() : Instrument()
 {

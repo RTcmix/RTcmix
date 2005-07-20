@@ -5,22 +5,23 @@
 #include <ugens.h>
 #include <bus.h>
 #include "mixn_structs.h"
+#include "funcs.h"
 
 extern float SR();
 
-extern loc *aud_locs;
-extern pt *spk_locs;
-extern rfact *ratefs;
-extern int cur_point;
-extern int num_rates;
-extern int cur_rate;
-extern int num_points;
-extern float *out_chan_amp; /* Used by inst */
-extern double tot_dist;
-extern int n_spk;
-extern Bool use_path;
-extern Bool use_rates;
-extern double cycle;  /* Length of 1 iteration ... last path time */
+loc *aud_locs;
+pt *spk_locs;
+rfact *ratefs;
+int num_rates;
+int cur_rate;
+int cur_point;
+int num_points;
+float *out_chan_amp; /* Used by inst */
+double tot_dist;
+int n_spk;
+Bool use_path;
+Bool use_rates;
+double cycle;  /* Length of 1 iteration ... last path time */
 
 /* calc_dist ------------------------------------------------------------------------- */
 
