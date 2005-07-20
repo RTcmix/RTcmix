@@ -36,7 +36,7 @@ include $(CMIXDIR)/site.conf
 #
 #   $ CFLAGS="-g" ./configure [...]
 #
-OPT += -Wall -Wno-unused
+OPT += -Wall -Wno-unused -Wno-deprecated
 
 # The path to this file
 MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
@@ -67,8 +67,8 @@ AUDIOLIB = $(AUDIODIR)/librtaudio.a
 ifeq ($(ARCH),LINUX)
   ARCHFLAGS = -DLINUX
   ARCH_RTLDFLAGS = -Wl,-rpath $(LIBDIR)
-  CC = gcc 
-  CXX = g++ -Wno-deprecated
+  CC = gcc
+  CXX = g++
   LD = ld
   MAKE = make
   INSTALL = cp -f
