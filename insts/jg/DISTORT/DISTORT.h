@@ -14,6 +14,7 @@ class DISTORT : public Instrument {
    Butter      *filt;
    TableL      *amptable;
 
+   DistortType getDistortType(double pval);
 public:
    DISTORT();
    virtual ~DISTORT();
