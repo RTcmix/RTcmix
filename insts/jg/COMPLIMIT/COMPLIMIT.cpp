@@ -370,7 +370,7 @@ int COMPLIMIT::run()
 #endif
    rtgetin(readptr, this, samps);
 
-   int over_thresh_offset;
+   int over_thresh_offset = 0;
 
    for (int i = 0; i < nframes; i++) {
       if (--branch <= 0) {
