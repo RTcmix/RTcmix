@@ -497,11 +497,6 @@ RTcmixMain::sockit(void *arg)
 
     // socket stuff
     int s, ns;
-#ifdef LINUX
-    unsigned int len;
-#else
-    int len;
-#endif
     struct sockaddr_in sss;
     int err;
     struct sockdata *sinfo;
@@ -546,7 +541,7 @@ RTcmixMain::sockit(void *arg)
 
     listen(s, 1);
 
-    len = sizeof(sss);
+    socklen_t len = sizeof(sss);
     ns = accept(s, (struct sockaddr *)&sss, &len);
     if(ns < 0) {
       perror("accept");
