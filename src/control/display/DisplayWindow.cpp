@@ -508,7 +508,11 @@ int openSocket()
 	if (listen(_servdesc, 1) < 0)
 		return reportError("openSocket (listen)", true);
 
+#ifdef JAGUAR
+	int len = sizeof(servaddr);
+#else
 	socklen_t len = sizeof(servaddr);
+#endif
 	_newdesc = accept(_servdesc, (struct sockaddr *) &servaddr, &len);
 	if (_newdesc < 0)
 		return reportError("openSocket (accept)", true);
