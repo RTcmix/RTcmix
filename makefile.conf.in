@@ -36,7 +36,7 @@ include $(CMIXDIR)/site.conf
 #
 #   $ CFLAGS="-g" ./configure [...]
 #
-OPT += -Wall -Wno-unused -Wno-deprecated
+OPT += -Wall -Wno-unused
 
 # The path to this file
 MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
@@ -68,7 +68,7 @@ ifeq ($(ARCH),LINUX)
   ARCHFLAGS = -DLINUX
   ARCH_RTLDFLAGS = -Wl,-rpath $(LIBDIR)
   CC = gcc
-  CXX = g++
+  CXX = g++ -Wno-deprecated
   LD = ld
   MAKE = make
   INSTALL = cp -f
@@ -80,7 +80,7 @@ ifeq ($(ARCH),MACOSX)
   ARCHFLAGS = -DMACOSX -fno-common
   ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX)
   CC = cc
-  CXX = c++
+  CXX = c++ -Wno-deprecated
   LD = ld
   MAKE = make
   INSTALL = cp -f
