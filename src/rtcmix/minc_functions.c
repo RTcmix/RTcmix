@@ -438,9 +438,9 @@ int resetval = 1000;                 /* modified by m_reset; read by insts */
 double m_reset(float p[], int n_args)
 {
 	if (p[0] <= 0)
-		die("reset", "Reset value must be greater than 0!");
+		die("reset", "Control rate must be greater than 0!");
 	resetval = p[0];
-	advise("reset", "Envelope calls set to %d times per sec.", resetval);
+	advise("reset", "Control rate set to %d updates per second.", resetval);
 
 	return 0.0;
 }
