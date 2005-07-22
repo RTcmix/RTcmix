@@ -339,7 +339,7 @@ int NetAudioDevice::waitForConnect()
 		PRINT0("select() returned -1, breaking out of wait\n");
 		return -1;
 	}
-#ifdef MACOSX
+#ifdef JAGUAR
 	int len = sizeof(_impl->sss);
 #else
 	socklen_t len = sizeof(_impl->sss);
