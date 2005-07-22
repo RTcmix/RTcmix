@@ -1,6 +1,6 @@
 # Print embeddable python library, as well as other libs it requires.
 # Will prefer static linkage unless invoked with "shared" argument.
-# JGG, 8/4/04
+# -JGG, 8/4/04, rev. 7/21/05 for OS X Tiger
 
 import sys, os.path, distutils.sysconfig
 
@@ -27,15 +27,23 @@ if static_link:
 
 linkshared = distutils.sysconfig.get_config_vars("LINKFORSHARED")[0]
 
-# On OS X 10.3, linkshared will include "-framework Python" (unless the
-# installation is broken).  That's all we need.  On Linux, linkshared
-# does not include the name of the shared library, so we add it below.
-
-if sys.platform.find("darwin") != -1:     # if it's OS X
-   if linkshared.find("Python") != -1:    # includes "-framework Python"
+if sys.platform.find("darwin") != -1:     # if it's OS X...
+   if linkshared.find("Python") != -1:
+      # If it's 10.3, <linkshared> includes "-framework Python", which is
+      # what we want.  If it's 10.4, it does not include this, but rather
+      # "Python.framework/Versions/2.3/Python", which is incorrect.  We
+      # replace the latter with the former here.  It'd be nice to do this
+      # in a less ad hoc way, but the combination of Apple's non-standard
+      # way of doing things and distutils confusion prevents this.
+      if linkshared.find("Python.framework/Versions") != -1:
+         wrong = "Python.framework/Versions/2.3/Python"
+         right = "-framework Python"
+         linkshared = linkshared.replace(wrong, right, 1)
       print linkshared, libs
       sys.exit(0)
 else:
+   # On Linux, <linkshared> does not include the name of the shared library,
+   # so we add it below.
    pythonlib = distutils.sysconfig.get_config_var("LDLIBRARY")
    if len(pythonlib) > 0:
       if pythonlib.endswith(".so"):       # sanity check
