@@ -4,6 +4,7 @@
 */
 #include <XMouse.h>
 #include <X11/cursorfont.h>
+#include <X11/keysym.h>
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
@@ -108,8 +109,9 @@ Window XMouse::createWindow(
 
 	XSetWindowAttributes attr;
 	attr.backing_store = WhenMapped;
-	attr.event_mask = ExposureMask | PointerMotionMask | ButtonMotionMask
-				| ButtonPressMask | ButtonReleaseMask | StructureNotifyMask;
+	attr.event_mask = KeyPressMask | ExposureMask | PointerMotionMask
+	                    | ButtonMotionMask | ButtonPressMask
+	                    | ButtonReleaseMask | StructureNotifyMask;
 	attr.background_pixel = XWhitePixel(_display, _screen);
 	attr.cursor = cursor;
 	const unsigned long valuemask = CWBackingStore | CWEventMask | CWBackPixel
@@ -209,11 +211,22 @@ void XMouse::drawWindowContent()
 	drawYLabels();
 }
 
+bool XMouse::handleKeyPress(XKeyEvent *kevt)
+{
+#ifdef NOTYET
+	KeySym keysym = XLookupKeysym(kevt, 0);
+	if (keysym == XK_q)	// regardless of modifier key
+		return false;
+#endif
+	return true;
+}
+
 bool XMouse::handleEvents()
 {
 	XEvent event;
 	const unsigned long evtmask =
-		  ExposureMask
+		  KeyPressMask
+		| ExposureMask
 		| PointerMotionMask
 		| StructureNotifyMask;
 
@@ -229,6 +242,9 @@ bool XMouse::handleEvents()
 				break;
 			case ConfigureNotify:
 				setFactors();
+				break;
+			case KeyPress:
+				keepgoing = handleKeyPress(&event.xkey);
 				break;
 			default:
 				break;
