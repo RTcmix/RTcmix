@@ -117,7 +117,7 @@ int MIX::run()
 		if (--branch <= 0) {
 			if (fastUpdate) {
 				if (amptable)
-					amp *= ampmult * tablei(currentFrame(), amptable, amptabs);
+					amp = ampmult * tablei(currentFrame(), amptable, amptabs);
 			}
 			else {
 				double p[4];
