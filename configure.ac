@@ -205,7 +205,7 @@ if test "$FFTW_SUPPORT" = "TRUE"; then
 fi
 
 # Write output files -----------------------------------------------------------
-#AC_CONFIG_HEADER(config.h)   # we don't need this yet
+AC_CONFIG_HEADER(config.h)
 AC_CONFIG_FILES(makefile.conf)
 AC_CONFIG_FILES(defs.conf)
 AC_OUTPUT
