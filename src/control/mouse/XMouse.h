@@ -44,6 +44,7 @@ private:
 	void drawWindowContent();
 	void drawXLabels();
 	void drawYLabels();
+	bool handleKeyPress(XKeyEvent *kevt);
 
 	int _screen;
 	Display *_display;
