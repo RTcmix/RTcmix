@@ -151,19 +151,19 @@ cleanall::
 	done
 
 # Make it clean for distribution or for moving to another system
-distclean: cleanall
+distclean: cleanall cleanac
 	@cd insts; $(MAKE) $(MFLAGS) distclean; 
 	@cd apps; $(MAKE) $(MFLAGS) distclean; 
 	@find . -name depend -exec rm -f '{}' ';'
-	@$(RM) config.log config.status config.cache defs.conf
 
 ####################################################### for maintainers only ###
 
 configure: configure.ac
+	touch defs.conf
 	aclocal
 	autoconf
 
 cleanac:
-	@$(RM) -r autom4te.cache config.log config.status config.cache \
+	@$(RM) -r autom4te.cache config.log config.status config.cache config.h \
 				configure defs.conf
 
