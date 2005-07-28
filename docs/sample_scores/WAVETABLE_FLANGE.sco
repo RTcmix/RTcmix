@@ -33,7 +33,7 @@ wetdrymix = 0.5
 flangetype = "IIR"
 
 // If table size is too small, you'll hear zipper noise.  (Try 1000 to see.)
-tabsize = 10000
+tabsize = 100000
 waveform = maketable("wave", tabsize, "sine")
 
 maxdelay = 1.0 / cpspch(lowpitch)
