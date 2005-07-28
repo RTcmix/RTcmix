@@ -11,7 +11,10 @@
    If an old-style gen table 1 is present, its values will be multiplied
    by the p3 amplitude multiplier, even if the latter is dynamic.
 
-   The series of random numbers that makes the noise
+   The series of random numbers that makes the noise is affected by any
+   calls to srand given in the script.  If there are no such calls, the
+   random seed is 1.
+
    JGG <johgibso at indiana dot edu>, 24 Dec 2002, rev. 7/9/04
 */
 #include <stdio.h>
