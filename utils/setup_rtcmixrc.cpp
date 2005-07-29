@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include "../src/control/midi/portmidi/pm_common/portmidi.h"
 
+// FIXME no longer necessary?
+#if 0
 // We make our own warn function so that we don't have to pull in more
 // RTcmix code.  This must have the same signature as the real one in
 // message.c.	It doesn't print WARNING ***, though.
@@ -33,7 +35,7 @@ warn(const char *inst_name, const char *format, ...)
 	fprintf(stderr, "\n%s\n\n", buf);
 }
 } // extern "C"
-
+#endif
 
 int chooseAudioDevices()
 {
