@@ -11,6 +11,21 @@ SYSOBJS = $(SRCDIR)/rtcmix/printsf.o $(SRCDIR)/rtcmix/check_byte_order.o \
 PLAY_HDRS = ../src/audio/sndlibsupport.h ../src/audio/AudioDevice.h
 OPTION_O = ../src/rtcmix/Option.o
 LIBCONF = ../src/conf/libconf.a
+
+# MIDI libraries for SETUP program
+PTLIB = ../src/control/midi/portmidi/porttime/libporttime.a
+ifeq ($(ARCH), LINUX)
+	PMLIB = ../src/control/midi/portmidi/pm_linux/libportmidi.a
+	MIDISYSLIB = -lasound
+	ifeq ($(AUDIODRIVER), ALSA)
+		CXXFLAGS += -DALSA
+	endif
+endif
+ifeq ($(ARCH), MACOSX)
+	PMLIB = ../src/control/midi/portmidi/pm_mac/libportmidi.a
+	MIDISYSLIB = -framework CoreFoundation -framework CoreAudio -framework CoreMIDI
+endif
+
 INCLUDES += -I$(AUDIODIR) -I$(SRCDIR)/sndlib -I$(SRCDIR)/rtcmix
 
 all: $(PROGS) head resample
@@ -23,7 +38,8 @@ $(PLAY).o: $(PLAY).cpp $(PLAY_HDRS)
 	$(CXX) $(CXXFLAGS) $(SOUND_DRIVER) -c $< -o $@
 
 $(SETUP): $(SETUP).o $(OPTION_O) $(LIBCONF)
-	$(CXX) $(CXXFLAGS) -o $(SETUP) $(SETUP).o $(OPTION_O) $(LIBCONF)
+	$(CXX) $(CXXFLAGS) -o $(SETUP) $(SETUP).o $(OPTION_O) $(LIBCONF) \
+		$(PMLIB) $(PTLIB) $(MIDISYSLIB)
 
 hist: $(HISTOBJ) $(SYSOBJS)
 	$(CC) $(CFLAGS) -o hist $(HISTOBJ) $(SYSOBJS) $(SNDLIB) -lm
