@@ -1,18 +1,18 @@
-/* RTcmix - Copyright (C) 2004  The RTcmix Development Team
+/* RTcmix - Copyright (C) 2005  The RTcmix Development Team
 	See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
 	the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-/* Write a basic .rtcmixrc file in the user's home directory.	-JGG, 7/1/04 */
+// Write a basic .rtcmixrc file in the user's home directory.
+// -JGG, 7/1/04; rev. for MIDI/audio devices, 7/29/05.
 
 #include <Option.h>
 #include <stdio.h>
-#include <unistd.h>
 #include "../src/control/midi/portmidi/pm_common/portmidi.h"
 
-/* We make our own warn function so that we don't have to pull in more
-	RTcmix code.  This must have the same signature as the real one in
-	message.c.	It doesn't print WARNING ***, though.
-*/
+// We make our own warn function so that we don't have to pull in more
+// RTcmix code.  This must have the same signature as the real one in
+// message.c.	It doesn't print WARNING ***, though.
+
 #include <stdarg.h>
 
 #define BUFSIZE 1024
@@ -35,67 +35,110 @@ warn(const char *inst_name, const char *format, ...)
 } // extern "C"
 
 
-int chooseMIDIDevice()
+int chooseAudioDevices()
+{
+	return 0;
+}
+
+
+#if defined(MACOSX) || defined(ALSA)
+
+void makeMIDIChoice(const PmDeviceInfo *info[], const int numDevices,
+	const bool input)
+{
+	const char *direction = input ? "input" : "output";
+
+	printf("\nHere are the names of MIDI %s devices in your system...\n\n"
+	       "\tID\tName\n"
+	       "----------------------------------------------------------\n",
+	       direction);
+
+	for (int id = 0; id < numDevices; id++) {
+		if (info[id] != NULL) {
+			if ((input && info[id]->input) || (!input && info[id]->output))
+				printf("\t%d\t\"%s\"\n", id, info[id]->name);
+		}
+	}
+	printf("\nEnter the ID number of one of the listed devices...\n");
+	bool trying = true;
+	while (trying) {
+		int chosenID;
+		if (scanf("%d", &chosenID) == 1) {
+			if (chosenID >= 0 && chosenID < numDevices && info[chosenID] != NULL) {
+				if (input && info[chosenID]->input) {
+					Option::midiInDevice(info[chosenID]->name);
+					trying = false;
+				}
+				else if (!input && info[chosenID]->output) {
+					Option::midiOutDevice(info[chosenID]->name);
+					trying = false;
+				}
+			}
+			else
+				printf("The number you typed was not one of the listed ID "
+						 "numbers.  Try again...\n");
+		}
+		else {
+			trying = false;
+		}
+	}
+}
+
+int chooseMIDIDevices()
 {
 	int status = 0;
-#if defined(MACOSX) || defined(ALSA)
 	Pm_Initialize();
 
 	const int numdev = Pm_CountDevices();
+	const PmDeviceInfo *info[numdev];
 
 	bool hasinputdev = false;
+	bool hasoutputdev = false;
 	for (int id = 0; id < numdev; id++) {
-		const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
-		if (info->input) {
-			hasinputdev = true;
-			break;
+		info[id] = Pm_GetDeviceInfo(id);
+		if (info[id] != NULL) {
+			if (info[id]->input)
+				hasinputdev = true;
+			else if (info[id]->output)
+				hasoutputdev = true;
 		}
 	}
-	if (hasinputdev) {
-		printf("\nHere are the names of MIDI input devices in your system...\n\n"
-				 "\tID\tName\n"
-				 "----------------------------------------------------------\n");
-		for (int id = 0; id < numdev; id++) {
-			const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
-			if (info->input)
-				printf("\t%d\t\"%s\"\n", id, info->name);
-		}
-		printf("\nEnter the ID number of one of the listed devices...\n");
-		bool trying = true;
-		while (trying) {
-			int chosenID;
-			if (scanf("%d", &chosenID) == 1) {
-				const PmDeviceInfo *info = Pm_GetDeviceInfo(chosenID);
-				if (info != NULL && info->input) {
-					Option::midiInDevice(info->name);
-					trying = false;
-				}
-				else
-					printf("The number you typed was not one of the listed ID "
-					       "numbers.  Try again...\n");
-			}
-			else {
-				trying = false;
-			}
-		}
-	}
+
+	if (hasinputdev)
+		makeMIDIChoice(info, numdev, true);
 	else
 		printf("NOTE: Your system appears to have no MIDI input devices.\n");
 
-	Pm_Terminate();
-#else // !defined(MACOSX) && !defined(ALSA)
-	printf("NOTE: MIDI not supported on your platform.\n");
+#ifdef NOTYET // XXX we don't support MIDI output yet
+	if (hasoutputdev)
+		makeMIDIChoice(info, numdev, false);
+	else
+		printf("NOTE: Your system appears to have no MIDI output devices.\n");
 #endif
+
+	Pm_Terminate();
 	return status;
 }
+
+#else // !defined(MACOSX) && !defined(ALSA)
+
+int chooseMIDIDevices()
+{
+	printf("NOTE: MIDI not supported on your platform.\n");
+	return 0;
+}
+
+#endif
 
 
 int main()
 {
 	Option::init();
 
-	if (chooseMIDIDevice() != 0)
-		exit(1);
+	if (chooseAudioDevices() != 0)
+		return -1;
+	if (chooseMIDIDevices() != 0)
+		return -1;
 
 	if (Option::writeConfigFile(Option::rcName()) != 0)
 		return -1;
