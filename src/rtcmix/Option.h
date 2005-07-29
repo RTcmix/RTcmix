@@ -189,6 +189,8 @@ public:
 	static void dump();
 
 private:
+	static void reportError(const char *format, const char *msg1, const char *msg2);
+
 	static bool _audio;
 	static bool _play;
 	static bool _record;

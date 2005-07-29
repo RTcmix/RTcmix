@@ -10,7 +10,7 @@
 #include <limits.h>        // PATH_MAX
 #include "Option.h"
 #include <Config.h>
-#include <ugens.h>         // FIXME: pull all this in just for warn()?
+#include <string.h>
 #include <iostream.h>
 
 #define DEVICE_MAX   64
@@ -86,7 +86,7 @@ int Option::readConfigFile(const char *fileName)
 	if (result == kConfigFileMissingErr)
 		return -1;			// user doesn't have an rc file; fail silently
 	if (result != kConfigNoErr) {
-		warn(NULL, "%s \"%s\"", conf.getLastErrorText(), fileName);
+		reportError("%s \"%s\"", conf.getLastErrorText(), fileName);
 		return -1;
 	}
 
@@ -99,70 +99,70 @@ int Option::readConfigFile(const char *fileName)
 	if (result == kConfigNoErr)
 		audio(bval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+		reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	key = kOptionPlay;
 	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
 		play(bval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+		reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	key = kOptionRecord;
 	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
 		record(bval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+		reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	key = kOptionClobber;
 	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
 		clobber(bval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+		reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	key = kOptionPrint;
 	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
 		print(bval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+		reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	key = kOptionReportClipping;
 	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
 		reportClipping(bval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+		reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	key = kOptionCheckPeaks;
 	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
 		checkPeaks(bval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+		reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	key = kOptionExitOnError;
 	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
 		exitOnError(bval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+		reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	key = kOptionAutoLoad;
 	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
 		autoLoad(bval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+		reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	key = kOptionFastUpdate;
 	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
 		fastUpdate(bval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+		reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	// double options .........................................................
 
@@ -173,14 +173,14 @@ int Option::readConfigFile(const char *fileName)
 	if (result == kConfigNoErr)
 		bufferFrames(dval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+		reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	key = kOptionBufferCount;
 	result = conf.getValue(key, dval);
 	if (result == kConfigNoErr)
 		bufferCount((int)dval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+		reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	// string options .........................................................
 
@@ -191,42 +191,42 @@ int Option::readConfigFile(const char *fileName)
 	if (result == kConfigNoErr)
 		device(sval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+		reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	key = kOptionInDevice;
 	result = conf.getValue(key, sval);
 	if (result == kConfigNoErr)
 		inDevice(sval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+		reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	key = kOptionOutDevice;
 	result = conf.getValue(key, sval);
 	if (result == kConfigNoErr)
 		outDevice(sval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+		reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	key = kOptionMidiInDevice;
 	result = conf.getValue(key, sval);
 	if (result == kConfigNoErr)
 		midiInDevice(sval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+		reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	key = kOptionMidiOutDevice;
 	result = conf.getValue(key, sval);
 	if (result == kConfigNoErr)
 		midiOutDevice(sval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+		reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	key = kOptionDSOPath;
 	result = conf.getValue(key, sval);
 	if (result == kConfigNoErr)
 		dsoPath(sval);
 	else if (result != kConfigNoValueForKey)
-		warn(NULL, "%s: %s.\n", conf.getLastErrorText(), key);
+		reportError("%s: %s.", conf.getLastErrorText(), key);
 
 	return 0;
 }
@@ -240,19 +240,20 @@ int Option::readConfigFile(const char *fileName)
 int Option::writeConfigFile(const char *fileName)
 {
 	if (fileName == NULL || fileName[0] == 0) {
-		warn(NULL, "Config file name is NULL or empty.");
+		fprintf(stderr, "Config file name is NULL or empty.\n");
 		return -1;
 	}
 
 	FILE *stream = fopen(fileName, "r");
 	if (stream != NULL || errno != ENOENT) {
-		warn(NULL, "Config file \"%s\" already exists.", fileName);
+		fprintf(stderr, "Config file \"%s\" already exists. Move it out of "
+		                "the way.\n", fileName);
 		return -1;
 	}
 
 	stream = fopen(fileName, "w");
 	if (stream == NULL) {
-		warn(NULL, "Can't open \"%s\" for writing.", fileName);
+		fprintf(stderr, "Can't open \"%s\" for writing.\n", fileName);
 		return -1;
 	}
 
@@ -417,6 +418,13 @@ void Option::dump()
 	cout << kOptionDSOPath << ": " << _dsoPath << endl;
 	cout << kOptionRCName << ": " << _rcName << endl;
 	cout << kOptionHomeDir << ": " << _homeDir << endl;
+}
+
+void Option::reportError(const char *format, const char *msg1, const char *msg2)
+{
+	char buf[1024];
+	snprintf(buf, 1024, format, msg1, msg2);
+	printf("Config file error:  %s\n", buf);
 }
 
 
