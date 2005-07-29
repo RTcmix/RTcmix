@@ -15,9 +15,9 @@ LIBCONF = ../src/conf/libconf.a
 # MIDI libraries for SETUP program
 PTLIB = ../src/control/midi/portmidi/porttime/libporttime.a
 ifeq ($(ARCH), LINUX)
-	PMLIB = ../src/control/midi/portmidi/pm_linux/libportmidi.a
-	MIDISYSLIB = -lasound
 	ifeq ($(AUDIODRIVER), ALSA)
+		PMLIB = ../src/control/midi/portmidi/pm_linux/libportmidi.a
+		MIDISYSLIB = -lasound
 		CXXFLAGS += -DALSA
 	endif
 endif
