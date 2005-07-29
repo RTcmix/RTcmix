@@ -9,33 +9,6 @@
 #include <stdio.h>
 #include "../src/control/midi/portmidi/pm_common/portmidi.h"
 
-// FIXME no longer necessary?
-#if 0
-// We make our own warn function so that we don't have to pull in more
-// RTcmix code.  This must have the same signature as the real one in
-// message.c.	It doesn't print WARNING ***, though.
-
-#include <stdarg.h>
-
-#define BUFSIZE 1024
-
-extern "C" {
-void
-warn(const char *inst_name, const char *format, ...)
-{
-	// ignore inst_name
-
-	char		buf[BUFSIZE];
-	va_list	args;
-
-	va_start(args, format);
-	vsnprintf(buf, BUFSIZE, format, args);
-	va_end(args);
-
-	fprintf(stderr, "\n%s\n\n", buf);
-}
-} // extern "C"
-#endif
 
 int chooseAudioDevices()
 {
@@ -76,12 +49,14 @@ void makeMIDIChoice(const PmDeviceInfo *info[], const int numDevices,
 					trying = false;
 				}
 			}
-			else
+			if (trying)
 				printf("The number you typed was not one of the listed ID "
 						 "numbers.  Try again...\n");
 		}
 		else {
-			trying = false;
+			printf("You must enter a number.  Try again...\n");
+			char str[1024];
+			scanf("%1023s", str);		// swallow last input
 		}
 	}
 }
