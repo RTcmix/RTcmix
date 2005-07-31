@@ -4,7 +4,7 @@
 #
 include ../makefile.conf
 
-DIRS = pod
+DIRS = #pod
 
 all:
 	@for DIR in $(DIRS); \
