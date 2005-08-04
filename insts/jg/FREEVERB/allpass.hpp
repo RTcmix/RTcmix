@@ -6,7 +6,10 @@
 
 #ifndef _allpass_
 #define _allpass_
-#include "denormals.h"
+
+#if defined(i386)
+ #define ANTI_DENORM
+#endif
 
 class fv_allpass
 {
@@ -19,6 +22,7 @@ public:
 			float	getfeedback();
 // private:
 	float	feedback;
+	float	antidenorm;
 	float	*buffer;
 	int		bufsize;
 	int		bufidx;
@@ -33,7 +37,10 @@ inline float fv_allpass::process(float input)
 	float bufout;
 	
 	bufout = buffer[bufidx];
-	undenormalise(bufout);
+#ifdef ANTI_DENORM
+	bufout += antidenorm;
+	antidenorm = -antidenorm;
+#endif
 	
 	output = -input + bufout;
 	buffer[bufidx] = input + (bufout*feedback);

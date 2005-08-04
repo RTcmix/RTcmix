@@ -6,10 +6,8 @@
 
 #include "comb.hpp"
 
-fv_comb::fv_comb()
+fv_comb::fv_comb() : filterstore(0), antidenorm(1e-18f), bufidx(0)
 {
-	filterstore = 0;
-	bufidx = 0;
 }
 
 void fv_comb::setbuffer(float *buf, int size) 

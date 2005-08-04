@@ -6,9 +6,8 @@
 
 #include "allpass.hpp"
 
-fv_allpass::fv_allpass()
+fv_allpass::fv_allpass() : antidenorm(1e-18f), bufidx(0)
 {
-	bufidx = 0;
 }
 
 void fv_allpass::setbuffer(float *buf, int size) 

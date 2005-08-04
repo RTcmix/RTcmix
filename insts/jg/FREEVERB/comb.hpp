@@ -7,7 +7,9 @@
 #ifndef _comb_
 #define _comb_
 
-#include "denormals.h"
+#if defined(i386)
+ #define ANTI_DENORM
+#endif
 
 class fv_comb
 {
@@ -25,6 +27,7 @@ private:
 	float	filterstore;
 	float	damp1;
 	float	damp2;
+	float	antidenorm;
 	float	*buffer;
 	int		bufsize;
 	int		bufidx;
@@ -38,10 +41,15 @@ inline float fv_comb::process(float input)
 	float output;
 
 	output = buffer[bufidx];
-	undenormalise(output);
+#ifdef ANTI_DENORM
+	output += antidenorm;
+#endif
 
 	filterstore = (output*damp2) + (filterstore*damp1);
-	undenormalise(filterstore);
+#ifdef ANTI_DENORM
+	filterstore += antidenorm;
+	antidenorm = -antidenorm;
+#endif
 
 	buffer[bufidx] = input + (filterstore*feedback);
 
