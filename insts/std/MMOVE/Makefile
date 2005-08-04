@@ -19,7 +19,7 @@ endif
 CXXFLAGS += -I. -I$(MOVEDIR) $(MINE)
 CFLAGS += -I. -I$(MOVEDIR) $(MINE)
 
-PROGS = MPLACE libMPLACE.so MMOVE libMMOVE.so libDMOVE.so
+PROGS = MPLACE libMPLACE.so MMOVE libMMOVE.so DMOVE libDMOVE.so
 
 .PHONY: all standalone install dso_install standalone_install \
 uninstall dso_uninstall standalone_uninstall clean cleanall
