@@ -47,6 +47,7 @@ SPECTACLE2_BASE::SPECTACLE2_BASE() :
 	_anal_window(NULL), _synth_window(NULL),
 	_input(NULL), _output(NULL),
 	_inbuf(NULL), _outbuf(NULL),
+	_binmaptable(NULL),
 	_fft(NULL),
 	_bucket(NULL),
 	_dry_delay(NULL)
