@@ -27,8 +27,13 @@ Thanks to Julius O. Smith for his resample program.
 Thanks to Laurent de Soras <http://ldesoras.free.fr> for his
 FFTReal class, which is our default FFT for the Offt object.
 
-Thanks to Roger Dannenberg and others for PortMidi, which we
+Thanks to Roger Dannenberg and others for PortMIDI, which we
 use in the MIDI control plugin.
+
+Thanks to Perry Cook and Gary Scavone for the STK library
+that is used by the instruments in the insts/stk directory.
+Thanks also to George Essl for the BandedWG object used by 
+the MBANDEDWG instrument.
 
 Thanks to Juha Nieminen <warp at iki dot fi> and Joel Yliluoma for
 their FunctionParser library.  (More at: http://iki.fi/warp/FunctionParser)
