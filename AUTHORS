@@ -31,9 +31,10 @@ Thanks to Roger Dannenberg and others for PortMIDI, which we
 use in the MIDI control plugin.
 
 Thanks to Perry Cook and Gary Scavone for the STK library
-that is used by the instruments in the insts/stk directory.
-Thanks also to George Essl for the BandedWG object used by 
-the MBANDEDWG instrument.
+that is used by the instruments in the insts/stk directory,
+and by a few instruments in the insts/jg directory.  Thanks
+also to George Essl for the BandedWG object used by the
+MBANDEDWG instrument.
 
 Thanks to Juha Nieminen <warp at iki dot fi> and Joel Yliluoma for
 their FunctionParser library.  (More at: http://iki.fi/warp/FunctionParser)
