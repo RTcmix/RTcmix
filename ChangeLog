@@ -1,6 +1,20 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+
+2005-08-14  John Gibson <johgibso-at-indiana.edu>
+
+	* New "linestep" table-creation function, which lets you create
+	  flat line segments using any number of <time, value> pairs.
+
+	* New modtable variant, "concat", which returns a larger table
+	  formed by concatenating two tables.
+
+	* New Ougens objects: Obalance, Orms, Odistort, Ostrum.
+
+
+**** Released RTcmix-4.0, Sunday, August 14, 2005 ****
+
 2005-06-15  John Gibson <johgibso-at-indiana.edu>
 
 	* New instrument: WAVY, a dual-oscillator WAVETABLE variant.  Lets you
