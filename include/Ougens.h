@@ -5,12 +5,14 @@
 #ifndef _OUGENS_H_
 #define _OUGENS_H_ 1
 
+#include "../genlib/Obalance.h"
 #include "../genlib/Obucket.h"
 #include "../genlib/Ocomb.h"
 #include "../genlib/Ocombi.h"
 #include "../genlib/Odcblock.h"
 #include "../genlib/Odelay.h"
 #include "../genlib/Odelayi.h"
+#include "../genlib/Odistort.h"
 #include "../genlib/Oequalizer.h"
 #include "../genlib/Offt.h"
 #include "../genlib/Oonepole.h"
@@ -18,6 +20,8 @@
 #include "../genlib/Ooscili.h"
 #include "../genlib/Orand.h"
 #include "../genlib/Oreson.h"
+#include "../genlib/Orms.h"
 #include "../genlib/Ortgetin.h"
+#include "../genlib/Ostrum.h"
 
 #endif // _OUGENS_H_

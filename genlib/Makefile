@@ -95,12 +95,14 @@ tableset.o \
 wshape.o
 
 OCFILES = \
+Obalance.cpp \
 Obucket.cpp \
 Ocomb.cpp \
 Ocombi.cpp \
 Odcblock.cpp \
 Odelay.cpp \
 Odelayi.cpp \
+Odistort.cpp \
 Oequalizer.cpp \
 Offt.cpp \
 Oonepole.cpp \
@@ -108,15 +110,19 @@ Ooscil.cpp \
 Ooscili.cpp \
 Oreson.cpp \
 Orand.cpp \
-Ortgetin.cpp
+Orms.cpp \
+Ortgetin.cpp \
+Ostrum.cpp
 
 OOBJECTS = \
+Obalance.o \
 Obucket.o \
 Ocomb.o \
 Ocombi.o \
 Odcblock.o \
 Odelay.o \
 Odelayi.o \
+Odistort.o \
 Oequalizer.o \
 Offt.o \
 Oonepole.o \
@@ -124,7 +130,9 @@ Ooscil.o \
 Ooscili.o \
 Orand.o \
 Oreson.o \
-Ortgetin.o
+Orms.o \
+Ortgetin.o \
+Ostrum.o
 
 ifeq ($(FFTW_SUPPORT), FALSE)
 	OCFILES += FFTReal.cpp
