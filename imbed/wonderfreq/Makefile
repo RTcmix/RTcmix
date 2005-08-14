@@ -1,7 +1,5 @@
 include ../package.conf
 
-INCLUDES += -I../../../src/rtcmix	# for globals.h
-
 OBJS = wonderfreq.o
 IMBCMIXOBJS += $(PROFILE_O)
 PROGS = wonderfreq
