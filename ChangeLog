@@ -8,6 +8,8 @@ fixes that we don't bother putting here.
 	  in many instances the older STRUM family of instruments.  Consider
 	  these as experimental for now.
 
+	* New instrument: VOCODE3
+
 	* New "linestep" table-creation function, which lets you create
 	  flat line segments using any number of <time, value> pairs.
 
