@@ -54,6 +54,7 @@ typedef enum {
 	ChebyTable = 17,
 	RandomTable = 20,
 	WindowTable = 25,
+	LinestepTable = 26,
 	EndTable
 } TableKind;
 
@@ -84,6 +85,7 @@ static char *_table_name[] = {
 	NULL,
 	"line",		// 24
 	"window",
+	"linestep",
 	NULL
 };
 
@@ -1421,6 +1423,53 @@ _window_table(const Arg args[], const int nargs, double *array, const int len)
 }
 
 
+// --------------------------------------------------------- _linestep_table ---
+// Create a function table comprising flat line segments, specified by
+// using any number of <time, value> pairs.  The table is not normalized.
+
+static int
+_linestep_table(const Arg args[], const int nargs, double *array, const int len)
+{
+	if (len < 2)
+		return die("maketable (linestep)", "Table length must be at least 2.");
+	if (!args_have_same_type(args, nargs, DoubleType))
+		return die("maketable (linestep)", "<time, value> pairs must be numbers.");
+	if ((nargs % 2) != 0)
+		return die("maketable (linestep)", "Incomplete <time, value> pair.");
+
+	double endtime = (double) args[nargs - 2];
+	double starttime = (double) args[0];
+	if (endtime - starttime <= 0.0)
+		return die("maketable (linestep)", "Times must be in ascending order.");
+	double scaler = (double) (len - 1) / (endtime - starttime);
+	double nextval = (double) args[1];
+	double thistime = starttime;
+	int i = 0;
+	for (int k = 1; k < nargs; k += 2) {
+		double nexttime;
+		double thisval = nextval;
+		if (k < nargs - 1) {
+			nexttime = (double) args[k + 1] - starttime;
+			if (nexttime - thistime < 0.0)	// okay for them to be the same
+				return die("maketable (linestep)", "Times must be in ascending order.");
+			nextval = (double) args[k + 2];
+		}
+		else
+			nextval = nexttime = 0.0;			// don't read off end of args array
+		int j = i + 1;
+		i = (int) ((nexttime * scaler) + 0.5);
+		//printf("j=%d, i=%d\n", j, i);
+		for (int l = j; l <= i; l++) {
+			if (l <= len)
+				array[l - 1] = thisval;
+		}
+	}
+	array[len - 1] = (double) args[nargs - 1];
+
+	return 0;
+}
+
+
 // --------------------------------------------------------- _dispatch_table ---
 
 static TableKind
@@ -1503,6 +1552,9 @@ _dispatch_table(const Arg args[], const int nargs, const int startarg,
 		case WindowTable:
 			status = _window_table(&args[startarg], nargs - startarg,
 																	*array, *len);
+			break;
+		case LinestepTable:
+			status = _linestep_table(&args[startarg], nargs - startarg, *array, *len);
 			break;
 		default:
 			return die("maketable", "Invalid table type.");
