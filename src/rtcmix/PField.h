@@ -292,6 +292,24 @@ private:
 	PField *_widthPField;
 };
 
+// Class for concatenating two tables.
+
+class ConcatTablePField : public PFieldWrapper {
+public:
+	ConcatTablePField(PField *innerPField, PField *table2);
+	virtual double	doubleValue(double didx) const;
+	virtual double	doubleValue(int idx) const;
+	virtual int	values() const { return _values; }
+protected:
+	virtual ~ConcatTablePField();
+private:
+	PField *_table2;
+	int _values;
+	double _breakpct;
+	double _scale1;
+	double _scale2;
+};
+
 // Class for reverse-reading table.
 
 class ReversePField : public PFieldWrapper {

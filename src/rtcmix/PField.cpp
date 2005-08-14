@@ -590,6 +590,45 @@ double DrawTablePField::doubleValue(int idx) const
 	return doubleValue(percent);
 }
 
+// ConcatTablePField
+
+ConcatTablePField::ConcatTablePField(PField *innerPField, PField *table2)
+	: PFieldWrapper(innerPField), _table2(table2)
+{
+	_table2->ref();
+	const int len1 = field()->values();
+	const int len2 = _table2->values();
+	_values = len1 + len2;
+	_breakpct = double(len1) / _values;
+	_scale1 = 1.0 / _breakpct;
+	_scale2 = 1.0 / (1.0 - _breakpct);
+}
+
+ConcatTablePField::~ConcatTablePField()
+{
+	_table2->unref();
+}
+
+double ConcatTablePField::doubleValue(double didx) const
+{
+	if (didx > 1.0)
+		didx = 1.0;
+	if (didx < _breakpct)
+		return field()->doubleValue(didx * _scale1);
+	else
+		return _table2->doubleValue((didx - _breakpct) * _scale2);
+}
+
+double ConcatTablePField::doubleValue(int idx) const
+{
+	const int len1 = field()->values();
+	if (idx < len1)
+		return field()->doubleValue(idx);
+	if (idx >= _values)
+		idx = _values - 1;
+	return _table2->doubleValue(idx - len1);
+}
+
 // ReversePField
 
 ReversePField::ReversePField(PField *innerPField) : PFieldWrapper(innerPField)
