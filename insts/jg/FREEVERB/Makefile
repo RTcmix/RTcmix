@@ -4,7 +4,7 @@ NAME = FREEVERB
 
 CURDIR = $(CMIXDIR)/insts/jg/$(NAME)
 OBJS = $(NAME).o allpass.o comb.o delay.o revmodel.o
-HDRS = allpass.hpp comb.hpp delay.hpp denormals.h revmodel.hpp tuning.h
+HDRS = allpass.hpp comb.hpp delay.hpp revmodel.hpp tuning.h
 CMIXOBJS += $(PROFILE_O)
 CXXFLAGS += -I. -Wall 
 PROGS = lib$(NAME).so $(NAME)
