@@ -13,6 +13,7 @@
 
 // Functions for modifying table PFields.   -JGG, 4/8/05
 
+#define CONCAT_USAGE "table = modtable(table, \"concat\", table2)"
 #define DRAW_USAGE "table = modtable(table, \"draw\", [\"literal\",] index, value[, width])"
 #define NORMALIZE_USAGE "table = modtable(table, \"normalize\" [, peak])"
 #define REVERSE_USAGE "table = modtable(table, \"reverse\")"
@@ -46,6 +47,8 @@ static PField *_modtable_usage(const char *msg)
 static Handle _modtable_usage()
 {
 	die("modtable",
+		"\n   usage: " CONCAT_USAGE
+		"\nOR"
 		"\n   usage: " DRAW_USAGE
 		"\nOR"
 		"\n   usage: " NORMALIZE_USAGE
@@ -60,6 +63,19 @@ static Handle _modtable_usage()
 
 // =============================================================================
 // Set up the various table modifications.
+
+// Concatenate the two tables.
+
+static PField *
+_concat_table(PField *intable, const Arg args[], const int nargs)
+{
+	if (nargs < 1)
+		return _modtable_usage(CONCAT_USAGE);
+	PField *table2 = (PField *) args[0];
+	if (table2 == NULL || !is_table(table2))
+		return _modtable_usage(CONCAT_USAGE);
+	return new ConcatTablePField(intable, table2);
+}
 
 
 // NOTE NOTE NOTE - This modtable variant is an experimental feature!
@@ -187,7 +203,9 @@ Handle modtable(const Arg args[], const int nargs)
 
 	PField *outtable = NULL;
 	if (args[1].isType(StringType)) {
-		if (args[1] == "draw")
+		if (args[1] == "concat")
+			outtable = _concat_table(intable, &args[2], nargs - 2);
+		else if (args[1] == "draw")
 			outtable = _draw_table(intable, &args[2], nargs - 2);
 		else if (args[1] == "normalize")
 			outtable = _normalize_table(intable, &args[2], nargs - 2);
