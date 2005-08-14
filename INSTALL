@@ -11,11 +11,10 @@ as for help.
       tar xfz RTcmix-[version].tar.gz
       (or: gunzip -c RTcmix-[version].tar.gz | tar xf - )
 
-2. If you downloaded the "cadillac version," which contains the optional
-   instrument packages, skip this step.
-
-   Download at least the std and jg packages, and unpack them into the
-   "insts" directory of your RTcmix.
+2. Look in RTcmix-[version]/insts.  If it contains "base", "std", "jg", "stk"
+   and "vccm" directories, then you can skip this step.  If you have only
+   "base", then you need to download the instrument packages named above.
+   Unpack them into the "insts" directory of your RTcmix.
 
 3. cd into the top level of the RTcmix directory, and run the configure script:
 
