@@ -905,11 +905,13 @@ get_current_header_comment_alloc()
 
    /* offset of first comment byte (from start of header) */
    comment_start = mus_header_comment_start();
-   assert(comment_start >= 0 && comment_start < 3000);  /* see if plausible */
+   // Not a valid assumption, since Peak writes comments after sound data. -JGG
+   //assert(comment_start >= 0 && comment_start < 3000);  /* see if plausible */
 
    /* offset of last comment byte (from start of header) */
    comment_end = mus_header_comment_end();
-   assert(comment_end >= 0 && comment_end < 3000);
+   // Not a valid assumption, since Peak writes comments after sound data. -JGG
+   //assert(comment_end >= 0 && comment_end < 3000);
 
    /* total bytes available for comment in header */
    len = comment_end - comment_start;
@@ -977,7 +979,8 @@ get_current_header_raw_comment(int fd, char **rawcomment)
    *rawcomment = NULL;
 
    start = mus_header_comment_start();
-   assert(start >= 0 && start < 3000);
+   // Not a valid assumption, since Peak writes comments after sound data. -JGG
+   //assert(start >= 0 && start < 3000);
 
    end = mus_header_comment_end();
    assert(end >= start);
