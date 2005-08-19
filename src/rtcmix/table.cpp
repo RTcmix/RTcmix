@@ -1571,6 +1571,8 @@ _dispatch_table(const Arg args[], const int nargs, const int startarg,
 extern "C" {
 	Handle maketable(const Arg args[], const int nargs);
 	double tablelen(const Arg args[], const int nargs);
+	double tablemin(const Arg args[], const int nargs);
+	double tablemax(const Arg args[], const int nargs);
 	Handle copytable(const Arg args[], const int nargs);
 	double samptable(const Arg args[], const int nargs);
 	double dumptable(const Arg args[], const int nargs);
@@ -1672,21 +1674,67 @@ maketable(const Arg args[], const int nargs)
 
 
 // ---------------------------------------------------------------- tablelen ---
+// length = tablelen(table_handle)
+
 double
 tablelen(const Arg args[], const int nargs)
 {
-	double len;
-
 	if (nargs != 1)
 		return die("tablelen", "Takes only one argument: a valid table handle.");
-	if (!args[0].isType(HandleType))
+	PField *pf = args[0];
+	if (pf == NULL)
 		return die("tablelen", "Argument must be a valid table handle.");
-
-	TablePField *table = _getTablePField(&args[0]);
+	const double *table = (double *) *pf;
 	if (table == NULL)
 		return die("tablelen", "Argument must be a valid table handle.");
 
-	return (double) table->values();
+	return (double) pf->values();
+}
+
+
+// ---------------------------------------------------------------- tablemin ---
+// min = tablemin(table_handle)
+
+double
+tablemin(const Arg args[], const int nargs)
+{
+	if (nargs != 1)
+		return die("tablemin", "Takes only one argument: a valid table handle.");
+	PField *pf = args[0];
+	if (pf == NULL)
+		return die("tablemin", "Argument must be a valid table handle.");
+	const double *table = (double *) *pf;
+	if (table == NULL)
+		return die("tablemin", "Argument must be a valid table handle.");
+	const int len = pf->values();
+
+	double min = 0.0, max = 0.0;
+	get_table_bounds(table, len, min, max);
+
+	return min;
+}
+
+
+// ---------------------------------------------------------------- tablemax ---
+// max = tablemax(table_handle)
+
+double
+tablemax(const Arg args[], const int nargs)
+{
+	if (nargs != 1)
+		return die("tablemax", "Takes only one argument: a valid table handle.");
+	PField *pf = args[0];
+	if (pf == NULL)
+		return die("tablemax", "Argument must be a valid table handle.");
+	const double *table = (double *) *pf;
+	if (table == NULL)
+		return die("tablemax", "Argument must be a valid table handle.");
+	const int len = pf->values();
+
+	double min = 0.0, max = 0.0;
+	get_table_bounds(table, len, min, max);
+
+	return max;
 }
 
 
