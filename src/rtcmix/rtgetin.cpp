@@ -59,6 +59,7 @@
 */
 #define IGNORE_BUS_COUNT_FOR_FILE_INPUT
 
+static inline long lmin(long a, long b) { return a < b ? a : b; }
 
 
 /* ------------------------------------------------------------ rtinrepos --- */
@@ -116,12 +117,8 @@ Instrument::rtinrepos(Instrument *inst, int frames, int whence)
 off_t 
 RTcmix::seekInputFile(int fdIndex, int frames, int chans, int whence)
 {
-   int   bytes_per_samp;
-
-   if (inputFileTable[fdIndex].is_float_format)
-      bytes_per_samp = sizeof(float);
-   else
-      bytes_per_samp = 2;
+   const int format = inputFileTable[fdIndex].data_format;
+   const int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(format);
 
    off_t bytes = frames * chans * bytes_per_samp;
 
@@ -208,6 +205,8 @@ read_float_samps(
       int         fd,               /* file descriptor for open input file */
       int         data_format,      /* sndlib data format of input file */
       int         file_chans,       /* total chans in input file */
+      long        cur_offset,       /* current file position before read */
+      long        endbyte,          /* first byte following last file sample */
       BufPtr      dest,             /* interleaved buffer from inst */
       int         dest_chans,       /* number of chans interleaved */
       int         dest_frames,      /* frames in interleaved buffer */
@@ -216,12 +215,9 @@ read_float_samps(
       short       src_chans         /* number of in-bus chans to copy */
       )
 {
-   int            seeked, src_samps, swap, bytes_per_samp;
-   ssize_t        bytes_to_read, bytes_read;
-   char           *bufp;
-   static float   *fbuf = NULL;
+   static float *fbuf = NULL;
    
-   bytes_per_samp = sizeof(float);
+   const int bytes_per_samp = sizeof(float);
 
    if (fbuf == NULL) {     /* 1st time, so allocate interleaved float buffer */
       fbuf = (float *) malloc((size_t) RTcmix::bufsamps() * MAXCHANS * bytes_per_samp);
@@ -230,12 +226,16 @@ read_float_samps(
          exit(1);
       }
    }
-   bufp = (char *) fbuf;
+   char *bufp = (char *) fbuf;
 
-   bytes_to_read = dest_frames * file_chans * bytes_per_samp;
+   const int bytes_requested = dest_frames * file_chans * bytes_per_samp;
+   const long bytes_remaining = endbyte - cur_offset;
+   const int extra_bytes = (bytes_requested > bytes_remaining)
+                           ? bytes_requested - bytes_remaining : 0;
+   ssize_t bytes_to_read = lmin(bytes_remaining, bytes_requested);
 
    while (bytes_to_read > 0) {
-      bytes_read = read(fd, bufp, bytes_to_read);
+      ssize_t bytes_read = read(fd, bufp, bytes_to_read);
       if (bytes_read == -1) {
          perror("read_float_samps (read)");
          exit(1);
@@ -250,6 +250,7 @@ read_float_samps(
    /* If we reached EOF, zero out remaining part of buffer that we
       expected to fill.
    */
+   bytes_to_read += extra_bytes;
    while (bytes_to_read > 0) {
       (* (float *) bufp) = 0.0;
       bufp += bytes_per_samp;
@@ -258,13 +259,13 @@ read_float_samps(
 
    /* Copy interleaved file buffer to dest buffer, with bus mapping. */
 
-   src_samps = dest_frames * file_chans;
+   const int src_samps = dest_frames * file_chans;
 
    for (int n = 0; n < dest_chans; n++) {
 #ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT
-      int chan = n;
+      const int chan = n;
 #else
-      int chan = src_chan_list? src_chan_list[n] : n;
+      const int chan = src_chan_list ? src_chan_list[n] : n;
 #endif
       int j = n;
       for (int i = chan; i < src_samps; i += file_chans, j += dest_chans)
@@ -272,9 +273,9 @@ read_float_samps(
    }
 
 #if MUS_LITTLE_ENDIAN
-   swap = IS_BIG_ENDIAN_FORMAT(data_format);
+   const bool swap = IS_BIG_ENDIAN_FORMAT(data_format);
 #else
-   swap = IS_LITTLE_ENDIAN_FORMAT(data_format);
+   const bool swap = IS_LITTLE_ENDIAN_FORMAT(data_format);
 #endif
    if (swap) {
       for (int i = 0; i < src_samps; i++)
@@ -291,6 +292,8 @@ read_24bit_samps(
       int         fd,               /* file descriptor for open input file */
       int         data_format,      /* sndlib data format of input file */
       int         file_chans,       /* total chans in input file */
+      long        cur_offset,       /* current file position before read */
+      long        endbyte,          /* first byte following last file sample */
       BufPtr      dest,             /* interleaved buffer from inst */
       int         dest_chans,       /* number of chans interleaved */
       int         dest_frames,      /* frames in interleaved buffer */
@@ -299,12 +302,9 @@ read_24bit_samps(
       short       src_chans         /* number of in-bus chans to copy */
       )
 {
-   int            seeked, src_samps, swap, bytes_per_samp;
-   ssize_t        bytes_to_read, bytes_read;
-   unsigned char  *bufp;
    static unsigned char *cbuf = NULL;
    
-   bytes_per_samp = 3;         /* 24-bit int */
+   const int bytes_per_samp = 3;         /* 24-bit int */
 
    if (cbuf == NULL) {     /* 1st time, so allocate interleaved char buffer */
       size_t nbytes = RTcmix::bufsamps() * MAXCHANS * bytes_per_samp;
@@ -314,12 +314,16 @@ read_24bit_samps(
          exit(1);
       }
    }
-   bufp = cbuf;
+   unsigned char *bufp = cbuf;
 
-   bytes_to_read = dest_frames * file_chans * bytes_per_samp;
+   const int bytes_requested = dest_frames * file_chans * bytes_per_samp;
+   const long bytes_remaining = endbyte - cur_offset;
+   const int extra_bytes = (bytes_requested > bytes_remaining)
+                           ? bytes_requested - bytes_remaining : 0;
+   ssize_t bytes_to_read = lmin(bytes_remaining, bytes_requested);
 
    while (bytes_to_read > 0) {
-      bytes_read = read(fd, bufp, bytes_to_read);
+      ssize_t bytes_read = read(fd, bufp, bytes_to_read);
       if (bytes_read == -1) {
          perror("read_24bit_samps (read)");
          exit(1);
@@ -334,6 +338,7 @@ read_24bit_samps(
    /* If we reached EOF, zero out remaining part of buffer that we
       expected to fill.
    */
+   bytes_to_read += extra_bytes;
    while (bytes_to_read > 0) {
       *bufp++ = 0;
       bytes_to_read--;
@@ -341,17 +346,17 @@ read_24bit_samps(
 
    /* Copy interleaved file buffer to dest buffer, with bus mapping. */
 
-   src_samps = dest_frames * file_chans;
+   const int src_samps = dest_frames * file_chans;
 
    for (int n = 0; n < dest_chans; n++) {
 #ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT
-      int chan = n;
+      const int chan = n;
 #else
-      int chan = src_chan_list? src_chan_list[n] : n;
+      const int chan = src_chan_list ? src_chan_list[n] : n;
 #endif
       int i = chan * bytes_per_samp;
-      int incr = file_chans * bytes_per_samp;
-      int src_bytes = src_samps * bytes_per_samp;
+      const int incr = file_chans * bytes_per_samp;
+      const int src_bytes = src_samps * bytes_per_samp;
       if (data_format == MUS_L24INT) {
          for (int j = n; i < src_bytes; i += incr, j += dest_chans) {
             int samp = (int) (((cbuf[i + 2] << 24)
@@ -380,6 +385,8 @@ read_short_samps(
       int         fd,               /* file descriptor for open input file */
       int         data_format,      /* sndlib data format of input file */
       int         file_chans,       /* total chans in input file */
+      long        cur_offset,       /* current file position before read */
+      long        endbyte,          /* first byte following last file sample */
       BufPtr      dest,             /* interleaved buffer from inst */
       int         dest_chans,       /* number of chans interleaved */
       int         dest_frames,      /* frames in interleaved buffer */
@@ -388,12 +395,9 @@ read_short_samps(
       short       src_chans         /* number of in-bus chans to copy */
       )
 {
-   int            seeked, src_samps, swap, bytes_per_samp;
-   ssize_t        bytes_to_read, bytes_read;
-   char           *bufp;
-   static short   *sbuf = NULL;
+   static short *sbuf = NULL;
    
-   bytes_per_samp = 2;         /* short int */
+   const int bytes_per_samp = 2;         /* short int */
 
    if (sbuf == NULL) {     /* 1st time, so allocate interleaved short buffer */
       sbuf = (short *) malloc((size_t) RTcmix::bufsamps() * MAXCHANS * bytes_per_samp);
@@ -402,12 +406,16 @@ read_short_samps(
          exit(1);
       }
    }
-   bufp = (char *) sbuf;
+   char *bufp = (char *) sbuf;
 
-   bytes_to_read = dest_frames * file_chans * bytes_per_samp;
+   const int bytes_requested = dest_frames * file_chans * bytes_per_samp;
+   const long bytes_remaining = endbyte - cur_offset;
+   const int extra_bytes = (bytes_requested > bytes_remaining)
+                           ? bytes_requested - bytes_remaining : 0;
+   ssize_t bytes_to_read = lmin(bytes_remaining, bytes_requested);
 
    while (bytes_to_read > 0) {
-      bytes_read = read(fd, bufp, bytes_to_read);
+      ssize_t bytes_read = read(fd, bufp, bytes_to_read);
       if (bytes_read == -1) {
          perror("read_short_samps (read)");
          exit(1);
@@ -422,6 +430,7 @@ read_short_samps(
    /* If we reached EOF, zero out remaining part of buffer that we
       expected to fill.
    */
+   bytes_to_read += extra_bytes;
    while (bytes_to_read > 0) {
       (* (short *) bufp) = 0;
       bufp += bytes_per_samp;
@@ -431,18 +440,18 @@ read_short_samps(
    /* Copy interleaved file buffer to dest buffer, with bus mapping. */
 
 #if MUS_LITTLE_ENDIAN
-   swap = IS_BIG_ENDIAN_FORMAT(data_format);
+   const bool swap = IS_BIG_ENDIAN_FORMAT(data_format);
 #else
-   swap = IS_LITTLE_ENDIAN_FORMAT(data_format);
+   const bool swap = IS_LITTLE_ENDIAN_FORMAT(data_format);
 #endif
 
-   src_samps = dest_frames * file_chans;
+   const int src_samps = dest_frames * file_chans;
 
    for (int n = 0; n < dest_chans; n++) {
 #ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT
-      int chan = n;
+      const int chan = n;
 #else
-      int chan = src_chan_list? src_chan_list[n] : n;
+      const int chan = src_chan_list ? src_chan_list[n] : n;
 #endif
       if (swap) {
          int j = n;
@@ -463,7 +472,8 @@ read_short_samps(
 
 
 /* ----------------------------------------------------------- read_samps --- */
-/* Currently used only by objlib/SoundIn.C. */
+/* Formerly used only by objlib/SoundIn.C. */
+#ifdef NOMORE
 int
 read_samps(
       int         fd,               /* file descriptor for open input file */
@@ -497,6 +507,7 @@ read_samps(
 
    return status;
 }
+#endif
 
 
 /* ---------------------------RTcmix::readFromInputFile [was get_file_in ]--- */
@@ -521,6 +532,7 @@ RTcmix::readFromInputFile(
    const int file_chans = inputFileTable[fdIndex].chans;
    const int data_format = inputFileTable[fdIndex].data_format;
    const int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(data_format);
+   const int endbyte = inputFileTable[fdIndex].endbyte;
 
    assert(file_chans <= MAXCHANS);
    assert(file_chans >= dest_chans);
@@ -532,16 +544,19 @@ RTcmix::readFromInputFile(
 
    if (inputFileTable[fdIndex].is_float_format) {
       status = ::read_float_samps(fd, data_format, file_chans,
+                                *pFileOffset, endbyte,
                                 dest, dest_chans, dest_frames,
                                 src_chan_list, src_chans);
    }
    else if (IS_24BIT_FORMAT(data_format)) {
       status = ::read_24bit_samps(fd, data_format, file_chans,
+                                *pFileOffset, endbyte,
                                 dest, dest_chans, dest_frames,
                                 src_chan_list, src_chans);
    }
    else {
       status = ::read_short_samps(fd, data_format, file_chans,
+                                *pFileOffset, endbyte,
                                 dest, dest_chans, dest_frames,
                                 src_chan_list, src_chans);
    }

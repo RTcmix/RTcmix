@@ -25,6 +25,7 @@ typedef struct inputdesc {
    short    data_format;       /* e.g., snd_16_linear (in sndlib.h) */
    short    is_float_format;   /* true if data format is 32-bit float */
    int      data_location;     /* offset of sound data start in file */
+   long     endbyte;           /* index of byte following last sample */
    float    srate;
    short    chans;
    double   dur;

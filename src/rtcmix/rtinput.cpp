@@ -150,7 +150,6 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	short          busindex, buslist[MAXBUS];
 	BusType        type;
 #endif /* INPUT_BUS_SUPPORT */
-	long           nsamps;
 	double         srate, dur;
 	char           *sfname, *str;
 	AudioPortType  port_type = MIC;
@@ -255,6 +254,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	}
 #define NEW_CODE
 	if (!is_open) {			/* if not, open input audio device or file. */
+		long nsamps = 0;
 		if (audio_in) {
 #ifdef NEW_CODE
 			if (rtsetparams_called) {
@@ -364,6 +364,8 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 				inputFileTable[i].data_format = data_format;
 				inputFileTable[i].is_float_format = IS_FLOAT_FORMAT(data_format);
 				inputFileTable[i].data_location = data_location;
+            int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(data_format);
+				inputFileTable[i].endbyte = data_location + (nsamps * bytes_per_samp);
 				inputFileTable[i].srate = (float) srate;
 				inputFileTable[i].chans = nchans;
 				inputFileTable[i].dur = dur;
@@ -411,6 +413,7 @@ RTcmix::releaseInput(int fdIndex)
          inputFileTable[fdIndex].data_format = MUS_UNSUPPORTED;
          inputFileTable[fdIndex].is_float_format = 0;
          inputFileTable[fdIndex].data_location = 0;
+         inputFileTable[fdIndex].endbyte = 0;
          inputFileTable[fdIndex].srate = 0.0;
          inputFileTable[fdIndex].chans = 0;
          inputFileTable[fdIndex].dur = 0.0;
