@@ -4,6 +4,10 @@ fixes that we don't bother putting here.
 
 2005-08-19  John Gibson <johgibso-at-indiana.edu>
 
+	* Fixed a problem reading files written by Peak (and any other
+	  program that writes header data after the sound data chunk of
+	  an AIFF or WAV file).
+
 	* New tablemin and tablemax functions, which return the
 	  min or max value of a table passed to them.
 
