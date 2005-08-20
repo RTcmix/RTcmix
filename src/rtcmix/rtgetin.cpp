@@ -532,7 +532,7 @@ RTcmix::readFromInputFile(
    const int file_chans = inputFileTable[fdIndex].chans;
    const int data_format = inputFileTable[fdIndex].data_format;
    const int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(data_format);
-   const int endbyte = inputFileTable[fdIndex].endbyte;
+   const long endbyte = inputFileTable[fdIndex].endbyte;
 
    assert(file_chans <= MAXCHANS);
    assert(file_chans >= dest_chans);
