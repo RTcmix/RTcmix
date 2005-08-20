@@ -245,6 +245,8 @@ main(int argc, char *argv[])
          }
 
          /* update header for bytes of sound data written (even for infd) */
+// FIXME: This is wrong for files that have header chunks following the
+// sound data chunk (SSND), such as those written by the Peak program.
          len = lseek(tmpfd, 0, SEEK_END);
          if (len == -1) {
             perror("sndpeak: lseek");

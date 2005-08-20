@@ -106,6 +106,8 @@ main(int argc, char *argv[])
          perror("lseek");
          exit(1);
       }
+// FIXME: This is wrong for files that have header chunks following the
+// sound data chunk (SSND), such as those written by the Peak program.
       sound_bytes = true_file_length - data_location;
 
       result = sndlib_set_header_data_size(fd, header_type, sound_bytes);
