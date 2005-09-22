@@ -6,6 +6,8 @@
 #include "Ostrum.h"
 #include <math.h>
 
+const float Ostrum::kMinFreq = 20.0f;
+
 // NB: Comments and variable names derived from Charlie's C strum code,
 // to make comparisons between that code and this object easier.  -JGG
 

@@ -27,7 +27,7 @@ public:
 	float next(float input = 0.0f);
 
 private:
-	static const float kMinFreq = 20.0f;
+	static const float kMinFreq;
 
 	void sset(float freq, float fundDecayTime, float nyquistDecayTime);
 	void randfill();
