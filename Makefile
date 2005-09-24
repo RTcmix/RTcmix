@@ -155,6 +155,7 @@ distclean: cleanall cleanac
 	@cd insts; $(MAKE) $(MFLAGS) distclean; 
 	@cd apps; $(MAKE) $(MFLAGS) distclean; 
 	@find . -name depend -exec rm -f '{}' ';'
+	@$(RM) defs.conf
 
 ####################################################### for maintainers only ###
 
@@ -164,6 +165,5 @@ configure: configure.ac
 	autoconf
 
 cleanac:
-	@$(RM) -r autom4te.cache config.log config.status config.cache config.h \
-				defs.conf
+	@$(RM) -r autom4te.cache config.log config.status config.cache config.h
 
