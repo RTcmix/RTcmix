@@ -165,5 +165,5 @@ configure: configure.ac
 
 cleanac:
 	@$(RM) -r autom4te.cache config.log config.status config.cache config.h \
-				configure defs.conf
+				defs.conf
 
