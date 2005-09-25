@@ -80,11 +80,11 @@ private:
 		flt_t	*			_ptr;
 	};
 
+	const long		_length;
+	const int		_nbr_bits;
 	const BitReversedLUT	_bit_rev_lut;
 	const TrigoLUT	_trigo_lut;
 	const flt_t		_sqrt2_2;
-	const long		_length;
-	const int		_nbr_bits;
 	flt_t *			_buffer_ptr;
 
 
