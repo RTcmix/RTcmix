@@ -1,3 +1,10 @@
+/* RTcmix  - Copyright (C) 2004  The RTcmix Development Team
+   See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+*/
+/* Revision of class cmix sfprint with more print options and ability to
+   work with more file header types.    -John Gibson
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,6 +17,7 @@
 #include <time.h>
 #include <sndlibsupport.h>
 
+#define STRLEN 64
 #define MAX_TIME_CHARS  64
 
 static void usage(void);
@@ -21,9 +29,74 @@ static void
 usage()
 {
    printf("usage:  \"sfprint [options] file [file...]\"\n");
-   printf("        options:  -v verbose\n");
+   printf("        options:  -d show peaks in dBFS\n");
    printf("                  -q quiet (return status only)\n");
+   printf("                  -t show peak times instead of frames\n");
+   printf("                  -v verbose\n");
    exit(1);
+}
+
+
+/* ----------------------------------------------------- make_time_string --- */
+static const char *
+make_time_string(const double seconds, const int sec_precision)
+{
+   static char buf[STRLEN];
+
+   int minutes = (int) seconds / 60;
+   double secs = fmod(seconds, 60.0);
+   double frac = seconds - (int) seconds;
+   sprintf(buf, "%.2f", frac);
+   if (strcmp(buf, "1.00") == 0) {     /* Will printf round seconds up? */
+      secs = (int) seconds + 1.0;
+      if (secs == 60.0) {              /* carry */
+         secs = 0.0;
+         minutes++;
+      }
+   }
+   snprintf(buf, STRLEN, "%.*f seconds [%d:%05.2f]",
+                                       sec_precision, seconds, minutes, secs);
+   return buf;
+}
+
+
+/* --------------------------------------------------------- print_maxamp --- */
+static double dbamp(float amp)
+{
+   double fabs_amp = fabs((double) amp);
+   return (20.0 * log10(fabs_amp));
+}
+
+static void print_maxamp(int srate, int nchans, float peaks[], long locs[],
+   int showtime, int showdbfs)
+{
+   int n;
+   char peakstr[nchans][STRLEN];
+   char locstr[nchans][STRLEN];
+
+   if (showtime) {
+      for (n = 0; n < nchans; n++) {
+         const double secs = (double) locs[n] / srate;
+         snprintf(locstr[n], STRLEN, "%s", make_time_string(secs, 2));
+      }
+   }
+   else {
+      for (n = 0; n < nchans; n++)
+         snprintf(locstr[n], STRLEN, "%ld", locs[n]);
+   }
+
+   if (showdbfs) {
+      const double dbref = dbamp(32768.0);
+      for (n = 0; n < nchans; n++)
+         snprintf(peakstr[n], STRLEN, "% 0.2f dBFS", dbamp(peaks[n]) - dbref);
+   }
+   else {
+      for (n = 0; n < nchans; n++)
+         snprintf(peakstr[n], STRLEN, "%06g", peaks[n]);
+   }
+
+   for (n = 0; n < nchans; n++)
+      printf("channel %d:  maxamp: %s  loc: %s\n", n, peakstr[n], locstr[n]);
 }
 
 
@@ -33,20 +106,7 @@ usage()
 static void
 print_duration(const double dur)
 {
-   /* Prepare bracketed version. */
-   int minutes = (int) dur / 60;
-   double seconds = fmod(dur, 60.0);
-   double frac = dur - (int) dur;
-   char buf[8];
-   sprintf(buf, "%.2f", frac);
-   if (strcmp(buf, "1.00") == 0) {     /* Will printf round seconds up? */
-      seconds = (int) seconds + 1.0;
-      if (seconds == 60.0) {           /* carry */
-         seconds = 0.0;
-         minutes++;
-      }
-   }
-   printf("duration: %f seconds [%d:%05.2f]\n", dur, minutes, seconds);
+   printf("duration: %s\n", make_time_string(dur, 6));
 }
 
 
@@ -71,7 +131,7 @@ int
 main(int argc, char *argv[])
 {
    int         i, fd, header_type, data_format, data_location;
-   int         verbose = 0, quiet = 0, status = 0;
+   int         verbose = 0, quiet = 0, showtime = 0, showdbfs = 0, status = 0;
    int         nsamps, result, srate, nchans, class;
    double      dur;
    char        *sfname, timestr[MAX_TIME_CHARS];
@@ -86,8 +146,14 @@ main(int argc, char *argv[])
 
       if (arg[0] == '-') {
          switch (arg[1]) {
+            case 'd':
+               showdbfs = 1;
+               break;
             case 'q':
                quiet = 1;
+               break;
+            case 't':
+               showtime = 1;
                break;
             case 'v':
                verbose = 1;
@@ -178,11 +244,9 @@ main(int argc, char *argv[])
       if (verbose)
          printf("frames: %d\nheader size: %d bytes\ndata size: %d bytes\n",
                            nsamps / nchans, data_location, nsamps * class);
+
       if (sfc.offset != -1) {
-         int n;
-         for (n = 0; n < nchans; n++)
-            printf("channel %d:  maxamp: %g  loc: %ld\n",
-                                           n, sfc.peak[n], sfc.peakloc[n]);
+         print_maxamp(srate, nchans, sfc.peak, sfc.peakloc, showtime, showdbfs);
          printf("maxamp updated: %s\n", timestr);
          if (!sfcomment_peakstats_current(&sfc, fd))
             printf("WARNING: maxamp stats not up-to-date -- run sndpeak.\n\n");
