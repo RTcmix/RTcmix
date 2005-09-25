@@ -2,6 +2,11 @@ NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
 
+2005-09-25  John Gibson <johgibso-at-indiana.edu>
+
+	* Add options to sfprint to show peaks in dBFS and peak locations in
+	  times, rather than frames.
+
 2005-08-19  John Gibson <johgibso-at-indiana.edu>
 
 	* Fixed a problem reading files written by Peak (and any other
