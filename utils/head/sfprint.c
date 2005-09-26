@@ -240,7 +240,8 @@ main(int argc, char *argv[])
       printf(":::::::::::::::::::\n%s\n:::::::::::::::::::\n", sfname);
       printf("%s, %s\n", mus_header_type_name(header_type),
                          mus_data_format_name(data_format));
-      printf("sr: %d  nchans: %d  class: %d\n", srate, nchans, class);
+      printf("sr: %d  nchans: %d  class: %d bytes per sample\n",
+                                              srate, nchans, class);
       if (verbose)
          printf("frames: %d\nheader size: %d bytes\ndata size: %d bytes\n",
                            nsamps / nchans, data_location, nsamps * class);
