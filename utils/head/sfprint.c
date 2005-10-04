@@ -92,7 +92,7 @@ static void print_maxamp(int srate, int nchans, float peaks[], long locs[],
    }
    else {
       for (n = 0; n < nchans; n++)
-         snprintf(peakstr[n], STRLEN, "%06g", peaks[n]);
+         snprintf(peakstr[n], STRLEN, "%g", peaks[n]);
    }
 
    for (n = 0; n < nchans; n++)
