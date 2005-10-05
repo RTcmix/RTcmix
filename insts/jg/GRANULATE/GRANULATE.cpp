@@ -75,10 +75,12 @@
             Maximum randomly determined amount to add or subtract from the
             current transposition value.  If p20 (transposition collection)
             is active, then jitter controls how much of the collection to
-            choose from.  In this case, jitter is an oct.pc value.  For example,
-            if the collection is [0.00, 0.02, 0.05, 0.07], then a jitter value
-            of 0.05 will cause only the first 3 pitches to be chosen, whereas a
-            jitter value of 0.07 would cause all 4 to be chosen.
+            choose from.  Note that jitter is still in linear octaves, although
+            the transposition collection is in oct.pc.  For example, if the
+            collection is [0.00, 0.02, 0.05, 0.07], then a jitter value of
+            octpch(0.05) will cause only the first three pitches to be chosen,
+            whereas a jitter value of octpch(0.07) would cause all four to be
+            chosen.
             [optional; if missing, no transposition jitter]
 
       p22 = random seed (integer)
