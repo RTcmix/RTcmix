@@ -15,6 +15,10 @@
  #define ANTI_DENORM
 #endif
 
+#ifndef sqrtf
+	#define sqrtf(val) sqrt((val))
+#endif
+
 const int kDefaultRMSWindowLength = 200;
 
 class Orms {
