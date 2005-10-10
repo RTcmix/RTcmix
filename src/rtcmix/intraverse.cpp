@@ -82,7 +82,8 @@ int RTcmix::runMainLoop(void)
 //		startupBufCount = ZERO_FRAMES_BEFORE / RTBUFSAMPS;
 		startupBufCount = 0;
 
-		if (audioDevice) {
+		// Device may have been closed by user interrupt.
+		if (audioDevice && audioDevice->isOpen()) {
 			// Set done callback on device.
 			audioDevice->setStopCallback(doneTraverse, this);
 			// Start audio output device, handing it our callback.
