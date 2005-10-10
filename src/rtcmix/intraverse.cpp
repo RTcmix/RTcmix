@@ -102,12 +102,8 @@ int RTcmix::waitForMainLoop()
 #ifdef WBUG	
 	cout << "ENTERING waitForMainLoop() FUNCTION *****\n";
 #endif
-	while (!audioDone) {
-#ifdef linux
-		usleep(1000);
-#else
-		sleep(1);
-#endif
+	while (!audioDone && audioDevice->isOpen()) {
+		usleep(10000);
 	}
 	AudioDevice *tmp = audioDevice;
 	audioDevice = NULL;
