@@ -98,6 +98,7 @@ int AudioFileDevice::doOpen(int mode)
 
 int AudioFileDevice::doClose()
 {
+	PRINT1("AudioFileDevice::doClose\n");
 	int status = 0;
 	if (!closing()) {
 		closing(true);
@@ -170,7 +171,7 @@ int	AudioFileDevice::doSendFrames(void *frameBuffer, int frames)
 
 void AudioFileDevice::run()
 {
-//	printf("AudioFileDevice::run: TOF\n");
+	PRINT1("AudioFileDevice::run entered\n");
 	assert(!isPassive());	// Cannot call this method when passive!
 	
 	while (!stopping()) {
@@ -191,7 +192,7 @@ void AudioFileDevice::run()
 	if (!stopping()) {
 		setState(Configured);
 		if (!closing()) {
-//			printf("AudioFileDevice::run: calling close()\n");
+			PRINT1("AudioFileDevice::run: calling close()\n");
 			close();
 		}
 	}

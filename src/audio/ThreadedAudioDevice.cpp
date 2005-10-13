@@ -12,6 +12,19 @@
 #include <assert.h>
 #include <errno.h>
 
+#define DEBUG 0
+
+#if DEBUG > 1
+#define PRINT0 if (1) printf
+#define PRINT1 if (1) printf
+#elif DEBUG > 0
+#define PRINT0 if (1) printf
+#define PRINT1 if (0) printf
+#else
+#define PRINT0 if (0) printf
+#define PRINT1 if (0) printf
+#endif
+
 // Uncomment this to make it possible to profile RTcmix code w/ gprof
 //#define PROFILE
 
@@ -33,7 +46,7 @@ int ThreadedAudioDevice::startThread()
 #ifdef PROFILE
 	getitimer(ITIMER_PROF, &globalTimerVal);
 #endif
-//	printf("\tThreadedAudioDevice::startThread: starting thread\n");
+	PRINT1("\tThreadedAudioDevice::startThread: starting thread\n");
 	int status = pthread_create(&_thread, NULL, _runProcess, this);
 	if (status < 0) {
 		error("Failed to create thread");
@@ -44,7 +57,7 @@ int ThreadedAudioDevice::startThread()
 int ThreadedAudioDevice::doStop()
 {
 	if (!stopping()) {
-//		printf("\tThreadedAudioDevice::doStop\n");
+		PRINT1("\tThreadedAudioDevice::doStop\n");
 		stopping(true);		// signals play thread
 		paused(false);
 		waitForThread();
@@ -63,13 +76,13 @@ void ThreadedAudioDevice::waitForThread(int waitMs)
 {
 	if (!isPassive()) {
 		assert(_thread != 0);	// should not get called again!
-//		printf("ThreadedAudioDevice::waitForThread: waiting for thread to finish\n");
+		PRINT1("ThreadedAudioDevice::waitForThread: waiting for thread to finish\n");
 		if (pthread_join(_thread, NULL) == -1) {
-//			printf("ThreadedAudioDevice::doStop: terminating thread!\n");
+			PRINT0("ThreadedAudioDevice::doStop: terminating thread!\n");
 			pthread_cancel(_thread);
 			_thread = 0;
 		}
-//		printf("\tThreadedAudioDevice::waitForThread: thread done\n");
+		PRINT1("\tThreadedAudioDevice::waitForThread: thread done\n");
 	}
 }
 
@@ -133,7 +146,7 @@ bool ThreadedAudioDevice::waitForDevice(unsigned int wTime) {
 		}
 	}
 	else {
-//		printf("ThreadedAudioDevice::waitForDevice: stopping == true\n");
+		PRINT1("ThreadedAudioDevice::waitForDevice: stopping == true\n");
 	}
 	return ret;
 }
