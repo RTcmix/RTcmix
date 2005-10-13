@@ -29,6 +29,7 @@ protected:
 	virtual int	doGetFrames(void *frameBuffer, int frameCount);
 	virtual int	doSendFrames(void *frameBuffer, int frameCount);
 private:
+	int connectPorts();
 	struct Impl;
 	Impl			*_impl;
 };
