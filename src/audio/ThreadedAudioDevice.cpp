@@ -34,8 +34,19 @@ static struct itimerval globalTimerVal;
 
 ThreadedAudioDevice::ThreadedAudioDevice()
 	  : _device(-1), _thread(0), _frameCount(0),
-	  _paused(false), _stopping(false), _closing(false)
+	  _starting(false), _paused(false), _stopping(false), _closing(false)
 {
+}
+
+ThreadedAudioDevice::~ThreadedAudioDevice()
+{
+	// This code handles the rare case where the child thread is starting
+	// at the same instant that the device is being destroyed.
+	PRINT1("~ThreadedAudioDevice\n");
+	if (starting() && _thread != 0) {
+		waitForThread();
+		starting(false);
+	}
 }
 
 int ThreadedAudioDevice::startThread()
@@ -43,6 +54,7 @@ int ThreadedAudioDevice::startThread()
 	stopping(false);	// Reset.
 	if (isPassive())	// Nothing else to do here if passive mode.
 		return 0;
+	starting(true);
 #ifdef PROFILE
 	getitimer(ITIMER_PROF, &globalTimerVal);
 #endif
@@ -61,6 +73,7 @@ int ThreadedAudioDevice::doStop()
 		stopping(true);		// signals play thread
 		paused(false);
 		waitForThread();
+		starting(false);
 	}
 	return 0;
 }
@@ -171,6 +184,7 @@ void *ThreadedAudioDevice::_runProcess(void *context)
 	{
 //			perror("ThreadedAudioDevice::startThread: Failed to set priority of thread.");
 	}
+	device->starting(false);	// Signal that the thread is now running
 	device->run();
 	return NULL;
 }

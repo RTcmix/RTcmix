@@ -13,6 +13,7 @@
 class ThreadedAudioDevice : public AudioDeviceImpl {
 protected:
 	ThreadedAudioDevice();
+	virtual ~ThreadedAudioDevice();
 	
 	// Local methods
 	virtual int			startThread();
@@ -33,9 +34,11 @@ protected:
 	void		resetFrameCount() { _frameCount = 0; }
 	void		incrementFrameCount(int frames) { _frameCount += frames; }
 	// These are to avoid reentrant code.
+	void		starting(bool s) { _starting = s; }
 	void		paused(bool p) { _paused = p; }
 	void		stopping(bool s) { _stopping = s; }
 	void		closing(bool c) { _closing = c; }
+	bool		starting() const { return _starting; }
 	bool		paused() const { return _paused; }
 	bool		stopping() const { return _stopping; }
 	bool		closing() const { return _closing; }
@@ -47,6 +50,7 @@ private:
 	fd_set		_rfdset, _wfdset;
 	pthread_t	_thread;
 	int			_frameCount;
+	bool		_starting;
 	bool		_paused;
 	bool		_stopping;
 	bool		_closing;
