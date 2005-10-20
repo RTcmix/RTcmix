@@ -160,7 +160,8 @@ int MIXN::run()
 
 	if (inchan < inputChannels())
 	  sig = in[i + (int)inchan] * aamp;
-
+	else
+	  sig = 0;
 
 
 	for (j = 0; j < outputchans; j++) {
