@@ -89,6 +89,9 @@ int MIXN::init(double p[], int n_args)
 
   skip = (int)(SR/(float)resetval); // how often to update amp curve, default 200/sec.
 
+  //  if (inchan >= inputChannels())
+  //  warn("MIXN","You are requesting channel %2.f of a %d channel file.\n",inchan+1,inputChannels());
+
   return(this->mytag);
 }
 
@@ -106,6 +109,7 @@ int MIXN::run()
   float *outp;
   float t_out_amp[8];  /* FIXME make this more flexible later */
   float t_dur;
+  float sig;
   int finalsamp;
 
   aamp = 0;
@@ -153,7 +157,10 @@ int MIXN::run()
 	  branch = skip;
 	}
 
-	float sig = in[i + (int)inchan] * aamp;
+	if (inchan < inputChannels())
+	  sig = in[i + (int)inchan] * aamp;
+
+
 
 	for (j = 0; j < outputchans; j++) {
 	  outp[j] = sig * out_chan_amp[j];
