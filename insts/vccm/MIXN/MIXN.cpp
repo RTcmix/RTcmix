@@ -63,6 +63,7 @@ int MIXN::init(double p[], int n_args)
   amp = p[4];
 	
   amp_count = 0;
+  outputchans = outputChannels();
   for (i=0; i < outputchans; i++) {
 	my_out_chan_amp[i] = 0.0;
   }
