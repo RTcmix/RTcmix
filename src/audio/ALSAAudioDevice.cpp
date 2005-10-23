@@ -416,13 +416,14 @@ static char *nonInterleavedZeroBuffer[] = {
 void ALSAAudioDevice::run()
 {
 	PRINT0("ALSAAudioDevice::run: top of loop\n");
-	while (waitForDevice(isPlaying() ? 0 : 1000) == true) {
+	int ret;
+	while ((ret = waitForDevice(isPlaying() ? 0 : 1000)) == 0) {
 		if (runCallback() != true) {
 			break;
 		}
 	}
 	PRINT0("ALSAAudioDevice::run: after loop\n");
-	if (!_stopDuringPause && isPlaying()) {
+	if (ret > 0 && !_stopDuringPause && isOpen() && isPlaying()) {
 		const int zFrames = (int) _periodSize;
 		PRINT0("ALSAAudioDevice::run: sending %d zeros to HW...\n", zFrames);
 		if (isDeviceInterleaved())
@@ -432,7 +433,8 @@ void ALSAAudioDevice::run()
 		snd_pcm_drain(_handle);
 		_stopDuringPause = false;	// reset
 	}
-	setState(Configured);	// no longer running
+	if (isOpen())
+		setState(Configured);	// no longer running
 	PRINT0("ALSAAudioDevice::run: calling stop callback\n");
 	stopCallback();
 	PRINT0("ALSAAudioDevice::run: thread exiting\n");
