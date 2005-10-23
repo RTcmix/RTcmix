@@ -130,8 +130,8 @@ void ThreadedAudioDevice::setDevice(int dev)
 	}
 }
 
-bool ThreadedAudioDevice::waitForDevice(unsigned int wTime) {
-	bool ret = false;
+int ThreadedAudioDevice::waitForDevice(unsigned int wTime) {
+	int ret;
 	unsigned waitSecs = int(wTime / 1000.0);
 	unsigned waitUsecs = (wTime * 1000) - unsigned(waitSecs * 1.0e+06);
 	// Wait wTime msecs for select to return, then bail.
@@ -151,15 +151,16 @@ bool ThreadedAudioDevice::waitForDevice(unsigned int wTime) {
 				fprintf(stderr,
 						"ThreadedAudioDevice::waitForDevice: select %s\n",
 						(selret == 0) ? "timed out" : "returned error");
-			ret = false;
+			ret = -1;
 		}
 		else {
 			setFDSet();
-			ret = true;
+			ret = 0;
 		}
 	}
 	else {
 		PRINT1("ThreadedAudioDevice::waitForDevice: stopping == true\n");
+		ret = 1;
 	}
 	return ret;
 }

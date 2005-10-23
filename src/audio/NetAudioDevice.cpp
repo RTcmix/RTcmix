@@ -105,7 +105,7 @@ NetAudioDevice::~NetAudioDevice()
 	delete _impl;
 }
 
-bool NetAudioDevice::waitForDevice(unsigned int wTime)
+int NetAudioDevice::waitForDevice(unsigned int wTime)
 {
 	while (!connected()) {
 		if (waitForConnect() == 0) {
@@ -115,7 +115,7 @@ bool NetAudioDevice::waitForDevice(unsigned int wTime)
 			}
 		}
 		else
-			return false;
+			return 1;	// signals stop
 	}
 	return ThreadedAudioDevice::waitForDevice(wTime);
 }
@@ -125,10 +125,10 @@ NetAudioDevice::run()
 {
 	PRINT1("NetAudioDevice::run: top of loop\n");
 	// waitForDevice() waits on the descriptor you passed to setDevice() until
-	// the device is ready to give/get audio.  It returns false if 
+	// the device is ready to give/get audio.  It returns nonzero if 
 	// AudioDevice::stop() is called, to allow the loop to exit.
 	unsigned waitMillis = 10000;
-    while (waitForDevice(waitMillis) == true) {
+    while (waitForDevice(waitMillis) == 0) {
         if (runCallback() != true) {
             break;
         }

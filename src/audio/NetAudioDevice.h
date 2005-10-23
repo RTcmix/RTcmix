@@ -18,7 +18,7 @@ public:
 	
 protected:
 	// ThreadedAudioDevice override
-	bool		waitForDevice(unsigned int wTime=0);
+	int			waitForDevice(unsigned int wTime=0);
 	// ThreadedAudioDevice reimplementation
 	virtual void run();
 	// AudioDeviceImpl reimplementation

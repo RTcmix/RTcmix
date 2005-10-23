@@ -147,8 +147,9 @@ void OSSAudioDevice::run()
 {
 	audio_buf_info info;
 	const bool playing = isPlaying();
+	int ret;
 	PRINT1("OSSAudioDevice::run: top of loop\n");
-	while (waitForDevice(0) == true) {
+	while ((ret = waitForDevice(0)) == 0) {
 		if (ioctl(playing ? SNDCTL_DSP_GETOSPACE : SNDCTL_DSP_GETISPACE,
 				  &info))
 		{
@@ -177,7 +178,7 @@ void OSSAudioDevice::run()
 			}
 		}
 	}
-	if (playing) {
+	if (ret >= 0 && playing) {
 		// Write buffer of zeros.
 		doSendFrames(zeroBuffer, sizeof(zeroBuffer)/getDeviceBytesPerFrame());
 	

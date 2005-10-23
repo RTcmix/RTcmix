@@ -5,9 +5,9 @@
 
 #if defined(JACK)
 
-#include "ThreadedAudioDevice.h"
+#include "AudioDeviceImpl.h"
 
-class JackAudioDevice : public ThreadedAudioDevice {
+class JackAudioDevice : public AudioDeviceImpl {
 public:
 	JackAudioDevice();
 	virtual ~JackAudioDevice();
@@ -17,8 +17,6 @@ public:
 	static AudioDevice*	create(const char *, const char *, int);
 	
 protected:
-	// ThreadedAudioDevice reimplementation
-	virtual void run();
 	// AudioDeviceImpl reimplementation
 	virtual int doOpen(int mode);
 	virtual int doClose();

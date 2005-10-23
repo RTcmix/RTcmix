@@ -24,7 +24,7 @@ protected:
 	int			doGetFrameCount() const;
 
 	// Virtual methods new to this class.
-	virtual bool waitForDevice(unsigned int wTime=0);	// wTime in msec.
+	virtual int waitForDevice(unsigned int wTime=0);	// wTime in msec.
 	
 	// Utilities.
 	void		waitForThread(int waitMs=1000);
