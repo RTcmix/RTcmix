@@ -64,6 +64,7 @@ AC_SUBST(AUDIODRIVER)
 
 # Perl options
 PERL_SUPPORT=FALSE                        # disable by default
+PERL_IN_LOCAL = FALSE
 PERL=perl                                 # default perl name
 WITH_PERL="false"                         # just for summary display below
 AC_ARG_WITH(perl, AC_HELP_STRING([--with-perl=PATH],
@@ -74,8 +75,12 @@ AC_ARG_WITH(perl, AC_HELP_STRING([--with-perl=PATH],
       fi
       PERL_SUPPORT=TRUE
       WITH_PERL="true"
+	  if test PERL = "/usr/local/bin/perl"; then
+		  PERL_IN_LOCAL = TRUE
+	  fi
    fi])
 AC_SUBST(PERL_SUPPORT)
+AC_SUBST(PERL_IN_LOCAL)
 AC_SUBST(PERL)
 
 # Python options
