@@ -64,7 +64,7 @@ AC_SUBST(AUDIODRIVER)
 
 # Perl options
 PERL_SUPPORT=FALSE                        # disable by default
-PERL_IN_LOCAL = FALSE
+PERL_IN_LOCAL=FALSE
 PERL=perl                                 # default perl name
 WITH_PERL="false"                         # just for summary display below
 AC_ARG_WITH(perl, AC_HELP_STRING([--with-perl=PATH],
