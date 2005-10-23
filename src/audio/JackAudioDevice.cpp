@@ -73,10 +73,10 @@ void
 JackAudioDevice::run()
 {
 	// waitForDevice() waits on the descriptor you passed to setDevice() until
-	// the device is ready to give/get audio.  It returns false if 
+	// the device is ready to give/get audio.  It returns non-zero if 
 	// AudioDevice::stop() is called, to allow the loop to exit.
 
-	while (waitForDevice(0) == true) {
+	while (waitForDevice(0) == 0) {
 		if (runCallback() != true) {
 			break;
 		}
