@@ -61,6 +61,7 @@ int RTcmix::runMainLoop(void)
 				cout << "runMainLoop:  shutting down" << endl;
 			else if (run_status == RT_ERROR)
 				cout << "runMainLoop:  shutting down due to error" << endl;
+			audioDone = true;
 			return -1;
 		}
 	}
@@ -103,7 +104,7 @@ int RTcmix::waitForMainLoop()
 #ifdef WBUG	
 	cout << "ENTERING waitForMainLoop() FUNCTION *****\n";
 #endif
-	while (!audioDone && audioDevice->isOpen()) {
+	while (!audioDone) {
 		usleep(10000);
 	}
 	AudioDevice *tmp = audioDevice;

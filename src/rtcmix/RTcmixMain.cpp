@@ -440,10 +440,9 @@ RTcmixMain::interrupt_handler(int signo)
 		interrupt_handler_called = 1;
 	   fprintf(stderr, "\n<<< Caught interrupt signal >>>\n");
 
-	   if (audioDevice) {
-		   audioDevice->close();
-	   }
-	   else {
+	   // Notify rendering loop.
+	   run_status = RT_SHUTDOWN;
+	   if (!audioDevice) {
 		   closesf();	// We exit if we have not yet configured audio.
 	   }
 	}
@@ -458,6 +457,7 @@ RTcmixMain::signal_handler(int signo)
 		signal_handler_called = 1;
 	   fprintf(stderr, "\n<<< Caught internal signal (%d) >>>\n", signo);
 
+	   run_status = RT_ERROR;
 	   switch (signo) {
 	   default:
 		   fflush(stdout);
