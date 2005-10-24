@@ -440,6 +440,9 @@ RTcmixMain::interrupt_handler(int signo)
 		interrupt_handler_called = 1;
 	   fprintf(stderr, "\n<<< Caught interrupt signal >>>\n");
 
+	   if (audioDevice) {
+	       audioDevice->close();
+	   }
 	   // Notify rendering loop.
 	   run_status = RT_SHUTDOWN;
 	   if (!audioDevice) {
