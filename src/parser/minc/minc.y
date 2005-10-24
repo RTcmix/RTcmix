@@ -297,7 +297,7 @@ static void cleanup()
 	efree(program);
 #endif
 	free_symbols();
-	yy_delete_buffer(yy_current_buffer);
-	yy_current_buffer = NULL;
+	yy_delete_buffer(YY_CURRENT_BUFFER);
+	/* yy_current_buffer = NULL; */
 }
 
