@@ -94,7 +94,7 @@ inline int32_t normalize<int32_t>(bool doIt, const int32_t &value) {
 template<>
 inline float normalize<float>(bool doIt, const float &value) { return doIt ? value * kNormalizer : value; }
 
-#ifdef LINUX
+#if defined(i386) || defined(_i386)
 static const Endian kMachineEndian = Little;
 #else
 static const Endian kMachineEndian = Big;
