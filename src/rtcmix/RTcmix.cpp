@@ -59,6 +59,7 @@ unsigned long	RTcmix::bufStartSamp 	= 0;
 
 int				RTcmix::rtInteractive 	= 1; // keep the heap going for this object
 int				RTcmix::rtsetparams_called = 0; // will call at object instantiation, though
+int				RTcmix::audioLoopStarted = 0;
 int				RTcmix::audio_config 	= 1;
 long			RTcmix::elapsed 		= 0;
 RTstatus		RTcmix::run_status      = RT_GOOD;

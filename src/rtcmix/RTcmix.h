@@ -146,6 +146,7 @@ protected:
 	
 	static int		rtInteractive;
 	static int		rtsetparams_called;
+	static int		audioLoopStarted;
 	static int		audio_config;
 
 	static AudioDevice *audioDevice;

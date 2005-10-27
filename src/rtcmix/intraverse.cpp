@@ -40,6 +40,9 @@ int RTcmix::runMainLoop(void)
 	cout << "ENTERING runMainLoop() FUNCTION *****\n";
 #endif
 
+	// This lets signal handler know that we have gotten to this point.
+	audioLoopStarted = 1;
+
 	// Wait for the ok to go ahead
 	::pthread_mutex_lock(&audio_config_lock);
 	if (!audio_config) {

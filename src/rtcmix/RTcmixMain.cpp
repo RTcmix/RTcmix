@@ -67,13 +67,21 @@ usage()
 }
 
 #ifdef DEBUG_MEMORY
+
+#include <string.h>
+
 void *operator new(size_t size) {
-	return malloc(size);
+	size_t memsize = (size > 4) ? size : 4;
+	void *ptr = malloc(memsize);
+	memset(ptr, 0xaa, memsize);
+	return ptr;
 }
 
 void operator delete(void *mem) {
-	if (mem)
+	if (mem) {
+		memset(mem, 0xdd, 4);
 		free(mem);
+	}
 }
 
 #endif
@@ -159,9 +167,9 @@ RTcmixMain::RTcmixMain(int argc, char **argv) : RTcmix(false)
       printf("--------> %s %s (%s) <--------\n",
              RTCMIX_NAME, RTCMIX_VERSION, argv[0]);
 
-   ug_intro();                  /* introduce standard routines */
-   profile();                   /* introduce user-written routines etc. */
-   rtprofile();                 /* introduce real-time user-written routines */
+   ::ug_intro();                /* introduce standard routines */
+   ::profile();                 /* introduce user-written routines etc. */
+   ::rtprofile();               /* introduce real-time user-written routines */
 
    setbuf(stdout, NULL);        /*  Want to see stdout errors */
 }
@@ -323,7 +331,7 @@ RTcmixMain::parseArguments(int argc, char **argv)
    // NOTE:  The way this is handled should change.
 #ifdef NETAUDIO
    if (netplay) {             /* set up socket for sending audio */
-      int status = setnetplay(rhostname, thesocket);
+      int status = ::setnetplay(rhostname, thesocket);
       if (status == -1) {
          fprintf(stderr, "Cannot establish network connection to '%s' for "
                                              "remote playing\n", rhostname);
@@ -361,7 +369,7 @@ RTcmixMain::run()
 #ifdef DBUG
          cout << "Parsing once ...\n";
 #endif
-         status = parse_score(xargc, xargv);
+         status = ::parse_score(xargc, xargv);
          if (status != 0)
             exit(1);
       }
@@ -406,9 +414,7 @@ RTcmixMain::run()
          destroy_parser();
    }
    else {
-      int status;
-
-      status = parse_score(xargc, xargv);
+      int status = ::parse_score(xargc, xargv);
 #ifdef PYTHON
       /* Have to reinstall this after running Python interpreter. (Why?) */
 	  set_sig_handlers();
@@ -428,7 +434,7 @@ RTcmixMain::run()
       destroy_parser();
    }
 
-   closesf_noexit();
+   ::closesf_noexit();
 }
 
 /* ---------------------------------------------------- interrupt_handler --- */
@@ -440,12 +446,12 @@ RTcmixMain::interrupt_handler(int signo)
 		interrupt_handler_called = 1;
 	   fprintf(stderr, "\n<<< Caught interrupt signal >>>\n");
 
+	   // Notify rendering loop.
+	   run_status = RT_SHUTDOWN;
 	   if (audioDevice) {
 	       audioDevice->close();
 	   }
-	   // Notify rendering loop.
-	   run_status = RT_SHUTDOWN;
-	   if (!audioDevice) {
+	   if (!audioLoopStarted) {
 		   closesf();	// We exit if we have not yet configured audio.
 	   }
 	}
