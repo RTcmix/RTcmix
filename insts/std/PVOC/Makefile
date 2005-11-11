@@ -3,10 +3,10 @@ include ../package.conf
 NAME = PVOC
 
 CURDIR = $(CMIXDIR)/insts/std/$(NAME)
-OBJS = PVOC.o lpa.o lpamp.o makewindows.o fft.o fold.o overlapadd.o PVFilter.o \
-		setup.o
+OBJS = PVOC.o lpa.o lpamp.o makewindows.o fft.o fold.o overlapadd.o setup.o
 
-#CMIXOBJS += $(PROFILE_O)
+INCLUDES += -I$(CMIXDIR)/src/rtcmix
+CXXFLAGS +=  -DSHAREDLIBDIR=\"$(LIBDESTDIR)\"
 
 PROGS = $(NAME) lib$(NAME).so
 
@@ -19,6 +19,12 @@ standalone: $(NAME)
 
 lib$(NAME).so:	$(UGENS_H) $(OBJS)
 	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+
+#libPVFilterTest.so:	PVFilter.o PVFilterTest.o
+#	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVFilterTest.o setup.o
+#
+#libPVRandBend.so:	PVFilter.o PVRandBend.o
+#	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVRandBend.o setup.o
 
 $(NAME):	$(UGENS_H) $(OBJS) $(CMIXOBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)

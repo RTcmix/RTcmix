@@ -12,8 +12,6 @@ extern "C" {
 
 typedef struct { float re; float im; } complex;
 
-complex cadd(), csub(), cmult(), smult(), cdiv(), conjg(), csqrt();
-
 extern const complex zero;
 extern const complex one;
 extern float TWOPI;
