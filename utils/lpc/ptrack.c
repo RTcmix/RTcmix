@@ -24,17 +24,17 @@ typedef short SIGTYPE;
 #define NAMESIZE 1024		/* commandline string size limit */
 #define FRAMAX 350
 
-int LSLICE;
-int JSLIDE;
-float SR;
-float NYQ; 
-int JMAX;
-int MM;
+static int LSLICE;
+static int JSLIDE;
+static float SR;
+static float NYQ; 
+static int JMAX;
+static int MM;
 char * buildsfname();
 extern	int	remotein;
-int debug = 0, verbose=0;
+static int debug = 0, verbose=0;
 
-int swap;
+static int swap;
 
 float gtphi[50][5][18],gtpsi[50][6][18];	/* had to change to globals */
 float gtgamph[50][5],gtgamps[50][6]; 		/* hence the 'g' in front of the names */

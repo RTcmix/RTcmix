@@ -8,19 +8,19 @@
 
 #define POLE_DEFAULT 24
 #define FRAMESIZE_DEFAULT 200
-char lpc_anal[MAXPATHLEN], unstable[MAXPATHLEN], soundfile[MAXPATHLEN];
-int poles = POLE_DEFAULT;
-int framesize = FRAMESIZE_DEFAULT;
-double inskip = 0;
-double duration;
+static char lpc_anal[MAXPATHLEN], unstable[MAXPATHLEN], soundfile[MAXPATHLEN];
+static int poles = POLE_DEFAULT;
+static int framesize = FRAMESIZE_DEFAULT;
+static double inskip = 0;
+static double duration;
 double atof();	/* needed here -- DAS */
-int durset = 0;
-int verbose = 0;
+static int durset = 0;
+static int verbose = 0;
 
-int first_frame = 1;
-int last_frame = 0;
+static int first_frame = 1;
+static int last_frame = 0;
 
-int swap;
+static int swap;
 
 main(ac,av)
 int ac;
