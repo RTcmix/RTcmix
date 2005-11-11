@@ -3,7 +3,7 @@
 
 load("iRAP")
 rtsetparams(44100, 2)
-rtinput("/snd/Public_Sounds/jimi3dSound.aiff")
+rtinput("../../../snd/stereo.wav");
 bus_config("RECORD", "in0-1","aux0out")
 
 RECORD(0,10,0,0)
