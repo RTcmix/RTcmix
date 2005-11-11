@@ -30,7 +30,7 @@ standalone:
 	  $(MAKE) $(MFLAGS) standalone; echo "done in $$DIR"; fi ) \
 	done
 
-install:
+install: stklib
 	@for DIR in $(LIBDIRS); \
 	do \
 	  ( if test -d $$DIR; then cd $$DIR; echo "making install in $$DIR..."; \
