@@ -1,6 +1,9 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2005-11-10  Douglas Scott  <netdscott at netscape.net>
+
+	* Finished the first version of my PVOC filter system.
 
 2005-09-25  John Gibson <johgibso-at-indiana.edu>
 
