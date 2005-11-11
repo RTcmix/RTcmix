@@ -130,13 +130,17 @@ main(int argc, char *argv[])
 		  {
 		  	printf("Reached %d seconds.  Shutting down...", duration);
 			sleep(2);
+			rrr->panic();
 			rrr->close();
 			sleep(1);
+			delete rrr;
 		  	printf("Exiting.\n");
 			exit(0);
 		  }
 		  checkCount = checkInterval;
 		}
 	}
+	rrr->panic();
+	delete rrr;
 	return 0;
 }
