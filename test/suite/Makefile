@@ -22,6 +22,7 @@ test_unwriteable_output \
 test_null_output \
 test_bad_chans \
 test_8_channel \
+test_n_channel_blip \
 test_aux_bus \
 test_bus_loop \
 test_simple_mix \
@@ -82,6 +83,13 @@ test_8_channel:
 	@echo
 	@echo Testing 8-channel output:
 	-$(CMD) < test-8-channel.sco
+
+test_n_channel_blip:
+	@echo
+	@echo Testing 2-channel output:
+	-$(CMD) 2 < test-n-channel-blip.sco
+	@echo Testing 8-channel output:
+	-$(CMD) 8 < test-n-channel-blip.sco
 
 test_nonexistant_input:
 	@echo
