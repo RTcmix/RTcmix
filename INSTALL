@@ -88,10 +88,12 @@ Mac OS X
 
    - If you want to use gnuplot with the fplot and plottable script functions,
      you have to install both the command-line gnuplot and the Aquaterm program.
+
      First download the Aquaterm v1.0.b2 (or later) binary package (.dmg) from
-     http://aquaterm.sourceforge.net, and install the package.  Then install
-     gnuplot.  You can build this from source (v. 4.0 or later), but the easiest
-     way is to download the binary package from...
+     http://aquaterm.sourceforge.net, and install the package.  (NB: I had
+     trouble getting v1.0.0 to work; v1.0.b2 did work.)
+     Then install gnuplot.  You can build this from source (v. 4.0 or later),
+     but the easiest way is to download the binary package from...
 
         http://www.lee-phillips.org/info/Macintosh/gnuplot_binaries4.0.pax.gz
 
