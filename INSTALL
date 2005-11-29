@@ -92,17 +92,10 @@ Mac OS X
      First download the Aquaterm v1.0.b2 (or later) binary package (.dmg) from
      http://aquaterm.sourceforge.net, and install the package.  (NB: I had
      trouble getting v1.0.0 to work; v1.0.b2 did work.)
+
      Then install gnuplot.  You can build this from source (v. 4.0 or later),
-     but the easiest way is to download the binary package from...
-
-        http://www.lee-phillips.org/info/Macintosh/gnuplot_binaries4.0.pax.gz
-
-     and install by typing (as root)...
-
-        pax -rf gnuplot_binaries4.0.pax
-
-     This assumes your browser already uncompressed the .gz archive file.
-     If not, type "gunzip gnuplot_binaries4.0.pax.gz".
+     but the easiest way is to download the binary package (currently called
+     "Gnuplot-4.0.0.dmg") from http://gnuplot.sourceforge.net.
 
      If you want to install gnuplot from source, grab "gnuplot-4.0.0.tar.gz"
      from ftp.gnuplot.info and unpack this in /usr/local/src.  Build the
