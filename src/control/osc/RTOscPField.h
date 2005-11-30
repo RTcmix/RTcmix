@@ -31,7 +31,7 @@ public:
 	inline void callbackReturn(int val) { _callbackReturn = val; }
 	inline int callbackReturn() const { return _callbackReturn; }
 	inline int index() const { return _index; }
-	inline void value(double value) { _value = value; }
+	inline void rawvalue(double value) { _rawvalue = value; }
 	inline double defaultval() const { return _default; }
 	inline char *path() const { return _path; }
 
@@ -53,7 +53,7 @@ private:
 	double _outputmin;
 	double _outputdiff;
 	double _default;
-	double _value;
+	double _rawvalue;
 	int _callbackReturn;
 };
 

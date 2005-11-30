@@ -28,7 +28,7 @@ RTOscPField::RTOscPField(
 	: RTNumberPField(0),
 	  _oscserver(oscserver), _index(index),
 	  _inputmin(inputmin), _inputmax(inputmax), _outputmin(outputmin),
-	  _default(defaultval), _value(kInvalidValue), _callbackReturn(0)
+	  _default(defaultval), _rawvalue(kInvalidValue), _callbackReturn(0)
 {
 	assert(_oscserver != NULL);
 	assert(_index >= 0);
@@ -55,8 +55,8 @@ RTOscPField::~RTOscPField()
 
 double RTOscPField::doubleValue(double) const
 {
-	// map _value, clamped to input range, into output range
-	double val = _value;
+	// map _rawvalue, clamped to input range, into output range
+	double val = _rawvalue;
 	if (val == kInvalidValue)
 		val = _default;
 	else {
@@ -79,10 +79,10 @@ int RTOscPField::handler(const char *path, const char *types, lo_arg **argv,
 	if (index < argc) {
 		lo_type type = (lo_type) types[index];
 		if (type == LO_FLOAT)	// the most common one
-			pfield->value(argv[index]->f);
+			pfield->rawvalue(argv[index]->f);
 		else if (lo_is_numerical_type(type)) {
 			double val = lo_hires_val(type, argv[index]);
-			pfield->value(val);
+			pfield->rawvalue(val);
 		}
 		else
 			fprintf(stderr, "WARNING: incoming OSC value of type '%c' can't "
