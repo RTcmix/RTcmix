@@ -1,6 +1,9 @@
 include ../../makefile.conf
 
 DIRS = common midi mouse display datafile
+ifeq ($(OSC_SUPPORT), TRUE)
+	DIRS += osc
+endif
 
 all: $(DIRS) $(OBJS)
 	@for DIR in $(DIRS); \
