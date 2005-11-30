@@ -7,13 +7,13 @@
 #include <PField.h>
 #include <Ougens.h>
 #include <string.h>
+#include <unistd.h>
 #include <float.h>
 #include <assert.h>
 
 extern int resetval;		// declared in src/rtcmix/minc_functions.c
 
-//const double kInvalidValue = DBL_MAX;
-const double kInvalidValue = 1919191919.0;
+const double kInvalidValue = DBL_MAX;
 
 RTOscPField::RTOscPField(
 		RTcmixOSC			*oscserver,
@@ -43,6 +43,8 @@ RTOscPField::RTOscPField(
 	_filter = new Oonepole(resetval);
 	_filter->setlag(lag);
 
+	while (!_oscserver->ready())
+		usleep(100);
 	_oscserver->registerPField(this, handler);
 }
 
