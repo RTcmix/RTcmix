@@ -37,7 +37,10 @@ RTMidiPField::RTMidiPField(
 	_filter->setlag(lag);
 }
 
-RTMidiPField::~RTMidiPField() {}
+RTMidiPField::~RTMidiPField()
+{
+	delete _filter;
+}
 
 double RTMidiPField::doubleValue(double dummy) const
 {

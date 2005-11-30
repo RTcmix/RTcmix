@@ -51,6 +51,7 @@ RTOscPField::RTOscPField(
 RTOscPField::~RTOscPField()
 {
 	delete [] _path;
+	delete _filter;
 }
 
 double RTOscPField::doubleValue(double) const
