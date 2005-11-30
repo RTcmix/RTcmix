@@ -16,7 +16,8 @@
 const int kPFieldBlockSize = 8;
 
 RTcmixOSC::RTcmixOSC()
-	: _serverThread(NULL), _pfieldBlockSize(kPFieldBlockSize), _numpfields(0)
+	: _serverThread(NULL), _pfieldBlockSize(kPFieldBlockSize), _numpfields(0),
+	  _ready(false)
 {
 	_pfields = (RTOscPField **) calloc(kPFieldBlockSize, sizeof(void *));
 }
@@ -63,6 +64,8 @@ int RTcmixOSC::init()
 	}
 
 	lo_server_thread_start(_serverThread);
+
+	_ready = true;
 
 	return 0;
 }

@@ -16,6 +16,7 @@ public:
 	virtual ~RTcmixOSC();
 	int init();
 	int registerPField(RTOscPField *pfield, lo_method_handler handler);
+	bool ready() const { return _ready; }
 
 private:
 	static void oscError(int num, const char *msg, const char *path);
@@ -24,6 +25,7 @@ private:
 	RTOscPField **_pfields;
 	int _pfieldBlockSize;
 	int _numpfields;
+	bool _ready;
 };
 
 RTcmixOSC *createOSCServer();
