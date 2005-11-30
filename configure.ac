@@ -141,6 +141,17 @@ AC_ARG_WITH(fftw, AC_HELP_STRING([--with-fftw],
    fi])
 AC_SUBST(FFTW_SUPPORT)
 
+# liblo options, for OSC server plugin (in src/control/osc)
+OSC_SUPPORT=FALSE                         # default
+WITH_OSC="false"                          # just for summary display below
+AC_ARG_WITH(osc, AC_HELP_STRING([--with-osc],
+   [use OSC]),
+   [if test "$withval" != "no"; then
+      OSC_SUPPORT=TRUE
+      WITH_OSC="true"
+   fi])
+AC_SUBST(OSC_SUPPORT)
+
 #AC_SUBST(WITH_VAL, "$withval")    # for debugging this script
 
 
@@ -209,6 +220,14 @@ if test "$FFTW_SUPPORT" = "TRUE"; then
    PKG_CHECK_MODULES(FFTW,fftw3f)
 fi
 
+# OSC
+if test "$OSC_SUPPORT" = "TRUE"; then
+   PKG_CHECK_MODULES(LIBLO,liblo)
+   AC_SUBST(LIBLO_CFLAGS)
+   AC_SUBST(LIBLO_LIBS)
+fi
+
+
 # Write output files -----------------------------------------------------------
 AC_CONFIG_HEADER(config.h)
 AC_CONFIG_FILES(makefile.conf)
@@ -224,5 +243,6 @@ echo "  " Build with ALSA support............................... : $WITH_ALSA
 echo "  " Build with JACK support............................... : $WITH_JACK
 echo "  " Build with NetPlay support............................ : $WITH_NPLAY
 echo "  " Build with FFTW support............................... : $WITH_FFTW
+echo "  " Build with OSC support................................ : $WITH_OSC
 echo
 
