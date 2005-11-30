@@ -41,12 +41,13 @@
 //   Example:
 //
 //   osc = makeconnection("osc", "/synth/freqs", index=1, inmin=-1, inmax=1,
-//                         outmin=100, outmax=1000, default=100, lag=40)
+//                         outmin=100, outmax=1000, default=200, lag=40)
 //
 //   If the OSC server receives messages with a path of "/synth/freqs",
-//   this PField returns the second item as a double, scaled to fit between
+//   this PField returns the second item of the OSC message (i.e., the one
+//   having a zero-based index of 1) as a double, scaled to fit between
 //   100 and 1000 inclusive.  Incoming OSC values are expected to fall between
-//   -1 and 1.  The PField returns 100 if accessed prior to receiving any
+//   -1 and 1.  The PField returns 200 if accessed prior to receiving any
 //   matching OSC messages.  The stream of values is smoothed using a lag
 //   value of 40.
 
