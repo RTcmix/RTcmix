@@ -13,7 +13,7 @@
       if (Option::print())
          print some stuff
 
-   From C code, you must use the get* and set* option code at the bottom
+   From C code, you must use the get* and set* functions at the bottom
    of this file.
 
    You must call Option::init() early in main() so that some data members
@@ -23,17 +23,17 @@
 
    To add new options, you need to edit Option.cpp/h and set_option.cpp.
    Please add your option after the existing ones of the same type (bool,
-   double or string), so that each block of changes has all the options
+   number or string), so that each block of changes has all the options
    in the same order.  This makes it easier to find things.
 
    1. Add a kOption* define below.  This is the key string that a user will
       write in .rtcmixrc or in the set_option script call.  Please stick to
       the naming conventions already established.
 
-   2. Add static accessor definitions for a bool, double or string option
+   2. Add static accessor definitions for a bool, number or string option
       below.  Note that (only) the string setter function must be declared
       here and defined in Option.cpp (search for "String option setting
-      methods").
+      methods").  Numbers can be int or double.
 
    3. Add a private static member variable to hold the option state, below.
 
@@ -41,7 +41,7 @@
       Strings must be initialized instead in the init method, in Option.cpp.
 
    5. Add code to Option::readConfigFile (Option.cpp) for your option.
-      Keep bool, double and string options separate, as they are now.
+      Keep bool, number and string options separate, as they are now.
 
    6. Add code to Option::writeConfigFile (Option.cpp) for your option.
 
@@ -71,6 +71,7 @@
 #define CONF_FILENAME ".rtcmixrc"
 #define DEFAULT_BUFFER_FRAMES 4096.0
 #define DEFAULT_BUFFER_COUNT 2
+#define DEFAULT_OSC_INPORT 7770
 
 // Option names.  These are the keys that appear in the .rtcmixrc file.
 // They're also the <option_name> used with the get_*_option C functions.
@@ -87,9 +88,10 @@
 #define kOptionAutoLoad         "auto_load"
 #define kOptionFastUpdate       "fast_update"
 
-// double options
+// number options
 #define kOptionBufferFrames     "buffer_frames"
 #define kOptionBufferCount      "buffer_count"
+#define kOptionOSCInPort        "osc_inport"
 
 // string options
 #define kOptionDevice           "device"
@@ -114,6 +116,8 @@ public:
 
 	static int readConfigFile(const char *fileName);
 	static int writeConfigFile(const char *fileName);
+
+	// bool options
 
 	static bool audio() { return _audio; }
 	static bool audio(const bool setIt) { _audio = setIt; return _audio; }
@@ -150,6 +154,8 @@ public:
 	static bool fastUpdate(const bool setIt) { _fastUpdate = setIt;
 													return _fastUpdate; }
 
+	// number options
+
 	static double bufferFrames() { return _bufferFrames; }
 	static double bufferFrames(const double frames) { _bufferFrames = frames;
 													return _bufferFrames; }
@@ -157,6 +163,12 @@ public:
 	static int bufferCount() { return _bufferCount; }
 	static int bufferCount(int count) { _bufferCount = count;
 													return _bufferCount; }
+
+	static int oscInPort() { return _oscInPort; }
+	static int oscInPort(int portnum) { _oscInPort = portnum;
+													return _oscInPort; }
+
+	// string options
 
 	// WARNING: If no string as been assigned, do not expect the get method
 	// to return NULL!  Instead, check that strlen is > 0.
@@ -191,6 +203,7 @@ public:
 private:
 	static void reportError(const char *format, const char *msg1, const char *msg2);
 
+	// bool options
 	static bool _audio;
 	static bool _play;
 	static bool _record;
@@ -202,9 +215,12 @@ private:
 	static bool _autoLoad;
 	static bool _fastUpdate;
 
+	// number options
 	static double _bufferFrames;
 	static int _bufferCount;
+	static int _oscInPort;
 
+	// string options
 	static char _device[];
 	static char _inDevice[];
 	static char _outDevice[];

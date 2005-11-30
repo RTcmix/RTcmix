@@ -35,6 +35,7 @@ enum ParamType {
 	FAST_UPDATE,
 	BUFFER_FRAMES,
 	BUFFER_COUNT,
+	OSC_INPORT,
 	DEVICE,
 	INDEVICE,
 	OUTDEVICE,
@@ -55,6 +56,8 @@ struct Param {
 static Param _param_list[] = {
 	// These are key=value option strings.  Please list these in the order in 
 	// which they appear in Option.h, to make it easier to compare.
+
+	// bool options
 	{ kOptionAudio, AUDIO, false},
 	{ kOptionPlay, PLAY, false},
 	{ kOptionRecord, RECORD, false},
@@ -66,9 +69,12 @@ static Param _param_list[] = {
 	{ kOptionAutoLoad, AUTO_LOAD, false},
 	{ kOptionFastUpdate, FAST_UPDATE, false},
 
+	// number options
 	{ kOptionBufferFrames, BUFFER_FRAMES, false},
 	{ kOptionBufferCount, BUFFER_COUNT, false},
+	{ kOptionOSCInPort, OSC_INPORT, false},
 
+	// string options
 	{ kOptionDevice, DEVICE, false},
 	{ kOptionInDevice, INDEVICE, false},
 	{ kOptionOutDevice, OUTDEVICE, false},
@@ -179,6 +185,9 @@ static int _set_key_value_option(const char *key, const char *sval,
 	double dval = 0.0;
 
 	switch (type) {
+
+		// bool options
+
 		case AUDIO:
 			status = _str_to_bool(sval, bval);
 			Option::audio(bval);
@@ -225,6 +234,9 @@ static int _set_key_value_option(const char *key, const char *sval,
 				warn("set_option", "With \"%s\" on, certain instruments run "
 					"faster at the expense of reduced capabilities.\n", key);
 			break;
+
+		// number options
+
 		case BUFFER_FRAMES:
 			status = _str_to_int(sval, ival);
 			if (status == 0) {
@@ -241,6 +253,17 @@ static int _set_key_value_option(const char *key, const char *sval,
 				Option::bufferCount(ival);
 			}
 			break;
+		case OSC_INPORT:
+			status = _str_to_int(sval, ival);
+			if (status == 0) {
+				if (ival <= 0)
+					return die("set_option", "\"%s\" value must be > 0", key);
+				Option::oscInPort(ival);
+			}
+			break;
+
+		// string options
+
 		case DEVICE:
 			Option::device(sval);
 			break;

@@ -29,6 +29,7 @@ bool Option::_fastUpdate = false;
 
 double Option::_bufferFrames = DEFAULT_BUFFER_FRAMES;
 int Option::_bufferCount = DEFAULT_BUFFER_COUNT;
+int Option::_oscInPort = DEFAULT_OSC_INPORT;
 
 char Option::_device[DEVICE_MAX];
 char Option::_inDevice[DEVICE_MAX];
@@ -164,7 +165,7 @@ int Option::readConfigFile(const char *fileName)
 	else if (result != kConfigNoValueForKey)
 		reportError("%s: %s.", conf.getLastErrorText(), key);
 
-	// double options .........................................................
+	// number options .........................................................
 
 	double dval;
 
@@ -179,6 +180,13 @@ int Option::readConfigFile(const char *fileName)
 	result = conf.getValue(key, dval);
 	if (result == kConfigNoErr)
 		bufferCount((int)dval);
+	else if (result != kConfigNoValueForKey)
+		reportError("%s: %s.", conf.getLastErrorText(), key);
+
+	key = kOptionOSCInPort;
+	result = conf.getValue(key, dval);
+	if (result == kConfigNoErr)
+		oscInPort((int)dval);
 	else if (result != kConfigNoValueForKey)
 		reportError("%s: %s.", conf.getLastErrorText(), key);
 
@@ -276,10 +284,11 @@ int Option::writeConfigFile(const char *fileName)
 	fprintf(stream, "%s = %s\n", kOptionFastUpdate, 
 										fastUpdate() ? "true" : "false");
 
-	// write double options
+	// write number options
 	fprintf(stream, "\n# Number options: key = value\n");
 	fprintf(stream, "%s = %g\n", kOptionBufferFrames, bufferFrames());
 	fprintf(stream, "%s = %d\n", kOptionBufferCount, bufferCount());
+	fprintf(stream, "%s = %d\n", kOptionOSCInPort, oscInPort());
 
 	// write string options
 	fprintf(stream, "\n# String options: key = \"quoted string\"\n");
@@ -410,6 +419,7 @@ void Option::dump()
 	cout << kOptionFastUpdate << ": " << _fastUpdate << endl;
 	cout << kOptionBufferFrames << ": " << _bufferFrames << endl;
 	cout << kOptionBufferCount << ": " << _bufferCount << endl;
+	cout << kOptionOSCInPort << ": " << _oscInPort << endl;
 	cout << kOptionDevice << ": " << _device << endl;
 	cout << kOptionInDevice << ": " << _inDevice << endl;
 	cout << kOptionOutDevice << ": " << _outDevice << endl;
