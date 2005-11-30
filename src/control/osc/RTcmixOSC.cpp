@@ -44,7 +44,7 @@ RTcmixOSC *createOSCServer()
 
 int RTcmixOSC::init()
 {
-	const int portnum = Option::OSCInPort();
+	const int portnum = Option::oscInPort();
 #if DEBUG > 0
 	printf("Requested OSC input port: \"%d\"\n", portnum);
 #endif
