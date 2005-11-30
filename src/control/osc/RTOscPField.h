@@ -6,7 +6,7 @@
 #define _RTOSCPFIELD_H_
 
 #include <PField.h>
-#include <lo.h>
+#include <lo/lo.h>
 
 class Oonepole;
 class RTcmixOSC;

@@ -6,7 +6,7 @@
 #ifndef _RTCMIXOSC_H_
 #define _RTCMIXOSC_H_
 
-#include <lo.h>
+#include <lo/lo.h>
 
 class RTOscPField;
 
