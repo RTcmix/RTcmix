@@ -85,7 +85,7 @@ int RTOscPField::handler(const char *path, const char *types, lo_arg **argv,
 			pfield->value(val);
 		}
 		else
-			fprintf(stderr, "WARNING: incoming OSC value of type \'%c\' can't "
+			fprintf(stderr, "WARNING: incoming OSC value of type '%c' can't "
 								 "be coerced to double.\n", type);
 	}
 	return pfield->callbackReturn();
