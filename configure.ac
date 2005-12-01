@@ -134,7 +134,7 @@ AC_SUBST(JACK_SUPPORT)
 FFTW_SUPPORT=FALSE                        # default
 WITH_FFTW="false"                         # just for summary display below
 AC_ARG_WITH(fftw, AC_HELP_STRING([--with-fftw],
-   [use FFTW]),
+   [use FFTW (alternative FFT library)]),
    [if test "$withval" != "no"; then
       FFTW_SUPPORT=TRUE
       WITH_FFTW="true"
@@ -145,7 +145,7 @@ AC_SUBST(FFTW_SUPPORT)
 OSC_SUPPORT=FALSE                         # default
 WITH_OSC="false"                          # just for summary display below
 AC_ARG_WITH(osc, AC_HELP_STRING([--with-osc],
-   [use OSC]),
+   [support OSC (Open Sound Control)]),
    [if test "$withval" != "no"; then
       OSC_SUPPORT=TRUE
       WITH_OSC="true"
