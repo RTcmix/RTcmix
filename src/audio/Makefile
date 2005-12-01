@@ -14,17 +14,18 @@ OBJECTS =  AudioDevice.o AudioIODevice.o AudioDeviceImpl.o \
 		   NetAudioDevice.o audio_dev_creator.o sndlibsupport.o
 
 ifeq ($(ARCH),LINUX)
-OBJECTS +=  OSSAudioDevice.o SinglePortOSSAudioDevice.o \
+	OBJECTS +=  OSSAudioDevice.o SinglePortOSSAudioDevice.o \
 			MultiPortOSSAudioDevice.o ALSAAudioDevice.o TestAudioDevice.o
 endif
 ifeq ($(ARCH),MACOSX)
-OBJECTS += OSXAudioDevice.o
+	OBJECTS += OSXAudioDevice.o
 endif
 ifeq ($(ARCH),SGI)
-OBJECTS += SGIAudioDevice.o
+	OBJECTS += SGIAudioDevice.o
 endif
 ifeq ($(JACK_SUPPORT), TRUE)
-OBJECTS += JackAudioDevice.o
+	OBJECTS += JackAudioDevice.o
+	CXXFLAGS += $(JACK_CFLAGS)
 endif
 
 SNDLIB = ../sndlib/sndlib.a
@@ -41,9 +42,6 @@ $(AUDIOLIB):	$(OBJECTS)
 
 .cpp.o:
 	$(CXX) $(CXXFLAGS) $(SOUND_DRIVER) -c $< -o $@
-
-JackAudioDevice.o:
-	$(CXX) $(CXXFLAGS) $(JACK_CFLAGS) $(SOUND_DRIVER) -c $< -o $@
 
 depend:
 ifeq ($(ARCH),LINUX)
