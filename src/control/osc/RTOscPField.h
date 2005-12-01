@@ -49,9 +49,8 @@ private:
 	int _index;
 	double _inputmin;
 	double _inputmax;
-	double _inputdiff;
 	double _outputmin;
-	double _outputdiff;
+	double _factor;
 	double _default;
 	double _rawvalue;
 	int _callbackReturn;

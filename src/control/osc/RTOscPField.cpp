@@ -36,8 +36,7 @@ RTOscPField::RTOscPField(
 	_path = new char [strlen(path) + 1];
 	strcpy(_path, path);
 
-	_inputdiff = _inputmax - _inputmin;
-	_outputdiff = outputmax - _outputmin;
+	_factor = (outputmax - _outputmin) / (_inputmax - _inputmin);
 
 	// NOTE: We rely on the control rate in effect when this PField is created.
 	_filter = new Oonepole(resetval);
@@ -65,7 +64,7 @@ double RTOscPField::doubleValue(double) const
 			val = _inputmin;
 		else if (val > _inputmax)
 			val = _inputmax;
-		val = ((val - _inputmin) * _outputdiff / _inputdiff) + _outputmin;
+		val = ((val - _inputmin) * _factor) + _outputmin;
 	}
 	return _filter->next(val);
 }
