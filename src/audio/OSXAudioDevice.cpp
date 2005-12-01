@@ -775,7 +775,9 @@ int OSXAudioDevice::openOutput()
 		for (int stream = 0; stream < streamCount; ++stream) {
 			if (stream == port->streamIndex) {
 				port->streamChannel = streamChannel;
+#if DEBUG > 0
 				printf("output port streamChannel = %d\n", port->streamChannel);
+#endif
 				break;
 			}
 			streamChannel += port->streamDesc->mBuffers[stream].mNumberChannels;
