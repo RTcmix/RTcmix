@@ -134,7 +134,9 @@ Orms.o \
 Ortgetin.o \
 Ostrum.o
 
-ifeq ($(FFTW_SUPPORT), FALSE)
+ifeq ($(FFTW_SUPPORT), TRUE)
+	CXXFLAGS += $(FFTW_CFLAGS)
+else
 	OCFILES += FFTReal.cpp
 	OOBJECTS += FFTReal.o
 endif

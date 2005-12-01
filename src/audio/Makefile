@@ -43,7 +43,7 @@ $(AUDIOLIB):	$(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(SOUND_DRIVER) -c $< -o $@
 
 JackAudioDevice.o:
-	$(CXX) $(CXXFLAGS) `pkg-config --cflags jack` $(SOUND_DRIVER) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(JACK_CFLAGS) $(SOUND_DRIVER) -c $< -o $@
 
 depend:
 ifeq ($(ARCH),LINUX)

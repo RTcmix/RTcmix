@@ -124,17 +124,8 @@ LIBMINC = ../parser/minc/libminc.a
 AUDIOLIB = ../audio/librtaudio.a
 SNDLIB = ../sndlib/sndlib.a
 
-ifeq ($(JACK_SUPPORT), TRUE)
- ifeq ($(FFTW_SUPPORT), TRUE)
-   AUDIOLIB += `pkg-config --libs jack fftw3f`
- else
-   AUDIOLIB += `pkg-config --libs jack`
- endif
-else
- ifeq ($(FFTW_SUPPORT), TRUE)
-   AUDIOLIB += `pkg-config --libs fftw3f`
- endif
-endif
+# NB: these LIBS defs will be empty if the features are not configured
+AUDIOLIB += $(FFTW_LIBS) $(JACK_LIBS)
 
 LIBS = $(AUDIOLIB) $(SNDLIB) $(LIBCONF)
 

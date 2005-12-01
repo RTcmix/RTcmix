@@ -212,12 +212,16 @@ fi
 # JACK
 if test "$JACK_SUPPORT" = "TRUE"; then
    PKG_CHECK_MODULES(JACK,jack)
+   AC_SUBST(JACK_CFLAGS)
+   AC_SUBST(JACK_LIBS)
 fi
 
 # FFTW
 # NOTE: If this fails, it could be because user hasn't built FFTW --enable-float
 if test "$FFTW_SUPPORT" = "TRUE"; then
    PKG_CHECK_MODULES(FFTW,fftw3f)
+   AC_SUBST(FFTW_CFLAGS)
+   AC_SUBST(FFTW_LIBS)
 fi
 
 # OSC
