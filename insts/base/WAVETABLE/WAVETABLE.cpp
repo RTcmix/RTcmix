@@ -115,6 +115,9 @@ int WAVETABLE::init(double p[], int n_args)
                     "an old-style gen function in slot %d.", WAVET_GEN_SLOT);
 		tablelen = fsize(WAVET_GEN_SLOT);
 	}
+	if (tablelen > 32767)
+		return die("WAVETABLE", "wavetable must have fewer than 32768 samples.");
+
 	osc = new Ooscili(SR, freq, wavetable, tablelen);
 
 	return nSamps();
