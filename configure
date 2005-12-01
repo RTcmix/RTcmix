@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CMIXDIR build build_cpu build_vendor build_os host host_cpu host_vendor host_os ARCH AUDIODRIVER PERL_SUPPORT PERL PYTHON_SUPPORT PYTHON HTMLDESTDIR NPLAY_SUPPORT JACK_SUPPORT FFTW_SUPPORT CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX CPP x_libraries EGREP PKG_CONFIG JACK_CFLAGS JACK_LIBS FFTW_CFLAGS FFTW_LIBS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CMIXDIR build build_cpu build_vendor build_os host host_cpu host_vendor host_os ARCH AUDIODRIVER PERL_SUPPORT PERL_IN_LOCAL PERL PYTHON_SUPPORT PYTHON HTMLDESTDIR NPLAY_SUPPORT JACK_SUPPORT FFTW_SUPPORT OSC_SUPPORT CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CXX CXXFLAGS ac_ct_CXX CPP x_libraries EGREP PKG_CONFIG JACK_CFLAGS JACK_LIBS FFTW_CFLAGS FFTW_LIBS LIBLO_CFLAGS LIBLO_LIBS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -864,7 +864,8 @@ Optional Packages:
   --with-docdir=PATH      put documentation in this directory
   --with-netplay          support NetPlay
   --with-jack             support JACK
-  --with-fftw             use FFTW
+  --with-fftw             use FFTW (alternative FFT library)
+  --with-osc              support OSC (Open Sound Control)
   --with-x                use the X Window System
 
 Some influential environment variables:
@@ -1462,6 +1463,7 @@ fi;
 
 # Perl options
 PERL_SUPPORT=FALSE                        # disable by default
+PERL_IN_LOCAL=FALSE
 PERL=perl                                 # default perl name
 WITH_PERL="false"                         # just for summary display below
 
@@ -1474,8 +1476,12 @@ if test "${with_perl+set}" = set; then
       fi
       PERL_SUPPORT=TRUE
       WITH_PERL="true"
+	  if test PERL = "/usr/local/bin/perl"; then
+		  PERL_IN_LOCAL = TRUE
+	  fi
    fi
 fi;
+
 
 
 
@@ -1549,6 +1555,20 @@ if test "${with_fftw+set}" = set; then
   if test "$withval" != "no"; then
       FFTW_SUPPORT=TRUE
       WITH_FFTW="true"
+   fi
+fi;
+
+
+# liblo options, for OSC server plugin (in src/control/osc)
+OSC_SUPPORT=FALSE                         # default
+WITH_OSC="false"                          # just for summary display below
+
+# Check whether --with-osc or --without-osc was given.
+if test "${with_osc+set}" = set; then
+  withval="$with_osc"
+  if test "$withval" != "no"; then
+      OSC_SUPPORT=TRUE
+      WITH_OSC="true"
    fi
 fi;
 
@@ -4144,6 +4164,8 @@ echo "$as_me: error: Library requirements (jack) not met; consider adjusting the
    { (exit 1); exit 1; }; }
   fi
 
+
+
 fi
 
 # FFTW
@@ -4247,7 +4269,114 @@ echo "$as_me: error: Library requirements (fftw3f) not met; consider adjusting t
    { (exit 1); exit 1; }; }
   fi
 
+
+
 fi
+
+# OSC
+if test "$OSC_SUPPORT" = "TRUE"; then
+
+  succeeded=no
+
+  if test -z "$PKG_CONFIG"; then
+    # Extract the first word of "pkg-config", so it can be a program name with args.
+set dummy pkg-config; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_path_PKG_CONFIG+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  case $PKG_CONFIG in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_PKG_CONFIG="$PKG_CONFIG" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_PKG_CONFIG="$as_dir/$ac_word$ac_exec_ext"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+  test -z "$ac_cv_path_PKG_CONFIG" && ac_cv_path_PKG_CONFIG="no"
+  ;;
+esac
+fi
+PKG_CONFIG=$ac_cv_path_PKG_CONFIG
+
+if test -n "$PKG_CONFIG"; then
+  echo "$as_me:$LINENO: result: $PKG_CONFIG" >&5
+echo "${ECHO_T}$PKG_CONFIG" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  fi
+
+  if test "$PKG_CONFIG" = "no" ; then
+     echo "*** The pkg-config script could not be found. Make sure it is"
+     echo "*** in your path, or set the PKG_CONFIG environment variable"
+     echo "*** to the full path to pkg-config."
+     echo "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
+  else
+     PKG_CONFIG_MIN_VERSION=0.9.0
+     if $PKG_CONFIG --atleast-pkgconfig-version $PKG_CONFIG_MIN_VERSION; then
+        echo "$as_me:$LINENO: checking for liblo" >&5
+echo $ECHO_N "checking for liblo... $ECHO_C" >&6
+
+        if $PKG_CONFIG --exists "liblo" ; then
+            echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+            succeeded=yes
+
+            echo "$as_me:$LINENO: checking LIBLO_CFLAGS" >&5
+echo $ECHO_N "checking LIBLO_CFLAGS... $ECHO_C" >&6
+            LIBLO_CFLAGS=`$PKG_CONFIG --cflags "liblo"`
+            echo "$as_me:$LINENO: result: $LIBLO_CFLAGS" >&5
+echo "${ECHO_T}$LIBLO_CFLAGS" >&6
+
+            echo "$as_me:$LINENO: checking LIBLO_LIBS" >&5
+echo $ECHO_N "checking LIBLO_LIBS... $ECHO_C" >&6
+            LIBLO_LIBS=`$PKG_CONFIG --libs "liblo"`
+            echo "$as_me:$LINENO: result: $LIBLO_LIBS" >&5
+echo "${ECHO_T}$LIBLO_LIBS" >&6
+        else
+            LIBLO_CFLAGS=""
+            LIBLO_LIBS=""
+            ## If we have a custom action on failure, don't print errors, but
+            ## do set a variable so people can do so.
+            LIBLO_PKG_ERRORS=`$PKG_CONFIG --errors-to-stdout --print-errors "liblo"`
+            echo $LIBLO_PKG_ERRORS
+        fi
+
+
+
+     else
+        echo "*** Your version of pkg-config is too old. You need version $PKG_CONFIG_MIN_VERSION or newer."
+        echo "*** See http://www.freedesktop.org/software/pkgconfig"
+     fi
+  fi
+
+  if test $succeeded = yes; then
+     :
+  else
+     { { echo "$as_me:$LINENO: error: Library requirements (liblo) not met; consider adjusting the PKG_CONFIG_PATH environment variable if your libraries are in a nonstandard prefix so pkg-config can find them." >&5
+echo "$as_me: error: Library requirements (liblo) not met; consider adjusting the PKG_CONFIG_PATH environment variable if your libraries are in a nonstandard prefix so pkg-config can find them." >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+
+
+fi
+
 
 # Write output files -----------------------------------------------------------
           ac_config_headers="$ac_config_headers config.h"
@@ -4879,6 +5008,7 @@ s,@host_os@,$host_os,;t t
 s,@ARCH@,$ARCH,;t t
 s,@AUDIODRIVER@,$AUDIODRIVER,;t t
 s,@PERL_SUPPORT@,$PERL_SUPPORT,;t t
+s,@PERL_IN_LOCAL@,$PERL_IN_LOCAL,;t t
 s,@PERL@,$PERL,;t t
 s,@PYTHON_SUPPORT@,$PYTHON_SUPPORT,;t t
 s,@PYTHON@,$PYTHON,;t t
@@ -4886,6 +5016,7 @@ s,@HTMLDESTDIR@,$HTMLDESTDIR,;t t
 s,@NPLAY_SUPPORT@,$NPLAY_SUPPORT,;t t
 s,@JACK_SUPPORT@,$JACK_SUPPORT,;t t
 s,@FFTW_SUPPORT@,$FFTW_SUPPORT,;t t
+s,@OSC_SUPPORT@,$OSC_SUPPORT,;t t
 s,@CC@,$CC,;t t
 s,@CFLAGS@,$CFLAGS,;t t
 s,@LDFLAGS@,$LDFLAGS,;t t
@@ -4904,6 +5035,8 @@ s,@JACK_CFLAGS@,$JACK_CFLAGS,;t t
 s,@JACK_LIBS@,$JACK_LIBS,;t t
 s,@FFTW_CFLAGS@,$FFTW_CFLAGS,;t t
 s,@FFTW_LIBS@,$FFTW_LIBS,;t t
+s,@LIBLO_CFLAGS@,$LIBLO_CFLAGS,;t t
+s,@LIBLO_LIBS@,$LIBLO_LIBS,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
@@ -5402,5 +5535,6 @@ echo "  " Build with ALSA support............................... : $WITH_ALSA
 echo "  " Build with JACK support............................... : $WITH_JACK
 echo "  " Build with NetPlay support............................ : $WITH_NPLAY
 echo "  " Build with FFTW support............................... : $WITH_FFTW
+echo "  " Build with OSC support................................ : $WITH_OSC
 echo
 
