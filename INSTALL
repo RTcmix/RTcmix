@@ -11,10 +11,12 @@ as for help.
       tar xfz RTcmix-[version].tar.gz
       (or: gunzip -c RTcmix-[version].tar.gz | tar xf - )
 
+
 2. Look in RTcmix-[version]/insts.  If it contains "base", "std", "jg", "stk"
    and "vccm" directories, then you can skip this step.  If you have only
    "base", then you need to download the instrument packages named above.
    Unpack them into the "insts" directory of your RTcmix.
+
 
 3. cd into the top level of the RTcmix directory, and run the configure script:
 
@@ -24,11 +26,13 @@ as for help.
    description of them.  If you already ran configure without the options,
    it's okay to run it again with the options you want.
  
-      --with-alsa       Use the ALSA driver on Linux
+      --with-alsa       Use the ALSA driver, rather than OSS, on Linux
+      --with-jack       Enable support for the JACK sound server
       --with-perl       Build the Perl-enabled RTcmix (PCMIX)
       --with-python     Build the Python-enabled RTcmix (PYCMIX)
       --with-netplay    Enable code that lets you play RTcmix over a network
       --with-fftw       Use the FFTW3 library, instead of the builtin FFT code
+      --with-osc        Compile support for receiving OSC (Open Sound Control)
 
    If you have more than one version of Perl or Python on your system, you
    can tell RTcmix which one to use by giving its path with the option, e.g.:
@@ -45,16 +49,34 @@ as for help.
    For additional configure options, run "./configure --help".  Some of the
    standard GNU options are not yet enabled for RTcmix.
 
+   If you want to use the optional FFTW (Fastest Fourier Transform in the West)
+   support, you must install the fftw3f library that is part of the fftw
+   package (see fftw.org).  Configure this package with "--enable-float"
+   before making and installing.  Configure RTcmix with "--with-fftw".
+
+   If you want to use the optional OSC (Open Sound Control) support, you must
+   install the liblo library <http://plugin.org.uk/liblo>.  On OS X, configure
+   this library with "--disable-ipv6".
+
+   To build RTcmix with FFTW, Jack or liblo support, you must have the pkgconfig
+   package installed.  Any recent Linux distribution has this, but OS X doesn't.
+   Get it from Fink or DarwinPorts, or compile it from source:
+   <http://pkgconfig.freedesktop.org/releases/pkg-config-0.20.tar.gz>.
+
+
 4. There are some special settings that you can make in the "site.conf" file,
    though most people will never need to do this.
+
 
 5. Make the package.  Be sure you're still in the top RTcmix directory and type:
 
       make
 
+
 6. If the package builds without errors, install it:
 
       make install
+
 
 7. Add the bin directory inside of the RTcmix directory to your $PATH.  For
    example, if you're using the bash shell, put something like this in .profile:
@@ -62,9 +84,11 @@ as for help.
       PATH="/path/to/rtcmix/bin:$PATH"
       export PATH
 
+
 8. Try running some of the scores in docs/sample_scores.  To run any score,
    type "CMIX < scorefile.sco".  If these seem to work, your installation
    is probably ok.
+
 
 See the README files in the docs dir for information on recent features.
 
