@@ -39,9 +39,12 @@ XDisplay::~XDisplay()
 void XDisplay::doConfigureLabel(const int id, const char *prefix,
 		const char *units, const int precision)
 {
-	_prefix[id] = strdup(prefix);
-	if (units)
-		_units[id] = strdup(units);
+	_prefix[id] = new char [strlen(prefix) + 1];
+	strcpy(_prefix[id], prefix);
+	if (units) {
+		_units[id] = new char [strlen(units) + 1];
+		strcpy(_units[id], units);
+	}
 	_label[id] = new char [kWholeLabelLength];
 	_label[id][0] = 0;
 	_precision[id] = precision;

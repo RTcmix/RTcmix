@@ -143,7 +143,8 @@ int writePacket(const DisplaySockPacket *packet)
 void configureLabelPrefix(const int id, const char *prefix)
 {
 	assert(id >= 0 && id < kNumLabels);
-	_prefix[id] = strdup(prefix);
+	_prefix[id] = new char [strlen(prefix) + 1];
+	strcpy(_prefix[id], prefix);
 	_label[id] = new char [kWholeLabelLength];
 	_label[id][0] = 0;
 	_labelCount++;
@@ -155,7 +156,8 @@ void configureLabelPrefix(const int id, const char *prefix)
 void configureLabelUnits(const int id, const char *units)
 {
 	assert(id >= 0 && id < kNumLabels);
-	_units[id] = strdup(units);
+	_units[id] = new char [strlen(units) + 1];
+	strcpy(_units[id], units);
 }
 
 // Set precision for label with <id>.

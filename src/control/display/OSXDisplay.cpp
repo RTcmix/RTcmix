@@ -29,7 +29,8 @@ OSXDisplay::OSXDisplay()
 	_sockport = kSockPort;
 	_packet = new DisplaySockPacket [1];
 	_evtpacket = new DisplaySockPacket [1];
-	_servername = strdup(kServerName);
+	_servername = new char [strlen(kServerName) + 1];
+	strcpy(_servername, kServerName);
 }
 
 OSXDisplay::~OSXDisplay()
