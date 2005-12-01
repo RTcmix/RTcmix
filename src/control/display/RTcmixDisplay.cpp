@@ -26,9 +26,9 @@ RTcmixDisplay::RTcmixDisplay() : RTcmixWindow(kSleepMsec), _labelCount(0)
 RTcmixDisplay::~RTcmixDisplay()
 {
 	for (int i = 0; i < kNumLabels; i++) {
-		delete _prefix[i];
-		delete _units[i];
-		delete _label[i];
+		delete [] _prefix[i];
+		delete [] _units[i];
+		delete [] _label[i];
 	}
 }
 
