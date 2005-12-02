@@ -31,6 +31,10 @@ public:
 	inline void callbackReturn(int val) { _callbackReturn = val; }
 	inline int callbackReturn() const { return _callbackReturn; }
 	inline int index() const { return _index; }
+	inline int badMessages() const { return _badMessages; }
+	inline void incrementBadMessages() { _badMessages++; }
+	inline int lastBadArgc() const { return _lastBadArgc; }
+	inline void lastBadArgc(int argc) { _lastBadArgc = argc; }
 	inline void rawvalue(double value) { _rawvalue = value; }
 	inline double defaultval() const { return _default; }
 	inline char *path() const { return _path; }
@@ -47,6 +51,8 @@ private:
 	RTcmixOSC *_oscserver;
 	char *_path;
 	int _index;
+	int _badMessages;
+	int _lastBadArgc;
 	double _inputmin;
 	double _inputmax;
 	double _outputmin;
