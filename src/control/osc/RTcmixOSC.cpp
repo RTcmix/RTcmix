@@ -85,7 +85,7 @@ int RTcmixOSC::registerPField(
 	// we register now, will be called on receipt of <path> by the OSC server.
 
 	for (int i = 0; i < _numpfields; i++) {
-		if (strcmp(path, _pfields[i]->path()) == 0)
+		if (_pfields[i] != NULL && strcmp(path, _pfields[i]->path()) == 0)
 			_pfields[i]->callbackReturn(1);
 	}
 
@@ -94,10 +94,34 @@ int RTcmixOSC::registerPField(
 	if (_numpfields == _pfieldBlockSize) {
 		_pfieldBlockSize += kPFieldBlockSize;
 		_pfields = (RTOscPField **) realloc(_pfields,
-		                                    sizeof(void *) * _pfieldBlockSize);
+		                                    sizeof(void *) *_pfieldBlockSize);
 	}
 	_pfields[_numpfields] = pfield;
 	_numpfields++;
+
+	return 0;
+}
+
+int RTcmixOSC::unregisterPField(
+	RTOscPField *pfield)        // client PField to register
+{
+	const char *path = pfield->path();
+
+	// FIXME: There is not yet an API to do this for only one method of several
+	// having the same path.  lo_server_thread_del_method() does it for all
+	// handlers with the same path.  That's okay for now, because we'll only
+	// get here when shutting down, but that might not always be true.
+
+	lo_server_thread_del_method(_serverThread, path, NULL);
+
+	// Remove PField from our list.
+	for (int i = 0; i < _numpfields; i++) {
+		if (strcmp(path, _pfields[i]->path()) == 0)
+			_pfields[i]->callbackReturn(1);
+	}
+
+	// mark this so that registerPField will ignored it
+	_pfields[_numpfields] = NULL;
 
 	return 0;
 }

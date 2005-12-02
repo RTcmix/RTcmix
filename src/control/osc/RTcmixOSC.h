@@ -16,6 +16,7 @@ public:
 	virtual ~RTcmixOSC();
 	int init();
 	int registerPField(RTOscPField *pfield, lo_method_handler handler);
+	int unregisterPField(RTOscPField *pfield);
 	bool ready() const { return _ready; }
 
 private:
