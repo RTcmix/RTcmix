@@ -107,9 +107,6 @@ MIX_INST = ../../insts/base/MIX/MIX.o
 
 COMMON_OBJS = $(CPPOBJS) $(COBJS) heap/rtHeap.o $(MIX_INST) ../audio/audio_devices.o
 
-PIMBED_OBJS = $(COMMON_OBJS) pRTcmix.o
-
-
 ifeq ($(NPLAY_SUPPORT), TRUE)
    COMMON_OBJS += setnetplay.o
    CPPSRCS += setnetplay.cpp
@@ -139,8 +136,10 @@ ifeq ($(PERL_SUPPORT), TRUE)
    PROGS += PMIX
 endif
 ifeq ($(PYTHON_SUPPORT), TRUE)
-   ARCHFLAGS += -DPYTHON
+   IMBEDSRCS += pyRTcmix.cpp
+   TARGETS += pyRTcmix.o
    PROGS += PYMIX
+   ARCHFLAGS += -DPYTHON
    PYTHONLIBS = `$(PYTHON) ../parser/python/print_libpython.py`
    ifeq ($(PYTHON_EXT_STATIC_LINK), TRUE)
       PYEXT = ../parser/python/rtcmixmodule.o
@@ -163,6 +162,9 @@ all: $(TARGETS)
 	$(INSTALL) RTsockfuncs.o $(LIBDIR)
 ifeq ($(PERL_SUPPORT), TRUE)
 	$(INSTALL) pRTcmix.o $(LIBDIR)
+endif
+ifeq ($(PYTHON_SUPPORT), TRUE)
+	$(INSTALL) pyRTcmix.o $(LIBDIR)
 endif
 	$(INSTALL) $(RTLIB) $(LIBDIR)
 
@@ -265,6 +267,7 @@ uninstall: standalone_uninstall
 	$(RM) $(LIBDIR)/RTcmixMain.o
 	$(RM) $(LIBDIR)/RTsockfuncs.o
 	$(RM) $(LIBDIR)/pRTcmix.o
+	$(RM) $(LIBDIR)/pyRTcmix.o
 
 standalone_uninstall:
 	$(RM) $(DESTDIR)/CMIX
