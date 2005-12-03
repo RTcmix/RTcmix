@@ -1,4 +1,4 @@
-/* RTcmix  - Copyright (C) 2001  The RTcmix Development Team
+/* RTcmix  - Copyright (C) 2001 The RTcmix Development Team
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
@@ -10,67 +10,91 @@
 #include "rtcmix_parse.h"
 #include <Option.h>
 
+#ifdef PYEXT_INIT
+extern void initrtcmix(void);		/* defined in rtcmixmodule.cpp */
+#endif
+
+/* ========================================================================== */
+/* These functions called when running interactively, from the PYRTcmix object.
+*/
+
+/* ----------------------------------------------------- python_parse_buf --- */
+int
+python_parse_buf(char *inBuf)
+{
+	static int python_inited = 0;
+	int status;
+
+	if (!python_inited) {
+		/* Init Python interpreter.  If this fails, it won't return. */
+		Py_Initialize();
+		python_inited = 1;
+	}
+
+	status = PyRun_SimpleStringFlags(inBuf, NULL);
+
+	return status;
+}
+
+
+/* ------------------------------------------------------ get_python_fval --- */
+double
+get_python_fval(char *val)
+{
+	// FIXME
+	return 0.0;
+}
+
+/* ------------------------------------------------------ python_finalize --- */
+void
+python_finalize()
+{
+	Py_Finalize();				/* any errors ignored internally */
+}
+
+
+/* ========================================================================== */
+/* These functions called when running non-interactively, from scripts. */
+
 static FILE *_script = NULL;
 static char *_script_name = NULL;
-
-#ifdef PYEXT_INIT
-extern void initrtcmix(void);    /* defined in rtcmixmodule.cpp */
-#endif
 
 /* ---------------------------------------------------------- parse_score --- */
 int
 parse_score(int argc, char *argv[])
 {
-   int   status, xargc;
-   char  *xargv[MAXARGS + 2];
+	int	status, xargc;
+	char	*xargv[MAXARGS + 2];
 
-   assert(argc <= MAXARGS);
+	assert(argc <= MAXARGS);
 
-   Py_SetProgramName(argv[0]);
+	Py_SetProgramName(argv[0]);
 
-   /* Init Python interpreter.  If this fails, it won't return. */
-   Py_Initialize();
+	/* Init Python interpreter.  If this fails, it won't return. */
+	Py_Initialize();
 
-   /* Define sys.argv in Python. */
-   PySys_SetArgv(argc, argv);
+	/* Define sys.argv in Python. */
+	PySys_SetArgv(argc, argv);
 
-   /* If we're linking statically to extension module, init it */
+	/* If we're linking statically to extension module, init it */
 #ifdef PYEXT_INIT
-   initrtcmix();
+	initrtcmix();
 #endif
 
-   if (_script == NULL)
-      _script = stdin;
-   /* Otherwise, <_script> will have been set by use_script_file. */
+	if (_script == NULL)
+		_script = stdin;
+	/* Otherwise, <_script> will have been set by use_script_file. */
 
-   /* Run the Python interpreter. */
-   PyRun_AnyFile(_script, _script_name);
+	/* Run the Python interpreter. */
+	PyRun_AnyFile(_script, _script_name);
 
-   /* Kill interpreter, so that it won't trap cntl-C while insts play.
-      Actually, it turns out that this doesn't help, at least for 
-      Python 2.x, so we have to reinstall our SIGINT handler in main().
-   */
-   Py_Finalize();                /* any errors ignored internally */
+	/* Kill interpreter, so that it won't trap cntl-C while insts play.
+	   Actually, it turns out that this doesn't help, at least for 
+	   Python 2.x, so we have to reinstall our SIGINT handler in main().
+	*/
+	Py_Finalize();				/* any errors ignored internally */
 
-   return 0;
-}
-
-
-/* ----------------------------------------------------- python_parse_buf --- */
-/* For use in embedding apps. */
-int
-python_parse_buf(char *inBuf)
-{
-   return 0;
-}
-
-
-/* ------------------------------------------------------ get_python_fval --- */
-/* For use in embedding apps. */
-double
-get_python_fval(char *val)
-{
-   return 0.0;
+	return 0;
 }
 
 
@@ -79,14 +103,14 @@ get_python_fval(char *val)
 void
 use_script_file(char *fname)
 {
-   _script = fopen(fname, "r");
-   if (_script == NULL) {
-      fprintf(stderr, "Can't open %s\n", fname);
-      return;
-   }
-   _script_name = fname;
-   if (get_bool_option(kOptionPrint))
-      printf("Using file %s\n", fname);
+	_script = fopen(fname, "r");
+	if (_script == NULL) {
+		fprintf(stderr, "Can't open %s\n", fname);
+		return;
+	}
+	_script_name = fname;
+	if (get_bool_option(kOptionPrint))
+		printf("Using file %s\n", fname);
 }
 
 
@@ -94,6 +118,6 @@ use_script_file(char *fname)
 void
 destroy_parser()
 {
-   /* nothing to do (see Py_Finalize() above) */
+	/* nothing to do (see Py_Finalize() above) */
 }
 
