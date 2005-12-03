@@ -56,6 +56,24 @@ parse_score(int argc, char *argv[])
 }
 
 
+/* ----------------------------------------------------- python_parse_buf --- */
+/* For use in embedding apps. */
+int
+python_parse_buf(char *inBuf)
+{
+   return 0;
+}
+
+
+/* ------------------------------------------------------ get_python_fval --- */
+/* For use in embedding apps. */
+double
+get_python_fval(char *val)
+{
+   return 0.0;
+}
+
+
 /* ------------------------------------------------------ use_script_file --- */
 /* Parse file <fname> instead of stdin. */
 void
