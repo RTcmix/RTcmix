@@ -99,7 +99,7 @@
 #define kOptionOutDevice        "outdevice"
 #define kOptionMidiInDevice     "midi_indevice"
 #define kOptionMidiOutDevice    "midi_outdevice"
-#define kOptionOSCHost          "localhost"
+#define kOptionOSCHost          "localhost"  // NB: for unimplemented transmit
 #define kOptionDSOPath          "dso_path"
 #define kOptionRCName           "rcname"
 #define kOptionHomeDir          "homedir"
