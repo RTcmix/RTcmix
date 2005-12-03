@@ -324,10 +324,12 @@ int Option::writeConfigFile(const char *fileName)
 	else
 		fprintf(stream, "# %s = \"%s\"\n", kOptionMidiOutDevice,
 														"my midi outdevice");
+#ifdef NOTYET  // we haven't implemented OSC transmit, which would need this
 	if (oscHost()[0])
 		fprintf(stream, "%s = \"%s\"\n", kOptionOSCHost, oscHost());
 	else
 		fprintf(stream, "# %s = \"%s\"\n", kOptionOSCHost, "localhost");
+#endif
 #ifdef SHAREDLIBDIR
 	fprintf(stream, "\n# %s is a colon-separated list of directories (full "
 			"path names) to \n# search for instruments.\n", kOptionDSOPath);
