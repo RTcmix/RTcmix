@@ -41,6 +41,7 @@ enum ParamType {
 	OUTDEVICE,
 	MIDI_INDEVICE,
 	MIDI_OUTDEVICE,
+	OSC_HOST,
 	DSOPATH,
 	RCNAME
 };
@@ -80,6 +81,7 @@ static Param _param_list[] = {
 	{ kOptionOutDevice, OUTDEVICE, false},
 	{ kOptionMidiInDevice, MIDI_INDEVICE, false},
 	{ kOptionMidiOutDevice, MIDI_OUTDEVICE, false},
+	{ kOptionOSCHost, OSC_HOST, false},
 	{ kOptionDSOPath, DSOPATH, false},
 	{ kOptionRCName, RCNAME, false},
 
@@ -279,6 +281,9 @@ static int _set_key_value_option(const char *key, const char *sval,
 		case MIDI_OUTDEVICE:
 			Option::midiOutDevice(sval);
 			break;
+		case OSC_HOST:
+			Option::oscHost(sval);
+			break;
 		case DSOPATH:
 			Option::dsoPath(sval);
 			break;
@@ -296,7 +301,7 @@ static int _set_key_value_option(const char *key, const char *sval,
 
 //-------------------------------------------------------- _set_value_option ---
 // This way of setting options is deprecated, in favor of the new key=value way.
-// Do not handle new options in this function; use _set_key_value_option.
+// NOTE: Do not handle new options in this function; use _set_key_value_option.
 static int _set_value_option(const char *sval, const bool rtsetparams_called)
 {
 	int type = -1;

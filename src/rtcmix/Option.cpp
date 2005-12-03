@@ -15,6 +15,7 @@
 
 #define DEVICE_MAX   64
 #define DSOPATH_MAX  PATH_MAX * 2
+#define OSCHOST_MAX  128
 
 bool Option::_audio = true;
 bool Option::_play = true;
@@ -36,6 +37,7 @@ char Option::_inDevice[DEVICE_MAX];
 char Option::_outDevice[DEVICE_MAX];
 char Option::_midiInDevice[DEVICE_MAX];
 char Option::_midiOutDevice[DEVICE_MAX];
+char Option::_oscHost[OSCHOST_MAX];
 char Option::_dsoPath[DSOPATH_MAX];
 char Option::_homeDir[PATH_MAX];
 char Option::_rcName[PATH_MAX];
@@ -48,6 +50,7 @@ void Option::init()
 	_outDevice[0] = 0;
 	_midiInDevice[0] = 0;
 	_midiOutDevice[0] = 0;
+	strcpy(_oscHost, "localhost");
 	_dsoPath[0] = 0;
 	_homeDir[0] = 0;
 	_rcName[0] = 0;
@@ -229,6 +232,13 @@ int Option::readConfigFile(const char *fileName)
 	else if (result != kConfigNoValueForKey)
 		reportError("%s: %s.", conf.getLastErrorText(), key);
 
+	key = kOptionOSCHost;
+	result = conf.getValue(key, sval);
+	if (result == kConfigNoErr)
+		oscHost(sval);
+	else if (result != kConfigNoValueForKey)
+		reportError("%s: %s.", conf.getLastErrorText(), key);
+
 	key = kOptionDSOPath;
 	result = conf.getValue(key, sval);
 	if (result == kConfigNoErr)
@@ -314,6 +324,10 @@ int Option::writeConfigFile(const char *fileName)
 	else
 		fprintf(stream, "# %s = \"%s\"\n", kOptionMidiOutDevice,
 														"my midi outdevice");
+	if (oscHost()[0])
+		fprintf(stream, "%s = \"%s\"\n", kOptionOSCHost, oscHost());
+	else
+		fprintf(stream, "# %s = \"%s\"\n", kOptionOSCHost, "localhost");
 #ifdef SHAREDLIBDIR
 	fprintf(stream, "\n# %s is a colon-separated list of directories (full "
 			"path names) to \n# search for instruments.\n", kOptionDSOPath);
@@ -362,6 +376,13 @@ char *Option::midiOutDevice(const char *devName)
 	strncpy(_midiOutDevice, devName, DEVICE_MAX);
 	_midiOutDevice[DEVICE_MAX - 1] = 0;
 	return _midiOutDevice;
+}
+
+char *Option::oscHost(const char *oscHost)
+{
+	strncpy(_oscHost, oscHost, OSCHOST_MAX);
+	_oscHost[OSCHOST_MAX - 1] = 0;
+	return _oscHost;
 }
 
 char *Option::dsoPath(const char *pathName)
@@ -425,6 +446,7 @@ void Option::dump()
 	cout << kOptionOutDevice << ": " << _outDevice << endl;
 	cout << kOptionMidiInDevice << ": " << _midiInDevice << endl;
 	cout << kOptionMidiOutDevice << ": " << _midiOutDevice << endl;
+	cout << kOptionOSCHost << ": " << _oscHost << endl;
 	cout << kOptionDSOPath << ": " << _dsoPath << endl;
 	cout << kOptionRCName << ": " << _rcName << endl;
 	cout << kOptionHomeDir << ": " << _homeDir << endl;
