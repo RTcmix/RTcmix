@@ -23,14 +23,14 @@
 
    John Gibson <johngibson@virginia.edu>,  21 April, 2000
 */
-rtsetparams(44100, 1)
+rtsetparams(44100, 2)
 load("COMPLIMIT")
 
 bus_config("COMPLIMIT", "in0-1", "out0-1")
 
-rtinput("/tmp/jumpyextract.wav")
-inskip = 10
-dur = .5
+rtinput("../../../snd/input.wav");
+inskip = 0;
+dur = DUR(0);
 
 ingain = 0
 outgain = 0
