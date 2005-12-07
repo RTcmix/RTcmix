@@ -8,8 +8,13 @@ load("STRUMFB")
 load("PANECHO")
 
 dur = 120
+use_frets = 0
 
 freq = makeconnection("mouse", "x", min=5, max=8, min, lag=80, "freq")
+if (use_frets) {
+	freq = makefilter(freq, "quantize", 1 / 12)
+	freq = makefilter(freq, "smooth", lag=40)
+}
 freq = makeconverter(freq, "pchoct")
 
 fbfreq = makeconnection("mouse", "y", min=5, max=9, min, lag=80, "fbfreq")
