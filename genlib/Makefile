@@ -95,6 +95,8 @@ tableset.o \
 wshape.o
 
 OCFILES = \
+Oallpass.cpp \
+Oallpassi.cpp \
 Obalance.cpp \
 Obucket.cpp \
 Ocomb.cpp \
@@ -115,6 +117,8 @@ Ortgetin.cpp \
 Ostrum.cpp
 
 OOBJECTS = \
+Oallpass.o \
+Oallpassi.o \
 Obalance.o \
 Obucket.o \
 Ocomb.o \
