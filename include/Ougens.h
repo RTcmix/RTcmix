@@ -5,6 +5,8 @@
 #ifndef _OUGENS_H_
 #define _OUGENS_H_ 1
 
+#include "../genlib/Oallpass.h"
+#include "../genlib/Oallpassi.h"
 #include "../genlib/Obalance.h"
 #include "../genlib/Obucket.h"
 #include "../genlib/Ocomb.h"
