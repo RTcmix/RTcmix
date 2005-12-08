@@ -1,4 +1,4 @@
-/* RTcmix - Copyright (C) 2004  The RTcmix Development Team
+/* RTcmix - Copyright (C) 2005  The RTcmix Development Team
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
@@ -62,12 +62,6 @@ float Oallpass::next(float input)
 	_lastout = temp - (_gain * _lastout);
 	
 	return _lastout;
-	
-//	this causes a high resonance
-/*	float tmp = input + (_gain * _delay->last());
-	_lastout = _delay->next(tmp);
-	return (tmp - (_gain * _lastout));
-*/
 }
 
 float Oallpass::next(float input, float delaySamps)
@@ -83,13 +77,6 @@ float Oallpass::next(float input, float delaySamps)
 	_lastout = temp - (_gain * _lastout);
 	
 	return _lastout;
-	
-//	this causes a high resonance
-/*	float tmp = input + (_gain * _delay->last());
-	_lastout = _delay->next(tmp);
-	return (tmp - (_gain * _lastout));
-*/
-
 }
 
 float Oallpass::frequency() const
