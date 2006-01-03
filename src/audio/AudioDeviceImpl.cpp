@@ -58,11 +58,13 @@ int	AudioDeviceImpl::setFrameFormat(int frameSampFmt, int frameChans)
 
 int AudioDeviceImpl::open(int mode, int sampfmt, int chans, double srate)
 {
-//	printf("AudioDeviceImpl::open: opening device 0x%x for %s in %s mode\n",
-//		   this,
-//		   (mode & DirectionMask) == RecordPlayback ? "Record/Playback"
-//		   : (mode & DirectionMask) == Playback ? "Playback" : "Record",
-//		   (mode & Passive) ? "Passive" : "Active");
+#if DEBUG > 0
+	printf("AudioDeviceImpl::open: opening device 0x%x for %s in %s mode\n",
+		   this,
+		   (mode & DirectionMask) == RecordPlayback ? "Record/Playback"
+		   : (mode & DirectionMask) == Playback ? "Playback" : "Record",
+		   (mode & Passive) ? "Passive" : "Active");
+#endif
 	_lastErr[0] = 0;
 	setMode(mode);
 	int status = 0;
