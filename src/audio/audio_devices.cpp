@@ -22,7 +22,7 @@
 #include "DualOutputAudioDevice.h"
 #include "audio_devices.h"
 
-#define DEBUG	1
+#define DEBUG	0
 
 #ifdef NETAUDIO
 char globalNetworkPath[128];			// Set by Minc/setnetplay.c
