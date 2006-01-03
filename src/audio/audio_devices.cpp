@@ -22,7 +22,7 @@
 #include "DualOutputAudioDevice.h"
 #include "audio_devices.h"
 
-#define DEBUG	0
+#define DEBUG	1
 
 #ifdef NETAUDIO
 char globalNetworkPath[128];			// Set by Minc/setnetplay.c
@@ -111,7 +111,7 @@ create_audio_devices(int record, int play, int chans, float srate, int *buffersi
 		int newSize = reqsize * numBuffers / reqcount;
 		if (newSize != *buffersize) {
 			advise("rtsetparams",
-				   "RTBUFSAMPS reset by audio device from %d to %d.",
+				   "Buffer size reset by audio device from %d to %d frames.",
 					*buffersize, newSize);
 			*buffersize = newSize;
 		}
