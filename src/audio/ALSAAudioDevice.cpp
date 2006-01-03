@@ -353,8 +353,9 @@ int	ALSAAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 			fread = snd_pcm_readi(_handle, frameBuffer, frameCount);
 		else
 			fread = snd_pcm_readn(_handle, (void **) frameBuffer, frameCount);
+		PRINT1("ALSAAudioDevice::doGetFrames: %d frames to read, %d read\n", frameCount, fread);
 		if (fread == -EPIPE) {
-//			printf("ALSAAudioDevice::doGetFrames: overrun on read -- recovering and calling again\n");
+			PRINT1("ALSAAudioDevice::doGetFrames: overrun on read -- recovering and calling again\n");
 			snd_pcm_prepare(_handle);
 		}
 		else if (fread < 0) {
