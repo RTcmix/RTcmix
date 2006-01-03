@@ -41,6 +41,9 @@ static const AudioDevEntry s_AudioDevEntries[] = {
 #ifdef NETAUDIO
 	{ &NetAudioDevice::recognize, &NetAudioDevice::create },
 #endif
+#ifdef JACK // before MACOSX, since OSXAudioDevice::recognize matches anything
+	{ &JackAudioDevice::recognize, &JackAudioDevice::create },
+#endif
 #ifdef MACOSX
 	{ &OSXAudioDevice::recognize, &OSXAudioDevice::create },
 #endif
@@ -56,9 +59,6 @@ static const AudioDevEntry s_AudioDevEntries[] = {
 #endif
 #ifdef SGI
 	{ &SGIAudioDevice::recognize, &SGIAudioDevice::create },
-#endif
-#ifdef JACK
-	{ &JackAudioDevice::recognize, &JackAudioDevice::create },
 #endif
 	{ NULL, NULL }
 };
