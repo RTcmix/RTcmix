@@ -1,4 +1,4 @@
-// JackAudioDevice.cpp
+// JackAudioDevice.cpp - by John Gibson and Douglas Scott
 
 #if defined(JACK)
 
@@ -350,23 +350,19 @@ int JackAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 
 int JackAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 {
-	jack_nframes_t jackBufSize = jack_get_buffer_size(_impl->client);
-#if 1
+#if 0
 // FIXME: I doubt this is right...
+	jack_nframes_t jackBufSize = jack_get_buffer_size(_impl->client);
 	jack_nframes_t rtcmixBufSize = *pWriteSize * *pCount;
 	if (rtcmixBufSize != jackBufSize) {
 		*pWriteSize = jackBufSize / *pCount;
 		// notify user
 	}
 #else
-	if ((jack_nframes_t) *pWriteSize != jackBufSize) {
-		*pWriteSize = jackBufSize;
-		// notify user?
-	}
-	if (*pCount != 1) {
-		*pCount = 1;
-		// notify user?
-	}
+	*pWriteSize = jack_get_buffer_size(_impl->client);
+	// NB: We ignore pCount, pretending it's always 1.  We don't change it
+	// to 1 for the caller, though, because this would screw up caller's
+	// recalculation of the buffer size.  We might want to warn user here.
 #endif
 
 	// Create JACK ports, one per channel, and audio buf pointer arrays.
@@ -460,7 +456,10 @@ int JackAudioDevice::doGetFrameCount() const
 
 bool JackAudioDevice::recognize(const char *desc)
 {
-	return (strncmp(desc, "JACK", 4) == 0);
+	if (desc == NULL)
+		return false;
+	return strncmp(desc, "JACK", 4) == 0
+	       || strncmp(desc, "jack", 4) == 0;
 }
 
 // If your audio device(s) needs a string descriptor, it will come in via
