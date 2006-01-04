@@ -435,7 +435,7 @@ Player::openAudioDevice()
    }
    if (reqsize != _deviceFrames) {
       if (!_quiet)
-         printf("Note: buffer size reset by audio device from %d to %d.",
+         printf("Note: buffer size reset by audio device from %d to %d.\n",
                                                       _deviceFrames, reqsize);
       _deviceFrames = reqsize;
    }
