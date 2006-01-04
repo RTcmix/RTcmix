@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DEBUG 1
+#define DEBUG 0
 
 #if DEBUG > 1
 #define PRINT0 if (1) printf
@@ -65,7 +65,7 @@ struct JackAudioDevice::Impl {
 	// class constructor directly below.  Ditto with destructor.
 	Impl() : client(NULL), numInPorts(0), numOutPorts(0), inPorts(NULL),
 		outPorts(NULL), inBuf(NULL), outBuf(NULL), frameCount(0),
-		jackOpen(false), jackActivated(false) {}
+		jackOpen(false) {}
 	~Impl();
 	jack_client_t *client;
 	int numInPorts;
@@ -76,7 +76,6 @@ struct JackAudioDevice::Impl {
 	jack_default_audio_sample_t **outBuf;
 	int frameCount;
 	bool jackOpen;
-	bool jackActivated;
 
 	static int runProcess(jack_nframes_t nframes, void *object);
 	static void shutdown(void *object);
@@ -84,11 +83,6 @@ struct JackAudioDevice::Impl {
 
 JackAudioDevice::Impl::~Impl()
 {
-#if 0 // wait, maybe the ports are owned by JACK?
-	use jack_port_unregister(), or just forget it?
-	for (int i = 0; i < numInPorts; i++)
-		delete inPorts[i];
-#endif
 	delete [] inPorts;
 	delete [] outPorts;
 	delete [] inBuf;
@@ -131,8 +125,10 @@ int JackAudioDevice::Impl::runProcess(jack_nframes_t nframes, void *object)
 #else
 	bool keepGoing = device->runCallback();
 	if (!keepGoing) {
+		PRINT0("runProcess: runCallback returned false; calling stopCallback\n");
 		device->stopCallback();
-		device->close();
+// FIXME: let's leave closing to happen from dtor
+//		device->close();
 	}
 #endif
 
@@ -147,8 +143,7 @@ void JackAudioDevice::Impl::shutdown(void *object)
 	PRINT0("JackAudioDevice::shutdown()\n");
 	JackAudioDevice *device = (JackAudioDevice *) object;
 	device->stopCallback();
-	device->close();
-	// FIXME: make RTcmix quit gracefully
+//	device->close();
 }
 
 JackAudioDevice::JackAudioDevice() : _impl(new Impl)
@@ -157,6 +152,7 @@ JackAudioDevice::JackAudioDevice() : _impl(new Impl)
 
 JackAudioDevice::~JackAudioDevice()
 { 
+	PRINT0("JackAudioDevice::~JackAudioDevice() - calling close()\n");
 	close();
 	delete _impl;
 }
@@ -201,12 +197,25 @@ int JackAudioDevice::doClose()
 		if (_impl->jackOpen) {
 			// must clear this right away to prevent race condition
 			_impl->jackOpen = false;
-			PRINT0("...calling jack_client_close(client=%p)\n", _impl->client);
-			if (jack_client_close(_impl->client) != 0)
-				return error("Error closing JACK.");
+
+			// If the jack daemon is running with elevated privs (i.e., with the
+			// -R flag), but the RTcmix threads are not -- as happens when you
+			// start jackd via jackstart, for example -- then there's a nasty
+			// problem when we receive a cntl-C interrupt.  In that case, doClose
+			// is called from an RTcmix thread, and calling jack_client_close will
+			// then hang, causing bad stuff to happen.  So in the realtime case,
+			// we just die without closing jack, since this seems to be okay.
+			if (!jack_is_realtime(_impl->client)) {
+				PRINT0("...calling jack_client_close(client=%p)\n", _impl->client);
+				if (jack_client_close(_impl->client) != 0)
+					return error("Error closing JACK.");
+			}
 		}
-// FIXME: not the right place (see other stopCallback invocations in this file),
-// but the only way to handle interrupt correctly?
+
+		// We call this here only because when called from our interrupt handler,
+		// this seems to be the only way to stop the process thread.  Note that
+		// this is safe for other situations, because stopCallback does something
+		// only the first time you call it.
 		stopCallback();
 	}
 	_impl->frameCount = 0;
@@ -264,10 +273,9 @@ int JackAudioDevice::doStart()
 {
 	PRINT0("JackAudioDevice::doStart()\n");
 
-	// NB: This can't be done before coordinating buffer size.
+	// NB: This can't be done before negotiating buffer size.
 	if (jack_activate(_impl->client) != 0)
 		return error("Error activating JACK client.");
-	_impl->jackActivated = true;
 
 	return connectPorts();
 }
@@ -281,14 +289,7 @@ int JackAudioDevice::doStop()
 {
 	PRINT0("JackAudioDevice::doStop()\n");
 
-#if 0
-	if (_impl->jackActivated) {
-		// must clear this right away to prevent race condition
-		_impl->jackActivated = false;
-		if (jack_deactivate(_impl->client) != 0)
-			return error("Error deactivating JACK client.");
-	}
-#endif
+	// NB: jack_client_close calls jack_deactivate, so we don't do that here.
 
 	return 0;
 }
