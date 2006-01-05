@@ -6,6 +6,7 @@
 #include <jack/jack.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #define DEBUG 0
 
@@ -20,49 +21,7 @@
 #define PRINT1 if (0) printf
 #endif
 
-
-// Our methods are called in this order during create_audio_devices()...
-//
-// recognize()
-// create()
-// doOpen()
-// doSetFormat()
-// doSetQueueSize()
-//
-// Then these are called...
-//
-// doStart()          // during RTcmix::runMainLoop()
-// doSendFrames()     // during RTcmix::rtsendsamps()
-// doGetFrames()      // during RTcmix::rtgetsamps()
-// doStop()           // during, errr, idunno
-
-// Here is a partial list of base class helper methods you may use to check
-// the state of the system.  Not all of these have valid values at all times --
-// some return state that you set via the init/open sequence.  Most should be
-// self-explanatory:
-
-// bool		isOpen() const;
-// bool		isRunning() const;				-- has start() been called
-// bool		isPaused() const;
-// int		getFrameFormat() const;			-- MUS_BSHORT, etc.
-// int		getDeviceFormat() const;
-// bool		isFrameFmtNormalized() const;
-// bool		isDeviceFmtNormalized() const;
-// bool		isFrameInterleaved() const;
-// bool		isDeviceInterleaved() const;
-// int		getFrameChannels() const;
-// int		getDeviceChannels() const;
-// double	getSamplingRate() const;
-// long		getFrameCount() const;			-- number of frames rec'd or played
-
-
-// This struct allows us to hide all Jack implementation details within
-// this source file.
-
 struct JackAudioDevice::Impl {
-	// Put all class-specific state in here.  You can also add a constructor
-	// to make sure all state is initialized, or do it by hand in the main
-	// class constructor directly below.  Ditto with destructor.
 	Impl() : client(NULL), numInPorts(0), numOutPorts(0), inPorts(NULL),
 		outPorts(NULL), inBuf(NULL), outBuf(NULL), frameCount(0),
 		jackOpen(false) {}
@@ -143,7 +102,7 @@ void JackAudioDevice::Impl::shutdown(void *object)
 	PRINT0("JackAudioDevice::shutdown()\n");
 	JackAudioDevice *device = (JackAudioDevice *) object;
 	device->stopCallback();
-//	device->close();
+//	device->close(); // better to let this happen from dtor
 }
 
 JackAudioDevice::JackAudioDevice() : _impl(new Impl)
@@ -157,73 +116,58 @@ JackAudioDevice::~JackAudioDevice()
 	delete _impl;
 }
 
-// doOpen() is called by AudioDevice::open() to do the class-specific opening
-// of the audio port, HW, device, etc.  and set up any remaining Impl state.
-//
-// The assumption is that the open of the HW will return a integer file
-// descriptor that we can wait on.  Before exiting this method, call
-// setDevice() and hand it that descriptor.  It is used by waitForDevice().
-//
-// 'mode' has a direction portion and a bit to indicate if the device is being
-// run in passive mode (does not spawn its own thread to handle I/O).
-// You are guaranteed that doOpen() will NOT be called if you are already open.
-
 int JackAudioDevice::doOpen(int mode)
 {
-	// Initialize any Impl state if not done in Impl::Impl().
-
 // FIXME: RTcmix is not always the program name
-// also, consider using jack_client_open, as in simple_client example
-	_impl->client = jack_client_new("RTcmix");
-	if (_impl->client == 0)
+	jack_status_t status;
+	_impl->client = jack_client_open("RTcmix", JackNullOption, &status);
+	if (_impl->client == NULL)
 		return error("JACK server not running?");
+//FIXME: use <status> to get better error message
 	_impl->jackOpen = true;
+
 	if (jack_set_process_callback(_impl->client, _impl->runProcess,
 			(void *) this) != 0)
 		return error("Could not register JACK process callback.");
+
 	jack_on_shutdown(_impl->client, _impl->shutdown, (void *) this);
 
 	return 0;
 }
 
-// doClose() is called by AudioDevice::close() to do the class-specific closing
-// of the audio port, HW, device, etc.  You are guaranteed that doClose() will
-// NOT be called if you are already closed.
-
 int JackAudioDevice::doClose()
 {
 	PRINT0("JackAudioDevice::doClose()\n");
-	if (isOpen()) {
-		if (_impl->jackOpen) {
-			// must clear this right away to prevent race condition
-			_impl->jackOpen = false;
+	if (_impl->jackOpen) {
+		// must clear this right away to prevent race condition
+		_impl->jackOpen = false;
 
-			// If the jack daemon is running with elevated privs (i.e., with the
-			// -R flag), but the RTcmix threads are not -- as happens when you
-			// start jackd via jackstart, for example -- then there's a nasty
-			// problem when we receive a cntl-C interrupt.  In that case, doClose
-			// is called from an RTcmix thread, and calling jack_client_close will
-			// then hang, causing bad stuff to happen.  So in the realtime case,
-			// we just die without closing jack, since this seems to be okay.
-			if (!jack_is_realtime(_impl->client)) {
-				PRINT0("...calling jack_client_close(client=%p)\n", _impl->client);
-				if (jack_client_close(_impl->client) != 0)
-					return error("Error closing JACK.");
-			}
+		// If the jack daemon is running with elevated privs (i.e., with the
+		// -R flag), but the RTcmix threads are not -- as happens when you
+		// start jackd via jackstart, for example -- then there's a nasty
+		// problem when we receive a cntl-C interrupt.  In that case, doClose
+		// is called from an RTcmix thread, and calling jack_client_close will
+		// then hang, causing bad stuff to happen.  So in the realtime case,
+		// we just die without closing jack, since this seems to be okay.
+		if (!jack_is_realtime(_impl->client)) {
+			PRINT0("...calling jack_client_close(client=%p)\n", _impl->client);
+			if (jack_client_close(_impl->client) != 0)
+				return error("Error closing JACK.");
 		}
-
-		// We call this here only because when called from our interrupt handler,
-		// this seems to be the only way to stop the process thread.  Note that
-		// this is safe for other situations, because stopCallback does something
-		// only the first time you call it.
-		stopCallback();
 	}
+	else // FIXME: seeing if we can eliminate jackOpen var
+		assert(0 && "doClose called with _impl->jackOpen false");
+
+	// We call this here only because when called from our interrupt handler,
+	// this seems to be the only way to stop the process thread.  Note that
+	// this is safe for other situations, because stopCallback does something
+	// only the first time you call it.
+	stopCallback();
 	_impl->frameCount = 0;
 	return 0;
 }
 
 // Connect JACK ports (must be done after activating JACK)
-
 int JackAudioDevice::connectPorts()
 {
 	// By default we connect to hardware in/out ports that make sense.
@@ -287,10 +231,7 @@ int JackAudioDevice::doPause(bool)
 
 int JackAudioDevice::doStop()
 {
-	PRINT0("JackAudioDevice::doStop()\n");
-
 	// NB: jack_client_close calls jack_deactivate, so we don't do that here.
-
 	return 0;
 }
 
