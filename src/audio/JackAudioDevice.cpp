@@ -9,6 +9,7 @@
 #include <assert.h>
 
 #define DEBUG 0
+#define USE_NON_INTERLEAVED
 
 #if DEBUG > 1
 #define PRINT0 if (1) printf
@@ -36,6 +37,7 @@ struct JackAudioDevice::Impl {
 	int frameCount;
 	bool jackOpen;
 
+	static void jackError(const char *msg);
 	static int runProcess(jack_nframes_t nframes, void *object);
 	static void shutdown(void *object);
 };
@@ -105,6 +107,12 @@ void JackAudioDevice::Impl::shutdown(void *object)
 //	device->close(); // better to let this happen from dtor
 }
 
+// FIXME: rework this later to allow GUI apps to provide a callback
+void JackAudioDevice::Impl::jackError(const char *msg)
+{
+	fprintf(stderr, "JACK Error: %s\n", msg);
+}
+
 JackAudioDevice::JackAudioDevice() : _impl(new Impl)
 {
 }
@@ -118,12 +126,22 @@ JackAudioDevice::~JackAudioDevice()
 
 int JackAudioDevice::doOpen(int mode)
 {
-// FIXME: RTcmix is not always the program name
+	jack_set_error_function(JackAudioDevice::Impl::jackError);
+
+// FIXME: RTcmix is not always the program name (e.g., cmixplay, RTcmixShell)
+	const char *clientName = "RTcmix";
+
 	jack_status_t status;
-	_impl->client = jack_client_open("RTcmix", JackNullOption, &status);
+	_impl->client = jack_client_open(clientName, JackNoStartServer, &status);
 	if (_impl->client == NULL)
-		return error("JACK server not running?");
-//FIXME: use <status> to get better error message
+		return error("Unable to connect to JACK server. Is it running?");
+	if (status & JackServerStarted)
+		printf("JACK server was not running...now starting it.\n");
+	if (status & JackNameNotUnique) {
+		char *name = jack_get_client_name(_impl->client);
+		printf("Unique name \"%s\" assigned for this JACK client.\n", name);
+	}
+
 	_impl->jackOpen = true;
 
 	if (jack_set_process_callback(_impl->client, _impl->runProcess,
@@ -263,17 +281,10 @@ int JackAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 // FIXME: can't we just change RTcmix::SR instead, and also notify user?
 	}
 
-// FIXME:
-// we just want to handle non-interleaved, normalized, 32bit floats in host byte order
-// what is the relation between this and <sampfmt> passed to us?
-//	int deviceFormat = MUS_GET_FORMAT(sampfmt);
-
-//	int deviceFormat = MUS_NON_INTERLEAVED | MUS_NORMALIZED;
-	int deviceFormat = MUS_INTERLEAVED | MUS_NORMALIZED;
-#if MUS_LITTLE_ENDIAN
-	deviceFormat |= MUS_LFLOAT;
+#ifdef USE_NON_INTERLEAVED
+	int deviceFormat = NATIVE_FLOAT_FMT | MUS_NON_INTERLEAVED | MUS_NORMALIZED;
 #else
-	deviceFormat |= MUS_BFLOAT;
+	int deviceFormat = NATIVE_FLOAT_FMT | MUS_INTERLEAVED | MUS_NORMALIZED;
 #endif
 
 	setDeviceParams(deviceFormat, chans, srate);
@@ -354,6 +365,22 @@ int JackAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 // setDeviceParams() above.  It will be converted into the 'frame format'
 // by a base class.  Here is where you fill frameBuffer from your audio HW.
 
+#ifdef USE_NON_INTERLEAVED
+int JackAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
+{
+	const int chans = getFrameChannels();
+	float **fFrameBuffer = (float **) frameBuffer;		// non-interleaved
+
+	for (int ch = 0; ch < chans; ch++) {
+		jack_default_audio_sample_t *src = _impl->inBuf[ch];
+		float *dest = fFrameBuffer[ch];
+		for (int i = 0; i < frameCount; i++)
+			*dest++ = (float) *src++;
+	}
+
+	return frameCount;
+}
+#else
 int JackAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 {
 	const int chans = getFrameChannels();
@@ -367,6 +394,7 @@ int JackAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 
 	return frameCount;
 }
+#endif
 
 // doSendFrames() is called by AudioDevice::sendFrames() during playback.
 // The format of 'frameBuffer' will be the format **YOU** specified via
@@ -374,6 +402,22 @@ int JackAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 // by a base class.   Here is where you hand the audio in frameBuffer to you
 // HW.
 
+#ifdef USE_NON_INTERLEAVED
+int JackAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
+{
+	const int chans = getFrameChannels();
+	float **fFrameBuffer = (float **) frameBuffer;		// non-interleaved
+
+	for (int ch = 0; ch < chans; ch++) {
+		float *src = fFrameBuffer[ch];
+		jack_default_audio_sample_t *dest = _impl->outBuf[ch];
+		for (int i = 0; i < frameCount; i++)
+			*dest++ = (jack_default_audio_sample_t) *src++;
+	}
+
+	return frameCount;
+}
+#else
 int JackAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 {
 	const int chans = getFrameChannels();
@@ -387,6 +431,7 @@ int JackAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 
 	return frameCount;
 }
+#endif
 
 int JackAudioDevice::doGetFrameCount() const
 {
