@@ -22,11 +22,16 @@
 #define PRINT1 if (0) printf
 #endif
 
+
+// -- JackAudioDevice::Impl ---------------------------------------------------
+
 struct JackAudioDevice::Impl {
-	Impl() : client(NULL), numInPorts(0), numOutPorts(0), inPorts(NULL),
-		outPorts(NULL), inBuf(NULL), outBuf(NULL), frameCount(0),
-		jackOpen(false) {}
+	Impl(char *serverName)
+		: serverName(serverName), client(NULL), numInPorts(0), numOutPorts(0),
+		  inPorts(NULL), outPorts(NULL), inBuf(NULL), outBuf(NULL), frameCount(0),
+		  srate(0), bufSize(0) {}
 	~Impl();
+	char *serverName;
 	jack_client_t *client;
 	int numInPorts;
 	int numOutPorts;
@@ -35,11 +40,14 @@ struct JackAudioDevice::Impl {
 	jack_default_audio_sample_t **inBuf;
 	jack_default_audio_sample_t **outBuf;
 	int frameCount;
-	bool jackOpen;
+	jack_nframes_t srate;
+	jack_nframes_t bufSize;
 
-	static void jackError(const char *msg);
 	static int runProcess(jack_nframes_t nframes, void *object);
+	static int srateChanged(jack_nframes_t nframes, void *object);
+	static int bufSizeChanged(jack_nframes_t nframes, void *object);
 	static void shutdown(void *object);
+	static void jackError(const char *msg);
 };
 
 JackAudioDevice::Impl::~Impl()
@@ -72,30 +80,46 @@ int JackAudioDevice::Impl::runProcess(jack_nframes_t nframes, void *object)
 		out[i] = (jack_default_audio_sample_t *)
 		                        jack_port_get_buffer(impl->outPorts[i], nframes);
 
-	// copy buffers
-// we'll try to do this in doGetFrames/doSendFrames
-
-
-	// process sound
-
-#if 0
-	bool keepGoing = true;
-	while (framesAvail < framesToRead && keepGoing) {
-		keepGoing = device->runCallback();
-	}
-#else
+	// process sound, resulting in one call each to doGetFrames and doSendFrames
 	bool keepGoing = device->runCallback();
 	if (!keepGoing) {
 		PRINT0("runProcess: runCallback returned false; calling stopCallback\n");
 		device->stopCallback();
-// FIXME: let's leave closing to happen from dtor
-//		device->close();
 	}
-#endif
 
 	impl->frameCount += nframes;
 
 	return 0;
+}
+
+int JackAudioDevice::Impl::srateChanged(jack_nframes_t nframes, void *object)
+{
+	PRINT0("JackAudioDevice::Impl::srateChanged()\n");
+	JackAudioDevice *device = (JackAudioDevice *) object;
+	int status = 0;
+	if (device->isRunning()) {
+		if (nframes != device->_impl->srate) {
+			device->error("JACK sample rate changed; we can't cope with this.");
+			status = -1;
+			device->stopCallback();
+		}
+	}
+	return status;
+}
+
+int JackAudioDevice::Impl::bufSizeChanged(jack_nframes_t nframes, void *object)
+{
+	PRINT0("JackAudioDevice::Impl::bufSizeChanged()\n");
+	JackAudioDevice *device = (JackAudioDevice *) object;
+	int status = 0;
+	if (device->isRunning()) {
+		if (nframes != device->_impl->bufSize) {
+			device->error("JACK buffer size changed; we can't cope with this.");
+			status = -1;
+			device->stopCallback();
+		}
+	}
+	return status;
 }
 
 // Called when JACK server shuts down.
@@ -104,7 +128,6 @@ void JackAudioDevice::Impl::shutdown(void *object)
 	PRINT0("JackAudioDevice::shutdown()\n");
 	JackAudioDevice *device = (JackAudioDevice *) object;
 	device->stopCallback();
-//	device->close(); // better to let this happen from dtor
 }
 
 // FIXME: rework this later to allow GUI apps to provide a callback
@@ -113,7 +136,11 @@ void JackAudioDevice::Impl::jackError(const char *msg)
 	fprintf(stderr, "JACK Error: %s\n", msg);
 }
 
-JackAudioDevice::JackAudioDevice() : _impl(new Impl)
+
+// -- JackAudioDevice ---------------------------------------------------------
+
+JackAudioDevice::JackAudioDevice(char *serverName)
+	: _impl(new Impl(serverName))
 {
 }
 
@@ -126,13 +153,15 @@ JackAudioDevice::~JackAudioDevice()
 
 int JackAudioDevice::doOpen(int mode)
 {
-	jack_set_error_function(JackAudioDevice::Impl::jackError);
+	jack_set_error_function(_impl->jackError);
 
 // FIXME: RTcmix is not always the program name (e.g., cmixplay, RTcmixShell)
 	const char *clientName = "RTcmix";
 
 	jack_status_t status;
-	_impl->client = jack_client_open(clientName, JackNoStartServer, &status);
+	jack_options_t options = jack_options_t(JackServerName | JackNoStartServer);
+	_impl->client = jack_client_open(clientName, options, &status,
+											_impl->serverName);
 	if (_impl->client == NULL)
 		return error("Unable to connect to JACK server.");
 	if (status & JackServerStarted)
@@ -142,11 +171,17 @@ int JackAudioDevice::doOpen(int mode)
 		printf("Unique name \"%s\" assigned for this JACK client.\n", name);
 	}
 
-	_impl->jackOpen = true;
-
 	if (jack_set_process_callback(_impl->client, _impl->runProcess,
 			(void *) this) != 0)
 		return error("Could not register JACK process callback.");
+
+	if (jack_set_sample_rate_callback(_impl->client, _impl->srateChanged,
+			(void *) this) != 0)
+		return error("Could not register JACK sample rate change callback.");
+
+	if (jack_set_buffer_size_callback(_impl->client, _impl->bufSizeChanged,
+			(void *) this) != 0)
+		return error("Could not register JACK buffer size change callback.");
 
 	jack_on_shutdown(_impl->client, _impl->shutdown, (void *) this);
 
@@ -156,32 +191,30 @@ int JackAudioDevice::doOpen(int mode)
 int JackAudioDevice::doClose()
 {
 	PRINT0("JackAudioDevice::doClose()\n");
-	if (_impl->jackOpen) {
-		// must clear this right away to prevent race condition
-		_impl->jackOpen = false;
 
-		// If the jack daemon is running with elevated privs (i.e., with the
-		// -R flag), but the RTcmix threads are not -- as happens when you
-		// start jackd via jackstart, for example -- then there's a nasty
-		// problem when we receive a cntl-C interrupt.  In that case, doClose
-		// is called from an RTcmix thread, and calling jack_client_close will
-		// then hang, causing bad stuff to happen.  So in the realtime case,
-		// we just die without closing jack, since this seems to be okay.
-		if (!jack_is_realtime(_impl->client)) {
-			PRINT0("...calling jack_client_close(client=%p)\n", _impl->client);
-			if (jack_client_close(_impl->client) != 0)
-				return error("Error closing JACK.");
-		}
+	// If the jack daemon is running with elevated privs (i.e., with the
+	// -R flag), but the RTcmix threads are not -- as happens when you
+	// start jackd via jackstart, for example -- then there's a nasty
+	// problem when we receive a cntl-C interrupt.  In that case, doClose
+	// is called from an RTcmix thread, and calling jack_client_close will
+	// then hang, causing bad stuff to happen.  So in the realtime case,
+	// we just die without closing jack, since this seems to be okay.
+
+	if (!jack_is_realtime(_impl->client)) {
+		PRINT0("...calling jack_client_close(client=%p)\n", _impl->client);
+		if (jack_client_close(_impl->client) != 0)
+			return error("Error closing JACK.");
 	}
-	else // FIXME: seeing if we can eliminate jackOpen var
-		assert(0 && "doClose called with _impl->jackOpen false");
 
-	// We call this here only because when called from our interrupt handler,
-	// this seems to be the only way to stop the process thread.  Note that
-	// this is safe for other situations, because stopCallback does something
-	// only the first time you call it.
+	// We call this here only because when we're called from our interrupt
+	// handler, this seems to be the only way to stop the process thread.
+	// Note that this is safe for other situations, because stopCallback does
+	// something only the first time you call it.
+
 	stopCallback();
+
 	_impl->frameCount = 0;
+
 	return 0;
 }
 
@@ -252,6 +285,10 @@ int JackAudioDevice::doPause(bool)
 int JackAudioDevice::doStop()
 {
 	// NB: jack_client_close calls jack_deactivate, so we don't do that here.
+#if 0	// this can lead to hangs on quitting
+	if (jack_deactivate(_impl->client) != 0)
+		return error("error deactivating JACK");
+#endif
 	return 0;
 }
 
@@ -266,6 +303,7 @@ int JackAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 		return error(msg);
 // FIXME: can't we just change RTcmix::SR instead, and also notify user?
 	}
+	_impl->srate = jsrate;
 
 #ifdef USE_NON_INTERLEAVED
 	int deviceFormat = NATIVE_FLOAT_FMT | MUS_NON_INTERLEAVED | MUS_NORMALIZED;
@@ -280,20 +318,11 @@ int JackAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 
 int JackAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 {
-#if 0
-// FIXME: I doubt this is right...
-	jack_nframes_t jackBufSize = jack_get_buffer_size(_impl->client);
-	jack_nframes_t rtcmixBufSize = *pWriteSize * *pCount;
-	if (rtcmixBufSize != jackBufSize) {
-		*pWriteSize = jackBufSize / *pCount;
-		// notify user
-	}
-#else
-	*pWriteSize = jack_get_buffer_size(_impl->client);
+	*pWriteSize = _impl->bufSize = jack_get_buffer_size(_impl->client);
+
 	// NB: We ignore pCount, pretending it's always 1.  We don't change it
 	// to 1 for the caller, though, because this would screw up caller's
 	// recalculation of the buffer size.  We might want to warn user here.
-#endif
 
 	// Create JACK ports, one per channel, and audio buf pointer arrays.
 
@@ -305,7 +334,7 @@ int JackAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 		_impl->inBuf = new jack_default_audio_sample_t * [numports];
 		char shortname[32];
 		for (int i = 0; i < numports; i++) {
-			sprintf(shortname, "in_%d", i + 1);
+			snprintf(shortname, 31, "in_%d", i + 1);
 			jack_port_t *port = jack_port_register(_impl->client, shortname,
 			                                       JACK_DEFAULT_AUDIO_TYPE,
 			                                       JackPortIsInput, 0);
@@ -322,7 +351,7 @@ int JackAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 		_impl->outBuf = new jack_default_audio_sample_t * [numports];
 		char shortname[32];
 		for (int i = 0; i < numports; i++) {
-			sprintf(shortname, "out_%d", i + 1);
+			snprintf(shortname, 31, "out_%d", i + 1);
 			jack_port_t *port = jack_port_register(_impl->client, shortname,
 			                                       JACK_DEFAULT_AUDIO_TYPE,
 			                                       JackPortIsOutput, 0);
@@ -412,15 +441,22 @@ bool JackAudioDevice::recognize(const char *desc)
 	       || strncmp(desc, "jack", 4) == 0;
 }
 
-// If your audio device(s) needs a string descriptor, it will come in via
-// 'inputDesc' and/or 'outputDesc', allowing you to specify different HW for
-// record and play.
+// <outputDesc> will begin with either "JACK" or "jack."  Optionally,
+// a JACK server name immediately follows a colon delimiter.
 
 AudioDevice *JackAudioDevice::create(const char *inputDesc,
 	const char *outputDesc, int mode)
 {
-// FIXME: could allow specification of jack server name
-	return new JackAudioDevice;
+	char *serverName = "default";
+
+	// NB: we assume that inputDesc is the same as outputDesc
+	if (outputDesc) {
+		char *delim = strchr(outputDesc, ':');
+		if (delim)
+			serverName = delim + 1;
+	}
+
+	return new JackAudioDevice(serverName);
 }
 
 #endif	// JACK
