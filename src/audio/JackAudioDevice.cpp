@@ -9,7 +9,7 @@
 #include <assert.h>
 
 #define DEBUG 0
-#define USE_NON_INTERLEAVED
+//#define USE_NON_INTERLEAVED
 
 #if DEBUG > 1
 #define PRINT0 if (1) printf
@@ -134,7 +134,7 @@ int JackAudioDevice::doOpen(int mode)
 	jack_status_t status;
 	_impl->client = jack_client_open(clientName, JackNoStartServer, &status);
 	if (_impl->client == NULL)
-		return error("Unable to connect to JACK server. Is it running?");
+		return error("Unable to connect to JACK server.");
 	if (status & JackServerStarted)
 		printf("JACK server was not running...now starting it.\n");
 	if (status & JackNameNotUnique) {
@@ -188,10 +188,12 @@ int JackAudioDevice::doClose()
 // Connect JACK ports (must be done after activating JACK)
 int JackAudioDevice::connectPorts()
 {
-	// By default we connect to hardware in/out ports that make sense.
-	// They can be overridden by port names given in set_option calls.
-
-	if (1) {
+	if (0) {
+		// Connect to ports specified by user via set_option, .rtcmixrc, etc.
+		// FIXME: implement this
+	}
+	else {
+		// Connect to hardware in/out ports (e.g., alsa_pcm)
 		if (isRecording()) {
 			const char **ports = jack_get_ports(_impl->client, NULL, NULL,
 			                                JackPortIsPhysical | JackPortIsOutput);
@@ -253,22 +255,6 @@ int JackAudioDevice::doStop()
 	return 0;
 }
 
-// doSetFormat() is called by AudioDevice::setFormat() and by
-// AudioDevice::open().  Here is where you configure your HW, setting it to the
-// format which will best handle the format passed in.  Note that it is NOT
-// necessary for the HW to match the input format except in sampling rate;  The
-// base class can handle most format conversions.
-//
-// 'sampfmt' is the format of the data passed to AudioDevice::getFrames() or
-//	AudioDevice::sendFrames(), and has three attributes:
-//	1) The actual type of the format, retrieved via MUS_GET_FORMAT(sampfmt)
-//	2) The interleave (true or false) retrieved via MUS_GET_INTERLEAVE(sampfmt)
-//	3) Whether the samples (when float) are normalized, retrieved via
-//		MUS_GET_NORMALIZED(sampfmt)
-//
-// At the end of this method, you must call setDeviceParams() to notify the
-// base class what format *you* need the audio data to be in.
-
 int JackAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 {
 	// Insure that RTcmix sampling rate matches JACK rate.
@@ -291,15 +277,6 @@ int JackAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 
 	return 0;
 }
-
-// doSetQueueSize() is called by AudioDevice::setQueueSize() to allow
-// HW-specific configuration of internal audio queue sizes.  The values handed
-// in via address represent the size **in frames** of the buffers that will be
-// handed to doGetFrames() and/or doSendFrames(), and the number of such
-// buffers the application would like to have queued up for robustness.  The
-// actual frame count as determined by your HW *must* be reported back to the
-// caller via 'pWriteSize'.  If you cannot match *pCount, just do the best you
-// can, but do not fail if you cannot match it.
 
 int JackAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 {
@@ -360,11 +337,6 @@ int JackAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 	return 0;
 }
 
-// doGetFrames() is called by AudioDevice::getFrames() during record.
-// The format of 'frameBuffer' will be the format **YOU** specified via
-// setDeviceParams() above.  It will be converted into the 'frame format'
-// by a base class.  Here is where you fill frameBuffer from your audio HW.
-
 #ifdef USE_NON_INTERLEAVED
 int JackAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 {
@@ -395,12 +367,6 @@ int JackAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 	return frameCount;
 }
 #endif
-
-// doSendFrames() is called by AudioDevice::sendFrames() during playback.
-// The format of 'frameBuffer' will be the format **YOU** specified via
-// setDeviceParams() above.  It was converted from the 'frame format'
-// by a base class.   Here is where you hand the audio in frameBuffer to you
-// HW.
 
 #ifdef USE_NON_INTERLEAVED
 int JackAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
@@ -438,9 +404,6 @@ int JackAudioDevice::doGetFrameCount() const
 	return _impl->frameCount;
 }
 
-// Return true if the passed in device descriptor matches one that this device
-// can understand.
-
 bool JackAudioDevice::recognize(const char *desc)
 {
 	if (desc == NULL)
@@ -456,6 +419,7 @@ bool JackAudioDevice::recognize(const char *desc)
 AudioDevice *JackAudioDevice::create(const char *inputDesc,
 	const char *outputDesc, int mode)
 {
+// FIXME: could allow specification of jack server name
 	return new JackAudioDevice;
 }
 
