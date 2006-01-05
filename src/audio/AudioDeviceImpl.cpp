@@ -43,6 +43,7 @@ AudioDeviceImpl::AudioDeviceImpl()
 
 AudioDeviceImpl::~AudioDeviceImpl()
 {
+	PRINT0("AudioDeviceImpl::~AudioDeviceImpl()\n");
 	/* if this asserts, close() is not being called before destructor */
 	assert(_convertBuffer == NULL);
 	delete _runCallback;
@@ -58,13 +59,11 @@ int	AudioDeviceImpl::setFrameFormat(int frameSampFmt, int frameChans)
 
 int AudioDeviceImpl::open(int mode, int sampfmt, int chans, double srate)
 {
-#if DEBUG > 0
-	printf("AudioDeviceImpl::open: opening device 0x%x for %s in %s mode\n",
+	PRINT0("AudioDeviceImpl::open: opening device %p for %s in %s mode\n",
 		   this,
 		   (mode & DirectionMask) == RecordPlayback ? "Record/Playback"
 		   : (mode & DirectionMask) == Playback ? "Playback" : "Record",
 		   (mode & Passive) ? "Passive" : "Active");
-#endif
 	_lastErr[0] = 0;
 	setMode(mode);
 	int status = 0;
@@ -86,6 +85,7 @@ int AudioDeviceImpl::close()
 		stop();
 		PRINT0("AudioDeviceImpl::close: now calling doClose()\n");
 		if ((status = doClose()) == 0) {
+			PRINT0("AudioDeviceImpl::close: now calling destroyConvertBuffer()\n");
 			destroyConvertBuffer();
 			setState(Closed);
 			_frameFormat = MUS_UNSUPPORTED;
@@ -482,7 +482,7 @@ AudioDeviceImpl::limitFrame(void *frameBuffer, int frames, bool doClip, bool che
 	const long bufStartSamp = getFrameCount();
 	int numclipped = 0;
 	float clipmax = 0.0f;
-	PRINT0("AudioDeviceImpl::limitFrame: clip = %d check = %d\n", doClip, checkPeaks);
+	PRINT1("AudioDeviceImpl::limitFrame: clip = %d check = %d\n", doClip, checkPeaks);
 	for (int c = 0; c < chans; ++c) {
 		float *fp;
 		int incr;
