@@ -4,14 +4,13 @@
 
 //#define DEBUG
 #include "FOLLOWER_BASE.h"
+#include <float.h>
 
 
 /* --------------------------------------------------------- FOLLOWER_BASE -- */
 FOLLOWER_BASE :: FOLLOWER_BASE()
+   : branch(0), in(NULL), rawmodamp(-FLT_MAX), amp_table(NULL)
 {
-   branch = 0;
-   in = NULL;
-   amp_table = NULL;
 }
 
 
@@ -32,9 +31,6 @@ int FOLLOWER_BASE :: init(double p[], int n_args)
    float outskip = p[0];
    float inskip = p[1];
    dur = p[2];
-
-   // apply conversion to normal range [-1, 1] for modulator input now
-   modamp = p[4] * (1.0 / 32768.0);
 
    int window_len = (int) p[5];
    if (window_len < 1)
@@ -70,8 +66,6 @@ int FOLLOWER_BASE :: init(double p[], int n_args)
    gauge->setWindowSize(window_len);
 
    smoother = new OnePole(SR);
-
-   skip = (int) (SR / (float) resetval);
 
    if (post_init(p, n_args) != 0)
       return DONT_SCHEDULE;
@@ -125,13 +119,14 @@ int FOLLOWER_BASE :: run()
          caramp = p[3];
          if (amp_table)
             caramp *= amp_table->tick(currentFrame(), 1.0);
-         if (p[4] != modamp) {
+         if (p[4] != rawmodamp) {
+            rawmodamp = p[4];
             // apply conversion to normal range [-1, 1]
-            modamp = p[4] * (1.0 / 32768.0);
+            modamp = rawmodamp * (1.0 / 32768.0);
          }
          update_smoother(p);
          update_params(p);
-         branch = skip;
+         branch = getSkip();
       }
       float carsig = in[i] * caramp;
       float modsig = in[i + 1] * modamp;
@@ -144,6 +139,8 @@ int FOLLOWER_BASE :: run()
          out[0] = outsig * pctleft;
          out[1] = outsig * (1.0 - pctleft);
       }
+		else
+			out[0] = outsig;
 
       rtaddout(out);
       increment();
