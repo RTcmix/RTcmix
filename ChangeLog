@@ -6,6 +6,8 @@ fixes that we don't bother putting here.
 	* New instrument: SPLITTER, which works like a set of mult
 	  jacks on a patchbay, distributing a single input signal
 	  to multiple output channels.
+	* FOLLOWER family of instruments: mono output has been broken
+	  for 3 years.  Shows how much use this is getting. ;-)
 
 2006-01-05  John Gibson <johgibso-at-indiana.edu>
 
