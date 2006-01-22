@@ -180,8 +180,6 @@ void FOLLOWGATE :: update_params(double p[])
 /* -------------------------------------------------------- process_sample -- */
 float FOLLOWGATE :: process_sample(float sample, float power)
 {
-   DPRINT1("%f\n", power);
-
    if (power >= threshold) {
       if (state == belowThreshold) {
          state = aboveThreshold;
@@ -199,7 +197,8 @@ float FOLLOWGATE :: process_sample(float sample, float power)
    }
 
    float env = envelope->tick();
-   DPRINT1("%f\n", env);
+
+   DPRINT3("sample: %f, power: %f, env: %f\n", sample, power, env);
 
    return sample * env;
 }
