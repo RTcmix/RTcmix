@@ -12,17 +12,19 @@
    #define DPRINT(msg)                    printf((msg))
    #define DPRINT1(msg, arg)              printf((msg), (arg))
    #define DPRINT2(msg, arg1, arg2)       printf((msg), (arg1), (arg2))
+   #define DPRINT3(msg, arg1, arg2, arg3) printf((msg), (arg1), (arg2), (arg3))
 #else
    #define DPRINT(msg)
    #define DPRINT1(msg, arg)
    #define DPRINT2(msg, arg1, arg2)
+   #define DPRINT3(msg, arg1, arg2, arg3)
 #endif
 
 class FOLLOWER_BASE : public Instrument {
 
 private:
-   int      branch, skip;
-   float    *in, caramp, modamp, smoothness;
+   int      branch;
+   float    *in, caramp, rawmodamp, modamp, smoothness;
    TableL   *amp_table;
    RMS      *gauge;
    OnePole  *smoother;
