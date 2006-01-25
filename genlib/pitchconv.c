@@ -112,13 +112,13 @@ INLINE double octlet(unsigned char *let)
 					p++;
 				}
 				else if (*p == 'x') {   // double sharp
-					semitones++;
+					semitones += 2;
 					p++;
 				}
 				state++;
 			}
 			else if (state == 2) {
-				if (*p == 'b') {        // double flat
+				if (*p == 'b') {        // double flat (w/ 'b' from state 1)
 					semitones--;
 					p++;
 				}
