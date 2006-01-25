@@ -5,6 +5,7 @@
 // original cmix pitch converters, rev. JGG, 6/20/04
 #include <math.h>
 #include <ugens.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 
@@ -152,7 +153,8 @@ INLINE double octlet(unsigned char *let)
 	}
 
 err:
-	die(NULL, "Invalid pitch representation \"%s\".", let);
+	// NB: Avoid using die() here to simplify linking for pchcps, etc. utils
+	fprintf(stderr, "Invalid pitch representation \"%s\".", let);
 	return 8.00;
 }
 
