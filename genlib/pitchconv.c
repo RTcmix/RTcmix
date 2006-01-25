@@ -154,7 +154,7 @@ INLINE double octlet(unsigned char *let)
 
 err:
 	// NB: Avoid using die() here to simplify linking for pchcps, etc. utils
-	fprintf(stderr, "Invalid pitch representation \"%s\".", let);
+	fprintf(stderr, "Invalid pitch representation \"%s\".\n", let);
 	return 8.00;
 }
 
