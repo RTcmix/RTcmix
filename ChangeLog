@@ -1,6 +1,14 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2006-01-24  John Gibson <johgibso-at-indiana.edu>
+
+	* Add octlet, pchlet, cpslet functions, which convert from ANSI
+	  pitch representation (e.g., "C#4") to familiar RTcmix representations.
+	  Note that these strings can also include cents, e.g., "C#4 -50" for
+	  C# above middle C minus 50 cents. For more information see
+	  http://dactyl.som.ohio-state.edu/Humdrum/representations/pitch.rep.html.
+
 2006-01-22  John Gibson <johgibso-at-indiana.edu>
 
 	* New instrument: SPLITTER, which works like a set of mult
