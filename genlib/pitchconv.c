@@ -5,6 +5,8 @@
 // original cmix pitch converters, rev. JGG, 6/20/04
 #include <math.h>
 #include <ugens.h>
+#include <stdlib.h>
+#include <errno.h>
 
 #ifdef __GNUC__
 #define INLINE inline
@@ -69,5 +71,98 @@ INLINE double pchmidi(unsigned char midinote)
 INLINE double octmidi(unsigned char midinote)
 {
 	return ((double) midinote / 12.0) + 3.0;
+}
+
+#define SEMITONE_LINOCT (1.0 / 12.0)
+
+// "let" is ANSI pitch representation (e.g., "Ab3 +22"), as described at 
+// http://dactyl.som.ohio-state.edu/Humdrum/representations/pitch.rep.html
+// JGG, 1/24/06
+
+INLINE double octlet(unsigned char *let)
+{
+	//                    A  B   C  D  E  F  G
+	int let2semitone[] = {9, 11, 0, 2, 4, 5, 7};
+	int octave = -9999;
+	int semitones = -9999;
+	int cents = 0;
+	int state = 0;
+
+	unsigned char *p = let;
+	while (*p) {
+		if (*p == ' ')                // eat spaces
+			p++;
+		else {
+			if (state == 0) {
+				int index = *p - 65;    // 65 is ASCII code for 'A'
+				if (index < 0 || index > 6)
+					goto err;
+				semitones = let2semitone[index];
+				p++;
+				state++;
+			}
+			else if (state == 1) {
+				if (*p == '#') {        // sharp
+					semitones++;
+					p++;
+				}
+				else if (*p == 'b') {   // flat
+					semitones--;
+					p++;
+				}
+				else if (*p == 'x') {   // double sharp
+					semitones++;
+					p++;
+				}
+				state++;
+			}
+			else if (state == 2) {
+				if (*p == 'b') {        // double flat
+					semitones--;
+					p++;
+				}
+				state++;
+			}
+			else if (state == 3) {
+				octave = *p - 48;       // 48 is ASCII code for '0' (zero)
+				if (octave < 0 || octave > 9)
+					goto err;
+				octave += 4;            // ANSI octave to linoct octave
+				p++;
+				state++;
+			}
+			else {
+				char *pos = NULL;
+				errno = 0;
+				cents = strtol(p, &pos, 10);
+				if (pos == (char *) p || *pos != 0 || errno == ERANGE)
+					goto err;
+				if (cents < -100 || cents > 100)
+					goto err;
+				break;
+			}
+		}
+	}
+	if (semitones > -4) {   // lowest: "Cbb4 -100" ... dbl flat -100 cents
+		double frac = semitones * SEMITONE_LINOCT;
+		double linoct = octave + frac;
+		if (cents)
+			linoct += cents * (SEMITONE_LINOCT * 0.01);
+		return linoct;
+	}
+
+err:
+	die(NULL, "Invalid pitch representation \"%s\".", let);
+	return 8.00;
+}
+
+INLINE double cpslet(unsigned char *let)
+{
+	return cpsoct(octlet(let));
+}
+
+INLINE double pchlet(unsigned char *let)
+{
+	return pchoct(octlet(let));
 }
 
