@@ -944,9 +944,9 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 		// We catch mono input and do the conversion ourselves.  Otherwise we
 		// create a buffer equal to the internal HW channel count.
 		if (port->streamCount == 1) {
-			if (port->deviceFormat.mChannelsPerFrame < chans && chans > 2) {
+			if (port->deviceFormat.mChannelsPerFrame < (UInt32) chans && chans > 2) {
 				char errmsg[64];
-				sprintf(errmsg, "Cannot open %u-channel OSX device for %d channels",
+				sprintf(errmsg, "Cannot open %lu-channel OSX device for %d channels",
 						port->deviceFormat.mChannelsPerFrame, chans);
 				return error(errmsg);
 			}
