@@ -135,7 +135,7 @@ INLINE double octlet(unsigned char *let)
 			else {
 				char *pos = NULL;
 				errno = 0;
-				cents = strtol(p, &pos, 10);
+				cents = strtol((char *) p, &pos, 10);
 				if (pos == (char *) p || *pos != 0 || errno == ERANGE)
 					goto err;
 				if (cents < -100 || cents > 100)
