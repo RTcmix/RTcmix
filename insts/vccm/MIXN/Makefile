@@ -24,18 +24,18 @@ $(OBJS): $(INSTRUMENT_H) $(OBJLIB_H) $(NAME).h
 install: dso_install
 
 dso_install: lib$(NAME).so
-	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)/libi$(NAME).so
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)
 
 standalone_install: standalone
-	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)/i$(NAME)
+	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)
 
 uninstall: dso_uninstall standalone_uninstall
 
 dso_uninstall:
-	$(RM) $(LIBDESTDIR)/libi$(NAME).so
+	$(RM) $(LIBDESTDIR)/lib$(NAME).so
 
 standalone_uninstall:
-	$(RM) $(DESTDIR)/i$(NAME)
+	$(RM) $(DESTDIR)/$(NAME)
 
 clean:
 	$(RM) $(OBJS) $(PROGS)
