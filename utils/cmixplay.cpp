@@ -133,7 +133,9 @@ public:
           const bool       useHotKeys,
           const double     hotKeySkipTime,
           const bool       autoPause,
-          const bool       quiet,
+          const bool       printTime,
+          const bool       printFileInfo,
+          const bool       printWarnings,
           const TimeFormat timeFormat
          );
    ~Player();
@@ -166,7 +168,9 @@ private:
    bool        _useHotKeys;
    double      _hotKeySkipTime;
    bool        _autoPause;
-   bool        _quiet;
+   bool        _printTime;
+   bool        _printFileInfo;
+   bool        _printWarnings;
    TimeFormat  _timeFormat;
 
    int         _fd;
@@ -216,13 +220,16 @@ Player::Player(
    const bool        useHotKeys,
    const double      hotKeySkipTime,
    const bool        autoPause,
-   const bool        quiet,
+   const bool        printTime,
+   const bool        printFileInfo,
+   const bool        printWarnings,
    const TimeFormat  timeFormat)
    : _fileName(fileName), _deviceName(deviceName), _startTime(startTime),
      _endTime(endTime), _playChan(playChan), _deviceFrames(requestedBufFrames),
      _factor(rescaleFactor), _force(forcePeak), _useHotKeys(useHotKeys),
-     _hotKeySkipTime(hotKeySkipTime), _autoPause(autoPause), _quiet(quiet),
-     _timeFormat(timeFormat)
+     _hotKeySkipTime(hotKeySkipTime), _autoPause(autoPause),
+     _printTime(printTime), _printFileInfo(printFileInfo),
+     _printWarnings(printWarnings), _timeFormat(timeFormat)
 {
    _inBuf = NULL;
    _outBuf = NULL;
@@ -259,7 +266,7 @@ Player::configure()
       return StatusError;
    }
    if (_endTime > 0.0 && _endTime > _fileDur) {
-      if (!_quiet)
+      if (_printWarnings)
          printf("Note: Your end time was later than the end of file.\n");
       // but continue anyway
       _endTime = 0.0;
@@ -434,7 +441,7 @@ Player::openAudioDevice()
       return StatusError;
    }
    if (reqsize != _deviceFrames) {
-      if (!_quiet)
+      if (_printWarnings)
          printf("Note: buffer size reset by audio device from %d to %d.\n",
                                                       _deviceFrames, reqsize);
       _deviceFrames = reqsize;
@@ -448,7 +455,7 @@ Player::openAudioDevice()
 void
 Player::printStats()
 {
-   if (!_quiet) {
+   if (_printFileInfo) {
       printf("File: %s\n", _fileName);
       printf("Rate: %d Hz   Chans: %d\n", _sRate, _fileChans);
       printf("Duration: %.*f seconds [%s]\n", MARK_PRECISION, _fileDur,
@@ -485,7 +492,7 @@ Player::doHotKeys(int framesRead)
                if (len < GOTO_BUFLEN - 1) {
                   _gotoBuf[len] = c;
                   _gotoBuf[len + 1] = 0;
-                  if (!_quiet) {
+                  if (_printTime) {
                      printf("%c", c);
                      fflush(stdout);
                   }
@@ -512,7 +519,7 @@ Player::doHotKeys(int framesRead)
                      int skipFrames = gotoFrame - _bufStartFrame;
                      _bufStartFrame = gotoFrame;
                      _skipBytes = (long) (skipFrames * _fileChans * _datumSize);
-                     if (!_quiet) {
+                     if (_printTime) {
                         _bufStartTime = seconds;
                         _curSecond = (int) seconds;
                      }
@@ -520,19 +527,19 @@ Player::doHotKeys(int framesRead)
                   }
                }
                _gotoPending = false;
-               if (!_quiet)
+               if (_printTime)
                   printf("\n");
             }
             else if (c == '\e') {   // escape cancels goto mode
                _gotoPending = false;
-               if (!_quiet)
+               if (_printTime)
                   printf("\n");
             }
          }
          else if (c == 'g') {       // enter goto mode
             _gotoBuf[0] = 0;
             _gotoPending = true;
-            if (!_quiet) {
+            if (_printTime) {
                printf("\nGo to [type number, then return]: ");
                fflush(stdout);
             }
@@ -546,7 +553,7 @@ Player::doHotKeys(int framesRead)
                int skipFrames = (int) (_hotKeySkipTime * _sRate + 0.5);
                _skipBytes = (long) (skipFrames * _fileChans * _datumSize);
                _bufStartFrame += skipFrames;
-               if (!_quiet) {
+               if (_printTime) {
                   _bufStartTime += _hotKeySkipTime;
                   _curSecond += (int) _hotKeySkipTime;
                   printf("\n");
@@ -558,7 +565,7 @@ Player::doHotKeys(int framesRead)
             int skipFrames = (int) (_hotKeySkipTime * _sRate + 0.5);
             _skipBytes = -(long) (skipFrames * _fileChans * _datumSize);
             _bufStartFrame -= skipFrames;
-            if (!_quiet) {
+            if (_printTime) {
                _bufStartTime -= _hotKeySkipTime;
                _curSecond -= (int) _hotKeySkipTime;
                printf("\n");
@@ -579,7 +586,7 @@ Player::doHotKeys(int framesRead)
          else if (c == 'p') {       // toggle pause
             if (_state == StatePlaying) {
                _state = StatePaused;
-               if (!_quiet)
+               if (_printTime)
                   printf("\nPaused...[type 'p' to resume]\n");
             }
             else
@@ -599,7 +606,7 @@ Player::doHotKeys(int framesRead)
          if (skip) {
             off_t curloc = lseek(_fd, 0, SEEK_CUR);
             if (curloc + _skipBytes <= _dataLocation) {
-               if (!_quiet) {
+               if (_printTime) {
                   _bufStartTime = 0.0;
                   _curSecond = 0;
                }
@@ -629,7 +636,7 @@ Player::doHotKeys(int framesRead)
 void
 Player::printTime()
 {
-   if (_quiet || _gotoPending)
+   if (!_printTime || _gotoPending)
       return;
 
    if (_bufStartTime >= _curSecond || _state == StatePaused) {
@@ -661,7 +668,7 @@ Player::readBuffer()
       bytesRead = read(_fd, _inBuf, samps * _datumSize);
       if (_autoPause) {
          _state = StatePaused;   // handled after return from readBuffer
-         if (!_quiet)
+         if (_printTime)
             printf("\nPausing at end...\n");
       }
    }
@@ -987,7 +994,8 @@ Usage: %s [options] filename  \n\
                               (default is 4 seconds)            \n\
                  -a        auto-pause at end                    \n\
                  -r        robust - larger audio buffers        \n\
-                 -q        quiet - don't print anything         \n\
+                 -q        quiet - don't print file info        \n\
+                 -Q        really quiet - don't print anything  \n\
                  --force   use rescale factor even if peak      \n\
                               amp of float file unknown         \n\
                  -D NAME   audio device name                    \n\
@@ -1017,7 +1025,8 @@ int
 main(int argc, char *argv[])
 {
    int         play_chan, requested_bufframes;
-   bool        quiet, robust, force, hotkeys, autopause;
+   bool        print_time, print_file_info, print_warnings, robust, force,
+               hotkeys, autopause;
    float       factor;
    double      start_time, end_time, request_dur, hk_skip_time;
    char        *file_name, *device_name;
@@ -1033,7 +1042,8 @@ main(int argc, char *argv[])
 
    file_name = NULL;
    device_name = Option::device();
-   quiet = robust = force = autopause = false;
+   robust = force = autopause = false;
+   print_time = print_file_info = print_warnings = true;
    play_chan = ALL_CHANS;
    hotkeys = true;
    factor = 0.0f;
@@ -1089,8 +1099,12 @@ main(int argc, char *argv[])
             case 'r':               // robust buffer size
                robust = true;
                break;
-            case 'q':               // no printout
-               quiet = true;
+            case 'Q':               // no printout at all
+               print_time = false;
+               print_warnings = false;
+               // fall through
+            case 'q':               // no file info printout
+               print_file_info = false;
                break;
             case '-':
                if (strcmp(arg, "--force") == 0)
@@ -1138,7 +1152,7 @@ main(int argc, char *argv[])
    requested_bufframes = BUF_FRAMES;
    if (robust) {
       requested_bufframes *= ROBUST_FACTOR;
-      if (!quiet)
+      if (print_warnings)
          printf("Warning: \"robust\" mode causes second count to run ahead.\n");
    }
 
@@ -1151,7 +1165,8 @@ main(int argc, char *argv[])
 
    player = new Player(file_name, device_name, start_time, end_time, play_chan,
                requested_bufframes, factor, force, hotkeys, hk_skip_time, 
-               autopause, quiet, time_format);
+               autopause, print_time, print_file_info, print_warnings,
+               time_format);
 
    status = player->configure();
    if (status != StatusGood)
@@ -1165,7 +1180,7 @@ main(int argc, char *argv[])
    else
       exit(EXIT_FAILURE);
 
-   if (!quiet)
+   if (print_time)
       printf("\n");
 
    delete player;
