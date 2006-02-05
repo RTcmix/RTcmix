@@ -990,7 +990,7 @@ Usage: %s [options] filename  \n\
                  -q        quiet - don't print anything         \n\
                  --force   use rescale factor even if peak      \n\
                               amp of float file unknown         \n\
-                 -D        audio device name                    \n\
+                 -D NAME   audio device name                    \n\
           Notes: duration (-d) ignored if you also give end time (-e)\n\
                  Times can be given as seconds or 0:00.0        \n\
                     If the latter, prints time in same way.     \n\
