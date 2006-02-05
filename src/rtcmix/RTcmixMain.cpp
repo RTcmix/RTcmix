@@ -44,10 +44,13 @@ usage()
       "           -i       run in interactive mode\n"
       "           -n       no init script (interactive mode only)\n"
       "           -o NUM   socket offset (interactive mode only)\n"
+#ifdef RTUPDATE
       "           -c       enable continuous control (rtupdates)\n"
+#endif
 #ifdef LINUX
       "           -p NUM   set process priority to NUM (as root only)\n"
 #endif
+      "           -D NAME  audio device name\n"
 #ifdef NETAUDIO
       "           -k NUM   socket number (netplay)\n"
       "           -r NUM   remote host ip (or name for netplay)\n"
@@ -227,6 +230,13 @@ RTcmixMain::parseArguments(int argc, char **argv)
 			   priority = atoi(argv[i]);
 			   break;
 #endif
+            case 'D':
+               if (++i >= argc) {
+                  fprintf(stderr, "You didn't give an audio device name.\n");
+                  exit(1);
+               }
+               Option::device(argv[i]);
+               break;
 #ifdef NETAUDIO
             case 'r':               /* set up for network playing */
               	if (++i >= argc) {
@@ -449,6 +459,7 @@ RTcmixMain::interrupt_handler(int signo)
 	   // Notify rendering loop.
 	   run_status = RT_SHUTDOWN;
 	   if (audioDevice) {
+printf("interrupt_handler: calling audioDevice->close()\n");
 	       audioDevice->close();
 	   }
 	   if (!audioLoopStarted) {
