@@ -1,0 +1,67 @@
+#!/bin/sh
+# Play a sound file, looping between two points, with amp scaling.
+# JGG, 2/5/06
+
+if [ $# -lt 2 ] || [ $# -gt 5 ]
+then
+	echo	"Usage: `basename $0` file totdur [inpoint [outpoint [amp]]]"
+	echo	"(loops file for totdur seconds, file segment optionally defined by"
+	echo	"in and out points, with optional amp scaling)"
+	exit 1
+fi
+
+flags='-q'
+
+script='
+file = s_arg(0);
+rtinput(file);
+totdur = f_arg(1);
+inskip = 0.0;
+inend = DUR();
+amp = 1.0;
+nargs = n_arg();
+if (nargs > 2) {
+	inskip = f_arg(2);
+	if (nargs > 3) {
+		inend = f_arg(3);
+		if (inend > DUR()) {
+			print("<outpoint> must be within file duration. Correcting...");
+		}
+		if (nargs > 4) {
+			amp = f_arg(4);
+		}
+	}
+	if (inskip >= inend) {
+		print("<inpoint> must be earlier than <outpoint>.");
+		exit(1);
+	}
+}
+chans = CHANS();
+rtsetparams(SR(), chans);
+segdur = inend - inskip;
+control_rate(5000);
+ramp = 0.01;
+env = maketable("line", 2000, 0,0, ramp,1, segdur-ramp,1, segdur,0);
+for (st = 0; st < totdur; st += segdur) {
+	if (totdur - st < segdur) {
+		segdur = totdur - st;
+	}
+	if (chans == 1) {
+		MIX(st, inskip, segdur, mul(amp, env), 0);
+	}
+	if (chans == 2) {
+		MIX(st, inskip, segdur, mul(amp, env), 0, 1);
+	}
+	if (chans == 4) {
+		MIX(st, inskip, segdur, mul(amp, env), 0, 1, 2, 3);
+	}
+	if (chans == 6) {
+		MIX(st, inskip, segdur, mul(amp, env), 0, 1, 2, 3, 4, 5);
+	}
+	if (chans == 8) {
+		MIX(st, inskip, segdur, mul(amp, env), 0, 1, 2, 3, 4, 5, 6, 7);
+	}
+}
+'
+echo $script | CMIX $flags $*
+
