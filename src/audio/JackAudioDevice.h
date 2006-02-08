@@ -9,7 +9,7 @@
 
 class JackAudioDevice : public AudioDeviceImpl {
 public:
-	JackAudioDevice();
+	JackAudioDevice(char *serverName);
 	virtual ~JackAudioDevice();
 	// Recognizer
 	static bool			recognize(const char *);
