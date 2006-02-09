@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <BusSlot.h>
+#include <sndlibsupport.h>
 #include "Instrument.h"
 #include "rtdefs.h"
 
@@ -126,10 +127,7 @@ RTcmix::attachInput(float start_time, InputState *input)
             different. However, we don't use sndlib to read float files, so
             their datum size is the real thing.
          */ 
-         if (inputFileTable[index].is_float_format)
-            datum_size = sizeof(float);
-         else
-            datum_size = 2;
+			datum_size = ::mus_data_format_to_bytes_per_sample(inputFileTable[index].data_format);
 
          /* Offset is measured from the header size determined in rtinput(). */
          input->fileOffset = inputFileTable[index].data_location
