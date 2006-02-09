@@ -123,10 +123,6 @@ RTcmix::attachInput(float start_time, InputState *input)
 		 // This is now rounded to the nearest frame -- DS
          int inskip_frames = (int) (0.5 + start_time * input->inputsr);
 
-         /* sndlib always uses 2 for datum size, even if the actual size is
-            different. However, we don't use sndlib to read float files, so
-            their datum size is the real thing.
-         */ 
 			datum_size = ::mus_data_format_to_bytes_per_sample(inputFileTable[index].data_format);
 
          /* Offset is measured from the header size determined in rtinput(). */
