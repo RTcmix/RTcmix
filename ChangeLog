@@ -1,6 +1,13 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2006-02-11  John Gibson <johgibso-at-indiana.edu>
+
+	* Fix bad 24-bit file bug: formerly, when reading 24-bit files,
+	  the inskip was set as if the file were 16-bit, meaning that a
+	  non-zero inskip would act as inskip * 2/3.
+	* TRANS3 updated to respond to 4.0 features.
+
 2006-01-24  John Gibson <johgibso-at-indiana.edu>
 
 	* Add octlet, pchlet, cpslet functions, which convert from ANSI
