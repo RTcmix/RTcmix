@@ -3,9 +3,10 @@
 
 if [ $# -lt 3 ]
 then
-   echo "Usage: `basename $0` infile outfile header [format]"
+   echo "Usage: `basename $0` infile outfile header [format [amp]]"
    echo "       header: aiff, aifc, wav, next, sun, ircam, raw"
    echo "       format: 16, 24, float; if missing, same as input"
+   echo "       amp: rescale factor; if zero, rescale to max"
    exit 1
 fi
 
@@ -42,7 +43,13 @@ srate=`sfprint $1 | awk '/nchans: / {print $2}'`
 chans=`sfprint $1 | awk '/nchans: / {print $4}'`
 class=`sfprint $1 | awk '/nchans: / {print $6}'`
 
-if [ $# -eq 4 ]
+if [ $chans -lt 1 -o $chans -gt 8 ]
+then
+   echo "Input files must have between 1 and 8 channels."
+   exit 1
+fi
+
+if [ $# -gt 3 ]
 then
    format=$4
 else
@@ -58,10 +65,10 @@ else
    fi
 fi
 
-if [ $chans -lt 1 -o $chans -gt 8 ]
+if [ $# -gt 4 ]
+	amp=$5
 then
-   echo "Input files must have between 1 and 8 channels."
-   exit 1
+	amp=1
 fi
 
 echo "Converting file..."
@@ -73,11 +80,16 @@ header = s_arg(2);
 srate = i_arg(3);
 chans = i_arg(4);
 format = s_arg(5);
+amp = f_arg(6);
+if (amp == 0) {
+	inpeak = filepeak(infile);
+	amp = 32767.0 / abs(inpeak);
+}
 set_option(\"play = no\", \"clobber = no\");
 rtsetparams(srate, chans);
 rtinput(infile);
 rtoutput(outfile, header, format);
-MIX(0, 0, DUR(), 1, 0, 1, 2, 3, 4, 5, 6, 7);
+MIX(0, 0, DUR(), amp, 0, 1, 2, 3, 4, 5, 6, 7);
 "
-echo $script | CMIX $flags $1 $2 $3 $srate $chans $format
+echo $script | CMIX $flags $1 $2 $3 $srate $chans $format $amp
 
