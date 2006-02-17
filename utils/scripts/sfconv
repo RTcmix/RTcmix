@@ -1,0 +1,83 @@
+#!/bin/sh
+# converts sound file formats using MIX in RTcmix   -JGG 9/28/00
+
+if [ $# -lt 3 ]
+then
+   echo "Usage: `basename $0` infile outfile header [format]"
+   echo "       header: aiff, aifc, wav, next, sun, ircam, raw"
+   echo "       format: 16, 24, float; if missing, same as input"
+   exit 1
+fi
+
+# validate input ...
+
+if [ ! -e $1 ]
+then
+   echo "Can't find input file."
+   exit 1
+fi
+
+if [ $1 == $2 ]
+then
+   echo "Your input file name is the same as your output file name!"
+   exit 1
+fi
+
+if [ -e $2 ]
+then
+   echo "Output file name already exists. Delete it first."
+   exit 1
+fi
+
+if [ $3 != "aiff" -a $3 != "aifc" -a $3 != "wav" -a $3 != "next" \
+                  -a $3 != "sun" -a $3 != "ircam" -a $3 != "raw" ]
+then
+   echo "Output format must be one of aiff, aifc, wav, next, sun, ircam, or raw."
+   exit 1
+fi
+
+flags=-Q
+
+srate=`sfprint $1 | awk '/nchans: / {print $2}'`
+chans=`sfprint $1 | awk '/nchans: / {print $4}'`
+class=`sfprint $1 | awk '/nchans: / {print $6}'`
+
+if [ $# -eq 4 ]
+then
+   format=$4
+else
+   if [ $class -eq 2 ]; then
+   	format="16"
+   elif [ $class -eq 3 ]; then
+   	format="24"
+   elif [ $class -eq 4 ]; then
+   	format="float"
+   else
+   	echo "Unknown input file format."
+   	exit 1
+   fi
+fi
+
+if [ $chans -lt 1 -o $chans -gt 8 ]
+then
+   echo "Input files must have between 1 and 8 channels."
+   exit 1
+fi
+
+echo "Converting file..."
+
+script="\
+infile = s_arg(0);
+outfile = s_arg(1);
+header = s_arg(2);
+srate = i_arg(3);
+chans = i_arg(4);
+format = s_arg(5);
+set_option(\"play = no\", \"clobber = no\");
+rtsetparams(srate, chans);
+rtinput(infile);
+rtoutput(outfile, header, format);
+MIX(0, 0, DUR(), 1, 0, 1, 2, 3, 4, 5, 6, 7);
+"
+echo $script | CMIX $flags $1 $2 $3 $srate $chans $format
+
