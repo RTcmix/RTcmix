@@ -1053,7 +1053,7 @@ sfcomment_peakstats_current(const SFComment *sfc, const int fd)
    the sndpeak program.
 */
 
-#define BUFSIZE  (1024 * 64)
+#define BUF_FRAMES  (1024 * 16)
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
 int
@@ -1069,7 +1069,7 @@ sndlib_findpeak(int    infd,
                 long   peakloc[])
 {
    int   i, n, bytespersamp, isfloat, byteswap;
-   long  frames, bufframes, startbyte;
+   long  frames, bufframes, startbyte, bufbytes;
    off_t oldloc;
    char  *buffer;
 
@@ -1082,7 +1082,7 @@ sndlib_findpeak(int    infd,
    bytespersamp = mus_data_format_to_bytes_per_sample(informat);
    isfloat = IS_FLOAT_FORMAT(informat);
 
-   assert(isfloat || bytespersamp == 2);
+   assert(isfloat || bytespersamp == 2 || bytespersamp == 3);
 
 #if MUS_LITTLE_ENDIAN
    byteswap = IS_BIG_ENDIAN_FORMAT(informat);
@@ -1095,7 +1095,8 @@ sndlib_findpeak(int    infd,
       peakloc[n] = 0;
    }
 
-   buffer = (char *)malloc(BUFSIZE);
+   bufbytes = BUF_FRAMES * bytespersamp * nchans;
+   buffer = (char *)malloc(bufbytes);
    if (buffer == NULL) {
       perror("sndlib_findpeak: malloc");
       return -1;
@@ -1116,7 +1117,7 @@ sndlib_findpeak(int    infd,
    }
 
    for (frames = 0; frames < nframes; frames += bufframes) {
-      long inbytes = read(infd, buffer, BUFSIZE);
+      long inbytes = read(infd, buffer, bufbytes);
       if (inbytes == -1) {
          perror("sndlib_findpeak: read");
          goto err;
@@ -1144,9 +1145,40 @@ sndlib_findpeak(int    infd,
          }
       }
       else if (bytespersamp == 3) {
-//FIXME
-         fprintf(stderr, "finding peak of 24bit file not yet implemented.");
-         return -1;
+         float fsamp, fabsamp, scalefactor = 1.0 / (float) (1 << 8);
+         unsigned char *bufp = (unsigned char *)buffer;
+         if (informat == MUS_L24INT) {
+            for (i = 0; i < bufframes; i++) {
+               for (n = 0; n < nchans; n++) {
+                  int samp = (int) (((bufp[2] << 24)
+                                   + (bufp[1] << 16)
+                                   + (bufp[0] << 8)) >> 8);
+                  fsamp = (float) samp * scalefactor;
+                  fabsamp = fabs(fsamp);
+                  if (fabsamp > peak[n]) {
+                     peak[n] = fabsamp;
+                     peakloc[n] = startframe + frames + i;
+                  }
+                  bufp += 3;
+               }
+            }
+         }
+         else {   // informat == MUS_B24INT
+            for (i = 0; i < bufframes; i++) {
+               for (n = 0; n < nchans; n++) {
+                  int samp = (int) (((bufp[0] << 24)
+                                   + (bufp[1] << 16)
+                                   + (bufp[2] << 8)) >> 8);
+                  fsamp = (float) samp * scalefactor;
+                  fabsamp = fabs(fsamp);
+                  if (fabsamp > peak[n]) {
+                     peak[n] = fabsamp;
+                     peakloc[n] = startframe + frames + i;
+                  }
+                  bufp += 3;
+               }
+            }
+         }
       }
       else if (bytespersamp == 2) {      /* short ints */
          short samp, absamp;
