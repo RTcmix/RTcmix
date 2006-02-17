@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2006-02-17  John Gibson <johgibso-at-indiana.edu>
+
+	* Make peak-finding function (sndlibsupport.c) -- used by sndpeak,
+	  the filepeak() script function, etc. -- work with 24-bit files.
+
 2006-02-11  John Gibson <johgibso-at-indiana.edu>
 
 	* Fix bad 24-bit file bug: formerly, when reading 24-bit files,
