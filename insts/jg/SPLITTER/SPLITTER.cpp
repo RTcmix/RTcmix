@@ -7,10 +7,14 @@
    p0 = output start time
    p1 = input start time
    p2 = duration
-   p3 = amplitude multiplier
-   p4 = input channel [optional, default is 0]
+   p3 = global amp multiplier
+   p4 = input channel
+   p5 = amplitude multiplier for first output channel
+   p6 = amplitude multiplier for second output channel
+   etc. (number of amp mult args must match bus_config'd output chans)
 
-   p3 (amp) can receive updates from a table or real-time control source.
+   The amp multipliers can receive updates from a table or real-time
+   control source.
 
    John Gibson <johgibso at indiana dot edu>, 1/22/06
 */
@@ -23,7 +27,7 @@
 
 
 SPLITTER::SPLITTER()
-	: _branch(0), _in(NULL)
+	: _branch(0), _in(NULL), _amps(NULL)
 {
 }
 
@@ -31,16 +35,17 @@ SPLITTER::SPLITTER()
 SPLITTER::~SPLITTER()
 {
 	delete [] _in;
+	delete [] _amps;
 }
 
 
 int SPLITTER::init(double p[], int n_args)
 {
+	_nargs = n_args;
 	const float outskip = p[0];
 	const float inskip = p[1];
 	const float dur = p[2];
-
-	_inchan = (n_args > 4) ? int(p[4]) : 0;			// default is chan 0
+	_inchan = int(p[4]);
 
 	if (rtsetoutput(outskip, dur, this) == -1)
 		return DONT_SCHEDULE;
@@ -50,6 +55,13 @@ int SPLITTER::init(double p[], int n_args)
 	if (_inchan >= inputChannels())
 		return die("SPLITTER", "You asked for channel %d of a %d-channel input.",
 		                                             _inchan, inputChannels());
+
+	if (_nargs - 5 != outputChannels())
+		return die("SPLITTER", "You supplied amp multipliers for %d output "
+		           "channels, but the instrument is configured for %d channels.",
+		           _nargs - 5, outputChannels());
+
+	_amps = new float [outputChannels()];
 
 	return nSamps();
 }
@@ -65,10 +77,14 @@ int SPLITTER::configure()
 
 void SPLITTER::doupdate()
 {
-	double p[4];
-	update(p, 4, 1 << 3);
+	double p[_nargs];
+	update(p, _nargs);
 
 	_amp = p[3];
+
+	const int outchans = outputChannels();
+	for (int i = 0; i < outchans; i++)
+		_amps[i] = p[i + 5];
 }
 
 
@@ -91,7 +107,7 @@ int SPLITTER::run()
 		float out[outchans];
 
 		for (int n = 0; n < outchans; n++)
-			out[n] = insig;
+			out[n] = insig * _amps[n];
 
 		rtaddout(out);
 		increment();

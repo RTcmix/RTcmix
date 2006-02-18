@@ -12,8 +12,9 @@ public:
 private:
 	void doupdate();
 
-	int _inchan, _branch;
+	int _inchan, _branch, _nargs;
 	float _amp;
 	float *_in;
+	float *_amps;
 };
 
