@@ -56,7 +56,12 @@ clean:
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) clean; ) \
 	done
 
-cleanall: clean
+cleanall:
+	$(RM) *.o depend core
+	@for DIR in $(DIRS); \
+	do \
+	  ( cd $$DIR; $(MAKE) $(MFLAGS) cleanall; ) \
+	done
 
 depend:
 ifeq ($(ARCH),LINUX)
