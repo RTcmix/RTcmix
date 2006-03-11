@@ -8,7 +8,7 @@
 #include <string.h>
 #include <assert.h>
 
-#define DEBUG 0
+#define DEBUG 1
 //#define USE_NON_INTERLEAVED
 
 #if DEBUG > 1
@@ -26,12 +26,12 @@
 // -- JackAudioDevice::Impl ---------------------------------------------------
 
 struct JackAudioDevice::Impl {
-	Impl(char *serverName)
+	Impl(const char *serverName)
 		: serverName(serverName), client(NULL), numInPorts(0), numOutPorts(0),
 		  inPorts(NULL), outPorts(NULL), inBuf(NULL), outBuf(NULL), frameCount(0),
 		  srate(0), bufSize(0) {}
 	~Impl();
-	char *serverName;
+	const char *serverName;
 	jack_client_t *client;
 	int numInPorts;
 	int numOutPorts;
@@ -139,7 +139,7 @@ void JackAudioDevice::Impl::jackError(const char *msg)
 
 // -- JackAudioDevice ---------------------------------------------------------
 
-JackAudioDevice::JackAudioDevice(char *serverName)
+JackAudioDevice::JackAudioDevice(const char *serverName)
 	: _impl(new Impl(serverName))
 {
 }
@@ -447,7 +447,7 @@ bool JackAudioDevice::recognize(const char *desc)
 AudioDevice *JackAudioDevice::create(const char *inputDesc,
 	const char *outputDesc, int mode)
 {
-	char *serverName = "default";
+	const char *serverName = "default";
 
 	// NB: we assume that inputDesc is the same as outputDesc
 	if (outputDesc) {
