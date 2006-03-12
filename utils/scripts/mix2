@@ -7,7 +7,7 @@ if [ $# -ne 4 ] && [ $# -ne 6 ]
 then
 	echo	"Usage: `basename $0` file1 amp1 file2 amp2"
 	echo	"	OR"
-	echo	"		  `basename $0` file1 inskip1 amp1 file2 inskip2 amp2"
+	echo	"       `basename $0` file1 inskip1 amp1 file2 inskip2 amp2"
 	echo	"(plays 2 files at the same time)"
 	exit 1
 fi
@@ -41,48 +41,17 @@ if (sr1 != sr2) {
 	print("File sampling rates must be the same.");
 	exit(1);
 }
+if (chans1 > 8 || chans2 > 8) {
+	print("Input files can have no more than 8 channels.");
+	exit(1);
+}
 rtsetparams(sr1, max(chans1, chans2));
-load("STEREO");
 rtinput(file1);
 dur = DUR() - inskip1;
-if (chans1 == 1) {
-	bus_config("STEREO", "in 0", "out 0-1");
-	STEREO(0, inskip1, dur, amp1, .5);
-}
-else if (chans1 == 2) {
-	bus_config("STEREO", "in 0-1", "out 0-1");
-	STEREO(0, inskip1, dur, amp1, 0, 1);
-}
-else if (chans1 == 4) {
-	MIX(0, inskip1, dur, amp1, 0, 1, 2, 3);
-}
-else if (chans1 == 8) {
-	MIX(0, inskip1, dur, amp1, 0, 1, 2, 3, 4, 5, 6, 7);
-}
-else {
-	print("Chans must be 1, 2, 4, or 8.");
-	exit(1);
-}
+MIX(0, inskip1, dur, amp1, 0, 1, 2, 3, 4, 5, 6, 7);
 rtinput(file2);
 dur = DUR() - inskip2;
-if (chans2 == 1) {
-	bus_config("STEREO", "in 0", "out 0-1");
-	STEREO(0, inskip2, dur, amp2, .5);
-}
-else if (chans2 == 2) {
-	bus_config("STEREO", "in 0-1", "out 0-1");
-	STEREO(0, inskip2, dur, amp2, 0, 1);
-}
-else if (chans2 == 4) {
-	MIX(0, inskip2, dur, amp2, 0, 1, 2, 3);
-}
-else if (chans2 == 8) {
-	MIX(0, inskip2, dur, amp2, 0, 1, 2, 3, 4, 5, 6, 7);
-}
-else {
-	print("Chans must be 1, 2, 4, or 8.");
-	exit(1);
-}
+MIX(0, inskip2, dur, amp2, 0, 1, 2, 3, 4, 5, 6, 7);
 '
 echo $script | CMIX $flags $*
 
