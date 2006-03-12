@@ -3,10 +3,10 @@
 
 if [ $# -lt 3 ]
 then
-   echo "Usage: `basename $0` infile outfile header [format [amp]]"
+   echo "Usage: `basename $0` infile outfile header [format [peak]]"
    echo "       header: aiff, aifc, wav, next, sun, ircam, raw"
    echo "       format: 16, 24, float; if missing, same as input"
-   echo "       amp: rescale factor; if zero, rescale to max"
+   echo "       peak: desired peak; if missing, same as input"
    exit 1
 fi
 
@@ -66,9 +66,10 @@ else
 fi
 
 if [ $# -gt 4 ]
-	amp=$5
 then
-	amp=1
+	peak=$5
+else
+	peak=0
 fi
 
 echo "Converting file..."
@@ -80,14 +81,17 @@ header = s_arg(2);
 srate = i_arg(3);
 chans = i_arg(4);
 format = s_arg(5);
-amp = f_arg(6);
-if (amp == 0) {
-	inpeak = filepeak(infile);
-	amp = 32767.0 / abs(inpeak);
-}
+peak = f_arg(6);
 set_option(\"play = no\", \"clobber = no\");
 rtsetparams(srate, chans);
 rtinput(infile);
+if (peak == 0)
+	amp = 1.0
+else {
+	inpeak = PEAK(infile);
+	amp = peak / abs(inpeak);
+	printf(\"input peak is %f; rescaling to a peak of %f...\n\", inpeak, peak);
+}
 rtoutput(outfile, header, format);
 MIX(0, 0, DUR(), amp, 0, 1, 2, 3, 4, 5, 6, 7);
 "
