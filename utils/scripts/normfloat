@@ -1,0 +1,66 @@
+#!/bin/sh
+# Normalize a floating-point sound file, multiplying every sample value
+# by 1/32768, and writing to a new output file.
+# JGG, 3/11/06
+
+if [ $# -lt 1 ]
+then
+	echo	"Usage: `basename $0` file [inpoint [outpoint]]"
+	exit 1
+fi
+
+flags='-q'
+
+extension=`expr "$1" : '.*\.\(.*\)'`
+base=`expr "$1" : '\(.*\)\..*'`
+outfile=${base}_rescale.${extension}
+#echo ${outfile}
+
+script='
+outfile = s_arg(0);
+infile = s_arg(1);
+rtinput(infile);
+inskip = 0.0;
+inend = DUR();
+nargs = n_arg();
+if (nargs > 2) {
+	inskip = f_arg(2);
+	if (inskip >= DUR()) {
+		print("<inpoint> must be less than file duration. Setting to zero...");
+		inskip = 0;
+	}
+	if (nargs > 3) {
+		inend = f_arg(3);
+		if (inend > DUR()) {
+			print("<outpoint> must be within file duration. Correcting...");
+			inend = DUR();
+		}
+	}
+}
+dur = inend - inskip;
+amp = 1.0 / 32768.0;
+chans = CHANS();
+set_option("play = no");
+rtsetparams(SR(), chans);
+rtoutput(outfile, "float");
+if (chans == 1) {
+	MIX(0, inskip, dur, amp, 0);
+}
+if (chans == 2) {
+	MIX(0, inskip, dur, amp, 0, 1);
+}
+if (chans == 4) {
+	MIX(0, inskip, dur, amp, 0, 1, 2, 3);
+}
+if (chans == 5) {
+	MIX(0, inskip, dur, amp, 0, 1, 2, 3, 4);
+}
+if (chans == 6) {
+	MIX(0, inskip, dur, amp, 0, 1, 2, 3, 4, 5);
+}
+if (chans == 8) {
+	MIX(0, inskip, dur, amp, 0, 1, 2, 3, 4, 5, 6, 7);
+}
+'
+echo $script | CMIX $flags $outfile $*
+
