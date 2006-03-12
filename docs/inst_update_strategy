@@ -662,20 +662,25 @@ TRANSBEND(start, inskip, dur, amp, pitch_curve_genno, [inchan, pctleft])
    ***NOTE: All other tables/pfields function analogously to gen 4.
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-LPCPLAY(start, dur, amp, pitch_factor, start_frame, end_frame,
+### LPCPLAY(start, dur, amp, pitch_factor, start_frame, end_frame,
                                              [warp, reson_cf, reson_bw])
-   25. sine wavetable [optional??]
-   26. amp envelope
+   25. sine wavetable [internal]
+   26. amp envelope [internal]
 
    New signature:
 
    LPCPLAY(start, dur, amp, pitch_factor, start_frame, end_frame,
-                                  [warp, reson_cf, reson_bw, wavetable])
+                                  [warp, reson_cf, reson_bw])
 
-   PFields: amp, wavetable (others?)
+   PFields: amp, warp, reson_cf, reson_bw
 
-   ***NOTE: If no gen 25, then <wavetable> arg must be present, and
-            must return a local table.  If both, then arg overrides gen.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+### LPCIN(start, inskip, dur, amp, start_frame, end_frame, input_chan,
+                                  [warp, reson_cf, reson_bw])
+   25. sine wavetable [internal]
+   26. amp envelope [internal]
+
+   PFields: amp, warp, reson_cf, reson_bw
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 METAFLUTE: BSFLUTE(start, dur, noise_amp, length1low, length1high,
