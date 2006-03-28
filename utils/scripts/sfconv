@@ -88,12 +88,12 @@ rtinput(infile);
 if (peak == 0)
 	amp = 1.0
 else {
-	inpeak = PEAK(infile);
+	inpeak = PEAK();
 	amp = peak / abs(inpeak);
 	printf(\"input peak is %f; rescaling to a peak of %f...\n\", inpeak, peak);
 }
 rtoutput(outfile, header, format);
 MIX(0, 0, DUR(), amp, 0, 1, 2, 3, 4, 5, 6, 7);
 "
-echo $script | CMIX $flags $1 $2 $3 $srate $chans $format $amp
+echo $script | CMIX $flags $1 $2 $3 $srate $chans $format $peak
 
