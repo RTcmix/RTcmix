@@ -9,6 +9,10 @@ nargs = len(sys.argv)
 if nargs == 2 and sys.argv[1] == "shared":
    static_link = 0
 
+major = sys.version_info[0]
+minor = sys.version_info[1] * 0.1
+pyversion = major + minor
+
 # Note that this adds libraries we've certainly already linked to.
 libs = distutils.sysconfig.get_config_var("LIBS")
 libs += " " + distutils.sysconfig.get_config_var("SYSLIBS")
@@ -36,7 +40,7 @@ if sys.platform.find("darwin") != -1:     # if it's OS X...
       # in a less ad hoc way, but the combination of Apple's non-standard
       # way of doing things and distutils confusion prevents this.
       if linkshared.find("Python.framework/Versions") != -1:
-         wrong = "Python.framework/Versions/2.3/Python"
+         wrong = "Python.framework/Versions/" + str(pyversion) + "/Python"
          right = "-framework Python"
          linkshared = linkshared.replace(wrong, right, 1)
       print linkshared, libs
