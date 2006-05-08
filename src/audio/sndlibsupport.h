@@ -102,7 +102,7 @@ int sndlib_put_header_comment(int, float [], long [], char *);
 int sndlib_current_header_comment_alloc_good(char *);
 int sfcomment_peakstats_current(const SFComment *, const int);
 int sndlib_findpeak(int, int, int, int, int, int, long, long,
-                                                          float [], long []);
+                    float [], long [], double [], double [], double []);
 
 /* for cmix legacy support */
 int sndlib_rheader(int, SFHEADER *);

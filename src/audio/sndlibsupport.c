@@ -1040,21 +1040,24 @@ sfcomment_peakstats_current(const SFComment *sfc, const int fd)
 /* ------------------------------------------------------ sndlib_findpeak --- */
 /* Finds the peak absolute value per channel, and the location (in frames)
    of this peak, in the soundfile window specified by <startframe> and
-   <nframes>. If <outfd> is not -1, writes each input buffer to <outfd>
-   with no change. (So the files must have same byte order.)
-   Stores peak stats into <peak> and <peakloc> arrays, which are assumed
-   to have at least <nchans> locations. Leaves file position pointer of
-   input file unchanged.
+   <nframes>. Also finds the average (absolute value) amplitude, rms amplitude
+   and average DC offset for this time span. If <outfd> is not -1, writes each
+   input buffer to <outfd> with no change. (So the files must have same byte
+   order.) Stores peak stats into <peak> and <peakloc> arrays, which are assumed
+   to have at least <nchans> locations. Same goes for <ampavg>, <rms> and
+   <dcavg> arrays. Leaves file position pointer of input file unchanged.
+   Input files can be either short integer, floating point or 24-bit integer.
 
    Returns 0 if successful, -1 if error.
 
-   Currently works only for floats or shorts, but that could be changed.
    The ability to copy input to output files is probably only useful for
    the sndpeak program.
 */
 
 #define BUF_FRAMES  (1024 * 16)
 #define ABS(x) ((x) < 0 ? -(x) : (x))
+#define NORMFACTOR  1.0 / 32768.0
+#define DENORMFACTOR 32768.0
 
 int
 sndlib_findpeak(int    infd,
@@ -1066,10 +1069,13 @@ sndlib_findpeak(int    infd,
                 long   startframe,
                 long   nframes,
                 float  peak[],
-                long   peakloc[])
+                long   peakloc[],
+                double ampavg[],
+                double dcavg[],
+                double rms[])
 {
    int   i, n, bytespersamp, isfloat, byteswap;
-   long  frames, bufframes, startbyte, bufbytes;
+   long  frames, bufframes, startbyte, bufbytes, bufcount = 0;
    off_t oldloc;
    char  *buffer;
 
@@ -1093,6 +1099,9 @@ sndlib_findpeak(int    infd,
    for (n = 0; n < nchans; n++) {
       peak[n] = 0.0;
       peakloc[n] = 0;
+      ampavg[n] = 0.0;
+      dcavg[n] = 0.0;
+      rms[n] = 0.0;
    }
 
    bufbytes = BUF_FRAMES * bytespersamp * nchans;
@@ -1128,7 +1137,7 @@ sndlib_findpeak(int    infd,
       bufframes = inbytes / bytespersamp / nchans;
 
       if (isfloat) {
-         float fsamp, fabsamp;
+         float fsamp, fabsamp, normsamp;
          float *fbuf = (float *)buffer;
 
          for (i = 0; i < bufframes; i++) {
@@ -1141,11 +1150,15 @@ sndlib_findpeak(int    infd,
                   peak[n] = fabsamp;
                   peakloc[n] = startframe + frames + i;
                }
+               ampavg[n] += fabsamp * NORMFACTOR;
+               normsamp = fsamp * NORMFACTOR;
+               dcavg[n] += normsamp;
+               rms[n] += normsamp * normsamp;
             }
          }
       }
       else if (bytespersamp == 3) {
-         float fsamp, fabsamp, scalefactor = 1.0 / (float) (1 << 8);
+         float fsamp, fabsamp, normsamp, scalefactor = 1.0 / (float) (1 << 8);
          unsigned char *bufp = (unsigned char *)buffer;
          if (informat == MUS_L24INT) {
             for (i = 0; i < bufframes; i++) {
@@ -1159,6 +1172,10 @@ sndlib_findpeak(int    infd,
                      peak[n] = fabsamp;
                      peakloc[n] = startframe + frames + i;
                   }
+                  ampavg[n] += fabsamp * NORMFACTOR;
+                  normsamp = fsamp * NORMFACTOR;
+                  dcavg[n] += normsamp;
+                  rms[n] += normsamp * normsamp;
                   bufp += 3;
                }
             }
@@ -1175,6 +1192,10 @@ sndlib_findpeak(int    infd,
                      peak[n] = fabsamp;
                      peakloc[n] = startframe + frames + i;
                   }
+                  ampavg[n] += fabsamp * NORMFACTOR;
+                  normsamp = fsamp * NORMFACTOR;
+                  dcavg[n] += normsamp;
+                  rms[n] += normsamp * normsamp;
                   bufp += 3;
                }
             }
@@ -1182,6 +1203,7 @@ sndlib_findpeak(int    infd,
       }
       else if (bytespersamp == 2) {      /* short ints */
          short samp, absamp;
+         float normsamp;
          short *sbuf = (short *)buffer;
 
          for (i = 0; i < bufframes; i++) {
@@ -1194,6 +1216,10 @@ sndlib_findpeak(int    infd,
                   peak[n] = absamp;
                   peakloc[n] = startframe + frames + i;
                }
+               ampavg[n] += absamp * NORMFACTOR;
+               normsamp = samp * NORMFACTOR;
+               dcavg[n] += normsamp;
+               rms[n] += normsamp * normsamp;
             }
          }
       }
@@ -1204,6 +1230,15 @@ sndlib_findpeak(int    infd,
             goto err;
          }
       }
+   }
+
+   /* denormalize averages so that they correspond to input range;
+      we do the normalization to avoid overflow during accumulation.
+   */
+   for (n = 0; n < nchans; n++) {
+      ampavg[n] = (ampavg[n] / nframes) * DENORMFACTOR;
+      dcavg[n] = (dcavg[n] / nframes) * DENORMFACTOR;
+      rms[n] = pow(rms[n] / nframes, 0.5) * DENORMFACTOR;
    }
 
    free(buffer);
