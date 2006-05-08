@@ -3,6 +3,7 @@ fixes that we don't bother putting here.
 
 2006-05-08  John Gibson <johgibso-at-indiana.edu>
 
+	* Make MULTEQ work with input/output of as many as 8 channels.
 	* Make peak-finding function (sndlibsupport.c) also find average
 	  amplitude, RMS amplitude and DC offset; make this info available
 	  (optionally) in sndpeak.  Also, let sndpeak work with 24-bit files.
