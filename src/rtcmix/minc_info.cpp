@@ -78,6 +78,8 @@ extern "C" {
 	double filechans(const Arg args[], const int nargs);
 	double filesr(const Arg args[], const int nargs);
 	double filepeak(const Arg args[], const int nargs);
+	double filerms(const Arg args[], const int nargs);
+	double filedc(const Arg args[], const int nargs);
 };
 
 double filedur(const Arg args[], const int nargs)
@@ -130,32 +132,30 @@ double filesr(const Arg args[], const int nargs)
    return srate;
 }
 
-double filepeak(const Arg args[], const int nargs)
+// helper function for filepeak, filerms, filedc
+int findpeakrmsdc(char *funcname, char *fname,
+	const double starttime, const double endtime, const int chan,
+	double *thepeak, double *therms, double *thedc)
 {
-	if (nargs < 1)
-		return die("filepeak", "Usage:  "
-		           "peak = filepeak(\"filename\"[, start[, end[, chan]]])");
-	const char *fname = args[0];
-
 	int format, dataloc, nchans;
 	double srate;
 	long nsamps;
-	int fd = open_sound_file("filepeak", (char *) fname, NULL, &format, &dataloc,
+	int fd = open_sound_file(funcname, fname, NULL, &format, &dataloc,
 	                         &srate, &nchans, &nsamps);
 	if (fd == -1)
-		return -1.0;
+		return -1;
 
-	long startframe = (nargs > 1) ? long(((double) args[1] * srate) + 0.5) : 0L;
+	long startframe = long((starttime * srate) + 0.5);
 	long nframes = (nsamps / nchans) - startframe;
-	if (nargs > 2) {
+	if (endtime != -1.0) {
 		long endframe = nframes;
-		nframes = long(((double) args[2] * srate) + 0.5) + startframe;
+		nframes = long((endtime * srate) + 0.5) + startframe;
 		if (nframes > endframe)
 			nframes = endframe;
 	}
-	int chan = (nargs > 3) ? int(args[3]) : ALL_CHANS;
+
 	if (chan != ALL_CHANS && chan >= nchans)
-		return die("filepeak", "You specified channel %d for a %d-channel file.",
+		return die(funcname, "You specified channel %d for a %d-channel file.",
 		           chan, nchans);
 	float peak[nchans];
 	long peakloc[nchans];
@@ -166,16 +166,81 @@ double filepeak(const Arg args[], const int nargs)
                     startframe, nframes, peak, peakloc, ampavg, dcavg, rms);
    sndlib_close(fd, 0, 0, 0, 0);
 	if (result == -1)
-		return -1.0;
+		return -1;
 
 	if (chan == ALL_CHANS) {
-		float max = 0.0;
-		for (int i = 0; i < nchans; i++)
-			if (peak[i] > max)
-				max = peak[i];
-		return max;
+		float maxpeak = 0.0;
+		float maxrms = 0.0;
+		float maxdc = 0.0;
+		for (int i = 0; i < nchans; i++) {
+			if (peak[i] > maxpeak)
+				maxpeak = peak[i];
+			if (rms[i] > maxrms)
+				maxrms = rms[i];
+			if (dcavg[i] > maxdc)
+				maxdc = dcavg[i];
+		}
+		*thepeak = maxpeak;
+		*therms = maxrms;
+		*thedc = maxdc;
 	}
-	return peak[chan];
+	else {
+		*thepeak = peak[chan];
+		*therms = rms[chan];
+		*thedc = dcavg[chan];
+	}
+	return 0;
+}
+
+double filepeak(const Arg args[], const int nargs)
+{
+	if (nargs < 1)
+		return die("filepeak", "Usage:  "
+		           "peak = filepeak(\"filename\"[, start[, end[, chan]]])");
+	const char *fname = args[0];
+	const double starttime = (nargs > 1) ? args[1] : 0.0;
+	const double endtime = (nargs > 2 && double(args[2]) > 0.0) ? args[2] : -1.0;
+	const int chan = (nargs > 3) ? int(args[3]) : ALL_CHANS;
+
+	double peak, rms, dc;
+	if (findpeakrmsdc("filepeak", (char *) fname, starttime, endtime, chan,
+			&peak, &rms, &dc) == -1)
+		return -1.0;
+	return peak;
+}
+
+double filerms(const Arg args[], const int nargs)
+{
+	if (nargs < 1)
+		return die("filerms", "Usage:  "
+		           "rms = filerms(\"filename\"[, start[, end[, chan]]])");
+	const char *fname = args[0];
+	const double starttime = (nargs > 1) ? args[1] : 0.0;
+	const double endtime = (nargs > 2 && double(args[2]) > 0.0) ? args[2] : -1.0;
+	const int chan = (nargs > 3) ? int(args[3]) : ALL_CHANS;
+
+	double peak, rms, dc;
+	if (findpeakrmsdc("filerms", (char *) fname, starttime, endtime, chan,
+			&peak, &rms, &dc) == -1)
+		return -1.0;
+	return rms;
+}
+
+double filedc(const Arg args[], const int nargs)
+{
+	if (nargs < 1)
+		return die("filedc", "Usage:  "
+		           "rms = filedc(\"filename\"[, start[, end[, chan]]])");
+	const char *fname = args[0];
+	const double starttime = (nargs > 1) ? args[1] : 0.0;
+	const double endtime = (nargs > 2 && double(args[2]) > 0.0) ? args[2] : -1.0;
+	const int chan = (nargs > 3) ? int(args[3]) : ALL_CHANS;
+
+	double peak, rms, dc;
+	if (findpeakrmsdc("filedc", (char *) fname, starttime, endtime, chan,
+			&peak, &rms, &dc) == -1)
+		return -1.0;
+	return dc;
 }
 
 

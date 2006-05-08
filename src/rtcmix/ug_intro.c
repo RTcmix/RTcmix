@@ -34,6 +34,8 @@ ug_intro()
 	UG_INTRO_DOUBLE_RETURN("filechans", filechans);
 	UG_INTRO_DOUBLE_RETURN("filesr", filesr);
 	UG_INTRO_DOUBLE_RETURN("filepeak", filepeak);
+	UG_INTRO_DOUBLE_RETURN("filerms", filerms);
+	UG_INTRO_DOUBLE_RETURN("filedc", filedc);
 	UG_INTRO("makegen", makegen);
 	UG_INTRO("open",m_open);
 	UG_INTRO("peakoff",peak_off);
@@ -117,6 +119,7 @@ ug_intro()
 	UG_INTRO("pickrand", m_pickrand);
 	UG_INTRO("pickwrand", m_pickwrand);
 	UG_INTRO("irand", m_irand);
+	UG_INTRO("trand", m_trand);
 	UG_INTRO("setexp", m_setexp);
 	UG_INTRO("addgens", m_addgens);
 	UG_INTRO("multgens", m_multgens);
