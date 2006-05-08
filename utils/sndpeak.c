@@ -11,6 +11,13 @@
 #include <byte_routines.h>
 #include <sndlibsupport.h>
 
+static double dbamp(float amp) /* nabbed from genlib/ampdb.c */
+{
+   double fabs_amp = fabs((double) amp);
+   return (20.0 * log10(fabs_amp));
+}
+
+
 /* Revision of cmix sndpeak program with sndlib support and other improvements.
                                                           -- J. Gibson, 6/6/99
 */
@@ -37,9 +44,11 @@ and write peak stats to that file instead.\n\
 Replace the original when you're satisfied all is well.\n"
 
 #define UNSUPPORTED_FORMAT_MSG "\"%s\" not in a supported data format.\n\
-(Can be 16-bit linear or 32-bit float, either byte order.)\n"
+(Can be 16-bit linear, 24-bit linear or 32-bit float, either byte order.)\n"
 
+#ifdef NOMORE
 #define NORM(x,y) ((float) (y) / (float) (x == SF_SHORT ? 32767.0 : 1.0))
+#endif
 
 static void usage(void);
 
@@ -51,8 +60,10 @@ usage()
 {
    printf("usage:  \"sndpeak [options] file [file...]\"\n");
    printf("        options:  -n  don't update header, just print\n");
+   printf("                  -d  display in dBFS as well as raw amplitudes\n");
    printf("                  -q  quiet\n");
-   printf("                  -v  verbose\n");
+   printf("                  -v  verbose file info\n");
+   printf("                  -x  show extra info (avg peak, avg DC, rms)\n");
    exit(1);
 }
 
@@ -68,16 +79,18 @@ int
 main(int argc, char *argv[])
 {
    int         i, result, infd, outfd, type, format, indataloc, outdataloc;
-   int         nchans, exitcode, update, verbose, quiet;
+   int         nchans, srate, exitcode;
+   int         update, verbose, quiet, showdb, showfull;
    long        startframe, nframes;
    long        peakloc[MAXCHANS];
    float       peak[MAXCHANS];
+   double      ampavg[MAXCHANS], dcavg[MAXCHANS], rms[MAXCHANS];
    char        *sfname, *outname;
    SFComment   sfc;
    struct stat statbuf;
 
    outfd = -1;
-   outdataloc = startframe = exitcode = verbose = quiet = 0;
+   outdataloc = startframe = exitcode = verbose = quiet = showdb = showfull = 0;
    update = 1;
 
    if (argc < 2)
@@ -88,6 +101,9 @@ main(int argc, char *argv[])
 
       if (arg[0] == '-') {
          switch (arg[1]) {
+            case 'd':
+               showdb = 1;
+               break;
             case 'n':
                update = 0;
                break;
@@ -96,6 +112,9 @@ main(int argc, char *argv[])
                break;
             case 'v':
                verbose = 1;
+               break;
+            case 'x':
+               showfull = 1;
                break;
             default:
                usage();
@@ -161,6 +180,7 @@ main(int argc, char *argv[])
       nchans = mus_header_chans();
       indataloc = mus_header_data_location();
       nframes = mus_header_samples() / nchans;
+      srate = mus_header_srate();
 
       /* Make sure this is a header type sndlib can write, and that
          there's enough room in the header to store the peak stats comment.
@@ -179,7 +199,6 @@ main(int argc, char *argv[])
             file with it when we're all done.
          */
          if (!sndlib_current_header_comment_alloc_good(NULL)) {
-            int srate = mus_header_srate();
 #ifdef AUTO_SHUFFLE
             outname = strdup(tmpnam(NULL));
             if (outname == NULL) {
@@ -218,7 +237,7 @@ main(int argc, char *argv[])
       }
 
       if (sndlib_findpeak(infd, outfd, indataloc, outdataloc, format, nchans,
-                                 startframe, nframes, peak, peakloc) == -1) {
+               startframe, nframes, peak, peakloc, ampavg, dcavg, rms) == -1) {
          fprintf(stderr, "Error while scanning \"%s\"\n", sfname);
          close(infd);
          CONTINUE;
@@ -292,15 +311,39 @@ main(int argc, char *argv[])
 
       if (!quiet) {
          int n, class = mus_data_format_to_bytes_per_sample(format);
+         double dbref = dbamp(32768.0);
 
          printf("Peak stats for file \"%s\":\n", sfname);
          for (n = 0; n < nchans; n++) {
             printf("  channel %d:  ", n);
-            if (peak[n])
+            if (peak[n]) {
+               float locsecs = peakloc[n] / (float) srate;
+#ifdef NOMORE
                printf("%f (absolute %f) at frame %ld\n",
                       NORM(class, peak[n]), peak[n], peakloc[n]);
+#else
+               if (showdb)
+                  printf("%f (%.2f dBFS) at frame %ld (%.3f secs)\n",
+                         peak[n], dbamp(peak[n]) - dbref, peakloc[n], locsecs);
+               else
+                  printf("%f at frame %ld (%.3f secs)\n",
+                         peak[n], peakloc[n], locsecs);
+#endif
+            }
             else
                printf("silence\n");
+            if (showfull) {
+               if (showdb)
+                  printf("              avg: %.3f (%.2f dBFS)\n"
+                         "              dc:  %.3f (%.2f dBFS)\n"
+                         "              rms: %.3f (%.2f dBFS)\n",
+                         ampavg[n], dbamp(ampavg[n]) - dbref,
+                         dcavg[n], dbamp(dcavg[n]) - dbref,
+                         rms[n], dbamp(rms[n]) - dbref);
+               else
+                  printf("              avg: %.3f, dc: %.3f, rms: %.3f\n",
+                         ampavg[n], dcavg[n], rms[n]);
+            }
          }
       }
    }
