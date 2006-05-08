@@ -25,7 +25,8 @@
    1: highpass, 2: lowshelf, 3: highshelf, 4: peaknotch).  If you give the
    string version, you can't change types during a note.
 
-   The instrument is either mono-to-mono or stereo-to-stereo.
+   The number of input channels must equal the number of output channels.
+   There can be as many as 8 channels.
 
    John Gibson <johgibso at indiana dot edu>, 26 Sep 2004; derived from EQ.
 

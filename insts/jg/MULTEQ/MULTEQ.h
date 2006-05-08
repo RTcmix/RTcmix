@@ -1,7 +1,7 @@
 #include <Ougens.h>
 
 #define MAXBAND  8
-#define MAXCHAN  2
+#define MAXCHAN  8
 
 class EQBand {
    Oequalizer  *_eq;
