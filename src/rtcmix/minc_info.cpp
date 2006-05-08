@@ -159,8 +159,11 @@ double filepeak(const Arg args[], const int nargs)
 		           chan, nchans);
 	float peak[nchans];
 	long peakloc[nchans];
+	double ampavg[nchans];
+	double dcavg[nchans];
+	double rms[nchans];
    int result = sndlib_findpeak(fd, -1, dataloc, -1, format, nchans,
-                                startframe, nframes, peak, peakloc);
+                    startframe, nframes, peak, peakloc, ampavg, dcavg, rms);
    sndlib_close(fd, 0, 0, 0, 0);
 	if (result == -1)
 		return -1.0;
@@ -319,6 +322,7 @@ RTcmix::get_peak(float start, float end, int chan)
    long      startframe, endframe, nframes, loc;
    long      peakloc[MAXCHANS];
    float     peak[MAXCHANS];
+   double    ampavg[MAXCHANS], dcavg[MAXCHANS], rms[MAXCHANS];
    SFComment sfc;
 
    index = get_last_input_index();
@@ -381,7 +385,7 @@ RTcmix::get_peak(float start, float end, int chan)
 
    /* NOTE: Might get here even if file_stats_valid. */
    result = sndlib_findpeak(fd, -1, dataloc, -1, format, nchans,
-                            startframe, nframes, peak, peakloc);
+                   startframe, nframes, peak, peakloc, ampavg, dcavg, rms);
 
    if (chan == ALL_CHANS) {
       float max = 0.0;
