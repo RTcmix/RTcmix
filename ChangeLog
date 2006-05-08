@@ -1,6 +1,13 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2006-05-08  John Gibson <johgibso-at-indiana.edu>
+
+	* Make peak-finding function (sndlibsupport.c) also find average
+	  amplitude, RMS amplitude and DC offset; make this info available
+	  (optionally) in sndpeak.  Also, let sndpeak work with 24-bit files.
+	* New filerms and filedc script functions, which work like filepeak().
+
 2006-02-17  John Gibson <johgibso-at-indiana.edu>
 
 	* Make peak-finding function (sndlibsupport.c) -- used by sndpeak,
