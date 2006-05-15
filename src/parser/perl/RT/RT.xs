@@ -57,7 +57,7 @@ handle_minc_function(...)
 //			   printf("handle_minc_function: argument[%d] was string\n", i-1);
             }
 			else {
-				printf("handle_minc_function: argument[%d] not number, string or reference!\n", i-1);
+				printf("handle_minc_function: \"%s()\": argument[%d] not number, string or reference!\n", function_name, i-1);
 				// Default to double 0.0
 			    arg->_type = DoubleType;
 			    arg->_val.number = 0;
