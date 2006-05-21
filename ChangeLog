@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2006-05-21  John Gibson <johgibso-at-indiana.edu>
+
+	* Add simple DC blocking instrument, DCBLOCK (in insts/jg)
+
 2006-05-08  John Gibson <johgibso-at-indiana.edu>
 
 	* Make MULTEQ work with input/output of as many as 8 channels.
