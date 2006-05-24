@@ -50,10 +50,12 @@ MBASE::MBASE() : m_tapsize(0)
     in = NULL;
     m_tapDelay = NULL;
 	m_buffersize = BUFLEN;
+	m_paths = 13;
+	m_cartflag = 0;
 
     for (int i = 0; i < 2; i++) {
        int j;
-       for (j = 0; j < 13; j++) {
+       for (j = 0; j < m_paths; j++) {
           m_vectors[i][j].Firtaps = NULL;
           m_vectors[i][j].Fircoeffs = NULL;
        }
@@ -77,7 +79,7 @@ MBASE::~MBASE()
 
 int MBASE::init(double p[], int n_args)
 {
-    int    flag, UseMikes, cartflag = 0;
+    int    flag, UseMikes;
     float  outskip, inskip, abs_factor, rvb_time;
     double R, T, dist;
 
@@ -93,6 +95,11 @@ int MBASE::init(double p[], int n_args)
     insamps = (int)(m_dur * SR);
 	
    	inamp = p[3];
+
+	if (inamp < 0) {
+		m_paths = 1;	// Dont process secondary paths
+		inamp = -inamp;
+	}
 
     /* Get results of Minc setup calls (space, mikes_on, mikes_off, matrix) */
     if (get_setup_params(Dimensions, &m_attenParams,
@@ -283,7 +290,7 @@ int MBASE::run()
 
 			DBG1(printf("  inner loop: bufsamps = %d\n", bufsamps));
 			for (int ch = 0; ch < 2; ch++) {
-				for (int path = 0; path < 13; path++) {
+				for (int path = 0; path < m_paths; path++) {
 					Vector *vec = &m_vectors[ch][path];
 					DBG(printf("vector[%d][%d]:\n", ch, path));
 					/* get delayed samps */
@@ -313,7 +320,7 @@ int MBASE::run()
 			DBG(printf("summing vectors\n"));
 			if (!m_binaural) {
 				// re-sum scaled reflected paths as early response
-				for (int path = 1; path < 13; path++) {
+				for (int path = 1; path < m_paths; path++) {
 					addBuf(&globalEarlyResponse[0][outputOffset+i], m_vectors[0][path].Sig, bufsamps);
 					addBuf(&globalEarlyResponse[1][outputOffset+i], m_vectors[1][path].Sig, bufsamps);
 				}           
@@ -454,7 +461,7 @@ void MBASE::set_walls(float wallfac)
    cutoff = (cutoff <= SR / 2) ? cutoff : SR / 2;     /* set limit at N.F. */
 
    for (int i = 0; i < 2; i++) {
-      for (int j = 1; j < 13; j++) {        /* skip first pair (direct sigs) */
+      for (int j = 1; j < m_paths; j++) {      /* skip first pair (direct sigs) */
          cf = (j > 4) ? cutoff * .6 : cutoff;   /* more filt for 2nd */
          toneset(SR, cf, 1, m_vectors[i][j].Walldata);        /* gen. wall reflect */
       }
@@ -710,7 +717,7 @@ void MBASE::setair(double rho, int flag, double *coeffs, bool directSrc)
 void MBASE::airfil_set(int flag)
 {
    for (int i = 0; i < 2; ++i)
-      for (int j = 0; j < 13; ++j)
+      for (int j = 0; j < m_paths; ++j)
          setair(m_vectors[i][j].Rho, flag, m_vectors[i][j].Airdata, j==0);
 }
 
@@ -739,7 +746,7 @@ void MBASE::mike_set()
    double OmniFactor = 1.0 - MikePatternFactor;
 
    for (int i = 0; i < 2; ++i)
-      for (int j = 0; j < 13; ++j)
+      for (int j = 0; j < m_paths; ++j)
          m_vectors[i][j].MikeAmp = 
 		     OmniFactor + (MikePatternFactor * cos(m_vectors[i][j].Theta - MikeAngle));
 }
@@ -752,7 +759,7 @@ void
 MBASE::earfil_set(int flag)
 {
    for (int i = 0; i < 2; ++i)
-      for (int j = 0; j < 13; ++j)
+      for (int j = 0; j < m_paths; ++j)
          setfir(m_vectors[i][j].Theta,
 		        g_Nterms[j],
 				flag,
@@ -778,7 +785,7 @@ MBASE::tap_set(int fir_flag)
    printf("outlocs:\n");
 #endif
    for (int i = 0; i < 2; ++i) {
-      for (int j = 0; j < 13; ++j) {
+      for (int j = 0; j < m_paths; ++j) {
          delay = m_vectors[i][j].Rho / MACH1;                /* delay time */
          if (fir_flag)
             m_vectors[i][j].outloc = (long)(delay * SR - g_Group_delay[j] + 0.5);

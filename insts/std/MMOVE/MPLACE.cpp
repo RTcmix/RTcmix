@@ -47,12 +47,12 @@ int PLACE::localInit(double p[], int n_args)
 	m_dist = (double)p[6];
 	m_inchan = n_args > 7 ? (int)p[7] : AVERAGE_CHANS;
     if (m_dist < 0) {
-        cartflag = 1;                    /* cartesian coordinates */
+        m_cartflag = 1;                    /* cartesian coordinates */
         m_dist *= -1.0;
         advise(name(), "Using cartesian coordinate system.");
     }
 	// convert angle to radians before passing in if polar
-    if (roomtrig(R , cartflag ? T : T * conv, m_dist, cartflag)) {
+    if (roomtrig(R , m_cartflag ? T : T * conv, m_dist, m_cartflag)) {
 		  die(name(), "roomtrig failed.");
         return(DONT_SCHEDULE);
     }

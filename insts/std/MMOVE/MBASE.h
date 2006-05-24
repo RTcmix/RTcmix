@@ -43,8 +43,9 @@ protected:
    void mike_set();
 protected:
    int    m_inchan, insamps, skip, m_binaural, m_tapsize, tapcount;
-   int    cartflag, m_buffersize;
+   int    m_cartflag, m_buffersize;
    int 	  m_branch;
+   int	  m_paths;
    float  inamp, m_dur;
    float  amptabs[2], *in;
    double *amparray;
