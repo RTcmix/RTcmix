@@ -85,7 +85,7 @@ int MOVE::localInit(double *p, int n_args)
     
     // copy global params into instrument
     
-    if (get_path_params(&rholoc[0], &thetaloc[0], &cartflag, &mindiff) < 0)
+    if (get_path_params(&rholoc[0], &thetaloc[0], &m_cartflag, &mindiff) < 0)
 		  return die(name(), "get_path_params failed.");
 
 	// treat mindiff as update rate in seconds
@@ -195,7 +195,7 @@ int MOVE::updatePosition(int currentSamp)
 #ifdef debug
         printf("updatePosition[%d]:\t\tR: %f  T: %f\n", currentSamp, R, T);
 #endif
-		if (roomtrig(R , T, m_dist, cartflag)) {
+		if (roomtrig(R , T, m_dist, m_cartflag)) {
             return (-1);
 		}
         // set taps, return max samp

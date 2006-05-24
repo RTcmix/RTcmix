@@ -82,7 +82,7 @@ int DMOVE::localInit(double *p, int n_args)
 	if (m_dist < 0.0) {
 	    advise(name(), "Using cartesian coordinate system");
 		m_dist *= -1.0;
-		cartflag = 1;
+		m_cartflag = 1;
 	}
     m_inchan = n_args > 7 ? (int)p[7] : AVERAGE_CHANS;
     
@@ -205,7 +205,7 @@ int DMOVE::updatePosition(int currentSamp)
 #ifdef debug
         printf("updatePosition[%d]:\t\tR: %f  T: %f\n", currentSamp, R, T);
 #endif
-		if (roomtrig(R , T, m_dist, cartflag)) {
+		if (roomtrig(R , T, m_dist, m_cartflag)) {
             return (-1);
 		}
         // set taps, return max samp
