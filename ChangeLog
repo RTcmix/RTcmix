@@ -1,6 +1,16 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2006-05-31  John Gibson <johgibso-at-indiana.edu>
+
+	* Add trand() score function, an idea from Doug Scott.
+	  This works like irand, except that it returns an integer
+	  in the range [min, max), suitable for using as an array
+	  index.  It guarantees that min is not less than zero.
+	* Make irand() min argument be optional, so new syntax is
+	  irand([min,] max).  If min is missing, then min will be
+	  zero and the single argument gives the max value.
+
 2006-05-21  John Gibson <johgibso-at-indiana.edu>
 
 	* Add simple DC blocking instrument, DCBLOCK (in insts/jg)
