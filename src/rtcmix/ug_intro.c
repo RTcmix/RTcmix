@@ -119,6 +119,7 @@ ug_intro()
 	UG_INTRO("pickrand", m_pickrand);
 	UG_INTRO("pickwrand", m_pickwrand);
 	UG_INTRO("irand", m_irand);
+	UG_INTRO("trand", m_trand);
 	UG_INTRO("setexp", m_setexp);
 	UG_INTRO("addgens", m_addgens);
 	UG_INTRO("multgens", m_multgens);

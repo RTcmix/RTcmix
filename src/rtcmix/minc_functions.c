@@ -503,8 +503,34 @@ double m_pickwrand(float p[], int n_args, double pp[])
 /* returns a randomly-interpolated value between its two input values */
 double m_irand(float p[], int n_args, double pp[])
 {
+	double min, max;
 	double frac = m_random(p, 0);
-	if (n_args != 2)
-		die("irand", "Must have exactly two arguments.\n");
-	return (frac * pp[0]) + (1.0 - frac) * pp[1];
+	if (n_args == 1) {
+		min = 0.0;
+		max = pp[0];
+	}
+	else if (n_args == 2) {
+		min = pp[0];
+		max = pp[1];
+	}
+	else {
+		die("irand", "Usage: irand([min,] max)\nDefault <min> is zero\n");
+		return -1.0;
+	}
+	return (frac * min) + (1.0 - frac) * max;
 }
+
+double m_trand(float p[], int n_args, double pp[])
+{
+	double raw = m_irand(p, n_args, pp);
+	int trunc = (int) raw;
+	if (trunc < 0)
+		trunc = 0;
+	else {
+		int max = (n_args > 0) ? (int) pp[n_args - 1] : 0;
+		if (trunc >= max)
+			trunc = max - 1;
+	}
+	return (double) trunc;
+}
+
