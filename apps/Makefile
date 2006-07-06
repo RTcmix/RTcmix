@@ -1,7 +1,7 @@
 include ../makefile.conf
 
 # This finds all dirs in this directory (except for CVS/).
-DIRS = `find . -type d -mindepth 1 -maxdepth 1 | sed -e '/CVS/d'`
+DIRS = `find . -mindepth 1 -maxdepth 1 -type d | sed -e '/CVS/d'`
 
 .PHONY: all progs imbed install uninstall clean cleanall
 
