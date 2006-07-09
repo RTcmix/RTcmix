@@ -71,7 +71,7 @@
   #define MUS_LITTLE_ENDIAN 1
 #endif
 
-#if (!(defined(MACOS))) && (defined(MPW_C) || defined(macintosh) || defined(__MRC__) || defined(__ppc__))
+#if (!(defined(MACOS))) && (defined(MPW_C) || defined(macintosh) || defined(__MRC__)
   #define MACOS 1
   #include <MacMemory.h>
   #include <TextUtils.h>
@@ -114,7 +114,7 @@
   #endif
 #endif  
 
-#ifdef MACOS
+#ifdef MAC_OSX
   #ifdef __ppc__
     #define MUS_LITTLE_ENDIAN 0
   #else
