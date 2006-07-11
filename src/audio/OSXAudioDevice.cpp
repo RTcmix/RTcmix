@@ -185,8 +185,21 @@ OSXAudioDevice::Impl::Port::interleavedSendFrames(struct Port *port,
 			}
 		}
 		else {
-			printf("Only mono-to-stereo interleaved playback conversion is currently supported\n");
-			return -1;
+#if DEBUG > 0
+			printf("Copying mono user frame into first two chans of interleaved buf\n");
+#endif
+			float *from = (float *) frameBuffer;
+			for (int in=0; in < frameCount; ++in) {
+				if (inLoc >= bufLen) // wrap
+					inLoc -= bufLen;
+				// Write single channel from frame into first two chans of circular buf.
+				outbuf[inLoc+1] = outbuf[inLoc] = (float)(*from);
+				for (int ch = 2; ch < bufChannels; ++ch) {
+					outbuf[inLoc+ch] = 0.0f;
+				}
+				++from;
+				inLoc += bufChannels;
+			}
 		}
 		break;
 
