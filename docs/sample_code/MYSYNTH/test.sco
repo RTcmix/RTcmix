@@ -1,5 +1,5 @@
 rtsetparams(44100, 2)
-load("/home/me/MYSYNTH/libMYSYNTH.so")
+load("./libMYSYNTH.so")
 
 setline(0,0, 1,1, 19,1, 20,0)
 
