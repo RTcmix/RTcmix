@@ -12,8 +12,8 @@ public:
 private:
 	void doupdate();
 
+	float *_in;
 	int _nargs, _inchan, _branch;
 	float _amp, _pan;
-	float *_in;
 };
 
