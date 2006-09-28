@@ -1,0 +1,33 @@
+# Default configuration file
+
+# Boolean options: key = [true | false]
+audio = true
+play = true
+record = false
+clobber = true
+print = true
+report_clipping = true
+check_peaks = true
+
+# Number options: key = value
+buffer_frames = 4096
+
+# String options: key = "quoted string"
+
+# "device" lets you select input and output devices
+# syntax: "device name :input,output"
+#    device name can have spaces
+#    no spaces allowed after ':'
+#    <input,output> are the stream IDs, either a single number or a range of numbers
+
+# Digi CoreAudio driver presents 8 mono streams -- not typical -- so it's a range
+device = "Digidesign HW ( HD ):0-7,0-7"
+
+# OS X MIDI devices -- currently only an input device name
+#midi_indevice = "EV-XS USB MIDI Controller: Port 1"
+midi_indevice = "MIDI Timepiece AV: Port 1"
+
+# dso_path is a colon-separated list of directories (full path names) to 
+# search for instruments.
+dso_path = "/usr/local/src/RTcmix/shlib"
+
