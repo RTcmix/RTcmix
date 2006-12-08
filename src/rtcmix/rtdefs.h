@@ -3,7 +3,7 @@
 
 #define MAXCHANS 8
 
-#define MAX_INPUT_FDS        128   /* number of slots in inputFileTable */
+#define RESERVE_INPUT_FDS    20  // subtract this from max number of input files
 
 #define NO_DEVICE_FDINDEX    -1    /* value for inst fdIndex if unused */
 #define NO_FD                -1    /* this InputDesc not in use */

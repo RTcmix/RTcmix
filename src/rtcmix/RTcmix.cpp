@@ -79,7 +79,6 @@ char *			RTcmix::rtoutsfname 			= NULL;
 int			RTcmix::tags_on 	= 0;
 #endif
 
-InputDesc	RTcmix::inputFileTable[MAX_INPUT_FDS];
 BufPtr 		RTcmix::audioin_buffer[MAXBUS];    /* input from ADC, not file */
 BufPtr 		RTcmix::aux_buffer[MAXBUS];
 BufPtr 		RTcmix::out_buffer[MAXBUS];
@@ -87,6 +86,9 @@ BufPtr 		RTcmix::out_buffer[MAXBUS];
 int			RTcmix::rtrecord 	= 0;		// indicates reading from audio device
 int			RTcmix::rtfileit 	= 0;		// signal writing to soundfile
 int			RTcmix::rtoutfile 	= 0;
+
+InputDesc *	RTcmix::inputFileTable = NULL;
+int			RTcmix::max_input_fds = 0;
 
 pthread_mutex_t RTcmix::pfieldLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RTcmix::audio_config_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -158,7 +160,14 @@ RTcmix::init_globals(bool fromMain, const char *defaultDSOPath)
       ToAuxPlayList[i] =-1;     /* The playback order for AUX buses */
    }
 
-   for (int i = 0; i < MAX_INPUT_FDS; i++)
+	max_input_fds = sysconf(_SC_OPEN_MAX);
+	if (max_input_fds == -1)	// call failed
+		max_input_fds = 128;		// what we used to hardcode
+	else
+		max_input_fds -= RESERVE_INPUT_FDS;
+	inputFileTable = new InputDesc[max_input_fds];
+
+   for (int i = 0; i < max_input_fds; i++)
       inputFileTable[i].fd = NO_FD;
 
    init_buf_ptrs();

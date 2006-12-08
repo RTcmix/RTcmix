@@ -243,7 +243,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 #endif /* INPUT_BUS_SUPPORT */
 
 	/* See if this audio device or file has already been opened. */
-	for (i = 0; i < MAX_INPUT_FDS; i++) {
+	for (i = 0; i < max_input_fds; i++) {
 		if (inputFileTable[i].fd != NO_FD) {
 			if (strcmp(sfname, inputFileTable[i].filename) == 0) {
 				last_input_index = i;
@@ -354,7 +354,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 			last_input_index is the value that will be used by any instrument
 			created after this call to rtinput().
 		*/
-		for (i = 0; i < MAX_INPUT_FDS; i++) {
+		for (i = 0; i < max_input_fds; i++) {
 			if (inputFileTable[i].fd == NO_FD) {
 				inputFileTable[i].filename = strdup(sfname);
 				inputFileTable[i].fd = fd;
@@ -376,9 +376,9 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 		}
 
 		/* If this is true, we've used up all input descriptors in our array. */
-		if (i == MAX_INPUT_FDS)
+		if (i == max_input_fds)
 			die("rtinput", "You have exceeded the maximum number of input "
-												"files (%d)!", MAX_INPUT_FDS);
+												"files (%d)!", max_input_fds);
 	}
 
 	/* Return this to Minc, so user can pass it to functions. */

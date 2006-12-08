@@ -225,7 +225,8 @@ private:
 	static int		rtfileit;		// 1 if rtoutput() succeeded
 	static int		rtoutfile;
 
-	static InputDesc	inputFileTable[];
+	static InputDesc	*inputFileTable;
+	static int max_input_fds;
 
 	static BufPtr	audioin_buffer[];    /* input from ADC, not file */
 	static BufPtr	aux_buffer[];
