@@ -48,7 +48,7 @@ WAVETABLE::~WAVETABLE()
 {
 	delete osc;
 	if (ownWavetable)
-		delete wavetable;
+		delete [] wavetable;
 }
 
 // In fastUpdate mode, we skip doupdate() entirely, instead updating only amp,
