@@ -5,7 +5,7 @@
    p2 = amp *
    p3 = frequency (Hz or oct.pc **)
    p4 = pan (in percent-to-left form: 0-1) [optional; default is 0]
-   p5 = reference to wavetable [optional; if missing, must use gen 2 ***]
+   p5 = reference to wavetable [optional; if missing, can use gen 2 ***]
 
    p2 (amplitude), p3 (freq) and p4 (pan) can receive dynamic updates
    from a table or real-time control source.
@@ -16,8 +16,9 @@
    ** oct.pc format generally will not work as you expect for p3 (osc freq)
    if the pfield changes dynamically.  Use Hz instead in that case.
 
-   *** If p5 is missing, you must use an old-style gen table 2 for the
-   oscillator waveform.
+   *** If p5 is missing, you can use an old-style gen table 2 for the
+   oscillator waveform.  If there is no p5 and no gen table 2, then a
+   a built-in sine table will be used.
 
                                                 rev for v4, JGG, 7/12/04
 */
@@ -25,6 +26,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
+#include <math.h>
 #include <Instrument.h>
 #include <PField.h>
 #include <Option.h>	// fastUpdate
@@ -39,11 +41,14 @@
 WAVETABLE::WAVETABLE() : Instrument()
 {
 	branch = 0;
+	ownWavetable = false;
 }
 
 WAVETABLE::~WAVETABLE()
 {
 	delete osc;
+	if (ownWavetable)
+		delete wavetable;
 }
 
 // In fastUpdate mode, we skip doupdate() entirely, instead updating only amp,
@@ -110,10 +115,17 @@ int WAVETABLE::init(double p[], int n_args)
 		wavetable = (double *) getPFieldTable(5, &tablelen);
 	if (wavetable == NULL) {
 		wavetable = floc(WAVET_GEN_SLOT);
-		if (wavetable == NULL)
-			return die("WAVETABLE", "Either use the wavetable pfield (p5) or make "
-                    "an old-style gen function in slot %d.", WAVET_GEN_SLOT);
-		tablelen = fsize(WAVET_GEN_SLOT);
+		if (wavetable)
+			tablelen = fsize(WAVET_GEN_SLOT);
+		else {
+			warn("WAVETABLE", "No wavetable specified, so using sine wave.");
+			tablelen = 1024;
+			wavetable = new double [tablelen];
+			ownWavetable = true;
+			const double twopi = M_PI * 2.0;
+			for (int i = 0; i < tablelen; i++)
+				wavetable[i] = sin(twopi * ((double) i / tablelen));
+		}
 	}
 	if (tablelen > 32767)
 		return die("WAVETABLE", "wavetable must have fewer than 32768 samples.");

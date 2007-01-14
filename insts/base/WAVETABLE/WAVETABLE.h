@@ -2,7 +2,7 @@
 
 class WAVETABLE : public Instrument {
 	int branch;
-	bool fastUpdate;
+	bool fastUpdate, ownWavetable;
 	float amp, ampmult, freqraw, spread, amptabs[2];
 	double *wavetable, *amptable;
 	Ooscili *osc;
