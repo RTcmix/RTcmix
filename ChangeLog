@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2007-01-13  John Gibson <jgibson-at-iglou.com>
+
+	* New default behavior for WAVETABLE: If no wavetable argument,
+	  and no old-style gen 2, then it will use a built-in sine table.
+
 2006-05-31  John Gibson <johgibso-at-indiana.edu>
 
 	* Add trand() score function, an idea from Doug Scott.
