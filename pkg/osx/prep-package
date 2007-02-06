@@ -1,0 +1,70 @@
+#!/bin/sh
+
+# location of our source tree
+rtcmixdir="/Users/jgibson/rtcmix"
+
+# clean and remake install dir
+rm -rf rtcmix
+mkdir rtcmix
+
+# copy docs
+ditto ../../docs rtcmix/docs
+cp README.rtf rtcmix
+
+# copy uninstaller script and play symlink to bin
+mkdir rtcmix/bin
+cp uninstall-rtcmix rtcmix/bin
+cd rtcmix/bin
+ln -s cmixplay play
+cd ../..
+
+# copy selected programs to rtcmix/bin
+cd ../../bin
+ditto DisplayWindow.app ../pkg/osx/rtcmix/bin/DisplayWindow.app
+ditto MouseWindow.app ../pkg/osx/rtcmix/bin/MouseWindow.app
+cp CMIX ../pkg/osx/rtcmix/bin
+cp PCMIX ../pkg/osx/rtcmix/bin
+cp PYCMIX ../pkg/osx/rtcmix/bin
+cp cmixplay ../pkg/osx/rtcmix/bin
+cp cpspch ../pkg/osx/rtcmix/bin
+cp pchcps ../pkg/osx/rtcmix/bin
+cp rescale ../pkg/osx/rtcmix/bin
+cp setup_rtcmixrc ../pkg/osx/rtcmix/bin
+cp sfcreate ../pkg/osx/rtcmix/bin
+cp sfprint ../pkg/osx/rtcmix/bin
+cp sndpeak ../pkg/osx/rtcmix/bin
+
+# copy lib and shlib dirs
+cd ..
+ditto lib pkg/osx/rtcmix/lib
+ditto /Applications/rtcmix/shlib pkg/osx/rtcmix/shlib
+
+# fix shared lib names in executables
+cd pkg/osx/rtcmix/bin
+install_name_tool -change ${rtcmixdir}/lib/librtcmix.dylib \
+	/Applications/rtcmix/lib/librtcmix.dylib CMIX
+install_name_tool -change ${rtcmixdir}/lib/libgen.dylib \
+	/Applications/rtcmix/lib/libgen.dylib CMIX
+install_name_tool -change ${rtcmixdir}/lib/librtcmix.dylib \
+	/Applications/rtcmix/lib/librtcmix.dylib PCMIX
+install_name_tool -change ${rtcmixdir}/lib/libgen.dylib \
+	/Applications/rtcmix/lib/libgen.dylib PCMIX
+install_name_tool -change ${rtcmixdir}/lib/librtcmix.dylib \
+	/Applications/rtcmix/lib/librtcmix.dylib PYCMIX
+install_name_tool -change ${rtcmixdir}/lib/libgen.dylib \
+	/Applications/rtcmix/lib/libgen.dylib PYCMIX
+cd ../lib
+install_name_tool -change ${rtcmixdir}/lib/libgen.dylib \
+	/Applications/rtcmix/lib/libgen.dylib librtcmix.dylib
+
+# fix shared lib paths in shared libs
+install_name_tool -id /Applications/rtcmix/lib/librtcmix.dylib librtcmix.dylib
+install_name_tool -id /Applications/rtcmix/lib/libgen.dylib libgen.dylib
+
+cd ../shlib
+for i in *.so
+do
+	install_name_tool -change ${rtcmixdir}/lib/libgen.dylib \
+		/Applications/rtcmix/lib/libgen.dylib $i
+done
+

@@ -1,0 +1,17 @@
+To build a package, first make distclean your source tree.
+Then uncomment the redefinition of LIBDESTDIR in site.conf
+that sets this to /Applications/rtcmix/shlib.  Make this
+directory as root.
+
+Now rebuild RTcmix.
+Install as root.  This will put the dso's in the new LIBDESTDIR.
+
+Finally, in the pkg/osx dir, type "make".  That will put
+an installable package on your Desktop.
+
+Before testing, delete /Applications/rtcmix.
+
+(To streamline this process, we need to avoid hardcoding the
+shared lib dir that's used in the load command.  Many places
+in RTcmix use SHAREDLIBDIR, which comes from LIBDESTDIR.)
+
