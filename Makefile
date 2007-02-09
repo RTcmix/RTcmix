@@ -142,6 +142,7 @@ clean::
 	  ( cd $$DIR; echo "making clean in $$DIR..."; \
 	  $(MAKE) $(MFLAGS) clean ); \
 	done
+	( cd pkg/osx; echo "making clean in pkg/osx..." )
 
 cleanall::
 	@for DIR in $(DIRS); \
@@ -149,6 +150,7 @@ cleanall::
 	  ( cd $$DIR; echo "making cleanall in $$DIR..."; \
 	  $(MAKE) $(MFLAGS) cleanall ); \
 	done
+	( cd pkg/osx; echo "making clean in pkg/osx..." )
 
 # Make it clean for distribution or for moving to another system
 distclean: cleanall cleanac
