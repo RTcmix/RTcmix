@@ -1,7 +1,12 @@
 #!/bin/sh
 
-# location of our source tree
-rtcmixdir="/Users/jgibson/rtcmix"
+# get location of RTcmix source tree, passed in from Makefile
+if [ $# -ne 1 ]
+then
+	echo "Usage: prep-package RTcmix_source_dir"
+	exit 1
+fi
+rtcmixdir=$1
 
 # clean and remake install dir
 rm -rf rtcmix
