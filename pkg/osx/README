@@ -14,7 +14,12 @@ you'll see an error message when making the package.
 
 Before testing, delete /Applications/rtcmix.
 
+Reset LIBDESTDIR, clean and remake/install RTcmix.
+
 (To streamline this process, we need to avoid hardcoding the
 shared lib dir that's used in the load command.  Many places
-in RTcmix use SHAREDLIBDIR, which comes from LIBDESTDIR.)
+in RTcmix use SHAREDLIBDIR, which comes from LIBDESTDIR.  We
+should set this at run-time by default to the location that
+also contains the RTcmix bin directory, and allow this location
+to be overridden by .rtcmixrc.)
 
