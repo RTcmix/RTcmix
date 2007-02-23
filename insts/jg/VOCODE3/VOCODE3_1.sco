@@ -3,7 +3,7 @@ rtsetparams(44100, 2, 256)
 load("VOCODE3")
 
 //rtoutput("foo.wav", "float")
-// CPU load: c. 70% running as root
+// CPU load: c. 70% running as root (without COMPLIMIT)
 // with Obalance, it's 40% !!  Must be conversion to floats and inline next()
 
 totdur = 60
@@ -48,7 +48,7 @@ else {
 
 
 // --------------------------------------------------------------------------
-bus_config("VOCODE3", "aux 0-1 in", "out 0-1")
+bus_config("VOCODE3", "aux 0-1 in", "aux 4-5 out")
 
 env = maketable("line", 1000, 0,0, .1,1, totdur-.1,1, totdur,0)
 
@@ -138,4 +138,20 @@ cartransp -= .03
 hold = makeLFO("square2", freq=10, min=0, max=8)
 VOCODE3(0, 0, totdur, amp * env, modcf, carcf, map, scale,
 			modtransp, cartransp, modq, carq, response, hold, pan=.1)
+
+
+// --------------------------------------------------------------------------
+load("COMPLIMIT")
+ingain = 0
+outgain = 0
+atk = 0.01
+rel = 0.01
+thresh = -1
+ratio = 100
+look = atk
+win = 128
+bus_config("COMPLIMIT", "aux 4 in", "out 0")
+COMPLIMIT(0, 0, totdur, ingain, outgain, atk, rel, thresh, ratio, look, win)
+bus_config("COMPLIMIT", "aux 5 in", "out 1")
+COMPLIMIT(0, 0, totdur, ingain, outgain, atk, rel, thresh, ratio, look, win)
 
