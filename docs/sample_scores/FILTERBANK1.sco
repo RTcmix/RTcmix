@@ -1,7 +1,7 @@
 rtsetparams(44100, 2)
 load("FILTERBANK")
 
-rtinput("../../../snd/loocher.aiff")
+rtinput("../../snd/loocher.aiff")
 inchan = 0
 inskip = 0
 dur = DUR()
