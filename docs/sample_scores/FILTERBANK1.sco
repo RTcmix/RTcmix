@@ -8,7 +8,7 @@ dur = DUR()
 ringdur = 5
 
 amp = 0.1
-bw = maketable("line", "nonorm", 1000, 0,0.01, dur-ringdur,0.001, dur,0.001)
+bw = maketable("line", "nonorm", 1000, 0,0.01, dur,0.001, dur+ringdur,0.001)
 
 start = 0
 FILTERBANK(start, inskip, dur, amp, ringdur, inchan, pan=0.1,
