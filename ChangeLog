@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2007-02-25  John Gibson <jgibson-at-iglou.com>
+
+	* New instrument: FILTERBANK, which is a lot like IIR's INPUTSIG,
+	  but permits real-time changing of filter parameters.
+
 2007-02-06  John Gibson <jgibson-at-iglou.com>
 
 	* Add a way to make an OS X binary package (in pkg/osx).
