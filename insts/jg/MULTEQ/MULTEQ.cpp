@@ -8,7 +8,8 @@
 
    Followed by one or more (up to 8) EQ band descriptions, given by
    quintuplets of
-        EQ type ("lowpass", "highpass", "lowshelf", "highshelf", "peaknotch") *
+        EQ type ("lowpass", "highpass", "lowshelf", "highshelf", "peaknotch",
+                 "bandpass") *
         filter frequency (Hz)
         filter Q (c. 0.5-10)
         filter gain (cut or boost, in dB -- for shelf and peak/notch only)
@@ -22,8 +23,8 @@
    control source.
 
    The EQ types can be updated only when using numeric codes (0: lowpass,
-   1: highpass, 2: lowshelf, 3: highshelf, 4: peaknotch).  If you give the
-   string version, you can't change types during a note.
+   1: highpass, 2: lowshelf, 3: highshelf, 4: peaknotch, 5: bandpass).  If
+   you give the string version, you can't change types during a note.
 
    The number of input channels must equal the number of output channels.
    There can be as many as 8 channels.
@@ -88,6 +89,7 @@ static char *_eqtype_name[] = {
    "lowshelf",    // 2
    "highshelf",   // 3
    "peaknotch",   // 4
+   "bandpass",    // 5
    NULL
 };
 
@@ -118,6 +120,7 @@ OeqType MULTEQ :: getEQType(bool trystring, int pfindex)
       case 2: eqtype = OeqLowShelf;  break;
       case 3: eqtype = OeqHighShelf; break;
       case 4: eqtype = OeqPeaking;   break;
+      case 5: eqtype = OeqBandPassCSG; break;
       default: eqtype = OeqInvalid;  break;
    }
    return eqtype;
