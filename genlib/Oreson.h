@@ -15,11 +15,14 @@ public:
 
 	Oreson(float srate, float centerFreq, float bandwidth,
 	                                            Scale scale = kPeakResponse);
+	void setparams(float cf, float bw);
 	inline void clear();
 	inline float next(float sig);
 	float last() { return _last; }
 
 private:
+	float _srate;
+	Scale _scale;
 	float _a0;
 	float _a1;
 	float _a2;
