@@ -12,7 +12,7 @@ ifeq ($(ARCH), MACOSX)
    SRCS += OSXMouse.cpp
    APP = MouseWindow
    GUILIBS = -framework Carbon
-   CXXFLAGS += -DAPP_PATH=\"$(DESTDIR)/$(APP).app\"
+#   CXXFLAGS += -DAPP_PATH=\"$(DESTDIR)/$(APP).app\"
 else
    OBJS += XMouse.o
    SRCS += XMouse.cpp

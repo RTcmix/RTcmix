@@ -12,7 +12,7 @@ ifeq ($(ARCH), MACOSX)
    SRCS += OSXDisplay.cpp
    APP = DisplayWindow
    GUILIBS = -framework Carbon
-   CXXFLAGS += -DAPP_PATH=\"$(DESTDIR)/$(APP).app\"
+#   CXXFLAGS += -DAPP_PATH=\"$(DESTDIR)/$(APP).app\"
 else
    OBJS += XDisplay.o
    SRCS += XDisplay.cpp
