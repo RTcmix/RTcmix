@@ -12,7 +12,12 @@ ifeq ($(ARCH), MACOSX)
    SRCS += OSXMouse.cpp
    APP = MouseWindow
    GUILIBS = -framework Carbon
-#   CXXFLAGS += -DAPP_PATH=\"$(DESTDIR)/$(APP).app\"
+   # When installing binary pkg in /Applications, don't hardcode path to app;
+   # when running from elsewhere, you *must* hardcode path.
+   ifeq ($(PKG), TRUE)
+   else
+      CXXFLAGS += -DAPP_PATH=\"$(DESTDIR)/$(APP).app\"
+   endif
 else
    OBJS += XMouse.o
    SRCS += XMouse.cpp
