@@ -16,6 +16,9 @@ mkdir rtcmix
 ditto ../../docs rtcmix/docs
 cp README.rtf rtcmix
 
+# copy snd, so that sample_scores work
+ditto ../../snd rtcmix/snd
+
 # copy uninstaller script and play symlink to bin
 mkdir rtcmix/bin
 cp uninstall-rtcmix rtcmix/bin
