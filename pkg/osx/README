@@ -7,7 +7,7 @@ Then uncomment the definition of PKG in makefile.conf.
 This causes a redefinition of LIBDESTDIR to point to
 /Applications/rtcmix/shlib.
 
-$ sudo mkdir /Applications/rtcmix; sudo chmod 775 /Applications/rtcmix
+$ sudo install -d -m 775 /Applications/rtcmix
 $ make
 $ sudo make install
 
@@ -19,7 +19,8 @@ an installable package on your Desktop.
 If you don't create and fill /Applications/rtcmix,
 you'll see an error message when making the package.
 
-Before testing, delete /Applications/rtcmix.
+Before testing, delete /Applications/rtcmix, and make
+sure that your .rtcmixrc does not have a dso_path string.
 
 Reset PKG, clean and remake/install RTcmix.
 
@@ -28,5 +29,7 @@ shared lib dir that's used in the load command.  Many places
 in RTcmix use SHAREDLIBDIR, which comes from LIBDESTDIR.  We
 should set this at run-time by default to the location that
 also contains the RTcmix bin directory, and allow this location
-to be overridden by .rtcmixrc.)
+to be overridden by .rtcmixrc.  Unfortunately, there seems
+to be no way to get reliably the path of a program, like
+CMIX.  See comments in RTcmixMain::RTcmixMain.)
 
