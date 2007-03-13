@@ -30,6 +30,14 @@ include $(CMIXDIR)/defs.conf
 # made inside defs.conf by the configure script.
 include $(CMIXDIR)/site.conf
 
+# For use when building an OS X package (see pkg/osx).
+# Note: this overrides definition in site.conf.
+ifeq ($(PKG), TRUE)
+	ifeq ($(ARCH), MACOSX)
+		LIBDESTDIR = /Applications/rtcmix/shlib
+	endif
+endif
+
 # OPT is defined first in defs.conf, as equivalent to the CFLAGS
 # macro output by the configure script.  By default, this will 
 # contain "-g -O2".  We add some warning flags here.  If you want 
