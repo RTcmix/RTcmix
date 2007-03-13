@@ -157,6 +157,19 @@ RTcmixMain::RTcmixMain(int argc, char **argv) : RTcmix(false)
 
 // FIXME: should consult a makefile variable to tell us whether we should
 // let dsoPath constructed at run time override SHAREDLIBDIR.
+
+// FIXME: But ... there is no reasonable way to get the app path at
+// runtime anyway...
+
+   // From comp.lang.c FAQ list - Question 19.31
+   // Q: How can my program discover the complete pathname to the executable
+   //    from which it was invoked?
+   // A: argv[0] may contain all or part of the pathname, or it may contain
+   //    nothing. You may be able to duplicate the command language
+   //    interpreter's search path logic to locate the executable if the name
+   //    in argv[0] is present but incomplete.  However, there is no
+   //    guaranteed solution.
+
    char *dsoPath = makeDSOPath(argv[0]);
    init_globals(true, dsoPath);		// 'true' indicates we were called from main
    delete [] dsoPath;
