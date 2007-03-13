@@ -333,7 +333,7 @@ int Option::writeConfigFile(const char *fileName)
 #ifdef SHAREDLIBDIR
 	fprintf(stream, "\n# %s is a colon-separated list of directories (full "
 			"path names) to \n# search for instruments.\n", kOptionDSOPath);
-	fprintf(stream, "%s = \"%s\"\n", kOptionDSOPath, SHAREDLIBDIR);
+	fprintf(stream, "# %s = \"%s\"\n", kOptionDSOPath, SHAREDLIBDIR);
 #endif
 
 	fprintf(stream, "\n");
