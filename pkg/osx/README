@@ -1,10 +1,17 @@
-To build a package, first "make distclean" your source tree.
-Then uncomment the redefinition of LIBDESTDIR in site.conf
-that sets this to /Applications/rtcmix/shlib.  Create this
-directory as root.
+To build a package, do these steps in this order.
 
-Now rebuild RTcmix.
-Install as root.  This will put the dso's in the new LIBDESTDIR.
+$ make distclean	# in rtcmix src tree
+$ ./configure --with-perl --with-python
+
+Then uncomment the definition of PKG in makefile.conf.  
+This causes a redefinition of LIBDESTDIR to point to
+/Applications/rtcmix/shlib.
+
+$ sudo mkdir /Applications/rtcmix
+$ make
+$ sudo make install
+
+This will put the dso's in the new LIBDESTDIR.
 
 Finally, in the pkg/osx dir, type "make".  That will put
 an installable package on your Desktop.
@@ -14,7 +21,7 @@ you'll see an error message when making the package.
 
 Before testing, delete /Applications/rtcmix.
 
-Reset LIBDESTDIR, clean and remake/install RTcmix.
+Reset PKG, clean and remake/install RTcmix.
 
 (To streamline this process, we need to avoid hardcoding the
 shared lib dir that's used in the load command.  Many places
