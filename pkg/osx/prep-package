@@ -47,6 +47,9 @@ cd ..
 ditto lib pkg/osx/rtcmix/lib
 ditto /Applications/rtcmix/shlib pkg/osx/rtcmix/shlib
 
+# delete SCRUB, which we don't want to distribute
+rm -f pkg/osx/rtcmix/shlib/libSCRUB.so
+
 # fix shared lib names in executables
 cd pkg/osx/rtcmix/bin
 install_name_tool -change ${rtcmixdir}/lib/librtcmix.dylib \
