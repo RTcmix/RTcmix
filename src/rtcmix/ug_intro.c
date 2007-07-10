@@ -53,6 +53,7 @@ ug_intro()
  	UG_INTRO("octlet",m_octlet);
  	UG_INTRO("cpslet",m_cpslet);
  	UG_INTRO("pchlet",m_pchlet);
+ 	UG_INTRO("pchadd",m_pchadd);
 	UG_INTRO("translen",m_translen);
  	UG_INTRO("dbamp",m_dbamp);
 	UG_INTRO("octcps",m_octcps);

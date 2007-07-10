@@ -70,6 +70,11 @@ double m_pchlet(float p[], int nargs, double pp[])
 	return 8.00;
 }
 
+double m_pchadd(float p[], int nargs, double pp[])
+{
+	return pchoct(octpch(pp[0]) + octpch(pp[1]));
+}
+
 double m_rand()
 { float rrand(); return(rrand()); }
 
