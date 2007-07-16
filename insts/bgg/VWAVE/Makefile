@@ -1,14 +1,15 @@
-# be sure that the file "package.conf" has the correct
-# directory/makefile for your RTcmix installation listed
-# ... i.e.  "include /usr/local/src/RTcmix/makefile.conf
-
 include ../package.conf
 
 NAME = VWAVE
 
+CURDIR = $(CMIXDIR)/insts/bgg/$(NAME)
+
 OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
 PROGS = $(NAME) lib$(NAME).so
+
+.PHONY: all standalone install dso_install standalone_install \
+uninstall dso_uninstall standalone_uninstall clean cleanall
 
 all: lib$(NAME).so
 
@@ -22,6 +23,26 @@ $(NAME): $(OBJS) $(CMIXOBJS)
 
 $(OBJS): $(INSTRUMENT_H) $(NAME).h
 
+install: dso_install
+
+dso_install: lib$(NAME).so
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)
+
+standalone_install: standalone
+	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)
+
+uninstall: dso_uninstall standalone_uninstall
+
+dso_uninstall:
+	$(RM) $(LIBDESTDIR)/lib$(NAME).so
+
+standalone_uninstall:
+	$(RM) $(DESTDIR)/$(NAME)
+
 clean:
-	$(RM) *.o $(OBJS) $(PROGS)
+	$(RM) $(OBJS) $(PROGS)
+
+cleanall: clean uninstall
+
+
 
