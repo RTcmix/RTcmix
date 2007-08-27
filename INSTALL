@@ -2,7 +2,7 @@ Here is how to install RTcmix and its instrument packages.
 
 If you have trouble, please join the rtcmix-discuss mailing list
 <http://music.columbia.edu/mailman/listinfo/rtcmix-discuss>, and 
-as for help.
+ask for help.
 
 
 1. Download RTcmix-[version].tar.gz and unpack it anywhere you like (in your
@@ -12,8 +12,8 @@ as for help.
       (or: gunzip -c RTcmix-[version].tar.gz | tar xf - )
 
 
-2. Look in RTcmix-[version]/insts.  If it contains "base", "std", "jg", "stk"
-   and "vccm" directories, then you can skip this step.  If you have only
+2. Look in RTcmix-[version]/insts.  If it contains "base", "std", "jg", "stk",
+   "bgg" and "vccm" directories, then you can skip this step.  If you have only
    "base", then you need to download the instrument packages named above.
    Unpack them into the "insts" directory of your RTcmix.
 
@@ -27,6 +27,7 @@ as for help.
    it's okay to run it again with the options you want.
  
       --with-alsa       Use the ALSA driver, rather than OSS, on Linux
+                        (ignored on OS X)
       --with-jack       Enable support for the JACK sound server
       --with-perl       Build the Perl-enabled RTcmix (PCMIX)
       --with-python     Build the Python-enabled RTcmix (PYCMIX)
