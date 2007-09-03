@@ -1,11 +1,16 @@
 include ../../makefile.conf
 
-# NOTE: This should match the name in uninstall-rtcmix.
-pkgname="RTcmix-4.0.1.pkg"
+namevers="RTcmix-4.0.1"
 
-all:
-	./prep-package $(CMIXDIR)
-	PackageMaker -build -proj RTcmix.pmproj -p ~/Desktop/${pkgname}
+all: intel
+
+intel:
+	./prep-package $(CMIXDIR) "Intel"
+	PackageMaker -build -proj RTcmix-Intel.pmproj -p ~/Desktop/${namevers}-Intel.pkg
+
+ppc:
+	./prep-package $(CMIXDIR) "PPC"
+	PackageMaker -build -proj RTcmix-PPC.pmproj -p ~/Desktop/${namevers}-PPC.pkg
 
 clean:
 	$(RM) -r rtcmix
