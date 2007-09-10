@@ -1,5 +1,8 @@
 #!/bin/sh
 
+#destdir="/Applications/rtcmix"
+destdir="/Network/Applications/Music/rtcmix"
+
 # get location of RTcmix source tree, passed in from Makefile,
 # and bin architecture ("Intel" or "PPC")
 if [ $# -ne 2 ]
@@ -7,7 +10,7 @@ then
 	echo "Usage: prep-package RTcmix_source_dir architecture"
 	exit 1
 fi
-rtcmixdir=$1
+srcdir=$1
 arch=$2
 
 # clean and remake install dir
@@ -47,37 +50,37 @@ cp sndpeak ../pkg/osx/rtcmix/bin
 # copy lib and shlib dirs
 cd ..
 ditto lib pkg/osx/rtcmix/lib
-ditto /Applications/rtcmix/shlib pkg/osx/rtcmix/shlib
+ditto ${destdir}/shlib pkg/osx/rtcmix/shlib
 
 # delete SCRUB, which we don't want to distribute
 rm -f pkg/osx/rtcmix/shlib/libSCRUB.so
 
 # fix shared lib names in executables
 cd pkg/osx/rtcmix/bin
-install_name_tool -change ${rtcmixdir}/lib/librtcmix.dylib \
-	/Applications/rtcmix/lib/librtcmix.dylib CMIX
-install_name_tool -change ${rtcmixdir}/lib/libgen.dylib \
-	/Applications/rtcmix/lib/libgen.dylib CMIX
-install_name_tool -change ${rtcmixdir}/lib/librtcmix.dylib \
-	/Applications/rtcmix/lib/librtcmix.dylib PCMIX
-install_name_tool -change ${rtcmixdir}/lib/libgen.dylib \
-	/Applications/rtcmix/lib/libgen.dylib PCMIX
-install_name_tool -change ${rtcmixdir}/lib/librtcmix.dylib \
-	/Applications/rtcmix/lib/librtcmix.dylib PYCMIX
-install_name_tool -change ${rtcmixdir}/lib/libgen.dylib \
-	/Applications/rtcmix/lib/libgen.dylib PYCMIX
+install_name_tool -change ${srcdir}/lib/librtcmix.dylib \
+	${destdir}/lib/librtcmix.dylib CMIX
+install_name_tool -change ${srcdir}/lib/libgen.dylib \
+	${destdir}/lib/libgen.dylib CMIX
+install_name_tool -change ${srcdir}/lib/librtcmix.dylib \
+	${destdir}/lib/librtcmix.dylib PCMIX
+install_name_tool -change ${srcdir}/lib/libgen.dylib \
+	${destdir}/lib/libgen.dylib PCMIX
+install_name_tool -change ${srcdir}/lib/librtcmix.dylib \
+	${destdir}/lib/librtcmix.dylib PYCMIX
+install_name_tool -change ${srcdir}/lib/libgen.dylib \
+	${destdir}/lib/libgen.dylib PYCMIX
 cd ../lib
-install_name_tool -change ${rtcmixdir}/lib/libgen.dylib \
-	/Applications/rtcmix/lib/libgen.dylib librtcmix.dylib
+install_name_tool -change ${srcdir}/lib/libgen.dylib \
+	${destdir}/lib/libgen.dylib librtcmix.dylib
 
 # fix shared lib paths in shared libs
-install_name_tool -id /Applications/rtcmix/lib/librtcmix.dylib librtcmix.dylib
-install_name_tool -id /Applications/rtcmix/lib/libgen.dylib libgen.dylib
+install_name_tool -id ${destdir}/lib/librtcmix.dylib librtcmix.dylib
+install_name_tool -id ${destdir}/lib/libgen.dylib libgen.dylib
 
 cd ../shlib
 for i in *.so
 do
-	install_name_tool -change ${rtcmixdir}/lib/libgen.dylib \
-		/Applications/rtcmix/lib/libgen.dylib $i
+	install_name_tool -change ${srcdir}/lib/libgen.dylib \
+		${destdir}/lib/libgen.dylib $i
 done
 
