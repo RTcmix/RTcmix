@@ -1,6 +1,20 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2007-09-11  John Gibson <johgibso-at-indiana.edu>
+
+	* Add optional initial value to control-smoothing filter:
+	  handle = makefilter(handle, "smooth", lag[, initval])
+	  Formerly if init value coming into filter was non-zero, you'd
+	  get a curve from 0 to that value, resulting in weird pitch or
+	  filter cf glisses, etc.  Now, just set the new initval argument
+	  to whatever is the initial value seen by the filter.
+
+	* Fixed all the various makeconnection PFields that take a lag
+	  parameter so that their internal smoothing filter starts from 
+	  the default value given in the makeconnection call, for the
+	  same reasons given above.
+
 2007-07-10  Brad Garton <brad-at-music.columbia.edu>
 
 	* New score function: pchadd, which safely adds two oct.pc numbers,
