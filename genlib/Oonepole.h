@@ -13,6 +13,12 @@ public:
 	Oonepole(float SR);
 	Oonepole(float SR, float freq);
 
+	// Set initial value of history sample (0 by default).
+
+	inline void sethist(float hist) { _hist = hist; }
+
+	inline void clear() { _hist = 0.0; }
+
 	// Positive freq gives lowpass; negative freq gives highpass.
 
 	void setfreq(float freq);
@@ -21,8 +27,6 @@ public:
 	// Lag should be in range [0, 1].
 
 	void setlag(float lag);
-
-	inline void clear() { _hist = 0.0; }
 
 	inline void setpole(float coeff)
 	{
