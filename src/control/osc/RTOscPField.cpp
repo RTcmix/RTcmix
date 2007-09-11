@@ -42,6 +42,7 @@ RTOscPField::RTOscPField(
 
 	// NOTE: We rely on the control rate in effect when this PField is created.
 	_filter = new Oonepole(resetval);
+	_filter->sethist(_default);
 	_filter->setlag(lag);
 
 	while (!_oscserver->ready())
