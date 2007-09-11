@@ -22,7 +22,7 @@ extern int resetval;		// declared in src/rtcmix/minc_functions.c
 #define INVERT_USAGE "filt = makefilter(pfield, \"invert\" [, center])"
 #define MAP_USAGE "filt = makefilter(pfield, \"map\", transferTable[, inputMin, inputMax])"
 #define QUANTIZE_USAGE "filt = makefilter(pfield, \"quantize\", quantum)"
-#define SMOOTH_USAGE "filt = makefilter(pfield, \"smooth\", lag)"
+#define SMOOTH_USAGE "filt = makefilter(pfield, \"smooth\", lag [, initval])"
 
 
 // =============================================================================
@@ -162,7 +162,8 @@ _smooth_filter(PField *innerpf, const Arg args[], const int nargs)
 	PField *lagpf = _get_pfield(args[0]);
 	if (lagpf == NULL)
 		return _filter_usage(SMOOTH_USAGE);
-	return new SmoothPField(innerpf, resetval, lagpf);
+	double initval = nargs > 1 ? (double) args[1] : 0.0;
+	return new SmoothPField(innerpf, resetval, lagpf, initval);
 }
 
 

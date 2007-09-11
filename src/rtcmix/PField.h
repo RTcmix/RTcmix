@@ -358,7 +358,8 @@ class OonepoleTrack;
 
 class SmoothPField : public PFieldWrapper {
 public:
-	SmoothPField(PField *innerPField, double krate, PField *lagPField);
+	SmoothPField(PField *innerPField, double krate, PField *lagPField,
+		double initval = 0.0);
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
 protected:

@@ -727,11 +727,13 @@ double RangePField::doubleValue(int idx) const
 
 // SmoothPField
 
-SmoothPField::SmoothPField(PField *innerPField, double krate, PField *lagPField)
+SmoothPField::SmoothPField(PField *innerPField, double krate, PField *lagPField,
+	double initval)
 	: PFieldWrapper(innerPField), _lagPField(lagPField)
 {
 	_lagPField->ref();
 	_filter = new OonepoleTrack(krate);
+	_filter->sethist(initval);
 	updateCutoffFreq();
 }
 
