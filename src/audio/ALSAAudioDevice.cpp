@@ -424,7 +424,7 @@ void ALSAAudioDevice::run()
 		}
 	}
 	PRINT0("ALSAAudioDevice::run: after loop\n");
-	if (ret > 0 && !_stopDuringPause && isOpen() && isPlaying()) {
+	if (ret >= 0 && !_stopDuringPause && isOpen() && isPlaying()) {
 		const int zFrames = (int) _periodSize;
 		PRINT0("ALSAAudioDevice::run: sending %d zeros to HW...\n", zFrames);
 		if (isDeviceInterleaved())
