@@ -233,7 +233,7 @@ protected:
 	virtual double	doubleValue(double didx) const;
 	virtual double	doubleValue(int idx) const;
 protected:
-	virtual ModifiedIndexPFieldWrapper::~ModifiedIndexPFieldWrapper();
+	virtual ~ModifiedIndexPFieldWrapper();
 private:
 	IIFunctor *_iifun;
 	DIFunctor *_difun;
