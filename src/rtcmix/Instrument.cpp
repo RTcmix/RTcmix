@@ -198,7 +198,8 @@ double Instrument::update(int index, int totframes)
 	assert(index < _pfields->size());
 	const int nframes = (totframes == 0) ? nSamps() : totframes;
 	double percent = double(currentFrame()) / nframes;
-	// NB: PFields must force <percent> to be <= 1.0
+	if (percent > 1.0)
+		percent = 1.0;
 	return (*_pfields)[index].doubleValue(percent);
 }
 
