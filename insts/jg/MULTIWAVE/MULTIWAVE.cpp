@@ -89,6 +89,8 @@ int MULTIWAVE::init(double p[], int n_args)
 
    for (int i = 0; i < numpartials; i++) {
       oscil[i] = new Ooscili(SR, 440.0, wavet, wavelen);
+      const int index = FIRST_FREQ_ARG + (4 * i);
+      oscil[i]->setphase(p[index + 2] / 360.0);
       amp[i] = 0.0;
       pan[i] = 0.0;
    }
