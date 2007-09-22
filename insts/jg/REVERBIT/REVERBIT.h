@@ -8,12 +8,19 @@ class REVERBIT : public Instrument {
    double  *amparray;
    double  tonedata[3];
 
-   void updateRvb(double p[]);
+   void doupdate();
 public:
    REVERBIT();
    virtual ~REVERBIT();
    virtual int init(double p[], int n_args);
    virtual int configure();
    virtual int run();
+};
+
+// update flags (shift amount is pfield index)
+enum {
+   kRvbTime = 1 << 4,
+   kRvbPct = 1 << 5,
+   kCutoffFreq = 1 << 7
 };
 

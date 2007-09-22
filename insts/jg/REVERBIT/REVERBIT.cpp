@@ -165,22 +165,28 @@ int REVERBIT::configure()
 }
 
 
-void REVERBIT::updateRvb(double p[])
+void REVERBIT::doupdate()
 {
-   amp = p[3];
+   double p[8];
+   update(p, 8, kRvbTime | kRvbPct | kCutoffFreq);
+
+   amp = update(3, insamps);  // env spans only input dur
    if (amparray)
       amp *= tablei(currentFrame(), amparray, amptabs);
+
    if (p[4] != reverbtime) {
       reverbtime = p[4];
       if (reverbtime <= 0.0)
          reverbtime = 0.0001;
       rvbset(SR, reverbtime, 1, rvbarray);
    }
+
    reverbpct = p[5];
    if (reverbpct < 0.0)
       reverbpct = 0.0;
    else if (reverbpct > 1.0)
       reverbpct = 1.0;
+
    if (usefilt && p[7] != cutoff) {
       cutoff = p[7];
       if (cutoff <= 0.0)
@@ -199,9 +205,7 @@ int REVERBIT::run()
 
    for (int i = 0; i < samps; i += inputChannels()) {
       if (--branch <= 0) {
-         double p[8];
-         update(p, 8);
-         updateRvb(p);
+         doupdate();
          branch = skip;
       }
 
