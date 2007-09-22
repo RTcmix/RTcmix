@@ -170,7 +170,7 @@ int MYINST::run()
 		// This block updates certain parameters at the control rate -- the
 		// rate set by the user with the control_rate() or reset() script
 		// functions.  The Instrument base class holds this value as a number
-		// sample frames to skip between updates.  Get this value using
+		// of sample frames to skip between updates.  Get this value using
 		// getSkip() to reset the <_branch> counter.
 
 		if (--_branch <= 0) {
