@@ -127,8 +127,6 @@ int FREEVERB :: init(double p[], int n_args)
       tableset(SR, dur, lenamp, amptabs);
    }
 
-   skip = (int) (SR / (float) resetval);
-
    return nSamps();
 }
 
@@ -235,14 +233,14 @@ int FREEVERB :: run()
    for (int i = 0; i < samps; i += inputChannels()) {
       if (--branch <= 0) {
          double p[11];
-         update(p, 11);
+         update(p, 11, kRoomSize | kPreDelay | kDamp | kDry | kWet | kWidth);
          if (currentFrame() < insamps) {  // amp is pre-effect
-            amp = p[3];
+            amp = update(3, insamps);
             if (amparray)
                amp *= tablei(currentFrame(), amparray, amptabs);
          }
          updateRvb(p);
-         branch = skip;
+         branch = getSkip();
       }
       if (currentFrame() < insamps) {     // still taking input from file
          in[i] *= amp;
