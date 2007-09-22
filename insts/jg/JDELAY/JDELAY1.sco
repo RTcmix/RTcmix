@@ -1,22 +1,20 @@
 rtsetparams(44100, 2)
 load("JDELAY")
 
-rtinput("astereo.snd")
+rtinput("../../../snd/input.wav")
 
 outskip = 0
-inskip = 1
-indur = DUR() - inskip
+inskip = 0
+indur = DUR()
 amp = 1.0
 deltime = 1/cpspch(7.02)
-feedback = .980
-ringdowndur = 2
+feedback = .990
+ringdur = 1
 percent_wet = 0.5
+prefadersend = 0  // if 0, sound stops abruptly; else env spans indur + ringdur
 
-setline(0,0, .01,1, indur/1.1,1, indur,0)
+env = maketable("line", 1000, 0,0, 1,1, 6,1, 10,0)
 
 cutoff = 4000
-JDELAY(outskip, inskip, indur, amp, deltime, feedback, ringdowndur,
-       cutoff, percent_wet, inchan=0, spread=1)
-JDELAY(outskip, inskip, indur, amp, deltime, feedback, ringdowndur,
-       cutoff, percent_wet, inchan=1, spread=0)
-
+JDELAY(outskip, inskip, indur, amp * env, deltime, feedback, ringdur,
+       cutoff, percent_wet, inchan=0, pan=0.5, prefadersend)
