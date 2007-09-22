@@ -119,23 +119,25 @@ int JFIR :: init(double p[], int n_args)
       tableset(SR, dur, lenamp, amptabs);
    }
 
-   skip = (int) (SR / (float) resetval);
-
    return nSamps();
 }
 
 
 void JFIR :: doupdate()
 {
-   double p[8];
-   update(p, 8, kAmp | kPan | kBypass);
-
-   amp = p[3];
+   amp = update(3, insamps);
    if (amparray)
       amp *= tablei(currentFrame(), amparray, amptabs);
 
-   pctleft = nargs > 6 ? p[6] : 0.5;            // default is center
-   bypass = nargs > 7 ? (bool) p[7] : false;    // default is no
+   if (nargs > 6)
+      pctleft = update(6);
+   else
+      pctleft = 0.5;            // default is center
+
+   if (nargs > 7)
+      bypass = bool(update(7));
+   else
+      bypass = false;           // default is no
 }
 
 
@@ -155,7 +157,7 @@ int JFIR :: run()
    for (int i = 0; i < samps; i += inputChannels()) {
       if (--branch <= 0) {
          doupdate();
-         branch = skip;
+         branch = getSkip();
       }
 
       float insig;
