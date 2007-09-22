@@ -80,8 +80,6 @@ int DELAY::init(double p[], int n_args)
 		tableset(SR, dur, amplen, amptabs);
 	}
 
-	skip = (int) (SR / (float) resetval);
-
 	return nSamps();
 }
 
@@ -100,15 +98,15 @@ int DELAY::run()
 	for (int i = 0; i < samps; i += inputChannels())  {
 		if (--branch <= 0) {
 			double p[9];
-			update(p, 9, kAmp | kDelTime | kDelRegen | kPan);
-			amp = p[3];
+			update(p, 9, kDelTime | kDelRegen | kPan);
+			amp = update(3, insamps);
 			if (amptable)
 				amp *= tablei(cursamp, amptable, amptabs);
 			float deltime = p[4];
 			delsamps = deltime * SR;
 			regen = p[5];
 			pctleft = p[8];
-			branch = skip;
+			branch = getSkip();
 		}
 
 		float sig, out[2];

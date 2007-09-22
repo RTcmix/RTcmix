@@ -6,11 +6,10 @@ class DELAY : public Instrument {
 	double delsamps;
 	float amp, *in, pctleft, regen, amptabs[2];
 	double *amptable;
-	int inchan, insamps, skip, branch;
+	int inchan, insamps, branch;
 	Odelay *delay;
 	// update flags (shift amount is pfield number)
 	enum {
-		kAmp = 1 << 3,
 		kDelTime = 1 << 4,
 		kDelRegen = 1 << 5,
 		kPan = 1 << 8

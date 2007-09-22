@@ -2,7 +2,7 @@
 
 class PANECHO : public Instrument {
 	bool warn_deltime;
-	int inchan, insamps, skip, branch;
+	int inchan, insamps, branch;
 	double delsamps0, delsamps1;
 	float amp, regen, prevdeltime0, prevdeltime1, *in, amptabs[2];
 	double *amptable;
@@ -19,7 +19,6 @@ public:
 
 // update flags (shift amount is pfield number)
 enum {
-	kAmp = 1 << 3,
 	kDelTime0 = 1 << 4,
 	kDelTime1 = 1 << 5,
 	kDelRegen = 1 << 6

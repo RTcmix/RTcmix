@@ -87,8 +87,6 @@ int PANECHO::init(double p[], int n_args)
 		tableset(SR, dur, amplen, amptabs);
 	}
 
-	skip = (int) (SR / (float) resetval);
-
 	return nSamps();
 }
 
@@ -113,8 +111,8 @@ int PANECHO::run()
 	for (int i = 0; i < samps; i += inputChannels())  {
 		if (--branch <= 0) {
 			double p[7];
-			update(p, 7, kAmp | kDelTime0 | kDelTime1 | kDelRegen);
-			amp = p[3];
+			update(p, 7, kDelTime0 | kDelTime1 | kDelRegen);
+			amp = update(3, insamps);
 			if (amptable)
 				amp *= tablei(currentFrame(), amptable, amptabs);
 			float thisdeltime = p[4];
@@ -128,7 +126,7 @@ int PANECHO::run()
 				prevdeltime1 = thisdeltime;
 			}
 			regen = p[6];
-			branch = skip;
+			branch = getSkip();
 		}
 
 		float sig, out[2];
