@@ -3,7 +3,7 @@ load("PANECHO")
 rtinput("../../snd/nucular.wav")
 dur = DUR()
 
-amp = 1.4
+amp = 1.1
 env = maketable("line", 1000, 0,0, 1,1, 8,1, 9,0)
 
 deltimeL = maketable("line", "nonorm", 1000, 0,0.2, 1,0.6, 3,0.01)
