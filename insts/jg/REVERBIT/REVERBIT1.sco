@@ -36,7 +36,7 @@
 rtsetparams(44100, 2)
 load("REVERBIT")
 
-rtinput("any.snd")
+rtinput("../../../snd/input.wav")
 
 start = 0
 inskip = 0
