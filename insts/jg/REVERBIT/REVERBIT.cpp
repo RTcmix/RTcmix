@@ -206,7 +206,7 @@ int REVERBIT::run()
    for (int i = 0; i < samps; i += inputChannels()) {
       if (--branch <= 0) {
          doupdate();
-         branch = skip;
+         branch = getSkip();
       }
 
       float insig[2], out[2];
