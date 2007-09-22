@@ -20,7 +20,7 @@ for (start = 0; start < 15; start = start + .12) {
    ellset(pbcut, sbcut, 0, ripple, atten)
    amp = .5
    pan = random()
-   st = start + (rand() * .01)
+   st = start + (random() * .01)
    ELL(st, inskip, dur, amp * env, ringdur, inchan, pan)
 
    pbcut = 900 + (rand() * 200)
@@ -28,7 +28,7 @@ for (start = 0; start < 15; start = start + .12) {
    ellset(pbcut, sbcut, 0, ripple, atten)
    amp = .23
    pan = random()
-   st = start + (rand() * .01)
+   st = start + (random() * .01)
    ELL(st, inskip, dur, amp * env, ringdur, inchan, pan)
 }
 
