@@ -95,8 +95,6 @@ int MULTIWAVE::init(double p[], int n_args)
       pan[i] = 0.0;
    }
 
-   skip = (int) (SR / (float) resetval);
-
    return nSamps();
 }
 
@@ -126,7 +124,7 @@ int MULTIWAVE::run()
    for (int i = 0; i < samps; i++) {
       if (--branch <= 0) {
          doupdate();
-         branch = skip;
+         branch = getSkip();
       }
 
       for (int j = 0; j < chans; j++)

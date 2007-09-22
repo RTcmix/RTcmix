@@ -1,7 +1,7 @@
 class Ooscili;
 
 class MULTIWAVE : public Instrument {
-   int     nargs, skip, branch, numpartials;
+   int     nargs, branch, numpartials;
    double  overall_amp;
    double  *amp, *pan;
    Ooscili **oscil;
