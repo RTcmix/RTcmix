@@ -200,9 +200,9 @@ int BUTTER :: init(double p[], int n_args)
 void BUTTER :: doupdate()
 {
    double p[12];
-   update(p, 12, kAmp | kType | kPan | kBypass | kFreq | kBandwidth);
+   update(p, 12, kType | kPan | kBypass | kFreq | kBandwidth);
 
-   amp = p[3];
+   amp = update(3, insamps);
    if (amparray)
       amp *= tablei(currentFrame(), amparray, amptabs);
 
