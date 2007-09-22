@@ -149,8 +149,6 @@ int REVERBIT::init(double p[], int n_args)
       tableset(SR, dur, amplen, amptabs);
    }
 
-   skip = (int) (SR / (float) resetval);
-
    prev_in[0] = prev_out[0] = 0.0;         // for DC-blocker
    prev_in[1] = prev_out[1] = 0.0;
 
