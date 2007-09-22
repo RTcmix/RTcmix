@@ -96,8 +96,6 @@ int REV :: init(double p[], int n_args)
       tableset(SR, dur, lenamp, amptabs);
    }
 
-   skip = (int) (SR / (float) resetval);
-
    return nSamps();
 }
 
@@ -118,13 +116,12 @@ int REV :: run()
 
    for (int i = 0; i < samps; i += inputChannels()) {
       if (--branch <= 0) {
-         double p[7];
-         update(p, 7, kAmp | kWetPercent);
-         amp = p[3];
+         amp = update(3, insamps);
          if (amparray)
             amp *= tablei(cursamp, amparray, amptabs);
-         reverb->setEffectMix(p[6]);
-         branch = skip;
+         const double wetdrymix = update(6);
+         reverb->setEffectMix(wetdrymix);
+         branch = getSkip();
       }
 
       float insig;
