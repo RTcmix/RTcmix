@@ -190,13 +190,11 @@ int ELL::run()
       float out[2], insig = 0.0;
       if (currentFrame() < insamps) {
          if (--branch <= 0) {
-            double p[7];
-            update(p, 7, kAmp | kPan);
-            amp = p[3];
+            amp = update(3, insamps);
             if (amptable)
                amp *= tablei(currentFrame(), amptable, amptabs);
             if (inchan != -1)
-               pctleft = nargs > 6 ? p[6] : 0.5;
+               pctleft = nargs > 6 ? update(6, insamps) : 0.5;
             branch = skip;
          }
          if (inchan == -1)                    /* use all input chans */

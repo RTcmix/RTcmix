@@ -16,8 +16,3 @@ public:
    virtual int run();
 };
 
-// update flags (shift amount is pfield number)
-enum {
-	kAmp = 1 << 3,
-	kPan = 1 << 6
-};
