@@ -48,8 +48,6 @@
 #include <rt.h>
 #include <rtdefs.h>
 
-#define MAXDELTIME 30.0    // seconds (176400 bytes per second at SR=44100)
-
 // local functions
 static void toneset(double, double, int, double []);
 static double tone(double, double []);
@@ -142,9 +140,15 @@ int JDELAY::init(double p[], int n_args)
 void JDELAY::doupdate()
 {
    double p[11];
-   update(p, 11, kAmp | kDelTime | kDelRegen | kCutoff | kWetPercent | kPan);
 
-   amp = p[3];
+   if (prefadersend) {
+      update(p, 11, kAmp | kDelTime | kDelRegen | kCutoff | kWetPercent | kPan);
+      amp = p[3];
+   }
+   else {
+      update(p, 11, kDelTime | kDelRegen | kCutoff | kWetPercent | kPan);
+      amp = update(3, insamps);
+   }
    if (amptable)
       amp *= tablei(currentFrame(), amptable, amptabs);
 
