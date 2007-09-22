@@ -168,8 +168,6 @@ int FLANGE :: init(double p[], int n_args)
       tableset(SR, dur, len, amptabs);
    }
 
-   skip = (int) (SR / (float) resetval);
-
    return nSamps();
 }
 
@@ -177,9 +175,8 @@ int FLANGE :: init(double p[], int n_args)
 void FLANGE :: doupdate()
 {
    double p[12];
-   update(p, 12, kAmp | kResonance | kModDepth | kModRate | kWetDry | kType
-                                                                    | kPan);
-   amp = p[3];
+   update(p, 12, kResonance | kModDepth | kModRate | kWetDry | kType | kPan);
+   amp = update(3, insamps);
    if (amparray)
       amp *= tablei(currentFrame(), amparray, amptabs);
 
@@ -238,7 +235,7 @@ int FLANGE :: run()
    for (int i = 0; i < samps; i += inputChannels()) {
       if (--branch <= 0) {
          doupdate();
-         branch = skip;
+         branch = getSkip();
       }
 
       float insig;

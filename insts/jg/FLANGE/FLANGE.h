@@ -2,7 +2,7 @@
 
 class FLANGE : public Instrument {
    bool    flangetype_was_string;
-   int     nargs, inchan, insamps, skip, branch, flangetype;
+   int     nargs, inchan, insamps, branch, flangetype;
    float   amp, resonance, moddepth, modrate, pctleft, wetdrymix, maxdelsamps;
    float   *in, amptabs[2];
    double  *amparray;
@@ -23,7 +23,6 @@ public:
 
 // update flags (shift amount is pfield index)
 enum {
-	kAmp = 1 << 3,
 	kResonance = 1 << 4,
 	kModDepth = 1 << 6,
 	kModRate = 1 << 7,

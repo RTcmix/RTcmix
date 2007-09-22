@@ -4,7 +4,7 @@
 
 class FILTSWEEP : public Instrument {
    bool    do_balance, bypass;
-   int     nargs, inchan, skip, branch, insamps, nfilts;
+   int     nargs, inchan, branch, insamps, nfilts;
    float   amp, pctleft, scale, cf, bw, *in;
    float   amptabs[2], cftabs[2], bwtabs[2];
    double  *amparray, *cfarray, *bwarray;
@@ -22,7 +22,6 @@ public:
 
 // update flags (shift amount is pfield index)
 enum {
-	kAmp = 1 << 3,
 	kPan = 1 << 8,
 	kBypass = 1 << 9,
 	kFreq = 1 << 10,

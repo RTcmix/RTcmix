@@ -136,8 +136,6 @@ int FILTSWEEP :: init(double p[], int n_args)
       tableset(SR, dur, len, bwtabs);
    }
 
-   skip = (int) (SR / (float) resetval);
-
    return nSamps();
 }
 
@@ -145,9 +143,9 @@ int FILTSWEEP :: init(double p[], int n_args)
 void FILTSWEEP :: doupdate()
 {
    double p[12];
-   update(p, 12, kAmp | kPan | kBypass | kFreq | kBandwidth);
+   update(p, 12, kPan | kBypass | kFreq | kBandwidth);
 
-   amp = p[3];
+   amp = update(3, insamps);
    if (amparray)
       amp *= tablei(currentFrame(), amparray, amptabs);
 
@@ -203,7 +201,7 @@ int FILTSWEEP :: run()
    for (int i = 0; i < samps; i += inputChannels()) {
       if (--branch <= 0) {
          doupdate();
-         branch = skip;
+         branch = getSkip();
       }
 
       float insig;
