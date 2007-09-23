@@ -1,6 +1,28 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2007-09-23  John Gibson <johgibso-at-indiana.edu>
+
+	* Fixed amp envelope problem in several instruments that
+	  divide their duration into two stages: time when reading
+	  from a file (or bus) and time when ringing down the effect.
+	  We intended for some instruments to apply an amp envelope
+	  only to the first stage, so that an envelope table would
+	  scale to fit just the input duration.  This was not happening.
+	  Instead, the table was scaled to fit the duration of the
+	  two stages combined, but the envelope was not consulted
+	  during the ringdown stage.  This could result in a click
+	  at the start of ringdown, depending on the character of
+	  the input.  The problem was with tables created with maketable,
+	  not with makegen.  This has been fixed in DELAY, PANECHO,
+	  JDELAY, FREEVERB, REV, REVERBIT (and several others in
+	  which the effect of the change is not as dramatic).  If a
+	  score applied an amp envelope, created with maketable, to
+	  one of these instruments, and the ringdown duration was
+	  more than a few tenths of a second, you might hear a 
+	  difference in sound.  For example, the attack time of the
+	  note will be shorter.
+
 2007-09-11  John Gibson <johgibso-at-indiana.edu>
 
 	* Add optional initial value to control-smoothing filter:
