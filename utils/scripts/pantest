@@ -1,0 +1,51 @@
+#!/bin/sh
+# Bounce filtered noise between speakers, to test for loudness.
+# Left channel goes first.
+#    Usage: pantest [dur [ampmult [srate]]]
+#           (defaults: dur = 30, ampmult = 1, srate = 44100)
+# JGG, 8/13/03
+
+#flags='-q'
+
+script='
+totdur = 30; masteramp = 1; sr = 44100;
+if (n_arg() > 0) {
+   totdur = f_arg(0);
+   if (n_arg() > 1) {
+      masteramp = f_arg(1);
+      if (n_arg() > 2) {
+         sr = f_arg(2);
+      }
+   }
+}
+rtsetparams(sr, 2);
+nyq = sr / 2;
+load("NOISE");
+load("JFIR");
+bus_config("NOISE", "aux 0-1 out");
+bus_config("JFIR", "aux 0-1 in", "out 0-1");
+notedur = 0.6;
+ramp = 0.01;
+gap = 0.6;
+amp = 90;
+firorder = 100;
+slope = -3;
+response = maketable("curve", 1000, 0,1,slope, nyq,0);
+bypass = 0;
+env = maketable("curve", 1000, 0,0,2, ramp,1,0, notedur-ramp,1,-2, notedur,0);
+pan = 1;
+incr = notedur + gap;
+for (st = 0; st < totdur; st += incr) {
+   NOISE(st, notedur, mul(ampdb(amp), env), pan);
+   if (pan == 0) {
+      pan = 1;
+   }
+   else {
+      pan = 0;
+   }
+}
+JFIR(0, 0, totdur, masteramp, firorder, 0, 1, bypass, response);
+JFIR(0, 0, totdur, masteramp, firorder, 1, 0, bypass, response);
+'
+echo $script | CMIX $flags $*
+
