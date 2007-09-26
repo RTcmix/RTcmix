@@ -504,7 +504,9 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 #endif
 		}
 		else {
-			// printf("OSXAudioDevice: run callback returned false -- calling stop callback\n");
+#if DEBUG > 0
+			printf("OSXAudioDevice: run callback returned false -- calling stop callback\n");
+#endif
 			device->stopCallback();
 			device->close();
 		}
