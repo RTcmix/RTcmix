@@ -5,7 +5,7 @@
 #include <Odcblock.h>
 
 Odcblock::Odcblock()
-	: _hist(0.0), _last(0.0)
+	: _hist(0.0), _last(0.0), _coeff(0.99)
 {
 }
 
