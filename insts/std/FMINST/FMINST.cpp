@@ -128,6 +128,8 @@ int FMINST::init(double p[], int n_args)
                     "an old-style gen function in slot %d.", WAVET_GEN_SLOT);
 		tablelen = fsize(WAVET_GEN_SLOT);
 	}
+	if (tablelen > 32767)
+		return die("FMINST", "wavetable must have fewer than 32768 samples.");
 
 	carosc = new Ooscili(SR, carfreq, wavetable, tablelen);
 	modosc = new Ooscili(SR, modfreq, wavetable, tablelen);
