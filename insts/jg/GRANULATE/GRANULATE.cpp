@@ -78,13 +78,13 @@
             choose from.  Note that jitter is still in linear octaves, although
             the transposition collection is in oct.pc.  For example, if the
             collection is [0.00, 0.02, 0.05, 0.07], then a jitter value of
-            octpch(0.05) will cause only the first three pitches to be chosen,
-            whereas a jitter value of octpch(0.07) would cause all four to be
-            chosen.
+            octpch(0.05) will cause only the first three transpositions to be
+            chosen, whereas a jitter value of octpch(0.07) would cause all four
+            to be chosen.
             [optional; if missing, no transposition jitter]
 
       p22 = random seed (integer)
-            [optional; if missing, uses system clock]
+            [optional; if missing, uses zero for the seed]
 
     * p23 = grain pan minimum (pctleft: 0-1)
     * p24 = grain pan maximum
