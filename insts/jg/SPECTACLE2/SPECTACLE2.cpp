@@ -70,9 +70,9 @@
       feedback, for example.)
 
    2. Output begins after a brief period of time during which internal buffers
-      are filling.  This time is the duration corresponding to the following
-      number of sample frames:  window length - (fft length / overlap).  This
-      duration is called "latency duration" below.
+      are filling.  This time is the duration corresponding to the number of
+      sample frames in the analysis window (p7). This duration is called
+      "latency duration" below.
 
       Most updateable parameters begin at the start of the note, including the
       initial latency duration when the instrument plays silence, and act until
