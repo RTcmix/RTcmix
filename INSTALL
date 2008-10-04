@@ -104,6 +104,12 @@ Platform Notes
 Linux
 -----
 
+   - Some Linux distributions (e.g., Ubuntu) do not include all the 
+     development supporting files that you need to build RTcmix. You have
+     to install these packages before trying to build RTcmix.  Specifically,
+     you need to install flex and bison, as well as the ALSA header files,
+     and probably also the X11 header files.
+
 
 Mac OS X
 --------
