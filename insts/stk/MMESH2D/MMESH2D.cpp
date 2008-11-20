@@ -82,8 +82,6 @@ int MMESH2D :: run()
 			if (amptable)
 				amp *= theEnv->next(currentFrame());
 
-			if (nargs > 9) pctleft = p[9];
-
 			branch = getSkip();
 		}
 
