@@ -207,7 +207,8 @@ PrintStreamList(AudioDeviceID devID, Boolean isInput, UInt32 *totChans)
 //printf("stream config prop size: %d, writeable: %d\n", size, writeable);
 
    // Fill list with description of buffers.
-   AudioBufferList *list = new AudioBufferList [size / sizeof(AudioBufferList)];
+   AudioBufferList *list = new AudioBufferList [size
+									/ (sizeof(AudioBufferList) - sizeof(UInt32))];
    err = AudioDeviceGetProperty(devID,
                            0, isInput,
                            kAudioDevicePropertyStreamConfiguration,

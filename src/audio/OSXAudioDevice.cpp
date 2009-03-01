@@ -689,7 +689,7 @@ int OSXAudioDevice::openInput()
 		return error("Can't get input device property info: ",
 					 ::errToString(err));
 	}
-	port->streamDesc = new AudioBufferList[size/sizeof(AudioBufferList)];
+	port->streamDesc = new AudioBufferList[size / (sizeof(AudioBufferList) - sizeof(UInt32))];
 	err = AudioDeviceGetProperty(devID, 
 								 kMasterChannel,
 								 isInput,
@@ -775,7 +775,7 @@ int OSXAudioDevice::openOutput()
 		return error("Can't get output device property info: ",
 					 ::errToString(err));
 	}
-	port->streamDesc = new AudioBufferList[size/sizeof(AudioBufferList)];
+	port->streamDesc = new AudioBufferList[size / (sizeof(AudioBufferList) - sizeof(UInt32))];
 	err = AudioDeviceGetProperty(devID, 
 								 kMasterChannel,
 								 isOutput,
