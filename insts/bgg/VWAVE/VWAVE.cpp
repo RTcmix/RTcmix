@@ -15,7 +15,6 @@
 */
 
 #include <stdlib.h>
-#include <iostream.h>
 #include <Instrument.h>
 #include <ugens.h>
 #include <Ougens.h>
