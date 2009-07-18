@@ -3,7 +3,6 @@
   the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 
-#include <iostream.h>
 #include <RTInletPField.h>
 #include <PField.h>
 #include <stdio.h>

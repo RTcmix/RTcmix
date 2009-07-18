@@ -14,7 +14,6 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <iostream.h>
 #include <signal.h>
 
 #include <RTcmixMain.h>

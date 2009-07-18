@@ -2,7 +2,6 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-#include <iostream.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
