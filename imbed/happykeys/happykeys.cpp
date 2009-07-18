@@ -16,7 +16,6 @@ This is from the original RTsocket version README file:
 */
 
 #define MAIN
-#include <iostream.h>
 #include <stdio.h>
 #include <curses.h>
 #include <fcntl.h>

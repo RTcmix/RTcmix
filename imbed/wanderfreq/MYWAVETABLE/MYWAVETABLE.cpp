@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <iostream.h>
 #include "MYWAVETABLE.h"
 #include <rt.h>
 #include <rtdefs.h>	/* for SR */

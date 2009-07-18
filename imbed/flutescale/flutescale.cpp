@@ -5,7 +5,6 @@
 */
 
 #define MAIN
-#include <iostream.h>
 #include <unistd.h>
 
 #include <globals.h>
