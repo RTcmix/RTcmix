@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include <iostream.h>
 
 Odelay::Odelay(long defaultLength) : _dline(NULL), _len(0)
 {
