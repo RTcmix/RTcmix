@@ -10,7 +10,6 @@
 *  p3 (amp) can receive updates.
 *  mono input / mono output only
 */
-#include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>

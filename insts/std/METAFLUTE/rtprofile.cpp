@@ -1,4 +1,3 @@
-#include <iostream.h>
 #include <rt.h>
 
 void

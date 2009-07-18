@@ -1,4 +1,3 @@
-#include <iostream.h>
 #include <ugens.h>
 #include <mixerr.h>
 #include <Instrument.h>
