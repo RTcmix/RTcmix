@@ -31,7 +31,6 @@
 #include <Stk.h>
 #include <Bowed.h> // from the stk library
 
-#include <iostream.h>        /* needed only for cout, etc. if you want it */
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
