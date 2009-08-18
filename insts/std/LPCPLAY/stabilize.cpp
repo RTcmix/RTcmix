@@ -1,7 +1,7 @@
 // stabilize.C
 
 #include <Complex.h>
-#include <stream.h>
+//#include <stream.h>
 #include "lp.h"
 
 static int factor(double*, long*, double*, double*, long*, long*, double*);

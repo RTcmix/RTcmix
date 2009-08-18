@@ -22,9 +22,8 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #endif
 #define _Complex_h 1
 
-
-#include <iostream.h>
 #include <math.h>
+#include <iostream>
 
 class Complex
 {
@@ -84,8 +83,8 @@ Complex   pow(const Complex& x, const Complex& p);
 Complex   pow(const Complex& x, double y);
 Complex   sqrt(const Complex& x);
    
-istream&  operator >> (istream& s, Complex& x);
-ostream&  operator << (ostream& s, const Complex& x);
+std::istream&  operator >> (std::istream& s, Complex& x);
+std::ostream&  operator << (std::ostream& s, const Complex& x);
 
 // other functions defined as inlines
 
