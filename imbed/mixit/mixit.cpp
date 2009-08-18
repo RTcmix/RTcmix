@@ -4,7 +4,8 @@
 */
 
 #define MAIN
-#include <iostream.h>
+
+#include <iostream>
 #include <unistd.h>
 
 #include <globals.h>
@@ -12,6 +13,8 @@
 extern "C" {
 	#include "randfuncs.h"
 }
+
+using namespace std;
 
 int
 main(int argc, char *argv[])
