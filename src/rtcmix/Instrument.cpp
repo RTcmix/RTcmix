@@ -7,7 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#include <iostream.h>
+#include <iostream>
 #include "Instrument.h"
 #include <RTcmix.h>
 #include "rt.h"
@@ -22,6 +22,8 @@
 #include <PField.h>
 #include <PFieldSet.h>
 #include <maxdispargs.h>
+
+using namespace std;
 
 InputState::InputState()
 	: fdIndex(NO_DEVICE_FDINDEX), fileOffset(0), inputsr(0.0), inputchans(0)

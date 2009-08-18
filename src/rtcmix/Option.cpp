@@ -11,7 +11,9 @@
 #include "Option.h"
 #include <Config.h>
 #include <string.h>
-#include <iostream.h>
+#include <iostream>
+
+using namespace std;
 
 #define DEVICE_MAX   64
 #define DSOPATH_MAX  PATH_MAX * 2

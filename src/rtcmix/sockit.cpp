@@ -3,7 +3,6 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #include <pthread.h>
-#include <iostream.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -23,6 +22,9 @@
 #include "dbug.h"
 
 #include "notetags.h"
+
+#include <iostream>
+using namespace std;
 
 // #define DBUG
 // #define ALLBUG

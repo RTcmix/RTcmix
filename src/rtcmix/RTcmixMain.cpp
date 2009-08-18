@@ -5,7 +5,7 @@
 
 #include <signal.h>
 #include <stdlib.h>
-#include <iostream.h>
+#include <iostream>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -20,6 +20,9 @@
 #include <prototypes.h>
 #include "../parser/rtcmix_parse.h"
 #include <sockdefs.h>
+#include <limits.h>
+
+using namespace std;
 
 #ifdef NETAUDIO
 extern int setnetplay(char *, char *);    // in setnetplay.cpp

@@ -5,7 +5,7 @@
 #include <RTcmix.h>
 #include <prototypes.h>
 #include <pthread.h>
-#include <iostream.h>
+#include <iostream>
 #include <stdio.h>
 #include <unistd.h>
 #include <assert.h>
@@ -17,6 +17,8 @@
 #include <bus.h>
 #include "BusSlot.h"
 #include <dbug.h>
+
+using namespace std;
 
 //#define TBUG
 //#define ALLBUG

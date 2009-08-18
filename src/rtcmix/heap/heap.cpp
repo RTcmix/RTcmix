@@ -5,7 +5,9 @@
 #include "heap.h"
 #include <lock.h>
 #include <Instrument.h>
-#include <iostream.h>
+#include <iostream>
+
+using namespace std;
 
 heapslot::heapslot() : chunkStart(0), inst(NULL), 
 					   left(NULL), right(NULL), parent(NULL)   
