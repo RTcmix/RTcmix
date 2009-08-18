@@ -40,6 +40,8 @@
 #include "BlowHole.h"
 #include <math.h>
 #include <string.h>
+#include <iostream>
+using namespace std;
 
 BlowHole :: BlowHole(MY_FLOAT lowestFrequency)
 {

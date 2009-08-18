@@ -36,6 +36,8 @@
 #include "ModalBar.h"
 #include <string.h>
 #include <math.h>
+#include <iostream>
+using namespace std;
 
 ModalBar :: ModalBar()
   : Modal()

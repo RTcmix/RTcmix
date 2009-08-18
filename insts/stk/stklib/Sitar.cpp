@@ -23,6 +23,8 @@
 
 #include "Sitar.h"
 #include <math.h>
+#include <iostream>
+using namespace std;
 
 Sitar :: Sitar(MY_FLOAT lowestFrequency)
 {

@@ -41,6 +41,8 @@
 
 #include "Saxofony.h"
 #include <string.h>
+#include <iostream>
+using namespace std;
 
 Saxofony :: Saxofony(MY_FLOAT lowestFrequency)
 {

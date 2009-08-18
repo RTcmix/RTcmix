@@ -19,7 +19,6 @@
 #define __INSTRMNT_H
 
 #include "Stk.h"
-#include <iostream.h>
 
 class Instrmnt : public Stk
 {

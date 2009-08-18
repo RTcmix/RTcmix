@@ -30,6 +30,8 @@
 
 #include "Mesh2D.h"
 #include <stdlib.h>
+#include <iostream>
+using namespace std;
 
 Mesh2D :: Mesh2D(short nX, short nY)
 {

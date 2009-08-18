@@ -27,6 +27,8 @@
 #include "Brass.h"
 #include <string.h>
 #include <math.h>
+#include <iostream>
+using namespace std;
 
 // BGG -- eliminated the ADSR (breath amp now comes in through
 // 	the tick() method) and the vibrato

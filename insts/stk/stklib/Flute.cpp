@@ -28,6 +28,8 @@
 
 #include "Flute.h"
 #include <string.h>
+#include <iostream>
+using namespace std;
 
 Flute :: Flute(MY_FLOAT lowestFrequency)
 {

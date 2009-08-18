@@ -20,6 +20,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <iostream>
+using namespace std;
 
 Modal :: Modal(int modes)
   : nModes(modes)

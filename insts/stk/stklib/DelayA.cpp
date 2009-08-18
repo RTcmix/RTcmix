@@ -27,7 +27,9 @@
 /***************************************************/
 
 #include "DelayA.h"
-#include <iostream.h>
+#include <iostream>
+using namespace std;
+
 
 DelayA :: DelayA()
 {

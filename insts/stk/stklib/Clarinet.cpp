@@ -28,6 +28,8 @@
 
 #include "Clarinet.h"
 #include <string.h>
+#include <iostream>
+using namespace std;
 
 Clarinet :: Clarinet(MY_FLOAT lowestFrequency)
 {

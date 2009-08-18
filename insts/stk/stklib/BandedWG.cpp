@@ -36,6 +36,8 @@
 #include "BandedWG.h"
 #include "Noise.h"
 #include <math.h>
+#include <iostream>
+using namespace std;
 
 BandedWG :: BandedWG()
 {

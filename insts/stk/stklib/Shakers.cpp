@@ -60,6 +60,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <iostream>
+using namespace std;
 
 int my_random(int max) //  Return Random Int Between 0 and max
 {

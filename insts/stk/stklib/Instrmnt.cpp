@@ -16,6 +16,8 @@
 /***************************************************/
 
 #include "Instrmnt.h"
+#include <iostream>
+using namespace std;
 
 Instrmnt :: Instrmnt()
 {

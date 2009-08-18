@@ -27,6 +27,8 @@
 
 #include "Bowed.h"
 #include <string.h>
+#include <iostream>
+using namespace std;
 
 Bowed :: Bowed(MY_FLOAT lowestFrequency)
 {
