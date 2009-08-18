@@ -42,6 +42,7 @@
 #include <rt.h>
 #include <rtdefs.h>
 #include <assert.h>
+#include <string.h>
 
 #define OPTIMIZE_EXPRESSION
 //#define DEBUG
