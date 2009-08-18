@@ -34,7 +34,7 @@ pan = makefilter(pan, "smooth", lag=70)  // smooth the abrupt random changes
 // This adjusts the amplitude to compensate for loss of power when panned
 // to the center.
 boost = makeconverter(pan, "boost")
-amp *= boost
+amp = amp * boost
 
 lowcf = 300
 highcf = 4000
