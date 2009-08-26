@@ -81,10 +81,8 @@ GetConfiguration(float *pMaxdev,
 double dataset(float *p, int n_args, double *pp)
 /* p1=dataset name, p2=npoles */
 {
-	char *name;
 	int i, set;
-	i=(int)pp[0];
-	name=(char *)i;
+	char *name=DOUBLE_TO_STRING(pp[0]);
 
 	if (name == NULL) {
 		rterror("dataset", "NULL file name");
