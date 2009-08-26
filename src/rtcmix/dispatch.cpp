@@ -70,7 +70,7 @@ dispatch(const char *str, double *pp, int n_args, void **inst)
 		   retval = (double) retarg;
 		}
 		else if (retarg.isType(StringType)) {
-		   retval = (double) (int) retarg.string();
+		   retval = STRING_TO_DOUBLE(retarg.string());
 		}
 		else if (retarg.isType(HandleType)) {
 			// Retrieve instrument pointer from retval.handle.

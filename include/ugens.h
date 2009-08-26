@@ -182,6 +182,24 @@ int registerFunction(const char *function, const char *dsoName);
 
 void addLegacyfunc(const char *label, double (*func_ptr)(float *, int, double *));
 
+#if defined(__GNUC__)
+#if (__SIZEOF_POINTER__ == 4)
+#define STRING_TO_DOUBLE(string) (double)(int)(const char *)(string)
+#define DOUBLE_TO_STRING(d) (char *)(int)(d)
+#define STRINGIFY(d) (double)(int)(d)
+#elif (__SIZEOF_POINTER__ == 8)
+#define STRING_TO_DOUBLE(string) (double)(long long)(const char *)(string)
+#define DOUBLE_TO_STRING(d) (char *)(long long)(d)
+#define STRINGIFY(d) (double)(long long)(d)
+#else
+#error __SIZEOF_POINTER__ not defined
+#endif
+#else	// not GNUC, assume 32bit for now
+#define STRING_TO_DOUBLE(string) (double)(int)(const char *)(string)
+#define DOUBLE_TO_STRING(d) (char *)(int)(d)
+#define STRINGIFY(d) (double)(int)(d)
+#endif
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

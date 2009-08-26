@@ -16,7 +16,7 @@ fdump(float p[], short n_args, double pp[])
 
    genslot = p[0];
    if (n_args > 1) {
-      char *fname = (char *) ((int) pp[1]);
+      char *fname = DOUBLE_TO_STRING(pp[1]);
       f = fopen(fname, "w+");
       if (f == NULL) {
          perror("fdump");

@@ -21,11 +21,11 @@ somefunk(float p[], int n_args, double pp[])
    an_int_arg = (int) p[0];
    a_float_arg = p[0];
 
-   /* This is the very bizarre method of getting a string pointer
+   /* This is the method of getting a string pointer
       from Minc. Minc allocates space for the string that persists
       for the life of the program, so we just need a pointer to it.
    */
-   a_str_arg = (char *) ((int) pp[0]);
+   a_str_arg = DOUBLE_TO_STRING(pp[0]);
 
    /* We'll just interpret the arg as a float here. */
    val = a_float_arg * 2;

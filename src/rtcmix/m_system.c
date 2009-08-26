@@ -1,12 +1,9 @@
 #include <stdlib.h>
+#include <ugens.h>
 
 double
-m_system(p,n_args, pp)
-float *p; short n_args; double *pp;
+m_system(float *p, short n_args, double *pp)
 {
-	int i;
-	char *command;
-	i = (int) pp[0];
-	command = (char *) i;
+	char *command = DOUBLE_TO_STRING(pp[0]);
 	return system(command);
 }

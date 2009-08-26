@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <ugens.h>      // for die, warn
 #include <rtcmix_types.h>
+#include <prototypes.h>
 #include <ug_intro.h>
 #include <string.h>
 #include <Option.h>
@@ -184,7 +185,7 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
                pp[i] = (double) theArg;
 			   break;
             case StringType:
-               pp[i] = (double) (int) ((const char *) theArg);
+               pp[i] = STRING_TO_DOUBLE(theArg);
 			   break;
             default:
                die(NULL, "%s: arguments must be numbers or strings.", funcname);
@@ -268,7 +269,7 @@ RTcmix::findAndLoadFunction(const char *funcname)
 		double pp[1];
 		sprintf(fullDSOPath, "%s.so", path);
 		p[0] = 0;
-		pp[0] = (double)(int) fullDSOPath;
+		pp[0] = STRING_TO_DOUBLE(fullDSOPath);
 		if (m_load(p, 1, pp) == 1)
 			status = 0;
 		else

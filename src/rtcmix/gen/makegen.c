@@ -145,7 +145,7 @@ makegen(float p[], int n_args, double pp[])
          break;
       case 1:
          {
-            char *sfname = (char *) ((int) pp[3]);
+            char *sfname = DOUBLE_TO_STRING(pp[3]);
             gen.pvals = p + 2;    /* gen1() needs size pfield */
             gen.nargs++;
             retval = gen1(&gen, sfname);

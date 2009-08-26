@@ -404,24 +404,22 @@ float *p;
 int n_args;
 double *pp;
 {
-        char *name;
-        int i;
+	char *name;
 	struct stat st;
-        fprec=22;
-        if(n_args>1)	/* if no npoles specified, it will be retrieved from */
-                npoles=p[1];	/* the header (if USE_HEADERS #defined) */
-        lpcinit();
-        i=(int)pp[0];
-        name=(char *)i;
-        if(strcmp(name,dataset_name)== 0) {
-                printf("\n%s is already open.\n",name);
-                return;
-        }
-        strcpy(dataset_name,name);
-        if((anal = open(name,0)) <= 0) {
-                printf("Can't open %s\n",name);
-                closesf();
-        }
+	fprec=22;
+	if(n_args>1)	/* if no npoles specified, it will be retrieved from */
+			npoles=p[1];	/* the header (if USE_HEADERS #defined) */
+	lpcinit();
+	name = DOUBLE_TO_STRING(pp[0]);
+	if(strcmp(name,dataset_name)== 0) {
+			printf("\n%s is already open.\n",name);
+			return;
+	}
+	strcpy(dataset_name,name);
+	if((anal = open(name,0)) <= 0) {
+			printf("Can't open %s\n",name);
+			closesf();
+	}
 	printf("\nOpened dataset %s.\n",name);
 #ifdef USE_HEADERS
 	if((lphs = checkForHeader(anal, &npoles, SR)) < 0) closesf();

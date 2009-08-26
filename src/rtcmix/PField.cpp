@@ -10,6 +10,7 @@
 #include <float.h>
 #include <Ougens.h>
 #include <Functor.h>
+#include <ugens.h>
 
 inline int max(int x, int y) { return (x >= y) ? x : y; }
 inline int min(int x, int y) { return (x < y) ? x : y; }
@@ -86,7 +87,7 @@ StringPField::~StringPField() { delete [] _string; }
 
 double StringPField::doubleValue(double) const
 {
-	return (double) (int) _string;
+	return STRING_TO_DOUBLE(_string);
 }
 
 int StringPField::print(FILE *file) const

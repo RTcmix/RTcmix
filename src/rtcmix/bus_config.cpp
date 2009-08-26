@@ -716,7 +716,7 @@ double
 RTcmix::bus_config(float p[], int n_args, double pp[])
 {
    ErrCode     err;
-   int         i, j, k, anint, startchan, endchan;
+   int         i, j, k, startchan, endchan;
    char        *str, *instname, *busname;
    BusType     type;
    BusSlot     *bus_slot;
@@ -734,13 +734,11 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
    Lock localLock(&bus_slot_lock);	// This will unlock when going out of scope.
 
    /* do the old Minc casting rigamarole to get string pointers from a double */
-   anint = (int)pp[0];
-   str = (char *)anint;
+   str = DOUBLE_TO_STRING(pp[0]);
    instname = strdup(str);	// Note:  If we exit nonfatally, we have to free.
 
    for (i = 1; i < n_args; i++) {
-      anint = (int)pp[i];
-      busname = (char *)anint;
+      busname = DOUBLE_TO_STRING(pp[i]);
       err = parse_bus_name(busname, &type, &startchan, &endchan);
       if (err)
          goto error;

@@ -37,12 +37,12 @@ double i_arg(float *p, short n_args)
 double s_arg(float *p,short n_args,double *pp)
 {
 	char *name;
-	int i1 = 0;
+	long long tempLong = 0;
 	if(((int)pp[0]) < aargc) {
 		name = aargv[(int)pp[0]];
-		i1 = (int) strdup(name);
+		tempLong = (long long) strdup(name);
 	}
-	return(i1);     /* return string pointer, cast as a double, for Minc */
+	return (double) tempLong;  /* return string pointer, cast as a double, for Minc */
 }
 
 /* Return the number of args. */

@@ -79,7 +79,7 @@ fplot(float p[], short n_args, double pp[])
 				fprintf(fdata, "%d %.6f\n", i, array[i]);
 			fclose(fdata);
 
-			plotcmds = (char *) ((int) pp[2]);
+			plotcmds = DOUBLE_TO_STRING(pp[2]);
 			fprintf(fcmd, 
 #ifdef MACOSX
 /* NB: requires installation of Aquaterm and gnuplot 3.8 */

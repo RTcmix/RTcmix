@@ -165,7 +165,7 @@ header_type_from_filename(char *fname)
 int
 RTcmix::parse_rtoutput_args(int nargs, double pp[])
 {
-   int   anint, i, j, matched;
+   int   i, j, matched;
    int   normfloat_requested;
    char  *arg;
 
@@ -175,8 +175,7 @@ RTcmix::parse_rtoutput_args(int nargs, double pp[])
    }
 
    /* This is the ancient method of casting a double to a char ptr. */
-   anint = (int)pp[0];
-   rtoutsfname = (char *)anint;
+   rtoutsfname = DOUBLE_TO_STRING(pp[0]);
    if (rtoutsfname == NULL)
    {
       rterror("rtoutput", "NULL file name!");
@@ -193,8 +192,7 @@ RTcmix::parse_rtoutput_args(int nargs, double pp[])
    normfloat_requested = 0;
 
    for (i = 1; i < nargs; i++) {
-      anint = (int)pp[i];
-      arg = (char *)anint;
+      arg = DOUBLE_TO_STRING(pp[i]);
 
       matched = 0;
       for (j = 0; j < num_params; j++) {

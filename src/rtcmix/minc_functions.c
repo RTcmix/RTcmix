@@ -10,6 +10,7 @@
 #include <sfheader.h>
 #include <maxdispargs.h>
 #include <Option.h>
+#include <prototypes.h>
 
 #define ARRAY_SIZE 256
 #define NUM_ARRAYS  32
@@ -102,8 +103,8 @@ double m_time_beat(float p[])
 double m_beat_time(float p[])
 { float beat_time(float); return(beat_time(p[0])); }
 
-double m_trunc(float p[])
-{ return((double)(int)(p[0])); }
+double m_trunc(float p[], int nargs, double pp[])
+{ return((double)(long long)(pp[0])); }		// D.S. 08/09
 
 double m_ampdb(float p[])
 { return(ampdb(p[0])); }
@@ -117,7 +118,7 @@ double m_stringify(float p, int n_args, double pp[])
 	   to a 'floating point' pointer suitable for use in
 	   further cmix calls */
 
-	return((double)(int) pp[0]);	/* was return (pp[0]) -- DS */
+	return STRINGIFY(pp[0]);
 }
 
 /* get the transposed length for a given input length at interval */
@@ -136,6 +137,15 @@ double m_log(float p[], int n_args)
    double val;
 
    val = log10((double)p[0]);
+
+   return(val);
+}
+
+double m_ln(float p[], int n_args)
+{
+   double val;
+
+   val = log((double)p[0]);
 
    return(val);
 }
@@ -267,15 +277,14 @@ double m_get_size(float p[], int n_args)
 double m_getpch(float p[], int n_args, double pp[])
 {
 	int pchfd;
-	int frameno,nbframe,iname;
+	int frameno,nbframe;
 	long skipbytes;
 	float vals[200]; /* enough for 46 poles + 4 data values */
 	char  *input;
 
 /*	p0=name of pchanal file; p1=framenumber to get */
 
-	iname = (int)pp[0];
-	input = (char *)iname;
+	input = DOUBLE_TO_STRING(pp[0]);
 
 	if((pchfd = open(input,0)) < 0)
 		die("getpch", "Can't open pitch analysis file");
@@ -298,15 +307,14 @@ double m_getpch(float p[], int n_args, double pp[])
 double m_getamp(float p[], int n_args, double pp[])
 {
 	int pchfd;
-	int frameno,nbframe,iname;
+	int frameno,nbframe;
 	long skipbytes;
 	float vals[200]; /* enough for 46 poles + 4 data values */
 	char  *input;
 
 /*	p0=name of pchanal file; p1=framenumber to get */
 
-	iname = (int)pp[0];
-	input = (char *)iname;
+	input = DOUBLE_TO_STRING(pp[0]);
 
 	if((pchfd = open(input,0)) < 0)
 		die("getamp", "Can't open pitch analysis file");

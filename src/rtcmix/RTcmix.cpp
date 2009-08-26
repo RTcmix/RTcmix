@@ -275,11 +275,11 @@ RTcmix::init(float tsr, int tnchans, int bsize,
 
 	int nargs = 0;
 	// set options if any are non-null
-	p[0] = pp[0] = (double)(int) opt1;
+	p[0] = pp[0] = STRINGIFY(opt1);
 	if (opt1) ++nargs;
-	p[1] = pp[1] =  (double)(int) opt2;
+	p[1] = pp[1] =  STRINGIFY(opt2);
 	if (opt2) ++nargs;
-	p[2] = pp[2] = (double)(int) opt3;
+	p[2] = pp[2] = STRINGIFY(opt3);
 	if (opt3) ++nargs;
 
 	if (nargs)
