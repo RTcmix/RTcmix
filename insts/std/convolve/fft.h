@@ -14,8 +14,6 @@ typedef struct {
 
 #define CABS(x) hypot( (x).re, (x).im )
 
-complex cadd(), csub(), cmult(), smult(), cdiv(), conjg(), csqrt() ;
-
 extern complex zero ;
 extern complex one ;
 /* extern char *malloc(), *calloc() ; */
