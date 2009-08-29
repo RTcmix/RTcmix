@@ -174,7 +174,6 @@ RTcmix::parse_rtoutput_args(int nargs, double pp[])
       return -1;
    }
 
-   /* This is the ancient method of casting a double to a char ptr. */
    rtoutsfname = DOUBLE_TO_STRING(pp[0]);
    if (rtoutsfname == NULL)
    {

@@ -143,7 +143,7 @@ FIXME: this stuff not implemented yet  -JGG
 double
 RTcmix::rtinput(float p[], int n_args, double pp[])
 {
-	int            i, j, anint, audio_in, p1_is_audioport, start_pfield, fd;
+	int            i, j, audio_in, p1_is_audioport, start_pfield, fd;
 	int            is_open, header_type, data_format, data_location, nchans;
 #ifdef INPUT_BUS_SUPPORT
 	int            startchan, endchan;
@@ -163,9 +163,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	p1_is_audioport = 0;
 	is_open = 0;
 
-	/* Cast Minc double to int, then to a string ptr. */
-	anint = (int) pp[0];
-	sfname = (char *) anint;
+	sfname = DOUBLE_TO_STRING(pp[0]);
 
 	/* Catch stoopid NULL filenames */
 	if (sfname == NULL) {
@@ -178,8 +176,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 
 		if (n_args > 1 && pp[1] != 0.0) {
 			p1_is_audioport = 1;
-			anint = (int) pp[1];
-			str = (char *) anint;
+			str = DOUBLE_TO_STRING(pp[1]);
 			if (strcmp(str, "MIC") == 0)
 				port_type = MIC;
 			else if (strcmp(str, "LINE") == 0)
@@ -214,8 +211,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	for (i = start_pfield; i < n_args; i++) {
 		ErrCode  err;
 
-		anint = (int) pp[i];
-		str = (char *) anint;
+		str = DOUBLE_TO_STRING(pp[i]);
 		if (str == NULL) {
 			rterror("rtinput", "NULL bus name!");
 			rtrecord = 0;

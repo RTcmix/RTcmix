@@ -7,6 +7,7 @@
 #include <sys/time.h>
 
 #include "RTcmix.h"
+#include "ugens.h"
 
 double irand(double low, double high)
 {

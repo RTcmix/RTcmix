@@ -22,7 +22,7 @@ get_dso_path(double pfield, char dsoPath[])
 #endif
 
     /* cast double to string pointer */
-    str = (char *) ((int) pfield);
+    str = DOUBLE_TO_STRING(pfield);
 
     if (!str || strlen(str) == 0) {
 		die("load", "Bad argument for p[0]!");
