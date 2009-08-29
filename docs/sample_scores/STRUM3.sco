@@ -10,10 +10,9 @@
 
 rtsetparams(44100, 2)
 load("STRUM")
-makegen(2, 2, 7, 0)
-7.00 7.02 7.05 7.07 7.10 8.00 8.07
+makegen(2, 2, 7, 7.00, 7.02, 7.05, 7.07, 7.10, 8.00, 8.07)
 
-srand(0.314)
+srand(0)
 for (st = 0; st < 15; st = st + 0.2) {
 	pind = random() * 7
 	pitch = sampfunc(2, pind)
