@@ -584,17 +584,17 @@ OSXAudioDevice::OSXAudioDevice(const char *desc) : _impl(new Impl)
 		}
 		else {
 			// Extract device name
-			int nameLen = (int) substr - (int) desc;
+			size_t nameLen = (size_t) substr - (size_t) desc;
 			_impl->deviceName = new char[nameLen + 1];
 			strncpy(_impl->deviceName, desc, nameLen);
 			_impl->deviceName[nameLen] = '\0';
 			++substr;	// skip ':'
-         // Extract input and output stream selecters
+         	// Extract input and output stream selecters
 			char *insubstr = NULL, *outsubstr = NULL;
             if ((outsubstr = strchr(substr, ',')) != NULL) {
                ++outsubstr;   // skip ','
                insubstr = substr;
-               insubstr[(int) outsubstr - (int) insubstr - 1] = '\0';
+               insubstr[(size_t) outsubstr - (size_t) insubstr - 1] = '\0';
             }
             else {
                outsubstr = substr;

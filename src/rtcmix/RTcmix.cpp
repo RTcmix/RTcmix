@@ -335,20 +335,17 @@ RTcmix::cmd(char name[], int n_args, char* p0, ...)
 	va_list ap;
 	int i;
 	char st[MAXDISPARGS][100];
-	int tmpint;
 	double p[MAXDISPARGS];
 	void *retval;
 
 	// this kludge dates from the olden days!
 	strcpy(st[0], p0);
-	tmpint = (int)st[0];
-	p[0] = (double)tmpint;
+	p[0] = STRING_TO_DOUBLE(st[0]);
 	va_start(ap, p0); // start variable list after p0
-		for (i = 1; i < n_args; i++) {
-			strcpy(st[i], va_arg(ap, char*));
-			tmpint = (int)st[i];
-			p[i] = (double)tmpint;
-      }
+	for (i = 1; i < n_args; i++) {
+		strcpy(st[i], va_arg(ap, char*));
+		p[i] = STRING_TO_DOUBLE(st[i]);
+	}
 	va_end(ap);
 
 	(void) ::dispatch(name, p, n_args, &retval);
@@ -431,20 +428,17 @@ RTcmix::cmdval(char name[], int n_args, char* p0, ...)
 	va_list ap;
 	int i;
 	char st[MAXDISPARGS][100];
-	int tmpint;
 	double p[MAXDISPARGS];
 	void *retval;
 
 	// this kludge dates from the olden days!
 	strcpy(st[0], p0);
-	tmpint = (int)st[0];
-	p[0] = (double)tmpint;
+	p[0] = STRING_TO_DOUBLE(st[0]);
 	va_start(ap, p0); // start variable list after p0
-		for (i = 1; i < n_args; i++) {
-			strcpy(st[i], va_arg(ap, char*));
-			tmpint = (int)st[i];
-			p[i] = (double)tmpint;
-   }
+	for (i = 1; i < n_args; i++) {
+		strcpy(st[i], va_arg(ap, char*));
+		p[i] = STRING_TO_DOUBLE(st[i]);
+	}
 	va_end(ap);
 
 	return ::dispatch(name, p, n_args, &retval);
