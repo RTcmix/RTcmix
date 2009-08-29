@@ -54,12 +54,13 @@ AC_SUBST(ARCH)
 # Audio driver options
 AUDIODRIVER=AUTO                          # default
 WITH_ALSA="false"                         # just for summary display below
-AC_ARG_WITH(alsa, AC_HELP_STRING([--with-alsa],
-   [use ALSA audio driver]),
+AC_ARG_WITH(alsa,
+   AC_HELP_STRING([--with-alsa], [use ALSA audio driver]),
    [if test "$withval" != "no"; then
       AUDIODRIVER=ALSA              # this is ignored on irrelevant platforms
       WITH_ALSA="true"
-   fi])
+   fi]
+)
 AC_SUBST(AUDIODRIVER)
 
 # Perl options
@@ -67,18 +68,20 @@ PERL_SUPPORT=FALSE                        # disable by default
 PERL_IN_LOCAL=FALSE
 PERL=perl                                 # default perl name
 WITH_PERL="false"                         # just for summary display below
-AC_ARG_WITH(perl, AC_HELP_STRING([--with-perl=PATH],
-   [build Perl-enabled RTcmix (PCMIX) (PATH optional)]),
+AC_ARG_WITH(perl,
+   AC_HELP_STRING([--with-perl=PATH],
+         [build Perl-enabled RTcmix (PCMIX) (PATH optional)]),
    [if test "$withval" != "no"; then
       if test "$withval" != "yes"; then
          PERL="$withval"                  # the path to perl
       fi
       PERL_SUPPORT=TRUE
       WITH_PERL="true"
-	  if test PERL = "/usr/local/bin/perl"; then
-		  PERL_IN_LOCAL = TRUE
-	  fi
-   fi])
+      if test PERL = "/usr/local/bin/perl"; then
+         PERL_IN_LOCAL=TRUE
+      fi
+   fi]
+)
 AC_SUBST(PERL_SUPPORT)
 AC_SUBST(PERL_IN_LOCAL)
 AC_SUBST(PERL)
@@ -87,69 +90,76 @@ AC_SUBST(PERL)
 PYTHON_SUPPORT=FALSE                      # disable by default
 PYTHON=python                             # default python name
 WITH_PYTHON="false"                       # just for summary display below
-AC_ARG_WITH(python, AC_HELP_STRING([--with-python=PATH],
-   [build Python-enabled RTcmix (PYCMIX) (PATH optional)]),
+AC_ARG_WITH(python,
+   AC_HELP_STRING([--with-python=PATH],
+         [build Python-enabled RTcmix (PYCMIX) (PATH optional)]),
    [if test "$withval" != "no"; then
       if test "$withval" != "yes"; then
          PYTHON="$withval"                # the path to python
       fi
       PYTHON_SUPPORT=TRUE
       WITH_PYTHON="true"
-   fi])
+   fi]
+)
 AC_SUBST(PYTHON_SUPPORT)
 AC_SUBST(PYTHON)
 
 # Documentation options
 HTMLDESTDIR="$CMIXDIR"/docs/html          # default location
-AC_ARG_WITH(docdir, AC_HELP_STRING([--with-docdir=PATH],
-   [put documentation in this directory]),
+AC_ARG_WITH(docdir,
+   AC_HELP_STRING([--with-docdir=PATH], [put documentation in this directory]),
    [if test "$withval" != "no" && test "$withval" != "yes"; then
       AC_SUBST(HTMLDESTDIR, ["$withval"/html]),
-   fi])
+   fi]
+)
 AC_SUBST(HTMLDESTDIR)
 
 # NetPlay options
 NPLAY_SUPPORT=FALSE                       # default
 WITH_NPLAY="false"                        # just for summary display below
-AC_ARG_WITH(netplay, AC_HELP_STRING([--with-netplay],
-   [support NetPlay]),
+AC_ARG_WITH(netplay,
+   AC_HELP_STRING([--with-netplay], [support NetPlay]),
    [if test "$withval" != "no"; then
       NPLAY_SUPPORT=TRUE
       WITH_NPLAY="true"
-   fi])
+   fi]
+)
 AC_SUBST(NPLAY_SUPPORT)
 
 # JACK options
 JACK_SUPPORT=FALSE                        # default
 WITH_JACK="false"                         # just for summary display below
-AC_ARG_WITH(jack, AC_HELP_STRING([--with-jack],
-   [support JACK]),
+AC_ARG_WITH(jack,
+   AC_HELP_STRING([--with-jack], [support JACK]),
    [if test "$withval" != "no"; then
       JACK_SUPPORT=TRUE
       WITH_JACK="true"
-   fi])
+   fi]
+)
 AC_SUBST(JACK_SUPPORT)
 
 # FFTW options
 FFTW_SUPPORT=FALSE                        # default
 WITH_FFTW="false"                         # just for summary display below
-AC_ARG_WITH(fftw, AC_HELP_STRING([--with-fftw],
-   [use FFTW (alternative FFT library)]),
+AC_ARG_WITH(fftw,
+   AC_HELP_STRING([--with-fftw], [use FFTW (alternative FFT library)]),
    [if test "$withval" != "no"; then
       FFTW_SUPPORT=TRUE
       WITH_FFTW="true"
-   fi])
+   fi]
+)
 AC_SUBST(FFTW_SUPPORT)
 
 # liblo options, for OSC server plugin (in src/control/osc)
 OSC_SUPPORT=FALSE                         # default
 WITH_OSC="false"                          # just for summary display below
-AC_ARG_WITH(osc, AC_HELP_STRING([--with-osc],
-   [support OSC (Open Sound Control)]),
+AC_ARG_WITH(osc,
+   AC_HELP_STRING([--with-osc], [support OSC (Open Sound Control)]),
    [if test "$withval" != "no"; then
       OSC_SUPPORT=TRUE
       WITH_OSC="true"
-   fi])
+   fi]
+)
 AC_SUBST(OSC_SUPPORT)
 
 #AC_SUBST(WITH_VAL, "$withval")    # for debugging this script
