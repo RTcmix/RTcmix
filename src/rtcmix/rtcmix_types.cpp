@@ -53,10 +53,10 @@ Arg::printInline(FILE *stream) const
 				break;
 			}
 			case InstrumentPtrType:
-				fprintf(stream, "Inst:0x%x ", _val.handle->ptr);
+				fprintf(stream, "Inst:0x%p ", _val.handle->ptr);
 				break;
 			case AudioStreamType:
-				fprintf(stream, "AudioStr:0x%x", _val.handle->ptr);
+				fprintf(stream, "AudioStr:0x%p", _val.handle->ptr);
 				break;
 			default:
 				fprintf(stream, "Unknown ");
