@@ -1,4 +1,4 @@
-rtsetparams(44100, 2);
+rtsetparams(44100, 2)
 load("JGRAN")
 load("REVERBIT")
 bus_config("JGRAN", "aux 0-1 out")
