@@ -50,6 +50,29 @@ AC_SUBST(ARCH)
 #
 # Note that the order of options appearing in "configure --help" output 
 # follows the order of AC_ARG_WITH() calls below.
+#
+# There is a similar set of flags for enabling and disabling features...
+#    --enable-feature
+#    --disable-feature
+
+# Architecture features
+PTRSIZEFLAG=
+AC_ARG_ENABLE(64bit,
+   AS_HELP_STRING([--enable-64bit], [build 64-bit version]),
+   [if test "$enableval" == "yes"; then
+      TMP_CFLAGS="$CFLAGS"
+      CFLAGS="-m64"
+      AC_RUN_IFELSE(
+         [AC_LANG_PROGRAM([], [return sizeof(void *) == 8 ? 0 : 1;])],
+         [PTRSIZEFLAG="-m64"],
+         [AC_MSG_ERROR([Don't know how to build a 64-bit object.])]
+      )
+      CFLAGS="$TMP_CFLAGS"
+   elif test "$enableval" == "no"; then
+      PTRSIZEFLAG="-m32"
+   fi]
+)
+AC_SUBST(PTRSIZEFLAG)
 
 # Audio driver options
 AUDIODRIVER=AUTO                          # default
@@ -251,6 +274,11 @@ AC_OUTPUT
 # Output summary message
 echo
 echo "Summary..."
+if test "$PTRSIZEFLAG" = "-m64"; then
+echo "  " Building 64-bit binaries by request
+elif test "$PTRSIZEFLAG" = "-m32"; then
+echo "  " Building 32-bit binaries by request
+fi
 echo "  " Build with Perl support............................... : $WITH_PERL
 echo "  " Build with Python support............................. : $WITH_PYTHON
 echo "  " Build with ALSA support............................... : $WITH_ALSA

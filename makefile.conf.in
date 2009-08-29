@@ -47,7 +47,7 @@ endif
 #
 #   $ CFLAGS="-g" ./configure [...]
 #
-OPT += -Wall -Wno-unused
+OPT += -Wall -Wno-unused @PTRSIZEFLAG@
 
 # The path to this file
 MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
@@ -168,15 +168,15 @@ ifeq ($(ARCH),LINUX)
     SYS_LDFLAGS = -lpthread -lm -ldl #-lefence
   endif
   DSO_LDFLAGS = $(OPT) $(SYSLIBS)
-  SHARED_LDFLAGS = -shared -Wl,-soname,$@
+  SHARED_LDFLAGS = @PTRSIZEFLAG@ -shared -Wl,-soname,$@
   DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
   DYN = -rdynamic
 endif
 ifeq ($(ARCH),MACOSX)
   SYS_LDFLAGS = -framework CoreAudio
   DSO_LDFLAGS = $(SYS_LDFLAGS)
-  SHARED_LDFLAGS = -bundle -flat_namespace -undefined suppress
-  DYNAMIC_LDFLAGS = -flat_namespace -undefined suppress -dynamiclib -install_name $(LIBDIR)/$@
+  SHARED_LDFLAGS = @PTRSIZEFLAG@ -bundle -flat_namespace -undefined suppress
+  DYNAMIC_LDFLAGS = @PTRSIZEFLAG@ -flat_namespace -undefined suppress -dynamiclib -install_name $(LIBDIR)/$@
   DYN = 
 endif
 ifeq ($(ARCH),SGI)
