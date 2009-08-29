@@ -529,7 +529,7 @@ void *
 RTcmixMain::sockit(void *arg)
 {
     char ttext[MAXTEXTARGS][512];
-    int i,tmpint;
+    int i;
 
     // socket stuff
     int s, ns;
@@ -630,8 +630,7 @@ RTcmixMain::sockit(void *arg)
 			for (i = 0; i < sinfo->n_args; i++)
 			  strcpy(ttext[i],sinfo->data.text[i]);
 			for (i = 0; i < sinfo->n_args; i++) {
-			  tmpint = (int)ttext[i];
-			  sinfo->data.p[i] = (double)tmpint;
+			  sinfo->data.p[i] = STRING_TO_DOUBLE(ttext[i]);
 			}
 		  }
 		  (void) ::dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
@@ -661,8 +660,7 @@ RTcmixMain::sockit(void *arg)
 			for (i = 0; i < sinfo->n_args; i++)
 				strcpy(ttext[i],sinfo->data.text[i]);
 			for (i = 0; i < sinfo->n_args; i++) {
-				tmpint = (int)ttext[i];
-				sinfo->data.p[i] = (double)tmpint;
+				sinfo->data.p[i] = STRING_TO_DOUBLE(ttext[i]);
 			}
 		}
 

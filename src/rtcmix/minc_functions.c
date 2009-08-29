@@ -50,7 +50,7 @@ double m_octcps(float p[])
 double m_octlet(float p[], int nargs, double pp[])
 {
 	if (nargs > 0 && pp[0] > 0.0)
-		return octlet((unsigned char *)((int) pp[0]));
+		return octlet(DOUBLE_TO_STRING(pp[0]));
 	die("octlet", "usage: octlet(\"pitch\"), where pitch is \"Ab3\", etc.");
 	return 8.00;
 }
@@ -58,7 +58,7 @@ double m_octlet(float p[], int nargs, double pp[])
 double m_cpslet(float p[], int nargs, double pp[])
 {
 	if (nargs > 0 && pp[0] > 0.0)
-		return cpslet((unsigned char *)((int) pp[0]));
+		return cpslet(DOUBLE_TO_STRING(pp[0]));
 	die("cpslet", "usage: cpslet(\"pitch\"), where pitch is \"Ab3\", etc.");
 	return 0.0;
 }
@@ -66,7 +66,7 @@ double m_cpslet(float p[], int nargs, double pp[])
 double m_pchlet(float p[], int nargs, double pp[])
 {
 	if (nargs > 0 && pp[0] > 0.0)
-		return pchlet((unsigned char *)((int) pp[0]));
+		return pchlet(DOUBLE_TO_STRING(pp[0]));
 	die("pchlet", "usage: pchlet(\"pitch\"), where pitch is \"Ab3\", etc.");
 	return 8.00;
 }
@@ -342,11 +342,9 @@ double str_num(float p[], int n_args, double pp[])
 
 	for (j=0; j<n_args; j=j+2) {
 		buf[0] = 0;
-		name = 0;
-		i = (int) pp[j];
+		name = DOUBLE_TO_STRING(pp[j]);
 		if (((j+1) < (n_args-1)) || !(n_args % 2))
 			sprintf(buf, "%g", pp[j+1]);
-		name = (char *) i;
 		printf("%s%s", name, buf);
 	}
 	printf("\n");

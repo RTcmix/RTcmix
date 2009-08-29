@@ -118,8 +118,7 @@ double m_open(float *p, short n_args, double *pp)
 	int   fno,i,new;
 	float *opk;
 
-	i = (int) pp[0];
-	name = (char *) i;
+	name = DOUBLE_TO_STRING(pp[0]);
 	fno = p[1];
 // JGG: will name ptr be valid for entire program run? Is its memory held by
 // parser? If not, we should malloc sfname[fno] below (with other mallocs)
