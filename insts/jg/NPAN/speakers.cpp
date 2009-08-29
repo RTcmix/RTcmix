@@ -121,7 +121,7 @@ NPAN_set_speakers(float p[], int nargs, double pp[])
 
    _speakers = new Speaker * [_num_speakers];
 
-   char *modestr = (char *) ((int) pp[0]);
+   char *modestr = DOUBLE_TO_STRING(pp[0]);
    if (strncmp(modestr, "pol", 3) == 0) {          // polar coordinates
       // Convert from user coordinates by adding 90 degrees, then convert
       // to radians.  Finally, normalize radians to [-PI, PI].
