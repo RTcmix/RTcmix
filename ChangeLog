@@ -1,6 +1,16 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2009-08-28  John Gibson <johgibso-at-indiana.edu>
+
+	* Allow enabling or disabling 64-bit compilation via configure script.
+	  (The actual compilation still needs work.)
+
+2009-03-01  John Gibson <johgibso-at-indiana.edu>
+
+	* Fix crash when analyzing OS X audio devices having more than
+	  one stream (such as the Focusrite Saffire Pro 40).
+
 2007-09-23  John Gibson <johgibso-at-indiana.edu>
 
 	* Fixed amp envelope problem in several instruments that
