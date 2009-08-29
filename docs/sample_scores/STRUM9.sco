@@ -11,7 +11,7 @@ semitone = 1.0/12.0;
 
 pitch = 7.00;
 
-srand(0.314)
+srand(0)
 for (st = 0; st < 50; st = st + 0.08) {
 	START(st, 1.0, pitch, 1.0, 0.1, 10000.0, 1, random())
 	dev = trunc((rand() * 2.1));
