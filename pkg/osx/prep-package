@@ -36,7 +36,7 @@ cd ../../bin
 ditto DisplayWindow.app ../pkg/osx/rtcmix/bin/DisplayWindow.app
 ditto MouseWindow.app ../pkg/osx/rtcmix/bin/MouseWindow.app
 cp CMIX ../pkg/osx/rtcmix/bin
-#cp PCMIX ../pkg/osx/rtcmix/bin
+cp PCMIX ../pkg/osx/rtcmix/bin
 cp PYCMIX ../pkg/osx/rtcmix/bin
 cp cmixplay ../pkg/osx/rtcmix/bin
 cp cpspch ../pkg/osx/rtcmix/bin
@@ -61,10 +61,10 @@ install_name_tool -change ${srcdir}/lib/librtcmix.dylib \
 	${destdir}/lib/librtcmix.dylib CMIX
 install_name_tool -change ${srcdir}/lib/libgen.dylib \
 	${destdir}/lib/libgen.dylib CMIX
-#install_name_tool -change ${srcdir}/lib/librtcmix.dylib \
-#	${destdir}/lib/librtcmix.dylib PCMIX
-#install_name_tool -change ${srcdir}/lib/libgen.dylib \
-#	${destdir}/lib/libgen.dylib PCMIX
+install_name_tool -change ${srcdir}/lib/librtcmix.dylib \
+	${destdir}/lib/librtcmix.dylib PCMIX
+install_name_tool -change ${srcdir}/lib/libgen.dylib \
+	${destdir}/lib/libgen.dylib PCMIX
 install_name_tool -change ${srcdir}/lib/librtcmix.dylib \
 	${destdir}/lib/librtcmix.dylib PYCMIX
 install_name_tool -change ${srcdir}/lib/libgen.dylib \
