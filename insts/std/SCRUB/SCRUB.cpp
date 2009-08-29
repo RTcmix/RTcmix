@@ -59,9 +59,8 @@ static const float cpsoct10 = cpsoct(10.0);
 
 SCRUB::SCRUB(int sincWidth, int sincOversampling) : Instrument(),
   kSincWidth(sincWidth), kSincOversampling(sincOversampling),
-  pSincTable(NULL), pRawFrames(NULL), pSincTableDiffs(NULL),
-  fFrameCount(0), fChannels(1),
-  fCurRawFramesIdx(0.0f), fFileChunkStartFrame(0), fFileChunkEndFrame(0)
+  pSincTable(NULL), pSincTableDiffs(NULL), fFrameCount(0), fChannels(1),
+  pRawFrames(NULL), fCurRawFramesIdx(0.0f), fFileChunkStartFrame(0), fFileChunkEndFrame(0)
 {
    _initialized = false;
    _startFrame = 0;

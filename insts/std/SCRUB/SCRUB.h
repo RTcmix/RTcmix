@@ -48,10 +48,10 @@ private:
 	
 	bool _initialized;
 
-	float* pSincTable;		// `right wing' of a sinc function
-	float* pSincTableDiffs;	// differences between sinc samples
 	int kSincWidth;		// number of zero crossings on either side
 	int kSincOversampling;	// number of samples per zero crossing
+	float* pSincTable;		// `right wing' of a sinc function
+	float* pSincTableDiffs;	// differences between sinc samples
 
 	long fFrameCount;		// soundfile: - frame count
 	int fChannels;		//            - channels
