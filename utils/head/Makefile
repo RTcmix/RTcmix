@@ -12,22 +12,22 @@ HEAD = sfcreate sfprint sfshrink sfhedit sffixsize
 all: $(HEAD)
 
 sfhedit: sfhedit.o $(SYSOBJS)
-	$(CC) -o sfhedit sfhedit.o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
+	$(CC) $(CFLAGS) -o sfhedit sfhedit.o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
 
 sfextend: sfextend.o $(SYSOBJS)
-	$(CC) -o sfextend sfextend.o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
+	$(CC) $(CFLAGS) -o sfextend sfextend.o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
 
 sfshrink: sfshrink.o $(SYSOBJS)
-	$(CC) -o sfshrink sfshrink.o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
+	$(CC) $(CFLAGS) -o sfshrink sfshrink.o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
 
 sfcreate: sfcreate.o $(SYSOBJS)
-	$(CC) -o sfcreate sfcreate.o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
+	$(CC) $(CFLAGS) -o sfcreate sfcreate.o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
 
 sfprint: sfprint.o  $(SYSOBJS)
-	$(CC) -o sfprint sfprint.o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
+	$(CC) $(CFLAGS) -o sfprint sfprint.o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
 
 sffixsize: sffixsize.o  $(SYSOBJS)
-	$(CC) -o sffixsize sffixsize.o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
+	$(CC) $(CFLAGS) -o sffixsize sffixsize.o $(SYSOBJS) $(SNDLIB) $(SYSLIBS)
 
 install: all
 	@echo "making install..."	
