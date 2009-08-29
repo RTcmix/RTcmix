@@ -1,8 +1,8 @@
 #!/bin/sh
 
-prefix=/Applications
+prefix=/Users/Shared
 pkgname="RTcmix-4.0.1-Intel.pkg"
 
-rm -rf /Library/Receipts/${pkgname}
 rm -rf ${prefix}/rtcmix
+rm -rf /Library/Receipts/${pkgname}
 
