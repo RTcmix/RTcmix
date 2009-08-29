@@ -19,6 +19,7 @@ mkdir rtcmix
 # copy docs
 ditto ../../docs rtcmix/docs
 cp README.rtf rtcmix
+cp license.txt rtcmix
 
 # copy snd, so that sample_scores work
 ditto ../../snd rtcmix/snd
