@@ -158,6 +158,7 @@ distclean: cleanall cleanac
 	@cd apps; $(MAKE) $(MFLAGS) distclean; 
 	@find . -name depend -exec rm -f '{}' ';'
 	@$(RM) defs.conf
+	@$(RM) makefile.conf
 
 ####################################################### for maintainers only ###
 
