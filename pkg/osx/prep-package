@@ -1,6 +1,6 @@
 #!/bin/sh
 
-destdir="/Users/Shared/rtcmix"
+destdir="/Applications/rtcmix"
 
 # get location of RTcmix source tree, passed in from Makefile,
 # and bin architecture ("Intel" or "PPC")
