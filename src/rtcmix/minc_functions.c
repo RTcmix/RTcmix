@@ -50,7 +50,7 @@ double m_octcps(float p[])
 double m_octlet(float p[], int nargs, double pp[])
 {
 	if (nargs > 0 && pp[0] > 0.0)
-		return octlet(DOUBLE_TO_STRING(pp[0]));
+		return octlet((unsigned char *) DOUBLE_TO_STRING(pp[0]));
 	die("octlet", "usage: octlet(\"pitch\"), where pitch is \"Ab3\", etc.");
 	return 8.00;
 }
@@ -58,7 +58,7 @@ double m_octlet(float p[], int nargs, double pp[])
 double m_cpslet(float p[], int nargs, double pp[])
 {
 	if (nargs > 0 && pp[0] > 0.0)
-		return cpslet(DOUBLE_TO_STRING(pp[0]));
+		return cpslet((unsigned char *) DOUBLE_TO_STRING(pp[0]));
 	die("cpslet", "usage: cpslet(\"pitch\"), where pitch is \"Ab3\", etc.");
 	return 0.0;
 }
@@ -66,7 +66,7 @@ double m_cpslet(float p[], int nargs, double pp[])
 double m_pchlet(float p[], int nargs, double pp[])
 {
 	if (nargs > 0 && pp[0] > 0.0)
-		return pchlet(DOUBLE_TO_STRING(pp[0]));
+		return pchlet((unsigned char *) DOUBLE_TO_STRING(pp[0]));
 	die("pchlet", "usage: pchlet(\"pitch\"), where pitch is \"Ab3\", etc.");
 	return 8.00;
 }
