@@ -216,11 +216,11 @@ heap/rtHeap.o:	heap/heap.o heap/queue.o
 # rules for three executables we build
 
 MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
-	$(CXX) -o MIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) $(M_O) -L. $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o MIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) $(M_O) -L. $(LDFLAGS)
 
 PMIX: $(MAIN_OBJS) $(P_O) $(LIBS) $(PROFILE_O)
 ifeq ($(PERL_SUPPORT), TRUE)
-	$(CXX) -o PMIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) \
+	$(CXX) $(CXXFLAGS) -o PMIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) \
 		$(P_O) -L. $(LDFLAGS) $(PERL_LDFLAGS)
 else
 	@echo "You haven't configured with PERL_SUPPORT!"
@@ -228,7 +228,7 @@ endif
 
 PYMIX: $(MAIN_OBJS) $(PY_O) $(LIBS) $(PROFILE_O)
 ifeq ($(PYTHON_SUPPORT), TRUE)
-	$(CXX) -o PYMIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) \
+	$(CXX) $(CXXFLAGS) -o PYMIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) \
 		$(PY_O) -L. $(LDFLAGS) $(PYEXT) $(PYTHONLIBS)
 else
 	@echo "You haven't configured with PYTHON_SUPPORT!"
