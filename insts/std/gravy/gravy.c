@@ -112,9 +112,7 @@ gravy(float p[], int n_args)
 }
 
 
-float transpose(num)
-float num;
-
+float transpose(float num)
 {
 	int octave;
 	float fract,mult;
@@ -126,8 +124,7 @@ float num;
 	return(mult);
 }
 
-double interp(y0,y1,y2,t)
-    register double t, y0, y1, y2;
+double interp(double y0, double y1, double y2, double t)
 {
     register double hy2, hy0, a, b, c;
     

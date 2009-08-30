@@ -12,7 +12,7 @@ double mindiff;
 double
 path (float p[], int n_args)		/* for polar coordinates */
 {
-    float rhos[100], thetas[100];
+    float rhos[200], thetas[200];
     int i, t;
     static double z = 0.017453292;    /* Pi/180 */
 

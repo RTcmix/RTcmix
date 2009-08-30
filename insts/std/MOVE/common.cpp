@@ -264,14 +264,16 @@ fir(double *sig, long counter, int nterms, double *coeffs, double *firtap, int l
 
 		/* first loop:  while outtap is >= 0 */
 		const int loop1 = outtap + 1;
-		for (i = 0; i < loop1; ++i, outtap--, c++)
-    	   out += firtap[outtap] * coeffs[c];
+		for (i = 0; i < loop1; ++i, outtap--, c++) {
+			out += firtap[outtap] * coeffs[c];
+		}
 
 		/* second loop: while outtap is positive after being wrapped */
 		outtap += flen;
 		const int loop2 = flen - loop1 - 1;
-		for (i = 0; i < loop2; ++i, outtap--, c++)
+		for (i = 0; i < loop2; ++i, outtap--, c++) {
 			out += firtap[outtap] * coeffs[c];
+		}
 
 		sig[n] = out;
 	}

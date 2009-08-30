@@ -4,7 +4,7 @@
 
 #define MAXTERMS  33       // also defined in firdata.h
 #define NANGLES   24
-#define ARRAYSIZE 1024		// used for Rho, Theta arrays
+#define ARRAYSIZE 4096		// used for Rho, Theta arrays
 
 #ifdef __cplusplus
 

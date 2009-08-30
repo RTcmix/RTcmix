@@ -125,8 +125,12 @@ int DMOVE::localInit(double *p, int n_args)
 
 int DMOVE::finishInit(double rvb_time, double *ringdur)
 {
+#ifdef debug
+	printf("finishInit()\n");
+#endif
     *ringdur = rvb_time;	// default
 	tapcount = updatePosition(0);
+	R_old = T_old = -99999999.0;	// force updatePosition() to do its work next time
     return 0;
 }
 

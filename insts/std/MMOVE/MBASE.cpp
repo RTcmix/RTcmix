@@ -302,9 +302,10 @@ int MBASE::run()
 					if (path > 0)	// no filtering of direct signal
          				wall(vec->Sig, bufsamps, vec->Walldata);
 					/* do binaural angle filters if necessary*/
-					if (m_binaural)						
+					if (m_binaural)	{					
 						fir(vec->Sig, thisFrame, g_Nterms[path], 
 					    	vec->Fircoeffs, vec->Firtaps, bufsamps);
+					}
 
           	 		// sum unscaled reflected paths as global input for RVB.
 					addBuf(&globalReverbInput[ch][outputOffset+i], vec->Sig, bufsamps);
