@@ -12,7 +12,7 @@ FILTERS = smallfilter.h largefilter.h
 all: $(PROG)
 
 $(PROG): $(HFILES) $(FILTERS) $(OBJS) libfilterkit.a $(SNDLIB)
-	$(CC) -o $(PROG) $(OBJS) libfilterkit.a $(SNDLIB) -lm
+	$(CC) $(CFLAGS) -o $(PROG) $(OBJS) libfilterkit.a $(SNDLIB) -lm
 
 libfilterkit.a: $(HFILES) filterkit.o
 	ar rc libfilterkit.a filterkit.o
