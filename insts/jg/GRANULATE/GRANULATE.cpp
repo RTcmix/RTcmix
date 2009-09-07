@@ -1,5 +1,10 @@
 /* GRANULATE - granulation of sound stored in a table
 
+   WARNING: This is my first granulation instrument. It has a bug that
+   results in an unintended dependency between traversal rate, grain rate,
+   and output jitter. The fix is included in GRANULATE2, which also has
+   several new features.
+
    Any parameter marked with '*' can receive updates from a real-time
    control source.
 
