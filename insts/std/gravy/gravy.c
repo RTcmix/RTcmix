@@ -24,6 +24,9 @@ extern float SR();
 *
 */
 
+float transpose(float);
+double interp(double, double, double, double);
+
 double
 gravy(float p[], int n_args)
 {
@@ -34,8 +37,6 @@ gravy(float p[], int n_args)
 	int winsize;
 	double vold,old,new,frac,count;
 	long i,j,k,m,intt,lgc,n,ncuts;
-	float transpose();
-	double interp();
 
 	winsamps = setnote(p[1],p[3],0);
 	setnote(p[0],p[2],1);
