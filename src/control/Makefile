@@ -1,6 +1,6 @@
 include ../../makefile.conf
 
-DIRS = common midi mouse display datafile
+DIRS = common midi mouse display datafile pfbus
 ifeq ($(OSC_SUPPORT), TRUE)
 	DIRS += osc
 endif
