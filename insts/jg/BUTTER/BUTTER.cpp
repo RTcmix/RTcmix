@@ -86,7 +86,7 @@ BUTTER :: ~BUTTER()
 }
 
 
-static char *_filttype_name[] = {
+static const char *_filttype_name[] = {
    "lowpass",     // 0
    "highpass",    // 1
    "bandpass",    // 2

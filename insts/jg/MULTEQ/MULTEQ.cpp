@@ -83,7 +83,7 @@ MULTEQ :: ~MULTEQ()
 }
 
 
-static char *_eqtype_name[] = {
+static const char *_eqtype_name[] = {
    "lowpass",     // 0
    "highpass",    // 1
    "lowshelf",    // 2

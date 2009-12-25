@@ -272,7 +272,7 @@ int SPECTACLE2_BASE::configure()
 	_input = new float [_window_len];            // interior input buffer
 	_output = new float [_window_len];           // interior output buffer
 	_anal_bins = new float [_fftlen + 2];        // analysis bins
-	if (_inbuf == NULL | _input == NULL || _output == NULL || _anal_bins == NULL)
+	if (_inbuf == NULL || _input == NULL || _output == NULL || _anal_bins == NULL)
 		return -1;
 	for (int i = 0; i < _window_len; i++)
 		_input[i] = _output[i] = 0.0f;
