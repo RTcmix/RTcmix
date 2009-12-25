@@ -81,9 +81,9 @@ extern "C" {
 /* functions in sys/sndlibsupport.c */
 
 /* for creating, opening and closing files for sndlib I/O */
-int sndlib_create(char *, int, int, int, int);
-int sndlib_open_read(char *);
-int sndlib_open_write(char *);
+int sndlib_create(const char *, int, int, int, int);
+int sndlib_open_read(const char *);
+int sndlib_open_write(const char *);
 int sndlib_close(int, int, int, int, int);
 
 /* for reading and writing headers */

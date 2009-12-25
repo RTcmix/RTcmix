@@ -57,7 +57,7 @@ WARNING: Not enough room in header for peak stats and comment.\n"
 #undef MIN
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 
-static int open_rd_or_rdwr(char *, int);
+static int open_rd_or_rdwr(const char *, int);
 static int format_raw_comment(SFComment *, int, char **);
 static int get_current_header_comment_alloc(void);
 static int get_current_header_raw_comment(int, char **);
@@ -96,7 +96,7 @@ static int get_current_header_raw_comment(int, char **);
    On failure, returns -1. Caller can check errno then.
 */
 int
-sndlib_create(char *sfname, int type, int format, int srate, int chans)
+sndlib_create(const char *sfname, int type, int format, int srate, int chans)
 {
    int  fd, loc;
 
@@ -124,7 +124,7 @@ sndlib_create(char *sfname, int type, int format, int srate, int chans)
 /* Does the dirty work for sndlib_open_read and sndlib_open_write (below).
 */
 static int
-open_rd_or_rdwr(char *sfname, int accesstype)
+open_rd_or_rdwr(const char *sfname, int accesstype)
 {
    int fd, format, loc, chans, type;
 
@@ -167,7 +167,7 @@ open_rd_or_rdwr(char *sfname, int accesstype)
    The caller might want to check first that this file exists.
 */
 int
-sndlib_open_read(char *sfname)
+sndlib_open_read(const char *sfname)
 {
    return open_rd_or_rdwr(sfname, O_RDONLY);
 }
@@ -178,7 +178,7 @@ sndlib_open_read(char *sfname)
    access. See the comments at sndlib_open_read for more.
 */
 int
-sndlib_open_write(char *sfname)
+sndlib_open_write(const char *sfname)
 {
    return open_rd_or_rdwr(sfname, O_RDWR);
 }
