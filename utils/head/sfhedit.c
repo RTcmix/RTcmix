@@ -135,12 +135,13 @@ main(int argc, char *argv[])
 			fcom = fopen("/tmp/comment","r");
 			i=0;
 			while ( (sfcomm(&sfcm,i) = getc(fcom)) != EOF ) {
-				if (++i > MAXCOMM) {
+				if (i >= MAXCOMM) {
 					printf("Gimme a break! I can only take %d characters\n",MAXCOMM);
 					printf("comment truncated to %d characters\n",MAXCOMM);
 					commentcode.bsize = MAXCOMM + sizeof(SFCODE);
 					break;
 				}
+				++i;
 			}
 			sfcomm(&sfcm,i) = '\0';
 			system("rm /tmp/comment");

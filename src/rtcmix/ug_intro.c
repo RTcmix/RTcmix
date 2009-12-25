@@ -95,6 +95,7 @@ ug_intro()
  	UG_INTRO("getamp",m_getamp);
  	UG_INTRO("stringify",m_stringify);
 	UG_INTRO("log",m_log);
+	UG_INTRO("ln",m_ln);
 	UG_INTRO("pow",m_pow);
 	UG_INTRO("round",m_round);
 	UG_INTRO("print",m_print);
@@ -121,6 +122,7 @@ ug_intro()
 	UG_INTRO("pickwrand", m_pickwrand);
 	UG_INTRO("irand", m_irand);
 	UG_INTRO("trand", m_trand);
+//	UG_INTRO("grand", m_grand);
 	UG_INTRO("setexp", m_setexp);
 	UG_INTRO("addgens", m_addgens);
 	UG_INTRO("multgens", m_multgens);

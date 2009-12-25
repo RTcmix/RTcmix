@@ -5,7 +5,7 @@
  * and subsequent work by Andrew Zeldis and Zico Kolter
  * and Roger B. Dannenberg
  *
- * $Id: pmmacosxcm.c,v 1.1 2004/08/15 15:44:58 gibson Exp $
+ * $Id: pmmacosxcm.c,v 1.2 2009/12/25 05:08:18 d_scott Exp $
  */
  
 /* Notes:
@@ -54,9 +54,9 @@
 #define MIDI_EOX        0xf7
 #define MIDI_STATUS_MASK 0x80
 
-static MIDIClientRef	client = NULL;	/* Client handle to the MIDI server */
-static MIDIPortRef	portIn = NULL;	/* Input port handle */
-static MIDIPortRef	portOut = NULL;	/* Output port handle */
+static MIDIClientRef	client = 0;	/* Client handle to the MIDI server */
+static MIDIPortRef	portIn = 0;	/* Input port handle */
+static MIDIPortRef	portOut = 0;	/* Output port handle */
 
 extern pm_fns_node pm_macosx_in_dictionary;
 extern pm_fns_node pm_macosx_out_dictionary;

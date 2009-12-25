@@ -6,7 +6,7 @@ class Instrument;
 struct rt_item {
 	struct rt_item *rt_next;
 	Instrument* (*rt_ptr)();
-	char *rt_name;
+	const char *rt_name;
 	};
 
 extern rt_item *rt_list;
@@ -15,7 +15,7 @@ void heapify(Instrument *Iptr);
 int addrtInst(rt_item*);
 
 extern "C" {
-    void merror(char*);
+    void merror(const char*);
 	void rtprofile();
 }
 

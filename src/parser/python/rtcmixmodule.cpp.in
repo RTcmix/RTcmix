@@ -126,7 +126,7 @@ static PField *PFieldFromPyObject(PyObject *obj)
 
 static PyObject *Opaque_type(OpaqueObject *self, PyObject *args)
 {
-   char *str = NULL;
+   const char *str = NULL;
 
    if (!PyArg_ParseTuple(args, ":type"))
       return NULL;
@@ -148,7 +148,7 @@ static PyMethodDef Opaque_methods[] = {
    {NULL, NULL}      // sentinel
 };
 
-static PyObject *Opaque_getattr(OpaqueObject *self, char *name)
+static PyObject *Opaque_getattr(OpaqueObject *self, const char *name)
 {
    if (self->attrDict != NULL) {
       PyObject *obj = PyDict_GetItemString(self->attrDict, name);
@@ -160,7 +160,7 @@ static PyObject *Opaque_getattr(OpaqueObject *self, char *name)
    return Py_FindMethod(Opaque_methods, (PyObject *) self, name);
 }
 
-static int Opaque_setattr(OpaqueObject *self, char *name, PyObject *obj)
+static int Opaque_setattr(OpaqueObject *self, const char *name, PyObject *obj)
 {
    if (self->attrDict == NULL) {
       self->attrDict = PyDict_New();
@@ -420,7 +420,7 @@ PyTypeObject OpaqueType = {
 
 // -- rtcmix module -----------------------------------------------------------
 
-static PyObject *_call_dispatch(PyObject *args, char *funcname)
+static PyObject *_call_dispatch(PyObject *args, const char *funcname)
 {
    if (!PyTuple_Check(args))
       return NULL;

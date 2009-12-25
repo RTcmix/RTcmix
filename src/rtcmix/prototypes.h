@@ -44,7 +44,7 @@ int read_samps(int fd, int data_format, int file_chans, BufPtr dest,
 
 /* rtinput.c */
 int get_last_input_index(void);
-int open_sound_file(char *funcname, char *sfname, int *header_type,
+int open_sound_file(const char *funcname, const char *sfname, int *header_type,
                     int *data_format, int *data_location, double *srate,
                     int *nchans, long *nsamps);
 

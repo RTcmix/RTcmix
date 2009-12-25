@@ -13,7 +13,7 @@
 #include "yystype.h"
 #define YYDEBUG 1
 #define YYPARSE_PARAM obj
-static char *my_strdup(char *src);
+static char *my_strdup(const char *src);
 int conferror(char *msg);
 %}
 
@@ -85,7 +85,7 @@ str: TOK_STRING      {
 %%
 
 static char *
-my_strdup(char *src)
+my_strdup(const char *src)
 {
    size_t len = strlen(src);
    char *dest = new char[len + 1];

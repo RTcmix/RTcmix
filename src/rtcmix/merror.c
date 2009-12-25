@@ -17,7 +17,7 @@ char	*mix_errlist[] = {
 };
 
 void
-merror(char *s)
+merror(const char *s)
 {
 	char *c;
 	int n;

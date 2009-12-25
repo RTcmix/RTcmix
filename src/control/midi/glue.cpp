@@ -17,8 +17,8 @@
 //FIXME: better to have a struct with one field a string, the other type?
 
 #define NAME_VARIANTS	4
-static char *_midi_type_name[][NAME_VARIANTS] = {
-	// NB: Order of these must correspond to indices given by MIDIType enum!
+static const char *_midi_type_name[][NAME_VARIANTS] = {
+// 	// NB: Order of these must correspond to indices given by MIDIType enum!
 	{ "cntl", "control", NULL, NULL },
 	{ "noteon", NULL, NULL, NULL },
 	{ "noteoff", NULL, NULL, NULL },
@@ -29,7 +29,7 @@ static char *_midi_type_name[][NAME_VARIANTS] = {
 	{ NULL, NULL, NULL, NULL }
 };
 
-static char *_midi_controller_name[128] = {
+static const char *_midi_controller_name[128] = {
 				"", "mod", "breath", "", "foot",
 				"port time", "data", "volume", "balance", "",
 /* 10 */		"pan", "expression", "fxctl1", "fxctl2", "",

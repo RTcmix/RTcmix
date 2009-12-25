@@ -91,7 +91,7 @@ double filedur(const Arg args[], const int nargs)
 	int nchans;
 	long nsamps;
 	double srate;
-	int fd = open_sound_file("filedur", (char *) fname, NULL, NULL, NULL,
+	int fd = open_sound_file("filedur", fname, NULL, NULL, NULL,
 	                         &srate, &nchans, &nsamps);
 	if (fd == -1)
 		return -1.0;
@@ -107,7 +107,7 @@ double filechans(const Arg args[], const int nargs)
 	const char *fname = args[0];
 
 	int nchans;
-	int fd = open_sound_file("filechans", (char *) fname, NULL, NULL, NULL,
+	int fd = open_sound_file("filechans", fname, NULL, NULL, NULL,
 	                         NULL, &nchans, NULL);
 	if (fd == -1)
 		return -1.0;
@@ -123,7 +123,7 @@ double filesr(const Arg args[], const int nargs)
 	const char *fname = args[0];
 
 	double srate;
-	int fd = open_sound_file("filesr", (char *) fname, NULL, NULL, NULL,
+	int fd = open_sound_file("filesr", fname, NULL, NULL, NULL,
 	                         &srate, NULL, NULL);
 	if (fd == -1)
 		return -1.0;
@@ -133,7 +133,7 @@ double filesr(const Arg args[], const int nargs)
 }
 
 // helper function for filepeak, filerms, filedc
-int findpeakrmsdc(char *funcname, char *fname,
+int findpeakrmsdc(const char *funcname, const char *fname,
 	const double starttime, const double endtime, const int chan,
 	double *thepeak, double *therms, double *thedc)
 {

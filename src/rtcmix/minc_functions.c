@@ -217,8 +217,10 @@ double m_min(float p[], int n_args)
 	return(min);
 }
 
-double m_exit(float p[], int n_args)
+double m_exit(float p[], int n_args, double pp[])
 {
+	const char *message = DOUBLE_TO_STRING(p[0]);
+	if (message) fprintf(stderr, "%s\n", message);
 	closesf();
 	return 0.0;
 }

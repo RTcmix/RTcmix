@@ -84,7 +84,7 @@ void Option::init()
 */
 int Option::readConfigFile(const char *fileName)
 {
-	char *key;
+	const char *key;
 	Config conf;
 
 	assert(fileName != NULL && fileName[0] != 0);

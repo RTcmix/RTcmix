@@ -100,7 +100,7 @@ void Config::dump(FILE *stream)
    }
 }
 
-char *Config::getLastErrorText()
+const char *Config::getLastErrorText()
 {
    if (_err == kConfigFileMissingErr)
       return "Configuration file doesn't exist";

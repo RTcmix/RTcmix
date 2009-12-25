@@ -107,7 +107,7 @@ public:
    ConfigErrorCode setValue(const char *key, const char *value);
 
    ConfigErrorCode getLastErrorCode() { return _err; }
-   char *getLastErrorText();
+   const char *getLastErrorText();
 
    void setDebug(bool doit) { _debug = doit; }
    void setDebug() { _debug = true; }

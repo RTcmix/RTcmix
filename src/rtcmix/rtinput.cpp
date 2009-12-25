@@ -49,14 +49,14 @@ get_last_input_index()
 /* ------------------------------------------------------ open_sound_file --- */
 int
 open_sound_file(
-      char     *funcname,       // for error messages
-      char     *sfname,         // name of sound file to open
-      int      *header_type,    // Remaining args are pointers to storage for
-      int      *data_format,    //    various bits of file header info.  If
-      int      *data_location,  //    pointer is NULL, it will be ignored.
-      double   *srate,          //    Info is undefined on error return (-1).
-      int      *nchans,
-      long     *nsamps)
+      const char     *funcname,       // for error messages
+      const char     *sfname,         // name of sound file to open
+      int     		 *header_type,    // Remaining args are pointers to storage for
+      int     		 *data_format,    //    various bits of file header info.  If
+      int     		 *data_location,  //    pointer is NULL, it will be ignored.
+      double   		 *srate,          //    Info is undefined on error return (-1).
+      int     		 *nchans,
+      long     		 *nsamps)
 {
    // See if file exists and is a regular file or link.
    struct stat sfst;

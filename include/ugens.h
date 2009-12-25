@@ -24,7 +24,7 @@ typedef	struct ug_item	ug_t;
 extern "C" {
 #endif /* __cplusplus */
 
-void merror(char *);
+void merror(const char *);
 
 /* times per second to update control-rate variables;
    defined in sys/minc_functions.c

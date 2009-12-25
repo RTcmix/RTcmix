@@ -51,7 +51,7 @@ makeconnection(const Arg args[], const int nargs)
 	HandleCreator creator = NULL;
 	const char *selector = (const char *) args[0];
 	char loadPath[1024];
-	char *dsoPath = Option::dsoPath();
+	const char *dsoPath = Option::dsoPath();
 	if (strlen(dsoPath) == 0)
 		dsoPath = SHAREDLIBDIR;
 	sprintf(loadPath, "%s/lib%sconn.so", dsoPath, selector);

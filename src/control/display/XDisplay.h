@@ -30,7 +30,7 @@ private:
 	int _screen;
 	Display *_display;
 	Window _window;
-	char *_windowname;
+	const char *_windowname;
 
 	GC _gc;
 	char *_fontName;

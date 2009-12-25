@@ -58,7 +58,7 @@ typedef enum {
 	EndTable
 } TableKind;
 
-static char *_table_name[] = {
+static const char *_table_name[] = {
 	"textfile",	// 0
 	"soundfile",
 	"literal",
