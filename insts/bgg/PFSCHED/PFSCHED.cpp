@@ -58,6 +58,7 @@ int PFSCHED::init(double p[], int n_args)
 	pfbusses[pfbus].drawflag = 0; // the 'connected' note will read when == 1
 //	pfbusses[pfbus].thepfield = &((*_pfields)[3]);
 	pfbusses[pfbus].thepfield = &(getPField(3)); // this is the PField to read
+	pfbusses[pfbus].percent = 0.0;
 	pfbusses[pfbus].theincr = (SR/(float)resetval)/(double)(nSamps()-(RTBUFSAMPS+1));
 	// note the subtraction above, thus the PField will be read for the
 	// correct duration
@@ -94,4 +95,3 @@ rtprofile()
 {
 	RT_INTRO("PFSCHED",makePFSCHED);
 }
-
