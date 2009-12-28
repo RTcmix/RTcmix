@@ -16,6 +16,7 @@ struct pfbusdata pfbusses[NPFBUSSES];
 
 class PFSCHED : public Instrument {
 	int pfbus;
+	int firsttime;
 
 	void doupdate();
 
