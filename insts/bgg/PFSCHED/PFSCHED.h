@@ -16,7 +16,6 @@ struct pfbusdata pfbusses[NPFBUSSES];
 
 class PFSCHED : public Instrument {
 	int pfbus;
-	int firsttime;
 
 	void doupdate();
 
@@ -24,5 +23,6 @@ public:
 	PFSCHED();
 	virtual ~PFSCHED();
 	virtual int init(double p[], int n_args);
+	virtual int configure();
 	virtual int run();
 };
