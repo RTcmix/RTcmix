@@ -254,7 +254,6 @@ int Instrument::configure(int bufsamps)
 {
 	assert(outbuf == NULL);	// configure called twice, or recursively??
 	outbuf = new BUFTYPE [bufsamps * outputchans];
-	bzero((void *)outbuf, (bufsamps * outputchans)*sizeof(BUFTYPE));
 	return configure();		// Class-specific configuration.
 }
 
