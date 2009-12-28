@@ -23,6 +23,7 @@
 #include <rtdefs.h>
 
 #include <stdio.h>
+#include <string.h> // for bzero()
 
 #include <PField.h>
 #include <PFieldSet.h>
@@ -63,6 +64,8 @@ int PFSCHED::init(double p[], int n_args)
 	// note the subtraction above, thus the PField will be read for the
 	// correct duration
 
+	firsttime = 1;
+
 	return nSamps();
 }
 
@@ -73,6 +76,13 @@ void PFSCHED::doupdate()
 int PFSCHED::run()
 {
 	int i;
+
+	// can't do this in ::init because configure() hasn't been called
+	// yet to set up the outbuf[]
+	if (firsttime) {
+		bzero((void *)outbuf, (RTBUFSAMPS * NCHANS)*sizeof(BUFTYPE));
+		firsttime = 0;
+	}
 
 	pfbusses[pfbus].drawflag = 1; // signal to start reading from the pfield
 	i = framesToRun();
