@@ -88,7 +88,7 @@ ifeq ($(ARCH),LINUX)
   SHLIB_SUFFIX = so
 endif
 ifeq ($(ARCH),MACOSX)
-  ARCHFLAGS = -DMACOSX -fno-common
+  ARCHFLAGS = -DMACOSX -fno-common -m32 -arch i386
   ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX)
   CC = cc
   CXX = c++ -Wno-deprecated
@@ -175,8 +175,8 @@ endif
 ifeq ($(ARCH),MACOSX)
   SYS_LDFLAGS = -framework CoreAudio
   DSO_LDFLAGS = $(SYS_LDFLAGS)
-  SHARED_LDFLAGS = @PTRSIZEFLAG@ -bundle -flat_namespace -undefined suppress
-  DYNAMIC_LDFLAGS = @PTRSIZEFLAG@ -flat_namespace -undefined suppress -dynamiclib -install_name $(LIBDIR)/$@
+  SHARED_LDFLAGS = $(ARCHFLAGS) -bundle -flat_namespace -undefined suppress
+  DYNAMIC_LDFLAGS = $(ARCHFLAGS) -flat_namespace -undefined suppress -dynamiclib -install_name $(LIBDIR)/$@
   DYN = 
 endif
 ifeq ($(ARCH),SGI)
