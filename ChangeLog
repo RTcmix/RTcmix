@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2010-01-08  Douglas Scott  <netdscott-at-netscape.net>
+
+	* Fixed 64-bit OSX audio problem.  Checked in dozens of minor changes
+	which will help prepare RTcmix for true 64-bit mode (using >2Mb files,
+	  etc.
+
 2009-08-28  John Gibson <johgibso-at-indiana.edu>
 
 	* Allow enabling or disabling 64-bit compilation via configure script.
@@ -1017,5 +1023,8 @@ Saturday, March 26, 2000 John Gibson <johngibson@virginia.edu>
    * Added dbamp function for lib and Minc.
      (ampdb.c, minc_functions.c, ug_intro.c)
    * Finally created this ChangeLog.
+
+
+
 
 
