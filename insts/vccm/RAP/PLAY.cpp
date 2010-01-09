@@ -64,7 +64,7 @@ int PLAY::run()
 {
 	int i,j,k,rsamps;
 	float out[MAXBUS];
-	float aamp;
+	float aamp=0.0f;
 	int branch;
 
 	rsamps = framesToRun();
