@@ -2,7 +2,7 @@
 #define _BUS_H_ 1
 
 /* MAXBUS is one greater than the total number of useable buses. */
-#define MAXBUS 33
+#define MAXBUS 65
 
 #ifdef __cplusplus
 

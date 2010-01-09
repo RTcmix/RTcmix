@@ -101,7 +101,7 @@ static float *newFloats(float *oldptr, long oldlen, long *newlen)
 	return ptr;
 }
 
-int Odelay::resize(long thisLength)
+long Odelay::resize(long thisLength)
 {
 	const long oldlen = _len;
 	// Make a guess at how big the new array should be.

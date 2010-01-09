@@ -314,7 +314,7 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 		warn("maketable (soundfile)", "The input file sampling rate is %g, but "
 			  "the output rate is currently %g.", srate, RTcmix::sr());
 
-	int file_frames = file_samps / file_chans;
+	long file_frames = file_samps / file_chans;
 
 	int table_chans = file_chans;
 	if (inchan != ALL_CHANS) {
@@ -325,20 +325,20 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 		table_chans = 1;
 	}
 
-	int table_frames = file_frames;			// if request_dur == 0
+	long table_frames = file_frames;			// if request_dur == 0
 	if (request_dur < 0.0)
-		table_frames = (int) -request_dur;
+		table_frames = (long) -request_dur;
 	else if (request_dur > 0.0)
-		table_frames = (int) (request_dur * srate + 0.5);
+		table_frames = (long) (request_dur * srate + 0.5);
 
-	int start_frame = (int) (inskip * srate + 0.5); 
+	long start_frame = (long) (inskip * srate + 0.5); 
 	if (inskip < 0.0)
-		start_frame = (int) -inskip;
+		start_frame = (long) -inskip;
 
 	if (start_frame + table_frames > file_frames)
 		table_frames = file_frames - start_frame;
 
-	int table_samps = table_frames * table_chans;
+	long table_samps = table_frames * table_chans;
  
 	double *block = new double[table_samps];
 	if (block == NULL)
@@ -367,13 +367,13 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 	int end_frame = start_frame + table_frames;
 
 	double *blockp = block;
-	int frames_read = 0;
-	int buf_start_frame = start_frame;
+	long frames_read = 0;
+	long buf_start_frame = start_frame;
 	for ( ; buf_start_frame < end_frame; buf_start_frame += frames_read) {
 		long bytes_read;
 
 		if (buf_start_frame + buf_frames > end_frame) {		  // last buffer
-			int samps = (end_frame - buf_start_frame) * file_chans;
+			long samps = (end_frame - buf_start_frame) * file_chans;
 			bytes_read = read(fd, buf, samps * bytes_per_samp);
 		}
 		else
@@ -384,7 +384,7 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 		if (bytes_read == 0)				// EOF, somehow
 			break;
 
-		int samps_read = bytes_read / bytes_per_samp;
+		long samps_read = bytes_read / bytes_per_samp;
 		frames_read = samps_read / file_chans;
 
 		int increment = 1;
@@ -396,14 +396,14 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 				increment = file_chans;
 			}
 			if (byteswap) {
-				for (int i = 0; i < samps_read; i += increment) {
+				for (long i = 0; i < samps_read; i += increment) {
 					byte_reverse4(bufp);				// modify *bufp in place
 					*blockp++ = (double) *bufp;
 					bufp += increment;
 				}
 			}
 			else {
-				for (int i = 0; i < samps_read; i += increment) {
+				for (long i = 0; i < samps_read; i += increment) {
 					*blockp++ = (double) *bufp;
 					bufp += increment;
 				}
@@ -417,7 +417,7 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 				increment = file_chans;
 			}
 			if (data_format == MUS_L24INT) {
-				for (int i = 0; i < samps_read; i += increment) {
+				for (long i = 0; i < samps_read; i += increment) {
 					int samp = (int) (((bufp[2] << 24)
 										  + (bufp[1] << 16)
 										  + (bufp[0] << 8)) >> 8);
@@ -426,7 +426,7 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 				}
 			}
 			else {	// data_format == MUS_B24INT
-				for (int i = 0; i < samps_read; i += increment) {
+				for (long i = 0; i < samps_read; i += increment) {
 					int samp = (int) (((bufp[0] << 24)
 										  + (bufp[1] << 16)
 										  + (bufp[2] << 8)) >> 8);
@@ -443,14 +443,14 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 				increment = file_chans;
 			}
 			if (byteswap) {
-				for (int i = 0; i < samps_read; i += increment) {
+				for (long i = 0; i < samps_read; i += increment) {
 					int16_t samp = reverse_int2(bufp);
 					*blockp++ = (double) samp;
 					bufp += increment;
 				}
 			}
 			else {
-				for (int i = 0; i < samps_read; i += increment) {
+				for (long i = 0; i < samps_read; i += increment) {
 					*blockp++ = (double) *bufp;
 					bufp += increment;
 				}

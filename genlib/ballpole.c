@@ -1,7 +1,8 @@
 float *
 ballpole(float *x, long *jcount, long npoles, float *past, float *c, float *out, long nvals)
 {
-	int i,j,nfint;
+	int i,nfint;
+	long j;
 	float *retval = out;
 	float temp;
 	for(i=0;i<nvals;++i){

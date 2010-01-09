@@ -607,7 +607,7 @@ OSXAudioDevice::OSXAudioDevice(const char *desc) : _impl(new Impl)
 			   }
                else if (strchr(selecters[dir], '-') == NULL) {
                   // Parse non-range selecter (single digit)
-                  _impl->port[dir].streamIndex = strtol(selecters[dir], NULL, 0);
+                  _impl->port[dir].streamIndex = (int) strtol(selecters[dir], NULL, 0);
                }
                else {
                   // Parse selecter of form "X-Y"

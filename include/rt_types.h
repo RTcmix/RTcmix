@@ -10,6 +10,12 @@
 #define BUFTYPE float           /* could be double some day */
 typedef BUFTYPE *BufPtr;
 
+#if BUFTYPE == float
+#define ZERO 0.0f
+#else
+#define ZERO 0.0
+#endif
+
 /* This should probably go someplace else in this file? */
 typedef enum {
   NO = 0,

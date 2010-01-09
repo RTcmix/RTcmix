@@ -29,13 +29,13 @@ void Orand::timeseed()
 
 float Orand::random()
 {
-	int i = ((rand_x = rand_x * 1103515245 + 12345) >> 16) & 077777;
+	long i = ((rand_x = rand_x * 1103515245 + 12345) >> 16) & 077777;
 	return (float) i / 32768.0;
 }
 
 float Orand::rand()
 {
-	int i = ((rand_x = rand_x * 1103515245 + 12345) >> 16) & 077777;
+	long i = ((rand_x = rand_x * 1103515245 + 12345) >> 16) & 077777;
 	return ((float) i / 16384.0) - 1.0;
 }
 

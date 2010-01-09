@@ -6,7 +6,7 @@
 
 extern SFMAXAMP      sfm[NFILES];
 extern SFHEADER	     sfdesc[NFILES];
-extern long filepointer[NFILES];
+extern off_t filepointer[NFILES];
 extern int sfd[NFILES];
 extern int isopen[NFILES];
 

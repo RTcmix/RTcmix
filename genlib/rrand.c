@@ -12,6 +12,6 @@ srrand(unsigned int x)
 
 float rrand()
 {
-	int i = ((randx = randx*1103515245 + 12345)>>16) & 077777;
+	long i = ((randx = randx*1103515245 + 12345)>>16) & 077777;
 	return((float)i/16384. - 1.);
 }

@@ -17,12 +17,12 @@ extern int  status[NFILES];
 extern char peakoff[NFILES];
 extern char *sndbuf[NFILES];     /* address of buffer */
 extern char wipe_is_off[NFILES]; /* this is for wipeout */
-extern long filepointer[NFILES]; /* to save current pointer in file */
+extern off_t filepointer[NFILES]; /* to save current pointer in file */
 
 extern SFHEADER      sfdesc[NFILES];
 
 
-int
+off_t
 inrepos(int samps, int fno)
 {
         int seeking,amt;
@@ -46,7 +46,7 @@ inrepos(int samps, int fno)
         return(filepointer[fno]);
 }
 
-int
+off_t
 outrepos(int samps, int fno)
 {
         int seeking,amt;
@@ -64,7 +64,7 @@ outrepos(int samps, int fno)
                 return(pointer[fno]);
                 }
         
-        if(wipe_is_off) _backup(fno);
+        if(wipe_is_off[fno]) _backup(fno);
         if(!peakoff[fno]) _chkpeak(fno);
         _writeit(fno);          /* write out current buffer */
         seeking = (amt - bufsize[fno]) * sfclass(&sfdesc[fno]);
@@ -74,7 +74,7 @@ outrepos(int samps, int fno)
                 closesf();
                 }
         
-        if(wipe_is_off) _readit(fno);
+        if(wipe_is_off[fno]) _readit(fno);
         pointer[fno] = 0;
         return(filepointer[fno]);
 }

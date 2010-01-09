@@ -259,7 +259,7 @@ dump(struct symbol *p, FILE * fp)
 
 /* Has error-checking for malloc built in. */
 char *
-emalloc(int nbytes)
+emalloc(long nbytes)
 {
    char *s;
 

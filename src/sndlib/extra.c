@@ -39,7 +39,7 @@ void mus_error(int error, const char *format, ...)
     (*mus_error_handler)(error, mus_error_buffer);
   else 
     {
-      fprintf(stderr, mus_error_buffer);
+      fprintf(stderr, "%s", mus_error_buffer);
       fputc('\n', stderr);
     }
 #else

@@ -91,7 +91,7 @@ public:
   ~RTQueue();
   void push(Instrument*, unsigned long);
   Instrument *pop();
-  int nextChunk();
+  unsigned long nextChunk();
   // Return the number of elements on the RTQueue
   int getSize() const { return size; }
   void print();  // For debugging

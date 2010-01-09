@@ -297,11 +297,11 @@ void Instrument::schedule(heap *rtHeap)
 {
   // Calculate variables for heap insertion
   float dur = getdur();
-  int samps = (int) (0.5 + dur * SR);	// Rounded to nearest - DS
+  long samps = (int) (0.5 + dur * SR);	// Rounded to nearest - DS
   //  cout << "nsamps = " << samps << endl;
   
   float start = getstart();
-  int startsamp = (int) (0.5 + start * SR);	// Rounded to nearest - DS
+  long startsamp = (long) (0.5 + start * SR);	// Rounded to nearest - DS
   
   if (RTcmix::interactive()) {
 #ifdef RTUPDATE
@@ -311,7 +311,7 @@ void Instrument::schedule(heap *rtHeap)
   	startsamp += RTcmix::getElapsedFrames();
   }
   
-  int endsamp = startsamp+samps;
+  long endsamp = startsamp+samps;
   setendsamp(endsamp);  // used by intraverse.cpp
   
   // place instrument into heap

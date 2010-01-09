@@ -23,7 +23,7 @@ Random::~Random() {}
 inline double Random::rawvalue()
 {
 	_randx = (_randx * 1103515245) + 12345;
-	int k = (_randx >> 16) & 077777;
+	long k = (_randx >> 16L) & 077777;
 	return (double) k / 32768.0;
 }
 

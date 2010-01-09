@@ -127,7 +127,7 @@ static int _str_to_int(const char *str, int &val)
 	long num = strtol(str, &pos, 10);
 	if (*pos != 0)
 		return -1;
-	val = num;
+	val = (int) num;
 	return 0;
 }
 
@@ -354,7 +354,7 @@ static int _parse_arg(const char *arg, const bool rtsetparams_called)
 	// whole string is to preserve options that must include spaces, such
 	// as "MOTU 828".  Store result into <opt>.
 
-	int len = arg ? strlen(arg) : 0;
+	long len = arg ? strlen(arg) : 0;
 	if (len > OPT_STRLEN - 1)
 		len = OPT_STRLEN - 1;
 

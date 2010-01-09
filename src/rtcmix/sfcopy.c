@@ -9,7 +9,7 @@
 /* these are all defined in sound.c */
 extern int  sfd[NFILES];            /* soundfile descriptors */
 extern char *sndbuf[NFILES];        /* address of buffer */
-extern long  filepointer[NFILES];   /* to save current pointer in file */
+extern off_t  filepointer[NFILES];   /* to save current pointer in file */
 extern int   nbytes;
 extern SFHEADER      sfdesc[NFILES];
 

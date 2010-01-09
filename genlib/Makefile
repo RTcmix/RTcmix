@@ -81,6 +81,7 @@ pluck.o \
 pluckset.o \
 randf.o \
 random.o \
+randfuncs.o \
 reson.o \
 resonz.o \
 reverb.o \

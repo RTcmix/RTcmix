@@ -54,7 +54,7 @@ extern short isNext;
 
 /* size of buffer to allocate.  this is no longer user-configurable */
 /* JGG: might want to make this 64*1024 in Linux */
-int nbytes = 32768;          /* exported only for the sake of sfcopy.c */
+off_t nbytes = 32768;          /* exported only for the sake of sfcopy.c */
 
 static int play_is_on=0;
 int  sfd[NFILES];            /* soundfile descriptors */
@@ -70,8 +70,8 @@ char peakoff[NFILES];        /* this will set peak test on or off*/
 static float punch[NFILES];	     /* punch alteration flags */
 static char istape[NFILES];         /* flag to see if it is a tape unit */
 static double starttime[NFILES];    /* to save starting time of note */
-static long  originalsize[NFILES];  /* to save byte length of file */
-long  filepointer[NFILES];   /* to save current pointer in file */
+static off_t  originalsize[NFILES];  /* to save byte length of file */
+off_t  filepointer[NFILES];   /* to save current pointer in file */
 int status[NFILES];	     /* save read/write flage as well */
 int isopen[NFILES];	     /* open status */
 int headersize[NFILES];      /* to accomodate bsd and next headers */
@@ -822,10 +822,11 @@ punch_on(float p[], int n_args)
 	return 0.0;
 }
 
-int
+off_t
 _readit(int fno)
 {
-	int i,n,maxread;
+	int i;
+	off_t n, maxread;
 	short tisamp,*tibuf;
 	float tfsamp,*tfbuf;
 
@@ -849,7 +850,7 @@ _readit(int fno)
 				/*if(istape[fno] && n) continue;*/
 				perror("read");
 				fprintf(stderr,
-				    "CMIX: Bad UNIX read, nbytes = %d\n",n);
+				    "CMIX: Bad UNIX read, nbytes = %lld\n",(long long)n);
 				fprintf(stderr, " sfd[fno]= %d\n",sfd[fno]);
 			        closesf();
 			}
@@ -898,10 +899,11 @@ _readit(int fno)
 	return(maxread ? n : maxread);
 }
 
-int
+off_t
 _writeit(int fno)
 {
-	int i,n=0;
+	int i;
+	off_t n=0;
 	short tisamp,*tibuf;
 	float tfsamp,*tfbuf;
 	float peakval;
@@ -953,7 +955,7 @@ _writeit(int fno)
 	if(play_is_on < 2) {
 		if((n = write(sfd[fno],sndbuf[fno],nbytes)) != nbytes) {
 			fprintf(stderr,
-					"CMIX: Bad UNIX write, file %d, nbytes = %d\n",fno,n);
+					"CMIX: Bad UNIX write, file %d, nbytes = %lld\n",fno,(long long)n);
 			perror("write");
 			closesf();
 		}
@@ -1025,7 +1027,8 @@ double
 m_clean(float p[], int n_args) /* a fast clean of file, after header */
 {
 /* if p1-> = 0, clean whole file, else skip=p1, dur=p2, ch-on? p3--> */
-	int i,todo,nwrite,n;
+	int i;
+	off_t n, nwrite, todo;
 	char *point;
 	int fno,segment,chlist[4];
 	int skipbytes;
@@ -1059,7 +1062,7 @@ m_clean(float p[], int n_args) /* a fast clean of file, after header */
 		fprintf(stderr,"CMIX: bad sflseek in clean\n");
 		closesf();
 	}
-	printf("Clean %d bytes\n",todo);
+	printf("Clean %lld bytes\n",(long long)todo);
 	while(todo) {
 		nwrite = (todo > nbytes) ? nbytes : todo;
 		if(segment) {

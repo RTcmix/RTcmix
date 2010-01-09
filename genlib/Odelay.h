@@ -72,7 +72,7 @@ public:
 	virtual float delay() const;
 	
 protected:
-	int	  resize(long newLen);
+	long	resize(long newLen);
 
 protected:
 	float *_dline;

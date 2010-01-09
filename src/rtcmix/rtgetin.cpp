@@ -230,7 +230,7 @@ read_float_samps(
 
    const int bytes_requested = dest_frames * file_chans * bytes_per_samp;
    const long bytes_remaining = endbyte - cur_offset;
-   const int extra_bytes = (bytes_requested > bytes_remaining)
+   const long extra_bytes = (bytes_requested > bytes_remaining)
                            ? bytes_requested - bytes_remaining : 0;
    ssize_t bytes_to_read = lmin(bytes_remaining, bytes_requested);
 
@@ -318,7 +318,7 @@ read_24bit_samps(
 
    const int bytes_requested = dest_frames * file_chans * bytes_per_samp;
    const long bytes_remaining = endbyte - cur_offset;
-   const int extra_bytes = (bytes_requested > bytes_remaining)
+   const long extra_bytes = (bytes_requested > bytes_remaining)
                            ? bytes_requested - bytes_remaining : 0;
    ssize_t bytes_to_read = lmin(bytes_remaining, bytes_requested);
 
@@ -410,7 +410,7 @@ read_short_samps(
 
    const int bytes_requested = dest_frames * file_chans * bytes_per_samp;
    const long bytes_remaining = endbyte - cur_offset;
-   const int extra_bytes = (bytes_requested > bytes_remaining)
+   const long extra_bytes = (bytes_requested > bytes_remaining)
                            ? bytes_requested - bytes_remaining : 0;
    ssize_t bytes_to_read = lmin(bytes_remaining, bytes_requested);
 

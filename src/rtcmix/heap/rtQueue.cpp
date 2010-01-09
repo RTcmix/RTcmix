@@ -25,7 +25,7 @@ RTQueue::~RTQueue()
 
 // Return the starting sample chunk of the top Instrument
 
-int RTQueue::nextChunk()
+unsigned long RTQueue::nextChunk()
 {
   return head->chunkstart;
 }

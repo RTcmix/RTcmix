@@ -129,7 +129,7 @@ static int string_to_partials(const char *str)
 	long num = strtol(str, &pos, 10);
 	if (*pos != 0)
 		return -1;
-	return num;
+	return (int) num;
 }
 
 static const int kMaxPartials = 1000;

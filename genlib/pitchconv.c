@@ -86,7 +86,7 @@ INLINE double octlet(unsigned char *let)
 	int let2semitone[] = {9, 11, 0, 2, 4, 5, 7};
 	int octave = -9999;
 	int semitones = -9999;
-	int cents = 0;
+	long cents = 0;
 	int state = 0;
 
 	unsigned char *p = let;

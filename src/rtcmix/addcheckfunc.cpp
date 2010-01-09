@@ -321,7 +321,7 @@ RTcmix::registerDSOs(const char *pathList)
 	bool done = false;
 	while (list != NULL) {
 		char path[1024];
-		int itemLen;
+		long itemLen;
 		const char *nextItem = strchr(list, ':');
 		if (nextItem != NULL) {
 			itemLen = nextItem - list;

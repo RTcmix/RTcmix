@@ -8,6 +8,7 @@
 #define NAMESIZE 128    /* Max size of file name */
 #define	UG_NULL	(struct ug_item *)0
 
+#include <sys/types.h>
 #include <rt_types.h>
 
 #define NFILES       12       /* maximum number of opened files */
@@ -151,16 +152,16 @@ void bwipeout(float *out, int fno, int size);
 int endnote(int xno);
 void _flushbuf(int fno);
 void _chkpeak(int fno);
-int _readit(int fno);
-int _writeit(int fno);
+off_t _readit(int fno);
+off_t _writeit(int fno);
 void _backup(int fno);
 void _forward(int fno);
 void closesf(void);
 void closesf_noexit(void);
 
 /* minout.c */
-int inrepos(int samps, int fno);
-int outrepos(int samps, int fno);
+off_t inrepos(int samps, int fno);
+off_t outrepos(int samps, int fno);
 
 /* fnscl.c */
 void fnscl(struct gen *gen);

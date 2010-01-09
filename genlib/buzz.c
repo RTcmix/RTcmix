@@ -8,7 +8,8 @@
 
 float buzz(float amp, float si, float hn, double *f, float *phs)
 {
-	register int j,k;
+	register int j;
+	long k;
 	float q,d,h2n,h2np1;
 	j = *phs;
 	k = (j+1) % 1024;

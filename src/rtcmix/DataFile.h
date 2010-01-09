@@ -70,7 +70,7 @@ private:
 	template <typename T>
 	inline int _write(const T val)
 	{
-		int nitems = fwrite(&val, sizeof(T), 1, _stream);
+		long nitems = fwrite(&val, sizeof(T), 1, _stream);
 		if (nitems != 1 && ferror(_stream))
 			return -1;
 		return 0;
@@ -80,7 +80,7 @@ private:
 	template <typename T>
 	inline int _read(T *val)
 	{
-		int nitems = fread(val, sizeof(T), 1, _stream);
+		long nitems = fread(val, sizeof(T), 1, _stream);
 		return (nitems != 1) ? -1 : 0;
 	}
 

@@ -324,8 +324,8 @@ int ALSAAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 		if ((status = snd_pcm_sw_params_current(_handle, swParams)) < 0) {
 			return error("Cannot initialize sw params: ", snd_strerror (status));
 		}
-		PRINT0("Testing: HW will wake us when %d frames can be %s\n",
-			   tryperiodsize, isPlaying() ? "written" : "read");
+		PRINT0("Testing: HW will wake us when %u frames can be %s\n",
+			   (unsigned)tryperiodsize, isPlaying() ? "written" : "read");
 		if ((status = snd_pcm_sw_params_set_avail_min(_handle, swParams, tryperiodsize)) < 0) {
 			return error("Cannot set minimum available count: ", 
 						 snd_strerror (status));

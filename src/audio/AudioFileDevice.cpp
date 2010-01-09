@@ -157,8 +157,8 @@ int AudioFileDevice::doGetFrames(void *frameBuffer, int frameCount)
 
 int	AudioFileDevice::doSendFrames(void *frameBuffer, int frames)
 {
-	int bytesToWrite = frames * getDeviceBytesPerFrame();
-	int bytesWritten = ::write(device(), frameBuffer, bytesToWrite);
+	long bytesToWrite = frames * getDeviceBytesPerFrame();
+	long bytesWritten = ::write(device(), frameBuffer, bytesToWrite);
 	if (bytesWritten < 0) {
 		return error("Error writing to file.");
 	}
