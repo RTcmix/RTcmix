@@ -47,7 +47,7 @@ endif
 #
 #   $ CFLAGS="-g" ./configure [...]
 #
-OPT += -Wall -Wno-unused @PTRSIZEFLAG@
+OPT += -Wall -Wno-unused
 
 # The path to this file
 MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
@@ -88,7 +88,7 @@ ifeq ($(ARCH),LINUX)
   SHLIB_SUFFIX = so
 endif
 ifeq ($(ARCH),MACOSX)
-  ARCHFLAGS = -DMACOSX -fno-common -m32 -arch i386
+  ARCHFLAGS = -DMACOSX -fno-common
   ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX)
   CC = cc
   CXX = c++ -Wno-deprecated
@@ -168,7 +168,7 @@ ifeq ($(ARCH),LINUX)
     SYS_LDFLAGS = -lpthread -lm -ldl #-lefence
   endif
   DSO_LDFLAGS = $(OPT) $(SYSLIBS)
-  SHARED_LDFLAGS = @PTRSIZEFLAG@ -shared -Wl,-soname,$@
+  SHARED_LDFLAGS = -shared -Wl,-soname,$@
   DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
   DYN = -rdynamic
 endif
