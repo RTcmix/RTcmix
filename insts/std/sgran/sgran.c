@@ -70,7 +70,6 @@ sgran(float p[], int n_args)
 	double flodiff,fmiddiff,fhidiff,ftidiff;
 	int len,j,z,chans,randflag=0;
 
-	int outrepos();
 	float rrand();
 	void srrand();
 	double prob();

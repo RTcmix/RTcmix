@@ -23,7 +23,7 @@ DataSet::~DataSet()
 	delete [] _array;
 }
 
-int
+off_t
 DataSet::open(const char *fileName, int npoleGuess, float sampRate)
 {
     if ((_fdesc = ::open(fileName, O_RDONLY)) < 0) {
