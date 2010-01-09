@@ -5,6 +5,7 @@
 //
 
 #include <stdint.h>  // for int32_t
+#include <sndlib.h>	 // for ENDIAN
 
 enum Endian { Little, Big };
 
@@ -94,7 +95,7 @@ inline int32_t normalize<int32_t>(bool doIt, const int32_t &value) {
 template<>
 inline float normalize<float>(bool doIt, const float &value) { return doIt ? value * kNormalizer : value; }
 
-#if defined(i386) || defined(_i386)
+#if MUS_LITTLE_ENDIAN
 static const Endian kMachineEndian = Little;
 #else
 static const Endian kMachineEndian = Big;
