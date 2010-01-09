@@ -8,7 +8,7 @@ PROGS = wanderfreq
 
 wanderfreq: $(OBJS) $(IMBCMIXOBJS)
 	cd MYWAVETABLE; make
-	$(CXX) -o $@ $(DYN) $(OBJS) $(IMBCMIXOBJS) $(LDFLAGS)
+	$(CXX) -o $@ $(DYN) $(OBJS) $(IMBCMIXOBJS) $(CXXFLAGS) $(LDFLAGS)
 
 wanderfreq.o:	wanderfreq.cpp $(INCLUDEDIR)/RTcmix.h $(INCLUDEDIR)/Instrument.h
 

@@ -7,7 +7,7 @@ IMBCMIXOBJS += $(PROFILE_O)
 PROGS = happykeys
 
 happykeys: $(OBJS) $(IMBCMIXOBJS)
-	$(CXX) -o $@ $(DYN) $(OBJS) $(IMBCMIXOBJS) $(LDFLAGS) -lcurses
+	$(CXX) -o $@ $(DYN) $(OBJS) $(IMBCMIXOBJS) $(CXXFLAGS) $(LDFLAGS) -lcurses
 
 clean:
 	$(RM) *.o $(OBJS) $(PROGS)
