@@ -12,14 +12,6 @@
 #include <assert.h>
 #include <sndlibsupport.h>	// RTcmix header
 
-// Get the correct native endian float
-
-#ifdef __ppc__
-#define PLATFORM_FLOAT	MUS_BFLOAT
-#else
-#define PLATFORM_FLOAT MUS_LFLOAT
-#endif
-
 #define DEBUG 0
 
 static const char *errToString(OSStatus err);
@@ -1000,7 +992,7 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 #endif
 	}
 	
-	int deviceFormat = PLATFORM_FLOAT | MUS_NORMALIZED;
+	int deviceFormat = NATIVE_FLOAT_FMT | MUS_NORMALIZED;
 	// We set the device format based upon whether we are recording or playing.
 	int portIndex = _impl->playing ? PLAY : REC;
 	port = &_impl->port[portIndex];
