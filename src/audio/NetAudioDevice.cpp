@@ -35,17 +35,15 @@
 
 #define DEBUG 0
 
-#if DEBUG > 0
-#define PRINT0 if (1) printf
-#define PRINT1 if (0) printf
-#else
 #if DEBUG > 1
 #define PRINT0 if (1) printf
 #define PRINT1 if (1) printf
+#elif DEBUG > 0
+#define PRINT0 if (1) printf
+#define PRINT1 if (0) printf
 #else
 #define PRINT0 if (0) printf
 #define PRINT1 if (0) printf
-#endif
 #endif
 
 static const int kDefaultSockNumber = 9999;
@@ -70,12 +68,17 @@ static const int kNetAudioFormat_Size = sizeof(NetAudioFormat);
 static const int kNetAudioSampfmt = NATIVE_SHORT_FMT | MUS_INTERLEAVED;
 
 struct NetAudioDevice::Impl {
-	Impl() : hostname(NULL), sockno(-1), sockdesc(-1) {}
+	Impl() : hostname(NULL), sockno(-1), sockdesc(-1), currentBuffer(0) { 
+		doubleBuffers[0] = doubleBuffers[1] = NULL; 
+	}
+	~Impl() { free(doubleBuffers[0]); free(doubleBuffers[1]); }
 	char				*hostname;
 	int					sockno;
 	struct sockaddr_in	sss;
 	int					sockdesc;			// as opened by socket()
 	int					framesPerWrite;		// set via doSetQueueSize()
+	void *				doubleBuffers[2];
+	int					currentBuffer;
 };
 
 inline bool NetAudioDevice::connected() { return device() > 0; }
@@ -179,6 +182,16 @@ NetAudioDevice::doOpen(int mode)
 			return error("Network socket connect failed: ",
 						 strerror(errno));
 		}
+		/* Set socket to blocking.  First get current flags */
+	    int flags;
+	    if ((flags = fcntl(_impl->sockdesc, F_GETFL, 0)) >= 0) {
+			if (fcntl(_impl->sockdesc, F_SETFL, flags & (~O_NONBLOCK)) < 0)  {
+				printf("NetAudioDevice: Failed to set socket to non-blocking: %s\n", strerror(errno));
+			}     	
+	    }
+		else {  
+			printf("NetAudioDevice: Failed to get socket flags.\n");
+		}
 		setDevice(_impl->sockdesc);
 		break;
 	case Record:
@@ -264,6 +277,16 @@ int
 NetAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 {
 	_impl->framesPerWrite = *pWriteSize;
+	// We need double-buffering on the capture end.
+	if (isRecording()) {
+		int bufsize = _impl->framesPerWrite * getDeviceBytesPerFrame();
+		_impl->doubleBuffers[0] = malloc(bufsize);
+		if (_impl->doubleBuffers[0] == NULL)
+			return error("Unable to allocate NetAudioDevice double buffers");
+		_impl->doubleBuffers[1] = malloc(bufsize);
+		if (_impl->doubleBuffers[1] == NULL)
+			return error("Unable to allocate NetAudioDevice double buffers");
+	}
 	return 0;
 }
 
@@ -271,8 +294,8 @@ int
 NetAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 {
 	int bytesToRead = frameCount * getDeviceBytesPerFrame();
-	char *cbuf = (char *) frameBuffer;
 	int bytesRead = 0;
+	char *cbuf = (char *) _impl->doubleBuffers[_impl->currentBuffer];
 	while (bytesRead < bytesToRead) {
 		int bytesNeeded = bytesToRead - bytesRead;
 //		printf("NetAudioDevice::doGetFrames: reading %d bytes from stream...\n", bytesNeeded);
@@ -289,6 +312,8 @@ NetAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 		}
 		bytesRead += bytes;
 	}
+	memcpy(frameBuffer, _impl->doubleBuffers[_impl->currentBuffer], bytesRead);
+	_impl->currentBuffer = !_impl->currentBuffer;	// swap
 	int framesRead = bytesRead / getDeviceBytesPerFrame();
 	incrementFrameCount(framesRead);
 	return framesRead;
@@ -348,6 +373,16 @@ int NetAudioDevice::waitForConnect()
 	if (sockdev < 0) {
 		::close(_impl->sockdesc);
 		return error("Network accept failed: ", strerror(errno));
+	}
+	/* Set socket to blocking.  First get current flags */
+    int flags;
+    if ((flags = fcntl(sockdev, F_GETFL, 0)) >= 0) {
+		if (fcntl(sockdev, F_SETFL, flags & (~O_NONBLOCK)) < 0)  {
+			printf("NetAudioDevice: Failed to set socket to non-blocking: %s\n", strerror(errno));
+		}     	
+    }
+	else {  
+		printf("NetAudioDevice: Failed to get socket flags.\n");
 	}
 	setDevice(sockdev);
 	printf("NetAudioDevice: got connection\n");
@@ -411,6 +446,11 @@ int NetAudioDevice::configure()
 	if (swapped) {
 		PRINT0("debug: header cookie was opposite endian\n");
 		netformat.fmt = swap(netformat.fmt);
+		// Indicate we are receiving opposite endian data
+		if (MUS_GET_FORMAT(netformat.fmt) == MUS_LSHORT)
+			netformat.fmt = MUS_BSHORT;		// We OR in interleaved below
+		else if (MUS_GET_FORMAT(netformat.fmt) == MUS_BSHORT)
+			netformat.fmt = MUS_LSHORT;		// We OR in interleaved below
 		netformat.chans = swap(netformat.chans);
 		netformat.sr = swap(netformat.sr);
 		netformat.blockFrames = swap(netformat.blockFrames);
