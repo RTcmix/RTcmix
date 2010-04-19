@@ -20,10 +20,10 @@
 
 using namespace std;
 
-//#define TBUG
-//#define ALLBUG
-//#define DBUG
-//#define WBUG	/* this new one turns on prints of where we are */
+#undef TBUG
+#undef ALLBUG
+#undef DBUG
+#undef WBUG	/* this new one turns on prints of where we are */
 
 // Temporary globals
 
@@ -95,6 +95,7 @@ int RTcmix::runMainLoop(void)
 			// Start audio output device, handing it our callback.
 			if (audioDevice->start(inTraverse, this) != 0) {
 				cerr << audioDevice->getLastError() << endl;
+				audioDone = true;
 				return -1;
 			}
 			return 0;	// Playing, thru HW and/or to FILE.

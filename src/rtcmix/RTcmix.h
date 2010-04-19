@@ -137,6 +137,7 @@ protected:
 	static int checkfunc(const char *funcname, const Arg arglist[], const int nargs, Arg *retval);
 	static int findAndLoadFunction(const char *funcname);
 	static void freefuncs();
+	static long getElapsed() { return elapsed; }
 
 protected:
 	/* Note: these 3 vars also extern in rtdefs.h, for use by insts */

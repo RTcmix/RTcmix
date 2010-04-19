@@ -702,7 +702,7 @@ RTcmixMain::sockit(void *arg)
 		else {
 	
 #ifdef DBUG
-		  cout << "sockit(): elapsed = " << elapsed << endl;
+		  cout << "sockit(): elapsed = " << getElapsed() << endl;
 		  cout << "sockit(): SR = " << SR << endl;
 #endif
 		  if(sinfo->name) {
