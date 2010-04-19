@@ -774,7 +774,10 @@ _expbrk_table(const Arg args[], const int nargs, double *array, const int len)
 		int j = i + 1;
 		array[i] = amp1;
 		double c = pow((amp2 / amp1), (1.0 / (double) args[k]));
-		i = (j - 1) + (int) args[k];
+		int increment = (int) args[k];
+		if (increment <= 0)
+			return die("maketable (expbrk)", "Bad time argument.");
+		i = (j - 1) + increment;
 		for (int l = j; l < i; l++) {
 			if (l < len) {
 				array[l] = array[l - 1] * c;
