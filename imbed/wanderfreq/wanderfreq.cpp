@@ -40,20 +40,20 @@ main(int argc, char *argv[])
 	sleep(1); // give the thread time to initialize
 
 	// load up MYWAVETABLE and set the makegens
-	rrr->cmd("load", 1, "./MYWAVETABLE/libMYWAVETABLE.so");
-	rrr->cmd("makegen", 9,
+	rrr->cmd((char *)(char *)"load", 1, (char *)"./MYWAVETABLE/libMYWAVETABLE.so");
+	rrr->cmd((char *)"makegen", 9,
 			1.0, 24.0, 1000.0, 0.0, 0.0, 1.0, 1.0, 999.0, 1.0);
-	rrr->cmd("makegen", 6, 2.0, 10.0, 1000.0, 1.0, 0.3, 0.1);
+	rrr->cmd((char *)"makegen", 6, 2.0, 10.0, 1000.0, 1.0, 0.3, 0.1);
 
 	for (i = 0; i < NINSTS; i++) {
 		// isn't this cute?  we can use RTcmix score functions
-		curfreq[i] = rrr->cmd("random") * 1000.0 + 100.0;
-		targfreq[i] = rrr->cmd("random") * 1000.0 + 100.0;
-		freqinc[i] = rrr->cmd("random") * 9.0 + 1.0;
+		curfreq[i] = rrr->cmd((char *)"random") * 1000.0 + 100.0;
+		targfreq[i] = rrr->cmd((char *)"random") * 1000.0 + 100.0;
+		freqinc[i] = rrr->cmd((char *)"random") * 9.0 + 1.0;
 		if (curfreq[i] > targfreq[i]) freqinc[i] = -freqinc[i];
 
 		// start the notes, looooong duration
-		theWaves[i] = (MYWAVETABLE*)rrr->cmd("MYWAVETABLE", 5,
+		theWaves[i] = (MYWAVETABLE*)rrr->cmd((char *)"MYWAVETABLE", 5,
 			0.0, duration, 30000.0/(double)NINSTS, curfreq[i],
 			(double)i*(1.0/(double)NINSTS));
 		theWaves[i]->ref();	// Keep these from being destroyed
@@ -89,15 +89,15 @@ void wander()
 
 		if (freqinc[i] < 0.0) {
 			if (curfreq[i] < targfreq[i]) {
-				targfreq[i] = rrr->cmd("random")*1000.0 + 100.0;
-				freqinc[i] = rrr->cmd("random")*9.0 + 1.0;
+				targfreq[i] = rrr->cmd((char *)"random")*1000.0 + 100.0;
+				freqinc[i] = rrr->cmd((char *)"random")*9.0 + 1.0;
 				if (curfreq[i] > targfreq[i])
 					freqinc[i] = -freqinc[i];
 			}
 		} else {
 			if (curfreq[i] > targfreq[i]) {
-				targfreq[i] = rrr->cmd("random")*1000.0 + 100.0;
-				freqinc[i] = rrr->cmd("random")*9.0 + 1.0;
+				targfreq[i] = rrr->cmd((char *)"random")*1000.0 + 100.0;
+				freqinc[i] = rrr->cmd((char *)"random")*9.0 + 1.0;
 				if (curfreq[i] > targfreq[i])
 					freqinc[i] = -freqinc[i];
 			}

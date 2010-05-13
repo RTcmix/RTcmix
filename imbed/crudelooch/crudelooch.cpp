@@ -30,9 +30,9 @@ main(int argc, char *argv[])
 	sleep(1); // give the thread time to initialized
 
 	// set up the instrument
-	rrr->cmd("load", 1, "WAVETABLE");
-	rrr->cmd("makegen", 8, 1.0, 7.0, 1000.0, 0.0, 500.0, 1.0, 500.0, 0.0);
-	rrr->cmd("makegen", 10,
+	rrr->cmd((char *)"load", 1, (char *)"WAVETABLE");
+	rrr->cmd((char *)"makegen", 8, 1.0, 7.0, 1000.0, 0.0, 500.0, 1.0, 500.0, 0.0);
+	rrr->cmd((char *)"makegen", 10,
 		2.0, 10.0, 1000.0, 1.0, 0.5, 0.25, 0.125, 0.06, 0.03, 0.015);
 
 
@@ -44,25 +44,25 @@ main(int argc, char *argv[])
 				start = 1.0;
 				dur = brrand() * 20.0 + 5.0;
 				pchval = pitches[(int)(brrand() * 14.0)];
-				rrr->cmd("WAVETABLE", 5,
+				rrr->cmd((char *)"WAVETABLE", 5,
 					start, dur, 5000.0, pchval, 0.0);
 
 				start += brrand();
 				dur += brrand();
 				pchval += rrand() * (pchval * 0.0069);
-				rrr->cmd("WAVETABLE", 5,
+				rrr->cmd((char *)"WAVETABLE", 5,
 					start, dur, 5000.0, pchval, 1.0);
 
 				start += brrand();
 				dur += brrand();
 				pchval += rrand() * (pchval * 0.0069);
-				rrr->cmd("WAVETABLE", 5,
+				rrr->cmd((char *)"WAVETABLE", 5,
 					start, dur, 5000.0, pchval, 0.2);
 
 				start += brrand();
 				dur += brrand();
 				pchval += rrand() * (pchval * 0.0069);
-				rrr->cmd("WAVETABLE", 5,
+				rrr->cmd((char *)"WAVETABLE", 5,
 					start, dur, 5000.0, pchval, 0.8);
 			}
 		}

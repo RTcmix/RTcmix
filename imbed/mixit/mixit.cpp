@@ -31,11 +31,11 @@ main(int argc, char *argv[])
 	rrr->printOff();
 	sleep(1); // give the thread time to initialized
 
-	rrr->cmd("load", 1, "STEREO");
-	rrr->cmd("rtinput", 1, name);
-	filedur = rrr->cmd("DUR");
-	rrr->cmd("setline", 6, 0.0, 0.0, 0.05, 1.0, 0.1, 0.0);
-	rrr->cmd("reset", 1, 44100.0);
+	rrr->cmd((char *)(char *)"load", 1, (char *)"STEREO");
+	rrr->cmd((char *)"rtinput", 1, name);
+	filedur = rrr->cmd((char *)"DUR");
+	rrr->cmd((char *)"setline", 6, 0.0, 0.0, 0.05, 1.0, 0.1, 0.0);
+	rrr->cmd((char *)"reset", 1, 44100.0);
 
 	tsrand(); // seed wthe random number generators with time-of-day
 
@@ -45,7 +45,7 @@ main(int argc, char *argv[])
 		outsk = 0.0;
 		for (i = 0; i < 100; i++) {
 			insk = brrand() * filedur;
-			rrr->cmd("STEREO", 6, outsk, insk, dur, 1.0, 0.0, 1.0);
+			rrr->cmd((char *)"STEREO", 6, outsk, insk, dur, 1.0, 0.0, 1.0);
 			outsk += 0.01;
 		}
 		sleep(1);
