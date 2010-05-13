@@ -2,8 +2,8 @@ include ../../../makefile.conf
 
 CONNLIB = libpfbusconn.so
 
-OBJS = PFBusPfield.o pfbusglue.o
-SRCS = PFBusPfield.cpp pfbusglue.cpp
+OBJS = PFBusPField.o pfbusglue.o
+SRCS = PFBusPField.cpp pfbusglue.cpp
 
 CXXFLAGS += -I. -I../../rtcmix
 
@@ -12,7 +12,7 @@ all: $(CONNLIB)
 $(CONNLIB): depend $(OBJS)
 	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS)
 
-pfbusglue.o: pfbusglue.cpp PFBusPfield.h
+pfbusglue.o: pfbusglue.cpp PFBusPField.h
 	$(CXX) $(CXXFLAGS) -c -o pfbusglue.o pfbusglue.cpp
 
 depend:
