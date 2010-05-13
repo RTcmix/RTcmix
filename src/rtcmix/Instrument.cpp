@@ -23,6 +23,10 @@
 #include <PFieldSet.h>
 #include <maxdispargs.h>
 
+// when this goes to 1 (in PFBusPField.cpp, set by a mechanism in the PFSCHED
+// instrument), then it signals that *this* Instrument/note is to de-queue
+int do_dq = 0;
+
 using namespace std;
 
 InputState::InputState()
@@ -183,6 +187,14 @@ int Instrument::update(double p[], int nvalues, unsigned fields)
 	}
 	for (; n < nvalues; ++n)
 		p[n] = 0.0;
+
+	// de-queue the note and reset the flag
+	if (do_dq == 1) {
+		int realstart = getendsamp() - nSamps();
+		setendsamp(realstart + currentFrame());
+		do_dq = 0;
+	}
+
 	return 0;
 }
 
@@ -203,6 +215,14 @@ double Instrument::update(int index, int totframes)
 	double percent = double(currentFrame()) / nframes;
 	if (percent > 1.0)
 		percent = 1.0;
+
+	// de-queue the note and reset the flag
+	if (do_dq == 1) {
+		int realstart = getendsamp() - nSamps();
+		setendsamp(realstart + currentFrame());
+		do_dq = 0;
+	}
+
 	return (*_pfields)[index].doubleValue(percent);
 }
 
