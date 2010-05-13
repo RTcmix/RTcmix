@@ -11,6 +11,8 @@
 	p1 = duration
 	p2 = 'pfield bus' to use
 	p3 = input PField variable
+	p4 = [optional] flag to set instrument to de-queue itself at end
+		of the duration
 
 	BGG, 11/2009
 */
@@ -54,15 +56,19 @@ int PFSCHED::init(double p[], int n_args)
 	if (rtsetoutput(p[0], p[1]+((double)(RTBUFSAMPS+1)/SR), this) == -1)
 		return DONT_SCHEDULE;
 
+	// if set_dq_flag is 1, then the dqflag of pfbusses[] will be set to
+	// signal de-queuing at end of this duration/envelope
+	if (n_args > 4) set_dq_flag = 1;
+	else set_dq_flag = 0;
+
 	pfbus = p[2];
 
 	pfbusses[pfbus].drawflag = 0; // the 'connected' note will read when == 1
 //	pfbusses[pfbus].thepfield = &((*_pfields)[3]);
 	pfbusses[pfbus].thepfield = &(getPField(3)); // this is the PField to read
-	pfbusses[pfbus].percent = 0.0;
-	pfbusses[pfbus].theincr = (SR/(float)resetval)/(double)(nSamps()-(RTBUFSAMPS+1));
-	// note the subtraction above, thus the PField will be read for the
-	// correct duration
+
+	// set the other fields in ::run in case multiple PFSCHEDs on one pfbus
+	firsttime = 1;
 
 	return nSamps();
 }
@@ -82,7 +88,16 @@ int PFSCHED::run()
 {
 	int i;
 
-	pfbusses[pfbus].drawflag = 1; // signal to start reading from the pfield
+	if (firsttime == 1) {
+		pfbusses[pfbus].percent = 0.0;
+		pfbusses[pfbus].dqflag = 0;
+		// note the subtraction; the PField will be read for the correct duration
+		pfbusses[pfbus].theincr = (SR/(float)resetval)/(double)(nSamps()-(RTBUFSAMPS+1));
+		pfbusses[pfbus].drawflag = 1; // signal to start reading from the pfield
+		firsttime = 0;
+	}
+
+	if (set_dq_flag == 1) pfbusses[pfbus].dqflag = 1;
 	i = framesToRun();
 	increment(i);
 
