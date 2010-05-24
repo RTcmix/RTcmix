@@ -9,7 +9,7 @@ class FLANGE : public Instrument {
    Butter  *filt;
    ZComb   *zcomb;
    ZNotch  *znotch;
-   OscilN  *modoscil;
+   OscilL  *modoscil;
 
    int getFlangeType(bool trystring);
    void doupdate();

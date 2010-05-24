@@ -160,7 +160,7 @@ int FLANGE :: init(double p[], int n_args)
                     "or make an old-style gen function in slot 2.");
 		tablelen = fsize(2);
 	}
-   modoscil = new OscilN(SR, 0.0, modtable, tablelen);
+   modoscil = new OscilL(SR, 0.0, modtable, tablelen);
 
    amparray = floc(1);
    if (amparray) {
