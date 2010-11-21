@@ -21,6 +21,7 @@
 #include <Random.h>
 #include <utils.h>
 #include <ugens.h>		// for warn, die
+#include <maxdispargs.h>
 
 // Functions for creating and modifying double arrays.  These can be passed
 // from a script to RTcmix functions that can accept them.  Much of this code
@@ -1489,7 +1490,7 @@ _string_to_tablekind(const char *str)
 	return InvalidTable;
 }
 
-static int
+int
 _dispatch_table(const Arg args[], const int nargs, const int startarg,
 	double **array, int *len)
 {
@@ -1607,6 +1608,7 @@ maketable(const Arg args[], const int nargs)
 
 	bool normalize = true;
 	InterpType interp = kInterp1stOrder;
+	bool dynamic = false;
 
 	int lenindex = 1;					// following table type string w/ no options
 	for (int i = lenindex; i < nargs; i++) {
@@ -1622,6 +1624,10 @@ maketable(const Arg args[], const int nargs)
 			interp = kInterp1stOrder;
 		else if (args[i] == "interp2")
 			interp = kInterp2ndOrder;
+		else if (args[i] == "dynamic") {
+			dynamic = true;
+			normalize = false;
+		}
 		else {
 			die("maketable", "Invalid string option \"%s\".",
 													(const char *) args[i]);
@@ -1656,9 +1662,42 @@ maketable(const Arg args[], const int nargs)
 		}
 	}
 
-	if (_dispatch_table(args, nargs, lenindex + 1, &data, &len) != 0) {
-		delete [] data;
-		return NULL;				// error message already given
+	if (!dynamic) {
+		if (_dispatch_table(args, nargs, lenindex + 1, &data, &len) != 0) {
+			delete [] data;
+			return NULL;				// error message already given
+		}
+	} else { // setup for dynamic tables (PFSCHED/pfbus)
+		Arg targs[MAXDISPARGS];
+	
+		for (int i  = 0; i < lenindex; i++)
+			targs[i] = args[i];
+
+		for (int j = lenindex; j < nargs;  j++) {
+			if (args[j].isType(StringType)) targs[j] = DYNTABLETOKEN;
+			else targs[j] = args[j];
+		}
+
+		if (_dispatch_table(targs, nargs, lenindex + 1, &data, &len) != 0) {
+			delete [] data;
+			return NULL;				// error message already given
+		}
+		// BGG -- pass the maketable() spec in through the data for
+		// on-the-fly construction, here's the setup:
+		// data[0] == flag for DYNTABLE
+		// data[1] == number of spec vals
+		// data[2] == table size
+		// data[3...n] == original maketable() specs for the table
+
+		int nspecs = nargs-(lenindex+1);
+		data[0] = DYNTABLETOKEN;
+		data[1] = nspecs;
+		data[2] = (double)targs[lenindex];
+
+		for (int j = 0; j < nspecs; j++)
+			data[j+3] = (double)targs[lenindex+j+1];
+
+		interp = kTruncate;
 	}
 
 	if (normalize)
