@@ -308,7 +308,7 @@ RTcmix::init(float tsr, int tnchans, int bsize,
 // from the string-sending command (below).  An old holdover from ancient
 // cmix, but it's a handy thing
 Instrument *
-RTcmix::cmd(char name[], int n_args, double p0, ...)
+RTcmix::cmd(const char *name, int n_args, double p0, ...)
 {
 	va_list ap;
 	int i;
@@ -326,10 +326,10 @@ RTcmix::cmd(char name[], int n_args, double p0, ...)
 	return (Instrument *) retval;
 }
 
-// string p-field sending command.  the first "char*" is to disambiguate
+// string p-field sending command.  the first "const char*" is to disambiguate
 // from the double version above
 Instrument *
-RTcmix::cmd(char name[], int n_args, char* p0, ...)
+RTcmix::cmd(const char *name, int n_args, const char* p0, ...)
 {
 	// these are not time-stamped as above... change if we need to!
 	va_list ap;
@@ -358,7 +358,7 @@ RTcmix::cmd(char name[], int n_args, char* p0, ...)
 
 // new PFieldSet sending command.
 Instrument *
-RTcmix::cmd(char name[], const PFieldSet &pfSet)
+RTcmix::cmd(const char *name, const PFieldSet &pfSet)
 {
 	void   *retval;
 	int nFields = pfSet.size();
@@ -387,7 +387,7 @@ RTcmix::cmd(char name[], const PFieldSet &pfSet)
 // for commands with no params -- the double return val is because
 // that's what these commands generally do.
 double
-RTcmix::cmd(char name[])
+RTcmix::cmd(const char *name)
 {
 	// these are not time-stamped as above... change if we need to!
 	double p[MAXDISPARGS]; // for passing into dispatch only
@@ -402,7 +402,7 @@ RTcmix::cmd(char name[])
 // instead of returning an Inst*, it returns the double value
 // of the RTcmix command that was invoked
 double
-RTcmix::cmdval(char name[], int n_args, double p0, ...)
+RTcmix::cmdval(const char *name, int n_args, double p0, ...)
 {
 	va_list ap;
 	int i;
@@ -422,7 +422,7 @@ RTcmix::cmdval(char name[], int n_args, double p0, ...)
 // that instead of returning an Inst*, it returns the double value
 // of the RTcmix command that was invoked
 double
-RTcmix::cmdval(char name[], int n_args, char* p0, ...)
+RTcmix::cmdval(const char *name, int n_args, const char* p0, ...)
 {
 	// these are not time-stamped as above... change if we need to!
 	va_list ap;

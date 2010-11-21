@@ -49,13 +49,13 @@ public:
 	virtual ~RTcmix();
 
 	
-	Instrument* cmd(char*, int, double, ...); // for numeric params
-	Instrument* cmd(char*, int, char*, ...); // for string params
-	Instrument* cmd(char*, const PFieldSet &); // for PFieldSet
+	Instrument* cmd(const char*, int, double, ...); // for numeric params
+	Instrument* cmd(const char*, int, const char*, ...); // for string params
+	Instrument* cmd(const char*, const PFieldSet &); // for PFieldSet
 
-	double cmd(char*); // for commands with no params
-	double cmdval(char*, int, double, ...); // value return (numeric params)
-	double cmdval(char*, int, char*, ...); // value return (string params)
+	double cmd(const char*); // for commands with no params
+	double cmdval(const char*, int, double, ...); // value return (numeric params)
+	double cmdval(const char*, int, const char*, ...); // value return (string params)
 
 	void printOn();
 	void printOff();
