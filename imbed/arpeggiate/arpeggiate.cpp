@@ -39,7 +39,7 @@ main(int argc, char *argv[])
 	sleep(1); // give the thread time to initialize
 
 	// load up STRUM
-	rrr->cmd((char *)"load", 1, (char *)"STRUM");
+	rrr->cmd("load", 1, (char *)"STRUM");
 
 	// set up the scheduling function, update every 0.8 seconds
 	RTtimeit(time, (sig_t)gonotes);
@@ -59,11 +59,11 @@ void gonotes()
 	start = 1.0; // give us a little lead time... not really necessary
 	for (i = 0; i < 8; i++) { // schedule 8 notes 0.1 secs apart
 		// it's more efficient to call a "random" directly, but hey...
-		pchindex = rrr->cmd((char *)"random") * 14.0;
+		pchindex = rrr->cmd("random") * 14.0;
 		pch = pitches[(int)pchindex];
-		stereo = rrr->cmd((char *)"random");
+		stereo = rrr->cmd("random");
 
-		rrr->cmd((char *)"START", 9,
+		rrr->cmd("START", 9,
 			start, 1.0, pch, 1.0, 0.1, 20000.0, 1.0, stereo, 1.0);
 		// note the use of "deleteflag" (the last p-field) above --
 		// this causes STRUM to clean up arrays, stops memory leak
