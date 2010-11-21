@@ -30,6 +30,13 @@
 #include <PField.h>
 #include <PFieldSet.h>
 
+// these are to enable dynamic maketable() construction
+#include "../../../src/include/maxdispargs.h"
+#include "../../../src/rtcmix/rtcmix_types.h"
+int _dispatch_table(const Arg *args, const int nargs, const int startarg, double **array, int *len);
+Handle createPFieldHandle(class PField *);
+
+
 PFSCHED::PFSCHED() : Instrument()
 {
 }
@@ -65,7 +72,8 @@ int PFSCHED::init(double p[], int n_args)
 
 	pfbusses[pfbus].drawflag = 0; // the 'connected' note will read when == 1
 //	pfbusses[pfbus].thepfield = &((*_pfields)[3]);
-	pfbusses[pfbus].thepfield = &(getPField(3)); // this is the PField to read
+//	pfbusses[pfbus].thepfield = &(getPField(3)); // this is the PField to read
+	PFSCHEDpfield = &(getPField(3)); // this is the PField to read
 
 	// set the other fields in ::run in case multiple PFSCHEDs on one pfbus
 	firsttime = 1;
@@ -89,6 +97,52 @@ int PFSCHED::run()
 	int i;
 
 	if (firsttime == 1) {
+		double tval = 0.0; // get rid of the compiler warning :-)
+		if (pfbusses[pfbus].thepfield != NULL) tval = pfbusses[pfbus].val;
+
+		pfbusses[pfbus].thepfield = PFSCHEDpfield; // this is the PField to read
+		Arg targs[MAXDISPARGS];
+		int nargs, lenindex;
+
+		// if DYNTABLETOKEN is the first value in the data, it means we need
+		// to construct a new table, based on the current pfield value
+		// and the construction data stored in the data[] array
+		if ( (*(pfbusses[pfbus].thepfield)).doubleValue(0) == DYNTABLETOKEN) {
+			nargs = (int)(*(pfbusses[pfbus].thepfield)).doubleValue(1) + 2;
+			lenindex = 1;
+			targs[0] = "line";
+			targs[1] = (*(pfbusses[pfbus].thepfield)).doubleValue(2);
+
+			for (i = 2; i < nargs; i++) {
+				// additional occurrences of DYNTABLETOKEN signal a 'curval', so
+				// use the current pfield value
+				if ( (*(pfbusses[pfbus].thepfield)).doubleValue(i+1) == DYNTABLETOKEN) {
+					targs[i] = tval;
+				} else {
+					targs[i] = (*(pfbusses[pfbus].thepfield)).doubleValue(i+1);
+				}
+			}
+
+			int len = targs[lenindex];
+			double *data = NULL;
+			data = new double[len];
+			if (data == NULL) {
+				die("maketable", "Out of memory.");
+				return NULL;
+			}
+
+			if (_dispatch_table(targs, nargs, lenindex + 1, &data, &len) != 0) {
+				delete [] data;
+				return NULL;            // error message already given
+			}
+
+			TablePField *table;
+			table = new TablePField(data, len);
+
+			// replace the pfield with the newly-constructed table
+			pfbusses[pfbus].thepfield = table;
+		}
+
 		pfbusses[pfbus].percent = 0.0;
 		pfbusses[pfbus].dqflag = 0;
 		// note the subtraction; the PField will be read for the correct duration

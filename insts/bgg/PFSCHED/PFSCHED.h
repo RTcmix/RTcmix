@@ -1,13 +1,14 @@
 #include <PField.h>
 
 // each 'pfbus' is has the data in this structure.  It is declared
-// here and referenced in src/control/pfbus/PFBusPfield.cpp
+// here and referenced in src/control/pfbus/PFBusPField.cpp
 struct pfbusdata {
 	int drawflag;
 	const PField *thepfield;
 	double val;
 	double percent;
 	double theincr;
+	int dqflag;
 };
 
 // this should be enough...
@@ -16,6 +17,9 @@ struct pfbusdata pfbusses[NPFBUSSES];
 
 class PFSCHED : public Instrument {
 	int pfbus;
+	int set_dq_flag;
+	int firsttime;
+	const PField *PFSCHEDpfield;
 
 	void doupdate();
 
