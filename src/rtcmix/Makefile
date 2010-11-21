@@ -151,9 +151,17 @@ endif
 # wrong linker path anyway.
 
 ifeq ($(PERL_IN_LOCAL), TRUE)
-PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts`
+	ifeq ($(ARCH),MACOSX)
+		PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts | sed 's/-arch i386 -arch ppc//'`
+	else
+		PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts`
+	endif
 else
-PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts | sed 's/usr\/local/usr/'`
+	ifeq ($(ARCH),MACOSX)
+		PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts | sed 's/usr\/local/usr/' | sed 's/-arch i386 -arch ppc//'`
+	else
+		PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts | sed 's/usr\/local/usr/'`
+	endif
 endif
 
 all: $(TARGETS)
