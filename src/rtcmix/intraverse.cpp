@@ -95,6 +95,7 @@ int RTcmix::runMainLoop(void)
 			// Start audio output device, handing it our callback.
 			if (audioDevice->start(inTraverse, this) != 0) {
 				cerr << audioDevice->getLastError() << endl;
+				audioDevice->close();
 				audioDone = true;
 				return -1;
 			}

@@ -5,7 +5,7 @@
 //
 
 #include <stdint.h>  // for int32_t
-#include <sndlib.h>	 // for ENDIAN
+#include "sndlib.h"
 
 enum Endian { Little, Big };
 

@@ -394,7 +394,7 @@ int	ALSAAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 	}
 	if (fwritten > 0) {
 		if (fwritten < frameCount && !stopping())
-			printf("ALSAAudioDevice::doSendFrames: wrote %d out of %d frames!\n",
+			PRINT1("ALSAAudioDevice::doSendFrames: wrote %d out of %d frames!\n",
 				   fwritten, frameCount);
 		incrementFrameCount(fwritten);
 		return fwritten;

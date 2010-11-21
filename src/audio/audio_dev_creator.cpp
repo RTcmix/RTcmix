@@ -132,16 +132,8 @@ createAudioDevice(const char *inputDesc,
 				delete inDev;
 				return NULL;
 			}
-			// Unfortunately, we still need a hack here:  Full duplex network audio
-			// must select on input (i.e., input device must be active, output
-			// device passive) but all others must do it the other way.
 
 			bool forceInputActive = false;
-#ifdef NETAUDIO
-			if (iCreator == NetAudioDevice::create)
-				forceInputActive = true;
-#endif
-
 			fullDuplexDevice = new AudioIODevice(inDev, outDev, forceInputActive);
 		}
 		theDevice = fullDuplexDevice;

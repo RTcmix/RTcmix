@@ -46,6 +46,8 @@
 #define PRINT1 if (0) printf
 #endif
 
+#define WAIT_IN_IO_CALL
+
 static const int kDefaultSockNumber = 9999;
 
 // The cookie is used to identify whether the data coming over the socket
@@ -111,14 +113,18 @@ NetAudioDevice::~NetAudioDevice()
 int NetAudioDevice::waitForDevice(unsigned int wTime)
 {
 	while (!connected()) {
+		PRINT1("NetAudioDevice::waitForDevice: not connected -- calling waitForConnect()...\n");
 		if (waitForConnect() == 0) {
 			if (configure() < 0) {
+				PRINT1("NetAudioDevice::waitForDevice: configure() failed -- disconnecting and trying again...\n");
 				disconnect();
 				continue;	// try again
 			}
 		}
-		else
+		else {
+			PRINT1("NetAudioDevice::waitForDevice: waitForConnect returned non-zero -- returning 1\n");
 			return 1;	// signals stop
+		}
 	}
 	return ThreadedAudioDevice::waitForDevice(wTime);
 }
@@ -127,15 +133,19 @@ void
 NetAudioDevice::run()
 {
 	PRINT1("NetAudioDevice::run: top of loop\n");
+#ifndef WAIT_IN_IO_CALL
 	// waitForDevice() waits on the descriptor you passed to setDevice() until
 	// the device is ready to give/get audio.  It returns nonzero if 
 	// AudioDevice::stop() is called, to allow the loop to exit.
 	unsigned waitMillis = 10000;
-    while (waitForDevice(waitMillis) == 0) {
-        if (runCallback() != true) {
-            break;
-        }
- 	}
+	while (waitForDevice(waitMillis) == 0) {
+#else
+	while (true) {
+#endif
+       if (runCallback() != true) {
+           break;
+       }
+	}
 	PRINT1("NetAudioDevice::run: after loop\n");
 	// If we stopped due to callback being done, set the state so that the
 	// call to close() does not attempt to call stop, which we cannot do in
@@ -159,6 +169,7 @@ NetAudioDevice::doOpen(int mode)
 {
 	struct hostent *hp;
 	int len = sizeof(_impl->sss);
+	int flags;
 
 	PRINT0("NetAudioDevice::doOpen()\n");
 
@@ -181,16 +192,6 @@ NetAudioDevice::doOpen(int mode)
 		if (connect(_impl->sockdesc, (struct sockaddr *)&_impl->sss, len) < 0) {
 			return error("Network socket connect failed: ",
 						 strerror(errno));
-		}
-		/* Set socket to blocking.  First get current flags */
-	    int flags;
-	    if ((flags = fcntl(_impl->sockdesc, F_GETFL, 0)) >= 0) {
-			if (fcntl(_impl->sockdesc, F_SETFL, flags & (~O_NONBLOCK)) < 0)  {
-				printf("NetAudioDevice: Failed to set socket to non-blocking: %s\n", strerror(errno));
-			}     	
-	    }
-		else {  
-			printf("NetAudioDevice: Failed to get socket flags.\n");
 		}
 		setDevice(_impl->sockdesc);
 		break;
@@ -297,20 +298,34 @@ NetAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 	int bytesRead = 0;
 	char *cbuf = (char *) _impl->doubleBuffers[_impl->currentBuffer];
 	while (bytesRead < bytesToRead) {
+#ifdef WAIT_IN_IO_CALL
+		unsigned waitMillis = 10000;
+		if (waitForDevice(waitMillis) == 0) {
+//			printf("NetAudioDevice::doGetFrames: waitForDevice returned 0\n");
+		}
+		else {
+			PRINT0("NetAudioDevice::doGetFrames: waitForDevice returned nonzero\n");
+			return 0;
+		}
+#endif
 		int bytesNeeded = bytesToRead - bytesRead;
 //		printf("NetAudioDevice::doGetFrames: reading %d bytes from stream...\n", bytesNeeded);
 		int bytes = ::read(device(), &cbuf[bytesRead], bytesNeeded);
 //		printf("NetAudioDevice::doGetFrames: read %d bytes\n", bytes);
-		if (bytes == 0) {
+		if (bytes < 0) {
+			if (errno == EAGAIN)
+				continue;
+			else 
+				return error("Network socket read failed: ", strerror(errno));
+		}
+		else if (bytes == 0) {
 			printf("NetAudioDevice::doGetFrames: connection broke -- disconnecting\n");
 			memset(frameBuffer, 0, bytesToRead);
 			disconnect();
 			return 0;
 		}
-		if (bytes < 0) {
-			return error("Network socket read failed: ", strerror(errno));
-		}
-		bytesRead += bytes;
+		else
+			bytesRead += bytes;
 	}
 	memcpy(frameBuffer, _impl->doubleBuffers[_impl->currentBuffer], bytesRead);
 	_impl->currentBuffer = !_impl->currentBuffer;	// swap
@@ -323,6 +338,16 @@ int
 NetAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 {
 	int bytesToWrite = frameCount * getDeviceBytesPerFrame();
+#ifdef WAIT_IN_IO_CALL
+	unsigned waitMillis = 10000;
+	if (waitForDevice(waitMillis) == 0) {
+		PRINT1("NetAudioDevice::doSendFrames: waitForDevice returned 0\n");
+	}
+	else {
+		PRINT0("NetAudioDevice::doSendFrames: waitForDevice returned nonzero\n");
+		return 0;
+	}
+#endif
 //	printf("NetAudioDevice::doSendFrames: writing %d bytes to stream...\n", bytesToWrite);
 	int bytesWritten = ::write(device(), frameBuffer, bytesToWrite);
 //	printf("NetAudioDevice::doSendFrames: wrote %d bytes\n", bytesWritten);
@@ -340,7 +365,7 @@ int NetAudioDevice::waitForConnect()
 	if (listen(_impl->sockdesc, 1) < 0) {
 		return error("Network socket listen failed: ", strerror(errno));
 	}
-	printf("NetAudioDevice: waiting for input connection...\n");
+	printf("NetAudioDevice::waitForConnect: waiting for input connection...\n");
 	// Make sure we wont block.
 	fcntl(_impl->sockdesc, F_SETFL, O_NONBLOCK);
 	// Select on socket, waiting until there is a connection to accept.
@@ -352,17 +377,17 @@ int NetAudioDevice::waitForConnect()
 	FD_ZERO(&rfdset);
 	do {
 		if (closing() || stopping()) {
-			PRINT0("breaking out of wait for stop or close\n");
+			PRINT0("NetAudioDevice::waitForConnect:  breaking out of wait for stop or close\n");
 			return -1;
 		}
 		timeout.tv_sec = 0;
 		timeout.tv_usec = 100000;
 		FD_SET(_impl->sockdesc, &rfdset);
-//		printf("in select loop...\n");
+//		printf("NetAudioDevice::waitForConnect:  in select loop...\n");
 	} while ((ret = select(nfds, &rfdset, NULL, NULL, &timeout)) == 0);
 	if (ret == -1) {
-		PRINT0("select() returned -1, breaking out of wait\n");
-		return -1;
+		PRINT0("NetAudioDevice::waitForConnect: select() returned -1, breaking out of wait\n");
+		return error("Error while waiting for network connection: ", strerror(errno));
 	}
 #ifdef JAGUAR
 	int len = sizeof(_impl->sss);
@@ -375,17 +400,17 @@ int NetAudioDevice::waitForConnect()
 		return error("Network accept failed: ", strerror(errno));
 	}
 	/* Set socket to blocking.  First get current flags */
-    int flags;
-    if ((flags = fcntl(sockdev, F_GETFL, 0)) >= 0) {
+	int flags;
+	if ((flags = fcntl(sockdev, F_GETFL, 0)) >= 0) {
 		if (fcntl(sockdev, F_SETFL, flags & (~O_NONBLOCK)) < 0)  {
-			printf("NetAudioDevice: Failed to set socket to non-blocking: %s\n", strerror(errno));
-		}     	
-    }
+			PRINT0("NetAudioDevice::waitForConnect: Failed to set socket to blocking: %s\n", strerror(errno));
+		}
+	}
 	else {  
-		printf("NetAudioDevice: Failed to get socket flags.\n");
+		PRINT0("NetAudioDevice::waitForConnect: Failed to get socket flags.\n");
 	}
 	setDevice(sockdev);
-	printf("NetAudioDevice: got connection\n");
+	printf("NetAudioDevice::waitForConnect: got connection\n");
 	return 0;
 }
 
@@ -405,17 +430,17 @@ int NetAudioDevice::disconnect()
 
 inline unsigned
 swap(unsigned ul) {
-    return (ul >> 24) | ((ul >> 8) & 0xff00) | ((ul << 8) & 0xff0000) | (ul << 24);
+   return (ul >> 24) | ((ul >> 8) & 0xff00) | ((ul << 8) & 0xff0000) | (ul << 24);
 }
 
 inline int swap(int x) { return swap((unsigned)x); }
 
 inline float
 swap(float uf) {
-    union { unsigned l; float f; } u;
-    u.f = uf;
-    u.l = swap(u.l);
-    return (u.f);
+   union { unsigned l; float f; } u;
+   u.f = uf;
+   u.l = swap(u.l);
+   return (u.f);
 }
 
 int NetAudioDevice::configure()
@@ -426,10 +451,12 @@ int NetAudioDevice::configure()
 //	printf("NetAudioDevice::configure(): reading header from stream...\n");
 	if ((rd = ::read(device(), &netformat, kNetAudioFormat_Size)) != kNetAudioFormat_Size)
 	{
-		fprintf(stderr, "NetAudioDevice: unable to read header: %s\n",
-				(rd >= 0) ? "partial or zero read" : strerror(errno));
+		fprintf(stderr, "NetAudioDevice: unable to read header: %s -- got %d of %d bytes\n",
+				(rd >= 0) ? "partial or zero read" : strerror(errno), rd, kNetAudioFormat_Size);
+		int err = errno;
+		disconnect();
 		return error("NetAudioDevice: unable to read header: ",
-					 (rd >= 0) ? "partial or zero read" : strerror(errno));
+					 (rd >= 0) ? "partial or zero read" : strerror(err));
 	}
 //	printf("NetAudioDevice: read header\n");
 	switch (netformat.cookie) {
@@ -441,6 +468,7 @@ int NetAudioDevice::configure()
 		break;
 	default:
 		fprintf(stderr, "NetAudioDevice: missing or corrupt header: cookie = 0x%x\n", netformat.cookie);
+		disconnect();
 		return error("NetAudioDevice: missing or corrupt header");
 	}
 	if (swapped) {
@@ -458,6 +486,7 @@ int NetAudioDevice::configure()
 	// Now make sure we can handle the format
 	if (!IS_SHORT_FORMAT(netformat.fmt)) {
 		fprintf(stderr, "NetAudioDevice: unknown or unsupported audio format\n");
+		disconnect();
 		return error("NetAudioDevice: unsupported audio format");
 	}
 	netformat.fmt |= MUS_INTERLEAVED;	// Just for good measure!
@@ -465,10 +494,12 @@ int NetAudioDevice::configure()
 	// For now we cannot handle buffer size or channel mismatches.
 	if (netformat.blockFrames != _impl->framesPerWrite) {
 		fprintf(stderr, "NetAudioDevice: sender and receiver RTBUFSAMPS must match\n");
+		disconnect();
 		return error("NetAudioDevice: audio buffer size mismatch");
 	}
 	else if (netformat.chans != getDeviceChannels()) {
 		fprintf(stderr, "NetAudioDevice: sender and receiver channel counts must match\n");
+		disconnect();
 		return error("NetAudioDevice: audio channel count mismatch");
 	}
 	// Just give a warning for SR mismatch.
@@ -477,6 +508,18 @@ int NetAudioDevice::configure()
 	}
 	setDeviceParams(netformat.fmt, netformat.chans, netformat.sr);
 	PRINT1("NetAudioDevice::configure(): resetting conversion routines\n");
+	
+	/* Set socket back to nonblocking.  First get current flags */
+	int flags;
+	if ((flags = fcntl(device(), F_GETFL, 0)) >= 0) {
+		if (fcntl(device(), F_SETFL, flags | O_NONBLOCK) < 0)  {
+			printf("NetAudioDevice::connect: Failed to set socket to nonblocking: %s\n", strerror(errno));
+		}
+	}
+	else {  
+		printf("NetAudioDevice::connect: Failed to get socket flags.\n");
+	}
+	
 	return resetFormatConversion();
 }
 
