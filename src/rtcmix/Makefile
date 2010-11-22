@@ -152,13 +152,13 @@ endif
 
 ifeq ($(PERL_IN_LOCAL), TRUE)
 	ifeq ($(ARCH),MACOSX)
-		PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts | sed 's/-arch i386 -arch ppc//'`
+		PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts | sed 's/-arch i386//' | sed 's/-arch ppc//'`
 	else
 		PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts`
 	endif
 else
 	ifeq ($(ARCH),MACOSX)
-		PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts | sed 's/usr\/local/usr/' | sed 's/-arch i386 -arch ppc//'`
+		PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts | sed 's/usr\/local/usr/' | sed 's/-arch i386//' | sed 's/-arch ppc//'`
 	else
 		PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts | sed 's/usr\/local/usr/'`
 	endif
