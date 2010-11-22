@@ -475,7 +475,6 @@ RTcmixMain::interrupt_handler(int signo)
 	   // Notify rendering loop.
 	   run_status = RT_SHUTDOWN;
 	   if (audioDevice) {
-printf("interrupt_handler: calling audioDevice->close()\n");
 	       audioDevice->close();
 	   }
 	   if (!audioLoopStarted) {
