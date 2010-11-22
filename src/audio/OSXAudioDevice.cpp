@@ -832,6 +832,9 @@ int OSXAudioDevice::openOutput()
 
 int OSXAudioDevice::doOpen(int mode)
 {
+	if (mode & Passive) {
+		return error("OSX Audio devices do not support passive device mode");
+	}
 	_impl->recording = ((mode & Record) != 0);
 	_impl->playing = ((mode & Playback) != 0);
 	Boolean isInput = !_impl->playing;

@@ -114,7 +114,7 @@ int NetAudioDevice::waitForDevice(unsigned int wTime)
 {
 	while (!connected()) {
 		PRINT1("NetAudioDevice::waitForDevice: not connected -- calling waitForConnect()...\n");
-		if (waitForConnect() == 0) {
+		if (waitForConnect(wTime) == 0) {
 			if (configure() < 0) {
 				PRINT1("NetAudioDevice::waitForDevice: configure() failed -- disconnecting and trying again...\n");
 				disconnect();
@@ -175,6 +175,8 @@ NetAudioDevice::doOpen(int mode)
 
 	bzero(&_impl->sss, len);
 	
+	PRINT1("NetAudioDevice::doOpen: calling socket()\n");
+	
 	// Create the socket
 	if( (_impl->sockdesc = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		return error("Network socket call failed: ", strerror(errno));
@@ -189,6 +191,7 @@ NetAudioDevice::doOpen(int mode)
 			return error("NetAudioDevice: gethostbyname failed: ",
 						 strerror(errno));
 		bcopy(hp->h_addr, &(_impl->sss.sin_addr.s_addr), hp->h_length);
+		PRINT1("NetAudioDevice::doOpen: calling connect()\n");
 		if (connect(_impl->sockdesc, (struct sockaddr *)&_impl->sss, len) < 0) {
 			return error("Network socket connect failed: ",
 						 strerror(errno));
@@ -245,7 +248,7 @@ NetAudioDevice::doStart()
 	else if (isRecording()) {
 		bool ready = false;
 		while (!ready) {
-			if (waitForConnect() == 0) {
+			if (waitForConnect(100000) == 0) {
 				if (configure() == 0)
 					ready = true;	// connection OK
 				else
@@ -299,7 +302,7 @@ NetAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 	char *cbuf = (char *) _impl->doubleBuffers[_impl->currentBuffer];
 	while (bytesRead < bytesToRead) {
 #ifdef WAIT_IN_IO_CALL
-		unsigned waitMillis = 10000;
+		unsigned waitMillis = 100;
 		if (waitForDevice(waitMillis) == 0) {
 //			printf("NetAudioDevice::doGetFrames: waitForDevice returned 0\n");
 		}
@@ -339,7 +342,7 @@ NetAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 {
 	int bytesToWrite = frameCount * getDeviceBytesPerFrame();
 #ifdef WAIT_IN_IO_CALL
-	unsigned waitMillis = 10000;
+	unsigned waitMillis = 1000;
 	if (waitForDevice(waitMillis) == 0) {
 		PRINT1("NetAudioDevice::doSendFrames: waitForDevice returned 0\n");
 	}
@@ -360,7 +363,7 @@ NetAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 	return framesWritten;
 }
 
-int NetAudioDevice::waitForConnect()
+int NetAudioDevice::waitForConnect(unsigned int wTime)
 {
 	if (listen(_impl->sockdesc, 1) < 0) {
 		return error("Network socket listen failed: ", strerror(errno));
@@ -380,9 +383,9 @@ int NetAudioDevice::waitForConnect()
 			PRINT0("NetAudioDevice::waitForConnect:  breaking out of wait for stop or close\n");
 			return -1;
 		}
-		timeout.tv_sec = 0;
-		timeout.tv_usec = 100000;
 		FD_SET(_impl->sockdesc, &rfdset);
+		timeout.tv_sec = unsigned(wTime / 1000);
+		timeout.tv_usec = 1000 * (unsigned(wTime) - (timeout.tv_sec * 1000));
 //		printf("NetAudioDevice::waitForConnect:  in select loop...\n");
 	} while ((ret = select(nfds, &rfdset, NULL, NULL, &timeout)) == 0);
 	if (ret == -1) {

@@ -133,7 +133,7 @@ void ThreadedAudioDevice::setDevice(int dev)
 int ThreadedAudioDevice::waitForDevice(unsigned int wTime) {
 	int ret;
 	unsigned waitSecs = int(wTime / 1000.0);
-	unsigned waitUsecs = (wTime * 1000) - unsigned(waitSecs * 1.0e+06);
+	unsigned waitUsecs = 1000 * (wTime - unsigned(waitSecs * 1000));
 	// Wait wTime msecs for select to return, then bail.
 	if (!stopping()) {
 		int nfds = _device + 1;

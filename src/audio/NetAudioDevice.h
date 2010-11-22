@@ -32,7 +32,7 @@ protected:
 	virtual int	doSendFrames(void *frameBuffer, int frameCount);
 
 protected:
-	int			waitForConnect();
+	int			waitForConnect(unsigned int wTime);
 	int			disconnect();
 	inline bool	connected();
 	int			configure();
