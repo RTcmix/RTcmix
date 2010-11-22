@@ -8,11 +8,12 @@
 #include <mixerr.h>
 #include <rt.h>
 #include <rtdefs.h>
+#include <assert.h>
 
 #include <common.h>
 #include "MMOVE.h"
 
-#undef debug
+//#define debug
 
 #ifdef SIG_DEBUG
 #define DBG(stmt) { stmt; }
@@ -135,49 +136,36 @@ int MOVE::finishInit(double rvb_time, double *ringdur)
 void MOVE::get_tap(int currentSamp, int chan, int path, int len)
 {
    Vector *vec = &m_vectors[chan][path];
-   double outloc = vec->outloc;
+   const double outloc = (double) vec->outloc;
+   if (outloc < -40000.0 || outloc > 40000.0) {
+	   printf("WHAM\n");
+   }
    const double oldOutloc = oldOutlocs[chan][path];
-   double delta;
-   if (oldOutloc == LocationUnset)
-       delta = 0.0;
-   else
-       delta = outloc - oldOutloc;
+   const double delta = (oldOutloc == LocationUnset) ? 0.0 : outloc - oldOutloc;
+   
    oldOutlocs[chan][path] = outloc;
    
-   double incr = 1.0 + delta / len;
-
+   const double incr = 1.0 + delta / len;
    const int tap = currentSamp % m_tapsize;
-   register double otap = (double) tap - outloc;
-   if (otap < 0.0) otap += m_tapsize;
-   double otapPlusOne = otap + 1.0;
-   if (otapPlusOne >= (double) m_tapsize) otapPlusOne -= m_tapsize;
    
-   double closestToEnd = max(otap, otapPlusOne);
-
-   // run till one of output taps wrap, or len reached
-
-   int len1 = min(len, m_tapsize - (int) closestToEnd);
-
    register double *tapdel = m_tapDelay;
    register double *Sig = vec->Sig;
+   register double outTap = (double) tap - outloc;
+   if (outTap < 0.0)
+	   outTap += m_tapsize;
    int out = 0;
    
    while (out < len)
    {
-       const int clen = len1;
-       for (int i = 0; i < clen; ++i) {
-	   int outtap = (int) otap;
-	   double frac = otap - (double)outtap;
-	   Sig[out++] = tapdel[outtap] + frac * (tapdel[outtap + 1] - tapdel[outtap]);
-	   otap += incr;
-       }
-
-       if (otap >= (double) m_tapsize) otap -= m_tapsize;
-       otapPlusOne = otap + 1.0;
-       if (otapPlusOne >= (double) m_tapsize) otapPlusOne -= m_tapsize;
-       closestToEnd = max(otap, otapPlusOne);
-
-       len1 = min(len - out, m_tapsize - (int) closestToEnd);
+		if (outTap >= (double) m_tapsize)
+			outTap -= m_tapsize;   
+		int iouttap = (int) outTap;
+		int outTapPlusOne = int(outTap + 1.0);
+		if (outTapPlusOne >= m_tapsize)
+			outTapPlusOne -= m_tapsize;   
+		double frac = outTap - (double)iouttap;
+		Sig[out++] = tapdel[iouttap] + frac * (tapdel[outTapPlusOne] - tapdel[iouttap]);
+		outTap += incr;
    }
 }
 
