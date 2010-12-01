@@ -93,7 +93,10 @@ OSXAudioDevice::Impl::Port::interleavedGetFrames(struct Port *port,
 
 	switch (frameChans) {
 	case 1:
-		if (bufChannels == 2) {
+		if (bufChannels == 1) {
+			goto MonoInput;
+		}
+		else if (bufChannels == 2) {
 #if DEBUG > 0
 			printf("Copying stereo buf into mono user frame\n");
 #endif
@@ -109,12 +112,13 @@ OSXAudioDevice::Impl::Port::interleavedGetFrames(struct Port *port,
 			}
 		}
 		else {
-			printf("Only stereo-to-mono record interleaved conversion is currently supported\n");
+			printf("Only mono-to-mono and stereo-to-mono record interleaved conversion is currently supported\n");
 			return -1;
 		}
 		break;
 
 	default:
+MonoInput:
 		{
 #if DEBUG > 0
 			printf("Copying %d-channel interleaved buf into user frame\n", bufChannels);
