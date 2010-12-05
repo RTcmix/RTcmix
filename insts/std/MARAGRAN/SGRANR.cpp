@@ -103,18 +103,19 @@ int SGRANR::run()
    long i,attacksamps,j,thechunksamp,waitsamps,left,ngrains;
 	float out[2];
 	float loc;
-        
-//        if ( (durhi*(float)SR) > chunksamps)
+    const int frameCount = framesToRun();
+	
+//        if ( (durhi*(float)SR) > frameCount)
 //		advise("SGRANR", "Grain duration larger than buffer.");
 
 	// figure out how many grains are in this chunk 
-	ngrains = (int)((float)chunksamps/(rate*(float)SR));	
+	ngrains = (int)((float)frameCount/(rate*(float)SR));	
         
 	if ( ngrains  < 1 ) {
                 if ( grainoverlap ) 
                     ngrains = 1;
                 else {
-                    if ( (rrand()*.5+.5) < ((float)chunksamps/(rate*(float)SR)) )
+					if ( (rrand()*.5+.5) < ((float)frameCount/(rate*(float)SR)) )
                         ngrains = 1;
                     else 
                          ngrains = 0;
@@ -124,7 +125,7 @@ int SGRANR::run()
         thechunksamp = 0;
         if ( ngrains ) {  
              for (i = 0; i < ngrains; i++) {
-                    // first, finish writing any grains from previous chunksamps or attacksamps
+                    // first, finish writing any grains from previous frame block or attacksamps
                 if ( grainoverlap ) {
                     left = ( grainsamps - overlapsample );
                     if ( left < 0 ) 
@@ -149,7 +150,7 @@ int SGRANR::run()
                 else
                     left = 0;
                 
-                attacksamps = (chunksamps - left)/ngrains; // samples betwn attacks
+				attacksamps = (frameCount - left)/ngrains; // samples betwn attacks
                 left = 0;
                 freq = (float)prob(freqlo, freqmid, freqhi, freqti);
                 si = freq * (float)len/SR;
@@ -187,7 +188,7 @@ int SGRANR::run()
             }
         }
         else { // ngrains = 0
-            for ( j = 0; j < chunksamps; j++ ) {
+			for ( j = 0; j < frameCount; j++ ) {
                 out[0] = 0.0;
                 if (outputChannels() == 2) out[1] = 0.0;
                 rtaddout(out);

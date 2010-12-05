@@ -160,7 +160,7 @@ int TRANSBEND::configure()
 
 int TRANSBEND :: run()
 {
-   const int out_frames = chunksamps;
+   const int out_frames = framesToRun();
    int       i, branch = 0, ibranch = 0, inChans = inputChannels();
    float     aamp, *outp;
    double    frac;

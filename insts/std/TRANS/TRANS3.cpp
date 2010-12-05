@@ -138,7 +138,7 @@ void TRANS3::doupdate()
 
 int TRANS3::run()
 {
-   const int outframes = chunksamps;
+   const int outframes = framesToRun();
    const int inchans = inputChannels();
    float *outp = outbuf;     // point to inst private out buffer
    double frac;

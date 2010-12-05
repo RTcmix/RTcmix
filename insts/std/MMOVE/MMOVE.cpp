@@ -137,9 +137,6 @@ void MOVE::get_tap(int currentSamp, int chan, int path, int len)
 {
    Vector *vec = &m_vectors[chan][path];
    const double outloc = (double) vec->outloc;
-   if (outloc < -40000.0 || outloc > 40000.0) {
-	   printf("WHAM\n");
-   }
    const double oldOutloc = oldOutlocs[chan][path];
    const double delta = (oldOutloc == LocationUnset) ? 0.0 : outloc - oldOutloc;
    

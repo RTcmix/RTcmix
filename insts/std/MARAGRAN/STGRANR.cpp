@@ -133,23 +133,24 @@ int STGRANR::run()
         float *outp;
 	float loc, ampfac, interval;
         double    frac;
+	const int frameCount = framesToRun();
         
 	if (in == NULL)        /* first time, so allocate it */
 		in = new float [RTBUFSAMPS * inputChannels()];
 
-//        if ( (durhi*(float)SR) > chunksamps)
+//        if ( (durhi*(float)SR) > frameCount())
 //		advise("STGRANR", "Grain duration larger than buffer.");
         
-        outp = outbuf;               /* point to inst private out buffer */
+    outp = outbuf;               /* point to inst private out buffer */
 
 	// figure out how many grains are in this chunk 
-	ngrains = (int)((float)chunksamps/(rate*(float)SR));	
+	ngrains = (int)((float)frameCount/(rate*(float)SR));	
         
 	if ( ngrains  < 1 ) {
                 if ( grainoverlap ) 
                     ngrains = 1;
                 else {
-                    if ( (rrand()*.5+.5) < ((float)chunksamps/(rate*(float)SR)) )
+					if ( (rrand()*.5+.5) < ((float)frameCount/(rate*(float)SR)) )
                         ngrains = 1;
                     else 
                          ngrains = 0;
@@ -159,7 +160,7 @@ int STGRANR::run()
         thechunksamp = 0;
         if ( ngrains ) {  
              for (i = 0; i < ngrains; i++) {
-                attacksamps = chunksamps/ngrains; // no grainoverlap yet
+				attacksamps = frameCount/ngrains; // no grainoverlap yet
                 transp = (float)prob(transplo, transpmid, transphi, transpti);
                 interval = octpch(transp);
                 increment = (double) cpsoct(10.0 + interval) / cpsoct(10.0);
@@ -223,7 +224,7 @@ int STGRANR::run()
             }
         }
         else { // ngrains = 0
-            for ( j = 0; j < chunksamps; j++ ) {
+			for ( j = 0; j < frameCount; j++ ) {
                 outp[0] = 0.0;
                 if (outputChannels() == 2) outp[1] = 0.0;
                 outp += outputChannels();

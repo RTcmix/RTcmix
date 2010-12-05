@@ -246,23 +246,25 @@ int BASE::run()
 
 	const int totalSamps = insamps + tapcount;
 
+	const int frameCount = framesToRun();
+	
 	DBG1(printf("%s::run(): totalSamps = %d\n", name(), totalSamps));
 
-	// this will return chunksamps' worth of input, even if we have
+	// this will return frameCount' worth of input, even if we have
 	// passed the end of the input (will produce zeros)
 
-	getInput(cursamp, chunksamps);
+	getInput(cursamp, frameCount);
 
-	DBG1(printf("getInput(%d, %d) called\n", cursamp, chunksamps));
+	DBG1(printf("getInput(%d, %d) called\n", cursamp, frameCount));
 	
 	int bufsamps = getBufferSize();
 	
 	// loop for required number of output samples
 
-	while (i < chunksamps) {
+	while (i < frameCount) {
 		// limit buffer size to end of current pull (chunksamps)
-        if (chunksamps - i < bufsamps)
-            bufsamps = max(0, chunksamps - i);
+		if (frameCount - i < bufsamps)
+			bufsamps = max(0, frameCount - i);
 
 		DBG1(printf("top of main loop: i = %d  cursamp = %d  bufsamps = %d\n",
                    i, cursamp, bufsamps));

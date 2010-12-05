@@ -254,19 +254,19 @@ int MBASE::run()
 	// this will return chunksamps' worth of input, even if we have
 	// passed the end of the input (will produce zeros)
 
-	getInput(thisFrame, chunksamps);
+	getInput(thisFrame, framesToRun());
 
-	DBG1(printf("getInput(%d, %d) called\n", thisFrame, chunksamps));
+	DBG1(printf("getInput(%d, %d) called\n", thisFrame, framesToRun()));
 	
 	int bufsamps = getBufferSize();
 	const int outputOffset = this->output_offset;
 	
 	// loop for required number of output samples
-
-	while (i < chunksamps) {
+	const int frameCount = framesToRun();
+	while (i < frameCount) {
 		// limit buffer size to end of current pull (chunksamps)
-        if (chunksamps - i < bufsamps)
-            bufsamps = max(0, chunksamps - i);
+		if (frameCount - i < bufsamps)
+            bufsamps = max(0, frameCount - i);
 
 		thisFrame = currentFrame();	// store this locally for efficiency
 
