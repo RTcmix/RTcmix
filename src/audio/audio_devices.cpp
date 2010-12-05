@@ -31,7 +31,7 @@ char globalNetworkPath[128];			// Set by Minc/setnetplay.c
 // Return pointers to the most recently specified audio device strings.
 // "indevice" always overrides "device", and same with "outdevice".
 
-const char *get_audio_device_name()
+static const char *get_audio_device_name()
 {
 	if (strlen(Option::inDevice()) || strlen(Option::outDevice()))
 		return NULL;
@@ -40,7 +40,7 @@ const char *get_audio_device_name()
 	return NULL;
 }
 
-const char *get_audio_indevice_name()
+static const char *get_audio_indevice_name()
 {
 	if (strlen(Option::inDevice()))
 		return Option::inDevice();
@@ -49,11 +49,11 @@ const char *get_audio_indevice_name()
 	return NULL;
 }
 
-const char *get_audio_outdevice_name()
+static const char *get_audio_outdevice_name(int devIndex)
 {
-	if (strlen(Option::outDevice()))
-		return Option::outDevice();
-	else if (strlen(Option::device()))
+	if (strlen(Option::outDevice(devIndex)))
+		return Option::outDevice(devIndex);
+	else if (devIndex == 0 && strlen(Option::device()))
 		return Option::device();
 	return NULL;
 }
@@ -64,7 +64,7 @@ create_audio_devices(int record, int play, int chans, float srate, int *buffersi
 {
 	int status;
 	const char *inDeviceName = get_audio_indevice_name();
-	const char *outDeviceName = get_audio_outdevice_name();
+	const char *outDeviceName = get_audio_outdevice_name(0);
 	AudioDevice *device = NULL;
 
 #ifdef NETAUDIO
