@@ -256,7 +256,7 @@ int FREEVERB :: run()
    }
 
    // Hand off to Freeverb to do the actual work.
-   rvb->processreplace(inL, inR, outL, outR, chunksamps, inputChannels(),
+   rvb->processreplace(inL, inR, outL, outR, framesToRun(), inputChannels(),
                                                          outputChannels());
 
    return framesToRun();
