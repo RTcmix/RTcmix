@@ -103,7 +103,7 @@ int COMBFILT::run()
 
   tsize = (RTBUFSAMPS * inputChannels());
 
-  rsamps = chunksamps*inputChannels();
+  rsamps = framesToRun()*inputChannels();
 
   rtgetin(in, this, rsamps);
 

@@ -88,7 +88,7 @@ int vMIX::run()
 	float out[MAXBUS];
 	float tamp;
 
-	rsamps = chunksamps*inputChannels();
+	rsamps = framesToRun()*inputChannels();
 
 	rtgetin(in, this, rsamps);
 

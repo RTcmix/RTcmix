@@ -3,7 +3,7 @@
    we're stashing the setline info in gen table 1 */
 load("ivMIX")
 rtsetparams(44100, 2)
-rtinput("/snd/jmr6u/eyes")
+rtinput("../../../snd/input.wav");
 setline(0,0, 1, 1)
 vMIX(0, 0, 7.0, 1, 0, 0)
 
