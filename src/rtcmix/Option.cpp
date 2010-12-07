@@ -15,7 +15,6 @@
 
 using namespace std;
 
-#define DEVICE_MAX   64
 #define DSOPATH_MAX  PATH_MAX * 2
 #define OSCHOST_MAX  128
 
@@ -36,7 +35,7 @@ int Option::_oscInPort = DEFAULT_OSC_INPORT;
 
 char Option::_device[DEVICE_MAX];
 char Option::_inDevice[DEVICE_MAX];
-char Option::_outDevice[DEVICE_MAX];
+char Option::_outDevice[MAX_OUTPUT_DEVICES][DEVICE_MAX];
 char Option::_midiInDevice[DEVICE_MAX];
 char Option::_midiOutDevice[DEVICE_MAX];
 char Option::_oscHost[OSCHOST_MAX];
@@ -49,7 +48,9 @@ void Option::init()
 {
 	_device[0] = 0;
 	_inDevice[0] = 0;
-	_outDevice[0] = 0;
+	_outDevice[0][0] = 0;
+	_outDevice[1][0] = 0;
+	_outDevice[2][0] = 0;
 	_midiInDevice[0] = 0;
 	_midiOutDevice[0] = 0;
 	strcpy(_oscHost, "localhost");
@@ -220,6 +221,20 @@ int Option::readConfigFile(const char *fileName)
 	else if (result != kConfigNoValueForKey)
 		reportError("%s: %s.", conf.getLastErrorText(), key);
 
+	key = kOptionOutDevice2;
+	result = conf.getValue(key, sval);
+	if (result == kConfigNoErr)
+		outDevice(sval, 1);
+	else if (result != kConfigNoValueForKey)
+		reportError("%s: %s.", conf.getLastErrorText(), key);
+
+	key = kOptionOutDevice3;
+	result = conf.getValue(key, sval);
+	if (result == kConfigNoErr)
+		outDevice(sval, 2);
+	else if (result != kConfigNoValueForKey)
+		reportError("%s: %s.", conf.getLastErrorText(), key);
+
 	key = kOptionMidiInDevice;
 	result = conf.getValue(key, sval);
 	if (result == kConfigNoErr)
@@ -361,11 +376,11 @@ char *Option::inDevice(const char *devName)
 	return _inDevice;
 }
 
-char *Option::outDevice(const char *devName)
+char *Option::outDevice(const char *devName, int devIndex)
 {
-	strncpy(_outDevice, devName, DEVICE_MAX);
-	_outDevice[DEVICE_MAX - 1] = 0;
-	return _outDevice;
+	strncpy(_outDevice[devIndex], devName, DEVICE_MAX);
+	_outDevice[devIndex][DEVICE_MAX - 1] = 0;
+	return _outDevice[devIndex];
 }
 
 char *Option::midiInDevice(const char *devName)
@@ -447,7 +462,9 @@ void Option::dump()
 	cout << kOptionOSCInPort << ": " << _oscInPort << endl;
 	cout << kOptionDevice << ": " << _device << endl;
 	cout << kOptionInDevice << ": " << _inDevice << endl;
-	cout << kOptionOutDevice << ": " << _outDevice << endl;
+	cout << kOptionOutDevice << ": " << _outDevice[0] << endl;
+	cout << kOptionOutDevice2 << ": " << _outDevice[1] << endl;
+	cout << kOptionOutDevice3 << ": " << _outDevice[2] << endl;
 	cout << kOptionMidiInDevice << ": " << _midiInDevice << endl;
 	cout << kOptionMidiOutDevice << ": " << _midiOutDevice << endl;
 	cout << kOptionOSCHost << ": " << _oscHost << endl;
@@ -560,6 +577,10 @@ char *get_string_option(const char *option_name)
 		return Option::inDevice();
 	else if (!strcmp(option_name, kOptionOutDevice))
 		return Option::outDevice();
+	else if (!strcmp(option_name, kOptionOutDevice2))
+		return Option::outDevice(1);
+	else if (!strcmp(option_name, kOptionOutDevice3))
+		return Option::outDevice(2);
 	else if (!strcmp(option_name, kOptionDSOPath))
 		return Option::dsoPath();
 
@@ -575,6 +596,10 @@ void set_string_option(const char *option_name, const char *value)
 		Option::inDevice(value);
 	else if (!strcmp(option_name, kOptionOutDevice))
 		Option::outDevice(value);
+	else if (!strcmp(option_name, kOptionOutDevice2))
+		Option::outDevice(value, 1);
+	else if (!strcmp(option_name, kOptionOutDevice3))
+		Option::outDevice(value, 2);
 	else if (!strcmp(option_name, kOptionDSOPath))
 		Option::dsoPath(value);
 	else

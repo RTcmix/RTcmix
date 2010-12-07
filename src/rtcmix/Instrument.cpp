@@ -74,8 +74,8 @@ Instrument::Instrument()
    _pfields = NULL;
 
    for (i = 0; i < MAXBUS; i++)
-      bufstatus[i] = 0;
-   needs_to_run = 1;
+	   bufferWritten[i] = false;
+   needs_to_run = true;
 
 #ifdef RTUPDATE
    if (tags_on) {
@@ -301,9 +301,9 @@ int Instrument::run(bool needsTo)
 	   obufptr = outbuf;
 
 	   for (int i = 0; i < outputchans; i++)
-		  bufstatus[i] = 0;
+		   bufferWritten[i] = false;
 
-	   needs_to_run = 0;
+	   needs_to_run = false;
 
 	   return run();	// Class-specific run().
    }
@@ -356,22 +356,22 @@ void Instrument::schedule(heap *rtHeap)
 */
 int Instrument::exec(BusType bus_type, int bus)
 {
-   int done;
+   bool done;
 
    run(needs_to_run);	// Only does anything if true.
 
    addout(bus_type, bus);
 
    /* Decide whether we'll call run() next time. */
-   done = 1;
+   done = true;
    for (int i = 0; i < outputchans; i++) {
-      if (bufstatus[i] == 0) {
-         done = 0;
+	   if (bufferWritten[i] == false) {
+         done = false;
          break;
       }
    }
    if (done)
-      needs_to_run = 1;
+      needs_to_run = true;
 
    return (int) needs_to_run;
 }
@@ -431,7 +431,7 @@ void Instrument::addout(BusType bus_type, int bus)
 
    assert(src_chan != -1);
 
-   endframe = output_offset + chunksamps;
+   endframe = output_offset + framesToRun();
 
    // Add outbuf to appropriate bus at offset
 	
@@ -440,7 +440,7 @@ void Instrument::addout(BusType bus_type, int bus)
 					 endframe, outputchans);
 
    /* Show exec() that we've written this chan. */
-   bufstatus[src_chan] = 1;
+   bufferWritten[src_chan] = true;
 }
 
 

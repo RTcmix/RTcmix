@@ -37,7 +37,7 @@ PField::~PField()
 const char * 	
 PField::stringValue(double dindex) const
 {
-	const int ivalue = intValue(dindex);
+	const size_t ivalue = intValue(dindex);
 	return (const char *) ((ivalue < 0x100000) ? 0 : ivalue);
 }
 

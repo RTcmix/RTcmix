@@ -69,8 +69,8 @@ protected:
 private:
    char 		  *_name;	// the name of this instrument
    BUFTYPE        *obufptr;
-   char           bufstatus[MAXBUS];
-   char           needs_to_run;
+   bool           bufferWritten[MAXBUS];
+   bool           needs_to_run;
    int            _skip;
    int            _nsamps;
 

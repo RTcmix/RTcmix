@@ -236,7 +236,7 @@ RTcmix::check_bus_inst_config(BusSlot *slot, Bool visit) {
 
 	/* If we haven't gotten a config yet ... allocate the graph array */
 	/* and the playback order list */
-	pthread_mutex_lock(&bus_config_status_lock);
+	Bus_Config_Status.lock();
 	if (Bus_Config_Status == NO) {
 		for (i=0;i<MAXBUS;i++) {
 			CheckNode *t_node = new CheckNode;
@@ -247,7 +247,7 @@ RTcmix::check_bus_inst_config(BusSlot *slot, Bool visit) {
 		}
 		Bus_Config_Status = YES;
 	}
-	pthread_mutex_unlock(&bus_config_status_lock);
+	Bus_Config_Status.unlock();
 
 	aux_ctr = out_ctr = 0;
 	j=0;
@@ -561,7 +561,7 @@ RTcmix::get_bus_config(const char *inst_name)
    warn(NULL, "No bus_config defined, setting default (in/out).");
    
    /* Some init stuff normally done in check_bus_inst_config */
-   pthread_mutex_lock(&bus_config_status_lock);
+   Bus_Config_Status.lock();
    if (Bus_Config_Status == NO) {
 	 for (i=0;i<MAXBUS;i++) {
 	   pthread_mutex_lock(&aux_to_aux_lock);
@@ -585,7 +585,7 @@ RTcmix::get_bus_config(const char *inst_name)
 	 }
 	 Bus_Config_Status = YES;
    }
-   pthread_mutex_unlock(&bus_config_status_lock);
+   Bus_Config_Status.unlock();
 
    for(i=0;i<NCHANS;i++) {
 	 pthread_mutex_lock(&out_in_use_lock);
@@ -679,7 +679,9 @@ parse_bus_name(char *busname, BusType *type, int *startchan, int *endchan)
    char     *p;
    ErrCode  status = NO_ERR;
 
-   switch (busname[0]) {
+   if (busname == NULL)
+	   status = INVAL_BUS_ERR;
+   else switch (busname[0]) {
       case 'i':                                      /* "in*" */
          *type = BUS_IN;
          p = &busname[2];                            /* skip over "in" */
@@ -755,7 +757,15 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
             for (k = startchan; k <= endchan; k++)
                bus_slot->in[j++] = k;
             bus_slot->in_count += (endchan - startchan) + 1;
-            break;
+			/* Make sure max channel count set in rtsetparams can accommodate
+               the highest input chan number in this bus config.
+			*/
+			if (endchan >= NCHANS) {
+				die("bus_config", "You specified %d channels in rtsetparams,\n"
+					"but this bus_config requires %d channels.",
+					NCHANS, endchan + 1);
+			}
+			break;
          case BUS_OUT:
 			if (bus_slot->out_count > 0) strcat(outbusses, ", ");
 			strcat(outbusses, busname);
@@ -776,8 +786,8 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
                the highest output chan number in this bus config.
             */
             if (endchan >= NCHANS) {
-               die("bus_config", "You specified %d output channels in rtsetparams, "
-                         "but this bus_config \nrequires %d channels.",
+               die("bus_config", "You specified %d output channels in rtsetparams,\n"
+                         "but this bus_config requires %d channels.",
                          NCHANS, endchan + 1);
             }
             break;

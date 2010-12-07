@@ -33,6 +33,7 @@
 #include "heap.h"
 #include "maxdispargs.h"
 #include "dbug.h"
+#include <globals.h>
 
 
 // This is declared (still) in globals.h for use in gen routines.
@@ -95,7 +96,6 @@ pthread_mutex_t RTcmix::aux_to_aux_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RTcmix::to_aux_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RTcmix::to_out_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RTcmix::inst_bus_config_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t RTcmix::bus_config_status_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RTcmix::bus_in_config_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RTcmix::has_child_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RTcmix::has_parent_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -112,7 +112,7 @@ short			RTcmix::ToAuxPlayList[MAXBUS];
 // Bus config state
 
 BusQueue *		RTcmix::Inst_Bus_Config;
-Bool			RTcmix::Bus_Config_Status = NO;
+Locked<Bool>	RTcmix::Bus_Config_Status(NO);
 CheckNode *		RTcmix::Bus_In_Config[MAXBUS];
 Bool			RTcmix::HasChild[MAXBUS];
 Bool			RTcmix::HasParent[MAXBUS];

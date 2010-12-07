@@ -1022,7 +1022,7 @@ _spline(const int closed, const float konst, const int nknots, double *outbuf,
 		if (m <= 0)
 			m = 1;
 		float h = hi1 / m;
-		for (int j = m; j > 0 || i == 0 && j == 0; j--) {
+		for (int j = m; j > 0 || (i == 0 && j == 0); j--) {
 			// interpolate
 			float x0 = (m - j) * h / hi1;
 			float x1 = j * h / hi1;

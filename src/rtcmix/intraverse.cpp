@@ -127,24 +127,17 @@ int RTcmix::waitForMainLoop()
 
 bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 {
-	short playEm = 1;
-	int i,chunksamps;
-	int rtQSize = 0, allQSize;
-	int offset;
-	int inst_chunk_finished = 0;
+	RTcmix *RTCore = (RTcmix *) arg;
+	const BusSlot *iBus;
+	unsigned long rtQchunkStart = 0;
+	Bool panic = NO;
+	short bus = -1, bus_count = 0, busq = 0;
+	int i;
 	short bus_q_offset = 0;
 
-	Instrument *Iptr;
-	const BusSlot *iBus;
-
-	unsigned long rtQchunkStart = 0;
-	unsigned long heapChunkStart = 0;
-
-	Bool aux_pb_done, frame_done, panic = NO;
-	short bus = -1, bus_count = 0, play_bus, busq = 0;
-	IBusClass bus_class, qStatus;
-	BusType bus_type = BUS_OUT; // Default when none is set
-
+#ifdef WBUG
+cout << "ENTERING inTraverse()\n";
+#endif
 #ifdef DBUG	  
 	printf("Entering big loop .....................\n");
 #endif
@@ -163,15 +156,15 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 
 	// deleteMin() returns top instrument if inst's start time is < bufEndSamp,
 	// else NULL.  heapChunkStart is set in all cases
+	
+	unsigned long heapChunkStart = 0;
+	Instrument *Iptr;
 
-	while ((Iptr = rtHeap->deleteMin(bufEndSamp, &heapChunkStart)) != NULL) 
-	{
-
+	while ((Iptr = rtHeap->deleteMin(bufEndSamp, &heapChunkStart)) != NULL) {
 #ifdef DBUG
 		cout << "Iptr " << (void *) Iptr << " pulled from rtHeap" << endl;
 		cout << "heapChunkStart = " << heapChunkStart << endl;
 #endif
-
 		if (panic) {
 #ifdef DBUG
 			cout << "Panic: Iptr " << (void *) Iptr << " unref'd" << endl;
@@ -201,7 +194,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 
 		// DJT Now we push things onto different queues
 		::pthread_mutex_lock(&bus_slot_lock);
-		bus_class = iBus->Class();
+		IBusClass bus_class = iBus->Class();
 		switch (bus_class) {
 		case TO_AUX:
 			bus_count = iBus->auxout_count;
@@ -269,14 +262,14 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	}
 	// End rtHeap popping and rtQueue insertion ----------------------------
 
-	qStatus = TO_AUX;
-	play_bus = 0;
-	aux_pb_done = NO;
-	allQSize = 0;
+	BusType bus_type = BUS_OUT; // Default when none is set
+	IBusClass qStatus = TO_AUX;
+	short play_bus = 0;
+	Bool aux_pb_done = NO;
+	int rtQSize = 0, allQSize = 0;
 
 	// rtQueue[] playback shuffling ++++++++++++++++++++++++++++++++++++++++
 	while (!aux_pb_done) {
-
 		switch (qStatus) {
 		case TO_AUX:
 			bus_q_offset = 0;
@@ -338,20 +331,26 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		cout << "bus: " << bus << endl;
 		cout << "busq:  " << busq << endl;
 #endif
+		
+#ifdef MULTI_THREAD
+#define MAX_INSTRUMENTS 32
+		Instrument *instruments[MAX_INSTRUMENTS];
+#endif
 
 		// Play elements on queue (insert back in if needed) ++++++++++++++++++
 		while (rtQSize > 0 && rtQchunkStart < bufEndSamp && bus != -1) {
+			int chunksamps = 0;
+			
 			Iptr = rtQueue[busq].pop();  // get next instrument off queue
 #ifdef DBUG
 			cout << "Iptr " << (void *) Iptr << " popped from rtQueue " << busq << endl;
 #endif			
-			iBus = Iptr->getBusSlot();
 			Iptr->set_ichunkstart(rtQchunkStart);
 
 			unsigned long endsamp = Iptr->getendsamp();
 
 			// difference in sample start (countdown)
-			offset = rtQchunkStart - bufStartSamp;  
+			int offset = rtQchunkStart - bufStartSamp;  
 
 			// DJT:  may have to expand here.  IE., conditional above
 			// (rtQchunkStart >= bufStartSamp)
@@ -373,12 +372,10 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			else {
 				chunksamps = bufEndSamp-rtQchunkStart;
 			}
-			if (chunksamps > RTBUFSAMPS)
-			{
+			if (chunksamps > RTBUFSAMPS) {
 				cout << "ERROR: chunksamps: " << chunksamps << " limiting to " << RTBUFSAMPS << endl;
 				chunksamps = RTBUFSAMPS;
 			}
-
 #ifdef DBUG
 			cout << "Begin playback iteration==========\n";
 			cout << "Q-rtQchunkStart:  " << rtQchunkStart << endl;
@@ -393,6 +390,8 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 #ifdef TBUG
 			cout << "Iptr->exec(" << bus_type << "," << bus << ") [" << Iptr->name() << "]\n";
 #endif		  
+			int inst_chunk_finished = 0;
+			
 			// DT_PANIC_MOD
 			if (!panic) {
 				inst_chunk_finished = Iptr->exec(bus_type, bus);    // write the samples * * * * * * * * * 
@@ -409,39 +408,9 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 				rtQueue[busq].push(Iptr,rtQchunkStart+chunksamps);   // put back onto queue
 			}
 			else {
-				::pthread_mutex_lock(&bus_slot_lock);
-				short t_count;
-				short t_class = iBus->Class();
-				short endbus = 999;  // Don't end yet
-				switch (t_class) {
-				case TO_AUX:
-					t_count = iBus->auxout_count;
-					endbus = iBus->auxout[t_count-1];
-					break;
-				case AUX_TO_AUX:
-					t_count = iBus->auxout_count;
-					endbus = iBus->auxout[t_count-1];
-					break;
-				case TO_AUX_AND_OUT:
-					if (qStatus == TO_OUT) {
-						t_count = iBus->out_count;
-						endbus = iBus->out[t_count-1];			
-					}
-					else
-						endbus = 1000;  /* can never equal this */
-					break;
-				case TO_OUT:
-					t_count = iBus->out_count;
-					endbus = iBus->out[t_count-1];
-					break;
-				default:
-					cout << "ERROR (intraverse): unknown bus_class\n";
-					break;
-				}
-				::pthread_mutex_unlock(&bus_slot_lock);
-
+				iBus = Iptr->getBusSlot();
 				// unref only after all buses have played -- i.e., if inst_chunk_finished
-				if (qStatus == t_class && inst_chunk_finished) {
+				if (qStatus == iBus->Class() && inst_chunk_finished) {
 #ifdef DBUG
 					cout << "unref'ing inst " << (void *) Iptr << endl;
 #endif
@@ -473,8 +442,12 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 
 	// DT_PANIC_MOD
 	if (!panic) {
-		if (rtsendsamps(device) != 0)
+		if (rtsendsamps(device) != 0) {
+#ifdef WBUG
+			cout << "EXITING inTraverse()\n";
+#endif
 			return false;
+		}
 	}
 
 	elapsed += RTBUFSAMPS;	
@@ -493,26 +466,28 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			rtgetsamps(device);
 	}
 
+	bool playEm = true;
+	
 	if (!rtInteractive) {  // Ending condition
 		if ((rtHeap->getSize() == 0) && (allQSize == 0)) {
 #ifdef ALLBUG
 			cout << "heapSize:  " << rtHeap->getSize() << endl;
 			cout << "rtQSize:  " << rtQSize << endl;
-			cout << "PLAYEM = 0\n";
+			cout << "PLAYEM = FALSE\n";
 			cout << "The end\n\n";
 #endif
-			playEm = 0;
+			playEm = false;
 		}
 	}
 	else {
 		// Check status from other threads
 		if (run_status == RT_SHUTDOWN) {
 			cout << "inTraverse:  shutting down" << endl;
-			playEm = 0;
+			playEm = false;
 		}
 		else if (run_status == RT_ERROR) {
 			cout << "inTraverse:  shutting down due to error" << endl;
-			playEm = 0;
+			playEm = false;
 		}
 		else if (panic && run_status == RT_GOOD) {
 			cout << "inTraverse:  panic mode finished" << endl;
@@ -522,6 +497,9 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		if (panic && (rtHeap->getSize() == 0) && (allQSize == 0))
 			run_status = RT_GOOD;
 	}
+#ifdef WBUG
+cout << "EXITING inTraverse()\n";
+#endif
 	return playEm;
 }
 

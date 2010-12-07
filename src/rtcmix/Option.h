@@ -73,6 +73,9 @@
 #define DEFAULT_BUFFER_COUNT 2
 #define DEFAULT_OSC_INPORT 7770
 
+#define DEVICE_MAX   64
+#define MAX_OUTPUT_DEVICES 3
+
 // Option names.  These are the keys that appear in the .rtcmixrc file.
 // They're also the <option_name> used with the get_*_option C functions.
 
@@ -97,6 +100,8 @@
 #define kOptionDevice           "device"
 #define kOptionInDevice         "indevice"
 #define kOptionOutDevice        "outdevice"
+#define kOptionOutDevice2       "outdevice2"
+#define kOptionOutDevice3       "outdevice3"
 #define kOptionMidiInDevice     "midi_indevice"
 #define kOptionMidiOutDevice    "midi_outdevice"
 #define kOptionOSCHost          "localhost"  // NB: for unimplemented transmit
@@ -180,8 +185,8 @@ public:
 	static char *inDevice() { return _inDevice; }
 	static char *inDevice(const char *devName);
 
-	static char *outDevice() { return _outDevice; }
-	static char *outDevice(const char *devName);
+	static char *outDevice(int devIndex=0) { return _outDevice[devIndex]; }
+	static char *outDevice(const char *devName, int devIndex=0);
 
 	static char *midiInDevice() { return _midiInDevice; }
 	static char *midiInDevice(const char *devName);
@@ -227,7 +232,7 @@ private:
 	// string options
 	static char _device[];
 	static char _inDevice[];
-	static char _outDevice[];
+	static char _outDevice[MAX_OUTPUT_DEVICES][DEVICE_MAX];
 	static char _midiInDevice[];
 	static char _midiOutDevice[];
 	static char _oscHost[];

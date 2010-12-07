@@ -35,4 +35,27 @@ inline void Lock::Unlock()
 
 inline Lock::~Lock() { Unlock(); }
 
+class Unlock {
+public:
+	inline Unlock(LockHandle h);
+	inline ~Unlock();
+	inline void Relock();
+private:
+	LockHandle _handle;
+};
+
+inline Unlock::Unlock(LockHandle h) : _handle(h)
+{
+	pthread_mutex_t *mutex = (pthread_mutex_t *) _handle;
+	pthread_mutex_unlock(mutex);
+}
+
+inline void Unlock::Relock()
+{
+	pthread_mutex_t *mutex = (pthread_mutex_t *) _handle;
+	pthread_mutex_lock(mutex);
+}
+
+inline Unlock::~Unlock() { Relock(); }
+
 #endif	// _RTCMIX_LOCK_H_
