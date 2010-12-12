@@ -49,6 +49,19 @@ protected:
 	inline int		getDeviceChannels() const;
 	inline double	getSamplingRate() const;
 
+	// Some devices will have different in/out channel counts, etc.
+	virtual int		getRecordDeviceChannels() const { return getDeviceChannels(); }
+	virtual int		getRecordDeviceFormat() const { return getDeviceFormat(); }
+	virtual bool	isRecordDeviceInterleaved() const { return isDeviceInterleaved(); }
+	virtual bool	isRecordDeviceFmtNormalized() const { return isDeviceFmtNormalized(); }
+	virtual bool	isRecordDeviceFmtClipped() const { return isDeviceFmtClipped(); }
+
+	virtual int		getPlaybackDeviceChannels() const { return getDeviceChannels(); }
+	virtual int		getPlaybackDeviceFormat() const { return getDeviceFormat(); }
+	virtual bool	isPlaybackDeviceInterleaved() const { return isDeviceInterleaved(); }
+	virtual bool	isPlaybackDeviceFmtNormalized() const { return isDeviceFmtNormalized(); }
+	virtual bool	isPlaybackDeviceFmtClipped() const { return isDeviceFmtClipped(); }
+
 protected:
 	AudioDeviceImpl();
 	virtual ~AudioDeviceImpl();
@@ -88,13 +101,13 @@ protected:
 	int				error(const char *msg, const char *msg2=0);
 
 private:
-	int				setupConversion();
+	int				setupConversion(bool recording, bool playing);
 	int				setConvertFunctions(int rawSrcFormat, int rawDstFormat);
 	void 			*createInterleavedBuffer(int fmt, int chans, int len);
 	void 			destroyInterleavedBuffer(int fmt);
 	void 			*createNoninterleavedBuffer(int fmt, int chans, int len);
 	void 			destroyNoninterleavedBuffer(int fmt, int chans);
-	int				createConvertBuffer(int frames);
+	int				createConvertBuffer(int frames, int chans);
 	void			destroyConvertBuffer();
 
 protected:

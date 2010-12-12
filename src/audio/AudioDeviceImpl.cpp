@@ -19,6 +19,8 @@
 #define PRINT1 if (0) printf
 #endif
 
+inline int max(int x, int y) { return (x > y) ? x : y; }
+
 // AudioDeviceImpl is the "workhorse" intermediate base class for most
 // AudioDevice leaf classes.  It holds the common state, handles all logic
 // that can be considered common to all AudioDevices (including state checking
@@ -190,7 +192,7 @@ int AudioDeviceImpl::sendFrames(void *frameBuffer, int frameCount)
 	int status = 0;
 	if (isPlaying()) {
 		// Clip if converting from non-clipped to clipped.
-		bool doClipping = !isFrameFmtClipped() && isDeviceFmtClipped();
+		bool doClipping = !isFrameFmtClipped() && isPlaybackDeviceFmtClipped();
 		limitFrame(frameBuffer, frameCount,
 				   doClipping, checkPeaks(), reportClipping());
 		void *sendBuffer = convertFrame(frameBuffer,
@@ -356,15 +358,15 @@ AudioDeviceImpl::destroyNoninterleavedBuffer(int fmt, int chans)
 // Note that for both record and playback, the conversion buffer is the same
 // format -- that of the HW.
 
-int AudioDeviceImpl::createConvertBuffer(int frames)
+int AudioDeviceImpl::createConvertBuffer(int frames, int chans)
 {
 	if (isDeviceInterleaved())
 		_convertBuffer = createInterleavedBuffer(getDeviceFormat(),
-												 getDeviceChannels(),
+												 chans,
 												 frames);
 	else
 		_convertBuffer = createNoninterleavedBuffer(getDeviceFormat(),
-													getDeviceChannels(),
+													chans,
 													frames);
 	if (!_convertBuffer)
 		return -1;
@@ -376,7 +378,7 @@ void AudioDeviceImpl::destroyConvertBuffer()
 	if (isDeviceInterleaved())
 		destroyInterleavedBuffer(getDeviceFormat());
 	else
-		destroyNoninterleavedBuffer(getDeviceFormat(), getDeviceChannels());
+		destroyNoninterleavedBuffer(getDeviceFormat(), max(getRecordDeviceChannels(), getPlaybackDeviceChannels()));
 	_convertBuffer = NULL;
 }
 
@@ -409,23 +411,43 @@ int AudioDeviceImpl::setQueueSize(int *pWriteSize, int *pCount)
 		*pWriteSize = reqWriteSize;
 		*pCount = reqCount;
 		_maxFrames = reqWriteSize * reqCount;
-		return setupConversion();
+		return setupConversion(isRecording(), isPlaying());
 	}
 	*pWriteSize = -1;	// error condition
 	return -1;
 }
 
-int AudioDeviceImpl::setupConversion()
+int AudioDeviceImpl::setupConversion(bool recording, bool playing)
 {
 	int status = 0;
 	// Use the raw format because the accessor functions
 	// filter out the interleave and normalize bits.
 	PRINT0("AudioDeviceImpl::setupConversion(): user fmt: 0x%x, "
-			"device fmt: 0x%x, user chans: %d, device chans: %d\n",
-			_frameFormat, _deviceFormat, getFrameChannels(), getDeviceChannels());
-	if (_frameFormat != _deviceFormat || getFrameChannels() != getDeviceChannels())
+			"device fmt: 0x%x, user chans: %d\n",
+			_frameFormat, _deviceFormat, getFrameChannels());
+	int deviceChannels, maxChannels;
+	if (recording && playing) {
+		if (getRecordDeviceFormat() != getPlaybackDeviceFormat()) {
+			return error("Full duplex only supported when rec and playback devices have same sample format");
+		}
+		PRINT0("record device chans: %d, playback device chans: %d\n", getRecordDeviceChannels(), getPlaybackDeviceChannels());
+		if (getRecordDeviceChannels() != getPlaybackDeviceChannels())
+			deviceChannels = 0;		// This will force conversion to be set up, below
+		maxChannels = max(getRecordDeviceChannels(), getPlaybackDeviceChannels());
+	}
+	else if (recording) {
+		maxChannels = deviceChannels = getRecordDeviceChannels();
+		PRINT0("record device chans: %d\n", deviceChannels);
+	}
+	else /* playing */ {
+		maxChannels = deviceChannels = getPlaybackDeviceChannels();
+		PRINT0("playback device chans: %d\n", deviceChannels);
+	}
+			
+	// Create conversion routines if 1) frame format differs from device or 2) channel counts differ
+	if (_frameFormat != _deviceFormat || getFrameChannels() != deviceChannels)
 	{
-		status = createConvertBuffer(_maxFrames);
+		status = createConvertBuffer(_maxFrames, maxChannels);
 		if (status == 0) {
 			status = setConvertFunctions(_frameFormat, _deviceFormat);
 		}
@@ -439,7 +461,7 @@ int AudioDeviceImpl::setupConversion()
 int AudioDeviceImpl::resetFormatConversion()
 {
 	destroyConvertBuffer();
-	return setupConversion();
+	return setupConversion(isRecording(), isPlaying());
 }
 
 int AudioDeviceImpl::getDeviceBytesPerFrame() const
@@ -453,26 +475,28 @@ void *
 AudioDeviceImpl::convertFrame(void *inbuffer, void *outbuffer,
 							  int frames, bool recording)
 {
-	const int devChans = getDeviceChannels();
 	const int frmChans = getFrameChannels();
-	if (_frameFormat == _deviceFormat && devChans == frmChans) {
-		return inbuffer;
+	const bool formatIsSame = (_frameFormat == _deviceFormat);
+	assert(inbuffer != NULL);
+	if (recording) {
+		const int devChans = getRecordDeviceChannels();
+		if (formatIsSame && devChans == frmChans)
+			return inbuffer;
+		assert(outbuffer != NULL);
+		assert(_recConvertFunction != NULL);
+		(*_recConvertFunction)(inbuffer, outbuffer,
+							   devChans, frmChans, frames);
 	}
 	else {
-		assert(inbuffer != NULL);
+		const int devChans = getPlaybackDeviceChannels();
+		if (formatIsSame && devChans == frmChans)
+			return inbuffer;
 		assert(outbuffer != NULL);
-		if (recording) {
-			assert(_recConvertFunction != NULL);
-			(*_recConvertFunction)(inbuffer, outbuffer,
-								   devChans, frmChans, frames);
-		}
-		else {
-			assert(_playConvertFunction != NULL);
-			(*_playConvertFunction)(inbuffer, outbuffer, 
-									frmChans, devChans, frames);
-		}
-		return outbuffer;
+		assert(_playConvertFunction != NULL);
+		(*_playConvertFunction)(inbuffer, outbuffer, 
+								frmChans, devChans, frames);
 	}
+	return outbuffer;
 }
 
 void
@@ -619,12 +643,16 @@ static void convert(void *_in, void *_out, int inchans, int outchans, int frames
     OutType *out = (OutType *)_out;
 	typedef typename InStream::ChannelType InChanType;
 	typedef typename OutStream::ChannelType OutChanType;    
+	const int chans = (outchans < inchans) ? outchans : inchans;
+//	printf("CONVERT: inchans %d outchans %d - running conversion for %d channels\n",
+//		   inchans, outchans, chans);
 	int ch;
-    for (ch = 0; ch < inchans; ++ch) {
+    for (ch = 0; ch < chans; ++ch) {
         InChanType *inbuffer = InStream::innerFromOuter(in, ch);
         OutChanType *outbuffer = OutStream::innerFromOuter(out, ch);
 		const int inIncr = InStream::channelIncrement(inchans);
 		const int outIncr = OutStream::channelIncrement(outchans);
+//		printf("\tchannel %d -- converting %d frames.  Outbuffer starts at %p\n", ch, frames, outbuffer);
         for (int fr = 0; fr < frames;
 			 ++fr, inbuffer += inIncr, outbuffer += outIncr)
 		{
@@ -642,6 +670,7 @@ static void convert(void *_in, void *_out, int inchans, int outchans, int frames
 	for (; ch < outchans; ++ch) {
         OutChanType *outbuffer = OutStream::innerFromOuter(out, ch);
 		const int outIncr = OutStream::channelIncrement(outchans);
+//		printf("\tchannel %d -- zeroing %d frames\n", ch, frames);
         for (int fr = 0; fr < frames; ++fr, outbuffer += outIncr)
 		{
             *outbuffer = (OutChanType) 0;

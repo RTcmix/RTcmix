@@ -26,6 +26,9 @@ protected:
 	virtual int	doGetFrames(void *frameBuffer, int frameCount);
 	virtual int	doSendFrames(void *frameBuffer, int frameCount);
 	virtual int doGetFrameCount() const;
+
+	virtual int getRecordDeviceChannels() const;
+	virtual int getPlaybackDeviceChannels() const;
 	
 private:
 	int			openInput();
