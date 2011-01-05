@@ -27,7 +27,6 @@ static AudioDeviceID findDeviceID(const char *devName, AudioDeviceID *devList,
 
 static const int REC = 0, PLAY = 1;
 static const int kMasterChannel = 0;
-static const int STREAMCOUNT_UNSET = -1;
 
 struct OSXAudioDevice::Impl {
 	AudioDeviceID			*deviceIDs;				// Queried on system.
@@ -241,31 +240,33 @@ OSXAudioDevice::Impl::Port::noninterleavedGetFrames(struct Port *port,
 {
 	const int streamCount = port->streamCount;	// for non-interleaved, this is the internal channel count
 	const int bufFrames = port->audioBufFrames;
-	int bufLoc = port->outLoc;
+	int bufLoc = 0;
 	float **fFrameBuffer = (float **) frameBuffer;		// non-interleaved
 #if DEBUG > 0
 	printf("OSXAudioDevice::doGetFrames: frameCount = %d REC filled = %d\n", frameCount, port->audioBufFilled);
 #endif
 	assert(frameCount <= port->audioBufFilled);
 
+	const int streamsToCopy = frameChans < streamCount ? frameChans : streamCount;
 #if DEBUG > 0
 	printf("Copying %d non-interleaved internal bufs into %d-channel user frame\n",
-		   streamCount, frameChans);
+		   streamsToCopy, frameChans);
 #endif
 	int stream;
-	for (stream = 0; stream < streamCount; ++stream) {
-		bufLoc = port->outLoc;
-		const int strIdx = stream + port->streamIndex;
+	for (stream = 0; stream < streamsToCopy; ++stream) {
 		// Offset into serially-ordered, multi-channel non-interleaved buf.
 		register float *buf = &port->audioBuffer[stream * bufFrames];
-		if (stream < frameChans) {
-			float *frame = fFrameBuffer[stream];
-			// Write each monaural frame from circ. buffer into a non-interleaved output frame.
-			for (int out=0; out < frameCount; ++out) {
-				if (bufLoc >= bufFrames)
-					bufLoc -= bufFrames;	// wrap
-				frame[out] = buf[bufLoc++];	
-			}
+		float *frame = fFrameBuffer[stream];
+		bufLoc = port->outLoc;
+#if DEBUG > 1
+		printf("\tstream %d: raw offset into mono internal buffer: %d (%d * %d)\n", stream, buf - &port->audioBuffer[0], stream, bufFrames);
+		printf("\tread internal (already-offset) buf starting at outLoc %d\n", bufLoc);
+#endif
+		// Write each monaural frame from circ. buffer into a non-interleaved output frame.
+		for (int out=0; out < frameCount; ++out) {
+			if (bufLoc >= bufFrames)
+				bufLoc -= bufFrames;	// wrap
+			frame[out] = buf[bufLoc++];	
 		}
 	}
 	// Zero out any remaining frame channels
@@ -295,7 +296,7 @@ OSXAudioDevice::Impl::Port::noninterleavedSendFrames(struct Port *port,
 	float **fFrameBuffer = (float **) frameBuffer;		// non-interleaved
 	const int streamCount = port->streamCount;	// for non-interleaved, this is the internal channel count
 	const int bufFrames = port->audioBufFrames;
-	int inLoc = port->inLoc;
+	int inLoc = 0;
 #if DEBUG > 0
 	printf("OSXAudioDevice::doSendFrames: frameCount = %d, PLAY filled = %d\n", frameCount, port->audioBufFilled);
 #endif
@@ -413,6 +414,11 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 					const int strIdx = stream + port->streamIndex;
 					register float *src = (float *) inInputData->mBuffers[strIdx].mData;
 					register float *dest = &port->audioBuffer[stream * port->audioBufFrames];
+#if DEBUG > 1
+					printf("\tstream %d: copying from HW buffer %d into internal buf at raw offset %d (%d * %d)\n",
+						   stream, strIdx, dest - &port->audioBuffer[0], stream, port->audioBufFrames);
+					printf("\t incrementing HW buffer pointer by %d for each frame\n", srcchans);
+#endif
 					for (int n = 0; n < framesToRead; ++n) {
 						if (inLoc == bufLen)	// wrap
 							inLoc = 0;
@@ -575,7 +581,7 @@ OSXAudioDevice::OSXAudioDevice(const char *desc) : _impl(new Impl)
 	_impl->deviceName = NULL;
 	for (int n = REC; n <= PLAY; ++n) {
 		_impl->port[n].streamIndex = 0;
-		_impl->port[n].streamCount = STREAMCOUNT_UNSET;		// Default;  reset if necessary
+		_impl->port[n].streamCount = 1;		// Default;  reset if necessary
 		_impl->port[n].streamChannel = 0;
 		_impl->port[n].streamDesc = NULL;
 		_impl->port[n].deviceBufFrames = 0;
@@ -611,7 +617,7 @@ OSXAudioDevice::OSXAudioDevice(const char *desc) : _impl(new Impl)
                insubstr[(size_t) outsubstr - (size_t) insubstr - 1] = '\0';
             }
             else {
-               outsubstr = substr;
+               insubstr = outsubstr = substr;
             }
             // Now parse stream selecters
             const char *selecters[2] = { insubstr, outsubstr };
@@ -717,17 +723,9 @@ int OSXAudioDevice::openInput()
 		return error("Can't get input device stream configuration: ",
 					 ::errToString(err));
 	}
-	if (port->streamCount != STREAMCOUNT_UNSET) {
-		// Check that user's request is a valid stream set
-		if (port->streamIndex + port->streamCount > (int) port->streamDesc->mNumberBuffers) {
-			return error("Invalid input stream set");
-		}
-	}
-	else if (port->streamDesc->mNumberBuffers > 1) {
-		port->streamCount = port->streamDesc->mNumberBuffers - port->streamIndex;
-	}
-	else {
-		port->streamCount = 1;
+	// Check that user's request is a valid stream set
+	if (port->streamIndex + port->streamCount > (int) port->streamDesc->mNumberBuffers) {
+		return error("Invalid input stream set");
 	}
 	// Brute force: Find first audio channel for desired input stream
 	int streamChannel = 1;
@@ -736,7 +734,9 @@ int OSXAudioDevice::openInput()
 		for (int stream = 0; stream < streamCount; ++stream) {
 			if (stream == port->streamIndex) {
 				port->streamChannel = streamChannel;
+#if DEBUG > 0
 				printf("input port streamChannel = %d\n", port->streamChannel);
+#endif
 				break;
 			}
 			streamChannel += port->streamDesc->mBuffers[stream].mNumberChannels;
@@ -813,17 +813,9 @@ int OSXAudioDevice::openOutput()
 		return error("Can't get output device stream configuration: ",
 					 ::errToString(err));
 	}
-	if (port->streamCount != STREAMCOUNT_UNSET) {
-		// Check that user's request is a valid stream set
-		if (port->streamIndex + port->streamCount > (int) port->streamDesc->mNumberBuffers) {
-			return error("Invalid output stream set");
-		}
-	}
-	else if (port->streamDesc->mNumberBuffers > 1) {
-		port->streamCount = port->streamDesc->mNumberBuffers - port->streamIndex;
-	}
-	else {
-		port->streamCount = 1;
+	// Check that user's request is a valid stream set
+	if (port->streamIndex + port->streamCount > (int) port->streamDesc->mNumberBuffers) {
+		return error("Invalid output stream set");
 	}
 	// Brute force: Find first audio channel for desired output stream
 	int streamChannel = 1;
