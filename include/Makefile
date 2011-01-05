@@ -6,6 +6,9 @@ all:
 	ln -sf ../src/rtcmix/ug_intro.h .
 	ln -sf ../src/rtcmix/spray.h .
 	ln -sf ../src/rtcmix/RefCounted.h .
+	ln -sf ../src/rtcmix/lock.h .
+	ln -sf ../src/rtcmix/Lockable.h .
+	ln -sf ../src/rtcmix/Locked.h .
 	ln -sf ../src/rtcmix/Instrument.h .
 	ln -sf ../src/rtcmix/PField.h .
 	ln -sf ../src/rtcmix/PFieldSet.h .
@@ -33,6 +36,9 @@ cleanall:
 	$(RM) spray.h
 	$(RM) RefCounted.h
 	$(RM) Instrument.h
+	$(RM) lock.h
+	$(RM) Lockable.h
+	$(RM) Locked.h
 	$(RM) PField.h
 	$(RM) PFieldSet.h
 	$(RM) Random.h
