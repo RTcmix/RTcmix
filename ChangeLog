@@ -1,6 +1,14 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2011-01-05  Douglas Scott  <netdscott-at-netscape.net>
+
+	* Time for my yearly checkin note.  Reworked OSX audio once again to
+	  correctly handle multi-stream hardware, and allow device to be opened
+	  with any number of RTcmix channels.  Checked in a host of other changes,
+	  most of which were cleanup.  Working on clearer way to handle locking of
+	  state in bus config code.
+
 2010-01-08  Douglas Scott  <netdscott-at-netscape.net>
 
 	* Fixed 64-bit OSX audio problem.  Checked in dozens of minor changes
