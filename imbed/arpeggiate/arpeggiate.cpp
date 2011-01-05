@@ -39,7 +39,7 @@ main(int argc, char *argv[])
 	sleep(1); // give the thread time to initialize
 
 	// load up STRUM
-	rrr->cmd("load", 1, (char *)"STRUM");
+	rrr->cmd("load", 1, "STRUM");
 
 	// set up the scheduling function, update every 0.8 seconds
 	RTtimeit(time, (sig_t)gonotes);

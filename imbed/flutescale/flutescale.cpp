@@ -19,7 +19,7 @@ main(int argc, char *argv[])
 	rrr->printOn();
 	sleep(1); // give the thread time to initialized
 
-	rrr->cmd("load", 1, (char *)"METAFLUTE");
+	rrr->cmd("load", 1, "METAFLUTE");
 	rrr->cmd("makegen", 7, 1.0, 24.0, 1000.0, 0.0, 1.0, 1.0, 1.0);
 	rrr->cmd("makegen", 11, 2.0, 24.0, 1000.0,
 		0.0, 0.0, 0.05, 1.0, 0.95, 1.0, 1.0, 0.0);

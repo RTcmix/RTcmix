@@ -32,7 +32,7 @@ int MYWAVETABLE::run()
 	int i;
 	float out[2];
 	
-	for (i = 0; i < chunksamps; i++) {
+	for (i = 0; i < framesToRun(); i++) {
 		out[0] = theOscil->next() * theEnv->next() * amp;
 		
 		if (outputchans == 2) // split stereo files between channels
