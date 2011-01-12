@@ -20,8 +20,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <iostream>
-using namespace std;
+#include <ugens.h>
 
 Modal :: Modal(int modes)
   : nModes(modes)
@@ -100,11 +99,11 @@ void Modal :: setFrequency(MY_FLOAT frequency)
 void Modal :: setRatioAndRadius(int modeIndex, MY_FLOAT ratio, MY_FLOAT radius)
 {
   if ( modeIndex < 0 ) {
-    cerr << "Modal: setRatioAndRadius modeIndex parameter is less than zero!" << endl;
+    advise("Modal", "setRatioAndRadius modeIndex parameter is less than zero!");
     return;
   }
   else if ( modeIndex >= nModes ) {
-    cerr << "Modal: setRatioAndRadius modeIndex parameter is greater than the number of operators!" << endl;
+    advise("Modal", "setRatioAndRadius modeIndex parameter is greater than the number of operators!");
     return;
   }
 
@@ -119,7 +118,7 @@ void Modal :: setRatioAndRadius(int modeIndex, MY_FLOAT ratio, MY_FLOAT radius)
     while (temp * baseFrequency > nyquist) temp *= (MY_FLOAT) 0.5;
     ratios[modeIndex] = temp;
 #if defined(_STK_DEBUG_)
-    cerr << "Modal : Aliasing would occur here ... correcting." << endl;
+    // cerr << "Modal : Aliasing would occur here ... correcting." << endl;
 #endif
   }
   radii[modeIndex] = radius;
@@ -144,11 +143,11 @@ void Modal :: setDirectGain(MY_FLOAT aGain)
 void Modal :: setModeGain(int modeIndex, MY_FLOAT gain)
 {
   if ( modeIndex < 0 ) {
-    cerr << "Modal: setModeGain modeIndex parameter is less than zero!" << endl;
+    advise("Modal", "setModeGain modeIndex parameter is less than zero!");
     return;
   }
   else if ( modeIndex >= nModes ) {
-    cerr << "Modal: setModeGain modeIndex parameter is greater than the number of operators!" << endl;
+    advise("Modal", "setModeGain modeIndex parameter is greater than the number of operators!");
     return;
   }
 
@@ -159,11 +158,11 @@ void Modal :: strike(MY_FLOAT amplitude)
 {
   MY_FLOAT gain = amplitude;
   if ( amplitude < 0.0 ) {
-    cerr << "Modal: strike amplitude is less than zero!" << endl;
+    advise("Modal", "strike amplitude is less than zero!");
     gain = 0.0;
   }
   else if ( amplitude > 1.0 ) {
-    cerr << "Modal: strike amplitude is greater than 1.0!" << endl;
+    advise("Modal", "strike amplitude is greater than 1.0!");
     gain = 1.0;
   }
 
@@ -190,7 +189,7 @@ void Modal :: noteOn(MY_FLOAT frequency, MY_FLOAT amplitude)
   this->setFrequency(frequency);
 
 #if defined(_STK_DEBUG_)
-  cerr << "Modal: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
+  // cerr << "Modal: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -201,7 +200,7 @@ void Modal :: noteOff(MY_FLOAT amplitude)
   this->damp(1.0 - (amplitude * 0.03));
 
 #if defined(_STK_DEBUG_)
-  cerr << "Modal: NoteOff amplitude = " << amplitude << endl;
+  // cerr << "Modal: NoteOff amplitude = " << amplitude << endl;
 #endif
 }
 
