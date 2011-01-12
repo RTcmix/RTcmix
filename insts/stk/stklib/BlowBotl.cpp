@@ -22,8 +22,7 @@
 
 #include "BlowBotl.h"
 #include <string.h>
-#include <iostream>
-using namespace std;
+#include <ugens.h>
 
 #define __BOTTLE_RADIUS_ 0.999
 
@@ -74,7 +73,7 @@ void BlowBotl :: setFrequency(MY_FLOAT frequency)
 {
   MY_FLOAT freakency = frequency;
   if ( frequency <= 0.0 ) {
-    cerr << "BlowBotl: setFrequency parameter is less than or equal to zero!" << endl;
+    advise("BlowBotl", "setFrequency parameter is less than or equal to zero!");
     freakency = 220.0;
   }
 
@@ -108,7 +107,7 @@ void BlowBotl :: noteOn(MY_FLOAT frequency, MY_FLOAT amplitude)
   outputGain = amplitude + 0.001;
 
 #if defined(_STK_DEBUG_)
-  cerr << "BlowBotl: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
+  // cerr << "BlowBotl: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -117,7 +116,7 @@ void BlowBotl :: noteOff(MY_FLOAT amplitude)
   this->stopBlowing(amplitude * 0.02);
 
 #if defined(_STK_DEBUG_)
-  cerr << "BlowBotl: NoteOff amplitude = " << amplitude << endl;
+  // cerr << "BlowBotl: NoteOff amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -156,11 +155,11 @@ void BlowBotl :: controlChange(int number, MY_FLOAT value)
   MY_FLOAT norm = value * ONE_OVER_128;
   if ( norm < 0 ) {
     norm = 0.0;
-    cerr << "BlowBotl: Control value less than zero!" << endl;
+    advise("BlowBotl", "Control value less than zero!");
   }
   else if ( norm > 1.0 ) {
     norm = 1.0;
-    cerr << "BlowBotl: Control value greater than 128.0!" << endl;
+    advise("BlowBotl", "Control value greater than 128.0!");
   }
 
 /*  BGG -- commented this stuff out because I didn't compile-in SKINI
@@ -174,10 +173,10 @@ void BlowBotl :: controlChange(int number, MY_FLOAT value)
   else if (number == __SK_AfterTouch_Cont_) // 128
     adsr->setTarget( norm );
   else
-    cerr << "BlowBotl: Undefined Control Number (" << number << ")!!" << endl;
+    // cerr << "BlowBotl: Undefined Control Number (" << number << ")!!" << endl;
 */
 
 #if defined(_STK_DEBUG_)
-  cerr << "BlowBotl: controlChange number = " << number << ", value = " << value << endl;
+  // cerr << "BlowBotl: controlChange number = " << number << ", value = " << value << endl;
 #endif
 }

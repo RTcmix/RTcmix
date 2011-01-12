@@ -16,8 +16,7 @@
 /***************************************************/
 
 #include "Instrmnt.h"
-#include <iostream>
-using namespace std;
+#include <ugens.h>
 
 Instrmnt :: Instrmnt()
 {
@@ -29,7 +28,7 @@ Instrmnt :: ~Instrmnt()
 
 void Instrmnt :: setFrequency(MY_FLOAT frequency)
 {
-  cerr << "Instrmnt: virtual setFrequency function call!" << endl;
+  advise("Instrmnt", "virtual setFrequency function call!");
 }
 
 MY_FLOAT Instrmnt :: lastOut() const

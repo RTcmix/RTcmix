@@ -28,8 +28,7 @@
 
 #include "Clarinet.h"
 #include <string.h>
-#include <iostream>
-using namespace std;
+#include <ugens.h>
 
 Clarinet :: Clarinet(MY_FLOAT lowestFrequency)
 {
@@ -76,7 +75,7 @@ void Clarinet :: setFrequency(MY_FLOAT frequency)
 {
   MY_FLOAT freakency = frequency;
   if ( frequency <= 0.0 ) {
-    cerr << "Clarinet: setFrequency parameter is less than or equal to zero!" << endl;
+    advise("Clarinet", "setFrequency parameter is less than or equal to zero!");
     freakency = 220.0;
   }
 
@@ -108,7 +107,7 @@ void Clarinet :: noteOn(MY_FLOAT frequency, MY_FLOAT amplitude)
   outputGain = amplitude + (MY_FLOAT) 0.001;
 
 #if defined(_STK_DEBUG_)
-  cerr << "Clarinet: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
+  // cerr << "Clarinet: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -117,7 +116,7 @@ void Clarinet :: noteOff(MY_FLOAT amplitude)
   this->stopBlowing(amplitude * (MY_FLOAT) 0.01);
 
 #if defined(_STK_DEBUG_)
-  cerr << "Clarinet: NoteOff amplitude = " << amplitude << endl;
+  // cerr << "Clarinet: NoteOff amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -161,11 +160,11 @@ void Clarinet :: controlChange(int number, MY_FLOAT value)
   MY_FLOAT norm = value * ONE_OVER_128;
   if ( norm < 0 ) {
     norm = 0.0;
-    cerr << "Clarinet: Control value less than zero!" << endl;
+    advise("Clarinet", "Control value less than zero!");
   }
   else if ( norm > 1.0 ) {
     norm = 1.0;
-    cerr << "Clarinet: Control value greater than 128.0!" << endl;
+    advise("Clarinet", "Control value greater than 128.0!");
   }
 
 /*  BGG --commented this stuff out because I didn't compile-in SKINI
@@ -180,11 +179,11 @@ void Clarinet :: controlChange(int number, MY_FLOAT value)
   else if (number == __SK_AfterTouch_Cont_) // 128
     envelope->setValue(norm);
   else
-    cerr << "Clarinet: Undefined Control Number (" << number << ")!!" << endl;
+    // cerr << "Clarinet: Undefined Control Number (" << number << ")!!" << endl;
 */
 
 #if defined(_STK_DEBUG_)
-  cerr << "Clarinet: controlChange number = " << number << ", value = " << value << endl;
+  // cerr << "Clarinet: controlChange number = " << number << ", value = " << value << endl;
 #endif
 }
 

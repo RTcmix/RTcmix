@@ -27,8 +27,7 @@
 #include "Brass.h"
 #include <string.h>
 #include <math.h>
-#include <iostream>
-using namespace std;
+#include <ugens.h>
 
 // BGG -- eliminated the ADSR (breath amp now comes in through
 // 	the tick() method) and the vibrato
@@ -68,7 +67,7 @@ void Brass :: setFrequency(MY_FLOAT frequency)
 {
   MY_FLOAT freakency = frequency;
   if ( frequency <= 0.0 ) {
-    cerr << "Brass: setFrequency parameter is less than or equal to zero!" << endl;
+    advise("Brass", "setFrequency parameter is less than or equal to zero!");
     freakency = 220.0;
   }
 
@@ -86,7 +85,7 @@ void Brass :: setLip(MY_FLOAT frequency)
 {
   MY_FLOAT freakency = frequency;
   if ( frequency <= 0.0 ) {
-    cerr << "Brass: setLip parameter is less than or equal to zero!" << endl;
+    advise("Brass", "setLip parameter is less than or equal to zero!");
     freakency = 220.0;
   }
 
@@ -120,7 +119,7 @@ void Brass :: noteOn(MY_FLOAT frequency, MY_FLOAT amplitude)
   this->startBlowing(amplitude, amplitude * 0.001);
 
 #if defined(_STK_DEBUG_)
-  cerr << "Brass: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
+  // cerr << "Brass: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -129,7 +128,7 @@ void Brass :: noteOff(MY_FLOAT amplitude)
   this->stopBlowing(amplitude * 0.005);
 
 #if defined(_STK_DEBUG_)
-  cerr << "Brass: NoteOff amplitude = " << amplitude << endl;
+  // cerr << "Brass: NoteOff amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -165,11 +164,11 @@ void Brass :: controlChange(int number, MY_FLOAT value)
   MY_FLOAT norm = value * ONE_OVER_128;
   if ( norm < 0 ) {
     norm = 0.0;
-    cerr << "Brass: Control value less than zero!" << endl;
+    advise("Brass", "Control value less than zero!");
   }
   else if ( norm > 1.0 ) {
     norm = 1.0;
-    cerr << "Brass: Control value greater than 128.0!" << endl;
+    advise("Brass", "Control value greater than 128.0!");
   }
 
 /*  BGG -- commented this stuff out because I didn't compile-in SKINI
@@ -187,10 +186,10 @@ void Brass :: controlChange(int number, MY_FLOAT value)
   else if (number == __SK_AfterTouch_Cont_) // 128
     adsr->setTarget( norm );
   else
-    cerr << "Brass: Undefined Control Number (" << number << ")!!" << endl;
+    // cerr << "Brass: Undefined Control Number (" << number << ")!!" << endl;
 */
 
 #if defined(_STK_DEBUG_)
-  cerr << "Brass: controlChange number = " << number << ", value = " << value << endl;
+  // cerr << "Brass: controlChange number = " << number << ", value = " << value << endl;
 #endif
 }

@@ -36,8 +36,8 @@
 #include "BandedWG.h"
 #include "Noise.h"
 #include <math.h>
-#include <iostream>
-using namespace std;
+#include <ugens.h>
+
 
 BandedWG :: BandedWG()
 {
@@ -188,7 +188,7 @@ void BandedWG :: setFrequency(MY_FLOAT frequency)
 {
   freakency = frequency;
   if ( frequency <= 0.0 ) {
-    cerr << "BandedWG: setFrequency parameter is less than or equal to zero!" << endl;
+    advise("BandedWG", "setFrequency parameter is less than or equal to zero!");
     freakency = 220.0;
   }
   if (freakency > 1568.0) freakency = 1568.0;
@@ -274,7 +274,7 @@ void BandedWG :: noteOn(MY_FLOAT frequency, MY_FLOAT amplitude)
     this->startBowing(amplitude, amplitude * 0.001);
 
 #if defined(_STK_DEBUG_)
-  cerr << "BandedWG: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
+  // cerr << "BandedWG: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -285,7 +285,7 @@ void BandedWG :: noteOff(MY_FLOAT amplitude)
     this->stopBowing((1.0 - amplitude) * 0.005);
 
 #if defined(_STK_DEBUG_)
-  cerr << "BandedWG: NoteOff amplitude = " << amplitude << endl;
+  // cerr << "BandedWG: NoteOff amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -346,11 +346,11 @@ void BandedWG :: controlChange(int number, MY_FLOAT value)
   MY_FLOAT norm = value * ONE_OVER_128;
   if ( norm < 0 ) {
     norm = 0.0;
-    cerr << "BandedWG: Control value less than zero!" << endl;
+    advise("BandedWG", "Control value less than zero!");
   }
   else if ( norm > 1.0 ) {
     norm = 1.0;
-    cerr << "BandedWG: Control value greater than 128.0!" << endl;
+    advise("BandedWG", "Control value greater than 128.0!");
   }
 
 /*  BGG --commented this stuff out because I didn't compile-in SKINI
@@ -403,11 +403,11 @@ void BandedWG :: controlChange(int number, MY_FLOAT value)
   else if (number == __SK_ProphesyRibbon_) // 16
     this->setPreset((int) value);  
   else
-    cerr << "BandedWG: Undefined Control Number (" << number << ")!!" << endl;
+    advise("BandedWG", "Undefined Control Number %d!!", number;)
 */
 
 #if defined(_STK_DEBUG_)
-  cerr << "BandedWG: controlChange number = " << number << ", value = " << value << endl;
+  // cerr << "BandedWG: controlChange number = " << number << ", value = " << value << endl;
 #endif
 }
 

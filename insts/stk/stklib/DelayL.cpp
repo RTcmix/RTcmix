@@ -27,8 +27,7 @@
 /***************************************************/
 
 #include "DelayL.h"
-#include <iostream>
-using namespace std;
+#include <ugens.h>
 
 
 DelayL :: DelayL()
@@ -62,13 +61,13 @@ void DelayL :: setDelay(MY_FLOAT theDelay)
   MY_FLOAT outPointer;
 
   if (theDelay > length-1) {
-    cerr << "DelayL: setDelay(" << theDelay << ") too big!" << endl;
+    advise("DelayL", "setDelay (%f) too big!", theDelay);
     // Force delay to maxLength
     outPointer = inPoint + 1.0;
     delay = length - 1;
   }
   else if (theDelay < 0 ) {
-    cerr << "DelayL: setDelay(" << theDelay << ") less than zero!" << endl;
+	 advise("DelayL", "setDelay (%f) less than 0.5 not possible!", theDelay);
     outPointer = inPoint;
     delay = 0;
   }

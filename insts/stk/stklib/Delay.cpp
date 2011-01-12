@@ -23,8 +23,7 @@
 /***************************************************/
 
 #include "Delay.h"
-#include <iostream>
-using namespace std;
+#include <ugens.h>
 
 
 Delay :: Delay()
@@ -70,13 +69,13 @@ void Delay :: clear(void)
 void Delay :: setDelay(long theDelay)
 {
   if (theDelay > length-1) { // The value is too big.
-    cerr << "Delay: setDelay(" << theDelay << ") too big!" << endl;
+    advise("Delay", "setDelay (%d) too big!", theDelay);
     // Force delay to maxLength.
     outPoint = inPoint + 1;
     delay = length - 1;
   }
   else if (theDelay < 0 ) {
-    cerr << "Delay: setDelay(" << theDelay << ") less than zero!" << endl;
+    advise("Delay", "setDelay (%d)less than zero!", theDelay);
     outPoint = inPoint;
     delay = 0;
   }
@@ -119,11 +118,11 @@ MY_FLOAT Delay :: contentsAt(long tapDelay) const
 {
   long i = tapDelay;
   if (i < 0) {
-    cerr << "Delay: contentsAt(" << tapDelay << ") too small!" << endl;
+    advise("Delay", "contentsAt (%d) too small!", tapDelay);
     i = 0;
   }
   else if (i > delay) {
-    cerr << "Delay: contentsAt(" << tapDelay << ") too big!" << endl;
+    advise("Delay", "contentsAt (%d) too big!", tapDelay);
     i = (long) delay;
   }
 

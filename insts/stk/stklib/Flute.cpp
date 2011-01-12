@@ -28,8 +28,8 @@
 
 #include "Flute.h"
 #include <string.h>
-#include <iostream>
-using namespace std;
+#include <ugens.h>
+
 
 Flute :: Flute(MY_FLOAT lowestFrequency)
 {
@@ -92,7 +92,7 @@ void Flute :: setFrequency(MY_FLOAT frequency)
 {
   lastFrequency = frequency;
   if ( frequency <= 0.0 ) {
-    cerr << "Flute: setFrequency parameter is less than or equal to zero!" << endl;
+    advise("Flute", "setFrequency parameter is less than or equal to zero!");
     lastFrequency = 220.0;
   }
 
@@ -128,7 +128,7 @@ void Flute :: noteOn(MY_FLOAT frequency, MY_FLOAT amplitude)
   outputGain = amplitude + 0.001;
 
 #if defined(_STK_DEBUG_)
-  cerr << "Flute: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
+  // cerr << "Flute: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -137,7 +137,7 @@ void Flute :: noteOff(MY_FLOAT amplitude)
   this->stopBlowing(amplitude * 0.02);
 
 #if defined(_STK_DEBUG_)
-  cerr << "Flute: NoteOff amplitude = " << amplitude << endl;
+  // cerr << "Flute: NoteOff amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -196,11 +196,11 @@ void Flute :: controlChange(int number, MY_FLOAT value)
   MY_FLOAT norm = value * ONE_OVER_128;
   if ( norm < 0 ) {
     norm = 0.0;
-    cerr << "Flute: Control value less than zero!" << endl;
+    advise("Flute", "Control value less than zero!");
   }
   else if ( norm > 1.0 ) {
     norm = 1.0;
-    cerr << "Flute: Control value greater than 128.0!" << endl;
+    advise("Flute", "Control value greater than 128.0!");
   }
 
 /*  BGG --commented this stuff out because I didn't compile-in SKINI
@@ -216,11 +216,11 @@ void Flute :: controlChange(int number, MY_FLOAT value)
   else if (number == __SK_AfterTouch_Cont_) // 128
     adsr->setTarget( norm );
   else
-    cerr << "Flute: Undefined Control Number (" << number << ")!!" << endl;
+    // cerr << "Flute: Undefined Control Number (" << number << ")!!" << endl;
 */
 
 #if defined(_STK_DEBUG_)
-  cerr << "Flute: controlChange number = " << number << ", value = " << value << endl;
+  // cerr << "Flute: controlChange number = " << number << ", value = " << value << endl;
 #endif
 }
 

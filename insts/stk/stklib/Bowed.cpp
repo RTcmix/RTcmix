@@ -27,8 +27,7 @@
 
 #include "Bowed.h"
 #include <string.h>
-#include <iostream>
-using namespace std;
+#include <ugens.h>
 
 Bowed :: Bowed(MY_FLOAT lowestFrequency)
 {
@@ -90,7 +89,7 @@ void Bowed :: setFrequency(MY_FLOAT frequency)
 {
   MY_FLOAT freakency = frequency;
   if ( frequency <= 0.0 ) {
-    cerr << "Bowed: setFrequency parameter is less than or equal to zero!" << endl;
+    advise("Bowed", "setFrequency parameter is less than or equal to zero!");
     freakency = 220.0;
   }
 
@@ -121,7 +120,7 @@ void Bowed :: noteOn(MY_FLOAT frequency, MY_FLOAT amplitude)
   this->setFrequency(frequency);
 
 #if defined(_STK_DEBUG_)
-  cerr << "Bowed: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
+  // cerr << "Bowed: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -130,7 +129,7 @@ void Bowed :: noteOff(MY_FLOAT amplitude)
   this->stopBowing(((MY_FLOAT) 1.0 - amplitude) * (MY_FLOAT) 0.005);
 
 #if defined(_STK_DEBUG_)
-  cerr << "Bowed: NoteOff amplitude = " << amplitude << endl;
+  // cerr << "Bowed: NoteOff amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -186,11 +185,11 @@ void Bowed :: controlChange(int number, MY_FLOAT value)
   MY_FLOAT norm = value * ONE_OVER_128;
   if ( norm < 0 ) {
     norm = 0.0;
-    cerr << "Bowed: Control value less than zero!" << endl;
+    advise("Bowed", "Control value less than zero!");
   }
   else if ( norm > 1.0 ) {
     norm = 1.0;
-    cerr << "Bowed: Control value greater than 128.0!" << endl;
+    advise("Bowed", "Control value greater than 128.0!");
   }
 
 /*  BGG -- commented this stuff out because I didn't compile-in SKINI
@@ -209,11 +208,11 @@ void Bowed :: controlChange(int number, MY_FLOAT value)
   else if (number == __SK_AfterTouch_Cont_) // 128
     adsr->setTarget(norm);
   else
-    cerr << "Bowed: Undefined Control Number (" << number << ")!!" << endl;
+    // cerr << "Bowed: Undefined Control Number (" << number << ")!!" << endl;
 */
 
 #if defined(_STK_DEBUG_)
-  cerr << "Bowed: controlChange number = " << number << ", value = " << value << endl;
+  // cerr << "Bowed: controlChange number = " << number << ", value = " << value << endl;
 #endif
 }
 
