@@ -30,8 +30,7 @@
 
 #include "Mesh2D.h"
 #include <stdlib.h>
-#include <iostream>
-using namespace std;
+#include <ugens.h>
 
 Mesh2D :: Mesh2D(short nX, short nY)
 {
@@ -150,11 +149,11 @@ void Mesh2D :: setNX(short lenX)
 {
   NX = lenX;
   if ( lenX < 2 ) {
-    cerr << "Mesh2D::setNX(" << lenX << "): Minimum length is 2!" << endl;
+    advise("Mesh2D", "setNX(%d): Minimum length is 2!", lenX);
     NX = 2;
   }
   else if ( lenX > NXMAX ) {
-    cerr << "Mesh2D::setNX(" << lenX << "): Maximum length is " << NXMAX << "!" << endl;
+    advise("Mesh2D", "setNX(%d): Maximum length is %d!", lenX, NXMAX);
     NX = NXMAX;
   }
 }
@@ -163,11 +162,11 @@ void Mesh2D :: setNY(short lenY)
 {
   NY = lenY;
   if ( lenY < 2 ) {
-    cerr << "Mesh2D::setNY(" << lenY << "): Minimum length is 2!" << endl;
+    advise("Mesh2D", "setNY(%d): Minimum length is 2!", lenY);
     NY = 2;
   }
   else if ( lenY > NYMAX ) {
-    cerr << "Mesh2D::setNY(" << lenY << "): Maximum length is " << NYMAX << "!" << endl;
+    advise("Mesh2D", "setNY(%d): Maximum length is %d!", lenY, NXMAX);
     NY = NYMAX;
   }
 }
@@ -176,11 +175,11 @@ void Mesh2D :: setDecay(MY_FLOAT decayFactor)
 {
   MY_FLOAT gain = decayFactor;
   if ( decayFactor < 0.0 ) {
-    cerr << "Mesh2D::setDecay decayFactor value is less than 0.0!" << endl;
+    advise("Mesh2D", "setDecay decayFactor value is less than 0.0!");
     gain = 0.0;
   }
   else if ( decayFactor > 1.0 ) {
-    cerr << "Mesh2D::setDecay decayFactor value is greater than 1.0!" << endl;
+    advise("Mesh2D", "setDecay decayFactor value is greater than 1.0!");
     gain = 1.0;
   }
 
@@ -195,22 +194,22 @@ void Mesh2D :: setDecay(MY_FLOAT decayFactor)
 void Mesh2D :: setInputPosition(MY_FLOAT xFactor, MY_FLOAT yFactor)
 {
   if ( xFactor < 0.0 ) {
-    cerr << "Mesh2D::setInputPosition xFactor value is less than 0.0!" << endl;
+    advise("Mesh2D", "setInputPosition xFactor value is less than 0.0!");
     xInput = 0;
   }
   else if ( xFactor > 1.0 ) {
-    cerr << "Mesh2D::setInputPosition xFactor value is greater than 1.0!" << endl;
+    advise("Mesh2D", "setInputPosition xFactor value is greater than 1.0!");
     xInput = NX - 1;
   }
   else
     xInput = (short) (xFactor * (NX - 1));
 
   if ( yFactor < 0.0 ) {
-    cerr << "Mesh2D::setInputPosition yFactor value is less than 0.0!" << endl;
+    advise("Mesh2D", "setInputPosition yFactor value is less than 0.0!");
     yInput = 0;
   }
   else if ( yFactor > 1.0 ) {
-    cerr << "Mesh2D::setInputPosition yFactor value is greater than 1.0!" << endl;
+    advise("Mesh2D", "setInputPosition yFactor value is greater than 1.0!");
     yInput = NY - 1;
   }
   else
@@ -230,14 +229,14 @@ void Mesh2D :: noteOn(MY_FLOAT frequency, MY_FLOAT amplitude)
   }
 
 #if defined(_STK_DEBUG_)
-  cerr << "Mesh2D: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
+  // cerr << "Mesh2D: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
 #endif
 }
 
 void Mesh2D :: noteOff(MY_FLOAT amplitude)
 {
 #if defined(_STK_DEBUG_)
-  cerr << "Mesh2D: NoteOff amplitude = " << amplitude << endl;
+  // cerr << "Mesh2D: NoteOff amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -369,11 +368,11 @@ void Mesh2D :: controlChange(int number, MY_FLOAT value)
   MY_FLOAT norm = value * ONE_OVER_128;
   if ( norm < 0 ) {
     norm = 0.0;
-    cerr << "Mesh2D: Control value less than zero!" << endl;
+    advise("Mesh2D", "Control value less than zero!");
   }
   else if ( norm > 1.0 ) {
     norm = 1.0;
-    cerr << "Mesh2D: Control value greater than 128.0!" << endl;
+    advise("Mesh2D", "Control value greater than 128.0!");
   }
 
 /* BGG -- some SKINI stuff in here (sorry perry!)
@@ -388,10 +387,10 @@ void Mesh2D :: controlChange(int number, MY_FLOAT value)
   else if (number == __SK_AfterTouch_Cont_) // 128
     ;
   else
-    cerr << "Mesh2D: Undefined Control Number (" << number << ")!!" << endl;
+    // cerr << "Mesh2D: Undefined Control Number (" << number << ")!!" << endl;
 */
 
 #if defined(_STK_DEBUG_)
-  cerr << "Mesh2D: controlChange number = " << number << ", value = " << value << endl;
+  // cerr << "Mesh2D: controlChange number = " << number << ", value = " << value << endl;
 #endif
 }

@@ -41,8 +41,7 @@
 
 #include "Saxofony.h"
 #include <string.h>
-#include <iostream>
-using namespace std;
+#include <ugens.h>
 
 Saxofony :: Saxofony(MY_FLOAT lowestFrequency)
 {
@@ -95,7 +94,7 @@ void Saxofony :: setFrequency(MY_FLOAT frequency)
 {
   MY_FLOAT freakency = frequency;
   if ( frequency <= 0.0 ) {
-    cerr << "Saxofony: setFrequency parameter is less than or equal to zero!" << endl;
+    advise("Saxofony", "setFrequency parameter is less than or equal to zero!");
     freakency = 220.0;
   }
 
@@ -144,7 +143,7 @@ void Saxofony :: noteOn(MY_FLOAT frequency, MY_FLOAT amplitude)
   outputGain = amplitude + 0.001;
 
 #if defined(_STK_DEBUG_)
-  cerr << "Saxofony: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
+  // cerr << "Saxofony: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -153,7 +152,7 @@ void Saxofony :: noteOff(MY_FLOAT amplitude)
   this->stopBlowing(amplitude * 0.01);
 
 #if defined(_STK_DEBUG_)
-  cerr << "Saxofony: NoteOff amplitude = " << amplitude << endl;
+  // cerr << "Saxofony: NoteOff amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -193,11 +192,11 @@ void Saxofony :: controlChange(int number, MY_FLOAT value)
   MY_FLOAT norm = value * ONE_OVER_128;
   if ( norm < 0 ) {
     norm = 0.0;
-    cerr << "Saxofony: Control value less than zero!" << endl;
+    advise("Saxofony", "Control value less than zero!");
   }
   else if ( norm > 1.0 ) {
     norm = 1.0;
-    cerr << "Saxofony: Control value greater than 128.0!" << endl;
+    advise("Saxofony", "Control value greater than 128.0!");
   }
 
 /*  BGG --commented this stuff out because I didn't compile-in SKINI
@@ -217,11 +216,11 @@ void Saxofony :: controlChange(int number, MY_FLOAT value)
   else if (number == 26) // reed table offset
     reedTable->setOffset(0.4 + ( norm * 0.6));
   else
-    cerr << "Saxofony: Undefined Control Number (" << number << ")!!" << endl;
+    // cerr << "Saxofony: Undefined Control Number (" << number << ")!!" << endl;
 */
 
 #if defined(_STK_DEBUG_)
-  cerr << "Saxofony: controlChange number = " << number << ", value = " << value << endl;
+  // cerr << "Saxofony: controlChange number = " << number << ", value = " << value << endl;
 #endif
 
 }

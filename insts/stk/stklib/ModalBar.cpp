@@ -36,8 +36,7 @@
 #include "ModalBar.h"
 #include <string.h>
 #include <math.h>
-#include <iostream>
-using namespace std;
+#include <ugens.h>
 
 ModalBar :: ModalBar()
   : Modal()
@@ -70,11 +69,11 @@ void ModalBar :: setStickHardness(MY_FLOAT hardness)
 /* BGG
   stickHardness = hardness;
   if ( hardness < 0.0 ) {
-    cerr << "ModalBar: setStickHardness parameter is less than zero!" << endl;
+    advise("ModalBar", "setStickHardness parameter is less than zero!");
     stickHardness = 0.0;
   }
   else if ( hardness > 1.0 ) {
-    cerr << "ModalBar: setStickHarness parameter is greater than 1.0!" << endl;
+    advise("ModalBar", "setStickHarness parameter is greater than 1.0!");
     stickHardness = 1.0;
   }
 
@@ -88,11 +87,11 @@ void ModalBar :: setStrikePosition(MY_FLOAT position)
 {
   strikePosition = position;
   if ( position < 0.0 ) {
-    cerr << "ModalBar: setStrikePositions parameter is less than zero!" << endl;
+    advise("ModalBar", "setStrikePositions parameter is less than zero!");
     strikePosition = 0.0;
   }
   else if ( position > 1.0 ) {
-    cerr << "ModalBar: setStrikePosition parameter is greater than 1.0!" << endl;
+    advise("ModalBar", "setStrikePosition parameter is greater than 1.0!");
     strikePosition = 1.0;
   }
 
@@ -180,11 +179,11 @@ void ModalBar :: controlChange(int number, MY_FLOAT value)
   MY_FLOAT norm = value * ONE_OVER_128;
   if ( norm < 0 ) {
     norm = 0.0;
-    cerr << "ModalBar: Control value less than zero!" << endl;
+    advise("ModalBar", "Control value less than zero!");
   }
   else if ( norm > 1.0 ) {
     norm = 1.0;
-    cerr << "ModalBar: Control value greater than 128.0!" << endl;
+    advise("ModalBar", "Control value greater than 128.0!");
   }
 
 /*  BGG -- commented this stuff out because I didn't compile-in SKINI
@@ -204,10 +203,10 @@ void ModalBar :: controlChange(int number, MY_FLOAT value)
   else if (number == __SK_AfterTouch_Cont_)	// 128
     envelope->setTarget( norm );
   else
-    cerr << "ModalBar: Undefined Control Number (" << number << ")!!" << endl;\
+    // cerr << "ModalBar: Undefined Control Number (" << number << ")!!" << endl;\
 */
 
 #if defined(_STK_DEBUG_)
-  cerr << "ModalBar: controlChange number = " << number << ", value = " << value << endl;
+  // cerr << "ModalBar: controlChange number = " << number << ", value = " << value << endl;
 #endif
 }

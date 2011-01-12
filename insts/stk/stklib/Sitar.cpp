@@ -23,8 +23,7 @@
 
 #include "Sitar.h"
 #include <math.h>
-#include <iostream>
-using namespace std;
+#include <ugens.h>
 
 Sitar :: Sitar(MY_FLOAT lowestFrequency)
 {
@@ -63,7 +62,7 @@ void Sitar :: setFrequency(MY_FLOAT frequency)
 {
   MY_FLOAT freakency = frequency;
   if ( frequency <= 0.0 ) {
-    cerr << "Sitar: setFrequency parameter is less than or equal to zero!" << endl;
+    advise("Sitar", "setFrequency parameter is less than or equal to zero!");
     freakency = 220.0;
   }
 
@@ -87,7 +86,7 @@ void Sitar :: noteOn(MY_FLOAT frequency, MY_FLOAT amplitude)
   amGain = 0.1 * amplitude;
 
 #if defined(_STK_DEBUG_)
-  cerr << "Sitar: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
+  // cerr << "Sitar: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -95,16 +94,16 @@ void Sitar :: noteOff(MY_FLOAT amplitude)
 {
   loopGain = (MY_FLOAT) 1.0 - amplitude;
   if ( loopGain < 0.0 ) {
-    cerr << "Plucked: noteOff amplitude greater than 1.0!" << endl;
+    advise("Sitar", "Plucked, noteOff amplitude greater than 1.0!");
     loopGain = 0.0;
   }
   else if ( loopGain > 1.0 ) {
-    cerr << "Plucked: noteOff amplitude less than or zero!" << endl;
+    advise("Sitar", "Plucked: noteOff amplitude less than or zero!");
     loopGain = (MY_FLOAT) 0.99999;
   }
 
 #if defined(_STK_DEBUG_)
-  cerr << "Plucked: NoteOff amplitude = " << amplitude << endl;
+  // cerr << "Plucked: NoteOff amplitude = " << amplitude << endl;
 #endif
 }
 

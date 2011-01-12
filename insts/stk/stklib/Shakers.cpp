@@ -60,8 +60,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
-#include <iostream>
-using namespace std;
+#include <ugens.h>
 
 int my_random(int max) //  Return Random Int Between 0 and max
 {
@@ -349,7 +348,7 @@ int Shakers :: setupName(char* instr)
   }
 
 #if defined(_STK_DEBUG_)
-  cerr << "Shakers: Setting instrument to " << instrs[which] << endl;
+  // cerr << "Shakers: Setting instrument to " << instrs[which] << endl;
 #endif
 
   return this->setupNum(which);
@@ -809,7 +808,7 @@ void Shakers :: noteOn(MY_FLOAT frequency, MY_FLOAT amplitude)
   if (instType==10 || instType==3) ratchetPos += 1;
 
 #if defined(_STK_DEBUG_)
-  cerr << "Shakers: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
+  // cerr << "Shakers: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -900,11 +899,11 @@ void Shakers :: controlChange(int number, MY_FLOAT value)
   MY_FLOAT norm = value * ONE_OVER_128;
   if ( norm < 0 ) {
     norm = 0.0;
-    cerr << "Shakers: Control value less than zero!" << endl;
+    advise("Shakers","Control value less than zero!");
   }
   else if ( norm > 1.0 ) {
     norm = 1.0;
-    cerr << "Shakers: Control value greater than 128.0!" << endl;
+    advise("Shakers", "Control value greater than 128.0!");
   }
 
   MY_FLOAT temp;
@@ -993,11 +992,11 @@ void Shakers :: controlChange(int number, MY_FLOAT value)
     this->setupNum(instType);
   }                                       
   else
-    cerr << "Shakers: Undefined Control Number (" << number << ")!!" << endl;
+    // cerr << "Shakers: Undefined Control Number (" << number << ")!!" << endl;
 */
 
 #if defined(_STK_DEBUG_)
-  cerr << "Shakers: controlChange number = " << number << ", value = " << value << endl;
+  // cerr << "Shakers: controlChange number = " << number << ", value = " << value << endl;
 #endif
 }
 
