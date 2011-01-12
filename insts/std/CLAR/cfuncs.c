@@ -34,7 +34,7 @@ mdelget(float *a, int samps, int *l)
 float  
 mdliget(float *a, float samps, int *l)
 {
-/* get interpolated value from delay line, wait seconds old */
+/* get interpolated value from delay line, samps samples old */
 	int im1;
 	int i;
 	float frac;
