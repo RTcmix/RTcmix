@@ -27,6 +27,7 @@
          A table-handle in p8 may also be used.)
       p3 (frequency)
       p7 (pan)
+		p8 (amplitude envelope table)
 */
 
 #include <Stk.h>
