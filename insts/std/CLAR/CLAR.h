@@ -1,4 +1,4 @@
-#define DELSIZE 100
+#define DELSIZE 500
 
 class CLAR : public Instrument {
 	int dl1[3],dl2[3],length1,length2;
