@@ -40,8 +40,7 @@
 #include "BlowHole.h"
 #include <math.h>
 #include <string.h>
-#include <iostream>
-using namespace std;
+#include <ugens.h>
 
 BlowHole :: BlowHole(MY_FLOAT lowestFrequency)
 {
@@ -129,7 +128,7 @@ void BlowHole :: setFrequency(MY_FLOAT frequency)
 {
   MY_FLOAT freakency = frequency;
   if ( frequency <= 0.0 ) {
-    cerr << "BlowHole: setFrequency parameter is less than or equal to zero!" << endl;
+    advise("BlowHole", "setFrequency parameter is less than or equal to zero!");
     freakency = 220.0;
   }
 
@@ -191,7 +190,7 @@ void BlowHole :: noteOn(MY_FLOAT frequency, MY_FLOAT amplitude)
   outputGain = amplitude + 0.001;
 
 #if defined(_STK_DEBUG_)
-  cerr << "BlowHole: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
+  // cerr << "BlowHole: NoteOn frequency = " << frequency << ", amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -200,7 +199,7 @@ void BlowHole :: noteOff(MY_FLOAT amplitude)
   this->stopBlowing(amplitude * 0.01);
 
 #if defined(_STK_DEBUG_)
-  cerr << "BlowHole: NoteOff amplitude = " << amplitude << endl;
+  // cerr << "BlowHole: NoteOff amplitude = " << amplitude << endl;
 #endif
 }
 
@@ -254,11 +253,11 @@ void BlowHole :: controlChange(int number, MY_FLOAT value)
   MY_FLOAT norm = value * ONE_OVER_128;
   if ( norm < 0 ) {
     norm = 0.0;
-    cerr << "BlowHole: Control value less than zero!" << endl;
+    advise("BlowHole", "Control value less than zero!");
   }
   else if ( norm > 1.0 ) {
     norm = 1.0;
-    cerr << "BlowHole: Control value greater than 128.0!" << endl;
+    advise("BlowHole", "Control value greater than 128.0!");
   }
 
 /*  BGG --commented this stuff out because I didn't compile-in SKINI
@@ -274,11 +273,11 @@ void BlowHole :: controlChange(int number, MY_FLOAT value)
   else if (number == __SK_AfterTouch_Cont_) // 128
     envelope->setValue( norm );
   else
-    cerr << "BlowHole: Undefined Control Number (" << number << ")!!" << endl;
+    // cerr << "BlowHole: Undefined Control Number (" << number << ")!!" << endl;
 */
 
 #if defined(_STK_DEBUG_)
-  cerr << "BlowHole: controlChange number = " << number << ", value = " << value << endl;
+  // cerr << "BlowHole: controlChange number = " << number << ", value = " << value << endl;
 #endif
 }
 
