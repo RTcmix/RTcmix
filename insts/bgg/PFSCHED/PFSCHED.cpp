@@ -70,6 +70,12 @@ int PFSCHED::init(double p[], int n_args)
 
 	pfbus = p[2];
 
+	if (pfbus_is_connected[pfbus] != 1) {
+		rterror("PFSCHED", "pfbus %d not connected", pfbus);
+		return DONT_SCHEDULE;
+	}
+
+
 	pfbusses[pfbus].drawflag = 0; // the 'connected' note will read when == 1
 //	pfbusses[pfbus].thepfield = &((*_pfields)[3]);
 //	pfbusses[pfbus].thepfield = &(getPField(3)); // this is the PField to read

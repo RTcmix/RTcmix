@@ -14,6 +14,7 @@ struct pfbusdata {
 // this should be enough...
 #define NPFBUSSES 1024
 struct pfbusdata pfbusses[NPFBUSSES];
+int pfbus_is_connected[NPFBUSSES];
 
 class PFSCHED : public Instrument {
 	int pfbus;
