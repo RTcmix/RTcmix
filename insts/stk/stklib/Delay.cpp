@@ -75,7 +75,7 @@ void Delay :: setDelay(long theDelay)
     delay = length - 1;
   }
   else if (theDelay < 0 ) {
-    advise("Delay", "setDelay (%d)less than zero!", theDelay);
+    advise("Delay", "setDelay (%d) less than zero!", theDelay);
     outPoint = inPoint;
     delay = 0;
   }
