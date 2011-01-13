@@ -33,6 +33,11 @@
 //		(pfbusses[1] internally).
 //				BGG 11/2009
 
+// BGG mm -- these are in insts/bgg/PFSCHED.h; catch a few crashes
+extern struct pfbusdata pfbusses[];
+extern int pfbus_is_connected[];
+
+
 static RTNumberPField *
 _pfbus_usage()
 {
@@ -59,6 +64,12 @@ create_pfield(const Arg args[], const int nargs)
 		defaultval = args[1];
 	else
 		return _pfbus_usage();
+
+	if (pfbusses[pfbusval].thepfield != NULL) {
+		rterror("pfbusses", "pfbus %d is already connected", pfbusval);
+		return (RTNumberPField*)(pfbusses[pfbusval].thepfield);
+	}
+	pfbus_is_connected[pfbusval] = 1;
 
 	return new PFBusPField(pfbusval, defaultval);
 }
