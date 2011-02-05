@@ -154,10 +154,10 @@ int PFSCHED::run()
 		// note the subtraction; the PField will be read for the correct duration
 		pfbusses[pfbus].theincr = (SR/(float)resetval)/(double)(nSamps()-(RTBUFSAMPS+1));
 		pfbusses[pfbus].drawflag = 1; // signal to start reading from the pfield
+		if (set_dq_flag == 1) pfbusses[pfbus].dqflag = 1;
 		firsttime = 0;
 	}
 
-	if (set_dq_flag == 1) pfbusses[pfbus].dqflag = 1;
 	i = framesToRun();
 	increment(i);
 
