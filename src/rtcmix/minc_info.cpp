@@ -9,6 +9,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+// BGG -- for note_exists()
+#include <Instrument.h>
+#include <utils.h>
+
 #define ALL_CHANS -1
 
 
@@ -498,3 +502,35 @@ m_info(float *p, int n_args)
 }
 
 }	// end extern "C"
+
+
+// BGG
+// functions to get dynamic info about Instruments -- BGG
+
+extern "C" {
+	double note_exists(const Arg args[], const int nargs);
+}
+
+double note_exists(const Arg args[], const int nargs)
+{
+	if (nargs != 1)
+		return die("note_exists", "Usage:  val = note_exists(Instrument_Handle)");
+
+	Instrument *Iptr = (Instrument *)args[0];
+	if (Iptr == NULL) {
+		warn("note_exists", "Instrument/note not initialized");
+		return -1;
+	}
+
+	Iptr->ref(); // increase ref count on instrument
+
+	double retval;
+	if (Iptr->isDone() == true)
+		retval = 0.0;
+	else
+		retval = 1.0;
+
+	Iptr->unref();	// decrease ref count on instrument
+	return retval;
+}
+
