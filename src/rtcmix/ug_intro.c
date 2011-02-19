@@ -36,6 +36,7 @@ ug_intro()
 	UG_INTRO_DOUBLE_RETURN("filepeak", filepeak);
 	UG_INTRO_DOUBLE_RETURN("filerms", filerms);
 	UG_INTRO_DOUBLE_RETURN("filedc", filedc);
+	UG_INTRO_DOUBLE_RETURN("note_exists", note_exists);
 	UG_INTRO("makegen", makegen);
 	UG_INTRO("open",m_open);
 	UG_INTRO("peakoff",peak_off);
