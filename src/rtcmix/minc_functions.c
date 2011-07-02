@@ -90,6 +90,7 @@ double m_srand(float p[], int n_args)
       struct timeval tv;
       gettimeofday(&tv, NULL);
       randx = (unsigned int) tv.tv_usec;
+	  advise("srand", "Seed initialized internally with value %u", randx);
    }
    else
       randx = (unsigned int) p[0];
@@ -503,7 +504,7 @@ double m_pickwrand(float p[], int n_args, double pp[])
 		/* sum up chances */
 		for (n = 1; n < n_args; n += 2)
 				totalchance += p[n];
-		rindex = m_random(p, 0) * totalchance;
+		rindex = m_random() * totalchance;
 		for (n = 1; n < n_args; n += 2)
 		{
 				psum += p[n];
@@ -517,7 +518,7 @@ double m_pickwrand(float p[], int n_args, double pp[])
 double m_irand(float p[], int n_args, double pp[])
 {
 	double min, max;
-	double frac = m_random(p, 0);
+	double frac = m_random();
 	if (n_args == 1) {
 		min = 0.0;
 		max = pp[0];

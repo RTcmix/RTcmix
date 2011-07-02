@@ -75,7 +75,7 @@ int soundin :: run()
    aamp = amp;                  /* in case amparray == NULL */
 
    branch = 0;
-   for (i = 0; i < chunksamps; i++) {
+   for (i = 0; i < framesToRun(); i++) {
       if (--branch < 0) {
          if (amparray)
             aamp = tablei(cursamp, amparray, amptabs) * amp;
