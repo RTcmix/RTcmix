@@ -47,9 +47,6 @@ usage()
       "           -i       run in interactive mode\n"
       "           -n       no init script (interactive mode only)\n"
       "           -o NUM   socket offset (interactive mode only)\n"
-#ifdef RTUPDATE
-      "           -c       enable continuous control (rtupdates)\n"
-#endif
 #ifdef LINUX
       "           -p NUM   set process priority to NUM (as root only)\n"
 #endif
@@ -291,44 +288,6 @@ RTcmixMain::parseArguments(int argc, char **argv)
                fprintf(stderr, "-s, -d, -e options not yet implemented\n");
                exit(1);
                break;
-#ifdef RTUPDATE
-            case 'c':     /* set up for continuous control (note tags on) */
-               tags_on = 1;
-               printf("rtupdates enabled\n");
-               curtag = 1;          /* "0" is reserved for all notes */
-			   curinst = 0;
-			   curgen = 1;
-
-               for (j = 0; j < MAXPUPS; j++)     /* initialize element 0 */
-                  pupdatevals[0][j] = NOPUPDATE;
-			   for(j = 0; j < MAXNUMTAGS; j++)
-			   {
-				   for(k = 0; k < MAXNUMPARAMS; k++)
-				   {
-					   numcalls[j][k] = 0;
-					   cum_parray_size[j][k] = 0;
-					   for(l = 0; l < MAXNUMCALLS; l++)
-					   {
-						   parray_size[j][k][l] = 0; //initilizes size of 
-					   }						  // pfpath array
- 
-				   }
-			   }
-			   for(j = 0; j < MAXNUMINSTS; j++)
-			   {
-				   pi_goto[j] = -1;
-				   for(k = 0; k < MAXNUMPARAMS; k++)
-				   {
-						numinstcalls[j][k] = 0;
-						cum_piarray_size[j][k] = 0;
-						for(l = 0; l < MAXNUMCALLS; l++)
-						{
-							piarray_size[j][k][l] = 0;
-						}
-				   }
-			   }
-               break;
-#endif /* RTUPDATE */
             case 'f':     /* use file name arg instead of stdin as score */
                if (++i >= argc) {
                   fprintf(stderr, "You didn't give a file name.\n");
@@ -662,24 +621,6 @@ RTcmixMain::sockit(void *arg)
 				sinfo->data.p[i] = STRING_TO_DOUBLE(ttext[i]);
 			}
 		}
-
-	 		// if it is an rtupdate, set the pval array
-		if (strcmp(sinfo->name, "rtupdate") == 0) {
-		  // rtupdate params are:
-		  //	p0 = note tag # 0 for all notes
-		  //	p1,2... pn,pn+1 = pfield, value
-#ifdef RTUPDATE
-		  ntag = (int)sinfo->data.p[0];
-		  pthread_mutex_lock(&pfieldLock);
-		  for (i = 1; i < sinfo->n_args; i += 2) {
-			pval = (int)sinfo->data.p[i];
-			pupdatevals[ntag][pval] = sinfo->data.p[i+1];
-		  }
-		  pthread_mutex_unlock(&pfieldLock);
-		  tag_sem=1;
-#endif /* RTUPDATE */
-		}
-
 		else if ( (strcmp(sinfo->name, "RTcmix_off") == 0) ) {
 			printf("RTcmix termination cmd received.\n");
 			run_status = RT_SHUTDOWN;	// Notify inTraverse()

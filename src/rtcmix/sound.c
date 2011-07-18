@@ -115,7 +115,7 @@ static float peakflag;
 double m_open(float *p, short n_args, double *pp) 
 {
 	char  *name,*cp,*getsfcode();
-	int   fno,i,new;
+	int   fno,i,inew;
 	float *opk;
 
 	name = DOUBLE_TO_STRING(pp[0]);
@@ -129,11 +129,11 @@ double m_open(float *p, short n_args, double *pp)
 		fprintf(stderr," Only %d files allowed\n", NFILES);
 		closesf();
 		}
-	new = 0;
+	inew = 0;
 	if(isopen[fno]) {
 		close(sfd[fno]);
 	}
-	else new = 1;
+	else inew = 1;
 
 	istape[fno] = (n_args == 4) ? 1 : 0;
 			/* in the case of a tape, there will be a 
@@ -170,7 +170,7 @@ double m_open(float *p, short n_args, double *pp)
 	/*
 	sfstats(sfd[fno]);
 	*/
-	if(new) {
+	if(inew) {
 		if((sndbuf[fno] = (char *)malloc((unsigned)nbytes)) == NULL) {
 			fprintf(stderr," CMIX: malloc sound buffer error\n");
 			closesf();

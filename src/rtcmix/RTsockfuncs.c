@@ -312,8 +312,7 @@ void parse(char *buf, char **args)
 	*args = NULL;
 }
 
-int execute(args)
-char **args;
+int execute(char **args)
 {
 	int status;
 	int pid;

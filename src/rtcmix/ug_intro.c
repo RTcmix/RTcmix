@@ -134,12 +134,5 @@ ug_intro()
 	UG_INTRO("reversegen", m_reversegen);
 	UG_INTRO("shiftgen", m_shiftgen);
 	UG_INTRO("quantizegen", m_quantizegen);
-#ifdef RTUPDATE
-	UG_INTRO("pgen", pgen);
-	UG_INTRO("note_pfield_path", note_pfield_path);
-	UG_INTRO("inst_pfield_path", inst_pfield_path);
-	UG_INTRO("unset_pfield_path", unset_pfield_path);
-	UG_INTRO("set_inst_tag_num", set_itag_num);
-#endif /* RTUPDATE */
 }
 
