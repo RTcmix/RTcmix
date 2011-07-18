@@ -22,7 +22,14 @@ protected:
 	LockHandle	getLockHandle() const { return (LockHandle) &_mutex; }
 private:
 	mutable pthread_mutex_t _mutex;
+	friend class AutoLock;
 };
 
+class AutoLock : public Lock {
+public:
+	AutoLock(Lockable *inLockable) : Lock(inLockable->getLockHandle()) {}
+	AutoLock(Lockable &inLockable) : Lock(inLockable.getLockHandle()) {}
+};
+	
 #endif	//	 _RT_LOCKABLE_H_
 

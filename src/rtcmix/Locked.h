@@ -20,7 +20,7 @@ private:
 	T	mValue;
 public:
 	explicit Locked(T inValue = T(0)) : mValue(inValue) {}
-	operator T() { return mValue; }
+	operator T() const { return mValue; }
 	Locked & operator = (T rhs) { mValue = rhs; return *this; }
 };
 
