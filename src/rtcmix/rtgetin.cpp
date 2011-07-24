@@ -117,6 +117,7 @@ Instrument::rtinrepos(Instrument *inst, int frames, int whence)
 off_t 
 RTcmix::seekInputFile(int fdIndex, int frames, int chans, int whence)
 {
+	AutoLock fileLock(inputFileTable[fdIndex]);
    const int format = inputFileTable[fdIndex].data_format;
    const int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(format);
 
@@ -347,6 +348,7 @@ read_24bit_samps(
    /* Copy interleaved file buffer to dest buffer, with bus mapping. */
 
    const int src_samps = dest_frames * file_chans;
+   const BUFTYPE scaleFactor = 1 / (BUFTYPE) (1 << 8);
 
    for (int n = 0; n < dest_chans; n++) {
 #ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT
@@ -362,7 +364,7 @@ read_24bit_samps(
             int samp = (int) (((cbuf[i + 2] << 24)
                              + (cbuf[i + 1] << 16)
                              + (cbuf[i] << 8)) >> 8);
-            dest[j] = (BUFTYPE) samp / (BUFTYPE) (1 << 8);
+			dest[j] = (BUFTYPE) samp * scaleFactor;
          }
       }
       else {   /* data_format == MUS_B24INT */
@@ -370,7 +372,7 @@ read_24bit_samps(
             int samp = (int) (((cbuf[i] << 24)
                              + (cbuf[i + 1] << 16)
                              + (cbuf[i + 2] << 8)) >> 8);
-            dest[j] = (BUFTYPE) samp / (BUFTYPE) (1 << 8);
+			dest[j] = (BUFTYPE) samp * scaleFactor;
          }
       }
    }
@@ -528,6 +530,7 @@ RTcmix::readFromInputFile(
 #endif
 
    /* File opened by earlier call to rtinput. */
+   AutoLock fileLock(inputFileTable[fdIndex]);
    int fd = inputFileTable[fdIndex].fd;
    const int file_chans = inputFileTable[fdIndex].chans;
    const int data_format = inputFileTable[fdIndex].data_format;

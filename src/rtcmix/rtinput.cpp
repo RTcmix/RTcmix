@@ -345,7 +345,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 
 		/* Put new file descriptor into the first available slot in the
 			inputFileTable.  Also copy the filename for later checking, and
-			fill in the other fields in the InputDesc struct (see rtdefs.h).
+			fill in the other fields in the InputDesc struct (see RTcmix.h).
 
 			last_input_index is the value that will be used by any instrument
 			created after this call to rtinput().
@@ -390,6 +390,7 @@ RTcmix::releaseInput(int fdIndex)
    // BGG -- added this to prevent file closings in interactive mode
    // we don't know if a file will be referenced again in the future
    if (!interactive()) {
+	   AutoLock fileLock(inputFileTable[fdIndex]);
 #ifdef DEBUG
       printf("RTcmix::releaseInput: fdIndex %d refcount = %d\n",
           fdIndex, inputFileTable[fdIndex].refcount);

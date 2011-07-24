@@ -29,6 +29,7 @@
 #include <utils.h>
 #include <ug_intro.h>
 #include <AudioDevice.h>
+#include <TaskManager.h>
 #include "rt.h"
 #include "heap.h"
 #include "maxdispargs.h"
@@ -109,6 +110,12 @@ short			RTcmix::AuxToAuxPlayList[MAXBUS];
 short			RTcmix::ToOutPlayList[MAXBUS];
 short			RTcmix::ToAuxPlayList[MAXBUS];
 
+#ifdef MULTI_THREAD
+pthread_mutex_t RTcmix::aux_buffer_lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t RTcmix::out_buffer_lock = PTHREAD_MUTEX_INITIALIZER;
+TaskManager *	RTcmix::taskManager = NULL;
+#endif
+
 // Bus config state
 
 BusQueue *		RTcmix::Inst_Bus_Config;
@@ -152,6 +159,9 @@ RTcmix::init_globals(bool fromMain, const char *defaultDSOPath)
 
    rtHeap = new heap;
    rtQueue = new RTQueue[MAXBUS*3];
+#ifdef MULTI_THREAD
+   taskManager = new TaskManager;
+#endif
 
    for (int i = 0; i < MAXBUS; i++) {
       AuxToAuxPlayList[i] = -1; /* The playback order for AUX buses */
@@ -190,6 +200,11 @@ RTcmix::free_globals()
 	rtQueue = NULL;
 	delete rtHeap;
 	rtHeap = NULL;
+#ifdef MULTI_THREAD
+	delete taskManager;
+	taskManager = NULL;
+#endif
+
 }
 
 /* ----------------------------------------------------- detect_denormals --- */

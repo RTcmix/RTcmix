@@ -18,6 +18,11 @@
 #include "BusSlot.h"
 #include <dbug.h>
 
+#ifdef MULTI_THREAD
+#include <TaskManager.h>
+#include <vector>
+#endif
+
 using namespace std;
 
 #undef TBUG
@@ -136,7 +141,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	short bus_q_offset = 0;
 
 #ifdef WBUG
-cout << "ENTERING inTraverse()\n";
+	printf("ENTERING inTraverse()\n");
 #endif
 #ifdef DBUG	  
 	printf("Entering big loop .....................\n");
@@ -267,7 +272,10 @@ cout << "ENTERING inTraverse()\n";
 	short play_bus = 0;
 	Bool aux_pb_done = NO;
 	int rtQSize = 0, allQSize = 0;
-
+#ifdef MULTI_THREAD
+	vector<Instrument *>instruments;
+	instruments.reserve(MAXBUS);
+#endif
 	// rtQueue[] playback shuffling ++++++++++++++++++++++++++++++++++++++++
 	while (!aux_pb_done) {
 		switch (qStatus) {
@@ -332,11 +340,6 @@ cout << "ENTERING inTraverse()\n";
 		cout << "busq:  " << busq << endl;
 #endif
 		
-#ifdef MULTI_THREAD
-#define MAX_INSTRUMENTS 32
-		Instrument *instruments[MAX_INSTRUMENTS];
-#endif
-
 		// Play elements on queue (insert back in if needed) ++++++++++++++++++
 		while (rtQSize > 0 && rtQchunkStart < bufEndSamp && bus != -1) {
 			int chunksamps = 0;
@@ -385,31 +388,55 @@ cout << "ENTERING inTraverse()\n";
 			cout << "offset:  " << offset << endl;
 			cout << "chunksamps:  " << chunksamps << endl;
 #endif      
-
 			Iptr->setchunk(chunksamps);  // set "chunksamps"		 
-#ifdef TBUG
-			cout << "Iptr->exec(" << bus_type << "," << bus << ") [" << Iptr->name() << "]\n";
-#endif		  
+			
 			int inst_chunk_finished = 0;
 			
 			// DT_PANIC_MOD
 			if (!panic) {
+#ifdef MULTI_THREAD
+#ifdef DBUG
+				cout << "putting inst " << (void *) Iptr << " into vector" << endl;
+#endif
+				instruments.push_back(Iptr);
+#else			
+#ifdef TBUG
+				cout << "Iptr->exec(" << bus_type << "," << bus << ") [" << Iptr->name() << "]\n";
+#endif
 				inst_chunk_finished = Iptr->exec(bus_type, bus);    // write the samples * * * * * * * * * 
 				endsamp = Iptr->getendsamp();
+#endif
 			}
 			else // DT_PANIC_MOD ... just keep on incrementing endsamp
 				endsamp += chunksamps;
+#ifdef MULTI_THREAD
+			rtQSize = rtQueue[busq].getSize();
+		}	// while(...)
 
+#ifdef DBUG
+		cout << "waiting for tasks..." << endl;
+#endif
+		taskManager->addTasks<Instrument, int, BusType, int, &Instrument::exec>(instruments, bus_type, bus);
+#ifdef DBUG
+		cout << "done waiting" << endl;
+#endif
+		for (vector<Instrument *>::iterator it = instruments.begin(); it != instruments.end(); ++it) {
+			Iptr = *it;
+			int chunksamps = Iptr->framesToRun();
+			unsigned long endsamp = Iptr->getendsamp();
+			int inst_chunk_finished = Iptr->needsToRun();
+#endif
 			// ReQueue or unref ++++++++++++++++++++++++++++++++++++++++++++++
 			if (endsamp > bufEndSamp && !panic) {
 #ifdef DBUG
-				cout << "re queueing inst " << (void *) Iptr << endl;
+				cout << "re queueing inst " << (void *) Iptr << " on rtQueue " << busq << endl;
 #endif
 				rtQueue[busq].push(Iptr,rtQchunkStart+chunksamps);   // put back onto queue
 			}
 			else {
 				iBus = Iptr->getBusSlot();
-				// unref only after all buses have played -- i.e., if inst_chunk_finished
+				// unref only after all buses have played -- i.e., if inst_chunk_finished.
+				// if not unref'd here, it means the inst still needs to run on another bus.
 				if (qStatus == iBus->Class() && inst_chunk_finished) {
 #ifdef DBUG
 					cout << "unref'ing inst " << (void *) Iptr << endl;
@@ -417,7 +444,7 @@ cout << "ENTERING inTraverse()\n";
 					Iptr->unref();
 				}
 			}  // end rtQueue or unref ----------------------------------------
-
+			
 			// DJT:  not sure this check before new rtQchunkStart is necessary
 			rtQSize = rtQueue[busq].getSize();
 			if (rtQSize) {
@@ -430,8 +457,11 @@ cout << "ENTERING inTraverse()\n";
 			cout << "chunksamps:  " << chunksamps << endl;
 			cout << "Iteration done==========\n";
 #endif
-		} // end Play elements on queue (insert back in if needed) -----------
-	}  // end aux_pb_done --------------------------------------------------
+		} // end while() [Play elements on queue (insert back in if needed)] -----------
+#ifdef MULTI_THREAD
+		instruments.clear();
+#endif
+	}  // end while (!aux_pb_done) --------------------------------------------------
 
 	// Write buf to audio device - - - - - - - - - - - - - - - - - - - - -
 #ifdef DBUG
@@ -514,6 +544,7 @@ bool RTcmix::doneTraverse(AudioDevice *device, void *arg)
 	if (Option::print())
 		cout << "\n";
 	audioDone = true;	// This signals waitForMainLoop()
+
 #ifdef WBUG
 	cout << "EXITING doneTraverse() FUNCTION *****\n";
 #endif

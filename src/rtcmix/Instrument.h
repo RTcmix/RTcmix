@@ -7,6 +7,7 @@
 
 #include <RefCounted.h>
 #include <bus.h>
+#include <Locked.h>
 #include <rt_types.h>
 #include <sys/types.h>
 
@@ -38,7 +39,7 @@ protected:
    int            cursamp;
    int            chunksamps;
    int            i_chunkstart;   // we need this for rtperf
-   int            endsamp;
+   Locked<int>    endsamp;
    int            output_offset;
 
    int            sfile_on;        // a soundfile is open (for closing later)
@@ -54,17 +55,6 @@ protected:
    BusSlot        *_busSlot;
    PFieldSet	  *_pfields;
    static double  s_dArray[];
-#ifdef RTUPDATE
-   // new RSD variables
-   EnvType rsd_env;
-   int rise_samps, sustain_samps, decay_samps;
-   float *rise_table,r_tabs[2];
-   float *sustain_table,s_tabs[2];
-   float *decay_table,d_tabs[2];
-   float rise_time, sustain_time, decay_time;
-   int _startOffset;
-   int rsd_samp;
-#endif /* RTUPDATE */
 
 private:
    char 		  *_name;	// the name of this instrument
@@ -73,44 +63,6 @@ private:
    bool           needs_to_run;
    int            _skip;
    int            _nsamps;
-
-   static pthread_mutex_t endsamp_lock;
-
-#ifdef RTUPDATE
-// stores the current index into the pfpath array
-   int			  cumulative_size[MAXNUMPARAMS];
-
-// stores the current index for each 'j' value
-   int 			  pfpathcounter[MAXNUMPARAMS];
-
-// used in linear interpolation to store the updated value
-   double 		  newpvalue[MAXNUMPARAMS];
-
-// used in linear interpolation to store the last updated value
-   double 		  oldpvalue[MAXNUMPARAMS][2];
-
-// These are the tables used by the gen interpolation
-   float		  *ptables[MAXNUMPARAMS];
-   float 		  ptabs[MAXNUMPARAMS][2];
-
-// stores the sample number when updating begins to allow valid indexing into
-// the gen array
-   int 			  oldsamp[MAXNUMPARAMS];
-
-// stores the current index into the pipath array
-   int			  cumulative_isize[MAXNUMPARAMS];
-
-// The instrument number and instrument slot number
-   int 			  instnum;
-   int			  slot;
-   
-	
-// used to keep track of which set of data in the pfpath array we are looking 
-// at.  This allows multiple calls to note_pfield_path and inst_pfield_path
-// with different envelopes specified
-   int			  j[MAXNUMPARAMS];
-   int 			  k[MAXNUMPARAMS];
-#endif /* RTUPDATE */
 
 public:
 	// Instruments should use these to access variables.
@@ -124,11 +76,12 @@ public:
 	void			increment() { ++cursamp; }
 	// Use this to increment cursamp inside block-based run loops.
 	void	    	increment(int amount) { cursamp += amount; }
+	void			setendsamp(int end) { endsamp = end; }
+	bool			needsToRun() const { return needs_to_run; }
 	// These inlines are declared at bottom of this header.
-	inline float	getstart();
-	inline float	getdur();
-	inline int		getendsamp();
-	void			setendsamp(int);
+	inline float	getstart() const;
+	inline float	getdur() const;
+	inline int		getendsamp() const;
 	inline void		setchunk(int);
 	inline void		set_ichunkstart(int);
 	inline void		set_output_offset(int);
@@ -153,18 +106,6 @@ public:
 	virtual int		configure();	// Sometimes overridden in derived class.
 	virtual int		run() = 0;		// Always redefined in derived class.
 
-#ifdef RTUPDATE
-   float			rtupdate(int, int);  // tag, p-field for return value
-   void				pf_path_update(int tag, int pval);
-   void				pi_path_update(int pval);
-   void				set_instnum(char* name);
-
-   void				RSD_setup(int RISE_SLOT, int SUSTAIN_SLOT,
-              				  int DECAY_SLOT, float duration);
-   void				RSD_check();
-   float			RSD_get();
-#endif /* RTUPDATE */
-
 // BGG -- added this for Ortgetin object support (see lib/Ortgetin.C)
    friend			class Ortgetin;
 
@@ -180,8 +121,8 @@ protected:
 	static int		rtsetinput(float, Instrument *);
 	static int		rtinrepos(Instrument *, int, int);
 	static int		rtgetin(float *, Instrument *, int);
-	int rtaddout(BUFTYPE samps[]);  				// replacement for old rtaddout
-	int rtbaddout(BUFTYPE samps[], int length);	// block version of same
+	int				rtaddout(BUFTYPE samps[]);  			// replacement for old rtaddout
+	int				rtbaddout(BUFTYPE samps[], int length);	// block version of same
 
 	const PField &	getPField(int index) const;
 	const double *	getPFieldTable(int index, int *tableLen) const;
@@ -191,19 +132,19 @@ private:
 };
 
 /* ------------------------------------------------------------- getstart --- */
-inline float Instrument::getstart()
+inline float Instrument::getstart() const
 {
    return _start;
 }
 
 /* --------------------------------------------------------------- getdur --- */
-inline float Instrument::getdur()
+inline float Instrument::getdur() const
 {
    return _dur;
 }
 
 /* ----------------------------------------------------------- getendsamp --- */
-inline int Instrument::getendsamp()
+inline int Instrument::getendsamp() const
 {
    return endsamp;
 }

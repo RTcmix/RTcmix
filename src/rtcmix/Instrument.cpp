@@ -37,16 +37,13 @@ InputState::InputState()
 int				Instrument::RTBUFSAMPS = 0;
 int				Instrument::NCHANS = 0;
 float			Instrument::SR     = 0;
-pthread_mutex_t Instrument::endsamp_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /* ----------------------------------------------------------- Instrument --- */
 Instrument::Instrument()
 	: _start(0.0), _dur(0.0), cursamp(0), chunksamps(0), i_chunkstart(0),
 	  endsamp(0), output_offset(0), outputchans(0), _name(NULL),
-	  needs_to_run(false), _nsamps(0)
+	  needs_to_run(true), _nsamps(0)
 {
-   int i;
-
    // Here we initialize the Instrument class globals (over and over, I know)
    // which replace the old system globals
    
@@ -54,44 +51,14 @@ Instrument::Instrument()
    SR = RTcmix::sr();
    RTBUFSAMPS = RTcmix::bufsamps();
    
-#ifdef RTUPDATE
-   for(i = 0; i < MAXNUMPARAMS; ++i)
-   {
-	   pfpathcounter[i] = 0;
-	   cumulative_size[i] = 0;
-	   newpvalue[i] = 0;
-	   oldsamp[i] = -1;
-	   j[i] = 0;
-	   k[i] = 0;
-   }
-   _startOffset = 0;
-#endif /* RTUPDATE */
-
    sfile_on = 0;                // default is no input soundfile
 
    outbuf = NULL;
    _busSlot = NULL;
    _pfields = NULL;
 
-   for (i = 0; i < MAXBUS; i++)
+   for (int i = 0; i < MAXBUS; i++)
 	   bufferWritten[i] = false;
-   needs_to_run = true;
-
-#ifdef RTUPDATE
-   if (tags_on) {
-      pthread_mutex_lock(&pfieldLock);
-
-      for (int i = 0; i < MAXPUPS; i++)  // initialize this element
-         pupdatevals[curtag][i] = NOPUPDATE;
-      mytag = curtag++;
-	  
-      if (curtag >= MAXPUPARR)
-         curtag = 1;            // wrap it around
-      // 0 is reserved for all-note rtupdates
-	  
-      pthread_mutex_unlock(&pfieldLock);
-   }
-#endif /* RTUPDATE */
 }
 
 
@@ -229,28 +196,13 @@ double Instrument::update(int index, int totframes)
 
 /* ------------------------------------------------------------ init() --- */
 
-// This function is now called by setup().  When using RTUPDATE, it initializes
-// the newpvalue and oldpvalue arrays which are used in the linear 
-// interpolation case.  It also identifies the slot number for the instrument.
+// This function is now called by setup().
 
 int Instrument::init(double p[], int n_args)
 {
-#ifdef RTUPDATE
-   int i;
-
-   for(i = 0; i < n_args; ++i)
-   {
-	   newpvalue[i] = p[i];	
-	   oldpvalue[i][0] = 0;
-	   oldpvalue[i][1] = p[i];
-   }
-   slot = piloc(instnum);
-   return 777;
-#else /* !RTUPDATE */
    cout << "You haven't defined an init member of your Instrument class!"
                                                                  << endl;
    return -1;
-#endif /* !RTUPDATE */
 }
 
 /* ----------------------------------------------------- configure(int) --- */
@@ -303,6 +255,7 @@ int Instrument::run(bool needsTo)
 	   for (int i = 0; i < outputchans; i++)
 		   bufferWritten[i] = false;
 
+//	   printf("Instrument::run(%p): bufferWritten[] both set to 0\n", this);
 	   needs_to_run = false;
 
 	   return run();	// Class-specific run().
@@ -324,9 +277,6 @@ void Instrument::schedule(heap *rtHeap)
   long startsamp = (long) (0.5 + start * SR);	// Rounded to nearest - DS
   
   if (RTcmix::interactive()) {
-#ifdef RTUPDATE
-	_startOffset = RTcmix::getElapsedFrames();
-#endif
   	// Adjust start frame based on elapsed frame count
   	startsamp += RTcmix::getElapsedFrames();
   }
@@ -358,12 +308,16 @@ int Instrument::exec(BusType bus_type, int bus)
 {
    bool done;
 
+//   printf("Instrument::exec(%p, bus_type %d, bus %d\n", this, (int)bus_type, bus);
+   
    run(needs_to_run);	// Only does anything if true.
 
    addout(bus_type, bus);
 
    /* Decide whether we'll call run() next time. */
    done = true;
+//   printf("Instrument::exec(%p) bufferWritten[0]: %d bufferWritten[1]: %d\n",
+//		  this, (int) bufferWritten[0], (int) bufferWritten[1]);
    for (int i = 0; i < outputchans; i++) {
 	   if (bufferWritten[i] == false) {
          done = false;
@@ -372,7 +326,7 @@ int Instrument::exec(BusType bus_type, int bus)
    }
    if (done)
       needs_to_run = true;
-
+//   printf("Instrument::exec(%p) returning %d\n", this, (int) needs_to_run);
    return (int) needs_to_run;
 }
 
@@ -387,10 +341,11 @@ int Instrument::exec(BusType bus_type, int bus)
 */
 int Instrument::rtaddout(BUFTYPE samps[])
 {
-   for (int i = 0; i < outputchans; i++)
-      *obufptr++ = samps[i];
-
-   return outputchans;
+	BUFTYPE *out = obufptr;
+	for (int i = 0; i < outputchans; i++)
+		out[i] = samps[i];
+	obufptr += outputchans;
+	return outputchans;
 }
 
 /* ------------------------------------------------------------ rtbaddout --- */
@@ -401,9 +356,10 @@ int Instrument::rtaddout(BUFTYPE samps[])
 int Instrument::rtbaddout(BUFTYPE samps[], int length)
 {
 	const int sampcount = length * outputchans;
+	BUFTYPE *out = obufptr;
 	for (int i = 0; i < sampcount; i++)
-		*obufptr++ = samps[i];
-
+		out[i] = samps[i];
+	obufptr += sampcount;
 	return sampcount;
 }
 
@@ -441,15 +397,7 @@ void Instrument::addout(BusType bus_type, int bus)
 
    /* Show exec() that we've written this chan. */
    bufferWritten[src_chan] = true;
-}
-
-
-/* ----------------------------------------------------------- setendsamp --- */
-void Instrument::setendsamp(int end)
-{
-  pthread_mutex_lock(&endsamp_lock);
-  endsamp = end;
-  pthread_mutex_unlock(&endsamp_lock);
+//   printf("Instrument::addout(%p): bufferWritten[%d] now 1\n", this, src_chan);
 }
 
 /* ----------------------------------------------------------------- gone --- */
@@ -490,552 +438,3 @@ Instrument::getPFieldTable(int index, int *tableLen) const
 		*tableLen = 0;
 	return tableArray;
 }
-
-#ifdef RTUPDATE
-/* --------------------set_instnum------------------------------------------ */
-
-// This function is used to set up the mapping between instrument names and 
-// their associated instrument tag numbers.  This function will set the 
-// number for a given instrument, based on the name that it is passed, and 
-// will associate the next availiable number with that name, if the name has 
-// not already been given a number
-void Instrument::set_instnum(char* name)
-{
-	inst_list *tmp;
-
-	// first inst called so need to allocate memory for the head of the list
-	if(ilist == NULL)
-	{	
-		ilist = (struct inst_list *) malloc(sizeof(struct inst_list));
-		ilist->next = NULL;
-		ilist->num = curinst++;
-	    ilist->name = name;
-	}
-	tmp = ilist;
-
-	// check to see if the inst already exists in the list and iterates to the
-	// end of the list
-	while((strcmp(name, tmp->name) != 0) && (tmp->next != NULL))
-	{
-		tmp = tmp->next;
-	}
-
-	// if the instrument already exists assign the instruments tag number to 
-	// the pre-existing number already given to that instrument
-	if(strcmp(name, tmp->name) == 0)
-	{
-		instnum = tmp->num;
-	}
-
-	// otherwise give it a new tag number and add it to the end of the list
-	// (the -1 flag is used in the same way it is in the initial case
-	else
-	{	  
-		tmp->next = (struct inst_list *) malloc(sizeof(struct inst_list));
-		tmp = tmp->next;
-		tmp->next = NULL;
-		tmp->num = curinst++;
-		tmp->name = name;
-		instnum = tmp->num;
-	}
-	return;
-}
-
-/* --------------------pi_path_update--------------------------------------- */
-
-// This function (called by pf_path_update) is used to test whether valid
-// data exists in the pipath array to update the relevant parameter.  If data
-// does exist and no data exists for the tag number (instance of an instrument)
-// that is calling this function, then this function sets the data in the 
-// pfpath array for that tag and parameter to the values in the pipath array
-// for that instrument tag and parameter
-void Instrument::pi_path_update(int pval)
-{
-	int i;
-
-	if(slot < 0)
-		return;
-
-	// while data exists in the pipath array and data does not exist in the 
-	// pfpath array, set the pfpath data to be the pipath data.  The k 
-	// iterator is used to distinguish between multiple calls/gen types for
-	// the array
-	
-	while((piarray_size[slot][pval][k[pval]] != 0) 
-         && (parray_size[mytag][pval][k[pval]] == 0))
-	{
-
-		gen_type[mytag][pval][k[pval]] = igen_type[slot][pval][k[pval]];
-		parray_size[mytag][pval][k[pval]] = piarray_size[slot][pval][k[pval]];
-		numcalls[mytag][pval] = numinstcalls[slot][pval];
-		for(i = 0; i < cum_piarray_size[slot][pval]; ++i)
-		{
-			pfpath[mytag][pval][i][0] = pipath[slot][pval][i][0];
-			pfpath[mytag][pval][i][1] = pipath[slot][pval][i][1];
-
-		}
-		k[pval]++;
-	}
-
-	return;
-}
-
-/* --------------------pf_path_update--------------------------------------- */
-
-// This function is where all of the actual parameter value changing occurs.
-// It is called from rtupdate and updates the pupdatevals array to whatever
-// the correct value should be.  Note on how to read pfpath array:  the array
-// is really an arrangement of sets of time-value pairs.  This function will 
-// usually be operating on a "set of time-value pairs".  This means that the 
-// program considers time-value pairs in groups of two, where it will 
-// interpolate from the "start value" to the "end value" beginning at the 
-// "start time" and ending at the "end time".  These four values in quotation
-// marks are the four values specified be each "set of time-value pairs".
-void Instrument::pf_path_update(int tag, int pval)
-{
-	float time, increment;
-	float updates_per_second; 
-	int i, incr_j;
-	double table_val, diff, difftime;
-	double start_index;
-	pi_path_update(pval);
-	incr_j = 0;
-
-	// if the user specifies gen type '0' use a linear interpolation.  Said
-	// interpolation is defined in the body of this if statement
-	if(gen_type[tag][pval][j[pval]] == 0 && gen_type[0][pval][j[pval]] == 0) 
-	{
-		// pfpathcounter is used to keep track of which time-values pair 
-		// the program is currently considering, if this is greater than the 
-		// total number of time value pairs for a given call (specified by 
-		// parray_size...with j representing which call/gen to use) than go 
-		// on to the next call
-		if(parray_size[tag][pval][j[pval]] > pfpathcounter[pval])
-		{
-			time = (cursamp - _startOffset) / SR + _start;
-
-			// this statement insures that time 0 = "now" for the real time
-			// performance case
-// DS			time -= schedtime;
-
-			if(time < pfpath[tag][pval][0][0]) // before inst reaches first 
-				return;						   // time specified in pfpath
-
-
-			updates_per_second = resetval;
-			
-			// increment equals the reciprical of the difference in time 
-			// between the current time value that you're working on (pfpath[0]
-            // and the last time value that you are working on. (oldpvalue[0])
-			// multiply this by the number of times this function gets called
-			// per second to determine how long each block of time is.  This
-			// is then multiplied by the difference between the current 
-			// parameter value (pfpath[1]) and the old parameter value
-			// (oldpvalue[1])
-			increment = 1 / ((pfpath[tag][pval][cumulative_size[pval]][0] 
-							 - oldpvalue[pval][0]) * updates_per_second);
-
-			increment *= pfpath[tag][pval][cumulative_size[pval]][1] 
-						 - oldpvalue[pval][1];
-
-		
-			// the new value is then incremented...this creates a linear 
-			// interpolation
-			newpvalue[pval] += increment;
-
-			pupdatevals[tag][pval] = newpvalue[pval];
-
-			// if you've passed the time specified in the pfpath array go on
-			// to the next time value pair and update pfpathcounter, 
-			// cumulative_size, newpvalue, and oldpvalue
-			if(time >= pfpath[tag][pval][cumulative_size[pval]][0])
-			{
-				pupdatevals[tag][pval] = 
-                             pfpath[tag][pval][cumulative_size[pval]][1];
-
-				oldpvalue[pval][0] = 
-                             pfpath[tag][pval][cumulative_size[pval]][0];
-
-				pfpathcounter[pval]++; 
-				cumulative_size[pval]++;
-				newpvalue[pval] = pupdatevals[tag][pval];
-				oldpvalue[pval][1] = newpvalue[pval];
-			
-			}
-		}
-
-		// now do the same actions as above, only test it for the global case.
-		// this is important because the user can specify information for a 
-		// given note tag or for all notes.  Therefore the global array must
-		// be checked
-		if(parray_size[0][pval][j[pval]] > pfpathcounter[pval])
-		{		
-			time = (cursamp - _startOffset) / SR + _start;
-
-			// this statement insures that time 0 = "now" for the real time
-			// performance case
-// DS			time -= schedtime;
-
-			if(time < pfpath[tag][pval][0][0]) // before inst reaches first 
-				return;						   // time specified in pfpath
-
-			updates_per_second = resetval;
-
-
-			// increment equals the reciprical of the difference in time 
-			// between the current time value that you're working on (pfpath[0]
-            // and the last time value that you are working on. (oldpvalue[0])
-			// multiply this by the number of times this function gets called
-			// per second to determine how long each block of time is.  This
-			// is then multiplied by the difference between the current 
-			// parameter value (pfpath[1]) and the old parameter value
-			// (oldpvalue[1])
-			increment = 1 / ((pfpath[0][pval][cumulative_size[pval]][0] 
-							 - oldpvalue[pval][0]) * updates_per_second);
-
-			increment *= pfpath[0][pval][cumulative_size[pval]][1] 
-						 - oldpvalue[pval][1];
-
-		    // the new value is then incremented...this creates a linear 
-			// interpolation
-			newpvalue[pval] += increment;
-
-			pupdatevals[0][pval] = newpvalue[pval];
-
-
-			// if you've passed the time specified in the pfpath array go on
-			// to the next time value pair and update pfpathcounter, 
-			// cumulative_size, newpvalue, and oldpvalue
-			if(time >= pfpath[0][pval][cumulative_size[pval]][0])
-			{
-				pupdatevals[0][pval] = 
-                               pfpath[0][pval][cumulative_size[pval]][1];
-
-				oldpvalue[pval][0] = pfpath[0][pval][cumulative_size[pval]][0];
-
-				pfpathcounter[pval]++; 
-				cumulative_size[pval]++;
-				newpvalue[pval] = pupdatevals[0][pval];
-				oldpvalue[pval][1] = newpvalue[pval];
-			
-			}
-		}
-	}
-	// This case deals with a user specified pgen for interpolation
-	else
-	{
-		// pfpathcounter is used to keep track of which time-values pair 
-		// the program is currently considering, if this is greater than the 
-		// total number of time value pairs for a given call (specified by 
-		// parray_size...with j representing which call/gen to use) than go 
-		// on to the next call
-		if(parray_size[tag][pval][j[pval]] > pfpathcounter[pval] + 1)
-		{
-			ptables[pval] = ploc(gen_type[tag][pval][j[pval]]);
-			
-			time = (cursamp - _startOffset) / SR + _start;
-// DS			time -= schedtime;
-
-			// cumulative size is storing the current index into the pfpath 
-            // array so this statement is testing to see if the current 
-            // time is greater than the start time of the current set of 
-            // time-value pairs
-		  
-			if(time >= pfpath[tag][pval][cumulative_size[pval]][0]) 
-			{
-				// if the current time is greater than the end time of the 
-				// current set of time-value pairs, than update the counters
-				// that dictate which set of time-value pairs the program is
-				// currently working on
-				if(time >= pfpath[tag][pval][cumulative_size[pval] + 1][0])
-				{
-					pfpathcounter[pval]++;
-					cumulative_size[pval]++;
-					oldsamp[pval] = cursamp;
-
-					// this test prevents the program from accessing data from
-					// outside the bounds of the array by verifying that 
-					// cumulative_size[pval] is not currently indexing the last
-					// valid element in the array
-					if(parray_size[tag][pval][j[pval]] 
-                                     <= cumulative_size[pval] + 1)
-						return;  
-				}
-				
-				// diff is the difference between the "end value" and the 
-				// "start value"
-				diff = pfpath[tag][pval][cumulative_size[pval] + 1][1] 
-                   - pfpath[tag][pval][cumulative_size[pval]][1];
-
-				// difftime is the difference between the "end time" and the
-				// "start time"
-				difftime = pfpath[tag][pval][cumulative_size[pval] + 1][0] 
-                           - pfpath[tag][pval][cumulative_size[pval]][0];
-
-				
-				tableset(difftime, psize(gen_type[tag][pval][j[pval]])
-                                 , ptabs[pval]);
-				
-
-				// This flag is used to test if this is the first time that 
-				// a value update will occur.  For the first update 
-                // cursamp - oldsamp[pval] should equal whatever the desired 
-				// first index into the table should be.  This is determined by
-				// the percentage of time that has elapsed in the current 
-				// interpolation multiplied by the total size of the table
-				// (SR * difftime)
-				if(oldsamp[pval] == -1)
-				{
-					oldsamp[pval] = cursamp;
-					start_index = (time 
-                                 - pfpath[tag][pval][cumulative_size[pval]][0])
-								 / difftime;
-					start_index *= SR * difftime;
-					oldsamp[pval] -= (int)start_index;
-				}
-				table_val = tablei(cursamp - oldsamp[pval], ptables[pval]
-                                   , ptabs[pval]);
-
-				pupdatevals[tag][pval] = 
-             pfpath[tag][pval][cumulative_size[pval]][1] + (table_val * diff);
-
-			}
-		} 
-
-		// if the array is not bigger than pfpathcounter and there are still
-		// other valid data in the pfpath array than increment 'j' to move
-		// to the next set of data
-		else
-		{
-			if(j[pval] < numcalls[tag][pval] - 1)
-				incr_j = 1;
-		}
-
-		// now do the same actions as above, only test it for the global case.
-		// this is important because the user can specify information for a 
-		// given note tag or for all notes.  Therefore the global array must
-		// be checked
-		if(parray_size[0][pval][j[pval]] > pfpathcounter[pval] + 1)
-		{
-			ptables[pval] = ploc(gen_type[0][pval][j[pval]]);
-			
-			   
-
-			time = (cursamp - _startOffset) / SR + _start;
-
-			// this statement insures that time 0 = "now" for the real time
-			// performance case
-// DS			time -= schedtime;
-
-			// cumulative size is storing the current index into the pfpath 
-            // array so this statement is testing to see if the current 
-            // time is greater than the start time of the current set of 
-            // time-value pairs
-			if(time >= pfpath[0][pval][cumulative_size[pval]][0])
-			{
-				// if the current time is greater than the end time of the 
-				// current set of time-value pairs, than update the counters
-				// that dictate which set of time-value pairs the program is
-				// currently working on
-				if(time >= pfpath[0][pval][cumulative_size[pval] + 1][0])
-				{
-					pfpathcounter[pval]++;
-					cumulative_size[pval]++;
-					oldsamp[pval] = cursamp;
-
-					// this test prevents the program from accessing data from
-					// outside the bounds of the array by verifying that 
-					// cumulative_size[pval] is not currently indexing the last
-					// valid element in the array
-					if(parray_size[0][pval][j[pval]] 
-                                 <= pfpathcounter[pval] + 1)
-
-						return;
-				}
-
-				// diff is the difference between the "end value" and the 
-				// "start value"
-				diff = pfpath[0][pval][cumulative_size[pval] + 1][1] 
-                   - pfpath[0][pval][cumulative_size[pval]][1];
-				
-				// difftime is the difference between the "end time" and the
-				// "start time"
-				difftime = pfpath[0][pval][cumulative_size[pval] + 1][0] 
-                           - pfpath[0][pval][cumulative_size[pval]][0];
-
-				tableset(difftime, psize(gen_type[0][pval][j[pval]])
-                                                 , ptabs[pval]);
-
-
-				// This flag is used to test if this is the first time that 
-				// a value update will occur.  For the first update 
-                // cursamp - oldsamp[pval] should equal whatever the desired 
-				// first index into the table should be.  This is determined by
-				// the percentage of time that has elapsed in the current 
-				// interpolation multiplied by the total size of the table
-				// (SR * difftime)
-				if(oldsamp[pval] == -1)
-				{
-					oldsamp[pval] = cursamp;
-					start_index = (time 
-                                 - pfpath[0][pval][cumulative_size[pval]][0])
-								 / difftime;
-					start_index *= SR * difftime;
-					oldsamp[pval] -= (int)start_index;
-				}
-
-				table_val = tablei(cursamp - oldsamp[pval], ptables[pval]
-                                   , ptabs[pval]);
-
-				pupdatevals[0][pval] = 
-                                   pfpath[0][pval][cumulative_size[pval]][1] 
-                                   + (table_val * diff);
-
-			}
-	    }
-
-		// if the array is not bigger than pfpathcounter and there are still
-		// other valid data in the pfpath array than increment 'j' to move
-		// to the next set of data
-		else
-		{
-			if(j[pval] < numcalls[0][pval] - 1)
-				incr_j = 1;
-		}
-	}
-
-	// increment the values involved in moving on to the next set of data
-	if(incr_j == 1)
-	{
-		j[pval]++;
-		cumulative_size[pval]++;
-		incr_j = 0;
-		pfpathcounter[pval] = 0;
-		oldsamp[pval] = -1;
-	}
-}
-
-/* --------------------rtupdate-------------------------------------------- */
-
-// This function is called by the instruments to check to see if there is a 
-// parameter update.  It calls pf_path_update to see if there is update data
-// specified by the score file, but it could also receive socket update data
-// if it is sent
-float Instrument::rtupdate(int tag, int pval)
-{
-  float tval;
-  pf_path_update(tag, pval);
-  pthread_mutex_lock(&pfieldLock);
-  if (pupdatevals[0][pval] != NOPUPDATE) // global takes precedence
-  {
-	  pthread_mutex_unlock(&pfieldLock);
-	  return pupdatevals[0][pval];
-  }
-  else
-	  tval = pupdatevals[tag][pval];
-  pupdatevals[tag][pval] = NOPUPDATE;
-  pthread_mutex_unlock(&pfieldLock);
-  return tval;
-}
-
-// Rise, Sustain, Decay code + + + + + + + + + + + + + + + + 
-void Instrument::RSD_setup(int RISE_SLOT, int SUSTAIN_SLOT, int DECAY_SLOT
-                           , float duration)
-{
-	rsd_env = NONE;
-	rise_samps = sustain_samps = decay_samps = 0;
-	
-	rise_table = sustain_table = decay_table = NULL;
-
-	
-	if((sustain_time || decay_time) && (rise_time <= 0))
-		rise_time = 0.0001;
-	if(rise_time)
-	{
-		rise_table = floc(RISE_SLOT);
-		if(rise_table)
-		{
-			tableset(rise_time, fsize(RISE_SLOT), r_tabs);
-			rise_samps = (int)(rise_time * SR);
-			rsd_env = RISE;
-		}
-	}
-
-	if((rise_time || decay_time) && (sustain_time <= 0))
-		sustain_time = 0.0001;
-	if(sustain_time)
-	{
-		sustain_table = floc(SUSTAIN_SLOT);
-		if(sustain_table)
-		{
-			tableset(sustain_time, fsize(SUSTAIN_SLOT), s_tabs);
-			sustain_samps = (int)(sustain_time * SR);
-		}
-	}
-
-	if((rise_time || sustain_time) && (decay_time <= 0))
-		decay_time = 0.0001;
-	if(decay_time)
-	{
-		decay_table = floc(DECAY_SLOT);
-		if(decay_table)
-		{
-			tableset(decay_time, fsize(DECAY_SLOT), d_tabs);
-			decay_samps = (int)(decay_time * SR);
-		}
-	}
-
-	if((rise_table) || (sustain_table) || (decay_table))
-	{
-		_dur = (rise_time + sustain_time + decay_time);
-	}
-	else
-		_dur = duration;
-	return;
-}
-
-	// End RSD Setup - - - - - - - - - - - - - - - - - - - - -
-
-// Check RSD Envelope + + + + + + + + + + + + + + + + + + + + 
-void Instrument::RSD_check()
-{
-	if((rsd_samp > rise_samps) && (rsd_env == RISE))
-	{
-		rsd_env = SUSTAIN;
-		rsd_samp = 0;
-	}
-	else if((rsd_samp > sustain_samps) && (rsd_env == SUSTAIN))
-	{
-		rsd_env = DECAY;
-		rsd_samp = 0;
-	}
-	return;
-}
-
-// End RSD Envelope Check - - - - - - - - - - - - - - - -
-
-// Check which Amplitude Envelope to use + + + + + + +
-float Instrument::RSD_get()
-{
-	float retvalue;
-	if(rsd_env == RISE)
-	{
-		retvalue = tablei(rsd_samp, rise_table, r_tabs);
-	}
-	else if(rsd_env == SUSTAIN)
-	{
-		retvalue = tablei(rsd_samp, sustain_table, s_tabs);
-	}
-	else if(rsd_env == DECAY)
-	{
-		retvalue = tablei(rsd_samp, decay_table, d_tabs);
-	}
-	else
-	{
-		retvalue = -1;
-	}
-	return retvalue;
-}
-// End Amp Env Check - - - - - - - - - - - - - - - - - 
-
-#endif /* RTUPDATE */

@@ -80,6 +80,7 @@ int
 RTcmix::attachInput(float start_time, InputState *input)
 {
       int index = get_last_input_index();
+	  AutoLock fileLock(inputFileTable[index]);
 #ifdef SGI
       if (index < 0) {
          return RT_NO_INPUT_SRC;

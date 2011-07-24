@@ -19,6 +19,7 @@ class RTQueue;
 class heap;
 class AudioDevice;
 class Arg;
+class TaskManager;
 
 struct _handle;
 typedef struct _handle *Handle;
@@ -40,6 +41,22 @@ enum RTInputError {
 	RT_ILLEGAL_DEV_OFFSET = -2,		// nonzero offset for audio input device
 	RT_INPUT_EOF = -3,				// start offset beyond end of input file (nonfatal)
 	RT_INPUT_CHANS_MISMATCH = -4	// specified input chan count != input file count
+};
+
+/* definition of input file desc struct used by rtinput */
+struct InputDesc : public Lockable {
+	char     *filename;         /* allocated by rtinput() */
+	int      fd;                /* file descriptor, or NO_FD, or AUDIO_DEVICE */
+	int      refcount;
+	short    is_audio_dev;      /* true if input from audio dev, not from file */
+	short    header_type;       /* e.g., AIFF_sound_file (in sndlib.h) */
+	short    data_format;       /* e.g., snd_16_linear (in sndlib.h) */
+	short    is_float_format;   /* true if data format is 32-bit float */
+	int      data_location;     /* offset of sound data start in file */
+	long     endbyte;           /* index of byte following last sample */
+	float    srate;
+	short    chans;
+	double   dur;
 };
 
 class RTcmix {
@@ -232,6 +249,11 @@ private:
 	static BufPtr	audioin_buffer[];    /* input from ADC, not file */
 	static BufPtr	aux_buffer[];
 	static BufPtr	out_buffer[];
+#ifdef MULTI_THREAD
+	static TaskManager *taskManager;
+	static pthread_mutex_t aux_buffer_lock;
+	static pthread_mutex_t out_buffer_lock;
+#endif
 	
 	static short AuxToAuxPlayList[]; /* The playback order for AUX buses */
 	static short ToOutPlayList[]; /* The playback order for AUX buses */

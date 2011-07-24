@@ -15,26 +15,6 @@
 */
 #define AUDIO_DEVICE_FD      -2    /* not -1 ! */
 
-/* definition of input file desc struct used by rtinput */
-typedef struct inputdesc {
-   char     *filename;         /* allocated by rtinput() */
-   int      fd;                /* file descriptor, or NO_FD, or AUDIO_DEVICE */
-   int      refcount;
-   short    is_audio_dev;      /* true if input from audio dev, not from file */
-   short    header_type;       /* e.g., AIFF_sound_file (in sndlib.h) */
-   short    data_format;       /* e.g., snd_16_linear (in sndlib.h) */
-   short    is_float_format;   /* true if data format is 32-bit float */
-   int      data_location;     /* offset of sound data start in file */
-   long     endbyte;           /* index of byte following last sample */
-   float    srate;
-   short    chans;
-   double   dur;
-} InputDesc;
-
-
-/* for insts - so they don't have to include RTcmix.h */
-/* these are defined in RTcmix.cpp */
-//int RTBUFSAMPS();
-//float SR();
+// InputDesc is now declared in RTcmix.h
 
 #endif /* _RTDEFS_H_ */

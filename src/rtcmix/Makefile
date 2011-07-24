@@ -70,6 +70,7 @@ PFieldSet.cpp \
 Random.cpp \
 RefCounted.cpp \
 RTcmix.cpp \
+TaskManager.cpp \
 rtcmix_types.cpp \
 rtcmix_wrappers.cpp \
 rtgetin.cpp \

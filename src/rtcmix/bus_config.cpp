@@ -635,16 +635,32 @@ RTcmix::get_bus_config(const char *inst_name)
 void
 RTcmix::addToBus(BusType type, int bus, BufPtr src, int offset, int endfr, int chans)
 {
-	register BufPtr dest = (type == BUS_AUX_OUT) ? 
-								aux_buffer[bus] : out_buffer[bus];
+	register BufPtr dest;
+	pthread_mutex_t *pMutex;
+	
+	if (type == BUS_AUX_OUT) {
+		dest = aux_buffer[bus];
+#ifdef MULTI_THREAD
+		pMutex = &aux_buffer_lock;
+#endif
+	}
+	else {
+		dest = out_buffer[bus];
+#ifdef MULTI_THREAD
+		pMutex = &out_buffer_lock;
+#endif
+	}
 	assert(dest != NULL);
-
-	// FIXME: pthread_mutex_lock dest buffer
+#ifdef MULTI_THREAD
+	pthread_mutex_lock(pMutex);
+#endif
 	for (int frame = offset; frame < endfr; frame++) {
 		dest[frame] += *src;
 		src += chans;
 	}
-	// FIXME: pthread_mutex_unlock dest buffer
+#ifdef MULTI_THREAD
+	pthread_mutex_unlock(pMutex);
+#endif
 }
 
 /* ------------------------------------------------------- parse_bus_chan --- */
