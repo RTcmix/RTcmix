@@ -130,9 +130,10 @@ int MIX::run()
 		}
 
 		float out[MAXBUS];
-		for (int j = 0; j < outputChannels(); j++) {
+		const int ochans = outputChannels();
+		for (int j = 0; j < ochans; j++) {
 			out[j] = 0.0;
-			for (int k = 0; k < inputChannels(); k++) {
+			for (int k = 0; k < inchans; k++) {
 				if (outchan[k] == j)
 					out[j] += in[i+k] * amp;
 			}
