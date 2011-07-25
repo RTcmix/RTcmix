@@ -476,8 +476,7 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 //
 // <a>, <b>, <c>, etc. are the numbers that go into the table.  The
 // "nonorm" tag is recommended, unless you want the numbers to be
-// normalized to [-1,1] or [0,1].  The arguments can also be
-// one-dimensional arrays created in the scripting language.
+// normalized to [-1,1] or [0,1].
 //
 // The function loads as many as <size> numbers into the table.  If there
 // are not that many number arguments, it zeros out the extra table values.
@@ -496,47 +495,26 @@ _literal_table(const Arg args[], const int nargs, double **array, int *len)
 	double *block = *array;
 	int length = *len;
 
-	// Compute number of single array items, flattening any script arrays
-	// (as long as they aren't nested -- an array within an array).
-	int content_length = 0;
-	for (int i = 0; i < nargs; i++) {
-		if (args[i].isType(ArrayType)) {
-			Array *a = args[i];
-			content_length += a->len;
-		}
-		else
-			content_length++;
-	}
-
 	if (length == 0) {
-		length = content_length;
+		length = nargs;
 		delete [] block;
 		block = new double[length];
 	}
 
-	const int fill_len = _min(content_length, length);
+	const int fill_len = _min(nargs, length);
 
 	int j = 0;
-	for (int i = 0; i < nargs && j < fill_len; i++) {
-		if (args[i].isType(ArrayType)) {
-			Array *a = args[i];
-			const int alen = a->len;
-			const double *adata = a->data;
-			for (int k = 0; k < alen && j < fill_len; k++)
-				block[j++] = adata[k];
-		}
-		else
-			block[j++] = args[i];
-	}
+	for (int i = 0; i < nargs && j < fill_len; i++)
+		block[j++] = args[i];
 
-	if (content_length < length) {
-		for (int i = content_length; i < length; i++)
+	if (nargs < length) {
+		for (int i = nargs; i < length; i++)
 			block[i] = 0.0;
 		advise("maketable (literal)",
 							"Table is larger than the number of elements given "
 							"to fill it.  Adding zeros to pad.");
 	}
-	else if (length < content_length)
+	else if (length < nargs)
 		warn("maketable (literal)",
 							"Table is large enough for only %d numbers.", length);
 
@@ -1509,56 +1487,81 @@ _dispatch_table(const Arg args[], const int nargs, const int startarg,
 	else
 		return die("maketable", "First argument must be a number or string.");
 
+	// Flatten any one-dimensional parser arrays into a new argument list,
+	// beginning from <startarg>.
+
+	Arg xargs[MAXDISPARGS];
+	int nxargs = 0;
+	for (int i = startarg; i < nargs; i++) {
+		if (args[i].isType(ArrayType)) {
+			// NB: currently if we get this far, the array must contain only doubles;
+			// otherwise it's an error (e.g., in src/parser/minc/callextfunc.cpp).
+			Array *a = args[i];
+			const int alen = a->len;
+			const double *adata = a->data;
+			for (int j = 0; j < alen; j++) {
+				xargs[nxargs++] = adata[j];
+				if (nxargs == MAXDISPARGS)
+					return die("maketable", "Exceeded maximum number of arguments (%d)",
+									MAXDISPARGS);
+			}
+		}
+		else {
+			xargs[nxargs++] = args[i];
+			if (nxargs == MAXDISPARGS)
+				return die("maketable", "Exceeded maximum number of arguments (%d)",
+								MAXDISPARGS);
+		}
+	}
+
 	// NOTE: passing addresses of array and len is correct for some of these
    //       tables, because they might need to recreate their array.
 
 	switch (tablekind) {
 		case TextfileTable:
-			status = _textfile_table(&args[startarg], nargs - startarg, *array, *len);
+			status = _textfile_table(xargs, nxargs, *array, *len);
 			break;
 		case SoundFileTable:
-			status = _soundfile_table(&args[startarg], nargs - startarg, array, len);
+			status = _soundfile_table(xargs, nxargs, array, len);
 			break;
 		case LiteralTable:
-			status = _literal_table(&args[startarg], nargs - startarg, array, len);
+			status = _literal_table(xargs, nxargs, array, len);
 			break;
 		case DatafileTable:
-			status = _datafile_table(&args[startarg], nargs - startarg, array, len);
+			status = _datafile_table(xargs, nxargs, array, len);
 			break;
 		case CurveTable:
-			status = _curve_table(&args[startarg], nargs - startarg, *array, *len);
+			status = _curve_table(xargs, nxargs, *array, *len);
 			break;
 		case ExpbrkTable:
-			status = _expbrk_table(&args[startarg], nargs - startarg, *array, *len);
+			status = _expbrk_table(xargs, nxargs, *array, *len);
 			break;
 		case LineTable:
-			status = _line_table(&args[startarg], nargs - startarg, *array, *len);
+			status = _line_table(xargs, nxargs, *array, *len);
 			break;
 		case LinebrkTable:
-			status = _linebrk_table(&args[startarg], nargs - startarg, *array, *len);
+			status = _linebrk_table(xargs, nxargs, *array, *len);
 			break;
 		case SplineTable:
-			status = _spline_table(&args[startarg], nargs - startarg, *array, *len);
+			status = _spline_table(xargs, nxargs, *array, *len);
 			break;
 		case Wave3Table:
-			status = _wave3_table(&args[startarg], nargs - startarg, *array, *len);
+			status = _wave3_table(xargs, nxargs, *array, *len);
 			break;
 		case WaveTable:
-			status = _wave_table(&args[startarg], nargs - startarg, *array, *len);
+			status = _wave_table(xargs, nxargs, *array, *len);
 			break;
 		case ChebyTable:
-			status = _cheby_table(&args[startarg], nargs - startarg, *array, *len);
+			status = _cheby_table(xargs, nxargs, *array, *len);
 			break;
 		case RandomTable:
-			status = _random_table(&args[startarg], nargs - startarg,
-																	*array, *len);
+			status = _random_table(xargs, nxargs, *array, *len);
 			break;
 		case WindowTable:
-			status = _window_table(&args[startarg], nargs - startarg,
-																	*array, *len);
+			status = _window_table(xargs, nxargs, *array, *len);
 			break;
 		case LinestepTable:
-			status = _linestep_table(&args[startarg], nargs - startarg, *array, *len);
+			status = _linestep_table(xargs, nxargs, *array, *len);
 			break;
 		default:
 			return die("maketable", "Invalid table type.");
@@ -1585,6 +1588,10 @@ extern "C" {
 
 
 // --------------------------------------------------------------- maketable ---
+// Make a table of values using one of the table types. Numeric arguments
+// can be scalars or one-dimensional scalar arrays created in the scripting
+// language.
+
 static void
 _maketable_usage()
 {
