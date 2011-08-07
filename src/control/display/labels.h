@@ -3,7 +3,7 @@
 
 const int kNumLabels = 12;          // Max. number of labels
 
-const int kWholeLabelLength = 128;  // Total number of chars in whole label
+const int kWholeLabelLength = 64;   // Total number of chars in whole label
 const int kPartLabelLength = 32;    // Total number of chars in label component
                                     // (i.e., prefix and units strings)
 
