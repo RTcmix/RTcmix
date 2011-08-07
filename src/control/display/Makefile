@@ -11,7 +11,7 @@ ifeq ($(ARCH), MACOSX)
    OBJS += OSXDisplay.o
    SRCS += OSXDisplay.cpp
    APP = DisplayWindow
-   GUILIBS = -framework Carbon
+   GUILIBS = 
    # When installing binary pkg in /Applications, don't hardcode path to app;
    # when running from elsewhere, you *must* hardcode path.
    ifeq ($(PKG), TRUE)
@@ -38,17 +38,9 @@ $(LIBDISPLAY): depend $(OBJS)
 glue.o: depend glue.cpp DisplayPField.h
 	$(CXX) $(CXXFLAGS) -c -o glue.o glue.cpp
 
-$(APP).o: $(APP).cpp
-	$(CXX) $(CXXFLAGS) -c -o $(APP).o $(APP).cpp
-
-# NB: Create OS X app bundle hierarchy each time, because bundle won't
-# work if it contains CVS admin directories!  -JGG
-$(APP): $(APP).o
-	$(CXX) $(CXXFLAGS) $(APP).o -o $(APP) $(GUILIBS)
-	install -d $(APP).app/Contents/MacOS
-	mv -f $(APP) $(APP).app/Contents/MacOS
-	cp -f osx_bundle_items/PkgInfo $(APP).app/Contents
-	cp -f osx_bundle_items/Info.plist $(APP).app/Contents
+.PHONY: $(APP)
+$(APP): 
+	cd $(APP); xcodebuild
 
 depend:
 	-$(SHELL) -ec '$(CXX) -M $(CXXFLAGS) $(SRCS)' > depend
@@ -58,7 +50,7 @@ depend:
 install: all
 	$(INSTALL) $(LIBDISPLAY) $(LIBDESTDIR)
 ifeq ($(ARCH), MACOSX)
-	ditto $(APP).app $(DESTDIR)/$(APP).app
+	ditto $(APP)/build/Release/$(APP).app $(DESTDIR)/$(APP).app
 endif
 
 uninstall:
@@ -68,9 +60,9 @@ ifeq ($(ARCH), MACOSX)
 endif
 
 clean:
-	$(RM) *.o $(LIBDISPLAY) $(APP)
+	$(RM) *.o $(LIBDISPLAY)
 ifeq ($(ARCH), MACOSX)
-	$(RM) -r $(APP).app
+	cd $(APP); xcodebuild clean
 endif
 
 cleanall: clean
