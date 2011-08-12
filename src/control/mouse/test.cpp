@@ -16,8 +16,8 @@ int main()
 	double max1 = 10000;
 	double default1 = min1;
 	double lag1 = 0.0;
-	char *prefix1 = "freq";
-	char *units1 = "Hz";
+	char *prefix1 = (char *) "freq";
+	char *units1 = (char *) "Hz";
 	RTMousePField *pf1 = new RTMousePField(mouse, kRTMouseAxisX, min1, max1,
 				default1, lag1, prefix1, units1, prec1);
 
@@ -26,7 +26,7 @@ int main()
 	double max2 = 2;
 	double default2 = min2;
 	double lag2 = 0.0;
-	char *prefix2 = "amp";
+	char *prefix2 = (char *) "amp";
 	char *units2 = NULL;
 	RTMousePField *pf2 = new RTMousePField(mouse, kRTMouseAxisY, min2, max2,
 				default2, lag2, prefix2, units2, prec2);
