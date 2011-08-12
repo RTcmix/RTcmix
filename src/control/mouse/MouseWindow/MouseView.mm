@@ -46,11 +46,7 @@ const int kFontSize = 14;
 
 - (void) awakeFromNib
 {
-	NSTrackingArea *trackingArea = [[[NSTrackingArea alloc] initWithRect:[self visibleRect]
-			options: NSTrackingMouseMoved | NSTrackingActiveAlways
-			owner:self
-			userInfo:nil] autorelease];
-	[self addTrackingArea:trackingArea];
+	[self updateTrackingAreas];
 }
 
 - (void) initLabels
@@ -106,6 +102,19 @@ const int kFontSize = 14;
 {
 	[self setFactors];
 	[self updateLabelRect];
+}
+
+- (void) updateTrackingAreas
+{
+	if (trackingArea) {
+		[self removeTrackingArea:trackingArea];
+		//[dealloc trackingArea]; // no, because set to autorelease
+	}
+	trackingArea = [[[NSTrackingArea alloc] initWithRect:[self visibleRect]
+			options: NSTrackingMouseMoved | NSTrackingActiveAlways
+			owner:self
+			userInfo:nil] autorelease];
+	[self addTrackingArea:trackingArea];
 }
 
 - (void) updateLabelRect
@@ -271,6 +280,7 @@ const int kFontSize = 14;
 	NSRect bounds = [self bounds];
 	const float width = bounds.size.width;
 	const float height = bounds.size.height;
+printf("setFactors: width=%f, height=%f\n", width, height);
 	xfactor = 1.0 / (double) (width - 1.0);
 	yfactor = 1.0 / (double) (height - 1.0);
 }

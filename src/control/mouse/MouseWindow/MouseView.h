@@ -25,6 +25,7 @@ const int kNumLabels = 4;
 	NSMutableString *ystring[kNumLabels];
 	NSMutableDictionary *stringAttributes;
 	NSTimer *timer;
+	NSTrackingArea *trackingArea;
 	BOOL updatePending;
 }
 
