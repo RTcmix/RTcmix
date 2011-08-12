@@ -264,7 +264,7 @@ const int kFontSize = 14;
 
 - (void) mouseEntered: (NSEvent *) event
 {
-	printf("mouseEntered\n");
+//	printf("mouseEntered\n");
 }
 
 - (void) mouseMoved: (NSEvent *) event
@@ -280,7 +280,6 @@ const int kFontSize = 14;
 	NSRect bounds = [self bounds];
 	const float width = bounds.size.width;
 	const float height = bounds.size.height;
-printf("setFactors: width=%f, height=%f\n", width, height);
 	xfactor = 1.0 / (double) (width - 1.0);
 	yfactor = 1.0 / (double) (height - 1.0);
 }
