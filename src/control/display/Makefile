@@ -67,5 +67,5 @@ endif
 
 cleanall: clean
 	$(RM) depend
-	cd $(APP); $(RM) build
+	cd $(APP); $(RM) -r build
 
