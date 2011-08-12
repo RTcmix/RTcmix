@@ -15,7 +15,6 @@
 		A1D793D613EED71700249047 /* Credits.rtf in Resources */ = {isa = PBXBuildFile; fileRef = A1D793D013EED71700249047 /* Credits.rtf */; };
 		A1D793D713EED71700249047 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = A1D793D213EED71700249047 /* InfoPlist.strings */; };
 		A1D793D813EED71700249047 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = A1D793D413EED71700249047 /* MainMenu.xib */; };
-		A1D793DA13EED71E00249047 /* DisplayWindow-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = A1D793D913EED71E00249047 /* DisplayWindow-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -93,6 +92,7 @@
 		29B97314FDCFA39411CA2CEA /* DisplayWindow */ = {
 			isa = PBXGroup;
 			children = (
+				A1D793D913EED71E00249047 /* DisplayWindow-Info.plist */,
 				080E96DDFE201D6D7F000001 /* Classes */,
 				29B97315FDCFA39411CA2CEA /* Other Sources */,
 				29B97317FDCFA39411CA2CEA /* Resources */,
@@ -118,7 +118,6 @@
 			isa = PBXGroup;
 			children = (
 				A1D793CF13EED71700249047 /* en.lproj */,
-				A1D793D913EED71E00249047 /* DisplayWindow-Info.plist */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -198,7 +197,6 @@
 				A1D793D613EED71700249047 /* Credits.rtf in Resources */,
 				A1D793D713EED71700249047 /* InfoPlist.strings in Resources */,
 				A1D793D813EED71700249047 /* MainMenu.xib in Resources */,
-				A1D793DA13EED71E00249047 /* DisplayWindow-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
