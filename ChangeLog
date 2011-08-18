@@ -1,15 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
-2011-07-25  John Gibson <johgibso-at-indiana.edu>
+2011-08-10  John Gibson <johgibso-at-indiana.edu>
 
-	* maketable now lets you supply its numerical arguments via a parser
-	  array for any table type. (Formerly, you could do this only with
-	  the "literal" type.) Example:
-	     x = { 0,0, 1,1, 9,1, 10,0 }
-	     table = maketable("line", 1000, x)
-	  same as...
-	     table = maketable("line", 1000, 0,0, 1,1, 9,1, 10,0)
+	* The Mac DisplayWindow and MouseWindow helper apps compile and
+	  should now work. Requires Xcode 10.6+ SDK.
 
 2011-01-05  Douglas Scott  <netdscott-at-netscape.net>
 
