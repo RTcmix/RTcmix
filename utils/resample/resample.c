@@ -3,9 +3,9 @@
  * Sampling Rate Conversion Program
  */
 
-static char resampleVersion[] = "\
+#define RESAMPLE_VERSION (char *) "\
 resample version 1.2 (jos at ccrma dot stanford dot edu)\n\
-(sndlib support by johgibso at indiana dot edu)\n";
+(sndlib support by johgibso at indiana dot edu)\n"
 
 #include "filterkit.h"
 #include "resample.h"
@@ -152,7 +152,7 @@ main(int argc, char *argv[])
             trace = 0;
             break;
          case 'v':                        /* -version */
-            printf(resampleVersion);
+            printf(RESAMPLE_VERSION);
             exit(0);
             break;
          default:
