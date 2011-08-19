@@ -70,8 +70,8 @@ DL_EXPORT(void) init$module()
 
    // Add some symbolic constants to the module
    PyObject *d = PyModule_GetDict(m);
-   ErrorObject = PyErr_NewException("$module.error", NULL, NULL);
-   PyDict_SetItemString(d, "error", ErrorObject);
+   ErrorObject = PyErr_NewException((char *) "$module.error", NULL, NULL);
+   PyDict_SetItemString(d, (char *) "error", ErrorObject);
 }
 
 } // extern "C"
