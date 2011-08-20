@@ -28,8 +28,10 @@ ifeq ($(PYTHON_EXT_STATIC_LINK), FALSE)
 	@echo "Currently cannot build shared lib rtcmix extension under Mac OS X."
 	@exit 1
 endif
-#	-$(PYTHON) setup.py build
-	env CFLAGS='-arch i386' LDFLAGS='-arch i386' $(PYTHON) setup.py build
+	# Build both Intel architectures; build fails for ppc arch with OS X 10.6
+	# and gcc 4.2
+	env CFLAGS='-arch i386 -arch x86_64' \
+		LDFLAGS='-arch i386 -arch x86_64' $(PYTHON) setup.py build
 	@echo "Don't worry about shared lib build failure.  We're using static link."
 else
 	$(PYTHON) setup.py build
