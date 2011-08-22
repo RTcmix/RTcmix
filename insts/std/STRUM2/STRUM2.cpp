@@ -21,6 +21,7 @@
 #include <rt.h>
 #include <rtdefs.h>
 
+const float kMinDecay = 0.001f;	// prevent NaNs in Ostrum
 
 STRUM2::STRUM2()
 	: _branch(0), _strum(NULL)
@@ -50,6 +51,8 @@ int STRUM2::init(double p[], int n_args)
 	int squish = int(p[4]);
 
 	float fundDecayTime = p[5];
+	if (fundDecayTime < kMinDecay)
+		fundDecayTime = kMinDecay;
 	float nyquistDecayTime = fundDecayTime * 0.1;
 
 	_strum = new Ostrum(SR, freq, squish, fundDecayTime, nyquistDecayTime);

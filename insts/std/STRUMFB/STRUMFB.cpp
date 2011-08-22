@@ -27,6 +27,7 @@
 #include <rt.h>
 #include <rtdefs.h>
 
+const float kMinDecay = 0.001f;	// prevent NaNs in Ostrum
 
 STRUMFB::STRUMFB()
 	: _branch(0), _last(0), _delay(NULL), _distort(NULL), _strum(NULL)
@@ -64,7 +65,11 @@ int STRUMFB::init(double p[], int n_args)
 	int squish = int(p[5]);
 
 	_decaytime = p[6];
+	if (_decaytime < kMinDecay)
+		_decaytime = kMinDecay;
 	_nyqdecaytime = p[7];
+	if (_nyqdecaytime < kMinDecay)
+		_nyqdecaytime = kMinDecay;
 
 	_strum = new Ostrum(SR, freq, squish, _decaytime, _nyqdecaytime);
 
@@ -89,10 +94,14 @@ void STRUMFB::doupdate()
 	bool updateDecays = false;
 	if (p[6] != _decaytime) {
 		_decaytime = p[6];
+		if (_decaytime < kMinDecay)
+			_decaytime = kMinDecay;
 		updateDecays = true;
 	}
 	if (p[7] != _nyqdecaytime) {
 		_nyqdecaytime = p[7];
+		if (_nyqdecaytime < kMinDecay)
+			_nyqdecaytime = kMinDecay;
 		updateDecays = true;
 	}
 
