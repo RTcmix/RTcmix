@@ -74,7 +74,7 @@ double get_perl_var(char *string) {
 
 /* ---------------------------------------------------------- parse_score --- */
 int
-parse_score(int argc, char *argv[])
+parse_score(int argc, char *argv[], char **env)
 {
    int   i, status, xargc;
    char  *xargv[MAXARGS + 2];
@@ -88,13 +88,16 @@ parse_score(int argc, char *argv[])
       xargv[i + 1] = argv[i];
    xargv[i + 1] = NULL;
    xargc = argc + 1;
-
+   PERL_SYS_INIT3(&xargc,&xargv,&env);
    perl_interp = perl_alloc();
    if (perl_interp) {
       perl_construct(perl_interp);
-      status = perl_parse(perl_interp, xs_init, xargc, xargv, (char **)NULL);
+      status = perl_parse(perl_interp, xs_init, xargc, xargv, env);
       if (status == 0)
          perl_run(perl_interp);
+      else {
+          fprintf(stderr, "Error: perl_parse returned status %d\n", status);
+      }
    }
    else {
       fprintf(stderr, "Can't create Perl interpreter.\n");
@@ -122,5 +125,6 @@ destroy_parser()
 {
    perl_destruct(perl_interp);
    perl_free(perl_interp);
+   PERL_SYS_TERM();
 }
 

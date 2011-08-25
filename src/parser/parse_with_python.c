@@ -61,7 +61,7 @@ static char *_script_name = NULL;
 
 /* ---------------------------------------------------------- parse_score --- */
 int
-parse_score(int argc, char *argv[])
+parse_score(int argc, char *argv[], char **env)
 {
 	int	status, xargc;
 	char	*xargv[MAXARGS + 2];

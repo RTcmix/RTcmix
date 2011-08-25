@@ -29,8 +29,13 @@ parse_with_minc.o: parse_with_minc.c rtcmix_parse.h
 	$(CC) $(CFLAGS) -c parse_with_minc.c
 
 parse_with_perl.o: parse_with_perl.c rtcmix_parse.h
+ifeq ($(ARCH),MACOSX)
+	$(CC) $(CFLAGS) `$(PERL) -MExtUtils::Embed -e ccopts | sed 's/-arch i386//' | sed 's/-arch ppc//' \
+		-DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c parse_with_perl.c
+else
 	$(CC) $(CFLAGS) `$(PERL) -MExtUtils::Embed -e ccopts` \
 		-DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c parse_with_perl.c
+endif
 
 parse_with_python.o: parse_with_python.c rtcmix_parse.h
 	$(CC) $(CFLAGS) -I$(PYTHON_INCLUDE_DIR) $(PYDEF) -c parse_with_python.c

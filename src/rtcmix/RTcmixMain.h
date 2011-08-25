@@ -5,12 +5,12 @@
 
 class RTcmixMain : public RTcmix {
 public:
-	RTcmixMain(int argc, char **argv);	// called from main.cpp
+	RTcmixMain(int argc, char **argv, char **env);	// called from main.cpp
 	void			run();	
 
 protected:
 	// Initialization methods.
-	void			parseArguments(int argc, char **argv);
+	void			parseArguments(int argc, char **argv, char **env);
 	static void		interrupt_handler(int);
 	static void		signal_handler(int);
 	static void		set_sig_handlers();
@@ -21,6 +21,7 @@ private:
 	char *			makeDSOPath(const char *progPath);
 	static int 		xargc;	// local copy of arg count
 	static char *	xargv[/*MAXARGS + 1*/];
+	static char **	xenv;
 	static int 		interrupt_handler_called;
 	static int 		signal_handler_called;
 	static int		noParse;

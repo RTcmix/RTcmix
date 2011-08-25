@@ -5,7 +5,7 @@ extern "C" {
 
 #define MAXARGS   32
 
-int parse_score(int argc, char *argv[]);
+int parse_score(int argc, char *argv[], char **env);
 int perl_parse_buf (char *inBuf);
 void set_perl_var(char *,double);
 double get_perl_var(char*);

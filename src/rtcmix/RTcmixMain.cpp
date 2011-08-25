@@ -104,6 +104,7 @@ extern "C" {
 
 int 			RTcmixMain::xargc;
 char *			RTcmixMain::xargv[MAXARGS + 1];
+char **			RTcmixMain::xenv = NULL;
 int				RTcmixMain::interrupt_handler_called = 0;
 int				RTcmixMain::signal_handler_called = 0;
 
@@ -151,7 +152,7 @@ char *RTcmixMain::makeDSOPath(const char *progPath)
    return dsoPath;
 }
 
-RTcmixMain::RTcmixMain(int argc, char **argv) : RTcmix(false)
+RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
 {
    set_sig_handlers();
 
@@ -174,7 +175,7 @@ RTcmixMain::RTcmixMain(int argc, char **argv) : RTcmix(false)
    init_globals(true, dsoPath);		// 'true' indicates we were called from main
    delete [] dsoPath;
 
-   parseArguments(argc, argv);
+   parseArguments(argc, argv, env);
 
    // Note:  What follows was done in main().  Some of it is identical
    // to RTcmix::init() for imbedded.  Factor this out.
@@ -191,7 +192,7 @@ RTcmixMain::RTcmixMain(int argc, char **argv) : RTcmix(false)
 }
 
 void
-RTcmixMain::parseArguments(int argc, char **argv)
+RTcmixMain::parseArguments(int argc, char **argv, char **env)
 {
    int         i, j, k, l;
    int         retcode;                 /* for mutexes */
@@ -209,6 +210,7 @@ RTcmixMain::parseArguments(int argc, char **argv)
    for (i = 1; i <= MAXARGS; i++)
       xargv[i] = NULL;
    xargc = 1;
+   xenv = env;
 
    /* Process command line, copying any args we don't handle into
       <xargv> for parsers to deal with.
@@ -354,7 +356,7 @@ RTcmixMain::run()
 #ifdef DBUG
          cout << "Parsing once ...\n";
 #endif
-         status = ::parse_score(xargc, xargv);
+         status = ::parse_score(xargc, xargv, xenv);
          if (status != 0)
             exit(1);
       }
@@ -399,7 +401,7 @@ RTcmixMain::run()
          destroy_parser();
    }
    else {
-      int status = ::parse_score(xargc, xargv);
+      int status = ::parse_score(xargc, xargv, xenv);
 #ifdef PYTHON
       /* Have to reinstall this after running Python interpreter. (Why?) */
 	  set_sig_handlers();

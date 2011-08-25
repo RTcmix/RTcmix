@@ -63,7 +63,7 @@ detect_denormals()
 
 /* ----------------------------------------------------------------- main --- */
 int
-main(int argc, char *argv[])
+main(int argc, char *argv[], char **env)
 {
 #ifdef LINUX
  #ifdef DENORMAL_CHECK
@@ -75,7 +75,7 @@ main(int argc, char *argv[])
    flush_all_underflows_to_zero();
 #endif
 
-   RTcmixMain app(argc, argv);
+   RTcmixMain app(argc, argv, env);
    app.run();
 
    return 0;

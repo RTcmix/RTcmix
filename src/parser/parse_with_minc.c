@@ -19,7 +19,7 @@ extern int aargc;
 
 /* ---------------------------------------------------------- parse_score --- */
 int
-parse_score(int argc, char *argv[])
+parse_score(int argc, char *argv[], char **env)
 {
    int   i, status;
 
