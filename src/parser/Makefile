@@ -30,7 +30,7 @@ parse_with_minc.o: parse_with_minc.c rtcmix_parse.h
 
 parse_with_perl.o: parse_with_perl.c rtcmix_parse.h
 ifeq ($(ARCH),MACOSX)
-	$(CC) $(CFLAGS) `$(PERL) -MExtUtils::Embed -e ccopts | sed 's/-arch i386//' | sed 's/-arch ppc//' \
+	$(CC) $(CFLAGS) `$(PERL) -MExtUtils::Embed -e ccopts | sed 's/-arch i386//' | sed 's/-arch ppc//'` \
 		-DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c parse_with_perl.c
 else
 	$(CC) $(CFLAGS) `$(PERL) -MExtUtils::Embed -e ccopts` \
