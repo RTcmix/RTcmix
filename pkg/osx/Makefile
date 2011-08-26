@@ -1,16 +1,19 @@
 include ../../makefile.conf
 
 namevers="RTcmix-4.0.1"
+packagemaker="/Developer/usr/bin/packagemaker"
 
-all: intel
+all: intel-usersshared
 
-intel:
-	./prep-package $(CMIXDIR) "Intel"
-	PackageMaker -build -proj RTcmix-Intel.pmproj -p ~/Desktop/${namevers}-Intel.pkg
+intel-applications:
+	./prep-package $(CMIXDIR) "/Applications/rtcmix" "Intel"
+	${packagemaker} --doc RTcmix-Intel-ApplicationsDir.pmdoc \
+		--out ~/Desktop/${namevers}-Intel.pkg
 
-ppc:
-	./prep-package $(CMIXDIR) "PPC"
-	PackageMaker -build -proj RTcmix-PPC.pmproj -p ~/Desktop/${namevers}-PPC.pkg
+intel-usersshared:
+	./prep-package $(CMIXDIR) "/Users/Shared/rtcmix" "Intel"
+	${packagemaker} --doc RTcmix-Intel-UsersSharedDir.pmdoc \
+		--out ~/Desktop/${namevers}-Intel.pkg
 
 clean:
 	$(RM) -r rtcmix
