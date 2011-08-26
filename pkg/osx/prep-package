@@ -1,16 +1,15 @@
 #!/bin/sh
 
-destdir="/Applications/rtcmix"
-
 # get location of RTcmix source tree, passed in from Makefile,
-# and bin architecture ("Intel" or "PPC")
-if [ $# -ne 2 ]
+# destination dir, and bin architecture ("Intel" or "PPC")
+if [ $# -ne 3 ]
 then
-	echo "Usage: prep-package RTcmix_source_dir architecture"
+	echo "Usage: prep-package RTcmix_source_dir dest_dir architecture"
 	exit 1
 fi
 srcdir=$1
-arch=$2
+destdir=$2
+arch=$3
 
 # clean and remake install dir
 rm -rf rtcmix
@@ -18,7 +17,12 @@ mkdir rtcmix
 
 # copy docs
 ditto ../../docs rtcmix/docs
-cp README.rtf rtcmix
+if [ ${destdir} == "/Applications/rtcmix" ]
+then
+	cp README-Applications.rtf rtcmix/README.rtf
+else
+	cp README-UsersShared.rtf rtcmix/README.rtf
+fi
 cp license.txt rtcmix
 
 # copy snd, so that sample_scores work
@@ -26,7 +30,7 @@ ditto ../../snd rtcmix/snd
 
 # copy uninstaller script and play symlink to bin
 mkdir rtcmix/bin
-cp uninstall-rtcmix-${arch} rtcmix/bin/uninstall-rtcmix
+#cp uninstall-rtcmix-${arch} rtcmix/bin/uninstall-rtcmix
 cd rtcmix/bin
 ln -s cmixplay play
 cd ../..
