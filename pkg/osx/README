@@ -16,16 +16,6 @@ This will put the dso's in the new LIBDESTDIR.
 Finally, in the pkg/osx dir, type "make".  That will put
 an installable package on your Desktop.
 
-Or rather, it used to, before Apple removed the PackageMaker
-command-line tool. Now our prep-package script, which does
-the work of preparing a distribution, runs correctly, but
-you'll seen an error message about not being able to find
-the PackageMaker tool.  Now you have to open the PackageMaker
-GUI and use the included RTcmix-Intel.pmdoc file, first
-editing the Install field in the Configuration pane so
-that it points to the pkg/osx/rtcmix directory created by
-prep-package. Then press the Build button.
-
 If you don't create and fill /Applications/rtcmix,
 you'll see an error message when making the package.
 
