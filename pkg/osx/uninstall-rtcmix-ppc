@@ -1,8 +1,0 @@
-#!/bin/sh
-
-prefix=/Applications
-pkgname="RTcmix-4.0.1-PPC.pkg"
-
-rm -rf ${prefix}/rtcmix
-rm -rf /Library/Receipts/${pkgname}
-
