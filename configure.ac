@@ -38,6 +38,26 @@ esac
 AC_SUBST(ARCH)
 
 
+# Standard program, library and header checks ----------------------------------
+
+# Check for programs.
+AC_PROG_CC
+AC_PROG_CXX
+
+# Check for libraries.
+AC_PATH_X
+AC_SUBST(x_libraries)
+
+# Check for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS(fcntl.h float.h limits.h mach/mach.h netdb.h netinet/in.h \
+stddef.h stdint.h stdlib.h string.h strings.h sys/file.h sys/ioctl.h \
+sys/param.h sys/socket.h sys/time.h termios.h unistd.h values.h)
+
+# Check for typedefs, structures, and compiler characteristics.
+# Check for library functions.
+
+
 # Configuration options --------------------------------------------------------
 #
 # Standard format for options is...
@@ -79,6 +99,7 @@ AC_SUBST(ARCH)
 # This is set up to allow compiling fat (64/32) binaries eventually.  -JG
 
 # First find out which ptr sizes we can support
+# NB: Must do AC_PROG_CC above this, or it will fail on Slack 10.2.
 TMP_CFLAGS="$CFLAGS"
 CFLAGS="-m64"
 AC_RUN_IFELSE(
@@ -153,12 +174,14 @@ ARCH_BITFLAGS="$ARCH_64BIT $ARCH_32BIT"
 AC_SUBST(ARCH_BITFLAGS)
 
 # Feed the right arch flags to Xcode for MouseWindow, DisplayWindow
-XCODE_ARCHS=
-if test "$WITH_32BIT" = "true"; then
-	XCODE_ARCHS+="i386"
-fi
-if test "$WITH_64BIT" = "true"; then
-	XCODE_ARCHS+="x86_64"
+XCODE_ARCHS=""
+if test "$ARCH" = "MACOSX"; then  # this trips up slack 10.2, so don't bother
+   if test "$WITH_32BIT" = "true"; then
+      XCODE_ARCHS+="i386"
+   fi
+   if test "$WITH_64BIT" = "true"; then
+      XCODE_ARCHS+="x86_64"
+   fi
 fi
 AC_SUBST(XCODE_ARCHS)
 #############################################################################
@@ -276,26 +299,6 @@ AC_ARG_WITH(osc,
 AC_SUBST(OSC_SUPPORT)
 
 #AC_SUBST(WITH_VAL, "$withval")    # for debugging this script
-
-
-# Standard program, library and header checks ----------------------------------
-
-# Check for programs.
-AC_PROG_CC
-AC_PROG_CXX
-
-# Check for libraries.
-AC_PATH_X
-AC_SUBST(x_libraries)
-
-# Check for header files.
-AC_HEADER_STDC
-AC_CHECK_HEADERS(fcntl.h float.h limits.h mach/mach.h netdb.h netinet/in.h \
-stddef.h stdint.h stdlib.h string.h strings.h sys/file.h sys/ioctl.h \
-sys/param.h sys/socket.h sys/time.h termios.h unistd.h values.h)
-
-# Check for typedefs, structures, and compiler characteristics.
-# Check for library functions.
 
 
 # Our own program, library and header checks -----------------------------------
