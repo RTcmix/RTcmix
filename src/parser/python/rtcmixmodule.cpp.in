@@ -157,7 +157,7 @@ static PyObject *Opaque_getattr(OpaqueObject *self, const char *name)
          return obj;
       }
    }
-   return Py_FindMethod(Opaque_methods, (PyObject *) self, name);
+   return Py_FindMethod(Opaque_methods, (PyObject *) self, (char *) name);
 }
 
 static int Opaque_setattr(OpaqueObject *self, const char *name, PyObject *obj)
