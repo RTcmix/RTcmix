@@ -667,6 +667,14 @@ CPPFLAGS
 ac_ct_CC
 EXEEXT
 OBJEXT
+CXX
+CXXFLAGS
+ac_ct_CXX
+XMKMF
+CPP
+x_libraries
+GREP
+EGREP
 ARCH_BITFLAGS
 XCODE_ARCHS
 AUDIODRIVER
@@ -680,14 +688,6 @@ NPLAY_SUPPORT
 JACK_SUPPORT
 FFTW_SUPPORT
 OSC_SUPPORT
-CXX
-CXXFLAGS
-ac_ct_CXX
-XMKMF
-CPP
-x_libraries
-GREP
-EGREP
 PKG_CONFIG
 JACK_CFLAGS
 JACK_LIBS
@@ -1289,6 +1289,7 @@ if test -n "$ac_init_help"; then
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-x                use the X Window System
   --with-64bit            build 64-bit version
   --with-32bit            build 32-bit version
   --with-alsa             use ALSA audio driver
@@ -1299,7 +1300,6 @@ Optional Packages:
   --with-jack             support JACK
   --with-fftw             use FFTW (alternative FFT library)
   --with-osc              support OSC (Open Sound Control)
-  --with-x                use the X Window System
 
 Some influential environment variables:
   CC          C compiler command
@@ -1886,49 +1886,9 @@ esac
 
 
 
-# Configuration options --------------------------------------------------------
-#
-# Standard format for options is...
-#    --with-option         (equivalent to --with-option=yes)
-#    --without-option      (equivalent to --with-option=no)
-#    --with-option=ARG
-# The built-in var <withval> will be set to "yes", "no" or "ARG" accordingly.
-# For perl and python options, we must be prepared to see any one of these
-# three values of <withval>.  -JGG
-#
-# Note that the order of options appearing in "configure --help" output
-# follows the order of AC_ARG_WITH() calls below.
-#
-# There is a similar set of flags for enabling and disabling features...
-#    --enable-feature
-#    --disable-feature
+# Standard program, library and header checks ----------------------------------
 
-# example of using --enable-foo construction
-#PTRSIZEFLAG=
-#AC_ARG_ENABLE(64bit,
-#   AS_HELP_STRING([--enable-64bit], [build 64-bit version]),
-#   [if test "$enableval" == "yes"; then
-#      TMP_CFLAGS="$CFLAGS"
-#      CFLAGS="-m64"
-#      AC_RUN_IFELSE(
-#         [AC_LANG_PROGRAM([], [return sizeof(void *) == 8 ? 0 : 1;])],
-#         [PTRSIZEFLAG="-m64"],
-#         [AC_MSG_ERROR([Don't know how to build a 64-bit object.])]
-#      )
-#      CFLAGS="$TMP_CFLAGS"
-#   elif test "$enableval" == "no"; then
-#      PTRSIZEFLAG="-m32"
-#   fi]
-#)
-#AC_SUBST(PTRSIZEFLAG)
-
-#############################################################################
-# Architecture -- pointer size
-# This is set up to allow compiling fat (64/32) binaries eventually.  -JG
-
-# First find out which ptr sizes we can support
-TMP_CFLAGS="$CFLAGS"
-CFLAGS="-m64"
+# Check for programs.
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -2848,1020 +2808,6 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-
-if test "$cross_compiling" = yes; then
-  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
-See \`config.log' for more details." >&5
-echo "$as_me: error: cannot run test program while cross compiling
-See \`config.log' for more details." >&2;}
-   { (exit 1); exit 1; }; }
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-int
-main ()
-{
-return sizeof(void *) == 8 ? 0 : 1;
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
-  { (case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  CAN_BUILD_64BIT="yes"
-else
-  echo "$as_me: program exited with status $ac_status" >&5
-echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-( exit $ac_status )
-CAN_BUILD_64BIT="no"
-
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
-fi
-
-
-CFLAGS="-m32"
-if test "$cross_compiling" = yes; then
-  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
-See \`config.log' for more details." >&5
-echo "$as_me: error: cannot run test program while cross compiling
-See \`config.log' for more details." >&2;}
-   { (exit 1); exit 1; }; }
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-int
-main ()
-{
-return sizeof(void *) == 4 ? 0 : 1;
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_link") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
-  { (case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_try") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  CAN_BUILD_32BIT="yes"
-else
-  echo "$as_me: program exited with status $ac_status" >&5
-echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-( exit $ac_status )
-CAN_BUILD_32BIT="no"
-
-fi
-rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
-fi
-
-
-CFLAGS="$TMP_CFLAGS"
-
-# Gather user requests
-WANTS_64BIT=""
-
-# Check whether --with-64bit was given.
-if test "${with_64bit+set}" = set; then
-  withval=$with_64bit; if test "$withval" != "no"; then
-      if test "$CAN_BUILD_64BIT" = "no"; then
-         { { echo "$as_me:$LINENO: error: Don't know how to build a 64-bit object." >&5
-echo "$as_me: error: Don't know how to build a 64-bit object." >&2;}
-   { (exit 1); exit 1; }; }
-      fi
-      WANTS_64BIT="yes"
-   else
-      WANTS_64BIT="no"
-   fi
-
-fi
-
-WANTS_32BIT=""
-
-# Check whether --with-32bit was given.
-if test "${with_32bit+set}" = set; then
-  withval=$with_32bit; if test "$withval" != "no"; then
-      if test "$CAN_BUILD_32BIT" = "no"; then
-         { { echo "$as_me:$LINENO: error: Don't know how to build a 32-bit object." >&5
-echo "$as_me: error: Don't know how to build a 32-bit object." >&2;}
-   { (exit 1); exit 1; }; }
-      fi
-      WANTS_32BIT="yes"
-   else
-      WANTS_32BIT="no"
-   fi
-
-fi
-
-
-# Build only 64bit by default, unless user requests 32bit, or requests not to
-# build 64bit, or the system doesn't support 64bit. This logic will have to be
-# changed if we want to support fat 64/32 binaries.
-ARCH_64BIT=""
-ARCH_32BIT=""
-if test "$CAN_BUILD_64BIT" = "yes" \
-		-a "$WANTS_32BIT" != "yes" \
-		-a "$WANTS_64BIT" != "no"; then
-  	ARCH_64BIT="-m64"
-else
-   if test "$CAN_BUILD_32BIT" = "no"; then
-      { { echo "$as_me:$LINENO: error: Don't know how to build a 32-bit object." >&5
-echo "$as_me: error: Don't know how to build a 32-bit object." >&2;}
-   { (exit 1); exit 1; }; }
-   fi
-   ARCH_32BIT="-m32"
-fi
-
-# Set up summary display for user and export variables.
-WITH_64BIT="false"
-WITH_32BIT="false"
-if test "$ARCH_64BIT" != ""; then
-   WITH_64BIT="true"
-fi
-if test "$ARCH_32BIT" != ""; then
-   WITH_32BIT="true"
-fi
-#echo "****** ARCH_64BIT: $ARCH_64BIT"
-#echo "****** ARCH_32BIT: $ARCH_32BIT"
-
-# Combine the bit flags into one symbol to be added to ARCHFLAGS later
-ARCH_BITFLAGS="$ARCH_64BIT $ARCH_32BIT"
-
-
-# Feed the right arch flags to Xcode for MouseWindow, DisplayWindow
-XCODE_ARCHS=
-if test "$WITH_32BIT" = "true"; then
-	XCODE_ARCHS+="i386"
-fi
-if test "$WITH_64BIT" = "true"; then
-	XCODE_ARCHS+="x86_64"
-fi
-
-#############################################################################
-
-
-# Audio driver options
-AUDIODRIVER=AUTO                          # default
-WITH_ALSA="false"                         # just for summary display below
-
-# Check whether --with-alsa was given.
-if test "${with_alsa+set}" = set; then
-  withval=$with_alsa; if test "$withval" != "no"; then
-      AUDIODRIVER=ALSA              # this is ignored on irrelevant platforms
-      WITH_ALSA="true"
-   fi
-
-fi
-
-
-
-# Perl options
-PERL_SUPPORT=FALSE                        # disable by default
-PERL_IN_LOCAL=FALSE
-PERL=perl                                 # default perl name
-WITH_PERL="false"                         # just for summary display below
-
-# Check whether --with-perl was given.
-if test "${with_perl+set}" = set; then
-  withval=$with_perl; if test "$withval" != "no"; then
-      if test "$withval" != "yes"; then
-         PERL="$withval"                  # the path to perl
-      fi
-      PERL_SUPPORT=TRUE
-      WITH_PERL="true"
-      if test PERL = "/usr/local/bin/perl"; then
-         PERL_IN_LOCAL=TRUE
-      fi
-   fi
-
-fi
-
-
-
-
-
-# Python options
-PYTHON_SUPPORT=FALSE                      # disable by default
-PYTHON=python                             # default python name
-WITH_PYTHON="false"                       # just for summary display below
-
-# Check whether --with-python was given.
-if test "${with_python+set}" = set; then
-  withval=$with_python; if test "$withval" != "no"; then
-      if test "$withval" != "yes"; then
-         PYTHON="$withval"                # the path to python
-      fi
-      PYTHON_SUPPORT=TRUE
-      WITH_PYTHON="true"
-   fi
-
-fi
-
-
-
-
-# Documentation options
-HTMLDESTDIR="$CMIXDIR"/docs/html          # default location
-
-# Check whether --with-docdir was given.
-if test "${with_docdir+set}" = set; then
-  withval=$with_docdir; if test "$withval" != "no" && test "$withval" != "yes"; then
-      HTMLDESTDIR="$withval"/html
-,
-   fi
-
-fi
-
-
-
-# NetPlay options
-NPLAY_SUPPORT=FALSE                       # default
-WITH_NPLAY="false"                        # just for summary display below
-
-# Check whether --with-netplay was given.
-if test "${with_netplay+set}" = set; then
-  withval=$with_netplay; if test "$withval" != "no"; then
-      NPLAY_SUPPORT=TRUE
-      WITH_NPLAY="true"
-   fi
-
-fi
-
-
-
-# JACK options
-JACK_SUPPORT=FALSE                        # default
-WITH_JACK="false"                         # just for summary display below
-
-# Check whether --with-jack was given.
-if test "${with_jack+set}" = set; then
-  withval=$with_jack; if test "$withval" != "no"; then
-      JACK_SUPPORT=TRUE
-      WITH_JACK="true"
-   fi
-
-fi
-
-
-
-# FFTW options
-FFTW_SUPPORT=FALSE                        # default
-WITH_FFTW="false"                         # just for summary display below
-
-# Check whether --with-fftw was given.
-if test "${with_fftw+set}" = set; then
-  withval=$with_fftw; if test "$withval" != "no"; then
-      FFTW_SUPPORT=TRUE
-      WITH_FFTW="true"
-   fi
-
-fi
-
-
-
-# liblo options, for OSC server plugin (in src/control/osc)
-OSC_SUPPORT=FALSE                         # default
-WITH_OSC="false"                          # just for summary display below
-
-# Check whether --with-osc was given.
-if test "${with_osc+set}" = set; then
-  withval=$with_osc; if test "$withval" != "no"; then
-      OSC_SUPPORT=TRUE
-      WITH_OSC="true"
-   fi
-
-fi
-
-
-
-#AC_SUBST(WITH_VAL, "$withval")    # for debugging this script
-
-
-# Standard program, library and header checks ----------------------------------
-
-# Check for programs.
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}gcc", so it can be a program name with args.
-set dummy ${ac_tool_prefix}gcc; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_prog_CC+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_CC="${ac_tool_prefix}gcc"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  { echo "$as_me:$LINENO: result: $CC" >&5
-echo "${ECHO_T}$CC" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_prog_CC"; then
-  ac_ct_CC=$CC
-  # Extract the first word of "gcc", so it can be a program name with args.
-set dummy gcc; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_prog_ac_ct_CC+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$ac_ct_CC"; then
-  ac_cv_prog_ac_ct_CC="$ac_ct_CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_ac_ct_CC="gcc"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_CC=$ac_cv_prog_ac_ct_CC
-if test -n "$ac_ct_CC"; then
-  { echo "$as_me:$LINENO: result: $ac_ct_CC" >&5
-echo "${ECHO_T}$ac_ct_CC" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-  if test "x$ac_ct_CC" = x; then
-    CC=""
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ echo "$as_me:$LINENO: WARNING: In the future, Autoconf will not detect cross-tools
-whose name does not start with the host triplet.  If you think this
-configuration is useful to you, please write to autoconf@gnu.org." >&5
-echo "$as_me: WARNING: In the future, Autoconf will not detect cross-tools
-whose name does not start with the host triplet.  If you think this
-configuration is useful to you, please write to autoconf@gnu.org." >&2;}
-ac_tool_warned=yes ;;
-esac
-    CC=$ac_ct_CC
-  fi
-else
-  CC="$ac_cv_prog_CC"
-fi
-
-if test -z "$CC"; then
-          if test -n "$ac_tool_prefix"; then
-    # Extract the first word of "${ac_tool_prefix}cc", so it can be a program name with args.
-set dummy ${ac_tool_prefix}cc; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_prog_CC+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_CC="${ac_tool_prefix}cc"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  { echo "$as_me:$LINENO: result: $CC" >&5
-echo "${ECHO_T}$CC" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
-  fi
-fi
-if test -z "$CC"; then
-  # Extract the first word of "cc", so it can be a program name with args.
-set dummy cc; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_prog_CC+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-  ac_prog_rejected=no
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    if test "$as_dir/$ac_word$ac_exec_ext" = "/usr/ucb/cc"; then
-       ac_prog_rejected=yes
-       continue
-     fi
-    ac_cv_prog_CC="cc"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-if test $ac_prog_rejected = yes; then
-  # We found a bogon in the path, so make sure we never use it.
-  set dummy $ac_cv_prog_CC
-  shift
-  if test $# != 0; then
-    # We chose a different compiler from the bogus one.
-    # However, it has the same basename, so the bogon will be chosen
-    # first if we set CC to just the basename; use the full file name.
-    shift
-    ac_cv_prog_CC="$as_dir/$ac_word${1+' '}$@"
-  fi
-fi
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  { echo "$as_me:$LINENO: result: $CC" >&5
-echo "${ECHO_T}$CC" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
-fi
-if test -z "$CC"; then
-  if test -n "$ac_tool_prefix"; then
-  for ac_prog in cl.exe
-  do
-    # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
-set dummy $ac_tool_prefix$ac_prog; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_prog_CC+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_CC="$ac_tool_prefix$ac_prog"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  { echo "$as_me:$LINENO: result: $CC" >&5
-echo "${ECHO_T}$CC" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
-    test -n "$CC" && break
-  done
-fi
-if test -z "$CC"; then
-  ac_ct_CC=$CC
-  for ac_prog in cl.exe
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ echo "$as_me:$LINENO: checking for $ac_word" >&5
-echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6; }
-if test "${ac_cv_prog_ac_ct_CC+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  if test -n "$ac_ct_CC"; then
-  ac_cv_prog_ac_ct_CC="$ac_ct_CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_ac_ct_CC="$ac_prog"
-    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_CC=$ac_cv_prog_ac_ct_CC
-if test -n "$ac_ct_CC"; then
-  { echo "$as_me:$LINENO: result: $ac_ct_CC" >&5
-echo "${ECHO_T}$ac_ct_CC" >&6; }
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-
-  test -n "$ac_ct_CC" && break
-done
-
-  if test "x$ac_ct_CC" = x; then
-    CC=""
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ echo "$as_me:$LINENO: WARNING: In the future, Autoconf will not detect cross-tools
-whose name does not start with the host triplet.  If you think this
-configuration is useful to you, please write to autoconf@gnu.org." >&5
-echo "$as_me: WARNING: In the future, Autoconf will not detect cross-tools
-whose name does not start with the host triplet.  If you think this
-configuration is useful to you, please write to autoconf@gnu.org." >&2;}
-ac_tool_warned=yes ;;
-esac
-    CC=$ac_ct_CC
-  fi
-fi
-
-fi
-
-
-test -z "$CC" && { { echo "$as_me:$LINENO: error: no acceptable C compiler found in \$PATH
-See \`config.log' for more details." >&5
-echo "$as_me: error: no acceptable C compiler found in \$PATH
-See \`config.log' for more details." >&2;}
-   { (exit 1); exit 1; }; }
-
-# Provide some information about the compiler.
-echo "$as_me:$LINENO: checking for C compiler version" >&5
-ac_compiler=`set X $ac_compile; echo $2`
-{ (ac_try="$ac_compiler --version >&5"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compiler --version >&5") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-{ (ac_try="$ac_compiler -v >&5"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compiler -v >&5") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-{ (ac_try="$ac_compiler -V >&5"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compiler -V >&5") 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-
-{ echo "$as_me:$LINENO: checking whether we are using the GNU C compiler" >&5
-echo $ECHO_N "checking whether we are using the GNU C compiler... $ECHO_C" >&6; }
-if test "${ac_cv_c_compiler_gnu+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-int
-main ()
-{
-#ifndef __GNUC__
-       choke me
-#endif
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_compiler_gnu=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_compiler_gnu=no
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-ac_cv_c_compiler_gnu=$ac_compiler_gnu
-
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_c_compiler_gnu" >&5
-echo "${ECHO_T}$ac_cv_c_compiler_gnu" >&6; }
-GCC=`test $ac_compiler_gnu = yes && echo yes`
-ac_test_CFLAGS=${CFLAGS+set}
-ac_save_CFLAGS=$CFLAGS
-{ echo "$as_me:$LINENO: checking whether $CC accepts -g" >&5
-echo $ECHO_N "checking whether $CC accepts -g... $ECHO_C" >&6; }
-if test "${ac_cv_prog_cc_g+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_save_c_werror_flag=$ac_c_werror_flag
-   ac_c_werror_flag=yes
-   ac_cv_prog_cc_g=no
-   CFLAGS="-g"
-   cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_cv_prog_cc_g=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	CFLAGS=""
-      cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  :
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	ac_c_werror_flag=$ac_save_c_werror_flag
-	 CFLAGS="-g"
-	 cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_cv_prog_cc_g=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-   ac_c_werror_flag=$ac_save_c_werror_flag
-fi
-{ echo "$as_me:$LINENO: result: $ac_cv_prog_cc_g" >&5
-echo "${ECHO_T}$ac_cv_prog_cc_g" >&6; }
-if test "$ac_test_CFLAGS" = set; then
-  CFLAGS=$ac_save_CFLAGS
-elif test $ac_cv_prog_cc_g = yes; then
-  if test "$GCC" = yes; then
-    CFLAGS="-g -O2"
-  else
-    CFLAGS="-g"
-  fi
-else
-  if test "$GCC" = yes; then
-    CFLAGS="-O2"
-  else
-    CFLAGS=
-  fi
-fi
-{ echo "$as_me:$LINENO: checking for $CC option to accept ISO C89" >&5
-echo $ECHO_N "checking for $CC option to accept ISO C89... $ECHO_C" >&6; }
-if test "${ac_cv_prog_cc_c89+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_cv_prog_cc_c89=no
-ac_save_CC=$CC
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <stdarg.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-/* Most of the following tests are stolen from RCS 5.7's src/conf.sh.  */
-struct buf { int x; };
-FILE * (*rcsopen) (struct buf *, struct stat *, int);
-static char *e (p, i)
-     char **p;
-     int i;
-{
-  return p[i];
-}
-static char *f (char * (*g) (char **, int), char **p, ...)
-{
-  char *s;
-  va_list v;
-  va_start (v,p);
-  s = g (p, va_arg (v,int));
-  va_end (v);
-  return s;
-}
-
-/* OSF 4.0 Compaq cc is some sort of almost-ANSI by default.  It has
-   function prototypes and stuff, but not '\xHH' hex character constants.
-   These don't provoke an error unfortunately, instead are silently treated
-   as 'x'.  The following induces an error, until -std is added to get
-   proper ANSI mode.  Curiously '\x00'!='x' always comes out true, for an
-   array size at least.  It's necessary to write '\x00'==0 to get something
-   that's true only with -std.  */
-int osf4_cc_array ['\x00' == 0 ? 1 : -1];
-
-/* IBM C 6 for AIX is almost-ANSI by default, but it replaces macro parameters
-   inside strings and character constants.  */
-#define FOO(x) 'x'
-int xlc6_cc_array[FOO(a) == 'x' ? 1 : -1];
-
-int test (int i, double x);
-struct s1 {int (*f) (int a);};
-struct s2 {int (*f) (double a);};
-int pairnames (int, char **, FILE *(*)(struct buf *, struct stat *, int), int, int);
-int argc;
-char **argv;
-int
-main ()
-{
-return f (e, argv, 0) != argv[0]  ||  f (e, argv, 1) != argv[1];
-  ;
-  return 0;
-}
-_ACEOF
-for ac_arg in '' -qlanglvl=extc89 -qlanglvl=ansi -std \
-	-Ae "-Aa -D_HPUX_SOURCE" "-Xc -D__EXTENSIONS__"
-do
-  CC="$ac_save_CC $ac_arg"
-  rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  ac_cv_prog_cc_c89=$ac_arg
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-
-rm -f core conftest.err conftest.$ac_objext
-  test "x$ac_cv_prog_cc_c89" != "xno" && break
-done
-rm -f conftest.$ac_ext
-CC=$ac_save_CC
-
-fi
-# AC_CACHE_VAL
-case "x$ac_cv_prog_cc_c89" in
-  x)
-    { echo "$as_me:$LINENO: result: none needed" >&5
-echo "${ECHO_T}none needed" >&6; } ;;
-  xno)
-    { echo "$as_me:$LINENO: result: unsupported" >&5
-echo "${ECHO_T}unsupported" >&6; } ;;
-  *)
-    CC="$CC $ac_cv_prog_cc_c89"
-    { echo "$as_me:$LINENO: result: $ac_cv_prog_cc_c89" >&5
-echo "${ECHO_T}$ac_cv_prog_cc_c89" >&6; } ;;
-esac
-
-
-ac_ext=c
-ac_cpp='$CPP $CPPFLAGS'
-ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
 ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
 ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -4228,6 +3174,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 # Check for libraries.
+
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -5269,6 +4216,386 @@ done
 
 # Check for typedefs, structures, and compiler characteristics.
 # Check for library functions.
+
+
+# Configuration options --------------------------------------------------------
+#
+# Standard format for options is...
+#    --with-option         (equivalent to --with-option=yes)
+#    --without-option      (equivalent to --with-option=no)
+#    --with-option=ARG
+# The built-in var <withval> will be set to "yes", "no" or "ARG" accordingly.
+# For perl and python options, we must be prepared to see any one of these
+# three values of <withval>.  -JGG
+#
+# Note that the order of options appearing in "configure --help" output
+# follows the order of AC_ARG_WITH() calls below.
+#
+# There is a similar set of flags for enabling and disabling features...
+#    --enable-feature
+#    --disable-feature
+
+# example of using --enable-foo construction
+#PTRSIZEFLAG=
+#AC_ARG_ENABLE(64bit,
+#   AS_HELP_STRING([--enable-64bit], [build 64-bit version]),
+#   [if test "$enableval" == "yes"; then
+#      TMP_CFLAGS="$CFLAGS"
+#      CFLAGS="-m64"
+#      AC_RUN_IFELSE(
+#         [AC_LANG_PROGRAM([], [return sizeof(void *) == 8 ? 0 : 1;])],
+#         [PTRSIZEFLAG="-m64"],
+#         [AC_MSG_ERROR([Don't know how to build a 64-bit object.])]
+#      )
+#      CFLAGS="$TMP_CFLAGS"
+#   elif test "$enableval" == "no"; then
+#      PTRSIZEFLAG="-m32"
+#   fi]
+#)
+#AC_SUBST(PTRSIZEFLAG)
+
+#############################################################################
+# Architecture -- pointer size
+# This is set up to allow compiling fat (64/32) binaries eventually.  -JG
+
+# First find out which ptr sizes we can support
+# NB: Must do AC_PROG_CC above this, or it will fail on Slack 10.2.
+TMP_CFLAGS="$CFLAGS"
+CFLAGS="-m64"
+if test "$cross_compiling" = yes; then
+  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
+See \`config.log' for more details." >&5
+echo "$as_me: error: cannot run test program while cross compiling
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; }
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return sizeof(void *) == 8 ? 0 : 1;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  CAN_BUILD_64BIT="yes"
+else
+  echo "$as_me: program exited with status $ac_status" >&5
+echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+( exit $ac_status )
+CAN_BUILD_64BIT="no"
+
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+fi
+
+
+CFLAGS="-m32"
+if test "$cross_compiling" = yes; then
+  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
+See \`config.log' for more details." >&5
+echo "$as_me: error: cannot run test program while cross compiling
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; }
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return sizeof(void *) == 4 ? 0 : 1;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  CAN_BUILD_32BIT="yes"
+else
+  echo "$as_me: program exited with status $ac_status" >&5
+echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+( exit $ac_status )
+CAN_BUILD_32BIT="no"
+
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+fi
+
+
+CFLAGS="$TMP_CFLAGS"
+
+# Gather user requests
+WANTS_64BIT=""
+
+# Check whether --with-64bit was given.
+if test "${with_64bit+set}" = set; then
+  withval=$with_64bit; if test "$withval" != "no"; then
+      if test "$CAN_BUILD_64BIT" = "no"; then
+         { { echo "$as_me:$LINENO: error: Don't know how to build a 64-bit object." >&5
+echo "$as_me: error: Don't know how to build a 64-bit object." >&2;}
+   { (exit 1); exit 1; }; }
+      fi
+      WANTS_64BIT="yes"
+   else
+      WANTS_64BIT="no"
+   fi
+
+fi
+
+WANTS_32BIT=""
+
+# Check whether --with-32bit was given.
+if test "${with_32bit+set}" = set; then
+  withval=$with_32bit; if test "$withval" != "no"; then
+      if test "$CAN_BUILD_32BIT" = "no"; then
+         { { echo "$as_me:$LINENO: error: Don't know how to build a 32-bit object." >&5
+echo "$as_me: error: Don't know how to build a 32-bit object." >&2;}
+   { (exit 1); exit 1; }; }
+      fi
+      WANTS_32BIT="yes"
+   else
+      WANTS_32BIT="no"
+   fi
+
+fi
+
+
+# Build only 64bit by default, unless user requests 32bit, or requests not to
+# build 64bit, or the system doesn't support 64bit. This logic will have to be
+# changed if we want to support fat 64/32 binaries.
+ARCH_64BIT=""
+ARCH_32BIT=""
+if test "$CAN_BUILD_64BIT" = "yes" \
+		-a "$WANTS_32BIT" != "yes" \
+		-a "$WANTS_64BIT" != "no"; then
+  	ARCH_64BIT="-m64"
+else
+   if test "$CAN_BUILD_32BIT" = "no"; then
+      { { echo "$as_me:$LINENO: error: Don't know how to build a 32-bit object." >&5
+echo "$as_me: error: Don't know how to build a 32-bit object." >&2;}
+   { (exit 1); exit 1; }; }
+   fi
+   ARCH_32BIT="-m32"
+fi
+
+# Set up summary display for user and export variables.
+WITH_64BIT="false"
+WITH_32BIT="false"
+if test "$ARCH_64BIT" != ""; then
+   WITH_64BIT="true"
+fi
+if test "$ARCH_32BIT" != ""; then
+   WITH_32BIT="true"
+fi
+#echo "****** ARCH_64BIT: $ARCH_64BIT"
+#echo "****** ARCH_32BIT: $ARCH_32BIT"
+
+# Combine the bit flags into one symbol to be added to ARCHFLAGS later
+ARCH_BITFLAGS="$ARCH_64BIT $ARCH_32BIT"
+
+
+# Feed the right arch flags to Xcode for MouseWindow, DisplayWindow
+XCODE_ARCHS=""
+if test "$ARCH" = "MACOSX"; then  # this trips up slack 10.2, so don't bother
+   if test "$WITH_32BIT" = "true"; then
+      XCODE_ARCHS+="i386"
+   fi
+   if test "$WITH_64BIT" = "true"; then
+      XCODE_ARCHS+="x86_64"
+   fi
+fi
+
+#############################################################################
+
+
+# Audio driver options
+AUDIODRIVER=AUTO                          # default
+WITH_ALSA="false"                         # just for summary display below
+
+# Check whether --with-alsa was given.
+if test "${with_alsa+set}" = set; then
+  withval=$with_alsa; if test "$withval" != "no"; then
+      AUDIODRIVER=ALSA              # this is ignored on irrelevant platforms
+      WITH_ALSA="true"
+   fi
+
+fi
+
+
+
+# Perl options
+PERL_SUPPORT=FALSE                        # disable by default
+PERL_IN_LOCAL=FALSE
+PERL=perl                                 # default perl name
+WITH_PERL="false"                         # just for summary display below
+
+# Check whether --with-perl was given.
+if test "${with_perl+set}" = set; then
+  withval=$with_perl; if test "$withval" != "no"; then
+      if test "$withval" != "yes"; then
+         PERL="$withval"                  # the path to perl
+      fi
+      PERL_SUPPORT=TRUE
+      WITH_PERL="true"
+      if test PERL = "/usr/local/bin/perl"; then
+         PERL_IN_LOCAL=TRUE
+      fi
+   fi
+
+fi
+
+
+
+
+
+# Python options
+PYTHON_SUPPORT=FALSE                      # disable by default
+PYTHON=python                             # default python name
+WITH_PYTHON="false"                       # just for summary display below
+
+# Check whether --with-python was given.
+if test "${with_python+set}" = set; then
+  withval=$with_python; if test "$withval" != "no"; then
+      if test "$withval" != "yes"; then
+         PYTHON="$withval"                # the path to python
+      fi
+      PYTHON_SUPPORT=TRUE
+      WITH_PYTHON="true"
+   fi
+
+fi
+
+
+
+
+# Documentation options
+HTMLDESTDIR="$CMIXDIR"/docs/html          # default location
+
+# Check whether --with-docdir was given.
+if test "${with_docdir+set}" = set; then
+  withval=$with_docdir; if test "$withval" != "no" && test "$withval" != "yes"; then
+      HTMLDESTDIR="$withval"/html
+,
+   fi
+
+fi
+
+
+
+# NetPlay options
+NPLAY_SUPPORT=FALSE                       # default
+WITH_NPLAY="false"                        # just for summary display below
+
+# Check whether --with-netplay was given.
+if test "${with_netplay+set}" = set; then
+  withval=$with_netplay; if test "$withval" != "no"; then
+      NPLAY_SUPPORT=TRUE
+      WITH_NPLAY="true"
+   fi
+
+fi
+
+
+
+# JACK options
+JACK_SUPPORT=FALSE                        # default
+WITH_JACK="false"                         # just for summary display below
+
+# Check whether --with-jack was given.
+if test "${with_jack+set}" = set; then
+  withval=$with_jack; if test "$withval" != "no"; then
+      JACK_SUPPORT=TRUE
+      WITH_JACK="true"
+   fi
+
+fi
+
+
+
+# FFTW options
+FFTW_SUPPORT=FALSE                        # default
+WITH_FFTW="false"                         # just for summary display below
+
+# Check whether --with-fftw was given.
+if test "${with_fftw+set}" = set; then
+  withval=$with_fftw; if test "$withval" != "no"; then
+      FFTW_SUPPORT=TRUE
+      WITH_FFTW="true"
+   fi
+
+fi
+
+
+
+# liblo options, for OSC server plugin (in src/control/osc)
+OSC_SUPPORT=FALSE                         # default
+WITH_OSC="false"                          # just for summary display below
+
+# Check whether --with-osc was given.
+if test "${with_osc+set}" = set; then
+  withval=$with_osc; if test "$withval" != "no"; then
+      OSC_SUPPORT=TRUE
+      WITH_OSC="true"
+   fi
+
+fi
+
+
+
+#AC_SUBST(WITH_VAL, "$withval")    # for debugging this script
 
 
 # Our own program, library and header checks -----------------------------------
@@ -6543,6 +5870,14 @@ CPPFLAGS!$CPPFLAGS$ac_delim
 ac_ct_CC!$ac_ct_CC$ac_delim
 EXEEXT!$EXEEXT$ac_delim
 OBJEXT!$OBJEXT$ac_delim
+CXX!$CXX$ac_delim
+CXXFLAGS!$CXXFLAGS$ac_delim
+ac_ct_CXX!$ac_ct_CXX$ac_delim
+XMKMF!$XMKMF$ac_delim
+CPP!$CPP$ac_delim
+x_libraries!$x_libraries$ac_delim
+GREP!$GREP$ac_delim
+EGREP!$EGREP$ac_delim
 ARCH_BITFLAGS!$ARCH_BITFLAGS$ac_delim
 XCODE_ARCHS!$XCODE_ARCHS$ac_delim
 AUDIODRIVER!$AUDIODRIVER$ac_delim
@@ -6556,14 +5891,6 @@ NPLAY_SUPPORT!$NPLAY_SUPPORT$ac_delim
 JACK_SUPPORT!$JACK_SUPPORT$ac_delim
 FFTW_SUPPORT!$FFTW_SUPPORT$ac_delim
 OSC_SUPPORT!$OSC_SUPPORT$ac_delim
-CXX!$CXX$ac_delim
-CXXFLAGS!$CXXFLAGS$ac_delim
-ac_ct_CXX!$ac_ct_CXX$ac_delim
-XMKMF!$XMKMF$ac_delim
-CPP!$CPP$ac_delim
-x_libraries!$x_libraries$ac_delim
-GREP!$GREP$ac_delim
-EGREP!$EGREP$ac_delim
 PKG_CONFIG!$PKG_CONFIG$ac_delim
 JACK_CFLAGS!$JACK_CFLAGS$ac_delim
 JACK_LIBS!$JACK_LIBS$ac_delim
