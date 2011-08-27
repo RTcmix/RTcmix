@@ -71,14 +71,14 @@ main(int argc, char *argv[])
 	
 	typedef struct _Buses { const char *wave; const char *mmovein; } Buses;
 	static const Buses buses[] = {
-		"aox0", "aix0",
-		"aox1", "aix1",
-		"aox2", "aix2",
-		"aox3", "aix3",
-		"aox4", "aix4",
-		"aox5", "aix5",
-		"aox6", "aix6",
-		"aox7", "aix7"
+		{ "aox0", "aix0" },
+		{ "aox1", "aix1" },
+		{ "aox2", "aix2" },
+		{ "aox3", "aix3" },
+		{ "aox4", "aix4" },
+		{ "aox5", "aix5" },
+		{ "aox6", "aix6" },
+		{ "aox7", "aix7" }
 	};
 	int noteIndex = 0;
 	
