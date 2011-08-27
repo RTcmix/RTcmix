@@ -41,6 +41,6 @@ num   {dig}+
 <INIT>"\n"              ;
 <INIT>" "|"\t"          ;
 <INIT>{let}({let}|{dig}|"_"|".")*   return TOK_KEY;
-<INIT>.                 conferror("invalid character");
+<INIT>.                 conferror((char *) "invalid character");
 .|"\n"                  { BEGIN INIT; unput(conftext[0]); }
 %%
