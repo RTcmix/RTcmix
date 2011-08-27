@@ -7,7 +7,7 @@ IMBCMIXOBJS += $(PROFILE_O)
 PROGS = crudelooch
 
 loochinspace: $(OBJS) $(IMBCMIXOBJS)
-	$(CXX) -o $@ $(DYN) $(OBJS) $(IMBCMIXOBJS) $(CXXFLAGS) $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@ $(DYN) $(OBJS) $(IMBCMIXOBJS) $(CXXFLAGS) $(LDFLAGS)
 
 clean:
 	$(RM) *.o $(OBJS) $(PROGS)

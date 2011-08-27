@@ -7,7 +7,7 @@ IMBCMIXOBJS += $(PROFILE_O)
 PROGS = arpeggiate
 
 arpeggiate: $(OBJS) $(IMBCMIXOBJS)
-	$(CXX) -o $@ $(DYN) $(OBJS) $(IMBCMIXOBJS) $(CXXFLAGS) $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o $@ $(DYN) $(OBJS) $(IMBCMIXOBJS) $(CXXFLAGS) $(LDFLAGS)
 
 clean:
 	$(RM) *.o $(OBJS) $(PROGS)
