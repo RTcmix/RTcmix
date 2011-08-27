@@ -40,7 +40,7 @@ glue.o: depend glue.cpp DisplayPField.h
 
 .PHONY: $(APP)
 $(APP): 
-	cd $(APP); xcodebuild
+	cd $(APP); xcodebuild ARCHS="$(XCODE_ARCHS)"
 
 depend:
 	-$(SHELL) -ec '$(CXX) -M $(CXXFLAGS) $(SRCS)' > depend
