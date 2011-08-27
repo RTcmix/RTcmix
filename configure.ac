@@ -55,24 +55,114 @@ AC_SUBST(ARCH)
 #    --enable-feature
 #    --disable-feature
 
-# Architecture features
-PTRSIZEFLAG=
-AC_ARG_ENABLE(64bit,
-   AS_HELP_STRING([--enable-64bit], [build 64-bit version]),
-   [if test "$enableval" == "yes"; then
-      TMP_CFLAGS="$CFLAGS"
-      CFLAGS="-m64"
-      AC_RUN_IFELSE(
-         [AC_LANG_PROGRAM([], [return sizeof(void *) == 8 ? 0 : 1;])],
-         [PTRSIZEFLAG="-m64"],
-         [AC_MSG_ERROR([Don't know how to build a 64-bit object.])]
-      )
-      CFLAGS="$TMP_CFLAGS"
-   elif test "$enableval" == "no"; then
-      PTRSIZEFLAG="-m32"
+# example of using --enable-foo construction
+#PTRSIZEFLAG=
+#AC_ARG_ENABLE(64bit,
+#   AS_HELP_STRING([--enable-64bit], [build 64-bit version]),
+#   [if test "$enableval" == "yes"; then
+#      TMP_CFLAGS="$CFLAGS"
+#      CFLAGS="-m64"
+#      AC_RUN_IFELSE(
+#         [AC_LANG_PROGRAM([], [return sizeof(void *) == 8 ? 0 : 1;])],
+#         [PTRSIZEFLAG="-m64"],
+#         [AC_MSG_ERROR([Don't know how to build a 64-bit object.])]
+#      )
+#      CFLAGS="$TMP_CFLAGS"
+#   elif test "$enableval" == "no"; then
+#      PTRSIZEFLAG="-m32"
+#   fi]
+#)
+#AC_SUBST(PTRSIZEFLAG)
+
+#############################################################################
+# Architecture -- pointer size
+# This is set up to allow compiling fat (64/32) binaries eventually.  -JG
+
+# First find out which ptr sizes we can support
+TMP_CFLAGS="$CFLAGS"
+CFLAGS="-m64"
+AC_RUN_IFELSE(
+   [AC_LANG_PROGRAM([], [return sizeof(void *) == 8 ? 0 : 1;])],
+   [CAN_BUILD_64BIT="yes"],
+   [CAN_BUILD_64BIT="no"]
+)
+CFLAGS="-m32"
+AC_RUN_IFELSE(
+   [AC_LANG_PROGRAM([], [return sizeof(void *) == 4 ? 0 : 1;])],
+   [CAN_BUILD_32BIT="yes"],
+   [CAN_BUILD_32BIT="no"]
+)
+CFLAGS="$TMP_CFLAGS"
+
+# Gather user requests
+WANTS_64BIT=""
+AC_ARG_WITH(64bit,
+   AC_HELP_STRING([--with-64bit], [build 64-bit version]),
+   [if test "$withval" != "no"; then
+      if test "$CAN_BUILD_64BIT" = "no"; then
+         AC_MSG_ERROR([Don't know how to build a 64-bit object.])
+      fi
+      WANTS_64BIT="yes"
+   else
+      WANTS_64BIT="no"
    fi]
 )
-AC_SUBST(PTRSIZEFLAG)
+WANTS_32BIT=""
+AC_ARG_WITH(32bit,
+   AC_HELP_STRING([--with-32bit], [build 32-bit version]),
+   [if test "$withval" != "no"; then
+      if test "$CAN_BUILD_32BIT" = "no"; then
+         AC_MSG_ERROR([Don't know how to build a 32-bit object.])
+      fi
+      WANTS_32BIT="yes"
+   else
+      WANTS_32BIT="no"
+   fi]
+)
+
+# Build only 64bit by default, unless user requests 32bit, or requests not to
+# build 64bit, or the system doesn't support 64bit. This logic will have to be
+# changed if we want to support fat 64/32 binaries.
+ARCH_64BIT=""
+ARCH_32BIT=""
+if test "$CAN_BUILD_64BIT" = "yes" \
+		-a "$WANTS_32BIT" != "yes" \
+		-a "$WANTS_64BIT" != "no"; then
+  	ARCH_64BIT="-m64"
+else
+   if test "$CAN_BUILD_32BIT" = "no"; then
+      AC_MSG_ERROR([Don't know how to build a 32-bit object.])
+   fi
+   ARCH_32BIT="-m32"
+fi
+
+# Set up summary display for user and export variables.
+WITH_64BIT="false"
+WITH_32BIT="false"
+if test "$ARCH_64BIT" != ""; then
+   WITH_64BIT="true"
+fi
+if test "$ARCH_32BIT" != ""; then
+   WITH_32BIT="true"
+fi
+#echo "****** ARCH_64BIT: $ARCH_64BIT" 
+#echo "****** ARCH_32BIT: $ARCH_32BIT" 
+
+# Combine the bit flags into one symbol to be added to ARCHFLAGS later
+ARCH_BITFLAGS="$ARCH_64BIT $ARCH_32BIT"
+AC_SUBST(ARCH_BITFLAGS)
+
+# Feed the right arch flags to Xcode for MouseWindow, DisplayWindow
+XCODE_ARCHS=
+if test "$WITH_32BIT" = "true"; then
+	XCODE_ARCHS+="i386"
+fi
+if test "$WITH_64BIT" = "true"; then
+	XCODE_ARCHS+="x86_64"
+fi
+AC_SUBST(XCODE_ARCHS)
+#############################################################################
+
 
 # Audio driver options
 AUDIODRIVER=AUTO                          # default
@@ -274,10 +364,10 @@ AC_OUTPUT
 # Output summary message
 echo
 echo "Summary..."
-if test "$PTRSIZEFLAG" = "-m64"; then
-echo "  " Building 64-bit binaries by request
-elif test "$PTRSIZEFLAG" = "-m32"; then
-echo "  " Building 32-bit binaries by request
+if test "$WITH_64BIT" = "true"; then
+echo "  " Building 64-bit binaries
+elif test "$WITH_32BIT" = "true"; then
+echo "  " Building 32-bit binaries
 fi
 echo "  " Build with Perl support............................... : $WITH_PERL
 echo "  " Build with Python support............................. : $WITH_PYTHON

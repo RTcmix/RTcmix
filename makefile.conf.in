@@ -76,7 +76,7 @@ AUDIOLIB = $(AUDIODIR)/librtaudio.a
 # Compile and link time flags
 
 ifeq ($(ARCH),LINUX)
-  ARCHFLAGS = -DLINUX
+  ARCHFLAGS = -DLINUX $(ARCH_BITFLAGS)
   ARCH_RTLDFLAGS = -Wl,-rpath $(LIBDIR)
   CC = gcc
   CXX = g++ -Wno-deprecated
@@ -88,7 +88,7 @@ ifeq ($(ARCH),LINUX)
   SHLIB_SUFFIX = so
 endif
 ifeq ($(ARCH),MACOSX)
-  ARCHFLAGS = -DMACOSX -fno-common
+  ARCHFLAGS = -DMACOSX $(ARCH_BITFLAGS) -fno-common
   ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX)
   CC = cc
   CXX = c++ -Wno-deprecated
@@ -100,7 +100,7 @@ ifeq ($(ARCH),MACOSX)
   SHLIB_SUFFIX = dylib
 endif
 ifeq ($(ARCH),SGI)
-  ARCHFLAGS = -DSGI
+  ARCHFLAGS = -DSGI $(ARCH_BITFLAGS)
   ARCH_RTLDFLAGS =
   CC = cc -Xcpluscomm
   CXX = CC
@@ -112,7 +112,7 @@ ifeq ($(ARCH),SGI)
   SHLIB_SUFFIX = so
 endif
 ifeq ($(ARCH),FREEBSD)
-  ARCHFLAGS = -DFREEBSD -DLINUX
+  ARCHFLAGS = -DFREEBSD -DLINUX $(ARCH_BITFLAGS)
   ARCH_RTLDFLAGS =
   CC = gcc
   CXX = g++

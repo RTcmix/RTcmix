@@ -667,7 +667,8 @@ CPPFLAGS
 ac_ct_CC
 EXEEXT
 OBJEXT
-PTRSIZEFLAG
+ARCH_BITFLAGS
+XCODE_ARCHS
 AUDIODRIVER
 PERL_SUPPORT
 PERL_IN_LOCAL
@@ -1285,14 +1286,11 @@ if test -n "$ac_init_help"; then
    esac
   cat <<\_ACEOF
 
-Optional Features:
-  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
-  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
-  --enable-64bit          build 64-bit version
-
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-64bit            build 64-bit version
+  --with-32bit            build 32-bit version
   --with-alsa             use ALSA audio driver
   --with-perl=PATH        build Perl-enabled RTcmix (PCMIX) (PATH optional)
   --with-python=PATH      build Python-enabled RTcmix (PYCMIX) (PATH optional)
@@ -1905,8 +1903,32 @@ esac
 #    --enable-feature
 #    --disable-feature
 
-# Architecture features
-PTRSIZEFLAG=
+# example of using --enable-foo construction
+#PTRSIZEFLAG=
+#AC_ARG_ENABLE(64bit,
+#   AS_HELP_STRING([--enable-64bit], [build 64-bit version]),
+#   [if test "$enableval" == "yes"; then
+#      TMP_CFLAGS="$CFLAGS"
+#      CFLAGS="-m64"
+#      AC_RUN_IFELSE(
+#         [AC_LANG_PROGRAM([], [return sizeof(void *) == 8 ? 0 : 1;])],
+#         [PTRSIZEFLAG="-m64"],
+#         [AC_MSG_ERROR([Don't know how to build a 64-bit object.])]
+#      )
+#      CFLAGS="$TMP_CFLAGS"
+#   elif test "$enableval" == "no"; then
+#      PTRSIZEFLAG="-m32"
+#   fi]
+#)
+#AC_SUBST(PTRSIZEFLAG)
+
+#############################################################################
+# Architecture -- pointer size
+# This is set up to allow compiling fat (64/32) binaries eventually.  -JG
+
+# First find out which ptr sizes we can support
+TMP_CFLAGS="$CFLAGS"
+CFLAGS="-m64"
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -2827,12 +2849,7 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-# Check whether --enable-64bit was given.
-if test "${enable_64bit+set}" = set; then
-  enableval=$enable_64bit; if test "$enableval" == "yes"; then
-      TMP_CFLAGS="$CFLAGS"
-      CFLAGS="-m64"
-      if test "$cross_compiling" = yes; then
+if test "$cross_compiling" = yes; then
   { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
 See \`config.log' for more details." >&5
 echo "$as_me: error: cannot run test program while cross compiling
@@ -2874,29 +2891,159 @@ eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-  PTRSIZEFLAG="-m64"
+  CAN_BUILD_64BIT="yes"
 else
   echo "$as_me: program exited with status $ac_status" >&5
 echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
 ( exit $ac_status )
-{ { echo "$as_me:$LINENO: error: Don't know how to build a 64-bit object." >&5
-echo "$as_me: error: Don't know how to build a 64-bit object." >&2;}
-   { (exit 1); exit 1; }; }
+CAN_BUILD_64BIT="no"
 
 fi
 rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
 fi
 
 
-      CFLAGS="$TMP_CFLAGS"
-   elif test "$enableval" == "no"; then
-      PTRSIZEFLAG="-m32"
+CFLAGS="-m32"
+if test "$cross_compiling" = yes; then
+  { { echo "$as_me:$LINENO: error: cannot run test program while cross compiling
+See \`config.log' for more details." >&5
+echo "$as_me: error: cannot run test program while cross compiling
+See \`config.log' for more details." >&2;}
+   { (exit 1); exit 1; }; }
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return sizeof(void *) == 4 ? 0 : 1;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  CAN_BUILD_32BIT="yes"
+else
+  echo "$as_me: program exited with status $ac_status" >&5
+echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+( exit $ac_status )
+CAN_BUILD_32BIT="no"
+
+fi
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+fi
+
+
+CFLAGS="$TMP_CFLAGS"
+
+# Gather user requests
+WANTS_64BIT=""
+
+# Check whether --with-64bit was given.
+if test "${with_64bit+set}" = set; then
+  withval=$with_64bit; if test "$withval" != "no"; then
+      if test "$CAN_BUILD_64BIT" = "no"; then
+         { { echo "$as_me:$LINENO: error: Don't know how to build a 64-bit object." >&5
+echo "$as_me: error: Don't know how to build a 64-bit object." >&2;}
+   { (exit 1); exit 1; }; }
+      fi
+      WANTS_64BIT="yes"
+   else
+      WANTS_64BIT="no"
    fi
 
 fi
 
+WANTS_32BIT=""
+
+# Check whether --with-32bit was given.
+if test "${with_32bit+set}" = set; then
+  withval=$with_32bit; if test "$withval" != "no"; then
+      if test "$CAN_BUILD_32BIT" = "no"; then
+         { { echo "$as_me:$LINENO: error: Don't know how to build a 32-bit object." >&5
+echo "$as_me: error: Don't know how to build a 32-bit object." >&2;}
+   { (exit 1); exit 1; }; }
+      fi
+      WANTS_32BIT="yes"
+   else
+      WANTS_32BIT="no"
+   fi
+
+fi
+
+
+# Build only 64bit by default, unless user requests 32bit, or requests not to
+# build 64bit, or the system doesn't support 64bit. This logic will have to be
+# changed if we want to support fat 64/32 binaries.
+ARCH_64BIT=""
+ARCH_32BIT=""
+if test "$CAN_BUILD_64BIT" = "yes" \
+		-a "$WANTS_32BIT" != "yes" \
+		-a "$WANTS_64BIT" != "no"; then
+  	ARCH_64BIT="-m64"
+else
+   if test "$CAN_BUILD_32BIT" = "no"; then
+      { { echo "$as_me:$LINENO: error: Don't know how to build a 32-bit object." >&5
+echo "$as_me: error: Don't know how to build a 32-bit object." >&2;}
+   { (exit 1); exit 1; }; }
+   fi
+   ARCH_32BIT="-m32"
+fi
+
+# Set up summary display for user and export variables.
+WITH_64BIT="false"
+WITH_32BIT="false"
+if test "$ARCH_64BIT" != ""; then
+   WITH_64BIT="true"
+fi
+if test "$ARCH_32BIT" != ""; then
+   WITH_32BIT="true"
+fi
+#echo "****** ARCH_64BIT: $ARCH_64BIT"
+#echo "****** ARCH_32BIT: $ARCH_32BIT"
+
+# Combine the bit flags into one symbol to be added to ARCHFLAGS later
+ARCH_BITFLAGS="$ARCH_64BIT $ARCH_32BIT"
+
+
+# Feed the right arch flags to Xcode for MouseWindow, DisplayWindow
+XCODE_ARCHS=
+if test "$WITH_32BIT" = "true"; then
+	XCODE_ARCHS+="i386"
+fi
+if test "$WITH_64BIT" = "true"; then
+	XCODE_ARCHS+="x86_64"
+fi
+
+#############################################################################
 
 
 # Audio driver options
@@ -4352,7 +4499,7 @@ _ACEOF
       eval "ac_im_$ac_var=\`\${MAKE-make} $ac_var 2>/dev/null | sed -n 's/^$ac_var=//p'\`"
     done
     # Open Windows xmkmf reportedly sets LIBDIR instead of USRLIBDIR.
-    for ac_extension in a so sl; do
+    for ac_extension in a so sl dylib la dll; do
       if test ! -f "$ac_im_usrlibdir/libX11.$ac_extension" &&
 	 test -f "$ac_im_libdir/libX11.$ac_extension"; then
 	ac_im_usrlibdir=$ac_im_libdir; break
@@ -4505,7 +4652,7 @@ sed 's/^/| /' conftest.$ac_ext >&5
 for ac_dir in `echo "$ac_x_includes $ac_x_header_dirs" | sed s/include/lib/g`
 do
   # Don't even attempt the hair of trying to link an X program!
-  for ac_extension in a so sl; do
+  for ac_extension in a so sl dylib la dll; do
     if test -r "$ac_dir/libX11.$ac_extension"; then
       ac_x_libraries=$ac_dir
       break 2
@@ -4784,7 +4931,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 
@@ -4805,7 +4952,7 @@ if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
 else
   ac_cv_header_stdc=no
 fi
-rm -f conftest*
+rm -f -r conftest*
 
 fi
 
@@ -6396,7 +6543,8 @@ CPPFLAGS!$CPPFLAGS$ac_delim
 ac_ct_CC!$ac_ct_CC$ac_delim
 EXEEXT!$EXEEXT$ac_delim
 OBJEXT!$OBJEXT$ac_delim
-PTRSIZEFLAG!$PTRSIZEFLAG$ac_delim
+ARCH_BITFLAGS!$ARCH_BITFLAGS$ac_delim
+XCODE_ARCHS!$XCODE_ARCHS$ac_delim
 AUDIODRIVER!$AUDIODRIVER$ac_delim
 PERL_SUPPORT!$PERL_SUPPORT$ac_delim
 PERL_IN_LOCAL!$PERL_IN_LOCAL$ac_delim
@@ -6427,7 +6575,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 83; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 84; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -6855,10 +7003,10 @@ fi
 # Output summary message
 echo
 echo "Summary..."
-if test "$PTRSIZEFLAG" = "-m64"; then
-echo "  " Building 64-bit binaries by request
-elif test "$PTRSIZEFLAG" = "-m32"; then
-echo "  " Building 32-bit binaries by request
+if test "$WITH_64BIT" = "true"; then
+echo "  " Building 64-bit binaries
+elif test "$WITH_32BIT" = "true"; then
+echo "  " Building 32-bit binaries
 fi
 echo "  " Build with Perl support............................... : $WITH_PERL
 echo "  " Build with Python support............................. : $WITH_PYTHON
