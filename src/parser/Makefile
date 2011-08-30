@@ -29,9 +29,20 @@ parse_with_minc.o: parse_with_minc.c rtcmix_parse.h
 	$(CC) $(CFLAGS) -c parse_with_minc.c
 
 parse_with_perl.o: parse_with_perl.c rtcmix_parse.h
+
 ifeq ($(ARCH),MACOSX)
+ifeq ($(BUILD_ARCH),ppc)
+	$(CC) $(CFLAGS) `$(PERL) -MExtUtils::Embed -e ccopts | sed 's/-arch i386//' | sed 's/-arch x86_64//'` \
+		-DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c parse_with_perl.c
+endif
+ifeq ($(BUILD_ARCH),i386)
+	$(CC) $(CFLAGS) `$(PERL) -MExtUtils::Embed -e ccopts | sed 's/-arch x86_64//' | sed 's/-arch ppc//'` \
+		-DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c parse_with_perl.c
+endif
+ifeq ($(BUILD_ARCH),x86_64)
 	$(CC) $(CFLAGS) `$(PERL) -MExtUtils::Embed -e ccopts | sed 's/-arch i386//' | sed 's/-arch ppc//'` \
 		-DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c parse_with_perl.c
+endif
 else
 	$(CC) $(CFLAGS) `$(PERL) -MExtUtils::Embed -e ccopts` \
 		-DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c parse_with_perl.c
