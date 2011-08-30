@@ -5,18 +5,23 @@ SRCS = parse_with_minc.c
 OBJS = parse_with_minc.o
 
 ifeq ($(PERL_SUPPORT), TRUE)
-	DIRS += perl
-	OBJS += parse_with_perl.o
-	SRCS += parse_with_perl.c
+  DIRS += perl
+  OBJS += parse_with_perl.o
+  SRCS += parse_with_perl.c
+  ifeq ($(ARCH), MACOSX)
+    PERL_INCLUDE_DIR = `$(PERL) -MExtUtils::Embed -e ccopts | sed 's/-arch ppc//' | sed 's/-arch i386//'`
+  else
+    PERL_INCLUDE_DIR = `$(PERL) -MExtUtils::Embed -e ccopts`
+  endif
 endif
 ifeq ($(PYTHON_SUPPORT), TRUE)
-	DIRS += python
-	OBJS += parse_with_python.o
-	SRCS += parse_with_python.c
-   PYTHON_INCLUDE_DIR = `$(PYTHON) python/print_python_includedir.py`
-   ifeq ($(PYTHON_EXT_STATIC_LINK), TRUE)
-      PYDEF = -DPYEXT_INIT
-   endif
+  DIRS += python
+  OBJS += parse_with_python.o
+  SRCS += parse_with_python.c
+  PYTHON_INCLUDE_DIR = `$(PYTHON) python/print_python_includedir.py`
+  ifeq ($(PYTHON_EXT_STATIC_LINK), TRUE)
+    PYDEF = -DPYEXT_INIT
+  endif
 endif
 
 all: $(DIRS) $(OBJS)
@@ -29,15 +34,7 @@ parse_with_minc.o: parse_with_minc.c rtcmix_parse.h
 	$(CC) $(CFLAGS) -c parse_with_minc.c
 
 parse_with_perl.o: parse_with_perl.c rtcmix_parse.h
-ifeq ($(ARCH),MACOSX)
-ifeq ($(BUILD_ARCH),x86_64)
-	$(CC) $(CFLAGS) `$(PERL) -MExtUtils::Embed -e ccopts | sed 's/-arch i386//' | sed 's/-arch ppc//'` \
-		-DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c parse_with_perl.c
-endif
-else
-	$(CC) $(CFLAGS) `$(PERL) -MExtUtils::Embed -e ccopts` \
-		-DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c parse_with_perl.c
-endif
+	$(CC) $(CFLAGS) $(PERL_INCLUDE_DIR) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c parse_with_perl.c
 
 parse_with_python.o: parse_with_python.c rtcmix_parse.h
 	$(CC) $(CFLAGS) -I$(PYTHON_INCLUDE_DIR) $(PYDEF) -c parse_with_python.c
