@@ -174,16 +174,16 @@ ARCH_BITFLAGS="$ARCH_64BIT $ARCH_32BIT"
 AC_SUBST(ARCH_BITFLAGS)
 
 # Feed the right arch flags to Xcode for MouseWindow, DisplayWindow
-XCODE_ARCHS=""
+BUILD_ARCH=""
 if test "$ARCH" = "MACOSX"; then  # this trips up slack 10.2, so don't bother
    if test "$WITH_32BIT" = "true"; then
-      XCODE_ARCHS+="i386"
+      BUILD_ARCH+="i386"
    fi
    if test "$WITH_64BIT" = "true"; then
-      XCODE_ARCHS+="x86_64"
+      BUILD_ARCH+="x86_64"
    fi
 fi
-AC_SUBST(XCODE_ARCHS)
+AC_SUBST(BUILD_ARCH)
 #############################################################################
 
 

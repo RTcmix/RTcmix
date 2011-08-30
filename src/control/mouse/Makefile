@@ -41,7 +41,7 @@ glue.o: depend glue.cpp RTMousePField.h
 
 .PHONY: $(APP)
 $(APP): 
-	cd $(APP); xcodebuild ARCHS="$(XCODE_ARCHS)"
+	cd $(APP); xcodebuild ARCHS="$(BUILD_ARCHS)"
 
 $(TEST).o: depend $(TEST).cpp RTMousePField.h
 	$(CXX) $(CXXFLAGS) -c -o $(TEST).o $(TEST).cpp
