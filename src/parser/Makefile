@@ -29,6 +29,7 @@ parse_with_minc.o: parse_with_minc.c rtcmix_parse.h
 	$(CC) $(CFLAGS) -c parse_with_minc.c
 
 parse_with_perl.o: parse_with_perl.c rtcmix_parse.h
+	$(CC) $(CFLAGS) -c parse_with_perl.c
 
 ifeq ($(ARCH),MACOSX)
 ifeq ($(BUILD_ARCH),ppc)
