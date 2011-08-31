@@ -9,7 +9,7 @@ ifeq ($(PERL_SUPPORT), TRUE)
   OBJS += parse_with_perl.o
   SRCS += parse_with_perl.c
   ifeq ($(ARCH), MACOSX)
-    PERL_INCLUDE_DIR = `$(PERL) -MExtUtils::Embed -e ccopts | sed 's/-arch ppc//' | sed 's/-arch i386//'`
+    PERL_INCLUDE_DIR = `sh perl/print_perl_includes.sh $(PERL) $(BUILD_ARCH)`
   else
     PERL_INCLUDE_DIR = `$(PERL) -MExtUtils::Embed -e ccopts`
   endif
