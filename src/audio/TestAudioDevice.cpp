@@ -132,12 +132,14 @@ TestAudioDevice::doPause(bool p)
 int
 TestAudioDevice::doSetFormat(int sampfmt, int chans, double srate)
 {
+#if NO_LONGER_NEED_THIS_CHECK
 	if (chans > _channels) {
 		char errmsg[64];
 		sprintf(errmsg, "Minc channel count (%d) must be <= test device count (%d)",
 				chans, _channels);
 		return error(errmsg);
 	}
+#endif
 	int status = _device->open(getMode(),
 						   NATIVE_SHORT_FMT | MUS_INTERLEAVED,
 						   2,
