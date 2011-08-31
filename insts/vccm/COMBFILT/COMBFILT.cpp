@@ -6,9 +6,7 @@
 #include <rt.h>
 #include <rtdefs.h>
 #include <combs.h>
-//#include <globals.h>
 #include <math.h>
-#include <rtupdate.h>
 
 COMBFILT::COMBFILT() : Instrument()
 {
@@ -117,59 +115,6 @@ int COMBFILT::run()
 	}
 
 	if (--branch < 0) {
-#ifdef RTUPDATE
-	  // Update P-Fields + + + + + + + + + + + + + + + + + + + 
-	  if(tags_on)
-	  {
-		tdur = rtupdate(this->mytag, 2);
-		if((tdur != NOPUPDATE) /* && rsd_env != DECAY */)
-		{
-	//	  finalsamp = i_chunkstart + i + decay_samps;
-		  this->setendsamp(finalsamp);
-	//	  if(decay_table)
-	//		rsd_env = DECAY;
-	//	  rsd_samp = 0;
-		  amp = aamp;
-		}
-	    tamp = rtupdate(this->mytag, 3);
-		if(tamp != NOPUPDATE)
-		{
-		  amp = tamp;
-		  aamp = amp;
-		}
-		tpitch = rtupdate(this->mytag, 4);
-		if(tpitch != NOPUPDATE)
-		{
-		  if(tpitch < 15.0)
-			tpitch = cpspch(tpitch);
-		  combfreq = tpitch;
-		  delay = (int)rint(SR/combfreq);
-		}
-		ta = rtupdate(this->mytag, 5);
-		if(ta != NOPUPDATE)
-		  a = ta;
-		tb = rtupdate(this->mytag, 6);
-		if(tb != NOPUPDATE)
-		  b = tb;
-		ttype = rtupdate(this->mytag, 7);
-		if(ttype != NOPUPDATE)
-		  type = (int)ttype;
-		twetdry = rtupdate(this->mytag, 8);
-		if(twetdry != NOPUPDATE)
-		  wetdry = twetdry;
-		tchan = rtupdate(this->mytag, 9);
-		if(tchan != NOPUPDATE)
-		{
-		  inchan = (int)tchan;
-		  if ((inchan+1) > inputChannels())
-			return die("COMBFILT", "You asked for channel %d of a %d-channel file.", 
-		        inchan,inputChannels());
-		}   
-		tspread = rtupdate(this->mytag, 10);
-		if(tspread != NOPUPDATE)
-		  spread = tspread;
-	  }  
-#endif	// RTUPDATE
 	  // End P-Field Updating - - - - - - - - - - - - - - - - - - - - -
 	  if (amptable)
 		aamp = table(cursamp, amptable, tabs) * amp;
@@ -218,9 +163,6 @@ makeCOMBFILT()
 
   inst = new COMBFILT();
   inst->set_bus_config("COMBFILT");
-#ifdef RTUPDATE
-  inst->set_instnum("COMBFILT");
-#endif
   return inst;
 }
 

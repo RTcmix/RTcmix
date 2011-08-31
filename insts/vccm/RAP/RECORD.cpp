@@ -94,9 +94,6 @@ makeRECORD()
 
 	inst = new RECORD();
 	inst->set_bus_config("RECORD");
-#ifdef RTUPDATE
-	inst->set_instnum("RECORD");
-#endif
 	return inst;
 }
 

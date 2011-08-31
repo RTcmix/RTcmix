@@ -94,13 +94,6 @@ int vMIX::run()
 
 	for (i = 0; i < rsamps; i += inputChannels())  {
 		if (--branch < 0) {
-#ifdef RTUPDATE
-			if(tags_on) {
-				tamp = rtupdate(this->mytag, 3);
-				if(tamp != NOPUPDATE)
-					amp = tamp;
-			}
-#endif	// RTUPDATE
 			if ((start_fade) || (fade_started)) {
 				if (!fade_started) {
 					finalsamp = i_chunkstart+i+fade_samps;
@@ -146,9 +139,6 @@ makevMIX()
 
 	inst = new vMIX();
 	inst->set_bus_config("vMIX");
-#ifdef RTUPDATE
-	inst->set_instnum("vMIX");
-#endif
 	return inst;
 }
 
