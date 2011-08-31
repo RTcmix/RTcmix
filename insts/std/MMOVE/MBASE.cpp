@@ -511,7 +511,10 @@ int MBASE::roomtrig(double A,                 /* 'rho' or 'x' */
 
    if (X < Dimensions[3] || X > Dimensions[1] || Y > Dimensions[0] ||
        Y < Dimensions[2]) {
-      rterror(name(), "Source location is outside room bounds!!");
+	  char msg[120];
+      if (cart) sprintf(msg, "Source location [%.1f, %.1f] is outside room bounds!!", X, Y);
+      else sprintf(msg, "Source location [%.1f, %.1f] is outside room bounds!!", R, T);
+      rterror(name(), msg);
       return (1);
    }
 
