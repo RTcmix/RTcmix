@@ -5,6 +5,8 @@ void
 sprayinit(struct slist *slist, int size, unsigned int seed)
 {
 	int i;
+	if (size > MAX_SPRAY_SIZE)
+		size = MAX_SPRAY_SIZE;
 	slist->size = size;
 	slist->current = size;
 	srrand(seed);
