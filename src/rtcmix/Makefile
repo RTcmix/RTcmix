@@ -70,7 +70,6 @@ PFieldSet.cpp \
 Random.cpp \
 RefCounted.cpp \
 RTcmix.cpp \
-TaskManager.cpp \
 rtcmix_types.cpp \
 rtcmix_wrappers.cpp \
 rtgetin.cpp \
@@ -92,6 +91,10 @@ rt_ug_intro.cpp \
 connection.cpp \
 converter.cpp \
 monitor.cpp
+
+ifdef MULTI_THREAD
+COMMON_CPPSRCS += TaskManager.cpp
+endif
 
 MAIN_CPPSRCS = RTcmixMain.cpp main.cpp
 
