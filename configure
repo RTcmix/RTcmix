@@ -677,6 +677,8 @@ GREP
 EGREP
 ARCH_BITFLAGS
 BUILD_ARCH
+MULTI_THREAD_SUPPORT
+THREAD_COUNT
 AUDIODRIVER
 PERL_SUPPORT
 PERL_IN_LOCAL
@@ -1292,6 +1294,9 @@ Optional Packages:
   --with-x                use the X Window System
   --with-64bit            build 64-bit version
   --with-32bit            build 32-bit version
+  --with-multithread=THREADCOUNT
+                          build multi-threaded RTcmix on OS X 10.6 or later
+                          (THREADCOUNT optional, default=2)
   --with-alsa             use ALSA audio driver
   --with-perl=PATH        build Perl-enabled RTcmix (PCMIX) (PATH optional)
   --with-python=PATH      build Python-enabled RTcmix (PYCMIX) (PATH optional)
@@ -4460,6 +4465,30 @@ fi
 
 #############################################################################
 
+# Enable running instruments on different processors
+MULTI_THREAD_SUPPORT=FALSE                # disable by default
+THREAD_COUNT=2                            # default number of threads
+WITH_MULTI_THREAD="false"                 # just for summary display below
+
+# Check whether --with-multithread was given.
+if test "${with_multithread+set}" = set; then
+  withval=$with_multithread; if test "$ARCH" != "MACOSX"; then
+      { { echo "$as_me:$LINENO: error: Can't build multi-threaded version unless on OS X 10.6 or later." >&5
+echo "$as_me: error: Can't build multi-threaded version unless on OS X 10.6 or later." >&2;}
+   { (exit 1); exit 1; }; }
+	fi
+   if test "$withval" != "no"; then
+      if test "$withval" != "yes"; then
+         THREAD_COUNT="$withval"
+      fi
+      MULTI_THREAD_SUPPORT=TRUE
+      WITH_MULTI_THREAD="true"
+   fi
+
+fi
+
+
+
 
 # Audio driver options
 AUDIODRIVER=AUTO                          # default
@@ -5880,6 +5909,8 @@ GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
 ARCH_BITFLAGS!$ARCH_BITFLAGS$ac_delim
 BUILD_ARCH!$BUILD_ARCH$ac_delim
+MULTI_THREAD_SUPPORT!$MULTI_THREAD_SUPPORT$ac_delim
+THREAD_COUNT!$THREAD_COUNT$ac_delim
 AUDIODRIVER!$AUDIODRIVER$ac_delim
 PERL_SUPPORT!$PERL_SUPPORT$ac_delim
 PERL_IN_LOCAL!$PERL_IN_LOCAL$ac_delim
@@ -5902,7 +5933,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 84; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 86; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -6335,6 +6366,7 @@ echo "  " Building 64-bit binaries
 elif test "$WITH_32BIT" = "true"; then
 echo "  " Building 32-bit binaries
 fi
+echo "  " Build with multi-threaded support..................... : $WITH_MULTI_THREAD
 echo "  " Build with Perl support............................... : $WITH_PERL
 echo "  " Build with Python support............................. : $WITH_PYTHON
 echo "  " Build with ALSA support............................... : $WITH_ALSA
