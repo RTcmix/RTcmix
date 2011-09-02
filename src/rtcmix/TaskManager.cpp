@@ -73,7 +73,11 @@ public:
 	TaskThread(Notifiable *inTarget, int inIndex)
 		: Notifier(inTarget, inIndex), mTask(NULL)
 	{
-		pthread_create(&mThread, NULL, sProcess, this);
+        pthread_attr_t attr;
+        pthread_attr_init(&attr);
+        pthread_attr_setschedpolicy(&attr, SCHED_RR);
+		pthread_create(&mThread, &attr, sProcess, this);
+        pthread_attr_destroy(&attr);
 	}
 	~TaskThread() { start(NULL); pthread_join(mThread, NULL); }
 	inline void start(Task *inTask);
@@ -124,6 +128,9 @@ void TaskThread::run()
 void *TaskThread::sProcess(void *inContext)
 {
 	TaskThread *This = (TaskThread *) inContext;
+    if (setpriority(PRIO_PROCESS, 0, -20) != 0) {
+        perror("TaskThread::sProcess: setpriority() failed.");
+    }
 	This->run();
 	return NULL;
 }
