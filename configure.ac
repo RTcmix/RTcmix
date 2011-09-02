@@ -186,6 +186,26 @@ fi
 AC_SUBST(BUILD_ARCH)
 #############################################################################
 
+# Enable running instruments on different processors
+MULTI_THREAD_SUPPORT=FALSE                # disable by default
+THREAD_COUNT=2                            # default number of threads
+WITH_MULTI_THREAD="false"                 # just for summary display below
+AC_ARG_WITH(multithread,
+   AC_HELP_STRING([--with-multithread=THREADCOUNT],
+         [build multi-threaded RTcmix on OS X 10.6 or later (THREADCOUNT optional, default=2)]),
+	[if test $(ARCH) != MACOSX; then
+      AC_MSG_ERROR([Can't build multi-threaded version unless on OS X 10.6 or later.])
+	fi]
+   [if test "$withval" != "no"; then
+      if test "$withval" != "yes"; then
+         THREAD_COUNT="$withval"
+      fi
+      MULTI_THREAD_SUPPORT=TRUE
+      WITH_MULTI_THREAD="true"
+   fi]
+)
+AC_SUBST(MULTI_THREAD_SUPPORT)
+AC_SUBST(THREAD_COUNT)
 
 # Audio driver options
 AUDIODRIVER=AUTO                          # default
@@ -372,6 +392,7 @@ echo "  " Building 64-bit binaries
 elif test "$WITH_32BIT" = "true"; then
 echo "  " Building 32-bit binaries
 fi
+echo "  " Build with multi-threaded support..................... : $WITH_MULTI_THREAD
 echo "  " Build with Perl support............................... : $WITH_PERL
 echo "  " Build with Python support............................. : $WITH_PYTHON
 echo "  " Build with ALSA support............................... : $WITH_ALSA
