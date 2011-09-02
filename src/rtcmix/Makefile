@@ -92,8 +92,8 @@ connection.cpp \
 converter.cpp \
 monitor.cpp
 
-ifdef MULTI_THREAD
-COMMON_CPPSRCS += TaskManager.cpp
+ifeq ($(MULTI_THREAD_SUPPORT), TRUE)
+   COMMON_CPPSRCS += TaskManager.cpp
 endif
 
 MAIN_CPPSRCS = RTcmixMain.cpp main.cpp
