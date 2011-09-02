@@ -1,10 +1,6 @@
 include ../../makefile.conf
 
 CXXFLAGS += $(SOUND_DRIVER)
-ifeq ($(MULTI_THREAD_SUPPORT), TRUE)
-   CXXFLAGS += -DMULTI_THREAD
-endif
-
 INCLUDES += -I$(INCLUDEDIR) -I../include -I../audio -I../sndlib -I./heap -I../conf
 
 COMMON_CSRCS = \
