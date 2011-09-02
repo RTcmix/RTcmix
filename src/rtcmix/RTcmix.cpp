@@ -29,7 +29,9 @@
 #include <utils.h>
 #include <ug_intro.h>
 #include <AudioDevice.h>
+#ifdef MULTI_THREAD
 #include <TaskManager.h>
+#endif
 #include "rt.h"
 #include "heap.h"
 #include "maxdispargs.h"
