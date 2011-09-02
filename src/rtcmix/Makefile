@@ -1,6 +1,10 @@
 include ../../makefile.conf
 
 CXXFLAGS += $(SOUND_DRIVER)
+ifeq ($(MULTI_THREAD_SUPPORT), TRUE)
+   CXXFLAGS += -DMULTI_THREAD
+endif
+
 INCLUDES += -I$(INCLUDEDIR) -I../include -I../audio -I../sndlib -I./heap -I../conf
 
 COMMON_CSRCS = \
@@ -211,6 +215,9 @@ addcheckfunc.o: addcheckfunc.cpp
 
 RTcmix.o: RTcmix.cpp
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c RTcmix.cpp
+
+TaskManager.o: TaskManager.cpp
+	$(CXX) $(CXXFLAGS) -DRT_THREAD_COUNT=$(THREAD_COUNT) -c TaskManager.cpp
 
 $(RTLIB): depend $(COMMON_OBJS) $(LIBMINC) $(LIBS)
 	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(COMMON_OBJS) $(LIBMINC) $(LIBS) $(SYSLIBS)
