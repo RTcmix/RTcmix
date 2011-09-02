@@ -59,7 +59,14 @@ int ThreadedAudioDevice::startThread()
 	getitimer(ITIMER_PROF, &globalTimerVal);
 #endif
 	PRINT1("\tThreadedAudioDevice::startThread: starting thread\n");
-	int status = pthread_create(&_thread, NULL, _runProcess, this);
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	int status = pthread_attr_setschedpolicy(&attr, SCHED_RR);
+	if (status != 0) {
+		fprintf(stderr, "startThread: Failed to set scheduling policy\n");
+	}
+	status = pthread_create(&_thread, &attr, _runProcess, this);
+	pthread_attr_destroy(&attr);
 	if (status < 0) {
 		error("Failed to create thread");
 	}
@@ -172,15 +179,6 @@ void *ThreadedAudioDevice::_runProcess(void *context)
 	getitimer(ITIMER_PROF, &globalTimerVal);
 #endif
 	ThreadedAudioDevice *device = (ThreadedAudioDevice *) context;
-	pthread_attr_t attr;
-	pthread_attr_init(&attr);
-	int status = pthread_attr_setschedpolicy(&attr, SCHED_RR);
-	pthread_attr_destroy(&attr);
-	if (status != 0)
-	{
-		device->error("Failed to set scheduling policy of thread");
-		return NULL;
-	}
 	if (setpriority(PRIO_PROCESS, 0, -20) != 0)
 	{
 //			perror("ThreadedAudioDevice::startThread: Failed to set priority of thread.");
