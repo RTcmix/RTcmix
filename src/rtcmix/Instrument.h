@@ -72,6 +72,7 @@ public:
 	int				inputChannels() const { return _input.inputchans; }
 	int				outputChannels() const { return outputchans; }
 	int				getSkip() const { return _skip; }
+    int             get_ichunkstart() const { return i_chunkstart; }
 	// Use this to increment cursamp inside single-frame run loops.
 	void			increment() { ++cursamp; }
 	// Use this to increment cursamp inside block-based run loops.

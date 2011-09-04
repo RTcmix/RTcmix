@@ -3,23 +3,23 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #include <RTcmix.h>
-#include <prototypes.h>
+#include "prototypes.h"
 #include <pthread.h>
 #include <iostream>
 #include <stdio.h>
 #include <unistd.h>
 #include <assert.h>
-#include <heap.h>
+#include "heap/heap.h"
 #include "rtdefs.h"
 #include <AudioDevice.h>
 #include <Instrument.h>
 #include <Option.h>
 #include <bus.h>
 #include "BusSlot.h"
-#include <dbug.h>
+#include "dbug.h"
 
 #ifdef MULTI_THREAD
-#include <TaskManager.h>
+#include "TaskManager.h"
 #include <vector>
 #endif
 
@@ -339,11 +339,14 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		cout << "bus: " << bus << endl;
 		cout << "busq:  " << busq << endl;
 #endif
-		
+
+#ifdef MULTI_THREAD
 		// Play elements on queue (insert back in if needed) ++++++++++++++++++
 		while (rtQSize > 0 && rtQchunkStart < bufEndSamp && bus != -1) {
 			int chunksamps = 0;
 			
+            rtQchunkStart = rtQueue[busq].nextChunk();
+            
 			Iptr = rtQueue[busq].pop();  // get next instrument off queue
 #ifdef DBUG
 			cout << "Iptr " << (void *) Iptr << " popped from rtQueue " << busq << endl;
@@ -389,27 +392,16 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			cout << "chunksamps:  " << chunksamps << endl;
 #endif      
 			Iptr->setchunk(chunksamps);  // set "chunksamps"		 
-			
-			int inst_chunk_finished = 0;
-			
+						
 			// DT_PANIC_MOD
 			if (!panic) {
-#ifdef MULTI_THREAD
 #ifdef DBUG
 				cout << "putting inst " << (void *) Iptr << " into vector" << endl;
 #endif
 				instruments.push_back(Iptr);
-#else			
-#ifdef TBUG
-				cout << "Iptr->exec(" << bus_type << "," << bus << ") [" << Iptr->name() << "]\n";
-#endif
-				inst_chunk_finished = Iptr->exec(bus_type, bus);    // write the samples * * * * * * * * * 
-				endsamp = Iptr->getendsamp();
-#endif
 			}
 			else // DT_PANIC_MOD ... just keep on incrementing endsamp
 				endsamp += chunksamps;
-#ifdef MULTI_THREAD
 			rtQSize = rtQueue[busq].getSize();
 		}	// while(...)
 
@@ -425,7 +417,9 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			int chunksamps = Iptr->framesToRun();
 			unsigned long endsamp = Iptr->getendsamp();
 			int inst_chunk_finished = Iptr->needsToRun();
-#endif
+
+            rtQchunkStart = Iptr->get_ichunkstart();    // We stored this value before placing into the vector
+            
 			// ReQueue or unref ++++++++++++++++++++++++++++++++++++++++++++++
 			if (endsamp > bufEndSamp && !panic) {
 #ifdef DBUG
@@ -445,11 +439,9 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 				}
 			}  // end rtQueue or unref ----------------------------------------
 			
-			// DJT:  not sure this check before new rtQchunkStart is necessary
 			rtQSize = rtQueue[busq].getSize();
 			if (rtQSize) {
-				rtQchunkStart = rtQueue[busq].nextChunk(); /* FIXME:  crapping out */
-				allQSize += rtQSize;                /* in RT situation sometimes */
+				allQSize += rtQSize;
 			}
 #ifdef DBUG
 			cout << "rtQSize: " << rtQSize << endl;
@@ -458,10 +450,109 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			cout << "Iteration done==========\n";
 #endif
 		} // end while() [Play elements on queue (insert back in if needed)] -----------
-#ifdef MULTI_THREAD
 		instruments.clear();
-#endif
 	}  // end while (!aux_pb_done) --------------------------------------------------
+
+#else   // MULTI_THREAD
+    
+    // Play elements on queue (insert back in if needed) ++++++++++++++++++
+    while (rtQSize > 0 && rtQchunkStart < bufEndSamp && bus != -1) {
+        int chunksamps = 0;
+                
+        Iptr = rtQueue[busq].pop();  // get next instrument off queue
+#ifdef DBUG
+        cout << "Iptr " << (void *) Iptr << " popped from rtQueue " << busq << endl;
+#endif			
+        Iptr->set_ichunkstart(rtQchunkStart);
+                
+        unsigned long endsamp = Iptr->getendsamp();
+        
+        // difference in sample start (countdown)
+        int offset = rtQchunkStart - bufStartSamp;  
+        
+        // DJT:  may have to expand here.  IE., conditional above
+        // (rtQchunkStart >= bufStartSamp)
+        // unlcear what that will do just now
+        if (offset < 0) { // BGG: added this trap for robustness
+            cout << "WARNING: the scheduler is behind the queue!" << endl;
+            cout << "rtQchunkStart:  " << rtQchunkStart << endl;
+            cout << "bufStartSamp:  " << bufStartSamp << endl;
+            cout << "endsamp:  " << endsamp << endl;
+            endsamp += offset;  // DJT:  added this (with hope)
+            offset = 0;
+        }
+        
+        Iptr->set_output_offset(offset);
+        
+        if (endsamp < bufEndSamp) {  // compute # of samples to write
+            chunksamps = endsamp-rtQchunkStart;
+        }
+        else {
+            chunksamps = bufEndSamp-rtQchunkStart;
+        }
+        if (chunksamps > RTBUFSAMPS) {
+            cout << "ERROR: chunksamps: " << chunksamps << " limiting to " << RTBUFSAMPS << endl;
+            chunksamps = RTBUFSAMPS;
+        }
+#ifdef DBUG
+        cout << "Begin playback iteration==========\n";
+        cout << "Q-rtQchunkStart:  " << rtQchunkStart << endl;
+        cout << "bufEndSamp:  " << bufEndSamp << endl;
+        cout << "RTBUFSAMPS:  " << RTBUFSAMPS << endl;
+        cout << "endsamp:  " << endsamp << endl;
+        cout << "offset:  " << offset << endl;
+        cout << "chunksamps:  " << chunksamps << endl;
+#endif      
+        Iptr->setchunk(chunksamps);  // set "chunksamps"		 
+        
+        int inst_chunk_finished = 0;
+        
+        // DT_PANIC_MOD
+        if (!panic) {
+#ifdef TBUG
+            cout << "Iptr->exec(" << bus_type << "," << bus << ") [" << Iptr->name() << "]\n";
+#endif
+            inst_chunk_finished = Iptr->exec(bus_type, bus);    // write the samples * * * * * * * * * 
+            endsamp = Iptr->getendsamp();
+        }
+        else // DT_PANIC_MOD ... just keep on incrementing endsamp
+            endsamp += chunksamps;
+        
+        // ReQueue or unref ++++++++++++++++++++++++++++++++++++++++++++++
+        if (endsamp > bufEndSamp && !panic) {
+#ifdef DBUG
+            cout << "re queueing inst " << (void *) Iptr << " on rtQueue " << busq << endl;
+#endif
+            rtQueue[busq].push(Iptr,rtQchunkStart+chunksamps);   // put back onto queue
+        }
+        else {
+            iBus = Iptr->getBusSlot();
+            // unref only after all buses have played -- i.e., if inst_chunk_finished.
+            // if not unref'd here, it means the inst still needs to run on another bus.
+            if (qStatus == iBus->Class() && inst_chunk_finished) {
+#ifdef DBUG
+                cout << "unref'ing inst " << (void *) Iptr << endl;
+#endif
+                Iptr->unref();
+            }
+        }  // end rtQueue or unref ----------------------------------------
+        
+        // DJT:  not sure this check before new rtQchunkStart is necessary
+        rtQSize = rtQueue[busq].getSize();
+        if (rtQSize) {
+            rtQchunkStart = rtQueue[busq].nextChunk(); /* FIXME:  crapping out */
+            allQSize += rtQSize;                /* in RT situation sometimes */
+        }
+#ifdef DBUG
+        cout << "rtQSize: " << rtQSize << endl;
+        cout << "rtQchunkStart:  " << rtQchunkStart << endl;
+        cout << "chunksamps:  " << chunksamps << endl;
+        cout << "Iteration done==========\n";
+#endif
+    } // end while() [Play elements on queue (insert back in if needed)] -----------
+}  // end while (!aux_pb_done) --------------------------------------------------
+
+#endif  // MULTI_THREAD
 
 	// Write buf to audio device - - - - - - - - - - - - - - - - - - - - -
 #ifdef DBUG
