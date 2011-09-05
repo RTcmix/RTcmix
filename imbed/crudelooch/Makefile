@@ -4,7 +4,7 @@ INCLUDES += -I../../../src/rtcmix	# for globals.h
 
 OBJS = loochinspace.o randfuncs.o
 IMBCMIXOBJS += $(PROFILE_O)
-PROGS = crudelooch
+PROGS = loochinspace
 
 loochinspace: $(OBJS) $(IMBCMIXOBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $(DYN) $(OBJS) $(IMBCMIXOBJS) $(CXXFLAGS) $(LDFLAGS)
