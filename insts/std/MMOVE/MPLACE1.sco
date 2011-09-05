@@ -1,6 +1,5 @@
 rtsetparams(44100,2,4096)
-rtinput("/home/dscott/sounds/Track11-EnglishSpokenMP.wav")
-load("MPLACE")
+rtinput("/home/doug/sounds/glass-01.wav");
 bus_config("MPLACE","in0","aox0-1")
 bus_config("RVB","aix0-1","out0-1")
 
@@ -24,7 +23,6 @@ angle_sound=90
 dist_mikes=5
 //dist_mikes=0.67	/* binaural */
 inchan=0
-
 MPLACE(outsk,insk,dur,pre_amp,dist2sound,angle_sound+180,dist_mikes,inchan);
 MPLACE(outsk+(256/44100),insk,dur,pre_amp,dist2sound,angle_sound,dist_mikes,inchan);
 MPLACE(outsk+0.5,insk,dur,pre_amp,dist2sound*1.3,angle_sound+270,dist_mikes,inchan);

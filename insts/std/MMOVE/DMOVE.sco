@@ -1,6 +1,6 @@
 rtsetparams(44100, 2, 256)
 load("DMOVE")
-rtinput("/home/dscott/sounds/Track11-EnglishSpokenMP.wav")
+rtinput("/home/doug/sounds/glass-broken-01.wav");
 
 bus_config("DMOVE","in0","aox0-1")
 bus_config("RVB","aix0-1","out0-1")

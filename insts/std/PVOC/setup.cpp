@@ -55,18 +55,18 @@ int GetFilter(PVFilter **ppFilter)
 
 double set_filter(float *p, int n_args, double *pp)
 {
-	int intarg = (int) pp[0];
-	if (intarg < g_currentFilters) {
-		if (g_filterCtors[intarg] == 0) {
+	size_t numarg = (size_t) pp[0];
+	if (numarg < (size_t)g_currentFilters) {
+		if (g_filterCtors[numarg] == 0) {
 			rterror("set_filter", "Requested filter slot (%d) is empty", 
-					intarg);
+					(int)numarg);
 			return -1;
 		}
-		advise("set_filter", "Slot %d selected", intarg);
-		g_currentFilterSlot = intarg;
+		advise("set_filter", "Slot %d selected", (int)numarg);
+		g_currentFilterSlot = (int)numarg;
 	}
 	else {
-		char *filtername = (char *) intarg;
+		const char *filtername = DOUBLE_TO_STRING(pp[0]);
 		char dsopath[1024];
 		if (filtername[0] == '.' || filtername[0] == '/') {
 			strncpy(dsopath, filtername, 1023);
