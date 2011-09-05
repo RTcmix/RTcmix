@@ -10,6 +10,9 @@ all:
 	ln -sf ../src/rtcmix/Lockable.h .
 	ln -sf ../src/rtcmix/Locked.h .
 	ln -sf ../src/rtcmix/Instrument.h .
+	ln -sf ../src/rtcmix/lock.h .
+	ln -sf ../src/rtcmix/Lockable.h .
+	ln -sf ../src/rtcmix/Locked.h .
 	ln -sf ../src/rtcmix/PField.h .
 	ln -sf ../src/rtcmix/PFieldSet.h .
 	ln -sf ../src/rtcmix/Random.h .
