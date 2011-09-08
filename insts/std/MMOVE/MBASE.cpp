@@ -44,6 +44,9 @@ extern int g_Nterms[13];                 /* defined in ../MOVE/common.C */
 
 extern double *globalEarlyResponse[2];		// Summed here, added to output.
 extern double *globalReverbInput[2];		// Summed here, fed into RVB.
+#ifdef MULTI_THREAD
+extern pthread_mutex_t globalReverbLock;
+#endif
 
 MBASE::MBASE() : m_tapsize(0)
 {
@@ -306,10 +309,14 @@ int MBASE::run()
 						fir(vec->Sig, thisFrame, g_Nterms[path], 
 					    	vec->Fircoeffs, vec->Firtaps, bufsamps);
 					}
-
+#ifdef MULTI_THREAD
+                    pthread_mutex_lock(&globalReverbLock);
+#endif
           	 		// sum unscaled reflected paths as global input for RVB.
 					addBuf(&globalReverbInput[ch][outputOffset+i], vec->Sig, bufsamps);
-
+#ifdef MULTI_THREAD
+                    pthread_mutex_unlock(&globalReverbLock);
+#endif
 					/* now do cardioid mike effect if not binaural mode */
 					if (!m_binaural)
 						scale(vec->Sig, bufsamps, vec->MikeAmp);
@@ -319,6 +326,9 @@ int MBASE::run()
 		 		}
 			}
 			DBG(printf("summing vectors\n"));
+#ifdef MULTI_THREAD
+            pthread_mutex_lock(&globalReverbLock);
+#endif
 			if (!m_binaural) {
 				// re-sum scaled reflected paths as early response
 				for (int path = 1; path < m_paths; path++) {
@@ -334,6 +344,9 @@ int MBASE::run()
 						   bufsamps);
 				}          
 			}
+#ifdef MULTI_THREAD
+            pthread_mutex_unlock(&globalReverbLock);
+#endif
 			DBG(printf("left signal:\n"));
 			DBG(PrintSig(&globalReverbInput[0][outputOffset], bufsamps, 0.1));
 			DBG(printf("right signal:\n"));

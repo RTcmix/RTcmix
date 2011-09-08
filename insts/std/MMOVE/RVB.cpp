@@ -7,6 +7,7 @@
 #include <ugens.h>
 #include <string.h>
 #include <stdio.h>
+#include <pthread.h>
 #include "msetup.h"
 
 //#define debug
@@ -35,6 +36,10 @@ extern "C" {
 
 double *globalEarlyResponse[2];		// Summed by PLACE/MOVE, added to output.
 double *globalReverbInput[2];		// Summed by PLACE/MOVE, fed into RVB.
+
+#ifdef MULTI_THREAD
+pthread_mutex_t globalReverbLock = PTHREAD_MUTEX_INITIALIZER;
+#endif
 
 int RVB::primes[NPRIMES + 2];
 int RVB::primes_gotten = 0;
@@ -155,6 +160,9 @@ int RVB::run()
 
     rtgetin(in, this, rsamps);
 
+#ifdef MULTI_THREAD
+	pthread_mutex_lock(&globalReverbLock);
+#endif
 	register float *outptr = &this->outbuf[0];
 	/* run summed 1st and 2nd generation paths through reverberator */
  	for (int n = 0; n < frames; n++) {
@@ -186,7 +194,9 @@ int RVB::run()
 		memset(globalReverbInput[c], 0, sizeof(double) * RTBUFSAMPS);
 		memset(globalEarlyResponse[c], 0, sizeof(double) * RTBUFSAMPS);
 	}
-	
+#ifdef MULTI_THREAD
+	pthread_mutex_unlock(&globalReverbLock);
+#endif
 	DBG(printf("FINAL MIX:\n"));
 	DBG(PrintInput(&this->outbuf[i], bufsamps));
 	
