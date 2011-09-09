@@ -2,7 +2,7 @@
 rtsetparams(44100, 2)
 load("WAVETABLE")
 
-// exponential ampflitude envelope ("F2" in Dodge)
+// exponential amplitude envelope ("F2" in Dodge)
 env = maketable("expbrk", 1000,  1, 1000, .0000000002)
 
 durf = 3    // scale duration
