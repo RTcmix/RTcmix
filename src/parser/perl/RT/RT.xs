@@ -74,8 +74,8 @@ handle_minc_function(...)
 				 RETVAL = newSVpv(retArg._val.string, 0);
 				 break;
 			 case HandleType:
-				 // Create reference to integer scalar containing address!
-				 RETVAL = newRV(newSViv((int) retArg._val.handle));
+				 // Create reference to IV scalar containing address
+				 RETVAL = newRV(newSViv((IV) retArg._val.handle));
 				 break;
 			 case ArrayType:
 			 default:
