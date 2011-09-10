@@ -26,7 +26,9 @@ sfstats.c \
 sound.c \
 soundio.c \
 tempo.c \
-ug_intro.c \
+ug_intro.c
+
+GEN_CSRCS = \
 gen/fdump.c \
 gen/floc.c \
 gen/fnscl.c \
@@ -107,9 +109,11 @@ CPPOBJS = $(patsubst %.cpp,%.o,$(COMMON_CPPSRCS))
 
 COBJS = $(patsubst %.c,%.o,$(COMMON_CSRCS))
 
+GENOBJS = $(patsubst %.c,%.o,$(GEN_CSRCS))
+
 MIX_INST = ../../insts/base/MIX/MIX.o
 
-COMMON_OBJS = $(CPPOBJS) $(COBJS) heap/rtHeap.o $(MIX_INST) ../audio/audio_devices.o
+COMMON_OBJS = $(CPPOBJS) $(COBJS) $(GENOBJS) heap/rtHeap.o $(MIX_INST) ../audio/audio_devices.o
 
 ifeq ($(NPLAY_SUPPORT), TRUE)
    COMMON_OBJS += setnetplay.o
@@ -134,10 +138,17 @@ PROGS = MIX
 MAIN_OBJS = RTcmixMain.o main.o
 TARGETS = $(RTLIB) $(MAIN_OBJS) RTsockfuncs.o $(PROGS)
 
+PERL_CCFLAGS=
+
 ifeq ($(PERL_SUPPORT), TRUE)
    IMBEDSRCS += pRTcmix.cpp
    TARGETS += pRTcmix.o
    PROGS += PMIX
+	ifeq ($(ARCH),MACOSX)
+		PERL_CCFLAGS=`sh ../parser/perl/print_perl_includes.sh $(PERL) $(BUILD_ARCH)`
+	else
+		PERL_CCFLAGS=`$(PERL) -MExtUtils::Embed -e ccopts`
+	endif
 endif
 ifeq ($(PYTHON_SUPPORT), TRUE)
    IMBEDSRCS += pyRTcmix.cpp
@@ -167,6 +178,9 @@ else
 		PERL_LDFLAGS = `$(PERL) -MExtUtils::Embed -e ldopts | sed 's/usr\/local/usr/'`
 	endif
 endif
+
+# This lets me compile without copying to LIBDIR
+targets: $(TARGETS)
 
 all: $(TARGETS)
 	$(INSTALL) main.o $(LIBDIR)
@@ -215,6 +229,9 @@ RTcmix.o: RTcmix.cpp
 TaskManager.o: TaskManager.cpp
 	$(CXX) $(CXXFLAGS) -DRT_THREAD_COUNT=$(THREAD_COUNT) -c TaskManager.cpp
 
+intraverse.o: intraverse.cpp
+	$(CXX) $(CXXFLAGS) -DRT_THREAD_COUNT=$(THREAD_COUNT) -c intraverse.cpp
+
 $(RTLIB): depend $(COMMON_OBJS) $(LIBMINC) $(LIBS)
 	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(COMMON_OBJS) $(LIBMINC) $(LIBS) $(SYSLIBS)
 
@@ -253,13 +270,12 @@ endif
 		uninstall standalone_uninstall clean cleanall
 
 depend:
-ifeq ($(ARCH),LINUX)
-	-$(SHELL) -ec '$(CC) -M $(CFLAGS) $(COMMON_CSRCS) $(COMMON_CPPSRCS) $(IMBEDSRCS) $(MAIN_CPPSRCS) `$(PERL) -MExtUtils::Embed -e ccopts`' > depend
-endif
 ifeq ($(ARCH),SGI)
 # Note: -MM is a gcc extension. If no gcc, use -M.
 # Unfortunately, this doesn't work...   -JGG
 #	$(SHELL) -ec '$(CC) -M $(CFLAGS) $(SRCS) $(CPPSRCS)' > depend
+else
+	-$(SHELL) -ec '$(CC) -M $(CFLAGS) $(COMMON_CSRCS) $(GEN_CSRCS) $(COMMON_CPPSRCS) $(IMBEDSRCS) $(MAIN_CPPSRCS) $(PERL_CCFLAGS)' > ./depend
 endif
 
 -include depend
