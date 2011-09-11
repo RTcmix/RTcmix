@@ -36,3 +36,5 @@ clean:
 
 cleanall: clean
 
+depend:
+
