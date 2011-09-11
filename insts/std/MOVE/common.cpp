@@ -83,15 +83,79 @@ wall(double *Sig, int len, double Walldata[3])
 void
 copyBuf(double *to, double *from, int len)
 {
-	for (int i = 0; i < len; i++)
+	const int len4 = len >> 2;
+	int i;
+	for (i = 0; i < len4; i++) {
+	    to[0] = from[0];
+	    to[1] = from[1];
+	    to[2] = from[2];
+	    to[3] = from[3];
+		to += 4;
+		from += 4;
+	}
+	const int extra = len - (len4<<2);
+	for (; i < extra; i++)
 	    to[i] = from[i];
+}
+
+void
+copyScaleBuf(double *to, double *from, int len, double gain)
+{
+    if (gain == 1.0) {
+        copyBuf(to, from, len);
+        return;
+    }
+	const int len4 = len >> 2;
+	int i;
+	for (i = 0; i < len4; i++) {
+	    to[0] = from[0] * gain;
+	    to[1] = from[1] * gain;
+	    to[2] = from[2] * gain;
+	    to[3] = from[3] * gain;
+		to += 4;
+		from += 4;
+	}
+	const int extra = len - (len4<<2);
+	for (; i < extra; i++)
+	    to[i] = from[i] * gain;
 }
 
 void
 addBuf(double *to, double *from, int len)
 {
-	for (int i = 0; i < len; i++)
+	const int len4 = len >> 2;
+	int i;
+	for (i = 0; i < len4; i++) {
+	    to[0] += from[0];
+	    to[1] += from[1];
+	    to[2] += from[2];
+	    to[3] += from[3];
+		to += 4;
+		from += 4;
+	}
+	const int extra = len - (len4<<2);
+	for (; i < extra; i++)
 	    to[i] += from[i];
+}
+
+void
+addScaleBuf(double *to, double *from, int len, double gain)
+{
+    if (gain == 0.0) return;
+    else if (gain == 1.0) { addBuf(to, from, len); return; }
+	const int len4 = len >> 2;
+	int i;
+	for (i = 0; i < len4; i++) {
+	    to[0] += from[0] * gain;
+	    to[1] += from[1] * gain;
+	    to[2] += from[2] * gain;
+	    to[3] += from[3] * gain;
+		to += 4;
+		from += 4;
+	}
+	const int extra = len - (len4<<2);
+	for (; i < extra; i++)
+	    to[i] += from[i] * gain;
 }
 
 #if defined(i386)

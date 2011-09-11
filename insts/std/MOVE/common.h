@@ -47,8 +47,10 @@ extern void scale(double *, int, double);
 extern void air(double *, int, double[3]);
 extern void wall(double *, int, double[3]);
 extern void check_denormals(double *, int);
-extern void copyBuf(double *to, double *from, int);
-extern void addBuf(double *to, double *from, int);
+extern void copyBuf(double *to, double *from, int len);
+extern void addBuf(double *to, double *from, int len);
+extern void copyScaleBuf(double *to, double *from, int len, double gain);
+extern void addScaleBuf(double *to, double *from, int len, double gain);
 extern double wrap(double);
 
 // global constants

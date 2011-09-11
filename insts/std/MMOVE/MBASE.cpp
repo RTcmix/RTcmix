@@ -34,6 +34,8 @@
 #define DBG1(stmt)
 #endif
 
+#define SIG_THRESH 100000000.0
+
 extern "C" {
    #include "cmixfuns.h"
 }
@@ -155,7 +157,7 @@ int MBASE::init(double p[], int n_args)
    return nSamps();
 }
 
-void PrintInput(float *sig, int len)
+static inline void PrintInput(float *sig, int len)
 {
     for (int i = 0; i < len; i++)
 	    if (sig[i] != 0.0)
@@ -163,7 +165,7 @@ void PrintInput(float *sig, int len)
 	printf("\n");
 }
 
-void PrintSig(double *sig, int len, double threshold = 0.0)
+static inline void PrintSig(double *sig, int len, double threshold = 0.0)
 {
     for (int i = 0; i < len; i++)
 	    if (sig[i] > threshold || sig[i] < -threshold)
@@ -295,7 +297,6 @@ int MBASE::run()
 			for (int ch = 0; ch < 2; ch++) {
 				for (int path = 0; path < m_paths; path++) {
 					Vector *vec = &m_vectors[ch][path];
-					DBG(printf("vector[%d][%d]:\n", ch, path));
 					/* get delayed samps */
 					get_tap(thisFrame, ch, path, bufsamps);
 					DBG(PrintSig(vec->Sig, bufsamps));   
@@ -309,31 +310,35 @@ int MBASE::run()
 						fir(vec->Sig, thisFrame, g_Nterms[path], 
 					    	vec->Fircoeffs, vec->Firtaps, bufsamps);
 					}
-#ifdef MULTI_THREAD
-                    pthread_mutex_lock(&globalReverbLock);
-#endif
-          	 		// sum unscaled reflected paths as global input for RVB.
-					addBuf(&globalReverbInput[ch][outputOffset+i], vec->Sig, bufsamps);
-#ifdef MULTI_THREAD
-                    pthread_mutex_unlock(&globalReverbLock);
-#endif
-					/* now do cardioid mike effect if not binaural mode */
-					if (!m_binaural)
-						scale(vec->Sig, bufsamps, vec->MikeAmp);
-
-					DBG(printf("after final scale before rvb:\n"));
-					DBG(PrintSig(vec->Sig, bufsamps, 0.1));
+                    DBG(printf("signal [%d][%d] before rvb:\n", ch, path));
+                    DBG(PrintSig(vec->Sig, bufsamps, SIG_THRESH));
 		 		}
 			}
 			DBG(printf("summing vectors\n"));
 #ifdef MULTI_THREAD
-            pthread_mutex_lock(&globalReverbLock);
+			pthread_mutex_lock(&globalReverbLock);
 #endif
+			Vector *vec;
+			// sum unscaled reflected paths as global input for RVB.
+			for (int path = 0; path < m_paths; path++) {
+				vec = &m_vectors[0][path];
+				addBuf(&globalReverbInput[0][outputOffset+i], vec->Sig, bufsamps);
+				vec = &m_vectors[1][path];
+				addBuf(&globalReverbInput[1][outputOffset+i], vec->Sig, bufsamps);
+			}
+
 			if (!m_binaural) {
+				// now do cardioid mike effect 
 				// re-sum scaled reflected paths as early response
 				for (int path = 1; path < m_paths; path++) {
-					addBuf(&globalEarlyResponse[0][outputOffset+i], m_vectors[0][path].Sig, bufsamps);
-					addBuf(&globalEarlyResponse[1][outputOffset+i], m_vectors[1][path].Sig, bufsamps);
+					vec = &m_vectors[0][path];
+					addScaleBuf(&globalEarlyResponse[0][outputOffset+i], vec->Sig, bufsamps, vec->MikeAmp);
+					vec = &m_vectors[1][path];
+					addScaleBuf(&globalEarlyResponse[1][outputOffset+i], vec->Sig, bufsamps, vec->MikeAmp);
+
+					DBG(printf("early response L and R:\n"));
+					DBG(PrintSig(&globalEarlyResponse[0][outputOffset+i], bufsamps, SIG_THRESH));
+					DBG(PrintSig(&globalEarlyResponse[1][outputOffset+i], bufsamps, SIG_THRESH));
 				}           
 			}
 			else {
@@ -344,27 +349,29 @@ int MBASE::run()
 						   bufsamps);
 				}          
 			}
+			DBG(printf("reverb input left signal:\n"));
+			DBG(PrintSig(&globalReverbInput[0][outputOffset], bufsamps, SIG_THRESH));
+			DBG(printf("reverb input right signal:\n"));
+			DBG(PrintSig(&globalReverbInput[1][outputOffset], bufsamps, SIG_THRESH));
 #ifdef MULTI_THREAD
             pthread_mutex_unlock(&globalReverbLock);
 #endif
-			DBG(printf("left signal:\n"));
-			DBG(PrintSig(&globalReverbInput[0][outputOffset], bufsamps, 0.1));
-			DBG(printf("right signal:\n"));
-			DBG(PrintSig(&globalReverbInput[1][outputOffset], bufsamps, 0.1));
 			/* write the direct signal only into the output bus  */
 			register float *outptr = &this->outbuf[i*2];
 			for (int n = 0; n < bufsamps; n++) {
-				*outptr++ = m_vectors[0][0].Sig[n];
-				*outptr++ = m_vectors[1][0].Sig[n];
+				outptr[0] = m_vectors[0][0].Sig[n];
+				outptr[1] = m_vectors[1][0].Sig[n];
+				outptr += 2;
 			}
-			DBG(printf("FINAL MIX:\n"));
-			DBG(PrintInput(&this->outbuf[i], bufsamps));
+//			DBG(printf("FINAL MIX:\n"));
+//			DBG(PrintInput(&this->outbuf[i], bufsamps));
 		}
 		else {
 			register float *outptr = &this->outbuf[i*2];
 			for (int n = 0; n < bufsamps; n++) {
-				*outptr++ = 0;
-				*outptr++ = 0;
+				outptr[0] = 0;
+				outptr[1] = 0;
+				outptr += 2;
 			}
 		}
 		

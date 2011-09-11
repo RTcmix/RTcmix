@@ -27,6 +27,22 @@
 #define DBG1(stmt)
 #endif
 
+static inline void PrintInput(float *sig, int len)
+{
+    for (int i = 0; i < len; i++)
+	    if (sig[i] != 0.0)
+		    printf("sig[%d] = %f\n", i, sig[i]);
+	printf("\n");
+}
+
+static inline void PrintSig(double *sig, int len, double threshold = 0.0)
+{
+    for (int i = 0; i < len; i++)
+	    if (sig[i] > threshold || sig[i] < -threshold)
+		    printf("sig[%d] = %f\n", i, sig[i]);
+	printf("\n");
+}
+
 extern "C" {
    #include <cmixfuns.h>
 }
@@ -198,7 +214,8 @@ int RVB::run()
 	pthread_mutex_unlock(&globalReverbLock);
 #endif
 	DBG(printf("FINAL MIX:\n"));
-	DBG(PrintInput(&this->outbuf[i], bufsamps));
+	DBG(PrintInput(&this->outbuf[0], RTBUFSAMPS));
+	DBG(PrintInput(&this->outbuf[1], RTBUFSAMPS));
 	
 	return frames;
 }
