@@ -23,7 +23,7 @@ public:
 };
 
 template <typename Object, typename Ret, Ret (Object::*Method)()>
-		class NoArgumentTask : public Task
+class NoArgumentTask : public Task
 {
 public:
 	NoArgumentTask(Object *inObject) : mObject(inObject), mReturned(0) {}
@@ -36,7 +36,7 @@ private:
 };
 
 template <typename Object, typename Ret, typename Arg, Ret (Object::*Method)(Arg)>
-		class OneArgumentTask : public Task
+class OneArgumentTask : public Task
 {
 public:
 	OneArgumentTask(Object *inObject, Arg inArg)
@@ -51,7 +51,7 @@ private:
 };
 
 template <typename Object, typename Ret, typename Arg1, typename Arg2, Ret (Object::*Method)(Arg1, Arg2)>
-		class TwoArgumentTask : public Task
+class TwoArgumentTask : public Task
 {
 public:
 	TwoArgumentTask(Object *inObject, Arg1 inArg1, Arg2 inArg2)

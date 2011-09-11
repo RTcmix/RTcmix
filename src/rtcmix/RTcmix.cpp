@@ -22,21 +22,21 @@
 #include <string.h>
 #include <signal.h>
 
-#include <prototypes.h>
+#include "prototypes.h"
 #include <ugens.h>
 #include <RTcmix.h>
 #include <Option.h>
-#include <utils.h>
+#include "utils.h"
 #include <ug_intro.h>
 #include <AudioDevice.h>
 #ifdef MULTI_THREAD
-#include <TaskManager.h>
+#include "TaskManager.h"
 #endif
 #include "rt.h"
 #include "heap.h"
 #include "maxdispargs.h"
 #include "dbug.h"
-#include <globals.h>
+#include "globals.h"
 
 
 // This is declared (still) in globals.h for use in gen routines.

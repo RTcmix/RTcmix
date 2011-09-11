@@ -6,7 +6,7 @@
 // utils.h
 // Decls of Handle and other utilities.
 
-#include <rtcmix_types.h>
+#include "rtcmix_types.h"
 #include <assert.h>
 #include <stdio.h>
 

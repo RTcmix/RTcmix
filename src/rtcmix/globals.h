@@ -6,7 +6,7 @@
 #ifndef _GLOBALS_H_ 
 #define _GLOBALS_H_ 1
 
-#include <version.h>
+#include "version.h"
 #include <bus.h>
 #include <stdio.h>
 

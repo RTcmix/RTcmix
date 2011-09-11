@@ -8,6 +8,11 @@
 //
 //
 
+#ifndef RT_THREAD_COUNT
+#define RT_THREAD_COUNT 2
+#endif
+
+
 #include "TaskManager.h"
 #include "Lockable.h"
 #include <pthread.h>
@@ -16,10 +21,6 @@
 #include <assert.h>
 
 #undef DEBUG
-
-#ifndef RT_THREAD_COUNT
-#define RT_THREAD_COUNT 2
-#endif
 
 #ifdef MACOSX
 

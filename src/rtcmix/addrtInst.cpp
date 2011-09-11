@@ -30,7 +30,6 @@ int
 RTcmix::addrtInst(rt_item *rt_p)
 {
 	rt_item *rt_tail;
-	rt_item *rt_temp;
 
 	// printf("ENTERING addrtInst() FUNCTION -----\n");
 	/*  Seek end of rt_list	*/

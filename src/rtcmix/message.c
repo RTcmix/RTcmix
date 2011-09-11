@@ -9,9 +9,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <globals.h>
+#include "globals.h"
 #include <rtdefs.h>
-#include <prototypes.h>
+#include "prototypes.h"
 #include <ugens.h>
 #include <Option.h>
 

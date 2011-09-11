@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <PField.h>
-#include <utils.h>
-#include <tableutils.h>
+#include "utils.h"
+#include "tableutils.h"
 #include <ugens.h>		// for warn, die
 
 // Functions for creating LFO PFields.    -John Gibson, 11/20/04

@@ -4,10 +4,10 @@
 */
 #include <stdlib.h>
 #include <string.h>
-#include <rtcmix_types.h>
-#include <tableutils.h>
+#include "rtcmix_types.h"
+#include "tableutils.h"
 #include <PField.h>
-#include <utils.h>
+#include "utils.h"
 #include <ugens.h>		// for warn, die
 
 // Functions for creating signal conditioning wrapper PFields.

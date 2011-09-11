@@ -9,9 +9,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <rtcmix_types.h>
+#include "rtcmix_types.h"
 #include <PField.h>
-#include <utils.h>
+#include "utils.h"
 #include <ugens.h>		// for warn, die
 
 

@@ -9,8 +9,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <assert.h>
-#include <prototypes.h>
-#include <buffers.h>
+#include "prototypes.h"
+#include "buffers.h"
 #include "rtdefs.h"
 #include <AudioDevice.h>
 #include "Option.h"

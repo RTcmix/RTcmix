@@ -1,5 +1,5 @@
 #include <RTcmix.h>
-#include <prototypes.h>
+#include "prototypes.h"
 #include <ugens.h>
 #include <sndlibsupport.h>
 #include <sfheader.h>
@@ -11,7 +11,7 @@
 
 // BGG -- for note_exists()
 #include <Instrument.h>
-#include <utils.h>
+#include "utils.h"
 
 #define ALL_CHANS -1
 

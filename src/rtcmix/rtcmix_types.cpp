@@ -1,5 +1,5 @@
 #include <rtcmix_types.h>
-#include <utils.h>
+#include "utils.h"
 #include <PField.h>
 #include <string.h>		// for strcmp()
 #include <stdlib.h>		// for free()

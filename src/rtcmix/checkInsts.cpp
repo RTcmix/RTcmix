@@ -3,17 +3,17 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #include <RTcmix.h>
-#include <prototypes.h>
+#include "prototypes.h"
 #include <maxdispargs.h>
 #include <pthread.h>
 #include <Instrument.h>
 #include <PField.h>
 #include <PFieldSet.h>
-#include <utils.h>
+#include "utils.h"
 #include "rt.h"
 #include "rtdefs.h"
 #include "mixerr.h"
-#include <rtcmix_types.h>
+#include "rtcmix_types.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

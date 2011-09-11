@@ -2,7 +2,7 @@
    point still need to be called from C.  -DS, 8/2004
  */
  
-#include <prototypes.h>
+#include "prototypes.h"
 #include <RTcmix.h>
 
 int rtsetparams_was_called()

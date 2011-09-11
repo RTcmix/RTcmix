@@ -9,7 +9,7 @@
 #include <math.h>
 #include <float.h>
 #include <Ougens.h>
-#include <Functor.h>
+#include "Functor.h"
 #include <ugens.h>
 
 inline int max(int x, int y) { return (x >= y) ? x : y; }
@@ -999,7 +999,7 @@ double MapPField::doubleValue(int idx) const
 
 // DataFileWriterPField
 
-#include <DataFile.h>
+#include "DataFile.h"
 
 DataFileWriterPField::DataFileWriterPField(PField *innerPField,
 		const char *fileName, const bool clobber, const int controlRate,

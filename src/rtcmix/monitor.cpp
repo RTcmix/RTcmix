@@ -6,9 +6,9 @@
 #include <string.h>
 #include <rtcmix_types.h>
 #include <PField.h>
-#include <DataFile.h>
+#include "DataFile.h"
 #include <Option.h>		// for clobber
-#include <utils.h>
+#include "utils.h"
 #include <ugens.h>		// for warn, die
 
 // Functions for creating signal monitoring wrapper PFields.  This type of

@@ -6,7 +6,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ugens.h>
-#include <globals.h>
+#include "globals.h"
 
 double
 m_infile(float *p, short n_args, double *pp) 

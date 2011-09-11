@@ -4,7 +4,7 @@
 */
 #include <iostream>
 #include "heap.h"
-#include <dbug.h>
+#include "dbug.h"
 #include <rtdefs.h>
 #include <RTcmix.h>
 #include <Instrument.h>
@@ -65,8 +65,8 @@ void RTQueue::push(Instrument *newInst, unsigned long new_chunkstart)
 #endif
     while((tempElt->chunkstart > newElt->chunkstart) && (tempElt->prev) && (i < size)){
       if (!tempElt->prev) { // BGG: we're at the head
-	cout << "We're at the head\n";
-	break;
+          cout << "We're at the head\n";
+          break;
       }
 #ifdef DBUG
       cout << "i = " << i << endl;
@@ -130,7 +130,7 @@ void RTQueue::push(Instrument *newInst, unsigned long new_chunkstart)
 
 // Pop an element of the top of the RTQueue
 
-Instrument *RTQueue::pop() 
+Instrument *RTQueue::pop(unsigned long *pChunkstart) 
 {
   rtQElt *tQelt;
   Instrument *retInst;
@@ -140,6 +140,7 @@ Instrument *RTQueue::pop()
     return NULL;
   }
   retInst = head->Inst;
+  *pChunkstart = head->chunkstart;
   head = head->next;
   delete tQelt;		// this unref's instrument
   size--;

@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include <rtcmix_types.h>
+#include "rtcmix_types.h"
 #include <PField.h>
 #include <ugens.h>		// for warn, die
 #include <Option.h>

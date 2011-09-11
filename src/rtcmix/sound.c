@@ -28,11 +28,11 @@
 */
 
 #define SOUND
-#include <prototypes.h>
+#include "prototypes.h"
 #include <ugens.h>
 #include <sndlibsupport.h>
 #include <sfheader.h>
-#include <byte_routines.h>
+#include "byte_routines.h"
 #include "dbug.h"
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,4 +1,4 @@
-#include <globals.h>
+#include "globals.h"
 #include <stdio.h>
 #include <sys/file.h>
 #include <sys/types.h>
@@ -10,7 +10,7 @@
 #include <sfheader.h>
 #include <maxdispargs.h>
 #include <Option.h>
-#include <prototypes.h>
+#include "prototypes.h"
 
 #define ARRAY_SIZE 256
 #define NUM_ARRAYS  32

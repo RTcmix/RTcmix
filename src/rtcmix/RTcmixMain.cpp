@@ -11,13 +11,13 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include <RTcmixMain.h>
+#include "RTcmixMain.h"
 #include <AudioDevice.h>
 #include <Option.h>
-#include <version.h>
+#include "version.h"
 #include <ugens.h>
 #include <ug_intro.h>
-#include <prototypes.h>
+#include "prototypes.h"
 #include "../parser/rtcmix_parse.h"
 #include <sockdefs.h>
 #include <limits.h>
@@ -194,8 +194,7 @@ RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
 void
 RTcmixMain::parseArguments(int argc, char **argv, char **env)
 {
-   int         i, j, k, l;
-   int         retcode;                 /* for mutexes */
+   int         i;
 #ifdef LINUX
    int		   priority = 0;
 #endif
@@ -499,7 +498,6 @@ RTcmixMain::sockit(void *arg)
     size_t amt;
     char *sptr;
     int val,optlen;
-    int ntag,pval;
 	Bool audio_configured = NO;
 
     /* create the socket for listening */

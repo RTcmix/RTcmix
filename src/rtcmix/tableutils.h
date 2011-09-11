@@ -4,7 +4,7 @@
 #ifndef _TABLEUTILS_H_ 
 #define TABLEUTILS_H_ 1
 
-#include <rtcmix_types.h>
+#include "rtcmix_types.h"
 
 class PField;
 

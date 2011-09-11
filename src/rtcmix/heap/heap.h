@@ -90,7 +90,7 @@ public:
   RTQueue() : head(NULL), tail(NULL), size(0) {}
   ~RTQueue();
   void push(Instrument*, unsigned long);
-  Instrument *pop();
+  Instrument *pop(unsigned long *pChunkStart);
   unsigned long nextChunk();
   // Return the number of elements on the RTQueue
   int getSize() const { return size; }

@@ -4,8 +4,8 @@
 #ifndef _PROTOTYPES_H_ 
 #define PROTOTYPES_H_ 1
 
-#include <buffers.h>    /* for BufPtr */
-#include <rtcmix_types.h>
+#include "buffers.h"    /* for BufPtr */
+#include "rtcmix_types.h"
 
 #ifdef __cplusplus
 

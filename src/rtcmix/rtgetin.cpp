@@ -10,11 +10,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <RTcmix.h>
-#include <prototypes.h>
+#include "prototypes.h"
 #include <sndlibsupport.h>
-#include <byte_routines.h>
+#include "byte_routines.h"
 #include <Instrument.h>
-#include <BusSlot.h>
+#include "BusSlot.h"
 #include <ugens.h>
 #include <rtdefs.h>
 #include <assert.h>
@@ -86,7 +86,7 @@ Instrument::rtinrepos(Instrument *inst, int frames, int whence)
    fdindex = inst->_input.fdIndex;
 
    if (fdindex == NO_DEVICE_FDINDEX || RTcmix::isInputAudioDevice(fdindex)) {
-      fprintf(stdin,
+      fprintf(stderr,
             "rtinrepos: request to reposition input, but input is not a file.");
 	  return -1;
    }

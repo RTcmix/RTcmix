@@ -3,7 +3,7 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #include <RTcmix.h>
-#include <prototypes.h>
+#include "prototypes.h"
 #include <ugens.h>
 #include <maxdispargs.h>
 #include "mixerr.h"

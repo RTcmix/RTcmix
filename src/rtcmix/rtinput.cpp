@@ -8,7 +8,7 @@
    Reworked again for 3.7 by Douglas Scott.
 */
 #include <RTcmix.h>
-#include <prototypes.h>
+#include "prototypes.h"
 #include <ugens.h>
 #include <stdio.h>
 #include <stdlib.h>

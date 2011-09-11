@@ -2,7 +2,7 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-#include <globals.h>
+#include "globals.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -370,7 +370,7 @@ int Instrument::rtbaddout(BUFTYPE samps[], int length)
 */
 void Instrument::addout(BusType bus_type, int bus)
 {
-   int      samp_index, endframe, src_chan, buses;
+   int      endframe, src_chan, buses;
    short    *bus_list;
 
    assert(bus >= 0 && bus < MAXBUS);
@@ -390,7 +390,7 @@ void Instrument::addout(BusType bus_type, int bus)
    endframe = output_offset + framesToRun();
 
    // Add outbuf to appropriate bus at offset
-	
+    	
    RTcmix::addToBus(bus_type, bus,
 					 &outbuf[src_chan], output_offset,
 					 endframe, outputchans);

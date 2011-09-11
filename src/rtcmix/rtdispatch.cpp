@@ -2,7 +2,7 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-#include <prototypes.h>
+#include "prototypes.h"
 #include "mixerr.h"
 
 

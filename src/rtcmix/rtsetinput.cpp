@@ -6,11 +6,11 @@
 /* rev for v2.3 by JGG */
 
 #include <RTcmix.h>
-#include <prototypes.h>
+#include "prototypes.h"
 #include <ugens.h>
 #include <stdio.h>
 #include <assert.h>
-#include <BusSlot.h>
+#include "BusSlot.h"
 #include <sndlibsupport.h>
 #include "Instrument.h"
 #include "rtdefs.h"

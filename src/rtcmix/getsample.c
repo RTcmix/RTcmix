@@ -1,5 +1,5 @@
 #include <sfheader.h>
-#include <byte_routines.h>
+#include "byte_routines.h"
 #include <stdio.h>
 #include <math.h>
 #include <ugens.h>
@@ -38,12 +38,13 @@ static int
 getisample(double sampleno, float *c, int input)
 {
 
-	int RECSIZE = bufsize[input];
-	int BPREC = RECSIZE * sizeof(short);
-	int BPFRAME = sfchans(&sfdesc[input]) * sizeof(short);
-	int FPREC = RECSIZE/sfchans(&sfdesc[input]);
+	ssize_t RECSIZE = bufsize[input];
+	ssize_t BPREC = RECSIZE * sizeof(short);
+	ssize_t BPFRAME = sfchans(&sfdesc[input]) * sizeof(short);
+	ssize_t FPREC = RECSIZE/sfchans(&sfdesc[input]);
 
-	int sample,i,j,nbytes;
+	int sample,i,j;
+    ssize_t nbytes;
 	signed short *array = (short *)sndbuf[input];
 	float tempsample1;
 	float tempsample2;
@@ -69,9 +70,11 @@ getisample(double sampleno, float *c, int input)
 			fprintf(stderr, "reached eof on input file\n");
 			return 0;
 		}
-		if (nbytes < BPREC)     /* zero out rest of sndbuf */
-			for (i = nbytes; i < BPREC; i++)
-				sndbuf[input][i] = 0;
+		if (nbytes < BPREC) {    /* zero out rest of sndbuf */
+			ssize_t n;
+			for (n = nbytes; n < BPREC; n++)
+				sndbuf[input][n] = 0;
+		}
 		oldsample = sample;
 		endsample = oldsample + FPREC - 1;
 		}

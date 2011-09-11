@@ -10,7 +10,7 @@
 #include <unistd.h>
 
 #include <RTcmix.h>
-#include <buffers.h>
+#include "buffers.h"
 #include <bus.h>
 #include <assert.h>
 

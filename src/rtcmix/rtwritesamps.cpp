@@ -12,7 +12,7 @@
 #include <math.h>    /* for fabs */
 #include <errno.h>
 #include <RTcmix.h>
-#include <prototypes.h>
+#include "prototypes.h"
 #include "AudioDevice.h"
 #include "audio_devices.h"
 

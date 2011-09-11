@@ -13,13 +13,13 @@
 #include <sys/time.h>
 #include <RTcmix.h>
 #include <rtcmix_types.h>
-#include <prototypes.h>
-#include <tableutils.h>
-#include <byte_routines.h>
+#include "prototypes.h"
+#include "tableutils.h"
+#include "byte_routines.h"
 #include <sndlibsupport.h>
 #include <PField.h>
 #include <Random.h>
-#include <utils.h>
+#include "utils.h"
 #include <ugens.h>		// for warn, die
 #include <maxdispargs.h>
 
@@ -553,7 +553,7 @@ _literal_table(const Arg args[], const int nargs, double **array, int *len)
 // elements in the array.  Get this with tablelen().
 //                                                          - JGG, 6/20/04
 
-#include <DataFile.h>
+#include "DataFile.h"
 
 static int
 _datafile_table(const Arg args[], const int nargs, double **array, int *len)

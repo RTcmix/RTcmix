@@ -16,11 +16,11 @@
 #include <netinet/in.h>
 #include <signal.h>
 
-#include <RTcmixMain.h>
-#include <prototypes.h>
+#include "RTcmixMain.h"
+#include "prototypes.h"
 #include <ugens.h>
 #include <ug_intro.h>
-#include <version.h>
+#include "version.h"
 #include "rt.h"
 #include "heap.h"
 #include "sockdefs.h"

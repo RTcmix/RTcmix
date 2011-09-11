@@ -12,8 +12,8 @@
 #include <math.h>       /* for fabs */
 #include <assert.h>
 #include <RTcmix.h>
-#include <prototypes.h>
-#include <buffers.h>
+#include "prototypes.h"
+#include "buffers.h"
 #include <ugens.h>
 #include <sndlibsupport.h>
 #include "rtdefs.h"

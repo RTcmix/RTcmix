@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <ugens.h>      // for die, warn
-#include <rtcmix_types.h>
-#include <prototypes.h>
+#include "rtcmix_types.h"
+#include "prototypes.h"
 #include <ug_intro.h>
 #include <string.h>
 #include <Option.h>
@@ -318,7 +318,6 @@ int
 RTcmix::registerDSOs(const char *pathList)
 {
 	const char *list = pathList;
-	bool done = false;
 	while (list != NULL) {
 		char path[1024];
 		long itemLen;

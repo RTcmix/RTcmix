@@ -6,9 +6,9 @@
 // scripting language.  Currently, we can't do op overloading in Perl,
 // so we use mul, add, div and sub functions as substitutes.   -JGG
 
-#include <rtcmix_types.h>
+#include "rtcmix_types.h"
 #include <PField.h>
-#include <utils.h>
+#include "utils.h"
 #include <ugens.h>		// for warn, die
 
 extern "C" {

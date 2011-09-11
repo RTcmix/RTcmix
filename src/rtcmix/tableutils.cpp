@@ -7,7 +7,7 @@
 #include <math.h>
 #include <float.h>		// for DBL_MAX
 #include <assert.h>
-#include <tableutils.h>
+#include "tableutils.h"
 #include <rtcmix_types.h>
 #include <PField.h>
 #include <ugens.h>		// for warn, die

@@ -12,7 +12,7 @@
 #include <sys/socket.h>
 
 #include <sockdefs.h>
-#include <RTsockfuncs.h>
+#include "RTsockfuncs.h"
 
 /* RTsockfuncs.c - a set of utility functions for real-time cmix interface
    programming */
