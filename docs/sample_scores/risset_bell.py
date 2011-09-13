@@ -14,7 +14,7 @@ if writeit:
 	rtoutput("/tmp/bell.aiff")
 
 # just a sine wave (try extra harmonics for more complex bell sound)
-wavet = maketable("wave", 10, 5000, "sine")
+wavet = maketable("wave", 5000, "sine")
 
 # exponential amplitude envelope
 env = maketable("expbrk", 1000,  1, 1000, .0005)
