@@ -15,7 +15,7 @@ if ($writeit) {
 }
 
 # just a sine wave (try extra harmonics for more complex bell sound)
-$wavet = maketable("wave", 10, 5000, "sine");
+$wavet = maketable("wave", 5000, "sine");
 
 # exponential amplitude envelope
 $env = maketable("expbrk", 1000,  1, 1000, .0005);
@@ -42,7 +42,6 @@ for ($st = 10; $st < 20; $st += $incr) {
 sub bell () {
    my($start, $dur, $amp, $freq) = @_;
    my $pan;
-   $a = mul($amp, $env);
    print "fundamental frequency: $freq\n";
    WAVETABLE($start, $dur,         mul($amp, $env),         $freq * .56,
 					$pan=1, $wavet);
