@@ -133,8 +133,6 @@ int RTcmix::waitForMainLoop()
 bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 {
 	RTcmix *RTCore = (RTcmix *) arg;
-	const BusSlot *iBus;
-	unsigned long rtQchunkStart = 0;
 	Bool panic = NO;
 	short bus = -1, bus_count = 0, busq = 0;
 	int i;
@@ -164,7 +162,8 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	
 	unsigned long heapChunkStart = 0;
 	Instrument *Iptr;
-
+    const BusSlot *iBus;
+    
 	while ((Iptr = rtHeap->deleteMin(bufEndSamp, &heapChunkStart)) != NULL) {
 #ifdef DBUG
 		cout << "Iptr " << (void *) Iptr << " pulled from rtHeap" << endl;
@@ -195,7 +194,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			}
 		}
 
-		iBus = Iptr->getBusSlot();
+        iBus = Iptr->getBusSlot();
 
 		// DJT Now we push things onto different queues
 		::pthread_mutex_lock(&bus_slot_lock);
@@ -272,6 +271,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	short play_bus = 0;
 	Bool aux_pb_done = NO;
 	int rtQSize = 0, allQSize = 0;
+    unsigned long rtQchunkStart = 0;
 #ifdef MULTI_THREAD
 	vector<Instrument *>instruments;
 	instruments.reserve(MAXBUS);
@@ -340,14 +340,15 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		cout << "busq:  " << busq << endl;
 #endif
 
+        // NOTE FOR ME:  Vars carried from above into block below: rtQSize, rtQchunkStart, bufEndSamp,
+        // bus, panic?, 
+        
 #ifdef MULTI_THREAD
 		// Play elements on queue (insert back in if needed) ++++++++++++++++++
 		while (rtQSize > 0 && rtQchunkStart < bufEndSamp && bus != -1) {
 			int chunksamps = 0;
-			
-            rtQchunkStart = rtQueue[busq].nextChunk();
-            
-			Iptr = rtQueue[busq].pop();  // get next instrument off queue
+			            
+			Iptr = rtQueue[busq].pop(&rtQchunkStart);  // get next instrument off queue
 #ifdef DBUG
 			cout << "Iptr " << (void *) Iptr << " popped from rtQueue " << busq << endl;
 #endif			
@@ -356,7 +357,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			unsigned long endsamp = Iptr->getendsamp();
 
 			// difference in sample start (countdown)
-			int offset = rtQchunkStart - bufStartSamp;  
+			long offset = long(rtQchunkStart - bufStartSamp);  
 
 			// DJT:  may have to expand here.  IE., conditional above
 			// (rtQchunkStart >= bufStartSamp)
@@ -459,7 +460,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
     while (rtQSize > 0 && rtQchunkStart < bufEndSamp && bus != -1) {
         int chunksamps = 0;
                 
-        Iptr = rtQueue[busq].pop();  // get next instrument off queue
+        Iptr = rtQueue[busq].pop(&rtQchunkStart);  // get next instrument off queue
 #ifdef DBUG
         cout << "Iptr " << (void *) Iptr << " popped from rtQueue " << busq << endl;
 #endif			
@@ -468,7 +469,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         unsigned long endsamp = Iptr->getendsamp();
         
         // difference in sample start (countdown)
-        int offset = rtQchunkStart - bufStartSamp;  
+        long offset = long(rtQchunkStart - bufStartSamp);  
         
         // DJT:  may have to expand here.  IE., conditional above
         // (rtQchunkStart >= bufStartSamp)
@@ -540,7 +541,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         // DJT:  not sure this check before new rtQchunkStart is necessary
         rtQSize = rtQueue[busq].getSize();
         if (rtQSize) {
-            rtQchunkStart = rtQueue[busq].nextChunk(); /* FIXME:  crapping out */
+//            rtQchunkStart = rtQueue[busq].nextChunk(); /* FIXME:  crapping out */
             allQSize += rtQSize;                /* in RT situation sometimes */
         }
 #ifdef DBUG
