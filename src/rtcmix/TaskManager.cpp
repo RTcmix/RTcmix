@@ -129,9 +129,11 @@ void TaskThread::run()
 void *TaskThread::sProcess(void *inContext)
 {
 	TaskThread *This = (TaskThread *) inContext;
-    if (setpriority(PRIO_PROCESS, 0, -20) != 0) {
-        perror("TaskThread::sProcess: setpriority() failed.");
-    }
+	if (setpriority(PRIO_PROCESS, 0, -20) != 0) {
+#ifdef DEBUG
+		perror("TaskThread::sProcess: setpriority() failed.");
+#endif
+	}
 	This->run();
 	return NULL;
 }
