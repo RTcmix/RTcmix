@@ -6,6 +6,16 @@ fixes that we don't bother putting here.
 	* The Mac DisplayWindow and MouseWindow helper apps compile and
 	  should now work. Requires Xcode 10.6+ SDK.
 
+2011-07-23  Douglas Scott  <netdscott-at-netscape.net>
+
+	* Removed remainder of old RTUPDATE code completely.
+	  Added system for running methods on class objects in parallel via multiple
+	  threads.  Added this to inTraverse() via #ifdefs (not pretty yet).  In order to
+	  support this, I needed to add locking to about a dozen input and output
+	  methods used by the Instrument class.  Some of these are #ifdef'd and
+	  others are compiled in at all times because they don't impact efficiency.
+	  Also tweaked a few other small methods for efficiency.
+
 2011-01-05  Douglas Scott  <netdscott-at-netscape.net>
 
 	* Time for my yearly checkin note.  Reworked OSX audio once again to
