@@ -30,17 +30,14 @@ class Odistort {
 public:
 	typedef float (*DistortFunction)(float input, float data);
 
-	Odistort(DistortFunction fun = Odistort::StrumClip);
+	Odistort(DistortFunction fun = Odistort::SoftClip);
 	~Odistort();
 
 	// Here are the available DistortFunction's...
 
-	// From STRUM/dist.c, commented out there.  <data> ignored.
-	static float SoftClip(float input, float data);
-
 	// From STRUM/dist.c, used in all the elec. guitar feedback variants.
 	// Assumes input in [-1,1].  <data> ignored.
-	static float StrumClip(float input, float data);
+	static float SoftClip(float input, float data);
 
 	// From STRUM/dist.c, commented out there.
 	// Assumes input in [-1,1].  <data> ignored.

@@ -14,11 +14,6 @@ Odistort::~Odistort()
 {
 }
 
-float Odistort::SoftClip(float input, float)
-{
-	return input - (0.33333334 * input * input * input);
-}
-
 // This was in Charlie Sullivan's strum code. Also discussed by
 // Julius Smith here:
 //    https://ccrma.stanford.edu/~jos/asahb04/Electric_Guitars.html
