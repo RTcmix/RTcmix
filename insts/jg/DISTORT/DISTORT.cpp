@@ -25,9 +25,9 @@
    John Gibson (johgibso at indiana dot edu), 8/12/03, rev 7/10/04, 9/21/11.
 
    Distortion algorithms borrowed from others...
-		soft clip and tube, from STRUM, by Charles Sullivan;
-		variable clip from Laurent de Soras, via musicdsp.org;
-		waveshaping from Bram de Jong, via musicdsp.org
+      soft clip and tube, from STRUM, by Charles Sullivan;
+      variable clip from Laurent de Soras, via musicdsp.org;
+      waveshaping from Bram de Jong, via musicdsp.org
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,8 +42,8 @@
 
 
 DISTORT::DISTORT()
-   : usefilt(false), branch(0), in(NULL), distort(NULL), filt(NULL),
-     amptable(NULL)
+   : usefilt(false), branch(0), param(1.0f), in(NULL), distort(NULL),
+     filt(NULL), amptable(NULL)
 {
 }
 
@@ -129,7 +129,11 @@ void DISTORT::doupdate()
    }
    pctleft = (nargs > 8) ? p[8] : 0.5;      // default is center
    bypass = (p[9] == 1.0);
-   param = (nargs > 10) ? p[10] : 1.0;
+   if (nargs > 10) {
+      param = p[10];
+		if (param < 1.0f)
+			param = 1.0f;
+   }
 }
 
 
@@ -140,8 +144,8 @@ int DISTORT::run()
 
    for (int i = 0; i < insamps; i += inputChannels()) {
       if (--branch <= 0) {
-			doupdate();
-			branch = getSkip();
+         doupdate();
+         branch = getSkip();
       }
       float sig = in[i + inchan];
       if (!bypass) {
