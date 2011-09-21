@@ -73,7 +73,7 @@ int STRUMFB::init(double p[], int n_args)
 
 	_strum = new Ostrum(SR, freq, squish, _decaytime, _nyqdecaytime);
 
-	_distort = new Odistort(Odistort::StrumClip);
+	_distort = new Odistort(Odistort::SoftClip);
 
 	return nSamps();
 }
