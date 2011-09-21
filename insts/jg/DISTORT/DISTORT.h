@@ -1,27 +1,26 @@
-#include <objlib.h>
-
-typedef enum {
-   SoftClip = 1,
-   Tube = 2
-} DistortType;
+class Odistort;
+class Butter;
+class TableL;
 
 class DISTORT : public Instrument {
-   bool        usefilt, bypass;
-   int         nargs, inchan, branch, skip;
-   float       amp, gain, cutoff, pctleft;
-   float       *in;
-   DistortType type;
-   Butter      *filt;
-   TableL      *amptable;
 
-   DistortType getDistortType(double pval);
 public:
    DISTORT();
    virtual ~DISTORT();
    virtual int init(double p[], int n_args);
    virtual int configure();
-   float distort(float, float);
    virtual int run();
+
+private:
+	void doupdate();
+
+   bool     usefilt, bypass;
+   int      nargs, inchan, branch, skip, type;
+   float    amp, gain, cutoff, pctleft, param;
+   float    *in;
+	Odistort	*distort;
+   Butter   *filt;
+   TableL   *amptable;
 };
 
 // update flags (shift amount is pfield number)
@@ -30,6 +29,7 @@ enum {
    kGain = 1 << 5,
    kFiltCF = 1 << 6,
    kPan = 1 << 8,
-   kBypass = 1 << 9
+   kBypass = 1 << 9,
+   kParam = 1 << 10
 };
 
