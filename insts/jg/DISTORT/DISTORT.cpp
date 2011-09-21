@@ -77,7 +77,7 @@ int DISTORT::init(double p[], int n_args)
                                                       inchan, inputChannels());
 
    if (type == 1)
-      distort = new Odistort(Odistort::StrumClip);
+      distort = new Odistort(Odistort::SoftClip);
    else if (type == 2)
       distort = new Odistort(Odistort::SimpleTube);
    else if (type == 3)
