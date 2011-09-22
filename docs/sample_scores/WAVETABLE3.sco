@@ -3,12 +3,13 @@ rtsetparams(44100, 2)
 load("WAVETABLE")
 
 maxamp = 4000
-amp = maketable("line", "nonorm", 1000, 0,maxamp, 1,0)
+amp = maketable("line", "nonorm", 1000, 0,0, .005,maxamp, 1,0)
 
 // The larger the wavetable size, the less interpolation noise.
 // Try 100 to hear what it does to the random waveforms after 3.5 seconds.
-tabsize = 2000
+tabsize = 5000
 wavet = maketable("wave", tabsize, 1, 0.3, 0.2)
+control_rate(44100)
 
 srand(0)
 
