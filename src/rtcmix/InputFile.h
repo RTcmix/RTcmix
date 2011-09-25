@@ -18,7 +18,7 @@ typedef int (*ReadFun)(int,int,int,off_t,long,BufPtr,int,int,const short[],short
 /* definition of input file struct used by rtinput */
 struct InputFile : public Lockable {
 public:
-	InputFile() : filename(NULL), fd(NO_FD), readBuffer(NULL) {}
+	InputFile();
     void init(int inFd, const char *inFileName, bool isAudioDev, int inHeaderType,
               int inDataFormat, int inDataLocation, long nFrames, float inSampleRate,
               int inChannels, double inDuration);
