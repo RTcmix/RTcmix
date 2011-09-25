@@ -87,7 +87,7 @@ inline bool NetAudioDevice::connected() { return device() > 0; }
 
 NetAudioDevice::NetAudioDevice(const char *path) : _impl(new Impl)
 {
-	char *substr = strstr(path, ":");
+	const char *substr = strstr(path, ":");
 	if (substr != NULL) {	
 		// Break path of form "hostname:sockno" into its components and store.
 		int sepIndex = strlen(path) - strlen(substr);
