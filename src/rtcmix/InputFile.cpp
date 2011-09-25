@@ -9,6 +9,7 @@
 #include "RTcmix.h"
 #include <sndlib.h>
 #include <assert.h>
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <sndlibsupport.h>
@@ -303,6 +304,8 @@ read_short_samps(
     
     return 0;
 }
+
+InputFile::InputFile() : filename(NULL), fd(NO_FD), readBuffer(NULL) {}
 
 void InputFile::init(int inFd, const char *inFileName, bool isAudioDev, int inHeaderType,
           int inDataFormat, int inDataLocation, long inFrames, float inSampleRate,
