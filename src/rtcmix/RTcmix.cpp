@@ -23,6 +23,7 @@
 #include <signal.h>
 
 #include "prototypes.h"
+#include "InputFile.h"
 #include <ugens.h>
 #include <RTcmix.h>
 #include <Option.h>
@@ -90,7 +91,7 @@ int			RTcmix::rtrecord 	= 0;		// indicates reading from audio device
 int			RTcmix::rtfileit 	= 0;		// signal writing to soundfile
 int			RTcmix::rtoutfile 	= 0;
 
-InputDesc *	RTcmix::inputFileTable = NULL;
+InputFile *	RTcmix::inputFileTable = NULL;
 int			RTcmix::max_input_fds = 0;
 
 pthread_mutex_t RTcmix::pfieldLock = PTHREAD_MUTEX_INITIALIZER;
@@ -176,7 +177,7 @@ RTcmix::init_globals(bool fromMain, const char *defaultDSOPath)
 		max_input_fds = 128;		// what we used to hardcode
 	else
 		max_input_fds -= RESERVE_INPUT_FDS;
-	inputFileTable = new InputDesc[max_input_fds];
+	inputFileTable = new InputFile[max_input_fds];
 
    for (int i = 0; i < max_input_fds; i++)
       inputFileTable[i].fd = NO_FD;
@@ -509,6 +510,16 @@ void RTcmix::run()
 			}
 		}
 	}
+}
+
+bool RTcmix::isInputAudioDevice(int fdIndex)
+{
+    return inputFileTable[fdIndex].is_audio_dev;
+}
+
+const char * RTcmix::getInputPath(int fdIndex)
+{
+    return inputFileTable[fdIndex].filename;
 }
 
 void RTcmix::close()

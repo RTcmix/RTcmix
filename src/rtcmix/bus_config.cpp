@@ -12,6 +12,7 @@
 #include "BusSlot.h"
 #include <RTcmix.h>
 #include "prototypes.h"
+#include "InputFile.h"
 #include <lock.h>
 #include <Option.h>
   

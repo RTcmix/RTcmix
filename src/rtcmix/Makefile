@@ -72,6 +72,7 @@ PFieldSet.cpp \
 Random.cpp \
 RefCounted.cpp \
 RTcmix.cpp \
+InputFile.cpp \
 rtcmix_types.cpp \
 rtcmix_wrappers.cpp \
 rtgetin.cpp \

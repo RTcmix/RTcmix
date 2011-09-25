@@ -14,6 +14,7 @@
 #include <sndlibsupport.h>
 #include "Instrument.h"
 #include "rtdefs.h"
+#include "InputFile.h"
 
 
 #define INCHANS_DISCREPANCY_WARNING "\
@@ -64,7 +65,7 @@ Instrument::rtsetinput(float start_time, Instrument *inst)
               RTcmix::getInputPath(inst->_input.fdIndex));
 		 break;
 	  case RT_INPUT_CHANS_MISMATCH:
-#ifdef NOMORE // pointless ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT in rtgetin.C
+#ifdef NOMORE // pointless ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT in InputFile.cpp
          advise(inst_name, INCHANS_DISCREPANCY_WARNING, inst->_input.inputchans,
                                                         src_chans, src_chans);
 #endif

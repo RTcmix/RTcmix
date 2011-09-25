@@ -4,6 +4,7 @@
 #include <sndlibsupport.h>
 #include <sfheader.h>
 #include "rtdefs.h"
+#include "InputFile.h"
 #include <stdio.h>
 #include <sys/file.h>
 #include <sys/types.h>

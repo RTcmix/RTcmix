@@ -30,6 +30,7 @@ struct BusSlot;
 struct _func;
 struct FunctionEntry;
 struct InputState;	// part of Instrument class
+struct InputFile;
 
 enum RTstatus {
 	RT_GOOD = 0, RT_SHUTDOWN = 1, RT_PANIC = 2, RT_ERROR = 3
@@ -41,22 +42,6 @@ enum RTInputError {
 	RT_ILLEGAL_DEV_OFFSET = -2,		// nonzero offset for audio input device
 	RT_INPUT_EOF = -3,				// start offset beyond end of input file (nonfatal)
 	RT_INPUT_CHANS_MISMATCH = -4	// specified input chan count != input file count
-};
-
-/* definition of input file desc struct used by rtinput */
-struct InputDesc : public Lockable {
-	char     *filename;         /* allocated by rtinput() */
-	int      fd;                /* file descriptor, or NO_FD, or AUDIO_DEVICE */
-	int      refcount;
-	short    is_audio_dev;      /* true if input from audio dev, not from file */
-	short    header_type;       /* e.g., AIFF_sound_file (in sndlib.h) */
-	short    data_format;       /* e.g., snd_16_linear (in sndlib.h) */
-	short    is_float_format;   /* true if data format is 32-bit float */
-	int      data_location;     /* offset of sound data start in file */
-	long     endbyte;           /* index of byte following last sample */
-	float    srate;
-	short    chans;
-	double   dur;
 };
 
 class RTcmix {
@@ -106,8 +91,8 @@ public:
 	// These are called by Instrument class -- can it be done using friends?
 	// Config
 	static BusSlot *get_bus_config(const char *inst_name);
-	static bool isInputAudioDevice(int fdIndex) { return inputFileTable[fdIndex].is_audio_dev; }
-    static const char *getInputPath(int fdIndex) { return inputFileTable[fdIndex].filename; }
+	static bool isInputAudioDevice(int fdIndex);
+    static const char *getInputPath(int fdIndex);
 	// Input
 	static int attachInput(float inputSkip, InputState *instInput);
 	static void readFromAuxBus(BufPtr dest, int dest_chans, int dest_frms, const short src_chan_list[], short src_chans, int output_offset);
@@ -243,7 +228,7 @@ private:
 	static int		rtfileit;		// 1 if rtoutput() succeeded
 	static int		rtoutfile;
 
-	static InputDesc	*inputFileTable;
+	static InputFile	*inputFileTable;
 	static int max_input_fds;
 
 	static BufPtr	audioin_buffer[];    /* input from ADC, not file */

@@ -20,6 +20,7 @@
 #include <rtdefs.h>
 #include <Option.h>
 #include "audio_devices.h"
+#include "InputFile.h"
 #ifdef LINUX
    #include <fcntl.h>
 #endif /* LINUX */
@@ -143,7 +144,7 @@ FIXME: this stuff not implemented yet  -JGG
 double
 RTcmix::rtinput(float p[], int n_args, double pp[])
 {
-	int            i, j, audio_in, p1_is_audioport, start_pfield, fd;
+	int            i, audio_in, p1_is_audioport, start_pfield, fd;
 	int            is_open, header_type, data_format, data_location, nchans;
 #ifdef INPUT_BUS_SUPPORT
 	int            startchan, endchan;
@@ -345,27 +346,14 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 
 		/* Put new file descriptor into the first available slot in the
 			inputFileTable.  Also copy the filename for later checking, and
-			fill in the other fields in the InputDesc struct (see RTcmix.h).
+			fill in the other fields in the InputFile struct (see InputFile.h).
 
 			last_input_index is the value that will be used by any instrument
 			created after this call to rtinput().
 		*/
 		for (i = 0; i < max_input_fds; i++) {
 			if (inputFileTable[i].fd == NO_FD) {
-				inputFileTable[i].filename = strdup(sfname);
-				inputFileTable[i].fd = fd;
-				inputFileTable[i].refcount = 0;
-				inputFileTable[i].is_audio_dev = audio_in;
-				inputFileTable[i].header_type = header_type;
-				inputFileTable[i].data_format = data_format;
-				inputFileTable[i].is_float_format = IS_FLOAT_FORMAT(data_format);
-				inputFileTable[i].data_location = data_location;
-            int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(data_format);
-				inputFileTable[i].endbyte = data_location + (nsamps * bytes_per_samp);
-				inputFileTable[i].srate = (float) srate;
-				inputFileTable[i].chans = nchans;
-				inputFileTable[i].dur = dur;
-
+                inputFileTable[i].init(fd, sfname, audio_in, header_type, data_format, data_location, nsamps, (float)srate, nchans, dur);
 				last_input_index = i;
 				break;
 			}
@@ -414,6 +402,9 @@ RTcmix::releaseInput(int fdIndex)
          inputFileTable[fdIndex].srate = 0.0;
          inputFileTable[fdIndex].chans = 0;
          inputFileTable[fdIndex].dur = 0.0;
+         if (inputFileTable[fdIndex].readBuffer);
+            free(inputFileTable[fdIndex].readBuffer);
+         inputFileTable[fdIndex].readBuffer = NULL;
       }
    }
 }
