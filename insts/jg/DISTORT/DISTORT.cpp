@@ -100,8 +100,6 @@ int DISTORT::init(double p[], int n_args)
       amptable = new TableL(SR, dur, function, len);
    }
 
-   skip = (int) (SR / (float) resetval);
-
    return nSamps();
 }
 

@@ -15,7 +15,7 @@ private:
 	void doupdate();
 
    bool     usefilt, bypass;
-   int      nargs, inchan, branch, skip, type;
+   int      nargs, inchan, branch, type;
    float    amp, gain, cutoff, pctleft, param;
    float    *in;
 	Odistort	*distort;
