@@ -12,47 +12,15 @@
 #define RT_THREAD_COUNT 2
 #endif
 
-
 #include "TaskManager.h"
 #include "Lockable.h"
+#include "RTSemaphore.h"
 #include <pthread.h>
 #include <stack>
 #include <stdio.h>
 #include <assert.h>
 
 #undef DEBUG
-
-#ifdef MACOSX
-
-#include <dispatch/dispatch.h>
-
-class Semaphore
-{
-public:
-	Semaphore(unsigned inStartingValue=0) : mSema(dispatch_semaphore_create((long)inStartingValue)) {}
-	~Semaphore() { mSema = NULL; }
-	void wait() { dispatch_semaphore_wait(mSema, DISPATCH_TIME_FOREVER); }	// each thread will wait on this
-	void post() { dispatch_semaphore_signal(mSema); }	// when done, each thread calls this
-private:
-	dispatch_semaphore_t	mSema;
-};
-
-#else
-
-#include <semaphore.h>
-
-class Semaphore
-{
-public:
-	Semaphore(unsigned inStartingValue=0) { sem_init(&mSema, 0, inStartingValue); }
-	~Semaphore() { sem_destroy(&mSema); }
-	void wait() { sem_wait(&mSema); }	// each thread will wait on this
-	void post() { sem_post(&mSema); }	// when done, each thread calls this
-private:
-	sem_t	mSema;
-};
-
-#endif
 
 class Notifiable {
 public:
@@ -87,7 +55,7 @@ protected:
 	static void *sProcess(void *inContext);
 private:
 	pthread_t	mThread;
-	Semaphore	mSema;
+	RTSemaphore	mSema;
 	Task *		mTask;
 };
 
@@ -158,9 +126,9 @@ public:
 private:
 	TaskThread		*mThreads[RT_THREAD_COUNT];
 	std::stack<int>	mIndices;
-	Semaphore		mThreadSema;
+	RTSemaphore		mThreadSema;
 	int				mRequestCount;		// Number of thread requests made that have not notified
-	Semaphore		mWaitSema;
+	RTSemaphore		mWaitSema;
 };
 
 // Block until a thread is free and return it

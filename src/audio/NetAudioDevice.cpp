@@ -137,7 +137,7 @@ NetAudioDevice::run()
 	// waitForDevice() waits on the descriptor you passed to setDevice() until
 	// the device is ready to give/get audio.  It returns nonzero if 
 	// AudioDevice::stop() is called, to allow the loop to exit.
-	unsigned waitMillis = 10000;
+	unsigned waitMillis = 100;
 	while (waitForDevice(waitMillis) == 0) {
 #else
 	while (true) {
@@ -248,7 +248,7 @@ NetAudioDevice::doStart()
 	else if (isRecording()) {
 		bool ready = false;
 		while (!ready) {
-			if (waitForConnect(100000) == 0) {
+			if (waitForConnect(100) == 0) {
 				if (configure() == 0)
 					ready = true;	// connection OK
 				else
@@ -386,7 +386,7 @@ int NetAudioDevice::waitForConnect(unsigned int wTime)
 		FD_SET(_impl->sockdesc, &rfdset);
 		timeout.tv_sec = unsigned(wTime / 1000);
 		timeout.tv_usec = 1000 * (unsigned(wTime) - (timeout.tv_sec * 1000));
-//		printf("NetAudioDevice::waitForConnect:  in select loop...\n");
+		//printf("NetAudioDevice::waitForConnect:  in select loop (timeout %g seconds) ...\n", wTime * 0.001);
 	} while ((ret = select(nfds, &rfdset, NULL, NULL, &timeout)) == 0);
 	if (ret == -1) {
 		PRINT0("NetAudioDevice::waitForConnect: select() returned -1, breaking out of wait\n");

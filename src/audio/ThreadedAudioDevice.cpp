@@ -181,7 +181,7 @@ void *ThreadedAudioDevice::_runProcess(void *context)
 	ThreadedAudioDevice *device = (ThreadedAudioDevice *) context;
 	if (setpriority(PRIO_PROCESS, 0, -20) != 0)
 	{
-//			perror("ThreadedAudioDevice::startThread: Failed to set priority of thread.");
+//			perror("ThreadedAudioDevice::_runProcess: Failed to set priority of thread.");
 	}
 	device->starting(false);	// Signal that the thread is now running
 	device->run();

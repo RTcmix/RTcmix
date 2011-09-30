@@ -11,6 +11,15 @@
 #include <string.h>
 #include <assert.h>
 #include <sndlibsupport.h>	// RTcmix header
+#include <RTSemaphore.h>
+
+// Test code to see if it is useful to make sure HW and render threads do not
+// access the circular buffer at the same time.  Does not seem to be necessary.
+#define LOCK_IO 0
+
+#if LOCK_IO
+#include <Lockable.h>
+#endif
 
 #define DEBUG 0
 
@@ -19,6 +28,9 @@
 #else
 #define ENTER(fun)
 #endif
+
+inline int max(int x, int y) { return (x >= y) ? x : y; }
+inline int min(int x, int y) { return (x < y) ? x : y; }
 
 static const char *errToString(OSStatus err);
 static OSStatus getDeviceList(AudioDeviceID **devList, int *devCount);
@@ -48,6 +60,9 @@ struct OSXAudioDevice::Impl {
 		int						audioBufFilled;		// audioBuffer samples available
 		typedef int (*FrameFunction)(struct Port *, void *, int, int);
 		FrameFunction			frameFn;
+#if LOCK_IO
+        Lockable                lock;
+#endif
 		static int				interleavedGetFrames(struct Port *, void *, int, int);
 		static int				interleavedSendFrames(struct Port *, void *, int, int);
 		static int				noninterleavedGetFrames(struct Port *, void *, int, int);
@@ -61,6 +76,11 @@ struct OSXAudioDevice::Impl {
 	bool					stopping;
 	bool					recording;				// Used by OSX code
 	bool					playing;				// Used by OSX code
+	pthread_t               renderThread;
+    RTSemaphore *           renderSema;
+    int                     underflowCount;
+    
+    
 	static OSStatus			runProcess(
 								AudioDeviceID			inDevice,
 								const AudioTimeStamp	*inNow,
@@ -75,10 +95,49 @@ struct OSXAudioDevice::Impl {
 								Boolean isInput,
 								AudioDevicePropertyID inPropertyID,
 								void *object);
+    
+    static void *           renderProcess(void *context);
 
+    Impl();
+    ~Impl();
+    
+    int                     startRenderThread(OSXAudioDevice *parent);
+    void                    stopRenderThread();
+    
 	inline int				inputDeviceChannels() const;
 	inline int				outputDeviceChannels() const;						
 };
+
+OSXAudioDevice::Impl::Impl()
+    : deviceIDs(NULL), deviceName(NULL), deviceID(0), 
+      renderThread(NULL), renderSema(NULL), underflowCount(0)
+{
+	for (int n = REC; n <= PLAY; ++n) {
+		port[n].streamIndex = 0;
+		port[n].streamCount = 1;		// Default;  reset if necessary
+		port[n].streamChannel = 0;
+		port[n].streamDesc = NULL;
+		port[n].deviceBufFrames = 0;
+		port[n].audioBufFrames = 0;
+		port[n].audioBufChannels = 0;
+		port[n].virtualChannels = 0;
+		port[n].audioBuffer = NULL;
+		port[n].inLoc = port[n].outLoc = 0;
+		port[n].audioBufFilled = 0;
+		port[n].frameFn = NULL;
+	}
+}
+
+OSXAudioDevice::Impl::~Impl()
+{
+    delete [] port[REC].streamDesc;
+	delete [] port[REC].audioBuffer;
+	delete [] port[PLAY].streamDesc;
+	delete [] port[PLAY].audioBuffer;
+	delete [] deviceIDs;
+	delete [] deviceName;
+    delete renderSema;
+}
 
 // I/O Functions
 
@@ -97,7 +156,9 @@ OSXAudioDevice::Impl::Port::interleavedGetFrames(struct Port *port,
 	printf("\tREC bufLoc begins at %d (out of %d)\n", bufLoc, bufLen);
 #endif
 	assert(frameCount <= port->audioBufFilled);
-
+#if LOCK_IO
+    port->lock.lock();
+#endif
 	if (frameChans == 1 && bufChannels == 2) {
 #if DEBUG > 0
 		printf("Copying stereo buf into mono user frame\n");
@@ -114,11 +175,11 @@ OSXAudioDevice::Impl::Port::interleavedGetFrames(struct Port *port,
 		}
 	}
 	else {
-#if DEBUG > 0
-		printf("Copying %d-channel interleaved buf into %d-channel user frame\n", bufChannels, frameChans);
-#endif
 		float *buf = port->audioBuffer;
 		float *frame = (float *) frameBuffer;
+#if DEBUG > 0
+		printf("Copying %d-channel interleaved buf %p into %d-channel user frame %p\n", bufChannels, buf, frameChans, frame);
+#endif
 		// For each frame, copy channels from our interleaved buffer up to the output frame's max. 
 		for (int out=0; out < frameCount; ++out) {
 			int ch;
@@ -139,6 +200,9 @@ OSXAudioDevice::Impl::Port::interleavedGetFrames(struct Port *port,
 	}
 	port->outLoc = bufLoc;
 	port->audioBufFilled -= frameCount;
+#if LOCK_IO
+    port->lock.unlock();
+#endif
 #if DEBUG > 1
 	printf("\tREC Filled now %d\n", port->audioBufFilled);
 #endif
@@ -164,13 +228,16 @@ OSXAudioDevice::Impl::Port::interleavedSendFrames(struct Port *port,
 #if DEBUG > 1
 	printf("\tPLAY inLoc begins at %d (out of %d)\n", inLoc, bufLen);
 #endif
+#if LOCK_IO
+    port->lock.lock();
+#endif
 	switch (frameChans) {
 	case 1:		// Mono input converted to stereo circ. buffer;  HW 2-N channels.
 		if (bufChannels == 2) {
-#if DEBUG > 0
-			printf("Copying mono user frame into our interleaved stereo buf\n");
-#endif
 			float *frame = (float *) frameBuffer;
+#if DEBUG > 0
+			printf("Copying mono user frame %p into our interleaved stereo buf %p\n", frame, buf);
+#endif
 			for (int in=0; in < frameCount; ++in) {
 				if (inLoc >= bufLen)	// wrap
 					inLoc -= bufLen;
@@ -180,10 +247,10 @@ OSXAudioDevice::Impl::Port::interleavedSendFrames(struct Port *port,
 			}
 		}
 		else {
-#if DEBUG > 0
-			printf("Copying mono user frame into first two chans of our interleaved buf\n");
-#endif
 			float *frame = (float *) frameBuffer;
+#if DEBUG > 0
+			printf("Copying mono user frame %p into first two chans of our interleaved buf %p\n", frame, buf);
+#endif
 			for (int in=0; in < frameCount; ++in) {
 				if (inLoc >= bufLen) // wrap
 					inLoc -= bufLen;
@@ -224,6 +291,9 @@ OSXAudioDevice::Impl::Port::interleavedSendFrames(struct Port *port,
 	}
 	port->audioBufFilled += frameCount;
 	port->inLoc = inLoc;
+#if LOCK_IO
+    port->lock.unlock();
+#endif
 #if DEBUG > 1
 	printf("\tPLAY Filled now %d\n", port->audioBufFilled);
 #endif
@@ -244,6 +314,9 @@ OSXAudioDevice::Impl::Port::noninterleavedGetFrames(struct Port *port,
 	float **fFrameBuffer = (float **) frameBuffer;		// non-interleaved
 #if DEBUG > 0
 	printf("OSXAudioDevice::doGetFrames: frameCount = %d REC filled = %d\n", frameCount, port->audioBufFilled);
+#endif
+#if LOCK_IO
+    port->lock.lock();
 #endif
 	assert(frameCount <= port->audioBufFilled);
 
@@ -278,6 +351,9 @@ OSXAudioDevice::Impl::Port::noninterleavedGetFrames(struct Port *port,
 	}
 	port->outLoc = bufLoc;
 	port->audioBufFilled -= frameCount;
+#if LOCK_IO
+    port->lock.unlock();
+#endif
 #if DEBUG > 1
 	printf("\tREC Filled now %d\n", port->audioBufFilled);
 #endif
@@ -302,6 +378,9 @@ OSXAudioDevice::Impl::Port::noninterleavedSendFrames(struct Port *port,
 #endif
 #if DEBUG > 0
 	printf("Copying %d channel user frame into %d non-interleaved internal buf channels\n", frameChans, streamCount);
+#endif
+#if LOCK_IO
+    port->lock.lock();
 #endif
 	for (int stream = 0; stream < streamCount; ++stream) {
 		inLoc = port->inLoc;
@@ -329,6 +408,9 @@ OSXAudioDevice::Impl::Port::noninterleavedSendFrames(struct Port *port,
 	}
 	port->audioBufFilled += frameCount;
 	port->inLoc = inLoc;
+#if LOCK_IO
+    port->lock.unlock();
+#endif
 #if DEBUG > 1
 	printf("\tPLAY Filled now %d\n", port->audioBufFilled);
 #endif
@@ -350,8 +432,6 @@ inline int OSXAudioDevice::Impl::outputDeviceChannels() const
 
 // Utilities
 
-inline int min(int x, int y) { return (x <= y) ? x : y; }
-
 inline int inAvailable(int filled, int size) {
 	return size - filled;
 }
@@ -372,10 +452,16 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 #if DEBUG > 0
 	printf("OSXAudioDevice: top of runProcess\n");
 #endif
-	bool keepGoing = true;
-	bool callbackCalled = false;
 	if (impl->recording) {
 		port = &impl->port[REC];
+#if LOCK_IO
+        if (!port->lock.tryLock()) {
+#if DEBUG > 0
+            printf("OSXAudioDevice: record section skipped due to block on render thread\n");
+#endif
+            goto Play;
+        }
+#endif
 		const int destchans = port->audioBufChannels;
 		// Length in samples, not frames.
 		const int bufLen = port->audioBufFrames * destchans;
@@ -389,69 +475,72 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 		printf("framesToRead = %d, framesAvail = %d, Filled = %d\n", framesToRead, framesAvail, port->audioBufFilled);
 #endif
 
-		// Run this loop while not enough space to copy audio from HW.
-		while (framesAvail < framesToRead && keepGoing) {
-			keepGoing = device->runCallback();
-			callbackCalled = true;
+		// Check for enough space to copy audio from HW.
+		if (framesAvail < framesToRead) {
+#if DEBUG > 0
+			printf("OSXAudioDevice (record): framesAvail (%d) less than needed -- OVERFLOW\n", framesAvail);
+#endif
+			impl->renderSema->post();
 			framesAvail = ::inAvailable(port->audioBufFilled, port->audioBufFrames);
 #if DEBUG > 0
-			printf("\tafter run callback, framesAvail = %d\n", framesAvail);
+			printf("\tafter posting to render thread, framesAvail = %d\n", framesAvail);
 #endif
 		}
 
-		if (keepGoing == true) {
 #if DEBUG > 1
-			printf("\tREC inLoc begins at %d (out of %d)\n", port->inLoc, bufLen);
+        printf("\tREC inLoc begins at %d (out of %d)\n", port->inLoc, bufLen);
 #endif
-			int	framesCopied = 0;
-			// Write input HW's audio data into port->audioBuffer.
-			//   Treat it as circular buffer.  Channel counts always match here.
-			while (framesCopied < framesToRead) {
-				const int srcchans = impl->inputDeviceChannels();
-				int inLoc = port->inLoc;
-				for (int stream = 0; stream < port->streamCount; ++stream) {
-					inLoc = port->inLoc;
-					const int strIdx = stream + port->streamIndex;
-					register float *src = (float *) inInputData->mBuffers[strIdx].mData;
-					register float *dest = &port->audioBuffer[stream * port->audioBufFrames];
+        int	framesCopied = 0;
+        // Write input HW's audio data into port->audioBuffer.
+        //   Treat it as circular buffer.  Channel counts always match here.
+        while (framesCopied < framesToRead) {
+            const int srcchans = impl->inputDeviceChannels();
+            int inLoc = port->inLoc;
+            for (int stream = 0; stream < port->streamCount; ++stream) {
+                inLoc = port->inLoc;
+                const int strIdx = stream + port->streamIndex;
+                register float *src = (float *) inInputData->mBuffers[strIdx].mData;
+                register float *dest = &port->audioBuffer[stream * port->audioBufFrames];
 #if DEBUG > 1
-					printf("\tstream %d: copying from HW buffer %d into internal buf at raw offset %d (%d * %d)\n",
-						   stream, strIdx, dest - &port->audioBuffer[0], stream, port->audioBufFrames);
-					printf("\t incrementing HW buffer pointer by %d for each frame\n", srcchans);
+                printf("\tstream %d: copying from HW buffer %d (%p) into internal buf %p at raw offset %ld (%d * %d)\n",
+                       stream, strIdx, src, dest, dest - &port->audioBuffer[0], stream, port->audioBufFrames);
+//                printf("\t incrementing HW buffer pointer by %d for each frame\n", srcchans);
 #endif
-					for (int n = 0; n < framesToRead; ++n) {
-						if (inLoc == bufLen)	// wrap
-							inLoc = 0;
-						for (int ch = 0; ch < destchans; ++ch) {
-							dest[inLoc++] = src[ch];
-						}
-						src += srcchans;
-					}
-				}
-				port->inLoc = inLoc;
-				port->audioBufFilled += framesToRead;
-				framesCopied = framesToRead;
-			}
-			framesAdvanced = framesCopied;
+                for (int n = 0; n < framesToRead; ++n) {
+                    if (inLoc == bufLen)	// wrap
+                        inLoc = 0;
+                    for (int ch = 0; ch < destchans; ++ch) {
+                        dest[inLoc++] = src[ch];
+                    }
+                    src += srcchans;
+                }
+            }
+            port->inLoc = inLoc;
+            port->audioBufFilled += framesToRead;
+            framesCopied = framesToRead;
+        }
+#if LOCK_IO
+        port->lock.unlock();
+#endif
+        framesAdvanced = framesCopied;
 #if DEBUG > 0
-			printf("\tREC Filled = %d\n", port->audioBufFilled);
+        printf("\tREC Filled = %d\n", port->audioBufFilled);
 #endif
 #if DEBUG > 1
-			printf("\tREC inLoc ended at %d\n", port->inLoc);
+        printf("\tREC inLoc ended at %d\n", port->inLoc);
 #endif
-		}
-		else if (!impl->playing) {
-			// printf("OSXAudioDevice: run callback returned false -- calling stop callback\n");
-			device->stopCallback();
-			device->close();
-#if DEBUG > 0
-			printf("OSXAudioDevice: leaving runProcess\n");
-#endif
-			return kAudioHardwareNoError;
-		}
 	}
+Play:
 	if (impl->playing) {
 		port = &impl->port[PLAY];
+#if LOCK_IO
+        if (!port->lock.tryLock()) {
+#if DEBUG > 0
+            printf("OSXAudioDevice: playback section skipped due to block on render thread\n");
+#endif
+            goto End;
+        }
+#endif
 		const int framesToWrite = port->deviceBufFrames;
 		const int destchans = impl->outputDeviceChannels();
 		const int srcchans = port->audioBufChannels;
@@ -462,75 +551,65 @@ OSXAudioDevice::Impl::runProcess(AudioDeviceID			inDevice,
 		printf("OSXAudioDevice: playback section (out buffer %d)\n", port->streamIndex);
 		printf("framesAvail (Filled) = %d\n", framesAvail);
 #endif
-		while (framesAvail < framesToWrite && keepGoing) {
-			assert(!callbackCalled);
+		if (framesAvail < framesToWrite) {
 #if DEBUG > 0
-			printf("\tframesAvail < needed (%d), so run callback for more\n", framesToWrite);
+            if ((impl->underflowCount %4) == 0)
+                printf("OSXAudioDevice (playback): framesAvail (%d) < needed (%d) -- UNDERFLOW\n", framesAvail, framesToWrite);
+            ++impl->underflowCount;
+            printf("\tzeroing input buffer and going on\n");
 #endif
-			keepGoing = device->runCallback();
-			framesAvail = port->audioBufFilled;
-#if DEBUG > 0
-			printf("\tafter run callback, framesAvail (Filled) = %d\n", framesAvail);
-#endif
-			if (framesAvail <= 0) {
-				assert(!keepGoing || device->isPassive());
-#if DEBUG > 0
-				printf("\tzeroing input buffer and going on\n");
-#endif
-				memset(port->audioBuffer, 0, bufLen * port->streamCount * sizeof(float));
-				framesAvail = framesToWrite;
-			}
+            for (int stream = 0; stream < port->streamCount; ++stream) {
+                memset(&port->audioBuffer[stream * port->audioBufFrames], 0, bufLen * sizeof(float));
+            }
+            framesAvail = framesToWrite;
+            port->audioBufFilled += framesToWrite;
 		}
-		if (keepGoing == true) {
 #if DEBUG > 1
-			printf("\tPLAY outLoc begins at %d (out of %d)\n",
-				   port->outLoc, bufLen);
+        printf("\tPLAY outLoc begins at %d (out of %d)\n",
+               port->outLoc, bufLen);
 #endif
-			int framesDone = 0;
-			// Audio data has been written into port->audioBuffer during doSendFrames.
-			//   Treat it as circular buffer.
-			// Copy that audio into the output HW's buffer.  Channel counts always match.
-			while (framesDone < framesToWrite) {
-				int bufLoc = port->outLoc;
+        int framesDone = 0;
+        // Audio data has been written into port->audioBuffer during doSendFrames.
+        //   Treat it as circular buffer.
+        // Copy that audio into the output HW's buffer.  Channel counts always match.
+        while (framesDone < framesToWrite) {
+            int bufLoc = port->outLoc;
 #if DEBUG > 0
-				printf("\tLooping for %d (%d-channel) stream%s\n",
-					   port->streamCount, destchans, port->streamCount > 1 ? "s" : "");
+            printf("\tLooping for %d (%d-channel) stream%s\n",
+                   port->streamCount, destchans, port->streamCount > 1 ? "s" : "");
 #endif
-				for (int stream = 0; stream < port->streamCount; ++stream) {
-					const int strIdx = stream + port->streamIndex;
-					register float *src = &port->audioBuffer[stream * port->audioBufFrames];
-					register float *dest = (float *) outOutputData->mBuffers[strIdx].mData;
-					bufLoc = port->outLoc;
-					for (int n = 0; n < framesToWrite; ++n) {
-						if (bufLoc == bufLen)	// wrap
-							bufLoc = 0;
-						for (int ch = 0; ch < destchans; ++ch) {
-							dest[ch] = src[bufLoc++];
-						}
-						dest += destchans;
-					}
-				}
-				port->audioBufFilled -= framesToWrite;
-				port->outLoc = bufLoc;
-				framesDone += framesToWrite;
-				framesAdvanced = framesDone;
-			}
+            for (int stream = 0; stream < port->streamCount; ++stream) {
+                const int strIdx = stream + port->streamIndex;
+                register float *src = &port->audioBuffer[stream * port->audioBufFrames];
+                register float *dest = (float *) outOutputData->mBuffers[strIdx].mData;
+                bufLoc = port->outLoc;
+                for (int n = 0; n < framesToWrite; ++n) {
+                    if (bufLoc == bufLen)	// wrap
+                        bufLoc = 0;
+                    for (int ch = 0; ch < destchans; ++ch) {
+                        dest[ch] = src[bufLoc++];
+                    }
+                    dest += destchans;
+                }
+            }
+            port->audioBufFilled -= framesToWrite;
+            port->outLoc = bufLoc;
+            framesDone += framesToWrite;
+            framesAdvanced = framesDone;
+        }
 #if DEBUG > 0
-			printf("\tPLAY Filled = %d\n", port->audioBufFilled);
+        printf("\tPLAY Filled = %d\n", port->audioBufFilled);
 #endif
 #if DEBUG > 1
-			printf("\tPLAY bufLoc ended at %d\n", port->outLoc);
+        printf("\tPLAY bufLoc ended at %d\n", port->outLoc);
 #endif
-		}
-		else {
-#if DEBUG > 0
-			printf("OSXAudioDevice: run callback returned false -- calling stop callback\n");
-#endif
-			device->stopCallback();
-			device->close();
-		}
 	}
 	impl->frameCount += framesAdvanced;
+#if LOCK_IO
+    port->lock.unlock();
+#endif
+    impl->renderSema->post();
+End:
 #if DEBUG > 0
 	printf("OSXAudioDevice: leaving runProcess\n\n");
 #endif
@@ -566,33 +645,101 @@ OSXAudioDevice::Impl::listenerProcess(AudioDeviceID inDevice,
 		// printf("Some other property was changed.\n");
 		break;
 	}
+#if NOT_NEEDED
 	if (!isRunning && impl->stopping) {
 		impl->stopping = false;	// We only want 1 invocation of callback
-		// printf("OSXAudioDevice: no longer running -- calling stop callback\n");
+#if DEBUG > 0
+		printf("OSXAudioDevice: listener says we are no longer running -- calling stop callback\n");
+#endif
 		device->stopCallback();
 	}
+#endif
 	return err;
+}
+
+void *
+OSXAudioDevice::Impl::renderProcess(void *context)
+{
+	OSXAudioDevice *device = (OSXAudioDevice *) context;
+	OSXAudioDevice::Impl *impl = device->_impl;
+	if (setpriority(PRIO_PROCESS, 0, -20) != 0)
+	{
+        //	perror("OSXAudioDevice::Impl::renderProcess: Failed to set priority of thread.");
+	}
+    while (true) {
+        impl->renderSema->wait();
+        if (impl->stopping) {
+#if DEBUG > 0
+            printf("OSXAudioDevice::Impl::renderProcess woke to stop -- breaking out\n");
+#endif
+            break;
+        }
+#if DEBUG > 0
+        printf("OSXAudioDevice::Impl::renderProcess woke up -- running slice\n");
+        if (impl->underflowCount > 0) {
+            --impl->underflowCount;
+        }
+#endif
+        bool ret = device->runCallback();
+        if (ret == false) {
+#if DEBUG > 0
+			printf("OSXAudioDevice: renderProcess: run callback returned false -- breaking out\n");
+#endif
+            break;
+        }
+    }
+#if DEBUG > 0
+    printf("OSXAudioDevice: renderProcess: calling stop callback\n");
+#endif
+    device->stopCallback();
+#if DEBUG > 0
+    printf("OSXAudioDevice: renderProcess exiting\n");
+#endif
+   return NULL;
+}
+
+int OSXAudioDevice::Impl::startRenderThread(OSXAudioDevice *parent)
+{
+#if DEBUG > 0
+	printf("\tOSXAudioDevice::Impl::startRenderThread: starting thread\n");
+#endif
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	int status = pthread_attr_setschedpolicy(&attr, SCHED_RR);
+	if (status != 0) {
+		fprintf(stderr, "startRenderThread: Failed to set scheduling policy\n");
+	}
+	status = pthread_create(&renderThread, &attr, renderProcess, parent);
+	pthread_attr_destroy(&attr);
+	if (status < 0) {
+		fprintf(stderr, "Failed to create render thread");
+	}
+	return status;
+}
+
+void OSXAudioDevice::Impl::stopRenderThread()
+{
+    assert(renderThread != 0);	// should not get called again!
+	stopping = true;
+#if DEBUG > 0
+    printf("OSXAudioDevice::Impl::stopRenderThread: posting to semaphore for thread\n");
+#endif
+    renderSema->post();  // wake up, it's time to die
+#if DEBUG > 0
+    printf("OSXAudioDevice::Impl::stopRenderThread: waiting for thread to finish\n");
+#endif
+    if (pthread_join(renderThread, NULL) == -1) {
+        fprintf(stderr, "OSXAudioDevice::Impl::stopRenderThread: terminating thread!\n");
+        pthread_cancel(renderThread);
+        renderThread = 0;
+    }
+#if DEBUG > 0
+    printf("\tOSXAudioDevice::Impl::stopRenderThread: thread done\n");
+#endif
 }
 
 OSXAudioDevice::OSXAudioDevice(const char *desc) : _impl(new Impl)
 {
-	_impl->deviceIDs = NULL;
-	_impl->deviceID = 0;
-	_impl->deviceName = NULL;
-	for (int n = REC; n <= PLAY; ++n) {
-		_impl->port[n].streamIndex = 0;
-		_impl->port[n].streamCount = 1;		// Default;  reset if necessary
-		_impl->port[n].streamChannel = 0;
-		_impl->port[n].streamDesc = NULL;
-		_impl->port[n].deviceBufFrames = 0;
-		_impl->port[n].audioBufFrames = 0;
-		_impl->port[n].audioBufChannels = 0;
-		_impl->port[n].virtualChannels = 0;
-		_impl->port[n].audioBuffer = NULL;
-		_impl->port[n].inLoc = _impl->port[n].outLoc = 0;
-		_impl->port[n].audioBufFilled = 0;
-		_impl->port[n].frameFn = NULL;
-	}
 	::getDeviceList(&_impl->deviceIDs, &_impl->deviceCount);
 	
 	if (desc != NULL) {
@@ -672,12 +819,6 @@ OSXAudioDevice::~OSXAudioDevice()
 {
 	//printf("OSXAudioDevice::~OSXAudioDevice()\n");
 	close();
-	delete [] _impl->port[REC].streamDesc;
-	delete [] _impl->port[REC].audioBuffer;
-	delete [] _impl->port[PLAY].streamDesc;
-	delete [] _impl->port[PLAY].audioBuffer;
-	delete [] _impl->deviceIDs;
-	delete [] _impl->deviceName;
 	delete _impl;
 }
 
@@ -924,6 +1065,15 @@ int OSXAudioDevice::doStart()
 {
 	ENTER(OSXAudioDevice::doStart());
 	_impl->stopping = false;
+    // Pre-fill the input buffers
+    int preBuffers =  _impl->port[!_impl->recording].audioBufFrames / _impl->port[!_impl->recording].deviceBufFrames - 1;
+#if DEBUG > 0
+    printf("OSXAudioDevice::doStart: prerolling %d slices\n", preBuffers);
+#endif
+    for (int prebuf = 1; prebuf < preBuffers; ++prebuf)
+        runCallback();
+    // Start up the render thread
+    _impl->startRenderThread(this);
 	OSStatus err = AudioDeviceStart(_impl->deviceID, _impl->runProcess);
 	int status = (err == kAudioHardwareNoError) ? 0 : -1;
 	if (status == -1)
@@ -940,7 +1090,7 @@ int OSXAudioDevice::doPause(bool pause)
 int OSXAudioDevice::doStop()
 {
 	ENTER(OSXAudioDevice::doStop());
-	_impl->stopping = true;	// avoids multiple stop notifications
+    _impl->stopRenderThread();
 	OSStatus err = AudioDeviceStop(_impl->deviceID, _impl->runProcess);
 	int status = (err == kAudioHardwareNoError) ? 0 : -1;
 	if (status == -1)
@@ -1113,23 +1263,20 @@ int OSXAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 			return error("Can't get audio device buffer size");
 		}
 
-		int deviceFrames = deviceBufferBytes / (sizeof(float) * port->deviceFormat.mChannelsPerFrame);
+		port->deviceBufFrames = deviceBufferBytes / (sizeof(float) * port->deviceFormat.mChannelsPerFrame);
 #if DEBUG > 0
 		printf("OSX device buffer size is %d frames, user req was %d frames\n",
-				deviceFrames, reqQueueFrames);
+				port->deviceBufFrames, reqQueueFrames);
 #endif
-		// We allocate the circular buffers to be the max(2_times_HW, user_req).
-		if (deviceFrames * 2 > reqQueueFrames) {
-			port->audioBufFrames = 2 * deviceFrames;
-		}
-		else {
-			// Make audio buffer a multiple of hw buffer
-			port->audioBufFrames = reqQueueFrames - (reqQueueFrames % deviceFrames);
-		}
+        port->audioBufFrames = *pCount * port->deviceBufFrames;
+        
 		// Notify caller of any change.
 		*pWriteSize = port->audioBufFrames / *pCount;
-
-		port->deviceBufFrames = deviceBufferBytes / (port->deviceFormat.mChannelsPerFrame * sizeof(float));
+        *pCount = port->audioBufFrames / port->deviceBufFrames;
+        
+        // Create our semaphore
+        
+        _impl->renderSema = new RTSemaphore(1);
 
 #if DEBUG > 0
 		printf("%s device bufsize: %d bytes (%d frames). circ buffer %d frames\n",
@@ -1144,9 +1291,8 @@ int OSXAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 		if (port->audioBuffer == NULL)
 			return error("Memory allocation failure for OSXAudioDevice buffer!");
 		memset(port->audioBuffer, 0, sizeof(float) * buflen);
-		// NEW: Set play buffer as filled with zeros.
-		if (dir == PLAY)
-			port->audioBufFilled = port->audioBufFrames;
+        if (dir == REC)
+            port->audioBufFilled = port->audioBufFrames;    // rec buffer set to empty
 		port->inLoc = 0;
 		port->outLoc = 0;
 	}
@@ -1181,6 +1327,11 @@ int OSXAudioDevice::doGetFrameCount() const
 {
 	return _impl->frameCount;
 }
+
+// Methods associated with rendering thread
+
+
+// Methods used for identification and creation
 
 bool OSXAudioDevice::recognize(const char *desc)
 {

@@ -16,6 +16,7 @@ public:
 	Lockable() { pthread_mutex_init(&_mutex, NULL); }
 	~Lockable() { pthread_mutex_destroy(&_mutex); }
 	void		lock() const { pthread_mutex_lock(&_mutex); }
+    bool        tryLock() const { return pthread_mutex_trylock(&_mutex) == 0; }
 	void		unlock() const { pthread_mutex_unlock(&_mutex); }
 protected:
 	// This allows subclasses to create temp Lock class instances
