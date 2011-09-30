@@ -79,6 +79,7 @@ RTcmix::addfunc(
    this_node->func_label = func_label;
    this_node->legacy = legacy;
 
+    bool autoload = Option::autoLoad();
    /* Place new node at tail of list.  Warn if this function name is already
       in list.
    */
@@ -90,12 +91,15 @@ RTcmix::addfunc(
    for ( ; cur_node->next; cur_node = cur_node->next) {
 #ifdef WARN_DUPLICATES
       if (strcmp(cur_node->func_label, this_node->func_label) == 0) {
-         warn("addfunc", "Function '%s' already introduced",
-			  this_node->func_label);
+         if (!autoload)
+             warn("addfunc", "Function '%s' already introduced",
+                  this_node->func_label);
+          delete this_node;
          return;
       }
 #endif
    }
+//    printf("addfunc: Function '%s' introduced\n", this_node->func_label);
    cur_node->next = this_node;
 } 
 
@@ -241,14 +245,23 @@ FunctionEntry::~FunctionEntry()
 	free(funcName);
 }
 
-const char *
-getDSOPath(FunctionEntry *entry, const char *funcname)
+static FunctionEntry *
+findFunctionEntry(FunctionEntry *entry, const char *funcname)
 {
 	while (entry != NULL) {
 		if (!strcmp(entry->funcName, funcname))
-			return entry->dsoPath;
+			return entry;
 		entry = entry->next;
 	}
+	return NULL;
+}
+
+static const char *
+getDSOPath(FunctionEntry *entry, const char *funcname)
+{
+	FunctionEntry * fentry = findFunctionEntry(entry, funcname);
+	if (fentry != NULL)
+        return fentry->dsoPath;
 	return NULL;
 }
 
@@ -270,6 +283,7 @@ RTcmix::findAndLoadFunction(const char *funcname)
 		sprintf(fullDSOPath, "%s.so", path);
 		p[0] = 0;
 		pp[0] = STRING_TO_DOUBLE(fullDSOPath);
+//        printf("findAndLoadFunction: calling load() on '%s' for function '%s'\n", fullDSOPath, funcname);
 		if (m_load(p, 1, pp) == 1)
 			status = 0;
 		else
@@ -345,7 +359,7 @@ RTcmix::registerDSOs(const char *pathList)
 //						printf("opened DSO '%s'\n", fullPath);
 						if (dso.loadFunction(&registerMe, "registerSelf") == 0)
 						{
-//							printf("\tfound register function.\n");
+//							printf("\tcalling register function.\n");
 							(*registerMe)();
 						}
 						dso.unload();

@@ -3,6 +3,7 @@ include ../makefile.conf
 all:
 	ln -sf ../src/rtcmix/rt.h .
 	ln -sf ../src/rtcmix/rtdefs.h .
+	ln -sf ../src/rtcmix/rtcmix_types.h .
 	ln -sf ../src/rtcmix/ug_intro.h .
 	ln -sf ../src/rtcmix/spray.h .
 	ln -sf ../src/rtcmix/RefCounted.h .
@@ -34,6 +35,7 @@ clean:
 
 cleanall:
 	$(RM) rt.h
+	$(RM) rtcmix_types.h
 	$(RM) ug_intro.h
 	$(RM) rtdefs.h
 	$(RM) spray.h
