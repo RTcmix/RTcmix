@@ -10,7 +10,7 @@ COMMON_OBJS = MBASE.o RVB.o msetup.o
 COMMON_HDRS = msetup.h $(EXTERN_HEADERS)
 POBJS = MPLACE.o placeprof.o $(COMMON_OBJS) $(EXTERN_OBJS)
 MOBJS = MMOVE.o moveprof.o path.o $(COMMON_OBJS) $(EXTERN_OBJS)
-DOBJS = DMOVE.o moveprof.o path.o $(COMMON_OBJS) $(EXTERN_OBJS)
+DOBJS = DMOVE.o dmoveprof.o path.o $(COMMON_OBJS) $(EXTERN_OBJS)
 #PROF = -pg
 PROF =
 ifeq ($(ARCH),LINUX)

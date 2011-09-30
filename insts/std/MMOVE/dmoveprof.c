@@ -17,7 +17,7 @@ profile()
   	return 0;
 }
 
-static const char *dsoName = "libMMOVE";
+static const char *dsoName = "libDMOVE";
 
 // This function is called, if present, by RTcmix at initialization time
 // when it locates and opens the DSO containing this function.  The call
@@ -32,7 +32,7 @@ static const char *dsoName = "libMMOVE";
 int
 registerSelf()
 {
-	registerFunction("MMOVE", dsoName);
+	registerFunction("DMOVE", dsoName);
 	registerFunction("RVB", dsoName);
 	registerFunction("oldmatrix", dsoName); 
 	registerFunction("matrix", dsoName); 
