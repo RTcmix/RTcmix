@@ -6,7 +6,7 @@
    p0  = output start time
    p1  = input start time
    p2  = input duration
-   p3  = amplitude multiplier
+   p3  = amplitude multiplier (pre-effect)
    p4  = room size (0-1.07143 ... don't ask)
    p5  = pre-delay time (time between dry signal and onset of reverb)
    p6  = ring-down duration
