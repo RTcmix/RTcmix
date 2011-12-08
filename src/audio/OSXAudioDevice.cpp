@@ -1114,43 +1114,49 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 	
 	for (int dir = startDir; dir <= endDir; ++dir) {
 		port = &_impl->port[dir];
-		AudioStreamBasicDescription requestedFormat = port->deviceFormat;
-		UInt32 hwChannels = port->deviceFormat.mChannelsPerFrame;
-		requestedFormat.mSampleRate = srate;
-		UInt32 size = sizeof(requestedFormat);
+		UInt32 size;
 		OSStatus err;
-		if (_impl->formatWritable)
-		{
-			// Default all values to device's defaults (from doOpen()), 
-			// then set our sample rate.
-			OSStatus err = AudioDeviceSetProperty(_impl->deviceID,
+        if (port->deviceFormat.mSampleRate != srate) {
+            if (_impl->formatWritable) {
+				// Default all values to device's defaults (from doOpen()), 
+				// then set our sample rate.
+				AudioStreamBasicDescription requestedFormat = port->deviceFormat;
+				requestedFormat.mSampleRate = srate;
+				size = sizeof(requestedFormat);
+				OSStatus err = AudioDeviceSetProperty(_impl->deviceID,
 										 NULL,
 										 port->streamChannel, dir == REC,
 								    	 kAudioDevicePropertyStreamFormat,
 										 size,
 										 (void *)&requestedFormat);
-			if (err != kAudioHardwareNoError) {
-				return error("Can't set audio device format: ", 
-							 ::errToString(err));
+				if (err != kAudioHardwareNoError) {
+					return error("Can't set audio device format: ", 
+								 ::errToString(err));
+				}
 			}
-		}
-		// Now retrieve settings to see what we got, and compare with request.
-		size = sizeof(port->deviceFormat);
-		err = AudioDeviceGetProperty(_impl->deviceID, 
-									  port->streamChannel, dir == REC,
-									  kAudioDevicePropertyStreamFormat, 
-									  &size, 
-									  &port->deviceFormat);
-		if (err != kAudioHardwareNoError) {
-			return error("Can't retrieve audio device format: ",
-						 ::errToString(err));
-		}
-		else if (port->deviceFormat.mSampleRate != srate) {
-			return error("Sampling rate not supported or cannot be set.");
+            else {
+                printf("Note:  This HW's audio format is not writable\n");
+            }
+            // Retrieve settings to see what we got, and compare with request.
+            size = sizeof(port->deviceFormat);
+            err = AudioDeviceGetProperty(_impl->deviceID, 
+                                         port->streamChannel, dir == REC,
+                                         kAudioDevicePropertyStreamFormat, 
+                                         &size, 
+                                         &port->deviceFormat);
+            if (err != kAudioHardwareNoError) {
+                return error("Can't retrieve audio device format: ",
+                             ::errToString(err));
+            }
+            else if (port->deviceFormat.mSampleRate != srate) {
+                return error("Sampling rate not supported or cannot be set.");
+            }
 		}
 		// Always report our channel count to be what we were configured for.  We do all channel
 		// matching ourselves during doGetFrames and doSendFrames.
 		port->virtualChannels = chans;
+
+		UInt32 hwChannels = port->deviceFormat.mChannelsPerFrame;
 
 		// We create a buffer equal to the internal HW channel count.
 		if (port->streamCount == 1) {
