@@ -16,6 +16,7 @@
 #define NUM_ARRAYS  32
 static double minc_array[NUM_ARRAYS][ARRAY_SIZE],minc_array_size[NUM_ARRAYS];
 
+extern "C" {
 
 double m_boost(float p[])
 { return(boost(p[0])); }
@@ -483,37 +484,6 @@ double m_reset(float p[], int n_args)
 	return 0.0;
 }
 
-/* returns random choice from its arguments */
-double m_pickrand(float p[], int n_args, double pp[]) 
-{
-		float rindex;
-		if (n_args == 0)
-				die("pickrand", "Must have at least one value to choose from!");
-		rindex = (m_random() * n_args) - 0.000001; /* 0 to 1.9999 for 2 args */
-		return pp[(int) rindex];
-}
-
-/* returns choice based on <value, probability> pairs */
-double m_pickwrand(float p[], int n_args, double pp[])
-{
-		int n;
-		float totalchance = 0, rindex, psum = 0;
-		if (n_args == 0 || (n_args & 1))
-				die("pickwrand", "Arguments must be in <value, probability> pairs!");
-
-		/* sum up chances */
-		for (n = 1; n < n_args; n += 2)
-				totalchance += p[n];
-		rindex = m_random() * totalchance;
-		for (n = 1; n < n_args; n += 2)
-		{
-				psum += p[n];
-				if (rindex <= psum)
-						return p[n-1];
-		}
-		return pp[n_args - 1];
-}
-
 /* returns a randomly-interpolated value between its two input values */
 double m_irand(float p[], int n_args, double pp[])
 {
@@ -546,5 +516,96 @@ double m_trand(float p[], int n_args, double pp[])
 			trunc = max - 1;
 	}
 	return (double) trunc;
+}
+
+}	// end extern "C"
+
+//-----------------------------------------------------------------------------
+// C++ functions
+
+extern "C" {
+	double m_pickrand(const Arg args[], const int nargs);
+	double m_pickwrand(const Arg args[], const int nargs);
+}
+
+// pickrand returns random choice from its arguments
+double m_pickrand(const Arg args[], const int nargs) 
+{
+	if (nargs == 0)
+		die("pickrand", "Must have at least one value to choose from!");
+
+//FIXME: would be nice to have the array-unpacking in a function for
+// use by others, instead of cutting/pasting it into each function. -JG
+	// Load all args, including ones from flattened arrays, into xargs.
+	double xargs[MAXDISPARGS];
+	int nxargs = 0;
+	for (int i = 0; i < nargs; i++) {
+		if (args[i].isType(ArrayType)) {
+			// NB: currently if we get this far, the array must contain only
+			// doubles; otherwise error (e.g., in src/parser/minc/callextfunc.cpp).
+			Array *a = args[i];
+			const int alen = a->len;
+			const double *adata = a->data;
+			for (int j = 0; j < alen; j++) {
+				xargs[nxargs++] = adata[j];
+				if (nxargs == MAXDISPARGS)
+					return die("pickrand", "Exceeded maximum number of arguments (%d)", MAXDISPARGS);
+			}
+		}
+		else if (args[i].isType(DoubleType)) {
+			xargs[nxargs++] = args[i];
+			if (nxargs == MAXDISPARGS)
+				return die("pickrand", "Exceeded maximum number of arguments (%d)", MAXDISPARGS);
+		}
+		else
+			return die("pickrand", "Arguments must be numbers or arrays of numbers");
+	}
+	float rindex;
+	rindex = (m_random() * nxargs) - 0.000001; // 0 to 1.9999 for 2 args
+	return xargs[(int) rindex];
+}
+
+// pickwrand returns choice based on <value, probability> pairs
+double m_pickwrand(const Arg args[], const int nargs) 
+{
+	if (nargs == 0 || (nargs & 1))
+		die("pickwrand", "Arguments must be in <value, probability> pairs!");
+
+	// Load all args, including ones from flattened arrays, into xargs.
+	double xargs[MAXDISPARGS];
+	int nxargs = 0;
+	for (int i = 0; i < nargs; i++) {
+		if (args[i].isType(ArrayType)) {
+			// NB: currently if we get this far, the array must contain only
+			// doubles; otherwise error (e.g., in src/parser/minc/callextfunc.cpp).
+			Array *a = args[i];
+			const int alen = a->len;
+			const double *adata = a->data;
+			for (int j = 0; j < alen; j++) {
+				xargs[nxargs++] = adata[j];
+				if (nxargs == MAXDISPARGS)
+					return die("pickwrand", "Exceeded maximum number of arguments (%d)", MAXDISPARGS);
+			}
+		}
+		else if (args[i].isType(DoubleType)) {
+			xargs[nxargs++] = args[i];
+			if (nxargs == MAXDISPARGS)
+				return die("pickrand", "Exceeded maximum number of arguments (%d)", MAXDISPARGS);
+		}
+		else
+			return die("pickrand", "Arguments must be numbers or arrays of numbers");
+	}
+
+	// sum up chances
+	float totalchance = 0, psum = 0;
+	for (int n = 1; n < nxargs; n += 2)
+		totalchance += xargs[n];
+	const float rindex = m_random() * totalchance;
+	for (int n = 1; n < nxargs; n += 2) {
+		psum += xargs[n];
+		if (rindex <= psum)
+			return xargs[n - 1];
+	}
+	return xargs[nxargs - 1];
 }
 
