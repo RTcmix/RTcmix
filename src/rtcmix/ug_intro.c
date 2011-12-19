@@ -119,8 +119,8 @@ ug_intro()
 	UG_INTRO("reset",m_reset);
 	UG_INTRO("control_rate",m_reset); /* because "reset" is a perlfunc */
 	UG_INTRO("load",m_load); /* allows loading of dynamic libraries */
-	UG_INTRO("pickrand", m_pickrand);
-	UG_INTRO("pickwrand", m_pickwrand);
+	UG_INTRO_DOUBLE_RETURN("pickrand", m_pickrand);
+	UG_INTRO_DOUBLE_RETURN("pickwrand", m_pickwrand);
 	UG_INTRO("irand", m_irand);
 	UG_INTRO("trand", m_trand);
 //	UG_INTRO("grand", m_grand);

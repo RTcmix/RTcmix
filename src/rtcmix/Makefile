@@ -13,7 +13,6 @@ io.c \
 load_utils.c \
 merror.c \
 message.c \
-minc_functions.c \
 minout.c \
 m_system.c \
 printsf.c \
@@ -65,6 +64,7 @@ intraverse.cpp \
 loader.cpp \
 lfo.cpp \
 minc_info.cpp \
+minc_functions.cpp \
 DataFile.cpp \
 Option.cpp \
 PField.cpp \
