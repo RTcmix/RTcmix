@@ -7,8 +7,8 @@
    p4 = modulation oscillator frequency (Hz) **
    p5 = input channel [optional, default is 0]
    p6 = pan (in percent-to-left form: 0-1) [optional; default is 0]
-   p7 = reference to AM modulator wavetable [optional; if missing, must use
-        gen 2 ***]
+   p7 = reference to AM modulator wavetable [optional; if missing, use
+        gen 2 ***, or default to internal sine wave] 
 
    p3 (amplitude), p4 (mod freq) and p6 (pan) can receive dynamic updates
    from a table or real-time control source.
@@ -41,8 +41,10 @@
 
 
    Author unknown (probably Brad Garton).
+	[yes it was me -- BGG]
    Modulator frequency table and xtra comments added by John Gibson, 1/12/02.
    rev for v4, JGG, 7/22/04
+	added default sine wavetable if gen slot or PField is NULL -- BGG 1/2/12
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -59,13 +61,17 @@ AM::AM() : Instrument()
 	in = NULL;
 	modosc = NULL;
 	freqtable = NULL;
+	wavetable = NULL;
 	branch = 0;
+	ownWavetable = false;
 }
 
 AM::~AM()
 {
 	delete [] in;
 	delete modosc;
+	if (ownWavetable)
+		delete [] wavetable;
 }
 
 int AM::init(double p[], int n_args)
@@ -91,17 +97,23 @@ int AM::init(double p[], int n_args)
 		tableset(SR, dur, amplen, amptabs);
 	}
 
-	double *wavetable = NULL;
 	int tablelen = 0;
 	if (n_args > 7) {      // handle table coming in as optional p7 TablePField
 		wavetable = (double *) getPFieldTable(7, &tablelen);
 	}
-	if (wavetable == NULL) {
+	if (wavetable == NULL) { // use old gen slot
 		wavetable = floc(2);
-		if (wavetable == NULL)
-			return die("AM", "Either use the wavetable pfield (p7) or make "
-                    "an old-style gen function in slot 2.");
-		tablelen = fsize(2);
+		if (wavetable)
+			tablelen = fsize(2);
+		else { // use default sine wave
+			warn("AM", "No modulator wavetable specified, so using sine wave.");
+			tablelen = 1024;
+			wavetable = new double [tablelen];
+			ownWavetable = true;
+			const double twopi = M_PI * 2.0;
+			for (int i = 0; i < tablelen; i++)
+				wavetable[i] = sin(twopi * ((double) i / tablelen));
+		}
 	}
 
 	modfreq = p[4];

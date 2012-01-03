@@ -4,8 +4,9 @@ class AM : public Instrument {
 	int inchan, skip, branch;
 	float *in, amp, modfreq, spread;
 	float amptabs[2], freqtabs[2];
-	double *amptable, *freqtable, *amtable;
+	double *wavetable, *amptable, *freqtable, *amtable;
 	Ooscili *modosc;
+	bool ownWavetable;
 
 public:
 	AM();
