@@ -37,7 +37,7 @@
    the makegen.
    
    *** If p7 is missing, you must use an old-style gen table 2 for the
-   modulator waveform.
+   modulator waveform. [added default sine wave, BGG 1/2012]
 
 
    Author unknown (probably Brad Garton).
