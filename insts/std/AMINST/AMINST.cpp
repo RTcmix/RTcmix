@@ -6,11 +6,12 @@
    p3 = carrier frequency (Hz)
    p4 = modulation frequency (Hz)
    p5 = pan (in percent-to-left form: 0-1) [optional; default is 0]
-   p6 = modulator amplitude [optional; if missing,must use gen 2 **]
+   p6 = modulator amplitude [optional; if missing, must use gen 2 **,
+        or default to 1.0]
    p7 = reference to carrier wavetable [optional; if missing, must use
-        gen 3 ***]
+        gen 3 ***, or default to internal sine wave]
    p8 = reference to modulator wavetable [optional; if missing, must use
-        gen 4 ****]
+        gen 4 ****, or default to internal sine wave]
 
    p2 (amplitude), p3 (carrier freq), p4 (modulator freq) and p5 (pan) can
    receive dynamic updates from a table or real-time control source.
@@ -23,16 +24,17 @@
    by p2 (amplitude), even if the latter is dynamic.
 
    ** If p6 is missing, you must use an old-style gen table 2 for the
-   modulation envelope.
+   modulation envelope. [added default of 1.0, BGG 1/2012]
 
    *** If p7 is missing, you must use an old-style gen table 3 for the
-   carrier waveform.
+   carrier waveform. [added default sine wave, BGG 1/2012]
 
    **** If p8 is missing, you must use an old-style gen table 4 for the
-   modulator waveform.
+   modulator waveform. [added default sine wave, BGG 1/2012]
 
 
    Author unknown (probably Brad Garton); rev for v4, JGG, 7/22/04
+   [yes it was me -- BGG]
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -49,12 +51,18 @@ AMINST::AMINST() : Instrument()
 	carosc = NULL;
 	modosc = NULL;
 	branch = 0;
+	ownModtable = false;
+	ownCartable = false;
 }
 
 AMINST::~AMINST()
 {
 	delete carosc;
 	delete modosc;
+	if (ownModtable)
+		delete [] modtable;
+	if (ownCartable)
+		delete [] cartable;
 }
 
 int AMINST::init(double p[], int n_args)
@@ -76,13 +84,16 @@ int AMINST::init(double p[], int n_args)
 	}
 
 	modamparr = NULL;
-	if (n_args < 7) {      // no p6 mod amp PField, must use gen table
+	p6present = true; // but maybe it isn't...
+	if (n_args < 7) { // no p6 mod amp PField, use gen table or default [1.0]
+		p6present = false;
 		modamparr = floc(2);
-		if (modamparr == NULL)
-			return die("AMINST", "Either use the mod. amp pfield (p6) or "
-							"make an old-style gen function in slot 2.");
-		int len = fsize(2);
-		tableset(SR, dur, len, modamptabs);
+		if (modamparr == NULL) { // will default to 1.0 in doupdate()
+			advise("AMINST", "no modulator amp (p6) present, defaulting to 1.0");
+		} else {
+			int len = fsize(2);
+			tableset(SR, dur, len, modamptabs);
+		}
 	}
 
 	cartable = NULL;
@@ -92,10 +103,17 @@ int AMINST::init(double p[], int n_args)
 	}
 	if (cartable == NULL) {
 		cartable = floc(3);
-		if (cartable == NULL)
-			return die("AMINST", "Either use the carrier wavetable pfield (p7) "
-						"or make an old-style gen function in slot 3.");
-		tablelen = fsize(3);
+		if (cartable)
+			tablelen = fsize(3);
+		else {
+			warn("AMINST", "No carrier wavetable specified, so using sine wave.");
+			tablelen = 1024;
+			cartable = new double [tablelen];
+			ownCartable = true;
+			const double twopi = M_PI * 2.0;
+			for (int i = 0; i < tablelen; i++)
+				cartable[i] = sin(twopi * ((double) i / tablelen));
+		}
 	}
 	carosc = new Ooscili(SR, carfreq, cartable, tablelen);
 
@@ -106,10 +124,17 @@ int AMINST::init(double p[], int n_args)
 	}
 	if (modtable == NULL) {
 		modtable = floc(4);
-		if (modtable == NULL)
-			return die("AMINST", "Either use the modulator wavetable pfield (p8) "
-						"or make an old-style gen function in slot 4.");
-		tablelen = fsize(4);
+		if (modtable)
+			tablelen = fsize(4);
+		else {
+			warn("AMINST", "No modulator wavetable specified, so using sine wave.");
+			tablelen = 1024;
+			modtable = new double [tablelen];
+			ownModtable = true;
+			const double twopi = M_PI * 2.0;
+			for (int i = 0; i < tablelen; i++)
+				modtable[i] = sin(twopi * ((double) i / tablelen));
+		}
 	}
 	modosc = new Ooscili(SR, modfreq, modtable, tablelen);
 
@@ -135,8 +160,12 @@ void AMINST::doupdate()
 
 	spread = p[5];
 
-	if (modamparr)
-		modamp = tablei(currentFrame(), modamparr, modamptabs);
+	if (!p6present) {
+		if (modamparr)
+			modamp = tablei(currentFrame(), modamparr, modamptabs);
+		else
+			modamp = 1.0; // default mod amp
+	}
 	else
 		modamp = p[6];
 }
