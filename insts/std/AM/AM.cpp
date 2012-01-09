@@ -17,11 +17,11 @@
    depending on whether the modulator waveform is unipolar or bipolar
    (unipolar = amp. mod., bipolar = ring mod.).
 
-   To make a unipolar sine wave, you have to add a DC component 90 degrees
-   out of phase.  For example, the following creates a sine wave that
-   oscillates between 0 and 1:
+   To make a unipolar sine wave, you have to add a DC component to shift
+   the sine wave out of the negative area.  For example, the following
+   creates a sine wave that oscillates between 0 and 1:
 
-      wave = maketable("wave3", 1000, 0,.5,90, 1,.5,0)
+      wave = maketable("wave3", 1000, 0,.5,0, 1,.5,0)
 
    ---
 
