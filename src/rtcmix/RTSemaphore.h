@@ -4,6 +4,9 @@
 #define RT_SEMAPHORE_H
 
 #ifdef MACOSX
+#include <Availability.h>
+
+#if defined(MACOSX) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 1060
 
 #include <dispatch/dispatch.h>
 
@@ -33,7 +36,8 @@ private:
 	sem_t	mSema;
 };
 
-#endif
+#endif	// OSX min version
+#endif	// MACOSX
 
 #endif	// RT_SEMAPHORE_H
 
