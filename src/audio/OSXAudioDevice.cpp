@@ -553,10 +553,11 @@ Play:
 #endif
 		if (framesAvail < framesToWrite) {
 #if DEBUG > 0
-            if ((impl->underflowCount %4) == 0)
-                printf("OSXAudioDevice (playback): framesAvail (%d) < needed (%d) -- UNDERFLOW\n", framesAvail, framesToWrite);
+            if ((impl->underflowCount %4) == 0) {
+                fprintf(stderr, "OSXAudioDevice (playback): framesAvail (%d) < needed (%d) -- UNDERFLOW\n", framesAvail, framesToWrite);
+                printf("\tzeroing input buffer and going on\n");
+            }
             ++impl->underflowCount;
-            printf("\tzeroing input buffer and going on\n");
 #endif
             for (int stream = 0; stream < port->streamCount; ++stream) {
                 memset(&port->audioBuffer[stream * port->audioBufFrames], 0, bufLen * sizeof(float));
@@ -638,11 +639,13 @@ OSXAudioDevice::Impl::listenerProcess(AudioDeviceID inDevice,
 						&size,
 				   		(void *) &isRunning);
 		break;
+    case kAudioDevicePropertyNominalSampleRate:
+        fprintf(stderr, "OSXAudioDevice: Nominal sample rate changed\n");
+        break;
 	case kAudioDeviceProcessorOverload:
 		fprintf(stderr, "OSXAudioDevice: I/O thread overload!\n");
 		break;
 	default:
-		// printf("Some other property was changed.\n");
 		break;
 	}
 #if NOT_NEEDED
@@ -667,6 +670,9 @@ OSXAudioDevice::Impl::renderProcess(void *context)
         //	perror("OSXAudioDevice::Impl::renderProcess: Failed to set priority of thread.");
 	}
     while (true) {
+#if DEBUG > 0
+        printf("OSXAudioDevice::Impl::renderProcess waiting...\n");
+#endif
         impl->renderSema->wait();
         if (impl->stopping) {
 #if DEBUG > 0
@@ -675,10 +681,13 @@ OSXAudioDevice::Impl::renderProcess(void *context)
             break;
         }
 #if DEBUG > 0
-        printf("OSXAudioDevice::Impl::renderProcess woke up -- running slice\n");
         if (impl->underflowCount > 0) {
+            printf("OSXAudioDevice::Impl::renderProcess woke up -- underflow count %d -- running slice\n", impl->underflowCount);
             --impl->underflowCount;
         }
+#endif
+#if DEBUG > 0
+        printf("OSXAudioDevice::Impl::renderProcess woke up -- running slice\n");
 #endif
         bool ret = device->runCallback();
         if (ret == false) {
@@ -741,7 +750,10 @@ void OSXAudioDevice::Impl::stopRenderThread()
 OSXAudioDevice::OSXAudioDevice(const char *desc) : _impl(new Impl)
 {
 	::getDeviceList(&_impl->deviceIDs, &_impl->deviceCount);
-	
+
+	CFRunLoopSourceRef nullRunLoop = 0;
+    AudioHardwareAddRunLoopSource(nullRunLoop);
+
 	if (desc != NULL) {
 		char *substr = strchr(desc, ':');
 		if (substr == NULL) {
@@ -1029,6 +1041,16 @@ int OSXAudioDevice::doOpen(int mode)
 										kAudioDevicePropertyDeviceIsRunning,
 									   _impl->listenerProcess, 
 									   (void *) this);
+	err = AudioDeviceAddPropertyListener(_impl->deviceID,
+                                         kMasterChannel, isInput,
+                                         kAudioDevicePropertyNominalSampleRate,
+                                         _impl->listenerProcess, 
+                                         (void *) this);
+	err = AudioDeviceAddPropertyListener(_impl->deviceID,
+                                         kMasterChannel, isInput,
+                                         kAudioDeviceProcessorOverload,
+                                         _impl->listenerProcess, 
+                                         (void *) this);
 	if (err != kAudioHardwareNoError) {
 		return error("Cannot register property listener with device: ",
 					 errToString(err));
@@ -1056,6 +1078,14 @@ int OSXAudioDevice::doClose()
 											kMasterChannel, _impl->recording,
 											kAudioDevicePropertyDeviceIsRunning,
 										   _impl->listenerProcess);
+	err = AudioDeviceRemovePropertyListener(_impl->deviceID,
+											kMasterChannel, _impl->recording,
+											kAudioDevicePropertyNominalSampleRate,
+                                            _impl->listenerProcess);
+	err = AudioDeviceRemovePropertyListener(_impl->deviceID,
+											kMasterChannel, _impl->recording,
+											kAudioDeviceProcessorOverload,
+                                            _impl->listenerProcess);
 	status = (err == kAudioHardwareNoError) ? status : -1;
 	_impl->frameCount = 0;
 	return status;
@@ -1149,7 +1179,7 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
                              ::errToString(err));
             }
             else if (port->deviceFormat.mSampleRate != srate) {
-                return error("Sampling rate not supported or cannot be set.");
+//                return error("Sampling rate not supported or cannot be set.");
             }
 		}
 		// Always report our channel count to be what we were configured for.  We do all channel
@@ -1326,7 +1356,15 @@ int	OSXAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 {
 	const int frameChans = getFrameChannels();
 	Impl::Port *port = &_impl->port[PLAY];
-	return (*port->frameFn)(port, frameBuffer, frameCount, frameChans);
+	int ret = (*port->frameFn)(port, frameBuffer, frameCount, frameChans);
+#if DEBUG > 0
+    if (_impl->underflowCount > 0) {
+        --_impl->underflowCount;
+        printf("OSXAudioDevice::Impl::doSendFrames: underflow count -> %d -- filled now %d\n",
+               _impl->underflowCount, port->audioBufFilled);
+    }
+#endif
+    return ret;
 }
 
 int OSXAudioDevice::doGetFrameCount() const
@@ -1435,7 +1473,7 @@ findDeviceID(const char *devName, AudioDeviceID *devList, int devCount, Boolean 
                                             	 kAudioDevicePropertyDeviceName,
                                             	 &size, NULL);
 	   if (err != kAudioHardwareNoError) {
-    	  fprintf(stderr, "findDeviceID: Can't get device name property info for device %lu.\n",
+    	  fprintf(stderr, "findDeviceID: Can't get device name property info for device %u\n",
                   devList[dev]);
     	  continue;
 	   }
