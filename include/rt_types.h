@@ -80,6 +80,10 @@ typedef int AtomicInt;
 
 #endif  // __cplusplus
 
+#else	// not MULTI_THREAD
+
+typedef int AtomicInt;
+
 #endif  // MULTI_THREAD
 
 #endif	// _RT_TYPES_H_
