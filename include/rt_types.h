@@ -34,5 +34,52 @@ typedef enum {
 #define SHORT (sizeof(short))
 #define LONG  (sizeof(long))
 
+#ifdef MULTI_THREAD
+#ifdef __cplusplus
+
+#ifdef MACOSX
+
+#include <libkern/OSAtomic.h>
+
+class AtomicInt
+{
+    int32_t val;
+public:
+    AtomicInt(int inVal=0) : val(inVal) {}
+    operator int () const { return val; }
+    int operator ++ () { return OSAtomicIncrement32(&val); }
+    int operator -- () { return OSAtomicDecrement32(&val); }
+    int operator = (int rhs) { return (val = rhs); }
+    
+};
+
+#elif defined(LINUX)
+
+#include <alsa/iatomic.h>
+
+class AtomicInt
+{
+    atomic_t val;
+public:
+    AtomicInt(int inVal=0) { atomic_set(&val, inVal); }
+    operator int () const { return atomic_read(&val); }
+    int operator ++ () { atomic_add(1, &val); return atomic_read(&val); }
+    int operator -- () { atomic_sub(1, &val); return atomic_read(&val); }
+    int operator = (int rhs) { atomic_set(&val, rhs); return atomic_read(&val); }
+};
+
+#else
+
+typedef int AtomicInt;
+
+#endif
+
+#else
+
+typedef int AtomicInt;
+
+#endif  // __cplusplus
+
+#endif  // MULTI_THREAD
 
 #endif	// _RT_TYPES_H_
