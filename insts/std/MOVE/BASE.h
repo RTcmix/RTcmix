@@ -90,7 +90,7 @@ protected:
    double m_rvbPast[2];	// For hi-pass filter
    // static data
    static int    primes[NPRIMES + 2];
-   static int primes_gotten;
+   static AtomicInt primes_gotten;
 };
 
 #undef min

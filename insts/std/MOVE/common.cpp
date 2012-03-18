@@ -38,6 +38,32 @@ scale(double *Sig, int len, double amp)
 		Sig[i] *= amp;
 }
 
+void
+btone(double *Sig, int len, double data[3])
+{
+	const double d0 = data[0];
+	const double d1 = data[1];
+	double past = data[2];
+	const int lenOver4 = len >> 2;
+	const int remainder = len - (lenOver4 << 2);
+	for (int i = 0; i < lenOver4; ++i) {
+		past = d0 * Sig[0] + d1 * past;
+		Sig[0] = past;
+		past = d0 * Sig[1] + d1 * past;
+		Sig[1] = past;
+		past = d0 * Sig[2] + d1 * past;
+		Sig[2] = past;
+		past = d0 * Sig[3] + d1 * past;
+		Sig[3] = past;
+		Sig += 4;
+	}
+	for (int i = 0; i < remainder; ++i) {
+		past = d0 * Sig[i] + d1 * past;
+		Sig[i] = past;
+	}
+	data[2] = past;
+}
+
 #if defined(i386)
 float airOffset =  1.0e-35;
 #endif
@@ -47,8 +73,8 @@ float airOffset =  1.0e-35;
 void
 air(double *Sig, int len, double airdata[3])
 {
+	btone(Sig, len, airdata);
 	for (int i = 0; i < len; ++i) {
-		Sig[i] = tone(Sig[i], &airdata[0]);
 #if defined(i386)
 		Sig[i] += airOffset;	// adding this small offset avoids FP underflow
 		airOffset = -airOffset;
@@ -69,8 +95,8 @@ float wallOffset = -1.0e-35;
 void
 wall(double *Sig, int len, double Walldata[3])
 {
+	btone(Sig, len, &Walldata[0]);
 	for (int i = 0; i < len; ++i) {
-   		Sig[i] = tone(Sig[i], &Walldata[0]);
 #if defined(i386)
 		Sig[i] += wallOffset;	// adding this small offset avoids FP underflow
 		wallOffset = -wallOffset;
@@ -80,8 +106,8 @@ wall(double *Sig, int len, double Walldata[3])
 
 // other buffer routines
 
-void
-copyBuf(double *to, double *from, int len)
+template <typename T>
+static void copyBufTo(T *to, double *from, int len)
 {
 	const int len4 = len >> 2;
 	int i;
@@ -94,8 +120,33 @@ copyBuf(double *to, double *from, int len)
 		from += 4;
 	}
 	const int extra = len - (len4<<2);
-	for (; i < extra; i++)
-	    to[i] = from[i];
+	for (i = 0; i < extra; i++)
+	    *to++ = *from++;
+}
+
+void copyBuf(double *to, double *from, int len) { copyBufTo<double>(to, from, len); }
+
+void copyBufToOut(float *to, double *from, int toChannels, int len)
+{
+	const int len4 = len >> 2;
+	int i;
+	const int second = toChannels;
+	const int third = toChannels * 2;
+	const int fourth = toChannels * 3;
+	const int stride = toChannels * 4;
+	for (i = 0; i < len4; i++) {
+	    to[0] = from[0];
+	    to[second] = from[1];
+	    to[third] = from[2];
+	    to[fourth] = from[3];
+		to += stride;
+		from += 4;
+	}
+	const int extra = len - (len4<<2);
+	for (int n = 0; n < extra; ++n) {
+	    *to += *from++;
+		to += toChannels;
+	}
 }
 
 void
@@ -116,12 +167,12 @@ copyScaleBuf(double *to, double *from, int len, double gain)
 		from += 4;
 	}
 	const int extra = len - (len4<<2);
-	for (; i < extra; i++)
-	    to[i] = from[i] * gain;
+	for (i = 0; i < extra; i++)
+	    *to++ = *from++ * gain;
 }
 
-void
-addBuf(double *to, double *from, int len)
+template <typename T>
+static void addBufTo(T *to, double *from, int len)
 {
 	const int len4 = len >> 2;
 	int i;
@@ -134,15 +185,17 @@ addBuf(double *to, double *from, int len)
 		from += 4;
 	}
 	const int extra = len - (len4<<2);
-	for (; i < extra; i++)
-	    to[i] += from[i];
+	for (i = 0; i < extra; i++)
+	    *to++ += *from++;
 }
 
-void
-addScaleBuf(double *to, double *from, int len, double gain)
+void addBuf(double *to, double *from, int len) { addBufTo(to, from, len); }
+
+template <typename T>
+static void addScaleBufTo(T *to, double *from, int len, double gain)
 {
     if (gain == 0.0) return;
-    else if (gain == 1.0) { addBuf(to, from, len); return; }
+    else if (gain == 1.0) { addBufTo(to, from, len); return; }
 	const int len4 = len >> 2;
 	int i;
 	for (i = 0; i < len4; i++) {
@@ -154,8 +207,33 @@ addScaleBuf(double *to, double *from, int len, double gain)
 		from += 4;
 	}
 	const int extra = len - (len4<<2);
-	for (; i < extra; i++)
-	    to[i] += from[i] * gain;
+	for (i = 0; i < extra; i++)
+	    *to++ += *from++ * gain;
+}
+
+void addScaleBuf(double *to, double *from, int len, double gain) { addScaleBufTo(to, from, len, gain); }
+
+void addScaleBufToOut(float *to, double *from, int len, int toChannels, double gain) {
+    if (gain == 0.0) return;
+	const int len4 = len >> 2;
+	int i;
+	const int second = toChannels;
+	const int third = toChannels * 2;
+	const int fourth = toChannels * 3;
+	const int stride = toChannels * 4;
+	for (i = 0; i < len4; i++) {
+	    to[0] += from[0] * gain;
+	    to[second] += from[1] * gain;
+	    to[third] += from[2] * gain;
+	    to[fourth] += from[3] * gain;
+		to += stride;
+		from += 4;
+	}
+	const int extra = len - (len4<<2);
+	for (i = 0; i < extra; ++i) {
+	    *to += *from++ * gain;
+		to += toChannels;
+	}
 }
 
 #if defined(i386)
@@ -344,53 +422,12 @@ fir(double *sig, long counter, int nterms, double *coeffs, double *firtap, int l
 }
 
 
-/* --------------------------------------------------------------- setfir --- */
-/* setfir looks up the coeffs for the particular binaural angle, rho,
-   and loads them into the firfilter memory. Also resets hist if needed.
-*/
-void
-setfir(double theta, int nterms, int flag, double *coeffs, double *firtap)
-{
-   static const double radmax = PI2;  /* 2PI rads */
-   double rad_inc, angle, frac;
-   register int lower, upper, skip;
-
-   extern double FIRDATA[NANGLES][MAXTERMS];  /* the stored coeffs for firs */
-
-   /* reset filter histories if flag = 1 */
-
-   if (flag && firtap) {
-      for (int i = 0; i <= nterms; ++i)
-         firtap[i] = 0.0;
-   }
-   /* calculations to produce interpolated data */
-
-   if (coeffs) {
-	   rad_inc = radmax / NANGLES;  /* distance in rads betw. data pts.  */
-	   angle = theta / rad_inc;     /* current angle in rad_incs */
-	   lower = (int)angle;          /* truncate to lower integer */
-	   frac = angle - lower;        /* for interpolating */
-	   upper = (lower + 1) % NANGLES;
-
-	   /* since not all firs use max # of terms stored, here is skip pt. */
-
-	   skip = (MAXTERMS - nterms) / 2;
-
-	   /* interpolate and load coefficients */
-	   for (int i = 0; i < nterms; ++i) {
-    	  int j = i + skip;
-    	  coeffs[i] = FIRDATA[lower][j]
-                	  + (FIRDATA[upper][j] - FIRDATA[lower][j]) * frac;
-	   }
-   }
-}
-
 /* common data structures for handling FIR coefficients, etc. */
 
 int g_Nterms[13] = {33, 25, 25, 25, 25, 15, 15, 15, 15, 15, 15, 15, 15};
 int g_Group_delay[13] = {17, 13, 13, 13, 13, 8, 8, 8, 8, 8, 8, 8, 8};
 
-double FIRDATA[NANGLES][MAXTERMS] = {
+const double FIRDATA[NANGLES][MAXTERMS] = {
 {0.000000e+00, 0.000000e+00, 0.000000e+00, 0.000000e+00, 0.000000e+00, 
 0.000000e+00, 0.000000e+00, 0.000000e+00, 0.000000e+00, 0.000000e+00, 
 0.000000e+00, 0.000000e+00, 0.000000e+00, 0.000000e+00, 0.000000e+00, 
@@ -559,3 +596,43 @@ double FIRDATA[NANGLES][MAXTERMS] = {
 -5.235356e-03, -2.083927e-04, 1.298735e-02, 4.479203e-03, -3.337312e-03, 
 -4.151823e-04, 1.764228e-03, 4.606534e-04, -3.536756e-04, -1.323056e-04, 
 1.256993e-04, 1.920508e-04, 2.074267e-04}};
+
+/* --------------------------------------------------------------- setfir --- */
+/* setfir looks up the coeffs for the particular binaural angle, rho,
+ and loads them into the firfilter memory. Also resets hist if needed.
+ */
+void
+setfir(double theta, int nterms, int flag, double *coeffs, double *firtap)
+{
+    static const double radmax = PI2;  /* 2PI rads */
+    double rad_inc, angle, frac;
+    register int lower, upper, skip;
+        
+    /* reset filter histories if flag = 1 */
+    
+    if (flag && firtap) {
+        for (int i = 0; i <= nterms; ++i)
+            firtap[i] = 0.0;
+    }
+    /* calculations to produce interpolated data */
+    
+    if (coeffs) {
+        rad_inc = radmax / NANGLES;  /* distance in rads betw. data pts.  */
+        angle = theta / rad_inc;     /* current angle in rad_incs */
+        lower = (int)angle;          /* truncate to lower integer */
+        frac = angle - lower;        /* for interpolating */
+        upper = (lower + 1) % NANGLES;
+        
+        /* since not all firs use max # of terms stored, here is skip pt. */
+        
+        skip = (MAXTERMS - nterms) / 2;
+        
+        /* interpolate and load coefficients */
+        for (int i = 0; i < nterms; ++i) {
+            int j = i + skip;
+            coeffs[i] = FIRDATA[lower][j]
+            + (FIRDATA[upper][j] - FIRDATA[lower][j]) * frac;
+        }
+    }
+}
+

@@ -34,27 +34,27 @@ extern "C" {
    #include "setup.h"
 }
 
-extern int g_Nterms[13];                 /* defined in common.C */
+extern int g_Nterms[13];				 /* defined in common.C */
 
 int BASE::primes[NPRIMES + 2];
-int BASE::primes_gotten = 0;
+AtomicInt BASE::primes_gotten = 0;
 
 BASE::BASE() : m_tapsize(0)
 {
-    in = NULL;
-    m_tapDelay = NULL;
+	in = NULL;
+	m_tapDelay = NULL;
 	m_buffersize = BUFLEN;
 
-    for (int i = 0; i < 2; i++) {
-       int j;
-       for (j = 0; j < 6; j++)
-          m_rvbData[i][j].Rvb_del = NULL;
-       for (j = 0; j < 13; j++) {
-          m_vectors[i][j].Firtaps = NULL;
-          m_vectors[i][j].Fircoeffs = NULL;
-       }
-    }
-    get_primes(NPRIMES, primes);        /* load array with prime numbers */
+	for (int i = 0; i < 2; i++) {
+	   int j;
+	   for (j = 0; j < 6; j++)
+		  m_rvbData[i][j].Rvb_del = NULL;
+	   for (j = 0; j < 13; j++) {
+		  m_vectors[i][j].Firtaps = NULL;
+		  m_vectors[i][j].Fircoeffs = NULL;
+	   }
+	}
+	get_primes(NPRIMES, primes);		/* load array with prime numbers */
 }
 
 BASE::~BASE()
@@ -63,78 +63,78 @@ BASE::~BASE()
    delete [] m_tapDelay;
    int i, j;
    for (i = 0; i < 2; i++) {
-      for (j = 0; j < 6; j++)
-         delete [] m_rvbData[i][j].Rvb_del;
-      for (j = 0; j < 13; j++) {
-         delete [] m_vectors[i][j].Firtaps;
-         delete [] m_vectors[i][j].Fircoeffs;
-      }
+	  for (j = 0; j < 6; j++)
+		 delete [] m_rvbData[i][j].Rvb_del;
+	  for (j = 0; j < 13; j++) {
+		 delete [] m_vectors[i][j].Firtaps;
+		 delete [] m_vectors[i][j].Fircoeffs;
+	  }
    }
 }
 
 int BASE::init(double p[], int n_args)
 {
-    int    flag, UseMikes, cartflag = 0;
-    float  outskip, inskip, abs_factor, rvb_time;
-    double R, T, dist;
+	int	flag, UseMikes, cartflag = 0;
+	float  outskip, inskip, abs_factor, rvb_time;
+	double R, T, dist;
 
-    outskip = p[0];
-    inskip = p[1];
-    m_dur = p[2];
-    if (m_dur < 0)                      /* "dur" represents timend */
-        m_dur = -m_dur - inskip;
+	outskip = p[0];
+	inskip = p[1];
+	m_dur = p[2];
+	if (m_dur < 0)					  /* "dur" represents timend */
+		m_dur = -m_dur - inskip;
 
 	if (rtsetinput(inskip, this) == -1) { // no input
 	  return(DONT_SCHEDULE);
 	}
-    insamps = (int)(m_dur * SR);
-    inamp = p[3];
+	insamps = (int)(m_dur * SR);
+	inamp = p[3];
 
-    double Matrix[12][12];
+	double Matrix[12][12];
    
-    /* Get results of Minc setup calls (space, mikes_on, mikes_off, matrix) */
-    if (get_setup_params(Dimensions, Matrix, &abs_factor, &rvb_time,
-                         &UseMikes, &MikeAngle, &MikePatternFactor) == -1) {
-       return die(name(), "You must call setup routine `space' first.");
+	/* Get results of Minc setup calls (space, mikes_on, mikes_off, matrix) */
+	if (get_setup_params(Dimensions, Matrix, &abs_factor, &rvb_time,
+						 &UseMikes, &MikeAngle, &MikePatternFactor) == -1) {
+	   return die(name(), "You must call setup routine `space' first.");
 	}
 
-    // call inst-specific init code
+	// call inst-specific init code
 	if (localInit(p, n_args) == DONT_SCHEDULE) {
 		return die(name(), "localInit failed.");
 	}
 
-    if (m_inchan >= inputChannels()) {
-       return die(name(),
-			      "You asked for channel %d of a %d-channel input file.", 
-			      m_inchan, inputChannels());
+	if (m_inchan >= inputChannels()) {
+	   return die(name(),
+				  "You asked for channel %d of a %d-channel input file.", 
+				  m_inchan, inputChannels());
 	}
-    if (inputChannels() == 1)
-       m_inchan = 0;
+	if (inputChannels() == 1)
+	   m_inchan = 0;
 
 	if (outputChannels() != 2) {
 		return die(name(), "Output must be stereo.");
 	}
 
-    wire_matrix(Matrix);
+	wire_matrix(Matrix);
 
-    /* (perform some initialization that used to be in space.c) */
-    int meanLength = MFP_samps(SR, Dimensions); // mean delay length for reverb
-    get_lengths(meanLength);              /* sets up delay lengths */
-    set_gains(rvb_time);                /* sets gains for filters */
-    set_walls(abs_factor);              /* sets wall filts for move routine */
-    set_allpass();
-    set_random();                       /* sets up random variation of delays */
+	/* (perform some initialization that used to be in space.c) */
+	int meanLength = MFP_samps(SR, Dimensions); // mean delay length for reverb
+	get_lengths(meanLength);			  /* sets up delay lengths */
+	set_gains(rvb_time);				/* sets gains for filters */
+	set_walls(abs_factor);			  /* sets wall filts for move routine */
+	set_allpass();
+	set_random();					   /* sets up random variation of delays */
 
    /* flag for use of ear filters */
    m_binaural = (!UseMikes && m_dist < 0.8 && m_dist != 0.0);
 
    amparray = floc(1);
    if (amparray) {
-      int amplen = fsize(1);
-      tableset(SR, m_dur, amplen, amptabs);      /* controls input dur only */
+	  int amplen = fsize(1);
+	  tableset(SR, m_dur, amplen, amptabs);	  /* controls input dur only */
    }
    else
-      advise(name(), "Setting phrase curve to all 1's.");
+	  advise(name(), "Setting phrase curve to all 1's.");
 
    skip = (int)(SR / (float)resetval);
    
@@ -145,77 +145,77 @@ int BASE::init(double p[], int n_args)
    m_branch = 0;
 
    if (rtsetoutput(outskip, m_dur + ringdur, this) == -1)
-      return DONT_SCHEDULE;
+	  return DONT_SCHEDULE;
    DBG1(printf("nsamps = %d\n", nSamps()));
    return nSamps();
 }
 
 void PrintInput(float *sig, int len)
 {
-    for (int i = 0; i < len; i++)
-	    if (sig[i] != 0.0)
-		    printf("sig[%d] = %f\n", i, sig[i]);
+	for (int i = 0; i < len; i++)
+		if (sig[i] != 0.0)
+			printf("sig[%d] = %f\n", i, sig[i]);
 	printf("\n");
 }
 
 void PrintSig(double *sig, int len, double threshold = 0.0)
 {
-    for (int i = 0; i < len; i++)
-	    if (sig[i] > threshold || sig[i] < -threshold)
-		    printf("sig[%d] = %f\n", i, sig[i]);
+	for (int i = 0; i < len; i++)
+		if (sig[i] > threshold || sig[i] < -threshold)
+			printf("sig[%d] = %f\n", i, sig[i]);
 	printf("\n");
 }
 
 int BASE::getInput(int currentSample, int frames)
 {
-    // number of samples to process this time through
+	// number of samples to process this time through
 	const int inChans = inputChannels();
 
-    int rsamps = frames * inChans;
+	int rsamps = frames * inChans;
 
-    rtgetin(in, this, rsamps);
+	rtgetin(in, this, rsamps);
 
-    float aamp = inamp;                  /* in case amparray == NULL */
-
-    int n = 0;
-    int bufsamps = BUFLEN;	// adjust
-    int lCurSamp;	// local copy for inner loops
-    float insig;
+	int n = 0;
+	float insig;
 #ifdef LOOP_DEBUG
-    int nsig = 0, nzeros = 0;
+	int nsig = 0, nzeros = 0;
 #endif
 
-    // apply curve to input signal and mix down to mono if necessary
+	float scale = 1.0/inChans;
+	// apply curve to input signal and mix down to mono if necessary
 
-    for (int s = 0, lCurSamp = currentSample; s < rsamps; s += inChans, lCurSamp++)
-    {
+	for (int s = 0, lCurSamp = currentSample; s < rsamps; s += inChans, lCurSamp++)
+	{
 		if (lCurSamp < insamps) {	/* processing input signal */
 #ifdef LOOP_DEBUG
 			nsig++;
 #endif
 			if (--m_branch < 0) {
-			   if (amparray)
-    			  aamp = tablei(lCurSamp, amparray, amptabs) * inamp;
-			   m_branch = skip;
+				double p[4];
+				update(p, 4, 1 << 3);
+				inamp = p[3];
+				if (amparray)
+					inamp *= tablei(lCurSamp, amparray, amptabs);
+				m_branch = skip;
 			}
 			if (m_inchan == AVERAGE_CHANS) {
 			   insig = 0.0;
 			   for (int c = 0; c < inChans; c++)
-    			  insig += in[s + c];
-			   insig /= (float)inChans;
+				  insig += in[s + c];
+				insig *= scale;
 			}
 			else
 			   insig = in[s + m_inchan];
-			insig *= aamp;
+			insig *= inamp;
 		}
-		else  {                               /* flushing delays & reverb */
+		else  {							   /* flushing delays & reverb */
 #ifdef LOOP_DEBUG
 			nzeros++;
 #endif
  			insig = 0.0;
 		}
-	    in[n++] = insig;	// write back into input array to save space
-    }
+		in[n++] = insig;	// write back into input array to save space
+	}
 #ifdef LOOP_DEBUG
 	DBG1(printf("getInput(): %d signal, %d zero padded\n", nsig, nzeros));
 #endif
@@ -227,9 +227,9 @@ int BASE::configure()
 	int status = 0;
 	
 	in = new float [RTBUFSAMPS * inputChannels()];
-    status = alloc_delays();			/* allocates memory for delays */
+	status = alloc_delays();			/* allocates memory for delays */
 
-	rvb_reset(m_tapDelay);                  // resets reverb & tap delay
+	rvb_reset(m_tapDelay);				  // resets reverb & tap delay
 
 	if (status == 0 && m_binaural) {
 		advise(name(), "Running in binaural mode.");
@@ -241,7 +241,7 @@ int BASE::configure()
 /* ------------------------------------------------------------------ run --- */
 int BASE::run()
 {
-	int    i = 0;
+	int	i = 0;
 	double roomsig[2][BUFLEN], rvbsig[2][BUFLEN];
 
 	const int totalSamps = insamps + tapcount;
@@ -267,7 +267,7 @@ int BASE::run()
 			bufsamps = max(0, frameCount - i);
 
 		DBG1(printf("top of main loop: i = %d  cursamp = %d  bufsamps = %d\n",
-                   i, cursamp, bufsamps));
+				   i, cursamp, bufsamps));
 		DBG(printf("input signal:\n"));
 		DBG(PrintInput(&in[i], bufsamps));
 		
@@ -277,12 +277,12 @@ int BASE::run()
 		// if processing input signal or flushing delay lines ... 
 
 		if (cursamp < totalSamps) {
-		    // limit buffer size of end of input data
+			// limit buffer size of end of input data
 			if (totalSamps - cursamp < bufsamps)
-			    bufsamps = max(0, totalSamps - cursamp);
+				bufsamps = max(0, totalSamps - cursamp);
 			
-		    if ((tapcount = updatePosition(cursamp)) < 0)
-			    exit(-1);
+			if ((tapcount = updatePosition(cursamp)) < 0)
+				exit(-1);
 
 			DBG1(printf("  inner loop: bufsamps = %d\n", bufsamps));
 		
@@ -294,20 +294,20 @@ int BASE::run()
 					get_tap(cursamp, ch, path, bufsamps);
 					DBG(PrintSig(vec->Sig, bufsamps));   
 					/* air absorpt. filters */
-         				air(vec->Sig, bufsamps, vec->Airdata);			
+		 				air(vec->Sig, bufsamps, vec->Airdata);			
 					/* wall absorpt. filters */
 					if (path > 0)	// no filtering of direct signal
-         				wall(vec->Sig, bufsamps, vec->Walldata);
+		 				wall(vec->Sig, bufsamps, vec->Walldata);
 					/* do binaural angle filters if necessary*/
 					if (m_binaural)						
 						fir(vec->Sig, cursamp, g_Nterms[path], 
-					    	vec->Fircoeffs, vec->Firtaps, bufsamps);
-           				// sum unscaled reflected paths as input for RVB.
+							vec->Fircoeffs, vec->Firtaps, bufsamps);
+		   				// sum unscaled reflected paths as input for RVB.
 					// first path is set; the rest are summed
 					if (path == 1)
-						copyBuf(&roomsig[ch][0], vec->Sig, bufsamps);             
+						copyBuf(&roomsig[ch][0], vec->Sig, bufsamps);			 
 					else if (path > 1)
-						addBuf(&roomsig[ch][0], vec->Sig, bufsamps);             
+						addBuf(&roomsig[ch][0], vec->Sig, bufsamps);			 
 					/* now do cardioid mike effect if not binaural mode */
 					if (!m_binaural)
 						scale(vec->Sig, bufsamps, vec->MikeAmp);
@@ -319,8 +319,8 @@ int BASE::run()
 			}
 			/* run 1st and 2nd generation paths through reverberator */
  			for (int n = 0; n < bufsamps; n++) {
-			    if (m_rvbamp != 0.0) {
-			    	double rmPair[2];
+				if (m_rvbamp != 0.0) {
+					double rmPair[2];
 					double rvbPair[2];
 					rmPair[0] = roomsig[0][n];
 					rmPair[1] = roomsig[1][n];
@@ -333,18 +333,18 @@ int BASE::run()
 			}
 			DBG(printf("summing vectors\n"));
 			if (!m_binaural) {
-           		// re-sum scaled direct and reflected paths as early response
+		   		// re-sum scaled direct and reflected paths as early response
 				// first path is set; the rest are summed
 				for (int path = 0; path < 13; path++) {
 					if (path == 0) {
 						copyBuf(&roomsig[0][0], m_vectors[0][path].Sig, bufsamps);
 						copyBuf(&roomsig[1][0], m_vectors[1][path].Sig, bufsamps);
-					}           
+					}		   
 					else {
 						addBuf(&roomsig[0][0], m_vectors[0][path].Sig, bufsamps);
 						addBuf(&roomsig[1][0], m_vectors[1][path].Sig, bufsamps);
 					}
-				}          
+				}		  
 			}
 			DBG(printf("left signal:\n"));
 			DBG(PrintSig(roomsig[0], bufsamps, 0.1));
@@ -360,8 +360,8 @@ int BASE::run()
 			DBG(PrintInput(&this->outbuf[i], bufsamps));
 		}
 
-		else {         /* flushing reverb */
-		    // this is the current location in the main output buffer
+		else {		 /* flushing reverb */
+			// this is the current location in the main output buffer
 			// to write to now
 			register float *outptr = &this->outbuf[i*2];
 			DBG1(printf("  flushing reverb: i = %d, bufsamps = %d\n", i, bufsamps));
@@ -398,13 +398,13 @@ BASE::wire_matrix(double Matrix[12][12])
 	// assign output pointers
 	for (i = 0, n = 0; i < 2; i++)
 		for (j = 0; j < 6; j++) {
-		    ReverbPatches[n].outptr = &m_rvbData[i][j].delin;
+			ReverbPatches[n].outptr = &m_rvbData[i][j].delin;
 			ReverbPatches[n].incount = 0;
 			n++;
 		}
 
 	for (row = 0; row < 12; row++) {
-	    for (col = 0, n = 0; col < 12; col++) {
+		for (col = 0, n = 0; col < 12; col++) {
 			if (Matrix[row][col] != 0.0) {
 				i = col / 6;
 				j = col % 6;
@@ -423,19 +423,19 @@ int BASE::alloc_firfilters()
 {
    /* allocate memory for FIR filters and zero delays */
    for (int i = 0; i < 2; i++) {
-      for (int j = 0; j < 13; j++) {
-         m_vectors[i][j].Firtaps = new double[g_Nterms[j] + 1];
+	  for (int j = 0; j < 13; j++) {
+		 m_vectors[i][j].Firtaps = new double[g_Nterms[j] + 1];
 		 if (m_vectors[i][j].Firtaps == NULL) {
 		 	fprintf(stderr, "Memory failure during setup\n");
 			return -1;
 		 }
 		 memset(m_vectors[i][j].Firtaps, 0, (g_Nterms[j] + 1) * sizeof(double));
-         m_vectors[i][j].Fircoeffs = new double[g_Nterms[j]];
+		 m_vectors[i][j].Fircoeffs = new double[g_Nterms[j]];
 		 if (m_vectors[i][j].Fircoeffs == NULL) {
 		 	fprintf(stderr, "Memory failure during setup\n");
 			return -1;
 		 }
-      }
+	  }
    }
    return 0;
 }
@@ -446,23 +446,23 @@ int BASE::alloc_firfilters()
 int BASE::alloc_delays()
 {
 	assert(m_tapsize > 0);
-    m_tapDelay = new double[m_tapsize + 8];
+	m_tapDelay = new double[m_tapsize + 8];
 	if (m_tapDelay == NULL) {
 		fprintf(stderr, "Memory failure during setup\n");
 		return -1;
-    }
+	}
 	memset(m_tapDelay, 0, (m_tapsize + 8) * sizeof(double));
 
    /* allocate memory for reverb delay lines */
    for (int i = 0; i < 2; i++) {
-      for (int j = 0; j < 6; j++) {
-         m_rvbData[i][j].Rvb_del = new double[rvbdelsize];
+	  for (int j = 0; j < 6; j++) {
+		 m_rvbData[i][j].Rvb_del = new double[rvbdelsize];
 		 if (m_rvbData[i][j].Rvb_del == NULL) {
-            fprintf(stderr, "Memory failure during setup\n");
-            return -1;
-         }
-         memset(m_rvbData[i][j].Rvb_del, 0, sizeof(double) * rvbdelsize);
-      }
+			fprintf(stderr, "Memory failure during setup\n");
+			return -1;
+		 }
+		 memset(m_rvbData[i][j].Rvb_del, 0, sizeof(double) * rvbdelsize);
+	  }
    }
    return 0;
 }
@@ -476,20 +476,20 @@ int BASE::alloc_delays()
 void BASE::get_lengths(long m_length)
 {
    int i, j, max = 0;
-   static float delfac[2][6] = {        /* These determine the distribution */
-      {0.819, 0.918, 1.0, 1.11, 1.18, 1.279},
-      {0.811, 0.933, 0.987, 1.13, 1.21, 1.247}
+   static const float delfac[2][6] = {		/* These determine the distribution */
+	  {0.819, 0.918, 1.0, 1.11, 1.18, 1.279},
+	  {0.811, 0.933, 0.987, 1.13, 1.21, 1.247}
    };
 
    for (i = 0; i < 2; ++i) {
-      for (j = 0; j < 6; ++j) {
-         int val = (int)(m_length * delfac[i][j] + 0.5); /* 2x6 diff. lengths */
-         int pval = close_prime(val, NPRIMES, primes);  /* all lengths primes */
-         Nsdelay[i][j] = pval;
+	  for (j = 0; j < 6; ++j) {
+		 int val = (int)(m_length * delfac[i][j] + 0.5); /* 2x6 diff. lengths */
+		 int pval = close_prime(val, NPRIMES, primes);  /* all lengths primes */
+		 Nsdelay[i][j] = pval;
 
-         /* the number of elements (max) for allocation */
-         max = (pval > max) ? pval : max;
-      }
+		 /* the number of elements (max) for allocation */
+		 max = (pval > max) ? pval : max;
+	  }
    }
    /* extra to allow for varying taps dur to random tap */
    rvbdelsize = (int)(max * 1.2);
@@ -517,11 +517,11 @@ void BASE::get_lengths(long m_length)
 */
 void BASE::set_gains(float rvbtime)
 {
-   int    i, fpoint, nvals = 16;
+   int	i, fpoint, nvals = 16;
    float  rescale, gain, dist, G1, temp = SR / MACH1;
    double adjust;
    static float array[16] = {
-      0, .001, 10, .1, 25, .225, 35, .28, 50, .35, 65, .4, 85, .45, 95, .475
+	  0, .001, 10, .1, 25, .225, 35, .28, 50, .35, 65, .4, 85, .45, 95, .475
    };
 
    /* compensate for variable delay lengths */
@@ -534,30 +534,30 @@ void BASE::set_gains(float rvbtime)
    setline(array, nvals, NCOEFFS, AIRCOEFFS);
 
    for (i = 0; i < NCOEFFS; i++)
-      AIRCOEFFS[i] = pow((double)AIRCOEFFS[i], adjust);
+	  AIRCOEFFS[i] = pow((double)AIRCOEFFS[i], adjust);
 
-   gain = 1.0 - 0.366 / (rvbtime * rescale);               /* a la Moorer */
+   gain = 1.0 - 0.366 / (rvbtime * rescale);			   /* a la Moorer */
    gain = (gain < 0.0) ? 0.0 : gain;
 #ifdef debug
    printf("number of samples in each reverb delay line.");
 #endif
    for (i = 0; i < 2; ++i) {
 #ifdef debug
-      printf("\nchannel %d:\n\n", i);
+	  printf("\nchannel %d:\n\n", i);
 #endif
-      for (int j = 0; j < 6; ++j) {
-         dist = Nsdelay[i][j] / temp;
-         fpoint = (int)(dist * (float)NCOEFFS / 300.0); /* 300 ft. max dist. */
-         /* to avoid overrunning: */
-         fpoint = (fpoint <= NCOEFFS - 1) ? fpoint : NCOEFFS - 1;
-         G1 = AIRCOEFFS[fpoint - 1];                 /* G1 is filter coeff. */
-         m_rvbData[i][j].Rvb_air[0] = gain * (1.0 - G1);       /* G2 is filt. gain */
-         m_rvbData[i][j].Rvb_air[1] = G1;
+	  for (int j = 0; j < 6; ++j) {
+		 dist = Nsdelay[i][j] / temp;
+		 fpoint = (int)(dist * (float)NCOEFFS / 300.0); /* 300 ft. max dist. */
+		 /* to avoid overrunning: */
+		 fpoint = (fpoint <= NCOEFFS - 1) ? fpoint : NCOEFFS - 1;
+		 G1 = AIRCOEFFS[fpoint - 1];				 /* G1 is filter coeff. */
+		 m_rvbData[i][j].Rvb_air[0] = gain * (1.0 - G1);	   /* G2 is filt. gain */
+		 m_rvbData[i][j].Rvb_air[1] = G1;
 #ifdef debug
-         printf("delay %d: %g (%7.2f ms.) g1 = %f\n\n", j, Nsdelay[i][j],
-                float(Nsdelay[i][j] * 1000.0 / SR), G1);
+		 printf("delay %d: %g (%7.2f ms.) g1 = %f\n\n", j, Nsdelay[i][j],
+				float(Nsdelay[i][j] * 1000.0 / SR), G1);
 #endif
-      }
+	  }
    }
 }
 
@@ -571,15 +571,15 @@ void BASE::set_walls(float wallfac)
    float cutoff, cf;
 
    wallfac /= 10.0;
-   wallfac *= wallfac;                 /* now an expon. value between 0 and 1 */
-   cutoff = wallfac * SR / 2;          /* sets -3db pt. between 0 & N.F. */
-   cutoff = (cutoff <= SR / 2) ? cutoff : SR / 2;     /* set limit at N.F. */
+   wallfac *= wallfac;				 /* now an expon. value between 0 and 1 */
+   cutoff = wallfac * SR / 2;		  /* sets -3db pt. between 0 & N.F. */
+   cutoff = (cutoff <= SR / 2) ? cutoff : SR / 2;	 /* set limit at N.F. */
 
    for (int i = 0; i < 2; i++) {
-      for (int j = 1; j < 13; j++) {        /* skip first pair (direct sigs) */
-         cf = (j > 4) ? cutoff * .6 : cutoff;   /* more filt for 2nd */
-         toneset(SR, cf, 1, m_vectors[i][j].Walldata);        /* gen. wall reflect */
-      }
+	  for (int j = 1; j < 13; j++) {		/* skip first pair (direct sigs) */
+		 cf = (j > 4) ? cutoff * .6 : cutoff;   /* more filt for 2nd */
+		 toneset(SR, cf, 1, m_vectors[i][j].Walldata);		/* gen. wall reflect */
+	  }
    }
 }
 
@@ -589,9 +589,9 @@ void BASE::set_walls(float wallfac)
 */
 void BASE::set_allpass()
 {
-   Allpass_del[0][0] = 0.72;         /* the gains */
+   Allpass_del[0][0] = 0.72;		 /* the gains */
    Allpass_del[1][0] = 0.72;
-   Allpass_del[0][1] = 180.0;        /* the delay lengths */
+   Allpass_del[0][1] = 180.0;		/* the delay lengths */
    Allpass_del[1][1] = 183.0;
 }
 
@@ -602,27 +602,27 @@ void BASE::set_allpass()
 */
 void BASE::set_random()
 {
-   static const float rnd_freq[2][6] = {    /* the freq of rand variations */
-      {4.9, 5.2, 6.7, 3.4, 2.7, 3.8},
-      {5.1, 6.3, 7.0, 3.6, 2.8, 4.4}
+   static const float rnd_freq[2][6] = {	/* the freq of rand variations */
+	  {4.9, 5.2, 6.7, 3.4, 2.7, 3.8},
+	  {5.1, 6.3, 7.0, 3.6, 2.8, 4.4}
    };
-   static const float rnd_pcnt[2][6] = {    /* the amt. of delay to vary */
-      {.0016, .0013, .0021, .0018, .0019, .0014},
-      {.0027, .0014, .0020, .0016, .0012, .0015}
+   static const float rnd_pcnt[2][6] = {	/* the amt. of delay to vary */
+	  {.0016, .0013, .0021, .0018, .0019, .0014},
+	  {.0027, .0014, .0020, .0016, .0012, .0015}
    };
-   static const float seed[2][6] = {        /* the seeds for randi */
-      {.314, .159, .265, .358, .979, .323},
-      {.142, .857, .685, .246, .776, .456}
+   static const float seed[2][6] = {		/* the seeds for randi */
+	  {.314, .159, .265, .358, .979, .323},
+	  {.142, .857, .685, .246, .776, .456}
    };
 
-   for (int i = 0; i < 2; i++) {              /* loop for 2 chans worth */
-      for (int j = 0; j < 6; j++) {           /* loop for 6 delays per chan */
-         ReverbData *r = &m_rvbData[i][j];
-         r->Rand_info[0] = rnd_pcnt[i][j] * SR / 2.0;    /* nsamps jitter */
-         r->Rand_info[1] = cycle(SR, rnd_freq[i][j], 512);   /* SI  */
-         r->Rand_info[2] = 1.0;
-         r->Rand_info[4] = seed[i][j];     /* load seeds */
-      }
+   for (int i = 0; i < 2; i++) {			  /* loop for 2 chans worth */
+	  for (int j = 0; j < 6; j++) {		   /* loop for 6 delays per chan */
+		 ReverbData *r = &m_rvbData[i][j];
+		 r->Rand_info[0] = rnd_pcnt[i][j] * SR / 2.0;	/* nsamps jitter */
+		 r->Rand_info[1] = cycle(SR, rnd_freq[i][j], 512);   /* SI  */
+		 r->Rand_info[2] = 1.0;
+		 r->Rand_info[4] = seed[i][j];	 /* load seeds */
+	  }
    }
 }
 
@@ -641,7 +641,7 @@ void BASE::matrix_mix()
 			*outptr += *patch->inptrs[n] * patch->gains[n];
 		}
 	}
-}	        
+}			
 
 /* -------------------------------------------------------------- delpipe --- */
 /* delpipe is a delay with a variable interpolated tap, used by reverb. */
@@ -653,15 +653,15 @@ delpipe(double sig, int *counter, double nsdel, int delsize, double *delay)
 
    intap = *counter;
    if (intap >= delsize)
-       intap -= delsize;
-   delay[intap] = sig;                    /* put samp into delay */
+	   intap -= delsize;
+   delay[intap] = sig;					/* put samp into delay */
    del1 = (int)nsdel;
    tap1 = intap - del1;
    if (tap1 < 0)
-       tap1 += delsize;
+	   tap1 += delsize;
    tap2 = tap1 - 1;
    if (tap2 < 0)
-       tap2 += delsize;
+	   tap2 += delsize;
    
    *counter = ++intap;			// increment and store
   
@@ -682,10 +682,10 @@ Allpass(double sig, int *counter, double *data)
    length = nsdel + 1;
    intap = *counter;
    if (intap >= length)
-       intap -= length;
+	   intap -= length;
    outtap = intap - nsdel;
    if (outtap < 0)
-      outtap += length;
+	  outtap += length;
 
    /* Input = sig + gain * (sig - delayed out)  */
 
@@ -711,35 +711,35 @@ void BASE::RVB(double *input, double *output, long counter)
    register int i, j;
    double sig, delsig;
 
-   for (i = 0; i < 2; ++i) {                /* loop for 2 output chans */
-      output[i] = 0.0;
-      for (j = 0; j < 6; ++j) {             /* loop for 6 delays per chan */
+   for (i = 0; i < 2; ++i) {				/* loop for 2 output chans */
+	  output[i] = 0.0;
+	  for (j = 0; j < 6; ++j) {			 /* loop for 6 delays per chan */
 		 ReverbData *rvb = &m_rvbData[i][j];
 	 	 ReverbData *rvb2 = rvb;
 	 
-         sig = input[i] + rvb->delin;      /* combine input w/ delay return */
+		 sig = input[i] + rvb->delin;	  /* combine input w/ delay return */
 
-         /* get new delay length (random) then 
-            put samp into delay & get new delayed samp out
-         */
-         double delay = Nsdelay[i][j] + randi(&rvb->Rand_info[0]);
-         delsig = delpipe(sig, &rvb->deltap, delay, rvbdelsize, &rvb->Rvb_del[0]);
+		 /* get new delay length (random) then 
+			put samp into delay & get new delayed samp out
+		 */
+		 double delay = Nsdelay[i][j] + randi(&rvb->Rand_info[0]);
+		 delsig = delpipe(sig, &rvb->deltap, delay, rvbdelsize, &rvb->Rvb_del[0]);
 
 #ifdef USE_BUGGY_CODE
-         if (i == 1 && j > 0)
-	     rvb2 = &m_rvbData[0][j];	// remap "incorrectly"
+		 if (i == 1 && j > 0)
+		 rvb2 = &m_rvbData[0][j];	// remap "incorrectly"
 #endif
-         /* filter with air simulation filters, set gains */
-         rvb->delout = tone(delsig, &rvb2->Rvb_air[0]);
+		 /* filter with air simulation filters, set gains */
+		 rvb->delout = tone(delsig, &rvb2->Rvb_air[0]);
 
-         /* sum outputs of all delays for 2 channels */
-         output[i] += rvb->delout;
-      }
-      /* run outputs through Allpass filter */
+		 /* sum outputs of all delays for 2 channels */
+		 output[i] += rvb->delout;
+	  }
+	  /* run outputs through Allpass filter */
 	  double sigout = Allpass(output[i], &allpassTap[i], Allpass_del[i]);
 #ifdef USE_HI_PASS
 	  output[i] = 0.51 * sigout - 0.49 * m_rvbPast[i];	// Hi pass FIR filter
-      m_rvbPast[i] = sigout;
+	  m_rvbPast[i] = sigout;
 #else
 	  output[i] = sigout;
 #endif
@@ -761,10 +761,10 @@ void BASE::RVB(double *input, double *output, long counter)
    2nd generation reflections. 13 vectors total:  1 source, 4 1st gen., 8
    2nd gen. These are split into stereo pairs by binaural.
 */
-int BASE::roomtrig(double A,                 /* 'rho' or 'x' */
-                    double B,                 /* 'theta' or 'y' */
-                    double H,
-                    int    cart)
+int BASE::roomtrig(double A,				 /* 'rho' or 'x' */
+					double B,				 /* 'theta' or 'y' */
+					double H,
+					int	cart)
 {
    register int i;
    double x[13], y[13], r[13], t[13], d[4], Ra[2], Ta[2];
@@ -773,33 +773,33 @@ int BASE::roomtrig(double A,                 /* 'rho' or 'x' */
 
    /* calc. X & Y if entered in polar form only */
 
-   if (!cart) {                 /* polar coordinates */
-      R = A;
-      T = B;	/* already in radians */
-      X = A * sin(T);
-      Y = A * cos(T);
+   if (!cart) {				 /* polar coordinates */
+	  R = A;
+	  T = B;	/* already in radians */
+	  X = A * sin(T);
+	  Y = A * cos(T);
    }
    else {
-      R = hypot(A, B);
-      T = atan(A / B);
-      if (B < 0.0)
-         T += M_PI;
-      X = A;
-      Y = B;
+	  R = hypot(A, B);
+	  T = atan(A / B);
+	  if (B < 0.0)
+		 T += M_PI;
+	  X = A;
+	  Y = B;
    }
 
    /* Check to see that source loc. is inside room bounds */
 
    if (X < Dimensions[3] || X > Dimensions[1] || Y > Dimensions[0] ||
-       Y < Dimensions[2]) {
-      rterror(name(), "Source location is outside room bounds!!");
-      return (1);
+	   Y < Dimensions[2]) {
+	  rterror(name(), "Source location is outside room bounds!!");
+	  return (1);
    }
 
    /* multiply global dimension array by 2 to save calc. time */
 
    for (i = 0; i < 4; ++i)
-      d[i] = Dimensions[i] * 2.0;
+	  d[i] = Dimensions[i] * 2.0;
 
    /* image calculations */
 
@@ -885,39 +885,39 @@ int BASE::roomtrig(double A,                 /* 'rho' or 'x' */
 
    /* calculate stereo vector pairs for each of these */
    for (i = 0; i < 13; ++i) {
-      binaural(r[i], t[i], x[i], y[i], H, Ra, Ta);
+	  binaural(r[i], t[i], x[i], y[i], H, Ra, Ta);
 	  register Vector *lvec = &m_vectors[0][i];
 	  register Vector *rvec = &m_vectors[1][i];
-      lvec->Rho = Ra[0];
-      rvec->Rho = Ra[1];
-      lvec->Theta = Ta[0];
-      rvec->Theta = Ta[1];
+	  lvec->Rho = Ra[0];
+	  rvec->Rho = Ra[1];
+	  lvec->Theta = Ta[0];
+	  rvec->Theta = Ta[1];
    }
 
    /* Check to see that source distance is not "zero" */
 
    if (m_vectors[0][0].Rho < 0.001 || m_vectors[1][0].Rho < 0.001) {
-      rterror(name(), "Zero source distance not allowed!");
-      return (1);
+	  rterror(name(), "Zero source distance not allowed!");
+	  return (1);
    }
 
    /* print out data for analysis */
 #ifdef debug
-   printf("Source angles: %.2f    %.2f\n", m_vectors[0][0].Theta / z, m_vectors[1][0].Theta / z);
+   printf("Source angles: %.2f	%.2f\n", m_vectors[0][0].Theta / z, m_vectors[1][0].Theta / z);
    printf("All others\n");
    for (i = 1; i < 13; i++)
-      printf("%.2f     %.2f\n", m_vectors[0][i].Theta / z, m_vectors[1][i].Theta / z);
+	  printf("%.2f	 %.2f\n", m_vectors[0][i].Theta / z, m_vectors[1][i].Theta / z);
    printf("Direct delays:\n");
-   printf("%d: %.2f ms.       %.2f ms.\n", i, m_vectors[0][0].Rho / 1.08, m_vectors[1][0].Rho / 1.08);
+   printf("%d: %.2f ms.	   %.2f ms.\n", i, m_vectors[0][0].Rho / 1.08, m_vectors[1][0].Rho / 1.08);
    printf("Room delays:\n");
    for (i = 1; i < 13; i++)
-      printf("%.2f ms.       %.2f ms.\n ", m_vectors[0][i].Rho / 1.08, m_vectors[1][i].Rho / 1.08);
+	  printf("%.2f ms.	   %.2f ms.\n ", m_vectors[0][i].Rho / 1.08, m_vectors[1][i].Rho / 1.08);
    printf("\n");
    printf("Direct dists:\n");
-   printf("%d: %.2f ft.       %.2f ft.\n", i, m_vectors[0][0].Rho, m_vectors[1][0].Rho);
+   printf("%d: %.2f ft.	   %.2f ft.\n", i, m_vectors[0][0].Rho, m_vectors[1][0].Rho);
    printf("Room dists:\n");
    for (i = 1; i < 13; i++)
-      printf("%.2f ft.       %.2f ft.\n ", m_vectors[0][i].Rho, m_vectors[1][i].Rho);
+	  printf("%.2f ft.	   %.2f ft.\n ", m_vectors[0][i].Rho, m_vectors[1][i].Rho);
    printf("\n");
 #endif
 
@@ -973,7 +973,7 @@ void BASE::rvb_reset(double *m_tapDelay)
 */
 void BASE::setair(double rho, int flag, double *coeffs)
 {
-   int    gpoint;
+   int	gpoint;
    float  fpoint, frac;
    double G1, G2;
 
@@ -994,7 +994,7 @@ void BASE::setair(double rho, int flag, double *coeffs)
    /* reset if flag = 1 */
 
    if (flag)
-      coeffs[2] = 0.0;
+	  coeffs[2] = 0.0;
 }
 
 
@@ -1005,8 +1005,8 @@ void BASE::setair(double rho, int flag, double *coeffs)
 void BASE::airfil_set(int flag)
 {
    for (int i = 0; i < 2; ++i)
-      for (int j = 0; j < 13; ++j)
-         setair(m_vectors[i][j].Rho, flag, m_vectors[i][j].Airdata);
+	  for (int j = 0; j < 13; ++j)
+		 setair(m_vectors[i][j].Rho, flag, m_vectors[i][j].Airdata);
 }
 
 /* -------------------------------------------------------------- put_tap --- */
@@ -1016,12 +1016,12 @@ void BASE::put_tap(int intap, float *Sig, int len)
 {
 	register double *tapdel = m_tapDelay;
 	int tap = intap;
-    while (tap >= m_tapsize)
-        tap -= m_tapsize;
+	while (tap >= m_tapsize)
+		tap -= m_tapsize;
 	for (int i = 0; i < len; ++i, tap++) {
-	    if (tap >= m_tapsize)
-		    tap = 0;
-    	tapdel[tap] = Sig[i];
+		if (tap >= m_tapsize)
+			tap = 0;
+		tapdel[tap] = Sig[i];
 	}
 }
 
@@ -1034,9 +1034,9 @@ void BASE::mike_set()
    double OmniFactor = 1.0 - MikePatternFactor;
 
    for (int i = 0; i < 2; ++i)
-      for (int j = 0; j < 13; ++j)
-         m_vectors[i][j].MikeAmp = 
-		     OmniFactor + (MikePatternFactor * cos(m_vectors[i][j].Theta - MikeAngle));
+	  for (int j = 0; j < 13; ++j)
+		 m_vectors[i][j].MikeAmp = 
+			 OmniFactor + (MikePatternFactor * cos(m_vectors[i][j].Theta - MikeAngle));
 }
 
 /* ----------------------------------------------------------- earfil_set --- */
@@ -1047,9 +1047,9 @@ void
 BASE::earfil_set(int flag)
 {
    for (int i = 0; i < 2; ++i)
-      for (int j = 0; j < 13; ++j)
-         setfir(m_vectors[i][j].Theta,
-		        g_Nterms[j],
+	  for (int j = 0; j < 13; ++j)
+		 setfir(m_vectors[i][j].Theta,
+				g_Nterms[j],
 				flag,
 				m_vectors[i][j].Fircoeffs,
 				m_vectors[i][j].Firtaps);
@@ -1061,32 +1061,33 @@ BASE::earfil_set(int flag)
    lines in move.  It compensates for the group phase delay in ear, and
    determines the max # of samps delay for loop purposes, later in move.
 */
+
+extern int g_Group_delay[13];		/* from firdata.h */
+
 long
 BASE::tap_set(int fir_flag)
 {
    long int maxloc = 0;
    double   delay;
 
-   extern int g_Group_delay[13];        /* from firdata.h */
-
 #ifdef debug
    printf("outlocs:\n");
 #endif
    for (int i = 0; i < 2; ++i) {
-      for (int j = 0; j < 13; ++j) {
-         delay = m_vectors[i][j].Rho / MACH1;                /* delay time */
-         if (fir_flag)
-            m_vectors[i][j].outloc = (long)(delay * SR - g_Group_delay[j] + 0.5);
-         else
-            m_vectors[i][j].outloc = (long)(delay * SR + 0.5);
-         if (m_vectors[i][j].outloc > (float)maxloc)
-            maxloc = (int)(m_vectors[i][j].outloc + 0.5);   /* max # of samps delay */
+	  for (int j = 0; j < 13; ++j) {
+		 delay = m_vectors[i][j].Rho / MACH1;				/* delay time */
+		 if (fir_flag)
+			m_vectors[i][j].outloc = (long)(delay * SR - g_Group_delay[j] + 0.5);
+		 else
+			m_vectors[i][j].outloc = (long)(delay * SR + 0.5);
+		 if (m_vectors[i][j].outloc > (float)maxloc)
+			maxloc = (int)(m_vectors[i][j].outloc + 0.5);   /* max # of samps delay */
 #ifdef debug
-         printf("%ld ", m_vectors[i][j].outloc);
+		 printf("%ld ", m_vectors[i][j].outloc);
 #endif
-      }
+	  }
 #ifdef debug
-      printf("\n");
+	  printf("\n");
 #endif
 
    }
@@ -1105,23 +1106,21 @@ BASE::get_primes(int x, int p[])
 {
    int val = 5, flag, i, index = 2;
 
-   if (!primes_gotten)
-   {
-	/* first 2 vals initialized */
-	p[0] = 2;
-	p[1] = 3;
+   if (++primes_gotten == 1) {
+		/* first 2 vals initialized */
+		p[0] = 2;
+		p[1] = 3;
 
-	while (index < x) {
-	   flag = 1;
-	   for (i = 1; flag && val / p[i] >= p[i]; ++i)
-              if (val % p[i] == 0)
-        	 flag = 0;
-	   if (flag) {
-              p[index] = val;
-              ++index;
-	   }
-	   val += 2;
+		while (index < x) {
+		   flag = 1;
+		   for (i = 1; flag && val / p[i] >= p[i]; ++i)
+				  if (val % p[i] == 0)
+				 flag = 0;
+		   if (flag) {
+				  p[index] = val;
+				  ++index;
+		   }
+		   val += 2;
+		}
 	}
-	primes_gotten = 1;
-    }
 }

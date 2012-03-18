@@ -25,7 +25,7 @@ extern "C" {
 #endif
 
 
-extern int g_Nterms[13];                 /* defined in common.C */
+extern const int g_Nterms[13];                 /* defined in common.C */
 
 /* ---------------------------------------------------------------- PLACE --- */
 PLACE::PLACE()

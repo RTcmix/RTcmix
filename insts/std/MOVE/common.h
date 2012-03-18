@@ -44,6 +44,7 @@ extern void binaural(double, double, double, double, double,
 extern void fir(double *, long, int, double *, double *, int);
 extern void setfir(double, int, int, double *, double *);
 extern void scale(double *, int, double);
+extern void btone(double *, int, double data[3]);
 extern void air(double *, int, double[3]);
 extern void wall(double *, int, double[3]);
 extern void check_denormals(double *, int);
@@ -52,6 +53,10 @@ extern void addBuf(double *to, double *from, int len);
 extern void copyScaleBuf(double *to, double *from, int len, double gain);
 extern void addScaleBuf(double *to, double *from, int len, double gain);
 extern double wrap(double);
+
+// Versions which write to floating point output buffers
+extern void addScaleBufToOut(float *to, double *from, int len, int toChannels, double gain);
+extern void copyBufToOut(float *to, double *from, int len, int toChannels);
 
 // global constants
 
