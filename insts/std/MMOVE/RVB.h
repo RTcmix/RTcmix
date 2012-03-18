@@ -56,7 +56,7 @@ private:
 	static void get_primes(int x, int p[]);
 	// static data
 	static int	primes[NPRIMES + 2];
-	static int	primes_gotten;
+	static AtomicInt primes_gotten;
 };
 
 #endif	// _RTCMIX_RVB_H_

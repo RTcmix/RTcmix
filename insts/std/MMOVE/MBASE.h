@@ -5,7 +5,6 @@
 
 #define MAXTERMS  33
 #define NCOEFFS   512
-#define BUFLEN	  256
 #define MAX_INPUTS  4
 #define AVERAGE_CHANS   -1           /* average input chans flag value */
 
@@ -58,7 +57,7 @@ protected:
    struct Vector {
    	double Rho;		// distance relative to listener
 	double Theta;		// angle relative to listener
-	double Sig[BUFLEN];	// current buffer for this path
+	double *Sig;	// current buffer for this path
 	double MikeAmp;		// amp factor for microphone mode
 	long outloc;		// index into tap delay
 	double Airdata[3];	// history, coeffs for 1st order filter

@@ -40,11 +40,10 @@ extern "C" {
    #include "cmixfuns.h"
 }
 
-extern int g_Nterms[13];                 /* defined in ../MOVE/common.C */
+extern const int g_Nterms[13];                 /* defined in ../MOVE/common.C */
 
 // These are declared in RVB.C
 
-extern double *globalEarlyResponse[2];		// Summed here, added to output.
 extern double *globalReverbInput[2];		// Summed here, fed into RVB.
 #ifdef MULTI_THREAD
 extern pthread_mutex_t globalReverbLock;
@@ -54,13 +53,14 @@ MBASE::MBASE() : m_tapsize(0)
 {
     in = NULL;
     m_tapDelay = NULL;
-	m_buffersize = BUFLEN;
+	m_buffersize = RTBUFSAMPS;
 	m_paths = 13;
 	m_cartflag = 0;
 
     for (int i = 0; i < 2; i++) {
        int j;
        for (j = 0; j < m_paths; j++) {
+		  m_vectors[i][j].Sig = NULL;
           m_vectors[i][j].Firtaps = NULL;
           m_vectors[i][j].Fircoeffs = NULL;
        }
@@ -75,6 +75,7 @@ MBASE::~MBASE()
    int i, j;
    for (i = 0; i < 2; i++) {
       for (j = 0; j < 13; j++) {
+		 delete [] m_vectors[i][j].Sig;
          delete [] m_vectors[i][j].Firtaps;
          delete [] m_vectors[i][j].Fircoeffs;
       }
@@ -157,19 +158,36 @@ int MBASE::init(double p[], int n_args)
    return nSamps();
 }
 
-static inline void PrintInput(float *sig, int len)
+static inline void PrintInput(float *sig, int len, double threshold = 0.0)
 {
     for (int i = 0; i < len; i++)
-	    if (sig[i] != 0.0)
+	    if (sig[i] > threshold || sig[i] < -threshold)
 		    printf("sig[%d] = %f\n", i, sig[i]);
+	printf("\n");
+}
+
+static inline void PrintOutput(float *sig, int len, int chans, double threshold = 0.0)
+{
+	const int samps = len * chans;
+	bool doPrint = false;
+    for (int i = 0; i < samps; i += chans) {
+	    if (sig[i] > threshold || sig[i] < -threshold)
+			doPrint = true;
+		if (doPrint)
+		    printf("sig[%d] = %f\n", i/chans, sig[i]);
+	}
 	printf("\n");
 }
 
 static inline void PrintSig(double *sig, int len, double threshold = 0.0)
 {
-    for (int i = 0; i < len; i++)
+	bool doPrint = false;
+    for (int i = 0; i < len; i++) {
 	    if (sig[i] > threshold || sig[i] < -threshold)
+			doPrint = true;
+		if (doPrint)
 		    printf("sig[%d] = %f\n", i, sig[i]);
+	}
 	printf("\n");
 }
 
@@ -183,13 +201,12 @@ int MBASE::getInput(int currentSample, int frames)
     rtgetin(in, this, rsamps);
 	
     int n = 0;
-    int bufsamps = BUFLEN;	// adjust
     int lCurSamp;	// local copy for inner loops
     float insig;
 #ifdef LOOP_DEBUG
     int nsig = 0, nzeros = 0;
 #endif
-
+	float scale = 1.0/inChans;
     // apply curve to input signal and mix down to mono if necessary
 
     for (int s = 0, lCurSamp = currentSample; s < rsamps; s += inChans, lCurSamp++)
@@ -210,7 +227,7 @@ int MBASE::getInput(int currentSample, int frames)
 			   insig = 0.0;
 			   for (int c = 0; c < inChans; c++)
     			  insig += in[s + c];
-			   insig /= (float)inChans;
+			   insig *= scale;
 			}
 			else
 			   insig = in[s + m_inchan];
@@ -236,6 +253,10 @@ int MBASE::configure()
 	
 	in = new float [RTBUFSAMPS * inputChannels()];
     status = alloc_delays();			/* allocates memory for delays */
+	
+	for (int i = 0; i < 2; i++)
+		for (int j = 0; j < 13; j++)
+			m_vectors[i][j].Sig = new double[getBufferSize()];
 
 	rvb_reset(m_tapDelay);   			// resets tap delay
 
@@ -249,11 +270,10 @@ int MBASE::configure()
 /* ------------------------------------------------------------------ run --- */
 int MBASE::run()
 {
-	int    i = 0;
-
 	const int totalSamps = insamps + tapcount;
 	int thisFrame = currentFrame();
-
+	const int outChans = outputChannels();
+	
 	DBG1(printf("%s::run(): totalSamps = %d\n", name(), totalSamps));
 
 	// this will return chunksamps' worth of input, even if we have
@@ -268,20 +288,24 @@ int MBASE::run()
 	
 	// loop for required number of output samples
 	const int frameCount = framesToRun();
-	while (i < frameCount) {
+	
+	memset(this->outbuf, 0, frameCount * outChans * sizeof(BUFTYPE));
+	
+	int frame = 0;
+	while (frame < frameCount) {
 		// limit buffer size to end of current pull (chunksamps)
-		if (frameCount - i < bufsamps)
-            bufsamps = max(0, frameCount - i);
+		if (frameCount - frame < bufsamps)
+            bufsamps = max(0, frameCount - frame);
 
 		thisFrame = currentFrame();	// store this locally for efficiency
 
-		DBG1(printf("top of main loop: i = %d  cursamp = %d  bufsamps = %d\n",
-                   i, thisFrame, bufsamps));
+		DBG1(printf("top of main loop: frame = %d  cursamp = %d  bufsamps = %d\n",
+                   frame, thisFrame, bufsamps));
 		DBG(printf("input signal:\n"));
-		DBG(PrintInput(&in[i], bufsamps));
+		DBG(PrintInput(&in[frame], bufsamps));
 		
 		// add signal to delay
-		put_tap(thisFrame, &in[i], bufsamps);
+		put_tap(thisFrame, &in[frame], bufsamps);
 
 		// if processing input signal or flushing delay lines ... 
 
@@ -293,13 +317,16 @@ int MBASE::run()
 			if ((tapcount = updatePosition(thisFrame)) < 0)
 				exit(-1);
 
-			DBG1(printf("  inner loop: bufsamps = %d\n", bufsamps));
+			DBG1(printf("  vector loop: bufsamps = %d\n", bufsamps));
 			for (int ch = 0; ch < 2; ch++) {
 				for (int path = 0; path < m_paths; path++) {
 					Vector *vec = &m_vectors[ch][path];
 					/* get delayed samps */
 					get_tap(thisFrame, ch, path, bufsamps);
-					DBG(PrintSig(vec->Sig, bufsamps));   
+#if 0				
+                    DBG(printf("signal [%d][%d] before filters:\n", ch, path));
+					DBG(PrintSig(vec->Sig, bufsamps));
+#endif
 					/* air absorpt. filters */
          			air(vec->Sig, bufsamps, vec->Airdata);			
 					/* wall absorpt. filters */
@@ -311,7 +338,8 @@ int MBASE::run()
 					    	vec->Fircoeffs, vec->Firtaps, bufsamps);
 					}
                     DBG(printf("signal [%d][%d] before rvb:\n", ch, path));
-                    DBG(PrintSig(vec->Sig, bufsamps, SIG_THRESH));
+                    DBG(PrintSig(vec->Sig, bufsamps));
+//                    DBG(PrintSig(vec->Sig, bufsamps, SIG_THRESH));
 		 		}
 			}
 			DBG(printf("summing vectors\n"));
@@ -319,69 +347,75 @@ int MBASE::run()
 			pthread_mutex_lock(&globalReverbLock);
 #endif
 			Vector *vec;
+			register float *outptr = &this->outbuf[frame*outChans];
+			
 			// sum unscaled reflected paths as global input for RVB.
 			for (int path = 0; path < m_paths; path++) {
 				vec = &m_vectors[0][path];
-				addBuf(&globalReverbInput[0][outputOffset+i], vec->Sig, bufsamps);
+				addBuf(&globalReverbInput[0][outputOffset+frame], vec->Sig, bufsamps);
 				vec = &m_vectors[1][path];
-				addBuf(&globalReverbInput[1][outputOffset+i], vec->Sig, bufsamps);
+				addBuf(&globalReverbInput[1][outputOffset+frame], vec->Sig, bufsamps);
 			}
 
 			if (!m_binaural) {
 				// now do cardioid mike effect 
-				// re-sum scaled reflected paths as early response
+				// add scaled reflected paths to output as early response
 				for (int path = 1; path < m_paths; path++) {
 					vec = &m_vectors[0][path];
-					addScaleBuf(&globalEarlyResponse[0][outputOffset+i], vec->Sig, bufsamps, vec->MikeAmp);
+					addScaleBufToOut(&outptr[0], vec->Sig, bufsamps, outChans, vec->MikeAmp);
 					vec = &m_vectors[1][path];
-					addScaleBuf(&globalEarlyResponse[1][outputOffset+i], vec->Sig, bufsamps, vec->MikeAmp);
-
+					addScaleBufToOut(&outptr[1], vec->Sig, bufsamps, outChans, vec->MikeAmp);
+#if 0
 					DBG(printf("early response L and R:\n"));
-					DBG(PrintSig(&globalEarlyResponse[0][outputOffset+i], bufsamps, SIG_THRESH));
-					DBG(PrintSig(&globalEarlyResponse[1][outputOffset+i], bufsamps, SIG_THRESH));
+					DBG(PrintOutput(&outptr[0], bufsamps, outChans, SIG_THRESH));
+					DBG(PrintOutput(&outptr[1], bufsamps, outChans, SIG_THRESH));
+#endif
 				}           
 			}
 			else {
-           		// copy scaled reflected paths as early response
+           		// copy scaled, filtered reflected paths (reverb input) as the early reponse
+				// to the output
 				for (int ch = 0; ch < 2; ++ch) {
-					copyBuf(&globalEarlyResponse[ch][outputOffset+i],
-						   &globalReverbInput[ch][outputOffset+i], 
+					copyBufToOut(&outptr[ch],
+						   &globalReverbInput[ch][outputOffset+frame],
+						   outChans,
 						   bufsamps);
 				}          
 			}
 			DBG(printf("reverb input left signal:\n"));
-			DBG(PrintSig(&globalReverbInput[0][outputOffset], bufsamps, SIG_THRESH));
+			DBG(PrintSig(&globalReverbInput[0][outputOffset], bufsamps));
 			DBG(printf("reverb input right signal:\n"));
-			DBG(PrintSig(&globalReverbInput[1][outputOffset], bufsamps, SIG_THRESH));
+			DBG(PrintSig(&globalReverbInput[1][outputOffset], bufsamps));
 #ifdef MULTI_THREAD
             pthread_mutex_unlock(&globalReverbLock);
 #endif
-			/* write the direct signal only into the output bus  */
-			register float *outptr = &this->outbuf[i*2];
+			/* add the direct signal into the output bus  */
 			for (int n = 0; n < bufsamps; n++) {
-				outptr[0] = m_vectors[0][0].Sig[n];
-				outptr[1] = m_vectors[1][0].Sig[n];
-				outptr += 2;
+				outptr[0] += m_vectors[0][0].Sig[n];
+				outptr[1] += m_vectors[1][0].Sig[n];
+				outptr += outChans;
 			}
-//			DBG(printf("FINAL MIX:\n"));
-//			DBG(PrintInput(&this->outbuf[i], bufsamps));
+			DBG(printf("FINAL MIX LEFT CHAN:\n"));
+			DBG(PrintOutput(&this->outbuf[frame*outChans], bufsamps, outChans));
 		}
 		else {
-			register float *outptr = &this->outbuf[i*2];
+#if 0   // WE ARE ZEROING THE OUTPUT BUFFER AT THE TOP
+			register float *outptr = &this->outbuf[frame*outChans];
 			for (int n = 0; n < bufsamps; n++) {
 				outptr[0] = 0;
 				outptr[1] = 0;
-				outptr += 2;
+				outptr += outChans;
 			}
+#endif
 		}
 		
 		increment(bufsamps);
-		i += bufsamps;
+		frame += bufsamps;
 		bufsamps = getBufferSize();		// update
-		DBG1(printf("\tinner loop done.  cursamp now %d\n", currentFrame()));
+		DBG1(printf("\tmain loop done.  cursamp now %d\n", currentFrame()));
 	}
 	DBG1(printf("%s::run done\n\n", name()));
-	return i;
+	return frame;
 }
 
 
@@ -803,7 +837,7 @@ MBASE::tap_set(int fir_flag)
    long int maxloc = 0;
    double   delay;
 
-   extern int g_Group_delay[13];        /* from firdata.h */
+   extern const int g_Group_delay[13];        /* from firdata.h */
 
 #ifdef debug
    printf("outlocs:\n");

@@ -50,7 +50,6 @@ extern "C" {
 // These globals are accessed by BASE.C to sum early response output and rvb
 // input for the RVB instrument.
 
-double *globalEarlyResponse[2];		// Summed by PLACE/MOVE, added to output.
 double *globalReverbInput[2];		// Summed by PLACE/MOVE, fed into RVB.
 
 #ifdef MULTI_THREAD
@@ -58,7 +57,7 @@ pthread_mutex_t globalReverbLock = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 int RVB::primes[NPRIMES + 2];
-int RVB::primes_gotten = 0;
+AtomicInt RVB::primes_gotten = 0;
 
 /* ------------------------------------------------------------ makeRVB --- */
 Instrument *makeRVB()
@@ -91,8 +90,6 @@ RVB::~RVB()
 		for (int i = 0; i < 2; i++) {
 			for (int j = 0; j < 6; j++)
 				delete [] m_rvbData[i][j].Rvb_del;
-			delete [] globalEarlyResponse[i];
-			globalEarlyResponse[i] = NULL;
 			delete [] globalReverbInput[i];
 			globalReverbInput[i] = NULL;
 		}
@@ -151,9 +148,6 @@ int RVB::configure()
 	// Allocate the global buffers used to store the early response.
 	
 	for (int n = 0; n < 2; ++n) {
-		if (globalEarlyResponse[n] == NULL)
-			globalEarlyResponse[n] = new double[RTBUFSAMPS];
-		memset(globalEarlyResponse[n], 0, sizeof(double) * RTBUFSAMPS);
 		if (globalReverbInput[n] == NULL)
 			globalReverbInput[n] = new double[RTBUFSAMPS];
 		memset(globalReverbInput[n], 0, sizeof(double) * RTBUFSAMPS);
@@ -168,13 +162,10 @@ int RVB::configure()
 int RVB::run()
 {
 	double rvbsig[2][8192];
-
-	// number of samples to process this time through
-
 	const int frames = framesToRun();
-    const int rsamps = frames * 2;
+	const int inChans = inputChannels();
 
-    rtgetin(in, this, rsamps);
+    rtgetin(in, this, frames * inChans);
 
 #ifdef MULTI_THREAD
 	pthread_mutex_lock(&globalReverbLock);
@@ -199,16 +190,15 @@ int RVB::run()
 		}
 		else
 			rvbsig[0][n] = rvbsig[1][n] = 0.0;
-		/* sum the direct signal, early response & reverbed sigs  */
-		*outptr++ = in[n*2] + globalEarlyResponse[0][n] + rvbsig[0][n];
-		*outptr++ = in[n*2+1] + globalEarlyResponse[1][n] + rvbsig[1][n];
+		/* sum the input signal (which includes early response) & reverbed sigs  */
+		*outptr++ = in[n*2] + rvbsig[0][n];
+		*outptr++ = in[n*2+1] + rvbsig[1][n];
 	}
 	increment(frames);
 	
 	// Zero out global buffers for next cycle.
 	for (int c = 0; c < 2; ++c) {
 		memset(globalReverbInput[c], 0, sizeof(double) * RTBUFSAMPS);
-		memset(globalEarlyResponse[c], 0, sizeof(double) * RTBUFSAMPS);
 	}
 #ifdef MULTI_THREAD
 	pthread_mutex_unlock(&globalReverbLock);
@@ -544,7 +534,7 @@ RVB::get_primes(int x, int p[])
 {
    int val = 5, index = 2;
 
-   if (!primes_gotten)
+   if (++primes_gotten == 1)
    {
 	/* first 2 vals initialized */
 	p[0] = 2;
@@ -561,6 +551,5 @@ RVB::get_primes(int x, int p[])
 	   }
 	   val += 2;
 	}
-	primes_gotten = 1;
     }
 }

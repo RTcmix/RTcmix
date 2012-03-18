@@ -62,7 +62,7 @@ MOVE::MOVE()
     R_old = -100000.0;
     T_old = 0.0;
     m_updateCount = 0;
-    m_updateSamps = BUFLEN;
+    m_updateSamps = RTBUFSAMPS;
     setup_trigfuns();
     rholoc = new double[ARRAYSIZE];
     thetaloc = new double[ARRAYSIZE];
@@ -76,6 +76,8 @@ MOVE::~MOVE()
     delete [] thetaloc;
     delete [] rholoc;
 }
+
+#define MINBUFFERSIZE 64
 
 int MOVE::localInit(double *p, int n_args)
 {
@@ -92,20 +94,21 @@ int MOVE::localInit(double *p, int n_args)
 	// treat mindiff as update rate in seconds
 	if (mindiff > 0.0) {
 		m_updateSamps = (int) (SR * mindiff + 0.5);
-		if (m_updateSamps <= BUFLEN)
-		{
+		if (m_updateSamps <= RTBUFSAMPS) {
+			if (m_updateSamps < MINBUFFERSIZE)
+				m_updateSamps = MINBUFFERSIZE;
 	        setBufferSize(m_updateSamps);
 #ifdef debug
 			printf("buffer size reset to %d samples\n", getBufferSize());
 #endif
 		}
-		// if update rate is larger than BUFLEN samples, set buffer size
+		// if update rate is larger than RTBUFSAMPS samples, set buffer size
 		// to be some integer fraction of the desired update count, then
 		// reset update count to be multiple of this.
 		else {
 		    int divisor = 2;
 			int newBufferLen;
-			while ((newBufferLen = m_updateSamps / divisor) > BUFLEN)
+			while ((newBufferLen = m_updateSamps / divisor) > RTBUFSAMPS)
 			    divisor++;
 			setBufferSize(newBufferLen);
 			m_updateSamps = newBufferLen * divisor;
