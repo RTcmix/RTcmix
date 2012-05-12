@@ -506,15 +506,15 @@ double m_irand(float p[], int n_args, double pp[])
 
 double m_trand(float p[], int n_args, double pp[])
 {
-	double raw = m_irand(p, n_args, pp);
-	int trunc = (int) raw;
-	if (trunc < 0)
-		trunc = 0;
-	else {
-		int max = (n_args > 0) ? (int) pp[n_args - 1] : 0;
-		if (trunc >= max)
-			trunc = max - 1;
-	}
+	if (n_args > 2 || n_args == 0)
+		die("trand", "Usage: trand([min,] max)\nDefault <min> is zero\n");
+
+	int trunc = m_irand(p, n_args, pp);
+
+	if (n_args == 2)	// this is to make the lower bound excluded
+		while (trunc == (int)p[0])
+			trunc = m_irand(p, n_args, pp);
+
 	return (double) trunc;
 }
 
