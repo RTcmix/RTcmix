@@ -511,7 +511,8 @@ double m_trand(float p[], int n_args, double pp[])
 
 	int trunc = m_irand(p, n_args, pp);
 
-	if (n_args == 2)	// this is to make the lower bound excluded
+	// this is to make the lower bound excluded for negative lower bound
+	if (n_args == 2 && p[0] != p[1])
 		while (trunc == (int)p[0])
 			trunc = m_irand(p, n_args, pp);
 
