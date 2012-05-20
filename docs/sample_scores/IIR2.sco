@@ -1,4 +1,4 @@
-/* NOISE - process white noise with an IIR filter bank
+/* IINOISE - process white noise with an IIR filter bank
 
    First, call setup to configure the filter bank:
 
@@ -10,7 +10,7 @@
    filter relative to the other filters in the bank.  There can be as many
    as 64 filters in the bank.
 
-   Then call NOISE:
+   Then call IINOISE:
 
       p0 = output start time
       p1 = duration
@@ -30,7 +30,7 @@ amp = 5000
 start = 0
 for (pc = 0; pc < 0.25; pc += 0.01) {
 	setup(8.00 + pc, 1.0, 1.0)
-	NOISE(start, dur=0.2, amp * env, random())
+	IINOISE(start, dur=0.2, amp * env, random())
 	start = start + 0.1
 }
 
