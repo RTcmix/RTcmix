@@ -51,6 +51,6 @@ makegen(1, 24, 1000, 0,0, 0.1,1, 0.2,0)
 start = 0
 for(pc = 0; pc < 0.25; pc = pc + 0.01) {
 	setup(8.00 + pc, 1.0, 1.0)
-	NOISE(start, 0.2, 5000, random())
+	IINOISE(start, 0.2, 5000, random())
 	start = start + 0.1
 	}

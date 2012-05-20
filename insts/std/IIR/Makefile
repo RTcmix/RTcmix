@@ -5,8 +5,8 @@ include ../package.conf
 NAME = IIR
 
 CURDIR = $(CMIXDIR)/insts/std/$(NAME)
-OBJS = INPUTSIG.o NOISE.o BUZZ.o PULSE.o cfuncs.o rtprofile.o
-HEADERS = INPUTSIG.h NOISE.h BUZZ.h PULSE.h
+OBJS = INPUTSIG.o IINOISE.o BUZZ.o PULSE.o cfuncs.o rtprofile.o
+HEADERS = INPUTSIG.h IINOISE.h BUZZ.h PULSE.h
 PROGS = lib$(NAME).so $(NAME)
 
 .PHONY: all standalone install dso_install standalone_install \
