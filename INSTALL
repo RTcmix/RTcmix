@@ -110,6 +110,36 @@ Linux
      you need to install flex and bison, as well as the ALSA header files,
      and probably also the X11 header files.
 
+   - On some distributions (e.g., Ubuntu), you may need to enable compilation
+     with the -fPIC flag. You'll know this if you see an error message during
+     make that includes a phrase like "recompile with -fPIC." To do this, 
+     after running configure, edit defs.conf and add -fPIC to the OPT line.
+     Then make clean and make. This will be fixed in a future version of RTcmix.
+
+   - If you configure --with-alsa and the output of the configure command
+     includes...
+
+        checking alsa/asoundlib.h usability... no
+        checking alsa/asoundlib.h presence... no
+        checking for alsa/asoundlib.h... no
+        configure: WARNING: ALSA asoundlib.h not present; using OSS instead of ALSA
+        checking for snd_pcm_open in -lasound... no
+        configure: WARNING: ALSA library not present; using OSS instead of ALSA
+        configure: creating ./config.status
+
+     then you need to install the ALSA development headers. For Ubuntu, the
+     incantation is: sudo apt-get install libasound2-dev.
+
+   - If you are set up to use ALSA, but you see this message when running
+     a score...
+
+        *** FATAL ERROR [rtsetparams]:  AudioDevice: This format conversion is currently not supported!
+
+     then it probably means you need to specify the "plughw" audio device.
+     Put this line in your ~/.rtcmixrc:
+
+        device = "plughw"
+
 
 Mac OS X
 --------
