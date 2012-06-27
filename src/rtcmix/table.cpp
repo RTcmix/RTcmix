@@ -1118,10 +1118,11 @@ _wave3_table(const Arg args[], const int nargs, double *array, const int len)
 	for (int j = nargs - 1; j > 0; j -= 3) {
 		assert(j > 0);
 		assert(j < nargs);
+
 		if ((double) args[j - 1] != 0.0) {
 			for (int i = 0; i < len; i++) {
 				double val;
-				if ((int)args[j - 2] == 0) val = 1.0; // BGG: harmonic 0 (DC)
+				if ((double)args[j - 2] == 0.0) val = 1.0; // BGG: harmonic 0 (DC)
 				else {
 					val = sin(TWOPI * ((double) i
 										/ ((double) len / (double) args[j - 2])
