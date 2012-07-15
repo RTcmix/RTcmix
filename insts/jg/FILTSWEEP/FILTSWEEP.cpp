@@ -206,7 +206,7 @@ int FILTSWEEP :: run()
 
       float insig;
       if (currentFrame() < insamps)
-         insig = in[i + inchan] * amp;
+         insig = in[i + inchan];
       else
          insig = 0.0;
 
@@ -219,6 +219,7 @@ int FILTSWEEP :: run()
             out[0] = balancer->tick(out[0], insig);
       }
 
+		out[0] *= amp;
       if (outputChannels() == 2) {
          out[1] = out[0] * (1.0 - pctleft);
          out[0] *= pctleft;
