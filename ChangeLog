@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2012-7-15  John Gibson <johgibso-at-indiana.edu>
+
+	* Make it so that the amp envelope for FILTSWEEP can be used to
+	  suppress the click that occurs at the beginning of a note when
+	  the balance feature is used.
+
 2011-12-19  John Gibson <johgibso-at-indiana.edu>
 
 	* pickrand and pickwrand now can take arrays of floats as
