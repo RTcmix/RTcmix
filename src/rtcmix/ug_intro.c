@@ -113,6 +113,7 @@ ug_intro()
 	UG_INTRO("spray_init",m_spray_init);
 	UG_INTRO("pchmidi",m_pchmidi);
 	UG_INTRO("cpsmidi",m_cpsmidi);
+	UG_INTRO("octmidi",m_octmidi);
 	UG_INTRO("midipch", m_midipch);
 	UG_INTRO("setline_size",m_setline_size);
 	UG_INTRO("setline",m_setline);
@@ -121,6 +122,7 @@ ug_intro()
 	UG_INTRO("load",m_load); /* allows loading of dynamic libraries */
 	UG_INTRO_DOUBLE_RETURN("pickrand", m_pickrand);
 	UG_INTRO_DOUBLE_RETURN("pickwrand", m_pickwrand);
+	UG_INTRO_DOUBLE_RETURN("get_time", get_time);
 	UG_INTRO("irand", m_irand);
 	UG_INTRO("trand", m_trand);
 //	UG_INTRO("grand", m_grand);

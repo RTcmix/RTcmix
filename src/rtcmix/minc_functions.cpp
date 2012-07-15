@@ -27,6 +27,9 @@ double m_pchmidi(float p[])
 double m_cpsmidi(float p[])
 { return(cpspch(pchmidi(((int)p[0])))); }
 
+double m_octmidi(float p[])
+{ return(octmidi(p[0])); }
+
 double m_midipch(float p[])
 { /*printf("%f\n",midipch(p[0]));*/ return(midipch(p[0])); }
 
@@ -512,9 +515,11 @@ double m_trand(float p[], int n_args, double pp[])
 	int trunc = m_irand(p, n_args, pp);
 
 	// this is to make the lower bound excluded for negative lower bound
-	if (n_args == 2 && (int)p[0] != (int)p[1])
-		while (trunc == (int)p[0])
-			trunc = m_irand(p, n_args, pp);
+	if (p[0] < 0 || p[1] < 0) {
+		if (n_args == 2 && (int)p[0] != (int)p[1])
+			while (trunc == (int)p[0])
+				trunc = m_irand(p, n_args, pp);
+	}
 
 	return (double) trunc;
 }
@@ -527,6 +532,7 @@ double m_trand(float p[], int n_args, double pp[])
 extern "C" {
 	double m_pickrand(const Arg args[], const int nargs);
 	double m_pickwrand(const Arg args[], const int nargs);
+	double get_time(); // returns number of seconds that have elapsed
 }
 
 // pickrand returns random choice from its arguments
@@ -610,3 +616,7 @@ double m_pickwrand(const Arg args[], const int nargs)
 	return xargs[nxargs - 1];
 }
 
+double get_time() {
+	double tval = RTcmix::getElapsedFrames()/RTcmix::sr();
+	return tval;
+}
