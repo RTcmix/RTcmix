@@ -191,7 +191,7 @@ double
 matrix(float p[], int n_args)
 {
    int   i, j;
-   float amp, val;
+   float amp;
 
    amp = p[0];
 
