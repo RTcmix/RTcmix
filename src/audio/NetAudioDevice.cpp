@@ -169,7 +169,6 @@ NetAudioDevice::doOpen(int mode)
 {
 	struct hostent *hp;
 	int len = sizeof(_impl->sss);
-	int flags;
 
 	PRINT0("NetAudioDevice::doOpen()\n");
 
@@ -213,7 +212,6 @@ NetAudioDevice::doOpen(int mode)
 int
 NetAudioDevice::doClose()
 {
-	int status;
 	// In record, the data device descriptor is not
 	// the socket descriptor.
 	PRINT0("NetAudioDevice::doClose()\n");
@@ -228,7 +226,6 @@ NetAudioDevice::doClose()
 int
 NetAudioDevice::doStart()
 {
-	int status = 0;
 	if (isPlaying()) {
 		NetAudioFormat netformat;
 		netformat.cookie = kAudioFmtCookie;

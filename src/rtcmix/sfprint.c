@@ -14,7 +14,6 @@ double
 sfprint(float p[], int n_args)
 {
 	int fno;
-	char date[26];
 	fno = p[0];
 	fprintf(stderr,"Header info for file number %d\n",fno);
 	printsf(&sfdesc[fno]);

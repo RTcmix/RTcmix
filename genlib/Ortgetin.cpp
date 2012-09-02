@@ -8,8 +8,6 @@
 
 Ortgetin::Ortgetin(Instrument *ins)
 {
-	int i;
-
 	theInst = ins;
 	chns = theInst->inputChannels();
 	rsamps = RTcmix::bufsamps() * chns;
