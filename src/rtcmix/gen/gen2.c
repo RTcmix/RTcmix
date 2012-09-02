@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ugens.h>
-#include <globals.h>
+#include "../globals.h"
 
 /* gen2 lets the user fill a function table with numbers specified in the
    score or in a text file. There are two "API's" for this: the original

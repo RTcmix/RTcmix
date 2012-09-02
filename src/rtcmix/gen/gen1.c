@@ -3,9 +3,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <ugens.h>
-#include <prototypes.h>
+#include "prototypes.h"
 #include <sndlibsupport.h>
-#include <byte_routines.h>
+#include "byte_routines.h"
 
 #define BUFSIZE   1024 * 64
 

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <ugens.h>
-#include <globals.h>
+#include "globals.h"
 
 double
 gen3(struct gen *gen)
