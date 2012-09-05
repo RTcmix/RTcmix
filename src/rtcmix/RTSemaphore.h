@@ -5,6 +5,7 @@
 
 #ifdef MACOSX
 #include <Availability.h>
+#endif
 
 #if defined(MACOSX) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 1060
 
@@ -36,8 +37,7 @@ private:
 	sem_t	mSema;
 };
 
-#endif	// OSX min version
-#endif	// MACOSX
+#endif	// MACOSX && 1060
 
 #endif	// RT_SEMAPHORE_H
 
