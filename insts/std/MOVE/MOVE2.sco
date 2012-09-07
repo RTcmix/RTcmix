@@ -19,8 +19,7 @@
 *
 */
 
-set_option("full_duplex_on")
-rtsetparams(44100, 2, 1024)
+rtsetparams(44100, 2, 4096)
 load("MOVE")
 rtinput("../../../snd/input.wav");
 

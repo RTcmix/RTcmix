@@ -74,9 +74,8 @@ BASE::~BASE()
 
 int BASE::init(double p[], int n_args)
 {
-	int	flag, UseMikes, cartflag = 0;
+	int	UseMikes;
 	float  outskip, inskip, abs_factor, rvb_time;
-	double R, T, dist;
 
 	outskip = p[0];
 	inskip = p[1];
