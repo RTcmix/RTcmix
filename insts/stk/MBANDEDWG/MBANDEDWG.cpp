@@ -76,7 +76,7 @@ int MBANDEDWG :: init(double p[], int n_args)
 		if (n_args < 13) {
 			velarray[0] = velarray[1] = 1.0;
 			advise("MBANDEDWG", "Setting velocity curve to all 1's.");
-			theVeloc = new Ooscili(SR, 1.0/p[1], velarray);
+			theVeloc = new Ooscili(SR, 1.0/p[1], velarray, 2);
 		}
 	}
 
