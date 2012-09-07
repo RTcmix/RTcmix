@@ -3,7 +3,7 @@
 class START : public Instrument {
 	float spread, aamp, amptabs[2];
 	double *amptable;
-	strumq *strumq1;
+	StrumQueue *strumq1;
 	int deleteflag, skip, branch;
 
 public:

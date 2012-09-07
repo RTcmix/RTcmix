@@ -7,8 +7,8 @@ class BEND1 : public Instrument {
 	double *glissf, *amptable;
 	float tags[2], amptabs[2];
 	float spread,amp,aamp;
-	strumq *strumq1;
-	delayq *dq;
+	StrumQueue *strumq1;
+	DelayQueue *dq;
 	float dgain,fbgain;
 	float cleanlevel,distlevel;
 	float d;
@@ -16,6 +16,7 @@ class BEND1 : public Instrument {
 
 public:
 	BEND1();
+	virtual ~BEND1();
 	virtual int init(double*, int);
 	virtual int run();
 };

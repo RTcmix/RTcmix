@@ -4,7 +4,7 @@
 #include <rt.h>
 #include <rtdefs.h>
 
-extern strumq *curstrumq[6];
+extern StrumQueue *curstrumq[6];
 
 extern "C" {
 	void sset(float, float, float, float, strumq*);
@@ -14,6 +14,11 @@ extern "C" {
 FRET::FRET() : Instrument()
 {
 	branch = 0;
+}
+
+FRET::~FRET()
+{
+	strumq1->unref();
 }
 
 int FRET::init(double p[], int n_args)
@@ -27,6 +32,7 @@ int FRET::init(double p[], int n_args)
 		return DONT_SCHEDULE;
 
 	strumq1 = curstrumq[0];
+	strumq1->ref();
 	freq = cpspch(p[2]);
 	tf0 = p[3];
 	tfN = p[4];
@@ -62,7 +68,6 @@ int FRET::run()
 				aamp = tablei(currentFrame(), amptable, amptabs);
 			branch = skip;
 		}
-
 		float out[2];
 		out[0] = strum(0.,strumq1) * aamp;
 

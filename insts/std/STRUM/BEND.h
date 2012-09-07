@@ -6,11 +6,12 @@ class BEND : public Instrument {
 	float tags[2], amptabs[2];
 	double *amptable, *glissf;
 	float spread,aamp;
-	strumq *strumq1;
+	StrumQueue *strumq1;
 	int reset,branch;
 
 public:
 	BEND();
+	virtual ~BEND();
 	virtual int init(double*, int);
 	virtual int run();
 };

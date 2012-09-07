@@ -4,8 +4,8 @@
 #include <rt.h>
 #include <rtdefs.h>
 
-extern strumq *curstrumq[6];
-extern delayq *curdelayq;
+extern StrumQueue *curstrumq[6];
+extern DelayQueue *curdelayq;
 
 extern "C" {
 	void sset(float, float, float, float, strumq*);
@@ -18,6 +18,11 @@ extern "C" {
 FRET1::FRET1() : Instrument()
 {
 	branch = 0;
+}
+
+FRET1::~FRET1()
+{
+	strumq1->unref();
 }
 
 int FRET1::init(double p[], int n_args)
@@ -33,6 +38,7 @@ int FRET1::init(double p[], int n_args)
 		return DONT_SCHEDULE;
 
 	strumq1 = curstrumq[0];
+	strumq1->ref();
 	freq = cpspch(p[2]);
 	tf0 = p[3];
 	tfN = p[4];

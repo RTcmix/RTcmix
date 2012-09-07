@@ -8,8 +8,8 @@ class VSTART1 : public Instrument {
 	float vsibot,vsidiff,vsi,vphase;
 	float vdepth, tab[2];
 	float spread, amp, aamp;
-	strumq *strumq1;
-	delayq *dq;
+	StrumQueue *strumq1;
+	DelayQueue *dq;
 	float dgain, fbgain;
 	float cleanlevel, distlevel;
 	int reset;

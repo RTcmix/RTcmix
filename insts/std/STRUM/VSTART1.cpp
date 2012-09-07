@@ -6,8 +6,8 @@
 #include <rt.h>
 #include <rtdefs.h>
 
-extern strumq *curstrumq[6];
-extern delayq *curdelayq;
+extern StrumQueue *curstrumq[6];
+extern DelayQueue *curdelayq;
 
 extern "C" {
 	void sset(float, float, float, float, strumq*);
@@ -26,10 +26,8 @@ VSTART1::VSTART1() : Instrument()
 
 VSTART1::~VSTART1()
 {
-	if (deleteflag == 1) {
-		delete strumq1;
-		delete dq;
-	}
+	strumq1->unref();
+	dq->unref();
 }
 
 int VSTART1::init(double p[], int n_args)
@@ -49,7 +47,8 @@ int VSTART1::init(double p[], int n_args)
 	if (rtsetoutput(p[0], p[1], this) == -1)
 		return DONT_SCHEDULE;
 
-	strumq1 = new strumq;
+	strumq1 = new StrumQueue;
+	strumq1->ref();
 	curstrumq[0] = strumq1;
 	freq = cpspch(p[2]);
 	tf0 = p[3];
@@ -57,7 +56,8 @@ int VSTART1::init(double p[], int n_args)
 	sset(SR, freq, tf0, tfN, strumq1);
 	randfill(1.0, (int)p[11], strumq1);
 
-	dq = new delayq;
+	dq = new DelayQueue;
+	dq->ref();
 	curdelayq = dq;
 	delayset(SR, cpspch(p[7]), dq);
 	delayclean(dq);

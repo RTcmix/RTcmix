@@ -6,7 +6,7 @@
 #include <rt.h>
 #include <rtdefs.h>
 
-strumq *curstrumq[6];
+StrumQueue *curstrumq[6];
 
 extern "C" {
 	void sset(float, float, float, float, strumq*);
@@ -21,9 +21,7 @@ START::START() : Instrument()
 
 START::~START()
 {
-	if (deleteflag == 1) {
-		delete strumq1;
-	}
+	strumq1->unref();
 }
 
 // p0 = start; p1 = dur; p2 = pitch (oct.pc); p3 = fundamental decay time
@@ -45,7 +43,8 @@ int START::init(double p[], int n_args)
 	if (rtsetoutput(outskip, dur, this) == -1)
 		return DONT_SCHEDULE;
 
-	strumq1 = new strumq;
+	strumq1 = new StrumQueue;
+	strumq1->ref();
 	curstrumq[0] = strumq1;
 	float freq = cpspch(pitch);
 	sset(SR, freq, fdecay, nydecay, strumq1);

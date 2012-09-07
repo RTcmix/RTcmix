@@ -4,7 +4,7 @@
 #include <rt.h>
 #include <rtdefs.h>
 
-extern strumq *curstrumq[6];
+extern StrumQueue *curstrumq[6];
 
 extern "C" {
 	void sset(float, float, float, float, strumq*);
@@ -14,6 +14,11 @@ extern "C" {
 BEND::BEND() : Instrument()
 {
 	branch = 0;
+}
+
+BEND::~BEND()
+{
+	strumq1->unref();
 }
 
 int BEND::init(double p[], int n_args)
@@ -27,6 +32,7 @@ int BEND::init(double p[], int n_args)
 		return DONT_SCHEDULE;
 
 	strumq1 = curstrumq[0];
+	strumq1->ref();
 	freq0 = cpspch(p[2]);
 	freq1 = cpspch(p[3]);
 	diff = freq1 - freq0;

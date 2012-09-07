@@ -9,8 +9,8 @@ class VFRET1 : public Instrument {
 	float vdepth;
 	float tab[2];
 	float spread,amp,aamp;
-	strumq *strumq1;
-	delayq *dq;
+	StrumQueue *strumq1;
+	DelayQueue *dq;
 	float dgain,fbgain;
 	float cleanlevel,distlevel;
 	float d, amptabs[2];
@@ -18,6 +18,7 @@ class VFRET1 : public Instrument {
 
 public:
 	VFRET1();
+	virtual ~VFRET1();
 	virtual int init(double*, int);
 	virtual int configure();
 	virtual int run();

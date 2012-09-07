@@ -6,8 +6,8 @@
 #include <rt.h>
 #include <rtdefs.h>
 
-extern strumq *curstrumq[6];
-extern delayq *curdelayq;
+extern StrumQueue *curstrumq[6];
+extern DelayQueue *curdelayq;
 
 extern "C" {
 	void sset(float, float, float, float, strumq*);
@@ -20,6 +20,12 @@ extern "C" {
 VFRET1::VFRET1() : Instrument()
 {
 	branch1 = branch2 = 0;
+}
+
+VFRET1::~VFRET1()
+{
+	strumq1->unref();
+	dq->unref();
 }
 
 int VFRET1::init(double p[], int n_args)
@@ -37,11 +43,14 @@ int VFRET1::init(double p[], int n_args)
 		return DONT_SCHEDULE;
 
 	strumq1 = curstrumq[0];
+	strumq1->ref();
+	
 	freq = cpspch(p[2]);
 	tf0 = p[3];
 	tfN = p[4];
 
 	dq = curdelayq;
+	dq->ref();
 	fbpitch = cpspch(p[7]);
 
 	amp = p[10];

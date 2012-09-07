@@ -1,5 +1,22 @@
 #define maxdl 14000
-typedef struct {
+
+struct delayq
+{
 	int p,del;
 	float d[maxdl],c1,c2;
-	} delayq;
+};
+
+#ifdef __cplusplus
+
+#include <RefCounted.h>
+#include <Lockable.h>
+
+class DelayQueue : public delayq, public RefCounted, public Lockable
+{
+};
+
+#else
+
+typedef struct delayq delayq;
+
+#endif

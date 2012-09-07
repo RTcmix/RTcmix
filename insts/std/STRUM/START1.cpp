@@ -4,8 +4,8 @@
 #include <rt.h>
 #include <rtdefs.h>
 
-extern strumq *curstrumq[6];
-delayq *curdelayq;
+extern StrumQueue *curstrumq[6];
+DelayQueue *curdelayq;
 
 extern "C" {
 	void sset(float, float, float, float, strumq*);
@@ -24,10 +24,8 @@ START1::START1() : Instrument()
 
 START1::~START1()
 {
-	if (deleteflag == 1) {
-		delete strumq1;
-		delete dq;
-	}
+	strumq1->unref();
+	dq->unref();
 }
 
 int START1::init(double p[], int n_args)
@@ -44,13 +42,15 @@ int START1::init(double p[], int n_args)
 	if (rtsetoutput(p[0], dur, this) == -1)
 		return DONT_SCHEDULE;
 	 
-	strumq1 = new strumq;
+	strumq1 = new StrumQueue;
+	strumq1->ref();
 	curstrumq[0] = strumq1;
 	float freq = cpspch(p[2]);
 	sset(SR, freq, p[3], p[4], strumq1);
 	randfill(1.0, (int)p[11], strumq1);
 
-	dq = new delayq;
+	dq = new DelayQueue;
+	dq->ref();
 	curdelayq = dq;
 	delayset(SR, cpspch(p[7]), dq);
 	delayclean(dq);

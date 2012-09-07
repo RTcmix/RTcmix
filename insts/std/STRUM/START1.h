@@ -3,8 +3,8 @@
 
 class START1 : public Instrument {
 	float spread, amp, aamp;
-	strumq *strumq1;
-	delayq *dq;
+	StrumQueue *strumq1;
+	DelayQueue *dq;
 	float dgain, fbgain;
 	float cleanlevel, distlevel;
 	float d, amptabs[2];

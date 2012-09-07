@@ -28,7 +28,7 @@ void sset(float SR, float freq, float tf0, float tNy, strumq *q)
    float xlen,xn,xerr,dH0,dHNy,H01,H02,HNy1,HNy2,H,a0,a1,c1,c2;
    float ncycles0,ncyclesNy;
    float tgent,c,s,del,p,temp,g;
-   double pow(),sin(),sqrt(),atan2(),fabs(),w0;
+   double w0;
    int i;
 
    xlen = 1./freq*SR;
