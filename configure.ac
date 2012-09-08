@@ -192,9 +192,9 @@ THREAD_COUNT=2                            # default number of threads
 WITH_MULTI_THREAD="false"                 # just for summary display below
 AC_ARG_WITH(multithread,
    AC_HELP_STRING([--with-multithread=THREADCOUNT],
-         [build multi-threaded RTcmix on OS X 10.6 or later (THREADCOUNT optional, default=2)]),
-	[if test "$ARCH" != "MACOSX"; then
-      AC_MSG_ERROR([Can't build multi-threaded version unless on OS X 10.6 or later.])
+         [build multi-threaded RTcmix on Linux or OS X 10.6 or later (THREADCOUNT optional, default=2)]),
+	[if test "$ARCH" != "MACOSX" && test "$ARCH" != "LINUX"; then
+      AC_MSG_ERROR([Can't build multi-threaded version unless on Linux, or OS X 10.6 or later.])
 	fi]
    [if test "$withval" != "no"; then
       if test "$withval" != "yes"; then
@@ -317,9 +317,16 @@ AC_ARG_WITH(osc,
    fi]
 )
 AC_SUBST(OSC_SUPPORT)
+# LIBGSL options
+AC_CHECK_LIB(m,main)
+AC_CHECK_LIB(gslcblas,main)
+AC_CHECK_LIB(gsl,main)
 
 #AC_SUBST(WITH_VAL, "$withval")    # for debugging this script
 
+
+# Check for typedefs, structures, and compiler characteristics.
+AC_C_BIGENDIAN
 
 # Our own program, library and header checks -----------------------------------
 
