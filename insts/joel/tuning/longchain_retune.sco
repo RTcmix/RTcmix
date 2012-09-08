@@ -3,7 +3,7 @@
 
 print_off()
 rtsetparams(44100, 2)
-load("/home/jwmatthys/my_rtcmix/tuning/libtuning.so")
+load("./libtuning.so")
 load("WAVETABLE")
 load("FLANGE")
 load("JDELAY")
