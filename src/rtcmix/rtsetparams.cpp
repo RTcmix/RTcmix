@@ -18,6 +18,7 @@
 #include <ugens.h>
 #include <Option.h>
 #include "rtdefs.h"
+#include "InputFile.h"
 
 /* #define DEBUG */
 
@@ -107,6 +108,10 @@ RTcmix::rtsetparams(float p[], int n_args, double pp[])
       allocate_out_buffer(i, RTBUFSAMPS);
    }
 
+#ifdef MULTI_THREAD
+	InputFile::createConversionBuffers(RTBUFSAMPS);
+#endif
+	
    rtsetparams_called = 1;	/* Put this at end to allow re-call due to error */
 
    return 0;

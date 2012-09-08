@@ -409,7 +409,7 @@ void Instrument::addout(BusType bus_type, int bus)
 void Instrument::gone()
 {
 #ifdef DEBUG
-   printf("Instrument::gone(this=0x%x): index %d\n", this, _input.fdIndex);
+   printf("Instrument::gone(this=%p): index %d\n", this, _input.fdIndex);
 #endif
 
    if (_input.fdIndex >= 0) {

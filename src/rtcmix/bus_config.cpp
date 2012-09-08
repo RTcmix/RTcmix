@@ -608,7 +608,7 @@ RTcmix::get_bus_config(const char *inst_name)
 	   in_chans = 0;
    }
    else
-     in_chans = inputFileTable[index].chans;
+     in_chans = inputFileTable[index].channels();
    
    default_bus_slot->in_count = in_chans;
    default_bus_slot->out_count = NCHANS;
@@ -633,6 +633,55 @@ RTcmix::get_bus_config(const char *inst_name)
 /* ------------------------------------------------------- addToBus --------- */
 /* This is called by each instrument during addout() to mix itself into bus. */
 
+#ifdef MULTI_THREAD
+
+// Parallel version just adds 
+void
+RTcmix::addToBus(BusType type, int bus, BufPtr src, int offset, int endfr, int chans)
+{
+	pthread_mutex_lock(&vectorLock);
+    mixVector.push_back(
+						MixData(
+								src,
+								(type == BUS_AUX_OUT) ? aux_buffer[bus] + offset : out_buffer[bus] + offset,
+								endfr - offset,
+								chans)
+                        );
+	
+	pthread_mutex_unlock(&vectorLock);
+}
+
+void
+RTcmix::mixToBus()
+{
+    for (std::vector<RTcmix::MixData>::iterator i = mixVector.begin(); i != mixVector.end(); ++i) {
+        MixData &m = *i;
+        BufPtr src = m.src;
+        BufPtr dest = m.dest;
+        const int framesOverFour = m.frames >> 2;
+        const int framesRemaining = m.frames - (framesOverFour << 2);
+        const int chans = m.channels;
+        const int chansx2 = chans << 1;
+        const int chansx3 = chansx2 + chans;
+        const int chansx4 = chansx2 + chansx2;
+        for (int n = 0; n < framesOverFour; ++n) {
+            dest[0] += src[0];
+            dest[1] += src[chans];
+            dest[2] += src[chansx2];
+            dest[3] += src[chansx3];
+            dest += 4;
+            src += chansx4;
+        }
+        for (int n = 0; n < framesRemaining; ++n) {
+            dest[n] += *src;
+            src += chans;
+        }
+    }
+    mixVector.clear();
+}
+
+#else
+
 void
 RTcmix::addToBus(BusType type, int bus, BufPtr src, int offset, int endfr, int chans)
 {
@@ -641,28 +690,18 @@ RTcmix::addToBus(BusType type, int bus, BufPtr src, int offset, int endfr, int c
 	
 	if (type == BUS_AUX_OUT) {
 		dest = aux_buffer[bus];
-#ifdef MULTI_THREAD
-		pMutex = &aux_buffer_lock;
-#endif
 	}
 	else {
 		dest = out_buffer[bus];
-#ifdef MULTI_THREAD
-		pMutex = &out_buffer_lock;
-#endif
 	}
 	assert(dest != NULL);
-#ifdef MULTI_THREAD
-	pthread_mutex_lock(pMutex);
-#endif
 	for (int frame = offset; frame < endfr; frame++) {
 		dest[frame] += *src;
 		src += chans;
 	}
-#ifdef MULTI_THREAD
-	pthread_mutex_unlock(pMutex);
-#endif
 }
+
+#endif	// MULTI_THREAD
 
 /* ------------------------------------------------------- parse_bus_chan --- */
 static ErrCode

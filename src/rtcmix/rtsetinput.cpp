@@ -81,17 +81,16 @@ int
 RTcmix::attachInput(float start_time, InputState *input)
 {
       int index = get_last_input_index();
-	  AutoLock fileLock(inputFileTable[index]);
 #ifdef SGI
       if (index < 0) {
          return RT_NO_INPUT_SRC;
       }
-      if ((inputFileTable[index].fd < 1)
-                         && (inputFileTable[index].fd != AUDIO_DEVICE_FD)) {
+      if ((!inputFileTable[index].isOpen())
+                         && (inputFileTable[index].getFD() != AUDIO_DEVICE_FD)) {
          return RT_NO_INPUT_SRC;
       }
 #else
-      if (index < 0 || inputFileTable[index].fd < 1) {
+      if (index < 0 || !inputFileTable[index].isOpen()) {
          return RT_NO_INPUT_SRC;
       }
 #endif
@@ -104,11 +103,11 @@ RTcmix::attachInput(float start_time, InputState *input)
       input->fdIndex = index;
 
       /* Fill in relevant data members of instrument class. */
-      input->inputsr = inputFileTable[index].srate;
+      input->inputsr = inputFileTable[index].sampleRate();
 
-      src_chans = inputFileTable[index].chans;
+      src_chans = inputFileTable[index].channels();
 
-      if (inputFileTable[index].is_audio_dev) {
+      if (inputFileTable[index].isAudioDevice()) {
          if (start_time != 0.0) {
 		    return RT_ILLEGAL_DEV_OFFSET;
 		 }
@@ -125,18 +124,18 @@ RTcmix::attachInput(float start_time, InputState *input)
 		 // This is now rounded to the nearest frame -- DS
          int inskip_frames = (int) (0.5 + start_time * input->inputsr);
 
-			datum_size = ::mus_data_format_to_bytes_per_sample(inputFileTable[index].data_format);
+		  datum_size = ::mus_data_format_to_bytes_per_sample(inputFileTable[index].dataFormat());
 
          /* Offset is measured from the header size determined in rtinput(). */
-         input->fileOffset = inputFileTable[index].data_location
+         input->fileOffset = inputFileTable[index].dataLocation()
                             + (inskip_frames * input->inputchans * datum_size);
 
-         if (start_time >= inputFileTable[index].dur)
+         if (start_time >= inputFileTable[index].duration())
 		    status = RT_INPUT_EOF;	// not fatal -- just produces warning
       }
 
    /* Increment the reference count for this file. */
-   inputFileTable[index].refcount++;
+   inputFileTable[index].reference();
 
    return status;
 }

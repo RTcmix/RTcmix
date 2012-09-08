@@ -75,8 +75,7 @@ Instrument::rtinrepos(Instrument *inst, int frames, int whence)
 off_t 
 RTcmix::seekInputFile(int fdIndex, int frames, int chans, int whence)
 {
-    AutoLock fileLock(inputFileTable[fdIndex]);
-    const int format = inputFileTable[fdIndex].data_format;
+    const int format = inputFileTable[fdIndex].dataFormat();
     const int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(format);
 
    off_t bytes = frames * chans * bytes_per_samp;
@@ -84,7 +83,7 @@ RTcmix::seekInputFile(int fdIndex, int frames, int chans, int whence)
    switch (whence) {
       case SEEK_SET:
          assert(bytes >= 0);
-         bytes += inputFileTable[fdIndex].data_location;
+         bytes += inputFileTable[fdIndex].dataLocation();
          break;
       case SEEK_CUR:
          break;
@@ -120,8 +119,6 @@ RTcmix::readFromAuxBus(
 
       ::copy_one_buf_to_interleaved_buf(dest, src, dest_chans, n, dest_frames);
    }
-
-//   return 0;
 }
 
 
@@ -153,8 +150,6 @@ RTcmix::readFromAudioDevice(
 
       copy_one_buf_to_interleaved_buf(dest, src, dest_chans, n, dest_frames);
    }
-
-//   return 0;
 }
 
 
@@ -171,7 +166,6 @@ RTcmix::readFromInputFile(
 {
     /* File opened by earlier call to rtinput. */
     InputFile &inputFile = inputFileTable[fdIndex];
-    AutoLock fileLock(inputFile);
     
     off_t amountRead = inputFile.readSamps(*pFileOffset,
                                            dest,
@@ -235,7 +229,7 @@ Instrument::rtgetin(float		*inarr,  /* interleaved array of <inputchans> */
       const short *in = bus_config->in;              /* in channel list */
 
       assert(in_count > 0);
-
+	   
       RTcmix::readFromInputFile(inarr, inchans, frames, in, in_count,
 	  				            fdindex, &inst->_input.fileOffset);
    }

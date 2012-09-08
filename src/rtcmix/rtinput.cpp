@@ -34,7 +34,7 @@ typedef enum {
    DIGITAL
 } AudioPortType;
 
-static int last_input_index = -1;
+static long last_input_index = -1;
 
 
 /* ------------------------------------------------- get_last_input_index --- */
@@ -43,7 +43,7 @@ static int last_input_index = -1;
 int
 get_last_input_index()
 {
-   return last_input_index;
+   return (int) last_input_index;   // FIX ME -- should return long
 }
 
 
@@ -144,7 +144,7 @@ FIXME: this stuff not implemented yet  -JGG
 double
 RTcmix::rtinput(float p[], int n_args, double pp[])
 {
-	int            i, audio_in, p1_is_audioport, start_pfield, fd;
+	int            audio_in, p1_is_audioport, start_pfield, fd;
 	int            is_open, header_type, data_format, data_location, nchans;
 #ifdef INPUT_BUS_SUPPORT
 	int            startchan, endchan;
@@ -238,22 +238,21 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	if (startchan == -1) {           /* no bus specified */
 	}
 #endif /* INPUT_BUS_SUPPORT */
-
+    long i;
+    
 	/* See if this audio device or file has already been opened. */
 	for (i = 0; i < max_input_fds; i++) {
-		if (inputFileTable[i].fd != NO_FD) {
-			if (strcmp(sfname, inputFileTable[i].filename) == 0) {
+		if (inputFileTable[i].isOpen()) {
+			if (inputFileTable[i].hasFile(sfname)) {
 				last_input_index = i;
 				is_open = 1;
 				break;
 			}
 		}
 	}
-#define NEW_CODE
 	if (!is_open) {			/* if not, open input audio device or file. */
 		long nsamps = 0;
 		if (audio_in) {
-#ifdef NEW_CODE
 			if (rtsetparams_called) {
 				// If audio *playback* was disabled, but there is a request for
 				// input audio, create the audio input device here.
@@ -283,20 +282,6 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 				Option::record(1);
 				rtrecord = 1;
 			}
-#else		// !NEW_CODE
-			if (rtsetparams_called && !Option::record()) {
-				die("rtinput", "Full duplex was not enabled for rtsetparams. "
-					"Set option \"full_duplex\" before calling rtsetparams()");
-				rtrecord = 0;	/* because we failed */
-				return -1;
-			}
-			if (!audioDevice) {
-				die("rtinput", "Audio input device not open yet. "
-												"Call rtsetparams first.");
-				rtrecord = 0;	/* because we failed */
-				return -1;
-			}
-#endif	// !NEW_CODE
 			fd = 1;  /* we don't use this; set to 1 so rtsetinput() will work */
 			for (i = 0; i < nchans; i++) {
 				allocate_audioin_buffer(i, RTBUFSAMPS);
@@ -352,7 +337,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 			created after this call to rtinput().
 		*/
 		for (i = 0; i < max_input_fds; i++) {
-			if (inputFileTable[i].fd == NO_FD) {
+			if (!inputFileTable[i].isOpen()) {
                 inputFileTable[i].init(fd, sfname, audio_in, header_type, data_format, data_location, nsamps, (float)srate, nchans, dur);
 				last_input_index = i;
 				break;
@@ -362,7 +347,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 		/* If this is true, we've used up all input descriptors in our array. */
 		if (i == max_input_fds)
 			die("rtinput", "You have exceeded the maximum number of input "
-												"files (%d)!", max_input_fds);
+												"files (%ld)!", max_input_fds);
 	}
 
 	/* Return this to Minc, so user can pass it to functions. */
@@ -378,34 +363,10 @@ RTcmix::releaseInput(int fdIndex)
    // BGG -- added this to prevent file closings in interactive mode
    // we don't know if a file will be referenced again in the future
    if (!interactive()) {
-	   AutoLock fileLock(inputFileTable[fdIndex]);
 #ifdef DEBUG
-      printf("RTcmix::releaseInput: fdIndex %d refcount = %d\n",
-          fdIndex, inputFileTable[fdIndex].refcount);
+      printf("RTcmix::releaseInput: fdIndex %d\n", fdIndex);
 #endif
-      if (--inputFileTable[fdIndex].refcount <= 0) {
-         if (inputFileTable[fdIndex].fd > 0) {
-#ifdef DEBUG
-            printf("\tclosing fd %d\n", inputFileTable[fdIndex].fd);
-#endif
-            mus_file_close(inputFileTable[fdIndex].fd);
-         }
-         if (inputFileTable[fdIndex].filename);
-            free(inputFileTable[fdIndex].filename);
-         inputFileTable[fdIndex].filename = NULL;
-         inputFileTable[fdIndex].fd = NO_FD;
-         inputFileTable[fdIndex].header_type = MUS_UNSUPPORTED;
-         inputFileTable[fdIndex].data_format = MUS_UNSUPPORTED;
-         inputFileTable[fdIndex].is_float_format = 0;
-         inputFileTable[fdIndex].data_location = 0;
-         inputFileTable[fdIndex].endbyte = 0;
-         inputFileTable[fdIndex].srate = 0.0;
-         inputFileTable[fdIndex].chans = 0;
-         inputFileTable[fdIndex].dur = 0.0;
-         if (inputFileTable[fdIndex].readBuffer);
-            free(inputFileTable[fdIndex].readBuffer);
-         inputFileTable[fdIndex].readBuffer = NULL;
-      }
+	   inputFileTable[fdIndex].unreference();
    }
 }
 

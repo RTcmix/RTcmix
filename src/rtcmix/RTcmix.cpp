@@ -92,7 +92,7 @@ int			RTcmix::rtfileit 	= 0;		// signal writing to soundfile
 int			RTcmix::rtoutfile 	= 0;
 
 InputFile *	RTcmix::inputFileTable = NULL;
-int			RTcmix::max_input_fds = 0;
+long		RTcmix::max_input_fds = 0;
 
 pthread_mutex_t RTcmix::pfieldLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RTcmix::audio_config_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -117,6 +117,8 @@ short			RTcmix::ToAuxPlayList[MAXBUS];
 pthread_mutex_t RTcmix::aux_buffer_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RTcmix::out_buffer_lock = PTHREAD_MUTEX_INITIALIZER;
 TaskManager *	RTcmix::taskManager = NULL;
+std::vector<RTcmix::MixData> RTcmix::mixVector;
+pthread_mutex_t RTcmix::vectorLock = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 // Bus config state
@@ -164,6 +166,7 @@ RTcmix::init_globals(bool fromMain, const char *defaultDSOPath)
    rtQueue = new RTQueue[MAXBUS*3];
 #ifdef MULTI_THREAD
    taskManager = new TaskManager;
+   mixVector.reserve(MAXBUS);
 #endif
 
    for (int i = 0; i < MAXBUS; i++) {
@@ -177,10 +180,8 @@ RTcmix::init_globals(bool fromMain, const char *defaultDSOPath)
 		max_input_fds = 128;		// what we used to hardcode
 	else
 		max_input_fds -= RESERVE_INPUT_FDS;
+	
 	inputFileTable = new InputFile[max_input_fds];
-
-   for (int i = 0; i < max_input_fds; i++)
-      inputFileTable[i].fd = NO_FD;
 
    init_buf_ptrs();
 
@@ -206,6 +207,7 @@ RTcmix::free_globals()
 #ifdef MULTI_THREAD
 	delete taskManager;
 	taskManager = NULL;
+	InputFile::destroyConversionBuffers();
 #endif
 
 }
@@ -378,7 +380,6 @@ RTcmix::cmd(const char *name, int n_args, const char* p0, ...)
 Instrument *
 RTcmix::cmd(const char *name, const PFieldSet &pfSet)
 {
-	void   *retval;
 	int nFields = pfSet.size();
 	Arg	*arglist = new Arg[nFields];
 	Arg retArg;
@@ -514,12 +515,12 @@ void RTcmix::run()
 
 bool RTcmix::isInputAudioDevice(int fdIndex)
 {
-    return inputFileTable[fdIndex].is_audio_dev;
+    return inputFileTable[fdIndex].isAudioDevice();
 }
 
 const char * RTcmix::getInputPath(int fdIndex)
 {
-    return inputFileTable[fdIndex].filename;
+    return inputFileTable[fdIndex].fileName();
 }
 
 void RTcmix::close()

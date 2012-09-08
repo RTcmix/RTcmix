@@ -96,7 +96,8 @@ converter.cpp \
 monitor.cpp
 
 ifeq ($(MULTI_THREAD_SUPPORT), TRUE)
-   COMMON_CPPSRCS += TaskManager.cpp
+   COMMON_CPPSRCS += TaskManager.cpp RTThread.cpp
+   CXXFLAGS += -DRT_THREAD_COUNT=$(THREAD_COUNT) 
 endif
 
 MAIN_CPPSRCS = RTcmixMain.cpp main.cpp
@@ -226,9 +227,6 @@ addcheckfunc.o: addcheckfunc.cpp
 
 RTcmix.o: RTcmix.cpp
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c RTcmix.cpp
-
-TaskManager.o: TaskManager.cpp
-	$(CXX) $(CXXFLAGS) -DRT_THREAD_COUNT=$(THREAD_COUNT) -c TaskManager.cpp
 
 intraverse.o: intraverse.cpp
 	$(CXX) $(CXXFLAGS) -DRT_THREAD_COUNT=$(THREAD_COUNT) -c intraverse.cpp

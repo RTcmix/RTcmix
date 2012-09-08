@@ -12,8 +12,13 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <fcntl.h>
 #include <sndlibsupport.h>
+#include <ugens.h>
 #include "byte_routines.h"
+#ifdef MULTI_THREAD
+#include "RTThread.h"
+#endif
 
 /* The define below is to disable some fancy bus-mapping code for file
  input that was not well thought out. As a user, when I open a file,
@@ -305,7 +310,31 @@ read_short_samps(
     return 0;
 }
 
-InputFile::InputFile() : filename(NULL), fd(NO_FD), readBuffer(NULL) {}
+#ifdef MULTI_THREAD
+
+char *		InputFile::sConversionBuffers[RT_THREAD_COUNT];
+
+void InputFile::createConversionBuffers(int inBufSamps)
+{
+	/* Allocate buffers needed to convert input audio files as they are read */
+	for (int i = 0; i < RT_THREAD_COUNT; ++i) {
+		sConversionBuffers[i] = (char *) malloc(sizeof(BUFTYPE) * MAXCHANS * inBufSamps);
+	}
+}
+
+void InputFile::destroyConversionBuffers()
+{
+	for (int i = 0; i < RT_THREAD_COUNT; ++i) {
+		free(sConversionBuffers[i]);
+		sConversionBuffers[i] = NULL;
+	}
+}
+
+#endif
+
+InputFile::InputFile() : filename(NULL), fd(NO_FD), readBuffer(NULL)
+{
+}
 
 void InputFile::init(int inFd, const char *inFileName, bool isAudioDev, int inHeaderType,
           int inDataFormat, int inDataLocation, long inFrames, float inSampleRate,
@@ -333,12 +362,58 @@ void InputFile::init(int inFd, const char *inFileName, bool isAudioDev, int inHe
         readFunction = &read_24bit_samps;
     else
         readFunction = &read_short_samps;
-    
+#ifndef MULTI_THREAD
     readBuffer = (void *) malloc((size_t) RTcmix::bufsamps() * MAXCHANS * bytes_per_samp);
     if (readBuffer == NULL) {
         perror("rtinput (malloc)");
         exit(1);
     }
+#endif
+}
+
+void InputFile::reference()
+{
+	if (++refcount == 1) {
+		// In here we can do any post-initialization that only needs to be done (once) when we are
+		// sure that this InputFile is being used by an instrument.
+	}
+}
+
+void InputFile::unreference()
+{
+#ifdef DEBUG
+	printf("InputFile::unreference: refcount = %d\n", refcount);
+#endif
+	if (--refcount <= 0) {
+		close();
+	}
+}
+
+void InputFile::close()
+{
+	if (fd > 0) {
+#ifdef DEBUG
+		printf("\tInputFile: closing fd %d\n", fd);
+#endif
+		mus_file_close(fd);
+		fd = NO_FD;
+	}
+#ifndef MULTI_THREAD
+	if (readBuffer)
+		free(readBuffer);
+	readBuffer = NULL;
+#endif
+	if (filename)
+		free(filename);
+	filename = NULL;
+	header_type = MUS_UNSUPPORTED;
+	data_format = MUS_UNSUPPORTED;
+	is_float_format = 0;
+	data_location = 0;
+	endbyte = 0;
+	srate = 0.0;
+	chans = 0;
+	dur = 0.0;
 }
 
 off_t InputFile::readSamps(off_t cur_offset,
@@ -352,19 +427,25 @@ off_t InputFile::readSamps(off_t cur_offset,
     assert(dest_chans >= src_chans);
 #endif
     assert(chans >= dest_chans);
-    if (lseek(fd, cur_offset, SEEK_SET) == -1) {
-        perror("RTcmix::readFromInputFile (lseek)");
-        exit(1);
-    }
-    int status = (*this->readFunction)(fd,
-                                 data_format,
-                                 chans,
-                                 cur_offset,
-                                 endbyte,
-                                 dest, dest_chans, dest_frames,
-                                 src_chan_list, src_chans,
-                                 readBuffer);
-    
+#ifdef MULTI_THREAD
+	readBuffer = sConversionBuffers[RTThread::GetIndexForThread()];
+#endif
+	{
+		AutoLock fileLock(this);
+		if (lseek(fd, cur_offset, SEEK_SET) == -1) {
+			perror("RTcmix::readFromInputFile (lseek)");
+			exit(1);
+		}
+		
+		int status = (*this->readFunction)(fd,
+									 data_format,
+									 chans,
+									 cur_offset,
+									 endbyte,
+									 dest, dest_chans, dest_frames,
+									 src_chan_list, src_chans,
+									 readBuffer);
+	}
     int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(data_format);
     return dest_frames * chans * bytes_per_samp;
 }

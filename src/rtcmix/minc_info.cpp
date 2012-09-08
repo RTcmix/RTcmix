@@ -258,12 +258,12 @@ RTcmix::input_chans(float *p, int n_args)   /* returns chans for rtinput() files
       fprintf(stderr, "There are no currently opened input files!\n");
       return 0.0;
    }
-   if (inputFileTable[index].is_audio_dev) {
+   if (inputFileTable[index].isAudioDevice()) {
       fprintf(stderr, "WARNING: Requesting channels of audio input device "
                       "(not sound file)!\n");
       return 0.0;
    }
-   return (inputFileTable[index].chans);
+   return (inputFileTable[index].channels());
 }
 
 double 
@@ -275,12 +275,12 @@ RTcmix::input_dur(float *p, int n_args)   /* returns duration for rtinput() file
       fprintf(stderr, "There are no currently opened input files!\n");
       return 0.0;
    }
-   if (inputFileTable[index].is_audio_dev) {
+   if (inputFileTable[index].isAudioDevice()) {
       fprintf(stderr, "WARNING: Requesting duration of audio input device "
                       "(not sound file)!\n");
       return 0.0;
    }
-   return (inputFileTable[index].dur);
+   return (inputFileTable[index].duration());
 }
 
 double
@@ -297,7 +297,7 @@ RTcmix::input_sr(float *p, int n_args)   /* returns rate for rtinput() files */
 //                    "(not sound file)!\n");
 //   return 0.0;
 //   }
-   return (inputFileTable[index].srate);
+   return (inputFileTable[index].sampleRate());
 }
 
 extern "C" {
@@ -401,16 +401,16 @@ RTcmix::get_peak(float start, float end, int chan)
       fprintf(stderr, "There are no currently opened input files!\n");
       return 0.0;
    }
-   if (inputFileTable[index].is_audio_dev) {
+   if (inputFileTable[index].isAudioDevice()) {
       fprintf(stderr, "WARNING: Requesting peak of audio input device "
                       "(not sound file)!\n");
       return 0.0;
    }
 
    if (end == 0.0)
-      end = inputFileTable[index].dur;       /* use end time of file */
+      end = inputFileTable[index].duration();       /* use end time of file */
 
-   fd = inputFileTable[index].fd;
+   fd = inputFileTable[index].getFD();
 
 // *** If end - start is, say, 60 seconds, less trouble to just analyze file
 // than to dig through file header?
@@ -424,10 +424,10 @@ RTcmix::get_peak(float start, float end, int chan)
    else
       file_stats_valid = 0;    /* file written since peak stats were updated */
 
-   format = inputFileTable[index].data_format;
-   dataloc = inputFileTable[index].data_location;
-   srate = (int) inputFileTable[index].srate;	// note: casting to int
-   nchans = inputFileTable[index].chans;
+   format = inputFileTable[index].dataFormat();
+   dataloc = inputFileTable[index].dataLocation();
+   srate = (int) inputFileTable[index].sampleRate();	// note: casting to int
+   nchans = inputFileTable[index].channels();
 
    startframe = (long)(start * srate + 0.5);
    endframe = (long)(end * srate + 0.5);

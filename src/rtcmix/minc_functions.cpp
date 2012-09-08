@@ -81,10 +81,10 @@ double m_pchadd(float p[], int nargs, double pp[])
 }
 
 double m_rand()
-{ float rrand(); return(rrand()); }
+{ return rrand(); }
 
 double m_random()
-{ float rrand(); return((rrand() * 0.5) + 0.5); }
+{ return (rrand() * 0.5) + 0.5; }
 
 double m_srand(float p[], int n_args)
 {

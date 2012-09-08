@@ -350,7 +350,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			            
 			Iptr = rtQueue[busq].pop(&rtQchunkStart);  // get next instrument off queue
 #ifdef DBUG
-			cout << "Iptr " << (void *) Iptr << " popped from rtQueue " << busq << endl;
+			cout << "Iptr " << (void *) Iptr << " popped from rtQueue " << busq << " at rtQchunkStart " << rtQchunkStart << endl;
 #endif			
 			Iptr->set_ichunkstart(rtQchunkStart);
 
@@ -364,7 +364,6 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			// unlcear what that will do just now
 			if (offset < 0) { // BGG: added this trap for robustness
 				cout << "WARNING: the scheduler is behind the queue!" << endl;
-				cout << "rtQchunkStart:  " << rtQchunkStart << endl;
 				cout << "bufStartSamp:  " << bufStartSamp << endl;
 				cout << "endsamp:  " << endsamp << endl;
 				endsamp += offset;  // DJT:  added this (with hope)
@@ -385,7 +384,6 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			}
 #ifdef DBUG
 			cout << "Begin playback iteration==========\n";
-			cout << "Q-rtQchunkStart:  " << rtQchunkStart << endl;
 			cout << "bufEndSamp:  " << bufEndSamp << endl;
 			cout << "RTBUFSAMPS:  " << RTBUFSAMPS << endl;
 			cout << "endsamp:  " << endsamp << endl;
@@ -397,7 +395,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			// DT_PANIC_MOD
 			if (!panic) {
 #ifdef DBUG
-				cout << "putting inst " << (void *) Iptr << " into vector" << endl;
+				cout << "putting inst " << (void *) Iptr << " into vector (bus" << bus_type << ") [" << Iptr->name() << "]\n";
 #endif
 				instruments.push_back(Iptr);
 			}
@@ -410,6 +408,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		cout << "waiting for tasks..." << endl;
 #endif
 		taskManager->addTasks<Instrument, int, BusType, int, &Instrument::exec>(instruments, bus_type, bus);
+        RTcmix::mixToBus();
 #ifdef DBUG
 		cout << "done waiting" << endl;
 #endif
@@ -462,8 +461,8 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
                 
         Iptr = rtQueue[busq].pop(&rtQchunkStart);  // get next instrument off queue
 #ifdef DBUG
-        cout << "Iptr " << (void *) Iptr << " popped from rtQueue " << busq << endl;
-#endif			
+		cout << "Iptr " << (void *) Iptr << " popped from rtQueue " << busq << " at rtQchunkStart " << rtQchunkStart << endl;
+#endif
         Iptr->set_ichunkstart(rtQchunkStart);
                 
         unsigned long endsamp = Iptr->getendsamp();
@@ -476,7 +475,6 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         // unlcear what that will do just now
         if (offset < 0) { // BGG: added this trap for robustness
             cout << "WARNING: the scheduler is behind the queue!" << endl;
-            cout << "rtQchunkStart:  " << rtQchunkStart << endl;
             cout << "bufStartSamp:  " << bufStartSamp << endl;
             cout << "endsamp:  " << endsamp << endl;
             endsamp += offset;  // DJT:  added this (with hope)
@@ -497,7 +495,6 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         }
 #ifdef DBUG
         cout << "Begin playback iteration==========\n";
-        cout << "Q-rtQchunkStart:  " << rtQchunkStart << endl;
         cout << "bufEndSamp:  " << bufEndSamp << endl;
         cout << "RTBUFSAMPS:  " << RTBUFSAMPS << endl;
         cout << "endsamp:  " << endsamp << endl;
@@ -558,7 +555,6 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	// Write buf to audio device - - - - - - - - - - - - - - - - - - - - -
 #ifdef DBUG
 	cout << "Writing samples----------\n";
-	cout << "Q-rtQchunkStart:  " << rtQchunkStart << endl;
 	cout << "bufEndSamp:  " << bufEndSamp << endl;
 #endif
 

@@ -8,19 +8,24 @@
 //
 //
 
-#ifndef RT_THREAD_COUNT
-#define RT_THREAD_COUNT 2
-#endif
 
 #include "TaskManager.h"
-#include "Lockable.h"
 #include "RTSemaphore.h"
+#include "RTThread.h"
+#include "rt_types.h"
 #include <pthread.h>
-#include <stack>
 #include <stdio.h>
 #include <assert.h>
 
+#ifdef LINUX
+#include <sys/time.h>
+#include <sys/resource.h>
+#endif
+
 #undef DEBUG
+#undef TASK_DEBUG
+#undef THREAD_DEBUG
+#undef POOL_DEBUG
 
 class Notifiable {
 public:
@@ -31,56 +36,59 @@ class Notifier {
 public:
 	Notifier(Notifiable *inTarget, int inIndex) : mTarget(inTarget), mIndex(inIndex) {}
 	void notify() { mTarget->notify(mIndex); }
+#ifndef THREAD_DEBUG
 private:
+#endif
 	Notifiable	*mTarget;
 	int 		mIndex;
 };
 
-class TaskThread : public Notifier
+class TaskThread : public RTThread, Notifier
 {
 public:
 	TaskThread(Notifiable *inTarget, int inIndex)
-		: Notifier(inTarget, inIndex), mTask(NULL)
-	{
-        pthread_attr_t attr;
-        pthread_attr_init(&attr);
-        pthread_attr_setschedpolicy(&attr, SCHED_RR);
-		pthread_create(&mThread, &attr, sProcess, this);
-        pthread_attr_destroy(&attr);
-	}
-	~TaskThread() { start(NULL); pthread_join(mThread, NULL); }
-	inline void start(Task *inTask);
+		: RTThread(inIndex), Notifier(inTarget, inIndex), mTask(NULL) {}
+	~TaskThread() { setTask(NULL); start(); }
+	inline void setTask(Task *inTask);
+	inline void start();
 protected:
-	void run();
-	static void *sProcess(void *inContext);
+	virtual void run();
 private:
-	pthread_t	mThread;
 	RTSemaphore	mSema;
 	Task *		mTask;
 };
 
-inline void TaskThread::start(Task *inTask)
+inline void TaskThread::setTask(Task *inTask)
 {
 	mTask = inTask;
-#ifdef DEBUG
-	printf("TaskThread::start(%p): posting for Task %p\n", this, inTask);
+}
+
+inline void TaskThread::start()
+{
+#ifdef THREAD_DEBUG
+	//	printf("TaskThread::start(%p): posting for Task %p\n", this, mTask);
 #endif
 	mSema.post();
 }
 
+
 void TaskThread::run()
 {
-#ifdef DEBUG
+#ifdef THREAD_DEBUG
 	printf("TaskThread %p running\n", this);
 #endif
 	bool done = false;
 	do {
 		mSema.wait();
-#ifdef DEBUG
-		printf("TaskThread %p woke up -- about to run mTask %p\n", this, mTask);
+#ifdef THREAD_DEBUG
+		printf("TaskThread %d woke up -- about to run mTask %p\n", mIndex, mTask);
 #endif
 		if (mTask) {
 			mTask->run();
+#ifdef THREAD_DEBUG
+            //printf("\tmTask %p done\n", mTask);
+            printf("TaskThread %d task done\n", mIndex);
+#endif
 			delete mTask;
 		}
 		else {
@@ -89,30 +97,17 @@ void TaskThread::run()
 		notify();
 	}
 	while (!done);
-#ifdef DEBUG
+#ifdef THREAD_DEBUG
 	printf("TaskThread %p exiting\n", this);
 #endif
 }
 
-void *TaskThread::sProcess(void *inContext)
-{
-	TaskThread *This = (TaskThread *) inContext;
-	if (setpriority(PRIO_PROCESS, 0, -20) != 0) {
-#ifdef DEBUG
-		perror("TaskThread::sProcess: setpriority() failed.");
-#endif
-	}
-	This->run();
-	return NULL;
-}
-
-class ThreadPool : private Lockable, private Notifiable
+class ThreadPool : private Notifiable
 {
 public:
 	ThreadPool() : mThreadSema(RT_THREAD_COUNT), mRequestCount(0), mWaitSema(0) { 
 		for(int i=0; i<RT_THREAD_COUNT; ++i) {
 			mThreads[i] = new TaskThread(this, i);
-			mIndices.push(i);
 		}
 	}
 	~ThreadPool() {
@@ -121,26 +116,32 @@ public:
 	}
 	inline TaskThread &getAvailableThread();
 	virtual void notify(int inIndex);
-	void setRequestCount(int count) { mRequestCount = count; }
-	void wait() { mWaitSema.wait(); }
+	inline void wait();
 private:
 	TaskThread		*mThreads[RT_THREAD_COUNT];
-	std::stack<int>	mIndices;
 	RTSemaphore		mThreadSema;
-	int				mRequestCount;		// Number of thread requests made that have not notified
+	AtomicInt		mRequestCount;		// Number of thread requests made that have not notified
 	RTSemaphore		mWaitSema;
 };
+
+inline void ThreadPool::wait() {
+	int count = mRequestCount;
+	for(int i=0; i<count; ++i)
+		mThreads[i]->start();
+#ifdef POOL_DEBUG
+	printf("ThreadPool waiting on %d threads\n", (int)count);
+#endif
+	mWaitSema.wait();
+}
 
 // Block until a thread is free and return it
 
 TaskThread& ThreadPool::getAvailableThread()
 {
-	mThreadSema.wait();
-	lock();
-	int tIndex = mIndices.top();
-	mIndices.pop();
-	unlock();
-#ifdef DEBUG
+    int tIndex = mRequestCount;
+    assert(tIndex < RT_THREAD_COUNT);
+	++mRequestCount;
+#ifdef POOL_DEBUG
 	printf("ThreadPool returning thread[%d]\n", tIndex);
 #endif
 	return *mThreads[tIndex];
@@ -150,17 +151,15 @@ TaskThread& ThreadPool::getAvailableThread()
 
 void ThreadPool::notify(int inIndex)
 {
-	lock();
-#ifdef DEBUG
+#ifdef POOL_DEBUG
 	printf("ThreadPool notified for index %d\n", inIndex);
 #endif
-	mIndices.push(inIndex);
 	int newCount = --mRequestCount;
-	unlock();
-	mThreadSema.post();
+#ifdef POOL_DEBUG
+    printf("ThreadPool mRequestCount: %d\n", newCount);
+#endif
 	if (newCount == 0) {
-#ifdef DEBUG
-		printf("ThreadPool mRequestCount: %d\n", newCount);
+#if defined(POOL_DEBUG) || defined(THREAD_DEBUG)
 		printf("ThreadPool posting to wait semaphore\n");
 #endif
 		mWaitSema.post();
@@ -173,12 +172,7 @@ TaskManagerImpl::~TaskManagerImpl() { delete mThreadPool; }
 
 void TaskManagerImpl::addTask(Task *inTask)
 {
-	mThreadPool->getAvailableThread().start(inTask);
-}
-
-void TaskManagerImpl::setRequestCount(int count)
-{
-	mThreadPool->setRequestCount(count);
+	mThreadPool->getAvailableThread().setTask(inTask);
 }
 
 void TaskManagerImpl::wait()

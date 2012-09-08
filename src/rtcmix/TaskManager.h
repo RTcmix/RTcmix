@@ -13,6 +13,10 @@
 
 #include <vector>
 
+#ifndef RT_THREAD_COUNT
+#define RT_THREAD_COUNT 2
+#endif
+
 using namespace std;
 
 class Task
@@ -75,7 +79,6 @@ public:
 	TaskManagerImpl();
 	virtual ~TaskManagerImpl();
 	void	addTask(Task *inTask);
-	void	setRequestCount(int count);
 	void	wait();
 private:
 	ThreadPool *mThreadPool;
@@ -87,11 +90,11 @@ public:
 	TaskManager();
 	~TaskManager();
 	template <typename Object, typename Ret, Ret (Object::*Method)()>
-	inline void addTasks(vector<Object *> inObjects);
+	inline void addTasks(const vector<Object *> &inObjects);
 	template <typename Object, typename Ret, typename Arg, Ret (Object::*Method)(Arg)>
-	inline void addTasks(vector<Object *> inObjects, Arg inArg);
+	inline void addTasks(const vector<Object *> &inObjects, Arg inArg);
 	template <typename Object, typename Ret, typename Arg1, typename Arg2, Ret (Object::*Method)(Arg1, Arg2)>
-	inline void addTasks(vector<Object *> inObjects, Arg1 inArg1, Arg2 inArg2);
+	inline void addTasks(const vector<Object *> &inObjects, Arg1 inArg1, Arg2 inArg2);
 
 protected:
 	void waitForCompletion();
@@ -100,37 +103,52 @@ private:
 };
 
 template <typename Object, typename Ret, Ret (Object::*Method)()>
-inline void TaskManager::addTasks(vector<Object *> inObjects)
+inline void TaskManager::addTasks(const vector<Object *> &inObjects)
 {
-	bool needToWait = !inObjects.empty();
-	mImpl->setRequestCount(inObjects.size());
-	for (typename vector<Object *>::iterator i = inObjects.begin(); i != inObjects.end(); ++i) {
-		mImpl->addTask(new NoArgumentTask<Object, Ret, Method>(*i));
+	int tasksToRun = inObjects.size();
+	typename vector<Object *>::const_iterator i = inObjects.begin();
+	while (tasksToRun > 0) {
+		int blockTasks = min(tasksToRun, RT_THREAD_COUNT);
+		for (int t = 0; t < blockTasks && i != inObjects.end(); ++t, ++i) {
+			Object *o = *i;
+			mImpl->addTask(new NoArgumentTask<Object, Ret, Method>(*i));
+		}
+		waitForCompletion();
+		tasksToRun -= blockTasks; 
 	}
-	if (needToWait) waitForCompletion();
 }
 
 template <typename Object, typename Ret, typename Arg, Ret (Object::*Method)(Arg)>
-inline void TaskManager::addTasks(vector<Object *> inObjects, Arg inArg)
+inline void TaskManager::addTasks(const vector<Object *> &inObjects, Arg inArg)
 {
-	bool needToWait = !inObjects.empty();
-	mImpl->setRequestCount(inObjects.size());
-	for (typename vector<Object *>::iterator i = inObjects.begin(); i != inObjects.end(); ++i) {
-		mImpl->addTask(new OneArgumentTask<Object, Ret, Arg, Method>(*i, inArg));
+	int tasksToRun = inObjects.size();
+	typename vector<Object *>::const_iterator i = inObjects.begin();
+	while (tasksToRun > 0) {
+		int blockTasks = min(tasksToRun, RT_THREAD_COUNT);
+		for (int t = 0; t < blockTasks && i != inObjects.end(); ++t, ++i) {
+			Object *o = *i;
+			mImpl->addTask(OneArgumentTask<Object, Ret, Arg, Method>(*i, inArg));
+		}
+		waitForCompletion();
+		tasksToRun -= blockTasks; 
 	}
-	if (needToWait) waitForCompletion();
 }
 
 template <typename Object, typename Ret, typename Arg1, typename Arg2, Ret (Object::*Method)(Arg1, Arg2)>
-inline void TaskManager::addTasks(vector<Object *> inObjects, Arg1 inArg1, Arg2 inArg2)
+inline void TaskManager::addTasks(const vector<Object *> &inObjects, Arg1 inArg1, Arg2 inArg2)
 {
-	bool needToWait = !inObjects.empty();
-	mImpl->setRequestCount(inObjects.size());
-	for (typename vector<Object *>::iterator i = inObjects.begin(); i != inObjects.end(); ++i) {
-		Object *o = *i;
-		mImpl->addTask(new TwoArgumentTask<Object, Ret, Arg1, Arg2, Method>(o, inArg1, inArg2));
+	int tasksToRun = inObjects.size();
+	typename vector<Object *>::const_iterator i = inObjects.begin();
+	while (tasksToRun > 0) {
+		int blockTasks = min(tasksToRun, RT_THREAD_COUNT);
+		// Feed in RT_THREAD_COUNT tasks to start, then feed a new task in every time an old one finishes.
+		for (int t = 0; t < blockTasks && i != inObjects.end(); ++t, ++i) {
+			Object *o = *i;
+			mImpl->addTask(new TwoArgumentTask<Object, Ret, Arg1, Arg2, Method>(o, inArg1, inArg2));
+		}
+		waitForCompletion();
+		tasksToRun -= blockTasks; 
 	}
-	if (needToWait) waitForCompletion();
 }
 
 #endif	// _TASKMANAGER_H_

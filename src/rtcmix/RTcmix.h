@@ -10,6 +10,9 @@
 #include <rt_types.h>
 #include <bus.h>
 #include "Locked.h"
+#ifdef MULTI_THREAD
+#include <vector>
+#endif
 
 extern "C" void set_SR(float);
 
@@ -102,6 +105,9 @@ public:
 	static void rtgetsamps(AudioDevice *inputDevice);
 	// Output	   
 	static void addToBus(BusType type, int bus, BufPtr buf, int offset, int endfr, int chans);
+#ifdef MULTI_THREAD
+    static void mixToBus();
+#endif
 	static void releaseInput(int fdIndex);
 
 	// These are functions called from the parser via pointers, and are
@@ -229,7 +235,7 @@ private:
 	static int		rtoutfile;
 
 	static InputFile	*inputFileTable;
-	static int max_input_fds;
+	static long     max_input_fds;
 
 	static BufPtr	audioin_buffer[];    /* input from ADC, not file */
 	static BufPtr	aux_buffer[];
@@ -238,6 +244,16 @@ private:
 	static TaskManager *taskManager;
 	static pthread_mutex_t aux_buffer_lock;
 	static pthread_mutex_t out_buffer_lock;
+    struct MixData {
+        BufPtr  src;
+        BufPtr  dest;
+        int     frames;
+        int     channels;
+        MixData(BufPtr inSrc, BufPtr inDest, int inFrames, int inChans)
+            : src(inSrc), dest(inDest), frames(inFrames), channels(inChans) {}
+    };
+    static std::vector<MixData> mixVector;
+	static pthread_mutex_t vectorLock;
 #endif
 	
 	static short AuxToAuxPlayList[]; /* The playback order for AUX buses */

@@ -27,7 +27,7 @@ PField::PField()
 PField::~PField()
 {
 #ifdef DEBUG
-	printf("PField::~PField (this = 0x%x)\n", this);
+	printf("PField::~PField (this = %p)\n", this);
 #endif
 }
 
