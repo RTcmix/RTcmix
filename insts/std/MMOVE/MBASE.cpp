@@ -42,13 +42,6 @@ extern "C" {
 
 extern const int g_Nterms[13];                 /* defined in ../MOVE/common.C */
 
-// These are declared in RVB.C
-
-extern double *globalReverbInput[2];		// Summed here, fed into RVB.
-#ifdef MULTI_THREAD
-extern pthread_mutex_t globalReverbLock;
-#endif
-
 MBASE::MBASE() : m_tapsize(0)
 {
     in = NULL;
@@ -124,10 +117,10 @@ int MBASE::init(double p[], int n_args)
 
     if (inputChannels() == 1)
        m_inchan = 0;
-
-	if (outputChannels() != 2)
-		return die(name(), "Output must be stereo.");
-
+	
+	if (outputChannels() != 4)
+		return die(name(), "Output must be 4-channel (2 signal, 2 reverb feed).");
+	
     /* (perform some initialization that used to be in space.c) */
     int meanLength = MFP_samps(SR, Dimensions); // mean delay length for reverb
     get_lengths(meanLength);              /* sets up delay lengths */
@@ -343,20 +336,15 @@ int MBASE::run()
 		 		}
 			}
 			DBG(printf("summing vectors\n"));
-#ifdef MULTI_THREAD
-			pthread_mutex_lock(&globalReverbLock);
-#endif
 			Vector *vec;
 			register float *outptr = &this->outbuf[frame*outChans];
-			
 			// sum unscaled reflected paths as global input for RVB.
 			for (int path = 0; path < m_paths; path++) {
 				vec = &m_vectors[0][path];
-				addBuf(&globalReverbInput[0][outputOffset+frame], vec->Sig, bufsamps);
+				addScaleBufToOut(&outptr[2], vec->Sig, bufsamps, outChans, 1.0);
 				vec = &m_vectors[1][path];
-				addBuf(&globalReverbInput[1][outputOffset+frame], vec->Sig, bufsamps);
+				addScaleBufToOut(&outptr[3], vec->Sig, bufsamps, outChans, 1.0);
 			}
-
 			if (!m_binaural) {
 				// now do cardioid mike effect 
 				// add scaled reflected paths to output as early response
@@ -376,19 +364,15 @@ int MBASE::run()
            		// copy scaled, filtered reflected paths (reverb input) as the early reponse
 				// to the output
 				for (int ch = 0; ch < 2; ++ch) {
-					copyBufToOut(&outptr[ch],
-						   &globalReverbInput[ch][outputOffset+frame],
-						   outChans,
-						   bufsamps);
-				}          
+					float *dest = &outptr[ch];
+					float *src = &outptr[ch+2];
+					for (int n=0; n<bufsamps; ++n) {
+						*dest = *src;
+						dest += outChans;
+						src += outChans;
+					}
+				}
 			}
-			DBG(printf("reverb input left signal:\n"));
-			DBG(PrintSig(&globalReverbInput[0][outputOffset], bufsamps));
-			DBG(printf("reverb input right signal:\n"));
-			DBG(PrintSig(&globalReverbInput[1][outputOffset], bufsamps));
-#ifdef MULTI_THREAD
-            pthread_mutex_unlock(&globalReverbLock);
-#endif
 			/* add the direct signal into the output bus  */
 			for (int n = 0; n < bufsamps; n++) {
 				outptr[0] += m_vectors[0][0].Sig[n];
@@ -397,18 +381,7 @@ int MBASE::run()
 			}
 			DBG(printf("FINAL MIX LEFT CHAN:\n"));
 			DBG(PrintOutput(&this->outbuf[frame*outChans], bufsamps, outChans));
-		}
-		else {
-#if 0   // WE ARE ZEROING THE OUTPUT BUFFER AT THE TOP
-			register float *outptr = &this->outbuf[frame*outChans];
-			for (int n = 0; n < bufsamps; n++) {
-				outptr[0] = 0;
-				outptr[1] = 0;
-				outptr += outChans;
-			}
-#endif
-		}
-		
+		}		
 		increment(bufsamps);
 		frame += bufsamps;
 		bufsamps = getBufferSize();		// update

@@ -47,15 +47,6 @@ extern "C" {
    #include <cmixfuns.h>
 }
 
-// These globals are accessed by BASE.C to sum early response output and rvb
-// input for the RVB instrument.
-
-double *globalReverbInput[2];		// Summed by PLACE/MOVE, fed into RVB.
-
-#ifdef MULTI_THREAD
-pthread_mutex_t globalReverbLock = PTHREAD_MUTEX_INITIALIZER;
-#endif
-
 int RVB::primes[NPRIMES + 2];
 AtomicInt RVB::primes_gotten = 0;
 
@@ -90,8 +81,6 @@ RVB::~RVB()
 		for (int i = 0; i < 2; i++) {
 			for (int j = 0; j < 6; j++)
 				delete [] m_rvbData[i][j].Rvb_del;
-			delete [] globalReverbInput[i];
-			globalReverbInput[i] = NULL;
 		}
 	}
 }
@@ -113,9 +102,9 @@ int RVB::init(double p[], int n_args)
     insamps = (int)(m_dur * SR);
     m_amp = p[3];
 
-    if (inputChannels() != 2)
-		return die(name(), "Input must be stereo.");
-
+    if (inputChannels() != 4)
+		return die(name(), "Input must be 4-channel (2 sig+early refl, 2 reverb input).");
+	
 	if (outputChannels() != 2)
 		return die(name(), "Output must be stereo.");
 
@@ -145,14 +134,6 @@ int RVB::configure()
 {
 	in = new float [RTBUFSAMPS * inputChannels()];
 
-	// Allocate the global buffers used to store the early response.
-	
-	for (int n = 0; n < 2; ++n) {
-		if (globalReverbInput[n] == NULL)
-			globalReverbInput[n] = new double[RTBUFSAMPS];
-		memset(globalReverbInput[n], 0, sizeof(double) * RTBUFSAMPS);
-	}
-
     alloc_delays();                     /* allocates memory for delays */
 	rvb_reset();
 	return 0;
@@ -167,9 +148,6 @@ int RVB::run()
 
     rtgetin(in, this, frames * inChans);
 
-#ifdef MULTI_THREAD
-	pthread_mutex_lock(&globalReverbLock);
-#endif
 	register float *outptr = &this->outbuf[0];
 	/* run summed 1st and 2nd generation paths through reverberator */
  	for (int n = 0; n < frames; n++) {
@@ -182,8 +160,8 @@ int RVB::run()
 		if (m_amp != 0.0) {
 			double rmPair[2];
 			double rvbPair[2];
-			rmPair[0] = globalReverbInput[0][n];
-			rmPair[1] = globalReverbInput[1][n];
+			rmPair[0] = in[n*inChans+2];
+			rmPair[1] = in[n*inChans+3];
 			doRun(rmPair, rvbPair, currentFrame() + n);
 			rvbsig[0][n] = rvbPair[0] * m_amp;
 			rvbsig[1][n] = rvbPair[1] * m_amp;
@@ -191,18 +169,11 @@ int RVB::run()
 		else
 			rvbsig[0][n] = rvbsig[1][n] = 0.0;
 		/* sum the input signal (which includes early response) & reverbed sigs  */
-		*outptr++ = in[n*2] + rvbsig[0][n];
-		*outptr++ = in[n*2+1] + rvbsig[1][n];
+		*outptr++ = in[n*inChans] + rvbsig[0][n];
+		*outptr++ = in[n*inChans+1] + rvbsig[1][n];
 	}
 	increment(frames);
-	
-	// Zero out global buffers for next cycle.
-	for (int c = 0; c < 2; ++c) {
-		memset(globalReverbInput[c], 0, sizeof(double) * RTBUFSAMPS);
-	}
-#ifdef MULTI_THREAD
-	pthread_mutex_unlock(&globalReverbLock);
-#endif
+		
 	DBG(printf("FINAL MIX:\n"));
 	DBG(PrintInput(&this->outbuf[0], RTBUFSAMPS));
 	DBG(PrintInput(&this->outbuf[1], RTBUFSAMPS));
@@ -326,11 +297,11 @@ RVB::matrix_mix()
 {
 	for (int i = 0; i < 12; ++i) {
 		ReverbPatch *patch = &ReverbPatches[i];
-   		double *outptr = patch->outptr;
-		*outptr = 0.0;
+		double out = 0.0;
 		for (int n = 0; n < patch->incount; n++) {
-			*outptr += *patch->inptrs[n] * patch->gains[n];
+			out += *patch->inptrs[n] * patch->gains[n];
 		}
+   		*patch->outptr = out;
 	}
 }	        
 

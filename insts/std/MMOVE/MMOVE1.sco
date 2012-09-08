@@ -1,16 +1,16 @@
 rtsetparams(44100,2,1024)
-rtinput("/home/dscott/sounds/Track11-EnglishSpokenMP.wav")
+rtinput("../../../snd/loocher.aiff");
 load("MMOVE")
-bus_config("MMOVE","in0","aox0-1")
-bus_config("RVB","aix0-1","out0-1")
+bus_config("MMOVE","in0","aox0-3")
+bus_config("RVB","aix0-3","out0-1")
 
 mikes(45,0.5)
 
 dist_front=100
-dist_right=130
-dist_rear=-145
-dist_left=-178
-height=100;
+dist_right=92
+dist_rear=-113
+dist_left=-77
+height=50;
 rvbtime=2;
 abs_fac=4;
 space(dist_front,dist_right,dist_rear,dist_left,height,abs_fac,rvbtime)
@@ -20,7 +20,7 @@ set_attenuation_params(5.0, 100.0, 1.5);
 
 insk=0
 outsk=0
-dur=15;
+dur=DUR(0);
 pre_amp=12
 dist_mikes=2.2		/* for normal */
 //dist_mikes=0.67	/* for binaural */

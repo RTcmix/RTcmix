@@ -1,7 +1,8 @@
 rtsetparams(44100,2,4096)
-rtinput("/home/doug/sounds/glass-01.wav");
-bus_config("MPLACE","in0","aox0-1")
-bus_config("RVB","aix0-1","out0-1")
+rtinput("../../../snd/nucular.wav")
+load("MPLACE");
+bus_config("MPLACE","in0","aox0-3")
+bus_config("RVB","aix0-3","out0-1")
 
 mikes(45,0.5)
 
