@@ -136,8 +136,6 @@ int MBASE::init(double p[], int n_args)
       int amplen = fsize(1);
       tableset(SR, m_dur, amplen, amptabs);      /* controls input dur only */
    }
-
-   skip = (int)(SR / (float)resetval);
    
    /* determine extra run time for this routine before calling rtsetoutput() */
    double ringdur = 0.0;
@@ -214,7 +212,7 @@ int MBASE::getInput(int currentSample, int frames)
 			   inamp = p[3];
 			   if (amparray)
     			  inamp *= tablei(lCurSamp, amparray, amptabs);
-			   m_branch = skip;
+			   m_branch = getSkip();
 			}
 			if (m_inchan == AVERAGE_CHANS) {
 			   insig = 0.0;

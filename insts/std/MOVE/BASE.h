@@ -46,7 +46,7 @@ protected:
    // static methods
    static void get_primes(int x, int p[]);
 protected:
-   int    m_inchan, insamps, skip, m_binaural, m_tapsize, tapcount;
+   int    m_inchan, insamps, m_binaural, m_tapsize, tapcount;
    int    cartflag, rvbdelsize, m_buffersize, m_branch;
    float  inamp, m_dur, m_rvbamp;
    float  amptabs[2], *in;

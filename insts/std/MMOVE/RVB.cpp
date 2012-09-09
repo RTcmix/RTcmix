@@ -121,8 +121,6 @@ int RVB::init(double p[], int n_args)
     set_allpass();
    
 	wire_matrix(Matrix);
-
-	_skip = (int) (SR / (float) resetval);
 	
 	if (rtsetoutput(outskip, m_dur + rvb_time, this) == -1)
 		return DONT_SCHEDULE;
@@ -155,7 +153,7 @@ int RVB::run()
 			double p[4];
 			update(p, 4);
 			m_amp = p[3];
-			_branch = _skip;
+			_branch = getSkip();
 		}
 		if (m_amp != 0.0) {
 			double rmPair[2];

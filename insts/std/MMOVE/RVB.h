@@ -51,7 +51,7 @@ private:
 	float		m_dur, m_amp;
 	float		*in;
 	int			insamps, rvbdelsize;
-	int			_skip, _branch;
+	int			_branch;
 	// static methods
 	static void get_primes(int x, int p[]);
 	// static data

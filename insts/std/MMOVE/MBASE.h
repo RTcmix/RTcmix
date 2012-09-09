@@ -41,7 +41,7 @@ protected:
    long tap_set(int);
    void mike_set();
 protected:
-   int    m_inchan, insamps, skip, m_binaural, m_tapsize, tapcount;
+   int    m_inchan, insamps, m_binaural, m_tapsize, tapcount;
    int    m_cartflag, m_buffersize;
    int 	  m_branch;
    int	  m_paths;

@@ -134,8 +134,6 @@ int BASE::init(double p[], int n_args)
    }
    else
 	  advise(name(), "Setting phrase curve to all 1's.");
-
-   skip = (int)(SR / (float)resetval);
    
    /* determine extra run time for this routine before calling rtsetoutput() */
    double ringdur = 0.0;
@@ -195,7 +193,7 @@ int BASE::getInput(int currentSample, int frames)
 				inamp = p[3];
 				if (amparray)
 					inamp *= tablei(lCurSamp, amparray, amptabs);
-				m_branch = skip;
+				m_branch = getSkip();
 			}
 			if (m_inchan == AVERAGE_CHANS) {
 			   insig = 0.0;
