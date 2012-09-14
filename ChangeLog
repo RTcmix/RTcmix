@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2012-09-08  Douglas Scott  <netdscott-at-netscape.net>
+
+	* Reworked multi-threaded code to remove almost all the locks.  This
+	  included a rewrite of the InputFile class to handle multi-threaded
+	  file audio conversion.  MT code also now works under Linux.
+
 2012-7-15  John Gibson <johgibso-at-indiana.edu>
 
 	* Make it so that the amp envelope for FILTSWEEP can be used to
