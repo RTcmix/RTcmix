@@ -63,8 +63,8 @@ class AtomicInt
 public:
     AtomicInt(int inVal=0) { atomic_set(&val, inVal); }
     operator int () const { return atomic_read(&val); }
-    int operator ++ () { atomic_add(1, &val); return atomic_read(&val); }
-    int operator -- () { atomic_sub(1, &val); return atomic_read(&val); }
+    int operator ++ () { return atomic_inc_return(&val); }
+    int operator -- () { return atomic_dec_return(&val); }
     int operator = (int rhs) { atomic_set(&val, rhs); return atomic_read(&val); }
 };
 
