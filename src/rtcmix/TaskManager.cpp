@@ -46,22 +46,19 @@ private:
 class TaskThread : public RTThread, Notifier
 {
 public:
-	TaskThread(Notifiable *inTarget, int inIndex)
-		: RTThread(inIndex), Notifier(inTarget, inIndex), mTask(NULL) {}
-	~TaskThread() { setTask(NULL); start(); }
-	inline void setTask(Task *inTask);
+	TaskThread(Notifiable *inTarget, TaskProvider *inProvider, int inIndex)
+		: RTThread(inIndex), Notifier(inTarget, inIndex),
+		  mStopping(false), mTaskProvider(inProvider) {}
+	~TaskThread() { mStopping = true; start(); }
 	inline void start();
 protected:
-	virtual void run();
+	virtual void	run();
+	Task *			getATask() { return mTaskProvider->getTask(); }
 private:
-	RTSemaphore	mSema;
-	Task *		mTask;
+	bool			mStopping;
+	TaskProvider *	mTaskProvider;
+	RTSemaphore		mSema;
 };
-
-inline void TaskThread::setTask(Task *inTask)
-{
-	mTask = inTask;
-}
 
 inline void TaskThread::start()
 {
@@ -71,32 +68,33 @@ inline void TaskThread::start()
 	mSema.post();
 }
 
-
 void TaskThread::run()
 {
 #ifdef THREAD_DEBUG
 	printf("TaskThread %p running\n", this);
 #endif
-	bool done = false;
 	do {
+#ifdef THREAD_DEBUG
+		printf("TaskThread %d sleeping...\n", mIndex);
+#endif
 		mSema.wait();
 #ifdef THREAD_DEBUG
-		printf("TaskThread %d woke up -- about to run mTask %p\n", mIndex, mTask);
+		printf("TaskThread %d woke up -- running task loop\n", mIndex);
 #endif
-		if (mTask) {
-			mTask->run();
+		Task *task;
+		while ((task = getATask()) != NULL) {
 #ifdef THREAD_DEBUG
-            //printf("\tmTask %p done\n", mTask);
-            printf("TaskThread %d task done\n", mIndex);
+            printf("TaskThread %d running task %p...\n", mIndex, task);
 #endif
-			delete mTask;
-		}
-		else {
-			done = true;
+			task->run();
+#ifdef THREAD_DEBUG
+            printf("TaskThread %d task %p done\n", mIndex, task);
+#endif
+			delete task;
 		}
 		notify();
 	}
-	while (!done);
+	while (!mStopping);
 #ifdef THREAD_DEBUG
 	printf("TaskThread %p exiting\n", this);
 #endif
@@ -105,46 +103,34 @@ void TaskThread::run()
 class ThreadPool : private Notifiable
 {
 public:
-	ThreadPool() : mThreadSema(RT_THREAD_COUNT), mRequestCount(0), mWaitSema(0) { 
+	ThreadPool(TaskProvider *inProvider) : mRequestCount(0), mThreadSema(RT_THREAD_COUNT), mWaitSema(0) {
 		for(int i=0; i<RT_THREAD_COUNT; ++i) {
-			mThreads[i] = new TaskThread(this, i);
+			mThreads[i] = new TaskThread(this, inProvider, i);
 		}
 	}
 	~ThreadPool() {
 		for(int i=0; i<RT_THREAD_COUNT; ++i)
 			delete mThreads[i];
 	}
-	inline TaskThread &getAvailableThread();
 	virtual void notify(int inIndex);
-	inline void wait();
+	inline void startAndWait(int taskCount);
 private:
 	TaskThread		*mThreads[RT_THREAD_COUNT];
+	AtomicInt		mRequestCount;
 	RTSemaphore		mThreadSema;
-	AtomicInt		mRequestCount;		// Number of thread requests made that have not notified
 	RTSemaphore		mWaitSema;
 };
 
-inline void ThreadPool::wait() {
-	int count = mRequestCount;
+inline void ThreadPool::startAndWait(int taskCount) {
+	// Dont start any more threads than we have tasks.
+	mRequestCount = std::min(taskCount, RT_THREAD_COUNT);
+	const int count = mRequestCount;
 	for(int i=0; i<count; ++i)
 		mThreads[i]->start();
 #ifdef POOL_DEBUG
-	printf("ThreadPool waiting on %d threads\n", (int)count);
+	printf("ThreadPool::startAndWait: waiting on %d threads\n", count);
 #endif
 	mWaitSema.wait();
-}
-
-// Block until a thread is free and return it
-
-TaskThread& ThreadPool::getAvailableThread()
-{
-    int tIndex = mRequestCount;
-    assert(tIndex < RT_THREAD_COUNT);
-	++mRequestCount;
-#ifdef POOL_DEBUG
-	printf("ThreadPool returning thread[%d]\n", tIndex);
-#endif
-	return *mThreads[tIndex];
 }
 
 // Let thread pool know that the thread at index inIndex is available
@@ -154,11 +140,7 @@ void ThreadPool::notify(int inIndex)
 #ifdef POOL_DEBUG
 	printf("ThreadPool notified for index %d\n", inIndex);
 #endif
-	int newCount = --mRequestCount;
-#ifdef POOL_DEBUG
-    printf("ThreadPool mRequestCount: %d\n", newCount);
-#endif
-	if (newCount == 0) {
+	if (mRequestCount.decrementAndTest()) {
 #if defined(POOL_DEBUG) || defined(THREAD_DEBUG)
 		printf("ThreadPool posting to wait semaphore\n");
 #endif
@@ -166,23 +148,56 @@ void ThreadPool::notify(int inIndex)
 	}
 }
 
-TaskManagerImpl::TaskManagerImpl() : mThreadPool(new ThreadPool) {}
+TaskManagerImpl::TaskManagerImpl()
+	: mThreadPool(new ThreadPool(this)), mTaskHead(NULL), mTaskTail(NULL) {}
 
 TaskManagerImpl::~TaskManagerImpl() { delete mThreadPool; }
 
 void TaskManagerImpl::addTask(Task *inTask)
 {
-	mThreadPool->getAvailableThread().setTask(inTask);
+#ifdef DEBUG
+	printf("TaskManagerImpl::addTask: adding task %p\n", inTask);
+#endif
+#if 0
+	// Each new task is put in front of the previous one
+	if (mTaskHead == NULL)
+		mTaskTail = mTaskHead = inTask;
+	else {
+		mTaskTail->next() = inTask;
+		mTaskTail = inTask;
+	}
+#else
+	// Each new task is put behind the previous one
+	inTask->next() = mTaskHead;
+	mTaskHead = inTask;
+#endif
 }
 
-void TaskManagerImpl::wait()
+Task * TaskManagerImpl::getTask()
+{
+	Task *task = mTaskStack.pop_atomic();
+#ifdef DEBUG
+	printf("TaskManagerImpl::getTask: returning task %p\n", task);
+#endif
+	return task;
+}
+
+void TaskManagerImpl::startAndWait()
 {
 #ifdef DEBUG
-	printf("TaskManagerImpl::wait waiting on ThreadPool...\n");
+	printf("TaskManagerImpl::startAndWait waiting on ThreadPool...\n");
 #endif
-	mThreadPool->wait();
+	int taskCount = 0;
+	// Push entire reversed linked list into stack
+	for (Task *t = mTaskHead; t != NULL; ++taskCount) {
+		Task *next = t->next();
+		mTaskStack.push_atomic(t);
+		t = next;
+	}
+	mTaskHead = mTaskTail = NULL;
+	mThreadPool->startAndWait(taskCount);
 #ifdef DEBUG
-	printf("TaskManagerImpl::wait done\n");
+	printf("TaskManagerImpl::startAndWait done\n");
 #endif
 }
 
@@ -195,7 +210,3 @@ TaskManager::~TaskManager()
 	delete mImpl;
 }
 
-void TaskManager::waitForCompletion()
-{
-	mImpl->wait();
-}

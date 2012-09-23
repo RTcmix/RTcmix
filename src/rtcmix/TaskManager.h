@@ -11,7 +11,9 @@
 #ifndef _TASKMANAGER_H_
 #define _TASKMANAGER_H_
 
+#include "Lockable.h"
 #include <vector>
+#include "atomic_stack.h"
 
 #ifndef RT_THREAD_COUNT
 #define RT_THREAD_COUNT 2
@@ -22,8 +24,19 @@ using namespace std;
 class Task
 {
 public:
+	Task() :mPrev(NULL), mNext(NULL) {}
 	virtual ~Task() {}
 	virtual void run()=0;
+	Task *&	prev() { return mPrev; }
+	Task *&	next() { return mNext; }
+private:
+	Task	*mPrev;
+	Task	*mNext;
+};
+
+class TaskProvider {
+public:
+	virtual Task *	getTask() = 0;
 };
 
 template <typename Object, typename Ret, Ret (Object::*Method)()>
@@ -73,15 +86,19 @@ private:
 
 class ThreadPool;
 
-class TaskManagerImpl
+class TaskManagerImpl : public TaskProvider, public Lockable
 {
 public:
 	TaskManagerImpl();
 	virtual ~TaskManagerImpl();
+	virtual Task *	getTask();
 	void	addTask(Task *inTask);
-	void	wait();
+	void	startAndWait();
 private:
-	ThreadPool *mThreadPool;
+	ThreadPool *			mThreadPool;
+	Task *					mTaskHead;
+	Task *					mTaskTail;
+	TAtomicStack2<Task>		mTaskStack;
 };
 
 class TaskManager
@@ -90,65 +107,39 @@ public:
 	TaskManager();
 	~TaskManager();
 	template <typename Object, typename Ret, Ret (Object::*Method)()>
-	inline void addTasks(const vector<Object *> &inObjects);
+	inline void addTask(Object * inObject);
 	template <typename Object, typename Ret, typename Arg, Ret (Object::*Method)(Arg)>
-	inline void addTasks(const vector<Object *> &inObjects, Arg inArg);
+	inline void addTask(Object * inObject, Arg inArg);
 	template <typename Object, typename Ret, typename Arg1, typename Arg2, Ret (Object::*Method)(Arg1, Arg2)>
-	inline void addTasks(const vector<Object *> &inObjects, Arg1 inArg1, Arg2 inArg2);
-
-protected:
-	void waitForCompletion();
+	inline void addTask(Object * inObject, Arg1 inArg1, Arg2 inArg2);
+	template <typename Object>
+	inline void waitForTasks(vector<Object *> &ioVector);
 private:
 	TaskManagerImpl	*mImpl;
 };
 
 template <typename Object, typename Ret, Ret (Object::*Method)()>
-inline void TaskManager::addTasks(const vector<Object *> &inObjects)
+inline void TaskManager::addTask(Object * inObject)
 {
-	int tasksToRun = inObjects.size();
-	typename vector<Object *>::const_iterator i = inObjects.begin();
-	while (tasksToRun > 0) {
-		int blockTasks = min(tasksToRun, RT_THREAD_COUNT);
-		for (int t = 0; t < blockTasks && i != inObjects.end(); ++t, ++i) {
-			Object *o = *i;
-			mImpl->addTask(new NoArgumentTask<Object, Ret, Method>(*i));
-		}
-		waitForCompletion();
-		tasksToRun -= blockTasks; 
-	}
+	mImpl->addTask(new NoArgumentTask<Object, Ret, Method>(inObject));
 }
 
 template <typename Object, typename Ret, typename Arg, Ret (Object::*Method)(Arg)>
-inline void TaskManager::addTasks(const vector<Object *> &inObjects, Arg inArg)
+inline void TaskManager::addTask(Object * inObject, Arg inArg)
 {
-	int tasksToRun = inObjects.size();
-	typename vector<Object *>::const_iterator i = inObjects.begin();
-	while (tasksToRun > 0) {
-		int blockTasks = min(tasksToRun, RT_THREAD_COUNT);
-		for (int t = 0; t < blockTasks && i != inObjects.end(); ++t, ++i) {
-			Object *o = *i;
-			mImpl->addTask(OneArgumentTask<Object, Ret, Arg, Method>(*i, inArg));
-		}
-		waitForCompletion();
-		tasksToRun -= blockTasks; 
-	}
+	mImpl->addTask(OneArgumentTask<Object, Ret, Arg, Method>(inObject, inArg));
 }
 
 template <typename Object, typename Ret, typename Arg1, typename Arg2, Ret (Object::*Method)(Arg1, Arg2)>
-inline void TaskManager::addTasks(const vector<Object *> &inObjects, Arg1 inArg1, Arg2 inArg2)
+inline void TaskManager::addTask(Object * inObject, Arg1 inArg1, Arg2 inArg2)
 {
-	int tasksToRun = inObjects.size();
-	typename vector<Object *>::const_iterator i = inObjects.begin();
-	while (tasksToRun > 0) {
-		int blockTasks = min(tasksToRun, RT_THREAD_COUNT);
-		// Feed in RT_THREAD_COUNT tasks to start, then feed a new task in every time an old one finishes.
-		for (int t = 0; t < blockTasks && i != inObjects.end(); ++t, ++i) {
-			Object *o = *i;
-			mImpl->addTask(new TwoArgumentTask<Object, Ret, Arg1, Arg2, Method>(o, inArg1, inArg2));
-		}
-		waitForCompletion();
-		tasksToRun -= blockTasks; 
-	}
+	mImpl->addTask(new TwoArgumentTask<Object, Ret, Arg1, Arg2, Method>(inObject, inArg1, inArg2));
+}
+
+template <typename Object>
+inline void TaskManager::waitForTasks(vector<Object *> &ioVector)
+{
+	mImpl->startAndWait();
 }
 
 #endif	// _TASKMANAGER_H_

@@ -34,8 +34,9 @@ typedef enum {
 #define SHORT (sizeof(short))
 #define LONG  (sizeof(long))
 
-#ifdef MULTI_THREAD
 #ifdef __cplusplus
+
+#ifdef MULTI_THREAD
 
 #ifdef MACOSX
 
@@ -47,8 +48,9 @@ class AtomicInt
 public:
     AtomicInt(int inVal=0) : val(inVal) {}
     operator int () const { return val; }
-    int operator ++ () { return OSAtomicIncrement32(&val); }
-    int operator -- () { return OSAtomicDecrement32(&val); }
+	void increment() { OSAtomicIncrement32(&val); }
+    bool incrementAndTest() { return OSAtomicIncrement32(&val) == 0; }
+    bool decrementAndTest() { return OSAtomicDecrement32(&val) == 0; }
     int operator = (int rhs) { return (val = rhs); }
     
 };
@@ -63,27 +65,35 @@ class AtomicInt
 public:
     AtomicInt(int inVal=0) { atomic_set(&val, inVal); }
     operator int () const { return atomic_read(&val); }
-    int operator ++ () { atomic_inc(&val); return (int)*this; }
-    int operator -- () { atomic_dec(&val); return (int)*this; }
-    int operator = (int rhs) { atomic_set(&val, rhs); return (int) *this; }
+    void increment() { atomic_inc(&val); }
+    bool incrementAndTest() { return atomic_inc_and_test(&val); }
+    bool decrementAndTest() { return atomic_dec_and_test(&val); }
+    int operator = (int rhs) { atomic_set(&val, rhs); return atomic_read(&val); }
 };
 
 #else
 
+#error Tell Doug Scott you are trying to compile MULTI_THREAD for this platform.
 typedef int AtomicInt;
 
 #endif
 
-#else
+#else	// !MULTI_THREAD
 
-typedef int AtomicInt;
+class AtomicInt
+{
+    int val;
+public:
+    AtomicInt(int inVal=0) : val(inVal) {}
+    operator int () const { return val; }
+    void increment() { ++val; }
+    bool incrementAndTest() { return ++val == 0; }
+    bool decrementAndTest() { return --val == 0; }
+    int operator = (int rhs) { return (val = rhs); }
+};
+
+#endif  // !MULTI_THREAD
 
 #endif  // __cplusplus
-
-#else	// not MULTI_THREAD
-
-typedef int AtomicInt;
-
-#endif  // MULTI_THREAD
 
 #endif	// _RT_TYPES_H_

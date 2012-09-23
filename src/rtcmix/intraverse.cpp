@@ -29,6 +29,7 @@ using namespace std;
 #undef ALLBUG
 #undef DBUG
 #undef WBUG	/* this new one turns on prints of where we are */
+#undef IBUG	/* debug what Instruments are doing */
 
 // Temporary globals
 
@@ -87,7 +88,7 @@ int RTcmix::runMainLoop(void)
 
 	// NOTE: audioin, aux and output buffers are zero'd during allocation
 
-	if (rtsetparams_called) {
+	if (rtsetparams_was_called()) {
 		// NOTE: This will be handled in the AudioDevice platform-specific.
 		// Right now, the intraVerse function below calls rtsendzeros().
 //		startupBufCount = ZERO_FRAMES_BEFORE / RTBUFSAMPS;
@@ -339,11 +340,12 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		cout << "bus: " << bus << endl;
 		cout << "busq:  " << busq << endl;
 #endif
-
-        // NOTE FOR ME:  Vars carried from above into block below: rtQSize, rtQchunkStart, bufEndSamp,
-        // bus, panic?, 
         
 #ifdef MULTI_THREAD
+#if defined(IBUG)
+		if (bus != -1)
+			cout << "\nAdding instruments for current slice [end = " << 1000 * bufEndSamp/SR << " ms.] and bus [" << bus << "]\n";
+#endif
 		// Play elements on queue (insert back in if needed) ++++++++++++++++++
 		while (rtQSize > 0 && rtQchunkStart < bufEndSamp && bus != -1) {
 			int chunksamps = 0;
@@ -395,23 +397,30 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			// DT_PANIC_MOD
 			if (!panic) {
 #ifdef DBUG
-				cout << "putting inst " << (void *) Iptr << " into vector (bus" << bus_type << ") [" << Iptr->name() << "]\n";
+				cout << "putting inst " << (void *) Iptr << " into taskmgr (bus" << bus_type << ") [" << Iptr->name() << "]\n";
 #endif
 				instruments.push_back(Iptr);
+				taskManager->addTask<Instrument, int, BusType, int, &Instrument::exec>(Iptr, bus_type, bus);
 			}
 			else // DT_PANIC_MOD ... just keep on incrementing endsamp
 				endsamp += chunksamps;
 			rtQSize = rtQueue[busq].getSize();
 		}	// while(...)
 
-#ifdef DBUG
-		cout << "waiting for tasks..." << endl;
+		if (!instruments.empty()) {
+#if defined(DBUG) || defined(IBUG)
+			cout << "Done adding instruments for current slice\n";
+			cout << "waiting for " << instruments.size() << " instrument tasks..." << endl;
 #endif
-		taskManager->addTasks<Instrument, int, BusType, int, &Instrument::exec>(instruments, bus_type, bus);
-        RTcmix::mixToBus();
-#ifdef DBUG
-		cout << "done waiting" << endl;
+			taskManager->waitForTasks(instruments);
+        	RTcmix::mixToBus();
+#if defined(DBUG) || defined(IBUG)
+			cout << "done waiting" << endl;
 #endif
+#if defined(IBUG)
+			cout << "Re-queuing instruments\n";
+#endif
+		}
 		for (vector<Instrument *>::iterator it = instruments.begin(); it != instruments.end(); ++it) {
 			Iptr = *it;
 			int chunksamps = Iptr->framesToRun();

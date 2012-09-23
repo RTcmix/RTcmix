@@ -124,7 +124,7 @@ public:
 #endif	
 #else	// MACOSX
 #if (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) > 40100
-		return __sync_val_compare_and_swap(pvalue, oldvalue, newvalue);
+		return __sync_bool_compare_and_swap(pvalue, oldvalue, newvalue);
 #else
 		#error WE NEED AN ATOMIC COMPARE AND SWAP OPERATOR HERE
 #endif
