@@ -11,7 +11,6 @@
 #ifndef _TASKMANAGER_H_
 #define _TASKMANAGER_H_
 
-#include "Lockable.h"
 #include <vector>
 #include "atomic_stack.h"
 
@@ -24,13 +23,11 @@ using namespace std;
 class Task
 {
 public:
-	Task() :mPrev(NULL), mNext(NULL) {}
+	Task() : mNext(NULL) {}
 	virtual ~Task() {}
 	virtual void run()=0;
-	Task *&	prev() { return mPrev; }
 	Task *&	next() { return mNext; }
 private:
-	Task	*mPrev;
 	Task	*mNext;
 };
 
@@ -86,7 +83,7 @@ private:
 
 class ThreadPool;
 
-class TaskManagerImpl : public TaskProvider, public Lockable
+class TaskManagerImpl : public TaskProvider
 {
 public:
 	TaskManagerImpl();
@@ -98,7 +95,11 @@ private:
 	ThreadPool *			mThreadPool;
 	Task *					mTaskHead;
 	Task *					mTaskTail;
+#ifdef MACOSX
 	TAtomicStack2<Task>		mTaskStack;
+#else
+	TAtomicStack<Task>		mTaskStack;
+#endif
 };
 
 class TaskManager
