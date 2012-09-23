@@ -23,7 +23,7 @@ public:
 class qElt {
 public:
   qElt(heapslot *hs) : next(NULL), prev(NULL), heap(hs) {}
-  friend class queue;
+  friend class rtqueue;
   friend class heap;
   qElt *next;
   qElt *prev;
@@ -32,14 +32,14 @@ public:
 
 // class for main queue structure
 
-class queue {
+class rtqueue {
 private:
   friend class heap;
   qElt *head;
   qElt *tail;
 public:
-  queue() : head(NULL), tail(NULL) {}
-  ~queue();
+  rtqueue() : head(NULL), tail(NULL) {}
+  ~rtqueue();
   void pushTail(heapslot*);
   void push(heapslot*);
   heapslot *pop();
@@ -51,7 +51,7 @@ public:
 
 class heap : public Lockable {
 private:
-  queue leaves;  // queue used to hold next insertion point
+  rtqueue leaves;  // queue used to hold next insertion point
 public:
   heapslot* bot;
   heapslot* top;

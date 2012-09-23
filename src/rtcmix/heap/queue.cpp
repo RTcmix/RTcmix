@@ -7,9 +7,9 @@
 
 using namespace std;
 
-queue::~queue()
+rtqueue::~rtqueue()
 {
-//	cout << "queue::~queue()\n";
+//	cout << "rtqueue::~rtqueue()\n";
 	if (tail != head) {
 	    delete tail;
 	}
@@ -22,7 +22,7 @@ queue::~queue()
 }
 
 void 
-queue::pushTail(heapslot *newHeapElt)
+rtqueue::pushTail(heapslot *newHeapElt)
 {
   // create new qElt
   qElt *newElt = new qElt(newHeapElt);
@@ -37,7 +37,7 @@ queue::pushTail(heapslot *newHeapElt)
 }
 
 void 
-queue::push(heapslot *newHeapElt)
+rtqueue::push(heapslot *newHeapElt)
 {
   qElt *newElt = new qElt(newHeapElt);
   
@@ -51,13 +51,13 @@ queue::push(heapslot *newHeapElt)
 }
 
 heapslot *
-queue::pop() 
+rtqueue::pop() 
 {
   qElt *tQelt;
   heapslot *retHeap;
   tQelt = head;
   if (!head) {
-    cerr << "ERROR: attempt to pop empty queue\n";
+    cerr << "ERROR: attempt to pop empty rtqueue\n";
     return NULL;
   }
   retHeap = head->heap;
@@ -67,13 +67,13 @@ queue::pop()
 }
 
 heapslot *
-queue::popTail()
+rtqueue::popTail()
 {
   qElt *tQelt;
   heapslot *retHeap;
   tQelt = tail;
   if (!tail) {
-    cerr << "ERROR: attempt to popTail empty queue\n";
+    cerr << "ERROR: attempt to popTail empty rtqueue\n";
     return NULL;
   }
   retHeap = tail->heap;
