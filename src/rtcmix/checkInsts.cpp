@@ -14,6 +14,7 @@
 #include "rtdefs.h"
 #include "mixerr.h"
 #include "rtcmix_types.h"
+#include "ugens.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,6 +54,11 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 #ifdef DEBUG
    printf("ENTERING checkInsts() FUNCTION -----\n");
 #endif
+	
+	if (!rtsetparams_was_called()) {
+		die(instname, "You did not call rtsetparams!");
+		return -1;
+	}
 
    mixerr = MX_FNAME;
    rt_temp = rt_list;

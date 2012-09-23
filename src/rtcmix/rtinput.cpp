@@ -253,7 +253,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	if (!is_open) {			/* if not, open input audio device or file. */
 		long nsamps = 0;
 		if (audio_in) {
-			if (rtsetparams_called) {
+			if (rtsetparams_was_called()) {
 				// If audio *playback* was disabled, but there is a request for
 				// input audio, create the audio input device here.
 				if (!audioDevice && !Option::play()) {

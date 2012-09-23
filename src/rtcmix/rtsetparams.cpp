@@ -43,7 +43,7 @@ RTcmix::rtsetparams(float p[], int n_args, double pp[])
    static char *out_port_str = NULL;
 #endif /* SGI */
 
-   if (rtsetparams_called) {
+   if (rtsetparams_was_called()) {
       die("rtsetparams", "You can only call rtsetparams once!");
 	  return -1;
    }
