@@ -631,11 +631,12 @@ RTcmix::get_bus_config(const char *inst_name)
 }
 
 /* ------------------------------------------------------- addToBus --------- */
-/* This is called by each instrument during addout() to mix itself into bus. */
+/* This is called by each instrument during addout() to insert a request for a mix.
+   All requests are mixed at the same time via mixToBus().
+ */
 
 #ifdef MULTI_THREAD
 
-// Parallel version just adds 
 void
 RTcmix::addToBus(BusType type, int bus, BufPtr src, int offset, int endfr, int chans)
 {
@@ -681,6 +682,9 @@ RTcmix::mixToBus()
 }
 
 #else
+
+/* ------------------------------------------------------- addToBus --------- */
+/* This is called by each instrument during addout() to mix itself into bus. */
 
 void
 RTcmix::addToBus(BusType type, int bus, BufPtr src, int offset, int endfr, int chans)
