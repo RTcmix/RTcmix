@@ -37,7 +37,7 @@ extern "C" {
 extern int g_Nterms[13];				 /* defined in common.C */
 
 int BASE::primes[NPRIMES + 2];
-AtomicInt BASE::primes_gotten = 0;
+AtomicInt BASE::primes_gotten = 1;
 
 BASE::BASE() : m_tapsize(0)
 {
@@ -1103,7 +1103,7 @@ BASE::get_primes(int x, int p[])
 {
    int val = 5, flag, i, index = 2;
 
-   if (++primes_gotten == 1) {
+   if (primes_gotten.decrementAndTest()) {
 		/* first 2 vals initialized */
 		p[0] = 2;
 		p[1] = 3;
