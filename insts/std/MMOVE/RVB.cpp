@@ -48,7 +48,7 @@ extern "C" {
 }
 
 int RVB::primes[NPRIMES + 2];
-AtomicInt RVB::primes_gotten = 0;
+AtomicInt RVB::primes_gotten = -1;
 
 /* ------------------------------------------------------------ makeRVB --- */
 Instrument *makeRVB()
@@ -503,7 +503,7 @@ RVB::get_primes(int x, int p[])
 {
    int val = 5, index = 2;
 
-   if (++primes_gotten == 1)
+   if (primes_gotten.incrementAndTest())
    {
 	/* first 2 vals initialized */
 	p[0] = 2;
