@@ -11,6 +11,10 @@ template <class T>
 static bool	compare_and_swap(T *oldvalue, T *newvalue, T **pvalue);
 #endif
 
+#ifndef NULL
+#define NULL ((void*)0)
+#endif
+
 //  linked list LIFO or FIFO (pop_all_reversed) stack, elements are pushed and popped atomically
 //  class T must implement T *& next().
 template <class T>
