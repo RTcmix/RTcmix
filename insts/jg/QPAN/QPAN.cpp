@@ -29,7 +29,7 @@
 
 //#define DEBUG
 
-#define PI_OVER_4    M_PI / 4.0
+#define PI_OVER_4    (M_PI / 4.0)
 
 
 QPAN::QPAN()
