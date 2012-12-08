@@ -79,8 +79,8 @@
 
 //#define DEBUG
 
-#define TWO_PI       M_PI * 2.0
-#define PI_OVER_2    M_PI / 2.0
+#define TWO_PI       (M_PI * 2.0)
+#define PI_OVER_2    (M_PI / 2.0)
 
 
 NPAN::NPAN() : Instrument()

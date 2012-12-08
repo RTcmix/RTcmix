@@ -8,7 +8,7 @@
 
 #define MIN_DISTANCE_FACTOR 0.25    // distance of 0.25 quadruples gain
 
-#define TWO_PI    M_PI * 2.0
+#define TWO_PI    (M_PI * 2.0)
 
 static int _num_speakers = 0;
 static Speaker **_speakers;
