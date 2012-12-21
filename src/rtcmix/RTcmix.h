@@ -146,7 +146,7 @@ protected:
 	static int checkfunc(const char *funcname, const Arg arglist[], const int nargs, Arg *retval);
 	static int findAndLoadFunction(const char *funcname);
 	static void freefuncs();
-	static long getElapsed() { return elapsed; }
+	static FRAMETYPE getElapsed() { return elapsed; }
 
 protected:
 	/* Note: these 3 vars also extern in rtdefs.h, for use by insts */
@@ -208,14 +208,16 @@ private:
 
 
 	/* used in intraverse.C, rtsendsamps.c */
-	static unsigned long bufStartSamp;
-	static long		elapsed;
+	static FRAMETYPE 	bufStartSamp;
+	static FRAMETYPE	elapsed;
 
 	// DT:  main heap structure used to queue instruments
 	static heap *rtHeap;
 	static RTQueue *rtQueue;
+	// HACK ALERT!!!  D.S. WAS HERE!!!!
+public:
 	static rt_item *rt_list;
-
+private:
 	static pthread_mutex_t pfieldLock;
 	static pthread_mutex_t aux_to_aux_lock;
 	static pthread_mutex_t to_aux_lock;

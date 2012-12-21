@@ -182,59 +182,95 @@ RTcmix::readFromInputFile(
 
 }
 
-
 /* -------------------------------------------------------------- rtgetin --- */
-/* For use by instruments that take input either from an in buffer or from
-   an aux buffer, but not from both at once. Also, input from files or from
-   the audio in device can come only through an in buffer, not from an aux
-   buffer. Note that file input ignores the bus_config entirely, simply
-   reading all the file channels into the insts buffer, which we assume is
-   large enough to hold them. (This should be a safe assumption, since
-   rtsetinput makes sure that inst->inputchans matches the file chans.)
-*/
+/* This static version switches between the old bus-based mode and the new chained buffer mode */
+
 int
 Instrument::rtgetin(float		*inarr,  /* interleaved array of <inputchans> */
         			Instrument	*inst,
         			int			nsamps)         /* samps, not frames */
 {
-   const int inchans = inst->inputChannels();    /* total in chans inst expects */
-   const BusSlot *bus_config = inst->getBusSlot();
-   const short in_count = bus_config->in_count;
-   const int fdindex = inst->_input.fdIndex;
-   const int frames = nsamps / inchans;
-
-   assert(inarr != NULL);
-
-   if (frames > RTcmix::bufsamps()) {
-      die(inst->name(), "Internal Error: rtgetin: nsamps out of range!");
-	  return -1;
-   }
-
-   if (fdindex == NO_DEVICE_FDINDEX) {               /* input from aux buses */
-      const short *auxin = bus_config->auxin;        /* auxin channel list */
-      const short auxin_count = bus_config->auxin_count;
-
-      assert(auxin_count > 0);
-
-      RTcmix::readFromAuxBus(inarr, inchans, frames, auxin, auxin_count, inst->output_offset);
-   }
-   else if (RTcmix::isInputAudioDevice(fdindex)) {  /* input from mic/line */
-      const short *in = bus_config->in;              /* in channel list */
-
-      assert(in_count > 0);
-
-      RTcmix::readFromAudioDevice(inarr, inchans, frames, in, in_count, inst->output_offset);
-   }
-   else {                                            /* input from file */
-      const short *in = bus_config->in;              /* in channel list */
-
-      assert(in_count > 0);
-	   
-      RTcmix::readFromInputFile(inarr, inchans, frames, in, in_count,
-	  				            fdindex, &inst->_input.fileOffset);
-   }
-
-   return nsamps;   // this seems pointless, but no insts pay attention anyway
+	if (inst->hasChainedInput()) {
+		const int chans = inst->inputChannels();
+		if (chans != inst->inputChainChannels) {
+			die(inst->name(), "rtgetin: cannot chain Instruments with different channel counts");
+			return -1;
+		}
+		const int frames = nsamps / chans;
+#ifdef DEBUG
+		printf("%s::rtgetin(): copying from inputChainBuf %p to inarr %p\n", inst->name(), inst->inputChainBuf, inarr);
+#endif
+		// Copy all channels of audio from inputChainBuf, which is a pointer to the output buffer of
+		// the previous instrument in the chain.
+		for (int ch = 0; ch < chans; ++ch) {
+			copy_interleaved_buf_to_buf(
+										inarr,            		/* interleaved dest buffer */
+										inst->inputChainBuf,    /* interleaved source buffer */
+										chans,                /* number of dest chans interleaved */
+										ch,                      /* output chan to copy into */
+										frames,                 /* frames in dest buffer */
+										chans,                /* number of input chans interleaved */
+										ch);                     /* input chan to copy from */
+		}
+		return nsamps;
+	}
+	else
+		return inst->rtgetin(inarr, nsamps);
 }
 
+/* -------------------------------------------------------------- rtgetin --- */
+/* For use by instruments that take input either from an in buffer or from
+ an aux buffer, but not from both at once. Also, input from files or from
+ the audio in device can come only through an in buffer, not from an aux
+ buffer. Note that file input ignores the bus_config entirely, simply
+ reading all the file channels into the insts buffer, which we assume is
+ large enough to hold them. (This should be a safe assumption, since
+ rtsetinput makes sure that inst->inputchans matches the file chans.)
+ */
+
+int	Instrument::rtgetin(float *inarr, int nsamps)
+{
+	const int inchans = inputChannels();    /* total in chans inst expects */
+	const BusSlot *busSlot = getBusSlot();
+	const short in_count = busSlot->in_count;
+	const int fdindex = _input.fdIndex;
+	const int frames = nsamps / inchans;
+	
+#ifdef DEBUG
+	printf("%s::rtgetin(): doing normal read from input\n", name());
+#endif
+
+	assert(inarr != NULL);
+	
+	if (frames > RTcmix::bufsamps()) {
+		die(name(), "Internal Error: rtgetin: nsamps out of range!");
+		return -1;
+	}
+	
+	if (fdindex == NO_DEVICE_FDINDEX) {               /* input from aux buses */
+		const short *auxin = busSlot->auxin;        /* auxin channel list */
+		const short auxin_count = busSlot->auxin_count;
+		
+		assert(auxin_count > 0);
+		
+		RTcmix::readFromAuxBus(inarr, inchans, frames, auxin, auxin_count, output_offset);
+	}
+	else if (RTcmix::isInputAudioDevice(fdindex)) {  /* input from mic/line */
+		const short *in = busSlot->in;              /* in channel list */
+		
+		assert(in_count > 0);
+		
+		RTcmix::readFromAudioDevice(inarr, inchans, frames, in, in_count, output_offset);
+	}
+	else {                                            /* input from file */
+		const short *in = busSlot->in;              /* in channel list */
+		
+		assert(in_count > 0);
+		
+		RTcmix::readFromInputFile(inarr, inchans, frames, in, in_count,
+								  fdindex, &_input.fileOffset);
+	}
+	
+	return nsamps;   // this seems pointless, but no insts pay attention anyway
+}
 

@@ -12,6 +12,7 @@
 #include <RTcmix.h>
 #include "rt.h"
 #include "rtdefs.h"
+#include "buffers.h"
 #include <notetags.h>
 #include <sndlibsupport.h>
 #include <bus.h>
@@ -42,7 +43,7 @@ float			Instrument::SR     = 0;
 Instrument::Instrument()
 	: _start(0.0), _dur(0.0), cursamp(0), chunksamps(0), i_chunkstart(0),
 	  endsamp(0), output_offset(0), outputchans(0), _name(NULL),
-	  needs_to_run(true), _nsamps(0)
+	  needs_to_run(true), _nsamps(0), inputChainBuf(NULL), inputChainChannels(0)
 {
    // Here we initialize the Instrument class globals (over and over, I know)
    // which replace the old system globals
@@ -157,7 +158,7 @@ int Instrument::update(double p[], int nvalues, unsigned fields)
 
 	// de-queue the note and reset the flag
 	if (do_dq == 1) {
-		int realstart = getendsamp() - nSamps();
+		FRAMETYPE realstart = getendsamp() - nSamps();
 		setendsamp(realstart + currentFrame());
 		do_dq = 0;
 	}
@@ -185,7 +186,7 @@ double Instrument::update(int index, int totframes)
 
 	// de-queue the note and reset the flag
 	if (do_dq == 1) {
-		int realstart = getendsamp() - nSamps();
+		FRAMETYPE realstart = getendsamp() - nSamps();
 		setendsamp(realstart + currentFrame());
 		do_dq = 0;
 	}
@@ -255,11 +256,12 @@ int Instrument::run(bool needsTo)
 
 	   for (int i = 0; i < outputchans; i++)
 		   bufferWritten[i] = false;
+	   
+	   int status = run();	// Class-specific run().
 
-//	   printf("Instrument::run(%p): bufferWritten[] both set to 0\n", this);
 	   needs_to_run = false;
 
-	   return run();	// Class-specific run().
+	   return status;
    }
    return 0;
 }
@@ -271,18 +273,18 @@ void Instrument::schedule(heap *rtHeap)
 {
   // Calculate variables for heap insertion
   float dur = getdur();
-  long samps = (int) (0.5 + dur * SR);	// Rounded to nearest - DS
+  FRAMETYPE samps = (FRAMETYPE) (0.5 + dur * SR);	// Rounded to nearest - DS
   //  cout << "nsamps = " << samps << endl;
   
   float start = getstart();
-  long startsamp = (long) (0.5 + start * SR);	// Rounded to nearest - DS
+  FRAMETYPE startsamp = (FRAMETYPE) (0.5 + start * SR);	// Rounded to nearest - DS
   
   if (RTcmix::interactive()) {
   	// Adjust start frame based on elapsed frame count
   	startsamp += RTcmix::getElapsedFrames();
   }
   
-  long endsamp = startsamp+samps;
+  FRAMETYPE endsamp = startsamp+samps;
   setendsamp(endsamp);  // used by intraverse.cpp
   
   // place instrument into heap
@@ -376,29 +378,39 @@ void Instrument::addout(BusType bus_type, int bus)
 
    assert(bus >= 0 && bus < MAXBUS);
 
-   bus_list = _busSlot->getBusList(bus_type, &buses);
+	if (bus_type != BUS_NONE) {
 
-   src_chan = -1;
-   for (int i = 0; i < buses; i++) {
-      if (bus_list[i] == bus) {
-         src_chan = i;
-         break;
-      }
-   }
+	   bus_list = _busSlot->getBusList(bus_type, &buses);
 
-   assert(src_chan != -1);
+	   src_chan = -1;
+	   for (int i = 0; i < buses; i++) {
+		  if (bus_list[i] == bus) {
+			 src_chan = i;
+			 break;
+		  }
+	   }
 
-   endframe = output_offset + framesToRun();
+	   assert(src_chan != -1);
 
-   // Add outbuf to appropriate bus at offset
-    	
-   RTcmix::addToBus(bus_type, bus,
-					 &outbuf[src_chan], output_offset,
-					 endframe, outputchans);
+	   endframe = output_offset + framesToRun();
 
-   /* Show exec() that we've written this chan. */
-   bufferWritten[src_chan] = true;
-//   printf("Instrument::addout(%p): bufferWritten[%d] now 1\n", this, src_chan);
+		// Add outbuf to appropriate bus at offset
+#ifdef DEBUG
+		printf("%s::addout(this=%p %d, %d): doing normal addToBus\n", name(), this, (int)bus_type, bus);
+#endif
+		RTcmix::addToBus(bus_type, bus,
+						 &outbuf[src_chan], output_offset,
+						 endframe, outputchans);
+
+		/* Show exec() that we've written this chan. */
+		bufferWritten[src_chan] = true;
+		//   printf("Instrument::addout(%p): bufferWritten[%d] now 1\n", this, src_chan);
+	}
+#ifdef DEBUG
+	else {
+		printf("%s::addout(this=%p %d, %d): NO-OP\n", name(), this, (int)bus_type, bus);
+	}
+#endif
 }
 
 /* ----------------------------------------------------------------- gone --- */
@@ -416,6 +428,21 @@ void Instrument::gone()
       RTcmix::releaseInput(_input.fdIndex);
       _input.fdIndex = NO_DEVICE_FDINDEX;
    }
+}
+
+/* ----------------------------------------------------------------- setChainedInputBuffer --- */
+/* Notifies the Instrument that its input comes from the specified buffer */
+
+int Instrument::setChainedInputBuffer(BUFTYPE *inputBuf, int inputChans)
+{
+	if (inputChannels() == inputChans) {
+		inputChainBuf = inputBuf;
+		inputChainChannels = inputChans;
+		return 0;
+	}
+	else {
+		return die(name(), "Mismatched chain output to input");
+	}
 }
 
 const PField &

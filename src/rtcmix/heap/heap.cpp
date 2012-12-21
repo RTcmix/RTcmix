@@ -27,13 +27,13 @@ heap::~heap()
 //	cout << "heap::~heap()\n";
 }
 
-unsigned long heap::getTop()
+FRAMETYPE heap::getTop()
 {
   Lock topLock(getLockHandle());	// This will unlock when it goes out of scope
   return top ? top->chunkStart : 0;
 }
 
-void heap::insert(Instrument *newInst, unsigned long cStart)
+void heap::insert(Instrument *newInst, FRAMETYPE cStart)
 {
   heapslot *newHeapElt;
   heapslot *tempHeapElt;
@@ -90,7 +90,7 @@ void heap::insert(Instrument *newInst, unsigned long cStart)
 // Returns start sample for the instrument as argument
 
 Instrument * 
-heap::deleteMin(unsigned long maxChunkStart, unsigned long *pChunkStart)
+heap::deleteMin(FRAMETYPE maxChunkStart, FRAMETYPE *pChunkStart)
 {
   int sift;               // flag to tell loop when to stop sifting
   Instrument* retInst;
@@ -228,7 +228,7 @@ void heapslot::dump(int indent)
 }
 
 
-rtQElt::rtQElt(Instrument *inst, unsigned long start)
+rtQElt::rtQElt(Instrument *inst, FRAMETYPE start)
 	: next(NULL), prev(NULL), Inst(inst), chunkstart(start)
 {
 	Inst->ref();

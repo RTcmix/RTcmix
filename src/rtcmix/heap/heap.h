@@ -1,6 +1,7 @@
 #ifndef _HEAP_H_
 #define _HEAP_H_ 1
 
+#include <rt_types.h>
 #include <Lockable.h>
 
 class Instrument;
@@ -9,7 +10,7 @@ class Instrument;
 
 class heapslot {
 public:
-  unsigned long chunkStart; // start samp for chunk
+  FRAMETYPE chunkStart; // start samp for chunk
   Instrument *inst;
   heapslot *left, *right, *parent;
 
@@ -57,10 +58,10 @@ public:
   heapslot* top;
   heap() : bot(NULL), top(NULL), size(0) {}
   ~heap();
-  unsigned long getTop();
+  FRAMETYPE getTop();
   long getSize() const { return size; }
-  void insert(Instrument*, unsigned long chunkStart);
-  Instrument *deleteMin(unsigned long maxChunkStart, unsigned long *pChunkStart);
+  void insert(Instrument*, FRAMETYPE chunkStart);
+  Instrument *deleteMin(FRAMETYPE maxChunkStart, FRAMETYPE *pChunkStart);
   void dump(heapslot*,int);
   long size;
 };
@@ -69,7 +70,7 @@ public:
 
 class rtQElt {
 public:
-  rtQElt(Instrument *inst, unsigned long start);
+  rtQElt(Instrument *inst, FRAMETYPE start);
   ~rtQElt();
 private:
   friend class RTQueue;
@@ -89,9 +90,9 @@ private:
 public:
   RTQueue() : head(NULL), tail(NULL), size(0) {}
   ~RTQueue();
-  void push(Instrument*, unsigned long);
-  Instrument *pop(unsigned long *pChunkStart);
-  unsigned long nextChunk();
+  void push(Instrument*, FRAMETYPE);
+  Instrument *pop(FRAMETYPE *pChunkStart);
+  FRAMETYPE nextChunk();
   // Return the number of elements on the RTQueue
   int getSize() const { return size; }
   void print();  // For debugging

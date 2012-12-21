@@ -1,6 +1,6 @@
 include ../../makefile.conf
 
-DIRS = MIX WAVETABLE
+DIRS = MIX WAVETABLE CHAIN
 
 .PHONY: all progs dsos standalone install dso_install standalone_install \
 uninstall dso_uninstall standalone_uninstall clean cleanall

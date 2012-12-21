@@ -25,14 +25,14 @@ RTQueue::~RTQueue()
 
 // Return the starting sample chunk of the top Instrument
 
-unsigned long RTQueue::nextChunk()
+FRAMETYPE RTQueue::nextChunk()
 {
   return head->chunkstart;
 }
 
 // Push an element to end of the RTQueue
 
-void RTQueue::push(Instrument *newInst, unsigned long new_chunkstart)
+void RTQueue::push(Instrument *newInst, FRAMETYPE new_chunkstart)
 {
   int i;
   long diff;
@@ -130,7 +130,7 @@ void RTQueue::push(Instrument *newInst, unsigned long new_chunkstart)
 
 // Pop an element of the top of the RTQueue
 
-Instrument *RTQueue::pop(unsigned long *pChunkstart) 
+Instrument *RTQueue::pop(FRAMETYPE *pChunkstart) 
 {
   rtQElt *tQelt;
   Instrument *retInst;

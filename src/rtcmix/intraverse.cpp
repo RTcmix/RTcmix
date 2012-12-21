@@ -33,7 +33,7 @@ using namespace std;
 
 // Temporary globals
 
-static unsigned long bufEndSamp;
+static FRAMETYPE bufEndSamp;
 static int startupBufCount = 0;
 static bool audioDone = false;
 
@@ -133,7 +133,7 @@ int RTcmix::waitForMainLoop()
 
 bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 {
-	RTcmix *RTCore = (RTcmix *) arg;
+//	RTcmix *RTCore = (RTcmix *) arg;
 	Bool panic = NO;
 	short bus = -1, bus_count = 0, busq = 0;
 	int i;
@@ -161,7 +161,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	// deleteMin() returns top instrument if inst's start time is < bufEndSamp,
 	// else NULL.  heapChunkStart is set in all cases
 	
-	unsigned long heapChunkStart = 0;
+	FRAMETYPE heapChunkStart = 0;
 	Instrument *Iptr;
     const BusSlot *iBus;
     
@@ -272,7 +272,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	short play_bus = 0;
 	Bool aux_pb_done = NO;
 	int rtQSize = 0, allQSize = 0;
-    unsigned long rtQchunkStart = 0;
+    FRAMETYPE rtQchunkStart = 0;
 #ifdef MULTI_THREAD
 	vector<Instrument *>instruments;
 	instruments.reserve(MAXBUS);
@@ -342,12 +342,19 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 #endif
         
 #ifdef MULTI_THREAD
+		if (bus != -1) {
 #if defined(IBUG)
-		if (bus != -1)
 			cout << "\nAdding instruments for current slice [end = " << 1000 * bufEndSamp/SR << " ms.] and bus [" << bus << "]\n";
 #endif
+		}
+		else {
+#if defined(IBUG)
+			cout << "\nDone with bus type " << bus_type << " -- continuing\n";
+#endif
+			continue;
+		}
 		// Play elements on queue (insert back in if needed) ++++++++++++++++++
-		while (rtQSize > 0 && rtQchunkStart < bufEndSamp && bus != -1) {
+		while (rtQSize > 0 && rtQchunkStart < bufEndSamp) {
 			int chunksamps = 0;
 			            
 			Iptr = rtQueue[busq].pop(&rtQchunkStart);  // get next instrument off queue
@@ -356,10 +363,10 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 #endif			
 			Iptr->set_ichunkstart(rtQchunkStart);
 
-			unsigned long endsamp = Iptr->getendsamp();
+			FRAMETYPE endsamp = Iptr->getendsamp();
 
 			// difference in sample start (countdown)
-			long offset = long(rtQchunkStart - bufStartSamp);  
+			int offset = int(rtQchunkStart - bufStartSamp);
 
 			// DJT:  may have to expand here.  IE., conditional above
 			// (rtQchunkStart >= bufStartSamp)
@@ -375,10 +382,10 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			Iptr->set_output_offset(offset);
 
 			if (endsamp < bufEndSamp) {  // compute # of samples to write
-				chunksamps = endsamp-rtQchunkStart;
+				chunksamps = int(endsamp-rtQchunkStart);
 			}
 			else {
-				chunksamps = bufEndSamp-rtQchunkStart;
+				chunksamps = int(bufEndSamp-rtQchunkStart);
 			}
 			if (chunksamps > RTBUFSAMPS) {
 				cout << "ERROR: chunksamps: " << chunksamps << " limiting to " << RTBUFSAMPS << endl;
@@ -397,7 +404,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			// DT_PANIC_MOD
 			if (!panic) {
 #ifdef DBUG
-				cout << "putting inst " << (void *) Iptr << " into taskmgr (bus" << bus_type << ") [" << Iptr->name() << "]\n";
+				cout << "putting inst " << (void *) Iptr << " into taskmgr (bustype " << bus_type << ") [" << Iptr->name() << "]\n";
 #endif
 				instruments.push_back(Iptr);
 				taskManager->addTask<Instrument, int, BusType, int, &Instrument::exec>(Iptr, bus_type, bus);
@@ -405,7 +412,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			else // DT_PANIC_MOD ... just keep on incrementing endsamp
 				endsamp += chunksamps;
 			rtQSize = rtQueue[busq].getSize();
-		}	// while(...)
+		}	// while(!aux_pb_done)
 
 		if (!instruments.empty()) {
 #if defined(DBUG) || defined(IBUG)
@@ -424,7 +431,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		for (vector<Instrument *>::iterator it = instruments.begin(); it != instruments.end(); ++it) {
 			Iptr = *it;
 			int chunksamps = Iptr->framesToRun();
-			unsigned long endsamp = Iptr->getendsamp();
+			FRAMETYPE endsamp = Iptr->getendsamp();
 			int inst_chunk_finished = Iptr->needsToRun();
 
             rtQchunkStart = Iptr->get_ichunkstart();    // We stored this value before placing into the vector

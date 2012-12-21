@@ -38,8 +38,8 @@ protected:
    float          _dur;
    int            cursamp;
    int            chunksamps;
-   int            i_chunkstart;   // we need this for rtperf
-   Locked<int>    endsamp;
+   FRAMETYPE      i_chunkstart;   // we need this for rtperf
+   Locked<FRAMETYPE>    endsamp;
    int            output_offset;
 
    int            sfile_on;        // a soundfile is open (for closing later)
@@ -63,6 +63,9 @@ private:
    bool           needs_to_run;
    int            _skip;
    int            _nsamps;
+	// CHAINED INSTRUMENT SUPPORT
+	BUFTYPE *		inputChainBuf;			// buffer used as input by rtgetin()
+	int				inputChainChannels;		// number of channels in this input buffer
 
 public:
 	// Instruments should use these to access variables.
@@ -72,19 +75,19 @@ public:
 	int				inputChannels() const { return _input.inputchans; }
 	int				outputChannels() const { return outputchans; }
 	int				getSkip() const { return _skip; }
-    int             get_ichunkstart() const { return i_chunkstart; }
+    FRAMETYPE       get_ichunkstart() const { return i_chunkstart; }
 	// Use this to increment cursamp inside single-frame run loops.
 	void			increment() { ++cursamp; }
 	// Use this to increment cursamp inside block-based run loops.
 	void	    	increment(int amount) { cursamp += amount; }
-	void			setendsamp(int end) { endsamp = end; }
+	void			setendsamp(FRAMETYPE end) { endsamp = end; }
 	bool			needsToRun() const { return needs_to_run; }
 	// These inlines are declared at bottom of this header.
 	inline float	getstart() const;
 	inline float	getdur() const;
-	inline int		getendsamp() const;
+	inline FRAMETYPE	getendsamp() const;
 	inline void		setchunk(int);
-	inline void		set_ichunkstart(int);
+	inline void		set_ichunkstart(FRAMETYPE);
 	inline void		set_output_offset(int);
 	inline const BusSlot *	getBusSlot() const;
 
@@ -117,11 +120,17 @@ protected:
    
 	// This is called by set_bus_config() ONLY.
     void			setName(const char *name);
-
+	// Methods for chaining instruments
+	friend			class CHAIN;
+	int				setChainedInputBuffer(BUFTYPE *inputBuf, int inputChannels);
+	bool			hasChainedInput() const { return inputChainBuf != NULL; }
+	void			chainAsOutput(Instrument *outputInst);
+	
 	static int		rtsetoutput(float, float, Instrument *);
 	static int		rtsetinput(float, Instrument *);
 	static int		rtinrepos(Instrument *, int, int);
 	static int		rtgetin(float *, Instrument *, int);
+	int				rtgetin(float *, int);
 	int				rtaddout(BUFTYPE samps[]);  			// replacement for old rtaddout
 	int				rtbaddout(BUFTYPE samps[], int length);	// block version of same
 
@@ -145,7 +154,7 @@ inline float Instrument::getdur() const
 }
 
 /* ----------------------------------------------------------- getendsamp --- */
-inline int Instrument::getendsamp() const
+inline FRAMETYPE Instrument::getendsamp() const
 {
    return endsamp;
 }
@@ -158,7 +167,7 @@ inline void Instrument::setchunk(int csamps)
 }
 
 /* ------------------------------------------------------ set_ichunkstart --- */
-inline void Instrument::set_ichunkstart(int csamps)
+inline void Instrument::set_ichunkstart(FRAMETYPE csamps)
 {
    i_chunkstart = csamps;
 }

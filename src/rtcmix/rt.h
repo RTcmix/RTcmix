@@ -3,11 +3,13 @@
 
 class Instrument;
 
+typedef Instrument * (*InstCreatorFunction)();
+
 struct rt_item {
 	struct rt_item *rt_next;
-	Instrument* (*rt_ptr)();
+	InstCreatorFunction rt_ptr;
 	const char *rt_name;
-	};
+};
 
 extern rt_item *rt_list;
 

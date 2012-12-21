@@ -40,16 +40,90 @@ printargs(const char *instname, const Arg arglist[], const int nargs)
    }
 }
 
+static InstCreatorFunction
+findInstCreator(rt_item *inList, const char *inInstName)
+{
+	rt_item *item = inList;       // rt_item defined in rt.h
+	while (item) {
+		if (strcmp(item->rt_name, inInstName) == 0) {
+			return item->rt_ptr;
+		}
+		item = item->rt_next;
+	}
+	return NULL;
+}
+
+// Load the argument list into a PFieldSet, hand to instrument, and call setup().  Does not destroy
+// the instrument on failure.
+
+static double loadPFieldsAndSetup(const char *inName, Instrument *inInst, const Arg arglist[], const int nargs)
+{
+	// Load PFieldSet with ConstPField instances for each
+	// valid p field.
+	mixerr = MX_NOERR;
+	PFieldSet *pfieldset = new PFieldSet(nargs);
+	if (!pfieldset) {
+		mixerr = MX_FAIL;
+		return DONT_SCHEDULE;
+	}
+	for (int arg = 0; arg < nargs; ++arg) {
+		const Arg &theArg = arglist[arg];
+		switch (theArg.type()) {
+			case DoubleType:
+				pfieldset->load(new ConstPField((double) theArg), arg);
+				break;
+			case StringType:
+				pfieldset->load(new StringPField(theArg.string()), arg);
+				break;
+			case HandleType:
+			{
+				Handle handle = (Handle) theArg;
+				if (handle != NULL) {
+					if (handle->type == PFieldType) {
+						assert(handle->ptr != NULL);
+						pfieldset->load((PField *) handle->ptr, arg);
+					}
+					else if (handle->type == InstrumentPtrType) {
+						assert(handle->ptr != NULL);
+						pfieldset->load(new InstPField((Instrument *)handle->ptr), arg);
+					}
+					else {
+						fprintf(stderr, "%s: arg %d: Unsupported handle type!\n",
+								inName, arg);
+						mixerr = MX_FAIL;
+					}
+				}
+				else {
+					fprintf(stderr, "%s: arg %d: NULL handle!\n", inName, arg);
+					mixerr = MX_FAIL;
+				}
+			}
+				break;
+			case ArrayType:
+				fprintf(stderr,
+						"%s: arg %d: Array (list) types cannot be passed to instruments.\n\tUse maketable(\"literal\", ...) instead.\n",
+						inName, arg);
+				mixerr = MX_FAIL;
+				break;
+			default:
+				fprintf(stderr, "%s: arg %d: Illegal argument type!\n",
+						inName, arg);
+				mixerr = MX_FAIL;
+				break;
+		}
+	}
+	if (mixerr == MX_FAIL) {
+		delete pfieldset;
+		return DONT_SCHEDULE;
+	}
+	return (double) inInst->setup(pfieldset);
+}
 
 double
-RTcmix::checkInsts(const char *instname, const Arg arglist[], 
+RTcmix::checkInsts(const char *instname, const Arg arglist[],
 				   const int nargs, Arg *retval)
 {
-// FIXME: set this up as in addcheckfuncs, so that the guts of the
-// instrument name list are not exposed here.  -JGG
-   rt_item *rt_p;       // rt_item defined in rt.h
-   rt_item *rt_temp;
-   Instrument *Iptr;
+	Instrument *Iptr = NULL;;
 
 #ifdef DEBUG
    printf("ENTERING checkInsts() FUNCTION -----\n");
@@ -60,81 +134,29 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 		return -1;
 	}
 
-   mixerr = MX_FNAME;
-   rt_temp = rt_list;
-   rt_p = rt_list;
-   
-   *retval = 0.0;	// Default to float 0
+	mixerr = MX_FNAME;
 
-   while (rt_p) {
-      if (strcmp(rt_p->rt_name, instname) == 0) {
+	*retval = 0.0;	// Default to float 0
 
-         ::printargs(instname, arglist, nargs);
+	InstCreatorFunction instCreator = findInstCreator(rt_list, instname);
 
-         /* Create the Instrument */
-         
-         Iptr = (*(rt_p->rt_ptr))();
-		 
-		 if (!Iptr) {
-		 	mixerr = MX_FAIL;
-			return -1;
-		 }
-
-         Iptr->ref();   // We do this to assure one reference
-   
-		// Load PFieldSet with ConstPField instances for each 
-		// valid p field.
-         PFieldSet *pfieldset = new PFieldSet(nargs);
-		 if (!pfieldset) {
-			Iptr->unref();
-		 	mixerr = MX_FAIL;
-			return -1;
-		 }
-         for (int arg = 0; arg < nargs; ++arg) {
-			const Arg &theArg = arglist[arg];
-			if (theArg.isType(DoubleType))
-				pfieldset->load(new ConstPField((double) theArg), arg);
-			else if (theArg.isType(StringType))
-				pfieldset->load(new StringPField(theArg.string()), arg);
-			else if (theArg.isType(HandleType)) {
-				Handle handle = (Handle) theArg;
-				if (handle != NULL) {
-				   if (handle->type == PFieldType) {
-				      assert(handle->ptr != NULL);
-				      pfieldset->load((PField *) handle->ptr, arg);
-				   }
-				   else {
-				 	  fprintf(stderr, "%s: arg %d: Unsupported handle type!\n",
-						   	  instname, arg);
-			 	  	  mixerr = MX_FAIL;
-				   }
-			    }
-			    else {
-				   fprintf(stderr, "%s: arg %d: NULL handle!\n",
-						   instname, arg);
-			 	   mixerr = MX_FAIL;
-			    }
-			}
-			else if (theArg.isType(ArrayType)) {
-			   fprintf(stderr, "%s: arg %d: Array (list) types cannot be passed to instruments.\n\tUse maketable(\"literal\", ...) instead.\n",
-					   instname, arg);
-			   mixerr = MX_FAIL;
-			}
-			else {
-			   fprintf(stderr, "%s: arg %d: Illegal argument type!\n",
-					   instname, arg);
-			   mixerr = MX_FAIL;
-			}
-		}
+	if (instCreator) {
 		
-		if (mixerr == MX_FAIL) {
-			delete pfieldset;
-			Iptr->unref();
-			return -1.0;
-		}
-		
-        double rv = (double) Iptr->setup(pfieldset);
+		::printargs(instname, arglist, nargs);
 
+		/* Create the Instrument */
+
+		Iptr = (*instCreator)();
+
+		if (!Iptr) {
+			mixerr = MX_FAIL;
+			return -1;
+		}
+
+		Iptr->ref();   // We do this to assure one reference
+
+		double rv = loadPFieldsAndSetup(instname, Iptr, arglist, nargs);
+		
         if (rv != (double) DONT_SCHEDULE) { // only schedule if no setup() error
 			// For non-interactive case, configure() is delayed until just
 			// before instrument run time.
@@ -144,31 +166,82 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 			   }
 			}
 		}
-
 		// Clean up if there was an error.
-		if (rv == (double) DONT_SCHEDULE) {
+		else {
 			Iptr->unref();
 			mixerr = MX_FAIL;
-            return rv;
+			return rv;
 		}
 
-        /* schedule instrument */
-        Iptr->schedule(rtHeap);
+		/* schedule instrument */
+		Iptr->schedule(rtHeap);
 
-        mixerr = MX_NOERR;
-        rt_list = rt_temp;
+		mixerr = MX_NOERR;
 
 		// Create Handle for Iptr on return
 		*retval = createInstHandle(Iptr);
 #ifdef DEBUG
-         printf("EXITING checkInsts() FUNCTION -----\n");
+		 printf("EXITING checkInsts() FUNCTION -----\n");
 #endif
-         return rv;
-      }
-      rt_p = rt_p->rt_next;
-   }
-   rt_list = rt_temp;
+		 return rv;
+	}
 
    return 0.0;
 }
 
+static Handle mkusage()
+{
+	die("makeinstrument", "Usage: makeinstrument(\"INSTRUMENTNAME\", p[0], p[1], ...)");
+	return 0;
+}
+
+extern "C" {
+	Handle makeinstrument(const Arg args[], const int nargs);
+}
+
+// makeinstrument():  Create an instrument and return it as a handle.  Do not configure or schedule the instrument.
+// This is specifically for use with the CHAIN instrument.
+
+Handle
+makeinstrument(const Arg arglist[], const int nargs)
+{
+	if (nargs < 4) {
+		return mkusage();
+	}
+	
+	Instrument *Iptr = NULL;;
+	const char *instName = (const char *) arglist[0];
+	
+	if (!instName)
+		return mkusage();
+	
+	InstCreatorFunction instCreator = findInstCreator(RTcmix::rt_list, instName);
+	
+	if (instCreator) {
+		/* Create the Instrument */
+		
+		Iptr = (*instCreator)();
+		
+		if (!Iptr) {
+			mixerr = MX_FAIL;
+			return 0;
+		}
+		
+		Iptr->ref();   // We do this to assure one reference
+		
+		// Call same function as for checkInsts(), but strip off initial instrument name arg.
+		
+		double rv = loadPFieldsAndSetup(instName, Iptr, &arglist[1], nargs-1);
+		
+        if (rv == (double) DONT_SCHEDULE) {
+			Iptr->unref();
+			mixerr = MX_FAIL;
+			return 0;
+		}
+		mixerr = MX_NOERR;
+		
+		// Create Handle for Iptr on return
+		return createInstHandle(Iptr);
+	}
+	return 0;
+}
