@@ -69,14 +69,12 @@ copy_interleaved_buf_to_buf(
       int            src_chans,       /* number of chans interleaved */
       int            src_chan)        /* chan to copy from */
 {
-   int   i, j, k;
-
-   j = src_chan;
-   k = dest_chan;
-   for (i = 0; i < dest_frames; i++) {
+   int j = src_chan;
+   int k = dest_chan;
+   for (int i = 0; i < dest_frames; i++) {
       dest[k] = src[j];
-      src_chan += src_chans;
-      dest_chan += dest_chans;
+      j += src_chans;
+      k += dest_chans;
    }
 }
 
