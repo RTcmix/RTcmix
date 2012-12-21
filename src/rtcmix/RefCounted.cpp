@@ -2,8 +2,26 @@
 //
 
 #include <RefCounted.h>
+#ifdef USE_OSX_DISPATCH
+#include <dispatch/dispatch.h>
+#endif
 
 RefCounted::~RefCounted() {}
+
+int RefCounted::unref()
+{
+	int r;
+	if ((r=--_refcount) <= 0) {
+#ifdef USE_OSX_DISPATCH
+		dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+						^{ delete this; }
+					   );
+#else
+		delete this;
+#endif
+	}
+	return r;
+}
 
 void RefCounted::ref(RefCounted *r)
 {

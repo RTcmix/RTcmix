@@ -9,7 +9,7 @@
 class RefCounted {
 public:
 	int ref() { return ++_refcount; }
-	int unref() { int r; if ((r=--_refcount) <= 0) { delete this; } return r; }
+	int unref();
 	static void ref(RefCounted *r);
 	static int unref(RefCounted *r);
 protected:
