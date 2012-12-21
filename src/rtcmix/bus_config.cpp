@@ -416,12 +416,10 @@ RTcmix::insert_bus_slot(char *name, BusSlot *slot) {
 	pthread_mutex_unlock(&inst_bus_config_lock);
 
 	Lock lock(&inst_bus_config_lock);	// unlocks when out of scope
-#define TEST_SLOT_CLEANUP
 	/* Traverse down each list */
 	while (qEntry) {	
 		/* If names match, then put onto the head of the slot's list */
 		if (strcmp(qEntry->instName(), name) == 0) {
-#ifdef TEST_SLOT_CLEANUP
 			BusSlot *next = qEntry->slot->next;
 			// Remove our reference to this slot and replace.
 			qEntry->slot->unref();
@@ -431,14 +429,6 @@ RTcmix::insert_bus_slot(char *name, BusSlot *slot) {
 			slot->next = next;
 			qEntry->slot = slot;
 			slot->ref();
-#else	//	TEST_SLOT_CLEANUP
-#ifdef PRINTALL
-			printf("insert_bus_slot: prepending new slot entry for '%s'\n", name);
-#endif
-			slot->next = qEntry->slot;
-			qEntry->slot = slot;
-			slot->ref();
-#endif	//	TEST_SLOT_CLEANUP
 			return NO_ERR;
 		}
 
