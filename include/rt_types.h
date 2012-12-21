@@ -16,6 +16,9 @@ typedef BUFTYPE *BufPtr;
 #define ZERO 0.0
 #endif
 
+/* type for frame counts (Inst start and end points) */
+#define FRAMETYPE long long
+
 /* This should probably go someplace else in this file? */
 typedef enum {
   NO = 0,
