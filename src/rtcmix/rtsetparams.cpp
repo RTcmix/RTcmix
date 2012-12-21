@@ -39,9 +39,6 @@ RTcmix::rtsetparams(float p[], int n_args, double pp[])
    int         verbose = Option::print();
    int         play_audio = Option::play();
    int         record_audio = Option::record();
-#ifdef SGI
-   static char *out_port_str = NULL;
-#endif /* SGI */
 
    if (rtsetparams_was_called()) {
       die("rtsetparams", "You can only call rtsetparams once!");
@@ -56,12 +53,7 @@ RTcmix::rtsetparams(float p[], int n_args, double pp[])
    int numBuffers = Option::bufferCount();
 
    if (n_args > 3 && pp[3] != 0.0) {
-#ifdef SGI
-      /* Cast Minc double to char ptr to get string. */
-      int iarg = (int) pp[3];
-      out_port_str = (char *) iarg;
- 	  advise("rtsetparams", "Playing through output port '%s'", out_port_str);
-#endif /* SGI */
+	   // We used to support a 4th argument for output port (SGI only).  Could we make use of this for other platforms?
    }
    
    if (SR <= 0.0) {
