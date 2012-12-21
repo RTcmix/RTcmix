@@ -71,6 +71,24 @@ private:
 	char	*_string;
 };
 
+// Constant-value PField used to pass Instrument pointers.
+
+class Instrument;
+
+class InstPField : public PField {
+public:
+	InstPField(Instrument *inst) : _instrument(inst) {}
+	virtual double 	doubleValue(int indx = 0) const { return doubleValue(0.0); }
+	virtual double	doubleValue(double) const { return 0.0; };
+	virtual int		print(FILE *f) const { return fprintf(f, "Instrument %p", _instrument); }
+	virtual int		values() const { return 1; }
+	Instrument *	instrument() const { return _instrument; }
+protected:
+	virtual 		~InstPField() {}
+private:
+	Instrument	*_instrument;
+};
+
 // Base class for operator PFields.  These may be instantianted with an
 // external Operator function.
 
