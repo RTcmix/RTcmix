@@ -435,14 +435,10 @@ void Instrument::gone()
 
 int Instrument::setChainedInputBuffer(BUFTYPE *inputBuf, int inputChans)
 {
-	if (inputChannels() == inputChans) {
-		inputChainBuf = inputBuf;
-		inputChainChannels = inputChans;
-		return 0;
-	}
-	else {
-		return die(name(), "Mismatched chain output to input");
-	}
+	_input.inputchans = inputChans;		// override this here
+	inputChainBuf = inputBuf;
+	inputChainChannels = inputChans;
+	return 0;
 }
 
 const PField &

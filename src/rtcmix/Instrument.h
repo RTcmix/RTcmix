@@ -124,7 +124,6 @@ protected:
 	friend			class CHAIN;
 	int				setChainedInputBuffer(BUFTYPE *inputBuf, int inputChannels);
 	bool			hasChainedInput() const { return inputChainBuf != NULL; }
-	void			chainAsOutput(Instrument *outputInst);
 	
 	static int		rtsetoutput(float, float, Instrument *);
 	static int		rtsetinput(float, Instrument *);

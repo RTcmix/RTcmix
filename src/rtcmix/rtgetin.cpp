@@ -192,10 +192,6 @@ Instrument::rtgetin(float		*inarr,  /* interleaved array of <inputchans> */
 {
 	if (inst->hasChainedInput()) {
 		const int chans = inst->inputChannels();
-		if (chans != inst->inputChainChannels) {
-			die(inst->name(), "rtgetin: cannot chain Instruments with different channel counts");
-			return -1;
-		}
 		const int frames = nsamps / chans;
 #ifdef DEBUG
 		printf("%s::rtgetin(): copying from inputChainBuf %p to inarr %p\n", inst->name(), inst->inputChainBuf, inarr);
