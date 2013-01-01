@@ -18,6 +18,13 @@ Ooscili::Ooscili(float SR, float freq, int arr) : _sr(SR)
 	init(freq);
 }
 
+Ooscili::Ooscili(float SR, float freq, double arr[]) : _sr(SR)
+{
+	array = arr;
+	length = sizeof(arr);
+	init(freq);
+}
+
 Ooscili::Ooscili(float SR, float freq, double arr[], int len) : _sr(SR)
 {
 	array = arr;
