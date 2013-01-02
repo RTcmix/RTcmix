@@ -190,8 +190,9 @@ Instrument *makeWAVETABLE()
 	return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
 	RT_INTRO("WAVETABLE", makeWAVETABLE);
 }
-
+#endif

@@ -156,8 +156,9 @@ Instrument *makeMIX()
 	return inst;
 }
 
-
+#ifdef MAXMSP
 void rtprofile()
 {
    RT_INTRO("MIX",makeMIX);
 }
+#endif
