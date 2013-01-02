@@ -277,43 +277,43 @@ void GVERB::doupdate()
 
 	if (pfs[4] != p->roomsize) {
 		if (pfs[4] < 1.0 || pfs[4] > p->maxroomsize) 
-			warn("GVERB", "bogus roomsize: %f\n", pfs[4]);
+			rtcmix_warn("GVERB", "bogus roomsize: %f\n", pfs[4]);
 		gverb_set_roomsize(p, pfs[4]); // sets p->roomsize
 	}
 
 	if (pfs[5] != p->revtime) {
 		if (pfs[5] < 0.1 || pfs[5] > 360.0)
-			warn("GVERB", "bad revtime: %f\n", pfs[5]);
+			rtcmix_warn("GVERB", "bad revtime: %f\n", pfs[5]);
 		gverb_set_revtime(p, pfs[5]);
 	}
 
 	if (pfs[6] != p->fdndamping) {
 		if (pfs[6] < 0.0 || pfs[6] > 1.0)
-			warn("GVERB", "incorrect damping: %f\n", pfs[6]);
+			rtcmix_warn("GVERB", "incorrect damping: %f\n", pfs[6]);
 		gverb_set_damping(p, pfs[6]);
 	}
 
 	if (pfs[7] != p->inputbandwidth) {
 		if (pfs[7] < 0.0 || pfs[7] > 1.0)
-			warn("GVERB", "input bandwith problem: %f\n", pfs[7]);
+			rtcmix_warn("GVERB", "input bandwith problem: %f\n", pfs[7]);
 		gverb_set_inputbandwidth(p, pfs[7]);
 	}
 
 	if (DB_CO(pfs[8]) != p->drylevel) {
 		if (pfs[8] < -90.0 || pfs[8] > 0.0)
-			warn("GVERB", "dry level wrong: %f\n", pfs[8]);
+			rtcmix_warn("GVERB", "dry level wrong: %f\n", pfs[8]);
 		gverb_set_drylevel(p, pfs[8]);
 	}
 
 	if (DB_CO(pfs[9]) != p->earlylevel) {
 		if (pfs[9] < -90.0 || pfs[9] > 0.0)
-			warn("GVERB", "problem with early reflection level: %f\n", pfs[9]);
+			rtcmix_warn("GVERB", "problem with early reflection level: %f\n", pfs[9]);
 			gverb_set_earlylevel(p, pfs[9]);
 	}
 
 	if (DB_CO(pfs[10]) != p->taillevel) {
 		if (pfs[10] < -90.0 || pfs[10] > 0.0)
-			warn("GVERB", "bogus tail level: %f\n", pfs[10]);
+			rtcmix_warn("GVERB", "bogus tail level: %f\n", pfs[10]);
 		gverb_set_taillevel(p, pfs[10]);
 	}
 }
