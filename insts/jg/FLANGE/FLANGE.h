@@ -5,11 +5,12 @@ class FLANGE : public Instrument {
    int     nargs, inchan, insamps, branch, flangetype;
    float   amp, resonance, moddepth, modrate, pctleft, wetdrymix, maxdelsamps;
    float   *in, amptabs[2];
-   double  *amparray;
+   double  *amparray, *modtable;
    Butter  *filt;
    ZComb   *zcomb;
    ZNotch  *znotch;
    OscilL  *modoscil;
+	bool ownModtable;
 
    int getFlangeType(bool trystring);
    void doupdate();
