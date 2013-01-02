@@ -303,9 +303,9 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 			}
 			else {
 				if (endchan - startchan >= nchans) {
-					warn("rtinput", "You specifed more input buses than "
+					rtcmix_warn("rtinput", "You specifed more input buses than "
 							"input file '%s' has channels.", sfname);
-					warn("rtinput", "Using in buses %d", foo);
+					rtcmix_warn("rtinput", "Using in buses %d", foo);
 					endchan = (startchan + nchans) - 1;
 				}
 			}
@@ -324,7 +324,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 #endif /* INPUT_BUS_SUPPORT */
 			}
 			if (srate != SR) {
-				warn("rtinput", "The input file sampling rate is %g, but "
+				rtcmix_warn("rtinput", "The input file sampling rate is %g, but "
 							"the output rate is currently %g.", srate, SR);
 			}
 		}

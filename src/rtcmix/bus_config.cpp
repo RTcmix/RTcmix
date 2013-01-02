@@ -549,7 +549,7 @@ RTcmix::get_bus_config(const char *inst_name)
    
    /* Default bus_config for backwards compatibility with < 3.0 scores */
    
-   warn(NULL, "No bus_config defined, setting default (in/out).");
+   rtcmix_advise(NULL, "No bus_config defined, setting default (in/out).");
    
    /* Some init stuff normally done in check_bus_inst_config */
    Bus_Config_Status.lock();
@@ -753,11 +753,11 @@ parse_bus_name(char *busname, BusType *type, int *startchan, int *endchan)
          status = parse_bus_chan(p, startchan, endchan);
          break;
       default:
-	  	 warn("bus_config", "Invalid bus specifier: '%s'", busname);
+	  	 rtcmix_warn("bus_config", "Invalid bus specifier: '%s'", busname);
          return INVAL_BUS_ERR;
    }
    if (status != NO_ERR)
-		warn("bus_config", "Invalid bus specifier: '%s'", busname);
+		rtcmix_warn("bus_config", "Invalid bus specifier: '%s'", busname);
    return status;
 }
 
@@ -900,7 +900,7 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
    err = print_inst_bus_config();
 #endif
 
-   advise("bus_config", "(%s) => %s => (%s)", inbusses, instname, outbusses);
+   rtcmix_advise("bus_config", "(%s) => %s => (%s)", inbusses, instname, outbusses);
    free(instname);
    return 0.0;
 

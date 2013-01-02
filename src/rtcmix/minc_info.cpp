@@ -519,7 +519,7 @@ double note_exists(const Arg args[], const int nargs)
 
 	Instrument *Iptr = (Instrument *)args[0];
 	if (Iptr == NULL) {
-		warn("note_exists", "Instrument/note not initialized");
+		rtcmix_warn("note_exists", "Instrument/note not initialized");
 		return -1;
 	}
 

@@ -194,7 +194,7 @@ m_invertgen(float p[], int n_args, double pp[])
    }
    center = min + ((max - min) / 2.0);
 
-//advise("invertgen", "min: %f, max: %f, center: %f", min, max, center);
+//rtcmix_advise("invertgen", "min: %f, max: %f, center: %f", min, max, center);
 
    /* invert values around center */
    for (i = 0; i < size; i++) {
@@ -258,7 +258,7 @@ m_shiftgen(float p[], int n_args, double pp[])
    shift = (int) p[1];
    abs_shift = abs(shift);
    if (abs_shift == 0 || abs_shift == size) {
-      advise("shiftgen", "Your shift of %d has no effect on the table!", shift);
+      rtcmix_advise("shiftgen", "Your shift of %d has no effect on the table!", shift);
       return (double) size;
    }
    if (abs_shift > size)

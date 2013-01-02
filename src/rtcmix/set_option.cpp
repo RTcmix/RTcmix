@@ -233,7 +233,7 @@ static int _set_key_value_option(const char *key, const char *sval,
 			status = _str_to_bool(sval, bval);
 			Option::fastUpdate(bval);
 			if (bval)
-				warn("set_option", "With \"%s\" on, certain instruments run "
+				rtcmix_warn("set_option", "With \"%s\" on, certain instruments run "
 					"faster at the expense of reduced capabilities.\n", key);
 			break;
 

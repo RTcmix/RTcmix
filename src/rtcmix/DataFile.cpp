@@ -193,7 +193,7 @@ long DataFile::readHeader(
 		_datumsize = format_datumsize(_format);
 		_filerate = (defaultFileRate == -1) ? _controlrate : defaultFileRate;
 		_increment = (double(_controlrate) / double(_filerate)) * _timefactor;
-		advise(NULL, "No header for data file \"%s\";\n"
+		rtcmix_advise(NULL, "No header for data file \"%s\";\n"
 					"assuming %s at %d per second, %s.\n",
 					_filename, format_string(_format), _filerate,
 					_swap ? "with byte-swapping" : "no byte-swapping");
@@ -232,7 +232,7 @@ readerr:
 	if (ferror(_stream))
 		rterror(NULL, "Read error for data file \"%s\"\n", _filename);
 	else
-		warn(NULL, "There's hardly anything in data file \"%s\"!\n",
+		rtcmix_warn(NULL, "There's hardly anything in data file \"%s\"!\n",
 				_filename);
 	return -1;
 

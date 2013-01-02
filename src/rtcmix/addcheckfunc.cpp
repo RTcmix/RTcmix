@@ -92,7 +92,7 @@ RTcmix::addfunc(
 #ifdef WARN_DUPLICATES
       if (strcmp(cur_node->func_label, this_node->func_label) == 0) {
          if (!autoload)
-             warn("addfunc", "Function '%s' already introduced",
+             rtcmix_warn("addfunc", "Function '%s' already introduced",
                   this_node->func_label);
           delete this_node;
          return;
@@ -312,7 +312,7 @@ RTcmix::registerFunction(const char *funcName, const char *dsoPath)
 		return 0;
 	}
 	else {
-		warn("RTcmix::registerFunction",
+		rtcmix_warn("RTcmix::registerFunction",
 			  "'%s' already registered for DSO '%s'", funcName, path);
 		return -1;
 	}

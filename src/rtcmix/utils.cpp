@@ -10,6 +10,7 @@
 #include <PField.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <ugens.h>
 
 Handle
 createPFieldHandle(PField *pfield)
@@ -73,7 +74,7 @@ unrefHandle(Handle h)
 #endif
 		}
 		else {
-			fprintf(stderr, "unrefHandle: unknown handle type!\n");
+			rtcmix_warn("unrefHandle", "unrefHandle: unknown handle type!");
 			return;
 		}
         free(h);

@@ -91,7 +91,7 @@ gen1(struct gen *gen, char *sfname)
       return die("gen1", "Can't open input file: \"%s\"!", sfname);
 
    if (srate != SR()) {
-      warn("gen1", "The input file sampling rate is %g, but "
+      rtcmix_warn("gen1", "The input file sampling rate is %g, but "
                       "the output rate is currently %g.", srate, SR());
    }
 

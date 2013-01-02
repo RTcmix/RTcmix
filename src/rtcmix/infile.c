@@ -27,7 +27,7 @@ m_infile(float *p, short n_args, double *pp)
 		die("infile", "Cannot find %s ... not opened.", name);
     else {
 		infile_desc[fno] = descrip;
-		advise("infile", "Datafile %s opened as file %d.", name, fno);
+		rtcmix_advise("infile", "Datafile %s opened as file %d.", name, fno);
     }
     return fno;
 }

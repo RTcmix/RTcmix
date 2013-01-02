@@ -61,12 +61,12 @@ Instrument::rtsetinput(float start_time, Instrument *inst)
                            "real-time audio device.");
          return -1;
       case RT_INPUT_EOF:
-         warn(inst_name, "Attempt to read past end of input file '%s'\n",
+         rtcmix_warn(inst_name, "Attempt to read past end of input file '%s'\n",
               RTcmix::getInputPath(inst->_input.fdIndex));
 		 break;
 	  case RT_INPUT_CHANS_MISMATCH:
 #ifdef NOMORE // pointless ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT in InputFile.cpp
-         advise(inst_name, INCHANS_DISCREPANCY_WARNING, inst->_input.inputchans,
+         rtcmix_advise(inst_name, INCHANS_DISCREPANCY_WARNING, inst->_input.inputchans,
                                                         src_chans, src_chans);
 #endif
 	  default:

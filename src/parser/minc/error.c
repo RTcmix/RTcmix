@@ -16,10 +16,17 @@
 extern int yylineno;
 static int exit_on_die = 1;
 
+// BGG -- these in message.c.  Maybe just #include <ugens.h>?
+extern void rtcmix_advise(const char *inst_name, const char *format, ...);
+extern void rtcmix_warn(const char *inst_name, const char *format, ...);
+extern void rterror(const char *inst_name, const char *format, ...);
+extern int die(const char *inst_name, const char *format, ...);
+
 void
 sys_error(char *msg)
 {
-   fprintf(stderr, "FATAL SYSTEM ERROR: %s\n", msg);
+	die("parser", "%s\n", msg);
+
    if (exit_on_die)
       exit(EXIT_FAILURE);
 }
@@ -41,7 +48,7 @@ minc_advise(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-   fprintf(stderr, "%s\n", buf);
+	rtcmix_advise("parser", buf);
 }
 
 void
@@ -54,7 +61,7 @@ minc_warn(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-   fprintf(stderr, "WARNING: %s (near line %d)\n", buf, yylineno);
+	rtcmix_warn("parser", "%s (near line %d)\n", buf, yylineno);
 }
 
 void
@@ -67,7 +74,8 @@ minc_die(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-   fprintf(stderr, "ERROR: %s (near line %d)\n", buf, yylineno);
+	rterror("parser", "%s (near line %d)\n", buf, yylineno);
+
    if (exit_on_die)
       exit(EXIT_FAILURE);
 }
@@ -82,7 +90,8 @@ minc_internal_error(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-   fprintf(stderr, "PROGRAM ERROR: %s (near line %d)\n", buf, yylineno);
+	rterror("parser-program", "%s (near line %d)\n", buf, yylineno);
+
    if (exit_on_die)
       exit(EXIT_FAILURE);
 }
@@ -90,6 +99,6 @@ minc_internal_error(const char *msg, ...)
 void
 yyerror(char *msg)
 {
-   fprintf(stderr, "near line %d: %s\n", yylineno, msg);
+	rterror("parser-yyerror", "near line %d: %s\n", yylineno, msg);
 }
 

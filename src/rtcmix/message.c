@@ -9,9 +9,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include "globals.h"
+#include <globals.h>
 #include <rtdefs.h>
-#include "prototypes.h"
+#include <prototypes.h>
 #include <ugens.h>
 #include <Option.h>
 
@@ -26,14 +26,14 @@
    The first arg is the name of the instrument they're called from.
    Non-instrument code can call these and pass NULL for <inst_name>.
    The remaining args are just like printf (format string and a variable
-   number of arguments to fill it).  advise() and warn() take into account
-   the current state of the print option, while die() prints no matter what,
-   and then exits after some cleanup.
+   number of arguments to fill it).  rtcmix_advise() and rtcmix_warn()
+   take into account the current state of the print option, while die()
+   prints no matter what, and then exits after some cleanup.
 */
 
-/* --------------------------------------------------------------- advise --- */
+/* -------------------------------------------------------- rtcmix_advise --- */
 void
-advise(const char *inst_name, const char *format, ...)
+rtcmix_advise(const char *inst_name, const char *format, ...)
 {
    if (get_print_option()) {
       char     buf[BUFSIZE];
@@ -51,9 +51,9 @@ advise(const char *inst_name, const char *format, ...)
 }
 
 
-/* --------------------------------------------------------------- warn --- */
+/* -------------------------------------------------------- rtcmix_warn --- */
 void
-warn(const char *inst_name, const char *format, ...)
+rtcmix_warn(const char *inst_name, const char *format, ...)
 {
    if (get_print_option()) {
       char     buf[BUFSIZE];

@@ -118,7 +118,7 @@ int WAVETABLE::init(double p[], int n_args)
 		if (wavetable)
 			tablelen = fsize(WAVET_GEN_SLOT);
 		else {
-			warn("WAVETABLE", "No wavetable specified, so using sine wave.");
+			rtcmix_advise("WAVETABLE", "No wavetable specified, so using sine wave.");
 			tablelen = 1024;
 			wavetable = new double [tablelen];
 			ownWavetable = true;

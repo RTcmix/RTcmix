@@ -192,7 +192,7 @@ _textfile_table(const Arg args[], const int nargs, double *array, const int len)
 		if (val == 0.0 && pos == buf) {
 			// no conversion performed; warn once
 			if (!non_convertible_found)
-				warn("maketable (textfile)",
+				rtcmix_warn("maketable (textfile)",
 					 "File contains some text that can't be converted to a number.");
 			non_convertible_found = true;
 			i--;
@@ -206,19 +206,19 @@ _textfile_table(const Arg args[], const int nargs, double *array, const int len)
 
 	float bogusval;
 	if (fscanf(stream, "%f", &bogusval) != EOF)
-		warn("maketable (textfile)", "File \"%s\" has more than %d numbers.",
+		rtcmix_warn("maketable (textfile)", "File \"%s\" has more than %d numbers.",
 																	fname, len);
 	fclose(stream);
 
 	if (i != len) {
-		warn("maketable (textfile)", "Only %d values loaded into table, "
+		rtcmix_warn("maketable (textfile)", "Only %d values loaded into table, "
 									  "followed by %d padding zeros.", i, len - i);
 		// Fill remainder with zeros.
 		for ( ; i < len; i++)
 			array[i] = 0.0;
 	}
 	else
-		advise("maketable (textfile)", "%d values loaded into table.", i);
+		rtcmix_advise("maketable (textfile)", "%d values loaded into table.", i);
 
 	return 0;
 }
@@ -312,7 +312,7 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 		return -1;
 
 	if (srate != RTcmix::sr())
-		warn("maketable (soundfile)", "The input file sampling rate is %g, but "
+		rtcmix_warn("maketable (soundfile)", "The input file sampling rate is %g, but "
 			  "the output rate is currently %g.", srate, RTcmix::sr());
 
 	long file_frames = file_samps / file_chans;
@@ -510,12 +510,12 @@ _literal_table(const Arg args[], const int nargs, double **array, int *len)
 	if (nargs < length) {
 		for (int i = nargs; i < length; i++)
 			block[i] = 0.0;
-		advise("maketable (literal)",
+		rtcmix_advise("maketable (literal)",
 							"Table is larger than the number of elements given "
 							"to fill it.  Adding zeros to pad.");
 	}
 	else if (length < nargs)
-		warn("maketable (literal)",
+		rtcmix_warn("maketable (literal)",
 							"Table is large enough for only %d numbers.", length);
 
 	*array = block;
@@ -598,12 +598,12 @@ _datafile_table(const Arg args[], const int nargs, double **array, int *len)
 	delete dfile;
 
 	if (length < fileitems)
-		warn("maketable (datafile)",
+		rtcmix_warn("maketable (datafile)",
 			  "File \"%s\" has %ld more numbers than table, which has %ld.",
 											fname, fileitems - length, length);
 	else if (length > fileitems) {
 		const long diff = length - fileitems;
-		warn("maketable (datafile)", "Only %ld values loaded into table, "
+		rtcmix_warn("maketable (datafile)", "Only %ld values loaded into table, "
 											  "followed by %ld padding zero%s.",
 											  fileitems, diff, diff > 1 ? "s" : "");
 		// Fill remainder with zeros.
@@ -611,7 +611,7 @@ _datafile_table(const Arg args[], const int nargs, double **array, int *len)
 			block[i] = 0.0;
 	}
 	else
-		advise("maketable (datafile)",
+		rtcmix_advise("maketable (datafile)",
 					"%ld values loaded into table.", readitems);
 
 	*array = block;
@@ -666,7 +666,7 @@ _transition(double a, double alpha, double b, int n, double *output)
 	delta = b - a;
 
 	if (n <= 1) {
-		warn("maketable (curve)", "Trying to transition over 1 array slot; "
+		rtcmix_warn("maketable (curve)", "Trying to transition over 1 array slot; "
 										  "time between points is too short");
 		*output = a;
 		return;
@@ -762,7 +762,7 @@ _expbrk_table(const Arg args[], const int nargs, double *array, const int len)
 				array[l] = array[l - 1] * c;
 			}
 			else {
-				warn("maketable (expbrk)", "The number of points requested "
+				rtcmix_warn("maketable (expbrk)", "The number of points requested "
 						"exceeds the table size...ignoring the excess.");
 				k = nargs; // force the loop to exit
 				break;
@@ -1307,7 +1307,7 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
 										"<mid> must be between <min> and <max>.");
 		tight = args[4];
 		if (tight < 0.0) {
-			warn("maketable (random)", "<tight> must be zero or greater "
+			rtcmix_warn("maketable (random)", "<tight> must be zero or greater "
 												"... setting to zero.");
 			tight = 0.0;
 		}
@@ -1658,7 +1658,7 @@ maketable(const Arg args[], const int nargs)
 		return NULL;
 	}
 	if (len > MAX_ARRAY_LEN) {
-		warn("maketable", "Requesting larger than maximum table length.  "
+		rtcmix_warn("maketable", "Requesting larger than maximum table length.  "
 													"Setting to %d.", MAX_ARRAY_LEN);
 		len = MAX_ARRAY_LEN;
 	}

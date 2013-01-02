@@ -82,18 +82,18 @@ makemonitor(const Arg args[], const int nargs)
 		if (nargs > 3) {
 			filerate = args[3];
 			if (filerate < 1) {
-				warn("makemonitor (datafile)", "<filerate> must be greater than "
+				rtcmix_warn("makemonitor (datafile)", "<filerate> must be greater than "
 						"zero...fixing.");
 				filerate = resetval / 10;
 			}
 			else if (filerate > resetval)
-				warn("makemonitor (datafile)", "Requesting a data file control rate"
+				rtcmix_warn("makemonitor (datafile)", "Requesting a data file control rate"
 					" that is higher than the synthesis control rate is wasteful.");
 
 			if (nargs > 4) {
 				formatcode = DataFile::formatStringToCode(args[4]);
 				if (formatcode == -1) {
-					warn("makemonitor (datafile)", "Invalid format string.  Valid "
+					rtcmix_warn("makemonitor (datafile)", "Invalid format string.  Valid "
 							"strings are:\n"
 							"\"double\", \"float\", \"int64\", \"int32\", \"int16\", "
 							"\"byte\"");

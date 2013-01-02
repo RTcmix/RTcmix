@@ -53,9 +53,9 @@ double m_load(float *p, int n_args, double *pp)
 
     if (theDSO.load(dsoPath) != 0) {
 #ifdef linux
-		warn("load", theDSO.error());
+		rtcmix_warn("load", theDSO.error());
 #else
-		warn("load", "Unable to dynamically load '%s': %s",
+		rtcmix_warn("load", "Unable to dynamically load '%s': %s",
 			 dsoPath, theDSO.error());
 #endif
 		return 0;
@@ -87,7 +87,7 @@ double m_load(float *p, int n_args, double *pp)
      } 
 
     if (!profileLoaded) {
-		warn("load", "Unable to find a profile routine in DSO '%s'", dsoPath);
+		rtcmix_warn("load", "Unable to find a profile routine in DSO '%s'", dsoPath);
 		theDSO.unload();
 		return 0;
     }

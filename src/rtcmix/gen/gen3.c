@@ -30,9 +30,9 @@ gen3(struct gen *gen)
    rewind(in_desc);
 
    if (i > gen->size)
-      warn("gen3", "Table not large enough to hold all the data in file.");
+      rtcmix_warn("gen3", "Table not large enough to hold all the data in file.");
 
-   advise("gen3", "%d values loaded into table.",
+   rtcmix_advise("gen3", "%d values loaded into table.",
                 (i <= gen->size) ? i : gen->size);
 
    i--;

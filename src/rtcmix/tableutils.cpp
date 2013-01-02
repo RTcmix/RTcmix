@@ -71,7 +71,7 @@ void fill_linebrk_table(const Arg args[], const int nargs, double *array,
 									+ (amp2 - amp1) * (double) (l - j) / (i - j + 1);
 			}
 			else {
-				warn("maketable (linebrk)", "The number of points requested "
+				rtcmix_warn("maketable (linebrk)", "The number of points requested "
 						"exceeds the table size...ignoring the excess.");
 				k = nargs; // force the loop to exit
 				break;

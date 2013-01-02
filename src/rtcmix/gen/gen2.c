@@ -118,10 +118,10 @@ gen2(struct gen *gen)
          rewind(in_desc);
       }
       if (i > gen->size)
-         warn("gen2", "Table not large enough to hold all the data in file.");
+         rtcmix_warn("gen2", "Table not large enough to hold all the data in file.");
 
       num_elements = (i <= gen->size) ? i : gen->size;
-      advise("gen2", "%d values loaded into table.", num_elements);
+      rtcmix_advise("gen2", "%d values loaded into table.", num_elements);
 
       i--;
       while (++i < gen->size)      /* fill remainder (if any) with zeros */

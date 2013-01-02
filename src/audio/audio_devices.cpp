@@ -110,7 +110,7 @@ create_audio_devices(int record, int play, int chans, float srate, int *buffersi
 		}
 		int newSize = reqsize * numBuffers / reqcount;
 		if (newSize != *buffersize) {
-			advise("rtsetparams",
+			rtcmix_advise("rtsetparams",
 				   "Buffer size reset by audio device from %d to %d frames.",
 					*buffersize, newSize);
 			*buffersize = newSize;

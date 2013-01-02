@@ -26,7 +26,7 @@ RTcmix::dispatch(const char *func_label, const Arg arglist[],
       checkInsts(func_label, arglist, nargs, retval);
       switch (mixerr) {
 	  case MX_FNAME:		// Function not found
-		 advise(NULL, 
+		 rtcmix_advise(NULL, 
 				"Note: \"%s\" is an undefined function or instrument.",
 				func_label);
 		 break;
@@ -54,7 +54,7 @@ dispatch(const char *str, double *pp, int n_args, void **inst)
 
 	Arg *rtcmixargs = new Arg[n_args];
 	if (rtcmixargs == NULL) {
-	  fprintf(stderr, "dispatch: out of memory\n");
+	  rterror("dispatch", "out of memory");
 	  return -1.0;
 	}
 	for (int i = 0; i < n_args; i++) {
@@ -82,7 +82,7 @@ dispatch(const char *str, double *pp, int n_args, void **inst)
 			retval = 0;
 		}
 		else {
-			fprintf(stderr, "dispatch: unhandled Arg return type!\n");
+			rterror("dispatch", "unhandled Arg return type!");
 			retval = 0;
 		}
 	}

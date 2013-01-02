@@ -100,9 +100,9 @@ create_pfield(const Arg args[], const int nargs)
 				filerate = (int) args[4];
 				formatcode = DataFile::formatStringToCode(args[5]);
 				if (formatcode == -1) {
-					warn("makeconnection (datafile)", "Invalid format string. "
+					rtcmix_warn("makeconnection (datafile)", "Invalid format string. "
 									"Valid strings are:");
-					warn("makeconnection (datafile)", "\"double\", \"float\", "
+					rtcmix_warn("makeconnection (datafile)", "\"double\", \"float\", "
 									"\"int64\", \"int32\", \"int16\", \"byte\"");
 					formatcode = kDataFormatFloat;
 				}

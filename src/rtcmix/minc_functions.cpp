@@ -94,7 +94,7 @@ double m_srand(float p[], int n_args)
       struct timeval tv;
       gettimeofday(&tv, NULL);
       randx = (unsigned int) tv.tv_usec;
-	  advise("srand", "Seed initialized internally with value %u", randx);
+	  rtcmix_advise("srand", "Seed initialized internally with value %u", randx);
    }
    else
       randx = (unsigned int) p[0];
@@ -412,7 +412,7 @@ double m_setline_size(float p[], int n_args)
 	if (p[0] < 2)
 		die("setline_size", "Setline array size must be at least 2!");
 	line_array_size = p[0];
-	advise("setline_size", "Setline arrays will have %d elements.",
+	rtcmix_advise("setline_size", "Setline arrays will have %d elements.",
                                                       line_array_size);
 	return 0.0;
 }
@@ -482,7 +482,7 @@ double m_reset(float p[], int n_args)
 	if (p[0] <= 0)
 		die("reset", "Control rate must be greater than 0!");
 	resetval = p[0];
-	advise("reset", "Control rate set to %d updates per second.", resetval);
+	rtcmix_advise("reset", "Control rate set to %d updates per second.", resetval);
 
 	return 0.0;
 }
