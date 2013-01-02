@@ -68,7 +68,7 @@ int HOLD::init(double p[], int n_args)
 		tableset(SR, hold_dur, amplen, tabs);
 	}
 	else
-		advise("HOLD", "Setting phrase curve to all 1's for *loop* duration.");
+		rtcmix_advise("HOLD", "Setting phrase curve to all 1's for *loop* duration.");
 
 	if (fade_time) {
 	  	fade_table = floc(2);

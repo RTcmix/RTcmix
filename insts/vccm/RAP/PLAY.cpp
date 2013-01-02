@@ -47,7 +47,7 @@ int PLAY::init(double p[], int n_args)
 		tableset(SR, p[2], amplen, tabs);
 	}
 	else
-		advise("PLAY", "Setting phrase curve to all 1's.");
+		rtcmix_advise("PLAY", "Setting phrase curve to all 1's.");
 
 	skip = (int)(SR/(float)resetval);
 

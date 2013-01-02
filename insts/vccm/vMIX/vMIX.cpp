@@ -58,7 +58,7 @@ int vMIX::init(double p[], int n_args)
 		tableset(SR, p[2], amplen, tabs);
 	}
 	else
-		advise("vMIX", "Setting phrase curve to all 1's.");
+		rtcmix_advise("vMIX", "Setting phrase curve to all 1's.");
 
 	if (fade_time) {
 	  	fade_table = floc(2);

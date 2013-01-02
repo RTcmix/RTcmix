@@ -56,7 +56,7 @@ int COMBFILT::init(double p[], int n_args)
 	tableset(SR, p[2], amplen, tabs);
   }
   else
-	advise("COMBFILT", "Setting phrase curve to all 1's.");
+	rtcmix_advise("COMBFILT", "Setting phrase curve to all 1's.");
 
   amp = p[3];
   a = p[5];
