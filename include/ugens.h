@@ -167,8 +167,8 @@ off_t outrepos(int samps, int fno);
 void fnscl(struct gen *gen);
 
 /* message.c */
-void advise(const char *inst_name, const char *format, ...);
-void warn(const char *inst_name, const char *format, ...);
+void rtcmix_advise(const char *inst_name, const char *format, ...);
+void rtcmix_warn(const char *inst_name, const char *format, ...);
 void rterror(const char *inst_name, const char *format, ...);
 /* returns DONT_SCHEDULE if !Option::exitOnError() */
 int die(const char *inst_name, const char *format, ...);
