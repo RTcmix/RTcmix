@@ -55,7 +55,7 @@ int soundin :: init(float p[], int n_args)
       tableset(dur, lenamp, amptabs);
    }
    else
-      advise("soundin", "Setting phrase curve to all 1's.");
+      rtcmix_advise("soundin", "Setting phrase curve to all 1's.");
 
    skip = (int)(SR / (float)resetval);
 
