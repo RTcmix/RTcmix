@@ -36,7 +36,7 @@ int CLAR::init(double p[], int n_args)
 		tableset(SR, p[1], lenamp, amptabs);
 	}
 	else
-		advise("CLAR", "Setting noise amp curve to all 1's.");
+		rtcmix_advise("CLAR", "Setting noise amp curve to all 1's.");
 
 	oamparr = floc(2);
 	if (oamparr) {
@@ -44,7 +44,7 @@ int CLAR::init(double p[], int n_args)
 		tableset(SR, p[1], olenamp, oamptabs);
 	}
 	else
-		advise("CLAR", "Setting output amp curve to all 1's.");
+		rtcmix_advise("CLAR", "Setting output amp curve to all 1's.");
 
 	imax = DELSIZE;
 	mdelset(SR, del1,dl1,imax);

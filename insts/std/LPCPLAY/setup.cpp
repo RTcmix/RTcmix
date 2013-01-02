@@ -93,7 +93,7 @@ double dataset(float *p, int n_args, double *pp)
 	for (set = 0; set < maxDataSets && strlen(g_dataset_names[set]); ++set) {
 		if (strcmp(name, g_dataset_names[set]) == 0) {
 			g_currentDataset = set;
-			::advise("dataset", "Using already open dataset at slot %d", set);
+			::rtcmix_advise("dataset", "Using already open dataset at slot %d", set);
 			return g_datasets[g_currentDataset]->getFrameCount();
 		}
 	}
@@ -125,7 +125,7 @@ double dataset(float *p, int n_args, double *pp)
 		return -1;
 	}
 
-	::advise("dataset", "File has %d poles and %d frames.",
+	::rtcmix_advise("dataset", "File has %d poles and %d frames.",
 			dataSet->getNPoles(), frms);
 	
 	// Add to dataset list.
@@ -146,17 +146,17 @@ double lpcstuff(float *p, int n_args)
         if(n_args>3) risetime=p[3];
         if(n_args>4) decaytime=p[4];
         if(n_args>5) cutoff = p[5]; else cutoff = 0;
-        ::advise("lpcstuff", "Adjusting settings for %s.",g_dataset_names[g_currentDataset]); 
-        ::advise("lpcstuff", "Thresh: %g  Randamp: %g  EnvRise: %g  EnvDecay: %g",
+        ::rtcmix_advise("lpcstuff", "Adjusting settings for %s.",g_dataset_names[g_currentDataset]); 
+        ::rtcmix_advise("lpcstuff", "Thresh: %g  Randamp: %g  EnvRise: %g  EnvDecay: %g",
 			   thresh,randamp, risetime, decaytime);
 #ifdef WHEN_UNVOICED_RATE_WORKING
         if(unvoiced_rate == 1)
-			::advise("lpcstuff", "Unvoiced frames played at normal rate.");
+			::rtcmix_advise("lpcstuff", "Unvoiced frames played at normal rate.");
         else
-			::advise("lpcstuff", "Unvoiced frames played at same rate as voiced 'uns.");
+			::rtcmix_advise("lpcstuff", "Unvoiced frames played at same rate as voiced 'uns.");
 #else
         if(unvoiced_rate == 1) {
-			::advise("lpcstuff", "Unvoiced rate option not yet working.");
+			::rtcmix_advise("lpcstuff", "Unvoiced rate option not yet working.");
 			unvoiced_rate = 0;
 		}
 #endif
@@ -167,18 +167,18 @@ double set_hnfactor(float *p, int n_args)
 {
 	if (p[0] < .01)
 	{
-		warn("set_hnfactor", "hnfactor must be greater than 0.01...ignoring");
+		rtcmix_warn("set_hnfactor", "hnfactor must be greater than 0.01...ignoring");
 		return hnfactor;
 	}
 	hnfactor = p[0];
-	::advise("set_hnfactor", "Harmonic count factor set to %g", hnfactor);
+	::rtcmix_advise("set_hnfactor", "Harmonic count factor set to %g", hnfactor);
 	return p[0];
 }
 
 double freset(float *p, int n_args)
 {
         perperiod = p[0];
-        ::advise("freset", "Frame reinitialization reset to %f times per period.",
+        ::rtcmix_advise("freset", "Frame reinitialization reset to %f times per period.",
 				perperiod);
 		return perperiod;
 }
@@ -187,7 +187,7 @@ double freset(float *p, int n_args)
 double setdev(float *p, int n_args)
 {
         maxdev = p[0];
-		::advise("setdev", "pitch deviation set to %g Hz", maxdev);
+		::rtcmix_advise("setdev", "pitch deviation set to %g Hz", maxdev);
 		return maxdev;
 }
 
@@ -195,7 +195,7 @@ double setdevfactor(float *p, int n_args)
 {
 		// LPCPLAY will treat negatives as a factor
         maxdev = -p[0];
-		::advise("setdevfactor", "pitch deviation factor: %g", -maxdev);
+		::rtcmix_advise("setdevfactor", "pitch deviation factor: %g", -maxdev);
 		return -maxdev;
 }
 
@@ -210,7 +210,7 @@ set_thresh(float *p, int n_args)
 	lowthresh = p[0];
 	highthresh = p[1];
 	thresh = highthresh;
-	::advise("set_thresh",
+	::rtcmix_advise("set_thresh",
 		   "lower error threshold: %0.6f  upper error threshold: %0.6f",
 			p[0], p[1]);
 	return lowthresh;
@@ -220,7 +220,7 @@ double
 use_autocorrect(float *p, int n_args)
 {
 	autoCorrect = (p[0] != 0.0f);
-	::advise("autocorrect", "auto-frame-correction turned %s", 
+	::rtcmix_advise("autocorrect", "auto-frame-correction turned %s", 
 			autoCorrect == 0.0 ? "off" : "on");
 	return p[0];
 }

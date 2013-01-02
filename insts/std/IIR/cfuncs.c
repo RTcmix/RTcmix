@@ -27,7 +27,7 @@ double setup(float p[], int n_args)
 	int i, j;
 	float first = 1.0f;
 
-	advise("IIR setup", "centerfreq    bandwidth  relative amp");
+	rtcmix_advise("IIR setup", "centerfreq    bandwidth  relative amp");
 
 	for (i = 0, j = 0; i < n_args; i += 3, j++)  {
 		float cf, bw, amp;
@@ -48,7 +48,7 @@ double setup(float p[], int n_args)
 		_filter_spec[j].bw = bw;
 		_filter_spec[j].amp = amp;
 
-		advise(NULL, "            %10.4f %10.4f %10.4f", cf, bw, amp);
+		rtcmix_advise(NULL, "            %10.4f %10.4f %10.4f", cf, bw, amp);
 	}
 	_num_filters = j;
 	return (double) _num_filters;

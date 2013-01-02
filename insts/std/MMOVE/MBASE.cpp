@@ -252,7 +252,7 @@ int MBASE::configure()
 	rvb_reset(m_tapDelay);   			// resets tap delay
 
 	if (status == 0 && m_binaural) {
-		advise(name(), "Running in binaural mode.");
+		rtcmix_advise(name(), "Running in binaural mode.");
 		status = alloc_firfilters();	// allocates memory for FIRs
 	}
 	return status;
@@ -401,13 +401,13 @@ int MBASE::alloc_firfilters()
       for (int j = 0; j < 13; j++) {
          m_vectors[i][j].Firtaps = new double[g_Nterms[j] + 1];
 		 if (m_vectors[i][j].Firtaps == NULL) {
-		 	fprintf(stderr, "Memory failure during setup\n");
+		 	rterror("MBASE (alloc_firfilters/Firtaps)", "Memory failure during setup");
 			return -1;
 		 }
 		 memset(m_vectors[i][j].Firtaps, 0, (g_Nterms[j] + 1) * sizeof(double));
          m_vectors[i][j].Fircoeffs = new double[g_Nterms[j]];
 		 if (m_vectors[i][j].Fircoeffs == NULL) {
-		 	fprintf(stderr, "Memory failure during setup\n");
+		 	rterror("MBASE (alloc_firfilters/Fircoeffs)", "Memory failure during setup");
 			return -1;
 		 }
       }
@@ -423,7 +423,7 @@ int MBASE::alloc_delays()
 	assert(m_tapsize > 0);
     m_tapDelay = new double[m_tapsize + 8];
 	if (m_tapDelay == NULL) {
-		fprintf(stderr, "Memory failure during setup\n");
+		rterror("MBASE (alloc_delays)", "Memory failure during setup");
 		return -1;
 	}
 	memset(m_tapDelay, 0, (m_tapsize + 8) * sizeof(double));

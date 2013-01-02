@@ -140,7 +140,7 @@ convolve(float p[], int n_args)
 
     if ((isamps) > NCMAX) {
       isamps = NCMAX;
-      warn("convolve", "Impulse response too long.");
+      rtcmix_warn("convolve", "Impulse response too long.");
     }
 
 /* Set up buffers. */
@@ -463,7 +463,7 @@ setwindow(float p[], int n_args)
 {
 	int number = p[0];
 
-	advise("convolve", "Creating window %d.", number);
+	rtcmix_advise("convolve", "Creating window %d.", number);
 	tableset(SR(), p[1],SIZE,tabs[number]);
 	setline(&p[2],n_args-2,SIZE,array[number]);
 	haswindow=1;
@@ -482,7 +482,7 @@ setwarp(float p[], int n_args)
 {
 	int number = p[0];
 
-	advise("convolve", "Creating warp table %d.", number);
+	rtcmix_advise("convolve", "Creating warp table %d.", number);
 	tableset(SR(), p[1],SIZE,warptabs[number]);
 	setline(&p[2],n_args-2,SIZE,warparray[number]);
 
@@ -517,7 +517,7 @@ setrange(float p[], int n_args)
 {
 	int number = p[0];
 
-	advise("convolve", "Creating range table %d.", number);
+	rtcmix_advise("convolve", "Creating range table %d.", number);
 	tableset(SR(), p[1],SIZE,rangetabs[number]);
 	setline(&p[2],n_args-2,SIZE,rangearray[number]);
 
@@ -553,7 +553,7 @@ setring(float p[], int n_args)
 {
 	int number = p[0];
 
-	advise("convolve", "Creating ring table %d.", number);
+	rtcmix_advise("convolve", "Creating ring table %d.", number);
 	tableset(SR(), p[1],SIZE,ringtabs[number]);
 	setline(&p[2],n_args-2,SIZE,ringarray[number]);
 
@@ -587,7 +587,7 @@ getring(float p[], int n_args)
 double
 setdry(float p[], int n_args)
 {
-	advise("convolve", "Creating dry table.");
+	rtcmix_advise("convolve", "Creating dry table.");
 	tableset(SR(), p[0],SIZE,drytabs);
 	setline(&p[1],n_args-1,SIZE,dryarray);
 

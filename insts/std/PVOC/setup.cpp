@@ -62,7 +62,7 @@ double set_filter(float *p, int n_args, double *pp)
 					(int)numarg);
 			return -1;
 		}
-		advise("set_filter", "Slot %d selected", (int)numarg);
+		rtcmix_advise("set_filter", "Slot %d selected", (int)numarg);
 		g_currentFilterSlot = (int)numarg;
 	}
 	else {
@@ -82,7 +82,7 @@ double set_filter(float *p, int n_args, double *pp)
 			FUN registerLib = NULL;
 			if (dso.loadFunction(&registerLib, "registerLib") == 0) {
 				g_currentFilterSlot = (*registerLib)(RegisterFilter);
-				advise("set_filter", "Filter dso loaded and placed in slot %d",
+				rtcmix_advise("set_filter", "Filter dso loaded and placed in slot %d",
 						g_currentFilterSlot);
 			}
 			else {

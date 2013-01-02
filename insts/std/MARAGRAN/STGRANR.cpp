@@ -86,13 +86,13 @@ int STGRANR::init(double p[], int n_args)
 		tableset(SR, evdur, alen, tabs);
 	}
 	else
-		advise("STGRANR", "Setting phrase curve to all 1's.");
+		rtcmix_advise("STGRANR", "Setting phrase curve to all 1's.");
 	grenvtable = floc(2);
 	if (grenvtable) {
 		grlen = fsize(2);
 	}
 	else
-		advise("STGRANR", "Setting grain envelope to all 1's.");
+		rtcmix_advise("STGRANR", "Setting grain envelope to all 1's.");
         
 	aamp = amp;
         
@@ -139,7 +139,7 @@ int STGRANR::run()
 		in = new float [RTBUFSAMPS * inputChannels()];
 
 //        if ( (durhi*(float)SR) > frameCount())
-//		advise("STGRANR", "Grain duration larger than buffer.");
+//		rtcmix_advise("STGRANR", "Grain duration larger than buffer.");
         
     outp = outbuf;               /* point to inst private out buffer */
 
@@ -232,7 +232,7 @@ int STGRANR::run()
                 thechunksamp++; // sample within chunk
            }
         }
- //       advise("STGRANR", "totalgrains: %ld\n",totalgrains);
+ //       rtcmix_advise("STGRANR", "totalgrains: %ld\n",totalgrains);
         return thechunksamp;        
 }
 

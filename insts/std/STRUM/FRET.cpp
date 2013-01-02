@@ -45,7 +45,7 @@ int FRET::init(double p[], int n_args)
 		tableset(SR, dur, amplen, amptabs);
 	}
 	else {
-		advise("FRET", "Setting phrase curve to all 1's.");
+		rtcmix_advise("FRET", "Setting phrase curve to all 1's.");
 		aamp = 1.0;
 	}
 

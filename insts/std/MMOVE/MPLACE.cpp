@@ -49,7 +49,7 @@ int PLACE::localInit(double p[], int n_args)
     if (m_dist < 0) {
         m_cartflag = 1;                    /* cartesian coordinates */
         m_dist *= -1.0;
-        advise(name(), "Using cartesian coordinate system.");
+        rtcmix_advise(name(), "Using cartesian coordinate system.");
     }
 	// convert angle to radians before passing in if polar
     if (roomtrig(R , m_cartflag ? T : T * conv, m_dist, m_cartflag)) {

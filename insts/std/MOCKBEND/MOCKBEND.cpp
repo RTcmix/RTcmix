@@ -125,7 +125,7 @@ int MOCKBEND :: init(double p[], int n_args)
    float total_indur = (float) m_DUR(NULL, 0);
    float dur_to_read = dur * averageInc;
    if (inskip + dur_to_read > total_indur) {
-      warn("MOCKBEND", "This note will read off the end of the input file.\n"
+      rtcmix_warn("MOCKBEND", "This note will read off the end of the input file.\n"
                     "You might not get the envelope decay you "
                     "expect from setline.\nReduce output duration.");
       /* no exit() */
@@ -144,7 +144,7 @@ int MOCKBEND :: init(double p[], int n_args)
       tableset(SR, dur, amplen, tabs);
    }
    else {
-      advise("MOCKBEND", "Setting phrase curve to all 1's.");
+      rtcmix_advise("MOCKBEND", "Setting phrase curve to all 1's.");
       aamp = amp;
    }
 

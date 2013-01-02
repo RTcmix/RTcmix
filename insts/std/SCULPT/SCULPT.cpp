@@ -35,7 +35,7 @@ int SCULPT::init(double p[], int n_args)
 		tableset(SR, tdur, len, amptabs);
 	}
 	else
-		advise("SCULPT", "Setting phrase curve to all 1's.");
+		rtcmix_advise("SCULPT", "Setting phrase curve to all 1's.");
 
 	freqtable = floc(3);
 	if (freqtable == NULL)

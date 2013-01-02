@@ -60,7 +60,7 @@ int VFRET1::init(double p[], int n_args)
 		tableset(SR, p[1], amplen, amptabs);
 	}
 	else {
-		advise("VFRET1", "Setting phrase curve to all 1's.");
+		rtcmix_advise("VFRET1", "Setting phrase curve to all 1's.");
 		aamp = amp;
 	}
 

@@ -43,7 +43,7 @@ void sset(float SR, float freq, float tf0, float tNy, strumq *q)
    del = 1.;  /*delay of 1 from three point filter to be added later */
    q->n = floor(xlen - del);
    if (q->n > maxlen) {
-      warn("STRUM", "Pitch is too low.");
+      rtcmix_warn("STRUM", "Pitch is too low.");
       q->n = maxlen;
    }
 

@@ -24,7 +24,7 @@ checkForHeader(int afd, int *nPoles, float sr)
 			die("dataset", "Can't read analysis file header.");
 			return -1;
 		}
-		advise("dataset", "This is a csound-type data file with header.");
+		rtcmix_advise("dataset", "This is a csound-type data file with header.");
 		if(lseek(afd, analheader.headersize, 0) < 0) {
 			die("dataset", "Bad lseek past header.");
 			return -1;
@@ -39,9 +39,9 @@ checkForHeader(int afd, int *nPoles, float sr)
 			return -1;
 		}
 		else if(!*nPoles) /* if none previously specified */
-			advise("dataset", "npoles set to %d", *nPoles=analheader.npoles);
+			rtcmix_advise("dataset", "npoles set to %d", *nPoles=analheader.npoles);
 		if(sr != 0.0 && sr != analheader.srate) {
-			warn("dataset",
+			rtcmix_warn("dataset",
 				 "Warning: LPC header SR (%.1f) != soundfile SR (%.1f)!", 
 				 analheader.srate, sr);
 		}

@@ -87,7 +87,7 @@ sgran(float p[], int n_args)
 		tableset(SR(), p[1], amplen, tabs);
 	}
 	else
-		advise("sgran", "Setting phrase curve to all 1's.");
+		rtcmix_advise("sgran", "Setting phrase curve to all 1's.");
 
 	wave = floc(6); /* finds starting loc. of waveform */
 	if (wave == NULL)

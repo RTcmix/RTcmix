@@ -80,7 +80,7 @@ int DMOVE::localInit(double *p, int n_args)
         return die(name(), "Wrong number of args.");
     m_dist = p[6];
 	if (m_dist < 0.0) {
-	    advise(name(), "Using cartesian coordinate system");
+	    rtcmix_advise(name(), "Using cartesian coordinate system");
 		m_dist *= -1.0;
 		m_cartflag = 1;
 	}

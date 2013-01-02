@@ -263,7 +263,7 @@ int LPCPLAY::localInit(double p[], int n_args)
 		_transposition = cpspch(-_pitch);  /* flat pitch in octave pt */
 
 	if (n_args <= _datafields && _pitch > 0) {
-		advise("LPCPLAY", "Overall transp factor: %f, weighted av. pitch = %g Hz",
+		rtcmix_advise("LPCPLAY", "Overall transp factor: %f, weighted av. pitch = %g Hz",
 			   _transposition, actualweight);
 		if (_maxdev) 
 			readjust(_maxdev,_pchvals,startFrame,endFrame,_thresh,actualweight);
@@ -422,7 +422,7 @@ int LPCPLAY::run()
 			break;
 		// Catch bad pitches which generate array overruns
 		else if (_counter > _arrayLen) {
-			warn("LPCPLAY", "Counter exceeded array size -- limiting.  Frame pitch: %f", newpch);
+			rtcmix_warn("LPCPLAY", "Counter exceeded array size -- limiting.  Frame pitch: %f", newpch);
 			_counter = _arrayLen;
 		}
 
@@ -538,7 +538,7 @@ LPCPLAY::deviation(float frame1, float frame2, float weight, float thresh)
 		}
 	}
 	dev = (xweight != 0.0f) ? sum / xweight : 0.0f;
-	advise("LPCPLAY", "Average pitch deviation = %f Hz",dev);
+	rtcmix_advise("LPCPLAY", "Average pitch deviation = %f Hz",dev);
 	return(dev);
 }
 
@@ -572,7 +572,7 @@ LPCPLAY::readjust(float maxdev, double *pchval,
 		// If negative, use as factor to multiply orig deviation
 		if (maxdev < 0)
 			maxdev = dev * -maxdev;
-		advise("LPCPLAY", "Adjusting pitch deviation to %f Hz",maxdev);
+		rtcmix_advise("LPCPLAY", "Adjusting pitch deviation to %f Hz",maxdev);
 		adjust(dev,maxdev,weight,pchval,firstframe,lastframe);
 	}
 }

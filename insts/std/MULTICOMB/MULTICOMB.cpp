@@ -83,7 +83,7 @@ int MULTICOMB::init(double p[], int n_args)
 
 	for (int j = 0; j < NCOMBS; j++) {
 		float cfreq = minfreq + ((maxfreq - minfreq) * (rrand() + 2.0) / 2.0);
-		advise("MULTICOMB", "comb number %d: %g Hz", j, cfreq);
+		rtcmix_advise("MULTICOMB", "comb number %d: %g Hz", j, cfreq);
 		float loopt = 1.0 / cfreq;
 		delsamps[j] = (int) (loopt * SR + 0.5);
 		comb[j] = new Ocomb(SR, loopt, rvbtime);

@@ -61,7 +61,7 @@ int REVMIX::init(double p[], int n_args)
       return die("REVMIX", "Input start time must be greater than zero.");
 
    if (dur > inskip) {
-      warn("REVMIX", "Duration must be greater than input start time. "
+      rtcmix_warn("REVMIX", "Duration must be greater than input start time. "
                      "Adjusting...");
       dur = inskip;
    }

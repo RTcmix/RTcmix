@@ -61,7 +61,7 @@ int FRET1::init(double p[], int n_args)
 		tableset(SR, dur, amplen, amptabs);
 	}
 	else {
-		advise("FRET1", "Setting phrase curve to all 1's.");
+		rtcmix_advise("FRET1", "Setting phrase curve to all 1's.");
 		aamp = amp;
 	}
 

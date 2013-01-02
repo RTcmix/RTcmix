@@ -339,7 +339,7 @@ stgran(float p[], int n_args)
       tableset(SR(), outdur, len, tab1);
    }
    else
-      advise("stgran", "Setting phrase curve to all 1's.");
+      rtcmix_advise("stgran", "Setting phrase curve to all 1's.");
 
    for (i = 0; i < nsamps; i++) {
       count++;

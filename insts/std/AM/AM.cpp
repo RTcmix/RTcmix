@@ -106,7 +106,7 @@ int AM::init(double p[], int n_args)
 		if (wavetable)
 			tablelen = fsize(2);
 		else { // use default sine wave
-			warn("AM", "No modulator wavetable specified, so using sine wave.");
+			rtcmix_advise("AM", "No modulator wavetable specified, so using sine wave.");
 			tablelen = 1024;
 			wavetable = new double [tablelen];
 			ownWavetable = true;

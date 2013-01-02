@@ -45,7 +45,7 @@ rotate(float p[], int n_args)
 		tableset(SR(), p[2], alen, amptabs);
 	}
 	else
-		advise("rotate", "Setting phrase curve to all 1's.");
+		rtcmix_advise("rotate", "Setting phrase curve to all 1's.");
 	
 	wintable = floc(2);
 	if (wintable == NULL)

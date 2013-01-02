@@ -89,7 +89,7 @@ int AMINST::init(double p[], int n_args)
 		p6present = false;
 		modamparr = floc(2);
 		if (modamparr == NULL) { // will default to 1.0 in doupdate()
-			advise("AMINST", "no modulator amp (p6) present, defaulting to 1.0");
+			rtcmix_advise("AMINST", "no modulator amp (p6) present, defaulting to 1.0");
 		} else {
 			int len = fsize(2);
 			tableset(SR, dur, len, modamptabs);
@@ -106,7 +106,7 @@ int AMINST::init(double p[], int n_args)
 		if (cartable)
 			tablelen = fsize(3);
 		else {
-			warn("AMINST", "No carrier wavetable specified, so using sine wave.");
+			rtcmix_advise("AMINST", "No carrier wavetable specified, so using sine wave.");
 			tablelen = 1024;
 			cartable = new double [tablelen];
 			ownCartable = true;
@@ -127,7 +127,7 @@ int AMINST::init(double p[], int n_args)
 		if (modtable)
 			tablelen = fsize(4);
 		else {
-			warn("AMINST", "No modulator wavetable specified, so using sine wave.");
+			rtcmix_advise("AMINST", "No modulator wavetable specified, so using sine wave.");
 			tablelen = 1024;
 			modtable = new double [tablelen];
 			ownModtable = true;

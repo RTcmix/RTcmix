@@ -57,7 +57,7 @@ int BEND1::init(double p[], int n_args)
 		tableset(SR, dur, amplen, amptabs);
 	}
 	else {
-		advise("BEND1", "Setting phrase curve to all 1's.");
+		rtcmix_advise("BEND1", "Setting phrase curve to all 1's.");
 		aamp = amp;
 	}
 

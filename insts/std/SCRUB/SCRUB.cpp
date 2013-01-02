@@ -120,7 +120,7 @@ int SCRUB::init(double p[], int n_args)
 		tableset(SR, dur, amplen, tabs);
 	}
 	else
-		advise("SCRUB", "Setting phrase curve to all 1's.");
+		rtcmix_advise("SCRUB", "Setting phrase curve to all 1's.");
 	aamp = amp;
 
 	skip = (int) (SR / (float) resetval);

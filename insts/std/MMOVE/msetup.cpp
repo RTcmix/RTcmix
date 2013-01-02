@@ -224,7 +224,7 @@ m_mikes(float p[], int n_args)
 {
    _MikeAngle = p[0] * PI / 180.0;  /* convert to rads */
    _MikePatternFactor = (p[1] <= 1.0) ? p[1] : 1.0;
-   advise("mikes", "Microphone angles: %.1f degrees, Pattern factor: %.1f",
+   rtcmix_advise("mikes", "Microphone angles: %.1f degrees, Pattern factor: %.1f",
           p[0], _MikePatternFactor);
    _UseMikes = 1;
 
@@ -238,7 +238,7 @@ m_mikes(float p[], int n_args)
 double
 m_mikes_off(float p[], int n_args)
 {
-   advise("mikes", "Microphone usage turned off.\n");
+   rtcmix_advise("mikes", "Microphone usage turned off.\n");
    _UseMikes = 0;
 
    return 0.0;
@@ -271,7 +271,7 @@ m_oldmatrix(float p[], int n_args)
             _Matrix[i][j] = val * amp;
          }
       }
-      advise("matrix", "Matrix loaded.\n");
+      rtcmix_advise("matrix", "Matrix loaded.\n");
       matrix_flag = 1;
    }
    else
@@ -292,12 +292,12 @@ m_matrix(float p[], int n_args)
 	  if (n_args == 1)
 	  {
 	   	_Matrix_Gain = amp;
-		advise("matrix", "Default matrix.  Gain set to %g", amp);
+		rtcmix_advise("matrix", "Default matrix.  Gain set to %g", amp);
 		return 0;
 	  }
    	  else if (n_args != 145)
 	  {
-	  	warn("matrix", "Incorrect number of args.  Ignoring matrix.");
+	  	rtcmix_warn("matrix", "Incorrect number of args.  Ignoring matrix.");
 		return 0;
 	  }
       /* loop for 12 by 12 args */
@@ -306,7 +306,7 @@ m_matrix(float p[], int n_args)
             _Matrix[i][j] = p[12*i+j+1] * amp;
          }
       }
-      advise("matrix", "Loaded 12x12 values.\n");
+      rtcmix_advise("matrix", "Loaded 12x12 values.\n");
       matrix_flag = 1;
    }
    else

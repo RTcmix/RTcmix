@@ -298,9 +298,9 @@ MFP_samps(float SR, double dim[])
    MFP = 4.0 * volume / area;
    mean_delay = 2.0 * MFP / MACH1;
 
-   advise(NULL, "This room is %.1f ft. long,", length);
-   advise(NULL, " %.1f ft. wide, & %.1f ft. high.\n", width, height);
-   advise(NULL, "The average delay is %.2f ms.\n", mean_delay * 1000.0);
+   rtcmix_advise(NULL, "This room is %.1f ft. long,", length);
+   rtcmix_advise(NULL, " %.1f ft. wide, & %.1f ft. high.\n", width, height);
+   rtcmix_advise(NULL, "The average delay is %.2f ms.\n", mean_delay * 1000.0);
 
    return (long)(mean_delay * SR + 0.5);
 }

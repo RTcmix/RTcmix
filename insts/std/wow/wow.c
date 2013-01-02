@@ -63,7 +63,7 @@ wow(float p[], int n_args)
 		tableset(SR(), p[2], lenamp, amptabs);
 	}
 	else
-		advise("wow", "Setting phrase curve to all 1's.");
+		rtcmix_advise("wow", "Setting phrase curve to all 1's.");
 
 	modulator_index = p[4];
 	modulator_freq = p[5];

@@ -137,7 +137,7 @@ void STEREO::updatePans(double p[])
 			val = p[i + MATRIX_PFIELD_OFFSET];
 		if (val > 1.0) {
 			if (warnInvalid) {
-				warn("STEREO", "One or more pan values were greater than 1.");
+				rtcmix_warn("STEREO", "One or more pan values were greater than 1.");
 				warnInvalid = false;
 			}
 			val = 1.0;

@@ -31,7 +31,7 @@ DataSet::open(const char *fileName, int npoleGuess, float sampRate)
 		return -1;
     }
 	_nPoles = npoleGuess;	// in case we are not using headers
-	::advise("dataset", "Opened lpc dataset %s.", fileName);
+	::rtcmix_advise("dataset", "Opened lpc dataset %s.", fileName);
 #ifdef USE_HEADERS
 	if ((_lpHeaderSize = ::checkForHeader(_fdesc, &_nPoles, sampRate)) < 0) {
 	    ::rterror("dataset", "Failed to check header");
@@ -73,7 +73,7 @@ DataSet::getFrame(float frameno, float *pCoeffs)
 		int bytesRead, framesRead = _fprec;
     	if (::lseek(_fdesc, _lpHeaderSize+(frame*_bpframe), 0) == -1)
 		{
-            	fprintf(stderr,"bad lseek on analysis file \n");
+            	rtcmix_warn("LPC", "bad lseek on analysis file");
             	return(-1);
     	}
 #ifdef debug
@@ -82,7 +82,7 @@ DataSet::getFrame(float frameno, float *pCoeffs)
 		/* Quit if we read less than one complete frame */
     	if ((bytesRead = ::read(_fdesc, _array, _bprec)) < _bpframe)
 		{
-            	fprintf(stderr,"reached eof on analysis file \n");
+            	rtcmix_warn("LPC","reached eof on analysis file \n");
             	return(-1);
     	}
 		framesRead = bytesRead / _bpframe;

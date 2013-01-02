@@ -133,7 +133,7 @@ int BASE::init(double p[], int n_args)
 	  tableset(SR, m_dur, amplen, amptabs);	  /* controls input dur only */
    }
    else
-	  advise(name(), "Setting phrase curve to all 1's.");
+	  rtcmix_advise(name(), "Setting phrase curve to all 1's.");
    
    /* determine extra run time for this routine before calling rtsetoutput() */
    double ringdur = 0.0;
@@ -229,7 +229,7 @@ int BASE::configure()
 	rvb_reset(m_tapDelay);				  // resets reverb & tap delay
 
 	if (status == 0 && m_binaural) {
-		advise(name(), "Running in binaural mode.");
+		rtcmix_advise(name(), "Running in binaural mode.");
 		status = alloc_firfilters();	// allocates memory for FIRs
 	}
 	return status;
@@ -423,13 +423,13 @@ int BASE::alloc_firfilters()
 	  for (int j = 0; j < 13; j++) {
 		 m_vectors[i][j].Firtaps = new double[g_Nterms[j] + 1];
 		 if (m_vectors[i][j].Firtaps == NULL) {
-		 	fprintf(stderr, "Memory failure during setup\n");
+		 	rterror("BASE (alloc_firfilters/Firtaps)", "Memory failure during setup");
 			return -1;
 		 }
 		 memset(m_vectors[i][j].Firtaps, 0, (g_Nterms[j] + 1) * sizeof(double));
 		 m_vectors[i][j].Fircoeffs = new double[g_Nterms[j]];
 		 if (m_vectors[i][j].Fircoeffs == NULL) {
-		 	fprintf(stderr, "Memory failure during setup\n");
+		 	rterror("BASE (alloc_firfilters/Fircoeffs)", "Memory failure during setup");
 			return -1;
 		 }
 	  }
@@ -445,7 +445,7 @@ int BASE::alloc_delays()
 	assert(m_tapsize > 0);
 	m_tapDelay = new double[m_tapsize + 8];
 	if (m_tapDelay == NULL) {
-		fprintf(stderr, "Memory failure during setup\n");
+		rterror("BASE (alloc_delays)", "Memory failure during setup");
 		return -1;
 	}
 	memset(m_tapDelay, 0, (m_tapsize + 8) * sizeof(double));
@@ -455,7 +455,7 @@ int BASE::alloc_delays()
 	  for (int j = 0; j < 6; j++) {
 		 m_rvbData[i][j].Rvb_del = new double[rvbdelsize];
 		 if (m_rvbData[i][j].Rvb_del == NULL) {
-			fprintf(stderr, "Memory failure during setup\n");
+			rterror("BASE (alloc_delays/Rvb_del)", "Memory failure during setup");
 			return -1;
 		 }
 		 memset(m_rvbData[i][j].Rvb_del, 0, sizeof(double) * rvbdelsize);

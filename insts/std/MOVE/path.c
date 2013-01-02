@@ -93,7 +93,7 @@ param (float p[], int n_args)	/* parametric setup for polar coordinates */
        		rholoc[i] = *fun1++;
        		thetaloc[i] = *fun2++;
     	}
-	advise("param", "Functions loaded.");
+	rtcmix_advise("param", "Functions loaded.");
 	cartflag = 0;
 
 	return 0.0;
@@ -120,7 +120,7 @@ cparam (float p[], int n_args) /* parametric setup for cartesian coordinates */
        		rholoc[i] = *fun1++;
        		thetaloc[i] = *fun2++;
     	}
-	advise("cparam", "Functions loaded.");
+	rtcmix_advise("cparam", "Functions loaded.");
 	cartflag = 1;
 
 	return 0.0;
@@ -130,8 +130,8 @@ double
 threshold(float p[], int n_args)
 {
 	mindiff = p[0];
-//	advise("threshold", "Source location updated every %.2f feet.", mindiff);
-	advise("threshold", "Source location updated every %.2f msec.",
+//	rtcmix_advise("threshold", "Source location updated every %.2f feet.", mindiff);
+	rtcmix_advise("threshold", "Source location updated every %.2f msec.",
 		   mindiff*1000.0);
 
 	return 0.0;

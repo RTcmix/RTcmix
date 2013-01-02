@@ -57,13 +57,13 @@ int SGRANR::init(double p[], int n_args)
             tableset(SR, evdur, alen, tabs);
 	}
 	else
-		advise("SGRANR", "Setting phrase curve to all 1's.");
+		rtcmix_advise("SGRANR", "Setting phrase curve to all 1's.");
 	grenvtable = floc(3);
 	if (grenvtable) {
             grlen = fsize(3);
 	}
 	else
-		advise("SGRANR", "Setting grain envelope to all 1's.");
+		rtcmix_advise("SGRANR", "Setting grain envelope to all 1's.");
         
 	aamp = amp;
         
@@ -106,7 +106,7 @@ int SGRANR::run()
     const int frameCount = framesToRun();
 	
 //        if ( (durhi*(float)SR) > frameCount)
-//		advise("SGRANR", "Grain duration larger than buffer.");
+//		rtcmix_advise("SGRANR", "Grain duration larger than buffer.");
 
 	// figure out how many grains are in this chunk 
 	ngrains = (int)((float)frameCount/(rate*(float)SR));	
@@ -196,7 +196,7 @@ int SGRANR::run()
                 thechunksamp++; // sample within chunk
            }
         }
- //       advise("SGRANR", "totalgrains: %ld\n",totalgrains);
+ //       rtcmix_advise("SGRANR", "totalgrains: %ld\n",totalgrains);
         return thechunksamp;        
 }
 

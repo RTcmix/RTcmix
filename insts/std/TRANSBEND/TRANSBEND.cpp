@@ -126,7 +126,7 @@ int TRANSBEND :: init(double p[], int n_args)
    total_indur = (float) m_DUR(NULL, 0);
    dur_to_read = dur * averageInc;
    if (inskip + dur_to_read > total_indur) {
-      warn("TRANSBEND", "This note will read off the end of the input file.\n"
+      rtcmix_warn("TRANSBEND", "This note will read off the end of the input file.\n"
                     "You might not get the envelope decay you "
                     "expect from setline.\nReduce output duration.");
       /* no exit() */
@@ -145,7 +145,7 @@ int TRANSBEND :: init(double p[], int n_args)
       tableset(SR, dur, amplen, tabs);
    }
    else
-      advise("TRANSBEND", "Setting phrase curve to all 1's.");
+      rtcmix_advise("TRANSBEND", "Setting phrase curve to all 1's.");
 
    skip = (int) (SR / (float) resetval);
 
