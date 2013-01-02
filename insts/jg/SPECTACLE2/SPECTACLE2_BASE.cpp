@@ -532,7 +532,7 @@ highcount:
 		if (control_table_size > _half_fftlen) {
 			const int ignorevals = control_table_size - _half_fftlen;
 			if (ignorevals != _prev_bg_ignorevals) {
-				warn(instname(), "Control table of size %d too large for "
+				rtcmix_warn(instname(), "Control table of size %d too large for "
 			                    "frequency range...ignoring last %d values",
 			                    control_table_size, ignorevals);
 				_prev_bg_ignorevals = ignorevals;
@@ -579,7 +579,7 @@ highcount:
 			if (ignorevals > 0) {
 				cntltablen = control_table_size - ignorevals;
 				if (ignorevals != _prev_bg_ignorevals) {
-					warn(instname(), "Control table of size %d too large for "
+					rtcmix_warn(instname(), "Control table of size %d too large for "
 			                       "frequency range...ignoring last %d values",
 			                       control_table_size, ignorevals);
 					_prev_bg_ignorevals = ignorevals;

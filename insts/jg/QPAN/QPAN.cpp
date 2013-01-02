@@ -123,7 +123,7 @@ void QPAN::doupdate()
       gains[3] = right * back;
 
 #ifdef DEBUG
-      advise("QPAN",
+      rtcmix_advise("QPAN",
              "gains:  l=%.3f, r=%.3f, f=%.3f, b=%.3f [%.3f, %.3f, %.3f, %.3f]",
              left, right, front, back,
              gains[0], gains[1], gains[2], gains[3]);

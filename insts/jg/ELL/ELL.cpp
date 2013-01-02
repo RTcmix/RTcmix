@@ -141,7 +141,7 @@ int ELL::init(double p[], int n_args)
          pctleft = 0.5;                     /* just set it to middle */
    }
    else if (pctleft != -1.0) {
-      warn("ELL", "pctleft ignored unless output is stereo and "
+      rtcmix_warn("ELL", "pctleft ignored unless output is stereo and "
                                                   "there's 1 input channel.");
       pctleft = -1.0;
    }
@@ -159,7 +159,7 @@ int ELL::init(double p[], int n_args)
       es[inchan] = new EllSect[nsects];
       ellpset(es[inchan], &xnorm);
    }
-   advise("ELL", "Filter: %d sections, normalization factor: %.9f",
+   rtcmix_advise("ELL", "Filter: %d sections, normalization factor: %.9f",
                                                                nsects, xnorm);
 
    amptable = floc(1);

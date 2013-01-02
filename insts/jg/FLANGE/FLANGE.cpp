@@ -14,7 +14,8 @@
    p10 = input channel  [optional; default is 0]
    p11 = pan (in percent-to-left form: 0-1) [optional; default is 0.5]
    p12 = ring-down duration [optional; default is resonance value]
-   p13 = reference to mod. wavetable [optional; if missing, must use gen 2 ***]
+   p13 = reference to mod. wavetable [optional; if missing, must use gen 2 ***,
+         or default to internal sine wave]
          Don't let the amplitude of this waveform exceed 1 (absolute value)!
 
    p3 (amplitude), p4 (resonance), p6 (modulation depth), p7 (modulation rate),
@@ -42,7 +43,7 @@
    can't change types during a note.
 
    *** If p13 is missing, you must use an old-style gen table 2 for the
-   modulator waveform.
+   modulator waveform.  [added default sine wave, BGG 6/2012]
 
 
    John Gibson (johgibso at indiana dot edu), 7/21/99; rev for v4, JGG, 7/24/04
@@ -65,6 +66,7 @@ FLANGE :: FLANGE() : Instrument()
    in = NULL;
    branch = 0;
    flangetype_was_string = false;
+	ownModtable = false;
 }
 
 
@@ -74,6 +76,8 @@ FLANGE :: ~FLANGE()
    delete zcomb;
    delete znotch;
    delete modoscil;
+	if (ownModtable)
+		delete [] modtable;
 }
 
 
@@ -148,17 +152,24 @@ int FLANGE :: init(double p[], int n_args)
    if (wetdrymix < 0.0 || wetdrymix > 1.0)
       return die("FLANGE", "Wet/dry mix must be between 0 and 1.");
 
-   double *modtable = NULL;
+   modtable = NULL;
    int tablelen = 0;
 	if (n_args > 13) {      // handle table coming in as optional p13 TablePField
 		modtable = (double *) getPFieldTable(13, &tablelen);
 	}
 	if (modtable == NULL) {
 		modtable = floc(2);
-		if (modtable == NULL)
-			return die("FLANGE", "Either use the mod. waveform pfield (p13) "
-                    "or make an old-style gen function in slot 2.");
-		tablelen = fsize(2);
+ 		if (modtable)
+			tablelen = fsize(2);
+		else {
+			rtcmix_warn("FLANGE", "No modulation wavetable specified, so using sine wave.");
+			tablelen = 1024;
+			modtable = new double [tablelen];
+			ownModtable = true;
+			const double twopi = M_PI * 2.0;
+			for (int i = 0; i < tablelen; i++)
+				modtable[i] = sin(twopi * ((double) i / tablelen));
+		}
 	}
    modoscil = new OscilL(SR, 0.0, modtable, tablelen);
 

@@ -219,13 +219,13 @@ int TVSPECTACLE :: pre_init(double p[], int n_args)
    if (eqcurve) {
       int len = fsize(9);
       if (check_curve(eqcurve, len, 0.0, 1.0))
-         warn(instname(), "EQ curve values must be between 0 and 1.\n"
+         rtcmix_warn(instname(), "EQ curve values must be between 0 and 1.\n"
                           "Fixing...");
       tableset(SR, inputdur + ringdur, len, eqcurvetabs);
       eq_curve_weight = eqcurve[0];
    }
    else {
-      advise(instname(), "Setting EQ table curve to all 0's (no table 9).");
+      rtcmix_advise(instname(), "Setting EQ table curve to all 0's (no table 9).");
       eq_curve_weight = 0.0;
    }
 
@@ -233,13 +233,13 @@ int TVSPECTACLE :: pre_init(double p[], int n_args)
    if (deltimecurve) {
       int len = fsize(10);
       if (check_curve(deltimecurve, len, 0.0, 1.0))
-         warn(instname(), "Delay time curve values must be between 0 and 1.\n"
+         rtcmix_warn(instname(), "Delay time curve values must be between 0 and 1.\n"
                           "Fixing...");
       tableset(SR, inputdur + ringdur, len, deltimecurvetabs);
       deltime_curve_weight = deltimecurve[0];
    }
    else {
-      advise(instname(), "Setting EQ table curve to all 0's (no table 10).");
+      rtcmix_advise(instname(), "Setting EQ table curve to all 0's (no table 10).");
       deltime_curve_weight = 0.0;
    }
 
@@ -247,13 +247,13 @@ int TVSPECTACLE :: pre_init(double p[], int n_args)
    if (feedbackcurve) {
       int len = fsize(11);
       if (check_curve(feedbackcurve, len, 0.0, 1.0))
-         warn(instname(), "Feedback curve values must be between 0 and 1.\n"
+         rtcmix_warn(instname(), "Feedback curve values must be between 0 and 1.\n"
                           "Fixing...");
       tableset(SR, inputdur + ringdur, len, feedbackcurvetabs);
       feedback_curve_weight = feedbackcurve[0];
    }
    else {
-      advise(instname(), "Setting EQ table curve to all 0's (no table 11).");
+      rtcmix_advise(instname(), "Setting EQ table curve to all 0's (no table 11).");
       feedback_curve_weight = 0.0;
    }
 

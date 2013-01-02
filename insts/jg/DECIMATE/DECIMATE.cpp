@@ -54,7 +54,7 @@ DECIMATE :: ~DECIMATE()
 
 static void warnold()
 {
-   warn("DECIMATE", "Pfield order has changed since v3.8!  p4 is new.");
+   rtcmix_warn("DECIMATE", "Pfield order has changed since v3.8!  p4 is new.");
 }
 
 
@@ -127,7 +127,7 @@ int DECIMATE :: init(double p[], int n_args)
       lpfilt->setLowPass(cutoff);
    }
    else
-      advise("DECIMATE", "Disabling low-pass filter.");
+      rtcmix_advise("DECIMATE", "Disabling low-pass filter.");
 
    skip = (int) (SR / (float) resetval);
 
@@ -146,7 +146,7 @@ inline void DECIMATE :: changebits(int nbits)
 {
    if (nbits > 16 || nbits < 1) {
       if (warn_bits) {
-         warn("DECIMATE", "Bits must be between 1 and 16.");
+         rtcmix_warn("DECIMATE", "Bits must be between 1 and 16.");
          warn_bits = false;
       }
       nbits = (nbits > 16) ? 16 : 1;
@@ -188,7 +188,7 @@ int DECIMATE :: run()
             cutoff = p[6];
             if (cutoff < 0.0 || cutoff > nyquist) {
                if (warn_cutoff) {
-                  warn("DECIMATE",
+                  rtcmix_warn("DECIMATE",
                        "Cutoff frequency must be between 0 and %g.", nyquist);
                   warn_cutoff = false;
                }

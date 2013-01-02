@@ -133,7 +133,7 @@ int CONVOLVE1::init(double p[], int n_args)
 			break;
 	_fftlen = 2 * _halfFFTlen;
 	DPRINT2("_impframes=%d, _halfFFTlen=%d\n", _impframes, _halfFFTlen);
-	advise("CONVOLVE1", "Using %d impulse response frames.  FFT length is %d.",
+	rtcmix_advise("CONVOLVE1", "Using %d impulse response frames.  FFT length is %d.",
 				_impframes, _fftlen);
 
 	if (rtsetinput(inskip, this) == -1)

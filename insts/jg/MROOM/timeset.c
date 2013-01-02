@@ -39,7 +39,7 @@ timeset(float p[], int n_args)
       _ntimes++;
    }
    else
-      warn("MROOM", "Can only have %d timeset calls for each MROOM.",
+      rtcmix_warn("MROOM", "Can only have %d timeset calls for each MROOM.",
                                                             TIME_ARRAY_SIZE);
 
    return 0.0;

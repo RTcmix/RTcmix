@@ -69,7 +69,7 @@ int ROOM::init(double p[], int n_args)
       tableset(SR, dur + ringdur, amplen, amptabs);
    }
    else
-      advise("ROOM", "Setting phrase curve to all 1's.");
+      rtcmix_advise("ROOM", "Setting phrase curve to all 1's.");
    aamp = amp;                  /* in case amparray == NULL */
 
    skip = (int)(SR / (float)resetval);

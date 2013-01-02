@@ -85,7 +85,7 @@ int FREEVERB :: init(double p[], int n_args)
                                                                max_roomsize);
    if (roomsize > max_roomsize) {
       roomsize = max_roomsize;
-      advise("FREEVERB", "Room size cannot be greater than %g. Adjusting...",
+      rtcmix_advise("FREEVERB", "Room size cannot be greater than %g. Adjusting...",
              max_roomsize);
    }
    int predelay_samps = (int) ((predelay_time * SR) + 0.5);
@@ -144,7 +144,7 @@ inline void FREEVERB :: updateRvb(double p[])
       roomsize = p[4];
       if (roomsize < 0.0 || roomsize > max_roomsize) {
          if (warn_roomsize) {
-            warn("FREEVERB", "Room size must be between 0 and %g. Adjusting...",
+            rtcmix_warn("FREEVERB", "Room size must be between 0 and %g. Adjusting...",
                                                                   max_roomsize);
             warn_roomsize = false;
          }
@@ -157,7 +157,7 @@ inline void FREEVERB :: updateRvb(double p[])
       int predelay_samps = (int) ((predelay_time * SR) + 0.5);
       if (predelay_samps > max_predelay_samps) {
          if (warn_predelay) {
-            warn("FREEVERB", "Pre-delay must be between 0 and %g seconds. "
+            rtcmix_warn("FREEVERB", "Pre-delay must be between 0 and %g seconds. "
                              "Adjusting...", (float) max_predelay_samps / SR);
             warn_predelay = false;
          }
@@ -169,7 +169,7 @@ inline void FREEVERB :: updateRvb(double p[])
       damp = p[7];
       if (damp < 0.0 || damp > 100.0) {
          if (warn_damp) {
-            warn("FREEVERB", "Damp must be between 0 and 100%%. Adjusting...");
+            rtcmix_warn("FREEVERB", "Damp must be between 0 and 100%%. Adjusting...");
             warn_damp = false;
          }
          damp = damp < 0.0 ? 0.0 : 100.0;
@@ -180,7 +180,7 @@ inline void FREEVERB :: updateRvb(double p[])
       dry = p[8];
       if (dry < 0.0 || dry > 100.0) {
          if (warn_dry) {
-            warn("FREEVERB", "Dry signal level must be between 0 and 100%%. "
+            rtcmix_warn("FREEVERB", "Dry signal level must be between 0 and 100%%. "
                                                                "Adjusting...");
             warn_dry = false;
          }
@@ -192,7 +192,7 @@ inline void FREEVERB :: updateRvb(double p[])
       wet = p[9];
       if (wet < 0.0 || wet > 100.0) {
          if (warn_wet) {
-            warn("FREEVERB", "Wet signal level must be between 0 and 100%%. "
+            rtcmix_warn("FREEVERB", "Wet signal level must be between 0 and 100%%. "
                                                                "Adjusting...");
             warn_wet = false;
          }
@@ -204,7 +204,7 @@ inline void FREEVERB :: updateRvb(double p[])
       width = p[10];
       if (width < 0.0 || width > 100.0) {
          if (warn_width) {
-            warn("FREEVERB", "Width must be between 0 and 100%%. Adjusting...");
+            rtcmix_warn("FREEVERB", "Width must be between 0 and 100%%. Adjusting...");
             warn_width = false;
          }
          width = width < 0.0 ? 0.0 : 100.0;

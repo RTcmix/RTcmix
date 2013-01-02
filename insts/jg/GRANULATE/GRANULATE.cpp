@@ -296,7 +296,7 @@ int GRANULATE::run()
          const int samps = RTBUFSAMPS * outputChannels();
          for (int i = 0; i < samps; i++)
             _block[i] = 0.0f;
-         advise("GRANULATE", "Reached end in non-wrap mode; stopping output.");
+         rtcmix_advise("GRANULATE", "Reached end in non-wrap mode; stopping output.");
          _stopped = true;
       }
       framesdone += blockframes;

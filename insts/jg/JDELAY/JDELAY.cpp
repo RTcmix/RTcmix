@@ -103,7 +103,7 @@ int JDELAY::init(double p[], int n_args)
       return die("JDELAY",
               "Cutoff freq. should be positive (or zero to disable filter).");
    else if (cutoff == 0.0)
-      advise("JDELAY", "Low-pass filter disabled.");
+      rtcmix_advise("JDELAY", "Low-pass filter disabled.");
    else {
       usefilt = true;
       toneset(SR, cutoff, 1, tonedata);

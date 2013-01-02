@@ -124,9 +124,9 @@ int NPAN::getmode()
 
 void NPAN::dumpspeakers()
 {
-   advise("NPAN", "Speakers (angles are internal degrees) -------------------");
+   rtcmix_advise("NPAN", "Speakers (angles are internal degrees) -------------------");
    for (int i = 0; i < num_speakers; i++) {
-      advise("NPAN", "chan %d:\tangle=%g, nextAngle=%g distance=%g",
+      rtcmix_advise("NPAN", "chan %d:\tangle=%g, nextAngle=%g distance=%g",
          speakers[i]->channel(),
          speakers[i]->angle(),
          speakers[i]->nextAngle(),
@@ -175,8 +175,8 @@ int NPAN::init(double p[], int n_args)
 void NPAN::setgains()
 {
 #ifdef DEBUG
-   advise("NPAN", "----------------------------------------------------------");
-   advise("NPAN", "src: x=%f, y=%f, angle=%g, dist=%g",
+   rtcmix_advise("NPAN", "----------------------------------------------------------");
+   rtcmix_advise("NPAN", "src: x=%f, y=%f, angle=%g, dist=%g",
       src_x, src_y, src_angle / TWO_PI * 360.0, src_distance);
 #endif
    const double pi_over_2 = PI_OVER_2;
@@ -218,7 +218,7 @@ void NPAN::setgains()
          speakers[i]->setGain(0.0);
 
 #ifdef DEBUG
-      advise("NPAN", "speaker[%d]: chan=%d, angle=%g, dist=%g, gain=%.12f",
+      rtcmix_advise("NPAN", "speaker[%d]: chan=%d, angle=%g, dist=%g, gain=%.12f",
              i, speakers[i]->channel(), speakers[i]->angleDegrees(),
              speakers[i]->distance(), speakers[i]->gain());
 #endif

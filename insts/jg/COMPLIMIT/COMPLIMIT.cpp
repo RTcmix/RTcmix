@@ -158,10 +158,10 @@ int COMPLIMIT::init(double p[], int n_args)
    window_frames = int(p[10]);
    if (window_frames == 0) {
       window_frames = min(DEFAULT_WINDOW_SIZE, RTBUFSAMPS);
-      advise("COMPLIMIT", "Setting window size to %d frames.", window_frames);
+      rtcmix_advise("COMPLIMIT", "Setting window size to %d frames.", window_frames);
    }
    else if (window_frames > RTBUFSAMPS) {
-      warn("COMPLIMIT", "Window size must be <= the RTcmix buffer size "
+      rtcmix_warn("COMPLIMIT", "Window size must be <= the RTcmix buffer size "
                         "(currently %d frames).  Correcting...", RTBUFSAMPS);
       window_frames = RTBUFSAMPS;
    }

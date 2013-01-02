@@ -171,7 +171,7 @@ int VOCODESYNTH :: init(double p[], int n_args)
 
    int window_len = (int) (responsetime * SR + 0.5);
    if (window_len < 2) {
-      warn("VOCODESYNTH", "Response time too short ... changing to %.8f.",
+      rtcmix_warn("VOCODESYNTH", "Response time too short ... changing to %.8f.",
                                                                      2.0 / SR);
       // Otherwise, can get ear-splitting output.
       window_len = 2;
@@ -228,7 +228,7 @@ int VOCODESYNTH :: init(double p[], int n_args)
                     "Center frequency spacing factor must be greater than 1.");
       if (lowcf < 15.0)                // interpreted as oct.pc
          lowcf = cpspch(lowcf);
-      advise("VOCODESYNTH", "Building center freqs above %g...", lowcf);
+      rtcmix_advise("VOCODESYNTH", "Building center freqs above %g...", lowcf);
       for (int i = 0; i < numbands; i++)
          cf[i] = lowcf * (float) pow((double) spacemult, (double) i);
    }
@@ -248,7 +248,7 @@ int VOCODESYNTH :: init(double p[], int n_args)
       if (numbands > MAXOSC)
          return die("VOCODESYNTH", "Can only use %d filters.", MAXOSC);
 
-      advise("VOCODESYNTH", "Reading center freqs from function table 4...");
+      rtcmix_advise("VOCODESYNTH", "Reading center freqs from function table 4...");
       for (int i = 0; i < numbands; i++) {
          float freq = freqtable[i];
          if (freq < 15.0) {            // interpreted as oct.pc or linoct
@@ -280,14 +280,14 @@ int VOCODESYNTH :: init(double p[], int n_args)
 
    for (int i = 0; i < numbands; i++) {
       if (cf[i] > SR * 0.5) {
-         warn("VOCODESYNTH", "A cf was above Nyquist. Correcting...");
+         rtcmix_warn("VOCODESYNTH", "A cf was above Nyquist. Correcting...");
          cf[i] = SR * 0.5;
       }
    }
 
-   advise("VOCODESYNTH", "centerfreq  bandwidth");
+   rtcmix_advise("VOCODESYNTH", "centerfreq  bandwidth");
    for (int i = 0; i < numbands; i++)
-      advise(NULL, "              %10.4f %10.4f", cf[i], bwpct * cf[i]);
+      rtcmix_advise(NULL, "              %10.4f %10.4f", cf[i], bwpct * cf[i]);
 
    if (carrier_transp)
       carrier_transp = octpch(carrier_transp);

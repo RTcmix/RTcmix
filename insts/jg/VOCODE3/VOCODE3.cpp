@@ -192,9 +192,9 @@ int VOCODE3::init(double p[], int n_args)
 	const bool print_stats = true;
 #endif
 	if (print_stats) {
-		advise(NULL, "VOCODE3:  mod. CF\tcar. CF  [Hz, after transp]");
-		advise(NULL, "          (Q=%2.1f)\t(Q=%2.1f)", _modq, _carq);
-		advise(NULL, "          -----------------------------------------");
+		rtcmix_advise(NULL, "VOCODE3:  mod. CF\tcar. CF  [Hz, after transp]");
+		rtcmix_advise(NULL, "          (Q=%2.1f)\t(Q=%2.1f)", _modq, _carq);
+		rtcmix_advise(NULL, "          -----------------------------------------");
 	}
 
 	for (int i = 0; i < _numfilts; i++) {
@@ -213,7 +213,7 @@ int VOCODE3::init(double p[], int n_args)
 		_lastmod[i] = 0.0f;	// not necessary
 
 		if (print_stats)
-			advise(NULL, "          %7.1f\t%7.1f", mfreq, cfreq);
+			rtcmix_advise(NULL, "          %7.1f\t%7.1f", mfreq, cfreq);
 	}
 
 	return nSamps();

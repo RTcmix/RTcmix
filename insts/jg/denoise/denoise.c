@@ -225,7 +225,7 @@ denoise(float p[], int n_args)
       outchan = inchan;
    else {
       outchan = 0;
-      warn("denoise", "Writing to channel 0 of output file, since output and "
+      rtcmix_warn("denoise", "Writing to channel 0 of output file, since output and "
                       "input files don't have the same number of channels.");
    }
    setnote(0., inputdur, OUTPUT);
@@ -250,14 +250,14 @@ denoise(float p[], int n_args)
                   "Make sure noise file begin time is earlier than end time!");
    }
    if (noiseDur < .25) {
-      warn("denoise", "Try to have at least .25 seconds of reference noise.");
+      rtcmix_warn("denoise", "Try to have at least .25 seconds of reference noise.");
       /* but keep going */
    }
    nsampsNoise = setnote(noiseInskip, noiseDur, NOISE);
    beg = (long)(noiseInskip * srate + 0.5);      /* first _frame_ to read */
    end = (long)(noiseInend * srate + 0.5);       /* last _frame_ to read */
 
-   advise("denoise", "Processing channel %d...", inchan);
+   rtcmix_advise("denoise", "Processing channel %d...", inchan);
 
 
    /* Set up parameter values */

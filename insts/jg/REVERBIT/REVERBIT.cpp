@@ -128,7 +128,7 @@ int REVERBIT::init(double p[], int n_args)
    if (usefilt)
       toneset(SR, cutoff, 1, tonedata);
    else
-      advise("REVERBIT", "Low-pass filter disabled.");
+      rtcmix_advise("REVERBIT", "Low-pass filter disabled.");
 
    float maxdeltime = rtchan_delaytime;
    // If delay time is very short, make delay line longer than necessary.

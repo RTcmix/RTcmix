@@ -115,7 +115,7 @@ int MROOM::init(double p[], int n_args)
       tableset(SR, dur, amplen, amptabs);
    }
    else
-      advise("MROOM", "Setting phrase curve to all 1's.");
+      rtcmix_advise("MROOM", "Setting phrase curve to all 1's.");
    aamp = ovamp;                  /* in case amparray == NULL */
 
    skip = (int)(SR / (float)resetval);

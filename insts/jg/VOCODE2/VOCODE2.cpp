@@ -157,7 +157,7 @@ int VOCODE2 :: init(double p[], int n_args)
 
    int balance_window = (int) (responsetime * SR);
    if (balance_window < 2) {
-      warn("VOCODE2", "Response time too short ... changing to %.8f.",
+      rtcmix_warn("VOCODE2", "Response time too short ... changing to %.8f.",
                                                                      2.0 / SR);
       /* Otherwise, can get ear-splitting output. */
       balance_window = 2;
@@ -194,7 +194,7 @@ int VOCODE2 :: init(double p[], int n_args)
       if (numfilts > MAXFILTS)
          return die("VOCODE2", "Can only use %d filters.", MAXFILTS);
 
-      advise("VOCODE2", "Reading center freqs from function table...");
+      rtcmix_advise("VOCODE2", "Reading center freqs from function table...");
       int j;
       for (j = 0; j < numfilts; j++) {
          float freq = freqtable[j];
@@ -220,14 +220,14 @@ int VOCODE2 :: init(double p[], int n_args)
    }
    for (int j = 0; j < numfilts; j++) {
       if (cf[j] > SR * 0.5) {
-         warn("VOCODE2", "A cf was above Nyquist. Correcting...");
+         rtcmix_warn("VOCODE2", "A cf was above Nyquist. Correcting...");
          cf[j] = SR * 0.5;
       }
    }
 
-   advise("VOCODE2", "centerfreq  bandwidth");
+   rtcmix_advise("VOCODE2", "centerfreq  bandwidth");
    for (int j = 0; j < numfilts; j++)
-      advise(NULL, "         %10.4f %10.4f", cf[j], bwpct * cf[j]);
+      rtcmix_advise(NULL, "         %10.4f %10.4f", cf[j], bwpct * cf[j]);
 
    if (carrier_transp)
       carrier_transp = octpch(carrier_transp);

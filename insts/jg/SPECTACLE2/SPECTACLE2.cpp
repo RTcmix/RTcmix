@@ -245,7 +245,7 @@ int SPECTACLE2::subinit(double p[], int n_args)
 			|| (p[14] != 0.0 || p[14] != _nyquist)
 			|| p[15] != 0.0
 			|| (p[16] != 0.0 || p[16] != _nyquist))
-			warn(instname(), "Use of the bin-mapping table ignores the freq. "
+			rtcmix_warn(instname(), "Use of the bin-mapping table ignores the freq. "
 			                 "ranges set in p13-16.");
 	}
 

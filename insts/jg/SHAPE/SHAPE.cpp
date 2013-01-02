@@ -139,7 +139,7 @@ int SHAPE :: init(double p[], int n_args)
          index_table = new TableL(SR, dur, function, len);
       }
       else
-         advise("SHAPE", "Setting distortion index curve to all 1's.");
+         rtcmix_advise("SHAPE", "Setting distortion index curve to all 1's.");
    }
 
    /* Construct the <ampnorm> WavShape object if (1) p6 is a TablePField, or

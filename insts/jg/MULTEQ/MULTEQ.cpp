@@ -157,7 +157,7 @@ int MULTEQ :: init(double p[], int n_args)
    int band = 0;
    for (int i = FIRST_BAND_PF; i < nargs; i += BAND_PFS, band += MAXCHAN) {
       if (numbands == MAXBAND) {
-         warn("MULTEQ", "You can only have %d EQ bands.", MAXBAND);
+         rtcmix_warn("MULTEQ", "You can only have %d EQ bands.", MAXBAND);
          break;
       }
 

@@ -255,7 +255,7 @@ int SPECTACLE_BASE :: init(double p[], int n_args)
       tableset(SR, inputdur, lenamp, iamptabs);
    }
    else
-      advise(instname(), "Setting input amplitude curve to all 1's.");
+      rtcmix_advise(instname(), "Setting input amplitude curve to all 1's.");
 
    oamparray = floc(2);
    if (oamparray) {
@@ -263,7 +263,7 @@ int SPECTACLE_BASE :: init(double p[], int n_args)
       tableset(SR, inputdur + ringdur, lenamp, oamptabs);
    }
    else
-      advise(instname(), "Setting output amplitude curve to all 1's.");
+      rtcmix_advise(instname(), "Setting output amplitude curve to all 1's.");
 
    if (rtsetinput(inskip, this) == -1)
       return DONT_SCHEDULE;

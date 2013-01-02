@@ -51,7 +51,7 @@ SynthGrainStream::~SynthGrainStream()
    delete _pitchrand;
    delete _panrand;
 #ifdef COUNT_VOICES
-   advise("GRANULATE", "Used %d voices", _maxvoice + 1);
+   rtcmix_advise("GRANULATE", "Used %d voices", _maxvoice + 1);
 #endif
 }
 

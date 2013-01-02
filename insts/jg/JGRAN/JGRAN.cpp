@@ -158,7 +158,7 @@ int JGRAN :: init(double p[], int n_args)
 		function = floc(3);
 		if (function == NULL) {
          tablelen = DEFAULT_WAVETABLE_SIZE;
-         advise("JGRAN", "Using sine for grain waveform (no table 3).");
+         rtcmix_advise("JGRAN", "Using sine for grain waveform (no table 3).");
       }
       else
 		   tablelen = fsize(3);

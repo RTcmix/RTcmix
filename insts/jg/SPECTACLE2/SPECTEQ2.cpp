@@ -167,7 +167,7 @@ int SPECTEQ2::subinit(double p[], int n_args)
 			                "the EQ table (p8).");
 		set_binmap_table(binmaptable);
 		if (p[9] != 0.0 || (p[10] != 0.0 || p[10] != _nyquist))
-			warn(instname(), "Use of the bin-mapping table ignores the freq. "
+			rtcmix_warn(instname(), "Use of the bin-mapping table ignores the freq. "
 			                 "range set in p9-10.");
 	}
 

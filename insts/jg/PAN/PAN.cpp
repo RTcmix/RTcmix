@@ -130,7 +130,7 @@ void PAN :: doupdate()
          pan[1] = 1.0 - newpan;
       }
 #ifdef DEBUG
-      advise("PAN", "newpan=%f pan[0]=%f pan[1]=%f (tot=%f)",
+      rtcmix_advise("PAN", "newpan=%f pan[0]=%f pan[1]=%f (tot=%f)",
                            newpan, pan[0], pan[1], pan[0] + pan[1]);
 #endif
    }
