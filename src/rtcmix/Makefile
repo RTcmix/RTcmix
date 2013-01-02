@@ -66,6 +66,7 @@ lfo.cpp \
 minc_info.cpp \
 minc_functions.cpp \
 DataFile.cpp \
+MMPrint.cpp \
 Option.cpp \
 PField.cpp \
 PFieldSet.cpp \
@@ -233,6 +234,9 @@ intraverse.o: intraverse.cpp
 
 $(RTLIB): depend $(COMMON_OBJS) $(LIBMINC) $(LIBS)
 	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(COMMON_OBJS) $(LIBMINC) $(LIBS) $(SYSLIBS)
+
+MMPrint.o: MMPrint.cpp MMPrint.h
+	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c $< -o $@
 
 Option.o: Option.cpp Option.h
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c $< -o $@
