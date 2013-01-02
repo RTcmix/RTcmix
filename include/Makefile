@@ -11,9 +11,8 @@ all:
 	ln -sf ../src/rtcmix/Lockable.h .
 	ln -sf ../src/rtcmix/Locked.h .
 	ln -sf ../src/rtcmix/Instrument.h .
-	ln -sf ../src/rtcmix/lock.h .
-	ln -sf ../src/rtcmix/Lockable.h .
-	ln -sf ../src/rtcmix/Locked.h .
+	ln -sf ../src/rtcmix/MMPrint.h .
+	ln -sf ../src/rtcmix/PFBusData.h .
 	ln -sf ../src/rtcmix/PField.h .
 	ln -sf ../src/rtcmix/PFieldSet.h .
 	ln -sf ../src/rtcmix/Random.h .
@@ -44,6 +43,8 @@ cleanall:
 	$(RM) lock.h
 	$(RM) Lockable.h
 	$(RM) Locked.h
+	$(RM) MMprint.h
+	$(RM) PFBusData.h
 	$(RM) PField.h
 	$(RM) PFieldSet.h
 	$(RM) Random.h
