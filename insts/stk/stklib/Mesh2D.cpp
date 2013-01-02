@@ -149,11 +149,11 @@ void Mesh2D :: setNX(short lenX)
 {
   NX = lenX;
   if ( lenX < 2 ) {
-    advise("Mesh2D", "setNX(%d): Minimum length is 2!", lenX);
+    rtcmix_advise("Mesh2D", "setNX(%d): Minimum length is 2!", lenX);
     NX = 2;
   }
   else if ( lenX > NXMAX ) {
-    advise("Mesh2D", "setNX(%d): Maximum length is %d!", lenX, NXMAX);
+    rtcmix_advise("Mesh2D", "setNX(%d): Maximum length is %d!", lenX, NXMAX);
     NX = NXMAX;
   }
 }
@@ -162,11 +162,11 @@ void Mesh2D :: setNY(short lenY)
 {
   NY = lenY;
   if ( lenY < 2 ) {
-    advise("Mesh2D", "setNY(%d): Minimum length is 2!", lenY);
+    rtcmix_advise("Mesh2D", "setNY(%d): Minimum length is 2!", lenY);
     NY = 2;
   }
   else if ( lenY > NYMAX ) {
-    advise("Mesh2D", "setNY(%d): Maximum length is %d!", lenY, NXMAX);
+    rtcmix_advise("Mesh2D", "setNY(%d): Maximum length is %d!", lenY, NXMAX);
     NY = NYMAX;
   }
 }
@@ -175,11 +175,11 @@ void Mesh2D :: setDecay(MY_FLOAT decayFactor)
 {
   MY_FLOAT gain = decayFactor;
   if ( decayFactor < 0.0 ) {
-    advise("Mesh2D", "setDecay decayFactor value is less than 0.0!");
+    rtcmix_advise("Mesh2D", "setDecay decayFactor value is less than 0.0!");
     gain = 0.0;
   }
   else if ( decayFactor > 1.0 ) {
-    advise("Mesh2D", "setDecay decayFactor value is greater than 1.0!");
+    rtcmix_advise("Mesh2D", "setDecay decayFactor value is greater than 1.0!");
     gain = 1.0;
   }
 
@@ -194,22 +194,22 @@ void Mesh2D :: setDecay(MY_FLOAT decayFactor)
 void Mesh2D :: setInputPosition(MY_FLOAT xFactor, MY_FLOAT yFactor)
 {
   if ( xFactor < 0.0 ) {
-    advise("Mesh2D", "setInputPosition xFactor value is less than 0.0!");
+    rtcmix_advise("Mesh2D", "setInputPosition xFactor value is less than 0.0!");
     xInput = 0;
   }
   else if ( xFactor > 1.0 ) {
-    advise("Mesh2D", "setInputPosition xFactor value is greater than 1.0!");
+    rtcmix_advise("Mesh2D", "setInputPosition xFactor value is greater than 1.0!");
     xInput = NX - 1;
   }
   else
     xInput = (short) (xFactor * (NX - 1));
 
   if ( yFactor < 0.0 ) {
-    advise("Mesh2D", "setInputPosition yFactor value is less than 0.0!");
+    rtcmix_advise("Mesh2D", "setInputPosition yFactor value is less than 0.0!");
     yInput = 0;
   }
   else if ( yFactor > 1.0 ) {
-    advise("Mesh2D", "setInputPosition yFactor value is greater than 1.0!");
+    rtcmix_advise("Mesh2D", "setInputPosition yFactor value is greater than 1.0!");
     yInput = NY - 1;
   }
   else
@@ -368,11 +368,11 @@ void Mesh2D :: controlChange(int number, MY_FLOAT value)
   MY_FLOAT norm = value * ONE_OVER_128;
   if ( norm < 0 ) {
     norm = 0.0;
-    advise("Mesh2D", "Control value less than zero!");
+    rtcmix_advise("Mesh2D", "Control value less than zero!");
   }
   else if ( norm > 1.0 ) {
     norm = 1.0;
-    advise("Mesh2D", "Control value greater than 128.0!");
+    rtcmix_advise("Mesh2D", "Control value greater than 128.0!");
   }
 
 /* BGG -- some SKINI stuff in here (sorry perry!)
