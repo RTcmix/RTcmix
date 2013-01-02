@@ -89,7 +89,7 @@ void Bowed :: setFrequency(MY_FLOAT frequency)
 {
   MY_FLOAT freakency = frequency;
   if ( frequency <= 0.0 ) {
-    advise("Bowed", "setFrequency parameter is less than or equal to zero!");
+    rtcmix_advise("Bowed", "setFrequency parameter is less than or equal to zero!");
     freakency = 220.0;
   }
 
@@ -185,11 +185,11 @@ void Bowed :: controlChange(int number, MY_FLOAT value)
   MY_FLOAT norm = value * ONE_OVER_128;
   if ( norm < 0 ) {
     norm = 0.0;
-    advise("Bowed", "Control value less than zero!");
+    rtcmix_advise("Bowed", "Control value less than zero!");
   }
   else if ( norm > 1.0 ) {
     norm = 1.0;
-    advise("Bowed", "Control value greater than 128.0!");
+    rtcmix_advise("Bowed", "Control value greater than 128.0!");
   }
 
 /*  BGG -- commented this stuff out because I didn't compile-in SKINI

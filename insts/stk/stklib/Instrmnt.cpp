@@ -28,7 +28,7 @@ Instrmnt :: ~Instrmnt()
 
 void Instrmnt :: setFrequency(MY_FLOAT frequency)
 {
-  advise("Instrmnt", "virtual setFrequency function call!");
+  rtcmix_advise("Instrmnt", "virtual setFrequency function call!");
 }
 
 MY_FLOAT Instrmnt :: lastOut() const

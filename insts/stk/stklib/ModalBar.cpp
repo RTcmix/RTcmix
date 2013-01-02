@@ -69,11 +69,11 @@ void ModalBar :: setStickHardness(MY_FLOAT hardness)
 /* BGG
   stickHardness = hardness;
   if ( hardness < 0.0 ) {
-    advise("ModalBar", "setStickHardness parameter is less than zero!");
+    rtcmix_advise("ModalBar", "setStickHardness parameter is less than zero!");
     stickHardness = 0.0;
   }
   else if ( hardness > 1.0 ) {
-    advise("ModalBar", "setStickHarness parameter is greater than 1.0!");
+    rtcmix_advise("ModalBar", "setStickHarness parameter is greater than 1.0!");
     stickHardness = 1.0;
   }
 
@@ -87,11 +87,11 @@ void ModalBar :: setStrikePosition(MY_FLOAT position)
 {
   strikePosition = position;
   if ( position < 0.0 ) {
-    advise("ModalBar", "setStrikePositions parameter is less than zero!");
+    rtcmix_advise("ModalBar", "setStrikePositions parameter is less than zero!");
     strikePosition = 0.0;
   }
   else if ( position > 1.0 ) {
-    advise("ModalBar", "setStrikePosition parameter is greater than 1.0!");
+    rtcmix_advise("ModalBar", "setStrikePosition parameter is greater than 1.0!");
     strikePosition = 1.0;
   }
 
@@ -179,11 +179,11 @@ void ModalBar :: controlChange(int number, MY_FLOAT value)
   MY_FLOAT norm = value * ONE_OVER_128;
   if ( norm < 0 ) {
     norm = 0.0;
-    advise("ModalBar", "Control value less than zero!");
+    rtcmix_advise("ModalBar", "Control value less than zero!");
   }
   else if ( norm > 1.0 ) {
     norm = 1.0;
-    advise("ModalBar", "Control value greater than 128.0!");
+    rtcmix_advise("ModalBar", "Control value greater than 128.0!");
   }
 
 /*  BGG -- commented this stuff out because I didn't compile-in SKINI

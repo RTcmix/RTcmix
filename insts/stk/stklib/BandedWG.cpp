@@ -188,7 +188,7 @@ void BandedWG :: setFrequency(MY_FLOAT frequency)
 {
   freakency = frequency;
   if ( frequency <= 0.0 ) {
-    advise("BandedWG", "setFrequency parameter is less than or equal to zero!");
+    rtcmix_advise("BandedWG", "setFrequency parameter is less than or equal to zero!");
     freakency = 220.0;
   }
   if (freakency > 1568.0) freakency = 1568.0;
@@ -346,11 +346,11 @@ void BandedWG :: controlChange(int number, MY_FLOAT value)
   MY_FLOAT norm = value * ONE_OVER_128;
   if ( norm < 0 ) {
     norm = 0.0;
-    advise("BandedWG", "Control value less than zero!");
+    rtcmix_advise("BandedWG", "Control value less than zero!");
   }
   else if ( norm > 1.0 ) {
     norm = 1.0;
-    advise("BandedWG", "Control value greater than 128.0!");
+    rtcmix_advise("BandedWG", "Control value greater than 128.0!");
   }
 
 /*  BGG --commented this stuff out because I didn't compile-in SKINI
@@ -403,7 +403,7 @@ void BandedWG :: controlChange(int number, MY_FLOAT value)
   else if (number == __SK_ProphesyRibbon_) // 16
     this->setPreset((int) value);  
   else
-    advise("BandedWG", "Undefined Control Number %d!!", number;)
+    rtcmix_advise("BandedWG", "Undefined Control Number %d!!", number;)
 */
 
 #if defined(_STK_DEBUG_)

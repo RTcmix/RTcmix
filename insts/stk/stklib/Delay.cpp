@@ -69,13 +69,13 @@ void Delay :: clear(void)
 void Delay :: setDelay(long theDelay)
 {
   if (theDelay > length-1) { // The value is too big.
-    advise("Delay", "setDelay (%d) too big!", theDelay);
+    rtcmix_advise("Delay", "setDelay (%d) too big!", theDelay);
     // Force delay to maxLength.
     outPoint = inPoint + 1;
     delay = length - 1;
   }
   else if (theDelay < 0 ) {
-    advise("Delay", "setDelay (%d) less than zero!", theDelay);
+    rtcmix_advise("Delay", "setDelay (%d) less than zero!", theDelay);
     outPoint = inPoint;
     delay = 0;
   }
@@ -118,11 +118,11 @@ MY_FLOAT Delay :: contentsAt(long tapDelay) const
 {
   long i = tapDelay;
   if (i < 0) {
-    advise("Delay", "contentsAt (%d) too small!", tapDelay);
+    rtcmix_advise("Delay", "contentsAt (%d) too small!", tapDelay);
     i = 0;
   }
   else if (i > delay) {
-    advise("Delay", "contentsAt (%d) too big!", tapDelay);
+    rtcmix_advise("Delay", "contentsAt (%d) too big!", tapDelay);
     i = (long) delay;
   }
 

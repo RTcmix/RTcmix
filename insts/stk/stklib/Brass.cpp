@@ -67,7 +67,7 @@ void Brass :: setFrequency(MY_FLOAT frequency)
 {
   MY_FLOAT freakency = frequency;
   if ( frequency <= 0.0 ) {
-    advise("Brass", "setFrequency parameter is less than or equal to zero!");
+    rtcmix_advise("Brass", "setFrequency parameter is less than or equal to zero!");
     freakency = 220.0;
   }
 
@@ -85,7 +85,7 @@ void Brass :: setLip(MY_FLOAT frequency)
 {
   MY_FLOAT freakency = frequency;
   if ( frequency <= 0.0 ) {
-    advise("Brass", "setLip parameter is less than or equal to zero!");
+    rtcmix_advise("Brass", "setLip parameter is less than or equal to zero!");
     freakency = 220.0;
   }
 
@@ -164,11 +164,11 @@ void Brass :: controlChange(int number, MY_FLOAT value)
   MY_FLOAT norm = value * ONE_OVER_128;
   if ( norm < 0 ) {
     norm = 0.0;
-    advise("Brass", "Control value less than zero!");
+    rtcmix_advise("Brass", "Control value less than zero!");
   }
   else if ( norm > 1.0 ) {
     norm = 1.0;
-    advise("Brass", "Control value greater than 128.0!");
+    rtcmix_advise("Brass", "Control value greater than 128.0!");
   }
 
 /*  BGG -- commented this stuff out because I didn't compile-in SKINI

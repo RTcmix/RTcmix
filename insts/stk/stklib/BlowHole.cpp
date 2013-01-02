@@ -128,7 +128,7 @@ void BlowHole :: setFrequency(MY_FLOAT frequency)
 {
   MY_FLOAT freakency = frequency;
   if ( frequency <= 0.0 ) {
-    advise("BlowHole", "setFrequency parameter is less than or equal to zero!");
+    rtcmix_advise("BlowHole", "setFrequency parameter is less than or equal to zero!");
     freakency = 220.0;
   }
 
@@ -253,11 +253,11 @@ void BlowHole :: controlChange(int number, MY_FLOAT value)
   MY_FLOAT norm = value * ONE_OVER_128;
   if ( norm < 0 ) {
     norm = 0.0;
-    advise("BlowHole", "Control value less than zero!");
+    rtcmix_advise("BlowHole", "Control value less than zero!");
   }
   else if ( norm > 1.0 ) {
     norm = 1.0;
-    advise("BlowHole", "Control value greater than 128.0!");
+    rtcmix_advise("BlowHole", "Control value greater than 128.0!");
   }
 
 /*  BGG --commented this stuff out because I didn't compile-in SKINI

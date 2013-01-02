@@ -69,13 +69,13 @@ void DelayA :: setDelay(MY_FLOAT theDelay)
   MY_FLOAT outPointer;
 
   if (theDelay > length-1) {
-    advise("DelayA", "setDelay (%f) too big!", theDelay);
+    rtcmix_advise("DelayA", "setDelay (%f) too big!", theDelay);
     // Force delay to maxLength
     outPointer = inPoint + 1.0;
     delay = length - 1;
   }
   else if (theDelay < 0.5) {
-    advise("DelayA", "setDelay (%f) less than 0.5 not possible!", theDelay);
+    rtcmix_advise("DelayA", "setDelay (%f) less than 0.5 not possible!", theDelay);
     outPointer = inPoint + 0.4999999999;
     delay = 0.5;
   }

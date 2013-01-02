@@ -99,11 +99,11 @@ void Modal :: setFrequency(MY_FLOAT frequency)
 void Modal :: setRatioAndRadius(int modeIndex, MY_FLOAT ratio, MY_FLOAT radius)
 {
   if ( modeIndex < 0 ) {
-    advise("Modal", "setRatioAndRadius modeIndex parameter is less than zero!");
+    rtcmix_advise("Modal", "setRatioAndRadius modeIndex parameter is less than zero!");
     return;
   }
   else if ( modeIndex >= nModes ) {
-    advise("Modal", "setRatioAndRadius modeIndex parameter is greater than the number of operators!");
+    rtcmix_advise("Modal", "setRatioAndRadius modeIndex parameter is greater than the number of operators!");
     return;
   }
 
@@ -143,11 +143,11 @@ void Modal :: setDirectGain(MY_FLOAT aGain)
 void Modal :: setModeGain(int modeIndex, MY_FLOAT gain)
 {
   if ( modeIndex < 0 ) {
-    advise("Modal", "setModeGain modeIndex parameter is less than zero!");
+    rtcmix_advise("Modal", "setModeGain modeIndex parameter is less than zero!");
     return;
   }
   else if ( modeIndex >= nModes ) {
-    advise("Modal", "setModeGain modeIndex parameter is greater than the number of operators!");
+    rtcmix_advise("Modal", "setModeGain modeIndex parameter is greater than the number of operators!");
     return;
   }
 
@@ -158,11 +158,11 @@ void Modal :: strike(MY_FLOAT amplitude)
 {
   MY_FLOAT gain = amplitude;
   if ( amplitude < 0.0 ) {
-    advise("Modal", "strike amplitude is less than zero!");
+    rtcmix_advise("Modal", "strike amplitude is less than zero!");
     gain = 0.0;
   }
   else if ( amplitude > 1.0 ) {
-    advise("Modal", "strike amplitude is greater than 1.0!");
+    rtcmix_advise("Modal", "strike amplitude is greater than 1.0!");
     gain = 1.0;
   }
 

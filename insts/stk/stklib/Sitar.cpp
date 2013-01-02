@@ -62,7 +62,7 @@ void Sitar :: setFrequency(MY_FLOAT frequency)
 {
   MY_FLOAT freakency = frequency;
   if ( frequency <= 0.0 ) {
-    advise("Sitar", "setFrequency parameter is less than or equal to zero!");
+    rtcmix_advise("Sitar", "setFrequency parameter is less than or equal to zero!");
     freakency = 220.0;
   }
 
@@ -94,11 +94,11 @@ void Sitar :: noteOff(MY_FLOAT amplitude)
 {
   loopGain = (MY_FLOAT) 1.0 - amplitude;
   if ( loopGain < 0.0 ) {
-    advise("Sitar", "Plucked, noteOff amplitude greater than 1.0!");
+    rtcmix_advise("Sitar", "Plucked, noteOff amplitude greater than 1.0!");
     loopGain = 0.0;
   }
   else if ( loopGain > 1.0 ) {
-    advise("Sitar", "Plucked: noteOff amplitude less than or zero!");
+    rtcmix_advise("Sitar", "Plucked: noteOff amplitude less than or zero!");
     loopGain = (MY_FLOAT) 0.99999;
   }
 
