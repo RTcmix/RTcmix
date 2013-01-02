@@ -68,6 +68,7 @@ minc_functions.cpp \
 DataFile.cpp \
 MMPrint.cpp \
 Option.cpp \
+PFBusData.cpp \
 PField.cpp \
 PFieldSet.cpp \
 Random.cpp \
@@ -239,6 +240,9 @@ MMPrint.o: MMPrint.cpp MMPrint.h
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c $< -o $@
 
 Option.o: Option.cpp Option.h
+	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c $< -o $@
+
+PFBusData.o: PFBusData.cpp PFBusData.h
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c $< -o $@
 
 $(MIX_INST):	
