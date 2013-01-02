@@ -14,6 +14,7 @@
 #include <rt.h>
 #include <rtdefs.h>
 #include <Option.h>
+#include <MMPrint.h>
 #include "CHAIN.h"
 
 
@@ -43,12 +44,22 @@ int  CHAIN::setup(PFieldSet *inPFields)
 		mInstVector.push_back(inst);
 		inst->ref();
 	}
-	if (Option::print()) {
+	if (Option::print() >= MMP_PRINTALL) {
+
+#ifdef MAXMSP
+		MMPrint::mm_print_ptr += sprintf(MMPrint::mm_print_ptr, "Instrument chain: ");
+		for (std::vector<Instrument *>::iterator it = mInstVector.begin(); it != mInstVector.end(); ++it) {
+			MMPrint::mm_print_ptr += sprintf(MMPrint::mm_print_ptr, "%s -> ", (*it)->name());
+		}
+		MMPrint::mm_print_ptr += sprintf(MMPrint::mm_print_ptr, "Out\n")+1;
+#else
+
 		printf("Instrument chain: ");
 		for (std::vector<Instrument *>::iterator it = mInstVector.begin(); it != mInstVector.end(); ++it) {
 			printf("%s -> ", (*it)->name());
 		}
 		printf("Out\n");
+#endif
 	}
 	delete inPFields;
 	return Instrument::setup(newSet);
@@ -113,8 +124,9 @@ Instrument *makeCHAIN()
 	return inst;
 }
 
-
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("CHAIN",makeCHAIN);
 }
+#endif
