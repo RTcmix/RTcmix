@@ -354,9 +354,10 @@ makeGVERB()
 	return inst;
 }
 
+#ifndef MAXMSP
 void
 rtprofile()
 {
 	RT_INTRO("GVERB",makeGVERB);
 }
-
+#endif

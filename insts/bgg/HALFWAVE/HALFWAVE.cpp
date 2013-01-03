@@ -7,7 +7,7 @@
 	p1 = duration
 	*p2 = pitch (Hz or oct.pc)
 	*p3 = amplitude
-	p4 = first ghald wavetable
+	p4 = first half wavetable
 	p5 = second half wavetable
 	*p6 = wavetable mid-crossover point [0-1]
 	*p7 = pan [optional; default is 0]
@@ -139,9 +139,10 @@ makeHALFWAVE()
 	return inst;
 }
 
+#ifndef MAXMSP
 void
 rtprofile()
 {
 	RT_INTRO("HALFWAVE",makeHALFWAVE);
 }
-
+#endif

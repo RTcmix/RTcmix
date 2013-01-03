@@ -28,7 +28,6 @@
 
 #include <math.h>
 #include <string.h>
-// BGGx
 #include <stdio.h>
 
 #define FDNORDER 4
