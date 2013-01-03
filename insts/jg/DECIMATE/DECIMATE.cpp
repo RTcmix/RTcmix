@@ -235,9 +235,10 @@ Instrument *makeDECIMATE()
    return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("DECIMATE", makeDECIMATE);
 }
-
+#endif
 

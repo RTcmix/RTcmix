@@ -11,9 +11,9 @@
 #if !defined(__SubNoise_h)
 #define __SubNoise_h
 
-#include "Noise.h"
+#include "JGNoise.h"
 
-class SubNoise : public Noise
+class SubNoise : public JGNoise
 {
   protected:  
     int counter;

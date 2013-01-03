@@ -21,7 +21,7 @@
 
 class Butter;
 class Envelope;
-class OnePole;
+class JGOnePole;
 class RMS;
 class TableL;
 class Ooscili;
@@ -42,7 +42,7 @@ class VOCODESYNTH : public Instrument {
    Ooscili     *carrier_osc[MAXOSC];
    TableL      *amptable;
    RMS         *gauge[MAXOSC];
-   OnePole     *smoother[MAXOSC];
+   JGOnePole     *smoother[MAXOSC];
    Envelope    *envelope[MAXOSC];
    PowerState  state[MAXOSC];
 

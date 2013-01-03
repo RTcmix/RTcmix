@@ -8,7 +8,7 @@
 
 #include "DLineL.h" 
 
-class ZComb : public Filter
+class ZComb : public JGFilter
 {
   protected:  
     DLineL   *delayLine;

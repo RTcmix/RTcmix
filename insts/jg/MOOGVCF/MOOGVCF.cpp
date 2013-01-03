@@ -218,9 +218,9 @@ Instrument *makeMOOGVCF()
    return inst;
 }
 
-
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("MOOGVCF", makeMOOGVCF);
 }
-
+#endif

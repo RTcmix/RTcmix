@@ -125,10 +125,10 @@ Instrument *makeSPLITTER()
 	return inst;
 }
 
-
+#ifndef MAXMSP
 void rtprofile()
 {
 	RT_INTRO("SPLITTER", makeSPLITTER);
 }
-
+#endif
 

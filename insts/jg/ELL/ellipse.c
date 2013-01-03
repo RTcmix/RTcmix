@@ -93,11 +93,11 @@ ellipse(float sig, int nsects, EllSect es[], float xnorm)
    return (sig * xnorm);
 }
 
-
+#ifndef MAXMSP
 int
 profile()
 {
 	UG_INTRO("ellset", ellset);
    return 0;
 }
-
+#endif

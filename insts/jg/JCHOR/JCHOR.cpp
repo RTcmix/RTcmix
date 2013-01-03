@@ -439,8 +439,9 @@ Instrument *makeJCHOR()
    return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("JCHOR", makeJCHOR);
 }
-
+#endif

@@ -221,7 +221,7 @@ roomset(float p[], int n_args)
    return 0.0;
 }
 
-
+#ifndef MAXMSP
 /* -------------------------------------------------------------- profile --- */
 int
 profile()
@@ -229,5 +229,5 @@ profile()
    UG_INTRO("roomset", roomset);
    return 0;
 }
-
+#endif
 

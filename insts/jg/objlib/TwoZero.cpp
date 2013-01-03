@@ -9,7 +9,7 @@
 #include "TwoZero.h"
 
 
-TwoZero :: TwoZero(double srate) : Filter(srate)
+TwoZero :: TwoZero(double srate) : JGFilter(srate)
 {
    inputs = new double [2];
    zeroCoeffs[0] = 0.0;

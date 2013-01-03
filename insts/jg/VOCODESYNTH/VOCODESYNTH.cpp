@@ -344,7 +344,7 @@ int VOCODESYNTH :: init(double p[], int n_args)
       gauge[i]->setWindowSize(window_len);
 
       if (smoothness > 0.0) {
-         smoother[i] = new OnePole(SR);
+         smoother[i] = new JGOnePole(SR);
          smoother[i]->setPole(smoothness);
       }
       else
@@ -473,11 +473,11 @@ Instrument *makeVOCODESYNTH()
    return inst;
 }
 
-
+#ifndef MAXMSP
 /* ------------------------------------------------------------- rtprofile -- */
 void
 rtprofile()
 {
    RT_INTRO("VOCODESYNTH", makeVOCODESYNTH);
 }
-
+#endif

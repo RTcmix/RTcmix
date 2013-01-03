@@ -241,12 +241,12 @@ int JGRAN :: init(double p[], int n_args)
    }
 
    // seed multipliers straight from Piche/Bezkorowajny source
-   durnoi = new Noise((unsigned int) seed * 243);
-   freqnoi = new Noise((unsigned int) seed * 734);
-   pannoi = new Noise((unsigned int) seed * 634);
-   ampnoi = new Noise((unsigned int) seed * 824);
+   durnoi = new JGNoise((unsigned int) seed * 243);
+   freqnoi = new JGNoise((unsigned int) seed * 734);
+   pannoi = new JGNoise((unsigned int) seed * 634);
+   ampnoi = new JGNoise((unsigned int) seed * 824);
    if (randomize_phase)
-      phasenoi = new Noise((unsigned int) seed * 951);
+      phasenoi = new JGNoise((unsigned int) seed * 951);
 
    krate = resetval;
    skip = (int) (SR / (float) krate);
@@ -443,8 +443,9 @@ Instrument *makeJGRAN()
    return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("JGRAN", makeJGRAN);
 }
-
+#endif

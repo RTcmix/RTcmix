@@ -5,7 +5,7 @@
 
 
 ZAllpass :: ZAllpass(double srate, double loopTime, double reverbTime)
-   : Filter(srate)
+   : JGFilter(srate)
 {
    long len;
 

@@ -8,7 +8,7 @@
 
 #include "DLineN.h" 
 
-class Notch : public Filter
+class Notch : public JGFilter
 {
   protected:  
     DLineN  *delayLine;

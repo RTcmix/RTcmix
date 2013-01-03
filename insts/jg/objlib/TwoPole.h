@@ -9,9 +9,9 @@
 #if !defined(__TwoPole_h)
 #define __TwoPole_h
 
-#include "Filter.h"
+#include "JGFilter.h"
 
-class TwoPole : public Filter
+class TwoPole : public JGFilter
 {
   protected:  
     double poleCoeffs[2];

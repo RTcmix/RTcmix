@@ -3,16 +3,16 @@
 #if !defined(__RMS_h)
 #define __RMS_h
 
-#include "Filter.h"
-#include "OnePole.h"
+#include "JGFilter.h"
+#include "JGOnePole.h"
 
-class RMS : public Filter
+class RMS : public JGFilter
 {
   private:
     int      counter;
   protected:  
     int      windowSize;
-    OnePole  *subLowFilter;
+    JGOnePole  *subLowFilter;
   public:
     RMS(double srate);
     ~RMS();

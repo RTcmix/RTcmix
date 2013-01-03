@@ -328,10 +328,10 @@ Instrument *makeBUTTER()
    return inst;
 }
 
-
+#ifndef MAXMSP
 void
 rtprofile()
 {
    RT_INTRO("BUTTER", makeBUTTER);
 }
-
+#endif

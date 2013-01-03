@@ -158,10 +158,11 @@ Instrument *makeREV()
    return inst;
 }
 
+#ifndef MAXMSP
 void
 rtprofile()
 {
    RT_INTRO("REV", makeREV);
 }
-
+#endif
 

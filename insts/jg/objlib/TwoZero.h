@@ -9,9 +9,9 @@
 #if !defined(__TwoZero_h)
 #define __TwoZero_h
 
-#include "Filter.h"
+#include "JGFilter.h"
 
-class TwoZero : public Filter
+class TwoZero : public JGFilter
 {
   protected:  
     double zeroCoeffs[2];

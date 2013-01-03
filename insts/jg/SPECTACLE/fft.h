@@ -15,8 +15,8 @@
 extern "C" {
 #endif /* __cplusplus */
 
-void rfft(float x[], int N, int forward);
-void cfft(float x[], int NC, int forward);
+void JGrfft(float x[], int N, int forward);
+void JGcfft(float x[], int NC, int forward);
 
 #ifdef __cplusplus
 } /* extern "C" */

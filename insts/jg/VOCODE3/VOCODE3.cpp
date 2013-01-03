@@ -370,8 +370,9 @@ Instrument *makeVOCODE3()
 	return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
 	RT_INTRO("VOCODE3", makeVOCODE3);
 }
-
+#endif

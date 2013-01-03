@@ -227,10 +227,10 @@ Instrument *makeJFIR()
    return inst;
 }
 
-
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("JFIR", makeJFIR);
 }
-
+#endif
 

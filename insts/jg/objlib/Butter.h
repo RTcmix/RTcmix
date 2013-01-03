@@ -1,9 +1,9 @@
 #if !defined(__Butter_h)
 #define __Butter_h
 
-#include "Filter.h"
+#include "JGFilter.h"
 
-class Butter : public Filter
+class Butter : public JGFilter
 {
   private:
     double c, d;

@@ -8,7 +8,7 @@
 
 
 ZComb :: ZComb(double srate, double loopTime, double reverbTime)
-   : Filter(srate)
+   : JGFilter(srate)
 {
    long len;
 

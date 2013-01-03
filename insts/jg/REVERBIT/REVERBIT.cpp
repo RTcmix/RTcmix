@@ -295,8 +295,9 @@ Instrument *makeREVERBIT()
    return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("REVERBIT", makeREVERBIT);
 }
-
+#endif

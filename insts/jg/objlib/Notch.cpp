@@ -7,7 +7,7 @@
 #include "Notch.h"
 
 
-Notch :: Notch(double srate, double loopTime, double scaler) : Filter(srate)
+Notch :: Notch(double srate, double loopTime, double scaler) : JGFilter(srate)
 {
    long len;
 

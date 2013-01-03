@@ -7,7 +7,7 @@
 double *resample_functable(double *table, int oldsize, int newsize);
 
 
-NZero :: NZero(double srate, int ntaps) : Filter(srate)
+NZero :: NZero(double srate, int ntaps) : JGFilter(srate)
 {
    order = ntaps;
    inputs = new double [order];

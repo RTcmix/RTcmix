@@ -4,10 +4,10 @@
 #if !defined(__Balance_h)
 #define __Balance_h
 
-#include "Filter.h"
+#include "JGFilter.h"
 #include "RMS.h"
 
-class Balance : public Filter
+class Balance : public JGFilter
 {
   private:
     int     counter;

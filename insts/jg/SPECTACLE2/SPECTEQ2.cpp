@@ -244,11 +244,11 @@ Instrument *makeSPECTEQ2()
 	return inst;
 }
 
-
+#ifndef MAXMSP
 // ---------------------------------------------------------------- rtprofile --
 void rtprofile()
 {
 	RT_INTRO("SPECTEQ2", makeSPECTEQ2);
 }
-
+#endif
 

@@ -180,8 +180,10 @@ Instrument *makeDISTORT()
    return inst;
 }
 
+#ifndef MAXMSP
 void
 rtprofile()
 {
    RT_INTRO("DISTORT", makeDISTORT);
 }
+#endif

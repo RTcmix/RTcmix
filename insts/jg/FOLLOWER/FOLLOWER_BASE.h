@@ -27,7 +27,7 @@ private:
    float    *in, caramp, rawmodamp, modamp, smoothness;
    TableL   *amp_table;
    RMS      *gauge;
-   OnePole  *smoother;
+   JGOnePole  *smoother;
 protected:
    int      nargs;
    float    dur, pctleft;

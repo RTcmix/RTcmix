@@ -304,10 +304,11 @@ Instrument *makeFOLLOWBUTTER()
    return inst;
 }
 
+#ifndef MAXMSP
 /* ------------------------------------------------------------- rtprofile -- */
 void rtprofile()
 {
    RT_INTRO("FOLLOWBUTTER", makeFOLLOWBUTTER);
 }
-
+#endif
 

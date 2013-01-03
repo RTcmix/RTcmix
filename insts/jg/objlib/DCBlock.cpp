@@ -8,7 +8,7 @@
 #include "DCBlock.h"
 
 
-DCBlock :: DCBlock() : Filter(0)
+DCBlock :: DCBlock() : JGFilter(0)
 {
    inputs = new double [1];
    outputs = NULL;               // unused

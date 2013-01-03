@@ -8,7 +8,7 @@ class FILTSWEEP : public Instrument {
    float   amp, pctleft, scale, cf, bw, *in;
    float   amptabs[2], cftabs[2], bwtabs[2];
    double  *amparray, *cfarray, *bwarray;
-   BiQuad  *filt[MAXFILTS];
+   JGBiQuad  *filt[MAXFILTS];
    Balance *balancer;
 
    void doupdate();

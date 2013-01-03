@@ -239,8 +239,9 @@ Instrument *makeELL()
    return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("ELL", makeELL);
 }
-
+#endif

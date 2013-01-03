@@ -193,8 +193,9 @@ Instrument *makeFILTERBANK()
 	return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
 	RT_INTRO("FILTERBANK", makeFILTERBANK);
 }
-
+#endif

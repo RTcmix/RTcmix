@@ -139,11 +139,11 @@ Instrument *makeSPECTEQ()
    return inst;
 }
 
-
+#ifndef MAXMSP
 /* ------------------------------------------------------------- rtprofile -- */
 void rtprofile()
 {
    RT_INTRO("SPECTEQ", makeSPECTEQ);
 }
-
+#endif
 

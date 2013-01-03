@@ -441,8 +441,9 @@ Instrument *makeWIGGLE()
    return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("WIGGLE", makeWIGGLE);
 }
-
+#endif

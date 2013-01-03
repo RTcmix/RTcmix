@@ -3,10 +3,10 @@
 #include "RMS.h"
 
 
-RMS :: RMS(double srate) : Filter(srate)
+RMS :: RMS(double srate) : JGFilter(srate)
 {
    gain = 1.0;
-   subLowFilter = new OnePole(srate);
+   subLowFilter = new JGOnePole(srate);
    subLowFilter->setFreq(10.0);
    windowSize = DEFAULT_CONTROL_RATE;
    counter = 0;

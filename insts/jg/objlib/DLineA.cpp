@@ -10,7 +10,7 @@
 #include "DLineA.h"
 
 
-DLineA :: DLineA(long max_length) : Filter(0)
+DLineA :: DLineA(long max_length) : JGFilter(0)
 {
    length = max_length;
    inputs = new double [length];

@@ -4,9 +4,9 @@
 #if !defined(__NZero_h)
 #define __NZero_h
 
-#include "Filter.h"
+#include "JGFilter.h"
 
-class NZero : public Filter
+class NZero : public JGFilter
 {
   protected:  
     int     order;

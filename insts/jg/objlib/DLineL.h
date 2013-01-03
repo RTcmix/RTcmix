@@ -28,9 +28,9 @@
 #if !defined(__DLineL_h)
 #define __DLineL_h
 
-#include "Filter.h"
+#include "JGFilter.h"
 
-class DLineL : public Filter
+class DLineL : public JGFilter
 {
   protected:  
     long inPoint;

@@ -4,7 +4,7 @@
 #include "Balance.h"
 
 
-Balance :: Balance(double srate) : Filter(srate)
+Balance :: Balance(double srate) : JGFilter(srate)
 {
    outputs = inputs = NULL;       // unused in this class
    inputRMS = new RMS(_sr);

@@ -244,8 +244,9 @@ Instrument *makeGRANSYNTH()
    return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("GRANSYNTH", makeGRANSYNTH);
 }
-
+#endif

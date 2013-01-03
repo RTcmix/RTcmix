@@ -337,8 +337,9 @@ Instrument *makeVOCODE2()
    return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("VOCODE2", makeVOCODE2);
 }
-
+#endif

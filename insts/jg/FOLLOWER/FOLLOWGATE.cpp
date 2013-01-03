@@ -215,11 +215,11 @@ Instrument *makeFOLLOWGATE()
    return inst;
 }
 
-
+#ifndef MAXMSP
 /* ------------------------------------------------------------- rtprofile -- */
 void rtprofile()
 {
    RT_INTRO("FOLLOWGATE", makeFOLLOWGATE);
 }
-
+#endif
 

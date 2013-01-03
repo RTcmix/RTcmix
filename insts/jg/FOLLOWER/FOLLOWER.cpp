@@ -119,11 +119,11 @@ Instrument *makeFOLLOWER()
    return inst;
 }
 
-
+#ifndef MAXMSP
 /* ------------------------------------------------------------- rtprofile -- */
 void rtprofile()
 {
    RT_INTRO("FOLLOWER", makeFOLLOWER);
 }
-
+#endif
 

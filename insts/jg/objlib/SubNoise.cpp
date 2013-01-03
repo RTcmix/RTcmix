@@ -11,7 +11,7 @@
 #include "SubNoise.h"
 
 
-SubNoise :: SubNoise() : Noise(0)
+SubNoise :: SubNoise() : JGNoise(0)
 {
    howOften = 15;
    counter = 0;       // was 15 in STK, so 1st ticks always gave 0 (by design?)
@@ -25,7 +25,7 @@ SubNoise :: ~SubNoise()
 
 // (srate / freq in Hz to get subSample)
 
-SubNoise :: SubNoise(int subSample, unsigned int aSeed = 0) : Noise(aSeed)
+SubNoise :: SubNoise(int subSample, unsigned int aSeed = 0) : JGNoise(aSeed)
 {    
    howOften = subSample;
    counter = 0;           // was == howOften in STK, so 1st ticks always gave 0
@@ -35,7 +35,7 @@ SubNoise :: SubNoise(int subSample, unsigned int aSeed = 0) : Noise(aSeed)
 double SubNoise :: tick()
 {
    if (!counter) {
-      lastOutput = Noise::tick();
+      lastOutput = JGNoise::tick();
       counter = howOften - 1;                  // JGG: added -1
    }
    else

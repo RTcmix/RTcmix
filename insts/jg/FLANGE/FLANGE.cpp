@@ -299,9 +299,9 @@ Instrument *makeFLANGE()
    return inst;
 }
 
-
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("FLANGE", makeFLANGE);
 }
-
+#endif

@@ -24,14 +24,14 @@ static void bitreverse(float x[], int N)
 }
 
 
-/* If forward is true, rfft replaces 2*N real data points in x with
+/* If forward is true, JGrfft replaces 2*N real data points in x with
    N complex values representing the positive frequency half of their
    Fourier spectrum, with x[1] replaced with the real part of the Nyquist
-   frequency value.  If forward is false, rfft expects x to contain a
+   frequency value.  If forward is false, JGrfft expects x to contain a
    positive frequency spectrum arranged as before, and replaces it with
    2*N real values.  N MUST be a power of 2.
 */
-void rfft(float x[], int N, int forward)
+void JGrfft(float x[], int N, int forward)
 {
    float c1, c2, h1r, h1i, h2r, h2i, wr, wi, wpr, wpi, temp, theta;
    float xr, xi;
@@ -43,7 +43,7 @@ void rfft(float x[], int N, int forward)
    c1 = 0.5;
    if (forward) {
       c2 = -0.5;
-      cfft(x, N, forward);
+      JGcfft(x, N, forward);
       xr = x[0];
       xi = x[1];
    }
@@ -89,18 +89,18 @@ void rfft(float x[], int N, int forward)
    if (forward)
       x[1] = xr;
    else
-      cfft(x, N, forward);
+      JGcfft(x, N, forward);
 }
 
 
-/* cfft replaces float array x containing NC complex values
+/* JGcfft replaces float array x containing NC complex values
    (2*NC float values alternating real, imagininary, etc.)
    by its Fourier transform if forward is true, or by its
    inverse Fourier transform if forward is false, using a
    recursive Fast Fourier transform method due to Danielson
    and Lanczos.  NC MUST be a power of 2.
 */
-void cfft(float x[], int NC, int forward)
+void JGcfft(float x[], int NC, int forward)
 {
    float wr, wi, wpr, wpi, theta, scale;
    int mmax, ND, m, i, j, delta;

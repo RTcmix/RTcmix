@@ -465,11 +465,11 @@ Instrument *makeSPECTACLE2()
 	return inst;
 }
 
-
+#ifndef MAXMSP
 // ---------------------------------------------------------------- rtprofile --
 void rtprofile()
 {
 	RT_INTRO("SPECTACLE2", makeSPECTACLE2);
 }
-
+#endif
 

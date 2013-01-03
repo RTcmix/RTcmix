@@ -23,7 +23,7 @@ class JGRAN : public Instrument {
    TableL   *minintens_table, *maxintens_table;
    TableL   *density_table, *pan_table, *panvar_table;
    OscilL   *car_oscil, *mod_oscil, *grainenv_oscil;
-   Noise    *durnoi, *freqnoi, *pannoi, *ampnoi, *phasenoi;
+   JGNoise    *durnoi, *freqnoi, *pannoi, *ampnoi, *phasenoi;
 
    void doupdate();
 public:

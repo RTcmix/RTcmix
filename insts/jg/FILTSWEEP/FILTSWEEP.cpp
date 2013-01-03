@@ -102,7 +102,7 @@ int FILTSWEEP :: init(double p[], int n_args)
       return die("FILTSWEEP",
                "Steepness (p5) must be an integer between 1 and %d.", MAXFILTS);
    for (int i = 0; i < nfilts; i++)
-      filt[i] = new BiQuad(SR);
+      filt[i] = new JGBiQuad(SR);
 
    if (do_balance) {
       balancer = new Balance(SR);
@@ -243,11 +243,11 @@ Instrument *makeFILTSWEEP()
    return inst;
 }
 
-
+#ifndef MAXMSP
 void
 rtprofile()
 {
    RT_INTRO("FILTSWEEP", makeFILTSWEEP);
 }
-
+#endif
 

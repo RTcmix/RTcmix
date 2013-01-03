@@ -14,7 +14,7 @@ enum {
 };
 
 
-Butter :: Butter(double srate) : Filter(srate)
+Butter :: Butter(double srate) : JGFilter(srate)
 {
    inputs = new double [2];
    zeroCoeffs[0] = 0.0;

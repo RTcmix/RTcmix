@@ -161,9 +161,9 @@ Instrument *makeMULTIWAVE()
    return inst;
 }
 
-
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("MULTIWAVE", makeMULTIWAVE);
 }
-
+#endif

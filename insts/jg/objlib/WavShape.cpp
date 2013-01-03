@@ -7,7 +7,7 @@
 #include "WavShape.h"
 
 
-WavShape :: WavShape() : Filter(0)
+WavShape :: WavShape() : JGFilter(0)
 {
    transferFunc = NULL;
 }

@@ -6,9 +6,9 @@
 #if !defined(__WavShape_h)
 #define __WavShape_h
 
-#include "Filter.h"
+#include "JGFilter.h"
 
-class WavShape : public Filter
+class WavShape : public JGFilter
 {
   protected:  
     int      lastIndex;

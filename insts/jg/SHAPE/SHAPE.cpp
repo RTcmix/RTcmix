@@ -257,9 +257,10 @@ Instrument *makeSHAPE()
    return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("SHAPE", makeSHAPE);
 }
-
+#endif
 

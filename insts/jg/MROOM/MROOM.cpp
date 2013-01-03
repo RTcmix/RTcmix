@@ -302,8 +302,9 @@ Instrument *makeMROOM()
    return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("MROOM", makeMROOM);
 }
-
+#endif

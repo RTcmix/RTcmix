@@ -8,7 +8,7 @@
 
 
 ZNotch :: ZNotch(double srate, double loopTime, double scaler)
-   : Filter(srate)
+   : JGFilter(srate)
 {
    long len;
 

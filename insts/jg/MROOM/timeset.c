@@ -45,7 +45,7 @@ timeset(float p[], int n_args)
    return 0.0;
 }
 
-
+#ifndef MAXMSP
 /* -------------------------------------------------------------- profile --- */
 int
 profile()
@@ -53,4 +53,4 @@ profile()
    UG_INTRO("timeset", timeset);
    return 0;
 }
-
+#endif

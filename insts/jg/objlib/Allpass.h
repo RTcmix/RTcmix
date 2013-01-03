@@ -5,7 +5,7 @@
 
 #include "DLineN.h" 
 
-class Allpass : public Filter
+class Allpass : public JGFilter
 {
   protected:  
     DLineN   *delayLine;

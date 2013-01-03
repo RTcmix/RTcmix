@@ -307,8 +307,9 @@ Instrument *makeEQ()
    return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("EQ", makeEQ);
 }
-
+#endif

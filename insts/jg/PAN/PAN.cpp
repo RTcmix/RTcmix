@@ -179,9 +179,9 @@ Instrument *makePAN()
    return inst;
 }
 
-
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("PAN", makePAN);
 }
-
+#endif

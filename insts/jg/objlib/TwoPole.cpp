@@ -4,7 +4,7 @@
 #include "TwoPole.h"
 
 
-TwoPole :: TwoPole(double srate) : Filter(srate)
+TwoPole :: TwoPole(double srate) : JGFilter(srate)
 {
    outputs = new double [2];
    poleCoeffs[0] = 0.0;

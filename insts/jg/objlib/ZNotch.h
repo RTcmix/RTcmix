@@ -8,7 +8,7 @@
 
 #include "DLineL.h" 
 
-class ZNotch : public Filter
+class ZNotch : public JGFilter
 {
   protected:  
     DLineL   *_dline;

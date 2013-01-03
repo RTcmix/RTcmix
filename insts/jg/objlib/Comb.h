@@ -6,7 +6,7 @@
 
 #include "DLineN.h" 
 
-class Comb : public Filter
+class Comb : public JGFilter
 {
   protected:  
     DLineN  *delayLine;

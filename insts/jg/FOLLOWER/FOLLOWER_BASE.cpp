@@ -65,7 +65,7 @@ int FOLLOWER_BASE :: init(double p[], int n_args)
    gauge = new RMS(SR);
    gauge->setWindowSize(window_len);
 
-   smoother = new OnePole(SR);
+   smoother = new JGOnePole(SR);
 
    if (post_init(p, n_args) != 0)
       return DONT_SCHEDULE;

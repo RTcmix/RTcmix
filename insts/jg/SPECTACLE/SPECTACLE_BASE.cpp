@@ -371,7 +371,7 @@ void SPECTACLE_BASE :: fold(int n)
 
 
 /* ----------------------------------------------------------- leanconvert -- */
-/* <fft_buf> is a spectrum in rfft format, i.e. it contains <half_fft_len> * 2
+/* <fft_buf> is a spectrum in JGrfft format, i.e. it contains <half_fft_len> * 2
    real values, arranged in pairs of real and imaginary values, except for
    the first two values, which are the real parts of 0 and Nyquist frequencies.
    Converts these into <half_fft_len> + 1 pairs of magnitude and phase values,
@@ -412,7 +412,7 @@ void SPECTACLE_BASE :: flush_dry_delay()
 /* --------------------------------------------------------- leanunconvert -- */
 /* leanunconvert essentially undoes what leanconvert does, i.e., it turns
    <half_fft_len> + 1 pairs of amplitude and phase values in <anal_chans>
-   into <half_fft_len> pairs of complex spectrum data (in rfft format) in
+   into <half_fft_len> pairs of complex spectrum data (in JGrfft format) in
    output array <fft_buf>.
 */
 void SPECTACLE_BASE :: leanunconvert()
@@ -546,14 +546,14 @@ int SPECTACLE_BASE :: run()
          DPRINT1("taking input...cursamp=%d\n", currentFrame());
          shiftin();
          fold(currentFrame());
-         rfft(fft_buf, half_fft_len, FORWARD);
+         JGrfft(fft_buf, half_fft_len, FORWARD);
          leanconvert();
       }
       else
          flush_dry_delay();
       modify_analysis();
       leanunconvert();
-      rfft(fft_buf, half_fft_len, INVERSE);
+      JGrfft(fft_buf, half_fft_len, INVERSE);
       overlapadd(currentFrame());
       shiftout();
 

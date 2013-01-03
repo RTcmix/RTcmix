@@ -1,9 +1,9 @@
 #if !defined(__DCBlock_h)
 #define __DCBlock_h
 
-#include "Filter.h"
+#include "JGFilter.h"
 
-class DCBlock : public Filter
+class DCBlock : public JGFilter
 {
   public:
     DCBlock();

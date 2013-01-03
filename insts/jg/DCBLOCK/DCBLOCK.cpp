@@ -110,10 +110,10 @@ Instrument *makeDCBLOCK()
 	return inst;
 }
 
-
+#ifndef MAXMSP
 void rtprofile()
 {
 	RT_INTRO("DCBLOCK", makeDCBLOCK);
 }
-
+#endif
 
