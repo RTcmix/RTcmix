@@ -11,6 +11,8 @@ value = makeconnection("pfbus", 1, 0.0)
 
 wave = maketable("wave", 1000, "sine")
 
+// this doesn't work because PFSCHED now requires start time of 0.
+// left in the repos to show how the "curval" token works in table construction
 PFSCHED(0, 2.1, 1, startenv)
 PFSCHED(3.5, 3.0, 1, fadenv, 1)
 WAVETABLE(0, 777.0, 20000*value, 8.00, 0.5, wave)
