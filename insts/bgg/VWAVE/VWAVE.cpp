@@ -151,9 +151,10 @@ makeVWAVE()
 	return inst;
 }
 
+#ifndef MAXMSP
 void
 rtprofile()
 {
 	RT_INTRO("VWAVE",makeVWAVE);
 }
-
+#endif
