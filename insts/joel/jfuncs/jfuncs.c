@@ -125,6 +125,7 @@ double m_prob (float p[], int n_args, double pp[])
 	return num;
 }
 
+#ifndef MAXMSP
 /* -------------------------------------------------------------- profile --- */
 int
 profile()
@@ -140,3 +141,4 @@ profile()
    UG_INTRO("map", m_map);
    return 0;
 }
+#endif

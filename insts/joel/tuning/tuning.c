@@ -171,6 +171,7 @@ double m_mean(float p[], int n_args, double pp[])
    return parse(pp[0],meanScale,12);
 }
 
+#ifndef MAXMSP
 /* -------------------------------------------------------------- profile --- */
 int
 profile()
@@ -186,3 +187,4 @@ profile()
    UG_INTRO("myscale", m_myscale);
    return 0;
 }
+#endif
