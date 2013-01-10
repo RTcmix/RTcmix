@@ -14,7 +14,9 @@
 #include <rt.h>
 #include <rtdefs.h>
 #include <Option.h>
+#ifdef MAXMSP
 #include <MMPrint.h>
+#endif
 #include "CHAIN.h"
 
 
@@ -83,19 +85,19 @@ int CHAIN::configure()
 	Instrument *previous = NULL;
 	for (std::vector<Instrument *>::iterator it = mInstVector.begin(); it != mInstVector.end(); ++it) {
 		Instrument *inst = *it;
-//		printf("CHAIN::configure: configuring %s\n", inst->name());
 		status = inst->configure(RTBUFSAMPS);
 		if (status != 0)
 			return status;
 		if (previous != NULL) {
-//			printf("CHAIN::configure: %s is input for %s\n", previous->name(), inst->name());
 			status = inst->setChainedInputBuffer(previous->outbuf, previous->outputChannels());
 			if (status != 0)
 				return status;
 		}
 		previous = inst;
 	}
-//	printf("CHAIN::configure: %s is input for %s\n", previous->name(), name());
+	// For CHAIN itself, we override our (what should be zero) input channel count here.  This allows setChainedInputBuffer() to succeed
+	// even though the counts don't seem to match.
+	_input.inputchans = previous->outputChannels();
 	status = setChainedInputBuffer(previous->outbuf, previous->outputChannels());
 	return status;
 }
@@ -107,7 +109,7 @@ int CHAIN::run()
 		Instrument *inst = *it;
 		inst->setchunk(framesToRun());	// For outer instrument, this is done in inTraverse()
 		inst->run(true);
-		inst->addout(BUS_NONE, 0);		// Special bus type makes this a no-op
+		inst->addout(BUS_NONE_OUT, 0);		// Special bus type makes this a no-op
 	}
 	// Copy from inputChainedBuf, which points to the outbuf of the last instrument in the chain.
 	unsigned copySize = framesToRun() * outputChannels() * sizeof(BUFTYPE);

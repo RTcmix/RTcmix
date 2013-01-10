@@ -616,6 +616,28 @@ RTcmix::get_bus_config(const char *inst_name)
    }
    if (err)
       exit(1);        /* This is probably what user wants? */
+	
+	// Print out the default bus config (if verbosity permits)
+	
+	char buslist[64];
+	switch (default_bus_slot->in_count) {
+		case 0:
+			sprintf(buslist, "() => ");
+			break;
+		case 1:
+			sprintf(buslist, "(in 0) => ");
+			break;
+		default:
+			sprintf(buslist, "(in 0-%d) => ", default_bus_slot->in_count - 1);
+			break;
+	}
+	strcat(buslist, inst_name);
+	if (default_bus_slot->out_count == 1)
+		strcat(buslist, " => (out 0)");
+	else
+		sprintf(buslist + strlen(buslist), " => (out 0-%d)", default_bus_slot->out_count - 1);
+	
+	rtcmix_advise(NULL, "default: %s\n", buslist);
 
    return default_bus_slot;
 }
@@ -752,6 +774,16 @@ parse_bus_name(char *busname, BusType *type, int *startchan, int *endchan)
          p = &busname[3];                            /* skip over "aux" */
          status = parse_bus_chan(p, startchan, endchan);
          break;
+	  case 'c':										 /* "chain*" */
+		p = &busname[5];                            /* skip over "chain" */
+		if (strchr(p, 'i'))
+		   *type = BUS_NONE_IN;
+		else if (strchr(p, 'o'))
+		   *type = BUS_NONE_OUT;
+		else
+		   return INVAL_BUS_ERR;
+		status = parse_bus_chan(p, startchan, endchan);
+		break;
       default:
 	  	 rtcmix_warn("bus_config", "Invalid bus specifier: '%s'", busname);
          return INVAL_BUS_ERR;
@@ -768,7 +800,7 @@ double
 RTcmix::bus_config(float p[], int n_args, double pp[])
 {
    ErrCode     err;
-   int         i, j, k, startchan, endchan;
+   int         i, j, k, startchan, endchan, chain_incount=0, chain_outcount=0;
    char        *str, *instname, *busname;
    BusType     type;
    BusSlot     *bus_slot;
@@ -800,8 +832,12 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
 			if (bus_slot->in_count > 0) strcat(inbusses, ", ");
 			strcat(inbusses, busname);
             if (bus_slot->auxin_count > 0) {
-                die("bus_config",
-                      "Can't have 'in' and 'aux-in' buses in same bus_config.");
+                return die("bus_config",
+                      	"Can't have 'in' and 'aux-in' buses in same bus_config.");
+            }
+            if (chain_incount > 0) {
+            	return die("bus_config",
+            		"Can't have 'in' and 'chain-in' buses in same bus_config.");
             }
             j = bus_slot->in_count;
             for (k = startchan; k <= endchan; k++)
@@ -811,17 +847,21 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
                the highest input chan number in this bus config.
 			*/
 			if (endchan >= NCHANS) {
-				die("bus_config", "You specified %d channels in rtsetparams,\n"
-					"but this bus_config requires %d channels.",
-					NCHANS, endchan + 1);
+				return die("bus_config", "You specified %d channels in rtsetparams,\n"
+							"but this bus_config requires %d channels.",
+							NCHANS, endchan + 1);
 			}
 			break;
          case BUS_OUT:
 			if (bus_slot->out_count > 0) strcat(outbusses, ", ");
 			strcat(outbusses, busname);
             if (bus_slot->auxout_count > 0) {
-                die("bus_config",
-                    "Can't have 'out' and 'aux-out' buses in same bus_config.");
+                return die("bus_config",
+                    		"Can't have 'out' and 'aux-out' buses in same bus_config.");
+            }
+            if (chain_outcount > 0) {
+            	return die("bus_config",
+            				"Can't have 'out' and 'chain-out' buses in same bus_config.");
             }
             j = bus_slot->out_count;
             for (k = startchan; k <= endchan; k++) {
@@ -845,8 +885,12 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
 			if (bus_slot->auxin_count > 0) strcat(inbusses, ", ");
 			strcat(inbusses, busname);
             if (bus_slot->in_count > 0) {
-                die("bus_config",
-                      "Can't have 'in' and 'aux-in' buses in same bus_config.");
+                return die("bus_config",
+                    	  "Can't have 'in' and 'aux-in' buses in same bus_config.");
+            }
+            if (chain_incount > 0) {
+            	return die("bus_config",
+                     	 "Can't have 'chain-in' and 'aux-in' buses in same bus_config.");
             }
             j = bus_slot->auxin_count;
             for (k = startchan; k <= endchan; k++)
@@ -857,8 +901,12 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
 			if (bus_slot->auxout_count > 0) strcat(outbusses, ", ");
 			strcat(outbusses, busname);
             if (bus_slot->out_count > 0) {
-                die("bus_config",
-                    "Can't have 'out' and 'aux-out' buses in same bus_config.");
+                return die("bus_config",
+                  	  "Can't have 'out' and 'aux-out' buses in same bus_config.");
+            }
+            if (chain_outcount > 0) {
+            	return die("bus_config",
+            			"Can't have 'aux-out' and 'chain-out' buses in same bus_config.");
             }
             j = bus_slot->auxout_count;
             for (k = startchan; k <= endchan; k++) {
@@ -869,6 +917,22 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
             }
             bus_slot->auxout_count += (endchan - startchan) + 1;
             break;
+		  case BUS_NONE_IN:
+			  strcat(inbusses, busname);
+			  if (bus_slot->in_count + bus_slot->auxin_count > 0) {
+				  return die("bus_config",
+                     	 "Can't have 'chain-in' combined with any other in type in same bus_config.");
+			  }
+			  chain_incount += (endchan - startchan) + 1;
+			  break;
+		  case BUS_NONE_OUT:
+			  strcat(outbusses, busname);
+			  if (bus_slot->out_count + bus_slot->auxout_count > 0) {
+				  return die("bus_config",
+					  	"Can't have 'chain-out' combined with any other out type in same bus_config.");
+			  }
+			  chain_outcount = (endchan - startchan) + 1;
+			  break;
 		 default:
 		 	break;
       }
@@ -887,7 +951,12 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
    for (i = 0; i < bus_slot->auxout_count; i++)
       allocate_aux_buffer(bus_slot->auxout[i], RTBUFSAMPS);
 
-
+	// We have to set these after all the above code to prevent chain assignments
+	// from generating conflicts or bus allocations.
+	
+	bus_slot->in_count += chain_incount;
+	bus_slot->out_count += chain_outcount;
+	
 #ifdef PRINTALL
    print_children();
    print_parents();

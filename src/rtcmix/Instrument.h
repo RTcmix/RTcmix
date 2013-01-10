@@ -65,7 +65,6 @@ private:
    int            _nsamps;
 	// CHAINED INSTRUMENT SUPPORT
 	BUFTYPE *		inputChainBuf;			// buffer used as input by rtgetin()
-	int				inputChainChannels;		// number of channels in this input buffer
 
 public:
 	// Instruments should use these to access variables.

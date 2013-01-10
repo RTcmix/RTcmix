@@ -43,7 +43,7 @@ float			Instrument::SR     = 0;
 Instrument::Instrument()
 	: _start(0.0), _dur(0.0), cursamp(0), chunksamps(0), i_chunkstart(0),
 	  endsamp(0), output_offset(0), outputchans(0), _name(NULL),
-	  needs_to_run(true), _nsamps(0), inputChainBuf(NULL), inputChainChannels(0)
+	  needs_to_run(true), _nsamps(0), inputChainBuf(NULL)
 {
    // Here we initialize the Instrument class globals (over and over, I know)
    // which replace the old system globals
@@ -271,11 +271,7 @@ int Instrument::run(bool needsTo)
 
 void Instrument::schedule(heap *rtHeap)
 {
-  // Calculate variables for heap insertion
-  float dur = getdur();
-  FRAMETYPE samps = (FRAMETYPE) (0.5 + dur * SR);	// Rounded to nearest - DS
-  //  cout << "nsamps = " << samps << endl;
-  
+  // Calculate variables for heap insertion  
   float start = getstart();
   FRAMETYPE startsamp = (FRAMETYPE) (0.5 + start * SR);	// Rounded to nearest - DS
   
@@ -284,7 +280,7 @@ void Instrument::schedule(heap *rtHeap)
   	startsamp += RTcmix::getElapsedFrames();
   }
   
-  FRAMETYPE endsamp = startsamp+samps;
+  FRAMETYPE endsamp = startsamp+nSamps();
   setendsamp(endsamp);  // used by intraverse.cpp
   
   // place instrument into heap
@@ -378,7 +374,7 @@ void Instrument::addout(BusType bus_type, int bus)
 
    assert(bus >= 0 && bus < MAXBUS);
 
-	if (bus_type != BUS_NONE) {
+	if (bus_type != BUS_NONE_OUT) {
 
 	   bus_list = _busSlot->getBusList(bus_type, &buses);
 
@@ -435,9 +431,10 @@ void Instrument::gone()
 
 int Instrument::setChainedInputBuffer(BUFTYPE *inputBuf, int inputChans)
 {
-	_input.inputchans = inputChans;		// override this here
+	if (_input.inputchans != inputChans) {
+		return die(name(), "Previous chained inst output (%d) != our input chans (%d)", inputChans, _input.inputchans);
+	}
 	inputChainBuf = inputBuf;
-	inputChainChannels = inputChans;
 	return 0;
 }
 

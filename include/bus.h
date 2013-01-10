@@ -19,7 +19,8 @@ enum BusType {
    BUS_OUT,
    BUS_AUX_IN,
    BUS_AUX_OUT,
-   BUS_NONE
+   BUS_NONE_IN,
+   BUS_NONE_OUT
 };
 
 enum IBusClass {
