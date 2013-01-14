@@ -97,9 +97,10 @@ makeFIR()
 	return inst;
 }
 
+#ifndef MAXMSP
 void
 rtprofile()
 {
 	RT_INTRO("FIR",makeFIR);
 }
-
+#endif

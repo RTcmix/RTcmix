@@ -140,8 +140,10 @@ Instrument *makeDELAY()
 	return inst;
 }
 
+#ifndef MAXMSP
 void
 rtprofile()
 {
 	RT_INTRO("DELAY",makeDELAY);
 }
+#endif

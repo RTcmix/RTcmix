@@ -257,10 +257,11 @@ Instrument *makeTRANS()
 
 extern Instrument *makeTRANS3();    // from TRANS3.cpp
 
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("TRANS", makeTRANS);
    RT_INTRO("TRANS3", makeTRANS3);
 }
-
+#endif
 

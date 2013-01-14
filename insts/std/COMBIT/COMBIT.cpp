@@ -111,8 +111,13 @@ int COMBIT::run()
 			double p[8];
 			update(p, 8);
 			amp = p[3];
-			if (amptable)
+			if (amptable) {
+#ifdef MAXMSP
+				amp *= rtcmix_table(currentFrame(), amptable, tabs);
+#else
 				amp *= table(currentFrame(), amptable, tabs);
+#endif
+			}
 			if (p[4] != frequency) {
 				frequency = p[4];
 				delsamps = (int) ((1.0 / frequency) * SR + 0.5);
@@ -155,8 +160,10 @@ Instrument *makeCOMBIT()
 	return inst;
 }
 
+#ifndef MAXMSP
 void
 rtprofile()
 {
 	RT_INTRO("COMBIT",makeCOMBIT);
 }
+#endif

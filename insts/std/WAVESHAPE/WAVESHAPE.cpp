@@ -224,9 +224,10 @@ Instrument *makeWAVESHAPE()
 	return inst;
 }
 
+#ifndef MAXMSP
 void
 rtprofile()
 {
 	RT_INTRO("WAVESHAPE",makeWAVESHAPE);
 }
-
+#endif

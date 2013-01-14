@@ -237,8 +237,9 @@ Instrument *makeFMINST()
 	return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
 	RT_INTRO("FMINST",makeFMINST);
 }
-
+#endif

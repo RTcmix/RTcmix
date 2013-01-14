@@ -45,6 +45,7 @@ Instrument *makeMOVE()
 }
 
 
+#ifndef MAXMSP
 /* ------------------------------------------------------------ rtprofile --- */
 void rtprofile()
 {
@@ -54,6 +55,7 @@ void rtprofile()
    RT_INTRO("MOVE", makeMOVE);
 #endif
 }
+#endif
 
 // Move methods
 

@@ -113,9 +113,10 @@ Instrument *makeSTRUM2()
 	return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
 	RT_INTRO("STRUM2", makeSTRUM2);
 }
-
+#endif
 

@@ -113,8 +113,13 @@ int MULTICOMB::run()
 			double p[7];
 			update(p, 7, kAmp | kRvbTime);
 			amp = p[3];
-			if (amptable)
+			if (amptable) {
+#ifdef MAXMSP
+				amp *= rtcmix_table(currentFrame(), amptable, amptabs);
+#else
 				amp *= table(currentFrame(), amptable, amptabs);
+#endif
+			}
 			if (p[6] != rvbtime) {
 				rvbtime = p[6];
 				for (int j = 0; j < NCOMBS; j++)
@@ -158,9 +163,10 @@ Instrument *makeMULTICOMB()
 	return inst;
 }
 
+#ifndef MAXMSP
 void
 rtprofile()
 {
 	RT_INTRO("MULTICOMB",makeMULTICOMB);
 }
-
+#endif

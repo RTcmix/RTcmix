@@ -71,8 +71,13 @@ int CLAR::run()
 {
 	for (int i = 0; i < framesToRun(); i++) {
 		if (--branch <= 0) {
-			if (amparr)
+			if (amparr) {
+#ifdef MAXMSP
+				aamp = rtcmix_table(currentFrame(), amparr, amptabs);
+#else
 				aamp = table(currentFrame(), amparr, amptabs);
+#endif
+			}
 			if (oamparr)
 				oamp = tablei(currentFrame(), oamparr, oamptabs);
 			branch = skip;
@@ -121,9 +126,10 @@ makeCLAR()
 	return inst;
 }
 
+#ifndef MAXMSP
 void
 rtprofile()
 {
 	RT_INTRO("CLAR",makeCLAR);
 }
-
+#endif

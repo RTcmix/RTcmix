@@ -187,9 +187,10 @@ Instrument *makeAM()
 	return inst;
 }
 
+#ifndef MAXMSP
 void
 rtprofile()
 {
 	RT_INTRO("AM",makeAM);
 }
-
+#endif

@@ -143,9 +143,10 @@ Instrument *makeDEL1()
 	return inst;
 }
 
+#ifndef MAXMSP
 void
 rtprofile()
 {
 	RT_INTRO("DEL1",makeDEL1);
 }
-
+#endif

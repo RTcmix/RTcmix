@@ -13,6 +13,7 @@ extern float *del1ptr,*del2ptr;
 extern int olength1,olength2;
 
 extern "C" {
+// BGG -- I don't think this function exists?
 	void mdelpartset(float*, int*, int);
 }
 
@@ -85,7 +86,11 @@ int LSFLUTE::run()
 		float sig = (rrand() * namp * aamp) + aamp;
 		float del1sig = mdelget(del1ptr,olength1,dl1ptr);
 		sig = sig + (del1sig * -0.35);
+#ifdef MAXMSP
+		delput(sig,del2ptr,dl2ptr);
+#else
 		mdelput(sig,del2ptr,dl2ptr);
+#endif
 
 		sig = mdelget(del2ptr,olength2,dl2ptr);
 		sig = (sig * sig * sig) - sig;
@@ -95,7 +100,11 @@ int LSFLUTE::run()
 		out[0] = sig * amp * oamp;
 		sig = (dampcoef * sig) + ((1.0 - dampcoef) * oldsig);
 		oldsig = sig;
+#ifdef MAXMSP
+		delput(sig,del1ptr,dl1ptr);
+#else
 		mdelput(sig,del1ptr,dl1ptr);
+#endif
 
 		if (outputChannels() == 2) {
 			out[1] = (1.0 - spread) * out[0];

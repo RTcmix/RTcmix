@@ -97,6 +97,11 @@ private:
 	float	_srd2, _phs, _magic;
 	double	*_sineFun, *_envFun;
 	int		_datafields;
+
+#ifdef MAXMSP
+// see note in LPCPLAY.cpp
+	int CLASSBRADSSTUPIDUNVOICEDFLAG;
+#endif
 };
 
 class LPCIN : public LPCINST {

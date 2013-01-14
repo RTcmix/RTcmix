@@ -199,10 +199,22 @@ double setdevfactor(float *p, int n_args)
 		return -maxdev;
 }
 
+#ifdef MAXMSP
+// BGG -- see BGGx note in LPCPLAY.cpp
+extern int BRADSSTUPIDUNVOICEDFLAG;
+#endif
+
 double
 set_thresh(float *p, int n_args)
 {
 	double log10();
+
+#ifdef MAXMSP
+// BGG --  see BGGx note in LPCPLAY.cpp. I just want plain unvoiced sound!
+	if (p[0] == -1.0) BRADSSTUPIDUNVOICEDFLAG = 1;
+	else BRADSSTUPIDUNVOICEDFLAG = 0;
+#endif
+
 	if(p[1] <= p[0]) {
 		::rterror("set_thresh", "upper thresh must be >= lower!");
 		return -1;
@@ -226,7 +238,7 @@ use_autocorrect(float *p, int n_args)
 }
 
 extern "C" {
-
+#ifndef MAXMSP
 int profile()
 {
 	float p[9]; double pp[9];
@@ -249,5 +261,29 @@ int profile()
 	highthresh = THRESH_UNSET;
 	return 0;
 }
+#endif
+
+#ifdef MAXMSP
+int LPCprof_called = 0;
+
+int LPCprofile()
+{
+	float p[9]; double pp[9];
+
+	if (LPCprof_called == 1) return 0;
+
+	p[0]=SINE_SLOT; p[1]=10; p[2]=1024; p[3]=1;
+	pp[0]=SINE_SLOT; pp[1]=10; pp[2]=1024; pp[3]=1;
+	makegen(p,4,pp);  /* store sinewave in array SINE_SLOT */
+	p[0]=ENV_SLOT; p[1]=7; p[2]=512; p[3]=0; p[4]=512; p[5]=1;
+	pp[0]=ENV_SLOT; pp[1]=7; pp[2]=512; pp[3]=0; pp[4]=512; pp[5]=1;
+	makegen(p,6,pp);
+	maxdev=0;
+	lowthresh = 0;
+	highthresh = 1;
+	LPCprof_called = 1;
+	return 0;
+}
+#endif // MAXMSP
 
 }

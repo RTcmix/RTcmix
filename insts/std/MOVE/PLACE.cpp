@@ -101,12 +101,13 @@ Instrument *makePLACE()
    return inst;
 }
 
-
+#ifndef MAXMSP
 /* ------------------------------------------------------------ rtprofile --- */
 void rtprofile()
 {
    RT_INTRO("PLACE", makePLACE);
 }
+#endif
 
 /* -------------------------------------------------------------- get_tap --- */
 /* Accesses the tap delay array and fills the del. signal array, Sig. */

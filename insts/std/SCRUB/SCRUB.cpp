@@ -168,8 +168,13 @@ int SCRUB::run()
 			update(p, 6);
 			amp = p[3];
 			speed = p[4];
-			if (amptable)
+			if (amptable) {
+#ifdef MAXMSP
+				aamp = rtcmix_table(currentFrame(), amptable, tabs) * amp;
+#else
 				aamp = table(currentFrame(), amptable, tabs) * amp;
+#endif
+			}
 			branch = skip;
 		}
 
@@ -199,10 +204,12 @@ Instrument *makeSCRUB()
    return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("SCRUB", makeSCRUB);
 }
+#endif
 
 inline int max(int x, int y) { return (x >= y) ? x : y; }
 

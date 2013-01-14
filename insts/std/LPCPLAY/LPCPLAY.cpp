@@ -106,8 +106,20 @@ LPCINST::~LPCINST()
 	delete [] _buzvals;
 }
 
+#ifdef MAXMSP
+extern "C" {
+	int LPCprofile();
+}
+#endif
+
 int LPCINST::init(double p[], int n_args)
 {
+	int rval;
+
+#ifdef MAXMSP
+	LPCprofile();
+#endif
+
 	if (outputchans != 1)
 		return die(name(), "Output file must have 1 channel only\n");
 
@@ -119,7 +131,9 @@ int LPCINST::init(double p[], int n_args)
 	
 	_nPoles = _dataSet->getNPoles();
 
-	localInit(p, n_args);
+	rval = localInit(p, n_args);
+	if (rval == DONT_SCHEDULE)
+		return die(name(), "LocalInit failed.");
 
 	// Finish the initialization
 	
@@ -170,6 +184,21 @@ LPCPLAY::~LPCPLAY()
    the error and exit. If you just want to warn the user and keep going,
    call warn() with a message.
 */
+
+/* BGGx
+	I need to go back and fix this.  I believe I can just use the class
+	variable (presently named "CLASSBRADSSTUPIDUNVOICEDFLAG") but not sure.
+	right now I'm just putting in the MAXMSP #ifdefs and don't want
+	to refactor this entire tangled mess o' code.
+
+	The issue is that I could NOT get unvoiced frames to work, no matter
+	what I did to set the threshold, etc.  I inserted this total hack to
+	make it work.  This code is in desparate need of refactoring.
+*/
+#ifdef MAXMSP
+int BRADSSTUPIDUNVOICEDFLAG; // set in setup.cpp (set_thresh())
+#endif
+
 int LPCPLAY::localInit(double p[], int n_args)
 {
    int i;
@@ -310,6 +339,12 @@ int LPCPLAY::localInit(double p[], int n_args)
 	_cf_fact = p[7];
 	_bw_fact = p[8];
 	_frameno = _frame1;	/* in case first frame is unvoiced */
+
+#ifdef MAXMSP
+// see note above
+	CLASSBRADSSTUPIDUNVOICEDFLAG = BRADSSTUPIDUNVOICEDFLAG;
+#endif
+
 	return 0;
 }
 
@@ -504,6 +539,12 @@ LPCPLAY::getVoicedAmp(float err)
 	sqerr = ::sqrt((double) err);
 	amp = 1.0 - ((sqerr - _lowthresh) / (_highthresh - _lowthresh));
 	amp = (amp < 0.0) ? 0.0 : (amp > 1.0) ? 1.0 : amp;
+
+#ifdef MAXMSP
+// see note above
+	if (CLASSBRADSSTUPIDUNVOICEDFLAG == 1) amp = 0.0;
+#endif
+
 	return amp;
 }
 
@@ -841,10 +882,11 @@ extern Instrument *makeWAVETABLE();
    associates a Minc name (in quotes below) with the instrument. This
    is the name the instrument goes by in a Minc script.
 */
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("LPCPLAY", makeLPCPLAY);
    RT_INTRO("LPCIN", makeLPCIN);
 }
-
+#endif
 

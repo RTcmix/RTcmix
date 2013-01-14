@@ -187,9 +187,9 @@ Instrument *makePHASER()
 	return inst;
 }
 
-
+#ifndef MAXMSP
 void rtprofile()
 {
 	RT_INTRO("PHASER", makePHASER);
 }
-
+#endif

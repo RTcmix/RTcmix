@@ -23,7 +23,9 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #define _Complex_h 1
 
 #include <math.h>
+#ifndef MAXMSP
 #include <iostream>
+#endif
 
 class Complex
 {
@@ -82,9 +84,11 @@ Complex   pow(const Complex& x, int p);
 Complex   pow(const Complex& x, const Complex& p);
 Complex   pow(const Complex& x, double y);
 Complex   sqrt(const Complex& x);
-   
+
+#ifndef MAXMSP
 std::istream&  operator >> (std::istream& s, Complex& x);
 std::ostream&  operator << (std::ostream& s, const Complex& x);
+#endif
 
 // other functions defined as inlines
 

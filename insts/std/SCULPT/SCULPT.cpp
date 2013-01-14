@@ -63,8 +63,13 @@ int SCULPT::run()
 		if (--branch <= 0) {
 			si = freqtable[index] * (float)len/SR;
 			float overamp;
-			if (amptable)
+			if (amptable) {
+#ifdef MAXMSP
+				overamp = rtcmix_table(currentFrame(), amptable, amptabs) * amp;
+#else
 				overamp = table(currentFrame(), amptable, amptabs) * amp;
+#endif
+			}
 			else
 				overamp = amp;
 			aamp = ampdb(60.0 + pamptable[index]) * overamp;
@@ -99,9 +104,10 @@ makeSCULPT()
 	return inst;
 }
 
+#ifndef MAXMSP
 void
 rtprofile()
 {
 	RT_INTRO("SCULPT",makeSCULPT);
 }
-
+#endif

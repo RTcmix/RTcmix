@@ -7,7 +7,9 @@
 #include <ugens.h>
 #include <string.h>
 #include <stdio.h>
+#ifndef MAXMSP
 #include <pthread.h>
+#endif
 #include "msetup.h"
 
 //#define debug
@@ -48,7 +50,11 @@ extern "C" {
 }
 
 int RVB::primes[NPRIMES + 2];
+#ifdef MAXMSP
+int RVB::primes_gotten = 0;
+#else
 AtomicInt RVB::primes_gotten = -1;
+#endif
 
 /* ------------------------------------------------------------ makeRVB --- */
 Instrument *makeRVB()
@@ -503,7 +509,11 @@ RVB::get_primes(int x, int p[])
 {
    int val = 5, index = 2;
 
+#ifdef MAXMSP
+	if (!primes_gotten)
+#else
    if (primes_gotten.incrementAndTest())
+#endif
    {
 	/* first 2 vals initialized */
 	p[0] = 2;
@@ -520,5 +530,8 @@ RVB::get_primes(int x, int p[])
 	   }
 	   val += 2;
 	}
+#ifdef MAXMSP
+	primes_gotten = 1;
+#endif
     }
 }

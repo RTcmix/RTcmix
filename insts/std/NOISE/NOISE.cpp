@@ -100,9 +100,9 @@ Instrument *makeNOISE()
    return inst;
 }
 
-
+#ifndef MAXMSP
 void rtprofile()
 {
    RT_INTRO("NOISE", makeNOISE);
 }
-
+#endif

@@ -9,6 +9,17 @@
 
 #include "lp.h"
 
+
+#ifdef MAXMSP
+#include <CoreFoundation/CoreFoundation.h>
+// from src/rtcmix/byte_routines.h
+#define byte_reverse4(data)                                    \
+    { char c, *t; t = (char *) data;                           \
+    c = t[0]; t[0] = t[3]; t[3] = c;                           \
+    c = t[1]; t[1] = t[2]; t[2] = c; }
+#endif
+
+
 DataSet::DataSet()
 	: _nPoles(0), _frameCount(0), _fdesc(-1), _lpHeaderSize(0), 
 	  _array(NULL), _oldframe(0), _endframe(0)
@@ -67,6 +78,9 @@ int
 DataSet::getFrame(float frameno, float *pCoeffs)
 {
 	int i,j;
+#ifdef MAXMSP
+	float swap1, swap2;
+#endif
 	int frame = (int)frameno;
 	float fraction = frameno - (float)frame;
 	if (!((frame >= _oldframe) && (frame < _endframe))) {
@@ -82,15 +96,26 @@ DataSet::getFrame(float frameno, float *pCoeffs)
 		/* Quit if we read less than one complete frame */
     	if ((bytesRead = ::read(_fdesc, _array, _bprec)) < _bpframe)
 		{
-            	rtcmix_warn("LPC","reached eof on analysis file \n");
+            	rtcmix_warn("LPC","reached eof on analysis file");
             	return(-1);
     	}
 		framesRead = bytesRead / _bpframe;
     	_oldframe = frame;
     	_endframe = _oldframe + framesRead - 1;
 	}
-	for(i=(frame-_oldframe)*_framsize,j=0; j<_framsize; i++,j++)  
-        	pCoeffs[j] = _array[i] + fraction * (_array[i+_framsize] - _array[i]);
+	for(i=(frame-_oldframe)*_framsize,j=0; j<_framsize; i++,j++) {
+#ifdef MAXMSP
+		swap1 = _array[i];
+		swap2 = _array[i+_framsize];
+		if (CFByteOrderGetCurrent() == CFByteOrderLittleEndian) {
+			byte_reverse4(&swap1);
+			byte_reverse4(&swap2);
+		}
+		pCoeffs[j] = swap1 + fraction * (swap2 - swap1);
+#else
+		pCoeffs[j] = _array[i] + fraction * (_array[i+_framsize] - _array[i]);
+#endif
+	}
 	return(0);
 }
 
