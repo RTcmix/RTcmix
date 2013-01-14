@@ -297,6 +297,10 @@ static void cleanup()
 	efree(program);
 #endif
 	free_symbols();
+#ifdef MAXMSP
+	yy_delete_buffer(yy_current_buffer);
+	yy_current_buffer = NULL;
+#endif
 	yy_delete_buffer(YY_CURRENT_BUFFER);
 	/* yy_current_buffer = NULL; */
 }

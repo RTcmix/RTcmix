@@ -13,8 +13,13 @@
 #define vsnprintf(str, sz, fmt, args)  vsprintf(str, fmt, args)
 #endif
 
+#ifdef MAXMSP
+extern int mm_yylineno;
+static int exit_on_die = 0;
+#else
 extern int yylineno;
 static int exit_on_die = 1;
+#endif
 
 // BGG -- these in message.c.  Maybe just #include <ugens.h>?
 extern void rtcmix_advise(const char *inst_name, const char *format, ...);
@@ -61,7 +66,11 @@ minc_warn(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
+#ifdef MAXMSP
+	rtcmix_warn("parser", "%s (near line %d)\n", buf, mm_yylineno);
+#else
 	rtcmix_warn("parser", "%s (near line %d)\n", buf, yylineno);
+#endif
 }
 
 void
@@ -74,7 +83,11 @@ minc_die(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
+#ifdef MAXMSP
+	rterror("parser", "%s (near line %d)\n", buf, mm_yylineno);
+#else
 	rterror("parser", "%s (near line %d)\n", buf, yylineno);
+#endif
 
    if (exit_on_die)
       exit(EXIT_FAILURE);
@@ -90,15 +103,27 @@ minc_internal_error(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
+#ifdef MAXMSP
+	rterror("parser-program", "%s (near line %d)\n", buf, mm_yylineno);
+#else
 	rterror("parser-program", "%s (near line %d)\n", buf, yylineno);
+#endif
 
    if (exit_on_die)
       exit(EXIT_FAILURE);
 }
 
+#ifdef MAXMSP
+void
+mm_yyerror(char *msg)
+{
+	rterror("parser-yyerror", "near line %d: %s\n", mm_yylineno, msg);
+}
+
+#else
 void
 yyerror(char *msg)
 {
 	rterror("parser-yyerror", "near line %d: %s\n", yylineno, msg);
 }
-
+#endif // MAXMSP
