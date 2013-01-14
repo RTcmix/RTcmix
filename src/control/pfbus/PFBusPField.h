@@ -7,19 +7,6 @@
 
 #include <PField.h>
 
-// this is from insts/bgg/PFSCHED/PFSCHED.h
-struct pfbusdata {
-   int drawflag;
-   const PField *thepfield;
-   double val;
-   double percent;
-   double theincr;
-	int dqflag;
-};
-
-extern struct pfbusdata pfbusses[]; // in insts/bgg/PFSCHED/PFSCHED.[h/cpp]
-extern int do_dq; // in src/rtcmix/Instrument.cpp, to signal de-queueing
-
 class PFBusPField : public RTNumberPField {
 public:
 	PFBusPField(

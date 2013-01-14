@@ -7,8 +7,8 @@
 #include <string.h>
 #include <rtcmix_types.h>
 #include <PField.h>
-#include <utils.h>   // in ../../rtcmix
 #include <PFBusPField.h>
+#include <utils.h>   // in ../../rtcmix
 #include <ugens.h>		// for warn, die
 
 
@@ -22,20 +22,20 @@
 //
 //		score to use this might be:
 //
-//		delayed_envelope = maketable("line", 1000, 0,0.0,  1,1.0)
-//		PFSCHED(3.5, 2.1, 1, delayed_envelope)
+//		sent_envelope = maketable("line", 1000, 0,0.0,  1,1.0)
+//		PFSCHED(0, 2.1, 1, sent_envelope)
 //		value = makeconnection("pfbus", 1, 0.0)
 //		INSTRUMENT(0, 5.6, value, p3)
 //
-//		the "value" PField for INSTRUMENT will be 0.0 until time 3.5, then
+//		the "value" PField for INSTRUMENT will be 0.0 until the PFSCHED
+//		note is sent (has to be time 0 for now).  At that point,
 //		the delayed_envelope table will start delivering values for 2.1 seconds
 //		through the PFSCHED instrument.  The values will be set on pfbus #1
-//		(pfbusses[1] internally).
-//				BGG 11/2009
-
-// BGG mm -- these are in insts/bgg/PFSCHED.h; catch a few crashes
-extern struct pfbusdata pfbusses[];
-extern int pfbus_is_connected[];
+//
+//		PFSCHED now has to operate at time 0; usually this will be sent
+//		dynamically from an iOS or Max/MSP environment
+//
+//				BGG 11/2009, 12/2012
 
 
 static RTNumberPField *
@@ -46,8 +46,16 @@ _pfbus_usage()
 	return NULL;
 }
 
+// BGG mm
+// can't use the 'normal' create_pfield() because of conflict with
+// inletglue.cpp function (dyn loading keeps them separate, but we
+// don't dynload in max/msp
 static RTNumberPField *
+#ifdef MAXMSP
+create_pfbus_pfield(const Arg args[], const int nargs)
+#else
 create_pfield(const Arg args[], const int nargs)
+#endif
 {
 	int pfbusval;
 	double defaultval;
@@ -65,27 +73,31 @@ create_pfield(const Arg args[], const int nargs)
 	else
 		return _pfbus_usage();
 
-	if (pfbusses[pfbusval].thepfield != NULL) {
-		rterror("pfbusses", "pfbus %d is already connected", pfbusval);
-		return (RTNumberPField*)(pfbusses[pfbusval].thepfield);
-	}
-	pfbus_is_connected[pfbusval] = 1;
-
 	return new PFBusPField(pfbusval, defaultval);
 }
 
-// The following functions are the publically-visible ones called by the
+// The following functions are the publicly-visible ones called by the
 // system.
 
 extern "C" {
+#ifdef MAXMSP
+	Handle create_pfbus_handle(const Arg args[], const int nargs);
+#else
 	Handle create_handle(const Arg args[], const int nargs);
 	int register_dso();
+#endif
 };
 
 Handle
+#ifdef MAXMSP
+create_pfbus_handle(const Arg args[], const int nargs)
+{
+	PField *pField = create_pfbus_pfield(args, nargs);
+#else
 create_handle(const Arg args[], const int nargs)
 {
 	PField *pField = create_pfield(args, nargs);
+#endif
 	Handle handle = NULL;
 	if (pField != NULL) {
 		handle = createPFieldHandle(pField);
@@ -93,8 +105,9 @@ create_handle(const Arg args[], const int nargs)
 	return handle;
 }
 
+#ifndef MAXMSP
 int register_dso()
 {
    return 0;
 }
-
+#endif
