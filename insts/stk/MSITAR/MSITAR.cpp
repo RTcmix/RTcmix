@@ -124,9 +124,10 @@ Instrument *makeMSITAR()
 	return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
 	RT_INTRO("MSITAR", makeMSITAR);
 }
-
+#endif
 

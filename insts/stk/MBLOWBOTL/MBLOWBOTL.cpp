@@ -137,9 +137,10 @@ Instrument *makeMBLOWBOTL()
 	return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
 	RT_INTRO("MBLOWBOTL", makeMBLOWBOTL);
 }
-
+#endif
 

@@ -163,9 +163,10 @@ Instrument *makeMMODALBAR()
 	return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
 	RT_INTRO("MMODALBAR", makeMMODALBAR);
 }
-
+#endif
 

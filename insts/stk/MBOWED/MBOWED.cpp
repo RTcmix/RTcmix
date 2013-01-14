@@ -176,9 +176,10 @@ Instrument *makeMBOWED()
 	return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
 	RT_INTRO("MBOWED", makeMBOWED);
 }
-
+#endif
 

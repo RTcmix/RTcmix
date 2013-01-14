@@ -144,9 +144,10 @@ Instrument *makeMCLAR()
 	return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
 	RT_INTRO("MCLAR", makeMCLAR);
 }
-
+#endif
 

@@ -143,9 +143,10 @@ Instrument *makeMSHAKERS()
 	return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
 	RT_INTRO("MSHAKERS", makeMSHAKERS);
 }
-
+#endif
 

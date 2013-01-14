@@ -186,9 +186,10 @@ Instrument *makeMBANDEDWG()
 	return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
 	RT_INTRO("MBANDEDWG", makeMBANDEDWG);
 }
-
+#endif
 

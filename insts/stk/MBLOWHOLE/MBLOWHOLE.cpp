@@ -163,9 +163,10 @@ Instrument *makeMBLOWHOLE()
 	return inst;
 }
 
+#ifndef MAXMSP
 void rtprofile()
 {
 	RT_INTRO("MBLOWHOLE", makeMBLOWHOLE);
 }
-
+#endif
 
