@@ -65,19 +65,19 @@ static inline long lmin(long a, long b) { return a < b ? a : b; }
 /* ----------------------------------------------------- read_float_samps --- */
 static int
 read_float_samps(
-                 int         fd,               /* file descriptor for open input file */
-                 int         data_format,      /* sndlib data format of input file */
-                 int         file_chans,       /* total chans in input file */
-                 off_t       cur_offset,       /* current file position before read */
-                 long        endbyte,          /* first byte following last file sample */
-                 BufPtr      dest,             /* interleaved buffer from inst */
-                 int         dest_chans,       /* number of chans interleaved */
-                 int         dest_frames,      /* frames in interleaved buffer */
-                 const short src_chan_list[],  /* list of in-bus chan numbers from inst */
+      int         fd,               /* file descriptor for open input file */
+      int         data_format,      /* sndlib data format of input file */
+      int         file_chans,       /* total chans in input file */
+      off_t       cur_offset,       /* current file position before read */
+      long        endbyte,          /* first byte following last file sample */
+      BufPtr      dest,             /* interleaved buffer from inst */
+      int         dest_chans,       /* number of chans interleaved */
+      int         dest_frames,      /* frames in interleaved buffer */
+      const short src_chan_list[],  /* list of in-bus chan numbers from inst */
                  /* (or NULL to fill all chans) */
-                 short       src_chans,         /* number of in-bus chans to copy */
-                 void *      read_buffer        /* block to read from disk into */
-                 )
+      short       src_chans,         /* number of in-bus chans to copy */
+      void *      read_buffer        /* block to read from disk into */
+      )
 {    
     const int bytes_per_samp = sizeof(float);
     char *bufp = (char *) read_buffer;
@@ -91,8 +91,10 @@ read_float_samps(
     while (bytes_to_read > 0) {
         ssize_t bytes_read = read(fd, bufp, bytes_to_read);
         if (bytes_read == -1) {
+#ifndef MAXMSP
             perror("read_float_samps (read)");
             exit(1);
+#endif
         }
         if (bytes_read == 0)          /* EOF */
             break;
@@ -144,19 +146,19 @@ read_float_samps(
 /* ----------------------------------------------------- read_24bit_samps --- */
 static int
 read_24bit_samps(
-                 int         fd,               /* file descriptor for open input file */
-                 int         data_format,      /* sndlib data format of input file */
-                 int         file_chans,       /* total chans in input file */
-                 off_t       cur_offset,       /* current file position before read */
-                 long        endbyte,          /* first byte following last file sample */
-                 BufPtr      dest,             /* interleaved buffer from inst */
-                 int         dest_chans,       /* number of chans interleaved */
-                 int         dest_frames,      /* frames in interleaved buffer */
-                 const short src_chan_list[],  /* list of in-bus chan numbers from inst */
+      int         fd,               /* file descriptor for open input file */
+      int         data_format,      /* sndlib data format of input file */
+      int         file_chans,       /* total chans in input file */
+      off_t       cur_offset,       /* current file position before read */
+      long        endbyte,          /* first byte following last file sample */
+      BufPtr      dest,             /* interleaved buffer from inst */
+      int         dest_chans,       /* number of chans interleaved */
+      int         dest_frames,      /* frames in interleaved buffer */
+      const short src_chan_list[],  /* list of in-bus chan numbers from inst */
                  /* (or NULL to fill all chans) */
-                 short       src_chans,         /* number of in-bus chans to copy */
-                 void *      read_buffer        /* block to read from disk into */
-                 )
+      short       src_chans,         /* number of in-bus chans to copy */
+      void *      read_buffer        /* block to read from disk into */
+      )
 {
     
     const int bytes_per_samp = 3;         /* 24-bit int */
@@ -171,8 +173,10 @@ read_24bit_samps(
     while (bytes_to_read > 0) {
         ssize_t bytes_read = read(fd, bufp, bytes_to_read);
         if (bytes_read == -1) {
+#ifndef MAXMSP
             perror("read_24bit_samps (read)");
             exit(1);
+#endif
         }
         if (bytes_read == 0)          /* EOF */
             break;
@@ -230,19 +234,19 @@ read_24bit_samps(
 /* ----------------------------------------------------- read_short_samps --- */
 static int
 read_short_samps(
-                 int         fd,               /* file descriptor for open input file */
-                 int         data_format,      /* sndlib data format of input file */
-                 int         file_chans,       /* total chans in input file */
-                 off_t       cur_offset,       /* current file position before read */
-                 long        endbyte,          /* first byte following last file sample */
-                 BufPtr      dest,             /* interleaved buffer from inst */
-                 int         dest_chans,       /* number of chans interleaved */
-                 int         dest_frames,      /* frames in interleaved buffer */
-                 const short src_chan_list[],  /* list of in-bus chan numbers from inst */
+      int         fd,               /* file descriptor for open input file */
+      int         data_format,      /* sndlib data format of input file */
+      int         file_chans,       /* total chans in input file */
+      off_t       cur_offset,       /* current file position before read */
+      long        endbyte,          /* first byte following last file sample */
+      BufPtr      dest,             /* interleaved buffer from inst */
+      int         dest_chans,       /* number of chans interleaved */
+      int         dest_frames,      /* frames in interleaved buffer */
+      const short src_chan_list[],  /* list of in-bus chan numbers from inst */
                  /* (or NULL to fill all chans) */
-                 short       src_chans,         /* number of in-bus chans to copy */
-                 void *      read_buffer        /* block to read from disk into */
-                 )
+      short       src_chans,         /* number of in-bus chans to copy */
+      void *      read_buffer        /* block to read from disk into */
+      )
 {
     const int bytes_per_samp = 2;         /* short int */
     char *bufp = (char *) read_buffer;
@@ -256,8 +260,10 @@ read_short_samps(
     while (bytes_to_read > 0) {
         ssize_t bytes_read = read(fd, bufp, bytes_to_read);
         if (bytes_read == -1) {
+#ifndef MAXMSP
             perror("read_short_samps (read)");
             exit(1);
+#endif
         }
         if (bytes_read == 0)          /* EOF */
             break;
@@ -365,8 +371,10 @@ void InputFile::init(int inFd, const char *inFileName, bool isAudioDev, int inHe
 #ifndef MULTI_THREAD
     readBuffer = (void *) malloc((size_t) RTcmix::bufsamps() * MAXCHANS * bytes_per_samp);
     if (readBuffer == NULL) {
+#ifndef MAXMSP
         perror("rtinput (malloc)");
         exit(1);
+#endif
     }
 #endif
 }
