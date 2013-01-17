@@ -126,7 +126,7 @@ double m_open(float *p, short n_args, double *pp)
 	status[fno] = (n_args == 3) ? (int)p[2] : 2;
 
 	if((fno >=  NFILES) || (fno < 0)) {
-		fprintf(stderr," Only %d files allowed\n", NFILES);
+		rtcmix_warn("m_open", "Only %d files allowed\n", NFILES);
 		closesf();
 		}
 	inew = 0;
@@ -145,7 +145,7 @@ double m_open(float *p, short n_args, double *pp)
 
 	if (status[fno] == O_RDWR
 			&& !WRITEABLE_HEADER_TYPE(sfheadertype(&sfdesc[fno]))) {
-		fprintf(stderr, "m_open: can't write this type of header.\n");
+		rtcmix_warn("m_open", "can't write this type of header.\n");
 		closesf();
 	}
 
@@ -155,16 +155,14 @@ double m_open(float *p, short n_args, double *pp)
 	is_Next[fno] = isNext;
 	headersize[fno] = getheadersize(&sfdesc[fno]);
 
-	if (get_print_option()) {
-		printf("name: %s   sr: %.3f  nchans: %d  class: %d\n",name,
-			sfsrate(&sfdesc[fno]),sfchans(&sfdesc[fno]), sfclass(&sfdesc[fno]));
-		printf("Soundfile type: %s\n",
-				mus_header_type_name(sfheadertype(&sfdesc[fno])));
-		printf("   data format: %s\n",
-				mus_data_format_name(sfdataformat(&sfdesc[fno])));
-		printf("Duration of file is %f seconds.\n",
-			(float)(sfst[fno].st_size - headersize[fno])/(float)sfclass(&sfdesc[fno])/(float)sfchans(&sfdesc[fno])/sfsrate(&sfdesc[fno]));
-	}
+	rtcmix_advise(NULL, "name: %s   sr: %.3f  nchans: %d  class: %d\n",name,
+		sfsrate(&sfdesc[fno]),sfchans(&sfdesc[fno]), sfclass(&sfdesc[fno]));
+	rtcmix_advise(NULL, "Soundfile type: %s\n",
+			mus_header_type_name(sfheadertype(&sfdesc[fno])));
+	rtcmix_advise(NULL, "   data format: %s\n",
+			mus_data_format_name(sfdataformat(&sfdesc[fno])));
+	rtcmix_advise(NULL, "Duration of file is %f seconds.\n",
+		(float)(sfst[fno].st_size - headersize[fno])/(float)sfclass(&sfdesc[fno])/(float)sfchans(&sfdesc[fno])/sfsrate(&sfdesc[fno]));
 
 	originalsize[fno] = istape[fno] ? 999999999 : sfst[fno].st_size;
 	/*
@@ -172,18 +170,18 @@ double m_open(float *p, short n_args, double *pp)
 	*/
 	if(inew) {
 		if((sndbuf[fno] = (char *)malloc((unsigned)nbytes)) == NULL) {
-			fprintf(stderr," CMIX: malloc sound buffer error\n");
+			rtcmix_warn("CMIX", "malloc sound buffer error\n");
 			closesf();
 		}
 		if((peakloc[fno] = (char *)malloc((unsigned)(sfchans(&sfdesc[fno]) * 
 			LONG))) == NULL) {
-			fprintf(stderr,"CMIX: malloc ovpeak buffer error\n");
+			rtcmix_warn("CMIX", "malloc ovpeak buffer error\n");
 			closesf();
 		}
 		if((peak[fno] = 
 			(char *)malloc((unsigned)(sfchans(&sfdesc[fno])* FLOAT))) 
 			== NULL) {
-			fprintf(stderr,"CMIX: malloc peak buffer error!\n");
+			rtcmix_warn("CMIX", "malloc peak buffer error!\n");
 			closesf();
 		}
 		peakoff[fno] = 0; /* default to peakcheckon when opening file*/
@@ -205,7 +203,7 @@ double m_open(float *p, short n_args, double *pp)
 	if(!SR()) set_SR(sfsrate(&sfdesc[fno]));	
 
 	if(sfsrate(&sfdesc[fno])!= SR())
-		fprintf(stderr,"Note--> SR reset to %f\n",SR());
+		rtcmix_advise("CMIX", "Note--> SR reset to %f\n",SR());
 
 	/* read in former peak amplitudes, make sure zero'ed out to start.*/
 
@@ -230,7 +228,7 @@ setnote(float start, float dur, int fno)
 	int i;
 
 	if(!isopen[fno]) {
-		fprintf(stderr,"You haven't opened file %d yet!\n",fno);
+		rtcmix_warn("setnote","You haven't opened file %d yet!\n",fno);
 		closesf();
 	}
 	if(start > 0.) /* if start < 0 it indicates number of samples to skip*/
@@ -249,7 +247,7 @@ setnote(float start, float dur, int fno)
 	if(!istape[fno]) {
 		if((filepointer[fno] = 
 		   lseek(sfd[fno],offset+headersize[fno],0)) == -1) {
-			fprintf(stderr,"CMIX: bad lseek in setnote\n");
+			rtcmix_warn("setnote", "CMIX: bad lseek in setnote\n");
 			closesf();
 		}
 	}
@@ -668,8 +666,7 @@ endnote(int xno)
    			}
    			if((i = write(sfd[fno],sndbuf[fno],final_bytes)) 
 											!= final_bytes) {
-				fprintf(stderr,
-					"CMIX: Bad UNIX write, file %d, nbytes = %d\n",
+				rtcmix_warn("CMIX", "Bad UNIX write, file %d, nbytes = %d\n",
 					fno,i);
 				perror("write");
 				closesf();
@@ -700,7 +697,7 @@ endnote(int xno)
 	sfmaxamptime(&sfm[fno]) = tp.tv_sec;
 		
 	if((filepointer[fno] = lseek(sfd[fno],0L,0)) < 0) {
-		fprintf(stderr,"Bad lseek to beginning of file\n");
+		rtcmix_warn("CMIX", "Bad lseek to beginning of file\n");
 		perror("lseek");
 		closesf();
 	}
@@ -708,6 +705,7 @@ endnote(int xno)
 
 	times(&timbuf);
 
+#ifndef MAXMSP // this really isn't used...
 	printf("\n(%6.2f)",(float)(
 					(timbuf.tms_stime-clockin[fno].tms_stime)+
 					(timbuf.tms_utime-clockin[fno].tms_utime))/60.);
@@ -731,6 +729,7 @@ endnote(int xno)
 			printf(")\n");
 		}
 	}
+#endif // MAXMSP
 
 	/* Copy the updated peak stats into the SFHEADER struct for this
 	   output file. (No swapping necessary.)
@@ -739,7 +738,7 @@ endnote(int xno)
 
 	/* Write header to file. */
 	if (wheader(sfd[fno], &sfdesc[fno])) {
-		fprintf(stderr, "endnote: bad header write\n");
+		rtcmix_warn("endnote", "bad header write\n");
 		perror("write");
 		closesf();
 	}
@@ -806,9 +805,9 @@ double
 peak_off(float p[], int n_args)
 {
 	peakoff[(int)p[0]] = (char)p[1];
-	if(p[1]) printf("      peak check turned off for file %d\n",(int)p[0]);
+	if(p[1]) rtcmix_advise(NULL, "      peak check turned off for file %d\n",(int)p[0]);
 		else
-		 printf("      peak check turned on for file %d\n",(int)p[0]);
+		 rtcmix_advise(NULL, "      peak check turned on for file %d\n",(int)p[0]);
 	return 0.0;
 }
 
@@ -816,9 +815,9 @@ double
 punch_on(float p[], int n_args)
 {
 	punch[(int)p[0]] = p[1];
-	if(!p[1]) printf("      punch turned off for file %d\n",(int)p[0]);
+	if(!p[1]) rtcmix_advise(NULL, "      punch turned off for file %d\n",(int)p[0]);
 		else
-		 printf("      punch check turned on for file %d\n",(int)p[0]);
+		 rtcmix_advise(NULL,"      punch check turned on for file %d\n",(int)p[0]);
 	return 0.0;
 }
 
@@ -849,9 +848,8 @@ _readit(int fno)
 			if(!n) {
 				/*if(istape[fno] && n) continue;*/
 				perror("read");
-				fprintf(stderr,
-				    "CMIX: Bad UNIX read, nbytes = %lld\n",(long long)n);
-				fprintf(stderr, " sfd[fno]= %d\n",sfd[fno]);
+				rtcmix_warn("CMIX", "Bad UNIX read, nbytes = %lld\n",(long long)n);
+				rtcmix_warn(NULL, " sfd[fno]= %d\n",sfd[fno]);
 			        closesf();
 			}
 		}
@@ -909,7 +907,7 @@ _writeit(int fno)
 	float peakval;
 
 	if(!status[fno]) {
-		fprintf(stderr,"File %d is write-protected!\n",fno);
+		rtcmix_warn(NULL, "File %d is write-protected!\n",fno);
 		closesf();
 	}
   
@@ -954,8 +952,7 @@ _writeit(int fno)
 
 	if(play_is_on < 2) {
 		if((n = write(sfd[fno],sndbuf[fno],nbytes)) != nbytes) {
-			fprintf(stderr,
-					"CMIX: Bad UNIX write, file %d, nbytes = %lld\n",fno,(long long)n);
+			rtcmix_warn("CMIX", "Bad UNIX write, file %d, nbytes = %lld\n",fno,(long long)n);
 			perror("write");
 			closesf();
 		}
@@ -976,7 +973,7 @@ _backup(int fno)     /* utility routine to backspace one 'record' */
 	if(play_is_on >= 2) return; 
 
 	if((filepointer[fno] = lseek(sfd[fno],(long)-nbytes,SEEK_CUR)) < 0) {
-		fprintf(stderr,"CMIX: bad back space in file %d\n",fno);
+		rtcmix_warn("CMIX", "bad back space in file %d\n",fno);
 		perror("lseek");
 		closesf();
 	}
@@ -986,7 +983,7 @@ void
 _forward(int fno)     /* utility routine to forwardspace one 'record' */
 {
 	if((filepointer[fno] = lseek(sfd[fno],(long)nbytes,1)) < 0) {
-		fprintf(stderr,"CMIX: bad forward space  in file %d\n",fno);
+		rtcmix_warn("CMIX", "bad forward space  in file %d\n",fno);
 		perror("lseek");
 		closesf();
 	}
@@ -1036,7 +1033,7 @@ m_clean(float p[], int n_args) /* a fast clean of file, after header */
 	fno = (int) p[0];
 	skipbytes = 0;
 	if(!status[fno]) {
-		fprintf(stderr,"fno %d is write-protected!\n",fno);
+		rtcmix_warn(NULL,"fno %d is write-protected!\n",fno);
 		closesf();
 	}
 	todo = originalsize[fno] - headersize[fno];
@@ -1059,7 +1056,7 @@ m_clean(float p[], int n_args) /* a fast clean of file, after header */
 
 	if((filepointer[fno] = 
 	   lseek(sfd[fno],skipbytes+headersize[fno],0)) == -1) {
-		fprintf(stderr,"CMIX: bad sflseek in clean\n");
+		rtcmix_warn("CMIX", "bad sflseek in clean\n");
 		closesf();
 	}
 	printf("Clean %lld bytes\n",(long long)todo);
@@ -1172,22 +1169,21 @@ float *p;
 	int output;
 	output = (int)p[0];
 	if(!isopen[output]) {
-		fprintf(stderr,"You haven't opened file %d yet!\n",output);
+		rtcmix_warn("play_on", "You haven't opened file %d yet!\n",output);
 		closesf();
 	}
 	if(p[1] == 0) play_is_on = 1;  /* play and write to disk */
 	if(p[1] == 1) play_is_on = 2;  /* play and read disk, but don't write */
 	if(p[1] == 2) play_is_on = 3;  /* play but don't read disk */
 	peakflag = p[2];
-	if(get_print_option())
-		printf("%s\n",
-		       (play_is_on == 1) ? "writing to and playing from disk"
-		       : (play_is_on == 2) ? "playing and reading disk only"
-		       : (play_is_on == 3) ? "playing without reading disk"
-		       : ""
-		);
+	rtcmix_advise("play_on", "%s\n",
+	       (play_is_on == 1) ? "writing to and playing from disk"
+	       : (play_is_on == 2) ? "playing and reading disk only"
+	       : (play_is_on == 3) ? "playing without reading disk"
+	       : ""
+	);
 	if(p[1] > 2. || p[1] < 0.) {
-		fprintf(stderr, "illegal value for p[1]\n");
+		rtcmix_warn("play_on", "illegal value for p[1]\n");
 		closesf();
 	}
 	if(get_print_option()) {
@@ -1205,8 +1201,7 @@ float *p;
 double
 play_on(float p[], int n_args)
 {	
-   fprintf(stderr, "Sorry, this version of RTcmix does not support "
-                   "the old cmix method of playing real-time audio.");
+   rtcmix_warn("CMIX", "Sorry, this version of RTcmix does not support the old cmix method of playing real-time audio.");
    return 0.0;
 }
 

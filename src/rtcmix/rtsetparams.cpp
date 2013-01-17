@@ -19,6 +19,7 @@
 #include <Option.h>
 #include "rtdefs.h"
 #include "InputFile.h"
+#include <MMPrint.h>
 
 /* #define DEBUG */
 
@@ -39,6 +40,12 @@ RTcmix::rtsetparams(float p[], int n_args, double pp[])
    int         verbose = Option::print();
    int         play_audio = Option::play();
    int         record_audio = Option::record();
+
+#ifdef MAXMSP
+// BGG mm -- ignore this one, use RTcmix::mm_rtsetparams()
+//    (called by maxmsp_rtsetparams() in main.cpp)
+	return 0.0;
+#endif
 
    if (rtsetparams_was_called()) {
       die("rtsetparams", "You can only call rtsetparams once!");
@@ -90,8 +97,7 @@ RTcmix::rtsetparams(float p[], int n_args, double pp[])
    audio_config = 1;
    pthread_mutex_unlock(&audio_config_lock);
 
-   if (verbose)
-      printf("Audio set:  %g sampling rate, %d channels\n", SR, NCHANS);
+   rtcmix_advise("Audio set",  "%g sampling rate, %d channels\n", SR, NCHANS);
 
    /* Allocate output buffers. Do this *after* opening audio devices,
       in case OSS changes our buffer size, for example.

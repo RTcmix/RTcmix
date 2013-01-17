@@ -84,7 +84,6 @@
 #define kOptionPlay             "play"
 #define kOptionRecord           "record"
 #define kOptionClobber          "clobber"
-#define kOptionPrint            "print"
 #define kOptionReportClipping   "report_clipping"
 #define kOptionCheckPeaks       "check_peaks"
 #define kOptionExitOnError      "exit_on_error"
@@ -95,6 +94,9 @@
 #define kOptionBufferFrames     "buffer_frames"
 #define kOptionBufferCount      "buffer_count"
 #define kOptionOSCInPort        "osc_inport"
+
+// int options
+#define kOptionPrint            "print"
 
 // string options
 #define kOptionDevice           "device"
@@ -137,9 +139,6 @@ public:
 	static bool clobber() { return _clobber; }
 	static bool clobber(const bool setIt) { _clobber = setIt; return _clobber; }
 
-	static bool print() { return _print; }
-	static bool print(const bool setIt) { _print = setIt; return _print; }
-
 	static bool reportClipping() { return _reportClipping; }
 	static bool reportClipping(const bool setIt) { _reportClipping = setIt;
 													return _reportClipping; }
@@ -173,6 +172,10 @@ public:
 	static int oscInPort() { return _oscInPort; }
 	static int oscInPort(int portnum) { _oscInPort = portnum;
 													return _oscInPort; }
+
+	// int options
+	static int print() { return _print; }
+	static int print(int setIt) { _print = setIt; return _print; }
 
 	// string options
 
@@ -217,7 +220,6 @@ private:
 	static bool _play;
 	static bool _record;
 	static bool _clobber;
-	static bool _print;
 	static bool _reportClipping;
 	static bool _checkPeaks;
 	static bool _exitOnError;
@@ -228,6 +230,9 @@ private:
 	static double _bufferFrames;
 	static int _bufferCount;
 	static int _oscInPort;
+
+	// int options
+	static int _print;
 
 	// string options
 	static char _device[];

@@ -441,8 +441,10 @@ off_t InputFile::readSamps(off_t cur_offset,
 	{
 		AutoLock fileLock(this);
 		if (lseek(fd, cur_offset, SEEK_SET) == -1) {
+#ifndef MAXMSP
 			perror("RTcmix::readFromInputFile (lseek)");
 			exit(1);
+#endif
 		}
 		
 		int status = (*this->readFunction)(fd,

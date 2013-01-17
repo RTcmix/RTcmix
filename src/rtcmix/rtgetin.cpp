@@ -44,8 +44,7 @@ Instrument::rtinrepos(Instrument *inst, int frames, int whence)
    fdindex = inst->_input.fdIndex;
 
    if (fdindex == NO_DEVICE_FDINDEX || RTcmix::isInputAudioDevice(fdindex)) {
-      fprintf(stderr,
-            "rtinrepos: request to reposition input, but input is not a file.");
+      rtcmix_warn("rtinrepos", "request to reposition input, but input is not a file.");
 	  return -1;
    }
 
@@ -60,12 +59,16 @@ Instrument::rtinrepos(Instrument *inst, int frames, int whence)
          inst->_input.fileOffset += offset;
          break;
       case SEEK_END:
-         fprintf(stderr, "rtinrepos: SEEK_END unimplemented\n");
+         rtcmix_warn("rtinrepos", "SEEK_END unimplemented\n");
+#ifndef MAXMSP
          exit(1);
+#endif
          break;
       default:
-         fprintf(stderr, "Instrument error: rtinrepos: invalid <whence>\n");
+         rtcmix_warn("rtinrepos", "invalid <whence>\n");
+#ifndef MAXMSP
          exit(1);
+#endif
          break;
    }
 
@@ -182,6 +185,37 @@ RTcmix::readFromInputFile(
 
 }
 
+#ifdef MAXMSP
+// BGG -- support for reading from the [buffer~] object buffer
+#define MM_IN_GAIN_FACTOR 32768.0 // goose it up for RTcmix
+
+/* ------------------------RTcmix::readFromMMbuf ------------------------ */
+void
+RTcmix::readFromMMbuf(
+		BufPtr		dest,				 /* interleaved buffer from inst */
+		int			dest_frames,		/* frames in interleaved buffer */
+		int			mmchans,			 /* [buffer~] chans */
+		float			*mmbufstart,		/* start of [buffer~] data */
+		int			mmbufframes,		/* length of [buffer~] data */
+		int			mmbufdex)			/* frame index from mmbufstart */
+{
+	int i, j, k;
+
+	k = mmbufdex * mmchans;
+	for (i = 0, j = 0; i < dest_frames; i++, j += mmchans, k += mmchans) {
+			dest[j] = mmbufstart[k] * MM_IN_GAIN_FACTOR;
+			if (mmchans == 2) dest[j+1] = mmbufstart[k+1] * MM_IN_GAIN_FACTOR;
+			if (++mmbufdex >= mmbufframes) {
+				mmbufdex--;
+				dest[j] = 0.0;
+				if (mmchans == 2) dest[j+1] = 0.0;
+			}
+	}
+//	return 0;
+}
+#endif // MAXMSP
+
+
 /* -------------------------------------------------------------- rtgetin --- */
 /* This static version switches between the old bus-based mode and the new chained buffer mode */
 
@@ -251,6 +285,24 @@ int	Instrument::rtgetin(float *inarr, int nsamps)
 		
 		RTcmix::readFromAuxBus(inarr, inchans, frames, auxin, auxin_count, output_offset);
 	}
+
+#ifdef MAXMSP
+// BGG -- read from [buffer~] buffer
+// in the older rtgetin(), this has to come before the isInputAudioDevice()
+// check (was never sure why).  This may no longer be true
+   else if (fdindex == USE_MM_BUF) {
+      RTcmix::readFromMMbuf(inarr, frames,
+            _input.inputchans,
+            _input.my_mm_buf->mm_bufstart,
+            _input.my_mm_buf->mm_buf_nframes,
+            _input.fileOffset);
+
+      _input.fileOffset += frames;
+      if (_input.fileOffset >= _input.my_mm_buf->mm_buf_nframes)
+         _input.fileOffset = _input.my_mm_buf->mm_buf_nframes - 1;
+   }
+#endif // MAXMSP
+
 	else if (RTcmix::isInputAudioDevice(fdindex)) {  /* input from mic/line */
 		const short *in = busSlot->in;              /* in channel list */
 		

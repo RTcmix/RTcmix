@@ -614,8 +614,12 @@ RTcmix::get_bus_config(const char *inst_name)
    if (!err) {
       err = insert_bus_slot((char *)inst_name, default_bus_slot);
    }
-   if (err)
+   if (err) {
+		die("bus_config", "couldn't get_bus_config, this is not good");
+#ifndef MAXMSP
       exit(1);        /* This is probably what user wants? */
+#endif
+	}
 	
 	// Print out the default bus config (if verbosity permits)
 	
@@ -942,8 +946,12 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
    if (!err) {
       err = insert_bus_slot(instname, bus_slot);
    }
-   if (err)
+   if (err) {
+		die("bus_config", "couldn't configure the busses");
+#ifndef MAXMSP
       exit(1);        /* This is probably what user wants? */
+#endif
+	}
 
    /* Make sure specified aux buses have buffers allocated. */
    for (i = 0; i < bus_slot->auxin_count; i++)

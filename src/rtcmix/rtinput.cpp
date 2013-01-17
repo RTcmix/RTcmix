@@ -19,6 +19,7 @@
 #include <sndlibsupport.h>
 #include <rtdefs.h>
 #include <Option.h>
+#include <MMPrint.h>
 #include "audio_devices.h"
 #include "InputFile.h"
 #ifdef LINUX
@@ -141,6 +142,14 @@ FIXME: this stuff not implemented yet  -JGG
    is to make it possible to have more than one input source for
    an instrument.
 */
+
+#ifdef MAXMSP
+// BGG mm -- from rtcmixmain() [main.cpp] -- the buffer vars
+extern mm_buf mm_bufs[]; // mm_buf defined in rtdefs.h
+extern int n_mm_bufs;
+extern int mm_buf_input;
+#endif
+
 double
 RTcmix::rtinput(float p[], int n_args, double pp[])
 {
@@ -196,6 +205,34 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 		nchans = audioNCHANS;
 		srate = SR;
 	}
+
+#ifdef MAXMSP
+// BGG mm ----------------------------
+// this segment is to allow rtcmix to access sample data from the
+// max/msp [buffer~] object.
+	if (strcmp(sfname, "MMBUF") == 0) {
+			str = DOUBLE_TO_STRING(pp[1]);
+			for (i = 0; i < n_mm_bufs; i++) {
+				if (strcmp(str, mm_bufs[i].name) == 0) {
+					mm_buf_input = i; // used in rtsetinput() for buf ID
+					break;
+				}
+			}
+			if (i == n_mm_bufs) {
+				die("rtinput", "no max/msp buffer named %s is set", str);
+				mm_buf_input = -1; // we are NOT using [buffer~] input, even if set
+				return -1;
+			}
+			audio_in = 1; // I think I need this to initialize some vars...
+
+// FIXME: need to replace this with the bus spec scheme below... -JGG
+		audioNCHANS =  NCHANS;
+		nchans = audioNCHANS;
+		srate = SR;
+		} else {
+			mm_buf_input = -1; // we are NOT using [buffer~] input, even if set
+		}
+#endif // MAXMSP
 
 #ifdef INPUT_BUS_SUPPORT
 	/* Parse bus specification. */
@@ -267,8 +304,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 					}
 					Option::record(true);
 					RTBUFSAMPS = nframes;
-					if (get_print_option())
-						printf("Input audio set:  %g sampling rate, %d channels\n", SR, NCHANS);
+					rtcmix_advise("Input audio set",  "%g sampling rate, %d channels\n", SR, NCHANS);
 				}
 				// If record disabled during rtsetparams(), we cannot force it on here.
 				else if (!Option::record()) {
@@ -312,17 +348,16 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 #endif /* INPUT_BUS_SUPPORT */
 
 			dur = (double) (nsamps / nchans) / srate;
-			if (get_print_option()) {
-				printf("Input file set for reading:\n");
-				printf("      name:  %s\n", sfname);
-				printf("      type:  %s\n", mus_header_type_name(header_type));
-				printf("    format:  %s\n", mus_data_format_name(data_format));
-				printf("     srate:  %g\n", srate);
-				printf("     chans:  %d\n", nchans);
-				printf("  duration:  %g\n", dur);
+			rtcmix_advise(NULL, "Input file set for reading:\n");
+			rtcmix_advise(NULL, "      name:  %s\n", sfname);
+			rtcmix_advise(NULL, "      type:  %s\n", mus_header_type_name(header_type));
+			rtcmix_advise(NULL, "    format:  %s\n", mus_data_format_name(data_format));
+			rtcmix_advise(NULL, "     srate:  %g\n", srate);
+			rtcmix_advise(NULL, "     chans:  %d\n", nchans);
+			rtcmix_advise(NULL, "  duration:  %g\n", dur);
 #ifdef INPUT_BUS_SUPPORT
 #endif /* INPUT_BUS_SUPPORT */
-			}
+
 			if (srate != SR) {
 				rtcmix_warn("rtinput", "The input file sampling rate is %g, but "
 							"the output rate is currently %g.", srate, SR);

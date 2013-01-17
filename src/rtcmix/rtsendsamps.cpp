@@ -78,12 +78,45 @@ real2int(float val)
 }
 #endif /* USE_REAL2INT */
 
+#ifdef MAXMSP
+extern float *maxmsp_outbuf; // set in mm_rtsetparams()
+// BGG mm -- for normalizing
+#define OUT_GAIN_FACTOR .000030517578125 // (1.0 / 32768.0)
+#endif
 
 /* ------------------------------------------------ write_to_audio_device --- */
 static int
 write_to_audio_device(BufPtr out_buffer[], int samps, AudioDevice *device)
 {
+#ifndef MAXMSP
 	return device->sendFrames(out_buffer, samps) == samps ? 0 : -1;
+
+#else // MAXMSP
+// BGG mm
+// FIXME:  If max/msp was set up with buffers filled as an AudioDevice,
+// then this would be a much better world
+   float *out;
+   int i,j;
+   int bsamps, nchans;
+
+// BGG mm
+// maxmsp_outbuf is a pointer to a max/msp buffer, passed in via
+// maxmsp_rtsetparams
+
+	bsamps = RTcmix::bufsamps();
+	nchans = RTcmix::chans();
+	out = maxmsp_outbuf;
+	for(i = 0; i < bsamps; i++)
+		for (j = 0; j < nchans; j++) {
+			*out++ = out_buffer[j][i] * OUT_GAIN_FACTOR;
+			if (Option::reportClipping()) {
+				if (ABS(out_buffer[j][i]) > 32768.0)
+					rtcmix_warn("CLIPPING","val: %f	channel: %d",out_buffer[j][i], j);
+			}
+		}
+
+	return 0;
+#endif // MAXMSP
 }
 
 /* ---------------------------------------------------------- rtsendzeros --- */
@@ -102,7 +135,7 @@ RTcmix::rtsendzeros(AudioDevice *device, int also_write_to_file)
    if (Option::play()) {
       err = ::write_to_audio_device(out_buffer, bufsamps(), device);
       if (err) {
-         fprintf(stderr, "rtsendzeros: Error: %s\n", device->getLastError());
+         rtcmix_warn("rtsendzeros error", "%s\n", device->getLastError());
 		 return err;
 	  }
    }
@@ -131,13 +164,14 @@ RTcmix::rtsendsamps(AudioDevice *device)
    }
    err = ::write_to_audio_device(out_buffer, bufsamps(), device);
    if (err != 0) {
-      fprintf(stderr, "rtsendsamps: Error: %s\n", device->getLastError());
+      rtcmix_warn("rtsendsamps error", "%s\n", device->getLastError());
    }
    return err;
 }
 
 
 /* -------------------------------------------------------- rtreportstats --- */
+// BGG -- this isn't used in maxmsp
 void
 RTcmix::rtreportstats(AudioDevice *device)
 {

@@ -6,6 +6,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <ugens.h>
 
 extern float SR;
 
@@ -37,7 +38,7 @@ inrepos(int samps, int fno)
         seeking = (amt - bufsize[fno]) * sfclass(&sfdesc[fno]);
 
         if ( (filepointer[fno] = lseek(sfd[fno],seeking,1)) == -1 ) {
-                fprintf(stderr,"CMIX: Bad inrepos lseek, file: %d\n",fno);
+                rtcmix_warn("inrepos", "Bad inrepos lseek, file: %d\n",fno);
                 closesf();
                 }
 
@@ -52,7 +53,7 @@ outrepos(int samps, int fno)
         int seeking,amt;
 
         if(!status[fno]) {
-                fprintf(stderr,"file %d is write protected!\n",fno);
+                rtcmix_warn("outrepos", "file %d is write protected!\n",fno);
                 perror("write");
                 closesf();
                 }
@@ -70,7 +71,7 @@ outrepos(int samps, int fno)
         seeking = (amt - bufsize[fno]) * sfclass(&sfdesc[fno]);
 
         if ( (filepointer[fno] = lseek(sfd[fno],seeking,1)) == -1 ) {
-                fprintf(stderr,"CMIX: bad outrepos lseek, file: %d\n",fno);
+                rtcmix_warn("outrepos", "CMIX: bad outrepos lseek, file: %d\n",fno);
                 closesf();
                 }
         

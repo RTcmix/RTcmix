@@ -21,6 +21,8 @@
 #include "../parser/rtcmix_parse.h"
 #include <sockdefs.h>
 #include <limits.h>
+#include <MMPrint.h>
+#include "heap.h"
 
 using namespace std;
 
@@ -154,7 +156,9 @@ char *RTcmixMain::makeDSOPath(const char *progPath)
 
 RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
 {
+#ifndef MAXMSP
    set_sig_handlers();
+#endif
 
 // FIXME: should consult a makefile variable to tell us whether we should
 // let dsoPath constructed at run time override SHAREDLIBDIR.
@@ -171,18 +175,29 @@ RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
    //    in argv[0] is present but incomplete.  However, there is no
    //    guaranteed solution.
 
+#ifdef MAXMSP
+	init_globals(true, NULL);			// 'true' indicates we were called from main
+
+	for (i = 1; i <= MAXARGS; i++) xargv[i] = NULL;
+	xargc = 1;
+#else
    char *dsoPath = makeDSOPath(argv[0]);
    init_globals(true, dsoPath);		// 'true' indicates we were called from main
    delete [] dsoPath;
 
    parseArguments(argc, argv, env);
+#endif
 
    // Note:  What follows was done in main().  Some of it is identical
    // to RTcmix::init() for imbedded.  Factor this out.
    /* Banner */
+#ifdef MAXMSP
+	MMPrint::mm_print_ptr += (sprintf(MMPrint::mm_print_ptr, "--------> %s %s <--------\n", RTCMIX_NAME, RTCMIX_VERSION)+1);
+#else
    if (Option::print())
       printf("--------> %s %s (%s) <--------\n",
              RTCMIX_NAME, RTCMIX_VERSION, argv[0]);
+#endif
 
    ::ug_intro();                /* introduce standard routines */
    ::profile();                 /* introduce user-written routines etc. */
@@ -233,7 +248,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                Option::reportClipping(false);
                Option::checkPeaks(false); /* (then fall through) */
             case 'q':               /* quiet */
-               Option::print(false);
+               Option::print(0);
                break;
 #ifdef LINUX
 			case 'p':
@@ -344,14 +359,12 @@ RTcmixMain::run()
       all instruments, and then plays them -- in that order.
    */
    if (rtInteractive) {
+		rtcmix_advise(NULL, "rtInteractive mode set\n");
 
-      if (Option::print())
-         fprintf(stdout, "rtInteractive mode set\n");
-
+#ifndef MAXMSP
       /* Read an initialization score. */
       if (!noParse) {
          int status;
-
 #ifdef DBUG
          cout << "Parsing once ...\n";
 #endif
@@ -359,6 +372,7 @@ RTcmixMain::run()
          if (status != 0)
             exit(1);
       }
+#endif // MAXMSP
 
       /* Create parsing thread. */
 #ifdef DBUG
@@ -400,7 +414,11 @@ RTcmixMain::run()
          destroy_parser();
    }
    else {
+#ifdef MAXMSP
+		int status = 0;
+#else
       int status = ::parse_score(xargc, xargv, xenv);
+#endif
 #ifdef PYTHON
       /* Have to reinstall this after running Python interpreter. (Why?) */
 	  set_sig_handlers();
@@ -417,10 +435,14 @@ RTcmixMain::run()
       else
          exit(status);
 
+#ifndef MAXMSP
       destroy_parser();
+#endif
    }
 
+#ifndef MAXMSP
    ::closesf_noexit();
+#endif
 }
 
 /* ---------------------------------------------------- interrupt_handler --- */
@@ -529,7 +551,9 @@ RTcmixMain::sockit(void *arg)
 	  fflush(stdout);
 	  run_status = RT_ERROR;	// Notify inTraverse()
 	  sleep(1);
+#ifndef MAXMSP
 	  cout << "\n";
+#endif
       exit(1);
     }
 
@@ -563,8 +587,10 @@ RTcmixMain::sockit(void *arg)
 		// Wait for the ok to go ahead
 		pthread_mutex_lock(&audio_config_lock);
 		if (!audio_config) {
+#ifndef MAXMSP
 		  if (Option::print())
 			cout << "sockit():  waiting for audio_config . . . \n";
+#endif
 		}
 		pthread_mutex_unlock(&audio_config_lock);
 		
@@ -665,3 +691,76 @@ RTcmixMain::sockit(void *arg)
 #endif
 }
 
+#ifdef MAXMSP
+// BGG -- called by flush_sched() in main.cpp (for the [flush] message)
+void
+RTcmixMain::resetQueueHeap()
+{
+	delete rtHeap;
+	delete [] rtQueue;
+	rtHeap = NULL;
+	rtQueue = NULL;
+
+	rtHeap = new heap;
+	rtQueue = new RTQueue[MAXBUS*3];
+}
+
+
+// BGG mm -- this is the loading code for instrument development using rtcmix~
+// this was mainly copied from loader.c (disabled in rtcmix~) and is called
+// from the loadinst() function at the end of main.cpp
+
+typedef void (*mm_loadFun)();
+
+int 
+RTcmixMain::doload(char *dsoPath)
+{
+    int profileLoaded;
+    mm_loadFun mm_loadrtprof = NULL;
+
+	// unload the dso if already present (this method checks for that)
+	theDSO.unload();
+
+    if (theDSO.load(dsoPath) != 0) {
+		rtcmix_warn("load", "Unable to dynamically load '%s': %s",
+			 dsoPath, theDSO.error());
+		return 0;
+    }
+
+    profileLoaded = 0;
+
+    /* if present, load & call the shared library's rtprofile function to 
+     * load its symbols.  Note that we access the function via its 
+     * unmangled symbol name due to its extern "C" decl in rt.h.
+     */
+
+	// BGG mm -- loading into rtcmix~ uses an auxiliary function in the
+	// instrument definition called "mm_load_rtprofile()", which then
+	// calls the rtprofile() [renamed mm_rtprofile()].
+	if (theDSO.loadFunction(&mm_loadrtprof, "mm_load_rtprofile") == 0) {
+      profileLoaded = 1; 
+      (*mm_loadrtprof)(); 
+#ifdef DBUG
+      printf("Loaded RT profile\n"); 
+#endif
+     } 
+
+    if (!profileLoaded) {
+		rtcmix_warn("load", "Unable to find a profile routine in DSO '%s'", dsoPath);
+		theDSO.unload();
+		return 0;
+    }
+
+	rtcmix_advise("loader", "Loaded %s functions from shared
+		library:\n\t'%s'.\n", (profileLoaded == 3) ? "standard and RT" :
+						   (profileLoaded == 2) ? "RT" : "standard", dsoPath);
+
+	return 1;
+}
+
+void
+RTcmixMain::unload()
+{
+	theDSO.unload();
+}
+#endif // MAXMSP

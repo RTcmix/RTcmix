@@ -77,6 +77,13 @@ Instrument::rtsetinput(float start_time, Instrument *inst)
    return 0;
 }
 
+#ifdef MAXMSP
+// BGG mm -- from rtcmixmain() [main.cpp] -- the buffer vars
+extern int mm_buf_input; // are we using [buffer~]?, which one?
+extern mm_buf mm_bufs[];
+extern int n_mm_bufs;
+#endif
+
 int
 RTcmix::attachInput(float start_time, InputState *input)
 {
@@ -106,6 +113,24 @@ RTcmix::attachInput(float start_time, InputState *input)
       input->inputsr = inputFileTable[index].sampleRate();
 
       src_chans = inputFileTable[index].channels();
+
+#ifdef MAXMSP
+//	 use max/msp [buffer~] for samples
+		if (mm_buf_input >= 0) { // set in rtinput when [buffer~] is being used
+			int stframe;
+			int mmb;
+
+			mmb = mm_buf_input; // which [buffer~] object we're using
+			stframe = (int) (start_time * sr());
+			if (stframe > mm_bufs[mmb].mm_buf_nframes) return RT_INPUT_EOF;
+
+			input->inputchans = mm_bufs[mmb].mm_buf_chans;
+			input->my_mm_buf = &(mm_bufs[mmb]); // address of active [buffer~] buf
+			input->fileOffset = stframe; // buf frame index
+			input->fdIndex = USE_MM_BUF; // from rtdefs.h, checked in rtgetin()
+
+      } else
+#endif
 
       if (inputFileTable[index].isAudioDevice()) {
          if (start_time != 0.0) {

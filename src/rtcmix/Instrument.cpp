@@ -7,7 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#ifndef MAXMSP
 #include <iostream>
+#endif
 #include "Instrument.h"
 #include <RTcmix.h>
 #include "rt.h"
@@ -23,15 +25,17 @@
 #include <PField.h>
 #include <PFieldSet.h>
 #include <maxdispargs.h>
-
-// when this goes to 1 (in PFBusPField.cpp, set by a mechanism in the PFSCHED
-// instrument), then it signals that *this* Instrument/note is to de-queue
-int do_dq = 0;
+#include <PFBusData.h>
 
 using namespace std;
 
+#ifdef MAXMSP
+InputState::InputState()
+   : fdIndex(NO_DEVICE_FDINDEX), fileOffset(0), inputsr(0.0), inputchans(0), my_mm_buf(NULL)
+#else
 InputState::InputState()
 	: fdIndex(NO_DEVICE_FDINDEX), fileOffset(0), inputsr(0.0), inputchans(0)
+#endif
 {
 }
 
@@ -60,6 +64,9 @@ Instrument::Instrument()
 
    for (int i = 0; i < MAXBUS; i++)
 	   bufferWritten[i] = false;
+
+	my_pfbus = PFBusData::connect_val;
+	PFBusData::connect_val = -1;
 }
 
 
@@ -156,11 +163,10 @@ int Instrument::update(double p[], int nvalues, unsigned fields)
 	for (; n < nvalues; ++n)
 		p[n] = 0.0;
 
-	// de-queue the note and reset the flag
-	if (do_dq == 1) {
-		FRAMETYPE realstart = getendsamp() - nSamps();
-		setendsamp(realstart + currentFrame());
-		do_dq = 0;
+	// my_pfbus is set using the bus_link() thing, check this bus for de-queing
+	if (my_pfbus != -1) {
+		if (PFBusData::dq_now[my_pfbus] == 1)
+			setendsamp(0);
 	}
 
 	return 0;
@@ -184,11 +190,10 @@ double Instrument::update(int index, int totframes)
 	if (percent > 1.0)
 		percent = 1.0;
 
-	// de-queue the note and reset the flag
-	if (do_dq == 1) {
-		FRAMETYPE realstart = getendsamp() - nSamps();
-		setendsamp(realstart + currentFrame());
-		do_dq = 0;
+	// my_pfbus is set using the bus_link() thing, check this bus for de-queing
+	if (my_pfbus != -1) {
+		if (PFBusData::dq_now[my_pfbus] == 1)
+			setendsamp(0);
 	}
 
 	return (*_pfields)[index].doubleValue(percent);
@@ -201,8 +206,10 @@ double Instrument::update(int index, int totframes)
 
 int Instrument::init(double p[], int n_args)
 {
+#ifndef MAXMSP
    cout << "You haven't defined an init member of your Instrument class!"
                                                                  << endl;
+#endif
    return -1;
 }
 

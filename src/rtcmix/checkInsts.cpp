@@ -20,6 +20,7 @@
 #include <string.h>
 #include <assert.h>
 #include <Option.h>
+#include <MMprint.h>
 
 //#define DEBUG
 
@@ -29,7 +30,15 @@ printargs(const char *instname, const Arg arglist[], const int nargs)
    int i;
    Arg arg;
 
-   if (Option::print()) {
+   if (Option::print() >= MMP_PRINTALL) {
+#ifdef MAXMSP
+		MMPrint::mm_print_ptr += sprintf(MMPrint::mm_print_ptr, "========<rt-queueing>=======\n")+1;
+		MMPrint::mm_print_ptr += sprintf(MMPrint::mm_print_ptr, "%s:  ", instname);
+		for (i = 0; i < nargs; i++) {
+			arglist[i].printInline(stdout);
+		}
+		MMPrint::mm_print_ptr += sprintf(MMPrint::mm_print_ptr, "\n")+1;
+#else
       printf("========<rt-queueing>=======\n");
       printf("%s:  ", instname);
       for (i = 0; i < nargs; i++) {
@@ -37,6 +46,7 @@ printargs(const char *instname, const Arg arglist[], const int nargs)
       }
       putchar('\n');
       fflush(stdout);
+#endif
    }
 }
 
@@ -88,26 +98,23 @@ static double loadPFieldsAndSetup(const char *inName, Instrument *inInst, const 
 						pfieldset->load(new InstPField((Instrument *)handle->ptr), arg);
 					}
 					else {
-						fprintf(stderr, "%s: arg %d: Unsupported handle type!\n",
-								inName, arg);
+						rtcmix_warn(inName, "arg %d: Unsupported handle type!\n", arg);
 						mixerr = MX_FAIL;
 					}
 				}
 				else {
-					fprintf(stderr, "%s: arg %d: NULL handle!\n", inName, arg);
+					rtcmix_warn(inName, "arg %d: NULL handle!\n", arg);
 					mixerr = MX_FAIL;
 				}
 			}
 				break;
 			case ArrayType:
-				fprintf(stderr,
-						"%s: arg %d: Array (list) types cannot be passed to instruments.\n\tUse maketable(\"literal\", ...) instead.\n",
-						inName, arg);
+				rtcmix_warn(inName,
+						"arg %d: Array (list) types cannot be passed to instruments.\n\tUse maketable(\"literal\", ...) instead.\n", arg);
 				mixerr = MX_FAIL;
 				break;
 			default:
-				fprintf(stderr, "%s: arg %d: Illegal argument type!\n",
-						inName, arg);
+				rtcmix_warn(inName, "arg %d: Illegal argument type!\n", arg);
 				mixerr = MX_FAIL;
 				break;
 		}
@@ -128,11 +135,13 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 #ifdef DEBUG
    printf("ENTERING checkInsts() FUNCTION -----\n");
 #endif
-	
+
+#ifndef MAXMSP
 	if (!rtsetparams_was_called()) {
 		die(instname, "You did not call rtsetparams!");
 		return -1;
 	}
+#endif
 
 	mixerr = MX_FNAME;
 
@@ -168,6 +177,7 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 		}
 		// Clean up if there was an error.
 		else {
+// BGG -- may have to comment this out for maxmsp
 			Iptr->unref();
 			mixerr = MX_FAIL;
 			return rv;

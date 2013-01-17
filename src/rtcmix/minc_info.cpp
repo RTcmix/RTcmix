@@ -9,13 +9,9 @@
 #include <sys/file.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
-// BGG -- for note_exists()
-#include <Instrument.h>
-#include "utils.h"
+#include <PFBusData.h>
 
 #define ALL_CHANS -1
-
 
 /* These are all for the older disk-based cmix functions. */
 extern int	     isopen[NFILES];        /* open status */
@@ -30,7 +26,7 @@ extern "C" {
 double m_sr(float *p, int n_args)
 {
   if(!isopen[(int)p[0]]) {
-    fprintf(stderr, "You haven't opened file %d yet!\n", (int)p[0]);
+    rtcmix_warn("sr", "You haven't opened file %d yet!\n", (int)p[0]);
     closesf();
   }
   return(sfsrate(&sfdesc[(int)p[0]]));
@@ -39,7 +35,7 @@ double m_sr(float *p, int n_args)
 double m_chans(float *p, int n_args)
 {	
   if(!isopen[(int)p[0]]) {
-    fprintf(stderr, "You haven't opened file %d yet!\n", (int)p[0]);
+    rtcmix_warn("chans", "You haven't opened file %d yet!\n", (int)p[0]);
     closesf();
   }
   
@@ -49,7 +45,7 @@ double m_chans(float *p, int n_args)
 double m_class(float *p, int n_args)
 {
   if(!isopen[(int)p[0]]) {
-    fprintf(stderr, "You haven't opened file %d yet!\n", (int)p[0]);
+    rtcmix_warn("class", "You haven't opened file %d yet!\n", (int)p[0]);
     closesf();
   }
   return(sfclass(&sfdesc[(int)p[0]]));
@@ -64,7 +60,7 @@ double m_dur(float *p, int n_args)
 	float dur;
 	i = (int) p[0];
 	if(!isopen[i]) {
-		fprintf(stderr, "You haven't opened file %d yet!\n", i);
+		rtcmix_warn("dur", "You haven't opened file %d yet!\n", (int)p[0]);
 		closesf();
 	}
 	dur = (float)(sfst[i].st_size - headersize[i])
@@ -255,12 +251,11 @@ RTcmix::input_chans(float *p, int n_args)   /* returns chans for rtinput() files
    int index = get_last_input_index();
 
    if (index < 0) {
-      fprintf(stderr, "There are no currently opened input files!\n");
+      rtcmix_warn("input_chans", "There are no currently opened input files!\n");
       return 0.0;
    }
    if (inputFileTable[index].isAudioDevice()) {
-      fprintf(stderr, "WARNING: Requesting channels of audio input device "
-                      "(not sound file)!\n");
+      rtcmix_warn("input_chans", "Requesting channels of audio input device, (not sound file)!\n");
       return 0.0;
    }
    return (inputFileTable[index].channels());
@@ -272,12 +267,11 @@ RTcmix::input_dur(float *p, int n_args)   /* returns duration for rtinput() file
    int index = get_last_input_index();
 
    if (index < 0) {
-      fprintf(stderr, "There are no currently opened input files!\n");
+      rtcmix_warn("DUR", "There are no currently opened input files!\n");
       return 0.0;
    }
    if (inputFileTable[index].isAudioDevice()) {
-      fprintf(stderr, "WARNING: Requesting duration of audio input device "
-                      "(not sound file)!\n");
+      rtcmix_warn("input_dur", "Requesting duration of audio input device (not sound file)!\n");
       return 0.0;
    }
    return (inputFileTable[index].duration());
@@ -289,7 +283,7 @@ RTcmix::input_sr(float *p, int n_args)   /* returns rate for rtinput() files */
    int index = get_last_input_index();
 
    if (index < 0) {
-      fprintf(stderr, "There are no currently opened input files!\n");
+      rtcmix_warn("SR", "There are no currently opened input files!\n");
       return 0.0;
    }
 //   if (inputFileTable[index].is_audio_dev) {
@@ -318,7 +312,7 @@ m_peak(float p[], int n_args)
 
 	fno = (int) p[0];
 	if (!isopen[fno]) {
-		fprintf(stderr, "You haven't opened file %d yet!\n", fno);
+		rtcmix_warn("peak", "You haven't opened file %d yet!\n", fno);
 		closesf();
 	}
 
@@ -332,7 +326,7 @@ m_peak(float p[], int n_args)
 		}
 	}
 	else
-		fprintf(stderr, "File %d has no peak stats!\n", fno);
+		rtcmix_warn("peak", "File %d has no peak stats!\n", fno);
 
 	return peak;
 }
@@ -345,14 +339,14 @@ m_left(float p[], int n_args)
 
 	fno = (int) p[0];
 	if (!isopen[fno]) {
-		fprintf(stderr, "You haven't opened file %d yet!\n", fno);
+		rtcmix_warn("left", "You haven't opened file %d yet!\n", fno);
 		closesf();
 	}
 
 	if (sfmaxamptime(&sfm[fno]) > 0L)
 		return (sfmaxamp(&sfm[fno], 0));    /* for channel 0 */
 	else
-		fprintf(stderr, "File %d has no peak stats!\n", fno);
+		rtcmix_warn("left", "File %d has no peak stats!\n", fno);
 
 	return 0.0;
 }
@@ -365,14 +359,14 @@ m_right(float p[], int n_args)
 
 	fno = (int) p[0];
 	if (!isopen[fno]) {
-		fprintf(stderr, "You haven't opened file %d yet!\n", fno);
+		rtcmix_warn("right", "You haven't opened file %d yet!\n", fno);
 		closesf();
 	}
 
 	if (sfmaxamptime(&sfm[fno]) > 0L)
 		return (sfmaxamp(&sfm[fno], 1));    /* for channel 1 */
 	else
-		fprintf(stderr, "File %d has no peak stats!\n", fno);
+		rtcmix_warn("right", "File %d has no peak stats!\n", fno);
 
 	return 0.0;
 }
@@ -398,12 +392,11 @@ RTcmix::get_peak(float start, float end, int chan)
    index = get_last_input_index();
 
    if (index < 0) {
-      fprintf(stderr, "There are no currently opened input files!\n");
+      rtcmix_warn("get_peak", "There are no currently opened input files!\n");
       return 0.0;
    }
    if (inputFileTable[index].isAudioDevice()) {
-      fprintf(stderr, "WARNING: Requesting peak of audio input device "
-                      "(not sound file)!\n");
+      rtcmix_warn("get_peak", "Requesting peak of audio input device (not sound file)!\n");
       return 0.0;
    }
 
@@ -506,32 +499,31 @@ m_info(float *p, int n_args)
 
 
 // BGG
-// functions to get dynamic info about Instruments -- BGG
-
+// used to check if a pfbus is connected and to link pfbusses w/ Instruments
 extern "C" {
-	double note_exists(const Arg args[], const int nargs);
+	double bus_exists(const Arg args[], const int nargs);
+	double bus_link(const Arg args[], const int nargs);
 }
 
-double note_exists(const Arg args[], const int nargs)
+double bus_exists(const Arg args[], const int nargs)
 {
 	if (nargs != 1)
-		return die("note_exists", "Usage:  val = note_exists(Instrument_Handle)");
+		return die("bus_exists", "Usage:  val = bus_exists(pfbus #)");
 
-	Instrument *Iptr = (Instrument *)args[0];
-	if (Iptr == NULL) {
-		rtcmix_warn("note_exists", "Instrument/note not initialized");
-		return -1;
-	}
+	int connection = (int)args[0];
+	int is_connected = PFBusData::pfbus_is_connected[connection];
 
-	Iptr->ref(); // increase ref count on instrument
+	if (is_connected == 1) return 1.0;
+	else return 0.0;
+}
 
-	double retval;
-	if (Iptr->isDone() == true)
-		retval = 0.0;
-	else
-		retval = 1.0;
 
-	Iptr->unref();	// decrease ref count on instrument
-	return retval;
+double bus_link(const Arg args[], const int nargs)
+{
+	if (nargs != 1)
+		return die("bus_link", "Usage:  val = bus_link(pfbus #)");
+
+	PFBusData::connect_val = (int)args[0];
+	return 1.0;
 }
 

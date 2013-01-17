@@ -2,15 +2,30 @@
 #define _RTCMIXMAIN_H_
 
 #include <RTcmix.h>
+#include "DynamicLib.h"
 
 class RTcmixMain : public RTcmix {
 public:
+#ifdef MAXMSP
+	RTcmixMain();  // called from main.cpp
+	// BGG -- for flushing Queue/Heap frpm flush_sched() (main.cpp)
+	void resetQueueHeap();
+	// BGG -- experimental dynloading of RTcmix insts in max/msp
+	DynamicLib theDSO;
+	int doload(char *dsoPath);
+	void unload();
+#else
 	RTcmixMain(int argc, char **argv, char **env);	// called from main.cpp
+#endif
 	void			run();	
 
 protected:
 	// Initialization methods.
+#ifdef MAXMSP
+	void			parseArguments(int argc, char **argv);
+#else
 	void			parseArguments(int argc, char **argv, char **env);
+#endif
 	static void		interrupt_handler(int);
 	static void		signal_handler(int);
 	static void		set_sig_handlers();

@@ -12,6 +12,7 @@
 #include <ug_intro.h>
 #include <string.h>
 #include <Option.h>
+#include <MMPrint.h>
 
 #define WARN_DUPLICATES
 
@@ -139,7 +140,15 @@ _printargs(const char *funcname, const Arg arglist[], const int nargs)
    int i;
    Arg arg;
 
-   if (Option::print()) {
+   if (Option::print() >= MMP_PRINTALL) {
+#ifdef MAXMSP
+		MMPrint::mm_print_ptr += (sprintf(MMPrint::mm_print_ptr, "============================\n")+1);
+		MMPrint::mm_print_ptr += sprintf(MMPrint::mm_print_ptr, "%s:  ", funcname);
+		for (i = 0; i < nargs; i++) {
+			arglist[i].printInline(stdout);
+		}
+		MMPrint::mm_print_ptr += (sprintf(MMPrint::mm_print_ptr, "\n")+1);
+#else
       printf("============================\n");
       printf("%s:  ", funcname);
       for (i = 0; i < nargs; i++) {
@@ -147,6 +156,7 @@ _printargs(const char *funcname, const Arg arglist[], const int nargs)
       }
       putchar('\n');
       fflush(stdout);
+#endif // MAXMSP
    }
 }
 

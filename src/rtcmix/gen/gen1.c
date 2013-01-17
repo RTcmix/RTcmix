@@ -138,8 +138,12 @@ gen1(struct gen *gen, char *sfname)
 
    seek_to = data_location + (start_frame * file_chans * bytes_per_samp);
    if (lseek(fd, seek_to, SEEK_SET) == -1) {
+#ifdef MAXMSP
+		return die("gen1", "lseek problem");
+#else
       perror("gen1 (lseek)");
       exit(1);
+#endif
    }
 
 #if MUS_LITTLE_ENDIAN
@@ -167,8 +171,12 @@ gen1(struct gen *gen, char *sfname)
       else
          bytes_read = read(fd, buf, BUFSIZE);
       if (bytes_read == -1) {
+#ifdef MAXMSP
+			return die("gen1", "read problem");
+#else
          perror("read");
          exit(1);
+#endif
       }
       if (bytes_read == 0)          /* EOF, somehow */
          break;

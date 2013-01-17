@@ -58,7 +58,7 @@ getisample(double sampleno, float *c, int input)
 		/* sflseek (sfheader.h) assumes header size, so can't use it */
 		if(lseek(sfd[input], (sample * BPFRAME) + headersize[input],
 							SEEK_SET) <= 0) {
-			fprintf(stderr,"badlseek on inputfile\n");
+			rterror(NULL, "badlseek on inputfile\n");
 			closesf();
 		}
 		nbytes = read(sfd[input], (char *)array, BPREC);
@@ -67,7 +67,7 @@ getisample(double sampleno, float *c, int input)
 			return 0;
 		}
 		if (nbytes == 0) {
-			fprintf(stderr, "reached eof on input file\n");
+			rterror(NULL, "reached eof on input file\n");
 			return 0;
 		}
 		if (nbytes < BPREC) {    /* zero out rest of sndbuf */
@@ -118,7 +118,7 @@ getfsample(double sampleno, float *c, int input)
 		/* sflseek (sfheader.h) assumes header size, so can't use it */
 		if(lseek(sfd[input], (sample * BPFRAME) + headersize[input],
 							SEEK_SET) <= 0) {
-			fprintf(stderr,"badlseek on inputfile\n");
+			rterror(NULL,"badlseek on inputfile\n");
 			closesf();
 		}
 		nbytes = read(sfd[input], (char *)array, BPREC);
@@ -127,7 +127,7 @@ getfsample(double sampleno, float *c, int input)
 			return 0;
 		}
 		if (nbytes == 0) {
-			fprintf(stderr, "reached eof on input file\n");
+			rterror(NULL, "reached eof on input file\n");
 			return 0;
 		}
 		if (nbytes < BPREC)     /* zero out rest of sndbuf */

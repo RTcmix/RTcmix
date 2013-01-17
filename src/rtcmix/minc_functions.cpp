@@ -11,6 +11,7 @@
 #include <maxdispargs.h>
 #include <Option.h>
 #include "prototypes.h"
+#include <MMprint.h>
 
 #define ARRAY_SIZE 256
 #define NUM_ARRAYS  32
@@ -188,6 +189,7 @@ double m_wrap(float p[], int n_args)
 
 double m_print(float p[], int n_args, double pp[])
 {
+// BGG -- NOTE:  This is now done in parser/minc/builtin.c
 	printf("Value = %10.8f\n", pp[0]);
 	return 0.0;
 }
@@ -352,15 +354,26 @@ double str_num(float p[], int n_args, double pp[])
 		name = DOUBLE_TO_STRING(pp[j]);
 		if (((j+1) < (n_args-1)) || !(n_args % 2))
 			sprintf(buf, "%g", pp[j+1]);
+#ifdef MAXMSP
+		MMPrint::mm_print_ptr += sprintf(MMPrint::mm_print_ptr, "%s%s", name, buf);
+#else
 		printf("%s%s", name, buf);
+#endif
 	}
+#ifdef MAXMSP
+	MMPrint::mm_print_ptr += (sprintf(MMPrint::mm_print_ptr, "\n")+1);
+#else
 	printf("\n");
+#endif
 	return 0.0;
 }
 
 double m_print_is_on(float p[], int n_args)
 {
-	set_bool_option(kOptionPrint, 1);
+	if (n_args > 0)
+		set_bool_option(kOptionPrint, (int)p[0]); // this does an int...
+	else
+		set_bool_option(kOptionPrint, MMP_PRINTALL); // BGG not really "bool" now
 	return 1.0;
 }
 

@@ -27,6 +27,11 @@
 
 extern "C" {
 	Handle makeconnection(const Arg args[], const int nargs);
+#ifdef MAXMSP
+// BGG -- see note below
+	Handle create_handle(const Arg args[], const int nargs);
+	Handle create_pfbus_handle(const Arg args[], const int nargs);
+#endif
 };
 
 typedef Handle (*HandleCreator)(const Arg[], const int);
@@ -50,6 +55,7 @@ makeconnection(const Arg args[], const int nargs)
 	Handle handle = NULL;
 	HandleCreator creator = NULL;
 	const char *selector = (const char *) args[0];
+#ifndef MAXMSP
 	char loadPath[1024];
 	const char *dsoPath = Option::dsoPath();
 	if (strlen(dsoPath) == 0)
@@ -70,6 +76,21 @@ makeconnection(const Arg args[], const int nargs)
 	else {
 		die("makeconnection", "dso load failed: %s\n", theDSO.error());
 	}
+
+#else 
+// BGG -- create_handle() will invoke the RTInletPField stuff in control/maxmsp
+// We can't use the 'normal' create_pfield() because of conflict with
+// inletglue.cpp function (dyn loading keeps them separate, but we
+// don't dynlaod in max/msp)
+// same with create_pfbus_handle()
+
+	if (args[0] == "inlet") {
+		handle = create_handle(&args[1], nargs-1);
+	} else if(args[0] == "pfbus") {
+		handle = create_pfbus_handle(&args[1], nargs-1);
+	}
+#endif // MAXMSP
+
 	return handle;
 }
 

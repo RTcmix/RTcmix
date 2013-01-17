@@ -100,6 +100,11 @@ public:
 	static int attachInput(float inputSkip, InputState *instInput);
 	static void readFromAuxBus(BufPtr dest, int dest_chans, int dest_frms, const short src_chan_list[], short src_chans, int output_offset);
 	static void readFromAudioDevice(BufPtr dest, int dest_chans, int dest_frms, const short src_chan_list[], short src_chans, int output_offset);
+
+#ifdef MAXMSP // for [buffer~] support
+	static void readFromMMbuf(BufPtr dest, int dest_frames, int  mmchans, float *mmbufstart, int mmbufframes, int mmbufdex);
+#endif
+
 	static off_t seekInputFile(int fdIndex, int frames, int chans, int whence);
 	static void readFromInputFile(BufPtr dest, int dest_chans, int dest_frms, const short src_chan_list[], short src_chans, int fdIndex, off_t *outFileOffset);
 	static void rtgetsamps(AudioDevice *inputDevice);
@@ -113,6 +118,9 @@ public:
 	// These are functions called from the parser via pointers, and are
 	// registered via rt_ug_intro().
 	static double rtsetparams(float*, int, double *);
+#ifdef MAXMSP
+	static double mm_rtsetparams(float, int, int, float*, float*);
+#endif
 	static double rtinput(float*, int, double *);
 	static double rtoutput(float*, int, double *);
 	static double set_option(float *, int, double *);
@@ -124,6 +132,13 @@ public:
 	static double input_peak(float *, int);
 	static double left_peak(float *, int);
 	static double right_peak(float *, int);
+
+	// BGG -- public for calling from imbedded apps
+	static bool inTraverse(AudioDevice *, void *);
+	// BGG -- public for the [flush] message (flush_sched()/resetQueueHeap())
+	// DT:  main heap structure used to queue instruments
+	static heap *rtHeap;
+	static RTQueue *rtQueue;
 
 protected:
 	RTcmix(bool dummy);				// Called by RTcmixMain class
@@ -178,7 +193,6 @@ private:
 
 	// Internal audio loop methods (called by runMainLoop())
 	
-	static bool inTraverse(AudioDevice *, void *);
 	static int rtsendsamps(AudioDevice *);
 	static int rtwritesamps(AudioDevice *);
 	static void limiter(BUFTYPE peaks[], long peaklocs[]);
@@ -211,9 +225,6 @@ private:
 	static FRAMETYPE 	bufStartSamp;
 	static FRAMETYPE	elapsed;
 
-	// DT:  main heap structure used to queue instruments
-	static heap *rtHeap;
-	static RTQueue *rtQueue;
 	// HACK ALERT!!!  D.S. WAS HERE!!!!
 public:
 	static rt_item *rt_list;

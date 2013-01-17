@@ -10,6 +10,8 @@
 #include <Locked.h>
 #include <rt_types.h>
 #include <sys/types.h>
+#include "rtdefs.h"
+
 
 #define MAXNUMPARAMS 100
 
@@ -24,6 +26,9 @@ struct InputState {
    off_t          fileOffset;      // current offset in file for this inst
    double         inputsr;		   // SR of input file
    int            inputchans;	   // Chans of input file
+#ifdef MAXMSP
+	mm_buf         *my_mm_buf;    // local copy of the active [buffer~]
+#endif
 };
 
 class Instrument : public RefCounted {
@@ -65,6 +70,8 @@ private:
    int            _nsamps;
 	// CHAINED INSTRUMENT SUPPORT
 	BUFTYPE *		inputChainBuf;			// buffer used as input by rtgetin()
+	// BGG -- for pfbus connection (dynamic PFields)
+	int				my_pfbus;
 
 public:
 	// Instruments should use these to access variables.

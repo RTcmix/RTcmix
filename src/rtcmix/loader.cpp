@@ -48,6 +48,12 @@ double m_load(float *p, int n_args, double *pp)
     DynamicLib theDSO;
     ProfileFun profileFun = NULL;
 
+#ifdef MAXMSP
+// BGG mm -- dynamic loading not working for scorefile in max/msp yet
+// Use the "loadinst" message
+	return 1.0;
+#endif
+
     if (get_dso_path(pp[0], dsoPath) != 0)
 		return 0;
 

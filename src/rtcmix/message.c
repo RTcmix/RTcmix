@@ -5,6 +5,11 @@
    is undef'd in makefile.conf
    -- BGG 1/2004
 */
+/* added capability to print into an internal buffer for 'imbedded' apps
+	(#ifdef MAXMSP's) and also to allow different printing levels with
+	print_on(X).  See MMPrint.h for listing of levels
+	-- BGG 1/2013
+*/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -14,6 +19,7 @@
 #include <prototypes.h>
 #include <ugens.h>
 #include <Option.h>
+#include <MMPrint.h>
 
 #define PREFIX  "*** "       /* print before WARNING and ERROR */
 #define BUFSIZE 1024
@@ -35,7 +41,7 @@
 void
 rtcmix_advise(const char *inst_name, const char *format, ...)
 {
-   if (get_print_option()) {
+   if (get_print_option() >= MMP_ADVISE) {
       char     buf[BUFSIZE];
       va_list  args;
 
@@ -43,10 +49,22 @@ rtcmix_advise(const char *inst_name, const char *format, ...)
       vsnprintf(buf, BUFSIZE, format, args);
       va_end(args);
 
+#ifndef MAXMSP
       if (inst_name)
          printf("%s:  %s\n", inst_name, buf);
       else
          printf("%s\n", buf);
+
+#else // MAXMSP
+      if (inst_name) {
+         int nchars = sprintf(get_mm_print_ptr(), "ADVISE [%s]:  %s\n", inst_name, buf);
+         set_mm_print_ptr(nchars+1);
+      }
+      else {
+         int nchars = sprintf(get_mm_print_ptr(), "ADVISE: %s\n", buf);
+         set_mm_print_ptr(nchars+1);
+      }
+#endif // MAXMSP
    }
 }
 
@@ -55,7 +73,7 @@ rtcmix_advise(const char *inst_name, const char *format, ...)
 void
 rtcmix_warn(const char *inst_name, const char *format, ...)
 {
-   if (get_print_option()) {
+   if (get_print_option() >= MMP_WARN) {
       char     buf[BUFSIZE];
       va_list  args;
 
@@ -63,10 +81,22 @@ rtcmix_warn(const char *inst_name, const char *format, ...)
       vsnprintf(buf, BUFSIZE, format, args);
       va_end(args);
 
+#ifndef MAXMSP
       if (inst_name)
          fprintf(stderr, "\n" PREFIX "WARNING [%s]:  %s\n\n", inst_name, buf);
       else
          fprintf(stderr, "\n" PREFIX "WARNING:  %s\n\n", buf);
+
+#else // MAXMSP
+      if (inst_name) {
+         int nchars = sprintf(get_mm_print_ptr(), "WARNING [%s]:  %s\n", inst_name, buf);
+         set_mm_print_ptr(nchars+1);
+      }
+      else {
+         int nchars = sprintf(get_mm_print_ptr(), "WARNING:  %s\n", buf);
+         set_mm_print_ptr(nchars+1);
+      }
+#endif // MAXMSP
    }
 }
 
@@ -78,14 +108,28 @@ rterror(const char *inst_name, const char *format, ...)
    char     buf[BUFSIZE];
    va_list  args;
 
+	if (get_print_option() < MMP_RTERRORS) return;
+
    va_start(args, format);
    vsnprintf(buf, BUFSIZE, format, args);
    va_end(args);
 
+#ifndef MAXMSP
    if (inst_name)
       fprintf(stderr, PREFIX "ERROR [%s]: %s\n", inst_name, buf);
    else
       fprintf(stderr, PREFIX "ERROR: %s\n", buf);
+
+#else // MAXMSP
+   if (inst_name) {
+      int nchars = sprintf(get_mm_print_ptr(), "ERROR [%s]: %s\n", inst_name, buf);
+      set_mm_print_ptr(nchars+1);
+   }
+   else {
+      int nchars = sprintf(get_mm_print_ptr(), "ERROR: %s\n", buf);
+      set_mm_print_ptr(nchars+1);
+   }
+#endif // MAXMSP
 }
 
 /* ------------------------------------------------------------------ die --- */
@@ -99,15 +143,25 @@ die(const char *inst_name, const char *format, ...)
    vsnprintf(buf, BUFSIZE, format, args);
    va_end(args);
 
+#ifndef MAXMSP
    if (inst_name)
       fprintf(stderr, PREFIX "FATAL ERROR [%s]:  %s\n", inst_name, buf);
    else
       fprintf(stderr, PREFIX "FATAL ERROR:  %s\n", buf);
 
+#else // MAXMSP
+   if (inst_name) {
+      int nchars = sprintf(get_mm_print_ptr(), "FATAL ERROR [%s]:  %s\n", inst_name, buf);
+      set_mm_print_ptr(nchars+1);
+   }
+   else {
+      int nchars = sprintf(get_mm_print_ptr(), "FATAL ERROR:  %s\n", buf);
+   }
+#endif // MAXMSP
+
    if (get_bool_option(kOptionExitOnError)) {
       if (!rtsetparams_was_called())
          closesf_noexit();
-
       exit(1);
       return 0;	/*NOTREACHED*/
    }

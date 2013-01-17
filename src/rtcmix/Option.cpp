@@ -11,7 +11,10 @@
 #include "Option.h"
 #include <Config.h>
 #include <string.h>
+#include "MMPrint.h"
+#ifndef MAXMSP
 #include <iostream>
+#endif
 
 using namespace std;
 
@@ -22,7 +25,6 @@ bool Option::_audio = true;
 bool Option::_play = true;
 bool Option::_record = false;
 bool Option::_clobber = false;
-bool Option::_print = true;
 bool Option::_reportClipping = true;
 bool Option::_checkPeaks = true;
 bool Option::_exitOnError = false;	// we override this in main.cpp
@@ -32,6 +34,14 @@ bool Option::_fastUpdate = false;
 double Option::_bufferFrames = DEFAULT_BUFFER_FRAMES;
 int Option::_bufferCount = DEFAULT_BUFFER_COUNT;
 int Option::_oscInPort = DEFAULT_OSC_INPORT;
+
+// BGG see MMPrint.h for levels
+#ifdef MAXMSP
+int Option::_print = MMP_RTERRORS; // basic level for max/msp
+#else
+int Option::_print = MMP_PRINTALL; // default print everthing for regular RTcmix
+#endif
+
 
 char Option::_device[DEVICE_MAX];
 char Option::_inDevice[DEVICE_MAX];
@@ -300,7 +310,6 @@ int Option::writeConfigFile(const char *fileName)
 	fprintf(stream, "%s = %s\n", kOptionPlay, play() ? "true" : "false");
 	fprintf(stream, "%s = %s\n", kOptionRecord, record() ? "true" : "false");
 	fprintf(stream, "%s = %s\n", kOptionClobber, clobber() ? "true" : "false");
-	fprintf(stream, "%s = %s\n", kOptionPrint, print() ? "true" : "false");
 	fprintf(stream, "%s = %s\n", kOptionReportClipping,
 										reportClipping() ? "true" : "false");
 	fprintf(stream, "%s = %s\n", kOptionCheckPeaks,
@@ -316,6 +325,7 @@ int Option::writeConfigFile(const char *fileName)
 	fprintf(stream, "%s = %g\n", kOptionBufferFrames, bufferFrames());
 	fprintf(stream, "%s = %d\n", kOptionBufferCount, bufferCount());
 	fprintf(stream, "%s = %d\n", kOptionOSCInPort, oscInPort());
+	fprintf(stream, "%s = %s\n", kOptionPrint, print());
 
 	// write string options
 	fprintf(stream, "\n# String options: key = \"quoted string\"\n");
@@ -447,6 +457,7 @@ char *Option::rcName(const char *rcName)
 
 void Option::dump()
 {
+#ifndef MAXMSP
 	cout << kOptionAudio << ": " << _audio << endl;
 	cout << kOptionPlay << ": " << _play << endl;
 	cout << kOptionRecord << ": " << _record << endl;
@@ -471,6 +482,7 @@ void Option::dump()
 	cout << kOptionDSOPath << ": " << _dsoPath << endl;
 	cout << kOptionRCName << ": " << _rcName << endl;
 	cout << kOptionHomeDir << ": " << _homeDir << endl;
+#endif // MAXMSP
 }
 
 void Option::reportError(const char *format, const char *msg1, const char *msg2)
@@ -524,7 +536,7 @@ int get_bool_option(const char *option_name)
 void set_bool_option(const char *option_name, int value)
 {
 	if (!strcmp(option_name, kOptionPrint))
-		Option::print((bool) value);
+		Option::print((int) value);
 	else if (!strcmp(option_name, kOptionReportClipping))
 		Option::reportClipping((bool) value);
 	else if (!strcmp(option_name, kOptionCheckPeaks))

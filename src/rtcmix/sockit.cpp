@@ -24,7 +24,10 @@
 
 #include "notetags.h"
 
+#ifndef MAXMSP
 #include <iostream>
+#endif
+
 using namespace std;
 
 // #define DBUG
@@ -83,8 +86,10 @@ RTcmixMain::sockit(void *arg)
 	  fflush(stdout);
 	  run_status = RT_ERROR;	// Notify inTraverse()
 	  sleep(1);
+#ifndef MAXMSP
 	  cout << "\n";
       exit(1);
+#endif
     }
 
     listen(s, 1);
@@ -113,8 +118,10 @@ RTcmixMain::sockit(void *arg)
 		// Wait for the ok to go ahead
 		pthread_mutex_lock(&audio_config_lock);
 		if (!audio_config) {
+#ifndef MAXMSP
 		  if (Option::print())
 			cout << "sockit():  waiting for audio_config . . . \n";
+#endif
 		}
 		pthread_mutex_unlock(&audio_config_lock);
 		
@@ -145,8 +152,10 @@ RTcmixMain::sockit(void *arg)
 		}
 		
 		if (audio_configured && rtInteractive) {
+#ifndef MAXMSP
 			if (Option::print())
 				cout << "sockit():  audio set.\n";
+#endif
 		}
 		
 	  }
@@ -173,21 +182,21 @@ RTcmixMain::sockit(void *arg)
 		}
 
 		else if ( (strcmp(sinfo->name, "RTcmix_off") == 0) ) {
-			printf("RTcmix termination cmd received.\n");
+			rtcmix_advise("sockit", "RTcmix termination cmd received.\n");
 			run_status = RT_SHUTDOWN;	// Notify inTraverse()
  			shutdown(s,0);
 			return NULL;
 		}
 		else if ( (strcmp(sinfo->name, "RTcmix_panic") == 0) ) {
 			int count = 30;
-			printf("RTcmix panic cmd received...\n");
+			rtcmix_warn("sockit", "RTcmix panic cmd received...\n");
 			run_status = RT_PANIC;	// Notify inTraverse()
 			while (count--) {
 #ifdef linux
 				usleep(1000);
 #endif
 			}
-			printf("Resuming normal mode\n");
+			rtcmix_advise("sockit", "Resuming normal mode\n");
 			run_status = RT_GOOD;	// Notify inTraverse()
 		}
 		else {

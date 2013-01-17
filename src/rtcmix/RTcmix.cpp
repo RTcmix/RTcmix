@@ -38,6 +38,7 @@
 #include "maxdispargs.h"
 #include "dbug.h"
 #include "globals.h"
+#include <MMPrint.h>
 
 
 // This is declared (still) in globals.h for use in gen routines.
@@ -61,7 +62,12 @@ int				RTcmix::audioNCHANS 	= 0;
 float			RTcmix::SR				= 0.0;
 FRAMETYPE		RTcmix::bufStartSamp 	= 0;
 
-int				RTcmix::rtInteractive 	= 1; // keep the heap going for this object
+#ifdef MAXMSP
+int				RTcmix::rtInteractive = 0;
+#else
+int				RTcmix::rtInteractive = 1; // keep the heap going for this object
+#endif
+
 int				RTcmix::rtsetparams_called = 0; // will call at object instantiation, though
 int				RTcmix::audioLoopStarted = 0;
 int				RTcmix::audio_config 	= 1;
@@ -78,10 +84,6 @@ int				RTcmix::output_header_type 		= -1;
 int				RTcmix::normalize_output_floats	= 0;
 int				RTcmix::is_float_format 		= 0;
 char *			RTcmix::rtoutsfname 			= NULL;
-
-#ifdef RTUPDATE
-int			RTcmix::tags_on 	= 0;
-#endif
 
 BufPtr 		RTcmix::audioin_buffer[MAXBUS];    /* input from ADC, not file */
 BufPtr 		RTcmix::aux_buffer[MAXBUS];
@@ -150,13 +152,17 @@ RTcmix::init_globals(bool fromMain, const char *defaultDSOPath)
       Option::dsoPathPrepend(defaultDSOPath);
 
    if (fromMain) {
+#ifndef MAXMSP
       Option::readConfigFile(Option::rcName());
       Option::exitOnError(true); // we do this no matter what is in config file
+#else
+      Option::exitOnError(false);
+#endif
       rtInteractive = 0;
    }
    else {
       SR = 44100.0; // what the heck...
-      Option::print(false);
+      Option::print(0);
       Option::reportClipping(false);
    }
 
@@ -266,8 +272,10 @@ RTcmix::RTcmix(bool dummy) {}
 
 RTcmix::~RTcmix()
 {
+#ifndef MAXMSP
 	run_status = RT_SHUTDOWN;
 	waitForMainLoop();
+#endif
 	free_globals();
 }
 
@@ -466,16 +474,18 @@ RTcmix::cmdval(const char *name, int n_args, const char* p0, ...)
 
 void RTcmix::printOn()
 {
-	Option::print(true);
+	Option::print(MMP_PRINTALL);
 	Option::reportClipping(true);
 
 	/* Banner */
-	printf("--------> %s %s <--------\n", RTCMIX_NAME, RTCMIX_VERSION);
+	char tbuf[128];
+	sprintf(tbuf, "--------> %s %s <--------\n", RTCMIX_NAME, RTCMIX_VERSION);
+	rtcmix_advise(NULL, tbuf);
 }
 
 void RTcmix::printOff()
 {
-	Option::print(false);
+	Option::print(MMP_FATAL);
 	Option::reportClipping(false);
 }
 

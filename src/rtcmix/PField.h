@@ -6,9 +6,7 @@
 #ifndef _PFIELD_H_
 #define _PFIELD_H_
 
-// BGG -- for "dynamic" PField tables used with the PFSCHED/pfbus mechanism
-#define DYNTABLETOKEN 78787878.0
-
+#define DYNTABLETOKEN 0.787878    // for "dynamic" PField tables
 
 #include <RefCounted.h>
 #include <stdio.h>
