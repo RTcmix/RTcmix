@@ -14,9 +14,7 @@
 #include <rt.h>
 #include <rtdefs.h>
 #include <Option.h>
-#ifdef MAXMSP
 #include <MMPrint.h>
-#endif
 #include "CHAIN.h"
 
 
