@@ -325,7 +325,7 @@ int Option::writeConfigFile(const char *fileName)
 	fprintf(stream, "%s = %g\n", kOptionBufferFrames, bufferFrames());
 	fprintf(stream, "%s = %d\n", kOptionBufferCount, bufferCount());
 	fprintf(stream, "%s = %d\n", kOptionOSCInPort, oscInPort());
-	fprintf(stream, "%s = %s\n", kOptionPrint, print());
+	fprintf(stream, "%s = %d\n", kOptionPrint, print());
 
 	// write string options
 	fprintf(stream, "\n# String options: key = \"quoted string\"\n");
