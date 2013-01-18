@@ -28,21 +28,19 @@ RTcmix::rtgetsamps(AudioDevice *inputDevice)
 {
 	assert(Option::record() == true);
 
-#ifndef MAXSP
+#ifndef MAXMSP
 	if (inputDevice->getFrames(audioin_buffer, RTBUFSAMPS) < 0)
 	{
 		rtcmix_warn("rtgetsamps", "%s\n", inputDevice->getLastError());
 	}
 
 #else // MAXMSP
-	bsamps = bufsamps();
-	nchans = chans();
 // BGG mm
 // maxmsp_inbuf is a pointer to a max/msp buffer, passed via maxmsp_rtsetparams
-	in = maxmsp_inbuf;
+	float *in = maxmsp_inbuf;
 
-	for(i = 0; i < bsamps; i++)
-		for (j = 0; j < nchans; j++)
+	for(int i = 0; i < RTBUFSAMPS; i++)
+		for (int j = 0; j < chans(); j++)
 			audioin_buffer[j][i] = *in++ * IN_GAIN_FACTOR;
 
 	return;
