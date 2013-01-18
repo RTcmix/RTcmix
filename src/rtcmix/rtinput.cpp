@@ -153,7 +153,7 @@ extern int mm_buf_input;
 double
 RTcmix::rtinput(float p[], int n_args, double pp[])
 {
-	int            audio_in, p1_is_audioport, start_pfield, fd;
+	int            i, j, audio_in, p1_is_audioport, start_pfield, fd;
 	int            is_open, header_type, data_format, data_location, nchans;
 #ifdef INPUT_BUS_SUPPORT
 	int            startchan, endchan;
@@ -207,7 +207,6 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	}
 
 #ifdef MAXMSP
-// BGG mm ----------------------------
 // this segment is to allow rtcmix to access sample data from the
 // max/msp [buffer~] object.
 	if (strcmp(sfname, "MMBUF") == 0) {
