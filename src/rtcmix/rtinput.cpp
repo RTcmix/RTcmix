@@ -210,6 +210,8 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 // this segment is to allow rtcmix to access sample data from the
 // max/msp [buffer~] object.
 	if (strcmp(sfname, "MMBUF") == 0) {
+			int i;
+
 			str = DOUBLE_TO_STRING(pp[1]);
 			for (i = 0; i < n_mm_bufs; i++) {
 				if (strcmp(str, mm_bufs[i].name) == 0) {
