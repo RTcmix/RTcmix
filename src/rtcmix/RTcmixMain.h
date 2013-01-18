@@ -21,11 +21,7 @@ public:
 
 protected:
 	// Initialization methods.
-#ifdef MAXMSP
-	void			parseArguments(int argc, char **argv);
-#else
 	void			parseArguments(int argc, char **argv, char **env);
-#endif
 	static void		interrupt_handler(int);
 	static void		signal_handler(int);
 	static void		set_sig_handlers();

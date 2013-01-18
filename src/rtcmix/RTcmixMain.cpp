@@ -154,7 +154,12 @@ char *RTcmixMain::makeDSOPath(const char *progPath)
    return dsoPath;
 }
 
+#ifdef MAXMSP
+// BGG mm -- got rid of argc and argv for max/msp
+RTcmixMain::RTcmixMain() : RTcmix(0)
+#else
 RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
+#endif
 {
 #ifndef MAXMSP
    set_sig_handlers();
@@ -178,7 +183,7 @@ RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
 #ifdef MAXMSP
 	init_globals(true, NULL);			// 'true' indicates we were called from main
 
-	for (i = 1; i <= MAXARGS; i++) xargv[i] = NULL;
+	for (int i = 1; i <= MAXARGS; i++) xargv[i] = NULL;
 	xargc = 1;
 #else
    char *dsoPath = makeDSOPath(argv[0]);
@@ -751,9 +756,12 @@ RTcmixMain::doload(char *dsoPath)
 		return 0;
     }
 
+#ifndef MAXMSP
+// BGG -- this totally cause the maxmsp compile to stop
 	rtcmix_advise("loader", "Loaded %s functions from shared
 		library:\n\t'%s'.\n", (profileLoaded == 3) ? "standard and RT" :
 						   (profileLoaded == 2) ? "RT" : "standard", dsoPath);
+#endif
 
 	return 1;
 }
