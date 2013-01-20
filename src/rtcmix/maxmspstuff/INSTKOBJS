@@ -1,5 +1,9 @@
+#ifdef IOS
+INSTKOBJS = ../../insts/stk/MBANDEDWG/MBANDEDWG.o \
+#else
 INSTKOBJS = ../../insts/stk/stklib/stklib.a \
 ../../insts/stk/MBANDEDWG/MBANDEDWG.o \
+#endif
 ../../insts/stk/MBLOWBOTL/MBLOWBOTL.o \
 ../../insts/stk/MBLOWHOLE/MBLOWHOLE.o \
 ../../insts/stk/MBOWED/MBOWED.o \

@@ -1,5 +1,9 @@
+#ifdef IOS
+INJGOBJS = ../../insts/jg/BUTTER/BUTTER.o \
+#else
 INJGOBJS = ../../insts/jg/objlib/objlib.a \
 ../../insts/jg/BUTTER/BUTTER.o \
+#endif
 ../../insts/jg/COMPLIMIT/COMPLIMIT.o \
 ../../insts/jg/CONVOLVE1/CONVOLVE1.o \
 ../../insts/jg/DCBLOCK/DCBLOCK.o \
