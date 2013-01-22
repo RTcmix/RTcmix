@@ -2,12 +2,15 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
+#ifndef IOS
 #include <iostream>
+#endif
 #include "heap.h"
 #include "dbug.h"
 #include <rtdefs.h>
 #include <RTcmix.h>
 #include <Instrument.h>
+#include <ugens.h> // for rtcmix_warn()
 
 using namespace std;
 
@@ -65,7 +68,9 @@ void RTQueue::push(Instrument *newInst, FRAMETYPE new_chunkstart)
 #endif
     while((tempElt->chunkstart > newElt->chunkstart) && (tempElt->prev) && (i < size)){
       if (!tempElt->prev) { // BGG: we're at the head
+#ifndef IOS
           cout << "We're at the head\n";
+#endif
           break;
       }
 #ifdef DBUG
@@ -136,7 +141,7 @@ Instrument *RTQueue::pop(FRAMETYPE *pChunkstart)
   Instrument *retInst;
   tQelt = head;
   if (!head) {
-    cerr << "ERROR: attempt to pop empty RTQueue\n";
+    rtcmix_warn("rtQueue", "attempt to pop empty RTQueue\n");
     return NULL;
   }
   retInst = head->Inst;

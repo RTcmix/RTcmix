@@ -16,11 +16,19 @@
 #include <ugens.h>
 #include "Option.h"
 
+
 #ifdef MAXMSP
+
+#ifndef IOS
 extern float *maxmsp_inbuf; // set in mm_rtsetparams()
-// BGG -- for normalizing
-#define IN_GAIN_FACTOR 32768.0
-#endif
+#define IN_GAIN_FACTOR 32768.0 // BGG -- for normalizing
+
+#else // IOS
+extern short *maxmsp_inbuf; // set in mm_rtsetparams()
+#endif // IOS
+
+#endif // MAXMSP
+
 
 /* ----------------------------------------------------------- rtgetsamps --- */
 void
@@ -37,11 +45,19 @@ RTcmix::rtgetsamps(AudioDevice *inputDevice)
 #else // MAXMSP
 // BGG mm
 // maxmsp_inbuf is a pointer to a max/msp buffer, passed via maxmsp_rtsetparams
+#ifdef IOS
+	short *in = maxmsp_inbuf;
+#else
 	float *in = maxmsp_inbuf;
+#endif
 
 	for(int i = 0; i < RTBUFSAMPS; i++)
 		for (int j = 0; j < chans(); j++)
+#ifdef IOS
+			audioin_buffer[j][i] = *in++;
+#else
 			audioin_buffer[j][i] = *in++ * IN_GAIN_FACTOR;
+#endif
 
 	return;
 #endif // MAXMSP

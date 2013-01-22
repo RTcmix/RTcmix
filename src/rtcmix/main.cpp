@@ -157,11 +157,27 @@ void reset_print()
 	MMPrint::mm_print_ptr = MMPrint::mm_print_buf;
 }
 
+#ifdef IOS
+// BGG ii -- we can fill these directly in iOS, so we pass them in below
+extern short *maxmsp_outbuf; // defined in mm_rtsetparams.cpp
+extern short *maxmsp_inbuf; // defined in mm_rtsetparams.cpp
+
+void pullTraverse(short *inbuf, short *outbuf)
+{
+	maxmsp_inbuf = inbuf;
+	maxmsp_outbuf = outbuf;
+
+	app->inTraverse(NULL, NULL);
+}
+#else // not IOS
 void pullTraverse()
 {
 	app->inTraverse(NULL, NULL);
 }
+#endif // IOS
 
+
+// BGG ii -- mm_inbuf/mm_outbuf come as NULL, they are passed in pulltraverse()
 int maxmsp_rtsetparams(float sr, int nchans, int vecsize, float *mm_inbuf, float *mm_outbuf)
 {
 	int status;

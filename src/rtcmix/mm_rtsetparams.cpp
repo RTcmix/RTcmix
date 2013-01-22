@@ -6,14 +6,16 @@
 /* Originally by Brad Garton and Doug Scott (SGI code) and Dave Topper
    (Linux code). Reworked for v2.3 by John Gibson.
    Reworked to use new AudioDevice code for v3.7 by Douglas Scott.
-*/
-/*
+
    This is the max/msp version of rtsetparams which initializes
    SR, NCHANS and RTBUFSAMPS.  I'm not using rtsetparams() directly
    because I am using it as a no-op so that standard RTcmix scores
    can be read directly by the rtcmix~ object.  This is called from
 	max/msp via the maxmsp_rtsetparams() extern "C" function
 	-- BGG mm 1/2005
+
+	modified slightly for iPhone development -- BGG ii 7/2009
+	added IOS ifdefs -- BGG 1/2013
 */
 
 #include <RTcmix.h>
@@ -31,9 +33,16 @@
 
 /* #define DEBUG */
 
-// BGG mm
+#ifdef IOS
+/ BGG ii -- converted these to short pointers for direct buffer-passing
+//		declared here even though they're not used here
+short *maxmsp_outbuf;
+short *maxmsp_inbuf;
+#else
 float *maxmsp_outbuf; // written to in rtsendsamps (write_to_audio_device)
 float *maxmsp_inbuf;
+#endif // IOS
+
 
 /* ------------------------------------------------------- mm_rtsetparams --- */
 /* Minc function that sets output sampling rate (p0), maximum number of
@@ -44,6 +53,9 @@ float *maxmsp_inbuf;
 
    Based on this information, rtsetparams allocates a mono output buffer
    for each of the output channels, and opens output devices.
+
+	BGG ii -- we don't use the *mm_inbuf and *mm_outbuf params for iPhone
+		work; these are passed in through the calls to pulltraverse()
 */
 double
 RTcmix::mm_rtsetparams(float sr, int nchans, int vecsize, float *mm_inbuf, float *mm_outbuf)
@@ -61,9 +73,11 @@ RTcmix::mm_rtsetparams(float sr, int nchans, int vecsize, float *mm_inbuf, float
    SR = sr;
    NCHANS = nchans;
    RTBUFSAMPS = vecsize;
-// BGG mm
+
+#ifndef IOS
 	maxmsp_inbuf = mm_inbuf; // passed in from max/msp via maxmsp_rtsetparams()
 	maxmsp_outbuf = mm_outbuf; // passed in from max/msp via maxmsp_rtsetparams()
+#endif
 
    int numBuffers = Option::bufferCount();
 
@@ -101,8 +115,8 @@ RTcmix::mm_rtsetparams(float sr, int nchans, int vecsize, float *mm_inbuf, float
    audio_config = 1;
    pthread_mutex_unlock(&audio_config_lock);
 
-   if (verbose > MMP_PRINTALL)
-      MMPrint::mm_print_ptr += (sprintf(MMPrint::mm_print_ptr, "Audio set:  %g sampling rate, %d channels\n", SR, NCHANS)+1);
+   if (verbose >= MMP_PRINTALL)
+      rtcmix_advise(NULL, "Audio set:  %g sampling rate, %d channels\n", SR, NCHANS);
 
    /* Allocate output buffers. Do this *after* opening audio devices,
       in case OSS changes our buffer size, for example.

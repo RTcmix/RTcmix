@@ -2,8 +2,11 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
+#ifndef IOS
 #include <iostream>
+#endif
 #include "heap.h"
+#include <ugens.h> // for rtcmix_warn()
 
 using namespace std;
 
@@ -57,7 +60,7 @@ rtqueue::pop()
   heapslot *retHeap;
   tQelt = head;
   if (!head) {
-    cerr << "ERROR: attempt to pop empty rtqueue\n";
+    rtcmix_warn("heap","attempt to pop empty rtqueue\n");
     return NULL;
   }
   retHeap = head->heap;
@@ -73,7 +76,7 @@ rtqueue::popTail()
   heapslot *retHeap;
   tQelt = tail;
   if (!tail) {
-    cerr << "ERROR: attempt to popTail empty rtqueue\n";
+    rtcmix_warn("heap", "attempt to popTail empty rtqueue\n");
     return NULL;
   }
   retHeap = tail->heap;

@@ -5,7 +5,9 @@
 #include "heap.h"
 #include <lock.h>
 #include <Instrument.h>
+#ifndef IOS
 #include <iostream>
+#endif
 
 using namespace std;
 
@@ -217,10 +219,12 @@ void heapslot::dump(int indent)
   
   if (left->inst)
     left->dump(indent+1);
-  
+
+#ifndef IOS
   for (i=0; i<indent; i++)
     cout << "    ";
   cout << chunkStart << "\n";
+#endif
   
   if (right->inst)
     right->dump(indent+1);
