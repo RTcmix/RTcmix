@@ -3,7 +3,9 @@
 #if defined(MACOSX)
 
 #include "OSXAudioDevice.h"
+#ifndef IOS
 #include <CoreAudio/CoreAudio.h>
+#endif
 #include <mach/mach.h>
 #include <mach/policy.h>
 #include <pthread.h>
