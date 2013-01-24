@@ -4,6 +4,7 @@
 
 #include "OSXAudioDevice.h"
 #ifndef IOS
+// can't find this in iOS for some reason -- BGG
 #include <CoreAudio/CoreAudio.h>
 #endif
 #include <mach/mach.h>
