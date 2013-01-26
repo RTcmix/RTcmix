@@ -18,7 +18,11 @@
 #include	"FFTReal.h"
 
 #include	<cassert>
-#include	<cmath>
+#ifdef IOSDEV
+#include	<math.h>
+#else
+#include	<cmath.h>
+#endif
 
 
 
