@@ -11,7 +11,7 @@
 #include <maxdispargs.h>
 #include <Option.h>
 #include "prototypes.h"
-#include <MMprint.h>
+#include <MMPrint.h>
 
 #define ARRAY_SIZE 256
 #define NUM_ARRAYS  32

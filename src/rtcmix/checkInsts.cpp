@@ -20,7 +20,7 @@
 #include <string.h>
 #include <assert.h>
 #include <Option.h>
-#include <MMprint.h>
+#include <MMPrint.h>
 
 //#define DEBUG
 
