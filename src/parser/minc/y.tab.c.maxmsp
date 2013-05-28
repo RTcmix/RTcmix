@@ -608,6 +608,9 @@ int mm_yywrap()
 
 static void cleanup()
 {
+	// BGG mm -- for dynamic memory mgmt
+	if (mm_yy_init == 1) return; // minc_memflush() was called prior
+
 #ifdef FREE_TREES_AT_END
 	free_tree(program);
 #else
@@ -620,6 +623,27 @@ static void cleanup()
 	mm_yy_delete_buffer(mm_yy_current_buffer);
 	mm_yy_current_buffer = NULL;
 */
+}
+
+// BGG mm -- for dynamic memory mgmt (double return for UG_INTRO() macro)
+double minc_memflush()
+{
+	if (mm_yy_init == 1) return 0.0; // memory already flushed
+
+#ifdef FREE_TREES_AT_END
+   free_tree(program);
+#else
+   efree(program);
+#endif
+	free_symbols();
+
+   mm_yy_delete_buffer(mm_yy_current_buffer);
+   mm_yy_current_buffer = NULL;
+
+	mm_yy_init = 1;    /* whether we need to initialize */
+	mm_yy_start = 0;   /* start state number */
+
+	return 1.0;
 }
 
 #line 622 "y.tab.c"
@@ -693,7 +717,6 @@ mm_yyin = NULL;
     mm_yyssp = mm_yyss;
     mm_yyvsp = mm_yyvs;
     *mm_yyssp = mm_yystate = 0;
-
 mm_yyloop:
     if ((mm_yyn = mm_yydefred[mm_yystate]) != 0) goto mm_yyreduce;
     if (mm_yychar < 0)
@@ -710,6 +733,7 @@ mm_yyloop:
         }
 #endif
     }
+
     if ((mm_yyn = mm_yysindex[mm_yystate]) && (mm_yyn += mm_yychar) >= 0 &&
             mm_yyn <= YYTABLESIZE && mm_yycheck[mm_yyn] == mm_yychar)
     {
@@ -722,18 +746,21 @@ mm_yyloop:
         {
             goto mm_yyoverflow;
         }
+
         *++mm_yyssp = mm_yystate = mm_yytable[mm_yyn];
         *++mm_yyvsp = mm_yylval;
         mm_yychar = (-1);
         if (mm_yyerrflag > 0)  --mm_yyerrflag;
         goto mm_yyloop;
     }
+
     if ((mm_yyn = mm_yyrindex[mm_yystate]) && (mm_yyn += mm_yychar) >= 0 &&
             mm_yyn <= YYTABLESIZE && mm_yycheck[mm_yyn] == mm_yychar)
     {
         mm_yyn = mm_yytable[mm_yyn];
         goto mm_yyreduce;
     }
+
     if (mm_yyerrflag) goto mm_yyinrecovery;
     goto mm_yynewerror;
 mm_yynewerror:
@@ -1188,6 +1215,7 @@ break;
         if (mm_yychar == 0) goto mm_yyaccept;
         goto mm_yyloop;
     }
+
     if ((mm_yyn = mm_yygindex[mm_yym]) && (mm_yyn += mm_yystate) >= 0 &&
             mm_yyn <= YYTABLESIZE && mm_yycheck[mm_yyn] == mm_yystate)
         mm_yystate = mm_yytable[mm_yyn];
@@ -1202,6 +1230,7 @@ to state %d\n", YYPREFIX, *mm_yyssp, mm_yystate);
     {
         goto mm_yyoverflow;
     }
+
     *++mm_yyssp = mm_yystate;
     *++mm_yyvsp = mm_yyval;
     goto mm_yyloop;

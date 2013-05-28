@@ -87,6 +87,8 @@ free_symbols()
 			free(str);
 			str = next;
 		}
+// BGG why was this missing?  fixed for minc_memflush()
+		stab[s] = NULL;
 #endif
 	}
 #ifdef DEBUG
@@ -132,6 +134,7 @@ install(char *name, ScopeType scope)
    p->v.number = 0.0;
 
    DPRINT2("install ('%s') => %p\n", name, p);
+
    return p;
 }
 
