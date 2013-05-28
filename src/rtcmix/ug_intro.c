@@ -3,6 +3,9 @@
 
 extern void rt_ug_intro();
 
+// BGG mm -- for dynamic memory mgmt (in src/parser/minc/y.tab.c)
+extern double minc_memflush();
+
 void
 ug_intro()
 {
@@ -138,5 +141,6 @@ ug_intro()
 	UG_INTRO("reversegen", m_reversegen);
 	UG_INTRO("shiftgen", m_shiftgen);
 	UG_INTRO("quantizegen", m_quantizegen);
+	UG_INTRO("minc_memflush", minc_memflush);
 }
 
