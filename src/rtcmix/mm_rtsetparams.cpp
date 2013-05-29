@@ -34,7 +34,7 @@
 /* #define DEBUG */
 
 #ifdef IOS
-/ BGG ii -- converted these to short pointers for direct buffer-passing
+// BGG ii -- converted these to short pointers for direct buffer-passing
 //		declared here even though they're not used here
 short *maxmsp_outbuf;
 short *maxmsp_inbuf;
