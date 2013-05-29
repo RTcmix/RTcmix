@@ -29,7 +29,6 @@ class Ooscili
 	void init(float);
 public:
 	Ooscili(float SR, float freq, int arr);
-	Ooscili(float SR, float freq, double arr[]);
 	Ooscili(float SR, float freq, double arr[], int len);
 	float next();
 	float next(int nsample);
