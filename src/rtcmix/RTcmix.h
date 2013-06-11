@@ -21,7 +21,7 @@ class PFieldSet;
 class RTQueue;
 class heap;
 class AudioDevice;
-class Arg;
+struct Arg;
 class TaskManager;
 
 struct _handle;
@@ -29,7 +29,11 @@ typedef struct _handle *Handle;
 struct rt_item;
 struct BusQueue;
 struct CheckNode;
-struct BusSlot;
+#ifdef __cplusplus
+	class BusSlot;
+#else
+	struct BusSlot;
+#endif
 struct _func;
 struct FunctionEntry;
 struct InputState;	// part of Instrument class
