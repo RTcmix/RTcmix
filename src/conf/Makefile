@@ -21,8 +21,15 @@ YFLAGS = -t -p $(SYMPREFIX) -d #-v  # -v for conf.output file
 
 all: $(LIBCONF)
 
+ifeq ($(BUILDTYPE), STANDALONE)
 $(LIBCONF): depend $(OBJS)
 	$(LD) -r $(OBJS) -o $(LIBCONF)
+else
+$(LIBCONF): depend $(OBJS)
+	$(RM) $@
+	ar q $@ $(OBJS)
+	$(RANLIB) $@
+endif
 
 $(TEST).o: depend $(TEST).cpp
 	$(CXX) $(CXXFLAGS) -c -o $(TEST).o $(TEST).cpp
@@ -40,8 +47,13 @@ conf.tab.cpp: lex.conf.c $(YSRC)
 	@if test -f conf.ypp.tab.c; then mv conf.ypp.tab.c conf.tab.cpp; fi;
 	@if test -f conf.ypp.tab.h; then mv conf.ypp.tab.h conf.tab.hpp; fi;
 
+ifeq ($(BUILDTYPE), STANDALONE)
 depend:
 	-$(SHELL) -ec '$(CXX) -M $(CXXFLAGS) $(TEST).cpp $(SRCS)' > depend
+else
+depend:
+
+endif
 
 -include depend
 

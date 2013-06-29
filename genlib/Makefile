@@ -2,7 +2,11 @@ include ../makefile.conf
 
 INCLUDES += -I../src/include -I../src/rtcmix
 
-LIB = libgen.$(SHLIB_SUFFIX)
+ifeq ($(BUILDTYPE), STANDALONE)
+  LIB = libgen.$(SHLIB_SUFFIX)
+else
+  LIB = libgen.a
+endif
 
 CFILES = \
 allpass.c \
@@ -35,6 +39,7 @@ pitchconv.c \
 pluck.c \
 pluckset.c \
 randf.c \
+randfuncs.c \
 random.c \
 reson.c \
 resonz.c \
@@ -80,8 +85,8 @@ pitchconv.o \
 pluck.o \
 pluckset.o \
 randf.o \
-random.o \
 randfuncs.o \
+random.o \
 reson.o \
 resonz.o \
 reverb.o \
@@ -139,6 +144,10 @@ Orms.o \
 Ortgetin.o \
 Ostrum.o
 
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS))
+	FFTW_SUPPORT = FALSE
+endif
+
 ifeq ($(FFTW_SUPPORT), TRUE)
 	CXXFLAGS += $(FFTW_CFLAGS)
 else
@@ -161,9 +170,18 @@ install:	all
 uninstall:
 	$(RM) $(LIBDIR)/$(LIB)
 
+ifeq ($(BUILDTYPE), STANDALONE)
 $(LIB):	$(OBJECTS) $(OOBJECTS)
 	$(RM) $@
 	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(OBJECTS) $(OOBJECTS)
+endif
+
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS))
+$(LIB):	$(OBJECTS) $(OOBJECTS)
+	ar rv $@ $(OBJECTS) $(OOBJECTS)
+	$(RANLIB) $@
+endif
+
 
 depend:
 ifeq ($(ARCH),LINUX)

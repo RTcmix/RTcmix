@@ -19,6 +19,15 @@ CMIXDIR = @CMIXDIR@
 # site.conf, or invoke configure with the "--with-alsa" option.
 AUDIODRIVER = TRUE
 
+# for building embedded RTcmix libs.  Uncomment the one to build
+# see the README.embed file for more information
+BUILDTYPE = STANDALONE
+#BUILDTYPE = MAXMSP
+#BUILDTYPE = IOS
+# if selecting "IOS", then one of the following two has to be uncommented
+#IPHONE_TYPE = SIMULATOR
+#IPHONE_TYPE = DEVICE
+
 # Uncomment this if building a binary package.
 #PKG = TRUE
 
@@ -92,6 +101,31 @@ ifeq ($(ARCH),MACOSX)
   ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX)
   CC = cc
   CXX = c++ -Wno-deprecated
+
+  ifeq ($(BUILDTYPE), MAXMSP)
+    ARCHFLAGS = -DMACOSX -DMAXMSP -fno-common
+	 CC = i686-apple-darwin11-llvm-gcc-4.2
+	 CXX = i686-apple-darwin11-llvm-g++-4.2 -Wno-deprecated
+  endif
+
+  ifeq ($(BUILDTYPE), IOS)
+    ifeq ($(IPHONE_TYPE), SIMULATOR)
+      ARCHFLAGS = -DMACOSX -DMAXMSP -DIOS -fno-common
+      ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX) -arch i386
+      CC = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin/gcc
+      CXX = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin/g++ -Wno-deprecated
+      IPHONE_CFLAGS = -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator5.0.sdk -arch i386
+    endif
+
+    ifeq ($(IPHONE_TYPE), DEVICE)
+      ARCHFLAGS = -DMACOSX -DMAXMSP -DIOS -DIOSDEV -fno-common
+      CC = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/gcc
+      CXX = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/g++
+      IPHONE_CFLAGS = -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS6.1.sdk -arch armv7 -arch armv7s
+    endif
+
+  endif
+
   LD = ld
   MAKE = make
   INSTALL = cp -f
@@ -139,8 +173,8 @@ ifeq ($(MULTI_THREAD_SUPPORT), TRUE)
 CMIX_FLAGS += -DMULTI_THREAD
 endif
 
-CFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
-CXXFLAGS = $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
+CFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
+CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(ARCHFLAGS) $(CMIX_FLAGS)
 
 # Platform-independent library flags
 

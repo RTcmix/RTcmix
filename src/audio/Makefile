@@ -17,12 +17,17 @@ ifeq ($(ARCH),LINUX)
 	OBJECTS +=  OSSAudioDevice.o SinglePortOSSAudioDevice.o \
 			MultiPortOSSAudioDevice.o ALSAAudioDevice.o TestAudioDevice.o
 endif
+
 ifeq ($(ARCH),MACOSX)
-	OBJECTS += OSXAudioDevice.o
+   ifeq ($(BUILDTYPE), STANDALONE)
+		OBJECTS += OSXAudioDevice.o
+   endif
 endif
+
 ifeq ($(ARCH),SGI)
 	OBJECTS += SGIAudioDevice.o
 endif
+
 ifeq ($(JACK_SUPPORT), TRUE)
 	OBJECTS += JackAudioDevice.o
 	CXXFLAGS += $(JACK_CFLAGS)

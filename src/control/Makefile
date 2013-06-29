@@ -1,11 +1,19 @@
 include ../../makefile.conf
 
-DIRS = common midi mouse display datafile pfbus
+ifeq ($(BUILDTYPE), STANDALONE)
+	DIRS = common midi mouse display datafile pfbus
+else
+	DIRS = maxmsp pfbus
+endif
+
 ifeq ($(OSC_SUPPORT), TRUE)
 	DIRS += osc
 endif
 
 all: $(DIRS) $(OBJS)
+	echo $(DIRS)
+	echo $(BUILDTYPE)
+	echo $(filter $(BUILDTYPE), "MAXMSP", IOS)
 	@for DIR in $(DIRS); \
 	do \
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) all; ) \
@@ -25,11 +33,13 @@ uninstall:
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) uninstall; ) \
 	done
 
+ifeq ($(BUILDTYPE), STANDALONE)
 depend:
 	@for DIR in $(DIRS); \
 	do \
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) depend; ) \
 	done
+endif
 
 clean:
 	@for DIR in $(DIRS); \

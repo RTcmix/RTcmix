@@ -5,7 +5,11 @@
 include makefile.conf
 
 BASE = insts/base
-DIRS = include genlib src insts utils apps docs snd
+ifeq ($(BUILDTYPE), STANDALONE)
+	DIRS = include genlib src insts utils apps docs snd
+else
+	DIRS = include genlib insts src
+endif
 
 all:	install_dirs
 	@echo "making all ..."

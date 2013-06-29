@@ -97,6 +97,10 @@ connection.cpp \
 converter.cpp \
 monitor.cpp
 
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS))
+	COMMON_CPPSRCS += mm_rtsetparams.cpp rtprofile.cpp
+endif
+
 ifeq ($(MULTI_THREAD_SUPPORT), TRUE)
    COMMON_CPPSRCS += TaskManager.cpp RTThread.cpp
    CXXFLAGS += -DRT_THREAD_COUNT=$(THREAD_COUNT) 
@@ -117,7 +121,23 @@ GENOBJS = $(patsubst %.c,%.o,$(GEN_CSRCS))
 
 MIX_INST = ../../insts/base/MIX/MIX.o
 
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS))
+include maxmspstuff/INBASEOBJS
+include maxmspstuff/INSTDOBJS
+include maxmspstuff/INJGOBJS
+include maxmspstuff/INSTKOBJS
+include maxmspstuff/INMAXMSPOBJS
+include maxmspstuff/INBGGOBJS
+include maxmspstuff/INJOELOBJS
+endif
+
 COMMON_OBJS = $(CPPOBJS) $(COBJS) $(GENOBJS) heap/rtHeap.o $(MIX_INST) ../audio/audio_devices.o
+
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS))
+	COMMON_OBJS += $(INBASEOBJS) $(INSTDOBJS) $(INJGOBJS) $(INSTKOBJS) \
+		$(INMAXMSPOBJS) $(INBGGOBJS) $(INJOELOBJS)
+endif
+
 
 ifeq ($(NPLAY_SUPPORT), TRUE)
    COMMON_OBJS += setnetplay.o
@@ -133,6 +153,13 @@ LIBMINC = ../parser/minc/libminc.a
 AUDIOLIB = ../audio/librtaudio.a
 SNDLIB = ../sndlib/sndlib.a
 
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS))
+LIBINLET = ../control/maxmsp/libinlet.a
+LIBPFBUS = ../control/pfbus/libpfbus.a
+LIBJGOBJ = ../../insts/jg/objlib/objlib.a
+LIBSTK = ../../insts/stk/stklib/stklib.a
+endif
+
 # NB: these LIBS defs will be empty if the features are not configured
 AUDIOLIB += $(FFTW_LIBS) $(JACK_LIBS)
 
@@ -140,7 +167,12 @@ LIBS = $(AUDIOLIB) $(SNDLIB) $(LIBCONF)
 
 PROGS = MIX
 MAIN_OBJS = RTcmixMain.o main.o
-TARGETS = $(RTLIB) $(MAIN_OBJS) RTsockfuncs.o $(PROGS)
+
+ifeq ($(BUILDTYPE), STANDALONE)
+	TARGETS = $(RTLIB) $(MAIN_OBJS) RTsockfuncs.o $(PROGS)
+else
+	TARGETS = $(COMMON_OBJS) $(MAIN_OBJS) RTsockfuncs.o $(PROGS)
+endif
 
 PERL_CCFLAGS=
 
@@ -186,17 +218,21 @@ endif
 # This lets me compile without copying to LIBDIR
 targets: $(TARGETS)
 
-all: $(TARGETS)
-	$(INSTALL) main.o $(LIBDIR)
-	$(INSTALL) RTcmixMain.o $(LIBDIR)
-	$(INSTALL) RTsockfuncs.o $(LIBDIR)
-ifeq ($(PERL_SUPPORT), TRUE)
-	$(INSTALL) pRTcmix.o $(LIBDIR)
+ifeq ($(BUILDTYPE), STANDALONE)
+  all: $(TARGETS)
+		$(INSTALL) main.o $(LIBDIR)
+		$(INSTALL) RTcmixMain.o $(LIBDIR)
+		$(INSTALL) RTsockfuncs.o $(LIBDIR)
+  ifeq ($(PERL_SUPPORT), TRUE)
+		$(INSTALL) pRTcmix.o $(LIBDIR)
+  endif
+  ifeq ($(PYTHON_SUPPORT), TRUE)
+		$(INSTALL) pyRTcmix.o $(LIBDIR)
+  endif
+		$(INSTALL) $(RTLIB) $(LIBDIR)
+else
+  all: $(TARGETS)
 endif
-ifeq ($(PYTHON_SUPPORT), TRUE)
-	$(INSTALL) pyRTcmix.o $(LIBDIR)
-endif
-	$(INSTALL) $(RTLIB) $(LIBDIR)
 
 # rules to allow complete lib compile from this dir only
 
@@ -218,6 +254,32 @@ $(SNDLIB):
 $(AUDIOLIB):
 	(cd ../audio; $(MAKE) $(MFLAGS) all;)
 
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS))
+  $(LIBINLET):
+		(cd ../control/maxmsp; $(MAKE) $(MFLAGS) all;)
+
+  $(LIBPFBUS):
+		(cd ../control/pfbus; $(MAKE) $(MFLAGS) all;)
+
+  $(INSTDOBJS):
+		(cd ../../insts/std; $(MAKE) $(MFLAGS) all;)
+
+  $(INJGOBJS):
+		(cd ../../insts/jg; $(MAKE) $(MFLAGS) all;)
+
+  $(INSTKOBJS):
+		(cd ../../insts/stk; $(MAKE) $(MFLAGS) all;)
+
+  $(INMAXMSPOBJS):
+		(cd ../../insts/maxmsp; $(MAKE) $(MFLAGS) all;)
+
+  $(INBGGOBJS):
+		(cd ../../insts/bgg; $(MAKE) $(MFLAGS) all;)
+
+  $(INJOELOBJS):
+		(cd ../../insts/joel; $(MAKE) $(MFLAGS) all;
+endif
+
 loader.o: loader.cpp
 	$(CXX) $(CFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c loader.cpp
 
@@ -233,8 +295,10 @@ RTcmix.o: RTcmix.cpp
 intraverse.o: intraverse.cpp
 	$(CXX) $(CXXFLAGS) -DRT_THREAD_COUNT=$(THREAD_COUNT) -c intraverse.cpp
 
+ifeq ($(BUILDTYPE), STANDALONE)
 $(RTLIB): depend $(COMMON_OBJS) $(LIBMINC) $(LIBS)
 	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(COMMON_OBJS) $(LIBMINC) $(LIBS) $(SYSLIBS)
+endif
 
 MMPrint.o: MMPrint.cpp MMPrint.h
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c $< -o $@
@@ -252,10 +316,44 @@ heap/rtHeap.o:	heap/heap.o heap/queue.o
 	@echo compiling heap.
 	(cd heap; $(MAKE) $(MFLAGS) all;)
 
-# rules for three executables we build
+# BGG -- these are needed to build a static lib
+ifeq ($(BUILDTYPE), IOS)
+include iosstuff/IOSLIBOBJS
+endif
 
+# rules for three executables we build
+# ifeqs for the different shared + static libs we build
+
+ifeq ($(BUILDTYPE), STANDALONE)
 MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
 	$(CXX) $(CXXFLAGS) -o MIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) $(M_O) -L. $(LDFLAGS)
+endif
+
+ifeq ($(BUILDTYPE), MAXMSP)
+MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
+	ld $(UB_CFLAGS) -U _cpost -bundle -flat_namespace -o rtcmixdylib.so \
+	$(COMMON_OBJS) $(LIBS) $(MAIN_OBJS) $(LIBINLET) $(LIBPFBUS) $(M_O) \
+	$(LIBJGOBJ) $(LIBSTK) $(LIBMINC) \
+	-L$(LIBDIR) -lgen $(SYS_LDFLAGS)
+endif
+
+ifeq ($(BUILDTYPE), IOS)
+  ifeq ($(IPHONE_TYPE), SIMULATOR)
+	IOSLIBNAME = librtcmix_iphone-SIM.a
+  else
+	IOSLIBNAME = librtcmix_iphone-DEV.a
+  endif
+MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
+	$(RM) $(IOSLIBNAME)
+	ar rv $(IOSLIBNAME) $(CPPOBJS) $(COBJS) $(GENOBJS) $(MIX_INST) \
+	$(INBASEOBJS) $(INSTDOBJS) $(INJGOBJS) $(INSTKOBJS) $(INMAXMSPOBJS) \
+	$(INBGGOBJS) $(INJOELOBJS) ../audio/audio_devices.o \
+	$(MAIN_OBJS) $(PROFILE_O) $(M_O) \
+	$(LIBRTAUDIOOBJS) $(LIBCONFOBJS) $(LIBGENOBJS) $(LIBINLETOBJS) \
+	$(LIBPFBUSOBJS) $(LIBMINCOBJS) $(LIBOBJLIBOBJS) $(LIBRTHEAP) \
+	$(LIBSNDLIB) $(LIBSTKLIB)
+	ranlib $(IOSLIBNAME)
+endif
 
 PMIX: $(MAIN_OBJS) $(P_O) $(LIBS) $(PROFILE_O)
 ifeq ($(PERL_SUPPORT), TRUE)
@@ -276,6 +374,7 @@ endif
 .PHONY: all standalone install standalone_install \
 		uninstall standalone_uninstall clean cleanall
 
+ifeq ($(BUILDTYPE), STANDALONE)
 depend:
 ifeq ($(ARCH),SGI)
 # Note: -MM is a gcc extension. If no gcc, use -M.
@@ -286,6 +385,7 @@ else
 endif
 
 -include depend
+endif
 
 install:	standalone_install
 
@@ -315,6 +415,7 @@ standalone_uninstall:
 clean:
 	(cd heap; $(MAKE) $(MFLAGS) clean;)
 	$(RM) $(COMMON_OBJS) $(TARGETS) core
+	$(RM) rtcmixdylib.so librtcmix_iphone-SIM.a librtcmix_iphone-DEV.a
 
 cleanall: clean
 	$(RM) depend

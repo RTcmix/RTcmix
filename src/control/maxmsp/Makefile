@@ -12,8 +12,15 @@ LIBINLET = libinlet.a
 
 all: $(LIBINLET)
 
+ifeq ($(BUILDTYPE), STANDALONE)
 $(LIBINLET): $(OBJS)
 	$(LD) -r $(OBJS) -o $@
+else
+$(LIBINLET): $(OBJS)
+	$(RM) $@
+	ar q $@ $(OBJS)
+	$(RANLIB) $@
+endif
 
 inletglue.o: inletglue.cpp RTInletPField.h
 	$(CXX) $(CXXFLAGS) -c -o inletglue.o inletglue.cpp

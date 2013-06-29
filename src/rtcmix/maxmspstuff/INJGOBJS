@@ -1,4 +1,4 @@
-#ifdef IOS
+ifeq ($(BUILDTYPE), IOS)
 INJGOBJS = ../../insts/jg/BUTTER/BUTTER.o \
 ../../insts/jg/COMPLIMIT/COMPLIMIT.o \
 ../../insts/jg/CONVOLVE1/CONVOLVE1.o \
@@ -54,7 +54,8 @@ INJGOBJS = ../../insts/jg/BUTTER/BUTTER.o \
 ../../insts/jg/WAVY/WAVY.o \
 ../../insts/jg/WAVY/fparser27/fparser.o \
 ../../insts/jg/WIGGLE/WIGGLE.o
-#else
+
+else ifeq ($(BUILDTYPE), MAXMSP)
 INJGOBJS = ../../insts/jg/objlib/objlib.a \
 ../../insts/jg/BUTTER/BUTTER.o \
 ../../insts/jg/COMPLIMIT/COMPLIMIT.o \
@@ -111,4 +112,4 @@ INJGOBJS = ../../insts/jg/objlib/objlib.a \
 ../../insts/jg/WAVY/WAVY.o \
 ../../insts/jg/WAVY/fparser27/fparser.o \
 ../../insts/jg/WIGGLE/WIGGLE.o
-#endif
+endif

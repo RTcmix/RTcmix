@@ -7,8 +7,15 @@ PROG = rtHeap.o
 
 all: $(PROG)
 
+ifeq ($(BUILDTYPE), STANDALONE)
 $(PROG): $(OBJS)
 	$(LD) -r $(OBJS) -o $(PROG)
+else
+$(PROG): $(OBJS)
+	$(RM) $@
+	ar q $@ $(OBJS)
+	$(RANLIB) $@
+endif
 
 clean:
 	$(RM) $(PROG) $(OBJS) depend
@@ -24,3 +31,4 @@ ifeq ($(ARCH),SGI)
 endif
 
 -include depend
+

@@ -16,9 +16,18 @@ YFLAGS = -d #-v
 
 all: $(MINC)
 
+ifeq ($(BUILDTYPE), STANDALONE)
 $(MINC): depend $(OBJS)
 	$(LD) -r $(OBJS) -o $(MINC)
+else
+$(MINC): $(OBJS)
+	$(RM) $@
+	ar q $@ $(OBJS)
+	$(RANLIB) $@
+endif
 
+
+ifeq ($(BUILDTYPE), STANDALONE)
 lex.yy.c: $(LSRC) minc_internal.h
 	$(LEX) $(LEXFLAGS) $(LSRC)
 
@@ -29,6 +38,16 @@ depend:
 	-$(SHELL) -ec '$(CC) -M $(CFLAGS) $(SRCS)' > depend
 
 -include depend
+
+else
+lex.yy.c:
+	cp lex.yy.c.maxmsp lex.yy.c
+
+y.tab.c: lex.yy.c
+	cp y.tab.c.maxmsp y.tab.c
+	cp y.tab.h.maxmsp y.tab.h
+endif
+
 
 install: all
 uninstall:
