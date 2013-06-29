@@ -1,0 +1,87 @@
+The 'make' process for RTcmix now includes the capability to compile
+libraries for other applications and environments that can employ
+an embedded version of RTcmix as an audio/music engine.  This
+embedded version includes the Minc parser as well as all (well,
+nearly all) the RTcmix instruments and functions in this distribution.
+
+The compilation for different libraries is set by choosing the
+correct "BUILDTYPE" in the makefile.conf file (generated after
+running the ./configure process as outlined in the INSTALL document).
+The default is with the "BUILDTYPE" to "STANDALONE", which will generate
+the 'classic' command-line RTcmix running from a unix-like terminal (shell)
+window.
+
+To set up for other compiles, you will need to edit the makefile.conf file
+and change the "BUILDTYPE".  In makefile.conf, the relevant lines are:
+
+	# for building embedded RTcmix libs.  Uncomment the one to build
+	# see the README.embed file for more information
+	BUILDTYPE = STANDALONE
+	#BUILDTYPE = MAXMSP
+	#BUILDTYPE = IOS
+	# if selecting "IOS", then one of the following two has to be uncommented
+	#IPHONE_TYPE = SIMULATOR
+	#IPHONE_TYPE = DEVICE
+
+For example, to set RTcmix to compile a library for the Max/MSP [rtcmix~]
+object, comment-out the "BUILDTYPE = STANDALONE" line and uncomment the
+"BUILDTYPE = MAXMSP" line:
+
+	# for building embedded RTcmix libs.  Uncomment the BUILDTYPE to build
+	# see the README.embed file for more information
+	#BUILDTYPE = STANDALONE
+	BUILDTYPE = MAXMSP
+	#BUILDTYPE = IOS
+	# if selecting "IOS", then one of the following two has to be uncommented
+	#IPHONE_TYPE = SIMULATOR
+	#IPHONE_TYPE = DEVICE
+
+For an iOS compile, you will also have to uncomment whether you are building
+a library for the Xcode iOS simulator or the iOS device.  These two
+separate libraries can be combined (see below).
+
+Some specific information about each buildtype:
+
+
+BUILDTYPE = MAXMSP
+
+-- This will create a file, "rtcmixdylib.so" in the src/rtcmix/ directory.
+To use this loadable library, it will need to be placed into the
+RTcmix/rtcmix-dylibs/ subdirectory with the [rtcmix~] object.
+
+
+
+BUILDTYPE = IOS
+IPHONE_TYPE = SIMULATOR
+	-or-
+IPHONE_TYPE = DEVICE
+
+-- This will build a static library for use with the iOS operating system.
+You will need to specify whether you are building the library for the
+Xcode iOS simulator or for use on in iOS device (iPhone, iPad).  The
+"IPHONE_TYPE = SIMULATOR" build will create the file librtcmix_iphone-SIM.a
+in the src/rtcmix/ directory.  The "IPHONE_TYPE = DEVICE" will
+produce librtcmix_iphone-DEV.a in the same directory.  Both of these
+static libraries may be combined into one library for use in Xcode iOS
+development with the following command:
+
+lipo -create librtcmix_iphone-SIM.a librtcmix_iphone-DEV.a -output libiRTCMIX.a
+
+The resulting libiRTCMIX.a "fat" static library file will contain code with
+the proper architectures for all iOS uses.
+
+
+These libraries are also generally distributed pre-built with the
+applications they are intended to accompany ([rtcmix~], iRTcmix).  I
+could probably 'automate' the install of the libraries, but I am assuming
+that if you are building these for development you know what you are
+doing.
+
+Coming soon:  static RTcmix library for OpenFrameworks standalone
+OSX app development; rtcmixdylib.so for the Pd environment and
+the appropriate lib for Android OS development (the last two thanks
+to Joel Matthys!).  All of these are currently working separately
+but need to be joined to this build process.
+
+Brad Garton
+June, 2013
