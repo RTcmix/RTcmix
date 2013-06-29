@@ -9,9 +9,16 @@ JGNoise.o SubNoise.o SubNoiseL.o WavShape.o ZAllpass.o Equalizer.o
 
 all: objlib.a
 
+ifeq ($(BUILDTYPE), STANDALONE)
 objlib.a: $(OBJS)
 	$(RM) objlib.a
 	ld -r $(OBJS) -o objlib.a
+else
+objlib.a: $(OBJS)
+	$(RM) $@
+	ar q $@ $(OBJS)
+	$(RANLIB) $@
+endif
 
 clean:
 	$(RM) $(OBJS) objlib.a
