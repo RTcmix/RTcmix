@@ -1,0 +1,68 @@
+LIBRTAUDIOOBJS = ../audio/AudioDevice.o ../audio/AudioIODevice.o \
+../audio/AudioDeviceImpl.o ../audio/ThreadedAudioDevice.o \
+../audio/AudioOutputGroupDevice.o ../audio/DualOutputAudioDevice.o \
+../audio/AudioFileDevice.o ../audio/NetAudioDevice.o \
+../audio/audio_dev_creator.o ../audio/sndlibsupport.o
+LIBCONFOBJS = ../conf/conf.tab.o ../conf/Config.o
+LIBGENOBJS = ../../genlib/allpass.o ../../genlib/allpole.o \
+../../genlib/ampdb.o ../../genlib/ballpole.o ../../genlib/bbuzz.o \
+../../genlib/boost.o ../../genlib/boscili.o ../../genlib/bpluck.o \
+../../genlib/breson.o ../../genlib/brrand.o ../../genlib/buzz.o \
+../../genlib/comb.o ../../genlib/combset.o ../../genlib/delget.o \
+../../genlib/delput.o ../../genlib/delset.o ../../genlib/dliget.o \
+../../genlib/hcomb.o ../../genlib/hplset.o ../../genlib/hpluck.o \
+../../genlib/evp.o ../../genlib/evset.o ../../genlib/oscil.o \
+../../genlib/oscili.o ../../genlib/osciln.o ../../genlib/oscilni.o \
+../../genlib/pitchconv.o ../../genlib/pluck.o ../../genlib/pluckset.o \
+../../genlib/randf.o ../../genlib/random.o ../../genlib/reson.o \
+../../genlib/resonz.o ../../genlib/reverb.o ../../genlib/rrand.o \
+../../genlib/rsnset.o ../../genlib/rvbset.o ../../genlib/setline.o \
+../../genlib/spray.o ../../genlib/table.o ../../genlib/tablei.o \
+../../genlib/tableset.o ../../genlib/wshape.o ../../genlib/Oallpass.o \
+../../genlib/Oallpassi.o ../../genlib/Obalance.o ../../genlib/Obucket.o \
+../../genlib/Ocomb.o ../../genlib/Ocombi.o ../../genlib/Odcblock.o \
+../../genlib/Odelay.o ../../genlib/Odelayi.o ../../genlib/Odistort.o \
+../../genlib/Oequalizer.o ../../genlib/Offt.o ../../genlib/Oonepole.o \
+../../genlib/Ooscil.o ../../genlib/Ooscili.o ../../genlib/Orand.o \
+../../genlib/Oreson.o ../../genlib/Orms.o ../../genlib/Ortgetin.o \
+../../genlib/Ostrum.o ../../genlib/FFTReal.o
+LIBINLETOBJS = ../control/maxmsp/RTInletPField.o ../control/maxmsp/inletglue.o
+LIBPFBUSOBJS = ../control/pfbus/PFBusPField.o ../control/pfbus/pfbusglue.o
+LIBMINCOBJS = ../parser/minc/y.tab.o ../parser/minc/builtin.o \
+../parser/minc/callextfunc.o ../parser/minc/error.o ../parser/minc/sym.o \
+../parser/minc/trees.o ../parser/minc/utils.o ../parser/minc/handle.o
+LIBOBJLIBOBJS = ../../insts/jg/objlib/JGFilter.o \
+../../insts/jg/objlib/JGOnePole.o ../../insts/jg/objlib/TwoPole.o \
+../../insts/jg/objlib/JGOneZero.o ../../insts/jg/objlib/TwoZero.o \
+../../insts/jg/objlib/NZero.o ../../insts/jg/objlib/JGBiQuad.o \
+../../insts/jg/objlib/Butter.o ../../insts/jg/objlib/DCBlock.o \
+../../insts/jg/objlib/RMS.o ../../insts/jg/objlib/Balance.o \
+../../insts/jg/objlib/DLineN.o ../../insts/jg/objlib/DLineL.o \
+../../insts/jg/objlib/DLineA.o ../../insts/jg/objlib/Reverb.o \
+../../insts/jg/objlib/PRCRev.o ../../insts/jg/objlib/JCRev.o \
+../../insts/jg/objlib/NRev.o ../../insts/jg/objlib/Comb.o \
+../../insts/jg/objlib/ZComb.o ../../insts/jg/objlib/Notch.o \
+../../insts/jg/objlib/ZNotch.o ../../insts/jg/objlib/Allpass.o \
+../../insts/jg/objlib/Envelope.o ../../insts/jg/objlib/ADSR.o \
+../../insts/jg/objlib/Oscil.o ../../insts/jg/objlib/OscilN.o \
+../../insts/jg/objlib/OscilL.o ../../insts/jg/objlib/KOscilN.o \
+../../insts/jg/objlib/TableN.o ../../insts/jg/objlib/TableL.o \
+../../insts/jg/objlib/JGNoise.o ../../insts/jg/objlib/SubNoise.o \
+../../insts/jg/objlib/SubNoiseL.o ../../insts/jg/objlib/WavShape.o \
+../../insts/jg/objlib/ZAllpass.o ../../insts/jg/objlib/Equalizer.o
+LIBRTHEAP = ./heap/heap.o ./heap/queue.o ./heap/rtQueue.o
+LIBSNDLIB = ../sndlib/headers.o ../sndlib/io.o ../sndlib/extra.o
+LIBSTKLIB = ../../insts/stk/stklib/Brass.o ../../insts/stk/stklib/DelayA.o \
+../../insts/stk/stklib/BiQuad.o ../../insts/stk/stklib/Filter.o \
+../../insts/stk/stklib/Stk.o ../../insts/stk/stklib/PoleZero.o \
+../../insts/stk/stklib/Instrmnt.o ../../insts/stk/stklib/Delay.o \
+../../insts/stk/stklib/DelayL.o ../../insts/stk/stklib/Noise.o \
+../../insts/stk/stklib/BowTabl.o ../../insts/stk/stklib/BandedWG.o \
+../../insts/stk/stklib/JetTabl.o ../../insts/stk/stklib/BlowBotl.o \
+../../insts/stk/stklib/ReedTabl.o ../../insts/stk/stklib/OneZero.o \
+../../insts/stk/stklib/BlowHole.o ../../insts/stk/stklib/OnePole.o \
+../../insts/stk/stklib/Bowed.o ../../insts/stk/stklib/Clarinet.o \
+../../insts/stk/stklib/Flute.o ../../insts/stk/stklib/Modal.o \
+../../insts/stk/stklib/ModalBar.o ../../insts/stk/stklib/Mesh2D.o \
+../../insts/stk/stklib/Saxofony.o ../../insts/stk/stklib/Shakers.o \
+../../insts/stk/stklib/Sitar.o
