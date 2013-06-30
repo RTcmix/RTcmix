@@ -132,7 +132,11 @@ float reverb(float, float*);
 int setline(float [], short, int, double []);
 void srrand(unsigned int);
 void rvbset(float SR, float, int, float*);
+#ifdef MAXMSP
+float rtcmix_table(long, double*, float*);
+#else
 float table(long, double*, float*);
+#endif
 float tablei(long, double*, float*);
 void tableset(float SR, float, int, float*);
 float wshape(float, double*, int);
