@@ -44,8 +44,11 @@ class Instrmnt : public Stk
   //! Compute one output sample.
   virtual MY_FLOAT tick() = 0;
 
+// BGG -- for some reason the "virtual" keyword was generating a bunch of
+// annoying "hides overloaded virtual function" warns; took it out for RTcmix
   //! Computer \e vectorSize outputs and return them in \e vector.
-  virtual MY_FLOAT *tick(MY_FLOAT *vector, unsigned int vectorSize);
+//  virtual MY_FLOAT *tick(MY_FLOAT *vector, unsigned int vectorSize);
+  MY_FLOAT *tick(MY_FLOAT *vector, unsigned int vectorSize);
   
   //! Perform the control change specified by \e number and \e value (0.0 - 128.0).
   virtual void controlChange(int number, MY_FLOAT value);

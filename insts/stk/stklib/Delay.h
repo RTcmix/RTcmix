@@ -64,11 +64,14 @@ public:
   //! Return the last computed output value.
   MY_FLOAT lastOut(void) const;
 
+// BGG -- for some reason the "virtual" keyword was generating a bunch of
+// annoying "hides overloaded virtual function" warns; took it out for RTcmix
   //! Return the value which will be output by the next call to tick().
   /*!
     This method is valid only for delay settings greater than zero!
    */
-  virtual MY_FLOAT nextOut(void) const;
+//  virtual MY_FLOAT nextOut(void) const;
+  MY_FLOAT nextOut(void) const;
 
   //! Input one sample to the delay-line and return one output.
   virtual MY_FLOAT tick(MY_FLOAT sample);
