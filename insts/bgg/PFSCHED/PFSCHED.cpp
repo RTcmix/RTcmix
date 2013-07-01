@@ -36,6 +36,39 @@
 int _dispatch_table(const Arg *args, const int nargs, const int startarg, double **array, int *len);
 Handle createPFieldHandle(class PField *);
 
+// BGG -- this is from src/rtcmix/table.cpp, but renamed slightly in case
+// of static lib conflicts.  Tried an extern declaration but it didn't work
+static const char *_table_names[] = {
+   "textfile", // 0
+   "soundfile",
+   "literal",
+   "datafile",
+   "curve",    // 4
+   "expbrk",
+   "line",
+   "linebrk",
+   "spline",   // 8
+   "wave3",
+   "wave",
+   NULL,
+   NULL,       // 12
+   NULL,
+   NULL,
+   NULL,
+   NULL,       // 16
+   "cheby",
+   "line",
+   NULL,
+   "random",   // 20
+   NULL,
+   NULL,
+   NULL,
+   "line",     // 24
+   "window",
+   "linestep",
+   NULL
+};
+
 
 PFSCHED::PFSCHED() : Instrument()
 {
@@ -88,19 +121,20 @@ int PFSCHED::makedyntable()
 	// if DYNTABLETOKEN is the first value in the data, it means we need
 	// to construct a new table, based on the current pfield value
 	// and the construction data stored in the data[] array
+	// see src/rtcmix/table.cpp for the spec for the data in the data[] array
 	if ( (*PF).doubleValue(0) == DYNTABLETOKEN) {
-		nargs = (int)(*PF).doubleValue(1) + 2;
-		lenindex = 1;
-		targs[0] = "line";
-		targs[1] = (*PF).doubleValue(2);
+		nargs = (int)(*PF).doubleValue(2) + 2; // counting past targs[0] and [1]
+		targs[0] = _table_names[(int)(*PF).doubleValue(1)];
+		targs[1] = (*PF).doubleValue(3);
+		lenindex = 1; // this indexing the targs[] array for _dispatch_table()
 
 		for (i = 2; i < nargs; i++) {
 			// additional occurrences of DYNTABLETOKEN signal a 'curval', so
 			// use the current pfield value
-			if ( (*PF).doubleValue(i+1) == DYNTABLETOKEN ) {
+			if ( (*PF).doubleValue(i+2) == DYNTABLETOKEN ) {
 				targs[i] = tval;
 			} else {
-				targs[i] = (*PF).doubleValue(i+1);
+				targs[i] = (*PF).doubleValue(i+2);
 			}
 		}
 
