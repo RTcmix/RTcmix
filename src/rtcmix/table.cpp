@@ -1690,24 +1690,22 @@ maketable(const Arg args[], const int nargs)
 			else targs[j] = args[j];
 		}
 
-		if (_dispatch_table(targs, nargs, lenindex + 1, &data, &len) != 0) {
-			delete [] data;
-			return NULL;				// error message already given
-		}
 		// BGG -- pass the maketable() spec in through the data for
 		// on-the-fly construction, here's the setup:
 		// data[0] == flag for DYNTABLE
-		// data[1] == number of spec vals
-		// data[2] == table size
-		// data[3...n] == original maketable() specs for the table
+		// data[1] == table type (numeric specifier, see switch below)
+		// data[2] == number of spec vals
+		// data[3] == table size
+		// data[4...n] == original maketable() specs for the table
 
 		int nspecs = nargs-(lenindex+1);
 		data[0] = DYNTABLETOKEN;
-		data[1] = nspecs;
-		data[2] = (double)targs[lenindex];
+		data[1] = (double)_string_to_tablekind((const char *)args[0]);
+		data[2] = nspecs;
+		data[3] = (double)targs[lenindex];
 
 		for (int j = 0; j < nspecs; j++)
-			data[j+3] = (double)targs[lenindex+j+1];
+			data[j+4] = (double)targs[lenindex+j+1];
 
 		interp = kTruncate;
 	}
