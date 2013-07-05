@@ -451,7 +451,7 @@ AudioDevice *JackAudioDevice::create(const char *inputDesc,
 
 	// NB: we assume that inputDesc is the same as outputDesc
 	if (outputDesc) {
-		char *delim = strchr(outputDesc, ':');
+		const char *delim = strchr(outputDesc, ':');
 		if (delim)
 			serverName = delim + 1;
 	}
