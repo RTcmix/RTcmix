@@ -325,7 +325,7 @@ stgran(float p[], int n_args)
    if (p[57] > 0)
       srrand(p[57]);
    else
-      srrand(.3);    /* JGG: srrand takes unsigned int! */
+      srrand(3);
 
    skip = SR() / (float) resetval;               /* control rate for amp curve */
 
