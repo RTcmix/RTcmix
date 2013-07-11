@@ -499,10 +499,12 @@ m_info(float *p, int n_args)
 
 
 // BGG
-// used to check if a pfbus is connected and to link pfbusses w/ Instruments
 extern "C" {
+// used to check if a pfbus is connected and to link pfbusses w/ Instruments
 	double bus_exists(const Arg args[], const int nargs);
 	double bus_link(const Arg args[], const int nargs);
+// used to get values from makeconnection("inlet", ...) into an executing score
+	double getPFval(const Arg args[], const int nargs);
 }
 
 double bus_exists(const Arg args[], const int nargs)
@@ -527,3 +529,12 @@ double bus_link(const Arg args[], const int nargs)
 	return 1.0;
 }
 
+double getPFval(const Arg args[], const int nargs)
+{
+	PField *PF = args[0];
+	if (PF == NULL) {
+		rtcmix_warn("getPFVal", "PField is not initialized");
+		return(0.0);
+	}
+	return (PF->doubleValue());
+}
