@@ -17,7 +17,11 @@ PROGS = PLACE libPLACE.so MOVE libMOVE.so
 .PHONY: all standalone install dso_install standalone_install \
 uninstall dso_uninstall standalone_uninstall clean cleanall
 
-all: libPLACE.so libMOVE.so
+ifeq ($(BUILDTYPE), STANDALONE)
+  all: libPLACE.so libMOVE.so
+else
+  all: $(OBJS) $(MOBJS)
+endif
 
 standalone: PLACE MOVE
 

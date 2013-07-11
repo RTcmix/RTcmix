@@ -13,7 +13,11 @@ PROGS = lib$(NAME).so $(NAME) lib$(NAME2).so $(NAME2)
 .PHONY: all standalone install dso_install standalone_install \
 uninstall dso_uninstall standalone_uninstall clean cleanall
 
-all: lib$(NAME).so lib$(NAME2).so
+ifeq ($(BUILDTYPE), STANDALONE)
+  all: lib$(NAME).so lib$(NAME2).so
+else
+  all: $(OBJS) $(OBJS2)
+endif
 
 standalone: $(NAME) $(NAME2)
 

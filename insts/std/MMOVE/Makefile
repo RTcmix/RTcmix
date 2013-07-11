@@ -24,7 +24,11 @@ PROGS = MPLACE libMPLACE.so MMOVE libMMOVE.so DMOVE libDMOVE.so
 .PHONY: all standalone install dso_install standalone_install \
 uninstall dso_uninstall standalone_uninstall clean cleanall
 
-all: libMPLACE.so libMMOVE.so libDMOVE.so
+ifeq ($(BUILDTYPE), STANDALONE)
+  all: libMPLACE.so libMMOVE.so libDMOVE.so
+else
+  all: $(POBJS) $(MOBJS) $(DOBJS)
+endif
 
 standalone: MPLACE MMOVE DMOVE
 

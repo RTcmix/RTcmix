@@ -7,7 +7,11 @@ OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
 PROGS = $(NAME) lib$(NAME).so
 
-all: lib$(NAME).so
+ifeq ($(BUILDTYPE), STANDALONE)
+  all: lib$(NAME).so
+else
+  all: $(OBJS)
+endif
 
 standalone: $(NAME)
 
