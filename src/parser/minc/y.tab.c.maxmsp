@@ -708,6 +708,8 @@ thebuf = buf;
 thelen = len;
 bpointer = 0;
 mm_yyin = NULL;
+// BGG -- added to reset the line # every time a new score buffer is received 
+mm_yylineno = 1;
 
     mm_yynerrs = 0;
     mm_yyerrflag = 0;
