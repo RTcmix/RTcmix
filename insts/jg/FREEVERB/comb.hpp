@@ -27,7 +27,9 @@ private:
 	float	filterstore;
 	float	damp1;
 	float	damp2;
+#ifdef ANTI_DENORM
 	float	antidenorm;
+#endif
 	float	*buffer;
 	int		bufsize;
 	int		bufidx;

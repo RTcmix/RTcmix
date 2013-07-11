@@ -6,7 +6,11 @@
 
 #include "comb.hpp"
 
+#ifdef ANTI_DENORM
 fv_comb::fv_comb() : filterstore(0), antidenorm(1e-18f), bufidx(0)
+#else
+fv_comb::fv_comb() : filterstore(0), bufidx(0)
+#endif
 {
 }
 
