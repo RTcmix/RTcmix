@@ -80,7 +80,7 @@ sgran(float p[], int n_args)
 	if (p[37] > 0)
 		srrand(p[37]);
    else
-		srrand(.3);
+		srrand(3);
 
 	nsamps = setnote(p[0],p[1],1); /* set file position */
 
