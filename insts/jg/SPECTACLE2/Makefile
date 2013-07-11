@@ -13,7 +13,11 @@ SPECTACLE2 SPECTEQ2
 .PHONY: all standalone install dso_install standalone_install \
 uninstall dso_uninstall standalone_uninstall clean cleanall
 
-all: libSPECTACLE2.so libSPECTEQ2.so
+ifeq ($(BUILDTYPE), STANDALONE)
+  all: libSPECTACLE2.so libSPECTEQ2.so
+else
+  all: $(SPECTACLE2_OBJS) $(SPECTEQ2_OBJS)
+endif
 
 standalone: SPECTACLE2 SPECTEQ2
 

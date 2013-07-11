@@ -18,7 +18,11 @@ libFOLLOWBUTTER.so FOLLOWBUTTER
 .PHONY: all standalone install dso_install standalone_install \
 uninstall dso_uninstall standalone_uninstall clean cleanall
 
-all: libFOLLOWER.so libFOLLOWGATE.so libFOLLOWBUTTER.so
+ifeq ($(BUILDTYPE), STANDALONE)
+  all: libFOLLOWER.so libFOLLOWGATE.so libFOLLOWBUTTER.so
+else
+  all: $(FOLLOWER_OBJS) $(FOLLOWGATE_OBJS) $(FOLLOWBUTTER_OBJS)
+endif
 
 $(OBJLIB_A):
 	@( cd $(OBJLIBDIR); echo "making in objlib..."; \

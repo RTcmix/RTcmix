@@ -18,7 +18,11 @@ SPECTACLE TVSPECTACLE SPECTEQ
 .PHONY: all standalone install dso_install standalone_install \
 uninstall dso_uninstall standalone_uninstall clean cleanall
 
-all: libSPECTACLE.so libTVSPECTACLE.so libSPECTEQ.so
+ifeq ($(BUILDTYPE), STANDALONE)
+  all: libSPECTACLE.so libTVSPECTACLE.so libSPECTEQ.so
+else
+  all: $(SPECTACLE_OBJS) $(TVSPECTACLE_OBJS) $(SPECTEQ_OBJS)
+endif
 
 $(OBJLIB_A):
 	@( cd $(OBJLIBDIR); echo "making in objlib..."; \
