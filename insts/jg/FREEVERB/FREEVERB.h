@@ -3,7 +3,7 @@
 class FREEVERB : public Instrument {
    bool     warn_roomsize, warn_predelay, warn_damp, warn_dry, warn_wet,
             warn_width;
-   int      inchan, branch, insamps;
+   int      branch, insamps;
    float    amp, ringdur, roomsize, predelay_time, max_roomsize,
             damp, dry, wet, width;
    float    *in, amptabs[2];
