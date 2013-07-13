@@ -1,4 +1,4 @@
-ifeq ($(BUILDTYPE), IOS)
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), IOS OPENFRAMEWORKS))
 INJGOBJS = ../../insts/jg/BUTTER/BUTTER.o \
 ../../insts/jg/COMPLIMIT/COMPLIMIT.o \
 ../../insts/jg/CONVOLVE1/CONVOLVE1.o \

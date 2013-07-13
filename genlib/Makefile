@@ -144,7 +144,7 @@ Orms.o \
 Ortgetin.o \
 Ostrum.o
 
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD))
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD OPENFRAMEWORKS))
 	FFTW_SUPPORT = FALSE
 endif
 
@@ -176,7 +176,7 @@ $(LIB):	$(OBJECTS) $(OOBJECTS)
 	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(OBJECTS) $(OOBJECTS)
 endif
 
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD))
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD OPENFRAMEWORKS))
 $(LIB):	$(OBJECTS) $(OOBJECTS)
 	ar rv $@ $(OBJECTS) $(OOBJECTS)
 	$(RANLIB) $@

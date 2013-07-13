@@ -1,4 +1,4 @@
-ifeq ($(BUILDTYPE), IOS)
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), IOS OPENFRAMEWORKS))
 INSTKOBJS = ../../insts/stk/MBANDEDWG/MBANDEDWG.o \
 ../../insts/stk/MBLOWBOTL/MBLOWBOTL.o \
 ../../insts/stk/MBLOWHOLE/MBLOWHOLE.o \

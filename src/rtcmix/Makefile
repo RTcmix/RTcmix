@@ -97,7 +97,7 @@ connection.cpp \
 converter.cpp \
 monitor.cpp
 
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD))
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD OPENFRAMEWORKS))
 	COMMON_CPPSRCS += mm_rtsetparams.cpp rtprofile.cpp
 endif
 
@@ -121,7 +121,7 @@ GENOBJS = $(patsubst %.c,%.o,$(GEN_CSRCS))
 
 MIX_INST = ../../insts/base/MIX/MIX.o
 
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD))
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD OPENFRAMEWORKS))
 include maxmspstuff/INBASEOBJS
 include maxmspstuff/INSTDOBJS
 include maxmspstuff/INJGOBJS
@@ -133,7 +133,7 @@ endif
 
 COMMON_OBJS = $(CPPOBJS) $(COBJS) $(GENOBJS) heap/rtHeap.o $(MIX_INST) ../audio/audio_devices.o
 
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD))
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD OPENFRAMEWORKS))
 	COMMON_OBJS += $(INBASEOBJS) $(INSTDOBJS) $(INJGOBJS) $(INSTKOBJS) \
 		$(INMAXMSPOBJS) $(INBGGOBJS) $(INJOELOBJS)
 endif
@@ -153,7 +153,7 @@ LIBMINC = ../parser/minc/libminc.a
 AUDIOLIB = ../audio/librtaudio.a
 SNDLIB = ../sndlib/sndlib.a
 
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD))
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD OPENFRAMEWORKS))
 LIBINLET = ../control/maxmsp/libinlet.a
 LIBPFBUS = ../control/pfbus/libpfbus.a
 LIBJGOBJ = ../../insts/jg/objlib/objlib.a
@@ -254,7 +254,7 @@ $(SNDLIB):
 $(AUDIOLIB):
 	(cd ../audio; $(MAKE) $(MFLAGS) all;)
 
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD))
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD OPENFRAMEWORKS))
   $(LIBINLET):
 		(cd ../control/maxmsp; $(MAKE) $(MFLAGS) all;)
 
@@ -317,7 +317,7 @@ heap/rtHeap.o:	heap/heap.o heap/queue.o
 	(cd heap; $(MAKE) $(MFLAGS) all;)
 
 # BGG -- these are needed to build a static lib
-ifeq ($(BUILDTYPE), IOS)
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), IOS OPENFRAMEWORKS))
 include iosstuff/IOSLIBOBJS
 endif
 
@@ -361,6 +361,22 @@ MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
 	$(LIBPFBUSOBJS) $(LIBMINCOBJS) $(LIBOBJLIBOBJS) $(LIBRTHEAP) \
 	$(LIBSNDLIB) $(LIBSTKLIB)
 	ranlib $(IOSLIBNAME)
+endif
+
+ifeq ($(BUILDTYPE), OPENFRAMEWORKS)
+  ifeq ($(OF_TYPE), OSXAPP)
+	OFLIBNAME = librtcmix.a
+  endif
+MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
+	$(RM) $(OFLIBNAME)
+	ar rv $(OFLIBNAME) $(CPPOBJS) $(COBJS) $(GENOBJS) $(MIX_INST) \
+	$(INBASEOBJS) $(INSTDOBJS) $(INJGOBJS) $(INSTKOBJS) $(INMAXMSPOBJS) \
+	$(INBGGOBJS) $(INJOELOBJS) ../audio/audio_devices.o \
+	$(MAIN_OBJS) $(PROFILE_O) $(M_O) \
+	$(LIBRTAUDIOOBJS) $(LIBCONFOBJS) $(LIBGENOBJS) $(LIBINLETOBJS) \
+	$(LIBPFBUSOBJS) $(LIBMINCOBJS) $(LIBOBJLIBOBJS) $(LIBRTHEAP) \
+	$(LIBSNDLIB) $(LIBSTKLIB)
+	ranlib $(OFLIBNAME)
 endif
 
 PMIX: $(MAIN_OBJS) $(P_O) $(LIBS) $(PROFILE_O)
@@ -423,7 +439,7 @@ standalone_uninstall:
 clean:
 	(cd heap; $(MAKE) $(MFLAGS) clean;)
 	$(RM) $(COMMON_OBJS) $(TARGETS) core
-	$(RM) rtcmixdylib.so rtcmixdylib_osx.so librtcmix_iphone-SIM.a librtcmix_iphone-DEV.a
+	$(RM) rtcmixdylib.so rtcmixdylib_osx.so librtcmix_iphone-SIM.a librtcmix_iphone-DEV.a librtcmix.a
 
 cleanall: clean
 	$(RM) depend

@@ -203,8 +203,15 @@ RTcmix::readFromMMbuf(
 
 	k = mmbufdex * mmchans;
 	for (i = 0, j = 0; i < dest_frames; i++, j += mmchans, k += mmchans) {
+
+#ifdef OPENFRAMEWORKS
+			dest[j] = mmbufstart[k];
+			if (mmchans == 2) dest[j+1] = mmbufstart[k+1];
+#else
 			dest[j] = mmbufstart[k] * MM_IN_GAIN_FACTOR;
 			if (mmchans == 2) dest[j+1] = mmbufstart[k+1] * MM_IN_GAIN_FACTOR;
+#endif
+
 			if (++mmbufdex >= mmbufframes) {
 				mmbufdex--;
 				dest[j] = 0.0;
