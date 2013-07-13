@@ -11,9 +11,6 @@ ifeq ($(OSC_SUPPORT), TRUE)
 endif
 
 all: $(DIRS) $(OBJS)
-	echo $(DIRS)
-	echo $(BUILDTYPE)
-	echo $(filter $(BUILDTYPE), "MAXMSP", IOS)
 	@for DIR in $(DIRS); \
 	do \
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) all; ) \
