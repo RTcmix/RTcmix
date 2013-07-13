@@ -55,7 +55,7 @@ INJGOBJS = ../../insts/jg/BUTTER/BUTTER.o \
 ../../insts/jg/WAVY/fparser27/fparser.o \
 ../../insts/jg/WIGGLE/WIGGLE.o
 
-else ifeq ($(BUILDTYPE), MAXMSP)
+else ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP PD))
 INJGOBJS = ../../insts/jg/objlib/objlib.a \
 ../../insts/jg/BUTTER/BUTTER.o \
 ../../insts/jg/COMPLIMIT/COMPLIMIT.o \

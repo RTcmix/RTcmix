@@ -11,7 +11,7 @@ INSTKOBJS = ../../insts/stk/MBANDEDWG/MBANDEDWG.o \
 ../../insts/stk/MSHAKERS/MSHAKERS.o \
 ../../insts/stk/MSITAR/MSITAR.o
 
-else ifeq ($(BUILDTYPE), MAXMSP)
+else ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP PD))
 INSTKOBJS = ../../insts/stk/stklib/stklib.a \
 ../../insts/stk/MBANDEDWG/MBANDEDWG.o \
 ../../insts/stk/MBLOWBOTL/MBLOWBOTL.o \
