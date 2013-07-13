@@ -97,7 +97,7 @@ connection.cpp \
 converter.cpp \
 monitor.cpp
 
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS))
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD))
 	COMMON_CPPSRCS += mm_rtsetparams.cpp rtprofile.cpp
 endif
 
@@ -121,7 +121,7 @@ GENOBJS = $(patsubst %.c,%.o,$(GEN_CSRCS))
 
 MIX_INST = ../../insts/base/MIX/MIX.o
 
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS))
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD))
 include maxmspstuff/INBASEOBJS
 include maxmspstuff/INSTDOBJS
 include maxmspstuff/INJGOBJS
@@ -133,7 +133,7 @@ endif
 
 COMMON_OBJS = $(CPPOBJS) $(COBJS) $(GENOBJS) heap/rtHeap.o $(MIX_INST) ../audio/audio_devices.o
 
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS))
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD))
 	COMMON_OBJS += $(INBASEOBJS) $(INSTDOBJS) $(INJGOBJS) $(INSTKOBJS) \
 		$(INMAXMSPOBJS) $(INBGGOBJS) $(INJOELOBJS)
 endif
@@ -153,7 +153,7 @@ LIBMINC = ../parser/minc/libminc.a
 AUDIOLIB = ../audio/librtaudio.a
 SNDLIB = ../sndlib/sndlib.a
 
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS))
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD))
 LIBINLET = ../control/maxmsp/libinlet.a
 LIBPFBUS = ../control/pfbus/libpfbus.a
 LIBJGOBJ = ../../insts/jg/objlib/objlib.a
@@ -254,7 +254,7 @@ $(SNDLIB):
 $(AUDIOLIB):
 	(cd ../audio; $(MAKE) $(MFLAGS) all;)
 
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS))
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD))
   $(LIBINLET):
 		(cd ../control/maxmsp; $(MAKE) $(MFLAGS) all;)
 
@@ -332,6 +332,14 @@ endif
 ifeq ($(BUILDTYPE), MAXMSP)
 MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
 	ld $(UB_CFLAGS) -U _cpost -bundle -flat_namespace -o rtcmixdylib.so \
+	$(COMMON_OBJS) $(LIBS) $(MAIN_OBJS) $(LIBINLET) $(LIBPFBUS) $(M_O) \
+	$(LIBJGOBJ) $(LIBSTK) $(LIBMINC) \
+	-L$(LIBDIR) -lgen $(SYS_LDFLAGS)
+endif
+
+ifeq ($(BUILDTYPE), PD)
+MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
+	ld $(UB_CFLAGS) -U _cpost -bundle -flat_namespace -o rtcmixdylib_osx.so \
 	$(COMMON_OBJS) $(LIBS) $(MAIN_OBJS) $(LIBINLET) $(LIBPFBUS) $(M_O) \
 	$(LIBJGOBJ) $(LIBSTK) $(LIBMINC) \
 	-L$(LIBDIR) -lgen $(SYS_LDFLAGS)
@@ -415,7 +423,7 @@ standalone_uninstall:
 clean:
 	(cd heap; $(MAKE) $(MFLAGS) clean;)
 	$(RM) $(COMMON_OBJS) $(TARGETS) core
-	$(RM) rtcmixdylib.so librtcmix_iphone-SIM.a librtcmix_iphone-DEV.a
+	$(RM) rtcmixdylib.so rtcmixdylib_osx.so librtcmix_iphone-SIM.a librtcmix_iphone-DEV.a
 
 cleanall: clean
 	$(RM) depend
