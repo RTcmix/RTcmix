@@ -23,6 +23,7 @@ AUDIODRIVER = TRUE
 # see the README.embed file for more information
 BUILDTYPE = STANDALONE
 #BUILDTYPE = MAXMSP
+#BUILDTYPE = PD
 #BUILDTYPE = IOS
 # if selecting "IOS", then one of the following two has to be uncommented
 #IPHONE_TYPE = SIMULATOR
@@ -106,6 +107,12 @@ ifeq ($(ARCH),MACOSX)
     ARCHFLAGS = -DMACOSX -DMAXMSP -fno-common
 	 CC = i686-apple-darwin11-llvm-gcc-4.2
 	 CXX = i686-apple-darwin11-llvm-g++-4.2 -Wno-deprecated
+  endif
+
+  ifeq ($(BUILDTYPE), PD)
+    ARCHFLAGS = -DMACOSX -DMAXMSP -DPD -fno-common
+    CC = i686-apple-darwin11-llvm-gcc-4.2
+    CXX = i686-apple-darwin11-llvm-g++-4.2 -Wno-deprecated
   endif
 
   ifeq ($(BUILDTYPE), IOS)
