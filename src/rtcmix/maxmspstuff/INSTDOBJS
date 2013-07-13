@@ -77,4 +77,3 @@ INSTDOBJS = ../../insts/std/AM/AM.o \
 ../../insts/std/TRANSBEND/TRANSBEND.o \
 ../../insts/std/WAVESHAPE/WAVESHAPE.o
 
-
