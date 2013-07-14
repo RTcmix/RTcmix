@@ -10,7 +10,7 @@
 #include "SubNoiseL.h"
 
 
-SubNoiseL :: SubNoiseL(int subSample = 15, unsigned int aSeed = 0)
+SubNoiseL :: SubNoiseL(int subSample, unsigned int aSeed)
            : SubNoise(subSample, aSeed)
 {    
    assert(subSample > 0);

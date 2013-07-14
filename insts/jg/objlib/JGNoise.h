@@ -13,7 +13,7 @@ class JGNoise
   protected:  
     double lastOutput;
   public:
-    JGNoise(unsigned int aSeed);
+    JGNoise(unsigned int aSeed = 0);
     virtual ~JGNoise();
     void seed(unsigned int aSeed);
     double tick();

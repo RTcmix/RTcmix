@@ -18,7 +18,7 @@ class SubNoiseL : public SubNoise
     double curVal;
     double increment;
   public:
-    SubNoiseL(int subSample, unsigned int aSeed);
+    SubNoiseL(int subSample = 15, unsigned int aSeed = 0);
     ~SubNoiseL();
     double tick();
     double lastOut();

@@ -15,7 +15,7 @@
 /* <aSeed> can be any integer between 0 and UINT_MAX. If it's 0, or if
    the argument is not given, then seed taken from microsecond counter.
 */
-JGNoise :: JGNoise(unsigned int aSeed = 0)
+JGNoise :: JGNoise(unsigned int aSeed)
 {
    this->seed(aSeed);
 
