@@ -8,7 +8,7 @@ bus_config("JDELAY", "aux 0 in", "out 0", "out 1")
 rtinput("../../snd/input.wav")
 inskip = 0
 
-masteramp = 3.0
+masteramp = 2.0
 
 /* --------------------------------------------------------------- sweep1 --- */
 start = 0
