@@ -87,6 +87,7 @@ rtsetoutput.cpp \
 rtsetparams.cpp \
 rtwritesamps.cpp \
 set_option.cpp \
+sound_sample_buf_read.cpp \
 table.cpp \
 tableutils.cpp \
 modtable.cpp \
