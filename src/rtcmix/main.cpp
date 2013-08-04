@@ -177,8 +177,11 @@ void pullTraverse()
 #endif // IOS
 
 
-// BGG ii -- mm_inbuf/mm_outbuf come as NULL, they are passed in pulltraverse()
+#ifdef PD
+int pd_rtsetparams(float sr, int nchans, int vecsize, float *mm_inbuf, float *mm_outbuf)
+#else
 int maxmsp_rtsetparams(float sr, int nchans, int vecsize, float *mm_inbuf, float *mm_outbuf)
+#endif
 {
 	int status;
 
@@ -247,6 +250,94 @@ void buffer_set(char *bufname, float *bufstart, int nframes, int nchans, int mod
 		n_mm_bufs++;
 	}
 }
+
+
+#ifdef OPENFRAMEWORKS
+
+// this is used for OpenFrameworks; will read a soundfile into a named
+// buffer for use by rtinput("MMBUF", "namedbuffer")
+void OF_buffer_load_set(char *filename, char *bufname, float insk, float dur)
+{
+	int i;
+	int foundit;
+	float *bufstart; // starting pointer to buffer
+	int nframes, nchans;
+
+	if (strlen(bufname) >= MAX_MM_BUFNAME) { // defined in rtdefs.h
+		rterror("OF_buffer_set", "the bufname has to be < %d chars", MAX_MM_BUFNAME);
+		return;
+	}
+
+	// check to see if this is already set
+	foundit = 0;
+	for (i = 0; i < n_mm_bufs; i++) {
+			if (strcmp(bufname, mm_bufs[i].name) == 0) foundit = 1;
+			break;
+	}
+
+	// it's a new one
+	if (foundit == 0) {
+		if (n_mm_bufs >= MAX_MM_BUFS) {
+			rterror("OF_buffer_set", "we can only do %d buffers at present, sorry!", MAX_MM_BUFS);
+			return;
+		}
+
+		bufstart = sound_sample_buf_read(filename, (double)insk, (double)dur, &nframes, &nchans);
+		if (bufstart == NULL) {
+			rterror("OF_buffer_set", "problem reading soundfile %s into memory", filename);
+			return;
+		}
+
+		strcpy(mm_bufs[n_mm_bufs].name, bufname);
+		mm_bufs[n_mm_bufs].mm_bufstart = bufstart;
+		mm_bufs[n_mm_bufs].mm_buf_nframes = nframes;
+		mm_bufs[n_mm_bufs].mm_buf_chans = nchans;
+		mm_bufs[n_mm_bufs].mm_modtime = 0; // this isn't used in OF right now
+		n_mm_bufs++;
+	}
+}
+
+#endif // OPENFRAMEWORKS
+
+
+// returns the number of frames in a named buffer
+int mm_buf_getframes(char *bufname)
+{
+   int i;
+   int foundit;
+
+   // find the bufname
+   foundit = 0;
+   for (i = 0; i < n_mm_bufs; i++) {
+         if (strcmp(bufname, mm_bufs[i].name) == 0) foundit = 1;
+         break;
+   }
+
+	return mm_bufs[i].mm_buf_nframes;
+}
+
+
+// returns the number of channels of a named buffer
+int mm_buf_getchans(char *bufname)
+{
+   int i;
+   int foundit;
+
+   // find the bufname
+   foundit = 0;
+   for (i = 0; i < n_mm_bufs; i++) {
+         if (strcmp(bufname, mm_bufs[i].name) == 0) foundit = 1;
+         break;
+   }
+
+	if (foundit == 0) {
+		rtcmix_warn("mm_buf_getchans", "there is no buffer named %s", bufname);
+		return -1;
+	}
+
+	return mm_bufs[i].mm_buf_chans;
+}
+
 
 // called for the [flush] message; deletes and reinstantiates the rtQueue
 // and rtHeap, thus flushing all scheduled events in the future
