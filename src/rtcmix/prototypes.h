@@ -48,6 +48,9 @@ int open_sound_file(const char *funcname, const char *sfname, int *header_type,
                     int *data_format, int *data_location, double *srate,
                     int *nchans, long *nsamps);
 
+/* sound_sample_buf_read.cpp */
+float *sound_sample_buf_read(char *fname, double insk, double dur, int *nframes, int *nchans);
+
 /* audio_devices.cpp */
 void stop_audio_devices();
 void destroy_audio_devices();
