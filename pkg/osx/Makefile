@@ -17,5 +17,11 @@ intel-usersshared:
 	${packagemaker} --doc RTcmix-Intel-UsersSharedDir.pmdoc \
 		--out ~/Desktop/${namevers}-Intel.pkg
 
+intel-usrlocal:
+	$(RM) -r rtcmix
+	./prep-package $(CMIXDIR) "/usr/local/rtcmix" "Intel"
+	${packagemaker} --doc RTcmix-Intel-UsrLocalDir.pmdoc \
+		--out ~/Desktop/${namevers}-Intel.pkg
+
 clean:
 	$(RM) -r rtcmix

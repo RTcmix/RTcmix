@@ -20,8 +20,11 @@ ditto ../../docs rtcmix/docs
 if [ ${destdir} == "/Applications/rtcmix" ]
 then
 	cp README-Applications.rtf rtcmix/README.rtf
-else
+elif [ ${destdir} == "/Users/Shared/rtcmix" ]
+then
 	cp README-UsersShared.rtf rtcmix/README.rtf
+else # /usr/local/rtcmix
+	cp README-UsrLocal.rtf rtcmix/README.rtf
 fi
 cp license.txt rtcmix
 
