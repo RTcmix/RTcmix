@@ -139,13 +139,6 @@ int Option::readConfigFile(const char *fileName)
 	else if (result != kConfigNoValueForKey)
 		reportError("%s: %s.", conf.getLastErrorText(), key);
 
-	key = kOptionPrint;
-	result = conf.getValue(key, bval);
-	if (result == kConfigNoErr)
-		print(bval);
-	else if (result != kConfigNoValueForKey)
-		reportError("%s: %s.", conf.getLastErrorText(), key);
-
 	key = kOptionReportClipping;
 	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
@@ -196,6 +189,13 @@ int Option::readConfigFile(const char *fileName)
 	result = conf.getValue(key, dval);
 	if (result == kConfigNoErr)
 		bufferCount((int)dval);
+	else if (result != kConfigNoValueForKey)
+		reportError("%s: %s.", conf.getLastErrorText(), key);
+
+	key = kOptionPrint;
+	result = conf.getValue(key, dval);
+	if (result == kConfigNoErr)
+		print((int)dval);
 	else if (result != kConfigNoValueForKey)
 		reportError("%s: %s.", conf.getLastErrorText(), key);
 
