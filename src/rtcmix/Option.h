@@ -171,7 +171,6 @@ public:
 	static int oscInPort(int portnum) { _oscInPort = portnum;
 													return _oscInPort; }
 
-	// int options
 	static int print() { return _print; }
 	static int print(int setIt) { _print = setIt; return _print; }
 
@@ -228,8 +227,6 @@ private:
 	static double _bufferFrames;
 	static int _bufferCount;
 	static int _oscInPort;
-
-	// int options
 	static int _print;
 
 	// string options

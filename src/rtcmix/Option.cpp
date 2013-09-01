@@ -498,7 +498,7 @@ void Option::reportError(const char *format, const char *msg1, const char *msg2)
 
 int get_print_option()
 {
-	return (int) Option::print();
+	return Option::print();
 }
 
 char *get_dsopath_option()
@@ -508,9 +508,7 @@ char *get_dsopath_option()
 
 int get_bool_option(const char *option_name)
 {
-	if (!strcmp(option_name, kOptionPrint))
-		return (int) Option::print();
-	else if (!strcmp(option_name, kOptionReportClipping))
+	if (!strcmp(option_name, kOptionReportClipping))
 		return (int) Option::reportClipping();
 	else if (!strcmp(option_name, kOptionCheckPeaks))
 		return (int) Option::checkPeaks();
@@ -535,9 +533,7 @@ int get_bool_option(const char *option_name)
 
 void set_bool_option(const char *option_name, int value)
 {
-	if (!strcmp(option_name, kOptionPrint))
-		Option::print((int) value);
-	else if (!strcmp(option_name, kOptionReportClipping))
+	if (!strcmp(option_name, kOptionReportClipping))
 		Option::reportClipping((bool) value);
 	else if (!strcmp(option_name, kOptionCheckPeaks))
 		Option::checkPeaks((bool) value);
@@ -563,9 +559,10 @@ double get_double_option(const char *option_name)
 {
 	if (!strcmp(option_name, kOptionBufferFrames))
 		return Option::bufferFrames();
-
 	else if (!strcmp(option_name, kOptionBufferCount))
 		return Option::bufferCount();
+	else if (!strcmp(option_name, kOptionPrint))
+		return Option::print();
 
 	assert(0 && "unsupported option name");
 	return 0;
@@ -577,6 +574,8 @@ void set_double_option(const char *option_name, double value)
 		Option::bufferFrames(value);
 	else if (!strcmp(option_name, kOptionBufferCount))
 		Option::bufferCount((int)value);
+	else if (!strcmp(option_name, kOptionPrint))
+		Option::print(value);
 	else
 		assert(0 && "unsupported option name");
 }
