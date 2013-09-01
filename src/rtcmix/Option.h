@@ -94,8 +94,6 @@
 #define kOptionBufferFrames     "buffer_frames"
 #define kOptionBufferCount      "buffer_count"
 #define kOptionOSCInPort        "osc_inport"
-
-// int options
 #define kOptionPrint            "print"
 
 // string options
