@@ -960,9 +960,10 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
       allocate_aux_buffer(bus_slot->auxout[i], RTBUFSAMPS);
 
 	// We have to set these after all the above code to prevent chain assignments
-	// from generating conflicts or bus allocations.
+	// from generating conflicts or bus allocations.  Setting the auxin_count allows
+	// the instrument to pass input inspection (does not fail due to missing input or bus).
 	
-	bus_slot->in_count += chain_incount;
+	bus_slot->auxin_count += chain_incount;
 	bus_slot->out_count += chain_outcount;
 	
 #ifdef PRINTALL
