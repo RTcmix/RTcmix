@@ -98,6 +98,7 @@ public:
 	inline const BusSlot *	getBusSlot() const;
 
 	void 			schedule(heap *rtHeap);
+	void			configureEndSamp(FRAMETYPE *pStartSamp);
 	void			set_bus_config(const char *);
 	virtual int		setup(PFieldSet *);				// Called by checkInsts()
 	virtual int		init(double *, int);			// Called by setup()

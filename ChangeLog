@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2013-09-02  Douglas Scott  <netdscott-at-netscape.net>
+
+	* Split out one Instrument class method to allow CHAIN'd insts
+	  to be configured correctly.  Guess I forgot to add a change log
+	  for all the CHAIN work a few months back...
+
 2012-09-08  Douglas Scott  <netdscott-at-netscape.net>
 
 	* Reworked multi-threaded code to remove almost all the locks.  This

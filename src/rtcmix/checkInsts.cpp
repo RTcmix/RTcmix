@@ -243,6 +243,8 @@ makeinstrument(const Arg arglist[], const int nargs)
 		
 		double rv = loadPFieldsAndSetup(instName, Iptr, &arglist[1], nargs-1);
 		
+		Iptr->configureEndSamp(NULL);
+		
         if (rv == (double) DONT_SCHEDULE) {
 			Iptr->unref();
 			mixerr = MX_FAIL;

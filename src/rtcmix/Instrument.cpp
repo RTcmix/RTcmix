@@ -273,25 +273,32 @@ int Instrument::run(bool needsTo)
    return 0;
 }
 
+void Instrument::configureEndSamp(FRAMETYPE *pStartSamp)
+{
+	// Calculate variables for heap insertion
+	float start = getstart();
+	FRAMETYPE startsamp = (FRAMETYPE) (0.5 + start * SR);	// Rounded to nearest - DS
+	
+	if (RTcmix::interactive()) {
+		// Adjust start frame based on elapsed frame count
+		startsamp += RTcmix::getElapsedFrames();
+	}
+	
+	FRAMETYPE endsamp = startsamp+nSamps();
+	setendsamp(endsamp);  // used by intraverse.cpp
+	if (pStartSamp)
+		*pStartSamp = startsamp;
+}
+
 /* ------------------------------------------------------------- schedule --- */
 /* Called from checkInsts to place the instrument into the scheduler heap */
 
 void Instrument::schedule(heap *rtHeap)
 {
-  // Calculate variables for heap insertion  
-  float start = getstart();
-  FRAMETYPE startsamp = (FRAMETYPE) (0.5 + start * SR);	// Rounded to nearest - DS
-  
-  if (RTcmix::interactive()) {
-  	// Adjust start frame based on elapsed frame count
-  	startsamp += RTcmix::getElapsedFrames();
-  }
-  
-  FRAMETYPE endsamp = startsamp+nSamps();
-  setendsamp(endsamp);  // used by intraverse.cpp
-  
-  // place instrument into heap
-  rtHeap->insert(this, startsamp);
+	FRAMETYPE startsamp = 0;
+	configureEndSamp(&startsamp);
+	// place instrument into heap
+	rtHeap->insert(this, startsamp);
 }
 
 /* ----------------------------------------------------------------- exec --- */
