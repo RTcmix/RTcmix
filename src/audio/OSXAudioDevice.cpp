@@ -130,9 +130,9 @@ OSXAudioDevice::Impl::Impl()
 
 OSXAudioDevice::Impl::~Impl()
 {
-    delete [] port[REC].streamDesc;
+    delete [] (char *) port[REC].streamDesc;
 	delete [] port[REC].audioBuffer;
-	delete [] port[PLAY].streamDesc;
+	delete [] (char *) port[PLAY].streamDesc;
 	delete [] port[PLAY].audioBuffer;
 	delete [] deviceIDs;
 	delete [] deviceName;
@@ -865,7 +865,7 @@ int OSXAudioDevice::openInput()
 		return error("Can't get input device property info: ",
 					 ::errToString(err));
 	}
-	port->streamDesc = new AudioBufferList[size / (sizeof(AudioBufferList) - sizeof(UInt32))];
+	port->streamDesc = (AudioBufferList *) new char[size];
 	err = AudioDeviceGetProperty(devID, 
 								 kMasterChannel,
 								 isInput,
@@ -955,7 +955,7 @@ int OSXAudioDevice::openOutput()
 		return error("Can't get output device property info: ",
 					 ::errToString(err));
 	}
-	port->streamDesc = new AudioBufferList[size / (sizeof(AudioBufferList) - sizeof(UInt32))];
+	port->streamDesc = (AudioBufferList *) new char[size];
 	err = AudioDeviceGetProperty(devID, 
 								 kMasterChannel,
 								 isOutput,
@@ -1100,8 +1100,9 @@ int OSXAudioDevice::doStart()
 #if DEBUG > 0
     printf("OSXAudioDevice::doStart: prerolling %d slices\n", preBuffers);
 #endif
-    for (int prebuf = 1; prebuf < preBuffers; ++prebuf)
+    for (int prebuf = 1; prebuf < preBuffers; ++prebuf) {
         runCallback();
+	}
     // Start up the render thread
     _impl->startRenderThread(this);
 	OSStatus err = AudioDeviceStart(_impl->deviceID, _impl->runProcess);
@@ -1466,7 +1467,22 @@ findDeviceID(const char *devName, AudioDeviceID *devList, int devCount, Boolean 
 		return devID;
 	}
 	for (int dev = 0; dev < devCount && devID == 0; ++dev) {
-
+	/*
+	 	// In near future, switch to newer API here, like this:
+		AudioObjectPropertyAddress property_address = {
+			kAudioObjectPropertyName,                   // mSelector
+			isInput ? kAudioObjectPropertyScopeInput : kAudioObjectPropertyScopeOutput,            // mScope
+			kAudioObjectPropertyElementMaster           // mElement
+		};
+		CFStringRef theName = nil;
+		UInt32 dataSize = sizeof(property_address);
+		OSStatus err = AudioObjectGetPropertyData(devList[dev],
+												  &property_address,
+												  0,     // inQualifierDataSize
+												  NULL,  // inQualifierData
+												  &dataSize,
+												  &theName);
+	*/
 	   OSStatus err = AudioDeviceGetPropertyInfo(devList[dev],
                                             	 0,
                                             	 isInput,
@@ -1478,7 +1494,7 @@ findDeviceID(const char *devName, AudioDeviceID *devList, int devCount, Boolean 
     	  continue;
 	   }
 
-	   char *name = new char[size + 1];
+	   char *name = new char[64 + size + 1];	// XXX Dont trust property size anymore!
 	   err = AudioDeviceGetProperty(devList[dev],
                                 	0,
                                 	isInput,
