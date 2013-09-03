@@ -17,7 +17,7 @@ static float thresh, randamp, unvoiced_rate;
 static float risetime, decaytime;	// enveloping; set externally
 static bool  autoCorrect = false;	// whether to stabilize each frame as it runs
 
-static const int maxDataSets = 16;
+static const int maxDataSets = 64;
 
 #define THRESH_UNSET (-1)
 
