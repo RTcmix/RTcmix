@@ -371,15 +371,15 @@ double str_num(float p[], int n_args, double pp[])
 double m_print_is_on(float p[], int n_args)
 {
 	if (n_args > 0)
-		set_bool_option(kOptionPrint, (int)p[0]); // this does an int...
+		set_double_option(kOptionPrint, p[0]);
 	else
-		set_bool_option(kOptionPrint, MMP_PRINTALL); // BGG not really "bool" now
+		set_double_option(kOptionPrint, MMP_PRINTALL);
 	return 1.0;
 }
 
 double m_print_is_off(float p[], int n_args)
 {
-	set_bool_option(kOptionPrint, 0);
+	set_double_option(kOptionPrint, 0.0);
 	return 0.0;
 }
 
