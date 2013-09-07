@@ -156,17 +156,16 @@ Mac OS X
      http://aquaterm.sourceforge.net, and install the package.
 
      Then install gnuplot. You can build this from source (v. 4.0 or later,
-	  see below), but the easiest way is to download a binary package. One is
-	  currently available here:
+	  see below). An alternative is to use one of several third-party package
+	  managers that install various Unix programs in Mac OS X. In all cases,
+	  you install the package manager, and then give some command to install
+	  gnuplot.
 
-			http://www.miscdebris.net/upload/gnuplot-4.2.5-i386.dmg
+		a. Fink (http://www.finkproject.org) [fink install gnuplot]
 
-     An alternative, especially if you have fink installed, is to type...
+		b. MacPorts (http://www.macports.org)
 
-        fink install gnuplot
-
-	  Apparently, you also can install a gnuplot binary using the Homebrew
-	  package manager (http://brew.sh).
+		c. Homebrew (http://brew.sh)
 
      If you want or need to install gnuplot from source, get it here:
 
