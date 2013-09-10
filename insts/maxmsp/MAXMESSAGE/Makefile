@@ -2,7 +2,7 @@ include ../package.conf
 
 NAME = MAXMESSAGE
 
-CURDIR = $(CMIXDIR)/insts.maxmsp/$(NAME)
+CURDIR = $(CMIXDIR)/insts/maxmsp/$(NAME)
 OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
 PROGS = lib$(NAME).so $(NAME)
