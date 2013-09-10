@@ -69,7 +69,7 @@ use_script_file(char *fname)
       exit(1);
    }
 #endif
-   if (get_bool_option(kOptionPrint))
+	if (get_print_option() > 4)
       printf("Using file %s\n", fname);
 }
 

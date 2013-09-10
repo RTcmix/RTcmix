@@ -109,7 +109,7 @@ use_script_file(char *fname)
 		return;
 	}
 	_script_name = fname;
-	if (get_bool_option(kOptionPrint))
+	if (get_print_option() > 4)
 		printf("Using file %s\n", fname);
 }
 
