@@ -63,7 +63,6 @@ static Param _param_list[] = {
 	{ kOptionPlay, PLAY, false},
 	{ kOptionRecord, RECORD, false},
 	{ kOptionClobber, CLOBBER, false},
-	{ kOptionPrint, PRINT, false},
 	{ kOptionReportClipping, REPORT_CLIPPING, false},
 	{ kOptionCheckPeaks, CHECK_PEAKS, false},
 	{ kOptionExitOnError, EXIT_ON_ERROR, false},
@@ -74,6 +73,7 @@ static Param _param_list[] = {
 	{ kOptionBufferFrames, BUFFER_FRAMES, false},
 	{ kOptionBufferCount, BUFFER_COUNT, false},
 	{ kOptionOSCInPort, OSC_INPORT, false},
+	{ kOptionPrint, PRINT, false},
 
 	// string options
 	{ kOptionDevice, DEVICE, false},
@@ -215,10 +215,6 @@ static int _set_key_value_option(const char *key, const char *sval,
 			status = _str_to_bool(sval, bval);
 			Option::clobber(bval);
 			break;
-		case PRINT:
-			status = _str_to_int(sval, ival);
-			Option::print(ival);
-			break;
 		case REPORT_CLIPPING:
 			status = _str_to_bool(sval, bval);
 			Option::reportClipping(bval);
@@ -268,6 +264,10 @@ static int _set_key_value_option(const char *key, const char *sval,
 					return die("set_option", "\"%s\" value must be > 0", key);
 				Option::oscInPort(ival);
 			}
+			break;
+		case PRINT:
+			status = _str_to_int(sval, ival);
+			Option::print(ival);
 			break;
 
 		// string options
