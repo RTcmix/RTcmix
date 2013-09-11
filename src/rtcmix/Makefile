@@ -72,6 +72,7 @@ PFBusData.cpp \
 PField.cpp \
 PFieldSet.cpp \
 Random.cpp \
+RawDataFile.cpp \
 RefCounted.cpp \
 RTcmix.cpp \
 InputFile.cpp \

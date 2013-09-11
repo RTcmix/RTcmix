@@ -11,55 +11,17 @@
 
 
 DataFile::DataFile(const char *fileName, const int controlRate,
-		const double timeFactor)
-	: _stream(NULL), _headerbytes(0), _swap(false),
+				   const double timeFactor)
+	: RawDataFile(fileName),
+	  _headerbytes(0),
 	  _format(kDataFormatFloat), _datumsize(sizeof(float)), _fileitems(0),
 	  _controlrate(controlRate), _filerate(0), _timefactor(timeFactor),
 	  _increment(1.0), _counter(1.0), _lastval(0.0)
 {
-	_filename = strdup(fileName);
 }
 
 DataFile::~DataFile()
 {
-	closeFile();
-	delete _filename;
-}
-
-int DataFile::openFileWrite(const bool clobber)
-{
-	_stream = fopen(_filename, "w");
-	if (_stream == NULL) {
-		rterror(NULL, "Can't open data file \"%s\" for writing: %s\n",
-						_filename, strerror(errno));
-		return -1;
-	}
-	return 0;
-}
-
-int DataFile::openFileRead()
-{
-	_stream = fopen(_filename, "r");
-	if (_stream == NULL) {
-		rterror(NULL, "Can't open data file \"%s\" for reading: %s\n",
-						_filename, strerror(errno));
-		return -1;
-	}
-	return 0;
-}
-
-int DataFile::closeFile()
-{
-	int status = 0;
-	if (_stream) {
-		if (fclose(_stream) != 0) {
-			rterror(NULL, "Error closing data file \"%s\": %s\n",
-						_filename, strerror(errno));
-			status = -1;
-		}
-		_stream = NULL;
-	}
-	return status;
 }
 
 int DataFile::formatStringToCode(const char *str)
