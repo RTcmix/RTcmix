@@ -207,6 +207,11 @@ AC_ARG_WITH(multithread,
 AC_SUBST(MULTI_THREAD_SUPPORT)
 AC_SUBST(THREAD_COUNT)
 
+# Enable use of GCD on OSX versions that support it
+if test "$ARCH" = "MACOSX"; then
+   AC_CHECK_HEADER(dispatch/dispatch.h, USE_OSX_DISPATCH=TRUE, [])
+fi
+
 # Audio driver options
 AUDIODRIVER=AUTO                          # default
 WITH_ALSA="false"                         # just for summary display below
