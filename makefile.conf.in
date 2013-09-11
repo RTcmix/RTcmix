@@ -103,6 +103,9 @@ ifeq ($(ARCH),LINUX)
 endif
 ifeq ($(ARCH),MACOSX)
   ARCHFLAGS = -DMACOSX $(ARCH_BITFLAGS) -fno-common
+  ifeq ($(USE_OSX_DISPATCH), TRUE)
+  ARCHFLAGS += -DUSE_OSX_DISPATCH
+  endif
   ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX)
   CC = cc
   CXX = c++ -Wno-deprecated
