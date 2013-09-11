@@ -130,6 +130,13 @@ rterror(const char *inst_name, const char *format, ...)
       set_mm_print_ptr(nchars+1);
    }
 #endif // MAXMSP
+
+// added for exit after Minc parse errors with the option set -- BGG
+   if (get_bool_option(kOptionExitOnError)) {
+      if (!rtsetparams_was_called())
+         closesf_noexit();
+      exit(1);
+   }
 }
 
 /* ------------------------------------------------------------------ die --- */
