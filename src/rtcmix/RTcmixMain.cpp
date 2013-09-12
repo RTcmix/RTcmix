@@ -66,6 +66,7 @@ usage()
       "           --debug  enter parser debugger (Perl only)\n"
       "           -q       quiet -- suppress print to screen\n"
       "           -Q       really quiet -- not even clipping or peak stats\n"
+      "           -v NUM   set verbosity (print level 0-5)\n"
       "           -h       this help blurb\n"
       "        Other options, and arguments, passed on to parser.\n\n");
    exit(1);
@@ -218,6 +219,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
 #ifdef LINUX
    int		   priority = 0;
 #endif
+   int		   printlevel = 5;
    char        *infile;
 #ifdef NETAUDIO
    char        rhostname[60], thesocket[8];
@@ -255,14 +257,26 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
             case 'q':               /* quiet */
                Option::print(0);
                break;
+            case 'v':               /* verbosity */
+               if (++i >= argc) {
+                  fprintf(stderr, "You didn't give a print level (0-5).\n");
+                  exit(1);
+               }
+               printlevel = atoi(argv[i]);
+               if (printlevel < 0 || printlevel > 5) {
+                  fprintf(stderr, "Print level must be between 0 and 5.\n");
+                  printlevel = 5;
+               }
+			      Option::print(printlevel);
+               break;
 #ifdef LINUX
-			case 'p':
+            case 'p':
                if (++i >= argc) {
                   fprintf(stderr, "You didn't give a priority number.\n");
                   exit(1);
                }
-			   priority = atoi(argv[i]);
-			   break;
+               priority = atoi(argv[i]);
+               break;
 #endif
             case 'D':
                if (++i >= argc) {
