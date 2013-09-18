@@ -819,7 +819,7 @@ _line_table(const Arg args[], const int nargs, double *array, const int len)
 	double scaler = (double) len / (endtime - starttime);
 #endif
 	double nextval = (double) args[1];
-	double thistime = starttime;
+	double thistime = 0;
 	int i = 0;
 	for (int k = 1; k < nargs; k += 2) {
 		double nexttime;
@@ -844,6 +844,7 @@ _line_table(const Arg args[], const int nargs, double *array, const int len)
 				array[l - 1] = thisval + (nextval - thisval)
 														* (double) (l - j) / ((i - j) + 1);
 		}
+		thistime = nexttime;
 	}
 #ifdef NEWWAY
 	array[len - 1] = (double) args[nargs - 1];
@@ -1430,7 +1431,7 @@ _linestep_table(const Arg args[], const int nargs, double *array, const int len)
 		return die("maketable (linestep)", "Times must be in ascending order.");
 	double scaler = (double) (len - 1) / (endtime - starttime);
 	double nextval = (double) args[1];
-	double thistime = starttime;
+	double thistime = 0;
 	int i = 0;
 	for (int k = 1; k < nargs; k += 2) {
 		double nexttime;
@@ -1450,6 +1451,7 @@ _linestep_table(const Arg args[], const int nargs, double *array, const int len)
 			if (l <= len)
 				array[l - 1] = thisval;
 		}
+		thistime = nexttime;
 	}
 	array[len - 1] = (double) args[nargs - 1];
 
