@@ -35,9 +35,6 @@ double parse_dispatch(const char *str, double *pp, int n_args, void **inst);
 /* parseit.C */
 void *parseit(void *);
 
-/* rtdispatch.C */
-double rtdispatch(char *fname, double *pp, int n_args, void **inst);
-
 /* rtgetin.C */
 int read_samps(int fd, int data_format, int file_chans, BufPtr dest,
                                     int dest_chans, int dest_frames);
