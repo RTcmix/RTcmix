@@ -13,6 +13,8 @@
 #include "setup.h"
 #include "PVFilter.h"
 
+#undef debug
+
 #ifdef MACOSX
 	#define cosf(x) (float) cos((double)(x))
 	#define sinf(x) (float) sin((double)(x))
@@ -211,7 +213,7 @@ int PVOC::init(double *p, int n_args)
 #endif
 
 	if (I > Nw) {
-		die("PVOC", "Window size must be >= decimation factor");
+		die("PVOC", "Window size must be >= interpolation factor");
 		return(DONT_SCHEDULE);
 	}
 	TWOPI = 8.*atan(1.);

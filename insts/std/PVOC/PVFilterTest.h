@@ -3,7 +3,7 @@
 #ifndef _PV_FILTERTEST_H_
 #define _PV_FILTERTEST_H_
 
-#include <PVFilter.h>
+#include "PVFilter.h"
 
 class PVFilterTest : public PVFilter {
 public:

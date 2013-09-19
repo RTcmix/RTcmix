@@ -3,7 +3,7 @@
 #ifndef _PV_RANDBEND_H_
 #define _PV_RANDBEND_H_
 
-#include <PVFilter.h>
+#include "PVFilter.h"
 
 class PVRandBend : public PVFilter {
 public:
