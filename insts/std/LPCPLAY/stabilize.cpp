@@ -1,6 +1,6 @@
 // stabilize.C
 
-#include <Complex.h>
+#include "Complex.h"
 //#include <stream.h>
 #include "lp.h"
 
@@ -12,7 +12,7 @@ static bool isStable(float*, long);
 int
 stabilize(float *frameIn, int npoles)
 {
-	long stable=0;
+	int stable=0;
 	float frameOut[MAXFRAME];
 	for(int i=0; i<npoles; i++)
 		frameOut[i] = -frameIn[npoles+3-i];
