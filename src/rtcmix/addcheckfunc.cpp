@@ -141,7 +141,7 @@ _printargs(const char *funcname, const Arg arglist[], const int nargs)
 
    if (Option::print() >= MMP_PRINTALL) {
       RTPrintf("============================\n");
-      RTPrintf("%s:  ", funcname);
+      RTPrintfCat("%s:  ", funcname);
       for (i = 0; i < nargs; i++) {
          arglist[i].printInline(stdout);
       }

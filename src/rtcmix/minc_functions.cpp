@@ -357,7 +357,7 @@ double str_num(float p[], int n_args, double pp[])
 		name = DOUBLE_TO_STRING(pp[j]);
 		if (((j+1) < (n_args-1)) || !(n_args % 2))
 			sprintf(buf, "%g", pp[j+1]);
-		RTPrintf("%s%s", name, buf);
+		RTPrintfCat("%s%s", name, buf);
 	}
 	RTPrintf("\n");
 	return 0.0;

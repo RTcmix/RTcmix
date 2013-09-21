@@ -196,7 +196,7 @@ RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
    // Note:  What follows was done in main().  Some of it is identical
    // to RTcmix::init() for imbedded.  Factor this out.
    /* Banner */
-#if MAXMSP
+#ifdef MAXMSP
 	RTPrintf("--------> %s %s <--------\n",
 			RTCMIX_NAME, RTCMIX_VERSION);
 #else

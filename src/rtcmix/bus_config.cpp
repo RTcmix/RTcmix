@@ -122,13 +122,13 @@ strtoint(char *str, int *num)
 void
 RTcmix::print_parents() {
   int i;
-  RTPrintf("Aux buses w/o aux inputs:  ");
+  RTPrintfCat("Aux buses w/o aux inputs:  ");
   for(i=0;i<MAXBUS;i++) {
 	pthread_mutex_lock(&aux_in_use_lock);
 	if (AuxInUse[i]) {
 	  pthread_mutex_lock(&has_parent_lock);
 	  if (!HasParent[i]) {
-		RTPrintf(" %d",i);
+		RTPrintfCat(" %d",i);
 	  }
 	  pthread_mutex_unlock(&has_parent_lock);
 	}
@@ -141,13 +141,13 @@ RTcmix::print_parents() {
 void
 RTcmix::print_children() {
   int i;
-  RTPrintf("Aux buses w/o aux outputs:  "); 
+  RTPrintfCat("Aux buses w/o aux outputs:  "); 
   for(i=0;i<MAXBUS;i++) {
 	pthread_mutex_lock(&aux_in_use_lock);
 	if (AuxInUse[i]) {
 	  pthread_mutex_lock(&has_child_lock);
 	  if (!HasChild[i]) {
-		RTPrintf(" %d",i);
+		RTPrintfCat(" %d",i);
 	  }
 	  pthread_mutex_unlock(&has_child_lock);
 	}
@@ -162,18 +162,18 @@ print_bus_slot(BusSlot *bs)
 {
    int i;
 
-   RTPrintf("\n   in_count=%d :", bs->in_count);
+   RTPrintfCat("\n   in_count=%d :", bs->in_count);
    for (i = 0; i < bs->in_count; i++)
-      RTPrintf(" %d", bs->in[i]);
-   RTPrintf("\n   out_count=%d :", bs->out_count);
+      RTPrintfCat(" %d", bs->in[i]);
+   RTPrintfCat("\n   out_count=%d :", bs->out_count);
    for (i = 0; i < bs->out_count; i++)
-      RTPrintf(" %d", bs->out[i]);
-   RTPrintf("\n   auxin_count=%d :", bs->auxin_count);
+      RTPrintfCat(" %d", bs->out[i]);
+   RTPrintfCat("\n   auxin_count=%d :", bs->auxin_count);
    for (i = 0; i < bs->auxin_count; i++)
-      RTPrintf(" %d", bs->auxin[i]);
-   RTPrintf("\n   auxout_count=%d :", bs->auxout_count);
+      RTPrintfCat(" %d", bs->auxin[i]);
+   RTPrintfCat("\n   auxout_count=%d :", bs->auxout_count);
    for (i = 0; i < bs->auxout_count; i++)
-      RTPrintf(" %d", bs->auxout[i]);
+      RTPrintfCat(" %d", bs->auxout[i]);
    RTPrintf("\n");
 }
 
@@ -190,7 +190,7 @@ RTcmix::print_inst_bus_config() {
 
    while (qEntry) {
 
-	  RTPrintf("%s",qEntry->instName());
+	  RTPrintfCat("%s",qEntry->instName());
 	  check_slot = qEntry->slot;
 	  
 	  if (check_slot == NULL) {
@@ -211,11 +211,11 @@ RTcmix::print_inst_bus_config() {
 void
 RTcmix::print_play_order() {
   int i;
-  RTPrintf("Output buffer playback order:  ");
+  RTPrintfCat("Output buffer playback order:  ");
   for(i=0;i<MAXBUS;i++) {
 	pthread_mutex_lock(&aux_to_aux_lock);
 	if (AuxToAuxPlayList[i] != -1) {
-	  RTPrintf(" %d",AuxToAuxPlayList[i]);
+	  RTPrintfCat(" %d",AuxToAuxPlayList[i]);
 	}
 	pthread_mutex_unlock(&aux_to_aux_lock);
   }

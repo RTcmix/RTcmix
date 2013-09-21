@@ -17,21 +17,21 @@ void printsf(SFHEADER *sfh)
    SFMAXAMP *sfmp;
    char     timestr[MAX_TIME_CHARS];
 
-   printf("sr: %f  nchans: %d  class: %d\n",
+   RTPrintf("sr: %f  nchans: %d  class: %d\n",
           sfsrate(sfh), sfchans(sfh), sfclass(sfh));
 
    sfmp = &(sfh->sfinfo.sf_maxamp);
 
    if (sfmaxamptime(sfmp)) {
       for (n = 0; n < sfchans(sfh); n++)
-         printf("channel %d:  maxamp: %g  loc: %ld\n",
+         RTPrintf("channel %d:  maxamp: %g  loc: %ld\n",
                 n, sfmaxamp(sfmp, n), sfmaxamploc(sfmp, n));
 
       strftime(timestr, MAX_TIME_CHARS, "%a %b %d %H:%M:%S %Z %Y",
                                          localtime(&sfmaxamptime(sfmp)));
-      printf("maxamp updated: %s\n", timestr);
+      RTPrintf("maxamp updated: %s\n", timestr);
    }
    else
-      printf("(no maxamp stats)\n");
+      RTPrintf("(no maxamp stats)\n");
 }
 

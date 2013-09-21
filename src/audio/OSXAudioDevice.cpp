@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <ugens.h>
 #include <sndlibsupport.h>	// RTcmix header
 #include <RTSemaphore.h>
 
@@ -1166,7 +1167,7 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 				}
 			}
             else {
-                printf("Note:  This HW's audio format is not writable\n");
+                RTPrintf("Note:  This HW's audio format is not writable\n");
             }
             // Retrieve settings to see what we got, and compare with request.
             size = sizeof(port->deviceFormat);
@@ -1432,7 +1433,7 @@ getDeviceList(AudioDeviceID **devList, int *devCount)
                         kAudioHardwarePropertyDevices,
                         &size, NULL);
    if (err != kAudioHardwareNoError) {
-      printf("Can't get hardware device list property info.\n");
+      RTFPrintf(stderr, "Can't get hardware device list property info.\n");
       return err;
    }
    *devCount = size / sizeof(AudioDeviceID);
@@ -1441,7 +1442,7 @@ getDeviceList(AudioDeviceID **devList, int *devCount)
                         kAudioHardwarePropertyDevices,
                         &size, *devList);
    if (err != kAudioHardwareNoError) {
-      printf("Can't get hardware device list.\n");
+      RTFPrintf(stderr, "Can't get hardware device list.\n");
       return err;
    }
 
@@ -1461,7 +1462,7 @@ findDeviceID(const char *devName, AudioDeviceID *devList, int devCount, Boolean 
 							&size,
 				   			(void *) &devID);
 		if (err != kAudioHardwareNoError || devID == kAudioDeviceUnknown) {
-			fprintf(stderr, "Cannot find default OSX device: %s\n", ::errToString(err));
+			RTFPrintf(stderr, "Cannot find default OSX device: %s\n", ::errToString(err));
 			return 0;
 		}
 		return devID;
@@ -1489,7 +1490,7 @@ findDeviceID(const char *devName, AudioDeviceID *devList, int devCount, Boolean 
                                             	 kAudioDevicePropertyDeviceName,
                                             	 &size, NULL);
 	   if (err != kAudioHardwareNoError) {
-    	  fprintf(stderr, "findDeviceID: Can't get device name property info for device %u\n",
+    	  RTFPrintf(stderr, "findDeviceID: Can't get device name property info for device %u\n",
                   devList[dev]);
     	  continue;
 	   }
@@ -1501,7 +1502,7 @@ findDeviceID(const char *devName, AudioDeviceID *devList, int devCount, Boolean 
                                 	kAudioDevicePropertyDeviceName,
                                 	&size, name);
 	   if (err != kAudioHardwareNoError) {
-    	  fprintf(stderr, "findDeviceID: Can't get device name property for device %lu.\n",
+    	  RTFPrintf(stderr, "findDeviceID: Can't get device name property for device %lu.\n",
 			  	  devList[dev]);
 		  delete [] name;
     	  continue;

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "rtcmix_parse.h"
+#include <ugens.h>
 #include <Option.h>
 
 
@@ -65,12 +66,12 @@ use_script_file(char *fname)
 	// BGG mm -- we don't use this in Max/MSP, and there is no yy_in var
    yyin = fopen(fname, "r+");
    if (yyin == NULL) {
-      fprintf(stderr, "Can't open %s\n", fname);
+      RTFPrintf(stderr, "Can't open %s\n", fname);
       exit(1);
    }
 #endif
 	if (get_print_option() > 4)
-      printf("Using file %s\n", fname);
+      RTPrintf("Using file %s\n", fname);
 }
 
 

@@ -36,10 +36,10 @@ Arg::printInline(FILE *stream) const
 {
 	switch (type()) {
 	case DoubleType:
-		RTFPrintf(stream, "%g ", _val.number);
+		RTFPrintfCat(stream, "%g ", _val.number);
 		break;
 	case StringType:
-		RTFPrintf(stream, "\"%s\" ", _val.string);
+		RTFPrintfCat(stream, "\"%s\" ", _val.string);
 		break;
 	case HandleType:
 		if (_val.handle != NULL) {
@@ -50,25 +50,25 @@ Arg::printInline(FILE *stream) const
 				PField *pf = (PField *) _val.handle->ptr;
 				double start = pf->doubleValue(0);
 				double end = pf->doubleValue(1.0);
-				RTFPrintf(stream, "PF:[%g,...,%g] ", start, end);
+				RTFPrintfCat(stream, "PF:[%g,...,%g] ", start, end);
 				break;
 			}
 			case InstrumentPtrType:
-				RTFPrintf(stream, "Inst:%p ", _val.handle->ptr);
+				RTFPrintfCat(stream, "Inst:%p ", _val.handle->ptr);
 				break;
 			case AudioStreamType:
-				RTFPrintf(stream, "AudioStr:%p", _val.handle->ptr);
+				RTFPrintfCat(stream, "AudioStr:%p", _val.handle->ptr);
 				break;
 			default:
-				RTFPrintf(stream, "Unknown ");
+				RTFPrintfCat(stream, "Unknown ");
 				break;
 			}
 		}
 		else
-			RTFPrintf(stream, "NULL ");
+			RTFPrintfCat(stream, "NULL ");
 		break;
 	case ArrayType:
-		RTFPrintf(stream, "[%g,...,%g] ", _val.array->data[0],
+		RTFPrintfCat(stream, "[%g,...,%g] ", _val.array->data[0],
 				_val.array->data[_val.array->len - 1]);
 		break;
 	default:

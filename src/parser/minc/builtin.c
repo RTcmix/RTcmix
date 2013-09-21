@@ -123,29 +123,29 @@ _do_print(const MincListElem args[], const int nargs)
       switch (args[i].type) {
          case MincFloatType:
             if (i == last_arg)
-               RTPrintf("%.12g", args[i].val.number);
+               RTPrintfCat("%.12g", args[i].val.number);
             else
-               RTPrintf("%.12g, ", args[i].val.number);
+               RTPrintfCat("%.12g, ", args[i].val.number);
             break;
          case MincStringType:
             if (i == last_arg)
-               RTPrintf("\"%s\"", args[i].val.string);
+               RTPrintfCat("\"%s\"", args[i].val.string);
             else
-               RTPrintf("\"%s\", ", args[i].val.string);
+               RTPrintfCat("\"%s\", ", args[i].val.string);
             break;
          case MincHandleType:
             if (i == last_arg)
-               RTPrintf("Handle:%p", args[i].val.handle);
+               RTPrintfCat("Handle:%p", args[i].val.handle);
             else
-               RTPrintf("Handle:%p, ", args[i].val.handle);
+               RTPrintfCat("Handle:%p, ", args[i].val.handle);
             break;
          case MincListType:
-            RTPrintf("[");
+            RTPrintfCat("[");
             _do_print(args[i].val.list->data, args[i].val.list->len);
             if (i == last_arg)
-               RTPrintf("]");
+               RTPrintfCat("]");
             else
-               RTPrintf("], ");
+               RTPrintfCat("], ");
             break;
          default:
             break;
