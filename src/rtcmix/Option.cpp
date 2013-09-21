@@ -11,7 +11,7 @@
 #include "Option.h"
 #include <Config.h>
 #include <string.h>
-#include "MMPrint.h"
+#include "ugens.h"
 #ifndef MAXMSP
 #include <iostream>
 #endif
@@ -35,7 +35,7 @@ double Option::_bufferFrames = DEFAULT_BUFFER_FRAMES;
 int Option::_bufferCount = DEFAULT_BUFFER_COUNT;
 int Option::_oscInPort = DEFAULT_OSC_INPORT;
 
-// BGG see MMPrint.h for levels
+// BGG see ugens.h for levels
 #ifdef MAXMSP
 int Option::_print = MMP_RTERRORS; // basic level for max/msp
 #else
@@ -489,7 +489,7 @@ void Option::reportError(const char *format, const char *msg1, const char *msg2)
 {
 	char buf[1024];
 	snprintf(buf, 1024, format, msg1, msg2);
-	printf("Config file error:  %s\n", buf);
+	RTPrintf("Config file error:  %s\n", buf);
 }
 
 

@@ -12,7 +12,6 @@
 #include <ug_intro.h>
 #include <string.h>
 #include <Option.h>
-#include <MMPrint.h>
 
 #define WARN_DUPLICATES
 
@@ -100,7 +99,7 @@ RTcmix::addfunc(
       }
 #endif
    }
-//    printf("addfunc: Function '%s' introduced\n", this_node->func_label);
+//    RTPrintf("addfunc: Function '%s' introduced\n", this_node->func_label);
    cur_node->next = this_node;
 } 
 
@@ -141,22 +140,12 @@ _printargs(const char *funcname, const Arg arglist[], const int nargs)
    Arg arg;
 
    if (Option::print() >= MMP_PRINTALL) {
-#ifdef MAXMSP
-		MMPrint::mm_print_ptr += (sprintf(MMPrint::mm_print_ptr, "============================\n")+1);
-		MMPrint::mm_print_ptr += sprintf(MMPrint::mm_print_ptr, "%s:  ", funcname);
-		for (i = 0; i < nargs; i++) {
-			arglist[i].printInline(stdout);
-		}
-		MMPrint::mm_print_ptr += (sprintf(MMPrint::mm_print_ptr, "\n")+1);
-#else
-      printf("============================\n");
-      printf("%s:  ", funcname);
+      RTPrintf("============================\n");
+      RTPrintf("%s:  ", funcname);
       for (i = 0; i < nargs; i++) {
          arglist[i].printInline(stdout);
       }
-      putchar('\n');
-      fflush(stdout);
-#endif // MAXMSP
+      RTPrintf("\n");
    }
 }
 
@@ -293,7 +282,7 @@ RTcmix::findAndLoadFunction(const char *funcname)
 		sprintf(fullDSOPath, "%s.so", path);
 		p[0] = 0;
 		pp[0] = STRING_TO_DOUBLE(fullDSOPath);
-//        printf("findAndLoadFunction: calling load() on '%s' for function '%s'\n", fullDSOPath, funcname);
+//        RTPrintf("findAndLoadFunction: calling load() on '%s' for function '%s'\n", fullDSOPath, funcname);
 		if (m_load(p, 1, pp) == 1)
 			status = 0;
 		else
@@ -317,7 +306,7 @@ RTcmix::registerFunction(const char *funcName, const char *dsoPath)
 		FunctionEntry *newEntry = new FunctionEntry(funcName, dsoPath);
 		newEntry->next = _functionRegistry;
 		_functionRegistry = newEntry;
-		printf("RTcmix::registerFunction: registered function '%s' for dso '%s'\n", 
+		RTPrintf("RTcmix::registerFunction: registered function '%s' for dso '%s'\n",
 				funcName, dsoPath);
 		return 0;
 	}
@@ -366,10 +355,10 @@ RTcmix::registerDSOs(const char *pathList)
 					DynamicLib dso;
 					if (dso.load(fullPath) == 0) {
 						RegisterFunction registerMe = NULL;
-//						printf("opened DSO '%s'\n", fullPath);
+//						RTPrintf("opened DSO '%s'\n", fullPath);
 						if (dso.loadFunction(&registerMe, "registerSelf") == 0)
 						{
-//							printf("\tcalling register function.\n");
+//							RTPrintf("\tcalling register function.\n");
 							(*registerMe)();
 						}
 						dso.unload();

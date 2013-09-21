@@ -75,7 +75,7 @@ double m_load(float *p, int n_args, double *pp)
       profileLoaded++;
       (*profileFun)();
 #ifdef DBUG
-      printf("Loaded standard profile\n");
+      RTPrintf("Loaded standard profile\n");
 #endif
     }
 
@@ -88,7 +88,7 @@ double m_load(float *p, int n_args, double *pp)
       profileLoaded += 2; 
       (*profileFun)(); 
 #ifdef DBUG
-      printf("Loaded RT profile\n"); 
+      RTPrintf("Loaded RT profile\n"); 
 #endif
      } 
 
@@ -99,7 +99,7 @@ double m_load(float *p, int n_args, double *pp)
     }
 
     if (get_print_option()) {
-		printf("Loaded %s functions from shared library:\n\t'%s'.\n",
+		RTPrintf("Loaded %s functions from shared library:\n\t'%s'.\n",
 			  (profileLoaded == 3) ? "standard and RT" :
 							   (profileLoaded == 2) ? "RT" : "standard",
 			  dsoPath);

@@ -46,20 +46,11 @@ int  CHAIN::setup(PFieldSet *inPFields)
 	}
 	if (Option::print() >= MMP_PRINTALL) {
 
-#ifdef MAXMSP
-		MMPrint::mm_print_ptr += sprintf(MMPrint::mm_print_ptr, "Instrument chain: ");
+		RTPrintf("Instrument chain: ");
 		for (std::vector<Instrument *>::iterator it = mInstVector.begin(); it != mInstVector.end(); ++it) {
-			MMPrint::mm_print_ptr += sprintf(MMPrint::mm_print_ptr, "%s -> ", (*it)->name());
+			RTPrintf("%s -> ", (*it)->name());
 		}
-		MMPrint::mm_print_ptr += sprintf(MMPrint::mm_print_ptr, "Out\n")+1;
-#else
-
-		printf("Instrument chain: ");
-		for (std::vector<Instrument *>::iterator it = mInstVector.begin(); it != mInstVector.end(); ++it) {
-			printf("%s -> ", (*it)->name());
-		}
-		printf("Out\n");
-#endif
+		RTPrintf("Out\n");
 	}
 	delete inPFields;
 	return Instrument::setup(newSet);

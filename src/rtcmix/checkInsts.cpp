@@ -20,7 +20,6 @@
 #include <string.h>
 #include <assert.h>
 #include <Option.h>
-#include <MMPrint.h>
 
 //#define DEBUG
 
@@ -31,22 +30,12 @@ printargs(const char *instname, const Arg arglist[], const int nargs)
    Arg arg;
 
    if (Option::print() >= MMP_PRINTALL) {
-#ifdef MAXMSP
-		MMPrint::mm_print_ptr += sprintf(MMPrint::mm_print_ptr, "========<rt-queueing>=======\n")+1;
-		MMPrint::mm_print_ptr += sprintf(MMPrint::mm_print_ptr, "%s:  ", instname);
-		for (i = 0; i < nargs; i++) {
-			arglist[i].printInline(stdout);
-		}
-		MMPrint::mm_print_ptr += sprintf(MMPrint::mm_print_ptr, "\n")+1;
-#else
-      printf("========<rt-queueing>=======\n");
-      printf("%s:  ", instname);
+      RTPrintf("========<rt-queueing>=======\n");
+      RTPrintf("%s:  ", instname);
       for (i = 0; i < nargs; i++) {
          arglist[i].printInline(stdout);
       }
-      putchar('\n');
-      fflush(stdout);
-#endif
+      RTPrintf("\n");
    }
 }
 
@@ -133,7 +122,7 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 	Instrument *Iptr = NULL;;
 
 #ifdef DEBUG
-   printf("ENTERING checkInsts() FUNCTION -----\n");
+   RTPrintf("ENTERING checkInsts() FUNCTION -----\n");
 #endif
 
 #ifndef MAXMSP
@@ -191,7 +180,7 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 		// Create Handle for Iptr on return
 		*retval = createInstHandle(Iptr);
 #ifdef DEBUG
-		 printf("EXITING checkInsts() FUNCTION -----\n");
+		 RTPrintf("EXITING checkInsts() FUNCTION -----\n");
 #endif
 		 return rv;
 	}

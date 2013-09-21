@@ -43,6 +43,9 @@ typedef enum {
 
 #ifdef MACOSX
 
+#if MAXMSP
+typedef int AtomicInt;
+#else
 #include <libkern/OSAtomic.h>
 
 class AtomicInt
@@ -57,6 +60,7 @@ public:
     int operator = (int rhs) { return (val = rhs); }
     
 };
+#endif	// !MAXMSP
 
 #elif defined(LINUX)
 

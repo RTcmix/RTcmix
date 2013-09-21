@@ -29,9 +29,9 @@ fdump(float p[], short n_args, double pp[])
    array = floc(genslot);
    if (array) {
       int i, len = fsize(genslot);
-      printf("Dumping function table %d...\n", genslot);
+      RTPrintf("Dumping function table %d...\n", genslot);
       for (i = 0; i < len; i++)
-         fprintf(f, "%d %.6f\n", i, array[i]);
+         RTFPrintf(f, "%d %.6f\n", i, array[i]);
    }
    else
       die(NULL, "You must make a gen before dumping it!");

@@ -19,7 +19,6 @@
 #include <sndlibsupport.h>
 #include <rtdefs.h>
 #include <Option.h>
-#include <MMPrint.h>
 #include "audio_devices.h"
 #include "InputFile.h"
 #ifdef LINUX

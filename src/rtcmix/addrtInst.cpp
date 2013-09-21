@@ -31,27 +31,27 @@ RTcmix::addrtInst(rt_item *rt_p)
 {
 	rt_item *rt_tail;
 
-	// printf("ENTERING addrtInst() FUNCTION -----\n");
+	// RTPrintf("ENTERING addrtInst() FUNCTION -----\n");
 	/*  Seek end of rt_list	*/
 	rt_tail = rt_list;
 	
 	if (!rt_tail) { // first one on the list
 	  rt_list = rt_p;
 	  rt_p->rt_next = NULL;
-	  // printf("EXITING addrtInst() FUNCTION (0)-----\n");
+	  // RTPrintf("EXITING addrtInst() FUNCTION (0)-----\n");
 	  return 0;
 	}
 	for (rt_tail=rt_list; rt_tail->rt_next; rt_tail=rt_tail->rt_next)
 	{
 		if (!strcmp((char *)rt_tail,rt_p->rt_name))	{
 			mixerr = MX_FEXIST;
-			// printf("EXITING addrtInst() FUNCTION (MX_FEXIST)-----\n");
+			// RTPrintf("EXITING addrtInst() FUNCTION (MX_FEXIST)-----\n");
 			return (-1);
 		}
 	}
 	rt_tail->rt_next = rt_p;
 	rt_p->rt_next = NULL;
-	// printf("EXITING addrtInst() FUNCTION (0)-----\n");
+	// RTPrintf("EXITING addrtInst() FUNCTION (0)-----\n");
 	return (0);
 }
 

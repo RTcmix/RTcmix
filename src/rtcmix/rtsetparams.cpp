@@ -19,7 +19,6 @@
 #include <Option.h>
 #include "rtdefs.h"
 #include "InputFile.h"
-#include <MMPrint.h>
 
 /* #define DEBUG */
 

@@ -153,10 +153,10 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	short bus_q_offset = 0;
 
 #ifdef WBUG
-	printf("ENTERING inTraverse()\n");
+	RTPrintf("ENTERING inTraverse()\n");
 #endif
 #ifdef DBUG	  
-	printf("Entering big loop .....................\n");
+	RTPrintf("Entering big loop .....................\n");
 #endif
 
 #ifdef MAXMSP

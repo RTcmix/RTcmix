@@ -21,7 +21,6 @@
 #include "../parser/rtcmix_parse.h"
 #include <sockdefs.h>
 #include <limits.h>
-#include <MMPrint.h>
 #include "heap.h"
 
 using namespace std;
@@ -197,11 +196,12 @@ RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
    // Note:  What follows was done in main().  Some of it is identical
    // to RTcmix::init() for imbedded.  Factor this out.
    /* Banner */
-#ifdef MAXMSP
-	MMPrint::mm_print_ptr += (sprintf(MMPrint::mm_print_ptr, "--------> %s %s <--------\n", RTCMIX_NAME, RTCMIX_VERSION)+1);
+#if MAXMSP
+	RTPrintf("--------> %s %s <--------\n",
+			RTCMIX_NAME, RTCMIX_VERSION);
 #else
-   if (Option::print())
-      printf("--------> %s %s (%s) <--------\n",
+	if (Option::print())
+	   RTPrintf("--------> %s %s (%s) <--------\n",
              RTCMIX_NAME, RTCMIX_VERSION, argv[0]);
 #endif
 

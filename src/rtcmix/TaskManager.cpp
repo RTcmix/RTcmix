@@ -140,7 +140,12 @@ void ThreadPool::notify(int inIndex)
 #ifdef POOL_DEBUG
 	printf("ThreadPool notified for index %d\n", inIndex);
 #endif
-	if (mRequestCount.decrementAndTest()) {
+#if MAXMSP
+	if (--mRequestCount == 0) 
+#else
+	if (mRequestCount.decrementAndTest())
+#endif
+	{
 #if defined(POOL_DEBUG) || defined(THREAD_DEBUG)
 		printf("ThreadPool posting to wait semaphore\n");
 #endif

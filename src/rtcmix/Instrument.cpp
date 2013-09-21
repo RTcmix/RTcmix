@@ -29,12 +29,10 @@
 
 using namespace std;
 
+InputState::InputState()
+: fdIndex(NO_DEVICE_FDINDEX), fileOffset(0), inputsr(0.0), inputchans(0)
 #ifdef MAXMSP
-InputState::InputState()
-   : fdIndex(NO_DEVICE_FDINDEX), fileOffset(0), inputsr(0.0), inputchans(0), my_mm_buf(NULL)
-#else
-InputState::InputState()
-	: fdIndex(NO_DEVICE_FDINDEX), fileOffset(0), inputsr(0.0), inputchans(0)
+, my_mm_buf(NULL)
 #endif
 {
 }
@@ -206,11 +204,8 @@ double Instrument::update(int index, int totframes)
 
 int Instrument::init(double p[], int n_args)
 {
-#ifndef MAXMSP
-   cout << "You haven't defined an init member of your Instrument class!"
-                                                                 << endl;
-#endif
-   return -1;
+	rtcmix_warn(name(), "You haven't defined an init() member for this class!");
+	return -1;
 }
 
 /* ----------------------------------------------------- configure(int) --- */
@@ -406,7 +401,7 @@ void Instrument::addout(BusType bus_type, int bus)
 
 		// Add outbuf to appropriate bus at offset
 #ifdef DEBUG
-		printf("%s::addout(this=%p %d, %d): doing normal addToBus\n", name(), this, (int)bus_type, bus);
+		RTPrintf("%s::addout(this=%p %d, %d): doing normal addToBus\n", name(), this, (int)bus_type, bus);
 #endif
 		RTcmix::addToBus(bus_type, bus,
 						 &outbuf[src_chan], output_offset,
@@ -418,7 +413,7 @@ void Instrument::addout(BusType bus_type, int bus)
 	}
 #ifdef DEBUG
 	else {
-		printf("%s::addout(this=%p %d, %d): NO-OP\n", name(), this, (int)bus_type, bus);
+		RTPrintf("%s::addout(this=%p %d, %d): NO-OP\n", name(), this, (int)bus_type, bus);
 	}
 #endif
 }
@@ -431,7 +426,7 @@ void Instrument::addout(BusType bus_type, int bus)
 void Instrument::gone()
 {
 #ifdef DEBUG
-   printf("Instrument::gone(this=%p): index %d\n", this, _input.fdIndex);
+   RTPrintf("Instrument::gone(this=%p): index %d\n", this, _input.fdIndex);
 #endif
 
    if (_input.fdIndex >= 0) {

@@ -10,6 +10,7 @@
 	print_on(X).  See MMPrint.h for listing of levels
 	-- BGG 1/2013
 */
+/* printing levels are now in ugens.h -- DS 9/2013 */
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -19,7 +20,6 @@
 #include <prototypes.h>
 #include <ugens.h>
 #include <Option.h>
-#include <MMPrint.h>
 
 #define PREFIX  "*** "       /* print before WARNING and ERROR */
 #define BUFSIZE 1024
@@ -49,22 +49,10 @@ rtcmix_advise(const char *inst_name, const char *format, ...)
       vsnprintf(buf, BUFSIZE, format, args);
       va_end(args);
 
-#ifndef MAXMSP
       if (inst_name)
-         printf("%s:  %s\n", inst_name, buf);
+         RTPrintf("%s:  %s\n", inst_name, buf);
       else
-         printf("%s\n", buf);
-
-#else // MAXMSP
-      if (inst_name) {
-         int nchars = sprintf(get_mm_print_ptr(), "ADVISE [%s]:  %s\n", inst_name, buf);
-         set_mm_print_ptr(nchars+1);
-      }
-      else {
-         int nchars = sprintf(get_mm_print_ptr(), "ADVISE: %s\n", buf);
-         set_mm_print_ptr(nchars+1);
-      }
-#endif // MAXMSP
+         RTPrintf("%s\n", buf);
    }
 }
 
@@ -81,22 +69,10 @@ rtcmix_warn(const char *inst_name, const char *format, ...)
       vsnprintf(buf, BUFSIZE, format, args);
       va_end(args);
 
-#ifndef MAXMSP
       if (inst_name)
-         fprintf(stderr, "\n" PREFIX "WARNING [%s]:  %s\n\n", inst_name, buf);
+         RTFprintf(stderr, "\n" PREFIX "WARNING [%s]:  %s\n\n", inst_name, buf);
       else
-         fprintf(stderr, "\n" PREFIX "WARNING:  %s\n\n", buf);
-
-#else // MAXMSP
-      if (inst_name) {
-         int nchars = sprintf(get_mm_print_ptr(), "WARNING [%s]:  %s\n", inst_name, buf);
-         set_mm_print_ptr(nchars+1);
-      }
-      else {
-         int nchars = sprintf(get_mm_print_ptr(), "WARNING:  %s\n", buf);
-         set_mm_print_ptr(nchars+1);
-      }
-#endif // MAXMSP
+         RTFprintf(stderr, "\n" PREFIX "WARNING:  %s\n\n", buf);
    }
 }
 
@@ -114,22 +90,10 @@ rterror(const char *inst_name, const char *format, ...)
    vsnprintf(buf, BUFSIZE, format, args);
    va_end(args);
 
-#ifndef MAXMSP
    if (inst_name)
-      fprintf(stderr, PREFIX "ERROR [%s]: %s\n", inst_name, buf);
+      RTFprintf(stderr, PREFIX "ERROR [%s]: %s\n", inst_name, buf);
    else
-      fprintf(stderr, PREFIX "ERROR: %s\n", buf);
-
-#else // MAXMSP
-   if (inst_name) {
-      int nchars = sprintf(get_mm_print_ptr(), "ERROR [%s]: %s\n", inst_name, buf);
-      set_mm_print_ptr(nchars+1);
-   }
-   else {
-      int nchars = sprintf(get_mm_print_ptr(), "ERROR: %s\n", buf);
-      set_mm_print_ptr(nchars+1);
-   }
-#endif // MAXMSP
+      RTFprintf(stderr, PREFIX "ERROR: %s\n", buf);
 
 // added for exit after Minc parse errors with the option set -- BGG
    if (get_bool_option(kOptionExitOnError)) {
@@ -150,21 +114,10 @@ die(const char *inst_name, const char *format, ...)
    vsnprintf(buf, BUFSIZE, format, args);
    va_end(args);
 
-#ifndef MAXMSP
    if (inst_name)
-      fprintf(stderr, PREFIX "FATAL ERROR [%s]:  %s\n", inst_name, buf);
+      RTFprintf(stderr, PREFIX "FATAL ERROR [%s]:  %s\n", inst_name, buf);
    else
-      fprintf(stderr, PREFIX "FATAL ERROR:  %s\n", buf);
-
-#else // MAXMSP
-   if (inst_name) {
-      int nchars = sprintf(get_mm_print_ptr(), "FATAL ERROR [%s]:  %s\n", inst_name, buf);
-      set_mm_print_ptr(nchars+1);
-   }
-   else {
-      int nchars = sprintf(get_mm_print_ptr(), "FATAL ERROR:  %s\n", buf);
-   }
-#endif // MAXMSP
+      RTFprintf(stderr, PREFIX "FATAL ERROR:  %s\n", buf);
 
    if (get_bool_option(kOptionExitOnError)) {
       if (!rtsetparams_was_called())

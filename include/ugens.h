@@ -170,6 +170,38 @@ off_t outrepos(int samps, int fno);
 /* fnscl.c */
 void fnscl(struct gen *gen);
 
+/*
+ [From MMPrint.h]
+ 
+ the different print levels (set by optional param in print_on(lvl)):
+ 0 -- fatal errors (die() in message.c)
+ 1 -- print() and printf()'s (in minc/builtin.c)
+ 2 -- rterrors (rterror() in message.c)
+ 3 -- warn errors (rtcmix_warn() in message.c)
+ 4 -- advise notifications (rtcmix_advise() in message.c)
+ 5 -- all the rest
+ 
+ Brad Garton, 12/2012
+*/
+
+/* printing macros */
+
+#define MMP_FATAL			0
+#define MMP_PRINTS			1
+#define MMP_RTERRORS		2
+#define MMP_WARN			3
+#define MMP_ADVISE			4
+#define MMP_PRINTALL		5
+
+#if MAXMSP
+#include "MMPrint.h"
+#define RTPrintf(format, ...) set_mm_print_ptr(sprintf(get_mm_print_ptr(), format, ## __VA_ARGS__)+1)
+#define RTFPrintf(FILE, format, ...) set_mm_print_ptr(sprintf(get_mm_print_ptr(), format, ## __VA_ARGS__)+1)
+#else
+#define RTPrintf(format, ...) printf(format, ## __VA_ARGS__)
+#define RTFPrintf(FILE, format, ...) fprintf(FILE, format, ## __VA_ARGS__)
+#endif
+	
 /* message.c */
 void rtcmix_advise(const char *inst_name, const char *format, ...);
 void rtcmix_warn(const char *inst_name, const char *format, ...);

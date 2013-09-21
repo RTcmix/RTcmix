@@ -8,7 +8,7 @@
 #include <string.h>
 #include <assert.h>
 #include <Option.h>
-#include <MMPrint.h>
+#include <ugens.h>
 
 /* Minc builtin functions, for use only in Minc scripts.
    To add a builtin function, make an entry for it in the function ptr array
@@ -121,69 +121,35 @@ _do_print(const MincListElem args[], const int nargs)
    last_arg = nargs - 1;
    for (i = 0; i < nargs; i++) {
       switch (args[i].type) {
-#ifdef MAXMSP
          case MincFloatType:
             if (i == last_arg)
-               nchars = sprintf(get_mm_print_ptr(), "%.12g", args[i].val.number);
+               RTPrintf("%.12g", args[i].val.number);
             else
-               nchars = sprintf(get_mm_print_ptr(), "%.12g, ", args[i].val.number);
+               RTPrintf("%.12g, ", args[i].val.number);
             break;
          case MincStringType:
             if (i == last_arg)
-               nchars = sprintf(get_mm_print_ptr(), "\"%s\"", args[i].val.string);
+               RTPrintf("\"%s\"", args[i].val.string);
             else
-               nchars = sprintf(get_mm_print_ptr(), "\"%s\", ", args[i].val.string);
+               RTPrintf("\"%s\", ", args[i].val.string);
             break;
          case MincHandleType:
             if (i == last_arg)
-               nchars = sprintf(get_mm_print_ptr(), "Handle:%p", args[i].val.handle);
+               RTPrintf("Handle:%p", args[i].val.handle);
             else
-               nchars = sprintf(get_mm_print_ptr(), "Handle:%p, ", args[i].val.handle);
+               RTPrintf("Handle:%p, ", args[i].val.handle);
             break;
          case MincListType:
-            nchars = sprintf(get_mm_print_ptr(), "%s", "[");
-            set_mm_print_ptr(nchars);
+            RTPrintf("[");
             _do_print(args[i].val.list->data, args[i].val.list->len);
             if (i == last_arg)
-               nchars = sprintf(get_mm_print_ptr(), "%s", "]");
+               RTPrintf("]");
             else
-               nchars = sprintf(get_mm_print_ptr(), "%s, ", "]");
+               RTPrintf("], ");
             break;
          default:
             break;
       }
-      set_mm_print_ptr(nchars);
-#else
-         case MincFloatType:
-            if (i == last_arg)
-               printf("%.12g", args[i].val.number);
-            else
-               printf("%.12g, ", args[i].val.number);
-            break;
-         case MincStringType:
-            if (i == last_arg)
-               printf("\"%s\"", args[i].val.string);
-            else
-               printf("\"%s\", ", args[i].val.string);
-            break;
-         case MincHandleType:
-            if (i == last_arg)
-               printf("Handle:%p", args[i].val.handle);
-            else
-               printf("Handle:%p, ", args[i].val.handle);
-            break;
-         case MincListType:
-            putchar('[');
-            _do_print(args[i].val.list->data, args[i].val.list->len);
-            if (i == last_arg)
-               putchar(']');
-            else
-               printf("], ");
-            break;
-         default:
-            break;
-      }
-#endif // MAXMSP
    }
 }
 
@@ -195,13 +161,7 @@ _minc_print(const MincListElem args[], const int nargs)
    if (get_print_option() < 1) return 0.0;
 
    _do_print(args, nargs);
-#ifdef MAXMSP
-   int nchars = sprintf(get_mm_print_ptr(), "\n");
-   set_mm_print_ptr(nchars+1);
-#else
-   putchar('\n');
-   fflush(stdout);
-#endif
+   RTPrintf("\n");
    return 0.0;
 }
 
