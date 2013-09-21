@@ -197,9 +197,13 @@ void fnscl(struct gen *gen);
 #include "MMPrint.h"
 #define RTPrintf(format, ...) set_mm_print_ptr(sprintf(get_mm_print_ptr(), format, ## __VA_ARGS__)+1)
 #define RTFPrintf(FILE, format, ...) set_mm_print_ptr(sprintf(get_mm_print_ptr(), format, ## __VA_ARGS__)+1)
+#define RTPrintfCat(format, ...) set_mm_print_ptr(sprintf(get_mm_print_ptr(), format, ## __VA_ARGS__))
+#define RTFPrintfCat(FILE, format, ...) set_mm_print_ptr(sprintf(get_mm_print_ptr(), format, ## __VA_ARGS__))
 #else
 #define RTPrintf(format, ...) printf(format, ## __VA_ARGS__)
 #define RTFPrintf(FILE, format, ...) fprintf(FILE, format, ## __VA_ARGS__)
+#define RTPrintfCat(format, ...) printf(format, ## __VA_ARGS__)
+#define RTFPrintfCat(FILE, format, ...) fprintf(FILE, format, ## __VA_ARGS__)
 #endif
 	
 /* message.c */
