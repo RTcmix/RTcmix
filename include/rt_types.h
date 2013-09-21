@@ -87,6 +87,12 @@ typedef int AtomicInt;
 
 #else	// !MULTI_THREAD
 
+#if MAXMSP
+
+typedef int AtomicInt;
+
+#else
+
 class AtomicInt
 {
     int val;
@@ -98,6 +104,7 @@ public:
     bool decrementAndTest() { return --val == 0; }
     int operator = (int rhs) { return (val = rhs); }
 };
+#endif	// !MAXMSP
 
 #endif  // !MULTI_THREAD
 
