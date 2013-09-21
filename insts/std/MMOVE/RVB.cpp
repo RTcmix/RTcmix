@@ -50,11 +50,7 @@ extern "C" {
 }
 
 int RVB::primes[NPRIMES + 2];
-#ifdef MAXMSP
-int RVB::primes_gotten = 0;
-#else
 AtomicInt RVB::primes_gotten = -1;
-#endif
 
 /* ------------------------------------------------------------ makeRVB --- */
 Instrument *makeRVB()
@@ -509,12 +505,12 @@ RVB::get_primes(int x, int p[])
 {
    int val = 5, index = 2;
 
-#ifdef MAXMSP
-	if (!primes_gotten)
+#ifndef MAXMSP
+	if (primes_gotten.incrementAndTest())
 #else
-   if (primes_gotten.incrementAndTest())
+	if (++primes_gotten == 0)
 #endif
-   {
+	{
 	/* first 2 vals initialized */
 	p[0] = 2;
 	p[1] = 3;
@@ -530,8 +526,5 @@ RVB::get_primes(int x, int p[])
 	   }
 	   val += 2;
 	}
-#ifdef MAXMSP
-	primes_gotten = 1;
-#endif
     }
 }

@@ -56,11 +56,7 @@ private:
 	static void get_primes(int x, int p[]);
 	// static data
 	static int	primes[NPRIMES + 2];
-#ifdef MAXMSP
-	static int  primes_gotten;
-#else
 	static AtomicInt primes_gotten;
-#endif
 };
 
 #endif	// _RTCMIX_RVB_H_

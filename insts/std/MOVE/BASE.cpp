@@ -37,11 +37,7 @@ extern "C" {
 extern int g_Nterms[13];				 /* defined in common.C */
 
 int BASE::primes[NPRIMES + 2];
-#ifdef MAXMSP
-int BASE::primes_gotten = 0;
-#else
-AtomicInt BASE::primes_gotten = 1;
-#endif
+AtomicInt BASE::primes_gotten = -1;
 
 BASE::BASE() : m_tapsize(0)
 {
@@ -1108,10 +1104,11 @@ BASE::get_primes(int x, int p[])
    int val = 5, flag, i, index = 2;
 
 #ifdef MAXMSP
-	if (!primes_gotten) {
+	if (++primes_gotten == 0)
 #else
-   if (primes_gotten.decrementAndTest()) {
+	if (primes_gotten.incrementAndTest())
 #endif
+	{
 		/* first 2 vals initialized */
 		p[0] = 2;
 		p[1] = 3;
@@ -1127,8 +1124,5 @@ BASE::get_primes(int x, int p[])
 		   }
 		   val += 2;
 		}
-#ifdef MAXMSP
-		primes_gotten = 1;
-#endif
 	}
 }
