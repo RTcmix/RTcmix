@@ -1,6 +1,13 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2013-09-20  Douglas Scott  <netdscott-at-netscape.net>
+
+	* Consolidated the basic printf-style code into new macro so MAX
+	  and other versions can use same code (new macros).  Changed #includes
+	  and headers to match.  Also worked to get rid of MAX ifdefs wherever
+	  I could.
+
 2013-09-02  Douglas Scott  <netdscott-at-netscape.net>
 
 	* Split out one Instrument class method to allow CHAIN'd insts
