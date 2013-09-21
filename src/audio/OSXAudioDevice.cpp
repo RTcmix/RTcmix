@@ -1167,7 +1167,7 @@ int OSXAudioDevice::doSetFormat(int fmt, int chans, double srate)
 				}
 			}
             else {
-                RTPrintf("Note:  This HW's audio format is not writable\n");
+                printf("Note:  This HW's audio format is not writable\n");
             }
             // Retrieve settings to see what we got, and compare with request.
             size = sizeof(port->deviceFormat);
@@ -1433,7 +1433,7 @@ getDeviceList(AudioDeviceID **devList, int *devCount)
                         kAudioHardwarePropertyDevices,
                         &size, NULL);
    if (err != kAudioHardwareNoError) {
-      RTFPrintf(stderr, "Can't get hardware device list property info.\n");
+      fprintf(stderr, "Can't get hardware device list property info.\n");
       return err;
    }
    *devCount = size / sizeof(AudioDeviceID);
@@ -1442,7 +1442,7 @@ getDeviceList(AudioDeviceID **devList, int *devCount)
                         kAudioHardwarePropertyDevices,
                         &size, *devList);
    if (err != kAudioHardwareNoError) {
-      RTFPrintf(stderr, "Can't get hardware device list.\n");
+      fprintf(stderr, "Can't get hardware device list.\n");
       return err;
    }
 
@@ -1462,7 +1462,7 @@ findDeviceID(const char *devName, AudioDeviceID *devList, int devCount, Boolean 
 							&size,
 				   			(void *) &devID);
 		if (err != kAudioHardwareNoError || devID == kAudioDeviceUnknown) {
-			RTFPrintf(stderr, "Cannot find default OSX device: %s\n", ::errToString(err));
+			fprintf(stderr, "Cannot find default OSX device: %s\n", ::errToString(err));
 			return 0;
 		}
 		return devID;
@@ -1490,7 +1490,7 @@ findDeviceID(const char *devName, AudioDeviceID *devList, int devCount, Boolean 
                                             	 kAudioDevicePropertyDeviceName,
                                             	 &size, NULL);
 	   if (err != kAudioHardwareNoError) {
-    	  RTFPrintf(stderr, "findDeviceID: Can't get device name property info for device %u\n",
+    	  fprintf(stderr, "findDeviceID: Can't get device name property info for device %u\n",
                   devList[dev]);
     	  continue;
 	   }
@@ -1502,7 +1502,7 @@ findDeviceID(const char *devName, AudioDeviceID *devList, int devCount, Boolean 
                                 	kAudioDevicePropertyDeviceName,
                                 	&size, name);
 	   if (err != kAudioHardwareNoError) {
-    	  RTFPrintf(stderr, "findDeviceID: Can't get device name property for device %lu.\n",
+    	  fprintf(stderr, "findDeviceID: Can't get device name property for device %lu.\n",
 			  	  devList[dev]);
 		  delete [] name;
     	  continue;
