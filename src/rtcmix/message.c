@@ -70,9 +70,9 @@ rtcmix_warn(const char *inst_name, const char *format, ...)
       va_end(args);
 
       if (inst_name)
-         RTFprintf(stderr, "\n" PREFIX "WARNING [%s]:  %s\n\n", inst_name, buf);
+         RTFPrintf(stderr, "\n" PREFIX "WARNING [%s]:  %s\n\n", inst_name, buf);
       else
-         RTFprintf(stderr, "\n" PREFIX "WARNING:  %s\n\n", buf);
+         RTFPrintf(stderr, "\n" PREFIX "WARNING:  %s\n\n", buf);
    }
 }
 
@@ -91,9 +91,9 @@ rterror(const char *inst_name, const char *format, ...)
    va_end(args);
 
    if (inst_name)
-      RTFprintf(stderr, PREFIX "ERROR [%s]: %s\n", inst_name, buf);
+      RTFPrintf(stderr, PREFIX "ERROR [%s]: %s\n", inst_name, buf);
    else
-      RTFprintf(stderr, PREFIX "ERROR: %s\n", buf);
+      RTFPrintf(stderr, PREFIX "ERROR: %s\n", buf);
 
 // added for exit after Minc parse errors with the option set -- BGG
    if (get_bool_option(kOptionExitOnError)) {
@@ -115,9 +115,9 @@ die(const char *inst_name, const char *format, ...)
    va_end(args);
 
    if (inst_name)
-      RTFprintf(stderr, PREFIX "FATAL ERROR [%s]:  %s\n", inst_name, buf);
+      RTFPrintf(stderr, PREFIX "FATAL ERROR [%s]:  %s\n", inst_name, buf);
    else
-      RTFprintf(stderr, PREFIX "FATAL ERROR:  %s\n", buf);
+      RTFPrintf(stderr, PREFIX "FATAL ERROR:  %s\n", buf);
 
    if (get_bool_option(kOptionExitOnError)) {
       if (!rtsetparams_was_called())
