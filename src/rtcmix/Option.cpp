@@ -489,7 +489,7 @@ void Option::reportError(const char *format, const char *msg1, const char *msg2)
 {
 	char buf[1024];
 	snprintf(buf, 1024, format, msg1, msg2);
-	RTPrintf("Config file error:  %s\n", buf);
+	printf("Config file error:  %s\n", buf);
 }
 
 
