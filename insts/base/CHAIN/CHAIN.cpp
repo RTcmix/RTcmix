@@ -46,9 +46,9 @@ int  CHAIN::setup(PFieldSet *inPFields)
 	}
 	if (Option::print() >= MMP_PRINTALL) {
 
-		RTPrintf("Instrument chain: ");
+		RTPrintfCat("Instrument chain: ");
 		for (std::vector<Instrument *>::iterator it = mInstVector.begin(); it != mInstVector.end(); ++it) {
-			RTPrintf("%s -> ", (*it)->name());
+			RTPrintfCat("%s -> ", (*it)->name());
 		}
 		RTPrintf("Out\n");
 	}
