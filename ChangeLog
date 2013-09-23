@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2013-09-22  Douglas Scott  <netdscott-at-netscape.net>
+
+	* Added new LOOP instrument.
+
 2013-09-20  Douglas Scott  <netdscott-at-netscape.net>
 
 	* Consolidated the basic printf-style code into new macro so MAX
