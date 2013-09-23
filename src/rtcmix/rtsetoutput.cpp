@@ -15,6 +15,17 @@ int Instrument::rtsetoutput(float start, float dur, Instrument *theInst)
 		 "rtsetoutput: No output open for this instrument (rtoutput failed?)!");
 	 return -1;
   }
+	
+	if (start < 0.0f) {
+		die(theInst->name(),
+			"rtsetoutput: start time must be >= 0.0");
+		return -1;
+	}
+	if (dur < 0.0f) {
+		die(theInst->name(),
+			"rtsetoutput: duration must be >= 0.0");
+		return -1;
+	}
   
   theInst->_start = start;
   theInst->_dur = dur;
