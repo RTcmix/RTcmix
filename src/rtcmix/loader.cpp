@@ -98,12 +98,10 @@ double m_load(float *p, int n_args, double *pp)
 		return 0;
     }
 
-    if (get_print_option()) {
-		RTPrintf("Loaded %s functions from shared library:\n\t'%s'.\n",
+	rtcmix_advise("load", "Loaded %s functions from shared library:\n\t'%s'.",
 			  (profileLoaded == 3) ? "standard and RT" :
 							   (profileLoaded == 2) ? "RT" : "standard",
 			  dsoPath);
-    }
 
     return 1;
 }

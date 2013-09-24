@@ -70,7 +70,7 @@ use_script_file(char *fname)
       exit(1);
    }
 #endif
-	if (get_print_option() > 4)
+	if (get_print_option() > MMP_ADVISE)
       RTPrintf("Using file %s\n", fname);
 }
 

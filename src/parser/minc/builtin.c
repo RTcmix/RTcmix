@@ -158,7 +158,7 @@ _do_print(const MincListElem args[], const int nargs)
 MincFloat
 _minc_print(const MincListElem args[], const int nargs)
 {
-   if (get_print_option() < 1) return 0.0;
+   if (get_print_option() < MMP_PRINTS) return 0.0;
 
    _do_print(args, nargs);
    RTPrintf("\n");
@@ -200,7 +200,7 @@ _minc_printf(const MincListElem args[], const int nargs)
    const char *p;
 	int nchars;
 
-	if (get_print_option() < 1) return 0.0;
+	if (get_print_option() < MMP_PRINTS) return 0.0;
 
    if (args[0].type != MincStringType) {
       minc_warn("printf: first argument must be format string");
@@ -223,7 +223,7 @@ _minc_printf(const MincListElem args[], const int nargs)
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-                  nchars = sprintf(get_mm_print_ptr(), "%d", (int) args[n].val.number);
+                  nchars = sprintf(s(), "%d", (int) args[n].val.number);
                   break;
                case 'f':      /* print float object */
                   if (args[n].type != MincFloatType) {
@@ -322,7 +322,7 @@ _minc_printf(const MincListElem args[], const int nargs)
    int n;
    const char *p;
 
-   if (get_print_option() < 1) return 0.0;
+   if (get_print_option() < MMP_PRINTS) return 0.0;
 
    if (args[0].type != MincStringType) {
       minc_warn("printf: first argument must be format string");
