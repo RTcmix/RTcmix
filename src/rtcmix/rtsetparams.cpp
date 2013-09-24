@@ -96,7 +96,7 @@ RTcmix::rtsetparams(float p[], int n_args, double pp[])
    audio_config = 1;
    pthread_mutex_unlock(&audio_config_lock);
 
-   rtcmix_advise("Audio set",  "%g sampling rate, %d channels\n", SR, NCHANS);
+   rtcmix_advise("Audio set",  "%g sampling rate, %d channels", SR, NCHANS);
 
    /* Allocate output buffers. Do this *after* opening audio devices,
       in case OSS changes our buffer size, for example.
