@@ -348,13 +348,13 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 #endif /* INPUT_BUS_SUPPORT */
 
 			dur = (double) (nsamps / nchans) / srate;
-			rtcmix_advise(NULL, "Input file set for reading:\n");
-			rtcmix_advise(NULL, "      name:  %s\n", sfname);
-			rtcmix_advise(NULL, "      type:  %s\n", mus_header_type_name(header_type));
-			rtcmix_advise(NULL, "    format:  %s\n", mus_data_format_name(data_format));
-			rtcmix_advise(NULL, "     srate:  %g\n", srate);
-			rtcmix_advise(NULL, "     chans:  %d\n", nchans);
-			rtcmix_advise(NULL, "  duration:  %g\n", dur);
+			rtcmix_advise(NULL, "Input file set for reading:");
+			rtcmix_advise(NULL, "      name:  %s", sfname);
+			rtcmix_advise(NULL, "      type:  %s", mus_header_type_name(header_type));
+			rtcmix_advise(NULL, "    format:  %s", mus_data_format_name(data_format));
+			rtcmix_advise(NULL, "     srate:  %g", srate);
+			rtcmix_advise(NULL, "     chans:  %d", nchans);
+			rtcmix_advise(NULL, "  duration:  %g", dur);
 #ifdef INPUT_BUS_SUPPORT
 #endif /* INPUT_BUS_SUPPORT */
 
