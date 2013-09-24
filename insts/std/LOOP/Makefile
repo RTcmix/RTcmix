@@ -2,12 +2,17 @@ include ../package.conf
 
 NAME = LOOP
 
+CURDIR = $(CMIXDIR)/insts/std/$(NAME)
 OBJS = $(NAME).o
 CMIXOBJS += $(PROFILE_O)
 CXXFLAGS += -I. -Wall 
 PROGS = $(NAME) lib$(NAME).so
 
-all: lib$(NAME).so
+ifeq ($(BUILDTYPE), STANDALONE)
+  all: lib$(NAME).so
+else
+  all: $(OBJS)
+endif
 
 standalone: $(NAME)
 
@@ -19,6 +24,24 @@ $(NAME): $(OBJS) $(CMIXOBJS)
 
 $(OBJS): $(INSTRUMENT_H) $(NAME).h
 
+install: dso_install
+
+dso_install: lib$(NAME).so
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)
+
+standalone_install: standalone
+	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)
+
+uninstall: dso_uninstall standalone_uninstall
+
+dso_uninstall:
+	$(RM) $(LIBDESTDIR)/lib$(NAME).so
+
+standalone_uninstall:
+	$(RM) $(DESTDIR)/$(NAME)
+
 clean:
 	$(RM) $(OBJS) $(PROGS)
+
+cleanall: clean uninstall
 
