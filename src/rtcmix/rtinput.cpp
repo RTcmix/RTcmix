@@ -152,25 +152,19 @@ extern int mm_buf_input;
 double
 RTcmix::rtinput(float p[], int n_args, double pp[])
 {
-	int            audio_in, p1_is_audioport, start_pfield, fd;
-	int            is_open, header_type, data_format, data_location, nchans;
+	int            audio_in = 0, in_memory = 0, p1_is_used = 0, start_pfield, fd;
+	int            is_open = 0, header_type, data_format, data_location = 0, nchans;
 #ifdef INPUT_BUS_SUPPORT
 	int            startchan, endchan;
 	short          busindex, buslist[MAXBUS];
 	BusType        type;
 #endif /* INPUT_BUS_SUPPORT */
-	double         srate, dur;
+	double         srate, dur = 0.0;
 	char           *sfname, *str;
 	AudioPortType  port_type = MIC;
 
 	header_type = MUS_UNSUPPORTED;
 	data_format = MUS_UNSUPPORTED;
-	data_location = 0;
-	dur = 0.0;
-
-	audio_in = 0;
-	p1_is_audioport = 0;
-	is_open = 0;
 
 	sfname = DOUBLE_TO_STRING(pp[0]);
 
@@ -184,7 +178,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 		audio_in = 1;
 
 		if (n_args > 1 && pp[1] != 0.0) {
-			p1_is_audioport = 1;
+			p1_is_used = 1;
 			str = DOUBLE_TO_STRING(pp[1]);
 			if (strcmp(str, "MIC") == 0)
 				port_type = MIC;
@@ -193,7 +187,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 			else if (strcmp(str, "DIGITAL") == 0)
 				port_type = DIGITAL;
 			else
-				p1_is_audioport = 0;		/* p[1] might be a bus spec. */
+				p1_is_used = 0;		/* p[1] might be a bus spec. */
 		}
 
 		/* This signals inTraverse() to grab buffers from the audio device. */
@@ -208,7 +202,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 #ifdef MAXMSP
 // this segment is to allow rtcmix to access sample data from the
 // max/msp [buffer~] object.
-	if (strcmp(sfname, "MMBUF") == 0) {
+	else if (strcmp(sfname, "MMBUF") == 0) {
 			int i;
 
 			str = DOUBLE_TO_STRING(pp[1]);
@@ -229,10 +223,20 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 		audioNCHANS =  NCHANS;
 		nchans = audioNCHANS;
 		srate = SR;
-		} else {
-			mm_buf_input = -1; // we are NOT using [buffer~] input, even if set
-		}
+	}
 #endif // MAXMSP
+	else {
+#ifdef MAXMSP
+		mm_buf_input = -1; // we are NOT using [buffer~] input, even if set
+#endif // MAXMSP
+		if (n_args > 1 && pp[1] != 0.0) {
+			p1_is_used = 1;
+			str = DOUBLE_TO_STRING(pp[1]);
+			if (strcasestr(str, "mem") != NULL) {
+				in_memory = 1;
+			}
+		}
+	}
 
 #ifdef INPUT_BUS_SUPPORT
 	/* Parse bus specification. */
@@ -244,7 +248,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	type = BUS_IN;
 	startchan = endchan = -1;
 
-	start_pfield = p1_is_audioport ? 2 : 1;
+	start_pfield = p1_is_used ? 2 : 1;
 
 	for (i = start_pfield; i < n_args; i++) {
 		ErrCode  err;
@@ -328,7 +332,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 		else {
 			rtrecord = 0;
 			fd = ::open_sound_file("rtinput", sfname, &header_type, &data_format,
-							&data_location, &srate, &nchans, &nsamps);
+									&data_location, &srate, &nchans, &nsamps);
 			if (fd == -1)
 				return -1;
 
@@ -355,6 +359,9 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 			rtcmix_advise(NULL, "     srate:  %g", srate);
 			rtcmix_advise(NULL, "     chans:  %d", nchans);
 			rtcmix_advise(NULL, "  duration:  %g", dur);
+			if (in_memory)
+				rtcmix_advise(NULL, "Loading file into memory");
+
 #ifdef INPUT_BUS_SUPPORT
 #endif /* INPUT_BUS_SUPPORT */
 
@@ -373,7 +380,16 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 		*/
 		for (i = 0; i < max_input_fds; i++) {
 			if (!inputFileTable[i].isOpen()) {
-                inputFileTable[i].init(fd, sfname, audio_in, header_type, data_format, data_location, nsamps, (float)srate, nchans, dur);
+                inputFileTable[i].init(fd,
+									   sfname,
+									   audio_in ? InputFile::AudioDeviceType : in_memory ? InputFile::InMemoryType : InputFile::FileType,
+									   header_type,
+									   data_format,
+									   data_location,
+									   nsamps/nchans,	// passing this in as frames now, not samps
+									   (float)srate,
+									   nchans,
+									   dur);
 				last_input_index = i;
 				break;
 			}
