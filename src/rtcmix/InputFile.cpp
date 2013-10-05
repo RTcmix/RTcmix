@@ -422,9 +422,9 @@ void InputFile::close()
 		_fd = NO_FD;
 	}
 #ifndef MULTI_THREAD
-	if (readBuffer)
-		free(readBuffer);
-	readBuffer = NULL;
+	if (_readBuffer)
+		free(_readBuffer);
+	_readBuffer = NULL;
 #endif
 	if (_memBuffer)
 		free(_memBuffer);
