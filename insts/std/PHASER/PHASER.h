@@ -1,5 +1,5 @@
 #include <Instrument.h>      // the base class for this instrument
-#include <vector.h>
+#include <vector>
 
 using std::vector;
 
