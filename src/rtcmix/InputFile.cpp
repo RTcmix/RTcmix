@@ -61,6 +61,7 @@
 #define IGNORE_BUS_COUNT_FOR_FILE_INPUT
 
 static inline long lmin(long a, long b) { return a < b ? a : b; }
+static inline long lmax(long a, long b) { return a > b ? a : b; }
 
 
 /* ----------------------------------------------------- read_float_samps --- */
@@ -539,10 +540,10 @@ off_t InputFile::copySamps(off_t     cur_offset,       /* current file position 
     const long fileBytesRemaining = _endbyte - cur_offset;
 	// Convert byte offset into original file into an offset into (float) _memBuffer
 	long membufOffset = fileAudioOffset / ::mus_data_format_to_bytes_per_sample(_data_format);
-    const int bytesRequested = dest_frames * _chans * bytes_per_samp;
-	const long bufBytesRemaining = bytes_per_frame * fileBytesRemaining / ::mus_data_format_to_bytes_per_sample(_data_format);
-    const long extra_bytes = (bytesRequested > bufBytesRemaining) ? bytesRequested - bufBytesRemaining : 0;
-    ssize_t bytes_to_copy = lmin(bufBytesRemaining, bytesRequested);
+    const int bufBytesRequested = dest_frames * _chans * bytes_per_samp;
+	const long bufBytesRemaining = (fileBytesRemaining / ::mus_data_format_to_bytes_per_sample(_data_format)) * bytes_per_frame;
+    const long extra_bytes = (bufBytesRequested > bufBytesRemaining) ? bufBytesRequested - bufBytesRemaining : 0;
+    ssize_t bytes_to_copy = lmin(bufBytesRemaining, bufBytesRequested);
     
 	if (dest_chans == _chans
 #ifndef IGNORE_BUS_COUNT_FOR_FILE_INPUT
@@ -553,14 +554,17 @@ off_t InputFile::copySamps(off_t     cur_offset,       /* current file position 
 		if (bytes_to_copy > 0) {
 //			printf("memcpy'ing %d bytes (%d frames) to dest from _memBuffer[%d]\n", bytes_to_copy, bytes_to_copy/(_chans * bytes_per_samp), membufOffset);
 			memcpy(dest, &_memBuffer[membufOffset], bytes_to_copy);
+			bytes_to_copy = 0;
 		}
 		
 		/* If we reached EOF, zero out remaining part of buffer that we
 		 expected to fill.
 		 */
-		if (extra_bytes > 0) {
-//			printf("zeroing dest buffer at offset %d, %d bytes worth\n", bytes_to_copy, extra_bytes);
-			memset((char *)dest + bytes_to_copy, 0, extra_bytes);
+		long bytesToZero = bytes_to_copy + extra_bytes;
+		if (bytesToZero > 0) {
+			long offset = lmax(bytes_to_copy, 0L);
+//			printf("zeroing dest buffer at offset %d, %d bytes worth\n", offset, bytesToZero);
+			memset((char *)dest + offset, 0, bytesToZero);
 		}
 	}
     else {
