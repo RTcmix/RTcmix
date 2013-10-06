@@ -485,7 +485,7 @@ off_t InputFile::readSamps(off_t cur_offset,
 
 int InputFile::loadSamps(long inFrames)
 {
-	_memBuffer = (BufPtr) malloc((size_t) inFrames * MAXCHANS * sizeof(BUFTYPE));
+	_memBuffer = (BufPtr) calloc((size_t) inFrames * MAXCHANS, sizeof(BUFTYPE));
 	if (_memBuffer == NULL) {
 		perror("malloc");
 		return -1;
@@ -497,8 +497,8 @@ int InputFile::loadSamps(long inFrames)
 #endif
 	}
 	const short src_chan_list[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
-	int framesRead = 0;
-	int bytesRead = 0;
+	long framesRead = 0;
+	long bytesRead = 0;
 	int status = 0;
     const int bytesPerFrame = ::mus_data_format_to_bytes_per_sample(_data_format) * _chans;
 	const int framesPerRead = sScratchBufferSize / bytesPerFrame;
@@ -506,7 +506,7 @@ int InputFile::loadSamps(long inFrames)
 		long frameCount = inFrames - framesRead;
 		if (frameCount > framesPerRead)
 			frameCount = framesPerRead;
-		const int byteCount = bytesPerFrame * frameCount;
+		const long byteCount = bytesPerFrame * frameCount;
 //		printf("reading %d frames (%d-channel) at offset %d via scratch buffer, into _memBuffer[%d*%d]\n", frameCount, _chans, lseek(_fd, 0, SEEK_CUR), framesRead, _chans);
 		status = (*this->_readFunction)(_fd,
 										_data_format,
