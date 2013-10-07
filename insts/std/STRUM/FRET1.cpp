@@ -22,7 +22,10 @@ FRET1::FRET1() : Instrument()
 
 FRET1::~FRET1()
 {
-	strumq1->unref();
+// BGGx -- deleting the strumq disables the 'carry-over' necessary for
+// BEND/FRET/etc. to work.  There has to be a better way, but this is
+// an ancient instrument
+//	strumq1->unref();
 }
 
 int FRET1::init(double p[], int n_args)

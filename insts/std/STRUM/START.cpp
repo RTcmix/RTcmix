@@ -21,7 +21,10 @@ START::START() : Instrument()
 
 START::~START()
 {
-	strumq1->unref();
+// BGGx -- deleting the strumq disables the 'carry-over' necessary for
+// BEND/FRET/etc. to work.  There has to be a better way, but this is
+// an ancient instrument
+//	strumq1->unref();
 }
 
 // p0 = start; p1 = dur; p2 = pitch (oct.pc); p3 = fundamental decay time
