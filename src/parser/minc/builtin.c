@@ -223,7 +223,7 @@ _minc_printf(const MincListElem args[], const int nargs)
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-                  nchars = sprintf(s(), "%d", (int) args[n].val.number);
+                  nchars = sprintf(get_mm_print_ptr(), "%d", (int) args[n].val.number);
                   break;
                case 'f':      /* print float object */
                   if (args[n].type != MincFloatType) {
