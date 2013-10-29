@@ -532,6 +532,20 @@ double m_trand(float p[], int n_args, double pp[])
 	return (double) trunc;
 }
 
+double m_chance(float p[], int n_args, double pp[])
+{
+	if (n_args != 2)
+		die("chance", "Usage: chance(num_rolls, num_sides)\n");
+	float numer = p[0];
+	float denom = p[1];
+	if (denom == 0.0f)
+		return 0.0;
+	if (numer > denom)
+		numer = denom;
+	float rval = m_random();
+	return rval <= numer / denom;
+}
+
 }	// end extern "C"
 
 //-----------------------------------------------------------------------------

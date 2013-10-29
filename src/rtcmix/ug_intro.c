@@ -133,6 +133,7 @@ ug_intro()
 	UG_INTRO_DOUBLE_RETURN("get_time", get_time);
 	UG_INTRO("irand", m_irand);
 	UG_INTRO("trand", m_trand);
+	UG_INTRO("chance", m_chance);
 //	UG_INTRO("grand", m_grand);
 	UG_INTRO("setexp", m_setexp);
 	UG_INTRO("addgens", m_addgens);
