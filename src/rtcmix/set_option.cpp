@@ -27,6 +27,7 @@ enum ParamType {
 	RECORD,
 	CLOBBER,
 	PRINT,
+	MUTE_THRESHOLD,
 	REPORT_CLIPPING,
 	CHECK_PEAKS,
 	FULL_DUPLEX,
@@ -74,6 +75,7 @@ static Param _param_list[] = {
 	{ kOptionBufferCount, BUFFER_COUNT, false},
 	{ kOptionOSCInPort, OSC_INPORT, false},
 	{ kOptionPrint, PRINT, false},
+	{ kOptionMuteThreshold, MUTE_THRESHOLD, false},
 
 	// string options
 	{ kOptionDevice, DEVICE, false},
@@ -268,6 +270,10 @@ static int _set_key_value_option(const char *key, const char *sval,
 		case PRINT:
 			status = _str_to_int(sval, ival);
 			Option::print(ival);
+			break;
+		case MUTE_THRESHOLD:
+			status = _str_to_double(sval, dval);
+			Option::muteThreshold(dval);
 			break;
 
 		// string options

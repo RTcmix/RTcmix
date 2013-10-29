@@ -25,6 +25,7 @@ public:
 	bool		isRunning() const;
 	bool		isPaused() const;
 	double		getPeak(int chan, long *peakLoc) const;
+	int			setMuteThreshold(double thresh);
 	const char *getLastError() const;
 
 protected:

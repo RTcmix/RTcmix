@@ -91,6 +91,10 @@ create_audio_devices(int record, int play, int chans, float srate, int *buffersi
 	// We hand the device noninterleaved, full-range floating point buffers.
 	int audioFormat = NATIVE_FLOAT_FMT | MUS_NON_INTERLEAVED;
 	device->setFrameFormat(audioFormat, chans);
+	
+	double muteThreshold = Option::muteThreshold();
+	if (muteThreshold > 0.0)
+		device->setMuteThreshold(muteThreshold);
 
 	int openMode = (record && play) ? AudioDevice::RecordPlayback
 				   : (record) ? AudioDevice::Record

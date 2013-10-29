@@ -72,6 +72,7 @@
 #define DEFAULT_BUFFER_FRAMES 4096.0
 #define DEFAULT_BUFFER_COUNT 2
 #define DEFAULT_OSC_INPORT 7770
+#define DEFAULT_MUTE_THRESHOLD 0.0	/* means no muting */
 
 #define DEVICE_MAX   64
 #define MAX_OUTPUT_DEVICES 3
@@ -95,6 +96,7 @@
 #define kOptionBufferCount      "buffer_count"
 #define kOptionOSCInPort        "osc_inport"
 #define kOptionPrint            "print"
+#define kOptionMuteThreshold	"mute_threshold"
 
 // string options
 #define kOptionDevice           "device"
@@ -174,6 +176,9 @@ public:
 	static int print() { return _print; }
 	static int print(int setIt) { _print = setIt; return _print; }
 
+	static double muteThreshold() { return _muteThreshold; }
+	static double muteThreshold(double thresh) { _muteThreshold = thresh; return _muteThreshold; }
+
 	// string options
 
 	// WARNING: If no string as been assigned, do not expect the get method
@@ -228,6 +233,7 @@ private:
 	static int _bufferCount;
 	static int _oscInPort;
 	static int _print;
+	static double _muteThreshold;
 
 	// string options
 	static char _device[];

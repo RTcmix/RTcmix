@@ -191,6 +191,17 @@ double AudioOutputGroupDevice::getPeak(int chan, long *peakLoc) const
 	return _devices[_count - 1]->getPeak(chan, peakLoc);
 }
 
+int AudioOutputGroupDevice::setMuteThreshold(double thresh)
+{
+	int ret = 0;
+	for (int dev = 0; dev < _count; ++dev) {
+		ret = _devices[dev]->setMuteThreshold(thresh);
+		if (ret < 0)
+			break;
+	}
+	return ret;
+}
+
 const char *AudioOutputGroupDevice::getLastError() const
 {
 	const char *theError = NULL;

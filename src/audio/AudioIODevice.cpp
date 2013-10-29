@@ -182,6 +182,11 @@ double AudioIODevice::getPeak(int chan, long *peakLoc) const
 	return _outputDevice->getPeak(chan, peakLoc);
 }
 
+int AudioIODevice::setMuteThreshold(double thresh)
+{
+	return _outputDevice->setMuteThreshold(thresh);
+}
+
 const char *AudioIODevice::getLastError() const
 {
 	const char *theError = getActiveDevice()->getLastError();

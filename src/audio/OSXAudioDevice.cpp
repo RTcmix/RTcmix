@@ -1502,8 +1502,8 @@ findDeviceID(const char *devName, AudioDeviceID *devList, int devCount, Boolean 
                                 	kAudioDevicePropertyDeviceName,
                                 	&size, name);
 	   if (err != kAudioHardwareNoError) {
-    	  fprintf(stderr, "findDeviceID: Can't get device name property for device %lu.\n",
-			  	  devList[dev]);
+    	  fprintf(stderr, "findDeviceID: Can't get device name property for device %u.\n",
+			  	  (unsigned)devList[dev]);
 		  delete [] name;
     	  continue;
 	   }

@@ -34,6 +34,7 @@ bool Option::_fastUpdate = false;
 double Option::_bufferFrames = DEFAULT_BUFFER_FRAMES;
 int Option::_bufferCount = DEFAULT_BUFFER_COUNT;
 int Option::_oscInPort = DEFAULT_OSC_INPORT;
+double Option::_muteThreshold = DEFAULT_MUTE_THRESHOLD;
 
 // BGG see ugens.h for levels
 #ifdef MAXMSP
@@ -206,6 +207,13 @@ int Option::readConfigFile(const char *fileName)
 	else if (result != kConfigNoValueForKey)
 		reportError("%s: %s.", conf.getLastErrorText(), key);
 
+	key = kOptionMuteThreshold;
+	result = conf.getValue(key, dval);
+	if (result == kConfigNoErr)
+		muteThreshold(dval);
+	else if (result != kConfigNoValueForKey)
+		reportError("%s: %s.", conf.getLastErrorText(), key);
+
 	// string options .........................................................
 
 	char *sval;
@@ -326,6 +334,7 @@ int Option::writeConfigFile(const char *fileName)
 	fprintf(stream, "%s = %d\n", kOptionBufferCount, bufferCount());
 	fprintf(stream, "%s = %d\n", kOptionOSCInPort, oscInPort());
 	fprintf(stream, "%s = %d\n", kOptionPrint, print());
+	fprintf(stream, "%s = %g\n", kOptionMuteThreshold, muteThreshold());
 
 	// write string options
 	fprintf(stream, "\n# String options: key = \"quoted string\"\n");
@@ -470,6 +479,7 @@ void Option::dump()
 	cout << kOptionFastUpdate << ": " << _fastUpdate << endl;
 	cout << kOptionBufferFrames << ": " << _bufferFrames << endl;
 	cout << kOptionBufferCount << ": " << _bufferCount << endl;
+	cout << kOptionMuteThreshold << ": " << _muteThreshold << endl;
 	cout << kOptionOSCInPort << ": " << _oscInPort << endl;
 	cout << kOptionDevice << ": " << _device << endl;
 	cout << kOptionInDevice << ": " << _inDevice << endl;
@@ -563,6 +573,8 @@ double get_double_option(const char *option_name)
 		return Option::bufferCount();
 	else if (!strcmp(option_name, kOptionPrint))
 		return Option::print();
+	else if (!strcmp(option_name, kOptionMuteThreshold))
+		return Option::muteThreshold();
 
 	assert(0 && "unsupported option name");
 	return 0;
@@ -576,6 +588,8 @@ void set_double_option(const char *option_name, double value)
 		Option::bufferCount((int)value);
 	else if (!strcmp(option_name, kOptionPrint))
 		Option::print(value);
+	else if (!strcmp(option_name, kOptionMuteThreshold))
+		Option::muteThreshold(value);
 	else
 		assert(0 && "unsupported option name");
 }

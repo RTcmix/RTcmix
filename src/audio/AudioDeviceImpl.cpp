@@ -35,8 +35,9 @@ AudioDeviceImpl::AudioDeviceImpl()
 	  _frameChannels(0), _deviceChannels(0), _samplingRate(0.0), _maxFrames(0),
 	  _runCallback(NULL), _stopCallback(NULL),
 	  _convertBuffer(NULL), 
-	  _recConvertFunction(NULL), _playConvertFunction(NULL)
+	  _recConvertFunction(NULL), _playConvertFunction(NULL), _muteThreshold(0.0)
 {
+	_lastErr[0] = '\0';
 	for (int n = 0; n < 32; ++n) {
 		_peaks[n] = 0.0;
 		_peakLocs[n] = 0;
@@ -236,6 +237,15 @@ int AudioDeviceImpl::setFormat(int sampfmt, int chans, double srate)
 		else return -1;
 	}
 	return error("Audio device not open");
+}
+
+int AudioDeviceImpl::setMuteThreshold(double thresh)
+{
+	if (thresh >= 0.0) {
+		_muteThreshold = thresh;
+		return 0;
+	}
+	return error("Mute threshold must be >= 0.0");
 }
 
 // Code for creating and destroying interleaved conversion buffer
@@ -510,6 +520,8 @@ AudioDeviceImpl::limitFrame(void *frameBuffer, int frames, bool doClip, bool che
 	const long bufStartSamp = getFrameCount();
 	int numclipped = 0;
 	float clipmax = 0.0f;
+	bool frameMuting = (_muteThreshold > 0.0);
+	
 	PRINT1("AudioDeviceImpl::limitFrame: clip = %d check = %d\n", doClip, checkPeaks);
 	for (int c = 0; c < chans; ++c) {
 		float *fp;
@@ -523,7 +535,7 @@ AudioDeviceImpl::limitFrame(void *frameBuffer, int frames, bool doClip, bool che
 			incr = 1;
 		}
 		for (int n = 0; n < frames; ++n, fp += incr) {
-			if (doClip) {
+			if (doClip || frameMuting) {
 				const float samp = *fp;
 				if (samp < -32768.0f) {
 					if (samp < -clipmax)
@@ -547,7 +559,24 @@ AudioDeviceImpl::limitFrame(void *frameBuffer, int frames, bool doClip, bool che
 			}
 		}
 	}
-	if (numclipped && reportClipping) {
+	if (frameMuting && clipmax >= _muteThreshold) {
+		if (reportClipping) {
+			float loc1 = bufStartSamp / getSamplingRate();
+			float loc2 = loc1 + (frames / getSamplingRate());
+			fprintf(stderr, "\n  MUTING frame due to samps exceeding %g, time range: %f - %f\n",
+					_muteThreshold, loc1, loc2);
+		}
+		if (isFrameInterleaved()) {
+			memset(frameBuffer, 0, frames * chans * sizeof(float));
+		}
+		else {
+			for (int c = 0; c < chans; ++c) {
+				float *fp = ((float **) frameBuffer)[c];
+				memset(fp, 0, frames * sizeof(float));
+			}
+		}
+	}
+	else if (numclipped && reportClipping) {
 		float loc1 = bufStartSamp / getSamplingRate();
 		float loc2 = loc1 + (frames / getSamplingRate());
 		bool printing_dots = true;	// HACK FOR NOW

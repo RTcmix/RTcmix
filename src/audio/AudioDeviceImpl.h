@@ -29,6 +29,7 @@ public:
 	bool			isPaused() const;
 	inline long		getFrameCount() const;
 	double			getPeak(int chan, long *location) const;
+	int				setMuteThreshold(double thresh);
 	const char *	getLastError() const;
 
 protected:
@@ -128,6 +129,7 @@ private:
 	void				*_convertBuffer;
 	ConversionFunction	_recConvertFunction;
 	ConversionFunction	_playConvertFunction;
+	double				_muteThreshold;
 	enum { ErrLength = 128 };
 	char				_lastErr[ErrLength];
 };

@@ -46,7 +46,8 @@ public:
 	virtual bool		isOpen() const = 0;
 	virtual bool		isRunning() const = 0;
 	virtual bool		isPaused() const = 0;
-	virtual double		getPeak(int chan, long *loc) const =0;
+	virtual double		getPeak(int chan, long *loc) const = 0;
+	virtual int			setMuteThreshold(double thresh) = 0;
 	virtual	const char *getLastError() const = 0;
 
 protected:
