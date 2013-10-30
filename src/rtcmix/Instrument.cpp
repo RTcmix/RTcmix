@@ -179,12 +179,16 @@ int Instrument::update(double p[], int nvalues, unsigned fields)
 // all the pfields using the first update method than to use this update method
 // multiple times, so try to avoid this method when you can use the other one.
 //                                                              -JGG, 6/5/05
+// Added third, optional argument to allow an instrument to specify how far through
+// its frames it currently is.  This allows block-based instruments to update their
+// pfields multiple times without the "currentFrame()" value changing.
+//																-DAS, 10/29/13
 
-double Instrument::update(int index, int totframes)
+double Instrument::update(int index, int totframes, int curFrame)
 {
 	assert(index < _pfields->size());
 	const int nframes = (totframes == 0) ? nSamps() : totframes;
-	double percent = double(currentFrame()) / nframes;
+	double percent = (curFrame > -1 ? curFrame : currentFrame()) / (double)nframes;
 	if (percent > 1.0)
 		percent = 1.0;
 

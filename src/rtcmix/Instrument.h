@@ -104,8 +104,8 @@ public:
 	virtual int		init(double *, int);			// Called by setup()
 	int				configure(int bufsamps);		// Called by inTraverse
 	int				run(bool needsTo);
-	virtual int		update(double *, int, unsigned fields=0);	// Called by run()
-	double			update(int, int totframes=0);
+	virtual int		update(double *, int , unsigned fields=0);	// Called by run()
+	double			update(int index, int totframes=0, int curFrame=-1);
 
 	int				exec(BusType bus_type, int bus);
 	void			addout(BusType bus_type, int bus);
