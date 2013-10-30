@@ -12,7 +12,7 @@ public:
 	virtual int configure();
 protected:
     virtual int localInit(double *, int);
-    virtual int finishInit(double, double *);
+    virtual int finishInit(double *);
     virtual int updatePosition(int);
     virtual void get_tap(int, int, int, int);
 };

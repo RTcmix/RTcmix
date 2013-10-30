@@ -12,8 +12,8 @@ dist_right=100
 dist_rear=-100
 dist_left=-100
 height=100
-rvbtime=3
-abs_fac=8
+rvbtime=1
+abs_fac=5
 space(dist_front,dist_right,dist_rear,dist_left,height,abs_fac,rvbtime)
 
 
@@ -35,7 +35,7 @@ mindist = 10
 maxdist = 100
 
 set_attenuation_params(mindist, maxdist, 1.0);
-threshold(0.005);
+threshold(0.001);
 
 DMOVE(outsk,insk,dur,amp,xpos,ypos,-dist_mikes,inchan);
 

@@ -59,7 +59,7 @@ int PLACE::localInit(double p[], int n_args)
     return 0;
 }
 
-int PLACE::finishInit(double rvb_time, double *ringdur)
+int PLACE::finishInit(double *ringdur)
 {
    /* set taps, return max samp */
    tapcount = tap_set(m_binaural);
@@ -68,7 +68,7 @@ int PLACE::finishInit(double rvb_time, double *ringdur)
    int resetFlag = 1;
    airfil_set(resetFlag);
 
-   *ringdur = rvb_time + ((float)tapcount / SR);
+   *ringdur = (float)tapcount / SR;
 
    return 0;
 }

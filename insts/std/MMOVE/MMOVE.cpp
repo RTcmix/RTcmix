@@ -129,9 +129,9 @@ int MOVE::localInit(double *p, int n_args)
     return 0;
 }
 
-int MOVE::finishInit(double rvb_time, double *ringdur)
+int MOVE::finishInit(double *ringdur)
 {
-    *ringdur = rvb_time;	// default
+    *ringdur = (float)m_tapsize / SR;	// max possible room delay
 	tapcount = updatePosition(0);
     return 0;
 }

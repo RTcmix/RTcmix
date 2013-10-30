@@ -163,7 +163,7 @@ void PrintSig(double *sig, int len, double threshold = 0.0)
 	printf("\n");
 }
 
-int BASE::getInput(int currentSample, int frames)
+int BASE::getInput(int currentFrame, int frames)
 {
 	// number of samples to process this time through
 	const int inChans = inputChannels();
@@ -181,18 +181,16 @@ int BASE::getInput(int currentSample, int frames)
 	float scale = 1.0/inChans;
 	// apply curve to input signal and mix down to mono if necessary
 
-	for (int s = 0, lCurSamp = currentSample; s < rsamps; s += inChans, lCurSamp++)
+	for (int s = 0, curFrm = currentFrame; s < rsamps; s += inChans, curFrm++)
 	{
-		if (lCurSamp < insamps) {	/* processing input signal */
+		if (curFrm < insamps) {	/* processing input signal */
 #ifdef LOOP_DEBUG
 			nsig++;
 #endif
 			if (--m_branch < 0) {
-				double p[4];
-				update(p, 4, 1 << 3);
-				inamp = p[3];
+				inamp = update(3, insamps, curFrm);
 				if (amparray)
-					inamp *= tablei(lCurSamp, amparray, amptabs);
+					inamp *= tablei(curFrm, amparray, amptabs);
 				m_branch = getSkip();
 			}
 			if (m_inchan == AVERAGE_CHANS) {

@@ -21,7 +21,7 @@ set_attenuation_params(5.0, 100.0, 1.5);
 insk=0
 outsk=0
 dur=DUR(0);
-pre_amp=12
+pre_amp=5
 dist_mikes=2.2		/* for normal */
 //dist_mikes=0.67	/* for binaural */
 inchan=0

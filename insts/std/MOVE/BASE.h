@@ -24,7 +24,7 @@ protected:
 
    void setBufferSize(int size) { m_buffersize = size; }
    int getBufferSize(void) { return m_buffersize; }
-   int getInput(int currentSample, int frames);
+   int getInput(int currentFrame, int frames);
    void wire_matrix(double [12][12]);
    int alloc_delays(void);
    int alloc_firfilters(void);

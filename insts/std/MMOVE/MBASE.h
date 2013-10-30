@@ -20,13 +20,13 @@ public:
    virtual int run();
 protected:
    virtual int localInit(double *, int) = 0;
-   virtual int finishInit(double, double *) = 0;
+   virtual int finishInit(double *) = 0;
    virtual int updatePosition(int) = 0;
    virtual void get_tap(int, int, int, int) = 0;
 
    void setBufferSize(int size) { m_buffersize = size; }
    int getBufferSize(void) { return m_buffersize; }
-   int getInput(int currentSample, int frames);
+   int getInput(int currentFrame, int frames);
    int alloc_delays(void);
    int alloc_firfilters(void);
    void get_lengths(long);

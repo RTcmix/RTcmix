@@ -123,12 +123,12 @@ int DMOVE::localInit(double *p, int n_args)
     return 0;
 }
 
-int DMOVE::finishInit(double rvb_time, double *ringdur)
+int DMOVE::finishInit(double *ringdur)
 {
 #ifdef debug
 	printf("finishInit()\n");
 #endif
-    *ringdur = rvb_time;	// default
+    *ringdur = (float)m_tapsize / SR;	// max possible room delay
 	tapcount = updatePosition(0);
 	R_old = T_old = -99999999.0;	// force updatePosition() to do its work next time
     return 0;

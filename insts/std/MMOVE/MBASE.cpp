@@ -79,7 +79,7 @@ MBASE::~MBASE()
 int MBASE::init(double p[], int n_args)
 {
     int    flag, UseMikes;
-    float  outskip, inskip, abs_factor, rvb_time;
+    float  outskip, inskip, abs_factor, dummy;
     double R, T, dist;
 
     outskip = p[0];
@@ -102,7 +102,7 @@ int MBASE::init(double p[], int n_args)
 
     /* Get results of Minc setup calls (space, mikes_on, mikes_off, matrix) */
     if (get_setup_params(Dimensions, &m_attenParams,
-						 &rvb_time, &abs_factor, &UseMikes, &MikeAngle,
+						 &dummy, &abs_factor, &UseMikes, &MikeAngle,
 						 &MikePatternFactor) == -1) {
 		return die(name(), "You must call setup routine `space' first.");
 	}
@@ -138,12 +138,12 @@ int MBASE::init(double p[], int n_args)
    }
    
    /* determine extra run time for this routine before calling rtsetoutput() */
-   double ringdur = 0.0;
-   finishInit(rvb_time, &ringdur);
+   double reflectionDur = 0.0;
+   finishInit(&reflectionDur);
    
    m_branch = 0;
    
-   if (rtsetoutput(outskip, m_dur + ringdur, this) == -1)
+   if (rtsetoutput(outskip, m_dur + reflectionDur, this) == -1)
       return DONT_SCHEDULE;
    DBG1(printf("nsamps = %d\n", nSamps()));
    return nSamps();
@@ -182,7 +182,7 @@ static inline void PrintSig(double *sig, int len, double threshold = 0.0)
 	printf("\n");
 }
 
-int MBASE::getInput(int currentSample, int frames)
+int MBASE::getInput(int currentFrame, int frames)
 {
     // number of samples to process this time through
 	const int inChans = inputChannels();
@@ -200,18 +200,16 @@ int MBASE::getInput(int currentSample, int frames)
 	float scale = 1.0/inChans;
     // apply curve to input signal and mix down to mono if necessary
 
-    for (int s = 0, lCurSamp = currentSample; s < rsamps; s += inChans, lCurSamp++)
+    for (int s = 0, curFrm = currentFrame; s < rsamps; s += inChans, curFrm++)
     {
-		if (lCurSamp < insamps) {	/* processing input signal */
+		if (curFrm < insamps) {	/* processing input signal */
 #ifdef LOOP_DEBUG
 			nsig++;
 #endif
 			if (--m_branch < 0) {
-			   double p[4];
-			   update(p, 4, 1 << 3);
-			   inamp = p[3];
+			   inamp = update(3, insamps, curFrm);
 			   if (amparray)
-    			  inamp *= tablei(lCurSamp, amparray, amptabs);
+    			  inamp *= tablei(curFrm, amparray, amptabs);
 			   m_branch = getSkip();
 			}
 			if (m_inchan == AVERAGE_CHANS) {
@@ -290,7 +288,7 @@ int MBASE::run()
 
 		thisFrame = currentFrame();	// store this locally for efficiency
 
-		DBG1(printf("top of main loop: frame = %d  cursamp = %d  bufsamps = %d\n",
+		DBG1(printf("top of main loop: frame = %d  thisFrame = %d  bufsamps = %d\n",
                    frame, thisFrame, bufsamps));
 		DBG(printf("input signal:\n"));
 		DBG(PrintInput(&in[frame], bufsamps));
@@ -383,7 +381,7 @@ int MBASE::run()
 		increment(bufsamps);
 		frame += bufsamps;
 		bufsamps = getBufferSize();		// update
-		DBG1(printf("\tmain loop done.  cursamp now %d\n", currentFrame()));
+		DBG1(printf("\tmain loop done.  thisFrame now %d\n", currentFrame()));
 	}
 	DBG1(printf("%s::run done\n\n", name()));
 	return frame;
@@ -723,8 +721,8 @@ void MBASE::setair(double rho, int flag, double *coeffs, bool directSrc)
    double atten = pow(rhoLimit/m_attenParams.minDistance,
    					  -m_attenParams.distanceExponent);
 //   if (directSrc)
-//	   printf("min is %g, dist is %g, attenuation = %g, expon = %g\n",
-//			   m_attenParams.minDistance, rhoLimit, atten, -m_attenParams.distanceExponent);
+//	   printf("rho was %g, min is %g, max is %g, rhoLimit is %g, attenuation = %g, expon = %g\n",
+//			   rho, m_attenParams.minDistance, m_attenParams.maxDistance, rhoLimit, atten, -m_attenParams.distanceExponent);
    double G2 = atten * (1.0 - G1);
 
    /* load into output array */
