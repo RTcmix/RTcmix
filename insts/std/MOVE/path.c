@@ -12,7 +12,7 @@ double mindiff;
 double
 path (float p[], int n_args)		/* for polar coordinates */
 {
-    float rhos[200], thetas[200];
+    float rhos[500], thetas[500];
     int i, t;
     static double z = 0.017453292;    /* Pi/180 */
 
@@ -44,7 +44,7 @@ path (float p[], int n_args)		/* for polar coordinates */
 double
 cpath (float p[], int n_args) 	/* for cartesian coordinates */
 {
-    float rhos[100], thetas[100];
+    float rhos[500], thetas[500];
     int i, t;
 
     /* check for proper input triplets */
@@ -130,7 +130,6 @@ double
 threshold(float p[], int n_args)
 {
 	mindiff = p[0];
-//	rtcmix_advise("threshold", "Source location updated every %.2f feet.", mindiff);
 	rtcmix_advise("threshold", "Source location updated every %.2f msec.",
 		   mindiff*1000.0);
 
