@@ -49,7 +49,7 @@ call_external_function(const char *funcname, const MincListElem arglist[],
 					rtcmixargs[i] = newarray;
 				}
 				else {
-					minc_die("can't pass a mixed-type list to an RTcmix function");
+					minc_die("can't pass a mixed-type list to RTcmix function %s()", funcname);
 					free(newarray);
 					return -1;
 				}
@@ -137,7 +137,6 @@ static double pow_binop(double x, double y)
 
 PField *createBinopPField(PField *pfield1, PField *pfield2, OpKind op)
 {
-	PField *opfield = NULL;
 	PFieldBinaryOperator::Operator binop = NULL;
 
 	// Create appropriate binary operator PField
@@ -175,8 +174,6 @@ PField *createBinopPField(PField *pfield1, PField *pfield2, OpKind op)
 MincHandle minc_binop_handle_float(const MincHandle mhandle,
 	const MincFloat val, OpKind op)
 {
-	Handle return_handle;
-
 	DPRINT2("minc_binop_handle_float (handle=%p, val=%f\n", mhandle, val);
 
 	// Extract PField from MincHandle.
@@ -196,8 +193,6 @@ MincHandle minc_binop_handle_float(const MincHandle mhandle,
 MincHandle minc_binop_float_handle(const MincFloat val,
 	const MincHandle mhandle, OpKind op)
 {
-	Handle return_handle;
-
 	DPRINT2("minc_binop_float_handle (val=%f, handle=%p\n", val, mhandle);
 
 	// Create ConstPField for MincFloat.

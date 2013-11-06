@@ -22,6 +22,7 @@
 static MincFloat _minc_print(const MincListElem args[], const int nargs);
 static MincFloat _minc_printf(const MincListElem args[], const int nargs);
 static MincFloat _minc_len(const MincListElem args[], const int nargs);
+static MincFloat _minc_interp(const MincListElem args[], const int nargs);
 static MincFloat _minc_index(const MincListElem args[], const int nargs);
 static MincString _minc_type(const MincListElem args[], const int nargs);
 
@@ -40,6 +41,7 @@ static struct _builtins {
    { "print",     _minc_print,   NULL },
    { "printf",    _minc_printf,  NULL },
    { "len",       _minc_len,     NULL },
+   { "interp",    _minc_interp,  NULL },
    { "index",     _minc_index,   NULL },
    { "type",      NULL,          _minc_type },
    { NULL,        NULL,          NULL }         /* marks end of list */
@@ -441,7 +443,7 @@ err:
 MincFloat
 _minc_len(const MincListElem args[], const int nargs)
 {
-   int len = 0;
+   unsigned long len = 0;
 
    if (nargs != 1)
       minc_warn("len: must have one argument");
@@ -468,6 +470,43 @@ _minc_len(const MincListElem args[], const int nargs)
    return (MincFloat) len;
 }
 
+static int min(int x, int y) { return (x <= y) ? x : y; }
+
+/* ------------------------------------------------------------------- interp -- */
+/* Return an interpolated numeric value from a list based on a fractional
+   "distance" through the list.
+ */
+MincFloat
+_minc_interp(const MincListElem args[], const int nargs)
+{
+	MincFloat outValue = -1;
+	if (nargs != 2)
+		minc_warn("interp: must have two arguments (list, fraction)");
+	else {
+		assert(args[1].type == MincFloatType);	// must pass a float as fractional value
+		if (args[0].type != MincListType) {
+			minc_warn("interp: first argument must be a list");
+			return -1.0;
+		}
+		MincListElem *data = args[0].val.list->data;
+		int len = args[0].val.list->len;
+		// Deal with degenerate cases
+		if (len == 0)
+			return 0.0;
+		else if (len == 1)
+			return data[0].val.number;
+		float fraction = args[1].val.number;
+		fraction = (fraction < 0.0) ? 0.0 : (fraction > 1.0) ? 1.0 : fraction;
+		int lowIndex = (int)((len - 1) * fraction);
+		int highIndex = min(len - 1, lowIndex + 1);
+		if (data[lowIndex].type != MincFloatType || data[highIndex].type != MincFloatType) {
+			minc_warn("interp: list elements to interpolate must both be floats");
+			return -1;
+		}
+		outValue = data[lowIndex].val.number + fraction * (data[highIndex].val.number - data[lowIndex].val.number);
+	}
+	return outValue;
+}
 
 /* ----------------------------------------------------------------- index -- */
 /* Given an item (float, string or handle), return the index of the item within
