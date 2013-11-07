@@ -202,11 +202,11 @@ int PVOC::init(double *p, int n_args)
 /*	freopen( "pv.out", "w", stderr ); */
 #ifdef debug
 	printf("pv parameters:\n" );
-	printf("R = %d\n", R );
-	printf("N = %d\n", N );
-	printf("Nw = %d\n", Nw );
-	printf("D = %d\n", D );
-	printf("I = %d\n", I );
+	printf("R (samprate) = %d\n", R );
+	printf("N (fft len) = %d\n", N );
+	printf("Nw (windowlen) = %d\n", Nw );
+	printf("D (decimation) = %d\n", D );
+	printf("I (interpolation) = %d\n", I );
 	printf("P = %g\n", P );
 	printf("Np = %d\n", Np );
 	printf("thresh = %g\n", _oscThreshold );
@@ -243,6 +243,9 @@ int PVOC::init(double *p, int n_args)
 	else
 		_on = _in;
 
+#ifdef debug
+	printf("_in: %d  _on: %d\n", _in, _on);
+#endif
 	// Get pv filter if present
 
 	::GetFilter(&_pvFilter);
@@ -276,7 +279,10 @@ int PVOC::configure()
 	
 	_inbuf = new BUFTYPE[inputChannels() * Nw];
 
-	_outbuf = new BUFTYPE[Nw];	// XXX CHECK THIS SIZE
+	// The output buffer is also larger in order to allow at least a full
+	// window of synthesized output to be stored.
+	
+	_outbuf = new BUFTYPE[-_on];	// XXX CHECK THIS SIZE
 		
 	return 0;
 }
@@ -297,33 +303,33 @@ int PVOC::run()
 		if (_cachedOutFrames)
 		{
 			int toCopy = min(_cachedOutFrames, outFramesNeeded);
-			if (_on > 0)
+			if (_on >= 0)
 			{
-	#ifdef debug
-				printf("\twriting %d of %d leftover frames from offset %d to rtbaddout\n", 
+#ifdef debug
+				printf("\twriting %d of %d leftover frames from _outbuf at offset %d to rtbaddout\n",
 					   toCopy, _cachedOutFrames, _outReadOffset);
-	#endif
+#endif
 				rtbaddout(&_outbuf[_outReadOffset], toCopy);
 				increment(toCopy);
+				_outReadOffset += toCopy;
+				assert(_outReadOffset <= _outWriteOffset);
+				if (_outReadOffset == _outWriteOffset)
+					_outReadOffset = _outWriteOffset = 0;
+#ifdef debug
+				printf("\t_outbuf read offset %d, write offset %d\n",
+					   _outReadOffset, _outWriteOffset);
+#endif
+				outFramesNeeded -= toCopy;
+				_cachedOutFrames -= toCopy;
 			}
-			_outReadOffset += toCopy;
-			assert(_outReadOffset <= _outWriteOffset);
-			if (_outReadOffset == _outWriteOffset)
-				_outReadOffset = _outWriteOffset = 0;
-	#ifdef debug
-			printf("\toutbuf read offset %d, write offset %d\n",
-				   _outReadOffset, _outWriteOffset);
-	#endif
-			outFramesNeeded -= toCopy;
-			_cachedOutFrames -= toCopy;
 		}
 
 		while (outFramesNeeded > 0)
 		{
-	#ifdef debug
+#ifdef debug
 			printf("\ttop of loop: needed=%d _in=%d _on=%d Nw=%d\n",
 				   outFramesNeeded, _in, _on, Nw);
-	#endif	
+#endif	
 			/*
 			* analysis: input D samples; window, fold and rotate input
 			* samples into FFT buffer; take FFT; and convert to
@@ -404,10 +410,10 @@ int PVOC::run()
 	#endif
 				rtbaddout(&_outbuf[_outReadOffset], framesToOutput);
 				increment(framesToOutput);
+				_outReadOffset += framesToOutput;
+				if (_outReadOffset == _outWriteOffset)
+					_outReadOffset = _outWriteOffset = 0;
 			}
-			_outReadOffset += framesToOutput;
-			if (_outReadOffset == _outWriteOffset)
-				_outReadOffset = _outWriteOffset = 0;
 
 			_cachedOutFrames = _outWriteOffset - _outReadOffset;
 	#ifdef debug
@@ -510,9 +516,7 @@ void PVOC::shiftout( float A[], int winLen, int I, int n)
 	float *output = &_outbuf[_outWriteOffset];
 #ifdef debug
 	printf("\tshiftout: winLen=%d I=%d n=%d\n", winLen, I, n);
-#endif
-#ifdef debug
-	printf("\tshiftout: copying A[%d - %d] to final output buffer at offset %d\n",
+	printf("\tshiftout: copying A[%d - %d] to _outbuf at write offset %d\n",
 		   0, I-1, _outWriteOffset);
 #endif
 	for (i = 0; i < I; ++i) {
@@ -521,6 +525,7 @@ void PVOC::shiftout( float A[], int winLen, int I, int n)
 	_outWriteOffset += I;
 
 #ifdef debug
+	printf("\tshiftout: write offset incremented to %d\n", _outWriteOffset);
 	if (winLen > I) {
 		printf("\tshiftout: moving A[%d - %d] to A[%d - %d]\n",
 				I, I+winLen-I-1, 0, winLen-I-1);
