@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2013-11-06  Douglas Scott  <netdscott-at-netscape.net>
+
+	* Fixed PVOC instrument to get rid of starting glitches.
+
 2013-10-28  Douglas Scott  <netdscott-at-netscape.net>
 
 	* Added new option to force-mute audio output that exceeds a given level.
