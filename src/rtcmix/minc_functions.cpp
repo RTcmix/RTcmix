@@ -597,7 +597,7 @@ double m_translen(const Arg args[], const int nargs)
 	}
 	else if (args[1].isType(DoubleType)) {
 		// This is exactly how TRANS does it, to assure a match.
-		double interval = octpch((double) args[0]);
+		double interval = octpch((double) args[1]);
 		newLen = origLen / (cpsoct(10.0 + interval) / cpsoct(10.0));
 	}
 	return newLen;
