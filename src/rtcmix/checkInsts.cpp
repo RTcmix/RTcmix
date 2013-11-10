@@ -98,9 +98,18 @@ static double loadPFieldsAndSetup(const char *inName, Instrument *inInst, const 
 			}
 				break;
 			case ArrayType:
-				rtcmix_warn(inName,
-						"arg %d: Array (list) types cannot be passed to instruments.\n\tUse maketable(\"literal\", ...) instead.\n", arg);
-				mixerr = MX_FAIL;
+			{
+				Array *array = (Array *)theArg;
+				assert(array->data != NULL);
+				double *dataCopy = new double[array->len];
+				if (dataCopy == NULL) {
+					rtcmix_warn(inName, "arg %d: ran out of memory copying array!\n", arg);
+					return MX_EMEM;
+				}
+				for (unsigned n = 0; n < array->len; ++n)
+					dataCopy[n] = array->data[n];
+				pfieldset->load(new TablePField(dataCopy, array->len, TablePField::Interpolate2ndOrder), arg);
+			}
 				break;
 			default:
 				rtcmix_warn(inName, "arg %d: Illegal argument type!\n", arg);

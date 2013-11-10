@@ -43,13 +43,14 @@ call_external_function(const char *funcname, const MincListElem arglist[],
 				Array *newarray = (Array *) emalloc(sizeof(Array));
 				if (newarray == NULL)
 					return -1;
+				assert(sizeof(*newarray->data) == sizeof(double));	// because we cast MincFloat to double here
 				newarray->data = (double *) float_list_to_array(arglist[i].val.list);
 				if (newarray->data != NULL) {
 					newarray->len = arglist[i].val.list->len;
 					rtcmixargs[i] = newarray;
 				}
 				else {
-					minc_die("can't pass a mixed-type list to RTcmix function %s()", funcname);
+					minc_die("can't pass an empty or mixed-type list to RTcmix function %s()", funcname);
 					free(newarray);
 					return -1;
 				}

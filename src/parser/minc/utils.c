@@ -35,9 +35,9 @@ MincFloat *
 float_list_to_array(const MincList *list)
 {
    int i;
-   MincFloat *array;
-
-   array = (MincFloat *) emalloc(list->len * sizeof(MincFloat));
+   MincFloat *array = NULL;
+   if (list->len > 0)
+	  array = (MincFloat *) emalloc(list->len * sizeof(MincFloat));
    if (array == NULL)
       return NULL;
    for (i = 0; i < list->len; i++) {

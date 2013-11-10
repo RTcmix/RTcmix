@@ -63,7 +63,6 @@ ug_intro()
  	UG_INTRO("cpslet",m_cpslet);
  	UG_INTRO("pchlet",m_pchlet);
  	UG_INTRO("pchadd",m_pchadd);
-	UG_INTRO("translen",m_translen);
  	UG_INTRO("dbamp",m_dbamp);
 	UG_INTRO("octcps",m_octcps);
 	UG_INTRO("cpsoct",m_cpsoct);
@@ -128,6 +127,7 @@ ug_intro()
 	UG_INTRO("reset",m_reset);
 	UG_INTRO("control_rate",m_reset); /* because "reset" is a perlfunc */
 	UG_INTRO("load",m_load); /* allows loading of dynamic libraries */
+	UG_INTRO_DOUBLE_RETURN("translen",m_translen);
 	UG_INTRO_DOUBLE_RETURN("pickrand", m_pickrand);
 	UG_INTRO_DOUBLE_RETURN("pickwrand", m_pickwrand);
 	UG_INTRO_DOUBLE_RETURN("get_time", get_time);

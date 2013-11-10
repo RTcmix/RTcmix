@@ -126,21 +126,6 @@ double m_stringify(float p, int n_args, double pp[])
 	return STRINGIFY(pp[0]);
 }
 
-/* get the transposed length for a given input length at interval */
-/* p0 = orig len   p1 = interval in octave point pc */
-double m_translen(float p[], int n_args, double pp[])
-{
-	double origLen = pp[0];
-	if (n_args != 2) {
-		die("translen", "usage: translen(orig_length, transp), where 'transp' is in pch format");
-		return origLen;
-	}
-	// This is exactly how TRANS does it, to assure a match.
-	double interval = octpch(pp[1]);
-	double newLen = origLen / (cpsoct(10.0 + interval) / cpsoct(10.0));
-	return newLen;
-}
-
 double m_log(float p[], int n_args)
 {
    double val;
@@ -552,9 +537,70 @@ double m_chance(float p[], int n_args, double pp[])
 // C++ functions
 
 extern "C" {
+	double m_translen(const Arg args[], const int nargs);
 	double m_pickrand(const Arg args[], const int nargs);
 	double m_pickwrand(const Arg args[], const int nargs);
 	double get_time(); // returns number of seconds that have elapsed
+}
+
+#include "PField.h"
+
+/* get the transposed length for a given input length at interval or series of intervals */
+/* p0 = orig len   p1 = interval in octave point pc */
+double m_translen(const Arg args[], const int nargs)
+{
+	if (!args[0].isType(DoubleType) || nargs != 2) {
+		die("translen", "usage: translen(orig_length, transp), where 'orig_length' is a float and 'transp' is float, array, or table in pch format");
+		return 0.0;
+	}
+	double origLen = (double) args[0];
+	double newLen = 0.0;
+	
+	if (args[1].isType(ArrayType)) {
+		Array *a = args[1];
+		const int alen = a->len;
+		const double *adata = a->data;
+		double intervalSum = 0.0;
+		for (int j = 0; j < alen; j++) {
+			double interval = octpch(adata[j]);
+			intervalSum += interval;
+		}
+		intervalSum /= (double) alen;	// compute average
+		double ratio = 1.0 / (cpsoct(10.0 + intervalSum) / cpsoct(10.0));
+		newLen = origLen * ratio;
+	}
+	else if (args[1].isType(HandleType)) {
+		Handle handle = (Handle) args[1];
+		if (handle != NULL) {
+			if (handle->type == PFieldType) {
+				if (handle->ptr == NULL)  {
+					die("translen", "NULL table handle for arg 1!");
+					return 0.0;
+				}
+				PField *pf = (PField *) handle->ptr;
+				double intervalSum = 0.0;
+				for (int j = 0; j < 100; j++) {
+					double interval = octpch(pf->doubleValue(double(j)/100.0));
+					intervalSum += interval;
+				}
+				intervalSum /= 100.0;	// compute average
+				double ratio = 1.0 / (cpsoct(10.0 + intervalSum) / cpsoct(10.0));
+				newLen = origLen * ratio;
+			}
+			else {
+				die("translen", "arg1 Handle can only be a table!");
+			}
+		}
+		else {
+			die("translen", "NULL handle for arg 1!");
+		}
+	}
+	else if (args[1].isType(DoubleType)) {
+		// This is exactly how TRANS does it, to assure a match.
+		double interval = octpch((double) args[0]);
+		newLen = origLen / (cpsoct(10.0 + interval) / cpsoct(10.0));
+	}
+	return newLen;
 }
 
 // pickrand returns random choice from its arguments
