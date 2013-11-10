@@ -282,7 +282,7 @@ int PVOC::configure()
 	// The output buffer is also larger in order to allow at least a full
 	// window of synthesized output to be stored.
 	
-	_outbuf = new BUFTYPE[-_on];	// XXX CHECK THIS SIZE
+	_outbuf = new BUFTYPE[Nw];	// XXX CHECK THIS SIZE
 		
 	return 0;
 }
@@ -293,139 +293,138 @@ int PVOC::run()
 	printf("PVOC::run\n\n");
 #endif
 
-	// This is inclosed in a do loop to run the engine forward until the first
-	//	valid buffer of output data is ready (_on >= 0).  This compensates for
-	//	the group delay of the windowed output.
+	// This runs the engine forward until the first buffer of output data is ready (see PVOC::shiftout()).
+	// This compensates for the group delay of the windowed output.
 	
-	do {
-		int outFramesNeeded = framesToRun();
+	int outFramesNeeded = framesToRun();
 
-		if (_cachedOutFrames)
-		{
-			int toCopy = min(_cachedOutFrames, outFramesNeeded);
-			if (_on >= 0)
-			{
-#ifdef debug
-				printf("\twriting %d of %d leftover frames from _outbuf at offset %d to rtbaddout\n",
-					   toCopy, _cachedOutFrames, _outReadOffset);
-#endif
-				rtbaddout(&_outbuf[_outReadOffset], toCopy);
-				increment(toCopy);
-				_outReadOffset += toCopy;
-				assert(_outReadOffset <= _outWriteOffset);
-				if (_outReadOffset == _outWriteOffset)
-					_outReadOffset = _outWriteOffset = 0;
-#ifdef debug
-				printf("\t_outbuf read offset %d, write offset %d\n",
-					   _outReadOffset, _outWriteOffset);
-#endif
-				outFramesNeeded -= toCopy;
-				_cachedOutFrames -= toCopy;
-			}
-		}
-
-		while (outFramesNeeded > 0)
+	if (_cachedOutFrames)
+	{
+		int toCopy = min(_cachedOutFrames, outFramesNeeded);
+		if (toCopy >= 0)
 		{
 #ifdef debug
-			printf("\ttop of loop: needed=%d _in=%d _on=%d Nw=%d\n",
-				   outFramesNeeded, _in, _on, Nw);
-#endif	
-			/*
-			* analysis: input D samples; window, fold and rotate input
-			* samples into FFT buffer; take FFT; and convert to
-			* amplitude-frequency (phase vocoder) form
-			*/
-			shiftin( _pvInput, Nw, D);
-			/*
-			 * increment times
-			 */
-			_in += D;
-			_on += I;
-
-			if ( Np ) {
-				::vvmult( winput, Hwin, _pvInput, Nw );
-				lpcoef[0] = ::lpa( winput, Nw, lpcoef, Np );
-			/*			printf("%.3g/", lpcoef[0] ); */
-			}
-			::fold( _pvInput, Wanal, Nw, _fftBuf, N, _in );
-			::rfft( _fftBuf, N2, FORWARD );
-			convert( _fftBuf, channel, N2, D, R );
-
-		// 	if ( I == 0 ) {
-		// 		if ( Np )
-		// 			fwrite( lpcoef, sizeof(float), Np+1, stdout );
-		// 		fwrite( channel, sizeof(float), N+2, stdout );
-		// 		fflush( stdout );
-		// /*		printf("\n" );
-		// 		continue;
-		// 	}
-		/*
-		 * at this point channel[2*i] contains amplitude data and
-		 * channel[2*i+1] contains frequency data (in Hz) for phase
-		 * vocoder channels i = 0, 1, ... N/2; the center frequency
-		 * associated with each channel is i*f, where f is the
-		 * fundamental frequency of analysis R/N; any desired spectral
-		 * modifications can be made at this point: pitch modifications
-		 * are generally well suited to oscillator bank resynthesis,
-		 * while time modifications are generally well (and more
-		 * efficiently) suited to overlap-add resynthesis
-		 */
-
-		 	if (_pvFilter) {
-				_pvFilter->run(channel, N2);
-			}
-
-			if ( obank ) {
-				/*
-				 * oscillator bank resynthesis
-				 */
-				oscbank( channel, N2, lpcoef, Np, R, Nw, I, P, _pvOutput );
-	#ifdef debug
-				printf("osc output (first 16):\n");
-				for (int x=0;x<16;++x) printf("%g ",_pvOutput[x]);
-				printf("\n");
-	#endif
-				shiftout( _pvOutput, Nw, I, _on+Nw-I);
-			}
-			else {
-				/*
-				 * overlap-add resynthesis
-				 */
-				unconvert( channel, _fftBuf, N2, I, R );
-				::rfft( _fftBuf, N2, INVERSE );
-				::overlapadd( _fftBuf, N, Wsyn, _pvOutput, Nw, _on );
-				// I samples written into _outbuf
-				shiftout( _pvOutput, Nw, I, _on);
-			}
- 		   // Handle case where last synthesized block extended beyond outFramesNeeded
-
-			int framesToOutput = ::min(outFramesNeeded, I);
-	#ifdef debug
-			printf("\tbottom of loop. framesToOutput: %d\n", framesToOutput);
-	#endif
-			if (_on >= 0) {
-	#ifdef debug
-				printf("\twriting %d frames from offset %d to rtbaddout\n", 
-					   framesToOutput, _outReadOffset);
-	#endif
-				rtbaddout(&_outbuf[_outReadOffset], framesToOutput);
-				increment(framesToOutput);
-				_outReadOffset += framesToOutput;
-				if (_outReadOffset == _outWriteOffset)
-					_outReadOffset = _outWriteOffset = 0;
-			}
-
-			_cachedOutFrames = _outWriteOffset - _outReadOffset;
-	#ifdef debug
-			if (_cachedOutFrames > 0) {
-	   	 		printf("\tsaving %d samples left over\n", _cachedOutFrames);
-			}
-			printf("\toutbuf read offset %d, write offset %d\n",
+			printf("\twriting %d of %d leftover frames from _outbuf at offset %d to rtbaddout\n",
+				   toCopy, _cachedOutFrames, _outReadOffset);
+#endif
+			rtbaddout(&_outbuf[_outReadOffset], toCopy);
+			increment(toCopy);
+			_outReadOffset += toCopy;
+			assert(_outReadOffset <= _outWriteOffset);
+			if (_outReadOffset == _outWriteOffset)
+				_outReadOffset = _outWriteOffset = 0;
+#ifdef debug
+			printf("\t_outbuf read offset %d, write offset %d\n",
 				   _outReadOffset, _outWriteOffset);
-	#endif
-			outFramesNeeded -= framesToOutput;
+#endif
+			outFramesNeeded -= toCopy;
+			_cachedOutFrames -= toCopy;
 		}
-	} while (_on < 0);
+	}
+
+	while (outFramesNeeded > 0)
+	{
+#ifdef debug
+		printf("\ttop of loop: needed=%d _in=%d _on=%d Nw=%d\n",
+			   outFramesNeeded, _in, _on, Nw);
+#endif	
+		/*
+		* analysis: input D samples; window, fold and rotate input
+		* samples into FFT buffer; take FFT; and convert to
+		* amplitude-frequency (phase vocoder) form
+		*/
+		shiftin( _pvInput, Nw, D);
+		/*
+		 * increment times
+		 */
+		_in += D;
+		_on += I;
+
+		if ( Np ) {
+			::vvmult( winput, Hwin, _pvInput, Nw );
+			lpcoef[0] = ::lpa( winput, Nw, lpcoef, Np );
+		/*			printf("%.3g/", lpcoef[0] ); */
+		}
+		::fold( _pvInput, Wanal, Nw, _fftBuf, N, _in );
+		::rfft( _fftBuf, N2, FORWARD );
+		convert( _fftBuf, channel, N2, D, R );
+
+	// 	if ( I == 0 ) {
+	// 		if ( Np )
+	// 			fwrite( lpcoef, sizeof(float), Np+1, stdout );
+	// 		fwrite( channel, sizeof(float), N+2, stdout );
+	// 		fflush( stdout );
+	// /*		printf("\n" );
+	// 		continue;
+	// 	}
+	/*
+	 * at this point channel[2*i] contains amplitude data and
+	 * channel[2*i+1] contains frequency data (in Hz) for phase
+	 * vocoder channels i = 0, 1, ... N/2; the center frequency
+	 * associated with each channel is i*f, where f is the
+	 * fundamental frequency of analysis R/N; any desired spectral
+	 * modifications can be made at this point: pitch modifications
+	 * are generally well suited to oscillator bank resynthesis,
+	 * while time modifications are generally well (and more
+	 * efficiently) suited to overlap-add resynthesis
+	 */
+
+		if (_pvFilter) {
+			_pvFilter->run(channel, N2);
+		}
+
+		if ( obank ) {
+			/*
+			 * oscillator bank resynthesis
+			 */
+			oscbank( channel, N2, lpcoef, Np, R, Nw, I, P, _pvOutput );
+#if defined(debug) && 0
+			printf("osc output (first 16):\n");
+			for (int x=0;x<16;++x) printf("%g ",_pvOutput[x]);
+			printf("\n");
+#endif
+			shiftout( _pvOutput, Nw, I, _on+Nw-I);
+		}
+		else {
+			/*
+			 * overlap-add resynthesis
+			 */
+			unconvert( channel, _fftBuf, N2, I, R );
+			::rfft( _fftBuf, N2, INVERSE );
+			::overlapadd( _fftBuf, N, Wsyn, _pvOutput, Nw, _on );
+			// I samples written into _outbuf
+			shiftout( _pvOutput, Nw, I, _on);
+		}
+	   // Handle case where last synthesized block extended beyond outFramesNeeded
+
+		int framesToOutput = ::min(outFramesNeeded, I);
+#ifdef debug
+		printf("\tbottom of loop. framesToOutput: %d\n", framesToOutput);
+#endif
+		int framesAvailable = _outWriteOffset - _outReadOffset;
+		framesToOutput = ::min(framesToOutput, framesAvailable);
+		if (framesToOutput > 0) {
+#ifdef debug
+			printf("\twriting %d frames from offset %d to rtbaddout\n", 
+				   framesToOutput, _outReadOffset);
+#endif
+			rtbaddout(&_outbuf[_outReadOffset], framesToOutput);
+			increment(framesToOutput);
+			_outReadOffset += framesToOutput;
+			if (_outReadOffset == _outWriteOffset)
+				_outReadOffset = _outWriteOffset = 0;
+		}
+
+		_cachedOutFrames = _outWriteOffset - _outReadOffset;
+#ifdef debug
+		if (_cachedOutFrames > 0) {
+			printf("\tsaving %d samples left over\n", _cachedOutFrames);
+		}
+		printf("\toutbuf read offset %d, write offset %d\n\n",
+			   _outReadOffset, _outWriteOffset);
+#endif
+		outFramesNeeded -= framesToOutput;
+	}	/* while (outFramesNeeded > 0) */
 
 	return framesToRun();
 }
@@ -516,16 +515,21 @@ void PVOC::shiftout( float A[], int winLen, int I, int n)
 	float *output = &_outbuf[_outWriteOffset];
 #ifdef debug
 	printf("\tshiftout: winLen=%d I=%d n=%d\n", winLen, I, n);
-	printf("\tshiftout: copying A[%d - %d] to _outbuf at write offset %d\n",
-		   0, I-1, _outWriteOffset);
 #endif
-	for (i = 0; i < I; ++i) {
-		output[i] = A[i];
-	}
-	_outWriteOffset += I;
-
+	if (n >= 0) {
 #ifdef debug
-	printf("\tshiftout: write offset incremented to %d\n", _outWriteOffset);
+		printf("\tshiftout: copying A[%d - %d] to _outbuf at write offset %d\n",
+			   0, I-1, _outWriteOffset);
+#endif
+		for (i = 0; i < I; ++i) {
+			output[i] = A[i];
+		}
+		_outWriteOffset += I;
+#ifdef debug
+		printf("\tshiftout: write offset incremented to %d\n", _outWriteOffset);
+#endif
+	}
+#ifdef debug
 	if (winLen > I) {
 		printf("\tshiftout: moving A[%d - %d] to A[%d - %d]\n",
 				I, I+winLen-I-1, 0, winLen-I-1);
@@ -703,7 +707,7 @@ PVOC::oscbank(float C[], int N, float lpcoef[], int npoles,
 	float *table = _table;
 	
 #ifdef debug
-	printf("oscbank: N=%d Nw=%d I=%d P=%g\n", N, Nw, I, P);
+	printf("\toscbank: N=%d Nw=%d I=%d P=%g\n", N, Nw, I, P);
 #endif
 	/*
 	 * for each channel, compute I samples using linear
