@@ -1,6 +1,20 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2014-03-04  Douglas Scott  <netdscott-at-netscape.net>
+
+	* Major revision!  Pushing version to 4.1.0.
+	  1) Cleaned up a lot of cout-vs-printf crud, on the way towards having no stream stuff.  MMPrint stuff is now just an implementation detail.
+	  2) Generalized #ifdefs from "MAXMSP" to "EMBEDDED" wherever possible to allow builds for other non-MAX platforms.
+	  3) Unified audio path for embedded/MAX vs. desktop; both use AudioDevices and inTraverse.  Much simpler!
+	  4) Added RTExit() and rtcmix_debug() to help simplify error handling and debugging.  MSP versions call cpost() to allow console view.
+	  5) Created a full set of "outward-facing" functions that are called by MAX/MSP and other embedded systems.
+	  6) Reworked yacc/lex code to remove leaks, added wrapper header to rename all public functions.
+	  7) Cleaned up all global/static state and memory usage so system exits and restarts cleanly.
+	  8) InputFiles now support loading from memory -- so new rtinput(file, "mem") functionality.
+	  9) Fixed some minor bugs in dispatch/checkInst code.
+	  10) Added AppleAudioDevice and MSPAudioDevice.
+
 2013-11-09  Douglas Scott  <netdscott-at-netscape.net>
 
 	* Added ability to pass array ({ ... }) as pfield.  translen() now accepts

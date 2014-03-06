@@ -90,7 +90,7 @@ AUDIOLIB = $(AUDIODIR)/librtaudio.a
 # Compile and link time flags
 
 ifeq ($(ARCH),LINUX)
-  ARCHFLAGS = -DLINUX $(ARCH_BITFLAGS)
+  ARCHFLAGS = -DLINUX $(ARCH_BITFLAGS) -DSTANDALONE
   ARCH_RTLDFLAGS = -Wl,-rpath $(LIBDIR)
   CC = gcc
   CXX = g++ -Wno-deprecated
@@ -102,58 +102,72 @@ ifeq ($(ARCH),LINUX)
   SHLIB_SUFFIX = so
 endif
 ifeq ($(ARCH),MACOSX)
-  ARCHFLAGS = -DMACOSX $(ARCH_BITFLAGS) -fno-common
-  ifeq ($(USE_OSX_DISPATCH), TRUE)
-  ARCHFLAGS += -DUSE_OSX_DISPATCH
-  endif
+  ARCHFLAGS = $(ARCH_BITFLAGS) -fno-common -DMACOSX		# DAS: create better macro
   ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX)
   CC = cc
   CXX = c++ -Wno-deprecated
+  LD = ld
+  MAKE = make -j 8
+  INSTALL = cp -f
+  RANLIB = ranlib
+  SHELL = /bin/sh
+  SHLIB_SUFFIX = dylib
+
+  ifeq ($(BUILDTYPE), STANDALONE)
+	ARCHFLAGS += $(ARCH_BITFLAGS) -DSTANDALONE
+	ifeq ($(USE_OSX_DISPATCH), TRUE)
+		ARCHFLAGS += -DUSE_OSX_DISPATCH
+	endif
+	CMIX_FLAGS += -DAPPLEAUDIO
+  	ARCH_RTLDFLAGS += -framework AudioUnit
+  endif
 
   ifeq ($(BUILDTYPE), MAXMSP)
-    ARCHFLAGS = -DMACOSX -DMAXMSP -fno-common
-	 CC = i686-apple-darwin11-llvm-gcc-4.2
-	 CXX = i686-apple-darwin11-llvm-g++-4.2 -Wno-deprecated
+	ARCHFLAGS += -DEMBEDDED -DMAXMSP -DMSP_AUDIO_DEVICE $(MAX_INCLUDES)
+	ifdef MAX_INPUTS
+		ARCHFLAGS += -DMAX_INPUTS=$(MAX_INPUTS)
+	endif
+	ifdef MAX_OUTPUTS
+		ARCHFLAGS += -DMAX_OUTPUTS=$(MAX_OUTPUTS)
+	endif
+      CC = `xcrun -f cc`
+      CXX = `xcrun -f c++` -Wno-deprecated
+      ARCHFLAGS += -isysroot `xcrun --show-sdk-path`
   endif
 
   ifeq ($(BUILDTYPE), PD)
-    ARCHFLAGS = -DMACOSX -DMAXMSP -DPD -fno-common
+    ARCHFLAGS += -DEMBEDDED -DPD
     CC = i686-apple-darwin11-llvm-gcc-4.2
     CXX = i686-apple-darwin11-llvm-g++-4.2 -Wno-deprecated
   endif
 
   ifeq ($(BUILDTYPE), IOS)
+	CMIX_FLAGS += -DAPPLEAUDIO
     ifeq ($(IPHONE_TYPE), SIMULATOR)
-      ARCHFLAGS = -DMACOSX -DMAXMSP -DIOS -fno-common
-      ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX) -arch i386
-      CC = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin/gcc
-      CXX = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/usr/bin/g++ -Wno-deprecated
-      IPHONE_CFLAGS = -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator5.0.sdk -arch i386
+      ARCHFLAGS += -DEMBEDDED -DIOS -arch i386
+      ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX) -arch i386 -framework AudioToolbox
+      CC = `xcrun -sdk iphonesimulator -f cc`
+      CXX = `xcrun -sdk iphonesimulator -f c++` -Wno-deprecated
+      IPHONE_CFLAGS = -isysroot `xcrun -sdk iphonesimulator --show-sdk-path`
     endif
 
     ifeq ($(IPHONE_TYPE), DEVICE)
-      ARCHFLAGS = -DMACOSX -DMAXMSP -DIOS -DIOSDEV -fno-common
-      CC = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/gcc
-      CXX = /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/g++
-      IPHONE_CFLAGS = -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS6.1.sdk -arch armv7 -arch armv7s
+      ARCHFLAGS += -DEMBEDDED -DIOS -DIOSDEV
+      ARCH_RTLDFLAGS += -framework ../../insts/bgg/GVERB/
+      CC = `xcrun -sdk iphoneos -f cc` -arch armv7s -arch armv7
+      CXX = `xcrun -sdk iphoneos -f c++` -arch armv7s -arch armv7
+      IPHONE_CFLAGS = -isysroot `xcrun -sdk iphoneos --show-sdk-path`# -arch armv7 -arch armv7s
     endif
   endif
 
   ifeq ($(BUILDTYPE), OPENFRAMEWORKS)
     ifeq ($(OF_TYPE), OSXAPP)
-      ARCHFLAGS = -DMACOSX -DMAXMSP -DIOS -DOPENFRAMEWORKS -fno-common -arch i386
+      ARCHFLAGS += -DEMBEDDED -DIOS -DOPENFRAMEWORKS -arch i386
     endif
   endif
-
-  LD = ld
-  MAKE = make
-  INSTALL = cp -f
-  RANLIB = ranlib
-  SHELL = /bin/sh
-  SHLIB_SUFFIX = dylib
 endif
 ifeq ($(ARCH),SGI)
-  ARCHFLAGS = -DSGI $(ARCH_BITFLAGS)
+  ARCHFLAGS = -DSGI $(ARCH_BITFLAGS) -DSTANDALONE
   ARCH_RTLDFLAGS =
   CC = cc -Xcpluscomm
   CXX = CC
@@ -165,7 +179,7 @@ ifeq ($(ARCH),SGI)
   SHLIB_SUFFIX = so
 endif
 ifeq ($(ARCH),FREEBSD)
-  ARCHFLAGS = -DFREEBSD -DLINUX $(ARCH_BITFLAGS)
+  ARCHFLAGS = -DFREEBSD -DLINUX $(ARCH_BITFLAGS) -DSTANDALONE
   ARCH_RTLDFLAGS =
   CC = gcc
   CXX = g++
