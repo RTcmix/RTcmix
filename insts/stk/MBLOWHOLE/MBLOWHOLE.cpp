@@ -163,7 +163,7 @@ Instrument *makeMBLOWHOLE()
 	return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
 	RT_INTRO("MBLOWHOLE", makeMBLOWHOLE);

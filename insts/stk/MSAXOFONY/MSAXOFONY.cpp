@@ -163,7 +163,7 @@ Instrument *makeMSAXOFONY()
 	return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
 	RT_INTRO("MSAXOFONY", makeMSAXOFONY);

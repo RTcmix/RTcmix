@@ -1,5 +1,5 @@
 rtsetparams(44100, 2)
-load("./libMMODALBAR.so")
+load("MMODALBAR")
 
 /* MMODALBAR - the "ModalBar" physical model instrument in
 	Perry Cook/Gary Scavone's "stk" (synthesis tookkit).

@@ -109,7 +109,7 @@ Instrument *makeMMESH2D()
 	return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
 	RT_INTRO("MMESH2D", makeMMESH2D);
