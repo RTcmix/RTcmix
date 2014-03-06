@@ -11,6 +11,7 @@
 #include <string.h>  /* for strerror */
 #include <math.h>    /* for fabs */
 #include <errno.h>
+#include <ugens.h>
 #include <RTcmix.h>
 #include "prototypes.h"
 #include "AudioDevice.h"
@@ -29,19 +30,21 @@ RTcmix::rtwritesamps(AudioDevice *fileDevice)
 {
 	const int nframes = bufsamps();
 
-   /* This catches our new case where rtoutput() failed but was ignored */
-   if (rtfileit < 0) {
-      fprintf(stderr, "rtwritesamps: No output file open (rtoutput failed).\n");
-      exit(1);
-   }
+	/* This catches our new case where rtoutput() failed but was ignored */
+	if (rtfileit < 0) {
+		die("rtwritesamps", "No output file open (rtoutput failed).");
+		RTExit(1);
+		return -1;	/*NOTREACHED*/	/* sometimes, that is */
+	}
    
-   int framesWritten = fileDevice->sendFrames(out_buffer, nframes);
+	int framesWritten = fileDevice->sendFrames(out_buffer, nframes);
    
-   if (framesWritten != nframes) {
-      fprintf(stderr, "rtwritesamps error: %s\n", fileDevice->getLastError());
-      exit(1);
-   }
+	if (framesWritten != nframes) {
+		die("rtwritesamps", "error: %s", fileDevice->getLastError());
+		RTExit(1);
+		return -1;	/*NOTREACHED*/	/* sometimes, that is */
+	}
 
-   return 0;
+	return 0;
 }
 

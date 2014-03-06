@@ -1,7 +1,11 @@
 include ../../makefile.conf
 
+AUDIODIR = ../audio
+SNDLIBDIR = ../sndlib
+CONFDIR = ../conf
+
 CXXFLAGS += $(SOUND_DRIVER)
-INCLUDES += -I$(INCLUDEDIR) -I../include -I../audio -I../sndlib -I./heap -I../conf
+INCLUDES += -I$(INCLUDEDIR) -I../include -I$(AUDIODIR) -I$(SNDLIBDIR) -I./heap -I../conf
 
 COMMON_CSRCS = \
 check_byte_order.c \
@@ -100,7 +104,7 @@ converter.cpp \
 monitor.cpp
 
 ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD OPENFRAMEWORKS))
-	COMMON_CPPSRCS += mm_rtsetparams.cpp rtprofile.cpp
+	COMMON_CPPSRCS += rtprofile.cpp
 endif
 
 ifeq ($(MULTI_THREAD_SUPPORT), TRUE)
@@ -133,7 +137,7 @@ include maxmspstuff/INBGGOBJS
 include maxmspstuff/INJOELOBJS
 endif
 
-COMMON_OBJS = $(CPPOBJS) $(COBJS) $(GENOBJS) heap/rtHeap.o $(MIX_INST) ../audio/audio_devices.o
+COMMON_OBJS = $(CPPOBJS) $(COBJS) $(GENOBJS) heap/rtHeap.o $(MIX_INST) $(AUDIODIR)/audio_devices.o
 
 ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD OPENFRAMEWORKS))
 	COMMON_OBJS += $(INBASEOBJS) $(INSTDOBJS) $(INJGOBJS) $(INSTKOBJS) \
@@ -150,10 +154,10 @@ ifeq ($(ARCH), MACOSX_10.0)
    COMMON_OBJS += osx_workaround.o
 endif
 
-LIBCONF = ../conf/libconf.a
+LIBCONF = $(CONFDIR)/libconf.a
 LIBMINC = ../parser/minc/libminc.a
-AUDIOLIB = ../audio/librtaudio.a
-SNDLIB = ../sndlib/sndlib.a
+AUDIOLIB = $(AUDIODIR)/librtaudio.a
+SNDLIB = $(SNDLIBDIR)/sndlib.a
 
 ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD OPENFRAMEWORKS))
 LIBINLET = ../control/maxmsp/libinlet.a
@@ -254,7 +258,7 @@ $(SNDLIB):
 	(cd ../sndlib; $(MAKE) $(MFLAGS) all;)
 
 $(AUDIOLIB):
-	(cd ../audio; $(MAKE) $(MFLAGS) all;)
+	(cd $(AUDIODIR); $(MAKE) $(MFLAGS) all;)
 
 ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD OPENFRAMEWORKS))
   $(LIBINLET):
@@ -333,10 +337,20 @@ endif
 
 ifeq ($(BUILDTYPE), MAXMSP)
 MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
-	ld $(UB_CFLAGS) -U _cpost -bundle -flat_namespace -o rtcmixdylib.so \
+	ld $(UB_CFLAGS) -U _cpost -U _dsp_addv -bundle -flat_namespace -o rtcmixdylib.so \
 	$(COMMON_OBJS) $(LIBS) $(MAIN_OBJS) $(LIBINLET) $(LIBPFBUS) $(M_O) \
 	$(LIBJGOBJ) $(LIBSTK) $(LIBMINC) \
-	-L$(LIBDIR) -lgen $(SYS_LDFLAGS)
+	-L../../genlib -lgen $(SYS_LDFLAGS)
+
+install:	maxmsp_install
+
+maxmsp_install:	all
+   ifndef MAX_INSTALL_DIR
+	@echo You are installing Max/MSP but have not set the install path for your library using MAX_INSTALL_DEST!
+   else
+	$(INSTALL) rtcmixdylib.so $(MAX_INSTALL_DIR)
+   endif
+
 endif
 
 ifeq ($(BUILDTYPE), PD)
@@ -345,6 +359,9 @@ MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
 	$(COMMON_OBJS) $(LIBS) $(MAIN_OBJS) $(LIBINLET) $(LIBPFBUS) $(M_O) \
 	$(LIBJGOBJ) $(LIBSTK) $(LIBMINC) \
 	-L$(LIBDIR) -lgen $(SYS_LDFLAGS)
+
+install:	all
+
 endif
 
 ifeq ($(BUILDTYPE), IOS)
@@ -357,12 +374,15 @@ MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
 	$(RM) $(IOSLIBNAME)
 	ar rv $(IOSLIBNAME) $(CPPOBJS) $(COBJS) $(GENOBJS) $(MIX_INST) \
 	$(INBASEOBJS) $(INSTDOBJS) $(INJGOBJS) $(INSTKOBJS) $(INMAXMSPOBJS) \
-	$(INBGGOBJS) $(INJOELOBJS) ../audio/audio_devices.o \
+	$(INBGGOBJS) $(INJOELOBJS) $(AUDIODIR)/audio_devices.o \
 	$(MAIN_OBJS) $(PROFILE_O) $(M_O) \
 	$(LIBRTAUDIOOBJS) $(LIBCONFOBJS) $(LIBGENOBJS) $(LIBINLETOBJS) \
 	$(LIBPFBUSOBJS) $(LIBMINCOBJS) $(LIBOBJLIBOBJS) $(LIBRTHEAP) \
 	$(LIBSNDLIB) $(LIBSTKLIB)
 	ranlib $(IOSLIBNAME)
+
+install:	all
+
 endif
 
 ifeq ($(BUILDTYPE), OPENFRAMEWORKS)
@@ -373,12 +393,15 @@ MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
 	$(RM) $(OFLIBNAME)
 	ar rv $(OFLIBNAME) $(CPPOBJS) $(COBJS) $(GENOBJS) $(MIX_INST) \
 	$(INBASEOBJS) $(INSTDOBJS) $(INJGOBJS) $(INSTKOBJS) $(INMAXMSPOBJS) \
-	$(INBGGOBJS) $(INJOELOBJS) ../audio/audio_devices.o \
+	$(INBGGOBJS) $(INJOELOBJS) $(AUDIODIR)/audio_devices.o \
 	$(MAIN_OBJS) $(PROFILE_O) $(M_O) \
 	$(LIBRTAUDIOOBJS) $(LIBCONFOBJS) $(LIBGENOBJS) $(LIBINLETOBJS) \
 	$(LIBPFBUSOBJS) $(LIBMINCOBJS) $(LIBOBJLIBOBJS) $(LIBRTHEAP) \
 	$(LIBSNDLIB) $(LIBSTKLIB)
 	ranlib $(OFLIBNAME)
+	
+install:	all
+
 endif
 
 PMIX: $(MAIN_OBJS) $(P_O) $(LIBS) $(PROFILE_O)
@@ -411,9 +434,11 @@ else
 endif
 
 -include depend
-endif
 
 install:	standalone_install
+
+endif
+
 
 standalone_install: all
 	@if test ! -d $(DESTDIR); then mkdir $(DESTDIR); fi;

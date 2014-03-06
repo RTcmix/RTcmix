@@ -1,4 +1,4 @@
-#ifdef MAXMSP
+#ifdef EMBEDDED
 float rtcmix_table(long nsample, double *array, float *tab)
 #else
 float table(long nsample, double *array, float *tab)

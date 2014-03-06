@@ -5,7 +5,7 @@
 #include <RTcmix.h>
 #include "prototypes.h"
 #include <pthread.h>
-#ifndef MAXMSP
+#ifndef EMBEDDED
 #include <iostream>
 #endif
 #include <stdio.h>
@@ -26,6 +26,14 @@
 #include <vector>
 #endif
 
+#ifdef EMBEDDED
+extern "C" {
+	void checkForBang();		// DAS TODO: currently in main.cpp -- create header and move to new file
+	void checkForVals();
+	void checkForPrint();
+}
+#endif
+
 using namespace std;
 
 #undef TBUG
@@ -40,27 +48,28 @@ static FRAMETYPE bufEndSamp;
 static int startupBufCount = 0;
 static bool audioDone = false;
 
-bool inTraverse(AudioDevice *device, void *arg);
-bool doneTraverse(AudioDevice *device, void *arg);
-
 int RTcmix::runMainLoop(void)
 {
 	Bool audio_configured = NO;
 
 #ifdef WBUG	
-	cout << "ENTERING runMainLoop() FUNCTION *****\n";
+	RTPrintf("ENTERING runMainLoop() FUNCTION *****\n");
 #endif
 
+	// Initialize everything ... cause it's good practice
+	bufStartSamp = 0;  // current end sample for buffer
+	bufEndSamp = RTBUFSAMPS;
+	startupBufCount = 0;
+	audioDone = false;
+	
 	// This lets signal handler know that we have gotten to this point.
 	audioLoopStarted = 1;
 
 	// Wait for the ok to go ahead
 	::pthread_mutex_lock(&audio_config_lock);
 	if (!audio_config) {
-#ifndef MAXMSP
 		if (Option::print())
-			cout << "runMainLoop():  waiting for audio_config . . .\n";
-#endif
+			RTPrintf("runMainLoop():  waiting for audio_config . . .\n");
 	}
 	::pthread_mutex_unlock(&audio_config_lock);
 
@@ -73,53 +82,37 @@ int RTcmix::runMainLoop(void)
 		if (rtInteractive) {
 			if (run_status == RT_GOOD || run_status == RT_PANIC)
 				continue;
-#ifndef MAXMSP
 			else if (run_status == RT_SHUTDOWN)
-				cout << "runMainLoop:  shutting down" << endl;
+				RTPrintf("runMainLoop:  shutting down\n");
 			else if (run_status == RT_ERROR)
-				cout << "runMainLoop:  shutting down due to error" << endl;
-#endif
+				RTPrintf("runMainLoop:  shutting down due to error\n");
 			audioDone = true;
 			return -1;
 		}
 	}
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 	if (audio_configured && rtInteractive) {
 		if (Option::print())
-			cout << "runMainLoop():  audio set." << endl;
+			RTPrintf("runMainLoop():  audio set.\n");
 	}
 #else
+	rtcmix_debug(NULL, "runMainLoop():  audio set.");
 	rtInteractive = 1;
 #endif
-
-	// Initialize everything ... cause it's good practice
-	bufStartSamp = 0;  // current end sample for buffer
-	bufEndSamp = RTBUFSAMPS;
 
 	// NOTE: audioin, aux and output buffers are zero'd during allocation
 
 	if (rtsetparams_was_called()) {
-		// NOTE: This will be handled in the AudioDevice platform-specific.
-		// Right now, the intraVerse function below calls rtsendzeros().
-//		startupBufCount = ZERO_FRAMES_BEFORE / RTBUFSAMPS;
 		startupBufCount = 0;
 
-		// Device may have been closed by user interrupt.
-		if (audioDevice && audioDevice->isOpen()) {
-			// Set done callback on device.
-			audioDevice->setStopCallback(doneTraverse, this);
-			// Start audio output device, handing it our callback.
-			if (audioDevice->start(inTraverse, this) != 0) {
-#ifndef MAXMSP
-				cerr << audioDevice->getLastError() << endl;
-#endif
-				audioDevice->close();
-				audioDone = true;
-				return -1;
-			}
-			return 0;	// Playing, thru HW and/or to FILE.
+		rtcmix_debug(NULL, "runMainLoop():  calling startAudio()");
+		if (startAudio(inTraverse, doneTraverse, this) != 0) {
+			audioDone = true;
+			return -1;
 		}
+		rtcmix_debug(NULL, "runMainLoop():  exiting function");
+		return 0;	// Playing, thru HW and/or to FILE.
 	}
 	audioDone = true;
 	return -1;	// Not playing, signal caller not to wait.
@@ -127,23 +120,17 @@ int RTcmix::runMainLoop(void)
 
 int RTcmix::waitForMainLoop()
 {
-#ifdef WBUG	
-	cout << "ENTERING waitForMainLoop() FUNCTION *****\n";
-#endif
+	rtcmix_debug(NULL, "waitForMainLoop():  entering function");
 	while (!audioDone) {
 		usleep(10000);
 	}
-	AudioDevice *tmp = audioDevice;
-	audioDevice = NULL;
-	delete tmp;
-#ifdef WBUG	
-	cout << "EXITING waitForMainLoop() FUNCTION *****\n";
-#endif
+	close();
+	bufEndSamp = 0;		// reset
+	rtcmix_debug(NULL, "waitForMainLoop():  exiting function");
 	return 0;
 }
 
 // This is now the audio play callback
-
 bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 {
 //	RTcmix *RTCore = (RTcmix *) arg;
@@ -159,7 +146,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	RTPrintf("Entering big loop .....................\n");
 #endif
 
-#ifdef MAXMSP
+#ifdef EMBEDDED
 	// BGG mm -- I need to find a better place to put this...
    bufEndSamp = bufStartSamp + RTBUFSAMPS;
 #endif
@@ -168,11 +155,19 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	// in the inTraverse init code.
 	
 	if (startupBufCount-- > 0) {
-		return (rtsendzeros(device, 0) == 0) ? true : false;
+		return (rtsendzeros(device, false) == 0) ? true : false;
 	}
 
 	if (rtInteractive && run_status == RT_PANIC)
 		panic = YES;
+#ifdef EMBEDDED
+	else if (rtInteractive && run_status == RT_FLUSH) {
+		resetHeapAndQueue();
+		rtsendzeros(device, false);
+		run_status = RT_GOOD;
+		return true;
+	}
+#endif
 
 	// Pop elements off rtHeap and insert into rtQueue +++++++++++++++++++++
 
@@ -185,12 +180,12 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
     
 	while ((Iptr = rtHeap->deleteMin(bufEndSamp, &heapChunkStart)) != NULL) {
 #ifdef DBUG
-		cout << "Iptr " << (void *) Iptr << " pulled from rtHeap" << endl;
-		cout << "heapChunkStart = " << heapChunkStart << endl;
+		RTPrintf("Iptr %p pulled from rtHeap\n", Iptr);
+		RTPrintf("heapChunkStart = %lld", (long long)heapChunkStart);
 #endif
 		if (panic) {
 #ifdef DBUG
-			cout << "Panic: Iptr " << (void *) Iptr << " unref'd" << endl;
+			RTPrintf("Panic: Iptr %p unref'd\n", Iptr);
 #endif
 			Iptr->unref();
 			continue;
@@ -202,11 +197,11 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 
 		if (!rtInteractive) {
 #ifdef ALLBUG
-			cout << "Calling configure()" << endl;
+			RTPrintf("Calling configure()\n");
 #endif
 			if (Iptr->configure(RTBUFSAMPS) != 0) {
 #ifdef DBUG
-				cerr << "Inst configure error: Iptr " << (void *) Iptr << " unref'd" << endl;
+				rtcmix_warn(NULL, "Inst configure error: Iptr %p unref'd", Iptr);
 #endif
 				Iptr->unref();
 				continue;
@@ -226,7 +221,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 				bus = iBus->auxout[i];
 				busq = bus+bus_q_offset;
 #ifdef ALLBUG
-				cout << "Pushing on TO_AUX[" << busq << "] rtQueue\n";
+				RTPrintf("Pushing on TO_AUX[%d] rtQueue\n", busq);
 #endif
 				rtQueue[busq].push(Iptr,heapChunkStart);
 			}
@@ -238,7 +233,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 				bus = iBus->auxout[i];
 				busq = bus+bus_q_offset;
 #ifdef ALLBUG
-				cout << "Pushing on AUX_TO_AUX[" << busq << "] rtQueue\n";
+				RTPrintf("Pushing on AUX_TO_AUX[%d] rtQueue\n", busq);
 #endif
 				rtQueue[busq].push(Iptr,heapChunkStart);
 			}
@@ -250,7 +245,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 				bus = iBus->out[i];
 				busq = bus+bus_q_offset;
 #ifdef ALLBUG
-				cout << "Pushing on TO_OUT[" << busq << "] rtQueue\n";
+				RTPrintf("Pushing on TO_OUT[%d] rtQueue\n", busq);
 #endif
 				rtQueue[busq].push(Iptr,heapChunkStart);
 			}
@@ -262,7 +257,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 				bus = iBus->out[i];
 				busq = bus+bus_q_offset;
 #ifdef ALLBUG
-				cout << "Pushing on TO_OUT2[" << busq << "] rtQueue\n";
+				RTPrintf("Pushing on TO_OUT2[%d] rtQueue\n", busq);
 #endif
 				rtQueue[busq].push(Iptr,heapChunkStart);
 			}
@@ -272,7 +267,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 				bus = iBus->auxout[i];
 				busq = bus+bus_q_offset;
 #ifdef ALLBUG
-				cout << "Pushing on TO_AUX2[" << busq << "] rtQueue\n";
+				RTPrintf("Pushing on TO_AUX2[%d] rtQueue\n", busq);
 #endif
 				rtQueue[busq].push(Iptr,heapChunkStart);
 			}
@@ -345,7 +340,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 				break;
 			case TO_OUT:
 #ifdef ALLBUG
-				cout << "aux_pb_done\n";
+				printf("aux_pb_done\n");
 #endif
 				aux_pb_done = YES;
 				break;
@@ -355,19 +350,19 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			}
 		}
 #ifdef ALLBUG
-		cout << "bus: " << bus << endl;
-		cout << "busq:  " << busq << endl;
+		printf("bus: %d  busq: %d\n", bus, busq);
 #endif
         
 #ifdef MULTI_THREAD
 		if (bus != -1) {
 #if defined(IBUG)
-			cout << "\nAdding instruments for current slice [end = " << 1000 * bufEndSamp/SR << " ms.] and bus [" << bus << "]\n";
+			printf("\nAdding instruments for current slice [end = %d ms] and bus [%d]\n",
+				   1000 * bufEndSamp/SR, busq);
 #endif
 		}
 		else {
 #if defined(IBUG)
-			cout << "\nDone with bus type " << bus_type << " -- continuing\n";
+			printf("\nDone with bus type %d -- continuing\n", bus_type);
 #endif
 			continue;
 		}
@@ -390,7 +385,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			// (rtQchunkStart >= bufStartSamp)
 			// unlcear what that will do just now
 			if (offset < 0) { // BGG: added this trap for robustness
-#ifndef MAXMSP
+#ifndef EMBEDDED
 				cout << "WARNING: the scheduler is behind the queue!" << endl;
 				cout << "bufStartSamp:  " << bufStartSamp << endl;
 				cout << "endsamp:  " << endsamp << endl;
@@ -408,7 +403,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 				chunksamps = int(bufEndSamp-rtQchunkStart);
 			}
 			if (chunksamps > RTBUFSAMPS) {
-#ifndef MAXMSP
+#ifndef EMBEDDED
 				cout << "ERROR: chunksamps: " << chunksamps << " limiting to " << RTBUFSAMPS << endl;
 #endif
 				chunksamps = RTBUFSAMPS;
@@ -512,7 +507,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         // (rtQchunkStart >= bufStartSamp)
         // unlcear what that will do just now
         if (offset < 0) { // BGG: added this trap for robustness
-#ifndef MAXMSP
+#ifndef EMBEDDED
             cout << "WARNING: the scheduler is behind the queue!" << endl;
             cout << "bufStartSamp:  " << bufStartSamp << endl;
             cout << "endsamp:  " << endsamp << endl;
@@ -530,7 +525,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
             chunksamps = bufEndSamp-rtQchunkStart;
         }
         if (chunksamps > RTBUFSAMPS) {
-#ifndef MAXMSP
+#ifndef EMBEDDED
             cout << "ERROR: chunksamps: " << chunksamps << " limiting to " << RTBUFSAMPS << endl;
 #endif
             chunksamps = RTBUFSAMPS;
@@ -601,6 +596,13 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	cout << "bufEndSamp:  " << bufEndSamp << endl;
 #endif
 
+#ifdef EMBEDDED
+	// Here is where we now call the "checkers" for Bang, Values, and Print	-- DAS
+	checkForBang();
+	checkForVals();
+	checkForPrint();
+#endif
+
 	// DT_PANIC_MOD
 	if (!panic) {
 		if (rtsendsamps(device) != 0) {
@@ -609,6 +611,9 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 #endif
 			return false;
 		}
+	}
+	else {
+		rtsendzeros(device, false);
 	}
 
 	elapsed += RTBUFSAMPS;	
@@ -643,19 +648,19 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	else {
 		// Check status from other threads
 		if (run_status == RT_SHUTDOWN) {
-#ifndef MAXMSP
+#ifndef EMBEDDED
 			cout << "inTraverse:  shutting down" << endl;
 #endif
 			playEm = false;
 		}
 		else if (run_status == RT_ERROR) {
-#ifndef MAXMSP
+#ifndef EMBEDDED
 			cout << "inTraverse:  shutting down due to error" << endl;
 #endif
 			playEm = false;
 		}
 		else if (panic && run_status == RT_GOOD) {
-#ifndef MAXMSP
+#ifndef EMBEDDED
 			cout << "inTraverse:  panic mode finished" << endl;
 #endif
 			panic = NO;
@@ -670,17 +675,26 @@ cout << "EXITING inTraverse()\n";
 	return playEm;
 }
 
+void  RTcmix::resetHeapAndQueue()
+{
+	delete rtHeap;
+	delete [] rtQueue;
+	rtHeap = NULL;
+	rtQueue = NULL;
+	
+	rtHeap = new heap;
+	rtQueue = new RTQueue[MAXBUS*3];
+}
+
 bool RTcmix::doneTraverse(AudioDevice *device, void *arg)
 {
-#ifndef MAXMSP
-	if (Option::print())
-		cout << "closing ...\n";
-#endif
 #ifdef WBUG
 	cout << "ENTERING doneTraverse()\n";
 #endif
+#ifndef EMBEDDED
+	if (Option::print())
+		cout << "closing ...\n";
 	rtreportstats(device);
-#ifndef MAXMSP
 	if (Option::print())
 		cout << "\n";
 #endif

@@ -28,6 +28,10 @@
 char globalNetworkPath[128];			// Set by Minc/setnetplay.c
 #endif
 
+#ifdef MAX_DSP_AUDIO
+// TODO PUT GLOBAL SPEC HERE
+#endif
+
 // Return pointers to the most recently specified audio device strings.
 // "indevice" always overrides "device", and same with "outdevice".
 
@@ -66,13 +70,6 @@ create_audio_devices(int record, int play, int chans, float srate, int *buffersi
 	const char *inDeviceName = get_audio_indevice_name();
 	const char *outDeviceName = get_audio_outdevice_name(0);
 	AudioDevice *device = NULL;
-
-#ifdef MAXMSP
-	// at present, 'imbedded' rtcmix (rtcmix~, iRTcmix) doesn't use an audio
-	// device.  Conversion is driven from the calling environment via
-	// pullTraverse (in main.cpp, calling a modified inTraverse() function).
-	return 0;
-#endif
 
 #ifdef NETAUDIO
 	// For backwards compatibility, we check to see if a network path was set

@@ -3,10 +3,10 @@
 // entry for Minc
 #include <rt.h>
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 extern "C" void rtprofile() {};
 
-#else // MAXMSP
+#else // EMBEDDED
 void
 rtprofile()
 {

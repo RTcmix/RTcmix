@@ -61,7 +61,7 @@ int				RTcmix::audioNCHANS 	= 0;
 float			RTcmix::SR				= 0.0;
 FRAMETYPE		RTcmix::bufStartSamp 	= 0;
 
-#ifdef MAXMSP
+#ifdef EMBEDDED
 int				RTcmix::rtInteractive = 0;
 #else
 int				RTcmix::rtInteractive = 1; // keep the heap going for this object
@@ -88,12 +88,13 @@ BufPtr 		RTcmix::audioin_buffer[MAXBUS];    /* input from ADC, not file */
 BufPtr 		RTcmix::aux_buffer[MAXBUS];
 BufPtr 		RTcmix::out_buffer[MAXBUS];
 
-int			RTcmix::rtrecord 	= 0;		// indicates reading from audio device
+bool		RTcmix::rtrecord 	= false;		// indicates reading from audio device
 int			RTcmix::rtfileit 	= 0;		// signal writing to soundfile
 int			RTcmix::rtoutfile 	= 0;
 
 InputFile *	RTcmix::inputFileTable = NULL;
 long		RTcmix::max_input_fds = 0;
+int			RTcmix::last_input_index = -1;
 
 pthread_mutex_t RTcmix::pfieldLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RTcmix::audio_config_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -147,11 +148,12 @@ void
 RTcmix::init_globals(bool fromMain, const char *defaultDSOPath)
 {
    Option::init();
+	rtcmix_debug(NULL, "RTcmix::init_globals entered");
    if (defaultDSOPath && defaultDSOPath[0])
       Option::dsoPathPrepend(defaultDSOPath);
 
    if (fromMain) {
-#ifndef MAXMSP
+#ifndef EMBEDDED
       Option::readConfigFile(Option::rcName());
       Option::exitOnError(true); // we do this no matter what is in config file
 #else
@@ -187,7 +189,8 @@ RTcmix::init_globals(bool fromMain, const char *defaultDSOPath)
 		max_input_fds -= RESERVE_INPUT_FDS;
 	
 	inputFileTable = new InputFile[max_input_fds];
-
+	last_input_index = -1;
+	
    init_buf_ptrs();
 
    if (Option::autoLoad()) {
@@ -202,6 +205,7 @@ RTcmix::init_globals(bool fromMain, const char *defaultDSOPath)
 void
 RTcmix::free_globals()
 {
+	rtcmix_debug(NULL, "RTcmix::free_globals entered");
 	free_buffers();
 	free_bus_config();
 	freefuncs();
@@ -209,6 +213,21 @@ RTcmix::free_globals()
 	rtQueue = NULL;
 	delete rtHeap;
 	rtHeap = NULL;
+	delete [] inputFileTable;
+	inputFileTable = NULL;
+	
+	// Experimental: Reset state of all global vars
+	rtsetparams_called 		= 0;
+	audioLoopStarted 		= 0;
+	audio_config 			= 1;
+	elapsed 				= 0;
+	run_status      		= RT_GOOD;
+	rtrecord 				= false;
+	rtfileit 				= 0;
+	rtoutfile 				= 0;
+	output_data_format 		= -1;
+	output_header_type 		= -1;
+	
 #ifdef MULTI_THREAD
 	delete taskManager;
 	taskManager = NULL;
@@ -271,10 +290,8 @@ RTcmix::RTcmix(bool dummy) {}
 
 RTcmix::~RTcmix()
 {
-#ifndef MAXMSP
 	run_status = RT_SHUTDOWN;
-	waitForMainLoop();
-#endif
+	waitForMainLoop();	// This calls close()
 	free_globals();
 }
 
@@ -502,21 +519,17 @@ void RTcmix::run()
 	int retcode;
 	if (!Option::play() && !Option::record() && rtfileit == 1) {
 		/* Create scheduling/audio thread. */
-#ifdef DBUG
-		fprintf(stdout, "calling runMainLoop()\n");
-#endif
+		rtcmix_debug(NULL, "RTcmix::run calling runMainLoop()");
 		retcode = runMainLoop();
 		if (retcode != 0) {
-			fprintf(stderr, "runMainLoop() failed\n");
+			rtcmix_warn(NULL, "RTcmix::run: runMainLoop() failed");
 		}
 		else {
 			/* Wait for audio thread. */
-#ifdef DBUG
-			fprintf(stdout, "calling waitForMainLoop()\n");
-#endif
+			rtcmix_debug(NULL, "RTcmix::run calling waitForMainLoop()");
 			retcode = waitForMainLoop();
 			if (retcode != 0) {
-				fprintf(stderr, "waitForMailLoop() failed\n");
+				rtcmix_warn(NULL, "RTcmix::run: waitForMailLoop() failed");
 			}
 		}
 	}
@@ -532,13 +545,52 @@ const char * RTcmix::getInputPath(int fdIndex)
     return inputFileTable[fdIndex].fileName();
 }
 
-void RTcmix::close()
+int RTcmix::startAudio(AudioDeviceCallback renderCallback, AudioDeviceCallback doneCallback, void *inContext)
 {
-	run_status = RT_SHUTDOWN;
-	delete audioDevice;
-	audioDevice = NULL;
+	rtcmix_debug(NULL, "RTcmix::startAudio entered");
+	if (audioDevice && audioDevice->isOpen()) {
+		// Set done callback on device.
+		if (doneCallback != NULL)
+			audioDevice->setStopCallback(doneCallback, inContext);
+		// Start audio output device, handing it our render callback.
+		if (audioDevice->start(renderCallback, inContext) != 0) {
+			rtcmix_warn(NULL, "Audio device failed to start: %s", audioDevice->getLastError());
+			audioDevice->close();
+			return -1;
+		}
+		return 0;	// Playing, thru HW and/or to FILE.
+	}
+	rtcmix_warn(NULL, "Audio device was NULL or not open");
+	return -1;
 }
 
+int RTcmix::stopAudio()
+{
+	rtcmix_debug(NULL, "RTcmix::stopAudio entered");
+	return audioDevice->stop();
+}
+
+void RTcmix::close()
+{
+	rtcmix_debug(NULL, "RTcmix::close entered");
+	run_status = RT_SHUTDOWN;
+	AudioDevice *dev = audioDevice;
+	audioDevice = NULL;
+	delete dev;
+	audio_config = NO;
+	free_buffers();
+#ifdef MULTI_THREAD
+	InputFile::destroyConversionBuffers();
+#endif
+	rtcmix_debug(NULL, "RTcmix::close exited");
+}
+
+int RTcmix::resetAudio(float, int, int, bool)
+{
+	rtcmix_debug(NULL, "RTcmix::resetAudio entered");
+	run_status = RT_GOOD;
+	return 0;
+}
 
 // This is from the RTsockfuncs.c file in ../lib.  It's such a handy
 // function, I just had to have it here, too!  BGG

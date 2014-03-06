@@ -43,9 +43,12 @@ typedef enum {
 
 #ifdef MACOSX
 
-#if MAXMSP
-typedef int AtomicInt;
+#ifdef MAXMSP
+
+#error Multi-threaded support not yet available for MAX/MSP
+
 #else
+
 #include <libkern/OSAtomic.h>
 
 class AtomicInt
@@ -80,18 +83,12 @@ public:
 
 #else
 
-#error Tell Doug Scott you are trying to compile MULTI_THREAD for this platform.
+#error Tell Doug Scott you are want to compile MULTI_THREAD for this platform.
 typedef int AtomicInt;
 
 #endif
 
 #else	// !MULTI_THREAD
-
-#if MAXMSP
-
-typedef int AtomicInt;
-
-#else
 
 class AtomicInt
 {
@@ -104,7 +101,6 @@ public:
     bool decrementAndTest() { return --val == 0; }
     int operator = (int rhs) { return (val = rhs); }
 };
-#endif	// !MAXMSP
 
 #endif  // !MULTI_THREAD
 

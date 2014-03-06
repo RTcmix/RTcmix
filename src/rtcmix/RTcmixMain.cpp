@@ -154,14 +154,14 @@ char *RTcmixMain::makeDSOPath(const char *progPath)
    return dsoPath;
 }
 
-#ifdef MAXMSP
+#ifdef EMBEDDED
 // BGG mm -- got rid of argc and argv for max/msp
-RTcmixMain::RTcmixMain() : RTcmix(0)
+RTcmixMain::RTcmixMain() : RTcmix(false)
 #else
 RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
 #endif
 {
-#ifndef MAXMSP
+#ifndef EMBEDDED
    set_sig_handlers();
 #endif
 
@@ -180,9 +180,8 @@ RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
    //    in argv[0] is present but incomplete.  However, there is no
    //    guaranteed solution.
 
-#ifdef MAXMSP
+#ifdef EMBEDDED
 	init_globals(true, NULL);			// 'true' indicates we were called from main
-
 	for (int i = 1; i <= MAXARGS; i++) xargv[i] = NULL;
 	xargc = 1;
 #else
@@ -196,7 +195,7 @@ RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
    // Note:  What follows was done in main().  Some of it is identical
    // to RTcmix::init() for imbedded.  Factor this out.
    /* Banner */
-#ifdef MAXMSP
+#ifdef EMBEDDED
 	RTPrintf("--------> %s %s <--------\n",
 			RTCMIX_NAME, RTCMIX_VERSION);
 #else
@@ -380,60 +379,52 @@ RTcmixMain::run()
    if (rtInteractive) {
 		rtcmix_advise(NULL, "rtInteractive mode set\n");
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
       /* Read an initialization score. */
       if (!noParse) {
          int status;
-#ifdef DBUG
-         cout << "Parsing once ...\n";
-#endif
+         rtcmix_debug(NULL, "Parsing once ...\n");
          status = ::parse_score(xargc, xargv, xenv);
          if (status != 0)
             exit(1);
       }
-#endif // MAXMSP
+#endif // EMBEDDED
 
       /* Create parsing thread. */
-#ifdef DBUG
-      fprintf(stdout, "creating sockit() thread\n");
-#endif
+      rtcmix_debug(NULL, "creating sockit() thread\n");
       retcode = pthread_create(&sockitThread, NULL, &RTcmixMain::sockit, (void *) this);
       if (retcode != 0) {
-         fprintf(stderr, "sockit() thread create failed\n");
+         rterror(NULL, "sockit() thread create failed\n");
       }
 
       /* Create scheduling thread. */
-#ifdef DBUG
-      fprintf(stdout, "calling runMainLoop()\n");
-#endif
+      rtcmix_debug(NULL, "calling runMainLoop()\n");
       retcode = runMainLoop();
       if (retcode != 0) {
-         fprintf(stderr, "runMainLoop() failed\n");
+         rterror(NULL, "runMainLoop() failed\n");
       }
 
       /* Join parsing thread. */
-#ifdef DBUG
-      fprintf(stdout, "joining sockit() thread\n");
-#endif
+      rtcmix_debug(NULL, "joining sockit() thread\n");
       retcode = pthread_join(sockitThread, NULL);
       if (retcode != 0) {
-         fprintf(stderr, "sockit() thread join failed\n");
+         rterror(NULL, "sockit() thread join failed\n");
       }
 
       /* Wait for audio thread. */
-#ifdef DBUG
-      fprintf(stdout, "calling waitForMainLoop()\n");
-#endif
+      rtcmix_debug(NULL, "calling waitForMainLoop()\n");
 	  retcode = waitForMainLoop();
       if (retcode != 0) {
-         fprintf(stderr, "waitForMailLoop() failed\n");
+         rterror(NULL, "waitForMailLoop() failed\n");
       }
 
-      if (!noParse)
+#ifndef EMBEDDED
+     if (!noParse)
          destroy_parser();
+#endif
    }
    else {
-#ifdef MAXMSP
+#ifdef EMBEDDED
 		int status = 0;
 #else
       int status = ::parse_score(xargc, xargv, xenv);
@@ -448,18 +439,21 @@ RTcmixMain::run()
 //			 if (setpriority(PRIO_PROCESS, 0, priority) != 0)
 //			 	perror("setpriority");
 #endif
-         if ((status = runMainLoop()) == 0)
+		 rtcmix_debug(NULL, "RTcmixMain::run: calling runMainLoop()\n");
+		  if ((status = runMainLoop()) == 0) {
+			 rtcmix_debug(NULL, "RTcmixMain::run: calling waitForMainLoop()\n");
 			 waitForMainLoop();
+		  }
 	  }
       else
          exit(status);
 
-#ifndef MAXMSP
-      destroy_parser();
+#ifndef EMBEDDED
+      destroy_parser();		// DAS TODO: make this work?
 #endif
    }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
    ::closesf_noexit();
 #endif
 }
@@ -543,9 +537,7 @@ RTcmixMain::sockit(void *arg)
 
     /* create the socket for listening */
 
-#ifdef DBUG
-    cout << "ENTERING sockit() FUNCTION **********\n";
-#endif
+    rtcmix_debug(NULL, "RTcmixMain::sockit entered");
     if( (s = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
       perror("socket");
 	  run_status = RT_ERROR;	// Notify inTraverse()
@@ -567,12 +559,8 @@ RTcmixMain::sockit(void *arg)
     err = bind(s, (struct sockaddr *)&sss, sizeof(sss));
     if (err < 0) {
       perror("bind");
-	  fflush(stdout);
 	  run_status = RT_ERROR;	// Notify inTraverse()
 	  sleep(1);
-#ifndef MAXMSP
-	  cout << "\n";
-#endif
       exit(1);
     }
 
@@ -606,7 +594,7 @@ RTcmixMain::sockit(void *arg)
 		// Wait for the ok to go ahead
 		pthread_mutex_lock(&audio_config_lock);
 		if (!audio_config) {
-#ifndef MAXMSP
+#ifndef EMBEDDED
 		  if (Option::print())
 			cout << "sockit():  waiting for audio_config . . . \n";
 #endif
@@ -710,18 +698,13 @@ RTcmixMain::sockit(void *arg)
 #endif
 }
 
-#ifdef MAXMSP
-// BGG -- called by flush_sched() in main.cpp (for the [flush] message)
+#ifdef EMBEDDED
+// BGG -- called by RTcmix_flushScore() in main.cpp (for the [flush] message)
 void
 RTcmixMain::resetQueueHeap()
 {
-	delete rtHeap;
-	delete [] rtQueue;
-	rtHeap = NULL;
-	rtQueue = NULL;
-
-	rtHeap = new heap;
-	rtQueue = new RTQueue[MAXBUS*3];
+	rtcmix_advise(NULL, "Flushing all instrument queues");
+	run_status = RT_FLUSH;	// This gets reset in inTraverse()
 }
 
 
@@ -770,11 +753,10 @@ RTcmixMain::doload(char *dsoPath)
 		return 0;
     }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 // BGG -- this totally cause the maxmsp compile to stop
-	rtcmix_advise("loader", "Loaded %s functions from shared
-		library:\n\t'%s'.\n", (profileLoaded == 3) ? "standard and RT" :
-						   (profileLoaded == 2) ? "RT" : "standard", dsoPath);
+	rtcmix_advise("loader", "Loaded %s functions from shared library:\n\t'%s'.\n", (profileLoaded == 3) ? "standard and RT" :
+		(profileLoaded == 2) ? "RT" : "standard", dsoPath);
 #endif
 
 	return 1;
@@ -785,4 +767,4 @@ RTcmixMain::unload()
 {
 	theDSO.unload();
 }
-#endif // MAXMSP
+#endif // EMBEDDED

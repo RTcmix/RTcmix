@@ -3,7 +3,7 @@
 
 extern void rt_ug_intro();
 
-#ifdef MAXMSP
+#ifdef EMBEDDED
 // BGG mm -- for dynamic memory mgmt (in src/parser/minc/y.tab.c)
 extern double minc_memflush();
 #endif
@@ -145,7 +145,7 @@ ug_intro()
 	UG_INTRO("reversegen", m_reversegen);
 	UG_INTRO("shiftgen", m_shiftgen);
 	UG_INTRO("quantizegen", m_quantizegen);
-#ifdef MAXMSP
+#ifdef EMBEDDED
 	UG_INTRO("minc_memflush", minc_memflush);
 #endif
 }

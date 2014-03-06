@@ -39,8 +39,10 @@ struct FunctionEntry;
 struct InputState;	// part of Instrument class
 struct InputFile;
 
+typedef bool (*AudioDeviceCallback)(AudioDevice *device, void *arg);
+
 enum RTstatus {
-	RT_GOOD = 0, RT_SHUTDOWN = 1, RT_PANIC = 2, RT_ERROR = 3
+	RT_GOOD = 0, RT_SHUTDOWN = 1, RT_PANIC = 2, RT_FLUSH = 3, RT_ERROR = 4
 };
 
 enum RTInputError {
@@ -105,10 +107,10 @@ public:
 	static void readFromAuxBus(BufPtr dest, int dest_chans, int dest_frms, const short src_chan_list[], short src_chans, int output_offset);
 	static void readFromAudioDevice(BufPtr dest, int dest_chans, int dest_frms, const short src_chan_list[], short src_chans, int output_offset);
 
-#ifdef MAXMSP // for [buffer~] support
-	static void readFromMMbuf(BufPtr dest, int dest_frames, int  mmchans, float *mmbufstart, int mmbufframes, int mmbufdex);
-#endif
-
+	/* ------------------------------------------------- get_last_input_index --- */
+	/* Called by rtsetinput to find out which file to set for the inst.
+	 */
+	static int get_last_input_index() { return last_input_index; }
 	static off_t seekInputFile(int fdIndex, int frames, int chans, int whence);
 	static void readFromInputFile(BufPtr dest, int dest_chans, int dest_frms, const short src_chan_list[], short src_chans, int fdIndex, off_t *outFileOffset);
 	static void rtgetsamps(AudioDevice *inputDevice);
@@ -118,13 +120,24 @@ public:
     static void mixToBus();
 #endif
 	static void releaseInput(int fdIndex);
+	
+	int setInputBuffer(const char *inName, float *inBuffer, int inFrames, int inChans, int inModtime);
+	static InputFile * findInput(const char *inName, int *pOutIndex);
 
+	static int setparams(float, int, int, bool, float*, float*);
+	static int resetparams(float, int, int, bool);
+
+	static int startAudio(AudioDeviceCallback renderCallback,
+						  AudioDeviceCallback doneCallback,
+						  void *inContext);
+	static int stopAudio();
+	static int resetAudio(float, int, int, bool);
+	// BGG -- public for calling from imbedded apps
+	static bool inTraverse(AudioDevice *, void *);
+	static bool doneTraverse(AudioDevice *, void *);
 	// These are functions called from the parser via pointers, and are
 	// registered via rt_ug_intro().
 	static double rtsetparams(float*, int, double *);
-#ifdef MAXMSP
-	static double mm_rtsetparams(float, int, int, float*, float*);
-#endif
 	static double rtinput(float*, int, double *);
 	static double rtoutput(float*, int, double *);
 	static double set_option(float *, int, double *);
@@ -137,13 +150,6 @@ public:
 	static double left_peak(float *, int);
 	static double right_peak(float *, int);
 
-	// BGG -- public for calling from imbedded apps
-	static bool inTraverse(AudioDevice *, void *);
-	// BGG -- public for the [flush] message (flush_sched()/resetQueueHeap())
-	// DT:  main heap structure used to queue instruments
-	static heap *rtHeap;
-	static RTQueue *rtQueue;
-
 protected:
 	RTcmix(bool dummy);				// Called by RTcmixMain class
 
@@ -155,10 +161,13 @@ protected:
 	static void free_globals();
 	static void free_bus_config();
 	
+	
 	// Audio loop methods
 	
 	int runMainLoop();
 	int waitForMainLoop();
+
+	static void resetHeapAndQueue();
 
 	// These were standalone but are now static methods
 	static double checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retval);
@@ -184,6 +193,11 @@ protected:
 
 	static pthread_mutex_t audio_config_lock;
 
+	// BGG -- used for the [flush] message (flush_sched()/resetQueueHeap())
+	// DT:  main heap structure used to queue instruments
+	static heap *rtHeap;
+	static RTQueue *rtQueue;
+
 private:
 	// Buffer alloc routines.
 	static int allocate_audioin_buffer(short chan, int len);
@@ -202,7 +216,6 @@ private:
 	static void limiter(BUFTYPE peaks[], long peaklocs[]);
 	static int rtsendzeros(AudioDevice *device, int);
 	static void rtreportstats(AudioDevice *);
-	static bool doneTraverse(AudioDevice *, void *);
 	
 	static float get_peak(float, float, int);
 	static int parse_rtoutput_args(int nargs, double pp[]);
@@ -246,12 +259,13 @@ private:
 	static pthread_mutex_t out_in_use_lock;
 	static pthread_mutex_t revplay_lock;
 	static pthread_mutex_t bus_slot_lock;
-
-	static int		rtrecord;
+	
+	static bool		rtrecord;
 	static int		rtfileit;		// 1 if rtoutput() succeeded
 	static int		rtoutfile;
 
 	static InputFile	*inputFileTable;
+	static int 		last_input_index;
 	static long     max_input_fds;
 
 	static BufPtr	audioin_buffer[];    /* input from ADC, not file */

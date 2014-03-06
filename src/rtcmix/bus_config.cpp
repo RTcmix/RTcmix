@@ -96,8 +96,6 @@ struct CheckQueue {
 /* Prototypes (in order)------------------------------------------------------*/
 static int strtoint(char*, int *);  /* Helper */
 static void print_bus_slot(BusSlot *);  /* Debugging */
-static void bf_traverse(int, Bool);
-static void create_play_order();
 
 /* ------------------------------------------------------------- strtoint --- */
 static inline int
@@ -222,6 +220,8 @@ RTcmix::print_play_order() {
   RTPrintf("\n");
 }
 
+static Bool Visited[MAXBUS];
+
 /* ------------------------------------------------ check_bust_inst_config -- */
 /* Parses bus graph nodes */
 
@@ -231,7 +231,6 @@ RTcmix::check_bus_inst_config(BusSlot *slot, Bool visit) {
 	short *in_check_list;
 	short in_check_count;
 	CheckQueue *in_check_queue,*last;
-	static Bool Visited[MAXBUS];
 	Bool Checked[MAXBUS];
 	short r_p_count=0;
 
@@ -297,7 +296,7 @@ RTcmix::check_bus_inst_config(BusSlot *slot, Bool visit) {
 #endif
 				/* If they're equal, then return the error */
 				if (t_in == t_out) {
-					rterror(NULL, "ERROR:  bus_config loop ... config not allowed.\n");
+					rterror(NULL, "bus_config loop ... config not allowed.\n");
 					return LOOP_ERR;
 				}
 			}
@@ -597,8 +596,10 @@ RTcmix::get_bus_config(const char *inst_name)
 	 else
 	   in_chans = 0;
    }
-   else
+   else {
      in_chans = inputFileTable[index].channels();
+     assert(in_chans > 0);
+   }
    
    default_bus_slot->in_count = in_chans;
    default_bus_slot->out_count = NCHANS;
@@ -616,9 +617,7 @@ RTcmix::get_bus_config(const char *inst_name)
    }
    if (err) {
 		die("bus_config", "couldn't get_bus_config, this is not good");
-#ifndef MAXMSP
-      exit(1);        /* This is probably what user wants? */
-#endif
+		RTExit(1);        /* This is probably what user wants? */
 	}
 	
 	// Print out the default bus config (if verbosity permits)
@@ -948,9 +947,7 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
    }
    if (err) {
 		die("bus_config", "couldn't configure the busses");
-#ifndef MAXMSP
-      exit(1);        /* This is probably what user wants? */
-#endif
+	   RTExit(1);        /* This is probably what user wants? */
 	}
 
    /* Make sure specified aux buses have buffers allocated. */
@@ -996,7 +993,16 @@ RTcmix::free_bus_config()
       delete q;
       q = next;
    }
+	Inst_Bus_Config = NULL;
    for (int i=0 ; i<MAXBUS; i++) {
 	   RefCounted::unref(Bus_In_Config[i]);
+	   Bus_In_Config[i] = NULL;
    }
+	memset(&Visited, 0, sizeof(Visited));
+	memset(&HasChild, 0, sizeof(HasChild));
+	memset(&HasParent, 0, sizeof(HasParent));
+	memset(&AuxInUse, 0, sizeof(AuxInUse));
+	memset(&AuxOutInUse, 0, sizeof(AuxOutInUse));
+	memset(&OutInUse, 0, sizeof(OutInUse));
+	Bus_Config_Status = NO;
 }

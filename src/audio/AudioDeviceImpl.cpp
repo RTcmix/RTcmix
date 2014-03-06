@@ -441,9 +441,11 @@ int AudioDeviceImpl::setupConversion(bool recording, bool playing)
 			return error("Full duplex only supported when rec and playback devices have same sample format");
 		}
 		PRINT0("\trecord device chans: %d, playback device chans: %d\n", getRecordDeviceChannels(), getPlaybackDeviceChannels());
+		maxChannels = max(getRecordDeviceChannels(), getPlaybackDeviceChannels());
 		if (getRecordDeviceChannels() != getPlaybackDeviceChannels())
 			deviceChannels = 0;		// This will force conversion to be set up, below
-		maxChannels = max(getRecordDeviceChannels(), getPlaybackDeviceChannels());
+		else
+			deviceChannels = maxChannels;
 	}
 	else if (recording) {
 		maxChannels = deviceChannels = getRecordDeviceChannels();

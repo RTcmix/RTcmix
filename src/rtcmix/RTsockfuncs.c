@@ -214,8 +214,6 @@ void RTsetsockstr(struct sockdata *ssend, char *cmd, int nargs, double *fields)
 
 void RTsetsockdata(struct sockdata *ssend, int arg, double val)
 {
-  double tval;
-  tval = (double)val;
   ssend->data.p[arg] = val;
 }
 

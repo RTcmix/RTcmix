@@ -27,7 +27,7 @@
 
 extern "C" {
 	Handle makeconnection(const Arg args[], const int nargs);
-#ifdef MAXMSP
+#ifdef EMBEDDED
 // BGG -- see note below
 	Handle create_handle(const Arg args[], const int nargs);
 	Handle create_pfbus_handle(const Arg args[], const int nargs);
@@ -53,9 +53,8 @@ makeconnection(const Arg args[], const int nargs)
 	}
 
 	Handle handle = NULL;
-	HandleCreator creator = NULL;
+#ifndef EMBEDDED
 	const char *selector = (const char *) args[0];
-#ifndef MAXMSP
 	char loadPath[1024];
 	const char *dsoPath = Option::dsoPath();
 	if (strlen(dsoPath) == 0)
@@ -64,6 +63,7 @@ makeconnection(const Arg args[], const int nargs)
 
 	DynamicLib theDSO;
 	if (theDSO.load(loadPath) == 0) {
+		HandleCreator creator = NULL;
 		if (theDSO.loadFunction(&creator, "create_handle") == 0) {
 			// Pass 2nd thru last args, leaving off selector
 			handle = (*creator)(&args[1], nargs - 1);
@@ -89,7 +89,7 @@ makeconnection(const Arg args[], const int nargs)
 	} else if(args[0] == "pfbus") {
 		handle = create_pfbus_handle(&args[1], nargs-1);
 	}
-#endif // MAXMSP
+#endif // EMBEDDED
 
 	return handle;
 }

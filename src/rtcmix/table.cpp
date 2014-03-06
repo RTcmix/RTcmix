@@ -950,8 +950,10 @@ _spline(const int closed, const float konst, const int nknots, double *outbuf,
 		float hi = x->val[i] - x->val[i - 1];
 		float hi1 = (i == nknots - 1) ? x->val[1] - x->val[0]
 										 : x->val[i + 1] - x->val[i];
-		if (hi1 * hi <= 0)
+		if (hi1 * hi <= 0) {
+			free(buf);
 			return -1;
+		}
 		u = i == 1 ? 0.0 : u - s * s / d;
 		v = i == 1 ? 0.0 : v - s * r[i - 1] / d;
 		r[i] = _rhs(i, nknots, x, y) - hi * r[i - 1] / d;

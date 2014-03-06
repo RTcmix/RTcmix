@@ -8,6 +8,7 @@
 #include <assert.h>
 #include <ugens.h>      // for die, warn
 #include "rtcmix_types.h"
+#include <mixerr.h>
 #include "prototypes.h"
 #include <ug_intro.h>
 #include <string.h>
@@ -27,6 +28,14 @@ typedef struct _func {
    const char  *func_label;
    int   legacy;        /* 1 if calling using old signature (w/ p[], pp[]) */
 } RTcmixFunction;
+
+struct FunctionEntry {
+	FunctionEntry(const char *fname, const char *dsoPath);
+	~FunctionEntry();
+	char *funcName;
+	char *dsoPath;
+	struct FunctionEntry *next;
+};
 
 /* --------------------------------------------------------------- addfunc -- */
 /* Place a function into the table we search when handed a function name
@@ -114,6 +123,15 @@ RTcmix::freefuncs()
 		cur_node = next;
 	}
 	_func_list = NULL;
+	
+	// DAS added 01/2014
+	
+	for (FunctionEntry *entry = _functionRegistry; entry; ) {
+		FunctionEntry *next = entry->next;
+		delete entry;
+		entry = next;
+	}
+	_functionRegistry = NULL;
 }
 
 /* ------------------------------------------------------------- findfunc -- */
@@ -162,16 +180,22 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
    if (func == NULL) {
       if (findAndLoadFunction(funcname) == 0) {
          func = ::findfunc(_func_list, funcname);
-            if (func == NULL)
+		  if (func == NULL) {
+			   mixerr = MX_FNAME;
                return -1;
+		  }
       }
-      else
-         return -1;
+      else {
+		  mixerr = MX_FNAME;
+		  return -1;
+	  }
    }
 
    /* function found, so call it */
 
    ::_printargs(funcname, arglist, nargs);
+
+   int status = 0;
 
    switch (func->return_type) {
    case DoubleType:
@@ -208,30 +232,39 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
                                                       (arglist, nargs);
       break;
    case HandleType:
-      *retval = (Handle) (*(func->func_ptr.handle_return))
+	  {
+      Handle retHandle = (Handle) (*(func->func_ptr.handle_return))
                                                       (arglist, nargs);
+	  if (retHandle == NULL) {
+		  status = -1;
+		  mixerr = MX_FAIL;
+	  }
+	  *retval = retHandle;
+	  }
       break;
    case StringType:
-      *retval = (const char *) (*(func->func_ptr.string_return))
+	  {
+      const char *retString = (const char *) (*(func->func_ptr.string_return))
                                                       (arglist, nargs);
+	  if (retString == NULL) {
+		  status = -1;
+		  mixerr = MX_FAIL;
+	  }
+	  *retval = retString;
+	  }
       break;
    default:
+	  die(NULL, "%s: unhandled return type: %d", funcname, (int)func->return_type);
+	  status = -1;
+	  mixerr = MX_FAIL;
       break;
    }
 
-   return 0;
+   return status;
 }
 
 // Code for function/DSO registry, which allows RTcmix to auto-load a DSO
 // for a given function.
-
-struct FunctionEntry {
-	FunctionEntry(const char *fname, const char *dsoPath);
-	~FunctionEntry();
-	char *funcName;
-	char *dsoPath;
-	struct FunctionEntry *next;
-};
 
 FunctionEntry::FunctionEntry(const char *fname, const char *dso_path)
 	: funcName(strdup(fname)), dsoPath(strdup(dso_path)), next(NULL)

@@ -7,14 +7,14 @@
 #include <Availability.h>
 #endif
 
-#if defined(MACOSX) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 1060
+#if (defined(MACOSX) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 1060) || defined(IOS)
 
 #include <dispatch/dispatch.h>
 
 class RTSemaphore
 {
 public:
-	RTSemaphore(unsigned inStartingValue=0) : mSema(dispatch_semaphore_create((long)inStartingValue)) {}
+	RTSemaphore(unsigned inStartingValue=0) : mSema(dispatch_semaphore_create((long)inStartingValue)) { if (!mSema) { throw -1; } }
 	~RTSemaphore() { mSema = NULL; }
 	void wait() { dispatch_semaphore_wait(mSema, DISPATCH_TIME_FOREVER); }	// each thread will wait on this
 	void post() { dispatch_semaphore_signal(mSema); }	// when done, each thread calls this
@@ -37,7 +37,7 @@ private:
 	sem_t	mSema;
 };
 
-#endif	// MACOSX && 1060
+#endif	// MACOSX && 1060 || IOS
 
 #endif	// RT_SEMAPHORE_H
 

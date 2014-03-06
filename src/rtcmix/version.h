@@ -1,14 +1,14 @@
-#ifndef MAXMSP
+#ifndef EMBEDDED
 #define RTCMIX_NAME "RTcmix"
 #define RTCMIX_MAJOR_VERSION "4"
-#define RTCMIX_MINOR_VERSION "0"
-#define RTCMIX_MICRO_VERSION "1"
-#define RTCMIX_VERSION "4.0.1"
+#define RTCMIX_MINOR_VERSION "1"
+#define RTCMIX_MICRO_VERSION "0"
+#define RTCMIX_VERSION "4.1.0"
 
-#else // MAXMSP
+#else // EMBEDDED
 #define RTCMIX_NAME "RTcmix-mm"
 #define RTCMIX_MAJOR_VERSION "4"
-#define RTCMIX_MINOR_VERSION "0"
-#define RTCMIX_MICRO_VERSION "1.8"
-#define RTCMIX_VERSION "4.0.1.8"
-#endif // MAXMSP
+#define RTCMIX_MINOR_VERSION "1"
+#define RTCMIX_MICRO_VERSION "0"
+#define RTCMIX_VERSION "4.1.0"
+#endif // EMBEDDED

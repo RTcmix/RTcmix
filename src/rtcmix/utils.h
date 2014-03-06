@@ -13,54 +13,10 @@
 #ifdef __cplusplus
 Handle createPFieldHandle(class PField *);
 Handle createInstHandle(class Instrument *);
-inline void refHandle(Handle h)
-{
-	assert(h->refcount >= 0);
-#ifdef DEBUG
-    printf("refHandle(%p): %d -> ", h, h->refcount);
-#endif
-	++h->refcount;
-#ifdef DEBUG
-    printf("%d\n", h->refcount);
-#endif
-}
-#endif	// __cplusplus
-
-#ifdef __cplusplus
 extern "C" {
 #endif	// __cplusplus
-
-void unrefHandle(Handle);
-
+	void refHandle(Handle h);
+	void unrefHandle(Handle h);
 #ifdef __cplusplus
 }
 #endif	// __cplusplus
-
-#define ALLOW_INLINE_C
-
-#ifndef __cplusplus
-#ifdef ALLOW_INLINE_C
-inline void refHandle(Handle h)
-{
-	assert(h->refcount >= 0);
-#ifdef DEBUG
-    printf("refHandle(%p): %d -> ", h, h->refcount);
-#endif
-	++h->refcount;
-#ifdef DEBUG
-    printf("%d\n", h->refcount);
-#endif
-}
-#else	// !ALLOW_INLINE_C
-// This is macro-ized to allow inlining in C
-#define refHandle(h) \
-	{ \
-	/* printf("refHandle(%p): %d -> ", h, h->refcount); */ \
-	assert(h->refcount >= 0); \
-	++h->refcount; \
-	/* printf("%d\n", h->refcount); */ \
-	} 
-
-#endif	// ALLOW_INLINE_C
-
-#endif	// !__cplusplus

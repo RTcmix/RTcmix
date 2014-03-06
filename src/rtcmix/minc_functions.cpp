@@ -189,7 +189,7 @@ double m_abs(float p[], int n_args)
 
 double m_mod(float p[], int n_args)
 {
-	int i,j;
+	int i;
 	i = (int)p[0] % (int)p[1];
 	return((float)i);
 }
@@ -215,7 +215,9 @@ double m_min(float p[], int n_args)
 double m_exit(float p[], int n_args, double pp[])
 {
 	const char *message = DOUBLE_TO_STRING(p[0]);
-	if (message) fprintf(stderr, "%s\n", message);
+	if (message) {
+		rtcmix_warn(NULL, "%s -- exiting if allowed", message);
+	}
 	closesf();
 	return 0.0;
 }

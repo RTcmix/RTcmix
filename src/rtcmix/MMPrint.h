@@ -12,7 +12,7 @@
 #ifndef __MM_PRINT_H__
 #define __MM_PRINT_H__
 
-#define SIZEOF_MMPRINTBUF 32768 /* should move to dyn alloc at some point */
+#define SIZEOF_MMPRINTBUF 65536 /* should move to dyn alloc at some point */
 
 #ifdef __cplusplus
 
@@ -23,13 +23,16 @@ public:
 	
 	static char mm_print_buf[];
 	static char *mm_print_ptr;
+	static bool mm_cleared;
 };
 
 extern "C" {
 #endif // __cplusplus
-	
+	int get_mm_print_space();
 	char *get_mm_print_ptr();
 	void set_mm_print_ptr(int v);
+	int is_print_cleared();
+	void clear_print();
 #ifdef __cplusplus
 } // extern "C"
 #endif

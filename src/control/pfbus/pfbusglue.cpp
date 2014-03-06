@@ -51,7 +51,7 @@ _pfbus_usage()
 // inletglue.cpp function (dyn loading keeps them separate, but we
 // don't dynload in max/msp
 static RTNumberPField *
-#ifdef MAXMSP
+#ifdef EMBEDDED
 create_pfbus_pfield(const Arg args[], const int nargs)
 #else
 create_pfield(const Arg args[], const int nargs)
@@ -80,7 +80,7 @@ create_pfield(const Arg args[], const int nargs)
 // system.
 
 extern "C" {
-#ifdef MAXMSP
+#ifdef EMBEDDED
 	Handle create_pfbus_handle(const Arg args[], const int nargs);
 #else
 	Handle create_handle(const Arg args[], const int nargs);
@@ -89,7 +89,7 @@ extern "C" {
 };
 
 Handle
-#ifdef MAXMSP
+#ifdef EMBEDDED
 create_pfbus_handle(const Arg args[], const int nargs)
 {
 	PField *pField = create_pfbus_pfield(args, nargs);
@@ -105,7 +105,7 @@ create_handle(const Arg args[], const int nargs)
 	return handle;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 int register_dso()
 {
    return 0;

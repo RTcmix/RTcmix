@@ -2,7 +2,7 @@ include ../../../makefile.conf
 
 INCLUDES += -I../../include -I../../rtcmix
 OBJS = y.tab.o builtin.o callextfunc.o error.o sym.o trees.o utils.o handle.o
-SRCS = builtin.c callextfunc.cpp error.c sym.c trees.c utils.c handle.c
+SRCS = builtin.c callextfunc.cpp error.c sym.c trees.c utils.c handle.cpp
 MINC = libminc.a
 
 LSRC = minc.l
@@ -17,37 +17,31 @@ YFLAGS = -d #-v
 all: $(MINC)
 
 ifeq ($(BUILDTYPE), STANDALONE)
+
 $(MINC): depend $(OBJS)
 	$(LD) -r $(OBJS) -o $(MINC)
+
 else
+
+ARCHFLAGS += -DEMBEDDED
+
 $(MINC): $(OBJS)
 	$(RM) $@
 	ar q $@ $(OBJS)
 	$(RANLIB) $@
+
 endif
 
-
-ifeq ($(BUILDTYPE), STANDALONE)
-lex.yy.c: $(LSRC) minc_internal.h
+lex.yy.c: $(LSRC) minc_internal.h rename.h
 	$(LEX) $(LEXFLAGS) $(LSRC)
 
-y.tab.c: lex.yy.c $(YSRC) minc_internal.h
+y.tab.c: lex.yy.c $(YSRC) minc_internal.h rename.h
 	$(YACC) $(YFLAGS) $(YSRC)
 
 depend:
 	-$(SHELL) -ec '$(CC) -M $(CFLAGS) $(SRCS)' > depend
 
 -include depend
-
-else
-lex.yy.c:
-	cp lex.yy.c.maxmsp lex.yy.c
-
-y.tab.c: lex.yy.c
-	cp y.tab.c.maxmsp y.tab.c
-	cp y.tab.h.maxmsp y.tab.h
-endif
-
 
 install: all
 uninstall:

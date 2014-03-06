@@ -2,6 +2,7 @@
 //
 
 #include <RefCounted.h>
+#include <assert.h>
 #ifdef USE_OSX_DISPATCH
 #include <dispatch/dispatch.h>
 #endif

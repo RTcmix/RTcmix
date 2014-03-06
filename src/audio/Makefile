@@ -2,25 +2,36 @@ include ../../makefile.conf
 
 AUDIOLIB = librtaudio.a
 
+# where we are versus the dylib or lib build directory
+RELATIVEDIR = ../audio
+
 INCLUDES += -I../sndlib -I../rtcmix -I$(INCLUDEDIR)
 CFLAGS += -DCMIX_LEGACY
 
-# Add this to enable the TestAudioDevice class
-#CXXFLAGS += -DTEST_AUDIO_DEVICE
-
 OBJECTS =  AudioDevice.o AudioIODevice.o AudioDeviceImpl.o \
 		   ThreadedAudioDevice.o AudioOutputGroupDevice.o \
-		   DualOutputAudioDevice.o AudioFileDevice.o \
-		   NetAudioDevice.o audio_dev_creator.o sndlibsupport.o
+		   DualOutputAudioDevice.o AudioFileDevice.o audio_devices.o \
+		   audio_dev_creator.o sndlibsupport.o
 
 ifeq ($(ARCH),LINUX)
+# Add this to enable the TestAudioDevice class
+	CXXFLAGS += -DTEST_AUDIO_DEVICE
+
 	OBJECTS +=  OSSAudioDevice.o SinglePortOSSAudioDevice.o \
 			MultiPortOSSAudioDevice.o ALSAAudioDevice.o TestAudioDevice.o
 endif
 
 ifeq ($(ARCH),MACOSX)
    ifeq ($(BUILDTYPE), STANDALONE)
-		OBJECTS += OSXAudioDevice.o
+		CXXFLAGS += -DOSX
+		OBJECTS += AppleAudioDevice.o
+   endif
+   ifeq ($(BUILDTYPE), MAXMSP)
+		OBJECTS += MSPAudioDevice.o
+   endif
+   ifeq ($(BUILDTYPE), IOS)
+		CXXFLAGS += -DIOS
+		OBJECTS += AppleAudioDevice.o
    endif
 endif
 
@@ -31,6 +42,10 @@ endif
 ifeq ($(JACK_SUPPORT), TRUE)
 	OBJECTS += JackAudioDevice.o
 	CXXFLAGS += $(JACK_CFLAGS)
+endif
+
+ifeq ($(NPLAY_SUPPORT), TRUE)
+	OBJECTS += NetAudioDevice.o
 endif
 
 SNDLIB = ../sndlib/sndlib.a
@@ -49,13 +64,12 @@ $(AUDIOLIB):	$(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(SOUND_DRIVER) -c $< -o $@
 
 depend:
-ifeq ($(ARCH),LINUX)
-	$(SHELL) -ec '$(CC) -MM $(CFLAGS) $(SOUND_DRIVER) *.c *.cpp' > depend
-endif
 ifeq ($(ARCH),SGI)
 # Note: -MM is a gcc extension. If no gcc, use -M.
 # Unfortunately, this doesn't work...   -JGG
 #	$(SHELL) -ec '$(CC) -M $(CFLAGS) $(SRCS) $(CPPSRCS)' > depend
+else
+	$(SHELL) -ec '$(CC) -MM $(CFLAGS) $(SOUND_DRIVER) *.c *.cpp' > depend
 endif
 
 -include depend
@@ -68,4 +82,15 @@ clean:
 
 cleanall: clean
 	$(RM) depend
+
+test:
+	@echo ARCH = ${ARCH}
+	@echo BUILDTYPE = ${BUILDTYPE}
+	@echo OBJECTS = ${OBJECTS}
+
+printobjs:
+	@for OBJ in $(OBJECTS); \
+	do \
+  		( echo $(RELATIVEDIR)/$$OBJ ); \
+	done
 

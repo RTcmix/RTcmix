@@ -6,7 +6,7 @@
 
 class RTcmixMain : public RTcmix {
 public:
-#ifdef MAXMSP
+#ifdef EMBEDDED 
 	RTcmixMain();  // called from main.cpp
 	// BGG -- for flushing Queue/Heap frpm flush_sched() (main.cpp)
 	void resetQueueHeap();

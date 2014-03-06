@@ -134,7 +134,7 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
    RTPrintf("ENTERING checkInsts() FUNCTION -----\n");
 #endif
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 	if (!rtsetparams_was_called()) {
 		die(instname, "You did not call rtsetparams!");
 		return -1;

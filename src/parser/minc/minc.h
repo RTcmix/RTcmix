@@ -7,11 +7,8 @@
 
 /* Anything here is availale for export outside of the Minc directory. */
 
-#ifdef MAXMSP
-int mm_yyparse(char *buf, int len);
-#else
 int yyparse(void);
-#endif
+int yylex_destroy(void);
 
 int configure_minc_error_handler(int exit);
 

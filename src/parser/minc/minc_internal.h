@@ -9,6 +9,7 @@
 
 #include <float.h>   /* for epsilon constants */
 #include <maxdispargs.h>
+#include "rename.h"
 #include "minc.h"
 
 //#define DEBUG
@@ -188,11 +189,7 @@ void minc_advise(const char *msg, ...);
 void minc_warn(const char *msg, ...);
 void minc_die(const char *msg, ...);
 void minc_internal_error(const char *msg, ...);
-#ifdef MAXMSP
-void mm_yyerror(char *msg);
-#else
 void yyerror(char *msg);
-#endif
 
 /* sym.c */
 struct symbol *install(char *name, ScopeType scope);

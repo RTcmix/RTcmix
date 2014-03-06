@@ -149,7 +149,7 @@ static int _str_to_double(const char *str, double &val)
 static int _set_full_duplex(const bool full_duplex,
 	const bool rtsetparams_called)
 {
-#ifndef MAXMSP
+#ifndef EMBEDDED
 	if (full_duplex && rtsetparams_called)
 		return die("set_option",
 					"Turn on full duplex BEFORE calling rtsetparams.");
@@ -163,7 +163,7 @@ static int _set_full_duplex(const bool full_duplex,
 		Option::record(state);
 	}
 	// Same check as above, for record.
-#ifndef MAXMSP
+#ifndef EMBEDDED
 	if (Option::record() && rtsetparams_called)
 		return die("set_option",
 					"Turn on record BEFORE calling rtsetparams.");
@@ -207,7 +207,7 @@ static int _set_key_value_option(const char *key, const char *sval,
 		case RECORD:
 			status = _str_to_bool(sval, bval);
 			Option::record(bval);
-#ifndef MAXMSP
+#ifndef EMBEDDED
 			if (Option::record() && rtsetparams_called)
 				return die("set_option",
 							"Turn on record BEFORE calling rtsetparams.");
@@ -334,7 +334,7 @@ static int _set_value_option(const char *sval, const bool rtsetparams_called)
 			break;
 		case RECORD:
 			Option::record(bval);
-#ifndef MAXMSP
+#ifndef EMBEDDED
 			if (Option::record() && rtsetparams_called)
 				return die("set_option",
 							"Turn on record BEFORE calling rtsetparams.");

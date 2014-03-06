@@ -705,7 +705,7 @@ endnote(int xno)
 
 	times(&timbuf);
 
-#ifndef MAXMSP // this really isn't used...
+#ifndef EMBEDDED // this really isn't used...
 	printf("\n(%6.2f)",(float)(
 					(timbuf.tms_stime-clockin[fno].tms_stime)+
 					(timbuf.tms_utime-clockin[fno].tms_utime))/60.);
@@ -729,7 +729,7 @@ endnote(int xno)
 			printf(")\n");
 		}
 	}
-#endif // MAXMSP
+#endif // EMBEDDED
 
 	/* Copy the updated peak stats into the SFHEADER struct for this
 	   output file. (No swapping necessary.)

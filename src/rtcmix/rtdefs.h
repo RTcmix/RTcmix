@@ -11,15 +11,8 @@
 
 // BGG mm --------------
 #define USE_MM_BUF            -777 // use [buffer~] sample data for input
-#define MAX_MM_BUFNAME 1024
 
-typedef struct mm_buf {
-   char name[MAX_MM_BUFNAME];    // name of [buffer~]
-   float *mm_bufstart;           // starting address of buffer
-   int mm_buf_nframes;           // length of buffer (frames)
-   int mm_buf_chans;             // # of channels in the buffer
-   int mm_modtime;               // check to see of [buffer~] was changed
-} mm_buf;
+#define MAX_INLETS				64	// For RTInletPField
 // BGG mm end --------------
 
 

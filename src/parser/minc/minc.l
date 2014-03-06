@@ -5,6 +5,7 @@
 %START INIT IGNORE COM CPCOM
 %x INCLUDE
 %{
+#include "rename.h"
 #include "y.tab.h"
 #define YY_ALWAYS_INTERACTIVE 1
 static int comments = 0;
@@ -14,6 +15,23 @@ extern void yyerror(char *);
 #define MAX_INCLUDE_DEPTH 10
 YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH];
 int include_stack_ptr = 0;
+#ifdef EMBEDDED
+#ifdef yy_flex_strncpy
+/* Because of the peculiarities of Lex, this function does not get declared or defined if the token 'yytext_ptr'
+ is #defined.  Because we redefine all non-static yy* symbols for embedded builds, we have to define our own version
+ of this method here.
+ */
+static void yy_flex_strncpy (char* s1, yyconst char * s2, int n)
+{
+	register int i;
+	for ( i = 0; i < n; ++i )
+	s1[i] = s2[i];
+}
+#endif
+extern int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
+#undef YY_INPUT
+#define YY_INPUT(buf,bytes,maxbytes) readFromGlobalBuffer(buf,&(bytes),maxbytes)
+#endif
 %}
 
 let   [a-zA-Z]

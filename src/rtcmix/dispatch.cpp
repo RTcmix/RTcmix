@@ -19,9 +19,10 @@ RTcmix::dispatch(const char *func_label, const Arg arglist[],
       non-zero status, print an error message if the error indicates that
 	  no function was found.  Else just return proper status.
    */
+	mixerr = MX_NOERR;      /* clear old errors */
    int status = checkfunc(func_label, arglist, nargs, retval);
 
-   if (status != 0) {         /* search rt functions */
+   if (status != 0 && mixerr == MX_FNAME) {         /* search rt functions */
       mixerr = MX_NOERR;      /* clear old errors */
       checkInsts(func_label, arglist, nargs, retval);
       switch (mixerr) {

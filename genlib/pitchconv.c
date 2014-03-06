@@ -154,11 +154,7 @@ INLINE double octlet(unsigned char *let)
 
 err:
 	// NB: Avoid using die() here to simplify linking for pchcps, etc. utils
-#ifdef MAXMSP
-	rtcmix_warn("pitch conversion", "Invalid pitch representation \"%s\".", let);
-#else
-	fprintf(stderr, "Invalid pitch representation \"%s\".", let);
-#endif
+	fprintf(stderr, "pitch conversion: Invalid pitch representation '%s'.\n", let);
 	return 8.00;
 }
 

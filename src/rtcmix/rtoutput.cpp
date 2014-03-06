@@ -250,8 +250,7 @@ RTcmix::parse_rtoutput_args(int nargs, double pp[])
       normal range fall between -1.0 and +1.0. This is what Snd
       and sndlib like to see, but it's not the old cmix way.
    */
-   if (normfloat_requested)
-      normalize_output_floats = 1;
+   normalize_output_floats = normfloat_requested;
 
    is_float_format = IS_FLOAT_FORMAT(output_data_format);
 

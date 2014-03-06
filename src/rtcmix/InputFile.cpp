@@ -5,7 +5,6 @@
 //
 
 #include "InputFile.h"
-#include "rtdefs.h"
 #include "RTcmix.h"
 #include <sndlib.h>
 #include <assert.h>
@@ -19,6 +18,8 @@
 #ifdef MULTI_THREAD
 #include "RTThread.h"
 #endif
+
+#undef FILE_DEBUG
 
 /* The define below is to disable some fancy bus-mapping code for file
  input that was not well thought out. As a user, when I open a file,
@@ -93,10 +94,8 @@ read_float_samps(
     while (bytes_to_read > 0) {
         ssize_t bytes_read = read(fd, bufp, bytes_to_read);
         if (bytes_read == -1) {
-#ifndef MAXMSP
             perror("read_float_samps (read)");
-            exit(1);
-#endif
+            RTExit(1);
         }
         if (bytes_read == 0)          /* EOF */
             break;
@@ -175,10 +174,8 @@ read_24bit_samps(
     while (bytes_to_read > 0) {
         ssize_t bytes_read = read(fd, bufp, bytes_to_read);
         if (bytes_read == -1) {
-#ifndef MAXMSP
             perror("read_24bit_samps (read)");
-            exit(1);
-#endif
+            RTExit(1);
         }
         if (bytes_read == 0)          /* EOF */
             break;
@@ -262,10 +259,8 @@ read_short_samps(
     while (bytes_to_read > 0) {
         ssize_t bytes_read = read(fd, bufp, bytes_to_read);
         if (bytes_read == -1) {
-#ifndef MAXMSP
             perror("read_short_samps (read)");
-            exit(1);
-#endif
+            RTExit(1);
         }
         if (bytes_read == 0)          /* EOF */
             break;
@@ -342,8 +337,19 @@ void InputFile::destroyConversionBuffers()
 
 #endif
 
-InputFile::InputFile() : _filename(NULL), _fd(NO_FD), _readBuffer(NULL), _memBuffer(NULL)
+InputFile::InputFile() : _filename(NULL), _fd(NO_FD), _readBuffer(NULL), _memBuffer(NULL), _gainScale(1.0f)
 {
+}
+
+InputFile::~InputFile()
+{
+#ifdef FILE_DEBUG
+	rtcmix_debug(NULL, "InputFile::~InputFile");
+#endif
+	if (_refcount > 0) {
+		rtcmix_debug(NULL, "Input file '%s' had %d outstanding references when destroyed", _filename, _refcount);
+	}
+	close();
 }
 
 void InputFile::init(int inFd, const char *inFileName, Type inType, int inHeaderType,
@@ -377,9 +383,7 @@ void InputFile::init(int inFd, const char *inFileName, Type inType, int inHeader
 	_readBuffer = (void *) malloc((size_t) RTcmix::bufsamps() * MAXCHANS * bytes_per_samp);
 	if (_readBuffer == NULL) {
 		die("rtinput", "Unable to allocate read buffer for input file");
-#ifndef MAXMSP
-		exit(1);
-#endif
+		RTExit(1);
 	}
 #endif
 
@@ -395,18 +399,68 @@ void InputFile::init(int inFd, const char *inFileName, Type inType, int inHeader
 		_endbyte = _data_location + (inFrames * bytes_per_samp * _chans);
 }
 
+#define MM_IN_GAIN_FACTOR 32767.0f // goose it up for RTcmix
+
+void InputFile::init(BufPtr inBuffer, const char *inBufferName, long inFrames, float inSampleRate, int inChannels)
+{
+	rtcmix_debug("InputFile::init", "inBuffer %p, frames %ld, chans %d", inBuffer, inFrames, inChannels);
+    _filename = strdup(inBufferName);
+    _fd = USE_MM_BUF;
+    _refcount = 0;
+    _fileType = InMemoryType;
+    _header_type = 0;
+    _data_format = NATIVE_FLOAT_FMT;
+    _is_float_format = 1;
+    _data_location = 0;
+    _srate = inSampleRate;
+    _chans = inChannels;
+    _dur = inFrames/inSampleRate;
+	
+    int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(_data_format);
+	
+    assert(_chans <= MAXCHANS);
+	
+	_readFunction = &read_float_samps;
+	_endbyte = inFrames * bytes_per_samp * _chans;
+
+#ifndef OPENFRAMEWORKS
+	_gainScale = MM_IN_GAIN_FACTOR;
+#endif
+	_memBuffer = inBuffer;
+}
+
+// TODO: DAS: This needs a lock to prevent modification during read
+
+void InputFile::reinit(BufPtr inBuffer, long inFrames, int inChannels)
+{
+    _chans = inChannels;
+    _dur = inFrames/_srate;
+	
+	rtcmix_debug("InputFile::reinit", "inBuffer %p, frames %ld, chans %d", inBuffer, inFrames, inChannels);
+    int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(_data_format);
+	
+    assert(_chans <= MAXCHANS);
+	
+	_endbyte = inFrames * bytes_per_samp * _chans;
+	
+	_memBuffer = inBuffer;
+}
+
 void InputFile::reference()
 {
 	if (++_refcount == 1) {
 		// In here we can do any post-initialization that only needs to be done (once) when we are
 		// sure that this InputFile is being used by an instrument.
 	}
+#ifdef FILE_DEBUG
+	rtcmix_debug(NULL, "InputFile::reference: refcount = %d\n", _refcount);
+#endif
 }
 
 void InputFile::unreference()
 {
-#ifdef DEBUG
-	printf("InputFile::unreference: refcount = %d\n", _refcount);
+#ifdef FILE_DEBUG
+	rtcmix_debug(NULL, "InputFile::unreference: refcount = %d\n", _refcount);
 #endif
 	if (--_refcount <= 0) {
 		close();
@@ -415,20 +469,27 @@ void InputFile::unreference()
 
 void InputFile::close()
 {
-	if (_fd > 0) {
-#ifdef DEBUG
-		printf("\tInputFile: closing fd %d\n", _fd);
+	if (_fd != USE_MM_BUF) {	// MM buffers are not owned by us
+		if (_memBuffer) {
+#ifdef FILE_DEBUG
+			rtcmix_debug(NULL, "\tInputFile::close: freeing _memBuffer");
 #endif
-		mus_file_close(_fd);
-		_fd = NO_FD;
+			free(_memBuffer);
+			_memBuffer = NULL;
+		}
+		if (_fd > 0) {
+#ifdef FILE_DEBUG
+			rtcmix_debug(NULL, "\tInputFile::close: closing fd %d", _fd);
+#endif
+			mus_file_close(_fd);
+			_fd = NO_FD;
+		}
 	}
 #ifndef MULTI_THREAD
 	if (_readBuffer)
 		free(_readBuffer);
 	_readBuffer = NULL;
 #endif
-	if (_memBuffer)
-		free(_memBuffer);
 	if (_filename)
 		free(_filename);
 	_filename = NULL;
@@ -463,10 +524,8 @@ off_t InputFile::readSamps(off_t cur_offset,
 		{
 			AutoLock fileLock(this);
 			if (lseek(_fd, cur_offset, SEEK_SET) == -1) {
-#ifndef MAXMSP
 				perror("RTcmix::readFromInputFile (lseek)");
-				exit(1);
-#endif
+				RTExit(1);
 			}
 			
 			int status = (*this->_readFunction)(_fd,
@@ -485,16 +544,17 @@ off_t InputFile::readSamps(off_t cur_offset,
 
 int InputFile::loadSamps(long inFrames)
 {
+#ifdef FILE_DEBUG
+	rtcmix_debug(NULL, "\tInputFile::loadSamps: allocating _memBuffer for %lu bytes", (size_t)inFrames * MAXCHANS * sizeof(BUFTYPE));
+#endif
 	_memBuffer = (BufPtr) calloc((size_t) inFrames * MAXCHANS, sizeof(BUFTYPE));
 	if (_memBuffer == NULL) {
 		perror("malloc");
 		return -1;
 	}
 	if (lseek(_fd, _data_location, SEEK_SET) == -1) {
-#ifndef MAXMSP
 		perror("RTcmix::readFromInputFile (lseek)");
-		exit(1);
-#endif
+		RTExit(1);
 	}
 	const short src_chan_list[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 	long framesRead = 0;
@@ -536,16 +596,16 @@ off_t InputFile::copySamps(off_t     cur_offset,       /* current file position 
     const int bytes_per_samp = sizeof(float);
 	const int bytes_per_frame = bytes_per_samp * _chans;
 	// Original file values
-    long fileAudioOffset = (cur_offset - _data_location);
-    const long fileBytesRemaining = _endbyte - cur_offset;
+    off_t fileAudioOffset = (cur_offset - _data_location);
+    const long fileBytesRemaining = long(_endbyte - cur_offset);
 	// Convert byte offset into original file into an offset into (float) _memBuffer
-	long membufOffset = fileAudioOffset / ::mus_data_format_to_bytes_per_sample(_data_format);
+	long membufOffset = long(fileAudioOffset / ::mus_data_format_to_bytes_per_sample(_data_format));
     const int bufBytesRequested = dest_frames * _chans * bytes_per_samp;
 	const long bufBytesRemaining = (fileBytesRemaining / ::mus_data_format_to_bytes_per_sample(_data_format)) * bytes_per_frame;
     const long extra_bytes = (bufBytesRequested > bufBytesRemaining) ? bufBytesRequested - bufBytesRemaining : 0;
     ssize_t bytes_to_copy = lmin(bufBytesRemaining, bufBytesRequested);
     
-	if (dest_chans == _chans
+	if (dest_chans == _chans && _gainScale == 1.0f
 #ifndef IGNORE_BUS_COUNT_FOR_FILE_INPUT
 		&& !src_chan_list
 #endif
@@ -568,7 +628,7 @@ off_t InputFile::copySamps(off_t     cur_offset,       /* current file position 
 		}
 	}
     else {
-		/* Copy interleaved _memBuffer to dest buffer, with bus mapping. */
+		/* Copy interleaved _memBuffer to dest buffer, with bus mapping and/or gain adjust. */
 		
 		const int src_samps = dest_frames * _chans;
 		BufPtr buf = &_memBuffer[membufOffset];
@@ -582,7 +642,7 @@ off_t InputFile::copySamps(off_t     cur_offset,       /* current file position 
 #endif
 			int j = n;
 			for (int i = chan; i < src_samps; i += _chans, j += dest_chans)
-				dest[j] = buf[i];
+				dest[j] = buf[i] * _gainScale;
 		}
 	}
     return 0;

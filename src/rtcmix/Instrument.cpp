@@ -7,9 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
-#ifndef MAXMSP
-#include <iostream>
-#endif
 #include "Instrument.h"
 #include <RTcmix.h>
 #include "rt.h"
@@ -31,9 +28,6 @@ using namespace std;
 
 InputState::InputState()
 : fdIndex(NO_DEVICE_FDINDEX), fileOffset(0), inputsr(0.0), inputchans(0)
-#ifdef MAXMSP
-, my_mm_buf(NULL)
-#endif
 {
 }
 

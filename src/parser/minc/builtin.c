@@ -118,7 +118,6 @@ static void
 _do_print(const MincListElem args[], const int nargs)
 {
    int i, last_arg;
-   int nchars;
 
    last_arg = nargs - 1;
    for (i = 0; i < nargs; i++) {
@@ -194,7 +193,7 @@ _minc_print(const MincListElem args[], const int nargs)
       a=1, a=1.2345, b=[-2, -1, 0, 1, 2, 99.99], c=boo!, type of c: string
 */
 
-#ifdef MAXMSP
+#if defined(EMBEDDED)
 MincFloat
 _minc_printf(const MincListElem args[], const int nargs)
 {
@@ -225,37 +224,37 @@ _minc_printf(const MincListElem args[], const int nargs)
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-                  nchars = sprintf(get_mm_print_ptr(), "%d", (int) args[n].val.number);
+                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%d", (int) args[n].val.number);
                   break;
                case 'f':      /* print float object */
                   if (args[n].type != MincFloatType) {
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-                  nchars = sprintf(get_mm_print_ptr(), "%.12g", args[n].val.number);
+                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%.12g", args[n].val.number);
                   break;
                case 'l':      /* print list object */
                   if (args[n].type != MincListType) {
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-						nchars = sprintf(get_mm_print_ptr(), "%s", "[");
-						set_mm_print_ptr(nchars);
+                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%s", "[");
+                  set_mm_print_ptr(nchars);
                   _do_print(args[n].val.list->data, args[n].val.list->len);
-						nchars = sprintf(get_mm_print_ptr(), "%s", "]");
-						set_mm_print_ptr(nchars);
+                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%s", "]");
+                  set_mm_print_ptr(nchars);
                   break;
                case 's':      /* print string object */
                   if (args[n].type != MincStringType) {
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-                  nchars = sprintf(get_mm_print_ptr(), "%s", args[n].val.string);
+                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%s", args[n].val.string);
                   break;
                case 't':      /* print type of object */
                   {
                      char *tstr = (char *) _make_type_string(args[n].type);
-	                  nchars = sprintf(get_mm_print_ptr(), "%s", tstr);
+	                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%s", tstr);
                      free(tstr);
                   }
                   break;
@@ -278,17 +277,17 @@ _minc_printf(const MincListElem args[], const int nargs)
             p++;
             switch (*p) {
                case 'n':
-						nchars = sprintf(get_mm_print_ptr(), "\n");
+						nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "\n");
                   break;
                case 't':
-						nchars = sprintf(get_mm_print_ptr(), "\t");
+						nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "\t");
                   break;
 //FIXME: currently, minc.l can't handle escaped quotes in strings
                case '\'':
-						nchars = sprintf(get_mm_print_ptr(), "\'");
+						nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "'");
                   break;
                case '"':
-						nchars = sprintf(get_mm_print_ptr(), "\"");
+						nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "\"");
                   break;
                case '\0':
                   minc_warn("printf: premature end of format string");
@@ -302,7 +301,7 @@ _minc_printf(const MincListElem args[], const int nargs)
             p++;
             break;
          default:
-				nchars = sprintf(get_mm_print_ptr(), "%.1s", p);
+			nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%.1s", p);
             p++;
             break;
       }
@@ -311,9 +310,8 @@ _minc_printf(const MincListElem args[], const int nargs)
 	set_mm_print_ptr(1);
    return 0.0;
 err:
-	nchars = sprintf(get_mm_print_ptr(), "\n");
+	nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "\n");
 	set_mm_print_ptr(nchars+1);
-   fflush(stdout);
    return -1.0;
 }
 
@@ -347,35 +345,35 @@ _minc_printf(const MincListElem args[], const int nargs)
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-                  printf("%d", (int) args[n].val.number);
+                  RTPrintfCat("%d", (int) args[n].val.number);
                   break;
                case 'f':      /* print float object */
                   if (args[n].type != MincFloatType) {
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-                  printf("%.12g", args[n].val.number);
+                  RTPrintfCat("%.12g", args[n].val.number);
                   break;
                case 'l':      /* print list object */
                   if (args[n].type != MincListType) {
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-                  putchar('[');
+                  RTPrintfCat("[");
                   _do_print(args[n].val.list->data, args[n].val.list->len);
-                  putchar(']');
+                  RTPrintfCat("]");
                   break;
                case 's':      /* print string object */
                   if (args[n].type != MincStringType) {
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-                  fputs(args[n].val.string, stdout);
+                  RTPrintfCat("%s", args[n].val.string);
                   break;
                case 't':      /* print type of object */
                   {
                      char *tstr = (char *) _make_type_string(args[n].type);
-                     fputs(tstr, stdout);
+                     RTPrintfCat("%s", tstr);
                      free(tstr);
                   }
                   break;
@@ -398,17 +396,17 @@ _minc_printf(const MincListElem args[], const int nargs)
             p++;
             switch (*p) {
                case 'n':
-                  putchar('\n');
+                  RTPrintfCat("\n");
                   break;
                case 't':
-                  putchar('\t');
+                  RTPrintfCat("\t");
                   break;
 //FIXME: currently, minc.l can't handle escaped quotes in strings
                case '\'':
-                  putchar('\'');
+                  RTPrintfCat("'");
                   break;
                case '"':
-                  putchar('"');
+                  RTPrintfCat("\"");
                   break;
                case '\0':
                   minc_warn("printf: premature end of format string");
@@ -422,18 +420,18 @@ _minc_printf(const MincListElem args[], const int nargs)
             p++;
             break;
          default:
-            putchar(*p);
+            RTPrintfCat("%c", *p);
             p++;
             break;
       }
    }
    return 0.0;
 err:
-   putchar('\n');
-   fflush(stdout);
+   RTPrintf("\n");
+//   fflush(stdout);
    return -1.0;
 }
-#endif // MAXMSP
+#endif // EMBEDDED
 
 
 /* ------------------------------------------------------------------- len -- */

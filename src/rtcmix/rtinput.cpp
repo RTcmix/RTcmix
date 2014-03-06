@@ -34,19 +34,6 @@ typedef enum {
    DIGITAL
 } AudioPortType;
 
-static long last_input_index = -1;
-
-
-/* ------------------------------------------------- get_last_input_index --- */
-/* Called by rtsetinput to find out which file to set for the inst.
-*/
-int
-get_last_input_index()
-{
-   return (int) last_input_index;   // FIX ME -- should return long
-}
-
-
 /* ------------------------------------------------------ open_sound_file --- */
 int
 open_sound_file(
@@ -142,27 +129,76 @@ FIXME: this stuff not implemented yet  -JGG
    an instrument.
 */
 
-#ifdef MAXMSP
-// BGG mm -- from rtcmixmain() [main.cpp] -- the buffer vars
-extern mm_buf mm_bufs[]; // mm_buf defined in rtdefs.h
-extern int n_mm_bufs;
-extern int mm_buf_input;
-#endif
+int RTcmix::setInputBuffer(const char *inName, float *inBuffer, int inFrames, int inChans, int inModtime)
+{
+	if (inName != NULL && inBuffer != NULL) {
+		/* See if this audio device or file has already been opened. */
+		InputFile *inFile = findInput(inName, &last_input_index);
+		if (inFile) {
+			// Update if mod time is more recent.
+			if (inModtime > inFile->modTime()) {
+				inFile->reinit(inBuffer, inFrames, inChans);
+				inFile->setModTime(inModtime);
+			}
+		}
+		else {
+			int i;
+			for (i = 0; i < max_input_fds; i++) {
+				if (!inputFileTable[i].isOpen()) {
+					inputFileTable[i].init(inBuffer,
+										   inName,
+										   inFrames,
+										   44100.0f,	// DAS Allow SR to VARY
+										   inChans);
+					last_input_index = i;
+					break;
+				}
+			}
+			
+			/* If this is true, we've used up all input descriptors in our array. */
+			if (i == max_input_fds) {
+				die("rtinput", "You have exceeded the maximum number of input "
+					"files and buffers (%ld)!", max_input_fds);
+				return -1;
+			}
+		}
+	}
+	else {
+		last_input_index = -1;	// NULL buffer passed in
+	}
+	return last_input_index;
+}
+
+InputFile *
+RTcmix::findInput(const char *inName, int *pOutIndex)
+{
+	for (int i = 0; i < max_input_fds; i++) {
+		if (inputFileTable[i].isOpen()) {
+			if (inputFileTable[i].hasFile(inName)) {
+				if (pOutIndex != NULL)
+					*pOutIndex = i;
+				rtcmix_advise("rtinput",  "Using pre-loaded internal buffer %d: '%s'", i, inName);
+				return &inputFileTable[i];
+			}
+		}
+	}
+	return NULL;
+}
 
 double
 RTcmix::rtinput(float p[], int n_args, double pp[])
 {
-	int            audio_in = 0, in_memory = 0, p1_is_used = 0, start_pfield, fd;
+	int            audio_in = 0, in_memory = 0, p1_is_used = 0, fd;
 	int            is_open = 0, header_type, data_format, data_location = 0, nchans;
+	bool		   set_record = false, in_buffer = false;
 #ifdef INPUT_BUS_SUPPORT
-	int            startchan, endchan;
+	int            startchan, endchan, start_pfield;
 	short          busindex, buslist[MAXBUS];
 	BusType        type;
 #endif /* INPUT_BUS_SUPPORT */
 	double         srate, dur = 0.0;
 	char           *sfname, *str;
 	AudioPortType  port_type = MIC;
-
 	header_type = MUS_UNSUPPORTED;
 	data_format = MUS_UNSUPPORTED;
 
@@ -190,8 +226,8 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 				p1_is_used = 0;		/* p[1] might be a bus spec. */
 		}
 
-		/* This signals inTraverse() to grab buffers from the audio device. */
-		rtrecord = 1;
+		/* This will eventually signal inTraverse() to pull audio from the device */
+		set_record = true;
 
 // FIXME: need to replace this with the bus spec scheme below... -JGG
 		audioNCHANS = (n_args > 2) ? (int) p[2] : NCHANS;
@@ -199,36 +235,24 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 		srate = SR;
 	}
 
-#ifdef MAXMSP
+#ifdef EMBEDDED
 // this segment is to allow rtcmix to access sample data from the
 // max/msp [buffer~] object.
 	else if (strcmp(sfname, "MMBUF") == 0) {
-			int i;
-
-			str = DOUBLE_TO_STRING(pp[1]);
-			for (i = 0; i < n_mm_bufs; i++) {
-				if (strcmp(str, mm_bufs[i].name) == 0) {
-					mm_buf_input = i; // used in rtsetinput() for buf ID
-					break;
-				}
-			}
-			if (i == n_mm_bufs) {
-				die("rtinput", "no max/msp buffer named %s is set", str);
-				mm_buf_input = -1; // we are NOT using [buffer~] input, even if set
-				return -1;
-			}
-			audio_in = 1; // I think I need this to initialize some vars...
-
+		str = DOUBLE_TO_STRING(pp[1]);
+		if (str == NULL) {
+			rterror("rtinput", "NULL buffer name!");
+			return -1;
+		}
+		sfname = str;	// use second argument as lookup string
+		in_buffer = true;
 // FIXME: need to replace this with the bus spec scheme below... -JGG
 		audioNCHANS =  NCHANS;
 		nchans = audioNCHANS;
 		srate = SR;
 	}
-#endif // MAXMSP
+#endif // EMBEDDED
 	else {
-#ifdef MAXMSP
-		mm_buf_input = -1; // we are NOT using [buffer~] input, even if set
-#endif // MAXMSP
 		if (n_args > 1 && pp[1] != 0.0) {
 			p1_is_used = 1;
 			str = DOUBLE_TO_STRING(pp[1]);
@@ -256,20 +280,20 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 		str = DOUBLE_TO_STRING(pp[i]);
 		if (str == NULL) {
 			rterror("rtinput", "NULL bus name!");
-			rtrecord = 0;
-			return -1;
+			set_record = false;
+			goto Error;
 		}
 
 		err = parse_bus_name(str, &type, &startchan, &endchan);
 		if (err) {
 			rterror("rtinput", "Invalid bus name specification.");
-			rtrecord = 0;
-			return -1;
+			set_record = false;
+			goto Error;
 		}
 		if (type != BUS_IN) {
 			rterror("rtinput", "You have to use an \"in\" bus with rtinput.");
-			rtrecord = 0;
-			return -1;
+			set_record = false;
+			goto Error;
 		}
 
 		for (j = startchan; j <= endchan; j++)
@@ -279,21 +303,17 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	if (startchan == -1) {           /* no bus specified */
 	}
 #endif /* INPUT_BUS_SUPPORT */
-    long i;
+    int i;
     
-	/* See if this audio device or file has already been opened. */
-	for (i = 0; i < max_input_fds; i++) {
-		if (inputFileTable[i].isOpen()) {
-			if (inputFileTable[i].hasFile(sfname)) {
-				last_input_index = i;
-				is_open = 1;
-				break;
-			}
-		}
+	/* See if this audio device, file, or buffer has already been opened and loaded. */
+	if (findInput(sfname, &last_input_index) != NULL) {
+		is_open = 1;
+		rtcmix_debug("rtinput", "found loaded file or buffer, last_input_index = %d", last_input_index);
 	}
 	if (!is_open) {			/* if not, open input audio device or file. */
 		long nsamps = 0;
 		if (audio_in) {
+			rtcmix_debug("rtinput", "audio_in is set to true -- expecting live input from an audio device");
 			if (rtsetparams_was_called()) {
 				// If audio *playback* was disabled, but there is a request for
 				// input audio, create the audio input device here.
@@ -303,8 +323,8 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 											 NCHANS, SR, &nframes,
 											 Option::bufferCount())) == NULL)
 					{
-						rtrecord = 0;	/* because we failed */
-						return -1;
+						set_record = false;
+						goto Error;
 					}
 					Option::record(true);
 					RTBUFSAMPS = nframes;
@@ -313,14 +333,14 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 				// If record disabled during rtsetparams(), we cannot force it on here.
 				else if (!Option::record()) {
 					die("rtinput", "Audio already configured for playback only via rtsetparams()");
-					rtrecord = 0;	/* because we failed */
-					return -1;
+					set_record = false;
+					goto Error;
 				}
 			}
 			else {
 				// This allows rtinput("AUDIO") to turn on record
 				Option::record(1);
-				rtrecord = 1;
+				set_record = true;	// DAS I had set this to false -- WHY?
 			}
 			fd = 1;  /* we don't use this; set to 1 so rtsetinput() will work */
 			for (i = 0; i < nchans; i++) {
@@ -329,12 +349,19 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 #ifdef INPUT_BUS_SUPPORT
 #endif /* INPUT_BUS_SUPPORT */
 		}
+		else if (in_buffer) {
+			die("rtinput", "No audio buffer is loaded which matches the name '%s'", sfname);
+			last_input_index = -1;
+			goto Error;
+		}
 		else {
-			rtrecord = 0;
+			set_record = false;
 			fd = ::open_sound_file("rtinput", sfname, &header_type, &data_format,
 									&data_location, &srate, &nchans, &nsamps);
-			if (fd == -1)
-				return -1;
+			if (fd == -1) {
+				last_input_index = -1;
+				goto Error;
+			}
 
 #ifdef INPUT_BUS_SUPPORT
 			if (startchan == -1) {     /* no bus specified above */
@@ -400,7 +427,13 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 			die("rtinput", "You have exceeded the maximum number of input "
 												"files (%ld)!", max_input_fds);
 	}
-
+	
+Error:
+	/* This signals inTraverse() to grab buffers from the audio device. We wait till the end to be sure we succeed,
+	   and that the record buffers are created.
+	 */
+	rtrecord = set_record;
+	
 	/* Return this to Minc, so user can pass it to functions. */
 	return (double) last_input_index;
 }

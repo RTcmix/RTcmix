@@ -4,10 +4,10 @@
    profile symbol.  In non-rt instrtuments this function is used
    to place the function on the Minc symbol table */
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 int profile() { return 0; }
 
-#else // MAXMSP
+#else // EMBEDDED
 // BGG mm -- this contains all the function profile()'s for max/msp
 //		we build a static lib for rtcmix~ and iRTcmix
 
@@ -75,5 +75,5 @@ profile()
 
 	return 0;
 }
-#endif // MAXMSP
+#endif // EMBEDDED
 

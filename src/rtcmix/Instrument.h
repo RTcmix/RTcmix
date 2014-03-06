@@ -26,9 +26,6 @@ struct InputState {
    off_t          fileOffset;      // current offset in file for this inst
    double         inputsr;		   // SR of input file
    int            inputchans;	   // Chans of input file
-#ifdef MAXMSP
-	mm_buf         *my_mm_buf;    // local copy of the active [buffer~]
-#endif
 };
 
 class Instrument : public RefCounted {

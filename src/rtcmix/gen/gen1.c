@@ -131,19 +131,16 @@ gen1(struct gen *gen, char *sfname)
       return die("gen1", "Not enough memory for function table %d.", gen->slot);
 
    buf = (char *) malloc((size_t) BUFSIZE);
-   if (buf == NULL)
+	if (buf == NULL) {
+		free(block);
       return die("gen1", "Not enough memory for temporary buffer.");
+	}
 
    bytes_per_samp = mus_data_format_to_bytes_per_sample(data_format);
 
    seek_to = data_location + (start_frame * file_chans * bytes_per_samp);
    if (lseek(fd, seek_to, SEEK_SET) == -1) {
-#ifdef MAXMSP
-		return die("gen1", "lseek problem");
-#else
-      perror("gen1 (lseek)");
-      exit(1);
-#endif
+		return die("gen1", "lseek() failed");
    }
 
 #if MUS_LITTLE_ENDIAN
@@ -171,12 +168,7 @@ gen1(struct gen *gen, char *sfname)
       else
          bytes_read = read(fd, buf, BUFSIZE);
       if (bytes_read == -1) {
-#ifdef MAXMSP
-			return die("gen1", "read problem");
-#else
-         perror("read");
-         exit(1);
-#endif
+			return die("gen1", "read() failed");
       }
       if (bytes_read == 0)          /* EOF, somehow */
          break;

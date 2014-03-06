@@ -70,7 +70,11 @@
 
 #define CONF_FILENAME ".rtcmixrc"
 #define DEFAULT_BUFFER_FRAMES 4096.0
+#ifdef MSP_AUDIO_DEVICE
+#define DEFAULT_BUFFER_COUNT 1
+#else
 #define DEFAULT_BUFFER_COUNT 2
+#endif
 #define DEFAULT_OSC_INPORT 7770
 #define DEFAULT_MUTE_THRESHOLD 0.0	/* means no muting */
 

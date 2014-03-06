@@ -22,19 +22,13 @@
 #include <ug_intro.h>
 #include "version.h"
 #include "rt.h"
+#include "rtdefs.h"
 #include "heap.h"
 #include "sockdefs.h"
 #include "notetags.h"           // contains defs for note-tagging
 #include "dbug.h"
+#include "InputFile.h"
 #include <MMPrint.h>
-
-#ifdef MAXMSP
-// BGG -- this is how you print to the console.app now in max/msp
-extern "C" {
-extern
-void cpost(char *fmt, ...);
-}
-#endif
 
 extern "C" {
 #ifdef SGI
@@ -69,7 +63,7 @@ detect_denormals()
 #endif /* LINUX */
 
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 /* ----------------------------------------------------------------- main --- */
 int
 main(int argc, char *argv[], char **env)
@@ -84,8 +78,7 @@ main(int argc, char *argv[], char **env)
    flush_all_underflows_to_zero();
 #endif
 
-	bzero(MMPrint::mm_print_buf, SIZEOF_MMPRINTBUF);
-	MMPrint::mm_print_ptr = MMPrint::mm_print_buf;
+   clear_print();
 
    RTcmixMain app(argc, argv, env);
    app.run();
@@ -93,16 +86,47 @@ main(int argc, char *argv[], char **env)
    return 0;
 }
 
-#else // MAXMSP
-/* ----------------------------------------------------------- rtcmixmain --- */
-RTcmixMain *app;
+#else // EMBEDDED
+/* ----------------------------------------------------------- RTcmix_init --- */
+static RTcmixMain *app;
 
 extern "C" {
+	typedef void (*RTcmixBangCallback)(void *inContext);
+	typedef void (*RTcmixValuesCallback)(float *values, int numValues, void *inContext);
+	typedef void (*RTcmixPrintCallback)(const char *printBuffer, void *inContext);
+	int RTcmix_init();	//	DAS WAS rtcmixmain
+	int RTcmix_destroy();
+	int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, float *mm_inbuf, float *mm_outbuf);	// DAS WAS maxmsp_rtsetparams
+	void RTcmix_setBangCallback(RTcmixBangCallback inBangCallback, void *inContext);
+	void RTcmix_setValuesCallback(RTcmixValuesCallback inValuesCallback, void *inContext);
+	void RTcmix_setPrintCallback(RTcmixPrintCallback inPrintCallback, void *inContext);
+#ifdef IOS
+	int RTcmix_startAudio();
+	int RTcmix_stopAudio();
+#endif
+	int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording);
+	void RTcmix_flushScore();
+	void RTcmix_setPField(int inlet, float pval);
+	int RTcmix_setInputBuffer(char *bufname, float *bufstart, int nframes, int nchans, int modtime);
+	int RTcmix_getBufferFrameCount(char *bufname);
+	int RTcmix_getBufferChannelCount(char *bufname);
+	// DAS Still need to rename these
+	void pfield_set(int inlet, float pval);
+#ifdef MAXMSP
+	void RTcmix_setMSPState(const char *inSpec, void *inState);
+	void loadinst(char *dsoname);
+	void unloadinst();
+#endif
+	// DAS These are called from inTraverse()
+	void checkForBang();
+	void checkForVals();
+	void checkForPrint();
+}
+
 int
-rtcmixmain()	// BGG mm -- now called this for max/msp
+RTcmix_init()	// BGG mm -- now called this for max/msp
 {
-	bzero(MMPrint::mm_print_buf, SIZEOF_MMPRINTBUF);
-	MMPrint::mm_print_ptr = MMPrint::mm_print_buf;
+	clear_print();
 
 // BGG no argc and argv in max/msp version mm
    app = new RTcmixMain();
@@ -111,241 +135,131 @@ rtcmixmain()	// BGG mm -- now called this for max/msp
    return 0;
 }
 
+int
+RTcmix_destroy()
+{
+	delete app;
+	app = NULL;
+	return 0;
+}
 
-// BGG -- these will be called from max/msp, an instrument will set
-// the *_ready value to signal to return something other than NULL
-// max/msp will then respond accordingly
+static RTcmixBangCallback	sBangCallback = NULL;
+static void *				sBangCallbackContext = NULL;
+
+void
+RTcmix_setBangCallback(RTcmixBangCallback inBangCallback, void *inContext)
+{
+	sBangCallback = inBangCallback;
+	sBangCallbackContext = inContext;
+}
 
 int bang_ready = 0;
 
-int check_bang()
+// This is called from inTraverse
+
+void checkForBang()
 {  
-   if (bang_ready == 1) {
-      bang_ready = 0;
-      return(1);
-   } else {
-      return(0);
-   }
+	if (bang_ready == 1) {
+		bang_ready = 0;
+		if (sBangCallback != NULL) {
+			sBangCallback(sBangCallbackContext);
+		}
+	}
 }
 
+static RTcmixValuesCallback sValuesCallback = NULL;
+static float sValuesArray[1024];
+static void *sValuesCallbackContext;
+
+void
+RTcmix_setValuesCallback(RTcmixValuesCallback inValuesCallback, void *inContext)
+{
+	sValuesCallback = inValuesCallback;
+	sValuesCallbackContext = inContext;
+}
 
 int vals_ready = 0;
 float maxmsp_vals[MAXDISPARGS];
 
-int check_vals(float thevals[])
+// This is called from inTraverse
+
+void checkForVals()
 {  
-   int i, tvals;
-   
-   if (vals_ready > 0) { // vals_ready will contain how many vals to return
-      for (i = 0; i < vals_ready; i++) thevals[i] = maxmsp_vals[i];
-      tvals = vals_ready;
-      vals_ready = 0;
-      return(tvals);
-   } else {
-      return(0);
-   }
+	if (vals_ready > 0 && sValuesArray != NULL) { // vals_ready will contain how many vals to return
+		int nVals = vals_ready;
+		vals_ready = 0;
+		// Copy into local static array.  This is what gets handed to callback.
+		for (int i = 0; i < nVals; i++) sValuesArray[i] = maxmsp_vals[i];
+		if (sValuesCallback) {
+			sValuesCallback(sValuesArray, nVals, sValuesCallbackContext);
+		}
+	}
 }
 
-char *get_print()
+static RTcmixPrintCallback sPrintCallback = NULL;
+static void *sPrintCallbackContext = NULL;
+
+void RTcmix_setPrintCallback(RTcmixPrintCallback inPrintCallback, void *inContext)
 {
-	return(MMPrint::mm_print_buf);
+	sPrintCallback = inPrintCallback;
+	sPrintCallbackContext = inContext;
 }
 
-void reset_print()
+// This is called from inTraverse
+
+void checkForPrint()
 {
-	bzero(MMPrint::mm_print_buf, SIZEOF_MMPRINTBUF);
-	MMPrint::mm_print_ptr = MMPrint::mm_print_buf;
+	if (!is_print_cleared()) {
+		const char *printBuf = MMPrint::mm_print_buf;
+		if (sPrintCallback)
+			sPrintCallback(printBuf, sPrintCallbackContext);
+		clear_print();
+	}
+}
+
+int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording)
+{
+	rtcmix_debug(NULL, "RTcmix_resetAudio entered");
+	app->close();
+	int status = app->resetparams(sr, nchans, vecsize, recording);
+	if (status == 0) {
+		status = app->resetAudio(sr, nchans, vecsize, recording);
+#if defined(MSP_AUDIO_DEVICE)
+		if (status == 0) {
+			rtcmix_debug(NULL, "RTcmix_resetAudio calling RTcmix::startAudio()");
+			// For now, there is no separate call to start audio in rtcmix~
+			status = app->startAudio(RTcmix::inTraverse, NULL, app);
+		}
+#endif
+	}
+	return status;
 }
 
 #ifdef IOS
-// BGG ii -- we can fill these directly in iOS, so we pass them in below
-extern short *maxmsp_outbuf; // defined in mm_rtsetparams.cpp
-extern short *maxmsp_inbuf; // defined in mm_rtsetparams.cpp
-
-void pullTraverse(short *inbuf, short *outbuf)
+	
+int RTcmix_startAudio()
 {
-	maxmsp_inbuf = inbuf;
-	maxmsp_outbuf = outbuf;
+	return app->startAudio(RTcmix::inTraverse, NULL, app);
+}
 
-	app->inTraverse(NULL, NULL);
-}
-#else // not IOS
-void pullTraverse()
+int RTcmix_stopAudio()
 {
-	app->inTraverse(NULL, NULL);
+	return app->stopAudio();
 }
+
 #endif // IOS
 
+#if defined(MAXMSP)	/* these are entry points used by MAX/MSP only */
 
-#ifdef PD
-int pd_rtsetparams(float sr, int nchans, int vecsize, float *mm_inbuf, float *mm_outbuf)
-#else
-int maxmsp_rtsetparams(float sr, int nchans, int vecsize, float *mm_inbuf, float *mm_outbuf)
-#endif
+#include "Option.h"
+
+void *gMSPAudioState;	// Used by MSPAudioDevice.cpp
+
+void RTcmix_setMSPState(const char *inSpec, void *inState)
 {
-	int status;
-
-	status = (int)app->mm_rtsetparams(sr, nchans, vecsize, mm_inbuf, mm_outbuf);
-
-	return(status);
+	Option::device(inSpec);
+	gMSPAudioState = inState;
 }
-
-
-// these are set from inlets on the rtcmix~ object, using PFields to
-// control the Instruments
-// rtcmix~ is set to constrain up to a max of 19 inlets for PFields
-float inletvals[20];
-
-void pfield_set(int inlet, float pval)
-{
-	inletvals[inlet-1] = pval;
-}
-
-
-// use this to pass in info from the max/msp [buffer~] object.  All
-// we need to know is the number of frames, nchans, and starting address
-// flags and globals to support this stuff, arg!
-#define MAX_MM_BUFS 50
-mm_buf mm_bufs[MAX_MM_BUFS]; // mm_buf defined in rtdefs.h
-int mm_buf_input = -1; // used in rtgetin() and then rtsetinput()
-int n_mm_bufs = 0;
-
-void buffer_set(char *bufname, float *bufstart, int nframes, int nchans, int modtime)
-{
-	int i;
-	int foundit;
-
-
-	if (strlen(bufname) >= MAX_MM_BUFNAME) { // defined in rtdefs.h
-		rtcmix_warn("bufset", "[buffer~] name has to be < %d chars", MAX_MM_BUFNAME);
-		return;
-	}
-
-	// check to see if this is already set
-	foundit = 0;
-	for (i = 0; i < n_mm_bufs; i++) {
-			if (strcmp(bufname, mm_bufs[i].name) == 0) {
-				foundit = 1;
-				if (modtime > mm_bufs[i].mm_modtime) { // buffer was modified
-					mm_bufs[i].mm_bufstart = bufstart;
-					mm_bufs[i].mm_buf_nframes = nframes;
-					mm_bufs[i].mm_buf_chans = nchans;
-					mm_bufs[i].mm_modtime = modtime;
-				}
-				break;
-			}
-	}
-
-	// it's a new one
-	if (foundit == 0) {
-		if (n_mm_bufs >= MAX_MM_BUFS) {
-			rtcmix_warn("bufset", "we can only do %d [buffer~] buffers at present, sorry!", MAX_MM_BUFS);
-			return;
-		}
-		strcpy(mm_bufs[n_mm_bufs].name, bufname);
-		mm_bufs[n_mm_bufs].mm_bufstart = bufstart;
-		mm_bufs[n_mm_bufs].mm_buf_nframes = nframes;
-		mm_bufs[n_mm_bufs].mm_buf_chans = nchans;
-		mm_bufs[n_mm_bufs].mm_modtime = modtime;
-		n_mm_bufs++;
-	}
-}
-
-
-#ifdef OPENFRAMEWORKS
-
-// this is used for OpenFrameworks; will read a soundfile into a named
-// buffer for use by rtinput("MMBUF", "namedbuffer")
-void OF_buffer_load_set(char *filename, char *bufname, float insk, float dur)
-{
-	int i;
-	int foundit;
-	float *bufstart; // starting pointer to buffer
-	int nframes, nchans;
-
-	if (strlen(bufname) >= MAX_MM_BUFNAME) { // defined in rtdefs.h
-		rterror("OF_buffer_set", "the bufname has to be < %d chars", MAX_MM_BUFNAME);
-		return;
-	}
-
-	// check to see if this is already set
-	foundit = 0;
-	for (i = 0; i < n_mm_bufs; i++) {
-			if (strcmp(bufname, mm_bufs[i].name) == 0) foundit = 1;
-			break;
-	}
-
-	// it's a new one
-	if (foundit == 0) {
-		if (n_mm_bufs >= MAX_MM_BUFS) {
-			rterror("OF_buffer_set", "we can only do %d buffers at present, sorry!", MAX_MM_BUFS);
-			return;
-		}
-
-		bufstart = sound_sample_buf_read(filename, (double)insk, (double)dur, &nframes, &nchans);
-		if (bufstart == NULL) {
-			rterror("OF_buffer_set", "problem reading soundfile %s into memory", filename);
-			return;
-		}
-
-		strcpy(mm_bufs[n_mm_bufs].name, bufname);
-		mm_bufs[n_mm_bufs].mm_bufstart = bufstart;
-		mm_bufs[n_mm_bufs].mm_buf_nframes = nframes;
-		mm_bufs[n_mm_bufs].mm_buf_chans = nchans;
-		mm_bufs[n_mm_bufs].mm_modtime = 0; // this isn't used in OF right now
-		n_mm_bufs++;
-	}
-}
-
-#endif // OPENFRAMEWORKS
-
-
-// returns the number of frames in a named buffer
-int mm_buf_getframes(char *bufname)
-{
-   int i;
-   int foundit;
-
-   // find the bufname
-   foundit = 0;
-   for (i = 0; i < n_mm_bufs; i++) {
-         if (strcmp(bufname, mm_bufs[i].name) == 0) foundit = 1;
-         break;
-   }
-
-	return mm_bufs[i].mm_buf_nframes;
-}
-
-
-// returns the number of channels of a named buffer
-int mm_buf_getchans(char *bufname)
-{
-   int i;
-   int foundit;
-
-   // find the bufname
-   foundit = 0;
-   for (i = 0; i < n_mm_bufs; i++) {
-         if (strcmp(bufname, mm_bufs[i].name) == 0) foundit = 1;
-         break;
-   }
-
-	if (foundit == 0) {
-		rtcmix_warn("mm_buf_getchans", "there is no buffer named %s", bufname);
-		return -1;
-	}
-
-	return mm_bufs[i].mm_buf_chans;
-}
-
-
-// called for the [flush] message; deletes and reinstantiates the rtQueue
-// and rtHeap, thus flushing all scheduled events in the future
-void flush_sched()
-{
-	app->resetQueueHeap(); // in RTcmixMain.cpp
-}
-
 
 // this is for dynamic loading of RTcmix instruments (for development)
 // only one rtcmix~ may be instantiated for this to work
@@ -363,6 +277,104 @@ void unloadinst()
 	app->unload();
 }
 
-} // end of "extern C"  BGG mm
-#endif // MAXMSP
+#endif	// MAXMSP
+
+#ifdef PD
+int pd_rtsetparams(float sr, int nchans, int vecsize, float *mm_inbuf, float *mm_outbuf)
+#else
+int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, float *mm_inbuf, float *mm_outbuf)	// DAS WAS mm_rtsetparams
+#endif
+{
+#if defined(MSP_AUDIO_DEVICE)
+	app->close();
+	app->resetAudio(sr, nchans, vecsize, recording);
+#endif
+#ifdef PD
+	int recording = 1;
+#endif
+	int status = app->setparams(sr, nchans, vecsize, recording != 0, mm_inbuf, mm_outbuf);
+#if defined(MSP_AUDIO_DEVICE)
+	if (status == 0) {
+		// For now, there is no separate call to start audio in rtcmix~
+		status = app->startAudio(RTcmix::inTraverse, NULL, app);
+	}
+#endif
+	return status;
+}
+
+
+// these are set from inlets on the rtcmix~ object, using PFields to
+// control the Instruments
+// rtcmix~ is set to constrain up to a max of 19 inlets for PFields
+// iRTCmix can handle up to MAX_INLETS - DAS
+
+float gInletValues[MAX_INLETS];
+
+void pfield_set(int inlet, float pval)
+{
+	if (inlet <= MAX_INLETS) {
+		gInletValues[inlet-1] = pval;
+	}
+	else {
+		die("pfield_set", "exceeded max inlet count [%d]", MAX_INLETS);
+	}
+}
+
+// New name
+void RTcmix_setPField(int inlet, float pval)
+{
+	pfield_set(inlet, pval);
+}
+
+// This allows a float audio buffer to be directly loaded as input
+
+int RTcmix_setInputBuffer(char *bufname, float *bufstart, int nframes, int nchans, int modtime)
+{
+	return (app->setInputBuffer(bufname, bufstart, nframes, nchans, modtime) >= 0) ? 0 : -1;
+}
+
+#ifdef OPENFRAMEWORKS
+
+// this is used for OpenFrameworks; will read a soundfile into a named
+// buffer for use by rtinput("MMBUF", "namedbuffer")
+void OF_buffer_load_set(char *filename, char *bufname, float insk, float dur)
+{
+}
+
+#endif // OPENFRAMEWORKS
+
+
+// returns the number of frames in a named buffer
+int RTcmix_getBufferFrameCount(char *bufname)
+{
+	InputFile *input = app->findInput(bufname, NULL);
+	if (input != NULL) {
+		return input->duration() / input->sampleRate();
+	}
+	rtcmix_warn("RTcmix_getBufferFrameCount", "there is no buffer named %s", bufname);
+	return -1;
+}
+
+
+// returns the number of channels of a named buffer
+int RTcmix_getBufferChannelCount(char *bufname)
+{
+	InputFile *input = app->findInput(bufname, NULL);
+	if (input != NULL) {
+		return input->channels();
+	}
+	rtcmix_warn("RTcmix_getBufferChannelCount", "there is no buffer named %s", bufname);
+	return -1;
+}
+
+
+// called for the [flush] message; deletes and reinstantiates the rtQueue
+// and rtHeap, thus flushing all scheduled events in the future
+void RTcmix_flushScore()
+{
+	app->resetQueueHeap(); // in RTcmixMain.cpp
+}
+
+
+#endif // EMBEDDED
 

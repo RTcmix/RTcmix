@@ -56,7 +56,7 @@ makeLFO(const Arg args[], const int nargs)
 			const int len = kLFOWavetableSize;
 			double *wavetable = new double [len];
 			if (wavetable_from_string(args[0], wavetable, len, "makeLFO") != 0) {
-				delete wavetable;
+				delete [] wavetable;
 				return NULL;
 			}
 			tablePField = new TablePField(wavetable, len);

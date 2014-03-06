@@ -2,17 +2,15 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-#ifndef IOS
-#include <iostream>
-#endif
 #include "heap.h"
 #include <ugens.h> // for rtcmix_warn()
+#include <stdio.h>
 
 using namespace std;
 
 rtqueue::~rtqueue()
 {
-//	cout << "rtqueue::~rtqueue()\n";
+//	printf("rtqueue::~rtqueue()\n");
 	if (tail != head) {
 	    delete tail;
 	}

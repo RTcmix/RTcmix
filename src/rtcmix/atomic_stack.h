@@ -174,7 +174,7 @@ public:
 	void	push_atomic(T *item) {
 		if (mNextPtrOffset < 0) {
 			T **pnext = &item->next();	// hack around offsetof not working with C++
-			mNextPtrOffset = (u_int8_t *)pnext - (u_int8_t *)item;
+			mNextPtrOffset = (char *)pnext - (char *)item;
 		}
 		OSAtomicEnqueue(&mHead, item, mNextPtrOffset);
 	}

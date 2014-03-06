@@ -4,16 +4,31 @@
 */
 %{
 #include <string.h>
+#include "rename.h"
 #include "minc_internal.h"
 #include "lex.yy.c"
+#ifdef EMBEDDED
+/* both in utils.c */
+extern int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
+#endif
 #define YYDEBUG 1
 #define MAXTOK_IDENTLIST 200
 
 #undef MDEBUG	/* turns on some parser debugging below */
 
 #ifdef MDEBUG
+#ifdef IOS
+#include <syslog.h>
+#define MPRINT(x) syslog(LOG_NOTICE, x "\n")
+#define MPRINT1(x,y) syslog(LOG_NOTICE, x "\n", y)
+#elif defined(MAXMSP)
+extern void cpost(const char *fmt, ...);
+#define MPRINT(x) cpost(x)
+#define MPRINT1(x,y) cpost(x, y)
+#else
 #define MPRINT(x) printf(x "\n")
 #define MPRINT1(x,y) printf(x "\n", y)
+#endif
 #else
 #define MPRINT(x)
 #define MPRINT1(x,y)
@@ -291,17 +306,54 @@ int yywrap()
 
 static void cleanup()
 {
+	MPRINT1("cleanup: yy_init = %d", yy_init);
+	MPRINT("Freeing program tree");
 #ifdef FREE_TREES_AT_END
     free_tree(program);
 #else
 	efree(program);
 #endif
+	/* Reset all static state */
+	comments = 0;	// from lex.yy.c
+	cpcomments = 0;
+	program = NULL;
+	idcount = 0;
+	flerror = 0;
+	level = 0;
+#ifndef EMBEDDED
+	/* BGG mm -- we need to keep the symbols for The Future */
 	free_symbols();
-#ifdef MAXMSP
-	yy_delete_buffer(yy_current_buffer);
-	yy_current_buffer = NULL;
-#endif
+	/* BGG mm -- I think this buffer gets reused, so we don't delete it */
 	yy_delete_buffer(YY_CURRENT_BUFFER);
-	/* yy_current_buffer = NULL; */
+	YY_CURRENT_BUFFER_LVALUE = NULL;
+#endif
 }
 
+#ifdef EMBEDDED
+
+#warning DAS Make sure yylex_destroy() works
+#define USE_YYLEX_DESTROY
+
+// BGG mm -- for dynamic memory mgmt (double return for UG_INTRO() macro)
+double minc_memflush()
+{
+	MPRINT("minc_memflush: Freeing parser memory");
+#ifdef FREE_TREES_AT_END
+	free_tree(program);
+#else
+	efree(program);
+#endif
+	program = NULL;
+	free_symbols();
+#ifdef USE_YYLEX_DESTROY
+	yylex_destroy();
+#else
+	yy_delete_buffer(YY_CURRENT_BUFFER);
+	YY_CURRENT_BUFFER_LVALUE = NULL;
+	
+	yy_init = 1;    /* whether we need to initialize */
+	yy_start = 0;   /* start state number */
+#endif
+	return 1.0;
+}
+#endif

@@ -1312,10 +1312,6 @@ int OSXAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 		*pWriteSize = port->audioBufFrames / *pCount;
         *pCount = port->audioBufFrames / port->deviceBufFrames;
         
-        // Create our semaphore
-        
-        _impl->renderSema = new RTSemaphore(1);
-
 #if DEBUG > 0
 		printf("%s device bufsize: %d bytes (%d frames). circ buffer %d frames\n",
 				dir == REC ? "Input" : "Output", deviceBufferBytes,
@@ -1334,6 +1330,9 @@ int OSXAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 		port->inLoc = 0;
 		port->outLoc = 0;
 	}
+
+	// Create our semaphore
+	_impl->renderSema = new RTSemaphore(1);
 	return 0;
 }
 

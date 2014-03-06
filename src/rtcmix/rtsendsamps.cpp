@@ -78,61 +78,12 @@ real2int(float val)
 }
 #endif /* USE_REAL2INT */
 
-
-#ifdef MAXMSP
-
-#ifndef IOS
-extern float *maxmsp_outbuf; // set in mm_rtsetparams()
-#define OUT_GAIN_FACTOR .000030517578125 // BGG mm -- normalizing (1.0/32768.0)
-
-#else // IOS
-extern short *maxmsp_outbuf; // set in mm_rtsetparams()
-#endif // IOS
-
-#endif // MAXMSP
-
-
 /* ------------------------------------------------ write_to_audio_device --- */
 static int
 write_to_audio_device(BufPtr out_buffer[], int samps, AudioDevice *device)
 {
-#ifndef MAXMSP
 	return device->sendFrames(out_buffer, samps) == samps ? 0 : -1;
 
-#else // MAXMSP
-// BGG mm
-// FIXME:  If max/msp was set up with buffers filled as an AudioDevice,
-// then this would be a much better world
-#ifdef IOS
-	short *out;
-#else
-   float *out;
-#endif
-   int i,j;
-   int bsamps, nchans;
-
-// BGG mm
-// maxmsp_outbuf is a pointer to a max/msp buffer, passed in via
-// maxmsp_rtsetparams
-
-	bsamps = RTcmix::bufsamps();
-	nchans = RTcmix::chans();
-	out = maxmsp_outbuf;
-	for(i = 0; i < bsamps; i++)
-		for (j = 0; j < nchans; j++) {
-#ifdef IOS
-			*out++ = out_buffer[j][i];
-#else
-			*out++ = out_buffer[j][i] * OUT_GAIN_FACTOR;
-#endif
-			if (Option::reportClipping()) {
-				if (ABS(out_buffer[j][i]) > 32768.0)
-					rtcmix_warn("CLIPPING","val: %f	channel: %d",out_buffer[j][i], j);
-			}
-		}
-
-	return 0;
-#endif // MAXMSP
 }
 
 /* ---------------------------------------------------------- rtsendzeros --- */

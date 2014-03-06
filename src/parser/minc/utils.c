@@ -80,4 +80,30 @@ array_to_float_list(const MincFloat *array, const int len)
    return list;
 }
 
+#ifdef EMBEDDED
+typedef size_t yy_size_t;	// from lex.yy.c
+static const char *sGlobalBuffer;
+static int sGlobalBufferLength;
+static int sBufferOffset;
+
+void setGlobalBuffer(const char *inBuf, int inBufSize)
+{
+	sGlobalBuffer = inBuf;
+	sGlobalBufferLength = inBufSize;
+	sBufferOffset = 0;	// reset
+}
+
+int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes)
+{
+	{
+		int  n;
+		for (n = 0; n < maxbytes && sBufferOffset < (sGlobalBufferLength-1); ++n)
+		{
+			buf[n] = sGlobalBuffer[sBufferOffset++];
+		}
+		*pBytes = n;
+	}
+	return 0;
+}
+#endif
 

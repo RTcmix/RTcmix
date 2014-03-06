@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <rtcmix_types.h>
+#include <rtdefs.h>
 #include <PField.h>
 #include <utils.h>   // in ../../rtcmix
 #include <RTInletPField.h>
@@ -57,6 +58,11 @@ create_pfield(const Arg args[], const int nargs)
 		defaultval = args[1];
 	else
 		return _inlet_usage();
+	
+	if (inletval > MAX_INLETS) {
+		die("makeconnection (inlet)", "Exceeded maximum number of inlets (%d)", MAX_INLETS);
+		return NULL;
+	}
 
 	return new RTInletPField(inletval, defaultval);
 }

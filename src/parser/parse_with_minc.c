@@ -4,74 +4,74 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include "minc/rename.h"
+#include "minc/minc.h"
 #include "rtcmix_parse.h"
 #include <ugens.h>
 #include <Option.h>
 
+extern int yyparse();
 
-#ifdef MAXMSP
-	extern int mm_yyparse();
+#ifdef EMBEDDED
 
-	/* <mm_yyin> is yacc's input file. If left alone, stdin will be used. */
-	// BGG mm -- I don't think we use this at all in max/msp, should change
-	extern FILE *mm_yyin;
-#else
-	extern int yyparse();
+int RTcmix_parseScore(char *thebuf, int buflen);
+extern int yyparse();
+extern int yylineno;
+extern void setGlobalBuffer(const char *inBuf, int inBufSize);
 
-	/* <yyin> is yacc's input file. If left alone, stdin will be used. */
-	extern FILE *yyin;
-#endif
+// BGG mm -- set this to accept a buffer from max/msp
+int RTcmix_parseScore(char *theBuf, int buflen)
+{
+	// BGG -- added to reset the line # every time a new score buffer is received
+	yylineno = 1;
+	setGlobalBuffer(theBuf, buflen+1);
+	return yyparse();
+}
 
+#else	// !EMBEDDED
+
+/* <yyin> is yacc's input file. If left alone, stdin will be used. */
+extern FILE *yyin;
 
 /* Defined in sys/command_line.c */
 extern char *aargv[];
 extern int aargc;
 
-
 /* ---------------------------------------------------------- parse_score --- */
-#ifdef MAXMSP
-// BGG mm -- set this to accept a buffer from max/msp
-int
-parse_score(char *thebuf, int buflen)
-#else
 int
 parse_score(int argc, char *argv[], char **env)
-#endif
 {
-   int   i, status;
-
-#ifndef MAXMSP
-   /* Copy command-line args to make them available to the Minc-only
-      functions in sys/command_line.c: f_arg, i_arg, s_arg, and n_arg.
-   */
-   for (i = 1; i < argc; i++)
-      aargv[i - 1] = argv[i];
-   aargc = argc - 1;
-
-   status = yyparse();
-#else
-   status = mm_yyparse(thebuf, buflen+1);
-#endif
-
-   return status;
+	int   i, status;
+	
+	/* Copy command-line args to make them available to the Minc-only
+	 functions in sys/command_line.c: f_arg, i_arg, s_arg, and n_arg.
+	 */
+	for (i = 1; i < argc; i++)
+		aargv[i - 1] = argv[i];
+	aargc = argc - 1;
+	
+	status = yyparse();
+	
+	return status;
 }
 
+#endif	// !EMBEDDEDs
 
 /* ------------------------------------------------------ use_script_file --- */
 /* Parse file <fname> instead of stdin. */
 void
 use_script_file(char *fname)
 {
-#ifndef MAXMSP
+#ifndef EMBEDDED
 	// BGG mm -- we don't use this in Max/MSP, and there is no yy_in var
-   yyin = fopen(fname, "r+");
-   if (yyin == NULL) {
-      RTFPrintf(stderr, "Can't open %s\n", fname);
-      exit(1);
-   }
+	yyin = fopen(fname, "r+");
+	if (yyin == NULL) {
+		RTFPrintf(stderr, "Can't open %s\n", fname);
+		exit(1);
+	}
 #endif
 	if (get_print_option() > MMP_ADVISE)
-      RTPrintf("Using file %s\n", fname);
+		RTPrintf("Using file %s\n", fname);
 }
 
 
@@ -79,6 +79,6 @@ use_script_file(char *fname)
 void
 destroy_parser()
 {
-   /* nothing to do for Minc */
+	yylex_destroy();
 }
 

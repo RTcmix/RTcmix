@@ -4,10 +4,8 @@
 */
 #include "heap.h"
 #include <lock.h>
+#include <stdio.h>
 #include <Instrument.h>
-#ifndef IOS
-#include <iostream>
-#endif
 
 using namespace std;
 
@@ -18,7 +16,7 @@ heapslot::heapslot() : chunkStart(0), inst(NULL),
 
 heapslot::~heapslot()
 {
-//	cout << "heapslot::~heapslot()\n";
+//	printf("heapslot::~heapslot()\n");
 	delete left;
 	delete right;
 }
@@ -26,7 +24,7 @@ heapslot::~heapslot()
 heap::~heap()
 {
     delete top;
-//	cout << "heap::~heap()\n";
+//	printf("heap::~heap()\n");
 }
 
 FRAMETYPE heap::getTop()
@@ -44,10 +42,10 @@ void heap::insert(Instrument *newInst, FRAMETYPE cStart)
 
   Lock insertLock(getLockHandle());	// This will unlock when it goes out of scope
 
-//  cout << "insert(in):  " << cStart << '\n';
+//  printf("insert(in):  %lld\n", cStart);
 
   if (size == 0) {          // SC:  heap is empty ... need to allocate new memory
-//    cout << "Heap empty ... initializing\n";
+//  printf("Heap empty ... initializing\n");
     top = new heapslot;
     leaves.head=NULL;
     leaves.tail=NULL;
@@ -84,8 +82,8 @@ void heap::insert(Instrument *newInst, FRAMETYPE cStart)
     tempHeapElt = tempHeapElt->parent;
   }
   size++;
-//  cout << "insert(out): " << tempHeapElt->chunkStart << "\n";
-//  cout << "heap::insert ... size = " << size << "\n";
+//  printf("insert(out): %lld\n", tempHeapElt->chunkStart);
+//  printf("heap::insert ... size = %d\n", size)";
 }
 
 // Pull the top instrument if its start sample is < maxChunkStart
@@ -204,7 +202,7 @@ heap::deleteMin(FRAMETYPE maxChunkStart, FRAMETYPE *pChunkStart)
 	  sift = 0;
     }
   }
-//  cout << "deleteMin(): " << retChunkStart << "\n";
+//  printf("deleteMin(): %lld\n", retChunkStart);
   size--;
   *pChunkStart = retChunkStart;
   return retInst;
@@ -220,11 +218,9 @@ void heapslot::dump(int indent)
   if (left->inst)
     left->dump(indent+1);
 
-#ifndef IOS
   for (i=0; i<indent; i++)
-    cout << "    ";
-  cout << chunkStart << "\n";
-#endif
+    printf("    ");
+  printf("%lld\n", chunkStart);
   
   if (right->inst)
     right->dump(indent+1);

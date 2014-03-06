@@ -1,7 +1,7 @@
 LIBRTAUDIOOBJS = ../audio/AudioDevice.o ../audio/AudioIODevice.o \
 ../audio/AudioDeviceImpl.o ../audio/ThreadedAudioDevice.o \
 ../audio/AudioOutputGroupDevice.o ../audio/DualOutputAudioDevice.o \
-../audio/AudioFileDevice.o ../audio/NetAudioDevice.o \
+../audio/AudioFileDevice.o ../audio/AppleAudioDevice.o \
 ../audio/audio_dev_creator.o ../audio/sndlibsupport.o
 LIBCONFOBJS = ../conf/conf.tab.o ../conf/Config.o
 LIBGENOBJS = ../../genlib/allpass.o ../../genlib/allpole.o \

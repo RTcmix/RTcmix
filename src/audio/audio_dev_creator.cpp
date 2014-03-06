@@ -6,6 +6,7 @@
 // to build based on the passed-in descriptor.
 
 #include <ugens.h>
+#include <stdio.h>
 
 #ifdef LINUX
 #include "SinglePortOSSAudioDevice.h"
@@ -18,8 +19,12 @@
 #ifdef NETAUDIO
 #include "NetAudioDevice.h"
 #endif
-#ifdef MACOSX
-#include "OSXAudioDevice.h"
+#ifdef MSP_AUDIO_DEVICE
+#include "MSPAudioDevice.h"
+#endif
+#ifdef APPLEAUDIO
+#include "AppleAudioDevice.h"
+//#include "OSXAudioDevice.h"
 #endif
 #ifdef SGI
 #include "SGIAudioDevice.h"
@@ -41,11 +46,15 @@ static const AudioDevEntry s_AudioDevEntries[] = {
 #ifdef NETAUDIO
 	{ &NetAudioDevice::recognize, &NetAudioDevice::create },
 #endif
-#ifdef JACK // before MACOSX, since OSXAudioDevice::recognize matches anything
+#ifdef JACK // before APPLEAUDIO, since AppleAudioDevice::recognize matches anything
 	{ &JackAudioDevice::recognize, &JackAudioDevice::create },
 #endif
-#ifdef MACOSX
-	{ &OSXAudioDevice::recognize, &OSXAudioDevice::create },
+#ifdef MSP_AUDIO_DEVICE
+	{ &MSPAudioDevice::recognize, &MSPAudioDevice::create },
+#endif
+#ifdef APPLEAUDIO
+	{ &AppleAudioDevice::recognize, &AppleAudioDevice::create },
+//	{ &OSXAudioDevice::recognize, &OSXAudioDevice::create },
 #endif
 #ifdef ALSA
 	{ &ALSAAudioDevice::recognize, &ALSAAudioDevice::create },

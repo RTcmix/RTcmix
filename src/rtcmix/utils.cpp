@@ -45,6 +45,18 @@ createInstHandle(Instrument *inst)
 	return handle;
 }
 
+void refHandle(Handle h)
+{
+	assert(h->refcount >= 0);
+#ifdef DEBUG
+    printf("refHandle(%p): %d -> ", h, h->refcount);
+#endif
+	++h->refcount;
+#ifdef DEBUG
+    printf("%d\n", h->refcount);
+#endif
+}
+
 void
 unrefHandle(Handle h)
 {

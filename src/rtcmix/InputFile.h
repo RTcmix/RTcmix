@@ -9,6 +9,7 @@
 
 #include "Lockable.h"
 #include "rt_types.h"
+#include "rtdefs.h"
 #include <sys/types.h>
 #include <string.h>
 
@@ -23,10 +24,13 @@ public:
 	static void destroyConversionBuffers();
 #endif
 	InputFile();
+	~InputFile();
     void init(int inFd, const char *inFileName, Type inType, int inHeaderType,
               int inDataFormat, int inDataLocation, long nFrames, float inSampleRate,
               int inChannels, double inDuration);
-	
+	void init(BufPtr inBuffer, const char *inBufferName, long nFrames, float inSampleRate, int inChannels);
+	void reinit(BufPtr inBuffer, long nFrames, int inChannels);
+
     void reference();
     void unreference();
 	
@@ -48,8 +52,10 @@ public:
                   /* (or NULL to fill all chans) */
                   short       src_chans         /* number of in-bus chans to copy */
     );
-	bool isOpen() const { return _fd > 0; }
-    
+	bool isOpen() const { return _fd > 0 || _fd == USE_MM_BUF; }
+	int modTime() const { return _modTime; }
+	void setModTime(int inModTime) { _modTime = inModTime; }
+
 protected:
 	int  loadSamps(long inFrames);
 	off_t copySamps(off_t     cur_offset,       /* current file position before read */
@@ -79,6 +85,8 @@ private:
     BufPtr 	 _memBuffer;
 	int      _refcount;
     ReadFun  _readFunction;
+	int		 _modTime;			/* used for live buffer mode */
+	float	 _gainScale;		/* same */
 	static const int	sScratchBufferSize = 4096;
 	static char			sScratchBuffer[];
 #ifdef MULTI_THREAD

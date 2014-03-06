@@ -132,7 +132,7 @@ float reverb(float, float*);
 int setline(float [], short, int, double []);
 void srrand(unsigned int);
 void rvbset(float SR, float, int, float*);
-#ifdef MAXMSP
+#ifdef EMBEDDED
 float rtcmix_table(long, double*, float*);
 #else
 float table(long, double*, float*);
@@ -180,6 +180,7 @@ void fnscl(struct gen *gen);
  3 -- warn errors (rtcmix_warn() in message.c)
  4 -- advise notifications (rtcmix_advise() in message.c)
  5 -- all the rest
+ 6 -- debugging only (rtcmix_debug() in message.c) -- DAS, 12/2013
  
  Brad Garton, 12/2012
 */
@@ -192,21 +193,25 @@ void fnscl(struct gen *gen);
 #define MMP_WARN			3
 #define MMP_ADVISE			4
 #define MMP_PRINTALL		5
+#define MMP_DEBUG			6
 
-#if MAXMSP
+#ifdef EMBEDDED
 #include "MMPrint.h"
-#define RTPrintf(format, ...) set_mm_print_ptr(sprintf(get_mm_print_ptr(), format, ## __VA_ARGS__)+1)
-#define RTFPrintf(FILE, format, ...) set_mm_print_ptr(sprintf(get_mm_print_ptr(), format, ## __VA_ARGS__)+1)
-#define RTPrintfCat(format, ...) set_mm_print_ptr(sprintf(get_mm_print_ptr(), format, ## __VA_ARGS__))
-#define RTFPrintfCat(FILE, format, ...) set_mm_print_ptr(sprintf(get_mm_print_ptr(), format, ## __VA_ARGS__))
+#define RTPrintf(format, ...) set_mm_print_ptr(snprintf(get_mm_print_ptr(), get_mm_print_space(), format, ## __VA_ARGS__)+1)
+#define RTFPrintf(FILE, format, ...) set_mm_print_ptr(snprintf(get_mm_print_ptr(), get_mm_print_space(), format, ## __VA_ARGS__)+1)
+#define RTPrintfCat(format, ...) set_mm_print_ptr(snprintf(get_mm_print_ptr(), get_mm_print_space(), format, ## __VA_ARGS__))
+#define RTFPrintfCat(FILE, format, ...) set_mm_print_ptr(snprintf(get_mm_print_ptr(), get_mm_print_space(), format, ## __VA_ARGS__))
+#define RTExit(status)
 #else
 #define RTPrintf(format, ...) printf(format, ## __VA_ARGS__)
 #define RTFPrintf(FILE, format, ...) fprintf(FILE, format, ## __VA_ARGS__)
 #define RTPrintfCat(format, ...) printf(format, ## __VA_ARGS__)
 #define RTFPrintfCat(FILE, format, ...) fprintf(FILE, format, ## __VA_ARGS__)
+#define RTExit(status) exit(status)
 #endif
 	
 /* message.c */
+void rtcmix_debug(const char *inst_name, const char *format, ...);
 void rtcmix_advise(const char *inst_name, const char *format, ...);
 void rtcmix_warn(const char *inst_name, const char *format, ...);
 void rterror(const char *inst_name, const char *format, ...);

@@ -10,6 +10,8 @@
 #include "minc_internal.h"
 #include "handle.h"
 
+#undef DEBUG
+
 static struct symbol *htab[HASHSIZE] =
    {0};                         /* hash table */
 

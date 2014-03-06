@@ -12,7 +12,7 @@
 #include <Config.h>
 #include <string.h>
 #include "ugens.h"
-#ifndef MAXMSP
+#ifndef EMBEDDED
 #include <iostream>
 #endif
 
@@ -37,7 +37,7 @@ int Option::_oscInPort = DEFAULT_OSC_INPORT;
 double Option::_muteThreshold = DEFAULT_MUTE_THRESHOLD;
 
 // BGG see ugens.h for levels
-#ifdef MAXMSP
+#ifdef EMBEDDED
 int Option::_print = MMP_RTERRORS; // basic level for max/msp
 #else
 int Option::_print = MMP_PRINTALL; // default print everthing for regular RTcmix
@@ -57,6 +57,26 @@ char Option::_rcName[PATH_MAX];
 
 void Option::init()
 {
+	// Set everything to defaults
+	_audio = true;
+	_play = true;
+	_record = false;
+	_clobber = false;
+	_reportClipping = true;
+	_checkPeaks = true;
+	_exitOnError = false;	// we override this in main.cpp
+	_autoLoad = false;
+	_fastUpdate = false;
+#ifdef EMBEDDED
+	_print = MMP_RTERRORS; // basic level for max/msp
+#else
+	_print = MMP_PRINTALL; // default print everthing for regular RTcmix
+#endif
+	_bufferFrames = DEFAULT_BUFFER_FRAMES;
+	_bufferCount = DEFAULT_BUFFER_COUNT;
+	_oscInPort = DEFAULT_OSC_INPORT;
+	_muteThreshold = DEFAULT_MUTE_THRESHOLD;
+
 	_device[0] = 0;
 	_inDevice[0] = 0;
 	_outDevice[0][0] = 0;
@@ -466,7 +486,7 @@ char *Option::rcName(const char *rcName)
 
 void Option::dump()
 {
-#ifndef MAXMSP
+#ifndef EMBEDDED
 	cout << kOptionAudio << ": " << _audio << endl;
 	cout << kOptionPlay << ": " << _play << endl;
 	cout << kOptionRecord << ": " << _record << endl;
@@ -492,7 +512,7 @@ void Option::dump()
 	cout << kOptionDSOPath << ": " << _dsoPath << endl;
 	cout << kOptionRCName << ": " << _rcName << endl;
 	cout << kOptionHomeDir << ": " << _homeDir << endl;
-#endif // MAXMSP
+#endif // EMBEDDED
 }
 
 void Option::reportError(const char *format, const char *msg1, const char *msg2)
