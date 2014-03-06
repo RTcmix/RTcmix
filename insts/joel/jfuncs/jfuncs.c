@@ -125,7 +125,7 @@ double m_prob (float p[], int n_args, double pp[])
 	return num;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 /* -------------------------------------------------------------- profile --- */
 int
 profile()

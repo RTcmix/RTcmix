@@ -72,7 +72,7 @@ int myScaleLength = 0;
 double diap = 261.625565301; // middle C
 double octaveOffset = 8.0;
 
-inline double myMap(double inval, double low0, double high0, double low1, double high1)
+static double myMap(double inval, double low0, double high0, double low1, double high1)
 {
 	double normVal = (inval-low0)/(high0-low0);
 	return low1 + normVal*(high1-low1);
@@ -171,7 +171,7 @@ double m_mean(float p[], int n_args, double pp[])
    return parse(pp[0],meanScale,12);
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 /* -------------------------------------------------------------- profile --- */
 int
 profile()
