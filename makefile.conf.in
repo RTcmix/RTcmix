@@ -107,7 +107,7 @@ ifeq ($(ARCH),MACOSX)
   CC = cc
   CXX = c++ -Wno-deprecated
   LD = ld
-  MAKE = make -j 8
+  MAKE = make
   INSTALL = cp -f
   RANLIB = ranlib
   SHELL = /bin/sh
