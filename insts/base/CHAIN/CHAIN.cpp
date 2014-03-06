@@ -1,10 +1,37 @@
-/*	Run a series of instruments as a group, chaining the output of each to the 
-    input of the next.
+/*	Runs a series of instruments as a group, chaining the output of each to the
+    input of the next.  All the instruments are scheduled together.
 
-		p0 = output start time
-		p1 = duration (-endtime)
+		p0 		= output start time
+		p1		= duration (-endtime)
+ 		p2		= number of instruments to follow
+ 		p3-n	= handles for instruments to be chained
+
+ 	To add an instruments to CHAIN, you have to create the instruments using the makeinstrument() utility.
+ 	Use the handle that is returned as the argument for that instrument.
+ 
+ 	CHAIN'd instruments do not use mix buses between them, but you still need to use bus_config() to configure
+ 	each instrument's input and output channel counts.  To do this, there is a special bus type called "chain",
+ 	which configures the instrument without invoking any of the in, out, or aux bus logic.  So, if you wished
+ 	to place WAVETABLE and DELAY in a CHAIN, you could configure each instrument like so:
+ 
+ 	bus_config("WAVETABLE", "chain 0 out");				// run WAVETABLE in monaural mode
+ 	bus_config("DELAY", "chain 0 in", "chain 1-2 out");	// run DELAY 1-channel in, 2-channel out
+ 	bus_config("CHAIN", "out 0-1");						// CHAIN's output MUST match output of last inst in chain (2-chan)
+ 
+ 	If the first instrument in the chain reads from disk, its input bus is configured just the way it would be in
+ 	an unchained system:
+ 
+ 	bus_config("TRANS", "in 0", "chain 0-1 out");		// read from file input, 2-channel out
+ 	bus_config("DELAY", "chain 0-1 in", "chain 2-3 out");	// run DELAY 2-channel in, 2-channel out
+ 	bus_config("CHAIN", "out 0-1");
+ 
+ 	In the same fashion as with aux busses, the outskip values for the CHAIN'd instruments should all be 0.
+ 	The CHAIN instrument alone determines the output skip.  The duration of the instruments can be arbitrary,
+ 	but will be truncated to the duration set in CHAIN.  If CHAIN's duration is longer than its instruments,
+ 	the extra time will be filled with zeros.
 
 */
+
 #include <unistd.h>
 #include <stdio.h>
 #include <ugens.h>
@@ -115,7 +142,7 @@ Instrument *makeCHAIN()
 	return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
    RT_INTRO("CHAIN",makeCHAIN);
