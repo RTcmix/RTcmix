@@ -244,7 +244,7 @@ Instrument *makeSPECTEQ2()
 	return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 // ---------------------------------------------------------------- rtprofile --
 void rtprofile()
 {

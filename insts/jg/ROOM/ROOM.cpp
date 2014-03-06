@@ -150,7 +150,7 @@ Instrument *makeROOM()
    return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
    RT_INTRO("ROOM", makeROOM);

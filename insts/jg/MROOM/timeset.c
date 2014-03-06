@@ -45,7 +45,7 @@ timeset(float p[], int n_args)
    return 0.0;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 /* -------------------------------------------------------------- profile --- */
 int
 profile()

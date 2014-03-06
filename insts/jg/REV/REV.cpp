@@ -158,7 +158,7 @@ Instrument *makeREV()
    return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void
 rtprofile()
 {

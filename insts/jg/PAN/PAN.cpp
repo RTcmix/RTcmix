@@ -179,7 +179,7 @@ Instrument *makePAN()
    return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
    RT_INTRO("PAN", makePAN);

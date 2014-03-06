@@ -152,19 +152,27 @@ int MOOGVCF :: configure()
    return in ? 0 : -1;
 }
 
+static const double kRescale = 1.0/32768.0;
 
 int MOOGVCF :: run()
 {
    const int samps = framesToRun() * inputChannels();
    rtgetin(in, this, samps);
 
+	// local copies to avoid accessing 'this' in the loop
+	float lb0 = b0, lb1 = b1, lb2 = b2, lb3 = b3, lb4 = b4;
+	float kp = p;
+	float kf = f;
+	
    for (int i = 0; i < samps; i += inputChannels()) {
       if (--branch <= 0) {
          doupdate();
-         branch = skip;
+		 kp = p;
+		 kf = f;
+        branch = skip;
       }
 
-      float insig = in[i + inchan] * amp;
+      float insig = in[i + inchan];
 
       float out[2];
 
@@ -172,29 +180,28 @@ int MOOGVCF :: run()
          out[0] = insig;
       else {
          // Bring (normally) into range [-1, 1]; filter code assumes this.
-         insig *= (1.0 / 32768.0);
+         insig *= kRescale;
 
-         insig -= q * b4;           // feedback
+         insig -= q * lb4;           // feedback
 
          // four cascaded onepole filters (bilinear transform)
-         float t1, t2;
-         t1 = b1;  b1 = (insig + b0) * p - b1 * f;
-         t2 = b2;  b2 = (b1 + t1)    * p - b2 * f;
-         t1 = b3;  b3 = (b2 + t2)    * p - b3 * f;
-                   b4 = (b3 + t1)    * p - b4 * f;
-         b4 = b4 - b4 * b4 * b4 * 0.166667;           // clipping
-         b0 = insig;
+         float t1 = lb1;	lb1 = (insig + lb0)	* kp - lb1 * kf;
+         float t2 = lb2;	lb2 = (lb1 + t1)	* kp - lb2 * kf;
+         t1 = lb3;			lb3 = (lb2 + t2)    * kp - lb3 * kf;
+							lb4 = (lb3 + t1)	* kp - lb4 * kf;
+         lb4 = lb4 - lb4 * lb4 * lb4 * 0.166667;           // clipping
+         lb0 = insig;
 
 #if defined(HIGHPASS)      // but only 6dB/oct
-         out[0] = insig - b4;
+         out[0] = insig - lb4;
 #elif defined(BANDPASS)    // 6dB/oct
-         out[0] = 3.0 * (b3 - b4);
+         out[0] = 3.0 * (lb3 - lb4);
 #else
-         out[0] = b4;
+         out[0] = lb4;
 #endif
-         out[0] *= 32768.0;
+         out[0] *= 32768.0 * amp;	// scale by amp *after* running filter
       }
-
+	   
       if (outputChannels() == 2) {
          out[1] = out[0] * (1.0 - pctleft);
          out[0] *= pctleft;
@@ -203,7 +210,10 @@ int MOOGVCF :: run()
       rtaddout(out);
       increment();
    }
-
+	
+	// Store locals back to 'this'
+	b0 = lb0, b1 = lb1, b2 = lb2, b3 = lb3, b4 = lb4;
+	
    return framesToRun();
 }
 
@@ -218,7 +228,7 @@ Instrument *makeMOOGVCF()
    return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
    RT_INTRO("MOOGVCF", makeMOOGVCF);

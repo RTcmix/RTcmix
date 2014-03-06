@@ -443,7 +443,7 @@ Instrument *makeJGRAN()
    return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
    RT_INTRO("JGRAN", makeJGRAN);

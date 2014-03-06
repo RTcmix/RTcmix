@@ -119,7 +119,7 @@ Instrument *makeFOLLOWER()
    return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 /* ------------------------------------------------------------- rtprofile -- */
 void rtprofile()
 {

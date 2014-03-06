@@ -1,8 +1,8 @@
-rtsetparams(44100, 2)
+rtsetparams(44100, 2, 512)
 load("JCHOR")
 
 /* -------------------------------------------------------------------------- */
-rtinput("your_very_own.snd")
+rtinput("../../../snd/nucular.wav");
 outskip = 0
 outdur = 9
 inskip = 0.00

@@ -370,7 +370,7 @@ Instrument *makeVOCODE3()
 	return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
 	RT_INTRO("VOCODE3", makeVOCODE3);

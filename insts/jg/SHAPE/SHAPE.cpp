@@ -257,7 +257,7 @@ Instrument *makeSHAPE()
    return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
    RT_INTRO("SHAPE", makeSHAPE);

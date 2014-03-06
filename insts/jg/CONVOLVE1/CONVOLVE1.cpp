@@ -374,7 +374,7 @@ Instrument *makeCONVOLVE1()
 	return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
 	RT_INTRO("CONVOLVE1", makeCONVOLVE1);

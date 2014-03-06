@@ -295,7 +295,7 @@ Instrument *makeJDELAY()
    return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
    RT_INTRO("JDELAY", makeJDELAY);

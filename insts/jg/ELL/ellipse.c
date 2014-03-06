@@ -93,7 +93,7 @@ ellipse(float sig, int nsects, EllSect es[], float xnorm)
    return (sig * xnorm);
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 int
 profile()
 {

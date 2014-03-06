@@ -239,7 +239,7 @@ Instrument *makeELL()
    return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
    RT_INTRO("ELL", makeELL);

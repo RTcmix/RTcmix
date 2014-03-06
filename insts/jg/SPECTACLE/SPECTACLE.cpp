@@ -234,7 +234,7 @@ Instrument *makeSPECTACLE()
    return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 /* ------------------------------------------------------------- rtprofile -- */
 void rtprofile()
 {
