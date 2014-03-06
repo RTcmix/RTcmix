@@ -70,7 +70,7 @@ sgran(float p[], int n_args)
 	double flodiff,fmiddiff,fhidiff,ftidiff;
 	int len,j,z,chans,randflag=0;
 
-#ifdef MAXMSP
+#ifdef EMBEDDED
 	int outrepos();
 #endif
 	float rrand();

@@ -19,8 +19,6 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 #pragma implementation
 #endif
 #include "Complex.h"
-//#include <std.h>
-//#include <builtin.h>
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>

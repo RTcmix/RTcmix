@@ -209,6 +209,8 @@ m_space(float p[], int n_args)
    if (!_rvb_time)
       _rvb_time = 0.001;            /* shortest rvb time allowed */
 
+   rtcmix_advise("space", "Room is %.2f feet wide by %.2f feet deep by %.2f feet tall", _right - _left, _front - _back, _ceiling);
+
    space_called = 1;
 
    return 0.0;

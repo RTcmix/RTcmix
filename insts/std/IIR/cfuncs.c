@@ -73,7 +73,7 @@ int get_iir_filter_specs(float cf[MAXFILTER], float bw[MAXFILTER],
 	return _num_filters;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 int profile()
 {
 	UG_INTRO("setup", IIR_setup);

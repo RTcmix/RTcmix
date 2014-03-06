@@ -98,7 +98,7 @@ private:
 	double	*_sineFun, *_envFun;
 	int		_datafields;
 
-#ifdef MAXMSP
+#ifdef EMBEDDED
 // see note in LPCPLAY.cpp
 	int CLASSBRADSSTUPIDUNVOICEDFLAG;
 #endif

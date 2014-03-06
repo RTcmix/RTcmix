@@ -237,7 +237,7 @@ Instrument *makeFMINST()
 	return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
 	RT_INTRO("FMINST",makeFMINST);

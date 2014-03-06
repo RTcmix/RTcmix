@@ -72,7 +72,7 @@ int CLAR::run()
 	for (int i = 0; i < framesToRun(); i++) {
 		if (--branch <= 0) {
 			if (amparr) {
-#ifdef MAXMSP
+#ifdef EMBEDDED
 				aamp = rtcmix_table(currentFrame(), amparr, amptabs);
 #else
 				aamp = table(currentFrame(), amparr, amptabs);
@@ -126,7 +126,7 @@ makeCLAR()
 	return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void
 rtprofile()
 {

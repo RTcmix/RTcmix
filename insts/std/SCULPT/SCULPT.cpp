@@ -64,7 +64,7 @@ int SCULPT::run()
 			si = freqtable[index] * (float)len/SR;
 			float overamp;
 			if (amptable) {
-#ifdef MAXMSP
+#ifdef EMBEDDED
 				overamp = rtcmix_table(currentFrame(), amptable, amptabs) * amp;
 #else
 				overamp = table(currentFrame(), amptable, amptabs) * amp;
@@ -104,7 +104,7 @@ makeSCULPT()
 	return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void
 rtprofile()
 {

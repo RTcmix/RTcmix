@@ -86,7 +86,7 @@ int LSFLUTE::run()
 		float sig = (rrand() * namp * aamp) + aamp;
 		float del1sig = mdelget(del1ptr,olength1,dl1ptr);
 		sig = sig + (del1sig * -0.35);
-#ifdef MAXMSP
+#ifdef EMBEDDED
 		delput(sig,del2ptr,dl2ptr);
 #else
 		mdelput(sig,del2ptr,dl2ptr);
@@ -100,7 +100,7 @@ int LSFLUTE::run()
 		out[0] = sig * amp * oamp;
 		sig = (dampcoef * sig) + ((1.0 - dampcoef) * oldsig);
 		oldsig = sig;
-#ifdef MAXMSP
+#ifdef EMBEDDED
 		delput(sig,del1ptr,dl1ptr);
 #else
 		mdelput(sig,del1ptr,dl1ptr);

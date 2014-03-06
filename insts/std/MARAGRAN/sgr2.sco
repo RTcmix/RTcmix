@@ -14,7 +14,7 @@
 *   3 is grain env
 */
 
-rtsetparams(44100, 2)
+rtsetparams(44100, 2, 512)
 load("SGRANR")
 
 makegen(1, 7, 1000, 1, 950, 1, 50, 0)

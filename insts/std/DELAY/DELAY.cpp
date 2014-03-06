@@ -140,7 +140,7 @@ Instrument *makeDELAY()
 	return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void
 rtprofile()
 {

@@ -188,7 +188,7 @@ int MOCKBEND :: run()
    for (int i = 0; i < out_frames; i++) {
       if (--branch <= 0) {
          if (amptable) {
-#ifdef MAXMSP
+#ifdef EMBEDDED
             aamp = rtcmix_table(currentFrame(), amptable, tabs) * amp;
 #else
             aamp = table(currentFrame(), amptable, tabs) * amp;
@@ -262,7 +262,7 @@ int MOCKBEND :: run()
       increment();
 
       if (--ibranch <= 0) {
-#ifdef MAXMSP
+#ifdef EMBEDDED
 		   float interval = rtcmix_table(currentFrame(), pitchtable, ptabs);
 #else
 		   float interval = table(currentFrame(), pitchtable, ptabs);
@@ -294,7 +294,7 @@ Instrument *makeMOCKBEND()
    return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
    RT_INTRO("MOCKBEND", makeMOCKBEND);

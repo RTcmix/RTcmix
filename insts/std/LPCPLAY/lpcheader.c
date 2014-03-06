@@ -3,17 +3,15 @@
 #include <sys/file.h>
 #include <unistd.h>
 #include <ugens.h>
+#include <byte_routines.h>
+#include <rt_types.h>
 #include "lp.h"
 #include "lpcheader.h"
-
-#ifdef MAXMSP
-#include <CoreFoundation/CoreFoundation.h>
-#endif
 
 LPHEADER analheader;
 
 int
-checkForHeader(int afd, int *nPoles, float sr)
+checkForHeader(int afd, int *nPoles, float sr, Bool *pSwapped)
 {
 	int magic[2], headersize=0;
 	/* see if second 32 bytes are the lpc header magic number */
@@ -23,29 +21,22 @@ checkForHeader(int afd, int *nPoles, float sr)
 	}
 	else lseek(afd, 0, 0);	/* back to beginning */
 
-#ifdef MAXMSP
-	if (CFByteOrderGetCurrent() == CFByteOrderLittleEndian) {
-		magic[0] = CFSwapInt32BigToHost(magic[0]);
-		magic[1] = CFSwapInt32BigToHost(magic[1]);
+	if (magic[1] == LP_SWAPMAGIC) {
+		byte_reverse4(&magic[1]);
+		*pSwapped = YES;
 	}
-#endif
-
 	if(magic[1] == LP_MAGIC) {	/* has header */
 		if(read(afd, (char *) &analheader, sizeof(analheader))
 				!= sizeof(analheader)) {
 			die("dataset", "Can't read analysis file header.");
 			return -1;
 		}
-
-#ifdef MAXMSP
-		if (CFByteOrderGetCurrent() == CFByteOrderLittleEndian) {
-			analheader.headersize = CFSwapInt32BigToHost(analheader.headersize);
-			analheader.lpmagic = CFSwapInt32BigToHost(analheader.lpmagic);
-			analheader.npoles = CFSwapInt32BigToHost(analheader.npoles);
-			analheader.nvals = CFSwapInt32BigToHost(analheader.nvals);
+		if (*pSwapped) {
+			byte_reverse4(&analheader.headersize);
+			byte_reverse4(&analheader.lpmagic);
+			byte_reverse4(&analheader.npoles);
+			byte_reverse4(&analheader.nvals);
 		}
-#endif
-
 		rtcmix_advise("dataset", "This is a csound-type data file with header.");
 		if(lseek(afd, analheader.headersize, 0) < 0) {
 			die("dataset", "Bad lseek past header.");

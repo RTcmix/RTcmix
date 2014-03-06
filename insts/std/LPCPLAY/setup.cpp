@@ -3,6 +3,7 @@
 #include <ugens.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include "setup.h"
 #include "lp.h"
 #include "DataSet.h"
@@ -199,7 +200,7 @@ double setdevfactor(float *p, int n_args)
 		return -maxdev;
 }
 
-#ifdef MAXMSP
+#ifdef EMBEDDED
 // BGG -- see BGGx note in LPCPLAY.cpp
 extern int BRADSSTUPIDUNVOICEDFLAG;
 #endif
@@ -207,9 +208,7 @@ extern int BRADSSTUPIDUNVOICEDFLAG;
 double
 set_thresh(float *p, int n_args)
 {
-	double log10();
-
-#ifdef MAXMSP
+#ifdef EMBEDDED
 // BGG --  see BGGx note in LPCPLAY.cpp. I just want plain unvoiced sound!
 	if (p[0] == -1.0) BRADSSTUPIDUNVOICEDFLAG = 1;
 	else BRADSSTUPIDUNVOICEDFLAG = 0;
@@ -238,7 +237,7 @@ use_autocorrect(float *p, int n_args)
 }
 
 extern "C" {
-#ifndef MAXMSP
+#ifndef EMBEDDED
 int profile()
 {
 	float p[9]; double pp[9];
@@ -263,7 +262,7 @@ int profile()
 }
 #endif
 
-#ifdef MAXMSP
+#ifdef EMBEDDED
 int LPCprof_called = 0;
 
 int LPCprofile()
@@ -284,6 +283,6 @@ int LPCprofile()
 	LPCprof_called = 1;
 	return 0;
 }
-#endif // MAXMSP
+#endif // EMBEDDED
 
 }

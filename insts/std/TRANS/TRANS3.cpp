@@ -131,7 +131,7 @@ void TRANS3::doupdate()
       transp = newtransp;
       _increment = cpsoct(10.0 + octpch(transp)) * oneover_cpsoct10;
 #ifdef DEBUG
-      printf("_increment: %g\n", _increment);
+      RTPrintf("_increment: %g\n", _increment);
 #endif
    }
 }
@@ -141,9 +141,9 @@ int TRANS3::run()
    const int outframes = framesToRun();
    const int inchans = inputChannels();
    float *outp = outbuf;     // point to inst private out buffer
-   double frac;
-
-   for (int i = 0; i < outframes; i++) {
+   int i;
+	
+   for (i = 0; i < outframes; i++) {
       if (--branch <= 0) {
          doupdate();
          branch = getSkip();
@@ -171,9 +171,9 @@ int TRANS3::run()
       outp[0] = interp3rdOrder(oldersig, oldsig, newsig, newestsig, frac) * amp;
 
 #ifdef DEBUG_FULL
-      printf("i: %d counter: %g incount: %d frac: %g inframe: %d cursamp: %d\n",
+      RTPrintf("i: %d counter: %g incount: %d frac: %g inframe: %d cursamp: %d\n",
              i, counter, incount, frac, inframe, currentFrame());
-      printf("interping %g, %g, %g, %g => %g\n", oldersig, oldsig, newsig, newestsig, outp[0]);
+      RTPrintf("interping %g, %g, %g, %g => %g\n", oldersig, oldsig, newsig, newestsig, outp[0]);
 #endif
 
       if (outputChannels() == 2) {
@@ -190,7 +190,7 @@ int TRANS3::run()
    }
 
 #ifdef DEBUG
-   printf("OUT %d frames\n\n", i);
+   RTPrintf("OUT %d frames\n\n", i);
 #endif
 
    return framesToRun();

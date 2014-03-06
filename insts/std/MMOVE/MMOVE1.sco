@@ -26,10 +26,11 @@ dist_mikes=2.2		/* for normal */
 //dist_mikes=0.67	/* for binaural */
 inchan=0
 
-threshold(0.0005);
+reset(0.001);
+threshold(0.0000);
 
 // slow, then zoom in and out again
-path(0,50,-90, 10,50,0, 11,10,20, 12,80,30, 15,30,90);
+path(0,50,-90, 10,50,0, 13,25,20, 15,40,30, 18,30,90);
 
 // MMOVE does not have rvb level arg that MOVE had.  Handled in RVB call now
 MMOVE(outsk,insk,dur,pre_amp,dist_mikes,inchan);

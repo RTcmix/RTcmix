@@ -26,5 +26,6 @@ private:
 	int	_bprec;
 	int	_bpframe;
 	int	_npolem1;
+	bool _swapped;
 };
 

@@ -277,7 +277,7 @@ int BASE::run()
 				bufsamps = max(0, totalSamps - cursamp);
 			
 			if ((tapcount = updatePosition(cursamp)) < 0)
-				exit(-1);
+				RTExit(-1);
 
 			DBG1(printf("  inner loop: bufsamps = %d\n", bufsamps));
 		
@@ -1101,11 +1101,7 @@ BASE::get_primes(int x, int p[])
 {
    int val = 5, flag, i, index = 2;
 
-#ifdef MAXMSP
-	if (++primes_gotten == 0)
-#else
 	if (primes_gotten.incrementAndTest())
-#endif
 	{
 		/* first 2 vals initialized */
 		p[0] = 2;

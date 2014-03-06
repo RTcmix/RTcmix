@@ -114,7 +114,7 @@ int MULTICOMB::run()
 			update(p, 7, kAmp | kRvbTime);
 			amp = p[3];
 			if (amptable) {
-#ifdef MAXMSP
+#ifdef EMBEDDED
 				amp *= rtcmix_table(currentFrame(), amptable, amptabs);
 #else
 				amp *= table(currentFrame(), amptable, amptabs);
@@ -163,7 +163,7 @@ Instrument *makeMULTICOMB()
 	return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void
 rtprofile()
 {

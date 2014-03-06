@@ -6,23 +6,12 @@
 #include <unistd.h>		// for lseek
 #include <sys/stat.h>	// for stat for getFrame()
 #include <fcntl.h>
-
+#include <byte_routines.h>
 #include "lp.h"
-
-
-#ifdef MAXMSP
-#include <CoreFoundation/CoreFoundation.h>
-// from src/rtcmix/byte_routines.h
-#define byte_reverse4(data)                                    \
-    { char c, *t; t = (char *) data;                           \
-    c = t[0]; t[0] = t[3]; t[3] = c;                           \
-    c = t[1]; t[1] = t[2]; t[2] = c; }
-#endif
-
 
 DataSet::DataSet()
 	: _nPoles(0), _frameCount(0), _fdesc(-1), _lpHeaderSize(0), 
-	  _array(NULL), _oldframe(0), _endframe(0)
+	  _array(NULL), _oldframe(0), _endframe(0), _swapped(false)
 {
 	_fprec = 22;
 }
@@ -44,10 +33,12 @@ DataSet::open(const char *fileName, int npoleGuess, float sampRate)
 	_nPoles = npoleGuess;	// in case we are not using headers
 	::rtcmix_advise("dataset", "Opened lpc dataset %s.", fileName);
 #ifdef USE_HEADERS
-	if ((_lpHeaderSize = ::checkForHeader(_fdesc, &_nPoles, sampRate)) < 0) {
+	Bool isSwapped = NO;
+	if ((_lpHeaderSize = ::checkForHeader(_fdesc, &_nPoles, sampRate, &isSwapped)) < 0) {
 	    ::rterror("dataset", "Failed to check header");
 		return -1;
 	}
+	_swapped = (isSwapped != 0);
 #else
 	if (!_nPoles) {
 		return -1;
@@ -78,9 +69,6 @@ int
 DataSet::getFrame(float frameno, float *pCoeffs)
 {
 	int i,j;
-#ifdef MAXMSP
-	float swap1, swap2;
-#endif
 	int frame = (int)frameno;
 	float fraction = frameno - (float)frame;
 	if (!((frame >= _oldframe) && (frame < _endframe))) {
@@ -104,17 +92,13 @@ DataSet::getFrame(float frameno, float *pCoeffs)
     	_endframe = _oldframe + framesRead - 1;
 	}
 	for(i=(frame-_oldframe)*_framsize,j=0; j<_framsize; i++,j++) {
-#ifdef MAXMSP
-		swap1 = _array[i];
-		swap2 = _array[i+_framsize];
-		if (CFByteOrderGetCurrent() == CFByteOrderLittleEndian) {
-			byte_reverse4(&swap1);
-			byte_reverse4(&swap2);
+		float first = _array[i];
+		float second = _array[i+_framsize];
+		if (_swapped) {
+			byte_reverse4(&first);
+			byte_reverse4(&second);
 		}
-		pCoeffs[j] = swap1 + fraction * (swap2 - swap1);
-#else
-		pCoeffs[j] = _array[i] + fraction * (_array[i+_framsize] - _array[i]);
-#endif
+		pCoeffs[j] = first + fraction * (second - first);
 	}
 	return(0);
 }

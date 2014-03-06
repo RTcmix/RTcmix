@@ -7,9 +7,6 @@
 #include <ugens.h>
 #include <string.h>
 #include <stdio.h>
-#ifndef MAXMSP
-#include <pthread.h>
-#endif
 #include "msetup.h"
 
 //#define debug
@@ -505,11 +502,7 @@ RVB::get_primes(int x, int p[])
 {
    int val = 5, index = 2;
 
-#ifndef MAXMSP
 	if (primes_gotten.incrementAndTest())
-#else
-	if (++primes_gotten == 0)
-#endif
 	{
 	/* first 2 vals initialized */
 	p[0] = 2;

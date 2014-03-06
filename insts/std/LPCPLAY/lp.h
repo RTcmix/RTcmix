@@ -2,7 +2,10 @@
 
 /* constants used throughout lpc code */
 
+#include <rt_types.h>
+
 #define	LP_MAGIC    999
+#define LP_SWAPMAGIC 0xE7030000
 #define	MAXPOLES    64
 #define	MAXFRAME    (MAXPOLES + 4)
 #define	LPBUFSIZ    4096
@@ -30,7 +33,7 @@ extern "C" {
 double shift(float, float, float);
 void bmultf(float *array, float mult, int number);
 int stabilize(float *array, int npoles);
-int checkForHeader(int afd, int *nPoles, float sr);
+int checkForHeader(int afd, int *nPoles, float sr, Bool *pSwapped);
 
 /* temporary until compiler bug fixed */
 void l_srrand(unsigned x);

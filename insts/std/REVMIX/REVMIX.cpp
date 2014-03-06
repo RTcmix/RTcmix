@@ -140,7 +140,7 @@ Instrument *makeREVMIX()
    return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
    RT_INTRO("REVMIX", makeREVMIX);

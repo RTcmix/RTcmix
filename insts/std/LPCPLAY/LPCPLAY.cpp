@@ -101,12 +101,12 @@ LPCINST::LPCINST(const char *name)
 */
 LPCINST::~LPCINST()
 {
-	_dataSet->unref();
+	RefCounted::unref(_dataSet);
 	delete [] _alpvals;
 	delete [] _buzvals;
 }
 
-#ifdef MAXMSP
+#ifdef EMBEDDED
 extern "C" {
 	int LPCprofile();
 }
@@ -116,7 +116,7 @@ int LPCINST::init(double p[], int n_args)
 {
 	int rval;
 
-#ifdef MAXMSP
+#ifdef EMBEDDED
 	LPCprofile();
 #endif
 
@@ -188,14 +188,14 @@ LPCPLAY::~LPCPLAY()
 /* BGGx
 	I need to go back and fix this.  I believe I can just use the class
 	variable (presently named "CLASSBRADSSTUPIDUNVOICEDFLAG") but not sure.
-	right now I'm just putting in the MAXMSP #ifdefs and don't want
+	right now I'm just putting in the EMBEDDED #ifdefs and don't want
 	to refactor this entire tangled mess o' code.
 
 	The issue is that I could NOT get unvoiced frames to work, no matter
 	what I did to set the threshold, etc.  I inserted this total hack to
 	make it work.  This code is in desparate need of refactoring.
 */
-#ifdef MAXMSP
+#ifdef EMBEDDED
 int BRADSSTUPIDUNVOICEDFLAG; // set in setup.cpp (set_thresh())
 #endif
 
@@ -340,7 +340,7 @@ int LPCPLAY::localInit(double p[], int n_args)
 	_bw_fact = p[8];
 	_frameno = _frame1;	/* in case first frame is unvoiced */
 
-#ifdef MAXMSP
+#ifdef EMBEDDED
 // see note above
 	CLASSBRADSSTUPIDUNVOICEDFLAG = BRADSSTUPIDUNVOICEDFLAG;
 #endif
@@ -540,7 +540,7 @@ LPCPLAY::getVoicedAmp(float err)
 	amp = 1.0 - ((sqerr - _lowthresh) / (_highthresh - _lowthresh));
 	amp = (amp < 0.0) ? 0.0 : (amp > 1.0) ? 1.0 : amp;
 
-#ifdef MAXMSP
+#ifdef EMBEDDED
 // see note above
 	if (CLASSBRADSSTUPIDUNVOICEDFLAG == 1) amp = 0.0;
 #endif
@@ -882,7 +882,7 @@ extern Instrument *makeWAVETABLE();
    associates a Minc name (in quotes below) with the instrument. This
    is the name the instrument goes by in a Minc script.
 */
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
    RT_INTRO("LPCPLAY", makeLPCPLAY);

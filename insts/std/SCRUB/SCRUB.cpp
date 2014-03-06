@@ -107,9 +107,11 @@ int SCRUB::init(double p[], int n_args)
 	if (rtsetinput(inskip, this) == -1)
 		return DONT_SCHEDULE;
 
-	if (inchan >= inputChannels()) {
+	fChannels = inputChannels();
+	
+	if (inchan >= fChannels) {
 		return die("SCRUB", "You asked for channel %d of a %d-channel file.",
-				   inchan, inputChannels());
+				   inchan, fChannels);
 	}
 	
 	_startFrame = (int) (0.5 + inskip * SR);
@@ -169,7 +171,7 @@ int SCRUB::run()
 			amp = p[3];
 			speed = p[4];
 			if (amptable) {
-#ifdef MAXMSP
+#ifdef EMBEDDED
 				aamp = rtcmix_table(currentFrame(), amptable, tabs) * amp;
 #else
 				aamp = table(currentFrame(), amptable, tabs) * amp;
@@ -204,7 +206,7 @@ Instrument *makeSCRUB()
    return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
    RT_INTRO("SCRUB", makeSCRUB);

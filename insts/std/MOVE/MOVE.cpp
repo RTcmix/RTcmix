@@ -45,7 +45,7 @@ Instrument *makeMOVE()
 }
 
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 /* ------------------------------------------------------------ rtprofile --- */
 void rtprofile()
 {

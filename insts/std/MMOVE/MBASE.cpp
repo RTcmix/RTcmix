@@ -304,7 +304,7 @@ int MBASE::run()
 				bufsamps = max(0, totalSamps - thisFrame);
 
 			if ((tapcount = updatePosition(thisFrame)) < 0)
-				exit(-1);
+				RTExit(-1);
 
 			DBG1(printf("  vector loop: bufsamps = %d\n", bufsamps));
 			for (int ch = 0; ch < 2; ch++) {
@@ -704,7 +704,7 @@ void MBASE::setair(double rho, int flag, double *coeffs, bool directSrc)
    // Max rho distance for filter is 300 ft.
 
    double filt_rho = (rho > 300 ? 300 : rho);
-   float fpoint = filt_rho * 511 / 300.0;
+   float fpoint = filt_rho * (NCOEFFS-2) / 300.0;
    int gpoint = (int)fpoint;
    float frac = fpoint - (float)gpoint;
    double G1 = AIRCOEFFS[gpoint] + frac * (AIRCOEFFS[gpoint + 1] - AIRCOEFFS[gpoint]);

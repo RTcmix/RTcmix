@@ -21,7 +21,7 @@ insk=0
 outsk=0
 amp = 1
 
-dur = 60
+dur = DUR();
 dist_mikes = 2
 inchan = 0
 
@@ -38,5 +38,7 @@ set_attenuation_params(mindist, maxdist, 1.0);
 threshold(0.001);
 
 DMOVE(outsk,insk,dur,amp,xpos,ypos,-dist_mikes,inchan);
+DMOVE(dur,insk,dur,amp,xpos,ypos,-dist_mikes,inchan);
+DMOVE(dur*2,insk,dur,amp,xpos,ypos,-dist_mikes,inchan);
 
 RVB(0, 0, dur+rvbtime+0.5, 0.5);

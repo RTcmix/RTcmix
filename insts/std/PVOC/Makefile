@@ -33,7 +33,7 @@ $(NAME):	$(UGENS_H) $(OBJS) $(CMIXOBJS)
 
 install: dso_install
 
-dso_install: lib$(NAME).so
+dso_install: lib$(NAME).so libPVRandBend.so
 	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)
 	$(INSTALL) $(CURDIR)/libPVRandBend.so $(LIBDESTDIR)
 

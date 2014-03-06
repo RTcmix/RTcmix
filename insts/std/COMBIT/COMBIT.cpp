@@ -112,7 +112,7 @@ int COMBIT::run()
 			update(p, 8);
 			amp = p[3];
 			if (amptable) {
-#ifdef MAXMSP
+#ifdef EMBEDDED
 				amp *= rtcmix_table(currentFrame(), amptable, tabs);
 #else
 				amp *= table(currentFrame(), amptable, tabs);
@@ -160,7 +160,7 @@ Instrument *makeCOMBIT()
 	return inst;
 }
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void
 rtprofile()
 {

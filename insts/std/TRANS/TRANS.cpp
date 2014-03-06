@@ -257,7 +257,7 @@ Instrument *makeTRANS()
 
 extern Instrument *makeTRANS3();    // from TRANS3.cpp
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void rtprofile()
 {
    RT_INTRO("TRANS", makeTRANS);
