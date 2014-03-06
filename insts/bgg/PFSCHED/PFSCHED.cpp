@@ -196,7 +196,7 @@ makePFSCHED()
 }
 
 
-#ifndef MAXMSP
+#ifndef EMBEDDED
 void
 rtprofile()
 {
