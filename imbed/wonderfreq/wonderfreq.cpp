@@ -30,11 +30,12 @@ double freqinc[NINSTS];
 
 const double maxamp = 60000.0/(double)NINSTS;
 
+void wander();
+
 int
 main(int argc, char *argv[])
 {
 	int i;
-	void *wander();
 	double duration = 999.00;	// default to loooong time
 
 	if (argc == 2)
