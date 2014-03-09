@@ -545,9 +545,9 @@ off_t InputFile::readSamps(off_t cur_offset,
 int InputFile::loadSamps(long inFrames)
 {
 #ifdef FILE_DEBUG
-	rtcmix_debug(NULL, "\tInputFile::loadSamps: allocating _memBuffer for %lu bytes", (size_t)inFrames * MAXCHANS * sizeof(BUFTYPE));
+	rtcmix_debug(NULL, "\tInputFile::loadSamps: allocating _memBuffer for %lu bytes", (size_t)inFrames * _chans * sizeof(BUFTYPE));
 #endif
-	_memBuffer = (BufPtr) calloc((size_t) inFrames * MAXCHANS, sizeof(BUFTYPE));
+	_memBuffer = (BufPtr) calloc((size_t) inFrames * _chans, sizeof(BUFTYPE));
 	if (_memBuffer == NULL) {
 		perror("malloc");
 		return -1;
