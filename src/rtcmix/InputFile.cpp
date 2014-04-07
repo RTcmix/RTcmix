@@ -593,15 +593,17 @@ off_t InputFile::copySamps(off_t     cur_offset,       /* current file position 
 				short       src_chans         /* number of in-bus chans to copy */
 )
 {
-    const int bytes_per_samp = sizeof(float);
-	const int bytes_per_frame = bytes_per_samp * _chans;
 	// Original file values
     off_t fileAudioOffset = (cur_offset - _data_location);
-    const long fileBytesRemaining = long(_endbyte - cur_offset);
-	// Convert byte offset into original file into an offset into (float) _memBuffer
-	long membufOffset = long(fileAudioOffset / ::mus_data_format_to_bytes_per_sample(_data_format));
-    const int bufBytesRequested = dest_frames * _chans * bytes_per_samp;
-	const long bufBytesRemaining = (fileBytesRemaining / ::mus_data_format_to_bytes_per_sample(_data_format)) * bytes_per_frame;
+    const long fileBytesRemaining = lmax(0L, long(_endbyte - fileAudioOffset));
+
+	const int bytes_per_src_samp = ::mus_data_format_to_bytes_per_sample(_data_format);
+    const int bytes_per_dest_samp = sizeof(float);
+	const int bytes_per_dest_frame = bytes_per_dest_samp * _chans;
+	// Convert byte offset into original file into a sample offset into (float) _memBuffer
+	long membufOffset = long(fileAudioOffset / bytes_per_src_samp);
+    const int bufBytesRequested = dest_frames * _chans * bytes_per_dest_samp;
+	const long bufBytesRemaining = (fileBytesRemaining / (src_chans * bytes_per_src_samp)) * bytes_per_dest_frame;
     const long extra_bytes = (bufBytesRequested > bufBytesRemaining) ? bufBytesRequested - bufBytesRemaining : 0;
     ssize_t bytes_to_copy = lmin(bufBytesRemaining, bufBytesRequested);
     
@@ -611,38 +613,44 @@ off_t InputFile::copySamps(off_t     cur_offset,       /* current file position 
 #endif
 		) {
 		
+		long offset = 0;
+		
 		if (bytes_to_copy > 0) {
-//			printf("memcpy'ing %d bytes (%d frames) to dest from _memBuffer[%d]\n", bytes_to_copy, bytes_to_copy/(_chans * bytes_per_samp), membufOffset);
+//			printf("memcpy'ing %d bytes (%d frames) to dest from _memBuffer[%d]\n", bytes_to_copy, bytes_to_copy/bytes_per_dest_frame, membufOffset);
 			memcpy(dest, &_memBuffer[membufOffset], bytes_to_copy);
+			offset += bytes_to_copy;
 			bytes_to_copy = 0;
 		}
 		
-		/* If we reached EOF, zero out remaining part of buffer that we
-		 expected to fill.
-		 */
+		/* If we reached EOF, zero out remaining part of buffer that we expected to fill. */
 		long bytesToZero = bytes_to_copy + extra_bytes;
 		if (bytesToZero > 0) {
-			long offset = lmax(bytes_to_copy, 0L);
 //			printf("zeroing dest buffer at offset %d, %d bytes worth\n", offset, bytesToZero);
 			memset((char *)dest + offset, 0, bytesToZero);
 		}
 	}
     else {
-		/* Copy interleaved _memBuffer to dest buffer, with bus mapping and/or gain adjust. */
+		/* Process interleaved _memBuffer samples and write to dest buffer, with bus mapping and/or gain adjust. */
+		const long samps = lmax(0, bytes_to_copy) / bytes_per_dest_samp;
+		const long dest_samps = dest_frames * dest_chans;
 		
-		const int src_samps = dest_frames * _chans;
 		BufPtr buf = &_memBuffer[membufOffset];
-//		printf("copying %d samps (%d %d-channel frames) to dest from _memBuffer[%d]\n", src_samps, src_samps/_chans, _chans, membufOffset);
+//		printf("copying %d samps (%d %d-channel frames) to dest from _memBuffer[%d]\n", samps, samps/_chans, _chans, membufOffset);
 		
-		for (int n = 0; n < dest_chans; n++) {
+		for (int dest_chan = 0; dest_chan < dest_chans; ++dest_chan) {
 #ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT
-			const int chan = n;
+			const int chan = dest_chan;
 #else
-			const int chan = src_chan_list ? src_chan_list[n] : n;
+			const int chan = src_chan_list ? src_chan_list[n] : dest_chan;
 #endif
-			int j = n;
-			for (int i = chan; i < src_samps; i += _chans, j += dest_chans)
-				dest[j] = buf[i] * _gainScale;
+			long out = dest_chan;
+			for (long in = chan; in < samps; in += src_chans, out += dest_chans) {
+				dest[out] = buf[in] * _gainScale;
+			}
+			// Zero out remainder of output buffer, if any left.
+			for (; out < dest_samps; out += dest_chans) {
+				dest[out] = 0.0;
+			}
 		}
 	}
     return 0;
