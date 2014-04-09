@@ -140,6 +140,8 @@ gen1(struct gen *gen, char *sfname)
 
    seek_to = data_location + (start_frame * file_chans * bytes_per_samp);
    if (lseek(fd, seek_to, SEEK_SET) == -1) {
+	   free(block);
+	   free(buf);
 		return die("gen1", "lseek() failed");
    }
 
@@ -168,7 +170,9 @@ gen1(struct gen *gen, char *sfname)
       else
          bytes_read = read(fd, buf, BUFSIZE);
       if (bytes_read == -1) {
-			return die("gen1", "read() failed");
+		  free(block);
+		  free(buf);
+		  return die("gen1", "read() failed");
       }
       if (bytes_read == 0)          /* EOF, somehow */
          break;

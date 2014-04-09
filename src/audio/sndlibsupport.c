@@ -345,6 +345,7 @@ sndlib_write_header(int  fd,
 
    if (lseek(fd, 0, SEEK_SET) == -1) {
       perror("sndlib_write_header: lseek");
+	   free(comment);
       return -1;
    }
 
@@ -354,6 +355,7 @@ sndlib_write_header(int  fd,
                                           data_format, comment, comment_len);
    if (result != MUS_NO_ERROR) {
       fprintf(stderr, "sndlib_write_header: Can't write header\n");
+	   free(comment);
       return -1;
    }
 

@@ -172,8 +172,10 @@ strsave(char *str)
    if (p == NULL)
       return NULL;
    p->str = (char *) emalloc(strlen(str) + 1);
-   if (p->str == NULL)
+	if (p->str == NULL) {
+		efree(p);
       return NULL;
+	}
    strcpy(p->str, str);
    p->next = stab[h];
    stab[h] = p;

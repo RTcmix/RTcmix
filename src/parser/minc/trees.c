@@ -1036,8 +1036,10 @@ exct_subscript_read(Tree tp)
          MincFloat frac = fltindex - index;
 		 MincList *theList = tp->u.child[0]->u.symbol->v.list;
 		 int len = 0;
-         if (theList == NULL)
+		  if (theList == NULL) {
             minc_die("attempt to index an empty list");
+			  return;
+		  }
          len = theList->len;
          if (fltindex < 0.0) {    /* -1 means last element */
             if (fltindex <= -2.0)
