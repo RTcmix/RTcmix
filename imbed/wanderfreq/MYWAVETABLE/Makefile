@@ -1,0 +1,20 @@
+include ../../../../makefile.conf
+
+OBJS = MYWAVETABLE.o
+CMIXOBJS += $(PROFILE_O)
+PROGS = MYWAVETABLE libMYWAVETABLE.so
+
+all: libMYWAVETABLE.so
+
+standalone:  MYWAVETABLE
+
+libMYWAVETABLE.so: $(OBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
+
+MYWAVETABLE: $(OBJS) $(CMIXOBJS)
+	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
+
+$(OBJS): $(INSTRUMENT_H)
+
+clean:
+	$(RM) *.o $(OBJS) $(PROGS)
