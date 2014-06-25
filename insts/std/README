@@ -1,0 +1,130 @@
+[Note: This note by Brad applies to an older version of RTcmix. Some
+of the details of Instrument operation have changed a little -- see
+docs/README.inst_porting, but it's still well worth reading this.
+                                                 -JGG, 18 May, 2000]
+
+
+This directory contains a bunch of CMIX and RTcmix instruments,
+all compiled and ready-to-roll.  I tried to make the p-fields
+for many of these instruments a bit more consistent, plus
+nearly all of them now read/write stereo and mono files (with
+optional p-fields for stereo placement, input channel to read).
+With only a few exceptions, I've also replaced setline() with
+a makegen, figuring that gen 24 does the same thing and it
+seems more in line with other aspects of instrument design.
+Finally, nearly all of the instruments have an associated
+Minc call "reset()" which takes 1 p-field allowing the user
+to specify how many times/sec. to update various envelopes.
+
+NOTE to older cmix users:  one of the biggest changes in terms
+of p-field rearrangements is that I have set the first p-field as
+the output skip.  This changes the syntax of many of the
+cmix sig-processing routines, where the old "insk, outsk, dur"
+used to be the thing to do.  Now they are "outsk, insk, dur".
+Annoying, eh?
+
+In each subdir should be several scorefiles with a listing
+of the p-fields for the instrument and examples of how to
+run it.  Plus the source code, of course.  The CAPITAL letter
+version of the each instrument is the real-time guy.  The
+samples coming out of the RT insts should be identical to
+samples written to an integer (playable) soundfile.
+
+The subdir "COMBINATION_SCORES" contain several sample scorefile
+using Doug Scott's load() feature.  Check 'em out!
+
+
+Here's a short note on RT instrument design, adapted from an
+older README:
+
+
+	Each Instrument has two member functions that must be defined
+	by the Instrument designer.  A new instrument is intended to
+	inherit the basic stuff from the base Instrument class (in
+	rtstuff/Instrument.C), but the base class only contains a few
+	variables used in setting up the sample loop.  I tried to make
+	an Instrument look as much like an existing cmix function
+	as possible, mainly to simplify the job of porting stuff
+	already done.  The Instrument::init(p, n_args) member function
+	does all the setup stuff prior to the sample loop (the code
+	should look familiar).  Note that the traditional call to
+	"setnote()" is replaced with a calls to "rtsetinput()" or
+	"rtsetoutput()" -- these schedule the instrument into the
+	appropriate slot(s) on the rtqueue heap.  NOTE that p[0]
+	has to be the start time of output if you plan to use
+	the Instrument in "interactive" mode.
+
+	The Instrument::run() member function is called
+	from the rtqueue heap, and it is expected to deliver
+	RTBUFSAMPS worth of samples each time (except when it
+	finished by reaching nsamps).  The chunksamps variable
+	is calculated by RTcmix to accomplish this and handle
+	the correct start and stop amounts (often less than
+	one buffer's worth).  The "cursamp" variable is used
+	to mark how many samples have actually passed, and
+	it holds its value between Instrument::run() calls,
+	so it can be used in table() calls, etc.
+
+	So the user-written Instrument sees a call to init() when
+	it gets set up on the rtqueue heap, and then it sees a number
+	of calls to run() depending on how long the note is.
+
+	Note that variables that are set by the init() member function
+	for use by the run() member function are declared in the
+	associated .h file for the Instrument.
+
+	Note also the rtprofile() function used to introduce the Instrument
+	to the Minc list of RTinstruments.  It is slightly different
+	than the equivalent profile() cmix function.  rtprofile()
+	has to create a new instance of the user-written Instrument,
+	so it has to have an 'auxiliary' function (makeWAVETABLE(), for
+	example) to do the job.  RT_INTRO cannot call the constructor
+	or the init routine of the user-written Instrument directly.
+
+The directory "TEMPLATE" contains a dummy (non-filled-out) RTcmix
+instrument if you want to try coding one up.
+
+
+The current list of instruments include:
+
+am,AM:  	amplitude modulate signal processor
+aminst,
+   AMINST:  	amplitude modulation synthesis instrument
+clar,CLAR: 	Perry Cook's "clarinot" physical model
+combit,COMBIT:	comb filter signal processor
+fminst,FMINST:	frequency modulation instrument
+iir,IIR:	infinite impulse response filter
+metaflute,
+  METAFLUTE:	Perry Cook's "Slide Flute", with pitch bend and vibrato
+mix,MIX:	soundfile mixing instrument (the "mix" command is in ../cmd)
+multicomb,
+  MULTICOMB:	4 comb filters simultaneously
+sculpt,SCULPT:	resynthesize data from the IRCAM "Audiosculpt" app.
+stereo,STEREO:	soundfile mixing instrument
+			(the "stereo" cmd is in ../cmd)
+strum,STRUM:	Charlie Sullivan's variant of the Karplus-Strong algorithm
+wavetable,
+  WAVETABLE:	wavetable oscillator instrument
+wshape,WSHAPE:	waveshaping instrument
+del1,DEL1:	single stereo (non-regenerating) delay line instrument
+delay,DELAY:	simple regenerating delay line instrument
+panecho,
+   PANECHO:	stereo regenerating delay line instrument
+convolve:	convolution instrument
+fir:		fir filter instrument
+flange:		stereo flanger
+gravy:		pitch and time shifter
+lpc:		the original lpc stuff
+move:		Doug Scott's room simulation with moving source
+mrotate:	time independent dynamically changing pitch-shifter
+noise:		noise
+place:		Doug Scott's room simulation
+pvoc:		phase vocoder (from F. R. Moore)
+rotate:		time independent pitch-shifting instrument
+sgran:		Mara Helmuth's stochastic granular synthesis instrument
+trans:		pitch-shifting instument, cubic spline interpolation
+vwavetable:	wavetable synthesizer w/ vibrato
+wah:		moving reson
+wahwah:		oscillating reson
+wow:		FM modulates an input soundfile
+numtest:	writes a single number out repeatedly (for debugging)

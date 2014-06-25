@@ -1,0 +1,11 @@
+I have done a more complete port, including a major structural change to allow
+buffer-based i/o rather than the previous sample-by-sample.  The hope is that
+this will reduce cache hits, etc., and allow optimizing of copies and adds.
+
+D.S. 6/24/2000
+
+I have also ported MOVE, which now shares all common code directly with PLACE
+(both inherit from the BASE instrument class).  PLACE will run in real time on
+a 500mHz Pentium III Linux box.
+
+D.S. 9/16/2000
