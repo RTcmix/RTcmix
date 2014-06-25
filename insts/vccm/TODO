@@ -1,0 +1,50 @@
+#insts.base
+$$ see if can treat like "STEREO" MIX ??
+# done WAVETABLE
+
+#insts.std
+# done AM
+# done AMINST
+# done CLAR
+# problems exist here done COMBIT -> now COMBFILT
+$$ uses "delset" DEL1
+$$ uses "delset" DELAY
+$$ uses 99 parameters FIR
+# done FMINST
+# done IIR
+# done METAFLUTE
+$$ seem to be libraries and not instruments MOVE
+$$ uses "combset" MULTICOMB
+$$ uses "delset" PANECHO
+$$ empty PLACE
+# done REVMIX
+$$ all params cannot be changed SCULPT
+# done STEREO
+# done STRUM ??
+# issues with updating dur and interval TRANS
+# done TRANSBEND
+# done WAVESHAPE
+
+# insts.jg
+$$ possible but complex COMPLIMIT
+$$ filter information is tied into "ellset" and not the instrument ELL
+$$ can't change ringdur but can change other params FILTSWEEP
+# problem with reallocating memory FLANGE
+$$ not sure if ringdur or damp is changing FREEVERB
+$$ most pertinent parameters tied up in function call that occurs before the 
+   sampling loop JCHOR
+# done but doesn't have RSD envelope JDELAY 
+$$ won't load library for some reason JFIR
+$$ can only update amplitude and dur JGRAN
+$$ uses distndelset function MROOM
+# done PAN
+# done REV
+$$ could update amp, dur, dcblockfilt, and reverbpct REVERBIT
+$$ could update amp, channel, and spread but interesting parameters are tied in   to roomset ROOM
+$$ parameters tied into distndelset SROOM
+$$ most parameters are used in init and not run VOCODE
+
+#insts.rtperf (done?)
+HAR
+MIXN : needs fixing (from spawn)
+RAP
