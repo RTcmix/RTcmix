@@ -1,0 +1,15 @@
+Some new synthesis instruments; see the *.cpp and *.sco
+files in each dir for pfield info
+
+
+SYNC - 'hard' sync oscillator synthesis instrument 
+HALFWAVE - specify two 1/2-waveforms, modulate the mid-crossover point
+VWAVE - "vector" wavetable synthesis with arbitrary # of wavetable
+GVERB - the "gigaverb" reverb instrument
+PFSCHED - an instrument for sending dynamic control information to notes
+
+
+Brad Garton, 7/2007
+and
+Brad Garton, 1/2013
+
