@@ -1,0 +1,28 @@
+This RTcmix instrument uses the Freeverb code by Jezar at Dreampoint
+(http://www.dreampoint.co.uk/~jzracc/freeverb.htm), which is released
+as public domain.
+
+The Freeverb files are allpass.cpp, allpass.hpp, comb.cpp, comb.hpp,
+denormals.h, revmodel.cpp, revmodel.hpp, tuning.h, and readme.txt.
+
+Here are the changes I made to this source:
+
+   - implemented pre-delay, including new delay class (delay.cpp, .hpp)
+
+   - made a few "int i" declarations in some for loops in revmodel.cpp,
+     just to keep egcs from complaining.
+
+   - changed the names of the comb and allpass classes to fv_comb and
+     fv_allpass, due to a namespace clash with RTcmix ugens.h.
+
+   - changed revmodel::processreplace to accept separate input and output
+     <skip> args, to mesh better with RTcmix buffer scheme.  (We're not using
+     the processmix method, so no change there.)
+
+Note that the units for the room size argument are unknown.  The maximum
+is 1.07143..., because higher than that would make the feedback amount
+for the comb filters greater than 1, and thus unstable.  With the room
+size set to the max., the reverb time is infinite, I assume.
+
+
+John Gibson <johngibson@virginia.edu>, 02/02/01

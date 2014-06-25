@@ -1,0 +1,20 @@
+#!/bin/sh
+
+header=objlib.h
+
+# rename old header, if there is one (so as not to be matched below)
+if [ -f $header ]
+then
+   mv $header $header.prev
+fi
+
+# prevent the header we generate from being matched by *.h below
+temp=_$header"eader"
+
+for i in *.h
+do
+  echo "#include \"$i\""
+done >> $temp
+
+mv $temp $header
+rm $header.prev

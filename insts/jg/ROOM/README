@@ -1,0 +1,255 @@
+[This is taken from the old cmix man pages. It describes room, sroom and mroom.
+The new real-time versions differ somewhat from these, but I though it better
+to include this info now.  -JGG]
+
+
+NAME
+     roomset(x, y, xsrc, ysrc, xwall_lft, ywall_lft, xwall_right, ywall_right,
+             absrpt, <rnd>)
+
+     room(outsk, dur, insk, channel)
+
+     -------
+
+     timeset(time, xval, yval)
+
+     sroom(insk, outsk, dur, amp, xroom, yroom, xsrc, ysrc, rvbtime, %rflct,
+           xinner, <chan>)
+
+     mroom(insk, outsk, dur, xroom, yroom, rvbtime, %rflct, xinner,
+           <chan>, <quant>)
+
+
+DESCRIPTION
+     The roomset and room commands are in the module called room.
+     The timeset and sroom commands are in the module called
+     sroom and the timeset and mroom commands are in the module
+     called mroom.
+
+     These room simulation routines will add reverberation and
+     "roominess" to BSD-type soundfiles (integer or floating
+     point) that are processed through them.  Roomset/room will
+     set up a two-dimensional model of a room and bounce thirteen
+     delay lines from the source to the listener.  Sroom will do
+     essentially the same thing but is a little fancier -- the
+     room model is rectangular, delay paths are based on "ideal"
+     reflections from the walls, the `listener' has an exandable
+     head, and reverberation is added to the delay lines to simu-
+     late diffusion from reflections of reflections.  Mroom will
+     create the same room model that sroom will and pass a moving
+     source through it.
+
+     roomset "creates" a virtual model of a room by computing the
+     delay, the speaker (source) location based on the angle from
+     the reflection point, and a decay factor based on the
+     absorption factor and the delay due to distance
+     <1/distance^absorption> for each reflection.  To visualize
+     the room created by this command, imagine a two-dimensional
+     space with (0,0) <the origin> at the lower left-hand corner.
+     In the roomset arguments, x and y are the x and y dimensions
+     of the space in feet.
+
+     Xsrc and ysrc specify the position of the sound source in
+     terms of a fraction of the x and y dimensions.  The argu-
+     ments .5, .5 for xsrc and ysrc will position a sound source
+     in the middle of the roomset space while .9, .1 will posi-
+     tion it at the right front.
+
+     Xwall_lft and ywall_lft specify the point at which the left
+     wall becomes the back wall in terms of a fraction of the
+     left side of the room only. Xwall_lft is thus a fraction of
+     the x dimension/2.  The arguments .1, .9 for xwall_lft and
+     ywall_lft will form almost a square corner for the left side
+     of the room, while .5, .5 will make the left side a straight
+     line from (0,0) to (x-dimension/2,y-dimension).  This will
+     create a triangular room if it is repeated for the
+     xwall_right and ywall_right arguments.  The right wall argu-
+     ments <xwall_right, ywall_right> are specified as if the
+     room were "folded over" -- if the arguments are identical to
+     the left wall arguments the room will be symmetrical.  The
+     basic shape of the room is probably best thought of as tri-
+     angular.  The sides of the triangle can then be pulled back
+     from their midpoints to approach a rectangle.
+
+     The absorption factor (absrpt) specifies how much the signal
+     will have decayed by the time it reaches the listener (posi-
+     tioned at (x-dimension/2,0).  An absorption factor of 2 will
+     approximate an average room while 3 will be rather dry, .5
+     will be highly reverberant and 0 will create the effect of
+     no absorption at all.  A negative absorption factor will
+     actually cause the sound to get louder as a function of
+     increased distance.
+
+     The thirteen reflection points along the walls are chosen
+     randomly.  The random number generator may be reseeded with
+     the optional tenth argument, rnd.
+
+     room passes the currently opened input file (file descriptor
+     0) through the room created by roomset and writes to the
+     currently opened output file (file descriptor 1).  The argu-
+     ments are straightforward: the variable 'insk' is the time
+     to skip before reading the input file, 'outsk' is the time
+     to skip on the output file before writing, 'dur' is the
+     duration of the segment (the actual duration will be
+     slightly longer as room flushes out the delay lines), and
+     'channel' is the channel to process of the input file (room
+     only does one channel at a time).
+
+     Sroom will calculate the delay paths from the walls of a
+     rectangular room to two points representing the corners of
+     an "inner" or listening room.  The room is set up on a
+     Cartesian coordinate system (x-y plane) with the center of
+     the  inner room's front wall positioned at the origin (0,0).
+
+     The arguments 'insk', 'outsk', 'dur' and 'amp' represent the
+     time to skip on the input file before beginning processing,
+     the time to skip on the output file before writing the pro-
+     cessed output, the duration of the input file to process,
+     and an amplitude multiplier that will be applied to the
+     input signal.
+
+     The variable 'Xroom' is the position along the x-axis where
+     the right-hand wall should appear. sroom will then create
+     the left-hand wall at -xroom, so this value represents 1/2
+     the room's width (in feet).  'Yroom' is the position along
+     the y-axis where the front wall will be drawn.  The rear
+     wall will be positioned at -yroom.  'Yroom' represents 1/2
+     the rooms height (also in feet).
+
+     The variables 'xsrc' and 'ysrc' are the x and y coordinates
+     of the sound source.  'Rvbtime' is the amount of time (in
+     seconds) it takes for the reverb comb filters to decay to
+     .001 of their original value.  Values greater than 1.0 - 1.5
+     tend to sound "metallic"; the frequency response of the
+     reverb combs becomes clearly audible.  '%rflct' is the per-
+     centage of sound reflected by the walls.  A '%rflct' value
+     of 100 will mean that the walls will not absorb any of the
+     incident sound.  The only attenuation in the delay paths
+     will be due to the distance travelled from the source to the
+     listener (-6 db for each doubling of distance).  'Xinner' is
+     the width of the inner (or listening) room.  The value
+     represents 1/2 the true width of the inner room (in feet).
+     'Chan' is an optional argument to specify which channel of
+     the currently opened input file to process through the room.
+     The default is channel 0.  Note that only one channel at a
+     time may be processed through these rooms.
+
+     Mroom is nearly identical to sroom.  The BIG DIFFERENCE is
+     that mroom allows a sound to travel through the room along a
+     defined trajectory.  The sound source remains at (xsrc,ysrc)
+     in sroom.  Consequently, the xsrc and ysrc arguments are
+     missing from mroom.  The sound source's trajectory is
+     defined by calls to timeset() <see below> prior to the call
+     to mroom. Mroom will calculate the doppler shift for the
+     source as it moves relative to the listening room and the
+     walls -- just like the real world!  The amount of frequency
+     shift from the doppler effect for sources moving directly
+     towards or away from a listener (or a wall) can be calcu-
+     lated by:
+
+          F(new) = (c/(c + SV)) * F(old)
+
+     where c = speed of sound (1086 ft/sec); F(old) is the origi-
+     nal source frequency; SV = source velocity (ft/sec); and
+     F(new) is the resultant doppler-shifted frequency.
+
+     Very fast source velocities may generate some quantization
+     noise if the position of the sound source is not updated
+     frequently enough.  In addition to the optional channel
+     argument <chan>, mroom has another optional argument <quant>
+     that specifies the number of times/second to update the
+     source position.  The default value is 100.  Values greater
+     than this will cause mroom to execute proportionally slower.
+     Note also that to specify the 'quant', 'chan' must also be
+     explicity written.
+
+     timeset is used to define the trajectory that the sound
+     source travelling through mroom will follow.  Calls to
+     timeset should precede the call to mroom for which the curve
+     is being defined.  The arguments are very simple: time is
+     the time (from the beginning of room processing) that the
+     source should be at the coordinate (xval,yval).  Mroom will
+     move the source along straight lines connecting the points
+     defined by the timeset calls.
+
+     EXAMPLES:
+
+          roomset(100, 140, .7, .7, .1, .9, .1, .9, 1.0)
+
+     will create a mildly reverberant nearly rectanglar room. The
+     room will be 100 feet wide and 140 feet deep with the sound
+     source positioned in the upper right of the room.
+
+          room(4, 14, .414, 0)
+
+     will skip .414 seconds into the input file and pass the
+     sound from channel 0 through the room created by roomset for
+     14 seconds, writing the resulting sound on the output file
+     beginning at time 4.
+
+          sroom(7, 49, 3.5, .7, 41, 21, -39, 1, 1.2, 80, 4, 1)
+
+     begins processing 7 seconds into the input file, will write
+     the processed output 49 seconds from the beginning of the
+     output file, and will process the sound for 3.5 seconds. The
+     amplitude of the input file will be multiplied by .7 before
+     it is placed in the room. The room itself is 82 feet wide
+     (2*41) and 42 feet high. The sound source is located at the
+     x,y coordinates (-39,1), or far to the left-hand side of the
+     listening room. The reverb time is 1.2 seconds (moderately
+     live) with the walls reflecting 80% of the sound hitting
+     them (20% absorption).  The inner or listening room is 8
+     feet wide. Channel 1 will of the input file will be pro-
+     cessed.
+
+          timeset(0, 17, 19)
+          timeset(17, -10, 15)
+          timeset(29, -11, -7)
+          timeset(49, -20, -14)
+          timeset(57, -19, -37)
+          timeset(77, 14, -5)
+          mroom(14, 0.7, 77, 1, 21, 49, .9, 50, .5)
+
+     The calls to timeset before the call to mroom specify a tra-
+     jectory for the sound source through the room that looks
+     approximately like this (each 'X' represents a timeset call):
+
+                                 |+49
+                                 |
+                                 |
+                                 |
+                                 |
+                                 |
+                                 |
+                     _X-----<----|-<------<------<----X  <--Start Here
+                    /            |
+     ______________|_____________|_____________________________
+     -21         __X             |                  X       +21
+            ____/                |           ______/
+         __/                     |      ____/
+        X                        |_____/
+        |                  ______/
+        |          _______/      |
+        |   ______/              |
+        |__/                     |
+        X                        |
+                                 |-49
+
+     Both mroom and sroom can use setline to draw an amplitude
+     modification curve while mixing.  If no call to setline is
+     made there is no modification done.  The syntax for the call
+     is identical to that used in mix.
+
+BUGS
+     Room runs relatively fast, sroom is somewhat slower, and
+     mroom is quite slow.  In mroom speeds faster than 10-20
+     ft/sec (depending on the frequency of the source) will prob-
+     ably have to have higher quantization rates in mroom to
+     avoid distortion. Mroom runs with a default quantization
+     rate of 100, higher rates may slow it down considerably.
+
+REFERENCES
+     F.R. Moore: "A General Model for Spatial Processing of Sounds."
+     The Computer Music Journal, Vol 7/3, pp. 6-15, 1983.
+
+

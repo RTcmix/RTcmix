@@ -1,0 +1,66 @@
+include ../package.conf
+
+CURDIR = $(CMIXDIR)/insts/jg/SPECTACLE2
+
+COMMON_OBJS = SPECTACLE2_BASE.o
+COMMON_HEADERS = SPECTACLE2_BASE.h
+SPECTACLE2_OBJS = SPECTACLE2.o $(COMMON_OBJS)
+SPECTEQ2_OBJS = SPECTEQ2.o $(COMMON_OBJS)
+CMIXOBJS += $(PROFILE_O)
+PROGS = libSPECTACLE2.so libSPECTEQ2.so \
+SPECTACLE2 SPECTEQ2
+
+.PHONY: all standalone install dso_install standalone_install \
+uninstall dso_uninstall standalone_uninstall clean cleanall
+
+ifeq ($(BUILDTYPE), STANDALONE)
+  all: libSPECTACLE2.so libSPECTEQ2.so
+else
+  all: $(SPECTACLE2_OBJS) $(SPECTEQ2_OBJS)
+endif
+
+standalone: SPECTACLE2 SPECTEQ2
+
+libSPECTACLE2.so: $(SPECTACLE2_OBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(SPECTACLE2_OBJS) $(GENLIB) $(SYSLIBS)
+
+SPECTACLE2: $(SPECTACLE2_OBJS) $(CMIXOBJS)
+	$(CXX) -o $@ $(SPECTACLE2_OBJS) $(CMIXOBJS) $(LDFLAGS)
+
+$(SPECTACLE2_OBJS): $(INSTRUMENT_H) $(COMMON_HEADERS) SPECTACLE2.h
+
+libSPECTEQ2.so: $(SPECTEQ2_OBJS) $(GENLIB)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(SPECTEQ2_OBJS) $(GENLIB) $(SYSLIBS)
+
+SPECTEQ2: $(SPECTEQ2_OBJS) $(CMIXOBJS)
+	$(CXX) -o $@ $(SPECTEQ2_OBJS) $(CMIXOBJS) $(LDFLAGS)
+
+$(SPECTEQ2_OBJS): $(INSTRUMENT_H) $(COMMON_HEADERS) SPECTEQ2.h
+
+SPECTACLE2_BASE.o: $(INSTRUMENT_H) $(COMMON_HEADERS)
+
+install: dso_install
+
+dso_install: all
+	$(INSTALL) $(CURDIR)/libSPECTACLE2.so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/libSPECTEQ2.so $(LIBDESTDIR)
+
+standalone_install: standalone
+	$(INSTALL) $(CURDIR)/SPECTACLE2 $(DESTDIR)
+	$(INSTALL) $(CURDIR)/SPECTEQ2 $(DESTDIR)
+
+uninstall: dso_uninstall standalone_uninstall
+
+dso_uninstall:
+	$(RM) $(LIBDESTDIR)/libSPECTACLE2.so
+	$(RM) $(LIBDESTDIR)/libSPECTEQ2.so
+
+standalone_uninstall:
+	$(RM) $(DESTDIR)/SPECTACLE2
+	$(RM) $(DESTDIR)/SPECTEQ2
+
+clean:
+	$(RM) $(SPECTACLE2_OBJS) $(SPECTEQ2_OBJS) $(PROGS)
+
+cleanall: clean uninstall
+

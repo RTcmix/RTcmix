@@ -1,0 +1,66 @@
+.TH DENOISE 1carl CARL
+.SH NAME
+denoise \- noise reduction
+.SH SYNOPSIS
+.B denoise
+[flags] noise_soundfile < floatsams > floatsams
+.nf
+.RS .5i
+flags:
+R = input sample rate (automatically read from stdin)
+N = number of bandpass filters (i.e., size of FFT) (1024)
+M = analysis window length (N-1)
+L = synthesis window length (M) 
+D = decimation factor (M/8)
+b = begin time in noise_soundfile (0)
+e = end time in noise_soundfile (end)
+d = duration in noise_soundfile (end - begin)
+t = threshold above noise reference (in dB) (30)
+s = sharpness of filter turnoff (scale of 1 to 5) (1)
+n = number of FFT frames to average over (5)
+m = minimum gain of filter when off (in dB) (-40)
+noise_soundfile name must follow all flags
+.RE
+.fi
+.SH DESCRIPTION 
+.LP
+This program tries to reduce unwanted background noise by setting up a
+bank of bandpass filters and controlling the gain of each filter. The
+gain is gradually turned down to a minimum (specified by -m) whenever
+the average energy level in that filter falls below some threshold.
+The threshold is set to be (approximately) -t dB above a predetermined
+noise floor.  The floor is computed automatically at the start of the
+program as the average spectrum of the noise_soundfile, which is assumed
+to contain at least .25 seconds of noise without signal.
+.LP
+This kind of noise reduction works best on hiss-type background noise
+(as opposed to pops and clicks) where the signal-to-noise ratio is good.
+The most important controls are as follows:  The -t flag controls the
+number of dB above the noise floor at which the filter starts to turn
+off.  Values between 20 and 40 dB may be appropriate.  The -s flag
+controls the sharpness of the filter turnoff (as a function of energy
+level in the filter band).  It is generally best left at a value of 1.
+The -m flag controls the extent to which the filter can be turned
+completely off.  Values between -20 and -40 dB are probably most useful.
+The -n flag controls the extent in time over which the average energy
+in the filter is to be computed.  This average is computed looking an
+equal amount ahead and behind the current time.  As a rule, n frames
+of FFT correspond to a time window of (n*N/8) / R seconds.  In practice,
+the -t and -m flags probably provide the most useful tradeoffs.
+.LP
+The other flags (-N, -M, and -D) control the FFT size, the window size,
+and the FFT spacing, respectively.  These flags should probably not be
+used except perhaps to increase N (always a power of two) for sample
+rates above 16KHz.  As a rule, M is set equal to N, and D is set equal
+to M/8.  For a factor of two decrease in compute time, D can be set to M/4;
+this may or may not affect sound quality.
+.LP
+The idea of performing noise reduction in this fashion has been
+independently introduced by a number of different people.  This
+implementation does not conform to any one in particular, except
+that the gain calculation is that suggested by Moorer & Berger in
+``Linear-Phase Bandsplitting: Theory and Applications,'' presented
+at the 76th Convention 1984 October 8-11 New York of the Audio
+Engineering Society (preprint #2132).
+.SH AUTHOR
+Mark Dolson
