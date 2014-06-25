@@ -1,0 +1,17 @@
+This is an RTcmix library which calculates custom non-equal-tempered tunings.
+
+INSTALL:
+
+1) Change package.conf in this folder to point to makefile.conf in your RTcmix
+   home directory.
+
+2) Open a terminal in this tuning folder and type:
+      make
+
+3) In your scorefile, change the load statement so that it points to the full
+   path of libtuning.so. (See tuningtest.sco for more details.)
+
+-Joel Matthys, 11/17/10
+
+
+https://pantherfile.uwm.edu/jmatthys/public/libTUNING.html

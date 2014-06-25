@@ -1,0 +1,42 @@
+I've added some new functions to MINC which I find useful. Here is a description
+of the new commands and instructions for installing them.
+
+==================================================================================================
+TO INSTALL:
+
+1. Copy the jfuncs folder to the top directory of your RTcmix installation.
+2. Open a terminal and cd into the jfuncs folder.
+3. Type make
+4. That's it. To use the functions, include the following command at the top of your RTcmix scorefile:
+	load ("path/to/RTcmix/jfuncs/jfuncs.so")
+		*obviously replace "path/to/RTcmix" with your actual path to RTcmix! ;)
+5. Try the sample files!
+
+===================================================================================================
+COMMANDS:
+
+sin(value)		trigonomic sine of the value.
+cos(value)		trigonomic cosine of the value.
+constrain(test,low,high)			clips the value if it exceeds the range [low-high]
+map(test,low0,high0,low1,high1) 	scales a value from an old range [low0-high0]
+									to a new range [low1-high1]
+	or: map(test,low,high)			scales a value in the range [0-1] to the range [low-high]
+lowrand()		random linear distribution in the range [0-1] weighted toward low values.
+highrand()		random linear distribution in the range [0-1] weighted toward high values.
+trirand()		random triangular distribution in the range [0-1] weighted toward center values.
+gaussrand()		random Gaussian distribution, aka "Bell Curve", in the range [0-1]
+
+prob()			Mara Helmuth's weighted random distribution algorithm
+				This can be called two different ways:
+	prob(lowlimit,midpoint,hilimit,tightness)
+	
+				or Joel Matthys's simplified version, which uses the same algorithm (thanks Mara!)
+				but scales it to the range [0-1].
+	prob(mid,weight)	
+		mid (0-1) is the midpoint of the distribution
+		weight (0-1): if weight = 0.5, prob returns a plain random distribution
+			if weight > 0.5, values cluster around mid value
+			if weight < 0.5, values avoid mid value
+
+Joel Matthys
+19 October 2010
