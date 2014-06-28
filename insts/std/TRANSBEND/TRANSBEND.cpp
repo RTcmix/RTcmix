@@ -21,7 +21,7 @@
       makegen(-2, 18, 1000, 0,octpch(.07), 1,octpch(-.07))
 
    Created from my and John Gibson's TRANS by Doug Scott
-	<netdscott@netscape.net> 9/3/2000.
+	<netdscott-at-netscape-dot-net> 9/3/2000.
 */
 #include <stdio.h>
 #include <stdlib.h>
