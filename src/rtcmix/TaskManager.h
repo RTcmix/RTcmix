@@ -4,7 +4,7 @@
 // Description: 
 //
 //
-// Author: Douglas Scott <netdscott@netscape.net>, (C) 2010
+// Author: Douglas Scott <netdscott-at-netscape-dot-net>, (C) 2010
 //
 //
 
