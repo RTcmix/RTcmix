@@ -59,6 +59,8 @@ int				RTcmix::NCHANS 			= 2;
 int				RTcmix::RTBUFSAMPS      = 0;
 int				RTcmix::audioNCHANS 	= 0;
 float			RTcmix::SR				= 0.0;
+bool			RTcmix::runToOffset		= false;
+FRAMETYPE		RTcmix::bufOffset		= 0;
 FRAMETYPE		RTcmix::bufStartSamp 	= 0;
 
 #ifdef EMBEDDED
@@ -217,6 +219,8 @@ RTcmix::free_globals()
 	inputFileTable = NULL;
 	
 	// Experimental: Reset state of all global vars
+	runToOffset				= false;
+	bufOffset				= 0;
 	rtsetparams_called 		= 0;
 	audioLoopStarted 		= 0;
 	audio_config 			= 1;
@@ -347,6 +351,23 @@ RTcmix::init(float tsr, int tnchans, int bsize,
 	}
 }
 
+double RTcmix::offset(float *p, int n_args, double *pp)
+{
+	if (n_args < 1 || n_args > 2) {
+		rtcmix_advise("offset", "Usage: offset(offset_time [, skip_preroll])");
+		return 0;
+	}
+	bufOffset = (FRAMETYPE)(pp[0] * sr());
+	runToOffset = (n_args == 1) ? true : pp[1] == 0.0;
+	if (rtrecord) {
+		rtcmix_advise("offset", "Cannot skip forward when recording");
+		bufOffset = 0;
+		runToOffset = false;
+		return bufOffset;
+	}
+	rtcmix_advise("offset", "Starting playback at time %.3f %s preroll.", pp[0], runToOffset ? "with" : "without");
+	return bufOffset;
+}
 
 // numeric p-field sending command.  The first "double" is to disambiguate
 // from the string-sending command (below).  An old holdover from ancient
@@ -543,6 +564,10 @@ bool RTcmix::isInputAudioDevice(int fdIndex)
 const char * RTcmix::getInputPath(int fdIndex)
 {
     return inputFileTable[fdIndex].fileName();
+}
+
+void RTcmix::setBufOffset(FRAMETYPE inOffset, bool inRunToOffset) {
+	bufOffset = inOffset; runToOffset = inRunToOffset;
 }
 
 int RTcmix::startAudio(AudioDeviceCallback renderCallback, AudioDeviceCallback doneCallback, void *inContext)

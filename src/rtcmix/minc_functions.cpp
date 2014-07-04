@@ -646,7 +646,7 @@ double m_pickrand(const Arg args[], const int nargs)
 double m_pickwrand(const Arg args[], const int nargs) 
 {
 	if (nargs == 0 || (nargs & 1))
-		die("pickwrand", "Arguments must be in <value, probability> pairs!");
+		return die("pickwrand", "Arguments must be in <value, probability> pairs!");
 
 	// Load all args, including ones from flattened arrays, into xargs.
 	double xargs[MAXDISPARGS];

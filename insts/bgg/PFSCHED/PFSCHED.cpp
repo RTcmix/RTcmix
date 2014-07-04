@@ -98,7 +98,8 @@ int PFSCHED::init(double p[], int n_args)
 	PFBusData::dq_now[pfbus] = 0;
 	PFBusData::drawflag[pfbus]  = 0; // prevent reading from the bus for now
 	PFBusData::thepfield[pfbus] = &(getPField(3)); // the PField to read
-	makedyntable();
+	if (makedyntable() == DONT_SCHEDULE)
+		return DONT_SCHEDULE;
 	PFBusData::dqflag[pfbus]  = p[4];
 	PFBusData::theincr[pfbus] = (SR/(float)resetval)/(double)(nSamps());
 	PFBusData::percent[pfbus] = 0.0;
@@ -144,12 +145,12 @@ int PFSCHED::makedyntable()
 
 		if (data == NULL) {
 			die("maketable", "Out of memory.");
-			return NULL;
+			return DONT_SCHEDULE;
 		}
 
 		if (_dispatch_table(targs, nargs, lenindex + 1, &data, &len) != 0) {
 			delete [] data;
-			return NULL;            // error message already given
+			return DONT_SCHEDULE;            // error message already given
 		}
 
 		TablePField *table;

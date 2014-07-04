@@ -107,6 +107,21 @@ int RTcmix::runMainLoop(void)
 		startupBufCount = 0;
 
 		rtcmix_debug(NULL, "runMainLoop():  calling startAudio()");
+		
+		if (bufOffset > 0) {
+			RTPrintf("Skipping %llu frames", (unsigned long long)bufOffset);
+			run_status = RT_SKIP;
+			int dot = 0, dotskip = (int)(sr()/bufsamps());	// dots in a second of audio
+			while (bufStartSamp < bufOffset) {
+				inTraverse(audioDevice, this);
+				if (dot++ % dotskip == 0) {
+					RTPrintf(".");
+				}
+			}
+			RTPrintf("\nPlaying.\n");
+			run_status = RT_GOOD;
+		}
+
 		if (startAudio(inTraverse, doneTraverse, this) != 0) {
 			audioDone = true;
 			return -1;
@@ -603,17 +618,16 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	checkForPrint();
 #endif
 
-	// DT_PANIC_MOD
-	if (!panic) {
+	if (panic) {
+		rtsendzeros(device, false);
+	}
+	else if (run_status != RT_SKIP) {
 		if (rtsendsamps(device) != 0) {
 #ifdef WBUG
 			cout << "EXITING inTraverse()\n";
 #endif
 			return false;
 		}
-	}
-	else {
-		rtsendzeros(device, false);
 	}
 
 	elapsed += RTBUFSAMPS;	
@@ -627,8 +641,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	// read in an input buffer (if audio input is active)
 	if (rtrecord) {
 		// cout << "Reading data from audio device\n";
-		// DT_PANIC_MOD
-		if (!panic)
+		if (!panic && run_status != RT_SKIP)
 			rtgetsamps(device);
 	}
 
@@ -693,7 +706,8 @@ bool RTcmix::doneTraverse(AudioDevice *device, void *arg)
 #endif
 #ifndef EMBEDDED
 	if (Option::print())
-		cout << "closing ...\n";
+		cout << "\nclosing...\n";
+	printf("Output duration: %.2f seconds\n", bufEndSamp / sr());
 	rtreportstats(device);
 	if (Option::print())
 		cout << "\n";

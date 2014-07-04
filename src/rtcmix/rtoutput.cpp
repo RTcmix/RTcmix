@@ -135,8 +135,6 @@ static int num_format_extensions = sizeof(format_extension_list)
                                                       / sizeof(Extension);
 
 static int header_type_from_filename(char *);
-static int parse_rtoutput_args(int, double []);
-
 
 /* -------------------------------------------- header_type_from_filename --- */
 static int
