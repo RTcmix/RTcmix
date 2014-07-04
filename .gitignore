@@ -1,0 +1,13 @@
+*.a
+*.o
+*.shlib
+*.dylib
+*.so
+*.conf
+*.build
+depend
+*.dSYM
+bin/
+lib/
+scores/
+

@@ -14,6 +14,7 @@ rt_ug_intro()
 	UG_INTRO("bus_config", RTcmix::bus_config);
 	UG_INTRO("rtinput",RTcmix::rtinput);
 	UG_INTRO("rtoutput",RTcmix::rtoutput);
+	UG_INTRO("rtoffset",RTcmix::offset);
 	UG_INTRO("CHANS",RTcmix::input_chans);  /* returns channels for rtinput files */
 	UG_INTRO("DUR",RTcmix::input_dur);  /* returns duration for rtinput files */
 	UG_INTRO("SR",RTcmix::input_sr);  /* returns rate for rtinput files */

@@ -240,8 +240,8 @@ midi_in_open(PmInternal *midi, void *driverInfo)
     if (macHostError != noErr) {
         pm_hosterror = macHostError;
         sprintf(pm_hosterror_text, 
-                "Host error %ld: MIDIPortConnectSource() in midi_in_open()",
-                macHostError);
+                "Host error %d: MIDIPortConnectSource() in midi_in_open()",
+                (int)macHostError);
         midi->descriptor = NULL;
         pm_free(m);
         return pmHostError;
@@ -262,7 +262,7 @@ midi_in_close(PmInternal *midi)
     if (!m) return pmBadPtr;
 
     endpoint = (MIDIEndpointRef) descriptors[midi->device_id].descriptor;
-    if (endpoint == NULL) {
+    if (endpoint == 0) {
         pm_hosterror = pmBadPtr;
     }
     
@@ -271,8 +271,8 @@ midi_in_close(PmInternal *midi)
     if (macHostError != noErr) {
         pm_hosterror = macHostError;
         sprintf(pm_hosterror_text, 
-                "Host error %ld: MIDIPortDisconnectSource() in midi_in_close()",
-                macHostError);
+                "Host error %d: MIDIPortDisconnectSource() in midi_in_close()",
+                (int)macHostError);
         err = pmHostError;
     }
     
@@ -347,8 +347,8 @@ midi_write_flush(PmInternal *midi)
 send_packet_error:
     pm_hosterror = macHostError;
     sprintf(pm_hosterror_text, 
-            "Host error %ld: MIDISend() in midi_write()",
-            macHostError);
+            "Host error %d: MIDISend() in midi_write()",
+            (int)macHostError);
     return pmHostError;
 
 }
@@ -656,7 +656,7 @@ PmError pm_macosxcm_init(void)
     /* Iterate over the MIDI input devices */
     for (i = 0; i < numInputs; i++) {
         endpoint = MIDIGetSource(i);
-        if (endpoint == NULL) {
+        if (endpoint == 0) {
             continue;
         }
 
@@ -672,7 +672,7 @@ PmError pm_macosxcm_init(void)
     /* Iterate over the MIDI output devices */
     for (i = 0; i < numOutputs; i++) {
         endpoint = MIDIGetDestination(i);
-        if (endpoint == NULL) {
+        if (endpoint == 0) {
             continue;
         }
 
@@ -688,14 +688,14 @@ PmError pm_macosxcm_init(void)
     
 error_return:
     pm_hosterror = macHostError;
-    sprintf(pm_hosterror_text, "Host error %ld: %s\n", macHostError, error_text);
+    sprintf(pm_hosterror_text, "Host error %d: %s\n", (int)macHostError, error_text);
     pm_macosxcm_term(); /* clear out any opened ports */
     return pmHostError;
 }
 
 void pm_macosxcm_term(void)
 {
-    if (client != NULL)	 MIDIClientDispose(client);
-    if (portIn != NULL)	 MIDIPortDispose(portIn);
-    if (portOut != NULL) MIDIPortDispose(portOut);
+    if (client != 0)	 MIDIClientDispose(client);
+    if (portIn != 0)	 MIDIPortDispose(portIn);
+    if (portOut != 0) 	 MIDIPortDispose(portOut);
 }

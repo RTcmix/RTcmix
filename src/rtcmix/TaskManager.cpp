@@ -108,7 +108,7 @@ public:
 			mThreads[i] = new TaskThread(this, inProvider, i);
 		}
 	}
-	~ThreadPool() {
+	virtual ~ThreadPool() {
 		for(int i=0; i<RT_THREAD_COUNT; ++i)
 			delete mThreads[i];
 	}

@@ -42,7 +42,7 @@ struct InputFile;
 typedef bool (*AudioDeviceCallback)(AudioDevice *device, void *arg);
 
 enum RTstatus {
-	RT_GOOD = 0, RT_SHUTDOWN = 1, RT_PANIC = 2, RT_FLUSH = 3, RT_ERROR = 4
+	RT_GOOD = 0, RT_SHUTDOWN = 1, RT_PANIC = 2, RT_SKIP = 3, RT_FLUSH = 4, RT_ERROR = 5
 };
 
 enum RTInputError {
@@ -81,6 +81,7 @@ public:
 	static int bufsamps() { return RTBUFSAMPS; }
 	static float sr() { return SR; }
 	static int chans() { return NCHANS; }
+	static void setBufOffset(FRAMETYPE inOffset, bool inRunToOffset);
 	static long getElapsedFrames() { return elapsed + bufsamps(); }
 	static bool outputOpen() { return rtfileit != -1; }
 	static bool rtsetparams_was_called() { return rtsetparams_called; }
@@ -142,6 +143,7 @@ public:
 	static double rtoutput(float*, int, double *);
 	static double set_option(float *, int, double *);
 	static double bus_config(float*, int, double *);
+	static double offset(float *, int, double *);
 	// Minc information functions as methods
 	static double input_chans(float *, int);
 	static double input_dur(float *, int);
@@ -239,6 +241,8 @@ private:
 
 
 	/* used in intraverse.C, rtsendsamps.c */
+	static bool			runToOffset;
+	static FRAMETYPE	bufOffset;
 	static FRAMETYPE 	bufStartSamp;
 	static FRAMETYPE	elapsed;
 
