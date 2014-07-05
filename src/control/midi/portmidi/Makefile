@@ -20,7 +20,7 @@ endif
 ifeq ($(ARCH), LINUX)
 	VFLAGS = -DPMALSA
 	PMLIB = pm_linux/libportmidi.a
-	MIDISYSLIB = -lasound
+	MIDISYSLIB = -lasound -lpthread
 	PMOBJECTS += pm_linux/pmlinux.o pm_linux/pmlinuxalsa.o
 	PTOBJECTS += porttime/ptlinux.o 
 endif

@@ -332,7 +332,7 @@ endif
 
 ifeq ($(BUILDTYPE), STANDALONE)
 MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
-	$(CXX) $(CXXFLAGS) -o MIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) $(M_O) -L. $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -o MIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) $(M_O) -L. $(LDFLAGS) $(SYS_LDFLAGS)
 endif
 
 ifeq ($(BUILDTYPE), MAXMSP)
@@ -407,7 +407,7 @@ endif
 PMIX: $(MAIN_OBJS) $(P_O) $(LIBS) $(PROFILE_O)
 ifeq ($(PERL_SUPPORT), TRUE)
 	$(CXX) $(CXXFLAGS) -o PMIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) \
-		$(P_O) -L. $(LDFLAGS) $(PERL_LDFLAGS)
+		$(P_O) -L. $(LDFLAGS) $(PERL_LDFLAGS) $(SYS_LDFLAGS)
 else
 	@echo "You haven't configured with PERL_SUPPORT!"
 endif
@@ -415,7 +415,7 @@ endif
 PYMIX: $(MAIN_OBJS) $(PY_O) $(LIBS) $(PROFILE_O)
 ifeq ($(PYTHON_SUPPORT), TRUE)
 	$(CXX) $(CXXFLAGS) -o PYMIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) \
-		$(PY_O) -L. $(LDFLAGS) $(PYEXT) $(PYTHONLIBS)
+		$(PY_O) -L. $(LDFLAGS) $(PYEXT) $(PYTHONLIBS) $(SYS_LDFLAGS)
 else
 	@echo "You haven't configured with PYTHON_SUPPORT!"
 endif

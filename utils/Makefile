@@ -17,7 +17,7 @@ PTLIB = ../src/control/midi/portmidi/porttime/libporttime.a
 ifeq ($(ARCH), LINUX)
 	ifeq ($(AUDIODRIVER), ALSA)
 		PMLIB = ../src/control/midi/portmidi/pm_linux/libportmidi.a
-		MIDISYSLIB = -lasound
+		MIDISYSLIB = -lasound -lpthread
 		CXXFLAGS += -DALSA
 	endif
 endif
