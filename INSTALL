@@ -110,12 +110,6 @@ Linux
      you need to install flex and bison, as well as the ALSA header files,
      and probably also the X11 header files.
 
-   - On some distributions (e.g., Ubuntu), you may need to enable compilation
-     with the -fPIC flag. You'll know this if you see an error message during
-     make that includes a phrase like "recompile with -fPIC." To do this, 
-     after running configure, edit defs.conf and add -fPIC to the OPT line.
-     Then make clean and make. This will be fixed in a future version of RTcmix.
-
    - If you configure --with-alsa and the output of the configure command
      includes...
 
