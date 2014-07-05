@@ -166,6 +166,14 @@ fi
 if test "$ARCH_32BIT" != ""; then
    WITH_32BIT="true"
 fi
+
+# add fPIC flag for Linux 64bit builds
+if test "$ARCH_64BIT" != ""; then
+      if test "$ARCH" = "LINUX"; then
+      CFLAGS="-fPIC"
+   fi
+fi
+
 #echo "****** ARCH_64BIT: $ARCH_64BIT" 
 #echo "****** ARCH_32BIT: $ARCH_32BIT" 
 
