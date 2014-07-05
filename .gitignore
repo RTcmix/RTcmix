@@ -20,9 +20,11 @@ shlib
 shlib/*
 scores
 scores/*
+*build
 *build/*
 *.tab.c*
 *.tab.h*
+*lex.yy.c*
 
 config.h
 
