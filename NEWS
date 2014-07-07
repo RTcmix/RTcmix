@@ -2,6 +2,15 @@ This gives a very brief summary of new things for each stable version.
 If you want more detail, see the ChangeLog.
 
 
+RTcmix version 4.1
+------------------
+
+Includes new CHAIN instrument, for creating "super instruments" that comprise
+a chain of several instruments. Also merges the formerly separate support for 
+rtcmix~ and iOS into the main source tree. Contains many years of other
+improvements as well.
+
+
 RTcmix version 4.0
 ------------------
 
