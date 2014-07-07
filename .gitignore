@@ -5,6 +5,7 @@
 *.dylib
 *.so
 *.conf
+*.status
 *.build
 *.log
 *.pm
@@ -25,6 +26,8 @@ scores/*
 *.tab.c*
 *.tab.h*
 *lex.yy.c*
+src/conf/lex.conf.c
+snd/input.wav
 
 config.h
 
