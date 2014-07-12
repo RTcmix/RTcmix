@@ -187,7 +187,7 @@ die(const char *inst_name, const char *format, ...)
 		RTFPrintf(stderr, PREFIX "FATAL ERROR:  %s\n", buf);
 #ifdef IOS
 		syslog(LOG_ERR, PREFIX "FATAL ERROR:  %s", buf);
-##elif defined(MAXMSP)
+#elif defined(MAXMSP)
 		cpost(PREFIX "FATAL ERROR: %s", buf);
 #endif
 
