@@ -286,17 +286,17 @@ double m_getpch(float p[], int n_args, double pp[])
 	input = DOUBLE_TO_STRING(pp[0]);
 
 	if((pchfd = open(input,0)) < 0)
-		die("getpch", "Can't open pitch analysis file");
+		return die("getpch", "Can't open pitch analysis file");
 
 	nbframe = 2*FLOAT; 
 	frameno = (int)p[1];
 
 	skipbytes = frameno * nbframe;
 	if (lseek(pchfd, skipbytes, 0) < 0)
-		die("getpch", "Error on pchanal lseek");
+		return die("getpch", "Error on pchanal lseek");
 
 	if (read(pchfd, (char *)vals, nbframe) != nbframe)
-		die("getpch", "Bad read on pchanal file");
+		return die("getpch", "Bad read on pchanal file");
 
 	close(pchfd);
 
@@ -316,17 +316,17 @@ double m_getamp(float p[], int n_args, double pp[])
 	input = DOUBLE_TO_STRING(pp[0]);
 
 	if((pchfd = open(input,0)) < 0)
-		die("getamp", "Can't open pitch analysis file");
+		return die("getamp", "Can't open pitch analysis file");
 
 	nbframe = 2*FLOAT; 
 	frameno = (int)p[1];
 
 	skipbytes = frameno * nbframe;
 	if (lseek(pchfd, skipbytes, 0) < 0)
-		die("getamp", "Error on pchanal lseek");
+		return die("getamp", "Error on pchanal lseek");
 
 	if (read(pchfd, (char *)vals, nbframe) != nbframe)
-		die("getamp", "Bad read on pchanal file");
+		return die("getamp", "Bad read on pchanal file");
 
 	close(pchfd);
 
@@ -372,10 +372,10 @@ double m_get_spray(float p[], int n_args)
 	int table_num = (int) p[0];
 
    if (table_num < 0 || table_num >= NUM_SPRAY_ARRAYS)
-      die("get_spray", "Spray table number must be between 0 and %d.",
+      return die("get_spray", "Spray table number must be between 0 and %d.",
                                                    NUM_SPRAY_ARRAYS - 1);
    if (slist[table_num].size == 0)
-      die("get_spray", "Spray table number %d was not initialized.", table_num);
+      return die("get_spray", "Spray table number %d was not initialized.", table_num);
 
 	return (double) (spray(&slist[table_num]));
 }
@@ -387,11 +387,11 @@ double m_spray_init(float p[], int n_args)
 
 	table_num = (int) p[0];
    if (table_num < 0 || table_num >= NUM_SPRAY_ARRAYS)
-      die("spray_init", "Spray table number must be between 0 and %d.",
+      return die("spray_init", "Spray table number must be between 0 and %d.",
                                                    NUM_SPRAY_ARRAYS - 1);
    size = (int) p[1];
    if (size < 2 || size > MAX_SPRAY_SIZE)
-      die("spray_init", "Spray table size must be between 2 and %d.",
+      return die("spray_init", "Spray table size must be between 2 and %d.",
                                                    MAX_SPRAY_SIZE);
    seed = (unsigned int) p[2];
 
@@ -405,7 +405,7 @@ static int line_array_size = 1000;      /* modified by m_setline_size */
 double m_setline_size(float p[], int n_args)
 {
 	if (p[0] < 2)
-		die("setline_size", "Setline array size must be at least 2!");
+		return die("setline_size", "Setline array size must be at least 2!");
 	line_array_size = p[0];
 	rtcmix_advise("setline_size", "Setline arrays will have %d elements.",
                                                       line_array_size);
@@ -454,6 +454,9 @@ double m_setexp(float p[], int n_args)
 	{
 		float val = p[i];
 		float loc = p[i+1];
+		if (loc < prevloc) {
+			return die("setexp", "Invalid time arguments");
+		}
 		pp[i+2] = val > 0.0f ? val : 0.00001;
 		pp[i+3] = (int) (line_array_size * ((loc - prevloc) / locRange));
 		prevloc = loc;
@@ -475,7 +478,7 @@ int resetval = 1000;                 /* modified by m_reset; read by insts */
 double m_reset(float p[], int n_args)
 {
 	if (p[0] <= 0)
-		die("reset", "Control rate must be greater than 0!");
+		return die("reset", "Control rate must be greater than 0!");
 	resetval = p[0];
 	rtcmix_advise("reset", "Control rate set to %d updates per second.", resetval);
 
@@ -496,8 +499,7 @@ double m_irand(float p[], int n_args, double pp[])
 		max = pp[1];
 	}
 	else {
-		die("irand", "Usage: irand([min,] max)\nDefault <min> is zero\n");
-		return -1.0;
+		return die("irand", "Usage: irand([min,] max)\nDefault <min> is zero\n");
 	}
 	return (frac * min) + (1.0 - frac) * max;
 }
@@ -505,7 +507,7 @@ double m_irand(float p[], int n_args, double pp[])
 double m_trand(float p[], int n_args, double pp[])
 {
 	if (n_args > 2 || n_args == 0)
-		die("trand", "Usage: trand([min,] max)\nDefault <min> is zero\n");
+		return die("trand", "Usage: trand([min,] max)\nDefault <min> is zero\n");
 
 	int trunc = m_irand(p, n_args, pp);
 
@@ -522,7 +524,7 @@ double m_trand(float p[], int n_args, double pp[])
 double m_chance(float p[], int n_args, double pp[])
 {
 	if (n_args != 2)
-		die("chance", "Usage: chance(num_rolls, num_sides)\n");
+		return die("chance", "Usage: chance(num_rolls, num_sides)\n");
 	float numer = p[0];
 	float denom = p[1];
 	if (denom == 0.0f)
