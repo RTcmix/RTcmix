@@ -6,9 +6,9 @@
 #ifndef _RTCMIXMIDI_H_
 #define _RTCMIXMIDI_H_
 
-#include <portmidi.h>
-#include <porttime.h>
-#include <pmutil.h>
+#include "portmidi.h"
+#include "porttime.h"
+#include "pmutil.h"
 
 #define SLEEP_MSEC			1		// How long to nap between polling of events
 #define INVALID_MIDIVAL    99999

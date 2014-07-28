@@ -3,8 +3,8 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 
-#include <RTMidiPField.h>
-#include <RTcmixMIDI.h>
+#include "RTMidiPField.h"
+#include "RTcmixMIDI.h"
 #include <PField.h>
 #include <Ougens.h>
 #include <assert.h>

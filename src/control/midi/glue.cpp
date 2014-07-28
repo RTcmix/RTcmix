@@ -10,8 +10,8 @@
 #include <Option.h>
 #include <PField.h>
 #include <utils.h>	// in ../../rtcmix
-#include <RTcmixMIDI.h>
-#include <RTMidiPField.h>
+#include "RTcmixMIDI.h"
+#include "RTMidiPField.h"
 #include <ugens.h>		// for warn, die
 
 //FIXME: better to have a struct with one field a string, the other type?

@@ -2,7 +2,7 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-#include <RTcmixMIDI.h>
+#include "RTcmixMIDI.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
