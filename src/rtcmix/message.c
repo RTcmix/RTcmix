@@ -143,7 +143,7 @@ rterror(const char *inst_name, const char *format, ...)
 		RTFPrintf(stderr, PREFIX "ERROR [%s]: %s\n", inst_name, buf);
 #ifdef IOS
 #ifndef IOSDEV
-		fprintf(stderr, PREFIX "ERROR: [%s]:  %s", inst_name, buf);
+		fprintf(stderr, PREFIX "ERROR: [%s]:  %s\n", inst_name, buf);
 #endif
 		syslog(LOG_ERR, PREFIX "ERROR: [%s]:  %s", inst_name, buf);
 #elif defined(MAXMSP)
@@ -154,7 +154,7 @@ rterror(const char *inst_name, const char *format, ...)
 		RTFPrintf(stderr, PREFIX "ERROR: %s\n", buf);
 #ifdef IOS
 #ifndef IOSDEV
-		fprintf(stderr, PREFIX "ERROR: %s", buf);
+		fprintf(stderr, PREFIX "ERROR: %s\n", buf);
 #endif
 		syslog(LOG_ERR, PREFIX "ERROR: %s", buf);
 #elif defined(MAXMSP)
@@ -185,7 +185,7 @@ die(const char *inst_name, const char *format, ...)
 		RTFPrintf(stderr, PREFIX "FATAL ERROR [%s]:  %s\n", inst_name, buf);
 #ifdef IOS
 #ifndef IOSDEV
-		fprintf(stderr, PREFIX "FATAL ERROR: [%s]:  %s", inst_name, buf);
+		fprintf(stderr, PREFIX "FATAL ERROR: [%s]:  %s\n", inst_name, buf);
 #endif
 		syslog(LOG_ERR, PREFIX "FATAL ERROR: [%s]:  %s", inst_name, buf);
 #elif defined(MAXMSP)
@@ -196,7 +196,7 @@ die(const char *inst_name, const char *format, ...)
 		RTFPrintf(stderr, PREFIX "FATAL ERROR:  %s\n", buf);
 #ifdef IOS
 #ifndef IOSDEV
-		fprintf(stderr, PREFIX "FATAL ERROR:  %s", buf);
+		fprintf(stderr, PREFIX "FATAL ERROR:  %s\n", buf);
 #endif
 		syslog(LOG_ERR, PREFIX "FATAL ERROR:  %s", buf);
 #elif defined(MAXMSP)
