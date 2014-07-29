@@ -142,7 +142,7 @@ rterror(const char *inst_name, const char *format, ...)
 	if (inst_name) {
 		RTFPrintf(stderr, PREFIX "ERROR [%s]: %s\n", inst_name, buf);
 #ifdef IOS
-#ifndef IOSDEV
+#ifdef IOSDEV
 		fprintf(stderr, PREFIX "ERROR: [%s]:  %s", inst_name, buf);
 #endif
 		syslog(LOG_ERR, PREFIX "ERROR: [%s]:  %s", inst_name, buf);
@@ -153,7 +153,7 @@ rterror(const char *inst_name, const char *format, ...)
 	else {
 		RTFPrintf(stderr, PREFIX "ERROR: %s\n", buf);
 #ifdef IOS
-#ifndef IOSDEV
+#ifdef IOSDEV
 		fprintf(stderr, PREFIX "ERROR: %s", buf);
 #endif
 		syslog(LOG_ERR, PREFIX "ERROR: %s", buf);
@@ -184,7 +184,7 @@ die(const char *inst_name, const char *format, ...)
 	if (inst_name) {
 		RTFPrintf(stderr, PREFIX "FATAL ERROR [%s]:  %s\n", inst_name, buf);
 #ifdef IOS
-#ifndef IOSDEV
+#ifdef IOSDEV
 		fprintf(stderr, PREFIX "FATAL ERROR: [%s]:  %s", inst_name, buf);
 #endif
 		syslog(LOG_ERR, PREFIX "FATAL ERROR: [%s]:  %s", inst_name, buf);
@@ -195,7 +195,7 @@ die(const char *inst_name, const char *format, ...)
 	else {
 		RTFPrintf(stderr, PREFIX "FATAL ERROR:  %s\n", buf);
 #ifdef IOS
-#ifndef IOSDEV
+#ifdef IOSDEV
 		fprintf(stderr, PREFIX "FATAL ERROR:  %s", buf);
 #endif
 		syslog(LOG_ERR, PREFIX "FATAL ERROR:  %s", buf);
