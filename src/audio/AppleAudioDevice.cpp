@@ -18,6 +18,7 @@
 #include <CoreAudio/CoreAudio.h>
 #include <CoreAudio/AudioHardware.h>
 #endif
+#include <new>
 // Test code to see if it is useful to make sure HW and render threads do not
 // access the circular buffer at the same time.  Does not seem to be necessary.
 #define LOCK_IO 1
@@ -26,21 +27,54 @@
 #include <Lockable.h>
 #endif
 
+// This is true for OSX at least.
+
+#define OUTPUT_CALLBACK_FIRST 1
+
 #include <syslog.h>
 #define DEBUG 0
 
 #if DEBUG > 0
-#define ENTER(fun) printf("Entering " #fun "\n");
-#else
-#define ENTER(fun)
+	#if !defined(IOSDEV)
+		#define DERROR(fmt, ...) fprintf(stderr, fmt, ## __VA_ARGS__)
+		#define DPRINT(fmt, ...) printf(fmt, ## __VA_ARGS__)
+		#define ENTER(fun) printf("Entering " #fun "\n");
+			#if DEBUG > 1
+				#define DPRINT1(fmt, ...) printf(fmt, ## __VA_ARGS__)
+			#else
+				#define DPRINT1(fmt, ...)
+			#endif
+	#else	/* IOS */
+		#define DERROR(fmt, ...) syslog(LOG_ERR, fmt, ## __VA_ARGS__)
+		#define DPRINT(fmt, ...) syslog(LOG_NOTICE, fmt, ## __VA_ARGS__)
+		#define ENTER(fun) syslog(LOG_NOTICE, "Entering " #fun "\n");
+			#if DEBUG > 1
+				#define DPRINT1(fmt, ...) syslog(LOG_NOTICE, fmt, ## __VA_ARGS__)
+			#else
+				#define DPRINT1(fmt, ...)
+			#endif
+	#endif	/* IOS */
+#else	/* DEBUG !> 0 */
+	#define ENTER(fun)
+	#define DPRINT(fmt, ...)
+	#define DPRINT1(fmt, ...)
+	#if !defined(IOSDEV)
+	#define DERROR(fmt, ...) fprintf(stderr, fmt, ## __VA_ARGS__)
+	#else
+	#define DERROR(fmt, ...) syslog(LOG_ERR, fmt, ## __VA_ARGS__)
+	#endif
 #endif
+
+// Utilities
 
 inline int max(int x, int y) { return (x >= y) ? x : y; }
 inline int min(int x, int y) { return (x < y) ? x : y; }
+inline int inAvailable(int filled, int size) {
+	return size - filled;
+}
 
 const int kOutputBus = 0;
 const int kInputBus = 1;
-
 static const int REC = 0, PLAY = 1;
 
 #ifndef IOS
@@ -85,14 +119,25 @@ struct AppleAudioDevice::Impl {
 	bool					stopping;
 	bool					recording;				// Used by OSX code
 	bool					playing;				// Used by OSX code
+	int						inputFramesAvailable;
 	pthread_t               renderThread;
     RTSemaphore *           renderSema;
     int                     underflowCount;
 	AudioUnit				audioUnit;
+	AudioBufferList			*inputBufferList;
 
+	AudioBufferList *		createInputBufferList(int inChannelCount, bool inInterleaved);
+	void					setBufferList(AudioBufferList *inList);
+	void					destroyInputBufferList(AudioBufferList *inList);
     int                     startRenderThread(AppleAudioDevice *parent);
     void                    stopRenderThread();
 	inline int				outputDeviceChannels() const;
+	static OSStatus			audioUnitInputCallback(void *inUserData,
+													AudioUnitRenderActionFlags *ioActionFlags,
+													const AudioTimeStamp *inTimeStamp,
+													UInt32 inBusNumber,
+													UInt32 inNumberFrames,
+													AudioBufferList *ioData);
 	static OSStatus			audioUnitRenderCallback(void *inUserData,
 											AudioUnitRenderActionFlags *ioActionFlags,
 											const AudioTimeStamp *inTimeStamp,
@@ -115,9 +160,7 @@ AppleAudioDevice::Impl::Port::getFrames(void *frameBuffer, int inFrameCount, int
 	const int bufFrames = audioBufFrames;
 	int bufLoc = 0;
 	float **fFrameBuffer = (float **) frameBuffer;		// non-interleaved
-#if DEBUG > 0
-	printf("AppleAudioDevice::doGetFrames: inFrameCount = %d REC filled = %d\n", inFrameCount, audioBufFilled);
-#endif
+	DPRINT("AppleAudioDevice::doGetFrames: inFrameCount = %d REC filled = %d\n", inFrameCount, audioBufFilled);
 #if LOCK_IO
     lock.lock();
 #endif
@@ -129,20 +172,16 @@ AppleAudioDevice::Impl::Port::getFrames(void *frameBuffer, int inFrameCount, int
 #endif
 		streamsToCopy = inFrameChans < streamCount ? inFrameChans : streamCount;
 	
-#if DEBUG > 0
-	printf("Copying %d non-interleaved internal bufs into %d-channel user frame\n",
+	DPRINT("AppleAudioDevice::doGetFrames: Copying %d non-interleaved internal bufs into %d-channel user frame\n",
 		   streamsToCopy, inFrameChans);
-#endif
 	int stream;
 	for (stream = 0; stream < streamsToCopy; ++stream) {
 		// Offset into serially-ordered, multi-channel non-interleaved buf.
 		register float *buf = &audioBuffer[stream * bufFrames];
 		float *frame = fFrameBuffer[stream];
 		bufLoc = outLoc;
-#if DEBUG > 1
-		printf("\tstream %d: raw offset into mono internal buffer: %d (%d * %d)\n", stream, buf - &audioBuffer[0], stream, bufFrames);
-		printf("\tread internal (already-offset) buf starting at outLoc %d\n", bufLoc);
-#endif
+		DPRINT1("\tstream %d: raw offset into mono internal buffer: %ld (%d * %d)\n", stream, buf - &audioBuffer[0], stream, bufFrames);
+		DPRINT1("\tread internal (already-offset) buf starting at outLoc %d\n", bufLoc);
 		// Write each monaural frame from circ. buffer into a non-interleaved output frame.
 		for (int out=0; out < inFrameCount; ++out) {
 			if (bufLoc >= bufFrames)
@@ -152,9 +191,7 @@ AppleAudioDevice::Impl::Port::getFrames(void *frameBuffer, int inFrameCount, int
 	}
 	// Zero out any remaining frame channels
 	for (; stream < inFrameChans; ++stream) {
-#if DEBUG > 0
-		printf("Zeroing user frame channel %d\n", stream);
-#endif
+		DPRINT("Zeroing user frame channel %d\n", stream);
 		memset(fFrameBuffer[stream], 0, inFrameCount * sizeof(float));
 	}
 	outLoc = bufLoc;
@@ -162,12 +199,8 @@ AppleAudioDevice::Impl::Port::getFrames(void *frameBuffer, int inFrameCount, int
 #if LOCK_IO
     lock.unlock();
 #endif
-#if DEBUG > 1
-	printf("\tREC Filled now %d\n", audioBufFilled);
-#endif
-#if DEBUG > 1
-	printf("\tREC bufLoc ended at %d. Returning frameCount = %d\n", bufLoc, inFrameCount);
-#endif
+	DPRINT1("\tREC Filled now %d\n", audioBufFilled);
+	DPRINT1("\tREC bufLoc ended at %d. Returning frameCount = %d\n", bufLoc, inFrameCount);
 	return inFrameCount;
 }
 
@@ -177,12 +210,8 @@ AppleAudioDevice::Impl::Port::sendFrames(void *frameBuffer, int frameCount, int 
 	float **fFrameBuffer = (float **) frameBuffer;		// non-interleaved
 	const int bufFrames = audioBufFrames;
 	int loc = 0;
-#if DEBUG > 0
-	printf("AppleAudioDevice::doSendFrames: frameCount = %d, PLAY filled = %d\n", frameCount, audioBufFilled);
-#endif
-#if DEBUG > 0
-	printf("Copying %d channel user frame into %d non-interleaved internal buf channels\n", frameChans, streamCount);
-#endif
+	DPRINT("AppleAudioDevice::doSendFrames: frameCount = %d, PLAY filled = %d\n", frameCount, audioBufFilled);
+	DPRINT("AppleAudioDevice::doSendFrames: Copying %d channel user frame into %d non-interleaved internal buf channels\n", frameChans, streamCount);
 #if LOCK_IO
     lock.lock();
 #endif
@@ -200,9 +229,7 @@ AppleAudioDevice::Impl::Port::sendFrames(void *frameBuffer, int frameCount, int 
 			}
 		}
 		else {
-#if DEBUG > 0
-			printf("Zeroing internal buf channel %d\n", stream);
-#endif
+			DPRINT("Zeroing internal buf channel %d\n", stream);
 			for (int in=0; in < frameCount; ++in) {
 				if (loc >= bufFrames)
 					loc -= bufFrames;	// wrap
@@ -215,12 +242,8 @@ AppleAudioDevice::Impl::Port::sendFrames(void *frameBuffer, int frameCount, int 
 #if LOCK_IO
     lock.unlock();
 #endif
-#if DEBUG > 1
-	printf("\tPLAY Filled now %d\n", audioBufFilled);
-#endif
-#if DEBUG > 1
-	printf("\tPLAY inLoc ended at %d. Returning frameCount = %d\n", inLoc, frameCount);
-#endif
+	DPRINT1("\tPLAY Filled now %d\n", audioBufFilled);
+	DPRINT1("\tPLAY inLoc ended at %d. Returning frameCount = %d\n", inLoc, frameCount);
 	return frameCount;
 }
 
@@ -235,6 +258,8 @@ renderThread(NULL), renderSema(NULL), underflowCount(0)
 	stopping = false;
 	recording = false;
 	playing = false;
+	inputFramesAvailable = 0;
+	inputBufferList = NULL;
 	for (int n = REC; n <= PLAY; ++n) {
 		port[n].streamIndex = 0;
 		port[n].streamCount = 0;		// Indicates that we are using the default.
@@ -261,12 +286,44 @@ AppleAudioDevice::Impl::~Impl()
 	delete [] deviceName;
 #endif
     delete renderSema;
+	destroyInputBufferList(inputBufferList);
 }
 
-// Utilities
+AudioBufferList *	AppleAudioDevice::Impl::createInputBufferList(int inChannelCount, bool inInterleaved)
+{
+	Impl::Port *port = &this->port[REC];
+	int numBuffers = (inInterleaved) ? 1 : inChannelCount;
+	int byteSize = sizeof(AudioBufferList) + (numBuffers - 1) * sizeof(AudioBufferList);
+	void *rawmem = new char[byteSize];
+	DPRINT("AppleAudioDevice::Impl::createInputBufferList creating AudioBufferList with %d %d-channel buffers\n",
+		   numBuffers, port->audioBufChannels);
+	AudioBufferList *newList = new (rawmem) AudioBufferList;
+	newList->mNumberBuffers = numBuffers;
+	// Set up constant values for each buffer from our port's state
+	for (int n = 0; n < numBuffers; ++n) {
+		newList->mBuffers[n].mNumberChannels = port->audioBufChannels;
+	}
+	return newList;
+}
 
-inline int inAvailable(int filled, int size) {
-	return size - filled;
+void	AppleAudioDevice::Impl::setBufferList(AudioBufferList *inList)
+{
+	Impl::Port *port = &this->port[REC];
+	// Point each buffer's data pointer at the appropriate offset into our port audioBuffer and set the byte size.
+	for (int n = 0; n < inList->mNumberBuffers; ++n) {
+		DPRINT1("\tbuffer[%d] mData set to stream frame offset %d, local offset %d, length %d\n",
+				n, n * port->audioBufFrames, port->inLoc, port->deviceBufFrames);
+		inList->mBuffers[n].mData = (void *) &port->audioBuffer[(n * port->audioBufFrames) + port->inLoc];
+		inList->mBuffers[n].mDataByteSize = port->deviceBufFrames * sizeof(float);
+	}
+}
+
+void	AppleAudioDevice::Impl::destroyInputBufferList(AudioBufferList *inList)
+{
+	// delete in reverse of how we created it
+	inList->~AudioBufferList();
+	char *rawmem = (char *) inList;
+	delete [] rawmem;
 }
 
 void *
@@ -279,41 +336,92 @@ AppleAudioDevice::Impl::renderProcess(void *context)
         //	perror("AppleAudioDevice::Impl::renderProcess: Failed to set priority of thread.");
 	}
     while (true) {
-#if DEBUG > 0
-        printf("AppleAudioDevice::Impl::renderProcess waiting...\n");
-#endif
+        DPRINT("AppleAudioDevice::Impl::renderProcess waiting...\n");
         impl->renderSema->wait();
         if (impl->stopping) {
-#if DEBUG > 0
-            printf("AppleAudioDevice::Impl::renderProcess woke to stop -- breaking out\n");
-#endif
+            DPRINT("AppleAudioDevice::Impl::renderProcess woke to stop -- breaking out\n");
             break;
         }
 #if DEBUG > 0
         if (impl->underflowCount > 0) {
-            printf("\nAppleAudioDevice::Impl::renderProcess woke up -- underflow count %d -- running slice\n", impl->underflowCount);
+            DPRINT("\nAppleAudioDevice::Impl::renderProcess woke up -- underflow count %d -- running slice\n", impl->underflowCount);
             --impl->underflowCount;
         }
 		else {
-			printf("\nAppleAudioDevice::Impl::renderProcess woke up -- running slice\n");
+			DPRINT("\nAppleAudioDevice::Impl::renderProcess woke up -- running slice\n");
 		}
 #endif
         bool ret = device->runCallback();
         if (ret == false) {
-#if DEBUG > 0
-			printf("AppleAudioDevice: renderProcess: run callback returned false -- breaking out\n");
-#endif
+			DPRINT("AppleAudioDevice: renderProcess: run callback returned false -- breaking out\n");
             break;
         }
     }
-#if DEBUG > 0
-    printf("AppleAudioDevice: renderProcess: calling stop callback\n");
-#endif
+    DPRINT("AppleAudioDevice: renderProcess: calling stop callback\n");
     device->stopCallback();
-#if DEBUG > 0
-    printf("AppleAudioDevice: renderProcess exiting\n");
-#endif
+    DPRINT("AppleAudioDevice: renderProcess exiting\n");
 	return NULL;
+}
+
+OSStatus AppleAudioDevice::Impl::audioUnitInputCallback(void *inUserData,
+											   AudioUnitRenderActionFlags *ioActionFlags,
+											   const AudioTimeStamp *inTimeStamp,
+											   UInt32 inBusNumber,
+											   UInt32 inNumberFrames,
+											   AudioBufferList *ioData)
+{
+	Impl *impl = (Impl *) inUserData;
+	OSStatus result = noErr;
+	DPRINT("\nAppleAudioDevice: top of audioUnitInputCallback: inBusNumber: %d ioData: %p\n", (int)inBusNumber, ioData);
+	assert (inBusNumber == kInputBus);
+	assert (impl->recording);
+
+	DPRINT("\tCopying directly into port's audioBuffer via AudioBuffer\n");
+	// We supply our own AudioBufferList for input.  Its buffers point into our port's buffer
+	impl->setBufferList(impl->inputBufferList);
+	// Pull audio from hardware into our AudioBufferList
+	result = AudioUnitRender(impl->audioUnit, ioActionFlags, inTimeStamp, kInputBus, inNumberFrames, impl->inputBufferList);
+	if (result != noErr) {
+		DERROR("ERROR: audioUnitInputCallback: AudioUnitRender failed with status %d\n", (int)result);
+		return result;
+	}
+	
+	// If we are only recording, we are done here except for notifying the RTcmix rendering thread.
+	
+	Port *port = &impl->port[REC];
+	
+	port->audioBufFilled += inNumberFrames;
+	port->inLoc = (port->inLoc + inNumberFrames) % (port->audioBufFrames * port->audioBufChannels);
+	
+	DPRINT("\tREC Filled = %d\n", port->audioBufFilled);
+	DPRINT1("\tREC inLoc ended at %d\n", port->inLoc);
+
+	if (!impl->playing) {
+#if LOCK_IO
+		if (!port->lock.tryLock()) {
+			DPRINT("AppleAudioDevice: record section skipped due to block on render thread\n");
+			return noErr;
+		}
+#endif
+		// DO EVERYTHING ELSE HERE
+		//
+		//
+#if LOCK_IO
+        port->lock.unlock();
+#endif
+		impl->frameCount += inNumberFrames;
+
+#if !OUTPUT_CALLBACK_FIRST
+		DPRINT("\tWaking render thread\n");
+		impl->renderSema->post();
+#endif
+	}
+#if OUTPUT_CALLBACK_FIRST
+	DPRINT("\tWaking render thread\n");
+	impl->renderSema->post();
+#endif
+	
+	return result;
 }
 
 OSStatus AppleAudioDevice::Impl::audioUnitRenderCallback(void *inUserData,
@@ -324,111 +432,16 @@ OSStatus AppleAudioDevice::Impl::audioUnitRenderCallback(void *inUserData,
 												AudioBufferList *ioData)
 {
 	Impl *impl = (Impl *) inUserData;
-	OSStatus result = noErr;
 	int framesAdvanced = 0;
 	Port *port;
-#if DEBUG > 0
-	printf("\nAppleAudioDevice: top of audioUnitRenderCallback\n");
-#endif
-	if (impl->recording) {
-		// Pull audio from hardware into ioData, then copy to our buffer
-		result = AudioUnitRender(impl->audioUnit, ioActionFlags, inTimeStamp, kInputBus, inNumberFrames, ioData);
-		if (result != noErr)
-			return result;
-		port = &impl->port[REC];
-#if LOCK_IO
-        if (!port->lock.tryLock()) {
-#if DEBUG > 0
-            printf("AppleAudioDevice: record section skipped due to block on render thread\n");
-#endif
-            goto Play;
-        }
-#endif
-		const int destchans = port->audioBufChannels;
-		// Length in samples, not frames.
-		const int bufLen = port->audioBufFrames * destchans;
-		// How many frames are available from HW.
-		const int framesToRead = inNumberFrames;
-		// How many frames' space are available in our buffer.
-		int frameSpaceAvail = ::inAvailable(port->audioBufFilled, port->audioBufFrames);
-		
-#if DEBUG > 0
-		printf("AppleAudioDevice: record section (in buffer %d)\n", port->streamIndex);
-		printf("framesToRead = %d, frameSpaceAvail = %d, Filled = %d\n", framesToRead, frameSpaceAvail, port->audioBufFilled);
-#endif
-
-		// Check for enough space to copy audio from HW.
-		if (frameSpaceAvail < framesToRead) {
-#if !defined(IOS)	// IRTCMIX starts recording from the input before inTraverse() starts pulling the recorded audio
-#if DEBUG > 0
-			printf("AppleAudioDevice (record): frameSpaceAvail (%d) less than needed -- OVERFLOW\n", frameSpaceAvail);
-#endif
-			impl->renderSema->post();
-			frameSpaceAvail = ::inAvailable(port->audioBufFilled, port->audioBufFrames);
-#if DEBUG > 0
-			printf("\tafter posting to render thread, frameSpaceAvail = %d\n", frameSpaceAvail);
-#endif
-#else	// IOS
-#if DEBUG > 0
-			printf("AppleAudioDevice (record): frameSpaceAvail (%d) less than needed -- overwriting\n", frameSpaceAvail);
-#endif
-			port->audioBufFilled = 0;
-			frameSpaceAvail = port->audioBufFrames;
-#endif	// !IOS
-		}
-
-#if DEBUG > 1
-        printf("\tREC inLoc begins at %d (out of %d)\n", port->inLoc, bufLen);
-#endif
-        int	framesCopied = 0;
-        // Write recorded audio data from audio unit into port->audioBuffer.
-        //   Treat it as circular buffer.  Channel counts always match here.
-        while (framesCopied < framesToRead) {
-            const int srcchans = 1;		// non-interleaved input - change this if we use interleaved
-            int inLoc = port->inLoc;
-            for (int stream = 0; stream < port->streamCount; ++stream) {
-                inLoc = port->inLoc;
-                const int strIdx = stream + port->streamIndex;
-                register float *src = (float *) ioData->mBuffers[strIdx].mData;
-                register float *dest = &port->audioBuffer[stream * port->audioBufFrames];
-#if DEBUG > 1
-                printf("\tstream %d: copying from HW buffer %d (%p) into internal buf %p at raw offset %d (%d * %d)\n",
-                       stream, strIdx, src, dest, dest - &port->audioBuffer[0], stream, port->audioBufFrames);
-				//                printf("\t incrementing HW buffer pointer by %d for each frame\n", srcchans);
-#endif
-                for (int n = 0; n < framesToRead; ++n) {
-                    if (inLoc == bufLen)	// wrap
-                        inLoc = 0;
-                    for (int ch = 0; ch < destchans; ++ch) {
-                        dest[inLoc++] = src[ch];
-                    }
-                    src += srcchans;
-                }
-            }
-            port->inLoc = inLoc;
-            port->audioBufFilled += framesToRead;
-            framesCopied = framesToRead;
-        }
-        framesAdvanced = framesCopied;
-#if LOCK_IO
-        port->lock.unlock();
-#endif
-#if DEBUG > 0
-        printf("\tREC Filled = %d\n", port->audioBufFilled);
-#endif
-#if DEBUG > 1
-        printf("\tREC inLoc ended at %d\n", port->inLoc);
-#endif
-	}
-Play:
+	DPRINT("\nAppleAudioDevice: top of audioUnitRenderCallback: inBusNumber: %d ioData: %p\n", (int)inBusNumber, ioData);
+	assert (inBusNumber == kOutputBus);
 	if (impl->playing) {
 		// Copy audio from our rendered buffer(s) into ioData to be written to the hardware
 		port = &impl->port[PLAY];
 #if LOCK_IO
         if (!port->lock.tryLock()) {
-#if DEBUG > 0
-            printf("AppleAudioDevice: playback section skipped due to block on render thread\n");
-#endif
+            DPRINT("AppleAudioDevice: playback section skipped due to block on render thread\n");
             goto End;
         }
 #endif
@@ -440,15 +453,13 @@ Play:
 		const int bufLen = port->audioBufFrames * srcchans;
 		int framesAvail = port->audioBufFilled;
 		
-#if DEBUG > 0
-		printf("AppleAudioDevice: playback section (out buffer %d)\n", port->streamIndex);
-		printf("framesAvail (Filled) = %d\n", framesAvail);
-#endif
+		DPRINT("AppleAudioDevice: playback section (out buffer %d)\n", port->streamIndex);
+		DPRINT("framesAvail (Filled) = %d\n", framesAvail);
 		if (framesAvail < framesToWrite) {
 #if DEBUG > 0
             if ((impl->underflowCount %4) == 0) {
-                fprintf(stderr, "AppleAudioDevice (playback): framesAvail (%d) < needed (%d) -- UNDERFLOW\n", framesAvail, framesToWrite);
-                printf("\tzeroing input buffer and going on\n");
+                DERROR("AppleAudioDevice (playback): framesAvail (%d) < needed (%d) -- UNDERFLOW\n", framesAvail, framesToWrite);
+                DPRINT("\tzeroing input buffer and going on\n");
             }
             ++impl->underflowCount;
 #endif
@@ -458,20 +469,16 @@ Play:
             framesAvail = framesToWrite;
             port->audioBufFilled += framesToWrite;
 		}
-#if DEBUG > 1
-        printf("\tPLAY outLoc begins at %d (out of %d)\n",
+        DPRINT1("\tPLAY outLoc begins at %d (out of %d)\n",
                port->outLoc, bufLen);
-#endif
         int framesDone = 0;
         // Audio data has been written into port->audioBuffer during doSendFrames.
         //   Treat it as circular buffer.
         // Copy that audio into the ioData buffer pointers.  Channel counts always match.
         while (framesDone < framesToWrite) {
             int bufLoc = port->outLoc;
-#if DEBUG > 0
-            printf("\tLooping for %d (%d-channel) stream%s\n",
+            DPRINT("\tLooping for %d (%d-channel) stream%s\n",
                    port->streamCount, destchans, port->streamCount > 1 ? "s" : "");
-#endif
             for (int stream = 0; stream < port->streamCount; ++stream) {
                 const int strIdx = stream + port->streamIndex;
                 register float *src = &port->audioBuffer[stream * port->audioBufFrames];
@@ -494,24 +501,23 @@ Play:
 			port->lock.unlock();
 #endif
        }
-#if DEBUG > 0
-        printf("\tPLAY Filled = %d\n", port->audioBufFilled);
-#endif
-#if DEBUG > 1
-        printf("\tPLAY bufLoc ended at %d\n", port->outLoc);
-#endif
+        DPRINT("\tPLAY Filled = %d\n", port->audioBufFilled);
+        DPRINT1("\tPLAY bufLoc ended at %d\n", port->outLoc);
 	}
 	impl->frameCount += framesAdvanced;
-#if DEBUG > 0
-	printf("\tWaking render thread\n");
+#if OUTPUT_CALLBACK_FIRST
+	if (!impl->recording)
 #endif
-    impl->renderSema->post();
+	{
+		DPRINT("\tWaking render thread\n");
+    	impl->renderSema->post();
+	}
 End:
-#if DEBUG > 0
-	printf("AppleAudioDevice: leaving audioUnitRenderCallback\n\n");
-#endif
+	DPRINT("AppleAudioDevice: leaving audioUnitRenderCallback\n\n");
 	return noErr;
 }
+
+union Prop { Float64 f64; Float32 f32; UInt32 uint; SInt32 sint; };
 
 void AppleAudioDevice::Impl::propertyListenerProc(void *inRefCon,
 											 AudioUnit inUnit,
@@ -519,25 +525,49 @@ void AppleAudioDevice::Impl::propertyListenerProc(void *inRefCon,
 											 AudioUnitScope inScope,
 											 AudioUnitElement inElement)
 {
-	printf("propertyListenerProc called for prop %d, scope %d\n",
+	DPRINT("propertyListenerProc called for prop %d, scope %d\n",
 		   (int)inID, (int)inScope);
+	Impl *impl = (Impl *) inRefCon;
+	Prop theProp;
+	UInt32 size = sizeof(theProp);
+	OSStatus status = AudioUnitGetProperty(impl->audioUnit,
+								  inID,
+								  inScope,
+								  inElement,
+								  &theProp,
+								  &size);
+	if (status != noErr) {
+		DERROR("AppleAudioDevice: failed to retrieve property during listener proc: error %d\n", (int)status);
+		return;
+	}
+	switch (inID) {
+		case kAudioUnitProperty_SampleRate:
+			DPRINT("AppleAudioDevice: got sample rate notification: %f\n", theProp.f64);
+			break;
+#ifndef IOS
+		case kAudioDevicePropertyBufferFrameSize:
+			DPRINT("AppleAudioDevice: got buffer frame size notification: %u\n", (unsigned)theProp.uint);
+			break;
+#endif
+		case kAudioUnitProperty_LastRenderError:
+			DPRINT("AppleAudioDevice: got render error notification: %d\n", (int)theProp.sint);
+			break;
+	}
 }
 
 int AppleAudioDevice::Impl::startRenderThread(AppleAudioDevice *parent)
 {
-#if DEBUG > 0
-	printf("\tAppleAudioDevice::Impl::startRenderThread: starting thread\n");
-#endif
+	DPRINT("\tAppleAudioDevice::Impl::startRenderThread: starting thread\n");
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);
 	int status = pthread_attr_setschedpolicy(&attr, SCHED_RR);
 	if (status != 0) {
-		fprintf(stderr, "startRenderThread: Failed to set scheduling policy\n");
+		DERROR("startRenderThread: Failed to set scheduling policy\n");
 	}
 	status = pthread_create(&renderThread, &attr, renderProcess, parent);
 	pthread_attr_destroy(&attr);
 	if (status < 0) {
-		fprintf(stderr, "Failed to create render thread");
+		DERROR("Failed to create render thread");
 	}
 	return status;
 }
@@ -546,21 +576,15 @@ void AppleAudioDevice::Impl::stopRenderThread()
 {
     assert(renderThread != 0);	// should not get called again!
 	stopping = true;
-#if DEBUG > 0
-    printf("AppleAudioDevice::Impl::stopRenderThread: posting to semaphore for thread\n");
-#endif
+    DPRINT("AppleAudioDevice::Impl::stopRenderThread: posting to semaphore for thread\n");
     renderSema->post();  // wake up, it's time to die
-#if DEBUG > 0
-    printf("AppleAudioDevice::Impl::stopRenderThread: waiting for thread to finish\n");
-#endif
+    DPRINT("AppleAudioDevice::Impl::stopRenderThread: waiting for thread to finish\n");
     if (pthread_join(renderThread, NULL) == -1) {
-        fprintf(stderr, "AppleAudioDevice::Impl::stopRenderThread: terminating thread!\n");
+        DERROR("AppleAudioDevice::Impl::stopRenderThread: terminating thread!\n");
         pthread_cancel(renderThread);
         renderThread = 0;
     }
-#if DEBUG > 0
-    printf("\tAppleAudioDevice::Impl::stopRenderThread: thread done\n");
-#endif
+    DPRINT("\tAppleAudioDevice::Impl::stopRenderThread: thread done\n");
 }
 
 // Main class implementation
@@ -572,7 +596,7 @@ AppleAudioDevice::AppleAudioDevice(const char *desc) : _impl(new Impl)
 
 AppleAudioDevice::~AppleAudioDevice()
 {
-	//printf("AppleAudioDevice::~AppleAudioDevice()\n");
+	//DPRINT("AppleAudioDevice::~AppleAudioDevice()\n");
 	close();
 	AudioUnitUninitialize(_impl->audioUnit);
 	AudioComponentInstanceDispose(_impl->audioUnit);
@@ -608,27 +632,6 @@ int AppleAudioDevice::doOpen(int mode)
 	if (status != noErr) {
 		return error("Unable to create the output audio unit");
 	}
-#ifndef IOS
-	Boolean isInput = impl->recording && !impl->playing;
-	AudioDeviceID devID = ::findDeviceID(impl->deviceName, impl->deviceIDs,
-	                       impl->deviceCount, isInput);
-	
-	if (devID == 0) {
-		char msg[64];
-		snprintf(msg, 64, "No matching device found for '%s'\n", impl->deviceName);
-		return error(msg);
-	}
-	
-	status = AudioUnitSetProperty(impl->audioUnit,
-								  kAudioOutputUnitProperty_CurrentDevice,
-								  kAudioUnitScope_Global,
-								  0,
-								  &devID,
-								  sizeof(devID));
-	if (status != noErr) {
-		return error("Unable to set hardware device on audio unit");
-	}
-#endif
 	// Enable IO for playback and/or record
 	
 	/* NOTE:  MUST ONLY BE ENABLED ON THE HW SIDE (Output Scope, Output Element) */
@@ -655,18 +658,47 @@ int AppleAudioDevice::doOpen(int mode)
 		return error("Unable to Enable/Disable output I/O on audio unit");
 	}
 
-	status = AudioUnitAddPropertyListener(impl->audioUnit, kAudioUnitProperty_SampleRate, Impl::propertyListenerProc, impl);
-
-	if (status != noErr) {
-		return error("Unable to set listener on audio unit");
+#ifndef IOS
+	Boolean isInput = impl->recording && !impl->playing;
+	AudioDeviceID devID = ::findDeviceID(impl->deviceName, impl->deviceIDs,
+	                       impl->deviceCount, isInput);
+	
+	if (devID == 0) {
+		char msg[64];
+		snprintf(msg, 64, "No matching device found for '%s'\n", impl->deviceName);
+		return error(msg);
 	}
 	
+	status = AudioUnitSetProperty(impl->audioUnit,
+								  kAudioOutputUnitProperty_CurrentDevice,
+								  kAudioUnitScope_Global,
+								  0,
+								  &devID,
+								  sizeof(devID));
+	if (status != noErr) {
+		return error("Unable to set hardware device on audio unit");
+	}
+
+	status = AudioUnitAddPropertyListener(impl->audioUnit, kAudioDevicePropertyBufferFrameSize, Impl::propertyListenerProc, impl);
+	if (status != noErr) {
+		return error("Unable to set BufferFrameSize listener on audio unit");
+	}
+	
+#endif
+	status = AudioUnitAddPropertyListener(impl->audioUnit, kAudioUnitProperty_SampleRate, Impl::propertyListenerProc, impl);
+	if (status != noErr) {
+		return error("Unable to set SampleRate listener on audio unit");
+	}
+	status = AudioUnitAddPropertyListener(impl->audioUnit, kAudioUnitProperty_LastRenderError, Impl::propertyListenerProc, impl);
+	if (status != noErr) {
+		return error("Unable to set LastRenderError listener on audio unit");
+	}
 	// Set I/O callback
-	AURenderCallbackStruct proc = { Impl::audioUnitRenderCallback, impl };
 	if (impl->recording) {
+		AURenderCallbackStruct proc = { Impl::audioUnitInputCallback, impl };
 		status = AudioUnitSetProperty(impl->audioUnit,
-									  kAudioUnitProperty_SetRenderCallback,
-									  kAudioUnitScope_Global,
+									  kAudioOutputUnitProperty_SetInputCallback,
+									  kAudioUnitScope_Output,
 									  kInputBus,
 									  &proc,
 									  sizeof(AURenderCallbackStruct));
@@ -675,9 +707,14 @@ int AppleAudioDevice::doOpen(int mode)
 		}
 	}
 	if (impl->playing) {
+		AURenderCallbackStruct proc = { Impl::audioUnitRenderCallback, impl };
 		status = AudioUnitSetProperty(impl->audioUnit,
 									  kAudioUnitProperty_SetRenderCallback,
+#ifdef STANDALONE	/* DAS TESTING */
 									  kAudioUnitScope_Global,
+#else
+									  kAudioUnitScope_Input,
+#endif
 									  kOutputBus,
 									  &proc,
 									  sizeof(AURenderCallbackStruct));
@@ -695,8 +732,8 @@ int AppleAudioDevice::doClose()
 	AURenderCallbackStruct proc = { NULL, NULL };
 	if (_impl->recording) {
 		(void) AudioUnitSetProperty(_impl->audioUnit,
-									  kAudioUnitProperty_SetRenderCallback,
-									  kAudioUnitScope_Input,
+									  kAudioOutputUnitProperty_SetInputCallback,
+									  kAudioUnitScope_Global,
 									  kInputBus,
 									  &proc,
 									  sizeof(AURenderCallbackStruct));
@@ -704,7 +741,7 @@ int AppleAudioDevice::doClose()
 	if (_impl->playing) {
 		(void) AudioUnitSetProperty(_impl->audioUnit,
 									  kAudioUnitProperty_SetRenderCallback,
-									  kAudioUnitScope_Output,
+									  kAudioUnitScope_Global,
 									  kOutputBus,
 									  &proc,
 									  sizeof(AURenderCallbackStruct));
@@ -719,9 +756,7 @@ int AppleAudioDevice::doStart()
 	_impl->stopping = false;
     // Pre-fill the input buffers
     int preBuffers =  _impl->port[!_impl->recording].audioBufFrames / _impl->port[!_impl->recording].deviceBufFrames - 1;
-#if DEBUG > 0
-    printf("AppleAudioDevice::doStart: prerolling %d slices\n", preBuffers);
-#endif
+    DPRINT("AppleAudioDevice::doStart: prerolling %d slices\n", preBuffers);
     for (int prebuf = 1; prebuf < preBuffers; ++prebuf) {
         runCallback();
 	}
@@ -780,14 +815,41 @@ int AppleAudioDevice::doSetFormat(int fmt, int chans, double srate)
 	
 	OSStatus status;
 	if (_impl->recording) {
+		// kInputBus is the input side of the AU
 		status = AudioUnitSetProperty(_impl->audioUnit,
 									  kAudioUnitProperty_StreamFormat,
-									  kAudioUnitScope_Output,
+									  kAudioUnitScope_Output,			// device side
 									  kInputBus,
 									  &_impl->deviceFormat,
 									  sizeof(AudioStreamBasicDescription));
 		if (status != noErr)
 			return error("Cannot set input stream format");
+		UInt32 size = sizeof(AudioStreamBasicDescription);
+		AudioStreamBasicDescription format;
+		status = AudioUnitGetProperty(_impl->audioUnit,
+									  kAudioUnitProperty_StreamFormat,
+									  kAudioUnitScope_Input,			// HW side
+									  kInputBus,
+									  &format,
+									  &size);
+		if (status != noErr)
+			return error("Cannot read input HW stream format");
+		DPRINT("input format (HW side): sr %f fmt %d flags 0x%x fpp %d cpf %d bpc %d bpp %d bpf %d\n",
+			   format.mSampleRate, (int)format.mFormatID, (unsigned)format.mFormatFlags,
+			   (int)format.mFramesPerPacket, (int)format.mChannelsPerFrame, (int)format.mBitsPerChannel,
+			   (int)format.mBytesPerPacket, (int)format.mBytesPerFrame);
+		status = AudioUnitGetProperty(_impl->audioUnit,
+									  kAudioUnitProperty_StreamFormat,
+									  kAudioUnitScope_Output,			// device side
+									  kInputBus,
+									  &_impl->deviceFormat,
+									  &size);
+		if (status != noErr)
+			return error("Cannot read input dev stream format");
+		DPRINT("input format (dev side): sr %f fmt %d flags 0x%x fpp %d cpf %d bpc %d bpp %d bpf %d\n",
+			   _impl->deviceFormat.mSampleRate, (int)_impl->deviceFormat.mFormatID, (unsigned)_impl->deviceFormat.mFormatFlags,
+			   (int)_impl->deviceFormat.mFramesPerPacket, (int)_impl->deviceFormat.mChannelsPerFrame, (int)_impl->deviceFormat.mBitsPerChannel,
+			   (int)_impl->deviceFormat.mBytesPerPacket, (int)_impl->deviceFormat.mBytesPerFrame);
 		Impl::Port *port = &_impl->port[REC];
 		// Always noninterleaved, so stream count == channel count.  Each stream is 1-channel
 		if (port->streamCount == 0)
@@ -807,6 +869,22 @@ int AppleAudioDevice::doSetFormat(int fmt, int chans, double srate)
 									  sizeof(AudioStreamBasicDescription));
 		if (status != noErr)
 			return error("Cannot set output stream format");
+#if 1
+		AudioStreamBasicDescription format;
+		UInt32 size = sizeof(AudioStreamBasicDescription);
+		status = AudioUnitGetProperty(_impl->audioUnit,
+									  kAudioUnitProperty_StreamFormat,
+									  kAudioUnitScope_Input,			// HW side
+									  kOutputBus,
+									  &format,
+									  &size);
+		if (status != noErr)
+			return error("Cannot read output dev stream format");
+		DPRINT("output format (dev side): sr %f fmt %d flags 0x%x fpp %d cpf %d bpc %d bpp %d bpf %d\n",
+			   format.mSampleRate, (int)format.mFormatID, (unsigned)format.mFormatFlags,
+			   (int)format.mFramesPerPacket, (int)format.mChannelsPerFrame, (int)format.mBitsPerChannel,
+			   (int)format.mBytesPerPacket, (int)format.mBytesPerFrame);
+#endif
 		Impl::Port *port = &_impl->port[PLAY];
 		// Always noninterleaved, so stream count == channel count.  Each stream is 1-channel
 		if (port->streamCount == 0)
@@ -852,9 +930,7 @@ int AppleAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 								  &propSize);
 	if (status != noErr)
 		return error("Cannot get buffer frame size from audio unit");
-#if DEBUG > 0
-	printf("AUHal's device returned buffer frame size = %u\n", (unsigned)devBufferFrameSize);
-#endif
+	DPRINT("AUHal's device returned buffer frame size = %u\n", (unsigned)devBufferFrameSize);
 #else	// for iOS
 	UInt32 devBufferFrameSize = reqQueueFrames;
 #endif
@@ -882,34 +958,32 @@ int AppleAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 	for (int dir = startDir; dir <= endDir; ++dir) {
 		Impl::Port *port = &_impl->port[dir];
 		port->deviceBufFrames = auQueueFrames;
-#if DEBUG > 0
-		printf("Device buffer length is %d frames, user req was %d frames\n",
+		DPRINT("Device buffer length is %d frames, user req was %d frames\n",
 			   (int)port->deviceBufFrames, (int)reqQueueFrames);
-#endif
         port->audioBufFrames = *pCount * port->deviceBufFrames;
         
 		// Notify caller of any change.
 		*pWriteSize = port->audioBufFrames / *pCount;
         *pCount = port->audioBufFrames / port->deviceBufFrames;
-#if DEBUG > 0
-		printf("%s device buflen: %d frames. circ buffer %d frames\n",
+		DPRINT("%s port buflen: %d frames. circ buffer %d frames\n",
 			   dir == REC ? "Input" : "Output",
 			   port->deviceBufFrames, port->audioBufFrames);
-		printf("\tBuffer configured for %d channels of audio\n",
+		DPRINT("\tBuffer configured for %d channels of audio\n",
 			   port->audioBufChannels * port->streamCount);
-#endif
 		int buflen = port->audioBufFrames * port->audioBufChannels * port->streamCount;
 		delete [] port->audioBuffer;
 		port->audioBuffer = new float[buflen];
 		if (port->audioBuffer == NULL)
-			return error("Memory allocation failure for OSXAudioDevice buffer!");
+			return error("Memory allocation failure for AppleAudioDevice buffer!");
 		memset(port->audioBuffer, 0, sizeof(float) * buflen);
         if (dir == REC)
             port->audioBufFilled = port->audioBufFrames;    // rec buffer set to empty
 		port->inLoc = 0;
 		port->outLoc = 0;
 	}
-	
+	if (_impl->recording) {
+		_impl->inputBufferList = _impl->createInputBufferList(getDeviceChannels(), isDeviceInterleaved());
+	}
 	status = AudioUnitInitialize(_impl->audioUnit);
 	if (status != noErr)
 		return error("Cannot initialize the output audio unit");
@@ -945,7 +1019,7 @@ int	AppleAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 #if DEBUG > 0
     if (_impl->underflowCount > 0) {
         --_impl->underflowCount;
-        printf("AppleAudioDevice::Impl::doSendFrames: underflow count -> %d -- filled now %d\n",
+        DPRINT("AppleAudioDevice::Impl::doSendFrames: underflow count -> %d -- filled now %d\n",
                _impl->underflowCount, port->audioBufFilled);
     }
 #endif
@@ -978,14 +1052,14 @@ getDeviceList(AudioDeviceID **devList, int *devCount)
 	
 	OSStatus err = AudioHardwareGetPropertyInfo(kAudioHardwarePropertyDevices, &size, NULL);
 	if (err != kAudioHardwareNoError) {
-		fprintf(stderr, "Can't get hardware device list property info.\n");
+		DERROR("Can't get hardware device list property info.\n");
 		return err;
 	}
 	*devCount = size / sizeof(AudioDeviceID);
 	*devList = new AudioDeviceID[*devCount];
 	err = AudioHardwareGetProperty(kAudioHardwarePropertyDevices, &size, *devList);
 	if (err != kAudioHardwareNoError) {
-		fprintf(stderr, "Can't get hardware device list.\n");
+		DERROR("Can't get hardware device list.\n");
 		return err;
 	}
 	
@@ -1005,7 +1079,7 @@ findDeviceID(const char *devName, AudioDeviceID *devList, int devCount, Boolean 
 												&size,
 												(void *) &devID);
 		if (err != kAudioHardwareNoError || devID == kAudioDeviceUnknown) {
-			fprintf(stderr, "Cannot find default OSX device\n");
+			DERROR("Cannot find default OSX device\n");
 			return 0;
 		}
 		return devID;
@@ -1033,7 +1107,7 @@ findDeviceID(const char *devName, AudioDeviceID *devList, int devCount, Boolean 
 												  kAudioDevicePropertyDeviceName,
 												  &size, NULL);
 		if (err != kAudioHardwareNoError) {
-			fprintf(stderr, "findDeviceID: Can't get device name property info for device %u\n",
+			DERROR("findDeviceID: Can't get device name property info for device %u\n",
 					devList[dev]);
 			continue;
 		}
@@ -1045,19 +1119,15 @@ findDeviceID(const char *devName, AudioDeviceID *devList, int devCount, Boolean 
 									 kAudioDevicePropertyDeviceName,
 									 &size, name);
 		if (err != kAudioHardwareNoError) {
-			fprintf(stderr, "findDeviceID: Can't get device name property for device %u.\n",
+			DERROR("findDeviceID: Can't get device name property for device %u.\n",
 					(unsigned)devList[dev]);
 			delete [] name;
 			continue;
 		}
-#if DEBUG > 0
-		printf("Checking device %d -- name: \"%s\"\n", dev, name);
-#endif
+		DPRINT("Checking device %d -- name: \"%s\"\n", dev, name);
 		// For now, we must match the case as well because strcasestr() does not exist.
 		if (strstr(name, devName) != NULL) {
-#if DEBUG > 0
-			printf("MATCH FOUND\n");
-#endif
+			DPRINT("MATCH FOUND\n");
 			devID = devList[dev];
 		}
 		delete [] name;
@@ -1111,17 +1181,15 @@ void AppleAudioDevice::parseDeviceDescription(const char *inDesc)
 						_impl->port[dir].streamCount = idx1 - idx0 + 1;
 					}
 					else {
-						fprintf(stderr, "Could not parse device descriptor \"%s\"\n", inDesc);
+						DERROR("Could not parse device descriptor \"%s\"\n", inDesc);
 						break;
 					}
 				}
             }
-#if DEBUG > 0
-			printf("input streamIndex = %d, requested streamCount = %d\n",
+			DPRINT("input streamIndex = %d, requested streamCount = %d\n",
 				   _impl->port[REC].streamIndex, _impl->port[REC].streamCount);
-			printf("output streamIndex = %d, requested streamCount = %d\n",
+			DPRINT("output streamIndex = %d, requested streamCount = %d\n",
 				   _impl->port[PLAY].streamIndex, _impl->port[PLAY].streamCount);
-#endif
         }
 		// Treat old-stye device name as "default" (handled below).
 		if (!strcmp(_impl->deviceName, "OSXHW")) {
