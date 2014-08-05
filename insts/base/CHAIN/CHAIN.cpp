@@ -69,7 +69,8 @@ int  CHAIN::setup(PFieldSet *inPFields)
 		InstPField *ipf = (InstPField *) &(*inPFields)[p+3];
 		Instrument *inst = ipf->instrument();
 		mInstVector.push_back(inst);
-		inst->ref();
+		// Instruments are referenced once when created.  Because CHAIN is the sole owner,
+		// we do not do another reference.
 	}
 	if (Option::print() >= MMP_PRINTALL) {
 
