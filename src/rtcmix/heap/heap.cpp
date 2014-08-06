@@ -228,14 +228,3 @@ void heapslot::dump(int indent)
 }
 
 
-rtQElt::rtQElt(Instrument *inst, FRAMETYPE start)
-	: next(NULL), prev(NULL), Inst(inst), chunkstart(start)
-{
-	Inst->ref();
-} 
-
-rtQElt::~rtQElt()
-{
-	Inst->unref();
-	Inst = NULL;
-}

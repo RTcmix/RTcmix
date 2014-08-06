@@ -2,157 +2,79 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-#ifndef IOS
-#include <iostream>
-#endif
 #include "heap.h"
 #include "dbug.h"
 #include <rtdefs.h>
 #include <RTcmix.h>
 #include <Instrument.h>
 #include <ugens.h> // for rtcmix_warn()
-
-using namespace std;
-
-//#define DBUG
+#include <algorithm>
+#include <assert.h>
 
 RTQueue::~RTQueue()
 {
-	rtQElt *elt = head;
-	while (elt && elt != tail) {
-		rtQElt *next = elt->next;
-		delete elt;
-		elt = next;
+	for (InstrumentListIterator it = mInstrumentList.begin();
+		 it != mInstrumentList.end();
+		 ++it) {
+		(*it).second->unref();
 	}
+}
+
+// Push an element to end of the RTQueue
+
+void RTQueue::push(Instrument *inInst, FRAMETYPE chunkstart)
+{
+#ifdef DEBUG_SORT
+	mSorted = false;
+#endif
+	mInstrumentList.push_back(Element(chunkstart, inInst));
+	inInst->ref();
+}
+
+bool RTQueue::sortElems (const RTQueue::Element& x,const RTQueue::Element& y)
+{
+	return (x.first > y.first);	// we pop from the end, so high frame numbers are in front
+}
+
+void RTQueue::sort()
+{
+#ifdef DEBUG_SORT
+	if (mSorted) { fprintf(stderr, "SORTING RTQueue TWICE!\n"); }
+#endif
+	std::sort(mInstrumentList.begin(), mInstrumentList.end(), sortElems);
+#ifdef DEBUG_SORT
+	mSorted = true;
+#endif
+}
+
+// Pop an element of the top of the RTQueue
+
+Instrument *	RTQueue::pop(FRAMETYPE *pChunkStart)
+{
+#ifdef DEBUG_SORT
+	assert(mSorted == true);
+#endif
+	if (mInstrumentList.empty()) {
+		rtcmix_warn("rtQueue", "attempt to pop empty RTQueue\n");
+		return NULL;
+	}
+	*pChunkStart = mInstrumentList.back().first;	// frame loc
+	Instrument *outInst = mInstrumentList.back().second;	// inst
+	outInst->unref();
+	mInstrumentList.pop_back();
+	return outInst;
 }
 
 // Return the starting sample chunk of the top Instrument
 
 FRAMETYPE RTQueue::nextChunk()
 {
-  return head->chunkstart;
+	return mInstrumentList.back().first;
 }
 
-// Push an element to end of the RTQueue
-
-void RTQueue::push(Instrument *newInst, FRAMETYPE new_chunkstart)
-{
-  int i;
-  long diff;
-  rtQElt *tempElt; // BGG: for queue insertion
-
-  rtQElt *newElt = new rtQElt(newInst, new_chunkstart);	// create new rtQElt
-
-  if (head == NULL)  // if first item on RTQueue
-    head = tail = newElt;
-  else if (tail->chunkstart <= newElt->chunkstart) {
-    // append to the end of the RTQueue
-#ifdef DBUG
-	cout << "RTQueue::push: Queueing at end\n";
-#endif
-    tail->next = newElt;
-    newElt->prev = tail;
-    tail = newElt;
-  }
-  else { // BGG: we have to insert this one
-#ifdef DBUG
-    cout << "RTQueue::push():  scanning ...\n";
-    cout << "tail->chunkstart = " << tail->chunkstart << endl;
-    cout << "newElt->chunkstart = " << newElt->chunkstart << endl;
-    cout << "Queue size = " << size << endl;
-#endif
-    tempElt = tail;
-    i = 1;
-#ifdef DBUG    
-    cout << "STARTING SCAN\n";
-#endif
-    while((tempElt->chunkstart > newElt->chunkstart) && (tempElt->prev) && (i < size)){
-      if (!tempElt->prev) { // BGG: we're at the head
-#ifndef IOS
-          cout << "We're at the head\n";
-#endif
-          break;
-      }
-#ifdef DBUG
-      cout << "i = " << i << endl;
-      cout << "tempElt = " << tempElt << endl;
-      cout << "head = " << head << endl;
-      cout << "head->chunkstart = " << head->chunkstart << endl;
-      cout << "tempElt->chunkstart = " << tempElt->chunkstart << endl;
-      cout << "newElt->chunkstart = " << newElt->chunkstart << endl;
-      diff = (newElt->chunkstart - tempElt->chunkstart);
-      cout << "diff = " << diff << endl;
-      cout << "tempElt->prev = " << tempElt->prev << endl;
-#endif
-      tempElt = tempElt->prev;
-      i++;
-    }
-#ifdef DBUG
-    cout << "DONE SCANNING\n";
-    cout << "i = " << i << endl;
-    cout << "tempElt = " << tempElt << endl;
-    cout << "head = " << head << endl;
-    cout << "head->chunkstart = " << head->chunkstart << endl;
-    cout << "tempElt->chunkstart = " << tempElt->chunkstart << endl;
-    cout << "newElt->chunkstart = " << newElt->chunkstart << endl;
-    diff = (newElt->chunkstart - tempElt->chunkstart);
-    cout << "diff = " << diff << endl;
-    cout << "tempElt->prev = " << tempElt->prev << endl;
-
-    if (diff > RTcmix::chans() * RTcmix::bufsamps()) {
-      cerr << "SCHEDULING INCONSISTENCY!\n";
-      cerr << "newElt->chunkstart = " << newElt->chunkstart << endl;
-      cout << "tempElt->chunkstart = " << tempElt->chunkstart << endl;
-      diff = (newElt->chunkstart - tempElt->chunkstart);
-      cout << "diff = " << diff << endl;
-      exit(1);
-    }
-#endif
-
-    if ((tempElt->prev) && (i < size)) {  // BGG: "normal" insertion
-#ifdef DBUG
-      cout << "Normal insertion\n";
-#endif
-      newElt->next = tempElt->next;
-      newElt->prev = tempElt;
-      (tempElt->next)->prev = newElt;
-      tempElt->next = newElt;
-    }
-    else { // BGG: put at the head
-#ifdef DBUG
-      cout << "Put it at the head\n";
-#endif
-      newElt->next = head;
-      newElt->prev = NULL;
-      // BGG:  I thought I would have to do the following line here,
-      //	but experience shows that it dumps core and does bad things
-      //		(tempElt->next)->prev = newElt;
-      head = newElt;
-    }
-  }
-  size++;
+void RTQueue::print() {
+	
 }
-
-// Pop an element of the top of the RTQueue
-
-Instrument *RTQueue::pop(FRAMETYPE *pChunkstart) 
-{
-  rtQElt *tQelt;
-  Instrument *retInst;
-  tQelt = head;
-  if (!head) {
-    rtcmix_warn("rtQueue", "attempt to pop empty RTQueue\n");
-    return NULL;
-  }
-  retInst = head->Inst;
-  *pChunkstart = head->chunkstart;
-  head = head->next;
-  delete tQelt;		// this unref's instrument
-  size--;
-  return retInst;
-}
-
-
 
 
 

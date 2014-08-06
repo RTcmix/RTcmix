@@ -3,6 +3,7 @@
 
 #include <rt_types.h>
 #include <Lockable.h>
+#include <vector>
 
 class Instrument;
 
@@ -68,36 +69,32 @@ public:
 
 // class for queue used to hold Instruments
 
-class rtQElt {
-public:
-  rtQElt(Instrument *inst, FRAMETYPE start);
-  ~rtQElt();
-private:
-  friend class RTQueue;
-  rtQElt *next;
-  rtQElt *prev;
-  Instrument *Inst;
-  unsigned long chunkstart;
-};
-
-// class for main queue structure
+#undef DEBUG_SORT	/* this was just to verify sorting happened correctly */
 
 class RTQueue {
+	typedef std::pair<FRAMETYPE, Instrument *> Element;
 private:
-  rtQElt *head;
-  rtQElt *tail;
-  int size;
+	std::vector<Element>	mInstrumentList;
+#ifdef DEBUG_SORT
+	bool mSorted;
+#endif
+	typedef std::vector<Element>::iterator InstrumentListIterator;
+	static bool sortElems(const Element& x,const Element& y);
 public:
-  RTQueue() : head(NULL), tail(NULL), size(0) {}
-  ~RTQueue();
-  void push(Instrument*, FRAMETYPE);
-  Instrument *pop(FRAMETYPE *pChunkStart);
-  FRAMETYPE nextChunk();
-  // Return the number of elements on the RTQueue
-  int getSize() const { return size; }
-  void print();  // For debugging
+#ifdef DEBUG_SORT
+	RTQueue() : mSorted(false) {}
+#else
+	RTQueue() {}
+#endif
+	~RTQueue();
+	void push(Instrument*, FRAMETYPE);
+	void sort();
+	Instrument *pop(FRAMETYPE *pChunkStart);
+	FRAMETYPE nextChunk();
+	// Return the number of elements on the RTQueue
+	int getSize() const { return (int) mInstrumentList.size(); }
+	void print();  // For debugging
 };
-
 
 #endif /* _HEAP_H_ */
 

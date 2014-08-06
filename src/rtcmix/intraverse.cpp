@@ -158,7 +158,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	RTPrintf("ENTERING inTraverse()\n");
 #endif
 #ifdef DBUG	  
-	RTPrintf("Entering big loop .....................\n");
+	RTPrintf("\nEntering big loop .....................\n");
 #endif
 
 #ifdef EMBEDDED
@@ -192,11 +192,11 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	FRAMETYPE heapChunkStart = 0;
 	Instrument *Iptr;
     const BusSlot *iBus;
-    
+
 	while ((Iptr = rtHeap->deleteMin(bufEndSamp, &heapChunkStart)) != NULL) {
 #ifdef DBUG
 		RTPrintf("Iptr %p pulled from rtHeap\n", Iptr);
-		RTPrintf("heapChunkStart = %lld", (long long)heapChunkStart);
+		RTPrintf("heapChunkStart = %lld\n", (long long)heapChunkStart);
 #endif
 		if (panic) {
 #ifdef DBUG
@@ -338,6 +338,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			busq = bus+bus_q_offset;
 			rtQSize = rtQueue[busq].getSize();
 			if (rtQSize > 0) {
+				rtQueue[busq].sort();
 				rtQchunkStart = rtQueue[busq].nextChunk();
 				// DS ADDED
 				assert(rtQchunkStart > 0 || bufStartSamp == 0);
@@ -371,12 +372,12 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 #ifdef MULTI_THREAD
 		if (bus != -1) {
 #if defined(IBUG)
-			printf("\nAdding instruments for current slice [end = %d ms] and bus [%d]\n",
+			printf("\nAdding instruments for current slice [end = %.3f ms] and bus [%d]\n",
 				   1000 * bufEndSamp/SR, busq);
 #endif
 		}
 		else {
-#if defined(IBUG)
+#if defined(IBUG) || defined(DEBUG)
 			printf("\nDone with bus type %d -- continuing\n", bus_type);
 #endif
 			continue;
@@ -444,7 +445,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			else // DT_PANIC_MOD ... just keep on incrementing endsamp
 				endsamp += chunksamps;
 			rtQSize = rtQueue[busq].getSize();
-		}	// while(!aux_pb_done)
+		}	// while (rtQSize > 0 && rtQchunkStart < bufEndSamp)
 
 		if (!instruments.empty()) {
 #if defined(DBUG) || defined(IBUG)
