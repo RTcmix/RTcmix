@@ -149,6 +149,11 @@ int AudioOutputGroupDevice::setQueueSize(int *pWriteSize, int *pCount)
 	return status;
 }
 
+double AudioOutputGroupDevice::getSamplingRate() const
+{
+	return _devices[0]->getSamplingRate();
+}
+
 int AudioOutputGroupDevice::getFrames(void *frameBuffer, int frameCount)
 {
 	// If getFrames() is called on this class, we will assume that the first

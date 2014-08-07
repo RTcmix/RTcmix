@@ -39,8 +39,9 @@ public:
 	virtual int			pause(bool) = 0;
 	virtual int			stop() = 0;
 	virtual int			setFormat(int fmt, int chans, double srate) = 0;
-	// Returns actual size via pFrames.
+	// Returns actual size via pCount.
 	virtual int			setQueueSize(int *pWriteSize, int *pCount) = 0;
+	virtual double		getSamplingRate() const = 0;
 	virtual int			getFrames(void *frameBuffer, int frameCount) = 0;
 	virtual int			sendFrames(void *frameBuffer, int frameCount) = 0;
 	virtual bool		isOpen() const = 0;

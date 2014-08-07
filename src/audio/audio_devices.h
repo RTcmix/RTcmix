@@ -9,7 +9,7 @@ extern "C" {
 
 AudioDevice *
 create_audio_devices(int record, int play, 
-					 int chans, float sr, 
+					 int chans, float *srate,
 					 int *buffersize, int numBuffers);
 
 AudioDevice *

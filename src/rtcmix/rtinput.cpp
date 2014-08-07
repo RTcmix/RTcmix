@@ -320,7 +320,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 				if (!audioDevice && !Option::play()) {
 					int nframes = RTBUFSAMPS;
 					if ((audioDevice = create_audio_devices(true, false,
-											 NCHANS, SR, &nframes,
+											 NCHANS, &SR, &nframes,
 											 Option::bufferCount())) == NULL)
 					{
 						set_record = false;

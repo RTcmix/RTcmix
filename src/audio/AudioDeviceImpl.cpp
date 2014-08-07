@@ -239,6 +239,11 @@ int AudioDeviceImpl::setFormat(int sampfmt, int chans, double srate)
 	return error("Audio device not open");
 }
 
+double AudioDeviceImpl::getSamplingRate() const
+{
+	return _samplingRate;
+}
+
 int AudioDeviceImpl::setMuteThreshold(double thresh)
 {
 	if (thresh >= 0.0) {

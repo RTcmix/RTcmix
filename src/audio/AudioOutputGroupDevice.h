@@ -19,6 +19,7 @@ public:
 	int			stop();
 	int			setFormat(int fmt, int chans, double srate);
 	int			setQueueSize(int *pWriteSize, int *pCount);
+	double		getSamplingRate() const;
 	int			getFrames(void *frameBuffer, int frameCount);
 	int			sendFrames(void *frameBuffer, int frameCount);
 	bool		isOpen() const;

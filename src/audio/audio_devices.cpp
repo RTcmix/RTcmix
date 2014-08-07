@@ -64,7 +64,7 @@ static const char *get_audio_outdevice_name(int devIndex)
 
 
 AudioDevice *
-create_audio_devices(int record, int play, int chans, float srate, int *buffersize, int numBuffers)
+create_audio_devices(int record, int play, int chans, float *ioSrate, int *buffersize, int numBuffers)
 {
 	int status;
 	const char *inDeviceName = get_audio_indevice_name();
@@ -107,8 +107,16 @@ create_audio_devices(int record, int play, int chans, float srate, int *buffersi
 		   !!(openMode & AudioDevice::ReportClipping));
 #endif
 
-	if ((status = device->open(openMode, audioFormat, chans, srate)) == 0)
-	{
+	float srate = *ioSrate;
+	
+	if ((status = device->open(openMode, audioFormat, chans, srate)) == 0) {
+		float newSrate = (float) device->getSamplingRate();
+		if (newSrate != srate) {
+			rtcmix_advise("rtsetparams",
+						  "Sample rate reset by audio device from %f to %f.",
+						  srate, newSrate);
+			*ioSrate = newSrate;
+		}
 		int reqsize = *buffersize;
 		int reqcount = numBuffers;
 		if ((status = device->setQueueSize(&reqsize, &reqcount)) < 0) {

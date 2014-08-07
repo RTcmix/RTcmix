@@ -150,6 +150,11 @@ int AudioIODevice::setQueueSize(int *pWriteSize, int *pCount)
 	return status;
 }
 
+double AudioIODevice::getSamplingRate() const
+{
+	return _outputDevice->getSamplingRate();
+}
+
 int AudioIODevice::getFrames(void *frameBuffer, int frameCount)
 {
 	int status = _inputDevice->getFrames(frameBuffer, frameCount);

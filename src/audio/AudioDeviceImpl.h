@@ -22,6 +22,7 @@ public:
 	int				stop();
 	int				setFormat(int sampfmt, int chans, double srate);
 	int				setQueueSize(int *pWriteSize, int *pCount);
+	double			getSamplingRate() const;
 	int				getFrames(void *frameBuffer, int frameCount);
 	int				sendFrames(void *frameBuffer, int frameCount);
 	bool			isOpen() const;
@@ -48,7 +49,6 @@ protected:
 	inline bool		isDeviceInterleaved() const;
 	inline int		getFrameChannels() const;
 	inline int		getDeviceChannels() const;
-	inline double	getSamplingRate() const;
 
 	// Some devices will have different in/out channel counts, etc.
 	virtual int		getRecordDeviceChannels() const { return getDeviceChannels(); }
@@ -212,11 +212,6 @@ inline int AudioDeviceImpl::getFrameChannels() const
 inline int AudioDeviceImpl::getDeviceChannels() const
 {
 	return  _deviceChannels;
-}
-
-inline double AudioDeviceImpl::getSamplingRate() const
-{
-	return _samplingRate;
 }
 
 inline long AudioDeviceImpl::getFrameCount() const

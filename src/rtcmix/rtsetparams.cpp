@@ -58,13 +58,15 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, float *mm_
 	 */
 	if (play_audio || record_audio) {
 		int nframes = RTBUFSAMPS;
+		float srate = SR;
 		rtcmix_debug(NULL, "RTcmix::setparams creating audio device(s)");
 		if ((audioDevice = create_audio_devices(record_audio, play_audio,
-												NCHANS, SR, &nframes, numBuffers)) == NULL)
+												NCHANS, &srate, &nframes, numBuffers)) == NULL)
 			return -1;
 
-		/* This may have been reset by driver. */
+		/* These may have been reset by driver. */
 		RTBUFSAMPS = nframes;
+		SR = srate;
 	}
 	
 	/* Allocate output buffers. Do this *after* opening audio devices,
@@ -115,18 +117,20 @@ int RTcmix::resetparams(float sr, int chans, int bufsamps, bool recording)
 	int	record_audio = Option::record(recording);
 	if (play_audio || record_audio) {
 		int nframes = RTBUFSAMPS;
+		float srate = SR;
 		rtcmix_debug(NULL, "RTcmix::resetparams re-creating audio device(s)");
 		if ((audioDevice = create_audio_devices(record_audio, play_audio,
-												NCHANS, SR, &nframes, numBuffers)) == NULL)
+												NCHANS, &srate, &nframes, numBuffers)) == NULL)
 		{
 			return -1;
 		}
-		/* This may have been reset by driver. */
+		/* These may have been reset by driver. */
 		RTBUFSAMPS = nframes;
+		SR = srate;
 	}
 	
 	/* Reallocate output buffers. Do this *after* opening audio devices,
-	 in case OSS changes our buffer size, for example.
+	 in case the device changes our buffer size, for example.
 	 */
 	for (int i = 0; i < NCHANS; i++) {
 		allocate_out_buffer(i, RTBUFSAMPS);
