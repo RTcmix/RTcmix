@@ -21,6 +21,7 @@ shlib
 shlib/*
 scores
 scores/*
+test/coreaudioprobe/coreaudioprobe
 *build
 *build/*
 *.tab.c*
