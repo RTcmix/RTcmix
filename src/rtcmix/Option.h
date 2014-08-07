@@ -69,7 +69,7 @@
 #include <string.h>
 
 #define CONF_FILENAME ".rtcmixrc"
-#define DEFAULT_BUFFER_FRAMES 4096.0
+#define DEFAULT_BUFFER_FRAMES 512.0
 #ifdef MSP_AUDIO_DEVICE
 #define DEFAULT_BUFFER_COUNT 1
 #else
