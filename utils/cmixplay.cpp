@@ -29,23 +29,11 @@
 
 #define PROGNAME  "cmixplay"
 
-/* Tradeoff: larger BUF_FRAMES makes playback more robust on a loaded machine
-   or over a network, at the cost of elapsed seconds display running ahead of
-   playback.  If user runs with robust flag (-r), code below increases buffer
-   params by ROBUST_FACTOR.
-*/
-
 #ifdef LINUX
    #include <values.h>
-   #define BUF_FRAMES          1024
-   #define ROBUST_FACTOR       4
 #endif
-
 #ifdef MACOSX
    #include <limits.h>
-   #define BUF_FRAMES          1024
-   // 4 glitches ... why?   XXX: still true?
-   #define ROBUST_FACTOR       2
 #endif
 
 #define SKIP_SECONDS        4.0f    // for fast-forward and rewind
@@ -993,12 +981,12 @@ Usage: %s [options] filename  \n\
                  -t NUM    time to skip for rewind, fast-forward\n\
                               (default is 4 seconds)            \n\
                  -a        auto-pause at end                    \n\
-                 -r        robust - larger audio buffers        \n\
                  -q        quiet - don't print file info        \n\
                  -Q        really quiet - don't print anything  \n\
                  --force   use rescale factor even if peak      \n\
                               amp of float file unknown         \n\
                  -D NAME   audio device name                    \n\
+                 -B NUM    buffer size (overrides ~/.rtcmixrc)  \n\
           Notes: duration (-d) ignored if you also give end time (-e)\n\
                  Times can be given as seconds or 0:00.0        \n\
                     If the latter, prints time in same way.     \n\
@@ -1025,7 +1013,7 @@ int
 main(int argc, char *argv[])
 {
    int         play_chan, requested_bufframes;
-   bool        print_time, print_file_info, print_warnings, robust, force,
+   bool        print_time, print_file_info, print_warnings, force,
                hotkeys, autopause;
    float       factor;
    double      start_time, end_time, request_dur, hk_skip_time;
@@ -1042,7 +1030,8 @@ main(int argc, char *argv[])
 
    file_name = NULL;
    device_name = Option::device();
-   robust = force = autopause = false;
+	requested_bufframes = 0;
+   force = autopause = false;
    print_time = print_file_info = print_warnings = true;
    play_chan = ALL_CHANS;
    hotkeys = true;
@@ -1075,6 +1064,11 @@ main(int argc, char *argv[])
                   usage();
                device_name = argv[i];
                break;
+            case 'B':               // buffer size (overrides .rtcmixrc)
+               if (++i >= argc)
+                  usage();
+               requested_bufframes = atoi(argv[i]);
+               break;
             case 'f':               // rescale factor (for float files)
                if (++i >= argc)
                   usage();
@@ -1095,9 +1089,6 @@ main(int argc, char *argv[])
                break;
             case 'a':               // auto-pause at end
                autopause = true;
-               break;
-            case 'r':               // robust buffer size
-               robust = true;
                break;
             case 'Q':               // no printout at all
                print_time = false;
@@ -1149,12 +1140,8 @@ main(int argc, char *argv[])
       exit(EXIT_FAILURE);
    }
 
-   requested_bufframes = BUF_FRAMES;
-   if (robust) {
-      requested_bufframes *= ROBUST_FACTOR;
-      if (print_warnings)
-         printf("Warning: \"robust\" mode causes second count to run ahead.\n");
-   }
+   if (requested_bufframes <= 0)
+   	requested_bufframes = Option::bufferFrames();
 
    // Set up terminal to handle hotkey input.
    if (hotkeys) {
