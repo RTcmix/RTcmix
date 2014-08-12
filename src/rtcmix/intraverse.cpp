@@ -592,6 +592,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         // DJT:  not sure this check before new rtQchunkStart is necessary
         rtQSize = rtQueue[busq].getSize();
         if (rtQSize) {
+            rtQueue[busq].sort();
             rtQchunkStart = rtQueue[busq].nextChunk(); /* FIXME:  crapping out */
             allQSize += rtQSize;                /* in RT situation sometimes */
         }
