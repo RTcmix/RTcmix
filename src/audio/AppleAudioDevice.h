@@ -33,7 +33,10 @@ protected:
 	
 	virtual int getRecordDeviceChannels() const;
 	virtual int getPlaybackDeviceChannels() const;
-	
+
+#ifndef IOS
+	int			setAudioHardwareRate(double *sampleRate);
+#endif
 	void		parseDeviceDescription(const char *inDesc);
 private:
 	struct	Impl;

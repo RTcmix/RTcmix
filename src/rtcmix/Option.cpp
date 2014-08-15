@@ -30,6 +30,7 @@ bool Option::_checkPeaks = true;
 bool Option::_exitOnError = false;	// we override this in main.cpp
 bool Option::_autoLoad = false;
 bool Option::_fastUpdate = false;
+bool Option::_requireSampleRate = true;
 
 double Option::_bufferFrames = DEFAULT_BUFFER_FRAMES;
 int Option::_bufferCount = DEFAULT_BUFFER_COUNT;
@@ -67,6 +68,7 @@ void Option::init()
 	_exitOnError = false;	// we override this in main.cpp
 	_autoLoad = false;
 	_fastUpdate = false;
+	_requireSampleRate = true;
 #ifdef EMBEDDED
 	_print = MMP_RTERRORS; // basic level for max/msp
 #else
@@ -192,6 +194,13 @@ int Option::readConfigFile(const char *fileName)
 	result = conf.getValue(key, bval);
 	if (result == kConfigNoErr)
 		fastUpdate(bval);
+	else if (result != kConfigNoValueForKey)
+		reportError("%s: %s.", conf.getLastErrorText(), key);
+
+	key = kOptionRequireSampleRate;
+	result = conf.getValue(key, bval);
+	if (result == kConfigNoErr)
+		requireSampleRate(bval);
 	else if (result != kConfigNoValueForKey)
 		reportError("%s: %s.", conf.getLastErrorText(), key);
 
@@ -347,6 +356,8 @@ int Option::writeConfigFile(const char *fileName)
 										autoLoad() ? "true" : "false");
 	fprintf(stream, "%s = %s\n", kOptionFastUpdate, 
 										fastUpdate() ? "true" : "false");
+	fprintf(stream, "%s = %s\n", kOptionRequireSampleRate,
+										requireSampleRate() ? "true" : "false");
 
 	// write number options
 	fprintf(stream, "\n# Number options: key = value\n");
@@ -497,6 +508,7 @@ void Option::dump()
 	cout << kOptionExitOnError << ": " << _exitOnError << endl;
 	cout << kOptionAutoLoad << ": " << _autoLoad << endl;
 	cout << kOptionFastUpdate << ": " << _fastUpdate << endl;
+	cout << kOptionRequireSampleRate << ": " << _requireSampleRate << endl;
 	cout << kOptionBufferFrames << ": " << _bufferFrames << endl;
 	cout << kOptionBufferCount << ": " << _bufferCount << endl;
 	cout << kOptionMuteThreshold << ": " << _muteThreshold << endl;
@@ -556,6 +568,8 @@ int get_bool_option(const char *option_name)
 		return (int) Option::autoLoad();
 	else if (!strcmp(option_name, kOptionFastUpdate))
 		return (int) Option::fastUpdate();
+	else if (!strcmp(option_name, kOptionRequireSampleRate))
+		return (int) Option::requireSampleRate();
 
 	assert(0 && "unsupported option name");		// program error
 	return 0;
@@ -581,6 +595,8 @@ void set_bool_option(const char *option_name, int value)
 		Option::autoLoad((bool) value);
 	else if (!strcmp(option_name, kOptionFastUpdate))
 		Option::fastUpdate((bool) value);
+	else if (!strcmp(option_name, kOptionRequireSampleRate))
+		Option::requireSampleRate((bool) value);
 	else
 		assert(0 && "unsupported option name");
 }

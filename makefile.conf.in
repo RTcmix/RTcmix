@@ -115,6 +115,7 @@ ifeq ($(ARCH),MACOSX)
 
   ifeq ($(BUILDTYPE), STANDALONE)
 	ARCHFLAGS += $(ARCH_BITFLAGS) -DSTANDALONE
+	ARCH_SYS_LDFLAGS = -framework CoreFoundation	# Only needed for OSX
 	ifeq ($(USE_OSX_DISPATCH), TRUE)
 		ARCHFLAGS += -DUSE_OSX_DISPATCH
 	endif
@@ -144,7 +145,7 @@ ifeq ($(ARCH),MACOSX)
   ifeq ($(BUILDTYPE), IOS)
 	CMIX_FLAGS += -DAPPLEAUDIO
     ifeq ($(IPHONE_TYPE), SIMULATOR)
-      ARCHFLAGS += -DEMBEDDED -DIOS -arch i386
+      ARCHFLAGS += -DEMBEDDED -DIOS -DSIMULATOR -arch i386
       ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX) -arch i386 -framework AudioToolbox
       CC = `xcrun -sdk iphonesimulator -f cc`
       CXX = `xcrun -sdk iphonesimulator -f c++` -Wno-deprecated
@@ -243,7 +244,7 @@ ifeq ($(ARCH),LINUX)
   DYN = -rdynamic
 endif
 ifeq ($(ARCH),MACOSX)
-  SYS_LDFLAGS = -framework CoreAudio
+  SYS_LDFLAGS = -framework CoreAudio $(ARCH_SYS_LDFLAGS)
   DSO_LDFLAGS = $(SYS_LDFLAGS)
   SHARED_LDFLAGS = $(ARCHFLAGS) -bundle -flat_namespace -undefined suppress
   DYNAMIC_LDFLAGS = $(ARCHFLAGS) -flat_namespace -undefined suppress -dynamiclib -install_name $(LIBDIR)/$@

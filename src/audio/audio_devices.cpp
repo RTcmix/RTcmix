@@ -111,12 +111,8 @@ create_audio_devices(int record, int play, int chans, float *ioSrate, int *buffe
 	
 	if ((status = device->open(openMode, audioFormat, chans, srate)) == 0) {
 		float newSrate = (float) device->getSamplingRate();
-		if (newSrate != srate) {
-			rtcmix_advise("rtsetparams",
-						  "Sample rate reset by audio device from %f to %f.",
-						  srate, newSrate);
-			*ioSrate = newSrate;
-		}
+		// We check whether this reset is allowed at the next level up.
+		*ioSrate = newSrate;
 		int reqsize = *buffersize;
 		int reqcount = numBuffers;
 		if ((status = device->setQueueSize(&reqsize, &reqcount)) < 0) {

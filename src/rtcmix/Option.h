@@ -94,6 +94,7 @@
 #define kOptionExitOnError      "exit_on_error"
 #define kOptionAutoLoad         "auto_load"
 #define kOptionFastUpdate       "fast_update"
+#define kOptionRequireSampleRate	"require_sample_rate"
 
 // number options
 #define kOptionBufferFrames     "buffer_frames"
@@ -163,6 +164,10 @@ public:
 	static bool fastUpdate(const bool setIt) { _fastUpdate = setIt;
 													return _fastUpdate; }
 
+	static bool requireSampleRate() { return _requireSampleRate; }
+	static bool requireSampleRate(const bool setIt) { _requireSampleRate = setIt;
+		return _requireSampleRate; }
+
 	// number options
 
 	static double bufferFrames() { return _bufferFrames; }
@@ -231,6 +236,7 @@ private:
 	static bool _exitOnError;
 	static bool _autoLoad;
 	static bool _fastUpdate;
+	static bool _requireSampleRate;
 
 	// number options
 	static double _bufferFrames;
