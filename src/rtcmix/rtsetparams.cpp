@@ -64,14 +64,16 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, float *mm_
 
 		/* These may have been reset by driver. */
 		RTBUFSAMPS = nframes;
-		if (!Option::requireSampleRate()) {
-			rtcmix_advise("rtsetparams",
-						  "Sample rate reset by audio device from %f to %f.",
-						  SR, srate);
-			SR = srate;
-		}
-		else {
-			return die("rtsetparams", "Sample rate could not be set to desired value.\nSet \"require_sample_rate=false\" to allow alternate rates.");
+		if (srate != SR) {
+			if (!Option::requireSampleRate()) {
+				rtcmix_advise("rtsetparams",
+							  "Sample rate reset by audio device from %f to %f.",
+							  SR, srate);
+				SR = srate;
+			}
+			else {
+				return die("rtsetparams", "Sample rate could not be set to desired value.\nSet \"require_sample_rate=false\" to allow alternate rates.");
+			}
 		}
 	}
 	
