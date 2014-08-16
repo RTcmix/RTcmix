@@ -1,0 +1,54 @@
+# site.conf
+#
+# Definitions in this file override the ones in defs.conf, which are generated
+# by the configure script.  Normally, you should not need to edit this file.
+# Just run the configure script.  (See INSTALL for details.)
+
+# The dir that will contain the instrument dynamic shared objects
+LIBDESTDIR = $(CMIXDIR)/shlib
+
+# Dirs in which to install documentation
+MANDESTDIR = $(CMIXDIR)/docs/man
+HTMLDESTDIR = $(CMIXDIR)/docs/html
+
+# Which platform?
+#ARCH = LINUX
+#ARCH = MACOSX
+#ARCH = SGI
+#ARCH = FREEBSD
+
+# optimization, debugging flags
+#OPT = -g -O2
+
+# Uncomment this to enable use of the Perl front end to RTcmix.
+# This requires a perl version >= 5.005_62.
+#PERL_SUPPORT = TRUE
+# Say which perl to use: just "perl" if you only have one; otherwise,
+# give full path name of perl to use, e.g., /usr/local/bin/perl.
+#PERL = perl
+# Set this to FALSE if your perl libraries are NOT in /usr/local/lib,
+# but rather are installed in /usr/lib.
+#PERL_IN_LOCAL = FALSE
+
+# Uncomment this to enable use of the Python front end to RTcmix.
+#PYTHON_SUPPORT = TRUE
+# Say which python to use: just "python" if you only have one; otherwise,
+# give full path name of python to use, e.g., /usr/local/bin/python.
+#PYTHON = python
+# We use a python extension to make RTcmix commands accessible inside
+# python.  The default is to link this extension statically.  If you
+# would like (or need) to link it dynamically, set this to FALSE.
+# Then go into src/parser/python and "make install" as root.  That
+# will copy the extension into your system-wide site-packages dir,
+# where PYMIX will be able to find it at run time.
+PYTHON_EXT_STATIC_LINK = TRUE
+
+# Uncomment this to enable code that lets you send and receive audio
+# sound over a network.  (See comments at the top of utils/nplay.c.)
+#NPLAY_SUPPORT = TRUE
+
+# Linux sound driver flags -- ignore for Irix and Mac OS X.  It doesn't
+# matter how these are set for Irix and Mac OS X.  The Linux flags should
+# work for FreeBSD, using OSS or an emulation of the OSS API.
+#AUDIODRIVER = ALSA
+#AUDIODRIVER = OSS
