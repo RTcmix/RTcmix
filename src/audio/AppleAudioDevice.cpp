@@ -14,25 +14,37 @@
 #include <ugens.h>
 #include <sndlibsupport.h>	// RTcmix header
 #include <RTSemaphore.h>
+#include <new>
+#include <syslog.h>
+
 #ifndef IOS
+
 #include <CoreAudio/CoreAudio.h>
 #include <CoreAudio/AudioHardware.h>
 #include <CoreFoundation/CFRunLoop.h>
-#endif
-#include <new>
+
 // Test code to see if it is useful to make sure HW and render threads do not
 // access the circular buffer at the same time.  Does not seem to be necessary.
 #define LOCK_IO 1
+
+// OSX runs the rendering code in its own thread
+#define RENDER_IN_CALLBACK 0
+// This is true for OSX.
+#define OUTPUT_CALLBACK_FIRST 1
+
+#else	/* IOS */
+
+#define LOCK_IO 0	/* never for iOS */
+#define RENDER_IN_CALLBACK 1
+#define OUTPUT_CALLBACK_FIRST 0
+
+#endif
 
 #if LOCK_IO
 #include <Lockable.h>
 #endif
 
-// This is true for OSX at least.
 
-#define OUTPUT_CALLBACK_FIRST 1
-
-#include <syslog.h>
 #define DEBUG 0
 
 #if DEBUG > 0
@@ -373,11 +385,20 @@ OSStatus AppleAudioDevice::Impl::audioUnitInputCallback(void *inUserData,
 											   UInt32 inNumberFrames,
 											   AudioBufferList *ioData)
 {
-	Impl *impl = (Impl *) inUserData;
+	AppleAudioDevice *device = (AppleAudioDevice *) inUserData;
+	Impl *impl = device->_impl;
+	Port *port = &impl->port[REC];
 	OSStatus result = noErr;
 	DPRINT("\nAppleAudioDevice: top of audioUnitInputCallback: inBusNumber: %d inNumberFrames: %u\n", (int)inBusNumber, (unsigned)inNumberFrames);
 	assert (inBusNumber == kInputBus);
 	assert (impl->recording);
+
+#if LOCK_IO
+	if (!port->lock.tryLock()) {
+		DPRINT("AppleAudioDevice: record section skipped due to block on render thread\n");
+		return noErr;
+	}
+#endif
 
 	DPRINT("\tCopying directly into port's audioBuffer via AudioBuffer\n");
 	// We supply our own AudioBufferList for input.  Its buffers point into our port's buffer
@@ -389,9 +410,8 @@ OSStatus AppleAudioDevice::Impl::audioUnitInputCallback(void *inUserData,
 		return result;
 	}
 	
-	// If we are only recording, we are done here except for notifying the RTcmix rendering thread.
+	// If we are only recording, we are done here except for notifying the RTcmix rendering thread, or running the render.
 	
-	Port *port = &impl->port[REC];
 	
 	port->audioBufFilled += inNumberFrames;
 	port->inLoc = (port->inLoc + inNumberFrames) % (port->audioBufFrames * port->audioBufChannels);
@@ -399,24 +419,29 @@ OSStatus AppleAudioDevice::Impl::audioUnitInputCallback(void *inUserData,
 	DPRINT1("\tREC Filled = %d\n", port->audioBufFilled);
 	DPRINT1("\tREC inLoc ended at %d\n", port->inLoc);
 
+#if LOCK_IO
+	port->lock.unlock();
+#endif
+
+	// If we are only recording and not playing, we wake the render thread (or run the render call) here.
+	// Otherwise, if we are playing as well, and the output callback did not precede us, we wait to do the render there.
+	
 	if (!impl->playing) {
-#if LOCK_IO
-		if (!port->lock.tryLock()) {
-			DPRINT("AppleAudioDevice: record section skipped due to block on render thread\n");
-			return noErr;
-		}
-#endif
-		// DO EVERYTHING ELSE HERE
-		//
-		//
-#if LOCK_IO
-        port->lock.unlock();
-#endif
+		
 		impl->frameCount += inNumberFrames;
+#if RENDER_IN_CALLBACK
+		DPRINT("\tRunning render callback inline\n");
+        bool ret = device->runCallback();
+        if (ret == false) {
+			DPRINT("\tRun callback returned false -- calling stop callback\n");
+			device->stopCallback();
+        }
+#else
 
 #if !OUTPUT_CALLBACK_FIRST
 		DPRINT("\tWaking render thread\n");
 		impl->renderSema->post();
+#endif
 #endif
 	}
 #if OUTPUT_CALLBACK_FIRST
@@ -434,7 +459,8 @@ OSStatus AppleAudioDevice::Impl::audioUnitRenderCallback(void *inUserData,
 												UInt32 inNumberFrames,
 												AudioBufferList *ioData)
 {
-	Impl *impl = (Impl *) inUserData;
+	AppleAudioDevice *device = (AppleAudioDevice *) inUserData;
+	Impl *impl = device->_impl;
 	int framesAdvanced = 0;
 	Port *port;
 	DPRINT("\nAppleAudioDevice: top of audioUnitRenderCallback: inBusNumber: %d inNumberFrames: %u\n", (int)inBusNumber, (unsigned)inNumberFrames);
@@ -512,8 +538,17 @@ OSStatus AppleAudioDevice::Impl::audioUnitRenderCallback(void *inUserData,
 	if (!impl->recording)
 #endif
 	{
+#if RENDER_IN_CALLBACK
+		DPRINT("\tRunning render callback inline\n");
+        bool ret = device->runCallback();
+        if (ret == false) {
+			DPRINT("\tRun callback returned false -- calling stop callback\n");
+			device->stopCallback();
+        }
+#else
 		DPRINT("\tWaking render thread\n");
     	impl->renderSema->post();
+#endif
 	}
 End:
 	DPRINT("AppleAudioDevice: leaving audioUnitRenderCallback\n\n");
@@ -775,7 +810,7 @@ int AppleAudioDevice::doOpen(int mode)
 			   impl->deviceFormat.mSampleRate, (int)impl->deviceFormat.mFormatID, (unsigned)impl->deviceFormat.mFormatFlags,
 			   (int)impl->deviceFormat.mFramesPerPacket, (int)impl->deviceFormat.mChannelsPerFrame, (int)impl->deviceFormat.mBitsPerChannel,
 			   (int)impl->deviceFormat.mBytesPerPacket, (int)impl->deviceFormat.mBytesPerFrame);
-		AURenderCallbackStruct proc = { Impl::audioUnitInputCallback, impl };
+		AURenderCallbackStruct proc = { Impl::audioUnitInputCallback, this };
 		status = AudioUnitSetProperty(impl->audioUnit,
 									  kAudioOutputUnitProperty_SetInputCallback,
 									  kAudioUnitScope_Output,
@@ -800,7 +835,7 @@ int AppleAudioDevice::doOpen(int mode)
 			   impl->deviceFormat.mSampleRate, (int)impl->deviceFormat.mFormatID, (unsigned)impl->deviceFormat.mFormatFlags,
 			   (int)impl->deviceFormat.mFramesPerPacket, (int)impl->deviceFormat.mChannelsPerFrame, (int)impl->deviceFormat.mBitsPerChannel,
 			   (int)impl->deviceFormat.mBytesPerPacket, (int)impl->deviceFormat.mBytesPerFrame);
-		AURenderCallbackStruct proc = { Impl::audioUnitRenderCallback, impl };
+		AURenderCallbackStruct proc = { Impl::audioUnitRenderCallback, this };
 		status = AudioUnitSetProperty(impl->audioUnit,
 									  kAudioUnitProperty_SetRenderCallback,
 #ifdef STANDALONE	/* DAS TESTING */
@@ -859,8 +894,10 @@ int AppleAudioDevice::doStart()
     for (int prebuf = 1; prebuf < preBuffers; ++prebuf) {
         runCallback();
 	}
+#if !RENDER_IN_CALLBACK
     // Start up the render thread
     _impl->startRenderThread(this);
+#endif
 	// Start the Audio I/O Unit
     OSStatus err = AudioOutputUnitStart(_impl->audioUnit);
 	int status = (err == noErr) ? 0 : -1;
@@ -878,7 +915,9 @@ int AppleAudioDevice::doPause(bool pause)
 int AppleAudioDevice::doStop()
 {
 	ENTER(AppleAudioDevice::doStop());
+#if !RENDER_IN_CALLBACK
     _impl->stopRenderThread();
+#endif
 	OSStatus err = AudioOutputUnitStop(_impl->audioUnit);
 	int status = (err == noErr) ? 0 : -1;
 	if (status == -1)
