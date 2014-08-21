@@ -89,5 +89,7 @@ utils/rescale
 utils/setup_rtcmixrc
 utils/sndpeak
 utils/sndreverse
+mout*
+site.conf
 
 
