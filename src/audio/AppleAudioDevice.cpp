@@ -17,7 +17,7 @@
 #include <new>
 #include <syslog.h>
 
-#ifndef IOS
+#ifdef STANDALONE
 
 #include <CoreAudio/CoreAudio.h>
 #include <CoreAudio/AudioHardware.h>
@@ -91,7 +91,7 @@ const int kInputBus = 1;
 static const int REC = 0, PLAY = 1;
 
 static const char *errToString(OSStatus err);
-#ifndef IOS
+#ifdef STANDALONE
 static AudioDeviceID findDeviceID(const char *devName, AudioDeviceID *devList,
 								  int devCount, Boolean isInput);
 #endif
@@ -100,7 +100,7 @@ struct AppleAudioDevice::Impl {
     Impl();
     ~Impl();
 
-#ifndef IOS
+#ifdef STANDALONE
 	AudioDeviceID			*deviceIDs;				// Queried on system.
 	int						deviceCount;			// Queried on system.
 	char 					*deviceName;			// Passed in by user.
@@ -111,6 +111,8 @@ struct AppleAudioDevice::Impl {
 		int						streamIndex;		// Which stream
 		int						streamCount;		// How many streams open
 		int						streamChannel;		// 1st chan of first stream
+		SInt32					*channelMap;		// Channel map
+		int						channelMapCount;	// number of channels in the map
 		AudioBufferList			*streamDesc;
 		unsigned int 			deviceBufFrames;	// hw buf length
 		float					*audioBuffer;		// circ. buffer
@@ -179,7 +181,7 @@ AppleAudioDevice::Impl::Port::getFrames(void *frameBuffer, int inFrameCount, int
     lock.lock();
 #endif
 	int streamsToCopy = 0;
-#ifndef IOS
+#ifdef STANDALONE
 	assert(inFrameCount <= audioBufFilled);
 #else
 	if (inFrameCount <= audioBufFilled)		// For IOS, we need to handle the case where there is no audio to pull.
@@ -263,7 +265,7 @@ AppleAudioDevice::Impl::Port::sendFrames(void *frameBuffer, int frameCount, int 
 
 AppleAudioDevice::Impl::Impl()
 :
-#if defined(OSX)
+#if defined(STANDALONE)
 deviceIDs(NULL), deviceName(NULL), deviceID(0), savedDeviceSampleRate(0.0),
 #endif
 renderThread(NULL), renderSema(NULL), underflowCount(0)
@@ -279,6 +281,8 @@ renderThread(NULL), renderSema(NULL), underflowCount(0)
 		port[n].streamIndex = 0;
 		port[n].streamCount = 0;		// Indicates that we are using the default.
 		port[n].streamChannel = 0;
+		port[n].channelMap = NULL;
+		port[n].channelMapCount = 0;
 		port[n].streamDesc = NULL;
 		port[n].deviceBufFrames = 0;
 		port[n].audioBufFrames = 0;
@@ -292,11 +296,13 @@ renderThread(NULL), renderSema(NULL), underflowCount(0)
 
 AppleAudioDevice::Impl::~Impl()
 {
+	delete [] port[REC].channelMap;
+	delete [] port[PLAY].channelMap;
     delete [] (char *) port[REC].streamDesc;
 	delete [] port[REC].audioBuffer;
 	delete [] (char *) port[PLAY].streamDesc;
 	delete [] port[PLAY].audioBuffer;
-#if defined(OSX)
+#if defined(STANDALONE)
 	delete [] deviceIDs;
 	delete [] deviceName;
 #endif
@@ -498,6 +504,21 @@ OSStatus AppleAudioDevice::Impl::audioUnitRenderCallback(void *inUserData,
             framesAvail = framesToWrite;
             port->audioBufFilled += framesToWrite;
 		}
+		
+#if RENDER_IN_CALLBACK
+		// If we are running inTraverse synchronously, we run it before we copy the data to the port's audio buffers
+#if OUTPUT_CALLBACK_FIRST
+		if (!impl->recording)
+#endif
+		{
+			DPRINT("\tRunning render callback inline\n");
+			bool ret = device->runCallback();
+			if (ret == false) {
+				DPRINT("\tRun callback returned false -- calling stop callback\n");
+				device->stopCallback();
+			}
+		}
+#endif	/* RENDER_IN_CALLBACK */
         DPRINT1("\tPLAY outLoc begins at %d (out of %d)\n",
                port->outLoc, bufLen);
         int framesDone = 0;
@@ -538,14 +559,7 @@ OSStatus AppleAudioDevice::Impl::audioUnitRenderCallback(void *inUserData,
 	if (!impl->recording)
 #endif
 	{
-#if RENDER_IN_CALLBACK
-		DPRINT("\tRunning render callback inline\n");
-        bool ret = device->runCallback();
-        if (ret == false) {
-			DPRINT("\tRun callback returned false -- calling stop callback\n");
-			device->stopCallback();
-        }
-#else
+#if !RENDER_IN_CALLBACK
 		DPRINT("\tWaking render thread\n");
     	impl->renderSema->post();
 #endif
@@ -613,7 +627,7 @@ void AppleAudioDevice::Impl::propertyListenerProc(void *inRefCon,
 			impl->gotFormatNotification = true;
 			break;
 		case kAudioUnitProperty_StreamFormat:
-#ifndef IOS
+#ifdef STANDALONE
 		case kAudioDevicePropertyStreamFormat:
 #endif
 			if (!impl->gotFormatNotification &&
@@ -625,7 +639,7 @@ void AppleAudioDevice::Impl::propertyListenerProc(void *inRefCon,
 				needToStop = true;
 			}
 			break;
-#ifndef IOS
+#ifdef STANDALONE
 		case kAudioDevicePropertyBufferFrameSize:
 			DPRINT(">>>> AppleAudioDevice: got buffer frame size notification: %u\n", (unsigned)theProp.uint);
 			if (device->isRunning() && theProp.uint != impl->port[!impl->recording].deviceBufFrames) {
@@ -709,7 +723,7 @@ int AppleAudioDevice::doOpen(int mode)
 	// Describe audio component
 	AudioComponentDescription desc;
 	desc.componentType = kAudioUnitType_Output;
-#ifndef IOS
+#ifdef STANDALONE
 	desc.componentSubType = kAudioUnitSubType_HALOutput;	// OSX
 #else
 	desc.componentSubType = kAudioUnitSubType_RemoteIO;		// iOS
@@ -721,7 +735,7 @@ int AppleAudioDevice::doOpen(int mode)
 	AudioComponent comp = AudioComponentFindNext(NULL, &desc);
 	status = AudioComponentInstanceNew(comp, &impl->audioUnit);
 	if (status != noErr) {
-		return error("Unable to create the output audio unit");
+		return appleError("Unable to create the output audio unit", status);
 	}
 	// Enable IO for playback and/or record.  This is done before setting the (OSX) device.
 	
@@ -736,7 +750,7 @@ int AppleAudioDevice::doOpen(int mode)
 								  sizeof(enableInput));
 
 	if (status != noErr) {
-		return error("Unable to Enable/Disable input I/O on audio unit");
+		return appleError("Unable to Enable/Disable input I/O on audio unit", status);
 	}
 	status = AudioUnitSetProperty(impl->audioUnit,
 								  kAudioOutputUnitProperty_EnableIO,
@@ -745,10 +759,10 @@ int AppleAudioDevice::doOpen(int mode)
 								  &enableOutput,
 								  sizeof(enableOutput));
 	if (status != noErr) {
-		return error("Unable to Enable/Disable output I/O on audio unit");
+		return appleError("Unable to Enable/Disable output I/O on audio unit", status);
 	}
 
-#ifndef IOS
+#ifdef STANDALONE
 	// Set the device for the HAL Audio Unit
 	
 	Boolean isInput = impl->recording && !impl->playing;
@@ -768,32 +782,32 @@ int AppleAudioDevice::doOpen(int mode)
 								  &devID,
 								  sizeof(devID));
 	if (status != noErr) {
-		return error("Unable to set hardware device on audio unit");
+		return appleError("Unable to set hardware device on audio unit", status);
 	}
 
 	// Set up property listeners
 	
 	status = AudioUnitAddPropertyListener(impl->audioUnit, kAudioDevicePropertyBufferFrameSize, Impl::propertyListenerProc, this);
 	if (status != noErr) {
-		return error("Unable to set BufferFrameSize listener on audio unit");
+		return appleError("Unable to set BufferFrameSize listener on audio unit", status);
 	}
 	status = AudioUnitAddPropertyListener(impl->audioUnit, kAudioDevicePropertyStreamFormat, Impl::propertyListenerProc, this);
 	if (status != noErr) {
-		return error("Unable to set Device StreamFormat listener on audio unit");
+		return appleError("Unable to set Device StreamFormat listener on audio unit", status);
 	}
 	
 #endif
 	status = AudioUnitAddPropertyListener(impl->audioUnit, kAudioUnitProperty_SampleRate, Impl::propertyListenerProc, this);
 	if (status != noErr) {
-		return error("Unable to set SampleRate listener on audio unit");
+		return appleError("Unable to set SampleRate listener on audio unit", status);
 	}
 	status = AudioUnitAddPropertyListener(impl->audioUnit, kAudioUnitProperty_StreamFormat, Impl::propertyListenerProc, this);
 	if (status != noErr) {
-		return error("Unable to set AU StreamFormat listener on audio unit");
+		return appleError("Unable to set AU StreamFormat listener on audio unit", status);
 	}
 	status = AudioUnitAddPropertyListener(impl->audioUnit, kAudioUnitProperty_LastRenderError, Impl::propertyListenerProc, this);
 	if (status != noErr) {
-		return error("Unable to set LastRenderError listener on audio unit");
+		return appleError("Unable to set LastRenderError listener on audio unit", status);
 	}
 	// Get HW format and set I/O callback for each direction.
 	if (impl->recording) {
@@ -805,7 +819,7 @@ int AppleAudioDevice::doOpen(int mode)
 									  &impl->deviceFormat,
 									  &size);
 		if (status != noErr)
-			return error("Cannot read input HW stream format");
+			return appleError("Cannot read input HW stream format", status);
 		DPRINT("input HW format: sr %f fmt %d flags 0x%x fpp %d cpf %d bpc %d bpp %d bpf %d\n",
 			   impl->deviceFormat.mSampleRate, (int)impl->deviceFormat.mFormatID, (unsigned)impl->deviceFormat.mFormatFlags,
 			   (int)impl->deviceFormat.mFramesPerPacket, (int)impl->deviceFormat.mChannelsPerFrame, (int)impl->deviceFormat.mBitsPerChannel,
@@ -818,7 +832,7 @@ int AppleAudioDevice::doOpen(int mode)
 									  &proc,
 									  sizeof(AURenderCallbackStruct));
 		if (status != noErr) {
-			return error("Unable to set input callback");
+			return appleError("Unable to set input callback", status);
 		}
 	}
 	if (impl->playing) {
@@ -830,7 +844,7 @@ int AppleAudioDevice::doOpen(int mode)
 									  &impl->deviceFormat,
 									  &size);
 		if (status != noErr)
-			return error("Cannot read output HW stream format");
+			return appleError("Cannot read output HW stream format", status);
 		DPRINT("output HW format: sr %f fmt %d flags 0x%x fpp %d cpf %d bpc %d bpp %d bpf %d\n",
 			   impl->deviceFormat.mSampleRate, (int)impl->deviceFormat.mFormatID, (unsigned)impl->deviceFormat.mFormatFlags,
 			   (int)impl->deviceFormat.mFramesPerPacket, (int)impl->deviceFormat.mChannelsPerFrame, (int)impl->deviceFormat.mBitsPerChannel,
@@ -847,7 +861,7 @@ int AppleAudioDevice::doOpen(int mode)
 									  &proc,
 									  sizeof(AURenderCallbackStruct));
 		if (status != noErr) {
-			return error("Unable to set output callback");
+			return appleError("Unable to set output callback", status);
 		}
 	}
 	return 0;
@@ -874,7 +888,7 @@ int AppleAudioDevice::doClose()
 									  &proc,
 									  sizeof(AURenderCallbackStruct));
 	}
-#ifndef IOS
+#ifdef STANDALONE
 	if (_impl->savedDeviceSampleRate != 0.0) {
 		DPRINT("AppleAudioDevice::doClose: restoring original sampling rate\n");
 		setAudioHardwareRate(&_impl->savedDeviceSampleRate);
@@ -902,7 +916,7 @@ int AppleAudioDevice::doStart()
     OSStatus err = AudioOutputUnitStart(_impl->audioUnit);
 	int status = (err == noErr) ? 0 : -1;
 	if (status == -1)
-		error("AppleAudioDevice::doStart: failed to start audio unit");
+		appleError("AppleAudioDevice::doStart: failed to start audio unit", status);
 	return status;
 }
 
@@ -921,11 +935,11 @@ int AppleAudioDevice::doStop()
 	OSStatus err = AudioOutputUnitStop(_impl->audioUnit);
 	int status = (err == noErr) ? 0 : -1;
 	if (status == -1)
-		error("AppleAudioDevice::doStop: failed to stop audio unit");
+		appleError("AppleAudioDevice::doStop: failed to stop audio unit", status);
 	return status;
 }
 
-#ifndef IOS
+#ifdef STANDALONE
 
 //static OSStatus	DeviceListenerProc(AudioObjectID	inObjectID,
 //								   UInt32			inNumberAddresses,
@@ -953,7 +967,7 @@ int AppleAudioDevice::setAudioHardwareRate(double *sampleRate)
 								  &devID,
 								  &size);
 	if (status != noErr) {
-		return error("Unable to get hardware device from audio unit");
+		return appleError("Unable to get hardware device from audio unit", status);
 	}
 	
 //	AudioObjectPropertyAddress addr = { kAudioDevicePropertyNominalSampleRate,
@@ -961,7 +975,7 @@ int AppleAudioDevice::setAudioHardwareRate(double *sampleRate)
 //										kAudioObjectPropertyElementMaster };
 //	status = AudioObjectAddPropertyListener(devID, &addr, DeviceListenerProc, this);
 //	if (status != noErr) {
-//		return error("Unable to add property listener to the hardware device");
+//		return appleError("Unable to add property listener to the hardware device", status);
 //	}
 
 	// Get current format
@@ -974,7 +988,7 @@ int AppleAudioDevice::setAudioHardwareRate(double *sampleRate)
 								 &size,
 								 &hwFormat);
 	if (status != kAudioHardwareNoError) {
-		return error("Can't get hardware device format");
+		return appleError("Can't get hardware device format", status);
 	}
 	
 	double newSampleRate = *sampleRate;
@@ -994,7 +1008,7 @@ int AppleAudioDevice::setAudioHardwareRate(double *sampleRate)
 										 &size,
 										 &writeable);
 		if (status != kAudioHardwareNoError) {
-			return error("Can't get input device writeable property");
+			return appleError("Can't get input device writeable property", status);
 		}
 		if (writeable) {
 			DPRINT("Attempting to change HW sample rate from %f to %f\n", hwFormat.mSampleRate, newSampleRate);
@@ -1031,7 +1045,7 @@ int AppleAudioDevice::setAudioHardwareRate(double *sampleRate)
 					DPRINT("AudioDevice returned '%s' for sample rate %f so we wont use it\n", errToString(err), newSampleRate);
 					break;
 				default:
-					return error("Can't set audio hardware format");
+					return appleError("Can't set audio hardware format", err);
 			}
             // Retrieve settings to see what we got, and compare with request.
             size = sizeof(hwFormat);
@@ -1043,7 +1057,7 @@ int AppleAudioDevice::setAudioHardwareRate(double *sampleRate)
                                          &size,
                                          &hwFormat);
             if (err != kAudioHardwareNoError) {
-                return error("Can't retrieve audio hardware format");
+                return appleError("Can't retrieve audio hardware format", status);
             }
 			if (hwFormat.mSampleRate != newSampleRate) {
 				DPRINT("Unable to set sample rate -- overriding with %f\n", hwFormat.mSampleRate);
@@ -1061,7 +1075,7 @@ int AppleAudioDevice::setAudioHardwareRate(double *sampleRate)
 	return noErr;
 }
 
-#endif
+#endif	/* STANDALONE */
 
 int AppleAudioDevice::doSetFormat(int fmt, int chans, double srate)
 {
@@ -1074,7 +1088,7 @@ int AppleAudioDevice::doSetFormat(int fmt, int chans, double srate)
 		return error("Only float audio buffers supported at this time.");
 
 	OSStatus status;
-#ifndef IOS
+#ifdef STANDALONE
 	// Attempt to set hardware sample rate, and return whatever was set.
 	status = setAudioHardwareRate(&srate);
 	if (status != 0)
@@ -1091,12 +1105,10 @@ int AppleAudioDevice::doSetFormat(int fmt, int chans, double srate)
 	_impl->deviceFormat.mBytesPerPacket   = 4;
 	_impl->deviceFormat.mBytesPerFrame    = 4;	// describes one noninterleaved channel
 	
-	// NOTE:  For now, we force the HW to the number of channels we request.
-	// Later, we will allow user to configure output to any consecutive set
-	// of streams on input and/or output.
 	UInt32 ioChannels = _impl->deviceFormat.mChannelsPerFrame;
 	
 	if (_impl->recording) {
+		Impl::Port *port = &_impl->port[REC];
 		// kInputBus is the input side of the AU
 		status = AudioUnitSetProperty(_impl->audioUnit,
 									  kAudioUnitProperty_StreamFormat,
@@ -1105,7 +1117,17 @@ int AppleAudioDevice::doSetFormat(int fmt, int chans, double srate)
 									  &_impl->deviceFormat,
 									  sizeof(AudioStreamBasicDescription));
 		if (status != noErr)
-			return error("Cannot set input stream format");
+			return appleError("Cannot set input stream format", status);
+		if (port->channelMap != NULL) {
+			status = AudioUnitSetProperty(_impl->audioUnit,
+										  kAudioOutputUnitProperty_ChannelMap,
+										  kAudioUnitScope_Output,			// client side
+										  kInputBus,
+										  port->channelMap,
+										  sizeof(SInt32) * port->channelMapCount);
+			if (status != noErr)
+				return appleError("Cannot set input channel map", status);
+		}
 #if DEBUG > 0
 		UInt32 size = sizeof(_impl->deviceFormat);
 		status = AudioUnitGetProperty(_impl->audioUnit,
@@ -1115,13 +1137,12 @@ int AppleAudioDevice::doSetFormat(int fmt, int chans, double srate)
 									  &_impl->deviceFormat,
 									  &size);
 		if (status != noErr)
-			return error("Cannot read input dev stream format");
+			return appleError("Cannot read input dev stream format", status);
 		DPRINT("input client format: sr %f fmt %d flags 0x%x fpp %d cpf %d bpc %d bpp %d bpf %d\n",
 			   _impl->deviceFormat.mSampleRate, (int)_impl->deviceFormat.mFormatID, (unsigned)_impl->deviceFormat.mFormatFlags,
 			   (int)_impl->deviceFormat.mFramesPerPacket, (int)_impl->deviceFormat.mChannelsPerFrame, (int)_impl->deviceFormat.mBitsPerChannel,
 			   (int)_impl->deviceFormat.mBytesPerPacket, (int)_impl->deviceFormat.mBytesPerFrame);
 #endif
-		Impl::Port *port = &_impl->port[REC];
 		// Always noninterleaved, so stream count == channel count.  Each stream is 1-channel
 		if (port->streamCount == 0)
 			port->streamCount = ioChannels;
@@ -1132,6 +1153,7 @@ int AppleAudioDevice::doSetFormat(int fmt, int chans, double srate)
 		// We create a buffer equal to the internal HW channel count.
 	}
 	if (_impl->playing) {
+		Impl::Port *port = &_impl->port[PLAY];
 		status = AudioUnitSetProperty(_impl->audioUnit,
 									  kAudioUnitProperty_StreamFormat,
 									  kAudioUnitScope_Input,			// client side
@@ -1139,7 +1161,17 @@ int AppleAudioDevice::doSetFormat(int fmt, int chans, double srate)
 									  &_impl->deviceFormat,
 									  sizeof(AudioStreamBasicDescription));
 		if (status != noErr)
-			return error("Cannot set output stream format");
+			return appleError("Cannot set output stream format", status);
+		if (port->channelMap != NULL) {
+			status = AudioUnitSetProperty(_impl->audioUnit,
+										  kAudioOutputUnitProperty_ChannelMap,
+										  kAudioUnitScope_Input,			// client side
+										  kOutputBus,
+										  port->channelMap,
+										  sizeof(SInt32) * port->channelMapCount);
+			if (status != noErr)
+				return appleError("Cannot set output channel map", status);
+		}
 #if DEBUG > 0
 		AudioStreamBasicDescription format;
 		UInt32 size = sizeof(AudioStreamBasicDescription);
@@ -1150,13 +1182,12 @@ int AppleAudioDevice::doSetFormat(int fmt, int chans, double srate)
 									  &format,
 									  &size);
 		if (status != noErr)
-			return error("Cannot read output dev stream format");
+			return appleError("Cannot read output dev stream format", status);
 		DPRINT("output client format: sr %f fmt %d flags 0x%x fpp %d cpf %d bpc %d bpp %d bpf %d\n",
 			   format.mSampleRate, (int)format.mFormatID, (unsigned)format.mFormatFlags,
 			   (int)format.mFramesPerPacket, (int)format.mChannelsPerFrame, (int)format.mBitsPerChannel,
 			   (int)format.mBytesPerPacket, (int)format.mBytesPerFrame);
 #endif
-		Impl::Port *port = &_impl->port[PLAY];
 		// Always noninterleaved, so stream count == channel count.  Each stream is 1-channel
 		if (port->streamCount == 0)
 			port->streamCount = ioChannels;
@@ -1181,7 +1212,7 @@ int AppleAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 	OSStatus status;
 	UInt32 reqQueueFrames = *pWriteSize;
 	UInt32 propSize;
-#ifndef IOS
+#ifdef STANDALONE
 	// set max buffer slice size
 	status = AudioUnitSetProperty(_impl->audioUnit,
 								  kAudioDevicePropertyBufferFrameSize,
@@ -1189,7 +1220,7 @@ int AppleAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 								  &reqQueueFrames,
 								  sizeof(reqQueueFrames));
 	if (status != noErr)
-		return error("Cannot set buffer frame size on audio unit");
+		return appleError("Cannot set buffer frame size on audio unit", status);
 
 	// get value back
 	UInt32 devBufferFrameSize = 0;
@@ -1200,7 +1231,7 @@ int AppleAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 								  &devBufferFrameSize,
 								  &propSize);
 	if (status != noErr)
-		return error("Cannot get buffer frame size from audio unit");
+		return appleError("Cannot get buffer frame size from audio unit", status);
 	DPRINT("AUHal's device returned buffer frame size = %u\n", (unsigned)devBufferFrameSize);
 #else	// for iOS
 	UInt32 devBufferFrameSize = reqQueueFrames;
@@ -1212,7 +1243,7 @@ int AppleAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 								  &devBufferFrameSize,
 								  sizeof(reqQueueFrames));
 	if (status != noErr)
-		return error("Cannot set max frames per slice on audio unit");
+		return appleError("Cannot set max frames per slice on audio unit", status);
 	// Get the property value back from audio device. We are going to use this value to allocate buffers accordingly
 	UInt32 auQueueFrames = 0;
 	propSize = sizeof(auQueueFrames);
@@ -1222,7 +1253,7 @@ int AppleAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 								  &auQueueFrames,
 								  &propSize);
 	if (status != noErr)
-		return error("Cannot get max frames per slice on audio unit");
+		return appleError("Cannot get max frames per slice on audio unit", status);
 
 	const int startDir = _impl->recording ? REC : PLAY;
 	const int endDir = _impl->playing ? PLAY : REC;
@@ -1257,7 +1288,7 @@ int AppleAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 	}
 	status = AudioUnitInitialize(_impl->audioUnit);
 	if (status != noErr)
-		return error("Cannot initialize the output audio unit");
+		return appleError("Cannot initialize the output audio unit", status);
 
 	// Create our semaphore
 	_impl->renderSema = new RTSemaphore(1);
@@ -1302,6 +1333,11 @@ int AppleAudioDevice::doGetFrameCount() const
 	return _impl->frameCount;
 }
 
+int AppleAudioDevice::appleError(const char *msg, int status)
+{
+	return error(msg, errToString(status));
+}
+
 // Methods used for identification and creation
 
 bool AppleAudioDevice::recognize(const char *desc)
@@ -1319,56 +1355,75 @@ errToString(OSStatus err)
 {
     const char *errstring;
     switch (err) {
-#ifdef IOS
     case kAudioUnitErr_InvalidProperty:
+		errstring = ": Invalid Property";
+		break;
     case kAudioUnitErr_InvalidParameter:
+		errstring = ": Invalid Parameter";
+		break;
     case kAudioUnitErr_InvalidElement:
+		errstring = ": Invalid Element";
+		break;
     case kAudioUnitErr_NoConnection:
+		errstring = ": No Connection";
+		break;
     case kAudioUnitErr_FailedInitialization:
+		errstring = ": Failed Initialization";
+		break;
     case kAudioUnitErr_TooManyFramesToProcess:
-    case kAudioUnitErr_InvalidFile:
+		errstring = ": Too Many Frames To Process";
+		break;
     case kAudioUnitErr_FormatNotSupported:
+		errstring = ": Format Not Supported";
+		break;
+	case kAudioUnitErr_PropertyNotWritable:
+		errstring = ": Property Not Writable";
+		break;
+	case kAudioUnitErr_InvalidPropertyValue:
+		errstring = ": Invalid Property Value";
+		break;
+	case kAudioUnitErr_PropertyNotInUse:
+		errstring = ": Property Not In Use";
+		break;
     case kAudioUnitErr_Uninitialized:
     case kAudioUnitErr_InvalidScope:
-    case kAudioUnitErr_PropertyNotWritable:
     case kAudioUnitErr_CannotDoInCurrentContext:
-    case kAudioUnitErr_InvalidPropertyValue:
-    case kAudioUnitErr_PropertyNotInUse:
     case kAudioUnitErr_Initialized:
     case kAudioUnitErr_InvalidOfflineRender:
     case kAudioUnitErr_Unauthorized:
-		errstring = "Audio Error";
+	case kAudioUnitErr_InvalidFile:
+		errstring = ": Audio Error";
         break;
-#else
+#ifdef STANDALONE
     case kAudioHardwareNoError:
-        errstring = "No error";
+        errstring = ": No error";
         break;
     case kAudioHardwareNotRunningError:
-        errstring = "Hardware not running";
+        errstring = ": Hardware not running";
         break;
     case kAudioHardwareUnspecifiedError:
-        errstring = "Unspecified error";
+        errstring = ": Unspecified error";
         break;
     case kAudioHardwareUnknownPropertyError:
-        errstring = "Unknown hardware property";
+        errstring = ": Unknown hardware property";
         break;
     case kAudioDeviceUnsupportedFormatError:
-        errstring = "Unsupported audio format";
+        errstring = ": Unsupported audio format";
         break;
     case kAudioHardwareBadPropertySizeError:
-        errstring = "Bad hardware propery size";
+        errstring = ": Bad hardware propery size";
         break;
     case kAudioHardwareIllegalOperationError:
-        errstring = "Illegal operation";
+        errstring = ": Illegal operation";
         break;
 #endif
     default:
-        errstring = "Unknown error";
+        errstring = ": Unknown error";
     }
     return errstring;
 }
 
-#ifndef IOS
+#ifdef STANDALONE
 
 static OSStatus
 getDeviceList(AudioDeviceID **devList, int *devCount)
@@ -1487,22 +1542,24 @@ void AppleAudioDevice::parseDeviceDescription(const char *inDesc)
             else {
 				insubstr = outsubstr = substr;
             }
-            // Now parse stream selecters
+            // Now parse stream selecters and set up channel mapping if necessary
             const char *selecters[2] = { insubstr, outsubstr };
+			int chanFirst = 0, chanLast = 0;
             for (int dir = REC; dir <= PLAY; ++dir) {
 				if (selecters[dir] == NULL) {
 					// Do nothing;  use defaults.
 				}
 				else if (strchr(selecters[dir], '-') == NULL) {
 					// Parse non-range selecter (single digit)
-					_impl->port[dir].streamIndex = (int) strtol(selecters[dir], NULL, 0);
+					chanFirst = (int) strtol(selecters[dir], NULL, 0);
 				}
 				else {
 					// Parse selecter of form "X-Y"
 					int idx0, idx1;
 					int found = sscanf(selecters[dir], "%d-%d", &idx0, &idx1);
-					if (found == 2) {
-						_impl->port[dir].streamIndex = idx0;
+					if (found == 2 && idx1 >= idx0) {
+						chanFirst = idx0;
+						chanLast = idx1;
 						_impl->port[dir].streamCount = idx1 - idx0 + 1;
 					}
 					else {
@@ -1510,12 +1567,24 @@ void AppleAudioDevice::parseDeviceDescription(const char *inDesc)
 						break;
 					}
 				}
+				if (chanFirst != 0 || chanLast != 0) {
+					int requestedChannels = (_impl->port[dir].streamCount > 0) ? _impl->port[dir].streamCount : 1;
+					_impl->port[dir].channelMap = new SInt32[requestedChannels];
+					_impl->port[dir].channelMapCount = requestedChannels;
+					for (int n = 0; n < requestedChannels; ++n) {
+						_impl->port[dir].channelMap[n] = chanFirst + n;
+					}
+				}
             }
-			DPRINT("input streamIndex = %d, requested streamCount = %d\n",
-				   _impl->port[REC].streamIndex, _impl->port[REC].streamCount);
-			DPRINT("output streamIndex = %d, requested streamCount = %d\n",
-				   _impl->port[PLAY].streamIndex, _impl->port[PLAY].streamCount);
-        }
+			DPRINT("requested input streamCount = %d\n", _impl->port[REC].streamCount);
+			if (_impl->port[REC].channelMap) {
+				DPRINT("\tmapping hardware channel %d to our channel 0, etc.\n", _impl->port[REC].channelMap[0]);
+			}
+			DPRINT("requested output streamCount = %d\n", _impl->port[PLAY].streamCount);
+ 			if (_impl->port[PLAY].channelMap) {
+				DPRINT("\tmapping our channel 0 to hardware channel %d, etc.\n", _impl->port[PLAY].channelMap[0]);
+			}
+       }
 		// Treat old-stye device name as "default" (handled below).
 		if (!strcmp(_impl->deviceName, "OSXHW")) {
 			delete [] _impl->deviceName;

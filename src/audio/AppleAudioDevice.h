@@ -34,6 +34,7 @@ protected:
 	virtual int getRecordDeviceChannels() const;
 	virtual int getPlaybackDeviceChannels() const;
 
+	int			appleError(const char *msg, int status);
 #ifndef IOS
 	int			setAudioHardwareRate(double *sampleRate);
 #endif
