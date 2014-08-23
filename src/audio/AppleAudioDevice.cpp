@@ -996,13 +996,23 @@ int AppleAudioDevice::setAudioHardwareRate(double *sampleRate)
 										 &size,
 										 &writeable);
 		if (status != kAudioHardwareNoError) {
-			return appleError("Can't get input device writeable property", status);
+			return appleError("Can't get device format writeable property", status);
 		}
 		if (writeable) {
-			DPRINT("Attempting to change HW sample rate from %f to %f\n", _impl->deviceFormat.mSampleRate, newSampleRate);
 			// Try to set new sample rate on hardware
 			// Default all values to device's defaults then set our sample rate.
-			AudioStreamBasicDescription requestedFormat = _impl->deviceFormat;
+			AudioStreamBasicDescription requestedFormat;
+			size = sizeof(requestedFormat);
+			status = AudioDeviceGetProperty(devID,
+											0,
+											isInput,
+											kAudioDevicePropertyStreamFormat,
+											&size,
+											&requestedFormat);
+			if (status != kAudioHardwareNoError) {
+				return appleError("Can't get device format", status);
+			}
+			DPRINT("Attempting to change HW sample rate from %f to %f\n", _impl->deviceFormat.mSampleRate, newSampleRate);
 			requestedFormat.mSampleRate = newSampleRate;
 			size = sizeof(requestedFormat);
 			OSStatus err = AudioDeviceSetProperty(devID,
@@ -1055,6 +1065,8 @@ int AppleAudioDevice::setAudioHardwareRate(double *sampleRate)
 			else {
 				DPRINT("Audio hardware sample rate now set to %f\n", actualFormat.mSampleRate);
 			}
+			// Store this because we do not retrieve fomrmat again.
+			_impl->deviceFormat.mSampleRate = actualFormat.mSampleRate;
 		}
 		else {
 			printf("Note:  This HW's audio format is not writable\n");
