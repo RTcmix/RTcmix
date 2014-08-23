@@ -127,7 +127,8 @@ struct AppleAudioDevice::Impl {
 		int						getFrames(void *, int, int);
 		int						sendFrames(void *, int, int);
 	} 						port[2];
-	AudioStreamBasicDescription deviceFormat;	// format
+	AudioStreamBasicDescription deviceFormat;		// format
+	AudioStreamBasicDescription clientFormat;		// format
 	int						bufferSampleFormat;
 	int						frameCount;
 	bool					gotFormatNotification;
@@ -978,25 +979,12 @@ int AppleAudioDevice::setAudioHardwareRate(double *sampleRate)
 //		return appleError("Unable to add property listener to the hardware device", status);
 //	}
 
-	// Get current format
-	AudioStreamBasicDescription hwFormat;
-	size = sizeof(hwFormat);
-	status = AudioDeviceGetProperty(devID,
-								 0,
-								 isInput,
-								 kAudioDevicePropertyStreamFormat,
-								 &size,
-								 &hwFormat);
-	if (status != kAudioHardwareNoError) {
-		return appleError("Can't get hardware device format", status);
-	}
-	
 	double newSampleRate = *sampleRate;
 	
 	// Don't do any of this work if the rates do not differ!
-	if (hwFormat.mSampleRate != newSampleRate) {
+	if (_impl->deviceFormat.mSampleRate != newSampleRate) {
 		// Save original for restore when closing (good OSX software practice)
-		_impl->savedDeviceSampleRate = hwFormat.mSampleRate;
+		_impl->savedDeviceSampleRate = _impl->deviceFormat.mSampleRate;
 
 		// Test whether or not audio format property is writable.
 		Boolean writeable = FALSE;
@@ -1011,10 +999,10 @@ int AppleAudioDevice::setAudioHardwareRate(double *sampleRate)
 			return appleError("Can't get input device writeable property", status);
 		}
 		if (writeable) {
-			DPRINT("Attempting to change HW sample rate from %f to %f\n", hwFormat.mSampleRate, newSampleRate);
+			DPRINT("Attempting to change HW sample rate from %f to %f\n", _impl->deviceFormat.mSampleRate, newSampleRate);
 			// Try to set new sample rate on hardware
 			// Default all values to device's defaults then set our sample rate.
-			AudioStreamBasicDescription requestedFormat = hwFormat;
+			AudioStreamBasicDescription requestedFormat = _impl->deviceFormat;
 			requestedFormat.mSampleRate = newSampleRate;
 			size = sizeof(requestedFormat);
 			OSStatus err = AudioDeviceSetProperty(devID,
@@ -1048,23 +1036,24 @@ int AppleAudioDevice::setAudioHardwareRate(double *sampleRate)
 					return appleError("Can't set audio hardware format", err);
 			}
             // Retrieve settings to see what we got, and compare with request.
-            size = sizeof(hwFormat);
+			AudioStreamBasicDescription actualFormat;
+            size = sizeof(actualFormat);
 			DPRINT("Retrieving hardware format\n");
             err = AudioDeviceGetProperty(devID,
                                          0,
 										 isInput,
                                          kAudioDevicePropertyStreamFormat,
                                          &size,
-                                         &hwFormat);
+                                         &actualFormat);
             if (err != kAudioHardwareNoError) {
                 return appleError("Can't retrieve audio hardware format", status);
             }
-			if (hwFormat.mSampleRate != newSampleRate) {
-				DPRINT("Unable to set sample rate -- overriding with %f\n", hwFormat.mSampleRate);
-				*sampleRate = hwFormat.mSampleRate;
+			if (actualFormat.mSampleRate != newSampleRate) {
+				DPRINT("Unable to set sample rate -- overriding with %f\n", actualFormat.mSampleRate);
+				*sampleRate = actualFormat.mSampleRate;
 			}
 			else {
-				DPRINT("Audio hardware sample rate now set to %f\n", hwFormat.mSampleRate);
+				DPRINT("Audio hardware sample rate now set to %f\n", actualFormat.mSampleRate);
 			}
 		}
 		else {
@@ -1096,16 +1085,16 @@ int AppleAudioDevice::doSetFormat(int fmt, int chans, double srate)
 #endif
 	
 	// Describe client format:  Non-interleaved floating point for both input and output
-	_impl->deviceFormat.mSampleRate       = srate;
-	_impl->deviceFormat.mFormatID         = kAudioFormatLinearPCM;
-	_impl->deviceFormat.mFormatFlags      = kAudioFormatFlagIsFloat|kAudioFormatFlagIsPacked|kAudioFormatFlagIsNonInterleaved;
-	_impl->deviceFormat.mFramesPerPacket  = 1;
-	_impl->deviceFormat.mChannelsPerFrame = chans;
-	_impl->deviceFormat.mBitsPerChannel   = 32;
-	_impl->deviceFormat.mBytesPerPacket   = 4;
-	_impl->deviceFormat.mBytesPerFrame    = 4;	// describes one noninterleaved channel
+	_impl->clientFormat.mSampleRate       = srate;
+	_impl->clientFormat.mFormatID         = kAudioFormatLinearPCM;
+	_impl->clientFormat.mFormatFlags      = kAudioFormatFlagIsFloat|kAudioFormatFlagIsPacked|kAudioFormatFlagIsNonInterleaved;
+	_impl->clientFormat.mFramesPerPacket  = 1;
+	_impl->clientFormat.mChannelsPerFrame = chans;
+	_impl->clientFormat.mBitsPerChannel   = 32;
+	_impl->clientFormat.mBytesPerPacket   = 4;
+	_impl->clientFormat.mBytesPerFrame    = 4;	// describes one noninterleaved channel
 	
-	UInt32 ioChannels = _impl->deviceFormat.mChannelsPerFrame;
+	UInt32 ioChannels = _impl->clientFormat.mChannelsPerFrame;
 	
 	if (_impl->recording) {
 		Impl::Port *port = &_impl->port[REC];
@@ -1114,11 +1103,16 @@ int AppleAudioDevice::doSetFormat(int fmt, int chans, double srate)
 									  kAudioUnitProperty_StreamFormat,
 									  kAudioUnitScope_Output,			// client side
 									  kInputBus,
-									  &_impl->deviceFormat,
+									  &_impl->clientFormat,
 									  sizeof(AudioStreamBasicDescription));
 		if (status != noErr)
 			return appleError("Cannot set input stream format", status);
+		// For input, we use the channelMap just as it was created.  It will have as many
+		// channels as the user has chosen to pull from the input hardware.
 		if (port->channelMap != NULL) {
+			if (port->channelMapCount != _impl->clientFormat.mChannelsPerFrame) {
+				return error("Input channel specification does not match requested number of channels");
+			}
 			status = AudioUnitSetProperty(_impl->audioUnit,
 										  kAudioOutputUnitProperty_ChannelMap,
 										  kAudioUnitScope_Output,			// client side
@@ -1129,19 +1123,20 @@ int AppleAudioDevice::doSetFormat(int fmt, int chans, double srate)
 				return appleError("Cannot set input channel map", status);
 		}
 #if DEBUG > 0
-		UInt32 size = sizeof(_impl->deviceFormat);
+		AudioStreamBasicDescription format;
+		UInt32 size = sizeof(format);
 		status = AudioUnitGetProperty(_impl->audioUnit,
 									  kAudioUnitProperty_StreamFormat,
 									  kAudioUnitScope_Output,			// client side
 									  kInputBus,
-									  &_impl->deviceFormat,
+									  &format,
 									  &size);
 		if (status != noErr)
 			return appleError("Cannot read input dev stream format", status);
 		DPRINT("input client format: sr %f fmt %d flags 0x%x fpp %d cpf %d bpc %d bpp %d bpf %d\n",
-			   _impl->deviceFormat.mSampleRate, (int)_impl->deviceFormat.mFormatID, (unsigned)_impl->deviceFormat.mFormatFlags,
-			   (int)_impl->deviceFormat.mFramesPerPacket, (int)_impl->deviceFormat.mChannelsPerFrame, (int)_impl->deviceFormat.mBitsPerChannel,
-			   (int)_impl->deviceFormat.mBytesPerPacket, (int)_impl->deviceFormat.mBytesPerFrame);
+			   format.mSampleRate, (int)format.mFormatID, (unsigned)format.mFormatFlags,
+			   (int)format.mFramesPerPacket, (int)format.mChannelsPerFrame, (int)format.mBitsPerChannel,
+			   (int)format.mBytesPerPacket, (int)format.mBytesPerFrame);
 #endif
 		// Always noninterleaved, so stream count == channel count.  Each stream is 1-channel
 		if (port->streamCount == 0)
@@ -1158,23 +1153,40 @@ int AppleAudioDevice::doSetFormat(int fmt, int chans, double srate)
 									  kAudioUnitProperty_StreamFormat,
 									  kAudioUnitScope_Input,			// client side
 									  kOutputBus,
-									  &_impl->deviceFormat,
+									  &_impl->clientFormat,
 									  sizeof(AudioStreamBasicDescription));
 		if (status != noErr)
 			return appleError("Cannot set output stream format", status);
 		if (port->channelMap != NULL) {
+			if (port->channelMapCount != _impl->clientFormat.mChannelsPerFrame) {
+				return error("Output channel specification does not match requested number of channels");
+			}
+			// For output, the channel map needs to have as many slots as there are hardware channels.
+			UInt32 hwChans = _impl->deviceFormat.mChannelsPerFrame;
+			UInt32 mapSlot = 0;
+			SInt32 *localMap = new SInt32[_impl->deviceFormat.mChannelsPerFrame];
+			memset(localMap, 0xff, sizeof(SInt32) * hwChans);	// set all to -1
+			DPRINT("output channelMap: ");
+			for (UInt32 chan = 0; chan < hwChans; ++chan) {
+				if (mapSlot < port->channelMapCount && port->channelMap[mapSlot] == chan) {
+					localMap[chan] = mapSlot++;
+				}
+				DPRINT("%d, ", localMap[chan]);
+			}
+			DPRINT("\n");
 			status = AudioUnitSetProperty(_impl->audioUnit,
 										  kAudioOutputUnitProperty_ChannelMap,
 										  kAudioUnitScope_Input,			// client side
 										  kOutputBus,
-										  port->channelMap,
-										  sizeof(SInt32) * port->channelMapCount);
+										  localMap,
+										  sizeof(SInt32) * hwChans);
+			delete [] localMap;
 			if (status != noErr)
 				return appleError("Cannot set output channel map", status);
 		}
 #if DEBUG > 0
 		AudioStreamBasicDescription format;
-		UInt32 size = sizeof(AudioStreamBasicDescription);
+		UInt32 size = sizeof(format);
 		status = AudioUnitGetProperty(_impl->audioUnit,
 									  kAudioUnitProperty_StreamFormat,
 									  kAudioUnitScope_Input,			// client side
@@ -1202,7 +1214,7 @@ int AppleAudioDevice::doSetFormat(int fmt, int chans, double srate)
 	
 	setDeviceParams(deviceFormat,
 					chans,
-					_impl->deviceFormat.mSampleRate);
+					_impl->clientFormat.mSampleRate);
 	return 0;
 }
 
