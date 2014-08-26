@@ -628,7 +628,7 @@ OSXAudioDevice::Impl::listenerProcess(AudioDeviceID inDevice,
 	OSXAudioDevice *device = (OSXAudioDevice *) object;
 	OSXAudioDevice::Impl *impl = device->_impl;
 	OSStatus err = noErr;
-	Boolean isRunning = 1;
+	UInt32 isRunning = 1;
 	UInt32 size = sizeof(isRunning);
 	// printf("OSXAudioDevice::Impl::listenerProcess() called\n");
 	switch (inPropertyID) {
