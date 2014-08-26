@@ -158,7 +158,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	RTPrintf("ENTERING inTraverse()\n");
 #endif
 #ifdef DBUG	  
-	RTPrintf("\nEntering big loop .....................\n");
+	RTPrintf("\nEntering big loop ...........  bufStartSamp = %llu\n", (unsigned long long)bufStartSamp);
 #endif
 
 #ifdef EMBEDDED
@@ -436,7 +436,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 						
 			// DT_PANIC_MOD
 			if (!panic) {
-#ifdef DBUG
+#ifdef IBUG
 				cout << "putting inst " << (void *) Iptr << " into taskmgr (bustype " << bus_type << ") [" << Iptr->name() << "]\n";
 #endif
 				instruments.push_back(Iptr);
@@ -467,7 +467,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			FRAMETYPE endsamp = Iptr->getendsamp();
 			int inst_chunk_finished = Iptr->needsToRun();
 
-            rtQchunkStart = Iptr->get_ichunkstart();    // We stored this value before placing into the vector
+			rtQchunkStart = Iptr->get_ichunkstart();    // We stored this value before placing into the vector
             
 			// ReQueue or unref ++++++++++++++++++++++++++++++++++++++++++++++
 			if (endsamp > bufEndSamp && !panic) {
@@ -514,10 +514,10 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 #endif
         Iptr->set_ichunkstart(rtQchunkStart);
                 
-        unsigned long endsamp = Iptr->getendsamp();
+        FRAMETYPE endsamp = Iptr->getendsamp();
         
         // difference in sample start (countdown)
-        long offset = long(rtQchunkStart - bufStartSamp);  
+        int offset = int(rtQchunkStart - bufStartSamp);
         
         // DJT:  may have to expand here.  IE., conditional above
         // (rtQchunkStart >= bufStartSamp)
@@ -535,10 +535,10 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         Iptr->set_output_offset(offset);
         
         if (endsamp < bufEndSamp) {  // compute # of samples to write
-            chunksamps = endsamp-rtQchunkStart;
+            chunksamps = int(endsamp-rtQchunkStart);
         }
         else {
-            chunksamps = bufEndSamp-rtQchunkStart;
+            chunksamps = int(bufEndSamp-rtQchunkStart);
         }
         if (chunksamps > RTBUFSAMPS) {
 #ifndef EMBEDDED

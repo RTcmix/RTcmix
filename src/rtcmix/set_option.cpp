@@ -34,6 +34,7 @@ enum ParamType {
 	EXIT_ON_ERROR,
 	AUTO_LOAD,
 	FAST_UPDATE,
+	REQUIRE_SAMPLE_RATE,
 	BUFFER_FRAMES,
 	BUFFER_COUNT,
 	OSC_INPORT,
@@ -69,6 +70,7 @@ static Param _param_list[] = {
 	{ kOptionExitOnError, EXIT_ON_ERROR, false},
 	{ kOptionAutoLoad, AUTO_LOAD, false},
 	{ kOptionFastUpdate, FAST_UPDATE, false},
+	{ kOptionRequireSampleRate, REQUIRE_SAMPLE_RATE, true},
 
 	// number options
 	{ kOptionBufferFrames, BUFFER_FRAMES, false},
@@ -239,6 +241,10 @@ static int _set_key_value_option(const char *key, const char *sval,
 			if (bval)
 				rtcmix_warn("set_option", "With \"%s\" on, certain instruments run "
 					"faster at the expense of reduced capabilities.\n", key);
+			break;
+		case REQUIRE_SAMPLE_RATE:
+			status = _str_to_bool(sval, bval);
+			Option::requireSampleRate(bval);
 			break;
 
 		// number options

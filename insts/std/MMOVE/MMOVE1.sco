@@ -1,4 +1,4 @@
-rtsetparams(44100,2,1024)
+rtsetparams(44100,2,256)
 rtinput("../../../snd/loocher.aiff");
 load("MMOVE")
 bus_config("MMOVE","in0","aox0-3")

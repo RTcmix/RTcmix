@@ -1,11 +1,11 @@
 // NB: default audio device (in .rtcmixrc) must work with <numchans> chans.
-set_option("print = off")
 if (n_arg() != 1) {
 	printf("*** Usage: CMIX numchans < test-n-channel-blip.sco\n")
 	exit(1)
 }
 numchans = i_arg(0)
 printf("Playing to %d output channels\n", numchans)
+print_on(0);
 rtsetparams(44100, numchans)
 load("WAVETABLE")
 

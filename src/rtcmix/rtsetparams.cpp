@@ -39,13 +39,11 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, float *mm_
 	int numBuffers = Option::bufferCount();
 	
 	if (SR <= 0.0) {
-		die("rtsetparams", "Sampling rate must be greater than 0.");
-		return -1;
+		return die("rtsetparams", "Sampling rate must be greater than 0.");
 	}
 	
 	if (NCHANS > MAXBUS) {
-		die("rtsetparams", "You can only have up to %d output channels.", MAXBUS - 1);
-		return -1;
+		return die("rtsetparams", "You can only have up to %d output channels.", MAXBUS - 1);
 	}
 	
 	/* play_audio is true unless user has called set_option("audio_off") before
@@ -66,7 +64,17 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, float *mm_
 
 		/* These may have been reset by driver. */
 		RTBUFSAMPS = nframes;
-		SR = srate;
+		if (srate != SR) {
+			if (!Option::requireSampleRate()) {
+				rtcmix_advise("rtsetparams",
+							  "Sample rate reset by audio device from %f to %f.",
+							  SR, srate);
+				SR = srate;
+			}
+			else {
+				return die("rtsetparams", "Sample rate could not be set to desired value.\nSet \"require_sample_rate=false\" to allow alternate rates.");
+			}
+		}
 	}
 	
 	/* Allocate output buffers. Do this *after* opening audio devices,
