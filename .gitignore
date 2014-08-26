@@ -75,6 +75,9 @@ src/control/midi/portmidi/pm_test/test
 src/rtcmix/MIX
 src/rtcmix/PMIX
 src/rtcmix/PYMIX
+test/suite/load_test.sco
+test/suite/sockettest
+test/suite/stresstest
 utils/cmixplay
 utils/cpspch
 utils/head/sfcreate
