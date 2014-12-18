@@ -227,7 +227,7 @@ int Instrument::configure(int bufsamps)
 {
 	assert(outbuf == NULL);	// configure called twice, or recursively??
 	outbuf = new BUFTYPE [bufsamps * outputchans];
-	bzero((void *)outbuf, sizeof(BUFTYPE) * bufsamps * outputchans);
+	clearOutput(bufsamps);
 	return configure();		// Class-specific configuration.
 }
 
@@ -414,6 +414,15 @@ void Instrument::addout(BusType bus_type, int bus)
 		RTPrintf("%s::addout(this=%p %d, %d): NO-OP\n", name(), this, (int)bus_type, bus);
 	}
 #endif
+}
+
+/* ----------------------------------------------------------------- clearOutput --- */
+/* Zeros the output buffer.
+*/
+
+void	Instrument::clearOutput(int length)
+{
+	bzero((void *)outbuf, sizeof(BUFTYPE) * length * outputchans);
 }
 
 /* ----------------------------------------------------------------- gone --- */

@@ -124,8 +124,13 @@ int CHAIN::run()
 {
 	for (std::vector<Instrument *>::iterator it = mInstVector.begin(); it != mInstVector.end(); ++it) {
 		Instrument *inst = *it;
-		inst->setchunk(framesToRun());	// For outer instrument, this is done in inTraverse()
-		inst->run(true);
+		if (!inst->isDone()) {
+			inst->setchunk(framesToRun());	// For outer instrument, this is done in inTraverse()
+			inst->run(true);
+		}
+		else {
+			inst->clearOutput(framesToRun());			// This should be optimized to happen only once
+		}
 		inst->addout(BUS_NONE_OUT, 0);		// Special bus type makes this a no-op
 	}
 	// Copy from inputChainedBuf, which points to the outbuf of the last instrument in the chain.

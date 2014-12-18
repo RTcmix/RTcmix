@@ -136,6 +136,7 @@ protected:
 	int				rtgetin(float *, int);
 	int				rtaddout(BUFTYPE samps[]);  			// replacement for old rtaddout
 	int				rtbaddout(BUFTYPE samps[], int length);	// block version of same
+	void			clearOutput(int length);
 
 	const PField &	getPField(int index) const;
 	const double *	getPFieldTable(int index, int *tableLen) const;
