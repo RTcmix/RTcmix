@@ -1,4 +1,4 @@
-This is RTcmix version 4.0, for Linux, Mac OS X, and other Unix platforms.
+This is RTcmix version 4.1, for Linux, Mac OS X, and other Unix platforms.
 
 See the INSTALL file for compilation and installation instructions.
 
@@ -8,11 +8,16 @@ using RTcmix.
 See the AUTHORS and LICENSE files for information about the license
 to this software.
 
-New versions of RTcmix appear at:
+RTcmix is now available on github.  This is now the 'official' version:
 
-   ftp://presto.music.virginia.edu/pub/rtcmix
+	https://github.com/RTcmix/
+
+The older presto.music.virginia.edu is no longer available.
 
 Also see the on-line docs and tutorials at:
 
    http://rtcmix.org
+
+
+December, 2014
 
