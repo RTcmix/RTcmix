@@ -48,9 +48,9 @@ class TaskThread : public RTThread, Notifier
 public:
 	TaskThread(Notifiable *inTarget, TaskProvider *inProvider, int inIndex)
 		: RTThread(inIndex), Notifier(inTarget, inIndex),
-		  mStopping(false), mTaskProvider(inProvider) {}
-	~TaskThread() { mStopping = true; start(); }
-	inline void start();
+		  mStopping(false), mTaskProvider(inProvider) { start(); }
+	~TaskThread() { mStopping = true; wake(); }
+	inline void wake();
 protected:
 	virtual void	run();
 	Task *			getATask() { return mTaskProvider->getTask(); }
@@ -60,10 +60,10 @@ private:
 	RTSemaphore		mSema;
 };
 
-inline void TaskThread::start()
+inline void TaskThread::wake()
 {
 #ifdef THREAD_DEBUG
-	//	printf("TaskThread::start(%p): posting for Task %p\n", this, mTask);
+	//	printf("TaskThread::wake(%p): posting for Task %p\n", this, mTask);
 #endif
 	mSema.post();
 }
@@ -122,11 +122,11 @@ private:
 };
 
 inline void ThreadPool::startAndWait(int taskCount) {
-	// Dont start any more threads than we have tasks.
+	// Dont wake any more threads than we have tasks.
 	mRequestCount = std::min(taskCount, RT_THREAD_COUNT);
 	const int count = mRequestCount;
 	for(int i=0; i<count; ++i)
-		mThreads[i]->start();
+		mThreads[i]->wake();
 #ifdef POOL_DEBUG
 	printf("ThreadPool::startAndWait: waiting on %d threads\n", count);
 #endif

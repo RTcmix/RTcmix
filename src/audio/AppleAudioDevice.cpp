@@ -905,7 +905,7 @@ int AppleAudioDevice::doStart()
 	_impl->stopping = false;
     // Pre-fill the input buffers
     int preBuffers =  _impl->port[!_impl->recording].audioBufFrames / _impl->port[!_impl->recording].deviceBufFrames - 1;
-    DPRINT("AppleAudioDevice::doStart: prerolling %d slices\n", preBuffers);
+    DPRINT("AppleAudioDevice::doStart: prerolling %d slices\n", preBuffers-1);
     for (int prebuf = 1; prebuf < preBuffers; ++prebuf) {
         runCallback();
 	}
@@ -1314,8 +1314,9 @@ int AppleAudioDevice::doSetQueueSize(int *pWriteSize, int *pCount)
 	if (status != noErr)
 		return appleError("Cannot initialize the output audio unit", status);
 
-	// Create our semaphore
-	_impl->renderSema = new RTSemaphore(1);
+	// Create our semaphore and signal it once so render runs first.
+	_impl->renderSema = new RTSemaphore(0);
+	_impl->renderSema->post();
 
 	return 0;
 }

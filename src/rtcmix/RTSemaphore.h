@@ -14,8 +14,8 @@
 class RTSemaphore
 {
 public:
-	RTSemaphore(unsigned inStartingValue=0) : mSema(dispatch_semaphore_create((long)inStartingValue)) { if (!mSema) { throw -1; } }
-	~RTSemaphore() { mSema = NULL; }
+	RTSemaphore(unsigned inStartingValue=0) : mSema(dispatch_semaphore_create((long)inStartingValue)) { if (!mSema) { throw -1; }; }
+	~RTSemaphore() { dispatch_release(mSema); mSema = NULL; }
 	void wait() { dispatch_semaphore_wait(mSema, DISPATCH_TIME_FOREVER); }	// each thread will wait on this
 	void post() { dispatch_semaphore_signal(mSema); }	// when done, each thread calls this
 private:

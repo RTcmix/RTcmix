@@ -18,6 +18,7 @@ public:
 	virtual ~RTThread();
 	static int	GetIndexForThread();
 protected:
+	void start();
 	virtual void run()=0;
 	static void *sProcess(void *inContext);
 private:

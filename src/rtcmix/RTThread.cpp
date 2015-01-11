@@ -1,6 +1,6 @@
 //
 //  RTThread.cpp
-//  RTcmixTest
+//  RTcmix
 //
 //  Created by Douglas Scott on 8/27/12.
 //
@@ -15,18 +15,32 @@ static pthread_once_t sOnceControl = PTHREAD_ONCE_INIT;
 
 pthread_key_t	RTThread::sIndexKey;
 
-RTThread::RTThread(int inThreadIndex) : mThreadIndex(inThreadIndex) {
+RTThread::RTThread(int inThreadIndex)
+	: mThread(NULL), mThreadIndex(inThreadIndex) {
 	pthread_once(&sOnceControl, InitOnce);
-	pthread_attr_t attr;
-	pthread_attr_init(&attr);
-	pthread_attr_setschedpolicy(&attr, SCHED_RR);
-	pthread_create(&mThread, &attr, sProcess, this);
-	pthread_attr_destroy(&attr);
 }
 
 RTThread::~RTThread() {
-	pthread_join(mThread, NULL);
+	if (mThread) {
+		pthread_join(mThread, NULL);
+	}
 }
+
+// We cannot start running the pthread in the ctor, so we do it here.
+
+void RTThread::start() {
+	if (mThread == NULL) {
+		pthread_attr_t attr;
+		pthread_attr_init(&attr);
+		pthread_attr_setschedpolicy(&attr, SCHED_RR);
+		if (pthread_create(&mThread, &attr, sProcess, this) != 0) {
+			throw -1;
+		}
+		pthread_attr_destroy(&attr);
+	}
+}
+
+// static internals
 
 void RTThread::InitOnce() {
 	int status = pthread_key_create(&sIndexKey, RTThread::DestroyMemory);
