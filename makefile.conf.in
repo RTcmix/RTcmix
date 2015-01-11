@@ -154,10 +154,10 @@ ifeq ($(ARCH),MACOSX)
 
     ifeq ($(IPHONE_TYPE), DEVICE)
       ARCHFLAGS += -DEMBEDDED -DIOS -DIOSDEV
-      ARCH_RTLDFLAGS += -framework ../../insts/bgg/GVERB/
+      ARCH_RTLDFLAGS =
       CC = `xcrun -sdk iphoneos -f cc` -arch armv7s -arch armv7
       CXX = `xcrun -sdk iphoneos -f c++` -arch armv7s -arch armv7
-      IPHONE_CFLAGS = -isysroot `xcrun -sdk iphoneos --show-sdk-path`# -arch armv7 -arch armv7s
+      IPHONE_CFLAGS = -isysroot `xcrun -sdk iphoneos --show-sdk-path`
     endif
   endif
 
