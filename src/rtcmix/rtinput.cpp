@@ -266,7 +266,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	/* Parse bus specification. */
 
 	busindex = 0;
-	for (i = 0; i < MAXBUS; i++)
+	for (i = 0; i < busCount; i++)
 		buslist[i] = -1;
 
 	type = BUS_IN;

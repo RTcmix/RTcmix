@@ -181,12 +181,12 @@ RTcmixMain::RTcmixMain(int argc, char **argv, char **env) : RTcmix(false)
    //    guaranteed solution.
 
 #ifdef EMBEDDED
-	init_globals(true, NULL);			// 'true' indicates we were called from main
+	init_options(true, NULL);		// 'true' indicates we were called from main
 	for (int i = 1; i <= MAXARGS; i++) xargv[i] = NULL;
 	xargc = 1;
 #else
    char *dsoPath = makeDSOPath(argv[0]);
-   init_globals(true, dsoPath);		// 'true' indicates we were called from main
+   init_options(true, dsoPath);		// 'true' indicates we were called from main
    delete [] dsoPath;
 
    parseArguments(argc, argv, env);

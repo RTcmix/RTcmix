@@ -84,8 +84,10 @@ void
 RTcmix::init_buf_ptrs()
 {
    int   i;
-
-   for (i = 0; i < MAXBUS; i++) {
+   audioin_buffer = new BufPtr[busCount];
+   aux_buffer = new BufPtr[busCount];
+   out_buffer = new BufPtr[busCount];
+   for (i = 0; i < busCount; i++) {
       audioin_buffer[i] = NULL;
       aux_buffer[i] = NULL;
       out_buffer[i] = NULL;
@@ -101,7 +103,7 @@ RTcmix::clear_audioin_buffers()
 {
    int   i, j;
 
-   for (i = 0; i < MAXBUS; i++) {
+   for (i = 0; i < busCount; i++) {
       BufPtr buf = audioin_buffer[i];
       if (buf != NULL)
          for (j = 0; j < RTBUFSAMPS; j++)
@@ -117,7 +119,7 @@ RTcmix::clear_aux_buffers()
 {
    int   i, j;
 
-   for (i = 0; i < MAXBUS; i++) {
+   for (i = 0; i < busCount; i++) {
       BufPtr buf = aux_buffer[i];
       if (buf != NULL)
          for (j = 0; j < RTBUFSAMPS; j++)
@@ -161,7 +163,7 @@ RTcmix::allocate_audioin_buffer(short chan, int nsamps)
 {
    BufPtr buf_ptr;
 
-   assert(chan >= 0 && chan < MAXBUS);
+   assert(chan >= 0 && chan < busCount);
 
    if (audioin_buffer[chan] == NULL) {
       buf_ptr = ::allocate_buf_ptr(nsamps);
@@ -182,7 +184,7 @@ RTcmix::allocate_aux_buffer(short chan, int nsamps)
 {
    BufPtr buf_ptr;
 
-   assert(chan >= 0 && chan < MAXBUS);
+   assert(chan >= 0 && chan < busCount);
 
    if (aux_buffer[chan] == NULL) {
       buf_ptr = ::allocate_buf_ptr(nsamps);
@@ -203,7 +205,7 @@ RTcmix::allocate_out_buffer(short chan, int nsamps)
 {
    BufPtr buf_ptr;
 
-   assert(chan >= 0 && chan < MAXBUS);
+   assert(chan >= 0 && chan < busCount);
 
    if (out_buffer[chan] == NULL) {
       buf_ptr = ::allocate_buf_ptr(nsamps);
@@ -219,7 +221,10 @@ RTcmix::allocate_out_buffer(short chan, int nsamps)
 void
 RTcmix::free_buffers()
 {
-	for (int chan = 0; chan < MAXBUS; ++chan)
+	if (!audioin_buffer)	// if one is NULL, they are all already NULL
+		return;
+
+	for (int chan = 0; chan < busCount; ++chan)
 	{
 		if (audioin_buffer[chan]) {
 			free(audioin_buffer[chan]);
@@ -234,4 +239,10 @@ RTcmix::free_buffers()
 			out_buffer[chan] = NULL;
 		}
 	}
+	delete [] audioin_buffer;
+	audioin_buffer = NULL;
+	delete [] aux_buffer;
+	aux_buffer = NULL;
+	delete [] out_buffer;
+	out_buffer = NULL;
 }

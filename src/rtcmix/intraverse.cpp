@@ -243,7 +243,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			break;
 		case AUX_TO_AUX:
 			bus_count = iBus->auxout_count;
-			bus_q_offset = MAXBUS;
+			bus_q_offset = busCount;
 			for(i=0;i<bus_count;i++) {
 				bus = iBus->auxout[i];
 				busq = bus+bus_q_offset;
@@ -255,7 +255,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			break;
 		case TO_OUT:
 			bus_count = iBus->out_count;
-			bus_q_offset = MAXBUS*2;
+			bus_q_offset = busCount*2;
 			for(i=0;i<bus_count;i++) {
 				bus = iBus->out[i];
 				busq = bus+bus_q_offset;
@@ -267,7 +267,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			break;
 		case TO_AUX_AND_OUT:
 			bus_count = iBus->out_count;
-			bus_q_offset = MAXBUS;
+			bus_q_offset = busCount;
 			for(i=0;i<bus_count;i++) {
 				bus = iBus->out[i];
 				busq = bus+bus_q_offset;
@@ -277,7 +277,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 				rtQueue[busq].push(Iptr,heapChunkStart);
 			}
 			bus_count = iBus->auxout_count;
-			bus_q_offset = 2*MAXBUS;
+			bus_q_offset = 2*busCount;
 			for(i=0;i<bus_count;i++) {
 				bus = iBus->auxout[i];
 				busq = bus+bus_q_offset;
@@ -303,7 +303,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
     FRAMETYPE rtQchunkStart = 0;
 #ifdef MULTI_THREAD
 	vector<Instrument *>instruments;
-	instruments.reserve(MAXBUS);
+	instruments.reserve(busCount);
 #endif
 	// rtQueue[] playback shuffling ++++++++++++++++++++++++++++++++++++++++
 	while (!aux_pb_done) {
@@ -316,14 +316,14 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			::pthread_mutex_unlock(&to_aux_lock);
 			break;
 		case AUX_TO_AUX:
-			bus_q_offset = MAXBUS;
+			bus_q_offset = busCount;
 			::pthread_mutex_lock(&aux_to_aux_lock);
 			bus = AuxToAuxPlayList[play_bus++];
 			::pthread_mutex_unlock(&aux_to_aux_lock);
 			bus_type = BUS_AUX_OUT;
 			break;
 		case TO_OUT:
-			bus_q_offset = MAXBUS*2;
+			bus_q_offset = busCount*2;
 			::pthread_mutex_lock(&to_out_lock);
 			bus = ToOutPlayList[play_bus++];
 			::pthread_mutex_unlock(&to_out_lock);
@@ -698,7 +698,7 @@ void  RTcmix::resetHeapAndQueue()
 	rtQueue = NULL;
 	
 	rtHeap = new heap;
-	rtQueue = new RTQueue[MAXBUS*3];
+	rtQueue = new RTQueue[busCount*3];
 }
 
 bool RTcmix::doneTraverse(AudioDevice *device, void *arg)

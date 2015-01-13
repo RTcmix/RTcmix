@@ -80,9 +80,10 @@ main(int argc, char *argv[], char **env)
 
    clear_print();
 
+   {
    RTcmixMain app(argc, argv, env);
    app.run();
-
+   }
    return 0;
 }
 
@@ -94,9 +95,9 @@ extern "C" {
 	typedef void (*RTcmixBangCallback)(void *inContext);
 	typedef void (*RTcmixValuesCallback)(float *values, int numValues, void *inContext);
 	typedef void (*RTcmixPrintCallback)(const char *printBuffer, void *inContext);
-	int RTcmix_init();	//	DAS WAS rtcmixmain
+	int RTcmix_init();
 	int RTcmix_destroy();
-	int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, float *mm_inbuf, float *mm_outbuf);	// DAS WAS maxmsp_rtsetparams
+	int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_count);
 	void RTcmix_setBangCallback(RTcmixBangCallback inBangCallback, void *inContext);
 	void RTcmix_setValuesCallback(RTcmixValuesCallback inValuesCallback, void *inContext);
 	void RTcmix_setPrintCallback(RTcmixPrintCallback inPrintCallback, void *inContext);
@@ -217,6 +218,8 @@ void checkForPrint()
 	}
 }
 
+// Currently this does not support resetting the number of busses.
+
 int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording)
 {
 	rtcmix_debug(NULL, "RTcmix_resetAudio entered");
@@ -282,7 +285,7 @@ void unloadinst()
 #ifdef PD
 int pd_rtsetparams(float sr, int nchans, int vecsize, float *mm_inbuf, float *mm_outbuf)
 #else
-int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, float *mm_inbuf, float *mm_outbuf)	// DAS WAS mm_rtsetparams
+int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_count)	// DAS WAS mm_rtsetparams
 #endif
 {
 #if defined(MSP_AUDIO_DEVICE)
@@ -291,8 +294,10 @@ int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, float *mm
 #endif
 #ifdef PD
 	int recording = 1;
+	int bus_count = 0;
 #endif
-	int status = app->setparams(sr, nchans, vecsize, recording != 0, mm_inbuf, mm_outbuf);
+	if (bus_count == 0) bus_count = DEFAULT_MAXBUS;
+	int status = app->setparams(sr, nchans, vecsize, recording != 0, bus_count);
 #if defined(MSP_AUDIO_DEVICE)
 	if (status == 0) {
 		// For now, there is no separate call to start audio in rtcmix~

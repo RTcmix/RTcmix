@@ -1,8 +1,15 @@
 #ifndef _BUS_H_ 
 #define _BUS_H_ 1
 
-/* MAXBUS is one greater than the total number of useable buses. */
-#define MAXBUS 65
+/* MAXBUS is the maximum number of buses you can ever request dynamically. Some arrays are still statically set using this */
+#define MINBUS 8
+#define MAXBUS 129
+
+#if defined(EMBEDDED)
+#define DEFAULT_MAXBUS 17
+#else
+#define DEFAULT_MAXBUS 65
+#endif
 
 #ifdef __cplusplus
 
@@ -29,6 +36,22 @@ enum IBusClass {
   TO_OUT,
   TO_AUX_AND_OUT,
   UNKNOWN
+};
+
+struct CheckNode;
+
+struct BusConfig
+{
+	/* Bus graph, parsed by check_bus_inst_config */
+	/* Allows loop checking ... and buffer playback order? */
+	CheckNode *	In_Config;
+	/* State for bus graph */
+	bool		HasChild;
+	bool		HasParent;
+	bool		AuxInUse;
+	bool		AuxOutInUse;
+	bool		OutInUse;
+	short		RevPlay;
 };
 
 class BusSlot;

@@ -103,6 +103,7 @@ public:
 	static BusSlot *get_bus_config(const char *inst_name);
 	static bool isInputAudioDevice(int fdIndex);
     static const char *getInputPath(int fdIndex);
+	static int getBusCount();
 	// Input
 	static int attachInput(float inputSkip, InputState *instInput);
 	static void readFromAuxBus(BufPtr dest, int dest_chans, int dest_frms, const short src_chan_list[], short src_chans, int output_offset);
@@ -125,7 +126,7 @@ public:
 	int setInputBuffer(const char *inName, float *inBuffer, int inFrames, int inChans, int inModtime);
 	static InputFile * findInput(const char *inName, int *pOutIndex);
 
-	static int setparams(float, int, int, bool, float*, float*);
+	static int setparams(float, int, int, bool, int);
 	static int resetparams(float, int, int, bool);
 
 	static int startAudio(AudioDeviceCallback renderCallback,
@@ -157,7 +158,8 @@ protected:
 
 	// Initialization methods.
 	void init(float, int, int, const char*, const char*, const char*);	// called by all constructors
-	static void init_globals(bool fromMain, const char *defaultDSOPath);
+	static void init_options(bool fromMain, const char *defaultDSOPath);
+	static void init_globals();
 
 	// Cleanup methods
 	static void free_globals();
@@ -272,9 +274,9 @@ private:
 	static int 		last_input_index;
 	static long     max_input_fds;
 
-	static BufPtr	audioin_buffer[];    /* input from ADC, not file */
-	static BufPtr	aux_buffer[];
-	static BufPtr	out_buffer[];
+	static BufPtr	*audioin_buffer;    /* input from ADC, not file */
+	static BufPtr	*aux_buffer;
+	static BufPtr	*out_buffer;
 #ifdef MULTI_THREAD
 	static TaskManager *taskManager;
 	static pthread_mutex_t aux_buffer_lock;
@@ -291,9 +293,9 @@ private:
 	static pthread_mutex_t vectorLock;
 #endif
 	
-	static short AuxToAuxPlayList[]; /* The playback order for AUX buses */
-	static short ToOutPlayList[]; /* The playback order for AUX buses */
-	static short ToAuxPlayList[]; /* The playback order for AUX buses */
+	static short *AuxToAuxPlayList; /* The playback order for AUX buses */
+	static short *ToOutPlayList; /* The playback order for AUX buses */
+	static short *ToAuxPlayList; /* The playback order for AUX buses */
 
 
 	// Bus configuration methods
@@ -316,17 +318,10 @@ private:
 	/* Used to initialize Bus_In_Config inside check_bus_inst_config */
 	static Locked<Bool> Bus_Config_Status;
 
-	/* Bus graph, parsed by check_bus_inst_config */
-	/* Allows loop checking ... and buffer playback order? */
-	static CheckNode *Bus_In_Config[MAXBUS];
+	/* This replaces MAXBUS */
+	static int busCount;
 
-	/* Global private arrays */
-	static Bool HasChild[MAXBUS];
-	static Bool HasParent[MAXBUS];
-	static Bool AuxInUse[MAXBUS];
-	static Bool AuxOutInUse[MAXBUS];
-	static Bool OutInUse[MAXBUS];
-	static short RevPlay[MAXBUS];
+	static BusConfig *BusConfigs;
 	
 	// END of bus config
 	

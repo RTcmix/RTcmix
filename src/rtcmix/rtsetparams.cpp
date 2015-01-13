@@ -23,7 +23,7 @@
 /* #define DEBUG */
 
 int
-RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, float *mm_inbuf, float *mm_outbuf)
+RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, int bus_count)
 {
 	int         i;
 	int         verbose = Option::print();
@@ -42,9 +42,25 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, float *mm_
 		return die("rtsetparams", "Sampling rate must be greater than 0.");
 	}
 	
-	if (NCHANS > MAXBUS) {
-		return die("rtsetparams", "You can only have up to %d output channels.", MAXBUS - 1);
+	if (bus_count < NCHANS) {
+		return die("rtsetparams", "Bus count must be >= channel count");
 	}
+	if (bus_count < MAXBUS && bus_count >= MINBUS) {
+		busCount = bus_count;
+	}
+	else {
+		return die("rtsetparams", "Bus count must be between %d and %d", MINBUS, MAXBUS);
+	}
+
+	if (NCHANS > busCount) {
+		return die("rtsetparams", "You can only have up to %d output channels.", busCount);
+	}
+	
+	// Now that much of our global state is dynamically sized, the initialization
+	// of that state needs to be delayed until after we know the bus count as
+	// passed via rtsetparams().
+	
+	init_globals();
 	
 	/* play_audio is true unless user has called set_option("audio_off") before
 	 rtsetparams. This would let user run multiple jobs, as long as only one
@@ -177,16 +193,13 @@ RTcmix::rtsetparams(float p[], int n_args, double pp[])
 #endif
 
 	if (rtsetparams_was_called()) {
-		die("rtsetparams", "You can only call rtsetparams once!");
-		return -1;
+		return die("rtsetparams", "You can only call rtsetparams once!");
 	}
-	if (n_args > 3 && pp[3] != 0.0) {
-		// We used to support a 4th argument for output port (SGI only).  Could we make use of this for other platforms?
-	}
-	
-	int bufsamps = n_args > 2 ? (int) p[2] : (int) Option::bufferFrames();
+		
+	int bufsamps = (n_args > 2) ? (int) p[2] : (int) Option::bufferFrames();
 	bool recording = Option::record();
+	int numBusses = (n_args > 3) ? (int)p[3] : DEFAULT_MAXBUS;
 	
-	return (double) setparams(p[0], (int)p[1], bufsamps, recording, NULL, NULL);
+	return (double) setparams(p[0], (int)p[1], bufsamps, recording, numBusses);
 }
 

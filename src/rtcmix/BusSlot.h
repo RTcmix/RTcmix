@@ -12,19 +12,19 @@
 
 class BusSlot : public RefCounted, public Lockable {
 public:
-	BusSlot();
+	BusSlot(int inBusCount);
 	inline		IBusClass Class() const;
 	inline 	   short * getBusList(BusType type, int *busCount);
 	BusSlot    *next;
 	BusSlot    *prev;
+	short      *in;
+	short      *out;
+	short      *auxin;
+	short      *auxout;
 	short      in_count;
-	short      in[MAXBUS];
 	short      out_count;
-	short      out[MAXBUS];
 	short      auxin_count;
-	short      auxin[MAXBUS];
 	short      auxout_count;
-	short      auxout[MAXBUS];
 protected:
 	virtual ~BusSlot();
 };

@@ -54,7 +54,7 @@ Instrument::Instrument()
    _busSlot = NULL;
    _pfields = NULL;
 
-   for (int i = 0; i < MAXBUS; i++)
+   for (int i = 0; i < RTcmix::getBusCount(); i++)
 	   bufferWritten[i] = false;
 
 	my_pfbus = PFBusData::connect_val;
@@ -379,7 +379,7 @@ void Instrument::addout(BusType bus_type, int bus)
    int      endframe, src_chan, buses;
    short    *bus_list;
 
-   assert(bus >= 0 && bus < MAXBUS);
+   assert(bus >= 0 && bus < RTcmix::getBusCount());
 
 	if (bus_type != BUS_NONE_OUT) {
 

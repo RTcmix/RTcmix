@@ -86,9 +86,9 @@ int				RTcmix::normalize_output_floats	= 0;
 int				RTcmix::is_float_format 		= 0;
 char *			RTcmix::rtoutsfname 			= NULL;
 
-BufPtr 		RTcmix::audioin_buffer[MAXBUS];    /* input from ADC, not file */
-BufPtr 		RTcmix::aux_buffer[MAXBUS];
-BufPtr 		RTcmix::out_buffer[MAXBUS];
+BufPtr *		RTcmix::audioin_buffer = NULL;    /* input from ADC, not file */
+BufPtr *		RTcmix::aux_buffer = NULL;
+BufPtr *		RTcmix::out_buffer = NULL;
 
 bool		RTcmix::rtrecord 	= false;		// indicates reading from audio device
 int			RTcmix::rtfileit 	= 0;		// signal writing to soundfile
@@ -113,9 +113,9 @@ pthread_mutex_t RTcmix::out_in_use_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RTcmix::revplay_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RTcmix::bus_slot_lock = PTHREAD_MUTEX_INITIALIZER;
 
-short			RTcmix::AuxToAuxPlayList[MAXBUS];
-short			RTcmix::ToOutPlayList[MAXBUS];
-short			RTcmix::ToAuxPlayList[MAXBUS];
+short *			RTcmix::AuxToAuxPlayList = NULL;
+short *			RTcmix::ToOutPlayList = NULL;
+short *			RTcmix::ToAuxPlayList = NULL;
 
 #ifdef MULTI_THREAD
 pthread_mutex_t RTcmix::aux_buffer_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -129,13 +129,8 @@ pthread_mutex_t RTcmix::vectorLock = PTHREAD_MUTEX_INITIALIZER;
 
 BusQueue *		RTcmix::Inst_Bus_Config;
 Locked<Bool>	RTcmix::Bus_Config_Status(NO);
-CheckNode *		RTcmix::Bus_In_Config[MAXBUS];
-Bool			RTcmix::HasChild[MAXBUS];
-Bool			RTcmix::HasParent[MAXBUS];
-Bool			RTcmix::AuxInUse[MAXBUS];
-Bool			RTcmix::AuxOutInUse[MAXBUS];
-Bool			RTcmix::OutInUse[MAXBUS];
-short			RTcmix::RevPlay[MAXBUS];
+int				RTcmix::busCount = DEFAULT_MAXBUS;
+BusConfig *		RTcmix::BusConfigs = NULL;
 
 // Function registry
 FunctionEntry *	RTcmix::_functionRegistry = NULL;
@@ -144,41 +139,57 @@ FunctionEntry *	RTcmix::_functionRegistry = NULL;
 struct _func *	RTcmix::_func_list = NULL;
 
 
+/* --------------------------------------------------------- init_options --- */
+void
+RTcmix::init_options(bool fromMain, const char *defaultDSOPath)
+{
+	rtcmix_debug(NULL, "RTcmix::init_options entered");
+	Option::init();
+	if (defaultDSOPath && defaultDSOPath[0])
+		Option::dsoPathPrepend(defaultDSOPath);
+	
+	if (fromMain) {
+#ifndef EMBEDDED
+		Option::readConfigFile(Option::rcName());
+		Option::exitOnError(true); // we do this no matter what is in config file
+#else
+		Option::exitOnError(false);
+#endif
+		rtInteractive = 0;
+	}
+	else {
+		SR = 44100.0; // what the heck...
+		Option::print(0);
+		Option::reportClipping(false);
+	}
+	
+	RTBUFSAMPS = (int) Option::bufferFrames();  /* modifiable with rtsetparams */
+
+	if (Option::autoLoad()) {
+		const char *dsoPath = Option::dsoPath();
+		if (strlen(dsoPath) == 0)
+			registerDSOs(SHAREDLIBDIR);
+		else
+			registerDSOs(dsoPath);
+	}
+}
 
 /* --------------------------------------------------------- init_globals --- */
 void
-RTcmix::init_globals(bool fromMain, const char *defaultDSOPath)
+RTcmix::init_globals()
 {
-   Option::init();
-	rtcmix_debug(NULL, "RTcmix::init_globals entered");
-   if (defaultDSOPath && defaultDSOPath[0])
-      Option::dsoPathPrepend(defaultDSOPath);
-
-   if (fromMain) {
-#ifndef EMBEDDED
-      Option::readConfigFile(Option::rcName());
-      Option::exitOnError(true); // we do this no matter what is in config file
-#else
-      Option::exitOnError(false);
-#endif
-      rtInteractive = 0;
-   }
-   else {
-      SR = 44100.0; // what the heck...
-      Option::print(0);
-      Option::reportClipping(false);
-   }
-
-   RTBUFSAMPS = (int) Option::bufferFrames();  /* modifiable with rtsetparams */
-
+   rtcmix_debug(NULL, "RTcmix::init_globals entered");
    rtHeap = new heap;
-   rtQueue = new RTQueue[MAXBUS*3];
+   rtQueue = new RTQueue[busCount*3];
 #ifdef MULTI_THREAD
    taskManager = new TaskManager;
-   mixVector.reserve(MAXBUS);
+   mixVector.reserve(busCount);
 #endif
-
-   for (int i = 0; i < MAXBUS; i++) {
+	BusConfigs = new BusConfig[busCount];
+	AuxToAuxPlayList = new short[busCount];
+	ToOutPlayList = new short[busCount];
+	ToAuxPlayList = new short[busCount];
+   for (int i = 0; i < busCount; i++) {
       AuxToAuxPlayList[i] = -1; /* The playback order for AUX buses */
       ToOutPlayList[i] = -1;    /* The playback order for AUX buses */
       ToAuxPlayList[i] =-1;     /* The playback order for AUX buses */
@@ -194,14 +205,6 @@ RTcmix::init_globals(bool fromMain, const char *defaultDSOPath)
 	last_input_index = -1;
 	
    init_buf_ptrs();
-
-   if (Option::autoLoad()) {
-      const char *dsoPath = Option::dsoPath();
-      if (strlen(dsoPath) == 0)
-         registerDSOs(SHAREDLIBDIR);
-      else
-         registerDSOs(dsoPath);
-   }
 }
 
 void
@@ -218,7 +221,16 @@ RTcmix::free_globals()
 	delete [] inputFileTable;
 	inputFileTable = NULL;
 	
-	// Experimental: Reset state of all global vars
+	delete [] AuxToAuxPlayList;
+	AuxToAuxPlayList = NULL;
+	delete [] ToAuxPlayList;
+	ToAuxPlayList = NULL;
+	delete [] ToOutPlayList;
+	ToAuxPlayList = NULL;
+	delete [] BusConfigs;
+	BusConfigs = NULL;
+	
+	// Reset state of all global vars
 	runToOffset				= false;
 	bufOffset				= 0;
 	rtsetparams_called 		= 0;
@@ -265,14 +277,14 @@ detect_denormals()
 //  The RTcmix constructor with default SR, NCHANS, and RTBUFSAMPS
 RTcmix::RTcmix() 
 {
-	init_globals(false, NULL);
+	init_options(false, NULL);
 	init(SR, NCHANS, RTBUFSAMPS, NULL, NULL, NULL);
 }
 
 //  The RTcmix constructor with settable SR, NCHANS; default RTBUFSAMPS
 RTcmix::RTcmix(float tsr, int tnchans)
 {
-	init_globals(false, NULL);
+	init_options(false, NULL);
 	init(tsr, tnchans, RTBUFSAMPS, NULL, NULL, NULL);
 }
 
@@ -282,7 +294,7 @@ RTcmix::RTcmix(float tsr, int tnchans)
 RTcmix::RTcmix(float tsr, int tnchans, int bsize,
 			   const char *opt1, const char *opt2, const char *opt3)
 {
-   init_globals(false, NULL);
+   init_options(false, NULL);
    init(tsr, tnchans, bsize, opt1, opt2, opt3);
 }
 
@@ -564,6 +576,11 @@ bool RTcmix::isInputAudioDevice(int fdIndex)
 const char * RTcmix::getInputPath(int fdIndex)
 {
     return inputFileTable[fdIndex].fileName();
+}
+
+int RTcmix::getBusCount()
+{
+	return busCount;
 }
 
 void RTcmix::setBufOffset(FRAMETYPE inOffset, bool inRunToOffset) {

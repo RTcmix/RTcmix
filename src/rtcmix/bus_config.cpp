@@ -40,15 +40,20 @@ struct BusQueue {
 // BusSlot "class" methods
 //
 
-BusSlot::BusSlot() : next(NULL), prev(NULL), in_count(0), out_count(0),
-					 auxin_count(0), auxout_count(0)
+BusSlot::BusSlot(int inBusCount)
+	: next(NULL), prev(NULL), in(new short[inBusCount]), out(new short[inBusCount]), auxin(new short[inBusCount]), auxout(new short[inBusCount]),
+	  in_count(0), out_count(0), auxin_count(0), auxout_count(0)
 {
-	for (int n=0; n<MAXBUS; ++n)
+	for (int n=0; n<inBusCount; ++n)
 	    in[n] = out[n] = auxin[n] = auxout[n] = 0;
 }
 
 BusSlot::~BusSlot()
 {
+	delete [] auxout;
+	delete [] auxin;
+	delete [] out;
+	delete [] in;
 	MPRINT("BusSlot 0x%x destroyed\n", this);
 }
 
@@ -78,11 +83,12 @@ enum ConfigStatus {
 // Local classes for configuration checking
 
 struct CheckNode : public RefCounted {
-   CheckNode() : bus_list(new short[MAXBUS]), bus_count(0) {}
-   CheckNode(short *list, short count) : bus_list(list), bus_count(count) {}
-   ~CheckNode() { MPRINT("CheckNode 0x%x destroyed\n", this); }
+   CheckNode(int inBusCount) : bus_list(new short[inBusCount]), bus_count(0), ownsBusList(true) {}
+   CheckNode(short *list, short count) : bus_list(list), bus_count(count), ownsBusList(false) {}
+   ~CheckNode() { if (ownsBusList) delete [] bus_list; MPRINT("CheckNode 0x%x destroyed\n", this); }
    short *bus_list;
    short bus_count;
+   bool ownsBusList;
 };
 
 struct CheckQueue {
@@ -121,11 +127,12 @@ void
 RTcmix::print_parents() {
   int i;
   RTPrintfCat("Aux buses w/o aux inputs:  ");
-  for(i=0;i<MAXBUS;i++) {
+  for(i=0;i<busCount;i++) {
+	BusConfig *bus = &BusConfigs[i];
 	pthread_mutex_lock(&aux_in_use_lock);
-	if (AuxInUse[i]) {
+	if (bus->AuxInUse) {
 	  pthread_mutex_lock(&has_parent_lock);
-	  if (!HasParent[i]) {
+	  if (!bus->HasParent) {
 		RTPrintfCat(" %d",i);
 	  }
 	  pthread_mutex_unlock(&has_parent_lock);
@@ -140,11 +147,12 @@ void
 RTcmix::print_children() {
   int i;
   RTPrintfCat("Aux buses w/o aux outputs:  "); 
-  for(i=0;i<MAXBUS;i++) {
+  for(i=0;i<busCount;i++) {
+	BusConfig *bus = &BusConfigs[i];
 	pthread_mutex_lock(&aux_in_use_lock);
-	if (AuxInUse[i]) {
+	if (bus->AuxInUse) {
 	  pthread_mutex_lock(&has_child_lock);
-	  if (!HasChild[i]) {
+	  if (!bus->HasChild) {
 		RTPrintfCat(" %d",i);
 	  }
 	  pthread_mutex_unlock(&has_child_lock);
@@ -210,7 +218,7 @@ void
 RTcmix::print_play_order() {
   int i;
   RTPrintfCat("Output buffer playback order:  ");
-  for(i=0;i<MAXBUS;i++) {
+  for(i=0;i<busCount;i++) {
 	pthread_mutex_lock(&aux_to_aux_lock);
 	if (AuxToAuxPlayList[i] != -1) {
 	  RTPrintfCat(" %d",AuxToAuxPlayList[i]);
@@ -238,10 +246,11 @@ RTcmix::check_bus_inst_config(BusSlot *slot, Bool visit) {
 	/* and the playback order list */
 	Bus_Config_Status.lock();
 	if (Bus_Config_Status == NO) {
-		for (i=0;i<MAXBUS;i++) {
-			CheckNode *t_node = new CheckNode;
+		for (i=0;i<busCount;i++) {
+			BusConfig *bus = &BusConfigs[i];
+			CheckNode *t_node = new CheckNode(busCount);
 			pthread_mutex_lock(&bus_in_config_lock);
-			Bus_In_Config[i] = t_node;
+			bus->In_Config = t_node;
 			t_node->ref();
 			pthread_mutex_unlock(&bus_in_config_lock);
 		}
@@ -251,22 +260,23 @@ RTcmix::check_bus_inst_config(BusSlot *slot, Bool visit) {
 
 	aux_ctr = out_ctr = 0;
 	j=0;
-	for(i=0;i<MAXBUS;i++) {
+	for(i=0;i<busCount;i++) {
+		BusConfig *bus = &BusConfigs[i];
 		if (visit)
 			Visited[i] = NO;
 		Checked[i] = NO;
 		pthread_mutex_lock(&revplay_lock);
-		RevPlay[i] = -1;
+		bus->RevPlay = -1;
 		pthread_mutex_unlock(&revplay_lock);
 		pthread_mutex_lock(&out_in_use_lock);
-		if (OutInUse[i]) {  // DJT For scheduling
+		if (bus->OutInUse) {  // DJT For scheduling
 			pthread_mutex_lock(&to_out_lock);
 			ToOutPlayList[out_ctr++] = i;
 			pthread_mutex_unlock(&to_out_lock);
 		}
 		pthread_mutex_unlock(&out_in_use_lock);
 		pthread_mutex_lock(&aux_out_in_use_lock);
-		if (AuxOutInUse[i]) {
+		if (bus->AuxOutInUse) {
 			pthread_mutex_lock(&to_aux_lock);
 			ToAuxPlayList[aux_ctr++] = i;
 			pthread_mutex_unlock(&to_aux_lock);
@@ -308,22 +318,22 @@ RTcmix::check_bus_inst_config(BusSlot *slot, Bool visit) {
 			/* put them on the list "to be checked" */
 
 			pthread_mutex_lock(&bus_in_config_lock);
-			if ((Bus_In_Config[t_in]->bus_count > 0) && !Visited[t_in]) {
+			if ((BusConfigs[t_in].In_Config->bus_count > 0) && !Visited[t_in]) {
 #ifdef PRINTALL
 				RTPrintf("check_bus_inst_config: adding Bus[%d] to list\n",t_in);
 #endif
 				pthread_mutex_lock(&has_parent_lock);
-				if (HasParent[t_in]) {
+				if (BusConfigs[t_in].HasParent) {
 #ifdef PRINTPLAY
 					RTPrintf("check_bus_inst_config: RevPlay[%d] = %d\n",r_p_count,t_in);
 #endif
 					pthread_mutex_lock(&revplay_lock);
-					RevPlay[r_p_count++] = t_in;
+					BusConfigs[r_p_count++].RevPlay = t_in;
 					pthread_mutex_unlock(&revplay_lock);
 				}
 				pthread_mutex_unlock(&has_parent_lock);
 				Visited[t_in] = YES;
-				CheckQueue *t_queue = new CheckQueue(Bus_In_Config[t_in]);
+				CheckQueue *t_queue = new CheckQueue(BusConfigs[t_in].In_Config);
 				last->next = t_queue;
 				last = t_queue;
 			}
@@ -363,41 +373,42 @@ RTcmix::insert_bus_slot(char *name, BusSlot *slot) {
 	for(i=0;i<slot->auxout_count;i++) {
 		s_out = slot->auxout[i];
 		pthread_mutex_lock(&aux_in_use_lock);
-		if (!AuxInUse[s_out]) {
-			AuxInUse[s_out] = YES;
+		BusConfig *outbus = &BusConfigs[s_out];
+		if (!outbus->AuxInUse) {
+			outbus->AuxInUse = YES;
 		}
 		pthread_mutex_unlock(&aux_in_use_lock);
 		for(j=0;j<slot->auxin_count;j++) {
 			s_in = slot->auxin[j];
 			pthread_mutex_lock(&has_parent_lock);
-			if ((!HasParent[s_out]) && (s_in != 333)) {
+			if (!outbus->HasParent && s_in != 333) {
 #ifdef PRINTALL
 				RTPrintf("insert_bus_slot: HasParent[%d]\n",s_out);
 #endif
-				HasParent[s_out] = YES;
+				outbus->HasParent = YES;
 			}
 			pthread_mutex_unlock(&has_parent_lock);
 
 			pthread_mutex_lock(&bus_in_config_lock);
-			t_in_count = Bus_In_Config[s_out]->bus_count;
+			t_in_count = outbus->In_Config->bus_count;
 			pthread_mutex_unlock(&bus_in_config_lock);
 #ifdef PRINTALL
 			RTPrintf("insert_bus_slot: Inserting Bus_In[%d] = %d\n",s_out,s_in);
 #endif
 			if (s_in != 333) {
 				pthread_mutex_lock(&bus_in_config_lock);
-				Bus_In_Config[s_out]->bus_list[t_in_count] = s_in;
-				Bus_In_Config[s_out]->bus_count++;
+				outbus->In_Config->bus_list[t_in_count] = s_in;
+				outbus->In_Config->bus_count++;
 
 // BGG -- my bus-wrapping hackeroo!  go brad go!  :-)
-				if (Bus_In_Config[s_out]->bus_count >= MAXBUS)
-					Bus_In_Config[s_out]->bus_count = 0;
+				if (outbus->In_Config->bus_count >= busCount)
+					outbus->In_Config->bus_count = 0;
 				pthread_mutex_unlock(&bus_in_config_lock);
 				pthread_mutex_lock(&has_child_lock);
-				HasChild[s_in] = YES;
+				BusConfigs[s_in].HasChild = YES;
 				pthread_mutex_unlock(&has_child_lock);
 				pthread_mutex_lock(&aux_in_use_lock);
-				AuxInUse[s_in] = YES;
+				BusConfigs[s_in].AuxInUse = YES;
 				pthread_mutex_unlock(&aux_in_use_lock);
 			}
 		}
@@ -450,7 +461,7 @@ RTcmix::bf_traverse(int bus, Bool visit) {
 #ifdef PRINTPLAY
   RTPrintf("entering bf_traverse(%d)\n", bus);
 #endif
-  BusSlot *temp = new BusSlot;
+  BusSlot *temp = new BusSlot(busCount);
   temp->auxin[0] = bus;
   temp->auxin_count=1;
   temp->auxout[0] = 333;
@@ -470,11 +481,12 @@ RTcmix::create_play_order() {
   short aux_p_count = 0;
 
   /* Put all the parents on */
-  for(i=0;i<MAXBUS;i++) {
+  for(i=0;i<busCount;i++) {
+	BusConfig *bus = &BusConfigs[i];
 	pthread_mutex_lock(&aux_in_use_lock);
-	if (AuxInUse[i]) {
+	if (bus->AuxInUse) {
 	  pthread_mutex_lock(&has_parent_lock);
-	  if (!HasParent[i]) {
+	  if (!bus->HasParent) {
 #ifdef PRINTPLAY
 		RTPrintf("create_play_order: AuxPlay[%d] = %d\n",aux_p_count,i);
 #endif
@@ -486,23 +498,24 @@ RTcmix::create_play_order() {
 	}
 	pthread_mutex_unlock(&aux_in_use_lock);
   }
-  for (i=0;i<MAXBUS;i++) {
+  for (i=0;i<busCount;i++) {
+	BusConfig *bus = &BusConfigs[i];
 	pthread_mutex_lock(&aux_in_use_lock);
-	if (AuxInUse[i]) {
+	if (bus->AuxInUse) {
 	  pthread_mutex_lock(&has_child_lock);
-	  if (!HasChild[i]) {
+	  if (!bus->HasChild) {
 		bf_traverse(i,visit);
 		if (visit) 
 		  visit = NO;
-		for (j=MAXBUS-1;j>=0;j--) {
+		for (j=busCount-1;j>=0;j--) {
 		  pthread_mutex_lock(&revplay_lock);
-		  if (RevPlay[j] != -1) {
+		  if (BusConfigs[j].RevPlay != -1) {
 #ifdef PRINTPLAY
 			RTPrintf("create_play_order: AuxPlay[%d](%d) = Rev[%d](%d)\n",
 					aux_p_count,AuxToAuxPlayList[aux_p_count],j,RevPlay[j]);
 #endif
 			pthread_mutex_lock(&aux_to_aux_lock);
-			AuxToAuxPlayList[aux_p_count++] = RevPlay[j];
+			AuxToAuxPlayList[aux_p_count++] = BusConfigs[j].RevPlay;
 			pthread_mutex_unlock(&aux_to_aux_lock);
 		  }
 		  pthread_mutex_unlock(&revplay_lock);
@@ -553,7 +566,8 @@ RTcmix::get_bus_config(const char *inst_name)
    /* Some init stuff normally done in check_bus_inst_config */
    Bus_Config_Status.lock();
    if (Bus_Config_Status == NO) {
-	 for (i=0;i<MAXBUS;i++) {
+	 for (i=0;i<busCount;i++) {
+	   BusConfig *bus = &BusConfigs[i];
 	   pthread_mutex_lock(&aux_to_aux_lock);
 	   AuxToAuxPlayList[i] = -1;
 	   pthread_mutex_unlock(&aux_to_aux_lock);
@@ -564,12 +578,12 @@ RTcmix::get_bus_config(const char *inst_name)
 	   ToOutPlayList[i] = -1;
 	   pthread_mutex_unlock(&to_out_lock);
 	   pthread_mutex_lock(&out_in_use_lock);
-	   OutInUse[i] = NO;
+	   bus->OutInUse = NO;
 	   pthread_mutex_unlock(&out_in_use_lock);
 	   // Added this initialization as well -- DS 5/2005
-	   CheckNode *t_node = new CheckNode;
+	   CheckNode *t_node = new CheckNode(busCount);
 	   pthread_mutex_lock(&bus_in_config_lock);
-	   Bus_In_Config[i] = t_node;
+	   bus->In_Config = t_node;
 	   t_node->ref();
 	   pthread_mutex_unlock(&bus_in_config_lock);
 	 }
@@ -579,14 +593,14 @@ RTcmix::get_bus_config(const char *inst_name)
 
    for(i=0;i<NCHANS;i++) {
 	 pthread_mutex_lock(&out_in_use_lock);
-	 OutInUse[i] = YES;
+	 BusConfigs[i].OutInUse = YES;
 	 pthread_mutex_unlock(&out_in_use_lock);
 	 pthread_mutex_lock(&to_out_lock);
 	 ToOutPlayList[i] = i;
 	 pthread_mutex_unlock(&to_out_lock);
    }
 
-   default_bus_slot = new BusSlot;
+   default_bus_slot = new BusSlot(busCount);
    /* Grab input chans from file descriptor table */
    index = get_last_input_index();
    /* Otherwise grab from audio device, if active */
@@ -705,7 +719,6 @@ void
 RTcmix::addToBus(BusType type, int bus, BufPtr src, int offset, int endfr, int chans)
 {
 	register BufPtr dest;
-	pthread_mutex_t *pMutex;
 	
 	if (type == BUS_AUX_OUT) {
 		dest = aux_buffer[bus];
@@ -724,7 +737,7 @@ RTcmix::addToBus(BusType type, int bus, BufPtr src, int offset, int endfr, int c
 
 /* ------------------------------------------------------- parse_bus_chan --- */
 static ErrCode
-parse_bus_chan(char *numstr, int *startchan, int *endchan)
+parse_bus_chan(char *numstr, int *startchan, int *endchan, int maxBus)
 {
    char  *p;
 
@@ -740,8 +753,8 @@ parse_bus_chan(char *numstr, int *startchan, int *endchan)
    else
       *endchan = *startchan;
 
-	/* NOTE: with the current code, only MAXBUS-1 channels are allowed */
-	if (*startchan >= MAXBUS-1 || *endchan >= MAXBUS-1)
+	/* NOTE: with the current code, only maxBus-1 channels are allowed */
+	if (*startchan > maxBus || *endchan > maxBus)
 		return INVAL_BUS_CHAN_ERR;
 
    return NO_ERR;
@@ -749,7 +762,7 @@ parse_bus_chan(char *numstr, int *startchan, int *endchan)
 
 /* ------------------------------------------------------- parse_bus_name --- */
 ErrCode
-parse_bus_name(char *busname, BusType *type, int *startchan, int *endchan)
+parse_bus_name(char *busname, BusType *type, int *startchan, int *endchan, int maxBus)
 {
    char     *p;
    ErrCode  status = NO_ERR;
@@ -760,12 +773,12 @@ parse_bus_name(char *busname, BusType *type, int *startchan, int *endchan)
       case 'i':                                      /* "in*" */
          *type = BUS_IN;
          p = &busname[2];                            /* skip over "in" */
-         status = parse_bus_chan(p, startchan, endchan);
+         status = parse_bus_chan(p, startchan, endchan, maxBus);
          break;
       case 'o':                                      /* "out*" */
          *type = BUS_OUT;
          p = &busname[3];                            /* skip over "out" */
-         status = parse_bus_chan(p, startchan, endchan);
+         status = parse_bus_chan(p, startchan, endchan, maxBus);
          break;
       case 'a':                                      /* "aux*" */
          if (strchr(busname, 'i'))
@@ -775,7 +788,7 @@ parse_bus_name(char *busname, BusType *type, int *startchan, int *endchan)
          else
             return INVAL_BUS_ERR;
          p = &busname[3];                            /* skip over "aux" */
-         status = parse_bus_chan(p, startchan, endchan);
+         status = parse_bus_chan(p, startchan, endchan, maxBus);
          break;
 	  case 'c':										 /* "chain*" */
 		p = &busname[5];                            /* skip over "chain" */
@@ -785,14 +798,14 @@ parse_bus_name(char *busname, BusType *type, int *startchan, int *endchan)
 		   *type = BUS_NONE_OUT;
 		else
 		   return INVAL_BUS_ERR;
-		status = parse_bus_chan(p, startchan, endchan);
+		status = parse_bus_chan(p, startchan, endchan, maxBus);
 		break;
       default:
 	  	 rtcmix_warn("bus_config", "Invalid bus specifier: '%s'", busname);
          return INVAL_BUS_ERR;
    }
    if (status != NO_ERR)
-		rtcmix_warn("bus_config", "Invalid bus specifier: '%s'", busname);
+		rtcmix_warn("bus_config", "Invalid bus specifier: '%s'%s", busname, (status == INVAL_BUS_CHAN_ERR) ? ": exceeded bus count (or negative bus)":"");
    return status;
 }
 
@@ -812,7 +825,7 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
    if (n_args < 2)
       die("bus_config", "Wrong number of args.");
 
-   bus_slot = new BusSlot;
+   bus_slot = new BusSlot(busCount);
    if (bus_slot == NULL)
       return -1.0;
 
@@ -826,7 +839,7 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
 
    for (i = 1; i < n_args; i++) {
       busname = DOUBLE_TO_STRING(pp[i]);
-      err = parse_bus_name(busname, &type, &startchan, &endchan);
+      err = parse_bus_name(busname, &type, &startchan, &endchan, busCount);
       if (err)
          goto error;
 
@@ -870,7 +883,7 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
             for (k = startchan; k <= endchan; k++) {
                bus_slot->out[j++] = k;
 			   pthread_mutex_lock(&out_in_use_lock);
-               OutInUse[k] = YES;  // DJT added
+               BusConfigs[k].OutInUse = YES;  // DJT added
 			   pthread_mutex_unlock(&out_in_use_lock);
             }
             bus_slot->out_count += (endchan - startchan) + 1;
@@ -915,7 +928,7 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
             for (k = startchan; k <= endchan; k++) {
                bus_slot->auxout[j++] = k;
 			   pthread_mutex_lock(&aux_out_in_use_lock);
-               AuxOutInUse[k] = YES;
+               BusConfigs[k].AuxOutInUse = YES;
 			   pthread_mutex_unlock(&aux_out_in_use_lock);
             }
             bus_slot->auxout_count += (endchan - startchan) + 1;
@@ -994,15 +1007,13 @@ RTcmix::free_bus_config()
       q = next;
    }
 	Inst_Bus_Config = NULL;
-   for (int i=0 ; i<MAXBUS; i++) {
-	   RefCounted::unref(Bus_In_Config[i]);
-	   Bus_In_Config[i] = NULL;
-   }
+	if (BusConfigs) {
+		for (int i=0 ; i<busCount; i++) {
+		   RefCounted::unref(BusConfigs[i].In_Config);
+		   BusConfigs[i].In_Config = NULL;
+		}
+		memset(BusConfigs, 0, busCount * sizeof(BusConfig));
+	}
 	memset(&Visited, 0, sizeof(Visited));
-	memset(&HasChild, 0, sizeof(HasChild));
-	memset(&HasParent, 0, sizeof(HasParent));
-	memset(&AuxInUse, 0, sizeof(AuxInUse));
-	memset(&AuxOutInUse, 0, sizeof(AuxOutInUse));
-	memset(&OutInUse, 0, sizeof(OutInUse));
 	Bus_Config_Status = NO;
 }
