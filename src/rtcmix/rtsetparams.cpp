@@ -136,6 +136,12 @@ int RTcmix::resetparams(float sr, int chans, int bufsamps, bool recording)
 		RTBUFSAMPS = bufsamps;
 	}
 	
+	// Now that much of our global state is dynamically sized, the initialization
+	// of that state needs to be delayed until after we know the bus count as
+	// passed via resetparams().
+	
+	init_globals();
+
 	int	numBuffers = Option::bufferCount();
 	int	play_audio = Option::play();
 	int	record_audio = Option::record(recording);
