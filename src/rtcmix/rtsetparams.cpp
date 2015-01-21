@@ -164,7 +164,12 @@ int RTcmix::resetparams(float sr, int chans, int bufsamps, bool recording)
 	for (int i = 0; i < NCHANS; i++) {
 		allocate_out_buffer(i, RTBUFSAMPS);
 	}
-	
+	/* Reallocate input buffers if we are in record mode.  This was initially done by rtinput() */
+	if (record_audio) {
+		for (int i = 0; i < NCHANS; i++) {
+			allocate_audioin_buffer(i, RTBUFSAMPS);
+		}
+	}
 #ifdef MULTI_THREAD
 	InputFile::createConversionBuffers(RTBUFSAMPS);
 #endif
