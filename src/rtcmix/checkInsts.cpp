@@ -134,13 +134,6 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
    RTPrintf("ENTERING checkInsts() FUNCTION -----\n");
 #endif
 
-#ifndef EMBEDDED
-	if (!rtsetparams_was_called()) {
-		die(instname, "You did not call rtsetparams!");
-		return -1;
-	}
-#endif
-
 	mixerr = MX_FNAME;
 
 	*retval = 0.0;	// Default to float 0
@@ -151,6 +144,13 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 		
 		::printargs(instname, arglist, nargs);
 
+#ifndef EMBEDDED
+		if (!rtsetparams_was_called()) {
+			die(instname, "You did not call rtsetparams!");
+			return -1;
+		}
+#endif
+		
 		/* Create the Instrument */
 
 		Iptr = (*instCreator)();
