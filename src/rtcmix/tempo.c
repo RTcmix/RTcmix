@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+#include <ugens.h>
 
 #define TLEN 20  /* maximum number of time/tempo pairs */
 #define TLENP 21
@@ -26,8 +27,7 @@ tempo(float p[], int n_args)
 	short m;
 	float dur,prvbt;
 	if(!n_args) {
-		printf("n_args = %d\n",n_args);
-		printf("Tempo changes cleared out\n");
+		rtcmix_advise("tempo", "Tempo changes cleared out");
 		tset = 0;
 		return -1.0;
 	}

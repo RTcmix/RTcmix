@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2015-02-04	Douglas Scott  <netdscott-at-netscape.net>
+
+	* Bumped version number to 4.1.1 to track changes to bus count code and embedded API changes.
+
 2014-03-04  Douglas Scott  <netdscott-at-netscape.net>
 
 	* Major revision!  Pushing version to 4.1.0.
