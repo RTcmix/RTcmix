@@ -42,6 +42,8 @@ struct CheckNode;
 
 struct BusConfig
 {
+	BusConfig() : In_Config(0), HasChild(false), HasParent(false), AuxInUse(false), AuxOutInUse(false),
+				  OutInUse(false), RevPlay(0) {}
 	/* Bus graph, parsed by check_bus_inst_config */
 	/* Allows loop checking ... and buffer playback order? */
 	CheckNode *	In_Config;
