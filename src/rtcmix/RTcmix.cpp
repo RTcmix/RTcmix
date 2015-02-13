@@ -165,6 +165,11 @@ RTcmix::init_options(bool fromMain, const char *defaultDSOPath)
 	
 	RTBUFSAMPS = (int) Option::bufferFrames();  /* modifiable with rtsetparams */
 
+#if defined(MAXMSP)
+	// The rtcmix~ object allows scores to be parsed without a call to rtsetparams(), so we
+	// have to do this up-front.  This means the bus_count is always fixed for MAX.
+	init_globals();
+#endif
 	if (Option::autoLoad()) {
 		const char *dsoPath = Option::dsoPath();
 		if (strlen(dsoPath) == 0)
@@ -620,7 +625,9 @@ void RTcmix::close()
 	audioDevice = NULL;
 	delete dev;
 	audio_config = NO;
+#ifndef MAXMSP
 	free_buffers();
+#endif
 #ifdef MULTI_THREAD
 	InputFile::destroyConversionBuffers();
 #endif
