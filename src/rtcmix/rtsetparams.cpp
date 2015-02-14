@@ -56,14 +56,12 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, int bus_co
 		return die("rtsetparams", "You can only have up to %d output channels.", busCount);
 	}
 	
-#if !defined(MAXMSP)
 	// Now that much of our global state is dynamically sized, the initialization
 	// of that state needs to be delayed until after we know the bus count as
-	// passed via rtsetparams().  MAX requires that this all be done at bringup time
-	// though because it is legal to parse a score before calling rtsetparams().
+	// passed via rtsetparams().
 	
 	init_globals();
-#endif
+	
 	/* play_audio is true unless user has called set_option("audio_off") before
 	 rtsetparams. This would let user run multiple jobs, as long as only one
 	 needs the audio drivers.  -JGG
