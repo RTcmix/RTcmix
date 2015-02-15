@@ -4,6 +4,10 @@ include ../makefile.conf
 
 DIRS = sndlib audio conf parser control rtcmix
 
+ifeq ($(BUILDTYPE), MAXMSP)
+DIRS += maxmsp
+endif
+
 .PHONY: all progs dsos standalone install dso_install standalone_install \
 uninstall dso_uninstall standalone_uninstall clean cleanall
 

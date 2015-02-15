@@ -348,7 +348,7 @@ maxmsp_install:	all
    ifndef MAX_INSTALL_DIR
 	@echo You are installing Max/MSP but have not set the install path for your library using MAX_INSTALL_DEST!
    else
-	$(INSTALL) rtcmixdylib.so $(MAX_INSTALL_DIR)
+	$(INSTALL) rtcmixdylib.so $(MAX_LIB_INSTALL_DIR)
    endif
 
 endif

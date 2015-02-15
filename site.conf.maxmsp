@@ -20,11 +20,17 @@ ARCH = MACOSX
 BUILDTYPE = MAXMSP
 #BUILDTYPE = PD
 #BUILDTYPE = IOS
-# if selecting "MAX", these include paths must be set
-MAX_INCLUDES = -I/Users/brad/software/maxstuff/MaxSDK-5.1.6/c74support/max-includes -I/Users/brad/software/maxstuff/MaxSDK-5.1.6/c74support/msp-includes -F/Users/brad/software/maxstuff/MaxSDK-5.1.6/c74support/max-includes -F/Users/brad/software/maxstuff/MaxSDK-5.1.6/c74support/msp-includes -I/System/Library/Frameworks/CoreServices.framework/Frameworks/CarbonCore.framework/Headers
-# The dir that will contain the dynamic shared library for the Max object
-MAX_INSTALL_DIR = "/Applications/Max 6.1/Cycling '74/msp-externals/RTcmix/rtcmix-dylibs/"
 
+# if selecting "MAX", the following three macros must be set
+# The path to your Max SDKs
+MAX_SDK_PATH = /opt/local/src/MaxSDK-5.1.6
+# The dir that will contain rtcmix~.mxo
+MAX_INSTALL_DIR = "/Applications/Max 6.1/Cycling '74/msp-externals/RTcmix/"
+# The dir that will contain the dynamic shared library for the Max object
+MAX_LIB_INSTALL_DIR = "/Applications/Max 6.1/Cycling '74/msp-externals/RTcmix/rtcmix-dylibs/"
+
+# This is set automaticall from those
+MAX_INCLUDES = -I${MAX_SDK_PATH}/c74support/max-includes -I${MAX_SDK_PATH}/c74support/msp-includes -F${MAX_SDK_PATH}/c74support/max-includes -F${MAX_SDK_PATH}/c74support/msp-includes -I/System/Library/Frameworks/CoreServices.framework/Frameworks/CarbonCore.framework/Headers
 
 # if selecting "IOS", then one of the following two has to be uncommented
 #IPHONE_TYPE = SIMULATOR
