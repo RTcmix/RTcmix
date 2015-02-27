@@ -87,12 +87,12 @@ static double loadPFieldsAndSetup(const char *inName, Instrument *inInst, const 
 						pfieldset->load(new InstPField((Instrument *)handle->ptr), arg);
 					}
 					else {
-						rtcmix_warn(inName, "arg %d: Unsupported handle type!\n", arg);
+						rtcmix_warn(inName, "arg %d: Unsupported handle type!", arg);
 						mixerr = MX_FAIL;
 					}
 				}
 				else {
-					rtcmix_warn(inName, "arg %d: NULL handle!\n", arg);
+					rtcmix_warn(inName, "arg %d: NULL handle!", arg);
 					mixerr = MX_FAIL;
 				}
 			}
@@ -103,7 +103,7 @@ static double loadPFieldsAndSetup(const char *inName, Instrument *inInst, const 
 				assert(array->data != NULL);
 				double *dataCopy = new double[array->len];
 				if (dataCopy == NULL) {
-					rtcmix_warn(inName, "arg %d: ran out of memory copying array!\n", arg);
+					rtcmix_warn(inName, "arg %d: ran out of memory copying array!", arg);
 					return MX_EMEM;
 				}
 				for (unsigned n = 0; n < array->len; ++n)
@@ -112,7 +112,7 @@ static double loadPFieldsAndSetup(const char *inName, Instrument *inInst, const 
 			}
 				break;
 			default:
-				rtcmix_warn(inName, "arg %d: Illegal argument type!\n", arg);
+				rtcmix_warn(inName, "arg %d: Illegal argument type!", arg);
 				mixerr = MX_FAIL;
 				break;
 		}
@@ -252,6 +252,11 @@ makeinstrument(const Arg arglist[], const int nargs)
 		
 		// Create Handle for Iptr on return
 		return createInstHandle(Iptr);
+	}
+	else {
+		rtcmix_advise("makeinstrument",
+					  "\"%s\" is an undefined function or instrument.",
+					  instName);
 	}
 	return 0;
 }

@@ -78,7 +78,9 @@ call_external_function(const char *funcname, const MincListElem arglist[],
 	case HandleType:
 		return_value->type = MincHandleType;
 		return_value->val.handle = (MincHandle) (Handle) retval;
-		ref_handle(return_value->val.handle);
+		if (return_value->val.handle) {
+			ref_handle(return_value->val.handle);
+		}
 		break;
 	case ArrayType:
 #ifdef NOMORE
