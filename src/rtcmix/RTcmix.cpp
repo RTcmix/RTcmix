@@ -366,18 +366,18 @@ RTcmix::init(float tsr, int tnchans, int bsize,
 double RTcmix::offset(float *p, int n_args, double *pp)
 {
 	if (n_args < 1 || n_args > 2) {
-		rtcmix_advise("offset", "Usage: offset(offset_time [, skip_preroll])");
+		rtcmix_advise("rtoffset", "Usage: rtoffset(offset_time [, skip_preroll])");
 		return 0;
 	}
 	bufOffset = (FRAMETYPE)(pp[0] * sr());
 	runToOffset = (n_args == 1) ? true : pp[1] == 0.0;
 	if (rtrecord) {
-		rtcmix_advise("offset", "Cannot skip forward when recording");
+		rtcmix_advise("rtoffset", "Cannot skip forward when recording");
 		bufOffset = 0;
 		runToOffset = false;
 		return bufOffset;
 	}
-	rtcmix_advise("offset", "Starting playback at time %.3f %s preroll.", pp[0], runToOffset ? "with" : "without");
+	rtcmix_advise("rtoffset", "Starting playback at time %.3f %s preroll.", pp[0], runToOffset ? "with" : "without");
 	return bufOffset;
 }
 
