@@ -101,7 +101,7 @@ double
 space(float p[], int n_args)
 {
    if (n_args < 7) {
-      die(NULL, "Not enough args for `space'");
+      die("space", "Not enough arguments");
    }
 
    _front = p[0];
@@ -145,7 +145,7 @@ mikes(float p[], int n_args)
 double
 mikes_off(float p[], int n_args)
 {
-   rtcmix_advise("mikes", "Microphone usage turned off.\n");
+   rtcmix_advise("mikes", "Microphone usage turned off.");
    _UseMikes = 0;
 
    return 0.0;
@@ -178,7 +178,7 @@ oldmatrix(float p[], int n_args)
             _Matrix[i][j] = val * amp;
          }
       }
-      rtcmix_advise("matrix", "Matrix loaded.\n");
+      rtcmix_advise("matrix", "Matrix loaded.");
       matrix_flag = 1;
    }
    else
@@ -213,7 +213,7 @@ matrix(float p[], int n_args)
             _Matrix[i][j] = p[12*i+j+1] * amp;
          }
       }
-      rtcmix_advise("matrix", "Loaded 12x12 values.\n");
+      rtcmix_advise("matrix", "Loaded 12x12 values.");
       matrix_flag = 1;
    }
    else

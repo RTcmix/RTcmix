@@ -182,14 +182,8 @@ m_set_attenuation_params(float p[], int n_args)
 double
 m_space(float p[], int n_args)
 {
-	if (space_called) {
-      die("space", "'space' can only be called once");
-	  return -1;
-	}
    if (n_args < 7) {
-      die("space",
-	  	  "Usage: space(front, right, -back, -left, ceiling, absorb, rvbtime)");
-	  return -1;
+      return die("space", "Usage: space(front, right, -back, -left, ceiling, absorb, rvbtime)");
    }
 
    _front = p[0];
@@ -199,8 +193,7 @@ m_space(float p[], int n_args)
    _ceiling = p[4];
 
    if (_back >= 0.0 || _left >= 0.0) {
-      die("space", "'back' and 'left' wall coords must be negative");
-	  return -1;
+      return die("space", "'back' and 'left' wall coords must be negative");
    }
 
    _abs_factor = p[5];
@@ -209,7 +202,8 @@ m_space(float p[], int n_args)
    if (!_rvb_time)
       _rvb_time = 0.001;            /* shortest rvb time allowed */
 
-   rtcmix_advise("space", "Room is %.2f feet wide by %.2f feet deep by %.2f feet tall", _right - _left, _front - _back, _ceiling);
+   rtcmix_advise("space", "%s is %.2f feet wide by %.2f feet deep by %.2f feet tall",
+				 _right - _left, _front - _back, _ceiling, space_called ? "New room" : "Room");
 
    space_called = 1;
 
@@ -240,7 +234,7 @@ m_mikes(float p[], int n_args)
 double
 m_mikes_off(float p[], int n_args)
 {
-   rtcmix_advise("mikes", "Microphone usage turned off.\n");
+   rtcmix_advise("mikes", "Microphone usage turned off.");
    _UseMikes = 0;
 
    return 0.0;
@@ -273,7 +267,7 @@ m_oldmatrix(float p[], int n_args)
             _Matrix[i][j] = val * amp;
          }
       }
-      rtcmix_advise("matrix", "Matrix loaded.\n");
+      rtcmix_advise("matrix", "Matrix loaded.");
       matrix_flag = 1;
    }
    else
@@ -308,7 +302,7 @@ m_matrix(float p[], int n_args)
             _Matrix[i][j] = p[12*i+j+1] * amp;
          }
       }
-      rtcmix_advise("matrix", "Loaded 12x12 values.\n");
+      rtcmix_advise("matrix", "Loaded 12x12 values.");
       matrix_flag = 1;
    }
    else
