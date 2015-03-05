@@ -35,16 +35,16 @@ Instrument::rtsetinput(float start_time, Instrument *inst)
    const char  *inst_name = inst->name();
 
    if (start_time < 0.0) {
-      return die(inst_name, "Illegal start time: %f", start_time);
+      return die(inst_name, "rtsetinput: Input skip must be >= 0.0");
    }
 
    if (auxin_count == 0 && in_count == 0) {
-		return die(inst_name, "This instrument requires input from either an in bus "
+      return die(inst_name, "rtsetinput: This instrument requires input from either an in bus "
                       "or an aux bus.\nChange this with bus_config().");
    }
    else if (auxin_count > 0) {
       if (start_time != 0.0) {
-         return die(inst_name, "Input start must be 0 when reading from an aux bus.");
+         return die(inst_name, "rtsetinput: Input skip must be 0 when reading from an aux bus.");
       }
    }
 
