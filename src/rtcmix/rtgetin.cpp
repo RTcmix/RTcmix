@@ -57,6 +57,7 @@ Instrument::rtinrepos(Instrument *inst, int frames, int whence)
          break;
       case SEEK_CUR:
          inst->_input.fileOffset += offset;
+         assert(inst->_input.fileOffset >= 0);
          break;
       case SEEK_END:
          rtcmix_warn("rtinrepos", "SEEK_END unimplemented\n");

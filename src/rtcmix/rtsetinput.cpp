@@ -34,17 +34,18 @@ Instrument::rtsetinput(float start_time, Instrument *inst)
    int   in_count = inst->getBusSlot()->in_count;
    const char  *inst_name = inst->name();
 
-   if (auxin_count == 0 && in_count == 0) {
-      die(inst_name, "This instrument requires input from either an in bus "
-                      "or an aux bus.\nChange this with bus_config().");
-		return -1;
-	}
+   if (start_time < 0.0) {
+      return die(inst_name, "Illegal start time: %f", start_time);
+   }
 
-   if (auxin_count > 0) {
+   if (auxin_count == 0 && in_count == 0) {
+		return die(inst_name, "This instrument requires input from either an in bus "
+                      "or an aux bus.\nChange this with bus_config().");
+   }
+   else if (auxin_count > 0) {
       if (start_time != 0.0) {
-         die(inst_name, "Input start must be 0 when reading from an aux bus.");
-			return -1;
-		}
+         return die(inst_name, "Input start must be 0 when reading from an aux bus.");
+      }
    }
 
    if (in_count > 0) {
@@ -54,12 +55,10 @@ Instrument::rtsetinput(float start_time, Instrument *inst)
 	  
 	  switch (status) {
 	  case RT_NO_INPUT_SRC:
-         die(inst_name, "No input source open for this instrument!");
-         return -1;
+         return die(inst_name, "No input source open for this instrument!");
       case RT_ILLEGAL_DEV_OFFSET:
-         die(inst_name, "Input start must be 0 when reading from the "
+         return die(inst_name, "Input start must be 0 when reading from the "
                            "real-time audio device.");
-         return -1;
       case RT_INPUT_EOF:
          rtcmix_warn(inst_name, "Attempt to read past end of input file '%s'\n",
               RTcmix::getInputPath(inst->_input.fdIndex));
@@ -129,7 +128,7 @@ RTcmix::attachInput(float start_time, InputState *input)
          /* Offset is measured from the header size determined in rtinput(). */
          input->fileOffset = inputFileTable[index].dataLocation()
                             + (inskip_frames * input->inputchans * datum_size);
-
+         assert(input->fileOffset >= 0);
          if (start_time >= inputFileTable[index].duration())
 		    status = RT_INPUT_EOF;	// not fatal -- just produces warning
       }
