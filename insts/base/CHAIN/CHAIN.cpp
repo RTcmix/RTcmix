@@ -68,6 +68,9 @@ int  CHAIN::setup(PFieldSet *inPFields)
 	for (int p = 0; p < numChainedInstruments; ++p) {
 		InstPField *ipf = (InstPField *) &(*inPFields)[p+3];
 		Instrument *inst = ipf->instrument();
+		if (inst == NULL) {
+			return die("CHAIN", "NULL instrument passed as argument %d", p+3);
+		}
 		mInstVector.push_back(inst);
 		// Instruments are referenced once when created.  Because CHAIN is the sole owner,
 		// we do not do another reference.
