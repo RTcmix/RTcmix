@@ -10,7 +10,7 @@
 #include "minc_internal.h"
 #include "handle.h"
 
-#undef DEBUG
+#define NO_EMALLOC_DEBUG
 
 static struct symbol *htab[HASHSIZE] =
    {0};                         /* hash table */
@@ -61,8 +61,8 @@ void
 free_symbols()
 {
 	int s;
-#ifdef DEBUG
-	printf("freeing symbol and string tables...\n");
+#ifdef DEBUG_MEMORY
+	rtcmix_print("freeing symbol and string tables...\n");
 #endif
 	for (s = 0; s < HASHSIZE; ++s)
 	{
@@ -70,8 +70,8 @@ free_symbols()
 		struct str *str;
    		for (p = htab[s]; p != NULL; ) {
 			struct symbol *next = p->next;
-#ifdef DEBUG
-			printf("\tfreeing symbol \"%s\" (%p)\n", p->name, p);
+#ifdef DEBUG_MEMORY
+			rtcmix_print("\tfreeing symbol \"%s\" (%p)\n", p->name, p);
 #endif
 			if (p->type == MincHandleType)
 				unref_handle(p->v.handle);
@@ -93,8 +93,8 @@ free_symbols()
 		stab[s] = NULL;
 #endif
 	}
-#ifdef DEBUG
-	printf("done\n");
+#ifdef DEBUG_MEMORY
+	rtcmix_print("done\n");
 #endif
 }
 

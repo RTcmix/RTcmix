@@ -100,7 +100,7 @@ call_external_function(const char *funcname, const MincListElem arglist[],
 
 	delete [] rtcmixargs;
 
-	return 0;
+	return result;
 }
 
 static Handle _createPFieldHandle(PField *pfield)

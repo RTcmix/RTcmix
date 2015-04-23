@@ -17,17 +17,21 @@ inline int min(int x, int y) { return (x < y) ? x : y; }
 
 // PField
 
-#ifdef DEBUG
+#ifdef DEBUG_MEMORY
 PField::PField()
 {
 	this;
 }
+
+int PField::ref() { rtcmix_print("PField:ref(this = %p)", this); return RefCounted::ref(); }
+int PField::unref() { rtcmix_print("PField:unref(this = %p)", this); return RefCounted::unref(); }
+
 #endif
 
 PField::~PField()
 {
-#ifdef DEBUG
-	printf("PField::~PField (this = %p)\n", this);
+#ifdef DEBUG_MEMORY
+	rtcmix_print("PField::~PField (this = %p)", this);
 #endif
 }
 

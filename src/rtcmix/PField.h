@@ -16,8 +16,10 @@
 
 class PField : public RefCounted {
 public:
-#ifdef DEBUG
+#ifdef DEBUG_MEMORY
 	PField();
+	virtual int ref();
+	virtual int unref();
 #endif
 	virtual double 	doubleValue(int indx = 0) const = 0;
 	virtual double 	doubleValue(double dindex) const = 0;

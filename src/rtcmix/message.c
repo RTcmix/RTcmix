@@ -125,6 +125,23 @@ rtcmix_warn(const char *inst_name, const char *format, ...)
    }
 }
 
+void rtcmix_print(const char *format, ...)
+{
+	char     buf[BUFSIZE];
+	va_list  args;
+	
+	va_start(args, format);
+	vsnprintf(buf, BUFSIZE, format, args);
+	va_end(args);
+
+#ifdef IOS
+	syslog(LOG_NOTICE, "DEBUG: %s", buf);
+#elif defined(MAXMSP)
+	cpost("DEBUG: %s", buf);
+#else
+	printf("DEBUG: %s", buf);
+#endif
+}
 
 /* -------------------------------------------------------------- rterror --- */
 void

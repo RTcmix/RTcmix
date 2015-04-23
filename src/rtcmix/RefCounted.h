@@ -8,8 +8,13 @@
 
 class RefCounted {
 public:
+#ifdef DEBUG_MEMORY
+	virtual int ref() { return ++_refcount; }
+	virtual int unref();
+#else
 	int ref() { return ++_refcount; }
 	int unref();
+#endif
 	static void ref(RefCounted *r);
 	static int unref(RefCounted *r);
 protected:

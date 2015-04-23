@@ -462,6 +462,7 @@ RTcmix::bf_traverse(int bus, Bool visit) {
   RTPrintf("entering bf_traverse(%d)\n", bus);
 #endif
   BusSlot *temp = new BusSlot(busCount);
+  temp->ref();
   temp->auxin[0] = bus;
   temp->auxin_count=1;
   temp->auxout[0] = 333;

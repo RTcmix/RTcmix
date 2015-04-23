@@ -6,12 +6,16 @@
 #ifdef USE_OSX_DISPATCH
 #include <dispatch/dispatch.h>
 #endif
+#include <ugens.h>
 
 RefCounted::~RefCounted() {}
 
 int RefCounted::unref()
 {
 	int r;
+#if defined(DEBUG_MEMORY) || defined(DEBUG)
+	if (_refcount < 0) { rtcmix_print("Refcounted::~RefCounted(this = %p): object already deleted!"); assert(0); }
+#endif
 	if ((r=--_refcount) <= 0) {
 #ifdef USE_OSX_DISPATCH
 		dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),

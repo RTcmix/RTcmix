@@ -327,7 +327,7 @@ enum {MUS_NO_ERROR, MUS_NO_FREQUENCY, MUS_NO_PHASE, MUS_NO_GEN, MUS_NO_LENGTH,
   #define MALLOC(a)    NewPtr((a))
   #define FREE(a)      DisposePtr((Ptr)(a))
 #else
-  #ifdef DEBUG_MEMORY
+  #if defined(DEBUG_MEMORY) && !defined(MACOSX)
     #define CALLOC(a, b)  mem_calloc((size_t)(a), (size_t)(b), __FUNCTION__, __FILE__, __LINE__)
     #define MALLOC(a)     mem_malloc((size_t)(a), __FUNCTION__, __FILE__, __LINE__)
     #define FREE(a)       mem_free(a, __FUNCTION__, __FILE__, __LINE__)

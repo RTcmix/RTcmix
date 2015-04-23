@@ -178,6 +178,7 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 // BGG -- may have to comment this out for maxmsp
 			Iptr->unref();
 			mixerr = MX_FAIL;
+			*retval = (Handle) NULL;
 			return rv;
 		}
 
