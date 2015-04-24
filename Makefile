@@ -4,9 +4,11 @@
 
 include makefile.conf
 
+# BGGx
+#	DIRS = include genlib src insts utils apps docs snd
 BASE = insts/base
 ifeq ($(BUILDTYPE), STANDALONE)
-	DIRS = include genlib src insts utils apps docs snd
+	DIRS = include genlib src insts utils
 else
 	DIRS = include genlib insts src
 endif

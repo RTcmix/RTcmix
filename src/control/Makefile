@@ -1,7 +1,9 @@
 include ../../makefile.conf
 
+# BGGx
+#	DIRS = common midi mouse display datafile pfbus
 ifeq ($(BUILDTYPE), STANDALONE)
-	DIRS = common midi mouse display datafile pfbus
+	DIRS = common midi datafile pfbus
 else
 	DIRS = maxmsp pfbus
 endif
