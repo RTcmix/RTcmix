@@ -1,8 +1,6 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
-#### BGG test
-
 2015-04-22	Douglas Scott  <netdscott-at-netscape.net>
 
 	* Added new rtcmix_print() to replace all printf() use in RTcmix (because MAX and iRTcmix cannot display the latter).
