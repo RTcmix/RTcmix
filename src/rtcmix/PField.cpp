@@ -12,16 +12,21 @@
 #include "Functor.h"
 #include <ugens.h>
 
+#undef DEBUG_PFIELD	/* local debugging */
+
 inline int max(int x, int y) { return (x >= y) ? x : y; }
 inline int min(int x, int y) { return (x < y) ? x : y; }
 
 // PField
 
-#ifdef DEBUG_MEMORY
 PField::PField()
 {
-	this;
+#if defined(DEBUG_PFIELD) || defined(DEBUG_MEMORY)
+	rtcmix_print("PField:PField(this = %p)", this);
+#endif
 }
+
+#ifdef DEBUG_MEMORY
 
 int PField::ref() { rtcmix_print("PField:ref(this = %p)", this); return RefCounted::ref(); }
 int PField::unref() { rtcmix_print("PField:unref(this = %p)", this); return RefCounted::unref(); }
@@ -30,7 +35,7 @@ int PField::unref() { rtcmix_print("PField:unref(this = %p)", this); return RefC
 
 PField::~PField()
 {
-#ifdef DEBUG_MEMORY
+#if defined(DEBUG_PFIELD) || defined(DEBUG_MEMORY)
 	rtcmix_print("PField::~PField (this = %p)", this);
 #endif
 }

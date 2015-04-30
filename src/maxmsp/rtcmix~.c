@@ -6,7 +6,7 @@
 //
 // new:
 // 	-- added PField control capability to work with RTcmix v 4.0
-//	-- change MAX_INPUTS and MAX_OUTPUTS to 20
+//	-- change MSP_INPUTS and MSP_OUTPUTS to 20
 //	-- fixed 'orphan editor window' crashing bug
 //	-- fixed the NUMVARS bug
 //
@@ -67,6 +67,14 @@
 //
 // 02/12/2015
 // -- minor bug fixes
+//
+// 04/01/2015
+// -- make sure MSP_INPUTS and MSP_OUTPUTS match those in MSPAudioDevice, and that they can be configured by the compile.
+//
+// 04/22/2015
+// -- allow input and output counts (renamed MSP_INPUTS and MSP_OUTPUTS) to be configured from build macro.
+//		added check for active DAC to rtcmix_dortcmix().  Added memory failure check to script methods.
+//
 
 
 
@@ -94,9 +102,21 @@
 //#include <dlfcn.h>
 //int dylibincr;
 
+// MAXCHANS can be configured in the build to allow for up to 128 audio channels.
+// If it is defined, use it to configure the input and output count.  Else, default.
 
-#define MAX_INPUTS 100 	//arbitrary -- for Damon!
-#define MAX_OUTPUTS 20	//also arbitrary
+#ifndef MAXCHANS
+#define MSP_INPUTS 128
+#define MSP_OUTPUTS 32
+#else
+#if MAXCHANS < 32
+#define MSP_INPUTS (MAXCHANS+120)
+#else
+#define MSP_INPUTS (MAXCHANS+64)
+#endif
+#define MSP_OUTPUTS MAXCHANS
+#endif
+
 #define MAX_SCRIPTS 32	//how many scripts can we store internally
 
 // Brad, here are some things I have turned off and on to get this to work efficiently.
@@ -123,7 +143,6 @@ typedef void (*setMSPStateFunctionPtr)(const char *, void *);
 typedef int (*rtsetparamsFunctionPtr)(float sr, int nchans, int vecsize, int recording, int bus_count);
 typedef int (*rtresetaudioFunctionPtr)(float sr, int nchans, int vecsize, int recording);
 typedef int (*parse_scoreFunctionPtr)();
-typedef void (*pullTraverseFunctionPtr)();
 typedef double (*parse_dispatchFunctionPtr)(char *cmd, double *p, int n_args, void *retval);
 typedef void (*pfield_setFunctionPtr)(int inlet, float pval);
 typedef void (*buffer_setFunctionPtr)(char *bufname, float *bufstart, int nframes, int nchans, int modtime);
@@ -146,8 +165,8 @@ typedef struct _rtcmix
     float srate;  					//sample rate
     long num_inputs, num_outputs; 	//number of inputs and outputs
     long num_pinlets;				// number of inlets for dynamic PField control
-    float in[MAX_INPUTS];			//values of input variables
-    short in_connected[MAX_INPUTS]; //booleans: true if signals connected to the input in question
+    float in[MSP_INPUTS];			//values of input variables
+    short in_connected[MSP_INPUTS]; //booleans: true if signals connected to the input in question
     								//we use this "connected" boolean so that users can connect *either* signals or floats
     								//to the various inputs; sometimes it's easier just to have floats, but other times
     								//it's essential to have signals.... but we have to know.
@@ -390,8 +409,8 @@ void *rtcmix_new(long num_inoutputs, long num_additional)
 
 	//constrain number of inputs and outputs
 	if (num_inoutputs < 1) num_inoutputs = 1; // no args, use default of 1 channel in/out
-	if ((num_inoutputs + num_additional) > MAX_INPUTS) {
-		error("sorry, only %d total inlets are allowed!", MAX_INPUTS);
+	if ((num_inoutputs + num_additional) > MSP_INPUTS) {
+		error("sorry, only %d total inlets are allowed!", MSP_INPUTS);
 		return(NULL);
 	}
 
@@ -471,7 +490,7 @@ void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count)
 {
     rtcmix_dprint(x, "rtcmix_dsp() called");
     
-	void *dsp_add_args[MAX_INPUTS + MAX_OUTPUTS + 2];
+	void *dsp_add_args[MSP_INPUTS + MSP_OUTPUTS + 2];
 	int i;
 
 	int totalInputs = x->num_inputs + x->num_pinlets;
@@ -1141,11 +1160,17 @@ void rtcmix_dortcmix(t_rtcmix *x, Symbol *s, short argc, Atom *argv)
 				break;
 			case A_SYM:
 				cmd = argv[i].a_w.w_sym->s_name;
+				break;
 		}
 	}
 	
-	x->parse_dispatch(cmd, p, argc-1, NULL);
-    
+	if ( (sys_getdspstate() == 1) || (strncmp(cmd, "system", 6) == 0) ) {
+		x->parse_dispatch(cmd, p, argc-1, NULL);
+	}
+	else {
+		post("DACs must be on to send an RTcmix command");
+	}
+	
     rtcmix_dprint(x, "rtcmix_dortcmix() complete");
 }
 
@@ -1308,7 +1333,7 @@ void rtcmix_loadset(t_rtcmix *x, long fl)
 // used for rtcmix~ internal buffers
 void rtcmix_edclose (t_rtcmix *x, char **text, long size) 
 {
-    rtcmix_dprint(x, "rtcmix_edclose() called");
+    rtcmix_dprint(x, "rtcmix_edclose() called with text \"%.16s\"... with size %ld", *text, size);
     
 	if (x->rtcmix_script[x->current_script]) {
 		sysmem_freeptr((void *)x->rtcmix_script[x->current_script]);
@@ -1316,10 +1341,15 @@ void rtcmix_edclose (t_rtcmix *x, char **text, long size)
 	}
 	x->rtcmix_script_len[x->current_script] = size;
     x->rtcmix_script[x->current_script] = (char *)sysmem_newptr((size+1) * sizeof(char)); // size+1 so we can add '\0' at end
-	strncpy(x->rtcmix_script[x->current_script], *text, size);
-	x->rtcmix_script[x->current_script][size] = '\0'; // add the terminating '\0'
-	x->m_editor = NULL;
-    
+	if (x->rtcmix_script[x->current_script]) {
+		strncpy(x->rtcmix_script[x->current_script], *text, size);
+		x->rtcmix_script[x->current_script][size] = '\0'; // add the terminating '\0'
+		x->m_editor = NULL;
+	}
+	else {
+		error("rtcmix~:  problem allocating memory for current script (size %ld+1)", size);
+	}
+	
     rtcmix_dprint(x, "rtcmix_edclose() complete");
 }
 

@@ -8,7 +8,12 @@
 #endif
 #include <ugens.h>
 
-RefCounted::~RefCounted() {}
+RefCounted::~RefCounted()
+{
+#if defined(DEBUG_MEMORY) || defined(DEBUG)
+	if (_refcount > 0) { rtcmix_print("Refcounted::~RefCounted(this = %p): delete called on object with nonzero ref count!"); assert(0); }
+#endif
+}
 
 int RefCounted::unref()
 {

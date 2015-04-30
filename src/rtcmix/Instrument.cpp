@@ -24,6 +24,8 @@
 #include <maxdispargs.h>
 #include <PFBusData.h>
 
+#undef DEBUG_INST
+
 using namespace std;
 
 InputState::InputState()
@@ -41,7 +43,7 @@ Instrument::Instrument()
 	  endsamp(0), output_offset(0), outputchans(0), _name(NULL),
 	  needs_to_run(true), _nsamps(0), inputChainBuf(NULL)
 {
-#ifdef DEBUG_MEMORY
+#if defined(DEBUG_MEMORY) || defined(DEBUG_INST)
 	rtcmix_print("Instrument::Instrument(this = %p)", this);
 #endif
    // Here we initialize the Instrument class globals (over and over, I know)
@@ -68,7 +70,7 @@ Instrument::Instrument()
 /* ---------------------------------------------------------- ~Instrument --- */
 Instrument::~Instrument()
 {
-#ifdef DEBUG_MEMORY
+#if defined(DEBUG_MEMORY) || defined(DEBUG_INST)
 	rtcmix_print("Instrument::~Instrument(this = %p [%s])", this, _name);
 #endif
 	if (sfile_on)

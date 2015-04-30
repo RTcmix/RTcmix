@@ -30,6 +30,14 @@
 #include <stdio.h>
 #include <string.h> // for bzero()
 
+#ifdef DEBUG_MEMORY
+#define DPRINT(x,y) rtcmix_print(x,y)
+#define DPRINT3(x,y,z) rtcmix_print(x,y,z)
+#else
+#define DPRINT(x,y)
+#define DPRINT3(x,y,z)
+#endif
+
 // these are to enable dynamic maketable() construction
 #include "../../../src/include/maxdispargs.h"
 #include "../../../src/rtcmix/rtcmix_types.h"
@@ -72,10 +80,12 @@ static const char *_table_names[] = {
 
 PFSCHED::PFSCHED() : Instrument()
 {
+	DPRINT("PFSCHED (this = %p)", this);
 }
 
 PFSCHED::~PFSCHED()
 {
+	DPRINT("~PFSCHED (this = %p)", this);
 }
 
 int PFSCHED::init(double p[], int n_args)
@@ -97,9 +107,13 @@ int PFSCHED::init(double p[], int n_args)
 
 	PFBusData::dq_now[pfbus] = 0;
 	PFBusData::drawflag[pfbus]  = 0; // prevent reading from the bus for now
-	PFBusData::thepfield[pfbus] = &(getPField(3)); // the PField to read
-	if (makedyntable() == DONT_SCHEDULE)
+	// NOTE: Casting away const here -- PFields were not intended to be shared.  DAS
+	PFBusData::thepfield[pfbus] = (PField *) &(getPField(3)); // the PField to read
+	if (makedyntable() == DONT_SCHEDULE) {
+		PFBusData::thepfield[pfbus] = NULL;		// D.S. Make sure this is not kept around.
 		return DONT_SCHEDULE;
+	}
+	PFBusData::thepfield[pfbus]->ref();
 	PFBusData::dqflag[pfbus]  = p[4];
 	PFBusData::theincr[pfbus] = (SR/(float)resetval)/(double)(nSamps());
 	PFBusData::percent[pfbus] = 0.0;
@@ -110,26 +124,24 @@ int PFSCHED::init(double p[], int n_args)
 
 int PFSCHED::makedyntable()
 {
-	int i;
 	double tval = 0.0; // get rid of the compiler warning :-)
 
 	const PField *PF = PFBusData::thepfield[pfbus];
-	if (PF != NULL) tval = PFBusData::val[pfbus];
-
-	Arg targs[MAXDISPARGS];
-	int nargs, lenindex;
+	if (PF != NULL)
+		tval = PFBusData::val[pfbus];
 
 	// if DYNTABLETOKEN is the first value in the data, it means we need
 	// to construct a new table, based on the current pfield value
 	// and the construction data stored in the data[] array
 	// see src/rtcmix/table.cpp for the spec for the data in the data[] array
 	if ( (*PF).doubleValue(0) == DYNTABLETOKEN) {
-		nargs = (int)(*PF).doubleValue(2) + 2; // counting past targs[0] and [1]
+		Arg targs[MAXDISPARGS];
+		int nargs = (int)(*PF).doubleValue(2) + 2; // counting past targs[0] and [1]
 		targs[0] = _table_names[(int)(*PF).doubleValue(1)];
 		targs[1] = (*PF).doubleValue(3);
-		lenindex = 1; // this indexing the targs[] array for _dispatch_table()
+		int lenindex = 1; // this indexing the targs[] array for _dispatch_table()
 
-		for (i = 2; i < nargs; i++) {
+		for (int i = 2; i < nargs; i++) {
 			// additional occurrences of DYNTABLETOKEN signal a 'curval', so
 			// use the current pfield value
 			if ( (*PF).doubleValue(i+2) == DYNTABLETOKEN ) {
@@ -157,7 +169,9 @@ int PFSCHED::makedyntable()
 		table = new TablePField(data, len);
 
 		// replace the pfield with the newly-constructed table
+		RefCounted::unref(PFBusData::thepfield[pfbus]);
 		PFBusData::thepfield[pfbus] = table;
+		table->ref();
 	}
 
 	return(1);

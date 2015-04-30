@@ -19,7 +19,7 @@ public:
 	~PFBusData() {};
 
 	static int drawflag[];
-	static const PField *thepfield[];
+	static PField *thepfield[];
 	static double val[];
 	static double percent[];
 	static double theincr[];

@@ -32,7 +32,10 @@ depend:
 -include depend
 
 install: all
+ifeq ($(BUILDTYPE), STANDALONE)
 	$(INSTALL) $(CONNLIB) $(LIBDESTDIR)
+else
+endif
 
 uninstall:
 	$(RM) $(LIBDESTDIR)/$(CONNLIB)

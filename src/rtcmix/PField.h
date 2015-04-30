@@ -17,7 +17,6 @@
 class PField : public RefCounted {
 public:
 #ifdef DEBUG_MEMORY
-	PField();
 	virtual int ref();
 	virtual int unref();
 #endif
@@ -30,6 +29,7 @@ public:
 	virtual int		copyValues(double *) const;
 	virtual int		values() const = 0;
 protected:
+	PField();
 	virtual 		~PField();
 };
 
