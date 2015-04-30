@@ -283,7 +283,7 @@ ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD OPENFRAMEWORKS))
 		(cd ../../insts/bgg; $(MAKE) $(MFLAGS) all;)
 
   $(INJOELOBJS):
-		(cd ../../insts/joel; $(MAKE) $(MFLAGS) all;
+		(cd ../../insts/joel; $(MAKE) $(MFLAGS) all;)
 endif
 
 loader.o: loader.cpp
@@ -423,7 +423,6 @@ endif
 .PHONY: all standalone install standalone_install \
 		uninstall standalone_uninstall clean cleanall
 
-ifeq ($(BUILDTYPE), STANDALONE)
 depend:
 ifeq ($(ARCH),SGI)
 # Note: -MM is a gcc extension. If no gcc, use -M.
@@ -434,6 +433,8 @@ else
 endif
 
 -include depend
+
+ifeq ($(BUILDTYPE), STANDALONE)
 
 install:	standalone_install
 
