@@ -55,14 +55,14 @@ findInstCreator(rt_item *inList, const char *inInstName)
 // Load the argument list into a PFieldSet, hand to instrument, and call setup().  Does not destroy
 // the instrument on failure.
 
-static double loadPFieldsAndSetup(const char *inName, Instrument *inInst, const Arg arglist[], const int nargs)
+static int loadPFieldsAndSetup(const char *inName, Instrument *inInst, const Arg arglist[], const int nargs)
 {
 	// Load PFieldSet with ConstPField instances for each
 	// valid p field.
 	mixerr = MX_NOERR;
 	PFieldSet *pfieldset = new PFieldSet(nargs);
 	if (!pfieldset) {
-		mixerr = MX_FAIL;
+		mixerr = MX_EMEM;
 		return DONT_SCHEDULE;
 	}
 	for (int arg = 0; arg < nargs; ++arg) {
@@ -117,14 +117,14 @@ static double loadPFieldsAndSetup(const char *inName, Instrument *inInst, const 
 				break;
 		}
 	}
-	if (mixerr == MX_FAIL) {
+	if (mixerr != MX_NOERR) {
 		delete pfieldset;
 		return DONT_SCHEDULE;
 	}
-	return (double) inInst->setup(pfieldset);
+	return inInst->setup(pfieldset);
 }
 
-double
+int
 RTcmix::checkInsts(const char *instname, const Arg arglist[],
 				   const int nargs, Arg *retval)
 {
@@ -144,12 +144,15 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 		
 		::printargs(instname, arglist, nargs);
 
-#ifndef EMBEDDED
 		if (!rtsetparams_was_called()) {
+#ifdef EMBEDDED
+			die(instname, "You need to start the audio device before doing this.");
+			mixerr = MX_FAIL;
+#else
 			die(instname, "You did not call rtsetparams!");
+#endif
 			return -1;
 		}
-#endif
 		
 		/* Create the Instrument */
 
@@ -162,22 +165,23 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 
 		Iptr->ref();   // We do this to assure one reference
 
-		double rv = loadPFieldsAndSetup(instname, Iptr, arglist, nargs);
+		int rv = loadPFieldsAndSetup(instname, Iptr, arglist, nargs);
 		
-        if (rv != (double) DONT_SCHEDULE) { // only schedule if no setup() error
+        if (rv != DONT_SCHEDULE) { // only schedule if no setup() error
 			// For non-interactive case, configure() is delayed until just
 			// before instrument run time.
 			if (rtInteractive) {
 			   if (Iptr->configure(RTBUFSAMPS) != 0) {
 				   rv = DONT_SCHEDULE;	// Configuration error!
+				   mixerr = MX_FAIL;
 			   }
 			}
 		}
 		// Clean up if there was an error.
 		else {
-// BGG -- may have to comment this out for maxmsp
 			Iptr->unref();
-			mixerr = MX_FAIL;
+			if (mixerr == MX_NOERR)		// don't overwrite existing error
+				mixerr = MX_FAIL;
 			*retval = (Handle) NULL;
 			return rv;
 		}
@@ -195,7 +199,7 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 		 return rv;
 	}
 
-   return 0.0;
+   return 0;
 }
 
 static Handle mkusage()

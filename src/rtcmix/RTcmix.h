@@ -174,7 +174,7 @@ protected:
 	static void resetHeapAndQueue();
 
 	// These were standalone but are now static methods
-	static double checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retval);
+	static int checkInsts(const char *instname, const Arg arglist[], const int nargs, Arg *retval);
 	static int checkfunc(const char *funcname, const Arg arglist[], const int nargs, Arg *retval);
 	static int findAndLoadFunction(const char *funcname);
 	static void freefuncs();
