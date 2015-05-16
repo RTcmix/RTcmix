@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2015-5-16  John Gibson <johgibso-at-indiana.edu>
+
+	* Let user store color preferences for OS X MouseWindow app.
+	  This feature courtesy of Stanko Juzbasic.
+
 2015-04-22	Douglas Scott  <netdscott-at-netscape.net>
 
 	* Added new rtcmix_print() to replace all printf() use in RTcmix (because MAX and iRTcmix cannot display the latter).
