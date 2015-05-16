@@ -23,6 +23,13 @@ const int kFontSize = 14;
 
 	[self initLabels];
 
+	tColor = [self getUserDefault: @"tColor"];
+	if (tColor == (NSColor *) nil)
+		tColor = [NSColor colorWithDeviceRed: (CGFloat) 0.0
+												green: (CGFloat) 0.0
+												blue: (CGFloat) 0.0
+												alpha: (CGFloat) 0.0];
+
 	NSFont *font = [NSFont fontWithName:kFontName size:kFontSize];
 	fontAscent = [font ascender];
 	lineHeight = fontAscent + [font descender] + [font leading] + kExtraLineHeight;
@@ -31,6 +38,7 @@ const int kFontSize = 14;
 
 	stringAttributes = [[NSMutableDictionary alloc] init];
 	[stringAttributes setObject:font forKey:NSFontAttributeName];
+	[stringAttributes setObject:tColor forKey:NSForegroundColorAttributeName];
 	
 	updatePending = NO;
 	timer = [NSTimer scheduledTimerWithTimeInterval: 0.1
@@ -47,6 +55,37 @@ const int kFontSize = 14;
 - (void) awakeFromNib
 {
 	[self updateTrackingAreas];
+}
+
+// Read GUI colors aColor, bColor, and tColor from user defaults file,
+// rtcmix.org.MouseWindow.plist
+// -Stanko Juzbasic
+- (NSColor*) getUserDefault: (NSString *) cName
+{
+//	NSLog(@"%@", cName);
+	NSString *val = [[NSUserDefaults standardUserDefaults] objectForKey: cName];
+	NSArray *vals = [val componentsSeparatedByString: @","];
+	NSColor *returnVal;
+	float rgb[3];
+
+	if ([vals count] == 3) {
+		for (int idx = 0; idx < [vals count]; idx++) {
+			val = [vals objectAtIndex: idx];
+			val = [val stringByTrimmingCharactersInSet: [[NSCharacterSet
+						characterSetWithCharactersInString: @"01234567890."] invertedSet]];
+			if ([val length]) {
+				rgb[idx] = [val floatValue];
+			}
+		}
+		returnVal = [NSColor colorWithDeviceRed: (CGFloat) rgb[0]
+													green: (CGFloat) rgb[1]
+													blue: (CGFloat) rgb[2]
+													alpha: 1.0];
+//		NSLog(@"r:%f\tg:%f\tb:%f\n", rgb[0], rgb[1], rgb[2]);
+		return returnVal;    
+	}    
+	else
+		return (NSColor*) nil;
 }
 
 - (void) initLabels
@@ -217,10 +256,23 @@ const int kFontSize = 14;
 {
 	NSRect bounds = [self bounds];
 
-	[[NSColor whiteColor] set];
+	bColor = [self getUserDefault: @"bColor"];
+	if (bColor == (NSColor *) nil)
+		bColor = [NSColor colorWithDeviceRed: (CGFloat) 1.0
+												green: (CGFloat) 1.0
+												blue: (CGFloat) 1.0
+												alpha: (CGFloat) 1.0];
+	[bColor set];
 	NSRectFill(bounds);
 
-	[[NSColor grayColor] set];
+	aColor = [self getUserDefault: @"aColor"];
+	if (aColor == (NSColor *) nil)
+		aColor = [NSColor colorWithDeviceRed: (CGFloat) 0.5
+												green: (CGFloat) 0.5
+												blue: (CGFloat) 0.5
+												alpha: (CGFloat) 1.0];
+	[aColor set];
+
 	float hcenter = bounds.size.width / 2.0;
 	float vcenter = bounds.size.height / 2.0;
 	NSBezierPath *path = [NSBezierPath bezierPath];

@@ -27,6 +27,9 @@ const int kNumLabels = 4;
 	NSTimer *timer;
 	NSTrackingArea *trackingArea;
 	BOOL updatePending;
+	NSColor *bColor;	// background
+	NSColor *aColor;	// axes
+	NSColor *tColor;	// text
 }
 
 - (id) initWithFrame: (NSRect) frame;
@@ -48,5 +51,6 @@ const int kNumLabels = 4;
 - (void) drawRect: (NSRect) rect;
 - (void) mouseMoved: (NSEvent *) event;
 - (void) setFactors;
+- (NSColor *) getUserDefault: (NSString *) cName;
 
 @end
