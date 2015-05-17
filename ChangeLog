@@ -5,6 +5,8 @@ fixes that we don't bother putting here.
 
 	* Let user store color preferences for OS X MouseWindow app.
 	  This feature courtesy of Stanko Juzbasic.
+	* New, experimental instrument (RESYNTH) that lets you do partial 
+	  resynthesis from an SDIF file. Requires Ircam SDIF library.
 
 2015-04-22	Douglas Scott  <netdscott-at-netscape.net>
 
