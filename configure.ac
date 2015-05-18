@@ -376,10 +376,24 @@ AC_ARG_WITH(osc,
    fi]
 )
 AC_SUBST(OSC_SUPPORT)
+
+# sdif options, for Ircam SDIF library (used in insts/jg/RESYNTH)
+SDIF_SUPPORT=FALSE                        # default
+WITH_SDIF="false"                         # just for summary display below
+AC_ARG_WITH(sdif,
+   AC_HELP_STRING([--with-sdif], [support SDIF (Sound Description Interchange Format)]),
+   [if test "$withval" != "no"; then
+      SDIF_SUPPORT=TRUE
+      WITH_SDIF="true"
+   fi]
+)
+AC_SUBST(SDIF_SUPPORT)
+
 # LIBGSL options
 AC_CHECK_LIB(m,main)
 AC_CHECK_LIB(gslcblas,main)
 AC_CHECK_LIB(gsl,main)
+
 
 #AC_SUBST(WITH_VAL, "$withval")    # for debugging this script
 
@@ -446,6 +460,13 @@ if test "$OSC_SUPPORT" = "TRUE"; then
    AC_SUBST(LIBLO_LIBS)
 fi
 
+# SDIF
+if test "$SDIF_SUPPORT" = "TRUE"; then
+   PKG_CHECK_MODULES(SDIF,sdif)
+   AC_SUBST(SDIF_CFLAGS)
+   AC_SUBST(SDIF_LIBS)
+fi
+
 
 # Write output files -----------------------------------------------------------
 AC_CONFIG_HEADER(config.h)
@@ -469,5 +490,6 @@ echo "  " Build with JACK support............................... : $WITH_JACK
 echo "  " Build with NetPlay support............................ : $WITH_NPLAY
 echo "  " Build with FFTW support............................... : $WITH_FFTW
 echo "  " Build with OSC support................................ : $WITH_OSC
+echo "  " Build with SDIF support............................... : $WITH_SDIF
 echo
 
