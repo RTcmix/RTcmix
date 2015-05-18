@@ -243,7 +243,7 @@ AC_ARG_WITH(multithread,
          [build multi-threaded RTcmix on Linux or OS X 10.6 or later (THREADCOUNT optional, default=2)]),
 	[if test "$ARCH" != "MACOSX" && test "$ARCH" != "LINUX"; then
       AC_MSG_ERROR([Can't build multi-threaded version unless on Linux, or OS X 10.6 or later.])
-	fi],
+	fi]
    [if test "$withval" != "no"; then
       if test "$withval" != "yes"; then
          THREAD_COUNT="$withval"

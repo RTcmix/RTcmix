@@ -4184,8 +4184,7 @@ if test "${with_multithread+set}" = set; then :
   withval=$with_multithread; if test "$ARCH" != "MACOSX" && test "$ARCH" != "LINUX"; then
       as_fn_error $? "Can't build multi-threaded version unless on Linux, or OS X 10.6 or later." "$LINENO" 5
 	fi
-else
-  if test "$withval" != "no"; then
+   if test "$withval" != "no"; then
       if test "$withval" != "yes"; then
          THREAD_COUNT="$withval"
       fi
