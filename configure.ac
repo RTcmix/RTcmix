@@ -8,17 +8,21 @@
 # from the configure process, but we don't, at least for now.
 # -JGG, 7/29/04
 
-AC_INIT(RTcmix, 4.0)
+AC_INIT(RTcmix, 4.1)
 AC_CONFIG_SRCDIR(src/rtcmix/main.cpp)
+
+# get rid of this soon...
+CONFIGURE_ARGS=$@
+echo $CONFIGURE_ARGS
 
 CMIXDIR=`pwd`
 AC_SUBST(CMIXDIR)
 
 
-# Determine host ---------------------------------------------------------------
+# Determine platform we are compiling on ---------------------------------------
 # NB: This requires that we distribute install-sh, config.sub and config.guess.
-AC_CANONICAL_HOST
-case "$host" in
+AC_CANONICAL_BUILD
+case "$build" in
    *-*-linux*)
       ARCH=LINUX
       ;;
@@ -36,6 +40,42 @@ case "$host" in
       ;;
 esac
 AC_SUBST(ARCH)
+
+AC_CANONICAL_HOST
+case "$host" in
+   maxmsp-cycling74-*)
+      BUILDTYPE=MAXMSP
+      ;;
+   pd-puredata-*)
+      BUILDTYPE=PD
+      ;;
+   iosdev-apple-*)
+      BUILDTYPE=IOS
+      IPHONE_TYPE=DEVICE
+      ;;
+   iossim-apple-*)
+      BUILDTYPE=IOS
+      IPHONE_TYPE=SIMULATOR
+      ;;
+   ofosx-openframeworks-*)
+      BUILDTYPE=OPENFRAMEWORKS
+      OF_TYPE=OSXAPP
+      ;;
+   ofios-openframeworks-*)
+      BUILDTYPE=OPENFRAMEWORKS
+      OF_TYPE=IOSAPP
+      ;;
+   ofandroid-openframeworks-*)
+      BUILDTYPE=OPENFRAMEWORKS
+      OF_TYPE=ANDROIDAPP
+      ;;
+   *)
+      BUILDTYPE=STANDALONE
+      ;;
+esac
+AC_SUBST(BUILDTYPE)
+AC_SUBST(IPHONE_TYPE)
+AC_SUBST(OF_TYPE)
 
 
 # Standard program, library and header checks ----------------------------------
@@ -170,7 +210,7 @@ fi
 # add fPIC flag for Linux 64bit builds
 if test "$ARCH_64BIT" != ""; then
       if test "$ARCH" = "LINUX"; then
-      CFLAGS="-fPIC"
+      CFLAGS+="-fPIC"
    fi
 fi
 
@@ -203,7 +243,7 @@ AC_ARG_WITH(multithread,
          [build multi-threaded RTcmix on Linux or OS X 10.6 or later (THREADCOUNT optional, default=2)]),
 	[if test "$ARCH" != "MACOSX" && test "$ARCH" != "LINUX"; then
       AC_MSG_ERROR([Can't build multi-threaded version unless on Linux, or OS X 10.6 or later.])
-	fi]
+	fi],
    [if test "$withval" != "no"; then
       if test "$withval" != "yes"; then
          THREAD_COUNT="$withval"
@@ -216,9 +256,11 @@ AC_SUBST(MULTI_THREAD_SUPPORT)
 AC_SUBST(THREAD_COUNT)
 
 # Enable use of GCD on OSX versions that support it
+USE_OSX_DISPATCH=FALSE
 if test "$ARCH" = "MACOSX"; then
    AC_CHECK_HEADER(dispatch/dispatch.h, USE_OSX_DISPATCH=TRUE, [])
 fi
+AC_SUBST(USE_OSX_DISPATCH)
 
 # Audio driver options
 AUDIODRIVER=AUTO                          # default

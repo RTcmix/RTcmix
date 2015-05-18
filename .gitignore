@@ -4,7 +4,6 @@
 *.shlib
 *.dylib
 *.so
-*.conf
 *.status
 *.build
 *.log
@@ -22,7 +21,6 @@ shlib
 shlib/*
 scores
 scores/*
-test/coreaudioprobe/coreaudioprobe
 *build
 *build/*
 *.tab.c*
@@ -32,6 +30,8 @@ src/conf/lex.conf.c
 snd/input.wav
 
 config.h
+defs.conf
+makefile.conf
 
 # symlinked headers
 include/byte_routines.h
@@ -75,6 +75,7 @@ src/control/midi/portmidi/pm_test/test
 src/rtcmix/MIX
 src/rtcmix/PMIX
 src/rtcmix/PYMIX
+test/coreaudioprobe/coreaudioprobe
 test/suite/load_test.sco
 test/suite/sockettest
 test/suite/stresstest
@@ -93,6 +94,5 @@ utils/setup_rtcmixrc
 utils/sndpeak
 utils/sndreverse
 mout*
-site.conf
 
 
