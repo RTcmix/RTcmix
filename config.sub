@@ -1,8 +1,4 @@
 #! /bin/sh
-#
-# CAUTION: This file contains changes for the RTcmix project!
-# Search for "RTcmix"...
-#
 # Configuration validation subroutine script.
 #   Copyright 1992-2014 Free Software Foundation, Inc.
 
@@ -1314,28 +1310,6 @@ case $basic_machine in
 		;;
 	orion105)
 		basic_machine=clipper-highlevel
-		;;
-# RTcmix additions (up to "mac | mpw | mac-mpw")
-	maxmsp)
-		basic_machine=maxmsp-cycling74
-		;;
-	pd)
-		basic_machine=pd-puredata
-		;;
-	iosdev)
-		basic_machine=iosdev-apple
-		;;
-	iossim)
-		basic_machine=iossim-apple
-		;;
-	ofosx)
-		basic_machine=ofosx-openframeworks
-		;;
-	ofios)
-		basic_machine=ofios-openframeworks
-		;;
-	ofandroid)
-		basic_machine=ofandroid-openframeworks
 		;;
 	mac | mpw | mac-mpw)
 		basic_machine=m68k-apple

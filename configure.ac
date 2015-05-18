@@ -8,12 +8,12 @@
 # from the configure process, but we don't, at least for now.
 # -JGG, 7/29/04
 
-AC_INIT(RTcmix, 4.1)
+AC_INIT([RTcmix], [4.1], [https://github.com/RTcmix/RTcmix])
 AC_CONFIG_SRCDIR(src/rtcmix/main.cpp)
 
-# get rid of this soon...
-CONFIGURE_ARGS=$@
-echo $CONFIGURE_ARGS
+# If we needed to do our own arg parsing, do it here...
+#CONFIGURE_ARGS=$@
+#echo $CONFIGURE_ARGS
 
 CMIXDIR=`pwd`
 AC_SUBST(CMIXDIR)
@@ -41,31 +41,32 @@ case "$build" in
 esac
 AC_SUBST(ARCH)
 
-AC_CANONICAL_HOST
-case "$host" in
-   maxmsp-cycling74-*)
+# Determine compilation target (standalone vs. embeddable lib) -----------------
+# $target_alias holds "--target=" command-line argument
+case "$target_alias" in
+   maxmsp)
       BUILDTYPE=MAXMSP
       ;;
-   pd-puredata-*)
+   pd)
       BUILDTYPE=PD
       ;;
-   iosdev-apple-*)
+   ios-dev)
       BUILDTYPE=IOS
       IPHONE_TYPE=DEVICE
       ;;
-   iossim-apple-*)
+   ios-sim)
       BUILDTYPE=IOS
       IPHONE_TYPE=SIMULATOR
       ;;
-   ofosx-openframeworks-*)
+   of-osx)
       BUILDTYPE=OPENFRAMEWORKS
       OF_TYPE=OSXAPP
       ;;
-   ofios-openframeworks-*)
+   of-ios)
       BUILDTYPE=OPENFRAMEWORKS
       OF_TYPE=IOSAPP
       ;;
-   ofandroid-openframeworks-*)
+   of-android)
       BUILDTYPE=OPENFRAMEWORKS
       OF_TYPE=ANDROIDAPP
       ;;
@@ -76,6 +77,9 @@ esac
 AC_SUBST(BUILDTYPE)
 AC_SUBST(IPHONE_TYPE)
 AC_SUBST(OF_TYPE)
+
+# for debugging side-effects of --host and --target args
+#echo "cross_compiling: $cross_compiling"
 
 
 # Standard program, library and header checks ----------------------------------
@@ -416,6 +420,9 @@ if test "$AUDIODRIVER" = "ALSA"; then
       fi
    fi
 fi
+
+# Do this before any of the conditional PKG_CHECK_MODULES calls.
+PKG_PROG_PKG_CONFIG
 
 # JACK
 if test "$JACK_SUPPORT" = "TRUE"; then
