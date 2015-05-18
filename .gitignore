@@ -32,6 +32,7 @@ snd/input.wav
 config.h
 defs.conf
 makefile.conf
+package.conf
 
 # symlinked headers
 include/byte_routines.h
