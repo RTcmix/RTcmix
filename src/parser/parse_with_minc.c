@@ -18,6 +18,7 @@ int RTcmix_parseScore(char *thebuf, int buflen);
 extern int yyparse();
 extern int yylineno;
 extern void setGlobalBuffer(const char *inBuf, int inBufSize);
+extern void set_rtcmix_error(int);
 
 // BGG mm -- set this to accept a buffer from max/msp
 int RTcmix_parseScore(char *theBuf, int buflen)
@@ -25,6 +26,7 @@ int RTcmix_parseScore(char *theBuf, int buflen)
 	// BGG -- added to reset the line # every time a new score buffer is received
 	yylineno = 1;
 	setGlobalBuffer(theBuf, buflen+1);
+	set_rtcmix_error(0);
 	return yyparse();
 }
 

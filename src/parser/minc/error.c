@@ -18,6 +18,7 @@ extern int yylineno;
 
 #ifdef EMBEDDED
 static int exit_on_die = 0;
+int rtcmix_error = 0;		// referenced in tree.c
 #else
 static int exit_on_die = 1;
 #endif
@@ -33,7 +34,9 @@ sys_error(char *msg)
 {
 	die("parser", "%s\n", msg);
 
-   if (exit_on_die)
+	set_rtcmix_error(-1);
+
+	if (exit_on_die)
       exit(EXIT_FAILURE);
 }
 
@@ -81,6 +84,8 @@ minc_die(const char *msg, ...)
    va_end(args);
 
 	rterror("parser", "%s (near line %d)\n", buf, yylineno);
+	
+	set_rtcmix_error(-1);
 
    if (exit_on_die)
       exit(EXIT_FAILURE);
@@ -98,7 +103,9 @@ minc_internal_error(const char *msg, ...)
 
 	rterror("parser-program", "%s (near line %d)\n", buf, yylineno);
 
-   if (exit_on_die)
+	set_rtcmix_error(-1);
+
+	if (exit_on_die)
       exit(EXIT_FAILURE);
 }
 
@@ -107,3 +114,15 @@ yyerror(char *msg)
 {
 	rterror("parser-yyerror", "near line %d: %s\n", yylineno, msg);
 }
+
+#ifdef EMBEDDED
+void set_rtcmix_error(int err)
+{
+	rtcmix_error = err;
+}
+
+Bool was_rtcmix_error()
+{
+	return (rtcmix_error != 0);
+}
+#endif

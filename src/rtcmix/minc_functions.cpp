@@ -219,7 +219,7 @@ double m_exit(float p[], int n_args, double pp[])
 		rtcmix_warn(NULL, "%s -- exiting if allowed", message);
 	}
 	closesf();
-	return 0.0;
+	return p[1];
 }
 
 double m_load_array(float p[], int n_args, double pp[])

@@ -7,10 +7,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include "minc_internal.h"
 #include "handle.h"
 
 #define NO_EMALLOC_DEBUG
+#define SYMBOL_DEBUG
 
 static struct symbol *htab[HASHSIZE] =
    {0};                         /* hash table */
@@ -25,19 +27,19 @@ static struct str {             /* string table */
 static struct symbol *freelist = NULL;  /* free list of unused entries */
 
 /* prototypes for local functions */
-static struct symbol *symalloc(char *name);
+static struct symbol *symalloc(const char *name);
 #ifdef NOTYET
 static void free_node(struct symbol *p);
 static void kill_scope(ScopeType scope);
 #endif
 static char *dname(int x);
 static void dump(struct symbol *p, FILE * fp);
-static int hash(char *s);
+static int hash(const char *s);
 
 
 /* Allocate and initialize and new symbol table entry for <name>. */
 static struct symbol *
-symalloc(char *name)
+symalloc(const char *name)
 {
    struct symbol *p;
 
@@ -50,6 +52,8 @@ symalloc(char *name)
          return NULL;
    }
    p->name = name;
+   p->tree = NULL;
+   p->sibling = NULL;
 #ifdef NOTYET
    p->defined = p->offset = 0;
    p->list = NULL;
@@ -57,11 +61,24 @@ symalloc(char *name)
    return p;
 }
 
+void free_symbol(struct symbol *p)
+{
+#ifdef SYMBOL_DEBUG
+	rtcmix_print("\tfreeing symbol \"%s\" for scope %d (%p)\n", p->name, p->scope, p);
+#endif
+	if (p->type == MincHandleType)
+		unref_handle(p->v.handle);
+	else if (p->type == MincListType) {
+		unref_value_list(&p->v);
+	}
+	free(p);
+}
+
 void
 free_symbols()
 {
 	int s;
-#ifdef DEBUG_MEMORY
+#ifdef SYMBOL_DEBUG
 	rtcmix_print("freeing symbol and string tables...\n");
 #endif
 	for (s = 0; s < HASHSIZE; ++s)
@@ -70,15 +87,13 @@ free_symbols()
 		struct str *str;
    		for (p = htab[s]; p != NULL; ) {
 			struct symbol *next = p->next;
-#ifdef DEBUG_MEMORY
-			rtcmix_print("\tfreeing symbol \"%s\" (%p)\n", p->name, p);
-#endif
-			if (p->type == MincHandleType)
-				unref_handle(p->v.handle);
-			else if (p->type == MincListType) {
-				unref_value_list(&p->v);
+			// Free all siblings which share the name but differ in scope
+			for (struct symbol *s = p->sibling; s != NULL;) {
+				struct symbol *next = s->sibling;
+				free_symbol(s);
+				s = next;
 			}
-			free(p);
+			free_symbol(p);
 			p = next;
 		}
 		htab[s] = NULL;
@@ -93,7 +108,7 @@ free_symbols()
 		stab[s] = NULL;
 #endif
 	}
-#ifdef DEBUG_MEMORY
+#ifdef SYMBOL_DEBUG
 	rtcmix_print("done\n");
 #endif
 }
@@ -122,37 +137,82 @@ free_node(struct symbol *p)
 
 /* Allocate a new entry for name and install it. */
 struct symbol *
-install(char *name, ScopeType scope)
+install(const char *name, ScopeType scope)
 {
-   int h;
-   struct symbol *p;
-
-   p = symalloc(name);
-   h = hash(name);
+   struct symbol *p = symalloc(name);
+   int h = hash(name);
    p->next = htab[h];
    p->scope = scope;
    p->type = MincVoidType;
    htab[h] = p;
    p->v.number = 0.0;
 
-   DPRINT2("install ('%s') => %p\n", name, p);
-
+#ifdef SYMBOL_DEBUG
+	DPRINT3("install ('%s', %d) => %p\n", name, scope, p);
+#endif
    return p;
 }
 
+// Add symbol with same name as existing symbol, different scope
+struct symbol *addscope(struct symbol *sym, ScopeType scope)
+{
+	struct symbol *p = symalloc(sym->name);
+	p->scope = scope;
+	p->type = MincVoidType;
+	p->v.number = 0.0;
+	// Walk sybling chain and place on end.
+	struct symbol **s;
+	for (s = &sym->sibling; *s != NULL; s = &(*s)->sibling) { assert((*s)->scope != scope); }
+	*s = p;
+#ifdef SYMBOL_DEBUG
+	DPRINT3("addscope ('%s', %d) => %p\n", sym->name, scope, p);
+#endif
+	return p;
+}
 
-/* Lookup <name>; return pointer to entry. */
+/* Lookup <name> at a given scope; return pointer to entry.
+   Will match for smallest scope that is >= than that requested.
+   So, looking for GLOBAL will not find LOCAL or PARAM.
+   If scope is OR'd with S_ANY, lookup will return the first symbol
+   matching the name, regardless of scope.
+ */
 /* WARNING: it can only find symbol if name is a ptr returned by strsave */
 struct symbol *
-lookup(char *name)
+lookup(const char *name, ScopeType scope)
 {
    struct symbol *p = NULL;
+   Bool rootIfNoMatch = (scope & S_ANY) != 0;
+   scope &= ~S_ANY;
 
-   for (p = htab[hash(name)]; p != NULL; p = p->next)
-      if (name == p->name)
-         break;
+   for (p = htab[hash(name)]; p != NULL; p = p->next) {
+	   if (name == p->name) {
+		   struct symbol *found = NULL;
+		   ScopeType smallestScope = scope;
+		   // Return symbol from smallest scope which contains it.
+		   for (struct symbol *s = p; s != NULL; s = s->sibling) {
+			   if (s->scope <= smallestScope) {
+				   found = s;
+				   smallestScope = s->scope;
+			   }
+		   }
+		   if (found) {
+			   p = found;
+		   }
+		   else if (!rootIfNoMatch) {
+			   p = NULL;
+		   }
+		   break;
+	   }
+   }
 
-   DPRINT2("lookup ('%s') => %p\n", name, p);
+#ifdef SYMBOL_DEBUG
+	if (p) {
+		DPRINT4("lookup ('%s', %d) => %p (scope %d)\n", name, scope, p, p->scope);
+	}
+	else {
+		DPRINT3("lookup ('%s', %d) => %p\n", name, scope, p);
+	}
+#endif
    return p;
 }
 
@@ -180,7 +240,9 @@ strsave(char *str)
    p->next = stab[h];
    stab[h] = p;
 
+#ifdef SYMBOL_DEBUG
    DPRINT2("strsave ('%s') => %p\n", str, p);
+#endif
    return p->str;
 }
 
@@ -290,7 +352,7 @@ void efree(void *mem)
 
 /* Returns an index to a hash bucket. */
 static int
-hash(char *s)
+hash(const char *s)
 {
    int i = 0;
 

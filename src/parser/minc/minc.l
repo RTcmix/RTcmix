@@ -81,6 +81,7 @@ num   {dig}+
 <INIT>float             return TOK_FLOAT_DECL;
 <INIT>string            return TOK_STRING_DECL;
 <INIT>handle            return TOK_HANDLE_DECL;
+<INIT>return			return TOK_RETURN;
 <INIT>[%=><{},;*+-]     return (*yytext);
 <INIT>"["|"]"|"/"       return (*yytext);
 <INIT>"("|")"           return (*yytext);
