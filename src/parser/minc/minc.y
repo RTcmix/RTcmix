@@ -4,6 +4,7 @@
 */
 %{
 #include <string.h>
+#include <assert.h>
 #include "rename.h"
 #include "minc_internal.h"
 #include "lex.yy.c"
@@ -13,6 +14,8 @@ extern int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
 #endif
 #define YYDEBUG 1
 #define MAXTOK_IDENTLIST 200
+#define TRUE 1
+#define FALSE 0
 
 #define MDEBUG	/* turns on yacc debugging below */
 
@@ -34,11 +37,10 @@ static int		flerror;		/* set if there was an error during parsing */
 static int		level = 0;	/* keeps track whether we are in a structure */
 static int		flevel = 0;	/* > 0 if we are in a function decl block */
 static MincDataType funReturnType = MincVoidType;	/* ret type for function */
+static char *	functionName;
 static void 	cleanup();
-static struct symbol * lookupOrAutodeclare(const char *name, ScopeType scope);
-static struct symbol * declareWithScope(MincDataType type, ScopeType scope);
-static ScopeType currentInstallScope();
-static ScopeType currentLookupScope();
+static struct symbol * lookupOrAutodeclare(const char *name);
+static struct symbol * declare(MincDataType type);
 static struct symbol * declareFunction(const char *name, MincDataType returnType);
 static Tree go(Tree t1);
 
@@ -85,23 +87,23 @@ stmt: rstmt					{ MPRINT("<rstmt>");
 								else
 									$$ = $1;
 							}
-	| TOK_FLOAT_DECL idl	{ declareWithScope(MincFloatType, currentInstallScope()); idcount = 0; }
-	| TOK_STRING_DECL idl	{ declareWithScope(MincStringType, currentInstallScope()); idcount = 0; }
-	| TOK_HANDLE_DECL idl	{ declareWithScope(MincHandleType, currentInstallScope()); idcount = 0; }
+	| TOK_FLOAT_DECL idl	{ declare(MincFloatType); idcount = 0; }
+	| TOK_STRING_DECL idl	{ declare(MincStringType); idcount = 0; }
+	| TOK_HANDLE_DECL idl	{ declare(MincHandleType); idcount = 0; }
 	| TOK_IF level bexp stmt {
-								level--; MPRINT1("level => %d", level);
+								level--; MPRINT1("level => %d", level); pop_scope();
 								$$ = go(tif($3, $4));
 							}
 	| TOK_IF level bexp stmt TOK_ELSE stmt {
-								level--; MPRINT1("level => %d", level);
+								level--; MPRINT1("level => %d", level); pop_scope();
 								$$ = go(tifelse($3, $4, $6));
 							}
 	| TOK_WHILE level bexp stmt	{
-								level--; MPRINT1("level => %d", level);
+								level--; MPRINT1("level => %d", level); pop_scope();
 								$$ = go(twhile($3, $4));
 							}
 	| TOK_FOR level '(' stmt ';' bexp ';' stmt ')' stmt {
-								level--; MPRINT1("level => %d", level);
+								level--; MPRINT1("level => %d", level); pop_scope();
 								$$ = go(tfor($4, $6, $8, $10));
 							}
 	| '{' stml '}'		{ $$ = $2; }
@@ -119,16 +121,16 @@ stmt: rstmt					{ MPRINT("<rstmt>");
 	;
 
 /* statement nesting level counter */
-level:  /* nothing */ { level++; MPRINT1("level => %d", level); }
+level:  /* nothing */ { level++; MPRINT1("level => %d", level); push_scope(); }
 	;
 
 /* statement returning a value: assignments, function calls, etc. */
 rstmt: id '=' exp		{
-								sym = lookupOrAutodeclare($1, currentLookupScope());
+								sym = lookupOrAutodeclare($1);
 								$$ = tstore(tname(sym), $3);
 							}
 	| id TOK_PLUSEQU exp {
-								sym = lookup($1, currentLookupScope());
+								sym = lookup($1, TRUE);
 								if (sym == NULL) {
 									minc_die("'%s' is not declared", $1);
 									$$ = tnoop();
@@ -137,7 +139,7 @@ rstmt: id '=' exp		{
 									$$ = topassign(tname(sym), $3, OpPlus);
 							}
 	| id TOK_MINUSEQU exp {
-								sym = lookup($1, currentLookupScope());
+								sym = lookup($1, TRUE);
 								if (sym == NULL) {
 									minc_die("'%s' is not declared", $1);
 									$$ = tnoop();
@@ -146,7 +148,7 @@ rstmt: id '=' exp		{
 									$$ = topassign(tname(sym), $3, OpMinus);
 							}
 	| id TOK_MULEQU exp {
-								sym = lookup($1, currentLookupScope());
+								sym = lookup($1, TRUE);
 								if (sym == NULL) {
 									minc_die("'%s' is not declared", $1);
 									$$ = tnoop();
@@ -155,7 +157,7 @@ rstmt: id '=' exp		{
 									$$ = topassign(tname(sym), $3, OpMul);
 							}
 	| id TOK_DIVEQU exp {
-								sym = lookup($1, currentLookupScope());
+								sym = lookup($1, TRUE);
 								if (sym == NULL) {
 									minc_die("'%s' is not declared", $1);
 									$$ = tnoop();
@@ -165,7 +167,7 @@ rstmt: id '=' exp		{
 							}
 
 	| id '(' expl ')' {
-								sym = lookup($1, currentLookupScope());
+								sym = lookup($1, TRUE);
 								if (sym == NULL) {
 									$$ = tcall($3, $1);
 								}
@@ -180,7 +182,7 @@ rstmt: id '=' exp		{
 	| '{' expl '}' 	{ $$ = tlist($2); }
 
 	| id '[' exp ']' 	{
-								sym = lookup($1, currentLookupScope());
+								sym = lookup($1, TRUE);
 								if (sym == NULL) {
 									minc_die("'%s' is not declared", $1);
 									$$ = tnoop();
@@ -189,7 +191,7 @@ rstmt: id '=' exp		{
 									$$ = tsubscriptread(tname(sym), $3);
 							}
 	| id '[' exp ']' '=' exp {
-								sym = lookup($1, currentLookupScope());
+								sym = lookup($1, TRUE);
 								if (sym == NULL) {
 									minc_die("'%s' is not declared", $1);
 									$$ = tnoop();
@@ -262,7 +264,7 @@ exp: rstmt				{ $$ = $1; }
 								$$ = top(OpNeg, $2, tconstf(0.0));
 							}
 	| id					{
-								sym = lookup($1, currentLookupScope());
+								sym = lookup($1, TRUE);
 								if (sym == NULL) {
 // FIXME: install id w/ value of 0, then warn??
 									minc_die("'%s' is not declared", $1);
@@ -301,17 +303,17 @@ fstml:	stml ret			{	MPRINT("<stml,ret>");
 
 arg: TOK_FLOAT_DECL id		{ MPRINT("<arg>");
 							  idlist[idcount++] = $2;
-							  sym = declareWithScope(MincFloatType, S_PARAM); idcount = 0;
+							  sym = declare(MincFloatType); idcount = 0;
 							  $$ = tname(sym);
 							}
 	| TOK_STRING_DECL id	{ MPRINT("<arg>");
 							  idlist[idcount++] = $2;
-							  sym = declareWithScope(MincStringType, S_PARAM); idcount = 0;
+							  sym = declare(MincStringType); idcount = 0;
 							  $$ = tname(sym);
 							}
 	| TOK_HANDLE_DECL id	{ MPRINT("<arg>");
 							  idlist[idcount++] = $2;
-							  sym = declareWithScope(MincHandleType, S_PARAM); idcount = 0;
+							  sym = declare(MincHandleType); idcount = 0;
 							  $$ = tname(sym);
 							}
 	;
@@ -332,75 +334,75 @@ fargl: '(' argl ')'			{ MPRINT("<fargl>"); $$ = targlist($2); }
 	;
 
 fname: TOK_FLOAT_DECL id function { MPRINT("<fname>");
-									$$ = strsave($2); funReturnType = MincFloatType; }
+									$$ = functionName = strsave($2); funReturnType = MincFloatType; }
 	| TOK_STRING_DECL id function { MPRINT("<fname>");
-									$$ = strsave($2); funReturnType = MincStringType; }
+									$$ = functionName = strsave($2); funReturnType = MincStringType; }
 	| TOK_HANDLE_DECL id function { MPRINT("<fname>");
-									$$ = strsave($2); funReturnType = MincHandleType; }
+									$$ = functionName = strsave($2); funReturnType = MincHandleType; }
 	;
 
 /* function block level counter */
 function:  /* nothing */ {	if (flevel > 0) {
 								minc_die("nested function decls not allowed");
 							}
-							flevel++; MPRINT1("flevel => %d", flevel);
+							flevel++; MPRINT1("<function> - flevel => %d", flevel);
 						 }
 ;
 
-fdef: fname fargl level '{' fstml '}'	{
+fdef: fname fargl '{' fstml '}'	{
 											MPRINT("<fdef>");
 											level--; MPRINT1("level => %d", level);
 											--flevel; MPRINT1("flevel => %d", flevel);
 											sym = declareFunction($1, funReturnType);
-											funReturnType = MincVoidType; /* reset */
+											functionName = NULL;			/* now that we are past the argument list */
+											funReturnType = MincVoidType; 	/* reset */
 											if (sym != NULL) {
-												sym->tree = tfdef($2, $5, $1);
+												sym->tree = tfdef($2, $4, $1);
 											}
 											/* because we're just a decl, and the tree is stored
 											   in the Symbol, we do not return a Tree to the parser.
 											 */
 											$$ = tnoop();
 										}
-	| error fname fargl level '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $1); flerror = 1; }
-	| error fname fargl level '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $1); flerror = 1; }
+	| error fname fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $1); flerror = 1; }
+	| error fname fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $1); flerror = 1; }
 	;
 
 %%
 
-static struct symbol * lookupOrAutodeclare(const char *name, ScopeType scope)
+static struct symbol * lookupOrAutodeclare(const char *name)
 {
-	Symbol *sym = lookup(name, scope);
+	Symbol *sym = lookup(name, FALSE);	// Check at current scope *only*
 	if (sym != NULL) {
 		return sym;
 	}
 	else {
-		sym = lookup(name, scope|S_ANY);	// check for root symbol
-		return (sym) ? addscope(sym, scope) : install(name, scope);		// either
+		sym = lookup(name, TRUE);		// check at all levels
+		return (sym) ? sym : install(name);		// XXX DOES THIS MATCH OLD BEHAVIOR?
 	}
 }
 
-static Symbol * declareWithScope(MincDataType type, ScopeType scope)
+static Symbol * declare(MincDataType type)
 {
-	MPRINT2("declareWithScope(type=%d, scope=%d)", type, scope);
+	MPRINT2("declare(type=%d, idcount=%d)", type, idcount);
 	int i;
 	
-	MPRINT1("    idcount=%d", idcount);
 	for (i = 0; i < idcount; i++) {
 		// This will return either the symbol at the requested scope, if declared,
 		// or the first declared version of the symbol it finds, regardless of scope.
-		Symbol *sym = lookup(idlist[i], scope|S_ANY);
+		Symbol *sym = lookup(idlist[i], TRUE);
 		if (sym != NULL) {
-			if (sym->scope == scope) {
+			if (sym->scope == current_scope()) {
 				minc_warn("variable '%s' redefined", idlist[i]);
 			}
 			else {
 				minc_warn("variable '%s' defined at another scope as well", idlist[i]);
-				sym = addscope(sym, scope);
+				sym = install(idlist[i]);
 			}
 			sym->type = type;
 		}
 		else {
-			sym = install(idlist[i], scope);
+			sym = install(idlist[i]);
 			sym->type = type;
 		}
 		return sym;
@@ -412,29 +414,17 @@ static struct symbol *
 declareFunction(const char *name, MincDataType returnType)
 {
 	MPRINT2("declareFunction('%s', type=%d)", name, returnType);
-	Symbol *sym = lookup(name, S_GLOBAL);
+	assert(current_scope() == 0);	// until I allow nested functions
+	Symbol *sym = lookup(name, FALSE);	// only look at current global level
 	if (sym != NULL) {
 		minc_die("function %s() is already declared", name);
 		return NULL;
 	}
 	else {
-		sym = install(name, S_GLOBAL);	// all functions global for now
-		sym->type = funReturnType;
+		sym = install(name);		// all functions global for now
+		sym->type = returnType;
 	}
 	return sym;
-}
-
-static ScopeType currentInstallScope()
-{
-	return flevel == 0 ? S_GLOBAL : S_LOCAL;
-}
-
-/* If we are parsing a local function, flevel will be > 0,
- and so we treat the symbol as local
- */
-static ScopeType currentLookupScope()
-{
-	return (flevel) == 0 ? S_GLOBAL : (level == 0) ? S_PARAM : S_LOCAL;
 }
 
 #define FREE_TREES_AT_END

@@ -8,14 +8,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <vector>
 #include "minc_internal.h"
 #include "handle.h"
 
 #define NO_EMALLOC_DEBUG
 #define SYMBOL_DEBUG
 
-static struct symbol *htab[HASHSIZE] =
-   {0};                         /* hash table */
 
 static struct str {             /* string table */
    char *str;                   /* string */
@@ -28,14 +27,103 @@ static struct symbol *freelist = NULL;  /* free list of unused entries */
 
 /* prototypes for local functions */
 static struct symbol *symalloc(const char *name);
+static void free_symbol(struct symbol *p);
 #ifdef NOTYET
 static void free_node(struct symbol *p);
 static void kill_scope(ScopeType scope);
 #endif
+#ifdef NOMORE
 static char *dname(int x);
 static void dump(struct symbol *p, FILE * fp);
+#endif
 static int hash(const char *s);
 
+// New Scope Code
+
+class Scope {
+public:
+	Scope(int inDepth) : _depth(inDepth) { htab[0] = 0; }
+	~Scope();
+	Symbol *install(const char *name);
+	Symbol *lookup(const char *name);
+	int		depth() const { return _depth; }
+private:
+	int		_depth;			  /* for debugging */
+	Symbol *htab[HASHSIZE];   /* hash table */
+};
+
+Scope::~Scope()
+{
+	for (int s = 0; s < HASHSIZE; ++s) {
+		for (Symbol *p = htab[s]; p != NULL; ) {
+			Symbol *next = p->next;
+			free_symbol(p);
+			p = next;
+		}
+		htab[s] = NULL;
+	}
+}
+
+Symbol *
+Scope::install(const char *name)
+{
+	Symbol *p = symalloc(name);
+	int h = hash(name);
+	p->next = htab[h];
+	p->scope = depth();	/* XXX */
+	p->type = MincVoidType;
+	htab[h] = p;
+	p->v.number = 0.0;
+	
+#ifdef SYMBOL_DEBUG
+	DPRINT3("Scope::install ('%s') => %p [scope %d]\n", name, p, p->scope);
+#endif
+	return p;
+}
+
+Symbol *
+Scope::lookup(const char *name)
+{
+	Symbol *p = NULL;
+	
+	for (p = htab[hash(name)]; p != NULL; p = p->next)
+		if (name == p->name)
+			break;
+	
+	DPRINT2("Scope::lookup ('%s') => %p\n", name, p);
+	return p;
+}
+
+static std::vector<Scope *> sScopeStack;
+static int sStackDepth = -1;	// hack till I figure out initialization
+
+void check_scope() {
+	if (sStackDepth == -1) {
+		push_scope();
+	}
+}
+
+void push_scope()
+{
+	++sStackDepth;
+	sScopeStack.push_back(new Scope(sStackDepth));
+	DPRINT1("push_scope() => %d\n", sStackDepth);
+}
+
+void pop_scope() {
+	Scope *top = sScopeStack.back();
+	sScopeStack.pop_back();
+	delete top;
+	--sStackDepth;
+	DPRINT1("pop_scope() => %d\n", sStackDepth);
+}
+
+int current_scope()
+{
+	check_scope();		// XXX HACK
+	DPRINT1("current_scope() == %d\n", sStackDepth);
+	return sStackDepth;
+}
 
 /* Allocate and initialize and new symbol table entry for <name>. */
 static struct symbol *
@@ -61,7 +149,7 @@ symalloc(const char *name)
    return p;
 }
 
-void free_symbol(struct symbol *p)
+static void free_symbol(struct symbol *p)
 {
 #ifdef SYMBOL_DEBUG
 	rtcmix_print("\tfreeing symbol \"%s\" for scope %d (%p)\n", p->name, p->scope, p);
@@ -77,34 +165,25 @@ void free_symbol(struct symbol *p)
 void
 free_symbols()
 {
-	int s;
 #ifdef SYMBOL_DEBUG
 	rtcmix_print("freeing symbol and string tables...\n");
 #endif
-	for (s = 0; s < HASHSIZE; ++s)
+	// Start at deepest scope (end) and work back to global (begin)
+	while (!sScopeStack.empty()) {
+		Scope *s = sScopeStack.back();
+		sScopeStack.pop_back();
+		delete s;
+	}
+	for (int s = 0; s < HASHSIZE; ++s)
 	{
-		struct symbol *p;
-		struct str *str;
-   		for (p = htab[s]; p != NULL; ) {
-			struct symbol *next = p->next;
-			// Free all siblings which share the name but differ in scope
-			for (struct symbol *s = p->sibling; s != NULL;) {
-				struct symbol *next = s->sibling;
-				free_symbol(s);
-				s = next;
-			}
-			free_symbol(p);
-			p = next;
-		}
-		htab[s] = NULL;
 #if 1
+		struct str *str;
 		for (str = stab[s]; str != NULL; ) {
 			struct str *next = str->next;
 			free(str->str);
 			free(str);
 			str = next;
 		}
-// BGG why was this missing?  fixed for minc_memflush()
 		stab[s] = NULL;
 #endif
 	}
@@ -137,37 +216,10 @@ free_node(struct symbol *p)
 
 /* Allocate a new entry for name and install it. */
 struct symbol *
-install(const char *name, ScopeType scope)
+install(const char *name)
 {
-   struct symbol *p = symalloc(name);
-   int h = hash(name);
-   p->next = htab[h];
-   p->scope = scope;
-   p->type = MincVoidType;
-   htab[h] = p;
-   p->v.number = 0.0;
-
-#ifdef SYMBOL_DEBUG
-	DPRINT3("install ('%s', %d) => %p\n", name, scope, p);
-#endif
-   return p;
-}
-
-// Add symbol with same name as existing symbol, different scope
-struct symbol *addscope(struct symbol *sym, ScopeType scope)
-{
-	struct symbol *p = symalloc(sym->name);
-	p->scope = scope;
-	p->type = MincVoidType;
-	p->v.number = 0.0;
-	// Walk sybling chain and place on end.
-	struct symbol **s;
-	for (s = &sym->sibling; *s != NULL; s = &(*s)->sibling) { assert((*s)->scope != scope); }
-	*s = p;
-#ifdef SYMBOL_DEBUG
-	DPRINT3("addscope ('%s', %d) => %p\n", sym->name, scope, p);
-#endif
-	return p;
+	check_scope();		// XXX HACK
+	return sScopeStack.back()->install(name);
 }
 
 /* Lookup <name> at a given scope; return pointer to entry.
@@ -177,40 +229,34 @@ struct symbol *addscope(struct symbol *sym, ScopeType scope)
    matching the name, regardless of scope.
  */
 /* WARNING: it can only find symbol if name is a ptr returned by strsave */
-struct symbol *
-lookup(const char *name, ScopeType scope)
+Symbol *
+lookup(const char *name, Bool anyLevel)
 {
-   struct symbol *p = NULL;
-   Bool rootIfNoMatch = (scope & S_ANY) != 0;
-   scope &= ~S_ANY;
-
-   for (p = htab[hash(name)]; p != NULL; p = p->next) {
-	   if (name == p->name) {
-		   struct symbol *found = NULL;
-		   ScopeType smallestScope = scope;
-		   // Return symbol from smallest scope which contains it.
-		   for (struct symbol *s = p; s != NULL; s = s->sibling) {
-			   if (s->scope <= smallestScope) {
-				   found = s;
-				   smallestScope = s->scope;
-			   }
-		   }
-		   if (found) {
-			   p = found;
-		   }
-		   else if (!rootIfNoMatch) {
-			   p = NULL;
-		   }
-		   break;
-	   }
-   }
-
-#ifdef SYMBOL_DEBUG
-	if (p) {
-		DPRINT4("lookup ('%s', %d) => %p (scope %d)\n", name, scope, p, p->scope);
+	Symbol *p = NULL;
+	int foundLevel = -1;
+	check_scope();		// XXX HACK
+	if (anyLevel) {
+		// Start at deepest scope and work back to global
+		for (std::vector<Scope *>::reverse_iterator it = sScopeStack.rbegin(); it != sScopeStack.rend(); ++it) {
+			Scope *s = *it;
+			if ((p = s->lookup(name)) != NULL) {
+				foundLevel = s->depth();
+				break;
+			}
+		}
 	}
 	else {
-		DPRINT3("lookup ('%s', %d) => %p\n", name, scope, p);
+		// Current scope only
+		if ((p = sScopeStack.back()->lookup(name)) != NULL) {
+			foundLevel = sScopeStack.back()->depth();
+		}
+	}
+#ifdef SYMBOL_DEBUG
+	if (p) {
+		DPRINT4("lookup ('%s', %s) => %p (scope %d)\n", name, anyLevel ? "any" : "current", p, foundLevel);
+	}
+	else {
+		DPRINT3("lookup ('%s', %s) => %p\n", name, anyLevel ? "any" : "current", p);
 	}
 #endif
    return p;
