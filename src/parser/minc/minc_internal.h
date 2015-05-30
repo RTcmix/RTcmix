@@ -95,7 +95,7 @@ struct tree;
 
 typedef struct symbol {       /* symbol table entries */
    struct symbol *next;       /* next entry on hash chain */
-   ScopeType scope;
+   int scope;
    MincDataType type;         /* type of data represented by symbol */
    const char *name;          /* symbol name */
    MincValue v;
@@ -141,6 +141,8 @@ typedef enum {
    NodeWhile,
    NodeFor,
    NodeIfElse,
+   NodeDecl,
+   NodeBlock,
    NodeNoop
 } NodeKind;
 
@@ -210,16 +212,24 @@ Bool was_rtcmix_error();
 #define was_rtcmix_error() 0
 #endif
 
-/* sym.c */
-struct symbol *install(const char *name, ScopeType scope);
-struct symbol *addscope(struct symbol *sym, ScopeType scope);
-struct symbol *lookup(const char *name, ScopeType scope);
+/* sym.cpp */
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+void push_scope();
+void pop_scope();
+struct symbol *install(const char *name);
+struct symbol *lookup(const char *name, Bool anyLevel);
+int current_scope();
 char *strsave(char *str);
 char *emalloc(long nbytes);
 void efree(void *mem);
 void clear_elem(MincListElem *);
 void unref_value_list(MincValue *);
 void free_symbols();
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 /* trees.c */
 Tree tnoop(void);
@@ -252,6 +262,8 @@ Tree targlistelem(Tree e1, Tree e2);
 Tree targlist(Tree e1);
 Tree treturn(Tree e1);
 Tree tfuncseq(Tree e1, Tree e2);
+Tree tdecl(const char *name, MincDataType type);
+Tree tblock(Tree e1);
 Tree exct(Tree tp);
 void free_tree(Tree tp);
 void print_tree(Tree tp);
