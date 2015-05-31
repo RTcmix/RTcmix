@@ -78,6 +78,8 @@ static const char *s_NodeKinds[] = {
    "NodeSubscriptWrite",
    "NodeOpAssign",
    "NodeName",
+   "NodeLookup",
+   "NodeAutoDecl",
    "NodeConstf",
    "NodeString",
    "NodeFDef",
@@ -301,18 +303,49 @@ topassign(Tree e1, Tree e2, OpKind op)
    or initialize tree node to a symbol entry
 */
 Tree
-tname(Symbol *symbol)
+tname(Tree e1)
 {
    Tree tp = node(OpFree, NodeName);
    if (tp == NULL)
       return NULL;
 
-   tp->u.symbol = symbol;
+	tp->u.child[0] = e1;
 
-   DPRINT2("tname ('%s') => NodeName %p\n", symbol->name, tp);
+   DPRINT2("tname (%p) => NodeName %p\n", e1, tp);
    return tp;
 }
 
+/* looks up symbol name and get the symbol
+ */
+
+Tree
+tlookup(const char *symbolName)
+{
+	Tree tp = node(OpFree, NodeLookup);
+	if (tp == NULL)
+		return NULL;
+	
+	tp->u.string = symbolName;
+	
+	DPRINT2("tlookup (%s) => NodeLookup %p\n", symbolName, tp);
+	return tp;
+}
+
+/* looks up symbol name and get the symbol, and auto-declares it if not found
+ */
+
+Tree
+tautodecl(const char *symbolName)
+{
+	Tree tp = node(OpFree, NodeAutoDecl);
+	if (tp == NULL)
+		return NULL;
+	
+	tp->u.string = symbolName;
+	
+	DPRINT2("tautodecl (%s) => NodeAutoDecl %p\n", symbolName, tp);
+	return tp;
+}
 
 Tree
 tstring(char *str)
@@ -1346,11 +1379,25 @@ exct(Tree tp)
          tp->v.string = tp->u.string;
          break;
       case NodeName:
-         /* assign what's in the symbol into tree's value field */
-         DPRINT1("exct NodeName: copying value from symbol '%s'\n", tp->u.symbol->name);
-         copy_sym_tree(tp, tp->u.symbol);
-		 assert(tp->type == tp->u.symbol->type);
+		/* look up the symbol */
+         exct(tp->u.child[0]);
+         tp->u.symbol = tp->u.child[0]->u.symbol;
+         if (tp->u.symbol) {
+        	 /* assign what's in the symbol into tree's value field */
+         	DPRINT1("exct NodeName: copying value from symbol '%s'\n", tp->u.symbol->name);
+         	copy_sym_tree(tp, tp->u.symbol);
+		 	assert(tp->type == tp->u.symbol->type);
+		 }
+		 else {
+			 minc_die("'%s' is not declared", tp->u.child[0]->u.string);
+		 }
          break;
+	   case NodeLookup:
+		   tp->u.symbol = lookup(tp->u.string, YES);
+		   break;
+	   case NodeAutoDecl:
+		   tp->u.symbol = lookupOrAutodeclare(tp->u.string);
+		   break;
       case NodeListElem:
          DPRINT1("NodeListElem exct'ing Tree link %p\n", tp->u.child[0]);
          exct(tp->u.child[0]);
@@ -1437,6 +1484,9 @@ exct(Tree tp)
          pop_list();
          break;
       case NodeStore:
+		 /* N.B. Now that symbol lookup is part of tree, this happens in
+		    the NodeName stored as child[0] */
+         exct(tp->u.child[0]);
          /* Store value and type into sym pointed to by child[0]->u.symbol. */
          exct(tp->u.child[1]);
          /* Copy entire MincValue union from expr to id sym and to tp. */
@@ -1785,8 +1835,15 @@ free_tree(Tree tp)
          free_tree(tp->u.child[1]);
          break;
       case NodeName:
+		   free_tree(tp->u.child[0]);
          break;
-      case NodeString:
+	   case NodeAutoDecl:
+		   break;
+	   case NodeLookup:
+		   break;
+	   case NodeScope:
+		   break;
+     case NodeString:
          break;
       case NodeConstf:
          break;

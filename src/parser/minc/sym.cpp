@@ -263,6 +263,18 @@ lookup(const char *name, Bool anyLevel)
    return p;
 }
 
+Symbol * lookupOrAutodeclare(const char *name)
+{
+	DPRINT1("lookupOrAutodeclare('%s')\n", name);
+	Symbol *sym = lookup(name, NO);	// Check at current scope *only*
+	if (sym != NULL) {
+		return sym;
+	}
+	else {
+		sym = lookup(name, YES);		// check at all levels
+		return (sym) ? sym : install(name);		// XXX DOES THIS MATCH OLD BEHAVIOR?
+	}
+}
 
 /* Lookup <str> and install if necessary; return pointer. */
 char *

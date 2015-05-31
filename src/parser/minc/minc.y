@@ -39,7 +39,6 @@ static int		flevel = 0;	/* > 0 if we are in a function decl block */
 static MincDataType funReturnType = MincVoidType;	/* ret type for function */
 static char *	functionName;
 static void 	cleanup();
-static struct symbol * lookupOrAutodeclare(const char *name);
 static Tree declare(MincDataType type);
 static struct symbol * declareFunction(const char *name, MincDataType returnType);
 static Tree go(Tree t1);
@@ -106,7 +105,7 @@ stmt: rstmt					{ MPRINT("<rstmt>");
 								level--; MPRINT1("level => %d", level);
 								$$ = go(tfor($4, $6, $8, $10));
 							}
-	| '{' block stml '}'	{ MPRINT("<{ stml }>"); $$ = tseq($2, $3); }
+	| '{' block level stml '}'	{ MPRINT("<{ stml }>"); $$ = tseq($2, $4); }
 	| fdef
 	| error TOK_FLOAT_DECL	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_STRING_DECL	{ flerror = 1; $$ = tnoop(); }
@@ -129,49 +128,14 @@ level:  /* nothing */ { level++; MPRINT1("level => %d", level); push_scope(); }
 	;
 
 /* statement returning a value: assignments, function calls, etc. */
-rstmt: id '=' exp		{
-								sym = lookupOrAutodeclare($1);
-								$$ = tstore(tname(sym), $3);
-							}
-	| id TOK_PLUSEQU exp {
-								sym = lookup($1, TRUE);
-								if (sym == NULL) {
-									minc_die("'%s' is not declared", $1);
-									$$ = tnoop();
-								}
-								else
-									$$ = topassign(tname(sym), $3, OpPlus);
-							}
-	| id TOK_MINUSEQU exp {
-								sym = lookup($1, TRUE);
-								if (sym == NULL) {
-									minc_die("'%s' is not declared", $1);
-									$$ = tnoop();
-								}
-								else
-									$$ = topassign(tname(sym), $3, OpMinus);
-							}
-	| id TOK_MULEQU exp {
-								sym = lookup($1, TRUE);
-								if (sym == NULL) {
-									minc_die("'%s' is not declared", $1);
-									$$ = tnoop();
-								}
-								else
-									$$ = topassign(tname(sym), $3, OpMul);
-							}
-	| id TOK_DIVEQU exp {
-								sym = lookup($1, TRUE);
-								if (sym == NULL) {
-									minc_die("'%s' is not declared", $1);
-									$$ = tnoop();
-								}
-								else
-									$$ = topassign(tname(sym), $3, OpDiv);
-							}
+rstmt: id '=' exp		{		$$ = tstore(tname(tautodecl($1)), $3); }
+	| id TOK_PLUSEQU exp {		$$ = topassign(tname(tlookup($1)), $3, OpPlus); }
+	| id TOK_MINUSEQU exp {		$$ = topassign(tname(tlookup($1)), $3, OpMinus); }
+	| id TOK_MULEQU exp {		$$ = topassign(tname(tlookup($1)), $3, OpMul); }
+	| id TOK_DIVEQU exp {		$$ = topassign(tname(tlookup($1)), $3, OpDiv); }
 
 	| id '(' expl ')' {
-								sym = lookup($1, TRUE);
+								sym = lookup($1, YES);
 								if (sym == NULL) {
 									$$ = tcall($3, $1);
 								}
@@ -183,26 +147,10 @@ rstmt: id '=' exp		{
 
 /* $2 will be the end of a linked list of tlistelem nodes */
 /* XXX: This causes 1 reduce/reduce conflict on '}'  How bad is this?  -JGG */
-	| '{' expl '}' 	{ $$ = tlist($2); }
+	| '{' expl '}' 	{ 				$$ = tlist($2); }
 
-	| id '[' exp ']' 	{
-								sym = lookup($1, TRUE);
-								if (sym == NULL) {
-									minc_die("'%s' is not declared", $1);
-									$$ = tnoop();
-								}
-								else
-									$$ = tsubscriptread(tname(sym), $3);
-							}
-	| id '[' exp ']' '=' exp {
-								sym = lookup($1, TRUE);
-								if (sym == NULL) {
-									minc_die("'%s' is not declared", $1);
-									$$ = tnoop();
-								}
-								else
-									$$ = tsubscriptwrite(tname(sym), $3, $6);
-							}
+	| id '[' exp ']' 	{			$$ = tsubscriptread(tname(tlookup($1)), $3); }
+	| id '[' exp ']' '=' exp {		$$ = tsubscriptwrite(tname(tlookup($1)), $3, $6); }
 	;
 
 /* identifier list */
@@ -268,14 +216,14 @@ exp: rstmt				{ $$ = $1; }
 								$$ = top(OpNeg, $2, tconstf(0.0));
 							}
 	| id					{
-								sym = lookup($1, TRUE);
+								sym = lookup($1, YES);
 								if (sym == NULL) {
 // FIXME: install id w/ value of 0, then warn??
 									minc_die("'%s' is not declared", $1);
 									$$ = tconstf(0.0);
 								}
 								else {
-									$$ = tname(sym);
+									$$ = tname(tlookup($1));
 								}
 							}
 	;
@@ -308,17 +256,17 @@ fstml:	stml ret			{	MPRINT("<stml,ret>");
 arg: TOK_FLOAT_DECL id		{ MPRINT("<arg>");
 							  idlist[idcount++] = $2;
 							  Tree decl = declare(MincFloatType); idcount = 0;
-							  $$ = tseq(decl, tname(sym));		// create a sequence of tdecl/tname nodes
+							  $$ = tseq(decl, tname(tlookup($2)));		// create a sequence of tdecl/tname nodes *** COULD THESE AUTO-DECLARE?
 							}
 	| TOK_STRING_DECL id	{ MPRINT("<arg>");
 							  idlist[idcount++] = $2;
 							  Tree decl = declare(MincStringType); idcount = 0;
-							  $$ = tseq(decl, tname(sym));
+							  $$ = tseq(decl, tname(tlookup($2)));
 							}
 	| TOK_HANDLE_DECL id	{ MPRINT("<arg>");
 							  idlist[idcount++] = $2;
 							  Tree decl = declare(MincHandleType); idcount = 0;
-							  $$ = tseq(decl, tname(sym));
+							  $$ = tseq(decl, tname(tlookup($2)));
 							}
 	;
 
@@ -373,19 +321,6 @@ fdef: fname fargl '{' fstml '}'	{
 	;
 
 %%
-
-static struct symbol * lookupOrAutodeclare(const char *name)
-{
-	MPRINT1("lookupOrAutodeclare('%s')", name);
-	Symbol *sym = lookup(name, FALSE);	// Check at current scope *only*
-	if (sym != NULL) {
-		return sym;
-	}
-	else {
-		sym = lookup(name, TRUE);		// check at all levels
-		return (sym) ? sym : install(name);		// XXX DOES THIS MATCH OLD BEHAVIOR?
-	}
-}
 
 // N.B. Because we have no need for <id>'s to exist in our tree other than for the purpose
 // of declaring variables, we shortcut here and do not rely on the recursive parser.  We

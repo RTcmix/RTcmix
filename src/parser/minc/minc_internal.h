@@ -122,6 +122,8 @@ typedef enum {
    NodeSubscriptWrite,
    NodeOpAssign,
    NodeName,
+   NodeLookup,
+   NodeAutoDecl,
    NodeConstf,
    NodeString,
    NodeFDef,
@@ -173,10 +175,10 @@ typedef struct tree {
       struct tree *child[4];
       Symbol *symbol;
       double number;
-      char *string;
+      const char *string;
    } u;
    MincValue v;
-   char *funcname;              /* for NodeCall only */
+   const char *funcname;              /* for NodeCall only */
 } *Tree;
 
 
@@ -221,6 +223,7 @@ void push_scope();
 void pop_scope();
 struct symbol *install(const char *name);
 struct symbol *lookup(const char *name, Bool anyLevel);
+struct symbol * lookupOrAutodeclare(const char *name);
 int current_scope();
 char *strsave(char *str);
 char *emalloc(long nbytes);
@@ -245,7 +248,9 @@ Tree temptylistelem(void);
 Tree tsubscriptread(Tree e1, Tree e2);
 Tree tsubscriptwrite(Tree e1, Tree e2, Tree e3);
 Tree topassign(Tree e1, Tree e2, OpKind op);
-Tree tname(Symbol *symbol);
+Tree tname(Tree e1);
+Tree tlookup(const char *symbolName);
+Tree tautodecl(const char *symbolName);
 Tree tstring(char *str);
 Tree tconstf(MincFloat num);
 Tree tcall(Tree args, char *funcname);
