@@ -62,8 +62,11 @@ char Trace::spaces[64];
 #define ENTER()
 #endif
 
-#ifdef DEBUG
+#ifdef DEBUG_MEMORY
 static int numTrees = 0;
+#endif
+
+#ifdef DEBUG
 static const char *s_NodeKinds[] = {
    "NodeZero",
    "NodeSeq",
@@ -94,6 +97,9 @@ static const char *s_NodeKinds[] = {
    "NodeWhile",
    "NodeFor",
    "NodeIfElse",
+   "NodeDecl",
+   "NodeBlock",
+   "NodeScope",
    "NodeNoop"
 };
 
@@ -197,7 +203,7 @@ node(OpKind op, NodeKind kind)
    tp->u.child[3] = NULL;
    tp->v.list = NULL;
    tp->funcname = NULL;
-#ifdef DEBUG
+#ifdef DEBUG_MEMORY
 	++numTrees;
    DPRINT1("[%d trees in existence]\n", numTrees);
 #endif
@@ -628,6 +634,38 @@ twhile(Tree e1, Tree e2)
    return tp;
 }
 
+Tree tdecl(const char *name, MincDataType type)
+{
+	Tree tp = node(OpFree, NodeDecl);
+	if (tp == NULL)
+		return NULL;
+	tp->u.string = (char *)name;	// XXX WILL THIS WORK?  (used in excl)
+	tp->type = type;
+
+	DPRINT2("tdecl ('%s') => NodeDecl %p\n", name, tp);
+	return tp;
+}
+
+Tree tblock(Tree e1)
+{
+	Tree tp = node(OpFree, NodeBlock);
+	if (tp == NULL)
+		return NULL;
+
+	tp->u.child[0] = e1;
+	DPRINT2("tblock (%p) => NodeBlock %p\n", e1, tp);
+	return tp;
+}
+
+Tree tscope()
+{
+	Tree tp = node(OpFree, NodeScope);
+	if (tp == NULL)
+		return NULL;
+	
+	DPRINT1("tscope () => NodeScope %p\n", tp);
+	return tp;
+}
 
 /* ========================================================================== */
 /* Operators */
@@ -1297,29 +1335,23 @@ exct(Tree tp)
    if (tp == NULL || was_rtcmix_error())
       return NULL;
 
+	DPRINT2("exct (enter %s, tp=%p)\n", printNodeKind(tp->kind), tp);
    switch (tp->kind) {
       case NodeConstf:
-         DPRINT1("exct (enter NodeConstf, tp=%p)\n", tp);
          tp->type = MincFloatType;
          tp->v.number = tp->u.number;
-         DPRINT1("exct (exit NodeConstf, tp=%p)\n", tp);
          break;
       case NodeString:
-         DPRINT1("exct (enter NodeString, tp=%p)\n", tp);
          tp->type = MincStringType;
          tp->v.string = tp->u.string;
-         DPRINT1("exct (exit NodeString, tp=%p)\n", tp);
          break;
       case NodeName:
-         DPRINT1("exct (enter NodeName, tp=%p)\n", tp);
          /* assign what's in the symbol into tree's value field */
          DPRINT1("exct NodeName: copying value from symbol '%s'\n", tp->u.symbol->name);
          copy_sym_tree(tp, tp->u.symbol);
 		 assert(tp->type == tp->u.symbol->type);
-         DPRINT1("exct (exit NodeName, tp=%p)\n", tp);
          break;
       case NodeListElem:
-         DPRINT1("exct (enter NodeListElem, tp=%p)\n", tp);
          DPRINT1("NodeListElem exct'ing Tree link %p\n", tp->u.child[0]);
          exct(tp->u.child[0]);
 		 if (sMincListLen == MAXDISPARGS) {
@@ -1335,15 +1367,11 @@ exct(Tree tp)
 			assert(sMincList[sMincListLen].type == tmp->type);
             sMincListLen++;
          }
-         DPRINT1("exct (exit NodeListElem, tp=%p)\n", tp);
          break;
       case NodeEmptyListElem:
-         DPRINT1("exct (enter NodeEmptyListElem, tp=%p)\n", tp);
          /* do nothing */
-         DPRINT("exct (exit NodeEmptyListElem)\n");
          break;
       case NodeList:
-         DPRINT1("exct (enter NodeList, tp=%p)\n", tp);
          push_list();
          exct(tp->u.child[0]);     /* NB: increments sMincListLen */
          {
@@ -1366,20 +1394,14 @@ exct(Tree tp)
             	copy_listelem_elem(&theList->data[i], &sMincList[i]);
          }
          pop_list();
-         DPRINT1("exct (exit NodeList, tp=%p)\n", tp);
          break;
       case NodeSubscriptRead:
-         DPRINT1("exct (enter NodeSubscriptRead, tp=%p)\n", tp);
          exct_subscript_read(tp);
-         DPRINT1("exct (exit NodeSubscriptRead, tp=%p)\n", tp);
          break;
       case NodeSubscriptWrite:
-         DPRINT1("exct (enter NodeSubscriptWrite, tp=%p)\n", tp);
          exct_subscript_write(tp);
-         DPRINT1("exct (exit NodeSubscriptWrite, tp=%p)\n", tp);
          break;
       case NodeFunc:
-         DPRINT1("exct (enter NodeFunc, tp=%p)\n", tp);
          sCalledFunction = tp->u.child[1]->funcname;
          push_list();
          DPRINT1("exct NodeFunc: exp list = %p\n", tp->u.child[0]);
@@ -1393,10 +1415,8 @@ exct(Tree tp)
 	   }
          pop_list();
 		   sCalledFunction = NULL;
-         DPRINT("exct (exit NodeFunc)\n");
          break;
       case NodeCall:
-         DPRINT1("exct (enter NodeCall, tp=%p)\n", tp);
          push_list();
          exct(tp->u.child[0]);
          {
@@ -1415,10 +1435,8 @@ exct(Tree tp)
 			}
          }
          pop_list();
-         DPRINT1("exct (exit NodeCall, tp=%p)\n", tp);
          break;
       case NodeStore:
-         DPRINT1("exct (enter NodeStore, tp=%p)\n", tp);
          /* Store value and type into sym pointed to by child[0]->u.symbol. */
          exct(tp->u.child[1]);
          /* Copy entire MincValue union from expr to id sym and to tp. */
@@ -1426,24 +1444,18 @@ exct(Tree tp)
 		 assert(tp->u.child[0]->u.symbol->type == tp->u.child[1]->type);
          copy_tree_tree(tp, tp->u.child[1]);
          assert(tp->type == tp->u.child[1]->type);
-         DPRINT2("exct (exit NodeStore, tp=%p, type=%d)\n", tp, tp->type);
          break;
       case NodeOpAssign:
-         DPRINT1("exct (enter NodeOpAssign, tp=%p)\n", tp);
          exct_opassign(tp, tp->op);
-         DPRINT1("exct (exit NodeOpAssign, tp=%p)\n", tp);
          break;
       case NodeNot:
-         DPRINT1("exct (enter NodeNot, tp=%p)\n", tp);
          tp->type = MincFloatType;
          if (cmp(0.0, exct(tp->u.child[0])->v.number) == 0)
             tp->v.number = 1.0;
          else
             tp->v.number = 0.0;
-         DPRINT1("exct (exit NodeNot, tp=%p)\n", tp);
          break;
       case NodeAnd:
-         DPRINT1("exct (enter NodeAnd, tp=%p)\n", tp);
          tp->type = MincFloatType;
          tp->v.number = 0.0;
          if (cmp(0.0, exct(tp->u.child[0])->v.number) != 0) {
@@ -1452,57 +1464,41 @@ exct(Tree tp)
                tp->v.number = 1.0;
             }
          }
-         DPRINT1("exct (exit NodeAnd, tp=%p)\n", tp);
          break;
       case NodeRelation:
-         DPRINT2("exct (enter NodeRelation, tp=%p, op=%d)\n", tp, tp->op);
          exct_relation(tp);
-         DPRINT2("exct (exit NodeRelation, tp=%p, op=%d)\n", tp, tp->op);
          break; /* switch NodeRelation */
       case NodeOperator:
-         DPRINT2("exct (enter NodeOperator, tp=%p, op=%d)\n", tp, tp->op);
          exct_operator(tp, tp->op);
-         DPRINT2("exct (exit NodeOperator, tp=%p, op=%d)\n", tp, tp->op);
          break; /* switch NodeOperator */
       case NodeUnaryOperator:
-         DPRINT1("exct (enter NodeUnaryOperator, tp=%p)\n", tp);
          tp->type = MincFloatType;
          if (tp->op == OpNeg)
             tp->v.number = -exct(tp->u.child[0])->v.number;
-         DPRINT1("exct (exit NodeUnaryOperator, tp=%p)\n", tp);
          break;
       case NodeOr:
-         DPRINT1("exct (enter NodeOr, tp=%p)\n", tp);
          tp->type = MincFloatType;
          tp->v.number = 0.0;
          if ((cmp(0.0, exct(tp->u.child[0])->v.number) != 0) ||
              (cmp(0.0, exct(tp->u.child[1])->v.number) != 0)) {
             tp->v.number = 1.0;
          }
-         DPRINT1("exct (exit NodeOr, tp=%p)\n", tp);
          break;
       case NodeIf:
-         DPRINT1("exct (enter NodeIf, tp=%p)\n", tp);
          if (cmp(0.0, exct(tp->u.child[0])->v.number) != 0)
             exct(tp->u.child[1]);
-         DPRINT1("exct (exit NodeIf, tp=%p)\n", tp);
          break;
       case NodeIfElse:
-         DPRINT1("exct (enter NodeIfElse, tp=%p)\n", tp);
          if (cmp(0.0, exct(tp->u.child[0])->v.number) != 0)
             exct(tp->u.child[1]);
          else
             exct(tp->u.child[2]);
-         DPRINT1("exct (exit NodeIfElse, tp=%p)\n", tp);
          break;
       case NodeWhile:
-         DPRINT1("exct (enter NodeWhile, tp=%p)\n", tp);
          while (cmp(0.0, exct(tp->u.child[0])->v.number) != 0)
             exct(tp->u.child[1]);
-         DPRINT1("exct (exit NodeWhile, tp=%p)\n", tp);
          break;
       case NodeFDef:
-		   DPRINT1("exct (enter NodeFDef, tp=%p)\n", tp);
 	   {
 		   DPRINT1("exct NodeFDef: executing arg list node %p\n", tp->u.child[0]);
 		   exct(tp->u.child[0]);
@@ -1511,17 +1507,13 @@ exct(Tree tp)
 		   DPRINT("NodeFDef copying exct results into self\n");
 		   copy_tree_tree(tp, temp);
 	   }
-		   DPRINT("exct (exit NodeFDef)\n");
 		   break;
       case NodeArgList:
-		   DPRINT1("exct (enter NodeArgList, tp=%p)\n", tp);
 		   sArgListLen = 0;
 		   sArgListIndex = 0;	// reset to walk list
 		   exct(tp->u.child[0]);
-		   DPRINT("exct (exit NodeArgList)\n");
          break;
       case NodeArgListElem:
-		   DPRINT1("exct (enter NodeArgListElem, tp=%p)\n", tp);
 		   ++sArgListLen;
 		   exct(tp->u.child[0]);
 		   {
@@ -1573,48 +1565,67 @@ exct(Tree tp)
 			   ++sArgListIndex;
 		   }
 		   }
-		   DPRINT("exct (exit NodeArgListElem)\n");
 		   break;
       case NodeRet:
-         DPRINT1("exct (enter NodeRet, tp=%p)\n", tp);
          exct(tp->u.child[0]);
          copy_tree_tree(tp, tp->u.child[0]);
          assert(tp->type == tp->u.child[0]->type);
-         DPRINT("exct (exit NodeRet)\n");
          break;
       case NodeFuncSeq:
-		   DPRINT1("exct (enter NodeFuncSeq, tp=%p)\n", tp);
 		   exct(tp->u.child[0]);
 		   exct(tp->u.child[1]);
 		   copy_tree_tree(tp, tp->u.child[1]);
 		   assert(tp->type == tp->u.child[1]->type);
-		   DPRINT1("exct (exit NodeFuncSeq, tp=%p)\n", tp);
          break;
       case NodeNoop:
-         DPRINT1("exct (enter NodeNoop, tp=%p)\n", tp);
          /* do nothing */
-         DPRINT("exct (exit NodeNoop)\n");
          break;
       case NodeFor:
-         DPRINT1("exct (enter NodeFor, tp=%p)\n", tp);
          exct(tp->u.child[0]);         /* init */
          while (cmp(0.0, exct(tp->u.child[1])->v.number) != 0) { /* condition */
             exct(tp->u.child[3]);      /* execute block */
             exct(tp->u.child[2]);      /* prepare for next iteration */
          }
-         DPRINT1("exct (exit NodeFor, tp=%p)\n", tp);
          break;
       case NodeSeq:
-         DPRINT1("exct (enter NodeSeq, tp=%p)\n", tp);
          exct(tp->u.child[0]);
          exct(tp->u.child[1]);
-         DPRINT1("exct (exit NodeSeq, tp=%p)\n", tp);
          break;
+	   case NodeBlock:				// NodeBlock returns void
+		   exct(tp->u.child[0]);
+		   exct(tp->u.child[1]);
+		   pop_scope();				// NodeScope handled push_scope()
+		   break;
+	   case NodeScope:
+		   push_scope();
+		   break;
+	   case NodeDecl:
+	   	{
+		const char *name = tp->u.string;		// as set by NodeDecl creator
+		DPRINT1("-- declaring variable '%s'\n", name);
+		Symbol *sym = lookup(name, YES);
+		if (!sym) {
+		   sym = install(name);
+		   sym->type = tp->type;
+		}
+		else {
+		   if (sym->scope == current_scope()) {
+			   minc_warn("variable '%s' redefined", name);
+		   }
+		   else {
+			   minc_warn("variable '%s' defined at another scope as well", name);
+			   sym = install(name);
+		   }
+		}
+		tp->u.symbol = sym;	// note:  overwrites u.string
+		}
+		break;
       default:
-         minc_internal_error("exct: tried to execute invalid node");
+         minc_internal_error("exct: tried to execute invalid node '%s'", printNodeKind(tp->kind));
          break;
    } /* switch kind */
 
+	DPRINT2("exct (exit %s, tp=%p)\n", printNodeKind(tp->kind), tp);
    return tp;
 }
 
@@ -1853,7 +1864,7 @@ free_tree(Tree tp)
    }
    tp->type = MincVoidType;		// To prevent double-free
    efree(tp);   /* actually free space */
-#ifdef DEBUG
+#ifdef DEBUG_MEMORY
 	--numTrees;
 //   DPRINT1("[%d trees left]\n", numTrees);
 #endif

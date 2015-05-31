@@ -40,7 +40,7 @@ static MincDataType funReturnType = MincVoidType;	/* ret type for function */
 static char *	functionName;
 static void 	cleanup();
 static struct symbol * lookupOrAutodeclare(const char *name);
-static struct symbol * declare(MincDataType type);
+static Tree declare(MincDataType type);
 static struct symbol * declareFunction(const char *name, MincDataType returnType);
 static Tree go(Tree t1);
 
@@ -65,7 +65,7 @@ static Tree go(Tree t1);
 %token <ival> TOK_HANDLE_DECL
 %token <ival> TOK_IDENT TOK_NUM TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING 
-%type  <trees> stml stmt rstmt bexp expl exp str arg argl fargl fdef ret fstml
+%type  <trees> stml stmt rstmt bexp expl exp str arg argl fargl fdef ret fstml block
 %type  <str> id fname
 
 %%
@@ -87,26 +87,26 @@ stmt: rstmt					{ MPRINT("<rstmt>");
 								else
 									$$ = $1;
 							}
-	| TOK_FLOAT_DECL idl	{ declare(MincFloatType); idcount = 0; }
-	| TOK_STRING_DECL idl	{ declare(MincStringType); idcount = 0; }
-	| TOK_HANDLE_DECL idl	{ declare(MincHandleType); idcount = 0; }
+	| TOK_FLOAT_DECL idl	{ $$ = declare(MincFloatType); idcount = 0; }	// e.g., "float x, y z"
+	| TOK_STRING_DECL idl	{ $$ = declare(MincStringType); idcount = 0; }
+	| TOK_HANDLE_DECL idl	{ $$ = declare(MincHandleType); idcount = 0; }
 	| TOK_IF level bexp stmt {
-								level--; MPRINT1("level => %d", level); pop_scope();
+								level--; MPRINT1("level => %d", level);
 								$$ = go(tif($3, $4));
 							}
 	| TOK_IF level bexp stmt TOK_ELSE stmt {
-								level--; MPRINT1("level => %d", level); pop_scope();
+								level--; MPRINT1("level => %d", level);
 								$$ = go(tifelse($3, $4, $6));
 							}
 	| TOK_WHILE level bexp stmt	{
-								level--; MPRINT1("level => %d", level); pop_scope();
+								level--; MPRINT1("level => %d", level);
 								$$ = go(twhile($3, $4));
 							}
 	| TOK_FOR level '(' stmt ';' bexp ';' stmt ')' stmt {
-								level--; MPRINT1("level => %d", level); pop_scope();
+								level--; MPRINT1("level => %d", level);
 								$$ = go(tfor($4, $6, $8, $10));
 							}
-	| '{' stml '}'		{ $$ = $2; }
+	| '{' block stml '}'	{ MPRINT("<{ stml }>"); $$ = tseq($2, $3); }
 	| fdef
 	| error TOK_FLOAT_DECL	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_STRING_DECL	{ flerror = 1; $$ = tnoop(); }
@@ -118,6 +118,10 @@ stmt: rstmt					{ MPRINT("<rstmt>");
 	| error TOK_ELSE	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_RETURN	{ flerror = 1; $$ = tnoop(); }
 	| error ';'			{ flerror = 1; $$ = tnoop(); }
+	;
+
+/* block */
+block:  /* nothing */ { MPRINT("scope increase"); $$ = tscope(); }
 	;
 
 /* statement nesting level counter */
@@ -303,18 +307,18 @@ fstml:	stml ret			{	MPRINT("<stml,ret>");
 
 arg: TOK_FLOAT_DECL id		{ MPRINT("<arg>");
 							  idlist[idcount++] = $2;
-							  sym = declare(MincFloatType); idcount = 0;
-							  $$ = tname(sym);
+							  Tree decl = declare(MincFloatType); idcount = 0;
+							  $$ = tseq(decl, tname(sym));		// create a sequence of tdecl/tname nodes
 							}
 	| TOK_STRING_DECL id	{ MPRINT("<arg>");
 							  idlist[idcount++] = $2;
-							  sym = declare(MincStringType); idcount = 0;
-							  $$ = tname(sym);
+							  Tree decl = declare(MincStringType); idcount = 0;
+							  $$ = tseq(decl, tname(sym));
 							}
 	| TOK_HANDLE_DECL id	{ MPRINT("<arg>");
 							  idlist[idcount++] = $2;
-							  sym = declare(MincHandleType); idcount = 0;
-							  $$ = tname(sym);
+							  Tree decl = declare(MincHandleType); idcount = 0;
+							  $$ = tseq(decl, tname(sym));
 							}
 	;
 
@@ -372,6 +376,7 @@ fdef: fname fargl '{' fstml '}'	{
 
 static struct symbol * lookupOrAutodeclare(const char *name)
 {
+	MPRINT1("lookupOrAutodeclare('%s')", name);
 	Symbol *sym = lookup(name, FALSE);	// Check at current scope *only*
 	if (sym != NULL) {
 		return sym;
@@ -382,32 +387,22 @@ static struct symbol * lookupOrAutodeclare(const char *name)
 	}
 }
 
-static Symbol * declare(MincDataType type)
+// N.B. Because we have no need for <id>'s to exist in our tree other than for the purpose
+// of declaring variables, we shortcut here and do not rely on the recursive parser.  We
+// create our own sequence of declaration nodes.
+
+static Tree declare(MincDataType type)
 {
 	MPRINT2("declare(type=%d, idcount=%d)", type, idcount);
 	int i;
 	
+	Tree t = tnoop();	// end of the list
+	
 	for (i = 0; i < idcount; i++) {
-		// This will return either the symbol at the requested scope, if declared,
-		// or the first declared version of the symbol it finds, regardless of scope.
-		Symbol *sym = lookup(idlist[i], TRUE);
-		if (sym != NULL) {
-			if (sym->scope == current_scope()) {
-				minc_warn("variable '%s' redefined", idlist[i]);
-			}
-			else {
-				minc_warn("variable '%s' defined at another scope as well", idlist[i]);
-				sym = install(idlist[i]);
-			}
-			sym->type = type;
-		}
-		else {
-			sym = install(idlist[i]);
-			sym->type = type;
-		}
-		return sym;
+		Tree decl = tdecl(idlist[i], type);
+		t = tseq(t, decl);
 	}
-	return NULL;	// NOTREACHED
+	return t;
 }
 
 static struct symbol *
@@ -432,13 +427,14 @@ declareFunction(const char *name, MincDataType returnType)
 static Tree
 go(Tree t1)
 {
-	MPRINT1("go(%p)", t1);
+	MPRINT1("--> go(%p)", t1);
 	if (level == 0) {
 		exct(t1);
 #ifndef FREE_TREES_AT_END
 		free_tree(t1);
 #endif
 	}
+	MPRINT1("<-- go(%p)", t1);
 	return t1;
 }
 

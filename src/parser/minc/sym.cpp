@@ -90,7 +90,7 @@ Scope::lookup(const char *name)
 		if (name == p->name)
 			break;
 	
-	DPRINT2("Scope::lookup ('%s') => %p\n", name, p);
+	DPRINT3("Scope::lookup ('%s') [scope %d] => %p\n", name, depth(), p);
 	return p;
 }
 
@@ -111,6 +111,7 @@ void push_scope()
 }
 
 void pop_scope() {
+	assert(sStackDepth >= 0);
 	Scope *top = sScopeStack.back();
 	sScopeStack.pop_back();
 	delete top;
@@ -235,7 +236,7 @@ lookup(const char *name, Bool anyLevel)
 	Symbol *p = NULL;
 	int foundLevel = -1;
 	check_scope();		// XXX HACK
-	if (anyLevel) {
+	if (anyLevel == YES) {
 		// Start at deepest scope and work back to global
 		for (std::vector<Scope *>::reverse_iterator it = sScopeStack.rbegin(); it != sScopeStack.rend(); ++it) {
 			Scope *s = *it;
