@@ -14,7 +14,7 @@
 
 #define NO_EMALLOC_DEBUG
 #define SYMBOL_DEBUG
-
+#undef DEBUG_MEMORY
 
 static struct str {             /* string table */
    char *str;                   /* string */
@@ -42,7 +42,7 @@ static int hash(const char *s);
 
 class Scope {
 public:
-	Scope(int inDepth) : _depth(inDepth) { htab[0] = 0; }
+	Scope(int inDepth) : _depth(inDepth) { memset(htab, 0, sizeof(htab)); }
 	~Scope();
 	Symbol *install(const char *name);
 	Symbol *lookup(const char *name);
@@ -54,6 +54,9 @@ private:
 
 Scope::~Scope()
 {
+#ifdef DEBUG_MEMORY
+	DPRINT1("Scope::~Scope(%p)\n", this);
+#endif
 	for (int s = 0; s < HASHSIZE; ++s) {
 		for (Symbol *p = htab[s]; p != NULL; ) {
 			Symbol *next = p->next;
@@ -97,31 +100,32 @@ Scope::lookup(const char *name)
 static std::vector<Scope *> sScopeStack;
 static int sStackDepth = -1;	// hack till I figure out initialization
 
-void check_scope() {
-	if (sStackDepth == -1) {
-		push_scope();
-	}
-}
+class InitializeScope
+{
+public:
+	InitializeScope() { push_scope(); }
+};
+
+static InitializeScope sInitializeScope;
 
 void push_scope()
 {
+	DPRINT1("push_scope() => %d\n", sStackDepth+1);
 	++sStackDepth;
 	sScopeStack.push_back(new Scope(sStackDepth));
-	DPRINT1("push_scope() => %d\n", sStackDepth);
 }
 
 void pop_scope() {
+	DPRINT1("pop_scope() => %d\n", sStackDepth-1);
 	assert(sStackDepth >= 0);
 	Scope *top = sScopeStack.back();
 	sScopeStack.pop_back();
 	delete top;
 	--sStackDepth;
-	DPRINT1("pop_scope() => %d\n", sStackDepth);
 }
 
 int current_scope()
 {
-	check_scope();		// XXX HACK
 	DPRINT1("current_scope() == %d\n", sStackDepth);
 	return sStackDepth;
 }
@@ -147,12 +151,15 @@ symalloc(const char *name)
    p->defined = p->offset = 0;
    p->list = NULL;
 #endif
+#ifdef DEBUG_MEMORY
+	DPRINT1("symalloc() -> %p\n", p);
+#endif
    return p;
 }
 
 static void free_symbol(struct symbol *p)
 {
-#ifdef SYMBOL_DEBUG
+#if defined(SYMBOL_DEBUG) || defined(DEBUG_MEMORY)
 	rtcmix_print("\tfreeing symbol \"%s\" for scope %d (%p)\n", p->name, p->scope, p);
 #endif
 	if (p->type == MincHandleType)
@@ -219,7 +226,6 @@ free_node(struct symbol *p)
 struct symbol *
 install(const char *name)
 {
-	check_scope();		// XXX HACK
 	return sScopeStack.back()->install(name);
 }
 
@@ -235,7 +241,6 @@ lookup(const char *name, Bool anyLevel)
 {
 	Symbol *p = NULL;
 	int foundLevel = -1;
-	check_scope();		// XXX HACK
 	if (anyLevel == YES) {
 		// Start at deepest scope and work back to global
 		for (std::vector<Scope *>::reverse_iterator it = sScopeStack.rbegin(); it != sScopeStack.rend(); ++it) {
@@ -268,10 +273,13 @@ Symbol * lookupOrAutodeclare(const char *name)
 	DPRINT1("lookupOrAutodeclare('%s')\n", name);
 	Symbol *sym = lookup(name, NO);	// Check at current scope *only*
 	if (sym != NULL) {
+		DPRINT("\tfound it at same scope\n");
 		return sym;
 	}
 	else {
+		DPRINT("\tnot in this scope - trying others\n");
 		sym = lookup(name, YES);		// check at all levels
+		if (sym) { DPRINT("\tfound it\n"); } else { DPRINT("\tnot found - installing\n"); }
 		return (sym) ? sym : install(name);		// XXX DOES THIS MATCH OLD BEHAVIOR?
 	}
 }

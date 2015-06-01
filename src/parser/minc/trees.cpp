@@ -62,6 +62,7 @@ char Trace::spaces[64];
 #define ENTER()
 #endif
 
+#define DEBUG_MEMORY
 #ifdef DEBUG_MEMORY
 static int numTrees = 0;
 #endif
@@ -101,7 +102,6 @@ static const char *s_NodeKinds[] = {
    "NodeIfElse",
    "NodeDecl",
    "NodeBlock",
-   "NodeScope",
    "NodeNoop"
 };
 
@@ -121,6 +121,7 @@ static void pop_list(void);
 static void copy_tree_tree(Tree tpdest, Tree tpsrc);
 static void copy_sym_tree(Tree tpdest, Symbol *src);
 static void copy_tree_sym(Symbol *dest, Tree tpsrc);
+static void copy_sym_sym(Symbol *dest, Symbol *src);
 static void copy_tree_listelem(MincListElem *edest, Tree tpsrc);
 static void copy_listelem_tree(Tree tpdest, MincListElem *esrc);
 static void copy_listelem_elem(MincListElem *edest, MincListElem *esrc);
@@ -327,7 +328,7 @@ tlookup(const char *symbolName)
 	
 	tp->u.string = symbolName;
 	
-	DPRINT2("tlookup (%s) => NodeLookup %p\n", symbolName, tp);
+	DPRINT2("tlookup ('%s') => NodeLookup %p\n", symbolName, tp);
 	return tp;
 }
 
@@ -343,7 +344,7 @@ tautodecl(const char *symbolName)
 	
 	tp->u.string = symbolName;
 	
-	DPRINT2("tautodecl (%s) => NodeAutoDecl %p\n", symbolName, tp);
+	DPRINT2("tautodecl ('%s') => NodeAutoDecl %p\n", symbolName, tp);
 	return tp;
 }
 
@@ -687,16 +688,6 @@ Tree tblock(Tree e1)
 
 	tp->u.child[0] = e1;
 	DPRINT2("tblock (%p) => NodeBlock %p\n", e1, tp);
-	return tp;
-}
-
-Tree tscope()
-{
-	Tree tp = node(OpFree, NodeScope);
-	if (tp == NULL)
-		return NULL;
-	
-	DPRINT1("tscope () => NodeScope %p\n", tp);
 	return tp;
 }
 
@@ -1364,7 +1355,6 @@ check_list_count()
 Tree
 exct(Tree tp)
 {
-	ENTER();
    if (tp == NULL || was_rtcmix_error())
       return NULL;
 
@@ -1381,14 +1371,14 @@ exct(Tree tp)
       case NodeName:
 		/* look up the symbol */
          exct(tp->u.child[0]);
-         tp->u.symbol = tp->u.child[0]->u.symbol;
-         if (tp->u.symbol) {
-        	 /* assign what's in the symbol into tree's value field */
-         	DPRINT1("exct NodeName: copying value from symbol '%s'\n", tp->u.symbol->name);
-         	copy_sym_tree(tp, tp->u.symbol);
-		 	assert(tp->type == tp->u.symbol->type);
+         if (tp->u.child[0]->u.symbol) {
+        	 /* assign what's in the child's symbol into tree's value field */
+         	DPRINT1("exct NodeName: copying value from symbol '%s'\n", tp->u.child[0]->u.symbol->name);
+         	copy_sym_tree(tp, tp->u.child[0]->u.symbol);
+		 	assert(tp->type == tp->u.child[0]->u.symbol->type);
 		 }
 		 else {
+			 // FIXME: install id w/ value of 0, then warn??
 			 minc_die("'%s' is not declared", tp->u.child[0]->u.string);
 		 }
          break;
@@ -1642,12 +1632,9 @@ exct(Tree tp)
          exct(tp->u.child[1]);
          break;
 	   case NodeBlock:				// NodeBlock returns void
-		   exct(tp->u.child[0]);
-		   exct(tp->u.child[1]);
-		   pop_scope();				// NodeScope handled push_scope()
-		   break;
-	   case NodeScope:
 		   push_scope();
+		   exct(tp->u.child[0]);
+		   pop_scope();
 		   break;
 	   case NodeDecl:
 	   	{
@@ -1768,6 +1755,15 @@ copy_tree_sym(Symbol *dest, Tree tpsrc)
 }
 
 static void
+copy_sym_sym(Symbol *dest, Symbol *src)
+{
+	DPRINT2("copy_sym_sym(%p, %p)\n", dest, src);
+	copy_value(&dest->v, dest->type, &src->v, src->type);
+	dest->type = src->type;
+	dest->name = src->name;		// XXX will this cause double-free?
+}
+
+static void
 copy_tree_listelem(MincListElem *dest, Tree tpsrc)
 {
    DPRINT2("copy_tree_listelem(%p, %p)\n", dest, tpsrc);
@@ -1798,7 +1794,9 @@ free_tree(Tree tp)
    if (tp == NULL)
       return;
 
-//   DPRINT2("entering free_tree(%p) (%s)\n", tp, printNodeKind(tp->kind));
+#ifdef DEBUG_MEMORY
+	DPRINT2("entering free_tree(%p) (%s)\n", tp, printNodeKind(tp->kind));
+#endif
 
    switch (tp->kind) {
       case NodeZero:
@@ -1837,11 +1835,14 @@ free_tree(Tree tp)
       case NodeName:
 		   free_tree(tp->u.child[0]);
          break;
+	   case NodeDecl:
+		   break;
 	   case NodeAutoDecl:
 		   break;
 	   case NodeLookup:
 		   break;
-	   case NodeScope:
+	   case NodeBlock:
+		   free_tree(tp->u.child[0]);
 		   break;
      case NodeString:
          break;
@@ -1911,6 +1912,9 @@ free_tree(Tree tp)
          free_tree(tp->u.child[2]);
          free_tree(tp->u.child[3]);
          break;
+	   default:
+		   minc_internal_error("free_tree: tried to destroy invalid node '%s'", printNodeKind(tp->kind));
+		   break;
    } /* switch kind */
 
    if (tp->type == MincHandleType) {
@@ -1923,7 +1927,7 @@ free_tree(Tree tp)
    efree(tp);   /* actually free space */
 #ifdef DEBUG_MEMORY
 	--numTrees;
-//   DPRINT1("[%d trees left]\n", numTrees);
+   DPRINT1("[%d trees left]\n", numTrees);
 #endif
 //   DPRINT1("leaving free_tree(%p)\n", tp);
 }

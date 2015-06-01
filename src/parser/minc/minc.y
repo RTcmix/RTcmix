@@ -64,7 +64,7 @@ static Tree go(Tree t1);
 %token <ival> TOK_HANDLE_DECL
 %token <ival> TOK_IDENT TOK_NUM TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING 
-%type  <trees> stml stmt rstmt bexp expl exp str arg argl fargl fdef ret fstml block
+%type  <trees> stml stmt rstmt bexp expl exp str arg argl fargl fdef ret fstml bstml
 %type  <str> id fname
 
 %%
@@ -89,23 +89,51 @@ stmt: rstmt					{ MPRINT("<rstmt>");
 	| TOK_FLOAT_DECL idl	{ $$ = declare(MincFloatType); idcount = 0; }	// e.g., "float x, y z"
 	| TOK_STRING_DECL idl	{ $$ = declare(MincStringType); idcount = 0; }
 	| TOK_HANDLE_DECL idl	{ $$ = declare(MincHandleType); idcount = 0; }
+	/* N.B. The reason we have so many versions is that we do not want to treat <bstml> as a <stmt> */
 	| TOK_IF level bexp stmt {
 								level--; MPRINT1("level => %d", level);
 								$$ = go(tif($3, $4));
+							}
+	| TOK_IF bexp bstml {
+								level--; MPRINT1("level => %d", level);
+								$$ = go(tif($2, $3));
 							}
 	| TOK_IF level bexp stmt TOK_ELSE stmt {
 								level--; MPRINT1("level => %d", level);
 								$$ = go(tifelse($3, $4, $6));
 							}
+	| TOK_IF bexp bstml TOK_ELSE stmt {
+								level--; MPRINT1("level => %d", level);
+								$$ = go(tifelse($2, $3, $5));
+							}
+	| TOK_IF level bexp stmt TOK_ELSE bstml {
+								level--; MPRINT1("level => %d", level);
+								$$ = go(tifelse($3, $4, $6));
+							}
+	| TOK_IF bexp bstml TOK_ELSE bstml {
+								level--; MPRINT1("level => %d", level);
+								$$ = go(tifelse($2, $3, $5));
+							}
 	| TOK_WHILE level bexp stmt	{
 								level--; MPRINT1("level => %d", level);
 								$$ = go(twhile($3, $4));
+							}
+	| TOK_WHILE bexp bstml	{
+								level--; MPRINT1("level => %d", level);
+								$$ = go(twhile($2, $3));
 							}
 	| TOK_FOR level '(' stmt ';' bexp ';' stmt ')' stmt {
 								level--; MPRINT1("level => %d", level);
 								$$ = go(tfor($4, $6, $8, $10));
 							}
-	| '{' block level stml '}'	{ MPRINT("<{ stml }>"); $$ = tseq($2, $4); }
+	| TOK_FOR '(' stmt ';' bexp ';' stmt ')' bstml {
+								level--; MPRINT1("level => %d", level);
+								$$ = go(tfor($3, $5, $7, $9));
+							}
+	| bstml						{
+								level--; MPRINT1("level => %d", level);
+								$$ = go($1);	/* standalone block gets executed immediately */
+							}
 	| fdef
 	| error TOK_FLOAT_DECL	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_STRING_DECL	{ flerror = 1; $$ = tnoop(); }
@@ -119,12 +147,13 @@ stmt: rstmt					{ MPRINT("<rstmt>");
 	| error ';'			{ flerror = 1; $$ = tnoop(); }
 	;
 
-/* block */
-block:  /* nothing */ { MPRINT("scope increase"); $$ = tscope(); }
+/* block of statements */
+
+bstml:	'{' level stml '}'	{ MPRINT("<{stml}>"); $$ = tblock($3); }
 	;
 
 /* statement nesting level counter */
-level:  /* nothing */ { level++; MPRINT1("level => %d", level); push_scope(); }
+level:  /* nothing */ { level++; MPRINT1("level => %d", level); }
 	;
 
 /* statement returning a value: assignments, function calls, etc. */
@@ -216,15 +245,7 @@ exp: rstmt				{ $$ = $1; }
 								$$ = top(OpNeg, $2, tconstf(0.0));
 							}
 	| id					{
-								sym = lookup($1, YES);
-								if (sym == NULL) {
-// FIXME: install id w/ value of 0, then warn??
-									minc_die("'%s' is not declared", $1);
-									$$ = tconstf(0.0);
-								}
-								else {
-									$$ = tname(tlookup($1));
-								}
+								$$ = tname(tlookup($1));
 							}
 	;
 
@@ -383,6 +404,7 @@ static void cleanup()
 	MPRINT1("cleanup: yy_init = %d", yy_init);
 	MPRINT1("Freeing program tree %p", program);
 #ifdef FREE_TREES_AT_END
+	print_tree(program);
     free_tree(program);
 #else
 	efree(program);

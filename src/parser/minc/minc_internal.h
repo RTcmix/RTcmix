@@ -145,7 +145,6 @@ typedef enum {
    NodeIfElse,
    NodeDecl,
    NodeBlock,
-   NodeScope,
    NodeNoop
 } NodeKind;
 
@@ -270,7 +269,6 @@ Tree treturn(Tree e1);
 Tree tfuncseq(Tree e1, Tree e2);
 Tree tdecl(const char *name, MincDataType type);
 Tree tblock(Tree e1);
-Tree tscope();
 Tree exct(Tree tp);
 void free_tree(Tree tp);
 void print_tree(Tree tp);
