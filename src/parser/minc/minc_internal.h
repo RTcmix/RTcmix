@@ -144,6 +144,7 @@ typedef enum {
    NodeFor,
    NodeIfElse,
    NodeDecl,
+   NodeFuncDecl,
    NodeBlock,
    NodeNoop
 } NodeKind;
@@ -177,7 +178,7 @@ typedef struct tree {
       const char *string;
    } u;
    MincValue v;
-   const char *funcname;              /* for NodeCall only */
+   const char *name;              /* used for function name, symbol name (for lookup) */
 } *Tree;
 
 
@@ -261,13 +262,14 @@ Tree tif(Tree e1, Tree e2);
 Tree tifelse(Tree e1, Tree e2, Tree e3);
 Tree tfor(Tree e1, Tree e2, Tree e3, Tree e4);
 Tree twhile(Tree e1, Tree e2);
-Tree tfdef(Tree e1, Tree e2, char *funcname);
+Tree tfdef(char *funcname, Tree e1, Tree e2);
 Tree tfunc(Tree e1, Tree e2);
 Tree targlistelem(Tree e1, Tree e2);
 Tree targlist(Tree e1);
 Tree treturn(Tree e1);
 Tree tfuncseq(Tree e1, Tree e2);
 Tree tdecl(const char *name, MincDataType type);
+Tree tfdecl(const char *name, MincDataType type);
 Tree tblock(Tree e1);
 Tree exct(Tree tp);
 void free_tree(Tree tp);

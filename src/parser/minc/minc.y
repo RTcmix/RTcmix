@@ -64,7 +64,8 @@ static Tree go(Tree t1);
 %token <ival> TOK_HANDLE_DECL
 %token <ival> TOK_IDENT TOK_NUM TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING 
-%type  <trees> stml stmt rstmt bexp expl exp str arg argl fargl fdef ret fstml bstml
+%type  <trees> stml stmt rstmt bexp expl exp str ret bstml
+%type  <trees> fdecl sdecl hdecl fdef fstml arg argl fargl
 %type  <str> id fname
 
 %%
@@ -86,10 +87,11 @@ stmt: rstmt					{ MPRINT("<rstmt>");
 								else
 									$$ = $1;
 							}
-	| TOK_FLOAT_DECL idl	{ $$ = declare(MincFloatType); idcount = 0; }	// e.g., "float x, y z"
-	| TOK_STRING_DECL idl	{ $$ = declare(MincStringType); idcount = 0; }
-	| TOK_HANDLE_DECL idl	{ $$ = declare(MincHandleType); idcount = 0; }
-	/* N.B. The reason we have so many versions is that we do not want to treat <bstml> as a <stmt> */
+	| fdecl
+	| sdecl
+	| hdecl
+	| fdef
+	/* N.B. The reason we have so many versions below is that we do not want to treat <bstml> as a <stmt> */
 	| TOK_IF level bexp stmt {
 								level--; MPRINT1("level => %d", level);
 								$$ = go(tif($3, $4));
@@ -134,7 +136,6 @@ stmt: rstmt					{ MPRINT("<rstmt>");
 								level--; MPRINT1("level => %d", level);
 								$$ = go($1);	/* standalone block gets executed immediately */
 							}
-	| fdef
 	| error TOK_FLOAT_DECL	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_STRING_DECL	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_HANDLE_DECL	{ flerror = 1; $$ = tnoop(); }
@@ -145,6 +146,15 @@ stmt: rstmt					{ MPRINT("<rstmt>");
 	| error TOK_ELSE	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_RETURN	{ flerror = 1; $$ = tnoop(); }
 	| error ';'			{ flerror = 1; $$ = tnoop(); }
+	;
+
+/* variable declaration lists */
+
+fdecl:	TOK_FLOAT_DECL idl	{ MPRINT("<fdecl>"); $$ = go(declare(MincFloatType)); idcount = 0; }	// e.g., "float x, y z"
+	;
+sdecl:	TOK_STRING_DECL idl	{ MPRINT("<sdecl>"); $$ = go(declare(MincStringType)); idcount = 0; }
+	;
+hdecl:	TOK_HANDLE_DECL idl	{ MPRINT("<hdecl>"); $$ = go(declare(MincHandleType)); idcount = 0; }
 	;
 
 /* block of statements */
@@ -330,7 +340,7 @@ fdef: fname fargl '{' fstml '}'	{
 											functionName = NULL;			/* now that we are past the argument list */
 											funReturnType = MincVoidType; 	/* reset */
 											if (sym != NULL) {
-												sym->tree = tfdef($2, $4, $1);
+												sym->tree = tfdef($1, $2, $4);
 											}
 											/* because we're just a decl, and the tree is stored
 											   in the Symbol, we do not return a Tree to the parser.

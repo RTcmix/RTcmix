@@ -62,7 +62,7 @@ char Trace::spaces[64];
 #define ENTER()
 #endif
 
-#define DEBUG_MEMORY
+#undef DEBUG_MEMORY
 #ifdef DEBUG_MEMORY
 static int numTrees = 0;
 #endif
@@ -101,6 +101,7 @@ static const char *s_NodeKinds[] = {
    "NodeFor",
    "NodeIfElse",
    "NodeDecl",
+   "NodeFuncDecl",
    "NodeBlock",
    "NodeNoop"
 };
@@ -205,7 +206,7 @@ node(OpKind op, NodeKind kind)
    tp->u.child[2] = NULL;
    tp->u.child[3] = NULL;
    tp->v.list = NULL;
-   tp->funcname = NULL;
+   tp->name = NULL;
 #ifdef DEBUG_MEMORY
 	++numTrees;
    DPRINT1("[%d trees in existence]\n", numTrees);
@@ -326,7 +327,7 @@ tlookup(const char *symbolName)
 	if (tp == NULL)
 		return NULL;
 	
-	tp->u.string = symbolName;
+	tp->name = symbolName;
 	
 	DPRINT2("tlookup ('%s') => NodeLookup %p\n", symbolName, tp);
 	return tp;
@@ -342,7 +343,7 @@ tautodecl(const char *symbolName)
 	if (tp == NULL)
 		return NULL;
 	
-	tp->u.string = symbolName;
+	tp->name = symbolName;
 	
 	DPRINT2("tautodecl ('%s') => NodeAutoDecl %p\n", symbolName, tp);
 	return tp;
@@ -437,9 +438,9 @@ tfdef(Tree args, Tree e1, char *funcname)
 	
 	tp->u.child[0] = args;	// NodeArgList
 	tp->u.child[1] = e1;	// NodeFuncSeq function body (statements), which returns value
-	tp->funcname = funcname;
+	tp->name = funcname;
 	
-	DPRINT4("tfdef (%p, %p, '%s') => NodeFDef %p\n", args, e1, funcname, tp);
+	DPRINT4("tfdef ('%s', %p, %p) => NodeFDef %p\n", funcname, args, e1, tp);
 	return tp;
 }
 
@@ -464,7 +465,7 @@ tcall(Tree args, char *funcname)
    if (tp == NULL)
       return NULL;
 
-   tp->funcname = funcname;
+   tp->name = funcname;
    tp->u.child[0] = args;
 
    DPRINT3("tcall ('%s', %p) => NodeCall %p\n", funcname, args, tp);
@@ -673,10 +674,22 @@ Tree tdecl(const char *name, MincDataType type)
 	Tree tp = node(OpFree, NodeDecl);
 	if (tp == NULL)
 		return NULL;
-	tp->u.string = (char *)name;	// XXX WILL THIS WORK?  (used in excl)
+	tp->name = name;
 	tp->type = type;
 
 	DPRINT2("tdecl ('%s') => NodeDecl %p\n", name, tp);
+	return tp;
+}
+
+Tree tfdecl(const char *name, MincDataType type)
+{
+	Tree tp = node(OpFree, NodeFuncDecl);
+	if (tp == NULL)
+		return NULL;
+	tp->name = name;
+	tp->type = type;
+	
+	DPRINT2("tfdecl ('%s') => NodeFuncDecl %p\n", name, tp);
 	return tp;
 }
 
@@ -1173,7 +1186,7 @@ static void
 exct_opassign(Tree tp, OpKind op)
 {
 	ENTER();
-   Tree tp0 = tp->u.child[0];
+   Tree tp0 = exct(tp->u.child[0]);
    Tree tp1 = exct(tp->u.child[1]);
 
    if (tp0->u.symbol->type != MincFloatType || tp1->type != MincFloatType) {
@@ -1215,6 +1228,7 @@ static void
 exct_subscript_read(Tree tp)
 {
 	ENTER();
+	exct(tp->u.child[0]);         /* lookup target */
    exct(tp->u.child[1]);
    if (tp->u.child[1]->type == MincFloatType) {
       if (tp->u.child[0]->u.symbol->type == MincListType) {
@@ -1272,6 +1286,7 @@ static void
 exct_subscript_write(Tree tp)
 {
 	ENTER();
+   exct(tp->u.child[0]);         /* lookup target */
    exct(tp->u.child[1]);         /* index */
    exct(tp->u.child[2]);         /* expression to store */
    if (tp->u.child[1]->type == MincFloatType) {
@@ -1379,14 +1394,14 @@ exct(Tree tp)
 		 }
 		 else {
 			 // FIXME: install id w/ value of 0, then warn??
-			 minc_die("'%s' is not declared", tp->u.child[0]->u.string);
+			 minc_die("'%s' is not declared", tp->u.child[0]->name);
 		 }
          break;
 	   case NodeLookup:
-		   tp->u.symbol = lookup(tp->u.string, YES);
+		   tp->u.symbol = lookup(tp->name, YES);
 		   break;
 	   case NodeAutoDecl:
-		   tp->u.symbol = lookupOrAutodeclare(tp->u.string);
+		   tp->u.symbol = lookupOrAutodeclare(tp->name);
 		   break;
       case NodeListElem:
          DPRINT1("NodeListElem exct'ing Tree link %p\n", tp->u.child[0]);
@@ -1439,7 +1454,7 @@ exct(Tree tp)
          exct_subscript_write(tp);
          break;
       case NodeFunc:
-         sCalledFunction = tp->u.child[1]->funcname;
+         sCalledFunction = tp->u.child[1]->name;
          push_list();
          DPRINT1("exct NodeFunc: exp list = %p\n", tp->u.child[0]);
          exct(tp->u.child[0]);	// execute arg list
@@ -1458,10 +1473,10 @@ exct(Tree tp)
          exct(tp->u.child[0]);
          {
             MincListElem retval;
-			int result = call_builtin_function(tp->funcname, sMincList, sMincListLen,
+			int result = call_builtin_function(tp->name, sMincList, sMincListLen,
                                                                      &retval);
 			if (result < 0) {
-               result = call_external_function(tp->funcname, sMincList, sMincListLen,
+               result = call_external_function(tp->name, sMincList, sMincListLen,
                                                                      &retval);
 			}
 			copy_listelem_tree(tp, &retval);
@@ -1638,7 +1653,7 @@ exct(Tree tp)
 		   break;
 	   case NodeDecl:
 	   	{
-		const char *name = tp->u.string;		// as set by NodeDecl creator
+		const char *name = tp->name;		// as set by NodeDecl creator
 		DPRINT1("-- declaring variable '%s'\n", name);
 		Symbol *sym = lookup(name, YES);
 		if (!sym) {
@@ -1654,8 +1669,24 @@ exct(Tree tp)
 			   sym = install(name);
 		   }
 		}
-		tp->u.symbol = sym;	// note:  overwrites u.string
+		tp->u.symbol = sym;
 		}
+		break;
+	   case NodeFuncDecl:
+	   {
+		   const char *name = tp->name;		// as set by NodeDecl creator
+		   DPRINT1("-- declaring function '%s'\n", name);
+		   assert(current_scope() == 0);	// until I allow nested functions
+		   Symbol *sym = lookup(name, NO);	// only look at current global level
+		   if (sym == NULL) {
+			   sym = install(name);		// all functions global for now
+			   sym->type = tp->type;
+			   tp->u.symbol = sym;
+		   }
+			else {
+			   minc_die("function %s() is already declared", name);
+			}
+	   }
 		break;
       default:
          minc_internal_error("exct: tried to execute invalid node '%s'", printNodeKind(tp->kind));
@@ -1837,9 +1868,14 @@ free_tree(Tree tp)
          break;
 	   case NodeDecl:
 		   break;
+	   case NodeFuncDecl:
+#warning FINISH ME
+		   break;
 	   case NodeAutoDecl:
+#warning FINISH ME
 		   break;
 	   case NodeLookup:
+#warning FINISH ME
 		   break;
 	   case NodeBlock:
 		   free_tree(tp->u.child[0]);
