@@ -36,11 +36,9 @@ static char		*idlist[MAXTOK_IDENTLIST];
 static int		flerror;		/* set if there was an error during parsing */
 static int		level = 0;	/* keeps track whether we are in a structure */
 static int		flevel = 0;	/* > 0 if we are in a function decl block */
-static MincDataType funReturnType = MincVoidType;	/* ret type for function */
 static char *	functionName;
 static void 	cleanup();
 static Tree declare(MincDataType type);
-static struct symbol * declareFunction(const char *name, MincDataType returnType);
 static Tree go(Tree t1);
 
 %}
@@ -65,8 +63,8 @@ static Tree go(Tree t1);
 %token <ival> TOK_IDENT TOK_NUM TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING 
 %type  <trees> stml stmt rstmt bexp expl exp str ret bstml
-%type  <trees> fdecl sdecl hdecl fdef fstml arg argl fargl
-%type  <str> id fname
+%type  <trees> fdecl sdecl hdecl fdef fstml arg argl fargl fundecl
+%type  <str> id
 
 %%
 /* program (the "start symbol") */
@@ -180,7 +178,7 @@ rstmt: id '=' exp		{		$$ = tstore(tname(tautodecl($1)), $3); }
 								}
 								else {
 									MPRINT1("function call to '%s()'", $1);
-									$$ = tfunc($3, sym->tree);
+									$$ = tfcall(tlookup($1), $3);
 								}
 							}
 
@@ -261,43 +259,29 @@ exp: rstmt				{ $$ = $1; }
 
 /* function declaration rules */
 
-/* a <ret> needs to be the last statement in every function definition */
-
-ret: TOK_RETURN exp			{	MPRINT("<ret>");
-								$$ = treturn($2);
-							}
-	| TOK_RETURN exp ';'	{	MPRINT("<ret;>");
-								$$ = treturn($2);
-							}
+fundecl: TOK_FLOAT_DECL id function { MPRINT("<fundecl>");
+									functionName = strsave($2);
+									$$ = go(tfdecl(functionName, MincFloatType)); }
+	| TOK_STRING_DECL id function { MPRINT("<fundecl>");
+									functionName = strsave($2);
+									$$ = go(tfdecl(functionName, MincStringType)); }
+	| TOK_HANDLE_DECL id function { MPRINT("<fundecl>");
+									functionName = strsave($2);
+									$$ = go(tfdecl(functionName, MincHandleType)); }
 	;
 
-fstml:	stml ret			{	MPRINT("<stml,ret>");
-								$$ = tfuncseq($1, $2);
-							}
-	| ret					{	MPRINT("<ret>");
-								$$ = tfuncseq(temptylistelem(), $1);
-							}
-	;
 
-/* an <arg> is always a type followed by an <id>, like "float length".  They
- are declared in PARAM scope because they will not be visible outside of the
- function definition.
+/* an <arg> is always a type followed by an <id>, like "float length".  They will not be visible outside of the function definition.
  */
 
 arg: TOK_FLOAT_DECL id		{ MPRINT("<arg>");
-							  idlist[idcount++] = $2;
-							  Tree decl = declare(MincFloatType); idcount = 0;
-							  $$ = tseq(decl, tname(tlookup($2)));		// create a sequence of tdecl/tname nodes *** COULD THESE AUTO-DECLARE?
+							  $$ = tdecl($2, MincFloatType);
 							}
 	| TOK_STRING_DECL id	{ MPRINT("<arg>");
-							  idlist[idcount++] = $2;
-							  Tree decl = declare(MincStringType); idcount = 0;
-							  $$ = tseq(decl, tname(tlookup($2)));
+							  $$ = tdecl($2, MincStringType);
 							}
 	| TOK_HANDLE_DECL id	{ MPRINT("<arg>");
-							  idlist[idcount++] = $2;
-							  Tree decl = declare(MincHandleType); idcount = 0;
-							  $$ = tseq(decl, tname(tlookup($2)));
+							  $$ = tdecl($2, MincHandleType);
 							}
 	;
 
@@ -310,45 +294,55 @@ argl: arg             { MPRINT("<argl>"); $$ = targlistelem(temptylistelem(), $1
 /* a <fargl> is a argument list for a function definition, like (float f, string s).
    We store this list in an NodeArgList tree because it gives us the information
    about the types of each of the arguments at the point where the function is called.
+   When the function is executed, each NodeArgListElem executes, which declares the argument
+   variable in the function's scope, then accesses it via lookup().
  */
 
 fargl: '(' argl ')'			{ MPRINT("<fargl>"); $$ = targlist($2); }
 	| '(' ')'              	{ MPRINT("<fargl> (NULL)"); $$ = targlist(temptylistelem()); }
 	;
 
-fname: TOK_FLOAT_DECL id function { MPRINT("<fname>");
-									$$ = functionName = strsave($2); funReturnType = MincFloatType; }
-	| TOK_STRING_DECL id function { MPRINT("<fname>");
-									$$ = functionName = strsave($2); funReturnType = MincStringType; }
-	| TOK_HANDLE_DECL id function { MPRINT("<fname>");
-									$$ = functionName = strsave($2); funReturnType = MincHandleType; }
-	;
-
 /* function block level counter */
-function:  /* nothing */ {	if (flevel > 0) {
+function:  level {	if (flevel > 0) {
 								minc_die("nested function decls not allowed");
 							}
 							flevel++; MPRINT1("<function> - flevel => %d", flevel);
 						 }
 ;
 
-fdef: fname fargl '{' fstml '}'	{
-											MPRINT("<fdef>");
-											level--; MPRINT1("level => %d", level);
-											--flevel; MPRINT1("flevel => %d", flevel);
-											sym = declareFunction($1, funReturnType);
-											functionName = NULL;			/* now that we are past the argument list */
-											funReturnType = MincVoidType; 	/* reset */
-											if (sym != NULL) {
-												sym->tree = tfdef($1, $2, $4);
-											}
-											/* because we're just a decl, and the tree is stored
-											   in the Symbol, we do not return a Tree to the parser.
-											 */
-											$$ = tnoop();
-										}
-	| error fname fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $1); flerror = 1; }
-	| error fname fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $1); flerror = 1; }
+/* a <ret> needs to be the last statement in every function definition */
+
+ret: TOK_RETURN exp			{	MPRINT("<ret>");
+									$$ = treturn($2);
+							}
+	| TOK_RETURN exp ';'	{	MPRINT("<ret;>");
+									$$ = treturn($2);
+							}
+	;
+
+/* function statement list must be a statement list ending with a return statement */
+
+fstml:	stml ret			{	MPRINT("<stml,ret>");
+									$$ = tfuncseq($1, $2);
+							}
+	| ret					{	MPRINT("<ret>");
+									$$ = tfuncseq(temptylistelem(), $1);
+							}
+	;
+
+fdef: fundecl fargl '{' fstml '}'	{
+									MPRINT("<fdef>");
+									--level; MPRINT1("level => %d", level);
+									--flevel; MPRINT1("flevel => %d", flevel);
+									go(tfdef($1, $2, $4));
+									functionName = NULL;	/* now that we are past the argument list */
+									/* because we're just a decl, and the tree is stored
+									   in the Symbol, we do not return a Tree to the parser.
+									 */
+									$$ = tnoop();
+								}
+	| error fundecl fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $1); flerror = 1; }
+	| error fundecl fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $1); flerror = 1; }
 	;
 
 %%
@@ -362,30 +356,21 @@ static Tree declare(MincDataType type)
 	MPRINT2("declare(type=%d, idcount=%d)", type, idcount);
 	int i;
 	
-	Tree t = tnoop();	// end of the list
+	assert(idcount > 0);
 	
-	for (i = 0; i < idcount; i++) {
-		Tree decl = tdecl(idlist[i], type);
-		t = tseq(t, decl);
-	}
-	return t;
-}
-
-static struct symbol *
-declareFunction(const char *name, MincDataType returnType)
-{
-	MPRINT2("declareFunction('%s', type=%d)", name, returnType);
-	assert(current_scope() == 0);	// until I allow nested functions
-	Symbol *sym = lookup(name, FALSE);	// only look at current global level
-	if (sym != NULL) {
-		minc_die("function %s() is already declared", name);
-		return NULL;
+	Tree t;
+ 
+ 	if (idcount > 1) {
+ 		t = tnoop();	// end of the list
+		for (i = 0; i < idcount; i++) {
+			Tree decl = tdecl(idlist[i], type);
+			t = tseq(t, decl);
+		}
 	}
 	else {
-		sym = install(name);		// all functions global for now
-		sym->type = returnType;
+		t = tdecl(idlist[0], type);		// no need for a list
 	}
-	return sym;
+	return t;
 }
 
 #define FREE_TREES_AT_END
@@ -414,7 +399,6 @@ static void cleanup()
 	MPRINT1("cleanup: yy_init = %d", yy_init);
 	MPRINT1("Freeing program tree %p", program);
 #ifdef FREE_TREES_AT_END
-	print_tree(program);
     free_tree(program);
 #else
 	efree(program);

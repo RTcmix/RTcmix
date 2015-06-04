@@ -83,12 +83,12 @@ static const char *s_NodeKinds[] = {
    "NodeAutoDecl",
    "NodeConstf",
    "NodeString",
-   "NodeFDef",
+   "NodeFuncDef",
    "NodeArgList",
    "NodeArgListElem",
    "NodeRet",
    "NodeFuncSeq",
-   "NodeFunc",
+   "NodeFuncCall",
    "NodeCall",
    "NodeAnd",
    "NodeOr",
@@ -384,7 +384,7 @@ targlistelem(Tree e1, Tree e2)
 		return NULL;
 	
 	tp->u.child[0] = e1;	// previous NodeArgListElem
-	tp->u.child[1] = e2;	// payload (NodeName for arg)
+	tp->u.child[1] = e2;	// payload (NodeDecl for arg)
 	
 	DPRINT3("targlistelem (%p, %p) => NodeArgListElem %p\n", e1, e2, tp);
 	return tp;
@@ -430,31 +430,33 @@ Tree tfuncseq(Tree e1, Tree e2)
 }
 
 Tree
-tfdef(Tree args, Tree e1, char *funcname)
+tfdef(Tree e1, Tree e2, Tree e3)
 {
-	Tree tp = node(OpFree, NodeFDef);
+	Tree tp = node(OpFree, NodeFuncDef);
 	if (tp == NULL)
 		return NULL;
 	
-	tp->u.child[0] = args;	// NodeArgList
-	tp->u.child[1] = e1;	// NodeFuncSeq function body (statements), which returns value
-	tp->name = funcname;
+	tp->u.child[0] = e1;	// Lookup node
+	tp->u.child[1] = e2;	// NodeArgList (argument symbol decls)
+	tp->u.child[2] = e3;	// NodeFuncSeq function body (statements), which returns value
+							// Right now, this last is handed to the Symbol and
+							// then NULL'd here in exct()
 	
-	DPRINT4("tfdef ('%s', %p, %p) => NodeFDef %p\n", funcname, args, e1, tp);
+	DPRINT4("tfdef (%p, %p, %p) => NodeFuncDef %p\n", e1, e2, e3, tp);
 	return tp;
 }
 
 Tree
-tfunc(Tree args, Tree e1)
+tfcall(Tree e1, Tree e2)
 {
-	Tree tp = node(OpFree, NodeFunc);
+	Tree tp = node(OpFree, NodeFuncCall);
 	if (tp == NULL)
 		return NULL;
 	
-	tp->u.child[0] = args;	// arg list passed to function call
-	tp->u.child[1] = e1;	// NodeFDef tree
+	tp->u.child[0] = e1;	// Symbol lookup
+	tp->u.child[1] = e2;	// arg (expression) list passed to function call
 	
-	DPRINT3("tfunc (%p, %p) => NodeFunc %p\n", args, e1, tp);
+	DPRINT3("tfcall (%p, %p) => NodeFuncCall %p\n", e1, e2, tp);
 	return tp;
 }
 
@@ -1453,21 +1455,6 @@ exct(Tree tp)
       case NodeSubscriptWrite:
          exct_subscript_write(tp);
          break;
-      case NodeFunc:
-         sCalledFunction = tp->u.child[1]->name;
-         push_list();
-         DPRINT1("exct NodeFunc: exp list = %p\n", tp->u.child[0]);
-         exct(tp->u.child[0]);	// execute arg list
-         DPRINT1("exct NodeFunc: func def = %p\n", tp->u.child[1]);
-         DPRINT("exct NodeFunc: executing function def node\n");
-	   {
-		   Tree temp = exct(tp->u.child[1]);
-		   DPRINT("NodeFunc copying def exct results into self\n");
-		   copy_tree_tree(tp, temp);
-	   }
-         pop_list();
-		   sCalledFunction = NULL;
-         break;
       case NodeCall:
          push_list();
          exct(tp->u.child[0]);
@@ -1553,16 +1540,6 @@ exct(Tree tp)
          while (cmp(0.0, exct(tp->u.child[0])->v.number) != 0)
             exct(tp->u.child[1]);
          break;
-      case NodeFDef:
-	   {
-		   DPRINT1("exct NodeFDef: executing arg list node %p\n", tp->u.child[0]);
-		   exct(tp->u.child[0]);
-		   DPRINT1("exct NodeFDef: executing function body node %p\n", tp->u.child[1]);
-		   Tree temp = exct(tp->u.child[1]);
-		   DPRINT("NodeFDef copying exct results into self\n");
-		   copy_tree_tree(tp, temp);
-	   }
-		   break;
       case NodeArgList:
 		   sArgListLen = 0;
 		   sArgListIndex = 0;	// reset to walk list
@@ -1570,7 +1547,8 @@ exct(Tree tp)
          break;
       case NodeArgListElem:
 		   ++sArgListLen;
-		   exct(tp->u.child[0]);
+		   exct(tp->u.child[0]);	// work our way to the front of the list
+		   exct(tp->u.child[1]);	// run the arg decl
 		   {
 		   // Symbol associated with this function argument
 		   Symbol *argSym = tp->u.child[1]->u.symbol;
@@ -1688,6 +1666,42 @@ exct(Tree tp)
 			}
 	   }
 		break;
+	   case NodeFuncDef:
+	   {
+		   // Look up symbol for function, and bind this FuncDef node to it.
+		   DPRINT1("exct NodeFuncDef: executing lookup node %p\n", tp->u.child[0]);
+		   exct(tp->u.child[0]);
+		   assert(tp->u.child[0]->u.symbol != NULL);
+		   tp->u.child[0]->u.symbol->tree = tp;
+	   }
+		   break;
+	   case NodeFuncCall:
+		   sCalledFunction = tp->u.child[0]->name;
+		   /* look up the symbol.  We have already checked for its existence
+			in order to distinguish built-in functions from declared ones */
+		   push_scope();
+		   DPRINT1("exct NodeFuncCall: symbol lookup via %p\n", tp->u.child[0]);
+		   exct(tp->u.child[0]);
+		   assert(tp->u.child[0]->u.symbol != NULL);
+		   push_list();
+	   {
+		   /* The function's definition node was stored on the symbol at declaration time */
+		   Tree funcDef = tp->u.child[0]->u.symbol->tree;
+		   DPRINT1("exct NodeFuncCall: func def = %p\n", funcDef);
+		   DPRINT1("exct NodeFuncCall: exp decl list = %p\n", tp->u.child[1]);
+		   exct(tp->u.child[1]);	// execute arg expression list
+		   /* The exp list is copied to the symbols for the function's arg list. */
+		   DPRINT("exct NodeFuncCall: walking arg decl/copy list\n");
+		   exct(funcDef->u.child[1]);
+		   DPRINT("exct NodeFuncCall: executing function block node\n");
+		   Tree temp = exct(funcDef->u.child[2]);
+		   DPRINT("NodeFuncCall copying def exct results into self\n");
+		   copy_tree_tree(tp, temp);
+	   }
+		   pop_list();
+		   pop_scope();
+		   sCalledFunction = NULL;
+		   break;
       default:
          minc_internal_error("exct: tried to execute invalid node '%s'", printNodeKind(tp->kind));
          break;
@@ -1884,7 +1898,7 @@ free_tree(Tree tp)
          break;
       case NodeConstf:
          break;
-      case NodeFDef:
+      case NodeFuncDef:
          free_tree(tp->u.child[0]);
          free_tree(tp->u.child[1]);
         break;
@@ -1898,7 +1912,7 @@ free_tree(Tree tp)
       case NodeRet:
          free_tree(tp->u.child[0]);
          break;
-      case NodeFunc:
+      case NodeFuncCall:
          free_tree(tp->u.child[0]);
          free_tree(tp->u.child[1]);
         break;

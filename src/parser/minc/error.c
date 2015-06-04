@@ -30,7 +30,7 @@ extern void rterror(const char *inst_name, const char *format, ...);
 extern int die(const char *inst_name, const char *format, ...);
 
 void
-sys_error(char *msg)
+sys_error(const char *msg)
 {
 	die("parser", "%s\n", msg);
 

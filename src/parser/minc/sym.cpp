@@ -146,7 +146,6 @@ symalloc(const char *name)
    }
    p->name = name;
    p->tree = NULL;
-   p->sibling = NULL;
 #ifdef NOTYET
    p->defined = p->offset = 0;
    p->list = NULL;

@@ -99,8 +99,7 @@ typedef struct symbol {       /* symbol table entries */
    MincDataType type;         /* type of data represented by symbol */
    const char *name;          /* symbol name */
    MincValue v;
-   struct tree *tree;		  /* for symbols that are functions, function definition */
-   struct symbol *sibling;	  /* next entry with same name, different scope */
+   struct tree *tree;		  /* for symbols that are functions, function def */
 #ifdef NOTYET
    short defined;             /* set when function defined */
    short offset;              /* offset in activation frame */
@@ -126,12 +125,12 @@ typedef enum {
    NodeAutoDecl,
    NodeConstf,
    NodeString,
-   NodeFDef,
+   NodeFuncDef,
    NodeArgList,
    NodeArgListElem,
    NodeRet,
    NodeFuncSeq,
-   NodeFunc,
+   NodeFuncCall,
    NodeCall,
    NodeAnd,
    NodeOr,
@@ -200,7 +199,7 @@ MincHandle minc_binop_float_handle(const MincFloat val, const MincHandle handle,
 MincHandle minc_binop_handles(const MincHandle handle1, const MincHandle handle2, OpKind op);
 
 /* error.c */
-void sys_error(char *msg);
+void sys_error(const char *msg);
 void minc_advise(const char *msg, ...);
 void minc_warn(const char *msg, ...);
 void minc_die(const char *msg, ...);
@@ -262,8 +261,8 @@ Tree tif(Tree e1, Tree e2);
 Tree tifelse(Tree e1, Tree e2, Tree e3);
 Tree tfor(Tree e1, Tree e2, Tree e3, Tree e4);
 Tree twhile(Tree e1, Tree e2);
-Tree tfdef(char *funcname, Tree e1, Tree e2);
-Tree tfunc(Tree e1, Tree e2);
+Tree tfdef(Tree e1, Tree e2, Tree e3);
+Tree tfcall(Tree e1, Tree e2);
 Tree targlistelem(Tree e1, Tree e2);
 Tree targlist(Tree e1);
 Tree treturn(Tree e1);
