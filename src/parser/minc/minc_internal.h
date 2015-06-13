@@ -13,7 +13,7 @@
 #include "rename.h"
 #include "minc.h"
 
-#define DEBUG
+#undef DEBUG
 #ifdef DEBUG
    #define DPRINT(msg)                    rtcmix_print((msg))
    #define DPRINT1(msg, arg)              rtcmix_print((msg), (arg))
@@ -82,15 +82,6 @@ typedef struct _minc_list_elem {
    MincValue val;
 } MincListElem;
 
-
-/* scopes */
-typedef enum {
-   S_LOCAL =	0x1,	/* body of defined function */
-   S_PARAM =	0x2,	/* argument list in defined function */
-   S_GLOBAL =	0x4,	/* global scope */
-   S_ANY	=	0x8		/* used during symbol install. OR'd with others */
-} ScopeType;
-
 struct tree;
 
 typedef struct symbol {       /* symbol table entries */
@@ -121,8 +112,7 @@ typedef enum {
    NodeSubscriptWrite,
    NodeOpAssign,
    NodeName,
-   NodeLookup,
-   NodeAutoDecl,
+   NodeAutoName,
    NodeConstf,
    NodeString,
    NodeFuncDef,
@@ -247,12 +237,11 @@ Tree temptylistelem(void);
 Tree tsubscriptread(Tree e1, Tree e2);
 Tree tsubscriptwrite(Tree e1, Tree e2, Tree e3);
 Tree topassign(Tree e1, Tree e2, OpKind op);
-Tree tname(Tree e1);
-Tree tlookup(const char *symbolName);
-Tree tautodecl(const char *symbolName);
-Tree tstring(char *str);
+Tree tname(const char *symbolName);
+Tree tautoname(const char *symbolName);
+Tree tstring(const char *str);
 Tree tconstf(MincFloat num);
-Tree tcall(Tree args, char *funcname);
+Tree tcall(Tree args, const char *funcname);
 Tree tcand(Tree test1, Tree test2);
 Tree tcor(Tree test1, Tree test2);
 Tree tnot(Tree test1);
@@ -262,7 +251,7 @@ Tree tifelse(Tree e1, Tree e2, Tree e3);
 Tree tfor(Tree e1, Tree e2, Tree e3, Tree e4);
 Tree twhile(Tree e1, Tree e2);
 Tree tfdef(Tree e1, Tree e2, Tree e3);
-Tree tfcall(Tree e1, Tree e2);
+Tree tfcall(Tree e1, const char *funcName);
 Tree targlistelem(Tree e1, Tree e2);
 Tree targlist(Tree e1);
 Tree treturn(Tree e1);

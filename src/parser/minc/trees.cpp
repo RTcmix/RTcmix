@@ -38,7 +38,7 @@ static int sArgListLen;		// number of arguments passed to a user-declared functi
 static int sArgListIndex;	// used to walk passed-in args for user-declared functions
 static const char *sCalledFunction;
 
-#define DEBUG_TRACE
+#undef DEBUG_TRACE
 #if defined(DEBUG_TRACE) && defined(__cplusplus)
 class Trace {
 public:
@@ -67,7 +67,6 @@ char Trace::spaces[64];
 static int numTrees = 0;
 #endif
 
-#ifdef DEBUG
 static const char *s_NodeKinds[] = {
    "NodeZero",
    "NodeSeq",
@@ -79,8 +78,7 @@ static const char *s_NodeKinds[] = {
    "NodeSubscriptWrite",
    "NodeOpAssign",
    "NodeName",
-   "NodeLookup",
-   "NodeAutoDecl",
+   "NodeAutoName",
    "NodeConstf",
    "NodeString",
    "NodeFuncDef",
@@ -111,18 +109,16 @@ static const char *printNodeKind(NodeKind k)
 	return s_NodeKinds[k];
 }
 
-#endif
-
 /* prototypes for local functions */
 static int cmp(MincFloat f1, MincFloat f2);
 static Tree node(OpKind op, NodeKind kind);
 static void push_list(void);
 static void pop_list(void);
+static const char *MincTypeName(MincDataType type);
 
 static void copy_tree_tree(Tree tpdest, Tree tpsrc);
 static void copy_sym_tree(Tree tpdest, Symbol *src);
 static void copy_tree_sym(Symbol *dest, Tree tpsrc);
-static void copy_sym_sym(Symbol *dest, Symbol *src);
 static void copy_tree_listelem(MincListElem *edest, Tree tpsrc);
 static void copy_listelem_tree(Tree tpdest, MincListElem *esrc);
 static void copy_listelem_elem(MincListElem *edest, MincListElem *esrc);
@@ -301,56 +297,43 @@ topassign(Tree e1, Tree e2, OpKind op)
 }
 
 
-/* converts symbol table entry into tree
+/* looks up symbol name and get the symbol.
+   converts symbol table entry into tree
    or initialize tree node to a symbol entry
 */
 Tree
-tname(Tree e1)
+tname(const char *symbolName)
 {
    Tree tp = node(OpFree, NodeName);
    if (tp == NULL)
       return NULL;
 
-	tp->u.child[0] = e1;
+	tp->name = symbolName;
 
-   DPRINT2("tname (%p) => NodeName %p\n", e1, tp);
+   DPRINT2("tname ('%s') => NodeName %p\n", symbolName, tp);
    return tp;
 }
 
-/* looks up symbol name and get the symbol
- */
-
-Tree
-tlookup(const char *symbolName)
-{
-	Tree tp = node(OpFree, NodeLookup);
-	if (tp == NULL)
-		return NULL;
-	
-	tp->name = symbolName;
-	
-	DPRINT2("tlookup ('%s') => NodeLookup %p\n", symbolName, tp);
-	return tp;
-}
-
 /* looks up symbol name and get the symbol, and auto-declares it if not found
+ 	converts symbol table entry into tree
+ 	or initialize tree node to a symbol entry
  */
 
 Tree
-tautodecl(const char *symbolName)
+tautoname(const char *symbolName)
 {
-	Tree tp = node(OpFree, NodeAutoDecl);
+	Tree tp = node(OpFree, NodeAutoName);
 	if (tp == NULL)
 		return NULL;
 	
 	tp->name = symbolName;
 	
-	DPRINT2("tautodecl ('%s') => NodeAutoDecl %p\n", symbolName, tp);
+	DPRINT2("tautodecl ('%s') => NodeAutoName %p\n", symbolName, tp);
 	return tp;
 }
 
 Tree
-tstring(char *str)
+tstring(const char *str)
 {
    Tree tp = node(OpFree, NodeString);
    if (tp == NULL)
@@ -447,21 +430,21 @@ tfdef(Tree e1, Tree e2, Tree e3)
 }
 
 Tree
-tfcall(Tree e1, Tree e2)
+tfcall(Tree args, const char *funcname)
 {
 	Tree tp = node(OpFree, NodeFuncCall);
 	if (tp == NULL)
 		return NULL;
 	
-	tp->u.child[0] = e1;	// Symbol lookup
-	tp->u.child[1] = e2;	// arg (expression) list passed to function call
+	tp->name = funcname;
+	tp->u.child[0] = args;	// arg (expression) list passed to function call
 	
-	DPRINT3("tfcall (%p, %p) => NodeFuncCall %p\n", e1, e2, tp);
+	DPRINT3("tfcall (%p, '%s') => NodeFuncCall %p\n", args, funcname, tp);
 	return tp;
 }
 
 Tree
-tcall(Tree args, char *funcname)
+tcall(Tree args, const char *funcname)
 {
    Tree tp = node(OpFree, NodeCall);
    if (tp == NULL)
@@ -470,7 +453,7 @@ tcall(Tree args, char *funcname)
    tp->name = funcname;
    tp->u.child[0] = args;
 
-   DPRINT3("tcall ('%s', %p) => NodeCall %p\n", funcname, args, tp);
+   DPRINT3("tcall (%p, '%s') => NodeCall %p\n", args, funcname, tp);
    return tp;
 }
 
@@ -1386,25 +1369,22 @@ exct(Tree tp)
          tp->v.string = tp->u.string;
          break;
       case NodeName:
-		/* look up the symbol */
-         exct(tp->u.child[0]);
-         if (tp->u.child[0]->u.symbol) {
-        	 /* assign what's in the child's symbol into tree's value field */
-         	DPRINT1("exct NodeName: copying value from symbol '%s'\n", tp->u.child[0]->u.symbol->name);
-         	copy_sym_tree(tp, tp->u.child[0]->u.symbol);
-		 	assert(tp->type == tp->u.child[0]->u.symbol->type);
+      case NodeAutoName:
+         /* look up the symbol */
+         tp->u.symbol = (tp->kind == NodeName) ? lookup(tp->name, YES) : lookupOrAutodeclare(tp->name);
+         if (tp->u.symbol) {
+			DPRINT1("exct NodeName/NodeAutoName: symbol %p\n", tp->u.symbol);
+        	 /* also assign the symbol's value into tree's value field */
+         	DPRINT1("exct NodeName/NodeAutoName: copying value from symbol '%s' to us\n", tp->u.symbol->name);
+         	copy_sym_tree(tp, tp->u.symbol);
+         	tp->name = tp->u.symbol->name;		// for debugging -- not used
+		 	assert(tp->type == tp->u.symbol->type);
 		 }
 		 else {
 			 // FIXME: install id w/ value of 0, then warn??
-			 minc_die("'%s' is not declared", tp->u.child[0]->name);
+			 minc_die("'%s' is not declared", tp->name);
 		 }
          break;
-	   case NodeLookup:
-		   tp->u.symbol = lookup(tp->name, YES);
-		   break;
-	   case NodeAutoDecl:
-		   tp->u.symbol = lookupOrAutodeclare(tp->name);
-		   break;
       case NodeListElem:
          DPRINT1("NodeListElem exct'ing Tree link %p\n", tp->u.child[0]);
          exct(tp->u.child[0]);
@@ -1479,11 +1459,13 @@ exct(Tree tp)
 		 /* N.B. Now that symbol lookup is part of tree, this happens in
 		    the NodeName stored as child[0] */
          exct(tp->u.child[0]);
-         /* Store value and type into sym pointed to by child[0]->u.symbol. */
+		 /* evaluate RHS expression */
          exct(tp->u.child[1]);
-         /* Copy entire MincValue union from expr to id sym and to tp. */
+         DPRINT2("exct NodeStore: copying value from rhs (%p) to lhs's symbol (%p)\n", tp->u.child[1], tp->u.child[0]->u.symbol);
+		/* Copy entire MincValue union from expr to id sym and to tp. */
          copy_tree_sym(tp->u.child[0]->u.symbol, tp->u.child[1]);
 		 assert(tp->u.child[0]->u.symbol->type == tp->u.child[1]->type);
+         DPRINT2("exct NodeStore: copying value from rhs (%p) to here (%p)\n", tp->u.child[1], tp);
          copy_tree_tree(tp, tp->u.child[1]);
          assert(tp->type == tp->u.child[1]->type);
          break;
@@ -1556,7 +1538,7 @@ exct(Tree tp)
 			   minc_die("%s() takes %d arguments but was passed %d!", sCalledFunction, sArgListLen, sMincListLen);
 		   }
 		   else if (sArgListIndex >= sMincListLen) {
-			   minc_warn("%s(): arg%d not provided - defaulting to 0", sCalledFunction, sArgListIndex);
+			   minc_warn("%s(): arg '%s' not provided - defaulting to 0", sCalledFunction, argSym->name);
 			   /* Copy zeroed MincValue union to us and then to sym. */
 			   MincListElem zeroElem;
 			   zeroElem.type = argSym->type;
@@ -1574,15 +1556,16 @@ exct(Tree tp)
 				   case MincFloatType:
 				   case MincStringType:
 					   if (argSym->type != argValue->type) {
-						   minc_die("%s arg%d type %d, expecting type %d",
-									sCalledFunction, sArgListIndex, argValue->type, argSym->type);
+						   minc_die("%s arg '%s' passed as %s, expecting %s",
+									sCalledFunction, argSym->name, MincTypeName(argValue->type), MincTypeName(argSym->type));
 					   }
 					   else compatible = true;
 					   break;
 				   case MincHandleType:
 				   case MincListType:
 					   if (argSym->type != MincHandleType && argSym->type != MincListType) {
-						   minc_die("%s arg%d type %d, expecting type %d", sCalledFunction, sArgListIndex, argValue->type, argSym->type);
+						   minc_die("%s arg '%s' passed as %s, expecting %s",
+									sCalledFunction, argSym->name, MincTypeName(argValue->type), MincTypeName(argSym->type));
 					   }
 					   else compatible = true;
 					   break;
@@ -1643,8 +1626,9 @@ exct(Tree tp)
 			   minc_warn("variable '%s' redefined", name);
 		   }
 		   else {
-			   minc_warn("variable '%s' defined at another scope as well", name);
+			   minc_warn("variable '%s' also defined at enclosing scope", name);
 			   sym = install(name);
+			   sym->type = tp->type;
 		   }
 		}
 		tp->u.symbol = sym;
@@ -1676,27 +1660,33 @@ exct(Tree tp)
 	   }
 		   break;
 	   case NodeFuncCall:
-		   sCalledFunction = tp->u.child[0]->name;
+		   sCalledFunction = tp->name;
 		   /* look up the symbol.  We have already checked for its existence
 			in order to distinguish built-in functions from declared ones */
 		   push_scope();
-		   DPRINT1("exct NodeFuncCall: symbol lookup via %p\n", tp->u.child[0]);
-		   exct(tp->u.child[0]);
-		   assert(tp->u.child[0]->u.symbol != NULL);
-		   push_list();
 	   {
-		   /* The function's definition node was stored on the symbol at declaration time */
-		   Tree funcDef = tp->u.child[0]->u.symbol->tree;
-		   DPRINT1("exct NodeFuncCall: func def = %p\n", funcDef);
-		   DPRINT1("exct NodeFuncCall: exp decl list = %p\n", tp->u.child[1]);
-		   exct(tp->u.child[1]);	// execute arg expression list
-		   /* The exp list is copied to the symbols for the function's arg list. */
-		   DPRINT("exct NodeFuncCall: walking arg decl/copy list\n");
-		   exct(funcDef->u.child[1]);
-		   DPRINT("exct NodeFuncCall: executing function block node\n");
-		   Tree temp = exct(funcDef->u.child[2]);
-		   DPRINT("NodeFuncCall copying def exct results into self\n");
-		   copy_tree_tree(tp, temp);
+		   Symbol *funcSymbol = lookup(tp->name, YES);
+		   assert(funcSymbol != NULL);
+		   push_list();
+		   /* The function's definition node was stored on the symbol at declaration time.
+			  However, if a function was called on a non-function symbol, the tree will be NULL.
+			*/
+		   Tree funcDef = funcSymbol->tree;
+		   if (funcDef) {
+			   DPRINT1("exct NodeFuncCall: func def = %p\n", funcDef);
+			   DPRINT1("exct NodeFuncCall: exp decl list = %p\n", tp->u.child[0]);
+			   exct(tp->u.child[0]);	// execute arg expression list
+			   /* The exp list is copied to the symbols for the function's arg list. */
+			   DPRINT("exct NodeFuncCall: walking arg decl/copy list\n");
+			   exct(funcDef->u.child[1]);
+			   DPRINT("exct NodeFuncCall: executing function block node\n");
+			   Tree temp = exct(funcDef->u.child[2]);
+			   DPRINT("NodeFuncCall copying def exct results into self\n");
+			   copy_tree_tree(tp, temp);
+		   }
+		   else {
+			   minc_die("'%s' is not a function", funcSymbol->name);
+		   }
 	   }
 		   pop_list();
 		   pop_scope();
@@ -1800,15 +1790,6 @@ copy_tree_sym(Symbol *dest, Tree tpsrc)
 }
 
 static void
-copy_sym_sym(Symbol *dest, Symbol *src)
-{
-	DPRINT2("copy_sym_sym(%p, %p)\n", dest, src);
-	copy_value(&dest->v, dest->type, &src->v, src->type);
-	dest->type = src->type;
-	dest->name = src->name;		// XXX will this cause double-free?
-}
-
-static void
 copy_tree_listelem(MincListElem *dest, Tree tpsrc)
 {
    DPRINT2("copy_tree_listelem(%p, %p)\n", dest, tpsrc);
@@ -1878,18 +1859,11 @@ free_tree(Tree tp)
          free_tree(tp->u.child[1]);
          break;
       case NodeName:
-		   free_tree(tp->u.child[0]);
+      case NodeAutoName:
          break;
 	   case NodeDecl:
 		   break;
 	   case NodeFuncDecl:
-#warning FINISH ME
-		   break;
-	   case NodeAutoDecl:
-#warning FINISH ME
-		   break;
-	   case NodeLookup:
-#warning FINISH ME
 		   break;
 	   case NodeBlock:
 		   free_tree(tp->u.child[0]);
@@ -1901,20 +1875,20 @@ free_tree(Tree tp)
       case NodeFuncDef:
          free_tree(tp->u.child[0]);
          free_tree(tp->u.child[1]);
+         free_tree(tp->u.child[2]);
         break;
       case NodeArgListElem:
          free_tree(tp->u.child[0]);
+         free_tree(tp->u.child[1]);
          break;
       case NodeArgList:
          free_tree(tp->u.child[0]);
-         free_tree(tp->u.child[1]);
          break;
       case NodeRet:
          free_tree(tp->u.child[0]);
          break;
       case NodeFuncCall:
          free_tree(tp->u.child[0]);
-         free_tree(tp->u.child[1]);
         break;
       case NodeCall:
          free_tree(tp->u.child[0]);
@@ -1995,6 +1969,22 @@ void print_tree(Tree tp)
 		print_tree(tp->u.child[0]);
 	}
 #endif
+}
+
+static const char *MincTypeName(MincDataType type)
+{
+	switch (type) {
+		case MincVoidType:
+			return "void";
+		case MincFloatType:
+			return "float";
+		case MincStringType:
+			return "string";
+		case MincHandleType:
+			return "handle";
+		case MincListType:
+			return "list";
+	}
 }
 
 void print_symbol(struct symbol * s)

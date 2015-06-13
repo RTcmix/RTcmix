@@ -89,7 +89,7 @@ num   {dig}+
 <INIT>" "|"\t"       ;
 <INIT>^include		  	{ BEGIN INCLUDE; }
 <INIT>({let}|"_")({let}|{dig}|"#"|"_"|".")*   return TOK_IDENT;
-<INIT>.                 yyerror("invalid character");
+<INIT>.                 { char msg[24]; sprintf(msg, "invalid character: '%c'", yytext[0]); yyerror(msg); }
 ^include		  		{ BEGIN INCLUDE; }
 .|"\n"                  { BEGIN INIT; unput(yytext[0]); }
 <INCLUDE>[ \t]*      /* eat the whitespace */

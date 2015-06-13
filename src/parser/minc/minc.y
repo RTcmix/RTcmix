@@ -85,42 +85,18 @@ stmt: rstmt					{ MPRINT("<rstmt>");
 								else
 									$$ = $1;
 							}
-	| fdecl
-	| sdecl
-	| hdecl
-	| fdef
 	/* N.B. The reason we have so many versions below is that we do not want to treat <bstml> as a <stmt> */
-	| TOK_IF level bexp stmt {
+	| TOK_IF level bexp stmt {	MPRINT("<IF bexp stmt>");
 								level--; MPRINT1("level => %d", level);
 								$$ = go(tif($3, $4));
-							}
-	| TOK_IF bexp bstml {
-								level--; MPRINT1("level => %d", level);
-								$$ = go(tif($2, $3));
 							}
 	| TOK_IF level bexp stmt TOK_ELSE stmt {
 								level--; MPRINT1("level => %d", level);
 								$$ = go(tifelse($3, $4, $6));
 							}
-	| TOK_IF bexp bstml TOK_ELSE stmt {
-								level--; MPRINT1("level => %d", level);
-								$$ = go(tifelse($2, $3, $5));
-							}
-	| TOK_IF level bexp stmt TOK_ELSE bstml {
-								level--; MPRINT1("level => %d", level);
-								$$ = go(tifelse($3, $4, $6));
-							}
-	| TOK_IF bexp bstml TOK_ELSE bstml {
-								level--; MPRINT1("level => %d", level);
-								$$ = go(tifelse($2, $3, $5));
-							}
 	| TOK_WHILE level bexp stmt	{
 								level--; MPRINT1("level => %d", level);
 								$$ = go(twhile($3, $4));
-							}
-	| TOK_WHILE bexp bstml	{
-								level--; MPRINT1("level => %d", level);
-								$$ = go(twhile($2, $3));
 							}
 	| TOK_FOR level '(' stmt ';' bexp ';' stmt ')' stmt {
 								level--; MPRINT1("level => %d", level);
@@ -130,10 +106,14 @@ stmt: rstmt					{ MPRINT("<rstmt>");
 								level--; MPRINT1("level => %d", level);
 								$$ = go(tfor($3, $5, $7, $9));
 							}
-	| bstml						{
+	| bstml					{	MPRINT("stmt (bstml)");
 								level--; MPRINT1("level => %d", level);
 								$$ = go($1);	/* standalone block gets executed immediately */
 							}
+	| fdecl
+	| sdecl
+	| hdecl
+	| fdef
 	| error TOK_FLOAT_DECL	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_STRING_DECL	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_HANDLE_DECL	{ flerror = 1; $$ = tnoop(); }
@@ -157,37 +137,38 @@ hdecl:	TOK_HANDLE_DECL idl	{ MPRINT("<hdecl>"); $$ = go(declare(MincHandleType))
 
 /* block of statements */
 
-bstml:	'{' level stml '}'	{ MPRINT("<{stml}>"); $$ = tblock($3); }
+bstml:	'{' level stml '}'	{ MPRINT("bstml (stml)"); $$ = tblock($3); }
+		| '{' level stmt ';' '}'	{ MPRINT("bstml (stmt;)"); $$ = tblock($3); }
 	;
 
 /* statement nesting level counter */
-level:  /* nothing */ { level++; MPRINT1("level => %d", level); }
+level:  /* nothing */ { level++; MPRINT1("<level> => %d", level); }
 	;
 
 /* statement returning a value: assignments, function calls, etc. */
-rstmt: id '=' exp		{		$$ = tstore(tname(tautodecl($1)), $3); }
-	| id TOK_PLUSEQU exp {		$$ = topassign(tname(tlookup($1)), $3, OpPlus); }
-	| id TOK_MINUSEQU exp {		$$ = topassign(tname(tlookup($1)), $3, OpMinus); }
-	| id TOK_MULEQU exp {		$$ = topassign(tname(tlookup($1)), $3, OpMul); }
-	| id TOK_DIVEQU exp {		$$ = topassign(tname(tlookup($1)), $3, OpDiv); }
+rstmt: id '=' exp		{		$$ = tstore(tautoname($1), $3); }
+	| id TOK_PLUSEQU exp {		$$ = topassign(tname($1), $3, OpPlus); }
+	| id TOK_MINUSEQU exp {		$$ = topassign(tname($1), $3, OpMinus); }
+	| id TOK_MULEQU exp {		$$ = topassign(tname($1), $3, OpMul); }
+	| id TOK_DIVEQU exp {		$$ = topassign(tname($1), $3, OpDiv); }
 
-	| id '(' expl ')' {
+	| id '(' expl ')' {			MPRINT("id (expl)");
 								sym = lookup($1, YES);
 								if (sym == NULL) {
 									$$ = tcall($3, $1);
 								}
 								else {
 									MPRINT1("function call to '%s()'", $1);
-									$$ = tfcall(tlookup($1), $3);
+									$$ = tfcall($3, $1);
 								}
 							}
 
 /* $2 will be the end of a linked list of tlistelem nodes */
 /* XXX: This causes 1 reduce/reduce conflict on '}'  How bad is this?  -JGG */
-	| '{' expl '}' 	{ 				$$ = tlist($2); }
+	| '{' expl '}'			{ MPRINT("{expl}");	$$ = tlist($2); }
 
-	| id '[' exp ']' 	{			$$ = tsubscriptread(tname(tlookup($1)), $3); }
-	| id '[' exp ']' '=' exp {		$$ = tsubscriptwrite(tname(tlookup($1)), $3, $6); }
+	| id '[' exp ']' 	{			$$ = tsubscriptread(tname($1), $3); }
+	| id '[' exp ']' '=' exp {		$$ = tsubscriptwrite(tname($1), $3, $6); }
 	;
 
 /* identifier list */
@@ -200,13 +181,13 @@ id:  TOK_IDENT			{ MPRINT("<id>"); $$ = strsave(yytext); }
 	;
 
 /* expression list */
-expl:	exp				{ MPRINT("<expl>"); $$ = tlistelem(temptylistelem(), $1); }
-	| expl ',' exp		{ MPRINT("<expl, exp>"); $$ = tlistelem($1, $3); }
+expl:	exp				{ MPRINT("expl (exp)"); $$ = tlistelem(temptylistelem(), $1); }
+	| expl ',' exp		{ MPRINT("expl, exp"); $$ = tlistelem($1, $3); }
 /* XXX causes reduce/reduce conflicts; don't need because str -> exp below
 	| str	 				{ $$ = tlistelem(temptylistelem(), $1); }
 	| expl ',' str		{ $$ = tlistelem($1, $3); }
 */
-	| /* nothing */	{ MPRINT("<expl> (NULL)"); $$ = temptylistelem(); }
+	| /* nothing */	{ MPRINT("expl (NULL)"); $$ = temptylistelem(); }
 	;
 
 /* string */
@@ -233,7 +214,7 @@ bexp:	exp %prec LOWPRIO	{ $$ = $1; }
 	;
 
 /* expression */
-exp: rstmt				{ $$ = $1; }
+exp: rstmt				{ MPRINT("exp (rstmt)"); $$ = $1; }
 	| exp TOK_POW exp	{ $$ = top(OpPow, $1, $3); }
 	| exp '*' exp		{ $$ = top(OpMul, $1, $3); }
 	| exp '/' exp		{ $$ = top(OpDiv, $1, $3); }
@@ -253,7 +234,7 @@ exp: rstmt				{ $$ = $1; }
 								$$ = top(OpNeg, $2, tconstf(0.0));
 							}
 	| id					{
-								$$ = tname(tlookup($1));
+								$$ = tname($1);
 							}
 	;
 
@@ -303,10 +284,10 @@ fargl: '(' argl ')'			{ MPRINT("<fargl>"); $$ = targlist($2); }
 	;
 
 /* function block level counter */
-function:  level {	if (flevel > 0) {
+function:  level {	MPRINT("<function>"); if (flevel > 0) {
 								minc_die("nested function decls not allowed");
 							}
-							flevel++; MPRINT1("<function> - flevel => %d", flevel);
+							flevel++; MPRINT1("flevel => %d", flevel);
 						 }
 ;
 

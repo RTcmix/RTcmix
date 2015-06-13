@@ -30,7 +30,6 @@ static struct symbol *symalloc(const char *name);
 static void free_symbol(struct symbol *p);
 #ifdef NOTYET
 static void free_node(struct symbol *p);
-static void kill_scope(ScopeType scope);
 #endif
 #ifdef NOMORE
 static char *dname(int x);
@@ -165,6 +164,9 @@ static void free_symbol(struct symbol *p)
 		unref_handle(p->v.handle);
 	else if (p->type == MincListType) {
 		unref_value_list(&p->v);
+	}
+	if (p->tree != NULL) {
+		free_tree(p->tree);		// Free the tree associated with this function symbol
 	}
 	free(p);
 }
@@ -311,31 +313,6 @@ strsave(char *str)
 #endif
    return p->str;
 }
-
-
-#ifdef NOTYET
-/* remove all entries of the scope from the symbol table */
-static void
-kill_scope(ScopeType scope)
-{
-   register int i;
-   register struct symbol *p, **q, *r;
-
-   for (i = 0; i < HASHSIZE; i++) {
-      q = &htab[i];
-      for (p = htab[i]; p; p = r) {
-         r = p->next;
-         if (p->scope == scope) {
-            *q = p->next;
-            free_node(p);
-         }
-         else
-            q = &p->next;
-      }
-   }
-}
-#endif
-
 
 #ifdef NOMORE
 /* Return string representation of type or scope. */
