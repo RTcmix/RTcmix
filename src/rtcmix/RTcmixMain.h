@@ -36,6 +36,7 @@ private:
 	static int 		interrupt_handler_called;
 	static int 		signal_handler_called;
 	static int		noParse;
+	static int		parseOnly;
 	#ifdef NETAUDIO
 	static int		netplay;     // for remote sound network playing
 	#endif
