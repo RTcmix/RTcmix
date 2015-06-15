@@ -17,9 +17,10 @@ extern int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
 #define TRUE 1
 #define FALSE 0
 
-#define MDEBUG	/* turns on yacc debugging below */
+#undef MDEBUG	/* turns on yacc debugging below */
 
 #ifdef MDEBUG
+int yydebug=1;
 #define MPRINT(x) rtcmix_print("YACC: %s\n", x)
 #define MPRINT1(x,y) rtcmix_print("YACC: " x "\n", y)
 #define MPRINT2(x,y,z) rtcmix_print("YACC: " x "\n", y, z)
@@ -62,7 +63,7 @@ static Tree go(Tree t1);
 %token <ival> TOK_HANDLE_DECL
 %token <ival> TOK_IDENT TOK_NUM TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING 
-%type  <trees> stml stmt rstmt bexp expl exp str ret bstml
+%type  <trees> stml stmt rstmt bexp expl exp str ret
 %type  <trees> fdecl sdecl hdecl fdef fstml arg argl fargl fundecl
 %type  <str> id
 
@@ -72,21 +73,23 @@ prg:	| stml				{ MPRINT("prg:"); program = $1; cleanup(); return 0; }
 	;
  
 /* statement list */
-stml:	stmt				{ MPRINT("<stmt>"); $$ = $1; }
-	| stmt ';'				{ MPRINT("<stmt;>"); $$ = $1; }
-	| stml stmt				{ MPRINT("<stml stmt>"); $$ = tseq($1, $2); }
-	| stml stmt ';'			{ MPRINT("<stml stmt;>"); $$ = tseq($1, $2); }
+stml:	stmt				{ MPRINT("stml:	stmt"); $$ = $1; }
+	| stmt ';'				{ MPRINT("stml:	stmt;"); $$ = $1; }
+	| stml stmt				{ MPRINT("stml:	stml stmt"); $$ = tseq($1, $2); }
+	| stml stmt ';'			{ MPRINT("stml:	stml stmt;"); $$ = tseq($1, $2); }
 	;
 
 /* statement */
-stmt: rstmt					{ MPRINT("<rstmt>");
+stmt: rstmt					{ MPRINT("rstmt");
 								if (level == 0) 
 									$$ = go($1); 
 								else
 									$$ = $1;
 							}
-	/* N.B. The reason we have so many versions below is that we do not want to treat <bstml> as a <stmt> */
-	| TOK_IF level bexp stmt {	MPRINT("<IF bexp stmt>");
+	| fdecl
+	| sdecl
+	| hdecl
+	| TOK_IF level bexp stmt {	MPRINT("IF bexp stmt");
 								level--; MPRINT1("level => %d", level);
 								$$ = go(tif($3, $4));
 							}
@@ -94,7 +97,7 @@ stmt: rstmt					{ MPRINT("<rstmt>");
 								level--; MPRINT1("level => %d", level);
 								$$ = go(tifelse($3, $4, $6));
 							}
-	| TOK_WHILE level bexp stmt	{
+	| TOK_WHILE level bexp stmt	{	MPRINT("WHILE bexp stmt");
 								level--; MPRINT1("level => %d", level);
 								$$ = go(twhile($3, $4));
 							}
@@ -102,17 +105,10 @@ stmt: rstmt					{ MPRINT("<rstmt>");
 								level--; MPRINT1("level => %d", level);
 								$$ = go(tfor($4, $6, $8, $10));
 							}
-	| TOK_FOR '(' stmt ';' bexp ';' stmt ')' bstml {
-								level--; MPRINT1("level => %d", level);
-								$$ = go(tfor($3, $5, $7, $9));
+
+	| '{' stml '}'			{ 	MPRINT("stmt: { stml }");
+								$$ = go(tblock($2));
 							}
-	| bstml					{	MPRINT("stmt (bstml)");
-								level--; MPRINT1("level => %d", level);
-								$$ = go($1);	/* standalone block gets executed immediately */
-							}
-	| fdecl
-	| sdecl
-	| hdecl
 	| fdef
 	| error TOK_FLOAT_DECL	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_STRING_DECL	{ flerror = 1; $$ = tnoop(); }
@@ -128,17 +124,11 @@ stmt: rstmt					{ MPRINT("<rstmt>");
 
 /* variable declaration lists */
 
-fdecl:	TOK_FLOAT_DECL idl	{ MPRINT("<fdecl>"); $$ = go(declare(MincFloatType)); idcount = 0; }	// e.g., "float x, y z"
+fdecl:	TOK_FLOAT_DECL idl	{ MPRINT("fdecl"); $$ = go(declare(MincFloatType)); idcount = 0; }	// e.g., "float x, y z"
 	;
-sdecl:	TOK_STRING_DECL idl	{ MPRINT("<sdecl>"); $$ = go(declare(MincStringType)); idcount = 0; }
+sdecl:	TOK_STRING_DECL idl	{ MPRINT("sdecl"); $$ = go(declare(MincStringType)); idcount = 0; }
 	;
-hdecl:	TOK_HANDLE_DECL idl	{ MPRINT("<hdecl>"); $$ = go(declare(MincHandleType)); idcount = 0; }
-	;
-
-/* block of statements */
-
-bstml:	'{' level stml '}'	{ MPRINT("bstml (stml)"); $$ = tblock($3); }
-		| '{' level stmt ';' '}'	{ MPRINT("bstml (stmt;)"); $$ = tblock($3); }
+hdecl:	TOK_HANDLE_DECL idl	{ MPRINT("hdecl"); $$ = go(declare(MincHandleType)); idcount = 0; }
 	;
 
 /* statement nesting level counter */
@@ -146,13 +136,13 @@ level:  /* nothing */ { level++; MPRINT1("<level> => %d", level); }
 	;
 
 /* statement returning a value: assignments, function calls, etc. */
-rstmt: id '=' exp		{		$$ = tstore(tautoname($1), $3); }
+rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = tstore(tautoname($1), $3); }
 	| id TOK_PLUSEQU exp {		$$ = topassign(tname($1), $3, OpPlus); }
 	| id TOK_MINUSEQU exp {		$$ = topassign(tname($1), $3, OpMinus); }
 	| id TOK_MULEQU exp {		$$ = topassign(tname($1), $3, OpMul); }
 	| id TOK_DIVEQU exp {		$$ = topassign(tname($1), $3, OpDiv); }
 
-	| id '(' expl ')' {			MPRINT("id (expl)");
+	| id '(' expl ')' {			MPRINT("id(expl)");
 								sym = lookup($1, YES);
 								if (sym == NULL) {
 									$$ = tcall($3, $1);
@@ -172,22 +162,18 @@ rstmt: id '=' exp		{		$$ = tstore(tautoname($1), $3); }
 	;
 
 /* identifier list */
-idl: id					{ MPRINT("<idl>"); idlist[idcount++] = $1; }
-	| idl ',' id		{ MPRINT("<idl, id>"); idlist[idcount++] = $3; }
+idl: id					{ MPRINT("idl: id"); idlist[idcount++] = $1; }
+	| idl ',' id		{ MPRINT("idl: idl,id"); idlist[idcount++] = $3; }
 	;
 
 /* identifier */
-id:  TOK_IDENT			{ MPRINT("<id>"); $$ = strsave(yytext); }
+id:  TOK_IDENT			{ MPRINT("id"); $$ = strsave(yytext); }
 	;
 
 /* expression list */
-expl:	exp				{ MPRINT("expl (exp)"); $$ = tlistelem(temptylistelem(), $1); }
-	| expl ',' exp		{ MPRINT("expl, exp"); $$ = tlistelem($1, $3); }
-/* XXX causes reduce/reduce conflicts; don't need because str -> exp below
-	| str	 				{ $$ = tlistelem(temptylistelem(), $1); }
-	| expl ',' str		{ $$ = tlistelem($1, $3); }
-*/
-	| /* nothing */	{ MPRINT("expl (NULL)"); $$ = temptylistelem(); }
+expl:	exp				{ MPRINT("expl: exp"); $$ = tlistelem(temptylistelem(), $1); }
+	| expl ',' exp		{ MPRINT("expl: expl,exp"); $$ = tlistelem($1, $3); }
+	| /* nothing */	{ MPRINT("expl: NULL"); $$ = temptylistelem(); }
 	;
 
 /* string */
@@ -214,7 +200,7 @@ bexp:	exp %prec LOWPRIO	{ $$ = $1; }
 	;
 
 /* expression */
-exp: rstmt				{ MPRINT("exp (rstmt)"); $$ = $1; }
+exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 	| exp TOK_POW exp	{ $$ = top(OpPow, $1, $3); }
 	| exp '*' exp		{ $$ = top(OpMul, $1, $3); }
 	| exp '/' exp		{ $$ = top(OpDiv, $1, $3); }
@@ -240,13 +226,13 @@ exp: rstmt				{ MPRINT("exp (rstmt)"); $$ = $1; }
 
 /* function declaration rules */
 
-fundecl: TOK_FLOAT_DECL id function { MPRINT("<fundecl>");
+fundecl: TOK_FLOAT_DECL id function { MPRINT("fundecl");
 									functionName = strsave($2);
 									$$ = go(tfdecl(functionName, MincFloatType)); }
-	| TOK_STRING_DECL id function { MPRINT("<fundecl>");
+	| TOK_STRING_DECL id function { MPRINT("fundecl");
 									functionName = strsave($2);
 									$$ = go(tfdecl(functionName, MincStringType)); }
-	| TOK_HANDLE_DECL id function { MPRINT("<fundecl>");
+	| TOK_HANDLE_DECL id function { MPRINT("fundecl");
 									functionName = strsave($2);
 									$$ = go(tfdecl(functionName, MincHandleType)); }
 	;
@@ -255,21 +241,21 @@ fundecl: TOK_FLOAT_DECL id function { MPRINT("<fundecl>");
 /* an <arg> is always a type followed by an <id>, like "float length".  They will not be visible outside of the function definition.
  */
 
-arg: TOK_FLOAT_DECL id		{ MPRINT("<arg>");
+arg: TOK_FLOAT_DECL id		{ MPRINT("arg");
 							  $$ = tdecl($2, MincFloatType);
 							}
-	| TOK_STRING_DECL id	{ MPRINT("<arg>");
+	| TOK_STRING_DECL id	{ MPRINT("arg");
 							  $$ = tdecl($2, MincStringType);
 							}
-	| TOK_HANDLE_DECL id	{ MPRINT("<arg>");
+	| TOK_HANDLE_DECL id	{ MPRINT("arg");
 							  $$ = tdecl($2, MincHandleType);
 							}
 	;
 
 /* an <argl> is one <arg> or a series of <arg>'s separated by commas */
 
-argl: arg             { MPRINT("<argl>"); $$ = targlistelem(temptylistelem(), $1); }
-	| argl ',' arg    { MPRINT("<argl,arg>"); $$ = targlistelem($1, $3); }
+argl: arg             { MPRINT("argl: arg"); $$ = targlistelem(temptylistelem(), $1); }
+	| argl ',' arg    { MPRINT("argl: argl,arg"); $$ = targlistelem($1, $3); }
 	;
 
 /* a <fargl> is a argument list for a function definition, like (float f, string s).
@@ -279,12 +265,12 @@ argl: arg             { MPRINT("<argl>"); $$ = targlistelem(temptylistelem(), $1
    variable in the function's scope, then accesses it via lookup().
  */
 
-fargl: '(' argl ')'			{ MPRINT("<fargl>"); $$ = targlist($2); }
-	| '(' ')'              	{ MPRINT("<fargl> (NULL)"); $$ = targlist(temptylistelem()); }
+fargl: '(' argl ')'			{ MPRINT("fargl: (argl)"); $$ = targlist($2); }
+	| '(' ')'              	{ MPRINT("fargl: (NULL)"); $$ = targlist(temptylistelem()); }
 	;
 
 /* function block level counter */
-function:  level {	MPRINT("<function>"); if (flevel > 0) {
+function:  level {	MPRINT("function"); if (flevel > 0) {
 								minc_die("nested function decls not allowed");
 							}
 							flevel++; MPRINT1("flevel => %d", flevel);
