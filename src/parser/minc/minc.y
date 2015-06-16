@@ -279,26 +279,26 @@ function:  level {	MPRINT("function"); if (flevel > 0) {
 
 /* a <ret> needs to be the last statement in every function definition */
 
-ret: TOK_RETURN exp			{	MPRINT("<ret>");
+ret: TOK_RETURN exp			{	MPRINT("ret");
 									$$ = treturn($2);
 							}
-	| TOK_RETURN exp ';'	{	MPRINT("<ret;>");
+	| TOK_RETURN exp ';'	{	MPRINT("ret;");
 									$$ = treturn($2);
 							}
 	;
 
 /* function statement list must be a statement list ending with a return statement */
 
-fstml:	stml ret			{	MPRINT("<stml,ret>");
+fstml:	stml ret			{	MPRINT("fstml: stml,ret");
 									$$ = tfuncseq($1, $2);
 							}
-	| ret					{	MPRINT("<ret>");
+	| ret					{	MPRINT("fstml: ret");
 									$$ = tfuncseq(temptylistelem(), $1);
 							}
 	;
 
 fdef: fundecl fargl '{' fstml '}'	{
-									MPRINT("<fdef>");
+									MPRINT("fdef");
 									--level; MPRINT1("level => %d", level);
 									--flevel; MPRINT1("flevel => %d", flevel);
 									go(tfdef($1, $2, $4));
