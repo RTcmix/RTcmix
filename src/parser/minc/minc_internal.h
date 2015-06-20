@@ -13,7 +13,6 @@
 #include "rename.h"
 #include "minc.h"
 
-#undef DEBUG
 #ifdef DEBUG
    #define DPRINT(msg)                    rtcmix_print((msg))
    #define DPRINT1(msg, arg)              rtcmix_print((msg), (arg))
@@ -120,7 +119,6 @@ typedef enum {
    NodeArgListElem,
    NodeRet,
    NodeFuncSeq,
-   NodeFuncCall,
    NodeCall,
    NodeAnd,
    NodeOr,
@@ -210,10 +208,11 @@ extern "C" {
 #endif /* __cplusplus */
 void push_scope();
 void pop_scope();
+int current_scope();
+void restore_scope(int scope);
 struct symbol *install(const char *name);
 struct symbol *lookup(const char *name, Bool anyLevel);
 struct symbol * lookupOrAutodeclare(const char *name);
-int current_scope();
 char *strsave(char *str);
 char *emalloc(long nbytes);
 void efree(void *mem);
@@ -251,7 +250,6 @@ Tree tifelse(Tree e1, Tree e2, Tree e3);
 Tree tfor(Tree e1, Tree e2, Tree e3, Tree e4);
 Tree twhile(Tree e1, Tree e2);
 Tree tfdef(Tree e1, Tree e2, Tree e3);
-Tree tfcall(Tree e1, const char *funcName);
 Tree targlistelem(Tree e1, Tree e2);
 Tree targlist(Tree e1);
 Tree treturn(Tree e1);

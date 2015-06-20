@@ -12,6 +12,8 @@
 
 /* This file holds the intermediate tree representation. */
 
+#define DEBUG
+
 #include "minc_internal.h"
 #include "handle.h"
 #include <stdio.h>
@@ -86,7 +88,6 @@ static const char *s_NodeKinds[] = {
    "NodeArgListElem",
    "NodeRet",
    "NodeFuncSeq",
-   "NodeFuncCall",
    "NodeCall",
    "NodeAnd",
    "NodeOr",
@@ -426,20 +427,6 @@ tfdef(Tree e1, Tree e2, Tree e3)
 							// then NULL'd here in exct()
 	
 	DPRINT4("tfdef (%p, %p, %p) => NodeFuncDef %p\n", e1, e2, e3, tp);
-	return tp;
-}
-
-Tree
-tfcall(Tree args, const char *funcname)
-{
-	Tree tp = node(OpFree, NodeFuncCall);
-	if (tp == NULL)
-		return NULL;
-	
-	tp->name = funcname;
-	tp->u.child[0] = args;	// arg (expression) list passed to function call
-	
-	DPRINT3("tfcall (%p, '%s') => NodeFuncCall %p\n", args, funcname, tp);
 	return tp;
 }
 
@@ -1400,6 +1387,7 @@ exct(Tree tp)
             copy_tree_listelem(&sMincList[sMincListLen], tmp);
 			assert(sMincList[sMincListLen].type == tmp->type);
             sMincListLen++;
+			 DPRINT2("NodeListElem: list at level %d now len %d\n", list_stack_ptr, sMincListLen);
          }
          break;
       case NodeEmptyListElem:
@@ -1436,25 +1424,62 @@ exct(Tree tp)
          exct_subscript_write(tp);
          break;
       case NodeCall:
-         push_list();
-         exct(tp->u.child[0]);
-         {
-            MincListElem retval;
-			int result = call_builtin_function(tp->name, sMincList, sMincListLen,
-                                                                     &retval);
-			if (result < 0) {
-               result = call_external_function(tp->name, sMincList, sMincListLen,
-                                                                     &retval);
+		push_list();
+		{
+			Symbol *funcSymbol = lookup(tp->name, YES);
+			if (funcSymbol) {
+				push_scope();
+				sCalledFunction = tp->name;
+				/* The function's definition node was stored on the symbol at declaration time.
+					However, if a function was called on a non-function symbol, the tree will be NULL.
+				 */
+				Tree funcDef = funcSymbol->tree;
+				if (funcDef) {
+					DPRINT1("exct NodeCall: func def = %p\n", funcDef);
+					DPRINT1("exct NodeCall: exp decl list = %p\n", tp->u.child[0]);
+					exct(tp->u.child[0]);	// execute arg expression list
+					/* The exp list is copied to the symbols for the function's arg list. */
+					DPRINT("exct NodeCall: walking arg decl/copy list\n");
+					exct(funcDef->u.child[1]);
+					DPRINT("exct NodeCall: executing function block node\n");
+					Tree temp = NULL;
+					int savedScope = current_scope();
+					try {
+						temp = exct(funcDef->u.child[2]);
+					}
+					catch (Tree returned) {	// This catches return statements!
+						DPRINT("NodeCall caught return stmt throw\n");
+						temp = returned;
+						restore_scope(savedScope);
+					}
+					DPRINT("NodeCall copying def exct results into self\n");
+					copy_tree_tree(tp, temp);
+				}
+				else {
+					minc_die("'%s' is not a function", funcSymbol->name);
+				}
+				pop_scope();
+				sCalledFunction = NULL;
 			}
-			copy_listelem_tree(tp, &retval);
-			assert(tp->type == retval.type);
-			clear_elem(&retval);
-			if (result != 0) {
-				set_rtcmix_error(result);	// store fatal error from RTcmix layer (EMBEDDED ONLY)
+			else {
+				exct(tp->u.child[0]);
+				MincListElem retval;
+				int result = call_builtin_function(tp->name, sMincList, sMincListLen,
+																	 &retval);
+				if (result < 0) {
+					result = call_external_function(tp->name, sMincList, sMincListLen,
+																	 &retval);
+				}
+				copy_listelem_tree(tp, &retval);
+				assert(tp->type == retval.type);
+				clear_elem(&retval);
+				if (result != 0) {
+					set_rtcmix_error(result);	// store fatal error from RTcmix layer (EMBEDDED ONLY)
+				}
 			}
-         }
-         pop_list();
-         break;
+		}
+		pop_list();
+		break;
       case NodeStore:
 		 /* N.B. Now that symbol lookup is part of tree, this happens in
 		    the NodeName stored as child[0] */
@@ -1586,6 +1611,8 @@ exct(Tree tp)
          exct(tp->u.child[0]);
          copy_tree_tree(tp, tp->u.child[0]);
          assert(tp->type == tp->u.child[0]->type);
+         DPRINT("NodeRet throwing for return stmt\n");
+         throw tp;	// Cool, huh?  Throws this node's body out to function's endpoint!
          break;
       case NodeFuncSeq:
 		   exct(tp->u.child[0]);
@@ -1659,39 +1686,6 @@ exct(Tree tp)
 		   tp->u.child[0]->u.symbol->tree = tp;
 	   }
 		   break;
-	   case NodeFuncCall:
-		   sCalledFunction = tp->name;
-		   /* look up the symbol.  We have already checked for its existence
-			in order to distinguish built-in functions from declared ones */
-		   push_scope();
-	   {
-		   Symbol *funcSymbol = lookup(tp->name, YES);
-		   assert(funcSymbol != NULL);
-		   push_list();
-		   /* The function's definition node was stored on the symbol at declaration time.
-			  However, if a function was called on a non-function symbol, the tree will be NULL.
-			*/
-		   Tree funcDef = funcSymbol->tree;
-		   if (funcDef) {
-			   DPRINT1("exct NodeFuncCall: func def = %p\n", funcDef);
-			   DPRINT1("exct NodeFuncCall: exp decl list = %p\n", tp->u.child[0]);
-			   exct(tp->u.child[0]);	// execute arg expression list
-			   /* The exp list is copied to the symbols for the function's arg list. */
-			   DPRINT("exct NodeFuncCall: walking arg decl/copy list\n");
-			   exct(funcDef->u.child[1]);
-			   DPRINT("exct NodeFuncCall: executing function block node\n");
-			   Tree temp = exct(funcDef->u.child[2]);
-			   DPRINT("NodeFuncCall copying def exct results into self\n");
-			   copy_tree_tree(tp, temp);
-		   }
-		   else {
-			   minc_die("'%s' is not a function", funcSymbol->name);
-		   }
-	   }
-		   pop_list();
-		   pop_scope();
-		   sCalledFunction = NULL;
-		   break;
       default:
          minc_internal_error("exct: tried to execute invalid node '%s'", printNodeKind(tp->kind));
          break;
@@ -1720,7 +1714,7 @@ push_list()
    list_stack[list_stack_ptr] = sMincList;
    list_len_stack[list_stack_ptr++] = sMincListLen;
    sMincList = (MincListElem *) calloc(MAXDISPARGS, sizeof(MincListElem));
-   DPRINT2("push_list: sMincList=%p at stack level %d\n", sMincList, list_stack_ptr);
+   DPRINT3("push_list: sMincList=%p at stack level %d, len %d\n", sMincList, list_stack_ptr, sMincListLen);
    sMincListLen = 0;
 }
 
@@ -1736,7 +1730,7 @@ pop_list()
       minc_die("stack underflow");
    sMincList = list_stack[--list_stack_ptr];
    sMincListLen = list_len_stack[list_stack_ptr];
-	DPRINT1("pop_list: at stack level %d\n", list_stack_ptr);
+	DPRINT3("pop_list: now at sMincList=%p, stack level %d, len %d\n", sMincList, list_stack_ptr, sMincListLen);
 }
 
 static void copy_value(MincValue *dest, MincDataType destType,
@@ -1887,9 +1881,6 @@ free_tree(Tree tp)
       case NodeRet:
          free_tree(tp->u.child[0]);
          break;
-      case NodeFuncCall:
-         free_tree(tp->u.child[0]);
-        break;
       case NodeCall:
          free_tree(tp->u.child[0]);
          break;

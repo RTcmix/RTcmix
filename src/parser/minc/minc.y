@@ -17,10 +17,10 @@ extern int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
 #define TRUE 1
 #define FALSE 0
 
-#undef MDEBUG	/* turns on yacc debugging below */
+#define MDEBUG	/* turns on yacc debugging below */
 
 #ifdef MDEBUG
-int yydebug=1;
+//int yydebug=1;
 #define MPRINT(x) rtcmix_print("YACC: %s\n", x)
 #define MPRINT1(x,y) rtcmix_print("YACC: " x "\n", y)
 #define MPRINT2(x,y,z) rtcmix_print("YACC: " x "\n", y, z)
@@ -31,13 +31,12 @@ int yydebug=1;
 #endif
 
 static Tree		program;
-static Symbol	*sym;
-static int		idcount = 0;	
+static int		idcount = 0;
 static char		*idlist[MAXTOK_IDENTLIST];  
 static int		flerror;		/* set if there was an error during parsing */
-static int		level = 0;	/* keeps track whether we are in a structure */
-static int		flevel = 0;	/* > 0 if we are in a function decl block */
-static char *	functionName;
+static int		level = 0;		/* keeps track whether we are in a structure */
+static int		flevel = 0;		/* > 0 if we are in a function decl block */
+static char *	functionName;	/* to allow errors to show the enclosing function */
 static void 	cleanup();
 static Tree declare(MincDataType type);
 static Tree go(Tree t1);
@@ -80,12 +79,7 @@ stml:	stmt				{ MPRINT("stml:	stmt"); $$ = $1; }
 	;
 
 /* statement */
-stmt: rstmt					{ MPRINT("rstmt");
-								if (level == 0) 
-									$$ = go($1); 
-								else
-									$$ = $1;
-							}
+stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 	| fdecl
 	| sdecl
 	| hdecl
@@ -107,9 +101,10 @@ stmt: rstmt					{ MPRINT("rstmt");
 							}
 
 	| '{' stml '}'			{ 	MPRINT("stmt: { stml }");
-								$$ = go(tblock($2));
+								$$ = go(tblock($3));
 							}
 	| fdef
+	| ret					{}
 	| error TOK_FLOAT_DECL	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_STRING_DECL	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_HANDLE_DECL	{ flerror = 1; $$ = tnoop(); }
@@ -120,6 +115,30 @@ stmt: rstmt					{ MPRINT("rstmt");
 	| error TOK_ELSE	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_RETURN	{ flerror = 1; $$ = tnoop(); }
 	| error ';'			{ flerror = 1; $$ = tnoop(); }
+	;
+
+/* A return statement.  Only used inside functions. */
+
+ret: TOK_RETURN exp			{	MPRINT("ret");
+								MPRINT1("called at level %d", level);
+								if (flevel == 0) {
+									minc_die("return statements not allowed in main score");
+									$$ = tnoop();
+								}
+								else {
+									$$ = treturn($2);
+								}
+							}
+	| TOK_RETURN exp ';'	{	MPRINT("ret;");
+								MPRINT1("called at level %d", level);
+								if (flevel == 0) {
+									minc_die("return statements not allowed in main score");
+									$$ = tnoop();
+								}
+								else {
+									$$ = treturn($2);
+								}
+							}
 	;
 
 /* variable declaration lists */
@@ -143,14 +162,7 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = tstore(tautoname($1), $3);
 	| id TOK_DIVEQU exp {		$$ = topassign(tname($1), $3, OpDiv); }
 
 	| id '(' expl ')' {			MPRINT("id(expl)");
-								sym = lookup($1, YES);
-								if (sym == NULL) {
-									$$ = tcall($3, $1);
-								}
-								else {
-									MPRINT1("function call to '%s()'", $1);
-									$$ = tfcall($3, $1);
-								}
+								$$ = tcall($3, $1);
 							}
 
 /* $2 will be the end of a linked list of tlistelem nodes */
@@ -276,16 +288,6 @@ function:  level {	MPRINT("function"); if (flevel > 0) {
 							flevel++; MPRINT1("flevel => %d", flevel);
 						 }
 ;
-
-/* a <ret> needs to be the last statement in every function definition */
-
-ret: TOK_RETURN exp			{	MPRINT("ret");
-									$$ = treturn($2);
-							}
-	| TOK_RETURN exp ';'	{	MPRINT("ret;");
-									$$ = treturn($2);
-							}
-	;
 
 /* function statement list must be a statement list ending with a return statement */
 

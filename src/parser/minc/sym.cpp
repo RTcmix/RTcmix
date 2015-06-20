@@ -3,6 +3,13 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 
+#define SYMBOL_DEBUG
+#undef DEBUG_MEMORY
+
+#ifdef SYMBOL_DEBUG
+#define DEBUG
+#endif
+
 /* symbol table management routines */
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,8 +20,6 @@
 #include "handle.h"
 
 #define NO_EMALLOC_DEBUG
-#define SYMBOL_DEBUG
-#undef DEBUG_MEMORY
 
 static struct str {             /* string table */
    char *str;                   /* string */
@@ -72,7 +77,7 @@ Scope::install(const char *name)
 	Symbol *p = symalloc(name);
 	int h = hash(name);
 	p->next = htab[h];
-	p->scope = depth();	/* XXX */
+	p->scope = depth();
 	p->type = MincVoidType;
 	htab[h] = p;
 	p->v.number = 0.0;
@@ -99,6 +104,7 @@ Scope::lookup(const char *name)
 static std::vector<Scope *> sScopeStack;
 static int sStackDepth = -1;	// hack till I figure out initialization
 
+#ifdef STANDALONE
 class InitializeScope
 {
 public:
@@ -106,6 +112,10 @@ public:
 };
 
 static InitializeScope sInitializeScope;
+#define CHECK_SCOPE_INIT() while(0)
+#else
+#define CHECK_SCOPE_INIT() if (sStackDepth == -1) push_scope()
+#endif
 
 void push_scope()
 {
@@ -125,8 +135,20 @@ void pop_scope() {
 
 int current_scope()
 {
+	CHECK_SCOPE_INIT();
 	DPRINT1("current_scope() == %d\n", sStackDepth);
 	return sStackDepth;
+}
+
+void restore_scope(int scope)
+{
+	DPRINT1("restore_scope() => %d\n", scope);
+	while (sStackDepth > scope) {
+		Scope *top = sScopeStack.back();
+		sScopeStack.pop_back();
+		delete top;
+		--sStackDepth;
+	}
 }
 
 /* Allocate and initialize and new symbol table entry for <name>. */
@@ -227,6 +249,7 @@ free_node(struct symbol *p)
 struct symbol *
 install(const char *name)
 {
+	CHECK_SCOPE_INIT();
 	return sScopeStack.back()->install(name);
 }
 
@@ -240,6 +263,7 @@ install(const char *name)
 Symbol *
 lookup(const char *name, Bool anyLevel)
 {
+	CHECK_SCOPE_INIT();
 	Symbol *p = NULL;
 	int foundLevel = -1;
 	if (anyLevel == YES) {
@@ -272,6 +296,7 @@ lookup(const char *name, Bool anyLevel)
 Symbol * lookupOrAutodeclare(const char *name)
 {
 	DPRINT1("lookupOrAutodeclare('%s')\n", name);
+	CHECK_SCOPE_INIT();
 	Symbol *sym = lookup(name, NO);	// Check at current scope *only*
 	if (sym != NULL) {
 		DPRINT("\tfound it at same scope\n");
