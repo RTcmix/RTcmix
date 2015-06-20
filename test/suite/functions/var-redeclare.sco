@@ -11,6 +11,7 @@ float function2()
 {
 	float variable;
 	variable = 30;
+	return variable;
 }
 
 print(variable);
