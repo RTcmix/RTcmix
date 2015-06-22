@@ -12,9 +12,8 @@
 #include "lex.conf.c"
 #include "yystype.h"
 #define YYDEBUG 1
-#define YYPARSE_PARAM obj
 static char *my_strdup(const char *src);
-int conferror(char *msg);
+int conferror(void *obj, char *msg);
 %}
 
 /* This makes the parser reentrant, and allows us to pass a pointer to
@@ -24,6 +23,7 @@ int conferror(char *msg);
    conf.l.
 */
 %pure_parser
+%parse-param {void *obj}
 
 %token <num> TOK_NUM TOK_TRUE TOK_FALSE
 %token <str> TOK_KEY TOK_STRING
@@ -94,8 +94,9 @@ my_strdup(const char *src)
 }
 
 int
-conferror(char *msg)
+conferror(void *obj, char *msg)
 {
+   #pragma unused (obj) /* required for %parse-param change for yyparse */
    fprintf(stderr, "near line %d: %s\n", conflineno, msg);
    return 0;
 }

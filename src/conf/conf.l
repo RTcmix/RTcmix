@@ -8,7 +8,7 @@
 #include "conf.tab.hpp"
 #define yyterminate() yy_delete_buffer(YY_CURRENT_BUFFER); return YY_NULL
 #define YY_DECL int conflex(YYSTYPE *lvalp)
-extern int conferror(char *);
+extern int conferror(void *, char *);
 %}
 
 let   [a-zA-Z]
@@ -41,6 +41,6 @@ num   {dig}+
 <INIT>"\n"              ;
 <INIT>" "|"\t"          ;
 <INIT>{let}({let}|{dig}|"_"|".")*   return TOK_KEY;
-<INIT>.                 conferror((char *) "invalid character");
+<INIT>.                 conferror(NULL, (char *) "invalid character");
 .|"\n"                  { BEGIN INIT; unput(conftext[0]); }
 %%
