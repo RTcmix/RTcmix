@@ -169,8 +169,8 @@ fi
 
 # add fPIC flag for Linux 64bit builds
 if test "$ARCH_64BIT" != ""; then
-      if test "$ARCH" = "LINUX"; then
-      CFLAGS="-fPIC"
+   if test "$ARCH" = "LINUX"; then
+      CFLAGS=" -fPIC"
    fi
 fi
 
