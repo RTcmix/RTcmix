@@ -41,46 +41,6 @@ case "$build" in
 esac
 AC_SUBST(ARCH)
 
-# Determine compilation target (standalone vs. embeddable lib) -----------------
-# $target_alias holds "--target=" command-line argument
-case "$target_alias" in
-   maxmsp)
-      BUILDTYPE=MAXMSP
-      ;;
-   pd)
-      BUILDTYPE=PD
-      ;;
-   ios-dev)
-      BUILDTYPE=IOS
-      IPHONE_TYPE=DEVICE
-      ;;
-   ios-sim)
-      BUILDTYPE=IOS
-      IPHONE_TYPE=SIMULATOR
-      ;;
-   of-osx)
-      BUILDTYPE=OPENFRAMEWORKS
-      OF_TYPE=OSXAPP
-      ;;
-   of-ios)
-      BUILDTYPE=OPENFRAMEWORKS
-      OF_TYPE=IOSAPP
-      ;;
-   of-android)
-      BUILDTYPE=OPENFRAMEWORKS
-      OF_TYPE=ANDROIDAPP
-      ;;
-   *)
-      BUILDTYPE=STANDALONE
-      ;;
-esac
-AC_SUBST(BUILDTYPE)
-AC_SUBST(IPHONE_TYPE)
-AC_SUBST(OF_TYPE)
-
-# for debugging side-effects of --host and --target args
-#echo "cross_compiling: $cross_compiling"
-
 
 # Standard program, library and header checks ----------------------------------
 
