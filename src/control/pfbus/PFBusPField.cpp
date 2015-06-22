@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
-#include <ugens.H>
+#include <ugens.h>
 
 #ifdef DEBUG_MEMORY
 #define DPRINT(x,y) rtcmix_print(x,y)
