@@ -11,8 +11,8 @@ LEXFLAGS = -l #-d    # -d for debug output
 
 YSRC = minc.y
 YACC = yacc
-#YACC = bison -y
-YFLAGS = -d #-v
+#YACC = bison -t -y
+YFLAGS = -d # -v
 
 all: $(MINC)
 

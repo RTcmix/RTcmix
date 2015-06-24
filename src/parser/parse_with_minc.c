@@ -16,6 +16,7 @@ extern int yyparse();
 
 int RTcmix_parseScore(char *thebuf, int buflen);
 extern int yyparse();
+extern void yyset_lineno(int line_number);
 extern int yylineno;
 extern void setGlobalBuffer(const char *inBuf, int inBufSize);
 extern void set_rtcmix_error(int);
@@ -24,7 +25,7 @@ extern void set_rtcmix_error(int);
 int RTcmix_parseScore(char *theBuf, int buflen)
 {
 	// BGG -- added to reset the line # every time a new score buffer is received
-	yylineno = 1;
+	yyset_lineno(1);
 	setGlobalBuffer(theBuf, buflen+1);
 	set_rtcmix_error(0);
 	return yyparse();

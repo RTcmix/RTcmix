@@ -36,8 +36,11 @@ static char		*idlist[MAXTOK_IDENTLIST];
 static int		flerror;		/* set if there was an error during parsing */
 static int		level = 0;		/* keeps track whether we are in a structure */
 static int		flevel = 0;		/* > 0 if we are in a function decl block */
+static int      xblock = 0;		/* 1 if we are entering a block preceeded by if(), else(), while(), or for() */
 static char *	functionName;	/* to allow errors to show the enclosing function */
 static void 	cleanup();
+static void 	incrLevel();
+static void		decrLevel();
 static Tree declare(MincDataType type);
 static Tree go(Tree t1);
 
@@ -61,8 +64,8 @@ static Tree go(Tree t1);
 %token <ival> TOK_STRING_DECL
 %token <ival> TOK_HANDLE_DECL
 %token <ival> TOK_IDENT TOK_NUM TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
-%token <ival> TOK_TRUE TOK_FALSE TOK_STRING 
-%type  <trees> stml stmt rstmt bexp expl exp str ret
+%token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
+%type  <trees> stml stmt rstmt bexp expl exp str ret bstml
 %type  <trees> fdecl sdecl hdecl fdef fstml arg argl fargl fundecl
 %type  <str> id
 
@@ -83,26 +86,27 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 	| fdecl
 	| sdecl
 	| hdecl
-	| TOK_IF level bexp stmt {	MPRINT("IF bexp stmt");
-								level--; MPRINT1("level => %d", level);
+	| TOK_IF level bexp stmt {	xblock = 1; MPRINT("IF bexp stmt");
+								decrLevel();
 								$$ = go(tif($3, $4));
+								xblock = 0;
 							}
-	| TOK_IF level bexp stmt TOK_ELSE stmt {
-								level--; MPRINT1("level => %d", level);
+	| TOK_IF level bexp stmt TOK_ELSE stmt { xblock = 1;
+								decrLevel();
 								$$ = go(tifelse($3, $4, $6));
+								xblock = 0;
 							}
-	| TOK_WHILE level bexp stmt	{	MPRINT("WHILE bexp stmt");
-								level--; MPRINT1("level => %d", level);
+	| TOK_WHILE level bexp stmt	{ xblock = 1;	MPRINT("WHILE bexp stmt");
+								decrLevel();
 								$$ = go(twhile($3, $4));
+								xblock = 0;
 							}
-	| TOK_FOR level '(' stmt ';' bexp ';' stmt ')' stmt {
-								level--; MPRINT1("level => %d", level);
+	| TOK_FOR level '(' stmt ';' bexp ';' stmt ')' stmt { xblock = 1;
+								decrLevel();
 								$$ = go(tfor($4, $6, $8, $10));
+								xblock = 0;
 							}
-
-	| '{' stml '}'			{ 	MPRINT("stmt: { stml }");
-								$$ = go(tblock($3));
-							}
+	| bstml
 	| fdef
 	| ret					{}
 	| error TOK_FLOAT_DECL	{ flerror = 1; $$ = tnoop(); }
@@ -111,10 +115,25 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 	| error TOK_IF		{ flerror = 1; $$ = tnoop(); }
 	| error TOK_WHILE	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_FOR	{ flerror = 1; $$ = tnoop(); }
-	| error '{'			{ flerror = 1; $$ = tnoop(); }
+	| error '{'		{ flerror = 1; $$ = tnoop(); }
 	| error TOK_ELSE	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_RETURN	{ flerror = 1; $$ = tnoop(); }
 	| error ';'			{ flerror = 1; $$ = tnoop(); }
+	;
+
+/* block statement list
+   This is tricky because we want to bump 'level' here (to avoid executing the contents of the list
+   until the block is completely created) but we don't want to bump it twice for <if bexp bstml>.  So,
+   if/else/while/for statements set xblock to 1 indicating the bump has already been done.  Only a 
+   stand-alone block statement will do its own bump.
+ */
+
+bstml:	'{'			{ if (!xblock) incrLevel(); }
+		stml
+		'}'			{ 	MPRINT("bstml: { stml }"); MPRINT2("level = %d, xblock = %d", level, xblock);
+									if (!xblock) { decrLevel(); }
+									$$ = go(tblock($3));
+								}
 	;
 
 /* A return statement.  Only used inside functions. */
@@ -151,7 +170,7 @@ hdecl:	TOK_HANDLE_DECL idl	{ MPRINT("hdecl"); $$ = go(declare(MincHandleType)); 
 	;
 
 /* statement nesting level counter */
-level:  /* nothing */ { level++; MPRINT1("<level> => %d", level); }
+level:  /* nothing */ { incrLevel(); }
 	;
 
 /* statement returning a value: assignments, function calls, etc. */
@@ -167,7 +186,7 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = tstore(tautoname($1), $3);
 
 /* $2 will be the end of a linked list of tlistelem nodes */
 /* XXX: This causes 1 reduce/reduce conflict on '}'  How bad is this?  -JGG */
-	| '{' expl '}'			{ MPRINT("{expl}");	$$ = tlist($2); }
+	| '{' level expl '}'	{ MPRINT("{expl}");	decrLevel(); $$ = tlist($3); }
 
 	| id '[' exp ']' 	{			$$ = tsubscriptread(tname($1), $3); }
 	| id '[' exp ']' '=' exp {		$$ = tsubscriptwrite(tname($1), $3, $6); }
@@ -236,7 +255,7 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 							}
 	;
 
-/* function declaration rules */
+/* function declaration */
 
 fundecl: TOK_FLOAT_DECL id function { MPRINT("fundecl");
 									functionName = strsave($2);
@@ -250,7 +269,8 @@ fundecl: TOK_FLOAT_DECL id function { MPRINT("fundecl");
 	;
 
 
-/* an <arg> is always a type followed by an <id>, like "float length".  They will not be visible outside of the function definition.
+/* an <arg> is always a type followed by an <id>, like "float length".  They only occur in function definitions, and
+   the variables declared are not visible outside of the function definition.
  */
 
 arg: TOK_FLOAT_DECL id		{ MPRINT("arg");
@@ -282,6 +302,7 @@ fargl: '(' argl ')'			{ MPRINT("fargl: (argl)"); $$ = targlist($2); }
 	;
 
 /* function block level counter */
+
 function:  level {	MPRINT("function"); if (flevel > 0) {
 								minc_die("nested function decls not allowed");
 							}
@@ -299,9 +320,11 @@ fstml:	stml ret			{	MPRINT("fstml: stml,ret");
 							}
 	;
 
+/* the full rule for a function declaration/definition */
+
 fdef: fundecl fargl '{' fstml '}'	{
 									MPRINT("fdef");
-									--level; MPRINT1("level => %d", level);
+									decrLevel();
 									--flevel; MPRINT1("flevel => %d", flevel);
 									go(tfdef($1, $2, $4));
 									functionName = NULL;	/* now that we are past the argument list */
@@ -315,6 +338,16 @@ fdef: fundecl fargl '{' fstml '}'	{
 	;
 
 %%
+
+static void 	incrLevel()
+{
+	++level; MPRINT1("level => %d", level);
+}
+
+static void		decrLevel()
+{
+	--level; MPRINT1("level => %d", level);
+}
 
 // N.B. Because we have no need for <id>'s to exist in our tree other than for the purpose
 // of declaring variables, we shortcut here and do not rely on the recursive parser.  We
@@ -347,14 +380,14 @@ static Tree declare(MincDataType type)
 static Tree
 go(Tree t1)
 {
-	MPRINT1("--> go(%p)", t1);
 	if (level == 0) {
+		MPRINT1("--> go(%p)", t1);
 		exct(t1);
 #ifndef FREE_TREES_AT_END
 		free_tree(t1);
 #endif
+		MPRINT1("<-- go(%p)", t1);
 	}
-	MPRINT1("<-- go(%p)", t1);
 	return t1;
 }
 

@@ -12,7 +12,7 @@
 
 /* This file holds the intermediate tree representation. */
 
-#define DEBUG
+#undef DEBUG
 
 #include "minc_internal.h"
 #include "handle.h"

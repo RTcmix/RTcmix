@@ -13,8 +13,9 @@ static int cpcomments = 0;
 extern void yyerror(char *);
 /* To allow includes of subfiles */
 #define MAX_INCLUDE_DEPTH 10
-YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH];
-int include_stack_ptr = 0;
+static int saved_lineno[MAX_INCLUDE_DEPTH];
+static YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH];
+static int include_stack_ptr = 0;
 #ifdef EMBEDDED
 #ifdef yy_flex_strncpy
 /* Because of the peculiarities of Lex, this function does not get declared or defined if the token 'yytext_ptr'
@@ -82,7 +83,7 @@ num   {dig}+
 <INIT>string            return TOK_STRING_DECL;
 <INIT>handle            return TOK_HANDLE_DECL;
 <INIT>return			return TOK_RETURN;
-<INIT>[%=><{},;*+-]     return (*yytext);
+<INIT>[%={}><,;*+-]     	return (*yytext);
 <INIT>"["|"]"|"/"       return (*yytext);
 <INIT>"("|")"           return (*yytext);
 <INIT>"\n"        ;
@@ -99,6 +100,7 @@ num   {dig}+
 				yyerror( "Includes nested too deeply");
 				exit(1);
 			}
+			saved_lineno[include_stack_ptr] = yylineno;
 			include_stack[include_stack_ptr++] = YY_CURRENT_BUFFER;
 			yyin = fopen( yytext, "r" );
 			if (!yyin)
@@ -120,6 +122,7 @@ num   {dig}+
 			else {
 				yy_delete_buffer(YY_CURRENT_BUFFER);
 				yy_switch_to_buffer(include_stack[include_stack_ptr]);
+				yyset_lineno(saved_lineno[include_stack_ptr]);
 			}
 		} 
 %%
