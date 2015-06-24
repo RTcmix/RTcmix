@@ -17,7 +17,7 @@ extern int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
 #define TRUE 1
 #define FALSE 0
 
-#define MDEBUG	/* turns on yacc debugging below */
+#undef MDEBUG	/* turns on yacc debugging below */
 
 #ifdef MDEBUG
 //int yydebug=1;
