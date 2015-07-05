@@ -34,10 +34,9 @@ static Tree		program;
 static int		idcount = 0;
 static char		*idlist[MAXTOK_IDENTLIST];  
 static int		flerror;		/* set if there was an error during parsing */
-static int		level = 0;		/* keeps track whether we are in a structure */
+static int		level = 0;		/* keeps track whether we are in a sub-block */
 static int		flevel = 0;		/* > 0 if we are in a function decl block */
 static int      xblock = 0;		/* 1 if we are entering a block preceeded by if(), else(), while(), or for() */
-static char *	functionName;	/* to allow errors to show the enclosing function */
 static void 	cleanup();
 static void 	incrLevel();
 static void		decrLevel();
@@ -162,11 +161,20 @@ ret: TOK_RETURN exp			{	MPRINT("ret");
 
 /* variable declaration lists */
 
-fdecl:	TOK_FLOAT_DECL idl	{ MPRINT("fdecl"); $$ = go(declare(MincFloatType)); idcount = 0; }	// e.g., "float x, y z"
+fdecl:	TOK_FLOAT_DECL idl	{ 	MPRINT("fdecl");
+								$$ = go(declare(MincFloatType));
+								idcount = 0;
+							}	// e.g., "float x, y z"
 	;
-sdecl:	TOK_STRING_DECL idl	{ MPRINT("sdecl"); $$ = go(declare(MincStringType)); idcount = 0; }
+sdecl:	TOK_STRING_DECL idl	{ 	MPRINT("sdecl");
+								$$ = go(declare(MincStringType));
+								idcount = 0;
+							}
 	;
-hdecl:	TOK_HANDLE_DECL idl	{ MPRINT("hdecl"); $$ = go(declare(MincHandleType)); idcount = 0; }
+hdecl:	TOK_HANDLE_DECL idl	{ 	MPRINT("hdecl");
+								$$ = go(declare(MincHandleType));
+								idcount = 0;
+							}
 	;
 
 /* statement nesting level counter */
@@ -258,14 +266,11 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 /* function declaration */
 
 fundecl: TOK_FLOAT_DECL id function { MPRINT("fundecl");
-									functionName = strsave($2);
-									$$ = go(tfdecl(functionName, MincFloatType)); }
+									$$ = go(tfdecl(strsave($2), MincFloatType)); }
 	| TOK_STRING_DECL id function { MPRINT("fundecl");
-									functionName = strsave($2);
-									$$ = go(tfdecl(functionName, MincStringType)); }
+									$$ = go(tfdecl(strsave($2), MincStringType)); }
 	| TOK_HANDLE_DECL id function { MPRINT("fundecl");
-									functionName = strsave($2);
-									$$ = go(tfdecl(functionName, MincHandleType)); }
+									$$ = go(tfdecl(strsave($2), MincHandleType)); }
 	;
 
 
@@ -327,7 +332,6 @@ fdef: fundecl fargl '{' fstml '}'	{
 									decrLevel();
 									--flevel; MPRINT1("flevel => %d", flevel);
 									go(tfdef($1, $2, $4));
-									functionName = NULL;	/* now that we are past the argument list */
 									/* because we're just a decl, and the tree is stored
 									   in the Symbol, we do not return a Tree to the parser.
 									 */
@@ -360,17 +364,10 @@ static Tree declare(MincDataType type)
 	
 	assert(idcount > 0);
 	
-	Tree t;
- 
- 	if (idcount > 1) {
- 		t = tnoop();	// end of the list
-		for (i = 0; i < idcount; i++) {
-			Tree decl = tdecl(idlist[i], type);
-			t = tseq(t, decl);
-		}
-	}
-	else {
-		t = tdecl(idlist[0], type);		// no need for a list
+	Tree t = tnoop();	// end of the list
+	for (i = 0; i < idcount; i++) {
+		Tree decl = tdecl(idlist[i], type);
+		t = tseq(t, decl);
 	}
 	return t;
 }

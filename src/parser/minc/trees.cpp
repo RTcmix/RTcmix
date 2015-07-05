@@ -38,7 +38,10 @@ static int list_stack_ptr;
 
 static int sArgListLen;		// number of arguments passed to a user-declared function
 static int sArgListIndex;	// used to walk passed-in args for user-declared functions
+
+static bool inCalledFunctionArgList = false;
 static const char *sCalledFunction;
+static int sFunctionCallDepth = 0;	// level of actively-executing function calls
 
 #undef DEBUG_TRACE
 #if defined(DEBUG_TRACE) && defined(__cplusplus)
@@ -1358,7 +1361,15 @@ exct(Tree tp)
       case NodeName:
       case NodeAutoName:
          /* look up the symbol */
-         tp->u.symbol = (tp->kind == NodeName) ? lookup(tp->name, YES) : lookupOrAutodeclare(tp->name);
+		   if (tp->kind == NodeName) {
+			   tp->u.symbol = lookup(tp->name, AnyLevel);
+		   }
+		   else if (tp->kind == NodeAutoName) {
+			   tp->u.symbol = lookupOrAutodeclare(tp->name);
+		   }
+		   else {
+			   minc_internal_error("NodeName/NodeAutoName exct: illegal node kind: %d", tp->kind);
+		   }
          if (tp->u.symbol) {
 			DPRINT1("exct NodeName/NodeAutoName: symbol %p\n", tp->u.symbol);
         	 /* also assign the symbol's value into tree's value field */
@@ -1426,9 +1437,8 @@ exct(Tree tp)
       case NodeCall:
 		push_list();
 		{
-			Symbol *funcSymbol = lookup(tp->name, YES);
+			Symbol *funcSymbol = lookup(tp->name, GlobalLevel);
 			if (funcSymbol) {
-				push_scope();
 				sCalledFunction = tp->name;
 				/* The function's definition node was stored on the symbol at declaration time.
 					However, if a function was called on a non-function symbol, the tree will be NULL.
@@ -1438,27 +1448,33 @@ exct(Tree tp)
 					DPRINT1("exct NodeCall: func def = %p\n", funcDef);
 					DPRINT1("exct NodeCall: exp decl list = %p\n", tp->u.child[0]);
 					exct(tp->u.child[0]);	// execute arg expression list
+					++sFunctionCallDepth;
+					push_function_stack();
+					push_scope();
 					/* The exp list is copied to the symbols for the function's arg list. */
-					DPRINT("exct NodeCall: walking arg decl/copy list\n");
 					exct(funcDef->u.child[1]);
-					DPRINT("exct NodeCall: executing function block node\n");
 					Tree temp = NULL;
 					int savedScope = current_scope();
+					int savedCallDepth = sFunctionCallDepth;
+					DPRINT1("exct NodeCall: executing function block node %p\n", funcDef->u.child[2]);
 					try {
 						temp = exct(funcDef->u.child[2]);
 					}
 					catch (Tree returned) {	// This catches return statements!
 						DPRINT("NodeCall caught return stmt throw\n");
 						temp = returned;
+						sFunctionCallDepth = savedCallDepth;
 						restore_scope(savedScope);
 					}
 					DPRINT("NodeCall copying def exct results into self\n");
 					copy_tree_tree(tp, temp);
+					pop_scope();
+					pop_function_stack();
+					--sFunctionCallDepth;
 				}
 				else {
 					minc_die("'%s' is not a function", funcSymbol->name);
 				}
-				pop_scope();
 				sCalledFunction = NULL;
 			}
 			else {
@@ -1550,7 +1566,10 @@ exct(Tree tp)
       case NodeArgList:
 		   sArgListLen = 0;
 		   sArgListIndex = 0;	// reset to walk list
+		   inCalledFunctionArgList = true;
+		   DPRINT1("exct NodeArgList: walking function '%s' arg decl/copy list\n", sCalledFunction);
 		   exct(tp->u.child[0]);
+		   inCalledFunctionArgList = false;
          break;
       case NodeArgListElem:
 		   ++sArgListLen;
@@ -1643,17 +1662,22 @@ exct(Tree tp)
 	   	{
 		const char *name = tp->name;		// as set by NodeDecl creator
 		DPRINT1("-- declaring variable '%s'\n", name);
-		Symbol *sym = lookup(name, YES);
+		Symbol *sym = lookup(name, inCalledFunctionArgList ? ThisLevel : AnyLevel);
 		if (!sym) {
 		   sym = install(name);
 		   sym->type = tp->type;
 		}
 		else {
 		   if (sym->scope == current_scope()) {
-			   minc_warn("variable '%s' redefined", name);
+			   if (inCalledFunctionArgList) {
+				   minc_die("argument variable '%s' already used", name);
+			   }
+			   minc_warn("variable '%s' redefined - using existing one", name);
 		   }
 		   else {
-			   minc_warn("variable '%s' also defined at enclosing scope", name);
+			   if (sFunctionCallDepth == 0) {
+			   	   minc_warn("variable '%s' also defined at enclosing scope", name);
+			   }
 			   sym = install(name);
 			   sym->type = tp->type;
 		   }
@@ -1666,7 +1690,7 @@ exct(Tree tp)
 		   const char *name = tp->name;		// as set by NodeDecl creator
 		   DPRINT1("-- declaring function '%s'\n", name);
 		   assert(current_scope() == 0);	// until I allow nested functions
-		   Symbol *sym = lookup(name, NO);	// only look at current global level
+		   Symbol *sym = lookup(name, GlobalLevel);	// only look at current global level
 		   if (sym == NULL) {
 			   sym = install(name);		// all functions global for now
 			   sym->type = tp->type;

@@ -18,6 +18,7 @@
 #include <vector>
 #include "minc_internal.h"
 #include "handle.h"
+#include <RefCounted.h>
 
 #define NO_EMALLOC_DEBUG
 
@@ -44,13 +45,14 @@ static int hash(const char *s);
 
 // New Scope Code
 
-class Scope {
+class Scope : public RefCounted {
 public:
 	Scope(int inDepth) : _depth(inDepth) { memset(htab, 0, sizeof(htab)); }
-	~Scope();
 	Symbol *install(const char *name);
 	Symbol *lookup(const char *name);
 	int		depth() const { return _depth; }
+protected:
+	virtual ~Scope();
 private:
 	int		_depth;			  /* for debugging */
 	Symbol *htab[HASHSIZE];   /* hash table */
@@ -101,54 +103,100 @@ Scope::lookup(const char *name)
 	return p;
 }
 
-static std::vector<Scope *> sScopeStack;
-static int sStackDepth = -1;	// hack till I figure out initialization
+typedef std::vector<Scope *>ScopeStack;
+typedef std::vector<ScopeStack *>CallStack;
 
-#ifdef STANDALONE
+static ScopeStack *sScopeStack = NULL;
+static CallStack *sCallStack = NULL;
+
 class InitializeScope
 {
 public:
-	InitializeScope() { push_scope(); }
+	InitializeScope() {
+		sScopeStack = new std::vector<Scope *>;
+		// We don't use push_scope() here because of the asserts.
+		Scope *globalScope = new Scope(0);
+		globalScope->ref();
+		sScopeStack->push_back(globalScope);
+	}
 };
 
+#ifdef STANDALONE
 static InitializeScope sInitializeScope;
 #define CHECK_SCOPE_INIT() while(0)
 #else
-#define CHECK_SCOPE_INIT() if (sStackDepth == -1) push_scope()
+#define CHECK_SCOPE_INIT() if (sScopeStack == NULL) do { InitializeScope(); } while (0)
 #endif
 
 void push_scope()
 {
-	DPRINT1("push_scope() => %d\n", sStackDepth+1);
-	++sStackDepth;
-	sScopeStack.push_back(new Scope(sStackDepth));
+	assert(!sScopeStack->empty());
+	int newscope = current_scope() + 1;
+	DPRINT2("push_scope() => %d (sScopeStack %p)\n", newscope, sScopeStack);
+	Scope *scope = new Scope(newscope);
+	scope->ref();
+	sScopeStack->push_back(scope);
 }
 
 void pop_scope() {
-	DPRINT1("pop_scope() => %d\n", sStackDepth-1);
-	assert(sStackDepth >= 0);
-	Scope *top = sScopeStack.back();
-	sScopeStack.pop_back();
-	delete top;
-	--sStackDepth;
+	DPRINT2("pop_scope() => %d (sScopeStack %p)\n", current_scope()-1, sScopeStack);
+	assert(!sScopeStack->empty());
+	Scope *top = sScopeStack->back();
+	sScopeStack->pop_back();
+	assert(!sScopeStack->empty());
+	top->unref();
 }
 
 int current_scope()
 {
 	CHECK_SCOPE_INIT();
-	DPRINT1("current_scope() == %d\n", sStackDepth);
-	return sStackDepth;
+	int current = (int) sScopeStack->size() - 1;
+	return current;
 }
 
 void restore_scope(int scope)
 {
 	DPRINT1("restore_scope() => %d\n", scope);
-	while (sStackDepth > scope) {
-		Scope *top = sScopeStack.back();
-		sScopeStack.pop_back();
-		delete top;
-		--sStackDepth;
+	while (current_scope() > scope) {
+		Scope *top = sScopeStack->back();
+		sScopeStack->pop_back();
+		top->unref();
 	}
+}
+
+/* CallStack code.  Whenever we call a user-defined function, we create and push a
+ * new ScopeStack into the CallStack and make this scope stack the current one.  We
+ * copy the global (level 0) scope into each new ScopeStack.
+ */
+
+void push_function_stack()
+{
+	DPRINT("push_function_stack()\n");
+	// Lazy init:  Most people will never use this
+	if (sCallStack == NULL) {
+		sCallStack = new CallStack;
+	}
+	DPRINT1("pushing sScopeStack %p\n", sScopeStack);
+	sCallStack->push_back(sScopeStack);
+	ScopeStack *newStack = new ScopeStack;
+	Scope *globalScope = sScopeStack->front();
+	globalScope->ref();
+	newStack->push_back(globalScope);
+	sScopeStack = newStack;
+	DPRINT1("sScopeStack now %p\n", sScopeStack);
+}
+
+void pop_function_stack()
+{
+	DPRINT("pop_function_stack()\n");
+	assert(sCallStack != NULL);
+	assert(!sCallStack->empty());
+	DPRINT1("destroying stack %p\n", sScopeStack);
+	delete sScopeStack;
+	sScopeStack = sCallStack->back();
+	sCallStack->pop_back();
+	DPRINT1("sScopeStack now %p\n", sScopeStack);
+	assert(sScopeStack != NULL);
 }
 
 /* Allocate and initialize and new symbol table entry for <name>. */
@@ -199,11 +247,13 @@ free_symbols()
 #ifdef SYMBOL_DEBUG
 	rtcmix_print("freeing symbol and string tables...\n");
 #endif
+	// We should not be stuck in a function call.
+	assert(sCallStack == NULL || sCallStack->size() == 0);
 	// Start at deepest scope (end) and work back to global (begin)
-	while (!sScopeStack.empty()) {
-		Scope *s = sScopeStack.back();
-		sScopeStack.pop_back();
-		delete s;
+	while (!sScopeStack->empty()) {
+		Scope *s = sScopeStack->back();
+		sScopeStack->pop_back();
+		s->unref();
 	}
 	for (int s = 0; s < HASHSIZE; ++s)
 	{
@@ -250,7 +300,7 @@ struct symbol *
 install(const char *name)
 {
 	CHECK_SCOPE_INIT();
-	return sScopeStack.back()->install(name);
+	return sScopeStack->back()->install(name);
 }
 
 /* Lookup <name> at a given scope; return pointer to entry.
@@ -261,14 +311,16 @@ install(const char *name)
  */
 /* WARNING: it can only find symbol if name is a ptr returned by strsave */
 Symbol *
-lookup(const char *name, Bool anyLevel)
+lookup(const char *name, LookupType lookupType)
 {
 	CHECK_SCOPE_INIT();
 	Symbol *p = NULL;
 	int foundLevel = -1;
-	if (anyLevel == YES) {
+	const char *typeString;
+	if (lookupType == AnyLevel) {
+		typeString = "AnyLevel";
 		// Start at deepest scope and work back to global
-		for (std::vector<Scope *>::reverse_iterator it = sScopeStack.rbegin(); it != sScopeStack.rend(); ++it) {
+		for (std::vector<Scope *>::reverse_iterator it = sScopeStack->rbegin(); it != sScopeStack->rend(); ++it) {
 			Scope *s = *it;
 			if ((p = s->lookup(name)) != NULL) {
 				foundLevel = s->depth();
@@ -276,18 +328,26 @@ lookup(const char *name, Bool anyLevel)
 			}
 		}
 	}
-	else {
+	else if (lookupType == GlobalLevel) {
+		typeString = "GlobalLevel";
+		// Global scope only
+		if ((p = sScopeStack->front()->lookup(name)) != NULL) {
+			foundLevel = sScopeStack->front()->depth();
+		}
+	}
+	else if (lookupType == ThisLevel) {
+		typeString = "ThisLevel";
 		// Current scope only
-		if ((p = sScopeStack.back()->lookup(name)) != NULL) {
-			foundLevel = sScopeStack.back()->depth();
+		if ((p = sScopeStack->back()->lookup(name)) != NULL) {
+			foundLevel = sScopeStack->back()->depth();
 		}
 	}
 #ifdef SYMBOL_DEBUG
 	if (p) {
-		DPRINT4("lookup ('%s', %s) => %p (scope %d)\n", name, anyLevel ? "any" : "current", p, foundLevel);
+		DPRINT4("lookup ('%s', %s) => %p (scope %d)\n", name, typeString, p, foundLevel);
 	}
 	else {
-		DPRINT3("lookup ('%s', %s) => %p\n", name, anyLevel ? "any" : "current", p);
+		DPRINT3("lookup ('%s', %s) => %p\n", name, typeString, p);
 	}
 #endif
    return p;
@@ -297,14 +357,14 @@ Symbol * lookupOrAutodeclare(const char *name)
 {
 	DPRINT1("lookupOrAutodeclare('%s')\n", name);
 	CHECK_SCOPE_INIT();
-	Symbol *sym = lookup(name, NO);	// Check at current scope *only*
+	Symbol *sym = lookup(name, ThisLevel);	// Check at current scope *only*
 	if (sym != NULL) {
 		DPRINT("\tfound it at same scope\n");
 		return sym;
 	}
 	else {
 		DPRINT("\tnot in this scope - trying others\n");
-		sym = lookup(name, YES);		// check at all levels
+		sym = lookup(name, AnyLevel);
 		if (sym) { DPRINT("\tfound it\n"); } else { DPRINT("\tnot found - installing\n"); }
 		return (sym) ? sym : install(name);		// XXX DOES THIS MATCH OLD BEHAVIOR?
 	}

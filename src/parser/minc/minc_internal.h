@@ -206,12 +206,15 @@ Bool was_rtcmix_error();
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+void push_function_stack();
+void pop_function_stack();
 void push_scope();
 void pop_scope();
 int current_scope();
 void restore_scope(int scope);
 struct symbol *install(const char *name);
-struct symbol *lookup(const char *name, Bool anyLevel);
+typedef enum LookupType { AnyLevel = 0, GlobalLevel = 1, ThisLevel = 2 } LookupType;
+struct symbol *lookup(const char *name, LookupType lookupType);
 struct symbol * lookupOrAutodeclare(const char *name);
 char *strsave(char *str);
 char *emalloc(long nbytes);
