@@ -14,18 +14,9 @@
 #include "minc.h"
 
 #ifdef DEBUG
-   #define DPRINT(msg)                    rtcmix_print((msg))
-   #define DPRINT1(msg, arg)              rtcmix_print((msg), (arg))
-   #define DPRINT2(msg, arg1, arg2)       rtcmix_print((msg), (arg1), (arg2))
-   #define DPRINT3(msg, arg1, arg2, arg3) rtcmix_print((msg), (arg1), (arg2), (arg3))
-   #define DPRINT4(msg, arg1, arg2, arg3, arg4) \
-                                 rtcmix_print((msg), (arg1), (arg2), (arg3), (arg4))
+   #define DPRINT(...) rtcmix_print(__VA_ARGS__)
 #else
-   #define DPRINT(msg)
-   #define DPRINT1(msg, arg)
-   #define DPRINT2(msg, arg1, arg2)
-   #define DPRINT3(msg, arg1, arg2, arg3)
-   #define DPRINT4(msg, arg1, arg2, arg3, arg4)
+   #define DPRINT(...)
 #endif
 
 /* important Minc tuning parameters */
@@ -264,11 +255,28 @@ Tree exct(Tree tp);
 void free_tree(Tree tp);
 void print_tree(Tree tp);
 void print_symbol(struct symbol * s);
+void print_value(MincValue *v, MincDataType type);
 
 /* utils.c */
 int is_float_list(const MincList *list);
 MincFloat *float_list_to_array(const MincList *list);
 MincList *array_to_float_list(const MincFloat *array, const int len);
+
+inline const char *MincTypeName(MincDataType type)
+{
+	switch (type) {
+		case MincVoidType:
+			return "void";
+		case MincFloatType:
+			return "float";
+		case MincStringType:
+			return "string";
+		case MincHandleType:
+			return "handle";
+		case MincListType:
+			return "list";
+	}
+}
 
 #ifdef __cplusplus
 } /* extern "C" */

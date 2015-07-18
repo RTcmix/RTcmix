@@ -61,7 +61,7 @@ private:
 Scope::~Scope()
 {
 #ifdef DEBUG_MEMORY
-	DPRINT1("Scope::~Scope(%p)\n", this);
+	DPRINT("Scope::~Scope(%p)\n", this);
 #endif
 	for (int s = 0; s < HASHSIZE; ++s) {
 		for (Symbol *p = htab[s]; p != NULL; ) {
@@ -85,7 +85,7 @@ Scope::install(const char *name)
 	p->v.number = 0.0;
 	
 #ifdef SYMBOL_DEBUG
-	DPRINT3("Scope::install ('%s') => %p [scope %d]\n", name, p, p->scope);
+	DPRINT("Scope::install ('%s') => %p [scope %d]\n", name, p, p->scope);
 #endif
 	return p;
 }
@@ -99,7 +99,7 @@ Scope::lookup(const char *name)
 		if (name == p->name)
 			break;
 	
-	DPRINT3("Scope::lookup ('%s') [scope %d] => %p\n", name, depth(), p);
+	DPRINT("Scope::lookup ('%s') [scope %d] => %p\n", name, depth(), p);
 	return p;
 }
 
@@ -132,14 +132,14 @@ void push_scope()
 {
 	assert(!sScopeStack->empty());
 	int newscope = current_scope() + 1;
-	DPRINT2("push_scope() => %d (sScopeStack %p)\n", newscope, sScopeStack);
+	DPRINT("push_scope() => %d (sScopeStack %p)\n", newscope, sScopeStack);
 	Scope *scope = new Scope(newscope);
 	scope->ref();
 	sScopeStack->push_back(scope);
 }
 
 void pop_scope() {
-	DPRINT2("pop_scope() => %d (sScopeStack %p)\n", current_scope()-1, sScopeStack);
+	DPRINT("pop_scope() => %d (sScopeStack %p)\n", current_scope()-1, sScopeStack);
 	assert(!sScopeStack->empty());
 	Scope *top = sScopeStack->back();
 	sScopeStack->pop_back();
@@ -156,7 +156,7 @@ int current_scope()
 
 void restore_scope(int scope)
 {
-	DPRINT1("restore_scope() => %d\n", scope);
+	DPRINT("restore_scope() => %d\n", scope);
 	while (current_scope() > scope) {
 		Scope *top = sScopeStack->back();
 		sScopeStack->pop_back();
@@ -176,14 +176,14 @@ void push_function_stack()
 	if (sCallStack == NULL) {
 		sCallStack = new CallStack;
 	}
-	DPRINT1("pushing sScopeStack %p\n", sScopeStack);
+	DPRINT("pushing sScopeStack %p\n", sScopeStack);
 	sCallStack->push_back(sScopeStack);
 	ScopeStack *newStack = new ScopeStack;
 	Scope *globalScope = sScopeStack->front();
 	globalScope->ref();
 	newStack->push_back(globalScope);
 	sScopeStack = newStack;
-	DPRINT1("sScopeStack now %p\n", sScopeStack);
+	DPRINT("sScopeStack now %p\n", sScopeStack);
 }
 
 void pop_function_stack()
@@ -191,11 +191,11 @@ void pop_function_stack()
 	DPRINT("pop_function_stack()\n");
 	assert(sCallStack != NULL);
 	assert(!sCallStack->empty());
-	DPRINT1("destroying stack %p\n", sScopeStack);
+	DPRINT("destroying stack %p\n", sScopeStack);
 	delete sScopeStack;
 	sScopeStack = sCallStack->back();
 	sCallStack->pop_back();
-	DPRINT1("sScopeStack now %p\n", sScopeStack);
+	DPRINT("sScopeStack now %p\n", sScopeStack);
 	assert(sScopeStack != NULL);
 }
 
@@ -220,7 +220,7 @@ symalloc(const char *name)
    p->list = NULL;
 #endif
 #ifdef DEBUG_MEMORY
-	DPRINT1("symalloc() -> %p\n", p);
+	DPRINT("symalloc() -> %p\n", p);
 #endif
    return p;
 }
@@ -344,10 +344,10 @@ lookup(const char *name, LookupType lookupType)
 	}
 #ifdef SYMBOL_DEBUG
 	if (p) {
-		DPRINT4("lookup ('%s', %s) => %p (scope %d)\n", name, typeString, p, foundLevel);
+		DPRINT("lookup ('%s', %s) => %p (scope %d, type %s)\n", name, typeString, p, foundLevel, MincTypeName(p->type));
 	}
 	else {
-		DPRINT3("lookup ('%s', %s) => %p\n", name, typeString, p);
+		DPRINT("lookup ('%s', %s) => %p\n", name, typeString, p);
 	}
 #endif
    return p;
@@ -355,7 +355,7 @@ lookup(const char *name, LookupType lookupType)
 
 Symbol * lookupOrAutodeclare(const char *name)
 {
-	DPRINT1("lookupOrAutodeclare('%s')\n", name);
+	DPRINT("lookupOrAutodeclare('%s')\n", name);
 	CHECK_SCOPE_INIT();
 	Symbol *sym = lookup(name, ThisLevel);	// Check at current scope *only*
 	if (sym != NULL) {
@@ -394,7 +394,7 @@ strsave(char *str)
    stab[h] = p;
 
 #ifdef SYMBOL_DEBUG
-   DPRINT2("strsave ('%s') => %p\n", str, p);
+   DPRINT("strsave ('%s') => %p\n", str, p);
 #endif
    return p->str;
 }
@@ -465,7 +465,7 @@ emalloc(long nbytes)
       sys_error("system out of memory");
 
 #ifndef NO_EMALLOC_DEBUG
-   DPRINT2("emalloc: nbytes=%d, ptr=%p\n", nbytes, s);
+   DPRINT("emalloc: nbytes=%d, ptr=%p\n", nbytes, s);
 #endif
    return s;
 }
@@ -473,7 +473,7 @@ emalloc(long nbytes)
 void efree(void *mem)
 {
 #ifndef NO_EMALLOC_DEBUG
-   DPRINT1("efree: ptr=%p\n", mem);
+   DPRINT("efree: ptr=%p\n", mem);
 #endif
    free(mem);
 }
