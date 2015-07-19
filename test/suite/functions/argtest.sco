@@ -1,9 +1,9 @@
-float testfunction(float f, string s, handle h)
+float testfunction(float f, string s, list l)
 {
 	print("in testfunction:");
 	print(f);
 	print(s);
-	print(h);
+	print(l);
 	return 0;
 }
 

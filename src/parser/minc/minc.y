@@ -62,10 +62,11 @@ static Tree go(Tree t1);
 %token <ival> TOK_FLOAT_DECL
 %token <ival> TOK_STRING_DECL
 %token <ival> TOK_HANDLE_DECL
+%token <ival> TOK_LIST_DECL
 %token <ival> TOK_IDENT TOK_NUM TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 %type  <trees> stml stmt rstmt bexp expl exp str ret bstml
-%type  <trees> fdecl sdecl hdecl fdef fstml arg argl fargl fundecl
+%type  <trees> fdecl sdecl hdecl ldecl fdef fstml arg argl fargl fundecl
 %type  <str> id
 
 %%
@@ -85,6 +86,7 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 	| fdecl
 	| sdecl
 	| hdecl
+	| ldecl
 	| TOK_IF level bexp stmt {	xblock = 1; MPRINT("IF bexp stmt");
 								decrLevel();
 								$$ = go(tif($3, $4));
@@ -111,6 +113,7 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 	| error TOK_FLOAT_DECL	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_STRING_DECL	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_HANDLE_DECL	{ flerror = 1; $$ = tnoop(); }
+	| error TOK_LIST_DECL	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_IF		{ flerror = 1; $$ = tnoop(); }
 	| error TOK_WHILE	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_FOR	{ flerror = 1; $$ = tnoop(); }
@@ -137,7 +140,7 @@ bstml:	'{'			{ if (!xblock) incrLevel(); }
 
 /* A return statement.  Only used inside functions. */
 
-ret: TOK_RETURN exp			{	MPRINT("ret");
+ret: TOK_RETURN exp			{	MPRINT("ret exp");
 								MPRINT1("called at level %d", level);
 								if (flevel == 0) {
 									minc_die("return statements not allowed in main score");
@@ -147,7 +150,7 @@ ret: TOK_RETURN exp			{	MPRINT("ret");
 									$$ = treturn($2);
 								}
 							}
-	| TOK_RETURN exp ';'	{	MPRINT("ret;");
+	| TOK_RETURN exp ';'	{	MPRINT("ret exp;");
 								MPRINT1("called at level %d", level);
 								if (flevel == 0) {
 									minc_die("return statements not allowed in main score");
@@ -176,6 +179,11 @@ hdecl:	TOK_HANDLE_DECL idl	{ 	MPRINT("hdecl");
 								idcount = 0;
 							}
 	;
+ldecl:	TOK_LIST_DECL idl	{ 	MPRINT("ldecl");
+								$$ = go(declare(MincListType));
+								idcount = 0;
+							}
+;
 
 /* statement nesting level counter */
 level:  /* nothing */ { incrLevel(); }
@@ -271,6 +279,8 @@ fundecl: TOK_FLOAT_DECL id function { MPRINT("fundecl");
 									$$ = go(tfdecl(strsave($2), MincStringType)); }
 	| TOK_HANDLE_DECL id function { MPRINT("fundecl");
 									$$ = go(tfdecl(strsave($2), MincHandleType)); }
+	| TOK_LIST_DECL id function { MPRINT("fundecl");
+									$$ = go(tfdecl(strsave($2), MincListType)); }
 	;
 
 
@@ -286,6 +296,9 @@ arg: TOK_FLOAT_DECL id		{ MPRINT("arg");
 							}
 	| TOK_HANDLE_DECL id	{ MPRINT("arg");
 							  $$ = tdecl($2, MincHandleType);
+							}
+	| TOK_LIST_DECL id		{ MPRINT("arg");
+								$$ = tdecl($2, MincListType);
 							}
 	;
 

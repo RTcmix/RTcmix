@@ -1635,15 +1635,9 @@ exct(Tree tp)
 			   switch (argValue->type) {
 				   case MincFloatType:
 				   case MincStringType:
-					   if (argSym->type != argValue->type) {
-						   minc_die("%s arg '%s' passed as %s, expecting %s",
-									sCalledFunction, argSym->name, MincTypeName(argValue->type), MincTypeName(argSym->type));
-					   }
-					   else compatible = true;
-					   break;
 				   case MincHandleType:
 				   case MincListType:
-					   if (argSym->type != MincHandleType && argSym->type != MincListType) {
+					   if (argSym->type != argValue->type) {
 						   minc_die("%s arg '%s' passed as %s, expecting %s",
 									sCalledFunction, argSym->name, MincTypeName(argValue->type), MincTypeName(argSym->type));
 					   }
@@ -1800,7 +1794,7 @@ static void copy_value(MincValue *dest, MincDataType destType,
    if (srcType == MincHandleType && src->handle != NULL) {
       ref_handle(src->handle);	// ref before unref
    }
-   else if (srcType == MincListType) {
+   else if (srcType == MincListType && src->list != NULL) {
 #ifdef DEBUG_MEMORY
       TPRINT("list %p refcount %d -> %d\n", src->list, src->list->refcount, src->list->refcount+1);
 #endif
@@ -2069,6 +2063,8 @@ clear_elem(MincListElem *elem)
 void
 unref_value_list(MincValue *value)
 {
+	if (value->list == NULL)
+		return;
 #ifdef DEBUG_MEMORY
    TPRINT("unref_value_list(%p) [%d -> %d]\n", value->list, value->list->refcount, value->list->refcount-1);
 #endif

@@ -1,9 +1,9 @@
-float myfunction(handle arg) { 
+float myfunction(list arg) { 
 	x = 0; 
 	return x;
 }
 
-handle l;
+list l;
 
 l = { 2, 3, 4 };
 
