@@ -5,19 +5,18 @@ embedded version includes the Minc parser as well as all (well,
 nearly all) the RTcmix instruments and functions in this distribution.
 
 The compilation for different libraries is set by choosing the
-correct "BUILDTYPE" in the makefile.conf file (generated after
-running the ./configure process as outlined in the INSTALL document).
-The default is with the "BUILDTYPE" to "STANDALONE", which will generate
-the 'classic' command-line RTcmix running from a unix-like terminal (shell)
-window.
+correct "BUILDTYPE" in the site.conf file.  The default is with the
+"BUILDTYPE" set to "STANDALONE", which will generate the 'classic'
+command-line RTcmix running from a unix-like terminal (shell) window.
 
-To set up for other compiles, you will need to edit the makefile.conf file
-and change the "BUILDTYPE".  In makefile.conf, the relevant lines are:
+To set up for other compiles, you will need to edit the site.conf file
+and change the "BUILDTYPE".  In site.conf, the relevant lines are:
 
 	# for building embedded RTcmix libs.  Uncomment the one to build
 	# see the README.embed file for more information
 	BUILDTYPE = STANDALONE
 	#BUILDTYPE = MAXMSP
+	#BUILDTYPE = PD
 	#BUILDTYPE = IOS
 	# if selecting "IOS", then one of the following two has to be uncommented
 	#IPHONE_TYPE = SIMULATOR
@@ -31,6 +30,7 @@ object, comment-out the "BUILDTYPE = STANDALONE" line and uncomment the
 	# see the README.embed file for more information
 	#BUILDTYPE = STANDALONE
 	BUILDTYPE = MAXMSP
+	#BUILDTYPE = PD
 	#BUILDTYPE = IOS
 	# if selecting "IOS", then one of the following two has to be uncommented
 	#IPHONE_TYPE = SIMULATOR
