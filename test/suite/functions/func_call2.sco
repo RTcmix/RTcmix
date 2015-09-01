@@ -1,10 +1,10 @@
-float myfunction(string arg1, handle h) { 
+float myfunction(string arg1, list l) { 
 	print(arg1);
-	print(h);
+	print(l);
 	return 0;
 }
 
-handle mh;
-mh = { 3, 4, 5 };
-myfunction("hello", mh);
+list ml;
+ml = { 3, 4, 5 };
+myfunction("hello", ml);
 
