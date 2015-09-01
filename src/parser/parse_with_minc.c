@@ -16,18 +16,15 @@ extern int yyparse();
 
 int RTcmix_parseScore(char *thebuf, int buflen);
 extern int yyparse();
-extern void yyset_lineno(int line_number);
 extern int yylineno;
 extern void setGlobalBuffer(const char *inBuf, int inBufSize);
-extern void set_rtcmix_error(int);
 
 // BGG mm -- set this to accept a buffer from max/msp
 int RTcmix_parseScore(char *theBuf, int buflen)
 {
-	// BGG -- added to reset the line # every time a new score buffer is received
-	yyset_lineno(1);
+	configure_minc_error_handler(get_bool_option(kOptionExitOnError));
 	setGlobalBuffer(theBuf, buflen+1);
-	set_rtcmix_error(0);
+	reset_parser();
 	return yyparse();
 }
 
@@ -53,6 +50,7 @@ parse_score(int argc, char *argv[], char **env)
 		aargv[i - 1] = argv[i];
 	aargc = argc - 1;
 	
+	configure_minc_error_handler(get_bool_option(kOptionExitOnError));
 	status = yyparse();
 	
 	return status;

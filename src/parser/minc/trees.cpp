@@ -22,6 +22,10 @@
 #include <math.h>
 #include <assert.h>
 
+extern "C" {
+	void yyset_lineno(int line_number);
+	int yyget_lineno(void);
+};
 
 /* We maintain a stack of MAXSTACK lists, which we access when forming 
    user lists (i.e., {1, 2, "foo"}) and function argument lists.  Each
@@ -42,6 +46,8 @@ static int sArgListIndex;	// used to walk passed-in args for user-declared funct
 static bool inCalledFunctionArgList = false;
 static const char *sCalledFunction;
 static int sFunctionCallDepth = 0;	// level of actively-executing function calls
+
+static bool inFunctionCall() { return sFunctionCallDepth > 0; }
 
 #undef DEBUG_TRACE
 #if defined(DEBUG_TRACE)
@@ -241,6 +247,7 @@ node(OpKind op, NodeKind kind)
    tp->u.child[3] = NULL;
    tp->v.list = NULL;
    tp->name = NULL;
+   tp->lineno = yyget_lineno();
 #ifdef DEBUG_MEMORY
 	++numTrees;
    TPRINT("[%d trees in existence]\n", numTrees);
@@ -1383,6 +1390,9 @@ exct(Tree tp)
       return NULL;
 	ENTER();
 	TPRINT("%s: tp=%p\n", printNodeKind(tp->kind), tp);
+	if (inFunctionCall() && tp->lineno > 0) {
+		yyset_lineno(tp->lineno);
+	}
    switch (tp->kind) {
       case NodeConstf:
          tp->type = MincFloatType;
@@ -1405,9 +1415,9 @@ exct(Tree tp)
 			   minc_internal_error("NodeName/NodeAutoName exct: illegal node kind: %d", tp->kind);
 		   }
          if (tp->u.symbol) {
-			TPRINT("exct NodeName/NodeAutoName: symbol %p\n", tp->u.symbol);
+			TPRINT("NodeName/NodeAutoName: symbol %p\n", tp->u.symbol);
         	 /* also assign the symbol's value into tree's value field */
-         	TPRINT("exct NodeName/NodeAutoName: copying value from symbol '%s' to us\n", tp->u.symbol->name);
+         	TPRINT("NodeName/NodeAutoName: copying value from symbol '%s' to us\n", tp->u.symbol->name);
          	copy_sym_tree(tp, tp->u.symbol);
          	tp->name = tp->u.symbol->name;		// for debugging -- not used
 		 	assert(tp->type == tp->u.symbol->type);
@@ -1479,34 +1489,43 @@ exct(Tree tp)
 				 */
 				Tree funcDef = funcSymbol->tree;
 				if (funcDef) {
-					TPRINT("exct NodeCall: func def = %p\n", funcDef);
-					TPRINT("exct NodeCall: exp decl list = %p\n", tp->u.child[0]);
+					TPRINT("NodeCall: func def = %p\n", funcDef);
+					TPRINT("NodeCall: exp decl list = %p\n", tp->u.child[0]);
 					exct(tp->u.child[0]);	// execute arg expression list
 					push_function_stack();
-					++sFunctionCallDepth;
-					TPRINT("exct NodeCall: function call depth => %d\n", sFunctionCallDepth);
 					push_scope();
-					/* The exp list is copied to the symbols for the function's arg list. */
-					exct(funcDef->u.child[1]);
+					int savedLineNo, savedScope, savedCallDepth;
 					Tree temp = NULL;
-					int savedScope = current_scope();
-					int savedCallDepth = sFunctionCallDepth;
-					TPRINT("exct NodeCall: executing %s() block node %p, call depth %d\n", sCalledFunction, funcDef->u.child[2], savedCallDepth);
 					try {
+						/* The exp list is copied to the symbols for the function's arg list. */
+						exct(funcDef->u.child[1]);
+						savedLineNo = yyget_lineno();
+						savedScope = current_scope();
+						++sFunctionCallDepth;
+						savedCallDepth = sFunctionCallDepth;
+						TPRINT("NodeCall(%p): executing %s() block node %p, call depth now %d\n",
+							   tp, sCalledFunction, funcDef->u.child[2], savedCallDepth);
 						temp = exct(funcDef->u.child[2]);
 					}
 					catch (Tree returned) {	// This catches return statements!
-						TPRINT("NodeCall caught return stmt throw - restoring call depth %d\n", savedCallDepth);
+						TPRINT("NodeCall(%p) caught %p return stmt throw - restoring call depth %d\n",
+							   tp, returned, savedCallDepth);
 						temp = returned;
 						sFunctionCallDepth = savedCallDepth;
 						restore_scope(savedScope);
 					}
+					catch(...) {	// Anything else is an error
+						pop_function_stack();
+						--sFunctionCallDepth;
+						throw;
+					}
+					--sFunctionCallDepth;
+					TPRINT("NodeCall: function call depth => %d\n", sFunctionCallDepth);
+					// restore parser line number
+					yyset_lineno(savedLineNo);
 					TPRINT("NodeCall copying def exct results into self\n");
 					copy_tree_tree(tp, temp);
-					pop_scope();
 					pop_function_stack();
-					--sFunctionCallDepth;
-					TPRINT("exct NodeCall: function call depth => %d\n", sFunctionCallDepth);
 				}
 				else {
 					minc_die("'%s' is not a function", funcSymbol->name);
@@ -1533,16 +1552,29 @@ exct(Tree tp)
 		pop_list();
 		break;
       case NodeStore:
+#ifdef ORIGINAL_CODE
 		 /* N.B. Now that symbol lookup is part of tree, this happens in
 		    the NodeName stored as child[0] */
+         TPRINT("NodeStore(%p): evaluate LHS %p (child 0)\n", tp, tp->u.child[0]);
          exct(tp->u.child[0]);
 		 /* evaluate RHS expression */
+         TPRINT("NodeStore(%p): evaluate RHS (child 1)\n", tp);
          exct(tp->u.child[1]);
-         TPRINT("exct NodeStore: copying value from rhs (%p) to lhs's symbol (%p)\n", tp->u.child[1], tp->u.child[0]->u.symbol);
+#else
+		   /* evaluate RHS expression */
+		   TPRINT("NodeStore(%p): evaluate RHS (child 1) FIRST\n", tp);
+		   exct(tp->u.child[1]);
+		   /* N.B. Now that symbol lookup is part of tree, this happens in
+			the NodeName stored as child[0] */
+		   TPRINT("NodeStore(%p): evaluate LHS %p (child 0)\n", tp, tp->u.child[0]);
+		   exct(tp->u.child[0]);
+#endif
+         TPRINT("NodeStore(%p): copying value from RHS (%p) to LHS's symbol (%p)\n",
+				tp, tp->u.child[1], tp->u.child[0]->u.symbol);
 		/* Copy entire MincValue union from expr to id sym and to tp. */
          copy_tree_sym(tp->u.child[0]->u.symbol, tp->u.child[1]);
 		 assert(tp->u.child[0]->u.symbol->type == tp->u.child[1]->type);
-         TPRINT("exct NodeStore: copying value from rhs (%p) to here (%p)\n", tp->u.child[1], tp);
+         TPRINT("NodeStore: copying value from RHS (%p) to here (%p)\n", tp->u.child[1], tp);
          copy_tree_tree(tp, tp->u.child[1]);
          assert(tp->type == tp->u.child[1]->type);
          break;
@@ -1603,7 +1635,7 @@ exct(Tree tp)
 		   sArgListLen = 0;
 		   sArgListIndex = 0;	// reset to walk list
 		   inCalledFunctionArgList = true;
-		   TPRINT("exct NodeArgList: walking function '%s()' arg decl/copy list\n", sCalledFunction);
+		   TPRINT("NodeArgList: walking function '%s()' arg decl/copy list\n", sCalledFunction);
 		   exct(tp->u.child[0]);
 		   inCalledFunctionArgList = false;
          break;
@@ -1638,7 +1670,7 @@ exct(Tree tp)
 				   case MincHandleType:
 				   case MincListType:
 					   if (argSym->type != argValue->type) {
-						   minc_die("%s arg '%s' passed as %s, expecting %s",
+						   minc_die("%s() arg '%s' passed as %s, expecting %s",
 									sCalledFunction, argSym->name, MincTypeName(argValue->type), MincTypeName(argSym->type));
 					   }
 					   else compatible = true;
@@ -1660,7 +1692,7 @@ exct(Tree tp)
          exct(tp->u.child[0]);
          copy_tree_tree(tp, tp->u.child[0]);
          assert(tp->type == tp->u.child[0]->type);
-         TPRINT("NodeRet throwing for return stmt\n");
+         TPRINT("NodeRet throwing %p for return stmt\n", tp);
          throw tp;	// Cool, huh?  Throws this node's body out to function's endpoint!
          break;
       case NodeFuncSeq:
@@ -1700,7 +1732,7 @@ exct(Tree tp)
 		else {
 		   if (sym->scope == current_scope()) {
 			   if (inCalledFunctionArgList) {
-				   minc_die("argument variable '%s' already used", name);
+				   minc_die("%s(): argument variable '%s' already used", sCalledFunction, name);
 			   }
 			   minc_warn("variable '%s' redefined - using existing one", name);
 		   }
@@ -1734,7 +1766,7 @@ exct(Tree tp)
 	   case NodeFuncDef:
 	   {
 		   // Look up symbol for function, and bind this FuncDef node to it.
-		   TPRINT("exct NodeFuncDef: executing lookup node %p\n", tp->u.child[0]);
+		   TPRINT("NodeFuncDef: executing lookup node %p\n", tp->u.child[0]);
 		   exct(tp->u.child[0]);
 		   assert(tp->u.child[0]->u.symbol != NULL);
 		   tp->u.child[0]->u.symbol->tree = tp;
@@ -1817,6 +1849,9 @@ copy_tree_tree(Tree tpdest, Tree tpsrc)
 {
    TPRINT("copy_tree_tree(%p, %p)\n", tpdest, tpsrc);
    copy_value(&tpdest->v, tpdest->type, &tpsrc->v, tpsrc->type);
+	if (tpdest->type != MincVoidType && tpsrc->type != tpdest->type) {
+		minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(tpdest->type), tpdest->name, MincTypeName(tpsrc->type));
+	}
    tpdest->type = tpsrc->type;
 	TPRINT("dest: ");
 	print_value(&tpdest->v, tpdest->type);
@@ -1827,7 +1862,11 @@ static void
 copy_sym_tree(Tree tpdest, Symbol *src)
 {
    TPRINT("copy_sym_tree(%p, %p)\n", tpdest, src);
+	assert(src->scope != -1);	// we accessed a variable after leaving its scope!
    copy_value(&tpdest->v, tpdest->type, &src->v, src->type);
+	if (tpdest->type != MincVoidType && src->type != tpdest->type) {
+		minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(tpdest->type), tpdest->name, MincTypeName(src->type));
+	}
    tpdest->type = src->type;
 	TPRINT("dest: ");
 	print_value(&tpdest->v, tpdest->type);
@@ -1837,7 +1876,11 @@ static void
 copy_tree_sym(Symbol *dest, Tree tpsrc)
 {
    TPRINT("copy_tree_sym(%p, %p)\n", dest, tpsrc);
+	assert(dest->scope != -1);	// we accessed a variable after leaving its scope!
    copy_value(&dest->v, dest->type, &tpsrc->v, tpsrc->type);
+	if (dest->type != MincVoidType && tpsrc->type != dest->type) {
+		minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dest->type), dest->name, MincTypeName(tpsrc->type));
+	}
    dest->type = tpsrc->type;
 }
 
@@ -2022,26 +2065,26 @@ void print_tree(Tree tp)
 
 void print_symbol(struct symbol * s)
 {
-	DPRINT("Symbol %p: '%s' scope: %d type: %d\n", s, s->name, s->scope, s->type);
+	rtcmix_print("Symbol %p: '%s' scope: %d type: %d\n", s, s->name, s->scope, s->type);
 }
 
 void print_value(MincValue *v, MincDataType type)
 {
 	switch (type) {
 		case MincFloatType:
-			DPRINT("%f\n", v->number);
+			TPRINT("%f\n", v->number);
 			break;
 		case MincHandleType:
-			DPRINT("%p\n", v->handle);
+			TPRINT("%p\n", v->handle);
 			break;
 		case MincListType:
-			DPRINT("%p\n", v->list);
+			TPRINT("%p\n", v->list);
 			break;
 		case MincStringType:
-			DPRINT("%s\n", v->string);
+			TPRINT("%s\n", v->string);
 			break;
 		case MincVoidType:
-			DPRINT("void\n");
+			TPRINT("void\n");
 			break;
 	}
 }

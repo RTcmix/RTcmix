@@ -12,10 +12,6 @@
 /* both in utils.c */
 extern int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
 #endif
-#define YYDEBUG 1
-#define MAXTOK_IDENTLIST 200
-#define TRUE 1
-#define FALSE 0
 
 #undef MDEBUG	/* turns on yacc debugging below */
 
@@ -29,6 +25,12 @@ extern int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
 #define MPRINT1(x,y)
 #define MPRINT2(x,y,z)
 #endif
+
+#define YYDEBUG 1
+#define MAXTOK_IDENTLIST 200
+#define TRUE 1
+#define FALSE 0
+#define CHECK_ERROR if (flerror) do { MPRINT("cleaning up after error"); cleanup(1); YYABORT; } while(0)
 
 static Tree		program;
 static int		idcount = 0;
@@ -68,6 +70,7 @@ static Tree go(Tree t1);
 %type  <trees> stml stmt rstmt bexp expl exp str ret bstml
 %type  <trees> fdecl sdecl hdecl ldecl fdef fstml arg argl fargl fundecl
 %type  <str> id
+%error-verbose
 
 %%
 /* program (the "start symbol") */
@@ -459,3 +462,11 @@ double minc_memflush()
 	return 1.0;
 }
 #endif
+
+void reset_parser()
+{
+	set_rtcmix_error(0);
+	flerror = 0;
+	// Reset the line # every time a new score buffer is received
+	yyset_lineno(1);
+}

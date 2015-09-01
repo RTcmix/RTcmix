@@ -157,6 +157,7 @@ typedef struct tree {
    } u;
    MincValue v;
    const char *name;              /* used for function name, symbol name (for lookup) */
+	int lineno;				/* used for error statements */
 } *Tree;
 
 
@@ -213,6 +214,7 @@ void efree(void *mem);
 void clear_elem(MincListElem *);
 void unref_value_list(MincValue *);
 void free_symbols();
+void dump_symbols();
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

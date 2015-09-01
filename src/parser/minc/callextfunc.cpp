@@ -17,7 +17,7 @@ int
 call_external_function(const char *funcname, const MincListElem arglist[],
 	const int nargs, MincListElem *return_value)
 {
-	int i, result, rtcmixargs_array_allocated = 0;
+	int i, result;
 	Arg retval;
 
 	Arg *rtcmixargs = new Arg[nargs];
@@ -59,6 +59,7 @@ call_external_function(const char *funcname, const MincListElem arglist[],
 		default:
 			minc_die("call_external_function: %s(): invalid argument type",
 					 funcname);
+			return -1;
 			break;
 		}
 	}

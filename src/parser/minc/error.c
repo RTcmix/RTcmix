@@ -14,13 +14,11 @@
 #define vsnprintf(str, sz, fmt, args)  vsprintf(str, fmt, args)
 #endif
 
-extern int yylineno;
+extern int yyget_lineno(void);
+static int exit_on_die = 0;
 
 #ifdef EMBEDDED
-static int exit_on_die = 0;
 int rtcmix_error = 0;		// referenced in tree.c
-#else
-static int exit_on_die = 1;
 #endif
 
 // BGG -- these in message.c.  Maybe just #include <ugens.h>?
@@ -70,7 +68,7 @@ minc_warn(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-	rtcmix_warn("parser", "%s (near line %d)\n", buf, yylineno);
+	rtcmix_warn("parser", "%s (near line %d)\n", buf, yyget_lineno());
 }
 
 void
@@ -85,7 +83,7 @@ minc_die(const char *msg, ...)
 
 	set_rtcmix_error(-1);
 
-	rterror("parser", "%s (near line %d)\n", buf, yylineno);
+	rterror("parser", "%s (near line %d)\n", buf, yyget_lineno());
 	
 
    if (exit_on_die)
@@ -104,7 +102,7 @@ minc_internal_error(const char *msg, ...)
 
 	set_rtcmix_error(-1);
 
-	rterror("parser-program", "%s (near line %d)\n", buf, yylineno);
+	rterror("parser-program", "%s (near line %d)\n", buf, yyget_lineno());
 
 	if (exit_on_die)
       exit(EXIT_FAILURE);
@@ -113,7 +111,7 @@ minc_internal_error(const char *msg, ...)
 void
 yyerror(char *msg)
 {
-	rterror("parser-yyerror", "near line %d: %s\n", yylineno, msg);
+	rterror("parser-yyerror", "near line %d: %s\n", yyget_lineno(), msg);
 }
 
 #ifdef EMBEDDED

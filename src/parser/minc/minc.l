@@ -101,7 +101,7 @@ num   {dig}+
 				yyerror( "Includes nested too deeply");
 				exit(1);
 			}
-			saved_lineno[include_stack_ptr] = yylineno;
+			saved_lineno[include_stack_ptr] = yyget_lineno();
 			include_stack[include_stack_ptr++] = YY_CURRENT_BUFFER;
 			yyin = fopen( yytext, "r" );
 			if (!yyin)

@@ -4,7 +4,7 @@
 */
 
 #undef SYMBOL_DEBUG
-#undef DEBUG_MEMORY
+#undef DEBUG_SYM_MEMORY
 
 #ifdef SYMBOL_DEBUG
 #define DEBUG
@@ -37,10 +37,7 @@ static void free_symbol(struct symbol *p);
 #ifdef NOTYET
 static void free_node(struct symbol *p);
 #endif
-#ifdef NOMORE
-static char *dname(int x);
-static void dump(struct symbol *p, FILE * fp);
-#endif
+static void dump(struct symbol *p);
 static int hash(const char *s);
 
 // New Scope Code
@@ -51,6 +48,7 @@ public:
 	Symbol *install(const char *name);
 	Symbol *lookup(const char *name);
 	int		depth() const { return _depth; }
+	void	dump();
 protected:
 	virtual ~Scope();
 private:
@@ -60,7 +58,7 @@ private:
 
 Scope::~Scope()
 {
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_SYM_MEMORY
 	DPRINT("Scope::~Scope(%p)\n", this);
 #endif
 	for (int s = 0; s < HASHSIZE; ++s) {
@@ -85,7 +83,7 @@ Scope::install(const char *name)
 	p->v.number = 0.0;
 	
 #ifdef SYMBOL_DEBUG
-	DPRINT("Scope::install ('%s') => %p [scope %d]\n", name, p, p->scope);
+	DPRINT("Scope::install (%p, '%s') => %p [scope %d]\n", this, name, p, p->scope);
 #endif
 	return p;
 }
@@ -99,8 +97,18 @@ Scope::lookup(const char *name)
 		if (name == p->name)
 			break;
 	
-	DPRINT("Scope::lookup ('%s') [scope %d] => %p\n", name, depth(), p);
+	DPRINT("Scope::lookup (%p, '%s') [scope %d] => %p\n", this, name, depth(), p);
 	return p;
+}
+
+void
+Scope::dump()
+{
+	Symbol *p = NULL;
+	for (int n = 0; n < HASHSIZE; ++n) {
+		for (p = htab[n]; p != NULL; p = p->next)
+			::dump(p);
+	}
 }
 
 typedef std::vector<Scope *>ScopeStack;
@@ -132,8 +140,8 @@ void push_scope()
 {
 	assert(!sScopeStack->empty());
 	int newscope = current_scope() + 1;
-	DPRINT("push_scope() => %d (sScopeStack %p)\n", newscope, sScopeStack);
 	Scope *scope = new Scope(newscope);
+	DPRINT("push_scope() => %d (sScopeStack %p) added scope %p\n", newscope, sScopeStack, scope);
 	scope->ref();
 	sScopeStack->push_back(scope);
 }
@@ -145,6 +153,7 @@ void pop_scope() {
 	sScopeStack->pop_back();
 	assert(!sScopeStack->empty());
 	top->unref();
+	DPRINT("pop_scope done\n");
 }
 
 int current_scope()
@@ -160,6 +169,16 @@ void restore_scope(int scope)
 	while (current_scope() > scope) {
 		Scope *top = sScopeStack->back();
 		sScopeStack->pop_back();
+		top->unref();
+	}
+	DPRINT("restore_scope done\n");
+}
+
+void clear_scope_stack(ScopeStack *stack)
+{
+	while (!stack->empty()) {
+		Scope *top = stack->back();
+		stack->pop_back();
 		top->unref();
 	}
 }
@@ -184,6 +203,7 @@ void push_function_stack()
 	newStack->push_back(globalScope);
 	sScopeStack = newStack;
 	DPRINT("sScopeStack now %p\n", sScopeStack);
+	dump_symbols();
 }
 
 void pop_function_stack()
@@ -192,11 +212,23 @@ void pop_function_stack()
 	assert(sCallStack != NULL);
 	assert(!sCallStack->empty());
 	DPRINT("destroying stack %p\n", sScopeStack);
+	clear_scope_stack(sScopeStack);
 	delete sScopeStack;
 	sScopeStack = sCallStack->back();
 	sCallStack->pop_back();
 	DPRINT("sScopeStack now %p\n", sScopeStack);
 	assert(sScopeStack != NULL);
+	dump_symbols();
+}
+
+void clear_call_stack(CallStack *stack)
+{
+	while (!stack->empty()) {
+		ScopeStack *top = stack->back();
+		stack->pop_back();
+		clear_scope_stack(top);
+		delete top;
+	}
 }
 
 /* Allocate and initialize and new symbol table entry for <name>. */
@@ -219,7 +251,7 @@ symalloc(const char *name)
    p->defined = p->offset = 0;
    p->list = NULL;
 #endif
-#ifdef DEBUG_MEMORY
+#ifdef DEBUG_SYM_MEMORY
 	DPRINT("symalloc() -> %p\n", p);
 #endif
    return p;
@@ -227,7 +259,7 @@ symalloc(const char *name)
 
 static void free_symbol(struct symbol *p)
 {
-#if defined(SYMBOL_DEBUG) || defined(DEBUG_MEMORY)
+#if defined(SYMBOL_DEBUG) || defined(DEBUG_SYM_MEMORY)
 	rtcmix_print("\tfreeing symbol \"%s\" for scope %d (%p)\n", p->name, p->scope, p);
 #endif
 	if (p->type == MincHandleType)
@@ -237,7 +269,9 @@ static void free_symbol(struct symbol *p)
 	}
 	if (p->tree != NULL) {
 		free_tree(p->tree);		// Free the tree associated with this function symbol
+		p->tree = NULL;
 	}
+	p->scope = -1;		// we assert on this elsewhere
 	free(p);
 }
 
@@ -245,19 +279,17 @@ void
 free_symbols()
 {
 #ifdef SYMBOL_DEBUG
-	rtcmix_print("freeing symbol and string tables...\n");
+	rtcmix_print("freeing scopes, symbols and string tables...\n");
 #endif
 	// We should not be stuck in a function call.
 	assert(sCallStack == NULL || sCallStack->size() == 0);
-	// Start at deepest scope (end) and work back to global (begin)
-	while (!sScopeStack->empty()) {
-		Scope *s = sScopeStack->back();
-		sScopeStack->pop_back();
-		s->unref();
-	}
+	delete sCallStack;
+	sCallStack = NULL;
+	clear_scope_stack(sScopeStack);
+	delete sScopeStack;
+	sScopeStack = NULL;
 	for (int s = 0; s < HASHSIZE; ++s)
 	{
-#if 1
 		struct str *str;
 		for (str = stab[s]; str != NULL; ) {
 			struct str *next = str->next;
@@ -266,7 +298,6 @@ free_symbols()
 			str = next;
 		}
 		stab[s] = NULL;
-#endif
 	}
 #ifdef SYMBOL_DEBUG
 	rtcmix_print("done\n");
@@ -365,7 +396,12 @@ Symbol * lookupOrAutodeclare(const char *name)
 	else {
 		DPRINT("\tnot in this scope - trying others\n");
 		sym = lookup(name, AnyLevel);
-		if (sym) { DPRINT("\tfound it\n"); } else { DPRINT("\tnot found - installing\n"); }
+		if (sym) {
+			DPRINT("\tfound it\n");
+		}
+		else {
+			DPRINT("\tnot found - installing\n");
+		}
 		return (sym) ? sym : install(name);		// XXX DOES THIS MATCH OLD BEHAVIOR?
 	}
 }
@@ -399,24 +435,22 @@ strsave(char *str)
    return p->str;
 }
 
-#ifdef NOMORE
+#ifdef SYMBOL_DEBUG
+
 /* Return string representation of type or scope. */
-static char *
+static const char *
 dname(int x)
 {
    static struct tname {
       int val;
-      char *name;
+      const char *name;
    } tnames[] = {
-      { T_INT, "int" },
-      { T_FLOAT, "float" },
-      { T_COND, "conditional" },
-      { T_SCALAR, "scalar" },
-      { T_FUNC, "()" },
-      { T_ARRAY, "[]" },
-      { S_GLOBAL, "global" },
-      { S_PARAM, "parameter" },
-      { S_LOCAL, "local" },
+//      { MincIntType, "int" },
+      { MincFloatType, "float" },
+      { MincHandleType, "handle" },
+      { MincListType, "list" },
+      { MincStringType, "string" },
+      { MincVoidType, "void" },
       { 0, 0 }
    };
    static char buf[30];
@@ -428,31 +462,40 @@ dname(int x)
    sprintf(buf, "<%d>", x);
    return buf;
 }
-
+#endif
 
 /* Print entire symbol table or one entry. */
 static void
-dump(struct symbol *p, FILE * fp)
+dump(struct symbol *p)
 {
-   int i;
+#ifdef SYMBOL_DEBUG
+	DPRINT("        [%p] '%s', type: %s\n", p, p->name, dname(p->type));
+#endif
+}
 
-   if (fp == NULL)
-      fp = stderr;
-   if (p == NULL)
-      for (i = 0; i < HASHSIZE; i++)
-         for (p = htab[i]; p; p = p->next)
-            dump(p, fp);
-   else {
-      fprintf(fp, "%s ", dname(p->type));
-/*
-   fprintf(fp, "%s%s, %sscope=%s, offset=%d\n", p->name,
-   dname(xshape(p->type)), p->defined?"defined, ":"",
-   dname(p->scope), p->offset);
-*/
+void dump_symbols()
+{
+	DPRINT("---- SYMBOL DUMP ----\n");
+	if (sCallStack != NULL) {
+		DPRINT("CallStack %p:\n", sCallStack);
+		for (CallStack::iterator it1 = sCallStack->begin(); it1 != sCallStack->end(); ++it1) {
+			ScopeStack *stack = *it1;
+			DPRINT("  ScopeStack %p:\n", stack);
+			for (ScopeStack::iterator it2 = stack->begin(); it2 != stack->end(); ++it2) {
+				Scope *scope = *it2;
+				DPRINT("    Scope %p [%d]:\n", scope, scope->depth());
+				scope->dump();
    }
 }
-#endif /* NOMORE */
-
+	}
+		DPRINT("ScopeStack %p:\n", sScopeStack);
+		for (ScopeStack::iterator it2 = sScopeStack->begin(); it2 != sScopeStack->end(); ++it2) {
+			Scope *scope = *it2;
+			DPRINT("    Scope %p [%d]:\n", scope, scope->depth());
+			scope->dump();
+		}
+	DPRINT("---- END ----\n");
+}
 
 /* Has error-checking for malloc built in. */
 char *
