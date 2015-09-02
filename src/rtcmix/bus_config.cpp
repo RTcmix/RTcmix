@@ -824,7 +824,7 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
    char		   inbusses[80], outbusses[80];	// for verbose message
 
    if (n_args < 2)
-      die("bus_config", "Wrong number of args.");
+      return die("bus_config", "Wrong number of args.");
 
    bus_slot = new BusSlot(busCount);
    if (bus_slot == NULL)
@@ -893,7 +893,7 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
                the highest output chan number in this bus config.
             */
             if (endchan >= NCHANS) {
-               die("bus_config", "You specified %d output channels in rtsetparams,\n"
+               return die("bus_config", "You specified %d output channels in rtsetparams,\n"
                          "but this bus_config requires %d channels.",
                          NCHANS, endchan + 1);
             }
@@ -995,8 +995,7 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
 
  error:
    free(instname);
-   die("bus_config", "Cannot parse arguments.");
-   return -1.0;
+   return die("bus_config", "Cannot parse arguments.");
 }
 
 void

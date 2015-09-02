@@ -215,8 +215,7 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
                pp[i] = STRING_TO_DOUBLE(theArg);
 			   break;
             default:
-               die(NULL, "%s: arguments must be numbers or strings.", funcname);
-               return -1;
+               return die(NULL, "%s: arguments must be numbers or strings.", funcname);
             }
          }
          /* some functions rely on zero contents of args > nargs */
