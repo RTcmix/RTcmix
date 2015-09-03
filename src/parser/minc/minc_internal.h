@@ -9,23 +9,14 @@
 
 #include <float.h>   /* for epsilon constants */
 #include <maxdispargs.h>
+#include <ugens.h>
 #include "rename.h"
 #include "minc.h"
 
-//#define DEBUG
 #ifdef DEBUG
-   #define DPRINT(msg)                    printf((msg))
-   #define DPRINT1(msg, arg)              printf((msg), (arg))
-   #define DPRINT2(msg, arg1, arg2)       printf((msg), (arg1), (arg2))
-   #define DPRINT3(msg, arg1, arg2, arg3) printf((msg), (arg1), (arg2), (arg3))
-   #define DPRINT4(msg, arg1, arg2, arg3, arg4) \
-                                 printf((msg), (arg1), (arg2), (arg3), (arg4))
+   #define DPRINT(...) rtcmix_print(__VA_ARGS__)
 #else
-   #define DPRINT(msg)
-   #define DPRINT1(msg, arg)
-   #define DPRINT2(msg, arg1, arg2)
-   #define DPRINT3(msg, arg1, arg2, arg3)
-   #define DPRINT4(msg, arg1, arg2, arg3, arg4)
+   #define DPRINT(...)
 #endif
 
 /* important Minc tuning parameters */
@@ -81,21 +72,15 @@ typedef struct _minc_list_elem {
    MincValue val;
 } MincListElem;
 
-
-/* scopes */
-typedef enum {
-   S_LOCAL = 3,
-   S_PARAM = 4,
-   S_GLOBAL = 5,
-   S_RESERVED = 10       /* the smallest number the newscope returns */
-} ScopeType;
+struct tree;
 
 typedef struct symbol {       /* symbol table entries */
    struct symbol *next;       /* next entry on hash chain */
-   ScopeType scope;
+   int scope;
    MincDataType type;         /* type of data represented by symbol */
-   char *name;                /* symbol name */
+   const char *name;          /* symbol name */
    MincValue v;
+   struct tree *tree;		  /* for symbols that are functions, function def */
 #ifdef NOTYET
    short defined;             /* set when function defined */
    short offset;              /* offset in activation frame */
@@ -117,8 +102,14 @@ typedef enum {
    NodeSubscriptWrite,
    NodeOpAssign,
    NodeName,
+   NodeAutoName,
    NodeConstf,
    NodeString,
+   NodeFuncDef,
+   NodeArgList,
+   NodeArgListElem,
+   NodeRet,
+   NodeFuncSeq,
    NodeCall,
    NodeAnd,
    NodeOr,
@@ -130,6 +121,9 @@ typedef enum {
    NodeWhile,
    NodeFor,
    NodeIfElse,
+   NodeDecl,
+   NodeFuncDecl,
+   NodeBlock,
    NodeNoop
 } NodeKind;
 
@@ -159,10 +153,11 @@ typedef struct tree {
       struct tree *child[4];
       Symbol *symbol;
       double number;
-      char *string;
+      const char *string;
    } u;
    MincValue v;
-   char *funcname;              /* for NodeCall only */
+   const char *name;              /* used for function name, symbol name (for lookup) */
+	int lineno;				/* used for error statements */
 } *Tree;
 
 
@@ -184,22 +179,45 @@ MincHandle minc_binop_float_handle(const MincFloat val, const MincHandle handle,
 MincHandle minc_binop_handles(const MincHandle handle1, const MincHandle handle2, OpKind op);
 
 /* error.c */
-void sys_error(char *msg);
+void sys_error(const char *msg);
 void minc_advise(const char *msg, ...);
 void minc_warn(const char *msg, ...);
 void minc_die(const char *msg, ...);
 void minc_internal_error(const char *msg, ...);
 void yyerror(char *msg);
+#ifdef EMBEDDED
+// These are used to determine if parser should bail out (since it never exits)
+void set_rtcmix_error(int err);
+Bool was_rtcmix_error();
+#else
+#define set_rtcmix_error(x)
+#define was_rtcmix_error() 0
+#endif
 
-/* sym.c */
-struct symbol *install(char *name, ScopeType scope);
-struct symbol *lookup(char *name);
+/* sym.cpp */
+#ifdef __cplusplus
+extern "C" {
+#endif /* __cplusplus */
+void push_function_stack();
+void pop_function_stack();
+void push_scope();
+void pop_scope();
+int current_scope();
+void restore_scope(int scope);
+struct symbol *install(const char *name);
+typedef enum LookupType { AnyLevel = 0, GlobalLevel = 1, ThisLevel = 2 } LookupType;
+struct symbol *lookup(const char *name, LookupType lookupType);
+struct symbol * lookupOrAutodeclare(const char *name);
 char *strsave(char *str);
 char *emalloc(long nbytes);
 void efree(void *mem);
 void clear_elem(MincListElem *);
 void unref_value_list(MincValue *);
 void free_symbols();
+void dump_symbols();
+#ifdef __cplusplus
+}
+#endif /* __cplusplus */
 
 /* trees.c */
 Tree tnoop(void);
@@ -214,10 +232,11 @@ Tree temptylistelem(void);
 Tree tsubscriptread(Tree e1, Tree e2);
 Tree tsubscriptwrite(Tree e1, Tree e2, Tree e3);
 Tree topassign(Tree e1, Tree e2, OpKind op);
-Tree tname(Symbol *symbol);
-Tree tstring(char *str);
+Tree tname(const char *symbolName);
+Tree tautoname(const char *symbolName);
+Tree tstring(const char *str);
 Tree tconstf(MincFloat num);
-Tree tcall(Tree args, char *funcname);
+Tree tcall(Tree args, const char *funcname);
 Tree tcand(Tree test1, Tree test2);
 Tree tcor(Tree test1, Tree test2);
 Tree tnot(Tree test1);
@@ -226,17 +245,40 @@ Tree tif(Tree e1, Tree e2);
 Tree tifelse(Tree e1, Tree e2, Tree e3);
 Tree tfor(Tree e1, Tree e2, Tree e3, Tree e4);
 Tree twhile(Tree e1, Tree e2);
+Tree tfdef(Tree e1, Tree e2, Tree e3);
+Tree targlistelem(Tree e1, Tree e2);
+Tree targlist(Tree e1);
+Tree treturn(Tree e1);
+Tree tfuncseq(Tree e1, Tree e2);
+Tree tdecl(const char *name, MincDataType type);
+Tree tfdecl(const char *name, MincDataType type);
+Tree tblock(Tree e1);
 Tree exct(Tree tp);
 void free_tree(Tree tp);
+void print_tree(Tree tp);
+void print_symbol(struct symbol * s);
+void print_value(MincValue *v, MincDataType type);
 
 /* utils.c */
 int is_float_list(const MincList *list);
 MincFloat *float_list_to_array(const MincList *list);
 MincList *array_to_float_list(const MincFloat *array, const int len);
 
-/* y.tab.c */
-void declare(MincDataType type);
-Tree go(Tree t1);
+inline const char *MincTypeName(MincDataType type)
+{
+	switch (type) {
+		case MincVoidType:
+			return "void";
+		case MincFloatType:
+			return "float";
+		case MincStringType:
+			return "string";
+		case MincHandleType:
+			return "handle";
+		case MincListType:
+			return "list";
+	}
+}
 
 #ifdef __cplusplus
 } /* extern "C" */

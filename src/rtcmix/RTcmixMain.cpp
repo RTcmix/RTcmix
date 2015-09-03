@@ -111,6 +111,7 @@ int				RTcmixMain::interrupt_handler_called = 0;
 int				RTcmixMain::signal_handler_called = 0;
 
 int				RTcmixMain::noParse         = 0;
+int				RTcmixMain::parseOnly       = 0;
 int				RTcmixMain::socknew			= 0;
 #ifdef NETAUDIO
 int				RTcmixMain::netplay 		= 0;	// for remote sound network playing
@@ -250,6 +251,9 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
             case 'n':               /* for use in rtInteractive mode only */
                noParse = 1;
                break;
+			case 'P':
+               parseOnly = 1;		/* parser testing */
+               break;
             case 'Q':               /* really quiet */
                Option::reportClipping(false);
                Option::checkPeaks(false); /* (then fall through) */
@@ -262,11 +266,11 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                   exit(1);
                }
                printlevel = atoi(argv[i]);
-               if (printlevel < 0 || printlevel > 5) {
-                  fprintf(stderr, "Print level must be between 0 and 5.\n");
-                  printlevel = 5;
+               if (printlevel < MMP_FATAL || printlevel > MMP_DEBUG) {
+                  fprintf(stderr, "Print level must be between %d and %d.\n", MMP_FATAL, MMP_DEBUG);
+                  printlevel = MMP_DEBUG;
                }
-			      Option::print(printlevel);
+				Option::print(printlevel);
                break;
 #ifdef LINUX
             case 'p':
@@ -428,6 +432,10 @@ RTcmixMain::run()
 		int status = 0;
 #else
       int status = ::parse_score(xargc, xargv, xenv);
+	   if (parseOnly) {
+		   rtcmix_debug(NULL, "RTcmixMain::run: parse-only returned status %d", status);
+		   exit(status);
+	   }
 #endif
 #ifdef PYTHON
       /* Have to reinstall this after running Python interpreter. (Why?) */

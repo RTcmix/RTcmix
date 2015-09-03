@@ -17,7 +17,7 @@ int
 call_external_function(const char *funcname, const MincListElem arglist[],
 	const int nargs, MincListElem *return_value)
 {
-	int i, result, rtcmixargs_array_allocated = 0;
+	int i, result;
 	Arg retval;
 
 	Arg *rtcmixargs = new Arg[nargs];
@@ -59,6 +59,7 @@ call_external_function(const char *funcname, const MincListElem arglist[],
 		default:
 			minc_die("call_external_function: %s(): invalid argument type",
 					 funcname);
+			return -1;
 			break;
 		}
 	}
@@ -177,7 +178,7 @@ PField *createBinopPField(PField *pfield1, PField *pfield2, OpKind op)
 MincHandle minc_binop_handle_float(const MincHandle mhandle,
 	const MincFloat val, OpKind op)
 {
-	DPRINT2("minc_binop_handle_float (handle=%p, val=%f\n", mhandle, val);
+	DPRINT("minc_binop_handle_float (handle=%p, val=%f\n", mhandle, val);
 
 	// Extract PField from MincHandle.
 	Handle handle = (Handle) mhandle;
@@ -196,7 +197,7 @@ MincHandle minc_binop_handle_float(const MincHandle mhandle,
 MincHandle minc_binop_float_handle(const MincFloat val,
 	const MincHandle mhandle, OpKind op)
 {
-	DPRINT2("minc_binop_float_handle (val=%f, handle=%p\n", val, mhandle);
+	DPRINT("minc_binop_float_handle (val=%f, handle=%p\n", val, mhandle);
 
 	// Create ConstPField for MincFloat.
 	PField *pfield1 = new ConstPField(val);
@@ -215,7 +216,7 @@ MincHandle minc_binop_float_handle(const MincFloat val,
 MincHandle minc_binop_handles(const MincHandle mhandle1,
 	const MincHandle mhandle2, OpKind op)
 {
-	DPRINT2("minc_binop_handles (handle1=%p, handle2=%p\n", mhandle1, mhandle2);
+	DPRINT("minc_binop_handles (handle1=%p, handle2=%p\n", mhandle1, mhandle2);
 
 	// Extract PFields from MincHandles
 

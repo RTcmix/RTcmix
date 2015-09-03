@@ -12,6 +12,8 @@
 
 /* This file holds the intermediate tree representation. */
 
+#undef DEBUG
+
 #include "minc_internal.h"
 #include "handle.h"
 #include <stdio.h>
@@ -20,6 +22,10 @@
 #include <math.h>
 #include <assert.h>
 
+extern "C" {
+	void yyset_lineno(int line_number);
+	int yyget_lineno(void);
+};
 
 /* We maintain a stack of MAXSTACK lists, which we access when forming 
    user lists (i.e., {1, 2, "foo"}) and function argument lists.  Each
@@ -28,15 +34,63 @@
    a type and a value, which is encoded in a MincValue union.  Nested lists
    and lists of mixed types are possible.
 */
-static MincListElem *list;
-static int list_len;
+static MincListElem *sMincList;
+static int sMincListLen;
 static MincListElem *list_stack[MAXSTACK];
 static int list_len_stack[MAXSTACK];
 static int list_stack_ptr;
 
-#ifdef DEBUG
+static int sArgListLen;		// number of arguments passed to a user-declared function
+static int sArgListIndex;	// used to walk passed-in args for user-declared functions
+
+static bool inCalledFunctionArgList = false;
+static const char *sCalledFunction;
+static int sFunctionCallDepth = 0;	// level of actively-executing function calls
+
+static bool inFunctionCall() { return sFunctionCallDepth > 0; }
+
+#undef DEBUG_TRACE
+#if defined(DEBUG_TRACE)
+class Trace {
+public:
+	Trace(const char *func) : mFunc(func) {
+		rtcmix_print("%s%s -->\n", spaces, mFunc);
+		++sTraceDepth;
+		for (int n =0; n<sTraceDepth*3; ++n) { spaces[n] = ' '; }
+		spaces[sTraceDepth*3] = '\0';
+	}
+	static char *getBuf() { return sMsgbuf; }
+	static void printBuf() { rtcmix_print("%s%s", spaces, sMsgbuf); }
+	~Trace() {
+		 --sTraceDepth;
+		for (int n =0; n<sTraceDepth*3; ++n) { spaces[n] = ' '; }
+		spaces[sTraceDepth*3] = '\0';
+		rtcmix_print("%s<-- %s\n", spaces, mFunc);
+	}
+private:
+	static char sMsgbuf[];
+	const char *mFunc;
+	static int sTraceDepth;
+	static char spaces[];
+};
+	
+char Trace::sMsgbuf[256];
+int Trace::sTraceDepth = 0;
+char Trace::spaces[128];
+
+#define ENTER() Trace __trace__(__FUNCTION__)
+#define TPRINT(...) do { snprintf(Trace::getBuf(), 256, __VA_ARGS__); Trace::printBuf(); } while(0)
+#else
+#define ENTER()
+#define TPRINT(...)
+#endif
+
+#undef DEBUG_MEMORY
+#ifdef DEBUG_MEMORY
 static int numTrees = 0;
-static char *s_NodeKinds[] = {
+#endif
+
+static const char *s_NodeKinds[] = {
    "NodeZero",
    "NodeSeq",
    "NodeStore",
@@ -47,8 +101,14 @@ static char *s_NodeKinds[] = {
    "NodeSubscriptWrite",
    "NodeOpAssign",
    "NodeName",
+   "NodeAutoName",
    "NodeConstf",
    "NodeString",
+   "NodeFuncDef",
+   "NodeArgList",
+   "NodeArgListElem",
+   "NodeRet",
+   "NodeFuncSeq",
    "NodeCall",
    "NodeAnd",
    "NodeOr",
@@ -60,7 +120,28 @@ static char *s_NodeKinds[] = {
    "NodeWhile",
    "NodeFor",
    "NodeIfElse",
+   "NodeDecl",
+   "NodeFuncDecl",
+   "NodeBlock",
    "NodeNoop"
+};
+
+static const char *s_OpKinds[] = {
+	"ILLEGAL",
+	"ILLEGAL",
+	"+",
+	"-",
+	"*",
+	"/",
+	"%",
+	"^",
+	"-",
+	"==",
+	"!=",
+	"<",
+	">",
+	"<=",
+	">="
 };
 
 static const char *printNodeKind(NodeKind k)
@@ -68,7 +149,10 @@ static const char *printNodeKind(NodeKind k)
 	return s_NodeKinds[k];
 }
 
-#endif
+static const char *printOpKind(OpKind k)
+{
+	return s_OpKinds[k];
+}
 
 /* prototypes for local functions */
 static int cmp(MincFloat f1, MincFloat f2);
@@ -109,6 +193,7 @@ cmp(MincFloat f1, MincFloat f2)
 static MincList *
 newList(int len)
 {
+	ENTER();
    MincList *list = (MincList *) emalloc(sizeof(MincList));
    if (list) {
 	  list->len = len;
@@ -125,7 +210,7 @@ newList(int len)
 	  }
 	  else
          list->data = NULL;
-      DPRINT2("newList: %p alloc'd at len %d\n", list, list_len);
+      TPRINT("newList: %p alloc'd at len %d\n", list, sMincListLen);
    }
    return list;
 }
@@ -161,10 +246,11 @@ node(OpKind op, NodeKind kind)
    tp->u.child[2] = NULL;
    tp->u.child[3] = NULL;
    tp->v.list = NULL;
-   tp->funcname = NULL;
-#ifdef DEBUG
+   tp->name = NULL;
+   tp->lineno = yyget_lineno();
+#ifdef DEBUG_MEMORY
 	++numTrees;
-   DPRINT1("[%d trees in existence]\n", numTrees);
+   TPRINT("[%d trees in existence]\n", numTrees);
 #endif
    return tp;
 }
@@ -175,7 +261,7 @@ tnoop()
 {
    Tree tp = node(OpFree, NodeNoop);
 
-   DPRINT1("tnoop => %p\n", tp);
+   TPRINT("tnoop => NodeNoop %p\n", tp);
    return tp;
 }
 
@@ -190,7 +276,7 @@ tseq(Tree e1, Tree e2)
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
 
-   DPRINT3("tseq (%p, %p) => %p\n", e1, e2, tp);
+   TPRINT("tseq (%p, %p) => NodeSeq %p\n", e1, e2, tp);
    return tp;
 }
 
@@ -205,7 +291,7 @@ top(OpKind op, Tree e1, Tree e2)
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
 
-   DPRINT4("top (%d, %p, %p) => %p\n", op, e1, e2, tp);
+   TPRINT("top (%d, %p, %p) => NodeOperator %p\n", op, e1, e2, tp);
    return tp;
 }
 
@@ -219,7 +305,7 @@ tunop(OpKind op, Tree e1)
 
    tp->u.child[0] = e1;
 
-   DPRINT3("tunop (%d, %p) => %p\n", op, e1, tp);
+   TPRINT("tunop (%d, %p) => NodeUnaryOperator %p\n", op, e1, tp);
    return tp;
 }
 
@@ -235,7 +321,7 @@ tstore(Tree e1, Tree e2)
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
 
-   DPRINT3("tstore (%p, %p) => %p\n", e1, e2, tp);
+   TPRINT("tstore (%p, %p) => NodeStore %p\n", e1, e2, tp);
    return tp;
 }
 
@@ -251,30 +337,48 @@ topassign(Tree e1, Tree e2, OpKind op)
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
 
-   DPRINT4("topassign, op=%d (%p, %p) => %p\n", op, e1, e2, tp);
+   TPRINT("topassign, op=%d (%p, %p) => NodeOpAssign %p\n", op, e1, e2, tp);
    return tp;
 }
 
 
-/* converts symbol table entry into tree
+/* looks up symbol name and get the symbol.
+   converts symbol table entry into tree
    or initialize tree node to a symbol entry
 */
 Tree
-tname(Symbol *symbol)
+tname(const char *symbolName)
 {
    Tree tp = node(OpFree, NodeName);
    if (tp == NULL)
       return NULL;
 
-   tp->u.symbol = symbol;
+	tp->name = symbolName;
 
-   DPRINT2("tname ('%s') => %p\n", symbol->name, tp);
+   TPRINT("tname ('%s') => NodeName %p\n", symbolName, tp);
    return tp;
 }
 
+/* looks up symbol name and get the symbol, and auto-declares it if not found
+ 	converts symbol table entry into tree
+ 	or initialize tree node to a symbol entry
+ */
 
 Tree
-tstring(char *str)
+tautoname(const char *symbolName)
+{
+	Tree tp = node(OpFree, NodeAutoName);
+	if (tp == NULL)
+		return NULL;
+	
+	tp->name = symbolName;
+	
+	TPRINT("tautoname ('%s') => NodeAutoName %p\n", symbolName, tp);
+	return tp;
+}
+
+Tree
+tstring(const char *str)
 {
    Tree tp = node(OpFree, NodeString);
    if (tp == NULL)
@@ -282,7 +386,7 @@ tstring(char *str)
 
    tp->u.string = str;
 
-   DPRINT2("tstring ('%s') => %p\n", str, tp);
+   TPRINT("tstring ('%s') => NodeString %p\n", str, tp);
    return tp;
 }
 
@@ -296,22 +400,91 @@ tconstf(MincFloat num)
 
    tp->u.number = num;
 
-   DPRINT2("tconstf (%f) => %p\n", num, tp);
+   TPRINT("tconstf (%f) => NodeConstf %p\n", num, tp);
    return tp;
 }
 
+Tree
+targlistelem(Tree e1, Tree e2)
+{
+	Tree tp = node(OpFree, NodeArgListElem);
+	if (tp == NULL)
+		return NULL;
+	
+	tp->u.child[0] = e1;	// previous NodeArgListElem
+	tp->u.child[1] = e2;	// payload (NodeDecl for arg)
+	
+	TPRINT("targlistelem (%p, %p) => NodeArgListElem %p\n", e1, e2, tp);
+	return tp;
+}
 
 Tree
-tcall(Tree args, char *funcname)
+targlist(Tree e1)
+{
+	Tree tp = node(OpFree, NodeArgList);
+	if (tp == NULL)
+		return NULL;
+	
+	tp->u.child[0] = e1;	// tail of NodeArgListElem linked list
+	
+	TPRINT("targlist (%p) => NodeArgList %p\n", e1, tp);
+	return tp;
+}
+
+Tree
+treturn(Tree e1)
+{
+	Tree tp = node(OpFree, NodeRet);
+	if (tp == NULL)
+		return NULL;
+	
+	tp->u.child[0] = e1;	// Node containing RHS for return
+	
+	TPRINT("treturn (%p) => NodeRet %p\n", e1, tp);
+	return tp;
+}
+
+Tree tfuncseq(Tree e1, Tree e2)
+{
+	Tree tp = node(OpFree, NodeFuncSeq);
+	if (tp == NULL)
+		return NULL;
+	
+	tp->u.child[0] = e1;
+	tp->u.child[1] = e2;
+	
+	TPRINT("tfuncseq (%p, %p) => NodeFuncSeq %p\n", e1, e2, tp);
+	return tp;
+}
+
+Tree
+tfdef(Tree e1, Tree e2, Tree e3)
+{
+	Tree tp = node(OpFree, NodeFuncDef);
+	if (tp == NULL)
+		return NULL;
+	
+	tp->u.child[0] = e1;	// Lookup node
+	tp->u.child[1] = e2;	// NodeArgList (argument symbol decls)
+	tp->u.child[2] = e3;	// NodeFuncSeq function body (statements), which returns value
+							// Right now, this last is handed to the Symbol and
+							// then NULL'd here in exct()
+	
+	TPRINT("tfdef (%p, %p, %p) => NodeFuncDef %p\n", e1, e2, e3, tp);
+	return tp;
+}
+
+Tree
+tcall(Tree args, const char *funcname)
 {
    Tree tp = node(OpFree, NodeCall);
    if (tp == NULL)
       return NULL;
 
-   tp->funcname = funcname;
+   tp->name = funcname;
    tp->u.child[0] = args;
 
-   DPRINT3("tcall ('%s', %p) => %p\n", funcname, args, tp);
+   TPRINT("tcall (%p, '%s') => NodeCall %p\n", args, funcname, tp);
    return tp;
 }
 
@@ -326,7 +499,7 @@ tcand(Tree test1, Tree test2)
    tp->u.child[0] = test1;
    tp->u.child[1] = test2;
 
-   DPRINT3("tcand (%p, %p) => %p\n", test1, test2, tp);
+   TPRINT("tcand (%p, %p) => NodeAnd %p\n", test1, test2, tp);
    return tp;
 }
 
@@ -341,7 +514,7 @@ tcor(Tree test1, Tree test2)
    tp->u.child[0] = test1;
    tp->u.child[1] = test2;
 
-   DPRINT3("tcor (%p, %p) => %p\n", test1, test2, tp);
+   TPRINT("tcor (%p, %p) => NodeOr %p\n", test1, test2, tp);
    return tp;
 }
 
@@ -355,7 +528,7 @@ tnot(Tree test1)
 
    tp->u.child[0] = test1;
 
-   DPRINT2("tnot (%p) => %p\n", test1, tp);
+   TPRINT("tnot (%p) => NodeNot %p\n", test1, tp);
    return tp;
 }
 
@@ -370,7 +543,7 @@ trel(OpKind op, Tree e1, Tree e2)
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
 
-   DPRINT4("trel (%d, %p, %p) => %p\n", op, e1, e2, tp);
+   TPRINT("trel (%d, %p, %p) => NodeRelation %p\n", op, e1, e2, tp);
    return tp;
 }
 
@@ -387,9 +560,9 @@ tlist(Tree e1)
    if (tp == NULL)
       return NULL;
 
-   tp->u.child[0] = e1;
+   tp->u.child[0] = e1;		// tail of NodeListElem linked list
 
-   DPRINT2("tlist (%p) => %p\n", e1, tp);
+   TPRINT("tlist (%p) => NodeList %p\n", e1, tp);
    return tp;
 }
 
@@ -401,10 +574,10 @@ tlistelem(Tree e1, Tree e2)
    if (tp == NULL)
       return NULL;
 
-   tp->u.child[0] = e1;
-   tp->u.child[1] = e2;
+   tp->u.child[0] = e1;		// previous elem
+   tp->u.child[1] = e2;		// payload (contents of exp)
 
-   DPRINT3("tlistelem (%p, %p) => %p\n", e1, e2, tp);
+   TPRINT("tlistelem (%p, %p) => NodeListElem %p\n", e1, e2, tp);
    return tp;
 }
 
@@ -414,7 +587,7 @@ temptylistelem()
 {
    Tree tp = node(OpFree, NodeEmptyListElem);
 
-   DPRINT1("temptylistelem => %p\n", tp);
+   TPRINT("temptylistelem => NodeEmptyListElem %p\n", tp);
    return tp;
 }
 
@@ -429,7 +602,7 @@ tsubscriptread(Tree e1, Tree e2)
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
 
-   DPRINT3("tsubscriptread (%p, %p) => %p\n", e1, e2, tp);
+   TPRINT("tsubscriptread (%p, %p) => NodeSubscriptRead %p\n", e1, e2, tp);
    return tp;
 }
 
@@ -445,7 +618,7 @@ tsubscriptwrite(Tree e1, Tree e2, Tree e3)
    tp->u.child[1] = e2;
    tp->u.child[2] = e3;
 
-   DPRINT4("tsubscriptwrite (%p, %p, %p) => %p\n", e1, e2, e3, tp);
+   TPRINT("tsubscriptwrite (%p, %p, %p) => NodeSubscriptWrite %p\n", e1, e2, e3, tp);
    return tp;
 }
 
@@ -460,7 +633,7 @@ tif(Tree e1, Tree e2)
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
 
-   DPRINT3("tif (%p, %p) => %p\n", e1, e2, tp);
+   TPRINT("tif (%p, %p) => NodeIf %p\n", e1, e2, tp);
    return tp;
 }
 
@@ -476,7 +649,7 @@ tifelse(Tree e1, Tree e2, Tree e3)
    tp->u.child[1] = e2;
    tp->u.child[2] = e3;
 
-   DPRINT4("tifelse (%p, %p, %p) => %p\n", e1, e2, e3, tp);
+   TPRINT("tifelse (%p, %p, %p) => NodeIfElse %p\n", e1, e2, e3, tp);
    return tp;
 }
 
@@ -493,7 +666,7 @@ tfor(Tree e1, Tree e2, Tree e3, Tree e4)
    tp->u.child[2] = e3;
    tp->u.child[3] = e4;
 
-   DPRINT4("tfor (%p, %p, %p, <e4>) => %p\n", e1, e2, e3, tp);
+   TPRINT("tfor (%p, %p, %p, <e4>) => NodeFor %p\n", e1, e2, e3, tp);
    return tp;
 }
 
@@ -508,10 +681,44 @@ twhile(Tree e1, Tree e2)
    tp->u.child[0] = e1;
    tp->u.child[1] = e2;
 
-   DPRINT3("twhile (%p, %p) => %p\n", e1, e2, tp);
+   TPRINT("twhile (%p, %p) => NodeWhile %p\n", e1, e2, tp);
    return tp;
 }
 
+Tree tdecl(const char *name, MincDataType type)
+{
+	Tree tp = node(OpFree, NodeDecl);
+	if (tp == NULL)
+		return NULL;
+	tp->name = name;
+	tp->type = type;
+
+	TPRINT("tdecl ('%s') => NodeDecl %p\n", name, tp);
+	return tp;
+}
+
+Tree tfdecl(const char *name, MincDataType type)
+{
+	Tree tp = node(OpFree, NodeFuncDecl);
+	if (tp == NULL)
+		return NULL;
+	tp->name = name;
+	tp->type = type;
+	
+	TPRINT("tfdecl ('%s') => NodeFuncDecl %p\n", name, tp);
+	return tp;
+}
+
+Tree tblock(Tree e1)
+{
+	Tree tp = node(OpFree, NodeBlock);
+	if (tp == NULL)
+		return NULL;
+
+	tp->u.child[0] = e1;
+	TPRINT("tblock (%p) => NodeBlock %p\n", e1, tp);
+	return tp;
+}
 
 /* ========================================================================== */
 /* Operators */
@@ -520,8 +727,9 @@ twhile(Tree e1, Tree e2)
 static void
 do_op_string(Tree tp, const char *str1, const char *str2, OpKind op)
 {
+	ENTER();
    char *s;
-   int   len;
+   unsigned long   len;
 
    switch (op) {
       case OpPlus:   /* concatenate */
@@ -554,6 +762,7 @@ do_op_string(Tree tp, const char *str1, const char *str2, OpKind op)
 static void
 do_op_num(Tree tp, const MincFloat val1, const MincFloat val2, OpKind op)
 {
+	ENTER();
    switch (op) {
       case OpPlus:
          tp->v.number = val1 + val2;
@@ -589,6 +798,7 @@ static void
 do_op_handle_num(Tree tp, const MincHandle val1, const MincFloat val2,
       OpKind op)
 {
+	ENTER();
    switch (op) {
       case OpPlus:
       case OpMinus:
@@ -616,6 +826,7 @@ static void
 do_op_num_handle(Tree tp, const MincFloat val1, const MincHandle val2,
       OpKind op)
 {
+	ENTER();
    switch (op) {
       case OpPlus:
       case OpMinus:
@@ -641,6 +852,7 @@ static void
 do_op_handle_handle(Tree tp, const MincHandle val1, const MincHandle val2,
       OpKind op)
 {
+	ENTER();
 	switch (op) {
 	case OpPlus:
 	case OpMinus:
@@ -669,6 +881,7 @@ do_op_handle_handle(Tree tp, const MincHandle val1, const MincHandle val2,
 static void
 do_op_list_iterate(Tree tp, Tree child, const MincFloat val, const OpKind op)
 {
+	ENTER();
    int i;
    MincListElem *dest;
    const MincList *srcList = child->v.list;
@@ -755,7 +968,7 @@ do_op_list_iterate(Tree tp, Tree child, const MincFloat val, const OpKind op)
    tp->type = MincListType;
    assert(tp->v.list == NULL);
    tp->v.list = destList;
-   DPRINT3("list %p refcount %d -> %d\n", destList, destList->refcount, destList->refcount+1);
+   TPRINT("do_op_list_iterate: list %p refcount %d -> %d\n", destList, destList->refcount, destList->refcount+1);
    ++destList->refcount;
 }
 
@@ -764,6 +977,7 @@ do_op_list_iterate(Tree tp, Tree child, const MincFloat val, const OpKind op)
 static void
 exct_operator(Tree tp, OpKind op)
 {
+	ENTER();
    Tree child0, child1;
 
    child0 = exct(tp->u.child[0]);
@@ -794,7 +1008,7 @@ exct_operator(Tree tp, OpKind op)
                   do_op_list_iterate(tp, child1, child0->v.number, op);
                break;
             default:
-               minc_internal_error("exct_operator: invalid type");
+               minc_internal_error("operator %s: invalid rhs type: %s", printOpKind(op), MincTypeName(child1->type));
                break;
          }
          break;
@@ -817,7 +1031,7 @@ exct_operator(Tree tp, OpKind op)
                minc_warn("can't operate on a string and a list");
                break;
             default:
-               minc_internal_error("exct_operator: invalid type");
+			   minc_internal_error("operator %s: invalid rhs type: %s", printOpKind(op), MincTypeName(child1->type));
                break;
          }
          break;
@@ -836,7 +1050,7 @@ exct_operator(Tree tp, OpKind op)
                minc_warn("can't operate on a list and a handle");
                break;
             default:
-               minc_internal_error("exct_operator: invalid type");
+               minc_internal_error("operator %s: invalid rhs type: %s", printOpKind(op), MincTypeName(child1->type));
                break;
          }
          break;
@@ -855,12 +1069,12 @@ exct_operator(Tree tp, OpKind op)
                minc_warn("can't operate on two lists");
                break;
             default:
-               minc_internal_error("exct_operator: invalid type");
+			   minc_internal_error("operator %s: invalid rhs type: %s", printOpKind(op), MincTypeName(child1->type));
                break;
          }
          break;
       default:
-         minc_internal_error("exct_operator: invalid type");
+		 minc_internal_error("operator %s: invalid lhs type: %s", printOpKind(op), MincTypeName(child0->type));
          break;
    }
 }
@@ -870,13 +1084,14 @@ exct_operator(Tree tp, OpKind op)
 static void
 exct_relation(Tree tp)
 {
+	ENTER();
    Tree tp0 = exct(tp->u.child[0]);
    Tree tp1 = exct(tp->u.child[1]);
 
    tp->type = MincFloatType;
 
    if (tp0->type != tp1->type) {
-      minc_warn("attempt to compare objects having different types");
+      minc_warn("operator %s: attempt to compare variables having different types", printOpKind(tp->op));
       tp->v.number = 0.0;
       return;
    }
@@ -978,7 +1193,7 @@ exct_relation(Tree tp)
    }
    return;
 unsupported_type:
-   minc_internal_error("can't compare this type of object");
+   minc_internal_error("operator %s: can't compare this type of object", printOpKind(tp->op));
 }
 
 
@@ -986,7 +1201,8 @@ unsupported_type:
 static void
 exct_opassign(Tree tp, OpKind op)
 {
-   Tree tp0 = tp->u.child[0];
+	ENTER();
+   Tree tp0 = exct(tp->u.child[0]);
    Tree tp1 = exct(tp->u.child[1]);
 
    if (tp0->u.symbol->type != MincFloatType || tp1->type != MincFloatType) {
@@ -1027,6 +1243,8 @@ exct_opassign(Tree tp, OpKind op)
 static void
 exct_subscript_read(Tree tp)
 {
+	ENTER();
+	exct(tp->u.child[0]);         /* lookup target */
    exct(tp->u.child[1]);
    if (tp->u.child[1]->type == MincFloatType) {
       if (tp->u.child[0]->u.symbol->type == MincListType) {
@@ -1083,6 +1301,8 @@ exct_subscript_read(Tree tp)
 static void
 exct_subscript_write(Tree tp)
 {
+	ENTER();
+   exct(tp->u.child[0]);         /* lookup target */
    exct(tp->u.child[1]);         /* index */
    exct(tp->u.child[2]);         /* expression to store */
    if (tp->u.child[1]->type == MincFloatType) {
@@ -1111,12 +1331,12 @@ exct_subscript_write(Tree tp)
 				tp->u.child[0]->u.symbol->v.list = theList = newList(len);
 			else
 				resizeList(theList, len);
-			DPRINT2("exct_subscript_write: MincList %p expanded to len %d\n",
+			TPRINT("exct_subscript_write: MincList %p expanded to len %d\n",
 					theList->data, len);
 			// Ref the list if just allocated.
 			if (theList->refcount == 0)
 				theList->refcount = 1;
-  			 DPRINT1("list %p refcount = 1\n", theList);
+  			 TPRINT("list %p refcount = 1\n", theList);
          }
          copy_tree_listelem(&theList->data[index], tp->u.child[2]);
 		 assert(theList->data[index].type == tp->u.child[2]->type);
@@ -1166,130 +1386,209 @@ check_list_count()
 Tree
 exct(Tree tp)
 {
-   if (tp == NULL)
+   if (tp == NULL || was_rtcmix_error())
       return NULL;
-
+	ENTER();
+	TPRINT("%s: tp=%p\n", printNodeKind(tp->kind), tp);
+	if (inFunctionCall() && tp->lineno > 0) {
+		yyset_lineno(tp->lineno);
+	}
    switch (tp->kind) {
       case NodeConstf:
-         DPRINT1("exct (enter NodeConstf, tp=%p)\n", tp);
          tp->type = MincFloatType;
          tp->v.number = tp->u.number;
-         DPRINT1("exct (exit NodeConstf, tp=%p)\n", tp);
          break;
       case NodeString:
-         DPRINT1("exct (enter NodeString, tp=%p)\n", tp);
          tp->type = MincStringType;
          tp->v.string = tp->u.string;
-         DPRINT1("exct (exit NodeString, tp=%p)\n", tp);
          break;
       case NodeName:
-         DPRINT1("exct (enter NodeName, tp=%p)\n", tp);
-         /* assign what's in the symbol into tree's value field */
-         copy_sym_tree(tp, tp->u.symbol);
-		 assert(tp->type == tp->u.symbol->type);
-         DPRINT1("exct (exit NodeName, tp=%p)\n", tp);
+      case NodeAutoName:
+         /* look up the symbol */
+		   if (tp->kind == NodeName) {
+			   tp->u.symbol = lookup(tp->name, AnyLevel);
+		   }
+		   else if (tp->kind == NodeAutoName) {
+			   tp->u.symbol = lookupOrAutodeclare(tp->name);
+		   }
+		   else {
+			   minc_internal_error("NodeName/NodeAutoName exct: illegal node kind: %d", tp->kind);
+		   }
+         if (tp->u.symbol) {
+			TPRINT("NodeName/NodeAutoName: symbol %p\n", tp->u.symbol);
+        	 /* also assign the symbol's value into tree's value field */
+         	TPRINT("NodeName/NodeAutoName: copying value from symbol '%s' to us\n", tp->u.symbol->name);
+         	copy_sym_tree(tp, tp->u.symbol);
+         	tp->name = tp->u.symbol->name;		// for debugging -- not used
+		 	assert(tp->type == tp->u.symbol->type);
+		 }
+		 else {
+			 // FIXME: install id w/ value of 0, then warn??
+			 minc_die("'%s' is not declared", tp->name);
+		 }
          break;
       case NodeListElem:
-         DPRINT1("exct (enter NodeListElem, tp=%p)\n", tp);
+         TPRINT("NodeListElem exct'ing Tree link %p\n", tp->u.child[0]);
          exct(tp->u.child[0]);
-         if (list_len == MAXDISPARGS)
+		 if (sMincListLen == MAXDISPARGS) {
             minc_die("exceeded maximum number of items for a list");
-         {
+		 }
+         else {
+			TPRINT("NodeListElem %p evaluating payload child Tree %p\n", tp, tp->u.child[1]);
             Tree tmp = exct(tp->u.child[1]);
             /* Copy entire MincValue union from expr to tp and to stack. */
+			TPRINT("NodeListElem %p copying child value into self and stack\n", tp);
             copy_tree_tree(tp, tmp);
-            copy_tree_listelem(&list[list_len], tmp);
-			assert(list[list_len].type == tmp->type);
-            list_len++;
+            copy_tree_listelem(&sMincList[sMincListLen], tmp);
+			assert(sMincList[sMincListLen].type == tmp->type);
+            sMincListLen++;
+			 TPRINT("NodeListElem: list at level %d now len %d\n", list_stack_ptr, sMincListLen);
          }
-         DPRINT1("exct (exit NodeListElem, tp=%p)\n", tp);
          break;
       case NodeEmptyListElem:
-         DPRINT1("exct (enter NodeEmptyListElem, tp=%p)\n", tp);
          /* do nothing */
-         DPRINT("exct (exit NodeEmptyListElem)\n");
          break;
       case NodeList:
-         DPRINT1("exct (enter NodeList, tp=%p)\n", tp);
          push_list();
-         exct(tp->u.child[0]);     /* NB: increments list_len */
+         exct(tp->u.child[0]);     /* NB: increments sMincListLen */
          {
 		    MincList *theList;
 			int i;
             if (check_list_count() < 0)
                return tp;
-			theList = newList(list_len);
+			theList = newList(sMincListLen);
             if (theList == NULL)
                return NULL;
 			if (tp->type == MincListType && tp->v.list != NULL)
 			   unref_value_list(&tp->v);
             tp->type = MincListType;
             tp->v.list = theList;
-  			DPRINT1("list assigned to tree %p\n", tp);
+  			TPRINT("MincList %p assigned to self\n", theList);
 			theList->refcount = 1;
-  			DPRINT1("list %p refcount = 1\n", theList);
+  			TPRINT("MincList refcount = 1\n");
 			// Copy from stack list into tree list.
-			for (i = 0; i < list_len; ++i)
-            	copy_listelem_elem(&theList->data[i], &list[i]);
+			for (i = 0; i < sMincListLen; ++i)
+            	copy_listelem_elem(&theList->data[i], &sMincList[i]);
          }
          pop_list();
-         DPRINT1("exct (exit NodeList, tp=%p)\n", tp);
          break;
       case NodeSubscriptRead:
-         DPRINT1("exct (enter NodeSubscriptRead, tp=%p)\n", tp);
          exct_subscript_read(tp);
-         DPRINT1("exct (exit NodeSubscriptRead, tp=%p)\n", tp);
          break;
       case NodeSubscriptWrite:
-         DPRINT1("exct (enter NodeSubscriptWrite, tp=%p)\n", tp);
          exct_subscript_write(tp);
-         DPRINT1("exct (exit NodeSubscriptWrite, tp=%p)\n", tp);
          break;
       case NodeCall:
-         DPRINT1("exct (enter NodeCall, tp=%p)\n", tp);
-         push_list();
-         exct(tp->u.child[0]);
-         {
-            MincListElem retval;
-            int result = call_builtin_function(tp->funcname, list, list_len,
-                                                                     &retval);
-            if (result < 0)
-               result = call_external_function(tp->funcname, list, list_len,
-                                                                     &retval);
-              copy_listelem_tree(tp, &retval);
-			  assert(tp->type == retval.type);
-			  clear_elem(&retval);
-         }
-         pop_list();
-         DPRINT1("exct (exit NodeCall, tp=%p)\n", tp);
-         break;
+		push_list();
+		{
+			Symbol *funcSymbol = lookup(tp->name, GlobalLevel);
+			if (funcSymbol) {
+				sCalledFunction = tp->name;
+				/* The function's definition node was stored on the symbol at declaration time.
+					However, if a function was called on a non-function symbol, the tree will be NULL.
+				 */
+				Tree funcDef = funcSymbol->tree;
+				if (funcDef) {
+					TPRINT("NodeCall: func def = %p\n", funcDef);
+					TPRINT("NodeCall: exp decl list = %p\n", tp->u.child[0]);
+					exct(tp->u.child[0]);	// execute arg expression list
+					push_function_stack();
+					push_scope();
+					int savedLineNo, savedScope, savedCallDepth;
+					Tree temp = NULL;
+					try {
+						/* The exp list is copied to the symbols for the function's arg list. */
+						exct(funcDef->u.child[1]);
+						savedLineNo = yyget_lineno();
+						savedScope = current_scope();
+						++sFunctionCallDepth;
+						savedCallDepth = sFunctionCallDepth;
+						TPRINT("NodeCall(%p): executing %s() block node %p, call depth now %d\n",
+							   tp, sCalledFunction, funcDef->u.child[2], savedCallDepth);
+						temp = exct(funcDef->u.child[2]);
+					}
+					catch (Tree returned) {	// This catches return statements!
+						TPRINT("NodeCall(%p) caught %p return stmt throw - restoring call depth %d\n",
+							   tp, returned, savedCallDepth);
+						temp = returned;
+						sFunctionCallDepth = savedCallDepth;
+						restore_scope(savedScope);
+					}
+					catch(...) {	// Anything else is an error
+						pop_function_stack();
+						--sFunctionCallDepth;
+						throw;
+					}
+					--sFunctionCallDepth;
+					TPRINT("NodeCall: function call depth => %d\n", sFunctionCallDepth);
+					// restore parser line number
+					yyset_lineno(savedLineNo);
+					TPRINT("NodeCall copying def exct results into self\n");
+					copy_tree_tree(tp, temp);
+					pop_function_stack();
+				}
+				else {
+					minc_die("'%s' is not a function", funcSymbol->name);
+				}
+				sCalledFunction = NULL;
+			}
+			else {
+				exct(tp->u.child[0]);
+				MincListElem retval;
+				int result = call_builtin_function(tp->name, sMincList, sMincListLen,
+																	 &retval);
+				if (result < 0) {
+					result = call_external_function(tp->name, sMincList, sMincListLen,
+																	 &retval);
+				}
+				copy_listelem_tree(tp, &retval);
+				assert(tp->type == retval.type);
+				clear_elem(&retval);
+				if (result != 0) {
+					set_rtcmix_error(result);	// store fatal error from RTcmix layer (EMBEDDED ONLY)
+				}
+			}
+		}
+		pop_list();
+		break;
       case NodeStore:
-         DPRINT1("exct (enter NodeStore, tp=%p)\n", tp);
-         /* Store value and type into sym pointed to by child[0]->u.symbol. */
+#ifdef ORIGINAL_CODE
+		 /* N.B. Now that symbol lookup is part of tree, this happens in
+		    the NodeName stored as child[0] */
+         TPRINT("NodeStore(%p): evaluate LHS %p (child 0)\n", tp, tp->u.child[0]);
+         exct(tp->u.child[0]);
+		 /* evaluate RHS expression */
+         TPRINT("NodeStore(%p): evaluate RHS (child 1)\n", tp);
          exct(tp->u.child[1]);
-         /* Copy entire MincValue union from expr to id sym and to tp. */
+#else
+		   /* evaluate RHS expression */
+		   TPRINT("NodeStore(%p): evaluate RHS (child 1) FIRST\n", tp);
+		   exct(tp->u.child[1]);
+		   /* N.B. Now that symbol lookup is part of tree, this happens in
+			the NodeName stored as child[0] */
+		   TPRINT("NodeStore(%p): evaluate LHS %p (child 0)\n", tp, tp->u.child[0]);
+		   exct(tp->u.child[0]);
+#endif
+         TPRINT("NodeStore(%p): copying value from RHS (%p) to LHS's symbol (%p)\n",
+				tp, tp->u.child[1], tp->u.child[0]->u.symbol);
+		/* Copy entire MincValue union from expr to id sym and to tp. */
          copy_tree_sym(tp->u.child[0]->u.symbol, tp->u.child[1]);
 		 assert(tp->u.child[0]->u.symbol->type == tp->u.child[1]->type);
+         TPRINT("NodeStore: copying value from RHS (%p) to here (%p)\n", tp->u.child[1], tp);
          copy_tree_tree(tp, tp->u.child[1]);
          assert(tp->type == tp->u.child[1]->type);
-         DPRINT2("exct (exit NodeStore, tp=%p, type=%d)\n", tp, tp->type);
          break;
       case NodeOpAssign:
-         DPRINT1("exct (enter NodeOpAssign, tp=%p)\n", tp);
          exct_opassign(tp, tp->op);
-         DPRINT1("exct (exit NodeOpAssign, tp=%p)\n", tp);
          break;
       case NodeNot:
-         DPRINT1("exct (enter NodeNot, tp=%p)\n", tp);
          tp->type = MincFloatType;
          if (cmp(0.0, exct(tp->u.child[0])->v.number) == 0)
             tp->v.number = 1.0;
          else
             tp->v.number = 0.0;
-         DPRINT1("exct (exit NodeNot, tp=%p)\n", tp);
          break;
       case NodeAnd:
-         DPRINT1("exct (enter NodeAnd, tp=%p)\n", tp);
          tp->type = MincFloatType;
          tp->v.number = 0.0;
          if (cmp(0.0, exct(tp->u.child[0])->v.number) != 0) {
@@ -1298,86 +1597,194 @@ exct(Tree tp)
                tp->v.number = 1.0;
             }
          }
-         DPRINT1("exct (exit NodeAnd, tp=%p)\n", tp);
          break;
       case NodeRelation:
-         DPRINT2("exct (enter NodeRelation, tp=%p, op=%d)\n", tp, tp->op);
          exct_relation(tp);
-         DPRINT2("exct (exit NodeRelation, tp=%p, op=%d)\n", tp, tp->op);
          break; /* switch NodeRelation */
       case NodeOperator:
-         DPRINT2("exct (enter NodeOperator, tp=%p, op=%d)\n", tp, tp->op);
          exct_operator(tp, tp->op);
-         DPRINT2("exct (exit NodeOperator, tp=%p, op=%d)\n", tp, tp->op);
          break; /* switch NodeOperator */
       case NodeUnaryOperator:
-         DPRINT1("exct (enter NodeUnaryOperator, tp=%p)\n", tp);
          tp->type = MincFloatType;
          if (tp->op == OpNeg)
             tp->v.number = -exct(tp->u.child[0])->v.number;
-         DPRINT1("exct (exit NodeUnaryOperator, tp=%p)\n", tp);
          break;
       case NodeOr:
-         DPRINT1("exct (enter NodeOr, tp=%p)\n", tp);
          tp->type = MincFloatType;
          tp->v.number = 0.0;
          if ((cmp(0.0, exct(tp->u.child[0])->v.number) != 0) ||
              (cmp(0.0, exct(tp->u.child[1])->v.number) != 0)) {
             tp->v.number = 1.0;
          }
-         DPRINT1("exct (exit NodeOr, tp=%p)\n", tp);
          break;
       case NodeIf:
-         DPRINT1("exct (enter NodeIf, tp=%p)\n", tp);
          if (cmp(0.0, exct(tp->u.child[0])->v.number) != 0)
             exct(tp->u.child[1]);
-         DPRINT1("exct (exit NodeIf, tp=%p)\n", tp);
          break;
       case NodeIfElse:
-         DPRINT1("exct (enter NodeIfElse, tp=%p)\n", tp);
          if (cmp(0.0, exct(tp->u.child[0])->v.number) != 0)
             exct(tp->u.child[1]);
          else
             exct(tp->u.child[2]);
-         DPRINT1("exct (exit NodeIfElse, tp=%p)\n", tp);
          break;
       case NodeWhile:
-         DPRINT1("exct (enter NodeWhile, tp=%p)\n", tp);
          while (cmp(0.0, exct(tp->u.child[0])->v.number) != 0)
             exct(tp->u.child[1]);
-         DPRINT1("exct (exit NodeWhile, tp=%p)\n", tp);
+         break;
+      case NodeArgList:
+		   sArgListLen = 0;
+		   sArgListIndex = 0;	// reset to walk list
+		   inCalledFunctionArgList = true;
+		   TPRINT("NodeArgList: walking function '%s()' arg decl/copy list\n", sCalledFunction);
+		   exct(tp->u.child[0]);
+		   inCalledFunctionArgList = false;
+         break;
+      case NodeArgListElem:
+		   ++sArgListLen;
+		   exct(tp->u.child[0]);	// work our way to the front of the list
+		   exct(tp->u.child[1]);	// run the arg decl
+		   {
+		   // Symbol associated with this function argument
+		   Symbol *argSym = tp->u.child[1]->u.symbol;
+		   if (sMincListLen > sArgListLen) {
+			   minc_die("%s() takes %d arguments but was passed %d!", sCalledFunction, sArgListLen, sMincListLen);
+		   }
+		   else if (sArgListIndex >= sMincListLen) {
+			   minc_warn("%s(): arg '%s' not provided - defaulting to 0", sCalledFunction, argSym->name);
+			   /* Copy zeroed MincValue union to us and then to sym. */
+			   MincListElem zeroElem;
+			   zeroElem.type = argSym->type;
+			   memset(&zeroElem.val, 0, sizeof(MincValue));
+			   copy_listelem_tree(tp, &zeroElem);
+			   copy_tree_sym(argSym, tp);
+			   ++sArgListIndex;
+		   }
+		   /* compare stored NodeName with user-passed arg */
+		   else {
+			   // Pre-cached argument value from caller
+			   MincListElem *argValue = &sMincList[sArgListIndex];
+			   bool compatible = false;
+			   switch (argValue->type) {
+				   case MincFloatType:
+				   case MincStringType:
+				   case MincHandleType:
+				   case MincListType:
+					   if (argSym->type != argValue->type) {
+						   minc_die("%s() arg '%s' passed as %s, expecting %s",
+									sCalledFunction, argSym->name, MincTypeName(argValue->type), MincTypeName(argSym->type));
+					   }
+					   else compatible = true;
+					   break;
+				   default:
+					   assert(argValue->type != MincVoidType);
+					   break;
+			   }
+			   if (compatible) {
+				   /* Copy passed-in arg's MincValue union to us and then to sym. */
+				   copy_listelem_tree(tp, argValue);
+				   copy_tree_sym(argSym, tp);
+			   }
+			   ++sArgListIndex;
+		   }
+		   }
+		   break;
+      case NodeRet:
+         exct(tp->u.child[0]);
+         copy_tree_tree(tp, tp->u.child[0]);
+         assert(tp->type == tp->u.child[0]->type);
+         TPRINT("NodeRet throwing %p for return stmt\n", tp);
+         throw tp;	// Cool, huh?  Throws this node's body out to function's endpoint!
+         break;
+      case NodeFuncSeq:
+		   exct(tp->u.child[0]);
+		   exct(tp->u.child[1]);
+		   copy_tree_tree(tp, tp->u.child[1]);
+		   assert(tp->type == tp->u.child[1]->type);
          break;
       case NodeNoop:
-         DPRINT1("exct (enter NodeNoop, tp=%p)\n", tp);
          /* do nothing */
-         DPRINT("exct (exit NodeNoop)\n");
          break;
       case NodeFor:
-         DPRINT1("exct (enter NodeFor, tp=%p)\n", tp);
          exct(tp->u.child[0]);         /* init */
          while (cmp(0.0, exct(tp->u.child[1])->v.number) != 0) { /* condition */
             exct(tp->u.child[3]);      /* execute block */
             exct(tp->u.child[2]);      /* prepare for next iteration */
          }
-         DPRINT1("exct (exit NodeFor, tp=%p)\n", tp);
          break;
       case NodeSeq:
-         DPRINT1("exct (enter NodeSeq, tp=%p)\n", tp);
          exct(tp->u.child[0]);
          exct(tp->u.child[1]);
-         DPRINT1("exct (exit NodeSeq, tp=%p)\n", tp);
          break;
+	   case NodeBlock:				// NodeBlock returns void
+		   push_scope();
+		   exct(tp->u.child[0]);
+		   pop_scope();
+		   break;
+	   case NodeDecl:
+	   	{
+		const char *name = tp->name;		// as set by NodeDecl creator
+		TPRINT("-- declaring variable '%s'\n", name);
+		Symbol *sym = lookup(name, inCalledFunctionArgList ? ThisLevel : AnyLevel);
+		if (!sym) {
+		   sym = install(name);
+		   sym->type = tp->type;
+		}
+		else {
+		   if (sym->scope == current_scope()) {
+			   if (inCalledFunctionArgList) {
+				   minc_die("%s(): argument variable '%s' already used", sCalledFunction, name);
+			   }
+			   minc_warn("variable '%s' redefined - using existing one", name);
+		   }
+		   else {
+			   if (sFunctionCallDepth == 0) {
+			   	   minc_warn("variable '%s' also defined at enclosing scope", name);
+			   }
+			   sym = install(name);
+			   sym->type = tp->type;
+		   }
+		}
+		tp->u.symbol = sym;
+		}
+		break;
+	   case NodeFuncDecl:
+	   {
+		   const char *name = tp->name;		// as set by NodeDecl creator
+		   TPRINT("-- declaring function '%s'\n", name);
+		   assert(current_scope() == 0);	// until I allow nested functions
+		   Symbol *sym = lookup(name, GlobalLevel);	// only look at current global level
+		   if (sym == NULL) {
+			   sym = install(name);		// all functions global for now
+			   sym->type = tp->type;
+			   tp->u.symbol = sym;
+		   }
+			else {
+			   minc_die("function %s() is already declared", name);
+			}
+	   }
+		break;
+	   case NodeFuncDef:
+	   {
+		   // Look up symbol for function, and bind this FuncDef node to it.
+		   TPRINT("NodeFuncDef: executing lookup node %p\n", tp->u.child[0]);
+		   exct(tp->u.child[0]);
+		   assert(tp->u.child[0]->u.symbol != NULL);
+		   tp->u.child[0]->u.symbol->tree = tp;
+	   }
+		   break;
       default:
-         minc_internal_error("exct: tried to execute invalid node");
+         minc_internal_error("exct: tried to execute invalid node '%s'", printNodeKind(tp->kind));
          break;
    } /* switch kind */
 
+	TPRINT("%s done, tp=%p, %s\n", printNodeKind(tp->kind), tp, MincTypeName(tp->type));
    return tp;
 }
 
 static void
 clear_list(MincListElem *list, int len)
 {
+	ENTER();
 	int i;
 	for (i = 0; i < len; ++i) {
 		clear_elem(&list[i]);
@@ -1387,51 +1794,50 @@ clear_list(MincListElem *list, int len)
 static void
 push_list()
 {
-   DPRINT("push_list\n");
+	ENTER();
    if (list_stack_ptr >= MAXSTACK)
       minc_die("stack overflow: too many nested function calls");
-   list_stack[list_stack_ptr] = list;
-   list_len_stack[list_stack_ptr++] = list_len;
-   list = (MincListElem *) calloc(MAXDISPARGS, sizeof(MincListElem));
-   DPRINT1("push_list calloc: list=%p\n", list);
-   list_len = 0;
+   list_stack[list_stack_ptr] = sMincList;
+   list_len_stack[list_stack_ptr++] = sMincListLen;
+   sMincList = (MincListElem *) calloc(MAXDISPARGS, sizeof(MincListElem));
+   TPRINT("push_list: sMincList=%p at stack level %d, len %d\n", sMincList, list_stack_ptr, sMincListLen);
+   sMincListLen = 0;
 }
 
 
 static void
 pop_list()
 {
-   DPRINT("pop_list\n");
-   DPRINT1("pop_list free: list=%p\n", list);
-   clear_list(list, MAXDISPARGS);
-   efree(list);
+	ENTER();
+   TPRINT("pop_list: sMincList=%p\n", sMincList);
+   clear_list(sMincList, MAXDISPARGS);
+   efree(sMincList);
    if (list_stack_ptr == 0)
       minc_die("stack underflow");
-   list = list_stack[--list_stack_ptr];
-   list_len = list_len_stack[list_stack_ptr];
+   sMincList = list_stack[--list_stack_ptr];
+   sMincListLen = list_len_stack[list_stack_ptr];
+	TPRINT("pop_list: now at sMincList=%p, stack level %d, len %d\n", sMincList, list_stack_ptr, sMincListLen);
 }
 
 static void copy_value(MincValue *dest, MincDataType destType,
                        MincValue *src, MincDataType srcType)
 {
-//   assert(srcType != MincVoidType);
+	ENTER();
    if (srcType == MincHandleType && src->handle != NULL) {
       ref_handle(src->handle);	// ref before unref
    }
-   else if (srcType == MincListType) {
-      DPRINT3("list %p refcount %d -> %d\n", src->list, src->list->refcount, src->list->refcount+1);
+   else if (srcType == MincListType && src->list != NULL) {
+#ifdef DEBUG_MEMORY
+      TPRINT("list %p refcount %d -> %d\n", src->list, src->list->refcount, src->list->refcount+1);
+#endif
       ++src->list->refcount;
    }
    if (destType == MincHandleType && dest->handle != NULL) {
-#ifdef DEBUG
-      DPRINT("\toverwriting existing Handle value\n");
-#endif
+      TPRINT("\toverwriting existing Handle value\n");
       unref_handle(dest->handle);	// overwriting handle, so unref
    }
    else if (destType == MincListType) {
-#ifdef DEBUG
-      DPRINT("\toverwriting existing MincList value\n");
-#endif
+      TPRINT("\toverwriting existing MincList value\n");
       unref_value_list(dest);
    }
    memcpy(dest, src, sizeof(MincValue));
@@ -1441,36 +1847,47 @@ static void copy_value(MincValue *dest, MincDataType destType,
 static void
 copy_tree_tree(Tree tpdest, Tree tpsrc)
 {
-   int no_ref = 0;
-   DPRINT2("copy_tree_tree(%p, %p)\n", tpdest, tpsrc);
+   TPRINT("copy_tree_tree(%p, %p)\n", tpdest, tpsrc);
    copy_value(&tpdest->v, tpdest->type, &tpsrc->v, tpsrc->type);
+	if (tpdest->type != MincVoidType && tpsrc->type != tpdest->type) {
+		minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(tpdest->type), tpdest->name, MincTypeName(tpsrc->type));
+	}
    tpdest->type = tpsrc->type;
+	TPRINT("dest: ");
+	print_value(&tpdest->v, tpdest->type);
 }
 
 /* This copies a Symbol's value and handles ref counting when necessary */
 static void
 copy_sym_tree(Tree tpdest, Symbol *src)
 {
-   int no_ref = 0;
-   DPRINT2("copy_sym_tree(%p, %p)\n", tpdest, src);
+   TPRINT("copy_sym_tree(%p, %p)\n", tpdest, src);
+	assert(src->scope != -1);	// we accessed a variable after leaving its scope!
    copy_value(&tpdest->v, tpdest->type, &src->v, src->type);
+	if (tpdest->type != MincVoidType && src->type != tpdest->type) {
+		minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(tpdest->type), tpdest->name, MincTypeName(src->type));
+	}
    tpdest->type = src->type;
+	TPRINT("dest: ");
+	print_value(&tpdest->v, tpdest->type);
 }
 
 static void
 copy_tree_sym(Symbol *dest, Tree tpsrc)
 {
-   int no_ref = 0;
-   DPRINT2("copy_tree_sym(%p, %p)\n", dest, tpsrc);
+   TPRINT("copy_tree_sym(%p, %p)\n", dest, tpsrc);
+	assert(dest->scope != -1);	// we accessed a variable after leaving its scope!
    copy_value(&dest->v, dest->type, &tpsrc->v, tpsrc->type);
+	if (dest->type != MincVoidType && tpsrc->type != dest->type) {
+		minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dest->type), dest->name, MincTypeName(tpsrc->type));
+	}
    dest->type = tpsrc->type;
 }
 
 static void
 copy_tree_listelem(MincListElem *dest, Tree tpsrc)
 {
-   int no_ref = 0;
-   DPRINT2("copy_tree_listelem(%p, %p)\n", dest, tpsrc);
+   TPRINT("copy_tree_listelem(%p, %p)\n", dest, tpsrc);
    copy_value(&dest->val, dest->type, &tpsrc->v, tpsrc->type);
    dest->type = tpsrc->type;
 }
@@ -1478,8 +1895,7 @@ copy_tree_listelem(MincListElem *dest, Tree tpsrc)
 static void
 copy_listelem_tree(Tree tpdest, MincListElem *esrc)
 {
-   int no_ref = 0;
-   DPRINT2("copy_listelem_tree(%p, %p)\n", tpdest, esrc);
+   TPRINT("copy_listelem_tree(%p, %p)\n", tpdest, esrc);
    copy_value(&tpdest->v, tpdest->type, &esrc->val, esrc->type);
    tpdest->type = esrc->type;
 }
@@ -1487,8 +1903,7 @@ copy_listelem_tree(Tree tpdest, MincListElem *esrc)
 static void
 copy_listelem_elem(MincListElem *edest, MincListElem *esrc)
 {
-   int no_ref = 0;
-   DPRINT2("copy_listelem_elem(%p, %p)\n", edest, esrc);
+   TPRINT("copy_listelem_elem(%p, %p)\n", edest, esrc);
    copy_value(&edest->val, edest->type, &esrc->val, esrc->type);
    edest->type = esrc->type;
 }
@@ -1500,12 +1915,15 @@ free_tree(Tree tp)
    if (tp == NULL)
       return;
 
-   DPRINT2("entering free_tree(%p) (%s)\n", tp, printNodeKind(tp->kind));
+#ifdef DEBUG_MEMORY
+	TPRINT("entering free_tree(%p) (%s)\n", tp, printNodeKind(tp->kind));
+#endif
 
    switch (tp->kind) {
       case NodeZero:
          break;
       case NodeSeq:
+      case NodeFuncSeq:
          free_tree(tp->u.child[0]);
          free_tree(tp->u.child[1]);
          break;
@@ -1536,10 +1954,33 @@ free_tree(Tree tp)
          free_tree(tp->u.child[1]);
          break;
       case NodeName:
+      case NodeAutoName:
          break;
-      case NodeString:
+	   case NodeDecl:
+		   break;
+	   case NodeFuncDecl:
+		   break;
+	   case NodeBlock:
+		   free_tree(tp->u.child[0]);
+		   break;
+     case NodeString:
          break;
       case NodeConstf:
+         break;
+      case NodeFuncDef:
+         free_tree(tp->u.child[0]);
+         free_tree(tp->u.child[1]);
+         free_tree(tp->u.child[2]);
+        break;
+      case NodeArgListElem:
+         free_tree(tp->u.child[0]);
+         free_tree(tp->u.child[1]);
+         break;
+      case NodeArgList:
+         free_tree(tp->u.child[0]);
+         break;
+      case NodeRet:
+         free_tree(tp->u.child[0]);
          break;
       case NodeCall:
          free_tree(tp->u.child[0]);
@@ -1587,6 +2028,9 @@ free_tree(Tree tp)
          free_tree(tp->u.child[2]);
          free_tree(tp->u.child[3]);
          break;
+	   default:
+		   minc_internal_error("free_tree: tried to destroy invalid node '%s'", printNodeKind(tp->kind));
+		   break;
    } /* switch kind */
 
    if (tp->type == MincHandleType) {
@@ -1597,22 +2041,63 @@ free_tree(Tree tp)
    }
    tp->type = MincVoidType;		// To prevent double-free
    efree(tp);   /* actually free space */
-#ifdef DEBUG
+#ifdef DEBUG_MEMORY
 	--numTrees;
-   DPRINT1("[%d trees left]\n", numTrees);
+   TPRINT("[%d trees left]\n", numTrees);
 #endif
-   DPRINT1("leaving free_tree(%p)\n", tp);
+//   TPRINT("leaving free_tree(%p)\n", tp);
+}
+
+void print_tree(Tree tp)
+{
+#ifdef DEBUG
+	rtcmix_print("Tree %p: %s type: %d\n", tp, printNodeKind(tp->kind), tp->type);
+	if (tp->kind == NodeName) {
+		rtcmix_print("Symbol:\n");
+		print_symbol(tp->u.symbol);
+	}
+	else if (tp->type == MincVoidType && tp->u.child[0] != NULL) {
+		rtcmix_print("Child 0:\n");
+		print_tree(tp->u.child[0]);
+	}
+#endif
+}
+
+void print_symbol(struct symbol * s)
+{
+	rtcmix_print("Symbol %p: '%s' scope: %d type: %d\n", s, s->name, s->scope, s->type);
+}
+
+void print_value(MincValue *v, MincDataType type)
+{
+	switch (type) {
+		case MincFloatType:
+			TPRINT("%f\n", v->number);
+			break;
+		case MincHandleType:
+			TPRINT("%p\n", v->handle);
+			break;
+		case MincListType:
+			TPRINT("%p\n", v->list);
+			break;
+		case MincStringType:
+			TPRINT("%s\n", v->string);
+			break;
+		case MincVoidType:
+			TPRINT("void\n");
+			break;
+	}
 }
 
 void
 clear_elem(MincListElem *elem)
 {
 	if (elem->type == MincListType) {
-	   DPRINT1("clear_elem(%p)\n", elem);
+	   TPRINT("clear_elem(%p)\n", elem);
        unref_value_list(&elem->val);
 	}
 	else if (elem->type == MincHandleType) {
-	   DPRINT1("clear_elem(%p)\n", elem);
+	   TPRINT("clear_elem(%p)\n", elem);
 	   unref_handle(elem->val.handle);
 	}
 }
@@ -1621,21 +2106,25 @@ clear_elem(MincListElem *elem)
 void
 unref_value_list(MincValue *value)
 {
-   DPRINT3("unref_value_list(%p) [%d -> %d]\n", value->list, value->list->refcount, value->list->refcount-1);
+	if (value->list == NULL)
+		return;
+#ifdef DEBUG_MEMORY
+   TPRINT("unref_value_list(%p) [%d -> %d]\n", value->list, value->list->refcount, value->list->refcount-1);
+#endif
    assert(value->list->refcount > 0);
    if (--value->list->refcount == 0) {
       if (value->list->data != NULL) {
 		 int e;
-		 DPRINT1("\tfreeing MincList data %p...\n", value->list->data);
+		 TPRINT("\tfreeing MincList data %p...\n", value->list->data);
 		 for (e = 0; e < value->list->len; ++e) {
 			 MincListElem *elem = &value->list->data[e];
 			 clear_elem(elem);
 		 }
 		 efree(value->list->data);
 		 value->list->data = NULL;
-		 DPRINT("\tdone\n");
+		 TPRINT("\tdone\n");
       }
-	  DPRINT1("\tfreeing MincList %p\n", value->list);
+	  TPRINT("\tfreeing MincList %p\n", value->list);
 	  efree(value->list);
    }
 }

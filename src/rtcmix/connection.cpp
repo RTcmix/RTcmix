@@ -71,10 +71,12 @@ makeconnection(const Arg args[], const int nargs)
 		else {
 			die("makeconnection", "symbol lookup failed: %s\n", theDSO.error());
 			theDSO.unload();
+			return NULL;
 		}
 	}
 	else {
 		die("makeconnection", "dso load failed: %s\n", theDSO.error());
+		return NULL;
 	}
 
 #else 

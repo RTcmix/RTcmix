@@ -25,8 +25,7 @@ get_dso_path(double pfield, char dsoPath[])
     str = DOUBLE_TO_STRING(pfield);
 
     if (!str || strlen(str) == 0) {
-		die("load", "Bad argument for p[0]!");
-		return -1;
+		return die("load", "Bad argument for p[0]!");
     }
     /* if name contains a '/', assume it is a full or relative path */
     if (strchr(str, '/'))

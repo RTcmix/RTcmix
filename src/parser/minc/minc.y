@@ -4,6 +4,7 @@
 */
 %{
 #include <string.h>
+#include <assert.h>
 #include "rename.h"
 #include "minc_internal.h"
 #include "lex.yy.c"
@@ -11,36 +12,39 @@
 /* both in utils.c */
 extern int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
 #endif
-#define YYDEBUG 1
-#define MAXTOK_IDENTLIST 200
 
-#undef MDEBUG	/* turns on some parser debugging below */
+#undef MDEBUG	/* turns on yacc debugging below */
 
 #ifdef MDEBUG
-#ifdef IOS
-#include <syslog.h>
-#define MPRINT(x) syslog(LOG_NOTICE, x "\n")
-#define MPRINT1(x,y) syslog(LOG_NOTICE, x "\n", y)
-#elif defined(MAXMSP)
-extern void cpost(const char *fmt, ...);
-#define MPRINT(x) cpost(x)
-#define MPRINT1(x,y) cpost(x, y)
-#else
-#define MPRINT(x) printf(x "\n")
-#define MPRINT1(x,y) printf(x "\n", y)
-#endif
+//int yydebug=1;
+#define MPRINT(x) rtcmix_print("YACC: %s\n", x)
+#define MPRINT1(x,y) rtcmix_print("YACC: " x "\n", y)
+#define MPRINT2(x,y,z) rtcmix_print("YACC: " x "\n", y, z)
 #else
 #define MPRINT(x)
 #define MPRINT1(x,y)
+#define MPRINT2(x,y,z)
 #endif
 
+#define YYDEBUG 1
+#define MAXTOK_IDENTLIST 200
+#define TRUE 1
+#define FALSE 0
+#define CHECK_ERROR if (flerror) do { MPRINT("cleaning up after error"); cleanup(1); YYABORT; } while(0)
+
 static Tree		program;
-static Symbol	*sym;
-static int		idcount = 0;	
+static int		idcount = 0;
 static char		*idlist[MAXTOK_IDENTLIST];  
 static int		flerror;		/* set if there was an error during parsing */
-static int		level = 0;	/* keeps track whether we are in a structure */
-static void cleanup();
+static int		level = 0;		/* keeps track whether we are in a sub-block */
+static int		flevel = 0;		/* > 0 if we are in a function decl block */
+static int      xblock = 0;		/* 1 if we are entering a block preceeded by if(), else(), while(), or for() */
+static void 	cleanup();
+static void 	incrLevel();
+static void		decrLevel();
+static Tree declare(MincDataType type);
+static Tree go(Tree t1);
+
 %}
 
 %left  <ival> LOWPRIO
@@ -60,151 +64,166 @@ static void cleanup();
 %token <ival> TOK_FLOAT_DECL
 %token <ival> TOK_STRING_DECL
 %token <ival> TOK_HANDLE_DECL
-%token <ival> TOK_IDENT TOK_NUM TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE 
-%token <ival> TOK_TRUE TOK_FALSE TOK_STRING 
-%type  <trees> stml stmt rstmt bexp expl exp str
-%type  <str> id 
+%token <ival> TOK_LIST_DECL
+%token <ival> TOK_IDENT TOK_NUM TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
+%token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
+%type  <trees> stml stmt rstmt bexp expl exp str ret bstml
+%type  <trees> fdecl sdecl hdecl ldecl fdef fstml arg argl fargl fundecl
+%type  <str> id
+%error-verbose
 
 %%
 /* program (the "start symbol") */
-prg:	| stml			{ MPRINT("prg:"); program = $1; cleanup(); return 0; }
+prg:	| stml				{ MPRINT("prg:"); program = $1; cleanup(); return 0; }
 	;
  
 /* statement list */
-stml:	stmt				{ MPRINT("<stmt>"); $$ = $1; }
-	| stmt ';'			{ MPRINT("<stmt;>"); $$ = $1; }
-	| stml stmt			{ MPRINT("<stml stmt>"); $$ = tseq($1, $2); }
-	| stml stmt ';'	{ MPRINT("<stml stmt;>"); $$ = tseq($1, $2); }
+stml:	stmt				{ MPRINT("stml:	stmt"); $$ = $1; }
+	| stmt ';'				{ MPRINT("stml:	stmt;"); $$ = $1; }
+	| stml stmt				{ MPRINT("stml:	stml stmt"); $$ = tseq($1, $2); }
+	| stml stmt ';'			{ MPRINT("stml:	stml stmt;"); $$ = tseq($1, $2); }
 	;
 
 /* statement */
-stmt: rstmt				{ MPRINT("<rstmt>");
-								if (level == 0) 
-									$$ = go($1); 
-								else
-									$$ = $1;
-							}
-	| TOK_FLOAT_DECL idl	{ declare(MincFloatType); idcount = 0; }
-	| TOK_STRING_DECL idl	{ declare(MincStringType); idcount = 0; }
-	| TOK_HANDLE_DECL idl	{ declare(MincHandleType); idcount = 0; }
-	| TOK_IF level bexp stmt {
-								level--; MPRINT1("level %d", level);
+stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
+	| fdecl
+	| sdecl
+	| hdecl
+	| ldecl
+	| TOK_IF level bexp stmt {	xblock = 1; MPRINT("IF bexp stmt");
+								decrLevel();
 								$$ = go(tif($3, $4));
+								xblock = 0;
 							}
-	| TOK_IF level bexp stmt TOK_ELSE stmt {
-								level--; MPRINT1("level %d", level);
+	| TOK_IF level bexp stmt TOK_ELSE stmt { xblock = 1;
+								decrLevel();
 								$$ = go(tifelse($3, $4, $6));
+								xblock = 0;
 							}
-	| TOK_WHILE level bexp stmt	{
-								level--; MPRINT1("level %d", level);
+	| TOK_WHILE level bexp stmt	{ xblock = 1;	MPRINT("WHILE bexp stmt");
+								decrLevel();
 								$$ = go(twhile($3, $4));
+								xblock = 0;
 							}
-	| TOK_FOR level '(' stmt ';' bexp ';' stmt ')' stmt {
-								level--; MPRINT1("level %d", level);
+	| TOK_FOR level '(' stmt ';' bexp ';' stmt ')' stmt { xblock = 1;
+								decrLevel();
 								$$ = go(tfor($4, $6, $8, $10));
+								xblock = 0;
 							}
-	| '{' stml '}'		{ $$ = $2; }
+	| bstml
+	| fdef
+	| ret					{}
 	| error TOK_FLOAT_DECL	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_STRING_DECL	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_HANDLE_DECL	{ flerror = 1; $$ = tnoop(); }
+	| error TOK_LIST_DECL	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_IF		{ flerror = 1; $$ = tnoop(); }
 	| error TOK_WHILE	{ flerror = 1; $$ = tnoop(); }
 	| error TOK_FOR	{ flerror = 1; $$ = tnoop(); }
-	| error '{'			{ flerror = 1; $$ = tnoop(); }
+	| error '{'		{ flerror = 1; $$ = tnoop(); }
 	| error TOK_ELSE	{ flerror = 1; $$ = tnoop(); }
+	| error TOK_RETURN	{ flerror = 1; $$ = tnoop(); }
 	| error ';'			{ flerror = 1; $$ = tnoop(); }
 	;
 
+/* block statement list
+   This is tricky because we want to bump 'level' here (to avoid executing the contents of the list
+   until the block is completely created) but we don't want to bump it twice for <if bexp bstml>.  So,
+   if/else/while/for statements set xblock to 1 indicating the bump has already been done.  Only a 
+   stand-alone block statement will do its own bump.
+ */
+
+bstml:	'{'			{ if (!xblock) incrLevel(); }
+		stml
+		'}'			{ 	MPRINT("bstml: { stml }"); MPRINT2("level = %d, xblock = %d", level, xblock);
+									if (!xblock) { decrLevel(); }
+									$$ = go(tblock($3));
+								}
+	;
+
+/* A return statement.  Only used inside functions. */
+
+ret: TOK_RETURN exp			{	MPRINT("ret exp");
+								MPRINT1("called at level %d", level);
+								if (flevel == 0) {
+									minc_die("return statements not allowed in main score");
+									$$ = tnoop();
+								}
+								else {
+									$$ = treturn($2);
+								}
+							}
+	| TOK_RETURN exp ';'	{	MPRINT("ret exp;");
+								MPRINT1("called at level %d", level);
+								if (flevel == 0) {
+									minc_die("return statements not allowed in main score");
+									$$ = tnoop();
+								}
+								else {
+									$$ = treturn($2);
+								}
+							}
+	;
+
+/* variable declaration lists */
+
+fdecl:	TOK_FLOAT_DECL idl	{ 	MPRINT("fdecl");
+								$$ = go(declare(MincFloatType));
+								idcount = 0;
+							}	// e.g., "float x, y z"
+	;
+sdecl:	TOK_STRING_DECL idl	{ 	MPRINT("sdecl");
+								$$ = go(declare(MincStringType));
+								idcount = 0;
+							}
+	;
+hdecl:	TOK_HANDLE_DECL idl	{ 	MPRINT("hdecl");
+								$$ = go(declare(MincHandleType));
+								idcount = 0;
+							}
+	;
+ldecl:	TOK_LIST_DECL idl	{ 	MPRINT("ldecl");
+								$$ = go(declare(MincListType));
+								idcount = 0;
+							}
+;
+
 /* statement nesting level counter */
-level:  /* nothing */ { level++; MPRINT1("level %d", level); }
+level:  /* nothing */ { incrLevel(); }
 	;
 
 /* statement returning a value: assignments, function calls, etc. */
-rstmt: id '=' exp		{
-								sym = lookup($1);
-								if (sym == NULL)	/* then autodeclare it */
-									sym = install($1, S_GLOBAL);
-								$$ = tstore(tname(sym), $3);
-							}
-	| id TOK_PLUSEQU exp {
-								sym = lookup($1);
-								if (sym == NULL) {
-									minc_die("'%s' is not declared", $1);
-									$$ = tnoop();
-								}
-								else
-									$$ = topassign(tname(sym), $3, OpPlus);
-							}
-	| id TOK_MINUSEQU exp {
-								sym = lookup($1);
-								if (sym == NULL) {
-									minc_die("'%s' is not declared", $1);
-									$$ = tnoop();
-								}
-								else
-									$$ = topassign(tname(sym), $3, OpMinus);
-							}
-	| id TOK_MULEQU exp {
-								sym = lookup($1);
-								if (sym == NULL) {
-									minc_die("'%s' is not declared", $1);
-									$$ = tnoop();
-								}
-								else
-									$$ = topassign(tname(sym), $3, OpMul);
-							}
-	| id TOK_DIVEQU exp {
-								sym = lookup($1);
-								if (sym == NULL) {
-									minc_die("'%s' is not declared", $1);
-									$$ = tnoop();
-								}
-								else
-									$$ = topassign(tname(sym), $3, OpDiv);
+rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = tstore(tautoname($1), $3); }
+	| id TOK_PLUSEQU exp {		$$ = topassign(tname($1), $3, OpPlus); }
+	| id TOK_MINUSEQU exp {		$$ = topassign(tname($1), $3, OpMinus); }
+	| id TOK_MULEQU exp {		$$ = topassign(tname($1), $3, OpMul); }
+	| id TOK_DIVEQU exp {		$$ = topassign(tname($1), $3, OpDiv); }
+
+	| id '(' expl ')' {			MPRINT("id(expl)");
+								$$ = tcall($3, $1);
 							}
 
-	| id '(' expl ')' { $$ = tcall($3, $1); }
-
+/* $2 will be the end of a linked list of tlistelem nodes */
 /* XXX: This causes 1 reduce/reduce conflict on '}'  How bad is this?  -JGG */
-	| '{' expl '}' 	{ $$ = tlist($2); }
+	| '{' level expl '}'	{ MPRINT("{expl}");	decrLevel(); $$ = tlist($3); }
 
-	| id '[' exp ']' 	{
-								sym = lookup($1);
-								if (sym == NULL) {
-									minc_die("'%s' is not declared", $1);
-									$$ = tnoop();
-								}
-								else
-									$$ = tsubscriptread(tname(sym), $3);
-							}
-	| id '[' exp ']' '=' exp {
-								sym = lookup($1);
-								if (sym == NULL) {
-									minc_die("'%s' is not declared", $1);
-									$$ = tnoop();
-								}
-								else
-									$$ = tsubscriptwrite(tname(sym), $3, $6);
-							}
+	| id '[' exp ']' 	{			$$ = tsubscriptread(tname($1), $3); }
+	| id '[' exp ']' '=' exp {		$$ = tsubscriptwrite(tname($1), $3, $6); }
 	;
 
 /* identifier list */
-idl: id					{ idlist[idcount++] = $1; }
-	| idl ',' id		{ idlist[idcount++] = $3; }
+idl: id					{ MPRINT("idl: id"); idlist[idcount++] = $1; }
+	| idl ',' id		{ MPRINT("idl: idl,id"); idlist[idcount++] = $3; }
 	;
 
 /* identifier */
-id:  TOK_IDENT			{ $$ = strsave(yytext); }
+id:  TOK_IDENT			{ MPRINT("id"); $$ = strsave(yytext); }
 	;
 
 /* expression list */
-expl:	exp				{ $$ = tlistelem(temptylistelem(), $1); }
-	| expl ',' exp		{ $$ = tlistelem($1, $3); }
-/* XXX causes reduce/reduce conflicts; don't need because str -> exp below
-	| str	 				{ $$ = tlistelem(temptylistelem(), $1); }
-	| expl ',' str		{ $$ = tlistelem($1, $3); }
-*/
-	| /* nothing */	{ $$ = temptylistelem(); }
+expl:	exp				{ MPRINT("expl: exp"); $$ = tlistelem(temptylistelem(), $1); }
+	| expl ',' exp		{ MPRINT("expl: expl,exp"); $$ = tlistelem($1, $3); }
+	| /* nothing */	{ MPRINT("expl: NULL"); $$ = temptylistelem(); }
 	;
 
 /* string */
@@ -231,7 +250,7 @@ bexp:	exp %prec LOWPRIO	{ $$ = $1; }
 	;
 
 /* expression */
-exp: rstmt				{ $$ = $1; }
+exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 	| exp TOK_POW exp	{ $$ = top(OpPow, $1, $3); }
 	| exp '*' exp		{ $$ = top(OpMul, $1, $3); }
 	| exp '/' exp		{ $$ = top(OpDiv, $1, $3); }
@@ -239,7 +258,7 @@ exp: rstmt				{ $$ = $1; }
 	| exp '-' exp		{ $$ = top(OpMinus, $1, $3); }
 	| exp '%' exp		{ $$ = top(OpMod, $1, $3); }
 	| '(' bexp ')'		{ $$ = $2; }
-	| str					{ $$ = $1; }
+	| str				{ $$ = $1; }
 	| TOK_NUM			{
 								double f = atof(yytext);
 								$$ = tconstf(f);
@@ -251,50 +270,136 @@ exp: rstmt				{ $$ = $1; }
 								$$ = top(OpNeg, $2, tconstf(0.0));
 							}
 	| id					{
-								sym = lookup($1);
-								if (sym == NULL) {
-// FIXME: install id w/ value of 0, then warn??
-									minc_die("'%s' is not declared", $1);
-									$$ = tconstf(0.0);
-								}
-								else
-									$$ = tname(sym);
+								$$ = tname($1);
 							}
 	;
 
+/* function declaration */
+
+fundecl: TOK_FLOAT_DECL id function { MPRINT("fundecl");
+									$$ = go(tfdecl(strsave($2), MincFloatType)); }
+	| TOK_STRING_DECL id function { MPRINT("fundecl");
+									$$ = go(tfdecl(strsave($2), MincStringType)); }
+	| TOK_HANDLE_DECL id function { MPRINT("fundecl");
+									$$ = go(tfdecl(strsave($2), MincHandleType)); }
+	| TOK_LIST_DECL id function { MPRINT("fundecl");
+									$$ = go(tfdecl(strsave($2), MincListType)); }
+	;
+
+
+/* an <arg> is always a type followed by an <id>, like "float length".  They only occur in function definitions, and
+   the variables declared are not visible outside of the function definition.
+ */
+
+arg: TOK_FLOAT_DECL id		{ MPRINT("arg");
+							  $$ = tdecl($2, MincFloatType);
+							}
+	| TOK_STRING_DECL id	{ MPRINT("arg");
+							  $$ = tdecl($2, MincStringType);
+							}
+	| TOK_HANDLE_DECL id	{ MPRINT("arg");
+							  $$ = tdecl($2, MincHandleType);
+							}
+	| TOK_LIST_DECL id		{ MPRINT("arg");
+								$$ = tdecl($2, MincListType);
+							}
+	;
+
+/* an <argl> is one <arg> or a series of <arg>'s separated by commas */
+
+argl: arg             { MPRINT("argl: arg"); $$ = targlistelem(temptylistelem(), $1); }
+	| argl ',' arg    { MPRINT("argl: argl,arg"); $$ = targlistelem($1, $3); }
+	;
+
+/* a <fargl> is a argument list for a function definition, like (float f, string s).
+   We store this list in an NodeArgList tree because it gives us the information
+   about the types of each of the arguments at the point where the function is called.
+   When the function is executed, each NodeArgListElem executes, which declares the argument
+   variable in the function's scope, then accesses it via lookup().
+ */
+
+fargl: '(' argl ')'			{ MPRINT("fargl: (argl)"); $$ = targlist($2); }
+	| '(' ')'              	{ MPRINT("fargl: (NULL)"); $$ = targlist(temptylistelem()); }
+	;
+
+/* function block level counter */
+
+function:  level {	MPRINT("function"); if (flevel > 0) {
+								minc_die("nested function decls not allowed");
+							}
+							flevel++; MPRINT1("flevel => %d", flevel);
+						 }
+;
+
+/* function statement list must be a statement list ending with a return statement */
+
+fstml:	stml ret			{	MPRINT("fstml: stml,ret");
+									$$ = tfuncseq($1, $2);
+							}
+	| ret					{	MPRINT("fstml: ret");
+									$$ = tfuncseq(temptylistelem(), $1);
+							}
+	;
+
+/* the full rule for a function declaration/definition */
+
+fdef: fundecl fargl '{' fstml '}'	{
+									MPRINT("fdef");
+									decrLevel();
+									--flevel; MPRINT1("flevel => %d", flevel);
+									go(tfdef($1, $2, $4));
+									/* because we're just a decl, and the tree is stored
+									   in the Symbol, we do not return a Tree to the parser.
+									 */
+									$$ = tnoop();
+								}
+	| error fundecl fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $1); flerror = 1; }
+	| error fundecl fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $1); flerror = 1; }
+	;
 
 %%
 
-void
-declare(MincDataType type)
+static void 	incrLevel()
 {
-	int i;
+	++level; MPRINT1("level => %d", level);
+}
 
+static void		decrLevel()
+{
+	--level; MPRINT1("level => %d", level);
+}
+
+// N.B. Because we have no need for <id>'s to exist in our tree other than for the purpose
+// of declaring variables, we shortcut here and do not rely on the recursive parser.  We
+// create our own sequence of declaration nodes.
+
+static Tree declare(MincDataType type)
+{
+	MPRINT2("declare(type=%d, idcount=%d)", type, idcount);
+	int i;
+	
+	assert(idcount > 0);
+	
+	Tree t = tnoop();	// end of the list
 	for (i = 0; i < idcount; i++) {
-	   Symbol *sym = lookup(idlist[i]);
-		if (sym != NULL) {
-			minc_warn("variable redefined: %s", idlist[i]);
-			/* note this handling may be illegal in arbitrary scoping */
-			sym->type = type;
-		}
-		else {
-			sym = install(idlist[i], S_GLOBAL);
-			sym->type = type;
-		}
+		Tree decl = tdecl(idlist[i], type);
+		t = tseq(t, decl);
 	}
+	return t;
 }
 
 #define FREE_TREES_AT_END
 
-Tree
+static Tree
 go(Tree t1)
 {
-	MPRINT("go()");
 	if (level == 0) {
+		MPRINT1("--> go(%p)", t1);
 		exct(t1);
 #ifndef FREE_TREES_AT_END
 		free_tree(t1);
 #endif
+		MPRINT1("<-- go(%p)", t1);
 	}
 	return t1;
 }
@@ -307,7 +412,7 @@ int yywrap()
 static void cleanup()
 {
 	MPRINT1("cleanup: yy_init = %d", yy_init);
-	MPRINT("Freeing program tree");
+	MPRINT1("Freeing program tree %p", program);
 #ifdef FREE_TREES_AT_END
     free_tree(program);
 #else
@@ -357,3 +462,11 @@ double minc_memflush()
 	return 1.0;
 }
 #endif
+
+void reset_parser()
+{
+	set_rtcmix_error(0);
+	flerror = 0;
+	// Reset the line # every time a new score buffer is received
+	yyset_lineno(1);
+}

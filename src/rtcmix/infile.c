@@ -19,12 +19,12 @@ m_infile(float *p, short n_args, double *pp)
     fno = p[1];
     /* Reject fno = 0, because that's indicates stdin to gen2. */
     if (fno < 1 || fno > MAX_INFILE_DESC)
-		die("infile", "File number must be between 1 and %d.",
+		return die("infile", "File number must be between 1 and %d.",
 						MAX_INFILE_DESC);
 
     descrip = fopen(name,"r");
     if (descrip == NULL)
-		die("infile", "Cannot find %s ... not opened.", name);
+		return die("infile", "Cannot find %s ... not opened.", name);
     else {
 		infile_desc[fno] = descrip;
 		rtcmix_advise("infile", "Datafile %s opened as file %d.", name, fno);

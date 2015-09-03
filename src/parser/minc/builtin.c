@@ -141,12 +141,20 @@ _do_print(const MincListElem args[], const int nargs)
                RTPrintfCat("Handle:%p, ", args[i].val.handle);
             break;
          case MincListType:
-            RTPrintfCat("[");
-            _do_print(args[i].val.list->data, args[i].val.list->len);
-            if (i == last_arg)
-               RTPrintfCat("]");
-            else
-               RTPrintfCat("], ");
+			if (args[i].val.list != NULL) {
+				RTPrintfCat("[");
+				_do_print(args[i].val.list->data, args[i].val.list->len);
+				if (i == last_arg)
+					RTPrintfCat("]");
+				else
+					RTPrintfCat("], ");
+			}
+			else {
+				if (i == last_arg)
+					RTPrintfCat("NULL");
+				else
+					RTPrintfCat("NULL, ");
+			}
             break;
          default:
             break;

@@ -2,7 +2,7 @@ include ../../../makefile.conf
 
 INCLUDES += -I../../include -I../../rtcmix
 OBJS = y.tab.o builtin.o callextfunc.o error.o sym.o trees.o utils.o handle.o
-SRCS = builtin.c callextfunc.cpp error.c sym.c trees.c utils.c handle.cpp
+SRCS = builtin.c callextfunc.cpp error.c sym.cpp trees.cpp utils.c handle.cpp
 MINC = libminc.a
 
 LSRC = minc.l
@@ -11,8 +11,8 @@ LEXFLAGS = -l #-d    # -d for debug output
 
 YSRC = minc.y
 YACC = yacc
-#YACC = bison -y
-YFLAGS = -d #-v
+#YACC = bison -t -y
+YFLAGS = -d # -v
 
 all: $(MINC)
 
