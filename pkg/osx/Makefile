@@ -1,27 +1,42 @@
 include ../../makefile.conf
 
-namevers="RTcmix-4.0.1"
-packagemaker="/Developer/usr/bin/packagemaker"
+version="4.1.2"
 
-all: intel-usersshared
+all: intel-usrlocal
 
 intel-applications:
-	$(RM) -r rtcmix
+	mkdir pkgtmp
 	./prep-package $(CMIXDIR) "/Applications/rtcmix" "Intel"
-	${packagemaker} --doc RTcmix-Intel-ApplicationsDir.pmdoc \
-		--out ~/Desktop/${namevers}-Intel.pkg
-
-intel-usersshared:
-	$(RM) -r rtcmix
-	./prep-package $(CMIXDIR) "/Users/Shared/rtcmix" "Intel"
-	${packagemaker} --doc RTcmix-Intel-UsersSharedDir.pmdoc \
-		--out ~/Desktop/${namevers}-Intel.pkg
+	pkgbuild    --root rtcmix \
+	            --identifier org.rtcmix.rtcmix \
+	            --version $(version) \
+	            --ownership recommended \
+	            --install-location "/Applications/rtcmix" \
+	            --scripts scripts \
+	            pkgtmp/rtcmix.pkg
+	productbuild \
+	            --distribution distribution.dist \
+	            --resources resources \
+	            --package-path pkgtmp \
+	            --version $(version) \
+	            RTcmix-v$(version).pkg
 
 intel-usrlocal:
-	$(RM) -r rtcmix
+	mkdir pkgtmp
 	./prep-package $(CMIXDIR) "/usr/local/rtcmix" "Intel"
-	${packagemaker} --doc RTcmix-Intel-UsrLocalDir.pmdoc \
-		--out ~/Desktop/${namevers}-Intel.pkg
+	pkgbuild    --root rtcmix \
+	            --identifier org.rtcmix.rtcmix \
+	            --version $(version) \
+	            --ownership recommended \
+	            --install-location "/usr/local/rtcmix" \
+	            --scripts scripts \
+	            pkgtmp/rtcmix.pkg
+	productbuild \
+	            --distribution distribution.dist \
+	            --resources resources \
+	            --package-path pkgtmp \
+	            --version $(version) \
+	            RTcmix-v$(version).pkg
 
 clean:
-	$(RM) -r rtcmix
+	$(RM) -r rtcmix pkgtmp

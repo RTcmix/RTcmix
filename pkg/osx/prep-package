@@ -17,16 +17,16 @@ mkdir rtcmix
 
 # copy docs
 ditto ../../docs rtcmix/docs
-if [ ${destdir} == "/Applications/rtcmix" ]
-then
-	cp README-Applications.rtf rtcmix/README.rtf
-elif [ ${destdir} == "/Users/Shared/rtcmix" ]
-then
-	cp README-UsersShared.rtf rtcmix/README.rtf
-else # /usr/local/rtcmix
-	cp README-UsrLocal.rtf rtcmix/README.rtf
-fi
-cp license.txt rtcmix
+#if [ ${destdir} == "/Applications/rtcmix" ]
+#then
+#	cp README-Applications.rtf rtcmix/README.rtf
+#elif [ ${destdir} == "/Users/Shared/rtcmix" ]
+#then
+#	cp README-UsersShared.rtf rtcmix/README.rtf
+#else # /usr/local/rtcmix
+#	cp README-UsrLocal.rtf rtcmix/README.rtf
+#fi
+cp ../../LICENSE rtcmix/license.txt
 
 # copy snd, so that sample_scores work
 ditto ../../snd rtcmix/snd
@@ -60,7 +60,7 @@ ditto lib pkg/osx/rtcmix/lib
 ditto ${destdir}/shlib pkg/osx/rtcmix/shlib
 
 # delete SCRUB, which we don't want to distribute
-rm -f pkg/osx/rtcmix/shlib/libSCRUB.so
+#rm -f pkg/osx/rtcmix/shlib/libSCRUB.so
 
 # fix shared lib names in executables
 cd pkg/osx/rtcmix/bin
