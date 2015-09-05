@@ -1,10 +1,10 @@
 #!/bin/sh
-
+set -e
 prof=~/.profile
 echo $SCRIPT_NAME: moving existing .profile
 mv $prof $prof.before_rtcmix_install
 echo $SCRIPT_NAME: creating new .profile
-echo 'PATH=/Users/Shared/rtcmix/bin:${PATH}' > $prof
+echo 'PATH=/usr/local/rtcmix/bin:${PATH}' > $prof
 echo 'PS1="\w/:\$ "' >> $prof
 echo "alias rm='rm -i'" >> $prof
 echo "alias cp='cp -i'" >> $prof

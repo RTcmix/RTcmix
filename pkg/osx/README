@@ -3,7 +3,7 @@ To build a package, do these steps in this order.
 $ make distclean	# in rtcmix src tree
 $ ./configure --with-perl --with-python
 
-Then uncomment the definition of PKG in makefile.conf.  
+Then uncomment the definition of PKG in site.conf.  
 This causes a redefinition of LIBDESTDIR to point to
 /Applications/rtcmix/shlib.
 

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<installer-gui-script minSpecVersion="1">
+	<title>RTcmix</title>
+	<organization>org.rtcmix.rtcmix</organization>
+	<domains enable_anywhere="true"/>
+	<options
+		customize="never"
+		hostArchitectures="x86_64"/>
+	<!-- Define documents displayed at various steps -->
+	<welcome    file="welcome.html"    mime-type="text/html"/>
+	<!-- List all component packages -->
+	<pkg-ref id="org.rtcmix.rtcmix"
+		version="4.1.2"
+		auth="none">rtcmix.pkg</pkg-ref>
+	<!-- List them again here. They can now be organized
+			as a hierarchy if you want. -->
+	<choices-outline>
+   	<line choice="org.rtcmix.rtcmix"/>
+	</choices-outline>
+	<!-- Define each choice above -->
+	<choice
+		id="org.rtcmix.rtcmix"
+		visible="true"
+		title="RTcmix"
+		description="Installation of RTcmix into /usr/local/"
+		start_selected="true">
+		<pkg-ref id="org.rtcmix.rtcmix"/>
+	</choice>
+</installer-gui-script>
