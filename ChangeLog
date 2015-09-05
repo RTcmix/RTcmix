@@ -1,6 +1,13 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2015-9-05  Douglas Scott  <netdscott-at-netscape.net>
+
+	* Another revision!  Now version 4.2.0.
+	  Added support for Minc function definitions which are declared inline at the top of a score.
+	  Minc variables are now 'scoped', which means their visibility can be local to the block in which they are defined.
+	  Turned on much-improved parser error messages (this is a Bison feature I did not know about).
+
 2015-5-16  John Gibson <johgibso-at-indiana.edu>
 
 	* Let user store color preferences for OS X MouseWindow app.
