@@ -328,10 +328,10 @@ free_node(struct symbol *p)
 
 /* Allocate a new entry for name and install it. */
 struct symbol *
-install(const char *name)
+install(const char *name, Bool isGlobal)
 {
 	CHECK_SCOPE_INIT();
-	return sScopeStack->back()->install(name);
+	return isGlobal ? sScopeStack->front()->install(name) : sScopeStack->back()->install(name);
 }
 
 /* Lookup <name> at a given scope; return pointer to entry.
@@ -384,7 +384,7 @@ lookup(const char *name, LookupType lookupType)
    return p;
 }
 
-Symbol * lookupOrAutodeclare(const char *name)
+Symbol * lookupOrAutodeclare(const char *name, Bool inFunctionCall)
 {
 	DPRINT("lookupOrAutodeclare('%s')\n", name);
 	CHECK_SCOPE_INIT();
@@ -400,9 +400,9 @@ Symbol * lookupOrAutodeclare(const char *name)
 			DPRINT("\tfound it\n");
 		}
 		else {
-			DPRINT("\tnot found - installing\n");
+			DPRINT("\tnot found - installing %s\n", inFunctionCall ? "at current scope" : "at global scope");
 		}
-		return (sym) ? sym : install(name);		// XXX DOES THIS MATCH OLD BEHAVIOR?
+		return (sym) ? sym : install(name, inFunctionCall ? NO : YES);
 	}
 }
 

@@ -1409,7 +1409,7 @@ exct(Tree tp)
 			   tp->u.symbol = lookup(tp->name, AnyLevel);
 		   }
 		   else if (tp->kind == NodeAutoName) {
-			   tp->u.symbol = lookupOrAutodeclare(tp->name);
+			   tp->u.symbol = lookupOrAutodeclare(tp->name, sFunctionCallDepth > 0 ? YES : NO);
 		   }
 		   else {
 			   minc_internal_error("NodeName/NodeAutoName exct: illegal node kind: %d", tp->kind);
@@ -1726,7 +1726,7 @@ exct(Tree tp)
 		TPRINT("-- declaring variable '%s'\n", name);
 		Symbol *sym = lookup(name, inCalledFunctionArgList ? ThisLevel : AnyLevel);
 		if (!sym) {
-		   sym = install(name);
+		   sym = install(name, NO);
 		   sym->type = tp->type;
 		}
 		else {
@@ -1740,7 +1740,7 @@ exct(Tree tp)
 			   if (sFunctionCallDepth == 0) {
 			   	   minc_warn("variable '%s' also defined at enclosing scope", name);
 			   }
-			   sym = install(name);
+			   sym = install(name, NO);
 			   sym->type = tp->type;
 		   }
 		}
@@ -1754,7 +1754,7 @@ exct(Tree tp)
 		   assert(current_scope() == 0);	// until I allow nested functions
 		   Symbol *sym = lookup(name, GlobalLevel);	// only look at current global level
 		   if (sym == NULL) {
-			   sym = install(name);		// all functions global for now
+			   sym = install(name, YES);		// all functions global for now
 			   sym->type = tp->type;
 			   tp->u.symbol = sym;
 		   }
