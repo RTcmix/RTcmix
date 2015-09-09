@@ -337,7 +337,7 @@ void InputFile::destroyConversionBuffers()
 
 #endif
 
-InputFile::InputFile() : _filename(NULL), _fd(NO_FD), _readBuffer(NULL), _memBuffer(NULL), _gainScale(1.0f)
+InputFile::InputFile() : _filename(NULL), _fd(NO_FD), _readBuffer(NULL), _memBuffer(NULL), _refcount(0), _gainScale(1.0f)
 {
 }
 

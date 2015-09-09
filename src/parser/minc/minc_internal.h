@@ -263,22 +263,7 @@ void print_value(MincValue *v, MincDataType type);
 int is_float_list(const MincList *list);
 MincFloat *float_list_to_array(const MincList *list);
 MincList *array_to_float_list(const MincFloat *array, const int len);
-
-inline const char *MincTypeName(MincDataType type)
-{
-	switch (type) {
-		case MincVoidType:
-			return "void";
-		case MincFloatType:
-			return "float";
-		case MincStringType:
-			return "string";
-		case MincHandleType:
-			return "handle";
-		case MincListType:
-			return "list";
-	}
-}
+const char *MincTypeName(MincDataType type);
 
 #ifdef __cplusplus
 } /* extern "C" */

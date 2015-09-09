@@ -80,6 +80,23 @@ array_to_float_list(const MincFloat *array, const int len)
    return list;
 }
 
+const char *MincTypeName(MincDataType type)
+{
+	switch (type) {
+		case MincVoidType:
+			return "void";
+		case MincFloatType:
+			return "float";
+		case MincStringType:
+			return "string";
+		case MincHandleType:
+			return "handle";
+		case MincListType:
+			return "list";
+	}
+	return NULL;
+}
+
 #ifdef EMBEDDED
 typedef size_t yy_size_t;	// from lex.yy.c
 static const char *sGlobalBuffer;
