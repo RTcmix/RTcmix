@@ -79,10 +79,10 @@ ifeq ($(ARCH),MACOSX)
   SHELL = /bin/sh
   SHLIB_SUFFIX = dylib
 
-  # -- standalone ---------------------------------------------
+  # -- standalone (OSX) ----------------------------------------
   ifeq ($(BUILDTYPE), STANDALONE)
     ARCHFLAGS += $(ARCH_BITFLAGS) -DSTANDALONE
-    ARCH_SYS_LDFLAGS = -framework CoreFoundation	# Only needed for OSX
+    ARCH_SYS_LDFLAGS = -framework CoreFoundation
     ifeq ($(USE_OSX_DISPATCH), TRUE)
       ARCHFLAGS += -DUSE_OSX_DISPATCH
     endif
@@ -180,20 +180,23 @@ ifeq ($(ARCH),FREEBSD)
   SHLIB_SUFFIX = so
 endif
 
-INCLUDES = -I. -I$(CMIXDIR)/include
+# -- Any Standalone --------------------------------------------
+ifeq ($(BUILDTYPE), STANDALONE)
+    ifeq ($(NPLAY_SUPPORT), TRUE)
+      CMIX_FLAGS += -DNETAUDIO
+    endif
+    ifeq ($(JACK_SUPPORT), TRUE)
+      CMIX_FLAGS += -DJACK
+    endif
+    ifeq ($(FFTW_SUPPORT), TRUE)
+      CMIX_FLAGS += -DFFTW
+    endif
+    ifeq ($(MULTI_THREAD_SUPPORT), TRUE)
+      CMIX_FLAGS += -DMULTI_THREAD
+    endif
+endif
 
-ifeq ($(NPLAY_SUPPORT), TRUE)
-CMIX_FLAGS += -DNETAUDIO
-endif
-ifeq ($(JACK_SUPPORT), TRUE)
-CMIX_FLAGS += -DJACK
-endif
-ifeq ($(FFTW_SUPPORT), TRUE)
-CMIX_FLAGS += -DFFTW
-endif
-ifeq ($(MULTI_THREAD_SUPPORT), TRUE)
-CMIX_FLAGS += -DMULTI_THREAD
-endif
+INCLUDES = -I. -I$(CMIXDIR)/include
 
 CFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_FLAGS)
 CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_FLAGS)
