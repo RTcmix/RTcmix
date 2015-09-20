@@ -6,7 +6,7 @@
 //
 // new:
 // 	-- added PField control capability to work with RTcmix v 4.0
-//	-- change MSP_INPUTS and MSP_OUTPUTS to 20
+//	-- change MAX_INPUTS and MAX_OUTPUTS to 20
 //	-- fixed 'orphan editor window' crashing bug
 //	-- fixed the NUMVARS bug
 //
@@ -368,11 +368,26 @@ int main(void)
  	// find the rtcmix-dylibs folder location
 	nameinpath("rtcmix-dylibs", &path);
 	rval = path_topathname(path, "", mpathname);
-	if (rval != 0) error("couldn't find the rtcmix-dylibs folder!");
+	if (rval != 0) {
+		error("couldn't find the rtcmix-dylibs folder!");
+	}
 	else { // this is to find the beginning "/" for root
-		for (i = 0; i < 1000; i++)
-			if (mpathname[i] == '/') break;
-		mpathptr = mpathname+i;
+		if (strncasecmp("Users:", mpathname, 6) == 0) {
+			// Exactly replace "Users:" with "/Users"
+			mpathname[0] = '/';
+			mpathname[1] = 'U';
+			mpathname[2] = 's';
+			mpathname[3] = 'e';
+			mpathname[4] = 'r';
+			mpathname[5] = 's';
+			mpathptr = mpathname;
+		}
+		else {
+			for (i = 0; i < 1000; i++)
+				if (mpathname[i] == '/') break;
+			mpathptr = mpathname+i;
+		}
+		post("converted to '%s'", mpathptr);
 	}
 
 	ps_buffer = gensym("buffer~"); // for [buffer~]
@@ -847,8 +862,7 @@ void rtcmix_dobangout(t_rtcmix *x, Symbol *s, short argc, Atom *argv)
 //tells the user about the inputs/outputs when mousing over them
 void rtcmix_assist(t_rtcmix *x, void *b, long m, long a, char *s)
 {
-    rtcmix_dprint(x, "rtcmix_assist() called");
-    
+
 	if (m == 1) {
 		if (a == 0) sprintf(s, "signal/text (score commands) in");
 		else sprintf(s, "signal/pfieldvals in");
@@ -857,8 +871,6 @@ void rtcmix_assist(t_rtcmix *x, void *b, long m, long a, char *s)
 		if (a < x->num_inputs) sprintf(s, "signal out");
 		else sprintf(s, "bang, float or float-list out");
 	}
-    
-    rtcmix_dprint(x, "rtcmix_assist() complete");
 }
 
 
@@ -1107,7 +1119,7 @@ void rtcmix_badquotes(char *cmd, char *thebuf)
 		} // at this point we're at the beginning of the should-be-quoted param in the buffer
 		
 		// so we copy it to a temporary buffer, insert a quote...
-		strncpy(tbuf, rtinputptr, sizeof(tbuf));
+		strcpy(tbuf, rtinputptr);
 		*rtinputptr++ = 34;
 		strcpy(rtinputptr, tbuf);
 		
@@ -1121,7 +1133,7 @@ void rtcmix_badquotes(char *cmd, char *thebuf)
 			}
 		
 		// and this splices the modified, happily-quoted-param buffer back to the buf we give to rtcmix
-		strncpy(tbuf, rtinputptr, sizeof(tbuf));
+		strcpy(tbuf, rtinputptr);
 		*rtinputptr++ = 34;
 		strcpy(rtinputptr, tbuf);
 	}
@@ -1448,7 +1460,7 @@ void rtcmix_dogoscript(t_rtcmix *x, Symbol *s, short argc, Atom *argv)
         return;
     }
 
-    if ((thebuf = sysmem_newptr(buflen)) == NULL) {
+    if ((thebuf = sysmem_newptr(buflen+1)) == NULL) {
         error("rtcmix~: problem allocating memory for score");
         return;
     }
@@ -1671,7 +1683,7 @@ void rtcmix_dowrite(t_rtcmix *x, Symbol *s, short argc, t_atom *argv)
 		  if (saveasdialog_extended(x->s_name[x->current_script], &x->path[x->current_script], &type_chosen, &thistype, 1))
 			return; //user cancelled
 	} 
-	strncpy(filename, x->s_name[x->current_script], sizeof(filename));
+	strcpy(filename, x->s_name[x->current_script]);
 	
 	err = path_createsysfile(filename, x->path[x->current_script], thistype, &fh);  
 	if (err) {       
@@ -1752,8 +1764,8 @@ void rtcmix_doread(t_rtcmix *x, Symbol *s, short argc, t_atom *argv)
 				x->s_name[x->current_script][0] = 0;
 				break;
 			case A_SYM:
-				strncpy(filename, argv[i].a_w.w_sym->s_name, sizeof(filename));
-				strncpy(x->s_name[x->current_script], filename, 256);
+				strcpy(filename, argv[i].a_w.w_sym->s_name);
+				strcpy(x->s_name[x->current_script], filename);
 		}
 	}
 
@@ -1779,7 +1791,7 @@ void rtcmix_doread(t_rtcmix *x, Symbol *s, short argc, t_atom *argv)
 		return;
 	}
 	
-	strncpy(x->s_name[x->current_script], filename, 256);
+	strcpy(x->s_name[x->current_script], filename);
 	
 	sysfile_geteof(fh, &size);
 	if (x->rtcmix_script[x->current_script]) {
