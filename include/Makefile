@@ -20,6 +20,7 @@ all:
 	ln -sf ../src/rtcmix/sockdefs.h .
 	ln -sf ../src/rtcmix/sfheader.h .
 	ln -sf ../src/rtcmix/notetags.h .
+	ln -sf ../src/rtcmix/RawDataFile.h .
 	ln -sf ../src/rtcmix/RTcmix.h .
 	ln -sf ../src/rtcmix/mixerr.h .
 	ln -sf ../src/rtcmix/byte_routines.h .

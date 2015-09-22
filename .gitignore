@@ -48,6 +48,7 @@ include/PFBusData.h
 include/PField.h
 include/PFieldSet.h
 include/Random.h
+include/RawDataFile.h
 include/RefCounted.h
 include/rt.h
 include/RTcmix.h
