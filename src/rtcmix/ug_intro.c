@@ -105,6 +105,7 @@ ug_intro()
 	UG_INTRO("log",m_log);
 	UG_INTRO("ln",m_ln);
 	UG_INTRO("pow",m_pow);
+	UG_INTRO("sqrt",m_sqrt);
 	UG_INTRO("round",m_round);
 	UG_INTRO("print",m_print);
 	UG_INTRO("wrap",m_wrap);
