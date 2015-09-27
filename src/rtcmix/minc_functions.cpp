@@ -152,6 +152,14 @@ double m_pow(float p[], int n_args, double pp[])
 	return(val);
 }
 
+double m_sqrt(float p[], int n_args, double pp[])
+{
+	double val;
+
+	val = sqrt(pp[0]);
+	return(val);
+}
+
 double m_round(float p[], int n_args)
 {
 	int val = p[0] + .5;

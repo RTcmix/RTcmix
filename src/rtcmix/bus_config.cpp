@@ -826,10 +826,6 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
    if (n_args < 2)
       return die("bus_config", "Wrong number of args.");
 
-	if (!rtsetparams_was_called()) {
-		return die("bus_config", "You did not call rtsetparams!");
-	}
-
    bus_slot = new BusSlot(busCount);
    if (bus_slot == NULL)
       return -1.0;
