@@ -2,6 +2,7 @@
 
 #include "PVFilterTest.h"
 #include <stdio.h>
+#include <ugens.h>
 
 PVFilter *
 PVFilterTest::create()
