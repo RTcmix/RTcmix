@@ -125,15 +125,15 @@ extern "C" {
 }
 
 int
-RTcmix_init()	// BGG mm -- now called this for max/msp
+RTcmix_init()
 {
-	clear_print();
-
-// BGG no argc and argv in max/msp version mm
-   app = new RTcmixMain();
-   app->run(); // in max/msp this just sets it all up...
-
-   return 0;
+	if (app == NULL) {
+		clear_print();
+		// BGG no argc and argv in max/msp version mm
+		app = new RTcmixMain();
+		app->run(); // in max/msp this just sets it all up...
+	}
+	return 0;
 }
 
 int
