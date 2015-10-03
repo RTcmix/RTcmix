@@ -28,8 +28,7 @@ int						g_currentFilters = 0;
 int RegisterFilter(FilterCreateFunction createFunction)
 {
 	if (g_currentFilters + 1 >= maxFilters) {
-		rterror(0, "RegisterFilter: exceeded max allowed filters (%d)", 
-				maxFilters);
+		rterror("set_filter", "Exceeded max allowed filters (%d)", maxFilters);
 		return -1;
 	}
 	g_filterCtors[g_currentFilters] = createFunction;
@@ -47,10 +46,18 @@ int GetFilter(PVFilter **ppFilter)
 		if (g_filterCtors[g_currentFilterSlot] != 0) {
 			filter = (*g_filterCtors[g_currentFilterSlot])();
 			g_filters[g_currentFilterSlot] = filter;
+			filter->ref();
 		}
 	}
 	*ppFilter = filter;
 	return 1;
+}
+
+void ClearFilter()
+{
+	rtcmix_debug("ClearFilter", "releasing filter in slot %d", g_currentFilterSlot);
+	RefCounted::unref(g_filters[g_currentFilterSlot]);
+	g_filters[g_currentFilterSlot] = NULL;
 }
 
 double set_filter(float *p, int n_args, double *pp)
@@ -101,10 +108,11 @@ double set_filter(float *p, int n_args, double *pp)
 
 double init_filter(float *p, int n_args, double *pp)
 {
+	::ClearFilter();
 	PVFilter *filter = NULL;
 	::GetFilter(&filter);
 	if (filter) {
-			return filter->init(pp, n_args);
+		return filter->init(pp, n_args);
 	}
 	return -1;
 }
