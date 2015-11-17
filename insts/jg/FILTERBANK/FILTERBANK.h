@@ -21,7 +21,7 @@ public:
 
 
 class FILTERBANK : public Instrument {
-	int			nargs, skip, branch, insamps, numbands, inchan;
+	int			nargs, branch, insamps, numbands, inchan;
 	float			amp, pan;
 	float			*in;
 	FilterBand	**filt;

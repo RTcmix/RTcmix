@@ -107,8 +107,6 @@ int FILTERBANK::init(double p[], int n_args)
 		band++;
 	}
 
-	skip = int(SR / (float) resetval);
-
 	return nSamps();
 }
 
@@ -155,7 +153,7 @@ int FILTERBANK::run()
 	for (int i = 0; i < samps; i += inchans) {
 		if (--branch <= 0) {
 			doupdate();
-			branch = skip;
+			branch = getSkip();
 		}
 
 		float insig;
