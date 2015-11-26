@@ -306,6 +306,47 @@ void rtcmix_okclose (t_rtcmix *x, char *prompt, short *result);
 void rtcmix_save(t_rtcmix *x, void *w);
 void rtcmix_restore(t_rtcmix *x, Symbol *s, short argc, Atom *argv);
 
+#ifdef DEBUG_MEMORY_OVERRUNS
+
+#define MEMSTART_COOKIE 0xabcdabcd
+#define MEMEND_COOKIE 0xefefefef
+struct memcheck { unsigned cookie; unsigned size; };
+
+// Debug memory looks like this:
+// MEMSTART SIZE   MEMORYFORUSER MEMEND
+// 4bytes  4bytes 'size' bytes  4 bytes
+
+#include <assert.h>
+
+void *newmem(unsigned size)
+{
+    unsigned long newsize = size + sizeof(struct memcheck) + 4;
+    char *cptr = (char *)sysmem_newptr(newsize);
+    struct memcheck *m = (struct memcheck *) cptr;
+    m->cookie = MEMSTART_COOKIE;                        // tag first 4 bytes
+    m->size = newsize;                                 // store size in next 4
+    *((unsigned*)(cptr+newsize-4)) = MEMEND_COOKIE;  // tag last 4 bytes (past user end)
+    return (void *)(cptr+sizeof(struct memcheck));   // return  offset into memory
+}
+
+void freemem(void *ptr)
+{
+    char *cptr = ((char *)ptr) - sizeof(struct memcheck);     // back up
+    struct memcheck *m = (struct memcheck *) cptr;            // cast to our struct
+    assert(m->cookie == MEMSTART_COOKIE);                       // check for corruption
+    assert(m->size < 10000);                                    // make sure its not some large negative, etc.
+    cptr += (m->size - 4);                                      // offset to the last 4 bytes
+    assert(*((unsigned*) cptr) == MEMEND_COOKIE);               // check for corruption
+    sysmem_freeptr(((char *)ptr) - sizeof(struct memcheck));    // free entire original block
+}
+
+#else
+
+void *newmem(unsigned size) { return sysmem_newptr(size); }
+void freemem(void *ptr) { sysmem_freeptr(ptr); }
+
+#endif
+
 t_symbol *ps_buffer; // for [buffer~]
 
 
@@ -1348,11 +1389,11 @@ void rtcmix_edclose (t_rtcmix *x, char **text, long size)
 	rtcmix_dprint(x, "rtcmix_edclose() called with text \"%.16s\"... with size %ld", *text, size);
 	
 	if (x->rtcmix_script[x->current_script]) {
-		sysmem_freeptr((void *)x->rtcmix_script[x->current_script]);
+		freemem((void *)x->rtcmix_script[x->current_script]);
 		x->rtcmix_script[x->current_script] = 0;
 	}
 	x->rtcmix_script_len[x->current_script] = size;
-	x->rtcmix_script[x->current_script] = (char *)sysmem_newptr((size+1) * sizeof(char)); // size+1 so we can add '\0' at end
+	x->rtcmix_script[x->current_script] = (char *)newmem((size+1) * sizeof(char)); // size+1 so we can add '\0' at end
 	if (x->rtcmix_script[x->current_script]) {
 		strncpy(x->rtcmix_script[x->current_script], *text, size);
 		x->rtcmix_script[x->current_script][size] = '\0'; // add the terminating '\0'
@@ -1413,6 +1454,12 @@ void rtcmix_goscript(t_rtcmix *x, Symbol *s, short argc, Atom *argv)
 	rtcmix_dprint(x, "rtcmix_goscript() complete");
 }
 
+static int count_chars(const char* string, char ch)
+{
+	int count = 0;
+	for(; *string; count += (*string++ == ch)) ;
+	return count;
+}
 
 // the [goscript N] message will cause buffer N to be sent to the RTcmix parser
 void rtcmix_dogoscript(t_rtcmix *x, Symbol *s, short argc, Atom *argv)
@@ -1460,14 +1507,20 @@ void rtcmix_dogoscript(t_rtcmix *x, Symbol *s, short argc, Atom *argv)
 		return;
 	}
 	
-	if ((thebuf = sysmem_newptr(buflen+1)) == NULL) {
+	// $ variables add length when expanded
+	int substitutions = count_chars(x->rtcmix_script[x->current_script], '$');
+	
+	// We'll leave 16 chars for each
+	buflen += (substitutions * 16);
+	
+	if ((thebuf = newmem(buflen+1)) == NULL) {
 		error("rtcmix~: problem allocating memory for score");
 		return;
 	}
 	
 	// probably don't need to transfer to a new buffer, but I want to be sure there's room for the \0,
 	// plus the substitution of \n for those annoying ^M thingies
-	for (i = 0, j = 0; i < buflen; i++) {
+	for (i = 0, j = 0; i < buflen && j < buflen; i++) {
 		thebuf[j] = *(x->rtcmix_script[x->current_script]+i);
 		if ((int)thebuf[j] == 13) thebuf[j] = '\n'; // RTcmix wants newlines, not <cr>'s
 		
@@ -1475,7 +1528,7 @@ void rtcmix_dogoscript(t_rtcmix *x, Symbol *s, short argc, Atom *argv)
 		if (thebuf[j] == '$') {
 			sscanf(x->rtcmix_script[x->current_script]+i+1, "%d", &tval);
 			if ( !(x->var_set[tval-1]) ) error("variable $%d has not been set yet, using 0.0 as default", tval);
-			sprintf(thebuf+j, "%f", x->var_array[tval-1]);
+			snprintf(thebuf+j, buflen-j, "%f", x->var_array[tval-1]);
 			j = strlen(thebuf)-1;
 			i++; // skip over the var number in input
 		}
@@ -1491,7 +1544,7 @@ void rtcmix_dogoscript(t_rtcmix *x, Symbol *s, short argc, Atom *argv)
 		post("DACs must be on to parse an RTcmix script");
 	}
 	
-	sysmem_freeptr(thebuf);
+	freemem(thebuf);
 	
 	rtcmix_dprint(x, "rtcmix_dogoscript() complete with current script size: %i",
 				  buflen);
@@ -1795,11 +1848,11 @@ void rtcmix_doread(t_rtcmix *x, Symbol *s, short argc, t_atom *argv)
 	
 	sysfile_geteof(fh, &size);
 	if (x->rtcmix_script[x->current_script]) {
-		sysmem_freeptr((void *)x->rtcmix_script[x->current_script]);
+		freemem((void *)x->rtcmix_script[x->current_script]);
 		x->rtcmix_script[x->current_script] = 0;
 	}
 	// BGG size+1 in max5 to add the terminating '\0'
-	if (!(x->rtcmix_script[x->current_script] = (char *)sysmem_newptr(size+1)) || !(script_handle = sysmem_newhandle(size+1))) {
+	if (!(x->rtcmix_script[x->current_script] = (char *)newmem(size+1)) || !(script_handle = sysmem_newhandle(size+1))) {
 		error("rtcmix~: %s too big to read", filename);
 		return;
 	} else {
@@ -1879,7 +1932,7 @@ void rtcmix_restore(t_rtcmix *x, Symbol *s, short argc, Atom *argv)
 	}
 	
 	if (!x->rtcmix_script[x->current_script]) { // if the script isn't being restored already
-		if (!(x->rtcmix_script[x->current_script] = (char *)sysmem_newptr(fsize+1))) { // fsize+1 for the '\0
+		if (!(x->rtcmix_script[x->current_script] = (char *)newmem(fsize+1))) { // fsize+1 for the '\0
 			error("rtcmix~: problem allocating memory for restored script");
 			return;
 		}
