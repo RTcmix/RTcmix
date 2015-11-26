@@ -3,7 +3,7 @@ include ../../makefile.conf
 OBJECT = rtcmix~.mxo
 
 all:
-	xcodebuild -project rtcmix~.xcodeproj -target rtcmix~ -configuration Default -arch i386 MAX_SDK_PATH=${MAX_SDK_PATH}
+	xcodebuild -project rtcmix~.xcodeproj -target rtcmix~ -configuration Default -arch ${BUILD_ARCH} MAX_SDK_PATH=${MAX_SDK_PATH}
 
 .PHONY: install clean cleanall
 

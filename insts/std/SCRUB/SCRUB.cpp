@@ -135,9 +135,9 @@ int SCRUB::configure()
 	in = new float[inputChannels() * RTBUFSAMPS];
 	int length = (int)(kSincWidth * kSincOversampling);
 	pSincTable = new float[length + 1]; // store the last 0.0, too
-	pSincTableDiffs = new float[length];
+	pSincTableDiffs = new float[length + 1];
 	if (pSincTable && pSincTableDiffs) {
-		MakeSincTable();
+		FillSincTable(length);
 	}
 	else {
 		delete [] in;
@@ -346,7 +346,7 @@ void SCRUB::RotateRawFrames(long frameshift) {
 
 
 //
-// MakeSincTable
+// FillSincTable
 // -------------
 // Fill pSincTable with a Hamming-windowed (raised cosine) sinc function up
 // to the kSincWidth'th zero-crossing to the left and right.  Since the sinc
@@ -354,8 +354,7 @@ void SCRUB::RotateRawFrames(long frameshift) {
 // Also fill an auxiliary table (pSincTableDiffs) with differences between
 // the sinc samples for efficiency.
 
-void SCRUB::MakeSincTable() {
-  int length = (int)(kSincWidth * kSincOversampling) + 1;
+void SCRUB::FillSincTable(int length) {
   float T_s = (float)M_PI / kSincOversampling; // sinc sample interval
   float T_w = T_s / kSincWidth; // window sample interval
   float rad;
@@ -367,7 +366,9 @@ void SCRUB::MakeSincTable() {
     pSincTable[i] = sin(rad)/rad * (.5 * cos(i * T_w) + .5);
     pSincTableDiffs[i-1] = pSincTable[i] - pSincTable[i-1];
   }
-} 
+	pSincTable[length] = pSincTable[length-1];
+	pSincTableDiffs[length] = 0.0;
+}
 
 
 //

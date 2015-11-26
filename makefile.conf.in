@@ -93,20 +93,22 @@ ifeq ($(ARCH),MACOSX)
   # -- MaxMSP -------------------------------------------------
   ifeq ($(BUILDTYPE), MAXMSP)
     ARCH_BITFLAGS = -m32   # must use this for current rtcmix~
-    ARCHFLAGS += -DEMBEDDED -DMAXMSP -DMSP_AUDIO_DEVICE $(MAX_INCLUDES)
+    ARCHFLAGS += $(ARCH_BITFLAGS) -DEMBEDDED -DMAXMSP -DMSP_AUDIO_DEVICE $(MAX_INCLUDES)
     ifeq ($(USE_OSX_DISPATCH), TRUE)
       ARCHFLAGS += -DUSE_OSX_DISPATCH
     endif
-    ifdef MAX_INPUTS
-      ARCHFLAGS += -DMAX_INPUTS=$(MAX_INPUTS)
-    endif
-    ifdef MAX_OUTPUTS
-      ARCHFLAGS += -DMAX_OUTPUTS=$(MAX_OUTPUTS)
+    # Optional but rare override for the maximum number of supported audio
+    # channels.  Must be >= 8
+    ifdef MAXCHANS
+      ARCHFLAGS += -DMAXCHANS=$(MAXCHANS)
     endif
     ARCHFLAGS += -isysroot `xcrun --show-sdk-path`
     CC = `xcrun -f cc`
     CXX = `xcrun -f c++` -Wno-deprecated
     MAX_INCLUDES = -I${MAX_SDK_PATH}/c74support/max-includes -I${MAX_SDK_PATH}/c74support/msp-includes -F${MAX_SDK_PATH}/c74support/max-includes -F${MAX_SDK_PATH}/c74support/msp-includes -I/System/Library/Frameworks/CoreServices.framework/Frameworks/CarbonCore.framework/Headers
+
+	RTLIB = rtcmixdylib.so
+	RTLIB_LDFLAGS = $(UB_CFLAGS) -U _cpost -U _dsp_addv -bundle -flat_namespace
   endif
 
   # -- Pd -----------------------------------------------------
@@ -115,15 +117,20 @@ ifeq ($(ARCH),MACOSX)
 # FIXME: why these compiler names?
     CC = i686-apple-darwin11-llvm-gcc-4.2
     CXX = i686-apple-darwin11-llvm-g++-4.2 -Wno-deprecated
+
+	RTLIB = rtcmixdylib_osx.so
+	RTLIB_LDFLAGS = $(UB_CFLAGS) -U _cpost -bundle -flat_namespace
+	RTLIBTYPE = DYNAMIC
   endif
 
   # -- iOS ----------------------------------------------------
   ifeq ($(BUILDTYPE), IOS)
     CMIX_FLAGS += -DAPPLEAUDIO
+	RTLIBTYPE = STATIC
     ifeq ($(IPHONE_TYPE), SIMULATOR)
 # FIXME: -m32 was set in site.conf.ios-sim, but not ios-dev. Okay?
       ARCH_BITFLAGS = -m32
-      ARCHFLAGS += -DEMBEDDED -DIOS -DSIMULATOR -arch i386
+      ARCHFLAGS += $(ARCH_BITFLAGS) -DEMBEDDED -DIOS -DSIMULATOR -arch i386
       ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX) -arch i386 -framework AudioToolbox
       ifeq ($(USE_OSX_DISPATCH), TRUE)
         ARCHFLAGS += -DUSE_OSX_DISPATCH
@@ -131,9 +138,11 @@ ifeq ($(ARCH),MACOSX)
       IPHONE_CFLAGS = -isysroot `xcrun -sdk iphonesimulator --show-sdk-path`
       CC = `xcrun -sdk iphonesimulator -f cc`
       CXX = `xcrun -sdk iphonesimulator -f c++` -Wno-deprecated
+
+	  RTLIB = librtcmix_iphone-SIM.a
     endif
     ifeq ($(IPHONE_TYPE), DEVICE)
-      ARCHFLAGS += -DEMBEDDED -DIOS -DIOSDEV
+      ARCHFLAGS += $(ARCH_BITFLAGS) -DEMBEDDED -DIOS -DIOSDEV
       ARCH_RTLDFLAGS =
       ifeq ($(USE_OSX_DISPATCH), TRUE)
         ARCHFLAGS += -DUSE_OSX_DISPATCH
@@ -141,6 +150,8 @@ ifeq ($(ARCH),MACOSX)
       IPHONE_CFLAGS = -isysroot `xcrun -sdk iphoneos --show-sdk-path`
       CC = `xcrun -sdk iphoneos -f cc` -arch armv7s -arch armv7
       CXX = `xcrun -sdk iphoneos -f c++` -arch armv7s -arch armv7
+
+	  RTLIB = librtcmix_iphone-DEV.a
     endif
   endif
 
@@ -148,6 +159,8 @@ ifeq ($(ARCH),MACOSX)
   ifeq ($(BUILDTYPE), OPENFRAMEWORKS)
     ifeq ($(OF_TYPE), OSXAPP)
       ARCHFLAGS += -DEMBEDDED -DIOS -DOPENFRAMEWORKS -arch i386
+      RTLIB = librtcmix.a
+      RTLIBTYPE = STATIC
     endif
   endif
 endif
@@ -182,6 +195,10 @@ endif
 
 # -- Any Standalone --------------------------------------------
 ifeq ($(BUILDTYPE), STANDALONE)
+	RTLIB = librtcmix.$(SHLIB_SUFFIX)
+	RTLIB_LDFLAGS = $(DYNAMIC_LDFLAGS)
+	RTLIBTYPE = DYNAMIC
+
     ifeq ($(NPLAY_SUPPORT), TRUE)
       CMIX_FLAGS += -DNETAUDIO
     endif
@@ -203,7 +220,6 @@ CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_F
 
 # Platform-independent library flags
 
-RTLIB = librtcmix.$(SHLIB_SUFFIX)
 LIBRTCMIX = $(LIBDIR)/$(RTLIB)
 RTLDFLAGS = -L$(LIBDIR) -lrtcmix -lgen
 
@@ -222,6 +238,8 @@ GENLIB =
 # LDFLAGS:              Libraries which standalone binaries link against.
 # IMBCMIXOBJS:          Non-lib .o files which imbedded binaries need.
 # DYNAMIC_LDFLAGS:      Linker flags when creating dynamic shared libraries.
+
+#
 
 ifeq ($(ARCH),LINUX)
   ifeq ($(AUDIODRIVER),ALSA)
