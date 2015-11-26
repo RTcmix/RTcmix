@@ -44,7 +44,7 @@ private:
 	void EnsureRawFramesIdxInbound();
 
 	// Set up pSincTable and pSincTableDiffs.
-	void MakeSincTable();
+	void FillSincTable(int length);
 	
 	bool _initialized;
 

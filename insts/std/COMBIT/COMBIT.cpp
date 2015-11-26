@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <ugens.h>
 #include <Ougens.h>
-#include <COMBIT.h>
+#include "COMBIT.h"
 #include <rt.h>
 #include <rtdefs.h>
 
