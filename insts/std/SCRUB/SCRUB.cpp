@@ -28,8 +28,8 @@
 #include <math.h>
 #include <string.h>
 
-//#define DEBUG
-//#define DEBUG_FULL
+#undef DEBUG
+#undef DEBUG_FULL
 
 #ifdef DEBUG
 #define PRINT printf
@@ -164,6 +164,8 @@ int SCRUB::run()
 
 	GetFrames(in, frameCount, speed);
 
+	PRINT("run: writing %d frames to output\n", frameCount);
+	
 	for (i = 0; i < frameCount; i++) {
 		if (--branch < 0) {
 			double 	p[6];
@@ -258,10 +260,12 @@ int SCRUB::ReadRawFrames(int destframe, int nframes) {
       fromFrame += fFrameCount;
     toFrame = fFileChunkEndFrame;
     fFileChunkStartFrame = (int) fromFrame;
+	  PRINT("ReadRawFrames: nframes %d, fromFrame %.2f\n", nframes, fromFrame);
   } else {
     fromFrame = fFileChunkEndFrame;
     toFrame = (fFileChunkEndFrame + nframes) % fFrameCount;
     fFileChunkEndFrame = (int)toFrame;
+	  PRINT("ReadRawFrames: nframes %d, fromFrame %.2f\n", nframes, fromFrame);
   }
 
   int res;
@@ -280,7 +284,7 @@ int SCRUB::ReadRawFrames(int destframe, int nframes) {
 		int framesToRead = min(RTBUFSAMPS, toread - read);
 		res = rtgetin(&pRawFrames[(destframe + read) * fChannels],
 					  this,
-					  framesToRead * fChannels);
+					  framesToRead * fChannels) / fChannels;
 		if (res == -1) {
 		  err = -1;
 		  break;
@@ -440,7 +444,7 @@ void SCRUB::GetFrames(float* frames, const int nframes, const float speed) {
 	int sincwidth = int(kSincWidth / ascaler); // preserve filter quality by
 						 // raising number of samps
 						 // interpolated
-
+	PRINT("GetFrames: nframes=%d\n", nframes);
 	for (int frm = 0; frm < nframes; frm++) { // for each frame do ...
 		EnsureRawFramesIdxInbound(); // rotate ring buffer, if necessary
 		cursmp = int(fCurRawFramesIdx);
