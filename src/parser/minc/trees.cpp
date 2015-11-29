@@ -972,6 +972,51 @@ do_op_list_iterate(Tree tp, Tree child, const MincFloat val, const OpKind op)
    ++destList->refcount;
 }
 
+/* ---------------------------------------------------- do_op_list_list -- */
+/* Currently just supports + and +=, concatenating the lists.  Store the result into a
+ new list for <tp>, so that child's list is unchanged.  N.B. This will operate on zero-length
+ and NULL lists as well.
+ */
+static void
+do_op_list_list(Tree tp, Tree child1, Tree child2, const OpKind op)
+{
+	ENTER();
+	int i, n;
+	const MincList *list1 = child1->v.list;
+	const int len1 = (list1) ? list1->len : 0;
+	MincListElem *src1 = (list1) ? list1->data : NULL;
+	const MincList *list2 = child2->v.list;
+	const int len2 = (list2) ? list2->len : 0;
+	MincListElem *src2 = (list2) ? list2->data : NULL;
+	
+	MincList *destList;
+	MincListElem *dest;
+	switch (op) {
+		case OpPlus:
+			destList = newList(len1+len2);
+			if (destList == NULL)
+				return;
+			dest = destList->data;
+			for (i = 0, n = 0; i < len1; ++i, ++n) {
+				dest[i] = src1[n];
+			}
+			for (n = 0; n < len2; ++i, ++n) {
+				dest[i] = src2[n];
+			}
+			break;
+		default:
+			minc_warn("invalid operator for two lists");
+			destList = newList(0);		// return zero-length list
+			break;
+	}
+	if (tp->type == MincListType) {	// if we are overwriting
+		unref_value_list(&tp->v);
+	}
+	tp->type = MincListType;
+	tp->v.list = destList;
+	TPRINT("do_op_list_list: list %p refcount %d -> %d\n", destList, destList->refcount, destList->refcount+1);
+	++destList->refcount;
+}
 
 /* --------------------------------------------------------- exct_operator -- */
 static void
@@ -1066,7 +1111,7 @@ exct_operator(Tree tp, OpKind op)
                minc_warn("can't operate on a handle");
                break;
             case MincListType:
-               minc_warn("can't operate on two lists");
+               do_op_list_list(tp, child0, child1, op);
                break;
             default:
 			   minc_internal_error("operator %s: invalid rhs type: %s", printOpKind(op), MincTypeName(child1->type));
