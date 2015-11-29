@@ -1589,6 +1589,7 @@ extern "C" {
 	double tablelen(const Arg args[], const int nargs);
 	double tablemin(const Arg args[], const int nargs);
 	double tablemax(const Arg args[], const int nargs);
+	double tablemean(const Arg args[], const int nargs);
 	Handle copytable(const Arg args[], const int nargs);
 	double samptable(const Arg args[], const int nargs);
 	double dumptable(const Arg args[], const int nargs);
