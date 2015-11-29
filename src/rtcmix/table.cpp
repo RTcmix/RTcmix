@@ -1793,6 +1793,23 @@ tablemax(const Arg args[], const int nargs)
 	return max;
 }
 
+// ---------------------------------------------------------------- tablemax ---
+// mean = tablemean(table_handle)
+
+double
+tablemean(const Arg args[], const int nargs)
+{
+	if (nargs != 1)
+		return die("tablemean", "Takes only one argument: a valid table handle.");
+	PField *pf = args[0];
+	if (pf == NULL)
+		return die("tablemean", "Argument must be a valid table handle.");
+	const double *table = (double *) *pf;
+	if (table == NULL)
+		return die("tablemean", "Argument must be a valid table handle.");
+	const int len = pf->values();
+	return get_table_mean(table, len);
+}
 
 // --------------------------------------------------------------- copytable ---
 // Make a copy of the given table, and return the copy.	If the optional

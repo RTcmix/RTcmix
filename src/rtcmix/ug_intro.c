@@ -20,6 +20,7 @@ ug_intro()
    UG_INTRO_DOUBLE_RETURN("tablelen", tablelen);
    UG_INTRO_DOUBLE_RETURN("tablemin", tablemin);
    UG_INTRO_DOUBLE_RETURN("tablemax", tablemax);
+   UG_INTRO_DOUBLE_RETURN("tablemean", tablemean);
    UG_INTRO_HANDLE_RETURN("copytable", copytable);
    UG_INTRO_DOUBLE_RETURN("samptable", samptable);
    UG_INTRO_DOUBLE_RETURN("dumptable", dumptable);

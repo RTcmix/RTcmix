@@ -50,6 +50,17 @@ void get_table_bounds(const double *array, const int len,
 	}
 }
 
+// -------------------------------------------------------- get_table_mean ---
+// Return the average of all the values in a table
+
+double get_table_mean(const double *array, const int len)
+{
+	double total = 0.0;
+	for (int i = 0; i < len; i++) {
+		total += array[i];
+	}
+	return total / len;
+}
 
 // ------------------------------------------------------ fill_linebrk_table ---
 // Given a breakpoint specification, fill the table <array> of length <len>
