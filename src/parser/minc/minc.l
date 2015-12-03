@@ -91,7 +91,7 @@ num   {dig}+
 <INIT>" "|"\t"       ;
 <INIT>^include		  	{ BEGIN INCLUDE; }
 <INIT>({let}|"_")({let}|{dig}|"#"|"_"|".")*   return TOK_IDENT;
-<INIT>.                 { char msg[24]; sprintf(msg, "invalid character: '%c'", yytext[0]); yyerror(msg); }
+<INIT>.                 { char msg[32]; snprintf(msg, 32, "invalid character: (%u) '%c'", (unsigned)yytext[0], yytext[0]); yyerror(msg); }
 ^include		  		{ BEGIN INCLUDE; }
 .|"\n"                  { BEGIN INIT; unput(yytext[0]); }
 <INCLUDE>[ \t]*      /* eat the whitespace */
