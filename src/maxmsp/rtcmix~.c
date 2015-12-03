@@ -1110,7 +1110,10 @@ void rtcmix_dotext(t_rtcmix *x, Symbol *s, short argc, Atom *argv)
 		rtcmix_badquotes("system", thebuf);
 		rtcmix_badquotes("dataset", thebuf);
 		
-		if (x->parse_score(thebuf, strlen(thebuf)) != 0) error("problem parsing RTcmix script");
+		if (x->parse_score(thebuf, strlen(thebuf)) != 0) {
+			error("problem parsing RTcmix script");
+			rtcmix_dprint(x, "script: \"%s\"", thebuf);
+		}
 	}
 	else {
 		post("DACs must be on to parse an RTcmix script");
@@ -1511,18 +1514,23 @@ void rtcmix_dogoscript(t_rtcmix *x, Symbol *s, short argc, Atom *argv)
 	int substitutions = count_chars(x->rtcmix_script[x->current_script], '$');
 	
 	// We'll leave 16 chars for each
-	buflen += (substitutions * 16);
+	int outbuflen = buflen + (substitutions * 16);
 	
-	if ((thebuf = newmem(buflen+1)) == NULL) {
+	// make sure there's room for the \0,
+	// plus the substitution of \n for those annoying ^M thingies
+
+	if ((thebuf = newmem(outbuflen+1)) == NULL) {
 		error("rtcmix~: problem allocating memory for score");
 		return;
 	}
 	
-	// probably don't need to transfer to a new buffer, but I want to be sure there's room for the \0,
-	// plus the substitution of \n for those annoying ^M thingies
-	for (i = 0, j = 0; i < buflen && j < buflen; i++) {
+	for (i = 0, j = 0; i < buflen && j < outbuflen; i++) {
 		thebuf[j] = *(x->rtcmix_script[x->current_script]+i);
-		if ((int)thebuf[j] == 13) thebuf[j] = '\n'; // RTcmix wants newlines, not <cr>'s
+		if ((int)thebuf[j] == 13)
+			thebuf[j] = '\n'; 	// RTcmix wants newlines, not <cr>'s
+		else if (thebuf[j] == '0') {
+			break;				// done
+		}
 		
 		// ok, here's where we substitute the $vars
 		if (thebuf[j] == '$') {
@@ -1538,7 +1546,10 @@ void rtcmix_dogoscript(t_rtcmix *x, Symbol *s, short argc, Atom *argv)
 	
 	// don't send if the dacs aren't turned on, unless it is a system() <------- HACK HACK HACK!
 	if ( (sys_getdspstate() == 1) || (strncmp(thebuf, "system", 6) == 0) ) {
-		if (x->parse_score(thebuf, j) != 0) error("problem parsing RTcmix script");
+		if (x->parse_score(thebuf, j) != 0) {
+			error("problem parsing RTcmix script");
+			rtcmix_dprint(x, "script: \"%s\"", thebuf);
+		}
 	}
 	else {
 		post("DACs must be on to parse an RTcmix script");
@@ -1546,8 +1557,7 @@ void rtcmix_dogoscript(t_rtcmix *x, Symbol *s, short argc, Atom *argv)
 	
 	freemem(thebuf);
 	
-	rtcmix_dprint(x, "rtcmix_dogoscript() complete with current script size: %i",
-				  buflen);
+	rtcmix_dprint(x, "rtcmix_dogoscript() complete with expanded script size: %i", j);
 }
 
 
