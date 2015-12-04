@@ -24,6 +24,37 @@ Arg::operator == (const char *str) const {
 	return isType(StringType) && !strcmp(_val.string, str);
 }
 
+Arg::Arg(const Arg &rhs) {
+	*this = rhs;
+}
+
+Arg & Arg::operator = (const Arg &rhs) {
+	assert(_type == VoidType);		// for now, we only allow assigning into empty instances
+	_type = rhs._type;
+	switch (_type) {
+		case DoubleType:
+			_val.number = rhs._val.number;
+			break;
+		case StringType:
+			_val.string = rhs._val.string;
+			break;
+		case HandleType:
+			_val.handle = rhs._val.handle;
+			break;
+		case ArrayType:
+			_val.array = (Array *) malloc(sizeof(Array));
+			_val.array->data = (double *) malloc(rhs._val.array->len * sizeof(double));
+			if (_val.array->data != NULL) {
+				memcpy(_val.array->data, rhs._val.array->data, rhs._val.array->len * sizeof(double));
+				_val.array->len = rhs._val.array->len;
+			}
+			break;
+		case VoidType:
+			break;
+	}
+	return *this;
+}
+
 void
 Arg::operator = (const Handle h) {
 	_type = HandleType;

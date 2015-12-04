@@ -49,6 +49,8 @@ typedef struct {
 #ifdef __cplusplus
    Arg() : _type(VoidType) { _val.number = 0.0; }
    ~Arg();
+   Arg(const Arg &rhs);
+   Arg & operator = (const Arg &rhs);
    RTcmixType type() const { return this->_type; }
    bool isType(RTcmixType type) const { return _type == type; }
    void operator = (double d) { _type = DoubleType; _val.number = d; }
