@@ -195,7 +195,7 @@
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
 				PRODUCT_NAME = "rtcmix~";
-				SDKROOT = macosx10.8;
+				SDKROOT = macosx10.10;
 				SECTORDER_FLAGS = "";
 				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
 				USER_HEADER_SEARCH_PATHS = "";
@@ -243,7 +243,7 @@
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
 				PRODUCT_NAME = "rtcmix~";
-				SDKROOT = macosx10.8;
+				SDKROOT = macosx10.10;
 				SECTORDER_FLAGS = "";
 				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
 				USER_HEADER_SEARCH_PATHS = "";
@@ -290,7 +290,7 @@
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
 				PRODUCT_NAME = "rtcmix~";
-				SDKROOT = macosx10.8;
+				SDKROOT = macosx10.10;
 				SECTORDER_FLAGS = "";
 				STRINGS_FILE_OUTPUT_ENCODING = "UTF-8";
 				USER_HEADER_SEARCH_PATHS = "";
@@ -318,13 +318,15 @@
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_PROJECT_1 = "“$(MAX_SDK_PATH)/c74support/msp-includes\"";
 				FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_PROJECT_2 = "“$(MAX_SDK_PATH)/c74support/max-includes\"";
 				GCC_ALTIVEC_EXTENSIONS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_WARN_ABOUT_DEPRECATED_FUNCTIONS = NO;
 				GENERATE_PKGINFO_FILE = YES;
 				HEADER_SEARCH_PATHS = "\"$(MAX_SDK_PATH)/c74support\"";
 				INFOPLIST_FILE = Info.plist;
-				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MAX_SDK_PATH = "/opt/local/src/MaxSDK-5.1.6";
-				SDKROOT = macosx10.8;
+				SDKROOT = macosx10.10;
+				STRIP_INSTALLED_PRODUCT = NO;
 			};
 			name = Development;
 		};
@@ -346,9 +348,9 @@
 				GENERATE_PKGINFO_FILE = YES;
 				HEADER_SEARCH_PATHS = "\"$(MAX_SDK_PATH)/c74support\"";
 				INFOPLIST_FILE = Info.plist;
-				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MAX_SDK_PATH = "/opt/local/src/MaxSDK-5.1.6";
-				SDKROOT = macosx10.8;
+				SDKROOT = macosx10.10;
 			};
 			name = Deployment;
 		};
@@ -370,9 +372,9 @@
 				GENERATE_PKGINFO_FILE = YES;
 				HEADER_SEARCH_PATHS = "\"$(MAX_SDK_PATH)/c74support\"";
 				INFOPLIST_FILE = Info.plist;
-				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MAX_SDK_PATH = "/opt/local/src/MaxSDK-5.1.6";
-				SDKROOT = macosx10.8;
+				SDKROOT = macosx10.10;
 			};
 			name = Default;
 		};
