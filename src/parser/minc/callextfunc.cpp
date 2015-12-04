@@ -12,12 +12,61 @@
 #include <prototypes.h>
 #include <PField.h>
 
+static Arg * minc_list_to_arglist(const char *funcname, const MincListElem *inList, const int inListLen, Arg *inArgs, int *pNumArgs)
+{
+	int oldNumArgs = *pNumArgs;
+	int n = 0, newNumArgs = oldNumArgs + inListLen;
+	// Create expanded array
+	Arg *newArgs = new Arg[newNumArgs];
+	if (newArgs == NULL)
+		return NULL;
+	if (inArgs != NULL) {
+		// Copy existing args to new array
+		for (; n < oldNumArgs; ++n) {
+			newArgs[n] = inArgs[n];
+		}
+	}
+	for (int i = 0; n < newNumArgs; ++i, ++n) {
+		switch (inList[i].type) {
+			case MincVoidType:
+				minc_die("call_external_function: %s(): invalid argument type", funcname);
+				delete [] newArgs;
+				return NULL;
+			case MincFloatType:
+				newArgs[n] = (double) inList[i].val.number;
+				break;
+			case MincStringType:
+				newArgs[n] = inList[i].val.string;
+				break;
+			case MincHandleType:
+				newArgs[n] = (Handle) inList[i].val.handle;
+				break;
+			case MincListType:
+				if (inList[i].val.list == NULL) {
+					minc_die("can't pass a null list (arg %d) to RTcmix function %s()", n, funcname);
+					return NULL;
+				}
+				if (inList[i].val.list->len <= 0) {
+					minc_die("can't pass an empty list (arg %d) to RTcmix function %s()", n, funcname);
+					delete [] newArgs;
+					return NULL;
+				}
+				else {
+					minc_die("for now, no nested lists can be passed to RTcmix function %s()", funcname);
+					delete [] newArgs;
+					return NULL;
+				}
+		}
+	}
+	*pNumArgs = newNumArgs;
+	return newArgs;
+}
 
 int
 call_external_function(const char *funcname, const MincListElem arglist[],
 	const int nargs, MincListElem *return_value)
 {
-	int i, result;
+	int result, numArgs = nargs;
 	Arg retval;
 
 	Arg *rtcmixargs = new Arg[nargs];
@@ -25,7 +74,7 @@ call_external_function(const char *funcname, const MincListElem arglist[],
 		return -1;
 
 	// Convert arglist for passing to RTcmix function.
-	for (i = 0; i < nargs; i++) {
+	for (int i = 0; i < nargs; i++) {
 		switch (arglist[i].type) {
 		case MincFloatType:
 			rtcmixargs[i] = arglist[i].val.number;
@@ -37,9 +86,26 @@ call_external_function(const char *funcname, const MincListElem arglist[],
 			rtcmixargs[i] = (Handle) arglist[i].val.handle;
 			break;
 		case MincListType:
+			if (arglist[i].val.list == NULL) {
+				minc_die("can't pass a null list (arg %d) to RTcmix function %s()", i, funcname);
+				return -1;
+			}
+			if (arglist[i].val.list->len <= 0) {
+				minc_die("can't pass an empty list (arg %d) to RTcmix function %s()", i, funcname);
+				return -1;
+			}
+			// If list is final argument to function, treat its contents as additional function arguments
+			if (i == nargs-1) {
+				int argCount = i;
+				Arg *newargs = minc_list_to_arglist(funcname, arglist[i].val.list->data, arglist[i].val.list->len, rtcmixargs, &argCount);
+				delete [] rtcmixargs;
+				if (newargs == NULL)
+					return -1;
+				rtcmixargs = newargs;
+				numArgs = argCount;
+			}
 			// If list contains only floats, convert and pass it along.
-			// Otherwise, it's an error.
-			{
+			else {
 				Array *newarray = (Array *) emalloc(sizeof(Array));
 				if (newarray == NULL)
 					return -1;
@@ -50,21 +116,21 @@ call_external_function(const char *funcname, const MincListElem arglist[],
 					rtcmixargs[i] = newarray;
 				}
 				else {
-					minc_die("can't pass an empty or mixed-type list to RTcmix function %s()", funcname);
+					minc_die("can't pass a mixed-type list (arg %d) to RTcmix function %s()", i, funcname);
 					free(newarray);
 					return -1;
 				}
 			}
 			break;
 		default:
-			minc_die("call_external_function: %s(): invalid argument type",
-					 funcname);
+			minc_die("call_external_function: %s(): arg %d: invalid argument type",
+					 funcname, i);
 			return -1;
 			break;
 		}
 	}
 
-	result = RTcmix::dispatch(funcname, rtcmixargs, nargs, &retval);
+	result = RTcmix::dispatch(funcname, rtcmixargs, numArgs, &retval);
    
 	// Convert return value from RTcmix function.
 	switch (retval.type()) {
