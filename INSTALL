@@ -108,7 +108,11 @@ Linux
      development supporting files that you need to build RTcmix. You have
      to install these packages before trying to build RTcmix.  Specifically,
      you need to install flex and bison, as well as the ALSA header files,
-     and probably also the X11 header files.
+     and probably also the X11 header files. If you want to build the Python
+     extension for RTcmix, you also must install python-dev and libssl-dev.
+     Currently, RTcmix works with Python 2.7, but not with Python 3. Install
+     any of these packages using "sudo apt-get install PACKAGE", where
+     PACKAGE is "bison", or "python-dev", etc.
 
    - If you configure --with-alsa and the output of the configure command
      includes...
