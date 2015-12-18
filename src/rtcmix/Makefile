@@ -103,13 +103,17 @@ connection.cpp \
 converter.cpp \
 monitor.cpp
 
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD OPENFRAMEWORKS))
+ifneq ($(BUILDTYPE), STANDALONE)
 	COMMON_CPPSRCS += rtprofile.cpp
 endif
 
 ifeq ($(MULTI_THREAD_SUPPORT), TRUE)
    COMMON_CPPSRCS += TaskManager.cpp RTThread.cpp
    CXXFLAGS += -DRT_THREAD_COUNT=$(THREAD_COUNT) 
+endif
+
+ifeq ($(NPLAY_SUPPORT), TRUE)
+   COMMON_CPPSRCS += setnetplay.cpp
 endif
 
 MAIN_CPPSRCS = RTcmixMain.cpp main.cpp
@@ -127,7 +131,7 @@ GENOBJS = $(patsubst %.c,%.o,$(GEN_CSRCS))
 
 MIX_INST = ../../insts/base/MIX/MIX.o
 
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD OPENFRAMEWORKS))
+ifneq ($(BUILDTYPE), STANDALONE)
 include maxmspstuff/INBASEOBJS
 include maxmspstuff/INSTDOBJS
 include maxmspstuff/INJGOBJS
@@ -139,15 +143,9 @@ endif
 
 COMMON_OBJS = $(CPPOBJS) $(COBJS) $(GENOBJS) heap/rtHeap.o $(MIX_INST) $(AUDIODIR)/audio_devices.o
 
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD OPENFRAMEWORKS))
+ifneq ($(BUILDTYPE), STANDALONE)
 	COMMON_OBJS += $(INBASEOBJS) $(INSTDOBJS) $(INJGOBJS) $(INSTKOBJS) \
 		$(INMAXMSPOBJS) $(INBGGOBJS) $(INJOELOBJS)
-endif
-
-
-ifeq ($(NPLAY_SUPPORT), TRUE)
-   COMMON_OBJS += setnetplay.o
-   CPPSRCS += setnetplay.cpp
 endif
 
 ifeq ($(ARCH), MACOSX_10.0)
@@ -159,7 +157,7 @@ LIBMINC = ../parser/minc/libminc.a
 AUDIOLIB = $(AUDIODIR)/librtaudio.a
 SNDLIB = $(SNDLIBDIR)/sndlib.a
 
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD OPENFRAMEWORKS))
+ifneq ($(BUILDTYPE), STANDALONE)
 LIBINLET = ../control/maxmsp/libinlet.a
 LIBPFBUS = ../control/pfbus/libpfbus.a
 LIBJGOBJ = ../../insts/jg/objlib/objlib.a
@@ -177,7 +175,7 @@ MAIN_OBJS = RTcmixMain.o main.o
 ifeq ($(BUILDTYPE), STANDALONE)
 	TARGETS = $(RTLIB) $(MAIN_OBJS) RTsockfuncs.o $(PROGS)
 else
-	TARGETS = $(COMMON_OBJS) $(MAIN_OBJS) RTsockfuncs.o $(PROGS)
+	TARGETS = $(COMMON_OBJS) $(MAIN_OBJS) RTsockfuncs.o $(RTLIB)
 endif
 
 PERL_CCFLAGS=
@@ -260,29 +258,30 @@ $(SNDLIB):
 $(AUDIOLIB):
 	(cd $(AUDIODIR); $(MAKE) $(MFLAGS) all;)
 
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP IOS PD OPENFRAMEWORKS))
-  $(LIBINLET):
+ifneq ($(BUILDTYPE), STANDALONE)
+
+	$(LIBINLET):
 		(cd ../control/maxmsp; $(MAKE) $(MFLAGS) all;)
 
-  $(LIBPFBUS):
+	$(LIBPFBUS):
 		(cd ../control/pfbus; $(MAKE) $(MFLAGS) all;)
 
-  $(INSTDOBJS):
+	$(INSTDOBJS):
 		(cd ../../insts/std; $(MAKE) $(MFLAGS) all;)
 
-  $(INJGOBJS):
+	$(INJGOBJS):
 		(cd ../../insts/jg; $(MAKE) $(MFLAGS) all;)
 
-  $(INSTKOBJS):
+	$(INSTKOBJS):
 		(cd ../../insts/stk; $(MAKE) $(MFLAGS) all;)
 
-  $(INMAXMSPOBJS):
+	$(INMAXMSPOBJS):
 		(cd ../../insts/maxmsp; $(MAKE) $(MFLAGS) all;)
 
-  $(INBGGOBJS):
+	$(INBGGOBJS):
 		(cd ../../insts/bgg; $(MAKE) $(MFLAGS) all;)
 
-  $(INJOELOBJS):
+	$(INJOELOBJS):
 		(cd ../../insts/joel; $(MAKE) $(MFLAGS) all;)
 endif
 
@@ -301,11 +300,6 @@ RTcmix.o: RTcmix.cpp
 intraverse.o: intraverse.cpp
 	$(CXX) $(CXXFLAGS) -DRT_THREAD_COUNT=$(THREAD_COUNT) -c intraverse.cpp
 
-ifeq ($(BUILDTYPE), STANDALONE)
-$(RTLIB): depend $(COMMON_OBJS) $(LIBMINC) $(LIBS)
-	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(COMMON_OBJS) $(LIBMINC) $(LIBS) $(SYSLIBS)
-endif
-
 MMPrint.o: MMPrint.cpp MMPrint.h
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c $< -o $@
 
@@ -322,8 +316,8 @@ heap/rtHeap.o:	heap/heap.o heap/queue.o
 	@echo compiling heap.
 	(cd heap; $(MAKE) $(MFLAGS) all;)
 
+ifeq ($(RTLIBTYPE), STATIC)
 # BGG -- these are needed to build a static lib
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), IOS OPENFRAMEWORKS))
 include iosstuff/IOSLIBOBJS
 endif
 
@@ -331,13 +325,15 @@ endif
 # ifeqs for the different shared + static libs we build
 
 ifeq ($(BUILDTYPE), STANDALONE)
+$(RTLIB): depend $(COMMON_OBJS) $(LIBMINC) $(LIBS)
+	$(CXX) $(RTLIB_LDFLAGS) -o $@ $(COMMON_OBJS) $(LIBMINC) $(LIBS) $(SYSLIBS)
 MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
 	$(CXX) $(CXXFLAGS) -o MIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) $(M_O) -L. $(LDFLAGS) $(SYS_LDFLAGS)
 endif
 
 ifeq ($(BUILDTYPE), MAXMSP)
-MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
-	ld $(UB_CFLAGS) -U _cpost -U _dsp_addv -bundle -flat_namespace -o rtcmixdylib.so \
+$(RTLIB): $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
+	ld $(RTLIB_LDFLAGS) -o $@ \
 	$(COMMON_OBJS) $(LIBS) $(MAIN_OBJS) $(LIBINLET) $(LIBPFBUS) $(M_O) \
 	$(LIBJGOBJ) $(LIBSTK) $(LIBMINC) \
 	-L../../genlib -lgen $(SYS_LDFLAGS)
@@ -348,14 +344,14 @@ maxmsp_install:	all
    ifndef MAX_INSTALL_DIR
 	@echo You are installing Max/MSP but have not set the install path for your library using MAX_INSTALL_DEST!
    else
-	$(INSTALL) rtcmixdylib.so $(MAX_LIB_INSTALL_DIR)
+	$(INSTALL) $(RTLIB) $(MAX_LIB_INSTALL_DIR)
    endif
 
 endif
 
 ifeq ($(BUILDTYPE), PD)
-MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
-	ld $(UB_CFLAGS) -U _cpost -bundle -flat_namespace -o rtcmixdylib_osx.so \
+$(RTLIB): $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
+	ld $(RTLIB_LDFLAGS) -o $@ \
 	$(COMMON_OBJS) $(LIBS) $(MAIN_OBJS) $(LIBINLET) $(LIBPFBUS) $(M_O) \
 	$(LIBJGOBJ) $(LIBSTK) $(LIBMINC) \
 	-L$(LIBDIR) -lgen $(SYS_LDFLAGS)
@@ -365,41 +361,37 @@ install:	all
 endif
 
 ifeq ($(BUILDTYPE), IOS)
-  ifeq ($(IPHONE_TYPE), SIMULATOR)
-	IOSLIBNAME = librtcmix_iphone-SIM.a
-  else
-	IOSLIBNAME = librtcmix_iphone-DEV.a
-  endif
-MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
-	$(RM) $(IOSLIBNAME)
-	ar rv $(IOSLIBNAME) $(CPPOBJS) $(COBJS) $(GENOBJS) $(MIX_INST) \
+$(RTLIB): $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
+	$(RM) $@
+	ar rv $@ $(CPPOBJS) $(COBJS) $(GENOBJS) $(MIX_INST) \
 	$(INBASEOBJS) $(INSTDOBJS) $(INJGOBJS) $(INSTKOBJS) $(INMAXMSPOBJS) \
 	$(INBGGOBJS) $(INJOELOBJS) $(AUDIODIR)/audio_devices.o \
 	$(MAIN_OBJS) $(PROFILE_O) $(M_O) \
 	$(LIBRTAUDIOOBJS) $(LIBCONFOBJS) $(LIBGENOBJS) $(LIBINLETOBJS) \
 	$(LIBPFBUSOBJS) $(LIBMINCOBJS) $(LIBOBJOBJS) $(LIBRTHEAPOBJS) \
 	$(LIBSNDLIBOBJS) $(LIBSTKOBJS)
-	ranlib $(IOSLIBNAME)
+ifeq ($(RTLIBTYPE), STATIC)
+	ranlib $@
+endif
 
 install:	all
 
 endif
 
 ifeq ($(BUILDTYPE), OPENFRAMEWORKS)
-  ifeq ($(OF_TYPE), OSXAPP)
-	OFLIBNAME = librtcmix.a
-  endif
-MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
-	$(RM) $(OFLIBNAME)
-	ar rv $(OFLIBNAME) $(CPPOBJS) $(COBJS) $(GENOBJS) $(MIX_INST) \
+$(RTLIB): $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
+	$(RM) $@
+	ar rv $@ $(CPPOBJS) $(COBJS) $(GENOBJS) $(MIX_INST) \
 	$(INBASEOBJS) $(INSTDOBJS) $(INJGOBJS) $(INSTKOBJS) $(INMAXMSPOBJS) \
 	$(INBGGOBJS) $(INJOELOBJS) $(AUDIODIR)/audio_devices.o \
 	$(MAIN_OBJS) $(PROFILE_O) $(M_O) \
 	$(LIBRTAUDIOOBJS) $(LIBCONFOBJS) $(LIBGENOBJS) $(LIBINLETOBJS) \
 	$(LIBPFBUSOBJS) $(LIBMINCOBJS) $(LIBOBJOBJS) $(LIBRTHEAPOBJS) \
 	$(LIBSNDOBJS) $(LIBSTKOBJS)
-	ranlib $(OFLIBNAME)
-	
+ifeq ($(RTLIBTYPE), STATIC)
+	ranlib $@
+endif
+
 install:	all
 
 endif
@@ -467,7 +459,7 @@ standalone_uninstall:
 clean:
 	(cd heap; $(MAKE) $(MFLAGS) clean;)
 	$(RM) $(COMMON_OBJS) $(TARGETS) core
-	$(RM) rtcmixdylib.so rtcmixdylib_osx.so librtcmix_iphone-SIM.a librtcmix_iphone-DEV.a librtcmix.a
+	$(RM) $(RTLIB)
 
 cleanall: clean
 	$(RM) depend

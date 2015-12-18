@@ -78,6 +78,11 @@ ifeq ($(ARCH),MACOSX)
   RANLIB = ranlib
   SHELL = /bin/sh
   SHLIB_SUFFIX = dylib
+  # Optional but rare override for the maximum number of supported audio
+  # channels.  Must be >= 8
+  ifdef MAXCHANS
+    ARCHFLAGS += -DMAXCHANS=$(MAXCHANS)
+  endif
 
   # -- standalone (OSX) ----------------------------------------
   ifeq ($(BUILDTYPE), STANDALONE)
@@ -92,7 +97,7 @@ ifeq ($(ARCH),MACOSX)
 
   # -- MaxMSP -------------------------------------------------
   ifeq ($(BUILDTYPE), MAXMSP)
-    ARCH_BITFLAGS = -m32   # must use this for current rtcmix~
+#    ARCH_BITFLAGS = -m32   # must use this for current rtcmix~
     ARCHFLAGS += $(ARCH_BITFLAGS) -DEMBEDDED -DMAXMSP -DMSP_AUDIO_DEVICE $(MAX_INCLUDES)
     ifeq ($(USE_OSX_DISPATCH), TRUE)
       ARCHFLAGS += -DUSE_OSX_DISPATCH
@@ -220,6 +225,7 @@ CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_F
 
 # Platform-independent library flags
 
+RTLIB = librtcmix.$(SHLIB_SUFFIX)
 LIBRTCMIX = $(LIBDIR)/$(RTLIB)
 RTLDFLAGS = -L$(LIBDIR) -lrtcmix -lgen
 
@@ -238,8 +244,6 @@ GENLIB =
 # LDFLAGS:              Libraries which standalone binaries link against.
 # IMBCMIXOBJS:          Non-lib .o files which imbedded binaries need.
 # DYNAMIC_LDFLAGS:      Linker flags when creating dynamic shared libraries.
-
-#
 
 ifeq ($(ARCH),LINUX)
   ifeq ($(AUDIODRIVER),ALSA)
