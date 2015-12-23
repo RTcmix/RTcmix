@@ -9,6 +9,8 @@
 *.log
 *.pm
 *.swp
+*.orig
+*.test
 depend
 *.dSYM
 lib*.a
@@ -98,3 +100,8 @@ utils/sndreverse
 mout*
 
 
+*.xcworkspacedata
+*.xccheckout
+*.xcuserstate
+*.xcscheme
+*.plist
