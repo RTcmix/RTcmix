@@ -1526,12 +1526,9 @@ void rtcmix_dogoscript(t_rtcmix *x, Symbol *s, short argc, Atom *argv)
 	
 	for (i = 0, j = 0; i < buflen && j < outbuflen; i++) {
 		thebuf[j] = *(x->rtcmix_script[x->current_script]+i);
-		if ((int)thebuf[j] == 13)
+		if ((int)thebuf[j] == 13) {
 			thebuf[j] = '\n'; 	// RTcmix wants newlines, not <cr>'s
-		else if (thebuf[j] == '0') {
-			break;				// done
 		}
-		
 		// ok, here's where we substitute the $vars
 		if (thebuf[j] == '$') {
 			sscanf(x->rtcmix_script[x->current_script]+i+1, "%d", &tval);
