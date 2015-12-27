@@ -779,6 +779,7 @@ Instrument *makePVOC()
    return inst;
 }
 
+#ifndef EMBEDDED
 /* The rtprofile introduces the instruments to the RTcmix core, and
    associates a Minc name (in quotes below) with the instrument. This
    is the name the instrument goes by in a Minc script.
@@ -787,3 +788,5 @@ void rtprofile()
 {
    RT_INTRO("PVOC", makePVOC);
 }
+#endif
+
