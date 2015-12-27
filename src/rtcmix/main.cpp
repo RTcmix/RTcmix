@@ -101,7 +101,7 @@ extern "C" {
 	void RTcmix_setBangCallback(RTcmixBangCallback inBangCallback, void *inContext);
 	void RTcmix_setValuesCallback(RTcmixValuesCallback inValuesCallback, void *inContext);
 	void RTcmix_setPrintCallback(RTcmixPrintCallback inPrintCallback, void *inContext);
-#ifdef IOS
+#if !defined(MAXMSP) && !defined(PD)
 	int RTcmix_startAudio();
 	int RTcmix_stopAudio();
 #endif
@@ -238,8 +238,8 @@ int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording)
 	return status;
 }
 
-#ifdef IOS
-	
+#if !defined(MAXMSP) && !defined(PD)
+
 int RTcmix_startAudio()
 {
 	return app->startAudio(RTcmix::inTraverse, NULL, app);
@@ -250,7 +250,7 @@ int RTcmix_stopAudio()
 	return app->stopAudio();
 }
 
-#endif // IOS
+#endif // !defined(MAXMSP) && !defined(PD)
 
 #if defined(MAXMSP)	/* these are entry points used by MAX/MSP only */
 
