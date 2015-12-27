@@ -22,15 +22,9 @@ ifeq ($(ARCH),LINUX)
 endif
 
 ifeq ($(ARCH),MACOSX)
-   ifeq ($(BUILDTYPE), STANDALONE)
-		CXXFLAGS += -DOSX
-		OBJECTS += AppleAudioDevice.o
-   endif
    ifeq ($(BUILDTYPE), MAXMSP)
 		OBJECTS += MSPAudioDevice.o
-   endif
-   ifeq ($(BUILDTYPE), IOS)
-		CXXFLAGS += -DIOS
+   else
 		OBJECTS += AppleAudioDevice.o
    endif
 endif
