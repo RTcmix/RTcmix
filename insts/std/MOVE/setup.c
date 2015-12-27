@@ -98,7 +98,7 @@ get_setup_params(double Dimensions[],       /* array of 5 elements */
    tion factor, between 0 (total absorption) and 10 (total reflection).   
 */
 double
-space(float p[], int n_args)
+m_space(float p[], int n_args)
 {
    if (n_args < 7) {
       die("space", "Not enough arguments");
