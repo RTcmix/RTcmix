@@ -64,6 +64,8 @@ ifeq ($(ARCH),LINUX)
   RANLIB = touch
   SHELL = /bin/sh
   SHLIB_SUFFIX = so
+  RTLIB = librtcmix.$(SHLIB_SUFFIX)
+  RTLIBTYPE = DYNAMIC
 endif
 
 # -- Mac OS X -------------------------------------------------
@@ -95,6 +97,17 @@ ifeq ($(ARCH),MACOSX)
     ARCH_RTLDFLAGS += -framework AudioUnit
   endif
 
+  # -- OSX embedded ----------------------------------------
+  ifeq ($(BUILDTYPE), OSXEMBEDDED)
+    ARCHFLAGS += $(ARCH_BITFLAGS) -DEMBEDDED
+    ARCH_SYS_LDFLAGS = -framework CoreFoundation -framework AudioToolbox
+    ifeq ($(USE_OSX_DISPATCH), TRUE)
+      ARCHFLAGS += -DUSE_OSX_DISPATCH
+    endif
+    CMIX_FLAGS += -DAPPLEAUDIO
+    ARCH_RTLDFLAGS += -framework AudioUnit
+  endif
+
   # -- MaxMSP -------------------------------------------------
   ifeq ($(BUILDTYPE), MAXMSP)
 #    ARCH_BITFLAGS = -m32   # must use this for current rtcmix~
@@ -114,6 +127,7 @@ ifeq ($(ARCH),MACOSX)
 
 	RTLIB = rtcmixdylib.so
 	RTLIB_LDFLAGS = $(UB_CFLAGS) -U _cpost -U _dsp_addv -bundle -flat_namespace
+	RTLIBTYPE = DYNAMIC
   endif
 
   # -- Pd -----------------------------------------------------
@@ -182,6 +196,8 @@ ifeq ($(ARCH),SGI)
   RANLIB = touch
   SHELL = /bin/sh
   SHLIB_SUFFIX = so
+  RTLIB = librtcmix.$(SHLIB_SUFFIX)
+  RTLIBTYPE = DYNAMIC
 endif
 
 # -- FreeBSD --------------------------------------------------
@@ -196,10 +212,12 @@ ifeq ($(ARCH),FREEBSD)
   RANLIB = touch
   SHELL = /bin/sh
   SHLIB_SUFFIX = so
+  RTLIB = librtcmix.$(SHLIB_SUFFIX)
+  RTLIBTYPE = DYNAMIC
 endif
 
-# -- Any Standalone --------------------------------------------
-ifeq ($(BUILDTYPE), STANDALONE)
+# -- Any non-Max OSX build --------------------------------------------
+ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), STANDALONE OSXEMBEDDED))
 	RTLIB = librtcmix.$(SHLIB_SUFFIX)
 	RTLIB_LDFLAGS = $(DYNAMIC_LDFLAGS)
 	RTLIBTYPE = DYNAMIC
@@ -225,7 +243,6 @@ CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_F
 
 # Platform-independent library flags
 
-RTLIB = librtcmix.$(SHLIB_SUFFIX)
 LIBRTCMIX = $(LIBDIR)/$(RTLIB)
 RTLDFLAGS = -L$(LIBDIR) -lrtcmix -lgen
 
@@ -252,7 +269,7 @@ ifeq ($(ARCH),LINUX)
     SYS_LDFLAGS = -lpthread -lm -ldl #-lefence
   endif
   DSO_LDFLAGS = $(OPT) $(SYSLIBS)
-  SHARED_LDFLAGS = -shared -Wl,-soname,$@
+  SHARED_LDFLAGS = -shared -Wl,-soname,$(RTLIB)
   DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
   DYN = -rdynamic
 endif
@@ -260,7 +277,7 @@ ifeq ($(ARCH),MACOSX)
   SYS_LDFLAGS = -framework CoreAudio $(ARCH_SYS_LDFLAGS)
   DSO_LDFLAGS = $(SYS_LDFLAGS)
   SHARED_LDFLAGS = $(ARCHFLAGS) -bundle -flat_namespace -undefined suppress
-  DYNAMIC_LDFLAGS = $(ARCHFLAGS) -flat_namespace -undefined suppress -dynamiclib -install_name $(LIBDIR)/$@
+  DYNAMIC_LDFLAGS = $(ARCHFLAGS) -flat_namespace -undefined suppress -dynamiclib -install_name $(LIBDIR)/$(RTLIB)
   DYN = 
 endif
 ifeq ($(ARCH),SGI)
@@ -273,7 +290,7 @@ endif
 ifeq ($(ARCH),FREEBSD)
   SYS_LDFLAGS += -pthread -lm -ll
   DSO_LDFLAGS = -export-dynamic $(SYS_LDFLAGS)
-  SHARED_LDFLAGS = -shared -Wl,-soname,$@
+  SHARED_LDFLAGS = -shared -Wl,-soname,$(RTLIB)
   DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
   DYN = -rdynamic
 endif

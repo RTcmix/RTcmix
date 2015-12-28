@@ -143,6 +143,7 @@ endif
 
 COMMON_OBJS = $(CPPOBJS) $(COBJS) $(GENOBJS) heap/rtHeap.o $(MIX_INST) $(AUDIODIR)/audio_devices.o
 
+# NB: all non-STANDALONE builds include all the instrument objects directly in the library
 ifneq ($(BUILDTYPE), STANDALONE)
 	COMMON_OBJS += $(INBASEOBJS) $(INSTDOBJS) $(INJGOBJS) $(INSTKOBJS) \
 		$(INMAXMSPOBJS) $(INBGGOBJS) $(INJOELOBJS)
@@ -329,10 +330,28 @@ $(RTLIB): depend $(COMMON_OBJS) $(LIBMINC) $(LIBS)
 	$(CXX) $(RTLIB_LDFLAGS) -o $@ $(COMMON_OBJS) $(LIBMINC) $(LIBS) $(SYSLIBS)
 MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
 	$(CXX) $(CXXFLAGS) -o MIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) $(M_O) -L. $(LDFLAGS) $(SYS_LDFLAGS)
+
+install:	standalone_install
+
+endif
+
+ifeq ($(BUILDTYPE), OSXEMBEDDED)
+$(RTLIB): depend $(MAIN_OBJS) $(M_O) $(COMMON_OBJS) $(LIBMINC) $(LIBS)
+	$(CXX) $(RTLIB_LDFLAGS) -o $@ $(MAIN_OBJS) $(COMMON_OBJS) $(LIBMINC) $(LIBS) \
+	$(LIBRTAUDIOOBJS) $(LIBCONFOBJS) $(LIBINLET) \
+	$(LIBPFBUS) $(LIBOBJOBJS) $(LIBRTHEAPOBJS) \
+	$(LIBSNDLIBOBJS) $(LIBJGOBJ) $(LIBSTK) \
+	$(M_O) -L../../genlib -lgen $(SYS_LDFLAGS)
+
+install:	osxembedded_install
+
+osxembedded_install:	all
+	$(INSTALL) $(RTLIB) $(LIBDIR)
+
 endif
 
 ifeq ($(BUILDTYPE), MAXMSP)
-$(RTLIB): $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
+$(RTLIB): $(MAIN_OBJS) $(M_O) $(COMMON_OBJS) $(LIBMINC) $(LIBS) $(PROFILE_O)
 	ld $(RTLIB_LDFLAGS) -o $@ \
 	$(COMMON_OBJS) $(LIBS) $(MAIN_OBJS) $(LIBINLET) $(LIBPFBUS) $(M_O) \
 	$(LIBJGOBJ) $(LIBSTK) $(LIBMINC) \
@@ -426,13 +445,6 @@ endif
 
 -include depend
 
-ifeq ($(BUILDTYPE), STANDALONE)
-
-install:	standalone_install
-
-endif
-
-
 standalone_install: all
 	@if test ! -d $(DESTDIR); then mkdir $(DESTDIR); fi;
 	$(INSTALL) MIX $(DESTDIR)/CMIX
@@ -464,3 +476,13 @@ clean:
 cleanall: clean
 	$(RM) depend
 
+# DAS Added these to make config debugging easier
+check_macros:
+	@echo ARCHFLAGS = $(ARCHFLAGS)
+	@echo ARCH_RTLDFLAGS = $(ARCH_RTLDFLAGS)
+	@echo CMIX_FLAGS = $(CMIX_FLAGS)
+	@echo RTLIB = $(RTLIB)
+	@echo RTLIB_LDFLAGS = $(RTLIB_LDFLAGS)
+	@echo RTLIBTYPE = $(RTLIBTYPE)
+	@echo SHARED_LDFLAGS = $(SHARED_LDFLAGS)
+	@echo DYNAMIC_LDFLAGS = $(DYNAMIC_LDFLAGS)

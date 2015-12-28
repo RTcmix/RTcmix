@@ -1,4 +1,3 @@
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), IOS OPENFRAMEWORKS))
 INSTKOBJS = ../../insts/stk/MBANDEDWG/MBANDEDWG.o \
 ../../insts/stk/MBLOWBOTL/MBLOWBOTL.o \
 ../../insts/stk/MBLOWHOLE/MBLOWHOLE.o \
@@ -10,18 +9,4 @@ INSTKOBJS = ../../insts/stk/MBANDEDWG/MBANDEDWG.o \
 ../../insts/stk/MSAXOFONY/MSAXOFONY.o \
 ../../insts/stk/MSHAKERS/MSHAKERS.o \
 ../../insts/stk/MSITAR/MSITAR.o
-
-else ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), MAXMSP PD))
-INSTKOBJS = ../../insts/stk/MBANDEDWG/MBANDEDWG.o \
-../../insts/stk/MBLOWBOTL/MBLOWBOTL.o \
-../../insts/stk/MBLOWHOLE/MBLOWHOLE.o \
-../../insts/stk/MBOWED/MBOWED.o \
-../../insts/stk/MBRASS/MBRASS.o \
-../../insts/stk/MCLAR/MCLAR.o \
-../../insts/stk/MMESH2D/MMESH2D.o \
-../../insts/stk/MMODALBAR/MMODALBAR.o \
-../../insts/stk/MSAXOFONY/MSAXOFONY.o \
-../../insts/stk/MSHAKERS/MSHAKERS.o \
-../../insts/stk/MSITAR/MSITAR.o
-endif
 
