@@ -1901,7 +1901,7 @@ void rtcmix_save(t_rtcmix *x, void *w)
 			k = 0;
 			for (j = 0; j < x->rtcmix_script_len[i]; j++) {
 				*tptr++ = *fptr++;
-				if (++k >= RTCMIX_BINBUF_SIZE) { // 'serialize' the script
+				if (++k >= RTCMIX_BINBUF_SIZE-1) { // 'serialize' the script
 					// the 'restore' message contains script #, current buffer length, final buffer length, symbol with buffer contents
 					*tptr = '\0';
 					binbuf_vinsert(w, "ssllls", gensym("#X"), gensym("restore"), i, k, x->rtcmix_script_len[i], gensym(tbuf));
