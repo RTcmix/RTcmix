@@ -176,7 +176,7 @@ MAIN_OBJS = RTcmixMain.o main.o
 ifeq ($(BUILDTYPE), STANDALONE)
 	TARGETS = $(RTLIB) $(MAIN_OBJS) RTsockfuncs.o $(PROGS)
 else
-	TARGETS = $(COMMON_OBJS) $(MAIN_OBJS) RTsockfuncs.o $(RTLIB)
+	TARGETS = $(COMMON_OBJS) $(MAIN_OBJS) $(RTLIB)
 endif
 
 PERL_CCFLAGS=
