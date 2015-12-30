@@ -449,8 +449,7 @@ double minc_memflush()
 	efree(program);
 #endif
 	program = NULL;
-	// Looks like we cannot do this - score may not be finished
-//	free_symbols();
+	free_symbols();
 #ifdef USE_YYLEX_DESTROY
 	yylex_destroy();
 #else
