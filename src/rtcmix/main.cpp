@@ -29,6 +29,7 @@
 #include "dbug.h"
 #include "InputFile.h"
 #include <MMPrint.h>
+#include "RTcmix_API.h"
 
 extern "C" {
 #ifdef SGI
@@ -64,6 +65,7 @@ detect_denormals()
 
 
 #ifndef EMBEDDED
+
 /* ----------------------------------------------------------------- main --- */
 int
 main(int argc, char *argv[], char **env)
@@ -88,50 +90,19 @@ main(int argc, char *argv[], char **env)
 }
 
 #else // EMBEDDED
-/* ----------------------------------------------------------- RTcmix_init --- */
-static RTcmixMain *app;
 
-extern "C" {
-	typedef void (*RTcmixBangCallback)(void *inContext);
-	typedef void (*RTcmixValuesCallback)(float *values, int numValues, void *inContext);
-	typedef void (*RTcmixPrintCallback)(const char *printBuffer, void *inContext);
-	int RTcmix_init();
-	int RTcmix_destroy();
-	int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_count);
-	void RTcmix_setBangCallback(RTcmixBangCallback inBangCallback, void *inContext);
-	void RTcmix_setValuesCallback(RTcmixValuesCallback inValuesCallback, void *inContext);
-	void RTcmix_setPrintCallback(RTcmixPrintCallback inPrintCallback, void *inContext);
-#if !defined(MAXMSP) && !defined(PD)
-	int RTcmix_startAudio();
-	int RTcmix_stopAudio();
-#endif
-	int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording);
-	void RTcmix_flushScore();
-	void RTcmix_setPField(int inlet, float pval);
-	int RTcmix_setInputBuffer(char *bufname, float *bufstart, int nframes, int nchans, int modtime);
-	int RTcmix_getBufferFrameCount(char *bufname);
-	int RTcmix_getBufferChannelCount(char *bufname);
-	// DAS Still need to rename these
-	void pfield_set(int inlet, float pval);
-#ifdef MAXMSP
-	void RTcmix_setMSPState(const char *inSpec, void *inState);
-	void loadinst(char *dsoname);
-	void unloadinst();
-#endif
-	// DAS These are called from inTraverse()
-	void checkForBang();
-	void checkForVals();
-	void checkForPrint();
-}
+static RTcmixMain *globalApp;
+
+/* ----------------------------------------------------------- RTcmix_init --- */
 
 int
 RTcmix_init()
 {
-	if (app == NULL) {
+	if (globalApp == NULL) {
 		clear_print();
 		// BGG no argc and argv in max/msp version mm
-		app = new RTcmixMain();
-		app->run(); // in max/msp this just sets it all up...
+		globalApp = new RTcmixMain();
+		globalApp->run(); // in max/msp this just sets it all up...
 	}
 	return 0;
 }
@@ -139,8 +110,8 @@ RTcmix_init()
 int
 RTcmix_destroy()
 {
-	delete app;
-	app = NULL;
+	delete globalApp;
+	globalApp = NULL;
 	return 0;
 }
 
@@ -223,15 +194,15 @@ void checkForPrint()
 int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording)
 {
 	rtcmix_debug(NULL, "RTcmix_resetAudio entered");
-	app->close();
-	int status = app->resetparams(sr, nchans, vecsize, recording);
+	globalApp->close();
+	int status = globalApp->resetparams(sr, nchans, vecsize, recording);
 	if (status == 0) {
-		status = app->resetAudio(sr, nchans, vecsize, recording);
+		status = globalApp->resetAudio(sr, nchans, vecsize, recording);
 #if defined(MSP_AUDIO_DEVICE)
 		if (status == 0) {
 			rtcmix_debug(NULL, "RTcmix_resetAudio calling RTcmix::startAudio()");
 			// For now, there is no separate call to start audio in rtcmix~
-			status = app->startAudio(RTcmix::inTraverse, NULL, app);
+			status = globalApp->startAudio(RTcmix::inTraverse, NULL, globalApp);
 		}
 #endif
 	}
@@ -242,12 +213,12 @@ int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording)
 
 int RTcmix_startAudio()
 {
-	return app->startAudio(RTcmix::inTraverse, NULL, app);
+	return globalApp->startAudio(RTcmix::inTraverse, NULL, globalApp);
 }
 
 int RTcmix_stopAudio()
 {
-	return app->stopAudio();
+	return globalApp->stopAudio();
 }
 
 #endif // !defined(MAXMSP) && !defined(PD)
@@ -270,14 +241,14 @@ void RTcmix_setMSPState(const char *inSpec, void *inState)
 void loadinst(char *dsoname)
 {
 	// the dsoname should be a fully-qualified pathname to the dynlib
-	app->doload(dsoname);
+	globalApp->doload(dsoname);
 }
 
 void unloadinst()
 {
 	// it is necessary to unload the dso directly, otherwise the dlopen()
 	// system keeps it in memory
-	app->unload();
+	globalApp->unload();
 }
 
 #endif	// MAXMSP
@@ -289,19 +260,19 @@ int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_c
 #endif
 {
 #if defined(MSP_AUDIO_DEVICE)
-	app->close();
-	app->resetAudio(sr, nchans, vecsize, recording);
+	globalApp->close();
+	globalApp->resetAudio(sr, nchans, vecsize, recording);
 #endif
 #ifdef PD
 	int recording = 1;
 	int bus_count = 0;
 #endif
 	if (bus_count == 0) bus_count = DEFAULT_MAXBUS;
-	int status = app->setparams(sr, nchans, vecsize, recording != 0, bus_count);
+	int status = globalApp->setparams(sr, nchans, vecsize, recording != 0, bus_count);
 #if defined(MSP_AUDIO_DEVICE)
 	if (status == 0) {
 		// For now, there is no separate call to start audio in rtcmix~
-		status = app->startAudio(RTcmix::inTraverse, NULL, app);
+		status = globalApp->startAudio(RTcmix::inTraverse, NULL, globalApp);
 	}
 #endif
 	return status;
@@ -335,7 +306,7 @@ void RTcmix_setPField(int inlet, float pval)
 
 int RTcmix_setInputBuffer(char *bufname, float *bufstart, int nframes, int nchans, int modtime)
 {
-	return (app->setInputBuffer(bufname, bufstart, nframes, nchans, modtime) >= 0) ? 0 : -1;
+	return (globalApp->setInputBuffer(bufname, bufstart, nframes, nchans, modtime) >= 0) ? 0 : -1;
 }
 
 #ifdef OPENFRAMEWORKS
@@ -352,7 +323,7 @@ void OF_buffer_load_set(char *filename, char *bufname, float insk, float dur)
 // returns the number of frames in a named buffer
 int RTcmix_getBufferFrameCount(char *bufname)
 {
-	InputFile *input = app->findInput(bufname, NULL);
+	InputFile *input = globalApp->findInput(bufname, NULL);
 	if (input != NULL) {
 		return input->duration() / input->sampleRate();
 	}
@@ -364,7 +335,7 @@ int RTcmix_getBufferFrameCount(char *bufname)
 // returns the number of channels of a named buffer
 int RTcmix_getBufferChannelCount(char *bufname)
 {
-	InputFile *input = app->findInput(bufname, NULL);
+	InputFile *input = globalApp->findInput(bufname, NULL);
 	if (input != NULL) {
 		return input->channels();
 	}
@@ -377,7 +348,7 @@ int RTcmix_getBufferChannelCount(char *bufname)
 // and rtHeap, thus flushing all scheduled events in the future
 void RTcmix_flushScore()
 {
-	app->resetQueueHeap(); // in RTcmixMain.cpp
+	globalApp->resetQueueHeap(); // in RTcmixMain.cpp
 }
 
 

@@ -24,6 +24,9 @@ all:
 	ln -sf ../src/rtcmix/RTcmix.h .
 	ln -sf ../src/rtcmix/mixerr.h .
 	ln -sf ../src/rtcmix/byte_routines.h .
+ifneq ($(BUILDTYPE), STANDALONE)
+	ln -sf ../src/rtcmix/RTcmix_API.h .
+endif
 
 depend:
 
@@ -57,5 +60,8 @@ cleanall:
 	$(RM) RTcmix.h
 	$(RM) mixerr.h
 	$(RM) byte_routines.h
+ifneq ($(BUILDTYPE), STANDALONE)
+	$(RM) RTcmix_API.h
+endif
 
 
