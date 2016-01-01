@@ -31,6 +31,11 @@
 #include <MMPrint.h>
 #include "RTcmix_API.h"
 
+#if defined(EMBEDDEDAUDIO)
+#include "sndlibsupport.h"
+#include "EmbeddedAudioDevice.h"
+#endif
+
 extern "C" {
 #ifdef SGI
   void flush_all_underflows_to_zero();
@@ -198,7 +203,7 @@ int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording)
 	int status = globalApp->resetparams(sr, nchans, vecsize, recording);
 	if (status == 0) {
 		status = globalApp->resetAudio(sr, nchans, vecsize, recording);
-#if defined(MSP_AUDIO_DEVICE)
+#if defined(MSPAUDIO)
 		if (status == 0) {
 			rtcmix_debug(NULL, "RTcmix_resetAudio calling RTcmix::startAudio()");
 			// For now, there is no separate call to start audio in rtcmix~
@@ -223,7 +228,7 @@ int RTcmix_stopAudio()
 
 #endif // !defined(MAXMSP) && !defined(PD)
 
-#if defined(MAXMSP)	/* these are entry points used by MAX/MSP only */
+#if defined(MSPAUDIO)	/* these are entry points used by MAX/MSP only */
 
 #include "Option.h"
 
@@ -234,6 +239,10 @@ void RTcmix_setMSPState(const char *inSpec, void *inState)
 	Option::device(inSpec);
 	gMSPAudioState = inState;
 }
+
+#endif
+
+#ifdef MAXMSP
 
 // this is for dynamic loading of RTcmix instruments (for development)
 // only one rtcmix~ may be instantiated for this to work
@@ -256,10 +265,10 @@ void unloadinst()
 #ifdef PD
 int pd_rtsetparams(float sr, int nchans, int vecsize, float *mm_inbuf, float *mm_outbuf)
 #else
-int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_count)	// DAS WAS mm_rtsetparams
+int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_count)
 #endif
 {
-#if defined(MSP_AUDIO_DEVICE)
+#if defined(MSPAUDIO)
 	globalApp->close();
 	globalApp->resetAudio(sr, nchans, vecsize, recording);
 #endif
@@ -269,7 +278,7 @@ int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_c
 #endif
 	if (bus_count == 0) bus_count = DEFAULT_MAXBUS;
 	int status = globalApp->setparams(sr, nchans, vecsize, recording != 0, bus_count);
-#if defined(MSP_AUDIO_DEVICE)
+#if defined(MSPAUDIO)
 	if (status == 0) {
 		// For now, there is no separate call to start audio in rtcmix~
 		status = globalApp->startAudio(RTcmix::inTraverse, NULL, globalApp);
@@ -278,6 +287,43 @@ int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_c
 	return status;
 }
 
+#ifdef EMBEDDEDAUDIO
+
+int RTcmix_setAudioBufferFormat(RTcmix_AudioFormat format, int nchans)
+{
+	int rtcmix_fmt = 0;
+	switch (format) {
+		case AudioFormat_16BitInt:
+			rtcmix_fmt = NATIVE_SHORT_FMT;
+			break;
+		case AudioFormat_24BitInt:
+			rtcmix_fmt = NATIVE_24BIT_FMT;
+			break;
+		case AudioFormat_32BitInt:
+			rtcmix_fmt = NATIVE_32BIT_FMT;
+			break;
+		case AudioFormat_32BitFloat:
+			rtcmix_fmt = NATIVE_FLOAT_FMT;
+			break;
+		case AudioFormat_32BitFloat_Normalized:
+			rtcmix_fmt = NATIVE_FLOAT_FMT;
+			rtcmix_fmt |= MUS_NORMALIZED;
+			break;
+		default:
+			rterror("RTcmix_setAudioBufferFormat", "Unknown format");
+			return -1;
+	}
+	// For now, only interleaved audio is allowed.
+	rtcmix_fmt |= MUS_INTERLEAVED;
+	return SetEmbeddedCallbackAudioFormat(rtcmix_fmt, nchans);
+}
+
+int RTcmix_runAudio(void *inAudioBuffer, void *outAudioBuffer, int nframes)
+{
+	return globalApp->runAudio(inAudioBuffer, outAudioBuffer, nframes);
+}
+
+#endif
 
 // these are set from inlets on the rtcmix~ object, using PFields to
 // control the Instruments

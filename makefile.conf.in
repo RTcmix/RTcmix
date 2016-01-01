@@ -29,8 +29,6 @@ include $(CMIXDIR)/site.conf
 # The path to this file
 MAKEFILE_CONF = $(CMIXDIR)/makefile.conf
 
-SOUND_DRIVER = -D$(AUDIODRIVER)
-
 LIBDIR = $(CMIXDIR)/lib
 DESTDIR = $(CMIXDIR)/bin
 BINDIR = $(DESTDIR)
@@ -93,8 +91,9 @@ ifeq ($(ARCH),MACOSX)
     ifeq ($(USE_OSX_DISPATCH), TRUE)
       ARCHFLAGS += -DUSE_OSX_DISPATCH
     endif
-    CMIX_FLAGS += -DAPPLEAUDIO
     ARCH_RTLDFLAGS += -framework AudioUnit
+    AUDIODRIVER=APPLE
+    CMIX_FLAGS += -DAPPLEAUDIO
   endif
 
   # -- OSX embedded ----------------------------------------
@@ -104,14 +103,18 @@ ifeq ($(ARCH),MACOSX)
     ifeq ($(USE_OSX_DISPATCH), TRUE)
       ARCHFLAGS += -DUSE_OSX_DISPATCH
     endif
-    CMIX_FLAGS += -DAPPLEAUDIO
     ARCH_RTLDFLAGS += -framework AudioUnit
+    AUDIODRIVER=EMBEDDED
+    CMIX_FLAGS += -DEMBEDDEDAUDIO
+	RTLIB = librtcmix_embedded.$(SHLIB_SUFFIX)
+	RTLIB_LDFLAGS = $(DYNAMIC_LDFLAGS)
+	RTLIBTYPE = DYNAMIC
   endif
 
   # -- MaxMSP -------------------------------------------------
   ifeq ($(BUILDTYPE), MAXMSP)
 #    ARCH_BITFLAGS = -m32   # must use this for current rtcmix~
-    ARCHFLAGS += $(ARCH_BITFLAGS) -DEMBEDDED -DMAXMSP -DMSP_AUDIO_DEVICE $(MAX_INCLUDES)
+    ARCHFLAGS += $(ARCH_BITFLAGS) -DEMBEDDED -DMAXMSP $(MAX_INCLUDES)
     ifeq ($(USE_OSX_DISPATCH), TRUE)
       ARCHFLAGS += -DUSE_OSX_DISPATCH
     endif
@@ -123,11 +126,12 @@ ifeq ($(ARCH),MACOSX)
     ARCHFLAGS += -isysroot `xcrun --show-sdk-path`
     CC = `xcrun -f cc`
     CXX = `xcrun -f c++` -Wno-deprecated
-    MAX_INCLUDES = -I${MAX_SDK_PATH}/c74support/max-includes -I${MAX_SDK_PATH}/c74support/msp-includes -F${MAX_SDK_PATH}/c74support/max-includes -F${MAX_SDK_PATH}/c74support/msp-includes -I/System/Library/Frameworks/CoreServices.framework/Frameworks/CarbonCore.framework/Headers
 
 	RTLIB = rtcmixdylib.so
 	RTLIB_LDFLAGS = $(UB_CFLAGS) -U _cpost -U _dsp_addv -bundle -flat_namespace
 	RTLIBTYPE = DYNAMIC
+    AUDIODRIVER=MAXMSP
+    CMIX_FLAGS += -DMSPAUDIO
   endif
 
   # -- Pd -----------------------------------------------------
@@ -140,12 +144,15 @@ ifeq ($(ARCH),MACOSX)
 	RTLIB = rtcmixdylib_osx.so
 	RTLIB_LDFLAGS = $(UB_CFLAGS) -U _cpost -bundle -flat_namespace
 	RTLIBTYPE = DYNAMIC
+    AUDIODRIVER=EMBEDDED
+    CMIX_FLAGS += -DEMBEDDEDAUDIO
   endif
 
   # -- iOS ----------------------------------------------------
   ifeq ($(BUILDTYPE), IOS)
-    CMIX_FLAGS += -DAPPLEAUDIO
 	RTLIBTYPE = STATIC
+    AUDIODRIVER=APPLE
+    CMIX_FLAGS += -DAPPLEAUDIO
     ifeq ($(IPHONE_TYPE), SIMULATOR)
 # FIXME: -m32 was set in site.conf.ios-sim, but not ios-dev. Okay?
       ARCH_BITFLAGS = -m32
@@ -180,6 +187,8 @@ ifeq ($(ARCH),MACOSX)
       ARCHFLAGS += -DEMBEDDED -DIOS -DOPENFRAMEWORKS -arch i386
       RTLIB = librtcmix.a
       RTLIBTYPE = STATIC
+      AUDIODRIVER=EMBEDDED
+      CMIX_FLAGS += -DEMBEDDEDAUDIO
     endif
   endif
 endif
@@ -216,8 +225,7 @@ ifeq ($(ARCH),FREEBSD)
   RTLIBTYPE = DYNAMIC
 endif
 
-# -- Any non-Max OSX build --------------------------------------------
-ifeq ($(BUILDTYPE), $(filter $(BUILDTYPE), STANDALONE OSXEMBEDDED))
+ifeq ($(BUILDTYPE), STANDALONE)
 	RTLIB = librtcmix.$(SHLIB_SUFFIX)
 	RTLIB_LDFLAGS = $(DYNAMIC_LDFLAGS)
 	RTLIBTYPE = DYNAMIC

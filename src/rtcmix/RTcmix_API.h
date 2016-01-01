@@ -20,13 +20,22 @@ extern "C" {
 	int RTcmix_stopAudio();
 #endif
 	int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording);
+#ifdef EMBEDDEDAUDIO
+	// The format of the audio buffers handed to RTcmix via RTcmix_runAudio()
+	typedef enum _RTcmix_AudioFormat { AudioFormat_16BitInt = 1, AudioFormat_24BitInt = 2, AudioFormat_32BitInt = 4,
+										AudioFormat_32BitFloat_Normalized = 8, AudioFormat_32BitFloat = 16 } RTcmix_AudioFormat;
+	int RTcmix_setAudioBufferFormat(RTcmix_AudioFormat format, int nchans);
+	// Call this to send and receive audio from RTcmix
+	int RTcmix_runAudio(void *inAudioBuffer, void *outAudioBuffer, int nframes);
+#endif
+	int RTcmix_parseScore(char *theBuf, int buflen);
 	void RTcmix_flushScore();
 	void RTcmix_setPField(int inlet, float pval);
 	int RTcmix_setInputBuffer(char *bufname, float *bufstart, int nframes, int nchans, int modtime);
 	int RTcmix_getBufferFrameCount(char *bufname);
 	int RTcmix_getBufferChannelCount(char *bufname);
-	// DAS Still need to rename these
-	void pfield_set(int inlet, float pval);
+	void RTcmix_setPField(int inlet, float pval);
+	void pfield_set(int inlet, float pval);		// old name for previous
 #ifdef MAXMSP
 	void RTcmix_setMSPState(const char *inSpec, void *inState);
 	void loadinst(char *dsoname);

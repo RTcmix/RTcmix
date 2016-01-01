@@ -1,6 +1,7 @@
 include ../../makefile.conf
 
 AUDIOLIB = librtaudio.a
+AUDIO_DEFINES = -D$(AUDIODRIVER)
 
 # where we are versus the dylib or lib build directory
 RELATIVEDIR = ../audio
@@ -22,10 +23,12 @@ ifeq ($(ARCH),LINUX)
 endif
 
 ifeq ($(ARCH),MACOSX)
-   ifeq ($(BUILDTYPE), MAXMSP)
-		OBJECTS += MSPAudioDevice.o
-   else
+   ifeq ($(AUDIODRIVER), APPLE)
 		OBJECTS += AppleAudioDevice.o
+   else ifeq ($(AUDIODRIVER), MAXMSP)
+		OBJECTS += MSPAudioDevice.o
+   else ifeq ($(AUDIODRIVER), EMBEDDED)
+   		OBJECTS += EmbeddedAudioDevice.o
    endif
 endif
 
@@ -52,10 +55,10 @@ $(AUDIOLIB):	$(OBJECTS)
 	$(RANLIB) $@
 
 .c.o:
-	$(CC) $(CFLAGS) $(SOUND_DRIVER) -c $< -o $@
+	$(CC) $(CFLAGS) $(AUDIO_DEFINES) -c $< -o $@
 
 .cpp.o:
-	$(CXX) $(CXXFLAGS) $(SOUND_DRIVER) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(AUDIO_DEFINES) -c $< -o $@
 
 depend:
 ifeq ($(ARCH),SGI)
@@ -63,7 +66,7 @@ ifeq ($(ARCH),SGI)
 # Unfortunately, this doesn't work...   -JGG
 #	$(SHELL) -ec '$(CC) -M $(CFLAGS) $(SRCS) $(CPPSRCS)' > depend
 else
-	$(SHELL) -ec '$(CC) -MM $(CFLAGS) $(SOUND_DRIVER) *.c *.cpp' > depend
+	$(SHELL) -ec '$(CC) -MM $(CFLAGS) $(AUDIO_DEFINES) *.c *.cpp' > depend
 endif
 
 -include depend
