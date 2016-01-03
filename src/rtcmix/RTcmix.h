@@ -82,7 +82,7 @@ public:
 	static float sr() { return SR; }
 	static int chans() { return NCHANS; }
 	static void setBufOffset(FRAMETYPE inOffset, bool inRunToOffset);
-	static long getElapsedFrames() { return elapsed + bufsamps(); }
+	static FRAMETYPE getElapsedFrames() { return elapsed + bufsamps(); }
 	static bool outputOpen() { return rtfileit != -1; }
 	static bool rtsetparams_was_called() { return rtsetparams_called; }
 	
