@@ -799,14 +799,14 @@ int rtcmix_load_dylib(t_rtcmix *x)
 			error("rtcmix~ could not find RTcmix_setPrintCallback()");
 	}
 	
-	x->symbol = NSLookupSymbolInModule(x->module, "_pfield_set");
+	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_setPField");
 	if (x->symbol == NULL) {
-		error("cannot find pfield_set");
+		error("cannot find RTcmix_setPField");
 		return(-1);
 	} else {
 		x->pfield_set = NSAddressOfSymbol(x->symbol);
 		if (!(x->pfield_set))
-			error("rtcmix~ could not find pfield_set()");
+			error("rtcmix~ could not find RTcmix_setPField()");
 	}
 	
 	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_setInputBuffer");

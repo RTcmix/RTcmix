@@ -30,12 +30,10 @@ extern "C" {
 #endif
 	int RTcmix_parseScore(char *theBuf, int buflen);
 	void RTcmix_flushScore();
-	void RTcmix_setPField(int inlet, float pval);
 	int RTcmix_setInputBuffer(char *bufname, float *bufstart, int nframes, int nchans, int modtime);
 	int RTcmix_getBufferFrameCount(char *bufname);
 	int RTcmix_getBufferChannelCount(char *bufname);
 	void RTcmix_setPField(int inlet, float pval);
-	void pfield_set(int inlet, float pval);		// old name for previous
 #ifdef MAXMSP
 	void RTcmix_setMSPState(const char *inSpec, void *inState);
 	void loadinst(char *dsoname);

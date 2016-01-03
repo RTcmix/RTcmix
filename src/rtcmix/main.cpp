@@ -330,23 +330,20 @@ int RTcmix_runAudio(void *inAudioBuffer, void *outAudioBuffer, int nframes)
 // rtcmix~ is set to constrain up to a max of 19 inlets for PFields
 // iRTCmix can handle up to MAX_INLETS - DAS
 
-float gInletValues[MAX_INLETS];
+float gInletValues[MAX_INLETS];		// used by RTInlinePField.cpp
 
-void pfield_set(int inlet, float pval)
+// New name
+void RTcmix_setPField(int inlet, float pval)
 {
 	if (inlet <= MAX_INLETS) {
 		gInletValues[inlet-1] = pval;
 	}
 	else {
-		die("pfield_set", "exceeded max inlet count [%d]", MAX_INLETS);
+		die("RTcmix_setPField", "exceeded max inlet count [%d]", MAX_INLETS);
 	}
 }
 
-// New name
-void RTcmix_setPField(int inlet, float pval)
-{
-	pfield_set(inlet, pval);
-}
+void pfield_set(int inlet, float pval) { RTcmix_setPField(inlet, pval); }	// UNTIL WE REMOVE THIS FROM IOS VERSION
 
 // This allows a float audio buffer to be directly loaded as input
 
