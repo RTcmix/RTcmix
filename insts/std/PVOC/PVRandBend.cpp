@@ -50,6 +50,9 @@ PVRandBend::run(float *pvdata, int nvals)
 	return 0;
 }
 
+// P0: number of bins
+// P1: pitch range
+
 int
 PVRandBend::init(double *pp, int nargs)
 {
