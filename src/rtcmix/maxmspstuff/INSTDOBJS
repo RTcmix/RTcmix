@@ -41,7 +41,6 @@ INSTDOBJS = ../../insts/std/AM/AM.o \
 ../../insts/std/NOISE/NOISE.o \
 ../../insts/std/PANECHO/PANECHO.o \
 ../../insts/std/PHASER/PHASER.o \
-../../insts/std/PVOC/PVFilter.o \
 ../../insts/std/PVOC/PVOC.o \
 ../../insts/std/PVOC/fft.o \
 ../../insts/std/PVOC/fold.o \
