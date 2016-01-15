@@ -15,15 +15,20 @@ extern "C" {
 	void RTcmix_setBangCallback(RTcmixBangCallback inBangCallback, void *inContext);
 	void RTcmix_setValuesCallback(RTcmixValuesCallback inValuesCallback, void *inContext);
 	void RTcmix_setPrintCallback(RTcmixPrintCallback inPrintCallback, void *inContext);
-#if !defined(MAXMSP) && !defined(PD)
+#ifdef IOS
 	int RTcmix_startAudio();
 	int RTcmix_stopAudio();
 #endif
 	int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording);
 #ifdef EMBEDDEDAUDIO
 	// The format of the audio buffers handed to RTcmix via RTcmix_runAudio()
-	typedef enum _RTcmix_AudioFormat { AudioFormat_16BitInt = 1, AudioFormat_24BitInt = 2, AudioFormat_32BitInt = 4,
-										AudioFormat_32BitFloat_Normalized = 8, AudioFormat_32BitFloat = 16 } RTcmix_AudioFormat;
+	typedef enum _RTcmix_AudioFormat {
+		AudioFormat_16BitInt = 1,				// 16 bit short integer samples
+		AudioFormat_24BitInt = 2,				// 24 bit (3-byte) packed integer samples
+		AudioFormat_32BitInt = 4,				// 32 bit (4-byte) integer samples
+		AudioFormat_32BitFloat_Normalized = 8,	// single-precision float samples, scaled between -1.0 and 1.0
+		AudioFormat_32BitFloat = 16				// single-precision float samples, scaled between -32767.0 and 32767.0
+	} RTcmix_AudioFormat;
 	int RTcmix_setAudioBufferFormat(RTcmix_AudioFormat format, int nchans);
 	// Call this to send and receive audio from RTcmix
 	int RTcmix_runAudio(void *inAudioBuffer, void *outAudioBuffer, int nframes);

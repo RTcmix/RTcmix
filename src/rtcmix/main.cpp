@@ -203,10 +203,10 @@ int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording)
 	int status = globalApp->resetparams(sr, nchans, vecsize, recording);
 	if (status == 0) {
 		status = globalApp->resetAudio(sr, nchans, vecsize, recording);
-#if defined(MSPAUDIO)
+#if defined(MSPAUDIO) || defined(EMBEDDEDAUDIO)
 		if (status == 0) {
 			rtcmix_debug(NULL, "RTcmix_resetAudio calling RTcmix::startAudio()");
-			// For now, there is no separate call to start audio in rtcmix~
+			// There is no separate call to start audio for embedded
 			status = globalApp->startAudio(RTcmix::inTraverse, NULL, globalApp);
 		}
 #endif
@@ -214,7 +214,7 @@ int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording)
 	return status;
 }
 
-#if !defined(MAXMSP) && !defined(PD)
+#ifdef IOS
 
 int RTcmix_startAudio()
 {
@@ -226,7 +226,7 @@ int RTcmix_stopAudio()
 	return globalApp->stopAudio();
 }
 
-#endif // !defined(MAXMSP) && !defined(PD)
+#endif // IOS
 
 #if defined(MSPAUDIO)	/* these are entry points used by MAX/MSP only */
 
@@ -278,9 +278,9 @@ int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_c
 #endif
 	if (bus_count == 0) bus_count = DEFAULT_MAXBUS;
 	int status = globalApp->setparams(sr, nchans, vecsize, recording != 0, bus_count);
-#if defined(MSPAUDIO)
+#if defined(MSPAUDIO) || defined(EMBEDDEDAUDIO)
 	if (status == 0) {
-		// For now, there is no separate call to start audio in rtcmix~
+		// There is no separate call to start audio for embedded
 		status = globalApp->startAudio(RTcmix::inTraverse, NULL, globalApp);
 	}
 #endif
@@ -351,17 +351,6 @@ int RTcmix_setInputBuffer(char *bufname, float *bufstart, int nframes, int nchan
 {
 	return (globalApp->setInputBuffer(bufname, bufstart, nframes, nchans, modtime) >= 0) ? 0 : -1;
 }
-
-#ifdef OPENFRAMEWORKS
-
-// this is used for OpenFrameworks; will read a soundfile into a named
-// buffer for use by rtinput("MMBUF", "namedbuffer")
-void OF_buffer_load_set(char *filename, char *bufname, float insk, float dur)
-{
-}
-
-#endif // OPENFRAMEWORKS
-
 
 // returns the number of frames in a named buffer
 int RTcmix_getBufferFrameCount(char *bufname)
