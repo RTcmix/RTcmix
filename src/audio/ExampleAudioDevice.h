@@ -21,6 +21,7 @@ protected:
 	virtual int doOpen(int mode);
 	virtual int doClose();
 	virtual int doStart();
+	virtual int doStop();
 	virtual int doPause(bool);
 	virtual int doSetFormat(int sampfmt, int chans, double srate);
 	virtual int doSetQueueSize(int *pWriteSize, int *pCount);
