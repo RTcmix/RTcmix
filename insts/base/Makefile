@@ -1,10 +1,6 @@
 include ../../makefile.conf
 
-ifeq ($(BUILDTYPE), STANDALONE)
-	DIRS = MIX WAVETABLE CHAIN
-else
-	DIRS = MIX WAVETABLE
-endif
+DIRS = MIX WAVETABLE CHAIN
 	
 
 .PHONY: all progs dsos standalone install dso_install standalone_install \
