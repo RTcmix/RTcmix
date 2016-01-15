@@ -1,12 +1,11 @@
 include ../makefile.conf
 
 INCLUDES += -I../src/include -I../src/rtcmix
+LIB = libgen.a
 
 ifeq ($(BUILDTYPE), STANDALONE)
-  LIB = libgen.$(SHLIB_SUFFIX)
   FFTW_SUPPORT = TRUE
 else
-  LIB = libgen.a
   FFTW_SUPPORT = FALSE
 endif
 
@@ -168,16 +167,9 @@ install:	all
 uninstall:
 	$(RM) $(LIBDIR)/$(LIB)
 
-ifeq ($(BUILDTYPE), STANDALONE)
-$(LIB):	$(OBJECTS) $(OOBJECTS)
-	$(RM) $@
-	$(CXX) $(DYNAMIC_LDFLAGS) -o $@ $(OBJECTS) $(OOBJECTS)
-else
 $(LIB):	$(OBJECTS) $(OOBJECTS)
 	ar rv $@ $(OBJECTS) $(OOBJECTS)
 	$(RANLIB) $@
-endif
-
 
 depend:
 ifeq ($(ARCH),LINUX)

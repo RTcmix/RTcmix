@@ -8,18 +8,28 @@ OBJS = PVOC.o lpa.o lpamp.o makewindows.o fft.o fold.o overlapadd.o setup.o
 INCLUDES += -I$(CMIXDIR)/src/rtcmix
 CXXFLAGS +=  -DSHAREDLIBDIR=\"$(LIBDESTDIR)\"
 
-FILTERS = libPVRandBend.$(SHLIB_SUFFIX) libPVRandBands.$(SHLIB_SUFFIX) libPVTransBend.$(SHLIB_SUFFIX)
+ifeq ($(BUILDTYPE), STANDALONE)
+	BUILD_FILTERS=1
+endif
 
-PROGS = $(NAME) lib$(NAME).$(SHLIB_SUFFIX) $(FILTERS)
+ifdef ($(BUILD_FILTERS))
+	FILTERS = libPVRandBend.$(SHLIB_SUFFIX) libPVRandBands.$(SHLIB_SUFFIX) libPVTransBend.$(SHLIB_SUFFIX)
+endif
+
+PROGS = $(NAME) lib$(NAME).so $(FILTERS)
 
 .PHONY: all standalone install dso_install standalone_install \
 uninstall dso_uninstall standalone_uninstall clean cleanall
 
-all: lib$(NAME).$(SHLIB_SUFFIX) $(FILTERS)
+ifeq ($(BUILDTYPE), STANDALONE)
+  all: lib$(NAME).so $(FILTERS)
+else
+  all: $(OBJS)
+endif
 
 standalone: $(NAME)
 
-lib$(NAME).$(SHLIB_SUFFIX):	$(UGENS_H) $(OBJS)
+lib$(NAME).so:	$(UGENS_H) $(OBJS)
 	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS) $(GENLIB) $(SYSLIBS)
 
 ifeq ($(BUILDTYPE), STANDALONE)
@@ -43,11 +53,13 @@ $(NAME):	$(UGENS_H) $(OBJS) $(CMIXOBJS)
 
 install: dso_install
 
-dso_install: lib$(NAME).$(SHLIB_SUFFIX) $(FILTERS)
-	$(INSTALL) $(CURDIR)/lib$(NAME).$(SHLIB_SUFFIX) $(LIBDESTDIR)
+dso_install: lib$(NAME).so $(FILTERS)
+	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)
+ifdef ($(BUILD_FILTERS))
 	$(INSTALL) $(CURDIR)/libPVRandBend.$(SHLIB_SUFFIX) $(LIBDESTDIR)
 	$(INSTALL) $(CURDIR)/libPVRandBands.$(SHLIB_SUFFIX) $(LIBDESTDIR)
 	$(INSTALL) $(CURDIR)/libPVTransBend.$(SHLIB_SUFFIX) $(LIBDESTDIR)
+endif
 
 standalone_install: standalone
 	$(INSTALL) $(CURDIR)/$(NAME) $(DESTDIR)
@@ -55,9 +67,12 @@ standalone_install: standalone
 uninstall: dso_uninstall standalone_uninstall
 
 dso_uninstall:
-	$(RM) $(LIBDESTDIR)/lib$(NAME).$(SHLIB_SUFFIX)
+	$(RM) $(LIBDESTDIR)/lib$(NAME).so
+ifdef ($(BUILD_FILTERS))
 	$(RM) $(LIBDESTDIR)/libPVRandBend.$(SHLIB_SUFFIX)
 	$(RM) $(LIBDESTDIR)/libPVRandBands.$(SHLIB_SUFFIX)
+	$(RM) $(LIBDESTDIR)/libPVTransBend.$(SHLIB_SUFFIX)
+endif
 
 standalone_uninstall:
 	$(RM) $(DESTDIR)/$(NAME)
