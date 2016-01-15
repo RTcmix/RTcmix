@@ -399,8 +399,6 @@ void InputFile::init(int inFd, const char *inFileName, Type inType, int inHeader
 		_endbyte = _data_location + (inFrames * bytes_per_samp * _chans);
 }
 
-#define MM_IN_GAIN_FACTOR 32767.0f // goose it up for RTcmix
-
 void InputFile::init(BufPtr inBuffer, const char *inBufferName, long inFrames, float inSampleRate, int inChannels)
 {
 	rtcmix_debug("InputFile::init", "inBuffer %p, frames %ld, chans %d", inBuffer, inFrames, inChannels);
@@ -423,9 +421,6 @@ void InputFile::init(BufPtr inBuffer, const char *inBufferName, long inFrames, f
 	_readFunction = &read_float_samps;
 	_endbyte = inFrames * bytes_per_samp * _chans;
 
-#ifndef OPENFRAMEWORKS
-	_gainScale = MM_IN_GAIN_FACTOR;
-#endif
 	_memBuffer = inBuffer;
 }
 
