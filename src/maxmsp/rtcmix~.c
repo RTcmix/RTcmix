@@ -530,7 +530,11 @@ void *rtcmix_new(long num_inoutputs, long num_additional)
 	}
 	
 	x->flushflag = 0; // [flush] sets flag for call to x->flush() in rtcmix_perform() (after pulltraverse completes)
+#if DEBUG_LOGGING
+	x->debugflag = 1;
+#else
 	x->debugflag = 0; // debugging is off by default
+#endif
 	x->audioConfigured = 0;	// indicates first time, prior to configuring audio
 	x->loadinstflag = 0; // set for normal operation (no RTcmix instrument dynloading)
 	

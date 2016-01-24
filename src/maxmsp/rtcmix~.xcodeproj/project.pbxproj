@@ -310,6 +310,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				DEBUG_DEFINES = "DEBUGLOGGING=1";
+				"DEBUG_DEFINES[arch=*]" = "DEBUGLOGGING=1";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_PROJECT_1)",
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_PROJECT_2)",
@@ -323,6 +325,7 @@
 				INFOPLIST_FILE = Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MAX_SDK_PATH = "/opt/local/src/MaxSDK-5.1.6";
+				OTHER_CFLAGS = "$(DEBUG_DEFINES)";
 				SDKROOT = macosx10.10;
 			};
 			name = Development;
@@ -331,6 +334,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				DEBUG_DEFINES = "";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_PROJECT_1)",
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_PROJECT_2)",
@@ -344,6 +348,7 @@
 				INFOPLIST_FILE = Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MAX_SDK_PATH = "/opt/local/src/MaxSDK-5.1.6";
+				OTHER_CFLAGS = "$(DEBUG_DEFINES)";
 				SDKROOT = macosx10.10;
 			};
 			name = Deployment;
@@ -352,6 +357,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				DEBUG_DEFINES = "";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_PROJECT_1)",
 					"$(FRAMEWORK_SEARCH_PATHS_QUOTED_FOR_PROJECT_2)",
@@ -365,6 +371,7 @@
 				INFOPLIST_FILE = Info.plist;
 				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				MAX_SDK_PATH = "/opt/local/src/MaxSDK-5.1.6";
+				OTHER_CFLAGS = "$(DEBUG_DEFINES)";
 				SDKROOT = macosx10.10;
 			};
 			name = Default;
