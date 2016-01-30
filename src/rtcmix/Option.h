@@ -70,7 +70,7 @@
 
 #define CONF_FILENAME ".rtcmixrc"
 #define DEFAULT_BUFFER_FRAMES 512.0
-#ifdef MSP_AUDIO_DEVICE
+#ifdef MSPAUDIO
 #define DEFAULT_BUFFER_COUNT 1
 #else
 #define DEFAULT_BUFFER_COUNT 2
