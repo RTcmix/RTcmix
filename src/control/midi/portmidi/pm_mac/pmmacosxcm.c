@@ -215,7 +215,7 @@ midi_in_open(PmInternal *midi, void *driverInfo)
     }
     
     endpoint = (MIDIEndpointRef) descriptors[midi->device_id].descriptor;
-    if (endpoint == NULL) {
+    if (endpoint == 0) {
         return pmInvalidDeviceId;
     }
 

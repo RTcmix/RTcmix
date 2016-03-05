@@ -10,7 +10,7 @@
 #include <math.h>
 #include <assert.h>
 
-// BGG -- this is set by pfield_set() in main.cpp
+// BGG -- this is set by RTcmix_setPField() in main.cpp
 //		the index is the inlet, the value is the value
 extern float gInletValues[];
 

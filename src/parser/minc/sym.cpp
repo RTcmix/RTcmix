@@ -287,7 +287,12 @@ free_symbols()
 	sCallStack = NULL;
 	clear_scope_stack(sScopeStack);
 	delete sScopeStack;
+#ifdef EMBEDDED
+	// Parsing may continue after call to free symbols, so...
+	InitializeScope();
+#else
 	sScopeStack = NULL;
+#endif
 	for (int s = 0; s < HASHSIZE; ++s)
 	{
 		struct str *str;

@@ -108,7 +108,7 @@ RTcmix::addfunc(
       }
 #endif
    }
-//    RTPrintf("addfunc: Function '%s' introduced\n", this_node->func_label);
+//   RTPrintf("addfunc: Function '%s' introduced at %p\n", this_node->func_label, this_node->func_ptr.legacy_return);
    cur_node->next = this_node;
 } 
 

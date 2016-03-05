@@ -15,12 +15,16 @@
 #include <ext_obex.h>
 #include <string.h>
 
-#ifndef MAX_INPUTS
-#define MAX_INPUTS 128
-#endif
-
-#ifndef MAX_OUTPUTS
-#define MAX_OUTPUTS 32
+#ifndef MAXCHANS
+	#define MSP_INPUTS 128
+	#define MSP_OUTPUTS 32
+#else
+	#if MAXCHANS < 32
+		#define MSP_INPUTS (MAXCHANS+120)
+	#else
+		#define MSP_INPUTS (MAXCHANS+64)
+	#endif
+	#define MSP_OUTPUTS MAXCHANS
 #endif
 
 struct MSP_Info
@@ -46,8 +50,8 @@ struct MSPAudioDevice::Impl
 	int					mNumOtherInputs;
 	int					mNumAudioOutputs;
 	int					mFrameSize;
-	float *				mInputBuffers[MAX_INPUTS];
-	float *				mOutputBuffers[MAX_OUTPUTS];
+	float *				mInputBuffers[MSP_INPUTS];
+	float *				mOutputBuffers[MSP_OUTPUTS];
 	int					mFrameCount;
 	MSP_Info			mInfo;
 	
@@ -61,8 +65,8 @@ MSPAudioDevice::Impl::Impl(MSPAudioDevice *inParent,
 	  mFrameSize(0), mFrameCount(0)
 {
 	int n;
-	for (n=0; n<MAX_INPUTS; ++n) mInputBuffers[n] = NULL;
-	for (n=0; n<MAX_OUTPUTS; ++n) mOutputBuffers[n] = NULL;
+	for (n=0; n<MSP_INPUTS; ++n) mInputBuffers[n] = NULL;
+	for (n=0; n<MSP_OUTPUTS; ++n) mOutputBuffers[n] = NULL;
 }
 
 MSPAudioDevice::Impl::~Impl()

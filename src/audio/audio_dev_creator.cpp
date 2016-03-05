@@ -19,7 +19,9 @@
 #ifdef NETAUDIO
 #include "NetAudioDevice.h"
 #endif
-#ifdef MSP_AUDIO_DEVICE
+#ifdef EMBEDDEDAUDIO
+#include "EmbeddedAudioDevice.h"
+#elif defined(MSPAUDIO)
 #include "MSPAudioDevice.h"
 #endif
 #ifdef APPLEAUDIO
@@ -49,7 +51,9 @@ static const AudioDevEntry s_AudioDevEntries[] = {
 #ifdef JACK // before APPLEAUDIO, since AppleAudioDevice::recognize matches anything
 	{ &JackAudioDevice::recognize, &JackAudioDevice::create },
 #endif
-#ifdef MSP_AUDIO_DEVICE
+#ifdef EMBEDDEDAUDIO
+	{ &EmbeddedAudioDevice::recognize, &EmbeddedAudioDevice::create },
+#elif defined(MSPAUDIO)
 	{ &MSPAudioDevice::recognize, &MSPAudioDevice::create },
 #endif
 #ifdef APPLEAUDIO

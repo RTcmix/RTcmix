@@ -1,11 +1,10 @@
 // setup.C -- Minc routines needed to set up PVOC utilities
 
 #include <ugens.h>
-#include <string.h>
 #include "PVFilter.h"
 #include "setup.h"
-#include <stdlib.h>
-#include <stdio.h>
+#include <string.h>		// strncpy()
+#include <stdio.h>		// sprintf()
 #include <DynamicLib.h>
 
 #ifndef SHAREDLIBDIR
@@ -13,9 +12,11 @@
 #endif
 
 extern "C" {
+#ifndef EMBEDDED
 int profile();
-double set_filter(float *, int, double *);
-double init_filter(float *, int, double *);
+#endif
+double set_filter(float *p, int, double *pp);
+double init_filter(float *p, int, double *pp);
 }
 
 static const int maxFilters = 8;
@@ -62,6 +63,10 @@ void ClearFilter()
 
 double set_filter(float *p, int n_args, double *pp)
 {
+#ifdef EMBEDDED
+	rterror("set_filter", "Dynamic filter loading not supported on this platform");
+	return -1;
+#endif
 	size_t numarg = (size_t) pp[0];
 	if (numarg < (size_t)g_currentFilters) {
 		if (g_filterCtors[numarg] == 0) {
@@ -117,9 +122,11 @@ double init_filter(float *p, int n_args, double *pp)
 	return -1;
 }
 
+#ifndef EMBEDDED
 int profile()
 {
 	UG_INTRO("set_filter", set_filter);
 	UG_INTRO("init_filter", init_filter);
 	return 0;
 }
+#endif

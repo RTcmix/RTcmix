@@ -35,7 +35,7 @@ PVRandBands::run(float *pvdata, int nvals)
 	return 0;
 }
 
-// total_bins, bins_to_chose, min_bin, max_bin
+// total_bins, bins_to_chose, min_bin, max_bin [, gain_scalar]
 
 int
 PVRandBands::init(double *pp, int nargs)

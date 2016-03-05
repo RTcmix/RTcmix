@@ -65,6 +65,9 @@ int  CHAIN::setup(PFieldSet *inPFields)
 		newSet->load(new ConstPField((*inPFields)[p].doubleValue(0.0)), p);
 	// The remaining args are InstPFields
 	int numChainedInstruments = (int)(*inPFields)[2].intValue(0.0);
+	if (numChainedInstruments <= 0) {
+		return die("CHAIN", "You must pass at least one instrument");
+	}
 	for (int p = 0; p < numChainedInstruments; ++p) {
 		InstPField *ipf = (InstPField *) &(*inPFields)[p+3];
 		Instrument *inst = ipf->instrument();

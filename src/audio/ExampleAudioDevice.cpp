@@ -131,6 +131,11 @@ int ExampleAudioDevice::doStart()
 	return error("Not implemented");
 }
 
+int ExampleAudioDevice::doStop()
+{
+	return error("Not implemented");
+}
+
 // This does nothing under RTcmix, so can be left as-is.
 
 int ExampleAudioDevice::doPause(bool)

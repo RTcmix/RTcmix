@@ -724,10 +724,10 @@ int AppleAudioDevice::doOpen(int mode)
 	// Describe audio component
 	AudioComponentDescription desc;
 	desc.componentType = kAudioUnitType_Output;
-#ifdef STANDALONE
-	desc.componentSubType = kAudioUnitSubType_HALOutput;	// OSX
-#else
+#ifdef IOS
 	desc.componentSubType = kAudioUnitSubType_RemoteIO;		// iOS
+#else
+	desc.componentSubType = kAudioUnitSubType_HALOutput;	// OSX
 #endif
 	desc.componentFlags = 0;
 	desc.componentFlagsMask = 0;
