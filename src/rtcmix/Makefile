@@ -368,6 +368,7 @@ ifeq ($(BUILDTYPE), STANDALONE)
 		$(INSTALL) pyRTcmix.o $(LIBDIR)
   endif
   ifdef RTLIB_INSTALL_DIR
+		@if test ! -d $(RTLIB_INSTALL_DIR) ; then mkdir -p $(RTLIB_INSTALL_DIR); fi;
 		$(INSTALL) $(RTLIB) $(RTLIB_INSTALL_DIR)
   else
 		@echo RTLIB_INSTALL_DIR is not set - not installing $(RTLIB)
@@ -384,7 +385,7 @@ MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
 	$(CXX) $(CXXFLAGS) -o MIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) $(M_O) -L. $(LDFLAGS) $(SYS_LDFLAGS)
 
 install:	all
-	@if test ! -d $(DESTDIR); then mkdir $(DESTDIR); fi;
+	@if test ! -d $(DESTDIR); then mkdir -p $(DESTDIR); fi;
 	$(INSTALL) MIX $(DESTDIR)/CMIX
 ifeq ($(PERL_SUPPORT), TRUE)
 	$(INSTALL) PMIX $(DESTDIR)/PCMIX

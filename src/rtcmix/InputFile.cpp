@@ -596,9 +596,9 @@ off_t InputFile::copySamps(off_t     cur_offset,       /* current file position 
     const int bytes_per_dest_samp = sizeof(float);
 	const int bytes_per_dest_frame = bytes_per_dest_samp * _chans;
 	// Convert byte offset into original file into a sample offset into (float) _memBuffer
-	long membufOffset = long(fileAudioOffset / bytes_per_src_samp);
+	long membufIndex = long(fileAudioOffset / bytes_per_src_samp);
     const int bufBytesRequested = dest_frames * _chans * bytes_per_dest_samp;
-	const long bufBytesRemaining = (fileBytesRemaining / (src_chans * bytes_per_src_samp)) * bytes_per_dest_frame;
+	const long bufBytesRemaining = (fileBytesRemaining / (_chans * bytes_per_src_samp)) * bytes_per_dest_frame;
     const long extra_bytes = (bufBytesRequested > bufBytesRemaining) ? bufBytesRequested - bufBytesRemaining : 0;
     ssize_t bytes_to_copy = lmin(bufBytesRemaining, bufBytesRequested);
     
@@ -611,8 +611,8 @@ off_t InputFile::copySamps(off_t     cur_offset,       /* current file position 
 		long offset = 0;
 		
 		if (bytes_to_copy > 0) {
-//			printf("memcpy'ing %d bytes (%d frames) to dest from _memBuffer[%d]\n", bytes_to_copy, bytes_to_copy/bytes_per_dest_frame, membufOffset);
-			memcpy(dest, &_memBuffer[membufOffset], bytes_to_copy);
+//			printf("memcpy'ing %d bytes (%d frames) to dest from _memBuffer[%d]\n", bytes_to_copy, bytes_to_copy/bytes_per_dest_frame, membufIndex);
+			memcpy(dest, &_memBuffer[membufIndex], bytes_to_copy);
 			offset += bytes_to_copy;
 			bytes_to_copy = 0;
 		}
@@ -629,8 +629,8 @@ off_t InputFile::copySamps(off_t     cur_offset,       /* current file position 
 		const long samps = lmax(0, bytes_to_copy) / bytes_per_dest_samp;
 		const long dest_samps = dest_frames * dest_chans;
 		
-		BufPtr buf = &_memBuffer[membufOffset];
-//		printf("copying %d samps (%d %d-channel frames) to dest from _memBuffer[%d]\n", samps, samps/_chans, _chans, membufOffset);
+		BufPtr buf = &_memBuffer[membufIndex];
+//		printf("copying %d samps (%d %d-channel frames) to dest from _memBuffer[%d]\n", samps, samps/_chans, _chans, membufIndex);
 		
 		for (int dest_chan = 0; dest_chan < dest_chans; ++dest_chan) {
 #ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT
