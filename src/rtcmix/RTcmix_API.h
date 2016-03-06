@@ -39,6 +39,7 @@ extern "C" {
 	int RTcmix_getBufferFrameCount(char *bufname);
 	int RTcmix_getBufferChannelCount(char *bufname);
 	void RTcmix_setPField(int inlet, float pval);
+	void pfield_set(int inlet, float pval);
 #ifdef MAXMSP
 	void RTcmix_setMSPState(const char *inSpec, void *inState);
 	void loadinst(char *dsoname);
