@@ -131,6 +131,7 @@ FIXME: this stuff not implemented yet  -JGG
 
 int RTcmix::setInputBuffer(const char *inName, float *inBuffer, int inFrames, int inChans, int inModtime)
 {
+	rtcmix_debug("setInputBuffer", "name '%s', buffer %p, frames %d, chans %d modtime %d", inName, inBUffer, inFrames, inChans, inModtime);
 	if (inName != NULL && inBuffer != NULL) {
 		/* See if this audio device or file has already been opened. */
 		InputFile *inFile = findInput(inName, &last_input_index);
@@ -164,6 +165,7 @@ int RTcmix::setInputBuffer(const char *inName, float *inBuffer, int inFrames, in
 		}
 	}
 	else {
+		rtcmix_debug("setInputBuffer", "Buffer was NULL");
 		last_input_index = -1;	// NULL buffer passed in
 	}
 	return last_input_index;
