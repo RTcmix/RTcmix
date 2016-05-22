@@ -123,7 +123,7 @@ public:
 #endif
 	static void releaseInput(int fdIndex);
 	
-	int setInputBuffer(const char *inName, float *inBuffer, int inFrames, int inChans, int inModtime);
+	int setInputBuffer(const char *inName, float *inBuffer, int inFrames, int inChans, int inModtime, float inGainScaling);
 	static InputFile * findInput(const char *inName, int *pOutIndex);
 	// Audio routines
 	static int setparams(float, int, int, bool, int);

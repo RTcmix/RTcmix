@@ -399,7 +399,7 @@ void InputFile::init(int inFd, const char *inFileName, Type inType, int inHeader
 		_endbyte = _data_location + (inFrames * bytes_per_samp * _chans);
 }
 
-void InputFile::init(BufPtr inBuffer, const char *inBufferName, long inFrames, float inSampleRate, int inChannels)
+void InputFile::init(BufPtr inBuffer, const char *inBufferName, long inFrames, float inSampleRate, int inChannels, float inScaling)
 {
 	rtcmix_debug("InputFile::init", "inBuffer %p, frames %ld, chans %d", inBuffer, inFrames, inChannels);
     _filename = strdup(inBufferName);
@@ -413,6 +413,7 @@ void InputFile::init(BufPtr inBuffer, const char *inBufferName, long inFrames, f
     _srate = inSampleRate;
     _chans = inChannels;
     _dur = inFrames/inSampleRate;
+	_gainScale = inScaling;
 	
     int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(_data_format);
 	

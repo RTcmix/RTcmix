@@ -349,7 +349,13 @@ void pfield_set(int inlet, float pval) { RTcmix_setPField(inlet, pval); }	// UNT
 
 int RTcmix_setInputBuffer(char *bufname, float *bufstart, int nframes, int nchans, int modtime)
 {
-	return (globalApp->setInputBuffer(bufname, bufstart, nframes, nchans, modtime) >= 0) ? 0 : -1;
+// THIS SHOULD BE HANDLED VIA THE PUBLIC FUNCTION
+#ifdef MAXMSP
+	float bufferGainScaling = 32767.0f;
+#else
+	float bufferGainScaling = 1.0f;
+#endif
+	return (globalApp->setInputBuffer(bufname, bufstart, nframes, nchans, modtime, bufferGainScaling) >= 0) ? 0 : -1;
 }
 
 // returns the number of frames in a named buffer
