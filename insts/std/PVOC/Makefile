@@ -12,8 +12,8 @@ ifeq ($(BUILDTYPE), STANDALONE)
 	BUILD_FILTERS=1
 endif
 
-ifdef ($(BUILD_FILTERS))
-	FILTERS = libPVRandBend.$(SHLIB_SUFFIX) libPVRandBands.$(SHLIB_SUFFIX) libPVTransBend.$(SHLIB_SUFFIX)
+ifdef BUILD_FILTERS
+	FILTERS = libPVRandBend.so libPVRandBands.so libPVTransBend.so
 endif
 
 PROGS = $(NAME) lib$(NAME).so $(FILTERS)
@@ -34,16 +34,16 @@ lib$(NAME).so:	$(UGENS_H) $(OBJS)
 
 ifeq ($(BUILDTYPE), STANDALONE)
 
-libPVFilterTest.$(SHLIB_SUFFIX):	PVFilter.o PVFilterTest.o
+libPVFilterTest.so:	PVFilter.o PVFilterTest.o
 	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVFilterTest.o setup.o
 
-libPVRandBend.$(SHLIB_SUFFIX):	PVFilter.o PVRandBend.o
+libPVRandBend.so:	PVFilter.o PVRandBend.o
 	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVRandBend.o setup.o
 
-libPVRandBands.$(SHLIB_SUFFIX):	PVFilter.o PVRandBands.o
+libPVRandBands.so:	PVFilter.o PVRandBands.o
 	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVRandBands.o setup.o
 
-libPVTransBend.$(SHLIB_SUFFIX):	PVFilter.o PVTransBend.o
+libPVTransBend.so:	PVFilter.o PVTransBend.o
 	$(CXX) $(SHARED_LDFLAGS) -o $@ PVFilter.o PVTransBend.o setup.o
 
 endif
@@ -55,10 +55,10 @@ install: dso_install
 
 dso_install: lib$(NAME).so $(FILTERS)
 	$(INSTALL) $(CURDIR)/lib$(NAME).so $(LIBDESTDIR)
-ifdef ($(BUILD_FILTERS))
-	$(INSTALL) $(CURDIR)/libPVRandBend.$(SHLIB_SUFFIX) $(LIBDESTDIR)
-	$(INSTALL) $(CURDIR)/libPVRandBands.$(SHLIB_SUFFIX) $(LIBDESTDIR)
-	$(INSTALL) $(CURDIR)/libPVTransBend.$(SHLIB_SUFFIX) $(LIBDESTDIR)
+ifdef BUILD_FILTERS
+	$(INSTALL) $(CURDIR)/libPVRandBend.so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/libPVRandBands.so $(LIBDESTDIR)
+	$(INSTALL) $(CURDIR)/libPVTransBend.so $(LIBDESTDIR)
 endif
 
 standalone_install: standalone
@@ -68,10 +68,10 @@ uninstall: dso_uninstall standalone_uninstall
 
 dso_uninstall:
 	$(RM) $(LIBDESTDIR)/lib$(NAME).so
-ifdef ($(BUILD_FILTERS))
-	$(RM) $(LIBDESTDIR)/libPVRandBend.$(SHLIB_SUFFIX)
-	$(RM) $(LIBDESTDIR)/libPVRandBands.$(SHLIB_SUFFIX)
-	$(RM) $(LIBDESTDIR)/libPVTransBend.$(SHLIB_SUFFIX)
+ifdef BUILD_FILTERS
+	$(RM) $(LIBDESTDIR)/libPVRandBend.so
+	$(RM) $(LIBDESTDIR)/libPVRandBands.so
+	$(RM) $(LIBDESTDIR)/libPVTransBend.so
 endif
 
 standalone_uninstall:
