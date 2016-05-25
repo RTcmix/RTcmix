@@ -403,6 +403,7 @@ $(RTLIB): depend $(COMMON_OBJS) $(LIBS)
 
 install:	all
   ifdef RTLIB_INSTALL_DIR
+		@if test ! -d $(RTLIB_INSTALL_DIR) ; then mkdir -p $(RTLIB_INSTALL_DIR); fi;
 		$(INSTALL) $(RTLIB) $(RTLIB_INSTALL_DIR)
   else
 		@echo RTLIB_INSTALL_DIR is not set - not installing $(RTLIB)
