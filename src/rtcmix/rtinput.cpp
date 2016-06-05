@@ -129,8 +129,9 @@ FIXME: this stuff not implemented yet  -JGG
    an instrument.
 */
 
-int RTcmix::setInputBuffer(const char *inName, float *inBuffer, int inFrames, int inChans, int inModtime)
+int RTcmix::setInputBuffer(const char *inName, float *inBuffer, int inFrames, int inChans, int inModtime, float inGainScaling)
 {
+	rtcmix_debug("setInputBuffer", "name '%s', buffer %p, frames %d, chans %d modtime %d", inName, inBuffer, inFrames, inChans, inModtime);
 	if (inName != NULL && inBuffer != NULL) {
 		/* See if this audio device or file has already been opened. */
 		InputFile *inFile = findInput(inName, &last_input_index);
@@ -149,7 +150,8 @@ int RTcmix::setInputBuffer(const char *inName, float *inBuffer, int inFrames, in
 										   inName,
 										   inFrames,
 										   44100.0f,	// DAS Allow SR to VARY
-										   inChans);
+										   inChans,
+										   inGainScaling);
 					last_input_index = i;
 					break;
 				}
@@ -164,6 +166,7 @@ int RTcmix::setInputBuffer(const char *inName, float *inBuffer, int inFrames, in
 		}
 	}
 	else {
+		rtcmix_debug("setInputBuffer", "Buffer was NULL");
 		last_input_index = -1;	// NULL buffer passed in
 	}
 	return last_input_index;

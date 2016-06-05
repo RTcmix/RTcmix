@@ -28,7 +28,7 @@ public:
     void init(int inFd, const char *inFileName, Type inType, int inHeaderType,
               int inDataFormat, int inDataLocation, long nFrames, float inSampleRate,
               int inChannels, double inDuration);
-	void init(BufPtr inBuffer, const char *inBufferName, long nFrames, float inSampleRate, int inChannels);
+	void init(BufPtr inBuffer, const char *inBufferName, long nFrames, float inSampleRate, int inChannels, float inScaling);
 	void reinit(BufPtr inBuffer, long nFrames, int inChannels);
 
     void reference();

@@ -530,7 +530,11 @@ void *rtcmix_new(long num_inoutputs, long num_additional)
 	}
 	
 	x->flushflag = 0; // [flush] sets flag for call to x->flush() in rtcmix_perform() (after pulltraverse completes)
+#if DEBUG_LOGGING
+	x->debugflag = 1;
+#else
 	x->debugflag = 0; // debugging is off by default
+#endif
 	x->audioConfigured = 0;	// indicates first time, prior to configuring audio
 	x->loadinstflag = 0; // set for normal operation (no RTcmix instrument dynloading)
 	
@@ -799,14 +803,14 @@ int rtcmix_load_dylib(t_rtcmix *x)
 			error("rtcmix~ could not find RTcmix_setPrintCallback()");
 	}
 	
-	x->symbol = NSLookupSymbolInModule(x->module, "_pfield_set");
+	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_setPField");
 	if (x->symbol == NULL) {
-		error("cannot find pfield_set");
+		error("cannot find RTcmix_setPField");
 		return(-1);
 	} else {
 		x->pfield_set = NSAddressOfSymbol(x->symbol);
 		if (!(x->pfield_set))
-			error("rtcmix~ could not find pfield_set()");
+			error("rtcmix~ could not find RTcmix_setPField()");
 	}
 	
 	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_setInputBuffer");
@@ -1526,12 +1530,9 @@ void rtcmix_dogoscript(t_rtcmix *x, Symbol *s, short argc, Atom *argv)
 	
 	for (i = 0, j = 0; i < buflen && j < outbuflen; i++) {
 		thebuf[j] = *(x->rtcmix_script[x->current_script]+i);
-		if ((int)thebuf[j] == 13)
+		if ((int)thebuf[j] == 13) {
 			thebuf[j] = '\n'; 	// RTcmix wants newlines, not <cr>'s
-		else if (thebuf[j] == '0') {
-			break;				// done
 		}
-		
 		// ok, here's where we substitute the $vars
 		if (thebuf[j] == '$') {
 			sscanf(x->rtcmix_script[x->current_script]+i+1, "%d", &tval);
@@ -1904,7 +1905,7 @@ void rtcmix_save(t_rtcmix *x, void *w)
 			k = 0;
 			for (j = 0; j < x->rtcmix_script_len[i]; j++) {
 				*tptr++ = *fptr++;
-				if (++k >= RTCMIX_BINBUF_SIZE) { // 'serialize' the script
+				if (++k >= RTCMIX_BINBUF_SIZE-1) { // 'serialize' the script
 					// the 'restore' message contains script #, current buffer length, final buffer length, symbol with buffer contents
 					*tptr = '\0';
 					binbuf_vinsert(w, "ssllls", gensym("#X"), gensym("restore"), i, k, x->rtcmix_script_len[i], gensym(tbuf));

@@ -152,7 +152,6 @@ int SCRUB::run()
 	const int frameCount = framesToRun();
 	int       i, inChans = inputChannels();
 	float     *outp;
-	double    frac;
 
 	// HACK
 	if (!_initialized) {
@@ -220,8 +219,15 @@ inline int max(int x, int y) { return (x >= y) ? x : y; }
 int SCRUB::Initialize() {
 	fFileChunkStartFrame = _startFrame;
 	fFileChunkEndFrame = _startFrame;
-	fFrameCount = (speed >= 0.0) ?
-		_startFrame + getendsamp() : max(_startFrame, getendsamp());
+	if (speed >= 0.0) {
+		// XXX FIX ME:  The fFrameCount value is never correct -- always too
+		// small when generating more frames out than frames coming in (pitch mult > 1)
+		// For now, just setting it large.
+		fFrameCount = _startFrame + getendsamp() + 999999;
+	}
+	else {
+		fFrameCount = max(_startFrame, getendsamp());
+	}
 	PRINT("Initialize: fFrameCount set to %ld\n", fFrameCount);
 	// read in initial frames so that fCurRawFramesIdx is centered
 	int NPastFrames = gkNrRawFrames / 2;
@@ -256,21 +262,24 @@ int SCRUB::ReadRawFrames(int destframe, int nframes) {
 
   if (nframes < 0) {
     fromFrame = (fFileChunkStartFrame + nframes) % fFrameCount;
-    if (fromFrame < 0)
-      fromFrame += fFrameCount;
+	  if (fromFrame < 0) {
+		  PRINT("ReadRawFrames: wrapping fromFrame\n");
+      	fromFrame += fFrameCount;
+	  }
     toFrame = fFileChunkEndFrame;
     fFileChunkStartFrame = (int) fromFrame;
-	  PRINT("ReadRawFrames: nframes %d, fromFrame %.2f\n", nframes, fromFrame);
+	  PRINT("ReadRawFrames: nframes %d, fromFrame %.2f fFileChunkEndFrame %ld [backward]\n", nframes, fromFrame, fFileChunkEndFrame);
   } else {
-    fromFrame = fFileChunkEndFrame;
-    toFrame = (fFileChunkEndFrame + nframes) % fFrameCount;
-    fFileChunkEndFrame = (int)toFrame;
-	  PRINT("ReadRawFrames: nframes %d, fromFrame %.2f\n", nframes, fromFrame);
+	  PRINT("ReadRawFrames: nframes %d, fFileChunkEndFrame starts out %ld, fFrameCount %ld\n", nframes, fFileChunkEndFrame, fFrameCount);
+	  fromFrame = fFileChunkEndFrame;
+	  toFrame = (fFileChunkEndFrame + nframes) % fFrameCount;
+	  fFileChunkEndFrame = (int)toFrame;
+	  PRINT("ReadRawFrames: fromFrame %.2f fFileChunkEndFrame now %ld [forward]\n", fromFrame, fFileChunkEndFrame);
   }
 
   int res;
   int toread = abs(nframes);
-  PRINT("ReadRawFrames calling rtinrepos() with loc = %d\n", (int)fromFrame);
+  PRINT("ReadRawFrames calling rtinrepos() with fromFrame = %d\n", (int)fromFrame);
   res = rtinrepos(this, (int) fromFrame, SEEK_SET);
   if (res < 0) {
     return -1;
@@ -293,7 +302,7 @@ int SCRUB::ReadRawFrames(int destframe, int nframes) {
 		  read += res;
 	}
     if (read < toread) {
- 	  PRINT("ReadRawFrames calling rtinrepos() with loc = 0\n");
+ 	  PRINT("Read %d, need %d - ReadRawFrames calling rtinrepos() with loc = 0\n", read, toread);
       rtinrepos(this, 0, SEEK_SET);
     }
 	else
@@ -323,21 +332,22 @@ int SCRUB::ReadRawFrames(int destframe, int nframes) {
 // negative <nframes>.
 
 void SCRUB::RotateRawFrames(long frameshift) {
-  if (frameshift != 0) {
-    long byteshift = ((gkNrRawFrames - abs(frameshift))
-		      * sizeof(float) * fChannels);
-    if (frameshift > 0) {
-      memmove(&pRawFrames[frameshift*fChannels], &pRawFrames[0], byteshift);
-      fFileChunkEndFrame = (fFileChunkEndFrame - frameshift) % fFrameCount;
-      if (fFileChunkEndFrame < 0)
-	fFileChunkEndFrame += fFrameCount;
-      ReadRawFrames(0, -frameshift);
-    } else if (frameshift < 0) {
-      memmove(pRawFrames, pRawFrames + -frameshift*fChannels, byteshift);
-      fFileChunkStartFrame = (fFileChunkStartFrame - frameshift) % fFrameCount;
-      ReadRawFrames(gkNrRawFrames + frameshift, -frameshift);
-    }
-  }
+	if (frameshift != 0) {
+		long byteshift = ((gkNrRawFrames - abs(frameshift)) * sizeof(float) * fChannels);
+		if (frameshift > 0) {
+			memmove(&pRawFrames[frameshift*fChannels], &pRawFrames[0], byteshift);
+			fFileChunkEndFrame = (fFileChunkEndFrame - frameshift) % fFrameCount;
+			if (fFileChunkEndFrame < 0) {
+				fFileChunkEndFrame += fFrameCount;
+			}
+			PRINT("RotateRawFrames: fFileChunkEndFrame now %ld\n", fFileChunkEndFrame);
+			ReadRawFrames(0, -frameshift);
+		} else if (frameshift < 0) {
+			memmove(pRawFrames, pRawFrames + -frameshift*fChannels, byteshift);
+			fFileChunkStartFrame = (fFileChunkStartFrame - frameshift) % fFrameCount;
+			ReadRawFrames(gkNrRawFrames + frameshift, -frameshift);
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -392,8 +402,8 @@ inline void SCRUB::EnsureRawFramesIdxInbound() {
   case 0x800 : shift = -gkRingBufSegmentSize; break;
   }
   if (shift) {
-    RotateRawFrames(shift);
-    fCurRawFramesIdx += (float)shift;
+		RotateRawFrames(shift);
+		fCurRawFramesIdx += (float)shift;
   }
 }
 

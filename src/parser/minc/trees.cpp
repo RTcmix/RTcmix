@@ -1488,7 +1488,6 @@ exct(Tree tp)
 			TPRINT("NodeListElem %p copying child value into self and stack\n", tp);
             copy_tree_tree(tp, tmp);
             copy_tree_listelem(&sMincList[sMincListLen], tmp);
-			assert(sMincList[sMincListLen].type == tmp->type);
             sMincListLen++;
 			 TPRINT("NodeListElem: list at level %d now len %d\n", list_stack_ptr, sMincListLen);
          }
@@ -1621,10 +1620,8 @@ exct(Tree tp)
 				tp, tp->u.child[1], tp->u.child[0]->u.symbol);
 		/* Copy entire MincValue union from expr to id sym and to tp. */
          copy_tree_sym(tp->u.child[0]->u.symbol, tp->u.child[1]);
-		 assert(tp->u.child[0]->u.symbol->type == tp->u.child[1]->type);
          TPRINT("NodeStore: copying value from RHS (%p) to here (%p)\n", tp->u.child[1], tp);
          copy_tree_tree(tp, tp->u.child[1]);
-         assert(tp->type == tp->u.child[1]->type);
          break;
       case NodeOpAssign:
          exct_opassign(tp, tp->op);
@@ -1896,6 +1893,12 @@ static void
 copy_tree_tree(Tree tpdest, Tree tpsrc)
 {
    TPRINT("copy_tree_tree(%p, %p)\n", tpdest, tpsrc);
+#ifdef EMBEDDED
+	/* Not yet handling errors with throw/catch */
+	if (tpsrc->type == MincVoidType) {
+		return;
+	}
+#endif
    copy_value(&tpdest->v, tpdest->type, &tpsrc->v, tpsrc->type);
 	if (tpdest->type != MincVoidType && tpsrc->type != tpdest->type) {
 		minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(tpdest->type), tpdest->name, MincTypeName(tpsrc->type));
@@ -1910,6 +1913,12 @@ static void
 copy_sym_tree(Tree tpdest, Symbol *src)
 {
    TPRINT("copy_sym_tree(%p, %p)\n", tpdest, src);
+#ifdef EMBEDDED
+	/* Not yet handling errors with throw/catch */
+	if (src == NULL) {
+		return;
+	}
+#endif
 	assert(src->scope != -1);	// we accessed a variable after leaving its scope!
    copy_value(&tpdest->v, tpdest->type, &src->v, src->type);
 	if (tpdest->type != MincVoidType && src->type != tpdest->type) {
@@ -1923,7 +1932,13 @@ copy_sym_tree(Tree tpdest, Symbol *src)
 static void
 copy_tree_sym(Symbol *dest, Tree tpsrc)
 {
-   TPRINT("copy_tree_sym(%p, %p)\n", dest, tpsrc);
+	TPRINT("copy_tree_sym(%p, %p)\n", dest, tpsrc);
+#ifdef EMBEDDED
+	/* Not yet handling errors using throw/catch */
+	if (dest == NULL || tpsrc->type == MincVoidType) {
+		return;
+	}
+#endif
 	assert(dest->scope != -1);	// we accessed a variable after leaving its scope!
    copy_value(&dest->v, dest->type, &tpsrc->v, tpsrc->type);
 	if (dest->type != MincVoidType && tpsrc->type != dest->type) {
@@ -1936,6 +1951,12 @@ static void
 copy_tree_listelem(MincListElem *dest, Tree tpsrc)
 {
    TPRINT("copy_tree_listelem(%p, %p)\n", dest, tpsrc);
+#ifdef EMBEDDED
+	/* Not yet handling errors with throw/catch */
+	if (tpsrc->type == MincVoidType) {
+		return;
+	}
+#endif
    copy_value(&dest->val, dest->type, &tpsrc->v, tpsrc->type);
    dest->type = tpsrc->type;
 }

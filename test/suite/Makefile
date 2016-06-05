@@ -46,6 +46,9 @@ stresstest: $(STRESSOBJS) $(IMBCMIXOBJS)
 sockettest: $(SOCKOBJS)
 	$(CXX) -o $@ $(SOCKOBJS) ../../lib/RTsockfuncs.o
 
+embeddedtest: embeddedtest.o
+	$(CXX) -I../.. -DEMBEDDED -DEMBEDDEDAUDIO -o $@ embeddedtest.o -L../../lib -lrtcmix_embedded
+
 run_stresstest:	stresstest
 	@echo
 	@echo Running interactive stress test for $(TESTLEN) seconds...
@@ -142,6 +145,12 @@ test_load:
 	@find ../../shlib/ -name lib\* | grep -v conn | sed 's/\(.*\)/if (load("&") != 1) { print("& LOAD FAILED"); }/' > load_test.sco
 	-$(CMD) < load_test.sco
 #	rm load_test.sco
+
+test_embedded:
+	@echo
+	@echo Testing embedded use of all instruments
+	@find ../../shlib/ -name lib\* | grep -v conn | sed 's/^.*lib//' | sed 's/\.so/(0,0,1,1)/' > embedded_test.sco
+	-./embeddedtest embedded_test.sco
 
 clean:
 	@echo Cleaning test suite.

@@ -1,7 +1,11 @@
 include ../makefile.conf
 
-# This finds all dirs in this directory (except for CVS/).
-DIRS = `find . -type d -mindepth 1 -maxdepth 1 | sed -e '/CVS/d'`
+ifeq ($(BUILDTYPE), STANDALONE)
+# This finds all dirs in this directory (filtered for embedded types).
+DIRS = `find . -type d -mindepth 1 -maxdepth 1 | sed -e '/maxmsp/d'`
+else
+DIRS = `find . -type d -mindepth 1 -maxdepth 1`
+endif
 
 .PHONY: all progs base std dsos standalone install dso_install \
 	standalone_install uninstall dso_uninstall standalone_uninstall \

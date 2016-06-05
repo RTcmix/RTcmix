@@ -1,8 +1,16 @@
 LIBRTAUDIOOBJS = ../audio/AudioDevice.o ../audio/AudioIODevice.o \
 ../audio/AudioDeviceImpl.o ../audio/ThreadedAudioDevice.o \
 ../audio/AudioOutputGroupDevice.o ../audio/DualOutputAudioDevice.o \
-../audio/AudioFileDevice.o ../audio/AppleAudioDevice.o \
-../audio/audio_dev_creator.o ../audio/sndlibsupport.o
+../audio/AudioFileDevice.o ../audio/audio_dev_creator.o ../audio/sndlibsupport.o
+ifeq ($(ARCH),MACOSX)
+	ifeq ($(AUDIODRIVER), APPLE)
+		LIBRTAUDIOOBJS += ../audio/AppleAudioDevice.o
+	else ifeq ($(AUDIODRIVER), MAXMSP)
+		LIBRTAUDIOOBJS += ../audio/MSPAudioDevice.o
+	else ifeq ($(AUDIODRIVER), EMBEDDED)
+		LIBRTAUDIOOBJS += ../audio/EmbeddedAudioDevice.o
+	endif
+endif
 LIBCONFOBJS = ../conf/conf.tab.o ../conf/Config.o
 LIBGENOBJS = ../../genlib/allpass.o ../../genlib/allpole.o \
 ../../genlib/ampdb.o ../../genlib/ballpole.o ../../genlib/bbuzz.o \
@@ -31,7 +39,7 @@ LIBPFBUSOBJS = ../control/pfbus/PFBusPField.o ../control/pfbus/pfbusglue.o
 LIBMINCOBJS = ../parser/minc/y.tab.o ../parser/minc/builtin.o \
 ../parser/minc/callextfunc.o ../parser/minc/error.o ../parser/minc/sym.o \
 ../parser/minc/trees.o ../parser/minc/utils.o ../parser/minc/handle.o
-LIBOBJLIBOBJS = ../../insts/jg/objlib/JGFilter.o \
+LIBOBJOBJS = ../../insts/jg/objlib/JGFilter.o \
 ../../insts/jg/objlib/JGOnePole.o ../../insts/jg/objlib/TwoPole.o \
 ../../insts/jg/objlib/JGOneZero.o ../../insts/jg/objlib/TwoZero.o \
 ../../insts/jg/objlib/NZero.o ../../insts/jg/objlib/JGBiQuad.o \
@@ -50,9 +58,9 @@ LIBOBJLIBOBJS = ../../insts/jg/objlib/JGFilter.o \
 ../../insts/jg/objlib/JGNoise.o ../../insts/jg/objlib/SubNoise.o \
 ../../insts/jg/objlib/SubNoiseL.o ../../insts/jg/objlib/WavShape.o \
 ../../insts/jg/objlib/ZAllpass.o ../../insts/jg/objlib/Equalizer.o
-LIBRTHEAP = ./heap/heap.o ./heap/queue.o ./heap/rtQueue.o
-LIBSNDLIB = ../sndlib/headers.o ../sndlib/io.o ../sndlib/extra.o
-LIBSTKLIB = ../../insts/stk/stklib/Brass.o ../../insts/stk/stklib/DelayA.o \
+LIBRTHEAPOBJS = ./heap/heap.o ./heap/queue.o ./heap/rtQueue.o
+LIBSNDOBJS = ../sndlib/headers.o ../sndlib/io.o ../sndlib/extra.o
+LIBSTKOBJS = ../../insts/stk/stklib/Brass.o ../../insts/stk/stklib/DelayA.o \
 ../../insts/stk/stklib/BiQuad.o ../../insts/stk/stklib/Filter.o \
 ../../insts/stk/stklib/Stk.o ../../insts/stk/stklib/PoleZero.o \
 ../../insts/stk/stklib/Instrmnt.o ../../insts/stk/stklib/Delay.o \

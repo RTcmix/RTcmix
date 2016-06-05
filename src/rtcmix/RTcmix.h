@@ -82,7 +82,7 @@ public:
 	static float sr() { return SR; }
 	static int chans() { return NCHANS; }
 	static void setBufOffset(FRAMETYPE inOffset, bool inRunToOffset);
-	static long getElapsedFrames() { return elapsed + bufsamps(); }
+	static FRAMETYPE getElapsedFrames() { return elapsed + bufsamps(); }
 	static bool outputOpen() { return rtfileit != -1; }
 	static bool rtsetparams_was_called() { return rtsetparams_called; }
 	
@@ -123,21 +123,25 @@ public:
 #endif
 	static void releaseInput(int fdIndex);
 	
-	int setInputBuffer(const char *inName, float *inBuffer, int inFrames, int inChans, int inModtime);
+	int setInputBuffer(const char *inName, float *inBuffer, int inFrames, int inChans, int inModtime, float inGainScaling);
 	static InputFile * findInput(const char *inName, int *pOutIndex);
-
+	// Audio routines
 	static int setparams(float, int, int, bool, int);
 	static int resetparams(float, int, int, bool);
 
 	static int startAudio(AudioDeviceCallback renderCallback,
 						  AudioDeviceCallback doneCallback,
 						  void *inContext);
+#ifdef EMBEDDEDAUDIO
+	static int runAudio(void *inAudioBuffer, void *outAudioBuffer, int frameCount);
+#endif
 	static int stopAudio();
 	static int resetAudio(float, int, int, bool);
-	// BGG -- public for calling from imbedded apps
+	// BGG -- public for using within imbedded API
 	static bool inTraverse(AudioDevice *, void *);
 	static bool doneTraverse(AudioDevice *, void *);
-	// These are functions called from the parser via pointers, and are
+	
+	// Config routines.  Called from the parser via pointers, and are
 	// registered via rt_ug_intro().
 	static double rtsetparams(float*, int, double *);
 	static double rtinput(float*, int, double *);

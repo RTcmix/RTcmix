@@ -289,6 +289,7 @@ void Instrument::configureEndSamp(FRAMETYPE *pStartSamp)
 	}
 	
 	FRAMETYPE endsamp = startsamp+nSamps();
+	assert(endsamp >= 0LL);
 	setendsamp(endsamp);  // used by intraverse.cpp
 	if (pStartSamp)
 		*pStartSamp = startsamp;

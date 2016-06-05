@@ -606,6 +606,18 @@ int RTcmix::startAudio(AudioDeviceCallback renderCallback, AudioDeviceCallback d
 	return -1;
 }
 
+#ifdef EMBEDDEDAUDIO
+
+#include "EmbeddedAudioDevice.h"
+
+int RTcmix::runAudio(void *inAudioBuffer, void *outAudioBuffer, int frameCount)
+{
+	EmbeddedAudioDevice *device = (EmbeddedAudioDevice *) audioDevice;
+	return (device && device->run(inAudioBuffer, outAudioBuffer, frameCount) == true) ? 0 : -1;
+}
+
+#endif
+
 int RTcmix::stopAudio()
 {
 	rtcmix_debug(NULL, "RTcmix::stopAudio entered");

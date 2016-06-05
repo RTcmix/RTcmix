@@ -154,6 +154,9 @@ int BUTTER :: init(double p[], int n_args)
                  "Steepness (p5) must be an integer between 1 and %d.",
                  MAXFILTS);
 
+	if (n_args < 5) {
+		return die("BUTTER", "Not enough arguments - p4 must specify a filter type");
+	}
    type = getFiltType(true);
    if (type == FiltInvalid)
       return die("BUTTER", "Type must be \"lowpass\", \"highpass\", "

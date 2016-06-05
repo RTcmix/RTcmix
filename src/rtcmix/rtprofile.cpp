@@ -11,8 +11,9 @@ void
 rtprofile()
 {
 // base
-   RT_INTRO("MIX",makeMIX);
-   RT_INTRO("WAVETABLE",makeWAVETABLE);
+	RT_INTRO("MIX",makeMIX);
+	RT_INTRO("WAVETABLE",makeWAVETABLE);
+	RT_INTRO("CHAIN",makeCHAIN);
 // std
 	RT_INTRO("AM",makeAM);
 	RT_INTRO("AMINST",makeAMINST);

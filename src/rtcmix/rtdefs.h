@@ -1,7 +1,11 @@
 #ifndef _RTDEFS_H_
 #define _RTDEFS_H_ 1
 
+#ifndef MAXCHANS
 #define MAXCHANS 8
+#elif MAXCHANS < 8
+#error MAXCHANS must be at least 8 (to match MINBUS)
+#endif
 
 #define RESERVE_INPUT_FDS    20  // subtract this from max number of input files
 
