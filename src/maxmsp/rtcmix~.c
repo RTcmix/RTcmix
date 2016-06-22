@@ -589,14 +589,14 @@ void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count)
 	if (x->audioConfigured) {
 		// This function destroys and rebuilds the AudioDevice and the audio buffers.
 		if (x->rtresetaudio) {
-			cpost("rtcmix_dsp calling RTcmix_resetAudio()");
+			rtcmix_dprint(x, "rtcmix_dsp calling RTcmix_resetAudio()");
 			x->rtresetaudio(x->srate, x->num_outputs, sp[0]->s_n, 1);
 		}
 	}
 	else {
 		if (x->rtsetparams)
 		{
-			cpost("rtcmix_dsp calling RTcmix_setParams()");
+			rtcmix_dprint(x, "rtcmix_dsp calling RTcmix_setParams()");
 			x->rtsetparams(x->srate, x->num_outputs, sp[0]->s_n, 1, 0);
 			x->audioConfigured = 1;
 		}
@@ -608,11 +608,11 @@ void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count)
 	rtcmix_load_dylib(x);
 #elif defined(DESTROY_ON_DSP_MESSAGE)
 	if (x->rtcmixdestroy) {
-		cpost("rtcmix_dsp calling RTcmix_destroy()");
+		rtcmix_dprint(x, "rtcmix_dsp calling RTcmix_destroy()");
 		x->rtcmixdestroy();
 	}
 	if (x->rtcmixinit) {
-		cpost("rtcmix_dsp calling RTcmix_init()");
+		rtcmix_dprint(x, "rtcmix_dsp calling RTcmix_init()");
 		x->rtcmixinit();
 	}
 #endif
@@ -635,7 +635,7 @@ void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count)
 	// This is done if we are either reloading the dylib, or destroying everything each time.
 	if (x->rtsetparams)
 	{
-		cpost("rtcmix_dsp calling RTcmix_setparams()");
+		rtcmix_dprint(x, "rtcmix_dsp calling RTcmix_setparams()");
 		x->rtsetparams(x->srate, x->num_outputs, sp[0]->s_n, 1, 0);
 	}
 #endif
@@ -940,7 +940,7 @@ void rtcmix_free(t_rtcmix *x)
 	
 	// Free the RTcmix system
 	if (x->rtcmixdestroy) {
-		cpost("rtcmix_free calling RTcmix_destroy()");
+		rtcmix_dprint(x, "rtcmix_free calling RTcmix_destroy()");
 		x->rtcmixdestroy();
 	}
 	
