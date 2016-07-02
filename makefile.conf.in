@@ -180,9 +180,9 @@ ifeq ($(ARCH),MACOSX)
 		CMIX_FLAGS += -DAPPLEAUDIO
 	endif
     ifeq ($(IPHONE_TYPE), SIMULATOR)
-      ARCH_BITFLAGS = -m32
-      ARCHFLAGS += $(ARCH_BITFLAGS) -DEMBEDDED -DIOS -DSIMULATOR -arch i386
-      ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX) -arch i386 -framework AudioToolbox
+      ARCH_BITFLAGS = -m64
+      ARCHFLAGS += $(ARCH_BITFLAGS) -DEMBEDDED -DIOS -DSIMULATOR -arch x86_64
+      ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX) -arch x86_64 -framework AudioToolbox
       ifeq ($(USE_OSX_DISPATCH), TRUE)
         ARCHFLAGS += -DUSE_OSX_DISPATCH
       endif
