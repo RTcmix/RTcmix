@@ -199,8 +199,8 @@ ifeq ($(ARCH),MACOSX)
         ARCHFLAGS += -DUSE_OSX_DISPATCH
       endif
       IPHONE_CFLAGS = -isysroot `xcrun -sdk iphoneos --show-sdk-path`
-      CC = `xcrun -sdk iphoneos -f cc` -arch armv7s -arch armv7
-      CXX = `xcrun -sdk iphoneos -f c++` -arch armv7s -arch armv7
+      CC = `xcrun -sdk iphoneos -f cc` -arch armv7s -arch armv7 -arch arm64
+      CXX = `xcrun -sdk iphoneos -f c++` -arch armv7s -arch armv7 -arch arm64
 
 	  RTLIB = librtcmix_iphone-DEV.a
     endif
