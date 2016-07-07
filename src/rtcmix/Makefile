@@ -400,6 +400,7 @@ else
 # Note: Some of these macros will be empty for dynamic builds; some will be empty for static
 $(RTLIB): depend $(COMMON_OBJS) $(LIBS)
 	$(LOAD) $@ $(COMMON_OBJS) $(INST_OBJS) $(LIB_OBJS) $(LIBS) $(SYS_LDFLAGS)
+	$(RANLIB) $@
 
 install:	all
   ifdef RTLIB_INSTALL_DIR

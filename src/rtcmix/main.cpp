@@ -350,7 +350,7 @@ void pfield_set(int inlet, float pval) { RTcmix_setPField(inlet, pval); }	// UNT
 int RTcmix_setInputBuffer(char *bufname, float *bufstart, int nframes, int nchans, int modtime)
 {
 // THIS SHOULD BE HANDLED VIA THE PUBLIC FUNCTION
-#ifdef MAXMSP
+#if defined(MAXMSP)  || defined(IOS)
 	float bufferGainScaling = 32767.0f;
 #else
 	float bufferGainScaling = 1.0f;
