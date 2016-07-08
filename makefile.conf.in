@@ -105,7 +105,7 @@ ifeq ($(ARCH),MACOSX)
       ARCHFLAGS += -DUSE_OSX_DISPATCH
     endif
     ARCH_RTLDFLAGS += -framework AudioUnit
-    AUDIODRIVER=EMBEDDED
+    AUDIODRIVER=EMBEDDEDAUDIO
     CMIX_FLAGS += -DEMBEDDEDAUDIO
     # This is overridable in site.conf
 	ifndef RTLIBTYPE
@@ -162,7 +162,7 @@ ifeq ($(ARCH),MACOSX)
 		RTLIB = rtcmixdylib_osx.a
 		RTLIB_LDFLAGS = $(UB_CFLAGS)
 	endif
-    AUDIODRIVER=EMBEDDED
+    AUDIODRIVER=EMBEDDEDAUDIO
     CMIX_FLAGS += -DEMBEDDEDAUDIO
   endif
 
