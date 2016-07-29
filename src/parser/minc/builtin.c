@@ -25,6 +25,7 @@ static MincFloat _minc_len(const MincListElem args[], const int nargs);
 static MincFloat _minc_interp(const MincListElem args[], const int nargs);
 static MincFloat _minc_index(const MincListElem args[], const int nargs);
 static MincString _minc_type(const MincListElem args[], const int nargs);
+static MincString _minc_tostring(const MincListElem args[], const int nargs);
 
 /* other prototypes */
 static int _find_builtin(const char *funcname);
@@ -44,6 +45,7 @@ static struct _builtins {
    { "interp",    _minc_interp,  NULL },
    { "index",     _minc_index,   NULL },
    { "type",      NULL,          _minc_type },
+   { "tostring",  NULL,          _minc_tostring },
    { NULL,        NULL,          NULL }         /* marks end of list */
 };
 
@@ -592,4 +594,21 @@ _minc_type(const MincListElem args[], const int nargs)
    return _make_type_string(args[0].type);
 }
 
+/* ------------------------------------------------------------------ tostring -- */
+/* Return the passed in (double) argument as a string type.
+ */
+MincString
+_minc_tostring(const MincListElem args[], const int nargs)
+{
+	if (nargs != 1) {
+		minc_warn("tostring: must have one argument");
+		return NULL;
+	}
+	if (args[0].type != MincFloatType) {
+		minc_warn("tostring: argument must be float type");
+		return NULL;
+	}
+	const char *convertedString = DOUBLE_TO_STRING(args[0].val.number);
+	return strdup(convertedString);
+}
 
