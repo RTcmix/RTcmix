@@ -18,6 +18,9 @@ all: $(MINC)
 
 ifeq ($(BUILDTYPE), STANDALONE)
 
+OBJS += args.o
+SRCS += args.cpp
+
 $(MINC): depend $(OBJS)
 	$(LD) -r $(OBJS) -o $(MINC)
 

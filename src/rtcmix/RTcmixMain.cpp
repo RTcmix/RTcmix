@@ -337,6 +337,8 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
             case '-':           /* accept "--debug" and pass to Perl as "-d" */
                if (strncmp(&arg[2], "debug", 10) == 0)
                   xargv[xargc++] = strdup("-d");
+			   else
+				   xargv[xargc++] = arg;    /* copy all other --arguments to parser */
                break;
             default:
                xargv[xargc++] = arg;    /* copy for parser */

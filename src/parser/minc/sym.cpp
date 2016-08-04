@@ -413,7 +413,7 @@ Symbol * lookupOrAutodeclare(const char *name, Bool inFunctionCall)
 
 /* Lookup <str> and install if necessary; return pointer. */
 char *
-strsave(char *str)
+strsave(const char *str)
 {
    int h;
    struct str *p;

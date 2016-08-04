@@ -1,6 +1,9 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2016-08-03	Douglas Scott  <netdscott-at-netscape.net>
+	* Added ability to pass in named variables via arguments:  --myseed=67 makes the variable $myseed available in Minc.
+
 2015-9-05  Douglas Scott  <netdscott-at-netscape.net>
 
 	* Another revision!  Now version 4.2.0.

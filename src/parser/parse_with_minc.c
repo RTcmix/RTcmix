@@ -30,8 +30,8 @@ int RTcmix_parseScore(char *theBuf, int buflen)
 
 #else	// !EMBEDDED
 
-/* <yyin> is yacc's input file. If left alone, stdin will be used. */
-extern FILE *yyin;
+/* Defined in minc/args.cpp */
+extern int check_new_arg(const char *);
 
 /* Defined in sys/command_line.c */
 extern char *aargv[];
@@ -41,14 +41,21 @@ extern int aargc;
 int
 parse_score(int argc, char *argv[], char **env)
 {
-	int   i, status;
+	int   i, status, new_arg_count = 0;
 	
 	/* Copy command-line args to make them available to the Minc-only
 	 functions in sys/command_line.c: f_arg, i_arg, s_arg, and n_arg.
 	 */
-	for (i = 1; i < argc; i++)
-		aargv[i - 1] = argv[i];
-	aargc = argc - 1;
+	for (i = 1; i < argc; i++) {
+		// grab --arguments to store for use as tokens in Minc.  Otherwise store argument in aargv
+		if (check_new_arg(argv[i]) == 1) {
+			++new_arg_count;
+		}
+		else {
+			aargv[i - 1] = argv[i];
+		}
+	}
+	aargc = argc - 1 - new_arg_count;	// dont count args we pulled out above
 	
 	configure_minc_error_handler(get_bool_option(kOptionExitOnError));
 	status = yyparse();
@@ -64,6 +71,9 @@ void
 use_script_file(char *fname)
 {
 #ifndef EMBEDDED
+	/* <yyin> is yacc's input file. If left alone, stdin will be used. */
+	extern FILE *yyin;
+	
 	// BGG mm -- we don't use this in Max/MSP, and there is no yy_in var
 	yyin = fopen(fname, "r+");
 	if (yyin == NULL) {

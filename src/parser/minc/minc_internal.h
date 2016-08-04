@@ -208,7 +208,7 @@ struct symbol *install(const char *name, Bool isGlobal);
 typedef enum LookupType { AnyLevel = 0, GlobalLevel = 1, ThisLevel = 2 } LookupType;
 struct symbol *lookup(const char *name, LookupType lookupType);
 struct symbol * lookupOrAutodeclare(const char *name, Bool inFunctionCall);
-char *strsave(char *str);
+char *strsave(const char *str);
 char *emalloc(long nbytes);
 void efree(void *mem);
 void clear_elem(MincListElem *);
