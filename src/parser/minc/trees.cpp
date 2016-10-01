@@ -1464,11 +1464,17 @@ exct(Tree tp)
 		   }
          if (tp->u.symbol) {
 			TPRINT("NodeName/NodeAutoName: symbol %p\n", tp->u.symbol);
-        	 /* also assign the symbol's value into tree's value field */
-         	TPRINT("NodeName/NodeAutoName: copying value from symbol '%s' to us\n", tp->u.symbol->name);
-         	copy_sym_tree(tp, tp->u.symbol);
-         	tp->name = tp->u.symbol->name;		// for debugging -- not used
-		 	assert(tp->type == tp->u.symbol->type);
+			/* For now, symbols for functions cannot be an RHS */
+			 if (tp->u.symbol->tree != NULL) {
+				 minc_die("Cannot use function '%s' as a variable", tp->name);
+			 }
+			 else {
+				 /* also assign the symbol's value into tree's value field */
+				TPRINT("NodeName/NodeAutoName: copying value from symbol '%s' to us\n", tp->u.symbol->name);
+				copy_sym_tree(tp, tp->u.symbol);
+				tp->name = tp->u.symbol->name;		// for debugging -- not used
+				assert(tp->type == tp->u.symbol->type);
+			 }
 		 }
 		 else {
 			 // FIXME: install id w/ value of 0, then warn??
@@ -1881,7 +1887,7 @@ static void copy_value(MincValue *dest, MincDataType destType,
       TPRINT("\toverwriting existing Handle value\n");
       unref_handle(dest->handle);	// overwriting handle, so unref
    }
-   else if (destType == MincListType) {
+   else if (destType == MincListType && dest->list != NULL) {
       TPRINT("\toverwriting existing MincList value\n");
       unref_value_list(dest);
    }
