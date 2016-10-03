@@ -11,7 +11,7 @@
 #include <maxdispargs.h>
 #include <ugens.h>
 #include "rename.h"
-#include "minc.h"
+#include "minc_defs.h"
 
 #ifdef DEBUG
    #define DPRINT(...) rtcmix_print(__VA_ARGS__)
@@ -184,7 +184,7 @@ void minc_advise(const char *msg, ...);
 void minc_warn(const char *msg, ...);
 void minc_die(const char *msg, ...);
 void minc_internal_error(const char *msg, ...);
-void yyerror(char *msg);
+void yyerror(const char *msg);
 #ifdef EMBEDDED
 // These are used to determine if parser should bail out (since it never exits)
 void set_rtcmix_error(int err);

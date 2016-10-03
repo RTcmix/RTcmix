@@ -7,6 +7,7 @@
 #include <stdarg.h>
 #include "rename.h"
 #include "minc_internal.h"
+#include "minc_defs.h"
 
 #define BUFSIZE 1024
 
@@ -14,7 +15,6 @@
 #define vsnprintf(str, sz, fmt, args)  vsprintf(str, fmt, args)
 #endif
 
-extern int yyget_lineno(void);
 static int exit_on_die = 0;
 
 #ifdef EMBEDDED
@@ -109,7 +109,7 @@ minc_internal_error(const char *msg, ...)
 }
 
 void
-yyerror(char *msg)
+yyerror(const char *msg)
 {
 	rterror("parser-yyerror", "near line %d: %s\n", yyget_lineno(), msg);
 }

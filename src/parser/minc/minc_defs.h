@@ -5,6 +5,10 @@
 #ifndef _MINC_H_
 #define _MINC_H_ 1
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Anything here is availale for export outside of the Minc directory. */
 
 typedef enum _MincError
@@ -17,8 +21,14 @@ typedef enum _MincError
 
 int yyparse(void);
 int yylex_destroy(void);
+void yyset_lineno (int line_number);
+int yyget_lineno(void);
 
 void reset_parser();
 int configure_minc_error_handler(int exit);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* _MINC_H_ */

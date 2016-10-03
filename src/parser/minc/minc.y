@@ -9,6 +9,9 @@
 #include "rename.h"
 #include "minc_internal.h"
 #include "lex.yy.c"
+#ifdef __cplusplus
+extern "C" {
+#endif
 #ifdef EMBEDDED
 /* in utils.c */
 extern int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
@@ -16,7 +19,9 @@ extern int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
 // in args.cpp
 extern const char *lookup_token(const char *token);
 #endif
-
+#ifdef __cplusplus
+}
+#endif
 #undef MDEBUG	/* turns on yacc debugging below */
 
 #ifdef MDEBUG

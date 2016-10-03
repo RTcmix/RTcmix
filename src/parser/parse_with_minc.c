@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "minc/rename.h"
-#include "minc/minc.h"
+#include "minc/minc_defs.h"
 #include "rtcmix_parse.h"
 #include <ugens.h>
 #include <Option.h>

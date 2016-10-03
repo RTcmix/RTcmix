@@ -6,11 +6,12 @@
 %x INCLUDE
 %{
 #include "rename.h"
-#include "y.tab.h"
+#include "minc_defs.h"
+#include "minc.hpp"
 #define YY_ALWAYS_INTERACTIVE 1
 static int comments = 0;
 static int cpcomments = 0;
-extern void yyerror(char *);
+extern void yyerror(const char *);
 /* To allow includes of subfiles */
 #define MAX_INCLUDE_DEPTH 10
 static int saved_lineno[MAX_INCLUDE_DEPTH];
