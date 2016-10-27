@@ -18,6 +18,7 @@
 #include <vector>
 #include "minc_internal.h"
 #include "handle.h"
+#include "Node.h"
 #include <RefCounted.h>
 
 #define NO_EMALLOC_DEBUG
@@ -29,15 +30,13 @@ static struct str {             /* string table */
    0
 };
 
-static struct symbol *freelist = NULL;  /* free list of unused entries */
+static Symbol *freelist = NULL;  /* free list of unused entries */
 
 /* prototypes for local functions */
-static struct symbol *symalloc(const char *name);
-static void free_symbol(struct symbol *p);
 #ifdef NOTYET
-static void free_node(struct symbol *p);
+static void free_node(Symbol *p);
 #endif
-static void dump(struct symbol *p);
+static void dump(Symbol *p);
 static int hash(const char *s);
 
 // New Scope Code
@@ -64,7 +63,7 @@ Scope::~Scope()
 	for (int s = 0; s < HASHSIZE; ++s) {
 		for (Symbol *p = htab[s]; p != NULL; ) {
 			Symbol *next = p->next;
-			free_symbol(p);
+			delete p;
 			p = next;
 		}
 		htab[s] = NULL;
@@ -74,8 +73,8 @@ Scope::~Scope()
 Symbol *
 Scope::install(const char *name)
 {
-	Symbol *p = symalloc(name);
-	int h = hash(name);
+	Symbol *p = Symbol::create(name);
+	int h = hash(name);		// TODO: FINISH COMBINING THIS INTO SYMBOL CREATOR
 	p->next = htab[h];
 	p->scope = depth();
 	p->type = MincVoidType;
@@ -232,47 +231,42 @@ void clear_call_stack(CallStack *stack)
 }
 
 /* Allocate and initialize and new symbol table entry for <name>. */
-static struct symbol *
-symalloc(const char *name)
+Symbol *	Symbol::create(const char *name)
 {
-   struct symbol *p;
-
-   p = freelist;
-   if (p)
-      freelist = p->next;
-   else {
-      p = (struct symbol *) emalloc(sizeof(struct symbol));
-      if (p == NULL)
-         return NULL;
-   }
-   p->name = name;
-   p->tree = NULL;
-#ifdef NOTYET
-   p->defined = p->offset = 0;
-   p->list = NULL;
-#endif
-#ifdef DEBUG_SYM_MEMORY
-	DPRINT("symalloc() -> %p\n", p);
-#endif
-   return p;
+	Symbol *p = freelist;
+	if (p) {
+		freelist = p->next;
+		return new(p) Symbol(name);
+	}
+	else {
+		return new Symbol(name);
+	}
 }
 
-static void free_symbol(struct symbol *p)
+Symbol::Symbol(const char *symName) : scope(-1), name(symName), node(NULL)
+{
+#ifdef NOTYET
+	defined = offset = 0;
+	list = NULL;
+#endif
+#ifdef DEBUG_SYM_MEMORY
+	DPRINT("Symbol::Symbol(%s) -> %p\n", symName, this);
+#endif
+}
+
+Symbol::~Symbol()
 {
 #if defined(SYMBOL_DEBUG) || defined(DEBUG_SYM_MEMORY)
-	rtcmix_print("\tfreeing symbol \"%s\" for scope %d (%p)\n", p->name, p->scope, p);
+//	rtcmix_print("\tSymbol::~Symbol() \"%s\" for scope %d (%p)\n", name, scope, this);
 #endif
-	if (p->type == MincHandleType)
-		unref_handle(p->v.handle);
-	else if (p->type == MincListType) {
-		unref_value_list(&p->v);
+	if (this->type == MincHandleType)
+		unref_handle(this->v.handle);
+	else if (this->type == MincListType) {
+		unref_value_list(&this->v);
 	}
-	if (p->tree != NULL) {
-		free_tree(p->tree);		// Free the tree associated with this function symbol
-		p->tree = NULL;
-	}
-	p->scope = -1;		// we assert on this elsewhere
-	free(p);
+	delete node;
+	node = NULL;		// TODO: CHECK: this should have been destroyed elsewhere
+	scope = -1;			// we assert on this elsewhere
 }
 
 void
@@ -314,7 +308,7 @@ free_symbols()
    TBD:  only allow a maximum freelist length
 */
 static void
-free_node(struct symbol *p)
+free_node(Symbol *p)
 {
    if (p == NULL) {
       minc_warn("free_node was called with NULL ptr ");
@@ -332,7 +326,7 @@ free_node(struct symbol *p)
 
 
 /* Allocate a new entry for name and install it. */
-struct symbol *
+Symbol *
 install(const char *name, Bool isGlobal)
 {
 	CHECK_SCOPE_INIT();
@@ -471,7 +465,7 @@ dname(int x)
 
 /* Print entire symbol table or one entry. */
 static void
-dump(struct symbol *p)
+dump(Symbol *p)
 {
 #ifdef SYMBOL_DEBUG
 	DPRINT("        [%p] '%s', type: %s\n", p, p->name, dname(p->type));
