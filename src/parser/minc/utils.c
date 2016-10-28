@@ -18,7 +18,7 @@ is_float_list(const MincList *list)
    int i;
 
    for (i = 0; i < list->len; i++)
-      if (list->data[i].type != MincFloatType)
+      if (list->data[i].dataType() != MincFloatType)
          return 0;
 
    return 1;
@@ -103,6 +103,7 @@ static const char *sGlobalBuffer;
 static int sGlobalBufferLength;
 static int sBufferOffset;
 
+extern "C" {
 void setGlobalBuffer(const char *inBuf, int inBufSize)
 {
 	sGlobalBuffer = inBuf;
@@ -122,5 +123,7 @@ int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes)
 	}
 	return 0;
 }
+}
+
 #endif
 
