@@ -3,12 +3,6 @@ include ../makefile.conf
 INCLUDES += -I../src/include -I../src/rtcmix
 LIB = libgen.a
 
-ifeq ($(BUILDTYPE), STANDALONE)
-  FFTW_SUPPORT = TRUE
-else
-  FFTW_SUPPORT = FALSE
-endif
-
 CFILES = \
 allpass.c \
 allpole.c \
