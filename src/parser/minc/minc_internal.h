@@ -13,6 +13,7 @@
 #include "rename.h"
 #include "minc_defs.h"
 #include "utils.h"
+#include "RefCounted.h"
 
 #ifdef DEBUG
    #define DPRINT(...) rtcmix_print(__VA_ARGS__)
@@ -121,15 +122,15 @@ public:
    MincValue val;
 };
 
-class MincList : public MincObject
+class MincList : public MincObject, public RefCounted
 {
 public:
 	MincList(int len);
-	~MincList();
 	void resize(int newLen);
 	int len;                /* number of MincListElem's in <data> array */
-	int refcount;			/* reference count for contained data */
 	MincListElem *data;
+protected:
+	virtual ~MincList();
 };
 
 class Node;

@@ -195,7 +195,7 @@ cmp(MincFloat f1, MincFloat f2)
    return 0;
 }
 
-MincList::MincList(int inLen) : len(inLen), refcount(0), data(NULL)
+MincList::MincList(int inLen) : len(inLen), data(NULL)
 {
 	ENTER();
 	if (inLen > 0) {
@@ -204,11 +204,27 @@ MincList::MincList(int inLen) : len(inLen), refcount(0), data(NULL)
 	TPRINT("MincList::MincList: %p alloc'd at len %d\n", this, inLen);
 }
 
+MincList::~MincList()
+{
+	TPRINT("freeing MincList %p\n", this);
+	if (data != NULL) {
+		TPRINT("freeing MincList data %p...\n", data);
+		for (int e = 0; e < len; ++e) {
+			MincListElem *elem = &data[e];
+			clear_elem(elem);
+		}
+		efree(data);
+		data = NULL;
+	}
+	TPRINT("\tdone\n");
+}
+
 void
 MincList::resize(int newLen)
 {
 	MincListElem *oldList = data;
 	data = new MincListElem[newLen];
+	TPRINT("MincList %p resizing with new data %p\n", this, data);
 	int i;
 	for (i = 0; i < len; ++i) {
 		data[i] = oldList[i];
@@ -217,6 +233,7 @@ MincList::resize(int newLen)
 		data[i] = 0.0;
 	}
 	len = newLen;
+	delete [] oldList;
 }
 
 /* ========================================================================== */
@@ -525,8 +542,7 @@ Node *	NodeOp::do_op_list_iterate(Node *child, const MincFloat val, const OpKind
    this->type = MincListType;
    assert(this->v.list == NULL);
    this->v.list = destList;
-   TPRINT("do_op_list_iterate: list %p refcount %d -> %d\n", destList, destList->refcount, destList->refcount+1);
-   ++destList->refcount;
+	destList->ref();
 	return this;
 }
 
@@ -569,8 +585,7 @@ Node *	NodeOp::do_op_list_list(Node *child1, Node *child2, const OpKind op)
 	}
 	this->type = MincListType;
 	this->v.list = destList;
-	TPRINT("do_op_list_list: list %p refcount %d -> %d\n", destList, destList->refcount, destList->refcount+1);
-	++destList->refcount;
+	destList->ref();
 	return this;
 }
 
@@ -695,8 +710,7 @@ Node *	NodeList::doExct()
 	type = MincListType;
 	v.list = theList;
 	TPRINT("MincList %p assigned to self\n", theList);
-	theList->refcount = 1;
-	TPRINT("MincList refcount = 1\n");
+	theList->ref();
 	// Copy from stack list into tree list.
 	for (int i = 0; i < sMincListLen; ++i)
 		copy_listelem_elem(&theList->data[i], &sMincList[i]);
@@ -798,16 +812,14 @@ Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
 		if (len < 0) {
 			minc_die("list array subscript exceeds integer size limit!");
 		}
-		if (theList == NULL)
+		if (theList == NULL) {
 			child(0)->u.symbol->v.list = theList = new MincList(len);
+			theList->ref();
+		}
 		else
 			theList->resize(len);
 		TPRINT("exct_subscript_write: MincList %p expanded to len %d\n",
 			   theList->data, len);
-		// Ref the list if just allocated.
-		if (theList->refcount == 0)
-			theList->refcount = 1;
-		TPRINT("list %p refcount = 1\n", theList);
 	}
 	copy_tree_listelem(&theList->data[index], child(2));
 	assert(theList->data[index].type == child(2)->type);
@@ -1444,10 +1456,7 @@ static void copy_value(MincValue *dest, MincDataType destType,
       ref_handle(src->handle);	// ref before unref
    }
    else if (srcType == MincListType && src->list != NULL) {
-#ifdef DEBUG_MEMORY
-      TPRINT("list %p refcount %d -> %d\n", src->list, src->list->refcount, src->list->refcount+1);
-#endif
-      ++src->list->refcount;
+      src->list->ref();
    }
    if (destType == MincHandleType && dest->handle != NULL) {
       TPRINT("\toverwriting existing Handle value\n");
@@ -1609,26 +1618,6 @@ clear_elem(MincListElem *elem)
 void
 unref_value_list(MincValue *value)
 {
-	if (value->list == NULL)
-		return;
-#ifdef DEBUG_MEMORY
-   TPRINT("unref_value_list(%p) [%d -> %d]\n", value->list, value->list->refcount, value->list->refcount-1);
-#endif
-   assert(value->list->refcount > 0);
-   if (--value->list->refcount == 0) {
-      if (value->list->data != NULL) {
-		 int e;
-		 TPRINT("\tfreeing MincList data %p...\n", value->list->data);
-		 for (e = 0; e < value->list->len; ++e) {
-			 MincListElem *elem = &value->list->data[e];
-			 clear_elem(elem);
-		 }
-		 efree(value->list->data);
-		 value->list->data = NULL;
-		 TPRINT("\tdone\n");
-      }
-	  TPRINT("\tfreeing MincList %p\n", value->list);
-	  efree(value->list);
-   }
+	RefCounted::unref(value->list);
 }
 
