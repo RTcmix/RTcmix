@@ -164,8 +164,9 @@ int GRANULATE::init(double p[], int n_args)
    int length;
    double *table = (double *) getPFieldTable(4, &length);
    if (table == NULL)
-      return die("GRANULATE", "You must create a table containing the sound "
-                              "to granulate.");
+      return die("GRANULATE", "You must create a table containing the sound to granulate.");
+	if (numinchans < 1)
+      return die("GRANULATE", "p5 should give the number of channels in the sound file table.");
    _stream = new GrainStream(SR, table, length, numinchans, outputChannels(),
                              PRESERVE_GRAIN_DURATION, seed, use3rdOrderInterp);
 
