@@ -22,21 +22,21 @@ inline int min(int x, int y) { return (x < y) ? x : y; }
 PField::PField()
 {
 #if defined(DEBUG_PFIELD) || defined(DEBUG_MEMORY)
-	rtcmix_print("PField:PField(this = %p)", this);
+	rtcmix_print("PField:PField(this = %p)\n", this);
 #endif
 }
 
 #ifdef DEBUG_MEMORY
 
-int PField::ref() { rtcmix_print("PField:ref(this = %p)", this); return RefCounted::ref(); }
-int PField::unref() { rtcmix_print("PField:unref(this = %p)", this); return RefCounted::unref(); }
+int PField::ref() { rtcmix_print("PField:ref(this = %p)\n", this); return RefCounted::ref(); }
+int PField::unref() { rtcmix_print("PField:unref(this = %p)\n", this); return RefCounted::unref(); }
 
 #endif
 
 PField::~PField()
 {
 #if defined(DEBUG_PFIELD) || defined(DEBUG_MEMORY)
-	rtcmix_print("PField::~PField (this = %p)", this);
+	rtcmix_print("PField::~PField (this = %p)\n", this);
 #endif
 }
 
