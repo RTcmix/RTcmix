@@ -61,7 +61,7 @@ class Node : public MincObject
 //protected:					TODO: FINISH FULL CLASS
 public:
 	NodeKind kind;
-	MincDataType type;
+	MincDataType _type;
 	OpKind op;
 	union {
 		Symbol *symbol;
@@ -74,12 +74,15 @@ public:
 	Node(OpKind op, NodeKind kind);
 	virtual 			~Node();
 	const char *		classname() const;
-	const char *		name() const { return (u.symbol) ? u.symbol->name : "UNDEFINED"; }
-	MincDataType		dataType() const { return type; }
+	const char *		name() const { return (u.symbol) ? u.symbol->name() : "UNDEFINED"; }
+	MincDataType		dataType() const { return v.dataType(); }
 	virtual Node*		child(int index) const { return NULL; }
+	Symbol *			symbol() const { return u.symbol; }
+	const MincValue&	value() const { return v; }
+	MincValue&			value() { return v; }
 	Node*				exct();
+	void				print();
 protected:
-	void				setType(MincDataType inType);
 	virtual Node*		doExct() = 0;
 };
 
@@ -147,8 +150,8 @@ private:
 	Node* do_op_handle_num(const MincHandle val1, const MincFloat val2, OpKind op);
 	Node* do_op_num_handle(const MincFloat val1, const MincHandle val2, OpKind op);
 	Node* do_op_handle_handle(const MincHandle val1, const MincHandle val2, OpKind op);
-	Node* do_op_list_iterate(Node *child, const MincFloat val, const OpKind op);
-	Node* do_op_list_list(Node *child1, Node *child2, const OpKind op);
+	Node* do_op_list_iterate(const MincList *srcList, const MincFloat val, const OpKind op);
+	Node* do_op_list_list(const MincList *list1, const MincList *list2, const OpKind op);
 };
 
 class NodeUnaryOperator : public Node1Child
@@ -444,7 +447,7 @@ class NodeDecl : public Node
 {
 public:
 	NodeDecl(const char *name, MincDataType type) : Node(OpFree, eNodeDecl), _symbolName(name) {
-		this->type = type;		// TODO
+		this->_type = type;		// TODO
 		NPRINT("NodeDecl('%s') => %p\n", name, this);
 	}
 protected:
@@ -457,7 +460,7 @@ class NodeFuncDecl : public Node
 {
 public:
 	NodeFuncDecl(const char *name, MincDataType type) : Node(OpFree, eNodeFuncDecl), _symbolName(name) {
-		this->type = type;		// TODO
+		this->_type = type;		// TODO
 		NPRINT("NodeFuncDecl('%s') => %p\n", name, this);
 	}
 protected:

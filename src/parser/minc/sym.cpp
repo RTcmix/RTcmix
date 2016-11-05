@@ -77,9 +77,7 @@ Scope::install(const char *name)
 	int h = hash(name);		// TODO: FINISH COMBINING THIS INTO SYMBOL CREATOR
 	p->next = htab[h];
 	p->scope = depth();
-	p->type = MincVoidType;
 	htab[h] = p;
-	p->v.number = 0.0;
 	
 #ifdef SYMBOL_DEBUG
 	DPRINT("Scope::install (%p, '%s') => %p [scope %d]\n", this, name, p, p->scope);
@@ -93,7 +91,7 @@ Scope::lookup(const char *name)
 	Symbol *p = NULL;
 	
 	for (p = htab[hash(name)]; p != NULL; p = p->next)
-		if (name == p->name)
+		if (name == p->name())
 			break;
 	
 	DPRINT("Scope::lookup (%p, '%s') [scope %d] => %p\n", this, name, depth(), p);
@@ -243,7 +241,7 @@ Symbol *	Symbol::create(const char *name)
 	}
 }
 
-Symbol::Symbol(const char *symName) : scope(-1), name(symName), node(NULL)
+Symbol::Symbol(const char *symName) : next(NULL), scope(-1), _name(symName), node(NULL)
 {
 #ifdef NOTYET
 	defined = offset = 0;
@@ -259,13 +257,8 @@ Symbol::~Symbol()
 #if defined(SYMBOL_DEBUG) || defined(DEBUG_SYM_MEMORY)
 //	rtcmix_print("\tSymbol::~Symbol() \"%s\" for scope %d (%p)\n", name, scope, this);
 #endif
-	if (this->type == MincHandleType)
-		unref_handle(this->v.handle);
-	else if (this->type == MincListType) {
-		unref_value_list(&this->v);
-	}
 	delete node;
-	node = NULL;		// TODO: CHECK: this should have been destroyed elsewhere
+	node = NULL;
 	scope = -1;			// we assert on this elsewhere
 }
 
@@ -374,7 +367,7 @@ lookup(const char *name, LookupType lookupType)
 	}
 #ifdef SYMBOL_DEBUG
 	if (p) {
-		DPRINT("lookup ('%s', %s) => %p (scope %d, type %s)\n", name, typeString, p, foundLevel, MincTypeName(p->type));
+		DPRINT("lookup ('%s', %s) => %p (scope %d, type %s)\n", name, typeString, p, foundLevel, MincTypeName(p->dataType()));
 	}
 	else {
 		DPRINT("lookup ('%s', %s) => %p\n", name, typeString, p);
@@ -468,7 +461,7 @@ static void
 dump(Symbol *p)
 {
 #ifdef SYMBOL_DEBUG
-	DPRINT("        [%p] '%s', type: %s\n", p, p->name, dname(p->type));
+	DPRINT("        [%p] '%s', type: %s\n", p, p->name(), dname(p->dataType()));
 #endif
 }
 

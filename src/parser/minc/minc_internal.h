@@ -98,29 +98,7 @@ typedef enum {
    support nested lists.
 */
 
-class MincList;
-
-union MincValue {
-   MincFloat number;
-   MincString string;
-   MincHandle handle;
-   MincList *list;
-};
-
-class MincListElem : public MincObject
-{
-public:
-	MincListElem() : type(MincVoidType) { val.number = 0.0; }
-	MincListElem(MincFloat f) : type(MincFloatType) { val.number = f; }
-	MincListElem(MincString s) : type(MincStringType) { val.string = s; }
-	MincListElem(MincHandle h) : type(MincHandleType) { val.handle = h; }	// TODO: reference?
-	~MincListElem() {}
-	
-	MincDataType	dataType() const { return type; }
-// private:				TODO: FINISH MAKING INTO REAL CLASS
-   MincDataType type;
-   MincValue val;
-};
+class MincListElem;
 
 class MincList : public MincObject, public RefCounted
 {
@@ -133,6 +111,56 @@ protected:
 	virtual ~MincList();
 };
 
+class MincValue {
+public:
+	MincValue() : type(MincVoidType) { _u.list = NULL; }
+	MincValue(MincFloat f) : type(MincFloatType) { _u.number = f; }
+	MincValue(MincString s) : type(MincStringType) { _u.string = s; }
+	MincValue(MincHandle h);
+	MincValue(MincList *l);
+	MincValue(MincDataType type);
+	~MincValue();
+	const MincValue& operator = (const MincValue &rhs);
+	const MincValue& operator = (MincFloat f);
+	const MincValue& operator = (MincString s);
+	const MincValue& operator = (MincHandle h);
+	const MincValue& operator = (MincList *l);
+	
+	operator MincFloat() const { return _u.number; }
+	operator MincString() const { return _u.string; }
+	operator MincHandle() const { return _u.handle; }
+	operator MincList *() const { return _u.list; }
+	MincDataType	dataType() const { return type; }
+	void zero() { _u.list = NULL; }		// zeroes without changing type
+	void print();
+private:
+	void doClear();
+	void doCopy(const MincValue &rhs);
+	MincDataType type;
+	union {
+		MincFloat number;
+		MincString string;
+		MincHandle handle;
+		MincList *list;
+	} _u;
+};
+
+class MincListElem : public MincObject
+{
+public:
+	MincListElem() {}
+	MincListElem(MincFloat f) : val(f) {}
+	MincListElem(MincString s) : val(s) {}
+	MincListElem(MincHandle h) : val(h) {}
+	~MincListElem() {}
+	
+	MincDataType		dataType() const { return val.dataType(); }
+	const MincValue&	value() const { return val; }
+	MincValue&			value() { return val; }
+private:
+   MincValue val;
+};
+
 class Node;
 
 class Symbol {       		/* symbol table entries */
@@ -140,12 +168,16 @@ public:
 	static Symbol *	create(const char *name);
 	Symbol(const char *name);
 	~Symbol();
+	MincDataType		dataType() const { return v.dataType(); }
+	const MincValue&	value() const { return v; }
+	MincValue&			value() { return v; }
+	const char *		name() { return _name; }
 	Symbol *next;       		  /* next entry on hash chain */
 	int scope;
-	MincDataType type;         /* type of data represented by symbol */
-	const char *name;          /* symbol name */
-	MincValue v;
+	const char *_name;          /* symbol name */
 	Node *node;		  		/* for symbols that are functions, function def */
+protected:
+	MincValue v;
 #ifdef NOTYET
 	short defined;             /* set when function defined */
 	short offset;              /* offset in activation frame */
