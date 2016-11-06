@@ -8,6 +8,10 @@
    Doug Scott added the '#' and '//' comment parsing.
 
    John Gibson <johgibso at indiana dot edu>, 1/20/04
+ 
+   Major rewrite to convert entire parser to "real" C++ classes.
+ 
+   Doug Scott, 11/2016
 */
 
 /* This file holds the intermediate tree representation. */
@@ -844,52 +848,51 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
 		minc_die("list index must be a number");
 		return this;
 	}
-	if (child(0)->u.symbol->dataType() == MincListType) {
-		MincFloat fltindex = (MincFloat) child(1)->value();
-		int index = (int) fltindex;
-		MincFloat frac = fltindex - index;
-		 MincList *theList = (MincList *) child(0)->symbol()->value();
-		 if (theList == NULL) {
-			 minc_die("attempt to index a NULL list");
-			 return this;
-		 }
-			int len = theList->len;
-		 if (len == 0) {
-			 minc_die("attempt to index an empty list");
-			 return this;
-		 }
-		 if (fltindex < 0.0) {    /* -1 means last element */
-			 if (fltindex <= -2.0)
-				 minc_warn("negative index ... returning last element");
-			 index = len - 1;
-			 fltindex = (MincFloat) index;
-		 }
-		 else if (fltindex > (MincFloat) (len - 1)) {
-			 minc_warn("attempt to index past the end of list ... "
-					   "returning last element");
-			 index = len - 1;
-			 fltindex = (MincFloat) index;
-		 }
-		MincListElem elem;
-		copy_listelem_elem(&elem, &theList->data[index]);
-		
-		/* do linear interpolation for float items */
-		if (elem.dataType() == MincFloatType && frac > 0.0 && index < len - 1) {
-			MincListElem& elem2 = theList->data[index + 1];
-			if (elem2.dataType() == MincFloatType) {
-				value() = (MincFloat) elem.value()
-				+ (frac * ((MincFloat) elem2.value() - (MincFloat) elem.value()));
-			}
-			else { /* can't interpolate btw. a number and another type */
-				value() = (MincFloat) elem.value();
-			}
+	if (child(0)->u.symbol->dataType() != MincListType) {
+		minc_die("attempt to index a variable that's not a list");
+		return this;
+	}
+	MincFloat fltindex = (MincFloat) child(1)->value();
+	int index = (int) fltindex;
+	MincFloat frac = fltindex - index;
+	 MincList *theList = (MincList *) child(0)->symbol()->value();
+	 if (theList == NULL) {
+		 minc_die("attempt to index a NULL list");
+		 return this;
+	 }
+		int len = theList->len;
+	 if (len == 0) {
+		 minc_die("attempt to index an empty list");
+		 return this;
+	 }
+	 if (fltindex < 0.0) {    /* -1 means last element */
+		 if (fltindex <= -2.0)
+			 minc_warn("negative index ... returning last element");
+		 index = len - 1;
+		 fltindex = (MincFloat) index;
+	 }
+	 else if (fltindex > (MincFloat) (len - 1)) {
+		 minc_warn("attempt to index past the end of list ... "
+				   "returning last element");
+		 index = len - 1;
+		 fltindex = (MincFloat) index;
+	 }
+	MincListElem elem;
+	copy_listelem_elem(&elem, &theList->data[index]);
+	
+	/* do linear interpolation for float items */
+	if (elem.dataType() == MincFloatType && frac > 0.0 && index < len - 1) {
+		MincListElem& elem2 = theList->data[index + 1];
+		if (elem2.dataType() == MincFloatType) {
+			value() = (MincFloat) elem.value()
+			+ (frac * ((MincFloat) elem2.value() - (MincFloat) elem.value()));
 		}
-		else {
-			copy_listelem_tree(this, &elem);
+		else { /* can't interpolate btw. a number and another type */
+			value() = (MincFloat) elem.value();
 		}
 	}
 	else {
-		minc_die("attempt to index a variable that's not a list");
+		copy_listelem_tree(this, &elem);
 	}
 	return this;
 }
@@ -1051,9 +1054,6 @@ Node *	NodeOpAssign::doExct()		// was exct_opassign()
 		minc_warn("can only use '%c=' with numbers",
 				  op == OpPlus ? '+' : (op == OpMinus ? '-'
 										: (op == OpMul ? '*' : '/')));
-		//FIXME: Is this correct?
-		//      memcpy(&this->v, &tp0->u.symbol->v, sizeof(MincValue));
-		//      this->type = tp0->type;
 		copy_sym_tree(this, tp0->symbol());
 		return this;
 	}
