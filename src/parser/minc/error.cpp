@@ -120,7 +120,7 @@ void set_rtcmix_error(int err)
 	rtcmix_error = err;
 }
 
-Bool was_rtcmix_error()
+bool was_rtcmix_error()
 {
 	return (rtcmix_error != 0);
 }

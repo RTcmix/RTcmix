@@ -224,7 +224,7 @@ _minc_printf(const MincListElem args[], const int nargs)
    }
 
    n = 1;
-   p = args[0].val.string;
+   p = (MincString) args[0].value();
    while (*p) {
       switch (*p) {
          case '%':
@@ -239,14 +239,14 @@ _minc_printf(const MincListElem args[], const int nargs)
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%d", (int) args[n].val.number);
+                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%d", (int) (MincFloat)args[n].value());
                   break;
                case 'f':      /* print float object */
                   if (args[n].dataType() != MincFloatType) {
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%.12g", args[n].val.number);
+                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%.12g", (MincFloat)args[n].value());
                   break;
                case 'l':      /* print list object */
                   if (args[n].dataType() != MincListType) {
@@ -255,7 +255,7 @@ _minc_printf(const MincListElem args[], const int nargs)
                   }
                   nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%s", "[");
                   set_mm_print_ptr(nchars);
-                  _do_print(args[n].val.list->data, args[n].val.list->len);
+				  _do_print(((MincList *)args[n].value())->data, ((MincList *)args[n].value())->len);
                   nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%s", "]");
                   set_mm_print_ptr(nchars);
                   break;
@@ -264,7 +264,7 @@ _minc_printf(const MincListElem args[], const int nargs)
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%s", args[n].val.string);
+                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%s", (MincString)args[n].value());
                   break;
                case 't':      /* print type of object */
                   {

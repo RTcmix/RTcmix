@@ -15,10 +15,10 @@ extern "C" {
 #endif
 #ifdef EMBEDDED
 /* in utils.c */
-extern int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
+int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
 #else
 // in args.cpp
-extern const char *lookup_token(const char *token);
+const char *lookup_token(const char *token);
 #endif
 #ifdef __cplusplus
 }

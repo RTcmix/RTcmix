@@ -1584,7 +1584,7 @@ copy_tree_sym(Symbol *dest, Node *tpsrc)
 	TPRINT("copy_tree_sym(%p, %p)\n", dest, tpsrc);
 #ifdef EMBEDDED
 	/* Not yet handling errors using throw/catch */
-	if (dest == NULL || tpsrc->type == MincVoidType) {
+	if (dest == NULL || tpsrc->dataType() == MincVoidType) {
 		return;
 	}
 #endif
@@ -1601,7 +1601,7 @@ copy_tree_listelem(MincListElem *dest, Node *tpsrc)
    TPRINT("copy_tree_listelem(%p, %p)\n", dest, tpsrc);
 #ifdef EMBEDDED
 	/* Not yet handling errors with throw/catch */
-	if (tpsrc->type == MincVoidType) {
+	if (tpsrc->dataType() == MincVoidType) {
 		return;
 	}
 #endif

@@ -62,7 +62,7 @@ extern "C" void yyerror(const char *msg);
 #ifdef EMBEDDED
 // These are used to determine if parser should bail out (since it never exits)
 void set_rtcmix_error(int err);
-Bool was_rtcmix_error();
+bool was_rtcmix_error();
 #else
 #define set_rtcmix_error(x)
 #define was_rtcmix_error() 0
@@ -103,7 +103,7 @@ class MincListElem;
 class MincList : public MincObject, public RefCounted
 {
 public:
-	MincList(int len);
+	MincList(int len=0);
 	void resize(int newLen);
 	int len;                /* number of MincListElem's in <data> array */
 	MincListElem *data;
@@ -183,6 +183,40 @@ protected:
 	short offset;              /* offset in activation frame */
 	Symbol *plist;             /* next parameter in parameter list */
 #endif
+};
+
+class RTException
+{
+public:
+	RTException(const char *msg) : _mesg(msg) {}
+	const char *mesg() { return _mesg; }
+private:
+	const char *_mesg;
+};
+
+class UnsupportedOperationException : public RTException
+{
+public:
+	UnsupportedOperationException(const char *msg) : RTException(msg) {}
+};
+
+class InvalidOperatorException : public RTException
+{
+public:
+	InvalidOperatorException(const char *msg) : RTException(msg) {}
+};
+
+class InvalidTypeException : public RTException
+{
+public:
+	InvalidTypeException(const char *msg) : RTException(msg) {}
+};
+
+
+class UndeclaredVariableException : public RTException
+{
+public:
+	UndeclaredVariableException(const char *msg) : RTException(msg) {}
 };
 
 /* builtin.cpp */
