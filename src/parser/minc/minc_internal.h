@@ -77,20 +77,53 @@ public:
 
 class Node;
 
-typedef union {
+union YYSTYPE {
    int ival;
    Node *node;
    char *str;
-} YYSTYPE;
+};
 #define YYSTYPE_IS_DECLARED   /* keep bison from declaring YYSTYPE as an int */
 
-typedef enum {
+enum MincDataType {
    MincVoidType = 0,
-   MincFloatType,       /* a floating point number, either float or double */
-   MincStringType,
-   MincHandleType,
-   MincListType
-} MincDataType;
+   MincFloatType = 1,       /* a floating point number, either float or double */
+   MincStringType = 2,
+   MincHandleType = 4,
+   MincListType = 8
+};
+
+class RTException
+{
+public:
+	RTException(const char *msg) : _mesg(msg) {}
+	const char *mesg() { return _mesg; }
+private:
+	const char *_mesg;
+};
+
+class UnsupportedOperationException : public RTException
+{
+public:
+	UnsupportedOperationException(const char *msg) : RTException(msg) {}
+};
+
+class InvalidOperatorException : public RTException
+{
+public:
+	InvalidOperatorException(const char *msg) : RTException(msg) {}
+};
+
+class InvalidTypeException : public RTException
+{
+public:
+	InvalidTypeException(const char *msg) : RTException(msg) {}
+};
+
+class UndeclaredVariableException : public RTException
+{
+public:
+	UndeclaredVariableException(const char *msg) : RTException(msg) {}
+};
 
 /* A MincList contains an array of MincListElem's, whose underlying data
    type is flexible.  So a MincList is an array of arbitrarily mixed types
@@ -125,17 +158,36 @@ public:
 	const MincValue& operator = (MincString s);
 	const MincValue& operator = (MincHandle h);
 	const MincValue& operator = (MincList *l);
-	
+
+	const MincValue& operator += (const MincValue &rhs);
+	const MincValue& operator -= (const MincValue &rhs);
+	const MincValue& operator *= (const MincValue &rhs);
+	const MincValue& operator /= (const MincValue &rhs);
+
+	const MincValue& operator[] const (const MincValue &index);	// for MincList access
+	MincValue& operator[] (const MincValue &index);	// for MincList access
+
 	operator MincFloat() const { return _u.number; }
 	operator MincString() const { return _u.string; }
 	operator MincHandle() const { return _u.handle; }
 	operator MincList *() const { return _u.list; }
+	
+	bool operator == (const MincValue &rhs);
+	bool operator != (const MincValue &rhs);
+	bool operator < (const MincValue &rhs);
+	bool operator > (const MincValue &rhs);
+	bool operator <= (const MincValue &rhs);
+	bool operator >= (const MincValue &rhs);
+	
+	
+	
 	MincDataType	dataType() const { return type; }
 	void zero() { _u.list = NULL; }		// zeroes without changing type
 	void print();
 private:
 	void doClear();
 	void doCopy(const MincValue &rhs);
+	bool validType(unsigned allowedTypes) const;
 	MincDataType type;
 	union {
 		MincFloat number;
@@ -183,40 +235,6 @@ protected:
 	short offset;              /* offset in activation frame */
 	Symbol *plist;             /* next parameter in parameter list */
 #endif
-};
-
-class RTException
-{
-public:
-	RTException(const char *msg) : _mesg(msg) {}
-	const char *mesg() { return _mesg; }
-private:
-	const char *_mesg;
-};
-
-class UnsupportedOperationException : public RTException
-{
-public:
-	UnsupportedOperationException(const char *msg) : RTException(msg) {}
-};
-
-class InvalidOperatorException : public RTException
-{
-public:
-	InvalidOperatorException(const char *msg) : RTException(msg) {}
-};
-
-class InvalidTypeException : public RTException
-{
-public:
-	InvalidTypeException(const char *msg) : RTException(msg) {}
-};
-
-
-class UndeclaredVariableException : public RTException
-{
-public:
-	UndeclaredVariableException(const char *msg) : RTException(msg) {}
 };
 
 /* builtin.cpp */

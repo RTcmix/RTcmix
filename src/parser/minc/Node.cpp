@@ -330,6 +330,34 @@ void MincValue::doCopy(const MincValue &rhs)
 	}
 }
 
+bool MincValue::validType(unsigned allowedTypes) const
+{
+	return ((type & allowedTypes) == type);
+}
+
+void MincValue::print()
+{
+	switch (type) {
+		case MincFloatType:
+			TPRINT("%f\n", _u.number);
+			break;
+		case MincHandleType:
+			TPRINT("%p\n", _u.handle);
+			break;
+		case MincListType:
+			TPRINT("%p\n", _u.list);
+			break;
+		case MincStringType:
+			TPRINT("%s\n", _u.string);
+			break;
+		case MincVoidType:
+			TPRINT("void\n");
+			break;
+	}
+}
+
+// Public operators
+
 const MincValue& MincValue::operator = (const MincValue &rhs)
 {
 	ENTER();
@@ -371,26 +399,20 @@ const MincValue& MincValue::operator = (MincList *l)
 	return *this;
 }
 
-void MincValue::print()
+const MincValue& MincValue::operator[] const (const MincValue &index)
 {
-	switch (type) {
-		case MincFloatType:
-			TPRINT("%f\n", _u.number);
-			break;
-		case MincHandleType:
-			TPRINT("%p\n", _u.handle);
-			break;
-		case MincListType:
-			TPRINT("%p\n", _u.list);
-			break;
-		case MincStringType:
-			TPRINT("%s\n", _u.string);
-			break;
-		case MincVoidType:
-			TPRINT("void\n");
-			break;
-	}
+	if (!validType(MincListType)) throw InvalidTypeException("Attempting to index something that is not a list");
+	if (!index.validType(MincFloatType)) throw InvalidTypeException("Index into a list must be a number");
+	return _u.list
+		
 }
+
+MincValue& MincValue::operator[] (const MincValue &index)
+{
+	
+}
+
+
 
 /* ========================================================================== */
 /* Tree nodes */
