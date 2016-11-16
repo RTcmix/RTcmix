@@ -7,6 +7,7 @@
 //
 
 #include <map>
+#include <string.h>
 #include "minc_internal.h"
 
 extern "C" {
