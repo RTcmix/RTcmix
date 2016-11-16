@@ -274,8 +274,8 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 							if (value != NULL) {
 								// We store this as a number constant if it can be coaxed into a number,
 								// else we store this as a string constant.
-								int is_number = 1;
-								for(int i = 0; value[i] != '\0'; ++i) {
+								int i, is_number = 1;
+								for(i = 0; value[i] != '\0'; ++i) {
 									if ('-' == value[i] && i == 0)
 										continue;	// allow initial sign
 									if (! (isdigit(value[i]) || '.' == value[i]) ) {
