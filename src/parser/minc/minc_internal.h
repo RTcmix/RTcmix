@@ -101,6 +101,14 @@ private:
 	const char *_mesg;
 };
 
+class RTFatalException
+{
+public:
+	RTFatalException(const char *msg) : RTException(msg) {}
+};
+
+// Such as attempting to multiply two MincStrings
+
 class UnsupportedOperationException : public RTException
 {
 public:
@@ -113,33 +121,47 @@ public:
 	InvalidOperatorException(const char *msg) : RTException(msg) {}
 };
 
-class InvalidTypeException : public RTException
+class NonmatchingTypeException : public RTException
 {
 public:
-	InvalidTypeException(const char *msg) : RTException(msg) {}
+	NonmatchingTypeException(const char *msg) : RTException(msg) {}
 };
 
-class UndeclaredVariableException : public RTException
+// Such as indexing a MincList with a MincString
+
+class InvalidTypeException : public RTFatalException
 {
 public:
-	UndeclaredVariableException(const char *msg) : RTException(msg) {}
+	InvalidTypeException(const char *msg) : RTFatalException(msg) {}
 };
 
-/* A MincList contains an array of MincListElem's, whose underlying data
+class UndeclaredVariableException : public RTFatalException
+{
+public:
+	UndeclaredVariableException(const char *msg) : RTFatalException(msg) {}
+};
+
+class ReclaredVariableException : public RTFatalException
+{
+public:
+	ReclaredVariableException(const char *msg) : RTFatalException(msg) {}
+};
+
+/* A MincList contains an array of MincValue's, whose underlying data
    type is flexible.  So a MincList is an array of arbitrarily mixed types
    (any of the types represented in the MincDataType enum), and it can
    support nested lists.
 */
 
-class MincListElem;
+class MincValue;
 
 class MincList : public MincObject, public RefCounted
 {
 public:
 	MincList(int len=0);
 	void resize(int newLen);
-	int len;                /* number of MincListElem's in <data> array */
-	MincListElem *data;
+	int len;                /* number of MincValue's in <data> array */
+	MincValue *data;
 protected:
 	virtual ~MincList();
 };
@@ -164,7 +186,7 @@ public:
 	const MincValue& operator *= (const MincValue &rhs);
 	const MincValue& operator /= (const MincValue &rhs);
 
-	const MincValue& operator[] const (const MincValue &index);	// for MincList access
+	const MincValue& operator[] (const MincValue &index) const;	// for MincList access
 	MincValue& operator[] (const MincValue &index);	// for MincList access
 
 	operator MincFloat() const { return _u.number; }
@@ -197,22 +219,6 @@ private:
 	} _u;
 };
 
-class MincListElem : public MincObject
-{
-public:
-	MincListElem() {}
-	MincListElem(MincFloat f) : val(f) {}
-	MincListElem(MincString s) : val(s) {}
-	MincListElem(MincHandle h) : val(h) {}
-	~MincListElem() {}
-	
-	MincDataType		dataType() const { return val.dataType(); }
-	const MincValue&	value() const { return val; }
-	MincValue&			value() { return val; }
-private:
-   MincValue val;
-};
-
 class Node;
 
 class Symbol {       		/* symbol table entries */
@@ -238,12 +244,12 @@ protected:
 };
 
 /* builtin.cpp */
-int call_builtin_function(const char *funcname, const MincListElem arglist[],
-						  const int nargs, MincListElem *retval);
+int call_builtin_function(const char *funcname, const MincValue arglist[],
+						  const int nargs, MincValue *retval);
 
 /* callextfunc.cpp */
-int call_external_function(const char *funcname, const MincListElem arglist[],
-						   const int nargs, MincListElem *return_value);
+int call_external_function(const char *funcname, const MincValue arglist[],
+						   const int nargs, MincValue *return_value);
 MincHandle minc_binop_handle_float(const MincHandle handle, const MincFloat val, OpKind op);
 MincHandle minc_binop_float_handle(const MincFloat val, const MincHandle handle, OpKind op);
 MincHandle minc_binop_handles(const MincHandle handle1, const MincHandle handle2, OpKind op);
@@ -262,7 +268,7 @@ Symbol * lookupOrAutodeclare(const char *name, Bool inFunctionCall);
 char *strsave(const char *str);
 char *emalloc(long nbytes);
 void efree(void *mem);
-void clear_elem(MincListElem *);
+void clear_elem(MincValue *);
 void unref_value_list(MincValue *);
 void free_symbols();
 void dump_symbols();

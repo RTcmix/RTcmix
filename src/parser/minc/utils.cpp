@@ -45,7 +45,7 @@ float_list_to_array(const MincList *list)
          free(array);
          return NULL;
       }
-      array[i] = (MincFloat)list->data[i].value();
+      array[i] = (MincFloat)list->data[i];
    }
 
    return array;
@@ -64,7 +64,7 @@ array_to_float_list(const MincFloat *array, const int len)
    MincList *list = new MincList(len);
 
    for (i = 0; i < len; i++) {
-      list->data[i].value() = array[i];
+      list->data[i] = array[i];
    }
 
    return list;

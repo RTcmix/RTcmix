@@ -35,13 +35,13 @@ extern "C" {
 /* We maintain a stack of MAXSTACK lists, which we access when forming 
    user lists (i.e., {1, 2, "foo"}) and function argument lists.  Each
    element of this stack is a list, allocated and freed by push_list and
-   pop_list.  <list> is an array of MincListElem structures, each having
+   pop_list.  <list> is an array of MincValue structures, each having
    a type and a value, which is encoded in a MincValue union.  Nested lists
    and lists of mixed types are possible.
 */
-static MincListElem *sMincList;
+static MincValue *sMincList;
 static int sMincListLen;
-static MincListElem *list_stack[MAXSTACK];
+static MincValue *list_stack[MAXSTACK];
 static int list_len_stack[MAXSTACK];
 static int list_stack_ptr;
 
@@ -57,9 +57,9 @@ static bool inFunctionCall() { return sFunctionCallDepth > 0; }
 static void copy_tree_tree(Node * tpdest, Node *  tpsrc);
 static void copy_sym_tree(Node *  tpdest, Symbol *src);
 static void copy_tree_sym(Symbol *dest, Node *  tpsrc);
-static void copy_tree_listelem(MincListElem *edest, Node *  tpsrc);
-static void copy_listelem_tree(Node *  tpdest, MincListElem *esrc);
-static void copy_listelem_elem(MincListElem *edest, MincListElem *esrc);
+static void copy_tree_listelem(MincValue *edest, Node *  tpsrc);
+static void copy_listelem_tree(Node *  tpdest, MincValue *esrc);
+static void copy_listelem_elem(MincValue *edest, MincValue *esrc);
 static void print_symbol(Symbol * s);		// TODO: Symbol::print()
 
 #if defined(DEBUG_TRACE)
@@ -205,7 +205,7 @@ MincList::MincList(int inLen) : len(inLen), data(NULL)
 {
 	ENTER();
 	if (inLen > 0) {
-		data = new MincListElem[len];
+		data = new MincValue[len];
 	}
 	TPRINT("MincList::MincList: %p alloc'd at len %d\n", this, inLen);
 }
@@ -230,8 +230,8 @@ MincList::~MincList()
 void
 MincList::resize(int newLen)
 {
-	MincListElem *oldList = data;
-	data = new MincListElem[newLen];
+	MincValue *oldList = data;
+	data = new MincValue[newLen];
 	TPRINT("MincList %p resizing with new data %p\n", this, data);
 	int i;
 	for (i = 0; i < len; ++i) {
@@ -243,6 +243,8 @@ MincList::resize(int newLen)
 	len = newLen;
 	delete [] oldList;
 }
+
+#define ThrowIf(exp, excp) if (exp) { throw excp; }
 
 /* ========================================================================== */
 /* MincValue */
@@ -399,20 +401,89 @@ const MincValue& MincValue::operator = (MincList *l)
 	return *this;
 }
 
-const MincValue& MincValue::operator[] const (const MincValue &index)
-{
-	if (!validType(MincListType)) throw InvalidTypeException("Attempting to index something that is not a list");
-	if (!index.validType(MincFloatType)) throw InvalidTypeException("Index into a list must be a number");
-	return _u.list
-		
-}
-
-MincValue& MincValue::operator[] (const MincValue &index)
+const MincValue& MincValue::operator += (const MincValue &rhs)
 {
 	
 }
 
+const MincValue& MincValue::operator -= (const MincValue &rhs)
+{
+	
+}
 
+const MincValue& MincValue::operator *= (const MincValue &rhs)
+{
+	
+}
+
+const MincValue& MincValue::operator /= (const MincValue &rhs)
+{
+	
+}
+
+// RHS use
+
+const MincValue& MincValue::operator[] (const MincValue &index) const
+{
+	if (!validType(MincListType)) throw InvalidTypeException("Attempting to index something that is not a list");
+	if (!index.validType(MincFloatType)) throw InvalidTypeException("Index into a list must be a number");
+	int iIndex = (int)(MincFloat) index;
+	// FINISH ME
+	return _u.list->data[iIndex];
+}
+
+// LHS use
+
+MincValue& MincValue::operator[] (const MincValue &index)
+{
+	if (!validType(MincListType)) throw InvalidTypeException("Attempting to index something that is not a list");
+	if (!index.validType(MincFloatType)) throw InvalidTypeException("Index into a list must be a number");
+	int iIndex = (int)(MincFloat) index;
+	// FINISH ME
+	return _u.list->data[iIndex];
+}
+
+bool MincValue::operator == (const MincValue &rhs)
+{
+	ThrowIf(rhs.type != this->type, NonmatchingTypeException("attempt to compare variables having different types"));
+	switch (type) {
+		case MincFloatType:
+			return cmp(_u.number, rhs._u.number) == 0;
+		case MincStringType:
+			return strcmp(_u.string, rhs._u.string) == 0;
+		default:
+			throw InvalidTypeException("can't compare this type of object");
+	}
+}
+
+bool MincValue::operator != (const MincValue &rhs)
+{
+	return !(*this == rhs);
+}
+
+bool MincValue::operator < (const MincValue &rhs)
+{
+	ThrowIf(rhs.type != this->type, NonmatchingTypeException("attempt to compare variables having different types"));
+	ThrowIf(this->type != MincFloatType, InvalidTypeException("can't compare this type of object"));
+	return cmp(_u.number, rhs._u.number) == -1;
+}
+
+bool MincValue::operator > (const MincValue &rhs)
+{
+	ThrowIf(rhs.type != this->type, NonmatchingTypeException("attempt to compare variables having different types"));
+	ThrowIf(this->type != MincFloatType, InvalidTypeException("can't compare this type of object"));
+	return cmp(_u.number, rhs._u.number) == 1;
+}
+
+bool MincValue::operator <= (const MincValue &rhs)
+{
+	return !(*this > rhs);
+}
+
+bool MincValue::operator >= (const MincValue &rhs)
+{
+	return !(*this < rhs);
+}
 
 /* ========================================================================== */
 /* Tree nodes */
@@ -501,7 +572,7 @@ Node *	NodeOp::do_op_string(const char *str1, const char *str2, OpKind op)
       case OpMod:
       case OpPow:
       case OpNeg:
-		minc_warn("unsupported operation on a string");
+		minc_warn("invalid operator for two strings");
 		this->v = (char *)NULL;	// TODO: check
 		return this;				// TODO: check
       default:
@@ -629,9 +700,9 @@ Node *	NodeOp::do_op_list_iterate(const MincList *srcList, const MincFloat val, 
 {
 	ENTER();
    int i;
-   MincListElem *dest;
+   MincValue *dest;
    const int len = srcList->len;
-   MincListElem *src = srcList->data;
+   MincValue *src = srcList->data;
    MincList *destList = new MincList(len);
    dest = destList->data;
    assert(len >= 0);
@@ -639,62 +710,62 @@ Node *	NodeOp::do_op_list_iterate(const MincList *srcList, const MincFloat val, 
       case OpPlus:
          for (i = 0; i < len; i++) {
             if (src[i].dataType() == MincFloatType)
-               dest[i].value() = (MincFloat)src[i].value() + val;
+               dest[i] = (MincFloat)src[i] + val;
             else
-               dest[i].value() = src[i].value();
+               dest[i] = src[i];
          }
          break;
       case OpMinus:
          for (i = 0; i < len; i++) {
             if (src[i].dataType() == MincFloatType)
-               dest[i].value() = (MincFloat)src[i].value() - val;
+               dest[i] = (MincFloat)src[i] - val;
             else
-				dest[i].value() = src[i].value();
+				dest[i] = src[i];
          }
          break;
       case OpMul:
          for (i = 0; i < len; i++) {
             if (src[i].dataType() == MincFloatType)
-               dest[i].value() = (MincFloat)src[i].value() * val;
+               dest[i] = (MincFloat)src[i] * val;
             else
-				dest[i].value() = src[i].value();
+				dest[i] = src[i];
          }
          break;
       case OpDiv:
          for (i = 0; i < len; i++) {
             if (src[i].dataType() == MincFloatType)
-               dest[i].value() = (MincFloat)src[i].value() / val;
+               dest[i] = (MincFloat)src[i] / val;
             else
-				dest[i].value() = src[i].value();
+				dest[i] = src[i];
          }
          break;
       case OpMod:
          for (i = 0; i < len; i++) {
             if (src[i].dataType() == MincFloatType)
-               dest[i].value() = (MincFloat) (long((MincFloat)src[i].value()) % (long) val);
+               dest[i] = (MincFloat) (long((MincFloat)src[i]) % (long) val);
             else
-				dest[i].value() = src[i].value();
+				dest[i] = src[i];
          }
          break;
       case OpPow:
          for (i = 0; i < len; i++) {
             if (src[i].dataType() == MincFloatType)
-               dest[i].value() = (MincFloat) pow((MincFloat) src[i].value(), (double) val);
+               dest[i] = (MincFloat) pow((MincFloat) src[i], (double) val);
             else
-				dest[i].value() = src[i].value();
+				dest[i] = src[i];
          }
          break;
       case OpNeg:
          for (i = 0; i < len; i++) {
             if (src[i].dataType() == MincFloatType)
-               dest[i].value() = -1 * (MincFloat)src[i].value();    /* <val> ignored */
+               dest[i] = -1 * (MincFloat)src[i];    /* <val> ignored */
             else
-				dest[i].value() = src[i].value();
+				dest[i] = src[i];
          }
          break;
       default:
          for (i = 0; i < len; i++)
-            dest[i].value() = 0.0;
+            dest[i] = 0.0;
          minc_internal_error("invalid list operator");
          break;
    }
@@ -714,12 +785,12 @@ Node *	NodeOp::do_op_list_list(const MincList *list1, const MincList *list2, con
 	ENTER();
 	int i, n;
 	const int len1 = (list1) ? list1->len : 0;
-	MincListElem *src1 = (list1) ? list1->data : NULL;
+	MincValue *src1 = (list1) ? list1->data : NULL;
 	const int len2 = (list2) ? list2->len : 0;
-	MincListElem *src2 = (list2) ? list2->data : NULL;
+	MincValue *src2 = (list2) ? list2->data : NULL;
 	
 	MincList *destList;
-	MincListElem *dest;
+	MincValue *dest;
 	switch (op) {
 		case OpPlus:
 			destList = new MincList(len1+len2);
@@ -790,7 +861,7 @@ Node *	NodeString::doExct()
 Node *	NodeName::doExct()
 {
 	/* look up the symbol */
-	u.symbol = lookup(_symbolName, AnyLevel);
+	setSymbol(lookup(_symbolName, AnyLevel));
 	return finishExct();
 }
 
@@ -819,7 +890,7 @@ Node *	NodeName::finishExct()
 Node *	NodeAutoName::doExct()
 {
 	/* look up the symbol */
-	u.symbol = lookupOrAutodeclare(symbolName(), sFunctionCallDepth > 0 ? YES : NO);
+	setSymbol(lookupOrAutodeclare(symbolName(), sFunctionCallDepth > 0 ? YES : NO));
 	return finishExct();
 }
 
@@ -870,7 +941,7 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
 		minc_die("list index must be a number");
 		return this;
 	}
-	if (child(0)->u.symbol->dataType() != MincListType) {
+	if (child(0)->symbol()->dataType() != MincListType) {
 		minc_die("attempt to index a variable that's not a list");
 		return this;
 	}
@@ -899,18 +970,18 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
 		 index = len - 1;
 		 fltindex = (MincFloat) index;
 	 }
-	MincListElem elem;
+	MincValue elem;
 	copy_listelem_elem(&elem, &theList->data[index]);
 	
 	/* do linear interpolation for float items */
 	if (elem.dataType() == MincFloatType && frac > 0.0 && index < len - 1) {
-		MincListElem& elem2 = theList->data[index + 1];
+		MincValue& elem2 = theList->data[index + 1];
 		if (elem2.dataType() == MincFloatType) {
-			value() = (MincFloat) elem.value()
-			+ (frac * ((MincFloat) elem2.value() - (MincFloat) elem.value()));
+			value() = (MincFloat) elem
+			+ (frac * ((MincFloat) elem2 - (MincFloat) elem));
 		}
 		else { /* can't interpolate btw. a number and another type */
-			value() = (MincFloat) elem.value();
+			value() = (MincFloat) elem;
 		}
 	}
 	else {
@@ -1022,7 +1093,7 @@ Node *	NodeCall::doExct()
 	}
 	else {
 		child(0)->exct();
-		MincListElem retval;
+		MincValue retval;
 		int result = call_builtin_function(_functionName, sMincList, sMincListLen,
 										   &retval);
 		if (result < 0) {
@@ -1058,9 +1129,9 @@ Node *	NodeStore::doExct()
 	child(0)->exct();
 #endif
 	TPRINT("NodeStore(%p): copying value from RHS (%p) to LHS's symbol (%p)\n",
-		   this, child(1), child(0)->u.symbol);
+		   this, child(1), child(0)->symbol());
 	/* Copy entire MincValue union from expr to id sym and to this. */
-	copy_tree_sym(child(0)->u.symbol, child(1));
+	copy_tree_sym(child(0)->symbol(), child(1));
 	TPRINT("NodeStore: copying value from RHS (%p) to here (%p)\n", child(1), this);
 	copy_tree_tree(this, child(1));
 	return this;
@@ -1402,9 +1473,9 @@ Node *	NodeArgListElem::doExct()
 	else if (sArgListIndex >= sMincListLen) {
 		minc_warn("%s(): arg '%s' not provided - defaulting to 0", sCalledFunction, argSym->name());
 		/* Copy zeroed MincValue to us and then to sym. */
-		MincListElem zeroElem;
-		zeroElem.value() = argSym->value();	// this captures the data type
-		zeroElem.value().zero();
+		MincValue zeroElem;
+		zeroElem = argSym->value();	// this captures the data type
+		zeroElem.zero();
 		copy_listelem_tree(this, &zeroElem);
 		copy_tree_sym(argSym, this);
 		++sArgListIndex;
@@ -1412,7 +1483,7 @@ Node *	NodeArgListElem::doExct()
 	/* compare stored NodeName with user-passed arg */
 	else {
 		// Pre-cached argument value from caller
-		MincListElem *argValue = &sMincList[sArgListIndex];
+		MincValue *argValue = &sMincList[sArgListIndex];
 		bool compatible = false;
 		switch (argValue->dataType()) {
 			case MincFloatType:
@@ -1504,7 +1575,7 @@ Node *	NodeDecl::doExct()
 			sym->value() = MincValue(this->_type);
 		}
 	}
-	this->u.symbol = sym;
+	this->setSymbol(sym);
 	return this;
 }
 
@@ -1516,7 +1587,7 @@ Node *	NodeFuncDecl::doExct()
 	if (sym == NULL) {
 		sym = install(_symbolName, YES);		// all functions global for now
 		sym->value() = MincValue(this->_type);
-		this->u.symbol = sym;
+		this->setSymbol(sym);
 	}
 	else {
 		minc_die("function %s() is already declared", _symbolName);
@@ -1529,8 +1600,8 @@ Node *	NodeFuncDef::doExct()
 	// Look up symbol for function, and bind this FuncDef node to it.
 	TPRINT("NodeFuncDef: executing lookup node %p\n", child(0));
 	child(0)->exct();
-	assert(child(0)->u.symbol != NULL);
-	child(0)->u.symbol->node = this;
+	assert(child(0)->symbol() != NULL);
+	child(0)->symbol()->node = this;
 	return this;
 }
 
@@ -1542,7 +1613,7 @@ push_list()
       minc_die("stack overflow: too many nested function calls");
    list_stack[list_stack_ptr] = sMincList;
    list_len_stack[list_stack_ptr++] = sMincListLen;
-   sMincList = new MincListElem[MAXDISPARGS];
+   sMincList = new MincValue[MAXDISPARGS];
    TPRINT("push_list: sMincList=%p at stack level %d, len %d\n", sMincList, list_stack_ptr, sMincListLen);
    sMincListLen = 0;
 }
@@ -1618,7 +1689,7 @@ copy_tree_sym(Symbol *dest, Node *tpsrc)
 }
 
 static void
-copy_tree_listelem(MincListElem *dest, Node *tpsrc)
+copy_tree_listelem(MincValue *dest, Node *tpsrc)
 {
    TPRINT("copy_tree_listelem(%p, %p)\n", dest, tpsrc);
 #ifdef EMBEDDED
@@ -1627,21 +1698,21 @@ copy_tree_listelem(MincListElem *dest, Node *tpsrc)
 		return;
 	}
 #endif
-	dest->value() = tpsrc->value();
+	*dest = tpsrc->value();
 }
 
 static void
-copy_listelem_tree(Node *tpdest, MincListElem *esrc)
+copy_listelem_tree(Node *tpdest, MincValue *esrc)
 {
    TPRINT("copy_listelem_tree(%p, %p)\n", tpdest, esrc);
-   tpdest->value() = esrc->value();
+   tpdest->value() = *esrc;
 }
 
 static void
-copy_listelem_elem(MincListElem *edest, MincListElem *esrc)
+copy_listelem_elem(MincValue *edest, MincValue *esrc)
 {
    TPRINT("copy_listelem_elem(%p, %p)\n", edest, esrc);
-   edest->value() = esrc->value();
+   *edest = *esrc;
 }
 
 #ifdef DEBUG

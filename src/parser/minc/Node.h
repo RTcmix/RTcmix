@@ -63,11 +63,6 @@ public:
 	NodeKind kind;
 	MincDataType _type;
 	OpKind op;
-	union {
-		Symbol *symbol;
-		double number;
-		const char *string;
-	} u;
 	MincValue 		v;
 	int				lineno;		/* used for error statements */
 public:
@@ -77,6 +72,7 @@ public:
 	const char *		name() const { return (u.symbol) ? u.symbol->name() : "UNDEFINED"; }
 	MincDataType		dataType() const { return v.dataType(); }
 	virtual Node*		child(int index) const { return NULL; }
+	void				setSymbol(Symbol *sym) { u.symbol = sym; }
 	Symbol *			symbol() const { return u.symbol; }
 	const MincValue&	value() const { return v; }
 	MincValue&			value() { return v; }
@@ -84,6 +80,12 @@ public:
 	void				print();
 protected:
 	virtual Node*		doExct() = 0;
+protected:
+	union {
+		Symbol *symbol;
+		double number;
+		const char *string;
+	} u;
 };
 
 class NodeNoop : public Node

@@ -12,7 +12,7 @@
 #include <prototypes.h>
 #include <PField.h>
 
-static Arg * minc_list_to_arglist(const char *funcname, const MincListElem *inList, const int inListLen, Arg *inArgs, int *pNumArgs)
+static Arg * minc_list_to_arglist(const char *funcname, const MincValue *inList, const int inListLen, Arg *inArgs, int *pNumArgs)
 {
 	int oldNumArgs = *pNumArgs;
 	int n = 0, newNumArgs = oldNumArgs + inListLen;
@@ -33,20 +33,20 @@ static Arg * minc_list_to_arglist(const char *funcname, const MincListElem *inLi
 				delete [] newArgs;
 				return NULL;
 			case MincFloatType:
-				newArgs[n] = (MincFloat) inList[i].value();
+				newArgs[n] = (MincFloat) inList[i];
 				break;
 			case MincStringType:
-				newArgs[n] = (MincString)inList[i].value();
+				newArgs[n] = (MincString)inList[i];
 				break;
 			case MincHandleType:
-				newArgs[n] = (Handle) (MincHandle)inList[i].value();
+				newArgs[n] = (Handle) (MincHandle)inList[i];
 				break;
 			case MincListType:
-				if ((MincList *)inList[i].value() == NULL) {
+				if ((MincList *)inList[i] == NULL) {
 					minc_die("can't pass a null list (arg %d) to RTcmix function %s()", n, funcname);
 					return NULL;
 				}
-				if (((MincList *)inList[i].value())->len <= 0) {
+				if (((MincList *)inList[i])->len <= 0) {
 					minc_die("can't pass an empty list (arg %d) to RTcmix function %s()", n, funcname);
 					delete [] newArgs;
 					return NULL;
@@ -63,8 +63,8 @@ static Arg * minc_list_to_arglist(const char *funcname, const MincListElem *inLi
 }
 
 int
-call_external_function(const char *funcname, const MincListElem arglist[],
-	const int nargs, MincListElem *return_value)
+call_external_function(const char *funcname, const MincValue arglist[],
+	const int nargs, MincValue *return_value)
 {
 	int result, numArgs = nargs;
 	Arg retval;
@@ -77,17 +77,17 @@ call_external_function(const char *funcname, const MincListElem arglist[],
 	for (int i = 0; i < nargs; i++) {
 		switch (arglist[i].dataType()) {
 		case MincFloatType:
-			rtcmixargs[i] = (MincFloat)arglist[i].value();
+			rtcmixargs[i] = (MincFloat)arglist[i];
 			break;
 		case MincStringType:
-			rtcmixargs[i] = (MincString)arglist[i].value();
+			rtcmixargs[i] = (MincString)arglist[i];
 			break;
 		case MincHandleType:
-			rtcmixargs[i] = (Handle) (MincHandle)arglist[i].value();
+			rtcmixargs[i] = (Handle) (MincHandle)arglist[i];
 			break;
 		case MincListType:
 			{
-			MincList *list = (MincList *)arglist[i].value();
+			MincList *list = (MincList *)arglist[i];
 			if (list == NULL) {
 				minc_die("can't pass a null list (arg %d) to RTcmix function %s()", i, funcname);
 				return -1;
@@ -138,13 +138,13 @@ call_external_function(const char *funcname, const MincListElem arglist[],
 	// Convert return value from RTcmix function.
 	switch (retval.type()) {
 	case DoubleType:
-		return_value->value() = (MincFloat) retval;
+		*return_value = (MincFloat) retval;
 		break;
 	case StringType:
-		return_value->value() = (MincString) retval;
+		*return_value = (MincString) retval;
 		break;
 	case HandleType:
-		return_value->value() = (MincHandle) (Handle) retval;
+		*return_value = (MincHandle) (Handle) retval;
 		break;
 	case ArrayType:
 #ifdef NOMORE
