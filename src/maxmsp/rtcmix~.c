@@ -75,11 +75,13 @@
 // -- allow input and output counts (renamed MSP_INPUTS and MSP_OUTPUTS) to be configured from build macro.
 //		added check for active DAC to rtcmix_dortcmix().  Added memory failure check to script methods.
 //
-
+// 01/27/2017
+// -- fixed buffer-reading code for $variables (incorrect length calculation)
+//		changed RTcmixVERSION to reflect current RTcmix (with the new neil insts)
 
 
 #define VERSION "2.00"
-#define RTcmixVERSION "RTcmix-maxmsp-4.1.1"
+#define RTcmixVERSION "RTcmix-maxmsp-4.2.1"
 
 #include "ext.h"
 #include "z_dsp.h"
