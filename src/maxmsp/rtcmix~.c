@@ -75,11 +75,13 @@
 // -- allow input and output counts (renamed MSP_INPUTS and MSP_OUTPUTS) to be configured from build macro.
 //		added check for active DAC to rtcmix_dortcmix().  Added memory failure check to script methods.
 //
-
+// 01/27/2017
+// -- fixed buffer-reading code for $variables (incorrect length calculation)
+//		changed RTcmixVERSION to reflect current RTcmix (with the new neil insts)
 
 
 #define VERSION "2.00"
-#define RTcmixVERSION "RTcmix-maxmsp-4.1.1"
+#define RTcmixVERSION "RTcmix-maxmsp-4.2.1"
 
 #include "ext.h"
 #include "z_dsp.h"
@@ -1537,7 +1539,7 @@ void rtcmix_dogoscript(t_rtcmix *x, Symbol *s, short argc, Atom *argv)
 		if (thebuf[j] == '$') {
 			sscanf(x->rtcmix_script[x->current_script]+i+1, "%d", &tval);
 			if ( !(x->var_set[tval-1]) ) error("variable $%d has not been set yet, using 0.0 as default", tval);
-			snprintf(thebuf+j, buflen-j, "%f", x->var_array[tval-1]);
+			snprintf(thebuf+j, outbuflen-j, "%f", x->var_array[tval-1]);
 			j = strlen(thebuf)-1;
 			i++; // skip over the var number in input
 		}
