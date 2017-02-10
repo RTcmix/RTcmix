@@ -1,5 +1,5 @@
 rtsetparams(44100, 2)
-load("./libHENON.so")
+load("HENON")
 load("TRANS")
 load("JDELAY")
 bus_config("HENON", "aux 0-1 out")

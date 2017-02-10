@@ -7,10 +7,12 @@
    p4 = b [optional, default is 0.3]
    p5 = x [optional, default is 1]
    p6 = y [optional, default is 1]
-   p7 = pan (in percent-to-left format) [optional, default is .5]
+   p7 = update rate for p3-p6 [optional, default is 1000]
+   p8 = pan (in percent-to-left format) [optional, default is .5]
 
-   p2 (amp), p3-p6 (function parameters), and p7 (pan) can
-   receive updates from a table or real-time control source.
+   p2 (amp), p3-p6 (function parameters), p7 (update rate), and
+   p8 (pan) can receive updates from a table or real-time control
+   source.
 
    p3-p6: Try values within a few tenths of the defaults given
    here.
@@ -44,6 +46,7 @@ int HENON::init(double p[], int n_args)
 
 	const float outskip = p[0];
 	const float dur = p[1];
+	branch2 = branch;
 
 	if (rtsetoutput(outskip, dur, this) == -1)
 		return DONT_SCHEDULE;
@@ -65,12 +68,20 @@ void HENON::doupdate()
 	update(p, nargs);
 
 	amp = p[2];
+	cr = (nargs > 7) ? (SR / p[7]) : (SR / 1000);
+	pan = (nargs > 8) ? p[8] : 0.5;
+}
+
+void HENON::updateparams()
+{
+	double p[nargs];
+	update(p, nargs);
+
 	a = (nargs > 3) ? p[3] : 1.4;
 	b = (nargs > 4) ? p[4] : 0.3;
+
 	x = (nargs > 5) ? p[5] : 1;
 	y = (nargs > 6) ? p[6] : 1;
-
-	pan = (nargs > 7) ? p[7] : 0.5;
 }
 
 int HENON::run()
@@ -80,13 +91,17 @@ int HENON::run()
 			doupdate();
 			branch = getSkip();
 		}
+		if (--branch2 <= 0) {
+			updateparams();
+			branch2 = cr;
+		}
 
 		x = y + 1 - (a * x * x);
 		y = b * z;
 		z = x;
 
 		float samp;
-		if (x > 1 || x < -1)
+		if ( x > 1 || x < -1 )
 			samp = sin(x);
 		else
 			samp = x;
@@ -98,6 +113,7 @@ int HENON::run()
 			out[1] = out[0] * (1.0 - pan);
 			out[0] *= pan;
 		}
+
 		rtaddout(out);
 		increment();
 	}
@@ -117,3 +133,4 @@ void rtprofile()
 {
 	RT_INTRO("HENON", makeHENON);
 }
+
