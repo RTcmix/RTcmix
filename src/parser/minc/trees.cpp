@@ -1810,7 +1810,12 @@ exct(Tree tp)
 			   tp->u.symbol = sym;
 		   }
 			else {
-			   minc_die("function %s() is already declared", name);
+#ifdef EMBEDDED
+				minc_warn("function %s() is already declared", name);
+				tp->u.symbol = sym;
+#else
+				minc_die("function %s() is already declared", name);
+#endif
 			}
 	   }
 		break;
