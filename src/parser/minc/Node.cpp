@@ -1590,7 +1590,12 @@ Node *	NodeFuncDecl::doExct()
 		this->setSymbol(sym);
 	}
 	else {
+#ifdef EMBEDDED
+		minc_warn("function %s() is already declared", _symbolName);
+		this->setSymbol(sym);
+#else
 		minc_die("function %s() is already declared", _symbolName);
+#endif
 	}
 	return this;
 }
