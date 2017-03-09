@@ -10,6 +10,8 @@
 #include <ugens.h>
 #include <Option.h>
 
+extern "C" {
+	
 extern int yyparse();
 
 #ifdef EMBEDDED
@@ -93,3 +95,4 @@ destroy_parser()
 	yylex_destroy();
 }
 
+}	//	extern "C"
