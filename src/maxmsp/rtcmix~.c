@@ -1537,7 +1537,7 @@ void rtcmix_dogoscript(t_rtcmix *x, Symbol *s, short argc, Atom *argv)
 		if (thebuf[j] == '$') {
 			sscanf(x->rtcmix_script[x->current_script]+i+1, "%d", &tval);
 			if ( !(x->var_set[tval-1]) ) error("variable $%d has not been set yet, using 0.0 as default", tval);
-			snprintf(thebuf+j, buflen-j, "%f", x->var_array[tval-1]);
+			snprintf(thebuf+j, outbuflen-j, "%f", x->var_array[tval-1]);
 			j = strlen(thebuf)-1;
 			i++; // skip over the var number in input
 		}

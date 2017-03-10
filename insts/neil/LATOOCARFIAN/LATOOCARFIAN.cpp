@@ -120,7 +120,9 @@ Instrument *makeLATOOCARFIAN()
 	return inst;
 }
 
+#ifndef EMBEDDED
 void rtprofile()
 {
 	RT_INTRO("LATOOCARFIAN", makeLATOOCARFIAN);
 }
+#endif

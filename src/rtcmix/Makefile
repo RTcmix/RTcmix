@@ -172,8 +172,9 @@ ifneq ($(BUILDTYPE), STANDALONE)
 	include maxmspstuff/INMAXMSPOBJS
 	include maxmspstuff/INBGGOBJS
 	include maxmspstuff/INJOELOBJS
+	include maxmspstuff/INNEILOBJS
 	INST_OBJS = $(INBASEOBJS) $(INSTDOBJS) $(INJGOBJS) $(INSTKOBJS) \
-		$(INMAXMSPOBJS) $(INBGGOBJS) $(INJOELOBJS)
+		$(INMAXMSPOBJS) $(INBGGOBJS) $(INJOELOBJS) $(INNEILOBJS)
 endif
 
 # Sub-libraries.  Not used for static builds.
@@ -321,6 +322,9 @@ everything:		$(SNDLIB) $(LIBRTAUDIO) $(MIX_OBJS) $(LIBMINC) $(LIBCONF)
 
 #	$(INJOELOBJS):
 		(cd ../../insts/joel; $(MAKE) $(MFLAGS) all;)
+
+#	$(INNEILOBJS):
+		(cd ../../insts/neil; $(MAKE) $(MFLAGS) all;)
 
 endif
 

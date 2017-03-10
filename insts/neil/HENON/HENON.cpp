@@ -113,7 +113,9 @@ Instrument *makeHENON()
 	return inst;
 }
 
+#ifndef EMBEDDED
 void rtprofile()
 {
 	RT_INTRO("HENON", makeHENON);
 }
+#endif

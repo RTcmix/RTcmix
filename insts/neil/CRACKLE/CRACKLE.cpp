@@ -100,7 +100,9 @@ Instrument *makeCRACKLE()
 	return inst;
 }
 
+#ifndef EMBEDDED
 void rtprofile()
 {
 	RT_INTRO("CRACKLE", makeCRACKLE);
 }
+#endif
