@@ -111,79 +111,111 @@ Scope::dump()
 typedef std::vector<Scope *>ScopeStack;
 typedef std::vector<ScopeStack *>CallStack;
 
-static ScopeStack *sScopeStack = NULL;
-static CallStack *sCallStack = NULL;
-
-class InitializeScope
-{
-public:
-	InitializeScope() {
-		sScopeStack = new std::vector<Scope *>;
-		// We don't use push_scope() here because of the asserts.
-		Scope *globalScope = new Scope(0);
-		globalScope->ref();
-		sScopeStack->push_back(globalScope);
-	}
-};
-
-#ifdef STANDALONE
-static InitializeScope sInitializeScope;
-#define CHECK_SCOPE_INIT() while(0)
-#else
-#define CHECK_SCOPE_INIT() if (sScopeStack == NULL) do { InitializeScope(); } while (0)
-#endif
-
-void push_scope()
-{
-	assert(!sScopeStack->empty());
-	int newscope = current_scope() + 1;
-	Scope *scope = new Scope(newscope);
-	DPRINT("push_scope() => %d (sScopeStack %p) added scope %p\n", newscope, sScopeStack, scope);
-	scope->ref();
-	sScopeStack->push_back(scope);
-}
-
-void pop_scope() {
-	DPRINT("pop_scope() => %d (sScopeStack %p)\n", current_scope()-1, sScopeStack);
-	assert(!sScopeStack->empty());
-	Scope *top = sScopeStack->back();
-	sScopeStack->pop_back();
-	assert(!sScopeStack->empty());
-	top->unref();
-	DPRINT("pop_scope done\n");
-}
-
-int current_scope()
-{
-	CHECK_SCOPE_INIT();
-	int current = (int) sScopeStack->size() - 1;
-	return current;
-}
-
-void restore_scope(int scope)
-{
-	DPRINT("restore_scope() => %d\n", scope);
-	while (current_scope() > scope) {
-		Scope *top = sScopeStack->back();
-		sScopeStack->pop_back();
-		top->unref();
-	}
-	DPRINT("restore_scope done\n");
-}
-
 void clear_scope_stack(ScopeStack *stack)
 {
-	while (!stack->empty()) {
+	while (stack && !stack->empty()) {
 		Scope *top = stack->back();
 		stack->pop_back();
 		top->unref();
 	}
 }
 
+class ScopeManager
+{
+	static ScopeStack *sScopeStack;
+public:
+	static ScopeStack *stack();
+	static void setStack(ScopeStack *stack);
+	static void dump();
+	static void destroy();
+};
+
+ScopeStack *ScopeManager::sScopeStack = NULL;
+
+ScopeStack *ScopeManager::stack()
+{
+	if (sScopeStack == NULL) {
+		sScopeStack = new std::vector<Scope *>;
+		// We don't use push_scope() here because of the asserts.
+		Scope *globalScope = new Scope(0);
+		globalScope->ref();
+		sScopeStack->push_back(globalScope);
+	}
+	return sScopeStack;
+}
+
+void ScopeManager::setStack(ScopeStack *stack)
+{
+	sScopeStack = stack;
+	DPRINT("sScopeStack now %p\n", sScopeStack);
+}
+
+void ScopeManager::destroy()
+{
+	DPRINT("clearing stack %p\n", sScopeStack);
+	clear_scope_stack(sScopeStack);
+	DPRINT("destroying stack %p\n", sScopeStack);
+	delete sScopeStack;
+	sScopeStack = NULL;
+}
+
+void ScopeManager::dump()
+{
+	// Note: this one does not auto-create the scope
+	DPRINT("ScopeStack %p:\n", sScopeStack);
+	for (ScopeStack::iterator it2 = sScopeStack->begin(); it2 != sScopeStack->end(); ++it2) {
+		Scope *scope = *it2;
+		DPRINT("    Scope %p [%d]:\n", scope, scope->depth());
+		scope->dump();
+	}
+}
+
+void push_scope()
+{
+	ScopeStack *stack = ScopeManager::stack();
+	assert(!stack->empty());
+	int newscope = current_scope() + 1;
+	Scope *scope = new Scope(newscope);
+	DPRINT("push_scope() => %d (stack %p) added scope %p\n", newscope, stack, scope);
+	scope->ref();
+	stack->push_back(scope);
+}
+
+void pop_scope() {
+	ScopeStack *stack = ScopeManager::stack();
+	DPRINT("pop_scope() => %d (stack %p)\n", current_scope()-1, stack);
+	assert(!stack->empty());
+	Scope *top = stack->back();
+	stack->pop_back();
+	assert(!stack->empty());
+	top->unref();
+	DPRINT("pop_scope done\n");
+}
+
+int current_scope()
+{
+	int current = (int) ScopeManager::stack()->size() - 1;
+	return current;
+}
+
+void restore_scope(int scope)
+{
+	DPRINT("restore_scope() => %d\n", scope);
+	ScopeStack *stack = ScopeManager::stack();
+	while (current_scope() > scope) {
+		Scope *top = stack->back();
+		stack->pop_back();
+		top->unref();
+	}
+	DPRINT("restore_scope done\n");
+}
+
 /* CallStack code.  Whenever we call a user-defined function, we create and push a
  * new ScopeStack into the CallStack and make this scope stack the current one.  We
  * copy the global (level 0) scope into each new ScopeStack.
  */
+
+static CallStack *sCallStack = NULL;
 
 void push_function_stack()
 {
@@ -192,14 +224,14 @@ void push_function_stack()
 	if (sCallStack == NULL) {
 		sCallStack = new CallStack;
 	}
-	DPRINT("pushing sScopeStack %p\n", sScopeStack);
-	sCallStack->push_back(sScopeStack);
+	DPRINT("pushing stack %p\n", stack);
+	ScopeStack *stack = ScopeManager::stack();
+	sCallStack->push_back(stack);
 	ScopeStack *newStack = new ScopeStack;
-	Scope *globalScope = sScopeStack->front();
+	Scope *globalScope = stack->front();
 	globalScope->ref();
 	newStack->push_back(globalScope);
-	sScopeStack = newStack;
-	DPRINT("sScopeStack now %p\n", sScopeStack);
+	ScopeManager::setStack(newStack);
 	dump_symbols();
 }
 
@@ -208,13 +240,10 @@ void pop_function_stack()
 	DPRINT("pop_function_stack()\n");
 	assert(sCallStack != NULL);
 	assert(!sCallStack->empty());
-	DPRINT("destroying stack %p\n", sScopeStack);
-	clear_scope_stack(sScopeStack);
-	delete sScopeStack;
-	sScopeStack = sCallStack->back();
+	ScopeStack *stack = ScopeManager::stack();
+	ScopeManager::destroy();
+	ScopeManager::setStack(sCallStack->back());
 	sCallStack->pop_back();
-	DPRINT("sScopeStack now %p\n", sScopeStack);
-	assert(sScopeStack != NULL);
 	dump_symbols();
 }
 
@@ -272,14 +301,7 @@ free_symbols()
 	assert(sCallStack == NULL || sCallStack->size() == 0);
 	delete sCallStack;
 	sCallStack = NULL;
-	clear_scope_stack(sScopeStack);
-	delete sScopeStack;
-#ifdef EMBEDDED
-	// Parsing may continue after call to free symbols, so...
-	InitializeScope();
-#else
-	sScopeStack = NULL;
-#endif
+	ScopeManager::destroy();
 	for (int s = 0; s < HASHSIZE; ++s)
 	{
 		struct str *str;
@@ -322,8 +344,7 @@ free_node(Symbol *p)
 Symbol *
 install(const char *name, Bool isGlobal)
 {
-	CHECK_SCOPE_INIT();
-	return isGlobal ? sScopeStack->front()->install(name) : sScopeStack->back()->install(name);
+	return isGlobal ? ScopeManager::stack()->front()->install(name) : ScopeManager::stack()->back()->install(name);
 }
 
 /* Lookup <name> at a given scope; return pointer to entry.
@@ -336,14 +357,14 @@ install(const char *name, Bool isGlobal)
 Symbol *
 lookup(const char *name, LookupType lookupType)
 {
-	CHECK_SCOPE_INIT();
 	Symbol *p = NULL;
 	int foundLevel = -1;
 	const char *typeString;
+	ScopeStack *stack = ScopeManager::stack();
 	if (lookupType == AnyLevel) {
 		typeString = "AnyLevel";
 		// Start at deepest scope and work back to global
-		for (std::vector<Scope *>::reverse_iterator it = sScopeStack->rbegin(); it != sScopeStack->rend(); ++it) {
+		for (std::vector<Scope *>::reverse_iterator it = stack->rbegin(); it != stack->rend(); ++it) {
 			Scope *s = *it;
 			if ((p = s->lookup(name)) != NULL) {
 				foundLevel = s->depth();
@@ -354,15 +375,15 @@ lookup(const char *name, LookupType lookupType)
 	else if (lookupType == GlobalLevel) {
 		typeString = "GlobalLevel";
 		// Global scope only
-		if ((p = sScopeStack->front()->lookup(name)) != NULL) {
-			foundLevel = sScopeStack->front()->depth();
+		if ((p = stack->front()->lookup(name)) != NULL) {
+			foundLevel = stack->front()->depth();
 		}
 	}
 	else if (lookupType == ThisLevel) {
 		typeString = "ThisLevel";
 		// Current scope only
-		if ((p = sScopeStack->back()->lookup(name)) != NULL) {
-			foundLevel = sScopeStack->back()->depth();
+		if ((p = stack->back()->lookup(name)) != NULL) {
+			foundLevel = stack->back()->depth();
 		}
 	}
 #ifdef SYMBOL_DEBUG
@@ -379,7 +400,6 @@ lookup(const char *name, LookupType lookupType)
 Symbol * lookupOrAutodeclare(const char *name, Bool inFunctionCall)
 {
 	DPRINT("lookupOrAutodeclare('%s')\n", name);
-	CHECK_SCOPE_INIT();
 	Symbol *sym = lookup(name, ThisLevel);	// Check at current scope *only*
 	if (sym != NULL) {
 		DPRINT("\tfound it at same scope\n");
@@ -477,15 +497,10 @@ void dump_symbols()
 				Scope *scope = *it2;
 				DPRINT("    Scope %p [%d]:\n", scope, scope->depth());
 				scope->dump();
-   }
-}
-	}
-		DPRINT("ScopeStack %p:\n", sScopeStack);
-		for (ScopeStack::iterator it2 = sScopeStack->begin(); it2 != sScopeStack->end(); ++it2) {
-			Scope *scope = *it2;
-			DPRINT("    Scope %p [%d]:\n", scope, scope->depth());
-			scope->dump();
+   			}
 		}
+	}
+	ScopeManager::dump();
 	DPRINT("---- END ----\n");
 }
 

@@ -29,6 +29,18 @@ int configure_minc_error_handler(int exit);
 
 #ifdef __cplusplus
 }
+
+// We only throw errors from the parser in embedded systems.  In others we simply exit.
+#ifdef EMBEDDED
+#define minc_throw(err) throw(err)
+#define minc_try try
+#define minc_catch(err) catch(err)
+#else
+#define minc_throw(err)
+#define minc_try
+#define minc_catch(err) if (0)
+#endif
+
 #endif
 
 #endif /* _MINC_H_ */

@@ -59,14 +59,6 @@ void minc_warn(const char *msg, ...);
 void minc_die(const char *msg, ...);
 void minc_internal_error(const char *msg, ...);
 extern "C" void yyerror(const char *msg);
-#ifdef EMBEDDED
-// These are used to determine if parser should bail out (since it never exits)
-void set_rtcmix_error(int err);
-bool was_rtcmix_error();
-#else
-#define set_rtcmix_error(x)
-#define was_rtcmix_error() 0
-#endif
 
 class MincObject
 {
@@ -101,7 +93,7 @@ private:
 	const char *_mesg;
 };
 
-class RTFatalException
+class RTFatalException : public RTException
 {
 public:
 	RTFatalException(const char *msg) : RTException(msg) {}

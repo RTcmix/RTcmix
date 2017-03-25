@@ -11,13 +11,13 @@
  
    Major rewrite to convert entire parser to "real" C++ classes.
  
-   Doug Scott, 11/2016
+   Doug Scott, 11/2016 - 04/2017
 */
 
 /* This file holds the intermediate tree representation. */
 
-#define DEBUG
-#define DEBUG_TRACE
+#undef DEBUG
+#undef DEBUG_TRACE
 
 #include "Node.h"
 #include "handle.h"
@@ -101,7 +101,7 @@ char Trace::spaces[128];
 #define TPRINT(...)
 #endif
 
-#undef DEBUG_MEMORY
+#define DEBUG_MEMORY
 #ifdef DEBUG_MEMORY
 static int numNodes = 0;
 #endif
@@ -207,7 +207,9 @@ MincList::MincList(int inLen) : len(inLen), data(NULL)
 	if (inLen > 0) {
 		data = new MincValue[len];
 	}
-	TPRINT("MincList::MincList: %p alloc'd at len %d\n", this, inLen);
+#ifdef DEBUG_MEMORY
+	TPRINT("MincList::MincList: %p alloc'd with len %d\n", this, inLen);
+#endif
 }
 
 MincList::~MincList()
@@ -251,23 +253,32 @@ MincList::resize(int newLen)
 
 MincValue::MincValue(MincHandle h) : type(MincHandleType)
 {
+#ifdef DEBUG_MEMORY
+//	TPRINT("created MincValue %p (for MincHandle)\n", this);
+#endif
 	_u.handle = h; ref_handle(h);
 }
 
 MincValue::MincValue(MincList *l) : type(MincListType)
 {
+#ifdef DEBUG_MEMORY
+//	TPRINT("created MincValue %p (for MincList *)\n", this);
+#endif
 	_u.list = l; RefCounted::ref(l);
 }
 
 MincValue::MincValue(MincDataType inType) : type(inType)
 {
+#ifdef DEBUG_MEMORY
+//	TPRINT("created MincValue %p (for MincDataType)\n", this);
+#endif
 	_u.list = NULL;		// to zero our contents
 }
 
 MincValue::~MincValue()
 {
 #ifdef DEBUG_MEMORY
-	TPRINT("deleting MincValue %p\n", this);
+//	TPRINT("deleting MincValue %p\n", this);
 #endif
 	switch (type) {
 		case MincHandleType:
@@ -279,6 +290,9 @@ MincValue::~MincValue()
 		default:
 			break;
 	}
+#ifdef DEBUG_MEMORY
+//	TPRINT("\tdone\n");
+#endif
 }
 
 void MincValue::doClear()
@@ -403,22 +417,22 @@ const MincValue& MincValue::operator = (MincList *l)
 
 const MincValue& MincValue::operator += (const MincValue &rhs)
 {
-	
+	return *this;
 }
 
 const MincValue& MincValue::operator -= (const MincValue &rhs)
 {
-	
+	return *this;
 }
 
 const MincValue& MincValue::operator *= (const MincValue &rhs)
 {
-	
+	return *this;
 }
 
 const MincValue& MincValue::operator /= (const MincValue &rhs)
 {
-	
+	return *this;
 }
 
 // RHS use
@@ -505,7 +519,7 @@ Node::~Node()
 #endif
 #ifdef DEBUG_MEMORY
 	--numNodes;
-	TPRINT("[%d nodes left]\n", numNodes);
+	TPRINT("[%d nodes remaining]\n", numNodes);
 #endif
 }
 
@@ -531,8 +545,6 @@ void Node::print()
 
 Node *	Node::exct()
 {
-	if (was_rtcmix_error())
-		return NULL;
 	ENTER();
 	TPRINT("%s::exct() this=%p\n", classname(), this);
 	if (inFunctionCall() && lineno > 0) {
@@ -923,7 +935,7 @@ Node *	NodeList::doExct()
 	if (check_list_count() < 0)
 		return this;
 	theList = new MincList(sMincListLen);
-	v = theList;
+	this->v = theList;
 	TPRINT("MincList %p assigned to self\n", theList);
 	// Copy from stack list into tree list.
 	for (int i = 0; i < sMincListLen; ++i)
@@ -1102,7 +1114,7 @@ Node *	NodeCall::doExct()
 		}
 		copy_listelem_tree(this, &retval);
 		if (result != 0) {
-			set_rtcmix_error(result);	// store fatal error from RTcmix layer (EMBEDDED ONLY)
+			// NOTE: FOR NOW WE DO NOTHING IN RESPONSE TO INSTRUMENT FAILURE
 		}
 	}
 	pop_list();
@@ -1643,7 +1655,7 @@ copy_tree_tree(Node *tpdest, Node *tpsrc)
 {
    TPRINT("copy_tree_tree(%p, %p)\n", tpdest, tpsrc);
 #ifdef EMBEDDED
-	/* Not yet handling errors with throw/catch */
+	/* Not yet handling nonfatal errors with throw/catch */
 	if (tpsrc->dataType() == MincVoidType) {
 		return;
 	}
@@ -1661,12 +1673,6 @@ static void
 copy_sym_tree(Node *tpdest, Symbol *src)
 {
    TPRINT("copy_sym_tree(%p, %p)\n", tpdest, src);
-#ifdef EMBEDDED
-	/* Not yet handling errors with throw/catch */
-	if (src == NULL) {
-		return;
-	}
-#endif
 	assert(src->scope != -1);	// we accessed a variable after leaving its scope!
 	if (tpdest->dataType() != MincVoidType && src->dataType() != tpdest->dataType()) {
 		minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(tpdest->dataType()), tpdest->name(), MincTypeName(src->dataType()));
@@ -1681,8 +1687,8 @@ copy_tree_sym(Symbol *dest, Node *tpsrc)
 {
 	TPRINT("copy_tree_sym(%p, %p)\n", dest, tpsrc);
 #ifdef EMBEDDED
-	/* Not yet handling errors using throw/catch */
-	if (dest == NULL || tpsrc->dataType() == MincVoidType) {
+	/* Not yet handling nonfatal errors using throw/catch */
+	if (tpsrc->dataType() == MincVoidType) {
 		return;
 	}
 #endif
@@ -1698,7 +1704,7 @@ copy_tree_listelem(MincValue *dest, Node *tpsrc)
 {
    TPRINT("copy_tree_listelem(%p, %p)\n", dest, tpsrc);
 #ifdef EMBEDDED
-	/* Not yet handling errors with throw/catch */
+	/* Not yet handling nonfatal errors with throw/catch */
 	if (tpsrc->dataType() == MincVoidType) {
 		return;
 	}

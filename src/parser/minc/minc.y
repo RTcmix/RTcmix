@@ -14,8 +14,9 @@
 extern "C" {
 #endif
 #ifdef EMBEDDED
-/* in utils.c */
-int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
+double minc_memflush();
+/* in utils.cpp */
+extern int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
 #else
 // in args.cpp
 const char *lookup_token(const char *token);
@@ -40,7 +41,6 @@ const char *lookup_token(const char *token);
 #define MAXTOK_IDENTLIST 200
 #define TRUE 1
 #define FALSE 0
-#define CHECK_ERROR if (flerror) do { MPRINT("cleaning up after error"); cleanup(1); YYABORT; } while(0)
 
 static Node *	program;
 static int		idcount = 0;
@@ -441,7 +441,16 @@ go(Node * t1)
 {
 	if (level == 0) {
 		MPRINT1("--> go(%p)", t1);
-		t1->exct();
+		try {
+			t1->exct();
+		}
+		catch(...) {
+			MPRINT1("caught exception - deleting node %p and cleaning up", t1);
+			delete t1;
+			t1 = NULL;
+			cleanup();
+			throw;
+		}
 		MPRINT1("<-- go(%p)", t1);
 	}
 	return t1;
@@ -457,10 +466,10 @@ static void cleanup()
 	MPRINT1("cleanup: yy_init = %d", yy_init);
 	MPRINT1("Freeing program tree %p", program);
     delete program;
+	program = NULL;
 	/* Reset all static state */
 	comments = 0;	// from lex.yy.c
 	cpcomments = 0;
-	program = NULL;
 	idcount = 0;
 	flerror = 0;
 	level = 0;
@@ -500,7 +509,6 @@ double minc_memflush()
 
 void reset_parser()
 {
-	set_rtcmix_error(0);
 	flerror = 0;
 	// Reset the line # every time a new score buffer is received
 	yyset_lineno(1);

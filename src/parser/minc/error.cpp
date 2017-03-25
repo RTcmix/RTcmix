@@ -31,9 +31,6 @@ void
 sys_error(const char *msg)
 {
 	die("parser", "%s\n", msg);
-
-	set_rtcmix_error(-1);
-
 	if (exit_on_die)
       exit(EXIT_FAILURE);
 }
@@ -81,13 +78,13 @@ minc_die(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-	set_rtcmix_error(-1);
-
 	rterror("parser", "%s (near line %d)\n", buf, yyget_lineno());
 	
 
    if (exit_on_die)
       exit(EXIT_FAILURE);
+
+	minc_throw(MincParserError);
 }
 
 void
@@ -100,28 +97,17 @@ minc_internal_error(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-	set_rtcmix_error(-1);
-
 	rterror("parser-program", "%s (near line %d)\n", buf, yyget_lineno());
 
 	if (exit_on_die)
       exit(EXIT_FAILURE);
+	
+	minc_throw(MincInternalError);
 }
 
 void
 yyerror(const char *msg)
 {
 	rterror("parser-yyerror", "near line %d: %s\n", yyget_lineno(), msg);
+	minc_throw(MincParserError);
 }
-
-#ifdef EMBEDDED
-void set_rtcmix_error(int err)
-{
-	rtcmix_error = err;
-}
-
-bool was_rtcmix_error()
-{
-	return (rtcmix_error != 0);
-}
-#endif
