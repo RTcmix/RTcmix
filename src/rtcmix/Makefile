@@ -139,6 +139,11 @@ ifeq ($(NPLAY_SUPPORT), TRUE)
    COMMON_CPPSRCS += setnetplay.cpp
 endif
 
+ifeq ($(EMBEDDED_USE_MMOVE), TRUE)
+	CXXFLAGS += -DUSE_MMOVE
+	CFLAGS += -DUSE_MMOVE
+endif
+
 MAIN_CPPSRCS = RTcmixMain.cpp main.cpp
 
 IMBEDSRCS =

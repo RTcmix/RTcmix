@@ -29,13 +29,6 @@ INSTDOBJS = ../../insts/std/AM/AM.o \
 ../../insts/std/METAFLUTE/LSFLUTE.o \
 ../../insts/std/METAFLUTE/SFLUTE.o \
 ../../insts/std/METAFLUTE/VSFLUTE.o \
-../../insts/std/MOVE/BASE.o \
-../../insts/std/MOVE/MOVE.o \
-../../insts/std/MOVE/PLACE.o \
-../../insts/std/MOVE/cmixfuns.o \
-../../insts/std/MOVE/common.o \
-../../insts/std/MOVE/path.o \
-../../insts/std/MOVE/setup.o \
 ../../insts/std/MOCKBEND/MOCKBEND.o \
 ../../insts/std/MULTICOMB/MULTICOMB.o \
 ../../insts/std/NOISE/NOISE.o \
@@ -76,3 +69,24 @@ INSTDOBJS = ../../insts/std/AM/AM.o \
 ../../insts/std/TRANSBEND/TRANSBEND.o \
 ../../insts/std/WAVESHAPE/WAVESHAPE.o
 
+ifeq ($(EMBEDDED_USE_MMOVE), TRUE)
+INSTDOBJS += \
+../../insts/std/MMOVE/MBASE.o \
+../../insts/std/MMOVE/DMOVE.o \
+../../insts/std/MMOVE/MMOVE.o \
+../../insts/std/MMOVE/MPLACE.o \
+../../insts/std/MMOVE/RVB.o \
+../../insts/std/MOVE/cmixfuns.o \
+../../insts/std/MOVE/common.o \
+../../insts/std/MMOVE/path.o \
+../../insts/std/MMOVE/msetup.o
+else
+INSTDOBJS += \
+../../insts/std/MOVE/BASE.o \
+../../insts/std/MOVE/MOVE.o \
+../../insts/std/MOVE/PLACE.o \
+../../insts/std/MOVE/cmixfuns.o \
+../../insts/std/MOVE/common.o \
+../../insts/std/MOVE/path.o \
+../../insts/std/MOVE/setup.o
+endif
