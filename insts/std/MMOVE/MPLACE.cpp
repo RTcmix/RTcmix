@@ -25,18 +25,18 @@
 
 extern int g_Nterms[13];                 /* defined in ../MOVE/common.C */
 
-/* ---------------------------------------------------------------- PLACE --- */
-PLACE::PLACE()
+/* ---------------------------------------------------------------- MPLACE --- */
+MPLACE::MPLACE()
 {
 }
 
 
-/* --------------------------------------------------------------- ~PLACE --- */
-PLACE::~PLACE()
+/* --------------------------------------------------------------- ~MPLACE --- */
+MPLACE::~MPLACE()
 {
 }
 
-int PLACE::localInit(double p[], int n_args)
+int MPLACE::localInit(double p[], int n_args)
 {
     if (n_args < 7)
         return die(name(), "Wrong number of args.");
@@ -59,7 +59,7 @@ int PLACE::localInit(double p[], int n_args)
     return 0;
 }
 
-int PLACE::finishInit(double *ringdur)
+int MPLACE::finishInit(double *ringdur)
 {
    /* set taps, return max samp */
    tapcount = tap_set(m_binaural);
@@ -73,11 +73,11 @@ int PLACE::finishInit(double *ringdur)
    return 0;
 }
 
-int PLACE::configure()
+int MPLACE::configure()
 {
 	int status = MBASE::configure();
 	if (status == 0) {
-		// PLACE sets all filters just once, so we clear them at this time
+		// MPLACE sets all filters just once, so we clear them at this time
 		int flag = 1;
 		airfil_set(flag);
 		if (m_binaural)
@@ -88,22 +88,23 @@ int PLACE::configure()
 	return status;
 }
 
-int PLACE::updatePosition(int)
+int MPLACE::updatePosition(int)
 {
     return tapcount;	// no-op for this class
 }
 
-/* ------------------------------------------------------------ makePLACE --- */
+/* ------------------------------------------------------------ makeMPLACE --- */
 Instrument *makeMPLACE()
 {
-   PLACE *inst;
+   MPLACE *inst;
 
-   inst = new PLACE();
+   inst = new MPLACE();
    inst->set_bus_config("MPLACE");
 
    return inst;
 }
 
+#ifndef EMBEDDED
 extern Instrument *makeRVB();	// From RVB.C
 
 /* ------------------------------------------------------------ rtprofile --- */
@@ -112,11 +113,12 @@ void rtprofile()
    RT_INTRO("MPLACE", makeMPLACE);
    RT_INTRO("RVB", makeRVB);
 }
+#endif
 
 /* -------------------------------------------------------------- get_tap --- */
 /* Accesses the tap delay array and fills the del. signal array, Sig. */
 
-void PLACE::get_tap(int intap, int chan, int path, int len)
+void MPLACE::get_tap(int intap, int chan, int path, int len)
 {
 	Vector *vec = &m_vectors[chan][path];
 	register double *tapdel = m_tapDelay;

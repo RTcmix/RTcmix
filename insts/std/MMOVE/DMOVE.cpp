@@ -35,6 +35,7 @@ Instrument *makeDMOVE()
    return inst;
 }
 
+#ifndef EMBEDDED
 extern Instrument *makeRVB();	// From RVB.C
 
 /* ------------------------------------------------------------ rtprofile --- */
@@ -43,6 +44,7 @@ void rtprofile()
    RT_INTRO("DMOVE", makeDMOVE);
    RT_INTRO("RVB", makeRVB);
 }
+#endif
 
 // Move methods
 
