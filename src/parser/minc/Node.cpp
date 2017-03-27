@@ -838,18 +838,22 @@ Node *	NodeOp::do_op_list_list(const MincList *list1, const MincList *list2, con
 
    This function prevents this from going on for too many thousands of
    iterations.
+ 
+ 	DAS: No longer needed!  "{}" now evaluates to a block after while(), etc!
 */
-#define MAX_LISTS 50000
 
 static int
 check_list_count()
 {
+#if 0
+#define MAX_LISTS 50000
    static int list_count = 0;
    if (++list_count > MAX_LISTS) {
       minc_die("Bailing out due to suspected infinite loop on "
                "empty code block\n(e.g., \"while (1) {}\").");
       return -1;
    }
+#endif
    return 0;
 }
 

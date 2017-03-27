@@ -51,7 +51,7 @@ public:
 protected:
 	virtual ~Scope();
 private:
-	int		_depth;			  /* for debugging */
+	int		_depth;
 	Symbol *htab[HASHSIZE];   /* hash table */
 };
 
