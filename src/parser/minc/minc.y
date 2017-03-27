@@ -80,6 +80,9 @@ static Node * go(Node * t1);
 %type  <node> stml stmt rstmt bexp expl exp str ret bstml
 %type  <node> fdecl sdecl hdecl ldecl fdef fstml arg argl fargl fundecl
 %type  <str> id
+
+%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl fdef fstml arg argl fargl fundecl
+
 %error-verbose
 
 %%
@@ -122,7 +125,7 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 							}
 	| bstml
 	| fdef
-	| ret					{}
+	| ret
 	| error TOK_FLOAT_DECL	{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_STRING_DECL	{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_HANDLE_DECL	{ flerror = 1; $$ = new NodeNoop(); }
@@ -216,11 +219,15 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
 	| id '(' expl ')' {			MPRINT("id(expl)");
 								$$ = new NodeCall($3, $1);
 							}
-/* $2 will be the end of a linked list of NodeListElems */
+
+	| id '(' ')' {			MPRINT("id()");
+								$$ = new NodeCall(new NodeEmptyListElem(), $1);
+							}
+
+/* $3 will be the end of a linked list of NodeListElems */
 /* XXX: This causes 1 reduce/reduce conflict on '}'  How bad is this?  -JGG */
 /*	DAS MAKING THESE TWO PURE RIGHT-HAND-SIDE EXPRESSIONS
 	| '{' level expl '}'	{ MPRINT("{expl}");	decrLevel(); $$ = new NodeList($3); }
-
 	| id '[' exp ']' 	{			$$ = new NodeSubscriptRead(new NodeName($1), $3); }
  */
 	| id '[' exp ']' '=' exp {		$$ = new NodeSubscriptWrite(new NodeName($1), $3, $6); }
@@ -238,7 +245,7 @@ id:  TOK_IDENT			{ MPRINT("id"); $$ = strsave(yytext); }
 /* expression list */
 expl:	exp				{ MPRINT("expl: exp"); $$ = new NodeListElem(new NodeEmptyListElem(), $1); }
 	| expl ',' exp		{ MPRINT("expl: expl,exp"); $$ = new NodeListElem($1, $3); }
-	| /* nothing */	{ MPRINT("expl: NULL"); $$ = new NodeEmptyListElem(); }
+//	| /* nothing */	{ MPRINT("expl: NULL"); $$ = new NodeEmptyListElem(); }
 	;
 
 /* string */
@@ -281,6 +288,7 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 /* DAS THESE ARE NOW PURE RIGHT-HAND-SIDE */
 /* $2 will be the end of a linked list of NodeListElems */
 	| '{' level expl '}'	{ MPRINT("{expl}");	decrLevel(); $$ = new NodeList($3); }
+	| '{' '}'				{ MPRINT("{}");	$$ = new NodeList(new NodeEmptyListElem()); }
 
 	| id '[' exp ']' 	{	$$ = new NodeSubscriptRead(new NodeName($1), $3); }
 	| TOK_ARG			{
