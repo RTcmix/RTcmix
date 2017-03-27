@@ -24,7 +24,7 @@ const char *lookup_token(const char *token);
 #ifdef __cplusplus
 }
 #endif
-#undef MDEBUG	/* turns on yacc debugging below */
+#define MDEBUG	/* turns on yacc debugging below */
 
 #ifdef MDEBUG
 //int yydebug=1;
@@ -149,6 +149,10 @@ bstml:	'{'			{ if (!xblock) incrLevel(); }
 									if (!xblock) { decrLevel(); }
 									$$ = go(new NodeBlock($3));
 								}
+	/* DAS handling empty block as special case to avoid need for empty stml's */
+	| '{''}'		{ 	MPRINT("bstml: {}");
+								$$ = go(new NodeBlock(new NodeNoop()));
+								}
 	;
 
 /* A return statement.  Only used inside functions. */
@@ -212,12 +216,13 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
 	| id '(' expl ')' {			MPRINT("id(expl)");
 								$$ = new NodeCall($3, $1);
 							}
-
 /* $2 will be the end of a linked list of NodeListElems */
 /* XXX: This causes 1 reduce/reduce conflict on '}'  How bad is this?  -JGG */
+/*	DAS MAKING THESE TWO PURE RIGHT-HAND-SIDE EXPRESSIONS
 	| '{' level expl '}'	{ MPRINT("{expl}");	decrLevel(); $$ = new NodeList($3); }
 
 	| id '[' exp ']' 	{			$$ = new NodeSubscriptRead(new NodeName($1), $3); }
+ */
 	| id '[' exp ']' '=' exp {		$$ = new NodeSubscriptWrite(new NodeName($1), $3, $6); }
 	;
 
@@ -273,6 +278,11 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 							double f = atof(yytext);
 							$$ = new NodeConstf(f);
 						}
+/* DAS THESE ARE NOW PURE RIGHT-HAND-SIDE */
+/* $2 will be the end of a linked list of NodeListElems */
+	| '{' level expl '}'	{ MPRINT("{expl}");	decrLevel(); $$ = new NodeList($3); }
+
+	| id '[' exp ']' 	{	$$ = new NodeSubscriptRead(new NodeName($1), $3); }
 	| TOK_ARG			{
 #ifndef EMBEDDED
 							const char *token = yytext + 1;	// strip off '$'
