@@ -19,8 +19,8 @@ extern int yyparse();
 int RTcmix_parseScore(char *thebuf, int buflen);
 extern int yyparse();
 extern int yylineno;
-extern void setGlobalBuffer(const char *inBuf, int inBufSize);
-extern double minc_memflush();
+extern void setGlobalBuffer(const char *inBuf, int inBufSize);	// minc/utils.cpp
+extern double minc_memflush();									// minc/minc.cpp (from minc.y)
 
 // BGG mm -- set this to accept a buffer from max/msp
 int RTcmix_parseScore(char *theBuf, int buflen)
@@ -104,6 +104,7 @@ destroy_parser()
 	yylex_destroy();
 #ifdef EMBEDDED
 	(void)minc_memflush();
+	clear_tree_state();
 #endif
 }
 

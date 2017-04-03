@@ -60,7 +60,25 @@ static void copy_tree_sym(Symbol *dest, Node *  tpsrc);
 static void copy_tree_listelem(MincValue *edest, Node *  tpsrc);
 static void copy_listelem_tree(Node *  tpdest, MincValue *esrc);
 static void copy_listelem_elem(MincValue *edest, MincValue *esrc);
+#ifdef DEBUG
 static void print_symbol(Symbol * s);		// TODO: Symbol::print()
+#endif
+
+void clear_tree_state()	// The only exported function from Node.cpp.  Clear all static state.
+{
+	sMincListLen = 0;
+	sMincList = NULL;
+	for (int n = 0; n < MAXSTACK; ++n) {
+		list_stack[n] = NULL;
+		list_len_stack[n] = 0;
+	}
+	list_stack_ptr = 0;
+	inCalledFunctionArgList = false;
+	sCalledFunction = NULL;
+	sFunctionCallDepth = 0;
+	sArgListLen = 0;
+	sArgListIndex = 0;
+}
 
 #if defined(DEBUG_TRACE)
 class Trace {
@@ -827,41 +845,6 @@ Node *	NodeOp::do_op_list_list(const MincList *list1, const MincList *list2, con
 /* ========================================================================== */
 /* Tree execution and disposal */
 
-/* ------------------------------------------------------ check_list_count -- */
-/* This protects us against a situation that can arise due to our use of
-   '{' and '}' to delimit both statements and list contents.  If you write 
-   the following in a script, it will quickly chew through all available
-   memory, as it allocates a zero-length block for an empty list on each
-   iteration.
-
-      while (1) {}
-
-   This function prevents this from going on for too many thousands of
-   iterations.
- 
- 	DAS: No longer needed!  "{}" now evaluates to a block after while(), etc!
-*/
-
-static int
-check_list_count()
-{
-#if 0
-#define MAX_LISTS 50000
-   static int list_count = 0;
-   if (++list_count > MAX_LISTS) {
-      minc_die("Bailing out due to suspected infinite loop on "
-               "empty code block\n(e.g., \"while (1) {}\").");
-      return -1;
-   }
-#endif
-   return 0;
-}
-
-
-/* ------------------------------------------------------------------ exct -- */
-/* These recursive functions interprets the intermediate code.
-*/
-
 Node *	NodeConstf::doExct()
 {
 	v = (MincFloat) u.number;
@@ -936,8 +919,6 @@ Node *	NodeList::doExct()
 	push_list();
 	child(0)->exct();     /* NB: increments sMincListLen */
 	MincList *theList;
-	if (check_list_count() < 0)
-		return this;
 	theList = new MincList(sMincListLen);
 	this->v = theList;
 	TPRINT("MincList %p assigned to self\n", theList);

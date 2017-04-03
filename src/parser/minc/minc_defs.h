@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-/* Anything here is availale for export outside of the Minc directory. */
+/* Anything here is available for export outside of the Minc directory. */
 
 typedef enum _MincError
 {
@@ -26,6 +26,7 @@ int yyget_lineno(void);
 
 void reset_parser();
 int configure_minc_error_handler(int exit);
+void clear_tree_state();	// The only exported function from Node.cpp
 
 #ifdef __cplusplus
 }
