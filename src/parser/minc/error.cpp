@@ -17,10 +17,6 @@
 
 static int exit_on_die = 0;
 
-#ifdef EMBEDDED
-int rtcmix_error = 0;		// referenced in tree.c
-#endif
-
 // BGG -- these in message.c.  Maybe just #include <ugens.h>?
 extern void rtcmix_advise(const char *inst_name, const char *format, ...);
 extern void rtcmix_warn(const char *inst_name, const char *format, ...);
@@ -33,6 +29,7 @@ sys_error(const char *msg)
 	die("parser", "%s\n", msg);
 	if (exit_on_die)
       exit(EXIT_FAILURE);
+	minc_throw(MincSystemError);
 }
 
 int
