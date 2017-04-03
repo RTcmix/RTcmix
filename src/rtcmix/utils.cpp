@@ -49,7 +49,7 @@ void refHandle(Handle h)
 {
 	assert(h->refcount >= 0);
 #ifdef DEBUG_MEMORY
-    rtcmix_print("refHandle(%p): %d -> %d", h, h->refcount, h->refcount+1);
+    rtcmix_print("refHandle(%p): %d -> %d\n", h, h->refcount, h->refcount+1);
 #endif
 	++h->refcount;
 }
@@ -58,7 +58,7 @@ void
 unrefHandle(Handle h)
 {
 #ifdef DEBUG_MEMORY
-    rtcmix_print("unrefHandle(%p): %d -> %d", h, h->refcount, h->refcount-1);
+    rtcmix_print("unrefHandle(%p): %d -> %d\n", h, h->refcount, h->refcount-1);
 #endif
 	assert(h->refcount >= 0);
 	--h->refcount;

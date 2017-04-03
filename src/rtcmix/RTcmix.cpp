@@ -38,6 +38,9 @@
 #include "maxdispargs.h"
 #include "dbug.h"
 #include "globals.h"
+#ifdef EMBEDDED
+#include "../parser/rtcmix_parse.h"
+#endif
 
 
 // This is declared (still) in globals.h for use in gen routines.
@@ -309,6 +312,9 @@ RTcmix::~RTcmix()
 	run_status = RT_SHUTDOWN;
 	waitForMainLoop();	// This calls close()
 	free_globals();
+#ifdef EMBEDDED
+	destroy_parser();	// clean up symbols, etc
+#endif
 }
 
 //  The actual initialization method called by the imbedded constructors

@@ -1,8 +1,8 @@
 include ../../../makefile.conf
 
 INCLUDES += -I../../include -I../../rtcmix
-OBJS = y.tab.o builtin.o callextfunc.o error.o sym.o trees.o utils.o handle.o
-SRCS = builtin.c callextfunc.cpp error.c sym.cpp trees.cpp utils.c handle.cpp
+OBJS = minc.o builtin.o callextfunc.o error.o sym.o Node.o utils.o handle.o
+SRCS = builtin.cpp callextfunc.cpp error.cpp sym.cpp Node.cpp utils.cpp handle.cpp
 MINC = libminc.a
 
 LSRC = minc.l
@@ -10,9 +10,8 @@ LEX = flex
 LEXFLAGS = -l #-d    # -d for debug output
 
 YSRC = minc.y
-YACC = yacc
-#YACC = bison -t -y
-YFLAGS = -d # -v
+YACC = bison
+YFLAGS = -d -o minc.cpp # -t -v
 
 all: $(MINC)
 
@@ -38,7 +37,7 @@ endif
 lex.yy.c: $(LSRC) minc_internal.h rename.h
 	$(LEX) $(LEXFLAGS) $(LSRC)
 
-y.tab.c: lex.yy.c $(YSRC) minc_internal.h rename.h
+minc.cpp: lex.yy.c $(YSRC) minc_internal.h rename.h
 	$(YACC) $(YFLAGS) $(YSRC)
 
 depend:
@@ -50,7 +49,7 @@ install: all
 uninstall:
 
 clean:
-	$(RM) *.o $(MINC) lex.yy.c y.tab.c y.tab.h y.output
+	$(RM) *.o $(MINC) lex.yy.c minc.cpp minc.hpp y.output
 
 cleanall: clean
 	$(RM) depend

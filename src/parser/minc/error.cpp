@@ -7,6 +7,7 @@
 #include <stdarg.h>
 #include "rename.h"
 #include "minc_internal.h"
+#include "minc_defs.h"
 
 #define BUFSIZE 1024
 
@@ -14,12 +15,7 @@
 #define vsnprintf(str, sz, fmt, args)  vsprintf(str, fmt, args)
 #endif
 
-extern int yyget_lineno(void);
 static int exit_on_die = 0;
-
-#ifdef EMBEDDED
-int rtcmix_error = 0;		// referenced in tree.c
-#endif
 
 // BGG -- these in message.c.  Maybe just #include <ugens.h>?
 extern void rtcmix_advise(const char *inst_name, const char *format, ...);
@@ -31,11 +27,9 @@ void
 sys_error(const char *msg)
 {
 	die("parser", "%s\n", msg);
-
-	set_rtcmix_error(-1);
-
 	if (exit_on_die)
       exit(EXIT_FAILURE);
+	minc_throw(MincSystemError);
 }
 
 int
@@ -81,13 +75,13 @@ minc_die(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-	set_rtcmix_error(-1);
-
 	rterror("parser", "%s (near line %d)\n", buf, yyget_lineno());
 	
 
    if (exit_on_die)
       exit(EXIT_FAILURE);
+
+	minc_throw(MincParserError);
 }
 
 void
@@ -100,28 +94,17 @@ minc_internal_error(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-	set_rtcmix_error(-1);
-
 	rterror("parser-program", "%s (near line %d)\n", buf, yyget_lineno());
 
 	if (exit_on_die)
       exit(EXIT_FAILURE);
+	
+	minc_throw(MincInternalError);
 }
 
 void
-yyerror(char *msg)
+yyerror(const char *msg)
 {
 	rterror("parser-yyerror", "near line %d: %s\n", yyget_lineno(), msg);
+	minc_throw(MincParserError);
 }
-
-#ifdef EMBEDDED
-void set_rtcmix_error(int err)
-{
-	rtcmix_error = err;
-}
-
-Bool was_rtcmix_error()
-{
-	return (rtcmix_error != 0);
-}
-#endif

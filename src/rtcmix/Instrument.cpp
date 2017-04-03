@@ -44,7 +44,7 @@ Instrument::Instrument()
 	  needs_to_run(true), _nsamps(0), inputChainBuf(NULL)
 {
 #if defined(DEBUG_MEMORY) || defined(DEBUG_INST)
-	rtcmix_print("Instrument::Instrument(this = %p)", this);
+	rtcmix_print("Instrument::Instrument(this = %p)\n", this);
 #endif
    // Here we initialize the Instrument class globals (over and over, I know)
    // which replace the old system globals
@@ -71,7 +71,7 @@ Instrument::Instrument()
 Instrument::~Instrument()
 {
 #if defined(DEBUG_MEMORY) || defined(DEBUG_INST)
-	rtcmix_print("Instrument::~Instrument(this = %p [%s])", this, _name);
+	rtcmix_print("Instrument::~Instrument(this = %p [%s])\n", this, _name);
 #endif
 	if (sfile_on)
 		gone();                   // decrement input soundfile reference
@@ -93,7 +93,7 @@ void Instrument::setName(const char *name)
 	_name = new char[strlen(name) + 1];
 	strcpy(_name, name);
 #ifdef DEBUG_MEMORY
-	rtcmix_print("Instrument::setNameF(this = %p [%s])", this, _name);
+	rtcmix_print("Instrument::setName(this = %p [%s])\n", this, _name);
 #endif
 }
 

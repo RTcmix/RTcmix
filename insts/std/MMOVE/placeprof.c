@@ -8,7 +8,7 @@ profile()
    UG_INTRO("matrix", m_matrix); 
    UG_INTRO("mikes", m_mikes); 
    UG_INTRO("mikes_off", m_mikes_off); 
-   UG_INTRO("space", m_space); 
+   UG_INTRO("space", mm_space); 
    UG_INTRO("set_attenuation_params", m_set_attenuation_params); 
    return 0;
 }

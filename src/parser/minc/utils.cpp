@@ -18,7 +18,7 @@ is_float_list(const MincList *list)
    int i;
 
    for (i = 0; i < list->len; i++)
-      if (list->data[i].type != MincFloatType)
+      if (list->data[i].dataType() != MincFloatType)
          return 0;
 
    return 1;
@@ -41,11 +41,11 @@ float_list_to_array(const MincList *list)
    if (array == NULL)
       return NULL;
    for (i = 0; i < list->len; i++) {
-      if (list->data[i].type != MincFloatType) {
+      if (list->data[i].dataType() != MincFloatType) {
          free(array);
          return NULL;
       }
-      array[i] = list->data[i].val.number;
+      array[i] = (MincFloat)list->data[i];
    }
 
    return array;
@@ -61,20 +61,10 @@ MincList *
 array_to_float_list(const MincFloat *array, const int len)
 {
    int i;
-   MincList *list;
-
-   list = (MincList *) emalloc(sizeof(MincList));
-   if (list == NULL)
-      return NULL;
-   list->data = (MincListElem *) emalloc(len * sizeof(MincListElem));
-   if (list->data == NULL) {
-      free(list);
-      return NULL;
-   }
+   MincList *list = new MincList(len);
 
    for (i = 0; i < len; i++) {
-      list->data[i].val.number = array[i];
-      list->data[i].type = MincFloatType;
+      list->data[i] = array[i];
    }
 
    return list;
@@ -103,6 +93,7 @@ static const char *sGlobalBuffer;
 static int sGlobalBufferLength;
 static int sBufferOffset;
 
+extern "C" {
 void setGlobalBuffer(const char *inBuf, int inBufSize)
 {
 	sGlobalBuffer = inBuf;
@@ -122,5 +113,7 @@ int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes)
 	}
 	return 0;
 }
+}
+
 #endif
 

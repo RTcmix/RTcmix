@@ -5,11 +5,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "minc/rename.h"
-#include "minc/minc.h"
+#include "minc/minc_defs.h"
 #include "rtcmix_parse.h"
 #include <ugens.h>
 #include <Option.h>
 
+extern "C" {
+	
 extern int yyparse();
 
 #ifdef EMBEDDED
@@ -17,7 +19,8 @@ extern int yyparse();
 int RTcmix_parseScore(char *thebuf, int buflen);
 extern int yyparse();
 extern int yylineno;
-extern void setGlobalBuffer(const char *inBuf, int inBufSize);
+extern void setGlobalBuffer(const char *inBuf, int inBufSize);	// minc/utils.cpp
+extern double minc_memflush();									// minc/minc.cpp (from minc.y)
 
 // BGG mm -- set this to accept a buffer from max/msp
 int RTcmix_parseScore(char *theBuf, int buflen)
@@ -25,7 +28,15 @@ int RTcmix_parseScore(char *theBuf, int buflen)
 	configure_minc_error_handler(get_bool_option(kOptionExitOnError));
 	setGlobalBuffer(theBuf, buflen+1);
 	reset_parser();
-	return yyparse();
+	int status;
+	try {
+		status = yyparse();
+	}
+	catch (MincError err) {
+		rtcmix_warn("RTcmix_parseScore", "caught exception %d", (int)err);
+		status = err;
+	}
+	return status;
 }
 
 #else	// !EMBEDDED
@@ -91,5 +102,10 @@ void
 destroy_parser()
 {
 	yylex_destroy();
+#ifdef EMBEDDED
+	(void)minc_memflush();
+	clear_tree_state();
+#endif
 }
 
+}	//	extern "C"
