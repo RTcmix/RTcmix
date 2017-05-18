@@ -44,6 +44,7 @@ protected:
 	double	_ampmlt;
 	double	_warpFactor;
 	float	_cutoff;							// amp cutoff level
+    float   _sourceDuration;
 	double	_cf_fact, _bw_fact;
 	float	_rsnetc[9];
 	float	_coeffs[MAXPOLES+4];

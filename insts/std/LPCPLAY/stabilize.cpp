@@ -27,7 +27,6 @@ stabilize(float *frameIn, int npoles)
 // the remaining functions are UGLY because they were converted from Fortran
 
 static Complex jay(0., 1.);
-static Complex tmp;
 
 inline double abs(double x) { return (x >= 0.) ? x : -x; }
 
@@ -39,15 +38,16 @@ factor(double *b, long *k4, double *rootr, double *rooti,
     long i_1, i_2, i_3;
 
     /* Local variables */
-    static double amax;
-    static long kerr;
-    static double dist, rmin, rmax;
-    static long i, j, k;
-    static double r;
-    static Complex z, res;
-    static double parti, distr, partr, r2, resmag, resmax;
-    static long k4m;
-    static double coe[MAXFRAME];
+    double amax;
+    long kerr;
+    double dist, rmin, rmax;
+    long i, j, k;
+    double r;
+    Complex z, res;
+    double parti, distr, partr, r2, resmag, resmax;
+    long k4m;
+    double coe[MAXFRAME];
+    Complex tmp;
 
 #ifdef LPC_DEBUG
 	printf("in factor npoles = %d\n",*k4);
@@ -128,25 +128,26 @@ dproot(long *mm, double *a, double *rootr, double *rooti, long *kerr,
     long i_1, i_2, i_3, i_4;
 
     /* Local variables */
-    static long mdec;
-    static double amin, amax, save[MAXFRAME];
-    static long kmax, kpol;
-    static double temp, size;
-    static long ktry;
-    static double real1, real2;
-    static Complex b[MAXFRAME], c[MAXFRAME];
-    static Complex p, w, z;
-    static double parti;
-    static long kpolm;
-    static double partr;
-    static long kount, newst, nroot;
-    static double r1, r2;
-    static long ktrym;
-    static Complex bb[MAXFRAME], cc[MAXFRAME];
-    static long mp;
-    static Complex pp;
-    static double sqteps, rkount, rr1, rr2;
-    static long mmp;
+    long mdec;
+    double amin, amax, save[MAXFRAME];
+    long kmax, kpol;
+    double temp, size;
+    long ktry;
+    double real1, real2;
+    Complex b[MAXFRAME], c[MAXFRAME];
+    Complex p, w, z;
+    double parti;
+    long kpolm;
+    double partr;
+    long kount, newst, nroot;
+    double r1, r2;
+    long ktrym;
+    Complex bb[MAXFRAME], cc[MAXFRAME];
+    long mp;
+    Complex pp;
+    double sqteps, rkount, rr1, rr2;
+    long mmp;
+    Complex tmp;
 
     int i, j, k, m;
 	
@@ -443,21 +444,21 @@ correct(float *frame, long npoles, float *a) {
     long i,i_1, i_2, i_3, i_4, i_5;
 
     /* Local variables */
-    static long nall;
-    static long j, k;
-    static double r[MAXFRAME];
-    static Complex w[MAXFRAME];
-    static long ndata;
-    static double y[97], rooti[96];
-    static long l1, k4;
-    static double rootr[96];
-    static long ii;
-    static double th[MAXFRAME];
-    static Complex ww;
-    static long kinsid;
-    static double zz;
-    static long kprint, k4m;
-    static double eps;
+//    long nall;
+    long j, k;
+    double r[MAXFRAME];
+    Complex w[MAXFRAME];
+    long ndata = 0;
+    double y[97], rooti[96];
+    long l1, k4;
+    double rootr[96];
+    long ii;
+    double th[MAXFRAME];
+    Complex ww;
+    long kinsid;
+    double zz;
+    long kprint, k4m;
+    double eps;
 
 #ifdef LPC_DEBUG
 	printf("\nin correct npoles = %d \n",npoles);
@@ -469,7 +470,7 @@ correct(float *frame, long npoles, float *a) {
     /* Function Body */
     k4 = npoles + 1;
     k4m = k4 - 1;
-    nall = k4 + 4;
+//    nall = k4 + 4;
     i_1 = k4m;
     for (ii = 1; ii <= i_1; ++ii) {
 		y[ii - 1] = -frame[ii + 4];
@@ -525,9 +526,9 @@ isStable(float *frame, long npoles) {
 	static const int Size = 150;
 	static const int SizeP1 = Size + 1;
     /* Local variables */
-    static float a[Size * Size]	/* was [150][150] */;
+    float a[Size * Size]	/* was [150][150] */;
     long i, m, mm;
-    static float rk[249];
+    float rk[249];
     /* Parameter adjustments */
     --frame;
 
