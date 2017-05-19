@@ -52,21 +52,21 @@ extern int aargc;
 int
 parse_score(int argc, char *argv[], char **env)
 {
-	int   i, status, new_arg_count = 0;
+	int aarg = 0, status, new_arg_count = 0;
 	
 	/* Copy command-line args to make them available to the Minc-only
 	 functions in sys/command_line.c: f_arg, i_arg, s_arg, and n_arg.
 	 */
-	for (i = 1; i < argc; i++) {
+	for (int arg = 1; arg < argc; arg++) {
 		// grab --arguments to store for use as tokens in Minc.  Otherwise store argument in aargv
-		if (check_new_arg(argv[i]) == 1) {
+		if (check_new_arg(argv[arg]) == 1) {
 			++new_arg_count;
 		}
 		else {
-			aargv[i - 1] = argv[i];
+			aargv[aarg++] = argv[arg];
 		}
 	}
-	aargc = argc - 1 - new_arg_count;	// dont count args we pulled out above
+	aargc = aarg;	// doesn't count args we pulled out above
 	
 	configure_minc_error_handler(get_bool_option(kOptionExitOnError));
 	status = yyparse();
