@@ -314,7 +314,7 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 								else {
 									// Strip off extra "" if present
 									if (value[0] == '"' && value[strlen(value)-1] == '"') {
-										const char *vcopy = strsave(value+1);
+										char *vcopy = strsave(value+1);
 										*strrchr(vcopy, '"') = '\0';
 										$$ = new NodeString(vcopy);
 									}
