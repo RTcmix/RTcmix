@@ -5,6 +5,7 @@
 #include <RTcmix.h>
 #include <Instrument.h>
 #include <ugens.h>
+#include <limits.h>
 
 int Instrument::rtsetoutput(float start, float dur, Instrument *theInst)
 {
