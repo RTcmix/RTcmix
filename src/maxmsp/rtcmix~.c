@@ -78,8 +78,8 @@
 
 
 
-#define VERSION "2.00"
-#define RTcmixVERSION "RTcmix-maxmsp-4.1.1"
+#define VERSION "2.004"
+#define RTcmixVERSION "RTcmix-maxmsp-4.3"
 
 #include "ext.h"
 #include "z_dsp.h"
