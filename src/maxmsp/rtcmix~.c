@@ -1009,7 +1009,7 @@ void rtcmix_valuescallback(float *values, int numValues, void *inContext)
 	if (numValues == 1)
 		outlet_float(x->outpointer, (double)(values[0]));
 	else {
-		for (i = 0; i < numValues; i++) SETFLOAT((x->valslist)+i, values[i]);
+		for (i = 0; i < numValues; i++) A_SETFLOAT((x->valslist)+i, values[i]);
 		outlet_list(x->outpointer, 0L, numValues, x->valslist);
 	}
 }
