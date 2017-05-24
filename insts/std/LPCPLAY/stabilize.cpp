@@ -28,7 +28,7 @@ stabilize(float *frameIn, int npoles)
 
 static Complex jay(0., 1.);
 
-inline double abs(double x) { return (x >= 0.) ? x : -x; }
+inline double dabs(double x) { return (x >= 0.) ? x : -x; }
 
 static int
 factor(double *b, long *k4, double *rootr, double *rooti,
@@ -113,7 +113,7 @@ factor(double *b, long *k4, double *rootr, double *rooti,
 		if (r < 1.) {
 			++(*kinsid);
 		}
-		distr = abs(r - 1.);
+		distr = dabs(r - 1.);
 		if (dist > distr) {
 			dist = distr;
 		}
@@ -385,7 +385,7 @@ L501:
     --mp;
     tmp = -jay * w;
     parti = tmp.real();
-    if (abs(parti) > sqteps) {
+    if (dabs(parti) > sqteps) {
 	goto L140;
     }
 /*        real root */
@@ -540,7 +540,7 @@ isStable(float *frame, long npoles) {
     for (mm = 1; mm <= npoles; ++mm) {
 		m = npoles - mm + 1;
 		rk[m - 1] = a[m + 1 + (m + 1) * Size - SizeP1];
-		if ((r_1 = rk[m - 1], abs(r_1)) < 1.) {
+		if ((r_1 = rk[m - 1], dabs(r_1)) < 1.) {
 			goto L20;
 		}
 		return false;
