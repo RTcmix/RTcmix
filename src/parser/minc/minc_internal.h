@@ -270,6 +270,8 @@ int is_float_list(const MincList *list);
 MincFloat *float_list_to_array(const MincList *list);
 MincList *array_to_float_list(const MincFloat *array, const int len);
 const char *MincTypeName(MincDataType type);
+void increment_score_line_offset(int offset);
+int get_score_line_offset();
 
 inline void *	MincObject::operator new(size_t size)
 {
@@ -280,5 +282,13 @@ inline void	MincObject::operator delete(void *ptr)
 {
 	efree(ptr);
 }
+
+#ifdef EMBEDDED
+#ifdef LINUX
+extern "C" int readFromGlobalBuffer(char *buf, int *pBytes, int maxbytes);
+#else
+extern "C" int readFromGlobalBuffer(char *buf, size_t *pBytes, int maxbytes);
+#endif
+#endif
 
 #endif /* _MINC_INTERNAL_H_ */

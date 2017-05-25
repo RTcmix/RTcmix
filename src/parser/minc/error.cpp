@@ -62,7 +62,7 @@ minc_warn(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-	rtcmix_warn("parser", "%s (near line %d)\n", buf, yyget_lineno());
+	rtcmix_warn("parser", "%s (near line %d)\n", buf, yyget_lineno()-get_score_line_offset());
 }
 
 void
@@ -75,7 +75,7 @@ minc_die(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-	rterror("parser", "%s (near line %d)\n", buf, yyget_lineno());
+	rterror("parser", "%s (near line %d)\n", buf, yyget_lineno()-get_score_line_offset());
 	
 
    if (exit_on_die)
@@ -94,7 +94,7 @@ minc_internal_error(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-	rterror("parser-program", "%s (near line %d)\n", buf, yyget_lineno());
+	rterror("parser-program", "%s (near line %d)\n", buf, yyget_lineno()-get_score_line_offset());
 
 	if (exit_on_die)
       exit(EXIT_FAILURE);
@@ -105,6 +105,6 @@ minc_internal_error(const char *msg, ...)
 void
 yyerror(const char *msg)
 {
-	rterror("parser-yyerror", "near line %d: %s\n", yyget_lineno(), msg);
+	rterror("parser-yyerror", "near line %d: %s\n", yyget_lineno()-get_score_line_offset(), msg);
 	minc_throw(MincParserError);
 }

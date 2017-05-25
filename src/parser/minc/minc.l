@@ -6,7 +6,7 @@
 %x INCLUDE
 %{
 #include "rename.h"
-#include "minc_defs.h"
+#include "minc_internal.h"
 #include "minc.hpp"
 #define YY_ALWAYS_INTERACTIVE 1
 static int comments = 0;
@@ -33,7 +33,6 @@ static void yy_flex_strncpy (char* s1, yyconst char * s2, int n)
 	s1[i] = s2[i];
 }
 #endif
-extern int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
 #ifdef __cplusplus
 }
 #endif
@@ -120,6 +119,7 @@ num   {dig}+
 				yyerror(msg);
 				exit(1);
 			}
+//			yyset_lineno(1);
 			yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
 			BEGIN INIT;
 		}
@@ -131,6 +131,7 @@ num   {dig}+
 			else {
 				yy_delete_buffer(YY_CURRENT_BUFFER);
 				yy_switch_to_buffer(include_stack[include_stack_ptr]);
+//				increment_score_line_offset(yyget_lineno() - saved_lineno[include_stack_ptr]);
 				yyset_lineno(saved_lineno[include_stack_ptr]);
 			}
 		} 

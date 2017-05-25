@@ -15,8 +15,6 @@ extern "C" {
 #endif
 #ifdef EMBEDDED
 double minc_memflush();
-/* in utils.cpp */
-extern int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
 #else
 // in args.cpp
 const char *lookup_token(const char *token);

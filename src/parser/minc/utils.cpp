@@ -87,6 +87,16 @@ const char *MincTypeName(MincDataType type)
 	return NULL;
 }
 
+static int score_line_offset = 0;
+void increment_score_line_offset(int offset)
+{
+	score_line_offset = offset;
+}
+int get_score_line_offset()
+{
+	return score_line_offset;
+}
+
 #ifdef EMBEDDED
 typedef size_t yy_size_t;	// from lex.yy.c
 static const char *sGlobalBuffer;
@@ -101,7 +111,11 @@ void setGlobalBuffer(const char *inBuf, int inBufSize)
 	sBufferOffset = 0;	// reset
 }
 
+#ifdef LINUX
+int readFromGlobalBuffer(char *buf, int *pBytes, int maxbytes)
+#else
 int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes)
+#endif
 {
 	{
 		int  n;
