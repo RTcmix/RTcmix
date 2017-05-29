@@ -15,11 +15,18 @@ OBJECTS =  AudioDevice.o AudioIODevice.o AudioDeviceImpl.o \
 		   audio_dev_creator.o sndlibsupport.o
 
 ifeq ($(ARCH),LINUX)
-# Add this to enable the TestAudioDevice class
-	CXXFLAGS += -DTEST_AUDIO_DEVICE
-
-	OBJECTS +=  OSSAudioDevice.o SinglePortOSSAudioDevice.o \
+   ifeq ($(AUDIODRIVER), EMBEDDEDAUDIO)
+   		OBJECTS += EmbeddedAudioDevice.o
+   else ifeq ($(AUDIODRIVER, ALSA))
+		OBJECTS +=  OSSAudioDevice.o SinglePortOSSAudioDevice.o \
 			MultiPortOSSAudioDevice.o ALSAAudioDevice.o TestAudioDevice.o
+   else
+		OBJECTS +=  OSSAudioDevice.o SinglePortOSSAudioDevice.o \
+			MultiPortOSSAudioDevice.o
+   endif
+# Add this to enable the TestAudioDevice class
+#		CXXFLAGS += -DTEST_AUDIO_DEVICE
+#		OBJECTS += TestAudioDevice.o
 endif
 
 ifeq ($(ARCH),MACOSX)

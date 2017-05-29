@@ -52,8 +52,13 @@ AUDIOLIB = $(AUDIODIR)/librtaudio.a
 
 # -- Linux ----------------------------------------------------
 ifeq ($(ARCH),LINUX)
-  ARCHFLAGS = -DLINUX $(ARCH_BITFLAGS) -DSTANDALONE
+  ARCHFLAGS = -DLINUX $(ARCH_BITFLAGS)
   ARCH_RTLDFLAGS = -Wl,-rpath $(LIBDIR)
+  ifeq ($(BUILDTYPE), STANDALONE)
+    ARCHFLAGS += -DSTANDALONE
+    RTLIB = librtcmix.$(SHLIB_SUFFIX)
+    RTLIBTYPE = DYNAMIC
+  endif
   CC = gcc
   CXX = g++ -Wno-deprecated
   LD = ld
@@ -62,8 +67,6 @@ ifeq ($(ARCH),LINUX)
   RANLIB = touch
   SHELL = /bin/sh
   SHLIB_SUFFIX = so
-  RTLIB = librtcmix.$(SHLIB_SUFFIX)
-  RTLIBTYPE = DYNAMIC
 endif
 
 # -- Mac OS X -------------------------------------------------
@@ -145,27 +148,6 @@ ifeq ($(ARCH),MACOSX)
     CMIX_FLAGS += -DMSPAUDIO
   endif
 
-  # -- Pd -----------------------------------------------------
-  ifeq ($(BUILDTYPE), PD)
-    ARCHFLAGS += -DEMBEDDED -DPD
-# FIXME: why these compiler names?
-    CC = i686-apple-darwin11-llvm-gcc-4.2
-    CXX = i686-apple-darwin11-llvm-g++-4.2 -Wno-deprecated
-
-	ifndef RTLIBTYPE
-		RTLIBTYPE = DYNAMIC
-	endif
-	ifeq ($(RTLIBTYPE), DYNAMIC)
-		RTLIB = rtcmixdylib_osx.so
-		RTLIB_LDFLAGS = $(UB_CFLAGS) -Wl,-U,_cpost,-bundle,-flat_namespace
-	else
-		RTLIB = rtcmixdylib_osx.a
-		RTLIB_LDFLAGS = $(UB_CFLAGS)
-	endif
-    AUDIODRIVER=EMBEDDEDAUDIO
-    CMIX_FLAGS += -DEMBEDDEDAUDIO
-  endif
-
   # -- iOS ----------------------------------------------------
   ifeq ($(BUILDTYPE), IOS)
 	# This is always true for IOS
@@ -239,6 +221,23 @@ ifeq ($(ARCH),FREEBSD)
   RTLIB = librtcmix.$(SHLIB_SUFFIX)
   RTLIBTYPE = DYNAMIC
   RTLIB_INSTALL_DIR = $(LIBDIR)
+endif
+
+# -- Pd -----------------------------------------------------
+ifeq ($(BUILDTYPE), PD)
+	ARCHFLAGS += -DEMBEDDED -DPD -I$(PD_INCLUDES)
+	ifndef RTLIBTYPE
+		RTLIBTYPE = STATIC
+	endif
+	ifeq ($(RTLIBTYPE), DYNAMIC)
+		RTLIB = rtcmixdylib.so
+		RTLIB_LDFLAGS = $(UB_CFLAGS) -Wl,-U,_cpost,-bundle,-flat_namespace
+	else
+		RTLIB = rtcmixlib.a
+		RTLIB_LDFLAGS = $(UB_CFLAGS)
+	endif
+	AUDIODRIVER=EMBEDDEDAUDIO
+	CMIX_FLAGS += -DEMBEDDEDAUDIO
 endif
 
 ifeq ($(BUILDTYPE), STANDALONE)
