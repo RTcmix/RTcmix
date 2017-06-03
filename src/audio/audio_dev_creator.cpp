@@ -8,9 +8,11 @@
 #include <ugens.h>
 #include <stdio.h>
 
-#ifdef LINUX
+#ifdef OSS
 #include "SinglePortOSSAudioDevice.h"
 #include "MultiPortOSSAudioDevice.h"
+#endif
+#ifdef TEST_AUDIO_DEVICE
 #include "TestAudioDevice.h"
 #endif
 #ifdef ALSA
@@ -58,15 +60,14 @@ static const AudioDevEntry s_AudioDevEntries[] = {
 #endif
 #ifdef APPLEAUDIO
 	{ &AppleAudioDevice::recognize, &AppleAudioDevice::create },
-//	{ &OSXAudioDevice::recognize, &OSXAudioDevice::create },
 #endif
 #ifdef ALSA
 	{ &ALSAAudioDevice::recognize, &ALSAAudioDevice::create },
 #endif
-#ifdef LINUX
 #ifdef TEST_AUDIO_DEVICE
 	{ &TestAudioDevice::recognize, &TestAudioDevice::create },
 #endif
+#ifdef OSS
 	{ &MultiPortOSSAudioDevice::recognize, &MultiPortOSSAudioDevice::create },
 	{ &SinglePortOSSAudioDevice::recognize, &SinglePortOSSAudioDevice::create },
 #endif

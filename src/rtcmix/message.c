@@ -25,10 +25,11 @@
 #include <syslog.h>
 #elif defined(MAXMSP)
 // BGG -- this is how you print to the console.app now in max/msp
-void cpost(const char *fmt, ...);
+extern void cpost(const char *fmt, ...);
 #define USE_POST
 #elif defined(PD)
 // DAS -- this is PD's version of same
+extern void post(const char *fmt, ...);
 #define cpost post
 #define USE_POST
 #endif

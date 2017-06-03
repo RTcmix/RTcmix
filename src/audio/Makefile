@@ -20,7 +20,7 @@ ifeq ($(ARCH),LINUX)
    else ifeq ($(AUDIODRIVER, ALSA))
 		OBJECTS +=  OSSAudioDevice.o SinglePortOSSAudioDevice.o \
 			MultiPortOSSAudioDevice.o ALSAAudioDevice.o TestAudioDevice.o
-   else
+   else ifeq ($(AUDIODRIVER, OSS))
 		OBJECTS +=  OSSAudioDevice.o SinglePortOSSAudioDevice.o \
 			MultiPortOSSAudioDevice.o
    endif

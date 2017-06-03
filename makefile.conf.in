@@ -59,6 +59,9 @@ ifeq ($(ARCH),LINUX)
     RTLIB = librtcmix.$(SHLIB_SUFFIX)
     RTLIBTYPE = DYNAMIC
   endif
+  ifndef AUDIODRIVER
+	AUDIODRIVER=OSS
+  endif
   CC = gcc
   CXX = g++ -Wno-deprecated
   LD = ld
