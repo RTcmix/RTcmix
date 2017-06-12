@@ -230,11 +230,11 @@ endif
 ifeq ($(BUILDTYPE), PD)
 	ARCHFLAGS += -DEMBEDDED -DPD -I$(PD_INCLUDES)
 	ifndef RTLIBTYPE
-		RTLIBTYPE = STATIC
+		RTLIBTYPE = DYNAMIC
 	endif
 	ifeq ($(RTLIBTYPE), DYNAMIC)
 		RTLIB = rtcmixdylib.so
-		RTLIB_LDFLAGS = $(UB_CFLAGS) -Wl,-U,_cpost,-bundle,-flat_namespace
+		RTLIB_LDFLAGS = $(UB_CFLAGS) -Wl,-U,_post,-bundle,-flat_namespace
 	else
 		RTLIB = rtcmixlib.a
 		RTLIB_LDFLAGS = $(UB_CFLAGS)
