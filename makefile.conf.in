@@ -234,10 +234,10 @@ ifeq ($(BUILDTYPE), PD)
 	endif
 	ifeq ($(RTLIBTYPE), DYNAMIC)
 		RTLIB = rtcmixdylib.so
-		RTLIB_LDFLAGS = $(UB_CFLAGS) -Wl,-U,_post,-bundle,-flat_namespace
+		RTLIB_LDFLAGS = $(SHARED_LDFLAGS) -Wl,-U,_post
 	else
 		RTLIB = rtcmixlib.a
-		RTLIB_LDFLAGS = $(UB_CFLAGS)
+		RTLIB_LDFLAGS =
 	endif
 	AUDIODRIVER=EMBEDDEDAUDIO
 	CMIX_FLAGS += -DEMBEDDEDAUDIO
