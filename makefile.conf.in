@@ -234,7 +234,7 @@ ifeq ($(BUILDTYPE), PD)
 	endif
 	ifeq ($(RTLIBTYPE), DYNAMIC)
 		RTLIB = rtcmixdylib.so
-		RTLIB_LDFLAGS = $(SHARED_LDFLAGS) -Wl,-U,_post
+		RTLIB_LDFLAGS = $(SHARED_LDFLAGS)
 	else
 		RTLIB = rtcmixlib.a
 		RTLIB_LDFLAGS =
