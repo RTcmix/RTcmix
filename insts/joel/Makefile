@@ -1,6 +1,6 @@
 include package.conf
 
-RTLIBDIRS = jfuncs tuning
+RTLIBDIRS = jfuncs tuning EXPDELAY
 
 LIBDIRS = $(RTLIBDIRS)
 

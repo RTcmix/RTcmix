@@ -12,7 +12,7 @@ else
 
 // modulator
 bus_config("MIX", "in 0", "aux 1 out")
-rtinput("../../snd/nucular.wav")
+rtinput("AUDIO")
 inskip = 0
 dur = DUR() - inskip
 amp = 1
@@ -58,4 +58,3 @@ spacemult += 0.008	// make right channel sound different
 
 VOCODE2(0, 0, dur, amp, numfilt, lowcf, spacemult, cartransp, bw,
    resp, hipass, hpcf, noise, noisubsamp, pan=0)
-

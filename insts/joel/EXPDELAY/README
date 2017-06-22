@@ -1,0 +1,30 @@
+This is an example of an instrument that reads from one channel of the input
+sound file and copies it to the output sound file. The comments should explain
+most of what you have to do to make an RTcmix processing instrument work.
+
+If you base an instrument on this example, copy the entire directory somewhere
+(it doesn't matter where), and modify it as follows...
+
+1) Change the name of the directory to the name of your instrument, which
+   should be in all caps, like other RTcmix real-time instruments.
+   Likewise change the names of MYINST.cpp and MYINST.h.
+
+2) Replace "MYINST" with your instrument name everywhere in MYINST.cpp and .h.
+
+3) In Makefile, set the "NAME" variable to the name of your instrument.
+
+4) Change package.conf so that it points to the "makefile.conf" in the
+   RTcmix distribution. (If you have a lot of instruments in one directory,
+   they can share one package.conf. Put it in the directory containing all
+   the instrument directories, and change their Makefiles to
+   "include ../package.conf". See insts/std for an example.)
+
+5) In "test.sco", change the load statement so that it loads the shared
+   lib in your src directory. For example, if your .cpp file is called
+   "MYINST.cpp" and its full path is "/home/bubba/src/MYINST/MYINST.cpp",
+   then the load statement you must put in all scores that use your
+   instrument is:  load("/home/bubba/src/MYINST/libMYINST.so").
+
+
+-John Gibson, 5/17/00
+
