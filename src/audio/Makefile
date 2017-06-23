@@ -17,10 +17,10 @@ OBJECTS =  AudioDevice.o AudioIODevice.o AudioDeviceImpl.o \
 ifeq ($(ARCH),LINUX)
    ifeq ($(AUDIODRIVER), EMBEDDEDAUDIO)
    		OBJECTS += EmbeddedAudioDevice.o
-   else ifeq ($(AUDIODRIVER, ALSA))
+   else ifeq ($(AUDIODRIVER), ALSA))
 		OBJECTS +=  OSSAudioDevice.o SinglePortOSSAudioDevice.o \
 			MultiPortOSSAudioDevice.o ALSAAudioDevice.o TestAudioDevice.o
-   else ifeq ($(AUDIODRIVER, OSS))
+   else ifeq ($(AUDIODRIVER), OSS))
 		OBJECTS +=  OSSAudioDevice.o SinglePortOSSAudioDevice.o \
 			MultiPortOSSAudioDevice.o
    endif
