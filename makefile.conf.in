@@ -7,7 +7,7 @@
 #
 #   $ ./configure [--with-alsa] [--with-perl] [--with-python]
 #
-# See INSTALL for details.  After using configure, you can 
+# See INSTALL for details.  After using configure, you can
 # override what it does by editing site.conf, if you want.
 ###############################################################
 
@@ -75,7 +75,7 @@ endif
 # -- Mac OS X -------------------------------------------------
 ifeq ($(ARCH),MACOSX)
   # DAS: create better macro
-  ARCHFLAGS = -fno-common -DMACOSX   
+  ARCHFLAGS = -fno-common -DMACOSX
   ARCH_RTLDFLAGS = -dylib_file /usr/lib/$(RTLIB):$(LIBRTCMIX)
   CC = cc
   CXX = c++ -Wno-deprecated
@@ -117,7 +117,7 @@ ifeq ($(ARCH),MACOSX)
 	ifndef RTLIBTYPE
 		RTLIBTYPE = DYNAMIC
 	endif
-	ifeq ($(RTLIBTYPE), DYNAMIC) 
+	ifeq ($(RTLIBTYPE), DYNAMIC)
 		RTLIB = librtcmix_embedded.$(SHLIB_SUFFIX)
 		RTLIB_LDFLAGS = $(DYNAMIC_LDFLAGS)
 	else
@@ -297,16 +297,17 @@ endif
 ifeq ($(ARCH),MACOSX)
   SYS_LDFLAGS = -framework CoreAudio $(ARCH_SYS_LDFLAGS)
   DSO_LDFLAGS = $(SYS_LDFLAGS)
-  SHARED_LDFLAGS = $(ARCHFLAGS) -bundle -flat_namespace -undefined suppress
+  ARCHFLAGS += -arch i386 -arch x86_64
+  SHARED_LDFLAGS = $(ARCHFLAGS) -bundle -Wl,-U,_post
   DYNAMIC_LDFLAGS = $(ARCHFLAGS) -flat_namespace -undefined suppress -dynamiclib -install_name $(LIBDIR)/$(RTLIB)
-  DYN = 
+  DYN =
 endif
 ifeq ($(ARCH),SGI)
   SYS_LDFLAGS = -lpthread -laudio -lm
   DSO_LDFLAGS = $(SYS_LDFLAGS)
   SHARED_LDFLAGS = -shared -update_registry $(LIBDESTDIR)/so_locations
   DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
-  DYN = 
+  DYN =
 endif
 ifeq ($(ARCH),FREEBSD)
   SYS_LDFLAGS += -pthread -lm -ll
@@ -343,5 +344,3 @@ TRASH = core core.[0-9]+ *~
 
 # Cool debugging feature:  to see value of make macro "$(MACRO)" type "make print-MACRO"
 print-%: ; @echo $* is $($*)
-
-
