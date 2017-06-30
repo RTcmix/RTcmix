@@ -229,6 +229,9 @@ endif
 # -- Pd -----------------------------------------------------
 ifeq ($(BUILDTYPE), PD)
 	ARCHFLAGS += -DEMBEDDED -DPD -I$(PD_INCLUDES)
+	ifeq ($(ARCH),MACOSX)
+		ARCHFLAGS += -arch i386 -arch x86_64
+	endif
 	ifndef RTLIBTYPE
 		RTLIBTYPE = DYNAMIC
 	endif
@@ -297,7 +300,7 @@ endif
 ifeq ($(ARCH),MACOSX)
   SYS_LDFLAGS = -framework CoreAudio $(ARCH_SYS_LDFLAGS)
   DSO_LDFLAGS = $(SYS_LDFLAGS)
-  SHARED_LDFLAGS = $(ARCHFLAGS) -bundle -flat_namespace -undefined suppress
+  SHARED_LDFLAGS = $(ARCHFLAGS) -bundle -Wl,-U,_post
   DYNAMIC_LDFLAGS = $(ARCHFLAGS) -flat_namespace -undefined suppress -dynamiclib -install_name $(LIBDIR)/$(RTLIB)
   DYN = 
 endif
