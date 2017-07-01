@@ -167,6 +167,11 @@ call_external_function(const char *funcname, const MincValue arglist[],
 	return result;
 }
 
+void printargs(const char *funcname, const Arg arglist[], const int nargs)
+{
+	RTcmix::printargs(funcname, arglist, nargs);
+}
+
 static Handle _createPFieldHandle(PField *pfield)
 {
 	Handle handle = (Handle) malloc(sizeof(struct _handle));

@@ -242,6 +242,7 @@ int call_builtin_function(const char *funcname, const MincValue arglist[],
 /* callextfunc.cpp */
 int call_external_function(const char *funcname, const MincValue arglist[],
 						   const int nargs, MincValue *return_value);
+void printargs(const char *funcname, const Arg arglist[], const int nargs);
 MincHandle minc_binop_handle_float(const MincHandle handle, const MincFloat val, OpKind op);
 MincHandle minc_binop_float_handle(const MincFloat val, const MincHandle handle, OpKind op);
 MincHandle minc_binop_handles(const MincHandle handle1, const MincHandle handle2, OpKind op);

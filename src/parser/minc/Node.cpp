@@ -21,6 +21,7 @@
 
 #include "Node.h"
 #include "handle.h"
+#include <Option.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -1061,6 +1062,7 @@ Node *	NodeCall::doExct()
 				savedCallDepth = sFunctionCallDepth;
 				TPRINT("NodeCall(%p): executing %s() block node %p, call depth now %d\n",
 					   this, sCalledFunction, funcDef->child(2), savedCallDepth);
+				printargs(sCalledFunction, NULL, 0);
 				temp = funcDef->child(2)->exct();
 			}
 			catch (Node * returned) {	// This catches return statements!
