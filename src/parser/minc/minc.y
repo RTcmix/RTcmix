@@ -17,7 +17,7 @@ extern "C" {
 double minc_memflush();
 #else
 // in args.cpp
-const char *lookup_token(const char *token);
+const char *lookup_token(const char *token, bool printWarning);
 #endif
 #ifdef __cplusplus
 }
@@ -73,7 +73,7 @@ static Node * go(Node * t1);
 %token <ival> TOK_STRING_DECL
 %token <ival> TOK_HANDLE_DECL
 %token <ival> TOK_LIST_DECL
-%token <ival> TOK_IDENT TOK_NUM TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
+%token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 %type  <node> stml stmt rstmt bexp expl exp str ret bstml
 %type  <node> fdecl sdecl hdecl ldecl fdef fstml arg argl fargl fundecl
@@ -289,10 +289,22 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 	| '{' '}'				{ MPRINT("{}");	$$ = new NodeList(new NodeEmptyListElem()); }
 
 	| id '[' exp ']' 	{	$$ = new NodeSubscriptRead(new NodeName($1), $3); }
+	| TOK_ARG_QUERY		{
+#ifndef EMBEDDED
+							/* ?argument will return 1.0 if defined, else 0.0 */
+							const char *token = yytext + 1;	// strip off '?'
+							// returns NULL silently if not found
+							const char *value = lookup_token(token, false);
+							$$ = new NodeConstf(value != NULL ? 1.0 : 0.0);
+#else
+							minc_warn("Argument variables not supported");
+							flerror = 1; $$ = new NodeNoop();
+#endif
+						}
 	| TOK_ARG			{
 #ifndef EMBEDDED
 							const char *token = yytext + 1;	// strip off '$'
-							const char *value = lookup_token(token);
+							const char *value = lookup_token(token, true);		// returns NULL with warning
 							if (value != NULL) {
 								// We store this as a number constant if it can be coaxed into a number,
 								// else we store this as a string constant.
