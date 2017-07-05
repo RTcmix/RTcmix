@@ -150,9 +150,9 @@ findfunc(RTcmixFunction *func_list, const char *func_label)
 }
 
 
-/* ------------------------------------------------------------ _printargs -- */
-static void
-_printargs(const char *funcname, const Arg arglist[], const int nargs)
+/* ------------------------------------------------------------ printargs -- */
+void
+RTcmix::printargs(const char *funcname, const Arg arglist[], const int nargs)
 {
    int i;
    Arg arg;
@@ -193,7 +193,7 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
 
    /* function found, so call it */
 
-   ::_printargs(funcname, arglist, nargs);
+   printargs(funcname, arglist, nargs);
 
    int status = 0;
 

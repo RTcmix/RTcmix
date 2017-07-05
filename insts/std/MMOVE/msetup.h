@@ -20,7 +20,7 @@ void decrement_users();
 int check_users();
 
 extern "C" {
-double m_space(float p[], int);
+double mm_space(float p[], int);
 double m_mikes(float p[], int);
 double m_mikes_off(float p[], int);
 double m_oldmatrix(float p[], int);

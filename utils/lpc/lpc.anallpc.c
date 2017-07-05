@@ -1,4 +1,4 @@
-#include "../../H/sfheader.h"
+#include "../../include/sfheader.h"
 #include <stdio.h>
 #include <sys/file.h>
 #include <sys/types.h>
@@ -27,11 +27,7 @@ int NPP1;
 #define FRAMAX   500 
 #define NDATA 4 /* number of data values stored with frame */
 
-anallpc(_lpc_anal, _soundfile, _poles, _framesize, _inskip, _duration, verbose)
-char *_lpc_anal, *_soundfile;
-int _poles, _framesize;
-double _inskip, _duration;
-int verbose;
+int anallpc(char *_lpc_anal, char *_soundfile, int _poles, int _framesize, double _inskip, double _duration, int verbose)
 {
 	int jj,ii,counter;
 	SFHEADER sfh;

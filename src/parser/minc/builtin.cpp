@@ -19,25 +19,25 @@
 */
 
 /* builtin function prototypes */
-static MincFloat _minc_print(const MincListElem args[], const int nargs);
-static MincFloat _minc_printf(const MincListElem args[], const int nargs);
-static MincFloat _minc_len(const MincListElem args[], const int nargs);
-static MincFloat _minc_interp(const MincListElem args[], const int nargs);
-static MincFloat _minc_index(const MincListElem args[], const int nargs);
-static MincString _minc_type(const MincListElem args[], const int nargs);
-static MincString _minc_tostring(const MincListElem args[], const int nargs);
+static MincFloat _minc_print(const MincValue args[], const int nargs);
+static MincFloat _minc_printf(const MincValue args[], const int nargs);
+static MincFloat _minc_len(const MincValue args[], const int nargs);
+static MincFloat _minc_interp(const MincValue args[], const int nargs);
+static MincFloat _minc_index(const MincValue args[], const int nargs);
+static MincString _minc_type(const MincValue args[], const int nargs);
+static MincString _minc_tostring(const MincValue args[], const int nargs);
 
 /* other prototypes */
 static int _find_builtin(const char *funcname);
-static void _do_print(const MincListElem args[], const int nargs);
+static void _do_print(const MincValue args[], const int nargs);
 static MincString _make_type_string(const MincDataType type);
 
 
 /* list of builtin functions, searched by _find_builtin */
 static struct _builtins {
-   char *label;
-   MincFloat (*number_return)(); /* func name for those returning MincFloat */
-   MincString (*string_return)();   /* func name for those returning char * */
+   const char *label;
+   MincFloat (*number_return)(const MincValue *, const int); /* func name for those returning MincFloat */
+   MincString (*string_return)(const MincValue *, const int);   /* func name for those returning char * */
 } builtin_funcs[] = {
    { "print",     _minc_print,   NULL },
    { "printf",    _minc_printf,  NULL },
@@ -66,21 +66,19 @@ _find_builtin(const char *funcname)
 }
 
 int
-call_builtin_function(const char *funcname, const MincListElem arglist[],
-   const int nargs, MincListElem *retval)
+call_builtin_function(const char *funcname, const MincValue arglist[],
+   const int nargs, MincValue *retval)
 {
    int index = _find_builtin(funcname);
    if (index < 0)
       return -1;
    if (builtin_funcs[index].number_return) {
-      retval->val.number = (MincFloat) (*(builtin_funcs[index].number_return))
+      *retval = (MincFloat) (*(builtin_funcs[index].number_return))
                                                          (arglist, nargs);
-      retval->type = MincFloatType;
    }
    else if (builtin_funcs[index].string_return) {
-      retval->val.string = (MincString) (*(builtin_funcs[index].string_return))
+      *retval = (MincString) (*(builtin_funcs[index].string_return))
                                                          (arglist, nargs);
-      retval->type = MincStringType;
    }
    return 0;
 }
@@ -117,35 +115,37 @@ _make_type_string(const MincDataType type)
 
 /* ------------------------------------------------------------- _do_print -- */
 static void
-_do_print(const MincListElem args[], const int nargs)
+_do_print(const MincValue args[], const int nargs)
 {
    int i, last_arg;
 
    last_arg = nargs - 1;
    for (i = 0; i < nargs; i++) {
-      switch (args[i].type) {
+      switch (args[i].dataType()) {
          case MincFloatType:
             if (i == last_arg)
-               RTPrintfCat("%.12g", args[i].val.number);
+               RTPrintfCat("%.12g", (MincFloat)args[i]);
             else
-               RTPrintfCat("%.12g, ", args[i].val.number);
+               RTPrintfCat("%.12g, ", (MincFloat)args[i]);
             break;
          case MincStringType:
             if (i == last_arg)
-               RTPrintfCat("\"%s\"", args[i].val.string);
+               RTPrintfCat("\"%s\"", (MincString)args[i]);
             else
-               RTPrintfCat("\"%s\", ", args[i].val.string);
+               RTPrintfCat("\"%s\", ", (MincString)args[i]);
             break;
          case MincHandleType:
             if (i == last_arg)
-               RTPrintfCat("Handle:%p", args[i].val.handle);
+               RTPrintfCat("Handle:%p", (MincHandle)args[i]);
             else
-               RTPrintfCat("Handle:%p, ", args[i].val.handle);
+               RTPrintfCat("Handle:%p, ", (MincHandle)args[i]);
             break;
          case MincListType:
-			if (args[i].val.list != NULL) {
+		  {
+			  MincList *list = (MincList *)args[i];
+			if (list != NULL) {
 				RTPrintfCat("[");
-				_do_print(args[i].val.list->data, args[i].val.list->len);
+				_do_print(list->data, list->len);
 				if (i == last_arg)
 					RTPrintfCat("]");
 				else
@@ -157,9 +157,14 @@ _do_print(const MincListElem args[], const int nargs)
 				else
 					RTPrintfCat("NULL, ");
 			}
+		  }
             break;
-         default:
-            break;
+         case MincVoidType:
+			  if (i == last_arg)
+				  RTPrintfCat("(void)");
+			  else
+				  RTPrintfCat("(void), ");
+           break;
       }
    }
 }
@@ -167,7 +172,7 @@ _do_print(const MincListElem args[], const int nargs)
 
 /* ----------------------------------------------------------------- print -- */
 MincFloat
-_minc_print(const MincListElem args[], const int nargs)
+_minc_print(const MincValue args[], const int nargs)
 {
    if (get_print_option() < MMP_PRINTS) return 0.0;
 
@@ -205,7 +210,7 @@ _minc_print(const MincListElem args[], const int nargs)
 
 #if defined(EMBEDDED)
 MincFloat
-_minc_printf(const MincListElem args[], const int nargs)
+_minc_printf(const MincValue args[], const int nargs)
 {
    int n;
    const char *p;
@@ -213,13 +218,13 @@ _minc_printf(const MincListElem args[], const int nargs)
 
 	if (get_print_option() < MMP_PRINTS) return 0.0;
 
-   if (args[0].type != MincStringType) {
+   if (args[0].dataType() != MincStringType) {
       minc_warn("printf: first argument must be format string");
       goto err;
    }
 
    n = 1;
-   p = args[0].val.string;
+   p = (MincString) args[0];
    while (*p) {
       switch (*p) {
          case '%':
@@ -230,40 +235,40 @@ _minc_printf(const MincListElem args[], const int nargs)
             }
             switch (*p) {
                case 'd':      /* print float object as integer */
-                  if (args[n].type != MincFloatType) {
+                  if (args[n].dataType() != MincFloatType) {
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%d", (int) args[n].val.number);
+                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%d", (int) (MincFloat)args[n]);
                   break;
                case 'f':      /* print float object */
-                  if (args[n].type != MincFloatType) {
+                  if (args[n].dataType() != MincFloatType) {
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%.12g", args[n].val.number);
+                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%.12g", (MincFloat)args[n]);
                   break;
                case 'l':      /* print list object */
-                  if (args[n].type != MincListType) {
+                  if (args[n].dataType() != MincListType) {
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
                   nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%s", "[");
                   set_mm_print_ptr(nchars);
-                  _do_print(args[n].val.list->data, args[n].val.list->len);
+				  _do_print(((MincList *)args[n])->data, ((MincList *)args[n])->len);
                   nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%s", "]");
                   set_mm_print_ptr(nchars);
                   break;
                case 's':      /* print string object */
-                  if (args[n].type != MincStringType) {
+                  if (args[n].dataType() != MincStringType) {
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%s", args[n].val.string);
+                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%s", (MincString)args[n]);
                   break;
                case 't':      /* print type of object */
                   {
-                     char *tstr = (char *) _make_type_string(args[n].type);
+                     char *tstr = (char *) _make_type_string(args[n].dataType());
 	                  nchars = snprintf(get_mm_print_ptr(), get_mm_print_space(), "%s", tstr);
                      free(tstr);
                   }
@@ -327,20 +332,20 @@ err:
 
 #else
 MincFloat
-_minc_printf(const MincListElem args[], const int nargs)
+_minc_printf(const MincValue args[], const int nargs)
 {
    int n;
    const char *p;
 
    if (get_print_option() < MMP_PRINTS) return 0.0;
 
-   if (args[0].type != MincStringType) {
+   if (args[0].dataType() != MincStringType) {
       minc_warn("printf: first argument must be format string");
       goto err;
    }
 
    n = 1;
-   p = args[0].val.string;
+   p = (MincString) args[0];
    while (*p) {
       switch (*p) {
          case '%':
@@ -351,38 +356,38 @@ _minc_printf(const MincListElem args[], const int nargs)
             }
             switch (*p) {
                case 'd':      /* print float object as integer */
-                  if (args[n].type != MincFloatType) {
+                  if (args[n].dataType() != MincFloatType) {
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-                  RTPrintfCat("%d", (int) args[n].val.number);
+                  RTPrintfCat("%d", (int) (MincFloat)args[n]);
                   break;
                case 'f':      /* print float object */
-                  if (args[n].type != MincFloatType) {
+                  if (args[n].dataType() != MincFloatType) {
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-                  RTPrintfCat("%.12g", args[n].val.number);
+                  RTPrintfCat("%.12g", (MincFloat)args[n]);
                   break;
                case 'l':      /* print list object */
-                  if (args[n].type != MincListType) {
+                  if (args[n].dataType() != MincListType) {
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
                   RTPrintfCat("[");
-                  _do_print(args[n].val.list->data, args[n].val.list->len);
+                  _do_print(((MincList *)args[n])->data, ((MincList *)args[n])->len);
                   RTPrintfCat("]");
                   break;
                case 's':      /* print string object */
-                  if (args[n].type != MincStringType) {
+                  if (args[n].dataType() != MincStringType) {
                      minc_warn("printf: wrong argument type for format");
                      goto err;
                   }
-                  RTPrintfCat("%s", args[n].val.string);
+                  RTPrintfCat("%s", (MincString)args[n]);
                   break;
                case 't':      /* print type of object */
                   {
-                     char *tstr = (char *) _make_type_string(args[n].type);
+                     char *tstr = (char *) _make_type_string(args[n].dataType() );
                      RTPrintfCat("%s", tstr);
                      free(tstr);
                   }
@@ -449,26 +454,26 @@ err:
    of items in a list or the number of characters in a string.
 */
 MincFloat
-_minc_len(const MincListElem args[], const int nargs)
+_minc_len(const MincValue args[], const int nargs)
 {
    unsigned long len = 0;
 
    if (nargs != 1)
       minc_warn("len: must have one argument");
    else {
-      switch (args[0].type) {
+      switch (args[0].dataType() ) {
          case MincFloatType:
             len = 1;
             break;
          case MincStringType:
-            len = strlen(args[0].val.string);
+            len = strlen((MincString)args[0]);
             break;
          case MincHandleType:
             /* NB: To get length of a table, call tablelen(handle) */
             len = 1;
             break;
          case MincListType:
-            len = args[0].val.list->len;
+            len = ((MincList *)args[0])->len;
             break;
          default:
             minc_warn("len: invalid argument");
@@ -485,33 +490,33 @@ static int min(int x, int y) { return (x <= y) ? x : y; }
    "distance" through the list.
  */
 MincFloat
-_minc_interp(const MincListElem args[], const int nargs)
+_minc_interp(const MincValue args[], const int nargs)
 {
 	MincFloat outValue = -1;
 	if (nargs != 2)
 		minc_warn("interp: must have two arguments (list, fraction)");
 	else {
-		assert(args[1].type == MincFloatType);	// must pass a float as fractional value
-		if (args[0].type != MincListType) {
+		assert(args[1].dataType() == MincFloatType);	// must pass a float as fractional value
+		if (args[0].dataType() != MincListType) {
 			minc_warn("interp: first argument must be a list");
 			return -1.0;
 		}
-		MincListElem *data = args[0].val.list->data;
-		int len = args[0].val.list->len;
+		MincValue *data = ((MincList*)args[0])->data;
+		int len = ((MincList*)args[0])->len;
 		// Deal with degenerate cases
 		if (len == 0)
 			return 0.0;
 		else if (len == 1)
-			return data[0].val.number;
-		float fraction = args[1].val.number;
+			return (MincFloat)data[0];
+		float fraction = (MincFloat)args[1];
 		fraction = (fraction < 0.0) ? 0.0 : (fraction > 1.0) ? 1.0 : fraction;
 		int lowIndex = (int)((len - 1) * fraction);
 		int highIndex = min(len - 1, lowIndex + 1);
-		if (data[lowIndex].type != MincFloatType || data[highIndex].type != MincFloatType) {
+		if (data[lowIndex].dataType() != MincFloatType || data[highIndex].dataType() != MincFloatType) {
 			minc_warn("interp: list elements to interpolate must both be floats");
 			return -1;
 		}
-		outValue = data[lowIndex].val.number + fraction * (data[highIndex].val.number - data[lowIndex].val.number);
+		outValue = (MincFloat)data[lowIndex] + fraction * ((MincFloat)data[highIndex] - (MincFloat)data[lowIndex]);
 	}
 	return outValue;
 }
@@ -526,50 +531,50 @@ _minc_interp(const MincListElem args[], const int nargs)
    <id> equals 1 after this call.
 */
 MincFloat
-_minc_index(const MincListElem args[], const int nargs)
+_minc_index(const MincValue args[], const int nargs)
 {
    int i, len, index = -1;
    MincDataType argtype;
-   MincListElem *data;
+   MincValue *data;
 
    if (nargs != 2) {
       minc_warn("index: must have two arguments (list, item_to_find)");
       return -1.0;
    }
-   if (args[0].type != MincListType) {
+   if (args[0].dataType() != MincListType) {
       minc_warn("index: first argument must be a list");
       return -1.0;
    }
-   argtype = args[1].type;
+   argtype = args[1].dataType() ;
    assert(argtype == MincFloatType || argtype == MincStringType
             || argtype == MincHandleType || argtype == MincListType);
 
-   len = args[0].val.list->len;
-   data = args[0].val.list->data;
+   len = ((MincList *)args[0])->len;
+   data = ((MincList *)args[0])->data;
 
    for (i = 0; i < len; i++) {
-      if (data[i].type == argtype) {
+      if (data[i].dataType() == argtype) {
          if (argtype == MincFloatType) {
-            if (data[i].val.number == args[1].val.number) {
+            if ((MincFloat)data[i] == (MincFloat)args[1]) {
                index = i;
                break;
             }
          }
          else if (argtype == MincStringType) {
-            if (strcmp(data[i].val.string, args[1].val.string) == 0) {
+            if (strcmp((MincString)data[i], (MincString)args[1]) == 0) {
                index = i;
                break;
             }
          }
 //FIXME: should this recurse and match entire list contents??
          else if (argtype == MincListType) {
-            if (data[i].val.list == args[1].val.list) {
+            if ((MincList*)data[i] == (MincList*)args[1]) {
                index = i;
                break;
             }
          }
          else if (argtype == MincHandleType) {
-            if (data[i].val.handle == args[1].val.handle) {
+			 if ((MincHandle)data[i] == (MincHandle)args[1]) {
                index = i;
                break;
             }
@@ -585,30 +590,30 @@ _minc_index(const MincListElem args[], const int nargs)
 /* Print the object type of the argument: float, string, handle, list.
 */
 MincString
-_minc_type(const MincListElem args[], const int nargs)
+_minc_type(const MincValue args[], const int nargs)
 {
    if (nargs != 1) {
       minc_warn("type: must have one argument");
       return NULL;
    }
-   return _make_type_string(args[0].type);
+   return _make_type_string(args[0].dataType() );
 }
 
 /* ------------------------------------------------------------------ tostring -- */
 /* Return the passed in (double) argument as a string type.
  */
 MincString
-_minc_tostring(const MincListElem args[], const int nargs)
+_minc_tostring(const MincValue args[], const int nargs)
 {
 	if (nargs != 1) {
 		minc_warn("tostring: must have one argument");
 		return NULL;
 	}
-	if (args[0].type != MincFloatType) {
+	if (args[0].dataType() != MincFloatType) {
 		minc_warn("tostring: argument must be float type");
 		return NULL;
 	}
-	const char *convertedString = DOUBLE_TO_STRING(args[0].val.number);
+	const char *convertedString = DOUBLE_TO_STRING((MincString)args[0]);
 	return strdup(convertedString);
 }
 

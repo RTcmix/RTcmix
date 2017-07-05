@@ -52,8 +52,16 @@ AUDIOLIB = $(AUDIODIR)/librtaudio.a
 
 # -- Linux ----------------------------------------------------
 ifeq ($(ARCH),LINUX)
-  ARCHFLAGS = -DLINUX $(ARCH_BITFLAGS) -DSTANDALONE
+  ARCHFLAGS = -DLINUX $(ARCH_BITFLAGS)
   ARCH_RTLDFLAGS = -Wl,-rpath $(LIBDIR)
+  ifeq ($(BUILDTYPE), STANDALONE)
+    ARCHFLAGS += -DSTANDALONE
+    RTLIB = librtcmix.$(SHLIB_SUFFIX)
+    RTLIBTYPE = DYNAMIC
+  endif
+  ifndef AUDIODRIVER
+	AUDIODRIVER=OSS
+  endif
   CC = gcc
   CXX = g++ -Wno-deprecated
   LD = ld
@@ -62,8 +70,6 @@ ifeq ($(ARCH),LINUX)
   RANLIB = touch
   SHELL = /bin/sh
   SHLIB_SUFFIX = so
-  RTLIB = librtcmix.$(SHLIB_SUFFIX)
-  RTLIBTYPE = DYNAMIC
 endif
 
 # -- Mac OS X -------------------------------------------------
@@ -145,27 +151,6 @@ ifeq ($(ARCH),MACOSX)
     CMIX_FLAGS += -DMSPAUDIO
   endif
 
-  # -- Pd -----------------------------------------------------
-  ifeq ($(BUILDTYPE), PD)
-    ARCHFLAGS += -DEMBEDDED -DPD
-# FIXME: why these compiler names?
-    CC = i686-apple-darwin11-llvm-gcc-4.2
-    CXX = i686-apple-darwin11-llvm-g++-4.2 -Wno-deprecated
-
-	ifndef RTLIBTYPE
-		RTLIBTYPE = DYNAMIC
-	endif
-	ifeq ($(RTLIBTYPE), DYNAMIC)
-		RTLIB = rtcmixdylib_osx.so
-		RTLIB_LDFLAGS = $(UB_CFLAGS) -Wl,-U,_cpost,-bundle,-flat_namespace
-	else
-		RTLIB = rtcmixdylib_osx.a
-		RTLIB_LDFLAGS = $(UB_CFLAGS)
-	endif
-    AUDIODRIVER=EMBEDDEDAUDIO
-    CMIX_FLAGS += -DEMBEDDEDAUDIO
-  endif
-
   # -- iOS ----------------------------------------------------
   ifeq ($(BUILDTYPE), IOS)
 	# This is always true for IOS
@@ -241,6 +226,27 @@ ifeq ($(ARCH),FREEBSD)
   RTLIB_INSTALL_DIR = $(LIBDIR)
 endif
 
+# -- Pd -----------------------------------------------------
+ifeq ($(BUILDTYPE), PD)
+	ARCHFLAGS += -DEMBEDDED -DPD -I$(PD_INCLUDES)
+	ifeq ($(ARCH),MACOSX)
+		SHARED_LDFLAGS += -Wl,-U,_post
+		ARCHFLAGS += -arch i386 -arch x86_64
+	endif
+	ifndef RTLIBTYPE
+		RTLIBTYPE = DYNAMIC
+	endif
+	ifeq ($(RTLIBTYPE), DYNAMIC)
+		RTLIB = rtcmixdylib.so
+		RTLIB_LDFLAGS = $(SHARED_LDFLAGS)
+	else
+		RTLIB = rtcmixlib.a
+		RTLIB_LDFLAGS =
+	endif
+	AUDIODRIVER=EMBEDDEDAUDIO
+	CMIX_FLAGS += -DEMBEDDEDAUDIO
+endif
+
 ifeq ($(BUILDTYPE), STANDALONE)
 	RTLIB = librtcmix.$(SHLIB_SUFFIX)
 	RTLIB_LDFLAGS = $(DYNAMIC_LDFLAGS)
@@ -295,7 +301,11 @@ endif
 ifeq ($(ARCH),MACOSX)
   SYS_LDFLAGS = -framework CoreAudio $(ARCH_SYS_LDFLAGS)
   DSO_LDFLAGS = $(SYS_LDFLAGS)
-  SHARED_LDFLAGS = $(ARCHFLAGS) -bundle -flat_namespace -undefined suppress
+  ifeq ($(BUILDTYPE), PD)
+  	SHARED_LDFLAGS = $(ARCHFLAGS) -bundle
+  else
+    	SHARED_LDFLAGS = $(ARCHFLAGS) -bundle -flat_namespace -undefined suppress
+  endif
   DYNAMIC_LDFLAGS = $(ARCHFLAGS) -flat_namespace -undefined suppress -dynamiclib -install_name $(LIBDIR)/$(RTLIB)
   DYN = 
 endif

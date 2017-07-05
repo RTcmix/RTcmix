@@ -25,7 +25,13 @@
 #include <syslog.h>
 #elif defined(MAXMSP)
 // BGG -- this is how you print to the console.app now in max/msp
-void cpost(const char *fmt, ...);
+extern void cpost(const char *fmt, ...);
+#define USE_POST
+#elif defined(PD)
+// DAS -- this is PD's version of same
+extern void post(const char *fmt, ...);
+#define cpost post
+#define USE_POST
 #endif
 
 #define PREFIX  "*** "       /* print before WARNING and ERROR */
@@ -59,7 +65,7 @@ void rtcmix_debug(const char *inst_name, const char *format, ...)
 			RTPrintf("DEBUG: %s:  %s\n", inst_name, buf);
 #ifdef IOS
 			syslog(LOG_DEBUG, "DEBUG: %s:  %s", inst_name, buf);
-#elif defined(MAXMSP)
+#elif defined(USE_POST)
 			cpost("DEBUG: [%s]:  %s", inst_name, buf);
 #endif
 		}
@@ -67,7 +73,7 @@ void rtcmix_debug(const char *inst_name, const char *format, ...)
 			RTPrintf("DEBUG: %s\n", buf);
 #ifdef IOS
 			syslog(LOG_DEBUG, "DEBUG: %s", buf);
-#elif defined(MAXMSP)
+#elif defined(USE_POST)
 			cpost("DEBUG: %s", buf);
 #endif
 		}
@@ -110,7 +116,7 @@ rtcmix_warn(const char *inst_name, const char *format, ...)
 			RTFPrintf(stderr, "\n" PREFIX "WARNING [%s]:  %s\n\n", inst_name, buf);
 #ifdef IOS
 			syslog(LOG_WARNING, PREFIX "WARNING: [%s]:  %s", inst_name, buf);
-#elif defined(MAXMSP)
+#elif defined(USE_POST)
 		   cpost(PREFIX "WARNING: [%s]:  %s", inst_name, buf);
 #endif
 	   }
@@ -118,7 +124,7 @@ rtcmix_warn(const char *inst_name, const char *format, ...)
 			RTFPrintf(stderr, "\n" PREFIX "WARNING:  %s\n\n", buf);
 #ifdef IOS
 			syslog(LOG_ERR, PREFIX "WARNING: %s", buf);
-#elif defined(MAXMSP)
+#elif defined(USE_POST)
 			cpost(PREFIX "WARNING: %s", buf);
 #endif
 	   }
@@ -136,7 +142,7 @@ void rtcmix_print(const char *format, ...)
 
 #ifdef IOS
 	syslog(LOG_NOTICE, "DEBUG: %s", buf);
-#elif defined(MAXMSP)
+#elif defined(USE_POST)
 	cpost("DEBUG: %s", buf);
 #else
 	printf("DEBUG: %s", buf);
@@ -163,7 +169,7 @@ rterror(const char *inst_name, const char *format, ...)
 		fprintf(stderr, PREFIX "ERROR: [%s]:  %s\n", inst_name, buf);
 #endif
 		syslog(LOG_ERR, PREFIX "ERROR: [%s]:  %s", inst_name, buf);
-#elif defined(MAXMSP)
+#elif defined(USE_POST)
 		cpost(PREFIX "ERROR: [%s]:  %s", inst_name, buf);
 #endif
 	}
@@ -174,7 +180,7 @@ rterror(const char *inst_name, const char *format, ...)
 		fprintf(stderr, PREFIX "ERROR: %s\n", buf);
 #endif
 		syslog(LOG_ERR, PREFIX "ERROR: %s", buf);
-#elif defined(MAXMSP)
+#elif defined(USE_POST)
 		cpost(PREFIX "ERROR: %s", buf);
 #endif
 	}
@@ -205,7 +211,7 @@ die(const char *inst_name, const char *format, ...)
 		fprintf(stderr, PREFIX "FATAL ERROR: [%s]:  %s\n", inst_name, buf);
 #endif
 		syslog(LOG_ERR, PREFIX "FATAL ERROR: [%s]:  %s", inst_name, buf);
-#elif defined(MAXMSP)
+#elif defined(USE_POST)
 		cpost(PREFIX "FATAL ERROR: [%s]:  %s", inst_name, buf);
 #endif
 	}
@@ -216,7 +222,7 @@ die(const char *inst_name, const char *format, ...)
 		fprintf(stderr, PREFIX "FATAL ERROR:  %s\n", buf);
 #endif
 		syslog(LOG_ERR, PREFIX "FATAL ERROR:  %s", buf);
-#elif defined(MAXMSP)
+#elif defined(USE_POST)
 		cpost(PREFIX "FATAL ERROR: %s", buf);
 #endif
 

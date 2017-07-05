@@ -1,7 +1,7 @@
 include ../../makefile.conf
 
 DIRS = minc
-SRCS = parse_with_minc.c
+SRCS = parse_with_minc.cpp
 OBJS = parse_with_minc.o
 
 ifeq ($(PERL_SUPPORT), TRUE)
@@ -30,8 +30,8 @@ all: $(DIRS) $(OBJS)
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) all; ) \
 	done
 
-parse_with_minc.o: parse_with_minc.c rtcmix_parse.h
-	$(CC) $(CFLAGS) -c parse_with_minc.c
+parse_with_minc.o: parse_with_minc.cpp rtcmix_parse.h
+	$(CXX) $(CXXFLAGS) -c parse_with_minc.cpp
 
 parse_with_perl.o: parse_with_perl.c rtcmix_parse.h
 	$(CC) $(CFLAGS) $(PERL_CCFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c parse_with_perl.c

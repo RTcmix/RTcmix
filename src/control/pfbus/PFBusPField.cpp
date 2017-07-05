@@ -28,7 +28,7 @@ PFBusPField::PFBusPField(
 	PFBusData::dq_now[n_pfbus] = 0;
 }
 
-PFBusPField::~PFBusPField() { DPRINT("~PFBusPField (%p)", this); }
+PFBusPField::~PFBusPField() { DPRINT("~PFBusPField (%p)\n", this); }
 
 double PFBusPField::doubleValue(double dummy) const
 {
@@ -39,7 +39,7 @@ double PFBusPField::doubleValue(double dummy) const
 		double pct = PFBusData::percent[_n_pfbus];
 		const PField *PF = PFBusData::thepfield[_n_pfbus];
 		PFBusData::val[_n_pfbus] = (*PF).doubleValue(pct);
-//		rtcmix_print("PFBusPField::doubleValue(%p): pct: %.2f val: %f", this, pct, PFBusData::val[_n_pfbus]);
+//		rtcmix_print("PFBusPField::doubleValue(%p): pct: %.2f val: %f\n", this, pct, PFBusData::val[_n_pfbus]);
 		pct += PFBusData::theincr[_n_pfbus];
 		PFBusData::percent[_n_pfbus] = pct;
 		if (pct >= 1.0) { // continue to read last value

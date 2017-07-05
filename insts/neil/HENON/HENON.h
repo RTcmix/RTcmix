@@ -11,9 +11,8 @@ public:
 
 private:
 	void doupdate();
-	void updateparams();
 
-	int nargs, branch, branch2, cr;
+	int nargs, branch;
 	float amp, pan, a, b, x, y, z;
 };
 

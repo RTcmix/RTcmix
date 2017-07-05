@@ -8,15 +8,20 @@
 #include <ctype.h>
 #include "rename.h"
 #include "minc_internal.h"
+#include "Node.h"
 #include "lex.yy.c"
+#ifdef __cplusplus
+extern "C" {
+#endif
 #ifdef EMBEDDED
-/* in utils.c */
-extern int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
+double minc_memflush();
 #else
 // in args.cpp
-extern const char *lookup_token(const char *token);
+const char *lookup_token(const char *token, bool printWarning);
 #endif
-
+#ifdef __cplusplus
+}
+#endif
 #undef MDEBUG	/* turns on yacc debugging below */
 
 #ifdef MDEBUG
@@ -34,9 +39,8 @@ extern const char *lookup_token(const char *token);
 #define MAXTOK_IDENTLIST 200
 #define TRUE 1
 #define FALSE 0
-#define CHECK_ERROR if (flerror) do { MPRINT("cleaning up after error"); cleanup(1); YYABORT; } while(0)
 
-static Tree		program;
+static Node *	program;
 static int		idcount = 0;
 static char		*idlist[MAXTOK_IDENTLIST];  
 static int		flerror;		/* set if there was an error during parsing */
@@ -46,8 +50,8 @@ static int      xblock = 0;		/* 1 if we are entering a block preceeded by if(), 
 static void 	cleanup();
 static void 	incrLevel();
 static void		decrLevel();
-static Tree declare(MincDataType type);
-static Tree go(Tree t1);
+static Node * declare(MincDataType type);
+static Node * go(Node * t1);
 
 %}
 
@@ -69,11 +73,14 @@ static Tree go(Tree t1);
 %token <ival> TOK_STRING_DECL
 %token <ival> TOK_HANDLE_DECL
 %token <ival> TOK_LIST_DECL
-%token <ival> TOK_IDENT TOK_NUM TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
+%token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
-%type  <trees> stml stmt rstmt bexp expl exp str ret bstml
-%type  <trees> fdecl sdecl hdecl ldecl fdef fstml arg argl fargl fundecl
+%type  <node> stml stmt rstmt bexp expl exp str ret bstml
+%type  <node> fdecl sdecl hdecl ldecl fdef fstml arg argl fargl fundecl
 %type  <str> id
+
+%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl fdef fstml arg argl fargl fundecl
+
 %error-verbose
 
 %%
@@ -84,8 +91,8 @@ prg:	| stml				{ MPRINT("prg:"); program = $1; cleanup(); return 0; }
 /* statement list */
 stml:	stmt				{ MPRINT("stml:	stmt"); $$ = $1; }
 	| stmt ';'				{ MPRINT("stml:	stmt;"); $$ = $1; }
-	| stml stmt				{ MPRINT("stml:	stml stmt"); $$ = tseq($1, $2); }
-	| stml stmt ';'			{ MPRINT("stml:	stml stmt;"); $$ = tseq($1, $2); }
+	| stml stmt				{ MPRINT("stml:	stml stmt"); $$ = new NodeSeq($1, $2); }
+	| stml stmt ';'			{ MPRINT("stml:	stml stmt;"); $$ = new NodeSeq($1, $2); }
 	;
 
 /* statement */
@@ -96,38 +103,38 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 	| ldecl
 	| TOK_IF level bexp stmt {	xblock = 1; MPRINT("IF bexp stmt");
 								decrLevel();
-								$$ = go(tif($3, $4));
+								$$ = go(new NodeIf($3, $4));
 								xblock = 0;
 							}
 	| TOK_IF level bexp stmt TOK_ELSE stmt { xblock = 1;
 								decrLevel();
-								$$ = go(tifelse($3, $4, $6));
+								$$ = go(new NodeIfElse($3, $4, $6));
 								xblock = 0;
 							}
 	| TOK_WHILE level bexp stmt	{ xblock = 1;	MPRINT("WHILE bexp stmt");
 								decrLevel();
-								$$ = go(twhile($3, $4));
+								$$ = go(new NodeWhile($3, $4));
 								xblock = 0;
 							}
 	| TOK_FOR level '(' stmt ';' bexp ';' stmt ')' stmt { xblock = 1;
 								decrLevel();
-								$$ = go(tfor($4, $6, $8, $10));
+								$$ = go(new NodeFor($4, $6, $8, $10));
 								xblock = 0;
 							}
 	| bstml
 	| fdef
-	| ret					{}
-	| error TOK_FLOAT_DECL	{ flerror = 1; $$ = tnoop(); }
-	| error TOK_STRING_DECL	{ flerror = 1; $$ = tnoop(); }
-	| error TOK_HANDLE_DECL	{ flerror = 1; $$ = tnoop(); }
-	| error TOK_LIST_DECL	{ flerror = 1; $$ = tnoop(); }
-	| error TOK_IF		{ flerror = 1; $$ = tnoop(); }
-	| error TOK_WHILE	{ flerror = 1; $$ = tnoop(); }
-	| error TOK_FOR	{ flerror = 1; $$ = tnoop(); }
-	| error '{'		{ flerror = 1; $$ = tnoop(); }
-	| error TOK_ELSE	{ flerror = 1; $$ = tnoop(); }
-	| error TOK_RETURN	{ flerror = 1; $$ = tnoop(); }
-	| error ';'			{ flerror = 1; $$ = tnoop(); }
+	| ret
+	| error TOK_FLOAT_DECL	{ flerror = 1; $$ = new NodeNoop(); }
+	| error TOK_STRING_DECL	{ flerror = 1; $$ = new NodeNoop(); }
+	| error TOK_HANDLE_DECL	{ flerror = 1; $$ = new NodeNoop(); }
+	| error TOK_LIST_DECL	{ flerror = 1; $$ = new NodeNoop(); }
+	| error TOK_IF		{ flerror = 1; $$ = new NodeNoop(); }
+	| error TOK_WHILE	{ flerror = 1; $$ = new NodeNoop(); }
+	| error TOK_FOR	{ flerror = 1; $$ = new NodeNoop(); }
+	| error '{'		{ flerror = 1; $$ = new NodeNoop(); }
+	| error TOK_ELSE	{ flerror = 1; $$ = new NodeNoop(); }
+	| error TOK_RETURN	{ flerror = 1; $$ = new NodeNoop(); }
+	| error ';'			{ flerror = 1; $$ = new NodeNoop(); }
 	;
 
 /* block statement list
@@ -141,7 +148,11 @@ bstml:	'{'			{ if (!xblock) incrLevel(); }
 		stml
 		'}'			{ 	MPRINT("bstml: { stml }"); MPRINT2("level = %d, xblock = %d", level, xblock);
 									if (!xblock) { decrLevel(); }
-									$$ = go(tblock($3));
+									$$ = go(new NodeBlock($3));
+								}
+	/* DAS handling empty block as special case to avoid need for empty stml's */
+	| '{''}'		{ 	MPRINT("bstml: {}");
+								$$ = go(new NodeBlock(new NodeNoop()));
 								}
 	;
 
@@ -151,20 +162,20 @@ ret: TOK_RETURN exp			{	MPRINT("ret exp");
 								MPRINT1("called at level %d", level);
 								if (flevel == 0) {
 									minc_die("return statements not allowed in main score");
-									$$ = tnoop();
+									$$ = new NodeNoop();
 								}
 								else {
-									$$ = treturn($2);
+									$$ = new NodeRet($2);
 								}
 							}
 	| TOK_RETURN exp ';'	{	MPRINT("ret exp;");
 								MPRINT1("called at level %d", level);
 								if (flevel == 0) {
 									minc_die("return statements not allowed in main score");
-									$$ = tnoop();
+									$$ = new NodeNoop();
 								}
 								else {
-									$$ = treturn($2);
+									$$ = new NodeRet($2);
 								}
 							}
 	;
@@ -197,22 +208,27 @@ level:  /* nothing */ { incrLevel(); }
 	;
 
 /* statement returning a value: assignments, function calls, etc. */
-rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = tstore(tautoname($1), $3); }
-	| id TOK_PLUSEQU exp {		$$ = topassign(tname($1), $3, OpPlus); }
-	| id TOK_MINUSEQU exp {		$$ = topassign(tname($1), $3, OpMinus); }
-	| id TOK_MULEQU exp {		$$ = topassign(tname($1), $3, OpMul); }
-	| id TOK_DIVEQU exp {		$$ = topassign(tname($1), $3, OpDiv); }
+rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAutoName($1), $3); }
+	| id TOK_PLUSEQU exp {		$$ = new NodeOpAssign(new NodeName($1), $3, OpPlus); }
+	| id TOK_MINUSEQU exp {		$$ = new NodeOpAssign(new NodeName($1), $3, OpMinus); }
+	| id TOK_MULEQU exp {		$$ = new NodeOpAssign(new NodeName($1), $3, OpMul); }
+	| id TOK_DIVEQU exp {		$$ = new NodeOpAssign(new NodeName($1), $3, OpDiv); }
 
 	| id '(' expl ')' {			MPRINT("id(expl)");
-								$$ = tcall($3, $1);
+								$$ = new NodeCall($3, $1);
 							}
 
-/* $2 will be the end of a linked list of tlistelem nodes */
-/* XXX: This causes 1 reduce/reduce conflict on '}'  How bad is this?  -JGG */
-	| '{' level expl '}'	{ MPRINT("{expl}");	decrLevel(); $$ = tlist($3); }
+	| id '(' ')' {			MPRINT("id()");
+								$$ = new NodeCall(new NodeEmptyListElem(), $1);
+							}
 
-	| id '[' exp ']' 	{			$$ = tsubscriptread(tname($1), $3); }
-	| id '[' exp ']' '=' exp {		$$ = tsubscriptwrite(tname($1), $3, $6); }
+/* $3 will be the end of a linked list of NodeListElems */
+/* XXX: This causes 1 reduce/reduce conflict on '}'  How bad is this?  -JGG */
+/*	DAS MAKING THESE TWO PURE RIGHT-HAND-SIDE EXPRESSIONS
+	| '{' level expl '}'	{ MPRINT("{expl}");	decrLevel(); $$ = new NodeList($3); }
+	| id '[' exp ']' 	{			$$ = new NodeSubscriptRead(new NodeName($1), $3); }
+ */
+	| id '[' exp ']' '=' exp {		$$ = new NodeSubscriptWrite(new NodeName($1), $3, $6); }
 	;
 
 /* identifier list */
@@ -225,52 +241,70 @@ id:  TOK_IDENT			{ MPRINT("id"); $$ = strsave(yytext); }
 	;
 
 /* expression list */
-expl:	exp				{ MPRINT("expl: exp"); $$ = tlistelem(temptylistelem(), $1); }
-	| expl ',' exp		{ MPRINT("expl: expl,exp"); $$ = tlistelem($1, $3); }
-	| /* nothing */	{ MPRINT("expl: NULL"); $$ = temptylistelem(); }
+expl:	exp				{ MPRINT("expl: exp"); $$ = new NodeListElem(new NodeEmptyListElem(), $1); }
+	| expl ',' exp		{ MPRINT("expl: expl,exp"); $$ = new NodeListElem($1, $3); }
+//	| /* nothing */	{ MPRINT("expl: NULL"); $$ = new NodeEmptyListElem(); }
 	;
 
 /* string */
 str:	TOK_STRING		{
 								char *s = yytext + 1;
 								s[strlen(s) - 1] = '\0';
-								$$ = tstring(strsave(s));
+								$$ = new NodeString(strsave(s));
 							}
 	;
 
 /* Boolean expression */
 bexp:	exp %prec LOWPRIO	{ $$ = $1; }
-	| TOK_NOT bexp %prec TOK_UNEQU { $$ = tnot($2); }
-	| bexp TOK_AND bexp	{ $$ = tcand($1, $3); }
-	| bexp TOK_OR  bexp	{ $$ = tcor($1, $3); }
-	| bexp TOK_EQU bexp	{ $$ = trel(OpEqual, $1, $3); }
-	| exp TOK_UNEQU exp	{ $$ = trel(OpNotEqual, $1, $3); }
-	| exp '<' exp			{ $$ = trel(OpLess, $1, $3); }
-	| exp '>' exp			{ $$ = trel(OpGreater, $1, $3); }
-	| exp TOK_LESSEQU exp { $$ = trel(OpLessEqual, $1, $3); }
-	| exp TOK_GTREQU exp	{ $$ = trel(OpGreaterEqual, $1, $3); }
-	| TOK_TRUE				{ $$ = trel(OpEqual, tconstf(1.0), tconstf(1.0)); }
-	| TOK_FALSE				{ $$ = trel(OpNotEqual, tconstf(1.0), tconstf(1.0)); }
+	| TOK_NOT bexp %prec TOK_UNEQU { $$ = new NodeNot($2); }
+	| bexp TOK_AND bexp	{ $$ = new NodeAnd($1, $3); }
+	| bexp TOK_OR  bexp	{ $$ = new NodeOr($1, $3); }
+	| bexp TOK_EQU bexp	{ $$ = new NodeRelation(OpEqual, $1, $3); }
+	| exp TOK_UNEQU exp	{ $$ = new NodeRelation(OpNotEqual, $1, $3); }
+	| exp '<' exp			{ $$ = new NodeRelation(OpLess, $1, $3); }
+	| exp '>' exp			{ $$ = new NodeRelation(OpGreater, $1, $3); }
+	| exp TOK_LESSEQU exp { $$ = new NodeRelation(OpLessEqual, $1, $3); }
+	| exp TOK_GTREQU exp	{ $$ = new NodeRelation(OpGreaterEqual, $1, $3); }
+	| TOK_TRUE				{ $$ = new NodeRelation(OpEqual, new NodeConstf(1.0), new NodeConstf(1.0)); }
+	| TOK_FALSE				{ $$ = new NodeRelation(OpNotEqual, new NodeConstf(1.0), new NodeConstf(1.0)); }
 	;
 
 /* expression */
 exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
-	| exp TOK_POW exp	{ $$ = top(OpPow, $1, $3); }
-	| exp '*' exp		{ $$ = top(OpMul, $1, $3); }
-	| exp '/' exp		{ $$ = top(OpDiv, $1, $3); }
-	| exp '+' exp		{ $$ = top(OpPlus, $1, $3); }
-	| exp '-' exp		{ $$ = top(OpMinus, $1, $3); }
-	| exp '%' exp		{ $$ = top(OpMod, $1, $3); }
+	| exp TOK_POW exp	{ $$ = new NodeOp(OpPow, $1, $3); }
+	| exp '*' exp		{ $$ = new NodeOp(OpMul, $1, $3); }
+	| exp '/' exp		{ $$ = new NodeOp(OpDiv, $1, $3); }
+	| exp '+' exp		{ $$ = new NodeOp(OpPlus, $1, $3); }
+	| exp '-' exp		{ $$ = new NodeOp(OpMinus, $1, $3); }
+	| exp '%' exp		{ $$ = new NodeOp(OpMod, $1, $3); }
 	| '(' bexp ')'		{ $$ = $2; }
 	| str				{ $$ = $1; }
 	| TOK_NUM			{
 							double f = atof(yytext);
-							$$ = tconstf(f);
+							$$ = new NodeConstf(f);
+						}
+/* DAS THESE ARE NOW PURE RIGHT-HAND-SIDE */
+/* $2 will be the end of a linked list of NodeListElems */
+	| '{' level expl '}'	{ MPRINT("{expl}");	decrLevel(); $$ = new NodeList($3); }
+	| '{' '}'				{ MPRINT("{}");	$$ = new NodeList(new NodeEmptyListElem()); }
+
+	| id '[' exp ']' 	{	$$ = new NodeSubscriptRead(new NodeName($1), $3); }
+	| TOK_ARG_QUERY		{
+#ifndef EMBEDDED
+							/* ?argument will return 1.0 if defined, else 0.0 */
+							const char *token = yytext + 1;	// strip off '?'
+							// returns NULL silently if not found
+							const char *value = lookup_token(token, false);
+							$$ = new NodeConstf(value != NULL ? 1.0 : 0.0);
+#else
+							minc_warn("Argument variables not supported");
+							flerror = 1; $$ = new NodeNoop();
+#endif
 						}
 	| TOK_ARG			{
 #ifndef EMBEDDED
 							const char *token = yytext + 1;	// strip off '$'
-							const char *value = lookup_token(token);
+							const char *value = lookup_token(token, true);		// returns NULL with warning
 							if (value != NULL) {
 								// We store this as a number constant if it can be coaxed into a number,
 								// else we store this as a string constant.
@@ -285,47 +319,47 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 								}
 								if (is_number) {
 									double f = atof(value);
-									$$ = tconstf(f);
+									$$ = new NodeConstf(f);
 								}
 								else {
 									// Strip off extra "" if present
 									if (value[0] == '"' && value[strlen(value)-1] == '"') {
-										const char *vcopy = strsave(value+1);
+										char *vcopy = strsave(value+1);
 										*strrchr(vcopy, '"') = '\0';
-										$$ = tstring(vcopy);
+										$$ = new NodeString(vcopy);
 									}
 									else {
-										$$ = tstring(strsave(value));
+										$$ = new NodeString(strsave(value));
 									}
 								}
 							}
-							else { flerror = 1; $$ = tnoop(); }
+							else { flerror = 1; $$ = new NodeNoop(); }
 #else
 							minc_warn("Argument variables not supported");
-							flerror = 1; $$ = tnoop();
+							flerror = 1; $$ = new NodeNoop();
 #endif
 						}
-	| TOK_TRUE			{ $$ = tconstf(1.0); }
-	| TOK_FALSE			{ $$ = tconstf(0.0); }
+	| TOK_TRUE			{ $$ = new NodeConstf(1.0); }
+	| TOK_FALSE			{ $$ = new NodeConstf(0.0); }
 	| '-' exp %prec CASTTOKEN {
-								/* tconstf is a dummy; makes exct_operator work */
-								$$ = top(OpNeg, $2, tconstf(0.0));
+								/* NodeConstf is a dummy; makes exct_operator work */
+								$$ = new NodeOp(OpNeg, $2, new NodeConstf(0.0));
 							}
 	| id					{
-								$$ = tname($1);
+								$$ = new NodeName($1);
 							}
 	;
 
 /* function declaration */
 
 fundecl: TOK_FLOAT_DECL id function { MPRINT("fundecl");
-									$$ = go(tfdecl(strsave($2), MincFloatType)); }
+									$$ = go(new NodeFuncDecl(strsave($2), MincFloatType)); }
 	| TOK_STRING_DECL id function { MPRINT("fundecl");
-									$$ = go(tfdecl(strsave($2), MincStringType)); }
+									$$ = go(new NodeFuncDecl(strsave($2), MincStringType)); }
 	| TOK_HANDLE_DECL id function { MPRINT("fundecl");
-									$$ = go(tfdecl(strsave($2), MincHandleType)); }
+									$$ = go(new NodeFuncDecl(strsave($2), MincHandleType)); }
 	| TOK_LIST_DECL id function { MPRINT("fundecl");
-									$$ = go(tfdecl(strsave($2), MincListType)); }
+									$$ = go(new NodeFuncDecl(strsave($2), MincListType)); }
 	;
 
 
@@ -334,23 +368,23 @@ fundecl: TOK_FLOAT_DECL id function { MPRINT("fundecl");
  */
 
 arg: TOK_FLOAT_DECL id		{ MPRINT("arg");
-							  $$ = tdecl($2, MincFloatType);
+							  $$ = new NodeDecl($2, MincFloatType);
 							}
 	| TOK_STRING_DECL id	{ MPRINT("arg");
-							  $$ = tdecl($2, MincStringType);
+							  $$ = new NodeDecl($2, MincStringType);
 							}
 	| TOK_HANDLE_DECL id	{ MPRINT("arg");
-							  $$ = tdecl($2, MincHandleType);
+							  $$ = new NodeDecl($2, MincHandleType);
 							}
 	| TOK_LIST_DECL id		{ MPRINT("arg");
-								$$ = tdecl($2, MincListType);
+								$$ = new NodeDecl($2, MincListType);
 							}
 	;
 
 /* an <argl> is one <arg> or a series of <arg>'s separated by commas */
 
-argl: arg             { MPRINT("argl: arg"); $$ = targlistelem(temptylistelem(), $1); }
-	| argl ',' arg    { MPRINT("argl: argl,arg"); $$ = targlistelem($1, $3); }
+argl: arg             { MPRINT("argl: arg"); $$ = new NodeArgListElem(new NodeEmptyListElem(), $1); }
+	| argl ',' arg    { MPRINT("argl: argl,arg"); $$ = new NodeArgListElem($1, $3); }
 	;
 
 /* a <fargl> is a argument list for a function definition, like (float f, string s).
@@ -360,8 +394,8 @@ argl: arg             { MPRINT("argl: arg"); $$ = targlistelem(temptylistelem(),
    variable in the function's scope, then accesses it via lookup().
  */
 
-fargl: '(' argl ')'			{ MPRINT("fargl: (argl)"); $$ = targlist($2); }
-	| '(' ')'              	{ MPRINT("fargl: (NULL)"); $$ = targlist(temptylistelem()); }
+fargl: '(' argl ')'			{ MPRINT("fargl: (argl)"); $$ = new NodeArgList($2); }
+	| '(' ')'              	{ MPRINT("fargl: (NULL)"); $$ = new NodeArgList(new NodeEmptyListElem()); }
 	;
 
 /* function block level counter */
@@ -376,10 +410,10 @@ function:  level {	MPRINT("function"); if (flevel > 0) {
 /* function statement list must be a statement list ending with a return statement */
 
 fstml:	stml ret			{	MPRINT("fstml: stml,ret");
-									$$ = tfuncseq($1, $2);
+									$$ = new NodeFuncSeq($1, $2);
 							}
 	| ret					{	MPRINT("fstml: ret");
-									$$ = tfuncseq(temptylistelem(), $1);
+									$$ = new NodeFuncSeq(new NodeEmptyListElem(), $1);
 							}
 	;
 
@@ -389,11 +423,11 @@ fdef: fundecl fargl '{' fstml '}'	{
 									MPRINT("fdef");
 									decrLevel();
 									--flevel; MPRINT1("flevel => %d", flevel);
-									go(tfdef($1, $2, $4));
+									go(new NodeFuncDef($1, $2, $4));
 									/* because we're just a decl, and the tree is stored
-									   in the Symbol, we do not return a Tree to the parser.
+									   in the Symbol, we do not return a Node to the parser.
 									 */
-									$$ = tnoop();
+									$$ = new NodeNoop();
 								}
 	| error fundecl fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; }
 	| error fundecl fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; }
@@ -415,32 +449,36 @@ static void		decrLevel()
 // of declaring variables, we shortcut here and do not rely on the recursive parser.  We
 // create our own sequence of declaration nodes.
 
-static Tree declare(MincDataType type)
+static Node * declare(MincDataType type)
 {
 	MPRINT2("declare(type=%d, idcount=%d)", type, idcount);
 	int i;
 	
 	assert(idcount > 0);
 	
-	Tree t = tnoop();	// end of the list
+	Node * t = new NodeNoop();	// end of the list
 	for (i = 0; i < idcount; i++) {
-		Tree decl = tdecl(idlist[i], type);
-		t = tseq(t, decl);
+		Node * decl = new NodeDecl(idlist[i], type);
+		t = new NodeSeq(t, decl);
 	}
 	return t;
 }
 
-#define FREE_TREES_AT_END
-
-static Tree
-go(Tree t1)
+static Node *
+go(Node * t1)
 {
 	if (level == 0) {
 		MPRINT1("--> go(%p)", t1);
-		exct(t1);
-#ifndef FREE_TREES_AT_END
-		free_tree(t1);
-#endif
+		try {
+			t1->exct();
+		}
+		catch(...) {
+			MPRINT1("caught exception - deleting node %p and cleaning up", t1);
+			delete t1;
+			t1 = NULL;
+			cleanup();
+			throw;
+		}
 		MPRINT1("<-- go(%p)", t1);
 	}
 	return t1;
@@ -455,15 +493,11 @@ static void cleanup()
 {
 	MPRINT1("cleanup: yy_init = %d", yy_init);
 	MPRINT1("Freeing program tree %p", program);
-#ifdef FREE_TREES_AT_END
-    free_tree(program);
-#else
-	efree(program);
-#endif
+    delete program;
+	program = NULL;
 	/* Reset all static state */
 	comments = 0;	// from lex.yy.c
 	cpcomments = 0;
-	program = NULL;
 	idcount = 0;
 	flerror = 0;
 	level = 0;
@@ -485,11 +519,7 @@ static void cleanup()
 double minc_memflush()
 {
 	MPRINT("minc_memflush: Freeing parser memory");
-#ifdef FREE_TREES_AT_END
-	free_tree(program);
-#else
-	efree(program);
-#endif
+	delete program;
 	program = NULL;
 	free_symbols();
 #ifdef USE_YYLEX_DESTROY
@@ -507,7 +537,6 @@ double minc_memflush()
 
 void reset_parser()
 {
-	set_rtcmix_error(0);
 	flerror = 0;
 	// Reset the line # every time a new score buffer is received
 	yyset_lineno(1);

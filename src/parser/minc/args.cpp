@@ -12,7 +12,7 @@
 
 extern "C" {
 	int check_new_arg(const char *argument);
-	const char *lookup_token(const char *token);
+	const char *lookup_token(const char *token, bool printWarning);
 }
 
 static std::map<int, const char *> sTokenMap;
@@ -72,11 +72,13 @@ check_new_arg(const char *argument)
 }
 
 const char *
-lookup_token(const char *token)
+lookup_token(const char *token, bool printWarning)
 {
 	std::map<int, const char *>::iterator it = sTokenMap.find(hash(token));
 	if (it == sTokenMap.end()) {
-		minc_warn("$%s was not passed to CMIX as an argument", token);
+		if (printWarning) {
+			minc_warn("$%s was not passed to CMIX as an argument", token);
+		}
 		return NULL;
 	}
 	return it->second;

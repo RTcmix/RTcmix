@@ -1,5 +1,5 @@
 rtsetparams(44100, 2)
-load("HENON")
+load("./libHENON.so")
 srand()
 
 for (start = 0; start < 15; start += 0.75) {
@@ -7,6 +7,6 @@ for (start = 0; start < 15; start += 0.75) {
 	b = irand(0.25, 0.35)
 	x = irand(0.5, 1.5)
 	y = irand(0.5, 1.5)
-	HENON(start, 0.75, 10000, a, b, x, y, irand(500,2000))
+	HENON(start, 0.75, 10000, a, b, x, y)
 }
 

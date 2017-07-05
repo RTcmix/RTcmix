@@ -5,7 +5,9 @@
 
 /* These are the publically-visible API routines for embedded RTcmix platforms */
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 	typedef void (*RTcmixBangCallback)(void *inContext);
 	typedef void (*RTcmixValuesCallback)(float *values, int numValues, void *inContext);
 	typedef void (*RTcmixPrintCallback)(const char *printBuffer, void *inContext);
@@ -48,4 +50,7 @@ extern "C" {
 	void checkForBang();
 	void checkForVals();
 	void checkForPrint();
+#ifdef __cplusplus
 }
+#endif
+

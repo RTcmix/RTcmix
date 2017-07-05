@@ -5,7 +5,7 @@ profile()
 {
     UG_INTRO("oldmatrix",m_oldmatrix); 
     UG_INTRO("matrix",m_matrix); 
-    UG_INTRO("space",m_space); 
+    UG_INTRO("space",mm_space); 
     UG_INTRO("mikes",m_mikes); 
     UG_INTRO("mikes_off",m_mikes_off); 
     UG_INTRO("param",param); 

@@ -41,13 +41,11 @@ typedef enum {
 
 #ifdef MULTI_THREAD
 
-#ifdef MACOSX
-
 #ifdef MAXMSP
 
-#error Multi-threaded support not yet available for MAX/MSP
+#error Multi-threaded support not yet available for this configuration
 
-#else
+#elif defined(MACOSX)
 
 #include <libkern/OSAtomic.h>
 
@@ -63,7 +61,6 @@ public:
     int operator = (int rhs) { return (val = rhs); }
     
 };
-#endif	// !MAXMSP
 
 #elif defined(LINUX)
 

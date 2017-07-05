@@ -5,6 +5,7 @@
 #include <RTcmix.h>
 #include <Instrument.h>
 #include <ugens.h>
+#include <limits.h>
 
 int Instrument::rtsetoutput(float start, float dur, Instrument *theInst)
 {
@@ -30,6 +31,10 @@ int Instrument::rtsetoutput(float start, float dur, Instrument *theInst)
   theInst->_start = start;
   theInst->_dur = dur;
   theInst->_nsamps = (int)(0.5 + dur * RTcmix::sr());
+	if (theInst->_nsamps < 0) {
+		rtcmix_warn(theInst->name(), "rtsetoutput: sample count exceeds MAXINT - limiting");
+		theInst->_nsamps = INT_MAX;
+	}
   
   return 0;
 }

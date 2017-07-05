@@ -142,7 +142,7 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 
 	if (instCreator) {
 		
-		::printargs(instname, arglist, nargs);
+		printargs(instname, arglist, nargs);
 
 		if (!rtsetparams_was_called()) {
 #ifdef EMBEDDED

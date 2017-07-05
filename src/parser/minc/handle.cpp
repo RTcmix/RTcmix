@@ -9,7 +9,8 @@ void
 ref_handle(MincHandle h)
 {
 	Handle handle = (Handle) h;
-	refHandle(handle);
+	if (handle)
+		refHandle(handle);
 }
 
 void

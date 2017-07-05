@@ -99,8 +99,9 @@ Instrument *makeBROWN()
 	return inst;
 }
 
+#ifndef EMBEDDED
 void rtprofile()
 {
 	RT_INTRO("BROWN", makeBROWN);
 }
-
+#endif

@@ -79,7 +79,8 @@ extern int GetLPCStuff(double *hithresh, double *lowthresh,
 					   float *randamp,
 					   bool *unvoiced_rate,
 					   float *risetime, float *decaytime,
-					   float *ampcutoff);
+					   float *ampcutoff,
+                       float *pSourceDuration);
 					   
 extern int GetConfiguration(float *maxdev,
 							float *perperiod,
@@ -249,7 +250,8 @@ int LPCPLAY::localInit(double p[], int n_args)
 				&_unvoiced_rate,
 				&_risetime, 
 				&_decaytime,
-				&_cutoff);
+				&_cutoff,
+                &_sourceDuration);
 					   
 	GetConfiguration(&_maxdev,
 					 &_perperiod,
@@ -261,7 +263,6 @@ int LPCPLAY::localInit(double p[], int n_args)
 
 	// Finish the initialization
 	
-	float *cpoint = _coeffs + 4;
 	evset(SR, getdur(), _risetime, _decaytime, ENV_SLOT, _evals);
 
 	_frames = frameCount;
@@ -291,7 +292,7 @@ int LPCPLAY::localInit(double p[], int n_args)
 	else
 		_transposition = cpspch(-_pitch);  /* flat pitch in octave pt */
 
-	if (n_args <= _datafields && _pitch > 0) {
+	if (n_args <= _datafields /* && _pitch > 0 */) {
 		rtcmix_advise("LPCPLAY", "Overall transp factor: %f, weighted av. pitch = %g Hz",
 			   _transposition, actualweight);
 		if (_maxdev) 
@@ -354,8 +355,6 @@ int LPCPLAY::localInit(double p[], int n_args)
 int LPCPLAY::run()
 {
 	int   n = 0;
-	float out[2];        /* Space for only 2 output chans! */
-
 #if 0
 		printf("\nLPCPLAY::run()\n");
 #endif
@@ -390,9 +389,10 @@ int LPCPLAY::run()
 		_bw_fact = p[8];
 		
 		int loc;
+        /* if unvoiced, set to normal rate */
 		if ( _unvoiced_rate && !_voiced )
 		{
-			++_frameno;	/* if unvoiced set to normal rate */
+			++_frameno;
 		}
 		else
 		{
@@ -409,8 +409,13 @@ int LPCPLAY::run()
 			
 		float buzamp = getVoicedAmp(_coeffs[THRESH]);
 		_voiced = (buzamp > 0.1); /* voiced = 0 for 10:1 noise */
-		float noisamp = (1.0 - buzamp) * _randamp;	/* for now */
+        // equal power handoff between buzz and noise
+        const float amp_pi_over2 = buzamp * PI * 0.5;
+        buzamp = sinf(amp_pi_over2);
+		float noisamp = cosf(amp_pi_over2) * _randamp;
+        
 		_ampmlt = _amp * _coeffs[RESIDAMP];
+        // Silence any frame with amp below requested threshold
 		if (_coeffs[RMSAMP] < _cutoff)
 			_ampmlt = 0;
 		float cps = tablei(currentFrame(),_pchvals,_tblvals);
@@ -455,7 +460,7 @@ int LPCPLAY::run()
 #endif
         if (_counter <= 0)
 			break;
-		// Catch bad pitches which generate array overruns
+		// Catch extreme pitches which generate array overruns
 		else if (_counter > _arrayLen) {
 			rtcmix_warn("LPCPLAY", "Counter exceeded array size -- limiting.  Frame pitch: %f", newpch);
 			_counter = _arrayLen;
@@ -638,8 +643,6 @@ LPCIN::~LPCIN()
 
 int LPCIN::localInit(double p[], int n_args)
 {
-   int i;
-
 	if (!n_args || n_args < 6 || n_args > 10)
 		return die("LPCIN",
 				   "p[0]=outskip, p[1]=inskip, p[2]=duration, p[3]=amp, p[4]=frame1, p[5]=frame2 [, p[6]=in_channel p[7]=warp p[8]=resoncf, p[9]=resonbw]\n");
@@ -669,18 +672,19 @@ int LPCIN::localInit(double p[], int n_args)
 
 	// Pull all the current configuration information out of the environment.
 	
-	double ddummy1, ddummy2, ddummy3;
+	double ddummy1, ddummy2;
 	float dummy1, dummy2, dummy3, dummy4;
 	bool bdummy;
 
 	GetLPCStuff(&ddummy1,
-				&ddummy1,
+				&ddummy2,
 				&dummy1,
 				&dummy2,
 				&bdummy,
 				&dummy3, 
 				&dummy4,
-				&_cutoff);	// All we use is cutoff here
+				&_cutoff,
+                &dummy1);	// All we use is cutoff here
 
 	GetConfiguration(&dummy1,
 					 &dummy2,
@@ -719,7 +723,6 @@ LPCIN::SetupArrays(int)
 int LPCIN::run()
 {
 	int   n = 0;
-	float out[2];        /* Space for only 2 output chans! */
 	const int inchans = inputChannels();
 
 	// Samples may have been left over from end of previous run's block
@@ -750,7 +753,6 @@ int LPCIN::run()
 		_cf_fact = p[LPCIN_cf];
 		_bw_fact = p[LPCIN_bw];
 
-		int loc;
 		_frameno = _frame1 + ((float)(currentFrame())/nSamps()) * _frames;
 
 #ifdef debug
@@ -875,8 +877,6 @@ Instrument *makeLPCIN()
 
    return inst;
 }
-
-extern Instrument *makeWAVETABLE();
 
 /* The rtprofile introduces the instruments to the RTcmix core, and
    associates a Minc name (in quotes below) with the instrument. This

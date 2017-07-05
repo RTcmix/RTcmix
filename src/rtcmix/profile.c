@@ -27,26 +27,29 @@ profile()
 	UG_INTRO("set_hnfactor",set_hnfactor);
 	UG_INTRO("autocorrect",use_autocorrect);
 
+#ifndef USE_MMOVE
 	// from MOVE/PLACE
 	UG_INTRO("oldmatrix",oldmatrix);
 	UG_INTRO("matrix",matrix);
 	UG_INTRO("mikes",mikes);
 	UG_INTRO("mikes_off",mikes_off);
-	UG_INTRO("param",param);
 	UG_INTRO("space",m_space);
-	UG_INTRO("cparam",cparam);
-	UG_INTRO("path",path);
-	UG_INTRO("cpath",cpath);
-	UG_INTRO("threshold",threshold);
-
-#ifdef NOT_YET
+#else
 	// from MMOVE/MPLACE
 	UG_INTRO("oldmatrix",m_oldmatrix);
 	UG_INTRO("matrix",m_matrix);
 	UG_INTRO("mikes",m_mikes);
 	UG_INTRO("mikes_off",m_mikes_off);
 	UG_INTRO("set_attenuation_params",m_set_attenuation_params);
+	UG_INTRO("space",mm_space);
 #endif
+	// used by both MOVE and MMOVE
+	UG_INTRO("param",param);
+	UG_INTRO("cparam",cparam);
+	UG_INTRO("path",path);
+	UG_INTRO("cpath",cpath);
+	UG_INTRO("threshold",threshold);
+	
 	// from PVOC
 	UG_INTRO("set_filter", set_filter);
 

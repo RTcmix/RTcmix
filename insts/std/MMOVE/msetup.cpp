@@ -180,7 +180,7 @@ m_set_attenuation_params(float p[], int n_args)
    tion factor, between 0 (total absorption) and 10 (total reflection).   
 */
 double
-m_space(float p[], int n_args)
+mm_space(float p[], int n_args)
 {
    if (n_args < 7) {
       return die("space", "Usage: space(front, right, -back, -left, ceiling, absorb, rvbtime)");

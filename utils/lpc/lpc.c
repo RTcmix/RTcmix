@@ -4,7 +4,7 @@
 #include <sys/param.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "../../H/sfheader.h"
+#include "../../include/sfheader.h"
 
 #define POLE_DEFAULT 24
 #define FRAMESIZE_DEFAULT 200
@@ -22,16 +22,14 @@ static int last_frame = 0;
 
 static int swap;
 
-main(ac,av)
-int ac;
-char *av[];
+int main(int ac, char *av[])
 	{
 	int i, valid_sf, sffd;
 	SFHEADER  sfh;
 	struct stat sfst;
 
 	/* set up parameters by setting up defaults, reading args,
-	/* and overriding defaults as needed 
+	 and overriding defaults as needed 
 	*/
 
 	/* have to have at least the nsame of the soundfile */
@@ -39,7 +37,7 @@ char *av[];
 		usage();
 	strcpy(soundfile, av[ac-1]);
 	/* make sure it's valid, and find out the duration so we
-	/* can have a default duration 
+	 can have a default duration 
 	*/
 	rwopensf(soundfile, sffd, sfh, sfst, av[0], valid_sf,2);
 	close(sffd);

@@ -1,6 +1,15 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2017-07-02  Douglas Scott  <netdscott-at-netscape.net>
+	* Added ability for a score to determine if a named variable has been set on the command line (see 2016-08-03).
+	  For example, if arg --myseed=67 is used, ?myseed in the score will be set to 1.
+2017-04-26  Douglas Scott  <netdscott-at-netscape.net>
+    * Yet another subrevision.  Rewrote parser entirely in C++ and added try/throw/catch for embedded error handling.
+	  Fixed some long-standing issues with the MinC parser.
+	  Allowing MMOVE/DMOVE/MPLACE to be used in embedded in place of MOVE/PLACE based on site.conf.
+	  Began process of making all the public symbols in those two systems unique.
+
 2016-08-03	Douglas Scott  <netdscott-at-netscape.net>
 	* Added ability to pass in named variables via arguments:  --myseed=67 makes the variable $myseed available in Minc.
 

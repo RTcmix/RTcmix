@@ -262,19 +262,11 @@ void unloadinst()
 
 #endif	// MAXMSP
 
-#ifdef PD
-int pd_rtsetparams(float sr, int nchans, int vecsize, float *mm_inbuf, float *mm_outbuf)
-#else
 int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_count)
-#endif
 {
 #if defined(MSPAUDIO)
 	globalApp->close();
 	globalApp->resetAudio(sr, nchans, vecsize, recording);
-#endif
-#ifdef PD
-	int recording = 1;
-	int bus_count = 0;
 #endif
 	if (bus_count == 0) bus_count = DEFAULT_MAXBUS;
 	int status = globalApp->setparams(sr, nchans, vecsize, recording != 0, bus_count);
@@ -350,7 +342,7 @@ void pfield_set(int inlet, float pval) { RTcmix_setPField(inlet, pval); }	// UNT
 int RTcmix_setInputBuffer(char *bufname, float *bufstart, int nframes, int nchans, int modtime)
 {
 // THIS SHOULD BE HANDLED VIA THE PUBLIC FUNCTION
-#if defined(MAXMSP)  || defined(IOS)
+#if defined(MAXMSP) || defined(PD) || defined(IOS)
 	float bufferGainScaling = 32767.0f;
 #else
 	float bufferGainScaling = 1.0f;

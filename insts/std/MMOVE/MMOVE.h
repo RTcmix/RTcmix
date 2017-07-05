@@ -5,10 +5,10 @@
 
 #include "MBASE.h"
 
-class MOVE : public MBASE {
+class MMOVE : public MBASE {
 public:
-    MOVE();
-    virtual ~MOVE();
+    MMOVE();
+    virtual ~MMOVE();
 protected:
     virtual int localInit(double *, int);
     virtual int finishInit(double *);

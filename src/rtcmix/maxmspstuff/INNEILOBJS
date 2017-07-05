@@ -1,0 +1,7 @@
+INNEILOBJS = ../../insts/neil/BROWN/BROWN.o \
+../../insts/neil/CRACKLE/CRACKLE.o \
+../../insts/neil/DUST/DUST.o \
+../../insts/neil/HENON/HENON.o \
+../../insts/neil/LATOOCARFIAN/LATOOCARFIAN.o \
+../../insts/neil/MULTIFM/MULTIFM.o \
+../../insts/neil/PINK/PINK.o

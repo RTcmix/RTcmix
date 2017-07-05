@@ -38,14 +38,15 @@ static const double LocationUnset = -999999.999999;
 /* ------------------------------------------------------------ makeMOVE --- */
 Instrument *makeMMOVE()
 {
-   MOVE *inst;
+   MMOVE *inst;
 
-   inst = new MOVE();	// The class is called MOVE, but the inst is MMOVE
+   inst = new MMOVE();	// The class is called MOVE, but the inst is MMOVE
    inst->set_bus_config("MMOVE");
 
    return inst;
 }
 
+#ifndef EMBEDDED
 extern Instrument *makeRVB();	// From RVB.C
 
 /* ------------------------------------------------------------ rtprofile --- */
@@ -54,10 +55,11 @@ void rtprofile()
    RT_INTRO("MMOVE", makeMMOVE);
    RT_INTRO("RVB", makeRVB);
 }
+#endif
 
 // Move methods
 
-MOVE::MOVE()
+MMOVE::MMOVE()
 {
     R_old = -100000.0;
     T_old = 0.0;
@@ -71,7 +73,7 @@ MOVE::MOVE()
 	    oldOutlocs[n][o] = LocationUnset;	// to force update
 }
 
-MOVE::~MOVE()
+MMOVE::~MMOVE()
 {
     delete [] thetaloc;
     delete [] rholoc;
@@ -79,7 +81,7 @@ MOVE::~MOVE()
 
 #define MINBUFFERSIZE 64
 
-int MOVE::localInit(double *p, int n_args)
+int MMOVE::localInit(double *p, int n_args)
 {
     if (n_args < 6)
         return die(name(), "Wrong number of args.");
@@ -129,14 +131,14 @@ int MOVE::localInit(double *p, int n_args)
     return 0;
 }
 
-int MOVE::finishInit(double *ringdur)
+int MMOVE::finishInit(double *ringdur)
 {
     *ringdur = (float)m_tapsize / SR;	// max possible room delay
 	tapcount = updatePosition(0);
     return 0;
 }
 
-void MOVE::get_tap(int currentSamp, int chan, int path, int len)
+void MMOVE::get_tap(int currentSamp, int chan, int path, int len)
 {
    Vector *vec = &m_vectors[chan][path];
    const double outloc = (double) vec->outloc;
@@ -173,7 +175,7 @@ void MOVE::get_tap(int currentSamp, int chan, int path, int len)
 // update of source angles and delays only happens if we are due for an update
 // (based on the update count) and there has been a change of position
 
-int MOVE::updatePosition(int currentSamp)
+int MMOVE::updatePosition(int currentSamp)
 {
     double R = tablei(currentSamp, rholoc, tabr);
     double T = tablei(currentSamp, thetaloc, tabt);
