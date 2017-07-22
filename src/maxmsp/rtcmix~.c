@@ -75,11 +75,16 @@
 // -- allow input and output counts (renamed MSP_INPUTS and MSP_OUTPUTS) to be configured from build macro.
 //		added check for active DAC to rtcmix_dortcmix().  Added memory failure check to script methods.
 //
+// 07/22/2017
+// -- removed use of specialized MSPAudioDevice and switched to using EmbeddedAudioDevice.
 
+// Hand-defining these here because these will always be true, and are needed to get the right portions of RTcmix_API.h
 
+#define EMBEDDEDAUDIO 1
+#define MAXMSP 1
 
-#define VERSION "2.004"
-#define RTcmixVERSION "RTcmix-maxmsp-4.3"
+#define VERSION "2.005"
+#define RTcmixVERSION "RTcmix-maxmsp-4.3.1"
 
 #include "ext.h"
 #include "z_dsp.h"
@@ -94,7 +99,7 @@
 #include <math.h>
 #include "buffer.h"
 #include "ext_obex.h"
-#include "RTcmix_API.h"
+#include "../../include/RTcmix_API.h"
 
 // for the NSmodule stuff
 #include <mach-o/dyld.h>
@@ -134,14 +139,10 @@
 #undef RESET_AUDIO_ON_DSP_MESSAGE
 
 /******* RTcmix stuff *******/
-typedef void (*RTcmixBangCallback)(void *inContext);
-typedef void (*RTcmixValuesCallback)(float *values, int numValues, void *inContext);
-typedef void (*RTcmixPrintCallback)(const char *printBuffer, void *inContext);
-
 typedef int (*rtcmixinitFunctionPtr)();
 typedef int (*rtcmixdestroyFunctionPtr)();
 typedef int (*rtsetparamsFunctionPtr)(float sr, int nchans, int vecsize, int recording, int bus_count);
-typedef int (*rtcmixsetaudiobufferformatFunctionPtr(RTcmix_AudioFormat format, int nchans);
+typedef int (*rtcmixsetaudiobufferformatFunctionPtr)(RTcmix_AudioFormat format, int nchans);
 
 typedef int (*rtcmixrunAudioFunctionPtr)(void *inAudioBuffer, void *outAudioBuffer, int nframes);
 typedef int (*rtresetaudioFunctionPtr)(float sr, int nchans, int vecsize, int recording);
@@ -256,6 +257,7 @@ char mpathname[1024]; // probably should be malloc'd
 void *rtcmix_new(long num_inoutputs, long num_additional);
 void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count);
 int rtcmix_load_dylib(t_rtcmix *x); // loads the main rtcmixdylib.so lib
+t_int *rtcmix_perform(t_int *w);
 void rtcmix_assist(t_rtcmix *x, void *b, long m, long a, char *s);
 void rtcmix_free(t_rtcmix *x);
 
@@ -575,17 +577,17 @@ void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count)
 		}
 	}
 	else {
+		if (x->rtsetaudiobufferformat)
+		{
+			rtcmix_dprint(x, "rtcmix_dsp calling RTcmix_setAudioBufferFormat()");
+			x->rtsetaudiobufferformat(AudioFormat_32BitFloat_Normalized, x->num_outputs);
+		}
 		if (x->rtsetparams)
 		{
 			rtcmix_dprint(x, "rtcmix_dsp calling RTcmix_setParams()");
 			x->rtsetparams(x->srate, x->num_outputs, sp[0]->s_n, 1, 0);
 			x->audioConfigured = 1;
 		}
-	}
-	if (x->rtsetaudiobufferformat)
-	{
-		rtcmix_dprint(x, "rtcmix_dsp calling RTcmix_setAudioBufferFormat()");
-		x->rtsetaudiobufferformat(AudioFormat_32BitFloat_Normalized, x->num_outputs);
 	}
 #endif
 	
@@ -613,15 +615,15 @@ void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count)
 
 #if defined(RELOAD_DYLIB) || defined(DESTROY_ON_DSP_MESSAGE)
 	// This is done if we are either reloading the dylib, or destroying everything each time.
-	if (x->rtsetparams)
-	{
-		rtcmix_dprint(x, "rtcmix_dsp calling RTcmix_setparams()");
-		x->rtsetparams(x->srate, x->num_outputs, sp[0]->s_n, 1, 0);
-	}
 	if (x->rtsetaudiobufferformat)
 	{
 		rtcmix_dprint(x, "rtcmix_dsp calling RTcmix_setAudioBufferFormat()");
 		x->rtsetaudiobufferformat(AudioFormat_32BitFloat_Normalized, x->num_outputs);
+	}
+	if (x->rtsetparams)
+	{
+		rtcmix_dprint(x, "rtcmix_dsp calling RTcmix_setparams()");
+		x->rtsetparams(x->srate, x->num_outputs, sp[0]->s_n, 1, 0);
 	}
 #endif
 	
@@ -652,7 +654,6 @@ int rtcmix_load_dylib(t_rtcmix *x)
 	// these are the entry function pointers in to the rtcmixdylib.so lib
 	x->rtcmixinit = NULL;
 	x->rtcmixdestroy = NULL;
-	x->setMSPState = NULL;
 	x->rtsetparams = NULL;
 	x->rtsetaudiobufferformat = NULL;
 	x->rtrunaudio = NULL;
@@ -897,18 +898,14 @@ t_int *rtcmix_perform(t_int *w)
 	
 	t_rtcmix *x = (t_rtcmix *)(w[1]);
 	
-	float *in[MAX_INPUTS]; 		//pointers to the input vectors
-	float *out[MAX_OUTPUTS];	//pointers to the output vectors
+	float *in[MSP_INPUTS]; 		//pointers to the input vectors
+	float *out[MSP_OUTPUTS];	//pointers to the output vectors
 	
 	const long nsamps = w[x->num_inputs + x->num_pinlets + x->num_outputs + 2];	//number of samples per vector
 	
 	//random local vars
 	int i, j, k;
-	
-	// for check_vals()
-	int valflag;
-	
-	
+		
 	//check to see if we should skip this routine if the patcher is "muted"
 	//i also setup of "power" messages for expensive objects, so that the
 	//object itself can be turned off directly. this can be convenient sometimes.
@@ -1082,7 +1079,7 @@ void rtcmix_valuescallback(float *values, int numValues, void *inContext)
 	if (numValues == 1)
 		outlet_float(x->outpointer, (double)(values[0]));
 	else {
-		for (i = 0; i < numValues; i++) A_SETFLOAT((x->valslist)+i, values[i]);
+		for (i = 0; i < numValues; i++) SETFLOAT((x->valslist)+i, values[i]);
 		outlet_list(x->outpointer, 0L, numValues, x->valslist);
 	}
 }
