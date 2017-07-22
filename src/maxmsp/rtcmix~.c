@@ -94,6 +94,7 @@
 #include <math.h>
 #include "buffer.h"
 #include "ext_obex.h"
+#include "RTcmix_API.h"
 
 // for the NSmodule stuff
 #include <mach-o/dyld.h>
@@ -139,8 +140,10 @@ typedef void (*RTcmixPrintCallback)(const char *printBuffer, void *inContext);
 
 typedef int (*rtcmixinitFunctionPtr)();
 typedef int (*rtcmixdestroyFunctionPtr)();
-typedef void (*setMSPStateFunctionPtr)(const char *, void *);
 typedef int (*rtsetparamsFunctionPtr)(float sr, int nchans, int vecsize, int recording, int bus_count);
+typedef int (*rtcmixsetaudiobufferformatFunctionPtr(RTcmix_AudioFormat format, int nchans);
+
+typedef int (*rtcmixrunAudioFunctionPtr)(void *inAudioBuffer, void *outAudioBuffer, int nframes);
 typedef int (*rtresetaudioFunctionPtr)(float sr, int nchans, int vecsize, int recording);
 typedef int (*parse_scoreFunctionPtr)();
 typedef double (*parse_dispatchFunctionPtr)(char *cmd, double *p, int n_args, void *retval);
@@ -175,8 +178,9 @@ typedef struct _rtcmix
 	/******* RTcmix stuff *******/
 	rtcmixinitFunctionPtr rtcmixinit;
 	rtcmixdestroyFunctionPtr rtcmixdestroy;
-	setMSPStateFunctionPtr setMSPState;
 	rtsetparamsFunctionPtr rtsetparams;
+	rtcmixsetaudiobufferformatFunctionPtr rtsetaudiobufferformat;
+	rtcmixrunAudioFunctionPtr rtrunaudio;
 	rtresetaudioFunctionPtr rtresetaudio;
 	parse_scoreFunctionPtr parse_score;
 	parse_dispatchFunctionPtr parse_dispatch;
@@ -236,16 +240,6 @@ typedef struct _rtcmix
 	// NOTE:  Only 1 rtcmix~ can be instantiated with this!
 	int loadinstflag;
 } t_rtcmix;
-
-// Struct shared with MSPAudioDevice.  THIS MUST MATCH WHAT IS DECLARED THERE
-
-struct MSP_Info
-{
-	void **mDspArgs;		// list of arguments to be handed to perform method
-	short *mInputConnected;	// pointer to array from rtcmix~.c
-	long *mDisabled;		// pointer to variable inside Max object indicating mute status
-};
-
 
 // for where the rtcmix-dylibs folder is located
 char *mpathptr;
@@ -544,7 +538,6 @@ void *rtcmix_new(long num_inoutputs, long num_additional)
 //this gets called everytime audio is started; even when audio is running, if the user
 //changes anything (like deletes a patch cord), audio will be turned off and
 //then on again, calling this func.
-//this passes special state to RTcmix, needed by MSPAudioDevice to add the  "perform" method to the DSP chain.
 //Also tells us where the audio vectors are and how big they are
 void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count)
 {
@@ -570,22 +563,6 @@ void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count)
 	dsp_add_args[totalInputs + totalOutputs + 1] = (void *)sp[0]->s_n; //pointer to the vector size
 	
 #if defined(RESET_AUDIO_ON_DSP_MESSAGE)
-	// This is what we have to do on each "dsp" message:
-	
-	// Pass a string to RTcmix describing the inputs and outputs for the audio device.
-	// also pass a struct containing:
-	// 1) dsp_add_args array so the device can register its 'perform' function
-	// 2) the array of input connection status shorts
-	// 3) a pointer to the disabled state for the object (used to mute)
-	if (x->setMSPState) {
-		char spec[128];
-		snprintf(spec, 128, "MSP:%ld,%ld,%ld", x->num_inputs, x->num_pinlets, x->num_outputs);
-		struct MSP_Info mspInfo;
-		mspInfo.mDspArgs = dsp_add_args;
-		mspInfo.mInputConnected = x->in_connected;
-		mspInfo.mDisabled = &x->x_obj.z_disabled;
-		x->setMSPState(spec, &mspInfo);	// pass these to MSPAudioDevice so it can call dsp_addv()
-	}
 	if (x->audioConfigured) {
 		// This function destroys and rebuilds the AudioDevice and the audio buffers.
 		if (x->rtresetaudio) {
@@ -600,6 +577,11 @@ void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count)
 			x->rtsetparams(x->srate, x->num_outputs, sp[0]->s_n, 1, 0);
 			x->audioConfigured = 1;
 		}
+	}
+	if (x->rtsetaudiobufferformat)
+	{
+		rtcmix_dprint(x, "rtcmix_dsp calling RTcmix_setAudioBufferFormat()");
+		x->rtsetaudiobufferformat(AudioFormat_32BitFloat_Normalized, x->num_outputs);
 	}
 #endif
 	
@@ -618,25 +600,16 @@ void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count)
 #endif
 	
 #if defined(RELOAD_DYLIB) || defined(DESTROY_ON_DSP_MESSAGE)
-	// pass a string to RTcmix describing the inputs and outputs for the audio device.
-	// also pass a struct containing:
-	// 1) dsp_add_args array so the device can register its 'perform' function
-	// 2) the array of input connection status shorts
-	// 3) a pointer to the disabled state for the object (used to mute)
-	if (x->setMSPState) {
-		char spec[128];
-		snprintf(spec, 128, "MSP:%ld,%ld,%ld", x->num_inputs, x->num_pinlets, x->num_outputs);
-		struct MSP_Info mspInfo;
-		mspInfo.mDspArgs = dsp_add_args;
-		mspInfo.mInputConnected = x->in_connected;
-		mspInfo.mDisabled = &x->x_obj.z_disabled;
-		x->setMSPState(spec, &mspInfo);	// pass these to MSPAudioDevice so it can call dsp_addv()
-	}
 	// This is done if we are either reloading the dylib, or destroying everything each time.
 	if (x->rtsetparams)
 	{
 		rtcmix_dprint(x, "rtcmix_dsp calling RTcmix_setparams()");
 		x->rtsetparams(x->srate, x->num_outputs, sp[0]->s_n, 1, 0);
+	}
+	if (x->rtsetaudiobufferformat)
+	{
+		rtcmix_dprint(x, "rtcmix_dsp calling RTcmix_setAudioBufferFormat()");
+		x->rtsetaudiobufferformat(AudioFormat_32BitFloat_Normalized, x->num_outputs);
 	}
 #endif
 	
@@ -669,6 +642,8 @@ int rtcmix_load_dylib(t_rtcmix *x)
 	x->rtcmixdestroy = NULL;
 	x->setMSPState = NULL;
 	x->rtsetparams = NULL;
+	x->rtsetaudiobufferformat = NULL;
+	x->rtrunaudio = NULL;
 	x->rtresetaudio = NULL;
 	x->parse_score = NULL;
 	x->parse_dispatch = NULL;
@@ -726,15 +701,6 @@ int rtcmix_load_dylib(t_rtcmix *x)
 		if (!(x->rtcmixdestroy))
 			error("rtcmix~ could not find RTcmix_destroy()");
 	}
-	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_setMSPState");
-	if (x->symbol == NULL) {
-		error("cannot find RTcmix_setMSPState");
-		return(-1);
-	} else {
-		x->setMSPState = NSAddressOfSymbol(x->symbol);
-		if (!(x->setMSPState))
-			error("rtcmix~ could not find RTcmix_setMSPState()");
-	}
 	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_setparams");
 	if (x->symbol == NULL) {
 		error("cannot find RTcmix_setparams");
@@ -743,6 +709,24 @@ int rtcmix_load_dylib(t_rtcmix *x)
 		x->rtsetparams = NSAddressOfSymbol(x->symbol);
 		if (!(x->rtsetparams))
 			error("rtcmix~ could not find RTcmix_setparams()");
+	}
+	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_setAudioBufferFormat");
+	if (x->symbol == NULL) {
+		error("cannot find RTcmix_setAudioBufferFormat");
+		return(-1);
+	} else {
+		x->rtsetaudiobufferformat = NSAddressOfSymbol(x->symbol);
+		if (!(x->rtsetaudiobufferformat))
+			error("rtcmix~ could not find RTcmix_setAudioBufferFormat()");
+	}
+	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_runAudio");
+	if (x->symbol == NULL) {
+		error("cannot find RTcmix_runAudio");
+		return(-1);
+	} else {
+		x->rtrunaudio = NSAddressOfSymbol(x->symbol);
+		if (!(x->rtrunaudio))
+			error("rtcmix~ could not find RTcmix_runAudio()");
 	}
 	x->symbol = NSLookupSymbolInModule(x->module, "_RTcmix_resetAudio");
 	if (x->symbol == NULL) {
@@ -891,6 +875,75 @@ int rtcmix_load_dylib(t_rtcmix *x)
 	rtcmix_dprint(x, "rtcmix_load_dylib() complete");
 	
 	return(0);
+}
+
+//this is where the action is
+//we get vectors of samples (n samples per vector), process them and send them out
+t_int *rtcmix_perform(t_int *w)
+{
+	// NO debugging post here; this one gets called all the time
+	
+	t_rtcmix *x = (t_rtcmix *)(w[1]);
+	
+	float *in[MAX_INPUTS]; 		//pointers to the input vectors
+	float *out[MAX_OUTPUTS];	//pointers to the output vectors
+	
+	const long nsamps = w[x->num_inputs + x->num_pinlets + x->num_outputs + 2];	//number of samples per vector
+	
+	//random local vars
+	int i, j, k;
+	
+	// for check_vals()
+	int valflag;
+	
+	
+	//check to see if we should skip this routine if the patcher is "muted"
+	//i also setup of "power" messages for expensive objects, so that the
+	//object itself can be turned off directly. this can be convenient sometimes.
+	//in any case, all audio objects should have this
+	// BGG -- need to set up to zero the buffers, though
+	if (x->x_obj.z_disabled) goto out;
+	
+	//check to see if we have a signal or float message connected to input
+	//then assign the pointer accordingly
+	for (i = 0; i < (x->num_inputs + x->num_pinlets); i++) {
+		in[i] = x->in_connected[i] ? (float *)(w[i+2]) : &x->in[i];
+	}
+	
+	//assign the output vectors
+	for (i = 0; i < x->num_outputs; i++) {
+		out[i] = (float *)(w[x->num_inputs+x->num_pinlets+i+2]);
+	}
+	
+	j = 0;
+	k = 0;
+	long n = nsamps;
+	while (n--) {	//this is where the action happens.....
+		
+		for(i = 0; i < x->num_inputs; i++)
+			if (x->in_connected[i])
+				(x->maxmsp_inbuf)[k++] = *in[i]++;
+			else
+				(x->maxmsp_inbuf)[k++] = *in[i];
+		
+		for(i = 0; i < x->num_outputs; i++)
+			*out[i]++ = (x->maxmsp_outbuf)[j++];
+		
+	}
+	
+	// RTcmix stuff
+	// this drives the RTcmix sample-computing engine
+	x->rtrunaudio(in, out, nsamps);
+	
+	// reset queue and heap if signalled
+	if (x->flushflag == 1) {
+		x->flush();
+		x->flushflag = 0;
+	}
+	
+	//return a pointer to the next object in the signal chain.
+out:
+	return w + x->num_inputs + x->num_pinlets + x->num_outputs + 3;
 }
 
 // the deferred bang output
