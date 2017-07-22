@@ -144,11 +144,11 @@ ifeq ($(ARCH),MACOSX)
     CXX = `xcrun -f c++` -Wno-deprecated
 
 	RTLIB = rtcmixdylib.so
-	RTLIB_LDFLAGS = $(UB_CFLAGS) -Wl,-U,_cpost,-U,_dsp_addv,-bundle,-flat_namespace
+	RTLIB_LDFLAGS = $(UB_CFLAGS) -Wl,-U,_cpost,-bundle,-flat_namespace
 	RTLIBTYPE = DYNAMIC
 	RTLIB_INSTALL_DIR = $(MAX_LIB_INSTALL_DIR)
-    AUDIODRIVER=MAXMSP
-    CMIX_FLAGS += -DMSPAUDIO
+    AUDIODRIVER=EMBEDDEDAUDIO
+    CMIX_FLAGS += -DEMBEDDEDAUDIO
   endif
 
   # -- iOS ----------------------------------------------------
