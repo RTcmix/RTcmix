@@ -207,6 +207,9 @@ typedef struct _rtcmix
 	 char pathname[1024]; // probably should be malloc'd
 	 */
 	
+	// space for these malloc'd in rtcmix_dsp()
+	float *maxmsp_outbuf;
+	float *maxmsp_inbuf;
 	
 	// script buffer pointer for large binbuf restores
 	char *restore_buf_ptr;
@@ -561,6 +564,7 @@ void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count)
 		dsp_add_args[i+1] = sp[i]->s_vec;
 	}
 	dsp_add_args[totalInputs + totalOutputs + 1] = (void *)sp[0]->s_n; //pointer to the vector size
+	dsp_addv(rtcmix_perform, (x->num_inputs + x->num_pinlets + x->num_outputs + 2), dsp_add_args); //add them to the signal chain
 	
 #if defined(RESET_AUDIO_ON_DSP_MESSAGE)
 	if (x->audioConfigured) {
@@ -598,7 +602,15 @@ void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count)
 		x->rtcmixinit();
 	}
 #endif
+
+	// allocate the RTcmix i/o transfer buffers
+	x->maxmsp_inbuf = malloc(sizeof(float) * sp[0]->s_n * x->num_inputs);
+	x->maxmsp_outbuf = malloc(sizeof(float) * sp[0]->s_n * x->num_outputs);
 	
+	// zero out these buffers for UB
+	for (i = 0; i < (sp[0]->s_n * x->num_inputs); i++) x->maxmsp_inbuf[i] = 0.0;
+	for (i = 0; i < (sp[0]->s_n * x->num_outputs); i++) x->maxmsp_outbuf[i] = 0.0;
+
 #if defined(RELOAD_DYLIB) || defined(DESTROY_ON_DSP_MESSAGE)
 	// This is done if we are either reloading the dylib, or destroying everything each time.
 	if (x->rtsetparams)
@@ -918,22 +930,25 @@ t_int *rtcmix_perform(t_int *w)
 	j = 0;
 	k = 0;
 	long n = nsamps;
-	while (n--) {	//this is where the action happens.....
-		
+	// copy input from MAX into transfer buffer
+	while (n--) {
 		for(i = 0; i < x->num_inputs; i++)
 			if (x->in_connected[i])
 				(x->maxmsp_inbuf)[k++] = *in[i]++;
 			else
 				(x->maxmsp_inbuf)[k++] = *in[i];
-		
-		for(i = 0; i < x->num_outputs; i++)
-			*out[i]++ = (x->maxmsp_outbuf)[j++];
-		
 	}
 	
 	// RTcmix stuff
 	// this drives the RTcmix sample-computing engine
-	x->rtrunaudio(in, out, nsamps);
+	x->rtrunaudio(x->maxmsp_inbuf, x->maxmsp_outbuf, nsamps);
+	
+	n = nsamps;
+	// copy output from RTcmix from transfer buffer
+	while (n--) {
+		for(i = 0; i < x->num_outputs; i++)
+			*out[i]++ = (x->maxmsp_outbuf)[j++];
+	}
 	
 	// reset queue and heap if signalled
 	if (x->flushflag == 1) {
@@ -996,6 +1011,11 @@ void rtcmix_free(t_rtcmix *x)
 		rtcmix_dprint(x, "rtcmix_free calling RTcmix_destroy()");
 		x->rtcmixdestroy();
 	}
+	
+	// free our transfer buffers
+	free(x->maxmsp_inbuf);
+	free(x->maxmsp_outbuf);
+	x->maxmsp_inbuf = x->maxmsp_outbuf = NULL;
 	
 	// not a bad idea to do this
 	if (x->module)
