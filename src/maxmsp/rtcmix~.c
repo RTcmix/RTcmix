@@ -557,8 +557,14 @@ void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count)
 	// set sample rate
 	x->srate = sp[0]->s_sr;
 	
+	int connectedInputs = 0;
+	
 	// check to see if there are signals connected to the various inputs
-	for(i = 0; i < totalInputs; i++) x->in_connected[i] = count[i];
+	for(i = 0; i < totalInputs; i++) {
+		x->in_connected[i] = count[i];
+		connectedInputs += count[i];
+	}
+	rtcmix_dprint(x, "rtcmix_dsp: %d connected inputs", connectedInputs);
 	
 	// construct the array of vectors and stuff
 	dsp_add_args[0] = x; //the object itself
@@ -617,7 +623,7 @@ void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count)
 	// This is done if we are either reloading the dylib, or destroying everything each time.
 	if (x->rtsetaudiobufferformat)
 	{
-		rtcmix_dprint(x, "rtcmix_dsp calling RTcmix_setAudioBufferFormat()");
+		rtcmix_dprint(x, "rtcmix_dsp calling RTcmix_setAudioBufferFormat with %d output channels", (int)x->num_outputs);
 		x->rtsetaudiobufferformat(AudioFormat_32BitFloat_Normalized, x->num_outputs);
 	}
 	if (x->rtsetparams)
