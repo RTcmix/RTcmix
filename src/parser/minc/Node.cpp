@@ -800,10 +800,8 @@ Node *	NodeOp::do_op_list_iterate(const MincList *srcList, const MincFloat val, 
          minc_internal_error("invalid list operator");
          break;
    }
-   assert(this->dataType() == MincVoidType);	// are we ever overwriting these?
-   assert((MincList*)this->value() == NULL);
    this->value() = destList;
-	return this;
+   return this;
 }
 
 /* ---------------------------------------------------- do_op_list_list -- */
