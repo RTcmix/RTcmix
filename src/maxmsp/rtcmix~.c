@@ -935,11 +935,12 @@ t_int *rtcmix_perform(t_int *w)
 	long n = nsamps;
 	// copy input from MAX into transfer buffer
 	while (n--) {
-		for(i = 0; i < x->num_inputs; i++)
+		for(i = 0; i < x->num_inputs; i++) {
 			if (x->in_connected[i])
 				(x->maxmsp_inbuf)[k++] = *in[i]++;
 			else
 				(x->maxmsp_inbuf)[k++] = *in[i];
+		}
 	}
 	
 	// RTcmix stuff
