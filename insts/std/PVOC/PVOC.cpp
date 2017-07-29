@@ -86,18 +86,19 @@ static void vvmult( float *out, float *a, float *b, int n )
 *  p0 = outskip
 *  p1 = inskip
 *  p2 = dur
-*  p3 = amp
+*  p3 = AMP (dynamic)
 *  p4 = input channel
 *  p5 = fft size
 *  p6 = window size
-*  p7 = decimation amount (readin)
+*  p7 = decimation amount (READIN) (dynamic)
 *  p8 = interpolation amount (putout)
-*  p9 = pitch multiplier
+*  p9 = pitch multiplier (dynamic)
 *  p10 = npoles
+*  p11 = oscillator threshold (dynamic)
 *
 */
 
-PVOC::PVOC() : _first(1), _valid(-1), _currentsample(0)
+PVOC::PVOC() : _first(1), _valid(-1)
 {
 	obank = 0;
 	_inReadOffset = _inWriteOffset = _outReadOffset = _outWriteOffset = 0;
@@ -185,6 +186,9 @@ int PVOC::init(double *p, int n_args)
 		return DONT_SCHEDULE; // no input
 	if (rtsetoutput(outskip, dur, this) == -1)
 		return DONT_SCHEDULE;
+	
+	_inputFrames = inputNSamps();
+	_currentInputFrame = 0;
 
 	// pick up arguments from command line
 
@@ -199,9 +203,8 @@ int PVOC::init(double *p, int n_args)
 	Np	= (int)p[10];		/* linear prediction order */
 	_oscThreshold  = p[11];		/* synthesis threshhold */
 
-/*	freopen( "pv.out", "w", stderr ); */
 #ifdef debug
-	printf("pv parameters:\n" );
+	printf("initial PVOC parameters:\n" );
 	printf("R (samprate) = %d\n", R );
 	printf("N (fft len) = %d\n", N );
 	printf("Nw (windowlen) = %d\n", Nw );
@@ -211,7 +214,14 @@ int PVOC::init(double *p, int n_args)
 	printf("Np = %d\n", Np );
 	printf("thresh = %g\n", _oscThreshold );
 #endif
-
+	if (D <= 0) {
+		die("PVOC", "decimation must be >= 1");
+		return(DONT_SCHEDULE);
+	}
+	if (I <= 0) {
+		die("PVOC", "interpolation must be >= 1");
+		return(DONT_SCHEDULE);
+	}
 	if (I > Nw) {
 		die("PVOC", "Window size must be >= interpolation factor");
 		return(DONT_SCHEDULE);
@@ -287,6 +297,53 @@ int PVOC::configure()
 	return 0;
 }
 
+static const int L = 8192;		// also used in initOscBank
+
+int PVOC::doUpdate()
+{
+#ifdef debug
+	printf("doUpdate: %d/%d = %f%%\n", _currentInputFrame, _inputFrames, (float)_currentInputFrame*100.0/_inputFrames);
+#endif
+	_amp = update(3, _inputFrames, _currentInputFrame);
+	/* decimation factor */
+	double newD = update(7, _inputFrames, _currentInputFrame);
+	if ((int)newD != D && newD >= 1.0) {
+		D = (int)newD;
+		_convertFactor = R / (D * TWOPI);
+#ifdef debug
+		printf("D updated to %d\n", D);
+#endif
+	}
+#ifdef ALLOW_DYNAMIC_INTERPOLATION
+	/* interpolation factor */
+	double newI = update(8, _inputFrames, _currentInputFrame);
+	if ((int)newI != I && newI >= 1.0) {
+		I	= (int)newI;
+		if (I > Nw) {
+			rtcmix_warn("PVOC", "interpolation factor limited to window size (%d)", Nw);
+			I = Nw;
+		}
+		_unconvertFactor = TWOPI * I / R;
+		_Iinv = 1./I;
+	}
+#endif
+	/* oscillator bank pitch factor */
+	double newP = update(9, _inputFrames, _currentInputFrame);
+	if (newP != P) {
+		const int N2 = N >> 1;
+		P = newP;
+		_Pinc = P*L/R;
+		_ffac = P*PI/N2;
+		if ( P > 1. )
+			_NP = int(N2/P);
+		else
+			_NP = int(N2);
+	}
+	_oscThreshold  = update(11, _inputFrames, _currentInputFrame);		/* synthesis threshhold */
+	
+	return 0;
+}
+
 int PVOC::run()
 {
 #ifdef debug
@@ -296,6 +353,8 @@ int PVOC::run()
 	// This runs the engine forward until the first buffer of output data is ready (see PVOC::shiftout()).
 	// This compensates for the group delay of the windowed output.
 	
+	doUpdate();
+
 	int outFramesNeeded = framesToRun();
 
 	if (_cachedOutFrames)
@@ -450,7 +509,6 @@ int PVOC::shiftin( float A[], int winLen, int D)
 #endif
 	for ( i = 0 ; i < winLen - D ; ++i )
 		A[i] = A[i+D];
-	_currentsample += (i-1);
 
 	int framesToRead = D;
 	int framecount = 0;
@@ -484,6 +542,7 @@ int PVOC::shiftin( float A[], int winLen, int D)
 			int framesRead = rtgetin(in, this, toRead*inchans) / inchans;
 			_cachedInFrames += framesRead;
 			_inWriteOffset += framesRead;
+			_currentInputFrame += framesRead;
 		}
 	}
 #ifdef debug
@@ -661,9 +720,6 @@ PVOC::unconvert( float C[], float S[], int N2, int I, int R )
 		S[real] = mag * cosf( phase );
 	}
 }
-
-static const int L = 8192;
-static const unsigned int Lmask = L - 1;
 
 void
 PVOC::initOscbank(int N, int npoles, int R, int Nw, int I, float P)

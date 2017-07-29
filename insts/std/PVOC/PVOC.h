@@ -18,7 +18,8 @@ protected:
 	int		_cachedOutFrames;
 	int		_first, _valid;
 	int		_inputchannel;
-	int		_currentsample;
+	int		_inputFrames;	// total number of frames of input
+	int		_currentInputFrame;	// where we are now in the input
 	int		R, N, N2, Nw, Nw2, D, I, i, _in, _on, obank, Np;
 	float	_amp;
 	float	P, *Hwin, *Wanal, *Wsyn, *_pvInput, *winput;
@@ -40,7 +41,7 @@ private:
 	void	initOscbank(int N, int npoles, int R, int Nw, int I, float P);
 	void	oscbank(float C[], int N, float lpcoef[], int npoles,
 					int R, int Nw, int I, float P, float O[]);
-
+	int		doUpdate();
 	int		shiftin(float A[], int N, int D);
 	void	convert(float S[], float C[], int N2, int D, int R);
 	void	unconvert(float C[], float S[], int N2, int I, int R);

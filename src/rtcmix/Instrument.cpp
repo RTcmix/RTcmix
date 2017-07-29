@@ -29,7 +29,7 @@
 using namespace std;
 
 InputState::InputState()
-: fdIndex(NO_DEVICE_FDINDEX), fileOffset(0), inputsr(0.0), inputchans(0)
+: fdIndex(NO_DEVICE_FDINDEX), fileOffset(0), inputsr(0.0), inputchans(0), inputNsamps(0)
 {
 }
 
@@ -191,7 +191,9 @@ int Instrument::update(double p[], int nvalues, unsigned fields)
 
 double Instrument::update(int index, int totframes, int curFrame)
 {
-	assert(index < _pfields->size());
+	if (index >= _pfields->size()) {
+		return 0.0;		// handle updates of optional pfields
+	}
 	const int nframes = (totframes == 0) ? nSamps() : totframes;
 	double percent = (curFrame > -1 ? curFrame : currentFrame()) / (double)nframes;
 	if (percent > 1.0)
