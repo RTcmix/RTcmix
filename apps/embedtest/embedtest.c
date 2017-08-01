@@ -51,7 +51,7 @@ char *testScore3 = { " \
 	} \
 " };
 
-PaStream *stream;
+PaStream *stream = NULL;
 
 /* this function called by high-priority system audio thread
 	(CoreAudio on macOS)
@@ -146,19 +146,19 @@ int deleteRTcmix()
 
 void playScore()
 {
-#if 0
+#if 1
 	RTcmix_parseScore(testScore1, strlen(testScore1));
 	Pa_Sleep(testScoreDuration1 * 1000); // wait while callback thread runs
 #endif
 
-#if 0
+#if 1
 	{
 		int i;
 		for (i = 0; i < 5; i++) {
 			RTcmix_parseScore(testScore2, strlen(testScore2));
 			Pa_Sleep(5000);
 		}
-		Pa_Sleep(testScoreDuration2 * 1000);
+//		Pa_Sleep(testScoreDuration2 * 1000);
 	}
 #endif
 
