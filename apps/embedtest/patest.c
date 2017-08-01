@@ -12,7 +12,7 @@
 #define OUTPUT_CHANS 2
 #define NUM_SECONDS 10
 
-PaStream *stream;
+PaStream *stream = NULL;
 float amp = 0.05;
 
 float myrand()
