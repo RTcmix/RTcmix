@@ -62,7 +62,7 @@ usage: %s [options] score1 [score2 ... scoreN]                        \n\
   -y NUM   delay time between scores                 5.0 (sec)        \n\
                                                                       \n\
   You must leave a space between a - flag and its arg. -d3 won't work.\n\
-  This command won't work for any scores that take live audio input or\n\
+  This program won't work for any scores that take live audio input or\n\
   invoke MIDI, OSC, or the mouse or display apps. There is no checking\n\
   for these dependencies.                                             \n\
   The amplitude multiplier is applied after RTcmix generates samples, \n\
