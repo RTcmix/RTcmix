@@ -1,4 +1,4 @@
-PROGS = patest embedtest scoreplayer
+PROGS = patest embedtest scoreplayer scoretrigger
 
 CFLAGS = -g -Wall
 LDFLAGS = -L/usr/local/lib -lportaudio -L../../lib -lrtcmix_embedded
@@ -15,6 +15,9 @@ embedtest: embedtest.c
 
 scoreplayer: scoreplayer.c
 	$(CC) $(CFLAGS) -o scoreplayer scoreplayer.c $(INCLUDES) $(LDFLAGS)
+
+scoretrigger: scoretrigger.c
+	$(CC) $(CFLAGS) -o scoretrigger scoretrigger.c $(INCLUDES) -lcurses $(LDFLAGS)
 
 clean:
 	$(RM) -r *.o $(PROGS) *.dSYM
