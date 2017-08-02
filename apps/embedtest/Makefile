@@ -1,4 +1,4 @@
-PROGS = patest embedtest #scoreplayer
+PROGS = patest embedtest scoreplayer
 
 CFLAGS = -g -Wall
 LDFLAGS = -L/usr/local/lib -lportaudio -L../../lib -lrtcmix_embedded
