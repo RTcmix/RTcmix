@@ -34,6 +34,7 @@ float totalDuration = 10.0;
 float scoreDelayTime = 5.0;	//FIXME: good default? Can derive from sco?
 PaStream *stream = NULL;
 int verbose = 0;
+int printJobOutput = 0;
 float rescaleFactor = 1.0;
 float sampleRate = SAMPLE_RATE;
 int framesPerBuffer = FRAMES_PER_BUF;
@@ -55,6 +56,7 @@ usage: %s [options] score1 [score2 ... scoreN]                        \n\
   -c NUM   number of output channels                 2                \n\
   -d NUM   total play duration                       10.0 (sec)       \n\
   -h       show this help text                                        \n\
+  -j       print RTcmix job output                                    \n\
   -r NUM   sampling rate                             44100.0          \n\
   -v       print settings before playing                              \n\
   -y NUM   delay time between scores                 5.0 (sec)        \n\
@@ -115,6 +117,21 @@ error:
 	return -1;
 }
 
+void rtcmixPrintCallback(const char *printBuffer, void *inContext)
+{
+	(void) inContext;
+	const char *p = printBuffer;
+	char str[1024];
+	int len = strlen(p);
+	while (len > 0) {
+		strncpy(str, p, 1024);
+		str[len-1] = 0;
+		printf("%s\n", str);
+		p += (len + 1);
+		len = strlen(p);
+	}
+}
+
 int initRTcmix()
 {
 	int result = RTcmix_init();
@@ -133,6 +150,12 @@ int initRTcmix()
 									  numInternalBuses);
 	if (result)
 		goto error;
+
+	if (printJobOutput) {
+		char str[64] = "set_option(\"print = 5\");\n";
+		RTcmix_parseScore(str, strlen(str));
+		RTcmix_setPrintCallback(rtcmixPrintCallback, NULL);
+	}
 
 	return 0;
 error:
@@ -315,6 +338,9 @@ int main(int argc, char *argv[])
 					break;
 				case 'h':
 					usage();
+					break;
+				case 'j':
+					printJobOutput = 1;
 					break;
 				case 'r':
 					if (++i >= argc)
