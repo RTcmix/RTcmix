@@ -360,7 +360,6 @@ int main(int argc, char *argv[])
 						scoreDelayTime = 0.0;
 					break;
 //FIXME: others: call flush after each score? call destroy after each?
-//FIXME: others: print job output using RTcmixPrintCallback?
 				default:
 					usage();
 			}
