@@ -3,7 +3,9 @@ librtcmix_embedded. These exist mostly as simple ways to exercise
 this library. These require a POSIX environment, so no Windows.
 
 To compile these, install PortAudio in its default location (/usr/local/lib).
-Configure RTcmix as follows.
+Get it here: http://portaudio.com/download.html.
+
+Build RTcmix as follows.
 
 1. Set BUILDTYPE to OSXEMBEDDED in rtcmix/site.conf.
 
