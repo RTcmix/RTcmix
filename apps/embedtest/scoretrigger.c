@@ -124,6 +124,12 @@ int initRTcmix()
 	if (result)
 		goto error;
 
+	/* Clipping reports mess up our curses screen. Must do this here, because
+		after RTcmix calls create_audio_devices, it's too late to change it. */
+	strncpy(str, "set_option(\"report_clipping = false\");\n", 64);
+	str[63] = 0;
+	RTcmix_parseScore(str, strlen(str));
+
 	result = RTcmix_setAudioBufferFormat(AudioFormat_32BitFloat_Normalized,
 					numOutChannels);
 	if (result)
@@ -136,11 +142,6 @@ int initRTcmix()
 									  numInternalBuses);
 	if (result)
 		goto error;
-
-	// Clipping reports mess up our curses screen
-	strncpy(str, "set_option(\"report_clipping = false\");\n", 64);
-	str[63] = 0;
-	RTcmix_parseScore(str, strlen(str));
 
 	return 0;
 error:
