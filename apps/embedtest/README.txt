@@ -1,7 +1,6 @@
 These test programs use PortAudio, usually in combination with
 librtcmix_embedded. These exist mostly as simple ways to exercise
-this library. These should compile on Windows, but I haven't tried
-it or done whatever is needed to set this up.
+this library. These require a POSIX environment, so no Windows.
 
 To compile these, install PortAudio in its default location (/usr/local/lib).
 Configure RTcmix as follows.
