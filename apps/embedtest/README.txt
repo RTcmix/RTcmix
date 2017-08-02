@@ -15,5 +15,12 @@ where our Makefile will find it.
 3. cd to the directory this README is in, and make.
 
 
+Programs
+--------
+embedtest.c - simple example of writing scores to RTcmix
+patest.c - play noise through PortAudio, without any RTcmix
+scoreplayer.c - play multiple scores, with configurable overlap
+scoretrigger.c - play scores interactively from the computer keyboard
+
 -John Gibson, 8/1/17
 
