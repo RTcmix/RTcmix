@@ -58,7 +58,10 @@ usage: %s [options] score1 [score2 ... scoreN]                        \n\
   -r NUM   sampling rate                             44100.0          \n\
   -v       print settings before playing                              \n\
                                                                       \n\
-  Trigger scores using keys for numbers 1-9.                          \n\
+  While running the program...                                        \n\
+     numbers 1-9 trigger scores                                       \n\
+     'f' flushes currently running scores from the scheduler          \n\
+     'r' restarts RTcmix                                              \n\
                                                                       \n\
   You must leave a space between a - flag and its arg. -d3 won't work.\n\
   This program won't work for any scores that take live audio input or\n\
@@ -149,6 +152,12 @@ error:
 	return -1;
 }
 
+int reInitRTcmix()
+{
+	RTcmix_destroy();
+	return initRTcmix();
+}
+
 int deleteAudio()
 {
 	PaError err = Pa_StopStream(stream);
@@ -192,9 +201,9 @@ int playScores()
 
 	// print instructions
 	if (numScores == 1)
-		addstr("Type number 1 to play the score, ESC to quit.\n");
+		addstr("Type number 1 to play the score, 'f' to flush, 'r' to restart, ESC to quit.\n");
 	else {
-		snprintf(str, 256, "Type numbers 1-%d to play the scores, ESC to quit.\n",					numScores);
+		snprintf(str, 256, "Type numbers 1-%d to play the scores, 'f' to flush, 'r' to restart, ESC to quit.\n",					numScores);
 		addstr(str);
 	}
 	for (i = 0; i < numScores; i++) {
@@ -211,6 +220,12 @@ int playScores()
 				i = scoreNum - 1;	// zero-based index
 				RTcmix_parseScore(scores[i], strlen(scores[i]));
 			}
+		}
+		else if (c == 'f') {
+			RTcmix_flushScore();
+		}
+		else if (c == 'r') {
+			reInitRTcmix();
 		}
 		else if (c == 27) {
 			printf("\n\nquitting...\n");
