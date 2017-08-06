@@ -19,6 +19,7 @@ scoreplayer: scoreplayer.c
 scoretrigger: scoretrigger.c
 	$(CC) $(CFLAGS) -o scoretrigger scoretrigger.c $(INCLUDES) -lcurses $(LDFLAGS)
 
+uninstall:
+
 clean:
 	$(RM) -r *.o $(PROGS) *.dSYM
-
