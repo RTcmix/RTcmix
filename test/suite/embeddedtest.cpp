@@ -28,7 +28,7 @@ static void PrintCallback(const char *printBuffer, void *inContext)
 	}
 }
 
-static void DoneCallback(long long samps) {
+static void DoneCallback(long long samps, void *context) {
 	printf("Done - %lld samples\n", samps);
 	done = true;
 }
@@ -61,22 +61,25 @@ int main(int argc, char **argv)
 				   );
 	
 	char scorebuf[2048];
-	int fd = open(argv[1], O_RDONLY);
-	if (fd<0) { perror("open"); exit(1); }
-	int len = read(fd, scorebuf, 2048);
+	for (int arg = 1; arg < argc; ++arg) {
+		int fd = open(argv[arg], O_RDONLY);
+		if (fd<0) { perror(argv[arg]); exit(1); }
+		int len = read(fd, scorebuf, 2048);
 	
-	printf("sending score (length %d bytes)\n", len);
-	status = RTcmix_parseScore(scorebuf, len);
-	printf("parse returned %d\n", status);
+		printf("sending score '%s' (length %d bytes)\n", argv[arg], len);
+		status = RTcmix_parseScore(scorebuf, len);
+		printf("parse returned %d\n", status);
+		close(fd);
 
-	while (!done) {
-		usleep(100*1000);
+		while (!done) {
+			usleep(100*1000);
+		}
 	}
+	
 	running = false;
 
 	usleep(1000*1000*1);
 	RTcmix_destroy();
 	usleep(1000*1000*1);
-	close(fd);
 	return status;
 }

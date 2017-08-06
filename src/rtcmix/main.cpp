@@ -206,7 +206,7 @@ void checkForPrint()
 void notifyIsFinished(long long endFrame)
 {
 	if (sFinishedCallback) {
-		sFinishedCallback(endFrame);
+		sFinishedCallback(endFrame, sFinishedCallbackContext);
 	}
 }
 
