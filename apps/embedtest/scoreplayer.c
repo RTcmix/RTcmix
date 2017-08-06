@@ -125,8 +125,8 @@ void rtcmixPrintCallback(const char *printBuffer, void *inContext)
 	int len = strlen(p);
 	while (len > 0) {
 		strncpy(str, p, 1024);
-		str[len-1] = 0;
-		printf("%s\n", str);
+		str[len] = 0;
+		printf("%s", str);
 		p += (len + 1);
 		len = strlen(p);
 	}
