@@ -31,6 +31,7 @@ extern "C" {
 	void checkForBang();		// DAS TODO: currently in main.cpp -- create header and move to new file
 	void checkForVals();
 	void checkForPrint();
+	void notifyIsFinished(long long);
 }
 #endif
 
@@ -180,6 +181,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		resetHeapAndQueue();
 		rtsendzeros(device, false);
 		run_status = RT_GOOD;
+		notifyIsFinished(bufEndSamp);
 		return true;
 	}
 #endif
@@ -305,6 +307,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	vector<Instrument *>instruments;
 	instruments.reserve(busCount);
 #endif
+	bool instrumentFound = false;
 	// rtQueue[] playback shuffling ++++++++++++++++++++++++++++++++++++++++
 	while (!aux_pb_done) {
 		switch (qStatus) {
@@ -338,7 +341,6 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			busq = bus+bus_q_offset;
 			rtQSize = rtQueue[busq].getSize();
 			if (rtQSize > 0) {
-				rtQueue[busq].sort();
 				rtQchunkStart = rtQueue[busq].nextChunk();
 				// DS ADDED
 				assert(rtQchunkStart > 0 || bufStartSamp == 0);
@@ -385,7 +387,8 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		// Play elements on queue (insert back in if needed) ++++++++++++++++++
 		while (rtQSize > 0 && rtQchunkStart < bufEndSamp) {
 			int chunksamps = 0;
-			            
+			instrumentFound = true;
+			
 			Iptr = rtQueue[busq].pop(&rtQchunkStart);  // get next instrument off queue
 #ifdef DBUG
 			cout << "Iptr " << (void *) Iptr << " popped from rtQueue " << busq << " at rtQchunkStart " << rtQchunkStart << endl;
@@ -503,11 +506,10 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	}  // end while (!aux_pb_done) --------------------------------------------------
 
 #else   // MULTI_THREAD
-    
     // Play elements on queue (insert back in if needed) ++++++++++++++++++
     while (rtQSize > 0 && rtQchunkStart < bufEndSamp && bus != -1) {
         int chunksamps = 0;
-                
+		instrumentFound = true;
         Iptr = rtQueue[busq].pop(&rtQchunkStart);  // get next instrument off queue
 #ifdef DBUG
 		cout << "Iptr " << (void *) Iptr << " popped from rtQueue " << busq << " at rtQchunkStart " << rtQchunkStart << endl;
@@ -592,7 +594,6 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         // DJT:  not sure this check before new rtQchunkStart is necessary
         rtQSize = rtQueue[busq].getSize();
         if (rtQSize) {
-            rtQueue[busq].sort();
             rtQchunkStart = rtQueue[busq].nextChunk(); /* FIXME:  crapping out */
             allQSize += rtQSize;                /* in RT situation sometimes */
         }
@@ -661,6 +662,11 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		}
 	}
 	else {
+#ifdef EMBEDDED
+		if (instrumentFound && (rtHeap->getSize() == 0) && (allQSize == 0)) {
+			notifyIsFinished(bufEndSamp);
+		}
+#endif
 		// Check status from other threads
 		if (run_status == RT_SHUTDOWN) {
 #ifndef EMBEDDED

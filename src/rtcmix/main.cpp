@@ -182,7 +182,16 @@ void RTcmix_setPrintCallback(RTcmixPrintCallback inPrintCallback, void *inContex
 	sPrintCallbackContext = inContext;
 }
 
-// This is called from inTraverse
+static RTcmixFinishedCallback sFinishedCallback = NULL;
+static void *sFinishedCallbackContext = NULL;
+
+void RTcmix_setFinishedCallback(RTcmixFinishedCallback inFinishedCallback, void *inContext)
+{
+	sFinishedCallback = inFinishedCallback;
+	sFinishedCallbackContext = inContext;
+}
+
+// These are called from inTraverse
 
 void checkForPrint()
 {
@@ -191,6 +200,13 @@ void checkForPrint()
 		if (sPrintCallback)
 			sPrintCallback(printBuf, sPrintCallbackContext);
 		clear_print();
+	}
+}
+
+void notifyIsFinished(long long endFrame)
+{
+	if (sFinishedCallback) {
+		sFinishedCallback(endFrame);
 	}
 }
 

@@ -20,40 +20,24 @@ RTQueue::~RTQueue()
 	}
 }
 
+bool RTQueue::sortElems (const RTQueue::Element& x,const RTQueue::Element& y)
+{
+	return (x.first < y.first);
+}
+
 // Push an element to end of the RTQueue
 
 void RTQueue::push(Instrument *inInst, FRAMETYPE chunkstart)
 {
-#ifdef DEBUG_SORT
-	mSorted = false;
-#endif
-	mInstrumentList.push_back(Element(chunkstart, inInst));
+	Element element(chunkstart, inInst);
+	mInstrumentList.insert(std::upper_bound(mInstrumentList.begin(), mInstrumentList.end(), element, sortElems), element);
 	inInst->ref();
-}
-
-bool RTQueue::sortElems (const RTQueue::Element& x,const RTQueue::Element& y)
-{
-	return (x.first > y.first);	// we pop from the end, so high frame numbers are in front
-}
-
-void RTQueue::sort()
-{
-#ifdef DEBUG_SORT
-	if (mSorted) { fprintf(stderr, "SORTING RTQueue TWICE!\n"); }
-#endif
-	std::sort(mInstrumentList.begin(), mInstrumentList.end(), sortElems);
-#ifdef DEBUG_SORT
-	mSorted = true;
-#endif
 }
 
 // Pop an element of the top of the RTQueue
 
 Instrument *	RTQueue::pop(FRAMETYPE *pChunkStart)
 {
-#ifdef DEBUG_SORT
-	assert(mSorted == true);
-#endif
 	if (mInstrumentList.empty()) {
 		rtcmix_warn("rtQueue", "attempt to pop empty RTQueue\n");
 		return NULL;

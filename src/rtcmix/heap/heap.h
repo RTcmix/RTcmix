@@ -69,26 +69,16 @@ public:
 
 // class for queue used to hold Instruments
 
-#undef DEBUG_SORT	/* this was just to verify sorting happened correctly */
-
 class RTQueue {
 	typedef std::pair<FRAMETYPE, Instrument *> Element;
 private:
 	std::vector<Element>	mInstrumentList;
-#ifdef DEBUG_SORT
-	bool mSorted;
-#endif
 	typedef std::vector<Element>::iterator InstrumentListIterator;
 	static bool sortElems(const Element& x,const Element& y);
 public:
-#ifdef DEBUG_SORT
-	RTQueue() : mSorted(false) {}
-#else
 	RTQueue() {}
-#endif
 	~RTQueue();
 	void push(Instrument*, FRAMETYPE);
-	void sort();
 	Instrument *pop(FRAMETYPE *pChunkStart);
 	FRAMETYPE nextChunk();
 	// Return the number of elements on the RTQueue
