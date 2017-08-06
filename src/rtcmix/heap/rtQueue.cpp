@@ -22,7 +22,7 @@ RTQueue::~RTQueue()
 
 bool RTQueue::sortElems (const RTQueue::Element& x,const RTQueue::Element& y)
 {
-	return (x.first < y.first);
+	return (x.first > y.first);
 }
 
 // Push an element to end of the RTQueue
@@ -30,7 +30,7 @@ bool RTQueue::sortElems (const RTQueue::Element& x,const RTQueue::Element& y)
 void RTQueue::push(Instrument *inInst, FRAMETYPE chunkstart)
 {
 	Element element(chunkstart, inInst);
-	mInstrumentList.insert(std::upper_bound(mInstrumentList.begin(), mInstrumentList.end(), element, sortElems), element);
+	mInstrumentList.insert(std::lower_bound(mInstrumentList.begin(), mInstrumentList.end(), element, sortElems), element);
 	inInst->ref();
 }
 
