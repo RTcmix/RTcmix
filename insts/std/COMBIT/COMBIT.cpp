@@ -34,9 +34,8 @@
 
 #define MINFREQ 0.1	// Hz
 
-COMBIT::COMBIT() : Instrument()
+COMBIT::COMBIT() : in(NULL), comb(NULL)
 {
-	in = NULL;
 	branch = 0;
 	delsamps = 0;
 	give_minfreq_warning = true;
