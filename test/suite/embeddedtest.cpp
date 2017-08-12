@@ -16,6 +16,8 @@
 #include <RTcmix_API.h>
 #include <fcntl.h>
 
+#define NO_WAIT
+
 char message[65536];
 bool done = false;
 
@@ -41,6 +43,7 @@ int main(int argc, char **argv)
 	RTcmix_setPrintCallback(PrintCallback, NULL);
 	RTcmix_setFinishedCallback(DoneCallback, NULL);
 	status = RTcmix_init();
+	RTcmix_setPrintLevel(6);
 
 	RTcmix_setAudioBufferFormat(AudioFormat_32BitFloat_Normalized, 2);
 
@@ -56,26 +59,44 @@ int main(int argc, char **argv)
 							   fprintf(stderr, "embeddedtest: %s\n", message);
 							   message[0] = 0;
 						   }
+						   usleep(1000*5);
 					   }
 				   }
 				   );
 	
-	char scorebuf[2048];
+	const char *printLevelString = "print_on(6)\n";
+	char scorebuf[4096];
 	for (int arg = 1; arg < argc; ++arg) {
+		done = false;
 		int fd = open(argv[arg], O_RDONLY);
 		if (fd<0) { perror(argv[arg]); exit(1); }
-		int len = read(fd, scorebuf, 2048);
+		long len = read(fd, scorebuf, 4096);
+		close(fd);
 	
-		printf("sending score '%s' (length %d bytes)\n", argv[arg], len);
+		printf("sending score '%s' (length %ld bytes)\n", argv[arg], len);
+		
 		status = RTcmix_parseScore(scorebuf, len);
 		printf("parse returned %d\n", status);
-		close(fd);
-
+		if (status != 0) {
+			printf("Offending score:\n%s", scorebuf);
+			continue;
+		}
+#ifndef NO_WAIT
 		while (!done) {
 			usleep(100*1000);
 		}
+#else
+		printf("sleeping briefly before next score...\n");
+		usleep(1000 * 500);
+#endif
 	}
-	
+
+#ifdef NO_WAIT
+	while (!done) {
+		usleep(100*1000);
+	}
+#endif
+
 	running = false;
 
 	usleep(1000*1000*1);
