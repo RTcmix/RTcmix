@@ -98,6 +98,7 @@ ifeq ($(ARCH),MACOSX)
       ARCHFLAGS += -DUSE_OSX_DISPATCH
     endif
     ARCH_RTLDFLAGS += -framework AudioUnit
+	SHLIB = rtcmix
     SHLIB_SUFFIX = dylib
     AUDIODRIVER=APPLE
     CMIX_FLAGS += -DAPPLEAUDIO
@@ -278,7 +279,7 @@ CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_F
 
 RTLIB = lib$(SHLIB).$(SHLIB_SUFFIX)
 LIBRTCMIX = $(LIBDIR)/$(RTLIB)
-RTLDFLAGS = -L$(LIBDIR) -l$(RTLIB) -lgen
+RTLDFLAGS = -L$(LIBDIR) -l$(SHLIB) -lgen
 
 # Platform-specific library flags Key:
 #
