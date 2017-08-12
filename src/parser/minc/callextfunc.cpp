@@ -84,6 +84,12 @@ call_external_function(const char *funcname, const MincValue arglist[],
 			break;
 		case MincHandleType:
 			rtcmixargs[i] = (Handle) (MincHandle)arglist[i];
+#ifdef EMBEDDED
+			if ((Handle)rtcmixargs[i] == NULL) {
+				minc_die("can't pass a null handle (arg %d) to RTcmix function %s()", i, funcname);
+				return -1;
+			}
+#endif
 			break;
 		case MincListType:
 			{
