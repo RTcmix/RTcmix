@@ -856,18 +856,18 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
             	return die("bus_config",
             		"Can't have 'in' and 'chain-in' buses in same bus_config.");
             }
-            j = bus_slot->in_count;
+            /* Make sure max channel count set in rtsetparams can accommodate
+               the highest input chan number in this bus config.
+            */
+            if (endchan >= NCHANS) {
+            	return die("bus_config", "You specified %d channels in rtsetparams,\n"
+            				"but this bus_config requires %d channels.",
+							 NCHANS, endchan + 1);
+            }
+           j = bus_slot->in_count;
             for (k = startchan; k <= endchan; k++)
                bus_slot->in[j++] = k;
             bus_slot->in_count += (endchan - startchan) + 1;
-			/* Make sure max channel count set in rtsetparams can accommodate
-               the highest input chan number in this bus config.
-			*/
-			if (endchan >= NCHANS) {
-				return die("bus_config", "You specified %d channels in rtsetparams,\n"
-							"but this bus_config requires %d channels.",
-							NCHANS, endchan + 1);
-			}
 			break;
          case BUS_OUT:
 			if (bus_slot->out_count > 0) strcat(outbusses, ", ");
@@ -880,6 +880,14 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
             	return die("bus_config",
             				"Can't have 'out' and 'chain-out' buses in same bus_config.");
             }
+            /* Make sure max output chans set in rtsetparams can accommodate
+			   the highest output chan number in this bus config.
+            */
+            if (endchan >= NCHANS) {
+            	return die("bus_config", "You specified %d output channels in rtsetparams,\n"
+							 "but this bus_config requires %d channels.",
+							 NCHANS, endchan + 1);
+            }
             j = bus_slot->out_count;
             for (k = startchan; k <= endchan; k++) {
                bus_slot->out[j++] = k;
@@ -889,14 +897,6 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
             }
             bus_slot->out_count += (endchan - startchan) + 1;
 
-            /* Make sure max output chans set in rtsetparams can accommodate
-               the highest output chan number in this bus config.
-            */
-            if (endchan >= NCHANS) {
-               return die("bus_config", "You specified %d output channels in rtsetparams,\n"
-                         "but this bus_config requires %d channels.",
-                         NCHANS, endchan + 1);
-            }
             break;
          case BUS_AUX_IN:
 			if (bus_slot->auxin_count > 0) strcat(inbusses, ", ");
