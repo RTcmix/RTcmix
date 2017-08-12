@@ -12,6 +12,7 @@ extern "C" {
 	typedef void (*RTcmixValuesCallback)(float *values, int numValues, void *inContext);
 	typedef void (*RTcmixPrintCallback)(const char *printBuffer, void *inContext);
 	typedef void (*RTcmixFinishedCallback)(long long frameCount, void *inContext);
+	void RTcmix_setPrintLevel(int level);
 	int RTcmix_init();
 	int RTcmix_destroy();
 	int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_count);

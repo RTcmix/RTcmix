@@ -96,7 +96,14 @@ main(int argc, char *argv[], char **env)
 
 #else // EMBEDDED
 
+#include "Option.h"
+
 static RTcmixMain *globalApp;
+
+void RTcmix_setPrintLevel(int level)
+{
+	Option::print(level);
+}
 
 /* ----------------------------------------------------------- RTcmix_init --- */
 
@@ -162,7 +169,7 @@ float maxmsp_vals[MAXDISPARGS];
 
 void checkForVals()
 {  
-	if (vals_ready > 0 && sValuesArray != NULL) { // vals_ready will contain how many vals to return
+	if (vals_ready > 0) { // vals_ready will contain how many vals to return
 		int nVals = vals_ready;
 		vals_ready = 0;
 		// Copy into local static array.  This is what gets handed to callback.
