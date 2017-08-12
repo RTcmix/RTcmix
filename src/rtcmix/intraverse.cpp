@@ -37,7 +37,6 @@ extern "C" {
 
 using namespace std;
 
-#undef TBUG
 #undef ALLBUG
 #undef DBUG
 #undef WBUG	/* this new one turns on prints of where we are */
@@ -451,17 +450,17 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		}	// while (rtQSize > 0 && rtQchunkStart < bufEndSamp)
 
 		if (!instruments.empty()) {
-#if defined(DBUG) || defined(IBUG)
-			cout << "Done adding instruments for current slice\n";
-			cout << "waiting for " << instruments.size() << " instrument tasks..." << endl;
+#if defined(DBUG)
+			printf("Done adding instruments for current slice\n");
+			printf("waiting for %d instrument tasks...", (int) instruments.size());
 #endif
 			taskManager->waitForTasks(instruments);
         	RTcmix::mixToBus();
-#if defined(DBUG) || defined(IBUG)
+#if defined(DBUG)
 			cout << "done waiting" << endl;
 #endif
 #if defined(IBUG)
-			cout << "Re-queuing instruments\n";
+			printf("Re-queuing instruments\n");
 #endif
 		}
 		for (vector<Instrument *>::iterator it = instruments.begin(); it != instruments.end(); ++it) {
@@ -488,6 +487,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 					cout << "unref'ing inst " << (void *) Iptr << endl;
 #endif
 					Iptr->unref();
+					Iptr = NULL;
 				}
 			}  // end rtQueue or unref ----------------------------------------
 			
@@ -511,8 +511,8 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         int chunksamps = 0;
 		instrumentFound = true;
         Iptr = rtQueue[busq].pop(&rtQchunkStart);  // get next instrument off queue
-#ifdef DBUG
-		cout << "Iptr " << (void *) Iptr << " popped from rtQueue " << busq << " at rtQchunkStart " << rtQchunkStart << endl;
+#ifdef IBUG
+		printf("Iptr %p popped from rtQueue %d at rtQchunkStart %lld\n", Iptr, busq, rtQchunkStart);
 #endif
         Iptr->set_ichunkstart(rtQchunkStart);
                 
@@ -562,8 +562,8 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         
         // DT_PANIC_MOD
         if (!panic) {
-#ifdef TBUG
-            cout << "Iptr->exec(" << bus_type << "," << bus << ") [" << Iptr->name() << "]\n";
+#ifdef IBUG
+            printf("Iptr->exec(%d, %d) [%s]\n", bus_type, bus, Iptr->name());
 #endif
             inst_chunk_finished = Iptr->exec(bus_type, bus);    // write the samples * * * * * * * * * 
             endsamp = Iptr->getendsamp();
@@ -573,8 +573,8 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         
         // ReQueue or unref ++++++++++++++++++++++++++++++++++++++++++++++
         if (endsamp > bufEndSamp && !panic) {
-#ifdef DBUG
-            cout << "re queueing inst " << (void *) Iptr << " on rtQueue " << busq << endl;
+#ifdef IBUG
+            printf("re queueing inst %p on rtQueue %d\n", Iptr, busq);
 #endif
             rtQueue[busq].push(Iptr,rtQchunkStart+chunksamps);   // put back onto queue
         }
@@ -584,10 +584,11 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
             // if not unref'd here, it means the inst still needs to run on another bus.
 
             if (qStatus == iBus->Class() && inst_chunk_finished) {
-#ifdef DBUG
-                cout << "unref'ing inst " << (void *) Iptr << endl;
+#ifdef IBUG
+                printf("unref'ing inst %p\n", Iptr);
 #endif
                 Iptr->unref();
+				Iptr = NULL;
             }
         }  // end rtQueue or unref ----------------------------------------
         
