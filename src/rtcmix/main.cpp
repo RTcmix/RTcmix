@@ -226,7 +226,7 @@ int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording)
 	int status = globalApp->resetparams(sr, nchans, vecsize, recording);
 	if (status == 0) {
 		status = globalApp->resetAudio(sr, nchans, vecsize, recording);
-#if defined(MSPAUDIO) || defined(EMBEDDEDAUDIO)
+#if defined(EMBEDDEDAUDIO)
 		if (status == 0) {
 			rtcmix_debug(NULL, "RTcmix_resetAudio calling RTcmix::startAudio()");
 			// There is no separate call to start audio for embedded
@@ -251,20 +251,6 @@ int RTcmix_stopAudio()
 
 #endif // IOS
 
-#if defined(MSPAUDIO)	/* these are entry points used by MAX/MSP only */
-
-#include "Option.h"
-
-void *gMSPAudioState;	// Used by MSPAudioDevice.cpp
-
-void RTcmix_setMSPState(const char *inSpec, void *inState)
-{
-	Option::device(inSpec);
-	gMSPAudioState = inState;
-}
-
-#endif
-
 #ifdef MAXMSP
 
 // this is for dynamic loading of RTcmix instruments (for development)
@@ -287,13 +273,14 @@ void unloadinst()
 
 int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_count)
 {
+#warning is it still necessary to close and reset audio in setparams?
 #if defined(MSPAUDIO)
 	globalApp->close();
 	globalApp->resetAudio(sr, nchans, vecsize, recording);
 #endif
 	if (bus_count == 0) bus_count = DEFAULT_MAXBUS;
 	int status = globalApp->setparams(sr, nchans, vecsize, recording != 0, bus_count);
-#if defined(MSPAUDIO) || defined(EMBEDDEDAUDIO)
+#if defined(EMBEDDEDAUDIO)
 	if (status == 0) {
 		// There is no separate call to start audio for embedded
 		status = globalApp->startAudio(RTcmix::inTraverse, NULL, globalApp);

@@ -23,8 +23,6 @@
 #endif
 #ifdef EMBEDDEDAUDIO
 #include "EmbeddedAudioDevice.h"
-#elif defined(MSPAUDIO)
-#include "MSPAudioDevice.h"
 #endif
 #ifdef APPLEAUDIO
 #include "AppleAudioDevice.h"
@@ -55,8 +53,6 @@ static const AudioDevEntry s_AudioDevEntries[] = {
 #endif
 #ifdef EMBEDDEDAUDIO
 	{ &EmbeddedAudioDevice::recognize, &EmbeddedAudioDevice::create },
-#elif defined(MSPAUDIO)
-	{ &MSPAudioDevice::recognize, &MSPAudioDevice::create },
 #endif
 #ifdef APPLEAUDIO
 	{ &AppleAudioDevice::recognize, &AppleAudioDevice::create },
