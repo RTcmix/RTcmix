@@ -32,8 +32,6 @@ endif
 ifeq ($(ARCH),MACOSX)
    ifeq ($(AUDIODRIVER), APPLE)
 		OBJECTS += AppleAudioDevice.o
-   else ifeq ($(AUDIODRIVER), MAXMSP)
-		OBJECTS += MSPAudioDevice.o
    else ifeq ($(AUDIODRIVER), EMBEDDEDAUDIO)
    		OBJECTS += EmbeddedAudioDevice.o
    endif

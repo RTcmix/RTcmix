@@ -12,6 +12,7 @@ extern "C" {
 	typedef void (*RTcmixValuesCallback)(float *values, int numValues, void *inContext);
 	typedef void (*RTcmixPrintCallback)(const char *printBuffer, void *inContext);
 	typedef void (*RTcmixFinishedCallback)(long long frameCount, void *inContext);
+	void RTcmix_setPrintLevel(int level);
 	int RTcmix_init();
 	int RTcmix_destroy();
 	int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_count);
@@ -45,7 +46,6 @@ extern "C" {
 	void RTcmix_setPField(int inlet, float pval);
 	void pfield_set(int inlet, float pval);
 #ifdef MAXMSP
-	void RTcmix_setMSPState(const char *inSpec, void *inState);
 	void loadinst(char *dsoname);
 	void unloadinst();
 #endif

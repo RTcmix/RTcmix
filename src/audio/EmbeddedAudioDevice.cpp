@@ -10,6 +10,19 @@
 #include "sndlibsupport.h"
 #include <string.h>
 
+#define DEBUG 0
+
+#if DEBUG
+#ifdef MACOSX
+#include <syslog.h>
+#define DPRINT(msg) syslog(LOG_ERR, msg)
+#else
+#define DPRINT(msg)
+#endif
+#else
+#define DPRINT(msg)
+#endif
+
 static int sCallbackAudioFormat;
 static int sCallbackAudioChannels;
 
@@ -51,6 +64,7 @@ bool EmbeddedAudioDevice::run(void *inputFrameBuffer, void *outputFrameBuffer, i
 
 int EmbeddedAudioDevice::doOpen(int mode)
 {
+	DPRINT("EmbeddedAudioDevice::doOpen");
 	// For now, we don't care -- we only copy to/from buffers that are non-null
 	switch (mode & DirectionMask) {
 		case Playback:
@@ -71,6 +85,7 @@ int EmbeddedAudioDevice::doOpen(int mode)
 
 int EmbeddedAudioDevice::doClose()
 {
+	DPRINT("EmbeddedAudioDevice::doClose");
 	_impl->frameCount = 0;
 	return 0;
 }
@@ -80,11 +95,13 @@ int EmbeddedAudioDevice::doClose()
 
 int EmbeddedAudioDevice::doStart()
 {
+	DPRINT("EmbeddedAudioDevice::doStart");
 	return 0;
 }
 
 int EmbeddedAudioDevice::doStop()
 {
+	DPRINT("EmbeddedAudioDevice::doStop");
 	_impl->frameCount = 0;
 	return 0;
 }

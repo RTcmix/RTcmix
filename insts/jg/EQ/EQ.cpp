@@ -57,13 +57,8 @@
 #include <float.h>   // for FLT_MIN, FLT_MAX
 
 
-EQ :: EQ() : Instrument()
+EQ :: EQ() : in(NULL), amp_table(NULL), freq_table(NULL), q_table(NULL), gain_table(NULL), eq(NULL)
 {
-   in = NULL;
-   amp_table = NULL;
-   freq_table = NULL;
-   q_table = NULL;
-   gain_table = NULL;
    branch = 0;
    freq = Q = gain = -FLT_MAX;
    eqtype_was_string = false;
