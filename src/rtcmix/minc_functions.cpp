@@ -21,17 +21,23 @@ extern "C" {
 double m_boost(float p[])
 { return(boost(p[0])); }
 
-double m_pchmidi(float p[])
-{ return(pchmidi((int)p[0])); }
+double m_midipch(float p[])
+{ return(midipch(p[0])); }
 
-double m_cpsmidi(float p[])
-{ return(cpspch(pchmidi(((int)p[0])))); }
+double m_pchmidi(float p[])
+{ return(pchmidi(p[0])); }
+
+double m_midioct(float p[])
+{ return(midioct(p[0])); }
 
 double m_octmidi(float p[])
 { return(octmidi(p[0])); }
 
-double m_midipch(float p[])
-{ /*printf("%f\n",midipch(p[0]));*/ return(midipch(p[0])); }
+double m_midicps(float p[])
+{ return(midicps(p[0])); }
+
+double m_cpsmidi(float p[])
+{ return(cpsmidi(p[0])); }
 
 double m_cpspch(float p[])
 { return(cpspch(p[0])); }
