@@ -43,26 +43,34 @@ makeconverter(const Arg args[], const int nargs)
 
 	if (args[1] == "ampdb")
 		converter = new ConverterPField(pfield, ConverterPField::ampdb);
+	else if (args[1] == "dbamp")
+		converter = new ConverterPField(pfield, ConverterPField::dbamp);
+	else if (args[1] == "boost")
+		converter = new ConverterPField(pfield, ConverterPField::boost);
 	else if (args[1] == "cpsoct")
 		converter = new ConverterPField(pfield, ConverterPField::cpsoct);
 	else if (args[1] == "octcps")
 		converter = new ConverterPField(pfield, ConverterPField::octcps);
+	else if (args[1] == "pchoct")
+		converter = new ConverterPField(pfield, ConverterPField::pchoct);
 	else if (args[1] == "octpch")
 		converter = new ConverterPField(pfield, ConverterPField::octpch);
 	else if (args[1] == "cpspch")
 		converter = new ConverterPField(pfield, ConverterPField::cpspch);
-	else if (args[1] == "pchoct")
-		converter = new ConverterPField(pfield, ConverterPField::pchoct);
 	else if (args[1] == "pchcps")
 		converter = new ConverterPField(pfield, ConverterPField::pchcps);
 	else if (args[1] == "midipch")
 		converter = new ConverterPField(pfield, ConverterPField::midipch);
 	else if (args[1] == "pchmidi")
 		converter = new ConverterPField(pfield, ConverterPField::pchmidi);
+	else if (args[1] == "midicps")
+		converter = new ConverterPField(pfield, ConverterPField::midicps);
+	else if (args[1] == "cpsmidi")
+		converter = new ConverterPField(pfield, ConverterPField::cpsmidi);
+	else if (args[1] == "midioct")
+		converter = new ConverterPField(pfield, ConverterPField::midioct);
 	else if (args[1] == "octmidi")
 		converter = new ConverterPField(pfield, ConverterPField::octmidi);
-	else if (args[1] == "boost")
-		converter = new ConverterPField(pfield, ConverterPField::boost);
 
 	if (converter == NULL) {
 		die("makeconverter", "Invalid converter type \"%s\".", (const char *) args[1]);
