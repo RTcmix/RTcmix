@@ -17,7 +17,6 @@ extern int yyparse();
 #ifdef EMBEDDED
 
 int RTcmix_parseScore(char *thebuf, int buflen);
-extern int yyparse();
 extern int yylineno;
 extern void setGlobalBuffer(const char *inBuf, int inBufSize);	// minc/utils.cpp
 extern double minc_memflush();									// minc/minc.cpp (from minc.y)

@@ -21,9 +21,7 @@
 #include <prototypes.h>
 #include <ugens.h>
 #include <Option.h>
-#ifdef IOS
-#include <syslog.h>
-#elif defined(MAXMSP)
+#ifdef MAXMSP
 // BGG -- this is how you print to the console.app now in max/msp
 extern void cpost(const char *fmt, ...);
 #define USE_POST
@@ -32,6 +30,11 @@ extern void cpost(const char *fmt, ...);
 extern void post(const char *fmt, ...);
 #define cpost post
 #define USE_POST
+#endif
+
+#if (defined(MACOSX) || defined(IOS)) && defined(EMBEDDED)
+#include <syslog.h>
+#define USE_SYSLOG
 #endif
 
 #define PREFIX  "*** "       /* print before WARNING and ERROR */
@@ -63,7 +66,7 @@ void rtcmix_debug(const char *inst_name, const char *format, ...)
 		
 		if (inst_name) {
 			RTPrintf("DEBUG: %s:  %s\n", inst_name, buf);
-#ifdef IOS
+#ifdef USE_SYSLOG
 			syslog(LOG_DEBUG, "DEBUG: %s:  %s", inst_name, buf);
 #elif defined(USE_POST)
 			cpost("DEBUG: [%s]:  %s", inst_name, buf);
@@ -71,7 +74,7 @@ void rtcmix_debug(const char *inst_name, const char *format, ...)
 		}
 		else {
 			RTPrintf("DEBUG: %s\n", buf);
-#ifdef IOS
+#ifdef USE_SYSLOG
 			syslog(LOG_DEBUG, "DEBUG: %s", buf);
 #elif defined(USE_POST)
 			cpost("DEBUG: %s", buf);
@@ -114,7 +117,7 @@ rtcmix_warn(const char *inst_name, const char *format, ...)
 
 	   if (inst_name) {
 			RTFPrintf(stderr, "\n" PREFIX "WARNING [%s]:  %s\n\n", inst_name, buf);
-#ifdef IOS
+#ifdef USE_SYSLOG
 			syslog(LOG_WARNING, PREFIX "WARNING: [%s]:  %s", inst_name, buf);
 #elif defined(USE_POST)
 		   cpost(PREFIX "WARNING: [%s]:  %s", inst_name, buf);
@@ -122,7 +125,7 @@ rtcmix_warn(const char *inst_name, const char *format, ...)
 	   }
 	   else {
 			RTFPrintf(stderr, "\n" PREFIX "WARNING:  %s\n\n", buf);
-#ifdef IOS
+#ifdef USE_SYSLOG
 			syslog(LOG_ERR, PREFIX "WARNING: %s", buf);
 #elif defined(USE_POST)
 			cpost(PREFIX "WARNING: %s", buf);
@@ -140,7 +143,7 @@ void rtcmix_print(const char *format, ...)
 	vsnprintf(buf, BUFSIZE, format, args);
 	va_end(args);
 
-#ifdef IOS
+#ifdef USE_SYSLOG
 	syslog(LOG_NOTICE, "DEBUG: %s", buf);
 #elif defined(USE_POST)
 	cpost("DEBUG: %s", buf);
@@ -164,7 +167,7 @@ rterror(const char *inst_name, const char *format, ...)
 
 	if (inst_name) {
 		RTFPrintf(stderr, PREFIX "ERROR [%s]: %s\n", inst_name, buf);
-#ifdef IOS
+#ifdef USE_SYSLOG
 #ifndef IOSDEV
 		fprintf(stderr, PREFIX "ERROR: [%s]:  %s\n", inst_name, buf);
 #endif
@@ -175,7 +178,7 @@ rterror(const char *inst_name, const char *format, ...)
 	}
 	else {
 		RTFPrintf(stderr, PREFIX "ERROR: %s\n", buf);
-#ifdef IOS
+#ifdef USE_SYSLOG
 #ifndef IOSDEV
 		fprintf(stderr, PREFIX "ERROR: %s\n", buf);
 #endif
@@ -206,7 +209,7 @@ die(const char *inst_name, const char *format, ...)
 
 	if (inst_name) {
 		RTFPrintf(stderr, PREFIX "FATAL ERROR [%s]:  %s\n", inst_name, buf);
-#ifdef IOS
+#ifdef USE_SYSLOG
 #ifndef IOSDEV
 		fprintf(stderr, PREFIX "FATAL ERROR: [%s]:  %s\n", inst_name, buf);
 #endif
@@ -217,7 +220,7 @@ die(const char *inst_name, const char *format, ...)
 	}
 	else {
 		RTFPrintf(stderr, PREFIX "FATAL ERROR:  %s\n", buf);
-#ifdef IOS
+#ifdef USE_SYSLOG
 #ifndef IOSDEV
 		fprintf(stderr, PREFIX "FATAL ERROR:  %s\n", buf);
 #endif

@@ -491,16 +491,19 @@ int yywrap()
 
 static void cleanup()
 {
-	MPRINT1("cleanup: yy_init = %d", yy_init);
+	rtcmix_debug("cleanup", "yy_init = %d", yy_init);
 	MPRINT1("Freeing program tree %p", program);
     delete program;
 	program = NULL;
 	/* Reset all static state */
 	comments = 0;	// from lex.yy.c
 	cpcomments = 0;
+	xblock = 0;
 	idcount = 0;
 	flerror = 0;
+	flevel = 0;
 	level = 0;
+	include_stack_ptr = 0;
 #ifndef EMBEDDED
 	/* BGG mm -- we need to keep the symbols for The Future */
 	free_symbols();
@@ -518,7 +521,7 @@ static void cleanup()
 // BGG mm -- for dynamic memory mgmt (double return for UG_INTRO() macro)
 double minc_memflush()
 {
-	MPRINT("minc_memflush: Freeing parser memory");
+	rtcmix_debug("minc_memflush", "Freeing parser memory");
 	delete program;
 	program = NULL;
 	free_symbols();
@@ -537,6 +540,7 @@ double minc_memflush()
 
 void reset_parser()
 {
+	rtcmix_debug("reset_parser", "resetting line number");
 	flerror = 0;
 	// Reset the line # every time a new score buffer is received
 	yyset_lineno(1);
