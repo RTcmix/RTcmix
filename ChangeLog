@@ -1,6 +1,14 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2017-08-17  John Gibson <johgibso-at-indiana.edu>
+	* Add the missing pitch conversion functions for MIDI note numbers,
+	  both in their scalar form and for use in makeconverter. MIDI note
+	  numbers are no longer truncated from float to integer.
+	  NOTE NOTE NOTE -- This is an incompatible change for scores using
+	  these functions! If you rely on this truncation, you will have to
+	  add it in your score, using the trunc() function.
+
 2017-07-28  Douglas Scott  <netdscott-at-netscape.net>
 	* PVOC now has dynamic pfields for gain, interpolation, pitch, and oscillator synth threshold
 2017-07-02  Douglas Scott  <netdscott-at-netscape.net>

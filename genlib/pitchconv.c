@@ -32,17 +32,23 @@ INLINE double octcps(double cps)
 	return log(cps / MIDC_OFFSET) / M_LN2;
 }
 
+INLINE double cpspch(double pch)
+{
+	double oct = octpch(pch);
+	return cpsoct(oct);
+}
+
+INLINE double pchcps(double cps)
+{
+	double oct = octcps(cps);
+	return pchoct(oct);
+}
+
 INLINE double octpch(double pch)
 {
 	int octave = (int) pch;
 	double semitone = (100.0 / 12.0) * (pch - octave);
 	return octave + semitone;
-}
-
-INLINE double cpspch(double pch)
-{
-	double oct = octpch(pch);
-	return cpsoct(oct);
 }
 
 INLINE double pchoct(double oct)
@@ -52,26 +58,36 @@ INLINE double pchoct(double oct)
 	return octave + (0.12 * linsemitone); 
 }
 
-INLINE double pchcps(double cps)
-{
-	double oct = octcps(cps);
-	return pchoct(oct);
-}
-
 INLINE double midipch(double pch)
 {
-	int midinote = (int) (((octpch(pch) - 3.0) * 12.0) + 0.5);
-	return midinote;
+	return (octpch(pch) - 3.0) * 12.0;
 }
 
-INLINE double pchmidi(unsigned char midinote)
+INLINE double pchmidi(double midinote)
 {
-	return pchoct(((double) midinote / 12.0) + 3.0);
+	return pchoct((midinote / 12.0) + 3.0);
 }
 
-INLINE double octmidi(unsigned char midinote)
+INLINE double midicps(double cps)
 {
-	return ((double) midinote / 12.0) + 3.0;
+	double oct = octcps(cps);
+	return midioct(oct);
+}
+
+INLINE double cpsmidi(double midi)
+{
+	double oct = octmidi(midi);
+	return cpsoct(oct);
+}
+
+INLINE double midioct(double oct)
+{
+	return (oct - 3.0) * 12.0;
+}
+
+INLINE double octmidi(double midinote)
+{
+	return (midinote / 12.0) + 3.0;
 }
 
 #define SEMITONE_LINOCT (1.0 / 12.0)
