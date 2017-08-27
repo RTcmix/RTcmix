@@ -2,7 +2,7 @@ PROGS = patest embedtest scoreplayer scoretrigger
 
 CFLAGS = -g -Wall
 LDFLAGS = -L/usr/local/lib -lportaudio -L../../lib -lrtcmix_embedded
-INCLUDES = -I/usr/local/include -I../../include
+INCLUDES = -I/usr/local/include -I../../src/rtcmix
 
 all: $(PROGS)
 
