@@ -15,8 +15,7 @@ endif
 
 all: $(PROGS)
 
-# NB: doesn't link to rtcmix, but we leave LDFLAGS alone here
-
+# NB: doesn't link to rtcmix, but we leave LDFLAGS alone for patest
 patest: patest.c
 	$(CC) $(CFLAGS) -o patest patest.c $(INCLUDES) $(LDFLAGS)
 
