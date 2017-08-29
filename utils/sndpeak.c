@@ -173,7 +173,7 @@ main(int argc, char *argv[])
 
       if (verbose) {
          printf("Input: %s\n", sfname);
-         printf(sndlib_print_current_header_stats(infd, &sfc, 2));
+         printf("%s", sndlib_print_current_header_stats(infd, &sfc, 2));
       }
 
       /* NOTE: must get these before tmp outfd becomes current header! */
