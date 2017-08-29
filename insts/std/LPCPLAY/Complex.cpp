@@ -16,7 +16,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 */
 
 #ifdef __GNUG__
-#pragma implementation
+//#pragma implementation
 #endif
 #include "Complex.h"
 #include <unistd.h>
