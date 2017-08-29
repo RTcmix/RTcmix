@@ -14,9 +14,8 @@
 #include "ugens.h"
 #ifndef EMBEDDED
 #include <iostream>
-#endif
-
 using namespace std;
+#endif
 
 #define DSOPATH_MAX  PATH_MAX * 2
 #define OSCHOST_MAX  128
