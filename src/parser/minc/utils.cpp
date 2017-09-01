@@ -96,38 +96,3 @@ int get_score_line_offset()
 {
 	return score_line_offset;
 }
-
-#ifdef EMBEDDED
-typedef size_t yy_size_t;	// from lex.yy.c
-static const char *sGlobalBuffer;
-static int sGlobalBufferLength;
-static int sBufferOffset;
-
-extern "C" {
-void setGlobalBuffer(const char *inBuf, int inBufSize)
-{
-	sGlobalBuffer = inBuf;
-	sGlobalBufferLength = inBufSize;
-	sBufferOffset = 0;	// reset
-}
-
-#ifdef LINUX
-int readFromGlobalBuffer(char *buf, int *pBytes, int maxbytes)
-#else
-int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes)
-#endif
-{
-	{
-		int  n;
-		for (n = 0; n < maxbytes && sBufferOffset < (sGlobalBufferLength-1); ++n)
-		{
-			buf[n] = sGlobalBuffer[sBufferOffset++];
-		}
-		*pBytes = n;
-	}
-	return 0;
-}
-}
-
-#endif
-
