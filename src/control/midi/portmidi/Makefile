@@ -31,7 +31,9 @@ CFLAGS += $(VFLAGS) $(PMFLAGS) -Ipm_common -Iporttime
 TESTPRG = pm_test/test pm_test/sysex pm_test/midithread pm_test/latency \
 pm_test/midithru
 
-all: $(PMLIB) $(PTLIB) $(TESTPRG)
+all: $(PMLIB) $(PTLIB)
+
+test: $(TESTPRG)
 
 $(PMLIB): Makefile $(PMOBJECTS)
 	$(RM) $@

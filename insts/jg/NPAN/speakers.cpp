@@ -73,12 +73,12 @@ usage()
 
 extern "C" {
 
-// ---------------------------------------------------------- compare_floats ---
+// -------------------------------------------------- compare_speaker_angles ---
 // Comparison function for qsort call below.
 static int compare_speaker_angles(const void *a, const void *b)
 {
-   const Speaker *spk1 = (Speaker *) *((int *) a);
-   const Speaker *spk2 = (Speaker *) *((int *) b);
+   const Speaker *spk1 = *((Speaker **) a);
+   const Speaker *spk2 = *((Speaker **) b);
 
 //printf("compare: spk1: %f spk2: %f\n", spk1->angle(), spk2->angle());
 

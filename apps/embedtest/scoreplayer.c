@@ -17,7 +17,9 @@
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
+#ifdef HAVE_PORTAUDIO
 #include <portaudio.h>
+#endif
 
 #define EMBEDDEDAUDIO
 #include <RTcmix_API.h>
@@ -31,10 +33,16 @@
 #define BUS_COUNT 32
 
 float totalDuration = 10.0;
+#ifdef HAVE_PORTAUDIO
+int withAudio = 1;
 float scoreDelayTime = 5.0;	//FIXME: good default? Can derive from sco?
 PaStream *stream = NULL;
+#else
+int withAudio = 0;
+float scoreDelayTime = 0.0;
+#endif
 int verbose = 0;
-int printJobOutput = 0;
+int printJobOutput = 1;
 float rescaleFactor = 1.0;
 float sampleRate = SAMPLE_RATE;
 int framesPerBuffer = FRAMES_PER_BUF;
@@ -56,7 +64,8 @@ usage: %s [options] score1 [score2 ... scoreN]                        \n\
   -c NUM   number of output channels                 2                \n\
   -d NUM   total play duration                       10.0 (sec)       \n\
   -h       show this help text                                        \n\
-  -j       print RTcmix job output                                    \n\
+  -n       don't play audio                                           \n\
+  -q       quiet: don't print RTcmix job output                       \n\
   -r NUM   sampling rate                             44100.0          \n\
   -v       print settings before playing                              \n\
   -y NUM   delay time between scores                 5.0 (sec)        \n\
@@ -70,6 +79,7 @@ usage: %s [options] score1 [score2 ... scoreN]                        \n\
                                                                       \n\
 "
 
+#ifdef HAVE_PORTAUDIO
 /* this function called by high-priority system audio thread
 	(CoreAudio on macOS)
 */
@@ -117,6 +127,27 @@ error:
 	return -1;
 }
 
+int deleteAudio()
+{
+	PaError err = Pa_StopStream(stream);
+	if (err != paNoError)
+		goto error;
+
+	err = Pa_CloseStream(stream);
+	if (err != paNoError)
+		goto error;
+
+	err = Pa_Terminate();
+	if (err != paNoError)
+		goto error;
+
+	return 0;
+error:
+	fprintf(stderr, "PortAudio delete failed (%s)\n", Pa_GetErrorText(err));
+	return -1;
+}
+#endif // HAVE_PORTAUDIO
+
 void rtcmixPrintCallback(const char *printBuffer, void *inContext)
 {
 	(void) inContext;
@@ -163,26 +194,6 @@ error:
 	return -1;
 }
 
-int deleteAudio()
-{
-	PaError err = Pa_StopStream(stream);
-	if (err != paNoError)
-		goto error;
-
-	err = Pa_CloseStream(stream);
-	if (err != paNoError)
-		goto error;
-
-	err = Pa_Terminate();
-	if (err != paNoError)
-		goto error;
-
-	return 0;
-error:
-	fprintf(stderr, "PortAudio delete failed (%s)\n", Pa_GetErrorText(err));
-	return -1;
-}
-
 int deleteRTcmix()
 {
 	return RTcmix_destroy();
@@ -196,14 +207,20 @@ void playScores()
 
 	for (i = 0; i < numScores; i++) {
 		RTcmix_parseScore(scores[i], strlen(scores[i]));
+		if (!withAudio) {
+			// must do this to collect printout
+			float *output = (float *) calloc(framesPerBuffer * numOutChannels, sizeof(float));
+			RTcmix_runAudio(NULL, output, framesPerBuffer);
+			free(output);
+		}
 		if (i != numScores - 1) {
-			Pa_Sleep(scoreDelayTime * 1000);
+			usleep(scoreDelayTime * 1000000);
 			sleepTime += scoreDelayTime;
 		}
 	}
 	remainingTime = totalDuration - sleepTime;
 	if (remainingTime > 0.0)
-		Pa_Sleep(remainingTime * 1000);
+		usleep(remainingTime * 1000000);
 }
 
 int loadScores()
@@ -275,6 +292,7 @@ void printSettings()
 	printf("Frames per buffer ........................ %d\n", framesPerBuffer);
 	printf("Number of output channels ................ %d\n", numOutChannels);
 	printf("Number of RTcmix internal buses .......... %d\n", numInternalBuses);
+	printf("Playing audio ............................ %s\n", withAudio ? "yes" : "no");
 	printf("Playing %d scores...\n", numScores);
 	for (i = 0; i < numScores; i++)
 		printf("   %s\n", scoreNames[i]);
@@ -339,8 +357,14 @@ int main(int argc, char *argv[])
 				case 'h':
 					usage();
 					break;
-				case 'j':
-					printJobOutput = 1;
+#ifdef HAVE_PORTAUDIO
+				case 'n':
+					withAudio = 0;
+					scoreDelayTime = 0.0;
+					break;
+#endif
+				case 'q':
+					printJobOutput = 0;
 					break;
 				case 'r':
 					if (++i >= argc)
@@ -385,9 +409,13 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	result = initAudio();
-	if (result)
-		return -1;
+#ifdef HAVE_PORTAUDIO
+	if (withAudio) {
+		result = initAudio();
+		if (result)
+			return -1;
+	}
+#endif
 
 	result = initRTcmix();
 	if (result)
@@ -407,6 +435,11 @@ int main(int argc, char *argv[])
 
 	result = deleteRTcmix();
 
-	return deleteAudio();
+#ifdef HAVE_PORTAUDIO
+	if (withAudio)
+		result = deleteAudio();
+#endif
+
+	return result;
 }
 

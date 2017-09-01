@@ -333,7 +333,7 @@ int SCRUB::ReadRawFrames(int destframe, int nframes) {
 
 void SCRUB::RotateRawFrames(long frameshift) {
 	if (frameshift != 0) {
-		long byteshift = ((gkNrRawFrames - abs(frameshift)) * sizeof(float) * fChannels);
+		long byteshift = ((gkNrRawFrames - labs(frameshift)) * sizeof(float) * fChannels);
 		if (frameshift > 0) {
 			memmove(&pRawFrames[frameshift*fChannels], &pRawFrames[0], byteshift);
 			fFileChunkEndFrame = (fFileChunkEndFrame - frameshift) % fFrameCount;

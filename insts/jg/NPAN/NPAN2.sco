@@ -24,7 +24,7 @@ NPANspeakers("polar",
 dist = 1
 
 // counter-clockwise from left front
-//angle = maketable("line", "nonorm", 1000, 0,45, 1,405)
+angle = maketable("line", "nonorm", 1000, 0,45, 1,405)
 
 // 3 counter-clockwise trips around circle
 //trips = 3
