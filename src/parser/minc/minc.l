@@ -2,7 +2,7 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-%START INIT IGNORE COM CPCOM
+%s INIT IGNORE COM CPCOM
 %x INCLUDE
 %{
 #include "rename.h"
@@ -28,7 +28,7 @@ extern "C" {
  */
 static void yy_flex_strncpy (char* s1, yyconst char * s2, int n)
 {
-	register int i;
+	int i;
 	for ( i = 0; i < n; ++i )
 	s1[i] = s2[i];
 }
@@ -36,8 +36,6 @@ static void yy_flex_strncpy (char* s1, yyconst char * s2, int n)
 #ifdef __cplusplus
 }
 #endif
-#undef YY_INPUT
-#define YY_INPUT(buf,bytes,maxbytes) readFromGlobalBuffer(buf,&(bytes),maxbytes)
 #endif
 %}
 
@@ -48,6 +46,7 @@ real2 (".")({dig}+)(("E"|"e")(("+"|"-")?)({dig}+))?
 num   {dig}+
 
 %%
+                BEGIN(INIT);
 <INIT>"/*"     { BEGIN COM; comments++; }
 <INIT>"//"     { BEGIN CPCOM; cpcomments = 1; }
 <INIT>#        { BEGIN IGNORE; }
@@ -101,7 +100,6 @@ num   {dig}+
 <INIT>"$"({let}|"_")({let}|{dig}|"_")*   return TOK_ARG;
 <INIT>.                 { char msg[32]; snprintf(msg, 32, "invalid character: (%u) '%c'", (unsigned)yytext[0], yytext[0]); yyerror(msg); }
 ^include		  		{ BEGIN INCLUDE; }
-.|"\n"                  { BEGIN INIT; unput(yytext[0]); }
 <INCLUDE>[ \t]*      /* eat the whitespace */
 <INCLUDE>[^ \t\n]+  { /* got the include file name */
 			if (include_stack_ptr >= MAX_INCLUDE_DEPTH)

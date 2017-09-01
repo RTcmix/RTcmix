@@ -294,9 +294,7 @@ Symbol::~Symbol()
 void
 free_symbols()
 {
-#ifdef SYMBOL_DEBUG
-	rtcmix_print("freeing scopes, symbols and string tables...\n");
-#endif
+	rtcmix_debug("free_symbols", "freeing scopes, symbols and string tables\n");
 	// We should not be stuck in a function call.
 	assert(sCallStack == NULL || sCallStack->size() == 0);
 	delete sCallStack;
@@ -314,7 +312,7 @@ free_symbols()
 		stab[s] = NULL;
 	}
 #ifdef SYMBOL_DEBUG
-	rtcmix_print("done\n");
+	rtcmix_print("free_symbols done\n");
 #endif
 }
 

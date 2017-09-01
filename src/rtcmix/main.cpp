@@ -111,6 +111,7 @@ int
 RTcmix_init()
 {
 	if (globalApp == NULL) {
+        rtcmix_debug("RTcmix_init", "creating main object");
 		clear_print();
 		// BGG no argc and argv in max/msp version mm
 		globalApp = new RTcmixMain();
@@ -122,6 +123,7 @@ RTcmix_init()
 int
 RTcmix_destroy()
 {
+    rtcmix_debug("RTcmix_destroy", "deleting main object");
 	delete globalApp;
 	globalApp = NULL;
 	return 0;

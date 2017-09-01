@@ -284,12 +284,4 @@ inline void	MincObject::operator delete(void *ptr)
 	efree(ptr);
 }
 
-#ifdef EMBEDDED
-#ifdef LINUX
-extern "C" int readFromGlobalBuffer(char *buf, int *pBytes, int maxbytes);
-#else
-extern "C" int readFromGlobalBuffer(char *buf, size_t *pBytes, int maxbytes);
-#endif
-#endif
-
 #endif /* _MINC_INTERNAL_H_ */

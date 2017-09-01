@@ -10,6 +10,12 @@
 #include <ugens.h>
 #include <Option.h>
 
+#ifdef EMBEDDED
+typedef struct yy_buffer_state * YY_BUFFER_STATE;
+extern YY_BUFFER_STATE yy_scan_bytes(const char * buf, size_t len);
+extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
+#endif
+
 extern "C" {
 	
 extern int yyparse();
@@ -18,14 +24,13 @@ extern int yyparse();
 
 int RTcmix_parseScore(char *thebuf, int buflen);
 extern int yylineno;
-extern void setGlobalBuffer(const char *inBuf, int inBufSize);	// minc/utils.cpp
 extern double minc_memflush();									// minc/minc.cpp (from minc.y)
 
 // BGG mm -- set this to accept a buffer from max/msp
 int RTcmix_parseScore(char *theBuf, int buflen)
 {
 	configure_minc_error_handler(get_bool_option(kOptionExitOnError));
-	setGlobalBuffer(theBuf, buflen+1);
+    YY_BUFFER_STATE buffer = yy_scan_bytes(theBuf, buflen);
 	reset_parser();
 	int status;
 	try {
@@ -35,6 +40,7 @@ int RTcmix_parseScore(char *theBuf, int buflen)
 		rtcmix_warn("RTcmix_parseScore", "caught exception %d", (int)err);
 		status = err;
 	}
+    yy_delete_buffer(buffer);
 	return status;
 }
 
