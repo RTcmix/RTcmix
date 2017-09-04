@@ -12,11 +12,13 @@
 static int comments = 0;
 static int cpcomments = 0;
 extern void yyerror(const char *);
+extern void yyfatalerror(const char *);
 /* To allow includes of subfiles */
 #define MAX_INCLUDE_DEPTH 10
 static int saved_lineno[MAX_INCLUDE_DEPTH];
 static YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH];
 static int include_stack_ptr = 0;
+#define YY_FATAL_ERROR(msg) yyfatalerror( msg )
 #ifdef EMBEDDED
 #ifdef __cplusplus
 extern "C" {
@@ -104,8 +106,7 @@ num   {dig}+
 <INCLUDE>[^ \t\n]+  { /* got the include file name */
 			if (include_stack_ptr >= MAX_INCLUDE_DEPTH)
 			{
-				yyerror( "Includes nested too deeply");
-				exit(1);
+				YY_FATAL_ERROR( "Includes nested too deeply");
 			}
 			saved_lineno[include_stack_ptr] = yyget_lineno();
 			include_stack[include_stack_ptr++] = YY_CURRENT_BUFFER;
@@ -115,8 +116,7 @@ num   {dig}+
 				char msg[1024];
 				snprintf(msg, 1024, "Unable to open include file \"%s\"",
 						 yytext);
-				yyerror(msg);
-				exit(1);
+				YY_FATAL_ERROR(msg);
 			}
 			yyset_lineno(1);
 			yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
