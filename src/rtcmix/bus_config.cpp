@@ -826,6 +826,14 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
    if (n_args < 2)
       return die("bus_config", "Wrong number of args.");
 
+   if (!rtsetparams_was_called()) {
+#ifdef EMBEDDED
+        return die("bus_config", "You need to start the audio device before doing this.");
+#else
+        return die("bus_config", "You did not call rtsetparams!");
+#endif
+   }
+
    bus_slot = new BusSlot(busCount);
    if (bus_slot == NULL)
       return -1.0;
@@ -961,7 +969,7 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
    }
    if (err) {
 		die("bus_config", "couldn't configure the busses");
-	   RTExit(1);        /* This is probably what user wants? */
+	   RTExit(SYSTEM_ERROR);        /* This is probably what user wants? */
 	}
 
    /* Make sure specified aux buses have buffers allocated. */
