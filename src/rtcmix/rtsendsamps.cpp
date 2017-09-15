@@ -82,8 +82,7 @@ real2int(float val)
 static int
 write_to_audio_device(BufPtr out_buffer[], int samps, AudioDevice *device)
 {
-	return device->sendFrames(out_buffer, samps) == samps ? 0 : -1;
-
+	return device->sendFrames(out_buffer, samps) == samps ? 0 : AUDIO_ERROR;
 }
 
 /* ---------------------------------------------------------- rtsendzeros --- */

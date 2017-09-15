@@ -26,19 +26,20 @@ RTcmix::dispatch(const char *func_label, const Arg arglist[],
       mixerr = MX_NOERR;      /* clear old errors */
       checkInsts(func_label, arglist, nargs, retval);
       switch (mixerr) {
-	  case MX_FNAME:		// Function not found
-		 rtcmix_advise(NULL, 
+          case MX_FNAME:		// Function not found
+              rtcmix_advise(NULL,
 				"Note: \"%s\" is an undefined function or instrument.",
 				func_label);
-		 break;
-	  case MX_NOERR:		// Success
-		 status = 0;
-		 break;
-	  case MX_FAIL:			// Some other failure.
-	  default:
-		 status = -1;
-		 break;
-	  }
+              status = FUNCTION_NOT_FOUND;
+              break;
+          case MX_NOERR:		// Success
+              status = 0;
+              break;
+          case MX_FAIL:			// Some other failure.
+          default:
+              status = -1;
+              break;
+      }
    }
    return status;
 }
