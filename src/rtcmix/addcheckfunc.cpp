@@ -192,14 +192,20 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
    }
 
    /* function found, so call it */
+   /* DAS: in order to properly report errors within function that return doubles,
+      we have to use try/catch because there are no return values guaranteed not
+      to be legal.  For embedded platforms, those function must throw an integer
+      exception.
+    */
 
    printargs(funcname, arglist, nargs);
 
    int status = 0;
 
-   switch (func->return_type) {
-   case DoubleType:
-      if (func->legacy) {
+    switch (func->return_type) {
+    case DoubleType:
+    try {
+        if (func->legacy) {
          /* for old (float p[], int nargs, double pp[]) signature */
          #include <maxdispargs.h>
          float p[MAXDISPARGS];
@@ -215,7 +221,8 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
                pp[i] = STRING_TO_DOUBLE(theArg);
 			   break;
             default:
-               return die(NULL, "%s: arguments must be numbers or strings.", funcname);
+               die(NULL, "%s: arguments must be numbers or strings.", funcname);
+                return PARAM_ERROR;
             }
          }
          /* some functions rely on zero contents of args > nargs */
@@ -229,7 +236,12 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
       else
          *retval = (double) (*(func->func_ptr.number_return))
                                                       (arglist, nargs);
-      break;
+    }
+    catch (int err) {
+        status = err;
+        mixerr = MX_FAIL;
+    }
+    break;
    case HandleType:
 	  {
       Handle retHandle = (Handle) (*(func->func_ptr.handle_return))
@@ -345,7 +357,7 @@ RTcmix::registerFunction(const char *funcName, const char *dsoPath)
 	else {
 		rtcmix_warn("RTcmix::registerFunction",
 			  "'%s' already registered for DSO '%s'", funcName, path);
-		return -1;
+		return SYSTEM_ERROR;
 	}
 }
 

@@ -121,7 +121,7 @@ static int loadPFieldsAndSetup(const char *inName, Instrument *inInst, const Arg
 		delete pfieldset;
 		return DONT_SCHEDULE;
 	}
-	return inInst->setup(pfieldset);
+    return inInst->setup(pfieldset) >= 0 ? 0 : DONT_SCHEDULE;
 }
 
 int
@@ -145,13 +145,12 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 		printargs(instname, arglist, nargs);
 
 		if (!rtsetparams_was_called()) {
+            mixerr = MX_FAIL;
 #ifdef EMBEDDED
-			die(instname, "You need to start the audio device before doing this.");
-			mixerr = MX_FAIL;
+			return die(instname, "You need to start the audio device before doing this.");
 #else
-			die(instname, "You did not call rtsetparams!");
+			return die(instname, "You did not call rtsetparams!");
 #endif
-			return -1;
 		}
 		
 		/* Create the Instrument */
@@ -160,20 +159,19 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 
 		if (!Iptr) {
 			mixerr = MX_FAIL;
-			return -1;
+			return DONT_SCHEDULE;
 		}
 
 		Iptr->ref();   // We do this to assure one reference
 
 		int rv = loadPFieldsAndSetup(instname, Iptr, arglist, nargs);
 		
-        if (rv != DONT_SCHEDULE) { // only schedule if no setup() error
+        if (rv == 0) { // only schedule if no setup() error
 			// For non-interactive case, configure() is delayed until just
 			// before instrument run time.
 			if (rtInteractive) {
-			   if (Iptr->configure(RTBUFSAMPS) != 0) {
-				   rv = DONT_SCHEDULE;	// Configuration error!
-				   mixerr = MX_FAIL;
+			   if ((rv = Iptr->configure(RTBUFSAMPS)) != 0) {
+				   mixerr = MX_FAIL;	// Configuration error!
 			   }
 			}
 		}
