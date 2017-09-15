@@ -71,7 +71,7 @@ call_external_function(const char *funcname, const MincValue arglist[],
 
 	Arg *rtcmixargs = new Arg[nargs];
 	if (rtcmixargs == NULL)
-		return -1;
+		return MEMORY_ERROR;
 
 	// Convert arglist for passing to RTcmix function.
 	for (int i = 0; i < nargs; i++) {
@@ -87,7 +87,7 @@ call_external_function(const char *funcname, const MincValue arglist[],
 #ifdef EMBEDDED
 			if ((Handle)rtcmixargs[i] == NULL) {
 				minc_die("can't pass a null handle (arg %d) to RTcmix function %s()", i, funcname);
-				return -1;
+				return PARAM_ERROR;
 			}
 #endif
 			break;
@@ -96,11 +96,11 @@ call_external_function(const char *funcname, const MincValue arglist[],
 			MincList *list = (MincList *)arglist[i];
 			if (list == NULL) {
 				minc_die("can't pass a null list (arg %d) to RTcmix function %s()", i, funcname);
-				return -1;
+				return PARAM_ERROR;
 			}
 			if (list->len <= 0) {
 				minc_die("can't pass an empty list (arg %d) to RTcmix function %s()", i, funcname);
-				return -1;
+				return PARAM_ERROR;
 			}
 			// If list is final argument to function, treat its contents as additional function arguments
 			if (i == nargs-1) {
@@ -116,7 +116,7 @@ call_external_function(const char *funcname, const MincValue arglist[],
 			else {
 				Array *newarray = (Array *) emalloc(sizeof(Array));
 				if (newarray == NULL)
-					return -1;
+					return MEMORY_ERROR;
 				assert(sizeof(*newarray->data) == sizeof(double));	// because we cast MincFloat to double here
 				newarray->data = (double *) float_list_to_array(list);
 				if (newarray->data != NULL) {
@@ -126,7 +126,7 @@ call_external_function(const char *funcname, const MincValue arglist[],
 				else {
 					minc_die("can't pass a mixed-type list (arg %d) to RTcmix function %s()", i, funcname);
 					free(newarray);
-					return -1;
+					return PARAM_ERROR;
 				}
 			}
 			}
@@ -134,7 +134,7 @@ call_external_function(const char *funcname, const MincValue arglist[],
 		default:
 			minc_die("call_external_function: %s(): arg %d: invalid argument type",
 					 funcname, i);
-			return -1;
+			return PARAM_ERROR;
 			break;
 		}
 	}

@@ -309,7 +309,7 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 	int fd = open_sound_file("maketable (soundfile)", (char *) fname, NULL,
                 &data_format, &data_location, &srate, &file_chans, &file_samps);
 	if (fd == -1)
-		return -1;
+		return FILE_ERROR;
 
 	if (srate != RTcmix::sr())
 		rtcmix_warn("maketable (soundfile)", "The input file sampling rate is %g, but "
@@ -1097,7 +1097,7 @@ _spline_table(const Arg args[], const int nargs, double *array, const int len)
 	//_spline_getlimit(&y, nknots);   JGG: y bounds not used
 
 	if (_spline(closed, curvature, nknots, array, len, &x, &y) != 0)
-		return -1;
+		return PARAM_ERROR;
 
 	return 0;
 }
@@ -1249,7 +1249,7 @@ _random_table_usage()
 		"\n   usage: table = maketable(\"random\", size, \"prob\", min, max, "
 						"mid, tight[, seed])"
 		"\n");
-	return -1;
+	return PARAM_ERROR;
 }
 
 static int
@@ -1258,8 +1258,10 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
 	if (nargs < 3)
 		return _random_table_usage();
 
-	if (len < 2)
-		return die("maketable (random)", "Table length must be at least 2.");
+    if (len < 2) {
+		die("maketable (random)", "Table length must be at least 2.");
+        return PARAM_ERROR;
+    }
 
 	int type = 0;
 	if (args[0].isType(StringType)) {

@@ -277,7 +277,7 @@ int BASE::run()
 				bufsamps = max(0, totalSamps - cursamp);
 			
 			if ((tapcount = updatePosition(cursamp)) < 0)
-				RTExit(-1);
+				RTExit(PARAM_ERROR);
 
 			DBG1(printf("  inner loop: bufsamps = %d\n", bufsamps));
 		

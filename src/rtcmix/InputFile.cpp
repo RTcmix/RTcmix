@@ -95,7 +95,7 @@ read_float_samps(
         ssize_t bytes_read = read(fd, bufp, bytes_to_read);
         if (bytes_read == -1) {
             perror("read_float_samps (read)");
-            RTExit(1);
+            RTExit(FILE_ERROR);
         }
         if (bytes_read == 0)          /* EOF */
             break;
@@ -175,7 +175,7 @@ read_24bit_samps(
         ssize_t bytes_read = read(fd, bufp, bytes_to_read);
         if (bytes_read == -1) {
             perror("read_24bit_samps (read)");
-            RTExit(1);
+            RTExit(FILE_ERROR);
         }
         if (bytes_read == 0)          /* EOF */
             break;
@@ -260,7 +260,7 @@ read_short_samps(
         ssize_t bytes_read = read(fd, bufp, bytes_to_read);
         if (bytes_read == -1) {
             perror("read_short_samps (read)");
-            RTExit(1);
+            RTExit(FILE_ERROR);
         }
         if (bytes_read == 0)          /* EOF */
             break;
@@ -383,7 +383,7 @@ void InputFile::init(int inFd, const char *inFileName, Type inType, int inHeader
 	_readBuffer = (void *) malloc((size_t) RTcmix::bufsamps() * MAXCHANS * bytes_per_samp);
 	if (_readBuffer == NULL) {
 		die("rtinput", "Unable to allocate read buffer for input file");
-		RTExit(1);
+		RTExit(MEMORY_ERROR);
 	}
 #endif
 
@@ -521,7 +521,7 @@ off_t InputFile::readSamps(off_t cur_offset,
 			AutoLock fileLock(this);
 			if (lseek(_fd, cur_offset, SEEK_SET) == -1) {
 				perror("RTcmix::readFromInputFile (lseek)");
-				RTExit(1);
+				RTExit(FILE_ERROR);
 			}
 			
 			int status = (*this->_readFunction)(_fd,
@@ -550,7 +550,7 @@ int InputFile::loadSamps(long inFrames)
 	}
 	if (lseek(_fd, _data_location, SEEK_SET) == -1) {
 		perror("RTcmix::readFromInputFile (lseek)");
-		RTExit(1);
+		RTExit(FILE_ERROR);
 	}
 	const short src_chan_list[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 	long framesRead = 0;

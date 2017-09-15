@@ -204,7 +204,7 @@ void fnscl(struct gen *gen);
 #define RTFPrintf(FILE, format, ...) set_mm_print_ptr(snprintf(get_mm_print_ptr(), get_mm_print_space(), format, ## __VA_ARGS__)+1)
 #define RTPrintfCat(format, ...) set_mm_print_ptr(snprintf(get_mm_print_ptr(), get_mm_print_space(), format, ## __VA_ARGS__))
 #define RTFPrintfCat(FILE, format, ...) set_mm_print_ptr(snprintf(get_mm_print_ptr(), get_mm_print_space(), format, ## __VA_ARGS__))
-#define RTExit(status)
+#define RTExit(status) throw(status)
 #else
 #define RTPrintf(format, ...) printf(format, ## __VA_ARGS__)
 #define RTFPrintf(FILE, format, ...) fprintf(FILE, format, ## __VA_ARGS__)

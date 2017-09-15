@@ -61,11 +61,11 @@ Instrument::rtinrepos(Instrument *inst, int frames, int whence)
          break;
       case SEEK_END:
          rtcmix_warn("rtinrepos", "SEEK_END unimplemented\n");
-         RTExit(1);
+         RTExit(PARAM_ERROR);
          break;
       default:
          rtcmix_warn("rtinrepos", "invalid <whence>\n");
-		 RTExit(1);
+		 RTExit(PARAM_ERROR);
          break;
    }
 
