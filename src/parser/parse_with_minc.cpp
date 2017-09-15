@@ -8,6 +8,7 @@
 #include "minc/minc_defs.h"
 #include "rtcmix_parse.h"
 #include <ugens.h>
+#include "rtdefs.h"
 #include <Option.h>
 
 #ifdef EMBEDDED
@@ -37,9 +38,36 @@ int RTcmix_parseScore(char *theBuf, int buflen)
 		status = yyparse();
 	}
 	catch (MincError err) {
-		rtcmix_warn("RTcmix_parseScore", "caught exception %d", (int)err);
+		rtcmix_warn("RTcmix_parseScore", "caught parse exception %d", (int)err);
 		status = err;
 	}
+    catch (int otherError) {
+        const char *errname;
+        switch (otherError) {
+            case FUNCTION_NOT_FOUND:
+                errname = "Function or instrument not found";
+                break;
+            case PARAM_ERROR:
+                errname = "Illegal or missing parameter";
+                break;
+            case AUDIO_ERROR:
+                errname = "Audio device error";
+                break;
+            case FILE_ERROR:
+                errname = "File error";
+                break;
+            case SYSTEM_ERROR:
+                errname = "RTcmix system error";
+                break;
+            case MEMORY_ERROR:
+                errname = "Memory error";
+                break;
+            default:
+                errname = "Other error";
+        }
+        rtcmix_warn("RTcmix_parseScore", "Caught exception: %s", errname);
+        status = otherError;
+    }
     yy_delete_buffer(buffer);
 	return status;
 }

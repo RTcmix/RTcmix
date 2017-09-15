@@ -27,6 +27,7 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
+#include <rtdefs.h>
 
 extern "C" {
 	void yyset_lineno(int line_number);
@@ -1093,13 +1094,24 @@ Node *	NodeCall::doExct()
 		MincValue retval;
 		int result = call_builtin_function(_functionName, sMincList, sMincListLen,
 										   &retval);
-		if (result < 0) {
+		if (result == FUNCTION_NOT_FOUND) {
 			result = call_external_function(_functionName, sMincList, sMincListLen,
 											&retval);
 		}
 		copy_listelem_tree(this, &retval);
-		if (result != 0) {
-			// NOTE: FOR NOW WE DO NOTHING IN RESPONSE TO INSTRUMENT FAILURE
+		switch (result) {
+            case NO_ERROR:
+                break;
+            case FUNCTION_NOT_FOUND:
+#if defined(EMBEDDED) && defined(ERROR_FAIL_ON_UNDEFINED_FUNCTION)
+                throw result;
+#endif
+                break;
+            default:
+#if defined(EMBEDDED)
+                throw result;
+#endif
+                break;
 		}
 	}
 	pop_list();
