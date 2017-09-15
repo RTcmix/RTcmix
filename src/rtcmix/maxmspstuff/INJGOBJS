@@ -23,6 +23,11 @@ INJGOBJS = ../../insts/jg/BUTTER/BUTTER.o \
 ../../insts/jg/GRANSYNTH/GRANSYNTH.o \
 ../../insts/jg/GRANSYNTH/synthgrainstream.o \
 ../../insts/jg/GRANSYNTH/synthgrainvoice.o \
+ifndef MAXMSP
+../../insts/jg/GRANULATE/GRANULATE.o \
+../../insts/jg/GRANULATE/grainstream.o \
+../../insts/jg/GRANULATE/grainvoice.o \
+endif
 ../../insts/jg/JCHOR/JCHOR.o \
 ../../insts/jg/JDELAY/JDELAY.o \
 ../../insts/jg/JFIR/JFIR.o \
