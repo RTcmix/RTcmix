@@ -499,11 +499,20 @@ double m_reset(float p[], int n_args)
 	return 0.0;
 }
 
-/* returns a randomly-interpolated value between its two input values */
+/* returns a randomly-interpolated value between its two input values, inclusive */
+static double _irand(double min, double max)
+{
+	double frac = m_random();
+	return (frac * min) + (1.0 - frac) * max;
+}
+
+/* Return a random float between min and max, inclusive. If max > min,
+   the two are exchanged. If only one arg is present, it is max, and
+   min is set to zero.
+*/
 double m_irand(float p[], int n_args, double pp[])
 {
 	double min, max;
-	double frac = m_random();
 	if (n_args == 1) {
 		min = 0.0;
 		max = pp[0];
@@ -515,23 +524,47 @@ double m_irand(float p[], int n_args, double pp[])
 	else {
 		return die("irand", "Usage: irand([min,] max)\nDefault <min> is zero\n");
 	}
-	return (frac * min) + (1.0 - frac) * max;
+	if (min > max) {
+		double tmp = max;
+		max = min;
+		min = tmp;
+	}
+	return _irand(min, max);
 }
 
+/* Assuming min < max, return a random integer between min and max.
+   The range is inclusive of min if min >= 0. The range is inclusive
+   of max if max <= 0. If min > max, the two are exchanged. If only
+   one arg is present, it is max, and min is set to zero. Examples,
+		min = 0, max = 10  =>  return integer between 0 and 9 (inclusive)
+		min = -10, max = 0  =>  return integer between -9 and 0 (inclusive)
+		min = -10, max = 10  =>  return integer between -9 and 9 (inclusive)
+*/
 double m_trand(float p[], int n_args, double pp[])
 {
-	if (n_args > 2 || n_args == 0)
-		return die("trand", "Usage: trand([min,] max)\nDefault <min> is zero\n");
-
-	int trunc = m_irand(p, n_args, pp);
-
-	// this is to make the lower bound excluded for negative lower bound
-	if (p[0] < 0 || p[1] < 0) {
-		if (n_args == 2 && (int)p[0] != (int)p[1])
-			while (trunc == (int)p[0])
-				trunc = m_irand(p, n_args, pp);
+	double min, max;
+	if (n_args == 1) {
+		min = 0.0;
+		max = pp[0];
 	}
+	else if (n_args == 2) {
+		min = pp[0];
+		max = pp[1];
+	}
+	else {
+		return die("trand", "Usage: trand([min,] max)\nDefault <min> is zero\n");
+	}
+	if (min > max) {
+		double tmp = max;
+		max = min;
+		min = tmp;
+	}
+	if (min < 0.0)
+		min += 0.0000000001;
+	if (max > 0.0)
+		max -= 0.0000000001;
 
+	int trunc = (int) _irand(min, max);
 	return (double) trunc;
 }
 
