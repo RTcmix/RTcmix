@@ -95,7 +95,7 @@ read_float_samps(
         ssize_t bytes_read = read(fd, bufp, bytes_to_read);
         if (bytes_read == -1) {
             perror("read_float_samps (read)");
-            RTExit(FILE_ERROR);
+            return FILE_ERROR;
         }
         if (bytes_read == 0)          /* EOF */
             break;
@@ -175,7 +175,7 @@ read_24bit_samps(
         ssize_t bytes_read = read(fd, bufp, bytes_to_read);
         if (bytes_read == -1) {
             perror("read_24bit_samps (read)");
-            RTExit(FILE_ERROR);
+            return FILE_ERROR;
         }
         if (bytes_read == 0)          /* EOF */
             break;
@@ -260,7 +260,7 @@ read_short_samps(
         ssize_t bytes_read = read(fd, bufp, bytes_to_read);
         if (bytes_read == -1) {
             perror("read_short_samps (read)");
-            RTExit(FILE_ERROR);
+            return FILE_ERROR;
         }
         if (bytes_read == 0)          /* EOF */
             break;
@@ -352,7 +352,7 @@ InputFile::~InputFile()
 	close();
 }
 
-void InputFile::init(int inFd, const char *inFileName, Type inType, int inHeaderType,
+int InputFile::init(int inFd, const char *inFileName, Type inType, int inHeaderType,
           int inDataFormat, int inDataLocation, long inFrames, float inSampleRate,
           int inChannels, double inDuration)
 {
@@ -370,7 +370,10 @@ void InputFile::init(int inFd, const char *inFileName, Type inType, int inHeader
 	
     int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(_data_format);
 
-    assert(_chans <= MAXCHANS);
+    if (_chans > MAXCHANS) {
+        die("InputFile", "Illegal channel count: %d", _chans);
+        return PARAM_ERROR;
+    }
 
 	if (_is_float_format)
 		_readFunction = &read_float_samps;
@@ -382,26 +385,27 @@ void InputFile::init(int inFd, const char *inFileName, Type inType, int inHeader
 #ifndef MULTI_THREAD
 	_readBuffer = (void *) malloc((size_t) RTcmix::bufsamps() * MAXCHANS * bytes_per_samp);
 	if (_readBuffer == NULL) {
-		die("rtinput", "Unable to allocate read buffer for input file");
-		RTExit(MEMORY_ERROR);
+		die("InputFile", "Unable to allocate read buffer for input file");
+		return MEMORY_ERROR;
 	}
 #endif
 
 	if (_fileType == InMemoryType) {
 		_endbyte = inFrames * bytes_per_samp * _chans;
     	if (loadSamps(inFrames) != 0) {
-			rtcmix_warn("rtinput", "File '%s' cannot be loaded into memory -- defaulting to regular load");
+			rtcmix_warn("InputFile", "File '%s' cannot be loaded into memory -- defaulting to regular load");
 			_fileType = FileType;
 			_endbyte += _data_location;
 		}
 	}
 	else
 		_endbyte = _data_location + (inFrames * bytes_per_samp * _chans);
+    return 0;
 }
 
-void InputFile::init(BufPtr inBuffer, const char *inBufferName, long inFrames, float inSampleRate, int inChannels, float inScaling)
+int InputFile::init(BufPtr inBuffer, const char *inBufferName, long inFrames, float inSampleRate, int inChannels, float inScaling)
 {
-	rtcmix_debug("InputFile::init", "inBuffer %p, frames %ld, chans %d", inBuffer, inFrames, inChannels);
+	rtcmix_debug("InputFile::initInputFile", "inBuffer %p, frames %ld, chans %d", inBuffer, inFrames, inChannels);
     _filename = strdup(inBufferName);
     _fd = USE_MM_BUF;
     _refcount = 0;
@@ -417,17 +421,21 @@ void InputFile::init(BufPtr inBuffer, const char *inBufferName, long inFrames, f
 	
     int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(_data_format);
 	
-    assert(_chans <= MAXCHANS);
+    if (_chans > MAXCHANS) {
+        die("InputFile", "Illegal channel count: %d", _chans);
+        return PARAM_ERROR;
+    }
 	
 	_readFunction = &read_float_samps;
 	_endbyte = inFrames * bytes_per_samp * _chans;
 
 	_memBuffer = inBuffer;
+    return 0;
 }
 
 // TODO: DAS: This needs a lock to prevent modification during read
 
-void InputFile::reinit(BufPtr inBuffer, long inFrames, int inChannels)
+int InputFile::reinit(BufPtr inBuffer, long inFrames, int inChannels)
 {
     _chans = inChannels;
     _dur = inFrames/_srate;
@@ -435,11 +443,15 @@ void InputFile::reinit(BufPtr inBuffer, long inFrames, int inChannels)
 	rtcmix_debug("InputFile::reinit", "inBuffer %p, frames %ld, chans %d", inBuffer, inFrames, inChannels);
     int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(_data_format);
 	
-    assert(_chans <= MAXCHANS);
+    if (_chans > MAXCHANS) {
+        die("InputFile", "Illegal channel count: %d", _chans);
+        return PARAM_ERROR;
+    }
 	
 	_endbyte = inFrames * bytes_per_samp * _chans;
 	
 	_memBuffer = inBuffer;
+    return 0;
 }
 
 void InputFile::reference()
@@ -449,14 +461,14 @@ void InputFile::reference()
 		// sure that this InputFile is being used by an instrument.
 	}
 #ifdef FILE_DEBUG
-	rtcmix_debug(NULL, "InputFile::reference: refcount = %d\n", _refcount);
+	rtcmix_debug("InputFile", "InputFile::reference: refcount = %d\n", _refcount);
 #endif
 }
 
 void InputFile::unreference()
 {
 #ifdef FILE_DEBUG
-	rtcmix_debug(NULL, "InputFile::unreference: refcount = %d\n", _refcount);
+	rtcmix_debug("InputFile", "InputFile::unreference: refcount = %d\n", _refcount);
 #endif
 	if (--_refcount <= 0) {
 		close();
@@ -521,7 +533,7 @@ off_t InputFile::readSamps(off_t cur_offset,
 			AutoLock fileLock(this);
 			if (lseek(_fd, cur_offset, SEEK_SET) == -1) {
 				perror("RTcmix::readFromInputFile (lseek)");
-				RTExit(FILE_ERROR);
+                return FILE_ERROR;
 			}
 			
 			int status = (*this->_readFunction)(_fd,
@@ -550,7 +562,7 @@ int InputFile::loadSamps(long inFrames)
 	}
 	if (lseek(_fd, _data_location, SEEK_SET) == -1) {
 		perror("RTcmix::readFromInputFile (lseek)");
-		RTExit(FILE_ERROR);
+        return FILE_ERROR;
 	}
 	const short src_chan_list[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 	long framesRead = 0;

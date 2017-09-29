@@ -138,7 +138,9 @@ int RTcmix::setInputBuffer(const char *inName, float *inBuffer, int inFrames, in
 		if (inFile) {
 			// Update if mod time is more recent.
 			if (inModtime > inFile->modTime()) {
-				inFile->reinit(inBuffer, inFrames, inChans);
+                if (inFile->reinit(inBuffer, inFrames, inChans) != 0) {
+                    return -1;
+                }
 				inFile->setModTime(inModtime);
 			}
 		}
@@ -146,20 +148,24 @@ int RTcmix::setInputBuffer(const char *inName, float *inBuffer, int inFrames, in
 			int i;
 			for (i = 0; i < max_input_fds; i++) {
 				if (!inputFileTable[i].isOpen()) {
-					inputFileTable[i].init(inBuffer,
+					if (inputFileTable[i].init(inBuffer,
 										   inName,
 										   inFrames,
 										   44100.0f,	// DAS Allow SR to VARY
 										   inChans,
-										   inGainScaling);
-					last_input_index = i;
-					break;
+                                           inGainScaling) == 0) {
+                        last_input_index = i;
+                        break;
+                   }
+                    else {
+                        return -1;
+                    }
 				}
 			}
 			
 			/* If this is true, we've used up all input descriptors in our array. */
 			if (i == max_input_fds) {
-				die("rtinput", "You have exceeded the maximum number of input "
+				die("setInputBuffer", "You have exceeded the maximum number of input "
 					"files and buffers (%ld)!", max_input_fds);
 				return -1;
 			}
@@ -410,7 +416,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 		*/
 		for (i = 0; i < max_input_fds; i++) {
 			if (!inputFileTable[i].isOpen()) {
-                inputFileTable[i].init(fd,
+                if (inputFileTable[i].init(fd,
 									   sfname,
 									   audio_in ? InputFile::AudioDeviceType : in_memory ? InputFile::InMemoryType : InputFile::FileType,
 									   header_type,
@@ -419,15 +425,19 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 									   nsamps/nchans,	// passing this in as frames now, not samps
 									   (float)srate,
 									   nchans,
-									   dur);
-				last_input_index = i;
-				break;
+                                           dur) == 0) {
+                    last_input_index = i;
+                    break;
+                }
+                else {
+                    return -1;
+                }
 			}
 		}
 
 		/* If this is true, we've used up all input descriptors in our array. */
 		if (i == max_input_fds)
-			die("rtinput", "You have exceeded the maximum number of input "
+			return die("rtinput", "You have exceeded the maximum number of input "
 												"files (%ld)!", max_input_fds);
 	}
 	
