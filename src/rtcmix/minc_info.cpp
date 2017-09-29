@@ -85,8 +85,10 @@ extern "C" {
 
 double filedur(const Arg args[], const int nargs)
 {
-	if (nargs != 1)
-		return die("filedur", "Usage:  duration = filedur(\"filename\")");
+    if (nargs != 1) {
+		die("filedur", "Usage:  duration = filedur(\"filename\")");
+        RTExit(PARAM_ERROR);
+   }
 	const char *fname = args[0];
 
 	int nchans;
@@ -103,8 +105,10 @@ double filedur(const Arg args[], const int nargs)
 
 double filechans(const Arg args[], const int nargs)
 {
-	if (nargs != 1)
-		return die("filechans", "Usage:  chans = filechans(\"filename\")");
+    if (nargs != 1) {
+		die("filechans", "Usage:  chans = filechans(\"filename\")");
+        RTExit(PARAM_ERROR);
+    }
 	const char *fname = args[0];
 
 	int nchans;
@@ -119,8 +123,10 @@ double filechans(const Arg args[], const int nargs)
 
 double filesr(const Arg args[], const int nargs)
 {
-	if (nargs != 1)
-		return die("filesr", "Usage:  sr = filesr(\"filename\")");
+    if (nargs != 1) {
+		die("filesr", "Usage:  sr = filesr(\"filename\")");
+        RTExit(PARAM_ERROR);
+    }
 	const char *fname = args[0];
 
 	double srate;
@@ -155,9 +161,11 @@ int findpeakrmsdc(const char *funcname, const char *fname,
 			nframes = endframe;
 	}
 
-	if (chan != ALL_CHANS && chan >= nchans)
-		return die(funcname, "You specified channel %d for a %d-channel file.",
+    if (chan != ALL_CHANS && chan >= nchans) {
+		die(funcname, "You specified channel %d for a %d-channel file.",
 		           chan, nchans);
+        RTExit(PARAM_ERROR);
+    }
 	float peak[nchans];
 	long peakloc[nchans];
 	double ampavg[nchans];
@@ -167,7 +175,7 @@ int findpeakrmsdc(const char *funcname, const char *fname,
                     startframe, nframes, peak, peakloc, ampavg, dcavg, rms);
    sndlib_close(fd, 0, 0, 0, 0);
 	if (result == -1)
-		return -1;
+        RTExit(SYSTEM_ERROR);
 
 	if (chan == ALL_CHANS) {
 		float maxpeak = 0.0;
@@ -195,9 +203,11 @@ int findpeakrmsdc(const char *funcname, const char *fname,
 
 double filepeak(const Arg args[], const int nargs)
 {
-	if (nargs < 1)
-		return die("filepeak", "Usage:  "
+    if (nargs < 1) {
+		die("filepeak", "Usage:  "
 		           "peak = filepeak(\"filename\"[, start[, end[, chan]]])");
+        RTExit(PARAM_ERROR);
+    }
 	const char *fname = args[0];
 	const double starttime = (nargs > 1) ? args[1] : 0.0;
 	const double endtime = (nargs > 2 && double(args[2]) > 0.0) ? args[2] : -1.0;
@@ -212,9 +222,11 @@ double filepeak(const Arg args[], const int nargs)
 
 double filerms(const Arg args[], const int nargs)
 {
-	if (nargs < 1)
-		return die("filerms", "Usage:  "
+    if (nargs < 1) {
+		die("filerms", "Usage:  "
 		           "rms = filerms(\"filename\"[, start[, end[, chan]]])");
+        RTExit(PARAM_ERROR);
+    }
 	const char *fname = args[0];
 	const double starttime = (nargs > 1) ? args[1] : 0.0;
 	const double endtime = (nargs > 2 && double(args[2]) > 0.0) ? args[2] : -1.0;
@@ -229,9 +241,11 @@ double filerms(const Arg args[], const int nargs)
 
 double filedc(const Arg args[], const int nargs)
 {
-	if (nargs < 1)
-		return die("filedc", "Usage:  "
+    if (nargs < 1) {
+		die("filedc", "Usage:  "
 		           "rms = filedc(\"filename\"[, start[, end[, chan]]])");
+        RTExit(PARAM_ERROR);
+    }
 	const char *fname = args[0];
 	const double starttime = (nargs > 1) ? args[1] : 0.0;
 	const double endtime = (nargs > 2 && double(args[2]) > 0.0) ? args[2] : -1.0;
@@ -509,9 +523,10 @@ extern "C" {
 
 double bus_exists(const Arg args[], const int nargs)
 {
-	if (nargs != 1)
-		return die("bus_exists", "Usage:  val = bus_exists(pfbus #)");
-
+    if (nargs != 1) {
+		die("bus_exists", "Usage:  val = bus_exists(pfbus #)");
+        RTExit(PARAM_ERROR);
+    }
 	int connection = (int)args[0];
 	int is_connected = PFBusData::pfbus_is_connected[connection];
 
@@ -522,8 +537,10 @@ double bus_exists(const Arg args[], const int nargs)
 
 double bus_link(const Arg args[], const int nargs)
 {
-	if (nargs != 1)
-		return die("bus_link", "Usage:  val = bus_link(pfbus #)");
+    if (nargs != 1) {
+		die("bus_link", "Usage:  val = bus_link(pfbus #)");
+        RTExit(PARAM_ERROR);
+    }
 
 	PFBusData::connect_val = (int)args[0];
 	return 1.0;

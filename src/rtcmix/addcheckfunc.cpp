@@ -181,13 +181,11 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
       if (findAndLoadFunction(funcname) == 0) {
          func = ::findfunc(_func_list, funcname);
 		  if (func == NULL) {
-			   mixerr = MX_FNAME;
-               return -1;
+               return FUNCTION_NOT_FOUND;
 		  }
       }
       else {
-		  mixerr = MX_FNAME;
-		  return -1;
+		  return FUNCTION_NOT_FOUND;
 	  }
    }
 
@@ -221,7 +219,7 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
                pp[i] = STRING_TO_DOUBLE(theArg);
 			   break;
             default:
-               die(NULL, "%s: arguments must be numbers or strings.", funcname);
+                die(NULL, "%s: arguments must be numbers or strings.", funcname);
                 return PARAM_ERROR;
             }
          }
@@ -239,7 +237,9 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
     }
     catch (int err) {
         status = err;
-        mixerr = MX_FAIL;
+    }
+    catch (RTCmixStatus rtstatus) {
+        status = (int)rtstatus;
     }
     break;
    case HandleType:
@@ -247,8 +247,7 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
       Handle retHandle = (Handle) (*(func->func_ptr.handle_return))
                                                       (arglist, nargs);
 	  if (retHandle == NULL) {
-		  status = -1;
-		  mixerr = MX_FAIL;
+		  status = SYSTEM_ERROR;
 	  }
 	  *retval = retHandle;
 	  }
@@ -258,16 +257,14 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
       const char *retString = (const char *) (*(func->func_ptr.string_return))
                                                       (arglist, nargs);
 	  if (retString == NULL) {
-		  status = -1;
-		  mixerr = MX_FAIL;
+		  status = SYSTEM_ERROR;
 	  }
 	  *retval = retString;
 	  }
       break;
    default:
 	  die(NULL, "%s: unhandled return type: %d", funcname, (int)func->return_type);
-	  status = -1;
-	  mixerr = MX_FAIL;
+	  status = SYSTEM_ERROR;
       break;
    }
 
