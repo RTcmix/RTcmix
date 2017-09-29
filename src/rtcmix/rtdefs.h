@@ -19,17 +19,6 @@
 #define MAX_INLETS				64	// For RTInletPField
 // BGG mm end --------------
 
-enum {
-    FUNCTION_NOT_FOUND      = 1,    /* error, but alternately treated as warning */
-    NO_ERROR                = 0,
-    DONT_SCHEDULE           = -1,	/* returned by Instr->init() on fatal err */
-    PARAM_ERROR             = -2,   /* passed-in value or value reached in curve, etc., out of range */
-    AUDIO_ERROR             = -3,   /* error with reading or writing audio to/from HW device */
-    FILE_ERROR              = -4,   /* error seeking in, reading or writing to file */
-    SYSTEM_ERROR            = -5,   /* unspecified fatal error */
-    MEMORY_ERROR            = -6
-};
-
 /* SGI audio lib doesn't give us a file descriptor for an audio device,
    so we use this fake one in the InputFile.
 */

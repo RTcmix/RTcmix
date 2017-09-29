@@ -173,6 +173,21 @@ off_t outrepos(int samps, int fno);
 /* fnscl.c */
 void fnscl(struct gen *gen);
 
+/* system error status values.  These are returned up through to the parser */
+
+typedef enum {
+    FUNCTION_NOT_FOUND      = 1,    /* error, but alternately treated as warning */
+    NO_ERROR                = 0,
+    DONT_SCHEDULE           = -1,	/* returned by Instr->init() on fatal err */
+    PARAM_ERROR             = -2,   /* passed-in value or value reached in curve, etc., out of range */
+    CONFIGURATION_ERROR     = -3,   /* instrument created before rtsetparams, etc. */
+    AUDIO_ERROR             = -4,   /* error with reading or writing audio to/from HW device */
+    FILE_ERROR              = -5,   /* error seeking in, reading or writing to file */
+    SYSTEM_ERROR            = -6,   /* unspecified fatal error */
+    MEMORY_ERROR            = -7
+} RTCmixStatus;
+    
+
 /*
  [From MMPrint.h]
  
@@ -204,15 +219,15 @@ void fnscl(struct gen *gen);
 #define RTFPrintf(FILE, format, ...) set_mm_print_ptr(snprintf(get_mm_print_ptr(), get_mm_print_space(), format, ## __VA_ARGS__)+1)
 #define RTPrintfCat(format, ...) set_mm_print_ptr(snprintf(get_mm_print_ptr(), get_mm_print_space(), format, ## __VA_ARGS__))
 #define RTFPrintfCat(FILE, format, ...) set_mm_print_ptr(snprintf(get_mm_print_ptr(), get_mm_print_space(), format, ## __VA_ARGS__))
-#define RTExit(status) throw(status)
 #else
 #define RTPrintf(format, ...) printf(format, ## __VA_ARGS__)
 #define RTFPrintf(FILE, format, ...) fprintf(FILE, format, ## __VA_ARGS__)
 #define RTPrintfCat(format, ...) printf(format, ## __VA_ARGS__)
 #define RTFPrintfCat(FILE, format, ...) fprintf(FILE, format, ## __VA_ARGS__)
-#define RTExit(status) exit(status)
 #endif
-	
+
+#define RTExit(status) throw(status)
+
 /* message.c */
 void rtcmix_debug(const char *inst_name, const char *format, ...);
 void rtcmix_advise(const char *inst_name, const char *format, ...);
