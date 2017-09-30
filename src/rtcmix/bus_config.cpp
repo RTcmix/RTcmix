@@ -631,8 +631,8 @@ RTcmix::get_bus_config(const char *inst_name)
       err = insert_bus_slot((char *)inst_name, default_bus_slot);
    }
    if (err) {
-		die("bus_config", "couldn't get_bus_config, this is not good");
-		RTExit(1);        /* This is probably what user wants? */
+		die("bus_config", "get_bus_config failed, this is not good");
+		RTExit(SYSTEM_ERROR);        /* This is probably what user wants? */
 	}
 	
 	// Print out the default bus config (if verbosity permits)
@@ -818,59 +818,70 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
 {
    ErrCode     err;
    int         i, j, k, startchan, endchan, chain_incount=0, chain_outcount=0;
-   char        *str, *instname, *busname;
+   char        *instname, *busname;
    BusType     type;
    BusSlot     *bus_slot;
    char		   inbusses[80], outbusses[80];	// for verbose message
 
-   if (n_args < 2)
-      return die("bus_config", "Wrong number of args.");
+    if (n_args < 2) {
+      die("bus_config", "Wrong number of args.");
+        RTExit(PARAM_ERROR);
+    }
 
    if (!rtsetparams_was_called()) {
 #ifdef EMBEDDED
-        return die("bus_config", "You need to start the audio device before doing this.");
+        die("bus_config", "You need to start the audio device before doing this.");
 #else
-        return die("bus_config", "You did not call rtsetparams!");
+        die("bus_config", "You did not call rtsetparams!");
 #endif
+       RTExit(PARAM_ERROR);
    }
 
    bus_slot = new BusSlot(busCount);
    if (bus_slot == NULL)
-      return -1.0;
+      RTExit(MEMORY_ERROR);
 
    inbusses[0] = outbusses[0] = '\0';
    
    Lock localLock(&bus_slot_lock);	// This will unlock when going out of scope.
 
    /* do the old Minc casting rigamarole to get string pointers from a double */
-   str = DOUBLE_TO_STRING(pp[0]);
-   instname = strdup(str);	// Note:  If we exit nonfatally, we have to free.
+   instname = DOUBLE_TO_STRING(pp[0]);
 
    for (i = 1; i < n_args; i++) {
       busname = DOUBLE_TO_STRING(pp[i]);
       err = parse_bus_name(busname, &type, &startchan, &endchan, busCount);
-      if (err)
-         goto error;
-
+       switch (err) {
+           case INVAL_BUS_ERR:
+           case INVAL_BUS_CHAN_ERR:
+           case LOOP_ERR:
+               RTExit(PARAM_ERROR);
+           case UNKNOWN_ERR:
+               RTExit(SYSTEM_ERROR);
+           default:
+               break;
+       }
       switch (type) {
          case BUS_IN:
 			if (bus_slot->in_count > 0) strcat(inbusses, ", ");
 			strcat(inbusses, busname);
             if (bus_slot->auxin_count > 0) {
-                return die("bus_config",
-                      	"Can't have 'in' and 'aux-in' buses in same bus_config.");
+                die("bus_config", "Can't have 'in' and 'aux-in' buses in same bus_config.");
+                RTExit(PARAM_ERROR);
+                RTExit(PARAM_ERROR);
             }
             if (chain_incount > 0) {
-            	return die("bus_config",
-            		"Can't have 'in' and 'chain-in' buses in same bus_config.");
-            }
+            	die("bus_config", "Can't have 'in' and 'chain-in' buses in same bus_config.");
+                RTExit(PARAM_ERROR);
+           }
             /* Make sure max channel count set in rtsetparams can accommodate
                the highest input chan number in this bus config.
             */
             if (endchan >= NCHANS) {
-            	return die("bus_config", "You specified %d channels in rtsetparams,\n"
+            	die("bus_config", "You specified %d channels in rtsetparams,\n"
             				"but this bus_config requires %d channels.",
 							 NCHANS, endchan + 1);
+                RTExit(PARAM_ERROR);
             }
            j = bus_slot->in_count;
             for (k = startchan; k <= endchan; k++)
@@ -881,20 +892,21 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
 			if (bus_slot->out_count > 0) strcat(outbusses, ", ");
 			strcat(outbusses, busname);
             if (bus_slot->auxout_count > 0) {
-                return die("bus_config",
-                    		"Can't have 'out' and 'aux-out' buses in same bus_config.");
+                die("bus_config", "Can't have 'out' and 'aux-out' buses in same bus_config.");
+                RTExit(PARAM_ERROR);
             }
             if (chain_outcount > 0) {
-            	return die("bus_config",
-            				"Can't have 'out' and 'chain-out' buses in same bus_config.");
-            }
+            	die("bus_config", "Can't have 'out' and 'chain-out' buses in same bus_config.");
+                RTExit(PARAM_ERROR);
+           }
             /* Make sure max output chans set in rtsetparams can accommodate
 			   the highest output chan number in this bus config.
             */
             if (endchan >= NCHANS) {
-            	return die("bus_config", "You specified %d output channels in rtsetparams,\n"
+            	die("bus_config", "You specified %d output channels in rtsetparams,\n"
 							 "but this bus_config requires %d channels.",
 							 NCHANS, endchan + 1);
+                RTExit(PARAM_ERROR);
             }
             j = bus_slot->out_count;
             for (k = startchan; k <= endchan; k++) {
@@ -910,12 +922,14 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
 			if (bus_slot->auxin_count > 0) strcat(inbusses, ", ");
 			strcat(inbusses, busname);
             if (bus_slot->in_count > 0) {
-                return die("bus_config",
+                die("bus_config",
                     	  "Can't have 'in' and 'aux-in' buses in same bus_config.");
+                RTExit(PARAM_ERROR);
             }
             if (chain_incount > 0) {
-            	return die("bus_config",
+            	die("bus_config",
                      	 "Can't have 'chain-in' and 'aux-in' buses in same bus_config.");
+                RTExit(PARAM_ERROR);
             }
             j = bus_slot->auxin_count;
             for (k = startchan; k <= endchan; k++)
@@ -926,12 +940,14 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
 			if (bus_slot->auxout_count > 0) strcat(outbusses, ", ");
 			strcat(outbusses, busname);
             if (bus_slot->out_count > 0) {
-                return die("bus_config",
+                die("bus_config",
                   	  "Can't have 'out' and 'aux-out' buses in same bus_config.");
+                RTExit(PARAM_ERROR);
             }
             if (chain_outcount > 0) {
-            	return die("bus_config",
+            	die("bus_config",
             			"Can't have 'aux-out' and 'chain-out' buses in same bus_config.");
+                RTExit(PARAM_ERROR);
             }
             j = bus_slot->auxout_count;
             for (k = startchan; k <= endchan; k++) {
@@ -945,16 +961,18 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
 		  case BUS_NONE_IN:
 			  strcat(inbusses, busname);
 			  if (bus_slot->in_count + bus_slot->auxin_count > 0) {
-				  return die("bus_config",
+				  die("bus_config",
                      	 "Can't have 'chain-in' combined with any other in type in same bus_config.");
+                  RTExit(PARAM_ERROR);
 			  }
 			  chain_incount += (endchan - startchan) + 1;
 			  break;
 		  case BUS_NONE_OUT:
 			  strcat(outbusses, busname);
 			  if (bus_slot->out_count + bus_slot->auxout_count > 0) {
-				  return die("bus_config",
+				  die("bus_config",
 					  	"Can't have 'chain-out' combined with any other out type in same bus_config.");
+                  RTExit(PARAM_ERROR);
 			  }
 			  chain_outcount = (endchan - startchan) + 1;
 			  break;
@@ -998,12 +1016,7 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
 #endif
 
    rtcmix_advise("bus_config", "(%s) => %s => (%s)", inbusses, instname, outbusses);
-   free(instname);
-   return 0.0;
-
- error:
-   free(instname);
-   return die("bus_config", "Cannot parse arguments.");
+   return 0;
 }
 
 void
