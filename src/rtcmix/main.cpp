@@ -314,8 +314,7 @@ int RTcmix_setAudioBufferFormat(RTcmix_AudioFormat format, int nchans)
 			rtcmix_fmt |= MUS_NORMALIZED;
 			break;
 		default:
-			rterror("RTcmix_setAudioBufferFormat", "Unknown format");
-			return -1;
+			return die("RTcmix_setAudioBufferFormat", "Unknown format");
 	}
 	// For now, only interleaved audio is allowed.
 	rtcmix_fmt |= MUS_INTERLEAVED;
