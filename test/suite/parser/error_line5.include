@@ -1,0 +1,7 @@
+// This is used as a test include file to verify that we 
+// get an error from the parser for line 5, not for the line
+// in the original score which includes this one.
+
+float x = 10;	// MinC does not allow declaration plus assignment
+
+
