@@ -2,6 +2,7 @@
 
 #include "AudioDeviceImpl.h"
 #include "audiostream.h"
+#include "ugens.h"
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
