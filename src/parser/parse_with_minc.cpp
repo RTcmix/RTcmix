@@ -50,6 +50,9 @@ int RTcmix_parseScore(char *theBuf, int buflen)
             case PARAM_ERROR:
                 errname = "Illegal or missing parameter";
                 break;
+            case CONFIGURATION_ERROR:
+                errname = "Configuration error";
+                break;
             case AUDIO_ERROR:
                 errname = "Audio device error";
                 break;
@@ -58,6 +61,9 @@ int RTcmix_parseScore(char *theBuf, int buflen)
                 break;
             case SYSTEM_ERROR:
                 errname = "RTcmix system error";
+                break;
+            case RESOURCE_ERROR:
+                errname = "Out of resources";
                 break;
             case MEMORY_ERROR:
                 errname = "Memory error";

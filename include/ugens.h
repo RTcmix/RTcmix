@@ -184,7 +184,8 @@ typedef enum {
     AUDIO_ERROR             = -4,   /* error with reading or writing audio to/from HW device */
     FILE_ERROR              = -5,   /* error seeking in, reading or writing to file */
     SYSTEM_ERROR            = -6,   /* unspecified fatal error */
-    MEMORY_ERROR            = -7
+    RESOURCE_ERROR          = -7,   /* exceeded file limit, etc. */
+    MEMORY_ERROR            = -8
 } RTCmixStatus;
     
 
