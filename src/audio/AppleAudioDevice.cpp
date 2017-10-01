@@ -1544,7 +1544,7 @@ void AppleAudioDevice::parseDeviceDescription(const char *inDesc)
 {
 	::getDeviceList(&_impl->deviceIDs, &_impl->deviceCount);
 	if (inDesc != NULL) {
-		char *substr = strchr(inDesc, ':');
+		char *substr = (char *)strchr(inDesc, ':');
 		if (substr == NULL) {
 			// Descriptor is just the device name
 			_impl->deviceName = new char[strlen(inDesc) + 1];
