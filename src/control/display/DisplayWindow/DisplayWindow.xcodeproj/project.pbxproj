@@ -258,6 +258,7 @@
 				GCC_PREFIX_HEADER = "DisplayWindow-Prefix.pch";
 				INFOPLIST_FILE = "DisplayWindow-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_NAME = DisplayWindow;
 				SDKROOT = macosx;
@@ -276,6 +277,7 @@
 				GCC_PREFIX_HEADER = "DisplayWindow-Prefix.pch";
 				INFOPLIST_FILE = "DisplayWindow-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
+				MACOSX_DEPLOYMENT_TARGET = 10.10;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_NAME = DisplayWindow;
 				SDKROOT = macosx;
