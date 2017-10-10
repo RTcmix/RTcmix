@@ -314,7 +314,7 @@ int MBASE::run()
 				bufsamps = max(0, totalSamps - thisFrame);
 
 			if ((tapcount = updatePosition(thisFrame)) < 0)
-				return PARAM_ERROR;
+				return -1;
 
 			DBG1(printf("  vector loop: bufsamps = %d\n", bufsamps));
 			for (int ch = 0; ch < 2; ch++) {
