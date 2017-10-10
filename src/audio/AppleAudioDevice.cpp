@@ -1544,7 +1544,7 @@ void AppleAudioDevice::parseDeviceDescription(const char *inDesc)
 {
 	::getDeviceList(&_impl->deviceIDs, &_impl->deviceCount);
 	if (inDesc != NULL) {
-		char *substr = strchr(inDesc, ':');
+		const char *substr = strchr(inDesc, ':');
 		if (substr == NULL) {
 			// Descriptor is just the device name
 			_impl->deviceName = new char[strlen(inDesc) + 1];
@@ -1558,14 +1558,15 @@ void AppleAudioDevice::parseDeviceDescription(const char *inDesc)
 			_impl->deviceName[nameLen] = '\0';
 			++substr;	// skip ':'
          	// Extract input and output stream selecters
-			char *insubstr = NULL, *outsubstr = NULL;
+			char *insubstr = NULL;
+			const char *outsubstr = NULL;
             if ((outsubstr = strchr(substr, ',')) != NULL) {
 				++outsubstr;   // skip ','
-				insubstr = substr;
+				insubstr = (char *)substr;
 				insubstr[(size_t) outsubstr - (size_t) insubstr - 1] = '\0';
             }
             else {
-				insubstr = outsubstr = substr;
+				insubstr = (char *) (outsubstr = substr);
             }
             // Now parse stream selecters and set up channel mapping if necessary
             const char *selecters[2] = { insubstr, outsubstr };
