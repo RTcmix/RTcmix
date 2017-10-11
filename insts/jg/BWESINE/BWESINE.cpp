@@ -6,12 +6,14 @@
       vol. 50, no. 11, November 2002.
    This allows us to resynthesize sound models written by Loris.
 
+   NB: The phase pfield doesn't work yet.
+
    p0 = output start time
    p1 = duration
    p2 = amplitude multiplier
    p3 = freq (in Hz only)
    p4 = bandwidth
-	p5 = starting phase (radians)
+   p5 = starting phase (radians)
    p6 = pan (in percent-to-left format) [optional, default is .5]
    p7 = wavetable
 
