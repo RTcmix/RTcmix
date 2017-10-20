@@ -61,11 +61,11 @@ Instrument::rtinrepos(Instrument *inst, int frames, int whence)
          break;
       case SEEK_END:
          rtcmix_warn("rtinrepos", "SEEK_END unimplemented\n");
-         RTExit(1);
+         return PARAM_ERROR;
          break;
       default:
          rtcmix_warn("rtinrepos", "invalid <whence>\n");
-		 RTExit(1);
+         return PARAM_ERROR;
          break;
    }
 
@@ -178,8 +178,8 @@ RTcmix::readFromInputFile(
       Note that this includes samples in channels that were read but
       not copied into the dest buffer!
    */
-   *pFileOffset += amountRead;
-
+    if (amountRead > 0)
+        *pFileOffset += amountRead;
 }
 
 /* -------------------------------------------------------------- rtgetin --- */

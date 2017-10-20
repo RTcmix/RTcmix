@@ -1,6 +1,7 @@
 // setup.C -- Minc routines needed to set up PVOC utilities
 
 #include <ugens.h>
+#include <rtdefs.h>
 #include "PVFilter.h"
 #include "setup.h"
 #include <string.h>		// strncpy()
@@ -30,7 +31,7 @@ int RegisterFilter(FilterCreateFunction createFunction)
 {
 	if (g_currentFilters + 1 >= maxFilters) {
 		rterror("set_filter", "Exceeded max allowed filters (%d)", maxFilters);
-		return -1;
+		return SYSTEM_ERROR;
 	}
 	g_filterCtors[g_currentFilters] = createFunction;
 	++g_currentFilters;
@@ -65,14 +66,14 @@ double set_filter(float *p, int n_args, double *pp)
 {
 #ifdef EMBEDDED
 	rterror("set_filter", "Dynamic filter loading not supported on this platform");
-	return -1;
+	return SYSTEM_ERROR;
 #endif
 	size_t numarg = (size_t) pp[0];
 	if (numarg < (size_t)g_currentFilters) {
 		if (g_filterCtors[numarg] == 0) {
 			rterror("set_filter", "Requested filter slot (%d) is empty", 
 					(int)numarg);
-			return -1;
+			return PARAM_ERROR;
 		}
 		rtcmix_advise("set_filter", "Slot %d selected", (int)numarg);
 		g_currentFilterSlot = (int)numarg;
@@ -100,12 +101,12 @@ double set_filter(float *p, int n_args, double *pp)
 			else {
 				rterror("set_filter", "dso function load returned \"%s\"\n",
 						dso.error());
-				return -1;
+				return SYSTEM_ERROR;
 			}
 		}
 		else {
 			rterror("set_filter", "dso load returned \"%s\"\n", dso.error());
-			return -1;
+			return SYSTEM_ERROR;
 		}
 	}
 	return 1;
@@ -119,7 +120,7 @@ double init_filter(float *p, int n_args, double *pp)
 	if (filter) {
 		return filter->init(pp, n_args);
 	}
-	return -1;
+	return PARAM_ERROR;
 }
 
 #ifndef EMBEDDED

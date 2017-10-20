@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <Option.h>
 #include <ugens.h>
+#include <rtdefs.h>
 
 /* Minc builtin functions, for use only in Minc scripts.
    To add a builtin function, make an entry for it in the function ptr array
@@ -71,7 +72,7 @@ call_builtin_function(const char *funcname, const MincValue arglist[],
 {
    int index = _find_builtin(funcname);
    if (index < 0)
-      return -1;
+      return FUNCTION_NOT_FOUND;
    if (builtin_funcs[index].number_return) {
       *retval = (MincFloat) (*(builtin_funcs[index].number_return))
                                                          (arglist, nargs);

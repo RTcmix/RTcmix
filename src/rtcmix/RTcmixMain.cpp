@@ -688,7 +688,7 @@ RTcmixMain::sockit(void *arg)
 		  cout << "sockit(): elapsed = " << getElapsed() << endl;
 		  cout << "sockit(): SR = " << SR << endl;
 #endif
-		  if(sinfo->name) {
+          if (strlen(sinfo->name) > 0) {
 #ifdef ALLBUG
 			cout << "SOCKET RECIEVED\n";
 			cout << "sinfo->name = " << sinfo->name << endl;

@@ -27,6 +27,7 @@
 #include <string.h>
 #include <math.h>
 #include <assert.h>
+#include <rtdefs.h>
 
 extern "C" {
 	void yyset_lineno(int line_number);
@@ -114,15 +115,18 @@ char Trace::spaces[128];
 #else
 #define ENTER() Trace __trace__(__FUNCTION__)
 #endif
+
 #define TPRINT(...) do { snprintf(Trace::getBuf(), 256, __VA_ARGS__); Trace::printBuf(); } while(0)
 #else
 #define ENTER()
 #define TPRINT(...)
 #endif
 
-#define DEBUG_MEMORY
 #ifdef DEBUG_MEMORY
+#define MPRINT(...) rtcmix_print(__VA_ARGS__)
 static int numNodes = 0;
+#else
+#define MPRINT(...)
 #endif
 
 static const char *s_NodeKinds[] = {
@@ -227,24 +231,24 @@ MincList::MincList(int inLen) : len(inLen), data(NULL)
 		data = new MincValue[len];
 	}
 #ifdef DEBUG_MEMORY
-	TPRINT("MincList::MincList: %p alloc'd with len %d\n", this, inLen);
+	MPRINT("MincList::MincList: %p alloc'd with len %d\n", this, inLen);
 #endif
 }
 
 MincList::~MincList()
 {
 #ifdef DEBUG_MEMORY
-	TPRINT("deleting MincList %p\n", this);
+	MPRINT("deleting MincList %p\n", this);
 #endif
 	if (data != NULL) {
 #ifdef DEBUG_MEMORY
-		TPRINT("deleting MincList data %p...\n", data);
+		MPRINT("deleting MincList data %p...\n", data);
 #endif
 		delete []data;
 		data = NULL;
 	}
 #ifdef DEBUG_MEMORY
-	TPRINT("\tdone\n");
+	MPRINT("\tdone\n");
 #endif
 }
 
@@ -253,7 +257,7 @@ MincList::resize(int newLen)
 {
 	MincValue *oldList = data;
 	data = new MincValue[newLen];
-	TPRINT("MincList %p resizing with new data %p\n", this, data);
+	MPRINT("MincList %p resizing with new data %p\n", this, data);
 	int i;
 	for (i = 0; i < len; ++i) {
 		data[i] = oldList[i];
@@ -273,7 +277,7 @@ MincList::resize(int newLen)
 MincValue::MincValue(MincHandle h) : type(MincHandleType)
 {
 #ifdef DEBUG_MEMORY
-//	TPRINT("created MincValue %p (for MincHandle)\n", this);
+//	MPRINT("created MincValue %p (for MincHandle)\n", this);
 #endif
 	_u.handle = h; ref_handle(h);
 }
@@ -281,7 +285,7 @@ MincValue::MincValue(MincHandle h) : type(MincHandleType)
 MincValue::MincValue(MincList *l) : type(MincListType)
 {
 #ifdef DEBUG_MEMORY
-//	TPRINT("created MincValue %p (for MincList *)\n", this);
+//	MPRINT("created MincValue %p (for MincList *)\n", this);
 #endif
 	_u.list = l; RefCounted::ref(l);
 }
@@ -289,7 +293,7 @@ MincValue::MincValue(MincList *l) : type(MincListType)
 MincValue::MincValue(MincDataType inType) : type(inType)
 {
 #ifdef DEBUG_MEMORY
-//	TPRINT("created MincValue %p (for MincDataType)\n", this);
+//	MPRINT("created MincValue %p (for MincDataType)\n", this);
 #endif
 	_u.list = NULL;		// to zero our contents
 }
@@ -297,7 +301,7 @@ MincValue::MincValue(MincDataType inType) : type(inType)
 MincValue::~MincValue()
 {
 #ifdef DEBUG_MEMORY
-//	TPRINT("deleting MincValue %p\n", this);
+//	MPRINT("deleting MincValue %p\n", this);
 #endif
 	switch (type) {
 		case MincHandleType:
@@ -310,7 +314,7 @@ MincValue::~MincValue()
 			break;
 	}
 #ifdef DEBUG_MEMORY
-//	TPRINT("\tdone\n");
+//	MPRINT("\tdone\n");
 #endif
 }
 
@@ -325,14 +329,14 @@ void MincValue::doClear()
 			break;
 		case MincHandleType:
 			if (_u.handle != NULL) {
-				TPRINT("\toverwriting existing Handle value\n");
+				MPRINT("\toverwriting existing Handle value %p\n", _u.handle);
 				unref_handle(_u.handle);	// overwriting handle, so unref
 				_u.handle = NULL;
 			}
 			break;
 		case MincListType:
 			if (_u.list != NULL) {
-				TPRINT("\toverwriting existing MincList value\n");
+				MPRINT("\toverwriting existing MincList value %p\n", _u.list);
 				RefCounted::unref(_u.list);
 				_u.list = NULL;
 			}
@@ -359,7 +363,7 @@ void MincValue::doCopy(const MincValue &rhs)
 			break;
 		default:
 			if (type != MincVoidType) {
-				TPRINT("\tAssigning from a void MincValue rhs");
+				MPRINT("\tAssigning from a void MincValue rhs");
 			}
 			break;
 	}
@@ -1093,13 +1097,24 @@ Node *	NodeCall::doExct()
 		MincValue retval;
 		int result = call_builtin_function(_functionName, sMincList, sMincListLen,
 										   &retval);
-		if (result < 0) {
+		if (result == FUNCTION_NOT_FOUND) {
 			result = call_external_function(_functionName, sMincList, sMincListLen,
 											&retval);
 		}
 		copy_listelem_tree(this, &retval);
-		if (result != 0) {
-			// NOTE: FOR NOW WE DO NOTHING IN RESPONSE TO INSTRUMENT FAILURE
+		switch (result) {
+            case NO_ERROR:
+                break;
+            case FUNCTION_NOT_FOUND:
+#if defined(EMBEDDED) && defined(ERROR_FAIL_ON_UNDEFINED_FUNCTION)
+                throw result;
+#endif
+                break;
+            default:
+#if defined(EMBEDDED)
+                throw result;
+#endif
+                break;
 		}
 	}
 	pop_list();

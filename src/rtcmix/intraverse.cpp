@@ -314,12 +314,14 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			bus_q_offset = 0;
 			bus_type = BUS_AUX_OUT;
 			::pthread_mutex_lock(&to_aux_lock);
+            assert(play_bus < busCount);
 			bus = ToAuxPlayList[play_bus++];
 			::pthread_mutex_unlock(&to_aux_lock);
 			break;
 		case AUX_TO_AUX:
 			bus_q_offset = busCount;
 			::pthread_mutex_lock(&aux_to_aux_lock);
+            assert(play_bus < busCount);
 			bus = AuxToAuxPlayList[play_bus++];
 			::pthread_mutex_unlock(&aux_to_aux_lock);
 			bus_type = BUS_AUX_OUT;
@@ -327,6 +329,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		case TO_OUT:
 			bus_q_offset = busCount*2;
 			::pthread_mutex_lock(&to_out_lock);
+            assert(play_bus < busCount);
 			bus = ToOutPlayList[play_bus++];
 			::pthread_mutex_unlock(&to_out_lock);
 			bus_type = BUS_OUT;

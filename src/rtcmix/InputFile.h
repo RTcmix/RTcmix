@@ -25,11 +25,11 @@ public:
 #endif
 	InputFile();
 	~InputFile();
-    void init(int inFd, const char *inFileName, Type inType, int inHeaderType,
+    int init(int inFd, const char *inFileName, Type inType, int inHeaderType,
               int inDataFormat, int inDataLocation, long nFrames, float inSampleRate,
               int inChannels, double inDuration);
-	void init(BufPtr inBuffer, const char *inBufferName, long nFrames, float inSampleRate, int inChannels, float inScaling);
-	void reinit(BufPtr inBuffer, long nFrames, int inChannels);
+	int init(BufPtr inBuffer, const char *inBufferName, long nFrames, float inSampleRate, int inChannels, float inScaling);
+	int reinit(BufPtr inBuffer, long nFrames, int inChannels);
 
     void reference();
     void unreference();

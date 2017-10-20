@@ -2,6 +2,7 @@
 
 #include "AudioDeviceImpl.h"
 #include "audiostream.h"
+#include "ugens.h"
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
@@ -385,7 +386,7 @@ int AudioDeviceImpl::createConvertBuffer(int frames, int chans)
 													chans,
 													frames);
 	if (!_convertBuffer)
-		return -1;
+		return SYSTEM_ERROR;
 	return 0;
 }
 
@@ -430,7 +431,7 @@ int AudioDeviceImpl::setQueueSize(int *pWriteSize, int *pCount)
 		return setupConversion(isRecording(), isPlaying());
 	}
 	*pWriteSize = -1;	// error condition
-	return -1;
+	return AUDIO_ERROR;
 }
 
 int AudioDeviceImpl::setupConversion(bool recording, bool playing)
