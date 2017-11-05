@@ -5,16 +5,15 @@ RTLIBDIRS = jfuncs tuning
 LIBDIRS = $(RTLIBDIRS)
 
 .PHONY: all progs dsos standalone install dso_install standalone_install\
-uninstall dso_uninstall standalone_uninstall clean cleanall
+uninstall dso_uninstall standalone_uninstall clean cleanall $(LIBDIRS)
 
 all: progs
 
-progs:
-	@for DIR in $(LIBDIRS); \
-	do \
-	  ( if test -d $$DIR; then cd $$DIR; echo "making in $$DIR..."; \
-	  $(MAKE) $(MFLAGS); echo "done in $$DIR"; fi ) \
-	done
+progs: $(LIBDIRS)
+
+$(LIBDIRS)::
+	@echo "making all in joel..."
+	$(MAKE) $(MFLAGS) -C $@ all
 
 dsos: all
 

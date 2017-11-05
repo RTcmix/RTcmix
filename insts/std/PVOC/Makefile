@@ -80,5 +80,5 @@ standalone_uninstall:
 clean:
 	$(RM) $(OBJS) $(PROGS) $(FILTERS) PVFilter.o PVFilterTest.o PVRandBend.o PVRandBands.o PVTransBend.o
 
-cleanall: clean uninstall
-
+cleanall: clean
+	$(RM) depend

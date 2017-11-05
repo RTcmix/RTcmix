@@ -35,4 +35,5 @@ clean:
 	$(RM) *.o $(LIBINLET)
 
 cleanall: clean
+	$(RM) depend
 

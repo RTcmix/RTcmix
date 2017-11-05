@@ -66,13 +66,7 @@ $(AUDIOLIB):	$(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(AUDIO_DEFINES) -c $< -o $@
 
 depend:
-ifeq ($(ARCH),SGI)
-# Note: -MM is a gcc extension. If no gcc, use -M.
-# Unfortunately, this doesn't work...   -JGG
-#	$(SHELL) -ec '$(CC) -M $(CFLAGS) $(SRCS) $(CPPSRCS)' > depend
-else
 	$(SHELL) -ec '$(CC) -MM $(CFLAGS) $(AUDIO_DEFINES) *.c *.cpp' > depend
-endif
 
 -include depend
 

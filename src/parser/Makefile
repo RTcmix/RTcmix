@@ -25,10 +25,10 @@ ifeq ($(PYTHON_SUPPORT), TRUE)
 endif
 
 all: $(DIRS) $(OBJS)
-	@for DIR in $(DIRS); \
-	do \
-	  ( cd $$DIR; $(MAKE) $(MFLAGS) all; ) \
-	done
+
+$(DIRS)::
+	@echo "making all in parser..."
+	$(MAKE) $(MFLAGS) -C $@
 
 parse_with_minc.o: parse_with_minc.cpp rtcmix_parse.h
 	$(CXX) $(CXXFLAGS) -c parse_with_minc.cpp
@@ -54,7 +54,7 @@ uninstall:
 	done
 
 clean:
-	$(RM) *.o depend core
+	$(RM) *.o core
 	@for DIR in $(DIRS); \
 	do \
 	  ( cd $$DIR; $(MAKE) $(MFLAGS) clean; ) \

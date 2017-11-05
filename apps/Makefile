@@ -41,7 +41,12 @@ clean:
 		$(MAKE) $(MFLAGS) clean ); \
 	done
 
-cleanall: clean uninstall
+cleanall:
+	@for DIR in $(DIRS); \
+	do \
+	  ( cd $$DIR; echo "making cleanall in $$DIR..."; \
+		$(MAKE) $(MFLAGS) cleanall ); \
+	done
 
 distclean: cleanall
 	@for DIR in $(DIRS); \

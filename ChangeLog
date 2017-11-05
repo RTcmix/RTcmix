@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2017-11-05  Douglas Scott  <netdscott-at-netscape.net>
+	* Big Makefile revision, part 1: 'make' and 'make all' will exit on first error.
+	* 'make cleanall' removes depend files but no longer does uninstall target.
+
 2017-10-19  Douglas Scott  <netdscott-at-netscape.net>
 	* First big revision to support proper error handling in embedded
 	* configurations of RTcmix.

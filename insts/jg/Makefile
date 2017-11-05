@@ -7,7 +7,7 @@ RTLIBDIRS = BUTTER BWESINE COMPLIMIT CONVOLVE1 DCBLOCK DECIMATE DISTORT ELL EQ \
 
 ifeq ($(BUILDTYPE), STANDALONE)
 	RTLIBDIRS += SROOM
-	CMIXLIBDIRS = bender denoise splice transpan
+	CMIXLIBDIRS = denoise
 endif
 ifndef MAXMSP
 	RTLIBDIRS += GRANULATE
@@ -19,14 +19,12 @@ endif
 LIBDIRS = $(RTLIBDIRS) $(CMIXLIBDIRS)
 
 .PHONY: all objlib progs dsos standalone install dso_install standalone_install\
-uninstall dso_uninstall standalone_uninstall clean cleanall
+uninstall dso_uninstall standalone_uninstall clean cleanall $(LIBDIRS)
 
-all: objlib
-	@for DIR in $(LIBDIRS); \
-	do \
-	  ( if test -d $$DIR; then cd $$DIR; echo "making all in $$DIR..."; \
-	  $(MAKE) $(MFLAGS) all; echo "done in $$DIR"; fi ) \
-	done
+all: objlib $(LIBDIRS)
+
+$(LIBDIRS)::
+	$(MAKE) $(MFLAGS) -C $@ all
 
 progs: all
 
