@@ -1,6 +1,6 @@
 include package.conf
 
-RTLIBDIRS = GVERB HALFWAVE SYNC VWAVE PFSCHED
+RTLIBDIRS = GVERB HALFWAVE SYNC VWAVE PFSCHED LOCALIZE
 
 .PHONY: all progs dsos standalone install dso_install standalone_install\
 uninstall dso_uninstall standalone_uninstall clean cleanall $(RTLIBDIRS)
