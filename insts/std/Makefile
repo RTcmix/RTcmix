@@ -83,5 +83,10 @@ clean:
 		$(MAKE) $(MFLAGS) clean; fi ) \
 	done
 
-cleanall: clean uninstall
+cleanall:
+	@for DIR in $(LIBDIRS); \
+	do \
+	  ( if test -d $$DIR; then cd $$DIR; echo "making cleanll in $$DIR..."; \
+		$(MAKE) $(MFLAGS) cleanall; fi ) \
+	done
 
