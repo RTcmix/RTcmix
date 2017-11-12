@@ -18,10 +18,11 @@ public:
 	static void ref(RefCounted *r);
 	static int unref(RefCounted *r);
 protected:
-	RefCounted() : _refcount(0) {}
+	RefCounted(bool dispatchOnDelete=false) : _refcount(0), _dispatch(dispatchOnDelete) {}
 	virtual ~RefCounted();
 private:
-	int _refcount;
+	short _refcount;
+    bool  _dispatch;
 };
 
 #endif	//	 _RT_REFCOUNTED_H_

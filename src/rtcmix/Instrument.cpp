@@ -38,8 +38,8 @@ int				Instrument::NCHANS = 0;
 float			Instrument::SR     = 0;
 
 /* ----------------------------------------------------------- Instrument --- */
-Instrument::Instrument()
-	: _start(0.0), _dur(0.0), cursamp(0), chunksamps(0), i_chunkstart(0),
+Instrument::Instrument() : RefCounted(true),
+	  _start(0.0), _dur(0.0), cursamp(0), chunksamps(0), i_chunkstart(0),
 	  endsamp(0), output_offset(0), outputchans(0), _name(NULL),
 	  needs_to_run(true), _nsamps(0), inputChainBuf(NULL)
 {
