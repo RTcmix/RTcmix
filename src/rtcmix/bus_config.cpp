@@ -755,7 +755,7 @@ parse_bus_chan(char *numstr, int *startchan, int *endchan, int maxBus)
       *endchan = *startchan;
 
 	/* NOTE: with the current code, only maxBus-1 channels are allowed */
-	if (*startchan > maxBus || *endchan > maxBus)
+	if (*startchan >= maxBus || *endchan >= maxBus)
 		return INVAL_BUS_CHAN_ERR;
 
    return NO_ERR;
