@@ -10,6 +10,8 @@ uninstall dso_uninstall standalone_uninstall clean cleanall $(LIBDIRS)
 
 all: stklib progs
 
+.NOTPARALLEL::
+
 stklib:
 	@echo "making in stklib..."
 	$(MAKE) $(MFLAGS) -C $@

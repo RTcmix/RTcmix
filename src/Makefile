@@ -11,6 +11,8 @@ endif
 .PHONY: all progs dsos standalone install dso_install standalone_install \
 uninstall dso_uninstall standalone_uninstall clean cleanall $(DIRS)
 
+.NOTPARALLEL::
+
 all: $(DIRS)
 
 $(DIRS)::
