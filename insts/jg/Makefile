@@ -23,6 +23,8 @@ uninstall dso_uninstall standalone_uninstall clean cleanall $(LIBDIRS)
 
 all: objlib $(LIBDIRS)
 
+.NOTPARALLEL::
+
 $(LIBDIRS)::
 	$(MAKE) $(MFLAGS) -C $@ all
 

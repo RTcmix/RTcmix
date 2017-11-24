@@ -13,6 +13,8 @@ endif
 
 all:	install_dirs $(DIRS)
 
+.NOTPARALLEL::
+
 $(DIRS)::
 	@echo "making all ..."
 	$(MAKE) $(MFLAGS) -C $@

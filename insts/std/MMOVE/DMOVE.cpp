@@ -192,10 +192,11 @@ void DMOVE::get_tap(int currentSamp, int chan, int path, int len)
 
 int DMOVE::updatePosition(int currentSamp)
 {
+    static double z = 0.017453292;    /* Pi/180 */
     double p[6];
 	update(p, 6, 1 << 4 | 1 << 5);
     double R = p[4];
-    double T = p[5];
+    double T = p[5] * z;    // convert to radians
     int maxtap = tapcount;
     if (R != R_old || T != T_old) {
 #ifdef debug

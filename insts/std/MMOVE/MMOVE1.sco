@@ -26,8 +26,8 @@ dist_mikes=2.2		/* for normal */
 //dist_mikes=0.67	/* for binaural */
 inchan=0
 
-reset(0.001);
-threshold(0.0000);
+reset(44100);
+threshold(1/44100);
 
 // slow, then zoom in and out again
 path(0,50,-90, 10,50,0, 13,25,20, 15,40,30, 18,30,90);

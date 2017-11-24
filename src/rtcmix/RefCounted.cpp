@@ -23,12 +23,16 @@ int RefCounted::unref()
 #endif
 	if ((r=--_refcount) <= 0) {
 #ifdef USE_OSX_DISPATCH
-		dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
-						^{ delete this; }
-					   );
-#else
-		delete this;
+        if (_dispatch) {
+            dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0),
+                           ^{ delete this; }
+            );
+        }
+        else
 #endif
+        {
+            delete this;
+        }
 	}
 	return r;
 }
