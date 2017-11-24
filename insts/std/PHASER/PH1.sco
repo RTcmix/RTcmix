@@ -22,8 +22,8 @@
 rtsetparams(44100, 2)
 load("PHASER")
 
-rtinput("/snd/loocher441.aiff")
+rtinput("../../../snd/loocher.aiff")
 
 makegen(2, 10, 1000, 1)
 ampenv = maketable("line", 1000, 0,0, 1,1, 9,1, 10,0)
-PHASER(0, 0, 7.0, 1*ampenv, 4, 0.3, 7.1, 1.0, 0, 0.5)
+PHASER(0, 0, DUR(), 1*ampenv, 4, 0.3, 7.1, 1.0, 0, 0.5)
