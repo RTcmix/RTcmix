@@ -127,6 +127,10 @@ void BWESINE::doupdate()
 	_amp = p[2] * kNormalizer;
 	_osc->setfreq(p[3]);
 	_bandwidth = p[4];
+	if (_bandwidth > 1.0)
+		_bandwidth = 1.0;
+	else if (_bandwidth < 0.0)
+		_bandwidth = 0.0;
 	_pan = p[6];
 }
 
