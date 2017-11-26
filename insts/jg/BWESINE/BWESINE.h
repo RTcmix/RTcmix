@@ -1,7 +1,7 @@
 #include <Instrument.h>
+#include <random>
 
 class Ooscili;
-class Orand;
 
 class BweNoise {
 public:
@@ -9,7 +9,8 @@ public:
 	~BweNoise();
 	float next();
 private:
-	Orand *_rand;
+	std::mt19937 _rgen;
+	std::normal_distribution<> _dist;
 	float _xv[4], _yv[4];
 };
 

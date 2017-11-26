@@ -36,23 +36,27 @@
 #include <rt.h>
 #include <rtdefs.h>
 
+const double seed = 1.0;
+const double mean = 0.0;
+const double stddev = 1.0;
+
 BweNoise::BweNoise()
+	: _rgen(seed),
+	  _dist(mean, stddev)
 {
-	_rand = new Orand();
 	for (int i = 0; i < 4; i++)
 		_xv[i] = _yv[i] = 0.0;
 }
 
 BweNoise::~BweNoise()
 {
-	delete _rand;
 }
 
 const double kGain = 4.663939207e+04;
 
 float BweNoise::next()
 {
-	double x = _rand->rand();
+	double x = _dist(_rgen);  // return value from normal (Gaussian) distribution
 
 	// Chebyshev 3rd-order lowpass, cf: 500 Hz, ripple: -1 dB, srate: 44100
 	// Specified at, and with code adapted from:
