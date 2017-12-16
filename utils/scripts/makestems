@@ -1,0 +1,157 @@
+#!/bin/sh
+# Given an interleaved sound file, write individual mono stems, each with
+# the same name as the input file, but with "-1", "-2", etc. appended.
+# These RTcmix programs must be in your path: CMIX and sfprint.
+#
+# This script works for 16-bit int, 24-bit int, and 32-bit floating-point
+# sound files. Floating point files with a normal range of
+# -32768 to 32767 (classic RTcmix), as well as a normal range of -1 to 1 (the
+# rest of the world), are supported, although this requires a guess about
+# the likely range. Be cautious if you use floating point files, because
+# you might generate a file with wildly out-of-range values, either inaudible
+# or ear-splitting! Note that there are differences in the way that normalized
+# floating-point files written by RTcmix and, for example, Adobe Audition
+# appear to this script.
+#
+# 32-bit int and 64-bit files, whether int or float, are not supported and
+# may not even be detected correctly.
+#
+# Please see usage text below for argument details.
+#
+# John Gibson <johgibso@gmail.com>, Dec 2017.
+
+if [ $# -lt 1 ]
+then
+	echo "Usage: `basename $0` filename [output-bit-depth [is-norm-float]]"
+	echo "       where filename is an interleaved sound file,"
+	echo "       (optional) output-bit-depth is 16, 24, or 32, and"
+	echo "       (optional) is-norm-float is 0 or 1, depending on whether a"
+	echo "       32-bit float file is in the normalized range [-1, 1]. If"
+	echo "       you give is-norm-float, you must also give output-bit-depth."
+	echo "       If the input file is 32-bit, then is-norm-float is assumed"
+	echo "       to be false, unless you override this."
+	exit 1
+fi
+version=0.4
+echo "`basename $0` $version"
+
+cmix=CMIX
+sfp=sfprint
+flags='-q'
+
+infile=$1
+sfbase=`expr "$infile" : '\(.*\)\..*'`
+ext=`expr "$infile" : '.*\.\(.*\)'`
+#echo "infile:" $infile
+#echo "sfbase:" $sfbase
+#echo "ext:" $ext
+
+outdepth=24
+if [ $# -gt 1 ]
+then
+	if [ $2 -eq 16 -o $2 -eq 24 -o $2 -eq 32 ]
+	then
+		outdepth=$2
+	fi
+fi
+
+# If sfprint barfs, -1 will tell us so.
+numchans=-1
+numchans=`$sfp $infile | awk '/nchans: / {print $4}'`
+if [ $numchans -eq -1 ]
+then
+	echo "sfprint can't read '$1'"
+	exit -1
+fi
+#echo "numchans:" $numchans
+
+isfloat=-1
+isfloat=`$sfp $infile | awk '/endian float/ {print 1}'`
+# deal with empty val when awk produces nothing
+if [ -z $isfloat ]
+then
+	isfloat=0
+fi
+if [ $isfloat -eq -1 ]
+then
+	echo "can't determine bit depth for '$1'"
+	exit -1
+fi
+
+class=-1
+class=`$sfp $infile | awk '/class: / {print $6}'`
+if [ $class -eq 4 -a $isfloat -ne 1 ]
+then
+	echo "can't handle 32-bit integer files"
+	exit -1
+fi
+
+# If the input is a normalized float file, and the output is not a float
+# file, then we scale up the samples to make sense for 16 and 24 bit files.
+# In all other cases, there is no scaling.
+scale=1
+isnormfloat=0
+if [ $isfloat -eq 1 ]
+then
+	if [ $# -eq 3 ]
+	then
+		isnormfloat=$3
+	fi
+	if [ $outdepth -ne 32 ]
+	then
+		if [ $isnormfloat -eq 1 ]
+		then
+			scale=32767
+		else
+			echo "WARNING: 32-bit float input given without is-norm-float flag,"
+			echo "and you want $outdepth-bit output. If your input has samples"
+			echo "in the [-1, 1] range, give an is-norm-float flag of 1."
+		fi
+	fi
+fi
+
+# Actually, this is not what we want, because if input is normfloat,
+# and output is float, user surely does not want scaling. Passing
+# "normfloat" to rtoutput will divide by 32768.
+#if [ $outdepth -eq 32 -a $isnormfloat -eq 1 ]
+#then
+#	# horrible kludge to avoid trouble with quoted string vars in cmix
+#	outdepth=33
+#fi
+#echo "outdepth:" $outdepth
+
+script='
+set_option("play = off", "clobber = on");
+sr = filesr($sf);
+chans = filechans($sf);
+if ($chan < 1 || $chan > chans) {
+	printf("invalid stem number (%d)\n", $chan);
+	exit(-1);
+}
+rtsetparams(sr, 1);
+rtinput($sf);
+if ($depth == 16)
+	rtoutput($stemfile)
+else if ($depth == 24)
+	rtoutput($stemfile, "24")
+else if ($depth == 32)
+	rtoutput($stemfile, "float")
+else
+	rtoutput($stemfile, "normfloat")
+matrix = {};
+for (i = 0; i < chans; i += 1) {
+	matrix[i] = -1
+}
+matrix[$chan - 1] = 0;
+MIX(0, 0, DUR(), $amp, matrix);
+'
+i=1
+while [ $i -le $numchans ]
+do
+	stemnum="$i"
+	outfile="$sfbase"-$stemnum.$ext
+	echo "outfile:" $outfile
+	echo $script | $cmix $flags --sf=$infile --chan=$stemnum --stemfile=$outfile --depth="$outdepth" --amp=$scale
+	i=`expr $i + 1`
+done
+
