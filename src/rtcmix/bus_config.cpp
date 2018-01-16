@@ -11,6 +11,7 @@
 #include <bus.h>
 #include "BusSlot.h"
 #include <RTcmix.h>
+#include <RTThread.h>
 #include "prototypes.h"
 #include "InputFile.h"
 #include <lock.h>
@@ -670,8 +671,7 @@ RTcmix::get_bus_config(const char *inst_name)
 void
 RTcmix::addToBus(BusType type, int bus, BufPtr src, int offset, int endfr, int chans)
 {
-	pthread_mutex_lock(&vectorLock);
-    mixVector.push_back(
+    mixVectors[RTThread::GetIndexForThread()].push_back(
 						MixData(
 								src,
 								(type == BUS_AUX_OUT) ? aux_buffer[bus] + offset : out_buffer[bus] + offset,
@@ -679,36 +679,39 @@ RTcmix::addToBus(BusType type, int bus, BufPtr src, int offset, int endfr, int c
 								chans)
                         );
 	
-	pthread_mutex_unlock(&vectorLock);
 }
 
 void
 RTcmix::mixToBus()
 {
-    for (std::vector<RTcmix::MixData>::iterator i = mixVector.begin(); i != mixVector.end(); ++i) {
-        MixData &m = *i;
-        BufPtr src = m.src;
-        BufPtr dest = m.dest;
-        const int framesOverFour = m.frames >> 2;
-        const int framesRemaining = m.frames - (framesOverFour << 2);
-        const int chans = m.channels;
-        const int chansx2 = chans << 1;
-        const int chansx3 = chansx2 + chans;
-        const int chansx4 = chansx2 + chansx2;
-        for (int n = 0; n < framesOverFour; ++n) {
-            dest[0] += src[0];
-            dest[1] += src[chans];
-            dest[2] += src[chansx2];
-            dest[3] += src[chansx3];
-            dest += 4;
-            src += chansx4;
+    // Mix all vectors from each thread down to the final mix buses
+    for (int i = 0; i < RT_THREAD_COUNT; ++i) {
+        std::vector<MixData> &vector = mixVectors[i];
+        for (std::vector<RTcmix::MixData>::iterator i = vector.begin(); i != vector.end(); ++i) {
+            MixData &m = *i;
+            BufPtr src = m.src;
+            BufPtr dest = m.dest;
+            const int framesOverFour = m.frames >> 2;
+            const int framesRemaining = m.frames - (framesOverFour << 2);
+            const int chans = m.channels;
+            const int chansx2 = chans << 1;
+            const int chansx3 = chansx2 + chans;
+            const int chansx4 = chansx2 + chansx2;
+            for (int n = 0; n < framesOverFour; ++n) {
+                dest[0] += src[0];
+                dest[1] += src[chans];
+                dest[2] += src[chansx2];
+                dest[3] += src[chansx3];
+                dest += 4;
+                src += chansx4;
+            }
+            for (int n = 0; n < framesRemaining; ++n) {
+                dest[n] += *src;
+                src += chans;
+            }
         }
-        for (int n = 0; n < framesRemaining; ++n) {
-            dest[n] += *src;
-            src += chans;
-        }
+        vector.clear();
     }
-    mixVector.clear();
 }
 
 #else

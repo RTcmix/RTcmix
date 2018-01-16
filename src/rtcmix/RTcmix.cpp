@@ -121,11 +121,10 @@ short *			RTcmix::ToOutPlayList = NULL;
 short *			RTcmix::ToAuxPlayList = NULL;
 
 #ifdef MULTI_THREAD
-pthread_mutex_t RTcmix::aux_buffer_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t RTcmix::out_buffer_lock = PTHREAD_MUTEX_INITIALIZER;
+//pthread_mutex_t RTcmix::aux_buffer_lock = PTHREAD_MUTEX_INITIALIZER;
+//pthread_mutex_t RTcmix::out_buffer_lock = PTHREAD_MUTEX_INITIALIZER;
 TaskManager *	RTcmix::taskManager = NULL;
-std::vector<RTcmix::MixData> RTcmix::mixVector;
-pthread_mutex_t RTcmix::vectorLock = PTHREAD_MUTEX_INITIALIZER;
+std::vector<RTcmix::MixData> RTcmix::mixVectors[RT_THREAD_COUNT];
 #endif
 
 // Bus config state
@@ -186,7 +185,9 @@ RTcmix::init_globals()
    rtQueue = new RTQueue[busCount*3];
 #ifdef MULTI_THREAD
    taskManager = new TaskManager;
-   mixVector.reserve(busCount);
+    for (int i = 0; i < RT_THREAD_COUNT; ++i) {
+        mixVectors[i].reserve(busCount);
+    }
 #endif
 	BusConfigs = new BusConfig[busCount];
 	AuxToAuxPlayList = new short[busCount];
