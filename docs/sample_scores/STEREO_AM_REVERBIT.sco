@@ -1,7 +1,5 @@
 rtsetparams(44100, 2)
 
-// ftp://presto.music.virginia.edu/pub/rtcmix/snd/ah.snd
-rtinput("/snd/Public_Sounds/vccm_old/ah.snd")
 rtinput("../../snd/huhh.wav")
 totdur = 20
 
