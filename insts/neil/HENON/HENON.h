@@ -12,7 +12,7 @@ public:
 private:
 	void doupdate();
 
-	int nargs, branch;
+	int nargs, branch, branch2, cr;
 	float amp, pan, a, b, x, y, z;
 };
 
