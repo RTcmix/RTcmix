@@ -29,8 +29,6 @@
 #include <rt.h>
 #include <rtdefs.h>
 
-#include <iostream>
-
 HENON::HENON()
 	: branch(0)
 {
