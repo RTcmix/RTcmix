@@ -69,8 +69,8 @@ static const char *_midi_controller_name[128] = {
 //                "polypress"
 //
 //    <subtype>   depends on <type>:
-//                   noteon     note number or velocity
-//                   noteoff    note number or velocity
+//                   noteon     "pitch" or "velocity"
+//                   noteoff    "pitch" or "velocity"
 //                   cntl       controller number or string symbol, such as
 //                              "mod", "foot", "breath", "data", "volume", "pan"
 //                   polypress  MIDI note number
