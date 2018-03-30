@@ -9,7 +9,7 @@
    p2 (amp), p3 (chaos), and p4 (pan) can receive updates from
    a table or real-time control source.
 
-   Neil Thornock <neilthornock at gmail>, 11/2016
+   Neil Thornock <neilthornock at gmail>, 11/2016; rev. 1/2018
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -79,6 +79,8 @@ int CRACKLE::run()
 		x0 = std::abs(0.03 - x2 + x3 - param * x1);
 
 		float out[2];
+		if (x0 > 0.3)
+			x0 = 0.2;
 		out[0] = x0 * amp * 5;
 
 		if (outputChannels() == 2) {
