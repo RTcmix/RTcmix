@@ -5,12 +5,13 @@
    p2 = amplitude multiplier
    p3 = density (average impulses per second) [default: 5]
    p4 = impulse range minimum (-1 or 0) [default: -1]
-   p5 = pan (in percent-to-left format) [default: 0.5]
+   p5 = seed [default: system clock]
+   p6 = pan (in percent-to-left format) [default: 0.5]
 
-   p2 (amp), p3 (pan), and p4 (density) can receive updates from a table or
+   p2 (amp), p4 (density), and p6 (pan) can receive updates from a table or
    real-time control source.
 
-   Neil Thornock, 11/2016
+   Neil Thornock, 11/2016; rev. 1/2018
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,6 +20,8 @@
 #include "DUST.h"
 #include <rt.h>
 #include <rtdefs.h>
+#include <random>
+#include <ctime>
 
 DUST::DUST()
 	: _branch(0)
@@ -46,6 +49,11 @@ int DUST::init(double p[], int n_args)
 	if (outputChannels() > 2)
 		return die("DUST", "Use mono or stereo output only.");
 
+	float seed = (_nargs > 5) ? p[5] : std::time(0);
+
+	_randgen = std::mt19937(seed);
+	_dist = std::uniform_real_distribution<double>(0, SR);
+
 	return nSamps();
 }
 
@@ -60,8 +68,8 @@ void DUST::doupdate()
 	update(p, _nargs);
 
 	_amp = p[2];
-	_pan = (_nargs > 5) ? p[5] : 0.5;
 	_density = (_nargs > 3) ? p[3] : 5;
+	_pan = (_nargs > 6) ? p[6] : 0.5;
 }
 
 int DUST::run()
@@ -75,7 +83,8 @@ int DUST::run()
 		float out[2];
 
 		float outsamp = 0.0;
-		if (_dice->random() < (_density / SR)) {
+		double thisr = _dist(_randgen);
+		if (thisr < _density) {
 			if (_range == -1)
 				outsamp = _dice->rand() * _amp;
 			else
