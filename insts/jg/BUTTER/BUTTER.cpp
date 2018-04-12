@@ -15,6 +15,7 @@
          if negative, the '-' sign acts as a flag to interpret the bw values
          as percentages (from 0 to 1) of the current cf.
          [optional; if missing, must use gen 3] ****
+   p12 = ringdown duration [optional, default is 0.1]
 
    p3 (amplitude), p4 (type), p8 (pan), p9 (bypass), p10 (freq) and 
    p11 (bandwidth) can receive dynamic updates from a table or real-time
@@ -144,7 +145,7 @@ int BUTTER :: init(double p[], int n_args)
    if (inchan >= inputChannels())
       return die("BUTTER", "You asked for channel %d of a %d-channel file.",
                                                       inchan, inputChannels());
-   const float ringdur = 1.0;
+   const float ringdur = (n_args == 13) ? p[12] : 0.1;
    if (rtsetoutput(outskip, dur + ringdur, this) == -1)
       return DONT_SCHEDULE;
    insamps = (int) (dur * SR + 0.5);
