@@ -144,7 +144,7 @@ int BUTTER :: init(double p[], int n_args)
    if (inchan >= inputChannels())
       return die("BUTTER", "You asked for channel %d of a %d-channel file.",
                                                       inchan, inputChannels());
-   const float ringdur = 0.1;
+   const float ringdur = 1.0;
    if (rtsetoutput(outskip, dur + ringdur, this) == -1)
       return DONT_SCHEDULE;
    insamps = (int) (dur * SR + 0.5);
