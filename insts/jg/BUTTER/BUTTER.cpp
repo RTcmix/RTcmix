@@ -34,7 +34,7 @@
    it has drawbacks: it can introduce a click at the start of the sound, it
    can cause the sound to pump up and down a bit, and it eats extra CPU time.
 
-	p12 (ringdown) controls how long the filter will ring once the input
+	p12 (ringdur) controls how long the filter will ring once the input
 	duration has elapsed. This is relevant only when the bandwidth is narrow
 	enough to produce an audible ring. Very narrow bandwidths could require
 	quite a long time to ring down (5-10 seconds or more).
