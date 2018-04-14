@@ -960,15 +960,14 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
 	 }
 	 if (fltindex < 0.0) {    /* -1 means last element */
 		 if (fltindex <= -2.0)
-			 minc_warn("negative index ... returning last element");
+             minc_warn("negative index: returning last element");
 		 index = len - 1;
-		 fltindex = (MincFloat) index;
+         frac = 0;
 	 }
 	 else if (fltindex > (MincFloat) (len - 1)) {
-		 minc_warn("attempt to index past the end of list ... "
-				   "returning last element");
+         minc_warn("attempt to index past the end of list: returning last element");
 		 index = len - 1;
-		 fltindex = (MincFloat) index;
+         frac = 0;
 	 }
 	MincValue elem;
 	copy_listelem_elem(&elem, &theList->data[index]);
@@ -1014,9 +1013,12 @@ Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
 		len = theList->len;
 		assert(len >= 0);    /* NB: okay to have zero-length list */
 	}
-	if (index == -1)     /* means last element */
-		index = len > 0 ? len - 1 : 0;
-	else if (index >= len) {
+    if (index < 0) {    /* means last element */
+        if (index <= -2)
+            minc_warn("negative index ... assigning to last element");
+        index = len > 0 ? len - 1 : 0;
+    }
+	if (index >= len) {
 		/* resize list */
 		int newslots;
 		newslots = len > 0 ? (index - (len - 1)) : index + 1;
