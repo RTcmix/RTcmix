@@ -323,14 +323,14 @@ void InputFile::createConversionBuffers(int inBufSamps)
 {
 	/* Allocate buffers needed to convert input audio files as they are read */
 	for (int i = 0; i < RT_THREAD_COUNT; ++i) {
-		sConversionBuffers[i] = (char *) malloc(sizeof(BUFTYPE) * MAXCHANS * inBufSamps);
+		sConversionBuffers[i] = new char[sizeof(BUFTYPE) * MAXCHANS * inBufSamps];
 	}
 }
 
 void InputFile::destroyConversionBuffers()
 {
 	for (int i = 0; i < RT_THREAD_COUNT; ++i) {
-		free(sConversionBuffers[i]);
+        delete [] sConversionBuffers[i];
 		sConversionBuffers[i] = NULL;
 	}
 }
