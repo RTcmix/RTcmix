@@ -1,0 +1,92 @@
+#!/bin/sh
+# Convert the given stereo file to a split-stereo file with two mono stems,
+# each having the same format as the input file, but with "-L" and "-R" appended
+# to the base file name.
+
+if [ $# -lt 1 ]
+then
+	echo "Usage: `basename $0` infile"
+	exit 1
+fi
+
+if [ ! -e $1 ]
+then
+	echo "Can't find input file."
+	exit 1
+fi
+
+#flags=-Q
+srate=`sfprint $1 | awk '/nchans: / {print $2}'`
+chans=`sfprint $1 | awk '/nchans: / {print $4}'`
+class=`sfprint $1 | awk '/nchans: / {print $6}'`
+
+if [ $chans -ne 2 ]
+then
+	echo "Input file \"$1\" must be stereo."
+	exit 1
+fi
+
+if [ $class -eq 2 ]; then
+	format="16"
+elif [ $class -eq 3 ]; then
+	format="24"
+elif [ $class -eq 4 ]; then
+	format="float"
+else
+	echo "Unknown input file format."
+	exit 1
+fi
+
+base=`expr "$1" : '\(.*\)\..*'`
+ext=`expr "$1" : '.*\.\(.*\)'`
+
+if [ ${ext} != "aiff" -a ${ext} != "aifc" -a ${ext} != "wav" -a \
+		${ext} != "next" -a ${ext} != "sun" -a ${ext} != "ircam" ]
+then
+	echo "Output format must be aiff, aifc, wav, next, sun, or ircam."
+	exit 1
+fi
+
+outnameL=${base}-L.${ext}
+outnameR=${base}-R.${ext}
+
+if [ -e ${outnameL} ]
+then
+	echo "Output file name \"${outnameL}\"already exists. Delete it first."
+	exit 1
+fi
+
+if [ -e ${outnameR} ]
+then
+	echo "Output file name \"${outnameR}\"already exists. Delete it first."
+	exit 1
+fi
+
+echo "Converting file \"$1\"..."
+
+script="\
+sfin = s_arg(0);
+sfout = s_arg(1);
+srate = f_arg(2);
+format = s_arg(3);
+set_option(\"play = no\", \"clobber = no\");
+rtsetparams(srate, 1);
+rtinput(sfin);
+rtoutput(sfout, format);
+MIX(0, 0, DUR(), 1, 0, -1);
+"
+echo $script | CMIX $flags $1 ${outnameL} $srate $format
+
+script="\
+sfin = s_arg(0);
+sfout = s_arg(1);
+srate = f_arg(2);
+format = s_arg(3);
+set_option(\"play = no\", \"clobber = no\");
+rtsetparams(srate, 1);
+rtinput(sfin);
+rtoutput(sfout, format);
+MIX(0, 0, DUR(), 1, -1, 0);
+"
+echo $script | CMIX $flags $1 ${outnameR} $srate $format
+
