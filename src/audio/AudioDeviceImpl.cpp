@@ -590,8 +590,8 @@ AudioDeviceImpl::limitFrame(void *frameBuffer, int frames, bool doClip, bool che
 		bool printing_dots = true;	// HACK FOR NOW
 		/* We start with a newline if we're also printing the buffer dots. */
 		fprintf(stderr,
-    		  "%s  CLIPPING: %4d samps, max: %g, time range: %f - %f\n",
-    		  (printing_dots? "\n" : ""), numclipped, clipmax, loc1, loc2);
+    		  "%sCLIPPING: %4d samps, max: %6.1f (%5.2f dBFS), time range: %.4f - %.4f\n",
+    		  (printing_dots? "\n" : ""), numclipped, clipmax, 20.0 * log10(fabs(clipmax) / 32768.0), loc1, loc2);
 	}
 }
 
