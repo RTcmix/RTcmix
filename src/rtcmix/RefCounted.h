@@ -21,7 +21,7 @@ protected:
 	RefCounted(bool dispatchOnDelete=false) : _refcount(0), _dispatch(dispatchOnDelete) {}
 	virtual ~RefCounted();
 private:
-	short _refcount;
+	int _refcount;
     bool  _dispatch;
 };
 
