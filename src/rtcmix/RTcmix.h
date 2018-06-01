@@ -284,8 +284,8 @@ private:
 	static BufPtr	*out_buffer;
 #ifdef MULTI_THREAD
 	static TaskManager *taskManager;
-	static pthread_mutex_t aux_buffer_lock;
-	static pthread_mutex_t out_buffer_lock;
+//	static pthread_mutex_t aux_buffer_lock;
+//	static pthread_mutex_t out_buffer_lock;
     struct MixData {
         BufPtr  src;
         BufPtr  dest;
@@ -294,8 +294,7 @@ private:
         MixData(BufPtr inSrc, BufPtr inDest, int inFrames, int inChans)
             : src(inSrc), dest(inDest), frames(inFrames), channels(inChans) {}
     };
-    static std::vector<MixData> mixVector;
-	static pthread_mutex_t vectorLock;
+    static std::vector<MixData> mixVectors[];
 #endif
 	
 	static short *AuxToAuxPlayList; /* The playback order for AUX buses */

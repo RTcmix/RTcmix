@@ -38,6 +38,7 @@ extern "C" {
 using namespace std;
 
 #undef ALLBUG
+#undef BBUG /* this one turns on bus debugging (verbose!) */
 #undef DBUG
 #undef WBUG	/* this new one turns on prints of where we are */
 #undef IBUG	/* debug what Instruments are doing */
@@ -314,6 +315,9 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			bus_q_offset = 0;
 			bus_type = BUS_AUX_OUT;
 			::pthread_mutex_lock(&to_aux_lock);
+#ifdef BBUG
+                printf("TO_AUX: play_bus: %d\n", play_bus);
+#endif
             assert(play_bus < busCount);
 			bus = ToAuxPlayList[play_bus++];
 			::pthread_mutex_unlock(&to_aux_lock);
@@ -321,6 +325,9 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		case AUX_TO_AUX:
 			bus_q_offset = busCount;
 			::pthread_mutex_lock(&aux_to_aux_lock);
+#ifdef BBUG
+                printf("AUX_TO_AUX: play_bus: %d\n", play_bus);
+#endif
             assert(play_bus < busCount);
 			bus = AuxToAuxPlayList[play_bus++];
 			::pthread_mutex_unlock(&aux_to_aux_lock);
@@ -329,6 +336,9 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		case TO_OUT:
 			bus_q_offset = busCount*2;
 			::pthread_mutex_lock(&to_out_lock);
+#ifdef BBUG
+                printf("TO_OUT: play_bus: %d\n", play_bus);
+#endif
             assert(play_bus < busCount);
 			bus = ToOutPlayList[play_bus++];
 			::pthread_mutex_unlock(&to_out_lock);
@@ -339,6 +349,9 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			break;
 		}
 
+#ifdef BBUG
+        printf("after qStatus switch: bus = %d\n", bus);
+#endif
 		if (bus != -1) {
 			busq = bus+bus_q_offset;
 			rtQSize = rtQueue[busq].getSize();
