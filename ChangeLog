@@ -1,8 +1,15 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2018-06-17  John Gibson <johgibso-at-indiana.edu>
+	* Added a method to Ooscili to let you set the starting phase in radians.
+	* BWESINE now does the right thing with the initial phase argument.
+
 2018-05-31  Douglas Scott  <netdscott-at-netscape.net>
 	* Rewrote thread farm to massively reduce contention between render threads.  Got 2x more notes!
+
+2018-05-27  John Gibson <johgibso-at-indiana.edu>
+	* Doug fixed a long-standing bug that caused a crash for scores that had more than 32767 references to a shared resource, such as a table.
 
 2017-11-05  Douglas Scott  <netdscott-at-netscape.net>
 	* Big Makefile revision, part 1: 'make' and 'make all' will exit on first error.
