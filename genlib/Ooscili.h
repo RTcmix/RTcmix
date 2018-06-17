@@ -33,7 +33,8 @@ public:
 	float next();
 	float next(int nsample);
 	inline void setfreq(float freq) { si = fp(freq * lendivSR); }
-	inline void setphase(double phs) { phase = fp(phs); }
+	inline void setphase(double phs) { phase = fp(phs); }	// wavetable index
+	void setPhaseRadians(double phs);
 	inline double getphase() const { return double(phase) / 65536; }
 	inline int getlength() const { return length; }
 //	inline float getdur() const { return 1.0 / freq; }
