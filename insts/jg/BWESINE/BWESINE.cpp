@@ -6,8 +6,6 @@
       vol. 50, no. 11, November 2002.
    This allows us to resynthesize sound models written by Loris.
 
-   NB: The phase pfield doesn't work yet.
-
    p0 = output start time
    p1 = duration
    p2 = amplitude multiplier
@@ -112,6 +110,8 @@ int BWESINE::init(double p[], int n_args)
 
 	_noi = new BweNoise();
 	_osc = new Ooscili(SR, 1, wavetable, tablelen);
+	if (initPhase != 0.0)
+		_osc->setPhaseRadians(initPhase);
 
 	return nSamps();
 }
@@ -157,7 +157,6 @@ int BWESINE::run()
 			amp *= a;
 		}
 		out[0] = _osc->next() * amp * kDeNormalizer;
-//printf("phase: %f\n", _osc->getphase());
 
 		if (outputChannels() == 2) {
 			out[1] = out[0] * (1.0 - _pan);
