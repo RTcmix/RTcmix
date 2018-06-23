@@ -32,12 +32,13 @@ then
 	echo "       to be false, unless you override this."
 	exit 1
 fi
-version=0.4
+version=0.5
 echo "`basename $0` $version"
 
 cmix=CMIX
 sfp=sfprint
 flags='-q'
+verbose=1
 
 infile=$1
 sfbase=`expr "$infile" : '\(.*\)\..*'`
@@ -148,9 +149,13 @@ MIX(0, 0, DUR(), $amp, matrix);
 i=1
 while [ $i -le $numchans ]
 do
-	stemnum="$i"
+	stemnum=`printf "%02d" $i`
 	outfile="$sfbase"-$stemnum.$ext
-	echo "outfile:" $outfile
+	if [ $verbose -eq 1 ]
+	then
+		echo "=================================================="
+		echo "Output file:" $outfile
+	fi
 	echo $script | $cmix $flags --sf=$infile --chan=$stemnum --stemfile=$outfile --depth="$outdepth" --amp=$scale
 	i=`expr $i + 1`
 done
