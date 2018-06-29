@@ -22,7 +22,7 @@ then
 	sf2=$3
 	insk2=0
 	amp2=$4
-elif [ $# -eq 6]
+elif [ $# -eq 6 ]
 then
 	sf1=$1
 	insk1=$2
