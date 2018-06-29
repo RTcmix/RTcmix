@@ -11,7 +11,7 @@ then
 	exit 1
 fi
 
-flags='-q'
+flags='-v 1'
 
 sf1=$1
 in1=$2
