@@ -12,7 +12,7 @@ then
 	exit 1
 fi
 
-flags='-q'
+flags='-v 1'
 
 if [ $# -eq 4 ]
 then
@@ -38,11 +38,11 @@ sr1 = filesr($sf1);
 chans2 = filechans($sf2);
 sr2 = filesr($sf2);
 if (sr1 != sr2) {
-	print("File sampling rates must be the same.");
+	printf("File sampling rates must be the same.\n");
 	exit(1);
 }
 if (chans1 > 8 || chans2 > 8) {
-	print("Input files can have no more than 8 channels.");
+	printf("Input files can have no more than 8 channels.\n");
 	exit(1);
 }
 rtsetparams(sr1, max(chans1, chans2));
