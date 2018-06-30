@@ -51,7 +51,7 @@ do
 	fi
 	if [ $nc -gt $nchans ]
 	then
-		$nchans=$nc
+		nchans=$nc
 	fi
 	i=`expr $i + 4`
 done
