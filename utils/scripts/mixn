@@ -68,14 +68,23 @@ for (i = 0; i < nargs; i += 4) {
 	dur = DUR() - inskip;
 	env = maketable("line", 20000, 0,0, $ramp,1, dur-$ramp,1, dur,0);
 	chans = CHANS();
-	matrix = {};
-	for (j = 0; j < $nchans; j += 1) {
-		matrix[j] = j;
-	}
 	if (chans == 1) {
-		matrix[1] = 0;
+		if ($nchans == 1) {
+			MIX(start, inskip, dur, mul(amp, env), 0);
+		}
+		else {
+			load("STEREO")
+			amp = mul(amp, boost(0.5))
+			STEREO(start, inskip, dur, mul(amp, env), 0.5);
+		}
 	}
-	MIX(start, inskip, dur, mul(amp, env), matrix);
+	else {
+		matrix = {};
+		for (j = 0; j < $nchans; j += 1) {
+			matrix[j] = j;
+		}
+		MIX(start, inskip, dur, mul(amp, env), matrix);
+	}
 }
 '
 echo $script | CMIX $flags --srate=$srate --nchans=$nchans --ramp=$ramp $*
