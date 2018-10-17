@@ -229,6 +229,91 @@ read_24bit_samps(
     return 0;
 }
 
+/* ----------------------------------------------------- read_32bit_samps --- */
+static int
+read_32bit_samps(
+                 int         fd,               /* file descriptor for open input file */
+                 int         data_format,      /* sndlib data format of input file */
+                 int         file_chans,       /* total chans in input file */
+                 off_t       cur_offset,       /* current file position before read */
+                 long        endbyte,          /* first byte following last file sample */
+                 BufPtr      dest,             /* interleaved buffer from inst */
+                 int         dest_chans,       /* number of chans interleaved */
+                 int         dest_frames,      /* frames in interleaved buffer */
+                 const short src_chan_list[],  /* list of in-bus chan numbers from inst */
+                 /* (or NULL to fill all chans) */
+                 short       src_chans,         /* number of in-bus chans to copy */
+                 void *      read_buffer        /* block to read from disk into */
+)
+{
+    
+    const int bytes_per_samp = 4;         /* 24-bit int */
+    unsigned char *bufp = (unsigned char *) read_buffer;
+    
+    const int bytes_requested = dest_frames * file_chans * bytes_per_samp;
+    const long bytes_remaining = endbyte - cur_offset;
+    const long extra_bytes = (bytes_requested > bytes_remaining)
+    ? bytes_requested - bytes_remaining : 0;
+    ssize_t bytes_to_read = lmin(bytes_remaining, bytes_requested);
+    
+    while (bytes_to_read > 0) {
+        ssize_t bytes_read = read(fd, bufp, bytes_to_read);
+        if (bytes_read == -1) {
+            perror("read_24bit_samps (read)");
+            return FILE_ERROR;
+        }
+        if (bytes_read == 0)          /* EOF */
+            break;
+        
+        bufp += bytes_read;
+        bytes_to_read -= bytes_read;
+    }
+    
+    /* If we reached EOF, zero out remaining part of buffer that we
+     expected to fill.
+     */
+    bytes_to_read += extra_bytes;
+    while (bytes_to_read > 0) {
+        *bufp++ = 0;
+        bytes_to_read--;
+    }
+    
+    /* Copy interleaved file buffer to dest buffer, with bus mapping. */
+    
+#if MUS_LITTLE_ENDIAN
+    const bool swap = IS_BIG_ENDIAN_FORMAT(data_format);
+#else
+    const bool swap = IS_LITTLE_ENDIAN_FORMAT(data_format);
+#endif
+
+    const int src_samps = dest_frames * file_chans;
+    const BUFTYPE scaleFactor = 1 / (BUFTYPE) (1 << 16);
+    const unsigned offset = 2U << 15;
+    int *ibuf = (int *)read_buffer;
+
+    for (int n = 0; n < dest_chans; n++) {
+#ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT
+        const int chan = n;
+#else
+        const int chan = src_chan_list ? src_chan_list[n] : n;
+#endif
+        if (swap) {
+            int j = n;
+            for (int i = chan; i < src_samps; i += file_chans, j += dest_chans) {
+                const int out = (int)(reverse_int4(&ibuf[i]));
+                dest[j] = (BUFTYPE) out;
+            }
+        }
+        else {
+            int j = n;
+            for (int i = chan; i < src_samps; i += file_chans, j += dest_chans) {
+                dest[j] = (BUFTYPE) (ibuf[i] * scaleFactor);
+            }
+        }
+    }
+    
+    return 0;
+}
 
 /* ----------------------------------------------------- read_short_samps --- */
 static int
@@ -379,6 +464,8 @@ int InputFile::init(int inFd, const char *inFileName, Type inType, int inHeaderT
 		_readFunction = &read_float_samps;
 	else if (IS_24BIT_FORMAT(_data_format))
 		_readFunction = &read_24bit_samps;
+    else if (IS_32BIT_FORMAT(_data_format))
+        _readFunction = &read_32bit_samps;
 	else
 		_readFunction = &read_short_samps;
 
