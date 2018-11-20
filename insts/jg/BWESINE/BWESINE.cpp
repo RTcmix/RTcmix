@@ -10,7 +10,7 @@
    p1 = duration
    p2 = amplitude multiplier
    p3 = freq (in Hz only)
-   p4 = bandwidth
+   p4 = bandwidth (0-1)
    p5 = starting phase (radians)
    p6 = pan (in percent-to-left format) [optional, default is .5]
    p7 = wavetable
