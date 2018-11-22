@@ -24,7 +24,6 @@ extern int yyparse();
 #ifdef EMBEDDED
 
 int RTcmix_parseScore(char *thebuf, int buflen);
-extern int yylineno;
 extern double minc_memflush();									// minc/minc.cpp (from minc.y)
 
 // BGG mm -- set this to accept a buffer from max/msp
