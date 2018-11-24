@@ -1,13 +1,13 @@
 print_on(3)
 
-include /Users/dscott/studies/soundprism08/audio.info
+include audio.info
 
 load("WAVETABLE")
 load("HOLO")
 
-include /Users/dscott/studies/soundprism08/tables.info
-include /Users/dscott/studies/soundprism08/space.info
-include /Users/dscott/studies/soundprism08/primes.info
+include tables.info
+include space.info
+include primes.info
 
 if (?seed) {
 	srand($seed);

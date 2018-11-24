@@ -1,0 +1,8 @@
+This directory has the score (plus sub-files included by the score) for one of my
+submissions to the Disquiet Junto project.  Just play the score with CMIX and
+it generates the entire piece.  If you tweak the random number for the score,
+you can generate an infinite set of "variations" on the piece.  This score does
+not make use of any external input soundfiles.
+
+-Doug, Nov 2018
+

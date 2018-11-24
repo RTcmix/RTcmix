@@ -1,7 +1,7 @@
-include /Users/dscott/studies/soundprism08/tables.info
-include /Users/dscott/studies/soundprism08/audio.info
-include /Users/dscott/studies/soundprism08/spacechain.info
-include /Users/dscott/studies/soundprism08/primes.info
+include tables.info
+include audio.info
+include spacechain.info
+include primes.info
 
 load("MULTIWAVE")
 load("HOLO")

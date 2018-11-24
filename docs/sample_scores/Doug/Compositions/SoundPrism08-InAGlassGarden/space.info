@@ -2,7 +2,7 @@
 
 load("DMOVE");
 
-include /Users/dscott/studies/soundprism08/busutils.info
+include busutils.info
 
 _front = 0; 
 _right = 1; 
