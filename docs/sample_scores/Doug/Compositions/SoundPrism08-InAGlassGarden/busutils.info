@@ -1,0 +1,98 @@
+# Globally used RTcmix bus utilities
+
+_inbuses = { "aix 0", "aix 1", "aix 2", "aix 3", "aix 4", "aix 5", "aix 6", 
+			 "aix 7", "aix 8", "aix 9", "aix 10", "aix 11", "aix 12", 
+			 "aix 13", "aix 14", "aix 15", "aix 16", "aix 17", "aix 18",
+			 "aix 19", "aix 20", "aix 21", "aix 22", "aix 23", "aix 24", 
+			 "aix 25", "aix 26", "aix 27", "aix 28", "aix 29", "aix 30",
+			 "aix 31", "aix 32", "aix 33", "aix 34", "aix 35", "aix 36", 
+			 "aix 37", "aix 38", "aix 39", "aix 40", "aix 41", "aix 42", 
+			 "aix 43", "aix 44", "aix 45", "aix 46", "aix 47", "aix 48", 
+			 "aix 49", "aix 50", "aix 51", "aix 52", "aix 53", "aix 54", 
+			 "aix 55", "aix 56", "aix 57", "aix 58", "aix 59", "aix 60", 
+			 "aix 61", "aix 62", "aix 63"
+		 };
+
+_outbuses = { "aox 0", "aox 1", "aox 2", "aox 3", "aox 4", "aox 5", "aox 6", 
+			 "aox 7", "aox 8", "aox 9", "aox 10", "aox 11", "aox 12", 
+			 "aox 13", "aox 14", "aox 15", "aox 16", "aox 17", "aox 18",
+			 "aox 19", "aox 20", "aox 21", "aox 22", "aox 23", "aox 24", 
+			 "aox 25", "aox 26", "aox 27", "aox 28", "aox 29", "aox 30",
+			 "aox 31", "aox 32", "aox 33", "aox 34", "aox 35", "aox 36", 
+			 "aox 37", "aox 38", "aox 39", "aox 40", "aox 41", "aox 42", 
+			 "aox 43", "aox 44", "aox 45", "aox 46", "aox 47", "aox 48", 
+			 "aox 49", "aox 50", "aox 51", "aox 52", "aox 53", "aox 54", 
+			 "aox 55", "aox 56", "aox 57", "aox 58", "aox 59", "aox 60", 
+			 "aox 61", "aox 62", "aox 63"
+		 };
+
+_nbusses = len(_inbuses);
+
+_inbus = _inbuses[0];
+_outbus = _outbuses[0];
+
+_count = 0;
+_busOffset = 0;
+
+// inOffset is the number of busses, starting at bus 0, to reserve for the send to output
+
+float init_busses(float inOffset)
+{
+	_busOffset = inOffset;
+	_nbusses -= _busOffset;
+	_count = 0;
+	_inbus = _inbuses[_busOffset];
+	_outbus = _outbuses[_busOffset];
+	printf("In bus starts at %s, out bus at %s\n", _inbus, _outbus);
+	return _nbusses;
+}
+
+float rotate_busses()
+{
+	_count += 1;
+	_outbus = _outbuses[_busOffset + (_count % _nbusses)];
+	_inbus = _inbuses[_busOffset + (_count % _nbusses)];
+	return _count;
+}
+
+float set_and_rotate_busses(string inst0, string inst0InBus, string inst1, string out)
+{
+	bus_config(inst0, inst0InBus, _outbus);
+	bus_config(inst1, _inbus, out);
+	rotate_busses();
+	return _count;
+}
+
+float set_and_rotate_busses_with_input(string inst0, string inst1, string out)
+{
+	return set_and_rotate_busses(inst0, "in 0", inst1, out);
+}
+
+float set_and_rotate_busses_with_aux_input(string inst0, string auxIn, string inst1, string out)
+{
+	return set_and_rotate_busses(inst0, auxIn, inst1, out);
+}
+
+float set_and_rotate_busses_no_input(string inst0, string inst1, string out)
+{
+	bus_config(inst0, _outbus);
+	bus_config(inst1, _inbus, out);
+	rotate_busses();
+	return _count;
+}
+
+float set_bus_count(float newcount)
+{
+	_nbusses = newcount - _busOffset;
+	printf("%f rotating busses\n", _nbusses);
+	return newcount;
+}
+
+float set_bus_chain(string _inst0, string _inst1, string _out)
+{
+	bus_config(_inst0, "in 0", "aox 0");
+	bus_config(_inst1, "aix 0", _out);
+	return 0;
+}
+
+

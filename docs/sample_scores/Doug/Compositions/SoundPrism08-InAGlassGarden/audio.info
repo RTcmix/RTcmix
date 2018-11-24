@@ -1,0 +1,16 @@
+sample_rate = 44100;
+channels = 2;
+bufsize = 1024;
+holo = 0;
+
+outfile = s_arg(0);
+
+if (outfile != 0) {
+    set_option("audio_off");
+	rtsetparams(sample_rate, channels, bufsize);
+    rtoutput(outfile, "24");
+	holo = 0;
+}
+else {
+	rtsetparams(sample_rate, channels, bufsize);
+}
