@@ -223,7 +223,16 @@ makeinstrument(const Arg arglist[], const int nargs)
 	InstCreatorFunction instCreator = findInstCreator(RTcmix::rt_list, instName);
 	
 	if (instCreator) {
-		/* Create the Instrument */
+        if (!rtsetparams_was_called()) {
+#ifdef EMBEDDED
+            die(instName, "You need to start the audio device before doing this.");
+#else
+            die(instName, "You did not call rtsetparams!");
+#endif
+            return NULL;
+        }
+
+        /* Create the Instrument */
 		
 		Iptr = (*instCreator)();
 		
