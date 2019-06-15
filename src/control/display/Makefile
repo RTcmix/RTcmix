@@ -18,6 +18,10 @@ ifeq ($(ARCH), MACOSX)
    else
       CXXFLAGS += -DAPP_PATH=\"$(DESTDIR)/$(APP).app\"
    endif
+   APP_TARGET = Deployment
+   OSX_VERSION=`xcrun --show-sdk-version`
+   SDKROOT = macosx${OSX_VERSION}
+   MACOSX_DEPLOYMENT_TARGET = ${OSX_VERSION}
 else
    OBJS += XDisplay.o
    SRCS += XDisplay.cpp
@@ -40,7 +44,7 @@ glue.o: depend glue.cpp DisplayPField.h
 
 .PHONY: $(APP)
 $(APP): 
-	cd $(APP); xcodebuild ARCHS="$(BUILD_ARCH)"
+	cd $(APP); xcodebuild ARCHS="$(BUILD_ARCH)" SDKROOT=${SDKROOT} MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET} -configuration ${APP_TARGET}
 
 depend:
 	-$(SHELL) -ec '$(CXX) -M $(CXXFLAGS) $(SRCS)' > depend
