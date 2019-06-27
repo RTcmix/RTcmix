@@ -1,6 +1,6 @@
 rtsetparams(44100, 2)
 load("WAVETABLE")
-control_rate = 44100
+control_rate(44100)
 
 totdur = 20
 numsines = 400
