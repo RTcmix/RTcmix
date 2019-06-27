@@ -12,7 +12,7 @@
    p3 = freq (in Hz only)
    p4 = bandwidth (0-1)
    p5 = starting phase (radians)
-   p6 = pan (in percent-to-left format) [optional, default is .5]
+   p6 = pan (in percent-to-left format)
    p7 = wavetable
 
    p2 (amp), p3 (freq), p4 (bandwidth), and p5 (pan) can receive updates from
