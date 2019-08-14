@@ -373,6 +373,14 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 			goto Error;
 		}
 		else {
+            if (!rtsetparams_was_called()) {
+#ifdef EMBEDDED
+                rterror("rtinput", "You need to start the audio device before doing this.");
+#else
+                rterror("rtinput", "You did not call rtsetparams!");
+#endif
+                status = CONFIGURATION_ERROR;
+            }
 			set_record = false;
 			fd = ::open_sound_file("rtinput", sfname, &header_type, &data_format,
 									&data_location, &srate, &nchans, &nsamps);
