@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2019-06-15  Douglas Scott <netdscott-at-netscape.net>
+	* Fix MouseWindow and DisplayWindow macOS Makefiles so that they will build the projects for any OSX version
+
+2019-06-14  John Gibson <johgibso-at-indiana.edu>
+	* Fix MouseWindow and DisplayWindow macOS projects so that they build in Mojave
+
 2018-06-17  John Gibson <johgibso-at-indiana.edu>
 	* Added a method to Ooscili to let you set the starting phase in radians.
 	* BWESINE now does the right thing with the initial phase argument.

@@ -1,5 +1,5 @@
 rtsetparams(44100, 2);
-rtinput("/usr/share/sounds/login.wav");
+rtinput("../../../snd/input.wav");
 
 load("MOCKBEND");
 

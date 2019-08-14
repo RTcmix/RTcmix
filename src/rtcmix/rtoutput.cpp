@@ -38,7 +38,7 @@
         "float"      32-bit floating point
         "normfloat"  32-bit floating point in range (mostly) from -1.0 to +1.0
         "16"         synonym for "short"
-        "24"         24-bit linear, not yet supported in RTcmix
+        "24"         24-bit linear
 
         The default is "short".
 
