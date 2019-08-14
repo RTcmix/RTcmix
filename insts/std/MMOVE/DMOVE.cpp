@@ -141,49 +141,40 @@ void DMOVE::get_tap(int currentSamp, int chan, int path, int len)
    double incr = 1.0 + delta / len;
 
    const int tap = currentSamp % m_tapsize;
-   register double otap = (double) tap - outloc;
-   if (otap < 0.0) otap += m_tapsize;
-   double otapPlusOne = otap + 1.0;
-   if (otapPlusOne >= (double) m_tapsize) otapPlusOne -= m_tapsize;
-   
-   double closestToEnd = max(otap, otapPlusOne);
-
-   // run till one of output taps wrap, or len reached
-
-   int len1 = min(len, m_tapsize - (int) closestToEnd);
-
-   register double *tapdel = m_tapDelay;
-   register double *Sig = vec->Sig;
-   int out = 0;
-   
-   while (out < len)
-   {
-       const int clen = len1;
-       for (int i = 0; i < clen; ++i) {
-		   int outtap = (int) otap;
-		   double frac = otap - (double)outtap;
-		   Sig[out++] = tapdel[outtap] + frac * (tapdel[outtap + 1] - tapdel[outtap]);
-		   otap += incr;
-		   // ADDED THIS INTO LOOP
-    	   if (otap >= (double) m_tapsize - 1)
-	    	  otap -= m_tapsize;
-		   else if (otap < 0.0)
-	    	  otap += m_tapsize;
-       }
-
-       if (otap >= (double) m_tapsize)
-	      otap -= m_tapsize;
-	   else if (otap < 0.0)
-	      otap += m_tapsize;
-       otapPlusOne = otap + 1.0;
-       if (otapPlusOne >= (double) m_tapsize)
-	      otapPlusOne -= m_tapsize;
-	   
-
-       closestToEnd = max(otap, otapPlusOne);
-
-       len1 = min(len - out, m_tapsize - (int) closestToEnd);
-   }
+   register double outTap = (double) tap - outloc;
+   if (outTap < 0.0) outTap += m_tapsize;
+   double *tapdel = m_tapDelay;
+   double *Sig = vec->Sig;
+    int out = 0;
+    
+    int len1 = (m_tapsize - (outTap + 1.0)) / incr;     // boundary point before needing to wrap
+    int count = 0;
+    int sampsNeeded = len;
+    while (sampsNeeded > 0 && count++ < len1) {
+        const int iOuttap = (int) outTap;
+        const double frac = outTap - (double)iOuttap;
+        Sig[out++] = tapdel[iOuttap] + frac * (tapdel[iOuttap+1] - tapdel[iOuttap]);
+        outTap += incr;
+        --sampsNeeded;
+    }
+    while (sampsNeeded > 0 && outTap < (double) m_tapsize) {
+        const int iOuttap = (int) outTap;
+        const double frac = outTap - (double)iOuttap;
+        int outTapPlusOne = int(outTap + 1.0);
+        if (outTapPlusOne >= m_tapsize)
+            outTapPlusOne -= m_tapsize;
+        Sig[out++] = tapdel[iOuttap] + frac * (tapdel[outTapPlusOne] - tapdel[iOuttap]);
+        outTap += incr;
+        --sampsNeeded;
+    }
+    outTap -= m_tapsize;
+    while (sampsNeeded > 0) {
+        const int iOuttap = (int) outTap;
+        const double frac = outTap - (double)iOuttap;
+        Sig[out++] = tapdel[iOuttap] + frac * (tapdel[iOuttap+1] - tapdel[iOuttap]);
+        outTap += incr;
+        --sampsNeeded;
+    }
 }
 
 // This gets called every internal buffer's worth of samples.  The actual
