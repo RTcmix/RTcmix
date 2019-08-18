@@ -8,11 +8,14 @@
 // BGGx
 // added an "objno" parameter to many of the embedded API calls
 
+#ifdef __cplusplus
 extern "C" {
 #endif
 	typedef void (*RTcmixBangCallback)(void *inContext);
 	typedef void (*RTcmixValuesCallback)(float *values, int numValues, void *inContext);
 	typedef void (*RTcmixPrintCallback)(const char *printBuffer, void *inContext);
+	typedef void (*RTcmixFinishedCallback)(long long frameCount, void *inContext);
+	void RTcmix_setPrintLevel(int level);
 	int RTcmix_init(int objno);
 	int RTcmix_destroy(int objno);
 	int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_count, int objno);
@@ -63,7 +66,6 @@ extern "C" {
     // BGGx
     int check_context();
 #ifdef __cplusplus
-
 }
 #endif
 
