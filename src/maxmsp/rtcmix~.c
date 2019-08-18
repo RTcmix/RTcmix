@@ -75,16 +75,13 @@
 // -- allow input and output counts (renamed MSP_INPUTS and MSP_OUTPUTS) to be configured from build macro.
 //		added check for active DAC to rtcmix_dortcmix().  Added memory failure check to script methods.
 //
-// 07/22/2017
-// -- removed use of specialized MSPAudioDevice and switched to using EmbeddedAudioDevice.
+// 01/27/2017
+// -- fixed buffer-reading code for $variables (incorrect length calculation)
+//		changed RTcmixVERSION to reflect current RTcmix (with the new neil insts)
 
-// Hand-defining these here because these will always be true, and are needed to get the right portions of RTcmix_API.h
 
-#define EMBEDDEDAUDIO 1
-#define MAXMSP 1
-
-#define VERSION "2.005"
-#define RTcmixVERSION "RTcmix-maxmsp-4.3.1"
+#define VERSION "2.00"
+#define RTcmixVERSION "RTcmix-maxmsp-4.2.1"
 
 #include "ext.h"
 #include "z_dsp.h"

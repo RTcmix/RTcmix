@@ -122,7 +122,9 @@ utils.cpp \
 rt_ug_intro.cpp \
 connection.cpp \
 converter.cpp \
-monitor.cpp
+monitor.cpp \
+wmmcontext.cpp
+# BGGx wmmcontext above
 
 # Build-based additions to local source files
 

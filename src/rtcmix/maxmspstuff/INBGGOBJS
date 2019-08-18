@@ -4,4 +4,6 @@ INBGGOBJS = ../../insts/bgg/GVERB/GVERB.o \
 ../../insts/bgg/LOCALIZE/LOCALIZE.o \
 ../../insts/bgg/PFSCHED/PFSCHED.o \
 ../../insts/bgg/SYNC/SYNC.o \
-../../insts/bgg/VWAVE/VWAVE.o
+../../insts/bgg/VWAVE/VWAVE.o \
+../../insts/bgg/LOCALIZE/LOCALIZE.o \
+../../insts/bgg/LOCALIZE/LOCALIZE2D.o

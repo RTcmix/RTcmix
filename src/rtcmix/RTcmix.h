@@ -158,6 +158,13 @@ public:
 	static double left_peak(float *, int);
 	static double right_peak(float *, int);
 
+// BGGx
+// BGG wmm -- these are the 'context' functions to allow multiple rtcmix~s
+	static void set_wmmcontext(int);
+	static void get_wmmcontext(int);
+	static void clear_wmmcontext(int);
+
+
 protected:
 	RTcmix(bool dummy);				// Called by RTcmixMain class
 

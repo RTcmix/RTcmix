@@ -1,10 +1,11 @@
 include ../package.conf
 
 NAME = LOCALIZE
+NAME2 = LOCALIZE2D
 
 CURDIR = $(CMIXDIR)/insts/bgg/$(NAME)
 
-OBJS = $(NAME).o
+OBJS = $(NAME).o $(NAME2).o
 CMIXOBJS += $(PROFILE_O)
 PROGS = $(NAME) lib$(NAME).so
 

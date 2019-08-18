@@ -633,9 +633,10 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 
 #ifdef EMBEDDED
 	// Here is where we now call the "checkers" for Bang, Values, and Print	-- DAS
-	checkForBang();
-	checkForVals();
-	checkForPrint();
+// BGGx -- use the old 'polling' technique in Unity
+//	checkForBang();
+//	checkForVals();
+//	checkForPrint();
 #endif
 
 	if (panic) {

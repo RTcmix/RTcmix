@@ -1,0 +1,247 @@
+In the "windows-RTcmix-files.tar" archive are the files I modified to
+do the brad-hack context-switching thing.  I think all the changes I
+put in are tagged with "// BGGx", so searching through the files
+for "BGGx" should take you to the altered code.  The Makefile,
+RTcmix.h and intraverse.cpp have only very minor changes.  The real
+action is all in main.cpp and is reflected in the altered API in
+RTcmix_API.h.  Two new files:  wmmcontext.cpp/h make it happen.
+
+If you look at RTcmix_API.h, you'll see that I've added a new param to
+most of the extern "C" { RTcmix_* } calls 'into' the main RTcmix code.
+This objno value is what you use to instantiate separate RTcmix objects.
+For example, in your calling code:
+
+	RTcmix_init(0);
+
+will set up the first RTcmix object, and
+
+	RTcmix_init(1);
+
+Then when you say:
+
+	RTcmix_runAudio(in, out, nframes, 0);
+	RTcmix_runAudio(in, out, nframes, 1);
+
+it will run the embedded sample generation/processing engine for RTcmix 0 and
+RTcmix 1 successively.
+
+
+This is all coded in main.cpp.  I start with this:
+
+	// BGGx
+	#define TOTOBJS 178
+	static RTcmixMain *globalApp[TOTOBJS];
+
+(which should probably be dyn-alloced; I just chose 178 because it seemed
+like a decent number).   These arrays:
+
+	// BGGx -- keep all sets for each instance separate
+	float OBJgInletValues[TOTOBJS][MAX_INLETS];
+	float gInletValues[MAX_INLETS];     // used by RTInlinePField.cpp
+
+are used for the PField control stuff, which turned out to be a little
+trickier than I had hoped.  Also you will see I defined some particular
+calls for the parser AND for the MAXBANG/MAXMESSAGE stuff in main.cpp
+(unity_checkForBang(int objno), unity_checkForVals(float *thevals, int objno),
+unity_parse_score(char *buf, int len, int objno)).  This is so I wouldn't have
+to communicate to the parser the "objno", and also because the callback
+function ptr mechanism wouldn't work with the context-switching scheme
+(see my note about this in the code).
+
+The file wmmcontext.cpp defines three functions that are used to do the
+state save/restore operation:
+
+	clear_wmmcontext(objno) -- initializes all the vars in the 'context'
+	get_wmmcontext(objno) -- gets the var values for a particular 'objno' and
+		makes them current
+	set_wmmcontext(objno) -- saves the current state of the vars
+
+So in each of the modified RTcmix API calls, you will see 
+
+	globalApp[objno]->get_wmmcontext(objno);
+	... do the RTcmix operation
+	globalApp[objno]->set_wmmcontext(objno);
+
+This will set up and then save the current working conext for each RTcmix
+'objno'.
+
+About the wmmcontext.cpp/h files:  they're a mess.  You'll see the traces
+of my figuring out which vars needed to be part of the context and
+which didn't, along with some additional vars needed for RTcmix operation.
+Many of the ones I'm saving/restoring probably don't need to be included.
+
+Also, at the very bottom of wmmcontext.cpp, you'll see this:
+
+	extern "C" {
+		int check_context() {
+			return(wmmcontext_busy);
+		}
+
+		int set_context(int v) {
+			wmmcontext_busy = v;
+			return(wmmcontext_busy);
+		}
+	}
+
+These functions are used as a crude 'locking' mechanism for the context
+switching. (set_context() isn't actually used; I needed it to test some
+stuff).
+
+
+So here's how some code would look that uses this functionality.  This
+is in C#, but you'll get the general idea.  I've only included the
+relevant parts of the code for running the RTcmix dylib:
+
+public static class DLL
+// this will contain the RTcmix_API references
+// note the "objno" param in each one
+{
+	[DllImport ("librtcmix_embedded")]
+	public static extern int RTcmix_init(int objno);
+
+	[DllImport ("librtcmix_embedded")]
+	public static extern int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_count, int objno);
+
+	[DllImport ("librtcmix_embedded")]
+	public static extern int RTcmix_setAudioBufferFormat(int format, int nchans, int objno);
+
+	[DllImport("librtcmix_embedded")]
+	unsafe public static extern int RTcmix_runAudio(void *k, void *outAudioBuffer, int nframes, int objno);
+
+	[DllImport ("librtcmix_embedded")]
+	unsafe public static extern int RTcmix_destroy(int objno);
+
+	[DllImport ("librtcmix_embedded")]
+	unsafe public static extern int unity_parse_score(char *buf, int len, int objno);
+
+	[DllImport ("librtcmix_embedded")]
+	unsafe public static extern int  unity_checkForBang(int objno);
+
+	[DllImport ("librtcmix_embedded")]
+	unsafe public static extern int  unity_checkForVals(float *thevals, int objno);
+
+	[DllImport ("librtcmix_embedded")]
+	unsafe public static extern int unity_checkForPrint(char *pptr, int objno);
+
+	[DllImport ("librtcmix_embedded")]
+	unsafe public static extern void RTcmix_setPField(int inlet, float pval, int objno);
+
+	[DllImport ("librtcmix_embedded")]
+	unsafe public static extern int check_context();
+}
+
+
+// change “rtcmixtemplate” to the name of your .cs script
+public class rtcmixmain : MonoBehaviour {
+	int objno = 0; // change this for multiple RTcmix instantiations
+	float[] vals = new float[1024]; // for MAXMESSAGE values
+	char[] printvals = new char[8192]; // for printing RTcmix messages/errors
+
+	void Start () {
+		int status;
+
+// BGG -- ok, here's how it works.  DLL.check_context() returns the value
+// of the "wmmcontext_busy" variable, which gets set to "1" when 
+// get_wmmcontext() is invoked and gets set back to "0" when
+// set_wmmcontext() is called.  It does a short sleep while waiting for the
+// context to be write-able.  Once it shows the context is clear for
+// writing, the DLL.RTcmix_init() function is called for the objno being
+// used
+		while (DLL.check_context() == 1)
+			System.Threading.Thread.Sleep (1);
+		status = DLL.RTcmix_init(objno);
+
+		// set it for single-precision float samples (see RTcmix_API.h), scaled between -1.0 and 1.0, 2 chans;
+		while (DLL.check_context() == 1) // again wait for context to be writeable
+			System.Threading.Thread.Sleep (1);
+		DLL.RTcmix_setAudioBufferFormat(8, 2, objno);
+
+		// note the "1024" here, vs. "2048" in the Unity code
+		// this is the difference between 'frames' and 'nsamples'
+		while (DLL.check_context() == 1) System.Threading.Thread.Sleep (1);
+		status = DLL.RTcmix_setparams(44100, 2, 1024, 1, 32, objno); // '32' is the nmber of RTcmix busses
+
+		// send a score to set up some bas_configs() and kick off with a MAXBANG
+		String score = "bus_config(\"IINOISE\", \"aux 0-1 out\") " +
+			"bus_config(\"GVERB\", \"aux 0-1 in\", \"out 0-1\") " +
+			"ampenv = maketable(\"line\", 1000, 0,0, 1,1, 2,0) " +
+			"GVERB(0, 0, 9999, 0.9, 178.0, 17.0, 0.71, 0.34, -20.0, -11.0, -9.0, 7.0) " +
+			"MAXBANG(0) ";
+		SendScore(score);
+	}
+
+	void OnApplicationQuit(){
+		while (DLL.check_context() == 1) System.Threading.Thread.Sleep (1);
+		DLL.RTcmix_destroy (objno); // reset RTcmix
+	}
+
+
+	// this function is called by unity for every buffer of sound samples computed
+	void OnAudioFilterRead(float[] data, int channels){
+		unsafe{
+			fixed (float* b = data) {
+				while (DLL.check_context() == 1) System.Threading.Thread.Sleep (1);
+				// null input, synthesis only.  If you were processing sound, the (void *)null
+				// would be replaced by (void *)b
+				// Also, 1024 instead of 2048 because it is frames, not nsamples
+				DLL.RTcmix_runAudio((void *)null, (void *)b, 1024, objno);
+
+
+				// process any MAXBANGs
+				if (DLL.unity_checkForBang(objno) == 1) {
+					String score = "setup(irand(150, 400), 40, 1) " +
+						"IINOISE(0, irand(7, 11), 20000*ampenv, 0.5) " +
+						"MAXBANG(irand(5, 10)) ";
+					SendScore(score);			
+				}
+
+
+				// uncomment this to process MAXMESSAGEs
+				/*
+				fixed (float *vptr = vals) {
+					// this shows how to access the values from a MAXMESSAGE
+					int nvals = DLL.unity_checkForVals(vptr, objno);
+					if (nvals > 0) {
+						Debug.Log("got some vals, " + nvals + " and vals[1] is " + vals[1]);
+					}
+				}
+				*/
+
+
+				// uncomment this to print RTcmix messages/errors in the system console
+				/*
+				fixed (char *pptr = printvals) {
+					int pcheck = DLL.unity_checkForPrint(pptr, objno);
+					while (pcheck > 0) {
+						string s = new string(printvals);
+						Debug.Log(s);
+						Array.Clear(printvals, 0, printvals.Length);
+						pcheck = DLL.unity_checkForPrint(pptr, objno);
+					}
+				}
+				*/
+			}
+		}
+	}
+
+
+	// this is the score-sending function
+	public void SendScore(String score) {
+		IntPtr sptr = Marshal.StringToHGlobalAnsi(score);
+		unsafe {
+			while (DLL.check_context() == 1)
+				System.Threading.Thread.Sleep (1);
+			DLL.unity_parse_score ((char*)sptr.ToPointer (), score.Length, objno);
+		}
+		Marshal.FreeHGlobal(sptr);
+	}
+}
+
+
+
+I hope this explains how it works and it will in fact work for you!  E-mail
+me with questions, etc.  Thursday I'm leaving for Helsinki and Utrecht
+for two weeks, but I'll have e-mail access.
+
+brad
+

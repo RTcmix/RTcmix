@@ -12,7 +12,8 @@
 
 // BGG -- this is set by RTcmix_setPField() in main.cpp
 //		the index is the inlet, the value is the value
-extern float gInletValues[];
+// BGGx - this is more correct (needed for unity)
+extern double *gInletValues;
 
 RTInletPField::RTInletPField(
 			const int			n_inlet,
