@@ -941,51 +941,75 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
 		minc_die("list index must be a number");
 		return this;
 	}
-	if (child(0)->symbol()->dataType() != MincListType) {
-		minc_die("attempt to index a variable that's not a list");
-		return this;
-	}
 	MincFloat fltindex = (MincFloat) child(1)->value();
 	int index = (int) fltindex;
 	MincFloat frac = fltindex - index;
-	 MincList *theList = (MincList *) child(0)->symbol()->value();
-	 if (theList == NULL) {
-		 minc_die("attempt to index a NULL list");
-		 return this;
-	 }
-		int len = theList->len;
-	 if (len == 0) {
-		 minc_die("attempt to index an empty list");
-		 return this;
-	 }
-	 if (fltindex < 0.0) {    /* -1 means last element */
-		 if (fltindex <= -2.0)
-             minc_warn("negative index: returning last element");
-		 index = len - 1;
-         frac = 0;
-	 }
-	 else if (fltindex > (MincFloat) (len - 1)) {
-         minc_warn("attempt to index past the end of list: returning last element");
-		 index = len - 1;
-         frac = 0;
-	 }
-	MincValue elem;
-	copy_listelem_elem(&elem, &theList->data[index]);
-	
-	/* do linear interpolation for float items */
-	if (elem.dataType() == MincFloatType && frac > 0.0 && index < len - 1) {
-		MincValue& elem2 = theList->data[index + 1];
-		if (elem2.dataType() == MincFloatType) {
-			value() = (MincFloat) elem
-			+ (frac * ((MincFloat) elem2 - (MincFloat) elem));
-		}
-		else { /* can't interpolate btw. a number and another type */
-			value() = (MincFloat) elem;
-		}
-	}
-	else {
-		copy_listelem_tree(this, &elem);
-	}
+    MincDataType child0Type = child(0)->symbol()->dataType();
+    if (child0Type == MincListType) {
+        MincList *theList = (MincList *) child(0)->symbol()->value();
+        if (theList == NULL) {
+            minc_die("attempt to index a NULL list");
+            return this;
+        }
+        int len = theList->len;
+        if (len == 0) {
+            minc_die("attempt to index an empty list");
+            return this;
+        }
+        if (fltindex < 0.0) {    /* -1 means last element */
+            if (fltindex <= -2.0)
+                minc_warn("negative index: returning last element");
+            index = len - 1;
+            frac = 0;
+        }
+        else if (fltindex > (MincFloat) (len - 1)) {
+            minc_warn("attempt to index past the end of list: returning last element");
+            index = len - 1;
+            frac = 0;
+        }
+        MincValue elem;
+        copy_listelem_elem(&elem, &theList->data[index]);
+
+        /* do linear interpolation for float items */
+        if (elem.dataType() == MincFloatType && frac > 0.0 && index < len - 1) {
+            MincValue& elem2 = theList->data[index + 1];
+            if (elem2.dataType() == MincFloatType) {
+                value() = (MincFloat) elem
+                + (frac * ((MincFloat) elem2 - (MincFloat) elem));
+            }
+            else { /* can't interpolate btw. a number and another type */
+                value() = (MincFloat) elem;
+            }
+        }
+        else {
+            copy_listelem_tree(this, &elem);
+        }
+    }
+    else if (child0Type == MincStringType) {
+        MincString theString = (MincString) child(0)->symbol()->value();
+        if (theString == NULL) {
+            minc_die("attempt to index a NULL string");
+            return this;
+        }
+        int stringLen = (int)strlen(theString);
+        if (index < 0) {    /* -1 means last element */
+            if (index <= -2)
+                minc_warn("negative index: returning last character");
+            index = stringLen - 1;
+        }
+        else if (index > stringLen - 1) {
+            minc_warn("attempt to index past the end of string: returning last element");
+            index = stringLen - 1;
+        }
+        char stringChar[2];
+        stringChar[1] = '\0';
+        strncpy(stringChar, &theString[index], 1);
+        MincValue elem((MincString)strdup(stringChar));  // create new string value from the one character
+        copy_listelem_tree(this, &elem);
+    }
+    else {
+        minc_die("attempt to index an R-variable that's not a string or list");
+    }
 	return this;
 }
 
@@ -1000,7 +1024,7 @@ Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
 		return this;	// TODO
 	}
 	if (child(0)->symbol()->dataType() != MincListType) {
-		minc_die("attempt to index a variable that's not a list");
+		minc_die("attempt to index an L-variable that's not a list");
 		return this;	// TODO
 	}
 	int len = 0;
