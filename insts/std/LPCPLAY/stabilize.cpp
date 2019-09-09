@@ -4,10 +4,10 @@
 //#include <stream.h>
 #include "lp.h"
 
-static int factor(double*, long*, double*, double*, long*, long*, double*);
-static int dproot(long*, double*, double*, double*, long*, long*, double *);
-static void correct(float*, long, float*);
-static bool isStable(float*, long);
+static int factor(double*, int*, double*, double*, int*, int*, double*);
+static int dproot(int*, double*, double*, double*, int*, int*, double *);
+static void correct(float*, int, float*);
+static bool isStable(float*, int);
 
 int
 stabilize(float *frameIn, int npoles)
@@ -31,21 +31,21 @@ static Complex jay(0., 1.);
 inline double dabs(double x) { return (x >= 0.) ? x : -x; }
 
 static int
-factor(double *b, long *k4, double *rootr, double *rooti,
-	   long *kinsid, long *kprint, double *eps) 
+factor(double *b, int *k4, double *rootr, double *rooti,
+	   int *kinsid, int *kprint, double *eps)
 {
     /* System generated locals */
-    long i_1, i_2, i_3;
+    int i_1, i_2, i_3;
 
     /* Local variables */
     double amax;
-    long kerr;
+    int kerr;
     double dist, rmin, rmax;
-    long i, j, k;
+    int i, j, k;
     double r;
     Complex z, res;
     double parti, distr, partr, r2, resmag, resmax;
-    long k4m;
+    int k4m;
     double coe[MAXFRAME];
     Complex tmp;
 
@@ -122,34 +122,35 @@ factor(double *b, long *k4, double *rootr, double *rooti,
 } /* factor */
 
 static int
-dproot(long *mm, double *a, double *rootr, double *rooti, long *kerr,
-		long *kprint, double *eps) {
+dproot(int *mm, double *a, double *rootr, double *rooti, int *kerr,
+		int *kprint, double *eps) {
     /* System generated locals */
-    long i_1, i_2, i_3, i_4;
+    int i_1, i_2, i_3, i_4;
 
     /* Local variables */
-    long mdec;
+    int mdec;
     double amin, amax, save[MAXFRAME];
-    long kmax, kpol;
+    int kmax, kpol;
     double temp, size;
-    long ktry;
+    int ktry;
     double real1, real2;
     Complex b[MAXFRAME], c[MAXFRAME];
     Complex p, w, z;
     double parti;
-    long kpolm;
+    int kpolm;
     double partr;
-    long kount, newst, nroot;
+    int kount, newst, nroot;
     double r1, r2;
-    long ktrym;
+    int ktrym;
     Complex bb[MAXFRAME], cc[MAXFRAME];
-    long mp;
+    int mp;
     Complex pp;
     double sqteps, rkount, rr1, rr2;
-    long mmp;
+    int mmp;
     Complex tmp;
 
-    int i, j, k, m;
+    int i, j, k;
+    int m;
 	
     /* Parameter adjustments */
     --a;
@@ -439,25 +440,25 @@ L600:
 static const Complex one = 1, zero = 0;
 
 static void
-correct(float *frame, long npoles, float *a) {
+correct(float *frame, int npoles, float *a) {
     /* System generated locals */
-    long i,i_1, i_2, i_3, i_4, i_5;
+    int i,i_1, i_2, i_3, i_4, i_5;
 
     /* Local variables */
-//    long nall;
-    long j, k;
+//    int nall;
+    int j, k;
     double r[MAXFRAME];
     Complex w[MAXFRAME];
-    long ndata = 0;
+    int ndata = 0;
     double y[97], rooti[96];
-    long l1, k4;
+    int l1, k4;
     double rootr[96];
-    long ii;
+    int ii;
     double th[MAXFRAME];
     Complex ww;
-    long kinsid;
+    int kinsid;
     double zz;
-    long kprint, k4m;
+    int kprint, k4m;
     double eps;
 
 #ifdef LPC_DEBUG
@@ -520,14 +521,14 @@ correct(float *frame, long npoles, float *a) {
 
 
 static bool
-isStable(float *frame, long npoles) {
+isStable(float *frame, int npoles) {
     /* System generated locals */
     double r_1;
 	static const int Size = 150;
 	static const int SizeP1 = Size + 1;
     /* Local variables */
     float a[Size * Size]	/* was [150][150] */;
-    long i, m, mm;
+    int i, m, mm;
     float rk[249];
     /* Parameter adjustments */
     --frame;
