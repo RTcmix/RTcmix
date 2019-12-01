@@ -1,6 +1,11 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2019-10-06  John Gibson <johgibso-at-indiana.edu>
+	* Release v4.3.2, including recent changes for Mojave compilation
+	  affecting the MouseWindow and DisplayWindow apps, as well as
+	  PYCMIX.
+
 2019-06-15  Douglas Scott <netdscott-at-netscape.net>
 	* Fix MouseWindow and DisplayWindow macOS Makefiles so that they will build the projects for any OSX version
 
