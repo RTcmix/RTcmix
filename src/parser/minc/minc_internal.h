@@ -139,6 +139,15 @@ public:
 	ReclaredVariableException(const char *msg) : RTFatalException(msg) {}
 };
 
+// Such as divide or mod by zero
+
+class ArithmaticException : public RTFatalException
+{
+public:
+    ArithmaticException(const char *msg) : RTFatalException(msg) {}
+};
+
+
 /* A MincList contains an array of MincValue's, whose underlying data
    type is flexible.  So a MincList is an array of arbitrarily mixed types
    (any of the types represented in the MincDataType enum), and it can

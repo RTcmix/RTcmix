@@ -636,7 +636,13 @@ Node *	NodeOp::do_op_num(const MincFloat val1, const MincFloat val2, OpKind op)
          this->v = val1 / val2;
          break;
       case OpMod:
-         this->v = (MincFloat) ((long) val1 % (long) val2);
+           if (val2 < 1.0 && val2 > -1.0) {
+               minc_die("Illegal value for RHS of a modulo operation");
+               this->v = 0.0;
+           }
+           else {
+               this->v = (MincFloat) ((long) val1 % (long) val2);
+           }
          break;
       case OpPow:
          this->v = pow(val1, val2);
