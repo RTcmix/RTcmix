@@ -79,10 +79,10 @@ static Node * go(Node * t1);
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 %type  <node> stml stmt rstmt bexp expl exp str ret bstml
-%type  <node> fdecl sdecl hdecl ldecl structdecl arg argl fdef fstml fargl funcdecl elmnt elmntl structdef
+%type  <node> fdecl sdecl hdecl ldecl structdecl arg argl fdef fstml fargl funcdecl mbr mbrl structdef
 %type  <str> id structname
 
-%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl structdecl fdef fstml arg argl fargl funcdecl elmnt elmntl structdef
+%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl structdecl fdef fstml arg argl fargl funcdecl mbr mbrl structdef
 
 %error-verbose
 
@@ -238,7 +238,8 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
 	| '{' level expl '}'	{ MPRINT("{expl}");	decrLevel(); $$ = new NodeList($3); }
 	| id '[' exp ']' 	{			$$ = new NodeSubscriptRead(new NodeName($1), $3); }
  */
-	| id '[' exp ']' '=' exp {		$$ = new NodeSubscriptWrite(new NodeName($1), $3, $6); }
+	| id '[' exp ']' '=' exp { $$ = new NodeSubscriptWrite(new NodeName($1), $3, $6); }
+    | id'.'id '=' exp { $$ = new NodeStore(new NodeMember(new NodeName($1), $3), $5); }
 	;
 
 /* identifier list */
@@ -253,7 +254,6 @@ id:  TOK_IDENT			{ MPRINT("id"); $$ = strsave(yytext); }
 /* expression list */
 expl:	exp				{ MPRINT("expl: exp"); $$ = new NodeListElem(new NodeEmptyListElem(), $1); }
 	| expl ',' exp		{ MPRINT("expl: expl,exp"); $$ = new NodeListElem($1, $3); }
-//	| /* nothing */	{ MPRINT("expl: NULL"); $$ = new NodeEmptyListElem(); }
 	;
 
 /* string */
@@ -293,12 +293,12 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 							double f = atof(yytext);
 							$$ = new NodeConstf(f);
 						}
-/* DAS THESE ARE NOW PURE RIGHT-HAND-SIDE */
-/* $2 will be the end of a linked list of NodeListElems */
+    /* DAS THESE ARE NOW PURE RIGHT-HAND-SIDE */
 	| '{' level expl '}'	{ MPRINT("{expl}");	decrLevel(); $$ = new NodeList($3); }
 	| '{' '}'				{ MPRINT("{}");	$$ = new NodeList(new NodeEmptyListElem()); }
 
 	| id '[' exp ']' 	{	$$ = new NodeSubscriptRead(new NodeName($1), $3); }
+    | id'.'id           {   $$ = new NodeMember(new NodeName($1), $3); }
 	| TOK_ARG_QUERY		{
 #ifndef EMBEDDED
 							/* ?argument will return 1.0 if defined, else 0.0 */
@@ -360,28 +360,28 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 							}
 	;
 
-/* an <elmnt> is always a type followed by an <id>, like "float length". They only occur in struct definitions.
+/* an <mbr> is always a type followed by an <id>, like "float length". They only occur in struct definitions.
  */
 
-elmnt: TOK_FLOAT_DECL id        { MPRINT("elmnt");
-        $$ = new NodeElement($2, MincFloatType); }
-    | TOK_STRING_DECL id    { MPRINT("elmnt");
-        $$ = new NodeElement($2, MincStringType); }
-    | TOK_HANDLE_DECL id    { MPRINT("elmnt");
-        $$ = new NodeElement($2, MincHandleType); }
-    | TOK_LIST_DECL id        { MPRINT("elmnt");
-        $$ = new NodeElement($2, MincListType); }
+mbr: TOK_FLOAT_DECL id        { MPRINT("mbr");
+        $$ = new NodeMemberDecl($2, MincFloatType); }
+    | TOK_STRING_DECL id    { MPRINT("mbr");
+        $$ = new NodeMemberDecl($2, MincStringType); }
+    | TOK_HANDLE_DECL id    { MPRINT("mbr");
+        $$ = new NodeMemberDecl($2, MincHandleType); }
+    | TOK_LIST_DECL id        { MPRINT("mbr");
+        $$ = new NodeMemberDecl($2, MincListType); }
     ;
 
 /* struct declaration */
 
-/* a <elmntl> is one <elmnt> or a series of <elmnt>'s separated by commas, for a struct definition,
+/* a <mbrl> is one <mbr> or a series of <mbr>'s separated by commas, for a struct definition,
     e.g. "float f, float g, string s"
  */
 
-elmntl: elmnt               { MPRINT("elmnt: elmnt");
+mbrl: mbr               { MPRINT("mbr: mbr");
             $$ = new NodeSeq(new NodeNoop(), $1); }
-    | elmntl ',' elmnt      { MPRINT("elmntl: elmntl,elmnt");
+    | mbrl ',' mbr      { MPRINT("mbrl: mbrl,mbr");
             $$ = new NodeSeq($1, $3); }
     ;
 
@@ -390,9 +390,9 @@ elmntl: elmnt               { MPRINT("elmnt: elmnt");
 structname: TOK_STRUCT_DECL id { MPRINT("structname"); $$ = $2; }
     ;
 
-/* "struct Foo { <element decls> }" */
+/* "struct Foo { <member decls> }" */
 
-structdef: structname '{' elmntl '}' struct   { MPRINT("structdef");
+structdef: structname '{' mbrl '}' struct   { MPRINT("structdef");
         --slevel; MPRINT1("slevel => %d", slevel);
         $$ = go(new NodeStructDef($1, $3));
     }
@@ -479,8 +479,8 @@ fdef: funcdecl fargl '{' fstml '}'	{
 									 */
 									$$ = new NodeNoop();
 								}
-	| error funcdecl fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; }
-	| error funcdecl fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; }
+	| error funcdecl fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
+	| error funcdecl fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
 	;
 
 %%

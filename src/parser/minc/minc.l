@@ -92,7 +92,7 @@ num   {dig}+
 <INIT>handle            return TOK_HANDLE_DECL;
 <INIT>list            	return TOK_LIST_DECL;
 <INIT>return			return TOK_RETURN;
-<INIT>[%={}><,;*+-]     return (*yytext);
+<INIT>[%={}><,.;*+-]     return (*yytext);
 <INIT>"["|"]"|"/"       return (*yytext);
 <INIT>"("|")"           return (*yytext);
 <INIT>"\n"        ;

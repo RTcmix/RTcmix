@@ -218,10 +218,10 @@ private:
 	} _u;
 };
 
-// ElementInfo describes an element in a MinC-declared struct
+// MemberInfo describes a member in a MinC-declared struct
 
-struct ElementInfo {
-    ElementInfo(const char *inName, MincDataType inType) : name(inName), type(inType) {}
+struct MemberInfo {
+    MemberInfo(const char *inName, MincDataType inType) : name(inName), type(inType) {}
     const char *    name;
     MincDataType    type;
 };
@@ -231,20 +231,21 @@ struct ElementInfo {
 class StructType {
 public:
     StructType(const char *inName) : _name(inName) {}
+    ~StructType() {}
     void addElement(const char *name, MincDataType type) {
         // TODO: Dont allow duplicate element names
-        _elements.push_back(ElementInfo(name, type));
+        _members.push_back(MemberInfo(name, type));
     }
     template <typename FuncType>
     void forEachElement(FuncType &function) const {
-        for (std::vector<ElementInfo>::const_iterator i = _elements.begin(); i != _elements.end(); ++i) {
+        for (std::vector<MemberInfo>::const_iterator i = _members.begin(); i != _members.end(); ++i) {
             function(i->name, i->type);
         }
     }
     const char *name() const { return _name; }
 protected:
     const char *                _name;
-    std::vector<ElementInfo>    _elements;
+    std::vector<MemberInfo>     _members;
 };
 
 
@@ -262,9 +263,11 @@ public:
     Node *              node() { return _node; }
     void                setNode(Node *inNode) { _node = inNode; }
     
+    Symbol *            getStructMember(const char *memberName);
+    
 	Symbol *next;       		  /* next entry on hash chain */
 	int scope;
-    Symbol *    _elements;      /* for symbols that are structs, element list */
+    Symbol *    _members;      /* for symbols that are structs, member list */
 protected:
     Symbol(const char *name);
 	const char *_name;          /* symbol name */

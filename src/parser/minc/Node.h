@@ -29,14 +29,13 @@ typedef enum {
 	eNodeEmptyListElem,
 	eNodeSubscriptRead,
 	eNodeSubscriptWrite,
-    eNodeMemberRead,
-    eNodeMemberWrite,
+    eNodeMember,
 	eNodeOpAssign,
 	eNodeName,
 	eNodeAutoName,
 	eNodeConstf,
 	eNodeString,
-    eNodeElement,
+    eNodeMemberDecl,
     eNodeStructDef,
 	eNodeFuncDef,
 	eNodeArgList,
@@ -276,13 +275,13 @@ protected:
 	virtual Node*		doExct();
 };
 
-class NodeElement : public Node
+class NodeMemberDecl : public Node
 {
 public:
-    NodeElement(const char *name, MincDataType type)
-            : Node(OpFree, eNodeElement), _symbolName(name) {
+    NodeMemberDecl(const char *name, MincDataType type)
+            : Node(OpFree, eNodeMemberDecl), _symbolName(name) {
         this->_type = type;        // TODO
-        NPRINT("NodeElement('%s') => %p\n", name, this);
+        NPRINT("NodeMemberDecl('%s') => %p\n", name, this);
     }
 protected:
     virtual Node*        doExct();
@@ -438,24 +437,16 @@ protected:
 	virtual Node*		doExct();
 };
 
-class NodeMemberRead : public Node2Children
+class NodeMember : public Node1Child
 {
 public:
-    NodeMemberRead(Node *n1, Node *n2) : Node2Children(OpFree, eNodeMemberRead, n1, n2) {
-        NPRINT("NodeMemberRead(%p, %p) => %p\n", n1, n2, this);
+    NodeMember(Node *n1, const char *memberName) : Node1Child(OpFree, eNodeMember, n1), _memberName(memberName) {
+        NPRINT("NodeMember(%p, '%s') => %p\n", n1, memberName, this);
     }
 protected:
     virtual Node*        doExct();
-};
-
-class NodeMemberWrite : public Node3Children
-{
-public:
-    NodeMemberWrite(Node *n1, Node *n2, Node *n3) : Node3Children(OpFree, eNodeMemberWrite, n1, n2, n3) {
-        NPRINT("NodeMemberWrite(%p, %p, %p) => %p\n", n1, n2, n3, this);
-    }
-protected:
-    virtual Node*        doExct();
+private:
+    const char *_memberName;
 };
 
 class NodeIf : public Node2Children

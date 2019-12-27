@@ -140,14 +140,13 @@ static const char *s_NodeKinds[] = {
    "NodeEmptyListElem",
    "NodeSubscriptRead",
    "NodeSubscriptWrite",
-   "NodeMemberRead",
-   "NodeMemberWrite",
+   "NodeMember",
    "NodeOpAssign",
    "NodeName",
    "NodeAutoName",
    "NodeConstf",
    "NodeString",
-   "NodeElement",
+   "NodeMemberDecl",
    "NodeStructDef",
    "NodeFuncDef",
    "NodeArgList",
@@ -882,16 +881,17 @@ Node *	NodeName::doExct()
 
 Node *	NodeName::finishExct()
 {
-	if (u.symbol) {
-		TPRINT("%s: symbol %p\n", classname(), u.symbol);
+    Symbol *nodeSymbol;
+	if ((nodeSymbol = symbol()) != NULL) {
+		TPRINT("%s: symbol %p\n", classname(), nodeSymbol);
 		/* For now, symbols for functions cannot be an RHS */
-		if (u.symbol->node() != NULL) {
+		if (nodeSymbol->node() != NULL) {
 			minc_die("Cannot use function '%s' as a variable", symbolName());
 		}
 		else {
 			/* also assign the symbol's value into tree's value field */
-			TPRINT("NodeName/NodeAutoName: copying value from symbol '%s' to us\n", u.symbol->name());
-			copy_sym_tree(this, u.symbol);
+			TPRINT("NodeName/NodeAutoName: copying value from symbol '%s' to us\n", nodeSymbol->name());
+			copy_sym_tree(this, nodeSymbol);
 		}
 	}
 	else {
@@ -1074,6 +1074,24 @@ Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
 	copy_tree_listelem(&theList->data[index], child(2));
 	copy_tree_tree(this, child(2));
 	return this;
+}
+
+Node *  NodeMember::doExct()
+{
+    ENTER();
+    child(0)->exct();         /* lookup target */
+    Symbol *structSymbol = child(0)->symbol();
+    Symbol *memberSymbol = structSymbol->getStructMember(_memberName);
+    if (memberSymbol) {
+        setSymbol(memberSymbol);
+        /* also assign the symbol's value into tree's value field */
+        TPRINT("NodeName/NodeAutoName: copying value from member symbol '%s' to us\n", memberSymbol->name());
+        copy_sym_tree(this, memberSymbol);
+    }
+    else {
+        minc_die("variable has no member '%s'", _memberName);
+    }
+    return this;
 }
 
 Node *	NodeCall::doExct()
@@ -1643,9 +1661,9 @@ Node *  NodeStructDef::doExct()
     return this;
 }
 
-Node *  NodeElement::doExct()
+Node *  NodeMemberDecl::doExct()
 {
-    TPRINT("-- storing decl info for element '%s', type %s\n", _symbolName, MincTypeName(this->_type));
+    TPRINT("-- storing decl info for member '%s', type %s\n", _symbolName, MincTypeName(this->_type));
     assert(sNewStructType != NULL);
     sNewStructType->addElement(_symbolName, this->_type);
     return this;

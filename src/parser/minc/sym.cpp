@@ -293,7 +293,7 @@ Symbol *	Symbol::create(const char *name)
 }
 
 Symbol::Symbol(const char *symName)
-    : next(NULL), scope(-1), _elements(NULL), _name(symName), _node(NULL)
+    : next(NULL), scope(-1), _members(NULL), _name(symName), _node(NULL)
 {
 #ifdef NOTYET
 	defined = offset = 0;
@@ -309,9 +309,27 @@ Symbol::~Symbol()
 #if defined(SYMBOL_DEBUG) || defined(DEBUG_SYM_MEMORY)
 //	rtcmix_print("\tSymbol::~Symbol() \"%s\" for scope %d (%p)\n", name, scope, this);
 #endif
+    for (Symbol *member = _members; member != NULL; ) {
+        Symbol *next = member->next;
+        delete member;
+        member = next;
+    }
 	delete _node;
 	_node = NULL;
 	scope = -1;			// we assert on this elsewhere
+}
+
+// Returns symbol for a struct's member, if present
+
+Symbol *
+Symbol::getStructMember(const char *memberName)
+{
+    for (Symbol *member = _members; member != NULL; member = member->next) {
+        if (member->name() == memberName) {
+            return member;
+        }
+    }
+    return NULL;
 }
 
 // This functor object adds a new element symbol to the root symbol's _elements list
@@ -322,11 +340,12 @@ public:
     ElementFun(Symbol *rootSym) : _root(rootSym) {}
     void operator() (const char *name, MincDataType type) {
         // Element symbols are not linked to any scope, so we call create() directly.
-        Symbol *elementSym = Symbol::create(name);
-        DPRINT("Symbol::init(element '%s') => %p\n", name, elementSym);
-        elementSym->value() = MincValue(type);          // initialize MincValue to correct type for element
-        elementSym->next = _root->_elements;
-        _root->_elements = elementSym;
+        Symbol *memberSym = Symbol::create(name);
+        DPRINT("Symbol::init(member '%s') => %p\n", name, memberSym);
+        memberSym->value() = MincValue(type);   // initialize MincValue to correct type for member
+        memberSym->scope = _root->scope;      // members have same scope as parent
+        memberSym->next = _root->_members;
+        _root->_members = memberSym;
     }
 private:
     Symbol *_root;
@@ -347,8 +366,7 @@ free_symbols()
 	delete sCallStack;
 	sCallStack = NULL;
 	ScopeManager::destroy();
-	for (int s = 0; s < HASHSIZE; ++s)
-	{
+	for (int s = 0; s < HASHSIZE; ++s) {
 		struct str *str;
 		for (str = stab[s]; str != NULL; ) {
 			struct str *next = str->next;
