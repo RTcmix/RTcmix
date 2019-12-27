@@ -14,6 +14,7 @@
 #include "minc_defs.h"
 #include "utils.h"
 #include "RefCounted.h"
+#include <vector>
 
 #ifdef DEBUG
    #define DPRINT(...) rtcmix_print(__VA_ARGS__)
@@ -147,7 +148,6 @@ public:
     ArithmaticException(const char *msg) : RTFatalException(msg) {}
 };
 
-
 /* A MincList contains an array of MincValue's, whose underlying data
    type is flexible.  So a MincList is an array of arbitrarily mixed types
    (any of the types represented in the MincDataType enum), and it can
@@ -201,9 +201,7 @@ public:
 	bool operator > (const MincValue &rhs);
 	bool operator <= (const MincValue &rhs);
 	bool operator >= (const MincValue &rhs);
-	
-	
-	
+		
 	MincDataType	dataType() const { return type; }
 	void zero() { _u.list = NULL; }		// zeroes without changing type
 	void print();
@@ -220,23 +218,58 @@ private:
 	} _u;
 };
 
+// ElementInfo describes an element in a MinC-declared struct
+
+struct ElementInfo {
+    ElementInfo(const char *inName, MincDataType inType) : name(inName), type(inType) {}
+    const char *    name;
+    MincDataType    type;
+};
+
+// A StructType describes a MinC-declared struct
+
+class StructType {
+public:
+    StructType(const char *inName) : _name(inName) {}
+    void addElement(const char *name, MincDataType type) {
+        // TODO: Dont allow duplicate element names
+        _elements.push_back(ElementInfo(name, type));
+    }
+    template <typename FuncType>
+    void forEachElement(FuncType &function) const {
+        for (std::vector<ElementInfo>::const_iterator i = _elements.begin(); i != _elements.end(); ++i) {
+            function(i->name, i->type);
+        }
+    }
+    const char *name() const { return _name; }
+protected:
+    const char *                _name;
+    std::vector<ElementInfo>    _elements;
+};
+
+
 class Node;
 
 class Symbol {       		/* symbol table entries */
 public:
 	static Symbol *	create(const char *name);
-	Symbol(const char *name);
 	~Symbol();
+    void                init(const StructType *);
 	MincDataType		dataType() const { return v.dataType(); }
 	const MincValue&	value() const { return v; }
 	MincValue&			value() { return v; }
 	const char *		name() { return _name; }
+    Node *              node() { return _node; }
+    void                setNode(Node *inNode) { _node = inNode; }
+    
 	Symbol *next;       		  /* next entry on hash chain */
 	int scope;
-	const char *_name;          /* symbol name */
-	Node *node;		  		/* for symbols that are functions, function def */
+    Symbol *    _elements;      /* for symbols that are structs, element list */
 protected:
-	MincValue v;
+    Symbol(const char *name);
+	const char *_name;          /* symbol name */
+	Node *      _node;		  	/* for symbols that are functions, function def */
+	MincValue   v;
 #ifdef NOTYET
 	short defined;             /* set when function defined */
 	short offset;              /* offset in activation frame */
@@ -263,10 +296,15 @@ void push_scope();
 void pop_scope();
 int current_scope();
 void restore_scope(int scope);
-Symbol *install(const char *name, Bool isGlobal);
+
+Symbol *installSymbol(const char *name, Bool isGlobal);
 enum LookupType { AnyLevel = 0, GlobalLevel = 1, ThisLevel = 2 };
-Symbol *lookup(const char *name, LookupType lookupType);
+Symbol *lookupSymbol(const char *name, LookupType lookupType);
 Symbol * lookupOrAutodeclare(const char *name, Bool inFunctionCall);
+
+StructType *installType(const char *typeName, Bool isGlobal);
+const StructType *lookupType(const char *typeName, LookupType lookupType);
+
 char *strsave(const char *str);
 char *emalloc(long nbytes);
 void efree(void *mem);

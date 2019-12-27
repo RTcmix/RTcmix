@@ -86,18 +86,19 @@ num   {dig}+
 <INIT>TRUE              return TOK_TRUE;
 <INIT>false             return TOK_FALSE;
 <INIT>FALSE             return TOK_FALSE;
+<INIT>struct            return TOK_STRUCT_DECL;
 <INIT>float             return TOK_FLOAT_DECL;
 <INIT>string            return TOK_STRING_DECL;
 <INIT>handle            return TOK_HANDLE_DECL;
 <INIT>list            	return TOK_LIST_DECL;
 <INIT>return			return TOK_RETURN;
-<INIT>[%={}><,;*+-]     	return (*yytext);
+<INIT>[%={}><,;*+-]     return (*yytext);
 <INIT>"["|"]"|"/"       return (*yytext);
 <INIT>"("|")"           return (*yytext);
 <INIT>"\n"        ;
 <INIT>" "|"\t"       ;
 <INIT>^include		  	{ BEGIN INCLUDE; }
-<INIT>({let}|"_")({let}|{dig}|"#"|"_"|".")*   return TOK_IDENT;
+<INIT>({let}|"_")({let}|{dig}|"#"|"_")*   return TOK_IDENT;
 <INIT>"?"({let}|"_")({let}|{dig}|"_")*   return TOK_ARG_QUERY;
 <INIT>"$"({let}|"_")({let}|{dig}|"_")*   return TOK_ARG;
 <INIT>.                 { char msg[32]; snprintf(msg, 32, "invalid character: (%u) '%c'", (unsigned)yytext[0], yytext[0]); yyerror(msg); }

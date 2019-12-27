@@ -29,11 +29,15 @@ typedef enum {
 	eNodeEmptyListElem,
 	eNodeSubscriptRead,
 	eNodeSubscriptWrite,
+    eNodeMemberRead,
+    eNodeMemberWrite,
 	eNodeOpAssign,
 	eNodeName,
 	eNodeAutoName,
 	eNodeConstf,
 	eNodeString,
+    eNodeElement,
+    eNodeStructDef,
 	eNodeFuncDef,
 	eNodeArgList,
 	eNodeArgListElem,
@@ -51,6 +55,7 @@ typedef enum {
 	eNodeFor,
 	eNodeIfElse,
 	eNodeDecl,
+    eNodeStructDecl,
 	eNodeFuncDecl,
 	eNodeBlock,
 	eNodeNoop
@@ -193,7 +198,6 @@ protected:
  */
 class NodeName : public Node
 {
-	const char *_symbolName;       /* used for function name, symbol name (for lookup) */
 public:
 	NodeName(const char *symbolName) : Node(OpFree, eNodeName), _symbolName(symbolName) {
 		NPRINT("NodeName('%s') => %p\n", symbolName, this);
@@ -203,6 +207,8 @@ protected:
 	virtual Node*		doExct();
 	Node *				finishExct();
 	const char *		symbolName() const { return _symbolName; }
+private:
+    const char *_symbolName;       /* used for function name, symbol name (for lookup) */
 };
 
 /* looks up symbol name and get the symbol, and auto-declares it if not found
@@ -268,6 +274,35 @@ public:
 	}
 protected:
 	virtual Node*		doExct();
+};
+
+class NodeElement : public Node
+{
+public:
+    NodeElement(const char *name, MincDataType type)
+            : Node(OpFree, eNodeElement), _symbolName(name) {
+        this->_type = type;        // TODO
+        NPRINT("NodeElement('%s') => %p\n", name, this);
+    }
+protected:
+    virtual Node*        doExct();
+private:
+    const char *    _symbolName;
+};
+
+// Struct definition node.  Stores "template" for a just-declared struct.
+//  n1 NodeSeq of NodeDecls for elements
+
+class NodeStructDef : public Node1Child
+{
+public:
+    NodeStructDef(const char *name, Node *n1) : Node1Child(OpFree, eNodeStructDef, n1), _typeName(name) {
+        NPRINT("NodeStructDef(%s, %p) => %p\n", name, n1, this);
+    }
+protected:
+    virtual Node*        doExct();
+private:
+    const char *    _typeName;
 };
 
 class NodeFuncSeq : public Node2Children
@@ -403,6 +438,26 @@ protected:
 	virtual Node*		doExct();
 };
 
+class NodeMemberRead : public Node2Children
+{
+public:
+    NodeMemberRead(Node *n1, Node *n2) : Node2Children(OpFree, eNodeMemberRead, n1, n2) {
+        NPRINT("NodeMemberRead(%p, %p) => %p\n", n1, n2, this);
+    }
+protected:
+    virtual Node*        doExct();
+};
+
+class NodeMemberWrite : public Node3Children
+{
+public:
+    NodeMemberWrite(Node *n1, Node *n2, Node *n3) : Node3Children(OpFree, eNodeMemberWrite, n1, n2, n3) {
+        NPRINT("NodeMemberWrite(%p, %p, %p) => %p\n", n1, n2, n3, this);
+    }
+protected:
+    virtual Node*        doExct();
+};
+
 class NodeIf : public Node2Children
 {
 public:
@@ -456,6 +511,20 @@ protected:
 	virtual Node*		doExct();
 private:
 	const char *	_symbolName;
+};
+
+class NodeStructDecl : public Node
+{
+public:
+    NodeStructDecl(const char *name, const char *typeName) : Node(OpFree, eNodeStructDecl), _symbolName(name), _typeName(typeName) {
+        this->_type = MincHandleType;
+        NPRINT("NodeStructDecl('struct %s %s') => %p\n", _typeName, _symbolName, this);
+    }
+protected:
+    virtual Node*        doExct();
+private:
+    const char *    _symbolName;
+    const char *    _typeName;
 };
 
 class NodeFuncDecl : public Node

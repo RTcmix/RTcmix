@@ -22,7 +22,7 @@ const char *lookup_token(const char *token, bool printWarning);
 #ifdef __cplusplus
 }
 #endif
-#undef MDEBUG	/* turns on yacc debugging below */
+#define MDEBUG	/* turns on yacc debugging below */
 
 #ifdef MDEBUG
 //int yydebug=1;
@@ -46,11 +46,13 @@ static char		*idlist[MAXTOK_IDENTLIST];
 static int		flerror;		/* set if there was an error during parsing */
 static int		level = 0;		/* keeps track whether we are in a sub-block */
 static int		flevel = 0;		/* > 0 if we are in a function decl block */
+static int      slevel = 0;     /* > 0 if we are in a struct decl block */
 static int      xblock = 0;		/* 1 if we are entering a block preceeded by if(), else(), while(), or for() */
 static void 	cleanup();
 static void 	incrLevel();
 static void		decrLevel();
 static Node * declare(MincDataType type);
+static Node * declareStruct(const char *typeName);
 static Node * go(Node * t1);
 
 %}
@@ -69,6 +71,7 @@ static Node * go(Node * t1);
 %left  <ival> '*' '/'
 %left  <ival> TOK_POW
 %left  <ival> CASTTOKEN
+%token <ival> TOK_STRUCT_DECL
 %token <ival> TOK_FLOAT_DECL
 %token <ival> TOK_STRING_DECL
 %token <ival> TOK_HANDLE_DECL
@@ -76,10 +79,10 @@ static Node * go(Node * t1);
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 %type  <node> stml stmt rstmt bexp expl exp str ret bstml
-%type  <node> fdecl sdecl hdecl ldecl fdef fstml arg argl fargl fundecl
-%type  <str> id
+%type  <node> fdecl sdecl hdecl ldecl structdecl arg argl fdef fstml fargl funcdecl elmnt elmntl structdef
+%type  <str> id structname
 
-%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl fdef fstml arg argl fargl fundecl
+%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl structdecl fdef fstml arg argl fargl funcdecl elmnt elmntl structdef
 
 %error-verbose
 
@@ -101,6 +104,7 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 	| sdecl
 	| hdecl
 	| ldecl
+    | structdecl
 	| TOK_IF level bexp stmt {	xblock = 1; MPRINT("IF bexp stmt");
 								decrLevel();
 								$$ = go(new NodeIf($3, $4));
@@ -124,6 +128,7 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 	| bstml
 	| fdef
 	| ret
+    | structdef
 	| error TOK_FLOAT_DECL	{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_STRING_DECL	{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_HANDLE_DECL	{ flerror = 1; $$ = new NodeNoop(); }
@@ -201,7 +206,12 @@ ldecl:	TOK_LIST_DECL idl	{ 	MPRINT("ldecl");
 								$$ = go(declare(MincListType));
 								idcount = 0;
 							}
-;
+    ;
+structdecl: TOK_STRUCT_DECL id idl    {     MPRINT("structdecl");
+                                            $$ = go(declareStruct($2));
+                                            idcount = 0;
+                                        }
+    ;
 
 /* statement nesting level counter */
 level:  /* nothing */ { incrLevel(); }
@@ -350,52 +360,92 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 							}
 	;
 
-/* function declaration */
+/* an <elmnt> is always a type followed by an <id>, like "float length". They only occur in struct definitions.
+ */
 
-fundecl: TOK_FLOAT_DECL id function { MPRINT("fundecl");
+elmnt: TOK_FLOAT_DECL id        { MPRINT("elmnt");
+        $$ = new NodeElement($2, MincFloatType); }
+    | TOK_STRING_DECL id    { MPRINT("elmnt");
+        $$ = new NodeElement($2, MincStringType); }
+    | TOK_HANDLE_DECL id    { MPRINT("elmnt");
+        $$ = new NodeElement($2, MincHandleType); }
+    | TOK_LIST_DECL id        { MPRINT("elmnt");
+        $$ = new NodeElement($2, MincListType); }
+    ;
+
+/* struct declaration */
+
+/* a <elmntl> is one <elmnt> or a series of <elmnt>'s separated by commas, for a struct definition,
+    e.g. "float f, float g, string s"
+ */
+
+elmntl: elmnt               { MPRINT("elmnt: elmnt");
+            $$ = new NodeSeq(new NodeNoop(), $1); }
+    | elmntl ',' elmnt      { MPRINT("elmntl: elmntl,elmnt");
+            $$ = new NodeSeq($1, $3); }
+    ;
+
+/* "struct Foo" - here we just return the id for the struct's name */
+
+structname: TOK_STRUCT_DECL id { MPRINT("structname"); $$ = $2; }
+    ;
+
+/* "struct Foo { <element decls> }" */
+
+structdef: structname '{' elmntl '}' struct   { MPRINT("structdef");
+        --slevel; MPRINT1("slevel => %d", slevel);
+        $$ = go(new NodeStructDef($1, $3));
+    }
+    ;
+
+/* struct level counter */
+
+struct:         {    MPRINT("struct"); if (slevel > 0) { minc_die("nested struct decls not allowed"); }
+                    slevel++; MPRINT1("slevel => %d", slevel);
+                }
+    ;
+
+/* a <arg> is always a type followed by an <id>, like "float length".  They only occur in function definitions.
+ The variables declared are not visible outside of the function definition.
+ */
+
+arg: TOK_FLOAT_DECL id        { MPRINT("arg");
+                                    $$ = new NodeDecl($2, MincFloatType); }
+    | TOK_STRING_DECL id    { MPRINT("arg");
+                                    $$ = new NodeDecl($2, MincStringType); }
+    | TOK_HANDLE_DECL id    { MPRINT("arg");
+                                    $$ = new NodeDecl($2, MincHandleType); }
+    | TOK_LIST_DECL id        { MPRINT("arg");
+                                    $$ = new NodeDecl($2, MincListType); }
+    ;
+
+/* function declaration, e.g. "list myfunction" */
+
+funcdecl: TOK_FLOAT_DECL id function { MPRINT("funcdecl");
 									$$ = go(new NodeFuncDecl(strsave($2), MincFloatType)); }
-	| TOK_STRING_DECL id function { MPRINT("fundecl");
+	| TOK_STRING_DECL id function { MPRINT("funcdecl");
 									$$ = go(new NodeFuncDecl(strsave($2), MincStringType)); }
-	| TOK_HANDLE_DECL id function { MPRINT("fundecl");
+	| TOK_HANDLE_DECL id function { MPRINT("funcdecl");
 									$$ = go(new NodeFuncDecl(strsave($2), MincHandleType)); }
-	| TOK_LIST_DECL id function { MPRINT("fundecl");
+	| TOK_LIST_DECL id function { MPRINT("funcdecl");
 									$$ = go(new NodeFuncDecl(strsave($2), MincListType)); }
 	;
 
+/* a <argl> is one <arg> or a series of <arg>'s separated by commas */
 
-/* an <arg> is always a type followed by an <id>, like "float length".  They only occur in function definitions, and
-   the variables declared are not visible outside of the function definition.
- */
+argl: arg     { MPRINT("argl: arg"); $$ = new NodeArgListElem(new NodeEmptyListElem(), $1); }
+    | argl ',' arg    { MPRINT("argl: argl,arg"); $$ = new NodeArgListElem($1, $3); }
+    ;
 
-arg: TOK_FLOAT_DECL id		{ MPRINT("arg");
-							  $$ = new NodeDecl($2, MincFloatType);
-							}
-	| TOK_STRING_DECL id	{ MPRINT("arg");
-							  $$ = new NodeDecl($2, MincStringType);
-							}
-	| TOK_HANDLE_DECL id	{ MPRINT("arg");
-							  $$ = new NodeDecl($2, MincHandleType);
-							}
-	| TOK_LIST_DECL id		{ MPRINT("arg");
-								$$ = new NodeDecl($2, MincListType);
-							}
-	;
-
-/* an <argl> is one <arg> or a series of <arg>'s separated by commas */
-
-argl: arg             { MPRINT("argl: arg"); $$ = new NodeArgListElem(new NodeEmptyListElem(), $1); }
-	| argl ',' arg    { MPRINT("argl: argl,arg"); $$ = new NodeArgListElem($1, $3); }
-	;
-
-/* a <fargl> is a argument list for a function definition, like (float f, string s).
+/* a <fargl> is a grouped argument list for a function definition, e.g. "(float f, string s)".
    We store this list in an NodeArgList tree because it gives us the information
    about the types of each of the arguments at the point where the function is called.
    When the function is executed, each NodeArgListElem executes, which declares the argument
    variable in the function's scope, then accesses it via lookup().
  */
 
-fargl: '(' argl ')'			{ MPRINT("fargl: (argl)"); $$ = new NodeArgList($2); }
-	| '(' ')'              	{ MPRINT("fargl: (NULL)"); $$ = new NodeArgList(new NodeEmptyListElem()); }
+fargl: '(' argl ')'		{ MPRINT("fargl: (argl)"); $$ = new NodeArgList($2); }
+	| '(' ')'           { MPRINT("fargl: (NULL)"); $$ = new NodeArgList(new NodeEmptyListElem()); }
 	;
 
 /* function block level counter */
@@ -407,7 +457,7 @@ function:  level {	MPRINT("function"); if (flevel > 0) {
 						 }
 ;
 
-/* function statement list must be a statement list ending with a return statement */
+/* function statement list.  Must be a statement list ending with a return statement */
 
 fstml:	stml ret			{	MPRINT("fstml: stml,ret");
 									$$ = new NodeFuncSeq($1, $2);
@@ -417,9 +467,9 @@ fstml:	stml ret			{	MPRINT("fstml: stml,ret");
 							}
 	;
 
-/* the full rule for a function declaration/definition */
+/* the full rule for a function declaration/definition, e.g. "list myfunction(string s) { ... }" */
 
-fdef: fundecl fargl '{' fstml '}'	{
+fdef: funcdecl fargl '{' fstml '}'	{
 									MPRINT("fdef");
 									decrLevel();
 									--flevel; MPRINT1("flevel => %d", flevel);
@@ -429,8 +479,8 @@ fdef: fundecl fargl '{' fstml '}'	{
 									 */
 									$$ = new NodeNoop();
 								}
-	| error fundecl fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; }
-	| error fundecl fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; }
+	| error funcdecl fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; }
+	| error funcdecl fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; }
 	;
 
 %%
@@ -452,16 +502,26 @@ static void		decrLevel()
 static Node * declare(MincDataType type)
 {
 	MPRINT2("declare(type=%d, idcount=%d)", type, idcount);
-	int i;
-	
 	assert(idcount > 0);
 	
 	Node * t = new NodeNoop();	// end of the list
-	for (i = 0; i < idcount; i++) {
+	for (int i = 0; i < idcount; i++) {
 		Node * decl = new NodeDecl(idlist[i], type);
 		t = new NodeSeq(t, decl);
 	}
 	return t;
+}
+
+static Node * declareStruct(const char *typeName)
+{
+    MPRINT2("declareStruct(typeName='%s', idcount=%d)", typeName, idcount);
+    assert(idcount > 0);
+    Node * t = new NodeNoop();    // end of the list
+    for (int i = 0; i < idcount; i++) {
+        Node * decl = new NodeStructDecl(idlist[i], typeName);
+        t = new NodeSeq(t, decl);
+    }
+    return t;
 }
 
 static Node *
@@ -502,6 +562,7 @@ static void cleanup()
 	idcount = 0;
 	flerror = 0;
 	flevel = 0;
+    slevel = 0;
 	level = 0;
 	include_stack_ptr = 0;
 #ifndef EMBEDDED

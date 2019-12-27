@@ -16,8 +16,8 @@
 
 /* This file holds the intermediate tree representation. */
 
-#undef DEBUG
-#undef DEBUG_TRACE
+#define DEBUG
+#define DEBUG_TRACE
 
 #include "Node.h"
 #include "handle.h"
@@ -46,6 +46,8 @@ static int sMincListLen;
 static MincValue *list_stack[MAXSTACK];
 static int list_len_stack[MAXSTACK];
 static int list_stack_ptr;
+
+static StructType *sNewStructType;  // struct currently being defined
 
 static int sArgListLen;		// number of arguments passed to a user-declared function
 static int sArgListIndex;	// used to walk passed-in args for user-declared functions
@@ -138,11 +140,15 @@ static const char *s_NodeKinds[] = {
    "NodeEmptyListElem",
    "NodeSubscriptRead",
    "NodeSubscriptWrite",
+   "NodeMemberRead",
+   "NodeMemberWrite",
    "NodeOpAssign",
    "NodeName",
    "NodeAutoName",
    "NodeConstf",
    "NodeString",
+   "NodeElement",
+   "NodeStructDef",
    "NodeFuncDef",
    "NodeArgList",
    "NodeArgListElem",
@@ -160,6 +166,7 @@ static const char *s_NodeKinds[] = {
    "NodeFor",
    "NodeIfElse",
    "NodeDecl",
+   "NodeStructDecl",
    "NodeFuncDecl",
    "NodeBlock",
    "NodeNoop"
@@ -869,7 +876,7 @@ Node *	NodeString::doExct()
 Node *	NodeName::doExct()
 {
 	/* look up the symbol */
-	setSymbol(lookup(_symbolName, AnyLevel));
+	setSymbol(lookupSymbol(_symbolName, AnyLevel));
 	return finishExct();
 }
 
@@ -878,7 +885,7 @@ Node *	NodeName::finishExct()
 	if (u.symbol) {
 		TPRINT("%s: symbol %p\n", classname(), u.symbol);
 		/* For now, symbols for functions cannot be an RHS */
-		if (u.symbol->node != NULL) {
+		if (u.symbol->node() != NULL) {
 			minc_die("Cannot use function '%s' as a variable", symbolName());
 		}
 		else {
@@ -942,7 +949,7 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
 {
 	ENTER();
 	child(0)->exct();         /* lookup target */
-	child(1)->exct();
+	child(1)->exct();         /* index */
 	if (child(1)->dataType() != MincFloatType) {
 		minc_die("list index must be a number");
 		return this;
@@ -1072,13 +1079,13 @@ Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
 Node *	NodeCall::doExct()
 {
 	push_list();
-	Symbol *funcSymbol = lookup(_functionName, GlobalLevel);
+	Symbol *funcSymbol = lookupSymbol(_functionName, GlobalLevel);
 	if (funcSymbol) {
 		sCalledFunction = _functionName;
 		/* The function's definition node was stored on the symbol at declaration time.
 		 However, if a function was called on a non-function symbol, the tree will be NULL.
 		 */
-		Node * funcDef = funcSymbol->node;
+		Node * funcDef = funcSymbol->node();
 		if (funcDef) {
 			TPRINT("NodeCall: func def = %p\n", funcDef);
 			TPRINT("NodeCall: exp decl list = %p\n", child(0));
@@ -1599,9 +1606,9 @@ Node *	NodeBlock::doExct()
 Node *	NodeDecl::doExct()
 {
 	TPRINT("-- declaring variable '%s'\n", _symbolName);
-	Symbol *sym = lookup(_symbolName, inCalledFunctionArgList ? ThisLevel : AnyLevel);
+	Symbol *sym = lookupSymbol(_symbolName, inCalledFunctionArgList ? ThisLevel : AnyLevel);
 	if (!sym) {
-		sym = install(_symbolName, NO);
+		sym = installSymbol(_symbolName, NO);
 		sym->value() = MincValue(this->_type);
 	}
 	else {
@@ -1615,7 +1622,7 @@ Node *	NodeDecl::doExct()
 			if (sFunctionCallDepth == 0) {
 				minc_warn("variable '%s' also defined at enclosing scope", _symbolName);
 			}
-			sym = install(_symbolName, NO);
+			sym = installSymbol(_symbolName, NO);
 			sym->value() = MincValue(this->_type);
 		}
 	}
@@ -1623,13 +1630,68 @@ Node *	NodeDecl::doExct()
 	return this;
 }
 
+Node *  NodeStructDef::doExct()
+{
+    TPRINT("-- storing declaration for struct type '%s'\n", _typeName);
+    assert(current_scope() == 0);    // until I allow nested structs
+    sNewStructType = installType(_typeName, YES);  // all structs global for now
+    if (sNewStructType) {
+        TPRINT("-- walking element list\n");
+        child(0)->exct();
+        sNewStructType = NULL;
+    }
+    return this;
+}
+
+Node *  NodeElement::doExct()
+{
+    TPRINT("-- storing decl info for element '%s', type %s\n", _symbolName, MincTypeName(this->_type));
+    assert(sNewStructType != NULL);
+    sNewStructType->addElement(_symbolName, this->_type);
+    return this;
+}
+
+Node *    NodeStructDecl::doExct()
+{
+    TPRINT("-- looking up type '%s'\n", _typeName);
+    const StructType *structType = lookupType(_typeName, GlobalLevel);    // GlobalLevel for now
+    if (structType) {
+        TPRINT("-- declaring variable '%s'\n", _symbolName);
+        Symbol *sym = lookupSymbol(_symbolName, GlobalLevel);       // GlobalLevel for now
+        if (!sym) {
+            sym = installSymbol(_symbolName, YES);          // YES for now
+            sym->init(structType);
+        }
+        else {
+            if (sym->scope == current_scope()) {
+                if (inCalledFunctionArgList) {
+                    minc_die("%s(): argument variable '%s' already used", sCalledFunction, _symbolName);
+                }
+                minc_warn("variable '%s' redefined - using existing one", _symbolName);
+            }
+            else {
+                if (sFunctionCallDepth == 0) {
+                    minc_warn("variable '%s' also defined at enclosing scope", _symbolName);
+                }
+                sym = installSymbol(_symbolName, NO);
+                sym->init(structType);
+            }
+        }
+        this->setSymbol(sym);
+    }
+    else {
+        minc_die("struct type '%s' is not defined", _typeName);
+    }
+    return this;
+}
+
 Node *	NodeFuncDecl::doExct()
 {
 	TPRINT("-- declaring function '%s'\n", _symbolName);
 	assert(current_scope() == 0);	// until I allow nested functions
-	Symbol *sym = lookup(_symbolName, GlobalLevel);	// only look at current global level
+	Symbol *sym = lookupSymbol(_symbolName, GlobalLevel);	// only look at current global level
 	if (sym == NULL) {
-		sym = install(_symbolName, YES);		// all functions global for now
+		sym = installSymbol(_symbolName, YES);		// all functions global for now
 		sym->value() = MincValue(this->_type);
 		this->setSymbol(sym);
 	}
@@ -1650,7 +1712,7 @@ Node *	NodeFuncDef::doExct()
 	TPRINT("NodeFuncDef: executing lookup node %p\n", child(0));
 	child(0)->exct();
 	assert(child(0)->symbol() != NULL);
-	child(0)->symbol()->node = this;
+	child(0)->symbol()->setNode(this);
 	return this;
 }
 
