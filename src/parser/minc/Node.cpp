@@ -58,17 +58,12 @@ static int sFunctionCallDepth = 0;	// level of actively-executing function calls
 
 static bool inFunctionCall() { return sFunctionCallDepth > 0; }
 
-static void copy_tree_tree(Node * tpdest, Node *  tpsrc);
-static void copy_sym_tree(Node *  tpdest, Symbol *src);
-static void copy_tree_sym(Symbol *dest, Node *  tpsrc);
 static void copy_tree_listelem(MincValue *edest, Node *  tpsrc);
-static void copy_listelem_tree(Node *  tpdest, MincValue *esrc);
-static void copy_listelem_elem(MincValue *edest, MincValue *esrc);
 #ifdef DEBUG
 static void print_symbol(Symbol * s);		// TODO: Symbol::print()
 #endif
 
-void clear_tree_state()	// The only exported function from Node.cpp.  Clear all static state.
+void clear_node_state()	// The only exported function from Node.cpp.  Clear all static state.
 {
 	sMincListLen = 0;
 	sMincList = NULL;
@@ -584,6 +579,42 @@ Node *	Node::exct()
 	return outNode;
 }
 
+/* This copies a node's value and handles ref counting when necessary */
+Node *
+Node::copy(Node *source)
+{
+    TPRINT("Node::copy(this=%p, %p)\n", this, source);
+#ifdef EMBEDDED
+    /* Not yet handling nonfatal errors with throw/catch */
+    if (tpsrc->dataType() == MincVoidType) {
+        return;
+    }
+#endif
+    if (dataType() != MincVoidType && source->dataType() != dataType()) {
+        minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
+    }
+    value() = source->value();
+    TPRINT("dest: ");
+    value().print();
+    return this;
+}
+
+/* This copies a Symbol's value and handles ref counting when necessary */
+Node *
+Node::copy(Symbol *src)
+{
+    TPRINT("Node::copy(this=%p, %p)\n", this, src);
+    assert(src->scope != -1);    // we accessed a variable after leaving its scope!
+    if (dataType() != MincVoidType && src->dataType() != dataType()) {
+        minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(src->dataType()));
+    }
+    value() = src->value();
+    TPRINT("dest: ");
+    value().print();
+    return this;
+}
+
+
 NodeNoop::~NodeNoop() {}	// to make sure there is a vtable
 
 /* ========================================================================== */
@@ -891,7 +922,7 @@ Node *	NodeName::finishExct()
 		else {
 			/* also assign the symbol's value into tree's value field */
 			TPRINT("NodeName/NodeAutoName: copying value from symbol '%s' to us\n", nodeSymbol->name());
-			copy_sym_tree(this, nodeSymbol);
+			copy(nodeSymbol);
 		}
 	}
 	else {
@@ -922,7 +953,7 @@ Node *	NodeListElem::doExct()
 		Node * tmp = child(1)->exct();
 		/* Copy entire MincValue union from expr to this and to stack. */
 		TPRINT("NodeListElem %p copying child value into self and stack\n", this);
-		copy_tree_tree(this, tmp);
+		copy(tmp);
 		copy_tree_listelem(&sMincList[sMincListLen], tmp);
 		sMincListLen++;
 		TPRINT("NodeListElem: list at level %d now len %d\n", list_stack_ptr, sMincListLen);
@@ -939,8 +970,9 @@ Node *	NodeList::doExct()
 	this->v = theList;
 	TPRINT("MincList %p assigned to self\n", theList);
 	// Copy from stack list into tree list.
-	for (int i = 0; i < sMincListLen; ++i)
-		copy_listelem_elem(&theList->data[i], &sMincList[i]);
+    for (int i = 0; i < sMincListLen; ++i) {
+		theList->data[i] = sMincList[i];
+    }
 	pop_list();
 	return this;
 }
@@ -981,7 +1013,7 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
             frac = 0;
         }
         MincValue elem;
-        copy_listelem_elem(&elem, &theList->data[index]);
+        elem = theList->data[index];
 
         /* do linear interpolation for float items */
         if (elem.dataType() == MincFloatType && frac > 0.0 && index < len - 1) {
@@ -995,7 +1027,7 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
             }
         }
         else {
-            copy_listelem_tree(this, &elem);
+            this->setValue(elem);
         }
     }
     else if (child0Type == MincStringType) {
@@ -1018,7 +1050,7 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
         stringChar[1] = '\0';
         strncpy(stringChar, &theString[index], 1);
         MincValue elem((MincString)strdup(stringChar));  // create new string value from the one character
-        copy_listelem_tree(this, &elem);
+        this->setValue(elem);
     }
     else {
         minc_die("attempt to index an R-variable that's not a string or list");
@@ -1072,7 +1104,7 @@ Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
 			   theList->data, len);
 	}
 	copy_tree_listelem(&theList->data[index], child(2));
-	copy_tree_tree(this, child(2));
+	copy(child(2));
 	return this;
 }
 
@@ -1086,7 +1118,7 @@ Node *  NodeMember::doExct()
         setSymbol(memberSymbol);
         /* also assign the symbol's value into tree's value field */
         TPRINT("NodeName/NodeAutoName: copying value from member symbol '%s' to us\n", memberSymbol->name());
-        copy_sym_tree(this, memberSymbol);
+        copy(memberSymbol);
     }
     else {
         minc_die("variable has no member '%s'", _memberName);
@@ -1141,7 +1173,7 @@ Node *	NodeCall::doExct()
 			// restore parser line number
 			yyset_lineno(savedLineNo);
 			TPRINT("NodeCall copying def exct results into self\n");
-			copy_tree_tree(this, temp);
+			copy(temp);
 			pop_function_stack();
 		}
 		else {
@@ -1158,7 +1190,7 @@ Node *	NodeCall::doExct()
 			result = call_external_function(_functionName, sMincList, sMincListLen,
 											&retval);
 		}
-		copy_listelem_tree(this, &retval);
+		this->setValue(retval);
 		switch (result) {
             case NO_ERROR:
                 break;
@@ -1200,9 +1232,9 @@ Node *	NodeStore::doExct()
 	TPRINT("NodeStore(%p): copying value from RHS (%p) to LHS's symbol (%p)\n",
 		   this, child(1), child(0)->symbol());
 	/* Copy entire MincValue union from expr to id sym and to this. */
-	copy_tree_sym(child(0)->symbol(), child(1));
+	child(0)->symbol()->copy(child(1));
 	TPRINT("NodeStore: copying value from RHS (%p) to here (%p)\n", child(1), this);
-	copy_tree_tree(this, child(1));
+	copy(child(1));
 	return this;
 }
 
@@ -1216,7 +1248,7 @@ Node *	NodeOpAssign::doExct()		// was exct_opassign()
 		minc_warn("can only use '%c=' with numbers",
 				  op == OpPlus ? '+' : (op == OpMinus ? '-'
 										: (op == OpMul ? '*' : '/')));
-		copy_sym_tree(this, tp0->symbol());
+		copy(tp0->symbol());
 		return this;
 	}
 	MincValue& symValue = tp0->symbol()->value();
@@ -1545,34 +1577,34 @@ Node *	NodeArgListElem::doExct()
 		MincValue zeroElem;
 		zeroElem = argSym->value();	// this captures the data type
 		zeroElem.zero();
-		copy_listelem_tree(this, &zeroElem);
-		copy_tree_sym(argSym, this);
+		this->setValue(zeroElem);
+		argSym->copy(this);
 		++sArgListIndex;
 	}
 	/* compare stored NodeName with user-passed arg */
 	else {
 		// Pre-cached argument value from caller
-		MincValue *argValue = &sMincList[sArgListIndex];
+		MincValue &argValue = sMincList[sArgListIndex];
 		bool compatible = false;
-		switch (argValue->dataType()) {
+		switch (argValue.dataType()) {
 			case MincFloatType:
 			case MincStringType:
 			case MincHandleType:
 			case MincListType:
-				if (argSym->dataType() != argValue->dataType()) {
+				if (argSym->dataType() != argValue.dataType()) {
 					minc_die("%s() arg '%s' passed as %s, expecting %s",
-								sCalledFunction, argSym->name(), MincTypeName(argValue->dataType()), MincTypeName(argSym->dataType()));
+								sCalledFunction, argSym->name(), MincTypeName(argValue.dataType()), MincTypeName(argSym->dataType()));
 				}
 				else compatible = true;
 				break;
 			default:
-				assert(argValue->dataType() != MincVoidType);
+				assert(argValue.dataType() != MincVoidType);
 				break;
 		}
 		if (compatible) {
 			/* Copy passed-in arg's MincValue union to us and then to sym. */
-			copy_listelem_tree(this, argValue);
-			copy_tree_sym(argSym, this);
+			this->setValue(argValue);
+			argSym->copy(this);
 		}
 		++sArgListIndex;
 	}
@@ -1582,7 +1614,7 @@ Node *	NodeArgListElem::doExct()
 Node *	NodeRet::doExct()
 {
 	child(0)->exct();
-	copy_tree_tree(this, child(0));
+	copy(child(0));
 	TPRINT("NodeRet throwing %p for return stmt\n", this);
 	throw this;	// Cool, huh?  Throws this node's body out to function's endpoint!
 	return NULL;	// notreached
@@ -1592,7 +1624,7 @@ Node *	NodeFuncSeq::doExct()
 {
 	child(0)->exct();
 	child(1)->exct();
-	copy_tree_tree(this, child(1));
+	copy(child(1));
 	return this;
 }
 
@@ -1761,56 +1793,6 @@ pop_list()
 	TPRINT("pop_list: now at sMincList=%p, stack level %d, len %d\n", sMincList, list_stack_ptr, sMincListLen);
 }
 
-/* This copies a node's value and handles ref counting when necessary */
-static void
-copy_tree_tree(Node *tpdest, Node *tpsrc)
-{
-   TPRINT("copy_tree_tree(%p, %p)\n", tpdest, tpsrc);
-#ifdef EMBEDDED
-	/* Not yet handling nonfatal errors with throw/catch */
-	if (tpsrc->dataType() == MincVoidType) {
-		return;
-	}
-#endif
-	if (tpdest->dataType() != MincVoidType && tpsrc->dataType() != tpdest->dataType()) {
-		minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(tpdest->dataType()), tpdest->name(), MincTypeName(tpsrc->dataType()));
-	}
-	tpdest->value() = tpsrc->value();
-	TPRINT("dest: ");
-	tpdest->value().print();
-}
-
-/* This copies a Symbol's value and handles ref counting when necessary */
-static void
-copy_sym_tree(Node *tpdest, Symbol *src)
-{
-   TPRINT("copy_sym_tree(%p, %p)\n", tpdest, src);
-	assert(src->scope != -1);	// we accessed a variable after leaving its scope!
-	if (tpdest->dataType() != MincVoidType && src->dataType() != tpdest->dataType()) {
-		minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(tpdest->dataType()), tpdest->name(), MincTypeName(src->dataType()));
-	}
-	tpdest->value() = src->value();
-	TPRINT("dest: ");
-	tpdest->value().print();
-}
-
-static void
-copy_tree_sym(Symbol *dest, Node *tpsrc)
-{
-	TPRINT("copy_tree_sym(%p, %p)\n", dest, tpsrc);
-#ifdef EMBEDDED
-	/* Not yet handling nonfatal errors using throw/catch */
-	if (tpsrc->dataType() == MincVoidType) {
-		return;
-	}
-#endif
-	assert(dest->scope != -1);	// we accessed a variable after leaving its scope!
-	if (dest->dataType() != MincVoidType && tpsrc->dataType() != dest->dataType()) {
-		minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dest->dataType()), dest->name(), MincTypeName(tpsrc->dataType()));
-	}
-   dest->value() = tpsrc->value();
-}
-
 static void
 copy_tree_listelem(MincValue *dest, Node *tpsrc)
 {
@@ -1822,20 +1804,6 @@ copy_tree_listelem(MincValue *dest, Node *tpsrc)
 	}
 #endif
 	*dest = tpsrc->value();
-}
-
-static void
-copy_listelem_tree(Node *tpdest, MincValue *esrc)
-{
-   TPRINT("copy_listelem_tree(%p, %p)\n", tpdest, esrc);
-   tpdest->value() = *esrc;
-}
-
-static void
-copy_listelem_elem(MincValue *edest, MincValue *esrc)
-{
-   TPRINT("copy_listelem_elem(%p, %p)\n", edest, esrc);
-   *edest = *esrc;
 }
 
 #ifdef DEBUG

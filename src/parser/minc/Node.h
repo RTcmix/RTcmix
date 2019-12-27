@@ -78,9 +78,13 @@ public:
 	virtual Node*		child(int index) const { return NULL; }
 	void				setSymbol(Symbol *sym) { u.symbol = sym; }
 	Symbol *			symbol() const { return u.symbol; }
+    void                setValue(const MincValue &value) { v = value; }
 	const MincValue&	value() const { return v; }
 	MincValue&			value() { return v; }
 	Node*				exct();
+    
+    Node *              copy(Node *);
+    Node *              copy(Symbol *);
 	void				print();
 protected:
 	virtual Node*		doExct() = 0;

@@ -332,6 +332,24 @@ Symbol::getStructMember(const char *memberName)
     return NULL;
 }
 
+Symbol *
+Symbol::copy(Node *tpsrc)
+{
+    DPRINT("Symbol::copy(this=%p, %p)\n", this, tpsrc);
+#ifdef EMBEDDED
+    /* Not yet handling nonfatal errors using throw/catch */
+    if (tpsrc->dataType() == MincVoidType) {
+        return;
+    }
+#endif
+    assert(scope != -1);    // we accessed a variable after leaving its scope!
+    if (dataType() != MincVoidType && tpsrc->dataType() != dataType()) {
+        minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(tpsrc->dataType()));
+    }
+    value() = tpsrc->value();
+    return this;
+}
+
 // This functor object adds a new element symbol to the root symbol's _elements list
 
 class ElementFun

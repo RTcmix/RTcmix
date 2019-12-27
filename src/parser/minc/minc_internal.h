@@ -263,6 +263,8 @@ public:
     Node *              node() { return _node; }
     void                setNode(Node *inNode) { _node = inNode; }
     
+    Symbol *            copy(Node *);
+    
     Symbol *            getStructMember(const char *memberName);
     
 	Symbol *next;       		  /* next entry on hash chain */

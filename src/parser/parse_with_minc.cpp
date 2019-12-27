@@ -142,7 +142,7 @@ destroy_parser()
 	yylex_destroy();
 #ifdef EMBEDDED
 	(void)minc_memflush();
-	clear_tree_state();
+	clear_node_state();
 #endif
 }
 
