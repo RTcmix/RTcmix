@@ -17,7 +17,7 @@
 /* This file holds the intermediate tree representation. */
 
 #define DEBUG
-#define DEBUG_TRACE
+#define DEBUG_TRACE 1  /* if defined to 1, basic trace.  If defined to 2, full trace */
 
 #include "Node.h"
 #include "handle.h"
@@ -107,10 +107,14 @@ char Trace::sMsgbuf[256];
 int Trace::sTraceDepth = 0;
 char Trace::spaces[128];
 
+#if DEBUG_TRACE==2
 #ifdef __GNUC__
 #define ENTER() Trace __trace__(__PRETTY_FUNCTION__)
 #else
 #define ENTER() Trace __trace__(__FUNCTION__)
+#endif
+#else
+#define ENTER()
 #endif
 
 #define TPRINT(...) do { snprintf(Trace::getBuf(), 256, __VA_ARGS__); Trace::printBuf(); } while(0)
@@ -390,6 +394,9 @@ void MincValue::print()
 		case MincStringType:
 			TPRINT("%s\n", _u.string);
 			break;
+        case MincStructType:
+            TPRINT("struct\n");
+            break;
 		case MincVoidType:
 			TPRINT("void\n");
 			break;
@@ -540,8 +547,6 @@ Node::~Node()
 {
 #ifdef DEBUG_MEMORY
 	TPRINT("entering ~Node (%s) this=%p\n", classname(), this);
-#endif
-#ifdef DEBUG_MEMORY
 	--numNodes;
 	TPRINT("[%d nodes remaining]\n", numNodes);
 #endif
@@ -575,7 +580,7 @@ Node *	Node::exct()
 		yyset_lineno(lineno);
 	}
 	Node *outNode = doExct();	// this is redefined on all subclasses
-	TPRINT("%s done, node=%p, %s\n", classname(), outNode, MincTypeName(dataType()));
+    TPRINT("%s::exct() done: outNode=%p of type %s\n", classname(), outNode, MincTypeName(outNode->dataType()));
 	return outNode;
 }
 
@@ -1133,7 +1138,7 @@ Node *	NodeCall::doExct()
 	if (funcSymbol) {
 		sCalledFunction = _functionName;
 		/* The function's definition node was stored on the symbol at declaration time.
-		 However, if a function was called on a non-function symbol, the tree will be NULL.
+            If a function was called on a non-function symbol, the tree will be NULL.
 		 */
 		Node * funcDef = funcSymbol->node();
 		if (funcDef) {
@@ -1437,6 +1442,9 @@ Node *	NodeOp::doExct()
 					else
 						do_op_list_iterate((MincList*)v1, (MincFloat)v0, this->op);
 					break;
+                case MincStructType:
+                    minc_warn("operator %s: a struct cannot be used for this operation", printOpKind(this->op));
+                    break;
 				default:
 					minc_internal_error("operator %s: invalid rhs type: %s", printOpKind(this->op), MincTypeName(v1.dataType()));
 					break;
@@ -1460,6 +1468,9 @@ Node *	NodeOp::doExct()
 				case MincListType:
 					minc_warn("can't operate on a string and a list");
 					break;
+                case MincStructType:
+                    minc_warn("operator %s: a struct cannot be used for this operation", printOpKind(this->op));
+                    break;
 				default:
 					minc_internal_error("operator %s: invalid rhs type: %s", printOpKind(this->op), MincTypeName(v1.dataType()));
 					break;
@@ -1479,6 +1490,9 @@ Node *	NodeOp::doExct()
 				case MincListType:
 					minc_warn("can't operate on a list and a handle");
 					break;
+                case MincStructType:
+                    minc_warn("operator %s: a struct cannot be used for this operation", printOpKind(this->op));
+                    break;
 				default:
 					minc_internal_error("operator %s: invalid rhs type: %s", printOpKind(this->op), MincTypeName(v1.dataType()));
 					break;
@@ -1498,13 +1512,19 @@ Node *	NodeOp::doExct()
 				case MincListType:
 					do_op_list_list((MincList *)v0, (MincList *)v1, this->op);
 					break;
+                case MincStructType:
+                    minc_warn("operator %s: a struct cannot be used for this operation", printOpKind(this->op));
+                    break;
 				default:
 					minc_internal_error("operator %s: invalid rhs type: %s", printOpKind(this->op), MincTypeName(v1.dataType()));
 					break;
 			}
 			break;
+        case MincStructType:
+            minc_warn("operator %s: a struct cannot be used for this operation", printOpKind(this->op));
+            break;
 		default:
-		 minc_internal_error("operator %s: invalid lhs type: %s", printOpKind(this->op), MincTypeName(v1.dataType()));
+            minc_internal_error("operator %s: invalid lhs type: %s", printOpKind(this->op), MincTypeName(v1.dataType()));
 			break;
 	}
 	return this;
@@ -1591,6 +1611,7 @@ Node *	NodeArgListElem::doExct()
 			case MincStringType:
 			case MincHandleType:
 			case MincListType:
+            case MincStructType:
 				if (argSym->dataType() != argValue.dataType()) {
 					minc_die("%s() arg '%s' passed as %s, expecting %s",
 								sCalledFunction, argSym->name(), MincTypeName(argValue.dataType()), MincTypeName(argSym->dataType()));

@@ -82,7 +82,8 @@ enum MincDataType {
    MincFloatType = 1,       /* a floating point number, either float or double */
    MincStringType = 2,
    MincHandleType = 4,
-   MincListType = 8
+   MincListType = 8,
+   MincStructType = 16
 };
 
 class RTException

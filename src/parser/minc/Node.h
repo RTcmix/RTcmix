@@ -64,9 +64,9 @@ class Node : public MincObject
 {
 //protected:					TODO: FINISH FULL CLASS
 public:
-	NodeKind kind;
-	MincDataType _type;
-	OpKind op;
+	NodeKind        kind;
+	MincDataType    _type;
+	OpKind          op;
 	MincValue 		v;
 	int				lineno;		/* used for error statements */
 public:
@@ -512,7 +512,7 @@ class NodeStructDecl : public Node
 {
 public:
     NodeStructDecl(const char *name, const char *typeName) : Node(OpFree, eNodeStructDecl), _symbolName(name), _typeName(typeName) {
-        this->_type = MincHandleType;
+        this->_type = MincStructType;
         NPRINT("NodeStructDecl('struct %s %s') => %p\n", _typeName, _symbolName, this);
     }
 protected:

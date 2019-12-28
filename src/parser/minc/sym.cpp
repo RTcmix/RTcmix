@@ -373,6 +373,7 @@ void Symbol::init(const StructType *structType)
 {
     ElementFun functor(this);
     structType->forEachElement(functor);
+    v = MincValue(MincStructType);
 }
 
 void
@@ -576,6 +577,7 @@ dname(int x)
       { MincHandleType, "handle" },
       { MincListType, "list" },
       { MincStringType, "string" },
+      { MincStructType, "struct" },
       { MincVoidType, "void" },
       { 0, 0 }
    };

@@ -56,6 +56,11 @@ static Arg * minc_list_to_arglist(const char *funcname, const MincValue *inList,
 					delete [] newArgs;
 					return NULL;
 				}
+                break;
+            case MincStructType:
+                minc_die("for now, structs cannot be passed to RTcmix function %s()", funcname);
+                delete [] newArgs;
+                return NULL;
 		}
 	}
 	*pNumArgs = newNumArgs;
@@ -131,6 +136,11 @@ call_external_function(const char *funcname, const MincValue arglist[],
 			}
 			}
 			break;
+        case MincStructType:
+            minc_die("call_external_function: %s(): arg %d: structs not supported as function arguments",
+                     funcname, i);
+            return PARAM_ERROR;
+            break;
 		default:
 			minc_die("call_external_function: %s(): arg %d: invalid argument type",
 					 funcname, i);

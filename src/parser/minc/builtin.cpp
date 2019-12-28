@@ -109,6 +109,9 @@ _make_type_string(const MincDataType type)
       case MincListType:
          str = strdup("list");
          break;
+      case MincStructType:
+         str = strdup("struct");
+         break;
    }
    return (MincString) str;
 }
@@ -160,6 +163,12 @@ _do_print(const MincValue args[], const int nargs)
 			}
 		  }
             break;
+         case MincStructType:
+              if (i == last_arg)
+                  RTPrintfCat("struct");
+              else
+                  RTPrintfCat("struct, ");
+              break;
          case MincVoidType:
 			  if (i == last_arg)
 				  RTPrintfCat("(void)");
@@ -523,7 +532,7 @@ _minc_interp(const MincValue args[], const int nargs)
 }
 
 /* ----------------------------------------------------------------- index -- */
-/* Given an item (float, string or handle), return the index of the item within
+/* Given an item (float, string, list, or handle), return the index of the item within
    the given list, or -1 if the item is not in the list.  Example:
 
       list = {1, 2, "three", 4}
