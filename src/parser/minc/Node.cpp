@@ -16,8 +16,9 @@
 
 /* This file holds the intermediate tree representation. */
 
-#define DEBUG
-#define DEBUG_TRACE 1  /* if defined to 1, basic trace.  If defined to 2, full trace */
+#undef DEBUG
+#undef DEBUG_TRACE
+//#define DEBUG_TRACE 1  /* if defined to 1, basic trace.  If defined to 2, full trace */
 
 #include "Node.h"
 #include "handle.h"

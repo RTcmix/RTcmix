@@ -3,7 +3,7 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 
-#define SYMBOL_DEBUG
+#undef SYMBOL_DEBUG
 #undef DEBUG_SYM_MEMORY
 
 #ifdef SYMBOL_DEBUG

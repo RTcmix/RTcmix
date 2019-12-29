@@ -22,7 +22,7 @@ const char *lookup_token(const char *token, bool printWarning);
 #ifdef __cplusplus
 }
 #endif
-#define MDEBUG	/* turns on yacc debugging below */
+#undef MDEBUG	/* turns on yacc debugging below */
 
 #ifdef MDEBUG
 //int yydebug=1;
@@ -406,17 +406,19 @@ struct:         {    MPRINT("struct"); if (slevel > 0) { minc_die("nested struct
     ;
 
 /* a <arg> is always a type followed by an <id>, like "float length".  They only occur in function definitions.
- The variables declared are not visible outside of the function definition.
+    The variables declared are not visible outside of the function definition.
  */
 
-arg: TOK_FLOAT_DECL id        { MPRINT("arg");
+arg: TOK_FLOAT_DECL id      { MPRINT("arg");
                                     $$ = new NodeDecl($2, MincFloatType); }
     | TOK_STRING_DECL id    { MPRINT("arg");
                                     $$ = new NodeDecl($2, MincStringType); }
     | TOK_HANDLE_DECL id    { MPRINT("arg");
                                     $$ = new NodeDecl($2, MincHandleType); }
-    | TOK_LIST_DECL id        { MPRINT("arg");
+    | TOK_LIST_DECL id      { MPRINT("arg");
                                     $$ = new NodeDecl($2, MincListType); }
+    | TOK_STRUCT_DECL id id { MPRINT("arg");
+                                    $$ = new NodeStructDecl($3, $2); }
     ;
 
 /* function declaration, e.g. "list myfunction" */
@@ -429,6 +431,8 @@ funcdecl: TOK_FLOAT_DECL id function { MPRINT("funcdecl");
 									$$ = go(new NodeFuncDecl(strsave($2), MincHandleType)); }
 	| TOK_LIST_DECL id function { MPRINT("funcdecl");
 									$$ = go(new NodeFuncDecl(strsave($2), MincListType)); }
+    | TOK_STRUCT_DECL id id function { MPRINT("funcdecl");
+                                    $$ = go(new NodeFuncDecl(strsave($3), MincStructType)); }
 	;
 
 /* a <argl> is one <arg> or a series of <arg>'s separated by commas */
