@@ -61,31 +61,6 @@ void minc_die(const char *msg, ...);
 void minc_internal_error(const char *msg, ...);
 extern "C" void yyerror(const char *msg);
 
-class MincObject
-{
-public:
-	void *operator new(size_t size);
-	void operator delete(void *);
-};
-
-class Node;
-
-union YYSTYPE {
-   int ival;
-   Node *node;
-   char *str;
-};
-#define YYSTYPE_IS_DECLARED   /* keep bison from declaring YYSTYPE as an int */
-
-enum MincDataType {
-   MincVoidType = 0,
-   MincFloatType = 1,       /* a floating point number, either float or double */
-   MincStringType = 2,
-   MincHandleType = 4,
-   MincListType = 8,
-   MincStructType = 16
-};
-
 class RTException
 {
 public:
@@ -149,6 +124,31 @@ public:
     ArithmaticException(const char *msg) : RTFatalException(msg) {}
 };
 
+class MincObject
+{
+public:
+    void *operator new(size_t size);
+    void operator delete(void *);
+};
+
+class Node;
+
+union YYSTYPE {
+    int ival;
+    Node *node;
+    char *str;
+};
+#define YYSTYPE_IS_DECLARED   /* keep bison from declaring YYSTYPE as an int */
+
+enum MincDataType {
+    MincVoidType = 0,
+    MincFloatType = 1,       /* a floating point number, either float or double */
+    MincStringType = 2,
+    MincHandleType = 4,
+    MincListType = 8,
+    MincStructType = 16
+};
+
 /* A MincList contains an array of MincValue's, whose underlying data
    type is flexible.  So a MincList is an array of arbitrarily mixed types
    (any of the types represented in the MincDataType enum), and it can
@@ -168,6 +168,23 @@ protected:
 	virtual ~MincList();
 };
 
+// A MincStruct contains a Symbol pointer which points to a linked list of Symbols
+// which represent the elements of a particular MinC-defined struct.
+
+class Symbol;
+
+class MincStruct : public MincObject, public RefCounted
+{
+public:
+    MincStruct() : _memberList(NULL) {}
+    ~MincStruct();
+    Symbol *    addMember(const char *name, MincDataType type, int scope);
+    Symbol *    lookupMember(const char *name);
+    Symbol *    members() { return _memberList; }
+protected:
+    Symbol *    _memberList;
+};
+
 class MincValue {
 public:
 	MincValue() : type(MincVoidType) { _u.list = NULL; }
@@ -175,6 +192,7 @@ public:
 	MincValue(MincString s) : type(MincStringType) { _u.string = s; }
 	MincValue(MincHandle h);
 	MincValue(MincList *l);
+    MincValue(MincStruct *str);
 	MincValue(MincDataType type);
 	~MincValue();
 	const MincValue& operator = (const MincValue &rhs);
@@ -195,7 +213,8 @@ public:
 	operator MincString() const { return _u.string; }
 	operator MincHandle() const { return _u.handle; }
 	operator MincList *() const { return _u.list; }
-	
+    operator MincStruct *() const { return _u.mstruct; }
+
 	bool operator == (const MincValue &rhs);
 	bool operator != (const MincValue &rhs);
 	bool operator < (const MincValue &rhs);
@@ -216,6 +235,7 @@ private:
 		MincString string;
 		MincHandle handle;
 		MincList *list;
+        MincStruct *mstruct;
 	} _u;
 };
 
@@ -264,13 +284,12 @@ public:
     Node *              node() { return _node; }
     void                setNode(Node *inNode) { _node = inNode; }
     
-    Symbol *            copy(Node *);
+    Symbol *            copyValue(Node *);
     
     Symbol *            getStructMember(const char *memberName);
     
 	Symbol *next;       		  /* next entry on hash chain */
 	int scope;
-    Symbol *    _members;      /* for symbols that are structs, member list */
 protected:
     Symbol(const char *name);
 	const char *_name;          /* symbol name */

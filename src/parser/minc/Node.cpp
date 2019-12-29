@@ -277,6 +277,40 @@ MincList::resize(int newLen)
 #define ThrowIf(exp, excp) if (exp) { throw excp; }
 
 /* ========================================================================== */
+/* MincStruct */
+
+MincStruct::~MincStruct()
+{
+    for (Symbol *member = _memberList; member != NULL; ) {
+        Symbol *next = member->next;
+        delete member;
+        member = next;
+    }
+}
+
+Symbol * MincStruct::addMember(const char *name, MincDataType type, int scope)
+{
+    // Element symbols are not linked to any scope, so we call create() directly.
+    Symbol *memberSym = Symbol::create(name);
+    DPRINT("Symbol::init(member '%s') => %p\n", name, memberSym);
+    memberSym->value() = MincValue(type);   // initialize MincValue to correct type for member
+    memberSym->scope = scope;
+    memberSym->next = _memberList;
+    _memberList = memberSym;
+    return memberSym;
+}
+
+Symbol * MincStruct::lookupMember(const char *name)
+{
+    for (Symbol *member = _memberList; member != NULL; member = member->next) {
+        if (member->name() == name) {
+            return member;
+        }
+    }
+    return NULL;
+}
+
+/* ========================================================================== */
 /* MincValue */
 
 MincValue::MincValue(MincHandle h) : type(MincHandleType)
@@ -293,6 +327,14 @@ MincValue::MincValue(MincList *l) : type(MincListType)
 //	MPRINT("created MincValue %p (for MincList *)\n", this);
 #endif
 	_u.list = l; RefCounted::ref(l);
+}
+
+MincValue::MincValue(MincStruct *str) : type(MincStructType)
+{
+#ifdef DEBUG_MEMORY
+    //    MPRINT("created MincValue %p (for MincStruct *)\n", this);
+#endif
+    _u.mstruct = str; RefCounted::ref(str);
 }
 
 MincValue::MincValue(MincDataType inType) : type(inType)
@@ -315,6 +357,9 @@ MincValue::~MincValue()
 		case MincListType:
 			RefCounted::unref(_u.list);
 			break;
+        case MincStructType:
+            RefCounted::unref(_u.mstruct);
+            break;
 		default:
 			break;
 	}
@@ -346,10 +391,19 @@ void MincValue::doClear()
 				_u.list = NULL;
 			}
 			break;
+        case MincStructType:
+            if (_u.mstruct != NULL) {
+                MPRINT("\toverwriting existing MincStruct value %p\n", _u.mstruct);
+                RefCounted::unref(_u.mstruct);
+                _u.mstruct = NULL;
+            }
+            break;
 		default:
 			break;
 	}
 }
+
+// Note: handle, list, and struct elements are referenced before this call is made
 
 void MincValue::doCopy(const MincValue &rhs)
 {
@@ -366,6 +420,9 @@ void MincValue::doCopy(const MincValue &rhs)
 		case MincListType:
 			_u.list = rhs._u.list;
 			break;
+        case MincStructType:
+            _u.mstruct = rhs._u.mstruct;
+            break;
 		default:
 			if (type != MincVoidType) {
 				MPRINT("\tAssigning from a void MincValue rhs");
@@ -395,7 +452,7 @@ void MincValue::print()
 			TPRINT("%s\n", _u.string);
 			break;
         case MincStructType:
-            TPRINT("struct\n");
+            TPRINT("%p\n", _u.mstruct);
             break;
 		case MincVoidType:
 			TPRINT("void\n");
@@ -412,6 +469,8 @@ const MincValue& MincValue::operator = (const MincValue &rhs)
 		ref_handle(rhs._u.handle);
 	else if (rhs.type == MincListType)
 		RefCounted::ref(rhs._u.list);
+    else if (rhs.type == MincStructType)
+        RefCounted::ref(rhs._u.mstruct);
 	doClear();
 	type = rhs.type;
 	doCopy(rhs);
@@ -586,9 +645,9 @@ Node *	Node::exct()
 
 /* This copies a node's value and handles ref counting when necessary */
 Node *
-Node::copy(Node *source)
+Node::copyValue(Node *source)
 {
-    TPRINT("Node::copy(this=%p, %p)\n", this, source);
+    TPRINT("Node::copyValue(this=%p, %p)\n", this, source);
 #ifdef EMBEDDED
     /* Not yet handling nonfatal errors with throw/catch */
     if (tpsrc->dataType() == MincVoidType) {
@@ -606,9 +665,9 @@ Node::copy(Node *source)
 
 /* This copies a Symbol's value and handles ref counting when necessary */
 Node *
-Node::copy(Symbol *src)
+Node::copyValue(Symbol *src)
 {
-    TPRINT("Node::copy(this=%p, %p)\n", this, src);
+    TPRINT("Node::copyValue(this=%p, %p)\n", this, src);
     assert(src->scope != -1);    // we accessed a variable after leaving its scope!
     if (dataType() != MincVoidType && src->dataType() != dataType()) {
         minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(src->dataType()));
@@ -894,7 +953,7 @@ Node *	NodeOp::do_op_list_list(const MincList *list1, const MincList *list2, con
 }
 
 /* ========================================================================== */
-/* Tree execution and disposal */
+/* Node execution and disposal */
 
 Node *	NodeConstf::doExct()
 {
@@ -927,7 +986,7 @@ Node *	NodeName::finishExct()
 		else {
 			/* also assign the symbol's value into tree's value field */
 			TPRINT("NodeName/NodeAutoName: copying value from symbol '%s' to us\n", nodeSymbol->name());
-			copy(nodeSymbol);
+			copyValue(nodeSymbol);
 		}
 	}
 	else {
@@ -958,7 +1017,7 @@ Node *	NodeListElem::doExct()
 		Node * tmp = child(1)->exct();
 		/* Copy entire MincValue union from expr to this and to stack. */
 		TPRINT("NodeListElem %p copying child value into self and stack\n", this);
-		copy(tmp);
+		copyValue(tmp);
 		copy_tree_listelem(&sMincList[sMincListLen], tmp);
 		sMincListLen++;
 		TPRINT("NodeListElem: list at level %d now len %d\n", list_stack_ptr, sMincListLen);
@@ -970,8 +1029,7 @@ Node *	NodeList::doExct()
 {
 	push_list();
 	child(0)->exct();     /* NB: increments sMincListLen */
-	MincList *theList;
-	theList = new MincList(sMincListLen);
+	MincList *theList = new MincList(sMincListLen);
 	this->v = theList;
 	TPRINT("MincList %p assigned to self\n", theList);
 	// Copy from stack list into tree list.
@@ -1109,7 +1167,7 @@ Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
 			   theList->data, len);
 	}
 	copy_tree_listelem(&theList->data[index], child(2));
-	copy(child(2));
+	copyValue(child(2));
 	return this;
 }
 
@@ -1123,7 +1181,7 @@ Node *  NodeMember::doExct()
         setSymbol(memberSymbol);
         /* also assign the symbol's value into tree's value field */
         TPRINT("NodeName/NodeAutoName: copying value from member symbol '%s' to us\n", memberSymbol->name());
-        copy(memberSymbol);
+        copyValue(memberSymbol);
     }
     else {
         minc_die("variable has no member '%s'", _memberName);
@@ -1178,7 +1236,7 @@ Node *	NodeCall::doExct()
 			// restore parser line number
 			yyset_lineno(savedLineNo);
 			TPRINT("NodeCall copying def exct results into self\n");
-			copy(temp);
+			copyValue(temp);
 			pop_function_stack();
 		}
 		else {
@@ -1237,9 +1295,9 @@ Node *	NodeStore::doExct()
 	TPRINT("NodeStore(%p): copying value from RHS (%p) to LHS's symbol (%p)\n",
 		   this, child(1), child(0)->symbol());
 	/* Copy entire MincValue union from expr to id sym and to this. */
-	child(0)->symbol()->copy(child(1));
+	child(0)->symbol()->copyValue(child(1));
 	TPRINT("NodeStore: copying value from RHS (%p) to here (%p)\n", child(1), this);
-	copy(child(1));
+	copyValue(child(1));
 	return this;
 }
 
@@ -1253,7 +1311,7 @@ Node *	NodeOpAssign::doExct()		// was exct_opassign()
 		minc_warn("can only use '%c=' with numbers",
 				  op == OpPlus ? '+' : (op == OpMinus ? '-'
 										: (op == OpMul ? '*' : '/')));
-		copy(tp0->symbol());
+		copyValue(tp0->symbol());
 		return this;
 	}
 	MincValue& symValue = tp0->symbol()->value();
@@ -1598,7 +1656,7 @@ Node *	NodeArgListElem::doExct()
 		zeroElem = argSym->value();	// this captures the data type
 		zeroElem.zero();
 		this->setValue(zeroElem);
-		argSym->copy(this);
+		argSym->copyValue(this);
 		++sArgListIndex;
 	}
 	/* compare stored NodeName with user-passed arg */
@@ -1625,7 +1683,7 @@ Node *	NodeArgListElem::doExct()
 		if (compatible) {
 			/* Copy passed-in arg's MincValue union to us and then to sym. */
 			this->setValue(argValue);
-			argSym->copy(this);
+			argSym->copyValue(this);
 		}
 		++sArgListIndex;
 	}
@@ -1635,7 +1693,7 @@ Node *	NodeArgListElem::doExct()
 Node *	NodeRet::doExct()
 {
 	child(0)->exct();
-	copy(child(0));
+	copyValue(child(0));
 	TPRINT("NodeRet throwing %p for return stmt\n", this);
 	throw this;	// Cool, huh?  Throws this node's body out to function's endpoint!
 	return NULL;	// notreached
@@ -1645,7 +1703,7 @@ Node *	NodeFuncSeq::doExct()
 {
 	child(0)->exct();
 	child(1)->exct();
-	copy(child(1));
+	copyValue(child(1));
 	return this;
 }
 

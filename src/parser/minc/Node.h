@@ -83,8 +83,8 @@ public:
 	MincValue&			value() { return v; }
 	Node*				exct();
     
-    Node *              copy(Node *);
-    Node *              copy(Symbol *);
+    Node *              copyValue(Node *);
+    Node *              copyValue(Symbol *);
 	void				print();
 protected:
 	virtual Node*		doExct() = 0;

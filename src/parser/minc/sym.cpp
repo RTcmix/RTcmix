@@ -293,7 +293,7 @@ Symbol *	Symbol::create(const char *name)
 }
 
 Symbol::Symbol(const char *symName)
-    : next(NULL), scope(-1), _members(NULL), _name(symName), _node(NULL)
+    : next(NULL), scope(-1), _name(symName), _node(NULL)
 {
 #ifdef NOTYET
 	defined = offset = 0;
@@ -309,11 +309,6 @@ Symbol::~Symbol()
 #if defined(SYMBOL_DEBUG) || defined(DEBUG_SYM_MEMORY)
 //	rtcmix_print("\tSymbol::~Symbol() \"%s\" for scope %d (%p)\n", name, scope, this);
 #endif
-    for (Symbol *member = _members; member != NULL; ) {
-        Symbol *next = member->next;
-        delete member;
-        member = next;
-    }
 	delete _node;
 	_node = NULL;
 	scope = -1;			// we assert on this elsewhere
@@ -324,29 +319,25 @@ Symbol::~Symbol()
 Symbol *
 Symbol::getStructMember(const char *memberName)
 {
-    for (Symbol *member = _members; member != NULL; member = member->next) {
-        if (member->name() == memberName) {
-            return member;
-        }
-    }
-    return NULL;
+    MincStruct *mstruct = (MincStruct *)v;
+    return mstruct->lookupMember(memberName);
 }
 
 Symbol *
-Symbol::copy(Node *tpsrc)
+Symbol::copyValue(Node *source)
 {
-    DPRINT("Symbol::copy(this=%p, %p)\n", this, tpsrc);
+    DPRINT("Symbol::copyValue(this=%p, %p)\n", this, source);
 #ifdef EMBEDDED
     /* Not yet handling nonfatal errors using throw/catch */
-    if (tpsrc->dataType() == MincVoidType) {
+    if (source->dataType() == MincVoidType) {
         return;
     }
 #endif
     assert(scope != -1);    // we accessed a variable after leaving its scope!
-    if (dataType() != MincVoidType && tpsrc->dataType() != dataType()) {
-        minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(tpsrc->dataType()));
+    if (dataType() != MincVoidType && source->dataType() != dataType()) {
+        minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
     }
-    value() = tpsrc->value();
+    value() = source->value();
     return this;
 }
 
@@ -357,13 +348,8 @@ class ElementFun
 public:
     ElementFun(Symbol *rootSym) : _root(rootSym) {}
     void operator() (const char *name, MincDataType type) {
-        // Element symbols are not linked to any scope, so we call create() directly.
-        Symbol *memberSym = Symbol::create(name);
-        DPRINT("Symbol::init(member '%s') => %p\n", name, memberSym);
-        memberSym->value() = MincValue(type);   // initialize MincValue to correct type for member
-        memberSym->scope = _root->scope;      // members have same scope as parent
-        memberSym->next = _root->_members;
-        _root->_members = memberSym;
+        MincStruct *mstruct = (MincStruct *)_root->value();
+        mstruct->addMember(name, type, _root->scope);
     }
 private:
     Symbol *_root;
@@ -371,9 +357,9 @@ private:
 
 void Symbol::init(const StructType *structType)
 {
+    v = MincValue(new MincStruct);
     ElementFun functor(this);
     structType->forEachElement(functor);
-    v = MincValue(MincStructType);
 }
 
 void
