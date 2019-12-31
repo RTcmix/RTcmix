@@ -47,11 +47,7 @@ typedef enum {
 
 /* prototypes for internal Minc use */
 
-typedef double MincFloat;
 #define EPSILON DBL_EPSILON
-
-typedef const char *MincString;
-typedef void *MincHandle;  // contents of this is opaque to Minc
 
 /* error.cpp */
 void sys_error(const char *msg);
@@ -131,14 +127,9 @@ public:
     void operator delete(void *);
 };
 
-class Node;
-
-union YYSTYPE {
-    int ival;
-    Node *node;
-    char *str;
-};
-#define YYSTYPE_IS_DECLARED   /* keep bison from declaring YYSTYPE as an int */
+typedef double MincFloat;
+typedef const char *MincString;
+typedef void *MincHandle;  // contents of this is opaque to Minc
 
 enum MincDataType {
     MincVoidType = 0,
@@ -149,194 +140,24 @@ enum MincDataType {
     MincStructType = 16
 };
 
-/* A MincList contains an array of MincValue's, whose underlying data
-   type is flexible.  So a MincList is an array of arbitrarily mixed types
-   (any of the types represented in the MincDataType enum), and it can
-   support nested lists.
-*/
-
 class MincValue;
-
-class MincList : public MincObject, public RefCounted
-{
-public:
-	MincList(int len=0);
-	void resize(int newLen);
-	int len;                /* number of MincValue's in <data> array */
-	MincValue *data;
-protected:
-	virtual ~MincList();
-};
-
-// A MincStruct contains a Symbol pointer which points to a linked list of Symbols
-// which represent the elements of a particular MinC-defined struct.
-
-class Symbol;
-
-class MincStruct : public MincObject, public RefCounted
-{
-public:
-    MincStruct() : _memberList(NULL) {}
-    ~MincStruct();
-    Symbol *    addMember(const char *name, MincDataType type, int scope);
-    Symbol *    lookupMember(const char *name);
-    Symbol *    members() { return _memberList; }
-protected:
-    Symbol *    _memberList;
-};
-
-class MincValue {
-public:
-	MincValue() : type(MincVoidType) { _u.list = NULL; }
-	MincValue(MincFloat f) : type(MincFloatType) { _u.number = f; }
-	MincValue(MincString s) : type(MincStringType) { _u.string = s; }
-	MincValue(MincHandle h);
-	MincValue(MincList *l);
-    MincValue(MincStruct *str);
-	MincValue(MincDataType type);
-	~MincValue();
-	const MincValue& operator = (const MincValue &rhs);
-	const MincValue& operator = (MincFloat f);
-	const MincValue& operator = (MincString s);
-	const MincValue& operator = (MincHandle h);
-	const MincValue& operator = (MincList *l);
-
-	const MincValue& operator += (const MincValue &rhs);
-	const MincValue& operator -= (const MincValue &rhs);
-	const MincValue& operator *= (const MincValue &rhs);
-	const MincValue& operator /= (const MincValue &rhs);
-
-	const MincValue& operator[] (const MincValue &index) const;	// for MincList access
-	MincValue& operator[] (const MincValue &index);	// for MincList access
-
-	operator MincFloat() const { return _u.number; }
-	operator MincString() const { return _u.string; }
-	operator MincHandle() const { return _u.handle; }
-	operator MincList *() const { return _u.list; }
-    operator MincStruct *() const { return _u.mstruct; }
-
-	bool operator == (const MincValue &rhs);
-	bool operator != (const MincValue &rhs);
-	bool operator < (const MincValue &rhs);
-	bool operator > (const MincValue &rhs);
-	bool operator <= (const MincValue &rhs);
-	bool operator >= (const MincValue &rhs);
-		
-	MincDataType	dataType() const { return type; }
-	void zero() { _u.list = NULL; }		// zeroes without changing type
-	void print();
-private:
-	void doClear();
-	void doCopy(const MincValue &rhs);
-	bool validType(unsigned allowedTypes) const;
-	MincDataType type;
-	union {
-		MincFloat number;
-		MincString string;
-		MincHandle handle;
-		MincList *list;
-        MincStruct *mstruct;
-	} _u;
-};
-
-// MemberInfo describes a member in a MinC-declared struct
-
-struct MemberInfo {
-    MemberInfo(const char *inName, MincDataType inType) : name(inName), type(inType) {}
-    const char *    name;
-    MincDataType    type;
-};
-
-// A StructType describes a MinC-declared struct
-
-class StructType {
-public:
-    StructType(const char *inName) : _name(inName) {}
-    ~StructType() {}
-    void addElement(const char *name, MincDataType type) {
-        // TODO: Dont allow duplicate element names
-        _members.push_back(MemberInfo(name, type));
-    }
-    template <typename FuncType>
-    void forEachElement(FuncType &function) const {
-        for (std::vector<MemberInfo>::const_iterator i = _members.begin(); i != _members.end(); ++i) {
-            function(i->name, i->type);
-        }
-    }
-    const char *name() const { return _name; }
-protected:
-    const char *                _name;
-    std::vector<MemberInfo>     _members;
-};
-
-
+class MincList;
 class Node;
 
-class Symbol {       		/* symbol table entries */
-public:
-	static Symbol *	create(const char *name);
-	~Symbol();
-    void                init(const StructType *);
-	MincDataType		dataType() const { return v.dataType(); }
-	const MincValue&	value() const { return v; }
-	MincValue&			value() { return v; }
-	const char *		name() { return _name; }
-    Node *              node() { return _node; }
-    void                setNode(Node *inNode) { _node = inNode; }
-    
-    Symbol *            copyValue(Node *);
-    
-    Symbol *            getStructMember(const char *memberName);
-    
-	Symbol *next;       		  /* next entry on hash chain */
-	int scope;
-protected:
-    Symbol(const char *name);
-	const char *_name;          /* symbol name */
-	Node *      _node;		  	/* for symbols that are functions, function def */
-	MincValue   v;
-#ifdef NOTYET
-	short defined;             /* set when function defined */
-	short offset;              /* offset in activation frame */
-	Symbol *plist;             /* next parameter in parameter list */
-#endif
+union YYSTYPE {
+    int ival;
+    Node *node;
+    char *str;
 };
+#define YYSTYPE_IS_DECLARED   /* keep bison from declaring YYSTYPE as an int */
 
-/* builtin.cpp */
-int call_builtin_function(const char *funcname, const MincValue arglist[],
-						  const int nargs, MincValue *retval);
-
-/* callextfunc.cpp */
-int call_external_function(const char *funcname, const MincValue arglist[],
-						   const int nargs, MincValue *return_value);
-void printargs(const char *funcname, const Arg arglist[], const int nargs);
-MincHandle minc_binop_handle_float(const MincHandle handle, const MincFloat val, OpKind op);
-MincHandle minc_binop_float_handle(const MincFloat val, const MincHandle handle, OpKind op);
-MincHandle minc_binop_handles(const MincHandle handle1, const MincHandle handle2, OpKind op);
-
-/* sym.cpp */
-void push_function_stack();
-void pop_function_stack();
-void push_scope();
-void pop_scope();
-int current_scope();
-void restore_scope(int scope);
-
-Symbol *installSymbol(const char *name, Bool isGlobal);
 enum LookupType { AnyLevel = 0, GlobalLevel = 1, ThisLevel = 2 };
-Symbol *lookupSymbol(const char *name, LookupType lookupType);
-Symbol * lookupOrAutodeclare(const char *name, Bool inFunctionCall);
 
-StructType *installType(const char *typeName, Bool isGlobal);
-const StructType *lookupType(const char *typeName, LookupType lookupType);
+void printargs(const char *funcname, const Arg arglist[], const int nargs);
 
 char *strsave(const char *str);
-char *emalloc(long nbytes);
-void efree(void *mem);
 void clear_elem(MincValue *);
 void unref_value_list(MincValue *);
-void free_symbols();
-void dump_symbols();
 
 /* utils.cpp */
 int is_float_list(const MincList *list);
@@ -345,6 +166,12 @@ MincList *array_to_float_list(const MincFloat *array, const int len);
 const char *MincTypeName(MincDataType type);
 void increment_score_line_offset(int offset);
 int get_score_line_offset();
+
+int hash(const char *c);
+int cmp(MincFloat f1, MincFloat f2);
+
+char *emalloc(long nbytes);
+void efree(void *mem);
 
 inline void *	MincObject::operator new(size_t size)
 {

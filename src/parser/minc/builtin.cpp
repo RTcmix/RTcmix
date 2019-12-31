@@ -3,6 +3,7 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #include "minc_internal.h"
+#include "MincValue.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

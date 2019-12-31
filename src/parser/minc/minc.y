@@ -9,6 +9,7 @@
 #include "rename.h"
 #include "minc_internal.h"
 #include "Node.h"
+#include "Symbol.h"
 #include "lex.yy.c"
 #ifdef __cplusplus
 extern "C" {

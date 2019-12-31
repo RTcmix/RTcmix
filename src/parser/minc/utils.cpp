@@ -2,8 +2,10 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-#include <stdlib.h>
 #include "minc_internal.h"
+#include "MincValue.h"
+#include <math.h>
+#include <stdlib.h>
 
 /* Minc utilities.  By John Gibson, 1/24/2004 */
 
@@ -98,3 +100,65 @@ int get_score_line_offset()
 {
 	return score_line_offset;
 }
+
+/* Has error-checking for malloc built in. */
+char *
+emalloc(long nbytes)
+{
+    char *s;
+    
+    s = (char *) malloc(nbytes);
+    if (s == NULL)
+        sys_error("system out of memory");
+    
+#ifndef NO_EMALLOC_DEBUG
+    DPRINT("emalloc: nbytes=%d, ptr=%p\n", nbytes, s);
+#endif
+    return s;
+}
+
+void efree(void *mem)
+{
+#ifndef NO_EMALLOC_DEBUG
+    DPRINT("efree: ptr=%p\n", mem);
+#endif
+    free(mem);
+}
+
+/* Returns an index to a hash bucket. */
+int
+hash(const char *s)
+{
+    int i = 0;
+    
+    while (*s) {
+        i = (((unsigned int) *s + i) % HASHSIZE);
+        s++;
+    }
+    return i;
+}
+
+/* floating point comparisons:
+ f1 < f2   ==> -1
+ f1 == f2  ==> 0
+ f1 > f2   ==> 1
+ */
+int
+cmp(MincFloat f1, MincFloat f2)
+{
+    if (fabs((double) f1 - (double) f2) < EPSILON) {
+        /* printf("cmp=%g %g %g \n",f1,f2,fabs(f1-f2)); */
+        return 0;
+    }
+    if ((f1 - f2) > EPSILON) {
+        /* printf("cmp > %g %g %g \n",f1,f2,fabs(f1-f2)); */
+        return 1;
+    }
+    if ((f2 - f1) > EPSILON) {
+        /* printf("cmp <%g %g %g \n",f1,f2,fabs(f1-f2)); */
+        return -1;
+    }
+    return 0;
+}
+
+

@@ -1,0 +1,2 @@
+struct Foo { float f_member };
+

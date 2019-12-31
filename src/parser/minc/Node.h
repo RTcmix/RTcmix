@@ -10,6 +10,7 @@
 #define RT_NODE_H
 
 #include "minc_internal.h"
+#include "MincValue.h"
 
 #ifdef DEBUG_TRACE
 static char sBuf[256];
@@ -73,7 +74,7 @@ public:
 	Node(OpKind op, NodeKind kind);
 	virtual 			~Node();
 	const char *		classname() const;
-	const char *		name() const { return (u.symbol) ? u.symbol->name() : "UNDEFINED"; }
+    const char *		name() const;
 	MincDataType		dataType() const { return v.dataType(); }
 	virtual Node*		child(int index) const { return NULL; }
 	void				setSymbol(Symbol *sym) { u.symbol = sym; }
