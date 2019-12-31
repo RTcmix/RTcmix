@@ -237,8 +237,8 @@ Node::copyValue(Node *source)
     TPRINT("Node::copyValue(this=%p, %p)\n", this, source);
 #ifdef EMBEDDED
     /* Not yet handling nonfatal errors with throw/catch */
-    if (tpsrc->dataType() == MincVoidType) {
-        return;
+    if (source->dataType() == MincVoidType) {
+        return this;
     }
 #endif
     if (dataType() != MincVoidType && source->dataType() != dataType()) {
