@@ -87,7 +87,7 @@ Symbol::copyValue(Node *source)
 #ifdef EMBEDDED
     /* Not yet handling nonfatal errors using throw/catch */
     if (source->dataType() == MincVoidType) {
-        return;
+        return this;
     }
 #endif
     assert(scope != -1);    // we accessed a variable after leaving its scope!
