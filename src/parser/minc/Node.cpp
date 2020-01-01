@@ -294,10 +294,12 @@ Node *	NodeOp::do_op_string(const char *str1, const char *str2, OpKind op)
       case OpDiv:
       case OpMod:
       case OpPow:
+        minc_warn("invalid operator for two strings");
+        this->v = (char *)NULL;    // TODO: check
+        break;
       case OpNeg:
-		minc_warn("invalid operator for two strings");
-		this->v = (char *)NULL;	// TODO: check
-		return this;				// TODO: check
+		minc_warn("invalid operator on string");
+        break;
       default:
          minc_internal_error("invalid string operator");
          break;
@@ -763,15 +765,20 @@ Node *  NodeMember::doExct()
     ENTER();
     child(0)->exct();         /* lookup target */
     Symbol *structSymbol = child(0)->symbol();
-    Symbol *memberSymbol = structSymbol->getStructMember(_memberName);
-    if (memberSymbol) {
-        setSymbol(memberSymbol);
-        /* also assign the symbol's value into tree's value field */
-        TPRINT("NodeName/NodeAutoName: copying value from member symbol '%s' to us\n", memberSymbol->name());
-        copyValue(memberSymbol);
+    if (structSymbol->dataType() == MincStructType) {
+        Symbol *memberSymbol = structSymbol->getStructMember(_memberName);
+        if (memberSymbol) {
+            setSymbol(memberSymbol);
+            /* also assign the symbol's value into tree's value field */
+            TPRINT("NodeName/NodeAutoName: copying value from member symbol '%s' to us\n", memberSymbol->name());
+            copyValue(memberSymbol);
+        }
+        else {
+            minc_die("struct variable has no member '%s'", _memberName);
+        }
     }
     else {
-        minc_die("variable has no member '%s'", _memberName);
+        minc_die("variable '%s' is not a struct", structSymbol->name());
     }
     return this;
 }
@@ -1349,12 +1356,16 @@ Node *	NodeDecl::doExct()
 Node *  NodeStructDef::doExct()
 {
     TPRINT("-- storing declaration for struct type '%s'\n", _typeName);
-    assert(current_scope() == 0);    // until I allow nested structs
-    sNewStructType = installType(_typeName, YES);  // all structs global for now
-    if (sNewStructType) {
-        TPRINT("-- walking element list\n");
-        child(0)->exct();
-        sNewStructType = NULL;
+    if (current_scope() == 0) {    // until I allow nested structs
+        sNewStructType = installType(_typeName, YES);  // all structs global for now
+        if (sNewStructType) {
+            TPRINT("-- walking element list\n");
+            child(0)->exct();
+            sNewStructType = NULL;
+        }
+    }
+    else {
+        minc_die("struct definitions only allowed in global scope for now");
     }
     return this;
 }
