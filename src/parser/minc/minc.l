@@ -69,6 +69,8 @@ num   {dig}+
 <INIT>"-="              return TOK_MINUSEQU;
 <INIT>"*="              return TOK_MULEQU;
 <INIT>"/="              return TOK_DIVEQU;
+<INIT>"++"              return TOK_PLUSPLUS;
+<INIT>"--"              return TOK_MINUSMINUS;
 <INIT>"**"|"^"          return TOK_POW;
 <INIT>"\""[^\"]*"\""    return TOK_STRING;
 <INIT>"\'"[^\']*"\'"    return TOK_STRING;

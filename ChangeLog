@@ -1,6 +1,9 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2020-01-02  Douglas Scott <netdscott-at-netscape.net>
+	* Added MinC support for ++id and --id;
+
 2019-12-30  Douglas Scott <netdscott-at-netscape.net>
 	* Revision 4.4.  Added MinC support for struct definition and declaration.  Big reorg of parser/minc/ source.
 

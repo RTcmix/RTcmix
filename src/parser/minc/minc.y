@@ -60,6 +60,8 @@ static Node * go(Node * t1);
 
 %left  <ival> LOWPRIO
 %left  <ival> '='
+%left  <ival> TOK_PLUSPLUS
+%left  <ival> TOK_MINUSMINUS
 %left  <ival> TOK_MINUSEQU
 %left  <ival> TOK_PLUSEQU
 %left  <ival> TOK_DIVEQU
@@ -225,7 +227,14 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
 	| id TOK_MULEQU exp {		$$ = new NodeOpAssign(new NodeName($1), $3, OpMul); }
 	| id TOK_DIVEQU exp {		$$ = new NodeOpAssign(new NodeName($1), $3, OpDiv); }
 
-	| id '(' expl ')' {			MPRINT("id(expl)");
+    | TOK_PLUSPLUS id %prec CASTTOKEN {
+        $$ = new NodeOpAssign(new NodeName($2), new NodeConstf(1.0), OpPlusPlus);
+    }
+    | TOK_MINUSMINUS id %prec CASTTOKEN {
+        $$ = new NodeOpAssign(new NodeName($2), new NodeConstf(1.0), OpMinusMinus);
+    }
+
+    | id '(' expl ')' {			MPRINT("id(expl)");
 								$$ = new NodeCall($3, $1);
 							}
 

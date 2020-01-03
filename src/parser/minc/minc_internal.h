@@ -42,7 +42,9 @@ typedef enum {
 	OpLess,
 	OpGreater,
 	OpLessEqual,
-	OpGreaterEqual
+	OpGreaterEqual,
+    OpPlusPlus,
+    OpMinusMinus
 } OpKind;
 
 /* prototypes for internal Minc use */

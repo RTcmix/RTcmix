@@ -902,9 +902,17 @@ Node *	NodeOpAssign::doExct()		// was exct_opassign()
 	Node *tp1 = child(1)->exct();
 	
 	if (tp0->symbol()->dataType() != MincFloatType || tp1->dataType() != MincFloatType) {
-		minc_warn("can only use '%c=' with numbers",
-				  op == OpPlus ? '+' : (op == OpMinus ? '-'
-										: (op == OpMul ? '*' : '/')));
+        if (op == OpPlusPlus) {
+            minc_warn("can only use '++' with numbers");
+        }
+        else if (op == OpMinusMinus) {
+            minc_warn("can only use '--' with numbers");
+        }
+        else {
+            minc_warn("can only use '%c=' with numbers",
+                      op == OpPlus ? '+' : (op == OpMinus ? '-'
+                                            : (op == OpMul ? '*' : '/')));
+        }
 		copyValue(tp0->symbol());
 		return this;
 	}
@@ -912,9 +920,11 @@ Node *	NodeOpAssign::doExct()		// was exct_opassign()
 	MincFloat rhs = (MincFloat)tp1->value();
 	switch (this->op) {
 		case OpPlus:
+        case OpPlusPlus:
 			symValue = (MincFloat)symValue + rhs;
 			break;
 		case OpMinus:
+        case OpMinusMinus:
 			symValue = (MincFloat)symValue - rhs;
 			break;
 		case OpMul:
