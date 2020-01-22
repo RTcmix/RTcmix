@@ -59,7 +59,7 @@ int RTcmix::runMainLoop(void)
 
 	// Initialize everything ... cause it's good practice
 	bufStartSamp = 0;  // current end sample for buffer
-	bufEndSamp = RTBUFSAMPS;
+	bufEndSamp = bufsamps();
 	startupBufCount = 0;
 	audioDone = false;
 	
@@ -154,6 +154,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	short bus = -1, bus_count = 0, busq = 0;
 	int i;
 	short bus_q_offset = 0;
+    const int frameCount = bufsamps();
 
 #ifdef WBUG
 	RTPrintf("ENTERING inTraverse()\n");
@@ -164,7 +165,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 
 #ifdef EMBEDDED
 	// BGG mm -- I need to find a better place to put this...
-   bufEndSamp = bufStartSamp + RTBUFSAMPS;
+   bufEndSamp = bufStartSamp + frameCount;
 #endif
 
 	// send a buffer of zeros to audio output device.  NOTE:  This used to be
@@ -216,7 +217,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 #ifdef ALLBUG
 			RTPrintf("Calling configure()\n");
 #endif
-			if (Iptr->configure(RTBUFSAMPS) != 0) {
+			if (Iptr->configure(frameCount) != 0) {
 #ifdef DBUG
 				rtcmix_warn(NULL, "Inst configure error: Iptr %p unref'd", Iptr);
 #endif
@@ -390,7 +391,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		if (bus != -1) {
 #if defined(IBUG)
 			printf("\nAdding instruments for current slice [end = %.3f ms] and bus [%d]\n",
-				   1000 * bufEndSamp/SR, busq);
+				   1000 * bufEndSamp/sr(), busq);
 #endif
 		}
 		else {
@@ -436,16 +437,16 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			else {
 				chunksamps = int(bufEndSamp-rtQchunkStart);
 			}
-			if (chunksamps > RTBUFSAMPS) {
+			if (chunksamps > frameCount) {
 #ifndef EMBEDDED
-				cout << "ERROR: chunksamps: " << chunksamps << " limiting to " << RTBUFSAMPS << endl;
+				cout << "ERROR: chunksamps: " << chunksamps << " limiting to " << frameCount << endl;
 #endif
-				chunksamps = RTBUFSAMPS;
+				chunksamps = frameCount;
 			}
 #ifdef DBUG
 			cout << "Begin playback iteration==========\n";
 			cout << "bufEndSamp:  " << bufEndSamp << endl;
-			cout << "RTBUFSAMPS:  " << RTBUFSAMPS << endl;
+			cout << "RTBUFSAMPS:  " << frameCount << endl;
 			cout << "endsamp:  " << endsamp << endl;
 			cout << "offset:  " << offset << endl;
 			cout << "chunksamps:  " << chunksamps << endl;
@@ -558,16 +559,16 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         else {
             chunksamps = int(bufEndSamp-rtQchunkStart);
         }
-        if (chunksamps > RTBUFSAMPS) {
+        if (chunksamps > frameCount) {
 #ifndef EMBEDDED
-            cout << "ERROR: chunksamps: " << chunksamps << " limiting to " << RTBUFSAMPS << endl;
+            cout << "ERROR: chunksamps: " << chunksamps << " limiting to " << frameCount << endl;
 #endif
-            chunksamps = RTBUFSAMPS;
+            chunksamps = frameCount;
         }
 #ifdef DBUG
         cout << "Begin playback iteration==========\n";
         cout << "bufEndSamp:  " << bufEndSamp << endl;
-        cout << "RTBUFSAMPS:  " << RTBUFSAMPS << endl;
+        cout << "RTBUFSAMPS:  " << frameCount << endl;
         cout << "endsamp:  " << endsamp << endl;
         cout << "offset:  " << offset << endl;
         cout << "chunksamps:  " << chunksamps << endl;
@@ -650,9 +651,9 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		}
 	}
 
-	elapsed += RTBUFSAMPS;	
-	bufStartSamp += RTBUFSAMPS;
-	bufEndSamp += RTBUFSAMPS;
+	elapsed += frameCount;
+	bufStartSamp += frameCount;
+	bufEndSamp += frameCount;
 
 	// zero the buffers
 	clear_aux_buffers();

@@ -59,9 +59,9 @@ extern "C" {
 // Static RTcmix member initialization
 
 int				RTcmix::NCHANS 			= 2;
-int				RTcmix::RTBUFSAMPS      = 0;
+int				RTcmix::sBufferFrameCount = 0;
 int				RTcmix::audioNCHANS 	= 0;
-float			RTcmix::SR				= 0.0;
+float			RTcmix::sSamplingRate	= 0.0;
 bool			RTcmix::runToOffset		= false;
 FRAMETYPE		RTcmix::bufOffset		= 0;
 FRAMETYPE		RTcmix::bufStartSamp 	= 0;
@@ -160,12 +160,12 @@ RTcmix::init_options(bool fromMain, const char *defaultDSOPath)
 		rtInteractive = 0;
 	}
 	else {
-		SR = 44100.0; // what the heck...
+		setSR(44100.0); // what the heck...
 		Option::print(0);
 		Option::reportClipping(false);
 	}
 	
-	RTBUFSAMPS = (int) Option::bufferFrames();  /* modifiable with rtsetparams */
+	setRTBUFSAMPS((int) Option::bufferFrames());  /* modifiable with rtsetparams */
 
 	if (Option::autoLoad()) {
 		const char *dsoPath = Option::dsoPath();
@@ -282,14 +282,14 @@ detect_denormals()
 RTcmix::RTcmix() 
 {
 	init_options(false, NULL);
-	init(SR, NCHANS, RTBUFSAMPS, NULL, NULL, NULL);
+	init(sSamplingRate, NCHANS, sBufferFrameCount, NULL, NULL, NULL);
 }
 
 //  The RTcmix constructor with settable SR, NCHANS; default RTBUFSAMPS
 RTcmix::RTcmix(float tsr, int tnchans)
 {
 	init_options(false, NULL);
-	init(tsr, tnchans, RTBUFSAMPS, NULL, NULL, NULL);
+	init(tsr, tnchans, sBufferFrameCount, NULL, NULL, NULL);
 }
 
 //  The RTcmix constructor with settable SR, NCHANS, RTBUFSAMPS, and up to

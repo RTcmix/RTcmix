@@ -151,7 +151,7 @@ RTcmix::rtreportstats(AudioDevice *device)
          peaks[n] = device->getPeak(n, &peaklocs[n]);
          double peak_dbfs = ::dbamp(peaks[n]) - dbref;
          printf("  channel %d: %12.6f (%6.2f dBFS) at frame %ld (%g seconds)\n",
-                n, peaks[n], peak_dbfs, peaklocs[n], (float) peaklocs[n] / SR);
+                n, peaks[n], peak_dbfs, peaklocs[n], (float) peaklocs[n] / sr());
       }
    }
 }

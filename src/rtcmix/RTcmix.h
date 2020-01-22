@@ -78,8 +78,8 @@ public:
 	// New public API
 
 	static bool interactive() { return rtInteractive; }
-	static int bufsamps() { return RTBUFSAMPS; }
-	static float sr() { return SR; }
+	static int bufsamps() { return sBufferFrameCount; }
+	static float sr() { return sSamplingRate; }
 	static int chans() { return NCHANS; }
 	static void setBufOffset(FRAMETYPE inOffset, bool inRunToOffset);
 	static FRAMETYPE getElapsedFrames() { return elapsed + bufsamps(); }
@@ -166,6 +166,9 @@ protected:
 	static void init_options(bool fromMain, const char *defaultDSOPath);
 	static void init_globals();
 
+	static void setSR(float sr) { sSamplingRate = sr; }
+    static void setRTBUFSAMPS(int samps) { sBufferFrameCount = samps; }
+
 	// Cleanup methods
 	static void free_globals();
 	static void free_bus_config();
@@ -186,10 +189,9 @@ protected:
 	static FRAMETYPE getElapsed() { return elapsed; }
 
 protected:
-	/* Note: these 3 vars also extern in rtdefs.h, for use by insts */
 	static int 		NCHANS;
-	static int 		RTBUFSAMPS;
-	static float 	SR;
+	static int 		sBufferFrameCount;
+	static float 	sSamplingRate;
 	
 	static int		rtInteractive;
 	static int		rtsetparams_called;

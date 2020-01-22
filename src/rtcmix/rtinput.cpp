@@ -206,7 +206,8 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	short          busindex, buslist[MAXBUS];
 	BusType        type;
 #endif /* INPUT_BUS_SUPPORT */
-	double         srate, dur = 0.0;
+    float          srate;
+    double         dur = 0.0;
 	char           *sfname, *str;
 	AudioPortType  port_type = MIC;
 	header_type = MUS_UNSUPPORTED;
@@ -243,7 +244,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 // FIXME: need to replace this with the bus spec scheme below... -JGG
 		audioNCHANS = (n_args > 2) ? (int) p[2] : NCHANS;
 		nchans = audioNCHANS;
-		srate = SR;
+		srate = sr();
 	}
 
 #ifdef EMBEDDED
@@ -261,7 +262,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 // FIXME: need to replace this with the bus spec scheme below... -JGG
 		audioNCHANS =  NCHANS;
 		nchans = audioNCHANS;
-		srate = SR;
+		srate = sr();
 	}
 #endif // EMBEDDED
 	else {
@@ -333,9 +334,10 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 				// If audio *playback* was disabled, but there is a request for
 				// input audio, create the audio input device here.
 				if (!audioDevice && !Option::play()) {
-					int nframes = RTBUFSAMPS;
+					int nframes = bufsamps();
+                    srate = sr();
 					if ((audioDevice = create_audio_devices(true, false,
-											 NCHANS, &SR, &nframes,
+											 NCHANS, &srate, &nframes,
 											 Option::bufferCount())) == NULL)
 					{
 						set_record = false;
@@ -343,8 +345,9 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
                         goto Error;
 					}
 					Option::record(true);
-					RTBUFSAMPS = nframes;
-					rtcmix_advise("Input audio set",  "%g sampling rate, %d channels\n", SR, NCHANS);
+                    setSR(srate);
+					setRTBUFSAMPS(nframes);
+					rtcmix_advise("Input audio set",  "%g sampling rate, %d channels\n", sr(), NCHANS);
 				}
 				// If record disabled during rtsetparams(), we cannot force it on here.
 				else if (!Option::record()) {
@@ -361,7 +364,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 			}
 			fd = 1;  /* we don't use this; set to 1 so rtsetinput() will work */
 			for (i = 0; i < nchans; i++) {
-				allocate_audioin_buffer(i, RTBUFSAMPS);
+				allocate_audioin_buffer(i, bufsamps());
 			}
 #ifdef INPUT_BUS_SUPPORT
 #endif /* INPUT_BUS_SUPPORT */
@@ -382,8 +385,9 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
                 status = CONFIGURATION_ERROR;
             }
 			set_record = false;
+            double dsrate = sr();
 			fd = ::open_sound_file("rtinput", sfname, &header_type, &data_format,
-									&data_location, &srate, &nchans, &nsamps);
+									&data_location, &dsrate, &nchans, &nsamps);
 			if (fd == -1) {
 				last_input_index = -1;
                 status = FILE_ERROR;
@@ -405,12 +409,12 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 			}
 #endif /* INPUT_BUS_SUPPORT */
 
-			dur = (double) (nsamps / nchans) / srate;
+			dur = (double) (nsamps / nchans) / dsrate;
 			rtcmix_advise(NULL, "Input file set for reading:");
 			rtcmix_advise(NULL, "      name:  %s", sfname);
 			rtcmix_advise(NULL, "      type:  %s", mus_header_type_name(header_type));
 			rtcmix_advise(NULL, "    format:  %s", mus_data_format_name(data_format));
-			rtcmix_advise(NULL, "     srate:  %g", srate);
+			rtcmix_advise(NULL, "     srate:  %g", dsrate);
 			rtcmix_advise(NULL, "     chans:  %d", nchans);
 			rtcmix_advise(NULL, "  duration:  %g", dur);
 			if (in_memory)
@@ -419,10 +423,11 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 #ifdef INPUT_BUS_SUPPORT
 #endif /* INPUT_BUS_SUPPORT */
 
-			if (srate != SR) {
+			if (dsrate != sr()) {
 				rtcmix_warn("rtinput", "The input file sampling rate is %g, but "
-							"the output rate is currently %g.", srate, SR);
+							"the output rate is currently %g.", dsrate, sr());
 			}
+            srate = dsrate;
 		}
 
 		/* Put new file descriptor into the first available slot in the
@@ -441,7 +446,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 									   data_format,
 									   data_location,
 									   nsamps/nchans,	// passing this in as frames now, not samps
-									   (float)srate,
+									   srate,
 									   nchans,
                                            dur)) == 0) {
                     last_input_index = i;
