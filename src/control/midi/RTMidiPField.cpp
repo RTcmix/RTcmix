@@ -13,7 +13,7 @@ extern int resetval;		// declared in src/rtcmix/minc_functions.c
 
 
 RTMidiPField::RTMidiPField(
-		RTcmixMIDI			*midiport,
+		RTcmixMIDIInput			*midiport,
 		const double		minval,
 		const double		maxval,
 		const double		defaultval,

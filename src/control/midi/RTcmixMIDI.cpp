@@ -10,8 +10,9 @@
 #include <limits.h>
 #include <assert.h>
 #include <Option.h>
+#include <RTcmix.h>
 
-#define DEBUG 0
+#define DEBUG 1
 
 // if INBUF_SIZE is 0, PortMidi uses a default value
 #define INBUF_SIZE		0
@@ -31,13 +32,13 @@ typedef struct {
 } RTMQMessage;
 
 
-RTcmixMIDI::RTcmixMIDI()
-	: _instream(NULL), _outstream(NULL), _active(false)
+RTcmixMIDIInput::RTcmixMIDIInput()
+	: _instream(NULL), _active(false)
 {
 	clear();
 }
 
-RTcmixMIDI::~RTcmixMIDI()
+RTcmixMIDIInput::~RTcmixMIDIInput()
 {
 	if (_mainToMIDI) {
 		RTMQMessage msg;
@@ -54,8 +55,6 @@ RTcmixMIDI::~RTcmixMIDI()
 	Pt_Stop();	// stop timer
 	if (_instream)
 		Pm_Close(_instream);
-	if (_outstream)
-		Pm_Close(_outstream);
 
 	Pm_QueueDestroy(_mainToMIDI);
 	Pm_QueueDestroy(_MIDIToMain);
@@ -63,9 +62,9 @@ RTcmixMIDI::~RTcmixMIDI()
 	Pm_Terminate();
 }
 
-RTcmixMIDI *createMIDIPort()
+RTcmixMIDIInput *createMIDIInputPort()
 {
-	RTcmixMIDI *midiport = new RTcmixMIDI();
+	RTcmixMIDIInput *midiport = new RTcmixMIDIInput();
 	if (midiport) {
 		if (midiport->init() == -1) {
 			delete midiport;
@@ -76,7 +75,7 @@ RTcmixMIDI *createMIDIPort()
 	return midiport;
 }
 
-int RTcmixMIDI::init()
+int RTcmixMIDIInput::init()
 {
 	_MIDIToMain = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(RTMQMessage));
 	_mainToMIDI = Pm_QueueCreate(MSG_QUEUE_SIZE, sizeof(RTMQMessage));
@@ -147,7 +146,7 @@ int RTcmixMIDI::init()
 	return 0;
 }
 
-void RTcmixMIDI::clear()
+void RTcmixMIDIInput::clear()
 {
 	for (int chan = 0; chan < 16; chan++) {
 		_noteonpitch[chan] = INVALID_MIDIVAL;
@@ -168,7 +167,7 @@ void RTcmixMIDI::clear()
 // -------------------------------------------------------------------- dump ---
 // Just for debugging.
 
-const char *RTcmixMIDI::getValueString(const int val)
+const char *RTcmixMIDIInput::getValueString(const int val)
 {
 	if (val == INVALID_MIDIVAL)
 		return "--";
@@ -178,7 +177,7 @@ const char *RTcmixMIDI::getValueString(const int val)
 	return buf;
 }
 
-void RTcmixMIDI::dump(const int chan)
+void RTcmixMIDIInput::dump(const int chan)
 {
 	printf("\nDumping current MIDI state...\n");
 	printf("---------------------------------------- Channel %d\n", chan + 1);
@@ -206,7 +205,7 @@ void RTcmixMIDI::dump(const int chan)
 
 // ------------------------------------------------------------ _processMIDI ---
 
-static enum {
+enum StatusByte {
 	kNoteOff = 0x80,
 	kNoteOn = 0x90,
 	kPolyPress = 0xA0,
@@ -215,14 +214,14 @@ static enum {
 	kChanPress = 0xD0,
 	kPitchBend = 0xE0,
 	kSystem = 0xF0
-} StatusByte;
+};
 
-// This is called from the MIDI worker thread.  The RTcmixMIDI object, held by
+// This is called from the MIDI worker thread.  The RTcmixMIDIInput object, held by
 // main thread, communicates with this worker thread by passing messages
 // back and forth.
-void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
+void RTcmixMIDIInput::_processMIDI(PtTimestamp timestamp, void *context)
 {
-	RTcmixMIDI *obj = (RTcmixMIDI *) context;
+	RTcmixMIDIInput *obj = (RTcmixMIDIInput *) context;
 
 	// Check for messages from object.
 	PmError result;
@@ -240,7 +239,7 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 	} while (result);
 
 	// Don't poll MIDI until initialization completes.  We still listen for
-	// object messages, in case RTcmixMIDI::init fails and dtor is then called.
+	// object messages, in case RTcmixMIDIInput::init fails and dtor is then called.
 	if (!obj->active())
 		return;
 
@@ -255,10 +254,10 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 
 			// Unless there was overflow, we should have a message now.
 			const long status = Pm_MessageStatus(buffer.message);
-			const long data1 = Pm_MessageData1(buffer.message);
-			const long data2 = Pm_MessageData2(buffer.message);
+			const int data1 = Pm_MessageData1(buffer.message);
+			const int data2 = Pm_MessageData2(buffer.message);
 
-			const long chan = status & 0x0F;
+			const int chan = status & 0x0F;
 
 			switch (status & 0xF0) {
 				case kNoteOn:
@@ -313,12 +312,12 @@ void RTcmixMIDI::_processMIDI(PtTimestamp timestamp, void *context)
 // then the note would be running within the MIDI worker thread!  Not what
 // we want.
 
-// FIXME: Presumably the scheduler would call RTcmixMIDI::checkMIDITrigger,
+// FIXME: Presumably the scheduler would call RTcmixMIDIInput::checkMIDITrigger,
 // which would dequeue such messages and take appropriate action, starting or
-// stopping notes.  Since RTcmixMIDI is supposed to be dynamically loaded, how
+// stopping notes.  Since RTcmixMIDIInput is supposed to be dynamically loaded, how
 // would scheduler know if and what to call?
 
-void RTcmixMIDI::noteOnTrigger(int chan, int pitch, int velocity)
+void RTcmixMIDIInput::noteOnTrigger(int chan, int pitch, int velocity)
 {
 	RTMQMessage msg;
 	msg.type = kNoteOnMsg;
@@ -328,7 +327,7 @@ void RTcmixMIDI::noteOnTrigger(int chan, int pitch, int velocity)
 	Pm_Enqueue(_MIDIToMain, &msg);
 }
 
-void RTcmixMIDI::noteOffTrigger(int chan, int pitch, int velocity)
+void RTcmixMIDIInput::noteOffTrigger(int chan, int pitch, int velocity)
 {
 	RTMQMessage msg;
 	msg.type = kNoteOffMsg;
@@ -339,3 +338,132 @@ void RTcmixMIDI::noteOffTrigger(int chan, int pitch, int velocity)
 }
 
 
+//************************************************//
+
+RTcmixMIDIOutput::RTcmixMIDIOutput() : _outstream(NULL)
+{
+    
+}
+
+RTcmixMIDIOutput::~RTcmixMIDIOutput()
+{
+//    Pt_Stop();    // stop timer
+    if (_outstream)
+        Pm_Close(_outstream);
+    Pm_Terminate();
+}
+
+int RTcmixMIDIOutput::init(long latency)
+{
+    Pm_Initialize();
+    
+    int id = 0;
+    const char *devname = Option::midiOutDevice();
+#if DEBUG > 0
+    printf("Requested MIDI output device: \"%s\"\n", devname);
+#endif
+    if (strlen(devname)) {
+        bool found = false;
+        const int numdev = Pm_CountDevices();
+        for ( ; id < numdev; id++) {
+            const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
+            if (info->output) {
+#if DEBUG > 0
+                printf("Found MIDI output device: \"%s\"\n", info->name);
+#endif
+                if (strcmp(info->name, devname) == 0) {
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (!found) {
+            fprintf(stderr, "WARNING: no match for MIDI output device \"%s\""
+                    " ... using default.\n", devname);
+            id = Pm_GetDefaultOutputDeviceID();
+        }
+    }
+    else {
+        fprintf(stderr, "WARNING: using default MIDI output device.\n");
+        id = Pm_GetDefaultOutputDeviceID();
+    }
+    const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
+    if (info == NULL) {
+        fprintf(stderr, "Could not open MIDI output device %d.\n", id);
+        return -1;
+    }
+#if DEBUG
+    printf("Opening Portmidi output stream with latency of %ld ms\n", latency);
+#endif
+    PmError err = Pm_OpenOutput(&_outstream, id, NULL, INBUF_SIZE, NULL, NULL, latency);
+    if (err != pmNoError) {
+        fprintf(stderr, "Could not open MIDI output stream: %s.\n",
+                Pm_GetErrorText(err));
+        return -1;
+    }
+    
+    return 0;
+}
+
+inline uchar make_status(uchar type, uchar chan) { return chan | type; }
+
+void RTcmixMIDIOutput::sendNoteOn(PmTimestamp timestamp, uchar chan, uchar pitch, uchar vel)
+{
+    PmEvent buffer;
+    buffer.message = Pm_Message(make_status(kNoteOn, chan), pitch, vel);
+    buffer.timestamp = timestamp;
+    lock();
+    Pm_Write(outstream(), &buffer, 1);
+    unlock();
+}
+
+void RTcmixMIDIOutput::sendNoteOff(PmTimestamp timestamp, uchar chan, uchar pitch, uchar vel)
+{
+    PmEvent buffer;
+    buffer.message = Pm_Message(make_status(kNoteOff, chan), pitch, vel);
+    buffer.timestamp = timestamp;
+    lock();
+    Pm_Write(outstream(), &buffer, 1);
+    unlock();
+}
+
+void RTcmixMIDIOutput::sendControl(PmTimestamp timestamp, uchar chan, uchar control, unsigned value)
+{
+    PmEvent buffer;
+    buffer.message = Pm_Message(make_status(kControl, chan), control, value);
+    buffer.timestamp = timestamp;
+    lock();
+    Pm_Write(outstream(), &buffer, 1);
+    unlock();
+}
+
+void RTcmixMIDIOutput::sendProgramChange(PmTimestamp timestamp, uchar chan, uchar program)
+{
+    PmEvent buffer;
+    buffer.message = Pm_Message(make_status(kProgram, chan), program, 0);
+    buffer.timestamp = timestamp;
+    lock();
+    Pm_Write(outstream(), &buffer, 1);
+    unlock();
+}
+
+RTcmixMIDIOutput *createMIDIOutputPort()
+{
+    // We need rtsetparams in order to set the latency of the MIDI system.
+    if (!RTcmix::rtsetparams_was_called()) {
+        fprintf(stderr, "You must call rtsetparams before setting up MIDI output");
+        return NULL;
+    }
+    RTcmixMIDIOutput *midiport = new RTcmixMIDIOutput();
+    if (midiport) {
+        // We set the MIDI latency to one buffer's length.  TODO:  It probably needs to include
+        // the buffer count value.
+        long latency = long(1000.0 * RTcmix::bufsamps() / RTcmix::sr());
+        if (midiport->init(latency) == -1) {
+            delete midiport;
+            return NULL;
+        }
+    }
+    
+    return midiport;
+}

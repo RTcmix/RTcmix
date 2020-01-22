@@ -1,6 +1,6 @@
 include package.conf
 
-RTLIBDIRS = # MIDI
+RTLIBDIRS = MIDI TONE
 
 LIBDIRS = $(RTLIBDIRS)
 
@@ -11,7 +11,7 @@ uninstall dso_uninstall standalone_uninstall clean cleanall $(LIBDIRS)
 all: $(LIBDIRS)
 
 $(LIBDIRS)::
-	@echo "making all in neil..."
+	@echo "making all in doug..."
 	$(MAKE) $(MFLAGS) -C $@
 
 progs: all
