@@ -340,24 +340,40 @@ void RTcmixMIDIInput::noteOffTrigger(int chan, int pitch, int velocity)
 
 //************************************************//
 
-RTcmixMIDIOutput::RTcmixMIDIOutput() : _outstream(NULL)
+static void startCallback(void *context)
+{
+    RTcmixMIDIOutput *midiport = (RTcmixMIDIOutput*) context;
+    // We set the MIDI latency to one buffer's length.  TODO:  It probably needs to include
+    // the buffer count value.
+    long latency = long(1000.0 * RTcmix::bufsamps() / RTcmix::sr());
+    midiport->start(latency);
+    midiport->sendMIDIStart(0);
+}
+
+static void stopCallback(void *context)
+{
+    RTcmixMIDIOutput *midiport = (RTcmixMIDIOutput*) context;
+    midiport->sendMIDIStop(0);
+    midiport->stop();
+}
+
+RTcmixMIDIOutput::RTcmixMIDIOutput() : _deviceID(0), _outstream(NULL)
 {
     
 }
 
 RTcmixMIDIOutput::~RTcmixMIDIOutput()
 {
-//    Pt_Stop();    // stop timer
-    if (_outstream)
-        Pm_Close(_outstream);
+    RTcmix::unregisterAudioStartCallback(startCallback, this);
+    RTcmix::unregisterAudioStopCallback(stopCallback, this);
+    stop();
     Pm_Terminate();
 }
 
-int RTcmixMIDIOutput::init(long latency)
+int RTcmixMIDIOutput::init()
 {
     Pm_Initialize();
     
-    int id = 0;
     const char *devname = Option::midiOutDevice();
 #if DEBUG > 0
     printf("Requested MIDI output device: \"%s\"\n", devname);
@@ -365,13 +381,14 @@ int RTcmixMIDIOutput::init(long latency)
     if (strlen(devname)) {
         bool found = false;
         const int numdev = Pm_CountDevices();
-        for ( ; id < numdev; id++) {
+        for (int id=0; id < numdev; id++) {
             const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
             if (info->output) {
 #if DEBUG > 0
                 printf("Found MIDI output device: \"%s\"\n", info->name);
 #endif
                 if (strcmp(info->name, devname) == 0) {
+                    _deviceID = id;
                     found = true;
                     break;
                 }
@@ -380,28 +397,43 @@ int RTcmixMIDIOutput::init(long latency)
         if (!found) {
             fprintf(stderr, "WARNING: no match for MIDI output device \"%s\""
                     " ... using default.\n", devname);
-            id = Pm_GetDefaultOutputDeviceID();
+            _deviceID = Pm_GetDefaultOutputDeviceID();
         }
     }
     else {
         fprintf(stderr, "WARNING: using default MIDI output device.\n");
-        id = Pm_GetDefaultOutputDeviceID();
+        _deviceID = Pm_GetDefaultOutputDeviceID();
     }
-    const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
+    const PmDeviceInfo *info = Pm_GetDeviceInfo(_deviceID);
     if (info == NULL) {
-        fprintf(stderr, "Could not open MIDI output device %d.\n", id);
+        fprintf(stderr, "Could not open MIDI output device %d.\n", _deviceID);
         return -1;
     }
+    return 0;
+}
+
+int RTcmixMIDIOutput::start(long latency)
+{
 #if DEBUG
     printf("Opening Portmidi output stream with latency of %ld ms\n", latency);
 #endif
-    PmError err = Pm_OpenOutput(&_outstream, id, NULL, INBUF_SIZE, NULL, NULL, latency);
+    PmError err = Pm_OpenOutput(&_outstream, _deviceID, NULL, INBUF_SIZE, NULL, NULL, latency);
     if (err != pmNoError) {
-        fprintf(stderr, "Could not open MIDI output stream: %s.\n",
-                Pm_GetErrorText(err));
+        fprintf(stderr, "Could not open MIDI output stream: %s.\n", Pm_GetErrorText(err));
         return -1;
     }
-    
+    return 0;
+}
+
+int RTcmixMIDIOutput::stop()
+{
+#if DEBUG
+    printf("Closing Portmidi output stream\n");
+#endif
+    if (_outstream) {
+        Pm_Close(_outstream);
+        _outstream = NULL;
+    }
     return 0;
 }
 
@@ -447,6 +479,26 @@ void RTcmixMIDIOutput::sendProgramChange(PmTimestamp timestamp, uchar chan, ucha
     unlock();
 }
 
+void RTcmixMIDIOutput::sendMIDIStart(long timestamp)
+{
+    PmEvent buffer;
+    buffer.message = Pm_Message(0xFA, 0, 0);
+    buffer.timestamp = timestamp;
+    lock();
+    Pm_Write(outstream(), &buffer, 1);
+    unlock();
+}
+
+void RTcmixMIDIOutput::sendMIDIStop(long timestamp)
+{
+    PmEvent buffer;
+    buffer.message = Pm_Message(0xFC, 0, 0);
+    buffer.timestamp = timestamp;
+    lock();
+    Pm_Write(outstream(), &buffer, 1);
+    unlock();
+}
+
 RTcmixMIDIOutput *createMIDIOutputPort()
 {
     // We need rtsetparams in order to set the latency of the MIDI system.
@@ -456,14 +508,13 @@ RTcmixMIDIOutput *createMIDIOutputPort()
     }
     RTcmixMIDIOutput *midiport = new RTcmixMIDIOutput();
     if (midiport) {
-        // We set the MIDI latency to one buffer's length.  TODO:  It probably needs to include
-        // the buffer count value.
-        long latency = long(1000.0 * RTcmix::bufsamps() / RTcmix::sr());
-        if (midiport->init(latency) == -1) {
+        if (midiport->init() == -1) {
             delete midiport;
             return NULL;
         }
     }
+    RTcmix::registerAudioStartCallback(startCallback, midiport);
+    RTcmix::registerAudioStopCallback(stopCallback, midiport);
     
     return midiport;
 }

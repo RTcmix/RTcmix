@@ -730,6 +730,7 @@ bool RTcmix::doneTraverse(AudioDevice *device, void *arg)
 #ifdef WBUG
 	cout << "ENTERING doneTraverse()\n";
 #endif
+    callStopCallbacks();
 #ifndef EMBEDDED
 	if (Option::print())
 		cout << "\nclosing...\n";

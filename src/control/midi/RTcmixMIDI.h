@@ -101,17 +101,24 @@ class RTcmixMIDIOutput : public RTMIDIOutput, private Lockable {
 public:
     RTcmixMIDIOutput();
     virtual ~RTcmixMIDIOutput();
-    int init(long latency);
+    int init();
     
+    int start(long latency);
+    int stop();
+    
+    void sendMIDIStart(long timestamp);
+    void sendMIDIStop(long timestamp);
+
     virtual void sendNoteOn(long timestamp, uchar chan, uchar pitch, uchar vel);
     virtual void sendNoteOff(long timestamp, uchar chan, uchar pitch, uchar vel);
     virtual void sendControl(long timestamp, uchar chan, uchar control, unsigned value);
     virtual void sendProgramChange(long timestamp, uchar chan, uchar program);
-    
+
 protected:
     inline PmStream *outstream() { return _outstream; }
 private:
-    PmStream *_outstream;
+    int         _deviceID;
+    PmStream *  _outstream;
 };
 
 RTcmixMIDIInput *createMIDIInputPort();

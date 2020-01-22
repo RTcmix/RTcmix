@@ -127,6 +127,9 @@ TaskManager *	RTcmix::taskManager = NULL;
 std::vector<RTcmix::MixData> RTcmix::mixVectors[RT_THREAD_COUNT];
 #endif
 
+std::vector<RTcmix::CallbackInfo> RTcmix::audioStartCallbacks;
+std::vector<RTcmix::CallbackInfo> RTcmix::audioStopCallbacks;
+
 // Bus config state
 
 BusQueue *		RTcmix::Inst_Bus_Config;
@@ -594,6 +597,60 @@ void RTcmix::setBufOffset(FRAMETYPE inOffset, bool inRunToOffset) {
 	bufOffset = inOffset; runToOffset = inRunToOffset;
 }
 
+void RTcmix::registerAudioStartCallback(AudioCallback callback, void *context)
+{
+    audioStartCallbacks.push_back(CallbackInfo(callback, context));
+}
+
+void RTcmix::unregisterAudioStartCallback(AudioCallback callback, void *context)
+{
+    for (std::vector<CallbackInfo>::iterator iter = audioStartCallbacks.begin();
+         iter != audioStartCallbacks.end();
+         ++iter) {
+        if (iter->callback == callback && iter->context == context) {
+            audioStartCallbacks.erase(iter);
+            break;
+        }
+    }
+}
+
+void RTcmix::registerAudioStopCallback(AudioCallback callback, void *context)
+{
+    audioStopCallbacks.push_back(CallbackInfo(callback, context));
+}
+
+void RTcmix::unregisterAudioStopCallback(AudioCallback callback, void *context)
+{
+    for (std::vector<CallbackInfo>::iterator iter = audioStopCallbacks.begin();
+         iter != audioStopCallbacks.end();
+         ++iter) {
+        if (iter->callback == callback && iter->context == context) {
+            audioStopCallbacks.erase(iter);
+            break;
+        }
+    }
+}
+
+void RTcmix::callStartCallbacks()
+{
+    for (std::vector<CallbackInfo>::iterator iter = audioStartCallbacks.begin();
+         iter != audioStartCallbacks.end();
+         ++iter)
+    {
+        (iter->callback)(iter->context);
+    }
+}
+
+void RTcmix::callStopCallbacks()
+{
+    for (std::vector<CallbackInfo>::iterator iter = audioStopCallbacks.begin();
+         iter != audioStopCallbacks.end();
+         ++iter)
+    {
+        (iter->callback)(iter->context);
+    }
+}
+
 int RTcmix::startAudio(AudioDeviceCallback renderCallback, AudioDeviceCallback doneCallback, void *inContext)
 {
 	rtcmix_debug(NULL, "RTcmix::startAudio entered");
@@ -601,6 +658,8 @@ int RTcmix::startAudio(AudioDeviceCallback renderCallback, AudioDeviceCallback d
 		// Set done callback on device.
 		if (doneCallback != NULL)
 			audioDevice->setStopCallback(doneCallback, inContext);
+        // Notify any listeners we are starting
+        callStartCallbacks();
 		// Start audio output device, handing it our render callback.
 		if (audioDevice->start(renderCallback, inContext) != 0) {
 			rtcmix_warn(NULL, "Audio device failed to start: %s", audioDevice->getLastError());
