@@ -1,6 +1,9 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+ See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+ the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+ */
 //
 //  PROGRAM.h
-//  RTcmix Desktop
 //
 //  Created by Douglas Scott on 1/19/20.
 //

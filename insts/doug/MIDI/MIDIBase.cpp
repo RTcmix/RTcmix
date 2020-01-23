@@ -1,11 +1,12 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+ See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+ the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+ */
 /* MIDIBase - base class for instruments which generate MIDI output
 
    p0 = output start time
    p1 = output duration
-   p2 = amplitude multiplier
-   p3 = MIDI channel
-   p4 = pitch (Octave point PC)
-   p5 = MIDI velocity
+   p2 = MIDI channel
 */
 #include <stdio.h>
 #include <stdlib.h>
@@ -18,7 +19,7 @@
 extern RTMIDIOutput *getMIDIOutput();
 
 MIDIBase::MIDIBase()
-    : _branch(0), _midiChannel(0), _nargs(0), _amp(0.0), _pan(0.5), _runStartFrame(0), _outputPort(NULL)
+    : _branch(0), _midiChannel(0), _nargs(0), _runStartFrame(0), _outputPort(NULL)
 {
 }
 
@@ -37,8 +38,7 @@ int MIDIBase::init(double p[], int n_args)
 
     const float outskip = p[0];
 	const float dur = p[1];
-    _amp = p[2];
-    _midiChannel = (int)p[3];
+    _midiChannel = (int)p[2];
     if (_midiChannel < 0 || _midiChannel > 15) {
         return die("NOTE", "Illegal MIDI channel");
     }

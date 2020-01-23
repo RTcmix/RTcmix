@@ -1,15 +1,17 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+ See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+ the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+ */
 //
 //  PROGRAM.cpp
-//  RTcmix Desktop
 //
 //  Created by Douglas Scott on 1/19/20.
 //
 /*
  p0 = output start time
  p1 = output duration
- p2 = amplitude multiplier
- p3 = MIDI channel
- p4 = Patch number (integer)
+ p2 = MIDI channel
+ p3 = Patch number (integer)
 */
 
 #include "PROGRAM.h"
@@ -27,32 +29,27 @@ PROGRAM::~PROGRAM()
 {
 }
 
-// Called by the scheduler to initialize the instrument. Things done here:
-//   - read, store and check pfields
-//   - set input and output file (or bus) pointers
-//   - init instrument-specific things
-// If there's an error here (like invalid pfields), call and return die() to
-// report the error.  If you just want to warn the user and keep going,
-// call warn() or rterror() with a message.
-
 int PROGRAM::init(double p[], int n_args)
 {
     if (MIDIBase::init(p, n_args) < 0) {
         return DONT_SCHEDULE;
     }
-    _patchNumber = (int)(p[4]);
+    _patchNumber = (int)(p[3]);
 
-    printf("Chan %d, patch %d\n", _midiChannel, _patchNumber);
-
-    if (_patchNumber < 0 || _patchNumber > 127) {
-        return die("PROGRAM", "Program number must be between 0 and 127");
+    if (_patchNumber < 0) {
+        rtcmix_warn("PROGRAM", "Patch number limited to 0");
+        _patchNumber = 0;
+    }
+    else if (_patchNumber > 127) {
+        rtcmix_warn("PROGRAM", "Patch number limited to 127");
+        _patchNumber = 127;
     }
     return nSamps();
 }
 
 void PROGRAM::doStart()
 {
-    printf("Sending MIDI program number %d\n", _patchNumber);
+//    printf("Sending MIDI program number %d\n", _patchNumber);
     _outputPort->sendProgramChange(0, _midiChannel, _patchNumber);
 }
 

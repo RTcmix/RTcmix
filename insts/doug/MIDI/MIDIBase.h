@@ -1,3 +1,11 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+ See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+ the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
+#ifndef _MIDIBase_h
+#define _MIDIBase_h
+
 #include <Instrument.h>      // the base class for this instrument
 
 class RTMIDIOutput;
@@ -19,8 +27,9 @@ protected:
     int _branch;
     int _midiChannel;
     int _nargs;
-    double _amp, _pan;
     FRAMETYPE _runStartFrame;   // first frame of current run()
     RTMIDIOutput *_outputPort;
 };
+
+#endif  // _MIDIBase_h
 

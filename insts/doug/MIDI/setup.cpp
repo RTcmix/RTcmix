@@ -21,7 +21,7 @@ RTMIDIOutput *getMIDIOutput()
 }
 
 double
-initialize(float *p, int n_args)
+setup_midi(float *p, int n_args)
 {
 #ifndef EMBEDDED
     char loadPath[1024];
@@ -39,18 +39,18 @@ initialize(float *p, int n_args)
             gMIDIOutput = (RTMIDIOutput *)(*creator)();
         }
         else {
-            die("initialize", "symbol lookup failed: %s\n", theDSO.error());
+            die("setup_midi", "symbol lookup failed: %s\n", theDSO.error());
             theDSO.unload();
             return SYSTEM_ERROR;
         }
     }
     else {
-        die("initialize", "dso load failed: %s\n", theDSO.error());
+        die("setup_midi", "dso load failed: %s\n", theDSO.error());
         return SYSTEM_ERROR;
     }
     return 1;
 #else
-    rterror("initialize", "MIDI output not supported in this configuration");
+    rterror("setup_midi", "MIDI output not supported in this configuration");
     return SYSTEM_ERROR;
 #endif
 }
@@ -65,7 +65,7 @@ double controller_number(float *p, int n_args, double *pp);
 
 int profile()
 {
-    UG_INTRO("initialize", initialize);
+    UG_INTRO("setup_midi", setup_midi);
     UG_INTRO("controller_number", controller_number);
     return 0;
 }

@@ -1,16 +1,18 @@
+/* RTcmix  - Copyright (C) 2000  The RTcmix Development Team
+ See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+ the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+ */
 //
 //  CONTROLLER.cpp
-//  RTcmix Desktop
 //
 //  Created by Douglas Scott on 1/19/20.
 //
 /*
  p0 = output start time
  p1 = output duration
- p2 = amplitude multiplier
- p3 = MIDI channel
- p4 = Controller number (integer)
- p5 = Controller value (0.0 - 1.0)
+ p2 = MIDI channel (0-15)
+ p3 = Controller number (integer, 0-127)
+ p4 = Controller value (normalize, 0.0 - 1.0)
 */
 
 #include "CONTROLLER.h"
@@ -20,7 +22,15 @@
 #include <stdio.h>
 #include <string.h>
 
-CONTROLLER::CONTROLLER() : MIDIBase(), _controllerNumber(-1), _controllerValue(0.0)
+#define DEBUG 0
+
+#if DEBUG
+#define PRINT printf
+#else
+#define PRINT if (0) printf
+#endif
+
+CONTROLLER::CONTROLLER() : MIDIBase(), _controllerNumber(0), _controllerValue(0.0)
 {
 }
 
@@ -41,10 +51,27 @@ int CONTROLLER::init(double p[], int n_args)
     if (MIDIBase::init(p, n_args) < 0) {
         return DONT_SCHEDULE;
     }
-    _controllerNumber = (int)(p[4]);     // midipch returns a float, so make sure we round appropriately
-    _controllerValue = p[5];
+    _controllerNumber = (int)(p[3]);
+    _controllerValue = p[4];
 
-//    printf("Chan %d, controller %d, value %f\n", _midiChannel, _controllerNumber, _controllerValue);
+    if (_controllerNumber < 0) {
+        rtcmix_warn("CONTROLLER", "Controller number limited to 0");
+        _controllerNumber = 0;
+    }
+    else if (_controllerNumber > 127) {
+        rtcmix_warn("CONTROLLER", "Controller number limited to 127");
+        _controllerNumber = 127;
+    }
+    if (_controllerValue < 0.0) {
+        rtcmix_warn("CONTROLLER", "Controller value limited to 0.0");
+        _controllerValue = 0.0;
+    }
+    else if (_controllerValue > 1.0) {
+        rtcmix_warn("CONTROLLER", "Controller value limited to 1.0");
+        _controllerValue = 1.0;
+    }
+    
+    PRINT("Chan %d ctrlr %d value %f (normalized)\n", _midiChannel, _controllerNumber, _controllerValue);
 
     return nSamps();
 }
@@ -52,7 +79,7 @@ int CONTROLLER::init(double p[], int n_args)
 void CONTROLLER::doStart()
 {
     unsigned value = unsigned(0.5 + (_controllerValue * 127));
-//    printf("Sending MIDI ctrlr %d with MIDI value %u\n", _controllerNumber, value);
+    PRINT("doStart sending on chan %d: ctrlr %d value %u\n", _midiChannel, _controllerNumber, value);
     _outputPort->sendControl(0, _midiChannel, _controllerNumber, value);
 }
 
@@ -65,14 +92,22 @@ void CONTROLLER::doupdate(FRAMETYPE currentFrame)
     // updated to certain pfields.  For more about this, read
     // src/rtcmix/Instrument.h.
     
-    double p[6];
-    update(p, 6, 1 << 5);
+    double p[5];
+    update(p, 5, 1 << 4);
     
-    float newValue = p[5];
+    float newValue = p[4];
+    if (newValue < 0.0) {
+        rtcmix_warn("CONTROLLER", "Controller value limited to 0.0");
+        newValue = 0;
+    }
+    else if (newValue > 1.0) {
+        rtcmix_warn("CONTROLLER", "Controller value limited to 1.0");
+        newValue = 1.0;
+    }
     if (newValue != _controllerValue) {
         unsigned value = unsigned(0.5 + (newValue * 127));
         long timestamp = 1000.0 * (currentFrame - getRunStartFrame()) / SR;
-//        printf("Sending MIDI ctrlr %d with MIDI value %u with frame time offset %ld ms\n", _controllerNumber, value, timestamp);
+        PRINT("doUpdate sending MIDI ctrlr %d with MIDI value %u with frame time offset %ld ms\n", _controllerNumber, value, timestamp);
         _outputPort->sendControl(timestamp, _midiChannel, _controllerNumber, value);
         _controllerValue = newValue;
     }
