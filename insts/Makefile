@@ -13,6 +13,7 @@ endif
 
 all: do_package
 	@for DIR in $(DIRS); do \
+	  echo "making target 'all' in $$DIR..."; \
 	  $(MAKE) $(MFLAGS) -C $$DIR all || exit 1; \
 	  echo "done in $$DIR"; \
 	done
