@@ -86,19 +86,32 @@
 #define VERSION "2.005"
 #define RTcmixVERSION "RTcmix-maxmsp-4.3.1"
 
-#include "ext.h"
-#include "z_dsp.h"
+#if MAX_SDK_VERSION==6
+#include <ext.h"
+#include <edit.h>
+#else
+#include <ext_common.h>
+#include <ext_prefix.h>
+#include <ext_mess.h>
+#include <ext_hashtab.h>
+#include <ext_dictionary.h>
+#include <ext_maxtypes.h>
+#include <ext_sysmem.h>
+#include <ext_proto.h>
+#include <ext_sysfile.h>
+#include <ext_path.h>
+#endif
+#include <ext_obex.h>
+#include <z_dsp.h>
 #include "string.h"
-#include "ext_strings.h"
-#include "edit.h"
-#include "ext_wind.h"
+#include <ext_strings.h>
+#include <ext_wind.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <math.h>
 #include "buffer.h"
-#include "ext_obex.h"
 #include "../../include/RTcmix_API.h"
 
 // for the NSmodule stuff
@@ -1086,7 +1099,7 @@ void rtcmix_valuescallback(float *values, int numValues, void *inContext)
 	if (numValues == 1)
 		outlet_float(x->outpointer, (double)(values[0]));
 	else {
-		for (i = 0; i < numValues; i++) SETFLOAT((x->valslist)+i, values[i]);
+		for (i = 0; i < numValues; i++) A_SETFLOAT((x->valslist)+i, values[i]);
 		outlet_list(x->outpointer, 0L, numValues, x->valslist);
 	}
 }
@@ -1156,7 +1169,7 @@ void rtcmix_dotext(t_rtcmix *x, Symbol *s, short argc, Atom *argv)
 	for (i=0; i < argc; i++) {
 		switch (argv[i].a_type) {
 			case A_LONG:
-				sprintf(xfer, " %ld", argv[i].a_w.w_long);
+				sprintf(xfer, " %ld", (long)argv[i].a_w.w_long);
 				break;
 			case A_FLOAT:
 				sprintf(xfer, " %lf", argv[i].a_w.w_float);
@@ -1816,7 +1829,7 @@ void rtcmix_dowrite(t_rtcmix *x, Symbol *s, short argc, t_atom *argv)
 	char filename[256];
 	t_handle script_handle;
 	short err;
-	long type_chosen, thistype = 'TEXT';
+	t_fourcc type_chosen, thistype = 'TEXT';
 	t_filehandle fh;
 	
 	if(!x->s_name[x->current_script][0]) {
@@ -1870,9 +1883,9 @@ void rtcmix_doread(t_rtcmix *x, Symbol *s, short argc, t_atom *argv)
 	
 	char filename[256];
 	short err, i, temp = 0;
-	long type = 'TEXT';
-	long size;
-	long outtype;
+	t_fourcc type = 'TEXT';
+	t_ptr_size size;
+	t_fourcc outtype;
 	t_filehandle fh;
 	t_handle script_handle;
 	
