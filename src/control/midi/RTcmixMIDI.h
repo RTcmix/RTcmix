@@ -112,6 +112,7 @@ public:
     virtual void sendNoteOn(long timestamp, uchar chan, uchar pitch, uchar vel);
     virtual void sendNoteOff(long timestamp, uchar chan, uchar pitch, uchar vel);
     virtual void sendControl(long timestamp, uchar chan, uchar control, unsigned value);
+    virtual void sendPitchBend(long timestamp, uchar chan, unsigned value);
     virtual void sendProgramChange(long timestamp, uchar chan, uchar program);
 
 protected:

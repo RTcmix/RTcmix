@@ -3,7 +3,7 @@ include ../package.conf
 NAME = MIDI
 
 CURDIR = $(CMIXDIR)/insts/doug/$(NAME)
-OBJS = MIDIBase.o PROGRAM.o CONTROLLER.o NOTE.o setup.o
+OBJS = MIDIBase.o PROGRAM.o CONTROLLER.o PITCHBEND.o NOTE.o setup.o
 CMIXOBJS +=
 PROGS = lib$(NAME).so $(NAME)
 CXXFLAGS += -DSHAREDLIBDIR=\"$(LIBDESTDIR)\"
@@ -25,7 +25,7 @@ lib$(NAME).so: $(OBJS) $(GENLIB)
 $(NAME): $(OBJS) $(CMIXOBJS)
 	$(CXX) -o $@ $(OBJS) $(CMIXOBJS) $(LDFLAGS)
 
-$(OBJS): $(INSTRUMENT_H) MIDIBase.h PROGRAM.h CONTROLLER.h NOTE.h
+$(OBJS): $(INSTRUMENT_H) MIDIBase.h PROGRAM.h CONTROLLER.h NOTE.h PITCHBEND.h
 
 install: dso_install
 

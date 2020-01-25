@@ -72,12 +72,14 @@ int profile()
 
 }
 
+extern Instrument *makePITCHBEND();
 extern Instrument *makeCONTROLLER();
 extern Instrument *makePROGRAM();
 extern Instrument *makeNOTE();
 
 void rtprofile()
 {
+    RT_INTRO("PITCHBEND", makePITCHBEND);
     RT_INTRO("CONTROLLER", makeCONTROLLER);
     RT_INTRO("PROGRAM", makePROGRAM);
     RT_INTRO("NOTE", makeNOTE);

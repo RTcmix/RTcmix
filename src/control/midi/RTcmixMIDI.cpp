@@ -469,6 +469,18 @@ void RTcmixMIDIOutput::sendControl(PmTimestamp timestamp, uchar chan, uchar cont
     unlock();
 }
 
+void RTcmixMIDIOutput::sendPitchBend(long timestamp, uchar chan, unsigned value)
+{
+    PmEvent buffer;
+    uchar msb = (value >> 8) & 0xff;
+    uchar lsb = value & 0xff;
+    buffer.message = Pm_Message(make_status(kPitchBend, chan), lsb, msb);
+    buffer.timestamp = timestamp;
+    lock();
+    Pm_Write(outstream(), &buffer, 1);
+    unlock();
+}
+
 void RTcmixMIDIOutput::sendProgramChange(PmTimestamp timestamp, uchar chan, uchar program)
 {
     PmEvent buffer;
