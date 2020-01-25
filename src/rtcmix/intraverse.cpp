@@ -645,7 +645,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 	else if (run_status != RT_SKIP) {
 		if (rtsendsamps(device) != 0) {
 #ifdef WBUG
-			cout << "EXITING inTraverse()\n";
+			RTPrintf("EXITING inTraverse()\n");
 #endif
 			return false;
 		}
@@ -688,19 +688,19 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		// Check status from other threads
 		if (run_status == RT_SHUTDOWN) {
 #ifndef EMBEDDED
-			cout << "inTraverse:  shutting down" << endl;
+            RTPrintf("inTraverse:  shutting down\n");
 #endif
 			playEm = false;
 		}
 		else if (run_status == RT_ERROR) {
 #ifndef EMBEDDED
-			cout << "inTraverse:  shutting down due to error" << endl;
+            RTPrintf("inTraverse:  shutting down due to error\n");
 #endif
 			playEm = false;
 		}
 		else if (panic && run_status == RT_GOOD) {
 #ifndef EMBEDDED
-			cout << "inTraverse:  panic mode finished" << endl;
+            RTPrintf("inTraverse:  panic mode finished\n");
 #endif
 			panic = NO;
 		}
@@ -709,7 +709,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			run_status = RT_GOOD;
 	}
 #ifdef WBUG
-cout << "EXITING inTraverse()\n";
+    RTPrintf("EXITING inTraverse()\n");
 #endif
 	return playEm;
 }
@@ -728,7 +728,7 @@ void  RTcmix::resetHeapAndQueue()
 bool RTcmix::doneTraverse(AudioDevice *device, void *arg)
 {
 #ifdef WBUG
-	cout << "ENTERING doneTraverse()\n";
+	RTPrintf("ENTERING doneTraverse()\n");
 #endif
     callStopCallbacks();
 #ifndef EMBEDDED
@@ -742,7 +742,7 @@ bool RTcmix::doneTraverse(AudioDevice *device, void *arg)
 	audioDone = true;	// This signals waitForMainLoop()
 
 #ifdef WBUG
-	cout << "EXITING doneTraverse() FUNCTION *****\n";
+	RTPrintf("EXITING doneTraverse()\n");
 #endif
 
 	return true;
