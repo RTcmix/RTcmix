@@ -566,11 +566,13 @@ char* cm_get_full_endpoint_name(MIDIEndpointRef endpoint)
     /* create the nicely formated name */
     MIDIObjectGetStringProperty(endpoint, kMIDIPropertyName, &endpointName);
     MIDIObjectGetStringProperty(device, kMIDIPropertyName, &deviceName);
+    bool fullNameUnique = true;
     if (deviceName != NULL) {
         fullName = CFStringCreateWithFormat(NULL, NULL, CFSTR("%@: %@"),
                                             deviceName, endpointName);
     } else {
         fullName = endpointName;
+        fullNameUnique = false;
     }
     
     /* copy the string into our buffer */
@@ -581,7 +583,7 @@ char* cm_get_full_endpoint_name(MIDIEndpointRef endpoint)
     /* clean up */
     if (endpointName) CFRelease(endpointName);
     if (deviceName) CFRelease(deviceName);
-    if (fullName) CFRelease(fullName);
+    if (fullName && fullNameUnique) CFRelease(fullName);
 
     return newName;
 }
