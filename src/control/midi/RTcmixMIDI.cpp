@@ -12,7 +12,7 @@
 #include <Option.h>
 #include <RTcmix.h>
 
-#define DEBUG 1
+#define DEBUG 0
 
 // if INBUF_SIZE is 0, PortMidi uses a default value
 #define INBUF_SIZE		0
@@ -92,7 +92,7 @@ int RTcmixMIDIInput::init()
 
 	int id = 0;
 	const char *devname = Option::midiInDevice();
-#if DEBUG > 0
+#if DEBUG
 	printf("Requested MIDI input device: \"%s\"\n", devname);
 #endif
 	if (strlen(devname)) {
@@ -101,7 +101,7 @@ int RTcmixMIDIInput::init()
 		for ( ; id < numdev; id++) {
 			const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
 			if (info->input) {
-#if DEBUG > 0
+#if DEBUG
 				printf("Found MIDI input device: \"%s\"\n", info->name);
 #endif
 				if (strcmp(info->name, devname) == 0) {
@@ -352,9 +352,12 @@ static void startCallback(void *context)
 
 static void stopCallback(void *context)
 {
-    RTcmixMIDIOutput *midiport = (RTcmixMIDIOutput*) context;
-    midiport->sendMIDIStop(0);
-    midiport->stop();
+#if DEBUG
+    printf("RTcmixMIDIOutput stop callback called\n");
+#endif
+    RTcmixMIDIOutput *midiout = (RTcmixMIDIOutput*) context;
+    midiout->sendMIDIStop(0);
+    midiout->stop();
 }
 
 RTcmixMIDIOutput::RTcmixMIDIOutput() : _deviceID(0), _outstream(NULL)
@@ -364,6 +367,9 @@ RTcmixMIDIOutput::RTcmixMIDIOutput() : _deviceID(0), _outstream(NULL)
 
 RTcmixMIDIOutput::~RTcmixMIDIOutput()
 {
+#if DEBUG
+    printf("Destroying RTcmixMIDIOutput instance\n");
+#endif
     RTcmix::unregisterAudioStartCallback(startCallback, this);
     RTcmix::unregisterAudioStopCallback(stopCallback, this);
     stop();
@@ -375,7 +381,7 @@ int RTcmixMIDIOutput::init()
     Pm_Initialize();
     
     const char *devname = Option::midiOutDevice();
-#if DEBUG > 0
+#if DEBUG
     printf("Requested MIDI output device: \"%s\"\n", devname);
 #endif
     if (strlen(devname)) {
@@ -384,7 +390,7 @@ int RTcmixMIDIOutput::init()
         for (int id=0; id < numdev; id++) {
             const PmDeviceInfo *info = Pm_GetDeviceInfo(id);
             if (info->output) {
-#if DEBUG > 0
+#if DEBUG
                 printf("Found MIDI output device: \"%s\"\n", info->name);
 #endif
                 if (strcmp(info->name, devname) == 0) {
@@ -496,18 +502,33 @@ void RTcmixMIDIOutput::sendMIDIStart(long timestamp)
     PmEvent buffer;
     buffer.message = Pm_Message(0xFA, 0, 0);
     buffer.timestamp = timestamp;
+    PmEvent buffers[16];
+    for (int chan = 0; chan < 16; ++chan) {
+        buffers[chan].message = Pm_Message(make_status(kControl, chan), 121, 0);   // ResetAllControllers
+        buffers[chan].timestamp = timestamp;
+    }
     lock();
+    Pm_Write(outstream(), buffers, 16);
     Pm_Write(outstream(), &buffer, 1);
     unlock();
 }
 
 void RTcmixMIDIOutput::sendMIDIStop(long timestamp)
 {
-    PmEvent buffer;
-    buffer.message = Pm_Message(0xFC, 0, 0);
-    buffer.timestamp = timestamp;
+    PmEvent buffer1, buffer2;
+    buffer1.message = Pm_Message(0xFF, 0, 0);   // system reset
+    buffer1.timestamp = timestamp;
+    buffer2.message = Pm_Message(0xFC, 0, 0);   // timecode stop
+    buffer2.timestamp = timestamp;
+    PmEvent buffers[16];
+    for (int chan = 0; chan < 16; ++chan) {
+        buffers[chan].message = Pm_Message(make_status(kControl, chan), 120, 0);   // AllSoundOff
+        buffers[chan].timestamp = timestamp;
+    }
     lock();
-    Pm_Write(outstream(), &buffer, 1);
+    Pm_Write(outstream(), buffers, 16);
+    Pm_Write(outstream(), &buffer1, 1);
+    Pm_Write(outstream(), &buffer2, 1);
     unlock();
 }
 
