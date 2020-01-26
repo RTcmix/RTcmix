@@ -76,11 +76,12 @@ int CONTROLLER::init(double p[], int n_args)
     return nSamps();
 }
 
-void CONTROLLER::doStart()
+void CONTROLLER::doStart(FRAMETYPE frameOffset)
 {
+    long timestamp = (1000.0 * frameOffset) / SR;
     unsigned value = unsigned(0.5 + (_controllerValue * 127));
-    PRINT("doStart sending on chan %d: ctrlr %d value %u\n", _midiChannel, _controllerNumber, value);
-    _outputPort->sendControl(0, _midiChannel, _controllerNumber, value);
+    PRINT("doStart sending on chan %d: ctrlr %d value %u at offset %ld\n", _midiChannel, _controllerNumber, value, timestamp);
+    _outputPort->sendControl(timestamp, _midiChannel, _controllerNumber, value);
 }
 
 // Called at the control rate to update parameters like amplitude, pan, etc.

@@ -47,10 +47,11 @@ int PROGRAM::init(double p[], int n_args)
     return nSamps();
 }
 
-void PROGRAM::doStart()
+void PROGRAM::doStart(FRAMETYPE frameOffset)
 {
 //    printf("Sending MIDI program number %d\n", _patchNumber);
-    _outputPort->sendProgramChange(0, _midiChannel, _patchNumber);
+    long timestamp = (1000.0 * frameOffset) / SR;
+    _outputPort->sendProgramChange(timestamp, _midiChannel, _patchNumber);
 }
 
 // Called at the control rate to update parameters like amplitude, pan, etc.

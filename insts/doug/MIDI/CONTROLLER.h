@@ -20,7 +20,7 @@ public:
     virtual ~CONTROLLER();
     virtual int init(double *, int);
 protected:
-    virtual void doStart();
+    virtual void doStart(FRAMETYPE frameOffset);
     virtual void doupdate(FRAMETYPE currentFrame);
     virtual void doStop(FRAMETYPE currentFrame) {}
 private:

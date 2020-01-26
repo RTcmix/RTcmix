@@ -60,9 +60,10 @@ int MIDIBase::configure()
 int MIDIBase::run()
 {
     _runStartFrame = currentFrame();
-    // We only do work for the first frame and last
+    // We only do work for the first frame.  We access the offset into the audio buffer via the base
+    // class 'output_offset'
     if (_runStartFrame == 0) {
-        doStart();
+        doStart(this->output_offset);
     }
 
     // Note:  We cannot cache currentFrame() because it updates with increment()

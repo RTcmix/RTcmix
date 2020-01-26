@@ -19,7 +19,7 @@ public:
     virtual int configure();
 	virtual int run();
 protected:
-    virtual void doStart()=0;
+    virtual void doStart(FRAMETYPE frameOffset)=0;
     virtual void doupdate(FRAMETYPE currentFrame)=0;
     virtual void doStop(FRAMETYPE currentFrame)=0;
     FRAMETYPE getRunStartFrame() const { return _runStartFrame; };

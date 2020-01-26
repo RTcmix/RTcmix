@@ -60,15 +60,16 @@ int NOTE::init(double p[], int n_args)
         _midiVel = 1.0;
     }
 
-    PRINT("NOTE: %p chan %d note %d vel %f (normalized)\n", this, _midiChannel, _midiNote, _midiVel);
+//    PRINT("NOTE: %p chan %d note %d vel %f (normalized)\n", this, _midiChannel, _midiNote, _midiVel);
     return nSamps();
 }
 
-void NOTE::doStart()
+void NOTE::doStart(FRAMETYPE frameOffset)
 {
+    long timestamp = (1000.0 * frameOffset) / SR;
     int vel = (int)(0.5 + 127.0*_midiVel);
-    PRINT("NOTE: %p sending note on chan %d note %d vel %d\n", this, _midiChannel, _midiNote, vel);
-    _outputPort->sendNoteOn(0, _midiChannel, _midiNote, vel);
+    PRINT("NOTE: %p sending note on chan %d note %d vel %d with offset %ld\n", this, _midiChannel, _midiNote, vel, timestamp);
+    _outputPort->sendNoteOn(timestamp, _midiChannel, _midiNote, vel);
 }
 
 // Called at the control rate to update parameters like amplitude, pan, etc.
@@ -80,7 +81,7 @@ void NOTE::doupdate(FRAMETYPE currentFrame)
 void NOTE::doStop(FRAMETYPE currentFrame)
 {
     long timestamp = 1000.0 * (currentFrame - getRunStartFrame()) / SR;
-    PRINT("NOTE: %p sending note off\n", this);
+    PRINT("NOTE: %p sending note off with offset %ld\n", this, timestamp);
     _outputPort->sendNoteOff(timestamp, _midiChannel, _midiNote, 0);
 }
 

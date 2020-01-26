@@ -58,11 +58,12 @@ int PITCHBEND::init(double p[], int n_args)
     return nSamps();
 }
 
-void PITCHBEND::doStart()
+void PITCHBEND::doStart(FRAMETYPE frameOffset)
 {
+    long timestamp = (1000.0 * frameOffset) / SR;
     unsigned value = 16383.5 + unsigned(0.5 + (_bendValue * 16383));
-    PRINT("doStart sending pitch bend on chan %d: value %u\n", _midiChannel, value);
-    _outputPort->sendPitchBend(0, _midiChannel, value);
+    PRINT("doStart sending pitch bend on chan %d: value %u at offset %ld\n", _midiChannel, value, timestamp);
+    _outputPort->sendPitchBend(timestamp, _midiChannel, value);
 }
 
 // Called at the control rate to update parameters like amplitude, pan, etc.
