@@ -668,6 +668,20 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 
 	bool playEm = true;
 	
+    // Check status from other threads
+    if (run_status == RT_SHUTDOWN) {
+#ifndef EMBEDDED
+        RTPrintf("inTraverse:  shutting down\n");
+#endif
+        playEm = false;
+    }
+    else if (run_status == RT_ERROR) {
+#ifndef EMBEDDED
+        RTPrintf("inTraverse:  shutting down due to error\n");
+#endif
+        playEm = false;
+    }
+
 	if (!rtInteractive) {  // Ending condition
 		if ((rtHeap->getSize() == 0) && (allQSize == 0)) {
 #ifdef ALLBUG
@@ -685,20 +699,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 			notifyIsFinished(bufEndSamp);
 		}
 #endif
-		// Check status from other threads
-		if (run_status == RT_SHUTDOWN) {
-#ifndef EMBEDDED
-            RTPrintf("inTraverse:  shutting down\n");
-#endif
-			playEm = false;
-		}
-		else if (run_status == RT_ERROR) {
-#ifndef EMBEDDED
-            RTPrintf("inTraverse:  shutting down due to error\n");
-#endif
-			playEm = false;
-		}
-		else if (panic && run_status == RT_GOOD) {
+		if (panic && run_status == RT_GOOD) {
 #ifndef EMBEDDED
             RTPrintf("inTraverse:  panic mode finished\n");
 #endif
