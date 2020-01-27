@@ -73,7 +73,7 @@ static int sArgListLen;		// number of arguments passed to a user-declared functi
 static int sArgListIndex;	// used to walk passed-in args for user-declared functions
 
 static bool inCalledFunctionArgList = false;
-static const char *sCalledFunction;
+static std::vector<const char *> sCalledFunctions;
 static int sFunctionCallDepth = 0;	// level of actively-executing function calls
 
 static bool inFunctionCall() { return sFunctionCallDepth > 0; }
@@ -82,6 +82,8 @@ static void copy_tree_listelem(MincValue *edest, Node *  tpsrc);
 #ifdef DEBUG
 static void print_symbol(Symbol * s);		// TODO: Symbol::print()
 #endif
+
+static MincWarningLevel sMincWarningLevel = MincAllWarnings;
 
 void clear_node_state()	// The only exported function from Node.cpp.  Clear all static state.
 {
@@ -93,7 +95,7 @@ void clear_node_state()	// The only exported function from Node.cpp.  Clear all 
 	}
 	list_stack_ptr = 0;
 	inCalledFunctionArgList = false;
-	sCalledFunction = NULL;
+	sCalledFunctions.clear();
 	sFunctionCallDepth = 0;
 	sArgListLen = 0;
 	sArgListIndex = 0;
@@ -788,7 +790,7 @@ Node *	NodeCall::doExct()
 	push_list();
 	Symbol *funcSymbol = lookupSymbol(_functionName, GlobalLevel);
 	if (funcSymbol) {
-		sCalledFunction = _functionName;
+		sCalledFunctions.push_back(_functionName);
 		/* The function's definition node was stored on the symbol at declaration time.
             If a function was called on a non-function symbol, the tree will be NULL.
 		 */
@@ -809,8 +811,8 @@ Node *	NodeCall::doExct()
 				++sFunctionCallDepth;
 				savedCallDepth = sFunctionCallDepth;
 				TPRINT("NodeCall(%p): executing %s() block node %p, call depth now %d\n",
-					   this, sCalledFunction, funcDef->child(2), savedCallDepth);
-				printargs(sCalledFunction, NULL, 0);
+					   this, sCalledFunctions.back(), funcDef->child(2), savedCallDepth);
+				printargs(sCalledFunctions.back(), NULL, 0);
 				temp = funcDef->child(2)->exct();
 			}
 			catch (Node * returned) {	// This catches return statements!
@@ -836,7 +838,7 @@ Node *	NodeCall::doExct()
 		else {
 			minc_die("'%s' is not a function", funcSymbol->name());
 		}
-		sCalledFunction = NULL;
+		sCalledFunctions.pop_back();
 	}
 	else {
 		child(0)->exct();
@@ -1237,7 +1239,7 @@ Node *	NodeArgList::doExct()
 	sArgListLen = 0;
 	sArgListIndex = 0;	// reset to walk list
 	inCalledFunctionArgList = true;
-	TPRINT("NodeArgList: walking function '%s()' arg decl/copy list\n", sCalledFunction);
+	TPRINT("NodeArgList: walking function '%s()' arg decl/copy list\n", sCalledFunctions.back());
 	child(0)->exct();
 	inCalledFunctionArgList = false;
 	return this;
@@ -1251,10 +1253,12 @@ Node *	NodeArgListElem::doExct()
 	// Symbol associated with this function argument
 	Symbol *argSym = child(1)->symbol();
 	if (sMincListLen > sArgListLen) {
-		minc_die("%s() takes %d arguments but was passed %d!", sCalledFunction, sArgListLen, sMincListLen);
+		minc_die("%s() takes %d arguments but was passed %d!", sCalledFunctions.back(), sArgListLen, sMincListLen);
 	}
 	else if (sArgListIndex >= sMincListLen) {
-		minc_warn("%s(): arg '%s' not provided - defaulting to 0", sCalledFunction, argSym->name());
+        if (sMincWarningLevel > MincNoDefaultedArgWarnings) {
+            minc_warn("%s(): arg '%s' not provided - defaulting to 0", sCalledFunctions.back(), argSym->name());
+        }
 		/* Copy zeroed MincValue to us and then to sym. */
 		MincValue zeroElem;
 		zeroElem = argSym->value();	// this captures the data type
@@ -1276,7 +1280,7 @@ Node *	NodeArgListElem::doExct()
             case MincStructType:
 				if (argSym->dataType() != argValue.dataType()) {
 					minc_die("%s() arg '%s' passed as %s, expecting %s",
-								sCalledFunction, argSym->name(), MincTypeName(argValue.dataType()), MincTypeName(argSym->dataType()));
+								sCalledFunctions.back(), argSym->name(), MincTypeName(argValue.dataType()), MincTypeName(argSym->dataType()));
 				}
 				else compatible = true;
 				break;
@@ -1347,7 +1351,7 @@ Node *	NodeDecl::doExct()
 	else {
 		if (sym->scope == current_scope()) {
 			if (inCalledFunctionArgList) {
-				minc_die("%s(): argument variable '%s' already used", sCalledFunction, _symbolName);
+				minc_die("%s(): argument variable '%s' already used", sCalledFunctions.back(), _symbolName);
 			}
 			minc_warn("variable '%s' redefined - using existing one", _symbolName);
 		}
@@ -1402,7 +1406,7 @@ Node *    NodeStructDecl::doExct()
         else {
             if (sym->scope == current_scope()) {
                 if (inCalledFunctionArgList) {
-                    minc_die("%s(): argument variable '%s' already used", sCalledFunction, _symbolName);
+                    minc_die("%s(): argument variable '%s' already used", sCalledFunctions.back(), _symbolName);
                 }
                 minc_warn("variable '%s' redefined - using existing one", _symbolName);
             }

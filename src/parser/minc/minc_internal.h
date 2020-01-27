@@ -27,6 +27,13 @@
 #define MAXSTACK 15        /* depth of function call or list recursion */
 #define HASHSIZE 107       /* number of buckets in string table */
 
+enum MincWarningLevel {
+    MincNoWarnings = 0,
+    MincNoDefaultedArgWarnings = 1,
+    MincAllWarnings = 2,
+    MincWarningsAsErrors = 5
+};
+
 typedef enum {
 	OpZero = 0,
 	OpFree,
