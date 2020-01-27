@@ -43,6 +43,7 @@ public:
     Symbol *    addMember(const char *name, MincDataType type, int scope);
     Symbol *    lookupMember(const char *name);
     Symbol *    members() { return _memberList; }
+    void        print();
 protected:
     Symbol *    _memberList;
 };

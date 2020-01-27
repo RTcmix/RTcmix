@@ -591,7 +591,7 @@ Node *	NodeName::finishExct()
 Node *	NodeAutoName::doExct()
 {
 	/* look up the symbol */
-	setSymbol(lookupOrAutodeclare(symbolName(), sFunctionCallDepth > 0 ? YES : NO));
+	setSymbol(lookupOrAutodeclare(symbolName(), inFunctionCall() ? YES : NO));
 	return finishExct();
 }
 
@@ -1356,7 +1356,7 @@ Node *	NodeDecl::doExct()
 			minc_warn("variable '%s' redefined - using existing one", _symbolName);
 		}
 		else {
-			if (sFunctionCallDepth == 0) {
+			if (!inFunctionCall() && !inCalledFunctionArgList) {
 				minc_warn("variable '%s' also defined at enclosing scope", _symbolName);
 			}
 			sym = installSymbol(_symbolName, NO);
@@ -1411,7 +1411,7 @@ Node *    NodeStructDecl::doExct()
                 minc_warn("variable '%s' redefined - using existing one", _symbolName);
             }
             else {
-                if (sFunctionCallDepth == 0) {
+                if (!inFunctionCall() && !inCalledFunctionArgList) {
                     minc_warn("variable '%s' also defined at enclosing scope", _symbolName);
                 }
                 sym = installSymbol(_symbolName, NO);

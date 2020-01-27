@@ -4,6 +4,7 @@
 */
 #include "minc_internal.h"
 #include "MincValue.h"
+#include "Symbol.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -165,10 +166,15 @@ _do_print(const MincValue args[], const int nargs)
 		  }
             break;
          case MincStructType:
+          {
+              MincStruct *theStruct = (MincStruct *)args[i];
+              RTPrintfCat("{ ");
+              theStruct->print();
               if (i == last_arg)
-                  RTPrintfCat("struct");
+                  RTPrintfCat(" }");
               else
-                  RTPrintfCat("struct, ");
+                  RTPrintfCat(" }, ");
+          }
               break;
          case MincVoidType:
 			  if (i == last_arg)
@@ -180,6 +186,19 @@ _do_print(const MincValue args[], const int nargs)
    }
 }
 
+// Note:  This is defined here to let it have access to the static helper routines above
+
+void    MincStruct::print()
+{
+    for (Symbol *member = _memberList; member != NULL;) {
+        Symbol *next = member->next;
+        _do_print(&member->value(), 1);
+        if (next != NULL) {
+            RTPrintfCat(", ");
+        }
+        member = next;
+    }
+}
 
 /* ----------------------------------------------------------------- print -- */
 MincFloat
