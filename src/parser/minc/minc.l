@@ -5,19 +5,22 @@
 %s INIT IGNORE COM CPCOM
 %x INCLUDE
 %{
+#include <list>
 #include "rename.h"
 #include "minc_internal.h"
 #include "minc.hpp"
 #define YY_ALWAYS_INTERACTIVE 1
+#define DEBUG_INCLUDES 0
 static int comments = 0;
 static int cpcomments = 0;
 extern void yyerror(const char *);
 extern void yyfatalerror(const char *);
 /* To allow includes of subfiles */
 #define MAX_INCLUDE_DEPTH 10
-static int saved_lineno[MAX_INCLUDE_DEPTH];
-static YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH];
-static int include_stack_ptr = 0;
+struct Include { int saved_lineno; YY_BUFFER_STATE state; };
+static Include include_stack[MAX_INCLUDE_DEPTH];
+static int include_stack_index = 0;
+std::list<const char *> includedFilenames;
 #define YY_FATAL_ERROR(msg) yyfatalerror( msg )
 #ifdef EMBEDDED
 #ifdef __cplusplus
@@ -107,34 +110,51 @@ num   {dig}+
 ^include		  		{ BEGIN INCLUDE; }
 <INCLUDE>[ \t]*      /* eat the whitespace */
 <INCLUDE>[^ \t\n]+  { /* got the include file name */
-			if (include_stack_ptr >= MAX_INCLUDE_DEPTH)
-			{
+            const char *includedFilename = yytext;
+#if DEBUG_INCLUDES
+            printf("including '%s'\n", includedFilename);
+#endif
+			if (include_stack_index >= MAX_INCLUDE_DEPTH) {
 				YY_FATAL_ERROR( "Includes nested too deeply");
 			}
-			saved_lineno[include_stack_ptr] = yyget_lineno();
-			include_stack[include_stack_ptr++] = YY_CURRENT_BUFFER;
-			yyin = fopen( yytext, "r" );
-			if (!yyin)
-			{
-				char msg[1024];
-				snprintf(msg, 1024, "Unable to open include file \"%s\"",
-						 yytext);
-				YY_FATAL_ERROR(msg);
-			}
-			yyset_lineno(1);
-			yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
-			BEGIN INIT;
+            // Check whether this file was already included at some earlier level.
+            bool found = false;
+            for (std::list<const char *>::const_iterator it = includedFilenames.begin(); it != includedFilenames.end(); ++it) {
+                if (strcmp(includedFilename, *it) == 0) {
+                    found = true;
+#if DEBUG_INCLUDES
+                    printf("'%s' already included once - skipping\n", includedFilename);
+#endif
+                    break;
+                }
+            }
+            if (!found) {
+                includedFilenames.push_back(strdup(includedFilename));
+                include_stack[include_stack_index].saved_lineno = yyget_lineno();
+                include_stack[include_stack_index++].state = YY_CURRENT_BUFFER;
+                yyin = fopen( yytext, "r" );
+                if (!yyin)
+                {
+                    char msg[1024];
+                    snprintf(msg, 1024, "Unable to open include file \"%s\"",
+                             yytext);
+                    YY_FATAL_ERROR(msg);
+                }
+                yyset_lineno(1);
+                yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
+            }
+            BEGIN INIT;
 		}
 
-<<EOF>> {	if (--include_stack_ptr < 0)
+<<EOF>> {	if (--include_stack_index < 0)
 			{
 				yyterminate();
 			}
 			else {
 				yy_delete_buffer(YY_CURRENT_BUFFER);
-				yy_switch_to_buffer(include_stack[include_stack_ptr]);
-				increment_score_line_offset(yyget_lineno() - saved_lineno[include_stack_ptr]);
-				yyset_lineno(saved_lineno[include_stack_ptr]);
+				yy_switch_to_buffer(include_stack[include_stack_index].state);
+				increment_score_line_offset(yyget_lineno() - include_stack[include_stack_index].saved_lineno);
+				yyset_lineno(include_stack[include_stack_index].saved_lineno);
 			}
 		} 
 %%
