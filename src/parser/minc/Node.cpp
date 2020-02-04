@@ -180,6 +180,7 @@ Node::Node(OpKind op, NodeKind kind)
 	: kind(kind), op(op), lineno(yyget_lineno())
 {
 	TPRINT("Node::Node (%s) this=%p\n", classname(), this);
+    u.number = 0.0;     // this should zero out the union.
 #ifdef DEBUG_MEMORY
 	++numNodes;
 	TPRINT("[%d nodes in existence]\n", numNodes);
