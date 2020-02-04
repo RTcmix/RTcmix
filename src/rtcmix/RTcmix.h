@@ -10,9 +10,7 @@
 #include <rt_types.h>
 #include <bus.h>
 #include "Locked.h"
-#ifdef MULTI_THREAD
 #include <vector>
-#endif
 
 extern "C" void set_SR(float);
 
@@ -40,6 +38,7 @@ struct InputState;	// part of Instrument class
 struct InputFile;
 
 typedef bool (*AudioDeviceCallback)(AudioDevice *device, void *arg);
+typedef void (*AudioCallback)(void *content);
 
 enum RTstatus {
 	RT_GOOD = 0, RT_SHUTDOWN = 1, RT_PANIC = 2, RT_SKIP = 3, RT_FLUSH = 4, RT_ERROR = 5
@@ -78,8 +77,8 @@ public:
 	// New public API
 
 	static bool interactive() { return rtInteractive; }
-	static int bufsamps() { return RTBUFSAMPS; }
-	static float sr() { return SR; }
+	static int bufsamps() { return sBufferFrameCount; }         // Replaces "RTBUFSAMPS"
+	static float sr() { return sSamplingRate; }                 // Replaces "SR"
 	static int chans() { return NCHANS; }
 	static void setBufOffset(FRAMETYPE inOffset, bool inRunToOffset);
 	static FRAMETYPE getElapsedFrames() { return elapsed + bufsamps(); }
@@ -130,6 +129,12 @@ public:
 	static int setparams(float, int, int, bool, int);
 	static int resetparams(float, int, int, bool);
 
+    static void registerAudioStartCallback(AudioCallback callback, void *context);
+    static void unregisterAudioStartCallback(AudioCallback callback, void *context);
+    
+    static void registerAudioStopCallback(AudioCallback callback, void *context);
+    static void unregisterAudioStopCallback(AudioCallback callback, void *context);
+
 	static int startAudio(AudioDeviceCallback renderCallback,
 						  AudioDeviceCallback doneCallback,
 						  void *inContext);
@@ -166,6 +171,9 @@ protected:
 	static void init_options(bool fromMain, const char *defaultDSOPath);
 	static void init_globals();
 
+	static void setSR(float sr) { sSamplingRate = sr; }
+    static void setRTBUFSAMPS(int samps) { sBufferFrameCount = samps; }
+
 	// Cleanup methods
 	static void free_globals();
 	static void free_bus_config();
@@ -186,10 +194,9 @@ protected:
 	static FRAMETYPE getElapsed() { return elapsed; }
 
 protected:
-	/* Note: these 3 vars also extern in rtdefs.h, for use by insts */
 	static int 		NCHANS;
-	static int 		RTBUFSAMPS;
-	static float 	SR;
+	static int 		sBufferFrameCount;
+	static float 	sSamplingRate;
 	
 	static int		rtInteractive;
 	static int		rtsetparams_called;
@@ -208,7 +215,17 @@ protected:
 	static RTQueue *rtQueue;
 
 private:
-	// Buffer alloc routines.
+    struct CallbackInfo {
+        AudioCallback callback; void *context;
+        CallbackInfo(AudioCallback cb, void *ctx) : callback(cb), context(ctx) {}
+    };
+    static std::vector<CallbackInfo> audioStartCallbacks;
+    static std::vector<CallbackInfo> audioStopCallbacks;
+    
+    static void callStartCallbacks();
+    static void callStopCallbacks();
+
+    // Buffer alloc routines.
 	static int allocate_audioin_buffer(short chan, int len);
 	static int allocate_aux_buffer(short chan, int len);
 	static int allocate_out_buffer(short chan, int len);

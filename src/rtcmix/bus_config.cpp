@@ -995,9 +995,9 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
 
    /* Make sure specified aux buses have buffers allocated. */
    for (i = 0; i < bus_slot->auxin_count; i++)
-      allocate_aux_buffer(bus_slot->auxin[i], RTBUFSAMPS);
+      allocate_aux_buffer(bus_slot->auxin[i], bufsamps());
    for (i = 0; i < bus_slot->auxout_count; i++)
-      allocate_aux_buffer(bus_slot->auxout[i], RTBUFSAMPS);
+      allocate_aux_buffer(bus_slot->auxout[i], bufsamps());
 
 	// We have to set these after all the above code to prevent chain assignments
 	// from generating conflicts or bus allocations.  Setting the auxin_count allows

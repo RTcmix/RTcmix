@@ -578,7 +578,7 @@ static void cleanup()
 	flevel = 0;
     slevel = 0;
 	level = 0;
-	include_stack_ptr = 0;
+	include_stack_index = 0;
 #ifndef EMBEDDED
 	/* BGG mm -- we need to keep the symbols for The Future */
 	free_symbols();

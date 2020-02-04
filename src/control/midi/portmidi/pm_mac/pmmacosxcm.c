@@ -37,6 +37,14 @@
 #include <CoreMIDI/MIDIServices.h>
 #include <CoreAudio/HostTime.h>
 
+#define DEBUG 0
+
+#if DEBUG
+#define PRINT printf
+#else
+#define PRINT if (0) printf
+#endif
+
 #define PACKET_BUFFER_SIZE 1024
 
 /* this is very strange: if I put in a reasonable 
@@ -189,7 +197,7 @@ readProc(const MIDIPacketList *newPackets, void *refCon, void *connRefCon)
                     break;
                 default:
                     /* Skip packets that are too large to fit in a PmMessage */
-#ifdef DEBUG
+#if DEBUG
                     printf("PortMidi debug msg: large packet skipped\n");
 #endif
                     continue;
@@ -338,6 +346,7 @@ midi_write_flush(PmInternal *midi)
     assert(m);
     assert(endpoint);
     if (m->packet != NULL) {
+        PRINT("midi_write_flush: calling MIDISend\n");
         /* out of space, send the buffer and start refilling it */
         macHostError = MIDISend(portOut, endpoint, m->packetList);
         m->packet = NULL; /* indicate no data in packetList now */
@@ -363,11 +372,13 @@ send_packet(PmInternal *midi, Byte *message, unsigned int messageLength,
     midi_macosxcm_type m = (midi_macosxcm_type) midi->descriptor;
     assert(m);
     
-    /* printf("add %d to packet %lx len %d\n", message[0], m->packet, messageLength); */
+    PRINT("send_packet: add msg 0x%x to packet %p len %d ts: %llu\n",
+          message[0], m->packet, messageLength, timestamp);
     m->packet = MIDIPacketListAdd(m->packetList, sizeof(m->packetBuffer), 
                                   m->packet, timestamp, messageLength, 
                                   message);
     if (m->packet == NULL) {
+        PRINT("send_packet: out of space - flushing packet list\n");
         /* out of space, send the buffer and start refilling it */
         /* make midi->packet non-null to fool midi_write_flush into sending */
         m->packet = (MIDIPacket *) 4; 
@@ -395,6 +406,7 @@ midi_write_short(PmInternal *midi, PmEvent *event)
     unsigned int messageLength;
 
     if (m->packet == NULL) {
+        PRINT("midi_write_short: first write or first after flush - creating new packet list\n");
         m->packet = MIDIPacketListInit(m->packetList);
         /* this can never fail, right? failure would indicate something 
            unrecoverable */
@@ -554,11 +566,13 @@ char* cm_get_full_endpoint_name(MIDIEndpointRef endpoint)
     /* create the nicely formated name */
     MIDIObjectGetStringProperty(endpoint, kMIDIPropertyName, &endpointName);
     MIDIObjectGetStringProperty(device, kMIDIPropertyName, &deviceName);
+    bool fullNameUnique = true;
     if (deviceName != NULL) {
         fullName = CFStringCreateWithFormat(NULL, NULL, CFSTR("%@: %@"),
                                             deviceName, endpointName);
     } else {
         fullName = endpointName;
+        fullNameUnique = false;
     }
     
     /* copy the string into our buffer */
@@ -569,7 +583,7 @@ char* cm_get_full_endpoint_name(MIDIEndpointRef endpoint)
     /* clean up */
     if (endpointName) CFRelease(endpointName);
     if (deviceName) CFRelease(deviceName);
-    if (fullName) CFRelease(fullName);
+    if (fullName && fullNameUnique) CFRelease(fullName);
 
     return newName;
 }

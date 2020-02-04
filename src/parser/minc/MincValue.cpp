@@ -80,8 +80,15 @@ Symbol * MincStruct::addMember(const char *name, MincDataType type, int scope)
     DPRINT("Symbol::init(member '%s') => %p\n", name, memberSym);
     memberSym->value() = MincValue(type);   // initialize MincValue to correct type for member
     memberSym->scope = scope;
-    memberSym->next = _memberList;
-    _memberList = memberSym;
+    // Ugly, but lets us put them on in order
+    if (_memberList == NULL) {
+        _memberList = memberSym;
+    }
+    else {
+        Symbol *member;
+        for (member = _memberList; member->next != NULL; member = member->next) {}
+        member->next = memberSym;
+    }
     return memberSym;
 }
 
@@ -94,6 +101,8 @@ Symbol * MincStruct::lookupMember(const char *name)
     }
     return NULL;
 }
+
+// MincStruct::print() is defined in builtin.cpp
 
 /* ========================================================================== */
 /* MincValue */

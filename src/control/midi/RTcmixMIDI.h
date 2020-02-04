@@ -9,14 +9,18 @@
 #include "portmidi.h"
 #include "porttime.h"
 #include "pmutil.h"
+#include <RTMIDIOutput.h>
+#include <Lockable.h>
 
 #define SLEEP_MSEC			1		// How long to nap between polling of events
 #define INVALID_MIDIVAL    99999
 
-class RTcmixMIDI {
+typedef unsigned char uchar;
+
+class RTcmixMIDIInput {
 public:
-	RTcmixMIDI();
-	virtual ~RTcmixMIDI();
+	RTcmixMIDIInput();
+	virtual ~RTcmixMIDIInput();
 	int init();
 	void clear();
 	void dump(const int chan);
@@ -50,7 +54,6 @@ private:
 	inline PmQueue *mainToMIDI() { return _mainToMIDI; }
 	inline PmQueue *MIDIToMain() { return _MIDIToMain; }
 	inline PmStream *instream() { return _instream; }
-	inline PmStream *outstream() { return _outstream; }
 
 	void noteOnTrigger(int chan, int pitch, int velocity);
 	void noteOffTrigger(int chan, int pitch, int velocity);
@@ -79,7 +82,6 @@ private:
 	static void _processMIDI(PtTimestamp timestamp, void *context);
 
 	PmStream *_instream;
-	PmStream *_outstream;
 	PmQueue *_mainToMIDI;
 	PmQueue *_MIDIToMain;
 	bool _active;
@@ -95,6 +97,33 @@ private:
 	int _chanpress[16];
 };
 
-RTcmixMIDI *createMIDIPort();
+class RTcmixMIDIOutput : public RTMIDIOutput, private Lockable {
+public:
+    RTcmixMIDIOutput();
+    virtual ~RTcmixMIDIOutput();
+    int init();
+    
+    int start(long latency);
+    int stop();
+    
+    void sendMIDIStart(long timestamp);
+    void sendMIDIStop(long timestamp);
+
+    virtual void sendNoteOn(long timestamp, uchar chan, uchar pitch, uchar vel);
+    virtual void sendNoteOff(long timestamp, uchar chan, uchar pitch, uchar vel);
+    virtual void sendControl(long timestamp, uchar chan, uchar control, unsigned value);
+    virtual void sendPitchBend(long timestamp, uchar chan, unsigned value);
+    virtual void sendProgramChange(long timestamp, uchar chan, uchar program);
+
+protected:
+    inline PmStream *outstream() { return _outstream; }
+private:
+    int         _deviceID;
+    PmStream *  _outstream;
+};
+
+RTcmixMIDIInput *createMIDIInputPort();
+
+RTcmixMIDIOutput *createMIDIOutputPort();
 
 #endif // _RTCMIXMIDI_H_

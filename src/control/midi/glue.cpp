@@ -245,9 +245,9 @@ create_pfield(const Arg args[], const int nargs)
 			return _midi_usage();
 	}
 
-	static RTcmixMIDI *midiport = NULL;
+	static RTcmixMIDIInput *midiport = NULL;
 	if (midiport == NULL)				// first time, so init midi system
-		midiport = createMIDIPort();
+		midiport = createMIDIInputPort();
 	if (midiport == NULL)
 		return NULL;
 
@@ -260,6 +260,7 @@ create_pfield(const Arg args[], const int nargs)
 
 extern "C" {
 	Handle create_handle(const Arg args[], const int nargs);
+    void * create_midi_output();
 	int register_dso();
 };
 
@@ -272,6 +273,16 @@ create_handle(const Arg args[], const int nargs)
 		handle = createPFieldHandle(pField);
 	}
 	return handle;
+}
+
+void *
+create_midi_output()
+{
+    static RTcmixMIDIOutput *sMIDIOutput;
+    if (sMIDIOutput == NULL) {
+        sMIDIOutput = createMIDIOutputPort();   // only create once per processs
+    }
+    return sMIDIOutput;
 }
 
 int register_dso()
