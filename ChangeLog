@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2020-02-03  Douglas Scott <netdscott-at-netscape.net>
+	* Added MIDI output support for MacOS (only, for now).  New "MIDI" instrument library containing 4 MIDI instruments.
+	* Lots of internal source cleanup: Removed RTBUFSAMPS and SR globals from RTcmix class and replaced with setter/getters.
+	* Reworked shutdown-on-signal behavior to allow last audio buffer to go out.
+	* Bumping to 4.4.1.
+
 2020-01-02  Douglas Scott <netdscott-at-netscape.net>
 	* Added MinC support for ++id and --id;
 
