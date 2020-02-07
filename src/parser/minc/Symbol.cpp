@@ -106,7 +106,12 @@ public:
     ElementFun(Symbol *rootSym) : _root(rootSym) {}
     void operator() (const char *name, MincDataType type) {
         MincStruct *mstruct = (MincStruct *)_root->value();
-        mstruct->addMember(name, type, _root->scope);
+        if (mstruct->lookupMember(name) != NULL) {
+            minc_die("Struct contains a duplicate member '%s'", name);
+        }
+        else {
+            mstruct->addMember(name, type, _root->scope);
+        }
     }
 private:
     Symbol *_root;
