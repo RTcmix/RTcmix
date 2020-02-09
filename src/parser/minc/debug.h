@@ -10,6 +10,9 @@
 
 #include "minc_internal.h"
 
+#undef DEBUG_TRACE
+//#define DEBUG_TRACE 1  /* if defined to 1, basic trace.  If defined to 2, full trace */
+
 #if defined(DEBUG_TRACE)
 
 class Trace {

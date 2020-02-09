@@ -77,6 +77,7 @@ public:
     operator MincHandle() const { return _u.handle; }
     operator MincList *() const { return _u.list; }
     operator MincStruct *() const { return _u.mstruct; }
+    operator bool() const { return (type == MincFloatType) ? _u.number != 0.0 : _u.string != NULL; }
     
     bool operator == (const MincValue &rhs);
     bool operator != (const MincValue &rhs);

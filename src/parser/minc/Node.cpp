@@ -21,15 +21,13 @@
 /* This file holds the intermediate tree representation. */
 
 #undef DEBUG
-#undef DEBUG_TRACE
-//#define DEBUG_TRACE 1  /* if defined to 1, basic trace.  If defined to 2, full trace */
+#include "debug.h"
 
 #include "Node.h"
 #include "MincValue.h"
 #include "Scope.h"
 #include "Symbol.h"
 #include "handle.h"
-#include "debug.h"
 #include <Option.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -946,7 +944,7 @@ Node *	NodeOpAssign::doExct()		// was exct_opassign()
 
 Node *	NodeNot::doExct()
 {
-	if (cmp(0.0, (MincFloat)child(0)->exct()->value()) == 0)
+	if ((bool)child(0)->exct()->value() == false)
 		this->value() = 1.0;
 	else
 		this->value() = 0.0;
@@ -956,8 +954,8 @@ Node *	NodeNot::doExct()
 Node *	NodeAnd::doExct()
 {
 	this->value() = 0.0;
-	if (cmp(0.0, (MincFloat)child(0)->exct()->value()) != 0) {
-		if (cmp(0.0, (MincFloat)child(1)->exct()->value()) != 0) {
+	if ((bool)child(0)->exct()->value() == true) {
+		if ((bool)child(1)->exct()->value() == true) {
 			this->value() = 1.0;
 		}
 	}
@@ -1205,8 +1203,8 @@ Node *	NodeUnaryOperator::doExct()
 Node *	NodeOr::doExct()
 {
 	this->value() = 0.0;
-	if ((cmp(0.0, (MincFloat)child(0)->exct()->value()) != 0) ||
-		(cmp(0.0, (MincFloat)child(1)->exct()->value()) != 0)) {
+	if (((bool)child(0)->exct()->value() == true) ||
+		((bool)child(1)->exct()->value() == true)) {
 		this->value() = 1.0;
 	}
 	return this;
@@ -1214,14 +1212,14 @@ Node *	NodeOr::doExct()
 
 Node *	NodeIf::doExct()
 {
-	if (cmp(0.0, (MincFloat)child(0)->exct()->value()) != 0)
+    if ((bool)child(0)->exct()->value() == true)
 		child(1)->exct();
 	return this;
 }
 
 Node *	NodeIfElse::doExct()
 {
-	if (cmp(0.0, (MincFloat)child(0)->exct()->value()) != 0)
+    if ((bool)child(0)->exct()->value() == true)
 		child(1)->exct();
 	else
 		child(2)->exct();
@@ -1230,8 +1228,9 @@ Node *	NodeIfElse::doExct()
 
 Node *	NodeWhile::doExct()
 {
-	while (cmp(0.0, (MincFloat)child(0)->exct()->value()) != 0)
+    while ((bool)child(0)->exct()->value() == true) {
 		child(1)->exct();
+    }
 	return this;
 }
 
@@ -1319,7 +1318,7 @@ Node *	NodeFuncSeq::doExct()
 Node *	NodeFor::doExct()
 {
 	child(0)->exct();         /* init */
-	while (cmp(0.0, (MincFloat)child(1)->exct()->value()) != 0) { /* condition */
+	while ((bool)child(1)->exct()->value() == true) { /* condition */
 		_child4->exct();      /* execute block */
 		child(2)->exct();      /* prepare for next iteration */
 	}

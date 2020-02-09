@@ -275,8 +275,8 @@ str:	TOK_STRING		{
 	;
 
 /* Boolean expression */
-bexp:	exp %prec LOWPRIO	{ $$ = $1; }
-	| TOK_NOT bexp %prec TOK_UNEQU { $$ = new NodeNot($2); }
+bexp:	exp %prec LOWPRIO	{ MPRINT("bexp"); $$ = $1; }
+	| TOK_NOT bexp %prec TOK_UNEQU { MPRINT("!bexp"); $$ = new NodeNot($2); }
 	| bexp TOK_AND bexp	{ $$ = new NodeAnd($1, $3); }
 	| bexp TOK_OR  bexp	{ $$ = new NodeOr($1, $3); }
 	| bexp TOK_EQU bexp	{ $$ = new NodeRelation(OpEqual, $1, $3); }
