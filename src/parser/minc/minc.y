@@ -611,7 +611,6 @@ double minc_memflush()
 #endif
 	return 1.0;
 }
-#endif
 
 void reset_parser()
 {
@@ -619,4 +618,8 @@ void reset_parser()
 	flerror = 0;
 	// Reset the line # every time a new score buffer is received
 	yyset_lineno(1);
+    // Special exported function from minc.l
+    yy_clear_includes();
 }
+
+#endif

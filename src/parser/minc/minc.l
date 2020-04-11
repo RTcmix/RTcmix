@@ -38,6 +38,11 @@ static void yy_flex_strncpy (char* s1, yyconst char * s2, int n)
 	s1[i] = s2[i];
 }
 #endif
+void yy_clear_includes()
+{
+    includedFilenames.clear();
+    include_stack_index = 0;
+}
 #ifdef __cplusplus
 }
 #endif
