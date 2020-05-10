@@ -178,6 +178,9 @@ int SCRUB::run()
 				aamp = table(currentFrame(), amptable, tabs) * amp;
 #endif
 			}
+            else {
+                aamp = amp;
+            }
 			branch = skip;
 		}
 
