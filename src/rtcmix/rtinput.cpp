@@ -138,7 +138,9 @@ int RTcmix::setInputBuffer(const char *inName, float *inBuffer, int inFrames, in
 		if (inFile) {
 			// Update if mod time is more recent.
 			if (inModtime > inFile->modTime()) {
-				inFile->reinit(inBuffer, inFrames, inChans);
+                if (inFile->reinit(inBuffer, inFrames, inChans) != 0) {
+                    return -1;
+                }
 				inFile->setModTime(inModtime);
 			}
 		}
@@ -146,20 +148,24 @@ int RTcmix::setInputBuffer(const char *inName, float *inBuffer, int inFrames, in
 			int i;
 			for (i = 0; i < max_input_fds; i++) {
 				if (!inputFileTable[i].isOpen()) {
-					inputFileTable[i].init(inBuffer,
+					if (inputFileTable[i].init(inBuffer,
 										   inName,
 										   inFrames,
 										   44100.0f,	// DAS Allow SR to VARY
 										   inChans,
-										   inGainScaling);
-					last_input_index = i;
-					break;
+                                           inGainScaling) == 0) {
+                        last_input_index = i;
+                        break;
+                   }
+                    else {
+                        return -1;
+                    }
 				}
 			}
 			
 			/* If this is true, we've used up all input descriptors in our array. */
 			if (i == max_input_fds) {
-				die("rtinput", "You have exceeded the maximum number of input "
+				die("setInputBuffer", "You have exceeded the maximum number of input "
 					"files and buffers (%ld)!", max_input_fds);
 				return -1;
 			}
@@ -194,12 +200,14 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	int            audio_in = 0, in_memory = 0, p1_is_used = 0, fd;
 	int            is_open = 0, header_type, data_format, data_location = 0, nchans;
 	bool		   set_record = false, in_buffer = false;
+    int            status = 0;
 #ifdef INPUT_BUS_SUPPORT
 	int            startchan, endchan, start_pfield;
 	short          busindex, buslist[MAXBUS];
 	BusType        type;
 #endif /* INPUT_BUS_SUPPORT */
-	double         srate, dur = 0.0;
+    float          srate;
+    double         dur = 0.0;
 	char           *sfname, *str;
 	AudioPortType  port_type = MIC;
 	header_type = MUS_UNSUPPORTED;
@@ -210,7 +218,8 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 	/* Catch stoopid NULL filenames */
 	if (sfname == NULL) {
 		rterror("rtinput", "NULL filename!");
-		return -1;
+        status = PARAM_ERROR;
+        goto Error;
 	}
 
 	if (strcmp(sfname, "AUDIO") == 0) {
@@ -235,7 +244,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 // FIXME: need to replace this with the bus spec scheme below... -JGG
 		audioNCHANS = (n_args > 2) ? (int) p[2] : NCHANS;
 		nchans = audioNCHANS;
-		srate = SR;
+		srate = sr();
 	}
 
 #ifdef EMBEDDED
@@ -245,14 +254,15 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 		str = DOUBLE_TO_STRING(pp[1]);
 		if (str == NULL) {
 			rterror("rtinput", "NULL buffer name!");
-			return -1;
+            status = PARAM_ERROR;
+            goto Error;
 		}
 		sfname = str;	// use second argument as lookup string
 		in_buffer = true;
 // FIXME: need to replace this with the bus spec scheme below... -JGG
 		audioNCHANS =  NCHANS;
 		nchans = audioNCHANS;
-		srate = SR;
+		srate = sr();
 	}
 #endif // EMBEDDED
 	else {
@@ -284,19 +294,22 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 		if (str == NULL) {
 			rterror("rtinput", "NULL bus name!");
 			set_record = false;
-			goto Error;
+            status = PARAM_ERROR;
+            goto Error;
 		}
 
 		err = parse_bus_name(str, &type, &startchan, &endchan);
 		if (err) {
 			rterror("rtinput", "Invalid bus name specification.");
 			set_record = false;
-			goto Error;
+            status = PARAM_ERROR;
+            goto Error;
 		}
 		if (type != BUS_IN) {
 			rterror("rtinput", "You have to use an \"in\" bus with rtinput.");
 			set_record = false;
-			goto Error;
+            status = PARAM_ERROR;
+            goto Error;
 		}
 
 		for (j = startchan; j <= endchan; j++)
@@ -321,22 +334,26 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 				// If audio *playback* was disabled, but there is a request for
 				// input audio, create the audio input device here.
 				if (!audioDevice && !Option::play()) {
-					int nframes = RTBUFSAMPS;
+					int nframes = bufsamps();
+                    srate = sr();
 					if ((audioDevice = create_audio_devices(true, false,
-											 NCHANS, &SR, &nframes,
+											 NCHANS, &srate, &nframes,
 											 Option::bufferCount())) == NULL)
 					{
 						set_record = false;
-						goto Error;
+                        status = AUDIO_ERROR;
+                        goto Error;
 					}
 					Option::record(true);
-					RTBUFSAMPS = nframes;
-					rtcmix_advise("Input audio set",  "%g sampling rate, %d channels\n", SR, NCHANS);
+                    setSR(srate);
+					setRTBUFSAMPS(nframes);
+					rtcmix_advise("Input audio set",  "%g sampling rate, %d channels\n", sr(), NCHANS);
 				}
 				// If record disabled during rtsetparams(), we cannot force it on here.
 				else if (!Option::record()) {
-					die("rtinput", "Audio already configured for playback only via rtsetparams()");
+					rterror("rtinput", "Audio already configured for playback only via rtsetparams()");
 					set_record = false;
+                    status = CONFIGURATION_ERROR;
 					goto Error;
 				}
 			}
@@ -347,22 +364,33 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 			}
 			fd = 1;  /* we don't use this; set to 1 so rtsetinput() will work */
 			for (i = 0; i < nchans; i++) {
-				allocate_audioin_buffer(i, RTBUFSAMPS);
+				allocate_audioin_buffer(i, bufsamps());
 			}
 #ifdef INPUT_BUS_SUPPORT
 #endif /* INPUT_BUS_SUPPORT */
 		}
 		else if (in_buffer) {
-			die("rtinput", "No audio buffer is loaded which matches the name '%s'", sfname);
+			rterror("rtinput", "No audio buffer is loaded which matches the name '%s'", sfname);
 			last_input_index = -1;
+            status = PARAM_ERROR;
 			goto Error;
 		}
 		else {
+            if (!rtsetparams_was_called()) {
+#ifdef EMBEDDED
+                rterror("rtinput", "You need to start the audio device before doing this.");
+#else
+                rterror("rtinput", "You did not call rtsetparams!");
+#endif
+                status = CONFIGURATION_ERROR;
+            }
 			set_record = false;
+            double dsrate = sr();
 			fd = ::open_sound_file("rtinput", sfname, &header_type, &data_format,
-									&data_location, &srate, &nchans, &nsamps);
+									&data_location, &dsrate, &nchans, &nsamps);
 			if (fd == -1) {
 				last_input_index = -1;
+                status = FILE_ERROR;
 				goto Error;
 			}
 
@@ -381,12 +409,12 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 			}
 #endif /* INPUT_BUS_SUPPORT */
 
-			dur = (double) (nsamps / nchans) / srate;
+			dur = (double) (nsamps / nchans) / dsrate;
 			rtcmix_advise(NULL, "Input file set for reading:");
 			rtcmix_advise(NULL, "      name:  %s", sfname);
 			rtcmix_advise(NULL, "      type:  %s", mus_header_type_name(header_type));
 			rtcmix_advise(NULL, "    format:  %s", mus_data_format_name(data_format));
-			rtcmix_advise(NULL, "     srate:  %g", srate);
+			rtcmix_advise(NULL, "     srate:  %g", dsrate);
 			rtcmix_advise(NULL, "     chans:  %d", nchans);
 			rtcmix_advise(NULL, "  duration:  %g", dur);
 			if (in_memory)
@@ -395,10 +423,11 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 #ifdef INPUT_BUS_SUPPORT
 #endif /* INPUT_BUS_SUPPORT */
 
-			if (srate != SR) {
+			if (dsrate != sr()) {
 				rtcmix_warn("rtinput", "The input file sampling rate is %g, but "
-							"the output rate is currently %g.", srate, SR);
+							"the output rate is currently %g.", dsrate, sr());
 			}
+            srate = dsrate;
 		}
 
 		/* Put new file descriptor into the first available slot in the
@@ -410,28 +439,41 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 		*/
 		for (i = 0; i < max_input_fds; i++) {
 			if (!inputFileTable[i].isOpen()) {
-                inputFileTable[i].init(fd,
+                if ((status = inputFileTable[i].init(fd,
 									   sfname,
 									   audio_in ? InputFile::AudioDeviceType : in_memory ? InputFile::InMemoryType : InputFile::FileType,
 									   header_type,
 									   data_format,
 									   data_location,
 									   nsamps/nchans,	// passing this in as frames now, not samps
-									   (float)srate,
+									   srate,
 									   nchans,
-									   dur);
-				last_input_index = i;
-				break;
+                                           dur)) == 0) {
+                    last_input_index = i;
+                    break;
+                }
+                else {
+                    last_input_index = -1;
+                    goto Error;
+                }
 			}
 		}
 
 		/* If this is true, we've used up all input descriptors in our array. */
-		if (i == max_input_fds)
-			die("rtinput", "You have exceeded the maximum number of input "
-												"files (%ld)!", max_input_fds);
+        if (i == max_input_fds) {
+			rterror("rtinput", "You have exceeded the maximum number of input "
+                    "files (%ld)!", max_input_fds);
+            last_input_index = -1;
+            status = RESOURCE_ERROR;
+            goto Error;
+        }
 	}
 	
 Error:
+    
+    if (status != NO_ERROR) {
+        RTExit(status);
+    }
 	/* This signals inTraverse() to grab buffers from the audio device. We wait till the end to be sure we succeed,
 	   and that the record buffers are created.
 	 */

@@ -9,58 +9,51 @@ then
 	exit 1
 fi
 
-flags='-q'
+flags='-v 1'
 
-extension=`expr "$1" : '.*\.\(.*\)'`
-base=`expr "$1" : '\(.*\)\..*'`
+infile=$1
+shift
+
+extension=`expr "$infile" : '.*\.\(.*\)'`
+base=`expr "$infile" : '\(.*\)\..*'`
 outfile=${base}_rescale.${extension}
 #echo ${outfile}
 
 script='
-outfile = s_arg(0);
-infile = s_arg(1);
-rtinput(infile);
 inskip = 0.0;
-inend = DUR();
-nargs = n_arg();
-if (nargs > 2) {
-	inskip = f_arg(2);
-	if (inskip >= DUR()) {
-		print("<inpoint> must be less than file duration. Setting to zero...");
-		inskip = 0;
+indur = filedur($sfin);
+inend = indur;
+if (n_arg() > 0) {
+	inskip = f_arg(0);
+	if (inskip >= indur) {
+		printf("inpoint (%f) must be less than file duration (%f).\n", inskip, indur);
+		exit(-1);
 	}
-	if (nargs > 3) {
-		inend = f_arg(3);
-		if (inend > DUR()) {
-			print("<outpoint> must be within file duration. Correcting...");
-			inend = DUR();
+	if (n_arg() > 1) {
+		inend = f_arg(1);
+		if (inend > indur) {
+			printf("outpoint (%f) must be within file duration (%f).\n", inend, indur);
+			exit(-1);
 		}
+	}
+	if (inskip >= inend) {
+		printf("inpoint (%f) must be less than outpoint (%f).\n", inskip, inend);
+		exit(-1);
 	}
 }
 dur = inend - inskip;
 amp = 32767.0;
-chans = CHANS();
-set_option("play = no");
-rtsetparams(SR(), chans);
-rtoutput(outfile, "float");
-if (chans == 1) {
-	MIX(0, inskip, dur, amp, 0);
+set_option("play = off", "clobber = on");
+sr = filesr($sfin);
+chans = filechans($sfin);
+rtsetparams(sr, chans);
+rtinput($sfin);
+rtoutput($sfout, "float");
+matrix = {};
+for (i = 0; i < chans; i += 1) {
+	matrix[i] = i;
 }
-if (chans == 2) {
-	MIX(0, inskip, dur, amp, 0, 1);
-}
-if (chans == 4) {
-	MIX(0, inskip, dur, amp, 0, 1, 2, 3);
-}
-if (chans == 5) {
-	MIX(0, inskip, dur, amp, 0, 1, 2, 3, 4);
-}
-if (chans == 6) {
-	MIX(0, inskip, dur, amp, 0, 1, 2, 3, 4, 5);
-}
-if (chans == 8) {
-	MIX(0, inskip, dur, amp, 0, 1, 2, 3, 4, 5, 6, 7);
-}
+MIX(0, inskip, dur, amp, matrix);
 '
-echo $script | CMIX $flags $outfile $*
+echo $script | CMIX $flags --sfin=$infile --sfout=$outfile $*
 

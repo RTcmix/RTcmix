@@ -31,9 +31,8 @@
 #include <rt.h>
 #include <rtdefs.h>
 
-PANECHO::PANECHO() : Instrument()
+PANECHO::PANECHO() : in(NULL), delay0(NULL), delay1(NULL)
 {
-	in = NULL;
 	branch = 0;
 	warn_deltime = true;
 }

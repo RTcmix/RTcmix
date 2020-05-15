@@ -11,85 +11,82 @@ then
 	exit 1
 fi
 
-flags='-q'
+flags='-v 1'
+
+sf1=$1
+in1=$2
+out1=$3
+sf2=$4
+in2=$5
+out2=-1
+if [ $# -eq 6 ]
+then
+	out2=$6
+fi
 
 script='
-ramplen = .002;
-file1 = s_arg(0);
-in1 = f_arg(1);
-out1 = f_arg(2);
-file2 = s_arg(3);
-in2 = f_arg(4);
-if (n_arg() > 5) {
-	out2 = f_arg(5)
-}
-else {
-	out2 = -1
-}
-
-rtinput(file1);
-chans1 = CHANS();
-sr1 = SR();
-rtinput(file2);
-chans2 = CHANS();
-sr2 = SR();
+ramplen = 0.002;
+chans1 = filechans($sf1);
+sr1 = filesr($sf1);
+chans2 = filechans($sf2);
+sr2 = filesr($sf2);
 if (sr1 != sr2) {
-	print("File sampling rates must be the same.");
+	printf("File sampling rates must be the same.\n");
 	exit(1);
 }
 rtsetparams(sr1, max(chans1, chans2));
 load("STEREO");
-reset(20000);
+control_rate(20000);
 amp = 1;
 
-if (out1 <= in1) {
-	str_num("out time (", out1, ") must be greater than in time (", in1, ")");
+if ($out1 <= $in1) {
+	printf("out time (%f) must be greater than in time (%f).\n", $out1, $in1);
 	exit(1);
 }
-rtinput(file1);
-dur1 = out1 - in1;
+rtinput($sf1);
+dur1 = $out1 - $in1;
 env = maketable("line", 20000, 0,0, ramplen,1, dur1-ramplen,1, dur1,0);
 if (chans1 == 1) {
-	STEREO(0, in1, dur1, mul(amp, env), .5)
+	STEREO(0, $in1, dur1, mul(amp, env), 0.5)
 }
 else if (chans1 == 2) {
-	STEREO(0, in1, dur1, mul(amp, env), 1, 0)
+	STEREO(0, $in1, dur1, mul(amp, env), 1, 0)
 }
 else if (chans1 == 4) {
-	MIX(0, in1, dur1, mul(amp, env), 0, 1, 2, 3)
+	MIX(0, $in1, dur1, mul(amp, env), 0, 1, 2, 3)
 }
 else if (chans1 == 8) {
-	MIX(0, in1, dur1, mul(amp, env), 0, 1, 2, 3, 4, 5, 6, 7)
+	MIX(0, $in1, dur1, mul(amp, env), 0, 1, 2, 3, 4, 5, 6, 7)
 }
 else {
-	print("Chans must be 1, 2, 4, or 8.");
+	printf("Chans must be 1, 2, 4, or 8.\n");
 	exit(1);
 }
 
-rtinput(file2);
-if (out2 == -1) {
-	dur2 = DUR() - in2
+rtinput($sf2);
+if ($out2 == -1) {
+	dur2 = DUR() - $in2
 }
 else {
-	dur2 = out2 - in2
+	dur2 = $out2 - $in2
 }
 env = maketable("line", 20000, 0,0, ramplen,1, dur2-ramplen,1, dur2,0);
 if (chans2 == 1) {
-	STEREO(dur1, in2, dur2, mul(amp, env), .5)
+	STEREO(dur1, $in2, dur2, mul(amp, env), 0.5)
 }
 else if (chans2 == 2) {
-	STEREO(dur1, in2, dur2, mul(amp, env), 1, 0)
+	STEREO(dur1, $in2, dur2, mul(amp, env), 1, 0)
 }
 else if (chans2 == 4) {
-	MIX(dur1, in2, dur2, mul(amp, env), 0, 1, 2, 3)
+	MIX(dur1, $in2, dur2, mul(amp, env), 0, 1, 2, 3)
 }
 else if (chans2 == 8) {
-	MIX(dur1, in2, dur2, mul(amp, env), 0, 1, 2, 3, 4, 5, 6, 7)
+	MIX(dur1, $in2, dur2, mul(amp, env), 0, 1, 2, 3, 4, 5, 6, 7)
 }
 else {
-	print("Chans must be 1, 2, 4, or 8.");
+	printf("Chans must be 1, 2, 4, or 8.\n");
 	exit(1);
 }
 '
-echo $script | CMIX $flags $*
+echo $script | CMIX $flags --sf1=$sf1 --in1=$in1 --out1=$out1 --sf2=$sf2 --in2=$in2 --out2=$out2
 

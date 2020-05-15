@@ -27,7 +27,7 @@ $(LIBMIDI): depend $(OBJS) $(PMLIB)
 glue.o: depend glue.cpp RTMidiPField.h
 	$(CXX) $(CXXFLAGS) -c -o glue.o glue.cpp
 
-$(PMLIB):
+$(PMLIB)::
 	( cd portmidi; $(MAKE) $(MFLAGS) all; )
 
 depend:

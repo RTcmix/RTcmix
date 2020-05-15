@@ -102,11 +102,12 @@ void
 RTcmix::clear_audioin_buffers()
 {
    int   i, j;
+    const int count = bufsamps();
 
    for (i = 0; i < busCount; i++) {
       BufPtr buf = audioin_buffer[i];
       if (buf != NULL)
-         for (j = 0; j < RTBUFSAMPS; j++)
+         for (j = 0; j < count; j++)
             buf[j] = 0.0;
    }
 }
@@ -118,11 +119,12 @@ void
 RTcmix::clear_aux_buffers()
 {
    int   i, j;
+    const int count = bufsamps();
 
    for (i = 0; i < busCount; i++) {
       BufPtr buf = aux_buffer[i];
       if (buf != NULL)
-         for (j = 0; j < RTBUFSAMPS; j++)
+         for (j = 0; j < count; j++)
             buf[j] = 0.0;
    }
 }
@@ -133,10 +135,11 @@ void
 RTcmix::clear_output_buffers()
 {
    int   i, j;
+    const int count = bufsamps();
 
    for (i = 0; i < NCHANS; i++) {          /* zero just the ones in use */
       BufPtr buf = out_buffer[i];
-      for (j = 0; j < RTBUFSAMPS; j++)
+      for (j = 0; j < count; j++)
          buf[j] = 0.0;
    }
 }

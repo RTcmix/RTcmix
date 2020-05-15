@@ -10,7 +10,7 @@ float thresh,randamp,fps,frame1,frame2,warp,cf,bw,dur,amp,start,amp
 float buzthresh, noisethresh;
 
 /* open the LPC file to be used for the resynthesis */
-dataset("/mnt/D/Sounds/lpcfiles/tori02.lpc",0)
+dataset("./tori02.lpc",0)
 
 /* lpcstuff arguments: */
 /* p0=threshold,p1=randamp,p2=unvoiced_at_norm_rate,p3=risetime,p4=decaytime,p5=gain_threshold */

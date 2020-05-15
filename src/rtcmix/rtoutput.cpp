@@ -38,7 +38,7 @@
         "float"      32-bit floating point
         "normfloat"  32-bit floating point in range (mostly) from -1.0 to +1.0
         "16"         synonym for "short"
-        "24"         24-bit linear, not yet supported in RTcmix
+        "24"         24-bit linear
 
         The default is "short".
 
@@ -293,7 +293,7 @@ RTcmix::rtoutput(float p[], int n_args, double pp[])
    */
    rtfileit = -1;
 
-   if (SR == 0) {
+   if (!rtsetparams_was_called()) {
       die("rtoutput", "You must call rtsetparams before rtoutput.");
       return -1;
    }
@@ -338,7 +338,7 @@ RTcmix::rtoutput(float p[], int n_args, double pp[])
    AudioDevice *dev;
    if ((dev = create_audio_file_device(audioDevice,
 				   				rtoutsfname, output_header_type,
-                                output_data_format, NCHANS, SR,
+                                output_data_format, NCHANS, sr(),
                                 normalize_output_floats,
                                 get_bool_option(kOptionCheckPeaks))) == NULL)
       return -1;  /* failed! */

@@ -31,7 +31,9 @@ CFLAGS += $(VFLAGS) $(PMFLAGS) -Ipm_common -Iporttime
 TESTPRG = pm_test/test pm_test/sysex pm_test/midithread pm_test/latency \
 pm_test/midithru
 
-all: $(PMLIB) $(PTLIB) $(TESTPRG)
+all: $(PMLIB) $(PTLIB)
+
+test: $(TESTPRG)
 
 $(PMLIB): Makefile $(PMOBJECTS)
 	$(RM) $@
@@ -70,7 +72,6 @@ porttime/ptlinux.o: Makefile porttime/ptlinux.c
 	$(CC) $(CFLAGS) -c porttime/ptlinux.c -o porttime/ptlinux.o
 
 clean:
-	$(RM) *.o *~ core* */*.o */*~ */core*
-	$(RM) $(PMLIB) $(PTLIB) pm_test/test pm_test/sysex pm_test/midithread
-	$(RM) pm_test/latency pm_test/midithru
+	$(RM) *.o *~ core* */*.o */*~ */core* $(PMLIB) $(PTLIB)
+	cd pm_test; $(RM) -r test sysex midithread latency midithru *.dSYM
 

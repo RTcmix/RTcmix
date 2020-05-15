@@ -13,7 +13,7 @@ typedef enum {
 class BUTTER : public Instrument {
    bool     do_balance, bypass, filttype_was_string;
    int      nargs, inchan, branch, skip, insamps, nfilts;
-   float    amp, pctleft, cf, bw;
+   float    inamp, outamp, pctleft, cf, bw;
    double   *amparray, *cfarray, *bwarray;
    float    amptabs[2], cftabs[2], bwtabs[2];
    float    *in;
@@ -38,6 +38,7 @@ enum {
 	kPan = 1 << 8,
 	kBypass = 1 << 9,
 	kFreq = 1 << 10,
-	kBandwidth = 1 << 11
+	kBandwidth = 1 << 11,
+	kOutAmp = 1 << 13
 };
 

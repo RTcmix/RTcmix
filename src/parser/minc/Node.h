@@ -10,6 +10,7 @@
 #define RT_NODE_H
 
 #include "minc_internal.h"
+#include "MincValue.h"
 
 #ifdef DEBUG_TRACE
 static char sBuf[256];
@@ -29,11 +30,14 @@ typedef enum {
 	eNodeEmptyListElem,
 	eNodeSubscriptRead,
 	eNodeSubscriptWrite,
+    eNodeMember,
 	eNodeOpAssign,
 	eNodeName,
 	eNodeAutoName,
 	eNodeConstf,
 	eNodeString,
+    eNodeMemberDecl,
+    eNodeStructDef,
 	eNodeFuncDef,
 	eNodeArgList,
 	eNodeArgListElem,
@@ -51,6 +55,7 @@ typedef enum {
 	eNodeFor,
 	eNodeIfElse,
 	eNodeDecl,
+    eNodeStructDecl,
 	eNodeFuncDecl,
 	eNodeBlock,
 	eNodeNoop
@@ -60,23 +65,27 @@ class Node : public MincObject
 {
 //protected:					TODO: FINISH FULL CLASS
 public:
-	NodeKind kind;
-	MincDataType _type;
-	OpKind op;
+	NodeKind        kind;
+	MincDataType    _type;
+	OpKind          op;
 	MincValue 		v;
 	int				lineno;		/* used for error statements */
 public:
 	Node(OpKind op, NodeKind kind);
 	virtual 			~Node();
 	const char *		classname() const;
-	const char *		name() const { return (u.symbol) ? u.symbol->name() : "UNDEFINED"; }
+    const char *		name() const;
 	MincDataType		dataType() const { return v.dataType(); }
 	virtual Node*		child(int index) const { return NULL; }
 	void				setSymbol(Symbol *sym) { u.symbol = sym; }
 	Symbol *			symbol() const { return u.symbol; }
+    void                setValue(const MincValue &value) { v = value; }
 	const MincValue&	value() const { return v; }
 	MincValue&			value() { return v; }
 	Node*				exct();
+    
+    Node *              copyValue(Node *);
+    Node *              copyValue(Symbol *);
 	void				print();
 protected:
 	virtual Node*		doExct() = 0;
@@ -193,7 +202,6 @@ protected:
  */
 class NodeName : public Node
 {
-	const char *_symbolName;       /* used for function name, symbol name (for lookup) */
 public:
 	NodeName(const char *symbolName) : Node(OpFree, eNodeName), _symbolName(symbolName) {
 		NPRINT("NodeName('%s') => %p\n", symbolName, this);
@@ -203,6 +211,8 @@ protected:
 	virtual Node*		doExct();
 	Node *				finishExct();
 	const char *		symbolName() const { return _symbolName; }
+private:
+    const char *_symbolName;       /* used for function name, symbol name (for lookup) */
 };
 
 /* looks up symbol name and get the symbol, and auto-declares it if not found
@@ -268,6 +278,35 @@ public:
 	}
 protected:
 	virtual Node*		doExct();
+};
+
+class NodeMemberDecl : public Node
+{
+public:
+    NodeMemberDecl(const char *name, MincDataType type)
+            : Node(OpFree, eNodeMemberDecl), _symbolName(name) {
+        this->_type = type;        // TODO
+        NPRINT("NodeMemberDecl('%s') => %p\n", name, this);
+    }
+protected:
+    virtual Node*        doExct();
+private:
+    const char *    _symbolName;
+};
+
+// Struct definition node.  Stores "template" for a just-declared struct.
+//  n1 NodeSeq of NodeDecls for elements
+
+class NodeStructDef : public Node1Child
+{
+public:
+    NodeStructDef(const char *name, Node *n1) : Node1Child(OpFree, eNodeStructDef, n1), _typeName(name) {
+        NPRINT("NodeStructDef(%s, %p) => %p\n", name, n1, this);
+    }
+protected:
+    virtual Node*        doExct();
+private:
+    const char *    _typeName;
 };
 
 class NodeFuncSeq : public Node2Children
@@ -403,6 +442,18 @@ protected:
 	virtual Node*		doExct();
 };
 
+class NodeMember : public Node1Child
+{
+public:
+    NodeMember(Node *n1, const char *memberName) : Node1Child(OpFree, eNodeMember, n1), _memberName(memberName) {
+        NPRINT("NodeMember(%p, '%s') => %p\n", n1, memberName, this);
+    }
+protected:
+    virtual Node*        doExct();
+private:
+    const char *_memberName;
+};
+
 class NodeIf : public Node2Children
 {
 public:
@@ -456,6 +507,20 @@ protected:
 	virtual Node*		doExct();
 private:
 	const char *	_symbolName;
+};
+
+class NodeStructDecl : public Node
+{
+public:
+    NodeStructDecl(const char *name, const char *typeName) : Node(OpFree, eNodeStructDecl), _symbolName(name), _typeName(typeName) {
+        this->_type = MincStructType;
+        NPRINT("NodeStructDecl('struct %s %s') => %p\n", _typeName, _symbolName, this);
+    }
+protected:
+    virtual Node*        doExct();
+private:
+    const char *    _symbolName;
+    const char *    _typeName;
 };
 
 class NodeFuncDecl : public Node

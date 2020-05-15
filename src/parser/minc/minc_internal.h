@@ -14,6 +14,7 @@
 #include "minc_defs.h"
 #include "utils.h"
 #include "RefCounted.h"
+#include <vector>
 
 #ifdef DEBUG
    #define DPRINT(...) rtcmix_print(__VA_ARGS__)
@@ -25,6 +26,13 @@
 #define YYLMAX   2048      /* maximum yacc line length */
 #define MAXSTACK 15        /* depth of function call or list recursion */
 #define HASHSIZE 107       /* number of buckets in string table */
+
+enum MincWarningLevel {
+    MincNoWarnings = 0,
+    MincNoDefaultedArgWarnings = 1,
+    MincAllWarnings = 2,
+    MincWarningsAsErrors = 5
+};
 
 typedef enum {
 	OpZero = 0,
@@ -41,16 +49,14 @@ typedef enum {
 	OpLess,
 	OpGreater,
 	OpLessEqual,
-	OpGreaterEqual
+	OpGreaterEqual,
+    OpPlusPlus,
+    OpMinusMinus
 } OpKind;
 
 /* prototypes for internal Minc use */
 
-typedef double MincFloat;
 #define EPSILON DBL_EPSILON
-
-typedef const char *MincString;
-typedef void *MincHandle;  // contents of this is opaque to Minc
 
 /* error.cpp */
 void sys_error(const char *msg);
@@ -59,30 +65,6 @@ void minc_warn(const char *msg, ...);
 void minc_die(const char *msg, ...);
 void minc_internal_error(const char *msg, ...);
 extern "C" void yyerror(const char *msg);
-
-class MincObject
-{
-public:
-	void *operator new(size_t size);
-	void operator delete(void *);
-};
-
-class Node;
-
-union YYSTYPE {
-   int ival;
-   Node *node;
-   char *str;
-};
-#define YYSTYPE_IS_DECLARED   /* keep bison from declaring YYSTYPE as an int */
-
-enum MincDataType {
-   MincVoidType = 0,
-   MincFloatType = 1,       /* a floating point number, either float or double */
-   MincStringType = 2,
-   MincHandleType = 4,
-   MincListType = 8
-};
 
 class RTException
 {
@@ -139,132 +121,52 @@ public:
 	ReclaredVariableException(const char *msg) : RTFatalException(msg) {}
 };
 
-/* A MincList contains an array of MincValue's, whose underlying data
-   type is flexible.  So a MincList is an array of arbitrarily mixed types
-   (any of the types represented in the MincDataType enum), and it can
-   support nested lists.
-*/
+// Such as divide or mod by zero
 
-class MincValue;
-
-class MincList : public MincObject, public RefCounted
+class ArithmaticException : public RTFatalException
 {
 public:
-	MincList(int len=0);
-	void resize(int newLen);
-	int len;                /* number of MincValue's in <data> array */
-	MincValue *data;
-protected:
-	virtual ~MincList();
+    ArithmaticException(const char *msg) : RTFatalException(msg) {}
 };
 
-class MincValue {
+class MincObject
+{
 public:
-	MincValue() : type(MincVoidType) { _u.list = NULL; }
-	MincValue(MincFloat f) : type(MincFloatType) { _u.number = f; }
-	MincValue(MincString s) : type(MincStringType) { _u.string = s; }
-	MincValue(MincHandle h);
-	MincValue(MincList *l);
-	MincValue(MincDataType type);
-	~MincValue();
-	const MincValue& operator = (const MincValue &rhs);
-	const MincValue& operator = (MincFloat f);
-	const MincValue& operator = (MincString s);
-	const MincValue& operator = (MincHandle h);
-	const MincValue& operator = (MincList *l);
-
-	const MincValue& operator += (const MincValue &rhs);
-	const MincValue& operator -= (const MincValue &rhs);
-	const MincValue& operator *= (const MincValue &rhs);
-	const MincValue& operator /= (const MincValue &rhs);
-
-	const MincValue& operator[] (const MincValue &index) const;	// for MincList access
-	MincValue& operator[] (const MincValue &index);	// for MincList access
-
-	operator MincFloat() const { return _u.number; }
-	operator MincString() const { return _u.string; }
-	operator MincHandle() const { return _u.handle; }
-	operator MincList *() const { return _u.list; }
-	
-	bool operator == (const MincValue &rhs);
-	bool operator != (const MincValue &rhs);
-	bool operator < (const MincValue &rhs);
-	bool operator > (const MincValue &rhs);
-	bool operator <= (const MincValue &rhs);
-	bool operator >= (const MincValue &rhs);
-	
-	
-	
-	MincDataType	dataType() const { return type; }
-	void zero() { _u.list = NULL; }		// zeroes without changing type
-	void print();
-private:
-	void doClear();
-	void doCopy(const MincValue &rhs);
-	bool validType(unsigned allowedTypes) const;
-	MincDataType type;
-	union {
-		MincFloat number;
-		MincString string;
-		MincHandle handle;
-		MincList *list;
-	} _u;
+    void *operator new(size_t size);
+    void operator delete(void *);
 };
 
+typedef double MincFloat;
+typedef const char *MincString;
+typedef void *MincHandle;  // contents of this is opaque to Minc
+
+enum MincDataType {
+    MincVoidType = 0,
+    MincFloatType = 1,       /* a floating point number, either float or double */
+    MincStringType = 2,
+    MincHandleType = 4,
+    MincListType = 8,
+    MincStructType = 16
+};
+
+class MincValue;
+class MincList;
 class Node;
 
-class Symbol {       		/* symbol table entries */
-public:
-	static Symbol *	create(const char *name);
-	Symbol(const char *name);
-	~Symbol();
-	MincDataType		dataType() const { return v.dataType(); }
-	const MincValue&	value() const { return v; }
-	MincValue&			value() { return v; }
-	const char *		name() { return _name; }
-	Symbol *next;       		  /* next entry on hash chain */
-	int scope;
-	const char *_name;          /* symbol name */
-	Node *node;		  		/* for symbols that are functions, function def */
-protected:
-	MincValue v;
-#ifdef NOTYET
-	short defined;             /* set when function defined */
-	short offset;              /* offset in activation frame */
-	Symbol *plist;             /* next parameter in parameter list */
-#endif
+union YYSTYPE {
+    int ival;
+    Node *node;
+    char *str;
 };
+#define YYSTYPE_IS_DECLARED   /* keep bison from declaring YYSTYPE as an int */
 
-/* builtin.cpp */
-int call_builtin_function(const char *funcname, const MincValue arglist[],
-						  const int nargs, MincValue *retval);
-
-/* callextfunc.cpp */
-int call_external_function(const char *funcname, const MincValue arglist[],
-						   const int nargs, MincValue *return_value);
-void printargs(const char *funcname, const Arg arglist[], const int nargs);
-MincHandle minc_binop_handle_float(const MincHandle handle, const MincFloat val, OpKind op);
-MincHandle minc_binop_float_handle(const MincFloat val, const MincHandle handle, OpKind op);
-MincHandle minc_binop_handles(const MincHandle handle1, const MincHandle handle2, OpKind op);
-
-/* sym.cpp */
-void push_function_stack();
-void pop_function_stack();
-void push_scope();
-void pop_scope();
-int current_scope();
-void restore_scope(int scope);
-Symbol *install(const char *name, Bool isGlobal);
 enum LookupType { AnyLevel = 0, GlobalLevel = 1, ThisLevel = 2 };
-Symbol *lookup(const char *name, LookupType lookupType);
-Symbol * lookupOrAutodeclare(const char *name, Bool inFunctionCall);
+
+void printargs(const char *funcname, const Arg arglist[], const int nargs);
+
 char *strsave(const char *str);
-char *emalloc(long nbytes);
-void efree(void *mem);
 void clear_elem(MincValue *);
 void unref_value_list(MincValue *);
-void free_symbols();
-void dump_symbols();
 
 /* utils.cpp */
 int is_float_list(const MincList *list);
@@ -273,6 +175,12 @@ MincList *array_to_float_list(const MincFloat *array, const int len);
 const char *MincTypeName(MincDataType type);
 void increment_score_line_offset(int offset);
 int get_score_line_offset();
+
+int hash(const char *c);
+int cmp(MincFloat f1, MincFloat f2);
+
+char *emalloc(long nbytes);
+void efree(void *mem);
 
 inline void *	MincObject::operator new(size_t size)
 {
@@ -283,13 +191,5 @@ inline void	MincObject::operator delete(void *ptr)
 {
 	efree(ptr);
 }
-
-#ifdef EMBEDDED
-#ifdef LINUX
-extern "C" int readFromGlobalBuffer(char *buf, int *pBytes, int maxbytes);
-#else
-extern "C" int readFromGlobalBuffer(char *buf, size_t *pBytes, int maxbytes);
-#endif
-#endif
 
 #endif /* _MINC_INTERNAL_H_ */

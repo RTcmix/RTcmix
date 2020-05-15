@@ -23,7 +23,7 @@ main(int argc, char *argv[])
 	unsigned totalcmds = 0;
 	int numcommands = 4;
 	int minsleep = 1000;	// in microseconds
-	int maxsleep = 10000;
+	int maxsleep = 5000;
 	const char *hwopt = NULL;
 	int checkCount, checkInterval;
 	int i;
@@ -97,7 +97,7 @@ main(int argc, char *argv[])
 				pval = irand(5.0, 5.05);
 				spread = irand(0.0, 1.0);
 				rrr->cmd("bus_config", 2, "START", "out0-1");
-				rrr->cmd("START", 9, 0.0, 1.0, pval, 1.0, 0.7, 5000.0, 1.0, spread, 1.0);
+				rrr->cmd("START", 9, 0.0, 1.0, pval, 1.0, 0.7, 10000.0, 1.0, spread, 1.0);
 				totalcmds += 2;
 				break;
 			case 1:
@@ -105,7 +105,7 @@ main(int argc, char *argv[])
 				pval2 = irand(0.0, 1.0);			// pan
 				pval3 = irand(0.05, 0.5);			// dur	
 				rrr->cmd("bus_config", 3, "TRANS3", "in0", "out0-1");
-				rrr->cmd("TRANS3", 5, 0.0, 0.0, pval3, 0.04, pval, pval2);
+				rrr->cmd("TRANS3", 5, 0.0, 0.0, pval3, 0.1, pval, pval2);
 				totalcmds += 2;
 				break;
 			case 2:
@@ -113,9 +113,9 @@ main(int argc, char *argv[])
 				rrr->cmd("bus_config", 3, "STEREO", "aix0", "out0-1");
 				pval = irand(-0.04, 0.04);
 				pval3 = irand(0.05, 0.5);			// dur	
-				rrr->cmd("TRANS", 5, 0.0, 0.0, pval3, 1.0, pval);
+				rrr->cmd("TRANS", 5, 0.0, 0.0, pval3, 0.5, pval);
 				pval2 = irand(0.0, 1.0);
-				rrr->cmd("STEREO", 5, 0.0, 0.0, pval3, 0.04, pval2);
+				rrr->cmd("STEREO", 5, 0.0, 0.0, pval3, 0.5, pval2);
 				totalcmds += 2;
 				break;
 			default:

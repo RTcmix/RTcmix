@@ -1,10 +1,9 @@
-//
-//  args.cpp
-//  RTcmixTest
+/* RTcmix  - Copyright (C) 2004  The RTcmix Development Team
+ See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
+ the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
+ */
 //
 //  Created by Douglas Scott on 7/31/16.
-//
-//
 
 #include <map>
 #include <string.h>
@@ -18,18 +17,6 @@ extern "C" {
 static std::map<int, const char *> sTokenMap;
 
 #define MAX_TOKEN_LEN 32
-
-static int
-hash(const char *s)
-{
-	int i = 0;
-	
-	while (*s) {
-		i = (((unsigned int) *s + i) % HASHSIZE);
-		s++;
-	}
-	return i;
-}
 
 int
 check_new_arg(const char *argument)

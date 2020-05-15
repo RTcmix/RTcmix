@@ -28,7 +28,7 @@ ifneq ($(BUILDTYPE), STANDALONE)
 	ln -sf ../src/rtcmix/RTcmix_API.h .
 endif
 
-depend:
+depend: all
 
 install: all
 

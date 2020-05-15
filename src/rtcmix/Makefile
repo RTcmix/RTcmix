@@ -421,43 +421,6 @@ install:	all
 
 endif
 
-#ifeq ($(BUILDTYPE), MAXMSP)
-#$(RTLIB): $(COMMON_OBJS) $(LIBMINC) $(LIBS)
-#	$(LOAD) $@ \
-#	$(MAIN_OBJS) $(COMMON_OBJS) $(INST_OBJS) $(LIB_OBJS) $(LIBS) \
-#	$(SYS_LDFLAGS)
-#
-#install:	maxmsp_install
-#
-#maxmsp_install:	all
-#   ifndef MAX_INSTALL_DIR
-#	@echo You are installing Max/MSP but have not set the install path for your library using MAX_INSTALL_DEST!
-#   else
-#	$(INSTALL) $(RTLIB) $(MAX_LIB_INSTALL_DIR)
-#   endif
-#
-#endif
-#
-#ifeq ($(BUILDTYPE), PD)
-#$(RTLIB): $(MAIN_OBJS) $(LIBS)
-#	$(LOAD) $@ \
-#	$(COMMON_OBJS) $(MAIN_OBJS) $(LIBS) \
-#	$(SYS_LDFLAGS)
-#
-#install:	all
-#
-#endif
-#
-#ifeq ($(BUILDTYPE), IOS)
-#$(RTLIB): $(COMMON_OBJS) $(MAIN_OBJS) $(LIBS)
-#	$(RM) $@
-#	$(LOAD) $@ $(COMMON_OBJS) $(INST_OBJS) $(LIB_OBJS) $(LIBS)
-#	$(RANLIB) $@
-#
-#install:	all
-#
-#endif
-
 PMIX: $(MAIN_OBJS) $(P_O) $(LIBS) $(PROFILE_O)
 ifeq ($(PERL_SUPPORT), TRUE)
 	$(CXX) $(CXXFLAGS) -o PMIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) \
@@ -483,7 +446,7 @@ ifeq ($(ARCH),SGI)
 # Unfortunately, this doesn't work...   -JGG
 #	$(SHELL) -ec '$(CC) -M $(CFLAGS) $(SRCS) $(CPPSRCS)' > depend
 else
-	-$(SHELL) -ec '$(CC) -M $(CFLAGS) $(COMMON_CSRCS) $(GEN_CSRCS) $(COMMON_CPPSRCS) $(IMBEDSRCS) $(MAIN_CPPSRCS) $(PERL_CCFLAGS)' > ./depend
+	-$(SHELL) -ec '$(CC) -M -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" $(CFLAGS) $(COMMON_CSRCS) $(GEN_CSRCS) $(COMMON_CPPSRCS) $(IMBEDSRCS) $(MAIN_CPPSRCS) $(PERL_CCFLAGS)' > ./depend
 endif
 
 -include depend

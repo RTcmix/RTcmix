@@ -477,10 +477,10 @@ RTcmixMain::interrupt_handler(int signo)
 		interrupt_handler_called = 1;
 	   fprintf(stderr, "\n<<< Caught interrupt signal >>>\n");
 
-	   // Notify rendering loop.
-	   run_status = RT_SHUTDOWN;
 	   if (audioDevice) {
-	       audioDevice->close();
+           fprintf(stderr, "flushing audio...\n");
+           // Notify rendering loop.
+           run_status = RT_SHUTDOWN;
 	   }
 	   if (!audioLoopStarted) {
 		   closesf();	// We exit if we have not yet configured audio.
@@ -688,7 +688,7 @@ RTcmixMain::sockit(void *arg)
 		  cout << "sockit(): elapsed = " << getElapsed() << endl;
 		  cout << "sockit(): SR = " << SR << endl;
 #endif
-		  if(sinfo->name) {
+          if (strlen(sinfo->name) > 0) {
 #ifdef ALLBUG
 			cout << "SOCKET RECIEVED\n";
 			cout << "sinfo->name = " << sinfo->name << endl;

@@ -56,7 +56,6 @@ ifeq ($(ARCH),LINUX)
   ARCH_RTLDFLAGS = -Wl,-rpath $(LIBDIR)
   ifeq ($(BUILDTYPE), STANDALONE)
     ARCHFLAGS += -DSTANDALONE
-    RTLIB = librtcmix.$(SHLIB_SUFFIX)
     RTLIBTYPE = DYNAMIC
   endif
   ifndef AUDIODRIVER
@@ -69,6 +68,7 @@ ifeq ($(ARCH),LINUX)
   INSTALL = cp -f
   RANLIB = touch
   SHELL = /bin/sh
+  SHLIB = rtcmix
   SHLIB_SUFFIX = so
 endif
 
@@ -84,7 +84,6 @@ ifeq ($(ARCH),MACOSX)
   INSTALL = cp -f
   RANLIB = ranlib
   SHELL = /bin/sh
-  SHLIB_SUFFIX = dylib
   # Optional but rare override for the maximum number of supported audio
   # channels.  Must be >= 8
   ifdef MAXCHANS
@@ -99,6 +98,8 @@ ifeq ($(ARCH),MACOSX)
       ARCHFLAGS += -DUSE_OSX_DISPATCH
     endif
     ARCH_RTLDFLAGS += -framework AudioUnit
+	SHLIB = rtcmix
+    SHLIB_SUFFIX = dylib
     AUDIODRIVER=APPLE
     CMIX_FLAGS += -DAPPLEAUDIO
   endif
@@ -113,16 +114,17 @@ ifeq ($(ARCH),MACOSX)
     ARCH_RTLDFLAGS += -framework AudioUnit
     AUDIODRIVER=EMBEDDEDAUDIO
     CMIX_FLAGS += -DEMBEDDEDAUDIO
+    SHLIB = rtcmix_embedded
     # This is overridable in site.conf
 	ifndef RTLIBTYPE
 		RTLIBTYPE = DYNAMIC
 	endif
 	ifeq ($(RTLIBTYPE), DYNAMIC) 
-		RTLIB = librtcmix_embedded.$(SHLIB_SUFFIX)
+        SHLIB_SUFFIX = dylib
 		RTLIB_LDFLAGS = $(DYNAMIC_LDFLAGS)
 	else
 		ARCH_RTLDFLAGS =
-		RTLIB = librtcmix_embedded.a
+        SHLIB_SUFFIX = a
 		RTLIB_LDFLAGS =
 	endif
 	RTLIB_INSTALL_DIR = $(LIBDIR)
@@ -143,7 +145,8 @@ ifeq ($(ARCH),MACOSX)
     CC = `xcrun -f cc`
     CXX = `xcrun -f c++` -Wno-deprecated
 
-	RTLIB = rtcmixdylib.so
+    SHLIB = rtcmixdylib
+	SHLIB_SUFFIX = so
 	RTLIB_LDFLAGS = $(UB_CFLAGS) -Wl,-U,_cpost,-bundle,-flat_namespace
 	RTLIBTYPE = DYNAMIC
 	RTLIB_INSTALL_DIR = $(MAX_LIB_INSTALL_DIR)
@@ -155,6 +158,7 @@ ifeq ($(ARCH),MACOSX)
   ifeq ($(BUILDTYPE), IOS)
 	# This is always true for IOS
 	RTLIBTYPE = STATIC
+	SHLIB_SUFFIX = a
 	# This is overridable in site.conf
 	ifndef AUDIODRIVER
     	AUDIODRIVER=APPLE
@@ -174,8 +178,7 @@ ifeq ($(ARCH),MACOSX)
       IPHONE_CFLAGS = -isysroot `xcrun -sdk iphonesimulator --show-sdk-path`
       CC = `xcrun -sdk iphonesimulator -f cc`
       CXX = `xcrun -sdk iphonesimulator -f c++` -Wno-deprecated
-
-	  RTLIB = librtcmix_iphone-SIM.a
+	  SHLIB = rtcmix_iphone-SIM
     endif
     ifeq ($(IPHONE_TYPE), DEVICE)
       ARCHFLAGS += $(ARCH_BITFLAGS) -DEMBEDDED -DIOS -DIOSDEV
@@ -186,8 +189,7 @@ ifeq ($(ARCH),MACOSX)
       IPHONE_CFLAGS = -isysroot `xcrun -sdk iphoneos --show-sdk-path`
       CC = `xcrun -sdk iphoneos -f cc` -arch armv7s -arch armv7 -arch arm64
       CXX = `xcrun -sdk iphoneos -f c++` -arch armv7s -arch armv7 -arch arm64
-
-	  RTLIB = librtcmix_iphone-DEV.a
+	  SHLIB = rtcmix_iphone-DEV
     endif
   endif
 endif
@@ -203,8 +205,8 @@ ifeq ($(ARCH),SGI)
   INSTALL = cp -f
   RANLIB = touch
   SHELL = /bin/sh
+  SHLIB = rtcmix
   SHLIB_SUFFIX = so
-  RTLIB = librtcmix.$(SHLIB_SUFFIX)
   RTLIBTYPE = DYNAMIC
   RTLIB_INSTALL_DIR = $(LIBDIR)
 endif
@@ -220,8 +222,8 @@ ifeq ($(ARCH),FREEBSD)
   INSTALL = cp -f
   RANLIB = touch
   SHELL = /bin/sh
+  SHLIB = rtcmix
   SHLIB_SUFFIX = so
-  RTLIB = librtcmix.$(SHLIB_SUFFIX)
   RTLIBTYPE = DYNAMIC
   RTLIB_INSTALL_DIR = $(LIBDIR)
 endif
@@ -237,10 +239,12 @@ ifeq ($(BUILDTYPE), PD)
 		RTLIBTYPE = DYNAMIC
 	endif
 	ifeq ($(RTLIBTYPE), DYNAMIC)
-		RTLIB = rtcmixdylib.so
+		SHLIB = rtcmixdylib
+		SHLIB_SUFFIX = so
 		RTLIB_LDFLAGS = $(SHARED_LDFLAGS)
 	else
-		RTLIB = rtcmixlib.a
+		SHLIB = rtcmixlib
+		SHLIB_SUFFIX = a
 		RTLIB_LDFLAGS =
 	endif
 	AUDIODRIVER=EMBEDDEDAUDIO
@@ -248,7 +252,6 @@ ifeq ($(BUILDTYPE), PD)
 endif
 
 ifeq ($(BUILDTYPE), STANDALONE)
-	RTLIB = librtcmix.$(SHLIB_SUFFIX)
 	RTLIB_LDFLAGS = $(DYNAMIC_LDFLAGS)
 	RTLIBTYPE = DYNAMIC
 	RTLIB_INSTALL_DIR = $(LIBDIR)
@@ -274,8 +277,9 @@ CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_F
 
 # Platform-independent library flags
 
+RTLIB = lib$(SHLIB).$(SHLIB_SUFFIX)
 LIBRTCMIX = $(LIBDIR)/$(RTLIB)
-RTLDFLAGS = -L$(LIBDIR) -lrtcmix -lgen
+RTLDFLAGS = -L$(LIBDIR) -l$(SHLIB) -lgen
 
 # Platform-specific library flags Key:
 #

@@ -18,7 +18,7 @@ Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
 
 #ifndef _Complex_h
 #ifdef __GNUG__
-#pragma interface
+//#pragma interface
 #endif
 #define _Complex_h 1
 

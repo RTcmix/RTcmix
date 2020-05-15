@@ -24,3 +24,5 @@ endif
 clean:
 	$(RM) $(OBJS) stklib.a
 
+cleanall: clean
+	$(RM) depend

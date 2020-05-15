@@ -19,7 +19,7 @@
 #include "DynamicLib.h"
 
 #if !defined(EMBEDDED) && !defined(SHAREDLIBDIR)
-#error "Compile flags are missing macro for SHAREDLIBDIR"
+#error "Compile flags are missing macro for SHAREDLIBDIR (IGNORE THIS FOR 'make depend')"
 #endif
 
 // =============================================================================

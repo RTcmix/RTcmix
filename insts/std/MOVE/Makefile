@@ -66,5 +66,5 @@ standalone_uninstall:
 clean:
 	$(RM) $(OBJS) $(MOBJS) $(PROGS)
 
-cleanall: clean uninstall
-
+cleanall: clean
+	$(RM) depend

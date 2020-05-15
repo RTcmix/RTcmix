@@ -13,7 +13,8 @@
 
 #include <PField.h>
 
-#include <common.h>
+//#include <common.h>
+#include "../MOVE/common.h"
 #include "msetup.h"
 
 //#define debug
@@ -51,7 +52,9 @@ MBASE::MBASE() : m_tapsize(0)
 	m_cartflag = 0;
 
     for (int i = 0; i < 2; i++) {
-       int j;
+      m_mixbufs[i] = NULL;
+      m_mixbufs[i+2] = NULL;
+     int j;
        for (j = 0; j < m_paths; j++) {
 		  m_vectors[i][j].Sig = NULL;
           m_vectors[i][j].Firtaps = NULL;
@@ -67,7 +70,9 @@ MBASE::~MBASE()
    delete [] m_tapDelay;
    int i, j;
    for (i = 0; i < 2; i++) {
-      for (j = 0; j < 13; j++) {
+       delete [] m_mixbufs[i];
+       delete [] m_mixbufs[i+2];
+     for (j = 0; j < 13; j++) {
 		 delete [] m_vectors[i][j].Sig;
          delete [] m_vectors[i][j].Firtaps;
          delete [] m_vectors[i][j].Fircoeffs;
@@ -78,9 +83,9 @@ MBASE::~MBASE()
 
 int MBASE::init(double p[], int n_args)
 {
-    int    flag, UseMikes;
+    int    UseMikes;
     float  outskip, inskip, abs_factor, dummy;
-    double R, T, dist;
+    double R, T;
 
     outskip = p[0];
     inskip = p[1];
@@ -243,7 +248,12 @@ int MBASE::configure()
 	in = new float [RTBUFSAMPS * inputChannels()];
     status = alloc_delays();			/* allocates memory for delays */
 	
-	for (int i = 0; i < 2; i++)
+    for (int ch = 0; ch < outputchans; ++ch) {
+        m_mixbufs[ch] = new double[RTBUFSAMPS];
+        memset(m_mixbufs[ch], 0, RTBUFSAMPS * sizeof(double));
+    }
+
+    for (int i = 0; i < 2; i++)
 		for (int j = 0; j < 13; j++)
 			m_vectors[i][j].Sig = new double[getBufferSize()];
 
@@ -304,7 +314,7 @@ int MBASE::run()
 				bufsamps = max(0, totalSamps - thisFrame);
 
 			if ((tapcount = updatePosition(thisFrame)) < 0)
-				RTExit(-1);
+				return -1;
 
 			DBG1(printf("  vector loop: bufsamps = %d\n", bufsamps));
 			for (int ch = 0; ch < 2; ch++) {
@@ -333,26 +343,25 @@ int MBASE::run()
 			}
 			DBG(printf("summing vectors\n"));
 			Vector *vec;
-			register float *outptr = &this->outbuf[frame*outChans];
 			// sum unscaled reflected paths as global input for RVB.
-			for (int path = 0; path < m_paths; path++) {
+			for (int path = 1; path < m_paths; path++) {
 				vec = &m_vectors[0][path];
-				addScaleBufToOut(&outptr[2], vec->Sig, bufsamps, outChans, 1.0);
+				addScaleBuf(&this->m_mixbufs[2][0], vec->Sig, bufsamps, 1.0);
 				vec = &m_vectors[1][path];
-				addScaleBufToOut(&outptr[3], vec->Sig, bufsamps, outChans, 1.0);
+				addScaleBuf(&this->m_mixbufs[3][0], vec->Sig, bufsamps, 1.0);
 			}
 			if (!m_binaural) {
 				// now do cardioid mike effect 
 				// add scaled reflected paths to output as early response
 				for (int path = 1; path < m_paths; path++) {
 					vec = &m_vectors[0][path];
-					addScaleBufToOut(&outptr[0], vec->Sig, bufsamps, outChans, vec->MikeAmp);
+					addScaleBuf(&this->m_mixbufs[0][0], vec->Sig, bufsamps, vec->MikeAmp);
 					vec = &m_vectors[1][path];
-					addScaleBufToOut(&outptr[1], vec->Sig, bufsamps, outChans, vec->MikeAmp);
+					addScaleBuf(&this->m_mixbufs[1][0], vec->Sig, bufsamps, vec->MikeAmp);
 #if 0
-					DBG(printf("early response L and R:\n"));
-					DBG(PrintOutput(&outptr[0], bufsamps, outChans, SIG_THRESH));
-					DBG(PrintOutput(&outptr[1], bufsamps, outChans, SIG_THRESH));
+					DBG(printf("early response L xand R:\n"));
+					DBG(PrintOutput(&this->m_mixbufs[0][0], bufsamps, outChans, SIG_THRESH));
+					DBG(PrintOutput(&this->m_mixbufs[1][0], bufsamps, outChans, SIG_THRESH));
 #endif
 				}           
 			}
@@ -360,24 +369,22 @@ int MBASE::run()
            		// copy scaled, filtered reflected paths (reverb input) as the early reponse
 				// to the output
 				for (int ch = 0; ch < 2; ++ch) {
-					float *dest = &outptr[ch];
-					float *src = &outptr[ch+2];
-					for (int n=0; n<bufsamps; ++n) {
-						*dest = *src;
-						dest += outChans;
-						src += outChans;
-					}
+                    copyBuf(&this->m_mixbufs[ch][0], &this->m_mixbufs[ch+2][0], bufsamps);
 				}
 			}
-			/* add the direct signal into the output bus  */
-			for (int n = 0; n < bufsamps; n++) {
-				outptr[0] += m_vectors[0][0].Sig[n];
-				outptr[1] += m_vectors[1][0].Sig[n];
-				outptr += outChans;
-			}
-			DBG(printf("FINAL MIX LEFT CHAN:\n"));
-			DBG(PrintOutput(&this->outbuf[frame*outChans], bufsamps, outChans));
-		}		
+			/* add the direct signal into the mix bus  */
+            addScaleBuf(&this->m_mixbufs[0][0], m_vectors[0][0].Sig, bufsamps, 1.0);
+            addScaleBuf(&this->m_mixbufs[1][0], m_vectors[1][0].Sig, bufsamps, 1.0);
+            
+            /* Now mix this into the output buffer */
+            float *outptr = &outbuf[frame * outChans];
+            for (int ch = 0; ch < outputchans; ++ch) {
+                copyBufToOut(&outptr[ch], &this->m_mixbufs[ch][0], 4, bufsamps);
+                memset(&this->m_mixbufs[ch][0], 0, bufsamps * sizeof(double));
+            }
+            DBG(printf("FINAL MIX LEFT CHAN:\n"));
+            DBG(PrintOutput(&this->outbuf[frame*outChans], bufsamps, outChans));
+		}
 		increment(bufsamps);
 		frame += bufsamps;
 		bufsamps = getBufferSize();		// update

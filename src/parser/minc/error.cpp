@@ -108,3 +108,13 @@ yyerror(const char *msg)
 	rterror("parser-yyerror", "near line %d: %s\n", yyget_lineno(), msg);
 	minc_throw(MincParserError);
 }
+
+void
+yyfatalerror(const char *msg)
+{
+    rterror("parser-yyfatalerror", "near line %d: %s\n", yyget_lineno(), msg);
+    if (exit_on_die)
+        exit(EXIT_FAILURE);
+    minc_throw(MincParserError);
+}
+

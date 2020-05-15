@@ -1082,6 +1082,17 @@ double ConverterPField::ampdb(const double db)
 	return ::ampdb(db);
 }
 
+double ConverterPField::dbamp(const double amp)
+{
+	return ::dbamp(amp);
+}
+
+// NB: returns an amp multiplier; feed this to an amp pfield, not a pan pfield
+double ConverterPField::boost(const double pan)
+{
+	return ::boost(pan);
+}
+
 double ConverterPField::cpsoct(const double oct)
 {
 	return ::cpsoct(oct);
@@ -1092,6 +1103,11 @@ double ConverterPField::octcps(const double cps)
 	return ::octcps(cps);
 }
 
+double ConverterPField::pchoct(const double oct)
+{
+	return ::pchoct(oct);
+}
+
 double ConverterPField::octpch(const double pch)
 {
 	return ::octpch(pch);
@@ -1100,11 +1116,6 @@ double ConverterPField::octpch(const double pch)
 double ConverterPField::cpspch(const double pch)
 {
 	return ::cpspch(pch);
-}
-
-double ConverterPField::pchoct(const double oct)
-{
-	return ::pchoct(oct);
 }
 
 double ConverterPField::pchcps(const double cps)
@@ -1119,17 +1130,26 @@ double ConverterPField::midipch(const double pch)
 
 double ConverterPField::pchmidi(const double midi)
 {
-	return ::pchmidi((unsigned char) midi);
+	return ::pchmidi(midi);
+}
+
+double ConverterPField::midicps(const double cps)
+{
+	return ::midicps(cps);
+}
+
+double ConverterPField::cpsmidi(const double midi)
+{
+	return ::cpsmidi(midi);
+}
+
+double ConverterPField::midioct(const double oct)
+{
+	return ::midioct(oct);
 }
 
 double ConverterPField::octmidi(const double midi)
 {
-	return ::octmidi((unsigned char) midi);
-}
-
-// NB: returns an amp multiplier; feed this to an amp pfield, not a pan pfield
-double ConverterPField::boost(const double pan)
-{
-	return ::boost(pan);
+	return ::octmidi(midi);
 }
 

@@ -22,7 +22,7 @@ RTcmix::rtgetsamps(AudioDevice *inputDevice)
 {
 	assert(Option::record() == true);
 
-	if (inputDevice->getFrames(audioin_buffer, RTBUFSAMPS) < 0)
+	if (inputDevice->getFrames(audioin_buffer, bufsamps()) < 0)
 	{
 		rtcmix_warn("rtgetsamps", "%s\n", inputDevice->getLastError());
 	}

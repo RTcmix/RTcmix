@@ -2,6 +2,7 @@
 
 #include "PVTransBend.h"
 #include <math.h>
+#include <rtdefs.h>
 #include <ugens.h>
 #include <stdio.h>
 
@@ -43,7 +44,8 @@ PVTransBend::init(double *pp, int nargs)
 {
 	_totalCalls = (int) pp[0];
 	if (_totalCalls <= 0) {
-		return die("init_filter", "total_calls must be > 0");
+		die("init_filter", "total_calls must be > 0");
+        return PARAM_ERROR;
 	}
 	_currentCall = 0;
 	_exptable = new double[2048];
@@ -54,7 +56,8 @@ PVTransBend::init(double *pp, int nargs)
 		int pIndex = 0;
 		for (int arg=1; arg<nargs; arg+=2) {
 			if (pp[arg] < prevTime) {
-				return die("init_filter", "Time values must be in ascending order");
+				die("init_filter", "Time values must be in ascending order");
+                return PARAM_ERROR;
 			}
 			pvals[pIndex] = (pp[arg] - timeZero) * (kArraySize-1) / totalTime;	// position
 			pvals[pIndex+1] = cpsoct(10.0 + octpch(pp[arg+1])) / cpsoct(10.0);	// transp
@@ -70,7 +73,8 @@ PVTransBend::init(double *pp, int nargs)
 		delete [] pvals;
 		return 0;
 	}
-	return die("init_filter", "PVTransBend usage: init_filter(total_calls, time0, intrvl0, ..., timeN, intrvlN)");
+	die("init_filter", "PVTransBend usage: init_filter(total_calls, time0, intrvl0, ..., timeN, intrvlN)");
+    return PARAM_ERROR;
 }
 
 // This function is called by the PVOC setup() routine for each DSO

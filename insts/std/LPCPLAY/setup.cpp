@@ -90,7 +90,7 @@ double dataset(float *p, int n_args, double *pp)
 
 	if (name == NULL) {
         ::rterror("dataset", "NULL file name");
-		return -1;
+		return PARAM_ERROR;
 	}
 
 	// Search all open dataset slots for matching name
@@ -103,7 +103,7 @@ double dataset(float *p, int n_args, double *pp)
 	}
 	if (set >= maxDataSets) {
 		::rterror("dataset", "Maximum number of datasets exceeded");
-		return -1;
+		return SYSTEM_ERROR;
 	}
 
 	// OK, this is a new set that we will put in a new slot
@@ -126,7 +126,7 @@ double dataset(float *p, int n_args, double *pp)
 			::rterror("dataset",
 				"For this file, you must specify the correct value for npoles in p[1].");
 		}
-		return -1;
+		return PARAM_ERROR;
 	}
 
 	::rtcmix_advise("dataset", "File has %d poles and %d frames.",

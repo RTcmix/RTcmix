@@ -1,4 +1,5 @@
-#include <Instrument.h>		  // the base class for this instrument
+#include <Instrument.h>
+#include <random>
 
 class DUST : public Instrument {
 
@@ -15,5 +16,6 @@ private:
 	int _nargs, _branch;
 	float _amp, _pan, _density, _range;
 	Orand *_dice;
+	std::mt19937 _randgen;
+	std::uniform_real_distribution<double> _dist;
 };
-

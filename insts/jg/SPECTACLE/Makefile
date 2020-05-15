@@ -86,5 +86,6 @@ standalone_uninstall:
 clean:
 	$(RM) $(SPECTACLE_OBJS) $(TVSPECTACLE_OBJS) $(SPECTEQ_OBJS) $(PROGS)
 
-cleanall: clean uninstall
+cleanall: clean
+	$(RM) depend
 

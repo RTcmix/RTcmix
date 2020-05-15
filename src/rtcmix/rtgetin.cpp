@@ -20,6 +20,8 @@
 #include <rtdefs.h>
 #include <assert.h>
 
+#undef DEBUG
+
 /* ------------------------------------------------------------ rtinrepos --- */
 /* Change rt input sound file position pointer, in preparation for a
    subsequent call to rtgetin.  Designed for use by instruments that 
@@ -56,16 +58,20 @@ Instrument::rtinrepos(Instrument *inst, int frames, int whence)
          inst->_input.fileOffset = offset;
          break;
       case SEEK_CUR:
+#ifdef DEBUG
+           printf("inst %p: inst->_input.fileOffset was %ld, frames = %d, offset = %ld, new file offset will be %ld\n",
+                  inst, (long)inst->_input.fileOffset, frames, (long)offset, (long)(inst->_input.fileOffset + offset));
+#endif
          inst->_input.fileOffset += offset;
          assert(inst->_input.fileOffset >= 0);
          break;
       case SEEK_END:
          rtcmix_warn("rtinrepos", "SEEK_END unimplemented\n");
-         RTExit(1);
+         return PARAM_ERROR;
          break;
       default:
          rtcmix_warn("rtinrepos", "invalid <whence>\n");
-		 RTExit(1);
+         return PARAM_ERROR;
          break;
    }
 
@@ -178,8 +184,8 @@ RTcmix::readFromInputFile(
       Note that this includes samples in channels that were read but
       not copied into the dest buffer!
    */
-   *pFileOffset += amountRead;
-
+    if (amountRead > 0)
+        *pFileOffset += amountRead;
 }
 
 /* -------------------------------------------------------------- rtgetin --- */
@@ -194,7 +200,7 @@ Instrument::rtgetin(float		*inarr,  /* interleaved array of <inputchans> */
 		const int chans = inst->inputChannels();
 		const int frames = nsamps / chans;
 #ifdef DEBUG
-		printf("%s::rtgetin(): copying from inputChainBuf %p to inarr %p\n", inst->name(), inst->inputChainBuf, inarr);
+		printf("%s::rtgetin(%p): copying from inputChainBuf %p to inarr %p\n", inst->name(), inst, inst->inputChainBuf, inarr);
 #endif
 		// Copy all channels of audio from inputChainBuf, which is a pointer to the output buffer of
 		// the previous instrument in the chain.
@@ -233,7 +239,7 @@ int	Instrument::rtgetin(float *inarr, int nsamps)
 	const int frames = nsamps / inchans;
 	
 #ifdef DEBUG
-	printf("%s::rtgetin(): doing normal read from input\n", name());
+	printf("%s::rtgetin(%p): doing normal read from input\n", name(), this);
 #endif
 
 	assert(inarr != NULL);

@@ -23,3 +23,6 @@ endif
 clean:
 	$(RM) $(OBJS) objlib.a
 
+cleanall: clean
+	$(RM) depend
+

@@ -19,9 +19,6 @@
 #define MAX_INLETS				64	// For RTInletPField
 // BGG mm end --------------
 
-
-#define DONT_SCHEDULE			-1	/* returned by Instr->init() on fatal err */
-
 /* SGI audio lib doesn't give us a file descriptor for an audio device,
    so we use this fake one in the InputFile.
 */

@@ -3,12 +3,15 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #include "minc_internal.h"
+#include "MincValue.h"
+#include "Symbol.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
 #include <Option.h>
 #include <ugens.h>
+#include <rtdefs.h>
 
 /* Minc builtin functions, for use only in Minc scripts.
    To add a builtin function, make an entry for it in the function ptr array
@@ -71,7 +74,7 @@ call_builtin_function(const char *funcname, const MincValue arglist[],
 {
    int index = _find_builtin(funcname);
    if (index < 0)
-      return -1;
+      return FUNCTION_NOT_FOUND;
    if (builtin_funcs[index].number_return) {
       *retval = (MincFloat) (*(builtin_funcs[index].number_return))
                                                          (arglist, nargs);
@@ -107,6 +110,9 @@ _make_type_string(const MincDataType type)
          break;
       case MincListType:
          str = strdup("list");
+         break;
+      case MincStructType:
+         str = strdup("struct");
          break;
    }
    return (MincString) str;
@@ -159,6 +165,17 @@ _do_print(const MincValue args[], const int nargs)
 			}
 		  }
             break;
+         case MincStructType:
+          {
+              MincStruct *theStruct = (MincStruct *)args[i];
+              RTPrintfCat("{ ");
+              theStruct->print();
+              if (i == last_arg)
+                  RTPrintfCat(" }");
+              else
+                  RTPrintfCat(" }, ");
+          }
+              break;
          case MincVoidType:
 			  if (i == last_arg)
 				  RTPrintfCat("(void)");
@@ -169,6 +186,19 @@ _do_print(const MincValue args[], const int nargs)
    }
 }
 
+// Note:  This is defined here to let it have access to the static helper routines above
+
+void    MincStruct::print()
+{
+    for (Symbol *member = _memberList; member != NULL;) {
+        Symbol *next = member->next;
+        _do_print(&member->value(), 1);
+        if (next != NULL) {
+            RTPrintfCat(", ");
+        }
+        member = next;
+    }
+}
 
 /* ----------------------------------------------------------------- print -- */
 MincFloat
@@ -522,7 +552,7 @@ _minc_interp(const MincValue args[], const int nargs)
 }
 
 /* ----------------------------------------------------------------- index -- */
-/* Given an item (float, string or handle), return the index of the item within
+/* Given an item (float, string, list, or handle), return the index of the item within
    the given list, or -1 if the item is not in the list.  Example:
 
       list = {1, 2, "three", 4}

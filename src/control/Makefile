@@ -11,12 +11,12 @@ ifeq ($(OSC_SUPPORT), TRUE)
 endif
 
 all: $(DIRS) $(OBJS)
-	@for DIR in $(DIRS); \
-	do \
-	  ( cd $$DIR; $(MAKE) $(MFLAGS) all; ) \
-	done
 
-.PHONY: install clean cleanall
+$(DIRS)::
+	@echo "making all in control..."
+	$(MAKE) $(MFLAGS) -C $@
+
+.PHONY: install clean cleanall $(DIRS)
 
 install:
 	@for DIR in $(DIRS); \

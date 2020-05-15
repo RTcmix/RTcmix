@@ -1,4 +1,5 @@
 INJGOBJS = ../../insts/jg/BUTTER/BUTTER.o \
+../../insts/jg/BWESINE/BWESINE.o \
 ../../insts/jg/COMPLIMIT/COMPLIMIT.o \
 ../../insts/jg/CONVOLVE1/CONVOLVE1.o \
 ../../insts/jg/DCBLOCK/DCBLOCK.o \
@@ -53,3 +54,8 @@ INJGOBJS = ../../insts/jg/BUTTER/BUTTER.o \
 ../../insts/jg/WAVY/WAVY.o \
 ../../insts/jg/WAVY/fparser27/fparser.o \
 ../../insts/jg/WIGGLE/WIGGLE.o
+ifneq ($(BUILDTYPE), MAXMSP)
+INJGOBJS += ../../insts/jg/GRANULATE/GRANULATE.o \
+../../insts/jg/GRANULATE/grainstream.o \
+../../insts/jg/GRANULATE/grainvoice.o
+endif

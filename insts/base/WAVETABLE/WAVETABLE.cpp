@@ -38,10 +38,8 @@
 #define WAVET_GEN_SLOT   2
 
 
-WAVETABLE::WAVETABLE() : Instrument()
+WAVETABLE::WAVETABLE() : branch(0), fastUpdate(false), ownWavetable(false), wavetable(NULL), amptable(NULL), osc(NULL)
 {
-	branch = 0;
-	ownWavetable = false;
 }
 
 WAVETABLE::~WAVETABLE()

@@ -26,6 +26,7 @@ struct InputState {
    off_t          fileOffset;      // current offset in file for this inst
    double         inputsr;		   // SR of input file
    int            inputchans;	   // Chans of input file
+   int            inputNsamps;	   // length in samps of input file
 };
 
 class Instrument : public RefCounted {
@@ -76,6 +77,7 @@ public:
 	int				framesToRun() const { return chunksamps; }
 	int				nSamps() const { return _nsamps; }
 	int				inputChannels() const { return _input.inputchans; }
+	int				inputNSamps() const { return _input.inputNsamps; }
 	int				outputChannels() const { return outputchans; }
 	int				getSkip() const { return _skip; }
     FRAMETYPE       get_ichunkstart() const { return i_chunkstart; }

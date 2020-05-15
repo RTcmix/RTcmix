@@ -2,8 +2,10 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
-#include <stdlib.h>
 #include "minc_internal.h"
+#include "MincValue.h"
+#include <math.h>
+#include <stdlib.h>
 
 /* Minc utilities.  By John Gibson, 1/24/2004 */
 
@@ -83,6 +85,8 @@ const char *MincTypeName(MincDataType type)
 			return "handle";
 		case MincListType:
 			return "list";
+        case MincStructType:
+            return "struct";
 	}
 	return NULL;
 }
@@ -97,37 +101,64 @@ int get_score_line_offset()
 	return score_line_offset;
 }
 
-#ifdef EMBEDDED
-typedef size_t yy_size_t;	// from lex.yy.c
-static const char *sGlobalBuffer;
-static int sGlobalBufferLength;
-static int sBufferOffset;
-
-extern "C" {
-void setGlobalBuffer(const char *inBuf, int inBufSize)
+/* Has error-checking for malloc built in. */
+char *
+emalloc(long nbytes)
 {
-	sGlobalBuffer = inBuf;
-	sGlobalBufferLength = inBufSize;
-	sBufferOffset = 0;	// reset
+    char *s;
+    
+    s = (char *) malloc(nbytes);
+    if (s == NULL)
+        sys_error("system out of memory");
+    
+#ifndef NO_EMALLOC_DEBUG
+    DPRINT("emalloc: nbytes=%d, ptr=%p\n", nbytes, s);
+#endif
+    return s;
 }
 
-#ifdef LINUX
-int readFromGlobalBuffer(char *buf, int *pBytes, int maxbytes)
-#else
-int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes)
-#endif
+void efree(void *mem)
 {
-	{
-		int  n;
-		for (n = 0; n < maxbytes && sBufferOffset < (sGlobalBufferLength-1); ++n)
-		{
-			buf[n] = sGlobalBuffer[sBufferOffset++];
-		}
-		*pBytes = n;
-	}
-	return 0;
-}
+#ifndef NO_EMALLOC_DEBUG
+    DPRINT("efree: ptr=%p\n", mem);
+#endif
+    free(mem);
 }
 
-#endif
+/* Returns an index to a hash bucket. */
+int
+hash(const char *s)
+{
+    int i = 0;
+    
+    while (*s) {
+        i = (((unsigned int) *s + i) % HASHSIZE);
+        s++;
+    }
+    return i;
+}
+
+/* floating point comparisons:
+ f1 < f2   ==> -1
+ f1 == f2  ==> 0
+ f1 > f2   ==> 1
+ */
+int
+cmp(MincFloat f1, MincFloat f2)
+{
+    if (fabs((double) f1 - (double) f2) < EPSILON) {
+        /* printf("cmp=%g %g %g \n",f1,f2,fabs(f1-f2)); */
+        return 0;
+    }
+    if ((f1 - f2) > EPSILON) {
+        /* printf("cmp > %g %g %g \n",f1,f2,fabs(f1-f2)); */
+        return 1;
+    }
+    if ((f2 - f1) > EPSILON) {
+        /* printf("cmp <%g %g %g \n",f1,f2,fabs(f1-f2)); */
+        return -1;
+    }
+    return 0;
+}
+
 

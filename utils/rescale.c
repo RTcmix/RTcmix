@@ -305,7 +305,7 @@ main(int argc, char *argv[])
    }
 
    printf("Input: %s\n", insfname);
-   printf(sndlib_print_current_header_stats(infd, &insfc, 2));
+   printf("%s", sndlib_print_current_header_stats(infd, &insfc, 2));
 
    if (!IS_FLOAT_FORMAT(informat))
       printf("NOTE: Input file is not floating point.\n");

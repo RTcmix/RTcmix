@@ -16,7 +16,7 @@ pyversion = major + minor
 # Note that this adds libraries we've certainly already linked to.
 libs = distutils.sysconfig.get_config_var("LIBS")
 libs += " " + distutils.sysconfig.get_config_var("SYSLIBS")
-libs += " -lz -lcrypto -lssl"
+#libs += " -lz -lcrypto -lssl"
 prefix = distutils.sysconfig.get_config_var("LIBPL")
 
 if static_link:

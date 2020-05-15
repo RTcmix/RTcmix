@@ -95,7 +95,7 @@ read_float_samps(
         ssize_t bytes_read = read(fd, bufp, bytes_to_read);
         if (bytes_read == -1) {
             perror("read_float_samps (read)");
-            RTExit(1);
+            return FILE_ERROR;
         }
         if (bytes_read == 0)          /* EOF */
             break;
@@ -175,7 +175,7 @@ read_24bit_samps(
         ssize_t bytes_read = read(fd, bufp, bytes_to_read);
         if (bytes_read == -1) {
             perror("read_24bit_samps (read)");
-            RTExit(1);
+            return FILE_ERROR;
         }
         if (bytes_read == 0)          /* EOF */
             break;
@@ -229,6 +229,91 @@ read_24bit_samps(
     return 0;
 }
 
+/* ----------------------------------------------------- read_32bit_samps --- */
+static int
+read_32bit_samps(
+                 int         fd,               /* file descriptor for open input file */
+                 int         data_format,      /* sndlib data format of input file */
+                 int         file_chans,       /* total chans in input file */
+                 off_t       cur_offset,       /* current file position before read */
+                 long        endbyte,          /* first byte following last file sample */
+                 BufPtr      dest,             /* interleaved buffer from inst */
+                 int         dest_chans,       /* number of chans interleaved */
+                 int         dest_frames,      /* frames in interleaved buffer */
+                 const short src_chan_list[],  /* list of in-bus chan numbers from inst */
+                 /* (or NULL to fill all chans) */
+                 short       src_chans,         /* number of in-bus chans to copy */
+                 void *      read_buffer        /* block to read from disk into */
+)
+{
+    
+    const int bytes_per_samp = 4;         /* 24-bit int */
+    unsigned char *bufp = (unsigned char *) read_buffer;
+    
+    const int bytes_requested = dest_frames * file_chans * bytes_per_samp;
+    const long bytes_remaining = endbyte - cur_offset;
+    const long extra_bytes = (bytes_requested > bytes_remaining)
+    ? bytes_requested - bytes_remaining : 0;
+    ssize_t bytes_to_read = lmin(bytes_remaining, bytes_requested);
+    
+    while (bytes_to_read > 0) {
+        ssize_t bytes_read = read(fd, bufp, bytes_to_read);
+        if (bytes_read == -1) {
+            perror("read_24bit_samps (read)");
+            return FILE_ERROR;
+        }
+        if (bytes_read == 0)          /* EOF */
+            break;
+        
+        bufp += bytes_read;
+        bytes_to_read -= bytes_read;
+    }
+    
+    /* If we reached EOF, zero out remaining part of buffer that we
+     expected to fill.
+     */
+    bytes_to_read += extra_bytes;
+    while (bytes_to_read > 0) {
+        *bufp++ = 0;
+        bytes_to_read--;
+    }
+    
+    /* Copy interleaved file buffer to dest buffer, with bus mapping. */
+    
+#if MUS_LITTLE_ENDIAN
+    const bool swap = IS_BIG_ENDIAN_FORMAT(data_format);
+#else
+    const bool swap = IS_LITTLE_ENDIAN_FORMAT(data_format);
+#endif
+
+    const int src_samps = dest_frames * file_chans;
+    const BUFTYPE scaleFactor = 1 / (BUFTYPE) (1 << 16);
+    const unsigned offset = 2U << 15;
+    int *ibuf = (int *)read_buffer;
+
+    for (int n = 0; n < dest_chans; n++) {
+#ifdef IGNORE_BUS_COUNT_FOR_FILE_INPUT
+        const int chan = n;
+#else
+        const int chan = src_chan_list ? src_chan_list[n] : n;
+#endif
+        if (swap) {
+            int j = n;
+            for (int i = chan; i < src_samps; i += file_chans, j += dest_chans) {
+                const int out = (int)(reverse_int4(&ibuf[i]));
+                dest[j] = (BUFTYPE) out;
+            }
+        }
+        else {
+            int j = n;
+            for (int i = chan; i < src_samps; i += file_chans, j += dest_chans) {
+                dest[j] = (BUFTYPE) (ibuf[i] * scaleFactor);
+            }
+        }
+    }
+    
+    return 0;
+}
 
 /* ----------------------------------------------------- read_short_samps --- */
 static int
@@ -260,7 +345,7 @@ read_short_samps(
         ssize_t bytes_read = read(fd, bufp, bytes_to_read);
         if (bytes_read == -1) {
             perror("read_short_samps (read)");
-            RTExit(1);
+            return FILE_ERROR;
         }
         if (bytes_read == 0)          /* EOF */
             break;
@@ -323,14 +408,14 @@ void InputFile::createConversionBuffers(int inBufSamps)
 {
 	/* Allocate buffers needed to convert input audio files as they are read */
 	for (int i = 0; i < RT_THREAD_COUNT; ++i) {
-		sConversionBuffers[i] = (char *) malloc(sizeof(BUFTYPE) * MAXCHANS * inBufSamps);
+		sConversionBuffers[i] = new char[sizeof(BUFTYPE) * MAXCHANS * inBufSamps];
 	}
 }
 
 void InputFile::destroyConversionBuffers()
 {
 	for (int i = 0; i < RT_THREAD_COUNT; ++i) {
-		free(sConversionBuffers[i]);
+        delete [] sConversionBuffers[i];
 		sConversionBuffers[i] = NULL;
 	}
 }
@@ -352,7 +437,7 @@ InputFile::~InputFile()
 	close();
 }
 
-void InputFile::init(int inFd, const char *inFileName, Type inType, int inHeaderType,
+int InputFile::init(int inFd, const char *inFileName, Type inType, int inHeaderType,
           int inDataFormat, int inDataLocation, long inFrames, float inSampleRate,
           int inChannels, double inDuration)
 {
@@ -370,38 +455,44 @@ void InputFile::init(int inFd, const char *inFileName, Type inType, int inHeader
 	
     int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(_data_format);
 
-    assert(_chans <= MAXCHANS);
+    if (_chans > MAXCHANS) {
+        die("InputFile", "Illegal channel count: %d", _chans);
+        return PARAM_ERROR;
+    }
 
 	if (_is_float_format)
 		_readFunction = &read_float_samps;
 	else if (IS_24BIT_FORMAT(_data_format))
 		_readFunction = &read_24bit_samps;
+    else if (IS_32BIT_FORMAT(_data_format))
+        _readFunction = &read_32bit_samps;
 	else
 		_readFunction = &read_short_samps;
 
 #ifndef MULTI_THREAD
 	_readBuffer = (void *) malloc((size_t) RTcmix::bufsamps() * MAXCHANS * bytes_per_samp);
 	if (_readBuffer == NULL) {
-		die("rtinput", "Unable to allocate read buffer for input file");
-		RTExit(1);
+		die("InputFile", "Unable to allocate read buffer for input file");
+		return MEMORY_ERROR;
 	}
 #endif
 
 	if (_fileType == InMemoryType) {
 		_endbyte = inFrames * bytes_per_samp * _chans;
     	if (loadSamps(inFrames) != 0) {
-			rtcmix_warn("rtinput", "File '%s' cannot be loaded into memory -- defaulting to regular load");
+			rtcmix_warn("InputFile", "File '%s' cannot be loaded into memory -- defaulting to regular load");
 			_fileType = FileType;
 			_endbyte += _data_location;
 		}
 	}
 	else
 		_endbyte = _data_location + (inFrames * bytes_per_samp * _chans);
+    return 0;
 }
 
-void InputFile::init(BufPtr inBuffer, const char *inBufferName, long inFrames, float inSampleRate, int inChannels, float inScaling)
+int InputFile::init(BufPtr inBuffer, const char *inBufferName, long inFrames, float inSampleRate, int inChannels, float inScaling)
 {
-	rtcmix_debug("InputFile::init", "inBuffer %p, frames %ld, chans %d", inBuffer, inFrames, inChannels);
+	rtcmix_debug("InputFile::initInputFile", "inBuffer %p, frames %ld, chans %d", inBuffer, inFrames, inChannels);
     _filename = strdup(inBufferName);
     _fd = USE_MM_BUF;
     _refcount = 0;
@@ -417,17 +508,21 @@ void InputFile::init(BufPtr inBuffer, const char *inBufferName, long inFrames, f
 	
     int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(_data_format);
 	
-    assert(_chans <= MAXCHANS);
+    if (_chans > MAXCHANS) {
+        die("InputFile", "Illegal channel count: %d", _chans);
+        return PARAM_ERROR;
+    }
 	
 	_readFunction = &read_float_samps;
 	_endbyte = inFrames * bytes_per_samp * _chans;
 
 	_memBuffer = inBuffer;
+    return 0;
 }
 
 // TODO: DAS: This needs a lock to prevent modification during read
 
-void InputFile::reinit(BufPtr inBuffer, long inFrames, int inChannels)
+int InputFile::reinit(BufPtr inBuffer, long inFrames, int inChannels)
 {
     _chans = inChannels;
     _dur = inFrames/_srate;
@@ -435,11 +530,15 @@ void InputFile::reinit(BufPtr inBuffer, long inFrames, int inChannels)
 	rtcmix_debug("InputFile::reinit", "inBuffer %p, frames %ld, chans %d", inBuffer, inFrames, inChannels);
     int bytes_per_samp = ::mus_data_format_to_bytes_per_sample(_data_format);
 	
-    assert(_chans <= MAXCHANS);
+    if (_chans > MAXCHANS) {
+        die("InputFile", "Illegal channel count: %d", _chans);
+        return PARAM_ERROR;
+    }
 	
 	_endbyte = inFrames * bytes_per_samp * _chans;
 	
 	_memBuffer = inBuffer;
+    return 0;
 }
 
 void InputFile::reference()
@@ -449,14 +548,14 @@ void InputFile::reference()
 		// sure that this InputFile is being used by an instrument.
 	}
 #ifdef FILE_DEBUG
-	rtcmix_debug(NULL, "InputFile::reference: refcount = %d\n", _refcount);
+	rtcmix_debug("InputFile", "InputFile::reference: refcount = %d\n", _refcount);
 #endif
 }
 
 void InputFile::unreference()
 {
 #ifdef FILE_DEBUG
-	rtcmix_debug(NULL, "InputFile::unreference: refcount = %d\n", _refcount);
+	rtcmix_debug("InputFile", "InputFile::unreference: refcount = %d\n", _refcount);
 #endif
 	if (--_refcount <= 0) {
 		close();
@@ -521,7 +620,7 @@ off_t InputFile::readSamps(off_t cur_offset,
 			AutoLock fileLock(this);
 			if (lseek(_fd, cur_offset, SEEK_SET) == -1) {
 				perror("RTcmix::readFromInputFile (lseek)");
-				RTExit(1);
+                return FILE_ERROR;
 			}
 			
 			int status = (*this->_readFunction)(_fd,
@@ -550,7 +649,7 @@ int InputFile::loadSamps(long inFrames)
 	}
 	if (lseek(_fd, _data_location, SEEK_SET) == -1) {
 		perror("RTcmix::readFromInputFile (lseek)");
-		RTExit(1);
+        return FILE_ERROR;
 	}
 	const short src_chan_list[] = { 0, 1, 2, 3, 4, 5, 6, 7 };
 	long framesRead = 0;

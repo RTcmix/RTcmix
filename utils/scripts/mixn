@@ -1,0 +1,91 @@
+#!/bin/bash
+# Play multiple sound files with independent start times, inskips, and
+# amp scaling. Files must have the same sampling rate. They can have
+# different channel counts, but they will play over the channels they have,
+# with one exception: mono files will play in stereo with phantom center.
+# E.g., 3 files: mono, stereo, quad => mono and stereo in 1-2, quad in 1-4.
+# There is no limit on the number of files or output channels, as long as the
+# audio interface supports that number of channels.
+# This is for us weirdos who still live in the shell and want to test mix
+# ideas quickly.
+# JGG, 6/30/18
+
+if [ $# -lt 2 ]
+then
+	echo "Usage: `basename $0` file1 start1 inskip1 amp1 ... fileN startN inskipN ampN"
+	echo "       (amp is in dB with 0 dB meaning no amplitude scaling)"
+	exit 1
+fi
+mod=`expr $# % 4`
+if [ $mod -ne 0 ]
+then
+	echo "Invalid argument count: need 4 per file."
+	exit 1
+fi
+
+sfp=sfprint
+flags='-v 1'
+ramp=0.001
+
+# get srate max out chans
+srate=0
+nchans=0
+i=1
+while [ $i -lt $# ]
+do
+	sf=${@:i:1}    # get value of i'th arg -- bash only; don't ask me...
+	sr=`$sfp "$sf" | awk '/nchans: / {print $2}'`
+	nc=`$sfp "$sf" | awk '/nchans: / {print $4}'`
+	if [ $srate -eq 0 ]
+	then
+		srate=$sr
+	fi
+	if [ $nchans -eq 0 ]
+	then
+		nchans=$nc
+	fi
+	if [ $sr -ne $srate ]
+	then
+		echo "All files must have the same sampling rate."
+		exit 1
+	fi
+	if [ $nc -gt $nchans ]
+	then
+		nchans=$nc
+	fi
+	i=`expr $i + 4`
+done
+
+script='
+rtsetparams($srate, $nchans);
+control_rate($srate);
+nargs = n_arg();
+for (i = 0; i < nargs; i += 4) {
+	rtinput(s_arg(i));
+	start = f_arg(i + 1);
+	inskip = f_arg(i + 2);
+	amp = ampdb(f_arg(i + 3));
+	dur = DUR() - inskip;
+	env = maketable("line", 20000, 0,0, $ramp,1, dur-$ramp,1, dur,0);
+	chans = CHANS();
+	if (chans == 1) {
+		if ($nchans == 1) {
+			MIX(start, inskip, dur, mul(amp, env), 0);
+		}
+		else {
+			load("STEREO")
+			amp = mul(amp, boost(0.5))
+			STEREO(start, inskip, dur, mul(amp, env), 0.5);
+		}
+	}
+	else {
+		matrix = {};
+		for (j = 0; j < $nchans; j += 1) {
+			matrix[j] = j;
+		}
+		MIX(start, inskip, dur, mul(amp, env), matrix);
+	}
+}
+'
+echo $script | CMIX $flags --srate=$srate --nchans=$nchans --ramp=$ramp $*
+

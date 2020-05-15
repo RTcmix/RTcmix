@@ -25,13 +25,13 @@ typedef enum {
 	kMIDINoteVelSubType,
 } MIDISubType;
 
-class RTcmixMIDI;
+class RTcmixMIDIInput;
 class Oonepole;
 
 class RTMidiPField : public RTNumberPField {
 public:
 	RTMidiPField(
-		RTcmixMIDI			*midiport,
+		RTcmixMIDIInput			*midiport,
 		const double		minval,
 		const double		maxval,
 		const double		defaultval,
@@ -48,7 +48,7 @@ protected:
 private:
 	double computeValue() const;
 
-	RTcmixMIDI	*_midiport;
+	RTcmixMIDIInput	*_midiport;
 	Oonepole		*_filter;
 	double		_min;
 	double		_diff;

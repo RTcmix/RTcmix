@@ -96,7 +96,14 @@ main(int argc, char *argv[], char **env)
 
 #else // EMBEDDED
 
+#include "Option.h"
+
 static RTcmixMain *globalApp;
+
+void RTcmix_setPrintLevel(int level)
+{
+	Option::print(level);
+}
 
 /* ----------------------------------------------------------- RTcmix_init --- */
 
@@ -104,6 +111,7 @@ int
 RTcmix_init()
 {
 	if (globalApp == NULL) {
+        rtcmix_debug("RTcmix_init", "creating main object");
 		clear_print();
 		// BGG no argc and argv in max/msp version mm
 		globalApp = new RTcmixMain();
@@ -115,6 +123,7 @@ RTcmix_init()
 int
 RTcmix_destroy()
 {
+    rtcmix_debug("RTcmix_destroy", "deleting main object");
 	delete globalApp;
 	globalApp = NULL;
 	return 0;
@@ -162,7 +171,7 @@ float maxmsp_vals[MAXDISPARGS];
 
 void checkForVals()
 {  
-	if (vals_ready > 0 && sValuesArray != NULL) { // vals_ready will contain how many vals to return
+	if (vals_ready > 0) { // vals_ready will contain how many vals to return
 		int nVals = vals_ready;
 		vals_ready = 0;
 		// Copy into local static array.  This is what gets handed to callback.
@@ -182,7 +191,16 @@ void RTcmix_setPrintCallback(RTcmixPrintCallback inPrintCallback, void *inContex
 	sPrintCallbackContext = inContext;
 }
 
-// This is called from inTraverse
+static RTcmixFinishedCallback sFinishedCallback = NULL;
+static void *sFinishedCallbackContext = NULL;
+
+void RTcmix_setFinishedCallback(RTcmixFinishedCallback inFinishedCallback, void *inContext)
+{
+	sFinishedCallback = inFinishedCallback;
+	sFinishedCallbackContext = inContext;
+}
+
+// These are called from inTraverse
 
 void checkForPrint()
 {
@@ -191,6 +209,13 @@ void checkForPrint()
 		if (sPrintCallback)
 			sPrintCallback(printBuf, sPrintCallbackContext);
 		clear_print();
+	}
+}
+
+void notifyIsFinished(long long endFrame)
+{
+	if (sFinishedCallback) {
+		sFinishedCallback(endFrame, sFinishedCallbackContext);
 	}
 }
 
@@ -289,8 +314,7 @@ int RTcmix_setAudioBufferFormat(RTcmix_AudioFormat format, int nchans)
 			rtcmix_fmt |= MUS_NORMALIZED;
 			break;
 		default:
-			rterror("RTcmix_setAudioBufferFormat", "Unknown format");
-			return -1;
+			return die("RTcmix_setAudioBufferFormat", "Unknown format");
 	}
 	// For now, only interleaved audio is allowed.
 	rtcmix_fmt |= MUS_INTERLEAVED;

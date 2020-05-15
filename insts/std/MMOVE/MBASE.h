@@ -47,6 +47,7 @@ protected:
    int	  m_paths;
    float  inamp, m_dur;
    float  amptabs[2], *in;
+   double *m_mixbufs[4];
    double *amparray;
    double AIRCOEFFS[NCOEFFS];
    double m_dist, *m_tapDelay;

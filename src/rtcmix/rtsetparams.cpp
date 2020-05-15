@@ -30,21 +30,13 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, int bus_co
 	int         play_audio = Option::play();
 	int         record_audio = Option::record(recording);
 	
-	// FIXME: Need better names for NCHANS and RTBUFSAMPS. -JGG
-	
-	SR = sr;
-	NCHANS = nchans;
-	RTBUFSAMPS = bufsamps;
-	
-	int numBuffers = Option::bufferCount();
-	
-	if (SR <= 0.0) {
-		return die("rtsetparams", "Sampling rate must be greater than 0.");
-	}
-	
-	if (bus_count < NCHANS) {
-		return die("rtsetparams", "Bus count must be >= channel count");
-	}
+    if (sr <= 0.0) {
+        return die("rtsetparams", "Sampling rate must be greater than 0.");
+    }
+    if (bus_count < NCHANS) {
+        return die("rtsetparams", "Bus count must be >= channel count");
+    }
+
 	if (bus_count < MAXBUS && bus_count >= MINBUS) {
 		busCount = bus_count;
 	}
@@ -52,11 +44,19 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, int bus_co
 		return die("rtsetparams", "Bus count must be between %d and %d", MINBUS, MAXBUS);
 	}
 
-	if (NCHANS > busCount) {
+	if (nchans > busCount) {
 		return die("rtsetparams", "You can only have up to %d output channels.", busCount);
 	}
 	
-	// Now that much of our global state is dynamically sized, the initialization
+    // FIXME: Need better name for NCHANS. -JGG
+    
+    setSR(sr);
+    NCHANS = nchans;
+    setRTBUFSAMPS(bufsamps);
+    
+    int numBuffers = Option::bufferCount();
+    
+    // Now that much of our global state is dynamically sized, the initialization
 	// of that state needs to be delayed until after we know the bus count as
 	// passed via rtsetparams().
 	
@@ -71,21 +71,21 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, int bus_co
 	 or has already called rtinput("AUDIO").  -DS
 	 */
 	if (play_audio || record_audio) {
-		int nframes = RTBUFSAMPS;
-		float srate = SR;
+		int nframes = RTcmix::bufsamps();
+        float srate = RTcmix::sr();
 		rtcmix_debug(NULL, "RTcmix::setparams creating audio device(s)");
 		if ((audioDevice = create_audio_devices(record_audio, play_audio,
 												NCHANS, &srate, &nframes, numBuffers)) == NULL)
 			return -1;
 
 		/* These may have been reset by driver. */
-		RTBUFSAMPS = nframes;
-		if (srate != SR) {
+		setRTBUFSAMPS(nframes);
+		if (srate != RTcmix::sr()) {
 			if (!Option::requireSampleRate()) {
 				rtcmix_advise("rtsetparams",
 							  "Sample rate reset by audio device from %f to %f.",
-							  SR, srate);
-				SR = srate;
+							  RTcmix::sr(), srate);
+				setSR(srate);
 			}
 			else {
 				return die("rtsetparams", "Sample rate could not be set to desired value.\nSet \"require_sample_rate=false\" to allow alternate rates.");
@@ -97,11 +97,11 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, int bus_co
 	 in case OSS changes our buffer size, for example.
 	 */
 	for (i = 0; i < NCHANS; i++) {
-		allocate_out_buffer(i, RTBUFSAMPS);
+        allocate_out_buffer(i, RTcmix::bufsamps());
 	}
 	
 #ifdef MULTI_THREAD
-	InputFile::createConversionBuffers(RTBUFSAMPS);
+	InputFile::createConversionBuffers(RTcmix::bufsamps());
 #endif
 
 	/* inTraverse waits for this. Set it even if play_audio is false! */
@@ -112,8 +112,7 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, int bus_co
 #ifdef EMBEDDED
 	if (verbose >= MMP_PRINTALL)
 #endif
-		rtcmix_advise(NULL, "Audio set:  %g sampling rate, %d channels\n", SR, NCHANS);
-	
+        rtcmix_advise(NULL, "Audio set:  %g sampling rate, %d channels\n", RTcmix::sr(), NCHANS);
 	
 	rtsetparams_called = 1;	/* Put this at end to allow re-call due to error */
 	
@@ -123,17 +122,17 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, int bus_co
 int RTcmix::resetparams(float sr, int chans, int bufsamps, bool recording)
 {
 	rtcmix_debug(NULL, "RTcmix::resetparams entered");
-	if (sr != SR) {
-		rtcmix_warn(NULL, "Resetting SR from %.2f to %.2f", SR, sr);
-		SR = sr;
+	if (sr != RTcmix::sr()) {
+		rtcmix_warn(NULL, "Resetting SR from %.2f to %.2f", RTcmix::sr(), sr);
+		setSR(sr);
 	}
 	if (chans != NCHANS) {
 		rtcmix_warn(NULL, "Resetting NCHANS from %d to %d", NCHANS, chans);
 		NCHANS = chans;
 	}
-	if (bufsamps != RTBUFSAMPS) {
-		rtcmix_warn(NULL, "Resetting RTBUFSAMPS from %d to %d", RTBUFSAMPS, bufsamps);
-		RTBUFSAMPS = bufsamps;
+	if (bufsamps != RTcmix::bufsamps()) {
+		rtcmix_warn(NULL, "Resetting RTBUFSAMPS from %d to %d", RTcmix::bufsamps(), bufsamps);
+		setRTBUFSAMPS(bufsamps);
 	}
 	
 	// For now, we have to do this operation by itself because RTcmix::close() freed these buffers.
@@ -145,8 +144,8 @@ int RTcmix::resetparams(float sr, int chans, int bufsamps, bool recording)
 	int	play_audio = Option::play();
 	int	record_audio = Option::record(recording);
 	if (play_audio || record_audio) {
-		int nframes = RTBUFSAMPS;
-		float srate = SR;
+        int nframes = RTcmix::bufsamps();
+		float srate = RTcmix::sr();
 		rtcmix_debug(NULL, "RTcmix::resetparams re-creating audio device(s)");
 		if ((audioDevice = create_audio_devices(record_audio, play_audio,
 												NCHANS, &srate, &nframes, numBuffers)) == NULL)
@@ -154,24 +153,24 @@ int RTcmix::resetparams(float sr, int chans, int bufsamps, bool recording)
 			return -1;
 		}
 		/* These may have been reset by driver. */
-		RTBUFSAMPS = nframes;
-		SR = srate;
+		setRTBUFSAMPS(nframes);
+		setSR(srate);
 	}
 	
 	/* Reallocate output buffers. Do this *after* opening audio devices,
 	 in case the device changes our buffer size, for example.
 	 */
 	for (int i = 0; i < NCHANS; i++) {
-		allocate_out_buffer(i, RTBUFSAMPS);
+		allocate_out_buffer(i, RTcmix::bufsamps());
 	}
 	/* Reallocate input buffers if we are in record mode.  This was initially done by rtinput() */
 	if (record_audio) {
 		for (int i = 0; i < NCHANS; i++) {
-			allocate_audioin_buffer(i, RTBUFSAMPS);
+			allocate_audioin_buffer(i, RTcmix::bufsamps());
 		}
 	}
 #ifdef MULTI_THREAD
-	InputFile::createConversionBuffers(RTBUFSAMPS);
+	InputFile::createConversionBuffers(RTcmix::bufsamps());
 #endif
 
 	/* inTraverse waits for this. Set it even if play_audio is false! */

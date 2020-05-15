@@ -20,10 +20,14 @@ typedef BUFTYPE *BufPtr;
 #define FRAMETYPE long long
 
 /* This should probably go someplace else in this file? */
+#ifndef NO
 typedef enum {
   NO = 0,
   YES
 } Bool;
+#else
+typedef Boolean Bool;
+#endif
 
 #ifndef PI
 #define      PI     3.141592654

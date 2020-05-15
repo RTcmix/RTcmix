@@ -8,7 +8,14 @@
 #include "minc/minc_defs.h"
 #include "rtcmix_parse.h"
 #include <ugens.h>
+#include "rtdefs.h"
 #include <Option.h>
+
+#ifdef EMBEDDED
+typedef struct yy_buffer_state * YY_BUFFER_STATE;
+extern YY_BUFFER_STATE yy_scan_bytes(const char * buf, size_t len);
+extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
+#endif
 
 extern "C" {
 	
@@ -17,25 +24,56 @@ extern int yyparse();
 #ifdef EMBEDDED
 
 int RTcmix_parseScore(char *thebuf, int buflen);
-extern int yyparse();
-extern int yylineno;
-extern void setGlobalBuffer(const char *inBuf, int inBufSize);	// minc/utils.cpp
 extern double minc_memflush();									// minc/minc.cpp (from minc.y)
 
 // BGG mm -- set this to accept a buffer from max/msp
 int RTcmix_parseScore(char *theBuf, int buflen)
 {
 	configure_minc_error_handler(get_bool_option(kOptionExitOnError));
-	setGlobalBuffer(theBuf, buflen+1);
+    YY_BUFFER_STATE buffer = yy_scan_bytes(theBuf, buflen);
 	reset_parser();
 	int status;
 	try {
 		status = yyparse();
 	}
 	catch (MincError err) {
-		rtcmix_warn("RTcmix_parseScore", "caught exception %d", (int)err);
+		rtcmix_warn("RTcmix_parseScore", "caught parse exception %d", (int)err);
 		status = err;
 	}
+    catch (int otherError) {
+        const char *errname;
+        switch (otherError) {
+            case FUNCTION_NOT_FOUND:
+                errname = "Function or instrument not found";
+                break;
+            case PARAM_ERROR:
+                errname = "Illegal or missing parameter";
+                break;
+            case CONFIGURATION_ERROR:
+                errname = "Configuration error";
+                break;
+            case AUDIO_ERROR:
+                errname = "Audio device error";
+                break;
+            case FILE_ERROR:
+                errname = "File error";
+                break;
+            case SYSTEM_ERROR:
+                errname = "RTcmix system error";
+                break;
+            case RESOURCE_ERROR:
+                errname = "Out of resources";
+                break;
+            case MEMORY_ERROR:
+                errname = "Memory error";
+                break;
+            default:
+                errname = "Other error";
+        }
+        rtcmix_warn("RTcmix_parseScore", "Caught exception: %s", errname);
+        status = otherError;
+    }
+    yy_delete_buffer(buffer);
 	return status;
 }
 
@@ -104,7 +142,7 @@ destroy_parser()
 	yylex_destroy();
 #ifdef EMBEDDED
 	(void)minc_memflush();
-	clear_tree_state();
+	clear_node_state();
 #endif
 }
 

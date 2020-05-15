@@ -1,0 +1,13 @@
+This directory contains a bunch of RTcmix scores which I used to generate the
+intermediate sound files for "In A Glass Garden".  Most of the scores can be
+run with the arguments "--seed=NNNN" where NNNN is any number between 0 and
+MAXINT.  Every seed will produce a slightly different result.  The scores make
+use of a higher-level system of functions I developed to specify chains of
+instruments, room characteristics, calls to DMOVE, etc.  All of that is here in
+the various .info files
+
+The final set of intermediate files that I generated were later mixed using Logic.
+
+-Doug, 10/2018
+
+ 

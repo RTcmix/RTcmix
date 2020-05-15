@@ -24,4 +24,5 @@ clean:
 cleanall: clean
 
 distclean: clean
+	$(RM) depend
 

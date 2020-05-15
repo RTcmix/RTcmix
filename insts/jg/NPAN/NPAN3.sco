@@ -14,7 +14,7 @@ NPANspeakers("polar",
      0, 1,   // front center
    180, 1)   // rear center
 
-rtinput("/snd/Public_Sounds/egg.snd")
+rtinput("../../../snd/loocher.aiff")
 inskip = 0
 
 amp = 1.0

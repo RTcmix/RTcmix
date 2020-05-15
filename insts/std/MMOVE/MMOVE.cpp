@@ -156,19 +156,34 @@ void MMOVE::get_tap(int currentSamp, int chan, int path, int len)
    if (outTap < 0.0)
 	   outTap += m_tapsize;
    int out = 0;
-   
-   while (out < len)
-   {
-		if (outTap >= (double) m_tapsize)
-			outTap -= m_tapsize;   
-		int iouttap = (int) outTap;
-		int outTapPlusOne = int(outTap + 1.0);
-		if (outTapPlusOne >= m_tapsize)
-			outTapPlusOne -= m_tapsize;   
-		double frac = outTap - (double)iouttap;
-		Sig[out++] = tapdel[iouttap] + frac * (tapdel[outTapPlusOne] - tapdel[iouttap]);
-		outTap += incr;
-   }
+    int len1 = (m_tapsize - (outTap + 1.0)) / incr;     // boundary point before needing to wrap
+    int count = 0;
+    int sampsNeeded = len;
+    while (sampsNeeded > 0 && count++ < len1) {
+        const int iOuttap = (int) outTap;
+        const double frac = outTap - (double)iOuttap;
+        Sig[out++] = tapdel[iOuttap] + frac * (tapdel[iOuttap+1] - tapdel[iOuttap]);
+        outTap += incr;
+        --sampsNeeded;
+    }
+    while (sampsNeeded > 0 && outTap < (double) m_tapsize) {
+        const int iOuttap = (int) outTap;
+        const double frac = outTap - (double)iOuttap;
+        int outTapPlusOne = int(outTap + 1.0);
+        if (outTapPlusOne >= m_tapsize)
+            outTapPlusOne -= m_tapsize;
+        Sig[out++] = tapdel[iOuttap] + frac * (tapdel[outTapPlusOne] - tapdel[iOuttap]);
+        outTap += incr;
+        --sampsNeeded;
+    }
+    outTap -= m_tapsize;
+    while (sampsNeeded > 0) {
+        const int iOuttap = (int) outTap;
+        const double frac = outTap - (double)iOuttap;
+        Sig[out++] = tapdel[iOuttap] + frac * (tapdel[iOuttap+1] - tapdel[iOuttap]);
+        outTap += incr;
+        --sampsNeeded;
+    }
 }
 
 // This gets called every internal buffer's worth of samples.  The actual

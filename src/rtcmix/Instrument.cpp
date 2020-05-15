@@ -29,7 +29,7 @@
 using namespace std;
 
 InputState::InputState()
-: fdIndex(NO_DEVICE_FDINDEX), fileOffset(0), inputsr(0.0), inputchans(0)
+: fdIndex(NO_DEVICE_FDINDEX), fileOffset(0), inputsr(0.0), inputchans(0), inputNsamps(0)
 {
 }
 
@@ -38,8 +38,8 @@ int				Instrument::NCHANS = 0;
 float			Instrument::SR     = 0;
 
 /* ----------------------------------------------------------- Instrument --- */
-Instrument::Instrument()
-	: _start(0.0), _dur(0.0), cursamp(0), chunksamps(0), i_chunkstart(0),
+Instrument::Instrument() : RefCounted(true),
+	  _start(0.0), _dur(0.0), cursamp(0), chunksamps(0), i_chunkstart(0),
 	  endsamp(0), output_offset(0), outputchans(0), _name(NULL),
 	  needs_to_run(true), _nsamps(0), inputChainBuf(NULL)
 {
@@ -191,7 +191,9 @@ int Instrument::update(double p[], int nvalues, unsigned fields)
 
 double Instrument::update(int index, int totframes, int curFrame)
 {
-	assert(index < _pfields->size());
+	if (index >= _pfields->size()) {
+		return 0.0;		// handle updates of optional pfields
+	}
 	const int nframes = (totframes == 0) ? nSamps() : totframes;
 	double percent = (curFrame > -1 ? curFrame : currentFrame()) / (double)nframes;
 	if (percent > 1.0)

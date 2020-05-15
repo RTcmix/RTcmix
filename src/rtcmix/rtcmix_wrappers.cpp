@@ -17,5 +17,5 @@ float SR()
 
 void set_SR(float srate)
 {
-	RTcmix::SR = srate;
+	RTcmix::setSR(srate);
 }

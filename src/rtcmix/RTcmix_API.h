@@ -11,12 +11,15 @@ extern "C" {
 	typedef void (*RTcmixBangCallback)(void *inContext);
 	typedef void (*RTcmixValuesCallback)(float *values, int numValues, void *inContext);
 	typedef void (*RTcmixPrintCallback)(const char *printBuffer, void *inContext);
+	typedef void (*RTcmixFinishedCallback)(long long frameCount, void *inContext);
+	void RTcmix_setPrintLevel(int level);
 	int RTcmix_init();
 	int RTcmix_destroy();
 	int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_count);
 	void RTcmix_setBangCallback(RTcmixBangCallback inBangCallback, void *inContext);
 	void RTcmix_setValuesCallback(RTcmixValuesCallback inValuesCallback, void *inContext);
 	void RTcmix_setPrintCallback(RTcmixPrintCallback inPrintCallback, void *inContext);
+	void RTcmix_setFinishedCallback(RTcmixFinishedCallback inFinishedCallback, void *inContext);
 #ifdef IOS
 	int RTcmix_startAudio();
 	int RTcmix_stopAudio();
@@ -49,6 +52,7 @@ extern "C" {
 	void checkForBang();
 	void checkForVals();
 	void checkForPrint();
+	void notifyIsFinished(long long);
 #ifdef __cplusplus
 }
 #endif

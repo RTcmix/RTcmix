@@ -1,0 +1,129 @@
+// include file with utilities for sound placement
+
+load("DMOVE");
+load("CHAIN");
+
+_front = 0; 
+_right = 1; 
+_rear = 2; 
+_left = 3;
+float dist_high, _rvbtime, abs_fac;
+float _mike_dist;
+list _dist;
+
+float foregroundMaxRho, midgroundMaxRho, backgroundMaxRho;
+
+float configureSpace()
+{
+	foregroundMaxRho = 6;
+	backgroundMaxRho = min(_dist[_front], _dist[_right]) - 1;
+	midgroundMaxRho = (foregroundMaxRho + backgroundMaxRho) / 2;
+	set_attenuation_params(_mike_dist, backgroundMaxRho, 1.25);
+	return 0;
+}
+
+float configureRoom(float width, float depth, float height, float brightness, float reverbTime, float mikeSpacing)
+{
+	status = space(_dist[_front]=depth/2, _dist[_right]=width/2, _dist[_rear]=-depth/2, _dist[_left]=-width/2, dist_high=height,
+				 abs_fac=brightness, _rvbtime=reverbTime);
+				
+	_mike_dist = mikeSpacing;
+	configureSpace();
+	if (_mike_dist >= 0.8) {
+		mikes(45.0, 0.5);
+	}
+	threshold(1/44100.0);
+	reset(44100);
+	bus_config("DMOVE", "chain 5 in", "chain 6-9 out");
+	// The following bus connection is fixed:  AUX 0-3 OUT -> RVB
+	// RVB's connection to "out" can be overridden
+	bus_config("CHAIN", "aux 0-3 out");
+	bus_config("RVB", "aux 0-3 in", "out 0-1");
+	return status;
+}
+
+float currentMaxRho, currentMinRho;
+kForeground = 0;
+kMidground = 1;
+kBackground = 2;
+
+float setSpace(float ground)
+{
+	if (ground == kForeground) {
+		currentMaxRho = foregroundMaxRho;
+		currentMinRho = 0;
+	}
+	else if (ground == kMidground) {
+		currentMaxRho = midgroundMaxRho;
+		currentMinRho = foregroundMaxRho;
+	}
+	else {
+		currentMaxRho = backgroundMaxRho;
+		currentMinRho = midgroundMaxRho;
+	}
+	return 0;
+}
+
+handle _frontInstrument;
+
+float configureFrontInstrument(string instname, float usesInput)
+{
+	float status;
+	if (usesInput) {
+		status = bus_config(instname, "in 0", "chain 0 out");
+	}
+	else {
+		status = bus_config(instname, "chain 0 out");
+	}
+	return status;
+}
+
+handle setFrontInstrument(handle inst)
+{
+	_frontInstrument = inst;
+	return _frontInstrument;
+}
+
+float roomPlaceAngleRange(float outskip, float inskip, float dur, float gain, float minAngle, float maxAngle)
+{
+	chainInsts = {}
+	chainInsts[0] = _frontInstrument;
+	dmove = makeinstrument("DMOVE", outskip, inskip, dur, gain, irand(currentMinRho, currentMaxRho), irand(minAngle, maxAngle), _mike_dist);
+	chainInsts[1] = dmove;
+	status = CHAIN(outskip, dur+_rvbtime, len(chainInsts), chainInsts);
+	return status;
+}
+
+float roomPlaceAngle(float outskip, float inskip, float dur, float gain, float angle)
+{
+	chainInsts = {}
+	chainInsts[0] = _frontInstrument;
+	dmove = makeinstrument("DMOVE", outskip, inskip, dur, gain, irand(currentMinRho, currentMaxRho), angle, _mike_dist);
+	chainInsts[1] = dmove;
+	status = CHAIN(outskip, dur+_rvbtime, len(chainInsts), chainInsts);
+	return status;
+}
+
+float roomPlaceRandom(float outskip, float inskip, float dur, float gain)
+{
+	angle = irand(0, 359);
+	return roomPlaceAngle(outskip, inskip, dur, gain, angle);
+}
+
+float roomMoveArc(float outskip, float inskip, float dur, float gain, float startAngle, float endAngle)
+{
+	chainInsts = {}
+	chainInsts[0] = _frontInstrument;
+	arc_dist = maketable("line", "nonorm", 10000, { 0, irand(currentMinRho, currentMaxRho), 1, irand(currentMinRho, currentMaxRho) });
+	arc_angle = maketable("line", "nonorm", 10000, { 0, startAngle, 1, endAngle });
+	printf("roomMoveArc: moving from %f degrees to %f degrees over %d seconds\n", startAngle, endAngle, dur);
+	dmove = makeinstrument("DMOVE", outskip, inskip, dur, gain, arc_dist, arc_angle, _mike_dist);
+	chainInsts[1] = dmove;
+	status = CHAIN(outskip, dur+_rvbtime, len(chainInsts), chainInsts);
+	return status;
+}
+
+float roomRun(float duration, float reverbGain)
+{
+	return RVB(0, 0, duration+_rvbtime, reverbGain);
+}

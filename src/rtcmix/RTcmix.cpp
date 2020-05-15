@@ -59,9 +59,9 @@ extern "C" {
 // Static RTcmix member initialization
 
 int				RTcmix::NCHANS 			= 2;
-int				RTcmix::RTBUFSAMPS      = 0;
+int				RTcmix::sBufferFrameCount = 0;
 int				RTcmix::audioNCHANS 	= 0;
-float			RTcmix::SR				= 0.0;
+float			RTcmix::sSamplingRate	= 0.0;
 bool			RTcmix::runToOffset		= false;
 FRAMETYPE		RTcmix::bufOffset		= 0;
 FRAMETYPE		RTcmix::bufStartSamp 	= 0;
@@ -121,12 +121,14 @@ short *			RTcmix::ToOutPlayList = NULL;
 short *			RTcmix::ToAuxPlayList = NULL;
 
 #ifdef MULTI_THREAD
-pthread_mutex_t RTcmix::aux_buffer_lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t RTcmix::out_buffer_lock = PTHREAD_MUTEX_INITIALIZER;
+//pthread_mutex_t RTcmix::aux_buffer_lock = PTHREAD_MUTEX_INITIALIZER;
+//pthread_mutex_t RTcmix::out_buffer_lock = PTHREAD_MUTEX_INITIALIZER;
 TaskManager *	RTcmix::taskManager = NULL;
-std::vector<RTcmix::MixData> RTcmix::mixVector;
-pthread_mutex_t RTcmix::vectorLock = PTHREAD_MUTEX_INITIALIZER;
+std::vector<RTcmix::MixData> RTcmix::mixVectors[RT_THREAD_COUNT];
 #endif
+
+std::vector<RTcmix::CallbackInfo> RTcmix::audioStartCallbacks;
+std::vector<RTcmix::CallbackInfo> RTcmix::audioStopCallbacks;
 
 // Bus config state
 
@@ -161,12 +163,12 @@ RTcmix::init_options(bool fromMain, const char *defaultDSOPath)
 		rtInteractive = 0;
 	}
 	else {
-		SR = 44100.0; // what the heck...
+		setSR(44100.0); // what the heck...
 		Option::print(0);
 		Option::reportClipping(false);
 	}
 	
-	RTBUFSAMPS = (int) Option::bufferFrames();  /* modifiable with rtsetparams */
+	setRTBUFSAMPS((int) Option::bufferFrames());  /* modifiable with rtsetparams */
 
 	if (Option::autoLoad()) {
 		const char *dsoPath = Option::dsoPath();
@@ -186,7 +188,9 @@ RTcmix::init_globals()
    rtQueue = new RTQueue[busCount*3];
 #ifdef MULTI_THREAD
    taskManager = new TaskManager;
-   mixVector.reserve(busCount);
+    for (int i = 0; i < RT_THREAD_COUNT; ++i) {
+        mixVectors[i].reserve(busCount);
+    }
 #endif
 	BusConfigs = new BusConfig[busCount];
 	AuxToAuxPlayList = new short[busCount];
@@ -281,14 +285,14 @@ detect_denormals()
 RTcmix::RTcmix() 
 {
 	init_options(false, NULL);
-	init(SR, NCHANS, RTBUFSAMPS, NULL, NULL, NULL);
+	init(sSamplingRate, NCHANS, sBufferFrameCount, NULL, NULL, NULL);
 }
 
 //  The RTcmix constructor with settable SR, NCHANS; default RTBUFSAMPS
 RTcmix::RTcmix(float tsr, int tnchans)
 {
 	init_options(false, NULL);
-	init(tsr, tnchans, RTBUFSAMPS, NULL, NULL, NULL);
+	init(tsr, tnchans, sBufferFrameCount, NULL, NULL, NULL);
 }
 
 //  The RTcmix constructor with settable SR, NCHANS, RTBUFSAMPS, and up to
@@ -593,6 +597,60 @@ void RTcmix::setBufOffset(FRAMETYPE inOffset, bool inRunToOffset) {
 	bufOffset = inOffset; runToOffset = inRunToOffset;
 }
 
+void RTcmix::registerAudioStartCallback(AudioCallback callback, void *context)
+{
+    audioStartCallbacks.push_back(CallbackInfo(callback, context));
+}
+
+void RTcmix::unregisterAudioStartCallback(AudioCallback callback, void *context)
+{
+    for (std::vector<CallbackInfo>::iterator iter = audioStartCallbacks.begin();
+         iter != audioStartCallbacks.end();
+         ++iter) {
+        if (iter->callback == callback && iter->context == context) {
+            audioStartCallbacks.erase(iter);
+            break;
+        }
+    }
+}
+
+void RTcmix::registerAudioStopCallback(AudioCallback callback, void *context)
+{
+    audioStopCallbacks.push_back(CallbackInfo(callback, context));
+}
+
+void RTcmix::unregisterAudioStopCallback(AudioCallback callback, void *context)
+{
+    for (std::vector<CallbackInfo>::iterator iter = audioStopCallbacks.begin();
+         iter != audioStopCallbacks.end();
+         ++iter) {
+        if (iter->callback == callback && iter->context == context) {
+            audioStopCallbacks.erase(iter);
+            break;
+        }
+    }
+}
+
+void RTcmix::callStartCallbacks()
+{
+    for (std::vector<CallbackInfo>::iterator iter = audioStartCallbacks.begin();
+         iter != audioStartCallbacks.end();
+         ++iter)
+    {
+        (iter->callback)(iter->context);
+    }
+}
+
+void RTcmix::callStopCallbacks()
+{
+    for (std::vector<CallbackInfo>::iterator iter = audioStopCallbacks.begin();
+         iter != audioStopCallbacks.end();
+         ++iter)
+    {
+        (iter->callback)(iter->context);
+    }
+}
+
 int RTcmix::startAudio(AudioDeviceCallback renderCallback, AudioDeviceCallback doneCallback, void *inContext)
 {
 	rtcmix_debug(NULL, "RTcmix::startAudio entered");
@@ -600,6 +658,8 @@ int RTcmix::startAudio(AudioDeviceCallback renderCallback, AudioDeviceCallback d
 		// Set done callback on device.
 		if (doneCallback != NULL)
 			audioDevice->setStopCallback(doneCallback, inContext);
+        // Notify any listeners we are starting
+        callStartCallbacks();
 		// Start audio output device, handing it our render callback.
 		if (audioDevice->start(renderCallback, inContext) != 0) {
 			rtcmix_warn(NULL, "Audio device failed to start: %s", audioDevice->getLastError());

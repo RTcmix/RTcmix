@@ -227,8 +227,8 @@ AppleAudioDevice::Impl::Port::sendFrames(void *frameBuffer, int frameCount, int 
 	float **fFrameBuffer = (float **) frameBuffer;		// non-interleaved
 	const int bufFrames = audioBufFrames;
 	int loc = 0;
-	DPRINT("AppleAudioDevice::doSendFrames: frameCount = %d, PLAY filled = %d\n", frameCount, audioBufFilled);
-	DPRINT("AppleAudioDevice::doSendFrames: Copying %d channel user frame into %d non-interleaved internal buf channels\n", frameChans, streamCount);
+	DPRINT("AppleAudioDevice::Impl::Port::sendFrames: frameCount = %d, PLAY filled = %d\n", frameCount, audioBufFilled);
+	DPRINT("\tCopying %d channel rendered frame into %d non-interleaved internal buf channels\n", frameChans, streamCount);
 #if LOCK_IO
     lock.lock();
 #endif
@@ -259,8 +259,8 @@ AppleAudioDevice::Impl::Port::sendFrames(void *frameBuffer, int frameCount, int 
 #if LOCK_IO
     lock.unlock();
 #endif
-	DPRINT1("\tPLAY Filled now %d\n", audioBufFilled);
-	DPRINT1("\tPLAY inLoc ended at %d. Returning frameCount = %d\n", inLoc, frameCount);
+	DPRINT1("\tPLAY Filled up to %d\n", audioBufFilled);
+    DPRINT1("\tLeaving AppleAudioDevice::Impl::Port::sendFrames:  PLAY inLoc ended at %d. Returning frameCount = %d\n", inLoc, frameCount);
 	return frameCount;
 }
 
@@ -271,6 +271,7 @@ deviceIDs(NULL), deviceName(NULL), deviceID(0), savedDeviceSampleRate(0.0),
 #endif
 renderThread(NULL), renderSema(NULL), underflowCount(0)
 {
+    frameCount = 0;
 	gotFormatNotification = false;
 	paused = false;
 	stopping = false;
@@ -361,7 +362,7 @@ AppleAudioDevice::Impl::renderProcess(void *context)
         DPRINT("AppleAudioDevice::Impl::renderProcess waiting...\n");
         impl->renderSema->wait();
         if (impl->stopping) {
-            DPRINT("AppleAudioDevice::Impl::renderProcess woke to stop -- breaking out\n");
+            DPRINT("\nAppleAudioDevice::Impl::renderProcess woke to stop -- breaking out\n");
             break;
         }
 #if DEBUG > 0
@@ -552,8 +553,8 @@ OSStatus AppleAudioDevice::Impl::audioUnitRenderCallback(void *inUserData,
 			port->lock.unlock();
 #endif
        }
-        DPRINT1("\tPLAY Filled = %d\n", port->audioBufFilled);
-        DPRINT1("\tPLAY bufLoc ended at %d\n", port->outLoc);
+        DPRINT1("\tPLAY Filled down to %d\n", port->audioBufFilled);
+        DPRINT1("\tPLAY outLoc ended at %d\n", port->outLoc);
 	}
 	impl->frameCount += framesAdvanced;
 #if OUTPUT_CALLBACK_FIRST
@@ -904,7 +905,7 @@ int AppleAudioDevice::doStart()
 	ENTER(AppleAudioDevice::doStart());
 	_impl->stopping = false;
     // Pre-fill the input buffers
-    int preBuffers =  _impl->port[!_impl->recording].audioBufFrames / _impl->port[!_impl->recording].deviceBufFrames - 1;
+    int preBuffers = _impl->port[!_impl->recording].audioBufFrames / _impl->port[!_impl->recording].deviceBufFrames;
     DPRINT("AppleAudioDevice::doStart: prerolling %d slices\n", preBuffers-1);
     for (int prebuf = 1; prebuf < preBuffers; ++prebuf) {
         runCallback();
@@ -1346,7 +1347,7 @@ int	AppleAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 #if DEBUG > 0
     if (_impl->underflowCount > 0) {
         --_impl->underflowCount;
-        DPRINT("AppleAudioDevice::Impl::doSendFrames: underflow count -> %d -- filled now %d\n",
+        DPRINT("AppleAudioDevice::doSendFrames: underflow count -> %d -- filled now %d\n",
                _impl->underflowCount, port->audioBufFilled);
     }
 #endif
@@ -1544,7 +1545,7 @@ void AppleAudioDevice::parseDeviceDescription(const char *inDesc)
 {
 	::getDeviceList(&_impl->deviceIDs, &_impl->deviceCount);
 	if (inDesc != NULL) {
-		char *substr = strchr(inDesc, ':');
+		const char *substr = strchr(inDesc, ':');
 		if (substr == NULL) {
 			// Descriptor is just the device name
 			_impl->deviceName = new char[strlen(inDesc) + 1];
@@ -1558,14 +1559,15 @@ void AppleAudioDevice::parseDeviceDescription(const char *inDesc)
 			_impl->deviceName[nameLen] = '\0';
 			++substr;	// skip ':'
          	// Extract input and output stream selecters
-			char *insubstr = NULL, *outsubstr = NULL;
+			char *insubstr = NULL;
+			const char *outsubstr = NULL;
             if ((outsubstr = strchr(substr, ',')) != NULL) {
 				++outsubstr;   // skip ','
-				insubstr = substr;
+				insubstr = (char *)substr;
 				insubstr[(size_t) outsubstr - (size_t) insubstr - 1] = '\0';
             }
             else {
-				insubstr = outsubstr = substr;
+				insubstr = (char *) (outsubstr = substr);
             }
             // Now parse stream selecters and set up channel mapping if necessary
             const char *selecters[2] = { insubstr, outsubstr };
