@@ -10,6 +10,7 @@
 
 #ifdef SYMBOL_DEBUG
 #define DEBUG
+static const char *dname(int x);
 #endif
 
 #include "Symbol.h"
