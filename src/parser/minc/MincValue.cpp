@@ -10,6 +10,7 @@
 #include "debug.h"
 #include "handle.h"
 #include "Symbol.h"
+#include <string.h>
 
 /* ========================================================================== */
 /* MincList */

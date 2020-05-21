@@ -11,6 +11,7 @@
 #include "Symbol.h"
 #include "minc_internal.h"
 #include <vector>
+#include <string.h>
 
 // New Scope Code
 
