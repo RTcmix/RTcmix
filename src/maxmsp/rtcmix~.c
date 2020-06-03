@@ -80,14 +80,18 @@
 
 // Hand-defining these here because these will always be true, and are needed to get the right portions of RTcmix_API.h
 
+// 5/30/2020
+// -- now completely 64-bit, with perform64 method, etc.  used max-sdk-7.3.3
+
+
 #define EMBEDDEDAUDIO 1
 #define MAXMSP 1
 
-#define VERSION "2.005"
-#define RTcmixVERSION "RTcmix-maxmsp-4.3.1"
+#define VERSION "2.01"
+#define RTcmixVERSION "RTcmix-maxmsp-4.4.1"
 
 #if MAX_SDK_VERSION==6
-#include <ext.h"
+#include <ext.h>
 #include <edit.h>
 #else
 #include <ext_common.h>
@@ -141,12 +145,12 @@
 // Brad, here are some things I have turned off and on to get this to work efficiently.
 // Whatever I left on was my best solution.  Only one can be #defined at a time!  -DS
 
-// BGGx
+// BGG
 //#undef RELOAD_DYLIB
 //#undef DESTROY_ON_DSP_MESSAGE
 //#define RESET_AUDIO_ON_DSP_MESSAGE
 //#undef RELOAD_DYLIB
-// BGGx -- I think these will work and reset the entire RTcmix engine
+// BGG -- these will work and reset the entire RTcmix engine
 #undef RELOAD_DYLIB
 #define DESTROY_ON_DSP_MESSAGE
 #undef RESET_AUDIO_ON_DSP_MESSAGE
@@ -171,18 +175,18 @@ typedef void (*setValuesCallbackPtr)(RTcmixValuesCallback inValuesCallback, void
 typedef void (*setPrintCallbackPtr)(RTcmixPrintCallback inPrintCallback, void *inContext);
 
 
-void *rtcmix_class;
+static t_class *rtcmix_class = NULL;
 
 typedef struct _rtcmix
 {
 	//header
-	t_pxobject x_obj;
+	t_pxobject ob;
 	
 	//variables specific to this object
-	float srate;  					//sample rate
-	long num_inputs, num_outputs; 	//number of inputs and outputs
+	float srate;  					// sample rate
+	long num_inputs, num_outputs; 	// number of inputs and outputs
 	long num_pinlets;				// number of inlets for dynamic PField control
-	float in[MSP_INPUTS];			//values of input variables
+	float in[MSP_INPUTS];			// values of input variables (for float/int inputs, init to 0.0)
 	short in_connected[MSP_INPUTS]; //booleans: true if signals connected to the input in question
 	//we use this "connected" boolean so that users can connect *either* signals or floats
 	//to the various inputs; sometimes it's easier just to have floats, but other times
@@ -254,6 +258,7 @@ typedef struct _rtcmix
 	int audioConfigured;	// if 1, we have already configured audio at least once
 	
 	// for setting "loadinst" mode, allowing dynamic loading of RTcmix instrumens.
+    // BGGx -- doesn't really work at present
 	// NOTE:  Only 1 rtcmix~ can be instantiated with this!
 	int loadinstflag;
 } t_rtcmix;
@@ -268,15 +273,15 @@ char mpathname[1024]; // probably should be malloc'd
 //setup funcs; this probably won't change, unless you decide to change the number of
 //args that the user can input, in which case rtcmix_new will have to change
 void *rtcmix_new(long num_inoutputs, long num_additional);
-void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count);
+void rtcmix_dsp64(t_rtcmix *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags);
 int rtcmix_load_dylib(t_rtcmix *x); // loads the main rtcmixdylib.so lib
-t_int *rtcmix_perform(t_int *w);
+void rtcmix_perform64(t_rtcmix *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam);
 void rtcmix_assist(t_rtcmix *x, void *b, long m, long a, char *s);
 void rtcmix_free(t_rtcmix *x);
 
 //for getting floats, ints or bangs at inputs
 void rtcmix_float(t_rtcmix *x, double f);
-void rtcmix_int(t_rtcmix *x, int i);
+void rtcmix_int(t_rtcmix *x, long i);
 void rtcmix_bang(t_rtcmix *x);
 void rtcmix_dobangout(t_rtcmix *x, Symbol *s, short argc, t_atom *argv); // for the defer
 
@@ -352,7 +357,7 @@ void freemem(void *ptr)
     sysmem_freeptr(((char *)ptr) - sizeof(struct memcheck));    // free entire original block
 }
 
-#else
+#else // DEBUG_MEMORY_OVERRUNS end
 
 void *newmem(unsigned size) { return sysmem_newptr(size); }
 void freemem(void *ptr) { sysmem_freeptr(ptr); }
@@ -365,59 +370,59 @@ t_symbol *ps_buffer; // for [buffer~]
 /****FUNCTIONS****/
 
 //primary MSP funcs
-int main(void)
+void ext_main(void *r)
 {
 	int i;
 	short path, rval;
-	
-	//the A_DEFLONG arguments give us the object arguments for the user to set number of ins/outs, etc.
-	//change these if you want different user args
-	setup((struct messlist **)&rtcmix_class, (method)rtcmix_new, (method)rtcmix_free, (short)sizeof(t_rtcmix), 0L, A_DEFLONG, A_DEFLONG, 0);
+
+	t_class *c = class_new("rtcmix~", (method)rtcmix_new, (method)rtcmix_free, (long)sizeof(t_rtcmix), 0L, A_DEFLONG, A_DEFLONG, 0);
 	
 	//standard messages; don't change these
-	addmess((method)rtcmix_dsp, "dsp", A_CANT, 0);
-	addmess((method)rtcmix_assist,"assist", A_CANT,0);
+	class_addmethod(c, (method)rtcmix_dsp64, "dsp64", A_CANT, 0);
+	class_addmethod(c, (method)rtcmix_assist,"assist", A_CANT,0);
 	
 	//our own messages
-	addmess((method)rtcmix_version, "version", 0);
-	addmess((method)rtcmix_text, "text", A_GIMME, 0);
-	addmess((method)rtcmix_rtcmix, "rtcmix", A_GIMME, 0);
-	addmess((method)rtcmix_var, "var", A_GIMME, 0);
-	addmess((method)rtcmix_varlist, "varlist", A_GIMME, 0);
-	addmess((method)rtcmix_bufset, "bufset", A_SYM, 0);
-	addmess((method)rtcmix_flush, "flush", 0);
-	addmess((method)rtcmix_loadinst, "loadinst", A_SYM, 0);
-	addmess((method)rtcmix_loadset, "loadset", A_LONG, 0);
+	class_addmethod(c, (method)rtcmix_version, "version", 0);
+	class_addmethod(c, (method)rtcmix_text, "text", A_GIMME, 0);
+	class_addmethod(c, (method)rtcmix_rtcmix, "rtcmix", A_GIMME, 0);
+	class_addmethod(c, (method)rtcmix_var, "var", A_GIMME, 0);
+	class_addmethod(c, (method)rtcmix_varlist, "varlist", A_GIMME, 0);
+	class_addmethod(c, (method)rtcmix_bufset, "bufset", A_SYM, 0);
+	class_addmethod(c, (method)rtcmix_flush, "flush", 0);
+	class_addmethod(c, (method)rtcmix_loadinst, "loadinst", A_SYM, 0);
+	class_addmethod(c, (method)rtcmix_loadset, "loadset", A_LONG, 0);
 	// "debug" toggles debugging mode
-	addmess((method)rtcmix_debug, "debug", 0);
+	class_addmethod(c, (method)rtcmix_debug, "debug", 0);
 	
 	//so we know what to do with floats that we receive at the inputs
-	addfloat((method)rtcmix_float);
+    class_addmethod(c, (method)rtcmix_float, "float", A_FLOAT, 0);
 	
 	// this for ints...
-	addint((method)rtcmix_int);
+    class_addmethod(c, (method)rtcmix_int, "int", A_LONG, 0);
 	
 	// trigger scripts
-	addbang((method)rtcmix_bang);
+    class_addmethod(c, (method)rtcmix_bang, "bang", 0);
 	
 	//for the text editor and scripts
-	addmess ((method)rtcmix_edclose, "edclose", A_CANT, 0);
-	addmess((method)rtcmix_dblclick, "dblclick", A_CANT, 0);
-	addmess((method)rtcmix_goscript, "goscript", A_GIMME, 0);
-	addmess((method)rtcmix_openscript, "openscript", A_GIMME, 0);
-	addmess((method)rtcmix_setscript, "setscript", A_GIMME, 0);
-	addmess((method)rtcmix_read, "read", A_GIMME, 0);
-	addmess ((method)rtcmix_okclose, "okclose", A_CANT, 0);
-	addmess((method)rtcmix_write, "savescript", A_GIMME, 0);
-	addmess((method)rtcmix_writeas, "savescriptas", A_GIMME, 0);
-	
+    class_addmethod(c, (method)rtcmix_edclose, "edclose", A_CANT, 0);
+    class_addmethod(c, (method)rtcmix_dblclick, "dblclick", A_CANT, 0);
+    class_addmethod(c, (method)rtcmix_goscript, "goscript", A_GIMME, 0);
+    class_addmethod(c, (method)rtcmix_openscript, "openscript", A_GIMME, 0);
+    class_addmethod(c, (method)rtcmix_setscript, "setscript", A_GIMME, 0);
+    class_addmethod(c, (method)rtcmix_read, "read", A_GIMME, 0);
+    class_addmethod(c, (method)rtcmix_okclose, "okclose", A_CANT, 0);
+    class_addmethod(c, (method)rtcmix_write, "savescript", A_GIMME, 0);
+	class_addmethod(c, (method)rtcmix_writeas, "savescriptas", A_GIMME, 0);
+                    
 	// binbuf storage
-	addmess((method)rtcmix_save, "save", A_CANT, 0);
-	addmess((method)rtcmix_restore, "restore", A_GIMME, 0);
-	
+    class_addmethod(c, (method)rtcmix_save, "save", A_CANT, 0);
+    class_addmethod(c, (method)rtcmix_restore, "restore", A_GIMME, 0);
+
 	//gotta have this one....
-	dsp_initclass();
-	
+	class_dspinit(c);
+	class_register(CLASS_BOX, c);
+	rtcmix_class = c;
+
 	// find the rtcmix-dylibs folder location
 	nameinpath("rtcmix-dylibs", &path);
 	rval = path_topathname(path, "", mpathname);
@@ -444,10 +449,9 @@ int main(void)
 	}
 	
 	ps_buffer = gensym("buffer~"); // for [buffer~]
-	
+    
 	// ho ho!
 	post("rtcmix~ -- RTcmix music language, v. %s (%s)", VERSION, RTcmixVERSION);
-	return(1);
 }
 
 
@@ -456,25 +460,10 @@ void *rtcmix_new(long num_inoutputs, long num_additional)
 {
 	int i;
 	t_rtcmix *x;
-	
-	
+		
 	// creates the object
-	x = (t_rtcmix *)newobject(rtcmix_class);
-	
-	//zero out the struct, to be careful (takk to jkclayton)
-	if (x) {
-		for(i=sizeof(t_pxobject);i<sizeof(t_rtcmix);i++)
-			((char *)x)[i]=0;
-	}
-	else {
-		error("rtcmix~: Object creation failed!");
-		return(NULL);
-	}
-	
-	// binbuf storage
-	// this sends the 'restore' message (rtcmix_restore() below)
-	gensym("#X")->s_thing = (struct object*)x;
-	
+	x = (t_rtcmix *)object_alloc(rtcmix_class);
+
 	//constrain number of inputs and outputs
 	if (num_inoutputs < 1) num_inoutputs = 1; // no args, use default of 1 channel in/out
 	if ((num_inoutputs + num_additional) > MSP_INPUTS) {
@@ -486,25 +475,31 @@ void *rtcmix_new(long num_inoutputs, long num_additional)
 	x->num_outputs = num_inoutputs;
 	x->num_pinlets = num_additional;
 	
-	// setup up inputs and outputs, for audio inputs
-	dsp_setup((t_pxobject *)x, x->num_inputs + x->num_pinlets);
+	if (x) {
+		dsp_setup((t_pxobject *)x, num_inoutputs + num_additional);   // MSP inlets: arg is # of inlets and is REQUIRED!
+	}
+	else {
+		error("rtcmix~: Object creation failed!");
+		return(NULL);
+	}
+	
+	// binbuf storage
+	// this sends the 'restore' message (rtcmix_restore() below)
+	gensym("#X")->s_thing = (struct object*)x;
+
 	
 	// outputs, right-to-left
 	x->outpointer = outlet_new((t_object *)x, 0); // for bangs (from MAXBANG), values + value lists (from MAXMESSAGE)
 	
 	for (i = 0; i < x->num_outputs; i++) {
-		outlet_new((t_object *)x, "signal");
+		outlet_new(x, "signal");
 	}
 	
 	// initialize some variables; important to do this!
 	for (i = 0; i < (x->num_inputs + x->num_pinlets); i++) {
-		x->in[i] = 0.;
-		x->in_connected[i] = 0;
+		x->in[i] = 0.0; // this is just arbitrary to initialize
 	}
-	
-	//occasionally this line is necessary if you are doing weird asynchronous things with the in/out vectors
-	x->x_obj.z_misc = Z_NO_INPLACE;
-	
+
 	// load the dylib
 	x->module = NULL; // new object, first time
 	
@@ -549,7 +544,9 @@ void *rtcmix_new(long num_inoutputs, long num_additional)
 #endif
 	x->audioConfigured = 0;	// indicates first time, prior to configuring audio
 	x->loadinstflag = 0; // set for normal operation (no RTcmix instrument dynloading)
-	
+    
+    x->ob.z_misc |= Z_NO_INPLACE; // ARG!!!!!!!  Cycling!!!!!!!
+
 	return(x);
 }
 
@@ -557,37 +554,27 @@ void *rtcmix_new(long num_inoutputs, long num_additional)
 //changes anything (like deletes a patch cord), audio will be turned off and
 //then on again, calling this func.
 //Also tells us where the audio vectors are and how big they are
-void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count)
+void rtcmix_dsp64(t_rtcmix *x, t_object *dsp64, short *count, double samplerate, long maxvectorsize, long flags)
 {
-	rtcmix_dprint(x, "rtcmix_dsp() called");
-	
-	void *dsp_add_args[MSP_INPUTS + MSP_OUTPUTS + 2];
+	rtcmix_dprint(x, "rtcmix_dsp64() called");
+    
 	int i;
-	
-	int totalInputs = x->num_inputs + x->num_pinlets;
-	int totalOutputs = x->num_outputs;
+
+	object_method(dsp64, gensym("dsp_add64"), x, rtcmix_perform64, 0, NULL);
 	
 	// set sample rate
-	x->srate = sp[0]->s_sr;
+	x->srate = samplerate;
 	
 	int connectedInputs = 0;
 	
 	// check to see if there are signals connected to the various inputs
-	for(i = 0; i < totalInputs; i++) {
+    for(i = 0; i < x->num_inputs; i++) { // check our signal inputs only
 		x->in_connected[i] = count[i];
 		connectedInputs += count[i];
 	}
 	rtcmix_dprint(x, "rtcmix_dsp: %d connected inputs", connectedInputs);
 	
-	// construct the array of vectors and stuff
-	dsp_add_args[0] = x; //the object itself
-	for(i = 0; i < (totalInputs + totalOutputs); i++) { //pointers to the input and output vectors
-		dsp_add_args[i+1] = sp[i]->s_vec;
-	}
-	dsp_add_args[totalInputs + totalOutputs + 1] = (void *)sp[0]->s_n; //pointer to the vector size
-	dsp_addv(rtcmix_perform, (x->num_inputs + x->num_pinlets + x->num_outputs + 2), dsp_add_args); //add them to the signal chain
-	
-#if defined(RESET_AUDIO_ON_DSP_MESSAGE)
+#if defined(RESET_AUDIO_ON_DSP_MESSAGE) // uses old perform methodology!
 	if (x->audioConfigured) {
 		// This function destroys and rebuilds the AudioDevice and the audio buffers.
 		if (x->rtresetaudio) {
@@ -624,13 +611,12 @@ void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count)
 	}
 #endif
 
-	// allocate the RTcmix i/o transfer buffers
-	x->maxmsp_inbuf = malloc(sizeof(float) * sp[0]->s_n * x->num_inputs);
-	x->maxmsp_outbuf = malloc(sizeof(float) * sp[0]->s_n * x->num_outputs);
+	x->maxmsp_inbuf = malloc(sizeof(float) *  maxvectorsize * x->num_inputs);
+	x->maxmsp_outbuf = malloc(sizeof(float) * maxvectorsize * x->num_outputs);
 	
-	// zero out these buffers for UB
-	for (i = 0; i < (sp[0]->s_n * x->num_inputs); i++) x->maxmsp_inbuf[i] = 0.0;
-	for (i = 0; i < (sp[0]->s_n * x->num_outputs); i++) x->maxmsp_outbuf[i] = 0.0;
+	// zero out these buffers to be safe
+	for (i = 0; i < (maxvectorsize * x->num_inputs); i++) x->maxmsp_inbuf[i] = 0.0;
+	for (i = 0; i < (maxvectorsize * x->num_outputs); i++) x->maxmsp_outbuf[i] = 0.0;
 
 #if defined(RELOAD_DYLIB) || defined(DESTROY_ON_DSP_MESSAGE)
 	// This is done if we are either reloading the dylib, or destroying everything each time.
@@ -642,7 +628,7 @@ void rtcmix_dsp(t_rtcmix *x, t_signal **sp, short *count)
 	if (x->rtsetparams)
 	{
 		rtcmix_dprint(x, "rtcmix_dsp calling RTcmix_setparams()");
-		x->rtsetparams(x->srate, x->num_outputs, sp[0]->s_n, 1, 0);
+		x->rtsetparams(x->srate, x->num_outputs, maxvectorsize, 1, 0);
 	}
 #endif
 	
@@ -911,71 +897,52 @@ int rtcmix_load_dylib(t_rtcmix *x)
 
 //this is where the action is
 //we get vectors of samples (n samples per vector), process them and send them out
-t_int *rtcmix_perform(t_int *w)
+void rtcmix_perform64(t_rtcmix *x, t_object *dsp64, double **ins, long numins, double **outs, long numouts, long sampleframes, long flags, void *userparam)
 {
 	// NO debugging post here; this one gets called all the time
 	
-	t_rtcmix *x = (t_rtcmix *)(w[1]);
-	
-	float *in[MSP_INPUTS]; 		//pointers to the input vectors
-	float *out[MSP_OUTPUTS];	//pointers to the output vectors
-	
-	const long nsamps = w[x->num_inputs + x->num_pinlets + x->num_outputs + 2];	//number of samples per vector
+	double *in[MSP_INPUTS]; 		//pointers to the input vectors
+	double *out[MSP_OUTPUTS];	//pointers to the output vectors
 	
 	//random local vars
 	int i, j, k;
-		
-	//check to see if we should skip this routine if the patcher is "muted"
-	//i also setup of "power" messages for expensive objects, so that the
-	//object itself can be turned off directly. this can be convenient sometimes.
-	//in any case, all audio objects should have this
-	// BGG -- need to set up to zero the buffers, though
-	if (x->x_obj.z_disabled) goto out;
-	
+
 	//check to see if we have a signal or float message connected to input
 	//then assign the pointer accordingly
-	for (i = 0; i < (x->num_inputs + x->num_pinlets); i++) {
-		in[i] = x->in_connected[i] ? (float *)(w[i+2]) : &x->in[i];
+    // msp ins and outs are not interleaved -- each ins[i] and outs[i] points to a channel of samples
+	for (i = 0; i < x->num_inputs; i++) { // don't use numins, it also include pfield inputs (proxies)
+        if (x->in_connected[i])
+            in[i] = ins[i]; // each input in[] points to a channel
+        out[i] = outs[i];
 	}
-	
-	//assign the output vectors
-	for (i = 0; i < x->num_outputs; i++) {
-		out[i] = (float *)(w[x->num_inputs+x->num_pinlets+i+2]);
-	}
-	
-	j = 0;
+    for (i = 0; i < numouts; i++) {
+        out[i] = outs[i];
+    }
+
 	k = 0;
-	long n = nsamps;
 	// copy input from MAX into transfer buffer
-	while (n--) {
-		for(i = 0; i < x->num_inputs; i++) {
-			if (x->in_connected[i])
-				(x->maxmsp_inbuf)[k++] = *in[i]++;
-			else
-				(x->maxmsp_inbuf)[k++] = *in[i];
-		}
-	}
-	
+    for (i = 0; i < sampleframes; i++) {
+        for (j = 0; j < x->num_inputs; j++) {
+            if (x->in_connected[j]) {
+                (x->maxmsp_inbuf)[k++] = *in[j]++;
+            }
+            else {
+                (x->maxmsp_inbuf)[k++] = x->in[j];
+            }
+        }
+    }
+    
 	// RTcmix stuff
 	// this drives the RTcmix sample-computing engine
-	x->rtrunaudio(x->maxmsp_inbuf, x->maxmsp_outbuf, nsamps);
-	
-	n = nsamps;
-	// copy output from RTcmix from transfer buffer
-	while (n--) {
-		for(i = 0; i < x->num_outputs; i++)
-			*out[i]++ = (x->maxmsp_outbuf)[j++];
-	}
-	
-	// reset queue and heap if signalled
-	if (x->flushflag == 1) {
-		x->flush();
-		x->flushflag = 0;
-	}
-	
-	//return a pointer to the next object in the signal chain.
-out:
-	return w + x->num_inputs + x->num_pinlets + x->num_outputs + 3;
+	x->rtrunaudio(x->maxmsp_inbuf, x->maxmsp_outbuf, sampleframes);
+    
+    k = 0;
+    // copy output from RTcmix transfer buffer
+    for (i = 0; i < sampleframes; i++) {
+        for(j = 0; j < x->num_outputs; j++) {
+            *out[j]++ = (x->maxmsp_outbuf)[k++];
+        }
+    }
 }
 
 // the deferred bang output
@@ -1047,41 +1014,31 @@ void rtcmix_free(t_rtcmix *x)
 
 //this gets called whenever a float is received at *any* input
 // used for the PField control inlets
-void rtcmix_float(t_rtcmix *x, double f)
+void rtcmix_float(t_rtcmix *x, double fval)
 {
-	int i;
-	
-	//check to see which input the float came in, then set the appropriate variable value
-	for(i = 0; i < (x->num_inputs + x->num_pinlets); i++) {
-		if (i == x->x_obj.z_in) {
-			if (i < x->num_inputs) {
-				x->in[i] = f;
-				post("rtcmix~: setting in[%d] =  %f, but rtcmix~ doesn't use this", i, f);
-			} else {
-				x->pfield_set(i - (x->num_inputs-1), f);
-			}
-		}
-	}
+    long inlet_number = proxy_getinlet((t_object *)x);
+    
+    if (inlet_number < x->num_inputs) {
+        x->in[inlet_number] = fval; // constant will go in for this signal
+    }
+    else {
+        x->pfield_set((inlet_number - x->num_inputs) + 1, fval);
+    }
 }
 
 
 //this gets called whenever an int is received at *any* input
 // used for the PField control inlets
-void rtcmix_int(t_rtcmix *x, int ival)
+void rtcmix_int(t_rtcmix *x, long ival)
 {
-	int i;
-	
-	//check to see which input the float came in, then set the appropriate variable value
-	for(i = 0; i < (x->num_inputs + x->num_pinlets); i++) {
-		if (i == x->x_obj.z_in) {
-			if (i < x->num_inputs) {
-				x->in[i] = (float)ival;
-				post("rtcmix~: setting in[%d] =  %f, but rtcmix~ doesn't use this", i, (float)ival);
-			} else {
-				x->pfield_set(i - (x->num_inputs-1), (float)ival);
-			}
-		}
-	}
+    long inlet_number = proxy_getinlet((t_object *)x);
+    
+    if (inlet_number < x->num_inputs) {
+        x->in[inlet_number] = (float)ival; // constant will go in for this signal
+    }
+    else {
+        x->pfield_set((inlet_number - x->num_inputs) + 1, (float)ival);
+    }
 }
 
 void rtcmix_bangcallback(void *inContext)
@@ -1112,6 +1069,7 @@ void rtcmix_printcallback(const char *printBuffer, void *inContext)
 		pbufptr += (strlen(pbufptr) + 1);
 	}
 }
+
 
 // bang triggers the current working script
 void rtcmix_bang(t_rtcmix *x)

@@ -1,4 +1,4 @@
-include ../package.conf
+include package.conf
 
 NAME = TONE
 

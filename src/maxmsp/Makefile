@@ -24,7 +24,7 @@ debug-install:	debug-all
 uninstall:
 
 clean:
-	xcodebuild clean
+	rm -rf build
 
 cleanall:	clean
 
