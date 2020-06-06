@@ -1,6 +1,8 @@
 include package.conf
 
-RTLIBDIRS = MIDI TONE
+# BGGx
+#RTLIBDIRS = MIDI TONE
+RTLIBDIRS =
 
 LIBDIRS = $(RTLIBDIRS)
 

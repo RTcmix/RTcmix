@@ -81,6 +81,7 @@
 // Hand-defining these here because these will always be true, and are needed to get the right portions of RTcmix_API.h
 
 // 5/30/2020
+// v. 2.01
 // -- now completely 64-bit, with perform64 method, etc.  used max-sdk-7.3.3
 
 
@@ -445,7 +446,7 @@ void ext_main(void *r)
 				if (mpathname[i] == '/') break;
 			mpathptr = mpathname+i;
 		}
-		post("converted to '%s'", mpathptr);
+		//post("converted to '%s'", mpathptr);
 	}
 	
 	ps_buffer = gensym("buffer~"); // for [buffer~]
@@ -1091,7 +1092,7 @@ void rtcmix_bang(t_rtcmix *x)
 // print out the rtcmix~ version
 void rtcmix_version(t_rtcmix *x)
 {
-	post("rtcmix~, v. %s by Brad Garton (%s)", VERSION, RTcmixVERSION);
+	post("rtcmix~, v. %s by Brad Garton/Doug Scott(%s)", VERSION, RTcmixVERSION);
 }
 
 
