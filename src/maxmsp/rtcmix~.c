@@ -1092,7 +1092,7 @@ void rtcmix_bang(t_rtcmix *x)
 // print out the rtcmix~ version
 void rtcmix_version(t_rtcmix *x)
 {
-	post("rtcmix~, v. %s by Brad Garton/Doug Scott(%s)", VERSION, RTcmixVERSION);
+	post("rtcmix~, v. %s by Brad Garton/Doug Scott (%s)", VERSION, RTcmixVERSION);
 }
 
 
