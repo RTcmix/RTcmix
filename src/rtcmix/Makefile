@@ -37,7 +37,6 @@ infile.c \
 io.c \
 load_utils.c \
 merror.c \
-message.c \
 minout.c \
 m_system.c \
 printsf.c \
@@ -88,6 +87,7 @@ Instrument.cpp \
 intraverse.cpp \
 loader.cpp \
 lfo.cpp \
+message.cpp \
 minc_info.cpp \
 minc_functions.cpp \
 DataFile.cpp \
