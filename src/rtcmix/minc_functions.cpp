@@ -131,15 +131,21 @@ double m_stringify(float p, int n_args, double pp[])
 	/* coerces a string passed in from Minc in quotes in p[0]
 	   to a 'floating point' pointer suitable for use in
 	   further cmix calls */
-
-	return STRINGIFY(pp[0]);
+    if (n_args < 1) {
+        die("stringify", "usage: stringfy(\"some_quoted_string\")");
+        RTExit(PARAM_ERROR);
+    }
+    return (pp[0] == 0.0) ? 0 : STRINGIFY(pp[0]);
 }
 
 double m_log(float p[], int n_args)
 {
    double val;
-
-   val = log10((double)p[0]);
+    if (p[0] <= 0.0) {
+        die("log", "argument cannot be <= 0");
+        RTExit(PARAM_ERROR);
+    }
+    val = log10((double)p[0]);
 
    return(val);
 }
@@ -148,6 +154,10 @@ double m_ln(float p[], int n_args)
 {
    double val;
 
+    if (p[0] <= 0.0) {
+        die("ln", "argument cannot be <= 0");
+        RTExit(PARAM_ERROR);
+    }
    val = log((double)p[0]);
 
    return(val);
@@ -165,6 +175,10 @@ double m_sqrt(float p[], int n_args, double pp[])
 {
 	double val;
 
+    if (p[0] <= 0.0) {
+        die("sqrt", "argument cannot be < 0");
+        RTExit(PARAM_ERROR);
+    }
 	val = sqrt(pp[0]);
 	return(val);
 }
@@ -207,6 +221,10 @@ double m_abs(float p[], int n_args)
 double m_mod(float p[], int n_args)
 {
 	int i;
+    if (p[1] < 1.0) {
+        die("mod", "Modulus must be >= 1");
+        RTExit(PARAM_ERROR);
+    }
 	i = (int)p[0] % (int)p[1];
 	return((float)i);
 }
