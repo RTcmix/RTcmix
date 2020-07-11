@@ -871,7 +871,6 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
             if (bus_slot->auxin_count > 0) {
                 die("bus_config", "Can't have 'in' and 'aux-in' buses in same bus_config.");
                 RTExit(PARAM_ERROR);
-                RTExit(PARAM_ERROR);
             }
             if (chain_incount > 0) {
             	die("bus_config", "Can't have 'in' and 'chain-in' buses in same bus_config.");
