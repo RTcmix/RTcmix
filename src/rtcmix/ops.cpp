@@ -34,6 +34,7 @@ Handle opmul(const Arg args[], const int nargs)
 	}
 	die("mul", "Usage: pfield = mul(arg1, arg2)\n"
 					"(Args can be pfields or constants.)");
+    rtOptionalThrow(PARAM_ERROR);
 	return NULL;
 }
 
@@ -53,6 +54,7 @@ Handle opadd(const Arg args[], const int nargs)
 	}
 	die("add", "Usage: pfield = add(arg1, arg2)\n"
 					"(Args can be pfields or constants.)");
+    rtOptionalThrow(PARAM_ERROR);
 	return NULL;
 }
 
@@ -77,6 +79,7 @@ Handle opdiv(const Arg args[], const int nargs)
 	}
 	die("div", "Usage: pfield = div(arg1, arg2)\n"
 					"(Args can be pfields or constants.)");
+    rtOptionalThrow(PARAM_ERROR);
 	return NULL;
 }
 
@@ -101,6 +104,7 @@ Handle opsub(const Arg args[], const int nargs)
 	}
 	die("sub", "Usage: pfield = sub(arg1, arg2)\n"
 					"(Args can be pfields or constants.)");
+    rtOptionalThrow(PARAM_ERROR);
 	return NULL;
 }
 

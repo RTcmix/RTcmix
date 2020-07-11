@@ -83,6 +83,7 @@ _midi_usage()
 	die("makeconnection (midi)",
 		"Usage: makeconnection(\"midi\", min, max, default, lag, "
 		"chan, type[, subtype])");
+    rtOptionalThrow(PARAM_ERROR);
 	return NULL;
 }
 
@@ -213,6 +214,7 @@ create_pfield(const Arg args[], const int nargs)
 		return _midi_usage();
 	if (lag < 0.0 || lag > 100.0) {
 		die("makeconnection (midi)", "<lag> must be between 0 and 100");
+        rtOptionalThrow(PARAM_ERROR);
 		return NULL;
 	}
 	lag *= 0.01;
@@ -223,6 +225,7 @@ create_pfield(const Arg args[], const int nargs)
 		return _midi_usage();
 	if (chan < 0 || chan > 15) {
 		die("makeconnection (midi)", "<chan> must be between 1 and 16");
+        rtOptionalThrow(PARAM_ERROR);
 		return NULL;
 	}
 
@@ -248,9 +251,10 @@ create_pfield(const Arg args[], const int nargs)
 	static RTcmixMIDIInput *midiport = NULL;
 	if (midiport == NULL)				// first time, so init midi system
 		midiport = createMIDIInputPort();
-	if (midiport == NULL)
+    if (midiport == NULL) {
+        rtOptionalThrow(SYSTEM_ERROR);
 		return NULL;
-
+    }
 	return new RTMidiPField(midiport, minval, maxval, defaultval, lag, chan,
 																		type, subtype);
 }

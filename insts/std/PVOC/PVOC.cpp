@@ -152,6 +152,7 @@ NewArray(int size)
 	float *arr = new float[size];
 	if (!arr) {
 		die("PVOC", "Unable to allocate memory");
+        rtOptionalThrow(MEMORY_ERROR);
 		return NULL;
 	}
 	memset(arr, 0, size * sizeof(float));
