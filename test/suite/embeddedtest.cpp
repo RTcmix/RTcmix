@@ -16,8 +16,6 @@
 #include <RTcmix_API.h>
 #include <fcntl.h>
 
-#define NO_WAIT
-
 char message[65536];
 bool done = false;
 
@@ -78,24 +76,15 @@ int main(int argc, char **argv)
 		status = RTcmix_parseScore(scorebuf, len);
 		printf("parse returned %d\n", status);
 		if (status != 0) {
-			printf("Offending score:\n%s", scorebuf);
+			printf("Offending score:\n%s\n\n", scorebuf);
+            done = true;
 			continue;
 		}
-#ifndef NO_WAIT
-		while (!done) {
-			usleep(100*1000);
-		}
-#else
-		printf("sleeping briefly before next score...\n");
-		usleep(1000 * 500);
-#endif
 	}
 
-#ifdef NO_WAIT
 	while (!done) {
-		usleep(100*1000);
+//		usleep(100*1000);
 	}
-#endif
 
 	running = false;
 

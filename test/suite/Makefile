@@ -47,7 +47,7 @@ sockettest: $(SOCKOBJS)
 	$(CXX) -o $@ $(SOCKOBJS) ../../lib/RTsockfuncs.o
 
 embeddedtest: embeddedtest.o
-	$(CXX) -I../.. -DEMBEDDED -DEMBEDDEDAUDIO -o $@ embeddedtest.o -L../../lib -lrtcmix_embedded
+	$(CXX) -g -o $@ embeddedtest.o -L../../lib -lrtcmix_embedded
 
 run_stresstest:	stresstest
 	@echo
@@ -148,8 +148,14 @@ test_load:
 
 test_embedded:
 	@echo
+	@echo Testing embedded use of all non-instrument functions
+	@mkdir -p function_scores
+	@for line in `cat every_function.sco`; do echo $$line\(\) > function_scores/$$line.sco; done
+	-./embeddedtest function_scores/*.sco
+#	@rm -rf function_scores
 	@echo Testing embedded use of all instruments
-	@find ../../shlib/ -name lib\* | grep -v conn | sed 's/^.*lib//' | sed 's/\.so/(0,0,1,1)/' > embedded_test.sco
+	@echo "rtinput(\"input.wav\")" > embedded_test.sco
+	@find ../../shlib/ -name lib\* | grep -v conn | sed 's/^.*lib//' | sed 's/\.so/(0,0,1,1,1,1,1,1,1,1)/' >> embedded_test.sco
 	-./embeddedtest embedded_test.sco
 
 clean:
