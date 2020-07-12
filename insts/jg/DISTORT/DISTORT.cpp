@@ -14,10 +14,11 @@
    p9  = bypass all processing (0: no, 1: yes) [optional, default is 0]
    p10 = distortion param (only for types 3 and 4 -- must be greater
          than zero, typically as high as 100) [optional, default is 1]
+   p11 = wet/dry mix (0: dry, 1: wet) [optional, default is 1]
 
-   p3 (amplitude), p5 (gain), p6 (cutoff), p8 (pan), p9 (bypass), and
-   p10 (distortion param) can receive dynamic updates from a table or
-   real-time control source.
+   p3 (amplitude), p5 (gain), p6 (cutoff), p8 (pan), p9 (bypass), 
+   p10 (distortion param), and p11 (wet/dry mix) can receive dynamic updates
+   from a table or real-time control source.
 
    If an old-style gen table 1 is present, its values will be multiplied
    by the p3 amplitude multiplier, even if the latter is dynamic.
@@ -42,7 +43,7 @@
 
 
 DISTORT::DISTORT()
-   : usefilt(false), branch(0), param(1.0f), in(NULL), distort(NULL),
+   : usefilt(false), branch(0), param(1.0), wet(1.0), in(NULL), distort(NULL),
      filt(NULL), amptable(NULL)
 {
 }
@@ -113,8 +114,8 @@ int DISTORT::configure()
 
 void DISTORT::doupdate()
 {
-   double p[11];
-   update(p, 11, kAmp | kGain | kFiltCF | kPan | kBypass | kParam);
+   double p[12];
+   update(p, 12, kAmp | kGain | kFiltCF | kPan | kBypass | kParam | kWet);
    amp = p[3];
    if (amptable)
       amp *= amptable->tick(currentFrame(), 1.0);
@@ -129,8 +130,15 @@ void DISTORT::doupdate()
    bypass = (p[9] == 1.0);
    if (nargs > 10) {
       param = p[10];
-		if (param < 1.0f)
-			param = 1.0f;
+      if (param < 1.0f)
+         param = 1.0f;
+      if (nargs > 11) {
+         wet = p[11];
+         if (wet < 0.0f)
+            wet = 0.0f;
+         else if (wet > 1.0f)
+            wet = 1.0f;
+      }
    }
 }
 
@@ -147,11 +155,14 @@ int DISTORT::run()
       }
       float sig = in[i + inchan];
       if (!bypass) {
+         float orig = sig;
          sig *= (gain / 32768.0f);  // apply gain, convert range
          sig = distort->next(sig, param);
          sig *= 32768.0f;
          if (usefilt)
             sig = filt->tick(sig);
+         sig *= wet;
+         sig += (1.0f - wet) * orig;	// linear xfade btw. dry and wet
       }
       sig *= amp;
       float out[2];
