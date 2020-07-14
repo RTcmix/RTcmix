@@ -1,3 +1,0 @@
-[submodule "src/pd"]
-	path = src/pd
-	url = https://github.com/jwmatthys/pd-rtcmix
