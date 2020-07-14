@@ -665,7 +665,7 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
             frac = 0;
         }
         else if (fltindex > (MincFloat) (len - 1)) {
-            minc_warn("attempt to index past the end of list: returning last element");
+            minc_warn("attempt to index past the end of list '%s': returning last element", child(0)->symbol()->name());
             index = len - 1;
             frac = 0;
         }
@@ -700,7 +700,7 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
             index = stringLen - 1;
         }
         else if (index > stringLen - 1) {
-            minc_warn("attempt to index past the end of string: returning last element");
+            minc_warn("attempt to index past the end of string '%s': returning last element", child(0)->symbol()->name());
             index = stringLen - 1;
         }
         char stringChar[2];
@@ -779,7 +779,7 @@ Node *  NodeMember::doExct()
             copyValue(memberSymbol);
         }
         else {
-            minc_die("struct variable has no member '%s'", _memberName);
+            minc_die("struct variable '%s' has no member '%s'", structSymbol->name(), _memberName);
         }
     }
     else {

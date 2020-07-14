@@ -26,7 +26,8 @@ bool Option::_record = false;
 bool Option::_clobber = false;
 bool Option::_reportClipping = true;
 bool Option::_checkPeaks = true;
-bool Option::_exitOnError = false;	// we override this in main.cpp
+bool Option::_exitOnError = false;	// we override this in main.cpp for standalone
+bool Option::_bailOnError = false;
 bool Option::_autoLoad = false;
 bool Option::_fastUpdate = false;
 bool Option::_requireSampleRate = true;
@@ -563,6 +564,8 @@ int get_bool_option(const char *option_name)
 		return (int) Option::record();
 	else if (!strcmp(option_name, kOptionExitOnError))
 		return (int) Option::exitOnError();
+    else if (!strcmp(option_name, kOptionBailOnError))
+        return (int) Option::bailOnError();
 	else if (!strcmp(option_name, kOptionAutoLoad))
 		return (int) Option::autoLoad();
 	else if (!strcmp(option_name, kOptionFastUpdate))
@@ -590,6 +593,8 @@ void set_bool_option(const char *option_name, int value)
 		Option::record((bool) value);
 	else if (!strcmp(option_name, kOptionExitOnError))
 		Option::exitOnError((bool) value);
+    else if (!strcmp(option_name, kOptionBailOnError))
+        Option::bailOnError((bool) value);
 	else if (!strcmp(option_name, kOptionAutoLoad))
 		Option::autoLoad((bool) value);
 	else if (!strcmp(option_name, kOptionFastUpdate))

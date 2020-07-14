@@ -1684,6 +1684,7 @@ maketable(const Arg args[], const int nargs)
 	if (!dynamic) {
 		if (_dispatch_table(args, nargs, lenindex + 1, &data, &len) != 0) {
 			delete [] data;
+            rtOptionalThrow(PARAM_ERROR);
 			return NULL;				// error message already given
 		}
 	} else { // setup for dynamic tables (PFSCHED/pfbus)
@@ -1869,12 +1870,14 @@ copytable(const Arg args[], const int nargs)
 	if (nargs < 1 || nargs > 3) {
 		die("copytable",
 			 "Usage: newtable = copytable(table_to_copy[, newsize, [interp]])");
+        rtOptionalThrow(PARAM_ERROR);
 		return NULL;
 	}
 	TablePField *oldtable = _getTablePField(&args[0]);
 	if (oldtable == NULL) {
 		die("copytable",
 			 "Usage: newtable = copytable(table_to_copy[, newsize, [interp]])");
+        rtOptionalThrow(PARAM_ERROR);
 		return NULL;
 	}
 
@@ -1883,6 +1886,7 @@ copytable(const Arg args[], const int nargs)
 		if (!args[1].isType(DoubleType)) {
 			die("copytable",
 				 "Usage: newtable = copytable(table_to_copy[, newsize, [interp]])");
+            rtOptionalThrow(PARAM_ERROR);
 			return NULL;
 		}
 		newsize = args[1];
@@ -1895,11 +1899,13 @@ copytable(const Arg args[], const int nargs)
 		if (!args[2].isType(StringType)) {
 			die("copytable",
 				 "Usage: newtable = copytable(table_to_copy[, newsize, [interp]])");
+            rtOptionalThrow(PARAM_ERROR);
 			return NULL;
 		}
 		if (args[2] != "nointerp" && args[2] != "interp") {
 			die("copytable",
 				 "Valid interpolation types: \"interp\", \"nointerp\"");
+            rtOptionalThrow(PARAM_ERROR);
 			return NULL;
 		}
 		interp = args[2];

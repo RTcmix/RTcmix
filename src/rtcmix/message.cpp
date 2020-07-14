@@ -12,7 +12,6 @@
 */
 /* printing levels are now in ugens.h -- DS 9/2013 */
 /* added rtcmix_debug() to allow run-time debugging of important stuff -- DS 12/2013 */
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
@@ -36,6 +35,7 @@ extern void post(const char *fmt, ...);
 #include <syslog.h>
 #define USE_SYSLOG
 #endif
+
 
 #define PREFIX  "*** "       /* print before WARNING and ERROR */
 #define BUFSIZE 1024
@@ -187,7 +187,14 @@ rterror(const char *inst_name, const char *format, ...)
 		cpost(PREFIX "ERROR: %s", buf);
 #endif
 	}
-
+#if 0
+// allow embedded system to bail out of parser on all errorss
+    if (get_bool_option(kOptionBailOnError)) {
+        if (!rtsetparams_was_called())
+            closesf_noexit();
+        throw(SYSTEM_ERROR);
+    }
+#endif
 // added for exit after Minc parse errors with the option set -- BGG
    if (get_bool_option(kOptionExitOnError)) {
       if (!rtsetparams_was_called())
@@ -241,3 +248,10 @@ die(const char *inst_name, const char *format, ...)
       return DONT_SCHEDULE;
 }
 
+RTCmixStatus rtOptionalThrow(RTCmixStatus status)
+{
+    if (get_bool_option(kOptionBailOnError)) {
+        throw(status);
+    }
+    return status;
+}

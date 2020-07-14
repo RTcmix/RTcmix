@@ -114,7 +114,7 @@ call_external_function(const char *funcname, const MincValue arglist[],
 				Arg *newargs = minc_list_to_arglist(funcname, list->data, list->len, rtcmixargs, &argCount);
 				delete [] rtcmixargs;
 				if (newargs == NULL)
-					return -1;
+					return PARAM_ERROR;
 				rtcmixargs = newargs;
 				numArgs = argCount;
 			}

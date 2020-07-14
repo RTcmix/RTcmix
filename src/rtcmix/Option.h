@@ -92,6 +92,7 @@
 #define kOptionReportClipping   "report_clipping"
 #define kOptionCheckPeaks       "check_peaks"
 #define kOptionExitOnError      "exit_on_error"
+#define kOptionBailOnError      "bail_on_error"
 #define kOptionAutoLoad         "auto_load"
 #define kOptionFastUpdate       "fast_update"
 #define kOptionRequireSampleRate	"require_sample_rate"
@@ -155,6 +156,10 @@ public:
 	static bool exitOnError() { return _exitOnError; }
 	static bool exitOnError(const bool setIt) { _exitOnError = setIt;
 													return _exitOnError; }
+    
+    static bool bailOnError() { return _bailOnError; }
+    static bool bailOnError(const bool setIt) { _bailOnError = setIt;
+        return _bailOnError; }
 
 	static bool autoLoad() { return _autoLoad; }
 	static bool autoLoad(const bool setIt) { _autoLoad = setIt;
@@ -234,6 +239,7 @@ private:
 	static bool _reportClipping;
 	static bool _checkPeaks;
 	static bool _exitOnError;
+    static bool _bailOnError;
 	static bool _autoLoad;
 	static bool _fastUpdate;
 	static bool _requireSampleRate;

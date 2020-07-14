@@ -197,6 +197,7 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 static Handle mkusage()
 {
 	die("makeinstrument", "Usage: makeinstrument(\"INSTRUMENTNAME\", p[0], p[1], ...)");
+    rtOptionalThrow(PARAM_ERROR);
 	return NULL;
 }
 
@@ -229,6 +230,7 @@ makeinstrument(const Arg arglist[], const int nargs)
 #else
             die(instName, "You did not call rtsetparams!");
 #endif
+            rtOptionalThrow(CONFIGURATION_ERROR);
             return NULL;
         }
 
@@ -249,9 +251,10 @@ makeinstrument(const Arg arglist[], const int nargs)
 		
 		Iptr->configureEndSamp(NULL);
 		
-        if (rv == (double) DONT_SCHEDULE) {
+        if (rv != 0) { // only schedule if no setup() error
 			Iptr->unref();
 			mixerr = MX_FAIL;
+            rtOptionalThrow((RTCmixStatus)rv);
 			return NULL;
 		}
 		mixerr = MX_NOERR;

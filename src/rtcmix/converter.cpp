@@ -29,6 +29,7 @@ makeconverter(const Arg args[], const int nargs)
 {
 	if (!args[0].isType(HandleType)) {
 		die("makeconverter", "First argument must be a valid pfield handle.");
+        rtOptionalThrow(PARAM_ERROR);
 		return NULL;
 	}
 	PField *pfield = (PField *) args[0];
@@ -36,6 +37,7 @@ makeconverter(const Arg args[], const int nargs)
 	if (!args[1].isType(StringType)) {
 		die("makeconverter", "Second argument must be a string giving "
 									"converter type, e.g. \"ampdb\", \"cpsoct\".");
+        rtOptionalThrow(PARAM_ERROR);
 		return NULL;
 	}
 
@@ -74,6 +76,7 @@ makeconverter(const Arg args[], const int nargs)
 
 	if (converter == NULL) {
 		die("makeconverter", "Invalid converter type \"%s\".", (const char *) args[1]);
+        rtOptionalThrow(PARAM_ERROR);
 		return NULL;
 	}
 

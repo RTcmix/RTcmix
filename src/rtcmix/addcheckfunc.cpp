@@ -63,6 +63,7 @@ RTcmix::addfunc(
    this_node = new RTcmixFunction;
    if (this_node == NULL) {
       die("addfunc", "no memory for table of functions");
+      RTExit(MEMORY_ERROR);
       return;
    }
 
@@ -82,6 +83,7 @@ RTcmix::addfunc(
          break;
       default:
          die("addfunc", "invalid function return type");
+         RTExit(PARAM_ERROR);
          return;
    }
    this_node->return_type = (RTcmixType) return_type;
@@ -243,24 +245,38 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
     }
     break;
    case HandleType:
-	  {
-      Handle retHandle = (Handle) (*(func->func_ptr.handle_return))
-                                                      (arglist, nargs);
-	  if (retHandle == NULL) {
-		  status = SYSTEM_ERROR;
+	  try {
+          Handle retHandle = (Handle) (*(func->func_ptr.handle_return))
+                                                          (arglist, nargs);
+          if (retHandle == NULL) {
+              status = SYSTEM_ERROR;
+          }
+          *retval = retHandle;
 	  }
-	  *retval = retHandle;
-	  }
+      catch (int err) {
+          status = err;
+      }
+      catch (RTCmixStatus rtstatus) {
+          status = (int)rtstatus;
+      }
       break;
    case StringType:
-	  {
-      const char *retString = (const char *) (*(func->func_ptr.string_return))
-                                                      (arglist, nargs);
-	  if (retString == NULL) {
-		  status = SYSTEM_ERROR;
+	  try {
+          const char *retString = (const char *) (*(func->func_ptr.string_return))
+                                                          (arglist, nargs);
+          if (retString == NULL) {
+              status = SYSTEM_ERROR;
+          }
+          *retval = retString;
 	  }
-	  *retval = retString;
-	  }
+      catch (int err) {
+          *retval = (char *) NULL;
+          status = err;
+      }
+      catch (RTCmixStatus rtstatus) {
+          *retval = (char *) NULL;
+          status = (int)rtstatus;
+      }
       break;
    default:
 	  die(NULL, "%s: unhandled return type: %d", funcname, (int)func->return_type);

@@ -73,7 +73,9 @@ int RTcmix_parseScore(char *theBuf, int buflen)
         rtcmix_warn("RTcmix_parseScore", "Caught exception: %s", errname);
         status = otherError;
     }
-    yy_delete_buffer(buffer);
+    if (status != 0) {
+        destroy_parser();
+    }
 	return status;
 }
 
