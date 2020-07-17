@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2020-07-17  Douglas Scott <netdscott-at-netscape.net>
+	* Moved the PD source directly into main project.
+	* (Earlier this month) Reworked error handling for embedded versions.
+
 2020-02-03  Douglas Scott <netdscott-at-netscape.net>
 	* Added MIDI output support for MacOS (only, for now).  New "MIDI" instrument library containing 4 MIDI instruments.
 	* Lots of internal source cleanup: Removed RTBUFSAMPS and SR globals from RTcmix class and replaced with setter/getters.
