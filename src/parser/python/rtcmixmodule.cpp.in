@@ -457,8 +457,8 @@ static Arg * append_list_to_arglist(const char *funcname, PyObject *obj, Arg *in
       }
       else if (OpaqueObject_Check(item)) {
          Handle handle = HandleFromPyObject(item);
-         if (handle->type != PFieldType) {
-            PyErr_SetString(PyExc_TypeError, "can't use non-PField Handle");
+         if (handle->type != PFieldType && handle->type != InstrumentPtrType) {
+            PyErr_SetString(PyExc_TypeError, "invalid RTcmix Handle type");
             return NULL;
          }
          newArgs[n] = handle;
@@ -495,8 +495,8 @@ static PyObject *_call_dispatch(PyObject *args, const char *funcname)
       PyObject *obj = PyTuple_GET_ITEM(args, i);
       if (OpaqueObject_Check(obj)) {
          Handle handle = HandleFromPyObject(obj);
-         if (handle->type != PFieldType) {
-            PyErr_SetString(PyExc_TypeError, "can't use non-PField Handle");
+         if (handle->type != PFieldType && handle->type != InstrumentPtrType) {
+            PyErr_SetString(PyExc_TypeError, "invalid RTcmix Handle type");
             return NULL;
          }
          rtcmixargs[i] = handle;
