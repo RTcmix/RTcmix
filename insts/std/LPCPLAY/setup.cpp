@@ -90,7 +90,7 @@ double dataset(float *p, int n_args, double *pp)
 
 	if (name == NULL) {
         ::rterror("dataset", "NULL file name");
-		return PARAM_ERROR;
+		return rtOptionalThrow(PARAM_ERROR);
 	}
 
 	// Search all open dataset slots for matching name
@@ -103,7 +103,7 @@ double dataset(float *p, int n_args, double *pp)
 	}
 	if (set >= maxDataSets) {
 		::rterror("dataset", "Maximum number of datasets exceeded");
-		return SYSTEM_ERROR;
+		return rtOptionalThrow(SYSTEM_ERROR);
 	}
 
 	// OK, this is a new set that we will put in a new slot
@@ -126,7 +126,7 @@ double dataset(float *p, int n_args, double *pp)
 			::rterror("dataset",
 				"For this file, you must specify the correct value for npoles in p[1].");
 		}
-		return PARAM_ERROR;
+		return rtOptionalThrow(PARAM_ERROR);
 	}
 
 	::rtcmix_advise("dataset", "File has %d poles and %d frames.",
@@ -162,7 +162,7 @@ double lpcstuff(float *p, int n_args)
                 ::rterror("lpcstuff",
                           "To play unvoiced frames at normal rate, you must specify the original source duration in p[6]");
                 unvoiced_rate = 0;
-                return -1;
+                return rtOptionalThrow(PARAM_ERROR);
             }
         }
         else
@@ -228,7 +228,7 @@ set_thresh(float *p, int n_args)
 
 	if(p[1] <= p[0]) {
 		::rterror("set_thresh", "upper thresh must be >= lower!");
-		return -1;
+        return rtOptionalThrow(PARAM_ERROR);
 	}
 	lowthresh = p[0];
 	highthresh = p[1];

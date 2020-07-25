@@ -37,21 +37,24 @@ setup_midi(float *p, int n_args)
         if (theDSO.loadFunction(&creator, "create_midi_output") == 0) {
             // Pass 2nd thru last args, leaving off selector
             gMIDIOutput = (RTMIDIOutput *)(*creator)();
+            if (gMIDIOutput == NULL) {
+                return rtOptionalThrow(SYSTEM_ERROR);
+            }
         }
         else {
-            die("setup_midi", "symbol lookup failed: %s\n", theDSO.error());
             theDSO.unload();
-            return SYSTEM_ERROR;
+            die("setup_midi", "symbol lookup failed: %s\n", theDSO.error());
+            return rtOptionalThrow(SYSTEM_ERROR);
         }
     }
     else {
         die("setup_midi", "dso load failed: %s\n", theDSO.error());
-        return SYSTEM_ERROR;
+        return rtOptionalThrow(SYSTEM_ERROR);
     }
     return 1;
 #else
     rterror("setup_midi", "MIDI output not supported in this configuration");
-    return SYSTEM_ERROR;
+    return rtOptionalThrow(SYSTEM_ERROR);
 #endif
 }
 

@@ -125,10 +125,17 @@ double m_open(float *p, short n_args, double *pp)
 	sfname[fno] = name;
 	status[fno] = (n_args == 3) ? (int)p[2] : 2;
 
-	if((fno >=  NFILES) || (fno < 0)) {
+    if(name == NULL) {
+        rtcmix_warn("m_open", "NULL filename!\n");
+        closesf();
+        return -1;
+    }
+
+    if((fno >=  NFILES) || (fno < 0)) {
 		rtcmix_warn("m_open", "Only %d files allowed\n", NFILES);
 		closesf();
-		}
+        return -1;
+    }
 	inew = 0;
 	if(isopen[fno]) {
 		close(sfd[fno]);
@@ -140,13 +147,16 @@ double m_open(float *p, short n_args, double *pp)
 			   4th argument listing the file number */
 
 	rwopensf(name,sfd[fno],sfdesc[fno],sfst[fno],"CMIX",i,status[fno]);
-	if (i < 0)
+    if (i < 0) {
 		closesf();
+        return -1;
+    }
 
 	if (status[fno] == O_RDWR
 			&& !WRITEABLE_HEADER_TYPE(sfheadertype(&sfdesc[fno]))) {
 		rtcmix_warn("m_open", "can't write this type of header.\n");
 		closesf();
+        return -1;
 	}
 
 	isopen[fno] = 1;
@@ -172,11 +182,13 @@ double m_open(float *p, short n_args, double *pp)
 		if((sndbuf[fno] = (char *)malloc((unsigned)nbytes)) == NULL) {
 			rtcmix_warn("CMIX", "malloc sound buffer error\n");
 			closesf();
+            return -1;
 		}
 		if((peakloc[fno] = (char *)malloc((unsigned)(sfchans(&sfdesc[fno]) * 
 			LONG))) == NULL) {
 			rtcmix_warn("CMIX", "malloc ovpeak buffer error\n");
 			closesf();
+            return -1;
 		}
 		if((peak[fno] = 
 			(char *)malloc((unsigned)(sfchans(&sfdesc[fno])* FLOAT))) 
@@ -1052,6 +1064,11 @@ m_clean(float p[], int n_args) /* a fast clean of file, after header */
 		for(i=0; i<sfchans(&sfdesc[fno]); i++) chlist[i] = p[i+3];
 	}
 	point = (char *)sndbuf[fno];
+    if (point == NULL) {
+        rtcmix_warn("CMIX", "bad file\n");
+        closesf();
+        return -1;
+    }
 	if(!segment) for(i=0; i<nbytes; i++) *(point+i) = 0;
 
 	if((filepointer[fno] = 
