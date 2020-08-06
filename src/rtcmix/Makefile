@@ -26,6 +26,11 @@ CONFDIR = ../conf
 CXXFLAGS += $(SOUND_DRIVER)
 INCLUDES += -I$(INCLUDEDIR) -I../include -I$(AUDIODIR) -I$(SNDLIBDIR) -I./heap -I../conf
 
+#MICHEL TRYING REAL HARD
+INCLUDES += -llo
+
+
+
 # Source file listings
 
 COMMON_CSRCS = \
@@ -37,6 +42,7 @@ infile.c \
 io.c \
 load_utils.c \
 merror.c \
+message.c \
 minout.c \
 m_system.c \
 printsf.c \
@@ -87,7 +93,6 @@ Instrument.cpp \
 intraverse.cpp \
 loader.cpp \
 lfo.cpp \
-message.cpp \
 minc_info.cpp \
 minc_functions.cpp \
 DataFile.cpp \
@@ -122,7 +127,10 @@ utils.cpp \
 rt_ug_intro.cpp \
 connection.cpp \
 converter.cpp \
-monitor.cpp
+monitor.cpp \
+osc_funcs.cpp \
+
+#MICHEL TRYING REAL HARD
 
 # Build-based additions to local source files
 

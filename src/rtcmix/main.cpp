@@ -4,7 +4,6 @@
 */
 #define DBUG
 //#define DENORMAL_CHECK
-#include <pthread.h>
 #include <sys/resource.h>
 #include <ctype.h>
 #include <string.h>
@@ -12,8 +11,6 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <signal.h>
 
 #include "RTcmixMain.h"
@@ -29,7 +26,148 @@
 #include "dbug.h"
 #include "InputFile.h"
 #include <MMPrint.h>
-#include "RTcmix_API.h"
+#include "RTcmix_API.h" 
+
+
+/*MICHEL VAZIRANI INCLUDES FOR OSC_PROJECT/TESTING*/
+
+#include <iostream>
+#include <sys/types.h>
+#include <sys/socket.h> //was already here
+#include <netinet/in.h> //was already here
+#include <pthread.h> //was already here
+
+#include <lo/lo.h>
+
+
+/*
+
+void liblo_error(int num, const char *msg, const char *path){
+
+    printf("liblo server error %d in path %s: %s\n", num, path, msg);
+    fflush(stdout);
+
+}
+
+
+static int done = 0;
+static lo_server_thread st; 
+
+
+int rtcmix_instr_hnldr(const char *path, const char *types, lo_arg ** argv,
+                int argc, void *data, void *user_data){
+
+    char* command = &argv[0]->S;
+    int status;
+    std::cout << command << std::endl;
+    status = RTcmix_parseScore(command, strlen(command));
+    std::cout << "STATUS: " << status << std::endl;
+    fflush(stdout);
+    return 0;
+}
+
+// these are set from inlets on the rtcmix~ object, using PFields to
+// control the Instruments
+// rtcmix~ is set to constrain up to a max of 19 inlets for PFields
+// iRTCmix can handle up to MAX_INLETS - DAS
+
+float gInletValues[MAX_INLETS];		// used by RTInlinePField.cpp
+
+// New name
+void RTcmix_setPField(int inlet, float pval)
+{
+	if (inlet <= MAX_INLETS) {
+		gInletValues[inlet-1] = pval;
+	}
+	else {
+		die("RTcmix_setPField", "exceeded max inlet count [%d]", MAX_INLETS);
+	}
+}
+
+void pfield_set(int inlet, float pval) { RTcmix_setPField(inlet, pval); }	// UNTIL WE REMOVE THIS FROM IOS VERSION
+
+
+
+int rtcmix_pfield_hndlr(const char *path, const char *types, lo_arg ** argv,
+                int argc, void *data, void *user_data){
+
+    int inlet = argv[0]->i;
+    float pval = argv[0]->f;
+
+    RTcmix_setPField(inlet, pval);
+    fflush(stdout);
+
+    return 0;
+}
+
+
+int quit_handler(const char *path, const char *types, lo_arg ** argv,
+                 int argc, void *data, void *user_data)
+{
+    done = 1;
+    printf("quiting\n\n");
+    fflush(stdout);
+    return 0;
+}
+
+*/
+
+
+//void* rtcmix_osc_thread(void *data){
+//
+//    /* start a new server on port 7777 */
+//    st = lo_server_thread_new("7777", liblo_error);
+//
+//    /*
+//    //Set an init and/or a cleanup function to the specifed server thread.
+//    lo_server_thread_set_callbacks(st, thread_init, NULL, NULL);
+//    */
+//
+//    /* add method that will match any path and args */
+//    //lo_server_thread_add_method(st, NULL, NULL, generic_handler, NULL);
+//
+//
+//    /* add method matching path /foo, with an OSC-string*/
+//    lo_server_thread_add_method(st, "/foo", "S", str_handler, NULL);
+//
+//
+//    /* add method matching path /rtc_inst, with an OSC-string*/
+//    lo_server_thread_add_method(st, "/rtc_inst", "S", rtcmix_instr_hnldr, NULL);
+//   
+//    /* add method matchin path /rtcmix/pfield with an int and float*/
+//    lo_server_thread_add_method(st, "/rtcmix/pfield", "if", rtcmix_pfield_hndlr, NULL);
+//
+//    /* add method that will match the path /quit with no args */
+//    lo_server_thread_add_method(st, "/quit", "", quit_handler, NULL);
+//
+//
+//    lo_server_thread_start(st);
+//
+//    while(!done){
+//        usleep(1000);
+//    }
+//    lo_server_thread_free(st);
+//
+//    return NULL;
+//}
+
+
+
+float gInletValues[MAX_INLETS];		// used by RTInlinePField.cpp
+
+void RTcmix_setPField(int inlet, float pval)
+{
+	if (inlet <= MAX_INLETS) {
+		gInletValues[inlet-1] = pval;
+	}
+	else {
+		die("RTcmix_setPField", "exceeded max inlet count [%d]", MAX_INLETS);
+	}
+}
+
+void pfield_set(int inlet, float pval) { RTcmix_setPField(inlet, pval); }	// UNTIL WE REMOVE THIS FROM IOS VERSION
+
+
 
 #if defined(EMBEDDEDAUDIO)
 #include "sndlibsupport.h"
@@ -88,11 +226,21 @@ main(int argc, char *argv[], char **env)
    clear_print();
 
    {
+
+    //pthread_t osc_thread;
+    //pthread_create(&osc_thread, NULL, rtcmix_osc_thread, NULL);
+
    RTcmixMain app(argc, argv, env);
    app.run();
+
+
+   //pthread_join(osc_thread, NULL);
+
    }
    return 0;
 }
+
+
 
 #else // EMBEDDED
 
@@ -333,21 +481,21 @@ int RTcmix_runAudio(void *inAudioBuffer, void *outAudioBuffer, int nframes)
 // rtcmix~ is set to constrain up to a max of 19 inlets for PFields
 // iRTCmix can handle up to MAX_INLETS - DAS
 
-float gInletValues[MAX_INLETS];		// used by RTInlinePField.cpp
+//float gInletValues[MAX_INLETS];		// used by RTInlinePField.cpp
 
 // New name
-void RTcmix_setPField(int inlet, float pval)
-{
-	if (inlet <= MAX_INLETS) {
-		gInletValues[inlet-1] = pval;
-	}
-	else {
-		die("RTcmix_setPField", "exceeded max inlet count [%d]", MAX_INLETS);
-	}
-}
-
-void pfield_set(int inlet, float pval) { RTcmix_setPField(inlet, pval); }	// UNTIL WE REMOVE THIS FROM IOS VERSION
-
+//void RTcmix_setPField(int inlet, float pval)
+//{
+//	if (inlet <= MAX_INLETS) {
+//		gInletValues[inlet-1] = pval;
+//	}
+//	else {
+//		die("RTcmix_setPField", "exceeded max inlet count [%d]", MAX_INLETS);
+//	}
+//}
+//
+//void pfield_set(int inlet, float pval) { RTcmix_setPField(inlet, pval); }	// UNTIL WE REMOVE THIS FROM IOS VERSION
+//
 // This allows a float audio buffer to be directly loaded as input
 
 int RTcmix_setInputBuffer(char *bufname, float *bufstart, int nframes, int nchans, int modtime)

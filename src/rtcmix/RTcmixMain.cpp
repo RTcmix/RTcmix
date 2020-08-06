@@ -23,6 +23,9 @@
 #include <limits.h>
 #include "heap.h"
 
+#include <pthread.h>
+#include "osc_funcs.h"
+
 using namespace std;
 
 #ifdef NETAUDIO
@@ -372,6 +375,15 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
 void
 RTcmixMain::run()
 {
+
+   pthread_t osc_thread;
+   pthread_create(&osc_thread, NULL, &rtcmix_osc_thread, NULL); 
+   //pthread_create(&osc_thread, NULL, &OSCThreads::rtcmix_osc_thread, osc_thrds); 
+
+
+
+
+
    pthread_t   sockitThread;
    int retcode;
    /* In rtInteractive mode, we set up RTcmix to listen for score data
@@ -398,10 +410,10 @@ RTcmixMain::run()
 
       /* Create parsing thread. */
       rtcmix_debug(NULL, "creating sockit() thread\n");
-      retcode = pthread_create(&sockitThread, NULL, &RTcmixMain::sockit, (void *) this);
-      if (retcode != 0) {
-         rterror(NULL, "sockit() thread create failed\n");
-      }
+      //retcode = pthread_create(&sockitThread, NULL, &RTcmixMain::sockit, (void *) this);
+      //if (retcode != 0) {
+      //   rterror(NULL, "sockit() thread create failed\n");
+      //}
 
       /* Create scheduling thread. */
       rtcmix_debug(NULL, "calling runMainLoop()\n");
@@ -412,10 +424,10 @@ RTcmixMain::run()
 
       /* Join parsing thread. */
       rtcmix_debug(NULL, "joining sockit() thread\n");
-      retcode = pthread_join(sockitThread, NULL);
-      if (retcode != 0) {
-         rterror(NULL, "sockit() thread join failed\n");
-      }
+      //retcode = pthread_join(sockitThread, NULL);
+      //if (retcode != 0) {
+      //   rterror(NULL, "sockit() thread join failed\n");
+      //}
 
       /* Wait for audio thread. */
       rtcmix_debug(NULL, "calling waitForMainLoop()\n");
@@ -466,6 +478,9 @@ RTcmixMain::run()
 #ifndef EMBEDDED
    ::closesf_noexit();
 #endif
+
+   pthread_join(osc_thread, NULL);
+
 }
 
 /* ---------------------------------------------------- interrupt_handler --- */
@@ -477,10 +492,10 @@ RTcmixMain::interrupt_handler(int signo)
 		interrupt_handler_called = 1;
 	   fprintf(stderr, "\n<<< Caught interrupt signal >>>\n");
 
+	   // Notify rendering loop.
+	   run_status = RT_SHUTDOWN;
 	   if (audioDevice) {
-           fprintf(stderr, "flushing audio...\n");
-           // Notify rendering loop.
-           run_status = RT_SHUTDOWN;
+	       audioDevice->close();
 	   }
 	   if (!audioLoopStarted) {
 		   closesf();	// We exit if we have not yet configured audio.
@@ -532,6 +547,7 @@ RTcmixMain::set_sig_handlers()
 void *
 RTcmixMain::sockit(void *arg)
 {
+    std::cout << "begin sockit function l543" << std::endl;
     char ttext[MAXTEXTARGS][512];
     int i;
 
@@ -575,19 +591,23 @@ RTcmixMain::sockit(void *arg)
     }
 
     listen(s, 1);
+    std::cout << "listen l587" << std::endl;
 
 #ifdef JAGUAR
     int len = sizeof(sss);
 #else
     socklen_t len = sizeof(sss);
 #endif
+    std::cout << "accepting? l594" << std::endl;
     ns = accept(s, (struct sockaddr *)&sss, &len);
     if(ns < 0) {
+      std::cout << "accepting FAILED l597" << std::endl;
       perror("accept");
 	  run_status = RT_ERROR;	// Notify inTraverse()
       exit(1);
     }
     else {
+      std::cout << "accept l601" << std::endl;
 
       sinfo = new (struct sockdata);
       // Zero the socket structure
@@ -600,6 +620,7 @@ RTcmixMain::sockit(void *arg)
       // coming over the socket before it can access the values of RTBUFSAMPS,
       // SR, NCHANS, etc.
       if (noParse) {
+                std::cout << "noParse l613" << std::endl;
 		
 		// Wait for the ok to go ahead
 		pthread_mutex_lock(&audio_config_lock);
@@ -646,7 +667,7 @@ RTcmixMain::sockit(void *arg)
 
       // Main socket reading loop
       while(1) {
-
+                std::cout << "do sockit loop" << std::endl;
 		sptr = (char *)sinfo;
 		amt = read(ns, (void *)sptr, sizeof(struct sockdata));
 		while (amt < sizeof(struct sockdata)) amt += read(ns, (void *)(sptr+amt), sizeof(struct sockdata)-amt);

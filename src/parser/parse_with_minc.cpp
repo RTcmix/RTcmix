@@ -10,18 +10,19 @@
 #include <ugens.h>
 #include "rtdefs.h"
 #include <Option.h>
+#include <iostream>
 
-#ifdef EMBEDDED
+//#ifdef EMBEDDED
 typedef struct yy_buffer_state * YY_BUFFER_STATE;
 extern YY_BUFFER_STATE yy_scan_bytes(const char * buf, size_t len);
 extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
-#endif
+//#endif
 
 extern "C" {
 	
 extern int yyparse();
 
-#ifdef EMBEDDED
+//#ifdef EMBEDDED
 
 int RTcmix_parseScore(char *thebuf, int buflen);
 extern double minc_memflush();									// minc/minc.cpp (from minc.y)
@@ -30,7 +31,7 @@ extern double minc_memflush();									// minc/minc.cpp (from minc.y)
 int RTcmix_parseScore(char *theBuf, int buflen)
 {
 	configure_minc_error_handler(get_bool_option(kOptionExitOnError));
-    YY_BUFFER_STATE buffer = yy_scan_bytes(theBuf, buflen);
+        YY_BUFFER_STATE buffer = yy_scan_bytes(theBuf, buflen);
 	reset_parser();
 	int status;
 	try {
@@ -73,13 +74,11 @@ int RTcmix_parseScore(char *theBuf, int buflen)
         rtcmix_warn("RTcmix_parseScore", "Caught exception: %s", errname);
         status = otherError;
     }
-    if (status != 0) {
-        destroy_parser();
-    }
+    //yy_delete_buffer(buffer);
 	return status;
 }
 
-#else	// !EMBEDDED
+//#else	// !EMBEDDED
 
 /* Defined in minc/args.cpp */
 extern int check_new_arg(const char *);
@@ -114,7 +113,7 @@ parse_score(int argc, char *argv[], char **env)
 	return status;
 }
 
-#endif	// !EMBEDDEDs
+//#endif	// !EMBEDDEDs
 
 /* ------------------------------------------------------ use_script_file --- */
 /* Parse file <fname> instead of stdin. */

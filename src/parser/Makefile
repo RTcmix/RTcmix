@@ -1,5 +1,9 @@
 include ../../makefile.conf
 
+ARCHFLAGS += -DEMBEDDED
+#Did this so that the parser doesn't destroy itself, change this
+
+
 DIRS = minc
 SRCS = parse_with_minc.cpp
 OBJS = parse_with_minc.o

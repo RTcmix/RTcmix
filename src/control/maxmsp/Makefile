@@ -1,39 +1,34 @@
-# NOTE:  This will not build the correct loadable object lib
-# for RTcmix!  It is intended to function to create a lib
-# for the rtcmix~ object.  BGG 7/1/2005
-
 include ../../../makefile.conf
 
-OBJS = RTInletPField.o inletglue.o
-SRCS = RTInletPField.cpp inletglue.cpp
+CONNLIB = libinletconn.so
+PFIELD_NAME = RTInletPField
+
+OBJS = $(PFIELD_NAME).o inletglue.o
+SRCS = $(PFIELD_NAME).cpp inletglue.cpp
 
 CXXFLAGS += -I. -I../../rtcmix
-LIBINLET = libinlet.a
 
-all: $(LIBINLET)
+all: $(CONNLIB)
 
-ifeq ($(BUILDTYPE), STANDALONE)
-$(LIBINLET): $(OBJS)
-	$(LD) -r $(OBJS) -o $@
-else
-$(LIBINLET): $(OBJS)
-	$(RM) $@
-	ar q $@ $(OBJS)
-	$(RANLIB) $@
-endif
+$(CONNLIB): depend $(OBJS)
+	$(CXX) $(SHARED_LDFLAGS) -o $@ $(OBJS)
 
-inletglue.o: inletglue.cpp RTInletPField.h
-	$(CXX) $(CXXFLAGS) -c -o inletglue.o inletglue.cpp
+glue.o: depend glue.cpp
+	$(CXX) $(CXXFLAGS) -c -o glue.o glue.cpp
+
+depend:
+	-$(SHELL) -ec '$(CXX) -M $(CXXFLAGS) $(SRCS)' > depend
+
+-include depend
 
 install: all
-#	$(INSTALL) $(LIBINLET) $(LIBDIR)
+	$(INSTALL) $(CONNLIB) $(LIBDESTDIR)
 
 uninstall:
-#	$(RM) $(LIBDIR)/$(LIBINLET)
+	$(RM) $(LIBDESTDIR)/$(CONNLIB)
 
 clean:
-	$(RM) *.o $(LIBINLET)
+	$(RM) *.o $(CONNLIB)
 
 cleanall: clean
 	$(RM) depend
-
