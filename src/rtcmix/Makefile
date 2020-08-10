@@ -25,10 +25,7 @@ CONFDIR = ../conf
 
 CXXFLAGS += $(SOUND_DRIVER)
 INCLUDES += -I$(INCLUDEDIR) -I../include -I$(AUDIODIR) -I$(SNDLIBDIR) -I./heap -I../conf
-
-#MICHEL TRYING REAL HARD
-INCLUDES += -llo
-
+INCLUDES += $(LIBLO_CFLAGS) $(LIBLO_LIBS)
 
 
 # Source file listings
