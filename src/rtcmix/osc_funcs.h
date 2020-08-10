@@ -19,13 +19,6 @@ int rtcmix_get_client_addrs(const char *path, const char *types, lo_arg ** argv,
         int argc, void *data, void *user_data);
 void update_client_namemap(char *clnt_ip, char *clnt_port, char *clnt_name);
 
-int rtcmix_test_send_str(const char *path, const char *types, lo_arg ** argv,
-        int argc, void *data, void *user_data);
-int rtcmix_test_send_int(const char *path, const char *types, lo_arg ** argv,
-        int argc, void *data, void *user_data);
-int rtcmix_test_send_flt(const char *path, const char *types, lo_arg ** argv,
-        int argc, void *data, void *user_data);
-
 int sendOSC_str(char *clnt_name, char *osc_path, char *message);
 int sendOSC_int(char *clnt_name, char *osc_path, char *message);
 int sendOSC_flt(char *clnt_name, char *osc_path, char *message);

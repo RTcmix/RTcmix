@@ -134,94 +134,6 @@ int sendOSC_flt(char *clnt_name, char *osc_path, float message){
 
 
 
-
-int sendOSC_anyformat(char *clnt_name, char *osc_path, char *format, ...){
-  
-    //TOTALLY DOESN'T WORK!
-
-    std::cout << "in send" << std::endl;
-    clnt_addr *c = (*client_addrs)[std::string(clnt_name)];
-    std::cout << "test3" << std::endl;
-    //std::string *clnt_ip = c->ip;
-    std::cout << "test4" << std::endl;
-    //std::string *clnt_port = c->port;
-    std::cout << "test5" << std::endl;
-
-   // int clnt_port = clnt_addr_store.sin_port;
-   // char *clnt_ip = NULL;
-   // inet_ntop(AF_INET, &(clnt_addr_store.sin_addr), clnt_ip, INET_ADDRSTRLEN);
-   // const char *port_str = std::to_string(clnt_port).c_str();
-  
-
-    //lo_address t = lo_address_new(clnt_ip->c_str(), clnt_port->c_str());
-    lo_address t = lo_address_new("localhost", "6543");
-    std::cout << "test6" << std::endl;
-
-    va_list args;
-    std::cout << "test7" << std::endl;
-    va_start(args, format);
-    std::cout << "test8" << std::endl;
-    std::cout << format << std::endl;
-    double val = va_arg(args, double);
-    std::cout << val << std::endl;
-    
-    if(lo_send(t, osc_path, format, args)==-1){
-        printf("OSC ERROR %d: %s\n", lo_address_errno(t), lo_address_errstr(t));
-        return 1;
-    }
-    va_end(args);
-    return 0;
-}
-
-
-
-/*I JUST USED THIS TO TEST RTCMIX SENDING OSC, IT'S REALLY USELESS OTHERWISE*/
-int rtcmix_test_send_str(const char *path, const char *types, lo_arg ** argv,
-        int argc, void *data, void *user_data){
-    char *name = &argv[0]->S;
-    if(sendOSC_str(name, "/test_receive_str", "some string from rtcmix")!=0){
-        printf("error sending");
-    }
-
-    fflush(stdout);
-    return 0;
-}
-
-int rtcmix_test_send_int(const char *path, const char *types, lo_arg ** argv,
-        int argc, void *data, void *user_data){
-    char *name = &argv[0]->S;
-    if(sendOSC_int(name, "/test_receive_int", 11010101)!=0){
-        printf("error sending");
-    }
-
-    fflush(stdout);
-    return 0;
-}
-
-int rtcmix_test_send_flt(const char *path, const char *types, lo_arg ** argv,
-        int argc, void *data, void *user_data){
-    char *name = &argv[0]->S;
-    if(sendOSC_flt(name, "/test_receive_flt", 3.141592)!=0){
-        printf("error sending");
-    }
-
-    fflush(stdout);
-    return 0;
-}
-
-int rtcmix_test_send_any(const char *path, const char *types, lo_arg ** argv,
-        int argc, void *data, void *user_data){
-    char *name = &argv[0]->S;
-    if(sendOSC_anyformat(name, "/test_receive_any", "d", 3.14)!=0){
-        printf("error sending");
-    }
-
-    fflush(stdout);
-    return 0;
-}
-
-
-
 int quit_handler(const char *path, const char *types, lo_arg ** argv,
                  int argc, void *data, void *user_data){
     quit_osc_signal = 1;
@@ -252,18 +164,6 @@ void* rtcmix_osc_thread(void *data){
     lo_server_thread_add_method(st, "/rtcmix/store_addrs", "SSS",
             &rtcmix_get_client_addrs, NULL);
 
-
-    lo_server_thread_add_method(st, "/rtcmix/test_send_str", "S",
-            &rtcmix_test_send_str, NULL);
-
-    lo_server_thread_add_method(st, "/rtcmix/test_send_int", "S",
-            &rtcmix_test_send_int, NULL);
-
-    lo_server_thread_add_method(st, "/rtcmix/test_send_flt", "S",
-            &rtcmix_test_send_flt, NULL);
-
-    lo_server_thread_add_method(st, "/rtcmix/test_send_any", "S",
-            &rtcmix_test_send_any, NULL);
 
 
     /* add method that will match the path /quit with no args */
