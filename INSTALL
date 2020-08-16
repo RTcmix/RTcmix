@@ -12,13 +12,7 @@ ask for help.
       (or: gunzip -c RTcmix-[version].tar.gz | tar xf - )
 
 
-2. Look in RTcmix-[version]/insts.  If it contains "base", "std", "jg", "stk",
-   "bgg" and "vccm" directories, then you can skip this step.  If you have only
-   "base", then you need to download the instrument packages named above.
-   Unpack them into the "insts" directory of your RTcmix.
-
-
-3. cd into the top level of the RTcmix directory, and run the configure script:
+2. cd into the top level of the RTcmix directory, and run the configure script:
 
       ./configure
 
@@ -65,28 +59,28 @@ ask for help.
    <http://pkgconfig.freedesktop.org/releases/pkg-config-0.20.tar.gz>.
 
 
-4. There are some special settings that you can make in the "site.conf" file,
+3. There are some special settings that you can make in the "site.conf" file,
    though most people will never need to do this.
 
 
-5. Make the package.  Be sure you're still in the top RTcmix directory and type:
+4. Make the package.  Be sure you're still in the top RTcmix directory and type:
 
       make
 
 
-6. If the package builds without errors, install it:
+5. If the package builds without errors, install it:
 
       make install
 
 
-7. Add the bin directory inside of the RTcmix directory to your $PATH.  For
+6. Add the bin directory inside of the RTcmix directory to your $PATH.  For
    example, if you're using the bash shell, put something like this in .profile:
 
       PATH="/path/to/rtcmix/bin:$PATH"
       export PATH
 
 
-8. Try running some of the scores in docs/sample_scores.  To run any score,
+7. Try running some of the scores in docs/sample_scores.  To run any score,
    type "CMIX < scorefile.sco".  If these seem to work, your installation
    is probably ok.
 
