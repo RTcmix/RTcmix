@@ -12,6 +12,7 @@
 *.swp
 *.orig
 *.test
+*.bak
 depend
 *.dSYM
 lib*.a
