@@ -59,6 +59,13 @@ ask for help.
    package installed. Any recent Linux distribution has this, but macOS doesn't.
    Get it from Fink or DarwinPorts, or compile it from source:
    <http://pkgconfig.freedesktop.org/releases/pkg-config-0.20.tar.gz>.
+   If the configure script complains about not finding the pkg-config program,
+   try invoking the configure script this way:
+
+      PKG_CONFIG=/usr/local/bin ./configure --with-[whatever] etc.
+
+   substituting the actual location of pkg-config on your system for the
+   "/usr/local/bin" above.
 
 
 3. There are some special settings that you can make in the "site.conf" file,
