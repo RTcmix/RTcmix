@@ -22,12 +22,14 @@ ask for help.
  
       --with-alsa       Use the ALSA driver, rather than OSS, on Linux
                         (ignored on macOS)
+      --with-fftw       Use the FFTW3 library, instead of the builtin FFT code
       --with-jack       Enable support for the JACK sound server
+      --with-multithread=THREADCOUNT  Build multi-threaded RTcmix on Linux or
+                        macOS (=THREADCOUNT optional, default=2)
+      --with-netplay    Enable code that lets you play RTcmix over a network
+      --with-osc        Compile support for receiving OSC (Open Sound Control)
       --with-perl       Build the Perl-enabled RTcmix (PCMIX)
       --with-python     Build the Python-enabled RTcmix (PYCMIX)
-      --with-netplay    Enable code that lets you play RTcmix over a network
-      --with-fftw       Use the FFTW3 library, instead of the builtin FFT code
-      --with-osc        Compile support for receiving OSC (Open Sound Control)
 
    If you have more than one version of Perl or Python on your system, you
    can tell RTcmix which one to use by giving its path with the option, e.g.:
