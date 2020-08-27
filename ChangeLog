@@ -1,6 +1,9 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2020-08-26  Douglas Scott <netdscott-at-netscape.net>
+	* Added new MinC 'map' type to parser, which accepts any MinC type as either a key or a value.
+
 2020-07-17  Douglas Scott <netdscott-at-netscape.net>
 	* Moved the PD source directly into main project.
 	* (Earlier this month) Reworked error handling for embedded versions.

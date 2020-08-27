@@ -111,6 +111,9 @@ _make_type_string(const MincDataType type)
       case MincListType:
          str = strdup("list");
          break;
+       case MincMapType:
+           str = strdup("map");
+           break;
       case MincStructType:
          str = strdup("struct");
          break;
@@ -127,24 +130,16 @@ _do_print(const MincValue args[], const int nargs)
 
    last_arg = nargs - 1;
    for (i = 0; i < nargs; i++) {
+      const char *delimiter = (i == last_arg) ? "" : ", ";
       switch (args[i].dataType()) {
          case MincFloatType:
-            if (i == last_arg)
-               RTPrintfCat("%.12g", (MincFloat)args[i]);
-            else
-               RTPrintfCat("%.12g, ", (MincFloat)args[i]);
+            RTPrintfCat("%.12g%s", (MincFloat)args[i], delimiter);
             break;
          case MincStringType:
-            if (i == last_arg)
-               RTPrintfCat("\"%s\"", (MincString)args[i]);
-            else
-               RTPrintfCat("\"%s\", ", (MincString)args[i]);
+            RTPrintfCat("\"%s\"%s", (MincString)args[i], delimiter);
             break;
          case MincHandleType:
-            if (i == last_arg)
-               RTPrintfCat("Handle:%p", (MincHandle)args[i]);
-            else
-               RTPrintfCat("Handle:%p, ", (MincHandle)args[i]);
+            RTPrintfCat("Handle:%p%s", (MincHandle)args[i], delimiter);
             break;
          case MincListType:
 		  {
@@ -152,41 +147,42 @@ _do_print(const MincValue args[], const int nargs)
 			if (list != NULL) {
 				RTPrintfCat("[");
 				_do_print(list->data, list->len);
-				if (i == last_arg)
-					RTPrintfCat("]");
-				else
-					RTPrintfCat("], ");
+                RTPrintfCat("]%s", delimiter);
 			}
 			else {
-				if (i == last_arg)
-					RTPrintfCat("NULL");
-				else
-					RTPrintfCat("NULL, ");
+                RTPrintfCat("NULL%s", delimiter);
 			}
 		  }
             break;
-         case MincStructType:
+          case MincMapType:
+          {
+              MincMap *mmap = (MincMap *)args[i];
+              if (mmap != NULL) {
+                  RTPrintfCat("[");
+                  mmap->print();
+                  RTPrintfCat("]%s", delimiter);
+              }
+              else {
+                  RTPrintfCat("NULL%s", delimiter);
+              }
+          }
+              break;
+        case MincStructType:
           {
               MincStruct *theStruct = (MincStruct *)args[i];
               RTPrintfCat("{ ");
               theStruct->print();
-              if (i == last_arg)
-                  RTPrintfCat(" }");
-              else
-                  RTPrintfCat(" }, ");
+              RTPrintfCat(" }%s", delimiter);
           }
               break;
          case MincVoidType:
-			  if (i == last_arg)
-				  RTPrintfCat("(void)");
-			  else
-				  RTPrintfCat("(void), ");
-           break;
+              RTPrintfCat("(void)%s", delimiter);
+              break;
       }
    }
 }
 
-// Note:  This is defined here to let it have access to the static helper routines above
+// Note:  These are defined here to let them have access to the static helper routines above
 
 void    MincStruct::print()
 {
@@ -199,6 +195,21 @@ void    MincStruct::print()
         member = next;
     }
 }
+
+void    MincMap::print()
+{
+    for (std::map<MincValue, MincValue, MincValueCmp>::iterator iter = map.begin(); iter != map.end();) {
+        RTPrintfCat("key:");
+        _do_print(&iter->first, 1);
+        RTPrintfCat(" val:");
+        _do_print(&iter->second, 1);
+        ++iter;
+        if (iter != map.end()) {
+            RTPrintfCat(", ");
+        }
+    }
+}
+
 
 /* ----------------------------------------------------------------- print -- */
 MincFloat
@@ -504,6 +515,9 @@ _minc_len(const MincValue args[], const int nargs)
             break;
          case MincListType:
             len = ((MincList *)args[0])->len;
+            break;
+         case MincMapType:
+            len = ((MincMap *)args[0])->len();
             break;
          default:
             minc_warn("len: invalid argument");

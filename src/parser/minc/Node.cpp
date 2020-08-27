@@ -239,7 +239,7 @@ Node *	Node::exct()
 Node *
 Node::copyValue(Node *source)
 {
-    TPRINT("Node::copyValue(this=%p, %p)\n", this, source);
+    TPRINT("Node::copyValue(this=%p, source=%p)\n", this, source);
 #ifdef EMBEDDED
     /* Not yet handling nonfatal errors with throw/catch */
     if (source->dataType() == MincVoidType) {
@@ -634,85 +634,166 @@ Node *	NodeList::doExct()
 	return this;
 }
 
+void    NodeSubscriptRead::readAtSubscript()
+{
+    if (child(1)->dataType() != MincFloatType) {
+        minc_die("list index must be a number");
+        return;
+    }
+    MincFloat fltindex = (MincFloat) child(1)->value();
+    int index = (int) fltindex;
+    MincFloat frac = fltindex - index;
+    MincList *theList = (MincList *) child(0)->symbol()->value();
+    if (theList == NULL) {
+        minc_die("attempt to index a NULL list");
+        return;
+    }
+    int len = theList->len;
+    if (len == 0) {
+        minc_die("attempt to index an empty list");
+        return;
+    }
+    if (fltindex < 0.0) {    /* -1 means last element */
+        if (fltindex <= -2.0)
+            minc_warn("negative index: returning last element");
+        index = len - 1;
+        frac = 0;
+    }
+    else if (fltindex > (MincFloat) (len - 1)) {
+        minc_warn("attempt to index past the end of list '%s': returning last element", child(0)->symbol()->name());
+        index = len - 1;
+        frac = 0;
+    }
+    MincValue elem;
+    elem = theList->data[index];
+    
+    /* do linear interpolation for float items */
+    if (elem.dataType() == MincFloatType && frac > 0.0 && index < len - 1) {
+        MincValue& elem2 = theList->data[index + 1];
+        if (elem2.dataType() == MincFloatType) {
+            value() = (MincFloat) elem
+            + (frac * ((MincFloat) elem2 - (MincFloat) elem));
+        }
+        else { /* can't interpolate btw. a number and another type */
+            value() = (MincFloat) elem;
+        }
+    }
+    else {
+        this->setValue(elem);
+    }
+}
+
+void    NodeSubscriptRead::searchWithMapKey()
+{
+    MincMap *theMap = (MincMap *) child(0)->symbol()->value();
+    if (theMap == NULL) {
+        minc_die("attempt to search a NULL map");
+        return;
+    }
+    const MincValue &valueIndex = child(1)->value();
+    std::map<MincValue, MincValue>::iterator it = theMap->map.find(valueIndex);
+    if (it == theMap->map.end()) {
+        minc_die("no item in map '%s' with that key", child(0)->symbol()->name());
+        return;
+    }
+    const MincValue &val = it->second;
+    this->setValue(val);
+}
+
 Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
 {
 	ENTER();
 	child(0)->exct();         /* lookup target */
 	child(1)->exct();         /* index */
-	if (child(1)->dataType() != MincFloatType) {
-		minc_die("list index must be a number");
-		return this;
-	}
-	MincFloat fltindex = (MincFloat) child(1)->value();
-	int index = (int) fltindex;
-	MincFloat frac = fltindex - index;
     MincDataType child0Type = child(0)->symbol()->dataType();
-    if (child0Type == MincListType) {
-        MincList *theList = (MincList *) child(0)->symbol()->value();
-        if (theList == NULL) {
-            minc_die("attempt to index a NULL list");
-            return this;
-        }
-        int len = theList->len;
-        if (len == 0) {
-            minc_die("attempt to index an empty list");
-            return this;
-        }
-        if (fltindex < 0.0) {    /* -1 means last element */
-            if (fltindex <= -2.0)
-                minc_warn("negative index: returning last element");
-            index = len - 1;
-            frac = 0;
-        }
-        else if (fltindex > (MincFloat) (len - 1)) {
-            minc_warn("attempt to index past the end of list '%s': returning last element", child(0)->symbol()->name());
-            index = len - 1;
-            frac = 0;
-        }
-        MincValue elem;
-        elem = theList->data[index];
-
-        /* do linear interpolation for float items */
-        if (elem.dataType() == MincFloatType && frac > 0.0 && index < len - 1) {
-            MincValue& elem2 = theList->data[index + 1];
-            if (elem2.dataType() == MincFloatType) {
-                value() = (MincFloat) elem
-                + (frac * ((MincFloat) elem2 - (MincFloat) elem));
+    switch (child0Type) {
+        case MincListType:
+            readAtSubscript();
+            break;
+        case MincMapType:
+            searchWithMapKey();
+            break;
+        case MincStringType:
+        {
+            MincString theString = (MincString) child(0)->symbol()->value();
+            MincFloat fltindex = (MincFloat) child(1)->value();
+            int index = (int) fltindex;
+            if (theString == NULL) {
+                minc_die("attempt to index a NULL string");
+                return this;
             }
-            else { /* can't interpolate btw. a number and another type */
-                value() = (MincFloat) elem;
+            int stringLen = (int)strlen(theString);
+            if (index < 0) {    /* -1 means last element */
+                if (index <= -2)
+                    minc_warn("negative index: returning last character");
+                index = stringLen - 1;
             }
-        }
-        else {
+            else if (index > stringLen - 1) {
+                minc_warn("attempt to index past the end of string '%s': returning last element", child(0)->symbol()->name());
+                index = stringLen - 1;
+            }
+            char stringChar[2];
+            stringChar[1] = '\0';
+            strncpy(stringChar, &theString[index], 1);
+            MincValue elem((MincString)strdup(stringChar));  // create new string value from the one character
             this->setValue(elem);
         }
-    }
-    else if (child0Type == MincStringType) {
-        MincString theString = (MincString) child(0)->symbol()->value();
-        if (theString == NULL) {
-            minc_die("attempt to index a NULL string");
-            return this;
-        }
-        int stringLen = (int)strlen(theString);
-        if (index < 0) {    /* -1 means last element */
-            if (index <= -2)
-                minc_warn("negative index: returning last character");
-            index = stringLen - 1;
-        }
-        else if (index > stringLen - 1) {
-            minc_warn("attempt to index past the end of string '%s': returning last element", child(0)->symbol()->name());
-            index = stringLen - 1;
-        }
-        char stringChar[2];
-        stringChar[1] = '\0';
-        strncpy(stringChar, &theString[index], 1);
-        MincValue elem((MincString)strdup(stringChar));  // create new string value from the one character
-        this->setValue(elem);
-    }
-    else {
-        minc_die("attempt to index an R-variable that's not a string or list");
+            break;
+        default:
+            minc_die("attempt to index or search an R-variable that's not a string, list, or map");
+            break;
     }
 	return this;
+}
+
+void    NodeSubscriptWrite::writeToSubscript()
+{
+    if (child(1)->dataType() != MincFloatType) {
+        minc_die("list index must be a number");
+        return;    // TODO
+    }
+    int len = 0;
+    MincList *theList = (MincList *) child(0)->symbol()->value();
+    MincFloat fltindex = (MincFloat) child(1)->value();
+    int index = (int) fltindex;
+    if (fltindex - (MincFloat) index > 0.0)
+        minc_warn("list index must be integer ... correcting");
+    if (theList != NULL) {
+        len = theList->len;
+        assert(len >= 0);    /* NB: okay to have zero-length list */
+    }
+    if (index < 0) {    /* means last element */
+        if (index <= -2)
+            minc_warn("negative index ... assigning to last element");
+        index = len > 0 ? len - 1 : 0;
+    }
+    if (index >= len) {
+        /* resize list */
+        int newslots;
+        newslots = len > 0 ? (index - (len - 1)) : index + 1;
+        len += newslots;
+        if (len < 0) {
+            minc_die("list array subscript exceeds integer size limit!");
+        }
+        if (theList == NULL) {
+            child(0)->symbol()->value() = theList = new MincList(len);
+        }
+        else
+            theList->resize(len);
+        TPRINT("exct_subscript_write: MincList %p expanded to len %d\n",
+               theList->data, len);
+    }
+    copy_tree_listelem(&theList->data[index], child(2));
+}
+
+void    NodeSubscriptWrite::writeWithMapKey()
+{
+    MincMap *theMap = (MincMap *) child(0)->symbol()->value();
+    const MincValue &valueIndex = child(1)->value();
+    if (theMap == NULL) {
+        child(0)->symbol()->value() = theMap = new MincMap();
+    }
+    theMap->map[valueIndex] = child(2)->value();
 }
 
 Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
@@ -721,46 +802,17 @@ Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
 	child(0)->exct();         /* lookup target */
 	child(1)->exct();         /* index */
 	child(2)->exct();         /* expression to store */
-	if (child(1)->dataType() != MincFloatType) {
-		minc_die("list index must be a number");
-		return this;	// TODO
-	}
-	if (child(0)->symbol()->dataType() != MincListType) {
-		minc_die("attempt to index an L-variable that's not a list");
-		return this;	// TODO
-	}
-	int len = 0;
-	MincList *theList = (MincList *) child(0)->symbol()->value();
-	MincFloat fltindex = (MincFloat) child(1)->value();
-	int index = (int) fltindex;
-	if (fltindex - (MincFloat) index > 0.0)
-		minc_warn("list index must be integer ... correcting");
-	if (theList != NULL) {
-		len = theList->len;
-		assert(len >= 0);    /* NB: okay to have zero-length list */
-	}
-    if (index < 0) {    /* means last element */
-        if (index <= -2)
-            minc_warn("negative index ... assigning to last element");
-        index = len > 0 ? len - 1 : 0;
+    switch (child(0)->symbol()->dataType()) {
+        case MincListType:
+            writeToSubscript();
+            break;
+        case MincMapType:
+            writeWithMapKey();
+            break;
+        default:
+            minc_die("attempt to index or store into an L-variable that's not a list or map");
+            break;
     }
-	if (index >= len) {
-		/* resize list */
-		int newslots;
-		newslots = len > 0 ? (index - (len - 1)) : index + 1;
-		len += newslots;
-		if (len < 0) {
-			minc_die("list array subscript exceeds integer size limit!");
-		}
-		if (theList == NULL) {
-			child(0)->symbol()->value() = theList = new MincList(len);
-		}
-		else
-			theList->resize(len);
-		TPRINT("exct_subscript_write: MincList %p expanded to len %d\n",
-			   theList->data, len);
-	}
-	copy_tree_listelem(&theList->data[index], child(2));
 	copyValue(child(2));
 	return this;
 }
@@ -1109,6 +1161,9 @@ Node *	NodeOp::doExct()
 					else
 						do_op_list_iterate((MincList*)v1, (MincFloat)v0, this->op);
 					break;
+                case MincMapType:
+                    minc_warn("operator %s: a map cannot be used for this operation", printOpKind(this->op));
+                    break;
                 case MincStructType:
                     minc_warn("operator %s: a struct cannot be used for this operation", printOpKind(this->op));
                     break;
@@ -1135,6 +1190,9 @@ Node *	NodeOp::doExct()
 				case MincListType:
 					minc_warn("can't operate on a string and a list");
 					break;
+                case MincMapType:
+                    minc_warn("can't operate on a string and a map");
+                    break;
                 case MincStructType:
                     minc_warn("operator %s: a struct cannot be used for this operation", printOpKind(this->op));
                     break;
@@ -1157,7 +1215,10 @@ Node *	NodeOp::doExct()
 				case MincListType:
 					minc_warn("can't operate on a list and a handle");
 					break;
-                case MincStructType:
+                case MincMapType:
+                    minc_warn("operator %s: a map cannot be used for this operation", printOpKind(this->op));
+                    break;
+               case MincStructType:
                     minc_warn("operator %s: a struct cannot be used for this operation", printOpKind(this->op));
                     break;
 				default:
@@ -1179,7 +1240,10 @@ Node *	NodeOp::doExct()
 				case MincListType:
 					do_op_list_list((MincList *)v0, (MincList *)v1, this->op);
 					break;
-                case MincStructType:
+                case MincMapType:
+                    minc_warn("operator %s: a map cannot be used for this operation", printOpKind(this->op));
+                    break;
+               case MincStructType:
                     minc_warn("operator %s: a struct cannot be used for this operation", printOpKind(this->op));
                     break;
 				default:
@@ -1281,6 +1345,7 @@ Node *	NodeArgListElem::doExct()
 			case MincStringType:
 			case MincHandleType:
 			case MincListType:
+            case MincMapType:
             case MincStructType:
 				if (argSym->dataType() != argValue.dataType()) {
 					minc_die("%s() arg '%s' passed as %s, expecting %s",
@@ -1289,7 +1354,7 @@ Node *	NodeArgListElem::doExct()
 				else compatible = true;
 				break;
 			default:
-				assert(argValue.dataType() != MincVoidType);
+                minc_internal_error("%s() arg '%s' is an unhandled type!", sCalledFunctions.back(), argSym->name());
 				break;
 		}
 		if (compatible) {

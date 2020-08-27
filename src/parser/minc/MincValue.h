@@ -10,8 +10,9 @@
 
 #include "minc_internal.h"
 #include <stddef.h>
+#include <map>
 
-/* A MincList contains an array of MincValue's, whose underlying data
+/* A MincList contains an array of MincValues, whose underlying data
  type is flexible.  So a MincList is an array of arbitrarily mixed types
  (any of the types represented in the MincDataType enum), and it can
  support nested lists.
@@ -28,6 +29,25 @@ public:
     MincValue *data;
 protected:
     virtual ~MincList();
+};
+
+/* A MincMap is a set of MincValues, like a MincList, except they can be
+   set and retrieved via MincValue "keys".  Like lists, they support mixed
+   types.
+ */
+class MincMap : public MincObject, public RefCounted
+{
+private:
+    struct MincValueCmp {
+        bool operator()(const MincValue& lhs, const MincValue& rhs) const;
+    };
+public:
+    MincMap();
+    int len() const { return (int) map.size(); }
+    std::map<MincValue, MincValue, MincValueCmp> map;
+    void        print();
+protected:
+    virtual ~MincMap();
 };
 
 // A MincStruct contains a Symbol pointer which points to a linked list of Symbols
@@ -55,6 +75,7 @@ public:
     MincValue(MincString s) : type(MincStringType) { _u.string = s; }
     MincValue(MincHandle h);
     MincValue(MincList *l);
+    MincValue(MincMap *m);
     MincValue(MincStruct *str);
     MincValue(MincDataType type);
     ~MincValue();
@@ -63,28 +84,32 @@ public:
     const MincValue& operator = (MincString s);
     const MincValue& operator = (MincHandle h);
     const MincValue& operator = (MincList *l);
-    
+    const MincValue& operator = (MincMap *m);
+
     const MincValue& operator += (const MincValue &rhs);
     const MincValue& operator -= (const MincValue &rhs);
     const MincValue& operator *= (const MincValue &rhs);
     const MincValue& operator /= (const MincValue &rhs);
     
-    const MincValue& operator[] (const MincValue &index) const;    // for MincList access
-    MincValue& operator[] (const MincValue &index);    // for MincList access
+    const MincValue& operator[] (const MincValue &index) const;    // for MincList,MincMap access
+    MincValue& operator[] (const MincValue &index);                 // for MincList, MincMap access
     
     operator MincFloat() const { return _u.number; }
     operator MincString() const { return _u.string; }
     operator MincHandle() const { return _u.handle; }
     operator MincList *() const { return _u.list; }
+    operator MincMap *() const { return _u.map; }
     operator MincStruct *() const { return _u.mstruct; }
     operator bool() const { return (type == MincFloatType) ? _u.number != 0.0 : _u.string != NULL; }
     
-    bool operator == (const MincValue &rhs);
-    bool operator != (const MincValue &rhs);
-    bool operator < (const MincValue &rhs);
-    bool operator > (const MincValue &rhs);
-    bool operator <= (const MincValue &rhs);
-    bool operator >= (const MincValue &rhs);
+    unsigned long long rawValue() const { return _u.raw; }
+    
+    bool operator == (const MincValue &rhs) const;
+    bool operator != (const MincValue &rhs) const;
+    bool operator < (const MincValue &rhs) const;
+    bool operator > (const MincValue &rhs) const;
+    bool operator <= (const MincValue &rhs) const;
+    bool operator >= (const MincValue &rhs) const;
     
     MincDataType    dataType() const { return type; }
     void zero() { _u.list = NULL; }        // zeroes without changing type
@@ -99,7 +124,9 @@ private:
         MincString string;
         MincHandle handle;
         MincList *list;
+        MincMap *map;
         MincStruct *mstruct;
+        unsigned long long raw;     // used for raw comparison
     } _u;
 };
 

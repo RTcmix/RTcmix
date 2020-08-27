@@ -430,6 +430,8 @@ public:
 	}
 protected:
 	virtual Node*		doExct();
+    void                readAtSubscript();
+    void                searchWithMapKey();
 };
 
 class NodeSubscriptWrite : public Node3Children
@@ -440,6 +442,8 @@ public:
 	}
 protected:
 	virtual Node*		doExct();
+    void                writeToSubscript();
+    void                writeWithMapKey();
 };
 
 class NodeMember : public Node1Child
