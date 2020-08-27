@@ -68,10 +68,10 @@ main(int argc, char *argv[])
 		}
 	}
 
-	int pid = RTopensocket(0, "CMIX");
+	int pid = RTopensocket(0, "/opt/local/src/RTcmix/bin/CMIX");
 	if (pid < 0)
 		exit(1);
-	sleep(2);
+	sleep(1);
 
 	sprintf(name, "localhost");
 
@@ -82,8 +82,15 @@ main(int argc, char *argv[])
 	/* open up the socket */
 	theSock = RTsock(name, 0);
 
+    if (verbose) {
+        RTsendsock("print_on", theSock, 1, 6.0);
+    }
+    else {
+        RTsendsock("print_off", theSock, 0);
+    }
+	RTsendsock("rtsetparams", theSock, 3, 44100.0, 2.0, 512.0);
+
 	/* set up the instruments */
-	RTsendsock("rtsetparams", theSock, 3, 44100.0, 2.0, 256.0);
 	
 	RTsendsock("load", theSock, 1, "STRUM");
 	RTsendsock("load", theSock, 1, "TRANS");
@@ -91,7 +98,6 @@ main(int argc, char *argv[])
 	RTsendsock("rtinput", theSock, 1, "./sinetone.wav");
 
 	RTsendsock("setline", theSock, 8, 0., 0., 1., 1., 100., 1., 110., 0.);
-	RTsendsock(verbose ? "print_on" : "print_off", theSock, 0);
 
 	checkInterval = 1000000 / maxsleep;	// about once per second
 	checkCount = checkInterval;
@@ -142,9 +148,9 @@ main(int argc, char *argv[])
 		  if (interrupted || (int) (sec - base_sec) > duration)
 		  {
 			if (interrupted)
-				printf("Shutting down...");
+				printf("Shutting down...\n");
 			else
-				printf("Reached %d seconds.  Shutting down...", duration);
+				printf("Reached %d seconds.  Shutting down...\n", duration);
 			fflush(stdout);
 			RTsendsock("RTcmix_off", theSock, 0);
 //			sleep(1);

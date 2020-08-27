@@ -23,6 +23,8 @@
 #include <limits.h>
 #include "heap.h"
 
+#undef DBUG
+
 using namespace std;
 
 #ifdef NETAUDIO
@@ -318,7 +320,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                   exit(1);
                }
                socknew = atoi(argv[i]);
-               printf("listening on socket: %d\n", MYPORT + socknew);
+               printf("%s listening on socket %d\n", xargv[0], MYPORT + socknew);
                break;
 //            case 's':               /* start time (unimplemented) */
             case 'd':               /* duration to play for (unimplemented) */
@@ -389,7 +391,7 @@ RTcmixMain::run()
       /* Read an initialization score. */
       if (!noParse) {
          int status;
-         rtcmix_debug(NULL, "Parsing once ...\n");
+         rtcmix_debug(NULL, "Parsing once ...");
          status = ::parse_score(xargc, xargv, xenv);
          if (status != 0)
             exit(1);
@@ -397,28 +399,31 @@ RTcmixMain::run()
 #endif // EMBEDDED
 
       /* Create parsing thread. */
-      rtcmix_debug(NULL, "creating sockit() thread\n");
+      rtcmix_debug(NULL, "creating sockit() thread");
       retcode = pthread_create(&sockitThread, NULL, &RTcmixMain::sockit, (void *) this);
       if (retcode != 0) {
          rterror(NULL, "sockit() thread create failed\n");
       }
 
       /* Create scheduling thread. */
-      rtcmix_debug(NULL, "calling runMainLoop()\n");
+      rtcmix_debug(NULL, "calling runMainLoop()");
       retcode = runMainLoop();
       if (retcode != 0) {
          rterror(NULL, "runMainLoop() failed\n");
       }
+      else {
+          rtcmix_debug(NULL, "runMainLoop() returned");
+      }
 
       /* Join parsing thread. */
-      rtcmix_debug(NULL, "joining sockit() thread\n");
+      rtcmix_debug(NULL, "joining sockit() thread");
       retcode = pthread_join(sockitThread, NULL);
       if (retcode != 0) {
          rterror(NULL, "sockit() thread join failed\n");
       }
 
       /* Wait for audio thread. */
-      rtcmix_debug(NULL, "calling waitForMainLoop()\n");
+      rtcmix_debug(NULL, "calling waitForMainLoop()");
 	  retcode = waitForMainLoop();
       if (retcode != 0) {
          rterror(NULL, "waitForMailLoop() failed\n");
@@ -449,9 +454,9 @@ RTcmixMain::run()
 //			 if (setpriority(PRIO_PROCESS, 0, priority) != 0)
 //			 	perror("setpriority");
 #endif
-		 rtcmix_debug(NULL, "RTcmixMain::run: calling runMainLoop()\n");
+		 rtcmix_debug(NULL, "RTcmixMain::run: calling runMainLoop()");
 		  if ((status = runMainLoop()) == 0) {
-			 rtcmix_debug(NULL, "RTcmixMain::run: calling waitForMainLoop()\n");
+			 rtcmix_debug(NULL, "RTcmixMain::run: calling waitForMainLoop()");
 			 waitForMainLoop();
 		  }
 	  }
@@ -563,7 +568,6 @@ RTcmixMain::sockit(void *arg)
     sss.sin_family = AF_INET;
     sss.sin_addr.s_addr = INADDR_ANY;
     // socknew is offset from MYPORT to allow more than one inst
-    if (noParse) {}	
     sss.sin_port = htons(MYPORT+socknew);
 
     err = bind(s, (struct sockaddr *)&sss, sizeof(sss));
@@ -583,12 +587,11 @@ RTcmixMain::sockit(void *arg)
 #endif
     ns = accept(s, (struct sockaddr *)&sss, &len);
     if(ns < 0) {
-      perror("accept");
-	  run_status = RT_ERROR;	// Notify inTraverse()
-      exit(1);
+        perror("RTcmixMain::sockit: accept");
+        run_status = RT_ERROR;	// Notify inTraverse()
+        exit(1);
     }
     else {
-
       sinfo = new (struct sockdata);
       // Zero the socket structure
       sinfo->name[0] = '\0';
@@ -606,7 +609,7 @@ RTcmixMain::sockit(void *arg)
 		if (!audio_config) {
 #ifndef EMBEDDED
 		  if (Option::print())
-			cout << "sockit():  waiting for audio_config . . . \n";
+              RTPrintf("RTcmixMain::sockit():  no-parse mode, so waiting for audio_config . . . \n");
 #endif
 		}
 		pthread_mutex_unlock(&audio_config_lock);
@@ -620,7 +623,13 @@ RTcmixMain::sockit(void *arg)
 
 		  sptr = (char *)sinfo;
 		  amt = read(ns, (void *)sptr, sizeof(struct sockdata));
-		  while (amt < sizeof(struct sockdata)) amt += read(ns, (void *)(sptr+amt), sizeof(struct sockdata)-amt);
+          while (amt < sizeof(struct sockdata)) {
+              amt += read(ns, (void *)(sptr+amt), sizeof(struct sockdata)-amt);
+          }
+          if (strlen(sinfo->name) == 0) {
+              rtcmix_warn(NULL, "bad socket command (NULL command name)");
+              continue;
+          }
 		  if ( (strcmp(sinfo->name, "rtinput") == 0) ||
 			   (strcmp(sinfo->name, "rtoutput") == 0) ||
 			   (strcmp(sinfo->name,"set_option") == 0) ||
@@ -634,72 +643,78 @@ RTcmixMain::sockit(void *arg)
 			  sinfo->data.p[i] = STRING_TO_DOUBLE(ttext[i]);
 			}
 		  }
+#ifdef DBUG
+          rtcmix_debug(NULL, "RTCmixMain::sockit: RECIEVED command during audio_configure loop");
+          rtcmix_debug(NULL, "sinfo->name = %s", sinfo->name);
+          rtcmix_debug(NULL, "sinfo->n_args = %d", (int)sinfo->n_args);
+          for (i=0;i<sinfo->n_args;i++) {
+              rtcmix_debug(NULL, "sinfo->data.p[%d] = %f", i, sinfo->data.p[i]);
+          }
+#endif
 		  (void) ::dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
 		}
 		
 		if (audio_configured && rtInteractive) {
 			if (Option::print())
-				cout << "sockit():  audio set.\n";
+                RTPrintf("RTcmixMain::sockit(): audio configured.\n");
 		}
-		
 	  }
 
       // Main socket reading loop
       while(1) {
-
 		sptr = (char *)sinfo;
 		amt = read(ns, (void *)sptr, sizeof(struct sockdata));
-		while (amt < sizeof(struct sockdata)) amt += read(ns, (void *)(sptr+amt), sizeof(struct sockdata)-amt);
-		if ( (strcmp(sinfo->name, "rtinput") == 0) ||
-			(strcmp(sinfo->name, "rtoutput") == 0) ||
-			(strcmp(sinfo->name,"set_option") == 0) ||
-			(strcmp(sinfo->name,"bus_config") == 0) ||
-			(strcmp(sinfo->name, "load")==0) ) {
-			
-			// these two commands use text data
-			// replace the text[i] with p[i] pointers
-			for (i = 0; i < sinfo->n_args; i++)
-				strcpy(ttext[i],sinfo->data.text[i]);
-			for (i = 0; i < sinfo->n_args; i++) {
-				sinfo->data.p[i] = STRING_TO_DOUBLE(ttext[i]);
-			}
-		}
-		else if ( (strcmp(sinfo->name, "RTcmix_off") == 0) ) {
-			printf("RTcmix termination cmd received.\n");
+        while (amt < sizeof(struct sockdata)) {
+            amt += read(ns, (void *)(sptr+amt), sizeof(struct sockdata)-amt);
+        }
+        if (strlen(sinfo->name) == 0) {
+            rtcmix_warn(NULL, "bad socket command (NULL command name)");
+            continue;
+        }
+		if (strcmp(sinfo->name, "RTcmix_off") == 0) {
+			RTPrintf("RTcmix termination cmd received.\n");
 			run_status = RT_SHUTDOWN;	// Notify inTraverse()
  			shutdown(s,0);
 			return NULL;
 		}
-		else if ( (strcmp(sinfo->name, "RTcmix_panic") == 0) ) {
+		else if (strcmp(sinfo->name, "RTcmix_panic") == 0) {
 			int count = 30;
-			printf("RTcmix panic cmd received...\n");
+			RTPrintf("RTcmix panic cmd received...\n");
 			run_status = RT_PANIC;	// Notify inTraverse()
 			while (count--) {
 #ifdef linux
 				usleep(1000);
 #endif
 			}
-			printf("Resuming normal mode\n");
+			RTPrintf("Resuming normal mode\n");
 			run_status = RT_GOOD;	// Notify inTraverse()
 		}
 		else {
-	
+            if (strcmp(sinfo->name, "rtinput") == 0 ||
+                strcmp(sinfo->name, "rtoutput") == 0 ||
+                strcmp(sinfo->name,"set_option") == 0 ||
+                strcmp(sinfo->name,"bus_config") == 0 ||
+                strcmp(sinfo->name, "load")==0 ) {
+                
+                // these two commands use text data
+                // replace the text[i] with p[i] pointers
+                for (i = 0; i < sinfo->n_args; i++)
+                    strcpy(ttext[i],sinfo->data.text[i]);
+                for (i = 0; i < sinfo->n_args; i++) {
+                    sinfo->data.p[i] = STRING_TO_DOUBLE(ttext[i]);
+                }
+            }
 #ifdef DBUG
-		  cout << "sockit(): elapsed = " << getElapsed() << endl;
-		  cout << "sockit(): SR = " << SR << endl;
+		  RTPrintf("sockit(): elapsed = %llu\n", (unsigned long long)getElapsed());
+		  RTPrintf("SR = %f\n", SR());
+          rtcmix_debug(NULL, "RTCmixMain::sockit: RECIEVED command");
+          rtcmix_debug(NULL, "sinfo->name = %s", sinfo->name);
+          rtcmix_debug(NULL, "sinfo->n_args = %d", (int)sinfo->n_args);
+          for (i=0;i<sinfo->n_args;i++) {
+              rtcmix_debug(NULL, "sinfo->data.p[%d] = %f", i, sinfo->data.p[i]);
+          }
 #endif
-          if (strlen(sinfo->name) > 0) {
-#ifdef ALLBUG
-			cout << "SOCKET RECIEVED\n";
-			cout << "sinfo->name = " << sinfo->name << endl;
-			cout << "sinfo->n_args = " << sinfo->n_args << endl;
-			for (i=0;i<sinfo->n_args;i++) {
-			  cout << "sinfo->data.p[" << i << "] =" << sinfo->data.p[i] << endl;
-			}
-#endif
-			(void) ::dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
-	    
-		  }
+          (void) ::dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
 		}
       }
     }

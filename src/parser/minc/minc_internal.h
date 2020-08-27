@@ -70,7 +70,7 @@ class RTException
 {
 public:
 	RTException(const char *msg) : _mesg(msg) {}
-	const char *mesg() { return _mesg; }
+	const char *mesg() const { return _mesg; }
 private:
 	const char *_mesg;
 };

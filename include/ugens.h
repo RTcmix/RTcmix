@@ -228,7 +228,7 @@ typedef enum {
 #endif
 
 #define RTExit(status) throw(status)
-
+    
 /* message.cpp */
 void rtcmix_debug(const char *inst_name, const char *format, ...);
 void rtcmix_advise(const char *inst_name, const char *format, ...);
@@ -238,6 +238,13 @@ void rtcmix_print(const char *format, ...);
 /* returns DONT_SCHEDULE if !Option::exitOnError() */
 int die(const char *inst_name, const char *format, ...);
 RTCmixStatus rtOptionalThrow(RTCmixStatus status);
+
+/* handle the fact that IOS does not allow a call to system() */
+#ifndef IOS
+#define rt_system(cmd) system(cmd)
+#else
+#define rt_system(cmd) rtcmix_warn("system", "Not allowed in iOS - not performing command '%s", cmd)
+#endif
 
 // pgen function declarations
 float *ploc(int tag);

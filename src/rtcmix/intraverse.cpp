@@ -75,6 +75,7 @@ int RTcmix::runMainLoop(void)
 	::pthread_mutex_unlock(&audio_config_lock);
 
 	while (!audio_configured) {
+//        rtcmix_debug(NULL, "runMainLoop():  top of !audio_configured loop");
 		::pthread_mutex_lock(&audio_config_lock);
 		if (audio_config) {
 			audio_configured = YES;
@@ -90,15 +91,16 @@ int RTcmix::runMainLoop(void)
 			audioDone = true;
 			return -1;
 		}
+        usleep(1000*100);   // no reason to run loop faster that 1 per 100 ms.
 	}
 
 #ifndef EMBEDDED
 	if (audio_configured && rtInteractive) {
 		if (Option::print())
-			RTPrintf("runMainLoop():  audio set.\n");
+			RTPrintf("runMainLoop():  audio configured.\n");
 	}
 #else
-	rtcmix_debug(NULL, "runMainLoop():  audio set.");
+	rtcmix_debug(NULL, "runMainLoop():  audio configured.");
 	rtInteractive = 1;
 #endif
 

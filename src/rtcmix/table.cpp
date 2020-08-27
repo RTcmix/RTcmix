@@ -2122,7 +2122,7 @@ plottable(const Arg args[], const int nargs)
 
 	snprintf(cmd, 255, "gnuplot %s &", cmd_file);
 	cmd[255] = 0;
-	system(cmd);
+	rt_system(cmd);
 
 	return 0.0;
 }
