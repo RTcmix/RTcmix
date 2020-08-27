@@ -6,7 +6,7 @@
 #include <signal.h>
 
 extern "C" {
-#include "../../src/rtcmix/RTsockfuncs.h"
+#include <RTsockfuncs.h>
 }
 
 double irand(double low, double high)
@@ -68,7 +68,7 @@ main(int argc, char *argv[])
 		}
 	}
 
-	int pid = RTopensocket(0, "/opt/local/src/RTcmix/bin/CMIX");
+	int pid = RTopensocket(0, "../../bin/CMIX");
 	if (pid < 0)
 		exit(1);
 	sleep(1);

@@ -1,8 +1,10 @@
 include ../../makefile.conf
 
 # This allows us to test before doing the install
-#CMD = ../../insts.base/MIX/MIX
-CMD = ../../bin/CMIX
+#CMD = ${CMIXDIR}/insts.base/MIX/MIX
+CMD = ${CMIXDIR}/bin/CMIX
+
+CXXFLAGS += -DCMIXDIR=${CMIXDIR}
 
 all:	announce all_tests
 
@@ -44,10 +46,10 @@ stresstest: $(STRESSOBJS) $(IMBCMIXOBJS)
 	$(CXX) -o $@ $(DYN) $(STRESSOBJS) $(IMBCMIXOBJS) $(LDFLAGS)
 
 sockettest: $(SOCKOBJS)
-	$(CXX) -o $@ $(SOCKOBJS) ../../lib/RTsockfuncs.o
+	$(CXX) -o $@ $(SOCKOBJS) ${CMIXDIR}/lib/RTsockfuncs.o
 
 embeddedtest: embeddedtest.o
-	$(CXX) -g -o $@ embeddedtest.o -L../../lib -lrtcmix_embedded
+	$(CXX) -g -o $@ embeddedtest.o -L${CMIXDIR}/lib -lrtcmix_embedded
 
 run_stresstest:	stresstest
 	@echo
@@ -142,7 +144,7 @@ test_stereo:
 test_load:
 	@echo
 	@echo Testing load of all shlib dsos
-	@find ../../shlib/ -name lib\* | grep -v conn | sed 's/\(.*\)/if (load("&") != 1) { print("& LOAD FAILED"); }/' > load_test.sco
+	@find ${CMIXDIR}/shlib/ -name lib\* | grep -v conn | sed 's/\(.*\)/if (load("&") != 1) { print("& LOAD FAILED"); }/' > load_test.sco
 	-$(CMD) < load_test.sco
 #	rm load_test.sco
 
@@ -155,7 +157,7 @@ test_embedded:
 #	@rm -rf function_scores
 	@echo Testing embedded use of all instruments
 	@echo "rtinput(\"input.wav\")" > embedded_test.sco
-	@find ../../shlib/ -name lib\* | grep -v conn | sed 's/^.*lib//' | sed 's/\.so/(0,0,1,1,1,1,1,1,1,1)/' >> embedded_test.sco
+	@find ${CMIXDIR}/shlib/ -name lib\* | grep -v conn | sed 's/^.*lib//' | sed 's/\.so/(0,0,1,1,1,1,1,1,1,1)/' >> embedded_test.sco
 	-./embeddedtest embedded_test.sco
 
 clean:
