@@ -684,7 +684,6 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         playEm = false;
     }
 
-	if (!rtInteractive) {  // Ending condition
 	if (!interactive()) {  // Ending condition
 		if ((rtHeap->getSize() == 0) && (allQSize == 0)) {
 #ifdef ALLBUG
