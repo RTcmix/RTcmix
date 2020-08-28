@@ -160,7 +160,7 @@ RTcmix::init_options(bool fromMain, const char *defaultDSOPath)
 #else
 		Option::exitOnError(false);
 #endif
-		rtInteractive = 0;
+        setInteractive(false);
 	}
 	else {
 		setSR(44100.0); // what the heck...
@@ -369,7 +369,7 @@ RTcmix::init(float tsr, int tnchans, int bsize,
 	}
 	else {
 		// If we are not playing or recording from HW, we cannot be interactive
-		rtInteractive = 0;
+        setInteractive(false);
 	}
 }
 

@@ -247,7 +247,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                usage();
                break;
             case 'i':               /* for separate parseit thread */
-               rtInteractive = 1;
+               setInteractive(true);
                audio_config = 0;
                break;
             case 'n':               /* for use in rtInteractive mode only */
@@ -384,7 +384,7 @@ RTcmixMain::run()
       When not in rtInteractive mode, RTcmix parses the score, schedules
       all instruments, and then plays them -- in that order.
    */
-   if (rtInteractive) {
+   if (interactive()) {
 		rtcmix_advise(NULL, "rtInteractive mode set\n");
 
 #ifndef EMBEDDED
@@ -654,7 +654,7 @@ RTcmixMain::sockit(void *arg)
 		  (void) ::dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
 		}
 		
-		if (audio_configured && rtInteractive) {
+		if (audio_configured && interactive()) {
 			if (Option::print())
                 RTPrintf("RTcmixMain::sockit(): audio configured.\n");
 		}

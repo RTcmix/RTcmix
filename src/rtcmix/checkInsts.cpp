@@ -167,7 +167,7 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
         if (rv == 0) { // only schedule if no setup() error
 			// For non-interactive case, configure() is delayed until just
 			// before instrument run time.
-			if (rtInteractive) {
+			if (interactive()) {
 			   if ((rv = Iptr->configure(bufsamps())) != 0) {
                    return rv;
 			   }

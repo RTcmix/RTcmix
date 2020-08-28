@@ -77,8 +77,9 @@ public:
 	// New public API
 
 	static bool interactive() { return rtInteractive; }
-	static int bufsamps() { return sBufferFrameCount; }         // Replaces "RTBUFSAMPS"
-	static float sr() { return sSamplingRate; }                 // Replaces "SR"
+    static void setInteractive(bool interactive) { rtInteractive = interactive; }
+    static int bufsamps() { return sBufferFrameCount; }         // Replaces "RTBUFSAMPS"
+    static float sr() { return sSamplingRate; }                 // Replaces "SR"
 	static int chans() { return NCHANS; }
 	static void setBufOffset(FRAMETYPE inOffset, bool inRunToOffset);
 	static FRAMETYPE getElapsedFrames() { return elapsed + bufsamps(); }
