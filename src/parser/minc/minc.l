@@ -101,6 +101,7 @@ num   {dig}+
 <INIT>string            return TOK_STRING_DECL;
 <INIT>handle            return TOK_HANDLE_DECL;
 <INIT>list            	return TOK_LIST_DECL;
+<INIT>map               return TOK_MAP_DECL;
 <INIT>return			return TOK_RETURN;
 <INIT>[%={}><,.;*+-]     return (*yytext);
 <INIT>"["|"]"|"/"       return (*yytext);

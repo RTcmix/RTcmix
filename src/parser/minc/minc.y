@@ -79,13 +79,14 @@ static Node * go(Node * t1);
 %token <ival> TOK_STRING_DECL
 %token <ival> TOK_HANDLE_DECL
 %token <ival> TOK_LIST_DECL
+%token <ival> TOK_MAP_DECL
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 %type  <node> stml stmt rstmt bexp expl exp str ret bstml
-%type  <node> fdecl sdecl hdecl ldecl structdecl arg argl fdef fstml fargl funcdecl mbr mbrl structdef
+%type  <node> fdecl sdecl hdecl ldecl mdecl structdecl arg argl fdef fstml fargl funcdecl mbr mbrl structdef
 %type  <str> id structname
 
-%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl structdecl fdef fstml arg argl fargl funcdecl mbr mbrl structdef
+%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mdecl structdecl fdef fstml arg argl fargl funcdecl mbr mbrl structdef
 
 %error-verbose
 
@@ -107,6 +108,7 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 	| sdecl
 	| hdecl
 	| ldecl
+    | mdecl
     | structdecl
 	| TOK_IF level bexp stmt {	xblock = 1; MPRINT("IF bexp stmt");
 								decrLevel();
@@ -136,6 +138,7 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 	| error TOK_STRING_DECL	{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_HANDLE_DECL	{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_LIST_DECL	{ flerror = 1; $$ = new NodeNoop(); }
+    | error TOK_MAP_DECL    { flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_IF		{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_WHILE	{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_FOR	{ flerror = 1; $$ = new NodeNoop(); }
@@ -209,6 +212,11 @@ ldecl:	TOK_LIST_DECL idl	{ 	MPRINT("ldecl");
 								$$ = go(declare(MincListType));
 								idcount = 0;
 							}
+    ;
+mdecl:    TOK_MAP_DECL idl    {     MPRINT("mdecl");
+                                $$ = go(declare(MincMapType));
+                                idcount = 0;
+                              }
     ;
 structdecl: TOK_STRUCT_DECL id idl    {     MPRINT("structdecl");
                                             $$ = go(declareStruct($2));
@@ -381,6 +389,8 @@ mbr: TOK_FLOAT_DECL id        { MPRINT("mbr");
         $$ = new NodeMemberDecl($2, MincHandleType); }
     | TOK_LIST_DECL id        { MPRINT("mbr");
         $$ = new NodeMemberDecl($2, MincListType); }
+    | TOK_MAP_DECL id        { MPRINT("mbr");
+        $$ = new NodeMemberDecl($2, MincMapType); }
     ;
 
 /* struct declaration */
@@ -427,6 +437,8 @@ arg: TOK_FLOAT_DECL id      { MPRINT("arg");
                                     $$ = new NodeDecl($2, MincHandleType); }
     | TOK_LIST_DECL id      { MPRINT("arg");
                                     $$ = new NodeDecl($2, MincListType); }
+    | TOK_MAP_DECL id      { MPRINT("arg");
+                                    $$ = new NodeDecl($2, MincMapType); }
     | TOK_STRUCT_DECL id id { MPRINT("arg");
                                     $$ = new NodeStructDecl($3, $2); }
     ;
@@ -441,6 +453,8 @@ funcdecl: TOK_FLOAT_DECL id function { MPRINT("funcdecl");
 									$$ = go(new NodeFuncDecl(strsave($2), MincHandleType)); }
 	| TOK_LIST_DECL id function { MPRINT("funcdecl");
 									$$ = go(new NodeFuncDecl(strsave($2), MincListType)); }
+    | TOK_MAP_DECL id function { MPRINT("funcdecl");
+                                    $$ = go(new NodeFuncDecl(strsave($2), MincMapType)); }
     | TOK_STRUCT_DECL id id function { MPRINT("funcdecl");
                                     $$ = go(new NodeFuncDecl(strsave($3), MincStructType)); }
 	;
@@ -546,6 +560,13 @@ go(Node * t1)
 		try {
 			t1->exct();
 		}
+        catch(const RTException &rtex) {
+            delete t1;
+            t1 = NULL;
+            cleanup();
+            rterror("parser", "caught fatal exception: '%s' - bailing out", rtex.mesg());
+            throw;
+        }
 		catch(...) {
 			MPRINT1("caught exception - deleting node %p and cleaning up", t1);
 			delete t1;

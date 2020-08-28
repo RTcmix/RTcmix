@@ -60,6 +60,26 @@ MincList::resize(int newLen)
     delete [] oldList;
 }
 
+MincMap::MincMap()
+{
+#ifdef DEBUG_MEMORY
+    MPRINT("MincMap::MincMap: %p alloc'd\n", this);
+#endif
+}
+
+MincMap::~MincMap()
+{
+#ifdef DEBUG_MEMORY
+    MPRINT("deleting ~MincMap %p\n", this);
+#endif
+}
+
+bool
+MincMap::MincValueCmp::operator()(const MincValue& lhs, const MincValue& rhs) const
+{
+    return lhs.rawValue() < rhs.rawValue();
+}
+
 #define ThrowIf(exp, excp) if (exp) { throw excp; }
 
 /* ========================================================================== */
@@ -124,6 +144,14 @@ MincValue::MincValue(MincList *l) : type(MincListType)
     _u.list = l; RefCounted::ref(l);
 }
 
+MincValue::MincValue(MincMap *m) : type(MincMapType)
+{
+#ifdef DEBUG_MEMORY
+    //    MPRINT("created MincValue %p (for MincMap *)\n", this);
+#endif
+    _u.map = m; RefCounted::ref(m);
+}
+
 MincValue::MincValue(MincStruct *str) : type(MincStructType)
 {
 #ifdef DEBUG_MEMORY
@@ -151,6 +179,9 @@ MincValue::~MincValue()
             break;
         case MincListType:
             RefCounted::unref(_u.list);
+            break;
+        case MincMapType:
+            RefCounted::unref(_u.map);
             break;
         case MincStructType:
             RefCounted::unref(_u.mstruct);
@@ -186,7 +217,14 @@ void MincValue::doClear()
                 _u.list = NULL;
             }
             break;
-        case MincStructType:
+        case MincMapType:
+            if (_u.map != NULL) {
+                MPRINT("\toverwriting existing MincMap value %p\n", _u.map);
+                RefCounted::unref(_u.map);
+                _u.map = NULL;
+            }
+            break;
+       case MincStructType:
             if (_u.mstruct != NULL) {
                 MPRINT("\toverwriting existing MincStruct value %p\n", _u.mstruct);
                 RefCounted::unref(_u.mstruct);
@@ -198,7 +236,7 @@ void MincValue::doClear()
     }
 }
 
-// Note: handle, list, and struct elements are referenced before this call is made
+// Note: handle, list, map, and struct elements are referenced before this call is made
 
 void MincValue::doCopy(const MincValue &rhs)
 {
@@ -215,7 +253,10 @@ void MincValue::doCopy(const MincValue &rhs)
         case MincListType:
             _u.list = rhs._u.list;
             break;
-        case MincStructType:
+        case MincMapType:
+            _u.map = rhs._u.map;
+            break;
+       case MincStructType:
             _u.mstruct = rhs._u.mstruct;
             break;
         default:
@@ -243,6 +284,9 @@ void MincValue::print()
         case MincListType:
             TPRINT("%p\n", _u.list);
             break;
+        case MincMapType:
+            TPRINT("%p\n", _u.map);
+            break;
         case MincStringType:
             TPRINT("%s\n", _u.string);
             break;
@@ -264,6 +308,8 @@ const MincValue& MincValue::operator = (const MincValue &rhs)
         ref_handle(rhs._u.handle);
     else if (rhs.type == MincListType)
         RefCounted::ref(rhs._u.list);
+    else if (rhs.type == MincMapType)
+        RefCounted::ref(rhs._u.map);
     else if (rhs.type == MincStructType)
         RefCounted::ref(rhs._u.mstruct);
     doClear();
@@ -297,6 +343,15 @@ const MincValue& MincValue::operator = (MincList *l)
     doClear();
     type = MincListType;
     _u.list = l;
+    return *this;
+}
+
+const MincValue& MincValue::operator = (MincMap *m)
+{
+    RefCounted::ref(m);    // ref before unref
+    doClear();
+    type = MincMapType;
+    _u.map = m;
     return *this;
 }
 
@@ -342,7 +397,7 @@ MincValue& MincValue::operator[] (const MincValue &index)
     return _u.list->data[iIndex];
 }
 
-bool MincValue::operator == (const MincValue &rhs)
+bool MincValue::operator == (const MincValue &rhs) const
 {
     ThrowIf(rhs.type != this->type, NonmatchingTypeException("attempt to compare variables having different types"));
     switch (type) {
@@ -355,31 +410,31 @@ bool MincValue::operator == (const MincValue &rhs)
     }
 }
 
-bool MincValue::operator != (const MincValue &rhs)
+bool MincValue::operator != (const MincValue &rhs) const
 {
     return !(*this == rhs);
 }
 
-bool MincValue::operator < (const MincValue &rhs)
+bool MincValue::operator < (const MincValue &rhs) const
 {
     ThrowIf(rhs.type != this->type, NonmatchingTypeException("attempt to compare variables having different types"));
     ThrowIf(this->type != MincFloatType, InvalidTypeException("can't compare this type of object"));
     return cmp(_u.number, rhs._u.number) == -1;
 }
 
-bool MincValue::operator > (const MincValue &rhs)
+bool MincValue::operator > (const MincValue &rhs) const
 {
     ThrowIf(rhs.type != this->type, NonmatchingTypeException("attempt to compare variables having different types"));
     ThrowIf(this->type != MincFloatType, InvalidTypeException("can't compare this type of object"));
     return cmp(_u.number, rhs._u.number) == 1;
 }
 
-bool MincValue::operator <= (const MincValue &rhs)
+bool MincValue::operator <= (const MincValue &rhs) const
 {
     return !(*this > rhs);
 }
 
-bool MincValue::operator >= (const MincValue &rhs)
+bool MincValue::operator >= (const MincValue &rhs) const
 {
     return !(*this < rhs);
 }

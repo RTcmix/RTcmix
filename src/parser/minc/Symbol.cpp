@@ -224,6 +224,7 @@ dname(int x)
       { MincFloatType, "float" },
       { MincHandleType, "handle" },
       { MincListType, "list" },
+      { MincMapType, "map" },
       { MincStringType, "string" },
       { MincStructType, "struct" },
       { MincVoidType, "void" },

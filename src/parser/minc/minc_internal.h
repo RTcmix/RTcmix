@@ -146,11 +146,13 @@ enum MincDataType {
     MincStringType = 2,
     MincHandleType = 4,
     MincListType = 8,
-    MincStructType = 16
+    MincMapType = 16,
+    MincStructType = 32
 };
 
 class MincValue;
 class MincList;
+class MincMap;
 class Node;
 
 union YYSTYPE {
