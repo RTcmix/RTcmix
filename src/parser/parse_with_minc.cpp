@@ -17,11 +17,8 @@ extern YY_BUFFER_STATE yy_scan_bytes(const char * buf, size_t len);
 extern "C" {
     extern int yyparse();
     extern int check_new_arg(const char *); /* Defined in minc/args.cpp */
-    int run_parser(const char *caller);
-    int parse_score_buffer(const char *buffer, int buflen);
+    static int run_parser(const char *caller);
     int RTcmix_parseScore(char *thebuf, int buflen);
-    void use_script_file(char *fname);
-    void destroy_parser();
 }
 
 static int
