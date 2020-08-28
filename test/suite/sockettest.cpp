@@ -123,7 +123,7 @@ main(int argc, char *argv[])
 				pval2 = irand(0.0, 1.0);			// pan
 				pval3 = irand(0.05, 0.5);			// dur	
 				RTsendsock("bus_config", theSock, 3, "TRANS3", "in0", "out0-1");
-				RTsendsock("TRANS3", theSock, 5, 0.0, 0.0, pval3, 0.04, pval, pval2);
+				RTsendsock("TRANS3", theSock, 5, 0.0, 0.0, pval3, 0.1, pval, pval2);
 				totalcmds += 2;
 				break;
 			case 2:
@@ -131,9 +131,9 @@ main(int argc, char *argv[])
 				RTsendsock("bus_config", theSock, 3, "STEREO", "aix0", "out0-1");
 				pval = irand(-0.04, 0.04);
 				pval3 = irand(0.05, 0.5);			// dur	
-				RTsendsock("TRANS", theSock, 5, 0.0, 0.0, pval3, 1.0, pval);
+				RTsendsock("TRANS", theSock, 5, 0.0, 0.0, pval3, 0.1, pval);
 				pval2 = irand(0.0, 1.0);
-				RTsendsock("STEREO", theSock, 5, 0.0, 0.0, pval3, 0.04, pval2);
+				RTsendsock("STEREO", theSock, 5, 0.0, 0.0, pval3, 0.1, pval2);
 				totalcmds += 2;
 				break;
 			default:

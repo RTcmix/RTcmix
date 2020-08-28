@@ -16,6 +16,10 @@
 #include <RTcmix_API.h>
 #include <fcntl.h>
 
+#ifndef EMBEDDED
+#error This code cannot be compiled unless the system is configured for an EMBEDDED system
+#endif
+
 char message[65536];
 bool done = false;
 

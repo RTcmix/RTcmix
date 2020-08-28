@@ -249,6 +249,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
             case 'i':               /* for separate parseit thread */
                setInteractive(true);
                audio_config = 0;
+               Option::exitOnError(false);  /* we cannot simply quit when in interactive mode */
                break;
             case 'n':               /* for use in rtInteractive mode only */
                noParse = 1;
