@@ -609,6 +609,16 @@ static void cleanup()
 #endif
 }
 
+void reset_parser()
+{
+    rtcmix_debug("reset_parser", "resetting line number");
+    flerror = 0;
+    // Reset the line # every time a new score buffer is received
+    yyset_lineno(1);
+    // Special exported function from minc.l
+    yy_clear_includes();
+}
+
 #ifdef EMBEDDED
 
 #warning DAS Make sure yylex_destroy() works
@@ -631,16 +641,6 @@ double minc_memflush()
 	yy_start = 0;   /* start state number */
 #endif
 	return 1.0;
-}
-
-void reset_parser()
-{
-	rtcmix_debug("reset_parser", "resetting line number");
-	flerror = 0;
-	// Reset the line # every time a new score buffer is received
-	yyset_lineno(1);
-    // Special exported function from minc.l
-    yy_clear_includes();
 }
 
 #endif

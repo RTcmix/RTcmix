@@ -83,8 +83,6 @@ static void print_symbol(Symbol * s);		// TODO: Symbol::print()
 
 static MincWarningLevel sMincWarningLevel = MincAllWarnings;
 
-#ifdef EMBEDDED
-
 void clear_node_state()	// The only exported function from Node.cpp.  Clear all static state.
 {
 	sMincListLen = 0;
@@ -100,8 +98,6 @@ void clear_node_state()	// The only exported function from Node.cpp.  Clear all 
 	sArgListLen = 0;
 	sArgListIndex = 0;
 }
-
-#endif
 
 static const char *s_NodeKinds[] = {
    "NodeZero",

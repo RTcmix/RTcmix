@@ -11,35 +11,31 @@
 #include "rtdefs.h"
 #include <Option.h>
 
-#ifdef EMBEDDED
 typedef struct yy_buffer_state * YY_BUFFER_STATE;
 extern YY_BUFFER_STATE yy_scan_bytes(const char * buf, size_t len);
-extern void yy_delete_buffer(YY_BUFFER_STATE buffer);
-#endif
 
 extern "C" {
-	
-extern int yyparse();
+    extern int yyparse();
+    extern int check_new_arg(const char *); /* Defined in minc/args.cpp */
+    int run_parser(const char *caller);
+    int parse_score_buffer(const char *buffer, int buflen);
+    int RTcmix_parseScore(char *thebuf, int buflen);
+    void use_script_file(char *fname);
+    void destroy_parser();
+}
 
-#ifdef EMBEDDED
-
-int RTcmix_parseScore(char *thebuf, int buflen);
-extern double minc_memflush();									// minc/minc.cpp (from minc.y)
-
-// BGG mm -- set this to accept a buffer from max/msp
-int RTcmix_parseScore(char *theBuf, int buflen)
+static int
+run_parser(const char *caller)
 {
-	configure_minc_error_handler(get_bool_option(kOptionExitOnError));
-    YY_BUFFER_STATE buffer = yy_scan_bytes(theBuf, buflen);
-	reset_parser();
-	int status;
-	try {
-		status = yyparse();
-	}
-	catch (MincError err) {
-		rtcmix_warn("RTcmix_parseScore", "caught parse exception %d", (int)err);
-		status = err;
-	}
+    configure_minc_error_handler(get_bool_option(kOptionExitOnError));
+    int status;
+    try {
+        status = yyparse();
+    }
+    catch (MincError err) {
+        rtcmix_warn(caller, "caught parse exception %d", (int)err);
+        status = err;
+    }
     catch (int otherError) {
         const char *errname;
         switch (otherError) {
@@ -70,19 +66,24 @@ int RTcmix_parseScore(char *theBuf, int buflen)
             default:
                 errname = "Other error";
         }
-        rtcmix_warn("RTcmix_parseScore", "Caught exception: %s", errname);
+        rtcmix_warn(caller, "Caught exception: %s", errname);
         status = otherError;
     }
+    // If the parser returns a bad status, it must be torn down and recreated
     if (status != 0) {
         destroy_parser();
     }
-	return status;
+    return status;
 }
 
-#else	// !EMBEDDED
+int parse_score_buffer(const char *buffer, int buflen)
+{
+    YY_BUFFER_STATE yybuf = yy_scan_bytes(buffer, buflen);
+    reset_parser();
+    return run_parser("parse_score_buffer");
+}
 
-/* Defined in minc/args.cpp */
-extern int check_new_arg(const char *);
+#ifndef EMBEDDED
 
 /* Defined in sys/command_line.c */
 extern char *aargv[];
@@ -108,13 +109,22 @@ parse_score(int argc, char *argv[], char **env)
 	}
 	aargc = aarg;	// doesn't count args we pulled out above
 	
-	configure_minc_error_handler(get_bool_option(kOptionExitOnError));
-	status = yyparse();
+	status = run_parser("parse_score");
 	
 	return status;
 }
 
-#endif	// !EMBEDDEDs
+#else
+
+// BGG mm -- set this to accept a buffer from max/msp
+int RTcmix_parseScore(char *theBuf, int buflen)
+{
+    YY_BUFFER_STATE buffer = yy_scan_bytes(theBuf, buflen);
+    reset_parser();
+    return run_parser("RTcmix_parseScore");
+}
+    
+#endif
 
 /* ------------------------------------------------------ use_script_file --- */
 /* Parse file <fname> instead of stdin. */
@@ -131,11 +141,16 @@ use_script_file(char *fname)
 		RTFPrintf(stderr, "Can't open %s\n", fname);
 		exit(1);
 	}
-#endif
 	if (get_print_option() > MMP_ADVISE)
 		RTPrintf("Using file %s\n", fname);
+#else
+    rterror("use_script_file", "Command not available for embedded builds");
+#endif
 }
 
+#ifdef EMBEDDED
+extern "C" double minc_memflush();                                    // minc/minc.cpp (from minc.y)
+#endif
 
 /* ------------------------------------------------------- destroy_parser --- */
 void
@@ -147,5 +162,3 @@ destroy_parser()
 	clear_node_state();
 #endif
 }
-
-}	//	extern "C"

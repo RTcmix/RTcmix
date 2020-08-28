@@ -25,11 +25,8 @@ void yyset_lineno (int line_number);
 int yyget_lineno(void);
 
 int configure_minc_error_handler(int exit);
-
-#ifdef EMBEDDED
 void reset_parser();
 void clear_node_state();	// The only exported function from Node.cpp
-#endif
 
 #ifdef __cplusplus
 }
