@@ -1608,7 +1608,7 @@ static void
 _maketable_usage()
 {
 	die("maketable",
-		"\n	 usage: table = maketable(type, [option, ] length, ...)\n");
+		"\n	 usage: table = maketable(type, [option, ] length, ...)");
 }
 
 typedef enum {

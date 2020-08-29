@@ -26,7 +26,7 @@ extern "C" {
 double m_sr(float *p, int n_args)
 {
   if(!isopen[(int)p[0]]) {
-    rtcmix_warn("sr", "You haven't opened file %d yet!\n", (int)p[0]);
+    rtcmix_warn("sr", "You haven't opened file %d yet!", (int)p[0]);
     closesf();
   }
   return(sfsrate(&sfdesc[(int)p[0]]));
@@ -35,7 +35,7 @@ double m_sr(float *p, int n_args)
 double m_chans(float *p, int n_args)
 {	
   if(!isopen[(int)p[0]]) {
-    rtcmix_warn("chans", "You haven't opened file %d yet!\n", (int)p[0]);
+    rtcmix_warn("chans", "You haven't opened file %d yet!", (int)p[0]);
     closesf();
   }
   
@@ -45,7 +45,7 @@ double m_chans(float *p, int n_args)
 double m_class(float *p, int n_args)
 {
   if(!isopen[(int)p[0]]) {
-    rtcmix_warn("class", "You haven't opened file %d yet!\n", (int)p[0]);
+    rtcmix_warn("class", "You haven't opened file %d yet!", (int)p[0]);
     closesf();
   }
   return(sfclass(&sfdesc[(int)p[0]]));
@@ -60,7 +60,7 @@ double m_dur(float *p, int n_args)
 	float dur;
 	i = (int) p[0];
 	if(!isopen[i]) {
-		rtcmix_warn("dur", "You haven't opened file %d yet!\n", (int)p[0]);
+		rtcmix_warn("dur", "You haven't opened file %d yet!", (int)p[0]);
 		closesf();
 	}
 	dur = (float)(sfst[i].st_size - headersize[i])
@@ -265,11 +265,11 @@ RTcmix::input_chans(float *p, int n_args)   /* returns chans for rtinput() files
    int index = get_last_input_index();
 
    if (index < 0) {
-      rtcmix_warn("input_chans", "There are no currently opened input files!\n");
+      rtcmix_warn("input_chans", "There are no currently opened input files!");
       return 0.0;
    }
    if (inputFileTable[index].isAudioDevice()) {
-      rtcmix_warn("input_chans", "Requesting channels of audio input device, (not sound file)!\n");
+      rtcmix_warn("input_chans", "Requesting channels of audio input device, (not sound file)!");
       return 0.0;
    }
    return (inputFileTable[index].channels());
@@ -281,11 +281,11 @@ RTcmix::input_dur(float *p, int n_args)   /* returns duration for rtinput() file
    int index = get_last_input_index();
 
    if (index < 0) {
-      rtcmix_warn("DUR", "There are no currently opened input files!\n");
+      rtcmix_warn("DUR", "There are no currently opened input files!");
       return 0.0;
    }
    if (inputFileTable[index].isAudioDevice()) {
-      rtcmix_warn("input_dur", "Requesting duration of audio input device (not sound file)!\n");
+      rtcmix_warn("input_dur", "Requesting duration of audio input device (not sound file)!");
       return 0.0;
    }
    return (inputFileTable[index].duration());
@@ -297,7 +297,7 @@ RTcmix::input_sr(float *p, int n_args)   /* returns rate for rtinput() files */
    int index = get_last_input_index();
 
    if (index < 0) {
-      rtcmix_warn("SR", "There are no currently opened input files!\n");
+      rtcmix_warn("SR", "There are no currently opened input files!");
       return 0.0;
    }
 //   if (inputFileTable[index].is_audio_dev) {
@@ -326,7 +326,7 @@ m_peak(float p[], int n_args)
 
 	fno = (int) p[0];
 	if (!isopen[fno]) {
-		rtcmix_warn("peak", "You haven't opened file %d yet!\n", fno);
+		rtcmix_warn("peak", "You haven't opened file %d yet!", fno);
 		closesf();
 	}
 
@@ -340,7 +340,7 @@ m_peak(float p[], int n_args)
 		}
 	}
 	else
-		rtcmix_warn("peak", "File %d has no peak stats!\n", fno);
+		rtcmix_warn("peak", "File %d has no peak stats!", fno);
 
 	return peak;
 }
@@ -353,14 +353,14 @@ m_left(float p[], int n_args)
 
 	fno = (int) p[0];
 	if (!isopen[fno]) {
-		rtcmix_warn("left", "You haven't opened file %d yet!\n", fno);
+		rtcmix_warn("left", "You haven't opened file %d yet!", fno);
 		closesf();
 	}
 
 	if (sfmaxamptime(&sfm[fno]) > 0L)
 		return (sfmaxamp(&sfm[fno], 0));    /* for channel 0 */
 	else
-		rtcmix_warn("left", "File %d has no peak stats!\n", fno);
+		rtcmix_warn("left", "File %d has no peak stats!", fno);
 
 	return 0.0;
 }
@@ -373,14 +373,14 @@ m_right(float p[], int n_args)
 
 	fno = (int) p[0];
 	if (!isopen[fno]) {
-		rtcmix_warn("right", "You haven't opened file %d yet!\n", fno);
+		rtcmix_warn("right", "You haven't opened file %d yet!", fno);
 		closesf();
 	}
 
 	if (sfmaxamptime(&sfm[fno]) > 0L)
 		return (sfmaxamp(&sfm[fno], 1));    /* for channel 1 */
 	else
-		rtcmix_warn("right", "File %d has no peak stats!\n", fno);
+		rtcmix_warn("right", "File %d has no peak stats!", fno);
 
 	return 0.0;
 }
@@ -406,11 +406,11 @@ RTcmix::get_peak(float start, float end, int chan)
    index = get_last_input_index();
 
    if (index < 0) {
-      rtcmix_warn("get_peak", "There are no currently opened input files!\n");
+      rtcmix_warn("get_peak", "There are no currently opened input files!");
       return 0.0;
    }
    if (inputFileTable[index].isAudioDevice()) {
-      rtcmix_warn("get_peak", "Requesting peak of audio input device (not sound file)!\n");
+      rtcmix_warn("get_peak", "Requesting peak of audio input device (not sound file)!");
       return 0.0;
    }
 
