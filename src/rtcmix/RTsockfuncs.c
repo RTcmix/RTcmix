@@ -107,12 +107,7 @@ int RTopensocket(int socket, char *binaryname) {
 int RTopensocket_syscall(int socket, char *binaryname) {
 	char syscall[60];
 	char flags[30];
-	char socknumber[2];
-	char args[64];
 	int pid;
-	int s;
-	struct sockaddr_in sss;
-	struct hostent *hp;
 
 	sprintf(syscall, "%s ", binaryname);
 	sprintf(flags, "-i -n -c -o %i", socket);
@@ -180,7 +175,9 @@ void RTsendsock(const char *cmd, int theSock, int nargs, ...)
 			(strcmp(ssend.name, "rtoutput") == 0) ||
 			(strcmp(ssend.name,"set_option") == 0) ||
 			(strcmp(ssend.name,"bus_config") == 0) ||
-			(strcmp(ssend.name, "load")==0) ) {
+			(strcmp(ssend.name, "load")==0) ||
+            (strcmp(ssend.name, "score")==0)
+        ) {
 		for (i = 0; i < nargs; i++) {
 			strcpy(ssend.data.text[i], va_arg(ap, char*));
 		}
@@ -316,7 +313,6 @@ void parse(char *buf, char **args)
 
 int execute(char **args)
 {
-	int status;
 	int pid;
 
 	/* fork */

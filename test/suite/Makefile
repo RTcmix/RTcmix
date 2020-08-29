@@ -37,6 +37,7 @@ $(NULL)
 
 STRESSOBJS = stresstest.o
 SOCKOBJS = sockettest.o
+SOCKSENDOBJS = socksend.o
 IMBCMIXOBJS += $(PROFILE_O)
 PROGS = stresstest sockettest
 TESTLEN = 30
@@ -47,6 +48,9 @@ stresstest: $(STRESSOBJS) $(IMBCMIXOBJS)
 
 sockettest: $(SOCKOBJS)
 	$(CXX) -o $@ $(SOCKOBJS) ${CMIXDIR}/lib/RTsockfuncs.o
+
+socksend: $(SOCKSENDOBJS)
+	$(CXX) -o $@ $(SOCKSENDOBJS) ${CMIXDIR}/lib/RTsockfuncs.o
 
 embeddedtest: embeddedtest.o
 	$(CXX) -g -o $@ embeddedtest.o -L${CMIXDIR}/lib -lrtcmix_embedded

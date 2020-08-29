@@ -631,30 +631,36 @@ RTcmixMain::sockit(void *arg)
               rtcmix_warn(NULL, "bad socket command (NULL command name)");
               continue;
           }
-		  if ( (strcmp(sinfo->name, "rtinput") == 0) ||
-			   (strcmp(sinfo->name, "rtoutput") == 0) ||
-			   (strcmp(sinfo->name,"set_option") == 0) ||
-			   (strcmp(sinfo->name,"bus_config") == 0) ||
-			   (strcmp(sinfo->name, "load")==0) ) {
-			// these two commands use text data
-			// replace the text[i] with p[i] pointers
-			for (i = 0; i < sinfo->n_args; i++)
-			  strcpy(ttext[i],sinfo->data.text[i]);
-			for (i = 0; i < sinfo->n_args; i++) {
-			  sinfo->data.p[i] = STRING_TO_DOUBLE(ttext[i]);
-			}
-		  }
-#ifdef DBUG
-          rtcmix_debug(NULL, "RTCmixMain::sockit: RECIEVED command during audio_configure loop");
-          rtcmix_debug(NULL, "sinfo->name = %s", sinfo->name);
-          rtcmix_debug(NULL, "sinfo->n_args = %d", (int)sinfo->n_args);
-          for (i=0;i<sinfo->n_args;i++) {
-              rtcmix_debug(NULL, "sinfo->data.p[%d] = %f", i, sinfo->data.p[i]);
+          if (strcmp(sinfo->name, "score")==0) {
+              for (int n = 0; n < sinfo->n_args; ++n) {
+                  parse_score_buffer(sinfo->data.text[n], (int)strlen(sinfo->data.text[0]));
+              }
           }
+          else {
+              if ( (strcmp(sinfo->name, "rtinput") == 0) ||
+                   (strcmp(sinfo->name, "rtoutput") == 0) ||
+                   (strcmp(sinfo->name,"set_option") == 0) ||
+                   (strcmp(sinfo->name,"bus_config") == 0) ||
+                   (strcmp(sinfo->name, "load")==0) ) {
+                // these two commands use text data
+                // replace the text[i] with p[i] pointers
+                for (i = 0; i < sinfo->n_args; i++)
+                  strcpy(ttext[i],sinfo->data.text[i]);
+                for (i = 0; i < sinfo->n_args; i++) {
+                  sinfo->data.p[i] = STRING_TO_DOUBLE(ttext[i]);
+                }
+              }
+#ifdef DBUG
+              rtcmix_debug(NULL, "RTCmixMain::sockit: RECIEVED command during audio_configure loop");
+              rtcmix_debug(NULL, "sinfo->name = %s", sinfo->name);
+              rtcmix_debug(NULL, "sinfo->n_args = %d", (int)sinfo->n_args);
+              for (i=0;i<sinfo->n_args;i++) {
+                  rtcmix_debug(NULL, "sinfo->data.p[%d] = %f", i, sinfo->data.p[i]);
+              }
 #endif
-		  (void) ::dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
-		}
-		
+              (void) ::dispatch(sinfo->name, sinfo->data.p, sinfo->n_args, NULL);
+            }
+        }
 		if (audio_configured && interactive()) {
 			if (Option::print())
                 RTPrintf("RTcmixMain::sockit(): audio configured.\n");
@@ -689,7 +695,14 @@ RTcmixMain::sockit(void *arg)
 			}
 			RTPrintf("Resuming normal mode\n");
 			run_status = RT_GOOD;	// Notify inTraverse()
+            continue;
 		}
+        else if (strcmp(sinfo->name, "score")==0) {
+            for (int n = 0; n < sinfo->n_args; ++n) {
+                parse_score_buffer(sinfo->data.text[n], (int)strlen(sinfo->data.text[0]));
+            }
+            continue;
+        }
 		else {
             if (strcmp(sinfo->name, "rtinput") == 0 ||
                 strcmp(sinfo->name, "rtoutput") == 0 ||
