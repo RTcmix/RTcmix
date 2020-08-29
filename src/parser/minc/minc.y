@@ -49,6 +49,7 @@ static int		level = 0;		/* keeps track whether we are in a sub-block */
 static int		flevel = 0;		/* > 0 if we are in a function decl block */
 static int      slevel = 0;     /* > 0 if we are in a struct decl block */
 static int      xblock = 0;		/* 1 if we are entering a block preceeded by if(), else(), while(), or for() */
+static bool     preserve_symbols = false;   /* what to do with symbol table at end of parse */
 static void 	cleanup();
 static void 	incrLevel();
 static void		decrLevel();
@@ -600,13 +601,19 @@ static void cleanup()
     slevel = 0;
 	level = 0;
 	include_stack_index = 0;
+    if (!preserve_symbols) {
+        free_symbols();
+    }
 #ifndef EMBEDDED
-	/* BGG mm -- we need to keep the symbols for The Future */
-	free_symbols();
 	/* BGG mm -- I think this buffer gets reused, so we don't delete it */
 	yy_delete_buffer(YY_CURRENT_BUFFER);
 	YY_CURRENT_BUFFER_LVALUE = NULL;
 #endif
+}
+
+void preserveSymbols(bool preserve)
+{
+    preserve_symbols = preserve;
 }
 
 void reset_parser()

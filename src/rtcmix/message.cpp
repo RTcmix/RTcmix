@@ -195,12 +195,6 @@ rterror(const char *inst_name, const char *format, ...)
         throw(SYSTEM_ERROR);
     }
 #endif
-// added for exit after Minc parse errors with the option set -- BGG
-   if (get_bool_option(kOptionExitOnError)) {
-      if (!rtsetparams_was_called())
-         closesf_noexit();
-      exit(1);
-   }
 }
 
 /* ------------------------------------------------------------------ die --- */
@@ -237,15 +231,7 @@ die(const char *inst_name, const char *format, ...)
 #endif
 
 	}
-
-   if (get_bool_option(kOptionExitOnError)) {
-      if (!rtsetparams_was_called())
-         closesf_noexit();
-      exit(1);
-      return 0;	/*NOTREACHED*/
-   }
-   else
-      return DONT_SCHEDULE;
+    return DONT_SCHEDULE;
 }
 
 RTCmixStatus rtOptionalThrow(RTCmixStatus status)

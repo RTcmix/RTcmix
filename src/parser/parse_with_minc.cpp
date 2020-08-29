@@ -24,13 +24,27 @@ extern "C" {
 static int
 run_parser(const char *caller)
 {
-    configure_minc_error_handler(get_bool_option(kOptionExitOnError));
     int status;
     try {
         status = yyparse();
     }
     catch (MincError err) {
-        rtcmix_warn(caller, "caught parse exception %d", (int)err);
+        const char *errType = NULL;
+        switch (err) {
+            case MincInstrumentError:
+                errType = "Instrument error";
+                break;
+            case MincParserError:
+                errType = "Parser error";
+                break;
+            case MincSystemError:
+                errType = "System error";
+                break;
+            case MincInternalError:
+                errType = "Internal error";
+                break;
+        }
+        rtcmix_warn(caller, "caught parse exception: %s", errType);
         status = err;
     }
     catch (int otherError) {
@@ -66,8 +80,13 @@ run_parser(const char *caller)
         rtcmix_warn(caller, "Caught exception: %s", errname);
         status = otherError;
     }
-    // If the parser returns a bad status, it must be torn down and recreated
     if (status != 0) {
+        // added for exit after Minc parse errors with the option set -- BGG
+        if (get_bool_option(kOptionExitOnError)) {
+            rtcmix_warn(caller, "Exit-on-error enabled - exiting");
+            exit(1);
+        }
+        // If the parser returns a bad status, it must be torn down and recreated
         destroy_parser();
     }
     return status;
@@ -77,6 +96,7 @@ int parse_score_buffer(const char *buffer, int buflen)
 {
     YY_BUFFER_STATE yybuf = yy_scan_bytes(buffer, buflen);
     reset_parser();
+    preserveSymbols(true);
     return run_parser("parse_score_buffer");
 }
 
@@ -106,6 +126,7 @@ parse_score(int argc, char *argv[], char **env)
 	}
 	aargc = aarg;	// doesn't count args we pulled out above
 	
+    preserveSymbols(false);
 	status = run_parser("parse_score");
 	
 	return status;
@@ -118,6 +139,7 @@ int RTcmix_parseScore(char *theBuf, int buflen)
 {
     YY_BUFFER_STATE buffer = yy_scan_bytes(theBuf, buflen);
     reset_parser();
+    preserveSymbols(true);
     return run_parser("RTcmix_parseScore");
 }
     
