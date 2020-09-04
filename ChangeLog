@@ -1,6 +1,13 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2020-09-04  Douglas Scott <netdscott-at-netscape.net>
+	* Reworked parser to support both buffer-based and stream-based input for any build type.
+	* Exception throwing now used for standalone parser as well as embedded.
+	* Moved logic for exit-on-error to single location in newly-worked parser code.
+	* Repaired "sockit" communication system.  
+	* Added new "score" command to sockit to allow testing of networked score tranmission (in preparation for OSC). 
+
 2020-08-26  Douglas Scott <netdscott-at-netscape.net>
 	* Added new MinC 'map' type to parser, which accepts any MinC type as either a key or a value.
 
