@@ -33,7 +33,7 @@ RTcmix::rtwritesamps(AudioDevice *fileDevice)
 	/* This catches our new case where rtoutput() failed but was ignored */
 	if (rtfileit < 0) {
 		die("rtwritesamps", "No output file open (rtoutput failed).");
-		RTExit(1);
+		RTExit(FILE_ERROR);
 		return -1;	/*NOTREACHED*/	/* sometimes, that is */
 	}
    
@@ -41,7 +41,7 @@ RTcmix::rtwritesamps(AudioDevice *fileDevice)
    
 	if (framesWritten != nframes) {
 		die("rtwritesamps", "error: %s", fileDevice->getLastError());
-		RTExit(1);
+		RTExit(FILE_ERROR);
 		return -1;	/*NOTREACHED*/	/* sometimes, that is */
 	}
 

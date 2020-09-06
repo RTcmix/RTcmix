@@ -238,9 +238,11 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
                                                       (arglist, nargs);
     }
     catch (int err) {
+        rtcmix_debug("checkfunc", "Caught exception %d", (int)err);
         status = err;
     }
     catch (RTCmixStatus rtstatus) {
+        rtcmix_debug("checkfunc", "Caught exception RTCmixStatus %d", (int)rtstatus);
         status = (int)rtstatus;
     }
     break;
@@ -270,10 +272,12 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
           *retval = retString;
 	  }
       catch (int err) {
+          rtcmix_debug("checkfunc", "Caught exception %d", (int)err);
           *retval = (char *) NULL;
           status = err;
       }
       catch (RTCmixStatus rtstatus) {
+          rtcmix_debug("checkfunc", "Caught exception RTCmixStatus %d", (int)rtstatus);
           *retval = (char *) NULL;
           status = (int)rtstatus;
       }

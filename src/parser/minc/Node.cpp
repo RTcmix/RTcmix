@@ -905,14 +905,12 @@ Node *	NodeCall::doExct()
             case NO_ERROR:
                 break;
             case FUNCTION_NOT_FOUND:
-#if defined(EMBEDDED) && defined(ERROR_FAIL_ON_UNDEFINED_FUNCTION)
+#if defined(ERROR_FAIL_ON_UNDEFINED_FUNCTION)
                 throw result;
 #endif
                 break;
             default:
-#if defined(EMBEDDED)
                 throw result;
-#endif
                 break;
 		}
 	}
