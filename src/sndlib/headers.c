@@ -1447,16 +1447,21 @@ static int wave_to_sndlib_format(int osf, int bps, int little)
   switch (osf)
     {
     case 1:
-      switch (bps)
-	{
-	case 8: return(MUS_UBYTE); break;
-	case 16: if (little) return(MUS_LSHORT); else return(MUS_BSHORT); break;
-	case 32: if (little) return(MUS_LINT); else return(MUS_BINT); break;
-	case 24: if (little) return(MUS_L24INT); else return(MUS_B24INT); break;
-	default: return(MUS_UBYTE); break;
+      switch (bps) {
+        case 8: return(MUS_UBYTE); break;
+        case 16: if (little) return(MUS_LSHORT); else return(MUS_BSHORT); break;
+        case 32: if (little) return(MUS_LINT); else return(MUS_BINT); break;
+        case 24: if (little) return(MUS_L24INT); else return(MUS_B24INT); break;
+        default: return(MUS_UBYTE); break;
 	}
       break;
-    case 3: if (little) return(MUS_LFLOAT); else return(MUS_BFLOAT); break;
+    case 3:
+      switch (bps) {
+          case 32: if (little) return(MUS_LFLOAT); else return(MUS_BFLOAT); break;
+          case 64: if (little) return(MUS_LDOUBLE); else return(MUS_BDOUBLE); break;
+          default: return(MUS_UNSUPPORTED); break;
+      }
+      break;
     case 6: if (bps == 8) return(MUS_ALAW); break;
     case 7: if (bps == 8) return(MUS_MULAW); break;
       /* IBM mulaw follows G711 specs like other versions (this info direct from IBM) */
