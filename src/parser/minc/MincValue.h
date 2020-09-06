@@ -78,6 +78,7 @@ public:
     MincValue(MincMap *m);
     MincValue(MincStruct *str);
     MincValue(MincDataType type);
+    MincValue(const MincValue &rhs);
     ~MincValue();
     const MincValue& operator = (const MincValue &rhs);
     const MincValue& operator = (MincFloat f);

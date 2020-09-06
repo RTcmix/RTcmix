@@ -131,7 +131,7 @@ Symbol * MincStruct::lookupMember(const char *name)
 MincValue::MincValue(MincHandle h) : type(MincHandleType)
 {
 #ifdef DEBUG_MEMORY
-    //    MPRINT("created MincValue %p (for MincHandle)\n", this);
+    MPRINT("created MincValue %p (for MincHandle)\n", this);
 #endif
     _u.handle = h; ref_handle(h);
 }
@@ -139,7 +139,7 @@ MincValue::MincValue(MincHandle h) : type(MincHandleType)
 MincValue::MincValue(MincList *l) : type(MincListType)
 {
 #ifdef DEBUG_MEMORY
-    //    MPRINT("created MincValue %p (for MincList *)\n", this);
+    MPRINT("created MincValue %p (for MincList *)\n", this);
 #endif
     _u.list = l; RefCounted::ref(l);
 }
@@ -147,7 +147,7 @@ MincValue::MincValue(MincList *l) : type(MincListType)
 MincValue::MincValue(MincMap *m) : type(MincMapType)
 {
 #ifdef DEBUG_MEMORY
-    //    MPRINT("created MincValue %p (for MincMap *)\n", this);
+    MPRINT("created MincValue %p (for MincMap *)\n", this);
 #endif
     _u.map = m; RefCounted::ref(m);
 }
@@ -155,7 +155,7 @@ MincValue::MincValue(MincMap *m) : type(MincMapType)
 MincValue::MincValue(MincStruct *str) : type(MincStructType)
 {
 #ifdef DEBUG_MEMORY
-    //    MPRINT("created MincValue %p (for MincStruct *)\n", this);
+    MPRINT("created MincValue %p (for MincStruct *)\n", this);
 #endif
     _u.mstruct = str; RefCounted::ref(str);
 }
@@ -163,15 +163,23 @@ MincValue::MincValue(MincStruct *str) : type(MincStructType)
 MincValue::MincValue(MincDataType inType) : type(inType)
 {
 #ifdef DEBUG_MEMORY
-    //    MPRINT("created MincValue %p (for MincDataType)\n", this);
+    MPRINT("created MincValue %p (for MincDataType)\n", this);
 #endif
     _u.list = NULL;        // to zero our contents
+}
+
+MincValue::MincValue(const MincValue &rhs)
+{
+#ifdef DEBUG_MEMORY
+    MPRINT("created MincValue %p (for copy ctor with rhs %p)\n", this, &rhs);
+#endif
+    *this = rhs;
 }
 
 MincValue::~MincValue()
 {
 #ifdef DEBUG_MEMORY
-    //    MPRINT("deleting MincValue %p\n", this);
+    MPRINT("deleting MincValue %p\n", this);
 #endif
     switch (type) {
         case MincHandleType:
@@ -190,7 +198,7 @@ MincValue::~MincValue()
             break;
     }
 #ifdef DEBUG_MEMORY
-    //    MPRINT("\tdone\n");
+    MPRINT("\tdone deleting\n");
 #endif
 }
 
@@ -304,6 +312,9 @@ void MincValue::print()
 const MincValue& MincValue::operator = (const MincValue &rhs)
 {
     ENTER();
+#ifdef DEBUG_MEMORY
+    MPRINT("MincValue %p assigning from rhs %p)\n", this, &rhs);
+#endif
     if (rhs.type == MincHandleType)
         ref_handle(rhs._u.handle);
     else if (rhs.type == MincListType)
