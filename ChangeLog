@@ -1,6 +1,9 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2020-09-06  Douglas Scott <netdscott-at-netscape.net>
+	* Bumping to 4.5.0.
+
 2020-09-04  Douglas Scott <netdscott-at-netscape.net>
 	* Reworked parser to support both buffer-based and stream-based input for any build type.
 	* Exception throwing now used for standalone parser as well as embedded.
