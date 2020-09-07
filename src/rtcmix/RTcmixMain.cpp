@@ -23,6 +23,10 @@
 #include <limits.h>
 #include "heap.h"
 
+#include <dlfcn.h>
+#include "oscpack/ip/UdpSocket.h"
+#include "RTOSCListener.h"
+
 #undef DBUG
 
 using namespace std;
@@ -49,7 +53,7 @@ usage()
       "        options:\n"
       "           -i       run in interactive mode\n"
       "           -n       no init script (interactive mode only)\n"
-      "           -o NUM   socket offset (interactive mode only)\n"
+      "           -o       run with background OSC server\n"
 #ifdef LINUX
       "           -p NUM   set process priority to NUM (as root only)\n"
 #endif
@@ -115,6 +119,9 @@ int				RTcmixMain::signal_handler_called = 0;
 int				RTcmixMain::noParse         = 0;
 int				RTcmixMain::parseOnly       = 0;
 int				RTcmixMain::socknew			= 0;
+
+UdpListeningReceiveSocket*      RTcmixMain::udpRcvSocket = NULL;
+
 #ifdef NETAUDIO
 int				RTcmixMain::netplay 		= 0;	// for remote sound network playing
 #endif
@@ -251,6 +258,12 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                audio_config = 0;
                Option::exitOnError(false);  /* we cannot simply quit when in interactive mode */
                break;
+            case 'o':
+                setInteractive(true);
+                setOSC(true);
+                audio_config = 0;
+                Option::exitOnError(false);
+                break;
             case 'n':               /* for use in rtInteractive mode only */
                noParse = 1;
                break;
@@ -314,7 +327,6 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                netplay = 1;
                break;
 #endif
-            case 'o':               /* NOTE NOTE NOTE: will soon replace -s */
             case 's':               /* set up a socket offset */
                if (++i >= argc) {
                   fprintf(stderr, "You didn't give a socket offset.\n");
@@ -376,6 +388,7 @@ void
 RTcmixMain::run()
 {
    pthread_t   sockitThread;
+   pthread_t   OSC_ServerThread;
    int retcode;
    /* In rtInteractive mode, we set up RTcmix to listen for score data
       over a socket, and then parse this, schedule instruments, and play
@@ -388,54 +401,92 @@ RTcmixMain::run()
    if (interactive()) {
 		rtcmix_advise(NULL, "rtInteractive mode set\n");
 
-#ifndef EMBEDDED
-      /* Read an initialization score. */
-      if (!noParse) {
-         int status;
-         rtcmix_debug(NULL, "Parsing once ...");
-         status = ::parse_score(xargc, xargv, xenv);
-         if (status != 0)
-            exit(1);
-      }
-#endif // EMBEDDED
+       if(OSC()){
+           rtcmix_debug(NULL, "creating OSC_Server() thread");
+           retcode = pthread_create(&OSC_ServerThread, NULL, &RTcmixMain::OSC_Server, (void *) this);
+           if (retcode != 0) {
+               rterror(NULL, "OSC_Server() thread create failed\n");
+           }
 
-      /* Create parsing thread. */
-      rtcmix_debug(NULL, "creating sockit() thread");
-      retcode = pthread_create(&sockitThread, NULL, &RTcmixMain::sockit, (void *) this);
-      if (retcode != 0) {
-         rterror(NULL, "sockit() thread create failed\n");
-      }
+           /* Create scheduling thread. */
+           rtcmix_debug(NULL, "calling runMainLoop()");
+           retcode = runMainLoop();
+           if (retcode != 0) {
+              rterror(NULL, "runMainLoop() failed\n");
+           }
+           else {
+               rtcmix_debug(NULL, "runMainLoop() returned");
+           }
+    
+           /* Join parsing thread. */
+           rtcmix_debug(NULL, "joining sockit() thread");
+           retcode = pthread_join(OSC_ServerThread, NULL);
+           if (retcode != 0) {
+              rterror(NULL, "OSC_Server() thread join failed\n");
+           }
+    
+           /* Wait for audio thread. */
+           rtcmix_debug(NULL, "calling waitForMainLoop()");
+           retcode = waitForMainLoop();
+           if (retcode != 0) {
+              rterror(NULL, "waitForMailLoop() failed\n");
+           }
+    
+     #ifndef EMBEDDED
+          if (!noParse)
+              destroy_parser();
+     #endif
 
-      /* Create scheduling thread. */
-      rtcmix_debug(NULL, "calling runMainLoop()");
-      retcode = runMainLoop();
-      if (retcode != 0) {
-         rterror(NULL, "runMainLoop() failed\n");
-      }
-      else {
-          rtcmix_debug(NULL, "runMainLoop() returned");
-      }
+       } else {
 
-      /* Join parsing thread. */
-      rtcmix_debug(NULL, "joining sockit() thread");
-      retcode = pthread_join(sockitThread, NULL);
-      if (retcode != 0) {
-         rterror(NULL, "sockit() thread join failed\n");
-      }
-
-      /* Wait for audio thread. */
-      rtcmix_debug(NULL, "calling waitForMainLoop()");
-	  retcode = waitForMainLoop();
-      if (retcode != 0) {
-         rterror(NULL, "waitForMailLoop() failed\n");
-      }
-
-#ifndef EMBEDDED
-     if (!noParse)
-         destroy_parser();
-#endif
-   }
-   else {
+    #ifndef EMBEDDED
+          /* Read an initialization score. */
+          if (!noParse) {
+             int status;
+             rtcmix_debug(NULL, "Parsing once ...");
+             status = ::parse_score(xargc, xargv, xenv);
+             if (status != 0)
+                exit(1);
+          }
+    #endif // EMBEDDED
+    
+          /* Create parsing thread. */
+          rtcmix_debug(NULL, "creating sockit() thread");
+          retcode = pthread_create(&sockitThread, NULL, &RTcmixMain::sockit, (void *) this);
+          if (retcode != 0) {
+             rterror(NULL, "sockit() thread create failed\n");
+          }
+    
+          /* Create scheduling thread. */
+          rtcmix_debug(NULL, "calling runMainLoop()");
+          retcode = runMainLoop();
+          if (retcode != 0) {
+             rterror(NULL, "runMainLoop() failed\n");
+          }
+          else {
+              rtcmix_debug(NULL, "runMainLoop() returned");
+          }
+    
+          /* Join parsing thread. */
+          rtcmix_debug(NULL, "joining sockit() thread");
+          retcode = pthread_join(sockitThread, NULL);
+          if (retcode != 0) {
+             rterror(NULL, "sockit() thread join failed\n");
+          }
+    
+          /* Wait for audio thread. */
+          rtcmix_debug(NULL, "calling waitForMainLoop()");
+    	  retcode = waitForMainLoop();
+          if (retcode != 0) {
+             rterror(NULL, "waitForMailLoop() failed\n");
+          }
+    
+    #ifndef EMBEDDED
+         if (!noParse)
+             destroy_parser();
+    #endif
+     }
+  } else {
 #ifdef EMBEDDED
 		int status = 0;
 #else
@@ -482,6 +533,11 @@ RTcmixMain::interrupt_handler(int signo)
 	if (!interrupt_handler_called) {
 		interrupt_handler_called = 1;
 	   fprintf(stderr, "\n<<< Caught interrupt signal >>>\n");
+
+           if (udpRcvSocket != NULL){
+                udpRcvSocket->AsynchronousBreak();
+                delete udpRcvSocket;
+           }
 
 	   if (audioDevice) {
            fprintf(stderr, "flushing audio...\n");
@@ -534,6 +590,17 @@ RTcmixMain::set_sig_handlers()
    }
 #endif
 }
+
+
+void * RTcmixMain::OSC_Server(void *arg){
+    RTOSCListener listener;
+    udpRcvSocket = new UdpListeningReceiveSocket(
+            IpEndpointName( IpEndpointName::ANY_ADDRESS, 7777), &listener );
+    udpRcvSocket->Run();
+
+    return NULL; //suppress warning
+}
+
 
 void *
 RTcmixMain::sockit(void *arg)

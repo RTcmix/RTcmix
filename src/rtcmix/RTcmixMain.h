@@ -3,6 +3,7 @@
 
 #include <RTcmix.h>
 #include "DynamicLib.h"
+#include "oscpack/ip/UdpSocket.h"
 
 class RTcmixMain : public RTcmix {
 public:
@@ -27,7 +28,8 @@ protected:
 	static void		set_sig_handlers();
 
 	static void *	sockit(void *);
-	
+	static void *   OSC_Server(void *);
+
 private:
 	char *			makeDSOPath(const char *progPath);
 	static int 		xargc;	// local copy of arg count
@@ -42,6 +44,7 @@ private:
 	#endif
 	/* for more than 1 socket, set by -s flag to CMIX as offset from MYPORT */
 	static int		socknew;
+        static UdpListeningReceiveSocket *udpRcvSocket;
 };
 
 #endif	// _RTCMIXMAIN_H_

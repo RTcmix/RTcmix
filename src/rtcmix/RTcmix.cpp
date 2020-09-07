@@ -72,6 +72,8 @@ int				RTcmix::rtInteractive = 0;
 int				RTcmix::rtInteractive = 1; // keep the heap going for this object
 #endif
 
+int                             RTcmix::rtOSC = 0;
+
 int				RTcmix::rtsetparams_called = 0; // will call at object instantiation, though
 int				RTcmix::audioLoopStarted = 0;
 int				RTcmix::audio_config 	= 1;

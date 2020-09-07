@@ -40,6 +40,7 @@ CONFDIR = $(SRCDIR)/conf
 PARSERDIR = $(SRCDIR)/parser
 MINCDIR = $(PARSERDIR)/minc
 PERLDIR = $(PARSERDIR)/perl
+OSCDIR = $(SRCDIR)/osc
 
 # For temporary use in linking MIX instrument in
 MIXDIR = insts/base/MIX
@@ -272,6 +273,10 @@ endif
 
 INCLUDES = -I. -I$(CMIXDIR)/include $(EXTRA_INCLUDES)
 
+#Michel here. This might be the wrong way to do it. Please let
+#me know if so. Sorry in advance.
+INCLUDES += -I$(OSCDIR)/RTOSCListener.o
+
 CFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_FLAGS)
 CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_FLAGS)
 
@@ -330,6 +335,10 @@ endif
 
 LDFLAGS = $(ARCH_RTLDFLAGS) $(RTLDFLAGS)
 SYSLIBS = $(ARCH_RTLDFLAGS) -L$(LIBDIR) -lgen $(SYS_LDFLAGS)
+
+#Michel here. This might be the wrong way to do it. Please let
+#me know if so. Sorry in advance.
+LDFLAGS += -L$(OSCDIR) -loscpack
 
 # For benefit of inst makefiles that live outside CMIXDIR hierarchy
 UGENS_H = $(CMIXDIR)/include/ugens.h

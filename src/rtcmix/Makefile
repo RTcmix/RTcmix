@@ -26,6 +26,8 @@ CONFDIR = ../conf
 CXXFLAGS += $(SOUND_DRIVER)
 INCLUDES += -I$(INCLUDEDIR) -I../include -I$(AUDIODIR) -I$(SNDLIBDIR) -I./heap -I../conf
 
+INCLUDES += -I../osc
+INCLUDES += ../osc/RTOSCListener.o
 # Source file listings
 
 COMMON_CSRCS = \
