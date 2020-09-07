@@ -273,10 +273,6 @@ endif
 
 INCLUDES = -I. -I$(CMIXDIR)/include $(EXTRA_INCLUDES)
 
-#Michel here. This might be the wrong way to do it. Please let
-#me know if so. Sorry in advance.
-INCLUDES += -I$(OSCDIR)/RTOSCListener.o
-
 CFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_FLAGS)
 CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_FLAGS)
 
