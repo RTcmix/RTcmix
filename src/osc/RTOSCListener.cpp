@@ -25,8 +25,8 @@ void RTOSCListener::ProcessMessage(const osc::ReceivedMessage& m,
         osc::ReceivedMessageArgumentStream args = m.ArgumentStream();
         const char *rtScript;
         args >> rtScript >> osc::EndMessage;
-        
 
+        std::cout << "<<< OSC Server Recieved Script >>>" << std::endl;
         std::cout << rtScript << std::endl;
 
         status = parse_score_buffer(rtScript, std::strlen(rtScript));
