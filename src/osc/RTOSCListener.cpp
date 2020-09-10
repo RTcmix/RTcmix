@@ -10,9 +10,12 @@
 #include "oscpack/ip/UdpSocket.h"
 #include "rtcmix_parse.h"
 
-int parse_score_buffer(const char *buffer, int buflen);
+//int parse_score_buffer(const char *buffer, int buflen);
 
 
+RTOSCListener::RTOSCListener(int (*parseCallback)(const char*, int)){
+    this->parseCallback = parseCallback;
+}
 
 
 void RTOSCListener::ProcessMessage(const osc::ReceivedMessage& m,
@@ -29,8 +32,7 @@ void RTOSCListener::ProcessMessage(const osc::ReceivedMessage& m,
         std::cout << "<<< OSC Server Recieved Script >>>" << std::endl;
         std::cout << rtScript << std::endl;
 
-        status = parse_score_buffer(rtScript, std::strlen(rtScript));
-
+        status = (*parseCallback)(rtScript, std::strlen(rtScript));
     }
 }
 

@@ -7,10 +7,15 @@
 
 class RTOSCListener : public osc::OscPacketListener {
 
+    public:
+        RTOSCListener(int (*parseCallback)(const char*, int));
+
     protected:
 
-    virtual void ProcessMessage( const osc::ReceivedMessage& m,
-                                     const IpEndpointName& remoteEndpoint );
+        int (*parseCallback)(const char*, int);  
+
+        virtual void ProcessMessage( const osc::ReceivedMessage& m,
+                                 const IpEndpointName& remoteEndpoint);
 
 
 };

@@ -260,7 +260,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                break;
             case 'o':
                 setInteractive(true);
-                setOSC(true);
+                setUseOSC(true);
                 audio_config = 0;
                 Option::exitOnError(false);
                 break;
@@ -401,7 +401,7 @@ RTcmixMain::run()
    if (interactive()) {
 		rtcmix_advise(NULL, "rtInteractive mode set\n");
 
-       if(OSC()){
+       if(usingOSC()){
            rtcmix_debug(NULL, "creating OSC_Server() thread");
            retcode = pthread_create(&OSC_ServerThread, NULL, &RTcmixMain::OSC_Server, (void *) this);
            if (retcode != 0) {
@@ -593,7 +593,10 @@ RTcmixMain::set_sig_handlers()
 
 
 void * RTcmixMain::OSC_Server(void *arg){
-    RTOSCListener listener;
+    
+    int (*parseCallback)(const char *, int) = &parse_score_buffer;
+
+    RTOSCListener listener(parseCallback);
     udpRcvSocket = new UdpListeningReceiveSocket(
             IpEndpointName( IpEndpointName::ANY_ADDRESS, 7777), &listener );
     udpRcvSocket->Run();

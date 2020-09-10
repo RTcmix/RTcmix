@@ -78,8 +78,8 @@ public:
 
 	static bool interactive() { return rtInteractive; }
     static void setInteractive(bool interactive) { rtInteractive = interactive; }
-    static bool OSC() { return rtOSC; }
-    static void setOSC(bool OSC) { rtOSC = OSC; }
+    static bool usingOSC() { return rtUsingOSC; }
+    static void setUseOSC(bool useOSC) { rtUsingOSC = useOSC; }
     static int bufsamps() { return sBufferFrameCount; }         // Replaces "RTBUFSAMPS"
     static float sr() { return sSamplingRate; }                 // Replaces "SR"
 	static int chans() { return NCHANS; }
@@ -202,7 +202,7 @@ protected:
 	static float 	sSamplingRate;
 	
 	static int		rtInteractive;
-	static int              rtOSC;
+	static int              rtUsingOSC;
         static int		rtsetparams_called;
 	static int		audioLoopStarted;
 	static int		audio_config;
