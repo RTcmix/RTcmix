@@ -280,12 +280,7 @@ CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_F
 
 RTLIB = lib$(SHLIB).$(SHLIB_SUFFIX)
 LIBRTCMIX = $(LIBDIR)/$(RTLIB)
-RTLDFLAGS = -L$(LIBDIR) -l$(SHLIB) -lgen
-
-#Michel here. This might be the wrong way to do it. Please let
-#me know if so. Sorry in advance.
-RTLDFLAGS += -L$(OSCDIR) -loscpack
-
+RTLDFLAGS = -L$(LIBDIR) -l$(SHLIB) -lgen -L$(OSCDIR) -loscpack
 
 # Platform-specific library flags Key:
 #
