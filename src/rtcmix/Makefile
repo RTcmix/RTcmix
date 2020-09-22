@@ -221,7 +221,7 @@ PROGS = MIX
 
 # Object lists are different for standalone vs. embedded
 ifeq ($(BUILDTYPE), STANDALONE)
-	TARGETS = $(RTLIB) $(MAIN_OBJS) RTsockfuncs.o ../osc/RTOSCListener.o $(PROGS)
+	TARGETS = $(RTLIB) $(MAIN_OBJS) RTsockfuncs.o  $(PROGS)
 else
 	COMMON_OBJS += $(M_O) $(MAIN_OBJS)
 	TARGETS = $(COMMON_OBJS) $(MAIN_OBJS) $(RTLIB)
