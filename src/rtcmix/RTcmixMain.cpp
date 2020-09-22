@@ -387,8 +387,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
 void
 RTcmixMain::run()
 {
-   pthread_t   sockitThread;
-   pthread_t   OSC_ServerThread;
+   pthread_t   serverThread;
    int retcode;
    /* In rtInteractive mode, we set up RTcmix to listen for score data
       over a socket, and then parse this, schedule instruments, and play
@@ -403,7 +402,7 @@ RTcmixMain::run()
 
        if(usingOSC()){
            rtcmix_debug(NULL, "creating OSC_Server() thread");
-           retcode = pthread_create(&OSC_ServerThread, NULL, &RTcmixMain::OSC_Server, (void *) this);
+           retcode = pthread_create(&serverThread, NULL, &RTcmixMain::OSC_Server, (void *) this);
            if (retcode != 0) {
                rterror(NULL, "OSC_Server() thread create failed\n");
            }
@@ -420,7 +419,7 @@ RTcmixMain::run()
     
            /* Join parsing thread. */
            rtcmix_debug(NULL, "joining sockit() thread");
-           retcode = pthread_join(OSC_ServerThread, NULL);
+           retcode = pthread_join(serverThread, NULL);
            if (retcode != 0) {
               rterror(NULL, "OSC_Server() thread join failed\n");
            }
@@ -452,7 +451,7 @@ RTcmixMain::run()
     
           /* Create parsing thread. */
           rtcmix_debug(NULL, "creating sockit() thread");
-          retcode = pthread_create(&sockitThread, NULL, &RTcmixMain::sockit, (void *) this);
+          retcode = pthread_create(&serverThread, NULL, &RTcmixMain::sockit, (void *) this);
           if (retcode != 0) {
              rterror(NULL, "sockit() thread create failed\n");
           }
@@ -469,7 +468,7 @@ RTcmixMain::run()
     
           /* Join parsing thread. */
           rtcmix_debug(NULL, "joining sockit() thread");
-          retcode = pthread_join(sockitThread, NULL);
+          retcode = pthread_join(serverThread, NULL);
           if (retcode != 0) {
              rterror(NULL, "sockit() thread join failed\n");
           }

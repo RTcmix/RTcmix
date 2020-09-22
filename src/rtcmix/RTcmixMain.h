@@ -3,8 +3,8 @@
 
 #include <RTcmix.h>
 #include "DynamicLib.h"
-#include "oscpack/ip/UdpSocket.h"
 
+class UdpListeningReceiveSocket;
 class RTcmixMain : public RTcmix {
 public:
 #ifdef EMBEDDED 
