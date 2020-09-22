@@ -5,9 +5,6 @@
 #include "oscpack/osc/OscReceivedElements.h"
 #include "oscpack/osc/OscPacketListener.h"
 #include "oscpack/ip/UdpSocket.h"
-//#include "rtcmix_parse.h"
-
-//int parse_score_buffer(const char *buffer, int buflen);
 
 
 RTOSCListener::RTOSCListener(int (*parseCallback)(const char*, int)){
