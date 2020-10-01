@@ -25,7 +25,7 @@ CONFDIR = ../conf
 
 CXXFLAGS += $(SOUND_DRIVER)
 INCLUDES += -I$(INCLUDEDIR) -I../include -I$(AUDIODIR) -I$(SNDLIBDIR) -I./heap -I../conf
-
+INCLUDES += -I../osc
 # Source file listings
 
 COMMON_CSRCS = \
@@ -221,7 +221,7 @@ PROGS = MIX
 
 # Object lists are different for standalone vs. embedded
 ifeq ($(BUILDTYPE), STANDALONE)
-	TARGETS = $(RTLIB) $(MAIN_OBJS) RTsockfuncs.o $(PROGS)
+	TARGETS = $(RTLIB) $(MAIN_OBJS) RTsockfuncs.o  $(PROGS)
 else
 	COMMON_OBJS += $(M_O) $(MAIN_OBJS)
 	TARGETS = $(COMMON_OBJS) $(MAIN_OBJS) $(RTLIB)
@@ -370,6 +370,7 @@ ifeq ($(BUILDTYPE), STANDALONE)
 		$(INSTALL) main.o $(LIBDIR)
 		$(INSTALL) RTcmixMain.o $(LIBDIR)
 		$(INSTALL) RTsockfuncs.o $(LIBDIR)
+		$(INSTALL) ../osc/RTOSCListener.o $(LIBDIR)
   ifeq ($(PERL_SUPPORT), TRUE)
 		$(INSTALL) pRTcmix.o $(LIBDIR)
   endif
@@ -390,8 +391,8 @@ ifeq ($(BUILDTYPE), STANDALONE)
 $(RTLIB): depend $(COMMON_OBJS) $(LIBS)
 	$(LOAD) $@ $(COMMON_OBJS) $(INST_OBJS) $(LIB_OBJS) $(LIBS) $(SYSLIBS)
 	$(RANLIB) $@
-MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
-	$(CXX) $(CXXFLAGS) -o MIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) $(M_O) -L. $(LDFLAGS) $(SYS_LDFLAGS)
+MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O) ../osc/RTOSCListener.o
+	$(CXX) $(CXXFLAGS) -o MIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) $(M_O) ../osc/RTOSCListener.o -L. $(LDFLAGS) $(SYS_LDFLAGS)
 
 install:	all
 	@if test ! -d $(DESTDIR); then mkdir -p $(DESTDIR); fi;
@@ -456,6 +457,7 @@ uninstall: standalone_uninstall
 	$(RM) $(LIBDIR)/main.o
 	$(RM) $(LIBDIR)/RTcmixMain.o
 	$(RM) $(LIBDIR)/RTsockfuncs.o
+	$(RM) $(LIBDIR)/RTOSCListener.o
 	$(RM) $(LIBDIR)/pRTcmix.o
 	$(RM) $(LIBDIR)/pyRTcmix.o
 

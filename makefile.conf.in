@@ -40,6 +40,7 @@ CONFDIR = $(SRCDIR)/conf
 PARSERDIR = $(SRCDIR)/parser
 MINCDIR = $(PARSERDIR)/minc
 PERLDIR = $(PARSERDIR)/perl
+OSCDIR = $(SRCDIR)/osc
 
 # For temporary use in linking MIX instrument in
 MIXDIR = insts/base/MIX
@@ -279,7 +280,7 @@ CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_F
 
 RTLIB = lib$(SHLIB).$(SHLIB_SUFFIX)
 LIBRTCMIX = $(LIBDIR)/$(RTLIB)
-RTLDFLAGS = -L$(LIBDIR) -l$(SHLIB) -lgen
+RTLDFLAGS = -L$(LIBDIR) -l$(SHLIB) -lgen -L$(OSCDIR) -loscpack
 
 # Platform-specific library flags Key:
 #
