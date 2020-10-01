@@ -136,6 +136,9 @@ int MBASE::init(double p[], int n_args)
    /* flag for use of ear filters */
    m_binaural = (!UseMikes && m_dist < 0.8 && m_dist != 0.0);
 
+   if (m_binaural) {
+       rtcmix_advise(name(), "Running in binaural mode.");
+   }
    amparray = floc(1);
    if (amparray) {
       int amplen = fsize(1);
@@ -260,7 +263,6 @@ int MBASE::configure()
 	rvb_reset(m_tapDelay);   			// resets tap delay
 
 	if (status == 0 && m_binaural) {
-		rtcmix_advise(name(), "Running in binaural mode.");
 		status = alloc_firfilters();	// allocates memory for FIRs
 	}
 	return status;
