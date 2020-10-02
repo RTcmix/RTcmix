@@ -24,8 +24,8 @@
 #include "heap.h"
 
 #include <dlfcn.h>
-#include "oscpack/ip/UdpSocket.h"
 #include "RTOSCListener.h"
+#include "lo/lo.h"
 
 #undef DBUG
 
@@ -120,7 +120,7 @@ int				RTcmixMain::noParse         = 0;
 int				RTcmixMain::parseOnly       = 0;
 int				RTcmixMain::socknew			= 0;
 
-UdpListeningReceiveSocket*      RTcmixMain::udpRcvSocket = NULL;
+lo_server_thread*       RTcmixMain::osc_thread_handle = NULL;
 
 #ifdef NETAUDIO
 int				RTcmixMain::netplay 		= 0;	// for remote sound network playing
@@ -533,9 +533,9 @@ RTcmixMain::interrupt_handler(int signo)
 		interrupt_handler_called = 1;
 	   fprintf(stderr, "\n<<< Caught interrupt signal >>>\n");
 
-           if (udpRcvSocket != NULL){
-                udpRcvSocket->AsynchronousBreak();
-                delete udpRcvSocket;
+           if (osc_thread_handle != NULL){
+               lo_server_thread_stop(*osc_thread_handle);
+               free(osc_thread_handle);
            }
 
 	   if (audioDevice) {
@@ -592,14 +592,7 @@ RTcmixMain::set_sig_handlers()
 
 
 void * RTcmixMain::OSC_Server(void *arg){
-    
-    int (*parseCallback)(const char *, int) = &parse_score_buffer;
-
-    RTOSCListener listener(parseCallback);
-    udpRcvSocket = new UdpListeningReceiveSocket(
-            IpEndpointName( IpEndpointName::ANY_ADDRESS, 7777), &listener );
-    udpRcvSocket->Run();
-
+    osc_thread_handle = start_osc_thread(&parse_score_buffer);
     return NULL; //suppress warning
 }
 

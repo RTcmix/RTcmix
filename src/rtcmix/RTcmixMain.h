@@ -3,8 +3,9 @@
 
 #include <RTcmix.h>
 #include "DynamicLib.h"
+#include "lo/lo.h"
 
-class UdpListeningReceiveSocket;
+//class UdpListeningReceiveSocket;
 class RTcmixMain : public RTcmix {
 public:
 #ifdef EMBEDDED 
@@ -44,7 +45,7 @@ private:
 	#endif
 	/* for more than 1 socket, set by -s flag to CMIX as offset from MYPORT */
 	static int		socknew;
-        static UdpListeningReceiveSocket *udpRcvSocket;
+        static lo_server_thread *osc_thread_handle;
 };
 
 #endif	// _RTCMIXMAIN_H_

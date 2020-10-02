@@ -2,34 +2,31 @@
 #include <cstring>
 
 #include "RTOSCListener.h"
-#include "oscpack/osc/OscReceivedElements.h"
-#include "oscpack/osc/OscPacketListener.h"
-#include "oscpack/ip/UdpSocket.h"
+#include "lo/lo.h"
 
+int score_handler(const char *path, const char *types, lo_arg ** argv,
+        int argc, void *data, void *user_data){
 
-RTOSCListener::RTOSCListener(int (*parseCallback)(const char*, int)){
-    this->parseCallback = parseCallback;
+    int (*parseCallback)(const char*, int) = (int (*)(const char*, int)) user_data;
+
+    char *theScore = &argv[0]->s;
+    std::cout << "Received score: \n\n" << theScore << std::endl;
+    int parseStatus;
+    parseStatus = (*parseCallback)(theScore, std::strlen(theScore));
+    return 0;
 }
 
+lo_server_thread* start_osc_thread(int (*parseCallback)(const char*, int)){
+    lo_server_thread *st = NULL;
+    st = (lo_server_thread*) malloc(sizeof(lo_server_thread));
+    *st = lo_server_thread_new("7777", NULL);
 
-void RTOSCListener::ProcessMessage(const osc::ReceivedMessage& m,
-                              const IpEndpointName& remoteEndpoint){
+    lo_server_thread_add_method(*st, "/RTcmix/ScoreCommands", "s",
+            &score_handler, (void*) parseCallback);
+    
+    lo_server_thread_start(*st);
 
-    (void) remoteEndpoint; // suppress unused parameter warning
-
-    int status;
-    if(std::strcmp(m.AddressPattern(), "/RTcmix/ScoreCommands") == 0){    
-        osc::ReceivedMessageArgumentStream args = m.ArgumentStream();
-        const char *rtScript;
-        args >> rtScript >> osc::EndMessage;
-
-        std::cout << "<<< OSC Server Recieved Script >>>" << std::endl;
-        std::cout << rtScript << std::endl;
-
-        status = (*parseCallback)(rtScript, std::strlen(rtScript));
-    }
+    return st;
 }
-
-
 
 
