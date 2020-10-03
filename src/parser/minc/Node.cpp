@@ -852,9 +852,16 @@ Node *	NodeCall::doExct()
 			child(0)->exct();	// execute arg expression list
 			push_function_stack();
 			push_scope();
-			int savedLineNo, savedScope, savedCallDepth;
+			int savedLineNo=0, savedScope=0, savedCallDepth=0;
 			Node * temp = NULL;
 			try {
+                // This replicates the argument-printing mechanism used by compiled-in functions.
+                if (Option::print() >= MMP_PRINTS) {
+                    RTPrintf("============================\n");
+                    RTPrintfCat("%s: ", sCalledFunctions.back());
+                    MincValue retval;
+                    call_builtin_function("print", sMincList, sMincListLen, &retval);
+                }
 				/* The exp list is copied to the symbols for the function's arg list. */
 				funcDef->child(1)->exct();
 				savedLineNo = yyget_lineno();
@@ -863,7 +870,6 @@ Node *	NodeCall::doExct()
 				savedCallDepth = sFunctionCallDepth;
 				TPRINT("NodeCall(%p): executing %s() block node %p, call depth now %d\n",
 					   this, sCalledFunctions.back(), funcDef->child(2), savedCallDepth);
-				printargs(sCalledFunctions.back(), NULL, 0);
 				temp = funcDef->child(2)->exct();
 			}
 			catch (Node * returned) {	// This catches return statements!
