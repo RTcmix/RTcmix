@@ -107,6 +107,12 @@ parse_score(int argc, char *argv[], char **env)
    return status;
 }
 
+/* ------------------------------------------------------ parse_score_buffer --- */
+/* not used in Perl */
+int parse_score_buffer(const char *buffer, int buflen)
+{
+    
+}
 
 /* ------------------------------------------------------ use_script_file --- */
 /* Not supported (and not needed) for Perl. */
