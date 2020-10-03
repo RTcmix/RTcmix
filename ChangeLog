@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2020-10-03  Douglas Scott <netdscott-at-netscape.net>
+	* Merged in Michel's OSC server work.
+	* Fixed hang-on-interrupt bug.
+
 2020-09-06  Douglas Scott <netdscott-at-netscape.net>
 	* Bumping to 4.5.0.
 
