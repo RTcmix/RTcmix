@@ -6,13 +6,18 @@
 #include <stdlib.h>
 #include "minc/rename.h"
 #include "minc/minc_defs.h"
+#include "minc/bison_version.h"
 #include "rtcmix_parse.h"
 #include <ugens.h>
 #include "rtdefs.h"
 #include <Option.h>
 
 typedef struct yy_buffer_state * YY_BUFFER_STATE;
+#if BISON_VERSION >= 3
+extern YY_BUFFER_STATE yy_scan_bytes(const char * buf, int len);
+#else
 extern YY_BUFFER_STATE yy_scan_bytes(const char * buf, size_t len);
+#endif
 
 extern "C" {
     extern int yyparse();

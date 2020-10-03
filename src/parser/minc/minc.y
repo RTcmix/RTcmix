@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include "rename.h"
+#include "bison_version.h"
 #include "minc_internal.h"
 #include "Node.h"
 #include "Symbol.h"
@@ -36,6 +37,7 @@ const char *lookup_token(const char *token, bool printWarning);
 #define MPRINT2(x,y,z)
 #endif
 
+#undef YYDEBUG
 #define YYDEBUG 1
 #define MAXTOK_IDENTLIST 200
 #define TRUE 1

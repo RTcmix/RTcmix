@@ -144,8 +144,8 @@ num   {dig}+
                 yyin = fopen( yytext, "r" );
                 if (!yyin)
                 {
-                    char msg[1024];
-                    snprintf(msg, 1024, "Unable to open include file \"%s\"",
+                    char msg[1054];
+                    snprintf(msg, 1054, "Unable to open include file \"%s\"",
                              yytext);
                     YY_FATAL_ERROR(msg);
                 }

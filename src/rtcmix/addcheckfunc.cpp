@@ -340,7 +340,7 @@ RTcmix::findAndLoadFunction(const char *funcname)
 		char fullDSOPath[128];
 		float p[1];
 		double pp[1];
-		sprintf(fullDSOPath, "%s.so", path);
+		snprintf(fullDSOPath, 128, "%s.so", path);
 		p[0] = 0;
 		pp[0] = STRING_TO_DOUBLE(fullDSOPath);
 //        RTPrintf("findAndLoadFunction: calling load() on '%s' for function '%s'\n", fullDSOPath, funcname);
@@ -412,7 +412,7 @@ RTcmix::registerDSOs(const char *pathList)
 			while ((entry = readdir(dsoDir)) != NULL) {
 				if (strncmp(entry->d_name, "lib", 3) == 0) {
 					char fullPath[1024];
-					sprintf(fullPath, "%s/%s", path, entry->d_name);
+					snprintf(fullPath, 1024, "%s/%s", path, entry->d_name);
 					DynamicLib dso;
 					if (dso.load(fullPath) == 0) {
 						RegisterFunction registerMe = NULL;

@@ -9,7 +9,7 @@
 
 #define kFracBits 16
 #define kFracShift 65536
-#define kFracMask kFracShift - 1
+#define kFracMask (kFracShift - 1)
 
 Ooscili::Ooscili(float SR, float freq, int arr) : _sr(SR)
 {

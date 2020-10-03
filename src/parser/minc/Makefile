@@ -9,6 +9,7 @@ LSRC = minc.l
 LEX = flex
 LEXFLAGS = -l #-d    # -d for debug output
 
+
 YSRC = minc.y
 YACC = bison
 YFLAGS = -d -o minc.cpp # -t -v
@@ -41,6 +42,7 @@ minc.cpp: lex.yy.c $(YSRC) minc_internal.h rename.h
 	$(YACC) $(YFLAGS) $(YSRC)
 
 depend:
+	-bison --version | awk '/bison/ { printf("#define BISON_VERSION %d\n", $$4); }' >> bison_version.h
 	-$(SHELL) -ec '$(CC) -M $(CFLAGS) $(SRCS)' > depend
 
 -include depend
@@ -52,5 +54,5 @@ clean:
 	$(RM) *.o $(MINC) lex.yy.c minc.cpp minc.hpp y.output
 
 cleanall: clean
-	$(RM) depend
+	$(RM) depend bison_version.h
 
