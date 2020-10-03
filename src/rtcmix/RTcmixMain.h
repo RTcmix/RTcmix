@@ -29,8 +29,9 @@ protected:
 	static void		set_sig_handlers();
 
 	static void *	sockit(void *);
+#ifdef OSC
 	static void *   OSC_Server(void *);
-
+#endif
 private:
 	char *			makeDSOPath(const char *progPath);
 	static int 		xargc;	// local copy of arg count

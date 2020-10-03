@@ -82,14 +82,17 @@ int RTcmix::runMainLoop(void)
 		}
 		::pthread_mutex_unlock(&audio_config_lock);
 		if (interactive()) {
+            int ret = 0;
 			if (run_status == RT_GOOD || run_status == RT_PANIC)
 				continue;
 			else if (run_status == RT_SHUTDOWN)
 				RTPrintf("runMainLoop:  shutting down\n");
-			else if (run_status == RT_ERROR)
+            else if (run_status == RT_ERROR) {
 				RTPrintf("runMainLoop:  shutting down due to error\n");
+                ret = -1;
+            }
 			audioDone = true;
-			return -1;
+			return ret;
 		}
         usleep(1000*100);   // no reason to run loop faster that 1 per 100 ms.
 	}

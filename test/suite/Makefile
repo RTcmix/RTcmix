@@ -39,7 +39,7 @@ STRESSOBJS = stresstest.o
 SOCKOBJS = sockettest.o
 SOCKSENDOBJS = socksend.o
 IMBCMIXOBJS += $(PROFILE_O)
-PROGS = stresstest sockettest
+PROGS = stresstest sockettest osc_send
 TESTLEN = 30
 
 stresstest: $(STRESSOBJS) $(IMBCMIXOBJS)
@@ -54,6 +54,13 @@ socksend: $(SOCKSENDOBJS)
 
 embeddedtest: embeddedtest.o
 	$(CXX) -g -o $@ embeddedtest.o -L${CMIXDIR}/lib -lrtcmix_embedded
+
+osc_send_test.o:	osc_send_test.cpp
+	$(CXX) ${LIBLO_CFLAGS} -c osc_send_test.cpp
+
+osc_send: osc_send_test.o
+	$(CXX) -g -o $@ osc_send_test.o ${LIBLO_LIBS}
+
 
 run_stresstest:	stresstest
 	@echo
