@@ -160,6 +160,12 @@ MIX_OBJS = ../../insts/base/MIX/MIX.o
 
 MAIN_OBJS = RTcmixMain.o main.o
 
+ifeq ($(OSC_SUPPORT), TRUE)
+	MAIN_OBJS += ../osc/RTOSCListener.o
+endif
+
+
+
 # The initial set of objects used by all builds
 COMMON_OBJS = $(CPPOBJS) $(COBJS) $(GENOBJS) $(RTHEAPOBJS) $(MIX_OBJS) $(AUDIODIR)/audio_devices.o
 
@@ -370,7 +376,6 @@ ifeq ($(BUILDTYPE), STANDALONE)
 		$(INSTALL) main.o $(LIBDIR)
 		$(INSTALL) RTcmixMain.o $(LIBDIR)
 		$(INSTALL) RTsockfuncs.o $(LIBDIR)
-		$(INSTALL) ../osc/RTOSCListener.o $(LIBDIR)
   ifeq ($(PERL_SUPPORT), TRUE)
 		$(INSTALL) pRTcmix.o $(LIBDIR)
   endif
@@ -391,8 +396,8 @@ ifeq ($(BUILDTYPE), STANDALONE)
 $(RTLIB): depend $(COMMON_OBJS) $(LIBS)
 	$(LOAD) $@ $(COMMON_OBJS) $(INST_OBJS) $(LIB_OBJS) $(LIBS) $(SYSLIBS)
 	$(RANLIB) $@
-MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O) ../osc/RTOSCListener.o
-	$(CXX) $(CXXFLAGS) -o MIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) $(M_O) ../osc/RTOSCListener.o -L. $(LDFLAGS) $(SYS_LDFLAGS)
+MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O) 
+	$(CXX) $(CXXFLAGS) -o MIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) $(M_O) -L. $(LDFLAGS) $(SYS_LDFLAGS)
 
 install:	all
 	@if test ! -d $(DESTDIR); then mkdir -p $(DESTDIR); fi;
@@ -457,7 +462,6 @@ uninstall: standalone_uninstall
 	$(RM) $(LIBDIR)/main.o
 	$(RM) $(LIBDIR)/RTcmixMain.o
 	$(RM) $(LIBDIR)/RTsockfuncs.o
-	$(RM) $(LIBDIR)/RTOSCListener.o
 	$(RM) $(LIBDIR)/pRTcmix.o
 	$(RM) $(LIBDIR)/pyRTcmix.o
 

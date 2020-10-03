@@ -24,8 +24,8 @@
 #include "heap.h"
 
 #include <dlfcn.h>
-#include "oscpack/ip/UdpSocket.h"
 #include "RTOSCListener.h"
+#include "lo/lo.h"
 
 #undef DBUG
 
@@ -120,7 +120,9 @@ int				RTcmixMain::noParse         = 0;
 int				RTcmixMain::parseOnly       = 0;
 int				RTcmixMain::socknew			= 0;
 
-UdpListeningReceiveSocket*      RTcmixMain::udpRcvSocket = NULL;
+#ifdef OSC
+lo_server_thread*       RTcmixMain::osc_thread_handle = NULL;
+#endif
 
 #ifdef NETAUDIO
 int				RTcmixMain::netplay 		= 0;	// for remote sound network playing
@@ -259,10 +261,15 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                Option::exitOnError(false);  /* we cannot simply quit when in interactive mode */
                break;
             case 'o':
+#ifdef OSC
                 setInteractive(true);
                 setUseOSC(true);
                 audio_config = 0;
                 Option::exitOnError(false);
+#else
+                 fprintf(stderr, "This build does not include OSC support\n");
+                 exit(1);
+#endif
                 break;
             case 'n':               /* for use in rtInteractive mode only */
                noParse = 1;
@@ -399,8 +406,8 @@ RTcmixMain::run()
    */
    if (interactive()) {
 		rtcmix_advise(NULL, "rtInteractive mode set\n");
-
-       if(usingOSC()){
+#ifdef OSC
+       if (usingOSC()) {
            rtcmix_debug(NULL, "creating OSC_Server() thread");
            retcode = pthread_create(&serverThread, NULL, &RTcmixMain::OSC_Server, (void *) this);
            if (retcode != 0) {
@@ -430,15 +437,16 @@ RTcmixMain::run()
            if (retcode != 0) {
               rterror(NULL, "waitForMailLoop() failed\n");
            }
-    
-     #ifndef EMBEDDED
+#ifndef EMBEDDED
           if (!noParse)
               destroy_parser();
-     #endif
+#endif
 
-       } else {
-
-    #ifndef EMBEDDED
+       }
+       else
+#endif  /* OSC */
+       {
+#ifndef EMBEDDED
           /* Read an initialization score. */
           if (!noParse) {
              int status;
@@ -447,7 +455,7 @@ RTcmixMain::run()
              if (status != 0)
                 exit(1);
           }
-    #endif // EMBEDDED
+#endif // EMBEDDED
     
           /* Create parsing thread. */
           rtcmix_debug(NULL, "creating sockit() thread");
@@ -480,12 +488,12 @@ RTcmixMain::run()
              rterror(NULL, "waitForMailLoop() failed\n");
           }
     
-    #ifndef EMBEDDED
+#ifndef EMBEDDED
          if (!noParse)
              destroy_parser();
-    #endif
+#endif
      }
-  } else {
+  } else {      // not interactive
 #ifdef EMBEDDED
 		int status = 0;
 #else
@@ -532,20 +540,23 @@ RTcmixMain::interrupt_handler(int signo)
 	if (!interrupt_handler_called) {
 		interrupt_handler_called = 1;
 	   fprintf(stderr, "\n<<< Caught interrupt signal >>>\n");
-
-           if (udpRcvSocket != NULL){
-                udpRcvSocket->AsynchronousBreak();
-                delete udpRcvSocket;
-           }
-
-	   if (audioDevice) {
+#ifdef OSC
+       if (osc_thread_handle != NULL) {
+           fprintf(stderr, "shutting down OSC server...\n");
+           lo_server_thread_stop(*osc_thread_handle);
+           free(osc_thread_handle);
+       }
+#endif
+       if (audioDevice) {
            fprintf(stderr, "flushing audio...\n");
-           // Notify rendering loop.
-           run_status = RT_SHUTDOWN;
-	   }
-	   if (!audioLoopStarted) {
-		   closesf();	// We exit if we have not yet configured audio.
-	   }
+       }
+       // Notify rendering loop no matter what.
+       run_status = RT_SHUTDOWN;
+
+       if (!audioLoopStarted) {
+           fprintf(stderr, "exiting\n");
+           exit(0);    // We exit if we have not yet configured audio.
+       }
 	}
 }
 
@@ -590,19 +601,12 @@ RTcmixMain::set_sig_handlers()
 #endif
 }
 
-
+#ifdef OSC
 void * RTcmixMain::OSC_Server(void *arg){
-    
-    int (*parseCallback)(const char *, int) = &parse_score_buffer;
-
-    RTOSCListener listener(parseCallback);
-    udpRcvSocket = new UdpListeningReceiveSocket(
-            IpEndpointName( IpEndpointName::ANY_ADDRESS, 7777), &listener );
-    udpRcvSocket->Run();
-
+    osc_thread_handle = start_osc_thread(&parse_score_buffer);
     return NULL; //suppress warning
 }
-
+#endif
 
 void *
 RTcmixMain::sockit(void *arg)

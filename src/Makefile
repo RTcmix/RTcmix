@@ -2,7 +2,11 @@
 
 include ../makefile.conf
 
-DIRS = sndlib audio conf parser control osc rtcmix
+DIRS = sndlib audio conf parser control rtcmix
+ifeq ($(OSC_SUPPORT), TRUE)
+	DIRS += osc
+endif
+
 
 ifeq ($(BUILDTYPE), MAXMSP)
 DIRS += maxmsp
