@@ -271,9 +271,16 @@ MincHandle minc_binop_handle_float(const MincHandle mhandle,
 {
 	DPRINT("minc_binop_handle_float (handle=%p, val=%f\n", mhandle, val);
 
+    if (mhandle == NULL) {
+        minc_warn("Null handle in binary operation");
+        return (MincHandle)0;
+    }
 	// Extract PField from MincHandle.
 	Handle handle = (Handle) mhandle;
-	assert(handle->type == PFieldType);
+    if (handle->type != PFieldType) {
+        minc_die("Illegal handle type for this operation");
+        return (MincHandle)0;
+    }
 	PField *pfield1 = (PField *) handle->ptr;
 
 	// Create ConstPField for MincFloat.
@@ -290,12 +297,20 @@ MincHandle minc_binop_float_handle(const MincFloat val,
 {
 	DPRINT("minc_binop_float_handle (val=%f, handle=%p\n", val, mhandle);
 
-	// Create ConstPField for MincFloat.
+    if (mhandle == NULL) {
+        minc_warn("Null handle in binary operation");
+        return (MincHandle)0;
+    }
+
+    // Create ConstPField for MincFloat.
 	PField *pfield1 = new ConstPField(val);
 
 	// Extract PField from MincHandle.
 	Handle handle = (Handle) mhandle;
-	assert(handle->type == PFieldType);
+    if (handle->type != PFieldType) {
+        minc_die("Illegal handle type for this operation");
+        return (MincHandle)0;
+    }
 	PField *pfield2 = (PField *) handle->ptr;
 
 	// Create PField using appropriate operator.
@@ -309,12 +324,18 @@ MincHandle minc_binop_handles(const MincHandle mhandle1,
 {
 	DPRINT("minc_binop_handles (handle1=%p, handle2=%p\n", mhandle1, mhandle2);
 
+    if (mhandle1 == NULL || mhandle2 == NULL) {
+        minc_warn("Null handle(s) in binary operation");
+        return (MincHandle)0;
+    }
 	// Extract PFields from MincHandles
 
 	Handle handle1 = (Handle) mhandle1;
 	Handle handle2 = (Handle) mhandle2;
-	assert(handle1->type == PFieldType);
-	assert(handle2->type == PFieldType);
+    if (handle1->type != PFieldType || handle2->type != PFieldType) {
+        minc_die("Illegal handle type(s) for this operation");
+        return (MincHandle)0;
+    }
 	PField *pfield1 = (PField *) handle1->ptr;
 	PField *pfield2 = (PField *) handle2->ptr;
 	PField *opfield = createBinopPField(pfield1, pfield2, op);
