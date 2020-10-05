@@ -296,7 +296,7 @@ Node *	NodeOp::do_op_string(const char *str1, const char *str2, OpKind op)
       case OpMod:
       case OpPow:
         minc_warn("invalid operator for two strings");
-        this->v = (char *)NULL;    // TODO: check
+        this->v = (char *)NULL;
         break;
       case OpNeg:
 		minc_warn("invalid operator on string");
@@ -367,7 +367,6 @@ Node *	NodeOp::do_op_handle_num(const MincHandle val1, const MincFloat val2,
          this->v = minc_binop_handle_float(val1, -1.0, OpMul);	// <val2> ignored
          break;
       default:
-		   // TODO: what should this return on error?
          minc_internal_error("invalid operator for handle and number");
          break;
    }
@@ -392,7 +391,6 @@ Node *	NodeOp::do_op_num_handle(const MincFloat val1, const MincHandle val2,
       case OpNeg:
          /* fall through */
       default:
-		   // TODO: what should this return on error?
          minc_internal_error("invalid operator for handle and number");
          break;
    }
@@ -416,19 +414,18 @@ Node *	NodeOp::do_op_handle_handle(const MincHandle val1, const MincHandle val2,
 		break;
 	case OpNeg:
 	default:
-			// TODO: what should this return on error?
 		minc_internal_error("invalid binary handle operator");
 		break;
 	}
 	return this;
 }
 
-/* ---------------------------------------------------- do_op_list_iterate -- */
+/* ---------------------------------------------------- do_op_list_float -- */
 /* Iterate over the list, performing the operation specified by <op>,
-   using the scalar <val>, for each list element.  Store the result into a
+   using the scalar <val>, for each list element - with the element first in the equation.  Store the result into a
    new list for <this>, so that child's list is unchanged.
 */
-Node *	NodeOp::do_op_list_iterate(const MincList *srcList, const MincFloat val, const OpKind op)
+Node *	NodeOp::do_op_list_float(const MincList *srcList, const MincFloat val, const OpKind op)
 {
 	ENTER();
    int i;
@@ -540,6 +537,65 @@ Node *	NodeOp::do_op_list_list(const MincList *list1, const MincList *list2, con
 	this->value() = destList;
 	destList->ref();
 	return this;
+}
+
+/* ---------------------------------------------------- do_op_float_list -- */
+/* Iterate over the list, performing the operation specified by <op>,
+ using the scalar <val>, for each list element - with <val> first in the equation.  Store the result into a
+ new list for <this>, so that child's list is unchanged.  NOTE:  This is only used
+ for asymmetrical operations -, /, %, **.
+ */
+Node *    NodeOp::do_op_float_list(const MincFloat val, const MincList *srcList, const OpKind op)
+{
+    ENTER();
+    int i;
+    MincValue *dest;
+    const int len = srcList->len;
+    MincValue *src = srcList->data;
+    MincList *destList = new MincList(len);
+    dest = destList->data;
+    assert(len >= 0);
+    switch (op) {
+        case OpMinus:
+            for (i = 0; i < len; i++) {
+                if (src[i].dataType() == MincFloatType)
+                    dest[i] = val - (MincFloat)src[i];
+                else
+                    dest[i] = src[i];
+            }
+            break;
+        case OpDiv:
+            for (i = 0; i < len; i++) {
+                if (src[i].dataType() == MincFloatType)
+                    dest[i] = val / (MincFloat)src[i];
+                else
+                    dest[i] = src[i];
+            }
+            break;
+        case OpMod:
+            for (i = 0; i < len; i++) {
+                if (src[i].dataType() == MincFloatType)
+                    dest[i] = (MincFloat) ((long) val % long((MincFloat)src[i]));
+                else
+                    dest[i] = src[i];
+            }
+            break;
+        case OpPow:
+            for (i = 0; i < len; i++) {
+                if (src[i].dataType() == MincFloatType)
+                    dest[i] = (MincFloat) pow((double) val, (MincFloat) src[i]);
+                else
+                    dest[i] = src[i];
+            }
+            break;
+        default:
+            for (i = 0; i < len; i++)
+                dest[i] = 0.0;
+            minc_internal_error("invalid float-list operator");
+            break;
+    }
+    this->value() = destList;
+    return this;
 }
 
 /* ========================================================================== */
@@ -746,7 +802,7 @@ void    NodeSubscriptWrite::writeToSubscript()
 {
     if (child(1)->dataType() != MincFloatType) {
         minc_die("list index must be a number");
-        return;    // TODO
+        return;
     }
     int len = 0;
     MincList *theList = (MincList *) child(0)->symbol()->value();
@@ -1025,7 +1081,7 @@ Node *	NodeRelation::doExct()		// was exct_relation()
 	MincValue& v1 = child(1)->exct()->value();
 	
 	if (v0.dataType() != v1.dataType()) {
-		minc_warn("operator %s: attempt to compare variables having different types", printOpKind(this->op));
+		minc_warn("operator %s: attempt to compare variables having different types - returning false", printOpKind(this->op));
 		this->value() = 0.0;
 		return this;
 	}
@@ -1127,8 +1183,9 @@ Node *	NodeRelation::doExct()		// was exct_relation()
 	}
 	return this;
 unsupported_type:
-	minc_internal_error("operator %s: can't compare this type of object", printOpKind(this->op));
-	return this;	// TODO
+    minc_warn("operator %s: cannot compare variables of this type - returning false", printOpKind(this->op));
+    this->value() = 0.0;
+    return this;
 }
 
 Node *	NodeOp::doExct()
@@ -1153,13 +1210,18 @@ Node *	NodeOp::doExct()
 					do_op_num_handle((MincFloat)v0, (MincHandle)v1, this->op);
 					break;
 				case MincListType:
-					/* Check for nonsensical ops. */
-					if (this->op == OpMinus)
-						minc_warn("can't subtract a list from a number");
-					else if (this->op == OpDiv)
-						minc_warn("can't divide a number by a list");
-					else
-						do_op_list_iterate((MincList*)v1, (MincFloat)v0, this->op);
+					/* Check for asymmetrical ops. */
+                    switch (this->op) {
+                        case OpMinus:
+                        case OpDiv:
+                        case OpMod:
+                        case OpPow:
+                            do_op_float_list((MincFloat)v0, (MincList*)v1, this->op);
+                            break;
+                        default:
+                            do_op_list_float((MincList*)v1, (MincFloat)v0, this->op);
+                            break;
+                    }
 					break;
                 case MincMapType:
                     minc_warn("operator %s: a map cannot be used for this operation", printOpKind(this->op));
@@ -1176,6 +1238,7 @@ Node *	NodeOp::doExct()
 			switch (v1.dataType()) {
 				case MincFloatType:
 				{
+                    // "do_op_string_float"
 					char buf[64];
 					snprintf(buf, 64, "%g", (MincFloat)v1);
 					do_op_string((MincString)v0, buf, this->op);
@@ -1207,13 +1270,13 @@ Node *	NodeOp::doExct()
 					do_op_handle_num((MincHandle)v0, (MincFloat)v1, this->op);
 					break;
 				case MincStringType:
-					minc_warn("can't operate on a string and a handle");
+					minc_warn("operator %s: can't operate on a string and a handle", printOpKind(this->op));
 					break;
 				case MincHandleType:
 					do_op_handle_handle((MincHandle)v0, (MincHandle)v1, this->op);
 					break;
 				case MincListType:
-					minc_warn("can't operate on a list and a handle");
+					minc_warn("operator %s: can't operate on a list and a handle", printOpKind(this->op));
 					break;
                 case MincMapType:
                     minc_warn("operator %s: a map cannot be used for this operation", printOpKind(this->op));
@@ -1229,13 +1292,13 @@ Node *	NodeOp::doExct()
 		case MincListType:
 			switch (v1.dataType()) {
 				case MincFloatType:
-					do_op_list_iterate((MincList *)v0, (MincFloat)v1, this->op);
+					do_op_list_float((MincList *)v0, (MincFloat)v1, this->op);
 					break;
 				case MincStringType:
-					minc_warn("can't operate on a string");
+					minc_warn("operator %s: can't operate on a list and a string", printOpKind(this->op));
 					break;
 				case MincHandleType:
-					minc_warn("can't operate on a handle");
+					minc_warn("operator %s: can't operate on a list and a handle", printOpKind(this->op));
 					break;
 				case MincListType:
 					do_op_list_list((MincList *)v0, (MincList *)v1, this->op);

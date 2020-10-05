@@ -161,8 +161,9 @@ private:
 	Node* do_op_handle_num(const MincHandle val1, const MincFloat val2, OpKind op);
 	Node* do_op_num_handle(const MincFloat val1, const MincHandle val2, OpKind op);
 	Node* do_op_handle_handle(const MincHandle val1, const MincHandle val2, OpKind op);
-	Node* do_op_list_iterate(const MincList *srcList, const MincFloat val, const OpKind op);
+	Node* do_op_list_float(const MincList *srcList, const MincFloat val, const OpKind op);
 	Node* do_op_list_list(const MincList *list1, const MincList *list2, const OpKind op);
+    Node* do_op_float_list(const MincFloat val, const MincList *srcList, const OpKind op);
 };
 
 class NodeUnaryOperator : public Node1Child
