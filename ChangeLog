@@ -1,6 +1,10 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2020-10-04  Douglas Scott <netdscott-at-netscape.net>
+	* Fixed some parser inconsistencies and crashes
+	* Bumped to 4.6.0 due to new OSC server support.
+
 2020-10-03  Douglas Scott <netdscott-at-netscape.net>
 	* Merged in Michel's OSC server work.
 	* Fixed hang-on-interrupt bug.
