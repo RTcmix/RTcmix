@@ -53,7 +53,9 @@ usage()
       "        options:\n"
       "           -i       run in interactive mode\n"
       "           -n       no init script (interactive mode only)\n"
+#ifdef OSC
       "           -o       run with background OSC server\n"
+#endif
 #ifdef LINUX
       "           -p NUM   set process priority to NUM (as root only)\n"
 #endif
