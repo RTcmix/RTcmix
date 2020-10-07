@@ -259,8 +259,14 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
 	| '{' level expl '}'	{ MPRINT("{expl}");	decrLevel(); $$ = new NodeList($3); }
 	| id '[' exp ']' 	{			$$ = new NodeSubscriptRead(new NodeName($1), $3); }
  */
-	| id '[' exp ']' '=' exp { $$ = new NodeSubscriptWrite(new NodeName($1), $3, $6); }
-    | id'.'id '=' exp { $$ = new NodeStore(new NodeMember(new NodeName($1), $3), $5); }
+	| id '[' exp ']' '=' exp {
+                                MPRINT("id[exp] = exp");
+                                $$ = new NodeSubscriptWrite(new NodeName($1), $3, $6);
+                            }
+    | id'.'id '=' exp       {
+                                MPRINT("id.id = exp");
+                                $$ = new NodeStore(new NodeMember(new NodeName($1), $3), $5);
+                            }
 	;
 
 /* identifier list */
@@ -318,8 +324,8 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 	| '{' level expl '}'	{ MPRINT("{expl}");	decrLevel(); $$ = new NodeList($3); }
 	| '{' '}'				{ MPRINT("{}");	$$ = new NodeList(new NodeEmptyListElem()); }
 
-	| id '[' exp ']' 	{	$$ = new NodeSubscriptRead(new NodeName($1), $3); }
-    | id'.'id           {   $$ = new NodeMember(new NodeName($1), $3); }
+	| id '[' exp ']' 	{	MPRINT("id[exp]");    $$ = new NodeSubscriptRead(new NodeName($1), $3); }
+    | id'.'id           {   MPRINT("id.id");    $$ = new NodeMember(new NodeName($1), $3); }
 	| TOK_ARG_QUERY		{
 #ifndef EMBEDDED
 							/* ?argument will return 1.0 if defined, else 0.0 */

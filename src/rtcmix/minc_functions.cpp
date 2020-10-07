@@ -322,7 +322,7 @@ double m_getpch(float p[], int n_args, double pp[])
 
     if((pchfd = open(input,0)) < 0) {
 		die("getpch", "Can't open pitch analysis file");
-        RTExit(PARAM_ERROR);
+        RTExit(FILE_ERROR);
     }
 
 	nbframe = 2*FLOAT; 
@@ -358,7 +358,7 @@ double m_getamp(float p[], int n_args, double pp[])
 
     if((pchfd = open(input,0)) < 0) {
 		die("getamp", "Can't open pitch analysis file");
-        RTExit(PARAM_ERROR);
+        RTExit(FILE_ERROR);
     }
 
 	nbframe = 2*FLOAT; 
@@ -848,7 +848,7 @@ double m_get_codon()
 	}
 	if (DNAFile->read(bases, 3) != 0) {
 		rtcmix_warn("get_codon", "Reached EOF on DNA file");
-		return -1;
+        RTExit(FILE_ERROR);
 	}
 	//	Normalize
 	bases[0] = toupper(bases[0]);

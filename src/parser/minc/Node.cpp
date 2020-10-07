@@ -636,9 +636,7 @@ Node *	NodeName::finishExct()
 		}
 	}
 	else {
-		// FIXME: install id w/ value of 0, then warn??
 		minc_die("'%s' is not declared", symbolName());
-//		return NULL;	// FIX ME: return NULL?  Void Node?
 	}
 	return this;
 }
@@ -656,7 +654,7 @@ Node *	NodeListElem::doExct()
 	child(0)->exct();
 	if (sMincListLen == MAXDISPARGS) {
 		minc_die("exceeded maximum number of items for a list");
-		return this;	// TODO: handle no-die case
+		return this;
 	}
 	else {
 		TPRINT("NodeListElem %p evaluating payload child Node %p\n", this, child(1));

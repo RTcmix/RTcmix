@@ -27,7 +27,6 @@
 
 #ifdef OSC
 #include "RTOSCListener.h"
-#include "lo/lo.h"
 #endif
 
 #undef DBUG

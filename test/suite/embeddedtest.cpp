@@ -44,8 +44,8 @@ int main(int argc, char **argv)
 	const int chans = 2;
 	RTcmix_setPrintCallback(PrintCallback, NULL);
 	RTcmix_setFinishedCallback(DoneCallback, NULL);
+    RTcmix_setPrintLevel(6);
 	status = RTcmix_init();
-	RTcmix_setPrintLevel(6);
 
 	RTcmix_setAudioBufferFormat(AudioFormat_32BitFloat_Normalized, 2);
 
