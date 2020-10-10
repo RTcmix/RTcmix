@@ -110,9 +110,9 @@ void RTcmix_setPrintLevel(int level)
 int
 RTcmix_init()
 {
+    clear_print();
 	if (globalApp == NULL) {
         rtcmix_debug("RTcmix_init", "creating main object");
-		clear_print();
 		// BGG no argc and argv in max/msp version mm
 		globalApp = new RTcmixMain();
 		globalApp->run(); // in max/msp this just sets it all up...
