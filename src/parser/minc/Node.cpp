@@ -20,7 +20,8 @@
 
 /* This file holds the intermediate tree representation. */
 
-#undef DEBUG
+#define DEBUG
+
 #include "debug.h"
 
 #include "Node.h"
@@ -77,9 +78,7 @@ static int sFunctionCallDepth = 0;	// level of actively-executing function calls
 static bool inFunctionCall() { return sFunctionCallDepth > 0; }
 
 static void copy_tree_listelem(MincValue *edest, Node *  tpsrc);
-#ifdef DEBUG
 static void print_symbol(Symbol * s);		// TODO: Symbol::print()
-#endif
 
 static MincWarningLevel sMincWarningLevel = MincAllWarnings;
 
@@ -110,8 +109,8 @@ static const char *s_NodeKinds[] = {
    "NodeSubscriptWrite",
    "NodeMember",
    "NodeOpAssign",
-   "NodeName",
-   "NodeAutoName",
+   "NodeLoadSym",
+   "NodeAutoDeclLoadSym",
    "NodeConstf",
    "NodeString",
    "NodeMemberDecl",
@@ -206,17 +205,19 @@ const char * Node::classname() const
 
 void Node::print()
 {
-#ifdef DEBUG
-	rtcmix_print("Node %p: %s type: %d\n", this, classname(), this->dataType());
-	if (kind == eNodeName) {
-		rtcmix_print("Symbol:\n");
+	TPRINT("Node %p: %s type: %d\n", this, classname(), this->dataType());
+	if (kind == eNodeLoadSym) {
+		TPRINT("Symbol:\n");
 		print_symbol(u.symbol);
 	}
 	else if (this->dataType() == MincVoidType && child(0) != NULL) {
-		rtcmix_print("Child 0:\n");
+		TPRINT("Child 0:\n");
 		child(0)->print();
 	}
-#endif
+    else {
+        TPRINT("value: ");
+        value().print();
+    }
 }
 
 Node *	Node::exct()
@@ -227,7 +228,7 @@ Node *	Node::exct()
 		yyset_lineno(lineno);
 	}
 	Node *outNode = doExct();	// this is redefined on all subclasses
-    TPRINT("%s::exct() done: outNode=%p of type %s\n", classname(), outNode, MincTypeName(outNode->dataType()));
+    TPRINT("%s::exct() done: returning node %p of type %s\n", classname(), outNode, MincTypeName(outNode->dataType()));
 	return outNode;
 }
 
@@ -235,7 +236,7 @@ Node *	Node::exct()
 Node *
 Node::copyValue(Node *source)
 {
-    TPRINT("Node::copyValue(this=%p, source=%p)\n", this, source);
+    TPRINT("Node::copyValue(this=%p, Node=%p)\n", this, source);
 #ifdef EMBEDDED
     /* Not yet handling nonfatal errors with throw/catch */
     if (source->dataType() == MincVoidType) {
@@ -255,7 +256,7 @@ Node::copyValue(Node *source)
 Node *
 Node::copyValue(Symbol *src)
 {
-    TPRINT("Node::copyValue(this=%p, %p)\n", this, src);
+    TPRINT("Node::copyValue(this=%p, Symbol=%p)\n", this, src);
     assert(src->scope != -1);    // we accessed a variable after leaving its scope!
     if (dataType() != MincVoidType && src->dataType() != dataType()) {
         minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(src->dataType()));
@@ -613,14 +614,14 @@ Node *	NodeString::doExct()
 	return this;
 }
 
-Node *	NodeName::doExct()
+Node *	NodeLoadSym::doExct()
 {
 	/* look up the symbol */
 	setSymbol(lookupSymbol(_symbolName, AnyLevel));
 	return finishExct();
 }
 
-Node *	NodeName::finishExct()
+Node *	NodeLoadSym::finishExct()
 {
     Symbol *nodeSymbol;
 	if ((nodeSymbol = symbol()) != NULL) {
@@ -631,7 +632,7 @@ Node *	NodeName::finishExct()
 		}
 		else {
 			/* also assign the symbol's value into tree's value field */
-			TPRINT("NodeName/NodeAutoName: copying value from symbol '%s' to us\n", nodeSymbol->name());
+			TPRINT("NodeLoadSym/NodeAutoDeclLoadSym: copying value from symbol '%s' to us\n", nodeSymbol->name());
 			copyValue(nodeSymbol);
 		}
 	}
@@ -641,7 +642,7 @@ Node *	NodeName::finishExct()
 	return this;
 }
 
-Node *	NodeAutoName::doExct()
+Node *	NodeAutoDeclLoadSym::doExct()
 {
 	/* look up the symbol */
 	setSymbol(lookupOrAutodeclare(symbolName(), inFunctionCall() ? YES : NO));
@@ -686,6 +687,8 @@ Node *	NodeList::doExct()
 
 void    NodeSubscriptRead::readAtSubscript()
 {
+    ENTER();
+    TPRINT("NodeSubscriptRead(%p): Index via node %p (child 1)\n", this, child(1));
     if (child(1)->dataType() != MincFloatType) {
         minc_die("list index must be a number");
         return;
@@ -693,7 +696,8 @@ void    NodeSubscriptRead::readAtSubscript()
     MincFloat fltindex = (MincFloat) child(1)->value();
     int index = (int) fltindex;
     MincFloat frac = fltindex - index;
-    MincList *theList = (MincList *) child(0)->symbol()->value();
+//    MincList *theList = (MincList *) child(0)->symbol()->value();
+    MincList *theList = (MincList *) child(0)->value();
     if (theList == NULL) {
         minc_die("attempt to index a NULL list");
         return;
@@ -753,9 +757,12 @@ void    NodeSubscriptRead::searchWithMapKey()
 Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
 {
 	ENTER();
+    TPRINT("Object:\n");
 	child(0)->exct();         /* lookup target */
+    TPRINT("Index:\n");
 	child(1)->exct();         /* index */
-    MincDataType child0Type = child(0)->symbol()->dataType();
+//    MincDataType child0Type = child(0)->symbol()->dataType();
+    MincDataType child0Type = child(0)->dataType();
     switch (child0Type) {
         case MincListType:
             readAtSubscript();
@@ -790,7 +797,7 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
         }
             break;
         default:
-            minc_die("attempt to index or search an R-variable that's not a string, list, or map");
+            minc_die("attempt to index or search an RHS-variable that's not a string, list, or map");
             break;
     }
 	return this;
@@ -798,6 +805,7 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
 
 void    NodeSubscriptWrite::writeToSubscript()
 {
+    ENTER();
     if (child(1)->dataType() != MincFloatType) {
         minc_die("list index must be a number");
         return;
@@ -849,8 +857,11 @@ void    NodeSubscriptWrite::writeWithMapKey()
 Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
 {
 	ENTER();
+    TPRINT("Object:\n");
 	child(0)->exct();         /* lookup target */
+    TPRINT("Index:\n");
 	child(1)->exct();         /* index */
+    TPRINT("Exp to store:\n");
 	child(2)->exct();         /* expression to store */
     switch (child(0)->symbol()->dataType()) {
         case MincListType:
@@ -870,28 +881,32 @@ Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
 Node *  NodeMember::doExct()
 {
     ENTER();
+    TPRINT("Object:\n");
     child(0)->exct();         /* lookup target */
+    // NOTE: If LHS was a temporary variable, structSymbol will be null
     Symbol *structSymbol = child(0)->symbol();
-    if (structSymbol->dataType() == MincStructType) {
-        Symbol *memberSymbol = structSymbol->getStructMember(_memberName);
-        if (memberSymbol) {
+    const char *targetName = (structSymbol != NULL) ? structSymbol->name() : "lhs-variable";
+    if (child(0)->dataType() == MincStructType) {
+       Symbol *memberSymbol = ((MincStruct *) child(0)->value())->lookupMember(_memberName);
+       if (memberSymbol) {
             setSymbol(memberSymbol);
             /* also assign the symbol's value into tree's value field */
-            TPRINT("NodeName/NodeAutoName: copying value from member symbol '%s' to us\n", memberSymbol->name());
+            TPRINT("NodeMember: copying value from member symbol '%s' to us\n", _memberName);
             copyValue(memberSymbol);
         }
         else {
-            minc_die("struct variable '%s' has no member '%s'", structSymbol->name(), _memberName);
+            minc_die("struct variable '%s' has no member '%s'", targetName, _memberName);
         }
     }
     else {
-        minc_die("variable '%s' is not a struct", structSymbol->name());
+        minc_die("variable '%s' is not a struct", targetName);
     }
     return this;
 }
 
 Node *	NodeCall::doExct()
 {
+    ENTER();
 	push_list();
 	Symbol *funcSymbol = lookupSymbol(_functionName, GlobalLevel);
 	if (funcSymbol) {
@@ -982,7 +997,7 @@ Node *	NodeStore::doExct()
 {
 #ifdef ORIGINAL_CODE
 	/* N.B. Now that symbol lookup is part of tree, this happens in
-	 the NodeName stored as child[0] */
+	 the NodeLoadSym stored as child[0] */
 	TPRINT("NodeStore(%p): evaluate LHS %p (child 0)\n", this, child(0));
 	child(0)->exct();
 	/* evaluate RHS expression */
@@ -993,7 +1008,7 @@ Node *	NodeStore::doExct()
 	TPRINT("NodeStore(%p): evaluate RHS (child 1) FIRST\n", this);
 	child(1)->exct();
 	/* N.B. Now that symbol lookup is part of tree, this happens in
-	 the NodeName stored as child[0] */
+	 the NodeLoadSym stored as child[0] */
 	TPRINT("NodeStore(%p): evaluate LHS %p (child 0)\n", this, child(0));
 	child(0)->exct();
 #endif
@@ -1378,6 +1393,7 @@ Node *	NodeArgListElem::doExct()
 {
 	++sArgListLen;
 	child(0)->exct();	// work our way to the front of the list
+    TPRINT("NodeArgListElem(%p): run arg decls %p (child 1)\n", this, child(1));
 	child(1)->exct();	// run the arg decl
 	// Symbol associated with this function argument
 	Symbol *argSym = child(1)->symbol();
@@ -1396,7 +1412,7 @@ Node *	NodeArgListElem::doExct()
 		argSym->copyValue(this);
 		++sArgListIndex;
 	}
-	/* compare stored NodeName with user-passed arg */
+	/* compare stored NodeLoadSym with user-passed arg */
 	else {
 		// Pre-cached argument value from caller
 		MincValue &argValue = sMincList[sArgListIndex];
@@ -1430,6 +1446,7 @@ Node *	NodeArgListElem::doExct()
 
 Node *	NodeRet::doExct()
 {
+    TPRINT("NodeRet(%p): Evaluate value %p (child 0)\n", this, child(0));
 	child(0)->exct();
 	copyValue(child(0));
 	TPRINT("NodeRet throwing %p for return stmt\n", this);
@@ -1472,7 +1489,7 @@ Node *	NodeBlock::doExct()
 
 Node *	NodeDecl::doExct()
 {
-	TPRINT("-- declaring variable '%s'\n", _symbolName);
+	TPRINT("NodeDecl(%p) -- declaring variable '%s'\n", this, _symbolName);
 	Symbol *sym = lookupSymbol(_symbolName, inCalledFunctionArgList ? ThisLevel : AnyLevel);
 	if (!sym) {
 		sym = installSymbol(_symbolName, NO);
@@ -1499,7 +1516,7 @@ Node *	NodeDecl::doExct()
 
 Node *  NodeStructDef::doExct()
 {
-    TPRINT("-- storing declaration for struct type '%s'\n", _typeName);
+    TPRINT("NodeStructDef(%p) -- storing declaration for struct type '%s'\n", this, _typeName);
     if (current_scope() == 0) {    // until I allow nested structs
         sNewStructType = installType(_typeName, YES);  // all structs global for now
         if (sNewStructType) {
@@ -1516,7 +1533,7 @@ Node *  NodeStructDef::doExct()
 
 Node *  NodeMemberDecl::doExct()
 {
-    TPRINT("-- storing decl info for member '%s', type %s\n", _symbolName, MincTypeName(this->_type));
+    TPRINT("NodeMemberDecl(%p) -- storing decl info for member '%s', type %s\n", this, _symbolName, MincTypeName(this->_type));
     assert(sNewStructType != NULL);
     sNewStructType->addElement(_symbolName, this->_type);
     return this;
@@ -1524,7 +1541,7 @@ Node *  NodeMemberDecl::doExct()
 
 Node *    NodeStructDecl::doExct()
 {
-    TPRINT("-- looking up type '%s'\n", _typeName);
+    TPRINT("NodeStructDecl(%p) -- looking up type '%s'\n", this, _typeName);
     const StructType *structType = lookupType(_typeName, GlobalLevel);    // GlobalLevel for now
     if (structType) {
         TPRINT("-- declaring variable '%s'\n", _symbolName);
@@ -1558,7 +1575,7 @@ Node *    NodeStructDecl::doExct()
 
 Node *	NodeFuncDecl::doExct()
 {
-	TPRINT("-- declaring function '%s'\n", _symbolName);
+	TPRINT("NodeFuncDecl(%p) -- declaring function '%s'\n", this, _symbolName);
 	assert(current_scope() == 0);	// until I allow nested functions
 	Symbol *sym = lookupSymbol(_symbolName, GlobalLevel);	// only look at current global level
 	if (sym == NULL) {
@@ -1580,7 +1597,7 @@ Node *	NodeFuncDecl::doExct()
 Node *	NodeFuncDef::doExct()
 {
 	// Look up symbol for function, and bind this FuncDef node to it.
-	TPRINT("NodeFuncDef: executing lookup node %p\n", child(0));
+	TPRINT("NodeFuncDef(%p): executing lookup node %p\n", this, child(0));
 	child(0)->exct();
 	assert(child(0)->symbol() != NULL);
 	child(0)->symbol()->setNode(this);
@@ -1627,10 +1644,8 @@ copy_tree_listelem(MincValue *dest, Node *tpsrc)
 	*dest = tpsrc->value();
 }
 
-#ifdef DEBUG
 static void print_symbol(Symbol * s)
 {
-	rtcmix_print("Symbol %p: '%s' scope: %d type: %d\n", s, s->name(), s->scope, s->dataType());
+	TPRINT("Symbol %p: '%s' scope: %d type: %d\n", s, s->name(), s->scope, s->dataType());
 }
-#endif
 

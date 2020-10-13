@@ -12,7 +12,7 @@
 #include "minc_internal.h"
 #include "MincValue.h"
 
-#ifdef DEBUG_TRACE
+#ifdef NODE_DEBUG
 static char sBuf[256];
 #define NPRINT(...) do { snprintf(sBuf, 256, __VA_ARGS__); rtcmix_print("%s", sBuf); } while(0)
 #else
@@ -32,8 +32,8 @@ typedef enum {
 	eNodeSubscriptWrite,
     eNodeMember,
 	eNodeOpAssign,
-	eNodeName,
-	eNodeAutoName,
+	eNodeLoadSym,
+	eNodeAutoDeclLoadSym,
 	eNodeConstf,
 	eNodeString,
     eNodeMemberDecl,
@@ -201,14 +201,14 @@ protected:
 /* looks up symbol name and get the symbol.  Converts symbol table entry into Node
 	or initialize Node to a symbol entry
  */
-class NodeName : public Node
+class NodeLoadSym : public Node
 {
 public:
-	NodeName(const char *symbolName) : Node(OpFree, eNodeName), _symbolName(symbolName) {
-		NPRINT("NodeName('%s') => %p\n", symbolName, this);
+	NodeLoadSym(const char *symbolName) : Node(OpFree, eNodeLoadSym), _symbolName(symbolName) {
+		NPRINT("NodeLoadSym('%s') => %p\n", symbolName, this);
 	}
 protected:
-	NodeName(const char *symbolName, NodeKind kind) : Node(OpFree, kind), _symbolName(symbolName) {}
+	NodeLoadSym(const char *symbolName, NodeKind kind) : Node(OpFree, kind), _symbolName(symbolName) {}
 	virtual Node*		doExct();
 	Node *				finishExct();
 	const char *		symbolName() const { return _symbolName; }
@@ -219,11 +219,11 @@ private:
 /* looks up symbol name and get the symbol, and auto-declares it if not found
  converts symbol table entry into tree or initialize tree node to a symbol entry
  */
-class NodeAutoName : public NodeName
+class NodeAutoDeclLoadSym : public NodeLoadSym
 {
 public:
-	NodeAutoName(const char *symbolName) : NodeName(symbolName, eNodeAutoName) {
-		NPRINT("NodeAutoName('%s') => %p\n", symbolName, this);
+	NodeAutoDeclLoadSym(const char *symbolName) : NodeLoadSym(symbolName, eNodeAutoDeclLoadSym) {
+		NPRINT("NodeAutoDeclLoadSym('%s') => %p\n", symbolName, this);
 	}
 protected:
 	virtual Node*		doExct();

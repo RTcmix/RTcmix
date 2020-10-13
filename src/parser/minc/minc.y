@@ -24,7 +24,7 @@ const char *lookup_token(const char *token, bool printWarning);
 #ifdef __cplusplus
 }
 #endif
-#undef MDEBUG	/* turns on yacc debugging below */
+#define MDEBUG	/* turns on yacc debugging below */
 
 #ifdef MDEBUG
 //int yydebug=1;
@@ -85,11 +85,11 @@ static Node * go(Node * t1);
 %token <ival> TOK_MAP_DECL
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
-%type  <node> stml stmt rstmt bexp expl exp str ret bstml
+%type  <node> stml stmt rstmt bexp expl exp str ret bstml obj
 %type  <node> fdecl sdecl hdecl ldecl mdecl structdecl arg argl fdef fstml fargl funcdecl mbr mbrl structdef
 %type  <str> id structname
 
-%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mdecl structdecl fdef fstml arg argl fargl funcdecl mbr mbrl structdef
+%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mdecl structdecl fdef fstml arg argl fargl funcdecl mbr mbrl structdef obj
 
 %error-verbose
 
@@ -231,41 +231,48 @@ structdecl: TOK_STRUCT_DECL id idl    {     MPRINT("structdecl");
 level:  /* nothing */ { incrLevel(); }
 	;
 
+/* An obj is anything that can be operator accessed via . or [] */
+obj:    id                  {       MPRINT("obj: id");          $$ = new NodeLoadSym($1); }
+    |   obj'.'id            {       MPRINT("obj: obj.id");      $$ = new NodeMember($1, $3);  }
+    |   obj'[' exp ']'      {       MPRINT("obj: obj[exp]");    $$ = new NodeSubscriptRead($1, $3); }     // This is always non-terminal therefor read-access only
+/*
+    CANNOT DO FUNCTION OBJECTS YET
+    |   obj'(' expl ')'     {       MPRINT("obj: obj(expl)");   $$ = new NodeCall($3, $1); }
+    |   obj'(' bexp ')'     {       MPRINT("obj: obj(bexp)");   $$ = new NodeCall($3, $1); }
+    |   obj'(' ')'          {       MPRINT("obj: obj()");       $$ = new NodeCall(new NodeEmptyListElem(), $1) }
+*/
+    ;
+
 /* statement returning a value: assignments, function calls, etc. */
-rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAutoName($1), $3); }
-	| id TOK_PLUSEQU exp {		$$ = new NodeOpAssign(new NodeName($1), $3, OpPlus); }
-	| id TOK_MINUSEQU exp {		$$ = new NodeOpAssign(new NodeName($1), $3, OpMinus); }
-	| id TOK_MULEQU exp {		$$ = new NodeOpAssign(new NodeName($1), $3, OpMul); }
-	| id TOK_DIVEQU exp {		$$ = new NodeOpAssign(new NodeName($1), $3, OpDiv); }
+rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAutoDeclLoadSym($1), $3); }
+	| id TOK_PLUSEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpPlus); }
+	| id TOK_MINUSEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpMinus); }
+	| id TOK_MULEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpMul); }
+	| id TOK_DIVEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpDiv); }
 
     | TOK_PLUSPLUS id %prec CASTTOKEN {
-        $$ = new NodeOpAssign(new NodeName($2), new NodeConstf(1.0), OpPlusPlus);
+        $$ = new NodeOpAssign(new NodeLoadSym($2), new NodeConstf(1.0), OpPlusPlus);
     }
     | TOK_MINUSMINUS id %prec CASTTOKEN {
-        $$ = new NodeOpAssign(new NodeName($2), new NodeConstf(1.0), OpMinusMinus);
+        $$ = new NodeOpAssign(new NodeLoadSym($2), new NodeConstf(1.0), OpMinusMinus);
     }
 
-    | id '(' expl ')' {			MPRINT("id(expl)");
+    | id '(' expl ')' {			MPRINT("rstmt: id(expl)");
 								$$ = new NodeCall($3, $1);
 							}
-
-	| id '(' ')' {			MPRINT("id()");
+    | id '(' bexp ')' {         MPRINT("rstmt: id(bexp)");
+                                $$ = new NodeCall($3, $1);
+                            }
+	| id '(' ')' {			MPRINT("rstmt: id()");
 								$$ = new NodeCall(new NodeEmptyListElem(), $1);
 							}
-
-/* $3 will be the end of a linked list of NodeListElems */
-/* XXX: This causes 1 reduce/reduce conflict on '}'  How bad is this?  -JGG */
-/*	DAS MAKING THESE TWO PURE RIGHT-HAND-SIDE EXPRESSIONS
-	| '{' level expl '}'	{ MPRINT("{expl}");	decrLevel(); $$ = new NodeList($3); }
-	| id '[' exp ']' 	{			$$ = new NodeSubscriptRead(new NodeName($1), $3); }
- */
-	| id '[' exp ']' '=' exp {
-                                MPRINT("id[exp] = exp");
-                                $$ = new NodeSubscriptWrite(new NodeName($1), $3, $6);
+	| obj '[' exp ']' '=' exp {
+                                MPRINT("rstmt: obj[exp] = exp");
+                                $$ = new NodeSubscriptWrite($1, $3, $6);
                             }
-    | id'.'id '=' exp       {
-                                MPRINT("id.id = exp");
-                                $$ = new NodeStore(new NodeMember(new NodeName($1), $3), $5);
+    | obj'.'id '=' exp       {
+                                MPRINT("rstmt: obj.id = exp");
+                                $$ = new NodeStore(new NodeMember($1, $3), $5);
                             }
 	;
 
@@ -314,18 +321,18 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 	| exp '+' exp		{ $$ = new NodeOp(OpPlus, $1, $3); }
 	| exp '-' exp		{ $$ = new NodeOp(OpMinus, $1, $3); }
 	| exp '%' exp		{ $$ = new NodeOp(OpMod, $1, $3); }
-	| '(' bexp ')'		{ $$ = $2; }
+	| '(' bexp ')'		{ MPRINT("exp: (bexp)"); $$ = $2; }
 	| str				{ $$ = $1; }
 	| TOK_NUM			{
 							double f = atof(yytext);
 							$$ = new NodeConstf(f);
 						}
     /* DAS THESE ARE NOW PURE RIGHT-HAND-SIDE */
-	| '{' level expl '}'	{ MPRINT("{expl}");	decrLevel(); $$ = new NodeList($3); }
-	| '{' '}'				{ MPRINT("{}");	$$ = new NodeList(new NodeEmptyListElem()); }
+    | '{' level expl '}'	{ MPRINT("exp: {expl}");	decrLevel(); $$ = new NodeList($3); }
+	| '{' '}'				{ MPRINT("exp: {}");	$$ = new NodeList(new NodeEmptyListElem()); }
 
-	| id '[' exp ']' 	{	MPRINT("id[exp]");    $$ = new NodeSubscriptRead(new NodeName($1), $3); }
-    | id'.'id           {   MPRINT("id.id");    $$ = new NodeMember(new NodeName($1), $3); }
+	| obj '[' exp ']' 	{	MPRINT("exp: obj[exp]");    $$ = new NodeSubscriptRead($1, $3); }
+    | obj'.'id           {   MPRINT("exp: obj.id");    $$ = new NodeMember($1, $3); }
 	| TOK_ARG_QUERY		{
 #ifndef EMBEDDED
 							/* ?argument will return 1.0 if defined, else 0.0 */
@@ -383,7 +390,7 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 								$$ = new NodeOp(OpNeg, $2, new NodeConstf(0.0));
 							}
 	| id					{
-								$$ = new NodeName($1);
+								$$ = new NodeLoadSym($1);
 							}
 	;
 
