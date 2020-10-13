@@ -57,6 +57,8 @@ static void 	incrLevel();
 static void		decrLevel();
 static Node * declare(MincDataType type);
 static Node * declareStruct(const char *typeName);
+static Node * parseArgumentQuery(const char *text, int *pOutErr);
+static Node * parseScoreArgument(const char *text, int *pOutErr);
 static Node * go(Node * t1);
 
 %}
@@ -334,54 +336,10 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 	| obj '[' exp ']' 	{	MPRINT("exp: obj[exp]");    $$ = new NodeSubscriptRead($1, $3); }
     | obj'.'id           {   MPRINT("exp: obj.id");    $$ = new NodeMember($1, $3); }
 	| TOK_ARG_QUERY		{
-#ifndef EMBEDDED
-							/* ?argument will return 1.0 if defined, else 0.0 */
-							const char *token = yytext + 1;	// strip off '?'
-							// returns NULL silently if not found
-							const char *value = lookup_token(token, false);
-							$$ = new NodeConstf(value != NULL ? 1.0 : 0.0);
-#else
-							minc_warn("Argument variables not supported");
-							flerror = 1; $$ = new NodeNoop();
-#endif
+                            $$ = parseArgumentQuery(yytext, &flerror);
 						}
 	| TOK_ARG			{
-#ifndef EMBEDDED
-							const char *token = yytext + 1;	// strip off '$'
-							const char *value = lookup_token(token, true);		// returns NULL with warning
-							if (value != NULL) {
-								// We store this as a number constant if it can be coaxed into a number,
-								// else we store this as a string constant.
-								int i, is_number = 1;
-								for(i = 0; value[i] != '\0'; ++i) {
-									if ('-' == value[i] && i == 0)
-										continue;	// allow initial sign
-									if (! (isdigit(value[i]) || '.' == value[i]) ) {
-										is_number = 0;
-										break;
-									}
-								}
-								if (is_number) {
-									double f = atof(value);
-									$$ = new NodeConstf(f);
-								}
-								else {
-									// Strip off extra "" if present
-									if (value[0] == '"' && value[strlen(value)-1] == '"') {
-										char *vcopy = strsave(value+1);
-										*strrchr(vcopy, '"') = '\0';
-										$$ = new NodeString(vcopy);
-									}
-									else {
-										$$ = new NodeString(strsave(value));
-									}
-								}
-							}
-							else { flerror = 1; $$ = new NodeNoop(); }
-#else
-							minc_warn("Argument variables not supported");
-							flerror = 1; $$ = new NodeNoop();
-#endif
+                            $$ = parseScoreArgument(yytext, &flerror);
 						}
 	| TOK_TRUE			{ $$ = new NodeConstf(1.0); }
 	| TOK_FALSE			{ $$ = new NodeConstf(0.0); }
@@ -566,6 +524,65 @@ static Node * declareStruct(const char *typeName)
         t = new NodeSeq(t, decl);
     }
     return t;
+}
+
+static Node * parseArgumentQuery(const char *text, int *pOutErr)
+{
+#ifndef EMBEDDED
+    /* ?argument will return 1.0 if defined, else 0.0 */
+    const char *token = text + 1;    // strip off '?'
+    // returns NULL silently if not found
+    const char *value = lookup_token(token, false);
+    return new NodeConstf(value != NULL ? 1.0 : 0.0);
+#else
+    minc_warn("Argument variables not supported");
+    *pOutErr = 1;
+    return new NodeNoop();
+#endif
+}
+
+static Node * parseScoreArgument(const char *text, int *pOutErr)
+{
+#ifndef EMBEDDED
+    const char *token = text + 1;    // strip off '$'
+    const char *value = lookup_token(token, true);        // returns NULL with warning
+    if (value != NULL) {
+        // We store this as a number constant if it can be coaxed into a number,
+        // else we store this as a string constant.
+        int i, is_number = 1;
+        for(i = 0; value[i] != '\0'; ++i) {
+            if ('-' == value[i] && i == 0)
+            continue;    // allow initial sign
+            if (! (isdigit(value[i]) || '.' == value[i]) ) {
+                is_number = 0;
+                break;
+            }
+        }
+        if (is_number) {
+            double f = atof(value);
+            return new NodeConstf(f);
+        }
+        else {
+            // Strip off extra "" if present
+            if (value[0] == '"' && value[strlen(value)-1] == '"') {
+                char *vcopy = strsave(value+1);
+                *strrchr(vcopy, '"') = '\0';
+                return new NodeString(vcopy);
+            }
+            else {
+                return new NodeString(strsave(value));
+            }
+        }
+    }
+    else {
+        *pOutErr = 1;
+        return new NodeNoop();
+    }
+#else
+    minc_warn("Argument variables not supported");
+    *pOutErr = 1;
+    return new NodeNoop();
+#endif
 }
 
 static Node *
