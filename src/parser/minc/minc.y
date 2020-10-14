@@ -87,11 +87,11 @@ static Node * go(Node * t1);
 %token <ival> TOK_MAP_DECL
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
-%type  <node> stml stmt rstmt bexp expl exp str ret bstml obj
+%type  <node> stml stmt rstmt bexp expl exp str ret bstml obj fexp fexpl
 %type  <node> fdecl sdecl hdecl ldecl mdecl structdecl arg argl fdef fstml fargl funcdecl mbr mbrl structdef
 %type  <str> id structname
 
-%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mdecl structdecl fdef fstml arg argl fargl funcdecl mbr mbrl structdef obj
+%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mdecl structdecl fdef fstml arg argl fargl funcdecl mbr mbrl structdef obj fexp fexpl
 
 %error-verbose
 
@@ -245,6 +245,16 @@ obj:    id                  {       MPRINT("obj: id");          $$ = new NodeLoa
 */
     ;
 
+/* function expression */
+fexp:   exp             { MPRINT("fexp: exp"); $$ = $1; }
+    |   bexp            { MPRINT("fexp: bexp"); $$ = $1; }
+;
+
+/* function expression list */
+fexpl:  fexp            { MPRINT("fexpl: fexp"); $$ = new NodeListElem(new NodeEmptyListElem(), $1); }
+    |   fexpl ',' fexp  {  MPRINT("fexpl: fexpl,fexp"); $$ = new NodeListElem($1, $3); }
+;
+
 /* statement returning a value: assignments, function calls, etc. */
 rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAutoDeclLoadSym($1), $3); }
 	| id TOK_PLUSEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpPlus); }
@@ -259,12 +269,9 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
         $$ = new NodeOpAssign(new NodeLoadSym($2), new NodeConstf(1.0), OpMinusMinus);
     }
 
-    | id '(' expl ')' {			MPRINT("rstmt: id(expl)");
+    | id '(' fexpl ')' {	MPRINT("rstmt: id(fexpl)");
 								$$ = new NodeCall($3, $1);
 							}
-    | id '(' bexp ')' {         MPRINT("rstmt: id(bexp)");
-                                $$ = new NodeCall($3, $1);
-                            }
 	| id '(' ')' {			MPRINT("rstmt: id()");
 								$$ = new NodeCall(new NodeEmptyListElem(), $1);
 							}
@@ -300,7 +307,7 @@ str:	TOK_STRING		{
 							}
 	;
 
-/* Boolean expression */
+/* Boolean expression, before being wrapped in () */
 bexp:	exp %prec LOWPRIO	{ MPRINT("bexp"); $$ = $1; }
 	| TOK_NOT bexp %prec TOK_UNEQU { MPRINT("!bexp"); $$ = new NodeNot($2); }
 	| bexp TOK_AND bexp	{ $$ = new NodeAnd($1, $3); }
@@ -323,7 +330,7 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 	| exp '+' exp		{ $$ = new NodeOp(OpPlus, $1, $3); }
 	| exp '-' exp		{ $$ = new NodeOp(OpMinus, $1, $3); }
 	| exp '%' exp		{ $$ = new NodeOp(OpMod, $1, $3); }
-	| '(' bexp ')'		{ MPRINT("exp: (bexp)"); $$ = $2; }
+	| '(' bexp ')'		{ MPRINT("exp: (bexp)"); $$ = $2; } // bexp only an expression when wrapped
 	| str				{ $$ = $1; }
 	| TOK_NUM			{
 							double f = atof(yytext);
@@ -352,7 +359,8 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 							}
 	;
 
-/* an <mbr> is always a type followed by an <id>, like "float length". They only occur in struct definitions.
+/* struct member declaration.
+    An <mbr> is always a type followed by an <id>, like "float length". They only occur in struct definitions.
  */
 
 mbr: TOK_FLOAT_DECL id        { MPRINT("mbr");
