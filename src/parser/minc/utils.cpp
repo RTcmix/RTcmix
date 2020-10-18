@@ -89,6 +89,8 @@ const char *MincTypeName(MincDataType type)
             return "map";
         case MincStructType:
             return "struct";
+        case MincFunctionType:
+            return "function";
 	}
 	return NULL;
 }

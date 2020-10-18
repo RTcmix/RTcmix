@@ -68,6 +68,19 @@ protected:
     Symbol *    _memberList;
 };
 
+// A MincFunction contains a Node which contains the list of operations to be carried
+// out by the function call.
+
+class Node;
+
+class MincFunction : public MincObject, public RefCounted {
+public:
+    MincFunction() : _functionBody(NULL) {}
+    ~MincFunction();
+private:
+    Node *  _functionBody;
+};
+
 class MincValue {
 public:
     MincValue() : type(MincVoidType) { _u.list = NULL; }
@@ -77,6 +90,7 @@ public:
     MincValue(MincList *l);
     MincValue(MincMap *m);
     MincValue(MincStruct *str);
+    MincValue(MincFunction *func);
     MincValue(MincDataType type);
     MincValue(const MincValue &rhs);
     ~MincValue();
@@ -86,6 +100,7 @@ public:
     const MincValue& operator = (MincHandle h);
     const MincValue& operator = (MincList *l);
     const MincValue& operator = (MincMap *m);
+    const MincValue& operator = (MincFunction *f);
 
     const MincValue& operator += (const MincValue &rhs);
     const MincValue& operator -= (const MincValue &rhs);
@@ -101,6 +116,7 @@ public:
     operator MincList *() const { return _u.list; }
     operator MincMap *() const { return _u.map; }
     operator MincStruct *() const { return _u.mstruct; }
+    operator MincFunction *() const { return _u.mfunc; }
     operator bool() const { return (type == MincFloatType) ? _u.number != 0.0 : _u.string != NULL; }
     
     unsigned long long rawValue() const { return _u.raw; }

@@ -21,7 +21,7 @@ public:
     void                init(const StructType *);
     MincDataType        dataType() const { return v.dataType(); }
     const MincValue&    value() const { return v; }
-    MincValue&            value() { return v; }
+    MincValue&          value() { return v; }
     const char *        name() { return _name; }
     Node *              node() { return _node; }
     void                setNode(Node *inNode) { _node = inNode; }

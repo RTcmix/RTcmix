@@ -117,6 +117,9 @@ _make_type_string(const MincDataType type)
       case MincStructType:
          str = strdup("struct");
          break;
+       case MincFunctionType:
+           str = strdup("function");
+           break;
    }
    return (MincString) str;
 }
@@ -141,7 +144,10 @@ _do_print(const MincValue args[], const int nargs)
          case MincHandleType:
             RTPrintfCat("Handle:%p%s", (MincHandle)args[i], delimiter);
             break;
-         case MincListType:
+          case MincFunctionType:
+              RTPrintfCat("Function:%p%s", (MincFunction *)args[i], delimiter);
+              break;
+        case MincListType:
 		  {
 			  MincList *list = (MincList *)args[i];
 			if (list != NULL) {

@@ -35,7 +35,7 @@ MincList::~MincList()
 #ifdef DEBUG_MEMORY
         MPRINT("deleting MincList data %p...\n", data);
 #endif
-        delete []data;
+        delete [] data;
         data = NULL;
     }
 #ifdef DEBUG_MEMORY
@@ -194,7 +194,10 @@ MincValue::~MincValue()
         case MincStructType:
             RefCounted::unref(_u.mstruct);
             break;
-        default:
+        case MincFunctionType:
+            RefCounted::unref(_u.mfunc);
+            break;
+       default:
             break;
     }
 #ifdef DEBUG_MEMORY
@@ -238,6 +241,12 @@ void MincValue::doClear()
                 RefCounted::unref(_u.mstruct);
                 _u.mstruct = NULL;
             }
+        case MincFunctionType:
+            if (_u.mfunc != NULL) {
+                MPRINT("\toverwriting existing MincFunction value %p\n", _u.mfunc);
+                RefCounted::unref(_u.mfunc);
+                _u.mfunc = NULL;
+            }
             break;
         default:
             break;
@@ -267,7 +276,10 @@ void MincValue::doCopy(const MincValue &rhs)
        case MincStructType:
             _u.mstruct = rhs._u.mstruct;
             break;
-        default:
+        case MincFunctionType:
+            _u.mfunc = rhs._u.mfunc;
+            break;
+       default:
             if (type != MincVoidType) {
                 MPRINT("\tAssigning from a void MincValue rhs");
             }
@@ -301,6 +313,9 @@ void MincValue::print()
         case MincStructType:
             TPRINT("%p\n", _u.mstruct);
             break;
+        case MincFunctionType:
+            TPRINT("%p\n", _u.mfunc);
+            break;
         case MincVoidType:
             TPRINT("void\n");
             break;
@@ -323,6 +338,8 @@ const MincValue& MincValue::operator = (const MincValue &rhs)
         RefCounted::ref(rhs._u.map);
     else if (rhs.type == MincStructType)
         RefCounted::ref(rhs._u.mstruct);
+    else if (rhs.type == MincFunctionType)
+        RefCounted::ref(rhs._u.mfunc);
     doClear();
     type = rhs.type;
     doCopy(rhs);
