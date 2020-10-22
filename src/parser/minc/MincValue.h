@@ -59,11 +59,12 @@ class MincStruct : public MincObject, public RefCounted
 {
 public:
     MincStruct() : _memberList(NULL) {}
-    ~MincStruct();
     Symbol *    addMember(const char *name, MincDataType type, int scope);
     Symbol *    lookupMember(const char *name);
     Symbol *    members() { return _memberList; }
     void        print();
+protected:
+    virtual ~MincStruct();
 protected:
     Symbol *    _memberList;
 };
@@ -75,8 +76,9 @@ class Node;
 
 class MincFunction : public MincObject, public RefCounted {
 public:
-    MincFunction() : _functionBody(NULL) {}
-    ~MincFunction();
+    MincFunction(Node *body);
+protected:
+    virtual ~MincFunction();
 private:
     Node *  _functionBody;
 };

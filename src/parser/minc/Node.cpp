@@ -1514,11 +1514,13 @@ Node *	NodeDecl::doExct()
 	return this;
 }
 
+// NodeStructDef stores the new struct type into the scope's struct type table
+
 Node *  NodeStructDef::doExct()
 {
     TPRINT("NodeStructDef(%p) -- storing declaration for struct type '%s'\n", this, _typeName);
     if (current_scope() == 0) {    // until I allow nested structs
-        sNewStructType = installType(_typeName, YES);  // all structs global for now
+        sNewStructType = installStructType(_typeName, YES);  // all structs global for now
         if (sNewStructType) {
             TPRINT("-- walking element list\n");
             child(0)->exct();
@@ -1542,7 +1544,7 @@ Node *  NodeMemberDecl::doExct()
 Node *    NodeStructDecl::doExct()
 {
     TPRINT("NodeStructDecl(%p) -- looking up type '%s'\n", this, _typeName);
-    const StructType *structType = lookupType(_typeName, GlobalLevel);    // GlobalLevel for now
+    const StructType *structType = lookupStructType(_typeName, GlobalLevel);    // GlobalLevel for now
     if (structType) {
         TPRINT("-- declaring variable '%s'\n", _symbolName);
         Symbol *sym = lookupSymbol(_symbolName, GlobalLevel);       // GlobalLevel for now

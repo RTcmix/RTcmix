@@ -381,7 +381,7 @@ mbr: TOK_FLOAT_DECL id        { MPRINT("mbr");
     e.g. "float f, float g, string s"
  */
 
-mbrl: mbr               { MPRINT("mbr: mbr");
+mbrl: mbr               { MPRINT("mbrl: mbr");
             $$ = new NodeSeq(new NodeNoop(), $1); }
     | mbrl ',' mbr      { MPRINT("mbrl: mbrl,mbr");
             $$ = new NodeSeq($1, $3); }

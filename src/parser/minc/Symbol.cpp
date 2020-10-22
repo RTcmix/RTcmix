@@ -227,6 +227,7 @@ dname(int x)
       { MincMapType, "map" },
       { MincStringType, "string" },
       { MincStructType, "struct" },
+      { MincFunctionType, "function" },
       { MincVoidType, "void" },
       { 0, 0 }
    };

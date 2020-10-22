@@ -58,8 +58,8 @@ protected:
     std::vector<MemberInfo>     _members;
 };
 
-StructType *installType(const char *typeName, Bool isGlobal);
-const StructType *lookupType(const char *typeName, LookupType lookupType);
+StructType *installStructType(const char *typeName, Bool isGlobal);
+const StructType *lookupStructType(const char *typeName, ScopeLookupType lookupType);
 
 void push_function_stack();
 void pop_function_stack();
@@ -70,7 +70,7 @@ void restore_scope(int scope);
 
 class Symbol;
 Symbol *installSymbol(const char *name, Bool isGlobal);
-Symbol *lookupSymbol(const char *name, LookupType lookupType);
+Symbol *lookupSymbol(const char *name, ScopeLookupType lookupType);
 Symbol * lookupOrAutodeclare(const char *name, Bool inFunctionCall);
 
 void dump_symbols();

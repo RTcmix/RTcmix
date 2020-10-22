@@ -163,7 +163,7 @@ union YYSTYPE {
 };
 #define YYSTYPE_IS_DECLARED   /* keep bison from declaring YYSTYPE as an int */
 
-enum LookupType { AnyLevel = 0, GlobalLevel = 1, ThisLevel = 2 };
+enum ScopeLookupType { AnyLevel = 0, GlobalLevel = 1, ThisLevel = 2 };
 
 void printargs(const char *funcname, const Arg arglist[], const int nargs);
 

@@ -70,7 +70,7 @@ MincMap::MincMap()
 MincMap::~MincMap()
 {
 #ifdef DEBUG_MEMORY
-    MPRINT("deleting ~MincMap %p\n", this);
+    MPRINT("deleting MincMap %p\n", this);
 #endif
 }
 
@@ -124,6 +124,22 @@ Symbol * MincStruct::lookupMember(const char *name)
 }
 
 // MincStruct::print() is defined in builtin.cpp
+
+/* ========================================================================== */
+/* MincFunction */
+
+MincFunction::MincFunction(Node *body) : _functionBody(body)
+{
+    ENTER();
+}
+
+MincFunction::~MincFunction()
+{
+#ifdef DEBUG_MEMORY
+    MPRINT("deleting MincFunction %p\n", this);
+#endif
+    delete _functionBody;
+}
 
 /* ========================================================================== */
 /* MincValue */

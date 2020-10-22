@@ -21,8 +21,8 @@ public:
     Symbol *            install(const char *name);
     Symbol *            lookup(const char *name) const;
     int                 depth() const { return _depth; }
-    StructType *        installType(const char *name);
-    const StructType *  lookupType(const char *name) const;
+    StructType *        installStructType(const char *name);
+    const StructType *  lookupStructType(const char *name) const;
     void                dump();
 protected:
     virtual             ~Scope();
@@ -75,13 +75,13 @@ Scope::lookup(const char *name) const
     return p;
 }
 
-StructType *    Scope::installType(const char *name)
+StructType *    Scope::installStructType(const char *name)
 {
     _structTypes.push_back(StructType(name));
     return &_structTypes.back();
 }
 
-const StructType *  Scope::lookupType(const char *name) const
+const StructType *  Scope::lookupStructType(const char *name) const
 {
     const StructType *outType = NULL;
     for (std::vector<StructType>::const_iterator i = _structTypes.begin(); i != _structTypes.end(); ++i) {
@@ -210,7 +210,7 @@ installSymbol(const char *name, Bool isGlobal)
  */
 /* WARNING: it can only find symbol if name is a ptr returned by strsave */
 Symbol *
-lookupSymbol(const char *name, LookupType lookupType)
+lookupSymbol(const char *name, ScopeLookupType lookupType)
 {
     Symbol *p = NULL;
     int foundLevel = -1;
@@ -329,29 +329,25 @@ void free_scopes()
 }
 
 StructType *
-installType(const char *typeName, Bool isGlobal)
+installStructType(const char *typeName, Bool isGlobal)
 {
-    if (ScopeManager::globalScope()->lookupType(typeName) == NULL) {
-        return ScopeManager::globalScope()->installType(typeName);
+    if (ScopeManager::globalScope()->lookupStructType(typeName) == NULL) {
+        return ScopeManager::globalScope()->installStructType(typeName);
     }
     else {
-#ifdef EMBEDDED
-        minc_warn("struct %s is already declared", typeName);
-#else
         minc_die("struct %s is already declared", typeName);
-#endif
         return NULL;
     }
 }
 
 const StructType *
-lookupType(const char *typeName, LookupType lookupType)
+lookupStructType(const char *typeName, ScopeLookupType lookupType)
 {
     if (lookupType == GlobalLevel) {
         // Global scope only
         const StructType *foundType = NULL;
         ScopeStack *stack = ScopeManager::stack();
-        if ((foundType = stack->front()->lookupType(typeName)) != NULL) {
+        if ((foundType = stack->front()->lookupStructType(typeName)) != NULL) {
             // probably print some logging here
         }
         return foundType;
