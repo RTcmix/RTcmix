@@ -630,10 +630,10 @@ Node *	NodeLoadSym::finishExct()
     Symbol *nodeSymbol;
 	if ((nodeSymbol = symbol()) != NULL) {
 		TPRINT("%s: symbol %p\n", classname(), nodeSymbol);
-			/* also assign the symbol's value into tree's value field */
-			TPRINT("NodeLoadSym/NodeAutoDeclLoadSym: copying value from symbol '%s' to us\n", nodeSymbol->name());
-			copyValue(nodeSymbol);
-		}
+        /* also assign the symbol's value into tree's value field */
+        TPRINT("NodeLoadSym/NodeAutoDeclLoadSym: copying value from symbol '%s' to us\n", nodeSymbol->name());
+        copyValue(nodeSymbol);
+	}
 	else {
 		minc_die("'%s' is not declared", symbolName());
 	}
@@ -657,7 +657,7 @@ Node *    NodeLoadFuncSym::finishExct()
         copyValue(nodeSymbol);
     }
     else {
-        TPRINT("NodeLoadFuncSym: '%s' has no symbol, may be builtin\n", symbolName());
+        TPRINT("NodeLoadFuncSym: '%s' has no symbol - will try builtin\n", symbolName());
         // Special trick: Store function name into Node's value
         value() = MincValue(symbolName());
     }
@@ -1437,6 +1437,7 @@ Node *	NodeArgListElem::doExct()
 			case MincListType:
             case MincMapType:
             case MincStructType:
+            case MincFunctionType:
 				if (argSym->dataType() != argValue.dataType()) {
 					minc_die("%s() arg '%s' passed as %s, expecting %s",
 								sCalledFunctions.back(), argSym->name(), MincTypeName(argValue.dataType()), MincTypeName(argSym->dataType()));

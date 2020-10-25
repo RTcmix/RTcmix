@@ -85,13 +85,14 @@ static Node * go(Node * t1);
 %token <ival> TOK_HANDLE_DECL
 %token <ival> TOK_LIST_DECL
 %token <ival> TOK_MAP_DECL
+%token <ival> TOK_FUNC_DECL;
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 %type  <node> stml stmt rstmt bexp expl exp str ret bstml obj fexp fexpl func
-%type  <node> fdecl sdecl hdecl ldecl mdecl structdecl arg argl fdef fstml fargl funcdecl mbr mbrl structdef
+%type  <node> fdecl sdecl hdecl ldecl mdecl structdecl funcdecl arg argl fdef fstml fargl funcname mbr mbrl structdef
 %type  <str> id structname
 
-%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mdecl structdecl fdef fstml arg argl fargl funcdecl mbr mbrl structdef obj fexp fexpl
+%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mdecl structdecl funcdecl fdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl
 
 %error-verbose
 
@@ -115,6 +116,7 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 	| ldecl
     | mdecl
     | structdecl
+    | funcdecl
 	| TOK_IF level bexp stmt {	xblock = 1; MPRINT("IF bexp stmt");
 								decrLevel();
 								$$ = go(new NodeIf($3, $4));
@@ -143,6 +145,7 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 	| error TOK_STRING_DECL	{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_HANDLE_DECL	{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_LIST_DECL	{ flerror = 1; $$ = new NodeNoop(); }
+    | error TOK_MAP_DECL    { flerror = 1; $$ = new NodeNoop(); }
     | error TOK_MAP_DECL    { flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_IF		{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_WHILE	{ flerror = 1; $$ = new NodeNoop(); }
@@ -225,6 +228,11 @@ mdecl:    TOK_MAP_DECL idl    {     MPRINT("mdecl");
     ;
 structdecl: TOK_STRUCT_DECL id idl    {     MPRINT("structdecl");
                                             $$ = go(declareStruct($2));
+                                            idcount = 0;
+                                        }
+    ;
+funcdecl:    TOK_FUNC_DECL idl    {     MPRINT("funcdecl");
+                                            $$ = go(declare(MincFunctionType));
                                             idcount = 0;
                                         }
     ;
@@ -362,16 +370,12 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
     An <mbr> is always a type followed by an <id>, like "float length". They only occur in struct definitions.
  */
 
-mbr: TOK_FLOAT_DECL id        { MPRINT("mbr");
-        $$ = new NodeMemberDecl($2, MincFloatType); }
-    | TOK_STRING_DECL id    { MPRINT("mbr");
-        $$ = new NodeMemberDecl($2, MincStringType); }
-    | TOK_HANDLE_DECL id    { MPRINT("mbr");
-        $$ = new NodeMemberDecl($2, MincHandleType); }
-    | TOK_LIST_DECL id        { MPRINT("mbr");
-        $$ = new NodeMemberDecl($2, MincListType); }
-    | TOK_MAP_DECL id        { MPRINT("mbr");
-        $$ = new NodeMemberDecl($2, MincMapType); }
+mbr: TOK_FLOAT_DECL id        { MPRINT("mbr");  $$ = new NodeMemberDecl($2, MincFloatType); }
+    | TOK_STRING_DECL id    { MPRINT("mbr");    $$ = new NodeMemberDecl($2, MincStringType); }
+    | TOK_HANDLE_DECL id    { MPRINT("mbr");    $$ = new NodeMemberDecl($2, MincHandleType); }
+    | TOK_LIST_DECL id        { MPRINT("mbr");  $$ = new NodeMemberDecl($2, MincListType); }
+    | TOK_MAP_DECL id        { MPRINT("mbr");   $$ = new NodeMemberDecl($2, MincMapType); }
+    | TOK_FUNC_DECL id        { MPRINT("mbr");   $$ = new NodeMemberDecl($2, MincFunctionType); }
     ;
 
 /* struct declaration */
@@ -410,6 +414,7 @@ struct:         {    MPRINT("struct"); if (slevel > 0) { minc_die("nested struct
 
 /* a <arg> is always a type followed by an <id>, like "float length".  They only occur in function definitions.
     The variables declared are not visible outside of the function definition.
+    TODO: CAN THESE BE DERIVED FROM SOME OTHER EXISTING RULE?
  */
 
 arg: TOK_FLOAT_DECL id      { MPRINT("arg");
@@ -424,21 +429,25 @@ arg: TOK_FLOAT_DECL id      { MPRINT("arg");
                                     $$ = new NodeDecl($2, MincMapType); }
     | TOK_STRUCT_DECL id id { MPRINT("arg");
                                     $$ = new NodeStructDecl($3, $2); }
+    | TOK_FUNC_DECL id      { MPRINT("arg");
+                                    $$ = new NodeDecl($2, MincFunctionType); }
     ;
 
-/* function declaration, e.g. "list myfunction" */
+/* function name, e.g. "list myfunction".  Used as first part of definition.
+    TODO: This is where I would add the ability for a function to return a function.
+ */
 
-funcdecl: TOK_FLOAT_DECL id function { MPRINT("funcdecl");
+funcname: TOK_FLOAT_DECL id function { MPRINT("funcname");
 									$$ = go(new NodeFuncDecl(strsave($2), MincFloatType)); }
-	| TOK_STRING_DECL id function { MPRINT("funcdecl");
+	| TOK_STRING_DECL id function { MPRINT("funcname");
 									$$ = go(new NodeFuncDecl(strsave($2), MincStringType)); }
-	| TOK_HANDLE_DECL id function { MPRINT("funcdecl");
+	| TOK_HANDLE_DECL id function { MPRINT("funcname");
 									$$ = go(new NodeFuncDecl(strsave($2), MincHandleType)); }
-	| TOK_LIST_DECL id function { MPRINT("funcdecl");
+	| TOK_LIST_DECL id function { MPRINT("funcname");
 									$$ = go(new NodeFuncDecl(strsave($2), MincListType)); }
-    | TOK_MAP_DECL id function { MPRINT("funcdecl");
+    | TOK_MAP_DECL id function { MPRINT("funcname");
                                     $$ = go(new NodeFuncDecl(strsave($2), MincMapType)); }
-    | TOK_STRUCT_DECL id id function { MPRINT("funcdecl");
+    | TOK_STRUCT_DECL id id function { MPRINT("funcname");
                                     $$ = go(new NodeFuncDecl(strsave($3), MincStructType)); }
 	;
 
@@ -478,9 +487,9 @@ fstml:	stml ret			{	MPRINT("fstml: stml,ret");
 							}
 	;
 
-/* the full rule for a function declaration/definition, e.g. "list myfunction(string s) { ... }" */
+/* the full rule for a function definition, e.g. "list myfunction(string s) { ... }" */
 
-fdef: funcdecl fargl '{' fstml '}'	{
+fdef: funcname fargl '{' fstml '}'	{
 									MPRINT("fdef");
 									decrLevel();
 									--flevel; MPRINT1("flevel => %d", flevel);
@@ -490,8 +499,8 @@ fdef: funcdecl fargl '{' fstml '}'	{
 									 */
 									$$ = new NodeNoop();
 								}
-	| error funcdecl fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
-	| error funcdecl fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
+	| error funcname fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
+	| error funcname fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
 	;
 
 %%

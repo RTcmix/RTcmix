@@ -13,6 +13,14 @@
 #include <vector>
 #include <string.h>
 
+#undef SYMBOL_DEBUG
+#undef DPRINT
+#ifdef SYMBOL_DEBUG
+#define DPRINT(...) rtcmix_print(__VA_ARGS__)
+#else
+#define DPRINT(...)
+#endif
+
 // New Scope Code
 
 class Scope : public RefCounted {

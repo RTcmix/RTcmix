@@ -299,8 +299,7 @@ protected:
 class NodeMemberDecl : public Node
 {
 public:
-    NodeMemberDecl(const char *name, MincDataType type)
-            : Node(OpFree, eNodeMemberDecl), _symbolName(name) {
+    NodeMemberDecl(const char *name, MincDataType type) : Node(OpFree, eNodeMemberDecl), _symbolName(name) {
         this->_type = type;        // TODO
         NPRINT("NodeMemberDecl('%s') => %p\n", name, this);
     }

@@ -67,8 +67,6 @@ Symbol::~Symbol()
 #if defined(SYMBOL_DEBUG) || defined(DEBUG_SYM_MEMORY)
 //	rtcmix_print("\tSymbol::~Symbol() \"%s\" for scope %d (%p)\n", name, scope, this);
 #endif
-	delete _node;
-	_node = NULL;
 	scope = -1;			// we assert on this elsewhere
 }
 
