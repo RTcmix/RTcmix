@@ -22,10 +22,7 @@ public:
     MincDataType        dataType() const { return v.dataType(); }
     const MincValue&    value() const { return v; }
     MincValue&          value() { return v; }
-    const char *        name() { return _name; }
-    Node *              node() { return _node; }
-    void                setNode(Node *inNode) { _node = inNode; }
-    
+    const char *        name() { return _name; }    
     Symbol *            copyValue(Node *);
     
     Symbol *            getStructMember(const char *memberName);
@@ -37,7 +34,6 @@ public:
 protected:
     Symbol(const char *name);
     const char *_name;          /* symbol name */
-    Node *      _node;              /* for symbols that are functions, function def */
     MincValue   v;
 #ifdef NOTYET
     short defined;             /* set when function defined */

@@ -34,6 +34,7 @@ typedef enum {
 	eNodeOpAssign,
 	eNodeLoadSym,
 	eNodeAutoDeclLoadSym,
+    eNodeLoadFuncSym,
 	eNodeConstf,
 	eNodeString,
     eNodeMemberDecl,
@@ -210,7 +211,7 @@ public:
 protected:
 	NodeLoadSym(const char *symbolName, NodeKind kind) : Node(OpFree, kind), _symbolName(symbolName) {}
 	virtual Node*		doExct();
-	Node *				finishExct();
+	virtual Node *      finishExct();
 	const char *		symbolName() const { return _symbolName; }
 private:
     const char *_symbolName;       /* used for function name, symbol name (for lookup) */
@@ -227,6 +228,20 @@ public:
 	}
 protected:
 	virtual Node*		doExct();
+};
+
+/* looks up symbol name for a function and get the symbol.  Converts symbol table entry into Node
+ or initialize Node to a symbol entry.  If there is no symbol, this is a builtin function, and we
+ do not flag that as an error.
+ */
+class NodeLoadFuncSym : public NodeLoadSym
+{
+public:
+    NodeLoadFuncSym(const char *symbolName) :  NodeLoadSym(symbolName, eNodeLoadFuncSym) {
+        NPRINT("NodeLoadFuncSym('%s') => %p\n", symbolName, this);
+    }
+protected:
+    virtual Node *      finishExct();
 };
 
 class NodeString : public Node
@@ -335,16 +350,18 @@ protected:
 	virtual Node*		doExct();
 };
 
-class NodeCall : public Node1Child
+// Function call node
+//  n1 Function definition node
+//  n2 Function arguments list
+
+class NodeCall : public Node2Children
 {
 public:
-	NodeCall(Node *args, const char *functionName) : Node1Child(OpFree, eNodeCall, args), _functionName(functionName) {
-		NPRINT("NodeCall(%p, '%s') => %p\n", args, functionName, this);
+	NodeCall(Node *func, Node *args) : Node2Children(OpFree, eNodeCall, func, args) {
+		NPRINT("NodeCall(%p, %p) => %p\n", func, args, this);
 	}
 protected:
 	virtual Node*		doExct();
-private:
-	const char*		_functionName;
 };
 
 class NodeAnd : public Node2Children

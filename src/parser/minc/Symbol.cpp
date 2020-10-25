@@ -51,7 +51,7 @@ Symbol *	Symbol::create(const char *name)
 }
 
 Symbol::Symbol(const char *symName)
-    : next(NULL), scope(-1), _name(symName), _node(NULL)
+    : next(NULL), scope(-1), _name(symName)
 {
 #ifdef NOTYET
 	defined = offset = 0;

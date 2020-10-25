@@ -77,6 +77,8 @@ class Node;
 class MincFunction : public MincObject, public RefCounted {
 public:
     MincFunction(Node *body);
+    void    copyArguments();
+    Node *  execute();
 protected:
     virtual ~MincFunction();
 private:
@@ -145,6 +147,7 @@ private:
         MincList *list;
         MincMap *map;
         MincStruct *mstruct;
+        MincFunction *mfunc;
         unsigned long long raw;     // used for raw comparison
     } _u;
 };

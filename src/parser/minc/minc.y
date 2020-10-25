@@ -87,7 +87,7 @@ static Node * go(Node * t1);
 %token <ival> TOK_MAP_DECL
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
-%type  <node> stml stmt rstmt bexp expl exp str ret bstml obj fexp fexpl
+%type  <node> stml stmt rstmt bexp expl exp str ret bstml obj fexp fexpl func
 %type  <node> fdecl sdecl hdecl ldecl mdecl structdecl arg argl fdef fstml fargl funcdecl mbr mbrl structdef
 %type  <str> id structname
 
@@ -237,12 +237,11 @@ level:  /* nothing */ { incrLevel(); }
 obj:    id                  {       MPRINT("obj: id");          $$ = new NodeLoadSym($1); }
     |   obj'.'id            {       MPRINT("obj: obj.id");      $$ = new NodeMember($1, $3);  }
     |   obj'[' exp ']'      {       MPRINT("obj: obj[exp]");    $$ = new NodeSubscriptRead($1, $3); }     // This is always non-terminal therefor read-access only
-/*
-    CANNOT DO FUNCTION OBJECTS YET
-    |   obj'(' expl ')'     {       MPRINT("obj: obj(expl)");   $$ = new NodeCall($3, $1); }
-    |   obj'(' bexp ')'     {       MPRINT("obj: obj(bexp)");   $$ = new NodeCall($3, $1); }
-    |   obj'(' ')'          {       MPRINT("obj: obj()");       $$ = new NodeCall(new NodeEmptyListElem(), $1) }
-*/
+    ;
+
+func:   id                  {       MPRINT("func: id");         $$ = new NodeLoadFuncSym($1); }
+    |   obj'.'id            {       MPRINT("func: obj.id");     $$ = new NodeMember($1, $3); }
+    |   obj'[' exp ']'      {       MPRINT("func: obj[exp]");   $$ = new NodeSubscriptRead($1, $3); }
     ;
 
 /* function expression */
@@ -269,11 +268,11 @@ rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAuto
         $$ = new NodeOpAssign(new NodeLoadSym($2), new NodeConstf(1.0), OpMinusMinus);
     }
 
-    | id '(' fexpl ')' {	MPRINT("rstmt: id(fexpl)");
-								$$ = new NodeCall($3, $1);
+    | func '(' fexpl ')' {	MPRINT("rstmt: func(fexpl)");
+								$$ = new NodeCall($1, $3);
 							}
-	| id '(' ')' {			MPRINT("rstmt: id()");
-								$$ = new NodeCall(new NodeEmptyListElem(), $1);
+	| func '(' ')' {			MPRINT("rstmt: func()");
+								$$ = new NodeCall($1, new NodeEmptyListElem());
 							}
 	| obj '[' exp ']' '=' exp {
                                 MPRINT("rstmt: obj[exp] = exp");
@@ -355,7 +354,7 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 								$$ = new NodeOp(OpNeg, $2, new NodeConstf(0.0));
 							}
 	| id					{
-								$$ = new NodeLoadSym($1);
+								MPRINT("exp: id");    $$ = new NodeLoadSym($1);
 							}
 	;
 
@@ -406,6 +405,8 @@ struct:         {    MPRINT("struct"); if (slevel > 0) { minc_die("nested struct
                     slevel++; MPRINT1("slevel => %d", slevel);
                 }
     ;
+
+/* Everything from this point down is used to build a function declaration/definition */
 
 /* a <arg> is always a type followed by an <id>, like "float length".  They only occur in function definitions.
     The variables declared are not visible outside of the function definition.

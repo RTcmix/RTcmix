@@ -9,6 +9,7 @@
 #include "MincValue.h"
 #include "debug.h"
 #include "handle.h"
+#include "Node.h"
 #include "Symbol.h"
 #include <string.h>
 
@@ -141,6 +142,18 @@ MincFunction::~MincFunction()
     delete _functionBody;
 }
 
+void
+MincFunction::copyArguments()
+{
+    (void)_functionBody->child(1)->exct();
+}
+
+Node *
+MincFunction::execute()
+{
+    return _functionBody->child(2)->exct();
+}
+
 /* ========================================================================== */
 /* MincValue */
 
@@ -174,6 +187,14 @@ MincValue::MincValue(MincStruct *str) : type(MincStructType)
     MPRINT("created MincValue %p (for MincStruct *)\n", this);
 #endif
     _u.mstruct = str; RefCounted::ref(str);
+}
+
+MincValue::MincValue(MincFunction *func) : type(MincFunctionType)
+{
+#ifdef DEBUG_MEMORY
+    MPRINT("created MincValue %p (for MincFunction *)\n", this);
+#endif
+    _u.mfunc = func; RefCounted::ref(func);
 }
 
 MincValue::MincValue(MincDataType inType) : type(inType)

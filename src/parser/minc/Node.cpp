@@ -82,7 +82,10 @@ static void print_symbol(Symbol * s);		// TODO: Symbol::print()
 
 static MincWarningLevel sMincWarningLevel = MincAllWarnings;
 
-void clear_node_state()	// The only exported function from Node.cpp.  Clear all static state.
+// The only exported functions from Node.cpp.
+
+// Clear all static state.
+void clear_tree_state()
 {
 	sMincListLen = 0;
 	sMincList = NULL;
@@ -111,6 +114,7 @@ static const char *s_NodeKinds[] = {
    "NodeOpAssign",
    "NodeLoadSym",
    "NodeAutoDeclLoadSym",
+   "NodeLoadFuncSym",
    "NodeConstf",
    "NodeString",
    "NodeMemberDecl",
@@ -176,12 +180,12 @@ static void pop_list(void);
 Node::Node(OpKind op, NodeKind kind)
 	: kind(kind), op(op), lineno(yyget_lineno())
 {
-	TPRINT("Node::Node (%s) this=%p\n", classname(), this);
-    u.number = 0.0;     // this should zero out the union.
 #ifdef DEBUG_MEMORY
+	TPRINT("Node::Node (%s) this=%p\n", classname(), this);
 	++numNodes;
 	TPRINT("[%d nodes in existence]\n", numNodes);
 #endif
+    u.number = 0.0;     // this should zero out the union.
 }
 
 Node::~Node()
@@ -626,16 +630,10 @@ Node *	NodeLoadSym::finishExct()
     Symbol *nodeSymbol;
 	if ((nodeSymbol = symbol()) != NULL) {
 		TPRINT("%s: symbol %p\n", classname(), nodeSymbol);
-		/* For now, symbols for functions cannot be an RHS */
-		if (nodeSymbol->node() != NULL) {
-			minc_die("Cannot use function '%s' as a variable", symbolName());
-		}
-		else {
 			/* also assign the symbol's value into tree's value field */
 			TPRINT("NodeLoadSym/NodeAutoDeclLoadSym: copying value from symbol '%s' to us\n", nodeSymbol->name());
 			copyValue(nodeSymbol);
 		}
-	}
 	else {
 		minc_die("'%s' is not declared", symbolName());
 	}
@@ -647,6 +645,23 @@ Node *	NodeAutoDeclLoadSym::doExct()
 	/* look up the symbol */
 	setSymbol(lookupOrAutodeclare(symbolName(), inFunctionCall() ? YES : NO));
 	return finishExct();
+}
+
+Node *    NodeLoadFuncSym::finishExct()
+{
+    Symbol *nodeSymbol;
+    if ((nodeSymbol = symbol()) != NULL) {
+        TPRINT("%s: symbol %p\n", classname(), nodeSymbol);
+        /* also assign the symbol's value into tree's value field */
+        TPRINT("NodeLoadFuncSym: copying value from symbol '%s' to us\n", nodeSymbol->name());
+        copyValue(nodeSymbol);
+    }
+    else {
+        TPRINT("NodeLoadFuncSym: '%s' has no symbol, may be builtin\n", symbolName());
+        // Special trick: Store function name into Node's value
+        value() = MincValue(symbolName());
+    }
+    return this;
 }
 
 Node *	NodeListElem::doExct()
@@ -696,7 +711,6 @@ void    NodeSubscriptRead::readAtSubscript()
     MincFloat fltindex = (MincFloat) child(1)->value();
     int index = (int) fltindex;
     MincFloat frac = fltindex - index;
-//    MincList *theList = (MincList *) child(0)->symbol()->value();
     MincList *theList = (MincList *) child(0)->value();
     if (theList == NULL) {
         minc_die("attempt to index a NULL list");
@@ -757,12 +771,11 @@ void    NodeSubscriptRead::searchWithMapKey()
 Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
 {
 	ENTER();
-    TPRINT("Object:\n");
+    TPRINT("NodeSubscriptRead: Object:\n");
 	child(0)->exct();         /* lookup target */
-    TPRINT("Index:\n");
+    TPRINT("NodeSubscriptRead: Index:\n");
 	child(1)->exct();         /* index */
-//    MincDataType child0Type = child(0)->symbol()->dataType();
-    MincDataType child0Type = child(0)->dataType();
+    MincDataType child0Type = child(0)->dataType(); // This is the type of the object having operator [] applied.
     switch (child0Type) {
         case MincListType:
             readAtSubscript();
@@ -857,11 +870,11 @@ void    NodeSubscriptWrite::writeWithMapKey()
 Node *	NodeSubscriptWrite::doExct()	// was exct_subscript_write()
 {
 	ENTER();
-    TPRINT("Object:\n");
+    TPRINT("NodeSubscriptWrite: Object:\n");
 	child(0)->exct();         /* lookup target */
-    TPRINT("Index:\n");
+    TPRINT("NodeSubscriptWrite: Index:\n");
 	child(1)->exct();         /* index */
-    TPRINT("Exp to store:\n");
+    TPRINT("NodeSubscriptWrite: Exp to store:\n");
 	child(2)->exct();         /* expression to store */
     switch (child(0)->symbol()->dataType()) {
         case MincListType:
@@ -885,7 +898,7 @@ Node *  NodeMember::doExct()
     child(0)->exct();         /* lookup target */
     // NOTE: If LHS was a temporary variable, structSymbol will be null
     Symbol *structSymbol = child(0)->symbol();
-    const char *targetName = (structSymbol != NULL) ? structSymbol->name() : "lhs-variable";
+    const char *targetName = (structSymbol != NULL) ? structSymbol->name() : "temp lhs";
     if (child(0)->dataType() == MincStructType) {
        Symbol *memberSymbol = ((MincStruct *) child(0)->value())->lookupMember(_memberName);
        if (memberSymbol) {
@@ -907,18 +920,17 @@ Node *  NodeMember::doExct()
 Node *	NodeCall::doExct()
 {
     ENTER();
+    TPRINT("NodeCall: Func:\n");
+    child(0)->exct();         /* lookup target */
 	push_list();
-	Symbol *funcSymbol = lookupSymbol(_functionName, GlobalLevel);
-	if (funcSymbol) {
-		sCalledFunctions.push_back(_functionName);
-		/* The function's definition node was stored on the symbol at declaration time.
-            If a function was called on a non-function symbol, the tree will be NULL.
-		 */
-		Node * funcDef = funcSymbol->node();
-		if (funcDef) {
-			TPRINT("NodeCall: func def = %p\n", funcDef);
-			TPRINT("NodeCall: exp decl list = %p\n", child(0));
-			child(0)->exct();	// execute arg expression list
+    TPRINT("NodeCall: Args = %p\n", child(1));
+    child(1)->exct();    // execute arg expression list (stored on this NodeCall)
+	if (child(0)->dataType() == MincFunctionType) {
+        Symbol *funcSymbol = child(0)->symbol();
+        sCalledFunctions.push_back(funcSymbol ? funcSymbol->name() : "temp lhs");   // FIX ME: have temp LHS vars store symbols
+        MincFunction *theFunction = (MincFunction *)child(0)->value();
+        if (theFunction) {
+			TPRINT("NodeCall: theFunction = %p\n", theFunction);
 			push_function_stack();
 			push_scope();
 			int savedLineNo=0, savedScope=0, savedCallDepth=0;
@@ -932,14 +944,14 @@ Node *	NodeCall::doExct()
                     call_builtin_function("print", sMincList, sMincListLen, &retval);
                 }
 				/* The exp list is copied to the symbols for the function's arg list. */
-				funcDef->child(1)->exct();
+				theFunction->copyArguments();
 				savedLineNo = yyget_lineno();
 				savedScope = current_scope();
 				++sFunctionCallDepth;
 				savedCallDepth = sFunctionCallDepth;
-				TPRINT("NodeCall(%p): executing %s() block node %p, call depth now %d\n",
-					   this, sCalledFunctions.back(), funcDef->child(2), savedCallDepth);
-				temp = funcDef->child(2)->exct();
+				TPRINT("NodeCall(%p): executing %s(), call depth now %d\n",
+					   this, sCalledFunctions.back(), savedCallDepth);
+				temp = theFunction->execute();
 			}
 			catch (Node * returned) {	// This catches return statements!
 				TPRINT("NodeCall(%p) caught %p return stmt throw - restoring call depth %d\n",
@@ -961,18 +973,16 @@ Node *	NodeCall::doExct()
 			copyValue(temp);
 			pop_function_stack();
 		}
-		else {
-			minc_die("'%s' is not a function", funcSymbol->name());
-		}
 		sCalledFunctions.pop_back();
 	}
-	else {
-		child(0)->exct();
+	else if (child(0)->dataType() == MincStringType) {
+        // We stored this away when we noticed this was a builtin function
+        const char *functionName = (MincString)child(0)->value();
 		MincValue retval;
-		int result = call_builtin_function(_functionName, sMincList, sMincListLen,
+		int result = call_builtin_function(functionName, sMincList, sMincListLen,
 										   &retval);
 		if (result == FUNCTION_NOT_FOUND) {
-			result = call_external_function(_functionName, sMincList, sMincListLen,
+			result = call_external_function(functionName, sMincList, sMincListLen,
 											&retval);
 		}
 		this->setValue(retval);
@@ -989,6 +999,9 @@ Node *	NodeCall::doExct()
                 break;
 		}
 	}
+    else {
+        assert(!"func object passed to NodeCall should be either MincFunction or MincString");
+    }
 	pop_list();
 	return this;
 }
@@ -1582,7 +1595,7 @@ Node *	NodeFuncDecl::doExct()
 	Symbol *sym = lookupSymbol(_symbolName, GlobalLevel);	// only look at current global level
 	if (sym == NULL) {
 		sym = installSymbol(_symbolName, YES);		// all functions global for now
-		sym->value() = MincValue(this->_type);
+		sym->value() = MincValue(MincFunctionType);      // Empty MincFunction value
 		this->setSymbol(sym);
 	}
 	else {
@@ -1598,11 +1611,13 @@ Node *	NodeFuncDecl::doExct()
 
 Node *	NodeFuncDef::doExct()
 {
-	// Look up symbol for function, and bind this FuncDef node to it.
+	// Look up symbol for function, and bind this FuncDef node to it via a MincFunction.
 	TPRINT("NodeFuncDef(%p): executing lookup node %p\n", this, child(0));
 	child(0)->exct();
 	assert(child(0)->symbol() != NULL);
-	child(0)->symbol()->setNode(this);
+	child(0)->symbol()->value() = MincValue(new MincFunction(this));
+#warning is this line correct and necessary?
+    setValue(child(0)->symbol()->value());
 	return this;
 }
 
