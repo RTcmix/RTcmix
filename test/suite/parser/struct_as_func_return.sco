@@ -10,6 +10,8 @@ struct Foo returnAFoo() {
 x = returnAFoo();
 
 if (x.f_member != 11) {
-	printf("ERROR: struct returned via function call did not preserve member value")
+	printf("FAILED: struct returned via function call did not preserve member value\n")
 	exit(1)
 }
+
+printf("SUCCEEDED\n");

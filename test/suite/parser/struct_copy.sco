@@ -8,7 +8,8 @@ x = foo;
 x.f_member = 7;
 
 if (x.f_member != foo.f_member) {
-	printf("ERROR: copied struct object is not copying member values!")
+	printf("FAILED: copied struct object is not copying member values!")
 	exit(1);
 }
 
+printf("SUCCEEDED\n");

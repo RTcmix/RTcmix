@@ -107,7 +107,7 @@ Scope::dump()
     Symbol *p = NULL;
     for (int n = 0; n < HASHSIZE; ++n) {
         for (p = htab[n]; p != NULL; p = p->next)
-            p->dump();
+            p->print();
     }
 }
 

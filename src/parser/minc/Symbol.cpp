@@ -34,8 +34,6 @@ static Symbol *freelist = NULL;  /* free list of unused entries */
 #ifdef NOTYET
 static void free_node(Symbol *p);
 #endif
-static void dump(Symbol *p);
-
 
 /* Allocate and initialize and new symbol table entry for <name>. */
 Symbol *	Symbol::create(const char *name)
@@ -58,7 +56,7 @@ Symbol::Symbol(const char *symName)
 	list = NULL;
 #endif
 #ifdef DEBUG_SYM_MEMORY
-	DPRINT("Symbol::Symbol(%s) -> %p\n", symName, this);
+	DPRINT("Symbol::Symbol('%s') -> %p\n", symName, this);
 #endif
 }
 
@@ -76,7 +74,9 @@ Symbol *
 Symbol::getStructMember(const char *memberName)
 {
     MincStruct *mstruct = (MincStruct *)v;
-    return mstruct->lookupMember(memberName);
+    Symbol *ret = mstruct->lookupMember(memberName);
+    DPRINT("Symbol::getStructMember(this=%p, member '%s') -> %p\n", this, memberName, ret);
+    return ret;
 }
 
 Symbol *
@@ -103,21 +103,22 @@ class ElementFun
 {
 public:
     ElementFun(Symbol *rootSym) : _root(rootSym) {}
-    void operator() (const char *name, MincDataType type) {
+    void operator() (const char *name, MincDataType type, const char *subtype) {
         MincStruct *mstruct = (MincStruct *)_root->value();
         if (mstruct->lookupMember(name) != NULL) {
             minc_die("Struct contains a duplicate member '%s'", name);
         }
         else {
-            mstruct->addMember(name, type, _root->scope);
+            mstruct->addMember(name, type, _root->scope, subtype);
         }
     }
 private:
     Symbol *_root;
 };
 
-void Symbol::init(const StructType *structType)
+void Symbol::initAsStruct(const StructType *structType)
 {
+    DPRINT("Symbol::initAsStruct(this=%p, structType=%p)\n", this, structType);
     v = MincValue(new MincStruct);
     ElementFun functor(this);
     structType->forEachElement(functor);
@@ -201,10 +202,10 @@ free_node(Symbol *p)
 #endif
 
 void
-Symbol::dump()
+Symbol::print()
 {
 #ifdef SYMBOL_DEBUG
-    DPRINT("        [%p] '%s', type: %s\n", this, name(), dname(dataType()));
+    DPRINT("Symbol %p: '%s', scope: %d, type: %s\n", this, name(), scope, dname(dataType()));
 #endif
 }
 

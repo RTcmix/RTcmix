@@ -10,3 +10,10 @@ float inner(float arg) {
 
 x = outer(inner(1));
 
+if (x != 2) {
+	printf("FAILED\n");
+}
+else {
+	printf("SUCCEEDED\n");
+}
+

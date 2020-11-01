@@ -8,3 +8,5 @@ reset(99999);
 // this is a non-defined function and so should just warn us
 
 not_defined_function(3, 4, 5);
+
+printf("SUCCEEDED\n");

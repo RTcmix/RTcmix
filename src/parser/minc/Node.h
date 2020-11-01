@@ -12,6 +12,9 @@
 #include "minc_internal.h"
 #include "MincValue.h"
 
+// NODE_DEBUG enables logging of Node creation
+#undef NODE_DEBUG
+
 #ifdef NODE_DEBUG
 static char sBuf[256];
 #define NPRINT(...) do { snprintf(sBuf, 256, __VA_ARGS__); rtcmix_print("%s", sBuf); } while(0)
@@ -299,14 +302,20 @@ protected:
 class NodeMemberDecl : public Node
 {
 public:
-    NodeMemberDecl(const char *name, MincDataType type) : Node(OpFree, eNodeMemberDecl), _symbolName(name) {
-        this->_type = type;        // TODO
-        NPRINT("NodeMemberDecl('%s') => %p\n", name, this);
+    NodeMemberDecl(const char *name, MincDataType type, const char *subtype=NULL) : Node(OpFree, eNodeMemberDecl), _symbolName(name), _symbolSubtype(subtype) {
+        this->_type = type;
+        if (_symbolSubtype == NULL) {
+            NPRINT("NodeMemberDecl('%s', %s) => %p\n", name, MincTypeName(type), this);
+        }
+        else {
+            NPRINT("NodeMemberDecl('%s', %s %s) => %p\n", name, MincTypeName(type), _symbolSubtype, this);
+        }
     }
 protected:
     virtual Node*        doExct();
 private:
     const char *    _symbolName;
+    const char *    _symbolSubtype;
 };
 
 // Struct definition node.  Stores "template" for a just-declared struct.

@@ -18,7 +18,7 @@ class Symbol {               /* symbol table entries */
 public:
     static Symbol *    create(const char *name);
     ~Symbol();
-    void                init(const StructType *);
+    void                initAsStruct(const StructType *);
     MincDataType        dataType() const { return v.dataType(); }
     const MincValue&    value() const { return v; }
     MincValue&          value() { return v; }
@@ -27,7 +27,7 @@ public:
     
     Symbol *            getStructMember(const char *memberName);
     
-    void                dump();
+    void                print();
     
     Symbol *next;                 /* next entry on hash chain */
     int scope;

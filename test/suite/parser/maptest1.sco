@@ -7,5 +7,8 @@ m["foo"] = 7;
 x = m["foo"];
 
 if (x != 7) {
-	printf("map failed to store value with key 'foo'\n");
+	printf("FAILED: map failed to store value with key 'foo'\n");
+}
+else {
+	printf("SUCCEEDED\n");
 }

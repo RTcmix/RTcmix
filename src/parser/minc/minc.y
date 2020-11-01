@@ -146,7 +146,7 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 	| error TOK_HANDLE_DECL	{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_LIST_DECL	{ flerror = 1; $$ = new NodeNoop(); }
     | error TOK_MAP_DECL    { flerror = 1; $$ = new NodeNoop(); }
-    | error TOK_MAP_DECL    { flerror = 1; $$ = new NodeNoop(); }
+    | error TOK_FUNC_DECL    { flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_IF		{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_WHILE	{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_FOR	{ flerror = 1; $$ = new NodeNoop(); }
@@ -376,6 +376,7 @@ mbr: TOK_FLOAT_DECL id        { MPRINT("mbr");  $$ = new NodeMemberDecl($2, Minc
     | TOK_LIST_DECL id        { MPRINT("mbr");  $$ = new NodeMemberDecl($2, MincListType); }
     | TOK_MAP_DECL id        { MPRINT("mbr");   $$ = new NodeMemberDecl($2, MincMapType); }
     | TOK_FUNC_DECL id        { MPRINT("mbr");   $$ = new NodeMemberDecl($2, MincFunctionType); }
+    | structname id           { MPRINT("mbr");   $$ = new NodeMemberDecl($2, MincStructType, $1); }     // member decl for struct includes struct type
     ;
 
 /* struct declaration */

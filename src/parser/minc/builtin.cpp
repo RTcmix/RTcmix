@@ -176,9 +176,14 @@ _do_print(const MincValue args[], const int nargs)
         case MincStructType:
           {
               MincStruct *theStruct = (MincStruct *)args[i];
-              RTPrintfCat("{ ");
-              theStruct->print();
-              RTPrintfCat(" }%s", delimiter);
+              if (theStruct != NULL) {
+                  RTPrintfCat("{ ");
+                  theStruct->print();
+                  RTPrintfCat(" }%s", delimiter);
+              }
+              else {
+                  RTPrintfCat("NULL%s", delimiter);
+              }
           }
               break;
          case MincVoidType:

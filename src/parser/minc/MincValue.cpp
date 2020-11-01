@@ -6,10 +6,13 @@
 //  Created by Douglas Scott on 12/30/19.
 //
 
+#undef DEBUG
+
 #include "MincValue.h"
 #include "debug.h"
 #include "handle.h"
 #include "Node.h"
+#include "Scope.h"
 #include "Symbol.h"
 #include <string.h>
 
@@ -95,13 +98,26 @@ MincStruct::~MincStruct()
     }
 }
 
-Symbol * MincStruct::addMember(const char *name, MincDataType type, int scope)
+Symbol * MincStruct::addMember(const char *name, MincDataType type, int scope, const char *subtype)
 {
     // Element symbols are not linked to any scope, so we call create() directly.
+    // RIGHT HERE, WE NEED THE FOLLOWING LINES, BUT WE ALSO NEED TO BE PASSED THE STRUCT TYPE
+    const StructType *structType = NULL;
+    if (type == MincStructType) {
+        structType = lookupStructType(subtype, GlobalLevel);    // GlobalLevel for now
+        if (!structType) {
+            minc_die("struct type '%s' is not defined", subtype);
+        }
+    }
+
     Symbol *memberSym = Symbol::create(name);
-    DPRINT("Symbol::init(member '%s') => %p\n", name, memberSym);
+    DPRINT("MincStruct::addMember(member '%s', type %s) => symbol %p\n", name, MincTypeName(type), memberSym);
     memberSym->value() = MincValue(type);   // initialize MincValue to correct type for member
     memberSym->scope = scope;
+    if (structType) {
+        memberSym->initAsStruct(structType);
+    }
+
     // Ugly, but lets us put them on in order
     if (_memberList == NULL) {
         _memberList = memberSym;
@@ -116,9 +132,10 @@ Symbol * MincStruct::addMember(const char *name, MincDataType type, int scope)
 
 Symbol * MincStruct::lookupMember(const char *name)
 {
-    for (Symbol *member = _memberList; member != NULL; member = member->next) {
-        if (member->name() == name) {
-            return member;
+    for (Symbol *memberSym = _memberList; memberSym != NULL; memberSym = memberSym->next) {
+        if (memberSym->name() == name) {
+            DPRINT("MincStruct::lookupMember('%s') => %p\n", name, memberSym);
+            return memberSym;
         }
     }
     return NULL;
@@ -336,22 +353,32 @@ void MincValue::print()
             TPRINT("%f\n", _u.number);
             break;
         case MincHandleType:
-            TPRINT("%p\n", _u.handle);
+            TPRINT("handle: %p\n", _u.handle);
             break;
         case MincListType:
-            TPRINT("%p\n", _u.list);
+            TPRINT("list: %p\n", _u.list);
             break;
         case MincMapType:
-            TPRINT("%p\n", _u.map);
+            TPRINT("map: %p\n", _u.map);
+            if (_u.map) {
+                TPRINT("{\n");
+                _u.map->print();
+                TPRINT("}\n");
+            }
             break;
         case MincStringType:
-            TPRINT("%s\n", _u.string);
+            TPRINT("'%s'\n", _u.string);
             break;
         case MincStructType:
-            TPRINT("%p\n", _u.mstruct);
+            TPRINT("struct: %p\n", _u.mstruct);
+            if (_u.mstruct) {
+                TPRINT("{\n");
+                _u.mstruct->print();
+                TPRINT("}\n");
+            }
             break;
         case MincFunctionType:
-            TPRINT("%p\n", _u.mfunc);
+            TPRINT("mfunction: %p\n", _u.mfunc);
             break;
         case MincVoidType:
             TPRINT("void\n");
@@ -363,8 +390,8 @@ void MincValue::print()
 
 const MincValue& MincValue::operator = (const MincValue &rhs)
 {
-    ENTER();
 #ifdef DEBUG_MEMORY
+    ENTER();
     MPRINT("MincValue %p assigning from rhs %p)\n", this, &rhs);
 #endif
     if (rhs.type == MincHandleType)

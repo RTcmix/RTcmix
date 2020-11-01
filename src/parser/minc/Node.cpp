@@ -78,7 +78,6 @@ static int sFunctionCallDepth = 0;	// level of actively-executing function calls
 static bool inFunctionCall() { return sFunctionCallDepth > 0; }
 
 static void copy_tree_listelem(MincValue *edest, Node *  tpsrc);
-static void print_symbol(Symbol * s);		// TODO: Symbol::print()
 
 static MincWarningLevel sMincWarningLevel = MincAllWarnings;
 
@@ -209,13 +208,13 @@ const char * Node::classname() const
 
 void Node::print()
 {
-	TPRINT("Node %p: %s type: %d\n", this, classname(), this->dataType());
+    TPRINT("Node %p contents: class: %s type: %s ", this, classname(), MincTypeName(this->dataType()));
 	if (kind == eNodeLoadSym) {
-		TPRINT("Symbol:\n");
-		print_symbol(u.symbol);
+		TPRINT("symbol: ");
+        u.symbol->print();
 	}
 	else if (this->dataType() == MincVoidType && child(0) != NULL) {
-		TPRINT("Child 0:\n");
+		TPRINT("child 0: ");
 		child(0)->print();
 	}
     else {
@@ -251,8 +250,8 @@ Node::copyValue(Node *source)
         minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
     }
     value() = source->value();
-    TPRINT("dest: ");
-    value().print();
+    TPRINT("this: ");
+    print();
     return this;
 }
 
@@ -266,8 +265,8 @@ Node::copyValue(Symbol *src)
         minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(src->dataType()));
     }
     value() = src->value();
-    TPRINT("dest: ");
-    value().print();
+    TPRINT("this: ");
+    print();
     return this;
 }
 
@@ -773,6 +772,7 @@ Node *	NodeSubscriptRead::doExct()	// was exct_subscript_read()
 	ENTER();
     TPRINT("NodeSubscriptRead: Object:\n");
 	child(0)->exct();         /* lookup target */
+    child(0)->print();      // DEBUG
     TPRINT("NodeSubscriptRead: Index:\n");
 	child(1)->exct();         /* index */
     MincDataType child0Type = child(0)->dataType(); // This is the type of the object having operator [] applied.
@@ -896,9 +896,11 @@ Node *  NodeMember::doExct()
     ENTER();
     TPRINT("Object:\n");
     child(0)->exct();         /* lookup target */
+    child(0)->print();      // DEBUG
     // NOTE: If LHS was a temporary variable, structSymbol will be null
     Symbol *structSymbol = child(0)->symbol();
     const char *targetName = (structSymbol != NULL) ? structSymbol->name() : "temp lhs";
+    TPRINT("NodeMember: attempting to access member '%s' on object '%s'\n", _memberName, targetName);
     if (child(0)->dataType() == MincStructType) {
        Symbol *memberSymbol = ((MincStruct *) child(0)->value())->lookupMember(_memberName);
        if (memberSymbol) {
@@ -973,6 +975,9 @@ Node *	NodeCall::doExct()
 			copyValue(temp);
 			pop_function_stack();
 		}
+        else {
+            minc_die("mfunction variable '%s' is NULL", sCalledFunctions.back());
+        }
 		sCalledFunctions.pop_back();
 	}
 	else if (child(0)->dataType() == MincStringType) {
@@ -1551,7 +1556,7 @@ Node *  NodeMemberDecl::doExct()
 {
     TPRINT("NodeMemberDecl(%p) -- storing decl info for member '%s', type %s\n", this, _symbolName, MincTypeName(this->_type));
     assert(sNewStructType != NULL);
-    sNewStructType->addElement(_symbolName, this->_type);
+    sNewStructType->addElement(_symbolName, this->_type, this->_symbolSubtype);
     return this;
 }
 
@@ -1560,11 +1565,11 @@ Node *    NodeStructDecl::doExct()
     TPRINT("NodeStructDecl(%p) -- looking up type '%s'\n", this, _typeName);
     const StructType *structType = lookupStructType(_typeName, GlobalLevel);    // GlobalLevel for now
     if (structType) {
-        TPRINT("-- declaring variable '%s'\n", _symbolName);
+        TPRINT("-- declaring struct variable '%s'\n", _symbolName);
         Symbol *sym = lookupSymbol(_symbolName, GlobalLevel);       // GlobalLevel for now
         if (!sym) {
             sym = installSymbol(_symbolName, YES);          // YES for now
-            sym->init(structType);
+            sym->initAsStruct(structType);
         }
         else {
             if (sym->scope == current_scope()) {
@@ -1578,7 +1583,7 @@ Node *    NodeStructDecl::doExct()
                     minc_warn("variable '%s' also defined at enclosing scope", _symbolName);
                 }
                 sym = installSymbol(_symbolName, NO);
-                sym->init(structType);
+                sym->initAsStruct(structType);
             }
         }
         this->setSymbol(sym);
@@ -1661,9 +1666,3 @@ copy_tree_listelem(MincValue *dest, Node *tpsrc)
 #endif
 	*dest = tpsrc->value();
 }
-
-static void print_symbol(Symbol * s)
-{
-	TPRINT("Symbol %p: '%s' scope: %d type: %d\n", s, s->name(), s->scope, s->dataType());
-}
-

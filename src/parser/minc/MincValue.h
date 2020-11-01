@@ -59,7 +59,7 @@ class MincStruct : public MincObject, public RefCounted
 {
 public:
     MincStruct() : _memberList(NULL) {}
-    Symbol *    addMember(const char *name, MincDataType type, int scope);
+    Symbol *    addMember(const char *name, MincDataType type, int scope, const char *subtype);
     Symbol *    lookupMember(const char *name);
     Symbol *    members() { return _memberList; }
     void        print();
