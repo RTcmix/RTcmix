@@ -24,7 +24,7 @@ const char *lookup_token(const char *token, bool printWarning);
 #ifdef __cplusplus
 }
 #endif
-#define MDEBUG	/* turns on yacc debugging below */
+#undef MDEBUG	/* turns on yacc debugging below */
 
 #ifdef MDEBUG
 //int yydebug=1;

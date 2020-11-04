@@ -219,7 +219,9 @@ void Node::print()
 	}
     else {
         TPRINT("value: ");
+#if DEBUG_TRACE
         value().print();
+#endif
     }
 }
 
