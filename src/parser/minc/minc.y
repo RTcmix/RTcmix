@@ -57,6 +57,8 @@ static void 	incrLevel();
 static void		decrLevel();
 static Node * declare(MincDataType type);
 static Node * declareStruct(const char *typeName);
+static Node * parseArgumentQuery(const char *text, int *pOutErr);
+static Node * parseScoreArgument(const char *text, int *pOutErr);
 static Node * go(Node * t1);
 
 %}
@@ -83,13 +85,14 @@ static Node * go(Node * t1);
 %token <ival> TOK_HANDLE_DECL
 %token <ival> TOK_LIST_DECL
 %token <ival> TOK_MAP_DECL
+%token <ival> TOK_FUNC_DECL;
 %token <ival> TOK_IDENT TOK_NUM TOK_ARG_QUERY TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
-%type  <node> stml stmt rstmt bexp expl exp str ret bstml
-%type  <node> fdecl sdecl hdecl ldecl mdecl structdecl arg argl fdef fstml fargl funcdecl mbr mbrl structdef
+%type  <node> stml stmt rstmt bexp expl exp str ret bstml obj fexp fexpl func
+%type  <node> fdecl sdecl hdecl ldecl mdecl structdecl funcdecl arg argl fdef fstml fargl funcname mbr mbrl structdef
 %type  <str> id structname
 
-%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mdecl structdecl fdef fstml arg argl fargl funcdecl mbr mbrl structdef
+%destructor { MPRINT1("yydestruct deleting node %p\n", $$); delete $$; } stml stmt rstmt bexp expl exp str ret bstml fdecl sdecl hdecl ldecl mdecl structdecl funcdecl fdef fstml arg argl fargl funcname mbr mbrl structdef obj fexp fexpl
 
 %error-verbose
 
@@ -113,6 +116,7 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 	| ldecl
     | mdecl
     | structdecl
+    | funcdecl
 	| TOK_IF level bexp stmt {	xblock = 1; MPRINT("IF bexp stmt");
 								decrLevel();
 								$$ = go(new NodeIf($3, $4));
@@ -142,6 +146,7 @@ stmt: rstmt					{ MPRINT("rstmt");	$$ = go($1); }
 	| error TOK_HANDLE_DECL	{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_LIST_DECL	{ flerror = 1; $$ = new NodeNoop(); }
     | error TOK_MAP_DECL    { flerror = 1; $$ = new NodeNoop(); }
+    | error TOK_FUNC_DECL    { flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_IF		{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_WHILE	{ flerror = 1; $$ = new NodeNoop(); }
 	| error TOK_FOR	{ flerror = 1; $$ = new NodeNoop(); }
@@ -226,46 +231,64 @@ structdecl: TOK_STRUCT_DECL id idl    {     MPRINT("structdecl");
                                             idcount = 0;
                                         }
     ;
+funcdecl:    TOK_FUNC_DECL idl    {     MPRINT("funcdecl");
+                                            $$ = go(declare(MincFunctionType));
+                                            idcount = 0;
+                                        }
+    ;
 
 /* statement nesting level counter */
 level:  /* nothing */ { incrLevel(); }
 	;
 
+/* An obj is anything that can be operator accessed via . or [] */
+obj:    id                  {       MPRINT("obj: id");          $$ = new NodeLoadSym($1); }
+    |   obj'.'id            {       MPRINT("obj: obj.id");      $$ = new NodeMember($1, $3);  }
+    |   obj'[' exp ']'      {       MPRINT("obj: obj[exp]");    $$ = new NodeSubscriptRead($1, $3); }     // This is always non-terminal therefor read-access only
+    ;
+
+func:   id                  {       MPRINT("func: id");         $$ = new NodeLoadFuncSym($1); }
+    |   obj'.'id            {       MPRINT("func: obj.id");     $$ = new NodeMember($1, $3); }
+    |   obj'[' exp ']'      {       MPRINT("func: obj[exp]");   $$ = new NodeSubscriptRead($1, $3); }
+    ;
+
+/* function expression */
+fexp:   exp             { MPRINT("fexp: exp"); $$ = $1; }
+    |   bexp            { MPRINT("fexp: bexp"); $$ = $1; }
+;
+
+/* function expression list */
+fexpl:  fexp            { MPRINT("fexpl: fexp"); $$ = new NodeListElem(new NodeEmptyListElem(), $1); }
+    |   fexpl ',' fexp  {  MPRINT("fexpl: fexpl,fexp"); $$ = new NodeListElem($1, $3); }
+;
+
 /* statement returning a value: assignments, function calls, etc. */
-rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAutoName($1), $3); }
-	| id TOK_PLUSEQU exp {		$$ = new NodeOpAssign(new NodeName($1), $3, OpPlus); }
-	| id TOK_MINUSEQU exp {		$$ = new NodeOpAssign(new NodeName($1), $3, OpMinus); }
-	| id TOK_MULEQU exp {		$$ = new NodeOpAssign(new NodeName($1), $3, OpMul); }
-	| id TOK_DIVEQU exp {		$$ = new NodeOpAssign(new NodeName($1), $3, OpDiv); }
+rstmt: id '=' exp		{ MPRINT("rstmt: id = exp");		$$ = new NodeStore(new NodeAutoDeclLoadSym($1), $3); }
+	| id TOK_PLUSEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpPlus); }
+	| id TOK_MINUSEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpMinus); }
+	| id TOK_MULEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpMul); }
+	| id TOK_DIVEQU exp {		$$ = new NodeOpAssign(new NodeLoadSym($1), $3, OpDiv); }
 
     | TOK_PLUSPLUS id %prec CASTTOKEN {
-        $$ = new NodeOpAssign(new NodeName($2), new NodeConstf(1.0), OpPlusPlus);
+        $$ = new NodeOpAssign(new NodeLoadSym($2), new NodeConstf(1.0), OpPlusPlus);
     }
     | TOK_MINUSMINUS id %prec CASTTOKEN {
-        $$ = new NodeOpAssign(new NodeName($2), new NodeConstf(1.0), OpMinusMinus);
+        $$ = new NodeOpAssign(new NodeLoadSym($2), new NodeConstf(1.0), OpMinusMinus);
     }
 
-    | id '(' expl ')' {			MPRINT("id(expl)");
-								$$ = new NodeCall($3, $1);
+    | func '(' fexpl ')' {	MPRINT("rstmt: func(fexpl)");
+								$$ = new NodeCall($1, $3);
 							}
-
-	| id '(' ')' {			MPRINT("id()");
-								$$ = new NodeCall(new NodeEmptyListElem(), $1);
+	| func '(' ')' {			MPRINT("rstmt: func()");
+								$$ = new NodeCall($1, new NodeEmptyListElem());
 							}
-
-/* $3 will be the end of a linked list of NodeListElems */
-/* XXX: This causes 1 reduce/reduce conflict on '}'  How bad is this?  -JGG */
-/*	DAS MAKING THESE TWO PURE RIGHT-HAND-SIDE EXPRESSIONS
-	| '{' level expl '}'	{ MPRINT("{expl}");	decrLevel(); $$ = new NodeList($3); }
-	| id '[' exp ']' 	{			$$ = new NodeSubscriptRead(new NodeName($1), $3); }
- */
-	| id '[' exp ']' '=' exp {
-                                MPRINT("id[exp] = exp");
-                                $$ = new NodeSubscriptWrite(new NodeName($1), $3, $6);
+	| obj '[' exp ']' '=' exp {
+                                MPRINT("rstmt: obj[exp] = exp");
+                                $$ = new NodeSubscriptWrite($1, $3, $6);
                             }
-    | id'.'id '=' exp       {
-                                MPRINT("id.id = exp");
-                                $$ = new NodeStore(new NodeMember(new NodeName($1), $3), $5);
+    | obj'.'id '=' exp       {
+                                MPRINT("rstmt: obj.id = exp");
+                                $$ = new NodeStore(new NodeMember($1, $3), $5);
                             }
 	;
 
@@ -291,7 +314,7 @@ str:	TOK_STRING		{
 							}
 	;
 
-/* Boolean expression */
+/* Boolean expression, before being wrapped in () */
 bexp:	exp %prec LOWPRIO	{ MPRINT("bexp"); $$ = $1; }
 	| TOK_NOT bexp %prec TOK_UNEQU { MPRINT("!bexp"); $$ = new NodeNot($2); }
 	| bexp TOK_AND bexp	{ $$ = new NodeAnd($1, $3); }
@@ -314,67 +337,23 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 	| exp '+' exp		{ $$ = new NodeOp(OpPlus, $1, $3); }
 	| exp '-' exp		{ $$ = new NodeOp(OpMinus, $1, $3); }
 	| exp '%' exp		{ $$ = new NodeOp(OpMod, $1, $3); }
-	| '(' bexp ')'		{ $$ = $2; }
+	| '(' bexp ')'		{ MPRINT("exp: (bexp)"); $$ = $2; } // bexp only an expression when wrapped
 	| str				{ $$ = $1; }
 	| TOK_NUM			{
 							double f = atof(yytext);
 							$$ = new NodeConstf(f);
 						}
     /* DAS THESE ARE NOW PURE RIGHT-HAND-SIDE */
-	| '{' level expl '}'	{ MPRINT("{expl}");	decrLevel(); $$ = new NodeList($3); }
-	| '{' '}'				{ MPRINT("{}");	$$ = new NodeList(new NodeEmptyListElem()); }
+    | '{' level expl '}'	{ MPRINT("exp: {expl}");	decrLevel(); $$ = new NodeList($3); }
+	| '{' '}'				{ MPRINT("exp: {}");	$$ = new NodeList(new NodeEmptyListElem()); }
 
-	| id '[' exp ']' 	{	MPRINT("id[exp]");    $$ = new NodeSubscriptRead(new NodeName($1), $3); }
-    | id'.'id           {   MPRINT("id.id");    $$ = new NodeMember(new NodeName($1), $3); }
+	| obj '[' exp ']' 	{	MPRINT("exp: obj[exp]");    $$ = new NodeSubscriptRead($1, $3); }
+    | obj'.'id           {   MPRINT("exp: obj.id");    $$ = new NodeMember($1, $3); }
 	| TOK_ARG_QUERY		{
-#ifndef EMBEDDED
-							/* ?argument will return 1.0 if defined, else 0.0 */
-							const char *token = yytext + 1;	// strip off '?'
-							// returns NULL silently if not found
-							const char *value = lookup_token(token, false);
-							$$ = new NodeConstf(value != NULL ? 1.0 : 0.0);
-#else
-							minc_warn("Argument variables not supported");
-							flerror = 1; $$ = new NodeNoop();
-#endif
+                            $$ = parseArgumentQuery(yytext, &flerror);
 						}
 	| TOK_ARG			{
-#ifndef EMBEDDED
-							const char *token = yytext + 1;	// strip off '$'
-							const char *value = lookup_token(token, true);		// returns NULL with warning
-							if (value != NULL) {
-								// We store this as a number constant if it can be coaxed into a number,
-								// else we store this as a string constant.
-								int i, is_number = 1;
-								for(i = 0; value[i] != '\0'; ++i) {
-									if ('-' == value[i] && i == 0)
-										continue;	// allow initial sign
-									if (! (isdigit(value[i]) || '.' == value[i]) ) {
-										is_number = 0;
-										break;
-									}
-								}
-								if (is_number) {
-									double f = atof(value);
-									$$ = new NodeConstf(f);
-								}
-								else {
-									// Strip off extra "" if present
-									if (value[0] == '"' && value[strlen(value)-1] == '"') {
-										char *vcopy = strsave(value+1);
-										*strrchr(vcopy, '"') = '\0';
-										$$ = new NodeString(vcopy);
-									}
-									else {
-										$$ = new NodeString(strsave(value));
-									}
-								}
-							}
-							else { flerror = 1; $$ = new NodeNoop(); }
-#else
-							minc_warn("Argument variables not supported");
-							flerror = 1; $$ = new NodeNoop();
-#endif
+                            $$ = parseScoreArgument(yytext, &flerror);
 						}
 	| TOK_TRUE			{ $$ = new NodeConstf(1.0); }
 	| TOK_FALSE			{ $$ = new NodeConstf(0.0); }
@@ -383,23 +362,21 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 								$$ = new NodeOp(OpNeg, $2, new NodeConstf(0.0));
 							}
 	| id					{
-								$$ = new NodeName($1);
+								MPRINT("exp: id");    $$ = new NodeLoadSym($1);
 							}
 	;
 
-/* an <mbr> is always a type followed by an <id>, like "float length". They only occur in struct definitions.
+/* struct member declaration.
+    An <mbr> is always a type followed by an <id>, like "float length". They only occur in struct definitions.
  */
 
-mbr: TOK_FLOAT_DECL id        { MPRINT("mbr");
-        $$ = new NodeMemberDecl($2, MincFloatType); }
-    | TOK_STRING_DECL id    { MPRINT("mbr");
-        $$ = new NodeMemberDecl($2, MincStringType); }
-    | TOK_HANDLE_DECL id    { MPRINT("mbr");
-        $$ = new NodeMemberDecl($2, MincHandleType); }
-    | TOK_LIST_DECL id        { MPRINT("mbr");
-        $$ = new NodeMemberDecl($2, MincListType); }
-    | TOK_MAP_DECL id        { MPRINT("mbr");
-        $$ = new NodeMemberDecl($2, MincMapType); }
+mbr: TOK_FLOAT_DECL id        { MPRINT("mbr");  $$ = new NodeMemberDecl($2, MincFloatType); }
+    | TOK_STRING_DECL id    { MPRINT("mbr");    $$ = new NodeMemberDecl($2, MincStringType); }
+    | TOK_HANDLE_DECL id    { MPRINT("mbr");    $$ = new NodeMemberDecl($2, MincHandleType); }
+    | TOK_LIST_DECL id        { MPRINT("mbr");  $$ = new NodeMemberDecl($2, MincListType); }
+    | TOK_MAP_DECL id        { MPRINT("mbr");   $$ = new NodeMemberDecl($2, MincMapType); }
+    | TOK_FUNC_DECL id        { MPRINT("mbr");   $$ = new NodeMemberDecl($2, MincFunctionType); }
+    | structname id           { MPRINT("mbr");   $$ = new NodeMemberDecl($2, MincStructType, $1); }     // member decl for struct includes struct type
     ;
 
 /* struct declaration */
@@ -408,7 +385,7 @@ mbr: TOK_FLOAT_DECL id        { MPRINT("mbr");
     e.g. "float f, float g, string s"
  */
 
-mbrl: mbr               { MPRINT("mbr: mbr");
+mbrl: mbr               { MPRINT("mbrl: mbr");
             $$ = new NodeSeq(new NodeNoop(), $1); }
     | mbrl ',' mbr      { MPRINT("mbrl: mbrl,mbr");
             $$ = new NodeSeq($1, $3); }
@@ -434,8 +411,11 @@ struct:         {    MPRINT("struct"); if (slevel > 0) { minc_die("nested struct
                 }
     ;
 
+/* Everything from this point down is used to build a function declaration/definition */
+
 /* a <arg> is always a type followed by an <id>, like "float length".  They only occur in function definitions.
     The variables declared are not visible outside of the function definition.
+    TODO: CAN THESE BE DERIVED FROM SOME OTHER EXISTING RULE?
  */
 
 arg: TOK_FLOAT_DECL id      { MPRINT("arg");
@@ -450,21 +430,25 @@ arg: TOK_FLOAT_DECL id      { MPRINT("arg");
                                     $$ = new NodeDecl($2, MincMapType); }
     | TOK_STRUCT_DECL id id { MPRINT("arg");
                                     $$ = new NodeStructDecl($3, $2); }
+    | TOK_FUNC_DECL id      { MPRINT("arg");
+                                    $$ = new NodeDecl($2, MincFunctionType); }
     ;
 
-/* function declaration, e.g. "list myfunction" */
+/* function name, e.g. "list myfunction".  Used as first part of definition.
+    TODO: This is where I would add the ability for a function to return a function.
+ */
 
-funcdecl: TOK_FLOAT_DECL id function { MPRINT("funcdecl");
+funcname: TOK_FLOAT_DECL id function { MPRINT("funcname");
 									$$ = go(new NodeFuncDecl(strsave($2), MincFloatType)); }
-	| TOK_STRING_DECL id function { MPRINT("funcdecl");
+	| TOK_STRING_DECL id function { MPRINT("funcname");
 									$$ = go(new NodeFuncDecl(strsave($2), MincStringType)); }
-	| TOK_HANDLE_DECL id function { MPRINT("funcdecl");
+	| TOK_HANDLE_DECL id function { MPRINT("funcname");
 									$$ = go(new NodeFuncDecl(strsave($2), MincHandleType)); }
-	| TOK_LIST_DECL id function { MPRINT("funcdecl");
+	| TOK_LIST_DECL id function { MPRINT("funcname");
 									$$ = go(new NodeFuncDecl(strsave($2), MincListType)); }
-    | TOK_MAP_DECL id function { MPRINT("funcdecl");
+    | TOK_MAP_DECL id function { MPRINT("funcname");
                                     $$ = go(new NodeFuncDecl(strsave($2), MincMapType)); }
-    | TOK_STRUCT_DECL id id function { MPRINT("funcdecl");
+    | TOK_STRUCT_DECL id id function { MPRINT("funcname");
                                     $$ = go(new NodeFuncDecl(strsave($3), MincStructType)); }
 	;
 
@@ -504,9 +488,9 @@ fstml:	stml ret			{	MPRINT("fstml: stml,ret");
 							}
 	;
 
-/* the full rule for a function declaration/definition, e.g. "list myfunction(string s) { ... }" */
+/* the full rule for a function definition, e.g. "list myfunction(string s) { ... }" */
 
-fdef: funcdecl fargl '{' fstml '}'	{
+fdef: funcname fargl '{' fstml '}'	{
 									MPRINT("fdef");
 									decrLevel();
 									--flevel; MPRINT1("flevel => %d", flevel);
@@ -516,8 +500,8 @@ fdef: funcdecl fargl '{' fstml '}'	{
 									 */
 									$$ = new NodeNoop();
 								}
-	| error funcdecl fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
-	| error funcdecl fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
+	| error funcname fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
+	| error funcname fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
 	;
 
 %%
@@ -559,6 +543,65 @@ static Node * declareStruct(const char *typeName)
         t = new NodeSeq(t, decl);
     }
     return t;
+}
+
+static Node * parseArgumentQuery(const char *text, int *pOutErr)
+{
+#ifndef EMBEDDED
+    /* ?argument will return 1.0 if defined, else 0.0 */
+    const char *token = text + 1;    // strip off '?'
+    // returns NULL silently if not found
+    const char *value = lookup_token(token, false);
+    return new NodeConstf(value != NULL ? 1.0 : 0.0);
+#else
+    minc_warn("Argument variables not supported");
+    *pOutErr = 1;
+    return new NodeNoop();
+#endif
+}
+
+static Node * parseScoreArgument(const char *text, int *pOutErr)
+{
+#ifndef EMBEDDED
+    const char *token = text + 1;    // strip off '$'
+    const char *value = lookup_token(token, true);        // returns NULL with warning
+    if (value != NULL) {
+        // We store this as a number constant if it can be coaxed into a number,
+        // else we store this as a string constant.
+        int i, is_number = 1;
+        for(i = 0; value[i] != '\0'; ++i) {
+            if ('-' == value[i] && i == 0)
+            continue;    // allow initial sign
+            if (! (isdigit(value[i]) || '.' == value[i]) ) {
+                is_number = 0;
+                break;
+            }
+        }
+        if (is_number) {
+            double f = atof(value);
+            return new NodeConstf(f);
+        }
+        else {
+            // Strip off extra "" if present
+            if (value[0] == '"' && value[strlen(value)-1] == '"') {
+                char *vcopy = strsave(value+1);
+                *strrchr(vcopy, '"') = '\0';
+                return new NodeString(vcopy);
+            }
+            else {
+                return new NodeString(strsave(value));
+            }
+        }
+    }
+    else {
+        *pOutErr = 1;
+        return new NodeNoop();
+    }
+#else
+    minc_warn("Argument variables not supported");
+    *pOutErr = 1;
+    return new NodeNoop();
+#endif
 }
 
 static Node *

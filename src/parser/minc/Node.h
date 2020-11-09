@@ -12,7 +12,10 @@
 #include "minc_internal.h"
 #include "MincValue.h"
 
-#ifdef DEBUG_TRACE
+// NODE_DEBUG enables logging of Node creation
+#undef NODE_DEBUG
+
+#ifdef NODE_DEBUG
 static char sBuf[256];
 #define NPRINT(...) do { snprintf(sBuf, 256, __VA_ARGS__); rtcmix_print("%s", sBuf); } while(0)
 #else
@@ -32,8 +35,9 @@ typedef enum {
 	eNodeSubscriptWrite,
     eNodeMember,
 	eNodeOpAssign,
-	eNodeName,
-	eNodeAutoName,
+	eNodeLoadSym,
+	eNodeAutoDeclLoadSym,
+    eNodeLoadFuncSym,
 	eNodeConstf,
 	eNodeString,
     eNodeMemberDecl,
@@ -84,8 +88,8 @@ public:
 	MincValue&			value() { return v; }
 	Node*				exct();
     
-    Node *              copyValue(Node *);
-    Node *              copyValue(Symbol *);
+    Node *              copyValue(Node *, bool allowTypeOverwrite=true);
+    Node *              copyValue(Symbol *, bool allowTypeOverwrite=true);
 	void				print();
 protected:
 	virtual Node*		doExct() = 0;
@@ -180,11 +184,14 @@ protected:
 class NodeStore : public Node2Children
 {
 public:
-	NodeStore(Node *n1, Node *n2) : Node2Children(OpFree, eNodeStore, n1, n2) {
-		NPRINT("NodeStore (%p, %p) => %p\n", n1, n2, this);
+	NodeStore(Node *n1, Node *n2, bool allowTypeOverwrite=true)
+        : Node2Children(OpFree, eNodeStore, n1, n2), _allowTypeOverwrite(allowTypeOverwrite) {
+		NPRINT("NodeStore (%p, %p, %d) => %p\n", n1, n2, allowTypeOverwrite, this);
 	}
 protected:
 	virtual Node*		doExct();
+private:
+    bool    _allowTypeOverwrite;        // true for everything except struct members
 };
 
 /* like NodeStore, but modify value before storing into variable */
@@ -201,16 +208,16 @@ protected:
 /* looks up symbol name and get the symbol.  Converts symbol table entry into Node
 	or initialize Node to a symbol entry
  */
-class NodeName : public Node
+class NodeLoadSym : public Node
 {
 public:
-	NodeName(const char *symbolName) : Node(OpFree, eNodeName), _symbolName(symbolName) {
-		NPRINT("NodeName('%s') => %p\n", symbolName, this);
+	NodeLoadSym(const char *symbolName) : Node(OpFree, eNodeLoadSym), _symbolName(symbolName) {
+		NPRINT("NodeLoadSym('%s') => %p\n", symbolName, this);
 	}
 protected:
-	NodeName(const char *symbolName, NodeKind kind) : Node(OpFree, kind), _symbolName(symbolName) {}
+	NodeLoadSym(const char *symbolName, NodeKind kind) : Node(OpFree, kind), _symbolName(symbolName) {}
 	virtual Node*		doExct();
-	Node *				finishExct();
+	virtual Node *      finishExct();
 	const char *		symbolName() const { return _symbolName; }
 private:
     const char *_symbolName;       /* used for function name, symbol name (for lookup) */
@@ -219,14 +226,28 @@ private:
 /* looks up symbol name and get the symbol, and auto-declares it if not found
  converts symbol table entry into tree or initialize tree node to a symbol entry
  */
-class NodeAutoName : public NodeName
+class NodeAutoDeclLoadSym : public NodeLoadSym
 {
 public:
-	NodeAutoName(const char *symbolName) : NodeName(symbolName, eNodeAutoName) {
-		NPRINT("NodeAutoName('%s') => %p\n", symbolName, this);
+	NodeAutoDeclLoadSym(const char *symbolName) : NodeLoadSym(symbolName, eNodeAutoDeclLoadSym) {
+		NPRINT("NodeAutoDeclLoadSym('%s') => %p\n", symbolName, this);
 	}
 protected:
 	virtual Node*		doExct();
+};
+
+/* looks up symbol name for a function and get the symbol.  Converts symbol table entry into Node
+ or initialize Node to a symbol entry.  If there is no symbol, this is a builtin function, and we
+ do not flag that as an error.
+ */
+class NodeLoadFuncSym : public NodeLoadSym
+{
+public:
+    NodeLoadFuncSym(const char *symbolName) :  NodeLoadSym(symbolName, eNodeLoadFuncSym) {
+        NPRINT("NodeLoadFuncSym('%s') => %p\n", symbolName, this);
+    }
+protected:
+    virtual Node *      finishExct();
 };
 
 class NodeString : public Node
@@ -284,15 +305,20 @@ protected:
 class NodeMemberDecl : public Node
 {
 public:
-    NodeMemberDecl(const char *name, MincDataType type)
-            : Node(OpFree, eNodeMemberDecl), _symbolName(name) {
-        this->_type = type;        // TODO
-        NPRINT("NodeMemberDecl('%s') => %p\n", name, this);
+    NodeMemberDecl(const char *name, MincDataType type, const char *subtype=NULL) : Node(OpFree, eNodeMemberDecl), _symbolName(name), _symbolSubtype(subtype) {
+        this->_type = type;
+        if (_symbolSubtype == NULL) {
+            NPRINT("NodeMemberDecl('%s', %s) => %p\n", name, MincTypeName(type), this);
+        }
+        else {
+            NPRINT("NodeMemberDecl('%s', %s %s) => %p\n", name, MincTypeName(type), _symbolSubtype, this);
+        }
     }
 protected:
     virtual Node*        doExct();
 private:
     const char *    _symbolName;
+    const char *    _symbolSubtype;
 };
 
 // Struct definition node.  Stores "template" for a just-declared struct.
@@ -335,16 +361,18 @@ protected:
 	virtual Node*		doExct();
 };
 
-class NodeCall : public Node1Child
+// Function call node
+//  n1 Function definition node
+//  n2 Function arguments list
+
+class NodeCall : public Node2Children
 {
 public:
-	NodeCall(Node *args, const char *functionName) : Node1Child(OpFree, eNodeCall, args), _functionName(functionName) {
-		NPRINT("NodeCall(%p, '%s') => %p\n", args, functionName, this);
+	NodeCall(Node *func, Node *args) : Node2Children(OpFree, eNodeCall, func, args) {
+		NPRINT("NodeCall(%p, %p) => %p\n", func, args, this);
 	}
 protected:
 	virtual Node*		doExct();
-private:
-	const char*		_functionName;
 };
 
 class NodeAnd : public Node2Children

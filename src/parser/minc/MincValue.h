@@ -59,13 +59,30 @@ class MincStruct : public MincObject, public RefCounted
 {
 public:
     MincStruct() : _memberList(NULL) {}
-    ~MincStruct();
-    Symbol *    addMember(const char *name, MincDataType type, int scope);
+    Symbol *    addMember(const char *name, MincDataType type, int scope, const char *subtype);
     Symbol *    lookupMember(const char *name);
     Symbol *    members() { return _memberList; }
     void        print();
 protected:
+    virtual ~MincStruct();
+protected:
     Symbol *    _memberList;
+};
+
+// A MincFunction contains a Node which contains the list of operations to be carried
+// out by the function call.
+
+class Node;
+
+class MincFunction : public MincObject, public RefCounted {
+public:
+    MincFunction(Node *body);
+    void    copyArguments();
+    Node *  execute();
+protected:
+    virtual ~MincFunction();
+private:
+    Node *  _functionBody;
 };
 
 class MincValue {
@@ -77,6 +94,7 @@ public:
     MincValue(MincList *l);
     MincValue(MincMap *m);
     MincValue(MincStruct *str);
+    MincValue(MincFunction *func);
     MincValue(MincDataType type);
     MincValue(const MincValue &rhs);
     ~MincValue();
@@ -86,6 +104,7 @@ public:
     const MincValue& operator = (MincHandle h);
     const MincValue& operator = (MincList *l);
     const MincValue& operator = (MincMap *m);
+    const MincValue& operator = (MincFunction *f);
 
     const MincValue& operator += (const MincValue &rhs);
     const MincValue& operator -= (const MincValue &rhs);
@@ -101,6 +120,7 @@ public:
     operator MincList *() const { return _u.list; }
     operator MincMap *() const { return _u.map; }
     operator MincStruct *() const { return _u.mstruct; }
+    operator MincFunction *() const { return _u.mfunc; }
     operator bool() const { return (type == MincFloatType) ? _u.number != 0.0 : _u.string != NULL; }
     
     unsigned long long rawValue() const { return _u.raw; }
@@ -127,6 +147,7 @@ private:
         MincList *list;
         MincMap *map;
         MincStruct *mstruct;
+        MincFunction *mfunc;
         unsigned long long raw;     // used for raw comparison
     } _u;
 };

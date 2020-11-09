@@ -26,7 +26,7 @@ int yyget_lineno(void);
 
 void preserveSymbols(bool preserve);
 void reset_parser();
-void clear_node_state();	// The only exported function from Node.cpp
+void clear_tree_state();	// The only exported function from Node.cpp
 
 #ifdef __cplusplus
 }

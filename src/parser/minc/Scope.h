@@ -31,9 +31,10 @@ public:
 // MemberInfo describes a member in a MinC-declared struct
 
 struct MemberInfo {
-    MemberInfo(const char *inName, MincDataType inType) : name(inName), type(inType) {}
+    MemberInfo(const char *inName, MincDataType inType, const char *subType) : name(inName), type(inType), subtype(subType) {}
     const char *    name;
     MincDataType    type;
+    const char *    subtype;
 };
 
 // A StructType describes a MinC-declared struct
@@ -42,14 +43,14 @@ class StructType {
 public:
     StructType(const char *inName) : _name(inName) {}
     ~StructType() {}
-    void addElement(const char *name, MincDataType type) {
+    void addElement(const char *name, MincDataType type, const char *subtype) {
         // TODO: Dont allow duplicate element names
-        _members.push_back(MemberInfo(name, type));
+        _members.push_back(MemberInfo(name, type, subtype));
     }
     template <typename FuncType>
     void forEachElement(FuncType &function) const {
         for (std::vector<MemberInfo>::const_iterator i = _members.begin(); i != _members.end(); ++i) {
-            function(i->name, i->type);
+            function(i->name, i->type, i->subtype);
         }
     }
     const char *name() const { return _name; }
@@ -58,8 +59,8 @@ protected:
     std::vector<MemberInfo>     _members;
 };
 
-StructType *installType(const char *typeName, Bool isGlobal);
-const StructType *lookupType(const char *typeName, LookupType lookupType);
+StructType *installStructType(const char *typeName, Bool isGlobal);
+const StructType *lookupStructType(const char *typeName, ScopeLookupType lookupType);
 
 void push_function_stack();
 void pop_function_stack();
@@ -70,7 +71,7 @@ void restore_scope(int scope);
 
 class Symbol;
 Symbol *installSymbol(const char *name, Bool isGlobal);
-Symbol *lookupSymbol(const char *name, LookupType lookupType);
+Symbol *lookupSymbol(const char *name, ScopeLookupType lookupType);
 Symbol * lookupOrAutodeclare(const char *name, Bool inFunctionCall);
 
 void dump_symbols();

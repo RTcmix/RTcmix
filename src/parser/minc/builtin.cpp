@@ -117,6 +117,9 @@ _make_type_string(const MincDataType type)
       case MincStructType:
          str = strdup("struct");
          break;
+       case MincFunctionType:
+           str = strdup("function");
+           break;
    }
    return (MincString) str;
 }
@@ -141,7 +144,10 @@ _do_print(const MincValue args[], const int nargs)
          case MincHandleType:
             RTPrintfCat("Handle:%p%s", (MincHandle)args[i], delimiter);
             break;
-         case MincListType:
+          case MincFunctionType:
+              RTPrintfCat("Function:%p%s", (MincFunction *)args[i], delimiter);
+              break;
+        case MincListType:
 		  {
 			  MincList *list = (MincList *)args[i];
 			if (list != NULL) {
@@ -170,9 +176,14 @@ _do_print(const MincValue args[], const int nargs)
         case MincStructType:
           {
               MincStruct *theStruct = (MincStruct *)args[i];
-              RTPrintfCat("{ ");
-              theStruct->print();
-              RTPrintfCat(" }%s", delimiter);
+              if (theStruct != NULL) {
+                  RTPrintfCat("{ ");
+                  theStruct->print();
+                  RTPrintfCat(" }%s", delimiter);
+              }
+              else {
+                  RTPrintfCat("NULL%s", delimiter);
+              }
           }
               break;
          case MincVoidType:
