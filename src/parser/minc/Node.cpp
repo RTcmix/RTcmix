@@ -239,7 +239,7 @@ Node *	Node::exct()
 
 /* This copies a node's value and handles ref counting when necessary */
 Node *
-Node::copyValue(Node *source)
+Node::copyValue(Node *source, bool allowTypeOverwrite)
 {
     TPRINT("Node::copyValue(this=%p, Node=%p)\n", this, source);
 #ifdef EMBEDDED
@@ -249,7 +249,12 @@ Node::copyValue(Node *source)
     }
 #endif
     if (dataType() != MincVoidType && source->dataType() != dataType()) {
-        minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
+        if (allowTypeOverwrite) {
+            minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
+        }
+        else {
+            minc_die("Cannot overwrite %s member '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
+        }
     }
     value() = source->value();
     TPRINT("this: ");
@@ -259,14 +264,19 @@ Node::copyValue(Node *source)
 
 /* This copies a Symbol's value and handles ref counting when necessary */
 Node *
-Node::copyValue(Symbol *src)
+Node::copyValue(Symbol *source, bool allowTypeOverwrite)
 {
-    TPRINT("Node::copyValue(this=%p, Symbol=%p)\n", this, src);
-    assert(src->scope != -1);    // we accessed a variable after leaving its scope!
-    if (dataType() != MincVoidType && src->dataType() != dataType()) {
-        minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(src->dataType()));
+    TPRINT("Node::copyValue(this=%p, Symbol=%p)\n", this, source);
+    assert(source->scope != -1);    // we accessed a variable after leaving its scope!
+    if (dataType() != MincVoidType && source->dataType() != dataType()) {
+        if (allowTypeOverwrite) {
+            minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
+        }
+        else {
+            minc_die("Cannot overwrite %s member '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
+        }
     }
-    value() = src->value();
+    value() = source->value();
     TPRINT("this: ");
     print();
     return this;
@@ -1035,9 +1045,9 @@ Node *	NodeStore::doExct()
 	TPRINT("NodeStore(%p): copying value from RHS (%p) to LHS's symbol (%p)\n",
 		   this, child(1), child(0)->symbol());
 	/* Copy entire MincValue union from expr to id sym and to this. */
-	child(0)->symbol()->copyValue(child(1));
+	child(0)->symbol()->copyValue(child(1), _allowTypeOverwrite);
 	TPRINT("NodeStore: copying value from RHS (%p) to here (%p)\n", child(1), this);
-	copyValue(child(1));
+	copyValue(child(1), _allowTypeOverwrite);
 	return this;
 }
 

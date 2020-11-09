@@ -88,8 +88,8 @@ public:
 	MincValue&			value() { return v; }
 	Node*				exct();
     
-    Node *              copyValue(Node *);
-    Node *              copyValue(Symbol *);
+    Node *              copyValue(Node *, bool allowTypeOverwrite=true);
+    Node *              copyValue(Symbol *, bool allowTypeOverwrite=true);
 	void				print();
 protected:
 	virtual Node*		doExct() = 0;
@@ -184,11 +184,14 @@ protected:
 class NodeStore : public Node2Children
 {
 public:
-	NodeStore(Node *n1, Node *n2) : Node2Children(OpFree, eNodeStore, n1, n2) {
-		NPRINT("NodeStore (%p, %p) => %p\n", n1, n2, this);
+	NodeStore(Node *n1, Node *n2, bool allowTypeOverwrite=true)
+        : Node2Children(OpFree, eNodeStore, n1, n2), _allowTypeOverwrite(allowTypeOverwrite) {
+		NPRINT("NodeStore (%p, %p, %d) => %p\n", n1, n2, allowTypeOverwrite, this);
 	}
 protected:
 	virtual Node*		doExct();
+private:
+    bool    _allowTypeOverwrite;        // true for everything except struct members
 };
 
 /* like NodeStore, but modify value before storing into variable */

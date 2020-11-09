@@ -80,7 +80,7 @@ Symbol::getStructMember(const char *memberName)
 }
 
 Symbol *
-Symbol::copyValue(Node *source)
+Symbol::copyValue(Node *source, bool allowTypeOverwrite)
 {
     DPRINT("Symbol::copyValue(this=%p, %p)\n", this, source);
 #ifdef EMBEDDED
@@ -91,7 +91,12 @@ Symbol::copyValue(Node *source)
 #endif
     assert(scope != -1);    // we accessed a variable after leaving its scope!
     if (dataType() != MincVoidType && source->dataType() != dataType()) {
-        minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
+        if (allowTypeOverwrite) {
+            minc_warn("Overwriting %s variable '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
+        }
+        else {
+            minc_die("Cannot overwrite %s member '%s' with %s", MincTypeName(dataType()), name(), MincTypeName(source->dataType()));
+        }
     }
     value() = source->value();
     return this;

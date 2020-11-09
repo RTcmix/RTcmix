@@ -23,7 +23,7 @@ public:
     const MincValue&    value() const { return v; }
     MincValue&          value() { return v; }
     const char *        name() { return _name; }    
-    Symbol *            copyValue(Node *);
+    Symbol *            copyValue(Node *, bool allowTypeOverwrite=true);
     
     Symbol *            getStructMember(const char *memberName);
     
