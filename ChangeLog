@@ -1,6 +1,12 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2020-11-09  Douglas Scott <netdscott-at-netscape.net>
+	* Major parser upgrade:  Supports embedding of structs, and maps in other structs.
+	* Added new 'mfunction' type to store custom functions - which can now be stored in structs, passed as function args.
+	* Boolean expressions may now be passed to a function without need for a double pair of parens
+	* Bumped to 5.0.0 due to new parser features which will not parse under earlier versions.
+
 2020-10-04  Douglas Scott <netdscott-at-netscape.net>
 	* Fixed some parser inconsistencies and crashes
 	* Bumped to 4.6.0 due to new OSC server support.
