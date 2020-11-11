@@ -1,6 +1,5 @@
 /* testing new parser features */
 
-/*
 l = { 100, 101 };
 
 z = l[1];
@@ -10,8 +9,6 @@ z = l[1];
 ll = { { 0, 1 }, { 2, 3 } };
 
 x = ll[1][1];
-
-*/
 
 // direct read access to struct via list
 
@@ -37,10 +34,9 @@ if (xx != 777) {
 	exit("x should equal 777");
 }
 
+/* NOT YET SUPPORTED
 
 // direct read access to struct via function call
-
-/* NOT YET SUPPORTED
 
 struct S returnAnS(float value)
 {
