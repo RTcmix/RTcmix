@@ -516,20 +516,29 @@ _minc_len(const MincValue args[], const int nargs)
       switch (args[0].dataType() ) {
          case MincFloatType:
             len = 1;
-            break;
+          break;
          case MincStringType:
-            len = strlen((MincString)args[0]);
-            break;
+          {
+              MincString string = (MincString)args[0];
+              len = string ? strlen(string) : 0;
+          }
+          break;
          case MincHandleType:
             /* NB: To get length of a table, call tablelen(handle) */
             len = 1;
             break;
          case MincListType:
-            len = ((MincList *)args[0])->len;
-            break;
+          {
+              MincList *list = (MincList *)args[0];
+              len = list ? list->len : 0;
+          }
+          break;
          case MincMapType:
-            len = ((MincMap *)args[0])->len();
-            break;
+          {
+              MincMap *map = (MincMap *)args[0];
+              len = map ? map->len() : 0;
+          }
+          break;
          default:
             minc_warn("len: invalid argument");
             break;
