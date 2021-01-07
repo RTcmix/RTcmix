@@ -196,7 +196,7 @@ mm_space(float p[], int n_args)
       return die("space", "'back' and 'left' wall coords must be negative");
    }
 
-   _abs_factor = p[5];
+   _abs_factor = (p[5] <= 10) ? p[5] : 10.0;
 
    _rvb_time = p[6];
    if (!_rvb_time)
