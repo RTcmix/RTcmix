@@ -343,9 +343,10 @@ static int _set_value_option(const char *sval, const bool rtsetparams_called)
 		case RECORD:
 			Option::record(bval);
 #ifndef EMBEDDED
-			if (Option::record() && rtsetparams_called)
-				return die("set_option",
-							"Turn on record BEFORE calling rtsetparams.");
+            if (Option::record() && rtsetparams_called) {
+				die("set_option", "Turn on record BEFORE calling rtsetparams.");
+                throw CONFIGURATION_ERROR;
+            }
 #endif
 			break;
 		case CLOBBER:
@@ -408,8 +409,10 @@ static int _parse_arg(const char *arg, const bool rtsetparams_called)
 	else										// check for single "value"
 		status = _set_value_option(opt, rtsetparams_called);
 
-	if (status == -1)
-		return die("set_option", "Unrecognized option \"%s\"", opt);
+    if (status == -1) {
+		rtcmix_warn("set_option", "Unrecognized option \"%s\" ignored", opt);
+        return rtOptionalThrow(PARAM_ERROR);
+    }
 	return 0;
 }
 
@@ -419,7 +422,7 @@ double RTcmix::set_option(float *p, int nargs, double pp[])
 	for (int i = 0; i < nargs; i++) {
 		char *arg = DOUBLE_TO_STRING(pp[i]);		// cast pfield to string
 
-		if (_parse_arg(arg, rtsetparams_was_called()) == -1)
+		if (_parse_arg(arg, rtsetparams_was_called()) != 0)
 			return -1.0;
 	}
 	return 0.0;

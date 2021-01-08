@@ -26,6 +26,7 @@ protected:
 private:
     int _controllerNumber;
     float _controllerValue;
+    unsigned _uControllerValue;
 };
 
 

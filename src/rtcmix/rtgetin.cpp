@@ -66,11 +66,11 @@ Instrument::rtinrepos(Instrument *inst, int frames, int whence)
          assert(inst->_input.fileOffset >= 0);
          break;
       case SEEK_END:
-         rtcmix_warn("rtinrepos", "SEEK_END unimplemented\n");
+         rtcmix_warn("rtinrepos", "SEEK_END unimplemented");
          return PARAM_ERROR;
          break;
       default:
-         rtcmix_warn("rtinrepos", "invalid <whence>\n");
+         rtcmix_warn("rtinrepos", "invalid <whence>");
          return PARAM_ERROR;
          break;
    }

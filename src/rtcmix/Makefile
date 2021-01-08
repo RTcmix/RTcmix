@@ -25,7 +25,7 @@ CONFDIR = ../conf
 
 CXXFLAGS += $(SOUND_DRIVER)
 INCLUDES += -I$(INCLUDEDIR) -I../include -I$(AUDIODIR) -I$(SNDLIBDIR) -I./heap -I../conf
-
+INCLUDES += -I../osc
 # Source file listings
 
 COMMON_CSRCS = \
@@ -160,6 +160,12 @@ MIX_OBJS = ../../insts/base/MIX/MIX.o
 
 MAIN_OBJS = RTcmixMain.o main.o
 
+ifeq ($(OSC_SUPPORT), TRUE)
+	MAIN_OBJS += ../osc/RTOSCListener.o
+endif
+
+
+
 # The initial set of objects used by all builds
 COMMON_OBJS = $(CPPOBJS) $(COBJS) $(GENOBJS) $(RTHEAPOBJS) $(MIX_OBJS) $(AUDIODIR)/audio_devices.o
 
@@ -221,7 +227,7 @@ PROGS = MIX
 
 # Object lists are different for standalone vs. embedded
 ifeq ($(BUILDTYPE), STANDALONE)
-	TARGETS = $(RTLIB) $(MAIN_OBJS) RTsockfuncs.o $(PROGS)
+	TARGETS = $(RTLIB) $(MAIN_OBJS) RTsockfuncs.o  $(PROGS)
 else
 	COMMON_OBJS += $(M_O) $(MAIN_OBJS)
 	TARGETS = $(COMMON_OBJS) $(MAIN_OBJS) $(RTLIB)
@@ -390,7 +396,7 @@ ifeq ($(BUILDTYPE), STANDALONE)
 $(RTLIB): depend $(COMMON_OBJS) $(LIBS)
 	$(LOAD) $@ $(COMMON_OBJS) $(INST_OBJS) $(LIB_OBJS) $(LIBS) $(SYSLIBS)
 	$(RANLIB) $@
-MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
+MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O) 
 	$(CXX) $(CXXFLAGS) -o MIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) $(M_O) -L. $(LDFLAGS) $(SYS_LDFLAGS)
 
 install:	all

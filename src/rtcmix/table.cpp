@@ -1608,7 +1608,7 @@ static void
 _maketable_usage()
 {
 	die("maketable",
-		"\n	 usage: table = maketable(type, [option, ] length, ...)\n");
+		"\n	 usage: table = maketable(type, [option, ] length, ...)");
 }
 
 typedef enum {
@@ -2122,7 +2122,7 @@ plottable(const Arg args[], const int nargs)
 
 	snprintf(cmd, 255, "gnuplot %s &", cmd_file);
 	cmd[255] = 0;
-	system(cmd);
+	rt_system(cmd);
 
 	return 0.0;
 }

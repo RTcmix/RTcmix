@@ -159,7 +159,7 @@ allocate_buf_ptr(int nsamps)       /* samples, not frames */
 
 /* ---------------------------------------------- allocate_audioin_buffer --- */
 /* Allocate one of the global audio input bus buffers.
-   Called from rtinput.
+   Called from rtinput and rtsetparams.
 */
 int
 RTcmix::allocate_audioin_buffer(short chan, int nsamps)

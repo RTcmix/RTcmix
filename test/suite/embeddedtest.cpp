@@ -16,6 +16,10 @@
 #include <RTcmix_API.h>
 #include <fcntl.h>
 
+#ifndef EMBEDDED
+#error This code cannot be compiled unless the system is configured for an EMBEDDED system
+#endif
+
 char message[65536];
 bool done = false;
 
@@ -40,8 +44,8 @@ int main(int argc, char **argv)
 	const int chans = 2;
 	RTcmix_setPrintCallback(PrintCallback, NULL);
 	RTcmix_setFinishedCallback(DoneCallback, NULL);
+    RTcmix_setPrintLevel(6);
 	status = RTcmix_init();
-	RTcmix_setPrintLevel(6);
 
 	RTcmix_setAudioBufferFormat(AudioFormat_32BitFloat_Normalized, 2);
 

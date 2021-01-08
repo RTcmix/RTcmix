@@ -30,7 +30,7 @@
 #define PRINT if (0) printf
 #endif
 
-CONTROLLER::CONTROLLER() : MIDIBase(), _controllerNumber(0), _controllerValue(0.0)
+CONTROLLER::CONTROLLER() : MIDIBase(), _controllerNumber(0), _controllerValue(0.0), _uControllerValue(0)
 {
 }
 
@@ -96,21 +96,22 @@ void CONTROLLER::doupdate(FRAMETYPE currentFrame)
     double p[5];
     update(p, 5, 1 << 4);
     
-    float newValue = p[4];
-    if (newValue < 0.0) {
+    _controllerValue = p[4];
+    if (_controllerValue < 0.0) {
         rtcmix_warn("CONTROLLER", "Controller value limited to 0.0");
-        newValue = 0;
+        _controllerValue = 0;
     }
-    else if (newValue > 1.0) {
+    else if (_controllerValue > 1.0) {
         rtcmix_warn("CONTROLLER", "Controller value limited to 1.0");
-        newValue = 1.0;
+        _controllerValue = 1.0;
     }
-    if (newValue != _controllerValue) {
-        unsigned value = unsigned(0.5 + (newValue * 127));
+    unsigned value = unsigned(0.5 + (_controllerValue * 127));
+    if (value != _uControllerValue) {
         long timestamp = 1000.0 * (currentFrame - getRunStartFrame()) / SR;
-        PRINT("doUpdate sending MIDI ctrlr %d with MIDI value %u with frame time offset %ld ms\n", _controllerNumber, value, timestamp);
+        PRINT("doUpdate sending MIDI ctrlr %d with MIDI value %u to MIDI chan %d with frame time offset %ld ms\n",
+              _controllerNumber, value, _midiChannel, timestamp);
         _outputPort->sendControl(timestamp, _midiChannel, _controllerNumber, value);
-        _controllerValue = newValue;
+        _uControllerValue = value;
     }
 }
 

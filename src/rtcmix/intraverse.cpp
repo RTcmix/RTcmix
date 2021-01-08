@@ -75,31 +75,36 @@ int RTcmix::runMainLoop(void)
 	::pthread_mutex_unlock(&audio_config_lock);
 
 	while (!audio_configured) {
+//        rtcmix_debug(NULL, "runMainLoop():  top of !audio_configured loop");
 		::pthread_mutex_lock(&audio_config_lock);
 		if (audio_config) {
 			audio_configured = YES;
 		}
 		::pthread_mutex_unlock(&audio_config_lock);
-		if (rtInteractive) {
+		if (interactive()) {
+            int ret = 0;
 			if (run_status == RT_GOOD || run_status == RT_PANIC)
 				continue;
 			else if (run_status == RT_SHUTDOWN)
 				RTPrintf("runMainLoop:  shutting down\n");
-			else if (run_status == RT_ERROR)
+            else if (run_status == RT_ERROR) {
 				RTPrintf("runMainLoop:  shutting down due to error\n");
+                ret = -1;
+            }
 			audioDone = true;
-			return -1;
+			return ret;
 		}
+        usleep(1000*100);   // no reason to run loop faster that 1 per 100 ms.
 	}
 
 #ifndef EMBEDDED
-	if (audio_configured && rtInteractive) {
+	if (audio_configured && interactive()) {
 		if (Option::print())
-			RTPrintf("runMainLoop():  audio set.\n");
+			RTPrintf("runMainLoop():  audio configured.\n");
 	}
 #else
-	rtcmix_debug(NULL, "runMainLoop():  audio set.");
-	rtInteractive = 1;
+	rtcmix_debug(NULL, "runMainLoop():  audio configured.");
+	setInteractive(true);
 #endif
 
 	// NOTE: audioin, aux and output buffers are zero'd during allocation
@@ -175,10 +180,10 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		return (rtsendzeros(device, false) == 0) ? true : false;
 	}
 
-	if (rtInteractive && run_status == RT_PANIC)
+	if (interactive() && run_status == RT_PANIC)
 		panic = YES;
 #ifdef EMBEDDED
-	else if (rtInteractive && run_status == RT_FLUSH) {
+	else if (interactive() && run_status == RT_FLUSH) {
 		resetHeapAndQueue();
 		rtsendzeros(device, false);
 		run_status = RT_GOOD;
@@ -213,7 +218,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 		// perform final configuration on it if we are not interactive.
 		// (If interactive, this is handled at init() time).
 
-		if (!rtInteractive) {
+		if (!interactive()) {
 #ifdef ALLBUG
 			RTPrintf("Calling configure()\n");
 #endif
@@ -682,7 +687,7 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
         playEm = false;
     }
 
-	if (!rtInteractive) {  // Ending condition
+	if (!interactive()) {  // Ending condition
 		if ((rtHeap->getSize() == 0) && (allQSize == 0)) {
 #ifdef ALLBUG
 			cout << "heapSize:  " << rtHeap->getSize() << endl;

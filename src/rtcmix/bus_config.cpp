@@ -1030,12 +1030,12 @@ RTcmix::free_bus_config()
       q = next;
    }
 	Inst_Bus_Config = NULL;
+    BusConfig zeroConfig;
 	if (BusConfigs) {
 		for (int i=0 ; i<busCount; i++) {
 		   RefCounted::unref(BusConfigs[i].In_Config);
-		   BusConfigs[i].In_Config = NULL;
+		   BusConfigs[i] = zeroConfig;
 		}
-		memset(BusConfigs, 0, busCount * sizeof(BusConfig));
 	}
 	memset(&Visited, 0, sizeof(Visited));
 	Bus_Config_Status = NO;

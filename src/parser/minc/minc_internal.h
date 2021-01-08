@@ -70,7 +70,7 @@ class RTException
 {
 public:
 	RTException(const char *msg) : _mesg(msg) {}
-	const char *mesg() { return _mesg; }
+	const char *mesg() const { return _mesg; }
 private:
 	const char *_mesg;
 };
@@ -141,16 +141,19 @@ typedef const char *MincString;
 typedef void *MincHandle;  // contents of this is opaque to Minc
 
 enum MincDataType {
-    MincVoidType = 0,
-    MincFloatType = 1,       /* a floating point number, either float or double */
-    MincStringType = 2,
-    MincHandleType = 4,
-    MincListType = 8,
-    MincStructType = 16
+    MincVoidType        = 0,
+    MincFloatType       = 1,       /* a floating point number, either float or double */
+    MincStringType      = 2,
+    MincHandleType      = 4,
+    MincListType        = 8,
+    MincMapType         = 16,
+    MincStructType      = 32,
+    MincFunctionType    = 64   /* a callable object */
 };
 
 class MincValue;
 class MincList;
+class MincMap;
 class Node;
 
 union YYSTYPE {
@@ -160,7 +163,7 @@ union YYSTYPE {
 };
 #define YYSTYPE_IS_DECLARED   /* keep bison from declaring YYSTYPE as an int */
 
-enum LookupType { AnyLevel = 0, GlobalLevel = 1, ThisLevel = 2 };
+enum ScopeLookupType { AnyLevel = 0, GlobalLevel = 1, ThisLevel = 2 };
 
 void printargs(const char *funcname, const Arg arglist[], const int nargs);
 

@@ -58,8 +58,16 @@ static Arg * minc_list_to_arglist(const char *funcname, const MincValue *inList,
 					return NULL;
 				}
                 break;
+            case MincMapType:
+                minc_die("for now, maps cannot be passed to RTcmix function %s()", funcname);
+                delete [] newArgs;
+                return NULL;
             case MincStructType:
                 minc_die("for now, structs cannot be passed to RTcmix function %s()", funcname);
+                delete [] newArgs;
+                return NULL;
+            case MincFunctionType:
+                minc_die("for now, functions cannot be passed to RTcmix function %s()", funcname);
                 delete [] newArgs;
                 return NULL;
 		}
@@ -137,14 +145,20 @@ call_external_function(const char *funcname, const MincValue arglist[],
 			}
 			}
 			break;
-        case MincStructType:
-            minc_die("call_external_function: %s(): arg %d: structs not supported as function arguments",
-                     funcname, i);
+       case MincMapType:
+            minc_die("%s(): arg %d: maps not supported as function arguments", funcname, i);
+            return PARAM_ERROR;
+            break;
+       case MincStructType:
+            minc_die("%s(): arg %d: structs not supported as function arguments", funcname, i);
+            return PARAM_ERROR;
+            break;
+       case MincFunctionType:
+            minc_die("%s(): arg %d: functions not supported as function arguments", funcname, i);
             return PARAM_ERROR;
             break;
 		default:
-			minc_die("call_external_function: %s(): arg %d: invalid argument type",
-					 funcname, i);
+			minc_die("%s(): arg %d: invalid argument type", funcname, i);
 			return PARAM_ERROR;
 			break;
 		}
@@ -265,9 +279,16 @@ MincHandle minc_binop_handle_float(const MincHandle mhandle,
 {
 	DPRINT("minc_binop_handle_float (handle=%p, val=%f\n", mhandle, val);
 
+    if (mhandle == NULL) {
+        minc_warn("Null handle in binary operation");
+        return (MincHandle)0;
+    }
 	// Extract PField from MincHandle.
 	Handle handle = (Handle) mhandle;
-	assert(handle->type == PFieldType);
+    if (handle->type != PFieldType) {
+        minc_die("Illegal handle type for this operation");
+        return (MincHandle)0;
+    }
 	PField *pfield1 = (PField *) handle->ptr;
 
 	// Create ConstPField for MincFloat.
@@ -284,12 +305,20 @@ MincHandle minc_binop_float_handle(const MincFloat val,
 {
 	DPRINT("minc_binop_float_handle (val=%f, handle=%p\n", val, mhandle);
 
-	// Create ConstPField for MincFloat.
+    if (mhandle == NULL) {
+        minc_warn("Null handle in binary operation");
+        return (MincHandle)0;
+    }
+
+    // Create ConstPField for MincFloat.
 	PField *pfield1 = new ConstPField(val);
 
 	// Extract PField from MincHandle.
 	Handle handle = (Handle) mhandle;
-	assert(handle->type == PFieldType);
+    if (handle->type != PFieldType) {
+        minc_die("Illegal handle type for this operation");
+        return (MincHandle)0;
+    }
 	PField *pfield2 = (PField *) handle->ptr;
 
 	// Create PField using appropriate operator.
@@ -303,12 +332,18 @@ MincHandle minc_binop_handles(const MincHandle mhandle1,
 {
 	DPRINT("minc_binop_handles (handle1=%p, handle2=%p\n", mhandle1, mhandle2);
 
+    if (mhandle1 == NULL || mhandle2 == NULL) {
+        minc_warn("Null handle(s) in binary operation");
+        return (MincHandle)0;
+    }
 	// Extract PFields from MincHandles
 
 	Handle handle1 = (Handle) mhandle1;
 	Handle handle2 = (Handle) mhandle2;
-	assert(handle1->type == PFieldType);
-	assert(handle2->type == PFieldType);
+    if (handle1->type != PFieldType || handle2->type != PFieldType) {
+        minc_die("Illegal handle type(s) for this operation");
+        return (MincHandle)0;
+    }
 	PField *pfield1 = (PField *) handle1->ptr;
 	PField *pfield2 = (PField *) handle2->ptr;
 	PField *opfield = createBinopPField(pfield1, pfield2, op);

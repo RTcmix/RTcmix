@@ -351,21 +351,31 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 				}
 				// If record disabled during rtsetparams(), we cannot force it on here.
 				else if (!Option::record()) {
-					rterror("rtinput", "Audio already configured for playback only via rtsetparams()");
+					rterror("rtinput", "Audio already configured for playback only via rtsetparams()\n\t\tAdd set_option(\"record=true\") at top of score");
 					set_record = false;
                     status = CONFIGURATION_ERROR;
 					goto Error;
 				}
-			}
-			else {
-				// This allows rtinput("AUDIO") to turn on record
-				Option::record(1);
-				set_record = true;	// DAS I had set this to false -- WHY?
-			}
-			fd = 1;  /* we don't use this; set to 1 so rtsetinput() will work */
-			for (i = 0; i < nchans; i++) {
-				allocate_audioin_buffer(i, bufsamps());
-			}
+//			}
+//			else {
+//				// This allows rtinput("AUDIO") to turn on record XXX NO LONGER SUPPORTED - MUST CALL rtsetparams FIRST - DAS
+//				Option::record(1);
+//				set_record = true;	// DAS I had set this to false -- WHY?
+//			}
+                fd = 1;  /* we don't use this; set to 1 so rtsetinput() will work */
+                for (i = 0; i < nchans; i++) {
+                    allocate_audioin_buffer(i, bufsamps());
+                }
+            }
+            else {
+#ifdef EMBEDDED
+                rterror("rtinput", "You need to start the audio device before doing this.");
+#else
+                rterror("rtinput", "You did not call rtsetparams!");
+#endif
+                status = CONFIGURATION_ERROR;
+                goto Error;
+            }
 #ifdef INPUT_BUS_SUPPORT
 #endif /* INPUT_BUS_SUPPORT */
 		}
@@ -383,6 +393,7 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
                 rterror("rtinput", "You did not call rtsetparams!");
 #endif
                 status = CONFIGURATION_ERROR;
+                goto Error;
             }
 			set_record = false;
             double dsrate = sr();

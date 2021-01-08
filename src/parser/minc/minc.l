@@ -37,16 +37,19 @@ static void yy_flex_strncpy (char* s1, yyconst char * s2, int n)
 	for ( i = 0; i < n; ++i )
 	s1[i] = s2[i];
 }
+#endif  /* yy_flex_strncpy */
+#ifdef __cplusplus
+}
 #endif
+#endif  /* EMBEDDED */
+extern "C" {
 void yy_clear_includes()
 {
     includedFilenames.clear();
     include_stack_index = 0;
 }
-#ifdef __cplusplus
 }
-#endif
-#endif
+
 %}
 
 let   [a-zA-Z]
@@ -101,6 +104,8 @@ num   {dig}+
 <INIT>string            return TOK_STRING_DECL;
 <INIT>handle            return TOK_HANDLE_DECL;
 <INIT>list            	return TOK_LIST_DECL;
+<INIT>map               return TOK_MAP_DECL;
+<INIT>mfunction         return TOK_FUNC_DECL;
 <INIT>return			return TOK_RETURN;
 <INIT>[%={}><,.;*+-]     return (*yytext);
 <INIT>"["|"]"|"/"       return (*yytext);
@@ -140,8 +145,8 @@ num   {dig}+
                 yyin = fopen( yytext, "r" );
                 if (!yyin)
                 {
-                    char msg[1024];
-                    snprintf(msg, 1024, "Unable to open include file \"%s\"",
+                    char msg[1054];
+                    snprintf(msg, 1054, "Unable to open include file \"%s\"",
                              yytext);
                     YY_FATAL_ERROR(msg);
                 }

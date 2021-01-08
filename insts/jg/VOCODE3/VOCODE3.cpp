@@ -87,9 +87,9 @@ const OeqType kBandPassType = OeqBandPassCPG;  // constant 0 dB peak gain
 
 
 VOCODE3::VOCODE3()
-	: _branch(0), _numfilts(0), _hold(0), _maptable(NULL),
-	  _responsetime(-FLT_MAX), _nyquist(SR * 0.5f),
-	  _in(NULL), _lastmod(NULL), _modulator_filt(NULL), _carrier_filt(NULL),
+	: _branch(0), _numfilts(0), _hold(0), _maptable(NULL), _responsetime(-FLT_MAX), _nyquist(SR * 0.5f),
+	  _in(NULL), _lastmod(NULL), _modtable_src(NULL), _cartable_src(NULL), _modtable_prev(NULL), _cartable_prev(NULL),
+      _maptable_src(NULL), _scaletable(NULL), _modulator_filt(NULL), _carrier_filt(NULL),
 	  _balancer(NULL)
 {
 }
@@ -103,6 +103,7 @@ VOCODE3::~VOCODE3()
 	delete [] _in;
 	delete [] _lastmod;
 
+    // NOTE:  It is possible to leak some or all of these because _numfilts could still be set to 0
 	for (int i = 0; i < _numfilts; i++) {
 		delete _modulator_filt[i];
 		delete _carrier_filt[i];
@@ -142,49 +143,50 @@ int VOCODE3::init(double p[], int n_args)
 		return die("VOCODE3",
 		"Must use 2 input channels: 'left' for carrier; 'right' for modulator.");
 
-	_modtable_src = (double *) getPFieldTable(4, &_numfilts);
-	if (_modtable_src == NULL)
+    int nFilters = 0;   // so we don't set _numfilts until constructor completely succeeds
+	_modtable_src = (double *) getPFieldTable(4, &nFilters);
+    if (_modtable_src == NULL)
 		return die("VOCODE3", "p4 must have the modulator center freq. table.");
 	int len;
 	_cartable_src = (double *) getPFieldTable(5, &len);
 	if (_cartable_src == NULL)
 		return die("VOCODE3", "p5 must have the carrier center freq. table.");
-	if (len != _numfilts)
+	if (len != nFilters)
 		return die("VOCODE3", "Modulator and carrier center freq. tables must "
 									 "be the same size.");
-	_modtable_prev = new double [_numfilts];   // these two arrays inited below
-	_cartable_prev = new double [_numfilts];
+	_modtable_prev = new double [nFilters];   // these two arrays inited below
+	_cartable_prev = new double [nFilters];
 
 	_maptable_src = (double *) getPFieldTable(6, &len);
-	if (_maptable_src && (len != _numfilts))
+	if (_maptable_src && (len != nFilters))
 		return die("VOCODE3", "Center freq. mapping table (p6) must be the same "
 									 "size as the modulator and carrier tables.");
-	_maptable = new int [_numfilts];
+	_maptable = new int [nFilters];
 	if (_maptable_src) {
-		for (int i = 0; i < _numfilts; i++)
+		for (int i = 0; i < nFilters; i++)
 			_maptable[i] = int(_maptable_src[i]);
 	}
 	else {	// no user mapping table; make linear mapping
-		for (int i = 0; i < _numfilts; i++)
+		for (int i = 0; i < nFilters; i++)
 			_maptable[i] = i;
 	}
 
 	_scaletable = (double *) getPFieldTable(7, &len);
-	if (_scaletable && (len != _numfilts))
+	if (_scaletable && (len != nFilters))
 		return die("VOCODE3", "The carrier scaling table must be the same size "
 		                      "(%d elements) as the carrier frequency table.",
-		                      _numfilts);
+		                      nFilters);
 
 	_modtransp = p[8];
 	_cartransp = p[9];
 	_modq = p[10];
 	_carq = p[11];
 
-	_lastmod = new float [_numfilts];
+	_lastmod = new float [nFilters];
 
-	_modulator_filt = new Oequalizer * [_numfilts];
-	_carrier_filt = new Oequalizer * [_numfilts];
-	_balancer = new Obalance * [_numfilts];
+	_modulator_filt = new Oequalizer * [nFilters];
+	_carrier_filt = new Oequalizer * [nFilters];
+	_balancer = new Obalance * [nFilters];
 
 #ifdef NOTYET
 	const bool print_stats = Option::printStats();
@@ -197,7 +199,9 @@ int VOCODE3::init(double p[], int n_args)
 		rtcmix_advise(NULL, "          -----------------------------------------");
 	}
 
-	for (int i = 0; i < _numfilts; i++) {
+    _numfilts = nFilters;   // intialize before running loop to allow proper cleanup
+    
+	for (int i = 0; i < nFilters; i++) {
 		_modulator_filt[i] = new Oequalizer(SR, kBandPassType);
 		_modtable_prev[i] = _modtable_src[i];
 		float mfreq = updateFreq(_modtable_src[i], _modtransp);
@@ -215,7 +219,6 @@ int VOCODE3::init(double p[], int n_args)
 		if (print_stats)
 			rtcmix_advise(NULL, "          %7.1f\t%7.1f", mfreq, cfreq);
 	}
-
 	return nSamps();
 }
 

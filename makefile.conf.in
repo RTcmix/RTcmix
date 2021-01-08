@@ -57,6 +57,7 @@ ifeq ($(ARCH),LINUX)
   ifeq ($(BUILDTYPE), STANDALONE)
     ARCHFLAGS += -DSTANDALONE
     RTLIBTYPE = DYNAMIC
+	INSTTYPE = DYNAMIC
   endif
   ifndef AUDIODRIVER
 	AUDIODRIVER=OSS
@@ -98,6 +99,7 @@ ifeq ($(ARCH),MACOSX)
       ARCHFLAGS += -DUSE_OSX_DISPATCH
     endif
     ARCH_RTLDFLAGS += -framework AudioUnit
+	INSTTYPE = DYNAMIC
 	SHLIB = rtcmix
     SHLIB_SUFFIX = dylib
     AUDIODRIVER=APPLE
@@ -107,13 +109,14 @@ ifeq ($(ARCH),MACOSX)
   # -- OSX embedded ----------------------------------------
   ifeq ($(BUILDTYPE), OSXEMBEDDED)
     ARCHFLAGS += $(ARCH_BITFLAGS) -DEMBEDDED
-    ARCH_SYS_LDFLAGS = -framework CoreFoundation -framework AudioToolbox
+    ARCH_SYS_LDFLAGS = -framework CoreFoundation -framework AudioToolbox -framework CoreMIDI
     ifeq ($(USE_OSX_DISPATCH), TRUE)
       ARCHFLAGS += -DUSE_OSX_DISPATCH
     endif
     ARCH_RTLDFLAGS += -framework AudioUnit
     AUDIODRIVER=EMBEDDEDAUDIO
     CMIX_FLAGS += -DEMBEDDEDAUDIO
+	INSTTYPE = STATIC
     SHLIB = rtcmix_embedded
     # This is overridable in site.conf
 	ifndef RTLIBTYPE
@@ -144,6 +147,7 @@ ifeq ($(ARCH),MACOSX)
     ARCHFLAGS += -isysroot `xcrun --show-sdk-path`
     CC = `xcrun -f cc`
     CXX = `xcrun -f c++` -Wno-deprecated
+	INSTTYPE = STATIC
 
     SHLIB = rtcmixdylib
 	SHLIB_SUFFIX = so
@@ -159,6 +163,7 @@ ifeq ($(ARCH),MACOSX)
 	# This is always true for IOS
 	RTLIBTYPE = STATIC
 	SHLIB_SUFFIX = a
+	INSTTYPE = STATIC
 	# This is overridable in site.conf
 	ifndef AUDIODRIVER
     	AUDIODRIVER=APPLE
@@ -203,6 +208,7 @@ ifeq ($(ARCH),SGI)
   LD = ld
   MAKE = gmake
   INSTALL = cp -f
+  INSTTYPE = DYNAMIC
   RANLIB = touch
   SHELL = /bin/sh
   SHLIB = rtcmix
@@ -220,6 +226,7 @@ ifeq ($(ARCH),FREEBSD)
   LD = ld
   MAKE = gmake
   INSTALL = cp -f
+  INSTTYPE = DYNAMIC
   RANLIB = touch
   SHELL = /bin/sh
   SHLIB = rtcmix
@@ -249,6 +256,7 @@ ifeq ($(BUILDTYPE), PD)
 	endif
 	AUDIODRIVER=EMBEDDEDAUDIO
 	CMIX_FLAGS += -DEMBEDDEDAUDIO
+    INSTTYPE = STATIC
 endif
 
 ifeq ($(BUILDTYPE), STANDALONE)
@@ -281,6 +289,13 @@ RTLIB = lib$(SHLIB).$(SHLIB_SUFFIX)
 LIBRTCMIX = $(LIBDIR)/$(RTLIB)
 RTLDFLAGS = -L$(LIBDIR) -l$(SHLIB) -lgen
 
+# Multi-platform OSC server support
+
+ifeq ($(OSC_SUPPORT), TRUE)
+	CMIX_FLAGS += -DOSC $(LIBLO_CFLAGS)
+	RTLDFLAGS += $(LIBLO_LIBS)
+endif
+
 # Platform-specific library flags Key:
 #
 # SYS_LDFLAGS:          External libraries for each platform.
@@ -308,7 +323,7 @@ ifeq ($(ARCH),MACOSX)
   ifeq ($(BUILDTYPE), PD)
   	SHARED_LDFLAGS = $(ARCHFLAGS) -bundle
   else
-    	SHARED_LDFLAGS = $(ARCHFLAGS) -bundle -flat_namespace -undefined suppress
+    	SHARED_LDFLAGS = $(ARCHFLAGS) $(OPT) -bundle -flat_namespace -undefined suppress
   endif
   DYNAMIC_LDFLAGS = $(ARCHFLAGS) -flat_namespace -undefined suppress -dynamiclib -install_name $(LIBDIR)/$(RTLIB)
   DYN = 

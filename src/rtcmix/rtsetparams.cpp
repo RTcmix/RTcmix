@@ -31,21 +31,25 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, int bus_co
 	int         record_audio = Option::record(recording);
 	
     if (sr <= 0.0) {
-        return die("rtsetparams", "Sampling rate must be greater than 0.");
+        die("rtsetparams", "Sampling rate must be greater than 0.");
+        RTExit(PARAM_ERROR);
     }
     if (bus_count < NCHANS) {
-        return die("rtsetparams", "Bus count must be >= channel count");
+        die("rtsetparams", "Bus count must be >= channel count");
+        RTExit(PARAM_ERROR);
     }
 
 	if (bus_count < MAXBUS && bus_count >= MINBUS) {
 		busCount = bus_count;
 	}
 	else {
-		return die("rtsetparams", "Bus count must be between %d and %d", MINBUS, MAXBUS);
+		die("rtsetparams", "Bus count must be between %d and %d", MINBUS, MAXBUS);
+        RTExit(PARAM_ERROR);
 	}
 
 	if (nchans > busCount) {
-		return die("rtsetparams", "You can only have up to %d output channels.", busCount);
+		die("rtsetparams", "You can only have up to %d output channels.", busCount);
+        RTExit(PARAM_ERROR);
 	}
 	
     // FIXME: Need better name for NCHANS. -JGG
@@ -76,8 +80,9 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, int bus_co
 		rtcmix_debug(NULL, "RTcmix::setparams creating audio device(s)");
 		if ((audioDevice = create_audio_devices(record_audio, play_audio,
 												NCHANS, &srate, &nframes, numBuffers)) == NULL)
-			return -1;
-
+        {
+			RTExit(SYSTEM_ERROR);
+        }
 		/* These may have been reset by driver. */
 		setRTBUFSAMPS(nframes);
 		if (srate != RTcmix::sr()) {
@@ -88,7 +93,8 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, int bus_co
 				setSR(srate);
 			}
 			else {
-				return die("rtsetparams", "Sample rate could not be set to desired value.\nSet \"require_sample_rate=false\" to allow alternate rates.");
+				die("rtsetparams", "Sample rate could not be set to desired value.\nSet \"require_sample_rate=false\" to allow alternate rates.");
+                RTExit(SYSTEM_ERROR);
 			}
 		}
 	}
@@ -104,15 +110,15 @@ RTcmix::setparams(float sr, int nchans, int bufsamps, bool recording, int bus_co
 	InputFile::createConversionBuffers(RTcmix::bufsamps());
 #endif
 
+#ifdef EMBEDDED
+    if (verbose >= MMP_PRINTALL)
+#endif
+        rtcmix_advise("rtsetparams", "Audio set:  %g sampling rate, %d channels\n", RTcmix::sr(), NCHANS);
+    
 	/* inTraverse waits for this. Set it even if play_audio is false! */
 	pthread_mutex_lock(&audio_config_lock);
 	audio_config = 1;
 	pthread_mutex_unlock(&audio_config_lock);
-	
-#ifdef EMBEDDED
-	if (verbose >= MMP_PRINTALL)
-#endif
-        rtcmix_advise(NULL, "Audio set:  %g sampling rate, %d channels\n", RTcmix::sr(), NCHANS);
 	
 	rtsetparams_called = 1;	/* Put this at end to allow re-call due to error */
 	
@@ -150,7 +156,7 @@ int RTcmix::resetparams(float sr, int chans, int bufsamps, bool recording)
 		if ((audioDevice = create_audio_devices(record_audio, play_audio,
 												NCHANS, &srate, &nframes, numBuffers)) == NULL)
 		{
-			return -1;
+			RTExit(SYSTEM_ERROR);
 		}
 		/* These may have been reset by driver. */
 		setRTBUFSAMPS(nframes);
@@ -202,7 +208,8 @@ RTcmix::rtsetparams(float p[], int n_args, double pp[])
 #endif
 
 	if (rtsetparams_was_called()) {
-		return die("rtsetparams", "You can only call rtsetparams once!");
+		die("rtsetparams", "You can only call rtsetparams once!");
+        RTExit(CONFIGURATION_ERROR);
 	}
 		
 	int bufsamps = (n_args > 2) ? (int) p[2] : (int) Option::bufferFrames();

@@ -77,19 +77,19 @@
 //
 // 07/22/2017
 // -- removed use of specialized MSPAudioDevice and switched to using EmbeddedAudioDevice.
-
-// Hand-defining these here because these will always be true, and are needed to get the right portions of RTcmix_API.h
-
+//
 // 5/30/2020
 // v. 2.01
 // -- now completely 64-bit, with perform64 method, etc.  used max-sdk-7.3.3
 
 
+// Hand-defining these here because these will always be true, and are needed to get the right portions of RTcmix_API.h
+
 #define EMBEDDEDAUDIO 1
 #define MAXMSP 1
 
 #define VERSION "2.01"
-#define RTcmixVERSION "RTcmix-maxmsp-4.4.1"
+#define RTcmixVERSION "RTcmix-maxmsp-4.6.0"
 
 #if MAX_SDK_VERSION==6
 #include <ext.h>

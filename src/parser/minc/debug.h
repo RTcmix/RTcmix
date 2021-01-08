@@ -8,10 +8,11 @@
 #ifndef debug_h
 #define debug_h
 
-#include "minc_internal.h"
-
 #undef DEBUG_TRACE
-//#define DEBUG_TRACE 1  /* if defined to 1, basic trace.  If defined to 2, full trace */
+// #define DEBUG_TRACE 2
+// #define DEBUG_MEMORY
+
+#include "minc_internal.h"
 
 #if defined(DEBUG_TRACE)
 

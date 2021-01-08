@@ -227,7 +227,6 @@ int BASE::configure()
 	rvb_reset(m_tapDelay);				  // resets reverb & tap delay
 
 	if (status == 0 && m_binaural) {
-		rtcmix_advise(name(), "Running in binaural mode.");
 		status = alloc_firfilters();	// allocates memory for FIRs
 	}
 	return status;

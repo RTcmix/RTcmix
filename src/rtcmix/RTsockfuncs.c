@@ -14,6 +14,8 @@
 #include <sockdefs.h>
 #include "RTsockfuncs.h"
 
+#undef DBUG
+
 /* RTsockfuncs.c - a set of utility functions for real-time cmix interface
    programming */
 
@@ -42,7 +44,7 @@ int newRTsock(char *ihost, int rtsno) {
 	err = connect(s, (struct sockaddr *)&sss, sizeof(sss));
 
 	if(err < 0) {
-		perror("connect");
+        perror("newRTsock: connect");
 		return err;
 #ifdef HARD_EXIT
 		exit(1);
@@ -67,7 +69,7 @@ int RTsock(char *ihost, int rtsno) {
 	sss.sin_port = htons(MYPORT+rtsno);
 
 	if(connect(s, (struct sockaddr *)&sss, sizeof(sss)) < 0) {
-		perror("connect");
+        perror("RTsock: connect");
 		exit(1);
 	}
 	return s;
@@ -105,12 +107,7 @@ int RTopensocket(int socket, char *binaryname) {
 int RTopensocket_syscall(int socket, char *binaryname) {
 	char syscall[60];
 	char flags[30];
-	char socknumber[2];
-	char args[64];
 	int pid;
-	int s;
-	struct sockaddr_in sss;
-	struct hostent *hp;
 
 	sprintf(syscall, "%s ", binaryname);
 	sprintf(flags, "-i -n -c -o %i", socket);
@@ -151,7 +148,7 @@ void RTkillsocket(int socket, int pid)
 
 void RTsendsockstr(int theSock, struct sockdata *sockstr)
 {
-  int amt;
+  long amt;
   /* printf("Writing to socket %d\n",theSock); */
   amt = write(theSock, (void *)sockstr, sizeof(struct sockdata));
   while (amt < sizeof(struct sockdata)) 
@@ -174,11 +171,13 @@ void RTsendsock(const char *cmd, int theSock, int nargs, ...)
 	strcpy(ssend.name, cmd);
 
 	va_start(ap, nargs);
-		if ( (strcmp(ssend.name, "rtinput") == 0) ||
+    if ( (strcmp(ssend.name, "rtinput") == 0) ||
 			(strcmp(ssend.name, "rtoutput") == 0) ||
 			(strcmp(ssend.name,"set_option") == 0) ||
 			(strcmp(ssend.name,"bus_config") == 0) ||
-			(strcmp(ssend.name, "load")==0) ) {
+			(strcmp(ssend.name, "load")==0) ||
+            (strcmp(ssend.name, "score")==0)
+        ) {
 		for (i = 0; i < nargs; i++) {
 			strcpy(ssend.data.text[i], va_arg(ap, char*));
 		}
@@ -191,7 +190,9 @@ void RTsendsock(const char *cmd, int theSock, int nargs, ...)
 	va_end(ap);
 
 	ssend.n_args = nargs;
-
+#ifdef DBUG
+    printf("RTsendsock: Sending name '%s', n_args %d\n", ssend.name, ssend.n_args);
+#endif
 	write(theSock, (char *)&ssend, sizeof(struct sockdata));
 }
 
@@ -312,7 +313,6 @@ void parse(char *buf, char **args)
 
 int execute(char **args)
 {
-	int status;
 	int pid;
 
 	/* fork */

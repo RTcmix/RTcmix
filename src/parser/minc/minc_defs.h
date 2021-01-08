@@ -24,27 +24,12 @@ int yylex_destroy(void);
 void yyset_lineno (int line_number);
 int yyget_lineno(void);
 
-int configure_minc_error_handler(int exit);
-
-#ifdef EMBEDDED
+void preserveSymbols(bool preserve);
 void reset_parser();
-void clear_node_state();	// The only exported function from Node.cpp
-#endif
+void clear_tree_state();	// The only exported function from Node.cpp
 
 #ifdef __cplusplus
 }
-
-// We only throw errors from the parser in embedded systems.  In others we simply exit.
-#ifdef EMBEDDED
-#define minc_throw(err) throw(err)
-#define minc_try try
-#define minc_catch(err) catch(err)
-#else
-#define minc_throw(err)
-#define minc_try
-#define minc_catch(err) if (0)
-#endif
-
 #endif
 
 #endif /* _MINC_H_ */

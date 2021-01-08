@@ -15,8 +15,6 @@
 #define vsnprintf(str, sz, fmt, args)  vsprintf(str, fmt, args)
 #endif
 
-static int exit_on_die = 0;
-
 // BGG -- these in message.c.  Maybe just #include <ugens.h>?
 extern void rtcmix_advise(const char *inst_name, const char *format, ...);
 extern void rtcmix_warn(const char *inst_name, const char *format, ...);
@@ -26,17 +24,8 @@ extern int die(const char *inst_name, const char *format, ...);
 void
 sys_error(const char *msg)
 {
-	die("parser", "%s\n", msg);
-	if (exit_on_die)
-      exit(EXIT_FAILURE);
-	minc_throw(MincSystemError);
-}
-
-int
-configure_minc_error_handler(int exit)
-{
-   exit_on_die = exit;
-   return 0;
+	die("parser", "%s", msg);
+	throw(MincSystemError);
 }
 
 void
@@ -62,7 +51,7 @@ minc_warn(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-	rtcmix_warn("parser", "%s (near line %d)\n", buf, yyget_lineno());
+   rtcmix_warn("parser", "%s (near line %d)", buf, yyget_lineno());
 }
 
 void
@@ -75,13 +64,9 @@ minc_die(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-	rterror("parser", "%s (near line %d)\n", buf, yyget_lineno());
-	
+	rterror("parser", "%s (near line %d)", buf, yyget_lineno());
 
-   if (exit_on_die)
-      exit(EXIT_FAILURE);
-
-	minc_throw(MincParserError);
+	throw(MincParserError);
 }
 
 void
@@ -94,27 +79,22 @@ minc_internal_error(const char *msg, ...)
    vsnprintf(buf, BUFSIZE, msg, args);
    va_end(args);
 
-	rterror("parser-program", "%s (near line %d)\n", buf, yyget_lineno());
+	rterror("parser-program", "%s (near line %d)", buf, yyget_lineno());
 
-	if (exit_on_die)
-      exit(EXIT_FAILURE);
-	
-	minc_throw(MincInternalError);
+	throw(MincInternalError);
 }
 
 void
 yyerror(const char *msg)
 {
-	rterror("parser-yyerror", "near line %d: %s\n", yyget_lineno(), msg);
-	minc_throw(MincParserError);
+	rterror("parser-yyerror", "near line %d: %s", yyget_lineno(), msg);
+	throw(MincParserError);
 }
 
 void
 yyfatalerror(const char *msg)
 {
-    rterror("parser-yyfatalerror", "near line %d: %s\n", yyget_lineno(), msg);
-    if (exit_on_die)
-        exit(EXIT_FAILURE);
-    minc_throw(MincParserError);
+    rterror("parser-yyfatalerror", "near line %d: %s", yyget_lineno(), msg);
+    throw(MincParserError);
 }
 

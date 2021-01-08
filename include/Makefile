@@ -17,6 +17,7 @@ all:
 	ln -sf ../src/rtcmix/PFieldSet.h .
 	ln -sf ../src/rtcmix/Random.h .
 	ln -sf ../src/rtcmix/RawDataFile.h .
+	ln -sf ../src/rtcmix/RTsockfuncs.h .
 	ln -sf ../src/rtcmix/Option.h .
 	ln -sf ../src/rtcmix/sockdefs.h .
 	ln -sf ../src/rtcmix/sfheader.h .
@@ -53,6 +54,7 @@ cleanall:
 	$(RM) PField.h
 	$(RM) PFieldSet.h
 	$(RM) Random.h
+	$(RM) RTsockfuncs.h
 	$(RM) Option.h
 	$(RM) sockdefs.h
 	$(RM) sfheader.h
