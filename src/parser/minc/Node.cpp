@@ -995,6 +995,9 @@ Node *	NodeCall::doExct()
 	else if (child(0)->dataType() == MincStringType) {
         // We stored this away when we noticed this was a builtin function
         const char *functionName = (MincString)child(0)->value();
+        if (!functionName) {
+            minc_die("string variable called as function is NULL");
+        }
 		MincValue retval;
 		int result = call_builtin_function(functionName, sMincList, sMincListLen,
 										   &retval);
@@ -1017,7 +1020,7 @@ Node *	NodeCall::doExct()
 		}
 	}
     else {
-        assert(!"func object passed to NodeCall should be either MincFunction or MincString");
+        minc_die("variable is not a function or instrument");
     }
 	pop_list();
 	return this;
