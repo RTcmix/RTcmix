@@ -42,6 +42,7 @@ minc.cpp: lex.yy.c $(YSRC) minc_internal.h rename.h
 	$(YACC) $(YFLAGS) $(YSRC)
 
 depend::
+	$(RM) bison_version.h
 	-bison --version | awk '/bison/ { printf("#define BISON_VERSION %d\n", $$4); }' >> bison_version.h
 	-$(SHELL) -ec '$(CC) -M $(CFLAGS) $(SRCS)' > depend
 
