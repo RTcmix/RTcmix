@@ -789,8 +789,10 @@ parse_bus_name(char *busname, BusType *type, int *startchan, int *endchan, int m
             *type = BUS_AUX_IN;
          else if (strchr(busname, 'o'))
             *type = BUS_AUX_OUT;
-         else
+         else {
+             rtcmix_warn("bus_config", "Invalid bus specifier: '%s'", busname);
             return INVAL_BUS_ERR;
+         }
          p = &busname[3];                            /* skip over "aux" */
          status = parse_bus_chan(p, startchan, endchan, maxBus);
          break;
@@ -800,8 +802,10 @@ parse_bus_name(char *busname, BusType *type, int *startchan, int *endchan, int m
 		   *type = BUS_NONE_IN;
 		else if (strchr(p, 'o'))
 		   *type = BUS_NONE_OUT;
-		else
+        else {
+            rtcmix_warn("bus_config", "Invalid bus specifier: '%s'", busname);
 		   return INVAL_BUS_ERR;
+        }
 		status = parse_bus_chan(p, startchan, endchan, maxBus);
 		break;
       default:

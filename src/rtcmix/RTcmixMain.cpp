@@ -275,7 +275,7 @@ RTcmixMain::parseArguments(int argc, char **argv, char **env)
                  exit(1);
 #endif
                 break;
-            case 'n':               /* for use in rtInteractive mode only */
+            case 'n':               /* for use in interactive mode only */
                noParse = 1;
                break;
 			case 'P':
@@ -400,16 +400,16 @@ RTcmixMain::run()
 {
    pthread_t   serverThread;
    int retcode;
-   /* In rtInteractive mode, we set up RTcmix to listen for score data
+   /* In interactive mode, we set up RTcmix to listen for score data
       over a socket, and then parse this, schedule instruments, and play
       them concurrently. The socket listening and parsing go in one
       thread, and the scheduler and instrument code go in another.
 
-      When not in rtInteractive mode, RTcmix parses the score, schedules
+      When not in interactive mode, RTcmix parses the score, schedules
       all instruments, and then plays them -- in that order.
    */
    if (interactive()) {
-		rtcmix_advise(NULL, "rtInteractive mode set\n");
+		rtcmix_advise(NULL, "interactive mode set\n");
 #ifdef OSC
        if (usingOSC()) {
            rtcmix_debug(NULL, "creating OSC_Server() thread");
@@ -429,7 +429,7 @@ RTcmixMain::run()
            }
     
            /* Join parsing thread. */
-           rtcmix_debug(NULL, "joining sockit() thread");
+           rtcmix_debug(NULL, "joining server thread");
            retcode = pthread_join(serverThread, NULL);
            if (retcode != 0) {
               rterror(NULL, "OSC_Server() thread join failed\n");
