@@ -8,7 +8,10 @@
 #include <assert.h>
 #include <ugens.h>      // for die, warn
 #include "rtcmix_types.h"
-#include <mixerr.h>
+// BGGx ww
+extern "C" {
+	#include <mixerr.h>
+}
 #include "prototypes.h"
 #include <ug_intro.h>
 #include <string.h>
@@ -178,6 +181,8 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
 
    // If we did not find it, try loading it from our list of registered DSOs.
    if (func == NULL) {
+// BGGx ww -- no loading in windows
+/*
       if (findAndLoadFunction(funcname) == 0) {
          func = ::findfunc(_func_list, funcname);
 		  if (func == NULL) {
@@ -186,9 +191,11 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
 		  }
       }
       else {
+	  */ // BGGx ww
 		  mixerr = MX_FNAME;
 		  return -1;
-	  }
+//	  }
+
    }
 
    /* function found, so call it */
@@ -266,7 +273,8 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
 // for a given function.
 
 FunctionEntry::FunctionEntry(const char *fname, const char *dso_path)
-	: funcName(strdup(fname)), dsoPath(strdup(dso_path)), next(NULL)
+// BGGx ww changed strdup to _strdupS
+	: funcName(_strdup(fname)), dsoPath(_strdup(dso_path)), next(NULL)
 {
 }
 
@@ -307,6 +315,8 @@ RTcmix::findAndLoadFunction(const char *funcname)
 {
 	const char *path;
 	int status = -1;
+	// BGGx ww -- no load in windows
+/*
 	if ((path = ::getDSOPath(_functionRegistry, funcname)) != NULL) {
 		char fullDSOPath[128];
 		float p[1];
@@ -320,6 +330,7 @@ RTcmix::findAndLoadFunction(const char *funcname)
 		else
 			status = -1; 
 	}
+*/ // BGGx ww
 	return status;
 }
 
@@ -349,8 +360,10 @@ RTcmix::registerFunction(const char *funcName, const char *dsoPath)
 	}
 }
 
-#include <dirent.h>
-#include "DynamicLib.h"
+// BGGx ww -- not necessary for embedded use
+
+//#include <dirent.h>
+//#include "DynamicLib.h"
 
 /* ------------------------------------------------------ registerDSOs -- */
 // This is called at initialization time to scan a supplied semicolon-separated
@@ -362,6 +375,8 @@ typedef int (*RegisterFunction)();
 int
 RTcmix::registerDSOs(const char *pathList)
 {
+	// BGGx ww
+	/*
 	const char *list = pathList;
 	while (list != NULL) {
 		char path[1024];
@@ -401,8 +416,10 @@ RTcmix::registerDSOs(const char *pathList)
 		}
 		list = nextItem;
 	}
+	*/
 	return 0;
 }
+
 
 // Wrappers for UG_INTRO() use.
 

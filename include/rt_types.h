@@ -10,11 +10,14 @@
 #define BUFTYPE float           /* could be double some day */
 typedef BUFTYPE *BufPtr;
 
-#if BUFTYPE == float
+// BGGx ww -- VS doesn't allow this, arg!
+//#if BUFTYPE == float
+//#define ZERO 0.0f
+//#else
+//#define ZERO 0.0
+//#endif
 #define ZERO 0.0f
-#else
-#define ZERO 0.0
-#endif
+
 
 /* type for frame counts (Inst start and end points) */
 #define FRAMETYPE long long

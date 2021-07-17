@@ -112,11 +112,19 @@ static int _num_params = sizeof(_param_list) / sizeof(Param);
 //-------------------------------- _str_to_bool, _str_to_int, _str_to_double ---
 static int _str_to_bool(const char *str, bool &val)
 {
+	// BGGx ww
+	/*
 	if (strcasecmp(str, "yes") == 0 || strcasecmp(str, "true") == 0
 			|| strcasecmp(str, "on") == 0 || strcmp(str, "1") == 0)
 		val = true;
 	else if (strcasecmp(str, "no") == 0 || strcasecmp(str, "false") == 0
 			|| strcasecmp(str, "off") == 0 || strcmp(str, "0") == 0)
+	*/
+	if (_stricmp(str, "yes") == 0 || _stricmp(str, "true") == 0
+		|| _stricmp(str, "on") == 0 || strcmp(str, "1") == 0)
+		val = true;
+	else if (_stricmp(str, "no") == 0 || _stricmp(str, "false") == 0
+		|| _stricmp(str, "off") == 0 || strcmp(str, "0") == 0)
 		val = false;
 	else {
 		val = false;
@@ -179,7 +187,9 @@ static int _set_key_value_option(const char *key, const char *sval,
 {
 	int type = -1;
 	for (int j = 0; j < _num_params; j++) {
-		if (strcasecmp(_param_list[j].arg, key) == 0) {
+		// BGGx ww
+		//if (strcasecmp(_param_list[j].arg, key) == 0) {
+		if (_stricmp(_param_list[j].arg, key) == 0) {
 			type = _param_list[j].type;
 			break;
 		}
@@ -325,7 +335,9 @@ static int _set_value_option(const char *sval, const bool rtsetparams_called)
 	int type = -1;
 	bool bval = false;
 	for (int j = 0; j < _num_params; j++) {
-		if (strcasecmp(_param_list[j].arg, sval) == 0) {
+		// BGGx ww
+		//if (strcasecmp(_param_list[j].arg, sval) == 0) {
+		if (_stricmp(_param_list[j].arg, sval) == 0) {
 			type = _param_list[j].type;
 			bval = _param_list[j].value;
 			break;

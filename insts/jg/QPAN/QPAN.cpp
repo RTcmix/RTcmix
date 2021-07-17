@@ -141,7 +141,9 @@ int QPAN::configure()
 
 int QPAN::run()
 {
-   float out[outputChannels()];
+	// BGGx ww ARG!
+   //float out[outputChannels()];
+	float *out = new float[outputChannels()];
    const int inchans = inputChannels();
    const int outchans = outputChannels();
    const int samps = framesToRun() * inchans;

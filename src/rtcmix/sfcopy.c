@@ -13,6 +13,9 @@ extern off_t  filepointer[NFILES];   /* to save current pointer in file */
 extern int   nbytes;
 extern SFHEADER      sfdesc[NFILES];
 
+// BGGx ww -- fsync now included as source file here
+extern int fsync(int fd);
+
 
 double
 sfcopy(float p[], int n_args)
@@ -39,11 +42,11 @@ sfcopy(float p[], int n_args)
 
 	while(bytes) {
 		maxread = (bytes > nbytes) ? nbytes : bytes;
-		if((n = read(sfd[input],sndbuf[input],maxread)) <= 0) {
+		if((n = _read(sfd[input],sndbuf[input],maxread)) <= 0) {
 			fprintf(stderr,"Apparent eof on input\n");
 			return -1.0;
 		}
-		if((jj = write(sfd[output],sndbuf[input],n)) <= 0) {
+		if((jj = _write(sfd[output],sndbuf[input],n)) <= 0) {
 			fprintf(stderr,"Trouble writing output file\n");
 			closesf();
 		}
@@ -51,10 +54,13 @@ sfcopy(float p[], int n_args)
 		filepointer[input] += n;
 		filepointer[output] += n;
 	}
+// BGGx ww -- don't deal with this, arg
+	/*
 	if(fsync(sfd[output]) < 0 ) {
 		fprintf(stderr,"trouble fsyncing file");
 		closesf();
 	}
+	*/
 	fprintf(stderr,"Copy completed\n");
 
 	return 0.0;

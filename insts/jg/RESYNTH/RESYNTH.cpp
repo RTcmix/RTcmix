@@ -125,7 +125,9 @@ int RESYNTH::init(double p[], int n_args)
    int retunetablen;
    double *retunetable = (double *) getPFieldTable(12, &retunetablen);
    if (retunetable) {
-		float tmp[retunetablen];
+	   // BGGx wwARG!
+		//float tmp[retunetablen];
+	   float *tmp = new float[retunetable];
 		for (int i = 0; i < retunetablen; i++)
 			tmp[i] = float(retunetable[i]);
 		_player->setRetuneChord(tmp, retunetablen);

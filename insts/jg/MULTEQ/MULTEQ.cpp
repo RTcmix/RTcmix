@@ -186,7 +186,9 @@ int MULTEQ :: init(double p[], int n_args)
 
 void MULTEQ :: doupdate()
 {
-   double p[nargs];
+	// BGGx ww ARG!
+   //double p[nargs];
+	double *p = new double[nargs];
    update(p, nargs);
 
    amp = p[3];

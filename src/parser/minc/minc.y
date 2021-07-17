@@ -5,16 +5,12 @@
 %{
 #include <string.h>
 #include <assert.h>
-#include <ctype.h>
 #include "rename.h"
 #include "minc_internal.h"
 #include "lex.yy.c"
 #ifdef EMBEDDED
-/* in utils.c */
+/* both in utils.c */
 extern int readFromGlobalBuffer(char *buf, yy_size_t *pBytes, int maxbytes);
-#else
-// in args.cpp
-extern const char *lookup_token(const char *token);
 #endif
 
 #undef MDEBUG	/* turns on yacc debugging below */
@@ -69,7 +65,7 @@ static Tree go(Tree t1);
 %token <ival> TOK_STRING_DECL
 %token <ival> TOK_HANDLE_DECL
 %token <ival> TOK_LIST_DECL
-%token <ival> TOK_IDENT TOK_NUM TOK_ARG TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
+%token <ival> TOK_IDENT TOK_NUM TOK_NOT TOK_IF TOK_ELSE TOK_FOR TOK_WHILE TOK_RETURN
 %token <ival> TOK_TRUE TOK_FALSE TOK_STRING '{' '}'
 %type  <trees> stml stmt rstmt bexp expl exp str ret bstml
 %type  <trees> fdecl sdecl hdecl ldecl fdef fstml arg argl fargl fundecl
@@ -264,47 +260,9 @@ exp: rstmt				{ MPRINT("exp: rstmt"); $$ = $1; }
 	| '(' bexp ')'		{ $$ = $2; }
 	| str				{ $$ = $1; }
 	| TOK_NUM			{
-							double f = atof(yytext);
-							$$ = tconstf(f);
-						}
-	| TOK_ARG			{
-#ifndef EMBEDDED
-							const char *token = yytext + 1;	// strip off '$'
-							const char *value = lookup_token(token);
-							if (value != NULL) {
-								// We store this as a number constant if it can be coaxed into a number,
-								// else we store this as a string constant.
-								int i, is_number = 1;
-								for(i = 0; value[i] != '\0'; ++i) {
-									if ('-' == value[i] && i == 0)
-										continue;	// allow initial sign
-									if (! (isdigit(value[i]) || '.' == value[i]) ) {
-										is_number = 0;
-										break;
-									}
-								}
-								if (is_number) {
-									double f = atof(value);
-									$$ = tconstf(f);
-								}
-								else {
-									// Strip off extra "" if present
-									if (value[0] == '"' && value[strlen(value)-1] == '"') {
-										const char *vcopy = strsave(value+1);
-										*strrchr(vcopy, '"') = '\0';
-										$$ = tstring(vcopy);
-									}
-									else {
-										$$ = tstring(strsave(value));
-									}
-								}
+								double f = atof(yytext);
+								$$ = tconstf(f);
 							}
-							else { flerror = 1; $$ = tnoop(); }
-#else
-							minc_warn("Argument variables not supported");
-							flerror = 1; $$ = tnoop();
-#endif
-						}
 	| TOK_TRUE			{ $$ = tconstf(1.0); }
 	| TOK_FALSE			{ $$ = tconstf(0.0); }
 	| '-' exp %prec CASTTOKEN {
@@ -478,7 +436,8 @@ static void cleanup()
 
 #ifdef EMBEDDED
 
-#warning DAS Make sure yylex_destroy() works
+// BGGx ww VS doesn't like #warning
+//#warning DAS Make sure yylex_destroy() works
 #define USE_YYLEX_DESTROY
 
 // BGG mm -- for dynamic memory mgmt (double return for UG_INTRO() macro)

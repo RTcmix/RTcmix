@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
-#include <sys/file.h>
+// BGGx ww
+//#include <sys/file.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -19,7 +20,7 @@ sfstats(int fd)
 	SFCOMMENT sfcm;
 	char *cp;
 
-	lseek(fd,0,0);
+	_lseek(fd,0,0);
 	rheader(fd,&sfh);
 
 	printf("stats for soundfile w/ descriptor %d:\n\n",fd);
@@ -31,7 +32,9 @@ sfstats(int fd)
 
 	cp = getsfcode(&sfh,SF_MAXAMP);
 	if (cp) { 
-		bcopy(cp + sizeof(SFCODE), (char *) &sfm, sizeof(SFMAXAMP));
+		// BGGx ww -- changed to memcpy
+		//bcopy(cp + sizeof(SFCODE), (char *) &sfm, sizeof(SFMAXAMP));
+		memcpy(cp + sizeof(SFCODE), (char *)&sfm, sizeof(SFMAXAMP));
 		printf("\nMAXAMP structure found, containing:\n");
 		printf("\tchannel #\tmaxamp\tsample #\n");
 		for (n = 0; n <= sfchans(&sfh); n++) {
@@ -40,7 +43,9 @@ sfstats(int fd)
 	}
 	cp = getsfcode(&sfh,SF_COMMENT);
 	if (cp) {
-		bcopy(cp + sizeof(SFCODE), (char *) &sfcm, ((SFCODE *)cp)->bsize);
+		// BGGx ww -- changed to memcpy
+		//bcopy(cp + sizeof(SFCODE), (char *) &sfcm, ((SFCODE *)cp)->bsize);
+		memcpy(cp + sizeof(SFCODE), (char *)&sfcm, ((SFCODE *)cp)->bsize);
 		printf("\nSFCOMMENT structure found, containing:\n");
 		printf("  %s\n\n",&sfcomm(&sfcm,0));
 	}

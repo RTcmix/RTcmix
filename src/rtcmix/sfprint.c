@@ -1,7 +1,8 @@
 #include "sfheader.h"
 #include "ugens.h"
 #include <stdio.h>
-#include <sys/file.h>
+// BGGx ww
+//#include <sys/file.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 static SFCODE	ampcode = {

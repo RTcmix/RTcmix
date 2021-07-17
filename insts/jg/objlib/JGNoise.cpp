@@ -2,8 +2,13 @@
    Returns pseudo-random numbers in the range (-1.0, 1.0).
    (Seed arg and method added by JGG.)
 */
-#include "JGNoise.h"    
-#include <sys/time.h>
+#include "JGNoise.h" 
+// BGGx ww
+//#include <sys/time.h>
+#include <time.h> // MS version
+
+// BGGx ww
+#define __OS_Win_
 
 #if defined(__OS_Win_)                              // for Windows95 or NT
    #define ONE_OVER_RANDLIMIT 0.00006103516
@@ -34,11 +39,17 @@ JGNoise :: ~JGNoise()
 void JGNoise :: seed(unsigned int aSeed = 0)
 {
    if (aSeed == 0) {
-      struct timeval tv;
-      gettimeofday(&tv, NULL);
-      aSeed = (unsigned int)tv.tv_usec;
+	// BGGx ww
+	// struct timeval tv;
+	// gettimeofday(&tv, NULL);
+	// aSeed = (unsigned int)tv.tv_usec;
+        time_t ltime;
+        time(&ltime);
+	aSeed = ltime;
    }
-   srandom(aSeed);
+   // BGGx ww -- use srand() instead of srandom()
+   //   srandom(aSeed);
+   srand(aSeed);
 }
 
 

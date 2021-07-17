@@ -12,8 +12,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
+// BGGx ww
+//#include <sys/socket.h>
+//#include <netinet/in.h>
 #include <signal.h>
 
 #include "RTcmixMain.h"
@@ -25,7 +26,7 @@
 #include "rtdefs.h"
 #include "heap.h"
 #include "sockdefs.h"
-#include "notetags.h"           // contains defs for note-tagging
+#include "notetags.h"	   // contains defs for note-tagging
 #include "dbug.h"
 #include "InputFile.h"
 #include <MMPrint.h>
@@ -79,7 +80,7 @@ main(int argc, char *argv[], char **env)
  #ifdef DENORMAL_CHECK
    detect_denormals();
  #endif
-   signal(SIGFPE, sigfpe_handler);          /* Install signal handler */
+   signal(SIGFPE, sigfpe_handler);	  /* Install signal handler */
 #endif /* LINUX */
 #ifdef SGI
    flush_all_underflows_to_zero();
@@ -96,44 +97,87 @@ main(int argc, char *argv[], char **env)
 
 #else // EMBEDDED
 
-static RTcmixMain *globalApp;
+// BGGx
+#define TOTOBJS 178
+static RTcmixMain *globalApp[TOTOBJS];
+
+// BGGx -- keep all sets for each instance separate
+float OBJgInletValues[TOTOBJS][MAX_INLETS];
+float gInletValues[MAX_INLETS];	 // used by RTInlinePField.cpp
+
+// BGG wmm
+#include <wmmcontext.h>
+wmmcontext theContext[TOTOBJS];
 
 /* ----------------------------------------------------------- RTcmix_init --- */
 
+// BGGx -- added objnos
 int
-RTcmix_init()
+RTcmix_init(int objno)
 {
-	if (globalApp == NULL) {
+//      if (globalApp[objno] == NULL) {
 		clear_print();
 		// BGG no argc and argv in max/msp version mm
-		globalApp = new RTcmixMain();
-		globalApp->run(); // in max/msp this just sets it all up...
-	}
+
+		globalApp[objno]->clear_wmmcontext(objno);
+		globalApp[objno]->get_wmmcontext(objno);
+
+		globalApp[objno] = new RTcmixMain();
+		globalApp[objno]->run(); // in max/msp this just sets it all up...
+		globalApp[objno]->set_wmmcontext(objno);
+//      }
 	return 0;
 }
 
 int
-RTcmix_destroy()
+RTcmix_destroy(int objno)
 {
-	delete globalApp;
-	globalApp = NULL;
+	globalApp[objno]->get_wmmcontext(objno);
+	delete globalApp[objno];
+//      globalApp[objno] = NULL;
+	// BGGxx
+	globalApp[objno]->set_wmmcontext(objno);
 	return 0;
 }
 
-static RTcmixBangCallback	sBangCallback = NULL;
-static void *				sBangCallbackContext = NULL;
+// BGGxx -- not using these in unity; do check_bang poll instead (see below)
+static RTcmixBangCallback       sBangCallback = NULL;
+static void *			   sBangCallbackContext = NULL;
 
 void
-RTcmix_setBangCallback(RTcmixBangCallback inBangCallback, void *inContext)
+RTcmix_setBangCallback(RTcmixBangCallback inBangCallback, void *inContext, int objno)
 {
 	sBangCallback = inBangCallback;
 	sBangCallbackContext = inContext;
 }
 
-int bang_ready = 0;
+// BGGx ww
+extern "C" {
+	int bang_ready = 0;
+}
+
+// BGGx -- don't do the bang callback scheme below unity_checkForBang()
+//	      the reason has to do with the context-switching:  for a score to be
+//	      sent and parsed, the wmmcontext_busy flag has to be 0 to allow it.
+//	      BUT if it is in a callback sequence of function calls from intraverse,
+//	      then it will still be 1.  I thought about temporarily resetting it
+//	      but this could allow another RTcmix to sneak in with its context.
+int unity_checkForBang(int objno)
+{
+	int retval;
+	retval = 0;
+
+	globalApp[objno]->get_wmmcontext(objno);
+	if (bang_ready == 1) {
+		bang_ready = 0;
+		retval = 1;
+	}
+	globalApp[objno]->set_wmmcontext(objno);
+	return retval;
+}
+
 
 // This is called from inTraverse
-
 void checkForBang()
 {  
 	if (bang_ready == 1) {
@@ -155,8 +199,30 @@ RTcmix_setValuesCallback(RTcmixValuesCallback inValuesCallback, void *inContext)
 	sValuesCallbackContext = inContext;
 }
 
-int vals_ready = 0;
-float maxmsp_vals[MAXDISPARGS];
+// BGGx ww
+extern "C" {
+	int vals_ready = 0;
+	float maxmsp_vals[MAXDISPARGS];
+}
+
+// BGGx -- do the polling for vals (see above note for unity_checkForBang)
+int unity_checkForVals(float *thevals, int objno)
+{
+	int retval;
+
+	globalApp[objno]->get_wmmcontext(objno);
+	if (vals_ready > 0) {
+		retval = vals_ready;  // vals_ready has the # of vals
+		for (int i = 0; i < retval; i++)
+			thevals[i] = maxmsp_vals[i];
+		vals_ready = 0;
+	} else {
+		retval = 0;
+	}
+	globalApp[objno]->set_wmmcontext(objno);
+	return retval;
+}
+
 
 // This is called from inTraverse
 
@@ -175,6 +241,49 @@ void checkForVals()
 
 static RTcmixPrintCallback sPrintCallback = NULL;
 static void *sPrintCallbackContext = NULL;
+
+// BGGx -- this is to return our 'lines' from the printbuf because
+//	      stoopid C# won't allow me to advance a pointer to a string
+
+char *pcheckptr;
+int firstprint;
+
+// BGGx -- do the polling for printing (see above note for unity_checkForBang)
+int unity_checkForPrint(char *pbuf, int objno)
+{
+	char *printBuf;
+	int retval;
+
+	globalApp[objno]->get_wmmcontext(objno);
+	if (!is_print_cleared()) {
+		if (firstprint == 0) {
+			pcheckptr = MMPrint::mm_print_buf;
+			firstprint = 1;
+		}
+
+		printBuf = pcheckptr;
+
+		if (strlen(printBuf) > 0) {
+			int i,j;
+			if (strlen(printBuf) > 0) {
+				for (i = 0, j = 0; i < strlen(printBuf); i++, j += 2)
+					pbuf[j] = printBuf[i];
+
+				pcheckptr += (i+1);
+			}
+			retval = 1;
+		} else {
+			clear_print();
+			firstprint = 0;
+			retval = 0;
+		}
+   } else {
+		retval = 0;
+	}
+	globalApp[objno]->set_wmmcontext(objno);
+	return retval;
+}
+
 
 void RTcmix_setPrintCallback(RTcmixPrintCallback inPrintCallback, void *inContext)
 {
@@ -196,39 +305,41 @@ void checkForPrint()
 
 // Currently this does not support resetting the number of busses.
 
-int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording)
+int RTcmix_resetAudio(float sr, int nchans, int vecsize, int recording, int objno)
 {
+	globalApp[objno]->get_wmmcontext(objno);
 	rtcmix_debug(NULL, "RTcmix_resetAudio entered");
-	globalApp->close();
-	int status = globalApp->resetparams(sr, nchans, vecsize, recording);
+	globalApp[objno]->close();
+	int status = globalApp[objno]->resetparams(sr, nchans, vecsize, recording);
 	if (status == 0) {
-		status = globalApp->resetAudio(sr, nchans, vecsize, recording);
+		status = globalApp[objno]->resetAudio(sr, nchans, vecsize, recording);
 #if defined(MSPAUDIO) || defined(EMBEDDEDAUDIO)
 		if (status == 0) {
 			rtcmix_debug(NULL, "RTcmix_resetAudio calling RTcmix::startAudio()");
 			// There is no separate call to start audio for embedded
-			status = globalApp->startAudio(RTcmix::inTraverse, NULL, globalApp);
+			status = globalApp[objno]->startAudio(RTcmix::inTraverse, NULL, globalApp);
 		}
 #endif
 	}
+	globalApp[objno]->set_wmmcontext(objno);
 	return status;
 }
 
 #ifdef IOS
 
-int RTcmix_startAudio()
+int RTcmix_startAudio(int objno)
 {
-	return globalApp->startAudio(RTcmix::inTraverse, NULL, globalApp);
+	return globalApp[objno]->startAudio(RTcmix::inTraverse, NULL, globalApp[objno]);
 }
 
-int RTcmix_stopAudio()
+int RTcmix_stopAudio(int objno)
 {
-	return globalApp->stopAudio();
+	return globalApp[objno]->stopAudio();
 }
 
 #endif // IOS
 
-#if defined(MSPAUDIO)	/* these are entry points used by MAX/MSP only */
+#if defined(MSPAUDIO)   /* these are entry points used by MAX/MSP only */
 
 #include "Option.h"
 
@@ -250,14 +361,14 @@ void RTcmix_setMSPState(const char *inSpec, void *inState)
 void loadinst(char *dsoname)
 {
 	// the dsoname should be a fully-qualified pathname to the dynlib
-	globalApp->doload(dsoname);
+	globalApp[objno]->doload(dsoname);
 }
 
 void unloadinst()
 {
 	// it is necessary to unload the dso directly, otherwise the dlopen()
 	// system keeps it in memory
-	globalApp->unload();
+	globalApp[objno]->unload();
 }
 
 #endif	// MAXMSP
@@ -265,31 +376,35 @@ void unloadinst()
 #ifdef PD
 int pd_rtsetparams(float sr, int nchans, int vecsize, float *mm_inbuf, float *mm_outbuf)
 #else
-int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_count)
+int RTcmix_setparams(float sr, int nchans, int vecsize, int recording, int bus_count, int objno)
 #endif
 {
+	globalApp[objno]->get_wmmcontext(objno);
+
 #if defined(MSPAUDIO)
-	globalApp->close();
-	globalApp->resetAudio(sr, nchans, vecsize, recording);
+	globalApp[objno]->close();
+	globalApp[objno]->resetAudio(sr, nchans, vecsize, recording);
 #endif
 #ifdef PD
 	int recording = 1;
 	int bus_count = 0;
 #endif
 	if (bus_count == 0) bus_count = DEFAULT_MAXBUS;
-	int status = globalApp->setparams(sr, nchans, vecsize, recording != 0, bus_count);
+	int status = globalApp[objno]->setparams(sr, nchans, vecsize, recording != 0, bus_count);
 #if defined(MSPAUDIO) || defined(EMBEDDEDAUDIO)
 	if (status == 0) {
 		// There is no separate call to start audio for embedded
-		status = globalApp->startAudio(RTcmix::inTraverse, NULL, globalApp);
+		status = globalApp[objno]->startAudio(RTcmix::inTraverse, NULL, globalApp[objno]);
 	}
 #endif
+
+	globalApp[objno]->set_wmmcontext(objno);
 	return status;
 }
 
 #ifdef EMBEDDEDAUDIO
 
-int RTcmix_setAudioBufferFormat(RTcmix_AudioFormat format, int nchans)
+int RTcmix_setAudioBufferFormat(RTcmix_AudioFormat format, int nchans, int objno)
 {
 	int rtcmix_fmt = 0;
 	switch (format) {
@@ -318,9 +433,31 @@ int RTcmix_setAudioBufferFormat(RTcmix_AudioFormat format, int nchans)
 	return SetEmbeddedCallbackAudioFormat(rtcmix_fmt, nchans);
 }
 
-int RTcmix_runAudio(void *inAudioBuffer, void *outAudioBuffer, int nframes)
+
+// BGGx -- for unity
+float tinputbuf[2048];  // so we only have to pass one buffer ptr in unity
+
+int RTcmix_runAudio(void *inAudioBuffer, void *outAudioBuffer, int nframes, int objno)
 {
-	return globalApp->runAudio(inAudioBuffer, outAudioBuffer, nframes);
+	// BGGx
+	int retval;
+
+	if (inAudioBuffer != NULL) {
+		for (int i = 0; i < 2048; i++)
+			tinputbuf[i] = ((float *)inAudioBuffer)[i];
+	} else {
+		memset(tinputbuf, 0, sizeof(float) * 2048);
+	}
+
+	globalApp[objno]->get_wmmcontext(objno);
+
+	// BGGx -- not sure why I can't just have gInletValues point to the
+	// correct entry in OBJgInletValues
+	memcpy((void *)gInletValues, (void *)OBJgInletValues[objno], sizeof(float) * MAX_INLETS);
+
+	retval = globalApp[objno]->runAudio(tinputbuf, outAudioBuffer, nframes);
+	globalApp[objno]->set_wmmcontext(objno);
+	return(retval);
 }
 
 #endif
@@ -330,24 +467,30 @@ int RTcmix_runAudio(void *inAudioBuffer, void *outAudioBuffer, int nframes)
 // rtcmix~ is set to constrain up to a max of 19 inlets for PFields
 // iRTCmix can handle up to MAX_INLETS - DAS
 
-float gInletValues[MAX_INLETS];		// used by RTInlinePField.cpp
+// BGGx -- OBJgInletValues  and gInletValues declared up above (they are
+// used in the RTcmix_runAudio() function
 
 // New name
-void RTcmix_setPField(int inlet, float pval)
+void RTcmix_setPField(int inlet, float pval, int objno)
 {
+	// BGGx -- no context necessary; just make an entry into the correct
+	// OBJgInletValues slot.  This is then copied to gInletValues just
+	// before running audio, so the correct value will be used
 	if (inlet <= MAX_INLETS) {
-		gInletValues[inlet-1] = pval;
+		OBJgInletValues[objno][inlet-1] = pval;
 	}
 	else {
 		die("RTcmix_setPField", "exceeded max inlet count [%d]", MAX_INLETS);
 	}
 }
 
-void pfield_set(int inlet, float pval) { RTcmix_setPField(inlet, pval); }	// UNTIL WE REMOVE THIS FROM IOS VERSION
+// BGGx
+// void pfield_set(int inlet, float pval) { RTcmix_setPField(inlet, pval); } 
+// UNTIL WE REMOVE THIS FROM IOS VERSION
 
 // This allows a float audio buffer to be directly loaded as input
 
-int RTcmix_setInputBuffer(char *bufname, float *bufstart, int nframes, int nchans, int modtime)
+int RTcmix_setInputBuffer(char *bufname, float *bufstart, int nframes, int nchans, int modtime, int objno)
 {
 // THIS SHOULD BE HANDLED VIA THE PUBLIC FUNCTION
 #if defined(MAXMSP)  || defined(IOS)
@@ -355,13 +498,13 @@ int RTcmix_setInputBuffer(char *bufname, float *bufstart, int nframes, int nchan
 #else
 	float bufferGainScaling = 1.0f;
 #endif
-	return (globalApp->setInputBuffer(bufname, bufstart, nframes, nchans, modtime, bufferGainScaling) >= 0) ? 0 : -1;
+	return (globalApp[objno]->setInputBuffer(bufname, bufstart, nframes, nchans, modtime, bufferGainScaling) >= 0) ? 0 : -1;
 }
 
 // returns the number of frames in a named buffer
-int RTcmix_getBufferFrameCount(char *bufname)
+int RTcmix_getBufferFrameCount(char *bufname, int objno)
 {
-	InputFile *input = globalApp->findInput(bufname, NULL);
+	InputFile *input = globalApp[objno]->findInput(bufname, NULL);
 	if (input != NULL) {
 		return input->duration() / input->sampleRate();
 	}
@@ -369,11 +512,10 @@ int RTcmix_getBufferFrameCount(char *bufname)
 	return -1;
 }
 
-
 // returns the number of channels of a named buffer
-int RTcmix_getBufferChannelCount(char *bufname)
+int RTcmix_getBufferChannelCount(char *bufname, int objno)
 {
-	InputFile *input = globalApp->findInput(bufname, NULL);
+	InputFile *input = globalApp[objno]->findInput(bufname, NULL);
 	if (input != NULL) {
 		return input->channels();
 	}
@@ -381,12 +523,27 @@ int RTcmix_getBufferChannelCount(char *bufname)
 	return -1;
 }
 
-
 // called for the [flush] message; deletes and reinstantiates the rtQueue
 // and rtHeap, thus flushing all scheduled events in the future
-void RTcmix_flushScore()
+void RTcmix_flushScore(int objno)
 {
-	globalApp->resetQueueHeap(); // in RTcmixMain.cpp
+	globalApp[objno]->get_wmmcontext(objno);
+	globalApp[objno]->resetQueueHeap(); // in RTcmixMain.cpp
+	globalApp[objno]->set_wmmcontext(objno);
+}
+
+// BGGx
+extern "C" int RTcmix_parseScore(char *thebuf, int buflen);
+
+int unity_parse_score(char *buf, int len, int objno)
+{
+   int retval;
+
+   globalApp[objno]->get_wmmcontext(objno);
+   retval = RTcmix_parseScore(buf, len);
+   globalApp[objno]->set_wmmcontext(objno);
+
+   return retval;
 }
 
 

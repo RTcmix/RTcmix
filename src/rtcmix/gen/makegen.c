@@ -10,8 +10,9 @@
 #include <assert.h>
 
 extern double gen1(struct gen *gen, char *sfname);
-extern double gen2(struct gen *gen);
-extern double gen3(struct gen *gen);
+// BGGx ww -- arg.
+//extern double gen2(struct gen *gen);
+//extern double gen3(struct gen *gen);
 extern double gen4(struct gen *gen);
 extern double gen5(struct gen *gen);
 extern double gen6(struct gen *gen);
@@ -137,12 +138,15 @@ makegen(float p[], int n_args, double pp[])
       case 4:
          retval = gen4(&gen);
          break;
+// BGGx ww --arg
+/*
       case 3:
          retval = gen3(&gen);
          break;
       case 2:
          retval = gen2(&gen);
          break;
+*/
       case 1:
          {
             char *sfname = DOUBLE_TO_STRING(pp[3]);

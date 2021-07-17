@@ -3,6 +3,9 @@
 // Intermediate base class for devices which run a thread for the audio loop.
 //
 
+// BGGx ww arg this is annoying. blitz it all
+/*
+
 #ifndef _THREADEDAUDIODEVICE_H_
 #define _THREADEDAUDIODEVICE_H_
 
@@ -57,3 +60,5 @@ private:
 };
 
 #endif	// _THREADEDAUDIODEVICE_H_
+
+*/

@@ -197,10 +197,20 @@ void fnscl(struct gen *gen);
 
 #ifdef EMBEDDED
 #include "MMPrint.h"
+
+// BGGxx ww -- horrible temporary hack
 #define RTPrintf(format, ...) set_mm_print_ptr(snprintf(get_mm_print_ptr(), get_mm_print_space(), format, ## __VA_ARGS__)+1)
 #define RTFPrintf(FILE, format, ...) set_mm_print_ptr(snprintf(get_mm_print_ptr(), get_mm_print_space(), format, ## __VA_ARGS__)+1)
 #define RTPrintfCat(format, ...) set_mm_print_ptr(snprintf(get_mm_print_ptr(), get_mm_print_space(), format, ## __VA_ARGS__))
 #define RTFPrintfCat(FILE, format, ...) set_mm_print_ptr(snprintf(get_mm_print_ptr(), get_mm_print_space(), format, ## __VA_ARGS__))
+/*
+#define RTPrintf //
+#define RTFPrintf //
+#define RTPrintfCat //
+#define RTFPrintfCat //
+*/
+
+
 #define RTExit(status)
 #else
 #define RTPrintf(format, ...) printf(format, ## __VA_ARGS__)

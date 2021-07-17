@@ -1,31 +1,31 @@
 include ../makefile.conf
 
 all:
-	ln -sf ../src/rtcmix/rt.h .
-	ln -sf ../src/rtcmix/rtdefs.h .
-	ln -sf ../src/rtcmix/rtcmix_types.h .
-	ln -sf ../src/rtcmix/ug_intro.h .
-	ln -sf ../src/rtcmix/spray.h .
-	ln -sf ../src/rtcmix/RefCounted.h .
-	ln -sf ../src/rtcmix/lock.h .
-	ln -sf ../src/rtcmix/Lockable.h .
-	ln -sf ../src/rtcmix/Locked.h .
-	ln -sf ../src/rtcmix/Instrument.h .
-	ln -sf ../src/rtcmix/MMPrint.h .
-	ln -sf ../src/rtcmix/PFBusData.h .
-	ln -sf ../src/rtcmix/PField.h .
-	ln -sf ../src/rtcmix/PFieldSet.h .
-	ln -sf ../src/rtcmix/Random.h .
-	ln -sf ../src/rtcmix/RawDataFile.h .
-	ln -sf ../src/rtcmix/Option.h .
-	ln -sf ../src/rtcmix/sockdefs.h .
-	ln -sf ../src/rtcmix/sfheader.h .
-	ln -sf ../src/rtcmix/notetags.h .
-	ln -sf ../src/rtcmix/RTcmix.h .
-	ln -sf ../src/rtcmix/mixerr.h .
-	ln -sf ../src/rtcmix/byte_routines.h .
+	cp ../src/rtcmix/rt.h .
+	cp ../src/rtcmix/rtdefs.h .
+	cp ../src/rtcmix/rtcmix_types.h .
+	cp ../src/rtcmix/ug_intro.h .
+	cp ../src/rtcmix/spray.h .
+	cp ../src/rtcmix/RefCounted.h .
+	cp ../src/rtcmix/lock.h .
+	cp ../src/rtcmix/Lockable.h .
+	cp ../src/rtcmix/Locked.h .
+	cp ../src/rtcmix/Instrument.h .
+	cp ../src/rtcmix/MMPrint.h .
+	cp ../src/rtcmix/PFBusData.h .
+	cp ../src/rtcmix/PField.h .
+	cp ../src/rtcmix/PFieldSet.h .
+	cp ../src/rtcmix/Random.h .
+	cp ../src/rtcmix/RawDataFile.h .
+	cp ../src/rtcmix/Option.h .
+	cp ../src/rtcmix/sockdefs.h .
+	cp ../src/rtcmix/sfheader.h .
+	cp ../src/rtcmix/notetags.h .
+	cp ../src/rtcmix/RTcmix.h .
+	cp ../src/rtcmix/mixerr.h .
+	cp ../src/rtcmix/byte_routines.h .
 ifneq ($(BUILDTYPE), STANDALONE)
-	ln -sf ../src/rtcmix/RTcmix_API.h .
+	cp ../src/rtcmix/RTcmix_API.h .
 endif
 
 depend:

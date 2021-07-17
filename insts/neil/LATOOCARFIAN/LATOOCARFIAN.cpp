@@ -68,7 +68,9 @@ int LATOOCARFIAN::configure()
 
 void LATOOCARFIAN::doupdate()
 {
-	double p[nargs];
+	// BGGx ww -- arg!
+	//double p[nargs];
+	double *p = new double[nargs];
 	update(p, nargs);
 
 	amp = p[2];
@@ -120,7 +122,9 @@ Instrument *makeLATOOCARFIAN()
 	return inst;
 }
 
+#ifndef EMBEDDED
 void rtprofile()
 {
 	RT_INTRO("LATOOCARFIAN", makeLATOOCARFIAN);
 }
+#endif

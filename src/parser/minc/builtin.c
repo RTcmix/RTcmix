@@ -94,21 +94,22 @@ _make_type_string(const MincDataType type)
 {
    char *str = NULL;
 
+// BGGx ww changed strdups to _strdups below because of POSIX/VS gunk
    switch (type) {
       case MincVoidType:
-         str = strdup("void");
+         str = _strdup("void");
          break;
       case MincFloatType:
-         str = strdup("float");
+         str = _strdup("float");
          break;
       case MincStringType:
-         str = strdup("string");
+         str = _strdup("string");
          break;
       case MincHandleType:
-         str = strdup("handle");
+         str = _strdup("handle");
          break;
       case MincListType:
-         str = strdup("list");
+         str = _strdup("list");
          break;
    }
    return (MincString) str;
@@ -478,7 +479,8 @@ _minc_len(const MincListElem args[], const int nargs)
    return (MincFloat) len;
 }
 
-static int min(int x, int y) { return (x <= y) ? x : y; }
+// BGGx ww seems to be a min() already?
+static int mymin(int x, int y) { return (x <= y) ? x : y; }
 
 /* ------------------------------------------------------------------- interp -- */
 /* Return an interpolated numeric value from a list based on a fractional
@@ -506,7 +508,8 @@ _minc_interp(const MincListElem args[], const int nargs)
 		float fraction = args[1].val.number;
 		fraction = (fraction < 0.0) ? 0.0 : (fraction > 1.0) ? 1.0 : fraction;
 		int lowIndex = (int)((len - 1) * fraction);
-		int highIndex = min(len - 1, lowIndex + 1);
+// BGGx ww -- changed mymin() from min() -- there was a dup
+		int highIndex = mymin(len - 1, lowIndex + 1);
 		if (data[lowIndex].type != MincFloatType || data[highIndex].type != MincFloatType) {
 			minc_warn("interp: list elements to interpolate must both be floats");
 			return -1;
@@ -609,6 +612,6 @@ _minc_tostring(const MincListElem args[], const int nargs)
 		return NULL;
 	}
 	const char *convertedString = DOUBLE_TO_STRING(args[0].val.number);
-	return strdup(convertedString);
+	return _strdup(convertedString);
 }
 

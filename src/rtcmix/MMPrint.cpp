@@ -1,5 +1,7 @@
 #include <MMPrint.h>
-#include <strings.h>
+// BGGx mm
+//#include <strings.h>
+#include <string.h>
 
 char MMPrint::mm_print_buf[SIZEOF_MMPRINTBUF];
 char *MMPrint::mm_print_ptr;
@@ -31,7 +33,10 @@ int is_print_cleared()
 
 void clear_print()
 {
-	bzero(MMPrint::mm_print_buf, SIZEOF_MMPRINTBUF);
+// BGGx ww -- use memset instead of bzero
+//	bzero(MMPrint::mm_print_buf, SIZEOF_MMPRINTBUF);
+	memset(MMPrint::mm_print_buf, 0, SIZEOF_MMPRINTBUF);
+
 	MMPrint::mm_print_ptr = MMPrint::mm_print_buf;
 	MMPrint::mm_cleared = true;
 }

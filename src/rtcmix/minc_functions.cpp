@@ -1,8 +1,15 @@
 #include "globals.h"
 #include <stdio.h>
-#include <sys/file.h>
+
+// BGGx ww 
+//#include <sys/file.h>
+
 #include <sys/types.h>
-#include <sys/time.h>
+
+// BGGx ww
+//#include <sys/time.h>
+#include <time.h>  // MS version
+
 #include <unistd.h>
 #include <math.h>
 #include <ugens.h>
@@ -91,10 +98,15 @@ double m_srand(float p[], int n_args)
    unsigned int randx;
 
    if (n_args == 0) {
-      struct timeval tv;
-      gettimeofday(&tv, NULL);
-      randx = (unsigned int) tv.tv_usec;
-	  rtcmix_advise("srand", "Seed initialized internally with value %u", randx);
+	// BGGx ww
+	//struct timeval tv;
+	//gettimeofday(&tv, NULL);
+	//randx = (unsigned int) tv.tv_usec;
+	time_t ltime;
+	time(&ltime);
+	randx = ltime;
+
+	rtcmix_advise("srand", "Seed initialized internally with value %u", randx);
    }
    else
       randx = (unsigned int) p[0];
@@ -293,20 +305,20 @@ double m_getpch(float p[], int n_args, double pp[])
 
 	input = DOUBLE_TO_STRING(pp[0]);
 
-	if((pchfd = open(input,0)) < 0)
+	if((pchfd = _open(input,0)) < 0)
 		return die("getpch", "Can't open pitch analysis file");
 
 	nbframe = 2*FLOAT; 
 	frameno = (int)p[1];
 
 	skipbytes = frameno * nbframe;
-	if (lseek(pchfd, skipbytes, 0) < 0)
+	if (_lseek(pchfd, skipbytes, 0) < 0)
 		return die("getpch", "Error on pchanal lseek");
 
-	if (read(pchfd, (char *)vals, nbframe) != nbframe)
+	if (_read(pchfd, (char *)vals, nbframe) != nbframe)
 		return die("getpch", "Bad read on pchanal file");
 
-	close(pchfd);
+	_close(pchfd);
 
 	return((double) vals[0]);
 }
@@ -323,20 +335,20 @@ double m_getamp(float p[], int n_args, double pp[])
 
 	input = DOUBLE_TO_STRING(pp[0]);
 
-	if((pchfd = open(input,0)) < 0)
+	if((pchfd = _open(input,0)) < 0)
 		return die("getamp", "Can't open pitch analysis file");
 
 	nbframe = 2*FLOAT; 
 	frameno = (int)p[1];
 
 	skipbytes = frameno * nbframe;
-	if (lseek(pchfd, skipbytes, 0) < 0)
+	if (_lseek(pchfd, skipbytes, 0) < 0)
 		return die("getamp", "Error on pchanal lseek");
 
-	if (read(pchfd, (char *)vals, nbframe) != nbframe)
+	if (_read(pchfd, (char *)vals, nbframe) != nbframe)
 		return die("getamp", "Bad read on pchanal file");
 
-	close(pchfd);
+	_close(pchfd);
 
 	return((double) vals[1]);
 }

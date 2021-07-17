@@ -14,7 +14,9 @@ SoundIn :: SoundIn(char *fileName, double inskip = 0.0)
       fprintf(stderr, "%s: %s\n", fileName, strerror(errno));
       exit(-1);                 // do something more graceful later...
    }
-   if (!S_ISREG(st.st_mode) && !S_ISLNK(st.st_mode)) {
+   // BGGx ww -- mingw/windows doesn't have links like this
+   //   if (!S_ISREG(sfst.st_mode) && !S_ISLNK(sfst.st_mode)) {
+   if (!S_ISREG(sfst.st_mode)) {
       fprintf(stderr, "\"%s\" is not a regular file or a link.\n", fileName);
       exit(-1);                 // do something more graceful later...
    }

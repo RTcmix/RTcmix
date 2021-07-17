@@ -2,6 +2,10 @@
    See ``AUTHORS'' for a list of contributors. See ``LICENSE'' for
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
+
+// BGGx ww -- for Sleep()
+#include <windows.h>
+
 #include <RTcmix.h>
 #include "prototypes.h"
 #include <pthread.h>
@@ -137,7 +141,9 @@ int RTcmix::waitForMainLoop()
 {
 	rtcmix_debug(NULL, "waitForMainLoop():  entering function");
 	while (!audioDone) {
-		usleep(10000);
+		// BGGx ww
+		//usleep(10000);
+		Sleep(10);
 	}
 	close();
 	bufEndSamp = 0;		// reset
@@ -615,9 +621,10 @@ bool RTcmix::inTraverse(AudioDevice *device, void *arg)
 
 #ifdef EMBEDDED
 	// Here is where we now call the "checkers" for Bang, Values, and Print	-- DAS
-	checkForBang();
-	checkForVals();
-	checkForPrint();
+// BGGx -- use the 'polling' approach in Unity
+//	checkForBang();
+//	checkForVals();
+//	checkForPrint();
 #endif
 
 	if (panic) {

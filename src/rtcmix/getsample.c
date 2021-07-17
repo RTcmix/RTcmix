@@ -38,13 +38,20 @@ static int
 getisample(double sampleno, float *c, int input)
 {
 
-	ssize_t RECSIZE = bufsize[input];
-	ssize_t BPREC = RECSIZE * sizeof(short);
-	ssize_t BPFRAME = sfchans(&sfdesc[input]) * sizeof(short);
-	ssize_t FPREC = RECSIZE/sfchans(&sfdesc[input]);
+	// BGGx ww change ssize_t to int
+	//ssize_t RECSIZE = bufsize[input];
+	//ssize_t BPREC = RECSIZE * sizeof(short);
+	//ssize_t BPFRAME = sfchans(&sfdesc[input]) * sizeof(short);
+	//ssize_t FPREC = RECSIZE/sfchans(&sfdesc[input]);
+
+	int RECSIZE = bufsize[input];
+	int BPREC = RECSIZE * sizeof(short);
+	int BPFRAME = sfchans(&sfdesc[input]) * sizeof(short);
+	int FPREC = RECSIZE / sfchans(&sfdesc[input]);
 
 	int sample,i,j;
-    ssize_t nbytes;
+	// BGGx ww nbytes was also ssize_t
+    int nbytes;
 	signed short *array = (short *)sndbuf[input];
 	float tempsample1;
 	float tempsample2;
@@ -56,12 +63,12 @@ getisample(double sampleno, float *c, int input)
 	fraction = sampleno - (double)sample;
 	if(!((sample >= oldsample) && (sample < endsample))) {
 		/* sflseek (sfheader.h) assumes header size, so can't use it */
-		if(lseek(sfd[input], (sample * BPFRAME) + headersize[input],
+		if(_lseek(sfd[input], (sample * BPFRAME) + headersize[input],
 							SEEK_SET) <= 0) {
 			rterror(NULL, "badlseek on inputfile\n");
 			closesf();
 		}
-		nbytes = read(sfd[input], (char *)array, BPREC);
+		nbytes = _read(sfd[input], (char *)array, BPREC);
 		if (nbytes == -1) {
 			perror("getisample: read");
 			return 0;
@@ -71,7 +78,8 @@ getisample(double sampleno, float *c, int input)
 			return 0;
 		}
 		if (nbytes < BPREC) {    /* zero out rest of sndbuf */
-			ssize_t n;
+			// BGGx ww arg, ssize_t n!
+			int n;
 			for (n = nbytes; n < BPREC; n++)
 				sndbuf[input][n] = 0;
 		}
@@ -116,12 +124,12 @@ getfsample(double sampleno, float *c, int input)
 	fraction = sampleno - (double)sample;
 	if(!((sample >= oldsample) && (sample < endsample))) {
 		/* sflseek (sfheader.h) assumes header size, so can't use it */
-		if(lseek(sfd[input], (sample * BPFRAME) + headersize[input],
+		if(_lseek(sfd[input], (sample * BPFRAME) + headersize[input],
 							SEEK_SET) <= 0) {
 			rterror(NULL,"badlseek on inputfile\n");
 			closesf();
 		}
-		nbytes = read(sfd[input], (char *)array, BPREC);
+		nbytes = _read(sfd[input], (char *)array, BPREC);
 		if (nbytes == -1) {
 			perror("getfsample: read");
 			return 0;

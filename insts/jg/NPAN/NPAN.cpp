@@ -271,7 +271,9 @@ int NPAN::configure()
 int NPAN::run()
 {
    const int outchans = outputChannels();
-   float out[outchans];
+   // BGGx ww ARG!
+   //float out[outchans];
+   float *out = new float[outchans];
    const int samps = framesToRun() * inputChannels();
 
    rtgetin(in, this, samps);

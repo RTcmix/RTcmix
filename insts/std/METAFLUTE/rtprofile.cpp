@@ -1,5 +1,6 @@
 #include <rt.h>
 
+#ifndef EMBEDDED
 void
 rtprofile()
 {
@@ -8,3 +9,4 @@ rtprofile()
 	RT_INTRO("VSFLUTE",makeVSFLUTE);
 	RT_INTRO("LSFLUTE",makeLSFLUTE);
 }
+#endif

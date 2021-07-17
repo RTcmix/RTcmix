@@ -22,8 +22,13 @@
 
 #define NO_EMALLOC_DEBUG
 
+// BGGx ww -- god this windows port just SUCKS it just SUCKS
+// windows did NOT allow a char *str inside the struct name str, so
+// I had to change all the refs in the code below to "sstr"
+// on the other hand, naming the string member "str" in "struct str"
+// is a bit much
 static struct str {             /* string table */
-   char *str;                   /* string */
+   char *sstr;                   /* string */
    struct str *next;            /* next entry */
 } *stab[HASHSIZE] = {
    0
@@ -298,7 +303,8 @@ free_symbols()
 		struct str *str;
 		for (str = stab[s]; str != NULL; ) {
 			struct str *next = str->next;
-			free(str->str);
+// BGGx ww doesn't like the str->str		
+			free(str->sstr);
 			free(str);
 			str = next;
 		}
@@ -413,31 +419,31 @@ Symbol * lookupOrAutodeclare(const char *name, Bool inFunctionCall)
 
 /* Lookup <str> and install if necessary; return pointer. */
 char *
-strsave(const char *str)
+strsave(char *str)
 {
    int h;
    struct str *p;
 
    h = hash(str);
    for (p = stab[h]; p != NULL; p = p->next)
-      if (strcmp(str, p->str) == 0)
-         return (p->str);
+      if (strcmp(str, p->sstr) == 0)
+         return (p->sstr);
    p = (struct str *) emalloc(sizeof(struct str));
    if (p == NULL)
       return NULL;
-   p->str = (char *) emalloc(strlen(str) + 1);
-	if (p->str == NULL) {
+   p->sstr = (char *) emalloc(strlen(str) + 1);
+	if (p->sstr == NULL) {
 		efree(p);
       return NULL;
 	}
-   strcpy(p->str, str);
+   strcpy(p->sstr, str);
    p->next = stab[h];
    stab[h] = p;
 
 #ifdef SYMBOL_DEBUG
    DPRINT("strsave ('%s') => %p\n", str, p);
 #endif
-   return p->str;
+   return p->sstr;
 }
 
 #ifdef SYMBOL_DEBUG

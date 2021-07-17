@@ -95,7 +95,7 @@ private:
 	ThreadPool *			mThreadPool;
 	Task *					mTaskHead;
 	Task *					mTaskTail;
-#ifdef MACOSX
+#ifdef MACOSX_NO
 	TAtomicStack2<Task>		mTaskStack;
 #else
 	TAtomicStack<Task>		mTaskStack;

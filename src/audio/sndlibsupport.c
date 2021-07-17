@@ -3,6 +3,9 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 
+// BGGx ww -- changed read/write/close/lseek to _read/_write/_close/_lseek
+//   for Visual Studio "warning POSIX name is deprecated nonsense
+
 /* sndlibsupport.c
 
    This file defines functions that help RTcmix use Bill Schottstaedt's
@@ -30,8 +33,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <sys/time.h>
-#include <time.h>
+
+// BGGx ww -- these can be replaced with a windows version, but we don't 
+//	really use them
+//#include <sys/time.h>
+//#include <time.h>
+
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -105,7 +112,8 @@ sndlib_create(const char *sfname, int type, int format, int srate, int chans)
    /* make sure relevant parts of sndlib are initialized */
    mus_header_initialize();
 
-   fd = open(sfname, O_RDWR | O_CREAT | O_TRUNC, 0666);
+// BGGx
+   fd = _open(sfname, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0666);
    if (fd == -1)
       return -1;
 
@@ -130,7 +138,8 @@ open_rd_or_rdwr(const char *sfname, int accesstype)
 
    assert(sfname != NULL && strlen(sfname) <= FILENAME_MAX);
 
-   fd = open(sfname, accesstype);
+// BGGx
+   fd = _open(sfname, accesstype | O_BINARY);
    if (fd == -1)
       return -1;
 
@@ -146,7 +155,7 @@ open_rd_or_rdwr(const char *sfname, int accesstype)
                             mus_data_format_to_bytes_per_sample(format),
                             loc, chans, type);
 
-   if (lseek(fd, loc, SEEK_SET) == -1) {
+   if (_lseek(fd, loc, SEEK_SET) == -1) {
       perror("open_rd_or_rdwr: lseek");
       return -1;
    }
@@ -169,7 +178,8 @@ open_rd_or_rdwr(const char *sfname, int accesstype)
 int
 sndlib_open_read(const char *sfname)
 {
-   return open_rd_or_rdwr(sfname, O_RDONLY);
+// BGGx
+   return open_rd_or_rdwr(sfname, O_RDONLY | O_BINARY);
 }
 
 
@@ -180,7 +190,8 @@ sndlib_open_read(const char *sfname)
 int
 sndlib_open_write(const char *sfname)
 {
-   return open_rd_or_rdwr(sfname, O_RDWR);
+// BGGx
+   return open_rd_or_rdwr(sfname, O_RDWR | O_BINARY);
 }
 
 
@@ -210,7 +221,7 @@ sndlib_close(int fd, int update, int type, int format, int nsamps)
 
    mus_file_close_descriptors(fd);
 
-   return close(fd);
+   return _close(fd);
 }
 
 
@@ -236,7 +247,7 @@ sndlib_read_header(int fd)
    /* Init the part of sndlib we need -- only inits once. */
    mus_header_initialize();
 
-   if (lseek(fd, 0, SEEK_SET) == -1)
+   if (_lseek(fd, 0, SEEK_SET) == -1)
       return -1;
 
    return mus_header_read_with_fd(fd);
@@ -343,7 +354,7 @@ sndlib_write_header(int  fd,
       if (!(comment_len % 4))
          comment_len--;
 
-   if (lseek(fd, 0, SEEK_SET) == -1) {
+   if (_lseek(fd, 0, SEEK_SET) == -1) {
       perror("sndlib_write_header: lseek");
 	   free(comment);
       return -1;
@@ -602,6 +613,9 @@ sndlib_get_current_header_comment(int fd, SFComment *sfc)
       long  timetag;
       char  *p, *pos;
 
+	  // BGGx ww -- getting an uninitialzed var error in VS
+	  pos = NULL;
+
       sfc->offset = pstr - buf;
 
       p = strchr(pstr, ':');
@@ -826,6 +840,8 @@ sndlib_put_current_header_comment(int    fd,
    chans = mus_header_chans();
 
    if (peak && peakloc) {                         /* use supplied peak stats */
+	   // BGGx ww
+	   /*
       struct timeval tp;
       int n;
 
@@ -835,6 +851,7 @@ sndlib_put_current_header_comment(int    fd,
       }
       gettimeofday(&tp, NULL);
       sfc.timetag = tp.tv_sec;
+	  */
 
       /* Though we don't know what the real offset (bytes from header
          comment start to peak stats text) will be, we set this to
@@ -1001,12 +1018,12 @@ get_current_header_raw_comment(int fd, char **rawcomment)
          return -1;
       }
 
-      if (lseek(fd, start, SEEK_SET) == -1) {
+      if (_lseek(fd, start, SEEK_SET) == -1) {
          perror("get_current_header_raw_comment: lseek");
          return -1;
       }
 
-      bytes = read(fd, *rawcomment, len);
+      bytes = _read(fd, *rawcomment, len);
 
       /* we should've read the amount sndlib said is there */
       if (bytes < len) {
@@ -1115,20 +1132,20 @@ sndlib_findpeak(int    infd,
 
    if (outfd > -1) {
       assert(outdataloc >= 0);
-      if (lseek(outfd, outdataloc, SEEK_SET) == -1) {
+      if (_lseek(outfd, outdataloc, SEEK_SET) == -1) {
          perror("sndlib_findpeak: lseek");
          return -1;
       }
    }
-   oldloc = lseek(infd, 0, SEEK_CUR);
+   oldloc = _lseek(infd, 0, SEEK_CUR);
    startbyte = (startframe * nchans * bytespersamp) + indataloc;
-   if (lseek(infd, startbyte, SEEK_SET) == -1) {
+   if (_lseek(infd, startbyte, SEEK_SET) == -1) {
       perror("sndlib_findpeak: lseek");
       return -1;
    }
 
    for (frames = 0; frames < nframes; frames += bufframes) {
-      long inbytes = read(infd, buffer, bufbytes);
+      long inbytes = _read(infd, buffer, bufbytes);
       if (inbytes == -1) {
          perror("sndlib_findpeak: read");
          goto err;
@@ -1226,7 +1243,7 @@ sndlib_findpeak(int    infd,
          }
       }
       if (outfd > -1) {   /* copy to output file (with same byte order) */
-         long outbytes = write(outfd, buffer, inbytes);
+         long outbytes = _write(outfd, buffer, inbytes);
          if (outbytes != inbytes) {
             perror("sndlib_findpeak: write");
             goto err;
@@ -1244,11 +1261,11 @@ sndlib_findpeak(int    infd,
    }
 
    free(buffer);
-   lseek(infd, oldloc, SEEK_SET);
+   _lseek(infd, oldloc, SEEK_SET);
    return 0;
 err:
    free(buffer);
-   lseek(infd, oldloc, SEEK_SET);
+   _lseek(infd, oldloc, SEEK_SET);
    return -1;
 }
 
@@ -1336,7 +1353,7 @@ sndlib_rheader(int fd, SFHEADER *sfh)
    sfcommentstr(sfh)[MAXCOMM - 1] = '\0';             /* ensure termination */
 
    /* Seek to beginning of snd data. */
-   if (lseek(fd, sfdatalocation(sfh), SEEK_SET) == -1) {
+   if (_lseek(fd, sfdatalocation(sfh), SEEK_SET) == -1) {
       perror("sndlib_rheader: lseek");
       return -1;
    }
@@ -1404,7 +1421,7 @@ sndlib_wheader(int fd, SFHEADER *sfh)
    if (header_type == MUS_AIFF && data_format == MUS_BFLOAT)
       header_type = MUS_AIFC;
 
-   file_length = lseek(fd, 0, SEEK_END);
+   file_length = _lseek(fd, 0, SEEK_END);
    if (file_length == -1) {
       perror("sndlib_wheader: lseek");
       return -1;
@@ -1473,7 +1490,7 @@ putlength(char *sfname, int fd, SFHEADER *sfh)
 
    assert(header_size >= 24);                  /* feeble sanity check */
 
-   file_length = lseek(fd, 0, SEEK_END);
+   file_length = _lseek(fd, 0, SEEK_END);
    if (file_length == -1) {
       perror("putlength: lseek");
       return -1;

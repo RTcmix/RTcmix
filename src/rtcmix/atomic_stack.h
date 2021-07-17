@@ -1,7 +1,8 @@
 #ifndef __CAAtomicStack_h__
 #define __CAAtomicStack_h__
 
-#ifdef MACOSX
+// BGGx ww
+#ifdef MACOSX_NO
 #include <libkern/OSAtomic.h>
 #if MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_4
 #include <CoreServices/CoreServices.h>
@@ -10,6 +11,7 @@
 template <class T>
 static bool	compare_and_swap(T *oldvalue, T *newvalue, T **pvalue);
 #endif
+
 
 #ifndef NULL
 #define NULL 0
@@ -118,7 +120,7 @@ public:
 	
 	static bool	compare_and_swap(T *oldvalue, T *newvalue, T **pvalue)
 	{
-#ifdef MACOSX
+#ifdef MACOSX_NO
 #if __LP64__
 		return ::OSAtomicCompareAndSwap64Barrier(int64_t(oldvalue), int64_t(newvalue), (int64_t *)pvalue);
 #elif MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_4
@@ -126,22 +128,27 @@ public:
 #else
 		return ::CompareAndSwap(UInt32(oldvalue), UInt32(newvalue), (UInt32 *)pvalue);
 #endif	
-#else	// MACOSX
+#else	// MACOSX_NO
 #if (__GNUC__ * 10000 + __GNUC_MINOR__ * 100 + __GNUC_PATCHLEVEL__) > 40100
 		return __sync_bool_compare_and_swap(pvalue, oldvalue, newvalue);
-#else
-		#error WE NEED AN ATOMIC COMPARE AND SWAP OPERATOR HERE
+// BGGx ww
+//#else
+//		#error WE NEED AN ATOMIC COMPARE AND SWAP OPERATOR HERE
 #endif
-#endif	// MACOSX
+#endif	// MACOSX_NO
+// BGGx ww
+		return 0;
 	}
 	
 protected:
 	T *		mHead;
 };
 
-#ifdef MACOSX
+// BGGx ww
+#ifdef MACOSX_NO
 #if ((MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_5))
 #include <libkern/OSAtomic.h>
+
 
 class CAAtomicStack {
 public:
@@ -199,6 +206,6 @@ private:
 
 #endif // MAC_OS_X_VERSION_MAX_ALLOWED
 
-#endif	// MACOSX
+#endif	// MACOSX+NO
 
 #endif // __CAAtomicStack_h__

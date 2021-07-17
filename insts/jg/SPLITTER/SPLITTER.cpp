@@ -76,8 +76,10 @@ int SPLITTER::configure()
 
 
 void SPLITTER::doupdate()
-{
-	double p[_nargs];
+{ 
+	// BGGx ww ARG!
+	//double p[_nargs];
+	double *p = new double[_nargs];
 	update(p, _nargs);
 
 	_amp = p[3];
@@ -104,7 +106,9 @@ int SPLITTER::run()
 
 		float insig = _in[i + _inchan] * _amp;
 
-		float out[outchans];
+		// BGGx ww ARG!
+		//float out[outchans];
+		float *out = new float[outchans];
 
 		for (int n = 0; n < outchans; n++)
 			out[n] = insig * _amps[n];

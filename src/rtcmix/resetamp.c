@@ -30,7 +30,7 @@ resetamp(float p[], int n_args)
 		sfmaxamp(&sfm[fno],i) = 0;
 		sfmaxamploc(&sfm[fno],i) = 0;
 	}
-	if((filepointer[fno] = lseek(sfd[fno],0L,0)) < 0) {
+	if((filepointer[fno] = _lseek(sfd[fno],0L,0)) < 0) {
 		fprintf(stderr,"Bad lseek to beginning of file\n");
 		perror("lseek");
 		closesf();

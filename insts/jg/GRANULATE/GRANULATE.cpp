@@ -164,9 +164,8 @@ int GRANULATE::init(double p[], int n_args)
    int length;
    double *table = (double *) getPFieldTable(4, &length);
    if (table == NULL)
-      return die("GRANULATE", "You must create a table containing the sound to granulate.");
-	if (numinchans < 1)
-      return die("GRANULATE", "p5 should give the number of channels in the sound file table.");
+      return die("GRANULATE", "You must create a table containing the sound "
+                              "to granulate.");
    _stream = new GrainStream(SR, table, length, numinchans, outputChannels(),
                              PRESERVE_GRAIN_DURATION, seed, use3rdOrderInterp);
 
@@ -188,7 +187,9 @@ int GRANULATE::init(double p[], int n_args)
 
 void GRANULATE::doupdate()
 {
-   double p[_nargs];
+	// BGGx ww ARG!
+   //do]uble p[_nargs];
+	double *p = new double[_nargs];
    update(p, _nargs, kInskip | kAmp | kInChan | kWinStart | kWinEnd | kWrap
          | kTraversal | kHopTime | kInJitter | kOutJitter | kMinDur | kMaxDur
          | kMinAmp | kMaxAmp | kTransp | kTranspJitter | kMinPan | kMaxPan);

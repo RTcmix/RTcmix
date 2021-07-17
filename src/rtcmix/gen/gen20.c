@@ -2,7 +2,8 @@
 #include <ugens.h>
 #include <stdio.h>
 #include <math.h>
-#include <sys/time.h>
+// BGGx ww
+//#include <sys/time.h>
 
 /* fills a gen with random numbers b/t 0 and 1 --
    the argument is the distribution type:
@@ -51,7 +52,8 @@ gen20(struct gen *gen)
    double sigma = .166666;
    double randnum = 0.0;
    double randnum2 = 0.0;
-   struct timeval tv;
+	   // BGGx ww
+   //struct timeval tv;
    double output;
    double alpha = .00628338;
    double min, max, tmp;
@@ -59,9 +61,11 @@ gen20(struct gen *gen)
 
    type = (int) gen->pvals[0];
 
+   // BGGx ww
    if (gen->pvals[1] == 0) {           /* added optional seed  -JG */
-      gettimeofday(&tv, NULL);
-      randx = tv.tv_usec;
+   //   gettimeofday(&tv, NULL);
+   //   randx = tv.tv_usec;
+	  randx = 777;
    }
    else
       randx = (int) gen->pvals[1];

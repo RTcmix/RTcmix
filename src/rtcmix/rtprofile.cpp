@@ -1,3 +1,6 @@
+// BGGx ww -- removed LPCPLAY and LPCIN RT_INTRO() stuff
+
+
 // this is for non-rt instruments to link to in order to resolve
 // the rtprofile symbol.  rt instruments use this to make a symbol
 // entry for Minc
@@ -28,16 +31,24 @@ rtprofile()
 	RT_INTRO("IINOISE",makeIINOISE);
 	RT_INTRO("BUZZ",makeBUZZ);
 	RT_INTRO("PULSE",makePULSE);
-	RT_INTRO("LPCPLAY", makeLPCPLAY);
-	RT_INTRO("LPCIN", makeLPCIN);
 	RT_INTRO("SGRANR",makeSGRANR);
 	RT_INTRO("STGRANR",makeSTGRANR);
 	RT_INTRO("SFLUTE",makeSFLUTE);
 	RT_INTRO("BSFLUTE",makeBSFLUTE);
 	RT_INTRO("VSFLUTE",makeVSFLUTE);
 	RT_INTRO("LSFLUTE",makeLSFLUTE);
+// BGGx ww
+/*
+#ifndef USE_MMOVE
 	RT_INTRO("MOVE", makeMOVE);
 	RT_INTRO("PLACE", makePLACE);
+#else
+	RT_INTRO("DMOVE", makeDMOVE);
+	RT_INTRO("MMOVE", makeMMOVE);
+	RT_INTRO("MPLACE", makeMPLACE);
+	RT_INTRO("RVB", makeRVB);
+#endif
+*/
 	RT_INTRO("MOCKBEND", makeMOCKBEND);
 	RT_INTRO("MULTICOMB",makeMULTICOMB);
 	RT_INTRO("NOISE",makeNOISE);
@@ -64,6 +75,7 @@ rtprofile()
 	RT_INTRO("WAVESHAPE",makeWAVESHAPE);
 // jg
 	RT_INTRO("BUTTER", makeBUTTER);
+	RT_INTRO("BWESINE", makeBWESINE);
 	RT_INTRO("COMPLIMIT", makeCOMPLIMIT);
 	RT_INTRO("CONVOLVE1", makeCONVOLVE1);
 	RT_INTRO("DCBLOCK", makeDCBLOCK);
@@ -124,5 +136,15 @@ rtprofile()
 	RT_INTRO("PFSCHED",makePFSCHED);
 	RT_INTRO("SYNC",makeSYNC);
 	RT_INTRO("VWAVE",makeVWAVE);
+	RT_INTRO("LOCALIZE",makeLOCALIZE);
+	RT_INTRO("LOCALIZE2D", makeLOCALIZE2D);
+// neil
+	RT_INTRO("BROWN", makeBROWN);
+	RT_INTRO("CRACKLE", makeCRACKLE);
+	RT_INTRO("DUST", makeDUST);
+	RT_INTRO("HENON", makeHENON);
+	RT_INTRO("LATOOCARFIAN", makeLATOOCARFIAN);
+	RT_INTRO("MULTIFM", makeMULTIFM);
+	RT_INTRO("PINK", makePINK);
 }
 #endif

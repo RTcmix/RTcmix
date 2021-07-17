@@ -107,8 +107,10 @@ Instrument *makePINK()
 	return inst;
 }
 
+#ifndef EMBEDDED
 void rtprofile()
 {
 	RT_INTRO("PINK", makePINK);
 }
+#endif
 

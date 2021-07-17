@@ -40,7 +40,7 @@ double s_arg(float *p,short n_args,double *pp)
 	size_t temp = 0;
 	if(((int)pp[0]) < aargc) {
 		name = aargv[(int)pp[0]];
-		temp = (size_t) strdup(name);
+		temp = (size_t) _strdup(name);
 	}
 	return (double) temp;  /* return string pointer, cast as a double, for Minc */
 }

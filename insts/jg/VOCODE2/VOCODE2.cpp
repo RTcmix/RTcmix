@@ -270,7 +270,9 @@ int VOCODE2 :: configure()
 
 void VOCODE2 :: doupdate()
 {
-   double p[nargs];
+	// BGGx ww ARG!
+   //double p[nargs];
+	double *p = new double[nargs];
    update(p, nargs, kAmp | kNoiseAmp | kPan);
 
    amp = p[3];

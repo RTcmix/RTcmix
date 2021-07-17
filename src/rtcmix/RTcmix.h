@@ -157,6 +157,14 @@ public:
 	static double left_peak(float *, int);
 	static double right_peak(float *, int);
 
+// BGGx
+// BGG wmm -- these are the 'context' functions that allo multiple rtcmix-s
+	static void set_wmmcontext(int);
+	static void get_wmmcontext(int);
+	static void clear_wmmcontext(int);
+
+
+
 protected:
 	RTcmix(bool dummy);				// Called by RTcmixMain class
 
@@ -343,6 +351,8 @@ private:
    to a void-returning function and sets up a timer to call that function
    every interval seconds.  Setting interval to 0.0 should disable the
    timer */
+// BGGx ww
+#define sig_t void*
 void RTtimeit(float interval, sig_t func);
 
 #endif	// _RTCMIX_H_

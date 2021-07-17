@@ -119,15 +119,20 @@ const char *Config::getLastErrorText()
    return NULL;
 }
 
+// BGGx ww -- not really using this
 extern int confparse(void *);
-extern FILE *confin;
-extern int confdebug;
+//extern FILE *confin;
+//extern int confdebug;
+FILE *confin;
+int confdebug;
 
 ConfigErrorCode Config::parseStream(FILE *stream)
 {
    confin = stream;
    confdebug = _debug ? 1 : 0;
-   int status = confparse(this);
+// BGGx ww -- not using this
+//   int status = confparse(this);
+	int status = 0; // BGGx
    if (status != 0)
       return setErrorCode(kConfigParseStreamErr);
    return setErrorCode(kConfigNoErr);

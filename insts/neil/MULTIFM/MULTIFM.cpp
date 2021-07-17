@@ -210,7 +210,9 @@ int MULTIFM::configure()
 
 void MULTIFM::doupdate()
 {
-	double p[nargs];
+	// BGGx ww arg!
+	//double p[nargs];
+	double *p = new double[nargs];
 	update(p, nargs);
 
 	for (int i = 0; i < numops; i++) {
@@ -292,7 +294,9 @@ Instrument *makeMULTIFM()
 	return inst;
 }
 
+#ifndef EMBEDDED
 void rtprofile()
 {
 	RT_INTRO("MULTIFM", makeMULTIFM);
 }
+#endif

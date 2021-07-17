@@ -149,7 +149,9 @@ void STEREO::updatePans(double p[])
 
 void STEREO::doupdate()
 {
-	double p[nargs];
+	// BGGx ww ARG!
+	//double p[nargs];
+	double *p = new double[nargs];
 	update(p, nargs);
 
 	amp = p[3];

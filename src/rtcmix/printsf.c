@@ -2,11 +2,12 @@
 #include "sfheader.h"
 #include "ugens.h"
 #include <stdio.h>
-#include <sys/file.h>
+//#include <sys/file.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/time.h>
-#include <time.h>
+// BGGx ww -- time-stamping not fixed, but I don't think we use this any more
+//#include <sys/time.h>
+//#include <time.h>
 
 #define MAX_TIME_CHARS  64
 

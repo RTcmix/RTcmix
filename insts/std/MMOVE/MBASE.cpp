@@ -40,7 +40,10 @@ extern "C" {
    #include "cmixfuns.h"
 }
 
-extern const int g_Nterms[13];                 /* defined in ../MOVE/common.C */
+// BGGx ww
+//extern const int g_Nterms[13];                 /* defined in ../MOVE/common.C */
+extern  int g_Nterms[];                 /* defined in ../MOVE/common.C */
+
 
 MBASE::MBASE() : m_tapsize(0)
 {
@@ -806,7 +809,9 @@ MBASE::tap_set(int fir_flag)
    long int maxloc = 0;
    double   delay;
 
-   extern const int g_Group_delay[13];        /* from firdata.h */
+   // BGGx ww
+//   extern const int g_Group_delay[13];        /* from firdata.h */
+   extern int g_Group_delay[];        /* from firdata.h */
 
 #ifdef debug
    printf("outlocs:\n");

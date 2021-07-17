@@ -37,13 +37,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/file.h>
+// BGGx ww
+//#include <sys/file.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/times.h>
+// BGGx ww
+//#include <sys/time.h>
+//#include <sys/times.h>
 #include <string.h>
 #include <Option.h>
+
+// BGGx ww
+#include <io.h>
+#include <fcntl.h>
+
 
 
 /* Used to determine if we should swap endian-ness */
@@ -85,7 +92,8 @@ static SFCODE ampcode = {
 	sizeof(SFMAXAMP) + sizeof(SFCODE)
 };
 
-static struct tms    clockin[NFILES];
+// BGGx ww
+//static struct tms    clockin[NFILES];
  
 float getpeakval(float peakflag, int fno);
 void m_zapout(int fno, char *buffer, int nwrite, int *chlist);
@@ -131,7 +139,7 @@ double m_open(float *p, short n_args, double *pp)
 		}
 	inew = 0;
 	if(isopen[fno]) {
-		close(sfd[fno]);
+		_close(sfd[fno]);
 	}
 	else inew = 1;
 
@@ -246,7 +254,7 @@ setnote(float start, float dur, int fno)
 
 	if(!istape[fno]) {
 		if((filepointer[fno] = 
-		   lseek(sfd[fno],offset+headersize[fno],0)) == -1) {
+		   +(sfd[fno],offset+headersize[fno],0)) == -1) {
 			rtcmix_warn("setnote", "CMIX: bad lseek in setnote\n");
 			closesf();
 		}
@@ -262,7 +270,8 @@ setnote(float start, float dur, int fno)
 
 	starttime[fno] = (start<0) ? -start/SR() : start;
 
-	times(&clockin[fno]);       /* read in starting time */
+// BGGx ww
+//	times(&clockin[fno]);       /* read in starting time */
 
 	return(nsamps);
 }
@@ -605,13 +614,15 @@ refill:	todo = ((pointer[fno] + size) > len)
 int
 endnote(int xno)
 {
-	struct timeval tp;	
-	struct timezone tzp;	
+	// BGGx ww
+//	struct timeval tp;	
+//	struct timezone tzp;	
 	int i,j,final_bytes,fno;
 	float notepeak,*pk;
 	double total;
 	long *pkloc;
-	struct tms timbuf;
+// BGGx ww
+//	struct tms timbuf;
 	float peakval;
 	struct stat st;
 	short tisamp,*tibuf;
@@ -664,7 +675,7 @@ endnote(int xno)
 					}
 				}
    			}
-   			if((i = write(sfd[fno],sndbuf[fno],final_bytes)) 
+   			if((i =_write(sfd[fno],sndbuf[fno],final_bytes)) 
 											!= final_bytes) {
 				rtcmix_warn("CMIX", "Bad UNIX write, file %d, nbytes = %d\n",
 					fno,i);
@@ -692,18 +703,20 @@ endnote(int xno)
 		}
 		if(*(pk+i) > notepeak) notepeak = *(pk+i);
 	}
-	
-	gettimeofday(&tp,&tzp);
-	sfmaxamptime(&sfm[fno]) = tp.tv_sec;
+
+	// BGGx ww
+//	gettimeofday(&tp,&tzp);
+//	sfmaxamptime(&sfm[fno]) = tp.tv_sec;
 		
-	if((filepointer[fno] = lseek(sfd[fno],0L,0)) < 0) {
+	if((filepointer[fno] = _lseek(sfd[fno],0L,0)) < 0) {
 		rtcmix_warn("CMIX", "Bad lseek to beginning of file\n");
 		perror("lseek");
 		closesf();
 	}
 
 
-	times(&timbuf);
+// BGGx ww
+//	times(&timbuf);
 
 #ifndef EMBEDDED // this really isn't used...
 	printf("\n(%6.2f)",(float)(
@@ -844,7 +857,7 @@ _readit(int fno)
 		maxread = nbytes;
 	
 	if((play_is_on <  3) || (status[fno] == 0)) {
-		if((n = read(sfd[fno],sndbuf[fno],maxread)) != maxread) {
+		if((n = _read(sfd[fno],sndbuf[fno],maxread)) != maxread) {
 			if(!n) {
 				/*if(istape[fno] && n) continue;*/
 				perror("read");
@@ -855,7 +868,9 @@ _readit(int fno)
 		}
 	}
 	if(((play_is_on==2) && !maxread) || ((play_is_on==3) && (status[fno])))
-	      bzero(sndbuf[fno],nbytes);  /* clean buffer out if not readin */
+// BGGx ww -- use memset instead of bzero
+//	      bzero(sndbuf[fno],nbytes);  /* clean buffer out if not readin */
+	      memset(sndbuf[fno], 0, nbytes);  /* clean buffer out if not readin */
 
 	/* Swap input buffer */
  	if(maxread && swap_bytes[fno]) {
@@ -889,7 +904,7 @@ _readit(int fno)
 	if(play_is_on < 2) {        		
 		if(maxread < nbytes) {
 			for(n=maxread; n<nbytes; n++) *(sndbuf[fno] + n) = 0;
-			filepointer[fno] = lseek(sfd[fno],(nbytes-maxread),1);
+			filepointer[fno] = _lseek(sfd[fno],(nbytes-maxread),1);
 		}               
 		else filepointer[fno] += nbytes;
 	}
@@ -951,7 +966,7 @@ _writeit(int fno)
 	}
 
 	if(play_is_on < 2) {
-		if((n = write(sfd[fno],sndbuf[fno],nbytes)) != nbytes) {
+		if((n = _write(sfd[fno],sndbuf[fno],nbytes)) != nbytes) {
 			rtcmix_warn("CMIX", "Bad UNIX write, file %d, nbytes = %lld\n",fno,(long long)n);
 			perror("write");
 			closesf();
@@ -972,7 +987,7 @@ _backup(int fno)     /* utility routine to backspace one 'record' */
 {
 	if(play_is_on >= 2) return; 
 
-	if((filepointer[fno] = lseek(sfd[fno],(long)-nbytes,SEEK_CUR)) < 0) {
+	if((filepointer[fno] = _lseek(sfd[fno],(long)-nbytes,SEEK_CUR)) < 0) {
 		rtcmix_warn("CMIX", "bad back space in file %d\n",fno);
 		perror("lseek");
 		closesf();
@@ -982,7 +997,7 @@ _backup(int fno)     /* utility routine to backspace one 'record' */
 void
 _forward(int fno)     /* utility routine to forwardspace one 'record' */
 {
-	if((filepointer[fno] = lseek(sfd[fno],(long)nbytes,1)) < 0) {
+	if((filepointer[fno] = _lseek(sfd[fno],(long)nbytes,1)) < 0) {
 		rtcmix_warn("CMIX", "bad forward space  in file %d\n",fno);
 		perror("lseek");
 		closesf();
@@ -998,7 +1013,7 @@ closesf()
 		if(isopen[i]) {
 			if (status[i]) 
 				putlength(sfname[i], sfd[i], &sfdesc[i]);
-			close(sfd[i]);
+			_close(sfd[i]);
 		}
 	}
 
@@ -1015,7 +1030,7 @@ closesf_noexit()
 		if(isopen[i]) {
 			if (status[i]) 
 				putlength(sfname[i], sfd[i], &sfdesc[i]);
-			close(sfd[i]);
+			_close(sfd[i]);
 		}
 	}
 }
@@ -1055,7 +1070,7 @@ m_clean(float p[], int n_args) /* a fast clean of file, after header */
 	if(!segment) for(i=0; i<nbytes; i++) *(point+i) = 0;
 
 	if((filepointer[fno] = 
-	   lseek(sfd[fno],skipbytes+headersize[fno],0)) == -1) {
+	   _lseek(sfd[fno],skipbytes+headersize[fno],0)) == -1) {
 		rtcmix_warn("CMIX", "bad sflseek in clean\n");
 		closesf();
 	}
@@ -1063,26 +1078,26 @@ m_clean(float p[], int n_args) /* a fast clean of file, after header */
 	while(todo) {
 		nwrite = (todo > nbytes) ? nbytes : todo;
 		if(segment) {
-			if((n = read(sfd[fno],sndbuf[fno],nwrite)) 
+			if((n = _read(sfd[fno],sndbuf[fno],nwrite)) 
 					== 0) { /* allow for fractional reads*/
 				fprintf(stderr, "CMIX: Apparent eof in clean\n");
 				return -1.0;
 			}
-			if(lseek(sfd[fno],-n,1) < 0) {
+			if(_lseek(sfd[fno],-n,1) < 0) {
 				fprintf(stderr,"Bad UNIX lseek in clean\n");
 				closesf();
 			}
 			m_zapout(fno,sndbuf[fno],n,chlist);
 			nwrite = n;
 		}
-		if((n = write(sfd[fno],sndbuf[fno],nwrite)) == 0) {
+		if((n = _write(sfd[fno],sndbuf[fno],nwrite)) == 0) {
 			fprintf(stderr, "CMIX: Apparent eof in clean\n");
 	        	closesf();
 		}
 		todo -= n;
 	}
 	if(!segment) {
-		if((lseek(sfd[fno],0,0)) == -1) {
+		if((_lseek(sfd[fno],0,0)) == -1) {
 			fprintf(stderr,"CMIX: bad lseek in clean\n");
 			closesf();
 		}
@@ -1101,7 +1116,7 @@ m_clean(float p[], int n_args) /* a fast clean of file, after header */
 		}
 	}
 	else 
-		if((lseek(sfd[fno],headersize[fno],0)) == -1) {
+		if((_lseek(sfd[fno],headersize[fno],0)) == -1) {
 			fprintf(stderr,"CMIX: bad lseek in clean\n");
 			closesf();
 		}

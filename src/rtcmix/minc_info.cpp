@@ -6,7 +6,7 @@
 #include "rtdefs.h"
 #include "InputFile.h"
 #include <stdio.h>
-#include <sys/file.h>
+//#include <sys/file.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <PFBusData.h>
@@ -14,12 +14,15 @@
 #define ALL_CHANS -1
 
 /* These are all for the older disk-based cmix functions. */
-extern int	     isopen[NFILES];        /* open status */
-extern SFHEADER      sfdesc[NFILES];
-extern SFMAXAMP      sfm[NFILES];
-extern struct stat   sfst[NFILES];
-extern int headersize[NFILES];
-extern "C" void sfstats(int fd);       /* defined in sfstats.c */
+// BGGx ww -- add extern "C"
+extern "C" {
+	extern int	     isopen[NFILES];        /* open status */
+	extern SFHEADER      sfdesc[NFILES];
+	extern SFMAXAMP      sfm[NFILES];
+	extern struct stat   sfst[NFILES];
+	extern int headersize[NFILES];
+	extern "C" void sfstats(int fd);       /* defined in sfstats.c */
+}
 
 extern "C" {
 
@@ -158,11 +161,20 @@ int findpeakrmsdc(const char *funcname, const char *fname,
 	if (chan != ALL_CHANS && chan >= nchans)
 		return die(funcname, "You specified channel %d for a %d-channel file.",
 		           chan, nchans);
+	// BGGx ww arg!
+	/*
 	float peak[nchans];
 	long peakloc[nchans];
 	double ampavg[nchans];
 	double dcavg[nchans];
 	double rms[nchans];
+	*/
+	float *peak = new float[nchans];
+	long *peakloc = new long[nchans];
+	double *ampavg = new double[nchans];
+	double *dcavg = new double[nchans];
+	double *rms = new double[nchans];
+
    int result = sndlib_findpeak(fd, -1, dataloc, -1, format, nchans,
                     startframe, nframes, peak, peakloc, ampavg, dcavg, rms);
    sndlib_close(fd, 0, 0, 0, 0);
@@ -483,8 +495,10 @@ RTcmix::right_peak(float p[], int n_args)
    return get_peak(p[0], p[1], 1);
 }
 
-
-extern int sfd[NFILES];
+// BGGx ww -- added extern "C"
+extern "C" {
+	extern int sfd[NFILES];
+}
 
 extern "C" {
 

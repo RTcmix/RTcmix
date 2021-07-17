@@ -27,9 +27,9 @@ merror(const char *s)
 		c = mix_errlist[mixerr];
 	n = strlen(s);
 	if(n) {
-		write(2, s, n);
-		write(2, ": ", 2);
+		_write(2, s, n);
+		_write(2, ": ", 2);
 	}
-	write(2, c, strlen(c));
-	write(2, "\n", 1);
+	_write(2, c, strlen(c));
+	_write(2, "\n", 1);
 }

@@ -134,8 +134,9 @@ int check_byte_order(SFHEADER *, char *, char *);
 void printsf(SFHEADER *);
 
 
+// BGGx ww -- added _open instead of open
 #define readopensf(name,fd,sfh,sfst,prog,result) \
-if ((fd = open(name,O_RDONLY)) < 0) {  \
+if ((fd = _open(name,O_RDONLY)) < 0) {  \
         fprintf(stderr,"%s: cannot access file %s\n",prog,name); \
 	result = -1;  \
 } \
@@ -153,8 +154,9 @@ else if (stat(name,&sfst)){ \
 } \
 else result = 0;
 
+// BGGx ww -- open to _open
 #define rwopensf(name,fd,sfh,sfst,prog,result,code) \
-if ((fd = open(name, code))  < 0) {  \
+if ((fd = _open(name, code))  < 0) {  \
         fprintf(stderr,"%s: cannot access file %s\n",prog,name); \
 	result = -1;  \
 } \

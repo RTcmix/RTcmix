@@ -8,6 +8,9 @@
 
 #include <assert.h>
 #include <limits.h>        // PATH_MAX
+// BGGx ww -- PATH_MAX not in windows; just grabbed this from somewhere
+#define PATH_MAX 260
+
 #include "Option.h"
 #include <Config.h>
 #include <string.h>
@@ -91,6 +94,9 @@ void Option::init()
 	_homeDir[0] = 0;
 	_rcName[0] = 0;
 
+// BGGx ww rip out all this stuff
+/*
+
 	// initialize home directory and full path of user's configuration file
 
 	char *dir = getenv("HOME");
@@ -108,6 +114,7 @@ void Option::init()
 	strncpy(_rcName, rc, PATH_MAX);
 	_rcName[PATH_MAX - 1] = 0;
 	delete [] rc;
+*/ // BGGx ww
 }
 
 /* Read configuration file <fileName>, which is probably the full path name
@@ -118,6 +125,8 @@ void Option::init()
 */
 int Option::readConfigFile(const char *fileName)
 {
+// BGGx ww -- rip out all this stuff
+/*
 	const char *key;
 	Config conf;
 
@@ -309,6 +318,7 @@ int Option::readConfigFile(const char *fileName)
 		dsoPath(sval);
 	else if (result != kConfigNoValueForKey)
 		reportError("%s: %s.", conf.getLastErrorText(), key);
+*/ // BGGx ww
 
 	return 0;
 }
@@ -321,6 +331,8 @@ int Option::readConfigFile(const char *fileName)
 
 int Option::writeConfigFile(const char *fileName)
 {
+// BGGx ww -- rip out all this stuff
+/*
 	if (fileName == NULL || fileName[0] == 0) {
 		fprintf(stderr, "Config file name is NULL or empty.\n");
 		return -1;
@@ -405,6 +417,7 @@ int Option::writeConfigFile(const char *fileName)
 
 	fprintf(stream, "\n");
 	fclose(stream);
+*/ // BGGx ww
 
 	return 0;
 }

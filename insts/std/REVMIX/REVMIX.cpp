@@ -104,7 +104,9 @@ int REVMIX::run()
 
    for (int i = samps - inputChannels(); i >=  0; i -= inputChannels())  {
       if (--branch <= 0) {
-         double p[nargs];
+		  // BGGx ww ARG
+         //double p[nargs];
+		  double *p = new double[nargs];
          update(p, nargs);
          amp = p[3];
          if (amparray)

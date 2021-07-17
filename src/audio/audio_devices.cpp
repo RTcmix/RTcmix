@@ -152,6 +152,8 @@ create_audio_file_device(AudioDevice *inDevice,
 	
 	AudioDevice *device = NULL;
 
+// BGGx
+/*
 	AudioFileDevice *fileDevice = new AudioFileDevice(outfilename,
 													  header_type);
 													
@@ -253,6 +255,7 @@ create_audio_file_device(AudioDevice *inDevice,
 		 printf("     srate:  %g\n", srate);
 		 printf("     chans:  %d\n", chans);
 	}
+*/ // BGGx
 
 	return device;
 }

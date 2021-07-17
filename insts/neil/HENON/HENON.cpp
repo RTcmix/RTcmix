@@ -61,7 +61,9 @@ int HENON::configure()
 
 void HENON::doupdate()
 {
-	double p[nargs];
+	// BGGx ww -- arg!
+	//double p[nargs];
+	double *p = new double[nargs];
 	update(p, nargs);
 
 	amp = p[2];
@@ -113,7 +115,9 @@ Instrument *makeHENON()
 	return inst;
 }
 
+#ifndef EMBEDDED
 void rtprofile()
 {
 	RT_INTRO("HENON", makeHENON);
 }
+#endif

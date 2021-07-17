@@ -4,7 +4,11 @@ design program "filter" from the princeton cmix distribution
 rossb 17/10/95
 */
 #include <math.h>
-#include <unistd.h>
+
+// BGGx ww
+//#include <unistd.h>
+#include <io.h>
+
 #include <stdio.h>
 #include <string.h>
 #include "setell.h"

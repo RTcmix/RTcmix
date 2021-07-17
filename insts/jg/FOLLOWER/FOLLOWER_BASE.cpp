@@ -114,7 +114,9 @@ int FOLLOWER_BASE :: run()
 
    for (int i = 0; i < samps; i += inputChannels()) {
       if (--branch <= 0) {
-         double p[nargs];
+		  // BGGx ww ARG!
+         //double p[nargs];
+		  double *p = new double[nargs];
          update(p, nargs);
          caramp = p[3];
          if (amp_table)

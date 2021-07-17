@@ -54,8 +54,9 @@ ug_intro()
 	UG_INTRO("sfprint",sfprint);
 	UG_INTRO("system",m_system);
 	UG_INTRO("sfcopy",sfcopy);
-	UG_INTRO("input",m_input);
-	UG_INTRO("output",m_output);
+// BGGx ww -- these could probably be declare extern, but we don't use them anyhow
+//	UG_INTRO("input",m_input);
+//	UG_INTRO("output",m_output);
 	UG_INTRO("cpspch",m_cpspch);
 	UG_INTRO("pchcps",m_pchcps);
  	UG_INTRO("pchoct",m_pchoct);
@@ -70,7 +71,8 @@ ug_intro()
 	UG_INTRO("random",m_random);
 	UG_INTRO("rand",m_rand);
 	UG_INTRO("srand",m_srand);
-	UG_INTRO("fplot",fplot);
+// BGGx ww
+//	UG_INTRO("fplot",fplot);
 	UG_INTRO("fdump",fdump);
 	UG_INTRO("tb",m_time_beat);
 	UG_INTRO("bt",m_beat_time);
@@ -128,7 +130,8 @@ ug_intro()
 	UG_INTRO("setline",m_setline);
 	UG_INTRO("reset",m_reset);
 	UG_INTRO("control_rate",m_reset); /* because "reset" is a perlfunc */
-	UG_INTRO("load",m_load); /* allows loading of dynamic libraries */
+// BGGx ww -- no loading in windows
+//	UG_INTRO("load",m_load); /* allows loading of dynamic libraries */
 	UG_INTRO_DOUBLE_RETURN("translen",m_translen);
 	UG_INTRO_DOUBLE_RETURN("pickrand", m_pickrand);
 	UG_INTRO_DOUBLE_RETURN("pickwrand", m_pickwrand);

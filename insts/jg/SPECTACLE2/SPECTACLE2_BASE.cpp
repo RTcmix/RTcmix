@@ -759,7 +759,9 @@ int SPECTACLE2_BASE::run()
 		float drysig = _dry_delay->next(insig);
 		outsig += drysig * _dry;
 
-		float out[outchans];
+		// BGGx ww ARG!
+		//float out[outchans];
+		float *out = new float[outchans];
 		out[0] = outsig * _oamp;
 		if (outchans == 2) {
 			out[1] = out[0] * (1.0f - _pan);

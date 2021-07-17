@@ -34,7 +34,6 @@
 // the NetAudioDevices only communicate using short integer audio.
 
 #define DEBUG 0
-#undef DEBUG_IO
 
 #if DEBUG > 1
 #define PRINT0 if (1) printf
@@ -310,26 +309,17 @@ NetAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 		}
 #endif
 		int bytesNeeded = bytesToRead - bytesRead;
-#ifdef DEBUG_IO
-		printf("NetAudioDevice::doGetFrames: reading %d bytes from stream...\n", bytesNeeded);
-#endif
+//		printf("NetAudioDevice::doGetFrames: reading %d bytes from stream...\n", bytesNeeded);
 		int bytes = ::read(device(), &cbuf[bytesRead], bytesNeeded);
-#ifdef DEBUG_IO
-		printf("NetAudioDevice::doGetFrames: read %d bytes\n", bytes);
-#endif
+//		printf("NetAudioDevice::doGetFrames: read %d bytes\n", bytes);
 		if (bytes < 0) {
-			if (errno == EAGAIN) {
-#ifdef DEBUG_IO
-				printf("NetAudioDevice::doGetFrames: got EAGAIN error -- continuing\n");
-#endif
+			if (errno == EAGAIN)
 				continue;
-			}
-			else {
+			else 
 				return error("Network socket read failed: ", strerror(errno));
-			}
 		}
 		else if (bytes == 0) {
-			printf("NetAudioDevice::doGetFrames: connection broke -- zeroing output and disconnecting\n");
+			printf("NetAudioDevice::doGetFrames: connection broke -- disconnecting\n");
 			memset(frameBuffer, 0, bytesToRead);
 			disconnect();
 			return 0;
@@ -337,9 +327,6 @@ NetAudioDevice::doGetFrames(void *frameBuffer, int frameCount)
 		else
 			bytesRead += bytes;
 	}
-#ifdef DEBUG_IO
-	printf("NetAudioDevice::doGetFrames: copying audio into output buffer %p\n", frameBuffer);
-#endif
 	memcpy(frameBuffer, _impl->doubleBuffers[_impl->currentBuffer], bytesRead);
 	_impl->currentBuffer = !_impl->currentBuffer;	// swap
 	int framesRead = bytesRead / getDeviceBytesPerFrame();
@@ -361,17 +348,12 @@ NetAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 		return 0;
 	}
 #endif
-#ifdef DEBUG_IO
-	printf("NetAudioDevice::doSendFrames: writing %d bytes to stream...\n", bytesToWrite);
-#endif
+//	printf("NetAudioDevice::doSendFrames: writing %d bytes to stream...\n", bytesToWrite);
 	int bytesWritten = ::write(device(), frameBuffer, bytesToWrite);
-#ifdef DEBUG_IO
-	printf("NetAudioDevice::doSendFrames: wrote %d bytes\n", bytesWritten);
-#endif
+//	printf("NetAudioDevice::doSendFrames: wrote %d bytes\n", bytesWritten);
 	if (bytesWritten <= 0) {
 		return error("Network socket write failed: ",
 					 (bytesWritten < 0) ? strerror(errno) : "wrote zero bytes");
-		bytesWritten = 0;
 	}
 	int framesWritten = bytesWritten / getDeviceBytesPerFrame();
 	incrementFrameCount(framesWritten);
@@ -497,11 +479,6 @@ int NetAudioDevice::configure()
 			netformat.fmt = MUS_BSHORT;		// We OR in interleaved below
 		else if (MUS_GET_FORMAT(netformat.fmt) == MUS_BSHORT)
 			netformat.fmt = MUS_LSHORT;		// We OR in interleaved below
-		if (isRunning() && !FORMATS_SAME_BYTE_ORDER(getDeviceFormat(), netformat.fmt)) {
-			fprintf(stderr, "NetAudioDevice: cannot switch endian-ness mid-run");
-			disconnect();
-			return error("NetAudioDevice: cannot switch endian-ness mid-run");
-		}
 		netformat.chans = swap(netformat.chans);
 		netformat.sr = swap(netformat.sr);
 		netformat.blockFrames = swap(netformat.blockFrames);
@@ -529,6 +506,9 @@ int NetAudioDevice::configure()
 	if (netformat.sr != getSamplingRate()) {
 		fprintf(stderr, "NetAudioDevice: warning: SR mismatch.  Playing at incorrect rate.\n");
 	}
+	setDeviceParams(netformat.fmt, netformat.chans, netformat.sr);
+	PRINT1("NetAudioDevice::configure(): resetting conversion routines\n");
+	
 	/* Set socket back to nonblocking.  First get current flags */
 	int flags;
 	if ((flags = fcntl(device(), F_GETFL, 0)) >= 0) {
@@ -540,12 +520,7 @@ int NetAudioDevice::configure()
 		printf("NetAudioDevice::connect: Failed to get socket flags.\n");
 	}
 	
-	if (!isRunning()) {
-		PRINT1("NetAudioDevice::configure(): setting conversion routines\n");
-		setDeviceParams(netformat.fmt, netformat.chans, netformat.sr);
-		return resetFormatConversion();
-	}
-	return 0;
+	return resetFormatConversion();
 }
 
 bool NetAudioDevice::recognize(const char *desc)

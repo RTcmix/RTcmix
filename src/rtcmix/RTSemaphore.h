@@ -3,7 +3,7 @@
 #ifndef RT_SEMAPHORE_H
 #define RT_SEMAPHORE_H
 
-#ifdef MACOSX
+#ifdef MACOSX_NO
 #include <Availability.h>
 #endif
 

@@ -1,8 +1,10 @@
 /* infile.c -- datafile name-setting command for use with gen1. D.A.S. 9/89
 */
 
+// BGGx ww ok just blitz this because sys/file.h isn't found
+
 #include <stdio.h>
-#include <sys/file.h>
+//#include <sys/file.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <ugens.h>
@@ -11,13 +13,14 @@
 double
 m_infile(float *p, short n_args, double *pp) 
 {
+	/*
     FILE *descrip;
     char  *name;
     int   fno;
 
     name = DOUBLE_TO_STRING(pp[0]);
     fno = p[1];
-    /* Reject fno = 0, because that's indicates stdin to gen2. */
+    // Reject fno = 0, because that's indicates stdin to gen2. 
     if (fno < 1 || fno > MAX_INFILE_DESC)
 		return die("infile", "File number must be between 1 and %d.",
 						MAX_INFILE_DESC);
@@ -30,5 +33,7 @@ m_infile(float *p, short n_args, double *pp)
 		rtcmix_advise("infile", "Datafile %s opened as file %d.", name, fno);
     }
     return fno;
+	*/
+	return 0;
 }
 

@@ -65,7 +65,9 @@ int NOISE :: run()
 {
    for (int i = 0; i < framesToRun(); i++) {
       if (--branch <= 0) {
-         double p[nargs];
+		 // BGGx ww ARG!
+         //double p[nargs];
+		 double *p = new double[nargs];
          update(p, nargs);
          amp = p[2];
          if (amparray)

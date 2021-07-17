@@ -79,7 +79,9 @@ int WAVY::setExpression()
 
 	// copy expression string to <str>, stripping all white space
 	const int len = strlen(fieldstr);
-	char str[len + 1];
+	// BGGx ww ARG!
+	//char str[len + 1];
+	char *str = new char[len + 1];
 	char *p = str;
 	for (int i = 0; i < len; i++) {
 		const char c = fieldstr[i];
@@ -209,7 +211,9 @@ int WAVY::run()
 		float sig1 = _oscilA->nexti();
 		float sig2 = _oscilB->nexti();
 
-		float out[chans];
+		// BGGx ww ARG!
+		//float out[chans];
+		float *out = new float[chans];
 		if (_fp)
 			out[0] = eval(sig1, sig2) * _amp;
 		else

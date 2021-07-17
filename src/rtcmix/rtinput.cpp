@@ -52,7 +52,14 @@ open_sound_file(
       rterror(funcname, "\"%s\": %s", sfname, strerror(errno));
       return -1;
    }
-   if (!S_ISREG(sfst.st_mode) && !S_ISLNK(sfst.st_mode)) {
+
+   // BGGx ww -- added this for windows
+#ifndef S_ISREG
+#define S_ISREG(mode)  (((mode) & S_IFMT) == S_IFREG)
+#endif
+// BGGx ww -- mingw/windows doesn't have links like this
+//   if (!S_ISREG(sfst.st_mode) && !S_ISLNK(sfst.st_mode)) {
+   if (!S_ISREG(sfst.st_mode)) {
       rterror(funcname, "\"%s\" is not a regular file or a link.\n", sfname);
       return -1;
    }
@@ -259,7 +266,9 @@ RTcmix::rtinput(float p[], int n_args, double pp[])
 		if (n_args > 1 && pp[1] != 0.0) {
 			p1_is_used = 1;
 			str = DOUBLE_TO_STRING(pp[1]);
-			if (strcasestr(str, "mem") != NULL) {
+// BGGx ww strcasestr doesn't exist in mingw/windows
+//			if (strcasestr(str, "mem") != NULL) {
+			if ((strstr(str, "mem") != NULL) || (strstr(str, "MEM") != NULL)) {
 				in_memory = 1;
 			}
 		}

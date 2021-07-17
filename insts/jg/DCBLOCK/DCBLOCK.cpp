@@ -90,7 +90,9 @@ int DCBLOCK::run()
 			_branch = getSkip();
 		}
 
-		float out[_chans];
+		// BGGx ww ARG!
+		//float out[_chans];
+		float *out = new float[_chans];
 		for (int n = 0; n < _chans; n++)
 			out[n] = _blocker[n]->next(_in[i + n]) * _amp;
 

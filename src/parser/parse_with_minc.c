@@ -24,7 +24,8 @@ int RTcmix_parseScore(char *theBuf, int buflen)
 {
 	configure_minc_error_handler(get_bool_option(kOptionExitOnError));
 	setGlobalBuffer(theBuf, buflen+1);
-	reset_parser();
+	// BGGx ww -- why was this here?
+	//reset_parser();
 	return yyparse();
 }
 

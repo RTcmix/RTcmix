@@ -101,7 +101,9 @@ int MULTIWAVE::init(double p[], int n_args)
 
 void MULTIWAVE::doupdate()
 {
-   double p[nargs];
+	// BGGx ww ARG!
+   //double p[nargs];
+	double *p = new double[nargs];
    update(p, nargs);
 
    overall_amp = p[2];
@@ -119,7 +121,9 @@ int MULTIWAVE::run()
 {
    const int samps = framesToRun();
    const int chans = outputChannels();
-   float out[chans];
+   // BGGx ww ARG!
+   //float out[chans];
+   float *out = new float[chans];
 
    for (int i = 0; i < samps; i++) {
       if (--branch <= 0) {

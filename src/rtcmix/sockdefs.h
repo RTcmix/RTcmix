@@ -1,7 +1,8 @@
 #ifndef _SOCKDEFS_H_
 #define _SOCKDEFS_H_ 1
 
-#include <netinet/in.h>
+// BGGx ww
+//#include <netinet/in.h>
 #include "maxdispargs.h"
 
 #define MAXTEXTARGS ((MAXDISPARGS*sizeof(double))/512)

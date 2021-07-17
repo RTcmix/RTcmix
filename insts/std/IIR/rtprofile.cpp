@@ -3,6 +3,7 @@
 #include <rt.h>
 #include <rtdefs.h>
 
+#ifndef EMBEDDED
 void
 rtprofile()
 {
@@ -11,4 +12,5 @@ rtprofile()
 	RT_INTRO("BUZZ",makeBUZZ);
 	RT_INTRO("PULSE",makePULSE);
 }
+#endif
 

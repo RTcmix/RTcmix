@@ -10,7 +10,11 @@
 #include <stdint.h>		// for int32_t, etc.
 #include <assert.h>
 #include <unistd.h>
-#include <sys/time.h>
+
+// BGGx ww -- use MS version
+//#include <sys/time.h>
+#include <time.h>
+
 #include <RTcmix.h>
 #include <rtcmix_types.h>
 #include "prototypes.h"
@@ -353,7 +357,7 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 									"Not enough memory for temporary buffer.");
 
 	off_t seek_to = data_location + (start_frame * file_chans * bytes_per_samp);
-	if (lseek(fd, seek_to, SEEK_SET) == -1)
+	if (_lseek(fd, seek_to, SEEK_SET) == -1)
 		return die("maketable (soundfile)", "File seek error: %s", strerror(errno));
 
 #if MUS_LITTLE_ENDIAN
@@ -375,10 +379,10 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 
 		if (buf_start_frame + buf_frames > end_frame) {		  // last buffer
 			long samps = (end_frame - buf_start_frame) * file_chans;
-			bytes_read = read(fd, buf, samps * bytes_per_samp);
+			bytes_read = _read(fd, buf, samps * bytes_per_samp);
 		}
 		else
-			bytes_read = read(fd, buf, BUFSAMPS * bytes_per_samp);
+			bytes_read = _read(fd, buf, BUFSAMPS * bytes_per_samp);
 		if (bytes_read == -1)
 			return die("maketable (soundfile)", "File read error: %s",
 															strerror(errno));
@@ -1321,9 +1325,15 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
 		seed = (int) args[3];
 
 	if (seed == 0) {
+		// BGGx ww -- use MS version
+		/*
 		struct timeval tv;
 		gettimeofday(&tv, NULL);
 		seed = (int) tv.tv_usec;
+		*/
+		time_t ltime;
+		time(&ltime);
+		seed = ltime;
 	}
 
 	Random *gen = NULL;
@@ -1476,6 +1486,14 @@ _string_to_tablekind(const char *str)
 	}
 	return InvalidTable;
 }
+
+// BGGx ww
+extern "C" {
+int
+_dispatch_table(const Arg args[], const int nargs, const int startarg,
+	double **array, int *len);
+}
+
 
 int
 _dispatch_table(const Arg args[], const int nargs, const int startarg,
@@ -2082,8 +2100,9 @@ plottable(const Arg args[], const int nargs)
 	char data_file[256] = "/tmp/rtcmix_plot_data_XXXXXX";
 	char cmd_file[256] = "/tmp/rtcmix_plot_cmds_XXXXXX";
 
-	if (mkstemp(data_file) == -1 || mkstemp(cmd_file) == -1)
-		return die("plottable", "Can't make temp files for gnuplot.");
+	// BGGx ww
+	//if (mkstemp(data_file) == -1 || mkstemp(cmd_file) == -1)
+	//	return die("plottable", "Can't make temp files for gnuplot.");
 
 	FILE *fdata = fopen(data_file, "w");
 	FILE *fcmd = fopen(cmd_file, "w");

@@ -89,10 +89,12 @@ read_float_samps(
     const long bytes_remaining = endbyte - cur_offset;
     const long extra_bytes = (bytes_requested > bytes_remaining)
     ? bytes_requested - bytes_remaining : 0;
-    ssize_t bytes_to_read = lmin(bytes_remaining, bytes_requested);
+	// BGGx ww ssize_t
+    int bytes_to_read = lmin(bytes_remaining, bytes_requested);
     
     while (bytes_to_read > 0) {
-        ssize_t bytes_read = read(fd, bufp, bytes_to_read);
+		// BGGx ww ssize_t arg!
+        int bytes_read = _read(fd, bufp, bytes_to_read);
         if (bytes_read == -1) {
             perror("read_float_samps (read)");
             RTExit(1);
@@ -169,10 +171,12 @@ read_24bit_samps(
     const long bytes_remaining = endbyte - cur_offset;
     const long extra_bytes = (bytes_requested > bytes_remaining)
     ? bytes_requested - bytes_remaining : 0;
-    ssize_t bytes_to_read = lmin(bytes_remaining, bytes_requested);
+	// BGGx ww ssize_t
+    int bytes_to_read = lmin(bytes_remaining, bytes_requested);
     
     while (bytes_to_read > 0) {
-        ssize_t bytes_read = read(fd, bufp, bytes_to_read);
+		// BGGx ww ssize_t
+        int bytes_read = _read(fd, bufp, bytes_to_read);
         if (bytes_read == -1) {
             perror("read_24bit_samps (read)");
             RTExit(1);
@@ -254,10 +258,11 @@ read_short_samps(
     const long bytes_remaining = endbyte - cur_offset;
     const long extra_bytes = (bytes_requested > bytes_remaining)
     ? bytes_requested - bytes_remaining : 0;
-    ssize_t bytes_to_read = lmin(bytes_remaining, bytes_requested);
+    int bytes_to_read = lmin(bytes_remaining, bytes_requested);
     
     while (bytes_to_read > 0) {
-        ssize_t bytes_read = read(fd, bufp, bytes_to_read);
+		// BGGx ww ssize_t
+        int bytes_read = _read(fd, bufp, bytes_to_read);
         if (bytes_read == -1) {
             perror("read_short_samps (read)");
             RTExit(1);
@@ -356,7 +361,7 @@ void InputFile::init(int inFd, const char *inFileName, Type inType, int inHeader
           int inDataFormat, int inDataLocation, long inFrames, float inSampleRate,
           int inChannels, double inDuration)
 {
-    _filename = strdup(inFileName);
+    _filename = _strdup(inFileName);
     _fd = inFd;
     _refcount = 0;
     _fileType = inType;
@@ -402,7 +407,7 @@ void InputFile::init(int inFd, const char *inFileName, Type inType, int inHeader
 void InputFile::init(BufPtr inBuffer, const char *inBufferName, long inFrames, float inSampleRate, int inChannels, float inScaling)
 {
 	rtcmix_debug("InputFile::init", "inBuffer %p, frames %ld, chans %d", inBuffer, inFrames, inChannels);
-    _filename = strdup(inBufferName);
+    _filename = _strdup(inBufferName);
     _fd = USE_MM_BUF;
     _refcount = 0;
     _fileType = InMemoryType;
@@ -519,7 +524,7 @@ off_t InputFile::readSamps(off_t cur_offset,
 #endif
 		{
 			AutoLock fileLock(this);
-			if (lseek(_fd, cur_offset, SEEK_SET) == -1) {
+			if (_lseek(_fd, cur_offset, SEEK_SET) == -1) {
 				perror("RTcmix::readFromInputFile (lseek)");
 				RTExit(1);
 			}
@@ -548,7 +553,7 @@ int InputFile::loadSamps(long inFrames)
 		perror("malloc");
 		return -1;
 	}
-	if (lseek(_fd, _data_location, SEEK_SET) == -1) {
+	if (_lseek(_fd, _data_location, SEEK_SET) == -1) {
 		perror("RTcmix::readFromInputFile (lseek)");
 		RTExit(1);
 	}
@@ -601,7 +606,8 @@ off_t InputFile::copySamps(off_t     cur_offset,       /* current file position 
     const int bufBytesRequested = dest_frames * _chans * bytes_per_dest_samp;
 	const long bufBytesRemaining = (fileBytesRemaining / (_chans * bytes_per_src_samp)) * bytes_per_dest_frame;
     const long extra_bytes = (bufBytesRequested > bufBytesRemaining) ? bufBytesRequested - bufBytesRemaining : 0;
-    ssize_t bytes_to_copy = lmin(bufBytesRemaining, bufBytesRequested);
+	// BGGx ww ssize_t
+    int bytes_to_copy = lmin(bufBytesRemaining, bufBytesRequested);
     
 	if (dest_chans == _chans && _gainScale == 1.0f
 #ifndef IGNORE_BUS_COUNT_FOR_FILE_INPUT

@@ -2,10 +2,11 @@
 #include <sfheader.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <sys/file.h>
+//#include <sys/file.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <sys/time.h>
+// BGGx ww -- it appears we don't need time.h in this file
+//#include <sys/time.h>
 #include <ugens.h>
 
 extern float SR;
@@ -37,7 +38,7 @@ inrepos(int samps, int fno)
         
         seeking = (amt - bufsize[fno]) * sfclass(&sfdesc[fno]);
 
-        if ( (filepointer[fno] = lseek(sfd[fno],seeking,1)) == -1 ) {
+        if ( (filepointer[fno] = _lseek(sfd[fno],seeking,1)) == -1 ) {
                 rtcmix_warn("inrepos", "Bad inrepos lseek, file: %d\n",fno);
                 closesf();
                 }
@@ -70,7 +71,7 @@ outrepos(int samps, int fno)
         _writeit(fno);          /* write out current buffer */
         seeking = (amt - bufsize[fno]) * sfclass(&sfdesc[fno]);
 
-        if ( (filepointer[fno] = lseek(sfd[fno],seeking,1)) == -1 ) {
+        if ( (filepointer[fno] = _lseek(sfd[fno],seeking,1)) == -1 ) {
                 rtcmix_warn("outrepos", "CMIX: bad outrepos lseek, file: %d\n",fno);
                 closesf();
                 }

@@ -28,6 +28,8 @@ INCLUDES += -I$(INCLUDEDIR) -I../include -I$(AUDIODIR) -I$(SNDLIBDIR) -I./heap -
 
 # Source file listings
 
+# BGGx ww -- removed loader.cpp and load_utils.c
+
 COMMON_CSRCS = \
 check_byte_order.c \
 command_line.c \
@@ -35,7 +37,6 @@ funderflow.c \
 getsample.c \
 infile.c \
 io.c \
-load_utils.c \
 merror.c \
 message.c \
 minout.c \
@@ -51,6 +52,7 @@ sound.c \
 soundio.c \
 tempo.c \
 ug_intro.c
+
 
 GEN_CSRCS = \
 gen/fdump.c \
@@ -86,7 +88,6 @@ dispatch.cpp \
 filter.cpp \
 Instrument.cpp \
 intraverse.cpp \
-loader.cpp \
 lfo.cpp \
 minc_info.cpp \
 minc_functions.cpp \
@@ -139,6 +140,11 @@ ifeq ($(NPLAY_SUPPORT), TRUE)
    COMMON_CPPSRCS += setnetplay.cpp
 endif
 
+ifeq ($(EMBEDDED_USE_MMOVE), TRUE)
+	CXXFLAGS += -DUSE_MMOVE
+	CFLAGS += -DUSE_MMOVE
+endif
+
 MAIN_CPPSRCS = RTcmixMain.cpp main.cpp
 
 IMBEDSRCS =
@@ -172,8 +178,9 @@ ifneq ($(BUILDTYPE), STANDALONE)
 	include maxmspstuff/INMAXMSPOBJS
 	include maxmspstuff/INBGGOBJS
 	include maxmspstuff/INJOELOBJS
+	include maxmspstuff/INNEILOBJS
 	INST_OBJS = $(INBASEOBJS) $(INSTDOBJS) $(INJGOBJS) $(INSTKOBJS) \
-		$(INMAXMSPOBJS) $(INBGGOBJS) $(INJOELOBJS)
+		$(INMAXMSPOBJS) $(INBGGOBJS) $(INJOELOBJS) $(INNEILOBJS)
 endif
 
 # Sub-libraries.  Not used for static builds.
@@ -197,7 +204,9 @@ ifeq ($(RTLIBTYPE), STATIC)
 	LIB_OBJS = $(LIBRTAUDIOOBJS) $(LIBCONFOBJS) $(LIBGENOBJS) $(LIBINLETOBJS) \
 		$(LIBPFBUSOBJS) $(LIBMINCOBJS) $(LIBOBJOBJS) $(LIBRTHEAPOBJS) \
 		$(LIBSNDOBJS) $(LIBSTKOBJS)
-	LOAD = $(AR) rv
+#BGGx ww
+#	LOAD = $(AR) rv
+	LOAD = $(AR) rcs
 	RANLIB = ranlib
 	# Nothing to link for static lib
 	SYS_LDFLAGS =
@@ -322,12 +331,14 @@ everything:		$(SNDLIB) $(LIBRTAUDIO) $(MIX_OBJS) $(LIBMINC) $(LIBCONF)
 #	$(INJOELOBJS):
 		(cd ../../insts/joel; $(MAKE) $(MFLAGS) all;)
 
+#	$(INNEILOBJS):
+		(cd ../../insts/neil; $(MAKE) $(MFLAGS) all;)
+
 endif
 
 # These objects need additional flags, which are spelled out here
 
-loader.o: loader.cpp
-	$(CXX) $(CFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c loader.cpp
+# BGGx ww -- removed loader.o
 
 connection.o: connection.cpp
 	$(CXX) $(CXXFLAGS) -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" -c connection.cpp
@@ -397,9 +408,10 @@ endif
 
 else
 
+# BGGxx ww -- MAIN?
 # Note: Some of these macros will be empty for dynamic builds; some will be empty for static
 $(RTLIB): depend $(COMMON_OBJS) $(LIBS)
-	$(LOAD) $@ $(COMMON_OBJS) $(INST_OBJS) $(LIB_OBJS) $(LIBS) $(SYS_LDFLAGS)
+	$(LOAD) $@ main.o RTcmixMain.o $(SYS_LDFLAGS)
 	$(RANLIB) $@
 
 install:	all

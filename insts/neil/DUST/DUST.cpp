@@ -55,8 +55,10 @@ int DUST::configure()
 }
 
 void DUST::doupdate()
-{
-	double p[_nargs];
+{ 
+	// BGGx ww -- arg!
+	//double p[_nargs];
+	double *p = new double[_nargs];
 	update(p, _nargs);
 
 	_amp = p[2];
@@ -103,8 +105,9 @@ Instrument *makeDUST()
 	return inst;
 }
 
+#ifndef EMBEDDED
 void rtprofile()
 {
 	RT_INTRO("DUST", makeDUST);
 }
-
+#endif

@@ -83,9 +83,12 @@ FLANGE :: ~FLANGE()
 
 inline int _string_to_flangecode(const char *str)
 {
-   if (strcasecmp(str, "IIR") == 0)
+	// BGGx ww
+   //if (strcasecmp(str, "IIR") == 0)
+	if (strstr(str, "IIR") == 0)
       return 0;
-   else if (strcasecmp(str, "FIR") == 0)
+   //else if (strcasecmp(str, "FIR") == 0)
+	else if (strstr(str, "FIR") == 0)
       return 1;
    return -1;
 }

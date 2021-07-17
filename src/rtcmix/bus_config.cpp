@@ -62,7 +62,7 @@ BusSlot::~BusSlot()
 //
 
 BusQueue::BusQueue(char *name, BusSlot *theSlot)
-		: inst_name(strdup(name)), slot(theSlot), next(NULL)
+		: inst_name(_strdup(name)), slot(theSlot), next(NULL)
 {
 	slot->ref();
 }
@@ -836,7 +836,7 @@ RTcmix::bus_config(float p[], int n_args, double pp[])
 
    /* do the old Minc casting rigamarole to get string pointers from a double */
    str = DOUBLE_TO_STRING(pp[0]);
-   instname = strdup(str);	// Note:  If we exit nonfatally, we have to free.
+   instname = _strdup(str);	// Note:  If we exit nonfatally, we have to free.
 
    for (i = 1; i < n_args; i++) {
       busname = DOUBLE_TO_STRING(pp[i]);

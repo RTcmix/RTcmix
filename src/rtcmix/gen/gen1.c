@@ -21,12 +21,12 @@ dump_gen_to_raw_file(double *buf, int nsamps)
    static int  fd = -1;
 
    if (fd == -1) {
-      fd = open("dumpaudio.raw", O_RDWR | O_CREAT | O_TRUNC, 0666);
+      fd = _open("dumpaudio.raw", O_RDWR | O_CREAT | O_TRUNC, 0666);
       assert(fd > 0);
       fprintf(stderr, "Dumping audio (as double samps) to \"dumpaudio.raw\".\n");
    }
    nbytes = nsamps * sizeof(double);
-   result = write(fd, buf, nbytes);
+   result = _write(fd, buf, nbytes);
    assert(result != -1);
 }
 
@@ -139,7 +139,7 @@ gen1(struct gen *gen, char *sfname)
    bytes_per_samp = mus_data_format_to_bytes_per_sample(data_format);
 
    seek_to = data_location + (start_frame * file_chans * bytes_per_samp);
-   if (lseek(fd, seek_to, SEEK_SET) == -1) {
+   if (_lseek(fd, seek_to, SEEK_SET) == -1) {
 	   free(block);
 	   free(buf);
 		return die("gen1", "lseek() failed");
@@ -165,10 +165,10 @@ gen1(struct gen *gen, char *sfname)
 
       if (buf_start_frame + buf_frames > end_frame) {      /* last buffer */
          int samps = (end_frame - buf_start_frame) * file_chans;
-         bytes_read = read(fd, buf, samps * bytes_per_samp);
+         bytes_read = _read(fd, buf, samps * bytes_per_samp);
       }
       else
-         bytes_read = read(fd, buf, BUFSIZE);
+         bytes_read = _read(fd, buf, BUFSIZE);
       if (bytes_read == -1) {
 		  free(block);
 		  free(buf);

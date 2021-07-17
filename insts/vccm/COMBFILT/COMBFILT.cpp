@@ -116,8 +116,11 @@ int COMBFILT::run()
 
 	if (--branch < 0) {
 	  // End P-Field Updating - - - - - - - - - - - - - - - - - - - - -
-	  if (amptable)
-		aamp = table(cursamp, amptable, tabs) * amp;
+		if (amptable) {
+			// BGG EMBEDDED
+			//aamp = table(cursamp, amptable, tabs) * amp;
+			aamp = rtcmix_table(cursamp, amptable, tabs) * amp;
+		}
 	  branch = skip;
 	}
 

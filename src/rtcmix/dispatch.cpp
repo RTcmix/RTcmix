@@ -6,7 +6,10 @@
 #include "prototypes.h"
 #include <ugens.h>
 #include <maxdispargs.h>
+// BGGx ww
+extern "C" {
 #include "mixerr.h"
+}
 #include <stdio.h>
 
 int

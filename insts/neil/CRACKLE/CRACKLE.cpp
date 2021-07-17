@@ -57,7 +57,9 @@ int CRACKLE::configure()
 
 void CRACKLE::doupdate()
 {
-	double p[nargs];
+	// BGGx ww -- arg!
+	//double p[nargs];
+	double *p = new double[nargs];
 	update(p, nargs);
 
 	amp = p[2];
@@ -100,7 +102,9 @@ Instrument *makeCRACKLE()
 	return inst;
 }
 
+#ifndef EMBEDDED
 void rtprofile()
 {
 	RT_INTRO("CRACKLE", makeCRACKLE);
 }
+#endif

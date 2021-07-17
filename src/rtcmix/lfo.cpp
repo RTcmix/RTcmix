@@ -135,16 +135,20 @@ makeLFO(const Arg args[], const int nargs)
 		lfo = new RangePField(lfo, minpf, maxpf, RangePField::BipolarSource);
 
 	return createPFieldHandle(lfo);
+	return NULL;
 }
 
 
 // -------------------------------------------------------------- makerandom ---
 #include <Random.h>
-#include <sys/time.h>
+// BGGx ww
+//#include <sys/time.h>
+#include <time.h> // MS version
 
 static Handle
 _makerandom_usage()
 {
+	/*
 	die("makerandom",
 		"\n   usage: rand = makerandom(type, freq, min, max[, seed])"
 		"\n          where <type> is \"linear\", \"low\", \"high\","
@@ -153,6 +157,7 @@ _makerandom_usage()
 		"\n   usage: rand = makerandom(\"prob\", freq, min, max, mid, "
 						"tight[, seed])"
 		"\n");
+		*/
 	return NULL;
 }
 
@@ -250,9 +255,15 @@ makerandom(const Arg args[], const int nargs)
 	if (nargs - index > 0)		// explicit seed
 		seed = (int) args[index];
 	if (seed == 0) {
+		// BGGx ww -- use MS version
+		/*
 		struct timeval tv;
 		gettimeofday(&tv, NULL);
 		seed = (int) tv.tv_usec;
+		*/
+		time_t ltime;
+		time(&ltime);
+		seed = ltime;
 	}
 
 	// check initial values

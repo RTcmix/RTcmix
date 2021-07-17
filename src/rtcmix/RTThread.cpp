@@ -15,13 +15,18 @@ static pthread_once_t sOnceControl = PTHREAD_ONCE_INIT;
 
 pthread_key_t	RTThread::sIndexKey;
 
-RTThread::RTThread(int inThreadIndex)
-	: mThread(NULL), mThreadIndex(inThreadIndex) {
+// BGGx ww
+//RTThread::RTThread(int inThreadIndex)
+//	: mThread(NULL), mThreadIndex(inThreadIndex) {
+RTThread::RTThread(int inThreadIndex) {
+	mThread.p = NULL;
+	mThreadIndex = inThreadIndex;
 	pthread_once(&sOnceControl, InitOnce);
 }
 
 RTThread::~RTThread() {
-	if (mThread) {
+//	if (mThread) {
+	if (mThread.p != NULL) {
 		pthread_join(mThread, NULL);
 	}
 }
@@ -29,7 +34,9 @@ RTThread::~RTThread() {
 // We cannot start running the pthread in the ctor, so we do it here.
 
 void RTThread::start() {
-	if (mThread == NULL) {
+	// BGGx ww
+//	if (mThread == NULL) {
+	if (mThread.p == NULL) {
 		pthread_attr_t attr;
 		pthread_attr_init(&attr);
 		pthread_attr_setschedpolicy(&attr, SCHED_RR);
@@ -71,11 +78,12 @@ void *RTThread::sProcess(void *inContext)
 {
 	RTThread *This = (RTThread *) inContext;
 	SetIndexForThread(This->GetIndex());
-	if (setpriority(PRIO_PROCESS, 0, -20) != 0) {
-#ifdef THREAD_DEBUG
-		perror("RTThread::sProcess: setpriority() failed.");
-#endif
-	}
+	// BGGx ww
+	//if (setpriority(PRIO_PROCESS, 0, -20) != 0) {
+//#ifdef THREAD_DEBUG
+//		perror("RTThread::sProcess: setpriority() failed.");
+//#endif
+	//}
 	This->run();
 	return NULL;
 }

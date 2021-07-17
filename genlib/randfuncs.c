@@ -1,5 +1,7 @@
 #include <math.h>
-#include <sys/time.h>
+// BGGx ww
+//#include <sys/time.h>
+#include <time.h>
 
 static  long    randx = 1;
 
@@ -34,11 +36,17 @@ static float s_brrand()
 
 void tsrand()
 {
+	// BGGx ww
+	/*
 	struct timeval tv;
 	struct timezone tz;
 
 	gettimeofday(&tv,&tz);
 	s_srrand(tv.tv_usec);
+	*/
+        time_t ltime;
+        time(&ltime);
+	s_srrand(ltime);
 }
 
 

@@ -198,41 +198,41 @@ static Handle _makefilter_usage()
 	return NULL;
 }
 
-Handle makefilter(const Arg args[], const int nargs)
-{
-	if (nargs < 2)
-		return _makefilter_usage();
+	Handle makefilter(const Arg args[], const int nargs)
+	{
+		if (nargs < 2)
+			return _makefilter_usage();
 
-	PField *innerpf = (PField *) args[0];
-	if (innerpf == NULL)
-		return _makefilter_usage();
+		PField *innerpf = (PField *)args[0];
+		if (innerpf == NULL)
+			return _makefilter_usage();
 
-	PField *filt = NULL;
-	if (args[1].isType(StringType)) {
-		if (args[1] == "clip")
-			filt = _clip_filter(innerpf, &args[2], nargs - 2);
-		else if (args[1] == "constrain")
-			filt = _constrain_filter(innerpf, &args[2], nargs - 2);
-		else if (args[1] == "delay")
-			filt = _delay_filter(innerpf, &args[2], nargs - 2);
-		else if (args[1] == "fitrange")
-			filt = _fitrange_filter(innerpf, &args[2], nargs - 2);
-		else if (args[1] == "invert")
-			filt = _invert_filter(innerpf, &args[2], nargs - 2);
-		else if (args[1] == "map")
-			filt = _map_filter(innerpf, &args[2], nargs - 2);
-		else if (args[1] == "quantize")
-			filt = _quantize_filter(innerpf, &args[2], nargs - 2);
-		else if (args[1] == "smooth")
-			filt = _smooth_filter(innerpf, &args[2], nargs - 2);
-		else {
-			die("makefilter", "Unsupported filter type \"%s\".",
-								(const char *) args[1]);
-			return NULL;
+		PField *filt = NULL;
+		if (args[1].isType(StringType)) {
+			if (args[1] == "clip")
+				filt = _clip_filter(innerpf, &args[2], nargs - 2);
+			else if (args[1] == "constrain")
+				filt = _constrain_filter(innerpf, &args[2], nargs - 2);
+			else if (args[1] == "delay")
+				filt = _delay_filter(innerpf, &args[2], nargs - 2);
+			else if (args[1] == "fitrange")
+				filt = _fitrange_filter(innerpf, &args[2], nargs - 2);
+			else if (args[1] == "invert")
+				filt = _invert_filter(innerpf, &args[2], nargs - 2);
+			else if (args[1] == "map")
+				filt = _map_filter(innerpf, &args[2], nargs - 2);
+			else if (args[1] == "quantize")
+				filt = _quantize_filter(innerpf, &args[2], nargs - 2);
+			else if (args[1] == "smooth")
+				filt = _smooth_filter(innerpf, &args[2], nargs - 2);
+			else {
+				die("makefilter", "Unsupported filter type \"%s\".",
+					(const char *)args[1]);
+				return NULL;
+			}
 		}
+		else
+			return _makefilter_usage();
+		return (filt == NULL) ? NULL : createPFieldHandle(filt);
 	}
-	else
-		return _makefilter_usage();
-	return (filt == NULL) ? NULL : createPFieldHandle(filt);
-}
 

@@ -234,8 +234,10 @@ Instrument *makeSROOM()
    return inst;
 }
 
+#ifndef EMBEDDED
 void rtprofile()
 {
    RT_INTRO("SROOM", makeSROOM);
 }
+#endif
 

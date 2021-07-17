@@ -147,7 +147,10 @@ header_type_from_filename(char *fname)
    if (p != NULL) {
       p++;     /* skip over '.' */
       for (i = 0; i < num_format_extensions; i++) {
-         if (strcasecmp(format_extension_list[i].arg, p) == 0) {
+		  // BGGx ww
+         //if (strcasecmp(format_extension_list[i].arg, p) == 0) {
+		 if (_stricmp(format_extension_list[i].arg, p) == 0) {
+
             format = format_extension_list[i].format;
             break;
          }
@@ -193,7 +196,9 @@ RTcmix::parse_rtoutput_args(int nargs, double pp[])
 
       matched = 0;
       for (j = 0; j < num_params; j++) {
-         if (strcasecmp(param_list[j].arg, arg) == 0) {
+		  // BGGx ww
+         //if (strcasecmp(param_list[j].arg, arg) == 0) {
+		 if (_stricmp(param_list[j].arg, arg) == 0) {
             matched = 1;
             break;
          }
@@ -209,8 +214,11 @@ RTcmix::parse_rtoutput_args(int nargs, double pp[])
             break;
          case DATA_FORMAT:
             output_data_format = param_list[j].value;
-            if (output_data_format == MUS_BFLOAT
-                           && strcasecmp(param_list[j].arg, "normfloat") == 0)
+			// BGGx ww
+            //if (output_data_format == MUS_BFLOAT
+            //               && strcasecmp(param_list[j].arg, "normfloat") == 0)
+			if (output_data_format == MUS_BFLOAT
+				&& _stricmp(param_list[j].arg, "normfloat") == 0)
                normfloat_requested = 1;
             break;
          case ENDIANNESS:  /* currently unused */
@@ -321,6 +329,10 @@ RTcmix::rtoutput(float p[], int n_args, double pp[])
       }
       else {
          /* make sure it's a regular file */
+// BGGx mm -- added this fpor windows
+#ifndef S_ISREG
+#define S_ISREG(mode)  (((mode) & S_IFMT) == S_IFREG)
+#endif
          if (!S_ISREG(statbuf.st_mode)) {
             rterror("rtoutput", "\"%s\" isn't a regular file; won't clobber it",
                                                                  rtoutsfname);

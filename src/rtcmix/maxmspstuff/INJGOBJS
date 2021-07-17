@@ -1,4 +1,5 @@
 INJGOBJS = ../../insts/jg/BUTTER/BUTTER.o \
+../../insts/jg/BWESINE/BWESINE.o \
 ../../insts/jg/COMPLIMIT/COMPLIMIT.o \
 ../../insts/jg/CONVOLVE1/CONVOLVE1.o \
 ../../insts/jg/DCBLOCK/DCBLOCK.o \

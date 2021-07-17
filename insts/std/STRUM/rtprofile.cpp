@@ -1,5 +1,6 @@
 #include <rt.h>
 
+#ifndef EMBEDDED
 void
 rtprofile()
 {
@@ -12,3 +13,5 @@ rtprofile()
 	RT_INTRO("VSTART1",makeVSTART1);
 	RT_INTRO("VFRET1",makeVFRET1);
 }
+#endif
+

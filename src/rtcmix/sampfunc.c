@@ -1,7 +1,8 @@
 #include "ugens.h"
 #include "sfheader.h"
 #include <stdio.h>
-#include <sys/file.h>
+// BGGx ww
+//#include <sys/file.h>
 #include <sys/types.h>
 
 double

@@ -136,7 +136,9 @@ int GRANSYNTH::init(double p[], int n_args)
 
 void GRANSYNTH::doupdate()
 {
-   double p[_nargs];
+	// BGGx ww ARG!
+   //double p[_nargs];
+	double *p = new double[_nargs];
    update(p, _nargs, kAmp | kHopTime | kOutJitter | kMinDur | kMaxDur
          | kMinAmp | kMaxAmp | kPitch | kPitchJitter | kMinPan | kMaxPan);
 

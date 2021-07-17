@@ -18,7 +18,8 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <sys/time.h>
+// BGGx ww
+//#include <sys/time.h>
 #include <string.h>
 #include <signal.h>
 
@@ -38,6 +39,9 @@
 #include "maxdispargs.h"
 #include "dbug.h"
 #include "globals.h"
+#ifdef EMBEDDED
+#include "../parser/rtcmix_parse.h"
+#endif
 
 
 // This is declared (still) in globals.h for use in gen routines.
@@ -165,6 +169,8 @@ RTcmix::init_options(bool fromMain, const char *defaultDSOPath)
 	
 	RTBUFSAMPS = (int) Option::bufferFrames();  /* modifiable with rtsetparams */
 
+	// BGGxx
+	/*
 	if (Option::autoLoad()) {
 		const char *dsoPath = Option::dsoPath();
 		if (strlen(dsoPath) == 0)
@@ -172,6 +178,7 @@ RTcmix::init_options(bool fromMain, const char *defaultDSOPath)
 		else
 			registerDSOs(dsoPath);
 	}
+	*/
 }
 
 /* --------------------------------------------------------- init_globals --- */
@@ -195,11 +202,16 @@ RTcmix::init_globals()
       ToAuxPlayList[i] =-1;     /* The playback order for AUX buses */
    }
 
+// BGGx ww -- sysconf and _SC_OPEN_MAX are posix, not in mingw.
+//	using our 'hardcode' default here
+/*
 	max_input_fds = sysconf(_SC_OPEN_MAX);
 	if (max_input_fds == -1)	// call failed
 		max_input_fds = 128;		// what we used to hardcode
 	else
 		max_input_fds -= RESERVE_INPUT_FDS;
+*/
+	max_input_fds = 128;
 	
 	inputFileTable = new InputFile[max_input_fds];
 	last_input_index = -1;
@@ -309,6 +321,9 @@ RTcmix::~RTcmix()
 	run_status = RT_SHUTDOWN;
 	waitForMainLoop();	// This calls close()
 	free_globals();
+#ifdef EMBEDDED
+	destroy_parser();	// clean up symbols, etc
+#endif
 }
 
 //  The actual initialization method called by the imbedded constructors
@@ -656,6 +671,8 @@ int RTcmix::resetAudio(float, int, int, bool)
 // put sleep()s in a while loop to keep the process alive...
 void RTtimeit(float interval, sig_t func)
 {
+// BGGx ww -- this timer stuff isn't available easily in windows/mingw
+/*
 	struct timeval tv;
 	struct itimerval itv;
 
@@ -665,5 +682,6 @@ void RTtimeit(float interval, sig_t func)
 	itv.it_value = tv;
 	setitimer(ITIMER_REAL, &itv, NULL);
 	signal(SIGALRM, func);
+*/
 }
 

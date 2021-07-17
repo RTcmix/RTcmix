@@ -17,7 +17,10 @@
 #include <RTcmix.h>
 #include "rt.h"
 #include "Instrument.h"
-#include "mixerr.h"
+ // BGGx ww
+extern "C" {
+	#include "mixerr.h"
+}
 #include <string.h>
 
 int

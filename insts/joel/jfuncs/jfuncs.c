@@ -7,6 +7,9 @@
   
 #define DEBUG
 
+// BGGx ww -- no drand48() in windows
+#define drand48() (((double)rand())/((double)RAND_MAX))
+
 double m_sin(float p[], int n_args, double pp[])
 {
 	double val;

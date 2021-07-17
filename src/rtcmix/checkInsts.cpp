@@ -12,7 +12,10 @@
 #include "utils.h"
 #include "rt.h"
 #include "rtdefs.h"
-#include "mixerr.h"
+// BGGx ww
+extern "C" {
+	#include "mixerr.h"
+}
 #include "rtcmix_types.h"
 #include "ugens.h"
 #include <stdio.h>
@@ -43,7 +46,8 @@ static InstCreatorFunction
 findInstCreator(rt_item *inList, const char *inInstName)
 {
 	rt_item *item = inList;       // rt_item defined in rt.h
-	while (item) {
+
+	while (item != NULL) {
 		if (strcmp(item->rt_name, inInstName) == 0) {
 			return item->rt_ptr;
 		}
@@ -128,7 +132,7 @@ int
 RTcmix::checkInsts(const char *instname, const Arg arglist[],
 				   const int nargs, Arg *retval)
 {
-	Instrument *Iptr = NULL;;
+	Instrument *Iptr = NULL;
 
 #ifdef DEBUG
    RTPrintf("ENTERING checkInsts() FUNCTION -----\n");
@@ -141,7 +145,6 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 	InstCreatorFunction instCreator = findInstCreator(rt_list, instname);
 
 	if (instCreator) {
-		
 		::printargs(instname, arglist, nargs);
 
 		if (!rtsetparams_was_called()) {

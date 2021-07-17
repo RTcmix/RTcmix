@@ -1,5 +1,7 @@
+# BGGx ww -- got rid of ThreadedAudioDevice.o
+
 LIBRTAUDIOOBJS = ../audio/AudioDevice.o ../audio/AudioIODevice.o \
-../audio/AudioDeviceImpl.o ../audio/ThreadedAudioDevice.o \
+../audio/AudioDeviceImpl.o \
 ../audio/AudioOutputGroupDevice.o ../audio/DualOutputAudioDevice.o \
 ../audio/AudioFileDevice.o ../audio/audio_dev_creator.o ../audio/sndlibsupport.o
 ifeq ($(AUDIODRIVER), APPLE)

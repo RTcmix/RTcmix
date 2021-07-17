@@ -88,7 +88,7 @@ sound_sample_buf_read(char *fname, double insk, double dur, int *nframes, int *n
 	}
 
 	off_t seek_to = data_location + (insk_frames * file_chans * bytes_per_samp);
-	if (lseek(fd, seek_to, SEEK_SET) == -1) {
+	if (_lseek(fd, seek_to, SEEK_SET) == -1) {
 		rterror("sound_sample_buf_read", "File seek error: %s", strerror(errno));
 		return NULL;
 	}
@@ -101,7 +101,7 @@ sound_sample_buf_read(char *fname, double insk, double dur, int *nframes, int *n
 	bool is_float = IS_FLOAT_FORMAT(data_format);
 	bool is_24bit = IS_24BIT_FORMAT(data_format);
 
-	long bytes_read = read(fd, buf, read_samps * bytes_per_samp);
+	long bytes_read = _read(fd, buf, read_samps * bytes_per_samp);
 	if (bytes_read == -1) {
 		rterror("sound_sample_buf_read", "File read error: %s", strerror(errno));
 		return NULL;

@@ -17,7 +17,7 @@
 RawDataFile::RawDataFile(const char *fileName)
 	: _stream(NULL), _swap(false)
 {
-	_filename = strdup(fileName);
+	_filename = _strdup(fileName);
 }
 
 RawDataFile::~RawDataFile()

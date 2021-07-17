@@ -65,8 +65,10 @@
                                   by John Gibson and Doug Scott, 6/27/04
 */
 
+
 #include <stdlib.h>
 #include <string.h>
+
 
 #define CONF_FILENAME ".rtcmixrc"
 #define DEFAULT_BUFFER_FRAMES 512.0

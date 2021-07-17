@@ -3,7 +3,9 @@
    the license to this software and for a DISCLAIMER OF ALL WARRANTIES.
 */
 #include <Orand.h>
-#include <sys/time.h>
+// BGGx ww
+//#include <sys/time.h>
+#include <time.h> // MS version
 
 Orand::Orand() : rand_x(1)
 {
@@ -20,11 +22,17 @@ void Orand::seed(int seed)
 
 void Orand::timeseed()
 {
+	// BGGx ww
+	/*
 	struct timeval tv;
 	struct timezone tz;
 
 	gettimeofday(&tv,&tz);
 	seed(tv.tv_usec);
+	*/
+	time_t ltime;
+	time(&ltime);
+	seed(ltime);
 }
 
 float Orand::random()

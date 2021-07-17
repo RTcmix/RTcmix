@@ -63,7 +63,9 @@ int DUMP::init(double p[], int n_args)
 
 void DUMP::doupdate()
 {
-	double p[nargs];
+	// BGGx ww ARG!
+	//double p[nargs];
+	double *p = new double[nargs];
 	update(p, nargs);
 
 	if (nargs > 3) {
