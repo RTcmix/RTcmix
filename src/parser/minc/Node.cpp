@@ -914,15 +914,21 @@ Node *  NodeMember::doExct()
     const char *targetName = (structSymbol != NULL) ? structSymbol->name() : "temp lhs";
     TPRINT("NodeMember: attempting to access member '%s' on object '%s'\n", _memberName, targetName);
     if (child(0)->dataType() == MincStructType) {
-       Symbol *memberSymbol = ((MincStruct *) child(0)->value())->lookupMember(_memberName);
-       if (memberSymbol) {
-            setSymbol(memberSymbol);
-            /* also assign the symbol's value into tree's value field */
-            TPRINT("NodeMember: copying value from member symbol '%s' to us\n", _memberName);
-            copyValue(memberSymbol);
+        MincStruct *theStruct = (MincStruct *) child(0)->value();
+        if (theStruct) {
+           Symbol *memberSymbol = theStruct->lookupMember(_memberName);
+           if (memberSymbol) {
+                setSymbol(memberSymbol);
+                /* also assign the symbol's value into tree's value field */
+                TPRINT("NodeMember: copying value from member symbol '%s' to us\n", _memberName);
+                copyValue(memberSymbol);
+            }
+            else {
+                minc_die("struct variable '%s' has no member '%s'", targetName, _memberName);
+            }
         }
         else {
-            minc_die("struct variable '%s' has no member '%s'", targetName, _memberName);
+            minc_die("struct variable %s' is NULL", targetName);
         }
     }
     else {
