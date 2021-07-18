@@ -54,7 +54,6 @@ extern "C" {
 	__declspec(dllexport) void RTcmix_setPField(int inlet, float pval, int objno);
 	__declspec(dllexport) void pfield_set(int inlet, float pval);
 #ifdef MAXMSP
-	void RTcmix_setMSPState(const char *inSpec, void *inState);
 	void loadinst(char *dsoname);
 	void unloadinst();
 #endif

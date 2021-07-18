@@ -15,18 +15,23 @@ OBJECTS =  AudioDevice.o AudioIODevice.o AudioDeviceImpl.o \
 		   audio_dev_creator.o sndlibsupport.o
 
 ifeq ($(ARCH),LINUX)
-# Add this to enable the TestAudioDevice class
-	CXXFLAGS += -DTEST_AUDIO_DEVICE
-
-	OBJECTS +=  OSSAudioDevice.o SinglePortOSSAudioDevice.o \
+   ifeq ($(AUDIODRIVER), EMBEDDEDAUDIO)
+   		OBJECTS += EmbeddedAudioDevice.o
+   else ifeq ($(AUDIODRIVER), ALSA))
+		OBJECTS +=  OSSAudioDevice.o SinglePortOSSAudioDevice.o \
 			MultiPortOSSAudioDevice.o ALSAAudioDevice.o TestAudioDevice.o
+   else ifeq ($(AUDIODRIVER), OSS))
+		OBJECTS +=  OSSAudioDevice.o SinglePortOSSAudioDevice.o \
+			MultiPortOSSAudioDevice.o
+   endif
+# Add this to enable the TestAudioDevice class
+#		CXXFLAGS += -DTEST_AUDIO_DEVICE
+#		OBJECTS += TestAudioDevice.o
 endif
 
 ifeq ($(ARCH),MACOSX)
    ifeq ($(AUDIODRIVER), APPLE)
 		OBJECTS += AppleAudioDevice.o
-   else ifeq ($(AUDIODRIVER), MAXMSP)
-		OBJECTS += MSPAudioDevice.o
    else ifeq ($(AUDIODRIVER), EMBEDDEDAUDIO)
    		OBJECTS += EmbeddedAudioDevice.o
    endif
@@ -61,13 +66,7 @@ $(AUDIOLIB):	$(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(AUDIO_DEFINES) -c $< -o $@
 
 depend:
-ifeq ($(ARCH),SGI)
-# Note: -MM is a gcc extension. If no gcc, use -M.
-# Unfortunately, this doesn't work...   -JGG
-#	$(SHELL) -ec '$(CC) -M $(CFLAGS) $(SRCS) $(CPPSRCS)' > depend
-else
 	$(SHELL) -ec '$(CC) -MM $(CFLAGS) $(AUDIO_DEFINES) *.c *.cpp' > depend
-endif
 
 -include depend
 

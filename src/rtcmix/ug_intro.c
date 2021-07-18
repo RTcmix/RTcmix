@@ -122,10 +122,12 @@ ug_intro()
 	UG_INTRO("str_num",str_num); /* string,num,strin,num, etc print out */
 	UG_INTRO("get_spray",m_get_spray);
 	UG_INTRO("spray_init",m_spray_init);
-	UG_INTRO("pchmidi",m_pchmidi);
-	UG_INTRO("cpsmidi",m_cpsmidi);
-	UG_INTRO("octmidi",m_octmidi);
+	UG_INTRO("pchmidi", m_pchmidi);
 	UG_INTRO("midipch", m_midipch);
+	UG_INTRO("cpsmidi", m_cpsmidi);
+	UG_INTRO("midicps", m_midicps);
+	UG_INTRO("octmidi", m_octmidi);
+	UG_INTRO("midioct", m_midioct);
 	UG_INTRO("setline_size",m_setline_size);
 	UG_INTRO("setline",m_setline);
 	UG_INTRO("reset",m_reset);

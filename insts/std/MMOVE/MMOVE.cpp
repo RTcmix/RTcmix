@@ -38,14 +38,15 @@ static const double LocationUnset = -999999.999999;
 /* ------------------------------------------------------------ makeMOVE --- */
 Instrument *makeMMOVE()
 {
-   MOVE *inst;
+   MMOVE *inst;
 
-   inst = new MOVE();	// The class is called MOVE, but the inst is MMOVE
+   inst = new MMOVE();	// The class is called MOVE, but the inst is MMOVE
    inst->set_bus_config("MMOVE");
 
    return inst;
 }
 
+#ifndef EMBEDDED
 extern Instrument *makeRVB();	// From RVB.C
 
 /* ------------------------------------------------------------ rtprofile --- */
@@ -54,10 +55,11 @@ void rtprofile()
    RT_INTRO("MMOVE", makeMMOVE);
    RT_INTRO("RVB", makeRVB);
 }
+#endif
 
 // Move methods
 
-MOVE::MOVE()
+MMOVE::MMOVE()
 {
     R_old = -100000.0;
     T_old = 0.0;
@@ -71,7 +73,7 @@ MOVE::MOVE()
 	    oldOutlocs[n][o] = LocationUnset;	// to force update
 }
 
-MOVE::~MOVE()
+MMOVE::~MMOVE()
 {
     delete [] thetaloc;
     delete [] rholoc;
@@ -79,7 +81,7 @@ MOVE::~MOVE()
 
 #define MINBUFFERSIZE 64
 
-int MOVE::localInit(double *p, int n_args)
+int MMOVE::localInit(double *p, int n_args)
 {
     if (n_args < 6)
         return die(name(), "Wrong number of args.");
@@ -129,14 +131,14 @@ int MOVE::localInit(double *p, int n_args)
     return 0;
 }
 
-int MOVE::finishInit(double *ringdur)
+int MMOVE::finishInit(double *ringdur)
 {
     *ringdur = (float)m_tapsize / SR;	// max possible room delay
 	tapcount = updatePosition(0);
     return 0;
 }
 
-void MOVE::get_tap(int currentSamp, int chan, int path, int len)
+void MMOVE::get_tap(int currentSamp, int chan, int path, int len)
 {
    Vector *vec = &m_vectors[chan][path];
    const double outloc = (double) vec->outloc;
@@ -154,26 +156,41 @@ void MOVE::get_tap(int currentSamp, int chan, int path, int len)
    if (outTap < 0.0)
 	   outTap += m_tapsize;
    int out = 0;
-   
-   while (out < len)
-   {
-		if (outTap >= (double) m_tapsize)
-			outTap -= m_tapsize;   
-		int iouttap = (int) outTap;
-		int outTapPlusOne = int(outTap + 1.0);
-		if (outTapPlusOne >= m_tapsize)
-			outTapPlusOne -= m_tapsize;   
-		double frac = outTap - (double)iouttap;
-		Sig[out++] = tapdel[iouttap] + frac * (tapdel[outTapPlusOne] - tapdel[iouttap]);
-		outTap += incr;
-   }
+    int len1 = (m_tapsize - (outTap + 1.0)) / incr;     // boundary point before needing to wrap
+    int count = 0;
+    int sampsNeeded = len;
+    while (sampsNeeded > 0 && count++ < len1) {
+        const int iOuttap = (int) outTap;
+        const double frac = outTap - (double)iOuttap;
+        Sig[out++] = tapdel[iOuttap] + frac * (tapdel[iOuttap+1] - tapdel[iOuttap]);
+        outTap += incr;
+        --sampsNeeded;
+    }
+    while (sampsNeeded > 0 && outTap < (double) m_tapsize) {
+        const int iOuttap = (int) outTap;
+        const double frac = outTap - (double)iOuttap;
+        int outTapPlusOne = int(outTap + 1.0);
+        if (outTapPlusOne >= m_tapsize)
+            outTapPlusOne -= m_tapsize;
+        Sig[out++] = tapdel[iOuttap] + frac * (tapdel[outTapPlusOne] - tapdel[iOuttap]);
+        outTap += incr;
+        --sampsNeeded;
+    }
+    outTap -= m_tapsize;
+    while (sampsNeeded > 0) {
+        const int iOuttap = (int) outTap;
+        const double frac = outTap - (double)iOuttap;
+        Sig[out++] = tapdel[iOuttap] + frac * (tapdel[iOuttap+1] - tapdel[iOuttap]);
+        outTap += incr;
+        --sampsNeeded;
+    }
 }
 
 // This gets called every internal buffer's worth of samples.  The actual
 // update of source angles and delays only happens if we are due for an update
 // (based on the update count) and there has been a change of position
 
-int MOVE::updatePosition(int currentSamp)
+int MMOVE::updatePosition(int currentSamp)
 {
     double R = tablei(currentSamp, rholoc, tabr);
     double T = tablei(currentSamp, thetaloc, tabt);

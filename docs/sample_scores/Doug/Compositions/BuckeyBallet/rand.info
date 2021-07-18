@@ -1,0 +1,15 @@
+randseed = 1;
+
+argcount = n_arg();
+
+for (arg = 0; arg < argcount; arg = arg + 1) {
+	string thisarg;
+	thisarg = s_arg(arg);
+	print(thisarg);
+	if (thisarg == "s" && arg < argcount - 1) {
+		randseed = i_arg(arg+1);
+	}
+}
+
+srand(randseed);
+

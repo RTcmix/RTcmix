@@ -42,7 +42,8 @@ _makemonitor_usage()
 		"\nOR"
 		"\n   usage: pfield = makemonitor(pfield, \"display\"[, prefix[, units,]] [precision])"
 		"\n");
-	return NULL;
+    rtOptionalThrow(PARAM_ERROR);
+    return NULL;
 }
 
 Handle
@@ -64,7 +65,8 @@ makemonitor(const Arg args[], const int nargs)
 		else {
 			die("makemonitor", "Unsupported monitor type \"%s\".",
 								(const char *) args[1]);
-			return NULL;
+            rtOptionalThrow(PARAM_ERROR);
+            return NULL;
 		}
 	}
 	else

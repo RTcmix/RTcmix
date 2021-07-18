@@ -100,7 +100,7 @@ fplot(float p[], short n_args, double pp[])
 
 			snprintf(cmd, 255, "gnuplot %s &", cmd_file);
 			cmd[255] = 0;
-			system(cmd);
+			rt_system(cmd);
 		}
 		else
 			return die("fplot", "You must make a gen before plotting it!");

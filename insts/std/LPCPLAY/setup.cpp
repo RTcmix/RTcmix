@@ -17,6 +17,7 @@ static float hnfactor = 1.0;	// harmonic count multiplier, set via lpcstuff
 static float thresh, randamp, unvoiced_rate;
 static float risetime, decaytime;	// enveloping; set externally
 static bool  autoCorrect = false;	// whether to stabilize each frame as it runs
+static float sourceDuration = 0.0;  // duration of source used to create LPC frames (passed in)
 
 static const int maxDataSets = 64;
 
@@ -46,7 +47,8 @@ GetLPCStuff(double *pHiThresh,
 			float *pRandamp,
 			bool *pUnvoiced_rate,
 			float *pRisetime, float *pDecaytime,
-			float *pAmpcutoff)
+			float *pAmpcutoff,
+            float *pSourceDuration)
 {
 	// Set these here if not already set.
 	if (highthresh == THRESH_UNSET)
@@ -61,6 +63,7 @@ GetLPCStuff(double *pHiThresh,
 	*pRisetime = risetime;
 	*pDecaytime = decaytime;
 	*pAmpcutoff = cutoff;
+    *pSourceDuration = sourceDuration;
 	return 1;
 }
 					   
@@ -82,12 +85,12 @@ GetConfiguration(float *pMaxdev,
 double dataset(float *p, int n_args, double *pp)
 /* p1=dataset name, p2=npoles */
 {
-	int i, set;
+	int set;
 	char *name=DOUBLE_TO_STRING(pp[0]);
 
 	if (name == NULL) {
-		rterror("dataset", "NULL file name");
-		return -1;
+        ::rterror("dataset", "NULL file name");
+		return rtOptionalThrow(PARAM_ERROR);
 	}
 
 	// Search all open dataset slots for matching name
@@ -100,7 +103,7 @@ double dataset(float *p, int n_args, double *pp)
 	}
 	if (set >= maxDataSets) {
 		::rterror("dataset", "Maximum number of datasets exceeded");
-		return -1;
+		return rtOptionalThrow(SYSTEM_ERROR);
 	}
 
 	// OK, this is a new set that we will put in a new slot
@@ -115,7 +118,7 @@ double dataset(float *p, int n_args, double *pp)
 
 	DataSet *dataSet = new DataSet;
 	
-	int frms = dataSet->open(name, npolesGuess, RTcmix::sr());
+	int frms = (int) dataSet->open(name, npolesGuess, RTcmix::sr());
 	
 	if (frms < 0)
 	{
@@ -123,7 +126,7 @@ double dataset(float *p, int n_args, double *pp)
 			::rterror("dataset",
 				"For this file, you must specify the correct value for npoles in p[1].");
 		}
-		return -1;
+		return rtOptionalThrow(PARAM_ERROR);
 	}
 
 	::rtcmix_advise("dataset", "File has %d poles and %d frames.",
@@ -138,7 +141,7 @@ double dataset(float *p, int n_args, double *pp)
 }
 
 double lpcstuff(float *p, int n_args)
-/* p0=thresh, p1=random amp, p2=unvoiced rate p3= rise, p4= dec, p5=thresh cutof*/
+/* p0=thresh, p1=random amp, p2=unvoiced rate p3= rise, p4= dec, p5=thresh cutof, p6=source duration*/
 {
         risetime=.01; decaytime=.1;
         if(n_args>0) thresh=p[0];
@@ -147,12 +150,21 @@ double lpcstuff(float *p, int n_args)
         if(n_args>3) risetime=p[3];
         if(n_args>4) decaytime=p[4];
         if(n_args>5) cutoff = p[5]; else cutoff = 0;
-        ::rtcmix_advise("lpcstuff", "Adjusting settings for %s.",g_dataset_names[g_currentDataset]); 
+        if(n_args>6) sourceDuration = p[6]; else sourceDuration = 0.0;
+        ::rtcmix_advise("lpcstuff", "Adjusting settings for %s.",g_dataset_names[g_currentDataset]);
         ::rtcmix_advise("lpcstuff", "Thresh: %g  Randamp: %g  EnvRise: %g  EnvDecay: %g",
 			   thresh,randamp, risetime, decaytime);
 #ifdef WHEN_UNVOICED_RATE_WORKING
-        if(unvoiced_rate == 1)
-			::rtcmix_advise("lpcstuff", "Unvoiced frames played at normal rate.");
+        if(unvoiced_rate == 1) {
+            if (sourceDuration > 0.0)
+                ::rtcmix_advise("lpcstuff", "Unvoiced frames played at normal rate.");
+            else {
+                ::rterror("lpcstuff",
+                          "To play unvoiced frames at normal rate, you must specify the original source duration in p[6]");
+                unvoiced_rate = 0;
+                return rtOptionalThrow(PARAM_ERROR);
+            }
+        }
         else
 			::rtcmix_advise("lpcstuff", "Unvoiced frames played at same rate as voiced 'uns.");
 #else
@@ -216,7 +228,7 @@ set_thresh(float *p, int n_args)
 
 	if(p[1] <= p[0]) {
 		::rterror("set_thresh", "upper thresh must be >= lower!");
-		return -1;
+        return rtOptionalThrow(PARAM_ERROR);
 	}
 	lowthresh = p[0];
 	highthresh = p[1];

@@ -5,10 +5,10 @@
 
 #include "MBASE.h"
 
-class PLACE : public MBASE {
+class MPLACE : public MBASE {
 public:
-    PLACE();
-    virtual ~PLACE();
+    MPLACE();
+    virtual ~MPLACE();
 	virtual int configure();
 protected:
     virtual int localInit(double *, int);

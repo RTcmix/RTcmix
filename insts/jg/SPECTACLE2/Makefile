@@ -62,5 +62,6 @@ standalone_uninstall:
 clean:
 	$(RM) $(SPECTACLE2_OBJS) $(SPECTEQ2_OBJS) $(PROGS)
 
-cleanall: clean uninstall
+cleanall: clean
+	$(RM) depend
 

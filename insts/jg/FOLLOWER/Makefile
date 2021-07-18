@@ -92,5 +92,6 @@ standalone_uninstall:
 clean:
 	$(RM) $(FOLLOWER_OBJS) $(FOLLOWGATE_OBJS) $(FOLLOWBUTTER_OBJS) $(PROGS)
 
-cleanall: clean uninstall
+cleanall: clean
+	$(RM) depend
 

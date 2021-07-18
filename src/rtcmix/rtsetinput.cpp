@@ -129,6 +129,7 @@ RTcmix::attachInput(float start_time, InputState *input)
          input->fileOffset = inputFileTable[index].dataLocation()
                             + (inskip_frames * input->inputchans * datum_size);
          assert(input->fileOffset >= 0);
+		 input->inputNsamps = (int) (0.5 + inputFileTable[index].duration() * input->inputsr) - inskip_frames;
          if (start_time >= inputFileTable[index].duration())
 		    status = RT_INPUT_EOF;	// not fatal -- just produces warning
       }

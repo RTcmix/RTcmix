@@ -16,7 +16,7 @@ private:
 
    bool     usefilt, bypass;
    int      nargs, inchan, branch, type;
-   float    amp, gain, cutoff, pctleft, param;
+   float    amp, gain, cutoff, pctleft, param, wet;
    float    *in;
 	Odistort	*distort;
    Butter   *filt;
@@ -30,6 +30,7 @@ enum {
    kFiltCF = 1 << 6,
    kPan = 1 << 8,
    kBypass = 1 << 9,
-   kParam = 1 << 10
+   kParam = 1 << 10,
+   kWet = 1 << 11
 };
 

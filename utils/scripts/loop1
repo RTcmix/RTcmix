@@ -10,58 +10,71 @@ then
 	exit 1
 fi
 
-flags='-q'
+flags='-v 1'
+
+inpt=0
+outpt=0
+amp=1
+if [ $# -gt 2 ]
+then
+	inpt=$3
+fi
+if [ $# -gt 3 ]
+then
+	outpt=$4
+fi
+if [ $# -gt 4 ]
+then
+	amp=$5
+fi
 
 script='
-file = s_arg(0);
-rtinput(file);
-totdur = f_arg(1);
-inskip = 0.0;
-inend = DUR();
-amp = 1.0;
-nargs = n_arg();
-if (nargs > 2) {
-	inskip = f_arg(2);
-	if (nargs > 3) {
-		inend = f_arg(3);
-		if (inend > DUR()) {
-			print("<outpoint> must be within file duration. Correcting...");
-		}
-		if (nargs > 4) {
-			amp = f_arg(4);
-		}
-	}
-	if (inskip >= inend) {
-		print("<inpoint> must be earlier than <outpoint>.");
-		exit(1);
+totdur = $dur;
+fdur = filedur($sf);
+inskip = $inpt;
+if ($outpt == 0) {
+	inend = fdur;
+}
+else {
+	inend = $outpt;
+	if (inend > fdur) {
+		printf("<outpoint> must be within file duration. Correcting to %f.\n", fdur);
+		inend = fdur;
 	}
 }
-chans = CHANS();
-rtsetparams(SR(), chans);
+if (inskip >= inend) {
+	printf("<inpoint> must be earlier than <outpoint>.\n");
+	exit(1);
+}
+printf("Looping %s, dur: %f, seg: [%f,%f], amp: %f\n", $sf, totdur, inskip, inend, $amp);
+sr = filesr($sf);
+chans = filechans($sf);
+rtsetparams(sr, chans);
+rtinput($sf);
 segdur = inend - inskip;
-control_rate(5000);
+control_rate(10000);
 ramp = 0.01;
-env = maketable("line", 2000, 0,0, ramp,1, segdur-ramp,1, segdur,0);
+env = maketable("curve", 10000, 0,0,1, ramp,1,0, segdur-ramp,1,-1, segdur,0);
 for (st = 0; st < totdur; st += segdur) {
 	if (totdur - st < segdur) {
 		segdur = totdur - st;
 	}
 	if (chans == 1) {
-		MIX(st, inskip, segdur, mul(amp, env), 0);
+		MIX(st, inskip, segdur, mul($amp, env), 0);
 	}
 	if (chans == 2) {
-		MIX(st, inskip, segdur, mul(amp, env), 0, 1);
+		MIX(st, inskip, segdur, mul($amp, env), 0, 1);
 	}
 	if (chans == 4) {
-		MIX(st, inskip, segdur, mul(amp, env), 0, 1, 2, 3);
+		MIX(st, inskip, segdur, mul($amp, env), 0, 1, 2, 3);
 	}
 	if (chans == 6) {
-		MIX(st, inskip, segdur, mul(amp, env), 0, 1, 2, 3, 4, 5);
+		MIX(st, inskip, segdur, mul($amp, env), 0, 1, 2, 3, 4, 5);
 	}
 	if (chans == 8) {
-		MIX(st, inskip, segdur, mul(amp, env), 0, 1, 2, 3, 4, 5, 6, 7);
+		MIX(st, inskip, segdur, mul($amp, env), 0, 1, 2, 3, 4, 5, 6, 7);
 	}
 }
 '
-echo $script | CMIX $flags $*
+echo $script | CMIX $flags --sf=$1 --dur=$2 --inpt=$inpt --outpt=$outpt --amp=$amp
 

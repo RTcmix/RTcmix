@@ -7,9 +7,11 @@ HALFWAVE - specify two 1/2-waveforms, modulate the mid-crossover point
 VWAVE - "vector" wavetable synthesis with arbitrary # of wavetable
 GVERB - the "gigaverb" reverb instrument
 PFSCHED - an instrument for sending dynamic control information to notes
+LOCALIZE - an instrument for 3-D localization in environments like Unity
 
 
-Brad Garton, 7/2007
-and
+Brad Garton, 7/2007,
 Brad Garton, 1/2013
+and
+Brad Garton, 11/2017
 

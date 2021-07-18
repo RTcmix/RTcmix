@@ -8,7 +8,6 @@ load("VOCODE3")
 
 totdur = 60
 
-rtinput("/snd/japan1/tvnews.aif")
 rtinput("../../../snd/input.wav")
 
 // modulator

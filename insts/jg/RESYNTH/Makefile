@@ -49,7 +49,8 @@ standalone_uninstall:
 clean:
 	$(RM) -r $(OBJS) SDIFfile.o $(PROGS) test test.o test.dSYM RESYNTH.dSYM
 
-cleanall: clean uninstall
+cleanall: clean
+	$(RM) depend
 
 test: test.cpp Interpolator.h List.h
 	g++ -g -o test test.cpp

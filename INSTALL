@@ -12,28 +12,24 @@ ask for help.
       (or: gunzip -c RTcmix-[version].tar.gz | tar xf - )
 
 
-2. Look in RTcmix-[version]/insts.  If it contains "base", "std", "jg", "stk",
-   "bgg" and "vccm" directories, then you can skip this step.  If you have only
-   "base", then you need to download the instrument packages named above.
-   Unpack them into the "insts" directory of your RTcmix.
-
-
-3. cd into the top level of the RTcmix directory, and run the configure script:
+2. cd into the top level of the RTcmix directory, and run the configure script:
 
       ./configure
 
-   There are some options you might want to give this script.  Here's a
-   description of them.  If you already ran configure without the options,
+   There are some options you might want to give this script. Here's a
+   description of them. If you already ran configure without the options,
    it's okay to run it again with the options you want.
  
       --with-alsa       Use the ALSA driver, rather than OSS, on Linux
-                        (ignored on OS X)
+                        (ignored on macOS)
+      --with-fftw       Use the FFTW3 library, instead of the builtin FFT code
       --with-jack       Enable support for the JACK sound server
+      --with-multithread=THREADCOUNT  Build multi-threaded RTcmix on Linux or
+                        macOS (=THREADCOUNT optional, default=2)
+      --with-netplay    Enable code that lets you play RTcmix over a network
+      --with-osc        Compile support for receiving OSC (Open Sound Control)
       --with-perl       Build the Perl-enabled RTcmix (PCMIX)
       --with-python     Build the Python-enabled RTcmix (PYCMIX)
-      --with-netplay    Enable code that lets you play RTcmix over a network
-      --with-fftw       Use the FFTW3 library, instead of the builtin FFT code
-      --with-osc        Compile support for receiving OSC (Open Sound Control)
 
    If you have more than one version of Perl or Python on your system, you
    can tell RTcmix which one to use by giving its path with the option, e.g.:
@@ -44,50 +40,57 @@ ask for help.
 
       ./configure --with-alsa --with-perl --with-python
 
-   NOTE: If you're running a Mac OS X earlier than 10.3 and want to enable
+   NOTE: If you're running macOS earlier than 10.3 and want to enable
    Python, see the instructions below.
 
-   For additional configure options, run "./configure --help".  Some of the
+   For additional configure options, run "./configure --help". Some of the
    standard GNU options are not yet enabled for RTcmix.
 
    If you want to use the optional FFTW (Fastest Fourier Transform in the West)
    support, you must install the fftw3f library that is part of the fftw
-   package (see fftw.org).  Configure this package with "--enable-float"
-   before making and installing.  Configure RTcmix with "--with-fftw".
+   package (see fftw.org). Configure this package with "--enable-float"
+   before making and installing. Configure RTcmix with "--with-fftw".
 
    If you want to use the optional OSC (Open Sound Control) support, you must
-   install the liblo library <http://plugin.org.uk/liblo>.  On OS X, configure
+   install the liblo library <http://plugin.org.uk/liblo>. On macOS, configure
    this library with "--disable-ipv6".
 
    To build RTcmix with FFTW, Jack or liblo support, you must have the pkgconfig
-   package installed.  Any recent Linux distribution has this, but OS X doesn't.
-   Get it from Fink or DarwinPorts, or compile it from source:
-   <http://pkgconfig.freedesktop.org/releases/pkg-config-0.20.tar.gz>.
+   package installed. Any recent Linux distribution has this, but macOS doesn't.
+   Get it from Brew, Fink, or DarwinPorts, or compile it from source:
+   <https://pkgconfig.freedesktop.org/releases/>. If the configure script
+   complains about not finding the pkg-config script, try invoking the
+   configure script this way:
+
+      PKG_CONFIG=/usr/local/bin/pkg-config ./configure --with-[whatever] etc.
+
+   substituting the actual location of pkg-config on your system for the
+   "/usr/local/bin" above.
 
 
-4. There are some special settings that you can make in the "site.conf" file,
+3. There are some special settings that you can make in the "site.conf" file,
    though most people will never need to do this.
 
 
-5. Make the package.  Be sure you're still in the top RTcmix directory and type:
+4. Make the package. Be sure you're still in the top RTcmix directory and type:
 
       make
 
 
-6. If the package builds without errors, install it:
+5. If the package builds without errors, install it:
 
       make install
 
 
-7. Add the bin directory inside of the RTcmix directory to your $PATH.  For
+6. Add the bin directory inside of the RTcmix directory to your $PATH. For
    example, if you're using the bash shell, put something like this in .profile:
 
       PATH="/path/to/rtcmix/bin:$PATH"
       export PATH
 
 
-8. Try running some of the scores in docs/sample_scores.  To run any score,
-   type "CMIX < scorefile.sco".  If these seem to work, your installation
+7. Try running some of the scores in docs/sample_scores. To run any score,
+   type "CMIX < scorefile.sco". If these seem to work, your installation
    is probably ok.
 
 
@@ -106,7 +109,7 @@ Linux
 
    - Some Linux distributions (e.g., Ubuntu) do not include all the 
      development supporting files that you need to build RTcmix. You have
-     to install these packages before trying to build RTcmix.  Specifically,
+     to install these packages before trying to build RTcmix. Specifically,
      you need to install flex and bison, as well as the ALSA header files,
      and probably also the X11 header files. If you want to build the Python
      extension for RTcmix, you also must install python-dev and libssl-dev.
@@ -139,63 +142,57 @@ Linux
         device = "plughw"
 
 
-Mac OS X
---------
+macOS
+-----
 
-   - You must use OS X 10.1 or later, and you must have installed the
-     appropriate version of the Developer Tools (currently Xcode 4, available
-	  to anyone with an Apple ID at https://developer.apple.com/xcode).
+   - You must use macOS 10.10 or later, and you must have installed the
+     appropriate version of the Developer Tools (currently Xcode 12, available
+     to anyone with an Apple ID at https://developer.apple.com/xcode).
 
    - If you want to use gnuplot with the plottable (and older fplot) script
-	  functions, you have to install both the command-line gnuplot and the
-	  AquaTerm program.
+     functions, you have to install both the command-line gnuplot and the
+     AquaTerm program.
 
      First download the AquaTerm-1.1.1.dmg (or later) binary package from
      http://aquaterm.sourceforge.net, and install the package.
 
      Then install gnuplot. You can build this from source (v. 4.0 or later,
-	  see below). An alternative is to use one of several third-party package
-	  managers that install various Unix programs in Mac OS X. In all cases,
-	  you install the package manager, and then give some command to install
-	  gnuplot.
+     see below). An alternative is to use one of several third-party package
+     managers that install various Unix programs in macOS. In all cases,
+     you install the package manager, and then give some command to install
+     gnuplot.
 
-		a. Fink (http://www.finkproject.org) [fink install gnuplot]
+       a. Homebrew (https://brew.sh)
 
-		b. MacPorts (http://www.macports.org)
+       b. MacPorts (https://macports.org)
 
-		c. Homebrew (http://brew.sh)
+       c. Fink (http://finkproject.org) [fink install gnuplot]
 
      If you want or need to install gnuplot from source, get it here:
 
-			http://sourceforge.net/projects/gnuplot/files
+          http://sourceforge.net/projects/gnuplot/files
 
-     Unpack the tarball in /usr/local/src.  Build the package like this:
+     Unpack the tarball in /usr/local/src. Build the package like this:
 
         ./configure --without-x
         make
         sudo make install
 
-	  For any of these options, including the binaries, you'll probably have to
-	  add /usr/local/bin to your shell path. For bash, do something like this
+     For any of these options, including the binaries, you'll probably have to
+     add /usr/local/bin to your shell path. For bash, do something like this
      in your .profile:
 
         PATH=/usr/local/bin:${PATH}
         export PATH
 
-   - OS X 10.3 and later have a usable Python built in. (If you want to enable
-	  the Python front end, and you are running a version of Mac OS X earlier
-	  than 10.3, you will have to build Python from source, because the Python
-	  supplied with the Developer Tools CD is incomplete. See the instructions
-	  in RTcmix/src/parser/python/NOTES.)
+   - macOS versions up until 10.16 (Big Sur) include Python. When no longer
+     included, you'll have to install one. Homebrew (https://brew.sh) is a
+     good way to do that.
 
 
 SGI Irix
 --------
 
    - It's been a long time since any of us have compiled RTcmix on Irix, so
-     who knows whether it will work or even build.  Let us know what you find.
-
-
-
--JGG, 8/1/04; rev. for v4, 6/17/05
+     who knows whether it will work or even build. Let us know what you find.
 

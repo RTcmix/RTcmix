@@ -1,7 +1,6 @@
 include ../makefile.conf
 
-# This finds all dirs in this directory (except for CVS/).
-DIRS = `find . -mindepth 1 -maxdepth 1 -type d | sed -e '/CVS/d'`
+DIRS = 
 
 .PHONY: all progs imbed install uninstall clean cleanall
 
@@ -42,7 +41,12 @@ clean:
 		$(MAKE) $(MFLAGS) clean ); \
 	done
 
-cleanall: clean uninstall
+cleanall:
+	@for DIR in $(DIRS); \
+	do \
+	  ( cd $$DIR; echo "making cleanall in $$DIR..."; \
+		$(MAKE) $(MFLAGS) cleanall ); \
+	done
 
 distclean: cleanall
 	@for DIR in $(DIRS); \

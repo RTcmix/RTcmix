@@ -18,6 +18,10 @@ ifeq ($(ARCH), MACOSX)
    else
       CXXFLAGS += -DAPP_PATH=\"$(DESTDIR)/$(APP).app\"
    endif
+   APP_TARGET = Release
+   OSX_VERSION=`xcrun --show-sdk-version --sdk macosx`
+   SDKROOT = macosx${OSX_VERSION}
+   MACOSX_DEPLOYMENT_TARGET = ${OSX_VERSION}
 else
    OBJS += XMouse.o
    SRCS += XMouse.cpp
@@ -41,7 +45,7 @@ glue.o: depend glue.cpp RTMousePField.h
 
 .PHONY: $(APP)
 $(APP): 
-	cd $(APP); xcodebuild ARCHS="$(BUILD_ARCH)"
+	cd $(APP); xcodebuild ARCHS="$(BUILD_ARCH)" SDKROOT=${SDKROOT} MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET} -configuration ${APP_TARGET}
 
 $(TEST).o: depend $(TEST).cpp RTMousePField.h
 	$(CXX) $(CXXFLAGS) -c -o $(TEST).o $(TEST).cpp

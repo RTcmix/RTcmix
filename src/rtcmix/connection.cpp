@@ -19,7 +19,7 @@
 #include "DynamicLib.h"
 
 #if !defined(EMBEDDED) && !defined(SHAREDLIBDIR)
-#error "Compile flags are missing macro for SHAREDLIBDIR"
+#error "Compile flags are missing macro for SHAREDLIBDIR (IGNORE THIS FOR 'make depend')"
 #endif
 
 // =============================================================================
@@ -43,12 +43,14 @@ makeconnection(const Arg args[], const int nargs)
 	if (!args[0].isType(StringType)) {
 		die("makeconnection", "First argument must be a string giving "
 			"connection type, e.g. \"mouse\", \"midi\".");
+        rtOptionalThrow(PARAM_ERROR);
 		return NULL;
 	}
 
 	if (args[0] == "mouseX" || args[0] == "mouseY") {
 		die("makeconnection",
 			"New calling convention for mouse is (\"mouse\", \"X\", ...)");
+        rtOptionalThrow(PARAM_ERROR);
 		return NULL;
 	}
 
@@ -71,11 +73,13 @@ makeconnection(const Arg args[], const int nargs)
 		else {
 			die("makeconnection", "symbol lookup failed: %s\n", theDSO.error());
 			theDSO.unload();
+            rtOptionalThrow(SYSTEM_ERROR);
 			return NULL;
 		}
 	}
 	else {
 		die("makeconnection", "dso load failed: %s\n", theDSO.error());
+        rtOptionalThrow(SYSTEM_ERROR);
 		return NULL;
 	}
 

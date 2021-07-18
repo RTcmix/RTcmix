@@ -1,0 +1,50 @@
+# Utility function for tables
+
+kDefaultTableSize = 10000;
+
+handle makeline(list arglist)
+{
+	return maketable("line", "nonorm", kDefaultTableSize, arglist);
+}
+
+// arglist will be { time0, value0, time1, value1, ..., timeN, valueN }
+// converts to { value0, size * (time1-time0)/totaltime, value1, size * (time2-time1)/totaltime, ... }
+
+/*
+handle makeexp(list arglist)
+{
+	arglen = len(arglist);
+	tableargs = {};
+	totaltime = arglist[arglen-2];		// last time value
+	previoustime = arglist[0];			// initial time
+	tindex = 0;
+	tableargs[tindex] = arglist[1];		// initial value
+	for (n = 1; n < arglen-1; n += 2) {
+		tableargs[tindex+1] = kDefaultTableSize * (arglist[n+1] - previoustime)/totaltime;	// distance to next
+		tableargs[tindex+2] = 
+		previoustime = 
+	}
+	return maketable("expbrk", kDefaultTableSize, 0.05, 3096, 1, 5096, 0.01);
+}
+*/
+
+handle randtable(float minval, float maxval, float numPoints)
+{
+	list arglist;
+	float curtime;
+	curtime = 0;
+	for (points = 0; points < numPoints; points += 1) {
+		value = irand(minval, maxval);
+		arglist = arglist + { curtime, value };
+		curtime += irand(0, 10);
+	}
+	print(arglist);
+	table = maketable("line", "nonorm", 10000, arglist);
+	return table;
+}
+
+float sampleline(handle table, float percent)
+{
+	tablelength = tablelen(table)
+	return samptable(table, min(1.0, percent) * tablelength);
+}

@@ -41,6 +41,7 @@ static PField *_get_pfield(const Arg& arg)
 static PField *_modtable_usage(const char *msg)
 {
 	die(NULL, "Usage: %s", msg);
+    rtOptionalThrow(PARAM_ERROR);
 	return NULL;
 }
 
@@ -57,6 +58,7 @@ static Handle _modtable_usage()
 		"\nOR"
 		"\n   usage: " SHIFT_USAGE
 		"\n");
+    rtOptionalThrow(PARAM_ERROR);
 	return NULL;
 }
 

@@ -44,6 +44,7 @@ static PField *_get_pfield(const Arg& arg)
 static PField *_filter_usage(const char *msg)
 {
 	die(NULL, "Usage: %s", msg);
+    rtOptionalThrow(PARAM_ERROR);
 	return NULL;
 }
 

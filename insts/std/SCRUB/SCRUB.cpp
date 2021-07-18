@@ -167,10 +167,11 @@ int SCRUB::run()
 	
 	for (i = 0; i < frameCount; i++) {
 		if (--branch < 0) {
-			double 	p[6];
-			update(p, 6);
+			double 	p[9];
+			update(p, 8);
 			amp = p[3];
 			speed = p[4];
+            pctleft = p[8];
 			if (amptable) {
 #ifdef EMBEDDED
 				aamp = rtcmix_table(currentFrame(), amptable, tabs) * amp;
@@ -178,6 +179,9 @@ int SCRUB::run()
 				aamp = table(currentFrame(), amptable, tabs) * amp;
 #endif
 			}
+            else {
+                aamp = amp;
+            }
 			branch = skip;
 		}
 
@@ -333,7 +337,7 @@ int SCRUB::ReadRawFrames(int destframe, int nframes) {
 
 void SCRUB::RotateRawFrames(long frameshift) {
 	if (frameshift != 0) {
-		long byteshift = ((gkNrRawFrames - abs(frameshift)) * sizeof(float) * fChannels);
+		long byteshift = ((gkNrRawFrames - labs(frameshift)) * sizeof(float) * fChannels);
 		if (frameshift > 0) {
 			memmove(&pRawFrames[frameshift*fChannels], &pRawFrames[0], byteshift);
 			fFileChunkEndFrame = (fFileChunkEndFrame - frameshift) % fFrameCount;

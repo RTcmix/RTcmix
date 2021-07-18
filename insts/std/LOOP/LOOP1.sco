@@ -1,7 +1,20 @@
-rtsetparams(44100, 1, 1024);
-load("LOOP");
+rtsetparams(44100, 2, 256)
+load("LOOP")
+rtinput("../../../snd/nucular.wav", "mem");
 
-rtinput("../../../snd/input.wav")
+insk=0
+outsk=0
+amp = 1
+transp = 0.0;
+if (?transposition) {
+	transp = $transposition;
+}
 
-LOOP(st=0, inskip=0, 20.0, amp=10, transp=1.0, loopstart=19999, looplen=10000);
+nframes = trunc(44100 * DUR());
+inchan = 0
 
+lstart = makeconnection("mouse", "x", min=0, max=nframes-1, dflt=0, lag=90, "position", "samples", 2);
+
+llen = makeconnection("mouse", "y", min=16, max=nframes/8, dflt=4410, lag=90, "loop length", "samples", 2);
+
+LOOP(outsk,insk,120,amp,transp,lstart,llen,inchan,pan=0.5);

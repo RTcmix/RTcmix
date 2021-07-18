@@ -8,9 +8,11 @@
 #include <ugens.h>
 #include <stdio.h>
 
-#ifdef LINUX
+#ifdef OSS
 #include "SinglePortOSSAudioDevice.h"
 #include "MultiPortOSSAudioDevice.h"
+#endif
+#ifdef TEST_AUDIO_DEVICE
 #include "TestAudioDevice.h"
 #endif
 #ifdef ALSA
@@ -21,8 +23,6 @@
 #endif
 #ifdef EMBEDDEDAUDIO
 #include "EmbeddedAudioDevice.h"
-#elif defined(MSPAUDIO)
-#include "MSPAudioDevice.h"
 #endif
 #ifdef APPLEAUDIO
 #include "AppleAudioDevice.h"
@@ -53,20 +53,17 @@ static const AudioDevEntry s_AudioDevEntries[] = {
 #endif
 #ifdef EMBEDDEDAUDIO
 	{ &EmbeddedAudioDevice::recognize, &EmbeddedAudioDevice::create },
-#elif defined(MSPAUDIO)
-	{ &MSPAudioDevice::recognize, &MSPAudioDevice::create },
 #endif
 #ifdef APPLEAUDIO
 	{ &AppleAudioDevice::recognize, &AppleAudioDevice::create },
-//	{ &OSXAudioDevice::recognize, &OSXAudioDevice::create },
 #endif
 #ifdef ALSA
 	{ &ALSAAudioDevice::recognize, &ALSAAudioDevice::create },
 #endif
-#ifdef LINUX
 #ifdef TEST_AUDIO_DEVICE
 	{ &TestAudioDevice::recognize, &TestAudioDevice::create },
 #endif
+#ifdef OSS
 	{ &MultiPortOSSAudioDevice::recognize, &MultiPortOSSAudioDevice::create },
 	{ &SinglePortOSSAudioDevice::recognize, &SinglePortOSSAudioDevice::create },
 #endif

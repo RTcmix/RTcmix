@@ -224,7 +224,7 @@ RTcmixMain::run()
 {
    pthread_t   sockitThread;
    int retcode;
-   if (rtInteractive) {
+   if (interactive()) {
 		rtcmix_advise(NULL, "rtInteractive mode set\n");
 
 #ifndef EMBEDDED
@@ -291,9 +291,9 @@ RTcmixMain::run()
 //			 if (setpriority(PRIO_PROCESS, 0, priority) != 0)
 //			 	perror("setpriority");
 #endif
-		 rtcmix_debug(NULL, "RTcmixMain::run: calling runMainLoop()\n");
+		 rtcmix_debug(NULL, "RTcmixMain::run: calling runMainLoop()");
 		  if ((status = runMainLoop()) == 0) {
-			 rtcmix_debug(NULL, "RTcmixMain::run: calling waitForMainLoop()\n");
+			 rtcmix_debug(NULL, "RTcmixMain::run: calling waitForMainLoop()");
 			 waitForMainLoop();
 		  }
 	  }
@@ -310,6 +310,7 @@ RTcmixMain::run()
 #endif
 }
 
+/* ---------------------------------------------------- interrupt_handler --- */
 void
 RTcmixMain::interrupt_handler(int signo)
 {
@@ -317,6 +318,11 @@ RTcmixMain::interrupt_handler(int signo)
 	if (!interrupt_handler_called) {
 		interrupt_handler_called = 1;
 	   fprintf(stderr, "\n<<< Caught interrupt signal >>>\n");
+       if (audioDevice) {
+           fprintf(stderr, "flushing audio...\n");
+       }
+       // Notify rendering loop no matter what.
+       run_status = RT_SHUTDOWN;
 
 	   // Notify rendering loop.
 	   run_status = RT_SHUTDOWN;
@@ -329,6 +335,7 @@ RTcmixMain::interrupt_handler(int signo)
 	}
 }
 
+/* ------------------------------------------------------- signal_handler --- */
 void
 RTcmixMain::signal_handler(int signo)
 {
@@ -351,10 +358,12 @@ RTcmixMain::signal_handler(int signo)
 void
 RTcmixMain::set_sig_handlers()
 {
+   /* Call interrupt_handler on cntl-C. */
    if (signal(SIGINT, interrupt_handler) == SIG_ERR) {
       fprintf(stderr, "Error installing signal handler.\n");
       exit(1);
    }
+   /* Call signal_handler on segv, etc. */
    if (signal(SIGSEGV, signal_handler) == SIG_ERR) {
       fprintf(stderr, "Error installing signal handler.\n");
       exit(1);

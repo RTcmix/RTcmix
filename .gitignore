@@ -3,6 +3,7 @@
 *.o
 *.shlib
 *.dylib
+*.dsp_cache
 *.so
 *.status
 *.build
@@ -11,6 +12,7 @@
 *.swp
 *.orig
 *.test
+*.bak
 depend
 *.dSYM
 lib*.a
@@ -54,6 +56,7 @@ include/RawDataFile.h
 include/RefCounted.h
 include/rt.h
 include/RTcmix.h
+include/RTcmix_API.h
 include/rtcmix_types.h
 include/rtdefs.h
 include/sfheader.h
@@ -62,6 +65,8 @@ include/spray.h
 include/ug_intro.h
 
 # parser dir generated files
+src/parser/minc/minc.cpp
+src/parser/minc/minc.hpp
 src/parser/perl/RT/Makefile
 src/parser/perl/RT/RT.bs
 src/parser/perl/RT/RT.c
@@ -69,6 +74,7 @@ src/parser/perl/RT/blib/
 src/parser/perl/RT/pm_to_blib
 src/parser/python/funclist
 src/parser/python/rtcmixmodule.cpp
+
 
 # in-directory binaries
 src/control/midi/portmidi/pm_test/latency

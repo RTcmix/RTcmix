@@ -32,8 +32,6 @@ protected:
 inline IBusClass 
 BusSlot::Class() const
 {
-  if (this == 0)
-	return UNKNOWN;
   if (auxin_count > 0 && auxout_count > 0)
 	return AUX_TO_AUX;
   if (auxout_count > 0 && out_count > 0)

@@ -1,6 +1,97 @@
 NOTE: Not everything gets into this ChangeLog.  There may be minor bug
 fixes that we don't bother putting here.
 
+2020-11-09  Douglas Scott <netdscott-at-netscape.net>
+	* Major parser upgrade:  Supports embedding of structs, and maps in other structs.
+	* Added new 'mfunction' type to store custom functions - which can now be stored in structs, passed as function args.
+	* Boolean expressions may now be passed to a function without need for a double pair of parens
+	* Bumped to 5.0.0 due to new parser features which will not parse under earlier versions.
+
+2020-10-04  Douglas Scott <netdscott-at-netscape.net>
+	* Fixed some parser inconsistencies and crashes
+	* Bumped to 4.6.0 due to new OSC server support.
+
+2020-10-03  Douglas Scott <netdscott-at-netscape.net>
+	* Merged in Michel's OSC server work.
+	* Fixed hang-on-interrupt bug.
+
+2020-09-06  Douglas Scott <netdscott-at-netscape.net>
+	* Bumping to 4.5.0.
+
+2020-09-04  Douglas Scott <netdscott-at-netscape.net>
+	* Reworked parser to support both buffer-based and stream-based input for any build type.
+	* Exception throwing now used for standalone parser as well as embedded.
+	* Moved logic for exit-on-error to single location in newly-worked parser code.
+	* Repaired "sockit" communication system.  
+	* Added new "score" command to sockit to allow testing of networked score tranmission (in preparation for OSC). 
+
+2020-08-26  Douglas Scott <netdscott-at-netscape.net>
+	* Added new MinC 'map' type to parser, which accepts any MinC type as either a key or a value.
+
+2020-07-17  Douglas Scott <netdscott-at-netscape.net>
+	* Moved the PD source directly into main project.
+	* (Earlier this month) Reworked error handling for embedded versions.
+
+2020-02-03  Douglas Scott <netdscott-at-netscape.net>
+	* Added MIDI output support for MacOS (only, for now).  New "MIDI" instrument library containing 4 MIDI instruments.
+	* Lots of internal source cleanup: Removed RTBUFSAMPS and SR globals from RTcmix class and replaced with setter/getters.
+	* Reworked shutdown-on-signal behavior to allow last audio buffer to go out.
+	* Bumping to 4.4.1.
+
+2020-01-02  Douglas Scott <netdscott-at-netscape.net>
+	* Added MinC support for ++id and --id;
+
+2019-12-30  Douglas Scott <netdscott-at-netscape.net>
+	* Revision 4.4.  Added MinC support for struct definition and declaration.  Big reorg of parser/minc/ source.
+
+2019-10-06  John Gibson <johgibso-at-indiana.edu>
+	* Release v4.3.2, including recent changes for Mojave compilation
+	  affecting the MouseWindow and DisplayWindow apps, as well as
+	  PYCMIX.
+
+2019-06-15  Douglas Scott <netdscott-at-netscape.net>
+	* Fix MouseWindow and DisplayWindow macOS Makefiles so that they will build the projects for any OSX version
+
+2019-06-14  John Gibson <johgibso-at-indiana.edu>
+	* Fix MouseWindow and DisplayWindow macOS projects so that they build in Mojave
+
+2018-06-17  John Gibson <johgibso-at-indiana.edu>
+	* Added a method to Ooscili to let you set the starting phase in radians.
+	* BWESINE now does the right thing with the initial phase argument.
+
+2018-05-31  Douglas Scott  <netdscott-at-netscape.net>
+	* Rewrote thread farm to massively reduce contention between render threads.  Got 2x more notes!
+
+2018-05-27  John Gibson <johgibso-at-indiana.edu>
+	* Doug fixed a long-standing bug that caused a crash for scores that had more than 32767 references to a shared resource, such as a table.
+
+2017-11-05  Douglas Scott  <netdscott-at-netscape.net>
+	* Big Makefile revision, part 1: 'make' and 'make all' will exit on first error.
+	* 'make cleanall' removes depend files but no longer does uninstall target.
+
+2017-10-19  Douglas Scott  <netdscott-at-netscape.net>
+	* First big revision to support proper error handling in embedded
+	* configurations of RTcmix.
+
+2017-08-17  John Gibson <johgibso-at-indiana.edu>
+	* Add the missing pitch conversion functions for MIDI note numbers,
+	  both in their scalar form and for use in makeconverter. MIDI note
+	  numbers are no longer truncated from float to integer.
+	  NOTE NOTE NOTE -- This is an incompatible change for scores using
+	  these functions! If you rely on this truncation, you will have to
+	  add it in your score, using the trunc() function.
+
+2017-07-28  Douglas Scott  <netdscott-at-netscape.net>
+	* PVOC now has dynamic pfields for gain, interpolation, pitch, and oscillator synth threshold
+2017-07-02  Douglas Scott  <netdscott-at-netscape.net>
+	* Added ability for a score to determine if a named variable has been set on the command line (see 2016-08-03).
+	  For example, if arg --myseed=67 is used, ?myseed in the score will be set to 1.
+2017-04-26  Douglas Scott  <netdscott-at-netscape.net>
+    * Yet another subrevision.  Rewrote parser entirely in C++ and added try/throw/catch for embedded error handling.
+	  Fixed some long-standing issues with the MinC parser.
+	  Allowing MMOVE/DMOVE/MPLACE to be used in embedded in place of MOVE/PLACE based on site.conf.
+	  Began process of making all the public symbols in those two systems unique.
+
 2016-08-03	Douglas Scott  <netdscott-at-netscape.net>
 	* Added ability to pass in named variables via arguments:  --myseed=67 makes the variable $myseed available in Minc.
 

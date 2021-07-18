@@ -4,13 +4,13 @@ DIRS = MIX WAVETABLE CHAIN
 	
 
 .PHONY: all progs dsos standalone install dso_install standalone_install \
-uninstall dso_uninstall standalone_uninstall clean cleanall
+uninstall dso_uninstall standalone_uninstall clean cleanall $(DIRS)
 
-all:
-	@for DIR in $(DIRS); \
-	do \
-	  ( cd $$DIR; $(MAKE) $(MFLAGS) all; ) \
-	done
+all: $(DIRS)
+
+$(DIRS)::
+	@echo "making all in base..."
+	$(MAKE) $(MFLAGS) -C $@ all
 
 dsos: all
 

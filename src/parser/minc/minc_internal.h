@@ -11,7 +11,10 @@
 #include <maxdispargs.h>
 #include <ugens.h>
 #include "rename.h"
-#include "minc.h"
+#include "minc_defs.h"
+#include "utils.h"
+#include "RefCounted.h"
+#include <vector>
 
 #ifdef DEBUG
    #define DPRINT(...) rtcmix_print(__VA_ARGS__)
@@ -24,249 +27,172 @@
 #define MAXSTACK 15        /* depth of function call or list recursion */
 #define HASHSIZE 107       /* number of buckets in string table */
 
-typedef union {
-   int ival;
-   struct tree *trees;
-   char *str;
-} YYSTYPE;
-#define YYSTYPE_IS_DECLARED   /* keep bison from declaring YYSTYPE as an int */
+enum MincWarningLevel {
+    MincNoWarnings = 0,
+    MincNoDefaultedArgWarnings = 1,
+    MincAllWarnings = 2,
+    MincWarningsAsErrors = 5
+};
 
 typedef enum {
-   MincVoidType = 0,
-   MincFloatType,       /* a floating point number, either float or double */
-   MincStringType,
-   MincHandleType,
-   MincListType
-} MincDataType;
-
-//typedef float MincFloat;
-//#define EPSILON FLT_EPSILON
-
-typedef double MincFloat;
-#define EPSILON DBL_EPSILON
-
-typedef const char *MincString;
-typedef void *MincHandle;  // contents of this is opaque to Minc
-
-/* A MincList contains an array of MincListElem's, whose underlying data
-   type is flexible.  So a MincList is an array of arbitrarily mixed types
-   (any of the types represented in the MincDataType enum), and it can
-   support nested lists.
-*/
-
-typedef struct {
-   int len;                /* number of MincListElem's in <data> array */
-   int refcount;			/* reference count for contained data */
-   struct _minc_list_elem *data;
-} MincList;
-
-typedef union {
-   MincFloat number;
-   MincString string;
-   MincHandle handle;
-   MincList *list;
-} MincValue;
-
-typedef struct _minc_list_elem {
-   MincDataType type;
-   MincValue val;
-} MincListElem;
-
-struct tree;
-
-typedef struct symbol {       /* symbol table entries */
-   struct symbol *next;       /* next entry on hash chain */
-   int scope;
-   MincDataType type;         /* type of data represented by symbol */
-   const char *name;          /* symbol name */
-   MincValue v;
-   struct tree *tree;		  /* for symbols that are functions, function def */
-#ifdef NOTYET
-   short defined;             /* set when function defined */
-   short offset;              /* offset in activation frame */
-   Symbol *plist;             /* next parameter in parameter list */
-#endif
-} Symbol;
-
-
-/* intermediate tree representation */
-
-typedef enum {
-   NodeZero = 0,
-   NodeSeq,
-   NodeStore,
-   NodeList,
-   NodeListElem,
-   NodeEmptyListElem,
-   NodeSubscriptRead,
-   NodeSubscriptWrite,
-   NodeOpAssign,
-   NodeName,
-   NodeAutoName,
-   NodeConstf,
-   NodeString,
-   NodeFuncDef,
-   NodeArgList,
-   NodeArgListElem,
-   NodeRet,
-   NodeFuncSeq,
-   NodeCall,
-   NodeAnd,
-   NodeOr,
-   NodeOperator,
-   NodeUnaryOperator,
-   NodeNot,
-   NodeRelation,
-   NodeIf,
-   NodeWhile,
-   NodeFor,
-   NodeIfElse,
-   NodeDecl,
-   NodeFuncDecl,
-   NodeBlock,
-   NodeNoop
-} NodeKind;
-
-typedef enum {
-   OpZero = 0,
-   OpFree,
-   OpPlus,
-   OpMinus,
-   OpMul,
-   OpDiv,
-   OpMod,
-   OpPow,
-   OpNeg,
-   OpEqual,
-   OpNotEqual,
-   OpLess,
-   OpGreater,
-   OpLessEqual,
-   OpGreaterEqual
+	OpZero = 0,
+	OpFree,
+	OpPlus,
+	OpMinus,
+	OpMul,
+	OpDiv,
+	OpMod,
+	OpPow,
+	OpNeg,
+	OpEqual,
+	OpNotEqual,
+	OpLess,
+	OpGreater,
+	OpLessEqual,
+	OpGreaterEqual,
+    OpPlusPlus,
+    OpMinusMinus
 } OpKind;
-
-typedef struct tree {
-   NodeKind kind;
-   MincDataType type;
-   OpKind op;
-   union {
-      struct tree *child[4];
-      Symbol *symbol;
-      double number;
-      const char *string;
-   } u;
-   MincValue v;
-   const char *name;              /* used for function name, symbol name (for lookup) */
-	int lineno;				/* used for error statements */
-} *Tree;
-
 
 /* prototypes for internal Minc use */
 
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
+#define EPSILON DBL_EPSILON
 
-/* builtin.c */
-int call_builtin_function(const char *funcname, const MincListElem arglist[],
-   const int nargs, MincListElem *retval);
-
-/* callextfunc.c */
-int call_external_function(const char *funcname, const MincListElem arglist[],
-   const int nargs, MincListElem *return_value);
-MincHandle minc_binop_handle_float(const MincHandle handle, const MincFloat val, OpKind op);
-MincHandle minc_binop_float_handle(const MincFloat val, const MincHandle handle, OpKind op);
-MincHandle minc_binop_handles(const MincHandle handle1, const MincHandle handle2, OpKind op);
-
-/* error.c */
+/* error.cpp */
 void sys_error(const char *msg);
 void minc_advise(const char *msg, ...);
 void minc_warn(const char *msg, ...);
 void minc_die(const char *msg, ...);
 void minc_internal_error(const char *msg, ...);
-void yyerror(char *msg);
-#ifdef EMBEDDED
-// These are used to determine if parser should bail out (since it never exits)
-void set_rtcmix_error(int err);
-Bool was_rtcmix_error();
-#else
-#define set_rtcmix_error(x)
-#define was_rtcmix_error() 0
-#endif
+extern "C" void yyerror(const char *msg);
 
-/* sym.cpp */
-#ifdef __cplusplus
-extern "C" {
-#endif /* __cplusplus */
-void push_function_stack();
-void pop_function_stack();
-void push_scope();
-void pop_scope();
-int current_scope();
-void restore_scope(int scope);
-struct symbol *install(const char *name, Bool isGlobal);
-typedef enum LookupType { AnyLevel = 0, GlobalLevel = 1, ThisLevel = 2 } LookupType;
-struct symbol *lookup(const char *name, LookupType lookupType);
-struct symbol * lookupOrAutodeclare(const char *name, Bool inFunctionCall);
-char *strsave(char *str);
-char *emalloc(long nbytes);
-void efree(void *mem);
-void clear_elem(MincListElem *);
+class RTException
+{
+public:
+	RTException(const char *msg) : _mesg(msg) {}
+	const char *mesg() const { return _mesg; }
+private:
+	const char *_mesg;
+};
+
+class RTFatalException : public RTException
+{
+public:
+	RTFatalException(const char *msg) : RTException(msg) {}
+};
+
+// Such as attempting to multiply two MincStrings
+
+class UnsupportedOperationException : public RTException
+{
+public:
+	UnsupportedOperationException(const char *msg) : RTException(msg) {}
+};
+
+class InvalidOperatorException : public RTException
+{
+public:
+	InvalidOperatorException(const char *msg) : RTException(msg) {}
+};
+
+class NonmatchingTypeException : public RTException
+{
+public:
+	NonmatchingTypeException(const char *msg) : RTException(msg) {}
+};
+
+// Such as indexing a MincList with a MincString
+
+class InvalidTypeException : public RTFatalException
+{
+public:
+	InvalidTypeException(const char *msg) : RTFatalException(msg) {}
+};
+
+class UndeclaredVariableException : public RTFatalException
+{
+public:
+	UndeclaredVariableException(const char *msg) : RTFatalException(msg) {}
+};
+
+class ReclaredVariableException : public RTFatalException
+{
+public:
+	ReclaredVariableException(const char *msg) : RTFatalException(msg) {}
+};
+
+// Such as divide or mod by zero
+
+class ArithmaticException : public RTFatalException
+{
+public:
+    ArithmaticException(const char *msg) : RTFatalException(msg) {}
+};
+
+class MincObject
+{
+public:
+    void *operator new(size_t size);
+    void operator delete(void *);
+};
+
+typedef double MincFloat;
+typedef const char *MincString;
+typedef void *MincHandle;  // contents of this is opaque to Minc
+
+enum MincDataType {
+    MincVoidType        = 0,
+    MincFloatType       = 1,       /* a floating point number, either float or double */
+    MincStringType      = 2,
+    MincHandleType      = 4,
+    MincListType        = 8,
+    MincMapType         = 16,
+    MincStructType      = 32,
+    MincFunctionType    = 64   /* a callable object */
+};
+
+class MincValue;
+class MincList;
+class MincMap;
+class Node;
+
+union YYSTYPE {
+    int ival;
+    Node *node;
+    char *str;
+};
+#define YYSTYPE_IS_DECLARED   /* keep bison from declaring YYSTYPE as an int */
+
+enum ScopeLookupType { AnyLevel = 0, GlobalLevel = 1, ThisLevel = 2 };
+
+void printargs(const char *funcname, const Arg arglist[], const int nargs);
+
+char *strsave(const char *str);
+void clear_elem(MincValue *);
 void unref_value_list(MincValue *);
-void free_symbols();
-void dump_symbols();
-#ifdef __cplusplus
-}
-#endif /* __cplusplus */
 
-/* trees.c */
-Tree tnoop(void);
-Tree tseq(Tree e1, Tree e2);
-Tree top(OpKind op, Tree e1, Tree e2);
-Tree tunop(OpKind op, Tree e1);
-Tree tbuiltinfunc(OpKind op, Tree e1);
-Tree tstore(Tree e1, Tree e2);
-Tree tlist(Tree e1);
-Tree tlistelem(Tree e1, Tree args);
-Tree temptylistelem(void);
-Tree tsubscriptread(Tree e1, Tree e2);
-Tree tsubscriptwrite(Tree e1, Tree e2, Tree e3);
-Tree topassign(Tree e1, Tree e2, OpKind op);
-Tree tname(const char *symbolName);
-Tree tautoname(const char *symbolName);
-Tree tstring(const char *str);
-Tree tconstf(MincFloat num);
-Tree tcall(Tree args, const char *funcname);
-Tree tcand(Tree test1, Tree test2);
-Tree tcor(Tree test1, Tree test2);
-Tree tnot(Tree test1);
-Tree trel(OpKind op, Tree e1, Tree e2);
-Tree tif(Tree e1, Tree e2);
-Tree tifelse(Tree e1, Tree e2, Tree e3);
-Tree tfor(Tree e1, Tree e2, Tree e3, Tree e4);
-Tree twhile(Tree e1, Tree e2);
-Tree tfdef(Tree e1, Tree e2, Tree e3);
-Tree targlistelem(Tree e1, Tree e2);
-Tree targlist(Tree e1);
-Tree treturn(Tree e1);
-Tree tfuncseq(Tree e1, Tree e2);
-Tree tdecl(const char *name, MincDataType type);
-Tree tfdecl(const char *name, MincDataType type);
-Tree tblock(Tree e1);
-Tree exct(Tree tp);
-void free_tree(Tree tp);
-void print_tree(Tree tp);
-void print_symbol(struct symbol * s);
-void print_value(MincValue *v, MincDataType type);
-
-/* utils.c */
+/* utils.cpp */
 int is_float_list(const MincList *list);
 MincFloat *float_list_to_array(const MincList *list);
 MincList *array_to_float_list(const MincFloat *array, const int len);
 const char *MincTypeName(MincDataType type);
+void increment_score_line_offset(int offset);
+int get_score_line_offset();
 
-#ifdef __cplusplus
-} /* extern "C" */
-#endif
+int hash(const char *c);
+int cmp(MincFloat f1, MincFloat f2);
+
+char *emalloc(long nbytes);
+void efree(void *mem);
+
+inline void *	MincObject::operator new(size_t size)
+{
+	return emalloc(size);
+}
+
+inline void	MincObject::operator delete(void *ptr)
+{
+	efree(ptr);
+}
 
 #endif /* _MINC_INTERNAL_H_ */

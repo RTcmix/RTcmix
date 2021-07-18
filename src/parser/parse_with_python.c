@@ -97,6 +97,12 @@ parse_score(int argc, char *argv[], char **env)
 	return 0;
 }
 
+/* ------------------------------------------------------ parse_score_buffer --- */
+/* not used in python */
+int parse_score_buffer(const char *buffer, int buflen)
+{
+    return 0;
+}
 
 /* ------------------------------------------------------ use_script_file --- */
 /* Parse file <fname> instead of stdin. */

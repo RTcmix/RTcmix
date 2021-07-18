@@ -6,7 +6,7 @@
 #include <signal.h>
 
 extern "C" {
-#include "../../src/rtcmix/RTsockfuncs.h"
+#include <RTsockfuncs.h>
 }
 
 double irand(double low, double high)
@@ -68,10 +68,10 @@ main(int argc, char *argv[])
 		}
 	}
 
-	int pid = RTopensocket(0, "CMIX");
+	int pid = RTopensocket(0, "../../bin/CMIX");
 	if (pid < 0)
 		exit(1);
-	sleep(2);
+	sleep(1);
 
 	sprintf(name, "localhost");
 
@@ -82,8 +82,15 @@ main(int argc, char *argv[])
 	/* open up the socket */
 	theSock = RTsock(name, 0);
 
+    if (verbose) {
+        RTsendsock("print_on", theSock, 1, 6.0);
+    }
+    else {
+        RTsendsock("print_off", theSock, 0);
+    }
+	RTsendsock("rtsetparams", theSock, 3, 44100.0, 2.0, 512.0);
+
 	/* set up the instruments */
-	RTsendsock("rtsetparams", theSock, 3, 44100.0, 2.0, 256.0);
 	
 	RTsendsock("load", theSock, 1, "STRUM");
 	RTsendsock("load", theSock, 1, "TRANS");
@@ -91,7 +98,6 @@ main(int argc, char *argv[])
 	RTsendsock("rtinput", theSock, 1, "./sinetone.wav");
 
 	RTsendsock("setline", theSock, 8, 0., 0., 1., 1., 100., 1., 110., 0.);
-	RTsendsock(verbose ? "print_on" : "print_off", theSock, 0);
 
 	checkInterval = 1000000 / maxsleep;	// about once per second
 	checkCount = checkInterval;
@@ -117,7 +123,7 @@ main(int argc, char *argv[])
 				pval2 = irand(0.0, 1.0);			// pan
 				pval3 = irand(0.05, 0.5);			// dur	
 				RTsendsock("bus_config", theSock, 3, "TRANS3", "in0", "out0-1");
-				RTsendsock("TRANS3", theSock, 5, 0.0, 0.0, pval3, 0.04, pval, pval2);
+				RTsendsock("TRANS3", theSock, 5, 0.0, 0.0, pval3, 0.1, pval, pval2);
 				totalcmds += 2;
 				break;
 			case 2:
@@ -125,9 +131,9 @@ main(int argc, char *argv[])
 				RTsendsock("bus_config", theSock, 3, "STEREO", "aix0", "out0-1");
 				pval = irand(-0.04, 0.04);
 				pval3 = irand(0.05, 0.5);			// dur	
-				RTsendsock("TRANS", theSock, 5, 0.0, 0.0, pval3, 1.0, pval);
+				RTsendsock("TRANS", theSock, 5, 0.0, 0.0, pval3, 0.1, pval);
 				pval2 = irand(0.0, 1.0);
-				RTsendsock("STEREO", theSock, 5, 0.0, 0.0, pval3, 0.04, pval2);
+				RTsendsock("STEREO", theSock, 5, 0.0, 0.0, pval3, 0.1, pval2);
 				totalcmds += 2;
 				break;
 			default:
@@ -142,9 +148,9 @@ main(int argc, char *argv[])
 		  if (interrupted || (int) (sec - base_sec) > duration)
 		  {
 			if (interrupted)
-				printf("Shutting down...");
+				printf("Shutting down...\n");
 			else
-				printf("Reached %d seconds.  Shutting down...", duration);
+				printf("Reached %d seconds.  Shutting down...\n", duration);
 			fflush(stdout);
 			RTsendsock("RTcmix_off", theSock, 0);
 //			sleep(1);

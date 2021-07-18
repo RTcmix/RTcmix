@@ -121,5 +121,5 @@ long Odelay::resize(long thisLength)
 
 float Odelay::delay() const
 {
-	return (float) (_len > 0) ? abs((_outpoint - _inpoint) % _len) : 0;
+	return (float) (_len > 0) ? labs((_outpoint - _inpoint) % _len) : 0;
 }

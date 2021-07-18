@@ -6,20 +6,21 @@ MMODALBAR MSAXOFONY MSHAKERS MSITAR
 LIBDIRS = $(RTLIBDIRS)
 
 .PHONY: all stklib progs dsos standalone install dso_install standalone_install\
-uninstall dso_uninstall standalone_uninstall clean cleanall
+uninstall dso_uninstall standalone_uninstall clean cleanall $(LIBDIRS)
 
 all: stklib progs
 
-stklib:
-	@( cd stklib; echo "making in stklib..."; \
-	  $(MAKE) $(MFLAGS); echo "done in stklib" ); \
+.NOTPARALLEL::
 
-progs:
-	@for DIR in $(LIBDIRS); \
-	do \
-	  ( if test -d $$DIR; then cd $$DIR; echo "making in $$DIR..."; \
-	  $(MAKE) $(MFLAGS); echo "done in $$DIR"; fi ) \
-	done
+stklib:
+	@echo "making in stklib..."
+	$(MAKE) $(MFLAGS) -C $@
+	@echo "done in stklib"
+
+progs: $(LIBDIRS)
+
+$(LIBDIRS)::
+	$(MAKE) $(MFLAGS) -C $@
 
 dsos: all
 

@@ -3,19 +3,25 @@
 include ../makefile.conf
 
 DIRS = sndlib audio conf parser control rtcmix
+ifeq ($(OSC_SUPPORT), TRUE)
+	DIRS += osc
+endif
+
 
 ifeq ($(BUILDTYPE), MAXMSP)
 DIRS += maxmsp
 endif
 
 .PHONY: all progs dsos standalone install dso_install standalone_install \
-uninstall dso_uninstall standalone_uninstall clean cleanall
+uninstall dso_uninstall standalone_uninstall clean cleanall $(DIRS)
+
+.NOTPARALLEL::
 
 all: $(DIRS)
-	@for DIR in $(DIRS); \
-	do \
-	  ( cd $$DIR; $(MAKE) $(MFLAGS) all; ) \
-	done
+
+$(DIRS)::
+	echo "making all in src..."
+	$(MAKE) -C $@
 
 dsos: all
 

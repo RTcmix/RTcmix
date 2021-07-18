@@ -3,16 +3,15 @@ include package.conf
 LIBDIRS = MAXBANG MAXMESSAGE
 
 .PHONY: all progs dsos standalone install dso_install standalone_install \
-uninstall dso_uninstall standalone_uninstall clean cleanall
+uninstall dso_uninstall standalone_uninstall clean cleanall $(LIBDIRS)
 
 all: progs
 
-progs:
-	@for DIR in $(LIBDIRS); \
-	do \
-	  ( cd $$DIR; echo "making in $$DIR..."; \
-	  $(MAKE) $(MFLAGS); echo "done in $$DIR"; ) \
-	done
+progs: $(LIBDIRS)
+
+$(LIBDIRS)::
+	@echo "making all in maxmsp..."
+	$(MAKE) $(MFLAGS) -C $@ all
 
 dsos: all
 

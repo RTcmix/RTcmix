@@ -420,6 +420,59 @@ PyTypeObject OpaqueType = {
 
 // -- rtcmix module -----------------------------------------------------------
 
+static Arg * append_list_to_arglist(const char *funcname, PyObject *obj, Arg *inArgs, int *pNumArgs)
+{
+   // NB: length of new list is oldlen + inListLen - 1, because last slot
+   // is replaced by the first value of the array we're appending. Note that
+   // *pNumArgs is actually the length of old arg list - 1.
+   int inListLen;
+   if (PyTuple_Check(obj))
+      inListLen = PyTuple_Size(obj);
+   else
+      inListLen = PyList_Size(obj);
+   int oldNumArgs = *pNumArgs;
+   int n = 0, newNumArgs = oldNumArgs + inListLen;
+   // Create expanded array
+   Arg *newArgs = new Arg[newNumArgs];
+   if (newArgs == NULL)
+      return NULL;
+   if (inArgs != NULL) {
+      // Copy existing args to new array
+      for (; n < oldNumArgs; ++n) {
+         newArgs[n] = inArgs[n];
+      }
+   }
+   for (int i = 0; n < newNumArgs; ++i, ++n) {
+      PyObject *item;
+      if (PyTuple_Check(obj))
+         item = PyTuple_GET_ITEM(obj, i);
+      else
+         item = PyList_GET_ITEM(obj, i);
+      if (PyNumber_Check(item))
+         newArgs[n] = PyFloat_AsDouble(item);
+      else if (PyString_Check(item)) {
+// FIXME: leak -- not necessary, because StringPField dups string?
+         char *str = strdup(PyString_AS_STRING(obj));
+         newArgs[n] = str;
+      }
+      else if (OpaqueObject_Check(item)) {
+         Handle handle = HandleFromPyObject(item);
+         if (handle->type != PFieldType && handle->type != InstrumentPtrType) {
+            PyErr_SetString(PyExc_TypeError, "invalid RTcmix Handle type");
+            return NULL;
+         }
+         newArgs[n] = handle;
+      }
+      else {
+         PyErr_SetString(PyExc_TypeError, "cannot expand lists that include "
+            "anything other than numbers and strings.");
+         newArgs[n] = 0.0;
+      }
+   }
+   *pNumArgs = newNumArgs;
+   return newArgs;
+}
+
 static PyObject *_call_dispatch(PyObject *args, const char *funcname)
 {
    if (!PyTuple_Check(args))
@@ -432,6 +485,7 @@ static PyObject *_call_dispatch(PyObject *args, const char *funcname)
       PyErr_SetString(PyExc_TypeError, buf);
       return NULL;
    }
+   int numArgs = nargs;
 
    Arg *rtcmixargs = new Arg[nargs];
    if (rtcmixargs == NULL)
@@ -441,8 +495,8 @@ static PyObject *_call_dispatch(PyObject *args, const char *funcname)
       PyObject *obj = PyTuple_GET_ITEM(args, i);
       if (OpaqueObject_Check(obj)) {
          Handle handle = HandleFromPyObject(obj);
-         if (handle->type != PFieldType) {
-            PyErr_SetString(PyExc_TypeError, "can't use non-PField Handle");
+         if (handle->type != PFieldType && handle->type != InstrumentPtrType) {
+            PyErr_SetString(PyExc_TypeError, "invalid RTcmix Handle type");
             return NULL;
          }
          rtcmixargs[i] = handle;
@@ -467,51 +521,58 @@ static PyObject *_call_dispatch(PyObject *args, const char *funcname)
       // NOTE: The memory allocated below is free'd right after the dispatch
       // call, during "delete rtcmixargs" (in Arg::~Arg).  Hopefully, cmix
       // functions will _copy_ the array contents.
-      else if (PyTuple_Check(obj)) {
-         int len = PyTuple_Size(obj);
-         double *data = (double *) malloc(sizeof(double) * len);
-         if (data) {
-            for (int j = 0; j < len; j++) {
-               PyObject *item = PyTuple_GET_ITEM(obj, j);
-               if (PyNumber_Check(item))
-                  data[j] = PyFloat_AsDouble(item);
-               else
-                  data[j] = 0.0;
+      else if (PyTuple_Check(obj) || PyList_Check(obj)) {
+         // If tuple/list is final argument to function, treat its contents
+         // as additional function arguments.
+         if (i == nargs - 1) {
+            int argCount = i;
+            Arg *newargs = append_list_to_arglist(funcname, obj, rtcmixargs, &argCount);
+            if (newargs == NULL)
+               return NULL;
+            delete [] rtcmixargs;
+            rtcmixargs = newargs;
+            numArgs = argCount;
+         }
+         else {
+            int len;
+            if (PyTuple_Check(obj))
+               len = PyTuple_Size(obj);
+            else
+               len = PyList_Size(obj);
+            double *data = (double *) malloc(sizeof(double) * len);
+            if (data) {
+               if (PyTuple_Check(obj)) {
+                  for (int j = 0; j < len; j++) {
+                     PyObject *item = PyTuple_GET_ITEM(obj, j);
+                     if (PyNumber_Check(item))
+                        data[j] = PyFloat_AsDouble(item);
+                     else
+                        data[j] = 0.0;
+                  }
+               }
+               else {
+                  for (int j = 0; j < len; j++) {
+                     PyObject *item = PyList_GET_ITEM(obj, j);
+                     if (PyNumber_Check(item))
+                        data[j] = PyFloat_AsDouble(item);
+                     else
+                        data[j] = 0.0;
+                  }
+               }
             }
-            Array *array = (Array *) malloc(sizeof(Array));
-            if (array) {
-               array->data = data;
-               array->len = len;
-               rtcmixargs[i] = array;
+            if (data) {
+               Array *array = (Array *) malloc(sizeof(Array));
+               if (array) {
+                  array->data = data;
+                  array->len = len;
+                  rtcmixargs[i] = array;
+               }
+               else
+                  rtcmixargs[i] = 0.0;
             }
             else
                rtcmixargs[i] = 0.0;
          }
-         else
-            rtcmixargs[i] = 0.0;
-      }
-      else if (PyList_Check(obj)) {    // similar to tuples
-         int len = PyList_Size(obj);
-         double *data = (double *) malloc(sizeof(double) * len);
-         if (data) {
-            for (int j = 0; j < len; j++) {
-               PyObject *item = PyList_GET_ITEM(obj, j);
-               if (PyNumber_Check(item))
-                  data[j] = PyFloat_AsDouble(item);
-               else
-                  data[j] = 0.0;
-            }
-            Array *array = (Array *) malloc(sizeof(Array));
-            if (array) {
-               array->data = data;
-               array->len = len;
-               rtcmixargs[i] = array;
-            }
-            else
-               rtcmixargs[i] = 0.0;
-         }
-         else
-            rtcmixargs[i] = 0.0;
       }
       else {
          char buf[128];
@@ -522,7 +583,7 @@ static PyObject *_call_dispatch(PyObject *args, const char *funcname)
    }
 
    Arg retval;
-   int result = RTcmix::dispatch(funcname, rtcmixargs, nargs, &retval);
+   int result = RTcmix::dispatch(funcname, rtcmixargs, numArgs, &retval);
 
    delete [] rtcmixargs;
 

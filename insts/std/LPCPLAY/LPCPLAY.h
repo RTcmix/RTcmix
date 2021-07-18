@@ -39,11 +39,12 @@ protected:
 	// These are set and used within subclasses.
 	double	_amp;
 	int		_nPoles;
-	float	_frames, _frameno;
-	int		_frame1;
+	float	_lpcFrames, _lpcFrameno;
+	int		_lpcFrame1;
 	double	_ampmlt;
 	double	_warpFactor;
 	float	_cutoff;							// amp cutoff level
+    float   _sourceDuration;
 	double	_cf_fact, _bw_fact;
 	float	_rsnetc[9];
 	float	_coeffs[MAXPOLES+4];

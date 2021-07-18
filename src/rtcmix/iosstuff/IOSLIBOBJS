@@ -36,9 +36,9 @@ LIBGENOBJS = ../../genlib/allpass.o ../../genlib/allpole.o \
 ../../genlib/Ostrum.o ../../genlib/FFTReal.o
 LIBINLETOBJS = ../control/maxmsp/RTInletPField.o ../control/maxmsp/inletglue.o
 LIBPFBUSOBJS = ../control/pfbus/PFBusPField.o ../control/pfbus/pfbusglue.o
-LIBMINCOBJS = ../parser/minc/y.tab.o ../parser/minc/builtin.o \
-../parser/minc/callextfunc.o ../parser/minc/error.o ../parser/minc/sym.o \
-../parser/minc/trees.o ../parser/minc/utils.o ../parser/minc/handle.o
+LIBMINCOBJS = ../parser/minc/Node.o ../parser/minc/callextfunc.o \
+../parser/minc/minc.o ../parser/minc/error.o ../parser/minc/sym.o \
+../parser/minc/builtin.o ../parser/minc/handle.o ../parser/minc/utils.o
 LIBOBJOBJS = ../../insts/jg/objlib/JGFilter.o \
 ../../insts/jg/objlib/JGOnePole.o ../../insts/jg/objlib/TwoPole.o \
 ../../insts/jg/objlib/JGOneZero.o ../../insts/jg/objlib/TwoZero.o \

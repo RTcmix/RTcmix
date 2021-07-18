@@ -66,6 +66,7 @@ RTcmix::addfunc(
    this_node = new RTcmixFunction;
    if (this_node == NULL) {
       die("addfunc", "no memory for table of functions");
+      RTExit(MEMORY_ERROR);
       return;
    }
 
@@ -85,6 +86,7 @@ RTcmix::addfunc(
          break;
       default:
          die("addfunc", "invalid function return type");
+         RTExit(PARAM_ERROR);
          return;
    }
    this_node->return_type = (RTcmixType) return_type;
@@ -153,9 +155,9 @@ findfunc(RTcmixFunction *func_list, const char *func_label)
 }
 
 
-/* ------------------------------------------------------------ _printargs -- */
-static void
-_printargs(const char *funcname, const Arg arglist[], const int nargs)
+/* ------------------------------------------------------------ printargs -- */
+void
+RTcmix::printargs(const char *funcname, const Arg arglist[], const int nargs)
 {
    int i;
    Arg arg;
@@ -186,27 +188,31 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
       if (findAndLoadFunction(funcname) == 0) {
          func = ::findfunc(_func_list, funcname);
 		  if (func == NULL) {
-			   mixerr = MX_FNAME;
-               return -1;
+               return FUNCTION_NOT_FOUND;
 		  }
       }
       else {
 	  */ // BGGx ww
-		  mixerr = MX_FNAME;
-		  return -1;
+         return FUNCTION_NOT_FOUND;
 //	  }
 
    }
 
    /* function found, so call it */
+   /* DAS: in order to properly report errors within function that return doubles,
+      we have to use try/catch because there are no return values guaranteed not
+      to be legal.  For embedded platforms, those function must throw an integer
+      exception.
+    */
 
-   ::_printargs(funcname, arglist, nargs);
+   printargs(funcname, arglist, nargs);
 
    int status = 0;
 
-   switch (func->return_type) {
-   case DoubleType:
-      if (func->legacy) {
+    switch (func->return_type) {
+    case DoubleType:
+    try {
+        if (func->legacy) {
          /* for old (float p[], int nargs, double pp[]) signature */
          #include <maxdispargs.h>
          float p[MAXDISPARGS];
@@ -222,7 +228,8 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
                pp[i] = STRING_TO_DOUBLE(theArg);
 			   break;
             default:
-               return die(NULL, "%s: arguments must be numbers or strings.", funcname);
+                die(NULL, "%s: arguments must be numbers or strings.", funcname);
+                return PARAM_ERROR;
             }
          }
          /* some functions rely on zero contents of args > nargs */
@@ -236,33 +243,55 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
       else
          *retval = (double) (*(func->func_ptr.number_return))
                                                       (arglist, nargs);
-      break;
+    }
+    catch (int err) {
+        rtcmix_debug("checkfunc", "Caught exception %d", (int)err);
+        status = err;
+    }
+    catch (RTCmixStatus rtstatus) {
+        rtcmix_debug("checkfunc", "Caught exception RTCmixStatus %d", (int)rtstatus);
+        status = (int)rtstatus;
+    }
+    break;
    case HandleType:
-	  {
-      Handle retHandle = (Handle) (*(func->func_ptr.handle_return))
-                                                      (arglist, nargs);
-	  if (retHandle == NULL) {
-		  status = -1;
-		  mixerr = MX_FAIL;
+	  try {
+          Handle retHandle = (Handle) (*(func->func_ptr.handle_return))
+                                                          (arglist, nargs);
+          if (retHandle == NULL) {
+              status = SYSTEM_ERROR;
+          }
+          *retval = retHandle;
 	  }
-	  *retval = retHandle;
-	  }
+      catch (int err) {
+          status = err;
+      }
+      catch (RTCmixStatus rtstatus) {
+          status = (int)rtstatus;
+      }
       break;
    case StringType:
-	  {
-      const char *retString = (const char *) (*(func->func_ptr.string_return))
-                                                      (arglist, nargs);
-	  if (retString == NULL) {
-		  status = -1;
-		  mixerr = MX_FAIL;
+	  try {
+          const char *retString = (const char *) (*(func->func_ptr.string_return))
+                                                          (arglist, nargs);
+          if (retString == NULL) {
+              status = SYSTEM_ERROR;
+          }
+          *retval = retString;
 	  }
-	  *retval = retString;
-	  }
+      catch (int err) {
+          rtcmix_debug("checkfunc", "Caught exception %d", (int)err);
+          *retval = (char *) NULL;
+          status = err;
+      }
+      catch (RTCmixStatus rtstatus) {
+          rtcmix_debug("checkfunc", "Caught exception RTCmixStatus %d", (int)rtstatus);
+          *retval = (char *) NULL;
+          status = (int)rtstatus;
+      }
       break;
    default:
 	  die(NULL, "%s: unhandled return type: %d", funcname, (int)func->return_type);
-	  status = -1;
-	  mixerr = MX_FAIL;
+	  status = SYSTEM_ERROR;
       break;
    }
 
@@ -273,7 +302,7 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
 // for a given function.
 
 FunctionEntry::FunctionEntry(const char *fname, const char *dso_path)
-// BGGx ww changed strdup to _strdupS
+// BGGx ww changed strdup to _strdup
 	: funcName(_strdup(fname)), dsoPath(_strdup(dso_path)), next(NULL)
 {
 }
@@ -321,7 +350,7 @@ RTcmix::findAndLoadFunction(const char *funcname)
 		char fullDSOPath[128];
 		float p[1];
 		double pp[1];
-		sprintf(fullDSOPath, "%s.so", path);
+		snprintf(fullDSOPath, 128, "%s.so", path);
 		p[0] = 0;
 		pp[0] = STRING_TO_DOUBLE(fullDSOPath);
 //        RTPrintf("findAndLoadFunction: calling load() on '%s' for function '%s'\n", fullDSOPath, funcname);
@@ -356,7 +385,7 @@ RTcmix::registerFunction(const char *funcName, const char *dsoPath)
 	else {
 		rtcmix_warn("RTcmix::registerFunction",
 			  "'%s' already registered for DSO '%s'", funcName, path);
-		return -1;
+		return SYSTEM_ERROR;
 	}
 }
 
@@ -398,7 +427,7 @@ RTcmix::registerDSOs(const char *pathList)
 			while ((entry = readdir(dsoDir)) != NULL) {
 				if (strncmp(entry->d_name, "lib", 3) == 0) {
 					char fullPath[1024];
-					sprintf(fullPath, "%s/%s", path, entry->d_name);
+					snprintf(fullPath, 1024, "%s/%s", path, entry->d_name);
 					DynamicLib dso;
 					if (dso.load(fullPath) == 0) {
 						RegisterFunction registerMe = NULL;

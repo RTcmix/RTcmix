@@ -86,12 +86,12 @@ static const char *_table_names[] = {
 
 PFSCHED::PFSCHED() : Instrument()
 {
-	DPRINT("PFSCHED (this = %p)", this);
+	DPRINT("PFSCHED (this = %p)\n", this);
 }
 
 PFSCHED::~PFSCHED()
 {
-	DPRINT("~PFSCHED (this = %p)", this);
+	DPRINT("~PFSCHED (this = %p)\n", this);
 }
 
 int PFSCHED::init(double p[], int n_args)

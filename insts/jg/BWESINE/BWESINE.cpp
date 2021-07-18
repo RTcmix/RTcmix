@@ -6,15 +6,13 @@
       vol. 50, no. 11, November 2002.
    This allows us to resynthesize sound models written by Loris.
 
-   NB: The phase pfield doesn't work yet.
-
    p0 = output start time
    p1 = duration
    p2 = amplitude multiplier
    p3 = freq (in Hz only)
-   p4 = bandwidth
+   p4 = bandwidth (0-1)
    p5 = starting phase (radians)
-   p6 = pan (in percent-to-left format) [optional, default is .5]
+   p6 = pan (in percent-to-left format)
    p7 = wavetable
 
    p2 (amp), p3 (freq), p4 (bandwidth), and p5 (pan) can receive updates from
@@ -36,23 +34,27 @@
 #include <rt.h>
 #include <rtdefs.h>
 
+const double seed = 1.0;
+const double mean = 0.0;
+const double stddev = 1.0;
+
 BweNoise::BweNoise()
+	: _rgen(seed),
+	  _dist(mean, stddev)
 {
-	_rand = new Orand();
 	for (int i = 0; i < 4; i++)
 		_xv[i] = _yv[i] = 0.0;
 }
 
 BweNoise::~BweNoise()
 {
-	delete _rand;
 }
 
 const double kGain = 4.663939207e+04;
 
 float BweNoise::next()
 {
-	double x = _rand->rand();
+	double x = _dist(_rgen);  // return value from normal (Gaussian) distribution
 
 	// Chebyshev 3rd-order lowpass, cf: 500 Hz, ripple: -1 dB, srate: 44100
 	// Specified at, and with code adapted from:
@@ -108,6 +110,8 @@ int BWESINE::init(double p[], int n_args)
 
 	_noi = new BweNoise();
 	_osc = new Ooscili(SR, 1, wavetable, tablelen);
+	if (initPhase != 0.0)
+		_osc->setPhaseRadians(initPhase);
 
 	return nSamps();
 }
@@ -127,6 +131,10 @@ void BWESINE::doupdate()
 	_amp = p[2] * kNormalizer;
 	_osc->setfreq(p[3]);
 	_bandwidth = p[4];
+	if (_bandwidth > 1.0)
+		_bandwidth = 1.0;
+	else if (_bandwidth < 0.0)
+		_bandwidth = 0.0;
 	_pan = p[6];
 }
 
@@ -149,7 +157,6 @@ int BWESINE::run()
 			amp *= a;
 		}
 		out[0] = _osc->next() * amp * kDeNormalizer;
-//printf("phase: %f\n", _osc->getphase());
 
 		if (outputChannels() == 2) {
 			out[1] = out[0] * (1.0 - _pan);

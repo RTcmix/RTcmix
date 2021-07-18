@@ -116,7 +116,7 @@ void process_midi(PtTimestamp timestamp, void *userData)
 										((data2 << 7) + data1) - 8192, data1, data2);
 					break;
 				default:
-					printf("0x%.2x, %ld, %ld\n", (u_char) status, data1, data2);
+					printf("0x%.2x, %ld, %ld\n", (char) status, data1, data2);
 					break;
 			}
 			fflush(stdout);

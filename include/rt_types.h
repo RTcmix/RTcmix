@@ -23,10 +23,14 @@ typedef BUFTYPE *BufPtr;
 #define FRAMETYPE long long
 
 /* This should probably go someplace else in this file? */
+#ifndef NO
 typedef enum {
   NO = 0,
   YES
 } Bool;
+#else
+typedef Boolean Bool;
+#endif
 
 #ifndef PI
 #define      PI     3.141592654
@@ -44,13 +48,11 @@ typedef enum {
 
 #ifdef MULTI_THREAD
 
-#ifdef MACOSX
-
 #ifdef MAXMSP
 
-#error Multi-threaded support not yet available for MAX/MSP
+#error Multi-threaded support not yet available for this configuration
 
-#else
+#elif defined(MACOSX)
 
 #include <libkern/OSAtomic.h>
 
@@ -66,7 +68,6 @@ public:
     int operator = (int rhs) { return (val = rhs); }
     
 };
-#endif	// !MAXMSP
 
 #elif defined(LINUX)
 

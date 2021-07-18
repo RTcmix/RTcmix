@@ -324,8 +324,10 @@ Instrument *makeGRANULATE()
    return inst;
 }
 
+#ifndef EMBEDDED
 void rtprofile()
 {
    RT_INTRO("GRANULATE", makeGRANULATE);
 }
+#endif
 

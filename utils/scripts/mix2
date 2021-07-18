@@ -12,46 +12,46 @@ then
 	exit 1
 fi
 
-flags='-q'
+flags='-v 1'
+
+if [ $# -eq 4 ]
+then
+	sf1=$1
+	insk1=0
+	amp1=$2
+	sf2=$3
+	insk2=0
+	amp2=$4
+elif [ $# -eq 6 ]
+then
+	sf1=$1
+	insk1=$2
+	amp1=$3
+	sf2=$4
+	insk2=$5
+	amp2=$6
+fi
 
 script='
-if (n_arg() == 6) {
-	file1 = s_arg(0);
-	inskip1 = f_arg(1);
-	amp1 = f_arg(2);
-	file2 = s_arg(3);
-	inskip2 = f_arg(4);
-	amp2 = f_arg(5);
-}
-else {
-	file1 = s_arg(0);
-	inskip1 = 0;
-	amp1 = f_arg(1);
-	file2 = s_arg(2);
-	inskip2 = 0;
-	amp2 = f_arg(3);
-}
-rtinput(file1);
-chans1 = CHANS();
-sr1 = SR();
-rtinput(file2);
-chans2 = CHANS();
-sr2 = SR();
+chans1 = filechans($sf1);
+sr1 = filesr($sf1);
+chans2 = filechans($sf2);
+sr2 = filesr($sf2);
 if (sr1 != sr2) {
-	print("File sampling rates must be the same.");
+	printf("File sampling rates must be the same.\n");
 	exit(1);
 }
 if (chans1 > 8 || chans2 > 8) {
-	print("Input files can have no more than 8 channels.");
+	printf("Input files can have no more than 8 channels.\n");
 	exit(1);
 }
 rtsetparams(sr1, max(chans1, chans2));
-rtinput(file1);
-dur = DUR() - inskip1;
-MIX(0, inskip1, dur, amp1, 0, 1, 2, 3, 4, 5, 6, 7);
-rtinput(file2);
-dur = DUR() - inskip2;
-MIX(0, inskip2, dur, amp2, 0, 1, 2, 3, 4, 5, 6, 7);
+rtinput($sf1);
+dur = DUR() - $insk1;
+MIX(0, $insk1, dur, $amp1, 0, 1, 2, 3, 4, 5, 6, 7);
+rtinput($sf2);
+dur = DUR() - $insk2;
+MIX(0, $insk1, dur, $amp2, 0, 1, 2, 3, 4, 5, 6, 7);
 '
-echo $script | CMIX $flags $*
+echo $script | CMIX $flags --sf1=$sf1 --insk1=$insk1 --amp1=$amp1 --sf2=$sf2 --insk2=$insk2 --amp2=$amp2
 

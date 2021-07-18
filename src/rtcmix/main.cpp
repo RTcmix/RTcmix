@@ -109,6 +109,11 @@ float gInletValues[MAX_INLETS];	 // used by RTInlinePField.cpp
 #include <wmmcontext.h>
 wmmcontext theContext[TOTOBJS];
 
+void RTcmix_setPrintLevel(int level)
+{
+	Option::print(level);
+}
+
 /* ----------------------------------------------------------- RTcmix_init --- */
 
 // BGGx -- added objnos
@@ -425,8 +430,7 @@ int RTcmix_setAudioBufferFormat(RTcmix_AudioFormat format, int nchans, int objno
 			rtcmix_fmt |= MUS_NORMALIZED;
 			break;
 		default:
-			rterror("RTcmix_setAudioBufferFormat", "Unknown format");
-			return -1;
+			return die("RTcmix_setAudioBufferFormat", "Unknown format");
 	}
 	// For now, only interleaved audio is allowed.
 	rtcmix_fmt |= MUS_INTERLEAVED;
@@ -493,7 +497,7 @@ void RTcmix_setPField(int inlet, float pval, int objno)
 int RTcmix_setInputBuffer(char *bufname, float *bufstart, int nframes, int nchans, int modtime, int objno)
 {
 // THIS SHOULD BE HANDLED VIA THE PUBLIC FUNCTION
-#if defined(MAXMSP)  || defined(IOS)
+#if defined(MAXMSP) || defined(PD) || defined(IOS)
 	float bufferGainScaling = 32767.0f;
 #else
 	float bufferGainScaling = 1.0f;

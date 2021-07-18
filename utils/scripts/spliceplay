@@ -11,61 +11,61 @@ then
    exit 1
 fi
 
-flags='-q'
+flags='-v 1'
+
+sf=$1
+shift
 
 script='
-ramplen = .002;
-infile = s_arg(0);
-numargs = n_arg() - 1;
+ramplen = 0.002;
 i = 0;
-for (arg = 1; arg <= numargs; arg = arg + 2) {
+args = {};
+for (arg = 0; arg < n_arg(); arg += 2) {
    in = f_arg(arg);
-   if (arg < numargs) {
+   if (arg < n_arg() - 1) {
       out = f_arg(arg + 1);
       if (out <= in) {
-         str_num("out time (", out, ") must be greater than in time (", in, ")");
+         printf("out time (%f) must be greater than in time (%f).\n", out, in);
          exit(1);
       }
    }
    else {
-      out = -1
+      out = -1;
    }
-   put_array(1, i, in);
-   put_array(1, i + 1, out);
-   i = i + 2;
+	args[i] = in;
+	args[i + 1] = out;
+   i += 2;
 }
-num_segments = i / 2;
-rtsetparams(44100, 2);
+numsegs = len(args) / 2;
+sr = filesr($sf);
+chans = filechans($sf);
+rtsetparams(sr, 2);
 load("STEREO");
-rtinput(infile);
-chans = CHANS();
+rtinput($sf);
 sfdur = DUR();
-outskip = 0;
 amp = 1;
-setline_size(20000);
-reset(20000);
-index = 0;
-for (seg = 0; seg < num_segments; seg = seg + 1) {
-   inskip = get_array(1, index);
-   endin = get_array(1, index + 1);
+control_rate(20000);
+outskip = 0;
+i = 0;
+for (seg = 0; seg < numsegs; seg += 1) {
+   inskip = args[i];
+   endin = args[i + 1];
    if (endin == -1) {
-      dur = sfdur - inskip
+      dur = sfdur - inskip;
    }
    else {
-      dur = endin - inskip
+      dur = endin - inskip;
    }
-   setline(0,0, ramplen,1, dur-ramplen,1, dur,0);
+   env = maketable("line", 20000, 0,0, ramplen,1, dur-ramplen,1, dur,0);
    if (chans == 1) {
-      STEREO(outskip, inskip, dur, amp, .5)
+      STEREO(outskip, inskip, dur, mul(amp, env), 0.5)
    }
    else {
-      STEREO(outskip, inskip, dur, amp, 1, 0)
+      STEREO(outskip, inskip, dur, mul(amp, env), 1, 0)
    }
-   outskip = outskip + dur;
-   index = index + 2;
+   outskip += dur;
+   i += 2;
 }
 '
-echo $script | CMIX $flags $*
+echo $script | CMIX $flags --sf=$sf $*
 
-# NB: it wasn't possible to use '*' in the script, because bash expands
-# this (to list of file names) even if single-quoted!

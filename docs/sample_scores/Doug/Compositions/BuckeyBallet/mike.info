@@ -1,0 +1,4 @@
+load("DMOVE");
+mike_dist = 4;
+mikes(45.0, 0.5);
+threshold(0.001);

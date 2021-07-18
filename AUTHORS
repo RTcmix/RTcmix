@@ -7,7 +7,7 @@ The RTcmix Development Team (in alphabetical order)
 
 Brad Garton       <garton-at-columbia.edu>
 John Gibson       <johgibso-at-indiana.edu>
-Doug Scott        <dscott-at-netscape.net>
+Doug Scott        <netdscott-at-netscape.net>
 David Topper      <topper-at-virginia.edu>
 
 with
@@ -17,13 +17,14 @@ R. Luke DuBois    <luke-at-columbia.edu>
 Mara Helmuth      <mara.helmuth-at-uc.edu>
 Joel Matthys      <jwmatthys-at-gmail.com>
 John Rhoads       <rhoads-at-virginia.edu>
+Neil Thornock     <neilthornock-at-gmail.com>
 
 
-Thanks to Bill Schottstaedt for his sndlib sound library.
-(http://ccrma-www.stanford.edu/CCRMA/Software/sndlib)
+Thanks to Bill Schottstaedt for his sndlib sound library
+(http://ccrma.stanford.edu/software/snd/sndlib).
 
-Thanks to Julius O. Smith for his resample program.
-(http://www-ccrma.stanford.edu/~jos/resample/index.html)
+Thanks to Julius O. Smith for his resample program
+(http://ccrma.stanford.edu/~jos/resample).
 
 Thanks to Laurent de Soras <http://ldesoras.free.fr> for his
 FFTReal class, which is our default FFT for the Offt object.
@@ -37,8 +38,8 @@ and by a few instruments in the insts/jg directory.  Thanks
 also to George Essl for the BandedWG object used by the
 MBANDEDWG instrument.
 
-Thanks to Juha Nieminen <warp at iki dot fi> and Joel Yliluoma for
-their FunctionParser library.  (More at: http://iki.fi/warp/FunctionParser)
+Thanks to Juha Nieminen and Joel Yliluoma for their FunctionParser
+library (http://warp.povusers.org/FunctionParser).
 
 Thanks to Christopher Penrose for help with Mac OS X audio I/O.
 

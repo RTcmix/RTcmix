@@ -38,7 +38,7 @@
         "float"      32-bit floating point
         "normfloat"  32-bit floating point in range (mostly) from -1.0 to +1.0
         "16"         synonym for "short"
-        "24"         24-bit linear, not yet supported in RTcmix
+        "24"         24-bit linear
 
         The default is "short".
 
@@ -293,7 +293,7 @@ RTcmix::rtoutput(float p[], int n_args, double pp[])
 
    if (rtfileit == 1) {
       rterror("rtoutput", "A soundfile is already open for writing...");
-      return -1;
+      return rtOptionalThrow(FILE_ERROR);
    }
 
    /* flag set to -1 until we reach end of function.  This way, if anything
@@ -301,14 +301,14 @@ RTcmix::rtoutput(float p[], int n_args, double pp[])
    */
    rtfileit = -1;
 
-   if (SR == 0) {
+   if (!rtsetparams_was_called()) {
       die("rtoutput", "You must call rtsetparams before rtoutput.");
-      return -1;
+       return rtOptionalThrow(CONFIGURATION_ERROR);
    }
 
    error = parse_rtoutput_args(n_args, pp);
    if (error)
-      return -1;          /* already reported in parse_rtoutput_args */
+      return rtOptionalThrow(PARAM_ERROR);          /* already reported in parse_rtoutput_args */
 
    error = stat(rtoutsfname, &statbuf);
 
@@ -319,13 +319,13 @@ RTcmix::rtoutput(float p[], int n_args, double pp[])
       else {
          rterror("rtoutput", "Error accessing file \"%s\": %s",
                                                 rtoutsfname, strerror(errno));
-         return -1;  /* was exit() */
+         return rtOptionalThrow(FILE_ERROR);  /* was exit() */
       }
    }
    else {               /* File exists; find out whether we can clobber it */
       if (!get_bool_option(kOptionClobber)) {
          rterror("rtoutput", "\n%s", CLOBBER_WARNING);
-         return -1;
+         return rtOptionalThrow(FILE_ERROR);
       }
       else {
          /* make sure it's a regular file */
@@ -336,7 +336,7 @@ RTcmix::rtoutput(float p[], int n_args, double pp[])
          if (!S_ISREG(statbuf.st_mode)) {
             rterror("rtoutput", "\"%s\" isn't a regular file; won't clobber it",
                                                                  rtoutsfname);
-            return -1;
+            return rtOptionalThrow(FILE_ERROR);
          }
       }
    }
@@ -350,10 +350,12 @@ RTcmix::rtoutput(float p[], int n_args, double pp[])
    AudioDevice *dev;
    if ((dev = create_audio_file_device(audioDevice,
 				   				rtoutsfname, output_header_type,
-                                output_data_format, NCHANS, SR,
+                                output_data_format, NCHANS, sr(),
                                 normalize_output_floats,
-                                get_bool_option(kOptionCheckPeaks))) == NULL)
-      return -1;  /* failed! */
+                                       get_bool_option(kOptionCheckPeaks))) == NULL)
+   {
+      return rtOptionalThrow(AUDIO_ERROR);  /* failed! */
+   }
 
    audioDevice = dev;
 

@@ -3,7 +3,7 @@
    p0 = output start time
    p1 = input start time
    p2 = input duration
-   p3 = amplitude multiplier *
+   p3 = input amplitude multiplier *
    p4 = type of filter ("lowpass", "highpass", "bandpass", "bandreject") **
    p5 = steepness (> 0) [optional, default is 1]
    p6 = balance output and input signals (0:no, 1:yes) [optional, default is 1]
@@ -15,10 +15,13 @@
          if negative, the '-' sign acts as a flag to interpret the bw values
          as percentages (from 0 to 1) of the current cf.
          [optional; if missing, must use gen 3] ****
+   p12 = ringdown duration [optional, default is 0.1]
+	p13 = output amplitude multiplier [optional, default is 1.0]
 
-   p3 (amplitude), p4 (type), p8 (pan), p9 (bypass), p10 (freq) and 
-   p11 (bandwidth) can receive dynamic updates from a table or real-time
-   control source.  p4 (type) can be updated only when using numeric codes. **
+   p3 (input amplitude), p4 (type), p8 (pan), p9 (bypass), p10 (freq) and 
+   p11 (bandwidth) and p13 (output amplitude) can receive dynamic updates from
+   a table or real-time control source. p4 (type) can be updated only when
+   using numeric codes. **
 
    p5 (steepness) is just the number of filters to add in series.  Using more
    than 1 steepens the slope of the filter.  If you don't set p6 (balance)
@@ -30,6 +33,14 @@
    with p3 (amp) to get the right amplitude when steepness is > 1.  However,
    it has drawbacks: it can introduce a click at the start of the sound, it
    can cause the sound to pump up and down a bit, and it eats extra CPU time.
+
+	p12 (ringdur) controls how long the filter will ring once the input
+	duration has elapsed. This is relevant only when the bandwidth is narrow
+	enough to produce an audible ring. Very narrow bandwidths could require
+	quite a long time to ring down (5-10 seconds or more).
+
+	p13 (output amplitude multiplier) lets you apply an amplitude envelope
+   that spans the entire note, whose total duration is the sum of p2 and p12.
 
    ----
 
@@ -66,14 +77,10 @@
 #define BALANCE_WINDOW_SIZE  10
 
 
-BUTTER :: BUTTER() : Instrument()
+BUTTER :: BUTTER()
+	: filttype_was_string(false), branch(0), outamp(1.0), cf(-FLT_MAX),
+	  bw(-FLT_MAX), amparray(NULL), cfarray(NULL), bwarray(NULL), in(NULL)
 {
-   in = NULL;
-   cfarray = NULL;
-   bwarray = NULL;
-   cf = bw = -FLT_MAX;
-   branch = 0;
-   filttype_was_string = false;
 }
 
 
@@ -134,7 +141,7 @@ int BUTTER :: init(double p[], int n_args)
    float outskip = p[0];
    float inskip = p[1];
    float dur = p[2];
-   amp = p[3];
+   inamp = p[3];
    nfilts = n_args > 5 ? (int) p[5] : 1;
    do_balance = n_args > 6 ? (bool) p[6] : true;
    inchan = n_args > 7 ? (int) p[7] : 0;            // default is chan 0
@@ -144,7 +151,7 @@ int BUTTER :: init(double p[], int n_args)
    if (inchan >= inputChannels())
       return die("BUTTER", "You asked for channel %d of a %d-channel file.",
                                                       inchan, inputChannels());
-   const float ringdur = 0.1;
+   const float ringdur = (n_args >= 13) ? p[12] : 0.1;
    if (rtsetoutput(outskip, dur + ringdur, this) == -1)
       return DONT_SCHEDULE;
    insamps = (int) (dur * SR + 0.5);
@@ -202,12 +209,12 @@ int BUTTER :: init(double p[], int n_args)
 
 void BUTTER :: doupdate()
 {
-   double p[12];
-   update(p, 12, kType | kPan | kBypass | kFreq | kBandwidth);
+   double p[14];
+   update(p, 14, kType | kPan | kBypass | kFreq | kBandwidth | kOutAmp);
 
-   amp = update(3, insamps);
+   inamp = update(3, insamps);
    if (amparray)
-      amp *= tablei(currentFrame(), amparray, amptabs);
+      inamp *= tablei(currentFrame(), amparray, amptabs);
 
    // If init type spec was string, we don't allow type updates.
    if (!filttype_was_string) {
@@ -270,6 +277,9 @@ void BUTTER :: doupdate()
          for (int j = 0; j < nfilts; j++)
             filt[j]->setBandReject(cf, bw);
    }
+
+   if (nargs > 13)
+      outamp = p[13];
 }
 
 
@@ -295,7 +305,7 @@ int BUTTER :: run()
 
       float insig;
       if (currentFrame() < insamps)
-         insig = in[i + inchan] * amp;
+         insig = in[i + inchan] * inamp;
       else
          insig = 0.0;
 
@@ -307,6 +317,7 @@ int BUTTER :: run()
          if (do_balance)
             out[0] = balancer->tick(out[0], insig);
       }
+		out[0] *= outamp;
 
       if (outputChannels() == 2) {
          out[1] = out[0] * (1.0 - pctleft);

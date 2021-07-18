@@ -11,68 +11,14 @@ else
 	DIRS = include genlib insts src
 endif
 
-all:	install_dirs
+all:	install_dirs $(DIRS)
+
+.NOTPARALLEL::
+
+$(DIRS)::
 	@echo "making all ..."
-	@for DIR in $(DIRS); \
-	do \
-	  ( cd $$DIR; $(MAKE) $(MFLAGS) all ); \
-	done
+	$(MAKE) $(MFLAGS) -C $@
 	@echo "done"
-
-# Individual make targets.  Note that these are not necessarily equivalent
-# to the subdir with the same name.
-
-include::
-	@echo "making and installing include..."
-	@cd include; $(MAKE) $(MFLAGS) install
-	@echo "done."; echo ""
-
-src::
-	@echo "making all in src..."
-	@cd src; $(MAKE) $(MFLAGS) all
-	@echo "done."; echo ""
-
-genlib::
-	@echo "making and installing genlib..."
-	@cd genlib; $(MAKE) $(MFLAGS) all
-	@echo "done."; echo ""
-
-utils::
-	@echo "making utils..."
-	@cd utils; $(MAKE) $(MFLAGS) all
-	@echo "done."; echo ""
-
-docs::
-	@echo "making docs ..."
-	@cd docs; $(MAKE) $(MFLAGS) all
-	@echo "done."; echo ""
-
-snd::
-	@echo "making snd ..."
-	@cd snd; $(MAKE) $(MFLAGS) all
-	@echo "done."; echo ""
-
-insts::
-	@echo "making insts ..."
-	@cd insts; $(MAKE) $(MFLAGS) all
-	@echo "done."; echo ""
-
-base::
-	@echo "making base insts ..."
-	@cd insts; $(MAKE) $(MFLAGS) base
-	@echo "done."; echo ""
-
-imbed::
-	@echo "making imbed apps ..."
-	@cd apps; $(MAKE) $(MFLAGS) imbed
-	@echo "done."; echo ""
-
-apps::
-	@echo "making apps ..."
-	@cd apps; $(MAKE) $(MFLAGS) all
-	@echo "done."; echo ""
-
-dsos:: insts
 
 standalone::
 	@echo "making standalone ..."

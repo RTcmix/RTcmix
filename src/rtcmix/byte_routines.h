@@ -18,11 +18,11 @@
     (((*(unsigned long int *) (data) & 0x000000ffU) << 24) |   \
      ((*(unsigned long int *) (data) & 0x0000ff00U) <<  8) |   \
      ((*(unsigned long int *) (data) & 0x00ff0000U) >>  8) |   \
-     ((*(unsigned long int *) (data) & 0xff000000U) >> 24));
+     ((*(unsigned long int *) (data) & 0xff000000U) >> 24))
 
 #define reverse_int2(data)                                     \
     (((*(unsigned short int *) (data) & 0x00ff) << 8) |        \
-     ((*(unsigned short int *) (data) & 0xff00) >> 8));
+     ((*(unsigned short int *) (data) & 0xff00) >> 8))
 
 
 

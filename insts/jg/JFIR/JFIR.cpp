@@ -58,9 +58,8 @@
 #define NROWS    60
 
 
-JFIR :: JFIR() : Instrument()
+JFIR :: JFIR() : in(NULL), filt(NULL)
 {
-   in = NULL;
    branch = 0;
 }
 

@@ -1,0 +1,83 @@
+#!/bin/sh
+# Convert stereo sound file to mono by taking only the left
+# channel. Uses header format given by suffix of output file.
+# If output file name is missing, it will be the same as the
+# input file name, but with "m" appended before the file extension,
+# and it will use the same suffix.
+# -JGG 9/3/14
+
+if [ $# -lt 1 ]
+then
+   echo "Usage: `basename $0` infile [outfile]"
+   exit 1
+fi
+
+# validate input ...
+
+if [ ! -e $1 ]
+then
+   echo "Can't find input file."
+   exit 1
+fi
+
+if [ $# == 2 ]
+then
+	outname=$2
+else
+	base=`expr "$1" : '\(.*\)\..*'`
+	ext=`expr "$1" : '.*\.\(.*\)'`
+	outname=${base}m.${ext}
+fi
+
+if [ ${outname} == $1 ]
+then
+   echo "Your input file name is the same as your output file name!"
+   exit 1
+fi
+
+if [ -e ${outname} ]
+then
+   echo "Output file name already exists. Delete it first."
+   exit 1
+fi
+
+#---------------------------------------------------------------
+flags=-Q
+srate=`sfprint $1 | awk '/nchans: / {print $2}'`
+chans=`sfprint $1 | awk '/nchans: / {print $4}'`
+class=`sfprint $1 | awk '/nchans: / {print $6}'`
+
+if [ $chans -ne 2 ]
+then
+   echo "Input file \"$1\" must be stereo."
+   exit 1
+fi
+
+if [ $class -eq 2 ]; then
+	format="16"
+elif [ $class -eq 3 ]; then
+	format="24"
+elif [ $class -eq 4 ]; then
+	format="float"
+else
+	echo "Unknown input file format."
+	exit 1
+fi
+
+echo "Converting file \"$1\"..."
+
+script="\
+infile = s_arg(0);
+outfile = s_arg(1);
+srate = f_arg(2);
+chans = i_arg(3);
+format = s_arg(4);
+set_option(\"play = no\", \"clobber = no\");
+rtsetparams(srate, 1);
+rtinput(infile);
+amp = 1.0;
+rtoutput(outfile, format);
+MIX(0, 0, DUR(), amp, 0, -1);
+"
+echo $script | CMIX $flags $1 ${outname} $srate $chans $format
+

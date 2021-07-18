@@ -9,7 +9,7 @@
 
 #define kFracBits 16
 #define kFracShift 65536
-#define kFracMask kFracShift - 1
+#define kFracMask (kFracShift - 1)
 
 Ooscili::Ooscili(float SR, float freq, int arr) : _sr(SR)
 {
@@ -34,6 +34,34 @@ void Ooscili::init(float freq)
 
 	// for arbitrary lookups in the next(nsample) method
 	tabscale = (double) (length - 1) / (_sr / freq);
+}
+
+#include <math.h>
+#ifndef M_PI
+	#define M_PI	3.14159265358979323846264338327950288
+#endif
+#ifndef TWOPI
+	#define TWOPI	((M_PI) * 2)
+#endif
+
+void Ooscili::setPhaseRadians(double phs)
+{
+	double normphase = 0.0;
+	// convert to [0,1], then scale to array length
+	if (phs < 0.0)
+		normphase = ((TWOPI + phs) / TWOPI) * length;
+	else
+		normphase = (phs / TWOPI) * length;
+	// wrap phase to [0, length)
+	if (normphase < 0.0)	{
+		while (normphase < 0.0)
+			normphase += double(length);
+	}
+	else {
+		while (normphase >= double(length))
+			normphase -= double(length);
+	}
+	phase = fp(normphase);
 }
 
 float Ooscili::next()

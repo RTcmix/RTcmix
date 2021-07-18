@@ -1,0 +1,29 @@
+# Utility function for tables
+
+kDefaultTableSize = 10000;
+
+handle makeline(list arglist)
+{
+	return maketable("line", "nonorm", kDefaultTableSize, arglist);
+}
+
+handle randtable(float minval, float maxval, float numPoints)
+{
+	list arglist;
+	float curtime;
+	curtime = 0;
+	for (points = 0; points < numPoints; points += 1) {
+		value = irand(minval, maxval);
+		arglist = arglist + { curtime, value };
+		curtime += irand(0, 10);
+	}
+	print(arglist);
+	table = maketable("line", "nonorm", 10000, arglist);
+	return table;
+}
+
+float sampleline(handle table, float percent)
+{
+	tablelength = tablelen(table)
+	return samptable(table, min(1.0, percent) * tablelength);
+}

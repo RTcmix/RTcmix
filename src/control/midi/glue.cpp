@@ -69,8 +69,8 @@ static const char *_midi_controller_name[128] = {
 //                "polypress"
 //
 //    <subtype>   depends on <type>:
-//                   noteon     note number or velocity
-//                   noteoff    note number or velocity
+//                   noteon     "pitch" or "velocity"
+//                   noteoff    "pitch" or "velocity"
 //                   cntl       controller number or string symbol, such as
 //                              "mod", "foot", "breath", "data", "volume", "pan"
 //                   polypress  MIDI note number
@@ -83,6 +83,7 @@ _midi_usage()
 	die("makeconnection (midi)",
 		"Usage: makeconnection(\"midi\", min, max, default, lag, "
 		"chan, type[, subtype])");
+    rtOptionalThrow(PARAM_ERROR);
 	return NULL;
 }
 
@@ -213,6 +214,7 @@ create_pfield(const Arg args[], const int nargs)
 		return _midi_usage();
 	if (lag < 0.0 || lag > 100.0) {
 		die("makeconnection (midi)", "<lag> must be between 0 and 100");
+        rtOptionalThrow(PARAM_ERROR);
 		return NULL;
 	}
 	lag *= 0.01;
@@ -223,6 +225,7 @@ create_pfield(const Arg args[], const int nargs)
 		return _midi_usage();
 	if (chan < 0 || chan > 15) {
 		die("makeconnection (midi)", "<chan> must be between 1 and 16");
+        rtOptionalThrow(PARAM_ERROR);
 		return NULL;
 	}
 
@@ -245,12 +248,13 @@ create_pfield(const Arg args[], const int nargs)
 			return _midi_usage();
 	}
 
-	static RTcmixMIDI *midiport = NULL;
+	static RTcmixMIDIInput *midiport = NULL;
 	if (midiport == NULL)				// first time, so init midi system
-		midiport = createMIDIPort();
-	if (midiport == NULL)
+		midiport = createMIDIInputPort();
+    if (midiport == NULL) {
+        rtOptionalThrow(SYSTEM_ERROR);
 		return NULL;
-
+    }
 	return new RTMidiPField(midiport, minval, maxval, defaultval, lag, chan,
 																		type, subtype);
 }
@@ -260,6 +264,7 @@ create_pfield(const Arg args[], const int nargs)
 
 extern "C" {
 	Handle create_handle(const Arg args[], const int nargs);
+    void * create_midi_output();
 	int register_dso();
 };
 
@@ -272,6 +277,16 @@ create_handle(const Arg args[], const int nargs)
 		handle = createPFieldHandle(pField);
 	}
 	return handle;
+}
+
+void *
+create_midi_output()
+{
+    static RTcmixMIDIOutput *sMIDIOutput;
+    if (sMIDIOutput == NULL) {
+        sMIDIOutput = createMIDIOutputPort();   // only create once per processs
+    }
+    return sMIDIOutput;
 }
 
 int register_dso()

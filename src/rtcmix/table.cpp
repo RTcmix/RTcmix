@@ -313,7 +313,7 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 	int fd = open_sound_file("maketable (soundfile)", (char *) fname, NULL,
                 &data_format, &data_location, &srate, &file_chans, &file_samps);
 	if (fd == -1)
-		return -1;
+		return FILE_ERROR;
 
 	if (srate != RTcmix::sr())
 		rtcmix_warn("maketable (soundfile)", "The input file sampling rate is %g, but "
@@ -1101,7 +1101,7 @@ _spline_table(const Arg args[], const int nargs, double *array, const int len)
 	//_spline_getlimit(&y, nknots);   JGG: y bounds not used
 
 	if (_spline(closed, curvature, nknots, array, len, &x, &y) != 0)
-		return -1;
+		return PARAM_ERROR;
 
 	return 0;
 }
@@ -1253,7 +1253,7 @@ _random_table_usage()
 		"\n   usage: table = maketable(\"random\", size, \"prob\", min, max, "
 						"mid, tight[, seed])"
 		"\n");
-	return -1;
+	return PARAM_ERROR;
 }
 
 static int
@@ -1262,8 +1262,10 @@ _random_table(const Arg args[], const int nargs, double *array, const int len)
 	if (nargs < 3)
 		return _random_table_usage();
 
-	if (len < 2)
-		return die("maketable (random)", "Table length must be at least 2.");
+    if (len < 2) {
+		die("maketable (random)", "Table length must be at least 2.");
+        return PARAM_ERROR;
+    }
 
 	int type = 0;
 	if (args[0].isType(StringType)) {
@@ -1624,7 +1626,7 @@ static void
 _maketable_usage()
 {
 	die("maketable",
-		"\n	 usage: table = maketable(type, [option, ] length, ...)\n");
+		"\n	 usage: table = maketable(type, [option, ] length, ...)");
 }
 
 typedef enum {
@@ -1700,6 +1702,7 @@ maketable(const Arg args[], const int nargs)
 	if (!dynamic) {
 		if (_dispatch_table(args, nargs, lenindex + 1, &data, &len) != 0) {
 			delete [] data;
+            rtOptionalThrow(PARAM_ERROR);
 			return NULL;				// error message already given
 		}
 	} else { // setup for dynamic tables (PFSCHED/pfbus)
@@ -1885,12 +1888,14 @@ copytable(const Arg args[], const int nargs)
 	if (nargs < 1 || nargs > 3) {
 		die("copytable",
 			 "Usage: newtable = copytable(table_to_copy[, newsize, [interp]])");
+        rtOptionalThrow(PARAM_ERROR);
 		return NULL;
 	}
 	TablePField *oldtable = _getTablePField(&args[0]);
 	if (oldtable == NULL) {
 		die("copytable",
 			 "Usage: newtable = copytable(table_to_copy[, newsize, [interp]])");
+        rtOptionalThrow(PARAM_ERROR);
 		return NULL;
 	}
 
@@ -1899,6 +1904,7 @@ copytable(const Arg args[], const int nargs)
 		if (!args[1].isType(DoubleType)) {
 			die("copytable",
 				 "Usage: newtable = copytable(table_to_copy[, newsize, [interp]])");
+            rtOptionalThrow(PARAM_ERROR);
 			return NULL;
 		}
 		newsize = args[1];
@@ -1911,11 +1917,13 @@ copytable(const Arg args[], const int nargs)
 		if (!args[2].isType(StringType)) {
 			die("copytable",
 				 "Usage: newtable = copytable(table_to_copy[, newsize, [interp]])");
+            rtOptionalThrow(PARAM_ERROR);
 			return NULL;
 		}
 		if (args[2] != "nointerp" && args[2] != "interp") {
 			die("copytable",
 				 "Valid interpolation types: \"interp\", \"nointerp\"");
+            rtOptionalThrow(PARAM_ERROR);
 			return NULL;
 		}
 		interp = args[2];
@@ -2133,7 +2141,7 @@ plottable(const Arg args[], const int nargs)
 
 	snprintf(cmd, 255, "gnuplot %s &", cmd_file);
 	cmd[255] = 0;
-	system(cmd);
+	rt_system(cmd);
 
 	return 0.0;
 }

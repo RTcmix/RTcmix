@@ -5,11 +5,13 @@
 #define MINBUS 8
 #define MAXBUS 129
 
+#ifndef DEFAULT_MAXBUS
 #if defined(EMBEDDED)
 #define DEFAULT_MAXBUS 17
 #else
 #define DEFAULT_MAXBUS 65
 #endif
+#endif  // !defined DEFAULT_MAXBUS
 
 #ifdef __cplusplus
 

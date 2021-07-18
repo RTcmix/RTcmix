@@ -12,15 +12,14 @@ endif
 LIBDIRS = $(RTLIBDIRS) $(CMIXLIBDIRS)
 
 .PHONY: all progs dsos standalone install dso_install standalone_install \
-uninstall dso_uninstall standalone_uninstall clean cleanall
+uninstall dso_uninstall standalone_uninstall clean cleanall $(LIBDIRS)
 
 
-all:
-	@for DIR in $(LIBDIRS); \
-	do \
-	  ( if test -d $$DIR; then cd $$DIR; echo "making all in $$DIR..."; \
-	  $(MAKE) $(MFLAGS); echo "done in $$DIR"; fi ) \
-	done
+all: $(LIBDIRS)
+
+$(LIBDIRS)::
+	@echo "making all in std..."
+	$(MAKE) $(MFLAGS) -C $@
 
 progs: all
 
@@ -84,5 +83,10 @@ clean:
 		$(MAKE) $(MFLAGS) clean; fi ) \
 	done
 
-cleanall: clean uninstall
+cleanall:
+	@for DIR in $(LIBDIRS); \
+	do \
+	  ( if test -d $$DIR; then cd $$DIR; echo "making cleanll in $$DIR..."; \
+		$(MAKE) $(MFLAGS) cleanall; fi ) \
+	done
 

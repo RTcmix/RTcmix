@@ -25,7 +25,7 @@ CONFDIR = ../conf
 
 CXXFLAGS += $(SOUND_DRIVER)
 INCLUDES += -I$(INCLUDEDIR) -I../include -I$(AUDIODIR) -I$(SNDLIBDIR) -I./heap -I../conf
-
+INCLUDES += -I../osc
 # Source file listings
 
 # BGGx ww -- removed loader.cpp and load_utils.c
@@ -38,7 +38,6 @@ getsample.c \
 infile.c \
 io.c \
 merror.c \
-message.c \
 minout.c \
 m_system.c \
 printsf.c \
@@ -89,6 +88,7 @@ filter.cpp \
 Instrument.cpp \
 intraverse.cpp \
 lfo.cpp \
+message.cpp \
 minc_info.cpp \
 minc_functions.cpp \
 DataFile.cpp \
@@ -161,6 +161,12 @@ MIX_OBJS = ../../insts/base/MIX/MIX.o
 
 MAIN_OBJS = RTcmixMain.o main.o
 
+ifeq ($(OSC_SUPPORT), TRUE)
+	MAIN_OBJS += ../osc/RTOSCListener.o
+endif
+
+
+
 # The initial set of objects used by all builds
 COMMON_OBJS = $(CPPOBJS) $(COBJS) $(GENOBJS) $(RTHEAPOBJS) $(MIX_OBJS) $(AUDIODIR)/audio_devices.o
 
@@ -224,7 +230,7 @@ PROGS = MIX
 
 # Object lists are different for standalone vs. embedded
 ifeq ($(BUILDTYPE), STANDALONE)
-	TARGETS = $(RTLIB) $(MAIN_OBJS) RTsockfuncs.o $(PROGS)
+	TARGETS = $(RTLIB) $(MAIN_OBJS) RTsockfuncs.o  $(PROGS)
 else
 	COMMON_OBJS += $(M_O) $(MAIN_OBJS)
 	TARGETS = $(COMMON_OBJS) $(MAIN_OBJS) $(RTLIB)
@@ -392,7 +398,7 @@ ifeq ($(BUILDTYPE), STANDALONE)
 $(RTLIB): depend $(COMMON_OBJS) $(LIBS)
 	$(LOAD) $@ $(COMMON_OBJS) $(INST_OBJS) $(LIB_OBJS) $(LIBS) $(SYSLIBS)
 	$(RANLIB) $@
-MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O)
+MIX: $(MAIN_OBJS) $(M_O) $(LIBS) $(PROFILE_O) 
 	$(CXX) $(CXXFLAGS) -o MIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) $(M_O) -L. $(LDFLAGS) $(SYS_LDFLAGS)
 
 install:	all
@@ -424,43 +430,6 @@ install:	all
 
 endif
 
-#ifeq ($(BUILDTYPE), MAXMSP)
-#$(RTLIB): $(COMMON_OBJS) $(LIBMINC) $(LIBS)
-#	$(LOAD) $@ \
-#	$(MAIN_OBJS) $(COMMON_OBJS) $(INST_OBJS) $(LIB_OBJS) $(LIBS) \
-#	$(SYS_LDFLAGS)
-#
-#install:	maxmsp_install
-#
-#maxmsp_install:	all
-#   ifndef MAX_INSTALL_DIR
-#	@echo You are installing Max/MSP but have not set the install path for your library using MAX_INSTALL_DEST!
-#   else
-#	$(INSTALL) $(RTLIB) $(MAX_LIB_INSTALL_DIR)
-#   endif
-#
-#endif
-#
-#ifeq ($(BUILDTYPE), PD)
-#$(RTLIB): $(MAIN_OBJS) $(LIBS)
-#	$(LOAD) $@ \
-#	$(COMMON_OBJS) $(MAIN_OBJS) $(LIBS) \
-#	$(SYS_LDFLAGS)
-#
-#install:	all
-#
-#endif
-#
-#ifeq ($(BUILDTYPE), IOS)
-#$(RTLIB): $(COMMON_OBJS) $(MAIN_OBJS) $(LIBS)
-#	$(RM) $@
-#	$(LOAD) $@ $(COMMON_OBJS) $(INST_OBJS) $(LIB_OBJS) $(LIBS)
-#	$(RANLIB) $@
-#
-#install:	all
-#
-#endif
-
 PMIX: $(MAIN_OBJS) $(P_O) $(LIBS) $(PROFILE_O)
 ifeq ($(PERL_SUPPORT), TRUE)
 	$(CXX) $(CXXFLAGS) -o PMIX $(DYN) $(MAIN_OBJS) $(PROFILE_O) \
@@ -486,7 +455,7 @@ ifeq ($(ARCH),SGI)
 # Unfortunately, this doesn't work...   -JGG
 #	$(SHELL) -ec '$(CC) -M $(CFLAGS) $(SRCS) $(CPPSRCS)' > depend
 else
-	-$(SHELL) -ec '$(CC) -M $(CFLAGS) $(COMMON_CSRCS) $(GEN_CSRCS) $(COMMON_CPPSRCS) $(IMBEDSRCS) $(MAIN_CPPSRCS) $(PERL_CCFLAGS)' > ./depend
+	-$(SHELL) -ec '$(CC) -M -DSHAREDLIBDIR=\"$(LIBDESTDIR)\" $(CFLAGS) $(COMMON_CSRCS) $(GEN_CSRCS) $(COMMON_CPPSRCS) $(IMBEDSRCS) $(MAIN_CPPSRCS) $(PERL_CCFLAGS)' > ./depend
 endif
 
 -include depend

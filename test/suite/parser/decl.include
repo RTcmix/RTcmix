@@ -1,0 +1,3 @@
+// This is to test multiple includes of a single file into a score
+
+float declared_in_header;

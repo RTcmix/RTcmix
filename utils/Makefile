@@ -99,6 +99,7 @@ endif
 
 clean:
 	$(RM) *.o core $(PROGS)
+	$(RM) -r *.dSYM
 	@cd head; $(MAKE) $(MFLAGS) clean
 	@cd resample; $(MAKE) $(MFLAGS) clean
 

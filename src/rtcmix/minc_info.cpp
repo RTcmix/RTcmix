@@ -29,7 +29,7 @@ extern "C" {
 double m_sr(float *p, int n_args)
 {
   if(!isopen[(int)p[0]]) {
-    rtcmix_warn("sr", "You haven't opened file %d yet!\n", (int)p[0]);
+    rtcmix_warn("sr", "You haven't opened file %d yet!", (int)p[0]);
     closesf();
   }
   return(sfsrate(&sfdesc[(int)p[0]]));
@@ -38,7 +38,7 @@ double m_sr(float *p, int n_args)
 double m_chans(float *p, int n_args)
 {	
   if(!isopen[(int)p[0]]) {
-    rtcmix_warn("chans", "You haven't opened file %d yet!\n", (int)p[0]);
+    rtcmix_warn("chans", "You haven't opened file %d yet!", (int)p[0]);
     closesf();
   }
   
@@ -48,7 +48,7 @@ double m_chans(float *p, int n_args)
 double m_class(float *p, int n_args)
 {
   if(!isopen[(int)p[0]]) {
-    rtcmix_warn("class", "You haven't opened file %d yet!\n", (int)p[0]);
+    rtcmix_warn("class", "You haven't opened file %d yet!", (int)p[0]);
     closesf();
   }
   return(sfclass(&sfdesc[(int)p[0]]));
@@ -63,7 +63,7 @@ double m_dur(float *p, int n_args)
 	float dur;
 	i = (int) p[0];
 	if(!isopen[i]) {
-		rtcmix_warn("dur", "You haven't opened file %d yet!\n", (int)p[0]);
+		rtcmix_warn("dur", "You haven't opened file %d yet!", (int)p[0]);
 		closesf();
 	}
 	dur = (float)(sfst[i].st_size - headersize[i])
@@ -88,8 +88,10 @@ extern "C" {
 
 double filedur(const Arg args[], const int nargs)
 {
-	if (nargs != 1)
-		return die("filedur", "Usage:  duration = filedur(\"filename\")");
+    if (nargs != 1) {
+		die("filedur", "Usage:  duration = filedur(\"filename\")");
+        RTExit(PARAM_ERROR);
+   }
 	const char *fname = args[0];
 
 	int nchans;
@@ -106,8 +108,10 @@ double filedur(const Arg args[], const int nargs)
 
 double filechans(const Arg args[], const int nargs)
 {
-	if (nargs != 1)
-		return die("filechans", "Usage:  chans = filechans(\"filename\")");
+    if (nargs != 1) {
+		die("filechans", "Usage:  chans = filechans(\"filename\")");
+        RTExit(PARAM_ERROR);
+    }
 	const char *fname = args[0];
 
 	int nchans;
@@ -122,8 +126,10 @@ double filechans(const Arg args[], const int nargs)
 
 double filesr(const Arg args[], const int nargs)
 {
-	if (nargs != 1)
-		return die("filesr", "Usage:  sr = filesr(\"filename\")");
+    if (nargs != 1) {
+		die("filesr", "Usage:  sr = filesr(\"filename\")");
+        RTExit(PARAM_ERROR);
+    }
 	const char *fname = args[0];
 
 	double srate;
@@ -158,9 +164,11 @@ int findpeakrmsdc(const char *funcname, const char *fname,
 			nframes = endframe;
 	}
 
-	if (chan != ALL_CHANS && chan >= nchans)
-		return die(funcname, "You specified channel %d for a %d-channel file.",
+    if (chan != ALL_CHANS && chan >= nchans) {
+		die(funcname, "You specified channel %d for a %d-channel file.",
 		           chan, nchans);
+        RTExit(PARAM_ERROR);
+    }
 	// BGGx ww arg!
 	/*
 	float peak[nchans];
@@ -179,7 +187,7 @@ int findpeakrmsdc(const char *funcname, const char *fname,
                     startframe, nframes, peak, peakloc, ampavg, dcavg, rms);
    sndlib_close(fd, 0, 0, 0, 0);
 	if (result == -1)
-		return -1;
+        RTExit(SYSTEM_ERROR);
 
 	if (chan == ALL_CHANS) {
 		float maxpeak = 0.0;
@@ -207,9 +215,11 @@ int findpeakrmsdc(const char *funcname, const char *fname,
 
 double filepeak(const Arg args[], const int nargs)
 {
-	if (nargs < 1)
-		return die("filepeak", "Usage:  "
+    if (nargs < 1) {
+		die("filepeak", "Usage:  "
 		           "peak = filepeak(\"filename\"[, start[, end[, chan]]])");
+        RTExit(PARAM_ERROR);
+    }
 	const char *fname = args[0];
 	const double starttime = (nargs > 1) ? args[1] : 0.0;
 	const double endtime = (nargs > 2 && double(args[2]) > 0.0) ? args[2] : -1.0;
@@ -224,9 +234,11 @@ double filepeak(const Arg args[], const int nargs)
 
 double filerms(const Arg args[], const int nargs)
 {
-	if (nargs < 1)
-		return die("filerms", "Usage:  "
+    if (nargs < 1) {
+		die("filerms", "Usage:  "
 		           "rms = filerms(\"filename\"[, start[, end[, chan]]])");
+        RTExit(PARAM_ERROR);
+    }
 	const char *fname = args[0];
 	const double starttime = (nargs > 1) ? args[1] : 0.0;
 	const double endtime = (nargs > 2 && double(args[2]) > 0.0) ? args[2] : -1.0;
@@ -241,9 +253,11 @@ double filerms(const Arg args[], const int nargs)
 
 double filedc(const Arg args[], const int nargs)
 {
-	if (nargs < 1)
-		return die("filedc", "Usage:  "
+    if (nargs < 1) {
+		die("filedc", "Usage:  "
 		           "rms = filedc(\"filename\"[, start[, end[, chan]]])");
+        RTExit(PARAM_ERROR);
+    }
 	const char *fname = args[0];
 	const double starttime = (nargs > 1) ? args[1] : 0.0;
 	const double endtime = (nargs > 2 && double(args[2]) > 0.0) ? args[2] : -1.0;
@@ -263,11 +277,11 @@ RTcmix::input_chans(float *p, int n_args)   /* returns chans for rtinput() files
    int index = get_last_input_index();
 
    if (index < 0) {
-      rtcmix_warn("input_chans", "There are no currently opened input files!\n");
+      rtcmix_warn("input_chans", "There are no currently opened input files!");
       return 0.0;
    }
    if (inputFileTable[index].isAudioDevice()) {
-      rtcmix_warn("input_chans", "Requesting channels of audio input device, (not sound file)!\n");
+      rtcmix_warn("input_chans", "Requesting channels of audio input device, (not sound file)!");
       return 0.0;
    }
    return (inputFileTable[index].channels());
@@ -279,11 +293,11 @@ RTcmix::input_dur(float *p, int n_args)   /* returns duration for rtinput() file
    int index = get_last_input_index();
 
    if (index < 0) {
-      rtcmix_warn("DUR", "There are no currently opened input files!\n");
+      rtcmix_warn("DUR", "There are no currently opened input files!");
       return 0.0;
    }
    if (inputFileTable[index].isAudioDevice()) {
-      rtcmix_warn("input_dur", "Requesting duration of audio input device (not sound file)!\n");
+      rtcmix_warn("input_dur", "Requesting duration of audio input device (not sound file)!");
       return 0.0;
    }
    return (inputFileTable[index].duration());
@@ -295,7 +309,7 @@ RTcmix::input_sr(float *p, int n_args)   /* returns rate for rtinput() files */
    int index = get_last_input_index();
 
    if (index < 0) {
-      rtcmix_warn("SR", "There are no currently opened input files!\n");
+      rtcmix_warn("SR", "There are no currently opened input files!");
       return 0.0;
    }
 //   if (inputFileTable[index].is_audio_dev) {
@@ -324,7 +338,7 @@ m_peak(float p[], int n_args)
 
 	fno = (int) p[0];
 	if (!isopen[fno]) {
-		rtcmix_warn("peak", "You haven't opened file %d yet!\n", fno);
+		rtcmix_warn("peak", "You haven't opened file %d yet!", fno);
 		closesf();
 	}
 
@@ -338,7 +352,7 @@ m_peak(float p[], int n_args)
 		}
 	}
 	else
-		rtcmix_warn("peak", "File %d has no peak stats!\n", fno);
+		rtcmix_warn("peak", "File %d has no peak stats!", fno);
 
 	return peak;
 }
@@ -351,14 +365,14 @@ m_left(float p[], int n_args)
 
 	fno = (int) p[0];
 	if (!isopen[fno]) {
-		rtcmix_warn("left", "You haven't opened file %d yet!\n", fno);
+		rtcmix_warn("left", "You haven't opened file %d yet!", fno);
 		closesf();
 	}
 
 	if (sfmaxamptime(&sfm[fno]) > 0L)
 		return (sfmaxamp(&sfm[fno], 0));    /* for channel 0 */
 	else
-		rtcmix_warn("left", "File %d has no peak stats!\n", fno);
+		rtcmix_warn("left", "File %d has no peak stats!", fno);
 
 	return 0.0;
 }
@@ -371,14 +385,14 @@ m_right(float p[], int n_args)
 
 	fno = (int) p[0];
 	if (!isopen[fno]) {
-		rtcmix_warn("right", "You haven't opened file %d yet!\n", fno);
+		rtcmix_warn("right", "You haven't opened file %d yet!", fno);
 		closesf();
 	}
 
 	if (sfmaxamptime(&sfm[fno]) > 0L)
 		return (sfmaxamp(&sfm[fno], 1));    /* for channel 1 */
 	else
-		rtcmix_warn("right", "File %d has no peak stats!\n", fno);
+		rtcmix_warn("right", "File %d has no peak stats!", fno);
 
 	return 0.0;
 }
@@ -404,11 +418,11 @@ RTcmix::get_peak(float start, float end, int chan)
    index = get_last_input_index();
 
    if (index < 0) {
-      rtcmix_warn("get_peak", "There are no currently opened input files!\n");
+      rtcmix_warn("get_peak", "There are no currently opened input files!");
       return 0.0;
    }
    if (inputFileTable[index].isAudioDevice()) {
-      rtcmix_warn("get_peak", "Requesting peak of audio input device (not sound file)!\n");
+      rtcmix_warn("get_peak", "Requesting peak of audio input device (not sound file)!");
       return 0.0;
    }
 
@@ -523,9 +537,10 @@ extern "C" {
 
 double bus_exists(const Arg args[], const int nargs)
 {
-	if (nargs != 1)
-		return die("bus_exists", "Usage:  val = bus_exists(pfbus #)");
-
+    if (nargs != 1) {
+		die("bus_exists", "Usage:  val = bus_exists(pfbus #)");
+        RTExit(PARAM_ERROR);
+    }
 	int connection = (int)args[0];
 	int is_connected = PFBusData::pfbus_is_connected[connection];
 
@@ -536,8 +551,10 @@ double bus_exists(const Arg args[], const int nargs)
 
 double bus_link(const Arg args[], const int nargs)
 {
-	if (nargs != 1)
-		return die("bus_link", "Usage:  val = bus_link(pfbus #)");
+    if (nargs != 1) {
+		die("bus_link", "Usage:  val = bus_link(pfbus #)");
+        RTExit(PARAM_ERROR);
+    }
 
 	PFBusData::connect_val = (int)args[0];
 	return 1.0;

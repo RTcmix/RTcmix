@@ -61,13 +61,12 @@ findInstCreator(rt_item *inList, const char *inInstName)
 
 static int loadPFieldsAndSetup(const char *inName, Instrument *inInst, const Arg arglist[], const int nargs)
 {
+    int status = NO_ERROR;
 	// Load PFieldSet with ConstPField instances for each
 	// valid p field.
-	mixerr = MX_NOERR;
 	PFieldSet *pfieldset = new PFieldSet(nargs);
 	if (!pfieldset) {
-		mixerr = MX_EMEM;
-		return DONT_SCHEDULE;
+		return MEMORY_ERROR;
 	}
 	for (int arg = 0; arg < nargs; ++arg) {
 		const Arg &theArg = arglist[arg];
@@ -91,13 +90,13 @@ static int loadPFieldsAndSetup(const char *inName, Instrument *inInst, const Arg
 						pfieldset->load(new InstPField((Instrument *)handle->ptr), arg);
 					}
 					else {
-						rtcmix_warn(inName, "arg %d: Unsupported handle type!", arg);
-						mixerr = MX_FAIL;
+						die(inName, "arg %d: Unsupported handle type!", arg);
+						status = PARAM_ERROR;
 					}
 				}
 				else {
-					rtcmix_warn(inName, "arg %d: NULL handle!", arg);
-					mixerr = MX_FAIL;
+					die(inName, "arg %d: NULL handle!", arg);
+                    status = PARAM_ERROR;
 				}
 			}
 				break;
@@ -107,25 +106,27 @@ static int loadPFieldsAndSetup(const char *inName, Instrument *inInst, const Arg
 				assert(array->data != NULL);
 				double *dataCopy = new double[array->len];
 				if (dataCopy == NULL) {
-					rtcmix_warn(inName, "arg %d: ran out of memory copying array!", arg);
-					return MX_EMEM;
+					die(inName, "arg %d: ran out of memory copying array!", arg);
+					status = MEMORY_ERROR;
 				}
-				for (unsigned n = 0; n < array->len; ++n)
-					dataCopy[n] = array->data[n];
-				pfieldset->load(new TablePField(dataCopy, array->len, TablePField::Interpolate2ndOrder), arg);
+                else {
+                    for (unsigned n = 0; n < array->len; ++n)
+                        dataCopy[n] = array->data[n];
+                    pfieldset->load(new TablePField(dataCopy, array->len, TablePField::Interpolate2ndOrder), arg);
+                }
 			}
 				break;
 			default:
-				rtcmix_warn(inName, "arg %d: Illegal argument type!", arg);
-				mixerr = MX_FAIL;
+				die(inName, "arg %d: Illegal argument type!", arg);
+                status = PARAM_ERROR;
 				break;
 		}
 	}
-	if (mixerr != MX_NOERR) {
+	if (status != NO_ERROR) {
 		delete pfieldset;
-		return DONT_SCHEDULE;
+		return status;
 	}
-	return inInst->setup(pfieldset);
+    return inInst->setup(pfieldset) >= 0 ? NO_ERROR : PARAM_ERROR;
 }
 
 int
@@ -138,8 +139,6 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
    RTPrintf("ENTERING checkInsts() FUNCTION -----\n");
 #endif
 
-	mixerr = MX_FNAME;
-
 	*retval = 0.0;	// Default to float 0
 
 	InstCreatorFunction instCreator = findInstCreator(rt_list, instname);
@@ -150,11 +149,10 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 		if (!rtsetparams_was_called()) {
 #ifdef EMBEDDED
 			die(instname, "You need to start the audio device before doing this.");
-			mixerr = MX_FAIL;
 #else
 			die(instname, "You did not call rtsetparams!");
 #endif
-			return -1;
+            return CONFIGURATION_ERROR;
 		}
 		
 		/* Create the Instrument */
@@ -162,37 +160,31 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 		Iptr = (*instCreator)();
 
 		if (!Iptr) {
-			mixerr = MX_FAIL;
-			return -1;
+			return SYSTEM_ERROR;
 		}
 
 		Iptr->ref();   // We do this to assure one reference
 
 		int rv = loadPFieldsAndSetup(instname, Iptr, arglist, nargs);
 		
-        if (rv != DONT_SCHEDULE) { // only schedule if no setup() error
+        if (rv == 0) { // only schedule if no setup() error
 			// For non-interactive case, configure() is delayed until just
 			// before instrument run time.
-			if (rtInteractive) {
-			   if (Iptr->configure(RTBUFSAMPS) != 0) {
-				   rv = DONT_SCHEDULE;	// Configuration error!
-				   mixerr = MX_FAIL;
+			if (interactive()) {
+			   if ((rv = Iptr->configure(bufsamps())) != 0) {
+                   return rv;
 			   }
 			}
 		}
 		// Clean up if there was an error.
 		else {
 			Iptr->unref();
-			if (mixerr == MX_NOERR)		// don't overwrite existing error
-				mixerr = MX_FAIL;
 			*retval = (Handle) NULL;
 			return rv;
 		}
 
 		/* schedule instrument */
 		Iptr->schedule(rtHeap);
-
-		mixerr = MX_NOERR;
 
 		// Create Handle for Iptr on return
 		*retval = createInstHandle(Iptr);
@@ -202,13 +194,14 @@ RTcmix::checkInsts(const char *instname, const Arg arglist[],
 		 return rv;
 	}
 
-   return 0;
+   return FUNCTION_NOT_FOUND;
 }
 
 static Handle mkusage()
 {
 	die("makeinstrument", "Usage: makeinstrument(\"INSTRUMENTNAME\", p[0], p[1], ...)");
-	return 0;
+    rtOptionalThrow(PARAM_ERROR);
+	return NULL;
 }
 
 extern "C" {
@@ -234,13 +227,23 @@ makeinstrument(const Arg arglist[], const int nargs)
 	InstCreatorFunction instCreator = findInstCreator(RTcmix::rt_list, instName);
 	
 	if (instCreator) {
-		/* Create the Instrument */
+        if (!rtsetparams_was_called()) {
+#ifdef EMBEDDED
+            die(instName, "You need to start the audio device before doing this.");
+#else
+            die(instName, "You did not call rtsetparams!");
+#endif
+            rtOptionalThrow(CONFIGURATION_ERROR);
+            return NULL;
+        }
+
+        /* Create the Instrument */
 		
 		Iptr = (*instCreator)();
 		
 		if (!Iptr) {
 			mixerr = MX_FAIL;
-			return 0;
+			return NULL;
 		}
 		
 		Iptr->ref();   // We do this to assure one reference
@@ -251,10 +254,11 @@ makeinstrument(const Arg arglist[], const int nargs)
 		
 		Iptr->configureEndSamp(NULL);
 		
-        if (rv == (double) DONT_SCHEDULE) {
+        if (rv != 0) { // only schedule if no setup() error
 			Iptr->unref();
 			mixerr = MX_FAIL;
-			return 0;
+            rtOptionalThrow((RTCmixStatus)rv);
+			return NULL;
 		}
 		mixerr = MX_NOERR;
 		
@@ -266,5 +270,5 @@ makeinstrument(const Arg arglist[], const int nargs)
 					  "\"%s\" is an undefined function or instrument.",
 					  instName);
 	}
-	return 0;
+	return NULL;
 }

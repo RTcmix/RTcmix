@@ -6,10 +6,6 @@
 #include "prototypes.h"
 #include <ugens.h>
 #include <maxdispargs.h>
-// BGGx ww
-extern "C" {
-#include "mixerr.h"
-}
 #include <stdio.h>
 
 int
@@ -22,26 +18,20 @@ RTcmix::dispatch(const char *func_label, const Arg arglist[],
       non-zero status, print an error message if the error indicates that
 	  no function was found.  Else just return proper status.
    */
-	mixerr = MX_NOERR;      /* clear old errors */
    int status = checkfunc(func_label, arglist, nargs, retval);
 
-   if (status != 0 && mixerr == MX_FNAME) {         /* search rt functions */
-      mixerr = MX_NOERR;      /* clear old errors */
-      checkInsts(func_label, arglist, nargs, retval);
-      switch (mixerr) {
-	  case MX_FNAME:		// Function not found
-		 rtcmix_advise(NULL, 
+   if (status == FUNCTION_NOT_FOUND) {    /* search rt functions */
+      status = checkInsts(func_label, arglist, nargs, retval);
+      switch (status) {
+          case FUNCTION_NOT_FOUND:		// Function not found
+              rtcmix_advise(NULL,
 				"Note: \"%s\" is an undefined function or instrument.",
 				func_label);
-		 break;
-	  case MX_NOERR:		// Success
-		 status = 0;
-		 break;
-	  case MX_FAIL:			// Some other failure.
-	  default:
-		 status = -1;
-		 break;
-	  }
+              break;
+          case NO_ERROR:
+          default:
+              break;
+      }
    }
    return status;
 }
