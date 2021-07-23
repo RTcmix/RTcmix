@@ -29,11 +29,10 @@
 //#define DEBUG
 //#define DEBUG_FULL
 
-const float one = 1.0;
-const float two = 2.0;
-const float three = 3.0;
-const float onehalf = 0.5;
-const float onesixth = 0.166666666667;
+const float one = 1.0f;
+const float two = 2.0f;
+const float onehalf = 0.5f;
+const float onesixth = 0.166666666667f;
 
 inline float interp3rdOrder(float ym2, float ym1, float yp1, float yp2, float t)
 {

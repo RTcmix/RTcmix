@@ -224,7 +224,7 @@ int BASE::configure()
 	in = new float [RTBUFSAMPS * inputChannels()];
 	status = alloc_delays();			/* allocates memory for delays */
 
-	rvb_reset(m_tapDelay);				  // resets reverb & tap delay
+	rvb_reset();				  // resets reverb & tap delay
 
 	if (status == 0 && m_binaural) {
 		status = alloc_firfilters();	// allocates memory for FIRs
@@ -923,7 +923,7 @@ int BASE::roomtrig(double A,				 /* 'rho' or 'x' */
 /* reset zeroes out all delay and filter histories in move and reverb
    each time move is called
 */
-void BASE::rvb_reset(double *m_tapDelay)
+void BASE::rvb_reset()
 {
 	register int i, j, k;
 
