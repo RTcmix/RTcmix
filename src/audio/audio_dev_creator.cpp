@@ -81,6 +81,11 @@ createAudioDevice(const char *inputDesc,
 	CreatorFun iCreator = NULL, oCreator = NULL;
 	AudioDevice *theDevice = NULL;
 	const AudioDevEntry *currentEntry;
+    
+    if (!recording && !playing) {
+        fprintf(stderr, "Device must be set to record and/or play\n");
+        return NULL;
+    }
 
 	if (recording) {
 		// Search for creator for inputDesc.

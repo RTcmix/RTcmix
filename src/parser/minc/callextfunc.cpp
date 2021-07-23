@@ -28,10 +28,11 @@ static Arg * minc_list_to_arglist(const char *funcname, const MincValue *inList,
 		}
 	}
 	for (int i = 0; n < newNumArgs; ++i, ++n) {
+        minc_try {
 		switch (inList[i].dataType()) {
+            default:
 			case MincVoidType:
 				minc_die("call_external_function: %s(): invalid argument type", funcname);
-				delete [] newArgs;
 				return NULL;
 			case MincFloatType:
 				newArgs[n] = (MincFloat) inList[i];
@@ -49,28 +50,24 @@ static Arg * minc_list_to_arglist(const char *funcname, const MincValue *inList,
 				}
 				if (((MincList *)inList[i])->len <= 0) {
 					minc_die("can't pass an empty list (arg %d) to RTcmix function %s()", n, funcname);
-					delete [] newArgs;
 					return NULL;
 				}
 				else {
 					minc_die("for now, no nested lists can be passed to RTcmix function %s()", funcname);
-					delete [] newArgs;
 					return NULL;
 				}
                 break;
             case MincMapType:
                 minc_die("for now, maps cannot be passed to RTcmix function %s()", funcname);
-                delete [] newArgs;
                 return NULL;
             case MincStructType:
                 minc_die("for now, structs cannot be passed to RTcmix function %s()", funcname);
-                delete [] newArgs;
                 return NULL;
             case MincFunctionType:
                 minc_die("for now, functions cannot be passed to RTcmix function %s()", funcname);
-                delete [] newArgs;
                 return NULL;
 		}
+        } minc_catch(delete [] newArgs;)
 	}
 	*pNumArgs = newNumArgs;
 	return newArgs;
@@ -87,6 +84,7 @@ call_external_function(const char *funcname, const MincValue arglist[],
 	if (rtcmixargs == NULL)
 		return MEMORY_ERROR;
 
+    minc_try {
 	// Convert arglist for passing to RTcmix function.
 	for (int i = 0; i < nargs; i++) {
 		switch (arglist[i].dataType()) {
@@ -163,6 +161,7 @@ call_external_function(const char *funcname, const MincValue arglist[],
 			break;
 		}
 	}
+    } minc_catch(delete [] rtcmixargs;)
 
 	result = RTcmix::dispatch(funcname, rtcmixargs, numArgs, &retval);
    
@@ -310,15 +309,16 @@ MincHandle minc_binop_float_handle(const MincFloat val,
         return (MincHandle)0;
     }
 
-    // Create ConstPField for MincFloat.
-	PField *pfield1 = new ConstPField(val);
-
 	// Extract PField from MincHandle.
 	Handle handle = (Handle) mhandle;
     if (handle->type != PFieldType) {
         minc_die("Illegal handle type for this operation");
         return (MincHandle)0;
     }
+    
+    // Create ConstPField for MincFloat.
+    PField *pfield1 = new ConstPField(val);
+    
 	PField *pfield2 = (PField *) handle->ptr;
 
 	// Create PField using appropriate operator.

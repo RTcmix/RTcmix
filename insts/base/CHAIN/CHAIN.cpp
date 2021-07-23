@@ -118,6 +118,7 @@ int CHAIN::configure()
 		}
 		previous = inst;
 	}
+    assert(previous != NULL);   // should not be possible for this to fire
 	// For CHAIN itself, we override our (what should be zero) input channel count here.  This allows setChainedInputBuffer() to succeed
 	// even though the counts don't seem to match.
 	_input.inputchans = previous->outputChannels();

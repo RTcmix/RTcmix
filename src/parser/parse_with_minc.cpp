@@ -99,7 +99,7 @@ run_parser(const char *caller)
 
 int parse_score_buffer(const char *buffer, int buflen)
 {
-    YY_BUFFER_STATE yybuf = yy_scan_bytes(buffer, buflen);
+    (void) yy_scan_bytes(buffer, buflen);
     reset_parser();
     preserveSymbols(true);
     return run_parser("parse_score_buffer");
