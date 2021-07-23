@@ -290,9 +290,9 @@ void Instrument::configureEndSamp(FRAMETYPE *pStartSamp)
 		startsamp += RTcmix::getElapsedFrames();
 	}
 	
-	FRAMETYPE endsamp = startsamp+nSamps();
-	assert(endsamp >= 0LL);
-	setendsamp(endsamp);  // used by intraverse.cpp
+	FRAMETYPE newEndSamp = startsamp+nSamps();
+	assert(newEndSamp >= 0LL);
+	setendsamp(newEndSamp);  // used by intraverse.cpp
 	if (pStartSamp)
 		*pStartSamp = startsamp;
 }

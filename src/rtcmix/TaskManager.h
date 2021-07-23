@@ -33,6 +33,7 @@ private:
 
 class TaskProvider {
 public:
+    virtual ~TaskProvider() {}
 	virtual Task *	getTask() = 0;
 };
 

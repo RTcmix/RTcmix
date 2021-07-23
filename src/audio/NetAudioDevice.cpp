@@ -371,7 +371,6 @@ NetAudioDevice::doSendFrames(void *frameBuffer, int frameCount)
 	if (bytesWritten <= 0) {
 		return error("Network socket write failed: ",
 					 (bytesWritten < 0) ? strerror(errno) : "wrote zero bytes");
-		bytesWritten = 0;
 	}
 	int framesWritten = bytesWritten / getDeviceBytesPerFrame();
 	incrementFrameCount(framesWritten);

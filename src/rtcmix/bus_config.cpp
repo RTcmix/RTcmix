@@ -687,8 +687,8 @@ RTcmix::mixToBus()
     // Mix all vectors from each thread down to the final mix buses
     for (int i = 0; i < RT_THREAD_COUNT; ++i) {
         std::vector<MixData> &vector = mixVectors[i];
-        for (std::vector<RTcmix::MixData>::iterator i = vector.begin(); i != vector.end(); ++i) {
-            MixData &m = *i;
+        for (std::vector<RTcmix::MixData>::iterator it = vector.begin(); it != vector.end(); ++it) {
+            MixData &m = *it;
             BufPtr src = m.src;
             BufPtr dest = m.dest;
             const int framesOverFour = m.frames >> 2;
