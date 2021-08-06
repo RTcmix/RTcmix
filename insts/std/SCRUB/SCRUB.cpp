@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include "SCRUB.h"
 #include <rt.h>
 #include <math.h>

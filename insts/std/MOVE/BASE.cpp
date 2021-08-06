@@ -6,7 +6,6 @@
 #include <string.h>
 #include <math.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <assert.h>
 #include "common.h"
 #include <rt.h>

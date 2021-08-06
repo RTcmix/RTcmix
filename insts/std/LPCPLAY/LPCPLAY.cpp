@@ -19,7 +19,6 @@
 #include <stdlib.h>
 #include <ugens.h>
 #include <math.h>
-#include <mixerr.h>
 #include <rt.h>
 #include <rtdefs.h>
 

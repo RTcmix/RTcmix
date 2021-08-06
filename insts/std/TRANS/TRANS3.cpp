@@ -22,7 +22,6 @@
 #include <float.h>
 #include <assert.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include "TRANS3.h"
 #include <rt.h>
 

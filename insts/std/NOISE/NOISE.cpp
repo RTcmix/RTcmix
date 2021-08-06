@@ -21,7 +21,6 @@
 #include <stdlib.h>
 #include <ugens.h>
 #include <math.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "NOISE.h"
 #include <rt.h>

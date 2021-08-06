@@ -38,7 +38,6 @@
 #include <float.h>
 #include <assert.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <PField.h>
 #include <Option.h>     // for fastUpdate
 #include "TRANS.h"
