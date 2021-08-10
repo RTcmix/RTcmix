@@ -43,7 +43,7 @@ RTcmix::addrtInst(rt_item *rt_p)
 	}
 	for (rt_tail=rt_list; rt_tail->rt_next; rt_tail=rt_tail->rt_next)
 	{
-		if (!strcmp((char *)rt_tail,rt_p->rt_name))	{
+		if (!strcmp(rt_tail->rt_name, rt_p->rt_name))	{
 			mixerr = MX_FEXIST;
 			// RTPrintf("EXITING addrtInst() FUNCTION (MX_FEXIST)-----\n");
 			return (-1);

@@ -8,7 +8,6 @@
 #include <assert.h>
 #include <ugens.h>      // for die, warn
 #include "rtcmix_types.h"
-#include <mixerr.h>
 #include "prototypes.h"
 #include <ug_intro.h>
 #include <string.h>
