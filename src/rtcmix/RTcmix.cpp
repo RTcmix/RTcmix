@@ -103,7 +103,6 @@ InputFile *	RTcmix::inputFileTable = NULL;
 long		RTcmix::max_input_fds = 0;
 int			RTcmix::last_input_index = -1;
 
-pthread_mutex_t RTcmix::pfieldLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RTcmix::audio_config_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RTcmix::aux_to_aux_lock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t RTcmix::to_aux_lock = PTHREAD_MUTEX_INITIALIZER;

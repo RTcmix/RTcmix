@@ -278,7 +278,6 @@ private:
 public:
 	static rt_item *rt_list;
 private:
-	static pthread_mutex_t pfieldLock;
 	static pthread_mutex_t aux_to_aux_lock;
 	static pthread_mutex_t to_aux_lock;
 	static pthread_mutex_t to_out_lock;
