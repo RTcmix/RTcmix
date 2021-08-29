@@ -1,4 +1,4 @@
-#include "../../H/ugens.h"
+#include "../../include/ugens.h"
 #define RESIDAMP     0
 #define RMSAMP       1
 #define THRESH       2

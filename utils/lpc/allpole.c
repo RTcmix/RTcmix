@@ -13,8 +13,8 @@ float ballpole(x,jcount,npoles,past,c,out,nvals)
 float *x,*past,*c,*out;
 long  *jcount,npoles,nvals;
 {
-	register i,j,nfint;
-	register float temp;
+	int i,j,nfint;
+	float temp;
 	for(i=0;i<nvals;++i){
 		temp = *x++;
 		for(j= *jcount, nfint=0;  nfint<npoles;  nfint++,j++)
