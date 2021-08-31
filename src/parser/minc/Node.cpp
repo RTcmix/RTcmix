@@ -173,6 +173,10 @@ static const char *printOpKind(OpKind k)
 static void push_list(void);
 static void pop_list(void);
 
+#ifdef DEBUG_MEMORY
+static int numNodes = 0;
+#endif
+
 /* ========================================================================== */
 /* Tree nodes */
 
@@ -1618,7 +1622,9 @@ Node *    NodeStructDecl::doExct()
 Node *	NodeFuncDecl::doExct()
 {
 	TPRINT("NodeFuncDecl(%p) -- declaring function '%s'\n", this, _symbolName);
-	assert(current_scope() == 0);	// until I allow nested functions
+    if (current_scope() > 0) {
+        minc_die("functions may only be declared at global scope");
+    }
 	Symbol *sym = lookupSymbol(_symbolName, GlobalLevel);	// only look at current global level
 	if (sym == NULL) {
 		sym = installSymbol(_symbolName, YES);		// all functions global for now
@@ -1642,6 +1648,7 @@ Node *	NodeFuncDef::doExct()
 	TPRINT("NodeFuncDef(%p): executing lookup node %p\n", this, child(0));
 	child(0)->exct();
 	assert(child(0)->symbol() != NULL);
+    // Note: 'this' stored inside MincFunction.
 	child(0)->symbol()->value() = MincValue(new MincFunction(this));
 #warning is this line correct and necessary?
     setValue(child(0)->symbol()->value());
