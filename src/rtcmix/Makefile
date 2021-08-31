@@ -96,6 +96,7 @@ Option.cpp \
 PFBusData.cpp \
 PField.cpp \
 PFieldSet.cpp \
+PvocReader.cpp \
 Random.cpp \
 RawDataFile.cpp \
 RefCounted.cpp \

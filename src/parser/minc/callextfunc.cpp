@@ -177,16 +177,17 @@ call_external_function(const char *funcname, const MincValue arglist[],
 		*return_value = (MincHandle) (Handle) retval;
 		break;
 	case ArrayType:
-#ifdef NOMORE
-// don't think functions will return non-opaque arrays to Minc, but if they do,
-// these should be converted to MincListType
-		return_value->type = MincArrayType;
-		{
-			Array *array = (Array *) retval;
-			return_value->val.array.len = array->len;
-			return_value->val.array.data = array->data;
+       {
+//          Functions can return non-opaque arrays to Minc.
+//          These are converted to MincListType so they can be accessed as 'list' objects
+           Array *array = (Array *) retval;
+           MincList *outlist = new MincList(array->len);
+           MincValue *dest = outlist->data;
+           for (int n=0; n < array->len; ++n) {
+               dest[n] = array->data[n];
+           }
+           *return_value = outlist;
 		}
-#endif
 		break;
 	default:
 		break;

@@ -14,7 +14,7 @@ typedef enum {
 typedef enum {
    PFieldType,
    InstrumentPtrType,
-   AudioStreamType
+   ListType
 } RTcmixHandleType;
 
 typedef struct _handle {

@@ -25,6 +25,9 @@ ug_intro()
    UG_INTRO_DOUBLE_RETURN("samptable", samptable);
    UG_INTRO_DOUBLE_RETURN("dumptable", dumptable);
    UG_INTRO_DOUBLE_RETURN("plottable", plottable);
+   UG_INTRO_DOUBLE_RETURN("pvinput", pvinput);
+   UG_INTRO_DOUBLE_RETURN("pvgetbincount", pvgetbincount);
+   UG_INTRO_DOUBLE_RETURN("pvgetframerate", pvgetframerate);
    UG_INTRO_HANDLE_RETURN("mul", opmul);
    UG_INTRO_HANDLE_RETURN("add", opadd);
    UG_INTRO_HANDLE_RETURN("div", opdiv);
@@ -37,6 +40,7 @@ ug_intro()
    UG_INTRO_HANDLE_RETURN("makeconverter", makeconverter);
    UG_INTRO_HANDLE_RETURN("makemonitor", makemonitor);
 	UG_INTRO_HANDLE_RETURN("makeinstrument", makeinstrument);
+    UG_INTRO_HANDLE_RETURN("pvgetframe", pvgetframe);
 	UG_INTRO_DOUBLE_RETURN("filedur", filedur);
 	UG_INTRO_DOUBLE_RETURN("filechans", filechans);
 	UG_INTRO_DOUBLE_RETURN("filesr", filesr);
