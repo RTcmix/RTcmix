@@ -44,16 +44,16 @@ LOOP::~LOOP()
 int LOOP::calculateLoop(double *pArray)
 {
 	if (pArray[5] < 0.0) {
-		_loopStart = (int) (0.5 + pArray[5] * SR);
+		_loopStart = (int) (0.5 + -pArray[5] * SR);
 	}
 	else {
 		_loopStart = (int) pArray[5];
 	}
 	
-	float loopLength = (int) pArray[6];
+	float loopLength = (float) pArray[6];
 	
 	if (loopLength < 0.0) {
-		loopLength = (int) (0.5 + loopLength * SR);
+		loopLength = (int) (0.5 + -loopLength * SR);
 	}
 	
 	if (loopLength < kMinLoopLen) {
