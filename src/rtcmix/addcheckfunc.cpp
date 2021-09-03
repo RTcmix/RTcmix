@@ -254,9 +254,11 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
           }
           // New:  If function is returning an array, it does it via a new Handle type.
           // This allows the function to return it has a Handle, and we copy it as an
-          // Array here.
+          // Array here.  This means we have to free the orphaned handle.
           if (retHandle->type == ListType) {
               *retval = (Array *) retHandle->ptr;
+              free(retHandle);
+              retHandle = NULL;
           }
           else {
               *retval = retHandle;

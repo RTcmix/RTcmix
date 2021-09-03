@@ -45,6 +45,18 @@ createInstHandle(Instrument *inst)
 	return handle;
 }
 
+Handle
+createArrayHandle(Array *array)
+{
+    Handle handle = (Handle) malloc(sizeof(struct _handle));
+    if (handle) {
+        handle->type = ListType;        // indicates we are returning an object to be referenced as a list
+        handle->ptr = (void *) array;
+        handle->refcount = 0;
+    }
+    return handle;
+}
+
 void refHandle(Handle h)
 {
 	assert(h->refcount >= 0);

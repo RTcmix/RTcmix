@@ -47,7 +47,7 @@ using namespace std;
 
 static FRAMETYPE bufEndSamp;
 static int startupBufCount = 0;
-static bool audioDone = false;
+static bool audioDone = true;   // set to false in runMainLoop
 
 int RTcmix::runMainLoop(void)
 {
@@ -141,7 +141,7 @@ int RTcmix::runMainLoop(void)
 
 int RTcmix::waitForMainLoop()
 {
-	rtcmix_debug(NULL, "waitForMainLoop():  entering function");
+	rtcmix_debug(NULL, "waitForMainLoop():  entering function, audioDone = %d", audioDone);
 	while (!audioDone) {
 		usleep(10000);
 	}

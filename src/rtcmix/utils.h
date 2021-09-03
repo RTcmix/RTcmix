@@ -13,6 +13,7 @@
 #ifdef __cplusplus
 Handle createPFieldHandle(class PField *);
 Handle createInstHandle(class Instrument *);
+Handle createArrayHandle(Array *array);
 extern "C" {
 #endif	// __cplusplus
 	void refHandle(Handle h);

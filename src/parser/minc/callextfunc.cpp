@@ -178,8 +178,8 @@ call_external_function(const char *funcname, const MincValue arglist[],
 		break;
 	case ArrayType:
        {
-//          Functions can return non-opaque arrays to Minc.
-//          These are converted to MincListType so they can be accessed as 'list' objects
+           // Functions can return non-opaque arrays to Minc.
+           // These are converted to MincListType so they can be accessed as 'list' objects
            Array *array = (Array *) retval;
            MincList *outlist = new MincList(array->len);
            MincValue *dest = outlist->data;

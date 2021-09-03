@@ -20,18 +20,7 @@ extern "C" {
     double pvgetbincount(const Arg args[], const int nargs);
     double pvgetframerate(const Arg args[], const int nargs);
     Handle pvgetframe(const Arg args[], const int nargs);
-}
-
-Handle
-createArrayHandle(Array *array)
-{
-    Handle handle = (Handle) malloc(sizeof(struct _handle));
-    if (handle) {
-        handle->type = ListType;        // indicates we are returning an object to be referenced as a list
-        handle->ptr = (void *) array;
-        handle->refcount = 0;
-    }
-    return handle;
+    Handle pvgetbin(const Arg args[], const int nargs);
 }
 
 static int gPvocFD = -1;
@@ -119,6 +108,11 @@ static Handle mkusage()
 Handle
 pvgetframe(const Arg arglist[], const int nargs)
 {
+    if (gPvocFD == -1) {
+        ::rterror("pvgetframe", "You haven't opened a PVOC data file yet");
+        rtOptionalThrow(CONFIGURATION_ERROR);
+        return NULL;
+    }
     double frameToRead = (double)arglist[0];
     if (frameToRead > gPvocFrameCount-1.0) {
         rtcmix_warn("pvgetframe", "Limiting frame number to %f", gPvocFrameCount-1.0);
@@ -131,7 +125,7 @@ pvgetframe(const Arg arglist[], const int nargs)
     int ampBins = gPvocBinsPerFrame / 2;    // only want amplitudes
     
     // In PVOC datafiles, each frame consists of a float gain followed by a float
-    // frequency.  We just pull the gain bins for now
+    // frequency.  We just pull the gain bins here.
     
     if (lseek(gPvocFD, read_offset, SEEK_SET) == -1) {
         ::rterror("pvgetframe", "Failed to seek in data file");
@@ -143,7 +137,7 @@ pvgetframe(const Arg arglist[], const int nargs)
 
     // Create Array
     
-    Array *outGains = new Array;
+    Array *outGains = (Array *)malloc(sizeof(Array));
     outGains->len = ampBins;
     outGains->data = (double *)malloc(ampBins * sizeof(double));
 
@@ -159,6 +153,59 @@ pvgetframe(const Arg arglist[], const int nargs)
     }
     delete [] totalframe;
     delete [] nextframe;
+    
+    // Wrap Array in Handle, and return.  This will return a 'list' to MinC.
+    return createArrayHandle(outGains);
+}
+
+Handle
+pvgetbin(const Arg arglist[], const int nargs)
+{
+    if (gPvocFD == -1) {
+        ::rterror("pvgetbin", "You haven't opened a PVOC data file yet");
+        rtOptionalThrow(CONFIGURATION_ERROR);
+        return NULL;
+    }
+    double binToRead = (double)arglist[0];
+    double maxBin = (gPvocBinsPerFrame / 2) - 1;
+    if (binToRead > maxBin) {
+        rtcmix_warn("pvgetbin", "Limiting bin number to %f", maxBin);
+        binToRead = maxBin;
+    }
+    else if (binToRead < 0.0) {
+        die("pvgetbin", "Usage: pvgetbin(bin_number).  Must be between 0 and bin_count-1");
+        rtOptionalThrow(PARAM_ERROR);
+        return NULL;
+    }
+    int read_offset = gPvocDataOffset + (((int)binToRead * gPvocBinsPerFrame) * sizeof(float));
+    if (lseek(gPvocFD, read_offset, SEEK_SET) == -1) {
+        ::rterror("pvgetbin", "Failed to seek in data file");
+        rtOptionalThrow(FILE_ERROR);
+        return NULL;
+    }
+    
+    // Create Array
+    
+    Array *outGains = (Array *)malloc(sizeof(Array));
+    outGains->len = gPvocFrameCount;
+    outGains->data = (double *)malloc(gPvocFrameCount * sizeof(double));
+
+    int skipBytes = (gPvocBinsPerFrame-1) * sizeof(float);
+    // read amp bin, skip to next frame, read next amp bin, repeat
+    for (int frame = 0; frame < gPvocFrameCount; ++frame) {
+        float binamp = 0.0f;
+        read(gPvocFD, &binamp, sizeof(float));
+        if (gPvocNeedsSwap) { byte_reverse4(&binamp); }
+//        printf("gain[%f] for frame %d: %.6f\n", binToRead, frame, binamp);
+        outGains->data[frame] = binamp;
+        if (lseek(gPvocFD, skipBytes, SEEK_CUR) == -1) {
+            free(outGains->data);
+            delete outGains;
+            ::rterror("pvgetbin", "Failed to seek in data file");
+            rtOptionalThrow(FILE_ERROR);
+            return NULL;
+        }
+    }
     
     // Wrap Array in Handle, and return.  This will return a 'list' to MinC.
     return createArrayHandle(outGains);

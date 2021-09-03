@@ -504,7 +504,7 @@ RTcmixMain::run()
       int status = ::parse_score(xargc, xargv, xenv);
 	   if (parseOnly) {
 		   rtcmix_debug(NULL, "RTcmixMain::run: parse-only returned status %d", status);
-		   exit(status);
+		   return;
 	   }
 #endif
 #ifdef PYTHON
