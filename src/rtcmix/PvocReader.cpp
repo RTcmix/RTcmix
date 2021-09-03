@@ -28,7 +28,9 @@ static bool gPvocNeedsSwap = 0;
 static int gPvocDataOffset = 0;
 static int gPvocFrameCount = 0;
 static double gPvocFrameRate = 0;
-static int gPvocBinsPerFrame = 0;
+static int gPvocBinsPerFrame = 0;       // how many amp/freq pairs
+
+static const int kBinSizeInBytes = 8;   // 2 floats per bin
 
 double
 pvinput(const Arg arglist[], const int nargs)
@@ -78,7 +80,7 @@ pvinput(const Arg arglist[], const int nargs)
     gPvocDataOffset = data_location;
     gPvocFrameCount = file_frames;
     gPvocFrameRate = srate;
-    gPvocBinsPerFrame = file_chans;
+    gPvocBinsPerFrame = file_chans / 2;
     return gPvocFrameCount;
 }
 
@@ -87,7 +89,7 @@ double pvgetbincount(const Arg args[], const int nargs)
     if (gPvocFD == -1) {
         return rtOptionalThrow(CONFIGURATION_ERROR);
     }
-    return gPvocBinsPerFrame / 2.0;
+    return gPvocBinsPerFrame;
 }
 
 double pvgetframerate(const Arg args[], const int nargs)
@@ -121,19 +123,19 @@ pvgetframe(const Arg arglist[], const int nargs)
     else if (frameToRead < 0.0) {
         return mkusage();
     }
-    int read_offset = gPvocDataOffset + (int)frameToRead * (gPvocBinsPerFrame * sizeof(float));
-    int ampBins = gPvocBinsPerFrame / 2;    // only want amplitudes
+    const int read_offset = gPvocDataOffset + ((int)frameToRead * (gPvocBinsPerFrame * kBinSizeInBytes));
+    const int ampBins = gPvocBinsPerFrame;    // only want amplitudes
     
     // In PVOC datafiles, each frame consists of a float gain followed by a float
-    // frequency.  We just pull the gain bins here.
+    // frequency.  We read entire frame, but only extract the gain bins here.
     
     if (lseek(gPvocFD, read_offset, SEEK_SET) == -1) {
         ::rterror("pvgetframe", "Failed to seek in data file");
         rtOptionalThrow(FILE_ERROR);
         return NULL;
     }
-    float *totalframe = new float[gPvocBinsPerFrame];
-    float *nextframe = new float[gPvocBinsPerFrame];
+    float *totalframe = new float[gPvocBinsPerFrame*2];
+    float *nextframe = new float[gPvocBinsPerFrame*2];
 
     // Create Array
     
@@ -141,15 +143,15 @@ pvgetframe(const Arg arglist[], const int nargs)
     outGains->len = ampBins;
     outGains->data = (double *)malloc(ampBins * sizeof(double));
 
-    read(gPvocFD, totalframe, gPvocBinsPerFrame*sizeof(float));
-    read(gPvocFD, nextframe, gPvocBinsPerFrame*sizeof(float));
+    read(gPvocFD, totalframe, gPvocBinsPerFrame*kBinSizeInBytes);
+    read(gPvocFD, nextframe, gPvocBinsPerFrame*kBinSizeInBytes);
 
     double frac = frameToRead - (int)frameToRead;
-    for (int bin = 0, loc = 0; bin < gPvocBinsPerFrame; bin += 2, ++loc) {
-        float binVal = totalframe[bin];
-        float nextBinVal = nextframe[bin];
+    for (int bin = 0; bin < gPvocBinsPerFrame; ++bin) {
+        float binVal = totalframe[bin*2];
+        float nextBinVal = nextframe[bin*2];
         if (gPvocNeedsSwap) { byte_reverse4(&binVal); byte_reverse4(&nextBinVal); }
-        outGains->data[loc] = binVal + frac * (nextBinVal - binVal);
+        outGains->data[bin] = binVal + frac * (nextBinVal - binVal);
     }
     delete [] totalframe;
     delete [] nextframe;
@@ -167,7 +169,7 @@ pvgetbin(const Arg arglist[], const int nargs)
         return NULL;
     }
     double binToRead = (double)arglist[0];
-    double maxBin = (gPvocBinsPerFrame / 2) - 1;
+    double maxBin = gPvocBinsPerFrame - 1;
     if (binToRead > maxBin) {
         rtcmix_warn("pvgetbin", "Limiting bin number to %f", maxBin);
         binToRead = maxBin;
@@ -177,26 +179,30 @@ pvgetbin(const Arg arglist[], const int nargs)
         rtOptionalThrow(PARAM_ERROR);
         return NULL;
     }
-    int read_offset = gPvocDataOffset + (((int)binToRead * gPvocBinsPerFrame) * sizeof(float));
+    
+    // Offset to beginning of amplitude values for bin[binToRead] in the first PVOC frame
+    int read_offset = gPvocDataOffset + int(binToRead * kBinSizeInBytes);
     if (lseek(gPvocFD, read_offset, SEEK_SET) == -1) {
         ::rterror("pvgetbin", "Failed to seek in data file");
         rtOptionalThrow(FILE_ERROR);
         return NULL;
     }
     
-    // Create Array
+    // Create Array with length to hold an amp for each frame in the datafile
     
     Array *outGains = (Array *)malloc(sizeof(Array));
     outGains->len = gPvocFrameCount;
     outGains->data = (double *)malloc(gPvocFrameCount * sizeof(double));
 
-    int skipBytes = (gPvocBinsPerFrame-1) * sizeof(float);
+    // How much we skip to get to the binToRead'th amplitude in each new frame.
+    // This is the size of each frame minus the size of the float we read for the previous frame.
+    int skipBytes = (gPvocBinsPerFrame * kBinSizeInBytes) - sizeof(float);
     // read amp bin, skip to next frame, read next amp bin, repeat
     for (int frame = 0; frame < gPvocFrameCount; ++frame) {
         float binamp = 0.0f;
         read(gPvocFD, &binamp, sizeof(float));
         if (gPvocNeedsSwap) { byte_reverse4(&binamp); }
-//        printf("gain[%f] for frame %d: %.6f\n", binToRead, frame, binamp);
+//        printf("gain[%d] for frame %d: %.6f\n", (int)binToRead, frame, binamp);
         outGains->data[frame] = binamp;
         if (lseek(gPvocFD, skipBytes, SEEK_CUR) == -1) {
             free(outGains->data);
