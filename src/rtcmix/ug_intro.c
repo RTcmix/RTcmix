@@ -51,6 +51,7 @@ ug_intro()
 	UG_INTRO_DOUBLE_RETURN("bus_exists", bus_exists);
 	UG_INTRO_DOUBLE_RETURN("bus_link", bus_link);
 	UG_INTRO_DOUBLE_RETURN("getPFval", getPFval);
+    UG_INTRO_DOUBLE_RETURN("stringtofloat", m_stringtofloat);
 	UG_INTRO("makegen", makegen);
 	UG_INTRO("open",m_open);
 	UG_INTRO("peakoff",peak_off);
@@ -122,7 +123,6 @@ ug_intro()
 	UG_INTRO("n_arg",n_arg); /* to return num args from command line */
 	UG_INTRO("print_on",m_print_is_on); /* to turn on printing*/
 	UG_INTRO("print_off",m_print_is_off); /* to turn off printing*/
-	UG_INTRO("str_num",str_num); /* string,num,strin,num, etc print out */
 	UG_INTRO("get_spray",m_get_spray);
 	UG_INTRO("spray_init",m_spray_init);
 	UG_INTRO("pchmidi", m_pchmidi);
@@ -143,7 +143,6 @@ ug_intro()
 	UG_INTRO("irand", m_irand);
 	UG_INTRO("trand", m_trand);
 	UG_INTRO("chance", m_chance);
-//	UG_INTRO("grand", m_grand);
 	UG_INTRO("setexp", m_setexp);
 	UG_INTRO("addgens", m_addgens);
 	UG_INTRO("multgens", m_multgens);

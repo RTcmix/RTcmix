@@ -70,7 +70,7 @@ int LOOP::init(double p[], int n_args)
 {
 	if (n_args < 7)
 		return die("LOOP",
-				   "Usage: LOOP(start, inskip, dur, amp, trans, loopstart, looplen[, inchan, pan])");
+				   "Usage: LOOP(start, inskip, dur, AMP, TRANS, LOOPSTART, LOOPLEN[, inchan, PAN])");
 
 	const float outskip = p[0];
 	const float inskip = p[1];
@@ -154,7 +154,7 @@ int LOOP::run()
 		_inLoc = (int) fLoc;	// read location in _in
 		const float frac = fLoc - _inLoc;
 		const int loc = (_inLoc * inchans) + _inchan;
-		float insig = _in[loc] + (frac * (_in[loc+1] - _in[loc])) * _amp;
+		float insig = (_in[loc] + (frac * (_in[loc+1] - _in[loc]))) * _amp;
 
 		float out[2];
 
