@@ -58,7 +58,7 @@ LPCINST::WarpFilter::set(float d, float *c, int npoles)
 }
 
 void 
-LPCINST::WarpFilter::run(float *sig, float d, float *c, float *out, int nvals)
+LPCINST::WarpFilter::run(float *sig, float d, float * const c, float *out, int outlen)
 {
 	float *past = _past;	// local copies of class state for efficiency
 	int npoles = _npoles;
@@ -66,7 +66,7 @@ LPCINST::WarpFilter::run(float *sig, float d, float *c, float *out, int nvals)
 	float outold = _outold;
 	const int npolem1 = npoles - 1;
 	
-    for (int i=0; i<nvals; ++i) {
+    for (int i=0; i<outlen; ++i) {
 		int n;
         float temp1 = past[npolem1];
         past[npolem1] = cq * outold - d * past[npolem1];
@@ -75,7 +75,9 @@ LPCINST::WarpFilter::run(float *sig, float d, float *c, float *out, int nvals)
             past[n] = d * (past[n+1] - past[n]) + temp1;
             temp1 = temp2;
         }
-        for (n=0; n<npoles; n++)  *sig += c[n] * past[n];
+        for (n=0; n<npoles; n++) {
+            *sig += c[n] * past[n];
+        }
         *out++ = outold = *sig++;
     }
 	_outold = outold;
@@ -365,8 +367,8 @@ int LPCPLAY::localInit(double p[], int n_args)
 int LPCPLAY::run()
 {
 	int   n = 0;
-#if 0
-		printf("\nLPCPLAY::run()\n");
+#ifdef debug
+    printf("\nLPCPLAY::run(this=%p): current frame %d\n", this, currentFrame());
 #endif
 
     const int totalOutFrames = nSamps();
@@ -375,8 +377,8 @@ int LPCPLAY::run()
 	if (_leftOver > 0) {
 		int toAdd = min(_leftOver, framesToRun());
 #ifdef debug
-		printf("using %d leftover samps starting at offset %d\n",
-			   _leftOver, _savedOffset);
+        printf("this=%p: using %d leftover samps starting at offset %d\n",
+			   this, _leftOver, _savedOffset);
 #endif
 		rtbaddout(&_alpvals[_savedOffset], toAdd);
 		increment(toAdd);
@@ -401,15 +403,12 @@ int LPCPLAY::run()
         const int currentOutFrame = currentFrame();
 		
         /* if unvoiced, set to normal rate */
-		if (_unvoiced_rate && !_voiced ) {
+		if (_unvoiced_rate && !_voiced) {
 			++_lpcFrameno;
 		}
 		else {
 			_lpcFrameno = _lpcFrame1 + ((float)(currentOutFrame)/totalOutFrames) * _lpcFrames;
 		}
-#if 0
-		printf("frame %g\n", _lpcFrameno);
-#endif
         if (_dataSet->getFrame(_lpcFrameno,_coeffs) == -1) {
             _amp = 0.0;
 			break;
@@ -417,9 +416,10 @@ int LPCPLAY::run()
 		// If requested, stabilize this frame before using
 		if (_autoCorrect)
 			stabilize(_coeffs, _nPoles);
-			
-		float buzamp = getVoicedAmp(_coeffs[THRESH]);
-		_voiced = (buzamp > 0.1); /* voiced = 0 for 10:1 noise */
+        
+        float buzamp = getVoicedAmp(_coeffs[THRESH]);
+        _voiced = (buzamp > _highthresh);
+
         // equal power handoff between buzz and noise
         const float amp_pi_over2 = buzamp * PI * 0.5;
         buzamp = sinf(amp_pi_over2);
@@ -446,7 +446,7 @@ int LPCPLAY::run()
 			float bw = (_bw_fact < 20.0) ? cf * _bw_fact : _bw_fact;
 			rszset(SR, cf, bw, 1., _rsnetc);
 #ifdef debug
-			printf("cf %g bw %g cps %g\n", cf, bw,cps);
+			printf("\tcf %g bw %g cps %g\n", cf, bw,cps);
 #endif
 		}
 		float si = newpch * _magic;
@@ -464,8 +464,8 @@ int LPCPLAY::run()
 		_counter = int(((float)SR/(newpch * _perperiod) ) * .5);
 		_counter = (_counter > (nSamps() - currentOutFrame)) ? nSamps() - currentOutFrame : _counter;
 #ifdef debug
-		printf("fr: %g err: %g bzamp: %g noisamp: %g newpch: %g _counter: %d\n",
-		 	   _lpcFrameno,_coeffs[THRESH],_ampmlt*buzamp,_ampmlt*noisamp,newpch,_counter);
+        printf("\tthis=%p: fr: %.2f err: %.5f bzamp: %g noisamp: %g newpch: %g _counter: %d\n",
+		 	   this, _lpcFrameno,_coeffs[THRESH],_ampmlt*buzamp,_ampmlt*noisamp,newpch,_counter);
 #endif
         if (_counter <= 0)
 			break;
@@ -489,7 +489,7 @@ int LPCPLAY::run()
 		if (_warpFactor != 0.0) {
 			float warp = (_warpFactor > 1.) ? shift(_coeffs[PITCH],newpch,(float)SR) : _warpFactor;
 #ifdef debug
-			printf("\tpch: %f newpch: %f warp: %f\n",_coeffs[PITCH], newpch, warp);
+			printf("\t pch: %f newpch: %f warp: %f\n",_coeffs[PITCH], newpch, warp);
 #endif
 			/*************
 			warp = ABS(warp) > .2 ? SIGN(warp) * .15 : warp;
@@ -501,7 +501,7 @@ int LPCPLAY::run()
 			ballpole(_buzvals,&_jcount,_nPoles,_past,cpoint,_alpvals,_counter);
 		}
 #ifdef debug
-		{ int x; float maxamp=0; for (x=0;x<_counter;x++) { if (ABS(_alpvals[x]) > ABS(maxamp)) maxamp = _alpvals[x]; }
+		{ float maxamp=0; for (int x=0;x<_counter;x++) { if (ABS(_alpvals[x]) > ABS(maxamp)) maxamp = _alpvals[x]; }
 			printf("\t maxamp = %.4f\n", maxamp);
 		}
 #endif
@@ -548,9 +548,8 @@ LPCPLAY::SetupArrays(int frameCount)
 double
 LPCPLAY::getVoicedAmp(float err)
 {
-	double sqerr, amp;
-	sqerr = ::sqrt((double) err);
-	amp = 1.0 - ((sqerr - _lowthresh) / (_highthresh - _lowthresh));
+	double sqerr = ::sqrt((double) err);
+	double amp = 1.0 - ((sqerr - _lowthresh) / (_highthresh - _lowthresh));
 	amp = (amp < 0.0) ? 0.0 : (amp > 1.0) ? 1.0 : amp;
 
 #ifdef EMBEDDED
@@ -777,8 +776,8 @@ int LPCIN::run()
 		_lpcFrameno = _lpcFrame1 + ((float)(currentFrame())/nSamps()) * _lpcFrames;
 
 #ifdef debug
-		printf("\tgetting frame %g of %d (%d out of %d signal samps)\n",
-			   _lpcFrameno, (int)_lpcFrames, currentFrame(), nSamps());
+        printf("\tthis=%p: getting frame %.1f of %d (%d out of %d signal samps)\n",
+			   this, _lpcFrameno, (int)_lpcFrames, currentFrame(), nSamps());
 #endif
         if (_dataSet->getFrame(_lpcFrameno,_coeffs) == -1) {
             _amp = 0.0;

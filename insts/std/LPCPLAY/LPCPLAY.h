@@ -18,7 +18,7 @@ protected:
 	public:
 		WarpFilter();
 		float set(float warp, float *c, int npoles);
-		void run(float *sig, float warp, float *c, float *out, int nvals);
+		void run(float *sig, float warp, float * const c, float *out, int outlen);
 	private:
 		int _npoles;
 		float _cq;
