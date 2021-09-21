@@ -68,11 +68,11 @@ typedef struct {
    operator Handle () const { return _val.handle; }
    operator Array *() const { return _val.array; }
    operator PField *() const {
-	   return (isType(HandleType) && _val.handle->type == PFieldType) ?
+	   return (isType(HandleType) && _val.handle && _val.handle->type == PFieldType) ?
 		   (PField *) _val.handle->ptr : NULL;
    }
    operator Instrument *() const {
-	   return (isType(HandleType) && _val.handle->type == InstrumentPtrType) ?
+	   return (isType(HandleType) && _val.handle && _val.handle->type == InstrumentPtrType) ?
 		   (Instrument *) _val.handle->ptr : NULL;
    }
    void printInline(FILE *) const;
