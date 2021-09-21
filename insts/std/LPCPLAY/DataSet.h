@@ -1,14 +1,15 @@
 #include <RefCounted.h>
+#include <Lockable.h>
 
 // DataSet.h
 
-class DataSet : public RefCounted
+class DataSet : public RefCounted, public Lockable
 {
 public:
 	DataSet();
 	off_t	open(const char *fileName, int npoleGuess, float sampRate);
-	inline int getNPoles() { return _nPoles; }
-	inline off_t getFrameCount() { return _frameCount; }
+	int getNPoles() const { return _nPoles; }
+	off_t getFrameCount() const { return _frameCount; }
 	int	getFrame(float frameno, float *pCoeffs);
 protected:
 	~DataSet();

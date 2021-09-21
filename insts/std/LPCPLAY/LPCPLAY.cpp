@@ -409,10 +409,14 @@ int LPCPLAY::run()
 		else {
 			_lpcFrameno = _lpcFrame1 + ((float)(currentOutFrame)/totalOutFrames) * _lpcFrames;
 		}
+        // We lock the data set here only because we dont want reentrant calls from parallel LPCPLAY calls.
+        _dataSet->lock();
         if (_dataSet->getFrame(_lpcFrameno,_coeffs) == -1) {
             _amp = 0.0;
+            _dataSet->unlock();
 			break;
         }
+        _dataSet->unlock();
 		// If requested, stabilize this frame before using
 		if (_autoCorrect)
 			stabilize(_coeffs, _nPoles);
@@ -779,10 +783,14 @@ int LPCIN::run()
         printf("\tthis=%p: getting frame %.1f of %d (%d out of %d signal samps)\n",
 			   this, _lpcFrameno, (int)_lpcFrames, currentFrame(), nSamps());
 #endif
+        // We lock the data set here only because we dont want reentrant calls from parallel LPCIN calls.
+        _dataSet->lock();
         if (_dataSet->getFrame(_lpcFrameno,_coeffs) == -1) {
             _amp = 0.0;
+            _dataSet->unlock();
 			break;
         }
+        _dataSet->unlock();
 
 		// If requested, stabilize this frame before using
 		if (_autoCorrect)
