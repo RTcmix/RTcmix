@@ -6,6 +6,9 @@
 
 #define MAXTEXTARGS ((MAXDISPARGS*sizeof(double))/512)
 
+#ifndef IPPORT_RESERVED
+#define IPPORT_RESERVED 1024
+#endif
 #define MYPORT (IPPORT_RESERVED + 78)
 /* IPPORT_RESERVED is 1024, so this is socket 1102
    IPPORT_MAXPORT is 65535 on SGIs */

@@ -34,6 +34,7 @@
 #include <sfheader.h>
 #include "byte_routines.h"
 #include "dbug.h"
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>

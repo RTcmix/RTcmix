@@ -11,6 +11,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <limits.h>
 #include <RTcmix.h>
 #include <rtcmix_types.h>
 #include "prototypes.h"
