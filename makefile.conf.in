@@ -65,8 +65,6 @@ ifeq ($(ARCH),LINUX)
   ifndef AUDIODRIVER
 	AUDIODRIVER=OSS
   endif
-  CC = gcc
-  CXX = g++ -Wno-deprecated
   LD = ld
   MAKE = make
   INSTALL = cp -f
@@ -283,6 +281,14 @@ ifeq ($(BUILDTYPE), STANDALONE)
     endif
 endif
 
+ifeq ($(BUILDTYPE), WASM)
+    ARCHFLAGS = -DLINUX -DEMBEDDED -DEMBEDDEDAUDIO -DWASM $(ARCH_BITFLAGS)
+    ARCH_RTLDFLAGS = -Wl
+    AUDIODRIVER = EMBEDDEDAUDIO
+    RANLIB = emranlib
+    RTLIBTYPE = STATIC
+endif
+
 INCLUDES = -I. -I$(CMIXDIR)/include $(EXTRA_INCLUDES)
 
 CFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_FLAGS)
@@ -350,6 +356,10 @@ ifeq ($(ARCH),FREEBSD)
   SHARED_LDFLAGS = -shared -Wl,-soname,$(RTLIB)
   DYNAMIC_LDFLAGS = $(SHARED_LDFLAGS)
   DYN = -rdynamic
+endif
+
+ifeq ($(BUILDTYPE), WASM)
+    SHARED_LDFLAGS = -Wl
 endif
 
 LDFLAGS = $(ARCH_RTLDFLAGS) $(RTLDFLAGS)
