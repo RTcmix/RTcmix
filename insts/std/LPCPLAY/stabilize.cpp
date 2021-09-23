@@ -1,7 +1,6 @@
 // stabilize.C
 
 #include "Complex.h"
-//#include <stream.h>
 #include "lp.h"
 
 static int factor(double*, int*, double*, double*, int*, int*, double*);
@@ -26,7 +25,7 @@ stabilize(float *frameIn, int npoles)
 
 // the remaining functions are UGLY because they were converted from Fortran
 
-static Complex jay(0., 1.);
+static const Complex jay(0., 1.);
 
 inline double dabs(double x) { return (x >= 0.) ? x : -x; }
 

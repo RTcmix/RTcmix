@@ -365,7 +365,7 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 	bool is_24bit = IS_24BIT_FORMAT(data_format);
 
 	int buf_frames = BUFSAMPS / file_chans;
-	int end_frame = start_frame + table_frames;
+	long end_frame = start_frame + table_frames;
 
 	double *blockp = block;
 	long frames_read = 0;
@@ -462,8 +462,11 @@ _soundfile_table(const Arg args[], const int nargs, double **array, int *len)
 	delete [] buf;
 	sndlib_close(fd, 0, 0, 0, 0);
 
+    if (table_samps > INT_MAX) {
+        rtcmix_warn("maketable (soundfile)", "Table length (%ld) > INT_MAX", table_samps);
+    }
 	*array = block;
-	*len = table_samps;
+	*len = (int) table_samps;   // after warning, we truncate here
 
 	return 0;
 }
@@ -614,8 +617,12 @@ _datafile_table(const Arg args[], const int nargs, double **array, int *len)
 		rtcmix_advise("maketable (datafile)",
 					"%ld values loaded into table.", readitems);
 
-	*array = block;
-	*len = length;
+    if (length > INT_MAX) {
+        rtcmix_warn("maketable (datafile)", "Table length (%ld) > INT_MAX", length);
+    }
+
+    *array = block;
+	*len = (int) length;    // after warning, truncate
 
 	return 0;
 readerr:
