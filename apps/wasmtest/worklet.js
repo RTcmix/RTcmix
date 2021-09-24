@@ -1,9 +1,9 @@
 class DoubleBufferProcessor extends AudioWorkletProcessor {
     constructor(options) {
         super()
-        this.blockSize = options.processorOptions.blockSize
-        this.currentBuffer = new Float32Array(this.blockSize)
-        this.nextBuffer = new Float32Array(this.blockSize)
+        this.frameSize = options.processorOptions.frameSize
+        this.currentBuffer = new Float32Array(this.frameSize * options.outputChannelCount[0])
+        this.nextBuffer = new Float32Array(this.frameSize * options.outputChannelCount[0])
         this.index = 0
 
         this.port.onmessage = (e) => {
@@ -23,20 +23,26 @@ class DoubleBufferProcessor extends AudioWorkletProcessor {
     }
 
     process(inputs, outputs, parameters) {
-        const output = outputs[0][0]
-        if (this.index >= this.blockSize) {
+        const channels = outputs[0]
+        if (this.index >= this.frameSize) {
             // Currently in underrun.
-            if (this.index === this.blockSize) {
+            if (this.index === this.frameSize) {
                 // Only print this once per underrun-streak.
                 console.log("Underrun!")
             }
-            output.fill(0)
+            for (const channel of channels) {
+                channel.fill(0)
+            }
         } else {
-            output.set(this.currentBuffer.subarray(this.index, this.index + output.length))
+            for (let i = 0; i < channels.length; i++) {
+                const start = this.index + this.frameSize * i
+                const subarray = this.currentBuffer.subarray(start, start + channels[i].length)
+                channels[i].set(subarray)
+            }
         }
-        // NOTE: This assumes blockSize is a multiple of output.length (128).
-        this.index += output.length
-        if (this.index >= this.blockSize && this.nextBufferReady) {
+        // NOTE: This assumes frameSize is a multiple of AudioWorklet frame size (128).
+        this.index += channels[0].length
+        if (this.index >= this.frameSize && this.nextBufferReady) {
             this.swapBuffers()
         }
         return true

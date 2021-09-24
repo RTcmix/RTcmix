@@ -11,17 +11,23 @@ let setupDone = false
 let outBuffer
 let worklet
 
+function getInt(address) {
+    return new Int32Array(Module.HEAP32.buffer)[address / Int32Array.BYTES_PER_ELEMENT]
+}
+
 async function setup() {
     await moduleReady
     Module._setup(context.sampleRate)
     await context.resume()
     await context.audioWorklet.addModule("worklet.js")
+    const frameSize = getInt(Module._FRAME_SIZE)
+    const numChannels = getInt(Module._NUM_CHANNELS)
     worklet = new AudioWorkletNode(context, "doublebuffer", {
         numberOfInputs: 0,
-        numberOfOutputs: 1,
-        processorOptions: { blockSize: Module._BLOCK_SIZE }
+        outputChannelCount: [numChannels],
+        processorOptions: { frameSize },
     })
-    const output = new Float32Array(Module.HEAP32.buffer, Module._output, Module._BLOCK_SIZE)
+    const output = new Float32Array(Module.HEAP32.buffer, Module._output, frameSize * numChannels)
     worklet.port.onmessage = (event) => {
         // Generate samples.
         Module._process()
@@ -58,6 +64,6 @@ for (st = 0; st < dur; st += 0.11) {
     pan = irand(0, 1)
     STRUM2(st, notedur, amp, freq, squish, decay, pan)
 }</textarea><br />
-        <button onclick="play()">Play RTcmix score</button>
+        <button onclick="play()">Play score</button>
     </body>
 </html>

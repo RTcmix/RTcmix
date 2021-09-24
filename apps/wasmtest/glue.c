@@ -9,18 +9,24 @@
 
 #define BUS_COUNT 32
 
-#define _BLOCK_SIZE 1024
+#define _FRAME_SIZE 1024
 EMSCRIPTEN_KEEPALIVE
-const int BLOCK_SIZE = _BLOCK_SIZE;
+const int FRAME_SIZE = _FRAME_SIZE;
 
 EMSCRIPTEN_KEEPALIVE
-float output[_BLOCK_SIZE];
+#define _NUM_CHANNELS 2
+const int NUM_CHANNELS = _NUM_CHANNELS;
+
+float interleaved[_FRAME_SIZE * _NUM_CHANNELS];
+
+EMSCRIPTEN_KEEPALIVE
+float output[_FRAME_SIZE * _NUM_CHANNELS];
 
 EMSCRIPTEN_KEEPALIVE
 void setup(int sample_rate) {
 	RTcmix_init();
-	RTcmix_setAudioBufferFormat(AudioFormat_32BitFloat_Normalized, 1);
-	RTcmix_setparams(sample_rate, 1, BLOCK_SIZE, 0, BUS_COUNT);
+	RTcmix_setAudioBufferFormat(AudioFormat_32BitFloat_Normalized, NUM_CHANNELS);
+	RTcmix_setparams(sample_rate, NUM_CHANNELS, FRAME_SIZE, 0, BUS_COUNT);
 }
 
 EMSCRIPTEN_KEEPALIVE
@@ -30,5 +36,11 @@ void load_score(char *score) {
 
 EMSCRIPTEN_KEEPALIVE
 void process() {
-	RTcmix_runAudio(NULL, output, BLOCK_SIZE);
+	RTcmix_runAudio(NULL, interleaved, FRAME_SIZE);
+	// Deinterleave channels for Web Audio API.
+	for (int frame = 0; frame < FRAME_SIZE; frame++) {
+		for (int channel = 0; channel < NUM_CHANNELS; channel++) {
+			output[channel * FRAME_SIZE + frame] = interleaved[frame * NUM_CHANNELS + channel];
+		}
+	}
 }
