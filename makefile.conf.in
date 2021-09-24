@@ -287,6 +287,8 @@ ifeq ($(BUILDTYPE), WASM)
     AUDIODRIVER = EMBEDDEDAUDIO
     RANLIB = emranlib
     RTLIBTYPE = STATIC
+    SHLIB = rtcmix_embedded
+    RTLIB_INSTALL_DIR = $(LIBDIR)
 endif
 
 INCLUDES = -I. -I$(CMIXDIR)/include $(EXTRA_INCLUDES)
