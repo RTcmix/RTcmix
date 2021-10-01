@@ -48,6 +48,8 @@ MINCLIB = $(MINCDIR)/libminc.a
 SNDLIB = $(SRCDIR)/sndlib/sndlib.a
 AUDIOLIB = $(AUDIODIR)/librtaudio.a
 
+LIBPREFIX = lib
+
 # Compile and link time flags
 
 # -- Linux ----------------------------------------------------
@@ -151,6 +153,8 @@ ifeq ($(ARCH),MACOSX)
 
     SHLIB = rtcmixdylib
 	SHLIB_SUFFIX = so
+	# we override this to remove the "lib" prefix
+	LIBPREFIX =
 	RTLIB_LDFLAGS = $(UB_CFLAGS) -Wl,-U,_cpost,-bundle,-flat_namespace
 	RTLIBTYPE = DYNAMIC
 	RTLIB_INSTALL_DIR = $(MAX_LIB_INSTALL_DIR)
@@ -285,7 +289,7 @@ CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_F
 
 # Platform-independent library flags
 
-RTLIB = lib$(SHLIB).$(SHLIB_SUFFIX)
+RTLIB = $(LIBPREFIX)$(SHLIB).$(SHLIB_SUFFIX)
 LIBRTCMIX = $(LIBDIR)/$(RTLIB)
 RTLDFLAGS = -L$(LIBDIR) -l$(SHLIB) -lgen
 
