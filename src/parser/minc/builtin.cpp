@@ -152,8 +152,15 @@ _do_print(const MincValue args[], const int nargs)
 			  MincList *list = (MincList *)args[i];
 			if (list != NULL) {
 				RTPrintfCat("[");
-				_do_print(list->data, list->len);
-                RTPrintfCat("]%s", delimiter);
+                unsigned printLimit = (unsigned)Option::printListLimit();
+                if (printLimit < list->len) {
+                    _do_print(list->data, printLimit);
+                    RTPrintfCat(", ...]%s", delimiter);
+                }
+                else {
+                    _do_print(list->data, list->len);
+                    RTPrintfCat("]%s", delimiter);
+                }
 			}
 			else {
                 RTPrintfCat("NULL%s", delimiter);
