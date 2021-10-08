@@ -27,12 +27,18 @@ async function setup() {
         outputChannelCount: [numChannels],
         processorOptions: { frameSize },
     })
+
     const output = new Float32Array(Module.HEAP32.buffer, Module._output, frameSize * numChannels)
     worklet.port.onmessage = (event) => {
         // Generate samples.
-        Module._process()
-        // Fill the buffer and transfer it back.
-        event.data.set(output)
+        if (Module._process()) {
+            event.data.set(output)
+        } else {
+            // Score finished playing.
+            event.data.fill(0)
+            document.getElementById("status").innerText = "Finished"
+        }
+        // Transfer the buffer back to the worklet.
         worklet.port.postMessage(event.data, [event.data.buffer])
     }
     worklet.connect(context.destination)
@@ -45,6 +51,7 @@ async function play() {
     }
     const score = document.getElementById("score").value
     Module.ccall("load_score", null, ["string"], [score])
+    document.getElementById("status").innerText = "Playing"
 }
         </script>
     </head>
@@ -60,6 +67,7 @@ for (st = 0; st < dur; st += 0.11) {
     pan = irand(0, 1)
     STRUM2(st, notedur, amp, freq, squish, decay, pan)
 }</textarea><br />
+        Status: <span id="status">Not started</span><br/>
         <button onclick="play()">Play score</button>
     </body>
 </html>
