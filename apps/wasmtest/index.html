@@ -39,10 +39,6 @@ async function setup() {
     setupDone = true
 }
 
-function more() {
-    Module._process(outBuffer, Module._BLOCK_SIZE);
-}
-
 async function play() {
     if (!setupDone) {
         await setup()
