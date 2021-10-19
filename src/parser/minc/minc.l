@@ -139,19 +139,27 @@ num   {dig}+
                 }
             }
             if (!found) {
-                includedFilenames.push_back(strdup(includedFilename));
-                include_stack[include_stack_index].saved_lineno = yyget_lineno();
-                include_stack[include_stack_index++].state = YY_CURRENT_BUFFER;
-                yyin = fopen( yytext, "r" );
-                if (!yyin)
-                {
+                yyin = fopen(includedFilename, "r" );
+#ifdef MINCLUDEDIR
+                if (!yyin) {
+                    // Did not find it locally - check the master MinC include dir if it is defined
+                    char alternate_location[1054];
+                    snprintf(alternate_location, 1054, "%s/%s", MINCLUDEDIR, includedFilename);
+                    yyin = fopen(alternate_location, "r" );
+                }
+#endif
+                if (!yyin) {
                     char msg[1054];
-                    snprintf(msg, 1054, "Unable to open include file \"%s\"",
-                             yytext);
+                    snprintf(msg, 1054, "Unable to open include file \"%s\"", includedFilename);
                     YY_FATAL_ERROR(msg);
                 }
-                yyset_lineno(1);
-                yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
+                else {
+                    includedFilenames.push_back(strdup(includedFilename));
+                    include_stack[include_stack_index].saved_lineno = yyget_lineno();
+                    include_stack[include_stack_index++].state = YY_CURRENT_BUFFER;
+                    yyset_lineno(1);
+                    yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
+                }
             }
             BEGIN INIT;
 		}
