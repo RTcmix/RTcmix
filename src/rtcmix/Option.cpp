@@ -44,6 +44,8 @@ int Option::_print = MMP_RTERRORS; // basic level for max/msp
 int Option::_print = MMP_PRINTALL; // default print everthing for regular RTcmix
 #endif
 
+int Option::_printListLimit = DEFAULT_PRINT_LIST_LIMIT;
+
 
 char Option::_device[DEVICE_MAX];
 char Option::_inDevice[DEVICE_MAX];
@@ -74,6 +76,7 @@ void Option::init()
 #else
 	_print = MMP_PRINTALL; // default print everthing for regular RTcmix
 #endif
+    _printListLimit = DEFAULT_PRINT_LIST_LIMIT;
 	_bufferFrames = DEFAULT_BUFFER_FRAMES;
 	_bufferCount = DEFAULT_BUFFER_COUNT;
 	_oscInPort = DEFAULT_OSC_INPORT;
@@ -229,7 +232,14 @@ int Option::readConfigFile(const char *fileName)
 	else if (result != kConfigNoValueForKey)
 		reportError("%s: %s.", conf.getLastErrorText(), key);
 
-	key = kOptionOSCInPort;
+    key = kOptionPrintListLimit;
+    result = conf.getValue(key, dval);
+    if (result == kConfigNoErr)
+        printListLimit((int)dval);
+    else if (result != kConfigNoValueForKey)
+        reportError("%s: %s.", conf.getLastErrorText(), key);
+
+    key = kOptionOSCInPort;
 	result = conf.getValue(key, dval);
 	if (result == kConfigNoErr)
 		oscInPort((int)dval);
@@ -365,6 +375,7 @@ int Option::writeConfigFile(const char *fileName)
 	fprintf(stream, "%s = %d\n", kOptionBufferCount, bufferCount());
 	fprintf(stream, "%s = %d\n", kOptionOSCInPort, oscInPort());
 	fprintf(stream, "%s = %d\n", kOptionPrint, print());
+    fprintf(stream, "%s = %d\n", kOptionPrintListLimit, printListLimit());
 	fprintf(stream, "%s = %g\n", kOptionMuteThreshold, muteThreshold());
 
 	// write string options

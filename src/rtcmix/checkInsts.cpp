@@ -23,22 +23,6 @@
 
 //#define DEBUG
 
-static void
-printargs(const char *instname, const Arg arglist[], const int nargs)
-{
-   int i;
-   Arg arg;
-
-   if (Option::print() >= MMP_PRINTALL) {
-      RTPrintf("========<rt-queueing>=======\n");
-      RTPrintfCat("%s:  ", instname);
-      for (i = 0; i < nargs; i++) {
-         arglist[i].printInline(stdout);
-      }
-      RTPrintf("\n");
-   }
-}
-
 static InstCreatorFunction
 findInstCreator(rt_item *inList, const char *inInstName)
 {

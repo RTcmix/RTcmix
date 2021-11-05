@@ -32,7 +32,7 @@ static float getIncrement(float pchOct)
 }
 
 LOOP::LOOP()
-	: _in(NULL), _usesPan(false), _branch(0), _inLoc(0), _position(0), _lastInPosition(-1)
+	: _in(NULL), _usesPan(false), _branch(0), _inLoc(0), _inputFrame(0), _lastInputFrame(-1)
 {
 }
 
@@ -99,8 +99,8 @@ int LOOP::init(double p[], int n_args)
 	if (_inchan >= inputChannels())
 		return die("LOOP", "You asked for channel %d of a %d-channel input.", _inchan, inputChannels());
 
-	_position = inskip * SR;	// Actual starting position in the input file
-	_inOffset = 0;	// Offset of first sample in _in array compared to _position.
+    _inputFrame = long(inskip * SR);    // Actual starting position in the input file, truncated to sample boundary
+    _inOffset = 0;	// Offset of first sample in _in array compared to _inputFrame.
 	
 	return nSamps();
 }
@@ -131,7 +131,7 @@ int LOOP::run()
 	int loopLength = _loopEnd - _loopStart + 1;
 	double end = _loopEnd + 1;
 
-//	printf("LOOP::run() TOP: _position: %.2f\n", _position);
+//	printf("LOOP::run() TOP: _inputFrame: %.2f\n", _inputFrame);
 	
 	for (int i = 0; i < outframes; ++i) {
 
@@ -143,14 +143,14 @@ int LOOP::run()
 			_branch = getSkip();
 		}
 		
-		if (_position >= _lastInPosition) {
-			int backskip = int(_position - _inLoc) - _inOffset;
+		if (_inputFrame >= _lastInputFrame) {
+			int backskip = int(_inputFrame - _inLoc) - _inOffset;
 			rtinrepos(this, -backskip, SEEK_CUR);
 			rtgetin(_in, this, samps);
-			_lastInPosition += (RTBUFSAMPS - backskip);
-			_inOffset = int(_position);
+			_lastInputFrame += (RTBUFSAMPS - backskip);
+			_inOffset = int(_inputFrame);
 		}
-		float fLoc = (_position - _inOffset);
+		float fLoc = (_inputFrame - _inOffset);
 		_inLoc = (int) fLoc;	// read location in _in
 		const float frac = fLoc - _inLoc;
 		const int loc = (_inLoc * inchans) + _inchan;
@@ -169,28 +169,28 @@ int LOOP::run()
 
 		increment();
 		
-		_position += _incr;
+		_inputFrame += _incr;
 		
-		if (_position >= end) {
+		if (_inputFrame >= end) {
 //			printf("LOOP::run(): hit loop end: (%.2f >= %.2f).  last interp before loop: %.2f between _in[%d] and _in[%d]\n",
-//				   _position, end, frac, _inLoc, _inLoc+1);
-//			if (_position - _loopStart > _inLoc) {		// loop start is not contained within current _in array
+//				   _inputFrame, end, frac, _inLoc, _inLoc+1);
+//			if (_inputFrame - _loopStart > _inLoc) {		// loop start is not contained within current _in array
 			if (_inOffset > _loopStart) {		// loop start is not contained within current _in array
 				rtinrepos(this, (int)_loopStart, SEEK_SET);	// set to first frame of loop
-				_position -= loopLength;
+				_inputFrame -= loopLength;
 				_inLoc = 0;
-				_lastInPosition = int(_position - 1);			// forces rtgetin()
-				_inOffset = _position;
-//				printf("LOOP::run() seeking back to %d.  _position will be %.2f\n\n", (int)_loopStart, _position);
+				_lastInputFrame = int(_inputFrame - 1);			// forces rtgetin()
+				_inOffset = _inputFrame;
+//				printf("LOOP::run() seeking back to %d.  _inputFrame will be %.2f\n\n", (int)_loopStart, _inputFrame);
 			}
 			else {										// loop is within _in array
-				_position -= loopLength;
-//				printf("LOOP::run() hit loop end: loop within buffer.  _position will be %.2f\n\n", _position);
+				_inputFrame -= loopLength;
+//				printf("LOOP::run() hit loop end: loop within buffer.  _inputFrame will be %.2f\n\n", _inputFrame);
 			}
 		}
 	}
 
-//	printf("LOOP::run() EXIT: _inLoc: %d, _inOffset: %d _position: %.2f\n\n", _inLoc, _inOffset, _position);
+//	printf("LOOP::run() EXIT: _inLoc: %d, _inOffset: %d _inputFrame: %.2f\n\n", _inLoc, _inOffset, _inputFrame);
 
 	return framesToRun();
 }

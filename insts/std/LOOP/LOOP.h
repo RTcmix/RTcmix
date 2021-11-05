@@ -17,6 +17,6 @@ private:
 	bool _usesPan;
 	int _inchan, _branch, _inOffset, _inLoc;
 	float _amp, _pan, _loopStart, _loopEnd;
-	double _position, _incr, _lastInPosition;
+	double _inputFrame, _incr, _lastInputFrame;
 };
 

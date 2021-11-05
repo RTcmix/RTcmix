@@ -183,7 +183,7 @@ call_external_function(const char *funcname, const MincValue arglist[],
            Array *array = (Array *) retval;
            MincList *outlist = new MincList(array->len);
            MincValue *dest = outlist->data;
-           for (int n=0; n < array->len; ++n) {
+           for (unsigned n=0; n < array->len; ++n) {
                dest[n] = array->data[n];
            }
            *return_value = outlist;
