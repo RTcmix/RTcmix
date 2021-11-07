@@ -8,10 +8,9 @@
    p5 = ending LPC frame
 
    // Optional
-
    p6 = warp		[0 == none]
    p7 = reson cf	[0 == none]
-   p8 = reson bw		
+   p8 = reson bw
 
 */
 
@@ -19,7 +18,6 @@
 #include <stdlib.h>
 #include <ugens.h>
 #include <math.h>
-#include <mixerr.h>
 #include <rt.h>
 #include <rtdefs.h>
 
@@ -31,6 +29,8 @@ static const float kDefaultFrequency = 256.0;
 
 static const int LPCPLAY_amp = 2;
 static const int LPCPLAY_pitch = 3;
+static const int LPCPLAY_firstframe = 4;
+static const int LPCPLAY_lastframe = 5;
 static const int LPCPLAY_warp = 6;
 static const int LPCPLAY_cf = 7;
 static const int LPCPLAY_bw = 8;
@@ -38,6 +38,7 @@ static const int LPCPLAY_bw = 8;
 inline int min(int x, int y) { return (x < y) ? x : y; }
 
 #undef debug
+#undef debug2   /* super detailed */
 
 LPCINST::WarpFilter::WarpFilter() : _outold(0.0f)
 {
@@ -57,7 +58,7 @@ LPCINST::WarpFilter::set(float d, float *c, int npoles)
 }
 
 void 
-LPCINST::WarpFilter::run(float *sig, float d, float *c, float *out, int nvals)
+LPCINST::WarpFilter::run(float *sig, float d, float * const c, float *out, int outlen)
 {
 	float *past = _past;	// local copies of class state for efficiency
 	int npoles = _npoles;
@@ -65,7 +66,7 @@ LPCINST::WarpFilter::run(float *sig, float d, float *c, float *out, int nvals)
 	float outold = _outold;
 	const int npolem1 = npoles - 1;
 	
-    for (int i=0; i<nvals; ++i) {
+    for (int i=0; i<outlen; ++i) {
 		int n;
         float temp1 = past[npolem1];
         past[npolem1] = cq * outold - d * past[npolem1];
@@ -74,7 +75,9 @@ LPCINST::WarpFilter::run(float *sig, float d, float *c, float *out, int nvals)
             past[n] = d * (past[n+1] - past[n]) + temp1;
             temp1 = temp2;
         }
-        for (n=0; n<npoles; n++)  *sig += c[n] * past[n];
+        for (n=0; n<npoles; n++) {
+            *sig += c[n] * past[n];
+        }
         *out++ = outold = *sig++;
     }
 	_outold = outold;
@@ -159,7 +162,7 @@ LPCPLAY::LPCPLAY() : LPCINST("LPCPLAY"), _pchvals(NULL), _noisvals(NULL)
 	_srd2 = SR/2.;
 	_magic = 512./SR;
 	_phs = 0.0;
-	_datafields = 10; /* number of fields before pitch curves */
+	_datafields = LPCPLAY_bw + 1; /* number of fields before pitch curves */
 	_voiced = true;		// default state
 	for (int i=0; i<9; i++)
 		_rsnetc[i]=0;
@@ -206,7 +209,7 @@ int LPCPLAY::localInit(double p[], int n_args)
 
 	if (!n_args || n_args < 6)
 		return die("LPCPLAY",
-				   "p[0]=starting time, p[1]=duration, p[2]=amp, p[3]=pitch, p[4]=frame1, p[5]=frame2, [ p[6]=warp p7=resoncf, p8=resonbw [ p9--> pitchcurves ] ]\n");
+				   "p[0]=starting time, p[1]=duration, p[2]=amp, p[3]=pitch, p[4]=frame1, p[5]=frame2, [ p[6]=warp, p[7]=resoncf, p[8]=resonbw, [ p9--> pitchcurves ] ]\n");
 
    /* Store pfields in variables, to allow for easy pfield renumbering.
       You should retain the RTcmix numbering convention for the first
@@ -218,8 +221,8 @@ int LPCPLAY::localInit(double p[], int n_args)
 	_amp = p[LPCPLAY_amp];
 	_pitch = p[LPCPLAY_pitch];
 
-	int startLPCFrame = (int) p[4];
-	int endLPCFrame = (int) p[5];
+	int startLPCFrame = (int) p[LPCPLAY_firstframe];
+	int endLPCFrame = (int) p[LPCPLAY_lastframe];
 	int lpcFrameCount = endLPCFrame - startLPCFrame + 1;
 
 	if (lpcFrameCount <= 0)
@@ -301,8 +304,7 @@ int LPCPLAY::localInit(double p[], int n_args)
 		_transposition = cpspch(-_pitch);  /* flat pitch in octave pt */
         rtcmix_advise("LPCPLAY", "p[3] will be used as flat pitch of %.2f Hz", _transposition);
     }
-
-	if (n_args <= _datafields && _pitch > 0) {
+	if (n_args <= _datafields /* && _pitch > 0 */) {
 		rtcmix_advise("LPCPLAY", "Overall transp factor: %f, weighted av. pitch = %g Hz",
 			   _transposition, actualweight);
 		if (_maxdev) 
@@ -346,7 +348,7 @@ int LPCPLAY::localInit(double p[], int n_args)
 	/* note, dont use this feature unless pitch is specified in p[3]*/
 	
 	_sineFun = floc(SINE_SLOT);
-	_reson_is_on = p[LPCPLAY_cf] ? true : false;
+	_reson_is_on = (p[LPCPLAY_cf] != 0.0) ? true : false;
 	_cf_fact = p[LPCPLAY_cf];
 	_bw_fact = p[LPCPLAY_bw];
 	_lpcFrameno = _lpcFrame1;	/* in case first frame is unvoiced */
@@ -365,8 +367,8 @@ int LPCPLAY::localInit(double p[], int n_args)
 int LPCPLAY::run()
 {
 	int   n = 0;
-#if 0
-		printf("\nLPCPLAY::run()\n");
+#ifdef debug
+    printf("\nLPCPLAY::run(this=%p): current frame %d\n", this, currentFrame());
 #endif
 
     const int totalOutFrames = nSamps();
@@ -375,8 +377,8 @@ int LPCPLAY::run()
 	if (_leftOver > 0) {
 		int toAdd = min(_leftOver, framesToRun());
 #ifdef debug
-		printf("using %d leftover samps starting at offset %d\n",
-			   _leftOver, _savedOffset);
+        printf("this=%p: using %d leftover samps starting at offset %d\n",
+			   this, _leftOver, _savedOffset);
 #endif
 		rtbaddout(&_alpvals[_savedOffset], toAdd);
 		increment(toAdd);
@@ -394,30 +396,34 @@ int LPCPLAY::run()
 		_amp = p[LPCPLAY_amp];
 		_pitch = p[LPCPLAY_pitch];
 		_warpFactor = p[LPCPLAY_warp];
-		_reson_is_on = p[LPCPLAY_cf] ? true : false;
+		_reson_is_on = (p[LPCPLAY_cf] > 0.0) ? true : false;
 		_cf_fact = p[LPCPLAY_cf];
 		_bw_fact = p[LPCPLAY_bw];
         
         const int currentOutFrame = currentFrame();
 		
         /* if unvoiced, set to normal rate */
-		if (_unvoiced_rate && !_voiced ) {
+		if (_unvoiced_rate && !_voiced) {
 			++_lpcFrameno;
 		}
 		else {
 			_lpcFrameno = _lpcFrame1 + ((float)(currentOutFrame)/totalOutFrames) * _lpcFrames;
 		}
-#if 0
-		printf("frame %g\n", _lpcFrameno);
-#endif
-		if (_dataSet->getFrame(_lpcFrameno,_coeffs) == -1)
+        // We lock the data set here only because we dont want reentrant calls from parallel LPCPLAY calls.
+        _dataSet->lock();
+        if (_dataSet->getFrame(_lpcFrameno,_coeffs) == -1) {
+            _amp = 0.0;
+            _dataSet->unlock();
 			break;
+        }
+        _dataSet->unlock();
 		// If requested, stabilize this frame before using
 		if (_autoCorrect)
 			stabilize(_coeffs, _nPoles);
-			
-		float buzamp = getVoicedAmp(_coeffs[THRESH]);
-		_voiced = (buzamp > 0.1); /* voiced = 0 for 10:1 noise */
+        
+        float buzamp = getVoicedAmp(_coeffs[THRESH]);
+        _voiced = (buzamp > _highthresh);
+
         // equal power handoff between buzz and noise
         const float amp_pi_over2 = buzamp * PI * 0.5;
         buzamp = sinf(amp_pi_over2);
@@ -444,7 +450,7 @@ int LPCPLAY::run()
 			float bw = (_bw_fact < 20.0) ? cf * _bw_fact : _bw_fact;
 			rszset(SR, cf, bw, 1., _rsnetc);
 #ifdef debug
-			printf("cf %g bw %g cps %g\n", cf, bw,cps);
+			printf("\tcf %g bw %g cps %g\n", cf, bw,cps);
 #endif
 		}
 		float si = newpch * _magic;
@@ -462,8 +468,8 @@ int LPCPLAY::run()
 		_counter = int(((float)SR/(newpch * _perperiod) ) * .5);
 		_counter = (_counter > (nSamps() - currentOutFrame)) ? nSamps() - currentOutFrame : _counter;
 #ifdef debug
-		printf("fr: %g err: %g bzamp: %g noisamp: %g pch: %g ctr: %d\n",
-		 	   _lpcFrameno,_coeffs[THRESH],_ampmlt*buzamp,_ampmlt*noisamp,newpch,_counter);
+        printf("\tthis=%p: fr: %.2f err: %.5f bzamp: %g noisamp: %g newpch: %g _counter: %d\n",
+		 	   this, _lpcFrameno,_coeffs[THRESH],_ampmlt*buzamp,_ampmlt*noisamp,newpch,_counter);
 #endif
         if (_counter <= 0)
 			break;
@@ -474,20 +480,20 @@ int LPCPLAY::run()
 		}
 
 		bbuzz(_ampmlt*buzamp,si,hn,_sineFun,&_phs,_buzvals,_counter);
-#ifdef debug
+#ifdef debug2
 		printf("\t _buzvals[0] = %g\n", _buzvals[0]);
 #endif
 		l_brrand(_ampmlt*noisamp,_noisvals,_counter);	/* TEMPORARY */
-#ifdef debug
+#ifdef debug2
 		printf("\t _noisvals[0] = %g\n", _noisvals[0]);
 #endif
 		for (int loc=0; loc<_counter; loc++) {
 			_buzvals[loc] += _noisvals[loc];	/* add voiced and unvoiced */
 		}
-		if (_warpFactor) {
+		if (_warpFactor != 0.0) {
 			float warp = (_warpFactor > 1.) ? shift(_coeffs[PITCH],newpch,(float)SR) : _warpFactor;
 #ifdef debug
-			printf("\tpch: %f newpch: %f d: %f\n",_coeffs[PITCH], newpch, warp);
+			printf("\t pch: %f newpch: %f warp: %f\n",_coeffs[PITCH], newpch, warp);
 #endif
 			/*************
 			warp = ABS(warp) > .2 ? SIGN(warp) * .15 : warp;
@@ -499,7 +505,7 @@ int LPCPLAY::run()
 			ballpole(_buzvals,&_jcount,_nPoles,_past,cpoint,_alpvals,_counter);
 		}
 #ifdef debug
-		{ int x; float maxamp=0; for (x=0;x<_counter;x++) { if (ABS(_alpvals[x]) > ABS(maxamp)) maxamp = _alpvals[x]; }
+		{ float maxamp=0; for (int x=0;x<_counter;x++) { if (ABS(_alpvals[x]) > ABS(maxamp)) maxamp = _alpvals[x]; }
 			printf("\t maxamp = %.4f\n", maxamp);
 		}
 #endif
@@ -523,7 +529,7 @@ int LPCPLAY::run()
 	if (n > framesToRun()) {
 		_leftOver = n - framesToRun();
 		_savedOffset = _counter - _leftOver;
-#ifdef debug
+#ifdef debug2
 		printf("saving %d samples left over at offset %d\n", _leftOver, _savedOffset);
 #endif
 	}
@@ -546,9 +552,8 @@ LPCPLAY::SetupArrays(int frameCount)
 double
 LPCPLAY::getVoicedAmp(float err)
 {
-	double sqerr, amp;
-	sqerr = ::sqrt((double) err);
-	amp = 1.0 - ((sqerr - _lowthresh) / (_highthresh - _lowthresh));
+	double sqerr = ::sqrt((double) err);
+	double amp = 1.0 - ((sqerr - _lowthresh) / (_highthresh - _lowthresh));
 	amp = (amp < 0.0) ? 0.0 : (amp > 1.0) ? 1.0 : amp;
 
 #ifdef EMBEDDED
@@ -629,9 +634,22 @@ LPCPLAY::readjust(float maxdev, double *pchval,
 	}
 }
 
-//
-// LPCIN
-//
+/* LPCIN - sound filtering instrument
+ 
+ p0 = output start time
+ p1 = input file skip time
+ p2 = duration
+ p3 = amplitude multiplier
+ p4 = starting LPC frame
+ p5 = ending LPC frame
+ 
+ // Optional
+ p6 = input channel
+ p7 = warp        [0 == none]
+ p8 = reson cf    [0 == none]
+ p9 = reson bw
+ 
+ */
 
 static const int LPCIN_amp = 3;
 static const int LPCIN_warp = 7;
@@ -735,7 +753,7 @@ int LPCIN::run()
 	if (_leftOver > 0)
 	{
 		int toAdd = min(_leftOver, framesToRun());
-#ifdef debug
+#ifdef debug2
 		printf("using %d leftover samps starting at offset %d\n",
 			   _leftOver, _savedOffset);
 #endif
@@ -755,18 +773,24 @@ int LPCIN::run()
 		update(p, LPCIN_bw + 1);
 		_amp = p[LPCIN_amp];
 		_warpFactor = p[LPCIN_warp];
-		_reson_is_on = p[LPCIN_cf] ? true : false;
+		_reson_is_on = (p[LPCIN_cf] > 0.0) ? true : false;
 		_cf_fact = p[LPCIN_cf];
 		_bw_fact = p[LPCIN_bw];
 
 		_lpcFrameno = _lpcFrame1 + ((float)(currentFrame())/nSamps()) * _lpcFrames;
 
 #ifdef debug
-		printf("\tgetting frame %g of %d (%d out of %d signal samps)\n",
-			   _lpcFrameno, (int)_lpcFrames, currentFrame(), nSamps());
+        printf("\tthis=%p: getting frame %.1f of %d (%d out of %d signal samps)\n",
+			   this, _lpcFrameno, (int)_lpcFrames, currentFrame(), nSamps());
 #endif
-		if (_dataSet->getFrame(_lpcFrameno,_coeffs) == -1)
+        // We lock the data set here only because we dont want reentrant calls from parallel LPCIN calls.
+        _dataSet->lock();
+        if (_dataSet->getFrame(_lpcFrameno,_coeffs) == -1) {
+            _amp = 0.0;
+            _dataSet->unlock();
 			break;
+        }
+        _dataSet->unlock();
 
 		// If requested, stabilize this frame before using
 		if (_autoCorrect)
@@ -809,7 +833,7 @@ int LPCIN::run()
 		for (int from=_inChannel, to=0; to < _counter; from += inchans, ++to)
 			_buzvals[to] = _inbuf[from];
 
-#ifdef debug
+#ifdef debug2
 		printf("\t _buzvals[0] = %g\n", _buzvals[0]);
 #endif
 		if (_warpFactor) {
@@ -827,7 +851,7 @@ int LPCIN::run()
 		{
 			ballpole(_buzvals,&_jcount,_nPoles,_past,cpoint,_alpvals,_counter);
 		}
-#ifdef debug
+#ifdef debug2
 		{ int x; float maxamp=0; for (x=0;x<_counter;x++) { if (ABS(_alpvals[x]) > ABS(maxamp)) maxamp = _alpvals[x]; }
 			printf("\t maxamp = %g\n", maxamp);
 		}
@@ -852,7 +876,7 @@ int LPCIN::run()
 	{
 		_leftOver = n - framesToRun();
 		_savedOffset = _counter - _leftOver;
-#ifdef debug
+#ifdef debug2
 		printf("saving %d samples left over at offset %d\n", _leftOver, _savedOffset);
 #endif
 	}

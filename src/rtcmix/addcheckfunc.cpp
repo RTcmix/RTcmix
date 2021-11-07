@@ -8,7 +8,6 @@
 #include <assert.h>
 #include <ugens.h>      // for die, warn
 #include "rtcmix_types.h"
-#include <mixerr.h>
 #include "prototypes.h"
 #include <ug_intro.h>
 #include <string.h>
@@ -252,8 +251,19 @@ RTcmix::checkfunc(const char *funcname, const Arg arglist[], const int nargs,
                                                           (arglist, nargs);
           if (retHandle == NULL) {
               status = SYSTEM_ERROR;
+              *retval = retHandle;
           }
-          *retval = retHandle;
+          // New:  If function is returning an array, it does it via a new Handle type.
+          // This allows the function to return it has a Handle, and we copy it as an
+          // Array here.  This means we have to free the orphaned handle.
+          else if (retHandle->type == ListType) {
+              *retval = (Array *) retHandle->ptr;
+              free(retHandle);
+              retHandle = NULL;
+          }
+          else {
+              *retval = retHandle;
+          }
 	  }
       catch (int err) {
           status = err;

@@ -1,10 +1,11 @@
 /************   LPCPLAY example score *****************/
 rtsetparams(44100, 1, 256);
+
 load("LPCPLAY");
 bus_config("LPCPLAY", "in 0", "out 0");
 
 /* LPCPLAY arguments: */
-/* p0=start,p1=dur,amp,p2=amp,p3=8ve.pch,p4=frame1,p5=frame2,p6=warp,p7=cf,p8=bw, p9/10 --> additional pitch specifications */
+/* p0=start,p1=dur,amp,p2=amp,p3=8ve.pch,p4=frame1,p5=frame2,p6=warp,p7=cf,p8=bw, p09/10 --> additional pitch specifications */
 
 float thresh,randamp,fps,frame1,frame2,warp,cf,bw,dur,amp,start,amp
 float buzthresh, noisethresh;
@@ -58,11 +59,12 @@ LPCPLAY(start=start+dur+1,dur*.9,amp,transp=8,frame1,frame2,warp=0,cf,bw,frame1+
 
 /* some whispered speech */
 lpcstuff(thresh = -.01,	randamp = .1,	0,0,0,0)
-set_thresh(0.9, 1);
+set_thresh(0.0, 0.001);
 LPCPLAY(start=start+dur+1,dur,amp,transp=8,frame1,frame2,warp=0,cf,bw)
+rtoffset(start)
 
 /* highpass whispered speech */
-LPCPLAY(start=start+dur+1,dur,amp,transp=8,frame1,frame2,warp=0,cf=5,bw=.1)
+LPCPLAY(start=start+dur+1,dur,amp*5,transp=8,frame1,frame2,warp=0,cf=5,bw=.1)
 
 /* highpass whispered speech, shift formants */
 LPCPLAY(start=start+dur+1,dur,amp,transp=8,frame1,frame2,warp=-.3,cf=7,bw=.05)
@@ -70,6 +72,7 @@ LPCPLAY(start=start+dur+1,dur,amp,transp=8,frame1,frame2,warp=-.3,cf=7,bw=.05)
 /* andrews sisters */
 lpcstuff(thresh = .09,	randamp = .1,	0, 0,0,0)
 set_thresh(buzthresh, noisethresh);
+dur *= 1.5;
 setdev(15)
 amp = 3
 LPCPLAY(start=start+dur+1,dur,amp,transp=.01,frame1,frame2,warp=0,cf=0,bw=0)

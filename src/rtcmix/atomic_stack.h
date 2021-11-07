@@ -3,9 +3,9 @@
 
 #ifdef MACOSX
 #include <libkern/OSAtomic.h>
-#if MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_4
-#include <CoreServices/CoreServices.h>
-#endif
+//#if MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_X_VERSION_10_4
+//#include <CoreServices/CoreServices.h>
+//#endif
 #elif defined(LINUX)
 template <class T>
 static bool	compare_and_swap(T *oldvalue, T *newvalue, T **pvalue);

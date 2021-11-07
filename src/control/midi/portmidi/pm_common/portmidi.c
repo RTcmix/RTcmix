@@ -733,9 +733,9 @@ PmError Pm_Abort( PortMidiStream* stream ) {
     /* arg checking */
     if (midi == NULL)
         err = pmBadPtr;
-    if (!descriptors[midi->device_id].pub.output)
+    else if (!descriptors[midi->device_id].pub.output)
         err = pmBadPtr;
-    if (!descriptors[midi->device_id].pub.opened)
+    else if (!descriptors[midi->device_id].pub.opened)
         err = pmBadPtr;
     else
         err = (*midi->dictionary->abort)(midi);

@@ -58,7 +58,6 @@ private:
 
 #ifdef DEBUG_MEMORY
 #define MPRINT(...) rtcmix_print(__VA_ARGS__)
-static int numNodes = 0;
 #else
 #define MPRINT(...)
 #endif

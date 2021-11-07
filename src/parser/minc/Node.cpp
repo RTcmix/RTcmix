@@ -173,6 +173,10 @@ static const char *printOpKind(OpKind k)
 static void push_list(void);
 static void pop_list(void);
 
+#ifdef DEBUG_MEMORY
+static int numNodes = 0;
+#endif
+
 /* ========================================================================== */
 /* Tree nodes */
 
@@ -914,15 +918,21 @@ Node *  NodeMember::doExct()
     const char *targetName = (structSymbol != NULL) ? structSymbol->name() : "temp lhs";
     TPRINT("NodeMember: attempting to access member '%s' on object '%s'\n", _memberName, targetName);
     if (child(0)->dataType() == MincStructType) {
-       Symbol *memberSymbol = ((MincStruct *) child(0)->value())->lookupMember(_memberName);
-       if (memberSymbol) {
-            setSymbol(memberSymbol);
-            /* also assign the symbol's value into tree's value field */
-            TPRINT("NodeMember: copying value from member symbol '%s' to us\n", _memberName);
-            copyValue(memberSymbol);
+        MincStruct *theStruct = (MincStruct *) child(0)->value();
+        if (theStruct) {
+           Symbol *memberSymbol = theStruct->lookupMember(_memberName);
+           if (memberSymbol) {
+                setSymbol(memberSymbol);
+                /* also assign the symbol's value into tree's value field */
+                TPRINT("NodeMember: copying value from member symbol '%s' to us\n", _memberName);
+                copyValue(memberSymbol);
+            }
+            else {
+                minc_die("struct variable '%s' has no member '%s'", targetName, _memberName);
+            }
         }
         else {
-            minc_die("struct variable '%s' has no member '%s'", targetName, _memberName);
+            minc_die("struct variable %s' is NULL", targetName);
         }
     }
     else {
@@ -995,6 +1005,9 @@ Node *	NodeCall::doExct()
 	else if (child(0)->dataType() == MincStringType) {
         // We stored this away when we noticed this was a builtin function
         const char *functionName = (MincString)child(0)->value();
+        if (!functionName) {
+            minc_die("string variable called as function is NULL");
+        }
 		MincValue retval;
 		int result = call_builtin_function(functionName, sMincList, sMincListLen,
 										   &retval);
@@ -1017,7 +1030,7 @@ Node *	NodeCall::doExct()
 		}
 	}
     else {
-        assert(!"func object passed to NodeCall should be either MincFunction or MincString");
+        minc_die("variable is not a function or instrument");
     }
 	pop_list();
 	return this;
@@ -1609,7 +1622,9 @@ Node *    NodeStructDecl::doExct()
 Node *	NodeFuncDecl::doExct()
 {
 	TPRINT("NodeFuncDecl(%p) -- declaring function '%s'\n", this, _symbolName);
-	assert(current_scope() == 0);	// until I allow nested functions
+    if (current_scope() > 0) {
+        minc_die("functions may only be declared at global scope");
+    }
 	Symbol *sym = lookupSymbol(_symbolName, GlobalLevel);	// only look at current global level
 	if (sym == NULL) {
 		sym = installSymbol(_symbolName, YES);		// all functions global for now
@@ -1633,6 +1648,7 @@ Node *	NodeFuncDef::doExct()
 	TPRINT("NodeFuncDef(%p): executing lookup node %p\n", this, child(0));
 	child(0)->exct();
 	assert(child(0)->symbol() != NULL);
+    // Note: 'this' stored inside MincFunction.
 	child(0)->symbol()->value() = MincValue(new MincFunction(this));
 #warning is this line correct and necessary?
     setValue(child(0)->symbol()->value());

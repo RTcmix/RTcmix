@@ -12,7 +12,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "MAXBANG.h"
 #include <rt.h>

@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <ugens.h>
 #include <math.h>
-#include <mixerr.h>
 #include <rt.h>
 #include <rtdefs.h>
 #include <string.h>
@@ -202,7 +201,7 @@ int PVOC::init(double *p, int n_args)
 	I	 = (int)p[8];		/* interpolation factor */
 	P	 = p[9];			/* oscillator bank pitch factor */
 	Np	= (int)p[10];		/* linear prediction order */
-	_oscThreshold  = p[11];		/* synthesis threshhold */
+	_oscThreshold  = (float)p[11];		/* synthesis threshhold */
 
 #ifdef debug
 	printf("initial PVOC parameters:\n" );
@@ -340,7 +339,7 @@ int PVOC::doUpdate()
 		else
 			_NP = int(N2);
 	}
-	_oscThreshold  = update(11, _inputFrames, _currentInputFrame);		/* synthesis threshhold */
+	_oscThreshold  = (float)update(11, _inputFrames, _currentInputFrame);		/* synthesis threshhold */
 	
 	return 0;
 }

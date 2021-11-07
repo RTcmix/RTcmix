@@ -5,7 +5,6 @@
 #include <string.h>
 #include <math.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include "common.h"
 #include <rt.h>
 #include <rtdefs.h>

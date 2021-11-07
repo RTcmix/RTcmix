@@ -33,6 +33,7 @@ LIBDIR = $(CMIXDIR)/lib
 DESTDIR = $(CMIXDIR)/bin
 BINDIR = $(DESTDIR)
 INCLUDEDIR = $(CMIXDIR)/include
+MINCLUDEDIR = $(CMIXDIR)/minclude
 
 SRCDIR = $(CMIXDIR)/src
 AUDIODIR = $(SRCDIR)/audio
@@ -47,6 +48,8 @@ MIXDIR = insts/base/MIX
 MINCLIB = $(MINCDIR)/libminc.a
 SNDLIB = $(SRCDIR)/sndlib/sndlib.a
 AUDIOLIB = $(AUDIODIR)/librtaudio.a
+
+LIBPREFIX = lib
 
 # Compile and link time flags
 
@@ -151,6 +154,8 @@ ifeq ($(ARCH),MACOSX)
 
     SHLIB = rtcmixdylib
 	SHLIB_SUFFIX = so
+	# we override this to remove the "lib" prefix
+	LIBPREFIX =
 	RTLIB_LDFLAGS = $(UB_CFLAGS) -Wl,-U,_cpost,-bundle,-flat_namespace
 	RTLIBTYPE = DYNAMIC
 	RTLIB_INSTALL_DIR = $(MAX_LIB_INSTALL_DIR)
@@ -263,6 +268,8 @@ ifeq ($(BUILDTYPE), STANDALONE)
 	RTLIB_LDFLAGS = $(DYNAMIC_LDFLAGS)
 	RTLIBTYPE = DYNAMIC
 	RTLIB_INSTALL_DIR = $(LIBDIR)
+	
+	CMIX_FLAGS += -DMINCLUDEDIR=\"$(MINCLUDEDIR)\"
 
     ifeq ($(NPLAY_SUPPORT), TRUE)
       CMIX_FLAGS += -DNETAUDIO
@@ -285,7 +292,7 @@ CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_F
 
 # Platform-independent library flags
 
-RTLIB = lib$(SHLIB).$(SHLIB_SUFFIX)
+RTLIB = $(LIBPREFIX)$(SHLIB).$(SHLIB_SUFFIX)
 LIBRTCMIX = $(LIBDIR)/$(RTLIB)
 RTLDFLAGS = -L$(LIBDIR) -l$(SHLIB) -lgen
 

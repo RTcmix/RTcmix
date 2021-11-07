@@ -627,7 +627,7 @@ PmError pm_macosxcm_init(void)
 {
     ItemCount numInputs, numOutputs, numDevices;
     MIDIEndpointRef endpoint;
-    int i;
+    ItemCount i;
     OSStatus macHostError;
     char *error_text;
 

@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include <Instrument.h>
 #include "SGRANR.h"
 #include <rt.h>

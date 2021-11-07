@@ -94,6 +94,7 @@ makegen(float p[], int n_args, double pp[])
    }
 
    if (!install_gen(genslot, gen.size, table)) {
+       free(table);
       die("makegen", "No more function tables available!");
       return -1.0;
    }
@@ -287,11 +288,15 @@ combine_gens(int destslot, int srcslot1, int srcslot2, int normalize,
       destsize = srcsize1;
 
    destarray = (double *) malloc((size_t) destsize * sizeof(double));
-   if (destarray == NULL)
+    if (destarray == NULL) {
+        free(tmparray);
       return die(funcname, "Not enough memory for new function table.");
+    }
 
-   if (!install_gen(destslot, destsize, destarray))
+   if (!install_gen(destslot, destsize, destarray)) {
+       free(destarray);
       return die(funcname, "No more function tables available.");
+   }
 
    /* Fill destination array. */
    switch (modtype) {

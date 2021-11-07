@@ -22,7 +22,6 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <ugens.h>
-#include <mixerr.h>
 #include "SCRUB.h"
 #include <rt.h>
 #include <math.h>
@@ -48,10 +47,6 @@
 // segment has both bits cleared.
 
 static const int gkRingBufSegmentSize = 1024;
-static const int gkOutOfBoundsTestMask = (gkRingBufSegmentSize << 1 &
-					  gkRingBufSegmentSize << 2);
-static const int gkOutOfBoundsLeft = 0;
-static const int gkOutOfBoundsRight = gkRingBufSegmentSize << 2;
 
 static const int gkNrRawFrames = 3 * gkRingBufSegmentSize;
 
@@ -442,8 +437,8 @@ inline void SCRUB::EnsureRawFramesIdxInbound() {
 // preserve filter quality, however, we have to increase the number of
 // samples for each interpolation by f'/f as well.
 
-void SCRUB::GetFrames(float* frames, const int nframes, const float speed) {
-	float F2OverF1 = 1.0f / fabs(speed);
+void SCRUB::GetFrames(float* frames, const int nframes, const float inSpeed) {
+	float F2OverF1 = 1.0f / fabs(inSpeed);
 	float ascaler = (F2OverF1 >= 1.0 ? 1.0 : F2OverF1); // amplitude scaler
 	float tunit = ascaler * kSincOversampling; // sinc table index scaler
 
@@ -499,6 +494,6 @@ void SCRUB::GetFrames(float* frames, const int nframes, const float speed) {
 			frames[outidx++] = sum * ascaler;	// could optimize * for upsampling
 			cursmp++;		// advance to next channel
 		}
-		fCurRawFramesIdx += speed;
+		fCurRawFramesIdx += inSpeed;
 	}
 }

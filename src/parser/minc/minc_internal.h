@@ -66,6 +66,9 @@ void minc_die(const char *msg, ...);
 void minc_internal_error(const char *msg, ...);
 extern "C" void yyerror(const char *msg);
 
+#define minc_try try
+#define minc_catch(actions) catch(...) { if (true) { actions } throw; }
+
 class RTException
 {
 public:

@@ -29,6 +29,7 @@
 
 class Notifiable {
 public:
+    virtual ~Notifiable() {}
 	virtual void notify(int inIndex) = 0;
 };
 

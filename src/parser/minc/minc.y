@@ -494,11 +494,7 @@ fdef: funcname fargl '{' fstml '}'	{
 									MPRINT("fdef");
 									decrLevel();
 									--flevel; MPRINT1("flevel => %d", flevel);
-									go(new NodeFuncDef($1, $2, $4));
-									/* because we're just a decl, and the tree is stored
-									   in the Symbol, we do not return a Node to the parser.
-									 */
-									$$ = new NodeNoop();
+									$$ = go(new NodeFuncDef($1, $2, $4));
 								}
 	| error funcname fargl '{' stml '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }
 	| error funcname fargl '{' '}'	{ minc_die("%s(): function body must end with 'return <exp>' statement", $2); flerror = 1; $$ = new NodeNoop(); }

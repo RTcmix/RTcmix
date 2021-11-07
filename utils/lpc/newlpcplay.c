@@ -1,5 +1,5 @@
-#include "../../H/ugens.h"
-#include "../../H/sfheader.h"
+#include "../../include/ugens.h"
+#include "../../include/sfheader.h"
 #include <math.h>
 #include <stdio.h>
 #include <sys/stat.h>

@@ -739,11 +739,36 @@ int AppleAudioDevice::doOpen(int mode)
 	if (status != noErr) {
 		return appleError("Unable to create the output audio unit", status);
 	}
+    UInt32 enableInput = impl->recording;
+    UInt32 enableOutput = impl->playing;
+    if (enableInput) {
+        UInt32 supportsInput = 0;
+        UInt32 uSize = sizeof(supportsInput);
+        status = AudioUnitGetProperty(impl->audioUnit,
+                                      kAudioOutputUnitProperty_HasIO,
+                                      kAudioUnitScope_Input,
+                                      kInputBus,
+                                      &supportsInput,
+                                      &uSize);
+        if (status != noErr || !supportsInput) {
+            return error("Selected audio device does not support input - use aggregate device");
+        }
+    }
+    if (enableOutput) {
+        UInt32 supportsOutput = 0;
+        UInt32 uSize = sizeof(supportsOutput);
+        status = AudioUnitGetProperty(impl->audioUnit,
+                                      kAudioOutputUnitProperty_HasIO,
+                                      kAudioUnitScope_Output,
+                                      kOutputBus,
+                                      &supportsOutput,
+                                      &uSize);
+        if (status != noErr || !supportsOutput) {
+            return error("Selected audio device does not support output - use aggregate device");
+        }
+    }
 	// Enable IO for playback and/or record.  This is done before setting the (OSX) device.
-	
-	UInt32 enableInput = impl->recording;
-	UInt32 enableOutput = impl->playing;
-	
+    	
 	status = AudioUnitSetProperty(impl->audioUnit,
 								  kAudioOutputUnitProperty_EnableIO,
 								  kAudioUnitScope_Input,

@@ -87,8 +87,8 @@ Arg::printInline(FILE *stream) const
 			case InstrumentPtrType:
 				RTFPrintfCat(stream, "Inst:%p ", _val.handle->ptr);
 				break;
-			case AudioStreamType:
-				RTFPrintfCat(stream, "AudioStr:%p", _val.handle->ptr);
+			case ListType:
+				RTFPrintfCat(stream, "List:%p", _val.handle->ptr);
 				break;
 			default:
 				RTFPrintfCat(stream, "Unknown ");

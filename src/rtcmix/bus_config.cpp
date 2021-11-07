@@ -687,8 +687,8 @@ RTcmix::mixToBus()
     // Mix all vectors from each thread down to the final mix buses
     for (int i = 0; i < RT_THREAD_COUNT; ++i) {
         std::vector<MixData> &vector = mixVectors[i];
-        for (std::vector<RTcmix::MixData>::iterator i = vector.begin(); i != vector.end(); ++i) {
-            MixData &m = *i;
+        for (std::vector<RTcmix::MixData>::iterator it = vector.begin(); it != vector.end(); ++it) {
+            MixData &m = *it;
             BufPtr src = m.src;
             BufPtr dest = m.dest;
             const int framesOverFour = m.frames >> 2;
@@ -789,8 +789,10 @@ parse_bus_name(char *busname, BusType *type, int *startchan, int *endchan, int m
             *type = BUS_AUX_IN;
          else if (strchr(busname, 'o'))
             *type = BUS_AUX_OUT;
-         else
+         else {
+             rtcmix_warn("bus_config", "Invalid bus specifier: '%s'", busname);
             return INVAL_BUS_ERR;
+         }
          p = &busname[3];                            /* skip over "aux" */
          status = parse_bus_chan(p, startchan, endchan, maxBus);
          break;
@@ -800,8 +802,10 @@ parse_bus_name(char *busname, BusType *type, int *startchan, int *endchan, int m
 		   *type = BUS_NONE_IN;
 		else if (strchr(p, 'o'))
 		   *type = BUS_NONE_OUT;
-		else
+        else {
+            rtcmix_warn("bus_config", "Invalid bus specifier: '%s'", busname);
 		   return INVAL_BUS_ERR;
+        }
 		status = parse_bus_chan(p, startchan, endchan, maxBus);
 		break;
       default:

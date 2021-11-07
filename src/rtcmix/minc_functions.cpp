@@ -382,23 +382,6 @@ double m_getamp(float p[], int n_args, double pp[])
 	return((double) vals[1]);
 }
 
-double str_num(float p[], int n_args, double pp[])
-{
-	char *name;
-	int i,j;
-	char buf[16];
-
-	for (j=0; j<n_args; j=j+2) {
-		buf[0] = 0;
-		name = DOUBLE_TO_STRING(pp[j]);
-		if (((j+1) < (n_args-1)) || !(n_args % 2))
-			sprintf(buf, "%g", pp[j+1]);
-		RTPrintfCat("%s%s", name, buf);
-	}
-	RTPrintf("\n");
-	return 0.0;
-}
-
 double m_print_is_on(float p[], int n_args)
 {
 	if (n_args > 0)
@@ -644,6 +627,7 @@ extern "C" {
 	double m_pickrand(const Arg args[], const int nargs);
 	double m_pickwrand(const Arg args[], const int nargs);
 	double get_time(); // returns number of seconds that have elapsed
+    double m_stringtofloat(const Arg args[], const int nargs);
 }
 
 #include "PField.h"
@@ -809,6 +793,22 @@ double get_time() {
 	double tval = RTcmix::getElapsedFrames()/RTcmix::sr();
 	return tval;
 }
+
+double m_stringtofloat(const Arg args[], const int nargs)
+{
+    if (nargs != 1 || !args[0].isType(StringType)) {
+        die("stringtofloat", "Usage: stringtofloat(some_string_containing_a_number");
+        RTExit(PARAM_ERROR);
+    }
+    const char *stringToScan = (const char *)args[0];
+    const char *str = stringToScan;
+    // pull off any starting non-number chars
+    while (!(*str >= '0' && *str <= '9') && (*str != '-') && (*str != '+') && *str != '.') str++;
+    float value = 0;
+    int found = sscanf(str, "%f", &value);
+    return (found == EOF) ? 0.0 : value;
+}
+
 
 #ifdef DOUGS_CODE
 
