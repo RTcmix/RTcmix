@@ -149,7 +149,7 @@ int BWESINE::run()
 		float out[2];
 		double amp = _amp;
 		if (_bandwidth == 1.0) {
-			amp *= sqrt(2.0 * _bandwidth) * _noi->next();
+			amp *= M_SQRT2 * _noi->next();
 		}
 		else if (_bandwidth != 0.0) {
 			double a = sqrt(1.0 - _bandwidth);
