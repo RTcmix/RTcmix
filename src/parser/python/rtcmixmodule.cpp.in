@@ -136,8 +136,8 @@ static PyObject *Opaque_type(OpaqueObject *self, PyObject *args)
       str = "PField";
    else if (handle->type == InstrumentPtrType)
       str = "Instrument";
-   else if (handle->type == AudioStreamType)
-      str = "AudioStream";
+   else if (handle->type == ListType)
+      str = "List";
    else
       str = "(invalid)";
    return PyString_FromString(str);
