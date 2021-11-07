@@ -92,6 +92,9 @@ int FILTERBANK::init(double p[], int n_args)
 	if (rtsetoutput(outskip, dur + ringdur, this) == -1)
 		return DONT_SCHEDULE;
 
+	if (inchan >= inputChannels())
+		return die("FILTERBANK", "Input channel pfield the exceeds number of configured input channels (%d).", inputChannels());
+
 	if ((nargs - FIRST_BAND_ARG) % BAND_ARGS)
 		return die("FILTERBANK", "For each band, need cf, bw, and amp.");
 
