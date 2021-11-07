@@ -88,12 +88,12 @@ int FILTERBANK::init(double p[], int n_args)
 	if (rtsetinput(inskip, this) == -1)
 		return DONT_SCHEDULE;
 	insamps = int(dur * SR + 0.5);
+   if (inchan >= inputChannels())
+      return die("FILTERBANK", "You asked for channel %d of a %d-channel file.",
+                                                      inchan, inputChannels());
 
 	if (rtsetoutput(outskip, dur + ringdur, this) == -1)
 		return DONT_SCHEDULE;
-
-	if (inchan >= inputChannels())
-		return die("FILTERBANK", "Input channel pfield the exceeds number of configured input channels (%d).", inputChannels());
 
 	if ((nargs - FIRST_BAND_ARG) % BAND_ARGS)
 		return die("FILTERBANK", "For each band, need cf, bw, and amp.");
