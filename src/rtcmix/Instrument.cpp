@@ -12,7 +12,6 @@
 #include "rt.h"
 #include "rtdefs.h"
 #include "buffers.h"
-#include <notetags.h>
 #include <sndlibsupport.h>
 #include <bus.h>
 #include "BusSlot.h"

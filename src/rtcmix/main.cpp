@@ -25,7 +25,6 @@
 #include "rtdefs.h"
 #include "heap.h"
 #include "sockdefs.h"
-#include "notetags.h"           // contains defs for note-tagging
 #include "dbug.h"
 #include "InputFile.h"
 #include <MMPrint.h>
@@ -205,7 +204,7 @@ void RTcmix_setFinishedCallback(RTcmixFinishedCallback inFinishedCallback, void 
 void checkForPrint()
 {
 	if (!is_print_cleared()) {
-		const char *printBuf = MMPrint::mm_print_buf;
+		const char *printBuf = get_mm_print_buf();
 		if (sPrintCallback)
 			sPrintCallback(printBuf, sPrintCallbackContext);
 		clear_print();
