@@ -27,6 +27,7 @@ static MincFloat _minc_printf(const MincValue args[], const int nargs);
 static MincFloat _minc_len(const MincValue args[], const int nargs);
 static MincFloat _minc_interp(const MincValue args[], const int nargs);
 static MincFloat _minc_index(const MincValue args[], const int nargs);
+static MincFloat _minc_contains(const MincValue args[], const int nargs);
 static MincString _minc_type(const MincValue args[], const int nargs);
 static MincString _minc_tostring(const MincValue args[], const int nargs);
 
@@ -47,6 +48,7 @@ static struct _builtins {
    { "len",       _minc_len,     NULL },
    { "interp",    _minc_interp,  NULL },
    { "index",     _minc_index,   NULL },
+   { "contains", _minc_contains, NULL },
    { "type",      NULL,          _minc_type },
    { "tostring",  NULL,          _minc_tostring },
    { NULL,        NULL,          NULL }         /* marks end of list */
@@ -510,16 +512,17 @@ err:
 
 /* ------------------------------------------------------------------- len -- */
 /* Print the length of the argument.  This is useful for getting the number
-   of items in a list or the number of characters in a string.
+   of items in a list or map, or the number of characters in a string.
 */
 MincFloat
 _minc_len(const MincValue args[], const int nargs)
 {
    unsigned long len = 0;
 
-   if (nargs != 1)
+    if (nargs != 1) {
       minc_warn("len: must have one argument");
-   else {
+    }
+    else {
       switch (args[0].dataType() ) {
          case MincFloatType:
             len = 1;
@@ -546,12 +549,15 @@ _minc_len(const MincValue args[], const int nargs)
               len = map ? map->len() : 0;
           }
           break;
+          case MincStructType:
+              minc_warn("len: cannot ask for length of a struct");
+              break;
          default:
             minc_warn("len: invalid argument");
             break;
       }
-   }
-   return (MincFloat) len;
+    }
+    return (MincFloat) len;
 }
 
 static int min(int x, int y) { return (x <= y) ? x : y; }
@@ -579,7 +585,7 @@ _minc_interp(const MincValue args[], const int nargs)
 			return 0.0;
 		else if (len == 1)
 			return (MincFloat)data[0];
-		float fraction = (MincFloat)args[1];
+		MincFloat fraction = (MincFloat)args[1];
 		fraction = (fraction < 0.0) ? 0.0 : (fraction > 1.0) ? 1.0 : fraction;
 		int lowIndex = (int)((len - 1) * fraction);
 		int highIndex = min(len - 1, lowIndex + 1);
@@ -593,7 +599,7 @@ _minc_interp(const MincValue args[], const int nargs)
 }
 
 /* ----------------------------------------------------------------- index -- */
-/* Given an item (float, string, list, or handle), return the index of the item within
+/* Given an item (float, string, list, handle, etc.), return the index of the item within
    the given list, or -1 if the item is not in the list.  Example:
 
       list = {1, 2, "three", 4}
@@ -617,8 +623,7 @@ _minc_index(const MincValue args[], const int nargs)
       return -1.0;
    }
    argtype = args[1].dataType() ;
-   assert(argtype == MincFloatType || argtype == MincStringType
-            || argtype == MincHandleType || argtype == MincListType);
+   assert(argtype != MincVoidType);
 
    len = ((MincList *)args[0])->len;
    data = ((MincList *)args[0])->data;
@@ -656,6 +661,32 @@ _minc_index(const MincValue args[], const int nargs)
    return (MincFloat) index;
 }
 
+/* ---------------------------------------------------------------- contains -- */
+/* Given an item (float, string, list, handle, etc.), return 1 if the item is contained
+   in the given list or map, or 0 if the item is not found.
+ */
+MincFloat
+_minc_contains(const MincValue args[], const int nargs)
+{
+    if (nargs != 2) {
+        minc_warn("contains: must have two arguments (container, item_to_find)");
+        return 0;
+    }
+    if (args[0].dataType() != MincListType && args[0].dataType() != MincMapType) {
+        minc_warn("contains: first argument must be a list or map");
+        return 0;
+    }
+    MincDataType argtype = args[1].dataType() ;
+    assert(argtype != MincVoidType);
+    
+    if (args[0].dataType() == MincListType) {
+        return _minc_index(args, nargs) != -1.0;
+    }
+    else {
+        MincMap *theMap = (MincMap *)args[0];
+        return theMap->contains(args[1]);
+    }
+}
 
 /* ------------------------------------------------------------------ type -- */
 /* Print the object type of the argument: float, string, handle, list.

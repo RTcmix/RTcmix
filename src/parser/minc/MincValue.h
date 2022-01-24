@@ -44,6 +44,7 @@ private:
 public:
     MincMap();
     int len() const { return (int) map.size(); }
+    bool contains(const MincValue &element);
     std::map<MincValue, MincValue, MincValueCmp> map;
     void        print();
 protected:

@@ -78,6 +78,11 @@ MincMap::~MincMap()
 #endif
 }
 
+bool MincMap::contains(const MincValue &element)
+{
+    return map.count(element) > 0;
+}
+
 bool
 MincMap::MincValueCmp::operator()(const MincValue& lhs, const MincValue& rhs) const
 {
