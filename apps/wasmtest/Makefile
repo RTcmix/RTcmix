@@ -2,9 +2,9 @@ CFLAGS = -Wall -O3
 INCLUDES = -I../../include
 LDFLAGS = -L../../lib -lrtcmix_embedded -s EXPORTED_RUNTIME_METHODS=["ccall"]
 
-all: glue
+all: glue.js glue.wasm
 
-glue: glue.c
+glue.js glue.wasm: glue.c
 	$(CC) $(CFLAGS) -o glue.js $< $(INCLUDES) $(LDFLAGS)
 
 clean:
