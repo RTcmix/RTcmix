@@ -78,11 +78,11 @@ for (st = 0; st < dur; st += 0.11) {
         <button onclick="play()">Play score</button><br /><br />
         <label style="display: flex; align-items: center">
             Inlet 0:
-            <input id="inlet-0" type="range" value="5000" min="0" max="10000" step="1" onchange="send(0)" />
+            <input id="inlet-0" type="range" value="5000" min="0" max="10000" step="1" oninput="send(0)" />
         </label><br />
         <label style="display: flex; align-items: center">
             Inlet 1:
-            <input id="inlet-1" type="range" value="200" min="0" max="1000" step="1" onchange="send(1)" />
+            <input id="inlet-1" type="range" value="200" min="0" max="1000" step="1" oninput="send(1)" />
         </label>
     </body>
 </html>
