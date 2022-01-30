@@ -56,3 +56,8 @@ int process() {
 	}
 	return 1;
 }
+
+EMSCRIPTEN_KEEPALIVE
+void send(int inlet, float value) {
+    RTcmix_setPField(inlet, value);
+}
