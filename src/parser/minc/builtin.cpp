@@ -684,7 +684,7 @@ _minc_contains(const MincValue args[], const int nargs)
     }
     else {
         MincMap *theMap = (MincMap *)args[0];
-        return theMap->contains(args[1]);
+        return theMap ? theMap->contains(args[1]) : 0;
     }
 }
 

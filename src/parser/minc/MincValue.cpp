@@ -227,7 +227,7 @@ MincValue::MincValue(MincDataType inType) : type(inType)
     _u.list = NULL;        // to zero our contents
 }
 
-MincValue::MincValue(const MincValue &rhs)
+MincValue::MincValue(const MincValue &rhs) : type(MincVoidType)
 {
 #ifdef DEBUG_MEMORY
     MPRINT("created MincValue %p (for copy ctor with rhs %p)\n", this, &rhs);
