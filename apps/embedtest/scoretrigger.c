@@ -123,6 +123,7 @@ int initRTcmix()
 {
 	char str[64];
 
+    RTcmix_setPrintLevel(6);
 	int result = RTcmix_init();
 	if (result)
 		goto error;
@@ -426,8 +427,8 @@ int main(int argc, char *argv[])
 		if (scores[i])
 			free(scores[i]);
 
-	result = deleteRTcmix();
+	result = deleteAudio();
 
-	return deleteAudio();
+	return deleteRTcmix();
 }
 
