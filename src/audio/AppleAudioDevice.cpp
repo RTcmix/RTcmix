@@ -737,8 +737,45 @@ int AppleAudioDevice::doOpen(int mode)
 	AudioComponent comp = AudioComponentFindNext(NULL, &desc);
 	status = AudioComponentInstanceNew(comp, &impl->audioUnit);
 	if (status != noErr) {
-		return appleError("Unable to create the output audio unit", status);
+		return appleError("Unable to create the audio unit", status);
 	}
+
+#ifdef STANDALONE
+    // Set the device for the HAL Audio Unit
+    
+    Boolean isInput = impl->recording && !impl->playing;
+    AudioDeviceID devID = ::findDeviceID(impl->deviceName, impl->deviceIDs,
+                                         impl->deviceCount, isInput);
+    
+    if (devID == 0) {
+        char msg[64];
+        snprintf(msg, 64, "No matching device found for '%s'\n", impl->deviceName);
+        return error(msg);
+    }
+    
+    status = AudioUnitSetProperty(impl->audioUnit,
+                                  kAudioOutputUnitProperty_CurrentDevice,
+                                  kAudioUnitScope_Global,
+                                  0,
+                                  &devID,
+                                  sizeof(devID));
+    if (status != noErr) {
+        return appleError("Unable to set hardware device on audio unit", status);
+    }
+    
+    // Set up property listeners
+    
+    status = AudioUnitAddPropertyListener(impl->audioUnit, kAudioDevicePropertyBufferFrameSize, Impl::propertyListenerProc, this);
+    if (status != noErr) {
+        return appleError("Unable to set BufferFrameSize listener on audio unit", status);
+    }
+    status = AudioUnitAddPropertyListener(impl->audioUnit, kAudioDevicePropertyStreamFormat, Impl::propertyListenerProc, this);
+    if (status != noErr) {
+        return appleError("Unable to set Device StreamFormat listener on audio unit", status);
+    }
+    
+#endif
+
     UInt32 enableInput = impl->recording;
     UInt32 enableOutput = impl->playing;
     if (enableInput) {
@@ -789,41 +826,6 @@ int AppleAudioDevice::doOpen(int mode)
 		return appleError("Unable to Enable/Disable output I/O on audio unit", status);
 	}
 
-#ifdef STANDALONE
-	// Set the device for the HAL Audio Unit
-	
-	Boolean isInput = impl->recording && !impl->playing;
-	AudioDeviceID devID = ::findDeviceID(impl->deviceName, impl->deviceIDs,
-	                       impl->deviceCount, isInput);
-	
-	if (devID == 0) {
-		char msg[64];
-		snprintf(msg, 64, "No matching device found for '%s'\n", impl->deviceName);
-		return error(msg);
-	}
-	
-	status = AudioUnitSetProperty(impl->audioUnit,
-								  kAudioOutputUnitProperty_CurrentDevice,
-								  kAudioUnitScope_Global,
-								  0,
-								  &devID,
-								  sizeof(devID));
-	if (status != noErr) {
-		return appleError("Unable to set hardware device on audio unit", status);
-	}
-
-	// Set up property listeners
-	
-	status = AudioUnitAddPropertyListener(impl->audioUnit, kAudioDevicePropertyBufferFrameSize, Impl::propertyListenerProc, this);
-	if (status != noErr) {
-		return appleError("Unable to set BufferFrameSize listener on audio unit", status);
-	}
-	status = AudioUnitAddPropertyListener(impl->audioUnit, kAudioDevicePropertyStreamFormat, Impl::propertyListenerProc, this);
-	if (status != noErr) {
-		return appleError("Unable to set Device StreamFormat listener on audio unit", status);
-	}
-	
-#endif
 	status = AudioUnitAddPropertyListener(impl->audioUnit, kAudioUnitProperty_SampleRate, Impl::propertyListenerProc, this);
 	if (status != noErr) {
 		return appleError("Unable to set SampleRate listener on audio unit", status);
