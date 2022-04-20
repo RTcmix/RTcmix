@@ -116,7 +116,7 @@ use_script_file(char *fname)
 	}
 	_script_name = fname;
 	if (get_print_option() > 4)
-		printf("Using file %s\n", fname);
+		printf("Using score file %s\n", fname);
 }
 
 

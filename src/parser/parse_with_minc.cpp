@@ -166,7 +166,7 @@ use_script_file(char *fname)
 		exit(1);
 	}
 	if (get_print_option() > MMP_ADVISE)
-		RTPrintf("Using file %s\n", fname);
+		RTPrintf("Using score file %s\n", fname);
 #else
     rterror("use_script_file", "Command not available for embedded builds");
 #endif

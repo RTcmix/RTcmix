@@ -545,7 +545,7 @@ static Node * parseArgumentQuery(const char *text, int *pOutErr)
 {
 #ifndef EMBEDDED
     /* ?argument will return 1.0 if defined, else 0.0 */
-    const char *token = text + 1;    // strip off '?'
+    const char *token = strsave(text + 1);    // strip off '?'
     // returns NULL silently if not found
     const char *value = lookup_token(token, false);
     return new NodeConstf(value != NULL ? 1.0 : 0.0);
@@ -559,7 +559,7 @@ static Node * parseArgumentQuery(const char *text, int *pOutErr)
 static Node * parseScoreArgument(const char *text, int *pOutErr)
 {
 #ifndef EMBEDDED
-    const char *token = text + 1;    // strip off '$'
+    const char *token = strsave(text + 1);    // strip off '$'
     const char *value = lookup_token(token, true);        // returns NULL with warning
     if (value != NULL) {
         // We store this as a number constant if it can be coaxed into a number,

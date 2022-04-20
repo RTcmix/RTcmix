@@ -173,9 +173,9 @@ RTcmix::parse_rtoutput_args(int nargs, double pp[])
    }
 
    rtoutsfname = DOUBLE_TO_STRING(pp[0]);
-   if (rtoutsfname == NULL)
+   if (rtoutsfname == NULL || strlen(rtoutsfname) == 0)
    {
-      rterror("rtoutput", "NULL file name!");
+      rterror("rtoutput", "NULL or empty file name!");
       return -1;
    }
 
