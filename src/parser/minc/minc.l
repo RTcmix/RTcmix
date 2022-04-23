@@ -17,7 +17,7 @@ extern void yyerror(const char *);
 extern void yyfatalerror(const char *);
 /* To allow includes of subfiles */
 #define MAX_INCLUDE_DEPTH 10
-struct Include { int saved_lineno; YY_BUFFER_STATE state; };
+struct Include { int saved_lineno; YY_BUFFER_STATE state; FILE *file; };
 static Include include_stack[MAX_INCLUDE_DEPTH];
 static int include_stack_index = 0;
 std::list<const char *> includedFilenames;
@@ -156,6 +156,7 @@ num   {dig}+
                 else {
                     includedFilenames.push_back(strdup(includedFilename));
                     include_stack[include_stack_index].saved_lineno = yyget_lineno();
+                    include_stack[include_stack_index].file = yyin;
                     include_stack[include_stack_index++].state = YY_CURRENT_BUFFER;
                     yyset_lineno(1);
                     yy_switch_to_buffer(yy_create_buffer(yyin, YY_BUF_SIZE));
@@ -171,6 +172,8 @@ num   {dig}+
 			else {
 				yy_delete_buffer(YY_CURRENT_BUFFER);
 				yy_switch_to_buffer(include_stack[include_stack_index].state);
+                fclose(include_stack[include_stack_index].file);
+                include_stack[include_stack_index].file = NULL;
 				increment_score_line_offset(yyget_lineno() - include_stack[include_stack_index].saved_lineno);
 				yyset_lineno(include_stack[include_stack_index].saved_lineno);
 			}
