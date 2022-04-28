@@ -206,7 +206,7 @@ pvgetbin(const Arg arglist[], const int nargs)
         outGains->data[frame] = binamp;
         if (lseek(gPvocFD, skipBytes, SEEK_CUR) == -1) {
             free(outGains->data);
-            delete outGains;
+            free(outGains);
             ::rterror("pvgetbin", "Failed to seek in data file");
             rtOptionalThrow(FILE_ERROR);
             return NULL;

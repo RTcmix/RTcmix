@@ -26,8 +26,6 @@ enum ParamType {
 	PLAY,
 	RECORD,
 	CLOBBER,
-	PRINT,
-	MUTE_THRESHOLD,
 	REPORT_CLIPPING,
 	CHECK_PEAKS,
 	FULL_DUPLEX,
@@ -39,6 +37,9 @@ enum ParamType {
 	BUFFER_FRAMES,
 	BUFFER_COUNT,
 	OSC_INPORT,
+    PRINT,
+    PRINT_LIST_LIMIT,
+    MUTE_THRESHOLD,
 	DEVICE,
 	INDEVICE,
 	OUTDEVICE,
@@ -79,6 +80,7 @@ static Param _param_list[] = {
 	{ kOptionBufferCount, BUFFER_COUNT, false},
 	{ kOptionOSCInPort, OSC_INPORT, false},
 	{ kOptionPrint, PRINT, false},
+    { kOptionPrintListLimit, PRINT_LIST_LIMIT, false},
 	{ kOptionMuteThreshold, MUTE_THRESHOLD, false},
 
 	// string options

@@ -29,45 +29,45 @@ static Arg * minc_list_to_arglist(const char *funcname, const MincValue *inList,
 	}
 	for (int i = 0; n < newNumArgs; ++i, ++n) {
         minc_try {
-		switch (inList[i].dataType()) {
-            default:
-			case MincVoidType:
-				minc_die("call_external_function: %s(): invalid argument type", funcname);
-				return NULL;
-			case MincFloatType:
-				newArgs[n] = (MincFloat) inList[i];
-				break;
-			case MincStringType:
-				newArgs[n] = (MincString)inList[i];
-				break;
-			case MincHandleType:
-				newArgs[n] = (Handle) (MincHandle)inList[i];
-				break;
-			case MincListType:
-				if ((MincList *)inList[i] == NULL) {
-					minc_die("can't pass a null list (arg %d) to RTcmix function %s()", n, funcname);
-					return NULL;
-				}
-				if (((MincList *)inList[i])->len <= 0) {
-					minc_die("can't pass an empty list (arg %d) to RTcmix function %s()", n, funcname);
-					return NULL;
-				}
-				else {
-					minc_die("for now, no nested lists can be passed to RTcmix function %s()", funcname);
-					return NULL;
-				}
-                break;
-            case MincMapType:
-                minc_die("for now, maps cannot be passed to RTcmix function %s()", funcname);
-                return NULL;
-            case MincStructType:
-                minc_die("for now, structs cannot be passed to RTcmix function %s()", funcname);
-                return NULL;
-            case MincFunctionType:
-                minc_die("for now, functions cannot be passed to RTcmix function %s()", funcname);
-                return NULL;
-		}
-        } minc_catch(delete [] newArgs;)
+            switch (inList[i].dataType()) {
+                default:
+                case MincVoidType:
+                    minc_die("call_external_function: %s(): invalid argument type", funcname);
+                    break;
+                case MincFloatType:
+                    newArgs[n] = (MincFloat) inList[i];
+                    break;
+                case MincStringType:
+                    newArgs[n] = (MincString)inList[i];
+                    break;
+                case MincHandleType:
+                    newArgs[n] = (Handle) (MincHandle)inList[i];
+                    break;
+                case MincListType:
+                    if ((MincList *)inList[i] == NULL) {
+                        minc_die("can't pass a null list (arg %d) to RTcmix function %s()", n, funcname);
+                        return NULL;
+                    }
+                    if (((MincList *)inList[i])->len <= 0) {
+                        minc_die("can't pass an empty list (arg %d) to RTcmix function %s()", n, funcname);
+                        return NULL;
+                    }
+                    else {
+                        minc_die("for now, no nested lists can be passed to RTcmix function %s()", funcname);
+                        return NULL;
+                    }
+                    break;
+                case MincMapType:
+                    minc_die("for now, maps cannot be passed to RTcmix function %s()", funcname);
+                    break;
+                case MincStructType:
+                    minc_die("for now, structs cannot be passed to RTcmix function %s()", funcname);
+                    break;
+                case MincFunctionType:
+                    minc_die("for now, functions cannot be passed to RTcmix function %s()", funcname);
+                    break;
+            }
+        } minc_catch(delete [] newArgs; newArgs = NULL;)
 	}
 	*pNumArgs = newNumArgs;
 	return newArgs;
