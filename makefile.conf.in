@@ -269,8 +269,6 @@ ifeq ($(BUILDTYPE), STANDALONE)
 	RTLIBTYPE = DYNAMIC
 	RTLIB_INSTALL_DIR = $(LIBDIR)
 	
-	CMIX_FLAGS += -DMINCLUDEDIR=\"$(MINCLUDEDIR)\"
-
     ifeq ($(NPLAY_SUPPORT), TRUE)
       CMIX_FLAGS += -DNETAUDIO
     endif
@@ -295,6 +293,10 @@ CXXFLAGS = $(IPHONE_CFLAGS) $(INCLUDES) $(OPT) $(PICFLAGS) $(ARCHFLAGS) $(CMIX_F
 RTLIB = $(LIBPREFIX)$(SHLIB).$(SHLIB_SUFFIX)
 LIBRTCMIX = $(LIBDIR)/$(RTLIB)
 RTLDFLAGS = -L$(LIBDIR) -l$(SHLIB) -lgen
+
+# All platforms can use global score include directory
+
+CMIX_FLAGS += -DMINCLUDEDIR=\"$(MINCLUDEDIR)\"
 
 # Multi-platform OSC server support
 
