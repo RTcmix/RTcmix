@@ -116,6 +116,7 @@ ug_intro()
 	UG_INTRO("round",m_round);
 	UG_INTRO("print",m_print);
 	UG_INTRO("wrap",m_wrap);
+    UG_INTRO("fwrap",m_fwrap);
 	UG_INTRO("abs",m_abs);
 	UG_INTRO("f_arg",f_arg); /* to return float from command line */
 	UG_INTRO("i_arg",i_arg); /* to return int from command line */

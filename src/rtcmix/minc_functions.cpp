@@ -192,7 +192,7 @@ double m_round(float p[], int n_args)
 double m_wrap(float p[], int n_args)
 {
 	/* keeps value between 0 and p[1] */
-	int val = p[0];
+	int val = (int) p[0];
 	int range = (int) p[1];
 	if(p[1] >= 1.0) {
 		while(val > range) val -= range;
@@ -204,6 +204,22 @@ double m_wrap(float p[], int n_args)
 	}
 	else val = 0;
 	return (double) val;
+}
+
+double m_fwrap(float p[], int n_args)
+{
+    /* keeps value between 0.0 and p[1] */
+    float val = p[0];
+    const float range = p[1];
+    if (range >= 0.0f) {
+        while (val > range) val -= range;
+        while (val < 0.0f) val += range;
+    }
+    else {
+        while (val < range) val -= range;
+        while (val > 0.0f) val += range;
+    }
+    return (double) val;
 }
 
 double m_print(float p[], int n_args, double pp[])
